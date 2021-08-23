@@ -19,6 +19,7 @@
 #include <sys/cdefs.h>
 
 enum { NNADAPTER_VERSION = 1 };
+enum { NNADAPTER_UNKNOWN = -1 };
 
 /**
  * Result codes.
@@ -34,6 +35,7 @@ typedef enum {
 } NNAdapterResultCode;
 
 enum { NNADAPTER_MAX_SIZE_OF_DIMENSIONS = 8 };
+enum { NNADAPTER_MAX_SIZE_OF_DYNAMIC_DIMENSIONS = 8 };
 
 /**
  * Operand precision codes.
@@ -72,7 +74,8 @@ typedef enum {
   NNADAPTER_TENSOR_FLOAT32 = 22,
   NNADAPTER_TENSOR_FLOAT64 = 23,
   /**
-   * A tensor of 8 bit signed integers that represent real numbers.
+   * A tensor of 8/16/32 bit signed/unsigned integers that represent real
+   * numbers.
    * - scale: a 32 bit floating point value greater than zero.
    *
    * The formula is:
@@ -81,9 +84,12 @@ typedef enum {
   NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER = 24,
   NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL = 25,
   NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER = 26,
-  NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER = 27,
-  NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL = 28,
-  NNADAPTER_TENSOR_QUANT_UINT32_ASYMM_PER_LAYER = 29,
+  NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_LAYER = 27,
+  NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_CHANNEL = 28,
+  NNADAPTER_TENSOR_QUANT_UINT16_ASYMM_PER_LAYER = 29,
+  NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER = 30,
+  NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL = 31,
+  NNADAPTER_TENSOR_QUANT_UINT32_ASYMM_PER_LAYER = 32,
 } NNAdapterOperandPrecisionCode;
 
 /**
@@ -515,8 +521,8 @@ typedef enum {
   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
-  * * 1: shape, a NNADAPTER_TENSOR_INT32 tensor. It indicates the shape you want
-  * to expand to, following the broadcast rule.
+  * * 1: shape, a NNADAPTER_TENSOR_INT32 or NNADAPTER_TENSOR_INT64 tensor. It
+  * indicates the shape you want to expand to, following the broadcast rule.
   *
   * Outputs:
   * * 0: output, A tensor with the same type as input.
@@ -529,8 +535,8 @@ typedef enum {
    * Return a Tensor with the 'shape' and 'value'.
    *
    * Inputs:
-   * * 0: shape, A NNADAPTER_TENSOR_INT32 tensor.
-   * * 1: value, A NNADAPTER_FLOAT32,  NNADAPTER_INT32, NNADAPTER_INT64 or
+   * * 0: shape, a NNADAPTER_TENSOR_INT32 or NNADAPTER_TENSOR_INT64 tensor.
+   * * 1: value, a NNADAPTER_FLOAT32,  NNADAPTER_INT32, NNADAPTER_INT64 or
    * NNADAPTER_BOOL scalar.
    *
    * Outputs:
@@ -870,11 +876,11 @@ typedef enum {
    * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: shape, An 1-D NNADAPTER_TENSOR_INT32 shape tensor which specifies the
-   * new shape, At most one dimension of the new shape can be -1. In this case,
-   * the value is inferred from the size of the tensor and the remaining
-   * dimensions. A dimension could also be 0, in which case the actual dimension
-   * value is unchanged.
+   * * 1: shape, an 1-D NNADAPTER_TENSOR_INT32 or NNADAPTER_TENSOR_INT64 shape
+   * tensor which specifies the new shape, At most one dimension of the new
+   * shape can be -1. In this case, the value is inferred from the size of the
+   * tensor and the remaining dimensions. A dimension could also be 0, in which
+   * case the actual dimension value is unchanged.
    *
    * Outputs:
    * * 0: output, A tensor with a new shape, and its type and data is same as
@@ -891,8 +897,8 @@ typedef enum {
    * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor with shape [N, C, ...].
-   * * 1: shape, a NNADAPTER_TENSOR_INT32 tensor. It indicates the target shape
-   * of output exclude dim_N and dim_C.
+   * * 1: shape, a NNADAPTER_TENSOR_INT32 or NNADAPTER_TENSOR_INT64 tensor. It
+   * indicates the target shape of output exclude dim_N and dim_C.
    * * 2: scales, a NNADAPTER_TENSOR_FLOAT32 tensor. It indicates the scale of
    * the output's shape exclude dim_N and dim_C.
    * * 3: align_corners. A NNADAPTER_BOOL scalar.  If True, the centers of the 4
@@ -911,8 +917,8 @@ typedef enum {
    * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor with shape [N, C, ...].
-   * * 1: shape, a NNADAPTER_TENSOR_INT32 tensor. It indicates the target shape
-   * of output exclude dim_N and dim_C.
+   * * 1: shape, a NNADAPTER_TENSOR_INT32 or NNADAPTER_TENSOR_INT64 tensor. It
+   * indicates the target shape of output exclude dim_N and dim_C.
    * * 2: scales, a NNADAPTER_TENSOR_FLOAT32 tensor. It indicates the scale of
    * the output's shape exclude dim_N and dim_C.
    * * 3: align_corners, NNADAPTER_BOOL scalar. If True, the centers of the 4
@@ -932,6 +938,8 @@ typedef enum {
    *
    * Inputs:
    * * 0: input, A NNADAPTER_TENSOR_INT32 tensor.
+   * * 1: dtype, a NNADAPTER_INT32 scalar, the value of NNADAPTER_TENSOR_INT32
+   * or NNADAPTER_TENSOR_INT64. Specifies the dtype of the result.
    *
    * Outputs:
    * * 0: output, A NNADAPTER_TENSOR_INT32 tensor.
@@ -1033,6 +1041,25 @@ typedef enum {
    * Available since version 1.
    */
   NNADAPTER_SPLIT,
+
+  /**
+   * Squeeze the dimension(s) of size 1 of input's shape.
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: axes, a NNADAPTER_TENSOR_INT32 tensor. It indicating the dimensions to
+   * be squeezed. Default is None. The range of axis is [−ndim(x),ndim(x)). It
+   * should be in range [-R, R), where R is the rank of input, negative value
+   * works the same way as axis+ndim(input).
+   *
+   * Outputs:
+   * * 0: output, A tensor with the same type as input.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_SQUEEZE,
 
   /**
    * Performs element-wise binary subtraction(with Numpy-style broadcasting
@@ -1204,9 +1231,23 @@ typedef struct NNAdapterOperandType {
 
   /**
    * The dimensions of the tensor.
-   * -1 means Any for supporting dynamic shape.
+   * Use NNADAPTER_UNKNOWN for dynamic shape.
    */
   int32_t dimensions[NNADAPTER_MAX_SIZE_OF_DIMENSIONS];
+
+  /**
+   * The gear count of dynamic dimensions.
+   *
+   */
+  uint32_t dynamic_dimension_count;
+
+  /**
+   * The dynamic dimensions of the tensor.
+   * Should not contains NNADAPTER_UNKNOWN because it requires the real
+   * dimensions.
+   */
+  int32_t dynamic_dimensions[NNADAPTER_MAX_SIZE_OF_DYNAMIC_DIMENSIONS]
+                            [NNADAPTER_MAX_SIZE_OF_DIMENSIONS];
 
   /**
    * The quantization parameters.
@@ -1368,28 +1409,30 @@ int NNAdapterModel_addOperand(NNAdapterModel* model,
  *
  * Available since version 1.
  */
-int NNAdapterModel_setOperand(NNAdapterOperand* operand,
-                              void* buffer,
-                              uint32_t length,
-                              bool copy);
+int NNAdapterModel_setOperandValue(NNAdapterOperand* operand,
+                                   void* buffer,
+                                   uint32_t length,
+                                   bool copy);
 /**
- * Add an operation to a model.
+ * Get the type of an operand.
+ *
+ * Available since version 1.
+ */
+int NNAdapterModel_getOperandType(NNAdapterOperand* operand,
+                                  NNAdapterOperandType** type);
+/**
+ * Add an operation to a model, and set the input and output operands of the
+ * specified operation.
  *
  * Available since version 1.
  */
 int NNAdapterModel_addOperation(NNAdapterModel* model,
                                 NNAdapterOperationType type,
-                                NNAdapterOperation** operation);
-/**
- * Set the input and output operands of the specified operation.
- *
- * Available since version 1.
- */
-int NNAdapterModel_setOperation(NNAdapterOperation* operation,
                                 uint32_t input_count,
                                 NNAdapterOperand** input_operands,
                                 uint32_t output_count,
-                                NNAdapterOperand** output_operands);
+                                NNAdapterOperand** output_operands,
+                                NNAdapterOperation** operation);
 /**
  * Indentify the input and output operands of the specified model.
  *

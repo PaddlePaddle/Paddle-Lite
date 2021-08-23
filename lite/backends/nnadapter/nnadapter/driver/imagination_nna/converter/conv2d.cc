@@ -101,7 +101,7 @@ int Program::ConvertConv2D(hal::Operation* operation) {
   unsigned int dilations[2] = {static_cast<unsigned int>(dilation_height),
                                static_cast<unsigned int>(dilation_width)};
   NNADAPTER_CHECK(
-      IsUInt8AsymmPerLayerQuantization(output_operand->type.precision));
+      IsUInt8AsymmPerLayerQuantType(output_operand->type.precision));
   imgdnn_quant_param output_quant_param;
   output_quant_param.scale = output_operand->type.asymm_per_layer_params.scale;
   output_quant_param.zero_point =

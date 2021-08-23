@@ -39,6 +39,33 @@ bool SubgraphOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
       op_desc.GetAttr<std::vector<std::string>>("input_data_names");
   param_.output_data_names =
       op_desc.GetAttr<std::vector<std::string>>("output_data_names");
+  // Get the quantization parameters of input and output data variables
+  auto op_info = dynamic_cast<const OpInfo*>(&op_desc);
+  param_.input_data_scales.clear();
+  param_.output_data_scales.clear();
+  for (auto& input_data_name : param_.input_data_names) {
+    auto it = std::find(
+        param_.input_names.begin(), param_.input_names.end(), input_data_name);
+    CHECK(it != param_.input_names.end());
+    int arg_index = it - param_.input_names.begin();
+    std::string scale_name = "Inputs" + to_string(arg_index) + "_scale";
+    float scale_value = -1.0f;
+    if (op_info->HasInputScale(scale_name, true))
+      scale_value = op_info->GetInputScale(scale_name, true)[0];
+    param_.input_data_scales.emplace_back(scale_value);
+  }
+  for (auto& output_data_name : param_.output_data_names) {
+    auto it = std::find(param_.output_names.begin(),
+                        param_.output_names.end(),
+                        output_data_name);
+    CHECK(it != param_.output_names.end());
+    int arg_index = it - param_.output_names.begin();
+    std::string scale_name = "Outputs" + to_string(arg_index) + "_scale";
+    float scale_value = -1.0f;
+    if (op_info->HasOutputScale(scale_name, true))
+      scale_value = op_info->GetOutputScale(scale_name, true)[0];
+    param_.output_data_scales.emplace_back(scale_value);
+  }
   CHECK(param_.program_desc);
   param_.block_idx = op_desc.GetAttr<int32_t>("sub_block");
   CHECK_GE(param_.block_idx, 0);

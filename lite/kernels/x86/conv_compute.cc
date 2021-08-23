@@ -14,6 +14,7 @@
 
 #include "lite/kernels/x86/conv_compute.h"
 #include <utility>
+#include "lite/backends/x86/math/fill_bias_activate.h"
 #include "lite/kernels/x86/conv_depthwise.h"
 #include "lite/kernels/x86/conv_direct.h"
 
@@ -21,6 +22,24 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace x86 {
+#define INIT_PARAM                      \
+  auto& param = this->Param<param_t>(); \
+  auto x_dims = param.x->dims();        \
+  auto w_dims = param.filter->dims();   \
+  auto o_dims = param.output->dims();   \
+  int win = x_dims[3];                  \
+  int hin = x_dims[2];                  \
+  int chin = x_dims[1];                 \
+  int num = x_dims[0];                  \
+  int wout = o_dims[3];                 \
+  int hout = o_dims[2];                 \
+  int chout = o_dims[1];                \
+  int kw = w_dims[3];                   \
+  int kh = w_dims[2];                   \
+  int group = param.groups;             \
+  int m = chout / group;                \
+  int n = hout * wout;                  \
+  int k = chin * kw * kh / group;
 
 template <>
 void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
@@ -45,6 +64,8 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   bool ks_equal = (stride_h == stride_w) && (kernel_h == kernel_w);
   bool no_dilation = (dilations[0] == 1) && (dilations[1] == 1);
   bool kps_equal = (paddings[0] == paddings[2]) && ks_equal;
+  bool pads_equal =
+      ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));
   bool flag_dw_3x3 =
       (kernel_h == 3) && (kernel_w == 3) && (stride_h == 1 || stride_h == 2);
   bool flag_dw_5x5 =
@@ -52,6 +73,12 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   // todo add conv_5x5_depthwise implement
   flag_dw_5x5 = false;
   bool flag_dw = flag_dw_3x3 || flag_dw_5x5;
+  if (kernel_w == 1 && stride_w == 1 && paddings[0] == 0 && kps_equal &&
+      pads_equal) {
+    flag_1x1gemm_ = true;
+  } else {
+    flag_1x1gemm_ = false;
+  }
 
   bool nodilations = true;
   for (auto ele : *(param.dilations))
@@ -85,156 +112,85 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   if (impl_) {
     return impl_->Run();
   }
-  // To-do(qili93): remove below lines of code after all kernels implemented
-  auto& context = ctx_->As<X86Context>();
-  auto& param = *param_.get_mutable<operators::ConvParam>();
-  lite::Tensor filter = *param.filter;
-  param.output->template mutable_data<float>();
-  const int batch_size = static_cast<int>(param.x->dims()[0]);
-
-  const int kh = static_cast<int>(param.filter->dims()[2]);
-  const int kw = static_cast<int>(param.filter->dims()[3]);
-
-  const int sh = static_cast<int>(param.strides[0]);
-  const int sw = static_cast<int>(param.strides[1]);
-
+  auto& ctx = ctx_->As<X86Context>();
+  INIT_PARAM
+  bool flag_bias = (param.bias != nullptr);
+  int group_size_out = m * n;
+  int group_size_weights = m * k;
+  int group_size_coldata = n * k;
+  int channel_in_size = chin * hin * win;
+  int channel_out_size = chout * hout * wout;
   auto paddings = *param.paddings;
-  const int ph = paddings[0];
-  const int pw = paddings[2];
+  auto dilations = *param.dilations;
 
-  bool kps_equal = (pw == ph) && (sw == sh) && (kw == kh);
-  bool pads_equal =
-      ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));
-  bool flag_1x1gemm = false;
-  if (kw == 1 && sw == 1 && pw == 0 && kps_equal && pads_equal) {
-    flag_1x1gemm = true;
-  }
+  auto din = param.x->data<float>();
+  auto dout = param.output->mutable_data<float>();
+  auto weights = param.filter->data<float>();
+  const float* bias_ptr =
+      flag_bias ? static_cast<const float*>(param.bias->data<float>())
+                : nullptr;
+  float* col_data = nullptr;
 
-  std::vector<int64_t> filter_shape_vec(filter.dims().Vectorize());
-  std::vector<int64_t> output_shape_vec(param.output->dims().Vectorize());
-  size_t data_dim = filter_shape_vec.size() - 2;
-  std::vector<int64_t> col_shape_vec(1 + 2 * data_dim);
-  col_shape_vec[0] = param.x->dims()[1] / param.groups;
-  for (size_t j = 0; j < data_dim; ++j) {
-    col_shape_vec[j + 1] = filter_shape_vec[j + 2];
-    col_shape_vec[j + 1 + data_dim] = output_shape_vec[j + 2];
+  if (!flag_1x1gemm_) {
+    int col_size = group * group_size_coldata;
+    col_data = static_cast<float*>(
+        TargetMalloc(TARGET(kX86), col_size * sizeof(float)));
   }
-  lite::DDim col_shape(col_shape_vec);
-  lite::DDim col_matrix_shape = col_shape.Flatten2D(data_dim + 1);
-  bool is_expand = IsExpand(
-      filter_shape_vec, param.strides, *param.paddings, *param.dilations);
-  lite::Tensor col;
-  lite::Tensor col_matrix;
-  if (is_expand) {
-    col.Resize(col_shape);
-    col.mutable_data<float>();
-    col_matrix.ShareDataWith(col);
-    col_matrix.Resize(col_matrix_shape);
-  }
-  lite::DDim input_shape = param.x->dims().Slice(1, param.x->dims().size());
-  lite::DDim filter_matrix_shape(std::vector<int64_t>{
-      filter.dims()[0], filter.dims().production() / filter.dims()[0]});
-  filter.Resize(filter_matrix_shape);
-  lite::DDim output_matrix_shape(std::vector<int64_t>{
-      param.output->dims()[1],
-      param.output->dims().production() /
-          (param.output->dims()[0] * param.output->dims()[1])});
-  int in_step = static_cast<int>(param.x->dims()[1]) / param.groups;
-  int out_step = static_cast<int>(param.output->dims()[1]) / param.groups;
-  paddle::lite::x86::math::Vol2ColFunctor<lite::TargetType::kX86, float>
-      vol2col;
-  paddle::lite::x86::math::Im2ColFunctor<
-      paddle::lite::x86::math::ColFormat::kCFO,
-      lite::TargetType::kX86,
-      float>
-      im2col;
-  auto blas =
-      paddle::lite::x86::math::GetBlas<lite::TargetType::kX86, float>(context);
-  for (int i = 0; i < batch_size; i++) {
-    lite::Tensor in_batch = param.x->template Slice<float>(i, i + 1);
-    in_batch.Resize(input_shape);
-    lite::Tensor out_batch = param.output->template Slice<float>(i, i + 1);
-    out_batch.Resize(output_matrix_shape);
-    for (int g = 0; g < param.groups; g++) {
-      lite::Tensor in_slice =
-          in_batch.Slice<float>(static_cast<int64_t>(g * in_step),
-                                static_cast<int64_t>((g + 1) * in_step));
-      auto paddings = *param.paddings;
-      if (!is_expand) {
-        col.ShareDataWith(in_slice);
-        col_matrix.ShareDataWith(col);
-        col_matrix.Resize(col_matrix_shape);
-      } else if (data_dim == 2U && !flag_1x1gemm) {
-        // im2col
-        im2col(context,
-               in_slice,
-               *param.dilations,
-               param.strides,
-               std::vector<int>{
-                   paddings[0], paddings[2], paddings[0], paddings[2]},
-               &(col));
-      } else if (data_dim == 3U) {
-        // vol2col
-        vol2col(context,
-                in_slice,
-                *param.dilations,
-                param.strides,
-                *param.paddings,
-                &(col));
-      }
-
-      // gemm
-      lite::Tensor out_slice;
-      out_slice =
-          out_batch.Slice<float>(static_cast<int64_t>(g * out_step),
-                                 static_cast<int64_t>((g + 1) * out_step));
-      lite::Tensor filter_slice;
-      filter_slice =
-          filter.Slice<float>(static_cast<int64_t>(g * out_step),
-                              static_cast<int64_t>((g + 1) * out_step));
-      blas.MatMul(
-          filter_slice, false, col_matrix, false, 1.0, &(out_slice), 0.0);
+  auto act_param = param.activation_param;
+  paddle::lite::x86::math::Blas<lite::TargetType::kX86> matmul(ctx);
+  for (int i = 0; i < num; i++) {
+    const float* din_batch = din + i * channel_in_size;
+    float* dout_batch = dout + i * channel_out_size;
+    const float* din_data = din_batch;
+    if (!flag_1x1gemm_) {
+      lite::x86::math::im2col<float>(din_batch,
+                                     chin,
+                                     hin,
+                                     win,
+                                     w_dims[2],
+                                     w_dims[3],
+                                     paddings[0],
+                                     paddings[1],
+                                     paddings[2],
+                                     paddings[3],
+                                     param.strides[0],
+                                     param.strides[1],
+                                     dilations[0],
+                                     dilations[1],
+                                     col_data);
+      din_data = static_cast<const float*>(col_data);
     }
-  }
 
-  // for bias
-  if (param.bias) {
-    const int output_channel = static_cast<int>(param.output->dims()[1]);
-    const int output_number =
-        param.output->dims().production() /
-        (param.output->dims()[0] * param.output->dims()[1]);
-    auto* bias_data = param.bias->template data<float>();
-    auto* out_data = param.output->template mutable_data<float>();
-    auto act_param = param.activation_param;
-    if (act_param.has_active) {
-      if (act_param.active_type == lite_api::ActivationType::kRelu) {
-        lite::x86::math::bias_add_relu_broadcast(out_data,
-                                                 bias_data,
-                                                 out_data,
-                                                 batch_size,
-                                                 output_channel,
-                                                 output_number);
-      } else if (act_param.active_type == lite_api::ActivationType::kRelu6) {
-        lite::x86::math::bias_add_relu6_broadcast(out_data,
-                                                  bias_data,
-                                                  out_data,
-                                                  batch_size,
-                                                  output_channel,
-                                                  output_number);
+    for (int g = 0; g < group; g++) {
+      const float* col_data_group = din_data + g * group_size_coldata;
+      const float* weights_group = weights + g * group_size_weights;
+      float* dout_group = dout_batch + g * group_size_out;
+      if (n == 1) {
+        matmul.GEMV<float>(
+            false, m, k, 1.f, weights_group, col_data_group, 0.f, dout_group);
       } else {
-        LOG(FATAL) << "[X86] unsupported Activation type";
+        matmul.GEMM<float>(false,
+                           false,
+                           m,
+                           n,
+                           k,
+                           1.f,
+                           weights_group,
+                           k,
+                           col_data_group,
+                           n,
+                           0.f,
+                           dout_group,
+                           n);
       }
-    } else {
-      lite::x86::math::bias_add_broadcast(out_data,
-                                          bias_data,
-                                          out_data,
-                                          batch_size,
-                                          output_channel,
-                                          output_number);
     }
+    // bias and activate
+    lite::x86::math::fill_bias_act(
+        dout_batch, bias_ptr, chout, wout * hout, flag_bias, &act_param);
   }
+  if (!flag_1x1gemm_) TargetFree(TARGET(kX86), col_data);
 }
-
+#undef INIT_PARAM
 }  // namespace x86
 }  // namespace kernels
 }  // namespace lite

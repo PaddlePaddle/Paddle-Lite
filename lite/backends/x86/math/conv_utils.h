@@ -78,6 +78,69 @@ void pack_padding8_m256(lite::Tensor* input,
 __m256 activation8_m256(__m256 input, const lite_api::ActivationType act_type);
 __m128 activation4_m128(__m128 input, const lite_api::ActivationType act_type);
 float activation1_float(float input, const lite_api::ActivationType act_type);
+template <typename Dtype>
+void im2col(const Dtype* data_im,
+            int channels,
+            int height,
+            int width,
+            int kernel_h,
+            int kernel_w,
+            int pad_top,
+            int pad_bottom,
+            int pad_left,
+            int pad_right,
+            int stride_h,
+            int stride_w,
+            int dilation_h,
+            int dilation_w,
+            Dtype* data_col);
+
+template <typename Dtype>
+void im2col_common(const Dtype* data_im,
+                   int channels,
+                   int height,
+                   int width,
+                   int kernel_h,
+                   int kernel_w,
+                   int pad_top,
+                   int pad_bottom,
+                   int pad_left,
+                   int pad_right,
+                   int stride_h,
+                   int stride_w,
+                   int dilation_h,
+                   int dilation_w,
+                   Dtype* data_col);
+
+template <typename Dtype>
+void im2col_s1(const Dtype* data_im,
+               int channels,
+               int height,
+               int width,
+               int kernel_h,
+               int kernel_w,
+               int pad_top,
+               int pad_bottom,
+               int pad_left,
+               int pad_right,
+               int dilation_h,
+               int dilation_w,
+               Dtype* data_col);
+
+template <typename Dtype>
+void im2col_s2(const Dtype* data_im,
+               int channels,
+               int height,
+               int width,
+               int kernel_h,
+               int kernel_w,
+               int pad_top,
+               int pad_bottom,
+               int pad_left,
+               int pad_right,
+               int dilation_h,
+               int dilation_w,
+               Dtype* data_col);
 
 // From: https://stackoverflow.com/a/25627536
 inline void transpose8_ps(__m256& row0,  // NOLINT

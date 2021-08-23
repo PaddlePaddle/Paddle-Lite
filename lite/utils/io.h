@@ -21,7 +21,7 @@
 #include <string>
 #include <vector>
 #if defined(_MSC_VER)
-#include "dirent.h"
+#include "dirent.h"  // NOLINT
 #else
 #include <dirent.h>
 #endif

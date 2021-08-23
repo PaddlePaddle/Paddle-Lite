@@ -21,35 +21,6 @@ namespace lite {
 namespace subgraph {
 namespace nnadapter {
 
-NNAdapterOperand* CastInt64OperandToInt32(Converter* converter,
-                                          Scope* scope,
-                                          const std::string& input_name,
-                                          const std::string& output_name) {
-  NNAdapterOperand* output_operand = nullptr;
-  if (converter->HasOperand(output_name)) {
-    output_operand = converter->GetOperand(output_name);
-  } else {
-    NNAdapterOperand* input_operand = nullptr;
-    auto input_dims = scope->FindTensor(input_name)->dims();
-    if (converter->HasOperand(input_name)) {
-      input_operand = converter->GetOperand(input_name);
-    } else {
-      input_operand = converter->AddVariableOperand(
-          input_dims, input_name, NNADAPTER_TENSOR_INT64);
-    }
-    auto dtype_operand = converter->AddInt32ConstantOperand(
-        static_cast<int32_t>(NNADAPTER_INT32));
-    output_operand =
-        converter->AddInt32VariableOperand(input_dims, output_name);
-    std::vector<NNAdapterOperand*> input_operands = {input_operand,
-                                                     dtype_operand};
-    std::vector<NNAdapterOperand*> output_operands = {output_operand};
-    auto cast_operation = converter->AddOperation(NNADAPTER_CAST);
-    converter->SetOperation(cast_operation, &input_operands, &output_operands);
-  }
-  return output_operand;
-}
-
 NNAdapterOperand* ConcatOperands(Converter* converter,
                                  Scope* scope,
                                  const std::vector<std::string>& input_names,
@@ -81,9 +52,8 @@ NNAdapterOperand* ConcatOperands(Converter* converter,
         output_name,
         precision);
     std::vector<NNAdapterOperand*> output_operands = {output_operand};
-    auto concat_operation = converter->AddOperation(NNADAPTER_CONCAT);
-    converter->SetOperation(
-        concat_operation, &input_operands, &output_operands);
+    converter->AddOperation(
+        NNADAPTER_CONCAT, &input_operands, &output_operands);
   }
   return output_operand;
 }
@@ -105,29 +75,15 @@ int FillConstantConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     auto shape_name = op_info->Input("ShapeTensor").front();
     auto shape_tensor = scope->FindTensor(shape_name);
     auto shape_dims = shape_tensor->dims();
-    auto shape_dtype = shape_tensor->precision();
-    switch (shape_dtype) {
-      case PRECISION(kInt64): {
-        // Cast to int32
-        // Warning: should use a unique name
-        std::string new_shape_name = shape_name + "_int32";
-        shape_operand = CastInt64OperandToInt32(
-            converter, scope, shape_name, new_shape_name);
-        break;
-      };
-      case PRECISION(kInt32): {
-        if (converter->HasOperand(shape_name)) {
-          shape_operand = converter->GetOperand(shape_name);
-        } else {
-          shape_operand =
-              converter->AddInt32VariableOperand(shape_dims, shape_name);
-        }
-        break;
-      };
-      default:
-        LOG(ERROR) << "Unsupported shape data type: "
-                   << lite_api::PrecisionToStr(shape_dtype);
-    }
+    auto shape_precision = shape_tensor->precision();
+    CHECK(shape_precision == PRECISION(kInt64) ||
+          shape_precision == PRECISION(kInt32))
+        << "Shape's data type should be int32 or int64, but received "
+        << lite_api::PrecisionToStr(shape_precision);
+    shape_operand = converter->AddVariableOperand(
+        shape_dims,
+        shape_name,
+        Precision2NNAdapterTensorPrecisionCode(shape_precision));
   } else if (op_info->HasInput("ShapeTensorList") &&
              !op_info->Input("ShapeTensorList").empty()) {
     // Use concat to generate shape_operand
@@ -135,35 +91,21 @@ int FillConstantConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     // Warning: should use a unique name
     std::string new_shape_name = shape_names.front() + "_concat_shape";
     auto shape_precision = scope->FindTensor(shape_names.front())->precision();
-    NNAdapterOperand* concat_shape_operand =
+    CHECK(shape_precision == PRECISION(kInt64) ||
+          shape_precision == PRECISION(kInt32))
+        << "Shape's data type should be int32 or int64, but received "
+        << lite_api::PrecisionToStr(shape_precision);
+    shape_operand =
         ConcatOperands(converter,
                        scope,
                        shape_names,
                        new_shape_name,
                        Precision2NNAdapterTensorPrecisionCode(shape_precision));
-
-    switch (shape_precision) {
-      case PRECISION(kInt64): {
-        // Cast to int32
-        // Warning: should use a unique name
-        std::string new_shape_int32_name = new_shape_name + "_int32";
-        shape_operand = CastInt64OperandToInt32(
-            converter, scope, new_shape_name, new_shape_int32_name);
-
-        break;
-      };
-      case PRECISION(kInt32):
-        shape_operand = concat_shape_operand;
-        break;
-      default:
-        LOG(ERROR) << "Unsupported shape_tensor_list data type: "
-                   << lite_api::PrecisionToStr(shape_precision);
-    }
   } else if (op_info->HasAttr("shape")) {
-    auto shape_int64 = op_info->GetAttr<std::vector<int64_t>>("shape");
-    std::vector<int32_t> shape_int32(shape_int64.begin(), shape_int64.end());
-    shape_operand = converter->AddInt32ConstantOperand(
-        &(shape_int32.at(0)), DDim({static_cast<int64_t>(shape_int32.size())}));
+    std::vector<int64_t> shape =
+        op_info->GetAttr<std::vector<int64_t>>("shape");
+    shape_operand = converter->AddInt64ConstantOperand(
+        shape.data(), DDim({static_cast<int64_t>(shape.size())}));
   } else {
     LOG(WARNING)
         << "One of ShapeTensor, ShapeTensorList or shape(attr) must be set.";
@@ -236,8 +178,7 @@ int FillConstantConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<NNAdapterOperand*> input_operands = {shape_operand,
                                                    value_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  auto fill_operation = converter->AddOperation(NNADAPTER_FILL);
-  converter->SetOperation(fill_operation, &input_operands, &output_operands);
+  converter->AddOperation(NNADAPTER_FILL, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
