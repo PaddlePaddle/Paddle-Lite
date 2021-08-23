@@ -333,12 +333,15 @@ class PrecisionProfiler {
       CLRuntime::Global()->command_queue().finish();
       switch (layout_type) {
         case DATALAYOUT(kImageDefault): {
-          paddle::lite::CLImageConverterDefault default_convertor;
-          auto image_shape = default_convertor.InitImageDimInfoWith(in->dims());
-          if (op_name == "fc" || op_name == "softmax") {
-            image_shape = DDim(std::vector<DDim::value_type>(
-                {in->dims()[1] / 4, in->dims()[0]}));
+          auto in_dims = in->dims();
+          // special case
+          if ((in_dims.size() == 2) &&
+              (op_name == "fc" || op_name == "softmax")) {
+            in_dims = DDim(std::vector<DDim::value_type>(
+                {in->dims()[0], in->dims()[1], 1, 1}));
           }
+          paddle::lite::CLImageConverterDefault default_convertor;
+          auto image_shape = default_convertor.InitImageDimInfoWith(in_dims);
           size_t im_w = image_shape[0];
           size_t im_h = image_shape[1];
           VLOG(1) << "image shape(W,H) of " << name << ": " << im_w << " "
@@ -365,7 +368,7 @@ class PrecisionProfiler {
           // high-dim padding to low-dim padding to fit image2d.
           // ImageConverter will be changed.
           default_convertor.ImageToNCHW(
-              in_data_v, real_out_v.data(), image_shape, in->dims());
+              in_data_v, real_out_v.data(), image_shape, in_dims);
           CHECK(real_out_v.size() == in->numel());
           *mean = compute_mean<float>(real_out_v.data(), real_out_v.size());
           *std_dev = compute_standard_deviation<float>(
@@ -373,7 +376,7 @@ class PrecisionProfiler {
           *ave_grow_rate = compute_average_grow_rate<float>(real_out_v.data(),
                                                             real_out_v.size());
           std::shared_ptr<lite::Tensor> real_out_t(new lite::Tensor);
-          real_out_t->Resize(in->dims());
+          real_out_t->Resize(in_dims);
           float* real_out_data = real_out_t->mutable_data<float>();
           memcpy(real_out_data,
                  real_out_v.data(),

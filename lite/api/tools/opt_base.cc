@@ -86,13 +86,43 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(
           Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)});
       valid_places_.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kInt32), DATALAYOUT(kNCHW)});
+      valid_places_.emplace_back(
           TARGET(kARM));  // enable kARM CPU kernel when no opencl kernel
-    } else if (target_repr == "x86") {
+    } else if (target_repr == "arm_metal") {
+      valid_places_.emplace_back(Place{
+          TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)});
+      valid_places_.emplace_back(Place{
+          TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray)});
+      valid_places_.emplace_back(TARGET(kARM));
+      valid_places_.emplace_back(TARGET(kHost));
+    } else if (target_repr == "x86_metal") {
+      valid_places_.emplace_back(Place{
+          TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)});
+      valid_places_.emplace_back(Place{
+          TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray)});
       valid_places_.emplace_back(TARGET(kX86));
+      valid_places_.emplace_back(TARGET(kHost));
+    } else if (target_repr == "x86") {
+      valid_places_.emplace_back(Place{TARGET(kX86), PRECISION(kFloat)});
+      valid_places_.emplace_back(Place{TARGET(kX86), PRECISION(kInt64)});
+    } else if (target_repr == "x86_opencl") {
+      valid_places_.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)});
+      valid_places_.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)});
+      valid_places_.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageDefault)});
+      valid_places_.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)});
+      valid_places_.emplace_back(Place{TARGET(kX86), PRECISION(kFloat)});
+      valid_places_.emplace_back(Place{TARGET(kX86), PRECISION(kInt64)});
     } else if (target_repr == "npu") {
       valid_places_.emplace_back(TARGET(kNPU));
     } else if (target_repr == "xpu") {
       valid_places_.emplace_back(TARGET(kXPU));
+    } else if (target_repr == "mlu") {
+      valid_places_.emplace_back(TARGET(kMLU));
     } else if (target_repr == "rknpu") {
       valid_places_.emplace_back(TARGET(kRKNPU));
       valid_places_.emplace_back(

@@ -285,3 +285,8 @@ TEST(box_coder_image2d, compute) {
 }  // namespace paddle
 
 USE_LITE_KERNEL(box_coder, kOpenCL, kFP16, kImageDefault, ImageDefault);
+USE_LITE_KERNEL(box_coder,
+                kOpenCL,
+                kFP16,
+                kImageDefault,
+                ImageDefaultNoUseSSDBoxesCalcOfflinePass);

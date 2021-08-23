@@ -260,7 +260,11 @@ __kernel void softmax_1x1(__read_only image2d_t input,
   if (c_blk_idx < c_blks) {
     float4 src = read_imagef(input, SAMPLER, (int2)(c_blk_idx, b_idx)) -
                  (float4)(maximum);
-    CL_DTYPE4 res = CONVERT_TYPE_TO(exp(src) * sum, CL_DTYPE4);
+#ifdef CL_DTYPE_half
+    CL_DTYPE4 res = convert_half4(exp(src) * sum);
+#else
+    CL_DTYPE4 res = exp(src) * sum;
+#endif
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(c_blk_idx, b_idx), res);
   }
 }
