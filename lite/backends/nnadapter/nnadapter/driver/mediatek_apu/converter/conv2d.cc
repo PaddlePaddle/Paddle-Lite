@@ -22,12 +22,14 @@ namespace mediatek_apu {
 
 int Program::ConvertConv2D(hal::Operation* operation) {
   CONV2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  // Datelayout is nhwc in mediatek_apu, so some attrs should be update.
+  // NHWC
   input_channel_size = input_operand->type.dimensions[3];
-  bool is_depthwise_mode = (group != 1 && input_channel_size == group);
+  is_depthwise_mode = (group != 1 && input_channel_size == group);
   NNADAPTER_VLOG(5) << "update depthwise mode(" << is_depthwise_mode << ").";
-  NNADAPTER_CHECK_EQ(dilation_height, 1);
-  NNADAPTER_CHECK_EQ(dilation_width, 1);
+  NNADAPTER_CHECK_EQ(dilation_height, 1)
+      << "MediaTek APU only supports dilations = [1,1]";
+  NNADAPTER_CHECK_EQ(dilation_width, 1)
+      << "MediaTek APU only supports dilations = [1,1]";
 
   // Convert to Neuron operands and operations
   auto input_index = GetMappedIndex(input_operand);
