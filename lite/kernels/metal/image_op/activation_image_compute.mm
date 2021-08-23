@@ -40,6 +40,23 @@ void ActivationImageCompute::PrepareForRun() {
 
     int active_type = static_cast<int>(param.active_type);
     switch (active_type) {
+        case 1:
+            function_name_ = "relu";
+            break;
+        case 2: {
+            Relu6MetalParam metal_param{param.hard_swish_threshold};
+            param_buffer_ =
+                std::make_shared<MetalBuffer>(metal_context_, sizeof(metal_param), &metal_param);
+        }
+            function_name_ = "relu6";
+            break;
+        case 4: {
+            LeakyReluMetalParam metal_param{param.Leaky_relu_alpha};
+            param_buffer_ =
+                std::make_shared<MetalBuffer>(metal_context_, sizeof(metal_param), &metal_param);
+        }
+            function_name_ = "leaky_relu";
+            break;
         case 5:
             function_name_ = "sigmoid";
             break;
@@ -79,7 +96,7 @@ void ActivationImageCompute::Run() {
     auto encoder = [backend commandEncoder];
     [encoder setTexture:input_buffer_->image() atIndex:(0)];
     [encoder setTexture:output_buffer_->image() atIndex:(1)];
-    if (function_name_ == "hard_swish" || function_name_ == "hard_sigmoid") {
+    if (function_name_ == "relu" || function_name_ == "leaky_relu" || function_name_ == "hard_swish" || function_name_ == "hard_sigmoid") {
         [encoder setBuffer:param_buffer_->buffer() offset:(0) atIndex:(0)];
     }
 
@@ -95,6 +112,90 @@ ActivationImageCompute::~ActivationImageCompute() {
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_LITE_KERNEL(relu,
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::ReluImageCompute,
+    def)
+    .BindInput("X",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(relu6,
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::Relu6ImageCompute,
+    def)
+    .BindInput("X",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(leaky_relu,
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::LeakyReluImageCompute,
+    def)
+    .BindInput("X",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(relu,
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::ReluImageCompute,
+    def)
+    .BindInput("X",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(relu6,
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::Relu6ImageCompute,
+    def)
+    .BindInput("X",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(leaky_relu,
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::LeakyReluImageCompute,
+    def)
+    .BindInput("X",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
 
 REGISTER_LITE_KERNEL(sigmoid,
     kMetal,
