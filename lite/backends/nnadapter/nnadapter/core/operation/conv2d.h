@@ -35,7 +35,7 @@ namespace operation {
   auto filter_channel_size = filter_operand->type.dimensions[1];               \
   auto filter_height = filter_operand->type.dimensions[2];                     \
   auto filter_width = filter_operand->type.dimensions[3];                      \
-  NNADAPTER_VLOG(5) << "filter=[" << output_channel_size << ","                \
+  NNADAPTER_VLOG(5) << "filter dims=[" << output_channel_size << ","           \
                     << filter_channel_size << "," << filter_height << ","      \
                     << filter_width << "]";                                    \
   /* Bias */                                                                   \
