@@ -563,7 +563,7 @@ endif()
 # TODO(Superjomn) support latter.
 if(NOT WITH_COVERAGE)
     lite_cc_test(test_light_api SRCS light_api_test.cc
-        DEPS paddle_api_full paddle_api_light
+        DEPS paddle_api_full paddle_api_light ${ops}
         CL_DEPS ${opencl_kernels}
         METAL_DEPS ${metal_kernels}
         FPGA_DEPS ${fpga_kernels}
@@ -573,7 +573,7 @@ if(NOT WITH_COVERAGE)
         ARGS --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
 
     lite_cc_test(test_apis SRCS apis_test.cc
-        DEPS paddle_api_full paddle_api_light
+        DEPS paddle_api_full paddle_api_light ${ops}
         CL_DEPS ${opencl_kernels}
         METAL_DEPS ${metal_kernels}
         X86_DEPS ${x86_kernels}
