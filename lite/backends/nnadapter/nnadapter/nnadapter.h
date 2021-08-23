@@ -1045,6 +1045,25 @@ typedef enum {
   NNADAPTER_SPLIT,
 
   /**
+   * Squeeze the dimension(s) of size 1 of input's shape.
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: axes, a NNADAPTER_TENSOR_INT32 tensor. It indicating the dimensions to
+   * be squeezed. Default is None. The range of axis is [−ndim(x),ndim(x)). It
+   * should be in range [-R, R), where R is the rank of input, negative value
+   * works the same way as axis+ndim(input).
+   *
+   * Outputs:
+   * * 0: output, A tensor with the same type as input.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_SQUEEZE,
+
+  /**
    * Performs element-wise binary subtraction(with Numpy-style broadcasting
    * https://numpy.org/doc/stable/user/basics.broadcasting.html).
    *

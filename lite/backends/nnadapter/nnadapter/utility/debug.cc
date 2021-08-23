@@ -334,6 +334,11 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         input_args = {"input"};
         output_args = {"output"};
         break;
+      case NNADAPTER_SQUEEZE:
+      case NNADAPTER_UNSQUEEZE:
+        input_args = {"input", "axes"};
+        output_args = {"output"};
+        break;
       case NNADAPTER_ASSIGN:
         input_args = {"input"};
         output_args = {"output"};
@@ -521,9 +526,11 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(SLICE);
     NNADAPTER_TYPE_TO_STRING(SOFTMAX);
     NNADAPTER_TYPE_TO_STRING(SPLIT);
+    NNADAPTER_TYPE_TO_STRING(SQUEEZE);
     NNADAPTER_TYPE_TO_STRING(SUB);
     NNADAPTER_TYPE_TO_STRING(TANH);
     NNADAPTER_TYPE_TO_STRING(TRANSPOSE);
+    NNADAPTER_TYPE_TO_STRING(UNSQUEEZE);
     default:
       name = "UNKNOWN";
       break;
