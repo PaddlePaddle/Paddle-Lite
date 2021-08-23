@@ -18,14 +18,6 @@
 
 using namespace metal;
 
-struct SplitParam {
-  int32_t idim[4];
-  int32_t axis;
-  int32_t offset;
-  int32_t trans[4];
-  int32_t vdim[4];
-};
-
 #define VNORMAL 1
 #define VX 2
 #define VY 3
@@ -69,6 +61,16 @@ struct SplitParam {
 #define V VZ
 #define R 4
 #define N 2
+#define P ftype
+#include "Split.inc.metal"
+#undef P
+#undef N
+#undef R
+#undef V
+
+#define V VZ
+#define R 4
+#define N 3
 #define P ftype
 #include "Split.inc.metal"
 #undef P

@@ -171,6 +171,14 @@ struct ReshapeParam {
   int32_t otrans[4];
 };
 
+struct Relu6Param {
+  float threshold;
+};
+
+struct LeakyReluParam {
+  float alpha;
+};
+
 struct HardSigmoidParam {
     float slope;
     float offset;
@@ -180,6 +188,14 @@ struct HardSwishParam {
     float offset;
     float threshold;
     float scale;
+};
+
+struct SplitParam {
+  int32_t idim[4];
+  int32_t axis;
+  int32_t offset;
+  int32_t trans[4];
+  int32_t vdim[4];
 };
 
 #pragma mark -
