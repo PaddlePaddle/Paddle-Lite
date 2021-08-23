@@ -4,13 +4,19 @@ if (NOT LITE_ON_TINY_PUBLISH)
 endif()
 
 if(WIN32)
-   lite_cc_library(lite_pybind SHARED SRCS pybind.cc   DEPS ${PYBIND_DEPS} fbs_headers)
+   lite_cc_library(lite_pybind SHARED SRCS pybind.cc   DEPS ${PYBIND_DEPS} fbs_headers ${external_libs_DEPS})
    get_property (os_dependency_modules GLOBAL PROPERTY OS_DEPENDENCY_MODULES)
    target_link_libraries(lite_pybind ${os_dependency_modules})
 else()
-   lite_cc_library(lite_pybind SHARED SRCS pybind.cc DEPS ${PYBIND_DEPS} fbs_headers)
+   message(STATUS "HUZHIQIANG: ${external_libs_DEPS}")
+   lite_cc_library(lite_pybind SHARED SRCS pybind.cc DEPS ${PYBIND_DEPS} fbs_headers ${external_libs_DEPS})
    target_sources(lite_pybind PUBLIC ${__lite_cc_files})
 endif(WIN32)
+
+if (LITE_WITH_X86)
+   add_dependencies(lite_pybind extern_xbyak)
+endif()
+
 target_link_libraries(lite_pybind $<TARGET_OBJECTS:all_kernel_faked>)
 
 if (LITE_ON_TINY_PUBLISH)

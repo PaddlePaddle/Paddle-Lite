@@ -67,27 +67,26 @@ if (LITE_ON_TINY_PUBLISH)
 endif()
 
 set(light_lib_DEPS light_api paddle_api paddle_api_light)
-
+set(full_lib_DEPS paddle_api paddle_api_light  paddle_api_full framework_proto core)
+set(external_libs_DEPS "")
 if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH_SW OR LITE_WITH_BM OR LITE_WITH_HUAWEI_ASCEND_NPU OR ARM_TARGET_OS STREQUAL "android" OR ARM_TARGET_OS STREQUAL "armlinux"))
     #full api dynamic library
-    lite_cc_library(paddle_full_api_shared SHARED SRCS paddle_api.cc light_api.cc cxx_api.cc cxx_api_impl.cc light_api_impl.cc
-                  DEPS paddle_api paddle_api_light  paddle_api_full)
-    add_dependencies(paddle_full_api_shared framework_proto core fbs_headers)
-    target_link_libraries(paddle_full_api_shared framework_proto core)
     if(LITE_WITH_X86)
-        add_dependencies(paddle_full_api_shared xxhash)
-        target_link_libraries(paddle_full_api_shared xxhash)
+        set(full_lib_DEPS ${full_lib_DEPS} xxhash)
         if ((NOT LITE_ON_MODEL_OPTIMIZE_TOOL) AND WITH_MKL)
             if(WITH_STATIC_MKL)
-                add_dependencies(paddle_full_api_shared ${MKLML_LIBRARIES})
+                set(external_libs_DEPS ${external_libs_DEPS} ${MKLML_LIBRARIES})
             else()
-                add_dependencies(paddle_full_api_shared dynload_mklml)
+                set(external_libs_DEPS ${external_libs_DEPS} dynload_mklml)
             endif()
-        endif()
-        if(WIN32)
-             target_link_libraries(paddle_full_api_shared shlwapi.lib)
-        endif()
-    endif()
+        endif ()
+     endif()
+
+
+    lite_cc_library(paddle_full_api_shared SHARED SRCS paddle_api.cc light_api.cc cxx_api.cc cxx_api_impl.cc light_api_impl.cc
+                  DEPS ${full_lib_DEPS} ${external_libs_DEPS})
+    add_dependencies(paddle_full_api_shared fbs_headers)
+
     if(LITE_WITH_CUDA)
         target_link_libraries(paddle_full_api_shared ${math_cuda} "-Wl,--whole-archive" ${cuda_kernels} "-Wl,--no-whole-archive")
     endif(LITE_WITH_CUDA)
@@ -97,7 +96,7 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
 
     #light api dynamic library
     lite_cc_library(paddle_light_api_shared SHARED SRCS paddle_api.cc light_api.cc light_api_impl.cc
-                  DEPS ${light_lib_DEPS}
+                  DEPS ${light_lib_DEPS} ${external_libs_DEPS}
                   ARM_DEPS ${arm_kernels}
                   CV_DEPS paddle_cv_arm
                   NPU_DEPS ${npu_kernels}
@@ -110,6 +109,7 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
                   )
 
     if(WIN32)
+        target_link_libraries(paddle_full_api_shared shlwapi.lib)
         target_link_libraries(paddle_light_api_shared shlwapi.lib)
     endif()
     target_link_libraries(paddle_light_api_shared ${light_lib_DEPS} ${arm_kernels} ${npu_kernels} ${huawei_ascend_npu_kernels} ${rknpu_kernels} ${apu_kernels})
@@ -596,7 +596,7 @@ if (LITE_WITH_PYTHON)
     add_subdirectory(python)
     # add library for opt_base
     lite_cc_library(opt_base SRCS tools/opt_base.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc
-        DEPS core utils)
+        DEPS core utils model_parser)
     add_dependencies(opt_base framework_proto all_kernel_faked)
 endif()
 
@@ -609,7 +609,7 @@ endif()
 if (LITE_ON_MODEL_OPTIMIZE_TOOL)
     message(STATUS "Compiling opt")
     lite_cc_binary(opt SRCS tools/opt.cc tools/opt_base.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc $<TARGET_OBJECTS:all_kernel_faked>
-        DEPS gflags utils ${host_kernels} core)
+        DEPS gflags utils ${host_kernels} core ${ops} model_parser)
     add_dependencies(opt all_kernel_faked)
 endif(LITE_ON_MODEL_OPTIMIZE_TOOL)
 
@@ -640,7 +640,7 @@ endif()
 # Some bins
 if(NOT IOS)
     lite_cc_binary(test_model_bin SRCS tools/model_test.cc DEPS paddle_api_full paddle_api_light gflags utils core
-        ${ops} ${host_kernels}
+        ${ops} ${host_kernels} ${full_lib_DEPS} ${external_libs_DEPS}
         ARM_DEPS ${arm_kernels}
         CV_DEPS paddle_cv_arm
         NPU_DEPS ${npu_kernels}
@@ -659,7 +659,7 @@ if(NOT IOS)
         HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels})
     
     lite_cc_binary(test_model_detection_bin SRCS model_test_detection.cc DEPS paddle_api_full paddle_api_light gflags utils core
-        ${ops} ${host_kernels}
+        ${ops} ${host_kernels} ${external_libs_DEPS}
         ARM_DEPS ${arm_kernels}
         CV_DEPS paddle_cv_arm
         NPU_DEPS ${npu_kernels}
@@ -678,7 +678,7 @@ if(NOT IOS)
         HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels})
     
     lite_cc_binary(test_model_classify_bin SRCS model_test_classify.cc DEPS paddle_api_full paddle_api_light gflags utils core
-        ${ops} ${host_kernels}
+        ${ops} ${host_kernels} ${external_libs_DEPS}
         ARM_DEPS ${arm_kernels}
         CV_DEPS paddle_cv_arm
         NPU_DEPS ${npu_kernels}
@@ -697,7 +697,7 @@ if(NOT IOS)
         HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels})
 
     lite_cc_binary(benchmark_bin SRCS tools/benchmark.cc DEPS paddle_api_full paddle_api_light gflags utils core
-        ${ops} ${host_kernels}
+        ${ops} ${host_kernels} ${external_libs_DEPS}
         ARM_DEPS ${arm_kernels}
         CV_DEPS paddle_cv_arm
         NPU_DEPS ${npu_kernels}
@@ -715,7 +715,7 @@ if(NOT IOS)
         HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels})
     
     lite_cc_binary(multithread_test SRCS lite_multithread_test.cc DEPS paddle_api_full paddle_api_light gflags utils core
-        ${ops} ${host_kernels}
+        ${ops} ${host_kernels} ${external_libs_DEPS}
         ARM_DEPS ${arm_kernels}
         CV_DEPS paddle_cv_arm
         NPU_DEPS ${npu_kernels}
@@ -734,7 +734,7 @@ if(NOT IOS)
         CUDA_DEPS ${cuda_kernels})
 
     lite_cc_binary(test_transformer SRCS transform_test.cc DEPS paddle_api_full paddle_api_light gflags utils core
-        ${ops} ${host_kernels}
+        ${ops} ${host_kernels} ${external_libs_DEPS}
         ARM_DEPS ${arm_kernels}
         CV_DEPS paddle_cv_arm
         NPU_DEPS ${npu_kernels}
