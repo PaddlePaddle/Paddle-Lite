@@ -81,7 +81,6 @@ void conv_direct_3x3s2(const float* i_data,
     new_iw_start = 1;
   } else {
     LOG(FATAL) << "[X86] conv_direct only support 3x3s2 with padding = 0 or 1";
-    ;
   }
 
   // [0,o_left) in output map needs Special treatment (Left boundary)
@@ -97,16 +96,14 @@ void conv_direct_3x3s2(const float* i_data,
   // and the number of input channels are always the same !
   int wc = ic;
 
-  //
   int ichw = ic * ih * iw;
   int ihw = ih * iw;
-  int wchwB = wc * wh * ww * BLOCK;
+  int wchw = wc * wh * ww;
   int whwB = wh * ww * BLOCK;
   int ohw = oh * ow;
   int ochw = oc * oh * ow;
-  int ohwB = oh * ow * BLOCK;
   int owB = ow * BLOCK;
-  int trans_out_size = oc_expand / BLOCK * ohwB;
+  int trans_out_size = oc_expand * ohw;
 
   // holds the intermediate  HWC output result
   float* trans_out = static_cast<float*>(
@@ -122,14 +119,14 @@ void conv_direct_3x3s2(const float* i_data,
       // fetch oc_gi th group kernel,there are BLOCK kernels
       // in it. we only need to deal with its ic_i channel !
       // oc_gi is oc_group_i !
-      for (int oc_gi = 0; oc_gi < oc_expand / BLOCK; oc_gi++) {
+      for (int oc_gi = 0; oc_gi < oc_expand; oc_gi += BLOCK) {
         // Now, we need compute the conv of one planar feature map and BLOCK
         // planar kernel
         // the  planar feature map's starting address
         const float* kernel_start_address =
-            trans_weight + oc_gi * wchwB +
+            trans_weight + oc_gi * wchw +
             ic_i * whwB;  // the first kernel's address in this BLOCK
-        float* output_start_address = trans_out + oc_gi * ohwB;
+        float* output_start_address = trans_out + oc_gi * ohw;
 
         // Handle upper boundary！
         for (int oh_i = 0; oh_i < o_upper; oh_i++) {
@@ -303,6 +300,8 @@ void conv_direct_3x3s2(const float* i_data,
 #endif
           }
         }
+/* So far, we have dealt with the special boundary,and now we begin to deal with
+ * the general situation */
 
 // prefetch the 3x3 conv kernel outside the below two Nested loop !
 #ifdef __AVX__
@@ -331,352 +330,335 @@ void conv_direct_3x3s2(const float* i_data,
 
 #endif
 
-        // So far, we have dealt with the special boundary,
-        // and now we begin to deal with the general situation
-        for (int ih_i = new_ih_start; ih_i <= new_ih; ih_i += 4) {
-          // one sliding window cangenerate 2x3 results
-          // below is the two line's first address!
-          float* output_address0 = output_start_address +
-                                   (ih_i + ph) / 2 * ow * BLOCK +
-                                   (new_iw_start + pw) / 2 * BLOCK;
-          float* output_address1 = output_address0 + ow * BLOCK;
+        // one sliding window cangenerate 2x3 results
+        // below is the two line's first address the first window generated!
+        float* output_address0 = output_start_address +
+                                 (new_ih_start + ph) / 2 * ow * BLOCK +
+                                 (new_iw_start + pw) / 2 * BLOCK;
+        float* output_address1 = output_address0 + ow * BLOCK;
 
+        for (int ih_i = new_ih_start; ih_i <= new_ih; ih_i += 4,
+                 output_address0 += 2 * ow * BLOCK,
+                 output_address1 += 2 * ow * BLOCK) {
           // iv is (ih_i~ ih_i + 4)row's first address !
           const float* row0 = input_start_address + ih_i * iw;
           const float* row1 = row0 + 1 * iw;
           const float* row2 = row0 + 2 * iw;
           const float* row3 = row0 + 3 * iw;
           const float* row4 = row0 + 4 * iw;
+          // The following is the starting address of
+          // each line of the sliding window
+          const float* iv0 = row0 + new_iw_start;
+          const float* iv1 = row1 + new_iw_start;
+          const float* iv2 = row2 + new_iw_start;
+          const float* iv3 = row3 + new_iw_start;
+          const float* iv4 = row4 + new_iw_start;
 
-          for (int iw_i = new_iw_start; iw_i <= new_iw; iw_i += 6) {
-            // The following is the starting address of
-            // each line of the sliding window
-            const float* iv0 = row0 + iw_i;
-            const float* iv1 = row1 + iw_i;
-            const float* iv2 = row2 + iw_i;
-            const float* iv3 = row3 + iw_i;
-            const float* iv4 = row4 + iw_i;
-            // the first line output's address
-            float* output_address00 = output_address0 + BLOCK * 0;
-            float* output_address01 = output_address0 + BLOCK * 1;
-            float* output_address02 = output_address0 + BLOCK * 2;
-            // the second line output's address
-            float* output_address10 = output_address1 + BLOCK * 0;
-            float* output_address11 = output_address1 + BLOCK * 1;
-            float* output_address12 = output_address1 + BLOCK * 2;
+          // the first line output's address
+          float* output_address00 = output_address0 + BLOCK * 0;
+          float* output_address01 = output_address0 + BLOCK * 1;
+          float* output_address02 = output_address0 + BLOCK * 2;
+          // the second line output's address
+          float* output_address10 = output_address1 + BLOCK * 0;
+          float* output_address11 = output_address1 + BLOCK * 1;
+          float* output_address12 = output_address1 + BLOCK * 2;
 
+          for (int iw_i = new_iw_start; iw_i <= new_iw; iw_i += 6,
+                   iv0 += 6,
+                   iv1 += 6,
+                   iv2 += 6,
+                   iv3 += 6,
+                   iv4 += 6,
+                   output_address00 += 3 * BLOCK,
+                   output_address01 += 3 * BLOCK,
+                   output_address02 += 3 * BLOCK,
+                   output_address10 += 3 * BLOCK,
+                   output_address11 += 3 * BLOCK,
+                   output_address12 += 3 * BLOCK) {
 #ifdef __AVX__
 
-            // Sliding windows can produce 2x3 results, but I now create three
-            // __m256
-            // to  represent the outputs  in the first line
+            // Sliding windows can produce 2x3 results, I now create them
             __m256 res00 = _mm256_loadu_ps(output_address00);
             __m256 res01 = _mm256_loadu_ps(output_address01);
             __m256 res02 = _mm256_loadu_ps(output_address02);
+            __m256 res10 = _mm256_loadu_ps(output_address10);
+            __m256 res11 = _mm256_loadu_ps(output_address11);
+            __m256 res12 = _mm256_loadu_ps(output_address12);
 
-            // I have used 12 registers, and there are 4 left!
-            // Next, I will use three to hold input data to generate outputs !
+            // I have used 15 registers, and there are one left!
+            // but I will use six reg to hold input data to generate outputs !
             // iv0: 0 1 2 3 4 5 6
             // 0,1,2 is Responsible for res00
             // 2,3,4 is Responsible for res01
             // 4,5,6 is Responsible for res01
-            __m256 input0 = _mm256_set1_ps(iv0[0]);
-            __m256 input2 = _mm256_set1_ps(
-                iv0[2]);  // needs to be retained because of reuse
-            __m256 input4 = _mm256_set1_ps(
-                iv0[4]);  // This needs to be retained because of reuse
-            res00 = _mm256_fmadd_ps(input0, w00, res00);
-            res01 = _mm256_fmadd_ps(input2, w00, res01);
-            res02 = _mm256_fmadd_ps(input4, w00, res02);
-            input0 = _mm256_set1_ps(iv0[6]);
-            res00 = _mm256_fmadd_ps(input2, w02, res00);
-            res01 = _mm256_fmadd_ps(input4, w02, res01);
-            res02 = _mm256_fmadd_ps(input0, w02, res02);
-            input0 = _mm256_set1_ps(iv0[1]);
-            input2 = _mm256_set1_ps(iv0[3]);
-            input4 = _mm256_set1_ps(iv0[5]);
-            res00 = _mm256_fmadd_ps(input0, w01, res00);
-            res01 = _mm256_fmadd_ps(input2, w01, res01);
-            res02 = _mm256_fmadd_ps(input4, w01, res02);
+            // iv4: 0 1 2 3 4 5 6
+            // 0,1,2 is Responsible for res00
+            // 2,3,4 is Responsible for res01
+            // 4,5,6 is Responsible for res01
+            __m256 input00 = _mm256_set1_ps(iv0[0]);
+            __m256 input02 = _mm256_set1_ps(iv0[2]);
+            __m256 input04 = _mm256_set1_ps(iv0[4]);
+            __m256 input10 = _mm256_set1_ps(iv4[0]);
+            __m256 input12 = _mm256_set1_ps(iv4[2]);
+            __m256 input14 = _mm256_set1_ps(iv4[4]);
+            res00 = _mm256_fmadd_ps(input00, w00, res00);
+            res01 = _mm256_fmadd_ps(input02, w00, res01);
+            res02 = _mm256_fmadd_ps(input04, w00, res02);
+            res10 = _mm256_fmadd_ps(input10, w20, res10);
+            res11 = _mm256_fmadd_ps(input12, w20, res11);
+            res12 = _mm256_fmadd_ps(input14, w20, res12);
+            input00 = _mm256_set1_ps(iv0[6]);
+            input10 = _mm256_set1_ps(iv4[6]);
+            res00 = _mm256_fmadd_ps(input02, w02, res00);
+            res01 = _mm256_fmadd_ps(input04, w02, res01);
+            res02 = _mm256_fmadd_ps(input00, w02, res02);
+            res10 = _mm256_fmadd_ps(input12, w22, res10);
+            res11 = _mm256_fmadd_ps(input14, w22, res11);
+            res12 = _mm256_fmadd_ps(input10, w22, res12);
+            input00 = _mm256_set1_ps(iv0[1]);
+            input02 = _mm256_set1_ps(iv0[3]);
+            input04 = _mm256_set1_ps(iv0[5]);
+            input10 = _mm256_set1_ps(iv4[1]);
+            input12 = _mm256_set1_ps(iv4[3]);
+            input14 = _mm256_set1_ps(iv4[5]);
+            res00 = _mm256_fmadd_ps(input00, w01, res00);
+            res01 = _mm256_fmadd_ps(input02, w01, res01);
+            res02 = _mm256_fmadd_ps(input04, w01, res02);
+            res10 = _mm256_fmadd_ps(input10, w21, res10);
+            res11 = _mm256_fmadd_ps(input12, w21, res11);
+            res12 = _mm256_fmadd_ps(input14, w21, res12);
+
             // iv1: 0 1 2 3 4 5 6
             // 0,1,2 is Responsible for res00
             // 2,3,4 is Responsible for res01
-            // 4,5,6 is Responsible for res01
-            input0 = _mm256_set1_ps(iv1[0]);
-            input2 = _mm256_set1_ps(
-                iv1[2]);  // This needs to be retained because of reuse
-            input4 = _mm256_set1_ps(
-                iv1[4]);  // This needs to be retained because of reuse
-            res00 = _mm256_fmadd_ps(input0, w10, res00);
-            res01 = _mm256_fmadd_ps(input2, w10, res01);
-            res02 = _mm256_fmadd_ps(input4, w10, res02);
-            input0 = _mm256_set1_ps(iv1[6]);
-            res00 = _mm256_fmadd_ps(input2, w12, res00);
-            res01 = _mm256_fmadd_ps(input4, w12, res01);
-            res02 = _mm256_fmadd_ps(input0, w12, res02);
-            input0 = _mm256_set1_ps(iv1[1]);
-            input2 = _mm256_set1_ps(iv1[3]);
-            input4 = _mm256_set1_ps(iv1[5]);
-            res00 = _mm256_fmadd_ps(input0, w11, res00);
-            res01 = _mm256_fmadd_ps(input2, w11, res01);
-            res02 = _mm256_fmadd_ps(input4, w11, res02);
+            // 4,5,6 is Responsible for res02
+            // iv3: 0 1 2 3 4 5 6
+            // 0,1,2 is Responsible for res10
+            // 2,3,4 is Responsible for res11
+            // 4,5,6 is Responsible for res12
+            input00 = _mm256_set1_ps(iv1[0]);
+            input02 = _mm256_set1_ps(iv1[2]);
+            input04 = _mm256_set1_ps(iv1[4]);
+            input10 = _mm256_set1_ps(iv3[0]);
+            input12 = _mm256_set1_ps(iv3[2]);
+            input14 = _mm256_set1_ps(iv3[4]);
+            res00 = _mm256_fmadd_ps(input00, w10, res00);
+            res01 = _mm256_fmadd_ps(input02, w10, res01);
+            res02 = _mm256_fmadd_ps(input04, w10, res02);
+            res10 = _mm256_fmadd_ps(input10, w10, res10);
+            res11 = _mm256_fmadd_ps(input12, w10, res11);
+            res12 = _mm256_fmadd_ps(input14, w10, res12);
+            input00 = _mm256_set1_ps(iv1[6]);
+            input10 = _mm256_set1_ps(iv3[6]);
+            res00 = _mm256_fmadd_ps(input02, w12, res00);
+            res01 = _mm256_fmadd_ps(input04, w12, res01);
+            res02 = _mm256_fmadd_ps(input00, w12, res02);
+            res10 = _mm256_fmadd_ps(input12, w12, res10);
+            res11 = _mm256_fmadd_ps(input14, w12, res11);
+            res12 = _mm256_fmadd_ps(input10, w12, res12);
+            input00 = _mm256_set1_ps(iv1[1]);
+            input02 = _mm256_set1_ps(iv1[3]);
+            input04 = _mm256_set1_ps(iv1[5]);
+            input10 = _mm256_set1_ps(iv3[1]);
+            input12 = _mm256_set1_ps(iv3[3]);
+            input14 = _mm256_set1_ps(iv3[5]);
+            res00 = _mm256_fmadd_ps(input00, w11, res00);
+            res01 = _mm256_fmadd_ps(input02, w11, res01);
+            res02 = _mm256_fmadd_ps(input04, w11, res02);
+            res10 = _mm256_fmadd_ps(input10, w11, res10);
+            res11 = _mm256_fmadd_ps(input12, w11, res11);
+            res12 = _mm256_fmadd_ps(input14, w11, res12);
+
             // iv2: 0 1 2 3 4 5 6
             // 0,1,2 is Responsible for res00
             // 2,3,4 is Responsible for res01
-            // 4,5,6 is Responsible for res01
-            input0 = _mm256_set1_ps(iv2[0]);
-            input2 = _mm256_set1_ps(iv2[2]);
-            input4 = _mm256_set1_ps(iv2[4]);
-            res00 = _mm256_fmadd_ps(input0, w20, res00);
-            res01 = _mm256_fmadd_ps(input2, w20, res01);
-            res02 = _mm256_fmadd_ps(input4, w20, res02);
-            input0 = _mm256_set1_ps(iv2[6]);
-            res00 = _mm256_fmadd_ps(input2, w22, res00);
-            res01 = _mm256_fmadd_ps(input4, w22, res01);
-            res02 = _mm256_fmadd_ps(input0, w22, res02);
-            input0 = _mm256_set1_ps(iv2[1]);
-            input2 = _mm256_set1_ps(iv2[3]);
-            input4 = _mm256_set1_ps(iv2[5]);
-            res00 = _mm256_fmadd_ps(input0, w21, res00);
-            res01 = _mm256_fmadd_ps(input2, w21, res01);
-            res02 = _mm256_fmadd_ps(input4, w21, res02);
-            // The first, second and third results have been calculated above.
+            // 4,5,6 is Responsible for res02
+            // iv2: 0 1 2 3 4 5 6
+            // 0,1,2 is Responsible for res10
+            // 2,3,4 is Responsible for res11
+            // 4,5,6 is Responsible for res12
+            input00 = _mm256_set1_ps(iv2[0]);
+            input02 = _mm256_set1_ps(iv2[2]);
+            input04 = _mm256_set1_ps(iv2[4]);
+            res00 = _mm256_fmadd_ps(input00, w20, res00);
+            res01 = _mm256_fmadd_ps(input02, w20, res01);
+            res02 = _mm256_fmadd_ps(input04, w20, res02);
+            res10 = _mm256_fmadd_ps(input00, w00, res10);
+            res11 = _mm256_fmadd_ps(input02, w00, res11);
+            res12 = _mm256_fmadd_ps(input04, w00, res12);
+            input00 = _mm256_set1_ps(iv2[6]);
+            res00 = _mm256_fmadd_ps(input02, w22, res00);
+            res01 = _mm256_fmadd_ps(input04, w22, res01);
+            res02 = _mm256_fmadd_ps(input00, w22, res02);
+            res10 = _mm256_fmadd_ps(input02, w02, res10);
+            res11 = _mm256_fmadd_ps(input04, w02, res11);
+            res12 = _mm256_fmadd_ps(input00, w02, res12);
+            input00 = _mm256_set1_ps(iv2[1]);
+            input02 = _mm256_set1_ps(iv2[3]);
+            input04 = _mm256_set1_ps(iv2[5]);
+            res00 = _mm256_fmadd_ps(input00, w21, res00);
+            res01 = _mm256_fmadd_ps(input02, w21, res01);
+            res02 = _mm256_fmadd_ps(input04, w21, res02);
+            res10 = _mm256_fmadd_ps(input00, w01, res10);
+            res11 = _mm256_fmadd_ps(input02, w01, res11);
+            res12 = _mm256_fmadd_ps(input04, w01, res12);
+
             // Store them back
             _mm256_storeu_ps(output_address00, res00);
             _mm256_storeu_ps(output_address01, res01);
             _mm256_storeu_ps(output_address02, res02);
-
-            // res00,res01,res02 need to be updated representing the outputs in
-            // the second line
-            // iv2: 0 1 2 3 4 5 6
-            // 0,1,2 is Responsible for res00
-            // 2,3,4 is Responsible for res01
-            // 4,5,6 is Responsible for res01
-            res00 = _mm256_loadu_ps(output_address10);
-            res01 = _mm256_loadu_ps(output_address11);
-            res02 = _mm256_loadu_ps(output_address12);
-            res00 = _mm256_fmadd_ps(input0, w01, res00);
-            res01 = _mm256_fmadd_ps(input2, w01, res01);
-            res02 = _mm256_fmadd_ps(input4, w01, res02);
-            input0 = _mm256_set1_ps(iv2[0]);
-            input2 = _mm256_set1_ps(iv2[2]);
-            input4 = _mm256_set1_ps(iv2[4]);
-            res00 = _mm256_fmadd_ps(input0, w00, res00);
-            res01 = _mm256_fmadd_ps(input2, w00, res01);
-            res02 = _mm256_fmadd_ps(input4, w00, res02);
-            input0 = _mm256_set1_ps(iv2[6]);
-            res00 = _mm256_fmadd_ps(input2, w02, res00);
-            res01 = _mm256_fmadd_ps(input4, w02, res01);
-            res02 = _mm256_fmadd_ps(input0, w02, res02);
-            // iv3: 0 1 2 3 4 5 6
-            // 0,1,2 is Responsible for res00
-            // 2,3,4 is Responsible for res01
-            // 4,5,6 is Responsible for res01
-            input0 = _mm256_set1_ps(iv3[0]);
-            input2 = _mm256_set1_ps(iv3[2]);
-            input4 = _mm256_set1_ps(iv3[4]);
-            res00 = _mm256_fmadd_ps(input0, w10, res00);
-            res01 = _mm256_fmadd_ps(input2, w10, res01);
-            res02 = _mm256_fmadd_ps(input4, w10, res02);
-            input0 = _mm256_set1_ps(iv3[6]);
-            res00 = _mm256_fmadd_ps(input2, w12, res00);
-            res01 = _mm256_fmadd_ps(input4, w12, res01);
-            res02 = _mm256_fmadd_ps(input0, w12, res02);
-            input0 = _mm256_set1_ps(iv3[1]);
-            input2 = _mm256_set1_ps(iv3[3]);
-            input4 = _mm256_set1_ps(iv3[5]);
-            res00 = _mm256_fmadd_ps(input0, w11, res00);
-            res01 = _mm256_fmadd_ps(input2, w11, res01);
-            res02 = _mm256_fmadd_ps(input4, w11, res02);
-            // iv4: 0 1 2 3 4 5 6
-            // 0,1,2 is Responsible for res00
-            // 2,3,4 is Responsible for res01
-            // 4,5,6 is Responsible for res01
-            input0 = _mm256_set1_ps(iv4[0]);
-            input2 = _mm256_set1_ps(iv4[2]);
-            input4 = _mm256_set1_ps(iv4[4]);
-            res00 = _mm256_fmadd_ps(input0, w20, res00);
-            res01 = _mm256_fmadd_ps(input2, w20, res01);
-            res02 = _mm256_fmadd_ps(input4, w20, res02);
-            input0 = _mm256_set1_ps(iv4[6]);
-            res00 = _mm256_fmadd_ps(input2, w22, res00);
-            res01 = _mm256_fmadd_ps(input4, w22, res01);
-            res02 = _mm256_fmadd_ps(input0, w22, res02);
-            input0 = _mm256_set1_ps(iv4[1]);
-            input2 = _mm256_set1_ps(iv4[3]);
-            input4 = _mm256_set1_ps(iv4[5]);
-            res00 = _mm256_fmadd_ps(input0, w21, res00);
-            res01 = _mm256_fmadd_ps(input2, w21, res01);
-            res02 = _mm256_fmadd_ps(input4, w21, res02);
-            // Store them back to trans_out!
-            _mm256_storeu_ps(output_address10, res00);
-            _mm256_storeu_ps(output_address11, res01);
-            _mm256_storeu_ps(output_address12, res02);
+            _mm256_storeu_ps(output_address10, res10);
+            _mm256_storeu_ps(output_address11, res11);
+            _mm256_storeu_ps(output_address12, res12);
 
 #else
-            // Sliding windows can produce 2x3 results, but I now create three
-            // __m256
-            // to  represent the outputs  in the first line
+            // Sliding windows can produce 2x3 results, I now create them
             __m128 res00 = _mm_loadu_ps(output_address00);
             __m128 res01 = _mm_loadu_ps(output_address01);
             __m128 res02 = _mm_loadu_ps(output_address02);
+            __m128 res10 = _mm_loadu_ps(output_address10);
+            __m128 res11 = _mm_loadu_ps(output_address11);
+            __m128 res12 = _mm_loadu_ps(output_address12);
 
-            // I have used 12 registers, and there are 4 left!
-            // Next, I will use three to hold input data to generate outputs !
+            // I have used 15 registers, and there are one left!
+            // but I will use six reg to hold input data to generate outputs !
             // iv0: 0 1 2 3 4 5 6
             // 0,1,2 is Responsible for res00
             // 2,3,4 is Responsible for res01
             // 4,5,6 is Responsible for res01
-            __m128 input0 = _mm_set1_ps(iv0[0]);
-            __m128 input2 = _mm_set1_ps(
-                iv0[2]);  // This needs to be retained because of reuse
-            __m128 input4 = _mm_set1_ps(
-                iv0[4]);  // This needs to be retained because of reuse
-            res00 = _mm_fmadd_ps(input0, w00, res00);
-            res01 = _mm_fmadd_ps(input2, w00, res01);
-            res02 = _mm_fmadd_ps(input4, w00, res02);
-            input0 = _mm_set1_ps(iv0[6]);
-            res00 = _mm_fmadd_ps(input2, w02, res00);
-            res01 = _mm_fmadd_ps(input4, w02, res01);
-            res02 = _mm_fmadd_ps(input0, w02, res02);
-            input0 = _mm_set1_ps(iv0[1]);
-            input2 = _mm_set1_ps(iv0[3]);
-            input4 = _mm_set1_ps(iv0[5]);
-            res00 = _mm_fmadd_ps(input0, w01, res00);
-            res01 = _mm_fmadd_ps(input2, w01, res01);
-            res02 = _mm_fmadd_ps(input4, w01, res02);
-            // iv1: 0 1 2 3 4 5 6
-            // 0,1,2 is Responsible for res00
-            // 2,3,4 is Responsible for res01
-            // 4,5,6 is Responsible for res01
-            input0 = _mm_set1_ps(iv1[0]);
-            input2 = _mm_set1_ps(
-                iv1[2]);  // This needs to be retained because of reuse
-            input4 = _mm_set1_ps(
-                iv1[4]);  // This needs to be retained because of reuse
-            res00 = _mm_fmadd_ps(input0, w10, res00);
-            res01 = _mm_fmadd_ps(input2, w10, res01);
-            res02 = _mm_fmadd_ps(input4, w10, res02);
-            input0 = _mm_set1_ps(iv1[6]);
-            res00 = _mm_fmadd_ps(input2, w12, res00);
-            res01 = _mm_fmadd_ps(input4, w12, res01);
-            res02 = _mm_fmadd_ps(input0, w12, res02);
-            input0 = _mm_set1_ps(iv1[1]);
-            input2 = _mm_set1_ps(iv1[3]);
-            input4 = _mm_set1_ps(iv1[5]);
-            res00 = _mm_fmadd_ps(input0, w11, res00);
-            res01 = _mm_fmadd_ps(input2, w11, res01);
-            res02 = _mm_fmadd_ps(input4, w11, res02);
-            // iv2: 0 1 2 3 4 5 6
-            // 0,1,2 is Responsible for res00
-            // 2,3,4 is Responsible for res01
-            // 4,5,6 is Responsible for res01
-            input0 = _mm_set1_ps(iv2[0]);
-            input2 = _mm_set1_ps(iv2[2]);
-            input4 = _mm_set1_ps(iv2[4]);
-            res00 = _mm_fmadd_ps(input0, w20, res00);
-            res01 = _mm_fmadd_ps(input2, w20, res01);
-            res02 = _mm_fmadd_ps(input4, w20, res02);
-            input0 = _mm_set1_ps(iv2[6]);
-            res00 = _mm_fmadd_ps(input2, w22, res00);
-            res01 = _mm_fmadd_ps(input4, w22, res01);
-            res02 = _mm_fmadd_ps(input0, w22, res02);
-            input0 = _mm_set1_ps(iv2[1]);
-            input2 = _mm_set1_ps(iv2[3]);
-            input4 = _mm_set1_ps(iv2[5]);
-            res00 = _mm_fmadd_ps(input0, w21, res00);
-            res01 = _mm_fmadd_ps(input2, w21, res01);
-            res02 = _mm_fmadd_ps(input4, w21, res02);
-            // The first, second and third results have been calculated above.
-            // Store them back
-            _mm_storeu_ps(output_address00, res00);
-            _mm_storeu_ps(output_address01, res01);
-            _mm_storeu_ps(output_address02, res02);
-
-            // res00,res01,res02 need to be updated representing the outputs in
-            // the second line
-            // iv2: 0 1 2 3 4 5 6
-            // 0,1,2 is Responsible for res00
-            // 2,3,4 is Responsible for res01
-            // 4,5,6 is Responsible for res01
-            res00 = _mm_loadu_ps(output_address10);
-            res01 = _mm_loadu_ps(output_address11);
-            res02 = _mm_loadu_ps(output_address12);
-            res00 = _mm_fmadd_ps(input0, w01, res00);
-            res01 = _mm_fmadd_ps(input2, w01, res01);
-            res02 = _mm_fmadd_ps(input4, w01, res02);
-            input0 = _mm_set1_ps(iv2[0]);
-            input2 = _mm_set1_ps(iv2[2]);
-            input4 = _mm_set1_ps(iv2[4]);
-            res00 = _mm_fmadd_ps(input0, w00, res00);
-            res01 = _mm_fmadd_ps(input2, w00, res01);
-            res02 = _mm_fmadd_ps(input4, w00, res02);
-            input0 = _mm_set1_ps(iv2[6]);
-            res00 = _mm_fmadd_ps(input2, w02, res00);
-            res01 = _mm_fmadd_ps(input4, w02, res01);
-            res02 = _mm_fmadd_ps(input0, w02, res02);
-            // iv3: 0 1 2 3 4 5 6
-            // 0,1,2 is Responsible for res00
-            // 2,3,4 is Responsible for res01
-            // 4,5,6 is Responsible for res01
-            input0 = _mm_set1_ps(iv3[0]);
-            input2 = _mm_set1_ps(iv3[2]);
-            input4 = _mm_set1_ps(iv3[4]);
-            res00 = _mm_fmadd_ps(input0, w10, res00);
-            res01 = _mm_fmadd_ps(input2, w10, res01);
-            res02 = _mm_fmadd_ps(input4, w10, res02);
-            input0 = _mm_set1_ps(iv3[6]);
-            res00 = _mm_fmadd_ps(input2, w12, res00);
-            res01 = _mm_fmadd_ps(input4, w12, res01);
-            res02 = _mm_fmadd_ps(input0, w12, res02);
-            input0 = _mm_set1_ps(iv3[1]);
-            input2 = _mm_set1_ps(iv3[3]);
-            input4 = _mm_set1_ps(iv3[5]);
-            res00 = _mm_fmadd_ps(input0, w11, res00);
-            res01 = _mm_fmadd_ps(input2, w11, res01);
-            res02 = _mm_fmadd_ps(input4, w11, res02);
             // iv4: 0 1 2 3 4 5 6
             // 0,1,2 is Responsible for res00
             // 2,3,4 is Responsible for res01
             // 4,5,6 is Responsible for res01
-            input0 = _mm_set1_ps(iv4[0]);
-            input2 = _mm_set1_ps(iv4[2]);
-            input4 = _mm_set1_ps(iv4[4]);
-            res00 = _mm_fmadd_ps(input0, w20, res00);
-            res01 = _mm_fmadd_ps(input2, w20, res01);
-            res02 = _mm_fmadd_ps(input4, w20, res02);
-            input0 = _mm_set1_ps(iv4[6]);
-            res00 = _mm_fmadd_ps(input2, w22, res00);
-            res01 = _mm_fmadd_ps(input4, w22, res01);
-            res02 = _mm_fmadd_ps(input0, w22, res02);
-            input0 = _mm_set1_ps(iv4[1]);
-            input2 = _mm_set1_ps(iv4[3]);
-            input4 = _mm_set1_ps(iv4[5]);
-            res00 = _mm_fmadd_ps(input0, w21, res00);
-            res01 = _mm_fmadd_ps(input2, w21, res01);
-            res02 = _mm_fmadd_ps(input4, w21, res02);
-            // Store them back to trans_out!
-            _mm_storeu_ps(output_address10, res00);
-            _mm_storeu_ps(output_address11, res01);
-            _mm_storeu_ps(output_address12, res02);
-#endif
+            __m128 input00 = _mm_set1_ps(iv0[0]);
+            __m128 input02 = _mm_set1_ps(iv0[2]);
+            __m128 input04 = _mm_set1_ps(iv0[4]);
+            __m128 input10 = _mm_set1_ps(iv4[0]);
+            __m128 input12 = _mm_set1_ps(iv4[2]);
+            __m128 input14 = _mm_set1_ps(iv4[4]);
+            res00 = _mm_fmadd_ps(input00, w00, res00);
+            res01 = _mm_fmadd_ps(input02, w00, res01);
+            res02 = _mm_fmadd_ps(input04, w00, res02);
+            res10 = _mm_fmadd_ps(input10, w20, res10);
+            res11 = _mm_fmadd_ps(input12, w20, res11);
+            res12 = _mm_fmadd_ps(input14, w20, res12);
+            input00 = _mm_set1_ps(iv0[6]);
+            input10 = _mm_set1_ps(iv4[6]);
+            res00 = _mm_fmadd_ps(input02, w02, res00);
+            res01 = _mm_fmadd_ps(input04, w02, res01);
+            res02 = _mm_fmadd_ps(input00, w02, res02);
+            res10 = _mm_fmadd_ps(input12, w22, res10);
+            res11 = _mm_fmadd_ps(input14, w22, res11);
+            res12 = _mm_fmadd_ps(input10, w22, res12);
+            input00 = _mm_set1_ps(iv0[1]);
+            input02 = _mm_set1_ps(iv0[3]);
+            input04 = _mm_set1_ps(iv0[5]);
+            input10 = _mm_set1_ps(iv4[1]);
+            input12 = _mm_set1_ps(iv4[3]);
+            input14 = _mm_set1_ps(iv4[5]);
+            res00 = _mm_fmadd_ps(input00, w01, res00);
+            res01 = _mm_fmadd_ps(input02, w01, res01);
+            res02 = _mm_fmadd_ps(input04, w01, res02);
+            res10 = _mm_fmadd_ps(input10, w21, res10);
+            res11 = _mm_fmadd_ps(input12, w21, res11);
+            res12 = _mm_fmadd_ps(input14, w21, res12);
 
-            // when inner loop ends, the output_address needs to be increased by
-            // 3 * BLOCK
-            output_address0 += 3 * BLOCK;
-            output_address1 += 3 * BLOCK;
+            // iv1: 0 1 2 3 4 5 6
+            // 0,1,2 is Responsible for res00
+            // 2,3,4 is Responsible for res01
+            // 4,5,6 is Responsible for res02
+            // iv3: 0 1 2 3 4 5 6
+            // 0,1,2 is Responsible for res10
+            // 2,3,4 is Responsible for res11
+            // 4,5,6 is Responsible for res12
+            input00 = _mm_set1_ps(iv1[0]);
+            input02 = _mm_set1_ps(iv1[2]);
+            input04 = _mm_set1_ps(iv1[4]);
+            input10 = _mm_set1_ps(iv3[0]);
+            input12 = _mm_set1_ps(iv3[2]);
+            input14 = _mm_set1_ps(iv3[4]);
+            res00 = _mm_fmadd_ps(input00, w10, res00);
+            res01 = _mm_fmadd_ps(input02, w10, res01);
+            res02 = _mm_fmadd_ps(input04, w10, res02);
+            res10 = _mm_fmadd_ps(input10, w10, res10);
+            res11 = _mm_fmadd_ps(input12, w10, res11);
+            res12 = _mm_fmadd_ps(input14, w10, res12);
+            input00 = _mm_set1_ps(iv1[6]);
+            input10 = _mm_set1_ps(iv3[6]);
+            res00 = _mm_fmadd_ps(input02, w12, res00);
+            res01 = _mm_fmadd_ps(input04, w12, res01);
+            res02 = _mm_fmadd_ps(input00, w12, res02);
+            res10 = _mm_fmadd_ps(input12, w12, res10);
+            res11 = _mm_fmadd_ps(input14, w12, res11);
+            res12 = _mm_fmadd_ps(input10, w12, res12);
+            input00 = _mm_set1_ps(iv1[1]);
+            input02 = _mm_set1_ps(iv1[3]);
+            input04 = _mm_set1_ps(iv1[5]);
+            input10 = _mm_set1_ps(iv3[1]);
+            input12 = _mm_set1_ps(iv3[3]);
+            input14 = _mm_set1_ps(iv3[5]);
+            res00 = _mm_fmadd_ps(input00, w11, res00);
+            res01 = _mm_fmadd_ps(input02, w11, res01);
+            res02 = _mm_fmadd_ps(input04, w11, res02);
+            res10 = _mm_fmadd_ps(input10, w11, res10);
+            res11 = _mm_fmadd_ps(input12, w11, res11);
+            res12 = _mm_fmadd_ps(input14, w11, res12);
+
+            // iv2: 0 1 2 3 4 5 6
+            // 0,1,2 is Responsible for res00
+            // 2,3,4 is Responsible for res01
+            // 4,5,6 is Responsible for res02
+            // iv2: 0 1 2 3 4 5 6
+            // 0,1,2 is Responsible for res10
+            // 2,3,4 is Responsible for res11
+            // 4,5,6 is Responsible for res12
+            input00 = _mm_set1_ps(iv2[0]);
+            input02 = _mm_set1_ps(iv2[2]);
+            input04 = _mm_set1_ps(iv2[4]);
+            res00 = _mm_fmadd_ps(input00, w20, res00);
+            res01 = _mm_fmadd_ps(input02, w20, res01);
+            res02 = _mm_fmadd_ps(input04, w20, res02);
+            res10 = _mm_fmadd_ps(input00, w00, res10);
+            res11 = _mm_fmadd_ps(input02, w00, res11);
+            res12 = _mm_fmadd_ps(input04, w00, res12);
+            input00 = _mm_set1_ps(iv2[6]);
+            res00 = _mm_fmadd_ps(input02, w22, res00);
+            res01 = _mm_fmadd_ps(input04, w22, res01);
+            res02 = _mm_fmadd_ps(input00, w22, res02);
+            res10 = _mm_fmadd_ps(input02, w02, res10);
+            res11 = _mm_fmadd_ps(input04, w02, res11);
+            res12 = _mm_fmadd_ps(input00, w02, res12);
+            input00 = _mm_set1_ps(iv2[1]);
+            input02 = _mm_set1_ps(iv2[3]);
+            input04 = _mm_set1_ps(iv2[5]);
+            res00 = _mm_fmadd_ps(input00, w21, res00);
+            res01 = _mm_fmadd_ps(input02, w21, res01);
+            res02 = _mm_fmadd_ps(input04, w21, res02);
+            res10 = _mm_fmadd_ps(input00, w01, res10);
+            res11 = _mm_fmadd_ps(input02, w01, res11);
+            res12 = _mm_fmadd_ps(input04, w01, res12);
+
+            // Store them back
+            _mm_storeu_ps(output_address00, res00);
+            _mm_storeu_ps(output_address01, res01);
+            _mm_storeu_ps(output_address02, res02);
+            _mm_storeu_ps(output_address10, res10);
+            _mm_storeu_ps(output_address11, res11);
+            _mm_storeu_ps(output_address12, res12);
+#endif
           }
         }
       }
     }
 
+    // we always assume oc % BLOCK == 0!
     // convert trans_out(HWC) to o_data(CHW)!
-    for (int oc_gi = 0; oc_gi < oc / BLOCK; oc_gi++) {
-      for (int oh_i = 0; oh_i < oh; oh_i += 1) {
+    for (int oc_gi = 0; oc_gi < oc; oc_gi += BLOCK) {
+      for (int oh_i = 0; oh_i < oh; oh_i++) {
         for (int ow_i = 0; ow_i < ow / BLOCK * BLOCK; ow_i += BLOCK) {
           // trans_out's start_index, we need fetch 8x8 element;
           float* from_address =
-              trans_out + oc_gi * ohwB + oh_i * owB + ow_i * BLOCK;
+              trans_out + oc_gi * ohw + oh_i * owB + ow_i * BLOCK;
 
 #ifdef __AVX__
           __m256 row0 = _mm256_loadu_ps(from_address + 0 * BLOCK);
@@ -695,35 +677,38 @@ void conv_direct_3x3s2(const float* i_data,
           __m128 row2 = _mm_loadu_ps(from_address + 2 * BLOCK);
           __m128 row3 = _mm_loadu_ps(from_address + 3 * BLOCK);
           _MM_TRANSPOSE4_PS(row0, row1, row2, row3);
+
 #endif
 
           if (bias != nullptr) {
 #ifdef __AVX__
-            row0 = _mm256_add_ps(row0, _mm256_set1_ps(bias[oc_gi * BLOCK + 0]));
-            row1 = _mm256_add_ps(row1, _mm256_set1_ps(bias[oc_gi * BLOCK + 1]));
-            row2 = _mm256_add_ps(row2, _mm256_set1_ps(bias[oc_gi * BLOCK + 2]));
-            row3 = _mm256_add_ps(row3, _mm256_set1_ps(bias[oc_gi * BLOCK + 3]));
-            row4 = _mm256_add_ps(row4, _mm256_set1_ps(bias[oc_gi * BLOCK + 4]));
-            row5 = _mm256_add_ps(row5, _mm256_set1_ps(bias[oc_gi * BLOCK + 5]));
-            row6 = _mm256_add_ps(row6, _mm256_set1_ps(bias[oc_gi * BLOCK + 6]));
-            row7 = _mm256_add_ps(row7, _mm256_set1_ps(bias[oc_gi * BLOCK + 7]));
+            row0 = _mm256_add_ps(row0, _mm256_set1_ps(bias[oc_gi + 0]));
+            row1 = _mm256_add_ps(row1, _mm256_set1_ps(bias[oc_gi + 1]));
+            row2 = _mm256_add_ps(row2, _mm256_set1_ps(bias[oc_gi + 2]));
+            row3 = _mm256_add_ps(row3, _mm256_set1_ps(bias[oc_gi + 3]));
+            row4 = _mm256_add_ps(row4, _mm256_set1_ps(bias[oc_gi + 4]));
+            row5 = _mm256_add_ps(row5, _mm256_set1_ps(bias[oc_gi + 5]));
+            row6 = _mm256_add_ps(row6, _mm256_set1_ps(bias[oc_gi + 6]));
+            row7 = _mm256_add_ps(row7, _mm256_set1_ps(bias[oc_gi + 7]));
 #else
-            row0 = _mm_add_ps(row0, _mm_set1_ps(bias[oc_gi * BLOCK + 0]));
-            row1 = _mm_add_ps(row1, _mm_set1_ps(bias[oc_gi * BLOCK + 1]));
-            row2 = _mm_add_ps(row2, _mm_set1_ps(bias[oc_gi * BLOCK + 2]));
-            row3 = _mm_add_ps(row3, _mm_set1_ps(bias[oc_gi * BLOCK + 3]));
+            row0 = _mm_add_ps(row0, _mm_set1_ps(bias[oc_gi + 0]));
+            row1 = _mm_add_ps(row1, _mm_set1_ps(bias[oc_gi + 1]));
+            row2 = _mm_add_ps(row2, _mm_set1_ps(bias[oc_gi + 2]));
+            row3 = _mm_add_ps(row3, _mm_set1_ps(bias[oc_gi + 3]));
 #endif
           }
+
           if (active_type == lite_api::ActivationType::kRelu) {
 #ifdef __AVX__
-            row0 = _mm256_max_ps(row0, _mm256_set1_ps(0.f));
-            row1 = _mm256_max_ps(row1, _mm256_set1_ps(0.f));
-            row2 = _mm256_max_ps(row2, _mm256_set1_ps(0.f));
-            row3 = _mm256_max_ps(row3, _mm256_set1_ps(0.f));
-            row4 = _mm256_max_ps(row4, _mm256_set1_ps(0.f));
-            row5 = _mm256_max_ps(row5, _mm256_set1_ps(0.f));
-            row6 = _mm256_max_ps(row6, _mm256_set1_ps(0.f));
-            row7 = _mm256_max_ps(row7, _mm256_set1_ps(0.f));
+            __m256 vzero = _mm256_set1_ps(0.f);
+            row0 = _mm256_max_ps(row0, vzero);
+            row1 = _mm256_max_ps(row1, vzero);
+            row2 = _mm256_max_ps(row2, vzero);
+            row3 = _mm256_max_ps(row3, vzero);
+            row4 = _mm256_max_ps(row4, vzero);
+            row5 = _mm256_max_ps(row5, vzero);
+            row6 = _mm256_max_ps(row6, vzero);
+            row7 = _mm256_max_ps(row7, vzero);
 #else
             row0 = _mm_max_ps(row0, _mm_set1_ps(0.f));
             row1 = _mm_max_ps(row1, _mm_set1_ps(0.f));
@@ -732,33 +717,36 @@ void conv_direct_3x3s2(const float* i_data,
 #endif
           } else if (active_type == lite_api::ActivationType::kRelu6) {
 #ifdef __AVX__
-            row0 = _mm256_max_ps(row0, _mm256_set1_ps(0.f));
-            row1 = _mm256_max_ps(row1, _mm256_set1_ps(0.f));
-            row2 = _mm256_max_ps(row2, _mm256_set1_ps(0.f));
-            row3 = _mm256_max_ps(row3, _mm256_set1_ps(0.f));
-            row4 = _mm256_max_ps(row4, _mm256_set1_ps(0.f));
-            row5 = _mm256_max_ps(row5, _mm256_set1_ps(0.f));
-            row6 = _mm256_max_ps(row6, _mm256_set1_ps(0.f));
-            row7 = _mm256_max_ps(row7, _mm256_set1_ps(0.f));
-            row0 = _mm256_min_ps(row0, _mm256_set1_ps(6.f));
-            row1 = _mm256_min_ps(row1, _mm256_set1_ps(6.f));
-            row2 = _mm256_min_ps(row2, _mm256_set1_ps(6.f));
-            row3 = _mm256_min_ps(row3, _mm256_set1_ps(6.f));
-            row4 = _mm256_min_ps(row4, _mm256_set1_ps(6.f));
-            row5 = _mm256_min_ps(row5, _mm256_set1_ps(6.f));
-            row6 = _mm256_min_ps(row6, _mm256_set1_ps(6.f));
-            row7 = _mm256_min_ps(row7, _mm256_set1_ps(6.f));
+            __m256 vzero = _mm256_set1_ps(0.f);
+            __m256 vsix = _mm256_set1_ps(6.f);
+            row0 = _mm256_max_ps(row0, vzero);
+            row1 = _mm256_max_ps(row1, vzero);
+            row2 = _mm256_max_ps(row2, vzero);
+            row3 = _mm256_max_ps(row3, vzero);
+            row4 = _mm256_max_ps(row4, vzero);
+            row5 = _mm256_max_ps(row5, vzero);
+            row6 = _mm256_max_ps(row6, vzero);
+            row7 = _mm256_max_ps(row7, vzero);
+            row0 = _mm256_min_ps(row0, vsix);
+            row1 = _mm256_min_ps(row1, vsix);
+            row2 = _mm256_min_ps(row2, vsix);
+            row3 = _mm256_min_ps(row3, vsix);
+            row4 = _mm256_min_ps(row4, vsix);
+            row5 = _mm256_min_ps(row5, vsix);
+            row6 = _mm256_min_ps(row6, vsix);
+            row7 = _mm256_min_ps(row7, vsix);
 
 #else
-
-            row0 = _mm_max_ps(row0, _mm_set1_ps(0.f));
-            row1 = _mm_max_ps(row1, _mm_set1_ps(0.f));
-            row2 = _mm_max_ps(row2, _mm_set1_ps(0.f));
-            row3 = _mm_max_ps(row3, _mm_set1_ps(0.f));
-            row0 = _mm_min_ps(row0, _mm_set1_ps(6.f));
-            row1 = _mm_min_ps(row1, _mm_set1_ps(6.f));
-            row2 = _mm_min_ps(row2, _mm_set1_ps(6.f));
-            row3 = _mm_min_ps(row3, _mm_set1_ps(6.f));
+            __m128 vzero = _mm_set1_ps(0.f);
+            __m128 vsix = _mm_set1_ps(6.f);
+            row0 = _mm_max_ps(row0, vzero);
+            row1 = _mm_max_ps(row1, vzero);
+            row2 = _mm_max_ps(row2, vzero);
+            row3 = _mm_max_ps(row3, vzero);
+            row0 = _mm_min_ps(row0, vsix);
+            row1 = _mm_min_ps(row1, vsix);
+            row2 = _mm_min_ps(row2, vsix);
+            row3 = _mm_min_ps(row3, vsix);
 #endif
           } else if (active_type == lite_api::ActivationType::kIndentity) {
           } else {
@@ -766,7 +754,7 @@ void conv_direct_3x3s2(const float* i_data,
           }
 
           float* dst_address =
-              o_data + bs_i * ochw + oc_gi * ohwB + oh_i * ow + ow_i;
+              o_data + bs_i * ochw + oc_gi * ohw + oh_i * ow + ow_i;
 #ifdef __AVX__
           _mm256_storeu_ps(dst_address + 0 * ohw, row0);
           _mm256_storeu_ps(dst_address + 1 * ohw, row1);
@@ -783,12 +771,13 @@ void conv_direct_3x3s2(const float* i_data,
           _mm_storeu_ps(dst_address + 3 * ohw, row3);
 #endif
         }
+
         for (int ow_i = ow / BLOCK * BLOCK; ow_i < ow; ow_i++) {
           // trans_out
           float* from_address =
-              trans_out + oc_gi * ohwB + oh_i * owB + ow_i * BLOCK;
+              trans_out + oc_gi * ohw + oh_i * owB + ow_i * BLOCK;
           float* dst_address =
-              o_data + bs_i * ochw + oc_gi * ohwB + oh_i * ow + ow_i;
+              o_data + bs_i * ochw + oc_gi * ohw + oh_i * ow + ow_i;
 #ifdef __AVX__
           __m256 row = _mm256_loadu_ps(from_address);
 #else
@@ -796,9 +785,9 @@ void conv_direct_3x3s2(const float* i_data,
 #endif
           if (bias != nullptr) {
 #ifdef __AVX__
-            row = _mm256_add_ps(row, _mm256_loadu_ps(&bias[oc_gi * BLOCK]));
+            row = _mm256_add_ps(row, _mm256_loadu_ps(&bias[oc_gi]));
 #else
-            row = _mm_add_ps(row, _mm_loadu_ps(&bias[oc_gi * BLOCK]));
+            row = _mm_add_ps(row, _mm_loadu_ps(&bias[oc_gi]));
 #endif
           }
           if (active_type == lite_api::ActivationType::kRelu) {
@@ -820,19 +809,19 @@ void conv_direct_3x3s2(const float* i_data,
             LOG(FATAL) << "[X86] unsupported Activation type";
           }
 #ifdef __AVX__
-          *(dst_address + 0 * oh * ow) = ((float*)(&row))[0];
-          *(dst_address + 1 * oh * ow) = ((float*)(&row))[1];
-          *(dst_address + 2 * oh * ow) = ((float*)(&row))[2];
-          *(dst_address + 3 * oh * ow) = ((float*)(&row))[3];
-          *(dst_address + 4 * oh * ow) = ((float*)(&row))[4];
-          *(dst_address + 5 * oh * ow) = ((float*)(&row))[5];
-          *(dst_address + 6 * oh * ow) = ((float*)(&row))[6];
-          *(dst_address + 7 * oh * ow) = ((float*)(&row))[7];
+          *(dst_address + 0 * oh * ow) = (reinterpret_cast<float*>(&row))[0];
+          *(dst_address + 1 * oh * ow) = (reinterpret_cast<float*>(&row))[1];
+          *(dst_address + 2 * oh * ow) = (reinterpret_cast<float*>(&row))[2];
+          *(dst_address + 3 * oh * ow) = (reinterpret_cast<float*>(&row))[3];
+          *(dst_address + 4 * oh * ow) = (reinterpret_cast<float*>(&row))[4];
+          *(dst_address + 5 * oh * ow) = (reinterpret_cast<float*>(&row))[5];
+          *(dst_address + 6 * oh * ow) = (reinterpret_cast<float*>(&row))[6];
+          *(dst_address + 7 * oh * ow) = (reinterpret_cast<float*>(&row))[7];
 #else
-          *(dst_address + 0 * oh * ow) = ((float*)(&row))[0];
-          *(dst_address + 1 * oh * ow) = ((float*)(&row))[1];
-          *(dst_address + 2 * oh * ow) = ((float*)(&row))[2];
-          *(dst_address + 3 * oh * ow) = ((float*)(&row))[3];
+          *(dst_address + 0 * oh * ow) = (reinterpret_cast<float*>(&row))[0];
+          *(dst_address + 1 * oh * ow) = (reinterpret_cast<float*>(&row))[1];
+          *(dst_address + 2 * oh * ow) = (reinterpret_cast<float*>(&row))[2];
+          *(dst_address + 3 * oh * ow) = (reinterpret_cast<float*>(&row))[3];
 #endif
         }
       }
