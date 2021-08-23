@@ -271,18 +271,16 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   converter->AddOperation(NNADAPTER_CONV_2D, &input_operands, &output_operands);
   // Activation operation without fusion
   if (!conv_with_act_fusion) {
-    NNAdapterOperand* activation_operation{nullptr};
     std::vector<NNAdapterOperand*> activation_input_operands{immediate_operand};
     std::vector<NNAdapterOperand*> activation_output_operands{output_operand};
     if (act_type == "leaky_relu") {
-      activation_operation = converter->AddOperation(NNADAPTER_LEAKY_RELU);
       auto alpha = op_info->GetAttr<float>("leaky_relu_alpha");
       auto alpha_operand = converter->AddFloat32ConstantOperand(alpha);
       activation_input_operands.push_back(alpha_operand);
+      converter->AddOperation(NNADAPTER_LEAKY_RELU,
+                              &activation_input_operands,
+                              &activation_output_operands);
     }
-    converter->SetOperation(activation_operation,
-                            &activation_input_operands,
-                            &activation_output_operands);
   }
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
