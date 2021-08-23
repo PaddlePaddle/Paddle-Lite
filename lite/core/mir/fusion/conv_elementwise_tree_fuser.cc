@@ -38,6 +38,14 @@ void ConvElementwiseTreeFuser::BuildPattern() {
                      ->assert_is_op_input(elementwise_type_, "Y");
 
   // create op nodes
+  // The pass will not been applied if conv1x1 has already applied this pass.
+  auto conv_teller = [](const Node* node) -> bool {
+    bool has_fuse_elementwise_op_type =
+        const_cast<Node*>(node)->AsStmt().op_info()->HasAttr(
+            "fuse_elementwise_op_type");
+    return (!has_fuse_elementwise_op_type);
+  };
+  // Limitation of elementwise
   auto elementwise_teller = [](const Node* node) -> bool {
     int axis =
         const_cast<Node*>(node)->AsStmt().op_info()->GetAttr<int>("axis");
@@ -54,7 +62,10 @@ void ConvElementwiseTreeFuser::BuildPattern() {
     return (axis == -1) && (!fuse_scale) &&
            ((!has_act_type) || (has_act_type && act_type == "relu"));
   };
-  conv_ = OpNode("conv", conv_type_)->assert_is_op(conv_type_);
+
+  conv_ = OpNode("conv", conv_type_)
+              ->assert_is_op(conv_type_)
+              ->assert_node_satisfied(conv_teller);
   elementwise_ = OpNode("elementwise", elementwise_type_)
                      ->assert_is_op(elementwise_type_)
                      ->assert_node_satisfied(elementwise_teller);
@@ -133,9 +144,12 @@ void ConvElementwiseTreeFuser::InsertNewNode(SSAGraph* graph,
             << conv_filter_dims << ". Skip this pass!";
     return;
   }
+
+  // NOTE: Mark these node as intermediate at this place.
   conv_output_->AsIntermediate();
   conv_->AsIntermediate();
   elementwise_->AsIntermediate();
+
   auto op_desc = GenOpDesc(matched);
   auto conv_op_new = LiteOpRegistry::Global().Create(conv_type_);
   auto conv_op_old = matched.at("conv")->stmt()->op();
