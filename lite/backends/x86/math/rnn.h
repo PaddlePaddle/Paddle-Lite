@@ -19,6 +19,13 @@
 #include "lite/core/tensor.h"
 #include "lite/utils/logging.h"
 
+#ifdef __AVX__
+#include <immintrin.h>
+#endif
+#ifdef __SSE__
+#include <xmmintrin.h>
+#endif
+
 namespace paddle {
 namespace lite {
 namespace x86 {
@@ -59,55 +66,22 @@ void vector_dot(float* out,
 void fill_bias_fc(float* out, const float* bias, int num, int channel);
 
 template <typename T>
-void act_relu(const T* din, T* dout, int size, int threads);
-
-template <typename T>
-void act_sigmoid(const T* din, T* dout, int size, int threads);
-
-template <typename T>
-void act_tanh(const T* din, T* dout, int size, int threads);
-
-template <typename T>
 void activation(
-    const T* din, T* dout, int size, std::string act_str, int threads) {
-  if (act_str == "sigmoid") {
-    act_sigmoid(din, dout, size, threads);
-  } else if (act_str == "tanh") {
-    act_tanh(din, dout, size, threads);
-  } else if (act_str == "relu") {
-    act_relu(din, dout, size, threads);
-  } else {
-    LOG(FATAL) << "unsupport activation " << act_str;
-  }
-}
+    const T* din, T* dout, int size, std::string act_str, int threads);
 
 template <typename T>
 void activation(const T* din,
                 T* dout,
                 int size,
                 lite_api::ActivationType act_type,
-                int threads) {
-  switch (act_type) {
-    case lite_api::ActivationType::kSigmoid:
-      act_sigmoid(din, dout, size, threads);
-      break;
-    case lite_api::ActivationType::kSigmoid_v2:
-      act_sigmoid(din, dout, size, threads);
-      break;
-    case lite_api::ActivationType::kTanh:
-      act_tanh(din, dout, size, threads);
-      break;
-    case lite_api::ActivationType::kTanh_v2:
-      act_tanh(din, dout, size, threads);
-      break;
-    case lite_api::ActivationType::kRelu:
-      act_relu(din, dout, size, threads);
-      break;
-    default:
-      LOG(FATAL) << "unsupport activation type:" << static_cast<int>(act_type);
-      break;
-  }
-}
+                int threads);
+
+template <typename T>
+void GruRnnComputeKernel(GRUMetaValue<T> value,
+                         int frame_size,
+                         int batch_size,
+                         lite_api::ActivationType active_node,
+                         lite_api::ActivationType active_gate);
 
 template <typename T>
 struct RnnLstmUnitFunctor {
@@ -199,67 +173,11 @@ struct RnnGruUnitFunctorV2 {
                          value.reset_output_value,
                          frame_size);
     }
-
-    auto value_reset_gate = value.gate_value;
-    auto value_update_gate = value.gate_value + frame_size;
-    auto value_reset_output = value.reset_output_value;
-    auto value_reset_bias = value.reset_bias;
-    for (int b = 0; b < batch_size; b++) {
-      activation(value_reset_gate,
-                 value_reset_gate,
-                 frame_size,
-                 lite_api::ActivationType::kSigmoid_v2,
-                 1);
-      activation(value_update_gate,
-                 value_update_gate,
-                 frame_size,
-                 lite_api::ActivationType::kSigmoid_v2,
-                 1);
-      for (int i = 0; i < frame_size; i++) {
-        value_reset_output[i] =
-            (value_reset_output[i] + value_reset_bias[i]) * value_reset_gate[i];
-      }
-      value_reset_gate += frame_size * 3;
-      value_update_gate += frame_size * 3;
-      value_reset_output += frame_size;
-    }
-
-    T* cell_state_value = value.gate_value + 2 * frame_size;
-    T* reset_output_value = value.reset_output_value;
-    for (int b = 0; b < batch_size; ++b) {
-      for (int f = 0; f < frame_size; f++) {
-        cell_state_value[f] += reset_output_value[f];
-      }
-      cell_state_value += frame_size * 3;
-      reset_output_value += frame_size;
-    }
-
-    value_update_gate = value.gate_value + frame_size;
-    auto value_frame_state = value.gate_value + 2 * frame_size;
-    auto value_output = value.output_value;
-    auto value_prev_out = value.prev_out_value;
-    for (int b = 0; b < batch_size; b++) {
-      activation(value_frame_state,
-                 value_frame_state,
-                 frame_size,
-                 lite_api::ActivationType::kTanh_v2,
-                 1);
-      for (int i = 0; i < frame_size; i++) {
-        value_output[i] = (1.f - value_update_gate[i]) * value_frame_state[i];
-      }
-      if (value.prev_out_value) {
-        for (int i = 0; i < frame_size; i++) {
-          value_output[i] =
-              value_output[i] + value_update_gate[i] * value_prev_out[i];
-        }
-      }
-      value_update_gate += frame_size * 3;
-      value_frame_state += frame_size * 3;
-      value_output += frame_size;
-      if (value.prev_out_value) {
-        value_prev_out += frame_size;
-      }
-    }
+    GruRnnComputeKernel(value, 
+                        frame_size, 
+                        batch_size, 
+                        active_node, 
+                        active_gate);
   }
 };
 
@@ -267,3 +185,4 @@ struct RnnGruUnitFunctorV2 {
 }  // namespace x86
 }  // namespace lite
 }  // namespace paddle
+
