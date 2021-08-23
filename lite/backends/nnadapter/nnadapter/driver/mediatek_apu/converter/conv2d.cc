@@ -22,6 +22,12 @@ namespace mediatek_apu {
 
 int Program::ConvertConv2D(hal::Operation* operation) {
   CONV2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  // nhwc
+  input_channel_size = input_operand->type.dimensions[3];
+  filter_height = filter_operand->type.dimensions[1];
+  filter_width = filter_operand->type.dimensions[2];
+  NNADAPTER_CHECK_EQ(dilation_height, 1);
+  NNADAPTER_CHECK_EQ(dilation_width, 1);
 
   // Convert to Neuron operands and operations
   auto input_index = GetMappedIndex(input_operand);

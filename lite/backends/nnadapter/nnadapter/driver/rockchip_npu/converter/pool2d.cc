@@ -35,12 +35,13 @@ int ConvertPool2D(Converter* converter, hal::Operation* operation) {
   attr.stride[0] = stride_width;
   attr.stride[1] = stride_height;
   attr.pad[0] = pad_width_left;
-  attr.pad[1] = pad_height_bottom;
-  attr.pad[2] = pad_width_top attr.pad[3] = pad_width_bottom;
+  attr.pad[1] = pad_width_right;
+  attr.pad[2] = pad_height_top;
+  attr.pad[3] = pad_height_bottom;
   attr.pad_type = rk::nn::PadType::AUTO;
-  attr.global_pooling =
-      global_pooling;  // TODO(hong19860320) fix the order of kernel
-                       // when global_pooling=true in rknpu_ddk
+  // TODO(hong19860320) fix the order of kernel when global_pooling=true in
+  // rknpu_ddk
+  attr.global_pooling = false;
   attr.round_type = ceil_mode ? rk::nn::RoundType::ROUND_CEIL
                               : rk::nn::RoundType::ROUND_FLOOR;
   std::vector<std::shared_ptr<rk::nn::Tensor>> input_tensors = {input_tensor};

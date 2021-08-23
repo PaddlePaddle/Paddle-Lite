@@ -40,8 +40,8 @@ int ConvertConv2D(Converter* converter, hal::Operation* operation) {
   attr.stride[1] = stride_height;
   attr.pad[0] = pad_width_left;
   attr.pad[1] = pad_width_right;
-  attr.pad[2] = pad_width_top;
-  attr.pad[3] = pad_width_bottom;
+  attr.pad[2] = pad_height_top;
+  attr.pad[3] = pad_height_bottom;
   attr.group = group;
   attr.multiplier = is_depthwise_mode ? output_channel_size / group : 0;
   attr.weights = output_channel_size;

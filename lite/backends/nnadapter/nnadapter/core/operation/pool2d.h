@@ -36,7 +36,7 @@ namespace operation {
   /* Input */                                                                  \
   auto input_operand = input_operands[0];                                      \
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);            \
-  /* Auto pad: AscendNPU does not support auto_pad. */                         \
+  /* Auto pad: not support auto_pad. */                                        \
   /* Pads: Pads are transed according to auto_pad, so pads are used. */        \
   uint32_t pads_size =                                                         \
       input_operands[2]->length / static_cast<uint32_t>(sizeof(int32_t));      \
@@ -71,10 +71,10 @@ namespace operation {
   NNADAPTER_VLOG(5) << "strides = [" << stride_height << ", " << stride_width  \
                     << "]";                                                    \
   /* Ceil mode */                                                              \
-  bool ceil_mode = *reinterpret_cast<bool*>(input_operands[5]->buffer);        \
+  bool ceil_mode = *reinterpret_cast<int8_t*>(input_operands[5]->buffer);      \
   NNADAPTER_VLOG(5) << "ceil_mode = " << ceil_mode;                            \
   /* Count include pad(for avg_pool) or return indices(for max_pool) */        \
-  bool flag = *reinterpret_cast<bool*>(input_operands[6]->buffer);             \
+  bool flag = *reinterpret_cast<int8_t*>(input_operands[6]->buffer);           \
   NNADAPTER_VLOG(5) << "count_include_pad/return_indices = " << flag;          \
   if (operation->type == NNADAPTER_AVERAGE_POOL_2D) {                          \
     NNADAPTER_CHECK(!flag) << "Only support count_include_pad = false.";       \
