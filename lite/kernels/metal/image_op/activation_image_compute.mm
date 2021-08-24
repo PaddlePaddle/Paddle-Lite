@@ -41,6 +41,7 @@ void ActivationImageCompute::PrepareForRun() {
 }
 
 void ActivationImageCompute::setup_without_mps() {
+    const auto& param = this->Param<param_t>();
     int active_type = static_cast<int>(param.active_type);
     switch (active_type) {
         case 5:
