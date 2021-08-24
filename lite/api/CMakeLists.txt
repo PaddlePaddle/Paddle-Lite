@@ -70,8 +70,8 @@ if (LITE_ON_TINY_PUBLISH)
     set(CMAKE_C_FLAGS_RELEASE "-Os -DNDEBUG")
 endif()
 
-set(light_lib_DEPS light_api paddle_api paddle_api_light)
-set(full_lib_DEPS paddle_api paddle_api_light  paddle_api_full framework_proto core)
+set(light_lib_DEPS light_api paddle_api paddle_api_light utils)
+set(full_lib_DEPS paddle_api paddle_api_light  paddle_api_full framework_proto core utils)
 set(external_libs_DEPS "")
 if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH_SW OR LITE_WITH_BM OR LITE_WITH_HUAWEI_ASCEND_NPU OR ARM_TARGET_OS STREQUAL "android" OR ARM_TARGET_OS STREQUAL "armlinux"))
     #full api dynamic library

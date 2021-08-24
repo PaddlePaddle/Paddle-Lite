@@ -1,4 +1,4 @@
-set(PYBIND_DEPS pybind python paddle_api_light paddle_api)
+set(PYBIND_DEPS pybind python paddle_api_light paddle_api utils)
 if (NOT LITE_ON_TINY_PUBLISH)
    set(PYBIND_DEPS ${PYBIND_DEPS} paddle_api_full opt_base)
 endif()
