@@ -14,7 +14,6 @@
 
 #pragma once
 #include <stdint.h>
-#include <bitset>
 #include <vector>
 #include "lite/core/kernel.h"
 
@@ -29,7 +28,6 @@ class FlipCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
   using param_t = operators::FcParam;
 
   void Run() {
-    constexpr size_t dim_bitset_size = 64;
     auto& param = this->Param<operators::FlipParam>();
     auto x = param.X;
     auto out = param.Out;
@@ -37,7 +35,7 @@ class FlipCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
 
     auto x_dims = x->dims();
     const int total_dims = x_dims.size();
-    std::bitset<dim_bitset_size> dim_bitset;
+    std::vector<bool> dim_bitset(64);
     for (size_t i = 0; i < flip_dims.size(); ++i) {
       int dim = flip_dims[i];
       if (flip_dims[i] < 0) {
