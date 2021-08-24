@@ -24,62 +24,78 @@ int Program::ConvertSlice(hal::Operation* operation) {
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
   auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 4);
+  NNADAPTER_CHECK_EQ(input_count, 5);
   NNADAPTER_CHECK_EQ(output_count, 1);
   // Input
   auto input_operand = input_operands[0];
   NNADAPTER_VLOG(5) << "input_operand: " << OperandToString(input_operand);
-  auto input_dimension_count = input_operand->type.dimension_count;
-  auto input_dimensions = input_operand->type.dimensions;
   // Axes
   auto axes_operand = input_operands[1];
-  auto axes_count = axes_operand->length / sizeof(int32_t);
+  auto axes_count =
+      axes_operand->length / static_cast<uint32_t>(sizeof(int32_t));
   auto axes = reinterpret_cast<int32_t*>(axes_operand->buffer);
   for (uint32_t i = 0; i < axes_count; i++) {
-    NNADAPTER_VLOG(5) << "axes[" << i << "]=" << axes[i];
+    NNADAPTER_VLOG(5) << "axes[" << i << "] = " << axes[i];
   }
   // Starts
   auto starts_operand = input_operands[2];
-  auto starts_count = starts_operand->length / sizeof(int32_t);
+  auto starts_count =
+      starts_operand->length / static_cast<uint32_t>(sizeof(int32_t));
+  NNADAPTER_CHECK_EQ(starts_count, axes_count);
   auto starts = reinterpret_cast<int32_t*>(starts_operand->buffer);
   for (uint32_t i = 0; i < starts_count; i++) {
-    NNADAPTER_VLOG(5) << "starts[" << i << "]=" << starts[i];
+    NNADAPTER_VLOG(5) << "starts[" << i << "] = " << starts[i];
   }
   // Ends
   auto ends_operand = input_operands[3];
-  auto ends_count = starts_operand->length / sizeof(int32_t);
+  auto ends_count =
+      ends_operand->length / static_cast<uint32_t>(sizeof(int32_t));
+  NNADAPTER_CHECK_EQ(ends_count, axes_count);
   auto ends = reinterpret_cast<int32_t*>(ends_operand->buffer);
   for (uint32_t i = 0; i < ends_count; i++) {
-    NNADAPTER_VLOG(5) << "ends[" << i << "]=" << ends[i];
+    NNADAPTER_VLOG(5) << "ends[" << i << "] = " << ends[i];
   }
-  NNADAPTER_CHECK_EQ(axes_count, starts_count);
-  NNADAPTER_CHECK_EQ(starts_count, ends_count);
+  // Steps
+  auto steps_operand = input_operands[4];
+  auto steps_count =
+      steps_operand->length / static_cast<uint32_t>(sizeof(int32_t));
+  NNADAPTER_CHECK_EQ(steps_count, axes_count);
+  auto steps = reinterpret_cast<int32_t*>(steps_operand->buffer);
+  for (uint32_t i = 0; i < steps_count; i++) {
+    NNADAPTER_VLOG(5) << "steps[" << i << "] = " << steps[i];
+  }
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output_operand: " << OperandToString(output_operand);
 
   // Convert to GE operators
   auto input_operator = GetMappedOperator(input_operand);
-  if (!input_operator) {
+  if (input_operator == nullptr) {
     input_operator = ConvertOperand(input_operand);
   }
-  std::vector<int> offsets(axes_count, 0);
-  std::vector<int> size(axes_count, 0);
-  // Get begin/offset based on axes and starts
-  for (int i = 0; i < axes_count; i++) {
-    auto axis = axes[i];
-    NNADAPTER_CHECK_LE(axis, input_dimension_count);
-    NNADAPTER_CHECK_LE(starts[i], input_dimensions[axis]);
-    offsets[axis] = starts[i];
-    size[axis] = ends[i] - starts[i];
+  auto axes_operator = GetMappedOperator(axes_operand);
+  if (axes_operator == nullptr) {
+    axes_operator = ConvertOperand(axes_operand);
   }
-  auto offsets_operator = AddInt32ConstantOperator(offsets);
-  auto size_operator = AddInt32ConstantOperator(size);
+  auto starts_operator = GetMappedOperator(starts_operand);
+  if (starts_operator == nullptr) {
+    starts_operator = ConvertOperand(starts_operand);
+  }
+  auto ends_operator = GetMappedOperator(ends_operand);
+  if (ends_operator == nullptr) {
+    ends_operator = ConvertOperand(ends_operand);
+  }
+  auto steps_operator = GetMappedOperator(steps_operand);
+  if (steps_operator == nullptr) {
+    steps_operator = ConvertOperand(steps_operand);
+  }
   auto slice_name = GetOperatorName(output_operand);
-  auto slice_op = std::make_shared<ge::op::Slice>(slice_name);
+  auto slice_op = std::make_shared<ge::op::StridedSliceV2>(slice_name);
   SET_INPUT(slice_op, x, input_operator);
-  SET_INPUT(slice_op, offsets, offsets_operator);
-  SET_INPUT(slice_op, size, size_operator);
+  SET_INPUT(slice_op, begin, starts_operator);
+  SET_INPUT(slice_op, end, ends_operator);
+  SET_INPUT(slice_op, axes, axes_operator);
+  SET_INPUT(slice_op, strides, steps_operator);
   MAP_OUTPUT(slice_op, y, output_operand);
   return NNADAPTER_NO_ERROR;
 }

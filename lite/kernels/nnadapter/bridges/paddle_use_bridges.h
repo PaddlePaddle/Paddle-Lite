@@ -148,5 +148,7 @@ USE_SUBGRAPH_BRIDGE(bilinear_interp, kNNAdapter, "huawei_ascend_npu");
 USE_SUBGRAPH_BRIDGE(bilinear_interp_v2, kNNAdapter, "huawei_ascend_npu");
 USE_SUBGRAPH_BRIDGE(hard_swish, kNNAdapter, "huawei_ascend_npu");
 USE_SUBGRAPH_BRIDGE(hard_sigmoid, kNNAdapter, "huawei_ascend_npu");
+USE_SUBGRAPH_BRIDGE(squeeze, kNNAdapter, "huawei_ascend_npu");
+USE_SUBGRAPH_BRIDGE(squeeze2, kNNAdapter, "huawei_ascend_npu");
 USE_SUBGRAPH_BRIDGE(unsqueeze, kNNAdapter, "huawei_ascend_npu");
 USE_SUBGRAPH_BRIDGE(unsqueeze2, kNNAdapter, "huawei_ascend_npu");

@@ -47,6 +47,7 @@ int Program::ConvertDeformableConv2d(hal::Operation* operation) {
   // Offset
   auto offset_operand = input_operands[1];
   NNADAPTER_VLOG(5) << "offset: " << OperandToString(offset_operand);
+  auto offset_channel = offset_operand->type.dimensions[1];
   // Mask
   auto mask_operand = input_operands[2];
   NNADAPTER_VLOG(5) << "mask: " << OperandToString(mask_operand);
@@ -109,16 +110,57 @@ int Program::ConvertDeformableConv2d(hal::Operation* operation) {
     mask_operator = ConvertOperand(mask_operand);
   }
 
+  /**
+   * Convert the offsets data arrangement in deformable_offsets
+   *
+   * NNAdapter:     yyyyy          ->      Ascend:   xxxxx
+   *                xxxxx                            xxxxx
+   *                yyyyy                            xxxxx
+   *                xxxxx                            yyyyy
+   *                yyyyy                            yyyyy
+   *                xxxxx                            yyyyy
+   *
+   */
+  // Slice offset_x in the channel dimension
+  auto x_begin_operator = AddInt32ConstantOperator(std::vector<int32_t>({1}));
+  auto x_end_operator =
+      AddInt32ConstantOperator(std::vector<int32_t>({offset_channel}));
+  auto x_strides_operator = AddInt32ConstantOperator(2);
+  auto x_axes_operator = AddInt32ConstantOperator(1);
+  auto slice_x_name = GetOperatorName(output_operand) + "/split_x";
+  auto slice_x_op = std::make_shared<ge::op::StridedSliceV2>(slice_x_name);
+  SET_INPUT(slice_x_op, x, offset_operator);
+  SET_INPUT(slice_x_op, begin, x_begin_operator);
+  SET_INPUT(slice_x_op, end, x_end_operator);
+  SET_INPUT(slice_x_op, strides, x_strides_operator);
+  SET_INPUT(slice_x_op, axes, x_axes_operator);
+  auto slice_x_operator = MAP_OUTPUT(slice_x_op, y, output_operand);
+
+  // Slice offset_y in the channel dimension
+  auto y_begin_operator = AddInt32ConstantOperator(std::vector<int32_t>({0}));
+  auto y_end_operator =
+      AddInt32ConstantOperator(std::vector<int32_t>({offset_channel - 1}));
+  auto y_strides_operator = AddInt32ConstantOperator(2);
+  auto y_axes_operator = AddInt32ConstantOperator(1);
+  auto slice_y_name = GetOperatorName(output_operand) + "/split_y";
+  auto slice_y_op = std::make_shared<ge::op::StridedSliceV2>(slice_y_name);
+  SET_INPUT(slice_y_op, x, offset_operator);
+  SET_INPUT(slice_y_op, begin, y_begin_operator);
+  SET_INPUT(slice_y_op, end, y_end_operator);
+  SET_INPUT(slice_y_op, strides, y_strides_operator);
+  SET_INPUT(slice_y_op, axes, y_axes_operator);
+  auto slice_y_operator = MAP_OUTPUT(slice_y_op, y, output_operand);
+
   // Concat the offset and mask in the channel dimension
   auto concat_name = GetOperatorName(output_operand) + "/concat";
   auto concat_op = std::make_shared<ge::op::ConcatD>(concat_name);
   concat_op->set_attr_concat_dim(1);
-  concat_op->set_attr_N(2);
-  concat_op->create_dynamic_input_x(2);
-  SET_DYNAMIC_INPUT(concat_op, x, 0, offset_operator);
-  SET_DYNAMIC_INPUT(concat_op, x, 1, mask_operator);
-  std::shared_ptr<Operator> concat_operator =
-      MAP_OUTPUT(concat_op, y, output_operand);
+  concat_op->set_attr_N(3);
+  concat_op->create_dynamic_input_x(3);
+  SET_DYNAMIC_INPUT(concat_op, x, 0, slice_x_operator);
+  SET_DYNAMIC_INPUT(concat_op, x, 1, slice_y_operator);
+  SET_DYNAMIC_INPUT(concat_op, x, 2, mask_operator);
+  auto concat_operator = MAP_OUTPUT(concat_op, y, output_operand);
 
   /**
    * Create deformable_offsets operator
@@ -158,7 +200,7 @@ int Program::ConvertDeformableConv2d(hal::Operation* operation) {
   deformable_offsets_op->set_attr_modulated(true);
   SET_INPUT(deformable_offsets_op, x, input_operator);
   SET_INPUT(deformable_offsets_op, offsets, concat_operator);
-  std::shared_ptr<Operator> deformable_offsets_operator =
+  auto deformable_offsets_operator =
       MAP_OUTPUT(deformable_offsets_op, y, output_operand);
 
   /** Create deformable_offsets operator
@@ -186,8 +228,7 @@ int Program::ConvertDeformableConv2d(hal::Operation* operation) {
   SET_INPUT(conv_op, x, deformable_offsets_operator);
   SET_INPUT(conv_op, filter, filter_operator);
   SET_INPUT(conv_op, bias, bias_operator);
-  std::shared_ptr<Operator> conv_operator =
-      MAP_OUTPUT(conv_op, y, output_operand);
+  auto conv_operator = MAP_OUTPUT(conv_op, y, output_operand);
 
   // Fuse activations
   auto act_name = GetOperatorName(output_operand);

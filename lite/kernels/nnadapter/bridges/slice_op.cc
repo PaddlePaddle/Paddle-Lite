@@ -55,6 +55,10 @@ int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   for (int i = 0; i < axes_size; i++) {
     ends[i] = ends_ori[i] > x_dims[axes[i]] ? x_dims[axes[i]] : ends_ori[i];
   }
+  std::vector<int> decrease_axis;
+  if (op_info->HasAttr("decrease_axis")) {
+    decrease_axis = op_info->GetAttr<std::vector<int>>("decrease_axis");
+  }
 
   // Input operand
   NNAdapterOperand* input_operand = nullptr;
@@ -83,11 +87,18 @@ int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       &steps[0], DDim({static_cast<int64_t>(steps.size())}));
   // Output operand
   NNAdapterOperand* output_operand = nullptr;
+  auto out_shape = x_dims.Vectorize();
+  for (size_t i = 0; i < axes.size(); i++) {
+    out_shape[axes[i]] = ends[i] - starts[i];
+  }
+  std::string out_name_slice =
+      decrease_axis.empty() ? out_name : out_name + "_squeeze_in";
   if (has_out_scale) {
-    output_operand =
-        converter->AddQuant8VariableOperand(out_dims, out_scale, out_name);
+    output_operand = converter->AddQuant8VariableOperand(
+        DDim(out_shape), out_scale, out_name_slice);
   } else {
-    output_operand = converter->AddFloat32VariableOperand(out_dims, out_name);
+    output_operand =
+        converter->AddFloat32VariableOperand(DDim(out_shape), out_name_slice);
   }
 
   // Slice operation
@@ -95,6 +106,23 @@ int SliceConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       input_operand, axes_operand, starts_operand, ends_operand, steps_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   converter->AddOperation(NNADAPTER_SLICE, &input_operands, &output_operands);
+
+  // Use squeeze to process decrease_axis(attr)
+  if (!decrease_axis.empty()) {
+    auto squeeze_axes_operand = converter->AddInt32ConstantOperand(
+        decrease_axis.data(),
+        DDim({static_cast<int64_t>(decrease_axis.size())}));
+    auto squeeze_output_operand =
+        converter->AddFloat32VariableOperand(out_dims, out_name);
+
+    std::vector<NNAdapterOperand*> squeeze_input_operands = {
+        output_operand, squeeze_axes_operand};
+    std::vector<NNAdapterOperand*> squeeze_output_operands = {
+        squeeze_output_operand};
+    converter->AddOperation(
+        NNADAPTER_SQUEEZE, &squeeze_input_operands, &squeeze_output_operands);
+  }
+
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
