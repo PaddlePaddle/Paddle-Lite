@@ -13,7 +13,7 @@ else()
    target_sources(lite_pybind PUBLIC ${__lite_cc_files})
 endif(WIN32)
 
-if (LITE_WITH_X86)
+if (WITH_XBYAK)
    add_dependencies(lite_pybind extern_xbyak)
 endif()
 

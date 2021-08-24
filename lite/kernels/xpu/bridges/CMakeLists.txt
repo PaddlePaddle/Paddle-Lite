@@ -2,7 +2,7 @@ if (NOT LITE_WITH_XTCL)
   return ()
 endif ()
 
-lite_cc_library (subgraph_bridge_utility_xpu SRCS utility.cc DEPS ${xpu_builder_libs} tensor)
+lite_cc_library (subgraph_bridge_utility_xpu SRCS utility.cc DEPS ${xpu_builder_libs} core)
 lite_cc_library (subgraph_bridge_graph_xpu SRCS graph.cc DEPS subgraph_bridge_utility_xpu)
 
 set (xpu_subgraph_bridge_deps core subgraph_bridge_utility_xpu subgraph_bridge_graph_xpu)
