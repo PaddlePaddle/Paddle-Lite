@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/optimizer/mir/memory_optimize_pass.h"
+#include <cctype>
 #include <memory>
 #include <utility>
 #include <vector>

@@ -102,7 +102,6 @@ class FcOPTest : public arena::TestCase {
     CHECK(out);
     DDim out_dim = ComputeOutDim(x->dims(), w->dims(), in_num_col_dims_);
     out->Resize(out_dim);
-
     auto x_data = x->data<float>();
     auto w_data = w->data<float>();
     const float* b_data = nullptr;
@@ -279,9 +278,7 @@ TEST(FcOP, precision) {
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
-  abs_error = 1e-2;
-  // TODO(shentanyue) fix bug
-  return;
+  abs_error = 5e-2;
 #else
   return;
 #endif

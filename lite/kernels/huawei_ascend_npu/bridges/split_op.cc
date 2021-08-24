@@ -92,7 +92,6 @@ int SplitConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     split_op->set_input_size_splits(*size_splits_node->data());
     split_op->set_input_split_dim(*split_dim_node->data());
     split_op->set_attr_num_split(sections_num);
-    split_op->set_attr_num_split(sections_num);
     split_op->create_dynamic_output_y(sections_num);
   }
 

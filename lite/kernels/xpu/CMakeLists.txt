@@ -83,6 +83,7 @@ else()
   add_kernel(pad2d_compute_xpu XPU extra SRCS pad2d_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(pixel_shuffle_compute_xpu XPU extra SRCS pixel_shuffle_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(correlation_compute_xpu XPU extra SRCS correlation_compute.cc DEPS ${lite_kernel_deps})
+  add_kernel(logical_compute_xpu XPU extra SRCS logical_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(compare_compute_xpu XPU extra SRCS compare_compute.cc DEPS ${lite_kernel_deps})
 
   # extra(fused kernel)

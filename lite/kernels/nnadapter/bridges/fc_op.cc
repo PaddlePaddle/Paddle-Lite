@@ -54,14 +54,12 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       has_out_scale ? op_info->GetOutputScale(out_scale_name, true)[0] : 0.f;
   auto out = scope->FindMutableTensor(out_name);
   auto out_dims = out->dims();
+  int out_rank = out_dims.size();
   int in_num_col_dims = op_info->GetAttr<int>("in_num_col_dims");
   int64_t M = input_dims.Slice(0, in_num_col_dims).production();
   int64_t K = input_dims.Slice(in_num_col_dims, input_dims.size()).production();
   int64_t N = w_dims[1];
   CHECK_EQ(K * N, w_dims.production());
-  CHECK_EQ(out_dims.size(), 2);
-  CHECK_EQ(out_dims[0], M);
-  CHECK_EQ(out_dims[1], N);
   VLOG(5) << "input dims: " << input_dims << " w dims: " << w_dims
           << " out_dims: " << out_dims << " M: " << M << " K: " << K
           << " N: " << N;
@@ -164,12 +162,18 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Output operand
   NNAdapterOperand* output_operand = nullptr;
+  std::string fc_out_name;
+  if (out_rank != 2) {
+    fc_out_name = out_name + "/fc";
+  } else {
+    fc_out_name = out_name;
+  }
   if (has_out_scale) {
-    output_operand =
-        converter->AddQuant8VariableOperand(DDim({M, N}), out_scale, out_name);
+    output_operand = converter->AddQuant8VariableOperand(
+        DDim({M, N}), out_scale, fc_out_name);
   } else {
     output_operand =
-        converter->AddFloat32VariableOperand(DDim({M, N}), out_name);
+        converter->AddFloat32VariableOperand(DDim({M, N}), fc_out_name);
   }
 
   // Fully connected layer
@@ -178,6 +182,29 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   converter->AddOperation(
       NNADAPTER_FULLY_CONNECTED, &input_operands, &output_operands);
+  // Create Reshape layer if rank is not equal to 2, convert the shape of output
+  if (out_rank != 2) {
+    std::vector<int32_t> out_shape;
+    for (auto e : input_dims.Slice(0, in_num_col_dims).Vectorize()) {
+      out_shape.push_back(static_cast<int32_t>(e));
+    }
+    out_shape.push_back(N);
+    std::vector<NNAdapterOperand*> reshape_input_operands;
+    NNAdapterOperand* reshape_output_operand = nullptr;
+    reshape_input_operands.push_back(output_operand);
+    // Reshape shape
+    auto shape_operand = converter->AddInt32ConstantOperand(
+        &out_shape[0], DDim({static_cast<int64_t>(out_shape.size())}));
+    reshape_input_operands.push_back(shape_operand);
+    // Reshape output
+    reshape_output_operand =
+        converter->AddFloat32VariableOperand(out_dims, out_name);
+    std::vector<NNAdapterOperand*> reshape_output_operands = {
+        reshape_output_operand};
+    converter->AddOperation(
+        NNADAPTER_RESHAPE, &reshape_input_operands, &reshape_output_operands);
+  }
+
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 
