@@ -61,13 +61,13 @@ int Program::ConvertFullyConnected(hal::Operation* operation) {
   // Reshape the input operator to 2-D tensor {batch_size, input_size} if the
   // dimension_count not equal 2
   if (input_operand->type.dimension_count != 2) {
-    auto reshape_name = GetOperatorName(input_operand);
+    auto reshape_name = GetOperatorName(input_operand) + "/reshape";
     auto reshape_op = std::make_shared<ge::op::Reshape>(reshape_name);
     auto shape_operator = AddInt32ConstantOperator(
         std::vector<int32_t>({static_cast<int32_t>(batch_size), input_size}));
     SET_INPUT(reshape_op, x, input_operator);
     SET_INPUT(reshape_op, shape, shape_operator);
-    input_operator = MAP_OUTPUT(reshape_op, y, input_operand);
+    input_operator = MAP_OUTPUT(reshape_op, y, output_operand);
   }
   auto weight_operator = ConvertOperand(weight_operand);
   auto bias_operator = ConvertOperand(bias_operand);
@@ -80,7 +80,21 @@ int Program::ConvertFullyConnected(hal::Operation* operation) {
   SET_INPUT(matmul_op, x1, input_operator);
   SET_INPUT(matmul_op, x2, weight_operator);
   SET_INPUT(matmul_op, bias, bias_operator);
-  MAP_OUTPUT(matmul_op, y, output_operand);
+  auto matmul_operator = MAP_OUTPUT(matmul_op, y, output_operand);
+  // Reshape the output tensor to origin shape
+  auto output_reshape_name = GetOperatorName(output_operand) + "/reshape";
+  auto output_reshape_op =
+      std::make_shared<ge::op::Reshape>(output_reshape_name);
+  std::vector<int32_t> out_shape;
+  for (uint32_t i = 0; i < output_operand->type.dimension_count; i++) {
+    auto dimension = output_operand->type.dimensions[i];
+    NNADAPTER_CHECK_GT(dimension, 0);
+    out_shape.push_back(dimension);
+  }
+  auto out_shape_operator = AddInt32ConstantOperator(out_shape);
+  SET_INPUT(output_reshape_op, x, matmul_operator);
+  SET_INPUT(output_reshape_op, shape, out_shape_operator);
+  MAP_OUTPUT(output_reshape_op, y, output_operand);
   return NNADAPTER_NO_ERROR;
 }
 

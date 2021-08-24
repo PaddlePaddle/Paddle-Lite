@@ -391,6 +391,12 @@ std::shared_ptr<Operator> Program::AddInt32ConstantOperator(
       dimensions.empty() ? std::vector<int32_t>({num_values}) : dimensions);
 }
 
+std::shared_ptr<Operator> Program::AddInt32ConstantOperator(
+    const int32_t values) {
+  auto num_values_vec = std::vector<int32_t>({values});
+  return AddInt32ConstantOperator(&num_values_vec[0], std::vector<int32_t>());
+}
+
 std::shared_ptr<Operator> Program::AddFloat32ConstantOperator(
     const float* values, const std::vector<int32_t>& dimensions) {
   return AddConstantOperator(values, NNADAPTER_TENSOR_FLOAT32, dimensions);

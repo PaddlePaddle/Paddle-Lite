@@ -90,6 +90,7 @@ class Program {
       const void* values,
       NNAdapterOperandPrecisionCode precision,
       const std::vector<int32_t>& dimensions = {});
+  std::shared_ptr<Operator> AddInt32ConstantOperator(const int32_t values);
   std::shared_ptr<Operator> AddInt32ConstantOperator(
       const int32_t* values, const std::vector<int32_t>& dimensions);
   std::shared_ptr<Operator> AddInt32ConstantOperator(
