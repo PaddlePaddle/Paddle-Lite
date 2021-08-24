@@ -144,11 +144,10 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto act_type = op_info->HasAttr("act_type")
                       ? op_info->GetAttr<std::string>("act_type")
                       : "";
+
   // Input0 operand and Input1 operand
-  auto input0_operand =
-      GenerateInputOperand(converter, x, x_dims, x_name, has_x_scale, x_scale);
-  auto input1_operand =
-      GenerateInputOperand(converter, y, y_dims, y_name, has_y_scale, y_scale);
+  NNAdapterOperand* input0_operand = nullptr;
+  NNAdapterOperand* input1_operand = nullptr;
 
   // Check whether the two dimensions are compatiable(Numpy-style broadcasting
   // https://numpy.org/doc/stable/user/basics.broadcasting.html).
@@ -197,8 +196,8 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                                               y_shape,
                                                               new_y_shape_name);
         input1_operand = y_reshape_operand;
-        input0_operand =
-            GenerateInputOperand(converter, x, x_name, has_x_scale, x_scale);
+        input0_operand = GenerateInputOperand(
+            converter, x, x_dims, x_name, has_x_scale, x_scale);
       } else {
         for (int i = 0; i < x_rank; i++) {
           x_shape[i + axis] = x_dims[i];
@@ -211,9 +210,14 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                                               x_shape,
                                                               new_x_shape_name);
         input0_operand = x_reshape_operand;
-        input1_operand =
-            GenerateInputOperand(converter, y, y_name, has_y_scale, y_scale);
+        input1_operand = GenerateInputOperand(
+            converter, y, y_dims, y_name, has_y_scale, y_scale);
       }
+    } else {
+      input0_operand = GenerateInputOperand(
+          converter, x, x_dims, x_name, has_x_scale, x_scale);
+      input1_operand = GenerateInputOperand(
+          converter, y, y_dims, y_name, has_y_scale, y_scale);
     }
   }
 
