@@ -118,6 +118,8 @@ class CLRuntime {
   lite_api::CLTuneMode auto_tune() { return auto_tune_; }
 
   size_t lws_repeats() { return lws_repeats_; }
+  bool tune_file_flag() { return have_tune_file_flag_; }
+  void set_del_flag() { del_tune_bin_flag_ = true; }
 
   void set_precision(
       lite_api::CLPrecisionType p = lite_api::CL_PRECISION_AUTO) {
@@ -337,6 +339,8 @@ class CLRuntime {
   // magic number for precompiled binary
   const std::string sn_key_{"lite_opencl_precompiled_binary_identifier"};
   bool gotten_bin_flag_{false};
+  bool del_tune_bin_flag_{false};
+  bool have_tune_file_flag_{false};
   // magic number for cl flush judgement
   const int opencl_flush_period_ = 10;
 };

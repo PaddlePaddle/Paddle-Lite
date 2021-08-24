@@ -846,6 +846,9 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
       kernel_ = context.cl_context()->GetKernel(kernel_key.str());
       return;
     }
+    if (CLRuntime::Global()->tune_file_flag()) {
+      CLRuntime::Global()->set_del_flag();
+    }
     int final_kernel_id = 0;
     int kernel_id = 0;
     std::string final_kernel_func_name = "conv2d_1x1_h1w4c1";
@@ -1034,6 +1037,10 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
       return;
     }
 
+    if (CLRuntime::Global()->tune_file_flag()) {
+      CLRuntime::Global()->set_del_flag();
+    }
+
     size_t max_work_group_size = 0;
     kernel_.getWorkGroupInfo<size_t>(CLRuntime::Global()->device(),
                                      CL_KERNEL_WORK_GROUP_SIZE,
@@ -1148,6 +1155,9 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
       return;
     }
 
+    if (CLRuntime::Global()->tune_file_flag()) {
+      CLRuntime::Global()->set_del_flag();
+    }
     size_t max_work_group_size = 0;
     kernel_.getWorkGroupInfo<size_t>(CLRuntime::Global()->device(),
                                      CL_KERNEL_WORK_GROUP_SIZE,

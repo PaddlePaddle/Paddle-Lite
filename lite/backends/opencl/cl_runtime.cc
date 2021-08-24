@@ -242,6 +242,7 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
         LOG(WARNING) << "The precompiled OpenCL binary[" << bin_file
                      << "] is illegal!";
         delete_bin_flag = true;
+        del_tune_bin_flag_ = true;
         // Jump to build from source
       } else if (host::memcmp(((sn_iter->second)[0]).data(),
                               GetSN(build_option).data(),
@@ -255,6 +256,7 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
         LOG(WARNING) << "The precompiled OpenCL binary[" << bin_file
                      << "] is invalid!";
         delete_bin_flag = true;
+        del_tune_bin_flag_ = true;
         // Jump to build from source
       } else {
 #ifdef LITE_WITH_LOG
@@ -285,6 +287,7 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
           ret = true;
         } else {
           delete_bin_flag = true;
+          del_tune_bin_flag_ = true;
           // Jump to build from source
         }
       }
@@ -299,6 +302,7 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
     // This case happened when model has updated. Bin file should be updated
     // accordingly.
     delete_bin_flag = true;
+    del_tune_bin_flag_ = true;
     gotten_bin_flag_ = false;
     remove_file(bin_file);
   }
@@ -408,8 +412,20 @@ void CLRuntime::SaveProgram() {
 
 void CLRuntime::SaveTuned() {
   if (tuned_path_name_.empty() || auto_tune() == lite_api::CL_TUNE_NONE) return;
+  auto remove_file = [](const std::string& bin_file) {
+    if (remove(bin_file.c_str()) != 0) {
+      LOG(FATAL) << "Cannot delete invalid precomplied OpenCL binary["
+                 << bin_file << "]!";
+    } else {
+      LOG(INFO) << "Invalid precomplied OpenCL binary[" << bin_file
+                << "] has been deleted!";
+    }
+  };
   std::string tuned_file =
       tuned_path_name_.at(0) + "/" + tuned_path_name_.at(1);
+  if (IsFileExists(tuned_file) && del_tune_bin_flag_) {
+    remove_file(tuned_file);
+  }
   if (IsFileExists(tuned_file)) {
     LOG(INFO) << "OpenCL Tuned file existed:" << tuned_file;
   } else {
@@ -848,6 +864,7 @@ void CLRuntime::set_auto_tune(lite_api::CLTuneMode tune_mode,
     if (!status) {
       LOG(WARNING) << "Failed to deserialize tuned file:" << tuned_file;
     }
+    have_tune_file_flag_ = true;
   } else {
     LOG(WARNING) << "Not found tuned file:" << tuned_file;
   }
