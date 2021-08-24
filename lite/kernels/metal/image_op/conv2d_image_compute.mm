@@ -435,7 +435,7 @@ void Conv2dImageCompute::setup_with_mps() {
             default:
                 break;
         }
-        // MPS算子
+        // MPS op
         MPSConvDataSource* scoure = [[MPSConvDataSource alloc] init];
         scoure.descriptor = description;
         // mps weights(filter) NHWC
@@ -470,7 +470,7 @@ void Conv2dImageCompute::setup_with_mps() {
                                                                        weights:scoure];
         ((__bridge MPSCNNConvolution*)mps_conv_op_).offset = MPSOffset{.x = offsetX, .y = offsetY};
         ((__bridge MPSCNNConvolution*)mps_conv_op_).edgeMode = MPSImageEdgeModeZero;
-        // MPS算子输入输出
+        // MPS input and output
         mps_input_image_ =
             (__bridge_retained void*)[[MPSImage alloc] initWithTexture:input_buffer_->image()
                                                        featureChannels:input_c];

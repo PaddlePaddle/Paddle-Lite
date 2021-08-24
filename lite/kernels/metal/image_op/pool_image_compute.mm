@@ -197,7 +197,7 @@ void PoolImageCompute::setup_with_mps() {
     }
     ((__bridge MPSCNNPoolingMax*)mps_pool_op_).offset = MPSOffset{.x = offsetX, .y = offsetY};
     ((__bridge MPSCNNPoolingMax*)mps_pool_op_).edgeMode = MPSImageEdgeModeZero;
-    // MPS算子输入输出
+    // MPS input and output
     auto input_c = static_cast<int>(input_buffer_->tensor_dim_[1]);
     auto output_c = static_cast<int>(output_buffer_->tensor_dim_[1]);
     mps_input_image_ =
