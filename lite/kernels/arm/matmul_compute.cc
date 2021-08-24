@@ -59,7 +59,8 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::ReInitWhenNeeded() {
       n_ = y_dims[y_dims.size() - 2];
     }
 
-  } else if (x_dims.size() == 2 && y_dims.size() == 2) {
+  } else if ((x_dims.size() == 2 && y_dims.size() == 2) ||
+             (x_dims.size() == 2 && y_dims.size() == 1)) {
     // x: [M, K], y: [K, N], out: [M, N]
     if (!x_transpose) {
       m_ = x_dims[0];
@@ -69,7 +70,11 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::ReInitWhenNeeded() {
       k_ = x_dims[0];
     }
     if (!y_transpose) {
-      n_ = y_dims[1];
+      if (y_dims.size() > 1) {
+        n_ = y_dims[1];
+      } else {
+        n_ = 1;
+      }
     } else {
       n_ = y_dims[0];
     }
@@ -211,7 +216,8 @@ void MatMulCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                &ctx);
       }
     }
-  } else if (x_dims.size() == 2 && y_dims.size() == 2) {
+  } else if ((x_dims.size() == 2 && y_dims.size() == 2) ||
+             (x_dims.size() == 2 && y_dims.size() == 1)) {
     // x: [M, K], y: [K, N], out: [M, N]
     int lda, ldb, ldc;
     if (!x_transpose) {
@@ -224,7 +230,11 @@ void MatMulCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
       lda = m_;
     }
     if (!y_transpose) {
-      n_ = y_dims[1];
+      if (y_dims.size() > 1) {
+        n_ = y_dims[1];
+      } else {
+        n_ = 1;
+      }
       ldb = n_;
     } else {
       n_ = y_dims[0];
@@ -413,7 +423,8 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                  &ctx);
       }
     }
-  } else if (x_dims.size() == 2 && y_dims.size() == 2) {
+  } else if ((x_dims.size() == 2 && y_dims.size() == 2) ||
+             (x_dims.size() == 2 && y_dims.size() == 1)) {
     // x: [M, K], y: [K, N], out: [M, N]
     lite::arm::math::gemm_s8(x_transpose,
                              y_transpose,
