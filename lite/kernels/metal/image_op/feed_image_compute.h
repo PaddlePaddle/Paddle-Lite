@@ -63,6 +63,8 @@ class FeedImageCompute
     std::string function_name_;
     MetalContext* metal_context_;
     DDim last_input_dims_{};
+
+    void* lanczos_{nullptr};
 };
 
 }  // namespace metal
