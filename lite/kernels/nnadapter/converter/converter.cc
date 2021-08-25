@@ -329,7 +329,8 @@ NNAdapterOperand* Converter::AddOperand(
     const void* buffer,
     bool copy,
     const std::string& name,
-    const std::vector<std::vector<int64_t>>& dynamic_dimensions) {
+    const std::vector<std::vector<int64_t>>& dynamic_dimensions,
+    bool is_shape_operand = false) {
   NNAdapterOperandType type;
   memset(&type, 0, sizeof(NNAdapterOperandType));
   if (dimensions.size() > 0) {
@@ -369,6 +370,9 @@ NNAdapterOperand* Converter::AddOperand(
     }
   } else {
     // Basic type, without any quantization parameters
+  }
+  if (is_shape_operand) {
+    type.lifetime = NNADAPTER_TEMPORARY_SHAPE;
   }
   auto operand = AddOperand(&type, name);
   if (buffer) {

@@ -117,10 +117,11 @@ typedef enum {
  */
 typedef enum {
   NNADAPTER_TEMPORARY_VARIABLE = 0,
-  NNADAPTER_CONSTANT_COPY = 1,
-  NNADAPTER_CONSTANT_REFERENCE = 2,
-  NNADAPTER_MODEL_INPUT = 3,
-  NNADAPTER_MODEL_OUTPUT = 4,
+  NNADAPTER_TEMPORARY_SHAPE = 1,
+  NNADAPTER_CONSTANT_COPY = 2,
+  NNADAPTER_CONSTANT_REFERENCE = 3,
+  NNADAPTER_MODEL_INPUT = 4,
+  NNADAPTER_MODEL_OUTPUT = 5,
 } NNAdapterOperandLifetimeCode;
 
 /**
@@ -1412,7 +1413,8 @@ int NNAdapterModel_addOperand(NNAdapterModel* model,
 int NNAdapterModel_setOperandValue(NNAdapterOperand* operand,
                                    void* buffer,
                                    uint32_t length,
-                                   bool copy);
+                                   bool copy,
+                                   bool temporary_shape);
 /**
  * Get the type of an operand.
  *

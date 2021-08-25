@@ -13,32 +13,33 @@
 // limitations under the License.
 
 #include "core/operation/fill.h"
-#include "driver/huawei_ascend_npu/converter.h"
+#include "core/hal/types.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/modeling.h"
+#include "utility/utility.h"
 
 namespace nnadapter {
-namespace huawei_ascend_npu {
+namespace operation {
 
-int Program::ConvertFill(hal::Operation* operation) {
+int PrepareFill(hal::Operation* operation) {
   FILL_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  // Infer the shape and type of output operands
+  NNADAPTER_CHECK_EQ(shape_operand->type.lifetime, NNADAPTER_TEMPORARY_SHAPE);
+  //   if(shape_operand->length>0){
 
-  // Convert to GE operators
-  auto shape_operator = GetMappedOperator(shape_operand);
-  if (shape_operator == nullptr) {
-    shape_operator = ConvertOperand(shape_operand);
-  }
-  auto value_operator = GetMappedOperator(value_operand);
-  if (value_operator == nullptr) {
-    value_operator = ConvertOperand(value_operand);
-  }
-  auto fill_name = GetOperatorName(output_operand);
-  auto fill_op = std::make_shared<ge::op::Fill>(fill_name);
-  SET_INPUT(fill_op, dims, shape_operator);
-  SET_INPUT(fill_op, value, value_operator);
-  MAP_OUTPUT(fill_op, y, output_operand);
+  //   }
+  //   int32_t shape_size = input_operand->type.dimension_count;
+  //   output_operand->type.dimensions[0] = shape_size;
+  //   output_operand->type.dynamic_dimension_count =
+  //       input_operand->type.dynamic_dimension_count;
+  //   for (uint32_t i = 0; i < input_operand->type.dynamic_dimension_count;
+  //   i++) {
+  //     output_operand->type.dynamic_dimensions[i][0] = shape_size;
+  //   }
+  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
 }
 
-}  // namespace huawei_ascend_npu
+}  // namespace operation
 }  // namespace nnadapter

@@ -45,5 +45,6 @@ REGISTER_CONVERTER(
     "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
 REGISTER_CONVERTER(abs, ConvertUnaryActivations, "huawei_ascend_npu");
 REGISTER_CONVERTER(log, ConvertUnaryActivations, "huawei_ascend_npu");
+REGISTER_CONVERTER(fill_any_like, ConvertFillAnyLike, "huawei_ascend_npu");
 
 #endif  // NOLINT

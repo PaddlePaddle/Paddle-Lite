@@ -22,6 +22,11 @@
 namespace nnadapter {
 namespace hal {
 
+typedef struct TemporaryShape {
+  std::vector<int32_t> shape;
+  std::vector<std::vector<int32_t>> dynamic_shape;
+} TemporaryShape;
+
 typedef struct Operand {
   NNAdapterOperandType type;
   void* buffer;
