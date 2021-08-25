@@ -394,7 +394,11 @@ void ConvImageCompute::PrepareForRun() {
                                            ? "conv2d_3x3_multi_batch"
                                            : "conv2d_3x3_opt");
         }
-        kernel_func_paths_.push_back("image/conv2d_3x3_opt_kernel.cl");
+        if (kernel_func_names_.back() != "conv2d_3x3_multi_batch") {
+          kernel_func_paths_.push_back("image/conv2d_3x3_opt_kernel.cl");
+        } else {
+          kernel_func_paths_.push_back("image/conv2d_3x3_kernel.cl");
+        }
         impl_ = &ConvImageCompute::Conv2d3x3opt;
 
         CLImageConverterNBlock converter;
@@ -574,6 +578,7 @@ void ConvImageCompute::PrepareForRun() {
   }  // if (is_mali)
   VLOG(1) << "kernel_func_names_[0]:" << kernel_func_names_[0]
           << " kernel_func_paths_[0]:" << kernel_func_paths_[0];
+  std::cout << "kernel_func_names_[0]:" << kernel_func_names_[0] << std::endl;
 
   // build options
   std::string build_options_single{""};
