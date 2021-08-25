@@ -578,7 +578,6 @@ void ConvImageCompute::PrepareForRun() {
   }  // if (is_mali)
   VLOG(1) << "kernel_func_names_[0]:" << kernel_func_names_[0]
           << " kernel_func_paths_[0]:" << kernel_func_paths_[0];
-  std::cout << "kernel_func_names_[0]:" << kernel_func_names_[0] << std::endl;
 
   // build options
   std::string build_options_single{""};

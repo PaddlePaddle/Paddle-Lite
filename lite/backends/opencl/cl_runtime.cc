@@ -294,42 +294,16 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
   return ret;
 }
 
-class Timer {
- private:
-  std::chrono::high_resolution_clock::time_point inTime, outTime;
-
- public:
-  void startTimer() { inTime = std::chrono::high_resolution_clock::now(); }
-
-  // unit millisecond
-  float getCostTimer() {
-    outTime = std::chrono::high_resolution_clock::now();
-    return static_cast<float>(
-        std::chrono::duration_cast<std::chrono::microseconds>(outTime - inTime)
-            .count() /
-        1e+3);
-  }
-};
-
 bool CLRuntime::CheckFromSource(const std::string& file_name,
                                 const std::string& program_key,
                                 const std::string& build_option) {
-  Timer timeIns;
-  timeIns.startTimer();
   auto ptr = CreateProgramFromSource(context(), file_name);
-  double create_ms = timeIns.getCostTimer();
   auto program = ptr.get();
-  BuildProgram(program, build_option);
-  double build_ms = timeIns.getCostTimer();
 #ifdef LITE_WITH_LOG
   VLOG(3) << " --- begin build program from source -> " << program_key
-          << " --- "
-          << "create_ms: " << create_ms << " build_ms: " << build_ms;
+          << " --- ";
 #endif
-  std::cout << " --- begin build program from source -> " << program_key
-            << " --- "
-            << "create_ms: " << create_ms << " build_ms: " << build_ms
-            << std::endl;
+  BuildProgram(program, build_option);
 
   // Keep built program binary
   if (binary_path_name_.size() == 2) {
