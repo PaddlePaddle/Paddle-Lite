@@ -70,7 +70,7 @@ if (LITE_ON_TINY_PUBLISH)
     set(CMAKE_C_FLAGS_RELEASE "-Os -DNDEBUG")
 endif()
 
-set(light_lib_DEPS light_api paddle_api paddle_api_light utils)
+set(light_lib_DEPS light_api paddle_api paddle_api_light utils core)
 set(full_lib_DEPS paddle_api paddle_api_light  paddle_api_full framework_proto core utils)
 set(external_libs_DEPS "")
 if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH_SW OR LITE_WITH_BM OR LITE_WITH_HUAWEI_ASCEND_NPU OR ARM_TARGET_OS STREQUAL "android" OR ARM_TARGET_OS STREQUAL "armlinux"))
@@ -537,11 +537,11 @@ lite_cc_library(paddle_api SRCS paddle_api.cc DEPS op_params core)
 if (LITE_ON_TINY_PUBLISH)
     lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api stream)
 else()
-    lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api)
+    lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api core utils)
 endif()
 if (NOT LITE_ON_TINY_PUBLISH)
     lite_cc_library(paddle_api_full SRCS cxx_api_impl.cc DEPS cxx_api paddle_api_light
-        ${ops}
+        ${ops} paddle_api framework_proto core utils
         ARM_DEPS ${arm_kernels}
         CV_DEPS paddle_cv_arm
         NPU_DEPS ${npu_kernels}
