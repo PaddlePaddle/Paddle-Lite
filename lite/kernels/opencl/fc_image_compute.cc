@@ -31,7 +31,7 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
     const auto bias_t = param.bias;
     has_bias_ = (bias_t == nullptr) ? false : true;
 
-    // Runtime precision can be forced to fp32 to avoid the loss of accuracy
+    // Runtime precision can be forced to fp32 to avoid precision loss
     // when K is larger than thres_k.
     // But this will increase the running time of fc because running time under
     // fp32 is two time longer than that under fp16.
