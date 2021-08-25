@@ -45,6 +45,7 @@ class TransposeImageCompute
     virtual ~TransposeImageCompute();
 
    private:
+    void run_without_mps();
     void setup_without_mps();
 
     const MetalImage* input_buffer_;
