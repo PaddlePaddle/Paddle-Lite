@@ -254,7 +254,7 @@ void ConvImageCompute::PrepareForRun() {
                        filter_image_h_,
                        filter_image_data);
     }
-    kernel_func_paths_.push_back("image/conv2d_1x1_opt_kernel.cl");
+    kernel_func_paths_.push_back("image/conv2d_1x1_default_mali_kernel.cl");
     impl_ = &ConvImageCompute::Conv2d1x1opt;
   } else {
     filter_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
@@ -268,7 +268,7 @@ void ConvImageCompute::PrepareForRun() {
       } else {
         kernel_func_names_.push_back("conv2d_1x1_opt");
       }
-      kernel_func_paths_.push_back("image/conv2d_1x1_kernel.cl");
+      kernel_func_paths_.push_back("image/conv2d_1x1_default_kernel.cl");
 
       CLImageConverterNWBlock converter;
       const DDim& filter_image_dims =
@@ -395,7 +395,7 @@ void ConvImageCompute::PrepareForRun() {
                                            : "conv2d_3x3_opt");
         }
         if (kernel_func_names_.back() != "conv2d_3x3_multi_batch") {
-          kernel_func_paths_.push_back("image/conv2d_3x3_opt_kernel.cl");
+          kernel_func_paths_.push_back("image/conv2d_3x3_default_kernel.cl");
         } else {
           kernel_func_paths_.push_back("image/conv2d_3x3_kernel.cl");
         }

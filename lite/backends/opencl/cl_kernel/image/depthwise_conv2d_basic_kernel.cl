@@ -14,7 +14,7 @@ limitations under the License. */
 
 #include <cl_common.h>
 
-
+/*
 __kernel void depth_conv2d_common(__private const int global_size_dim0, // (out_c + 1) / 4
                                   __private const int global_size_dim1, // (out_w + 1) / 4
                                   __private const int global_size_dim2, // out_n * out_h
@@ -180,6 +180,7 @@ CL_DTYPE4 alpha0, alpha1, alpha2, alpha3;
     WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(out_pos_x,     out_nh), out0);
   }
 }
+*/
 
 __kernel void depth_conv2d(__private const int global_size_dim0,
                            __private const int global_size_dim1,
