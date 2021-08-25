@@ -1,3 +1,4 @@
+# test
 include(lite)
 
 message(STATUS "LIGHT_FRAMEWORK:\t${LITE_WITH_LIGHT_WEIGHT_FRAMEWORK}")
