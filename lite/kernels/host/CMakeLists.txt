@@ -48,7 +48,7 @@ add_kernel(where_index_compute_host Host extra SRCS where_index_compute.cc DEPS 
 add_kernel(where_compute_host Host extra SRCS where_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(print_compute_host Host extra SRCS print_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(while_compute_host Host extra SRCS while_compute.cc DEPS ${lite_kernel_deps} program)
-add_kernel(conditional_block_compute_host Host extra SRCS conditional_block_compute.cc DEPS ${lite_kernel_deps} program)
+add_kernel(conditional_block_compute_host Host extra SRCS conditional_block_compute.cc DEPS ${lite_kernel_deps} program while_compute_host)
 add_kernel(correlation_compute_host Host extra SRCS correlation_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(activation_grad_compute_host Host train SRCS activation_grad_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(pixel_shuffle_compute_host Host extra SRCS pixel_shuffle_compute.cc DEPS ${lite_kernel_deps})

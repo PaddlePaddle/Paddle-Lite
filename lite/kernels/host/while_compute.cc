@@ -15,11 +15,35 @@
 #include "lite/kernels/host/while_compute.h"
 #include <unordered_map>
 #include <utility>
+#ifdef LITE_WITH_XPU
+#include "lite/backends/xpu/target_wrapper.h"
+#include "lite/backends/xpu/xpu_header_sitter.h"
+#endif
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace host {
+
+bool GetCondData(const Tensor *cond) {
+  auto is_host = [](TargetType x) -> bool {
+    return x == TARGET(kHost) || x == TARGET(kX86) || x == TARGET(kARM);
+  };
+
+  bool flag;
+  if (is_host(cond->target())) {
+    flag = cond->data<bool>()[0];
+  } else if (cond->target() == TARGET(kXPU)) {
+#ifdef LITE_WITH_XPU
+    TargetWrapperXPU::MemcpySync(
+        &flag, cond->raw_data(), cond->memory_size(), IoDirection::DtoH);
+#endif
+  } else {
+    LOG(ERROR) << "Unsupported target: "
+               << lite_api::TargetToStr(cond->target());
+  }
+  return flag;
+}
 
 void WhileCompute::PrepareForRun() {
   auto &param = this->Param<param_t>();
@@ -28,10 +52,14 @@ void WhileCompute::PrepareForRun() {
         param.program_desc, param.exec_scope, param.block_idx));
   }
 }
+
 void WhileCompute::Run() {
   auto &param = this->Param<param_t>();
-  while (param.cond->data<bool>()[0]) {
+  auto cond = param.cond;
+  bool need_run = GetCondData(cond);
+  while (need_run) {
     program_->Run();
+    need_run = GetCondData(cond);
   }
 }
 
