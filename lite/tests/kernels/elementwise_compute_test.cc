@@ -367,8 +367,6 @@ TEST(Elementwise, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 5e-2;
-  // TODO(shentanyue) add broadcasting logic for input tensor
-  return;
 #else
   return;
 #endif
