@@ -884,7 +884,7 @@ template void sign<float>(const float* din, float* dout, int size, int threads);
 template <typename T>
 void softplus(const T* din, T* dout, int size, int threads) {
   for (int i = 0; i < size; ++i) {
-    dout[0] = log((T)1. + exp(din[i]));
+    dout[0] = log((T)1. + exp(din[0]));
     din++;
     dout++;
   }

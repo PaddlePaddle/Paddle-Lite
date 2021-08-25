@@ -12,40 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/metal/mps_conv_datasource.h"
+#pragma once
 
-@implementation MPSConvDataSource
+#include "lite/core/kernel.h"
 
-- (MPSDataType)dataType API_AVAILABLE(ios(11.0)) {
-	return MPSDataTypeFloat16;
-}
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace xpu {
 
-- (MPSCNNConvolutionDescriptor * __nonnull) descriptor API_AVAILABLE(ios(10.0)) {
-	return _descriptor;
-}
+class IsEmptyCompute
+    : public KernelLite<TARGET(kXPU), PRECISION(kAny), DATALAYOUT(kAny)> {
+ public:
+  void Run() override;
 
-- (void *)weights {
-	return _weights;
-}
+  virtual ~IsEmptyCompute() = default;
+};
 
-- (float *)biasTerms {
-	return _biasTerms;
-}
-
-- (BOOL)load {
-	return YES;
-}
-
-- (void)purge{
-
-}
-
-- (NSString*)label {
-	return @"mps_conv_add_relu_label";
-}
-
-- (nonnull id)copyWithZone:(nullable NSZone *)zone {
-	return self;
-}
-
-@end
+}  // namespace xpu
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle

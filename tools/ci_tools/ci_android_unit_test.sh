@@ -64,14 +64,13 @@ function test_arm_api {
     make $test_name -j$NUM_PROC
 
     local model_path=$(find . -name "lite_naive_model")
-    local remote_model=paddle_api
     local testpath=$(find ./lite -name ${test_name})
 
 
     adb -s $adb_device push $testpath /data/local/tmp/$adb_work_dir
     adb -s $adb_device shell chmod +x "/data/local/tmp/$adb_work_dir/$test_name"
-    adb -s $adb_device push $model_path /data/local/tmp/$adb_work_dir/$remote_model
-    adb -s $adb_device shell "cd /data/local/tmp/$adb_work_dir && ./$test_name --model_dir $remote_model"
+    adb -s $adb_device push $model_path /data/local/tmp/$adb_work_dir
+    adb -s $adb_device shell "cd /data/local/tmp/$adb_work_dir && ./$test_name --model_dir lite_naive_model"
 }
 
 # 2 function of compiling
@@ -130,6 +129,8 @@ function build_test_android {
   build_directory=$WORKSPACE/ci.android.$arch.$toolchain
   cd $build_directory
 
+  adb -s ${adb_devices[0]} shell "cd /data/local/tmp && rm -rf $adb_workdir && mkdir $adb_workdir"
+  test_arm_api ${adb_devices[0]} $adb_work_dir
 
   adb -s ${adb_devices[0]} shell "cd /data/local/tmp && rm -rf $adb_workdir && mkdir $adb_workdir"
   for _test in $(cat $TESTS_FILE); do
@@ -145,7 +146,6 @@ function build_test_android {
           test_arm_unit_test $_test ${adb_devices[0]} $adb_workdir
       fi
   done
-  test_arm_api ${adb_devices[0]} $adb_work_dir
   adb -s ${adb_devices[0]} shell "cd /data/local/tmp && rm -rf $adb_workdir"
 }
 

@@ -255,11 +255,7 @@ TEST(Split_test, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
-  return;  // TODO(shentanyue): Check failed: (output_tensor_descs.size() ==
-           // output_count): 0!==2
   TestSplitBase<float>(place, abs_error);
-  TestSplitBase<int>(place, abs_error);
-  TestSplitBase<int64_t>(place, abs_error);
   TestSplitAxis(place, abs_error);
   TestSplitNum(place, abs_error);
   TestSplitSections(place, abs_error);

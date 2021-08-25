@@ -47,6 +47,8 @@ if(WIN32)
     set(CMAKE_SUPPRESS_REGENERATION ON)
     set(CMAKE_STATIC_LIBRARY_PREFIX lib)
     add_definitions("/DGOOGLE_GLOG_DLL_DECL=")
+    add_definitions(-DGLOG_NO_ABBREVIATED_SEVERITIES)
+    add_definitions(-DNOMINMAX)
 
     if(MSVC_STATIC_CRT)
       set(CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS_DEBUG} /bigobj /MTd")

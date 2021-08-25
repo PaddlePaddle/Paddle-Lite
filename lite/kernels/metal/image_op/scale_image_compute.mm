@@ -41,6 +41,12 @@ void ScaleImageCompute::PrepareForRun() {
 }
 
 void ScaleImageCompute::Run() {
+    @autoreleasepool {
+        run_without_mps();
+    }
+}
+
+void ScaleImageCompute::run_without_mps() {
     auto pipline = pipline_;
     auto outTexture = output_buffer_->image();
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();

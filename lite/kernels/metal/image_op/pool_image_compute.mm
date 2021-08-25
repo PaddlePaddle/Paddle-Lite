@@ -63,10 +63,12 @@ void PoolImageCompute::PrepareForRun() {
 }
 
 void PoolImageCompute::Run() {
-    if (use_mps_) {
-        run_with_mps();
-    } else {
-        run_without_mps();
+    @autoreleasepool {
+        if (use_mps_) {
+            run_with_mps();
+        } else {
+            run_without_mps();
+        }
     }
 }
 
@@ -153,10 +155,12 @@ void PoolImageCompute::run_with_mps() {
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     auto cmdbuf = [backend commandBuffer];
     if (mps_pool_op_) {
-        [((__bridge MPSCNNPoolingMax*)mps_pool_op_)
-            encodeToCommandBuffer:cmdbuf
-                      sourceImage:(__bridge MPSImage*)mps_input_image_
-                 destinationImage:(__bridge MPSImage*)mps_output_image_];
+        if (@available(iOS 10.0, *)) {
+            [((__bridge MPSCNNPoolingMax*)mps_pool_op_)
+                encodeToCommandBuffer:cmdbuf
+                          sourceImage:(__bridge MPSImage*)mps_input_image_
+                     destinationImage:(__bridge MPSImage*)mps_output_image_];
+        }
     }
     [backend commit:cmdbuf];
 }
@@ -179,33 +183,35 @@ void PoolImageCompute::setup_with_mps() {
     }
     int offsetX = static_cast<int>(((int)(kw - 1) + 1) / 2 - pw);
     int offsetY = static_cast<int>(((int)(kh - 1) + 1) / 2 - ph);
-
-    if (param.pooling_type == "max") {
-        mps_pool_op_ =
-            (__bridge_retained void*)[[MPSCNNPoolingMax alloc] initWithDevice:backend.device
-                                                                  kernelWidth:kw
-                                                                 kernelHeight:kh
-                                                              strideInPixelsX:sw
-                                                              strideInPixelsY:sh];
-    } else if (param.pooling_type == "avg") {
-        mps_pool_op_ =
-            (__bridge_retained void*)[[MPSCNNPoolingAverage alloc] initWithDevice:backend.device
+    
+    if (@available(iOS 10.0, *)) {
+        if (param.pooling_type == "max") {
+            mps_pool_op_ =
+                (__bridge_retained void*)[[MPSCNNPoolingMax alloc] initWithDevice:backend.device
                                                                       kernelWidth:kw
                                                                      kernelHeight:kh
                                                                   strideInPixelsX:sw
                                                                   strideInPixelsY:sh];
+        } else if (param.pooling_type == "avg") {
+            mps_pool_op_ =
+                (__bridge_retained void*)[[MPSCNNPoolingAverage alloc] initWithDevice:backend.device
+                                                                          kernelWidth:kw
+                                                                         kernelHeight:kh
+                                                                      strideInPixelsX:sw
+                                                                      strideInPixelsY:sh];
+        }
+        ((__bridge MPSCNNPoolingMax*)mps_pool_op_).offset = MPSOffset{.x = offsetX, .y = offsetY};
+        ((__bridge MPSCNNPoolingMax*)mps_pool_op_).edgeMode = MPSImageEdgeModeZero;
+        // MPS input and output
+        auto input_c = static_cast<int>(input_buffer_->tensor_dim_[1]);
+        auto output_c = static_cast<int>(output_buffer_->tensor_dim_[1]);
+        mps_input_image_ =
+            (__bridge_retained void*)[[MPSImage alloc] initWithTexture:input_buffer_->image()
+                                                       featureChannels:input_c];
+        mps_output_image_ =
+            (__bridge_retained void*)[[MPSImage alloc] initWithTexture:output_buffer_->image()
+                                                       featureChannels:output_c];
     }
-    ((__bridge MPSCNNPoolingMax*)mps_pool_op_).offset = MPSOffset{.x = offsetX, .y = offsetY};
-    ((__bridge MPSCNNPoolingMax*)mps_pool_op_).edgeMode = MPSImageEdgeModeZero;
-    // MPS input and output
-    auto input_c = static_cast<int>(input_buffer_->tensor_dim_[1]);
-    auto output_c = static_cast<int>(output_buffer_->tensor_dim_[1]);
-    mps_input_image_ =
-        (__bridge_retained void*)[[MPSImage alloc] initWithTexture:input_buffer_->image()
-                                                   featureChannels:input_c];
-    mps_output_image_ =
-        (__bridge_retained void*)[[MPSImage alloc] initWithTexture:output_buffer_->image()
-                                                   featureChannels:output_c];
 }
 
 PoolImageCompute::~PoolImageCompute() {

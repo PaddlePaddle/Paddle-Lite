@@ -1,4 +1,4 @@
-// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#ifndef LITE_KERNELS_METAL_IMAGE_OP_RELU_IMAGE_COMPUTE_H_
+#define LITE_KERNELS_METAL_IMAGE_OP_RELU_IMAGE_COMPUTE_H_
 
 #include <memory>
 
@@ -32,17 +33,41 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-class BilinearInterpImageCompute
+class ReluImageCompute
     : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {
-    using param_t = operators::InterpolateParam;
+    using param_t = operators::ActivationParam;
 
    public:
     void PrepareForRun() override;
     void Run() override;
     void SaveOutput() override {
-        MetalDebug::SaveOutput(function_name_, output_buffer_);
+        MetalDebug::SaveOutput("relu", output_buffer_);
     };
-    virtual ~BilinearInterpImageCompute();
+    virtual ~ReluImageCompute();
+
+   private:
+    void run_without_mps();
+    void setup_without_mps();
+
+    const MetalImage* input_buffer_;
+    MetalImage* output_buffer_{nullptr};
+
+    id<MTLComputePipelineState> pipline_;
+    std::string function_name_;
+    MetalContext* metal_context_;
+};
+
+class Relu6ImageCompute
+    : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {
+    using param_t = operators::ActivationParam;
+
+   public:
+    void PrepareForRun() override;
+    void Run() override;
+    void SaveOutput() override {
+        MetalDebug::SaveOutput("relu6", output_buffer_);
+    };
+    virtual ~Relu6ImageCompute();
 
    private:
     void run_without_mps();
@@ -57,19 +82,20 @@ class BilinearInterpImageCompute
     MetalContext* metal_context_;
 };
 
-class NearestInterpImageCompute
+class LeakyReluImageCompute
     : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {
-    using param_t = operators::InterpolateParam;
+    using param_t = operators::ActivationParam;
 
    public:
     void PrepareForRun() override;
     void Run() override;
     void SaveOutput() override {
-        MetalDebug::SaveOutput(function_name_, output_buffer_);
+        MetalDebug::SaveOutput("leaky_relu", output_buffer_);
     };
-    virtual ~NearestInterpImageCompute();
+    virtual ~LeakyReluImageCompute();
 
    private:
+    void run_without_mps();
     void setup_without_mps();
 
     const MetalImage* input_buffer_;
@@ -85,3 +111,5 @@ class NearestInterpImageCompute
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
+#endif  // LITE_KERNELS_METAL_IMAGE_OP_RELU_IMAGE_COMPUTE_H_

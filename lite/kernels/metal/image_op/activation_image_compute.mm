@@ -37,7 +37,11 @@ void ActivationImageCompute::PrepareForRun() {
     input_buffer_ = param.X->data<MetalHalf, MetalImage>();
     output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
 #endif
+  setup_without_mps();
+}
 
+void ActivationImageCompute::setup_without_mps() {
+    const auto& param = this->Param<param_t>();
     int active_type = static_cast<int>(param.active_type);
     switch (active_type) {
         case 1:
@@ -89,6 +93,12 @@ void ActivationImageCompute::PrepareForRun() {
 }
 
 void ActivationImageCompute::Run() {
+  @autoreleasepool {
+    run_without_mps();
+  }
+}
+
+void ActivationImageCompute::run_without_mps() {
     auto pipline = pipline_;
     auto outTexture = output_buffer_->image();
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
