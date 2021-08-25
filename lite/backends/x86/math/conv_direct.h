@@ -36,44 +36,6 @@ void conv_direct_3x3s2(const float* i_data,
                        const float* bias,
                        lite_api::ActivationType active_type);
 
-void conv_direct_padinput_3x3s2(
-    const float* i_data,
-    float* pad_i_data,
-    const float* trans_weight,
-    float* trans_out,  // holds the intermediate output result
-    int bs,
-    int ic,
-    int ih,
-    int iw,
-    int new_ih,
-    int new_iw,
-    int oc,
-    int oc_expand,
-    float* o_data,
-    int oh,
-    int ow,
-    int new_oh,
-    int new_ow,
-    int ph,
-    int pw,
-    const float* bias,
-    lite_api::ActivationType active_type);
-
-void conv_direct_3x3s2_forcin3_m256(const float* i_data,
-                                    float* trans_i_data,
-                                    const float* trans_weight,
-                                    float* trans_out,
-                                    int bs,
-                                    int ic,
-                                    int ih,
-                                    int iw,
-                                    int oc,
-                                    int oc_expand,
-                                    float* o_data,
-                                    int oh,
-                                    int ow,
-                                    int ph,
-                                    int pw);
 }  // namespace math
 }  // namespace x86
 }  // namespace lite
