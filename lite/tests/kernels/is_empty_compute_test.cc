@@ -66,7 +66,9 @@ void TestIsEmptyHelper(Place place,
 
 void TestIsEmpty(Place place, float abs_error) {
   TestIsEmptyHelper(place, abs_error, {2, 3, 4, 5});
+#if !defined(LITE_WITH_XPU)
   TestIsEmptyHelper(place, abs_error, {0});
+#endif
 }
 
 TEST(is_empty, precision) {
@@ -74,6 +76,8 @@ TEST(is_empty, precision) {
   float abs_error = 1e-5;
 #if defined(LITE_WITH_ARM)
   place = TARGET(kHost);
+#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  place = TARGET(kXPU);
 #else
   return;
 #endif

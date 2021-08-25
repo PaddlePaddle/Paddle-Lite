@@ -805,6 +805,7 @@ function(bundle_static_library tgt_name bundled_tgt_name fake_target)
       COMMAND ${ar_tool} -M < ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar
       OUTPUT ${bundled_tgt_full_name}
       COMMENT "Bundling ${bundled_tgt_name}"
+      DEPENDS ${tgt_name}
       VERBATIM)
   else()
     foreach(lib ${static_libs})
@@ -812,6 +813,7 @@ function(bundle_static_library tgt_name bundled_tgt_name fake_target)
     endforeach()
     add_custom_command(
       COMMAND /usr/bin/libtool -static -o ${bundled_tgt_full_name} ${libfiles}
+      DEPENDS ${tgt_name}
       OUTPUT ${bundled_tgt_full_name}
     )
   endif()
