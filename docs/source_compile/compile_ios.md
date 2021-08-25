@@ -61,8 +61,7 @@ inference_lite_lib.ios64.armv8
 │   ├── paddle_use_kernels.h
 │   ├── paddle_use_ops.h
 │   └── paddle_use_passes.h
-├── metal
-metallib文件
+├── metal                                                  metallib文件
 │   └── lite.metallib
 └── lib                                                    C++预测库（静态库）
     └── libpaddle_api_light_bundled.a
