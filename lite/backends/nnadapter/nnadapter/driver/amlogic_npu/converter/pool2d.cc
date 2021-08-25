@@ -30,18 +30,18 @@ int Program::ConvertPool2D(hal::Operation* operation) {
   }
   auto output_tensor = ConvertOperand(output_operand);
   aml::nn::PoolAttr attr;
-  attr.ksize[0] = kernel_height;
-  attr.ksize[1] = kernel_width;
-  attr.stride[0] = stride_height;
-  attr.stride[1] = stride_width;
-  attr.pad[0] = pad_height_top;
-  attr.pad[1] = pad_height_bottom;
-  attr.pad[2] = pad_width_left;
-  attr.pad[3] = pad_width_right;
+  attr.ksize[0] = kernel_width;
+  attr.ksize[1] = kernel_height;
+  attr.stride[0] = stride_width;
+  attr.stride[1] = stride_height;
+  attr.pad[0] = pad_width_left;
+  attr.pad[1] = pad_width_right;
+  attr.pad[2] = pad_height_top;
+  attr.pad[3] = pad_height_bottom;
   attr.pad_type = aml::nn::PadType::AUTO;
-  attr.global_pooling =
-      global_pooling;  // TODO(hong19860320) fix the order of kernel
-                       // when global_pooling=true in rknpu_ddk
+  // TODO(hong19860320) fix the order of kernel when global_pooling=true in
+  // rknpu_ddk
+  attr.global_pooling = false;
   attr.round_type = ceil_mode ? aml::nn::RoundType::ROUND_CEIL
                               : aml::nn::RoundType::ROUND_FLOOR;
   std::vector<std::shared_ptr<aml::nn::Tensor>> input_tensors = {input_tensor};

@@ -209,6 +209,8 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       dilations.data(), DDim({static_cast<int64_t>(dilations.size())}));
 
   // Fuse code operand
+  std::vector<std::string> activation_support_split_ops{"leaky_relu"};
+  bool conv_with_act_fusion = true;
   int32_t fuse_code_value = NNADAPTER_FUSED_NONE;
   if (act_type == "relu") {
     fuse_code_value = NNADAPTER_FUSED_RELU;
@@ -217,8 +219,16 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   } else if (act_type == "relu6") {
     fuse_code_value = NNADAPTER_FUSED_RELU6;
   } else if (!act_type.empty()) {
-    LOG(WARNING) << "Unsupported activation type: " << act_type;
-    return FAILED;
+    if (std::find(activation_support_split_ops.begin(),
+                  activation_support_split_ops.end(),
+                  act_type) == activation_support_split_ops.end()) {
+      LOG(WARNING) << "NNadapter doesn't supported activation type : "
+                   << act_type << " fusion!";
+      return FAILED;
+    }
+    VLOG(5) << "Split conv + " << act_type
+            << " fusion operator into two operators!";
+    conv_with_act_fusion = false;
   }
   auto fuse_code_operand = converter->AddInt32ConstantOperand(fuse_code_value);
 
@@ -231,7 +241,19 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     output_operand =
         converter->AddFloat32VariableOperand(output_dims, output_name);
   }
-
+  // Immediate operand for conv
+  NNAdapterOperand* immediate_operand = output_operand;
+  if (!conv_with_act_fusion) {
+    // TODO(csy0225): Quant scene needs to save the conv output's scale, because
+    // the act
+    // op's input needs it.
+    if (has_output_scale) {
+      LOG(WARNING) << "NNadapter conv + act fusion op which splits into two "
+                      "operators doesn't support quant scene!";
+      return FAILED;
+    }
+    immediate_operand = converter->AddFloat32VariableOperand(output_dims);
+  }
   // Conv2D operation
   std::vector<NNAdapterOperand*> input_operands = {input_operand,
                                                    filter_operand,
@@ -242,8 +264,21 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                                                    group_operand,
                                                    dilations_operand,
                                                    fuse_code_operand};
-  std::vector<NNAdapterOperand*> output_operands = {output_operand};
+  std::vector<NNAdapterOperand*> output_operands = {immediate_operand};
   converter->AddOperation(NNADAPTER_CONV_2D, &input_operands, &output_operands);
+  // Activation operation without fusion
+  if (!conv_with_act_fusion) {
+    std::vector<NNAdapterOperand*> activation_input_operands{immediate_operand};
+    std::vector<NNAdapterOperand*> activation_output_operands{output_operand};
+    if (act_type == "leaky_relu") {
+      auto alpha = op_info->GetAttr<float>("leaky_relu_alpha");
+      auto alpha_operand = converter->AddFloat32ConstantOperand(alpha);
+      activation_input_operands.push_back(alpha_operand);
+      converter->AddOperation(NNADAPTER_LEAKY_RELU,
+                              &activation_input_operands,
+                              &activation_output_operands);
+    }
+  }
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

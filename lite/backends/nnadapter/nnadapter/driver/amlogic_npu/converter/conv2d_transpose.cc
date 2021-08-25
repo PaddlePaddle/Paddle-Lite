@@ -45,15 +45,15 @@ int Program::ConvertConv2DTranspose(hal::Operation* operation) {
   attr.ksize[1] = filter_width;
   attr.stride[0] = stride_width;
   attr.stride[1] = stride_height;
-  attr.pad[0] = pad_height_top;
-  attr.pad[1] = pad_height_bottom;
-  attr.pad[2] = pad_width_left;
-  attr.pad[3] = pad_width_right;
+  attr.pad[0] = pad_width_left;
+  attr.pad[1] = pad_width_right;
+  attr.pad[2] = pad_height_top;
+  attr.pad[3] = pad_height_bottom;
   attr.group = group;
   attr.multiplier = 0;
   attr.weights = filter_channel_size;
-  attr.dilation[0] = dilation_height;
-  attr.dilation[1] = dilation_width;
+  attr.dilation[0] = dilation_width;
+  attr.dilation[1] = dilation_height;
   attr.pad_type = aml::nn::PadType::AUTO;
   // fuse RELU ?
   if (fuse_code != NNADAPTER_FUSED_NONE) {

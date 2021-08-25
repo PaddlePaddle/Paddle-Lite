@@ -61,9 +61,17 @@ function publish_inference_lib {
     if [ ${BUILD_OPENCL} = ON ]; then
       build_dir=build.lite.x86.opencl
     fi
-    if [ -d ${build_dir}/inference_lite_lib/cxx/lib ] && [ -d ${build_dir}/inference_lite_lib/python/install/dist ]; then
+    if [ -d ${build_dir}/inference_lite_lib/python/install/dist ]; then
       # test python installer
       cd ${build_dir}
+      cd inference_lite_lib/python/install/dist/
+
+      # Here is a temporary solution for pip bug on macOS,
+      # When compile a python module installer on mac whose system is higher than 11,
+      # the resulted installer can not be installed on current machine.
+      installer_name=$(ls)
+      macOS10_installer_name=$(ls | sed 's/11/10/g')
+      mv $installer_name $macOS10_installer_name && cd -
       python$python_version -m pip install --force-reinstall  inference_lite_lib/python/install/dist/*.whl
       # download test model
       prepare_model mobilenet_v1 $mobilenet_v1_url
