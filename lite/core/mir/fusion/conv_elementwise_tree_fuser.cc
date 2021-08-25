@@ -26,6 +26,7 @@ void ConvElementwiseTreeFuser::BuildPattern() {
   auto* conv_input =
       VarNode("conv_input")->assert_is_op_input(conv_type_, "Input")->AsInput();
   auto* conv_filter = VarNode("conv_filter")
+                          ->assert_is_persistable_var()
                           ->assert_is_op_input(conv_type_, "Filter")
                           ->AsInput();
   auto* elementwise_input = VarNode("elementwise_input")
@@ -35,7 +36,8 @@ void ConvElementwiseTreeFuser::BuildPattern() {
   // create intermediate nodes
   conv_output_ = VarNode("conv_output")
                      ->assert_is_op_output(conv_type_, "Output")
-                     ->assert_is_op_input(elementwise_type_, "Y");
+                     ->assert_is_op_input(elementwise_type_, "Y")
+                     ->assert_only_one_output();
 
   // create op nodes
   // The pass will not been applied if conv1x1 has already applied this pass.
@@ -79,13 +81,15 @@ void ConvElementwiseTreeFuser::BuildPattern() {
   // consider two special cases: conv with bias, conv with prelu alpha
   std::vector<PMNode*> conv_inputs{conv_input, conv_filter};
   if (conv_has_bias_) {
-    auto* conv_bias =
-        VarNode("conv_bias")->assert_is_op_input(conv_type_, "Bias");
+    auto* conv_bias = VarNode("conv_bias")
+                          ->assert_is_op_input(conv_type_, "Bias")
+                          ->assert_is_persistable_var();
     conv_inputs.push_back(conv_bias);
   }
   if (conv_has_prelu_alpha_) {
     auto* conv_alpha = VarNode("conv_alpha")
                            ->assert_is_op_input(conv_type_, "Prelu_alpha")
+                           ->assert_is_persistable_var()
                            ->AsInput();
     conv_inputs.push_back(conv_alpha);
   }
