@@ -77,3 +77,13 @@ using namespace metal;
 #undef N
 #undef R
 #undef V
+
+#define V VZ
+#define R 4
+#define N 4
+#define P ftype
+#include "Split.inc.metal"
+#undef P
+#undef N
+#undef R
+#undef V
