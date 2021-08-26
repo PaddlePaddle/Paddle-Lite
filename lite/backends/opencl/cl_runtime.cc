@@ -190,6 +190,16 @@ bool CLRuntime::CheckFromCache(const std::string& program_key) {
   }
 }
 
+static auto remove_file = [](const std::string& bin_file) {
+  if (remove(bin_file.c_str()) != 0) {
+    LOG(FATAL) << "Cannot delete invalid precomplied OpenCL binary[" << bin_file
+               << "]!";
+  } else {
+    LOG(INFO) << "Invalid precomplied OpenCL binary[" << bin_file
+              << "] has been deleted!";
+  }
+};
+
 bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
                                            const std::string& build_option) {
   bool ret = false;
@@ -199,15 +209,6 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
 
   // find binary
   std::string bin_file = path_name.at(0) + "/" + path_name.at(1);
-  auto remove_file = [](const std::string& bin_file) {
-    if (remove(bin_file.c_str()) != 0) {
-      LOG(FATAL) << "Cannot delete invalid precomplied OpenCL binary["
-                 << bin_file << "]!";
-    } else {
-      LOG(INFO) << "Invalid precomplied OpenCL binary[" << bin_file
-                << "] has been deleted!";
-    }
-  };
 
   if (programs_.empty()) {
     // Check whether binary exist.
@@ -412,15 +413,6 @@ void CLRuntime::SaveProgram() {
 
 void CLRuntime::SaveTuned() {
   if (tuned_path_name_.empty() || auto_tune() == lite_api::CL_TUNE_NONE) return;
-  auto remove_file = [](const std::string& bin_file) {
-    if (remove(bin_file.c_str()) != 0) {
-      LOG(FATAL) << "Cannot delete invalid precomplied OpenCL binary["
-                 << bin_file << "]!";
-    } else {
-      LOG(INFO) << "Invalid precomplied OpenCL binary[" << bin_file
-                << "] has been deleted!";
-    }
-  };
   std::string tuned_file =
       tuned_path_name_.at(0) + "/" + tuned_path_name_.at(1);
   if (IsFileExists(tuned_file) && del_tune_bin_flag_) {
