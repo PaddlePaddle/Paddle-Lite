@@ -77,6 +77,19 @@ limitations under the License. */
 
 
 // axis = 1
+#define DOConcat2InputAxis1                                            \
+  int boundary0 = input_shape0.y; /* C_blk0 */                         \
+  int boundary1 = boundary0 + input_shape1.y; /* C_blk0 + C_blk1 */    \
+  int2 input_pos;                                                      \
+  input_pos.y = nh_idx;                                                \
+  if (c_blk_idx < boundary0) {                                         \
+    input_pos.x = c_blk_idx * input_shape0.w + w_idx;                  \
+    result = READ_IMG_TYPE(CL_DTYPE_CHAR, input0, SAMPLER, input_pos); \
+  } else if (c_blk_idx < boundary1) {                                  \
+    input_pos.x = (c_blk_idx - boundary0) * input_shape1.w + w_idx;    \
+    result = READ_IMG_TYPE(CL_DTYPE_CHAR, input1, SAMPLER, input_pos); \
+  }
+
 #define DOConcat3InputAxis1                                            \
   DOConcat2InputAxis1;                                                 \
   int boundary2 = boundary1 + input_shape2.y;                          \
