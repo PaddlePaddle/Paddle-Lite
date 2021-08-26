@@ -285,7 +285,7 @@ void MLUPostprocessPass::InsertBefore(SSAGraph* graph,
                 head_node->AsArg().name,
                 cur_node->AsArg().name);
   // for subgraph op, modify the BlockDesc
-  auto sub_program_desc = dynamic_cast<paddle::lite::operators::SubgraphOp*>(
+  auto sub_program_desc = static_cast<paddle::lite::operators::SubgraphOp*>(
                               inst_node->AsStmt().op().get())
                               ->GetProgramDesc();
   CHECK(sub_program_desc);
@@ -451,7 +451,7 @@ void MLUPostprocessPass::InsertAfter(SSAGraph* graph,
                  tail_node->AsArg().name,
                  cur_node->AsArg().name);
   // for subgraph op, modify the BlockDesc
-  auto sub_program_desc = dynamic_cast<paddle::lite::operators::SubgraphOp*>(
+  auto sub_program_desc = static_cast<paddle::lite::operators::SubgraphOp*>(
                               inst_node->AsStmt().op().get())
                               ->GetProgramDesc();
   CHECK(sub_program_desc);
@@ -497,7 +497,7 @@ void MLUPostprocessPass::RecreateOp(Node* inst_node, SSAGraph* graph) {
 
 bool MLUPostprocessPass::IsFirstConvInSubgraph(Node* arg_node,
                                                Node* inst_node) {
-  auto sub_program_desc = dynamic_cast<paddle::lite::operators::SubgraphOp*>(
+  auto sub_program_desc = static_cast<paddle::lite::operators::SubgraphOp*>(
                               inst_node->AsStmt().op().get())
                               ->GetProgramDesc();
   CHECK(sub_program_desc);
@@ -768,7 +768,7 @@ void MLUPostprocessPass::AdjustSubgraph(Node* subgraph_node,
                                         const Type* subgraph_type) {
   CHECK_EQ(subgraph_node->AsStmt().op()->Type(), "subgraph");
   auto subgraph_op =
-      dynamic_cast<operators::SubgraphOp*>(subgraph_node->AsStmt().op().get());
+      static_cast<operators::SubgraphOp*>(subgraph_node->AsStmt().op().get());
   CHECK(subgraph_op);
   auto sub_program_desc = subgraph_op->GetProgramDesc();
   CHECK(sub_program_desc);

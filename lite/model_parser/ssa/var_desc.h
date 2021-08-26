@@ -20,8 +20,8 @@
 #include <utility>
 #include <vector>
 
-#include "lite/model_parser/general/block_desc.h"
-#include "lite/model_parser/general/var_desc.h"
+#include "lite/core/model/general/block_desc.h"
+#include "lite/core/model/general/var_desc.h"
 
 namespace paddle {
 namespace lite {

@@ -434,6 +434,10 @@ TEST(Conv2d, precision) {
   abs_error = 1e-2;
   // TODO(shentanyue): enable later
   return;
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kX86);
+  TestConvKsize(place, abs_error);
+  return;
 #else
   return;
 #endif

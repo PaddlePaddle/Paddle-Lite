@@ -20,7 +20,7 @@
 #include <utility>
 #include <vector>
 
-#include "lite/model_parser/general/block_desc.h"
+#include "lite/core/model/general/block_desc.h"
 #include "lite/model_parser/ssa/op_desc.h"
 #include "lite/model_parser/ssa/var_desc.h"
 
