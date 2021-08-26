@@ -14,7 +14,7 @@ if (WITH_MKL AND (NOT WITH_STATIC_MKL))
 endif ()
 
 if (PADDLE_WITH_XBYAK)
-  lite_cc_library (x86_cpu_info SRCS cpu_info.cc DEPS xbyak)
+  lite_cc_library (x86_cpu_info SRCS cpu_info.cc DEPS extern_xbyak)
 else ()
   lite_cc_library (x86_cpu_info SRCS cpu_info.cc)
 endif ()
