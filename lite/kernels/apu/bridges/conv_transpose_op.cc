@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include <vector>
-#include "lite/core/subgraph_bridge_registry.h"
+#include "lite/core/subgraph/subgraph_bridge_registry.h"
 #include "lite/kernels/apu/bridges/graph.h"
 #include "lite/kernels/apu/bridges/utility.h"
 

@@ -48,20 +48,19 @@ add_kernel(slice_metal_compute METAL basic SRCS image_op/slice_image_compute.mm 
 add_kernel(matmul_metal_compute METAL basic SRCS image_op/matmul_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(pad2d_metal_compute METAL basic SRCS image_op/pad2d_image_compute.mm DEPS metal_target_wrapper)
 
-
 if(LITE_WITH_METAL)
   add_library(METAL_BASE STATIC IMPORTED )
   set_target_properties(METAL_BASE PROPERTIES IMPORTED_LOCATION ${METAL_LIBRARY})
   
   lite_cc_test(test_batch_norm_metal_image_metal SRCS image_op/batch_norm_image_compute_test.mm
-          DEPS batch_norm_metal_image io_copy_metal_image op_registry program metal_target_wrapper ${METAL_BASE} ${tensor_lite} op_registry program context )
+          DEPS batch_norm_metal_image io_copy_metal_image metal_target_wrapper ${METAL_BASE} ${tensor_lite} core)
   
   lite_cc_test(test_activation_metal_image_metal SRCS image_op/activation_image_compute_test.mm
-          DEPS activation_metal_image io_copy_metal_image op_registry program metal_target_wrapper ${METAL_BASE} ${tensor_lite} op_registry program context )
+          DEPS activation_metal_image io_copy_metal_image metal_target_wrapper ${METAL_BASE} ${tensor_lite} core)
   
   lite_cc_test(test_pool_metal_image_metal SRCS image_op/pool_image_compute_test.mm
-          DEPS pool_metal_image io_copy_metal_image op_registry program metal_target_wrapper ${METAL_BASE} ${tensor_lite} op_registry program context )
+          DEPS pool_metal_image io_copy_metal_image metal_target_wrapper ${METAL_BASE} ${tensor_lite} core)
   
   lite_cc_test(test_dw_metal_image_metal SRCS image_op/conv2d_image_compute_test.mm
-          DEPS conv2d_metal_image io_copy_metal_image op_registry program metal_target_wrapper ${METAL_BASE} ${tensor_lite} op_registry program context )
+          DEPS conv2d_metal_image io_copy_metal_image metal_target_wrapper ${METAL_BASE} ${tensor_lite} core)
 endif()

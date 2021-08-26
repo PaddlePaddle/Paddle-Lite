@@ -19,8 +19,8 @@
 #include <vector>
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/kernel.h"
-#include "lite/core/subgraph_bridge_registry.h"
-#include "lite/core/subgraph_engine_base.h"
+#include "lite/core/subgraph/subgraph_bridge_registry.h"
+#include "lite/core/subgraph/subgraph_engine_base.h"
 
 namespace paddle {
 namespace lite {
