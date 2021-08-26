@@ -17,7 +17,7 @@
 #include <string>
 #include <vector>
 #include "flatbuffers/flatbuffers.h"
-#include "lite/model_parser/base/vector_view.h"
+#include "lite/core/model/base/vector_view.h"
 
 namespace paddle {
 namespace lite {
