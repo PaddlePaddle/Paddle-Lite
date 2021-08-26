@@ -101,7 +101,8 @@ class LITE_API OptBase {
   void DisplayKernelsInfo();        // Display kernel information
   // 3. Check if this model is supported
   void CheckIfModelSupported(bool print_ops_info = true);
-
+  void PrintAllSupportedOpsInMdformat();  // print all ops in markdown format to
+                                          // modify doc
  private:
   bool enable_fp16_{false};
   CxxConfig opt_config_;
