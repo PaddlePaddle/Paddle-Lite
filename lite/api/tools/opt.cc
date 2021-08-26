@@ -64,6 +64,9 @@ DEFINE_bool(print_supported_ops,
 DEFINE_bool(print_all_ops,
             false,
             "Print all the valid operators of Paddle-Lite");
+DEFINE_bool(print_all_ops_in_md_format,
+            false,
+            "Print all the valid operators of Paddle-Lite to modify docs");
 DEFINE_bool(print_model_ops, false, "Print operators in the input model");
 
 int main(int argc, char** argv) {
@@ -122,6 +125,10 @@ int main(int argc, char** argv) {
   }
   if (FLAGS_print_model_ops) {
     opt.CheckIfModelSupported(true);
+    return 0;
+  }
+  if (FLAGS_print_all_ops_in_md_format) {
+    opt.PrintAllSupportedOpsInMdformat();
     return 0;
   }
   if ((FLAGS_model_dir == "" &&
