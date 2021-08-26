@@ -2,10 +2,10 @@ if(NOT LITE_WITH_NNADAPTER)
   return()
 endif()
 
-lite_cc_library(subgraph_bridge_utility_nnadapter SRCS utility.cc DEPS tensor)
+lite_cc_library(subgraph_bridge_utility_nnadapter SRCS utility.cc DEPS core)
 lite_cc_library(subgraph_bridge_converter_nnadapter SRCS converter.cc DEPS nnadapter_wrapper subgraph_bridge_utility_nnadapter)
 
-set(nnadapter_subgraph_bridge_deps subgraph_bridge_registry subgraph_bridge_utility_nnadapter subgraph_bridge_converter_nnadapter)
+set(nnadapter_subgraph_bridge_deps core subgraph_bridge_utility_nnadapter subgraph_bridge_converter_nnadapter)
 
 lite_cc_library(subgraph_bridge_conv_op_nnadapter SRCS conv_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_unary_act_op_nnadapter SRCS unary_act_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
@@ -43,7 +43,7 @@ lite_cc_library(subgraph_bridge_range_op_nnadapter SRCS range_op.cc DEPS ${nnada
 lite_cc_library(subgraph_bridge_leaky_relu_op_nnadapter SRCS leaky_relu_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 
 set(nnadapter_subgraph_bridges
-        subgraph_bridge_registry
+        core
         subgraph_bridge_utility_nnadapter
         subgraph_bridge_converter_nnadapter
         subgraph_bridge_conv_op_nnadapter

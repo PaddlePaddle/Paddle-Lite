@@ -8,7 +8,7 @@ lite_cc_binary(lite_model_debug_tool SRCS model_debug_tool.cc
     cxx_api
     debug_utils
     target_wrapper_host
-    mir_passes
+    core
     gflags
     logging
     ${ops} ${host_kernels}

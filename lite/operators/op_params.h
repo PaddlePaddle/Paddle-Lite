@@ -19,10 +19,10 @@
 #include <vector>
 
 #include "lite/api/paddle_place.h"
+#include "lite/core/model/base/apis.h"
 #include "lite/core/scope.h"
 #include "lite/core/tensor.h"
 #include "lite/core/types.h"
-#include "lite/model_parser/base/apis.h"
 #include "lite/model_parser/cpp_desc.h"
 #include "lite/utils/all.h"
 /*
