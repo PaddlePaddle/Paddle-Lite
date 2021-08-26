@@ -549,11 +549,17 @@ void conv_depthwise_3x3s2_p1_direct(const float* din,
 
           //! process bottom pad
           if (j + 1 == col && right) {
-            __m128 out0 = _mm_loadu_ps(doutr0_ptr);
-            __m128 rmask_ro_ = _mm_loadu_ps(rmask_ro);
-            __m128 rmask_rm_ = _mm_loadu_ps(rmask_rm);            
+            for (int i = 0 ; i < 4 ; i++) {
+              if(rmask_ro[i] == 1) {
+                *(doutr0_ptr+i) = *((float*)(&r0)+i);
+              } 
+            }
+            continue;            
+            //__m128 out0 = _mm_loadu_ps(doutr0_ptr);
+            //__m128 rmask_ro_ = _mm_loadu_ps(rmask_ro);
+            //__m128 rmask_rm_ = _mm_loadu_ps(rmask_rm);            
 
-            r0 = _mm_add_ps(_mm_mul_ps(rmask_rm_, out0) , _mm_mul_ps(rmask_ro_, r0));
+            //r0 = _mm_add_ps(_mm_mul_ps(rmask_rm_, out0) , _mm_mul_ps(rmask_ro_, r0));
           }   
 
           _mm_storeu_ps(doutr0_ptr, r0); 
@@ -1201,13 +1207,20 @@ void conv_depthwise_3x3s1_p1_direct(const float* din,
 
           //! process bottom pad
           if (j + 1 == col && right) {
-            __m128 out0 = _mm_loadu_ps(doutr0);
-            __m128 out1 = _mm_loadu_ps(doutr1);
-            __m128 rmask_ro_ = _mm_loadu_ps(rmask_ro);
-            __m128 rmask_rm_ = _mm_loadu_ps(rmask_rm);            
+            for (int i = 0 ; i < 4 ; i++) {
+              if(rmask_ro[i] == 1) {
+                *(doutr0+i) = *((float*)(&r0)+i);
+                *(doutr1+i) = *((float*)(&r1)+i);                
+              } 
+            }
+            continue;             
+            //__m128 out0 = _mm_loadu_ps(doutr0);
+            //__m128 out1 = _mm_loadu_ps(doutr1);
+            //__m128 rmask_ro_ = _mm_loadu_ps(rmask_ro);
+            //__m128 rmask_rm_ = _mm_loadu_ps(rmask_rm);            
 
-            r0 = _mm_add_ps(_mm_mul_ps(rmask_rm_, out0) , _mm_mul_ps(rmask_ro_, r0));
-            r1 = _mm_add_ps(_mm_mul_ps(rmask_rm_, out1) , _mm_mul_ps(rmask_ro_, r1));            
+            //r0 = _mm_add_ps(_mm_mul_ps(rmask_rm_, out0) , _mm_mul_ps(rmask_ro_, r0));
+            //r1 = _mm_add_ps(_mm_mul_ps(rmask_rm_, out1) , _mm_mul_ps(rmask_ro_, r1));            
           }   
 
           _mm_storeu_ps(doutr0, r0);
