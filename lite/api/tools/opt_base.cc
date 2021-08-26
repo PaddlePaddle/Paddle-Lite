@@ -429,7 +429,7 @@ void OptBase::DisplayKernelsInfo() {  // Display kernel information
   OPT_LOG << ::paddle::lite::KernelRegistry::Global().DebugString();
 }
 void OptBase::PrintAllOps() {
-  // 1. Get supported ops on these targets
+  // 1. Get all supported ops
   std::set<std::string> valid_ops;
   for (size_t i = 0; i < supported_ops_target.size(); i++) {
     auto ops = supported_ops_target[i];
@@ -437,6 +437,83 @@ void OptBase::PrintAllOps() {
   }
   // 2. Print support info of these ops
   PrintOpsInfo(valid_ops);
+}
+
+void OptBase::PrintAllSupportedOpsInMdformat() {
+  // 1. Get all supported ops
+  std::set<std::string> valid_ops;
+  for (size_t i = 0; i < supported_ops_target.size(); i++) {
+    auto ops = supported_ops_target[i];
+    valid_ops.insert(ops.begin(), ops.end());
+  }
+  std::cout << "The number of supported operators is : " << supported_ops.size()
+            << "\n";
+  const std::vector<std::string> valid_targets = {"kHost",
+                                                  "kX86",
+                                                  "kCUDA",
+                                                  "kARM",
+                                                  "kOpenCL",
+                                                  "kFPGA",
+                                                  "kNPU",
+                                                  "kXPU",
+                                                  "kRKNPU",
+                                                  "kAPU",
+                                                  "kHuaweiAscendNPU",
+                                                  "kImaginationNNA",
+                                                  "kIntelFPGA",
+                                                  "kBM"};
+  const std::vector<std::string> readable_valid_targets = {"Host",
+                                                           "X86",
+                                                           "CUDA",
+                                                           "ARM",
+                                                           "OpenCL",
+                                                           "FPGA",
+                                                           "华为NPU",
+                                                           "百度XPU",
+                                                           "瑞芯微NPU",
+                                                           "联发科APU",
+                                                           "华为升腾NPU",
+                                                           "颖脉NNA",
+                                                           "英特尔FPGA",
+                                                           "比特大陆"};
+  // Print the first row: OP_nam taget1 target2 ...
+  std::cout << "| "
+            << "OP_name ";
+  for (size_t i = 0; i < readable_valid_targets.size(); i++) {
+    std::cout << "| " << readable_valid_targets[i] << " ";
+  }
+  std::cout << "\n";
+
+  // Print the second row
+  std::cout << "|-:|";
+  for (size_t i = 0; i < readable_valid_targets.size(); i++) {
+    std::cout << "-|"
+              << " ";
+  }
+  std::cout << "\n";
+
+  // Print the name of supported ops and mark if it's supported by each target
+  // print the support info of inputed ops: valid_ops
+  for (auto op = valid_ops.begin(); op != valid_ops.end(); op++) {
+    // Check: If this kernel doesn't match any operator, we will skip it.
+    if (supported_ops.find(*op) == supported_ops.end()) {
+      continue;
+    }
+    std::cout << "| " << *op << " ";
+    // Print OP info.
+    auto ops_valid_places = supported_ops.at(*op);
+    for (size_t i = 0; i < valid_targets.size(); i++) {
+      if (std::find(ops_valid_places.begin(),
+                    ops_valid_places.end(),
+                    valid_targets[i]) != ops_valid_places.end()) {
+        std::cout << "| "
+                  << "Y ";
+      } else {
+        std::cout << "|   ";
+      }
+    }
+    std::cout << "|\n";
+  }
 }
 
 void OptBase::PrintSupportedOps() {

@@ -53,6 +53,7 @@ execute_process(
     ${ops_src_list}
     ${subgraph_bridges_src_list}
     ${CMAKE_BINARY_DIR}/supported_kernel_op_info.h
+    ${LITE_BUILD_EXTRA}
     RESULT_VARIABLE result)
 #--------------------------------------------------------------------------------------------------
 

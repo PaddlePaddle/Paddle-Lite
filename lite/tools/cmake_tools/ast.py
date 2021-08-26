@@ -507,6 +507,7 @@ class RegisterLiteOpParser(SyntaxParser):
                     break
             else:
                 break
+        self.cur_pos = 0
         while self.cur_pos < len(self.str):
             start = self.str.find(self.KEYWORD, self.cur_pos)
             if start != -1:
