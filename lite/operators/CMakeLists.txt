@@ -232,7 +232,7 @@ add_operator(__xpu__dynamic_lstm_fuse_op extra SRCS __xpu__dynamic_lstm_fuse_op.
 # Only for FPGA
 add_operator(fpga_conv_op extra SRCS __fpga__conv_op.cc)
 
-add_library(ops STATIC ${OPS_SRC})
+#add_library(ops STATIC ${OPS_SRC})
 
 if (NOT LITE_WITH_X86)
     if(NOT LITE_WITH_ARM)
