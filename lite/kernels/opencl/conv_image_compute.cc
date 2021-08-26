@@ -825,6 +825,7 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
       kernel_num = 1;
     } else {
       kernel_num = 6;
+      kernel_func_paths_[0] = "image/conv2d_1x1_opt_kernel.cl";
     }
     for (size_t i = 0; i < kernel_num; i++) {
       if (i == 1) {
