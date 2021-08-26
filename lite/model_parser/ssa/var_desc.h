@@ -43,6 +43,7 @@ class VarDesc : public std::enable_shared_from_this<VarDesc> {
 
   VarDesc(int32_t block_idx, const general::VarDesc* raw_desc)
       : block_idx_{block_idx}, meta_{std::make_shared<MetaInfo>()} {
+    SetPersistable(*raw_desc);
     meta_->raw_desc =
         std::unique_ptr<const general::VarDesc,
                         std::function<void(const general::VarDesc*)>>(
@@ -51,6 +52,7 @@ class VarDesc : public std::enable_shared_from_this<VarDesc> {
 
   VarDesc(int32_t block_idx, general::VarDesc&& raw_desc)
       : block_idx_{block_idx}, meta_{std::make_shared<MetaInfo>()} {
+    SetPersistable(raw_desc);
     meta_->raw_desc =
         std::unique_ptr<const general::VarDesc,
                         std::function<void(const general::VarDesc*)>>(
@@ -93,6 +95,13 @@ class VarDesc : public std::enable_shared_from_this<VarDesc> {
 
   void ClearTargetOps() { targets_.clear(); }
 
+  void SetPersistable(const general::VarDesc& raw_desc) {
+    if (raw_desc.Persistable()) {
+      persistable_ = true;
+      mutable_ = false;
+    }
+  }
+
  private:
   struct MetaInfo {
     std::unique_ptr<const general::VarDesc,
@@ -103,6 +112,7 @@ class VarDesc : public std::enable_shared_from_this<VarDesc> {
   int32_t block_idx_{kInvalidIdx};
   std::shared_ptr<MetaInfo> meta_;
   bool mutable_{true};
+  bool persistable_{false};
   std::vector<OpDescBase const*> targets_;
   size_t count_{0};
 };
