@@ -31,6 +31,11 @@ class Converter {
   explicit Converter(NNAdapterModel* model) : model_(model) {}
   ~Converter() {}
 
+  void SetOperands(
+      std::map<std::string, std::vector<NNAdapterOperand*>>* operands) {
+    operands_ = operands;
+  }
+
   // NNAdapter operand
   bool HasOperand(const std::string& name);
   NNAdapterOperand* GetOperand(std::string name);
@@ -120,7 +125,7 @@ class Converter {
                                void* buffer = nullptr,
                                bool copy = true,
                                const std::string& name = "");
-  std::map<std::string, NNAdapterOperand*> operands_;
+  std::map<std::string, std::vector<NNAdapterOperand*>>* operands_;
   NNAdapterModel* model_{nullptr};
 };
 

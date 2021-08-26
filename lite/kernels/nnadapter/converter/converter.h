@@ -15,6 +15,7 @@
 #pragma once
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 #include "lite/kernels/nnadapter/engine.h"
@@ -34,14 +35,19 @@ class Converter {
   explicit Converter(NNAdapterModel* model) : model_(model) {}
   ~Converter() {}
 
+  std::map<std::string, std::vector<NNAdapterOperand*>>* GetOperands() {
+    return &operands_;
+  }
+
   // Convert a block_desc with tensors to a NNAdapter model
   int Apply(int block_idx,
-            const cpp::ProgramDesc* program_desc,
+            const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
             Scope* exec_scope,
             const std::vector<Variable>& input_vars,
             std::vector<Variable>* output_vars,
             std::vector<NNAdapterOperand*>* input_operands,
-            std::vector<NNAdapterOperand*>* output_operands);
+            std::vector<NNAdapterOperand*>* output_operands,
+            void* sub_converter);
 
   // Mapping a string name to a operand
   NNAdapterOperand* GetMappedOperand(const std::string& name);

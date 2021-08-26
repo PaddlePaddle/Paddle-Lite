@@ -141,13 +141,16 @@ bool Program::BuildAndCacheToFile(
   LOG(INFO) << "GetBoolFromEnv(NNADAPTER_ENABLE_CONVERTER)   " << enable;
   if (enable) {
     Converter converter(model_);
+    subgraph::nnadapter::Converter sub_converter(model_);
+    sub_converter.SetOperands(converter.GetOperands());
     if (converter.Apply(block_idx,
-                        program_desc.get(),
+                        program_desc,
                         exec_scope,
                         input_vars,
                         output_vars,
                         &input_operands,
-                        &output_operands) != NO_ERROR) {
+                        &output_operands,
+                        reinterpret_cast<void*>(&sub_converter)) != NO_ERROR) {
       return false;
     }
   } else {
