@@ -48,6 +48,7 @@ add_kernel(fetch_metal_image METAL basic SRCS image_op/fetch_image_compute.mm DE
 add_kernel(slice_metal_compute METAL basic SRCS image_op/slice_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(matmul_metal_compute METAL basic SRCS image_op/matmul_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(pad2d_metal_compute METAL basic SRCS image_op/pad2d_image_compute.mm DEPS metal_target_wrapper)
+add_kernel(shuffle_channel_metal_compute METAL basic SRCS image_op/shuffle_channel_image_compute.mm DEPS metal_target_wrapper)
 
 
 add_library(METAL_BASE STATIC IMPORTED )
