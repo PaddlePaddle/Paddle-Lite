@@ -11,7 +11,7 @@ lite_cc_binary(lite_model_debug_tool SRCS model_debug_tool.cc
     core
     gflags
     logging
-    ${ops} ${host_kernels}
+    ops ${host_kernels}
     X86_DEPS ${x86_kernels}
     ARM_DEPS ${arm_kernels}
     NPU_DEPS ${npu_kernels}
