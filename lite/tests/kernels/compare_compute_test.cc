@@ -163,16 +163,6 @@ void TestCompare(Place place,
                  std::vector<int64_t> x_dims,
                  std::vector<int64_t> y_dims,
                  int axis) {
-  if (typeid(T) == typeid(float)) {
-    place.precision = PRECISION(kFloat);
-  } else if (typeid(T) == typeid(int32_t)) {
-    place.precision = PRECISION(kInt32);
-  } else if (typeid(T) == typeid(int64_t)) {
-    place.precision = PRECISION(kInt64);
-  } else {
-    LOG(FATAL) << "unsupported dtype";
-  }
-
   std::unique_ptr<arena::TestCase> tester = nullptr;
   if (op == "equal") {
     tester = static_cast<std::unique_ptr<arena::TestCase>>(
