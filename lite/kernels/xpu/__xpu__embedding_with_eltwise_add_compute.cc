@@ -21,7 +21,7 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-bool CheckEmbeddingIds(int64_t* idx,
+bool CheckEmbeddingIds(const int64_t* idx,
                        size_t idx_len,
                        size_t table_len,
                        int64_t padding_idx) {
