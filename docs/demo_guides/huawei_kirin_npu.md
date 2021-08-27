@@ -22,16 +22,9 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 ### 已支持的Paddle模型
 
 #### 模型
-- [MobileNetV1](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224_fluid.tar.gz)
-- [MobileNetV2](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v2_fp32_224_fluid.tar.gz)
-- ResNet系列（例如[ResNet18](https://paddlelite-demo.bj.bcebos.com/models/resnet18_fp32_224_fluid.tar.gz)、[ResNet50](https://paddlelite-demo.bj.bcebos.com/models/resnet50_fp32_224_fluid.tar.gz)）
-- [SqueezeNetV1](https://paddlelite-demo.bj.bcebos.com/models/squeezenet_fp32_224_fluid.tar.gz)
-- [MnasNet](https://paddlelite-demo.bj.bcebos.com/models/mnasnet_fp32_224_fluid.tar.gz)
-- [SSD-MobileNetV1](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_pascalvoc_fp32_300_fluid.tar.gz) *
-- YOLOv3系列（例如[YOLOv3-MobileNetV3](https://paddlelite-demo.bj.bcebos.com/models/yolov3_mobilenet_v3_prune86_FPGM_320_fp32_fluid.tar.gz)） *
-- [Transformer](https://github.com/PaddlePaddle/models/tree/release/1.8/PaddleNLP/machine_translation/transformer) *
-- CycleGAN
-- 百度内部业务模型（由于涉密，不方便透露具体细节）
+- mobilenet_v1_fp32_224
+- resnet50_fp32_224
+- ssd_mobilenet_v1_relu_voc_fp32_300
 
 #### 性能
 - 测试环境
@@ -56,34 +49,24 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
       - NPU：Da Vinci架构，2 x Ascend Lite + 1 x Ascend Tiny
 
 - 测试方法
-  - warmup=10，repeats=30，统计平均时间，单位是ms
-  - 线程数为1，```DeviceInfo::Global().SetRunMode```设置LITE_POWER_HIGH
-  - 分类模型的输入图像维度是{1，3，224，224}，检测模型YOLOv3的维度是{1，3，300，300}
+  - warmup=1, repeats=5，统计平均时间，单位是ms
+  - 线程数为1，```paddle::lite_api::PowerMode CPU_POWER_MODE```设置为``` paddle::lite_api::PowerMode::LITE_POWER_HIGH ```
+  - 分类模型的输入图像维度是{1，3，224，224}，检测模型的维度是{1，3，300，300}
 
 - 测试结果
 
   |模型 |Kirin 810||Kirin 990||Kirin 990 5G||
   |---|---|---|---|---|---|---|
   |  |CPU(ms) | NPU(ms) |CPU(ms) | NPU(ms) |CPU(ms) | NPU(ms) |
-  |MobileNetV1|  40.6692|  5.54013|  31.7788|  2.87613|  33.7056|  2.56747|
-  |MobileNetV2|  28.8675|  6.07687|  22.0599|  3.29|  21.915|  3.0198|
-  |SqueezeNetV1|  24.3369|  4.2882|  17.2335|  2.64507|  16.441|  1.99127|
-  |MobileNetV3_small_x1_0|  8.56147|  5.73127|  6.1622|  3.6188|  6.161|  3.07933|
-  |MobileNetV3_large_x1_0|  24.2411|  8.8436|  17.6282|  5.17007| 17.7403|  4.46753|
-  |ResNet50|  243.362|  18.2089|  188.278|  9.52347|  195.01|  7.22413|
-  |ResNet18|  83.4019|  8.95044|  59.1979|  4.4132|  60.6379|  3.2484|
-  |MnasNet|  26.0265|  5.67727|  19.3513|  2.9928|  19.674|  2.70053|
-  |Inception-v4|  424.817|  29.7705|  321.639|  17.4933|  344.484|  12.3104|
-  |SSD-MobileNetV1*|  -|  -|  65.67|  18.21|  71.8|  16.6|
-  |YOLOv3-MobileNetV3*|  65.3149|  36.2999|  45.7647|  22.9404|  46.8137|  24.4829|
-
-带*表示该模型的部分算子不支持华为Kirin NPU加速，而是采用ARM CPU+华为Kirin NPU异构计算方式获得支持。
+  |mobilenet_v1_fp32_224|  38.358801|  5.903400|  30.234800|   3.352000|  31.567600|  2.992200|
+  |resnet50_fp32_224|  224.719998|  18.087400|  176.660199|  9.825800|  186.572998|  7.645400|
+  |ssd_mobilenet_v1_relu_voc_fp32_300|  80.059001|  30.157600|  63.044600|  22.901200|  68.458200|  21.399200|
 
 ### 已支持（或部分支持）NNAdapter的Paddle算子
 
 可以通过访问[https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/bridges/paddle_use_bridges.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/bridges/paddle_use_bridges.h)获得最新的算子支持列表。
 
-不经过NNAdapter标准算子转换，直接将Paddle算子转换成HiAI IR的方案可点击[链接](https://paddle-lite.readthedocs.io/zh/release-v2.9/demo_guides/huawei_kirin_npu.html)。
+**不经过NNAdapter标准算子转换，而是直接将Paddle算子转换成HiAI IR的方案可点击[链接](https://paddle-lite.readthedocs.io/zh/release-v2.9/demo_guides/huawei_kirin_npu.html)**。
 
 ## 参考示例演示
 
@@ -112,73 +95,57 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
           - labels
             - synset_words.txt # 1000分类label文件
           - models
-            - resnet50_fp32_224 # Paddle non-combined格式的resnet50 float32模型
-              - __model__ # Paddle fluid模型组网文件，可拖入https://lutzroeder.github.io/netron/进行可视化显示网络结构
-              - bn2a_branch1_mean # Paddle fluid模型参数文件
-              - bn2a_branch1_scale
+            - mobilenet_v1_fp32_224 # Paddle non-combined格式的mobilenet_v1 float32模型
+              - __model__ # Paddle fluid模型组网文件，可使用netron查看网络结构
+              - conv1_bn_mean # Paddle fluid模型参数文件
               - subgraph_partition_config_file.txt # 自定义子图分割配置文件
               ...
         - shell
           - CMakeLists.txt # 示例程序CMake脚本
-          - build.linux.amd64 # 已编译好的，适用于amd64
-            - image_classification_demo # 已编译好的，适用于amd64的示例程序
-          - build.linux.arm64 # 已编译好的，适用于arm64
+          - build.android.arm64-v8a # arm64-v8a编译工作目录
+            - image_classification_demo # 已编译好的，适用于amd64-v8a的示例程序
+          - build.android.armeabi-v7a # armeabi-v7a编译工作目录
             - image_classification_demo # 已编译好的，适用于arm64的示例程序
             ...
           ...
           - image_classification_demo.cc # 示例程序源码
           - build.sh # 示例程序编译脚本
-          - run.sh # 示例程序本地运行脚本
-          - run_with_ssh.sh # 示例程序ssh运行脚本
           - run_with_adb.sh # 示例程序adb运行脚本
       - libs
         - PaddleLite
           - android
             - arm64-v8a
-            - armeabi-v7a
-          - linux
-            - amd64
-              - include # PaddleLite头文件
-              - lib # PaddleLite库文件
-                - huawei_ascend_npu # 华为昇腾NPU NNAdapter API运行时库和Driver HAL库
-                	- libnnadapter.so # NNAdapter API运行时库
-                	- libnnadapter_driver_huawei_ascend_npu.so # 华为昇腾NPU NNAdapter driver HAL库
-                - libiomp5.so # Intel OpenMP库
-                - libmklml_intel.so # Intel MKL库
-                - libmklml_gnu.so # GNU MKL库
-                - libpaddle_full_api_shared.so # 预编译PaddleLite full api库
-                - libpaddle_light_api_shared.so # 预编译PaddleLite light api库
-            - arm64
               - include # PaddleLite头文件
               - lib
-            - armhf
-            	...
+                - huawei_kirin_npu
+                  - libnnadapter.so # NNAdapter API运行时库
+                  - libnnadapter_driver_huawei_kirin_npu.so # Kirin NPU Driver HAL库
+                  - libhiai.so # Kirin NPU HiAI DDK
+                  ...
+                - libpaddle_full_api_shared.so # 预编译PaddleLite full api库
+                - libpaddle_light_api_shared.so # 预编译PaddleLite light api库
+                - libc++_shared.so
+            - armeabi-v7a
+            	- include
+              - lib
+            ...
         - OpenCV # OpenCV预编译库
       - ssd_detection_demo # 基于ssd的目标检测示例程序
   ```
 
 - Android shell端的示例程序
-  - Android shell端示例程序用法：  
-
-    编译示例程序（image_classification_demo）
-    ```shell
-    ./build.sh android arm64-v8a
-    ```
-    运行示例程序（image_classification_demo）
-    ```shell
-    vim run_with_adb.sh 将line9的'#'删除，使能subgraph_partition_config_file.txt自定义子图分割配置文件
-    ./run_with_adb.sh mobilenet_v1_fp32_224 android arm64-v8a huawei_kirin_npu
-    ```
   - 按照以下命令分别运行转换后的ARM CPU模型和华为Kirin NPU模型，比较它们的性能和结果；
   ```shell
   1）由于HiAI的限制，需要root权限才能执行shell示例程序。
   2）run_with_adb.sh只能在连接设备的系统上运行，不能在docker环境执行（可能无法找到设备），也不能在设备上运行。
   3）build.sh需要在docker环境中执行，否则，需要将build.sh的ANDROID_NDK修改为当前环境下的NDK路径。
-  4）build.sh与run_with_adb.sh根据入参生成针对不同操作系统、体系结构的二进制程序并运行，需查阅注释信息配置正确的参数值。
+  4）build.sh根据入参生成针对不同操作系统、体系结构的二进制程序，需查阅注释信息配置正确的参数值。
+  5）run_with_adb.sh入参包括模型名称、操作系统、体系结构、目标设备、设备序列号等，需查阅注释信息配置正确的参数值。
+  6）对于需要使能自定义子图分割文件的模型，请注意将run_with_adb.sh中line12行首'#'删除。
 
   运行适用于ARM CPU的mobilenetv1模型
   $ cd PaddleLite-generic-demo/image_classification_demo/shell
-  $ ./run_with_adb.sh mobilenet_v1_fp32_224 android arm64-v8a huawei_kirin_npu
+  $ ./run_with_adb.sh mobilenet_v1_fp32_224 android arm64-v8a
     ...
   iter 0 cost: 30.349001 ms
   iter 1 cost: 30.517000 ms
@@ -196,6 +163,7 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 
   运行适用于华为Kirin NPU的mobilenetv1模型
   $ cd PaddleLite-generic-demo/image_classification_demo/shell
+  $ ./run_with_adb.sh mobilenet_v1_fp32_224 android arm64-v8a huawei_kirin_npu
     ...
   iter 0 cost: 3.503000 ms
   iter 1 cost: 3.406000 ms
@@ -212,6 +180,18 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
   Postprocess time: 0.099000 ms
   ```
   - 如果需要更改测试图片，可将图片拷贝到PaddleLite-generic-demo/image_classification_demo/assets/images目录下，然后调用convert_to_raw_image.py生成相应的RGB Raw图像，最后修改run_with_adb.sh的IMAGE_NAME变量即可；
+  - 重新编译示例程序：  
+  ```shell
+  注意：
+  1）请根据buid.sh配置正确的参数值。
+  2）需在docker环境中编译。
+
+  # 对于arm64-v8a
+  ./build.sh android arm64-v8a
+
+  # 对于armeabi-v7a
+  ./build.sh android armeabi-v7a
+  ```
 
 - 注意：opt生成的模型只是标记了华为Kirin NPU支持的Paddle算子，并没有真正生成华为Kirin NPU模型，只有在执行时才会将标记的Paddle算子转成HiAI IR并组网得到HiAI IRGraph，然后生成并执行华为Kirin NPU模型（具体原理请参考Pull Request[#2576](https://github.com/PaddlePaddle/Paddle-Lite/pull/2576)）；
 - 不同模型，不同型号（ROM版本）的华为手机，在执行阶段，由于某些Paddle算子无法完全转成HiAI IR，或目标手机的HiAI版本过低等原因，可能导致HiAI模型无法成功生成，在这种情况下，Paddle Lite会调用ARM CPU版算子进行运算完成整个预测任务。
@@ -233,7 +213,7 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
   - For armv8
     - tiny_publish编译
       ```shell
-      $ ./lite/tools/build_android.sh --android_stl=c++_shared --with_extra=ON --with_log=ON --with_nnadapter=ON --nnadapter_with_huawei_kirin_npu=ON --nnadapter_huawei_kirin_npu_sdk_root=/$(pwd)/hiai_ddk_lib_510
+      $ ./lite/tools/build_android.sh --android_stl=c++_shared --with_extra=ON --with_log=ON --with_nnadapter=ON --nnadapter_with_huawei_kirin_npu=ON --nnadapter_huawei_kirin_npu_sdk_root=$(pwd)/hiai_ddk_lib_510
       ```
 
     - full_publish编译
@@ -254,7 +234,7 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
   - For armv7
     - tiny_publish编译
       ```shell
-      $ ./lite/tools/build_android.sh --arch=armv7 --android_stl=c++_shared --with_extra=ON --with_log=ON --with_nnadapter=ON --nnadapter_with_huawei_kirin_npu=ON --nnadapter_huawei_kirin_npu_sdk_root=/$(pwd)/hiai_ddk_lib_330
+      $ ./lite/tools/build_android.sh --arch=armv7 --android_stl=c++_shared --with_extra=ON --with_log=ON --with_nnadapter=ON --nnadapter_with_huawei_kirin_npu=ON --nnadapter_huawei_kirin_npu_sdk_root=$(pwd)/hiai_ddk_lib_330
       ```
     
     - full_publish编译
@@ -272,7 +252,7 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
       $ cp -rf build.lite.android.armv8.gcc/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib
       ```
   
-      备注：<font color="red">由于HiAI DDK的so库均基于c++_shared构建，建议将android stl设置为c++_shared</font>，更多选项还可以通过 "./lite/tools/build_android.sh help" 查看。
+      备注：由于HiAI DDK的so库均基于c++_shared构建，建议将android stl设置为c++_shared，更多选项还可以通过 "./lite/tools/build_android.sh help" 查看。
 
 - 替换头文件后需要重新编译示例程序
 
@@ -301,12 +281,61 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
   - Kirin NPU HiAI 内部存在少量Bug，会导致HiAI模型生成失败或者错误的子图融合，最终导致模型推理失败或错误。
 - 实现原理
   - Subgraph detection pass在执行分割任务前，通过读取指定配置文件的方式获得禁用华为Kirin NPU的算子列表，实现人为干预分割结果的目的。
-- 具体步骤（以ssd_mobilenent_v1目标检测示例程序为例）
-  - 步骤1：查看ssd_mobilenent_v1的模型结构，具体是将PaddleLite-generic-demo/ssd_detection_demo/assets/models/ssd_mobilenet_v1_relu_voc_fp32_300目录下的__model__拖入[Netron页面](https://lutzroeder.github.io/netron/)即得到如下图所示的网络结构（部分）：
+- 具体步骤（以ssd_mobilenet_v1_relu_voc_fp32_300目标检测示例程序为例）
+  - 步骤1：查看ssd_mobilenet_v1_relu_voc_fp32_300的模型结构，具体是将PaddleLite-generic-demo/ssd_detection_demo/assets/models/ssd_mobilenet_v1_relu_voc_fp32_300目录下的__model__拖入[Netron页面](https://lutzroeder.github.io/netron/)即得到如下图所示的网络结构（部分）：
 
-    ![ssd_mobilenent_v1_netron](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/ssd_mobilenet_v1_relu_voc_fp32_300_netron.jpeg)
+    ![ssd_mobilenet_v1_relu_voc_fp32_300_netron](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/ssd_mobilenet_v1_relu_voc_fp32_300_netron.jpeg)
 
   - 步骤2：由于Kirin HiAI内部进行了错误的子图融合，本例中将强制设置两个transpose2算子运行在ARM CPU上。同时，查阅[算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/bridges/paddle_use_bridges.h)可知，Kirin NPU不支持flatten2、box_coder、multiclass_nums这三个算子。
+    ```shell
+    注意：
+    1. 在run_with_adb.sh line9，可看到'#SUBGRAPH_PARTITION_CONFIG_FILE=subgraph_partition_config_file.txt',
+    删除'#'即可使能自定义子图分割配置文件。
+    2. demo中包含了kernel优选的过程，将根据目标平台以及自定义子图分配配置文件筛选出在目标平台上运行的算子。
+
+    # 不使能自定义子图分割配置文件，Kirin NPU得出错误的预测结果
+    $ cd PaddleLite-generic-demo/ssd_detection_demo/shell
+    $ ./run_with_adb.sh ssd_mobilenet_v1_relu_voc_fp32_300 android arm64-v8a huawei_kirin_npu
+    ...
+    iter 0 cost: 14.114000 ms
+    iter 1 cost: 14.051000 ms
+    iter 2 cost: 13.990000 ms
+    iter 3 cost: 16.572001 ms
+    iter 4 cost: 16.872000 ms
+    warmup: 1 repeat: 5, average: 15.119800 ms, max: 16.872000 ms, min: 13.990000 ms
+    results: 200
+    ...
+    [110] aeroplane - 1.000000 0.806027,0.228254,0.987190,0.485760
+    [111] aeroplane - 1.000000 0.881030,0.244493,1.077540,0.411632
+    [112] bicycle - 1.000000 -0.062173,-0.070797,0.224258,0.255616
+    ...
+    [198] bicycle - 1.000000 0.656274,0.198462,0.854739,0.389812
+    [199] bicycle - 1.000000 0.704027,0.133047,0.802967,0.346298
+    Preprocess time: 1.038000 ms
+    Prediction time: 15.119800 ms
+    Postprocess time: 0.127000 ms
+
+    --------------------------------------------------------------------
+
+    # 使能自定义子图分割配置文件，Kirin NPU得出正确的预测结果
+    $ cd PaddleLite-generic-demo/ssd_detection_demo/shell
+    $ vim run_with_adb.sh 将line9行首'#'删除
+    $ ./run_with_adb.sh ssd_mobilenet_v1_relu_voc_fp32_300 android arm64-v8a huawei_kirin_npu
+    ...
+    iter 0 cost: 23.389999 ms
+    iter 1 cost: 23.167999 ms
+    iter 2 cost: 23.010000 ms
+    iter 3 cost: 23.030001 ms
+    iter 4 cost: 23.152000 ms
+    warmup: 1 repeat: 5, average: 23.150000 ms, max: 23.389999 ms, min: 23.010000 ms
+    results: 3
+    [0] bicycle - 0.998047 0.149730,0.234041,0.731353,0.802842
+    [1] car - 0.947266 0.600478,0.132399,0.900813,0.300571
+    [2] dog - 0.991211 0.166347,0.257502,0.434295,0.923455
+    Preprocess time: 1.078000 ms
+    Prediction time: 23.150000 ms
+    Postprocess time: 0.007000 ms
+    ```
 
   - 步骤3：如果直接使用opt工具生成华为Kirin NPU模型，会发现整个网络被分割成3个子图（即3个subgraph op），它们都将运行在华为Kirin NPU上；
 
@@ -398,34 +427,57 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
         op_type3                                        表示任意算子类型为op_type3的节点均被强制运行在ARM CPU上
       ```
         
-  - 步骤6：对于YOLOv3_MobileNetV3的模型，我们如何得到PaddleLite-generic-demo/ssd_detection_demo/assets/models/ssd_mobilenet_v1_relu_voc_fp32_300/subgraph_partition_config_file.txt的配置呢？
+  - 步骤6：对于ssd_mobilenet_v1_relu_voc_fp32_300的模型，我们如何得到PaddleLite-generic-demo/ssd_detection_demo/assets/models/ssd_mobilenet_v1_relu_voc_fp32_300/subgraph_partition_config_file.txt的配置呢？
     - 重新在Netron打开PaddleLite-generic-demo/ssd_detection_demo/assets/models/ssd_mobilenet_v1_relu_voc_fp32_300模型，以其中一个transpose2节点为例，点击改节点即可在右侧看到输入、输出张量信息:
 
       ![ssd_mobilenet_v1_relu_voc_fp32_300_find_custom_split_node_netron](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/ssd_mobilenet_v1_relu_voc_fp32_300_find_custom_split_node_netron.jpeg)
       
-    - 同时，在opt工具生成优化模型的日志中，也可以查到节点输入输出张量的准确信息。
+    - 同时，在opt工具生成优化模型的日志中，搜索『subgraph operators:』，也可以看到各个算子的详细信息
       
       ```shell
-      transpose2:conv2d_22.tmp_1:transpose_0.tmp_0,transpose_0.tmp_1
-      flatten2:transpose_0.tmp_0:flatten_0.tmp_0,flatten_0.tmp_1
-      conv2d:conv2d_23.w_0,batch_norm_22.tmp_3,conv2d_23.b_0:conv2d_23.tmp_1
-      transpose2:conv2d_23.tmp_1:transpose_1.tmp_0,transpose_1.tmp_1
-      flatten2:transpose_1.tmp_0:flatten_1.tmp_0,flatten_1.tmp_1
+      subgraph operators: 
+      feed:feed:image
+      conv2d:image,conv1_weights,conv1_bn_offset:batch_norm_0.tmp_3
+      depthwise_conv2d:batch_norm_0.tmp_3,conv2_1_dw_weights,conv2_1_dw_bn_offset:batch_norm_1.tmp_3
+      conv2d:batch_norm_1.tmp_3,conv2_1_sep_weights,conv2_1_sep_bn_offset:batch_norm_2.tmp_3
+      depthwise_conv2d:batch_norm_2.tmp_3,conv2_2_dw_weights,conv2_2_dw_bn_offset:batch_norm_3.tmp_3
+      conv2d:batch_norm_3.tmp_3,conv2_2_sep_weights,conv2_2_sep_bn_offset:batch_norm_4.tmp_3
+      depthwise_conv2d:batch_norm_4.tmp_3,conv3_1_dw_weights,conv3_1_dw_bn_offset:batch_norm_5.tmp_3
+      conv2d:batch_norm_5.tmp_3,conv3_1_sep_weights,conv3_1_sep_bn_offset:batch_norm_6.tmp_3
+      depthwise_conv2d:batch_norm_6.tmp_3,conv3_2_dw_weights,conv3_2_dw_bn_offset:batch_norm_7.tmp_3
+      conv2d:batch_norm_7.tmp_3,conv3_2_sep_weights,conv3_2_sep_bn_offset:batch_norm_8.tmp_3
+      depthwise_conv2d:batch_norm_8.tmp_3,conv4_1_dw_weights,conv4_1_dw_bn_offset:batch_norm_9.tmp_3
+      ...
+      ...
+      ...
       conv2d:conv2d_24.w_0,batch_norm_26.tmp_3,conv2d_24.b_0:conv2d_24.tmp_1
       transpose2:conv2d_24.tmp_1:transpose_2.tmp_0,transpose_2.tmp_1
       flatten2:transpose_2.tmp_0:flatten_2.tmp_0,flatten_2.tmp_1
-      conv2d:conv2d_25.w_0,batch_norm_26.tmp_3,conv2d_25.b_0:conv2d_25.tmp_1
-      transpose2:conv2d_25.tmp_1:transpose_3.tmp_0,transpose_3.tmp_1
-      flatten2:transpose_3.tmp_0:flatten_3.tmp_0,flatten_3.tmp_1
-      conv2d:conv2d_26.w_0,batch_norm_28.tmp_3,conv2d_26.b_0:conv2d_26.tmp_1
-      transpose2:conv2d_26.tmp_1:transpose_4.tmp_0,transpose_4.tmp_1
-      flatten2:transpose_4.tmp_0:flatten_4.tmp_0,flatten_4.tmp_1
-      conv2d:conv2d_27.w_0,batch_norm_28.tmp_3,conv2d_27.b_0:conv2d_27.tmp_1
-      conv2d:conv2d_28.w_0,batch_norm_30.tmp_3,conv2d_28.b_0:conv2d_28.tmp_1
+      conv2d:conv2d_23.w_0,batch_norm_22.tmp_3,conv2d_23.b_0:conv2d_23.tmp_1
+      transpose2:conv2d_23.tmp_1:transpose_1.tmp_0,transpose_1.tmp_1
+      flatten2:transpose_1.tmp_0:flatten_1.tmp_0,flatten_1.tmp_1
+      conv2d:conv2d_29.w_0,batch_norm_30.tmp_3,conv2d_29.b_0:conv2d_29.tmp_1
+      transpose2:conv2d_29.tmp_1:transpose_7.tmp_0,transpose_7.tmp_1
+      flatten2:transpose_7.tmp_0:flatten_7.tmp_0,flatten_7.tmp_1
+      conv2d:conv2d_33.w_0,batch_norm_34.tmp_3,conv2d_33.b_0:conv2d_33.tmp_1
+      transpose2:conv2d_33.tmp_1:transpose_11.tmp_0,transpose_11.tmp_1
+      flatten2:transpose_11.tmp_0:flatten_11.tmp_0,flatten_11.tmp_1
+      concat:flatten_1.tmp_0,flatten_3.tmp_0,flatten_5.tmp_0,flatten_7.tmp_0,flatten_9.tmp_0,flatten_11.tmp_0:concat_3.tmp_0
+      reshape2:concat_3.tmp_0:reshape2_1.tmp_0,reshape2_1.tmp_1
+      softmax:reshape2_1.tmp_0:softmax_0.tmp_0
+      transpose2:softmax_0.tmp_0:transpose_12.tmp_0,transpose_12.tmp_1
+      conv2d:conv2d_22.w_0,batch_norm_22.tmp_3,conv2d_22.b_0:conv2d_22.tmp_1
+      transpose2:conv2d_22.tmp_1:transpose_0.tmp_0,transpose_0.tmp_1
+      flatten2:transpose_0.tmp_0:flatten_0.tmp_0,flatten_0.tmp_1
       transpose2:conv2d_28.tmp_1:transpose_6.tmp_0,transpose_6.tmp_1
       flatten2:transpose_6.tmp_0:flatten_6.tmp_0,flatten_6.tmp_1
-      conv2d:conv2d_30.w_0,batch_norm_32.tmp_3,conv2d_30.b_0:conv2d_30.tmp_1
-      transpose2:conv2d_30.tmp_1:transpose_8.tmp_0,transpose_8.tmp_1
+      transpose2:conv2d_32.tmp_1:transpose_10.tmp_0,transpose_10.tmp_1
+      flatten2:transpose_10.tmp_0:flatten_10.tmp_0,flatten_10.tmp_1
+      concat:flatten_0.tmp_0,flatten_2.tmp_0,flatten_4.tmp_0,flatten_6.tmp_0,flatten_8.tmp_0,flatten_10.tmp_0:concat_2.tmp_0
+      reshape2:concat_2.tmp_0:reshape2_0.tmp_0,reshape2_0.tmp_1
+      box_coder:concat_0.tmp_0,concat_1.tmp_0,reshape2_0.tmp_0:box_coder_0.tmp_0
+      multiclass_nms:box_coder_0.tmp_0,transpose_12.tmp_0:save_infer_model/scale_0.tmp_0
+      fetch:save_infer_model/scale_0.tmp_0:fetch
       ```
 
     

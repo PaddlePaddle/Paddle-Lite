@@ -20,8 +20,9 @@ Paddle Lite已支持Rockchip NPU的预测部署。
 ### 已支持的Paddle模型
 
 #### 模型
-- [MobileNetV1-int8全量化模型](https://paddlelite-demo.bj.bcebos.com/devices/rockchip/mobilenet_v1_int8_224_fluid.tar.gz)
-- [ResNet50-int8全量化模型](https://paddlelite-demo.bj.bcebos.com/devices/rockchip/resnet50_int8_224_fluid.tar.gz)
+- mobilenet_v1_int8_224_per_layer
+- resnet50_int8_224_per_layer
+- ssd_mobilenet_v1_relu_voc_int8_300_per_layer
 
 #### 性能
 - 测试环境
@@ -38,22 +39,23 @@ Paddle Lite已支持Rockchip NPU的预测部署。
       - NPU：1.2Tops，support INT8/ INT16
 
 - 测试方法
-  - warmup=10, repeats=30，统计平均时间，单位是ms
-  - 线程数为1，```DeviceInfo::Global().SetRunMode```设置LITE_POWER_HIGH
-  - 分类模型的输入图像维度是{1, 3, 224, 224}
+  - warmup=1, repeats=5，统计平均时间，单位是ms
+  - 线程数为1，```paddle::lite_api::PowerMode CPU_POWER_MODE```设置为``` paddle::lite_api::PowerMode::LITE_POWER_HIGH ```
+  - 分类模型的输入图像维度是{1，3，224，224}，检测模型的维度是{1，3，300，300}
 
 - 测试结果
 
   |模型 |RK1808EVB||TB-RK1808S0 AI计算棒||RV1109EVB||
   |---|---|---|---|---|---|---|
   |  |CPU(ms) | NPU(ms) |CPU(ms) | NPU(ms) |CPU(ms) | NPU(ms) |
-  |MobileNetV1-int8|  266.623505|  6.139|  359.007996|  9.4335|  335.03993|  6.6995|
-  |ResNet50-int8|  1488.346999|  18.19899|  1983.601501|  23.5935|  1960.27252|  29.8895|
+  |mobilenet_v1_int8_224_per_layer|  266.965796|  6.982800|  357.467200|  9.330400|  331.796204|  7.494000|
+  |resnet50_int8_224_per_layer|  1503.052393|  19.387600|  2016.901196|  22.655600|  1959.528223|  30.797000|
+  |ssd_mobilenet_v1_relu_voc_int8_300_per_layer|  545.154004|  15.315800|  731.145203|  19.800800|  696.48919|  14.957600|
 
 ### 已支持（或部分支持）NNAdapter的Paddle算子
 可以通过访问[https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/bridges/paddle_use_bridges.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/bridges/paddle_use_bridges.h)获得最新的算子支持列表。
 
-不经过NNAdapter标准算子转换，直接将Paddle算子转换成HiAI IR的方案可点击[链接](https://paddle-lite.readthedocs.io/zh/release-v2.9/demo_guides/rockchip_npu.html)。
+**不经过NNAdapter标准算子转换，而是直接将Paddle算子转换成HiAI IR的方案可点击[链接](https://paddle-lite.readthedocs.io/zh/release-v2.9/demo_guides/rockchip_npu.html)**。
 
 ## 参考示例演示
 
@@ -131,19 +133,18 @@ Paddle Lite已支持Rockchip NPU的预测部署。
           - labels
             - synset_words.txt # 1000分类label文件
           - models
-            - resnet50_fp32_224 # Paddle non-combined格式的resnet50 float32模型
-              - __model__ # Paddle fluid模型组网文件，可拖入https://lutzroeder.github.io/netron/进行可视化显示网络结构
-              - bn2a_branch1_mean # Paddle fluid模型参数文件
-              - bn2a_branch1_scale
-              - subgraph_partition_config_file.txt # 自定义子图分割配置文件
+            - mobilenet_v1_int8_224_per_layer
+              - __model__ # Paddle fluid模型组网文件，可使用netron查看网络结构
+              — conv1_weights # Paddle fluid模型参数文件
+              - batch_norm_0.tmp_2.quant_dequant.scale # Paddle fluid模型量化参数文件
+              — subgraph_partition_config_file.txt # 自定义子图分割配置文件
               ...
         - shell
           - CMakeLists.txt # 示例程序CMake脚本
-          - build.linux.amd64 # 已编译好的，适用于amd64
-            - image_classification_demo # 已编译好的，适用于amd64的示例程序
-          - build.linux.arm64 # 已编译好的，适用于arm64
+          - build.linux.arm64 # arm64编译工作目录
             - image_classification_demo # 已编译好的，适用于arm64的示例程序
-            ...
+          - build.linux.armhf # armhf编译工作目录
+            - image_classification_demo # 已编译好的，适用于armhf的示例程序
           ...
           - image_classification_demo.cc # 示例程序源码
           - build.sh # 示例程序编译脚本
@@ -152,49 +153,50 @@ Paddle Lite已支持Rockchip NPU的预测部署。
           - run_with_adb.sh # 示例程序adb运行脚本
       - libs
         - PaddleLite
-          - android
-            - arm64-v8a
-            - armeabi-v7a
           - linux
-            - amd64
-              - include # PaddleLite头文件
-              - lib # PaddleLite库文件
-                - huawei_ascend_npu # 华为昇腾NPU NNAdapter API运行时库和Driver HAL库
-                	- libnnadapter.so # NNAdapter API运行时库
-                	- libnnadapter_driver_huawei_ascend_npu.so # 华为昇腾NPU NNAdapter driver HAL库
-                - libiomp5.so # Intel OpenMP库
-                - libmklml_intel.so # Intel MKL库
-                - libmklml_gnu.so # GNU MKL库
-                - libpaddle_full_api_shared.so # 预编译PaddleLite full api库
-                - libpaddle_light_api_shared.so # 预编译PaddleLite light api库
             - arm64
               - include # PaddleLite头文件
-              - lib
+              - lib # PaddleLite库文件
+                - rockchip_npu # Rockchip NPU NNAdapter API运行时库、Driver HAL库、DDK
+                	- libnnadapter.so # NNAdapter API运行时库
+                	- libnnadapter_driver_rockchip_npu.so # Rockchip NPU NNAdapter Driver HAL库
+                  - librknpu_ddk.so # Rockchip NPU DDK
+                  - libGAL.so # 芯原DDK
+                  - libVSC.so # 芯原DDK
+                  - libOpenVX.so # 芯原DDK
+                  - libgomp.so.1 # gnuomp库
+                - libpaddle_full_api_shared.so # 预编译PaddleLite full api库
+                - libpaddle_light_api_shared.so # 预编译PaddleLite light api库
             - armhf
-            	...
+              - include # PaddleLite头文件
+              - lib
+                - rockchip_npu # Rockchip NPU NNAdapter API运行时库和Driver HAL库
+                  - libnnadapter.so
+                  - libnnadapter_driver_rockchip_npu.so
+                  - librknpu_ddk.so
+                  - libGAL.so
+                  - libVSC.so
+                  - libOpenVX.so
+                  ...
+            	  - libpaddle_full_api_shared.so # 预编译PaddleLite full api库
+                - libpaddle_light_api_shared.so # 预编译PaddleLite light api库
+            ...
+          - android
         - OpenCV # OpenCV预编译库
       - ssd_detection_demo # 基于ssd的目标检测示例程序
   ```
-
-- Android shell端示例程序用法（以RK1808 EVB为例）：  
-
-  编译示例程序（image_classification_demo）
-  ```shell
-  ./build.sh android arm64
-  ```
-  运行示例程序（image_classification_demo）
-  ```shell
-  ./run_with_adb.sh mobilenet_v1_int8_224_per_layer linux arm64 cpu a133d8abb26137b2
 
 - 按照以下命令分别运行转换后的ARM CPU模型和Rockchip NPU模型，比较它们的性能和结果；
 
   ```shell
   注意：
-  1）run_with_adb.sh不能在docker环境执行，否则可能无法找到设备，也不能在设备上运行；
+  1）run_with_adb.sh不能在docker环境执行，否则可能无法找到设备，也不能在设备上运行。
   2）run_with_ssh.sh不能在设备上运行，且执行前需要配置目标设备的IP地址、SSH账号和密码。
-  3）build.sh与run_with_adb.sh、run_with_ssh.sh根据入参生成针对不同操作系统、体系结构的二进制程序并运行，需查阅注释信息配置正确的参数值。
+  3）build.sh根据入参生成针对不同操作系统、体系结构的二进制程序，需查阅注释信息配置正确的参数值。
+  4）run_with_adb.sh入参包括模型名称、操作系统、体系结构、目标设备、设备序列号等，需查阅注释信息配置正确的参数值。
+  5）run_with_ssh.sh入参包括模型名称、操作系统、体系结构、目标设备、ip地址、用户名、用户密码等，需查阅注释信息配置正确的参数值。
 
-  运行适用于ARM CPU的mobilenet_v1_int8_224_per_layer全量化模型
+  在ARM CPU上运行mobilenet_v1_int8_224_per_layer全量化模型
   $ cd PaddleLite-generic-demo/image_classification_demo/shell
 
   For RK1808 EVB
@@ -222,7 +224,7 @@ Paddle Lite已支持Rockchip NPU的预测部署。
     Postprocess time: 0.554000 ms
 
   For TB-RK1808S0 AI计算棒
-  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer linux arm64
+  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer linux arm64 cpu 192.168.180.8 22 toybrick toybrick
     (TB-RK1808S0 AI计算棒)
     warmup: 1 repeat: 5, average: 357.467200 ms, max: 358.815002 ms, min: 356.808014 ms
     results: 3
@@ -233,7 +235,9 @@ Paddle Lite已支持Rockchip NPU的预测部署。
     Prediction time: 357.467200 ms
     Postprocess time: 0.596000 ms
 
-  运行适用于Rockchip NPU的mobilenet_v1_int8_224_per_layer全量化模型
+  ------------------------------
+
+  在Rockchip NPU上运行mobilenet_v1_int8_224_per_layer全量化模型
   $ cd PaddleLite-generic-demo/image_classification_demo/shell
 
   For RK1808 EVB
@@ -261,7 +265,7 @@ Paddle Lite已支持Rockchip NPU的预测部署。
     Postprocess time: 0.577000 ms
 
   For TB-RK1808S0 AI计算棒
-  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer linux arm64 rockchip_npu
+  $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer linux arm64 rockchip_npu 192.168.180.8 22 toybrick toybrick
     (TB-RK1808S0 AI计算棒)
     warmup: 1 repeat: 5, average: 9.330400 ms, max: 9.753000 ms, min: 8.421000 ms
     results: 3
@@ -274,6 +278,18 @@ Paddle Lite已支持Rockchip NPU的预测部署。
   ```
 
 - 如果需要更改测试图片，可将图片拷贝到PaddleLite-generic-demo/image_classification_demo/assets/images目录下，然后调用convert_to_raw_image.py生成相应的RGB Raw图像，最后修改run_with_adb.sh、run_with_ssh.sh的IMAGE_NAME变量即可；
+- 重新编译示例程序：  
+  ```shell
+  注意：
+  1）请根据buid.sh配置正确的参数值。
+  2）需在docker环境中编译。
+
+  # 对于RK1808EVB, TB-RK1808S0
+  ./build.sh linux arm64
+
+  # 对于RK1806EVB, RV1109/1126 EVB
+  ./build.sh linux armhf
+  ```
 
 ### 更新支持Rockchip NPU的Paddle Lite库
 
@@ -323,12 +339,12 @@ Paddle Lite已支持Rockchip NPU的预测部署。
     - 替换头文件和库
       ```shell
       # 替换 include 目录：
-      $ cp -rf build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/include/
+      $ cp -rf build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/include/
       # 替换 NNAdapter相关so：
-      $ cp -rf build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libnnadapter* PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/rockchip_npu/
+      $ cp -rf build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.nnadapter/cxx/lib/libnnadapter* PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/rockchip_npu/
       # 替换 libpaddle_full_api_shared.so或libpaddle_light_api_shared.so
-      $ cp -rf build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/
-      $ cp -rf build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/
+      $ cp -rf build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/
+      $ cp -rf build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/
       ```
   
 - 替换头文件后需要重新编译示例程序
