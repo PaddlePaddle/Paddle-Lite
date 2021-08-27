@@ -1659,6 +1659,30 @@ struct MatMulParam : ParamBase {
   }
 };
 
+/// ----------------------- bmm operators ----------------------
+struct BmmParam : ParamBase {
+  const lite::Tensor* X{};
+  const lite::Tensor* Y{};
+  lite::Tensor* Out{};
+  WITH_INT8_CONFIG
+
+  // get a vector of input tensors
+  const std::vector<const Tensor*>* input_tensor_ptrs() override {
+    if (!input_tensor_ptrs_cache_) {
+      input_tensor_ptrs_cache_.reset(new std::vector<const Tensor*>({X, Y}));
+    }
+    return input_tensor_ptrs_cache_.get();
+  }
+
+  // get a vector of output tensors
+  std::vector<Tensor*>* output_tensor_ptrs() override {
+    if (!output_tensor_ptrs_cache_) {
+      output_tensor_ptrs_cache_.reset(new std::vector<lite::Tensor*>({Out}));
+    }
+    return output_tensor_ptrs_cache_.get();
+  }
+};
+
 struct GatherNdParam : ParamBase {
   const lite::Tensor* x{nullptr};
   const lite::Tensor* index{nullptr};
