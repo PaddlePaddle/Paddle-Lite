@@ -28,7 +28,10 @@ namespace nnadapter {
 
 class Converter {
  public:
-  explicit Converter(NNAdapterModel* model) : model_(model) {}
+  explicit Converter(
+      NNAdapterModel* model,
+      std::map<std::string, std::vector<NNAdapterOperand*>>* operands = nullptr)
+      : model_(model), operands_(operands) {}
   ~Converter() {}
 
   void SetOperands(
@@ -125,8 +128,8 @@ class Converter {
                                void* buffer = nullptr,
                                bool copy = true,
                                const std::string& name = "");
-  std::map<std::string, std::vector<NNAdapterOperand*>>* operands_;
   NNAdapterModel* model_{nullptr};
+  std::map<std::string, std::vector<NNAdapterOperand*>>* operands_;
 };
 
 }  // namespace nnadapter

@@ -36,8 +36,7 @@ int Converter::Apply(
     const std::vector<Variable>& input_vars,
     std::vector<Variable>* output_vars,
     std::vector<NNAdapterOperand*>* input_operands,
-    std::vector<NNAdapterOperand*>* output_operands,
-    void* sub_converter) {
+    std::vector<NNAdapterOperand*>* output_operands) {
   CHECK(program_desc.get());
   CHECK(exec_scope);
   auto block_size = program_desc->BlocksSize();
@@ -129,7 +128,9 @@ int Converter::Apply(
     if (bridges.Exists(op_type, TARGET(kNNAdapter))) {
       auto kernel = inst.kernel();
       CHECK(bridges.Select(op_type, TARGET(kNNAdapter))(
-          sub_converter, op, const_cast<KernelBase*>(kernel)));
+          reinterpret_cast<void*>(&sub_converter),
+          op,
+          const_cast<KernelBase*>(kernel)));
       continue;
     }
     LOG(FATAL) << "Unsupported type '" << op_type << "' in block " << block_idx;
@@ -298,7 +299,8 @@ NNAdapterOperand* Converter::AddOutputOperand(
                     false);
 }
 
-NNAdapterOperandType* Converter::GetOperandType(NNAdapterOperand* operand) {
+const NNAdapterOperandType* Converter::GetOperandType(
+    NNAdapterOperand* operand) {
   NNAdapterOperandType* type = nullptr;
   NNAdapterModel_getOperandType_invoke(operand, &type);
   CHECK(type);

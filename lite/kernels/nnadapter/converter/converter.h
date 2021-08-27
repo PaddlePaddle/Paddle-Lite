@@ -18,6 +18,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "lite/kernels/nnadapter/bridges/converter.h"
 #include "lite/kernels/nnadapter/engine.h"
 #include "lite/kernels/nnadapter/utility.h"
 
@@ -32,7 +33,9 @@ const int UNSUPPORTED_FEATURE = 2;
 
 class Converter {
  public:
-  explicit Converter(NNAdapterModel* model) : model_(model) {}
+  explicit Converter(NNAdapterModel* model) : model_(model) {
+    sub_converter = subgraph::nnadapter::Converter(model_, &operands_);
+  }
   ~Converter() {}
 
   std::map<std::string, std::vector<NNAdapterOperand*>>* GetOperands() {
@@ -46,8 +49,7 @@ class Converter {
             const std::vector<Variable>& input_vars,
             std::vector<Variable>* output_vars,
             std::vector<NNAdapterOperand*>* input_operands,
-            std::vector<NNAdapterOperand*>* output_operands,
-            void* sub_converter);
+            std::vector<NNAdapterOperand*>* output_operands);
 
   // Mapping a string name to a operand
   NNAdapterOperand* GetMappedOperand(const std::string& name);
@@ -146,7 +148,7 @@ class Converter {
       uint32_t quant_channel_dim = 0);
   // Get the type of a operand, which includes precision, dimension and
   // quantization parameters
-  NNAdapterOperandType* GetOperandType(NNAdapterOperand* operand);
+  const NNAdapterOperandType* GetOperandType(NNAdapterOperand* operand);
   // Add a operation with input and output operands
   NNAdapterOperation* AddOperation(
       NNAdapterOperationType type,
@@ -175,6 +177,7 @@ class Converter {
                        bool copy = true);
   NNAdapterModel* model_{nullptr};
   std::map<std::string, std::vector<NNAdapterOperand*>> operands_;
+  subgraph::nnadapter::Converter sub_converter{model_};
 };
 
 }  // namespace nnadapter

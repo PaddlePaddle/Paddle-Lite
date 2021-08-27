@@ -138,16 +138,13 @@ bool Program::BuildAndCacheToFile(
   int result = NNAdapterModel_create_invoke(&model_);
   std::vector<NNAdapterOperand *> input_operands, output_operands;
   Converter converter(model_);
-  subgraph::nnadapter::Converter sub_converter(model_);
-  sub_converter.SetOperands(converter.GetOperands());
   if (converter.Apply(block_idx,
                       program_desc,
                       exec_scope,
                       input_vars,
                       output_vars,
                       &input_operands,
-                      &output_operands,
-                      reinterpret_cast<void*>(&sub_converter)) != NO_ERROR) {
+                      &output_operands) != NO_ERROR) {
     return false;
   }
   NNAdapterModel_identifyInputsAndOutputs_invoke(model_,
