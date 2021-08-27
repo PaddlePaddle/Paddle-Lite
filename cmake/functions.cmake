@@ -48,8 +48,6 @@ file(WRITE ${fake_kernels_src_list} "") # clean
 
 # add a kernel for some specific device
 set(IS_FAKED_KERNEL false)
-add_library(kernels STATIC "${CMAKE_SOURCE_DIR}/lite/kernels/host/feed_compute.cc" "${CMAKE_SOURCE_DIR}/lite/kernels/host/fetch_compute.cc")
-add_dependencies(kernels utils)
 # device: one of (Host, ARM, X86, NPU, MLU, HUAWEI_ASCEND_NPU, APU, FPGA, OPENCL, CUDA, BM, RKNPU IMAGINATION_NNA)
 # level: one of (basic, extra)
 function(add_kernel TARGET device level)
@@ -96,7 +94,6 @@ function(add_kernel TARGET device level)
     foreach(src ${args_SRCS})
         file(APPEND ${kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
         set(KERNELS_SRC ${KERNELS_SRC} "${CMAKE_CURRENT_SOURCE_DIR}/${src}" CACHE INTERNAL "kernels source")
-        target_sources(kernels PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/${src}")
         set(__lite_cc_files ${__lite_cc_files} "${CMAKE_CURRENT_SOURCE_DIR}/${src}" CACHE INTERNAL "")
     endforeach()
 
