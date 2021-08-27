@@ -70,6 +70,31 @@ class MatMulCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
   virtual ~MatMulCompute() = default;
 };
 
+template <typename T>
+class BmmCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::BmmParam;
+
+  void Run() override {
+    auto &context = ctx_->As<X86Context>();
+    auto &param = *param_.get_mutable<operators::BmmParam>();
+
+    auto *x = param.X;
+    auto *y = param.Y;
+    auto *out = param.Out;
+    out->template mutable_data<T>();
+
+    auto blas = lite::x86::math::GetBlas<lite::TargetType::kX86, T>(context);
+    auto mat_dim_a = lite::x86::math::CreateMatrixDescriptor(
+        RowMatrixFromVector(x->dims()), 0, false);
+    auto mat_dim_b = lite::x86::math::CreateMatrixDescriptor(
+        ColumnMatrixFromVector(y->dims()), 0, false);
+    blas.MatMul(*x, mat_dim_a, *y, mat_dim_b, 1.0, out, T(0));
+  }
+
+  virtual ~BmmCompute() = default;
+};
+
 }  // namespace x86
 }  // namespace kernels
 }  // namespace lite

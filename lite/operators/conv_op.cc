@@ -63,16 +63,21 @@ void UpdatePaddingAndDilation(std::vector<int>* paddings,
     for (size_t i = 0; i < strides.size(); ++i) {
       int out_size = (data_dims[i + 2] + strides[i] - 1) / strides[i];
       int pad_sum = (std::max)(
-          (out_size - 1) * strides[i] + ksize[i + 2] - data_dims[i + 2],
+          out_size * strides[i] + ksize[i + 2] - 1 - data_dims[i + 2],
           (int64_t)0);
-      int pad_0 = pad_sum / 2;
-      int pad_1 = pad_sum - pad_0;
-      // pad
-      *(paddings->begin() + i * 2) = pad_0;
-      *(paddings->begin() + i * 2 + 1) = pad_1;
+      if (strides[i] == 1) {
+        int pad_0 = pad_sum / 2;
+        int pad_1 = pad_sum - pad_0;
+        *(paddings->begin() + i * 2) = pad_0;
+        *(paddings->begin() + i * 2 + 1) = pad_1;
+      } else {
+        *(paddings->begin() + i * 2 + 1) =
+            pad_sum - *(paddings->begin() + i * 2);
+      }
       // dilation
       *(dilations->begin() + i) = 1;
     }
+
   } else if (padding_algorithm == "VALID") {
     for (auto& it : *paddings) {
       it = 0;
