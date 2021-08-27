@@ -145,12 +145,17 @@ void RunModel(std::string model_dir,
   //  second, [convert and use opencl nb
   //    model](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/docs/user_guides/opt/opt_bin.md).
 
-  bool is_opencl_backend_valid =
-      ::IsOpenCLBackendValid(false /*check_fp16_valid = false*/);
+  bool is_opencl_backend_valid = false;
+  try {
+    is_opencl_backend_valid =
+        ::IsOpenCLBackendValid(false /*check_fp16_valid = false*/);
+  } catch (...) {
+    std::cerr << "Paddle-Lite Exception Happened on OpenCL Valid Check!"
+              << std::endl;
+    // Fall back to cpu model
+  }
   std::cout << "is_opencl_backend_valid:" << is_opencl_backend_valid
             << std::endl;
-  //  Uncomment code below to enable OpenCL
-  /*
   if (is_opencl_backend_valid) {
     // Set opencl kernel binary.
     // Large addtitional prepare time is cost due to algorithm selecting and
@@ -182,11 +187,9 @@ void RunModel(std::string model_dir,
     config.set_opencl_precision(CL_PRECISION_FP32);
   } else {
     std::cout << "Unsupport opencl nb model." << std::endl;
-    exit(1);
     // you can give backup cpu nb model instead
     // config.set_model_from_file(cpu_nb_model_dir);
   }
-  */
 
   // 2. Create PaddlePredictor by MobileConfig
   std::shared_ptr<PaddlePredictor> predictor =
@@ -226,8 +229,13 @@ void RunModel(std::string model_dir,
   double avg_duration = -1;
   for (size_t ridx = 0; ridx < repeats; ++ridx) {
     timeInstance.startTimer();
-
-    predictor->Run();
+    try {
+      predictor->Run();
+    } catch (...) {
+      std::cerr << "Paddle-Lite Exception Happened on Run()!" << std::endl;
+      // Fall back to cpu model
+      std::abort();
+    }
 
     double duration = timeInstance.getCostTimer();
     sum_duration += duration;
