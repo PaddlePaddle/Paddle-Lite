@@ -48,7 +48,7 @@ endif()
 if(NOT LITE_ON_TINY_PUBLISH)
   proto_library(framework_proto SRCS framework.proto)
   set(CORE_SRC ${CORE_SRC} ${OPTIMIZER_SRC})
-  set(CORE_DEPS ${CORE_DEPS} framework_proto ops)
+  set(CORE_DEPS ${CORE_DEPS} framework_proto)
 endif()
 
 if (LITE_WITH_PROFILE)
@@ -72,7 +72,7 @@ lite_cc_library(core SRCS ${CORE_SRC}
   BM_DEPS target_wrapper_bm
   MLU_DEPS target_wrapper_mlu
   NNADAPTER_DEPS nnadapter_wrapper)
-
+add_dependencies(core ops)
 
 #-------------------------------------------- GET CODE META INFO ------------------------------------------
 if (LITE_WITH_CODE_META_INFO)
