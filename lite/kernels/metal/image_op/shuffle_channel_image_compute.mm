@@ -27,12 +27,12 @@ void ShuffleChannelImageCompute::PrepareForRun() {
     metal_context_ = (MetalContext*)context.context();
 
     const auto& param = this->Param<param_t>();
-    auto output_dims = param.output->dims();
+    auto output_dims = param.Out->dims();
 
 #ifdef LITE_WITH_METAL_FULL
 #else
-    input_buffer_ = param.x->data<MetalHalf, MetalImage>();
-    output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
+    input_buffer_ = param.X->data<MetalHalf, MetalImage>();
+    output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
 #endif
 
     setup_without_mps();
