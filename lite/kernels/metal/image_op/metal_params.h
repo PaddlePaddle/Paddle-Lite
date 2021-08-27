@@ -258,4 +258,32 @@ struct Pad2dParam {
     uint16_t mode;
 };
 
+struct YoloBoxMetalParam {
+    int imgH;
+    int imgW;
+    int xN;
+    int xC;
+    int xH;
+    int xW;
+    int xStride;
+    int xSize;
+    int boxNum;
+    int anchorNum;
+    int anchorStride;
+    int classNum;
+    int clipBBox;
+    float confThresh;
+    float scale;
+    float bias;
+};
+
+struct CompareMetalParam {
+    int compareType;
+};
+
+struct CastMetalParam {
+    int inType;
+    int outType;
+};
+
 #endif  // LITE_KERNELS_METAL_IMAGE_OP_METAL_PARAMS_H_
