@@ -4,19 +4,7 @@ endif()
 
 set(test_kernel_deps
     ops
-    ${host_kernels}
-    ${arm_kernels}
-    ${x86_kernels}
-    ${cuda_kernels}
-    ${xpu_kernels}
-    ${npu_kernels}
-    ${huawei_ascend_npu_kernels}
-    ${rknpu_kernels}
-    ${apu_kernels}
-    ${imagination_nna_kernels}
-    ${bm_kernels}
-    ${opencl_kernels}
-    ${nnadapter_kernels}
+    kernels
 )
 
 lite_cc_test(test_kernel_conv_compute SRCS conv_compute_test.cc DEPS ${test_kernel_deps})
