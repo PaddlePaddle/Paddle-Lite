@@ -48,6 +48,10 @@ add_kernel(fetch_metal_image METAL basic SRCS image_op/fetch_image_compute.mm DE
 add_kernel(slice_metal_compute METAL basic SRCS image_op/slice_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(matmul_metal_compute METAL basic SRCS image_op/matmul_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(pad2d_metal_compute METAL basic SRCS image_op/pad2d_image_compute.mm DEPS metal_target_wrapper)
+add_kernel(cast_metal_compute METAL basic SRCS image_op/cast_image_compute.mm DEPS metal_target_wrapper)
+add_kernel(compare_metal_compute METAL basic SRCS image_op/compare_image_compute.mm DEPS metal_target_wrapper)
+add_kernel(elementwise_div_metal_image METAL basic SRCS image_op/elementwise_div_image_compute.mm DEPS metal_target_wrapper)
+add_kernel(yolo_box_metal_image METAL basic SRCS image_op/yolo_box_image_compute.mm DEPS metal_target_wrapper)
 
 
 add_library(METAL_BASE STATIC IMPORTED )
