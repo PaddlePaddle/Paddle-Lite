@@ -1,7 +1,12 @@
 # NOTE we leave the add_kernel not protected by LITE_WITH_LIGHT_WEIGHT_FRAMEWORK so that all the kernels will be registered
 # to the model_optimize_tool.
-if((NOT LITE_ON_MODEL_OPTIMIZE_TOOL) AND (NOT LITE_WITH_PYTHON) AND (NOT (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)))
-    return()
+
+if(LITE_WITH_ARM)
+  set(IS_FAKED_KERNEL false CACHE INTERNAL "")
+elseif(LITE_ON_MODEL_OPTIMIZE_TOOL OR LITE_WITH_PYTHONLITE_WITH_PYTHON)
+  set(IS_FAKED_KERNEL true CACHE INTERNAL "")
+else()
+  return()
 endif()
 
 message(STATUS "compile with lite ARM kernels")

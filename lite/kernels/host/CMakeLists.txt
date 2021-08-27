@@ -1,3 +1,9 @@
+if(LITE_ON_MODEL_OPTIMIZE_TOOL)
+  set(IS_FAKED_KERNEL true CACHE INTERNAL "")
+else()
+  set(IS_FAKED_KERNEL false CACHE INTERNAL "")
+endif()
+
 message(STATUS "compile with lite host kernels")
 
 # basic kernels
