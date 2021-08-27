@@ -7,6 +7,7 @@ if(LITE_BUILD_TAILOR)
 endif()
 
 add_library(ops STATIC "${CMAKE_SOURCE_DIR}/lite/operators/op_params.cc")
+add_dependencies(ops utils)
 # add an operator
 # level: one of (basic, extra, train)
 function(add_operator TARGET level)

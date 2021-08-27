@@ -530,7 +530,7 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
    #    FPGA_DEPS ${fpga_kernels})
 endif()
 
-lite_cc_library(paddle_api SRCS paddle_api.cc DEPS op_params core)
+lite_cc_library(paddle_api SRCS paddle_api.cc DEPS ops core)
 
 #-----------------------------------------------------------------------------------------------------
 # The final inference library for both CxxConfig and MobileConfig.

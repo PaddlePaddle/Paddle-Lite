@@ -2,7 +2,7 @@ if ((NOT LITE_ON_MODEL_OPTIMIZE_TOOL) AND (NOT LITE_WITH_PYTHON) AND (NOT LITE_W
     return ()
 endif()
 
-set(metal_kernel_deps op_params metal_target_wrapper)
+set(metal_kernel_deps ops metal_target_wrapper)
 find_library(METAL_LIBRARY Metal REQUIRED)
 
 message(STATUS "compile with lite Metal kernels")
