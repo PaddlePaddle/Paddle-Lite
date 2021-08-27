@@ -11,7 +11,7 @@ message(STATUS "compile with lite Metal kernels")
 # image kernel      #
 #####################
 add_kernel(activation_metal_image METAL basic SRCS image_op/activation_image_compute.mm DEPS metal_target_wrapper)
-# add_kernel(batch_norm_metal_image METAL basic SRCS image_op/batch_norm_image_compute.mm METAL_DEPS metal_target_wrapper)
+add_kernel(batch_norm_metal_image METAL basic SRCS image_op/batch_norm_image_compute.mm METAL_DEPS metal_target_wrapper)
 add_kernel(relu_metal_image METAL basic SRCS image_op/relu_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(pool_metal_image METAL basic SRCS image_op/pool_image_compute.mm DEPS metal_target_wrapper)
 # add_kernel(mul_metal_image METAL basic SRCS image_op/mul_image_compute.mm DEPS metal_target_wrapper)
@@ -19,7 +19,7 @@ add_kernel(reshape_metal_image METAL basic SRCS image_op/reshape_image_compute.m
 add_kernel(elementwise_add_metal_image METAL basic SRCS image_op/elementwise_add_image_compute.mm DEPS metal_target_wrapper)
 # add_kernel(elementwise_max_metal_image METAL basic SRCS image_op/elementwise_max_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(elementwise_mul_metal_image METAL basic SRCS image_op/elementwise_mul_image_compute.mm DEPS metal_target_wrapper)
-# add_kernel(elementwise_sub_metal_image METAL basic SRCS image_op/elementwise_sub_image_compute.mm DEPS metal_target_wrapper)
+add_kernel(elementwise_sub_metal_image METAL basic SRCS image_op/elementwise_sub_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(conv2d_metal_image METAL basic SRCS image_op/conv2d_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(depthwise_conv2d_metal_image METAL basic SRCS image_op/depthwise_conv2d_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(softmax_metal_image METAL basic SRCS image_op/softmax_image_compute.mm DEPS metal_target_wrapper)

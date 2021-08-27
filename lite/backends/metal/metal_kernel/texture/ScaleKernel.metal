@@ -20,68 +20,37 @@ using namespace metal;
 struct ScaleParam {
   float scale;
   float abias;
+  MetalActivationParam activationParam;
 };
 
-kernel void scale_before_bias_float(
-    texture2d_array<float, access::read> inTexture [[texture(0)]],
-    texture2d_array<float, access::write> outTexture [[texture(1)]],
+kernel void scale_before_bias(
+    texture2d_array<ftype, access::read> inTexture [[texture(0)]],
+    texture2d_array<ftype, access::write> outTexture [[texture(1)]],
     constant ScaleParam &pm [[buffer(0)]],
     uint3 gid [[thread_position_in_grid]]) {
   if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
       gid.z >= outTexture.get_array_size())
     return;
-  constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
-  const float4 input = inTexture.read(gid.xy, gid.z);
+  const ftype4 input = inTexture.read(gid.xy, gid.z);
   const float scale = pm.scale;
   const float abias = pm.abias;
-  const float4 output = scale * input + abias;
-  outTexture.write(output, gid.xy, gid.z);
+  const ftype4 output = scale * input + abias;
+  ftype4 relu = activation(output, pm.activationParam);
+  outTexture.write(relu, gid.xy, gid.z);
 }
 
-kernel void scale_after_bias_float(
-    texture2d_array<float, access::read> inTexture [[texture(0)]],
-    texture2d_array<float, access::write> outTexture [[texture(1)]],
+kernel void scale_after_bias(
+    texture2d_array<ftype, access::read> inTexture [[texture(0)]],
+    texture2d_array<ftype, access::write> outTexture [[texture(1)]],
     constant ScaleParam &pm [[buffer(0)]],
     uint3 gid [[thread_position_in_grid]]) {
   if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
       gid.z >= outTexture.get_array_size())
     return;
-  constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
-  const float4 input = inTexture.read(gid.xy, gid.z);
+  const ftype4 input = inTexture.read(gid.xy, gid.z);
   const float scale = pm.scale;
   const float abias = pm.abias;
-  const float4 output = scale * (input + abias);
-  outTexture.write(output, gid.xy, gid.z);
-}
-
-kernel void scale_before_bias_half(
-    texture2d_array<half, access::read> inTexture [[texture(0)]],
-    texture2d_array<half, access::write> outTexture [[texture(1)]],
-    constant ScaleParam &pm [[buffer(0)]],
-    uint3 gid [[thread_position_in_grid]]) {
-  if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
-      gid.z >= outTexture.get_array_size())
-    return;
-  constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
-  const half4 input = inTexture.read(gid.xy, gid.z);
-  const float scale = pm.scale;
-  const float abias = pm.abias;
-  const float4 output = scale * (float4)input + abias;
-  outTexture.write(half4(output), gid.xy, gid.z);
-}
-
-kernel void scale_after_bias_half(
-    texture2d_array<half, access::read> inTexture [[texture(0)]],
-    texture2d_array<half, access::write> outTexture [[texture(1)]],
-    constant ScaleParam &pm [[buffer(0)]],
-    uint3 gid [[thread_position_in_grid]]) {
-  if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
-      gid.z >= outTexture.get_array_size())
-    return;
-  constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
-  const half4 input = inTexture.read(gid.xy, gid.z);
-  const float scale = pm.scale;
-  const float abias = pm.abias;
-  const float4 output = scale * ((float4)input + abias);
-  outTexture.write(half4(output), gid.xy, gid.z);
+  const ftype4 output = scale * (input + abias);
+  ftype4 relu = activation(output, pm.activationParam);
+  outTexture.write(relu, gid.xy, gid.z);
 }
