@@ -6,8 +6,6 @@ if(LITE_BUILD_TAILOR)
   file(STRINGS ${tailored_ops_list_path} tailored_ops_list)
 endif()
 
-add_library(ops STATIC "${CMAKE_SOURCE_DIR}/lite/operators/op_params.cc")
-add_dependencies(ops utils)
 # add an operator
 # level: one of (basic, extra, train)
 function(add_operator TARGET level)
@@ -34,7 +32,6 @@ function(add_operator TARGET level)
       file(APPEND ${ops_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
       set(__lite_cc_files ${__lite_cc_files} "${CMAKE_CURRENT_SOURCE_DIR}/${src}" CACHE INTERNAL "")
       set(OPS_SRC ${OPS_SRC} "${CMAKE_CURRENT_SOURCE_DIR}/${src}" CACHE INTERNAL "source")
-      target_sources(ops PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/${src}")
     endforeach()
 endfunction()
 

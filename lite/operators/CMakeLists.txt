@@ -230,6 +230,9 @@ add_operator(__xpu__dynamic_lstm_fuse_op extra SRCS __xpu__dynamic_lstm_fuse_op.
 # Only for FPGA
 add_operator(fpga_conv_op extra SRCS __fpga__conv_op.cc)
 
+add_library(ops STATIC ${OPS_SRC} op_params.cc)
+add_dependencies(ops utils)
+
 if (NOT LITE_WITH_X86)
     if(NOT LITE_WITH_ARM)
         lite_cc_test(test_one_hot_op SRCS one_hot_op_test.cc DEPS ops core ${op_deps} kernels)
