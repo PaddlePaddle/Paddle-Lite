@@ -21,18 +21,7 @@ function(lite_cc_test_with_model_and_data TARGET)
         set(ARGS ${ARGS} ${args_ARGS})
     endif()
     lite_cc_test(${TARGET} SRCS ${TARGET}.cc
-        DEPS ${lite_model_test_DEPS} paddle_api_full
-        ARM_DEPS ${arm_kernels}
-        X86_DEPS ${x86_kernels}
-        NPU_DEPS ${npu_kernels} ${npu_bridges}
-        HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels} ${huawei_ascend_npu_bridges}
-        XPU_DEPS ${xpu_kernels} ${xpu_bridges}
-        APU_DEPS ${apu_kernels} ${apu_bridges}
-        RKNPU_DEPS ${rknpu_kernels} ${rknpu_bridges}
-        BM_DEPS ${bm_kernels} ${bm_bridges}
-        MLU_DEPS ${mlu_kernels} ${mlu_bridges}
-        METAL_DEPS ${metal_kernels}
-        NNADAPTER_DEPS ${nnadapter_kernels}
+        DEPS ${lite_model_test_DEPS} paddle_api_full kernels
         ARGS ${ARGS} SERIAL)
     if(DEFINED args_MODEL)
         add_dependencies(${TARGET} extern_lite_download_${args_MODEL}_tar_gz)
