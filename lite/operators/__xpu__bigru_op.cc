@@ -90,7 +90,6 @@ bool XPUBiGRUOp::InferShapeImpl() const {
 }
 
 bool XPUBiGRUOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
-  AttachParam(&param_);
   bool has_mul_b = op_desc.GetAttr<bool>("has_mul_b");
   bool has_gru_b = op_desc.GetAttr<bool>("has_gru_b");
 
