@@ -4,7 +4,7 @@ endif()
 
 if(LITE_WITH_XTCL)
   add_subdirectory(bridges)
-  add_kernel(subgraph_compute_xpu XPU basic SRCS subgraph_compute.cc DEPS ${lite_kernel_deps} device_xpu subgraph_engine_base ${xpu_subgraph_bridges})
+  add_kernel(subgraph_compute_xpu XPU basic SRCS subgraph_compute.cc DEPS ${lite_kernel_deps} device_xpu core ${xpu_subgraph_bridges})
 else()
   # basic
   add_kernel(rnn_compute_xpu XPU basic SRCS rnn_compute.cc DEPS ${lite_kernel_deps})

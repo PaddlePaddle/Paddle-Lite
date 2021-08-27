@@ -19,7 +19,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "lite/model_parser/base/traits.h"
+#include "lite/core/model/base/traits.h"
 #include "lite/model_parser/flatbuffers/framework_generated.h"
 
 namespace paddle {

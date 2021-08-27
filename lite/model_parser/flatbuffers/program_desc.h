@@ -19,8 +19,8 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "lite/model_parser/base/io.h"
-#include "lite/model_parser/base/program_desc.h"
+#include "lite/core/model/base/io.h"
+#include "lite/core/model/base/program_desc.h"
 #include "lite/model_parser/flatbuffers/block_desc.h"
 #include "lite/model_parser/flatbuffers/framework_generated.h"
 #include "lite/model_parser/flatbuffers/op_version_map.h"

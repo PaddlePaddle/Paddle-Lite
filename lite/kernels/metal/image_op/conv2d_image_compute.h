@@ -41,6 +41,7 @@ class Conv2dImageCompute
 
    public:
     void PrepareForRun() override;
+    void ReInitWhenNeeded() override;
     void Run() override;
     void SaveOutput() override {
         MetalDebug::SaveOutput(
@@ -53,6 +54,11 @@ class Conv2dImageCompute
     void* mps_conv_op_{nullptr};
     void* mps_input_image_{nullptr};
     void* mps_output_image_{nullptr};
+
+    void init_for_run();
+    void init_memory();
+    void release_memory();
+    void release_mps_memory();
 
     void setup_with_mps();
     void setup_without_mps();
@@ -73,12 +79,12 @@ class Conv2dImageCompute
 
    private:
     bool is_depthwise_{false};
-    uint16_t activate_type_ = 0;
     std::string name_param_out_;
 
     id<MTLComputePipelineState> pipline_;
     std::string function_name_;
     MetalContext* metal_context_;
+    DDim last_input_dims_{};
 
     MetalImage* output_buffer_{nullptr};
     const MetalImage* input_buffer_;
