@@ -34,13 +34,9 @@ const int UNSUPPORTED_FEATURE = 2;
 class Converter {
  public:
   explicit Converter(NNAdapterModel* model) : model_(model) {
-    sub_converter = subgraph::nnadapter::Converter(model_, &operands_);
+    sub_converter.reset(new subgraph::nnadapter::Converter(model_, &operands_));
   }
   ~Converter() {}
-
-  std::map<std::string, std::vector<NNAdapterOperand*>>* GetOperands() {
-    return &operands_;
-  }
 
   // Convert a block_desc with tensors to a NNAdapter model
   int Apply(int block_idx,
@@ -177,7 +173,7 @@ class Converter {
                        bool copy = true);
   NNAdapterModel* model_{nullptr};
   std::map<std::string, std::vector<NNAdapterOperand*>> operands_;
-  subgraph::nnadapter::Converter sub_converter{model_};
+  std::shared_ptr<subgraph::nnadapter::Converter> sub_converter{nullptr};
 };
 
 }  // namespace nnadapter

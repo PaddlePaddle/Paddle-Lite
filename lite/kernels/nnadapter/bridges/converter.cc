@@ -21,7 +21,7 @@ namespace subgraph {
 namespace nnadapter {
 
 bool Converter::HasOperand(const std::string& name) {
-  return (*operands_).find(name) != (*operands_).end();
+  return operands_->find(name) != operands_->end();
 }
 
 NNAdapterOperand* Converter::GetOperand(std::string name) {

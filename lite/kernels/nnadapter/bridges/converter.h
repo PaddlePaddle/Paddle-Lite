@@ -34,11 +34,6 @@ class Converter {
       : model_(model), operands_(operands) {}
   ~Converter() {}
 
-  void SetOperands(
-      std::map<std::string, std::vector<NNAdapterOperand*>>* operands) {
-    operands_ = operands;
-  }
-
   // NNAdapter operand
   bool HasOperand(const std::string& name);
   NNAdapterOperand* GetOperand(std::string name);

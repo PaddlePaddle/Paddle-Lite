@@ -128,7 +128,7 @@ int Converter::Apply(
     if (bridges.Exists(op_type, TARGET(kNNAdapter))) {
       auto kernel = inst.kernel();
       CHECK(bridges.Select(op_type, TARGET(kNNAdapter))(
-          reinterpret_cast<void*>(&sub_converter),
+          reinterpret_cast<void*>(sub_converter.get()),
           op,
           const_cast<KernelBase*>(kernel)));
       continue;
