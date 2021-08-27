@@ -13,4 +13,4 @@ add_kernel(calib_compute_mlu MLU basic SRCS calib_compute.cc)
 # depend on transpose function in backend/x86/math/math_function
 add_kernel(layout_compute_mlu MLU basic SRCS layout_compute.cc)
 
-set(lite_kernel_deps ${lite_kernel_deps} ${mlu_subgraph_bridges} ${target_wrapper_mlu})
+set(lite_kernel_deps ${lite_kernel_deps} ${mlu_subgraph_bridges} ${target_wrapper_mlu} CACHE INTERNAL "")

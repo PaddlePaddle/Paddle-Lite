@@ -50,7 +50,7 @@ add_kernel(slice_compute_fpga FPGA basic SRCS slice_compute.cc)
 
 add_kernel(unsqueeze_compute_fpga FPGA basic SRCS unsqueeze_compute.cc)
 
-set(lite_kernel_deps ${lite_kernel_deps} ${fpga_deps})
+set(lite_kernel_deps ${lite_kernel_deps} ${fpga_deps} CACHE INTERNAL "")
 
 # lite_cc_test(test_acivation_fpga SRCS activation_compute_test.cc DEPS kernels)
 lite_cc_test(test_conv_fpga SRCS conv_compute_test.cc DEPS kernels)

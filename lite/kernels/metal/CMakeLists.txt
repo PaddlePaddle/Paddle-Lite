@@ -57,7 +57,7 @@ add_kernel(pad2d_metal_compute METAL basic SRCS image_op/pad2d_image_compute.mm)
 add_library(METAL_BASE STATIC IMPORTED )
 set_target_properties(METAL_BASE PROPERTIES IMPORTED_LOCATION ${METAL_LIBRARY})
 
-set(lite_kernel_deps ${lite_kernel_deps} metal_target_wrapper)
+set(lite_kernel_deps ${lite_kernel_deps} metal_target_wrapper CACHE INTERNAL "")
 
 lite_cc_test(test_batch_norm_metal_image_metal SRCS image_op/batch_norm_image_compute_test.mm
         DEPS kernels ${METAL_BASE} ${tensor_lite} core )

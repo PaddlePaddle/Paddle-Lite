@@ -12,4 +12,4 @@ add_kernel(conv_depthwise_intel_fpga INTEL_FPGA basic SRCS conv_depthwise.cc)
 add_kernel(conv_gemmlike_intel_fpga INTEL_FPGA basic SRCS conv_gemmlike.cc)
 add_kernel(conv_compute_intel_fpga INTEL_FPGA basic SRCS conv_compute.cc)
 
-set(lite_kernel_deps ${lite_kernel_deps} ${intel_fpga_runtime_libs})
+set(lite_kernel_deps ${lite_kernel_deps} ${intel_fpga_runtime_libs} CACHE INTERNAL "")

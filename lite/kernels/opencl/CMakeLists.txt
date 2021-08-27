@@ -156,7 +156,7 @@ add_kernel(matmul_opencl_buffer OPENCL basic SRCS matmul_buffer_compute.cc)
 # extra
 # wait to add ...
 
-set(lite_kernel_deps ${lite_kernel_deps} ${cl_kernel_deps})
+set(lite_kernel_deps ${lite_kernel_deps} ${cl_kernel_deps} CACHE INTERNAL "")
 
 ######################
 # buffer kernel test #

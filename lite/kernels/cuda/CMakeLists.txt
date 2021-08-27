@@ -60,7 +60,7 @@ add_kernel(var_conv_2d_compute_cuda CUDA extra SRCS var_conv_2d_compute.cu)
 add_kernel(topk_pooling_compute_cuda CUDA extra SRCS topk_pooling_compute.cu)
 add_kernel(assign_value_compute_cuda CUDA extra SRCS assign_value_compute.cu)
 
-set(lite_kernel_deps ${lite_kernel_deps} cuda_gemm cuda_scale cuda_elementwise cuda_transpose cudnn_pool cuda_batched_gemm ${math_cuda})
+set(lite_kernel_deps ${lite_kernel_deps} cuda_gemm cuda_scale cuda_elementwise cuda_transpose cudnn_pool cuda_batched_gemm ${math_cuda} CACHE INTERNAL "")
 
 # unit test
 lite_cc_test(calib_compute_cuda_test SRCS calib_compute_cuda_test.cc DEPS kernels)

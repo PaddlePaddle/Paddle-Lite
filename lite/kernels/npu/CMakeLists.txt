@@ -10,4 +10,4 @@ add_subdirectory(bridges)
 
 add_kernel(subgraph_compute_npu NPU basic SRCS subgraph_compute.cc)
 
-set(lite_kernel_deps ${lite_kernel_deps} ${npu_subgraph_bridges})
+set(lite_kernel_deps ${lite_kernel_deps} ${npu_subgraph_bridges} CACHE INTERNAL "")

@@ -112,5 +112,5 @@ else()
   add_kernel(__xpu__conv_pixel_shuffle_compute_xpu XPU extra SRCS __xpu__conv_pixel_shuffle_compute.cc)
   add_kernel(__xpu__dynamic_lstm_compute_xpu XPU extra SRCS __xpu__dynamic_lstm_compute.cc)
 
-  set(lite_kernel_deps ${lite_kernel_deps} ${xpu_subgraph_bridges} target_wrapper_xpu)
+  set(lite_kernel_deps ${lite_kernel_deps} ${xpu_subgraph_bridges} target_wrapper_xpu CACHE INTERNAL "")
 endif()
