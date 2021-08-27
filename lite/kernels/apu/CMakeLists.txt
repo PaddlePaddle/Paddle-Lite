@@ -1,3 +1,12 @@
 add_subdirectory(bridges)
+if(LITE_WITH_APU)
+  set(IS_FAKED_KERNEL false CACHE INTERNAL "")
+elseif(LITE_ON_MODEL_OPTIMIZE_TOOL OR LITE_WITH_PYTHON)
+  set(IS_FAKED_KERNEL true CACHE INTERNAL "")
+else()
+  return()
+endif()
 
-add_kernel(subgraph_compute_apu APU basic SRCS subgraph_compute.cc DEPS ${lite_kernel_deps} device_apu neuron_adapter core ${apu_subgraph_bridges})
+add_kernel(subgraph_compute_apu APU basic SRCS subgraph_compute.cc)
+add_dependencies(kernels ${apu_subgraph_bridges} device_apu neuron_adapter)
+target_link_libraries(kernels ${apu_subgraph_bridges} device_apu neuron_adapter)

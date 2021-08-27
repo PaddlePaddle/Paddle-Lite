@@ -1,12 +1,11 @@
 if(LITE_WITH_X86)
   set(IS_FAKED_KERNEL false CACHE INTERNAL "")
-elseif(LITE_ON_MODEL_OPTIMIZE_TOOL OR LITE_WITH_PYTHONLITE_WITH_PYTHON)
+elseif(LITE_ON_MODEL_OPTIMIZE_TOOL OR LITE_WITH_PYTHON)
   set(IS_FAKED_KERNEL true CACHE INTERNAL "")
 else()
   return()
 endif()
 
-set(lite_kernel_deps ${lite_kernel_deps} math_function fluid_data_type jit_kernel_helper)
 
 add_kernel(activation_compute_x86 X86 basic SRCS activation_compute.cc)
 add_kernel(scale_compute_x86 X86 basic SRCS scale_compute.cc)
@@ -72,6 +71,9 @@ add_kernel(interpolate_compute_x86 X86 basic SRCS interpolate_compute.cc)
 add_kernel(pow_compute_x86 X86 extra SRCS pow_compute.cc)
 add_kernel(rnn_compute_x86 X86 basic SRCS rnn_compute.cc)
 add_kernel(conv_transpose_x86 X86 basic SRCS conv_transpose_compute.cc)
+
+add_dependencies(kernels math_function fluid_data_type jit_kernel_helper)
+target_link_libraries(kernels math_function fluid_data_type jit_kernel_helper)
 
 lite_cc_test(test_conv2d_compute_x86 SRCS conv_compute_test.cc DEPS kernels)
 lite_cc_test(test_mul_compute_x86 SRCS mul_compute_test.cc DEPS kernels)

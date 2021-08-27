@@ -26,35 +26,7 @@ execute_process(
     ${LITE_BUILD_EXTRA}
     RESULT_VARIABLE result)
 
-#-------------------------------opt----------------------------------------------------------------
-# tricks to create headfiles for opt
-file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/all_kernel_faked_dir)
-execute_process(
-    COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/create_fake_kernel_registry.py
-    ${kernels_src_list}
-    ${fake_kernels_src_list}
-    ${CMAKE_BINARY_DIR}/all_kernel_faked_dir
-    ${CMAKE_BINARY_DIR}/all_kernel_faked.h
-    ${CMAKE_BINARY_DIR}/all_kernel_faked.cc
-    ${CMAKE_BINARY_DIR}/kernel_src_map.h
-    RESULT_VARIABLE result)
 
-file(GLOB all_kernel_faked_src ${CMAKE_BINARY_DIR}/all_kernel_faked_dir/*.cc)
-if (LITE_ON_MODEL_OPTIMIZE_TOOL OR LITE_WITH_PYTHON)
-  add_library(all_kernel_faked OBJECT ${all_kernel_faked_src})
-  add_dependencies(all_kernel_faked core)
-endif()
-
-# create headfile to restore ops info sorted by suppported platforms
-execute_process(
-    COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/record_supported_kernel_op.py
-    ${kernels_src_list}
-    ${fake_kernels_src_list}
-    ${ops_src_list}
-    ${subgraph_bridges_src_list}
-    ${CMAKE_BINARY_DIR}/supported_kernel_op_info.h
-    RESULT_VARIABLE result)
-#--------------------------------------------------------------------------------------------------
 
 
 
@@ -452,7 +424,7 @@ if (LITE_WITH_PYTHON)
     # add library for opt_base
     lite_cc_library(opt_base SRCS tools/opt_base.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc
         DEPS core utils model_parser)
-    add_dependencies(opt_base framework_proto all_kernel_faked)
+    add_dependencies(opt_base framework_proto kernels)
 endif()
 
 if (LITE_ON_TINY_PUBLISH)
@@ -463,9 +435,8 @@ endif()
 
 if (LITE_ON_MODEL_OPTIMIZE_TOOL)
     message(STATUS "Compiling opt")
-    lite_cc_binary(opt SRCS tools/opt.cc tools/opt_base.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc $<TARGET_OBJECTS:all_kernel_faked>
+    lite_cc_binary(opt SRCS tools/opt.cc tools/opt_base.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc
         DEPS gflags utils kernels core ops model_parser)
-    add_dependencies(opt all_kernel_faked)
 endif(LITE_ON_MODEL_OPTIMIZE_TOOL)
 
 if(NOT WITH_COVERAGE)
