@@ -61,7 +61,7 @@ if (LITE_WITH_NPU OR LITE_WITH_XTCL OR LITE_WITH_BM OR LITE_WITH_RKNPU OR LITE_W
 endif ()
 
 lite_cc_library(core SRCS ${CORE_SRC}
-  DEPS target_wrapper_host place fbs_headers ${CORE_DEPS}
+  DEPS target_wrapper_host place fbs_headers ${CORE_DEPS} ops
   X86_DEPS target_wrapper_x86 eigen3
   CUDA_DEPS target_wrapper_cuda cuda_context
   XPU_DEPS target_wrapper_xpu
@@ -72,7 +72,6 @@ lite_cc_library(core SRCS ${CORE_SRC}
   BM_DEPS target_wrapper_bm
   MLU_DEPS target_wrapper_mlu
   NNADAPTER_DEPS nnadapter_wrapper)
-add_dependencies(core ops)
 
 #-------------------------------------------- GET CODE META INFO ------------------------------------------
 if (LITE_WITH_CODE_META_INFO)
