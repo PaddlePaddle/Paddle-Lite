@@ -300,7 +300,6 @@ CONCAT4(4Input, Axis0)
 CONCAT5(5Input, Axis0)
 CONCAT6(6Input, Axis0)
 // axis = 1
-CONCAT2(2Input, Axis1)
 CONCAT3(3Input, Axis1)
 CONCAT4(4Input, Axis1)
 CONCAT5(5Input, Axis1)
