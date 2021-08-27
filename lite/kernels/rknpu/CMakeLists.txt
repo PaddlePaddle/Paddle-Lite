@@ -10,5 +10,4 @@ endif()
 add_subdirectory(bridges)
 
 add_kernel(subgraph_compute_rknpu RKNPU basic SRCS subgraph_compute.cc)
-add_dependencies(kernels device_rknpu ${rknpu_subgraph_bridges})
-target_link_libraries(kernels device_rknpu ${rknpu_subgraph_bridges})
+set(lite_kernel_deps ${lite_kernel_deps} ${rknpu_subgraph_bridges})

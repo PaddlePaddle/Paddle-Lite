@@ -105,7 +105,7 @@ add_subdirectory(imagination_nna)
 add_subdirectory(intel_fpga)
 add_subdirectory(nnadapter)
 
-
+message(STATUS "HELLO:${lite_kernel_deps}---------------------------------------")
 #-------------------------------post_process----------------------------------------------------------------
 # tricks to create headfiles for opt
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/all_kernel_faked_dir)

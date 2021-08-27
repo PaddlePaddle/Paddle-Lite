@@ -12,5 +12,4 @@ aux_source_directory(converter CONVERTERS)
 
 add_kernel(subgraph_compute_nnadapter NNADAPTER basic SRCS utility.cc ${CONVERTERS} engine.cc subgraph_compute.cc)
 
-target_link_libraries(kernels nnadapter_wrapper ${nnadapter_subgraph_bridges})
-add_dependencies(kernels nnadapter_wrapper ${nnadapter_subgraph_bridges})
+set(lite_kernel_deps ${lite_kernel_deps} ${nnadapter_subgraph_bridges})

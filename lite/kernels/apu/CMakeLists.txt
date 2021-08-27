@@ -8,5 +8,5 @@ else()
 endif()
 
 add_kernel(subgraph_compute_apu APU basic SRCS subgraph_compute.cc)
-add_dependencies(kernels ${apu_subgraph_bridges} device_apu neuron_adapter)
-target_link_libraries(kernels ${apu_subgraph_bridges} device_apu neuron_adapter)
+set(lite_kernel_deps ${lite_kernel_deps} ${apu_subgraph_bridges} device_apu neuron_adapter)
+

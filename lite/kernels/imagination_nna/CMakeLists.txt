@@ -8,5 +8,4 @@ endif()
 add_subdirectory(bridges)
 
 add_kernel(subgraph_compute_imagination_nna IMAGINATION_NNA basic SRCS subgraph_compute.cc)
-add_dependencies(kernels device_imagination_nna ${imagination_nna_subgraph_bridges})
-target_link_libraries(kernels device_imagination_nna ${imagination_nna_subgraph_bridges})
+set(lite_kernel_deps ${lite_kernel_deps} device_imagination_nna ${imagination_nna_subgraph_bridges})
