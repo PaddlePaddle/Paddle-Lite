@@ -7,10 +7,11 @@
 ### 编译
 
 1、 下载代码
+
 ```bash
 git clone https://github.com/PaddlePaddle/Paddle-Lite.git
-# 切换到release分支，比如v2.9
-git checkout v2.9
+# 切换到release分支
+git checkout <release-tag>
 ```
 2、 源码编译(需要按照提示输入对应的参数)
 
@@ -27,20 +28,25 @@ lite\tools\build_windows.bat with_strip D:\Paddle-Lite\opt_model_dir
 
 编译脚本`build_windows.bat`，追加参数说明：
 
-| 参数                   | 介绍                                                                                                                                                      | 值          |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
-| without_log            | 可选，是否编译带日志的预测库（默认为ON，即日志打开）                                                                                                      | `ON`、`OFF` |
-| without_python         | 可选，是否编译python预测库（默认为ON，即编译Python）                                                                                                      | `ON`、`OFF` |
-| with_extra             | 可选，是否编译全量预测库（当Python打开时默认打开，否则为OFF)，详情可参考[预测库说明](./library.html)。                                                    | `ON`、`OFF` |
-| with_profile           | 可选，是否支持逐层耗时分析（默认为OFF）                                                                                                                   | `ON`、`OFF` |
-| with_precision_profile | 可选，是否支持逐层精度分析（默认为OFF）                                                                                                                   | `ON`、`OFF` |
-| with_strip             | 可选，是否根据模型裁剪预测库（默认为OFF），详情可参考[裁剪预测库](../source_compile/library_trailoring.html)。                                            | `ON`、`OFF` |
-| build_x86              | 可选，是否编译X86平台预测库（默认为OFF，即编译X64平台）                                                                                                   | `ON`、`OFF` |
-| with_static_mkl        | 可选，是否静态链接Intel(R) MKL加速库（默认为OFF，即动态链接)                                                                                              | `ON`、`OFF` |
-| with_dynamic_crt       | 可选，是否动态链接MSVC Rumtime即MD_DynamicRelease（默认为OFF，即静态链接)                                                                                 | `ON`、`OFF` |
-| with_opencl            | 可选，是否开启OpenCL（默认为OFF，即编译的预测库仅在CPU上运行，当设为`ON`时，编译出的预测库支持在GPU上运行)                                                | `ON`、`OFF` |
-| use_ninja              | 可选，是否使用[Ninja](https://ninja-build.org/)构建系统（默认为OFF，即编译使用MSBuild+MSVC的构建方案，当设为`ON`时，使用Ninja+MSVC编译构建方案来加速编译) | `ON`、`OFF` |
-| without_avx            | 可选，使用AVX/SSE指令对x86 Kernel进行加速（默认为ON)                                                                                                      | `ON`、`OFF` |
+| 参数                   | 介绍                                                         | 值          |
+| ---------------------- | ------------------------------------------------------------ | ----------- |
+| without_log            | 可选，是否编译带日志的预测库（默认为ON，即日志打开）         | `ON`、`OFF` |
+| without_python         | 可选，是否编译python预测库（默认为ON，即编译Python）         | `ON`、`OFF` |
+| with_extra             | 可选，是否编译全量预测库（当Python打开时默认打开，否则为OFF)，详情可参考[预测库说明](./library.html)。 | `ON`、`OFF` |
+| with_profile           | 可选，是否支持逐层耗时分析（默认为OFF）                      | `ON`、`OFF` |
+| with_precision_profile | 可选，是否支持逐层精度分析（默认为OFF）                      | `ON`、`OFF` |
+| with_strip             | 可选，是否根据模型裁剪预测库（默认为OFF），详情可参考[裁剪预测库](../source_compile/library_trailoring.html)。 | `ON`、`OFF` |
+| build_x86              | 可选，是否编译X86平台预测库（默认为OFF，即编译X64平台）      | `ON`、`OFF` |
+| with_static_mkl        | 可选，是否静态链接Intel(R) MKL加速库（默认为OFF，即动态链接) | `ON`、`OFF` |
+| with_dynamic_crt       | 可选，是否动态链接MSVC Rumtime即MD_DynamicRelease（默认为OFF，即静态链接) | `ON`、`OFF` |
+| with_opencl            | 可选，是否开启OpenCL（默认为OFF，即编译的预测库仅在CPU上运行，当设为`ON`时，编译出的预测库支持在GPU上运行) | `ON`、`OFF` |
+| use_ninja              | 可选，是否使用[Ninja](https://ninja-build.org/)构建系统（默认使用vs2015的MSBuild构建方案，添加上此编译选项使用Ninja编译构建) |             |
+| use_vs2017             | 可选，是否使用vs2017构建系统（默认使用vs2015的构建方案，添加上此编译选项使用vs2017编译构建) |             |
+| use_vs2019             | 可选，是否使用vs2019构建系统（默认使用vs2015的构建方案，添加上此编译选项使用vs2019编译构建) |             |
+| without_avx            | 可选，使用AVX/SSE指令对x86 Kernel进行加速（默认为ON)         | `ON`、`OFF` |
+| with_baidu_xpu         | 可选，使用xpu kernel进行加速（默认为不用，添加此编译选项便可开启） |             |
+| with_baidu_xpu_xtcl    | 可选，使用xtcl 对xpu kernel进行加速（默认为不用，添加此编译选项并同时开启with_baidu_xpu便可开启） |             |
+| baidu_xpu_sdk_root     | 可选，当启用with_baidu_xpu或者with_baidu_xpu_xtcl时候都需要添加xpu的windows产出包的相关路径 |             |
 
 ### 编译结果说明
 
