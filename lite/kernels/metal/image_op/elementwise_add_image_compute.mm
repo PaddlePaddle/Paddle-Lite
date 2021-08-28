@@ -30,6 +30,23 @@ void ElementwiseAddImageCompute::PrepareForRun() {
     auto& context = ctx_->As<MTLContext>();
     metal_context_ = (MetalContext*)context.context();
 
+    init_memory();
+    init_for_run();
+}
+
+void ElementwiseAddImageCompute::ReInitWhenNeeded() {
+    const auto& param = this->Param<param_t>();
+    auto input_dims = param.X->dims();
+
+    if (last_input_dims_ != input_dims) {
+        release_memory();
+        release_mps_memory();
+        init_memory();
+        init_for_run();
+    }
+}
+
+void ElementwiseAddImageCompute::init_memory() {
     const auto& param = this->Param<param_t>();
     auto output_dims = param.Out->dims();
     auto input_dims = param.X->dims();
@@ -40,10 +57,13 @@ void ElementwiseAddImageCompute::PrepareForRun() {
     input_buffer_x_ = param.X->data<MetalHalf, MetalImage>();
     input_buffer_y_ = param.Y->data<MetalHalf, MetalImage>();
 #endif
+    last_input_dims_ = input_dims;
+}
 
+void ElementwiseAddImageCompute::init_for_run() {
     // use MPS or not
     bool should_use_mps = false;
-    if (@available(iOS 10.0, *)) {
+    if (@available(iOS 11.3, *)) {
         if (metal_context_->use_mps()) {
             should_use_mps = true;
         }
@@ -56,12 +76,7 @@ void ElementwiseAddImageCompute::PrepareForRun() {
     }
 // X Y output
 #ifdef LITE_WITH_METAL_FULL
-    if ([input_buffer_x_->image() pixelFormat] == MTLPixelFormatRGBA32Float &&
-        [input_buffer_y_->image() pixelFormat] == MTLPixelFormatRGBA32Float &&
-        [output_buffer_->image() pixelFormat] == MTLPixelFormatRGBA32Float) {
-    } else {
-        should_use_mps = false;
-    }
+
 #else
     if ([input_buffer_x_->image() pixelFormat] == MTLPixelFormatRGBA16Float &&
         [input_buffer_y_->image() pixelFormat] == MTLPixelFormatRGBA16Float &&
@@ -80,10 +95,12 @@ void ElementwiseAddImageCompute::PrepareForRun() {
 }
 
 void ElementwiseAddImageCompute::Run() {
-    if (use_mps_) {
-        run_with_mps();
-    } else {
-        run_without_mps();
+    @autoreleasepool {
+        if (use_mps_) {
+            run_with_mps();
+        } else {
+            run_without_mps();
+        }
     }
 }
 
@@ -171,35 +188,43 @@ void ElementwiseAddImageCompute::run_with_mps() {
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     auto cmdbuf = [backend commandBuffer];
     if (mps_add_op_) {
-        [((__bridge MPSCNNAdd*)mps_add_op_)
-            encodeToCommandBuffer:cmdbuf
-                     primaryImage:(__bridge MPSImage*)mps_input_image_
-                   secondaryImage:(__bridge MPSImage*)mps_input_image_y_
-                 destinationImage:(__bridge MPSImage*)mps_output_image_];
+        if (@available(iOS 11.3, *)) {
+            [((__bridge MPSCNNAdd*)mps_add_op_)
+                encodeToCommandBuffer:cmdbuf
+                         primaryImage:(__bridge MPSImage*)mps_input_image_
+                       secondaryImage:(__bridge MPSImage*)mps_input_image_y_
+                     destinationImage:(__bridge MPSImage*)mps_output_image_];
+        }
     }
     [backend commit:cmdbuf];
 }
 
 void ElementwiseAddImageCompute::setup_with_mps() {
-    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
-    //
-    mps_add_op_ = (__bridge_retained void*)[[MPSCNNAdd alloc] initWithDevice:backend.device];
-    // MPS算子输入输出
-    auto input_x_c = MAX(4, static_cast<int>(input_buffer_x_->tensor_dim_[1]));
-    auto input_y_c = MAX(4, static_cast<int>(input_buffer_y_->tensor_dim_[1]));
-    auto output_c = MAX(4, static_cast<int>(output_buffer_->tensor_dim_[1]));
-    mps_input_image_ =
-        (__bridge_retained void*)[[MPSImage alloc] initWithTexture:input_buffer_x_->image()
-                                                   featureChannels:input_x_c];
-    mps_input_image_y_ =
-        (__bridge_retained void*)[[MPSImage alloc] initWithTexture:input_buffer_y_->image()
-                                                   featureChannels:input_y_c];
-    mps_output_image_ =
-        (__bridge_retained void*)[[MPSImage alloc] initWithTexture:output_buffer_->image()
-                                                   featureChannels:output_c];
+    if (@available(iOS 11.3, *)) {
+        auto backend = (__bridge MetalContextImp*)metal_context_->backend();
+        //
+        mps_add_op_ = (__bridge_retained void*)[[MPSCNNAdd alloc] initWithDevice:backend.device];
+        // MPS算子输入输出
+        auto input_x_c = MAX(4, static_cast<int>(input_buffer_x_->tensor_dim_[1]));
+        auto input_y_c = MAX(4, static_cast<int>(input_buffer_y_->tensor_dim_[1]));
+        auto output_c = MAX(4, static_cast<int>(output_buffer_->tensor_dim_[1]));
+        mps_input_image_ =
+            (__bridge_retained void*)[[MPSImage alloc] initWithTexture:input_buffer_x_->image()
+                                                       featureChannels:input_x_c];
+        mps_input_image_y_ =
+            (__bridge_retained void*)[[MPSImage alloc] initWithTexture:input_buffer_y_->image()
+                                                       featureChannels:input_y_c];
+        mps_output_image_ =
+            (__bridge_retained void*)[[MPSImage alloc] initWithTexture:output_buffer_->image()
+                                                       featureChannels:output_c];
+    }
 }
 
-ElementwiseAddImageCompute::~ElementwiseAddImageCompute() {
+void ElementwiseAddImageCompute::release_memory() {
+    TargetWrapperMetal::FreeImage(output_buffer_);
+}
+
+void ElementwiseAddImageCompute::release_mps_memory() {
     if (mps_add_op_) {
         CFRelease(mps_add_op_);
         mps_add_op_ = nullptr;
@@ -216,7 +241,11 @@ ElementwiseAddImageCompute::~ElementwiseAddImageCompute() {
         CFRelease(mps_output_image_);
         mps_output_image_ = nullptr;
     }
-    TargetWrapperMetal::FreeImage(output_buffer_);
+}
+
+ElementwiseAddImageCompute::~ElementwiseAddImageCompute() {
+    release_memory();
+    release_mps_memory();
 }
 
 }  // namespace metal

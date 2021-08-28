@@ -30,16 +30,45 @@ void FeedImageCompute::PrepareForRun() {
     auto& context = ctx_->As<MTLContext>();
     metal_context_ = (MetalContext*)context.context();
 
-    const auto& param = this->Param<param_t>();
-    auto output_dims = param.out->dims();
+    init_memory();
+    setup_without_mps();
+}
 
+void FeedImageCompute::ReInitWhenNeeded() {
+    const auto& param = this->Param<param_t>();
     Tensor& input_tensor = param.feed_list->at(param.col);
     auto input_dims = input_tensor.dims();
+
+    if (last_input_dims_ != input_dims) {
+        release_memory();
+        init_memory();
+    }
+}
+
+void FeedImageCompute::init_memory() {
+    const auto& param = this->Param<param_t>();
+    Tensor& input_tensor = param.feed_list->at(param.col);
+    auto input_dims = input_tensor.dims();
+    
     param.out->Resize(input_dims);
 #ifdef LITE_WITH_METAL_FULL
 #else
-    output_buffer_ = param.out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
+    output_buffer_ = param.out->mutable_data<MetalHalf, MetalImage>(metal_context_, input_dims);
 #endif
+    last_input_dims_ = input_dims;
+}
+
+void FeedImageCompute::Run() {
+    @autoreleasepool {
+            run_without_mps();
+    }
+}
+
+void FeedImageCompute::setup_without_mps() {
+    const auto& param = this->Param<param_t>();
+
+    Tensor& input_tensor = param.feed_list->at(param.col);
+    auto input_dims = input_tensor.dims();
     auto input_c = input_dims[1];
     if (input_c == 1) {
         function_name_ = "buf_to_tex";
@@ -53,7 +82,7 @@ void FeedImageCompute::PrepareForRun() {
     pipline_ = [backend pipline:function_name_];
 }
 
-void FeedImageCompute::Run() {
+void FeedImageCompute::run_without_mps() {
     auto pipline = pipline_;
     auto outTexture = output_buffer_->image();
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
@@ -74,8 +103,16 @@ void FeedImageCompute::Run() {
     [backend commit];
 }
 
-FeedImageCompute::~FeedImageCompute() {
+void FeedImageCompute::release_memory() {
+    if(lanczos_) {
+        CFRelease(lanczos_);
+        lanczos_ = nullptr;
+    }
     TargetWrapperMetal::FreeImage(output_buffer_);
+}
+
+FeedImageCompute::~FeedImageCompute() {
+    release_memory();
 }
 
 }  // namespace metal

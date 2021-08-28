@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/subgraph_bridge_registry.h"
+#include "lite/core/subgraph/subgraph_bridge_registry.h"
 #include "lite/kernels/nnadapter/bridges/converter.h"
 #include "lite/kernels/nnadapter/bridges/utility.h"
 
@@ -20,6 +20,87 @@ namespace paddle {
 namespace lite {
 namespace subgraph {
 namespace nnadapter {
+
+NNAdapterOperand* ReshapeOperands(Converter* converter,
+                                  const OpInfo* op_info,
+                                  const std::string& input_name,
+                                  std::string input_scale_name,
+                                  const DDim& input_dims,
+                                  std::vector<int32_t> shape_data,
+                                  const std::string& output_name) {
+  NNAdapterOperand* output_operand = nullptr;
+  if (converter->HasOperand(output_name)) {
+    output_operand = converter->GetOperand(output_name);
+  } else {
+    // Reshape inputs
+    auto has_out_scale = op_info->HasInputScale(input_scale_name, true);
+    auto out_scale =
+        has_out_scale ? op_info->GetInputScale(input_scale_name, true)[0] : 0.f;
+    std::vector<NNAdapterOperand*> input_operands;
+    NNAdapterOperand* input_operand = nullptr;
+    if (converter->HasOperand(input_name)) {
+      input_operand = converter->GetOperand(input_name);
+    } else {
+      if (has_out_scale) {
+        input_operand = converter->AddQuant8VariableOperand(
+            input_dims, out_scale, input_name);
+      } else {
+        input_operand =
+            converter->AddFloat32VariableOperand(input_dims, input_name);
+      }
+    }
+    input_operands.push_back(input_operand);
+    // Reshape shape
+    auto shape_operand = converter->AddInt32ConstantOperand(
+        &shape_data[0], DDim({static_cast<int64_t>(shape_data.size())}));
+    input_operands.push_back(shape_operand);
+    // Reshape output
+    std::vector<int64_t> shape_data_int64;
+    for (auto ele : shape_data) {
+      shape_data_int64.push_back(static_cast<int64_t>(ele));
+    }
+    if (has_out_scale) {
+      output_operand = converter->AddQuant8VariableOperand(
+          DDim(shape_data_int64), out_scale, output_name);
+    } else {
+      output_operand = converter->AddFloat32VariableOperand(
+          DDim(shape_data_int64), output_name);
+    }
+    std::vector<NNAdapterOperand*> output_operands = {output_operand};
+    converter->AddOperation(
+        NNADAPTER_RESHAPE, &input_operands, &output_operands);
+  }
+  return output_operand;
+}
+
+NNAdapterOperand* GenerateInputOperand(Converter* converter,
+                                       Tensor* input,
+                                       const DDim& input_dims,
+                                       const std::string& input_name,
+                                       bool has_input_scale,
+                                       float input_scale) {
+  NNAdapterOperand* input_operand = nullptr;
+  auto input_persistable = input->persistable();
+  if (converter->HasOperand(input_name)) {
+    input_operand = converter->GetOperand(input_name);
+  } else {
+    if (has_input_scale) {
+      input_operand =
+          input_persistable
+              ? converter->AddQuant8ConstantOperand(
+                    input->mutable_data<int8_t>(), input_dims, input_scale)
+              : converter->AddQuant8VariableOperand(
+                    input_dims, input_scale, input_name);
+    } else {
+      input_operand =
+          input_persistable
+              ? converter->AddFloat32ConstantOperand(
+                    input->mutable_data<float>(), input_dims)
+              : converter->AddFloat32VariableOperand(input_dims, input_name);
+    }
+  }
+  return input_operand;
+}
 
 int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
@@ -63,69 +144,80 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto act_type = op_info->HasAttr("act_type")
                       ? op_info->GetAttr<std::string>("act_type")
                       : "";
+
+  // Input0 operand and Input1 operand
+  NNAdapterOperand* input0_operand = nullptr;
+  NNAdapterOperand* input1_operand = nullptr;
+
   // Check whether the two dimensions are compatiable(Numpy-style broadcasting
   // https://numpy.org/doc/stable/user/basics.broadcasting.html).
   // Fill the dimension of Y with 1
-  int max_rank = x_rank > y_rank ? x_rank : y_rank;
-  std::vector<int64_t> x_shape(max_rank, 1);
-  std::vector<int64_t> y_shape(max_rank, 1);
-  if (x_rank > y_rank) {
-    for (int i = 0; i < y_rank; i++) {
-      y_shape[i + axis] = y_dims[i];
-    }
-    y_dims = DDim(y_shape);
-  } else {
-    for (int i = 0; i < x_rank; i++) {
-      x_shape[i + axis] = x_dims[i];
-    }
-    x_dims = DDim(x_shape);
-  }
-  bool matched = true;
-  for (int i = 0; i < max_rank; i++) {
-    matched &= (x_dims[i] == y_dims[i] || x_dims[i] == 1 || y_dims[i] == 1);
-  }
-  CHECK(matched) << "Incompatible broadcasting for x " << x->dims().repr()
-                 << " y " << y->dims().repr();
-
-  // Input0 operand
-  NNAdapterOperand* input0_operand = nullptr;
-  if (converter->HasOperand(x_name)) {
-    input0_operand = converter->GetOperand(x_name);
-    // TODO(hong19860320) Add a NNADAPTER_RESHAPE operation if x_dims is changed
-  } else {
-    if (has_x_scale) {
-      input0_operand =
-          x_persistable
-              ? converter->AddQuant8ConstantOperand(
-                    reinterpret_cast<int8_t*>(x->raw_data()), x_dims, x_scale)
-              : converter->AddQuant8VariableOperand(x_dims, x_scale, x_name);
+  if (y_persistable || x_persistable) {
+    int max_rank = x_rank > y_rank ? x_rank : y_rank;
+    std::vector<int64_t> x_shape(max_rank, 1);
+    std::vector<int64_t> y_shape(max_rank, 1);
+    if (x_rank > y_rank) {
+      for (int i = 0; i < y_rank; i++) {
+        y_shape[i + axis] = y_dims[i];
+      }
+      y_dims = DDim(y_shape);
     } else {
-      input0_operand =
-          x_persistable
-              ? converter->AddFloat32ConstantOperand(
-                    reinterpret_cast<float*>(x->raw_data()), x_dims)
-              : converter->AddFloat32VariableOperand(x_dims, x_name);
+      for (int i = 0; i < x_rank; i++) {
+        x_shape[i + axis] = x_dims[i];
+      }
+      x_dims = DDim(x_shape);
     }
-  }
-
-  // Input1 operand
-  NNAdapterOperand* input1_operand = nullptr;
-  if (converter->HasOperand(y_name)) {
-    input1_operand = converter->GetOperand(y_name);
-    // TODO(hong19860320) Add a NNADAPTER_RESHAPE operation if y_dims is changed
+    bool matched = true;
+    for (int i = 0; i < max_rank; i++) {
+      matched &= (x_dims[i] == y_dims[i] || x_dims[i] == 1 || y_dims[i] == 1);
+    }
+    CHECK(matched) << "Incompatible broadcasting for x_dims: " << x->dims()
+                   << ", y_dims: " << y->dims();
+    input0_operand = GenerateInputOperand(
+        converter, x, x_dims, x_name, has_x_scale, x_scale);
+    input1_operand = GenerateInputOperand(
+        converter, y, y_dims, y_name, has_y_scale, y_scale);
   } else {
-    if (has_y_scale) {
-      input1_operand =
-          y_persistable
-              ? converter->AddQuant8ConstantOperand(
-                    reinterpret_cast<int8_t*>(y->raw_data()), y_dims, y_scale)
-              : converter->AddQuant8VariableOperand(y_dims, y_scale, y_name);
+    if (x_rank != y_rank) {
+      std::string new_x_shape_name = x_name + "new_shape";
+      std::string new_y_shape_name = y_name + "new_shape";
+      int max_rank = x_rank > y_rank ? x_rank : y_rank;
+      std::vector<int32_t> x_shape(max_rank, 1);
+      std::vector<int32_t> y_shape(max_rank, 1);
+      if (x_rank > y_rank) {
+        for (int i = 0; i < y_rank; i++) {
+          y_shape[i + axis] = y_dims[i];
+        }
+        NNAdapterOperand* y_reshape_operand = ReshapeOperands(converter,
+                                                              op_info,
+                                                              y_name,
+                                                              y_scale_name,
+                                                              y_dims,
+                                                              y_shape,
+                                                              new_y_shape_name);
+        input1_operand = y_reshape_operand;
+        input0_operand = GenerateInputOperand(
+            converter, x, x_dims, x_name, has_x_scale, x_scale);
+      } else {
+        for (int i = 0; i < x_rank; i++) {
+          x_shape[i + axis] = x_dims[i];
+        }
+        NNAdapterOperand* x_reshape_operand = ReshapeOperands(converter,
+                                                              op_info,
+                                                              x_name,
+                                                              x_scale_name,
+                                                              x_dims,
+                                                              x_shape,
+                                                              new_x_shape_name);
+        input0_operand = x_reshape_operand;
+        input1_operand = GenerateInputOperand(
+            converter, y, y_dims, y_name, has_y_scale, y_scale);
+      }
     } else {
-      input1_operand =
-          y_persistable
-              ? converter->AddFloat32ConstantOperand(
-                    reinterpret_cast<float*>(y->raw_data()), y_dims)
-              : converter->AddFloat32VariableOperand(y_dims, y_name);
+      input0_operand = GenerateInputOperand(
+          converter, x, x_dims, x_name, has_x_scale, x_scale);
+      input1_operand = GenerateInputOperand(
+          converter, y, y_dims, y_name, has_y_scale, y_scale);
     }
   }
 

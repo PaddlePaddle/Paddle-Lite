@@ -54,13 +54,13 @@ add_library(METAL_BASE STATIC IMPORTED )
 set_target_properties(METAL_BASE PROPERTIES IMPORTED_LOCATION ${METAL_LIBRARY})
 
 lite_cc_test(test_batch_norm_metal_image_metal SRCS image_op/batch_norm_image_compute_test.mm
-        DEPS batch_norm_metal_image io_copy_metal_image op_registry program metal_target_wrapper ${METAL_BASE} ${tensor_lite} op_registry program context )
+        DEPS batch_norm_metal_image io_copy_metal_image metal_target_wrapper ${METAL_BASE} ${tensor_lite} core )
 
 lite_cc_test(test_relu_metal_image_metal SRCS image_op/relu_image_compute_test.mm
-        DEPS relu_metal_image io_copy_metal_image op_registry program metal_target_wrapper ${METAL_BASE} ${tensor_lite} op_registry program context )
+        DEPS relu_metal_image io_copy_metal_image metal_target_wrapper ${METAL_BASE} ${tensor_lite} core )
 
 lite_cc_test(test_pool_metal_image_metal SRCS image_op/pool_image_compute_test.mm
-        DEPS pool_metal_image io_copy_metal_image op_registry program metal_target_wrapper ${METAL_BASE} ${tensor_lite} op_registry program context )
+        DEPS pool_metal_image io_copy_metal_image metal_target_wrapper ${METAL_BASE} ${tensor_lite} core )
 
 lite_cc_test(test_dw_metal_image_metal SRCS image_op/conv2d_image_compute_test.mm
-        DEPS conv2d_metal_image io_copy_metal_image op_registry program metal_target_wrapper ${METAL_BASE} ${tensor_lite} op_registry program context )
+        DEPS conv2d_metal_image io_copy_metal_image metal_target_wrapper ${METAL_BASE} ${tensor_lite} core )

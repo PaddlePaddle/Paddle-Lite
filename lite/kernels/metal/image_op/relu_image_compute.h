@@ -46,6 +46,9 @@ class ReluImageCompute
     virtual ~ReluImageCompute();
 
    private:
+    void run_without_mps();
+    void setup_without_mps();
+
     const MetalImage* input_buffer_;
     MetalImage* output_buffer_{nullptr};
 
@@ -67,6 +70,9 @@ class Relu6ImageCompute
     virtual ~Relu6ImageCompute();
 
    private:
+    void run_without_mps();
+    void setup_without_mps();
+
     const MetalImage* input_buffer_;
     MetalImage* output_buffer_{nullptr};
     std::shared_ptr<MetalBuffer> params_buffer_;
@@ -89,6 +95,9 @@ class LeakyReluImageCompute
     virtual ~LeakyReluImageCompute();
 
    private:
+    void run_without_mps();
+    void setup_without_mps();
+
     const MetalImage* input_buffer_;
     MetalImage* output_buffer_{nullptr};
     std::shared_ptr<MetalBuffer> params_buffer_;

@@ -34,14 +34,16 @@ void ExpImageCompute::PrepareForRun() {
     input_buffer_ = param.X->data<MetalHalf, MetalImage>();
     output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
 #endif
-
-    function_name_ = "exp";
-    // pipline
-    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
-    pipline_ = [backend pipline:function_name_];
+    setup_without_mps();
 }
 
 void ExpImageCompute::Run() {
+    @autoreleasepool {
+        run_without_mps();
+    }
+}
+
+void ExpImageCompute::run_without_mps() {
     auto pipline = pipline_;
     auto outTexture = output_buffer_->image();
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
@@ -52,6 +54,13 @@ void ExpImageCompute::Run() {
 
     [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
     [backend commit];
+}
+
+void ExpImageCompute::setup_without_mps() {
+    function_name_ = "exp";
+    // pipline
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
+    pipline_ = [backend pipline:function_name_];
 }
 
 ExpImageCompute::~ExpImageCompute() {

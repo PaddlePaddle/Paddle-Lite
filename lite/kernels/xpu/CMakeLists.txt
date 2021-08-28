@@ -4,7 +4,7 @@ endif()
 
 if(LITE_WITH_XTCL)
   add_subdirectory(bridges)
-  add_kernel(subgraph_compute_xpu XPU basic SRCS subgraph_compute.cc DEPS ${lite_kernel_deps} device_xpu subgraph_engine_base ${xpu_subgraph_bridges})
+  add_kernel(subgraph_compute_xpu XPU basic SRCS subgraph_compute.cc DEPS ${lite_kernel_deps} device_xpu core ${xpu_subgraph_bridges})
 else()
   # basic
   add_kernel(rnn_compute_xpu XPU basic SRCS rnn_compute.cc DEPS ${lite_kernel_deps})
@@ -83,7 +83,9 @@ else()
   add_kernel(pad2d_compute_xpu XPU extra SRCS pad2d_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(pixel_shuffle_compute_xpu XPU extra SRCS pixel_shuffle_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(correlation_compute_xpu XPU extra SRCS correlation_compute.cc DEPS ${lite_kernel_deps})
+  add_kernel(logical_compute_xpu XPU extra SRCS logical_compute.cc DEPS ${lite_kernel_deps})
   add_kernel(compare_compute_xpu XPU extra SRCS compare_compute.cc DEPS ${lite_kernel_deps})
+  add_kernel(is_empty_compute_xpu XPU extra SRCS is_empty_compute.cc DEPS ${lite_kernel_deps})
 
   # extra(fused kernel)
   add_kernel(__xpu__resnet50_compute_xpu XPU extra SRCS __xpu__resnet50_compute.cc DEPS ${lite_kernel_deps})
