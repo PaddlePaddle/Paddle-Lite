@@ -59,7 +59,7 @@ void conv_depthwise_3x3s2_p1_direct(
 
   //! prepare for processing right result
   int rmask_o[4] = {0};
-  float rmask_i[8] = {1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f};
+  float rmaskr[8] = {-1.f, -1.f, -1.f, -1.f, -1.f, -1.f, -1.f, -1.f};
   int r = w_out % 3;
   int col = w_out / 3;
   if (r > 0) col++;
@@ -75,18 +75,19 @@ void conv_depthwise_3x3s2_p1_direct(
   if (r > 0) {
     for (int i = 0; i < 8; i++) {
       if (i <= r) {
-        rmask_i[i] = 1.f;
+        rmaskr[i] = -1.f;
       } else {
-        rmask_i[i] = 0.f;
+        rmaskr[i] = 1.f;        
       }
     }
-  }
+  } 
 
   int size_in_channel = w_in * h_in;
   int size_out_channel = w_out * h_out;
   int w_stride = 9;
 
   __m128 zero = _mm_set1_ps(0.f);
+  __m256 zero_256 = _mm256_set1_ps(0.f);
 
   for (int n = 0; n < num; ++n) {
     const float *din_batch = din + n * ch_in * size_in_channel;
@@ -182,17 +183,15 @@ void conv_depthwise_3x3s2_p1_direct(
             din_ptr2 += 5;
             din_ptr3 += 5;
             din_ptr4 += 5;
-            __m256 lmaski_ =
-                _mm256_set_ps(0.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f);
-            i0 = _mm256_mul_ps(i0, lmaski_);
+            i0 = _mm256_blend_ps(zero_256, i0, 0b01111111);
             i0 = _mm256_permutevar8x32_ps(i0, shift_3);
-            i1 = _mm256_mul_ps(i1, lmaski_);
+            i1 = _mm256_blend_ps(zero_256, i1, 0b01111111);
             i1 = _mm256_permutevar8x32_ps(i1, shift_3);
-            i2 = _mm256_mul_ps(i2, lmaski_);
+            i2 = _mm256_blend_ps(zero_256, i2, 0b01111111);
             i2 = _mm256_permutevar8x32_ps(i2, shift_3);
-            i3 = _mm256_mul_ps(i3, lmaski_);
+            i3 = _mm256_blend_ps(zero_256, i3, 0b01111111);
             i3 = _mm256_permutevar8x32_ps(i3, shift_3);
-            i4 = _mm256_mul_ps(i4, lmaski_);
+            i4 = _mm256_blend_ps(zero_256, i4, 0b01111111);
             i4 = _mm256_permutevar8x32_ps(i4, shift_3);
           } else {
             din_ptr0 += 6;
@@ -205,12 +204,12 @@ void conv_depthwise_3x3s2_p1_direct(
           //! process right remain
           __m128i mask = _mm_setr_epi32(0x80000000, 0x80000000, 0x80000000, 0);
           if (j + 1 == col) {
-            __m256 rmaski_ = _mm256_loadu_ps(rmask_i);
-            i0 = _mm256_mul_ps(i0, rmaski_);
-            i1 = _mm256_mul_ps(i1, rmaski_);
-            i2 = _mm256_mul_ps(i2, rmaski_);
-            i3 = _mm256_mul_ps(i3, rmaski_);
-            i4 = _mm256_mul_ps(i4, rmaski_);
+            __m256 rmask_ri = _mm256_loadu_ps(rmaskr);            
+            i0 = _mm256_blendv_ps(zero_256, i0, rmask_ri);
+            i1 = _mm256_blendv_ps(zero_256, i1, rmask_ri);
+            i2 = _mm256_blendv_ps(zero_256, i2, rmask_ri);
+            i3 = _mm256_blendv_ps(zero_256, i3, rmask_ri);
+            i4 = _mm256_blendv_ps(zero_256, i4, rmask_ri);
             dout_ptr = dout_ptr + 2 * w_out;
             if (right) {
               mask = _mm_setr_epi32(
@@ -325,18 +324,15 @@ void conv_depthwise_3x3s2_p1_direct(
       static_cast<float *>(TargetMalloc(TARGET(kX86), w_out * sizeof(float)));
 
   //! prepare for processing right result
-  float rmask_ro[4] = {0.f, 0.f, 0.f, 0.f};
-  float rmask_rm[4] = {1.f, 1.f, 1.f, 1.f};
-  float rmask_i[12] = {
-      1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f};
+  float rmasko[4] = {1.f, 1.f, 1.f, 1.f};
+  float rmaskr[12] = {-1.f,-1.f,-1.f,-1.f,-1.f,-1.f,-1.f,-1.f,-1.f,-1.f,-1.f,-1.f};
   int r = w_out % 4;
   int col = w_out / 4;
   if (r > 0) col++;
   if (r > 0) {
     for (int i = 0; i < 4; i++) {
       if (i < r) {
-        rmask_ro[i] = 1.f;
-        rmask_rm[i] = 0.f;
+        rmasko[i] = -1.f;
       }
     }
     right = true;
@@ -345,9 +341,9 @@ void conv_depthwise_3x3s2_p1_direct(
   if (r > 0) {
     for (int i = 0; i < 12; i++) {
       if (i <= r) {
-        rmask_i[i] = 1.f;
+        rmaskr[i] = -1.f;
       } else {
-        rmask_i[i] = 0.f;
+        rmaskr[i] = 1.f;
       }
     }
   }
@@ -466,20 +462,20 @@ void conv_depthwise_3x3s2_p1_direct(
           //! process right remain
           if (j + 1 == col) {
             doutr0 = doutr0 + w_out;
-            __m128 mask = _mm_loadu_ps(rmask_i);
-            i0_0 = _mm_mul_ps(i0_0, mask);
-            i1_0 = _mm_mul_ps(i1_0, mask);
-            i2_0 = _mm_mul_ps(i2_0, mask);
+            __m128 rmask = _mm_loadu_ps(rmaskr);            
+            i0_0 = _mm_blendv_ps(zero, i0_0, rmask);
+            i1_0 = _mm_blendv_ps(zero, i1_0, rmask);
+            i2_0 = _mm_blendv_ps(zero, i2_0, rmask);
 
-            mask = _mm_loadu_ps(rmask_i + 4);
-            i0_1 = _mm_mul_ps(i0_1, mask);
-            i1_1 = _mm_mul_ps(i1_1, mask);
-            i2_1 = _mm_mul_ps(i2_1, mask);
+            rmask = _mm_loadu_ps(rmaskr + 4);
+            i0_1 = _mm_blendv_ps(zero, i0_1, rmask);
+            i1_1 = _mm_blendv_ps(zero, i1_1, rmask);
+            i2_1 = _mm_blendv_ps(zero, i2_1, rmask);   
 
-            mask = _mm_loadu_ps(rmask_i + 8);
-            i0_2 = _mm_mul_ps(i0_2, mask);
-            i1_2 = _mm_mul_ps(i1_2, mask);
-            i2_2 = _mm_mul_ps(i2_2, mask);
+            rmask = _mm_loadu_ps(rmaskr + 8);
+            i0_2 = _mm_blendv_ps(zero, i0_2, rmask);
+            i1_2 = _mm_blendv_ps(zero, i1_2, rmask);
+            i2_2 = _mm_blendv_ps(zero, i2_2, rmask);                       
           }
           //！ shift input
           // 0,1,2,3  4,5,6,7  8,9,10,11 => 0,1,2,3  2,3,4,5  3,4,5,6
@@ -556,11 +552,8 @@ void conv_depthwise_3x3s2_p1_direct(
           //! process bottom pad
           if (j + 1 == col && right) {
             __m128 out0 = _mm_loadu_ps(doutr0_ptr);
-            __m128 rmask_ro_ = _mm_loadu_ps(rmask_ro);
-            __m128 rmask_rm_ = _mm_loadu_ps(rmask_rm);
-
-            r0 = _mm_add_ps(_mm_mul_ps(rmask_rm_, out0),
-                            _mm_mul_ps(rmask_ro_, r0));
+            __m128 rmask_ro = _mm_loadu_ps(rmasko);            
+            r0 = _mm_blendv_ps(out0, r0, rmask_ro);
           }
 
           _mm_storeu_ps(doutr0_ptr, r0);
@@ -603,7 +596,7 @@ void conv_depthwise_3x3s1_p1_direct(
 
   //! prepare for processing right result
   int rmask_o[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-  float rmask_i[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+  float rmaskr[8] = {1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f};
   int r = w_out % 6;
   int col = w_out / 6;
   if (r > 0) col++;
@@ -611,14 +604,14 @@ void conv_depthwise_3x3s1_p1_direct(
     for (int i = 0; i < 8; i++) {
       if (i < r) {
         rmask_o[i] = 0x80000000;
-        rmask_i[i] = 1.f;
+        rmaskr[i] = -1.f;
       }
     }
-    rmask_i[r] = 1.f;
+    rmaskr[r] = -1.f;
     right = true;
   } else {
     for (int i = 0; i < 7; i++) {
-      rmask_i[i] = 1.f;
+      rmaskr[i] = -1.f;
     }
   }
 
@@ -744,20 +737,18 @@ void conv_depthwise_3x3s1_p1_direct(
             din_ptr3 += 5;
             din_ptr4 += 5;
             din_ptr5 += 5;
-            __m256 lmaski_ =
-                _mm256_set_ps(0.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f);
-            i0 = _mm256_mul_ps(i0, lmaski_);
+            i0 = _mm256_blend_ps(zero, i0, 0b01111111);
             i0 = _mm256_permutevar8x32_ps(i0, shift_3);
-            i1 = _mm256_mul_ps(i1, lmaski_);
+            i1 = _mm256_blend_ps(zero, i1, 0b01111111);
             i1 = _mm256_permutevar8x32_ps(i1, shift_3);
-            i2 = _mm256_mul_ps(i2, lmaski_);
+            i2 = _mm256_blend_ps(zero, i2, 0b01111111);
             i2 = _mm256_permutevar8x32_ps(i2, shift_3);
-            i3 = _mm256_mul_ps(i3, lmaski_);
+            i3 = _mm256_blend_ps(zero, i3, 0b01111111);
             i3 = _mm256_permutevar8x32_ps(i3, shift_3);
-            i4 = _mm256_mul_ps(i4, lmaski_);
+            i4 = _mm256_blend_ps(zero, i4, 0b01111111);
             i4 = _mm256_permutevar8x32_ps(i4, shift_3);
-            i5 = _mm256_mul_ps(i5, lmaski_);
-            i5 = _mm256_permutevar8x32_ps(i5, shift_3);
+            i5 = _mm256_blend_ps(zero, i5, 0b01111111);
+            i5 = _mm256_permutevar8x32_ps(i5, shift_3);                        
           } else {
             din_ptr0 += 6;
             din_ptr1 += 6;
@@ -777,13 +768,13 @@ void conv_depthwise_3x3s1_p1_direct(
                                             0x80000000,
                                             0x80000000);
           if (j + 1 == col) {
-            __m256 rmaski_ = _mm256_loadu_ps(rmask_i);
-            i0 = _mm256_mul_ps(i0, rmaski_);
-            i1 = _mm256_mul_ps(i1, rmaski_);
-            i2 = _mm256_mul_ps(i2, rmaski_);
-            i3 = _mm256_mul_ps(i3, rmaski_);
-            i4 = _mm256_mul_ps(i4, rmaski_);
-            i5 = _mm256_mul_ps(i5, rmaski_);
+            __m256 rmask_i = _mm256_loadu_ps(rmaskr);            
+            i0 = _mm256_blendv_ps(zero, i0, rmask_i);
+            i1 = _mm256_blendv_ps(zero, i1, rmask_i);             
+            i2 = _mm256_blendv_ps(zero, i2, rmask_i);
+            i3 = _mm256_blendv_ps(zero, i3, rmask_i);
+            i4 = _mm256_blendv_ps(zero, i4, rmask_i);
+            i5 = _mm256_blendv_ps(zero, i5, rmask_i);
             dout_ptr = dout_ptr + 4 * w_out;
             if (right) {
               smask_ = _mm256_set_epi32(rmask_o[7],
@@ -945,7 +936,6 @@ void conv_depthwise_3x3s1_p1_direct(
 
   TargetFree(TARGET(kX86), zero_ptr);
   TargetFree(TARGET(kX86), write_ptr);
-
 #else
   bool right = false;  // for right result
 
@@ -959,17 +949,15 @@ void conv_depthwise_3x3s1_p1_direct(
       static_cast<float *>(TargetMalloc(TARGET(kX86), w_out * sizeof(float)));
 
   //! prepare for processing right result
-  float rmask_rm[4] = {1.f, 1.f, 1.f, 1.f};
-  float rmask_ro[4] = {0.f, 0.f, 0.f, 0.f};
-  float rmask_i[8] = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
+  float rmasko[4] = {1.f, 1.f, 1.f, 1.f};
+  float rmaskr[8] = {1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f};
   int r = w_out % 4;
   int col = w_out / 4;
   if (r > 0) col++;
   if (r > 0) {
     for (int i = 0; i < 4; i++) {
       if (i < r) {
-        rmask_ro[i] = 1.f;
-        rmask_rm[i] = 0.f;
+        rmasko[i] = -1.f;
       }
     }
     right = true;
@@ -977,12 +965,12 @@ void conv_depthwise_3x3s1_p1_direct(
   if (r > 0) {
     for (int i = 0; i < 8; i++) {
       if (i <= r) {
-        rmask_i[i] = 1.f;
+        rmaskr[i] = -1.f;
       }
     }
   } else {
     for (int i = 0; i < 5; i++) {
-      rmask_i[i] = 1.f;
+        rmaskr[i] = -1.f;
     }
   }
 
@@ -1113,17 +1101,17 @@ void conv_depthwise_3x3s1_p1_direct(
           //! process right remain
           if (j + 1 == col) {
             dout_ptr = dout_ptr + 2 * w_out;
-            __m128 mask = _mm_loadu_ps(rmask_i);
-            i0_0 = _mm_mul_ps(i0_0, mask);
-            i1_0 = _mm_mul_ps(i1_0, mask);
-            i2_0 = _mm_mul_ps(i2_0, mask);
-            i3_0 = _mm_mul_ps(i3_0, mask);
+            __m128 rmask_i = _mm_loadu_ps(rmaskr);            
+            i0_0 = _mm_blendv_ps(zero, i0_0, rmask_i);
+            i1_0 = _mm_blendv_ps(zero, i1_0, rmask_i);
+            i2_0 = _mm_blendv_ps(zero, i2_0, rmask_i);
+            i3_0 = _mm_blendv_ps(zero, i3_0, rmask_i);
 
-            mask = _mm_loadu_ps(rmask_i + 4);
-            i0_1 = _mm_mul_ps(i0_1, mask);
-            i1_1 = _mm_mul_ps(i1_1, mask);
-            i2_1 = _mm_mul_ps(i2_1, mask);
-            i3_1 = _mm_mul_ps(i3_1, mask);
+            rmask_i = _mm_loadu_ps(rmaskr + 4);
+            i0_1 = _mm_blendv_ps(zero, i0_1, rmask_i);
+            i1_1 = _mm_blendv_ps(zero, i1_1, rmask_i);
+            i2_1 = _mm_blendv_ps(zero, i2_1, rmask_i);
+            i3_1 = _mm_blendv_ps(zero, i3_1, rmask_i);
           }
 
           __m128 wei_00 = _mm_load1_ps(wei_ptr);
@@ -1235,13 +1223,9 @@ void conv_depthwise_3x3s1_p1_direct(
           if (j + 1 == col && right) {
             __m128 out0 = _mm_loadu_ps(doutr0);
             __m128 out1 = _mm_loadu_ps(doutr1);
-            __m128 rmask_ro_ = _mm_loadu_ps(rmask_ro);
-            __m128 rmask_rm_ = _mm_loadu_ps(rmask_rm);
-
-            r0 = _mm_add_ps(_mm_mul_ps(rmask_rm_, out0),
-                            _mm_mul_ps(rmask_ro_, r0));
-            r1 = _mm_add_ps(_mm_mul_ps(rmask_rm_, out1),
-                            _mm_mul_ps(rmask_ro_, r1));
+            __m128 rmask_ro = _mm_loadu_ps(rmasko);
+            r0 = _mm_blendv_ps(out0, r0, rmask_ro);
+            r1 = _mm_blendv_ps(out1, r1, rmask_ro);
           }
 
           _mm_storeu_ps(doutr0, r0);
