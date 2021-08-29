@@ -15,14 +15,14 @@
 #ifndef __NNADAPTER_CONVERTER_ALL_H__  // NOLINT
 #define __NNADAPTER_CONVERTER_ALL_H__
 
-REGISTER_CONVERTER(conv2d,
-                   ConvertConv2D,
-                   "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
-                   "npu,amlogic_npu,imagination_nna");
-REGISTER_CONVERTER(depthwise_conv2d,
-                   ConvertConv2D,
-                   "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
-                   "npu,amlogic_npu,imagination_nna");
+// REGISTER_CONVERTER(conv2d,
+//                    ConvertConv2D,
+//                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
+//                    "npu,amlogic_npu,imagination_nna");
+// REGISTER_CONVERTER(depthwise_conv2d,
+//                    ConvertConv2D,
+//                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
+//                    "npu,amlogic_npu,imagination_nna");
 // REGISTER_CONVERTER(softmax,
 //                    ConvertSoftmax,
 //                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
