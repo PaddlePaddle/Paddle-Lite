@@ -22,7 +22,9 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace x86 {
-#define CONV_DW_PARAM i_data, o_data, bs, oc, oh, ow, ic, ih, iw, w_data, b_data, pad, flag_bias, act_param
+#define CONV_DW_PARAM                                                         \
+  i_data, o_data, bs, oc, oh, ow, ic, ih, iw, w_data, b_data, pad, flag_bias, \
+      act_param
 template <>
 void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto& param = this->Param<param_t>();
@@ -37,10 +39,10 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
     const auto* i_data = param.x->data<float>();
     const auto* w_data = param.filter->data<float>();
     const auto* b_data = param.bias ? param.bias->data<float>() : nullptr;
-    auto act_param = param.activation_param;    
+    auto act_param = param.activation_param;
     const auto stride = param.strides[1];
     auto pad = (*param.paddings)[2];
-    bool flag_bias = param.bias != nullptr;    
+    bool flag_bias = param.bias != nullptr;
     auto* o_data = param.output->mutable_data<float>();
 
     auto x_dims = param.x->dims();
@@ -54,7 +56,7 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
     int oh = o_dims[2];
     int ow = o_dims[3];
     int oc = o_dims[1];
-    
+
     if (stride == 1) {
       lite::x86::math::conv_depthwise_3x3s1_p1_direct(CONV_DW_PARAM);
     } else if (stride == 2) {
