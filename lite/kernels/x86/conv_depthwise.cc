@@ -35,7 +35,7 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   int batch_size = param.x->dims()[0];
   int input_channel = param.x->dims()[1];
 
-  /*if ((*param.paddings)[0] == 1) {
+  if ((*param.paddings)[0] == 1) {
     const auto* i_data = param.x->data<float>();
     const auto* w_data = param.filter->data<float>();
     const auto* b_data = param.bias ? param.bias->data<float>() : nullptr;
@@ -64,7 +64,7 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
     }
     KERNEL_FUNC_NAME("conv_depthwise_direct")
     return;
-  }*/
+  }
 
   const int pack_size =
       input_channel % 8 == 0 ? 8 : input_channel % 4 == 0 ? 4 : 1;
