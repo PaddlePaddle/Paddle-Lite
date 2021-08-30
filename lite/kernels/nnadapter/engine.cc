@@ -17,7 +17,7 @@
 #include <time.h>
 #include <utility>
 #include "lite/core/op_registry.h"
-#include "lite/core/subgraph_bridge_registry.h"
+#include "lite/core/subgraph/subgraph_bridge_registry.h"
 #include "lite/kernels/nnadapter/bridges/converter.h"
 #include "lite/kernels/nnadapter/bridges/paddle_use_bridges.h"
 #include "lite/kernels/nnadapter/bridges/utility.h"

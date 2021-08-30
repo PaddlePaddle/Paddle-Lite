@@ -17,7 +17,7 @@
 #include <set>
 #include <string>
 #include "lite/api/paddle_place.h"
-#include "lite/model_parser/base/apis.h"
+#include "lite/core/model/base/apis.h"
 
 namespace paddle {
 namespace lite {

@@ -3,7 +3,7 @@ if (LITE_ON_TINY_PUBLISH)
   return()
 endif()
 
-lite_cc_library(naive_buffer SRCS naive_buffer.cc DEPS types)
+lite_cc_library(naive_buffer SRCS naive_buffer.cc DEPS core)
 
 add_subdirectory(proto)
 

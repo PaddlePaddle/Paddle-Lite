@@ -18,7 +18,7 @@
 
 #include "lite/core/op_lite.h"
 #include "lite/core/op_registry.h"
-#include "lite/core/subgraph_bridge_registry.h"
+#include "lite/core/subgraph/subgraph_bridge_registry.h"
 #include "lite/kernels/mlu/bridges/test_helper.h"
 #include "lite/operators/activation_ops.h"
 

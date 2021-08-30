@@ -21,7 +21,7 @@
 #include <utility>
 #include <vector>
 
-#include "lite/model_parser/general/op_desc.h"
+#include "lite/core/model/general/op_desc.h"
 #include "lite/model_parser/ssa/op_proto.h"
 #include "lite/model_parser/ssa/var_desc.h"
 

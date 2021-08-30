@@ -17,6 +17,7 @@
 
 #include <MetalPerformanceShaders/MetalPerformanceShaders.h>
 
+API_AVAILABLE(ios(10.0))
 @interface MPSConvDataSource : NSObject <MPSCNNConvolutionDataSource> {
 }
 @property (nonatomic, assign) void* weights;

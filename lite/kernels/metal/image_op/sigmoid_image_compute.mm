@@ -37,6 +37,18 @@ void SigmoidImageCompute::PrepareForRun() {
     input_buffer_ = param.X->data<MetalHalf, MetalImage>();
     output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
 #endif
+
+    setup_without_mps();
+}
+
+void SigmoidImageCompute::Run() {
+    @autoreleasepool {
+        run_without_mps();
+    }
+}
+
+void SigmoidImageCompute::setup_without_mps() {
+>>>>>>> 29fd1e6... [metal] autoreleasepool;(eg: keep predict in one resident thread )
     function_name_ = "sigmoid";
     if (param.has_active) {
         if (param.active_type == lite_api::ActivationType::kSigmoid) {
@@ -52,7 +64,7 @@ void SigmoidImageCompute::PrepareForRun() {
     pipline_ = [backend pipline:function_name_];
 }
 
-void SigmoidImageCompute::Run() {
+void SigmoidImageCompute::run_without_mps() {
     auto pipline = pipline_;
     auto outTexture = output_buffer_->image();
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();

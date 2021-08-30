@@ -18,7 +18,7 @@
 #include <map>
 #include <string>
 #include <vector>
-#include "lite/model_parser/base/apis.h"
+#include "lite/core/model/base/apis.h"
 #include "lite/model_parser/naive_buffer/naive_buffer_wrapper_helper.h"
 #include "lite/model_parser/naive_buffer/proto/framework.nb.h"
 
