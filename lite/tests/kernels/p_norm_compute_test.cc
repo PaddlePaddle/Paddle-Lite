@@ -134,7 +134,7 @@ void test_p_norm(Place place, float abs_error) {
   }
 }
 
-TEST(Norm, precision) {
+TEST(PNorm, precision) {
   Place place;
   float abs_error = 2e-5;
 #if defined(LITE_WITH_NNADAPTER)
@@ -144,9 +144,6 @@ TEST(Norm, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
-  place = TARGET(kHuaweiAscendNPU);
-  abs_error = 1e-2;  // use fp16
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kHost);
 #elif defined(LITE_WITH_X86)
