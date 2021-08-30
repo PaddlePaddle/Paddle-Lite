@@ -183,6 +183,16 @@ bool CLRuntime::CheckFromCache(const std::string& program_key) {
   }
 }
 
+static auto remove_file = [](const std::string& bin_file) {
+  if (remove(bin_file.c_str()) != 0) {
+    LOG(FATAL) << "Cannot delete invalid precomplied OpenCL binary[" << bin_file
+               << "]!";
+  } else {
+    LOG(INFO) << "Invalid precomplied OpenCL binary[" << bin_file
+              << "] has been deleted!";
+  }
+};
+
 bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
                                            const std::string& build_option) {
   bool ret = false;
@@ -192,15 +202,6 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
 
   // find binary
   std::string bin_file = path_name.at(0) + "/" + path_name.at(1);
-  auto remove_file = [](const std::string& bin_file) {
-    if (remove(bin_file.c_str()) != 0) {
-      LOG(FATAL) << "Cannot delete invalid precomplied OpenCL binary["
-                 << bin_file << "]!";
-    } else {
-      LOG(INFO) << "Invalid precomplied OpenCL binary[" << bin_file
-                << "] has been deleted!";
-    }
-  };
 
   if (programs_.empty()) {
     // check whether binary exist
@@ -230,6 +231,7 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
         LOG(WARNING) << "The precompiled OpenCL binary[" << bin_file
                      << "] is illegal!";
         delete_bin_flag = true;
+        del_tune_bin_flag_ = true;
         // Jump to build from source
       } else if (host::memcmp(((sn_iter->second)[0]).data(),
                               GetSN(build_option).data(),
@@ -243,6 +245,7 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
         LOG(WARNING) << "The precompiled OpenCL binary[" << bin_file
                      << "] is invalid!";
         delete_bin_flag = true;
+        del_tune_bin_flag_ = true;
         // Jump to build from source
       } else {
 #ifdef LITE_WITH_LOG
@@ -273,6 +276,7 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
           ret = true;
         } else {
           delete_bin_flag = true;
+          del_tune_bin_flag_ = true;
           // Jump to build from source
         }
       }
@@ -287,6 +291,7 @@ bool CLRuntime::CheckFromPrecompiledBinary(const std::string& program_key,
     // This case happened when model has updated. Bin file should be updated
     // accordingly.
     delete_bin_flag = true;
+    del_tune_bin_flag_ = true;
     gotten_bin_flag_ = false;
     remove_file(bin_file);
   }
@@ -396,6 +401,9 @@ void CLRuntime::SaveTuned() {
   if (tuned_path_name_.empty() || auto_tune() == lite_api::CL_TUNE_NONE) return;
   std::string tuned_file =
       tuned_path_name_.at(0) + "/" + tuned_path_name_.at(1);
+  if (IsFileExists(tuned_file) && del_tune_bin_flag_) {
+    remove_file(tuned_file);
+  }
   if (IsFileExists(tuned_file)) {
     LOG(INFO) << "OpenCL Tuned file existed:" << tuned_file;
   } else {
@@ -430,23 +438,10 @@ bool CLRuntime::Deserialize(
 }
 
 // tuned param
-bool CLRuntime::Serialize(const std::string file_name,
-                          const std::map<std::string, cl::NDRange>& map_data) {
-  std::map<std::string, std::vector<int>> map_data_cpy;
-  for (auto& kv : map_data) {
-#ifdef LITE_WITH_LOG
-    VLOG(3) << std::to_string(static_cast<int>(kv.second[0])) << ","
-            << std::to_string(static_cast<int>(kv.second[1])) << ","
-            << std::to_string(static_cast<int>(kv.second[2]));
-#endif
-    map_data_cpy.insert(std::pair<std::string, std::vector<int>>(
-        kv.first,
-        {static_cast<int>(kv.second[0]),
-         static_cast<int>(kv.second[1]),
-         static_cast<int>(kv.second[2])}));
-  }
-
-  fbs::opencl::TuneCache cache{map_data_cpy};
+bool CLRuntime::Serialize(
+    const std::string file_name,
+    const std::map<std::string, std::vector<int>>& map_data) {
+  fbs::opencl::TuneCache cache{map_data};
   std::vector<int> buffer;
   cache.CopyDataToBuffer(&buffer);
 
@@ -455,23 +450,12 @@ bool CLRuntime::Serialize(const std::string file_name,
 }
 
 bool CLRuntime::Deserialize(const std::string file_name,
-                            std::map<std::string, cl::NDRange>* map_ptr) {
+                            std::map<std::string, std::vector<int>>* map_ptr) {
   std::vector<int> buffer;
   ReadFile<int>(file_name, &buffer);
 
   fbs::opencl::TuneCache cache{buffer};
-  std::map<std::string, std::vector<int>> tmp_map = cache.GetBinaryMap();
-  for (auto& kv : tmp_map) {
-    cl::NDRange range{static_cast<cl::size_type>(kv.second[0]),
-                      static_cast<cl::size_type>(kv.second[1]),
-                      static_cast<cl::size_type>(kv.second[2])};
-#ifdef LITE_WITH_LOG
-    VLOG(3) << std::to_string(kv.second[0]) << ","
-            << std::to_string(kv.second[1]) << ","
-            << std::to_string(kv.second[2]);
-#endif
-    map_ptr->insert(std::pair<std::string, cl::NDRange>(kv.first, range));
-  }
+  *map_ptr = cache.GetBinaryMap();
   return true;
 }
 
@@ -856,6 +840,7 @@ void CLRuntime::set_auto_tune(lite_api::CLTuneMode tune_mode,
     if (!status) {
       LOG(ERROR) << "failed to deserialize tuned_file:" << tuned_file;
     }
+    have_tune_file_flag_ = true;
   } else {
     LOG(INFO) << "Not found tuned file:" << tuned_file;
   }
@@ -863,28 +848,29 @@ void CLRuntime::set_auto_tune(lite_api::CLTuneMode tune_mode,
 }
 
 bool CLRuntime::HasTunedLocalWorkSizeMap(const std::string& key,
-                                         cl::NDRange* lws) {
+                                         std::vector<int>* tuned_value) {
   bool has = false;
   auto it = tuned_lwss_map_.find(key);
   if (it != tuned_lwss_map_.end()) {
-    *lws = it->second;
+    *tuned_value = it->second;
     has = true;
   }
   return has;
 }
 
 void CLRuntime::SetTunedLocalWorkSizeMap(const std::string& key,
-                                         const cl::NDRange lws) {
+                                         const std::vector<int>& tune_vct) {
   auto it = tuned_lwss_map_.find(key);
   if (it != tuned_lwss_map_.end()) {
     auto lws_old = it->second;
     LOG(FATAL) << "===> found lws_old with same key, please add more detailed "
                   "info to key <==="
                << "\n lws_old:" << lws_old[0] << "," << lws_old[1] << ","
-               << lws_old[2] << "\n lws_new:" << lws[0] << "," << lws[1] << ","
-               << lws[2];
+               << lws_old[2] << "\n lws_new:" << tune_vct[0] << ","
+               << tune_vct[1] << "," << tune_vct[2];
   }
-  tuned_lwss_map_.insert(std::pair<std::string, cl::NDRange>(key, lws));
+  tuned_lwss_map_.insert(
+      std::pair<std::string, std::vector<int>>(key, tune_vct));
 }
 
 double CLRuntime::GetCommandTime(const cl::Event& event) {
