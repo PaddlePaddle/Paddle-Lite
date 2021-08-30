@@ -377,6 +377,15 @@ std::shared_ptr<Operator> Program::AddConstantOperator(
   return constant_operator;
 }
 
+std::shared_ptr<Operator> Program::AddZeroConstantOperator(
+    NNAdapterOperandPrecisionCode precision,
+    const std::vector<int32_t>& dimensions) {
+  auto precision_data_length = GetOperandPrecisionDataLength(precision);
+  auto num_values = ProductionOfDimensions(dimensions);
+  std::vector<uint8_t> zero_values(precision_data_length * num_values, 0);
+  return AddConstantOperator(&zero_values[0], precision, dimensions);
+}
+
 std::shared_ptr<Operator> Program::AddInt32ConstantOperator(
     const int32_t* values, const std::vector<int32_t>& dimensions) {
   return AddConstantOperator(values, NNADAPTER_TENSOR_INT32, dimensions);

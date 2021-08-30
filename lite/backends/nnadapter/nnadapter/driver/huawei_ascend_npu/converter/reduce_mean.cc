@@ -15,6 +15,7 @@
 #include "driver/huawei_ascend_npu/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/modeling.h"
 
 namespace nnadapter {
 namespace huawei_ascend_npu {
@@ -57,16 +58,17 @@ int Program::ConvertReduceMean(hal::Operation* operation) {
   SET_INPUT(reduce_mean_op, x, input_operator);
   SET_INPUT(reduce_mean_op, axes, axes_operator);
   auto reduce_mean_operator = MAP_OUTPUT(reduce_mean_op, y, output_operand);
-  // If keep_dim == false && reduce_all, need add reshape op, trans scalar to 1D
-  // tensor with shape[1].
+  // In the following cases need add op trans scalar to 1D tensor with shape[1]:
+  // 1. keep_dim == false && reduce_all
+  // 2. output operand is model output operand.
   auto reduce_all = axes_size == input_operand->type.dimension_count;
-  if (!keep_dim && reduce_all) {
-    auto reshape_op =
-        std::make_shared<ge::op::Reshape>(reduce_mean_name + "/shape");
-    auto shape_operator = AddInt32ConstantOperator({1});
-    SET_INPUT(reshape_op, x, reduce_mean_operator);
-    SET_INPUT(reshape_op, shape, shape_operator);
-    MAP_OUTPUT(reshape_op, y, output_operand);
+  if (!keep_dim && reduce_all && IsModelOutputOperand(output_operand)) {
+    auto add_op = std::make_shared<ge::op::Add>(reduce_mean_name + "/add");
+    auto zero_operator = AddZeroConstantOperator(input_operand->type.precision,
+                                                 std::vector<int32_t>{1});
+    SET_INPUT(add_op, x1, reduce_mean_operator);
+    SET_INPUT(add_op, x2, zero_operator);
+    MAP_OUTPUT(add_op, y, output_operand);
   }
   return NNADAPTER_NO_ERROR;
 }
