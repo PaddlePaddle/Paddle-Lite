@@ -11,7 +11,7 @@ limitations under the License. */
 
 #pragma once
 
-#include "lite/backends/x86/math/detail/activation_functions.h"
+#include "lite/backends/x86/math/activation_functions.h"
 #include "lite/core/context.h"
 #include "lite/utils/cp_logging.h"
 
