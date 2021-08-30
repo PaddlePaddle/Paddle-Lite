@@ -129,6 +129,9 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto count_include_pad_operand =
       converter->AddBool8ConstantOperand(count_include_pad);
 
+  // Adaptive operand
+  auto adaptive_operand = converter->AddBool8ConstantOperand(adaptive);
+
   // Output operand
   NNAdapterOperand* output_operand = nullptr;
   if (has_out_scale) {
@@ -151,7 +154,8 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       filter_height_operand,
       fuse_code_operand,
       ceil_mode_operand,
-      count_include_pad_operand};
+      count_include_pad_operand,
+      adaptive_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   NNAdapterOperationType pool2d_operation_type;
   if (pooling_type == "max") {
