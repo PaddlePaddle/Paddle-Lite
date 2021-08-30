@@ -13,9 +13,9 @@
 // limitations under the License.
 
 #include "lite/kernels/x86/conv_depthwise.h"
-#include "lite/backends/x86/math/conv_depthwise_pack4.h"
-#include "lite/backends/x86/math/conv_depthwise_pack8.h"
-#include "lite/backends/x86/math/conv_utils.h"
+#include "lite/backends/x86/math/avx/conv_depthwise_pack4.h"
+#include "lite/backends/x86/math/avx/conv_depthwise_pack8.h"
+#include "lite/backends/x86/math/avx/conv_utils.h"
 
 namespace paddle {
 namespace lite {

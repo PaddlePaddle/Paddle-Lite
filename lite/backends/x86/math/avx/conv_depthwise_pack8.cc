@@ -12,9 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "lite/backends/x86/math/conv_depthwise_pack8.h"
+#include "lite/backends/x86/math/avx/conv_depthwise_pack8.h"
 #include <vector>
-#include "lite/backends/x86/math/conv_utils.h"
+#include "lite/backends/x86/math/avx/conv_utils.h"
 
 namespace paddle {
 namespace lite {
