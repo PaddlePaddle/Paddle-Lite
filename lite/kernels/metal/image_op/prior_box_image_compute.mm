@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/metal/image_op/prior_box_image_compute.h"
+#include "lite/backends/metal/metal_context_imp.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
 
@@ -21,26 +22,26 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-template <typename P, PrecisionType PTYPE>
-void PriorBoxImageCompute<P, PTYPE>::PrepareForRun() {
-    auto& context = this->ctx_->template As<ContextMetal>();
+void PriorBoxImageCompute::PrepareForRun() {
+    auto& context = ctx_->As<MTLContext>();
     metal_context_ = (MetalContext*)context.context();
-    auto device = metal_context_->GetDefaultDevice();
 
-    const auto& param = this->template Param<param_t>();
+    const auto& param = this->Param<param_t>();
     auto box_dims = param.boxes->dims();
     auto variances_dims = param.variances->dims();
-
-    input_buffer_ = param.input->template data<P, MetalImage>();
-    image_buffer_ = param.image->template data<P, MetalImage>();
-    output_buffer_ = param.boxes->template mutable_data<P, MetalImage>(box_dims);
-    variances_buffer_ = param.variances->template mutable_data<P, MetalImage>(variances_dims);
+#ifdef LITE_WITH_METAL_FULL
+#else
+    input_buffer_ = param.input->data<MetalHalf, MetalImage>();
+    image_buffer_ = param.input->data<MetalHalf, MetalImage>();
+    output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, box_dims);
+    variances_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, variances_dims);
+#endif
 
     assert(param.min_sizes.size() == 1);
-    auto image_width = (float)(image_buffer_->pad_to_four_dim_[3]);
-    auto image_height = (float)(image_buffer_->pad_to_four_dim_[2]);
-    auto feature_width = (float)(input_buffer_->pad_to_four_dim_[3]);
-    auto feature_height = (float)(input_buffer_->pad_to_four_dim_[2]);
+    auto image_width = static_cast<float>(image_buffer_->pad_to_four_dim_[3]);
+    auto image_height = static_cast<float>(image_buffer_->pad_to_four_dim_[2]);
+    auto feature_width = static_cast<float>(input_buffer_->pad_to_four_dim_[3]);
+    auto feature_height = static_cast<float>(input_buffer_->pad_to_four_dim_[2]);
 
     float step_w = param.step_w;
     float step_h = param.step_h;
@@ -69,12 +70,7 @@ void PriorBoxImageCompute<P, PTYPE>::PrepareForRun() {
         }
     }
 
-    auto aspect_ratios_size = (uint32_t)(output_aspect_ratios.size());
-
-    new_aspect_ratio_buffer_ = metal_context_->CreateBuffer(*device,
-        output_aspect_ratios.data(),
-        aspect_ratios_size * sizeof(float),
-        METAL_ACCESS_FLAG::CPUWriteOnly);
+    new_aspect_ratio_buffer_ = std::make_shared<MetalBuffer>(metal_context_, output_aspect_ratios.size() * sizeof(float), output_aspect_ratios.data());
 
     auto max_sizes_size = (uint32_t)(param.max_sizes.size());
     auto min_sizes_size = (uint32_t)(param.min_sizes.size());
@@ -84,7 +80,7 @@ void PriorBoxImageCompute<P, PTYPE>::PrepareForRun() {
     float minSize = (bool)(*(param.min_sizes.end())) ? *(param.min_sizes.end()) : 0.0f;
     float maxSize = (bool)(*(param.max_sizes.end())) ? *(param.min_sizes.end()) : 0.0f;
 
-    PriorBoxMetalParam prior_box_param = {param.offset,
+    PriorBoxMetalParam metal_param = {param.offset,
         step_w,
         step_h,
         minSize,
@@ -96,49 +92,45 @@ void PriorBoxImageCompute<P, PTYPE>::PrepareForRun() {
         aspect_ratios_size,
         min_sizes_size,
         max_sizes_size};
+    param_buffer_ = std::make_shared<MetalBuffer>(metal_context_, sizeof(metal_param), &metal_param);
 
-    new_aspect_ratio_buffer_ = metal_context_->CreateBuffer(
-        *device, &prior_box_param, sizeof(prior_box_param), METAL_ACCESS_FLAG::CPUWriteOnly);
-
-    std::string function_name = "";
-    if (std::is_same<float, P>::value) {
-        function_name = "prior_box";
-        if (param.min_max_aspect_ratios_order) function_name = "prior_box_MinMaxAspectRatiosOrder";
-    } else if (std::is_same<MetalHalf, P>::value) {
-        function_name = "prior_box_half";
-        if (param.min_max_aspect_ratios_order)
-            function_name = "prior_box_MinMaxAspectRatiosOrder_half";
-    }
-    assert(!function_name.empty());
-
-    kernel_ = metal_context_->GetKernel(*device, function_name);
-    queue_ = metal_context_->GetDefaultQueue(*device);
+    function_name_ = "prior_box";
+    
+    if (param.min_max_aspect_ratios_order) 
+        function_name_ = "prior_box_MinMaxAspectRatiosOrder";
+    
+    // pipline
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
+    pipline_ = [backend pipline:function_name_];
 }
 
-template <typename P, PrecisionType PTYPE>
-void PriorBoxImageCompute<P, PTYPE>::Run() {
-    const auto& param = this->template Param<param_t>();
-    auto output_width = output_buffer_->texture_width_;
-    auto output_height = output_buffer_->texture_height_;
-    auto output_array_length = output_buffer_->array_length_;
+void PriorBoxImageCompute::Run() {
+    @autoreleasepool {
+        run_without_mps();
+    }
+}
 
-    auto encoder =
-        std::make_shared<MetalEncoder>(metal_context_->cmd_buf_.get(), &kernel_->program_);
-    MetalUint3 global_work_size = {static_cast<MetalUint>(output_width),
-        static_cast<MetalUint>(output_height),
-        static_cast<MetalUint>(output_array_length)};
+void PriorBoxImageCompute::run_without_mps() {
+    auto pipline = pipline_;
+    auto outTexture = output_buffer_->image();
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
 
-    [encoder->metal_command_encoder_ setTexture:(input_buffer_->image()) atIndex:(0)];
-    [encoder->metal_command_encoder_ setTexture:(image_buffer_->image()) atIndex:(1)];
-    [encoder->metal_command_encoder_ setBuffer:(new_aspect_ratio_buffer_->buffer())
-                                        offset:(0)
-                                       atIndex:(0)];
-    [encoder->metal_command_encoder_ setBuffer:(param_buffer_->buffer()) offset:(0) atIndex:(1)];
-    [encoder->metal_command_encoder_ setTexture:(output_buffer_->image()) atIndex:(2)];
-    [encoder->metal_command_encoder_ setBytes:(param.variances_.data())
-                                       length:(sizeof(float) * param.variances_.size())
-                                      atIndex:(2)];
-    kernel_->Execute(*encoder, global_work_size, false);
+    auto encoder = [backend commandEncoder];
+    [encoder setTexture:(input_buffer_->image()) atIndex:(0)];
+    [encoder setTexture:(image_buffer_->image()) atIndex:(1)];
+    [encoder setTexture:(output_buffer_->image()) atIndex:(2)];
+
+    [encoder setBuffer:(new_aspect_ratio_buffer_->buffer()) offset:(0) atIndex:(1)];
+    [encoder setBuffer:(param_buffer_->buffer()) offset:(0) atIndex:(1)];
+    [encoder setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(2)];
+
+    [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
+    [backend commit];
+}
+
+PriorBoxImageCompute::~PriorBoxImageCompute() {
+    TargetWrapperMetal::FreeImage(output_buffer_);
+    TargetWrapperMetal::FreeImage(variances_buffer_);
 }
 
 }  // namespace metal
@@ -146,15 +138,7 @@ void PriorBoxImageCompute<P, PTYPE>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-template class paddle::lite::kernels::metal::PriorBoxImageCompute<float, PRECISION(kFloat)>;
-template class paddle::lite::kernels::metal::PriorBoxImageCompute<MetalHalf, PRECISION(kFP16)>;
-
-typedef paddle::lite::kernels::metal::PriorBoxImageCompute<float, PRECISION(kFloat)>
-    MetalPriorBoxFp32;
-typedef paddle::lite::kernels::metal::PriorBoxImageCompute<MetalHalf, PRECISION(kFP16)>
-    MetalPriorBoxFp16;
-
-REGISTER_LITE_KERNEL(prior_box, kMetal, kFloat, kMetalTexture2DArray, MetalPriorBoxFp32, def)
+REGISTER_LITE_KERNEL(prior_box, kMetal, kFloat, kMetalTexture2DArray, paddle::lite::kernels::metal::PriorBoxImageCompute, def)
     .BindInput("Input",
         {LiteType::GetTensorTy(TARGET(kMetal),
             PRECISION(kFloat),
@@ -173,7 +157,7 @@ REGISTER_LITE_KERNEL(prior_box, kMetal, kFloat, kMetalTexture2DArray, MetalPrior
             DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(prior_box, kMetal, kFP16, kMetalTexture2DArray, MetalPriorBoxFp16, def)
+REGISTER_LITE_KERNEL(prior_box, kMetal, kFP16, kMetalTexture2DArray, paddle::lite::kernels::metal::PriorBoxImageCompute, def)
     .BindInput("Input",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .BindOutput("Image",

@@ -1,4 +1,4 @@
-// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,28 +32,28 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-template <typename P, PrecisionType PTYPE>
 class PriorBoxImageCompute
-    : public KernelLite<TARGET(kMetal), PTYPE, DATALAYOUT(kMetalTexture2DArray)> {
+    : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {
     using param_t = operators::PriorBoxParam;
 
    public:
     void PrepareForRun() override;
     void Run() override;
     void SaveOutput() override {
-        MetalDebug::SaveOutput("prior_box", output_buffer_);
+        MetalDebug::SaveOutput(function_name_, output_buffer_);
     };
 
    private:
+    void run_without_mps();
     const MetalImage* input_buffer_;
-    MetalImage* output_buffer_;
+    MetalImage* output_buffer_{nullptr};
     std::shared_ptr<MetalBuffer> param_buffer_;
     std::shared_ptr<MetalBuffer> new_aspect_ratio_buffer_;
     MetalImage* variances_buffer_;
     const MetalImage* image_buffer_;
-    std::shared_ptr<MetalKernel> kernel_;
-    std::shared_ptr<MetalQueue> queue_;
-    std::shared_ptr<MetalEncoder> encoder_;
+
+    id<MTLComputePipelineState> pipline_;
+    std::string function_name_;
     MetalContext* metal_context_;
 };
 
