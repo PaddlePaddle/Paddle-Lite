@@ -53,7 +53,6 @@ void GatherV2Func(const operators::GatherParam& param, const int axis) {
   const int axis_index = axis;
   int input_index_dim_size = input_dim[axis_index];
   for (int i = 0; i < index_size; i++) {
-    LOG(INFO) << lite::string_format("index_data[%d]: %lld", i, index_data[i]);
     CHECK_LT(index_data[i], input_index_dim_size)
         << "The element of Index must be less than the size of "
         << "dim size of axis dim";
@@ -88,7 +87,6 @@ void GatherCompute<IndexType, AxisType>::Run() {
   int axis = param.axis;
   // get axis from tensor
   if (param.Axis != nullptr) {
-    LOG(INFO) << "param.Axis is not nullptr";
     const Tensor* axis_tensor = param.Axis;
     const auto& axis_type = axis_tensor->precision();
     if (axis_type == PRECISION(kInt32)) {
@@ -100,11 +98,6 @@ void GatherCompute<IndexType, AxisType>::Run() {
                  << lite_api::PrecisionToStr(axis_type);
     }
   }
-
-  LOG(INFO) << "axis: " << axis;
-  LOG(INFO) << "in dims: " << param.X->dims();
-  LOG(INFO) << "index dims: " << param.Index->dims();
-  LOG(INFO) << "out dims: " << param.Out->dims();
 
   const auto& data_type = param.X->precision();
   if (axis != 0) {

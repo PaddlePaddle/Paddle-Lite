@@ -21,7 +21,6 @@ namespace lite {
 namespace operators {
 
 bool GatherOp::CheckShape() const {
-  LOG(INFO) << "check shape";
   CHECK_OR_FALSE(param_.X);
   CHECK_OR_FALSE(param_.Index);
   CHECK_OR_FALSE(param_.Out);
@@ -41,8 +40,6 @@ bool GatherOp::CheckShape() const {
 }
 
 bool GatherOp::InferShapeImpl() const {
-  LOG(INFO) << "InferShapeImpl";
-
   auto axis = param_.axis;
   auto input_dim = param_.X->dims();
   auto index_dims = param_.Index->dims();
@@ -69,14 +66,12 @@ bool GatherOp::InferShapeImpl() const {
 }
 
 bool GatherOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
-  LOG(INFO) << "AttachImpl";
   param_.X = scope->FindTensor(opdesc.Input("X").front());
   param_.Index = scope->FindTensor(opdesc.Input("Index").front());
   param_.Out = scope->FindMutableTensor(opdesc.Output("Out").front());
   if (opdesc.HasInput("Axis") && !opdesc.Input("Axis").empty()) {
-    LOG(INFO) << "AXIS exist";
+    LOG(INFO) << "Axis exist";
     auto axis = opdesc.Input("Axis").front();
-    LOG(INFO) << "xxx";
     param_.Axis = scope->FindTensor(axis);
   }
   param_.axis = opdesc.GetAttr<int>("axis");
