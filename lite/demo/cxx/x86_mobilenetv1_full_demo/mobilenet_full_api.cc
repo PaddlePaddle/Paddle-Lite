@@ -140,7 +140,7 @@ void RunModel(std::string model_dir,
   // 1. Create CxxConfig
   CxxConfig config;
   config.set_model_dir(model_dir);
-#ifdef DEMO_WITH_OPENCL
+#ifdef LITE_WITH_OPENCL
   config.set_valid_places(
       {Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)},
        Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)},

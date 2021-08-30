@@ -29,8 +29,50 @@ namespace lite {
 TEST(Mobilenet_v1, test_mobilenetv1_lite_x86) {
   lite_api::CxxConfig config;
   config.set_model_dir(FLAGS_model_dir);
+#ifndef LITE_WITH_OPENCL
   config.set_valid_places({lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
                            lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
+#else
+  config.set_valid_places(
+      {Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)},
+       Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)},
+       Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageDefault)},
+       Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)},
+       Place{TARGET(kOpenCL), PRECISION(kInt32), DATALAYOUT(kNCHW)},
+       Place{TARGET(kX86), PRECISION(kFloat)},
+       Place{TARGET(kHost), PRECISION(kFloat)}});
+
+  bool is_opencl_backend_valid =
+      ::IsOpenCLBackendValid(false /*check_fp16_valid = false*/);
+  std::cout << "is_opencl_backend_valid:" << is_opencl_backend_valid
+            << std::endl;
+
+  // Set opencl kernel binary.
+  // Large addtitional prepare time is cost due to algorithm selecting and
+  // building kernel from source code.
+  // Prepare time can be reduced dramitically after building algorithm file
+  // and OpenCL kernel binary on the first running.
+  // The 1st running time will be a bit longer due to the compiling time if
+  // you don't call `set_opencl binary_path_name` explicitly.
+  // So call `set_opencl binary_path_name` explicitly is strongly recommended.
+
+  // Make sure you have write permission of the binary path.
+  // We strongly recommend each model has a unique binary name.
+  const std::string bin_path = "./";
+  const std::string bin_name = "lite_opencl_kernel.bin";
+  config.set_opencl_binary_path_name(bin_path, bin_name);
+  // CL_TUNE_NONE: 0
+  // CL_TUNE_RAPID: 1
+  // CL_TUNE_NORMAL: 2
+  // CL_TUNE_EXHAUSTIVE: 3
+  config.set_opencl_tune(CL_TUNE_NONE);
+  // opencl precision option. Most x86 devices only support fp32, so set
+  // CL_PRECISION_FP32 as default.
+  // CL_PRECISION_AUTO: 0, first fp16 if valid, default
+  // CL_PRECISION_FP32: 1, force fp32
+  // CL_PRECISION_FP16: 2, force fp16
+  config.set_opencl_precision(CL_PRECISION_FP32);
+#endif
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
   auto input_tensor = predictor->GetInput(0);
