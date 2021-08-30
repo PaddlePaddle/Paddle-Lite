@@ -861,25 +861,6 @@ void sgemv_trans(const int M,
 // clang-format off
 //! define compute kernel
 #ifdef __aarch64__
-#define SGEMV_IN_8                                    \
-  "prfm  pldl1keep, [%[in]]   \n" /* preload din */   \
-  "prfm  pldl1keep, [%[w0]]   \n" /* preload w0 */    \
-  "prfm  pldl1keep, [%[w1]]   \n" /* preload w1 */    \
-  "prfm  pldl1keep, [%[w2]]   \n" /* preload w2 */    \
-  "prfm  pldl1keep, [%[w3]]   \n" /* preload w3 */    \
-  "prfm  pldl1keep, [%[w4]]   \n" /* preload w4 */    \
-  "prfm  pldl1keep, [%[w5]]   \n" /* preload w5 */    \
-  "prfm  pldl1keep, [%[w6]]   \n" /* preload w6 */    \
-  "prfm  pldl1keep, [%[w7]]   \n" /* preload w7 */    \
-  "movi   v0.4s,  #0          \n" /* set out0 to 0 */ \
-  "movi   v1.4s,  #0          \n" /* set out1 to 0 */ \
-  "movi   v2.4s,  #0          \n" /* set out2 to 0 */ \
-  "movi   v3.4s,  #0          \n" /* set out3 to 0 */ \
-  "movi   v4.4s,  #0          \n" /* set out4 to 0 */ \
-  "movi   v5.4s,  #0          \n" /* set out5 to 0 */ \
-  "movi   v6.4s,  #0          \n" /* set out6 to 0 */ \
-  "movi   v7.4s,  #0          \n" /* set out7 to 0 */
-
 #define SGEMV_IN_8_BIAS                                    \
   "ldp   q8, q9, [%[bias_ptr]]\n" /* load bias to q8, q9*/ \
   "prfm  pldl1keep, [%[in]]   \n" /* preload din */        \
@@ -907,12 +888,6 @@ void sgemv_trans(const int M,
   "ins    v5.s[0], v9.s[1]    \n" /* out5 = bias5 */       \
   "ins    v6.s[0], v9.s[2]    \n" /* out6 = bias6 */       \
   "ins    v7.s[0], v9.s[3]    \n" /* out7 = bias7 */
-
-#define SGEMV_IN_1                                    \
-  "prfm  pldl1keep, [%[in]]   \n" /* preload din */   \
-  "prfm  pldl1keep, [%[w0]]   \n" /* preload w0 */    \
-  "movi   v0.4s,  #0          \n" /* set out0 to 0 */ \
-  "movi   v1.4s,  #0          \n" /* set out0 to 0 */
 
 #define SGEMV_IN_1_BIAS                               \
   "prfm  pldl1keep, [%[in]]   \n" /* preload din */   \
@@ -1200,6 +1175,7 @@ void sgemv_trans(const int M,
   "cmp %w[tail], #1           \n"\
   "faddp s8, v9.2s            \n"\
   "blt  4f                    \n"\
+  "3:                         \n"\
   "ldr s16, [%[in]], #4       \n"\
   "ldr s17, [%[w0]], #4       \n"\
   "subs %w[tail], %w[tail], #1\n"\
@@ -1482,11 +1458,6 @@ void sgemv_trans(const int M,
   "pld [%[w2], #64]               @ preload cache line, weights r2\n" \
   "pld [%[w3], #64]               @ preload cache line, weights r3\n"
 
-#define SGEMV_IN_1                                                        \
-  "pld [%[in]]                        @ preload cache line, input\n"      \
-  "pld [%[w0]]                        @ preload cache line, weights r0\n" \
-  "vmov.u32 q0, #0                    @ set q0 to 0\n"
-
 #define SGEMV_IN_1_BIAS                                                   \
   "pld [%[in]]                        @ preload cache line, input\n"      \
   "pld [%[w0]]                        @ preload cache line, weights r0\n" \
@@ -1756,11 +1727,12 @@ void sgemv_trans(const int M,
     "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23", \
     "v24", "v25", "cc", "memory"
 
-#define REMAIN_ASM                                              \
+#define REMAIN_ASM                                                \
   : [in] "+r"(ptr_in), [w0] "+r"(ptr_w0), [cnt] "+r"(cnt_loop), \
     [tail] "+r"(tail_loop)\
   : [out] "r"(ptr_out), [bias0] "r"(bias0), [beta] "r"(beta)\
-  : "v0", "v1", "v8", "v9", "v10", "v11", "v16", "v17", "x20", "cc", "memory"
+  : "v0", "v1", "v2", "v3", "v4", "v5", "v8", "v9", "v10", "v11", \
+    "v16", "v17", "x20", "cc", "memory"
 
 #else
 #define MAIN_LOOP                                    \
@@ -2244,104 +2216,157 @@ void sgemv_relu6(const int M,
   float32x4_t vsix = vdupq_n_f32(six);
   bool has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
   float32x4_t vbeta = vdupq_n_f32(beta);
-  bool has_a53 = (ctx->arch() == kA53);
-  bool has_a35 = (ctx->arch() == kA35);
 
 #ifdef __aarch64__
   int out_cnt = M >> 3;
-  if (has_a35) {
-    cnt = N >> 2;
-    tail = N & 3;
-  }
-  if (has_a53) {
-    if (has_beta) {
+  if (has_beta) {
 #pragma omp parallel for
-      for (int j = 0; j < out_cnt; j++) {
-        MAIN_LOOP
-        asm volatile(
-            SGEMV_IN_8_BIAS SGEMV_KERNEL_8_A53 SGEMV_OUT_8_RELU6_BETA MAIN_ASM);
-      }
-//! deal with remains
-#pragma omp parallel for
-      for (int j = out_cnt * 8; j < M; ++j) {
-        REMAIN
-        asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1_A53 SGEMV_OUT_1_RELU6_BETA
-                         REMAIN_ASM);
-      }
-    } else {
-#pragma omp parallel for
-      for (int j = 0; j < out_cnt; j++) {
-        MAIN_LOOP
-        asm volatile(
-            SGEMV_IN_8_BIAS SGEMV_KERNEL_8_A53 SGEMV_OUT_8_RELU6 MAIN_ASM);
-      }
-//! deal with remains
-#pragma omp parallel for
-      for (int j = out_cnt * 8; j < M; ++j) {
-        REMAIN
-        asm volatile(
-            SGEMV_IN_1_BIAS SGEMV_KERNEL_1_A53 SGEMV_OUT_1_RELU6 REMAIN_ASM);
-      }
+    for (int j = 0; j < out_cnt; j++) {
+      MAIN_LOOP
+      asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8 SGEMV_OUT_8_RELU6_BETA
+                   : [in] "+r"(ptr_in),
+                     [w0] "+r"(ptr_w0),
+                     [w1] "+r"(ptr_w1),
+                     [w2] "+r"(ptr_w2),
+                     [w3] "+r"(ptr_w3),
+                     [w4] "+r"(ptr_w4),
+                     [w5] "+r"(ptr_w5),
+                     [w6] "+r"(ptr_w6),
+                     [w7] "+r"(ptr_w7),
+                     [cnt] "+r"(cnt_loop),
+                     [tail] "+r"(tail_loop)
+                   : [out] "r"(ptr_out),
+                     [bias_ptr] "r"(bias_local),
+                     [vsix] "w"(vsix),
+                     [vbeta] "w"(vbeta)
+                   : "v0",
+                     "v1",
+                     "v2",
+                     "v3",
+                     "v4",
+                     "v5",
+                     "v6",
+                     "v7",
+                     "v8",
+                     "v9",
+                     "v10",
+                     "v11",
+                     "v12",
+                     "v13",
+                     "v14",
+                     "v15",
+                     "v16",
+                     "v17",
+                     "v18",
+                     "v19",
+                     "v20",
+                     "v21",
+                     "v22",
+                     "v23",
+                     "v24",
+                     "v25",
+                     "cc",
+                     "memory");
     }
-  } else if (has_a35) {
-    if (has_beta) {
-#pragma omp parallel for
-      for (int j = 0; j < out_cnt; j++) {
-        MAIN_LOOP
-        asm volatile(
-            SGEMV_IN_8_BIAS SGEMV_KERNEL_8_A35 SGEMV_OUT_8_RELU6_BETA MAIN_ASM);
-      }
 //! deal with remains
 #pragma omp parallel for
-      for (int j = out_cnt * 8; j < M; ++j) {
-        REMAIN
-        asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1_A35 SGEMV_OUT_1_RELU6_BETA
-                         REMAIN_ASM);
-      }
-    } else {
-#pragma omp parallel for
-      for (int j = 0; j < out_cnt; j++) {
-        MAIN_LOOP
-        asm volatile(
-            SGEMV_IN_8_BIAS SGEMV_KERNEL_8_A35 SGEMV_OUT_8_RELU6 MAIN_ASM);
-      }
-//! deal with remains
-#pragma omp parallel for
-      for (int j = out_cnt * 8; j < M; ++j) {
-        REMAIN
-        asm volatile(
-            SGEMV_IN_1_BIAS SGEMV_KERNEL_1_A35 SGEMV_OUT_1_RELU6 REMAIN_ASM);
-      }
+    for (int j = out_cnt * 8; j < M; ++j) {
+      REMAIN
+      asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_RELU6_BETA
+                   : [in] "+r"(ptr_in),
+                     [w0] "+r"(ptr_w0),
+                     [cnt] "+r"(cnt_loop),
+                     [tail] "+r"(tail_loop)
+                   : [out] "r"(ptr_out),
+                     [bias0] "r"(bias0),
+                     [six] "r"(six),
+                     [beta] "r"(beta)
+                   : "v0",
+                     "v1",
+                     "v2",
+                     "v3",
+                     "v4",
+                     "v5",
+                     "v8",
+                     "v9",
+                     "v10",
+                     "v11",
+                     "v16",
+                     "v17",
+                     "cc",
+                     "memory");
     }
   } else {
-    if (has_beta) {
 #pragma omp parallel for
-      for (int j = 0; j < out_cnt; j++) {
-        MAIN_LOOP
-        asm volatile(
-            SGEMV_IN_8_BIAS SGEMV_KERNEL_8_A53 SGEMV_OUT_8_RELU6_BETA MAIN_ASM);
-      }
+    for (int j = 0; j < out_cnt; j++) {
+      MAIN_LOOP
+      asm volatile(
+          SGEMV_IN_8_BIAS SGEMV_KERNEL_8 SGEMV_OUT_8_RELU6
+          : [in] "+r"(ptr_in),
+            [w0] "+r"(ptr_w0),
+            [w1] "+r"(ptr_w1),
+            [w2] "+r"(ptr_w2),
+            [w3] "+r"(ptr_w3),
+            [w4] "+r"(ptr_w4),
+            [w5] "+r"(ptr_w5),
+            [w6] "+r"(ptr_w6),
+            [w7] "+r"(ptr_w7),
+            [cnt] "+r"(cnt_loop),
+            [tail] "+r"(tail_loop)
+          : [out] "r"(ptr_out), [bias_ptr] "r"(bias_local), [vsix] "w"(vsix)
+          : "v0",
+            "v1",
+            "v2",
+            "v3",
+            "v4",
+            "v5",
+            "v6",
+            "v7",
+            "v8",
+            "v9",
+            "v10",
+            "v11",
+            "v12",
+            "v13",
+            "v14",
+            "v15",
+            "v16",
+            "v17",
+            "v18",
+            "v19",
+            "v20",
+            "v21",
+            "v22",
+            "v23",
+            "v24",
+            "v25",
+            "cc",
+            "memory");
+    }
 //! deal with remains
 #pragma omp parallel for
-      for (int j = out_cnt * 8; j < M; ++j) {
-        REMAIN
-        asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1_A53 SGEMV_OUT_1_RELU6_BETA
-                         REMAIN_ASM);
-      }
-    } else {
-#pragma omp parallel for
-      for (int j = 0; j < out_cnt; j++) {
-        MAIN_LOOP
-        asm volatile(
-            SGEMV_IN_8_BIAS SGEMV_KERNEL_8_A53 SGEMV_OUT_8_RELU6 MAIN_ASM);
-      }
-//! deal with remains
-#pragma omp parallel for
-      for (int j = out_cnt * 8; j < M; ++j) {
-        REMAIN
-        asm volatile(
-            SGEMV_IN_1_BIAS SGEMV_KERNEL_1_A53 SGEMV_OUT_1_RELU6 REMAIN_ASM);
-      }
+    for (int j = out_cnt * 8; j < M; ++j) {
+      REMAIN
+      asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_RELU6
+                   : [in] "+r"(ptr_in),
+                     [w0] "+r"(ptr_w0),
+                     [cnt] "+r"(cnt_loop),
+                     [tail] "+r"(tail_loop)
+                   : [out] "r"(ptr_out), [bias0] "r"(bias0), [six] "r"(six)
+                   : "v0",
+                     "v1",
+                     "v2",
+                     "v3",
+                     "v4",
+                     "v5",
+                     "v8",
+                     "v9",
+                     "v10",
+                     "v11",
+                     "v16",
+                     "v17",
+                     "cc",
+                     "memory");
     }
   }
 #else  // __aarch64__
@@ -2486,103 +2511,156 @@ void sgemv_leakey_relu(const int M,
   float32x4_t valpha = vdupq_n_f32(alpha);
   bool has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
   float32x4_t vbeta = vdupq_n_f32(beta);
-  bool has_a53 = (ctx->arch() == kA53);
-  bool has_a35 = (ctx->arch() == kA35);
 #ifdef __aarch64__
   int out_cnt = M >> 3;
-  if (has_a35) {
-    cnt = N >> 2;
-    tail = N & 3;
-  }
-  if (has_a53) {
-    if (has_beta) {
+  if (has_beta) {
 #pragma omp parallel for
-      for (int j = 0; j < out_cnt; j++) {
-        MAIN_LOOP
-        asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8_A53
-                         SGEMV_OUT_8_LEAKEY_RELU_BETA MAIN_ASM);
-      }
-//! deal with remains
-#pragma omp parallel for
-      for (int j = out_cnt * 8; j < M; ++j) {
-        REMAIN
-        asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1_A53
-                         SGEMV_OUT_1_LEAKEY_RELU_BETA REMAIN_ASM);
-      }
-    } else {
-#pragma omp parallel for
-      for (int j = 0; j < out_cnt; j++) {
-        MAIN_LOOP
-        asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8_A53 SGEMV_OUT_8_LEAKEY_RELU
-                         MAIN_ASM);
-      }
-//! deal with remains
-#pragma omp parallel for
-      for (int j = out_cnt * 8; j < M; ++j) {
-        REMAIN
-        asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1_A53 SGEMV_OUT_1_LEAKEY_RELU
-                         REMAIN_ASM);
-      }
+    for (int j = 0; j < out_cnt; j++) {
+      MAIN_LOOP
+      asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8 SGEMV_OUT_8_LEAKEY_RELU_BETA
+                   : [in] "+r"(ptr_in),
+                     [w0] "+r"(ptr_w0),
+                     [w1] "+r"(ptr_w1),
+                     [w2] "+r"(ptr_w2),
+                     [w3] "+r"(ptr_w3),
+                     [w4] "+r"(ptr_w4),
+                     [w5] "+r"(ptr_w5),
+                     [w6] "+r"(ptr_w6),
+                     [w7] "+r"(ptr_w7),
+                     [cnt] "+r"(cnt_loop),
+                     [tail] "+r"(tail_loop)
+                   : [out] "r"(ptr_out),
+                     [bias_ptr] "r"(bias_local),
+                     [valpha] "w"(valpha),
+                     [vbeta] "w"(vbeta)
+                   : "v0",
+                     "v1",
+                     "v2",
+                     "v3",
+                     "v4",
+                     "v5",
+                     "v6",
+                     "v7",
+                     "v8",
+                     "v9",
+                     "v10",
+                     "v11",
+                     "v12",
+                     "v13",
+                     "v14",
+                     "v15",
+                     "v16",
+                     "v17",
+                     "v18",
+                     "v19",
+                     "v20",
+                     "v21",
+                     "v22",
+                     "v23",
+                     "v24",
+                     "v25",
+                     "cc",
+                     "memory");
     }
-  } else if (has_a35) {
-    if (has_beta) {
-#pragma omp parallel for
-      for (int j = 0; j < out_cnt; j++) {
-        MAIN_LOOP
-        asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8_A35
-                         SGEMV_OUT_8_LEAKEY_RELU_BETA MAIN_ASM);
-      }
 //! deal with remains
 #pragma omp parallel for
-      for (int j = out_cnt * 8; j < M; ++j) {
-        REMAIN
-        asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1_A35
-                         SGEMV_OUT_1_LEAKEY_RELU_BETA REMAIN_ASM);
-      }
-    } else {
-#pragma omp parallel for
-      for (int j = 0; j < out_cnt; j++) {
-        MAIN_LOOP
-        asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8_A35 SGEMV_OUT_8_LEAKEY_RELU
-                         MAIN_ASM);
-      }
-//! deal with remains
-#pragma omp parallel for
-      for (int j = out_cnt * 8; j < M; ++j) {
-        REMAIN
-        asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1_A35 SGEMV_OUT_1_LEAKEY_RELU
-                         REMAIN_ASM);
-      }
+    for (int j = out_cnt * 8; j < M; ++j) {
+      REMAIN
+      asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_LEAKEY_RELU_BETA
+                   : [in] "+r"(ptr_in),
+                     [w0] "+r"(ptr_w0),
+                     [cnt] "+r"(cnt_loop),
+                     [tail] "+r"(tail_loop)
+                   : [out] "r"(ptr_out),
+                     [bias0] "r"(bias0),
+                     [alpha] "r"(alpha),
+                     [beta] "r"(beta)
+                   : "v0",
+                     "v1",
+                     "v2",
+                     "v3",
+                     "v4",
+                     "v5",
+                     "v8",
+                     "v9",
+                     "v10",
+                     "v11",
+                     "v16",
+                     "v17",
+                     "cc",
+                     "memory");
     }
   } else {
-    if (has_beta) {
 #pragma omp parallel for
-      for (int j = 0; j < out_cnt; j++) {
-        MAIN_LOOP
-        asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8_A53
-                         SGEMV_OUT_8_LEAKEY_RELU_BETA MAIN_ASM);
-      }
+    for (int j = 0; j < out_cnt; j++) {
+      MAIN_LOOP
+      asm volatile(
+          SGEMV_IN_8_BIAS SGEMV_KERNEL_8 SGEMV_OUT_8_LEAKEY_RELU
+          : [in] "+r"(ptr_in),
+            [w0] "+r"(ptr_w0),
+            [w1] "+r"(ptr_w1),
+            [w2] "+r"(ptr_w2),
+            [w3] "+r"(ptr_w3),
+            [w4] "+r"(ptr_w4),
+            [w5] "+r"(ptr_w5),
+            [w6] "+r"(ptr_w6),
+            [w7] "+r"(ptr_w7),
+            [cnt] "+r"(cnt_loop),
+            [tail] "+r"(tail_loop)
+          : [out] "r"(ptr_out), [bias_ptr] "r"(bias_local), [valpha] "w"(valpha)
+          : "v0",
+            "v1",
+            "v2",
+            "v3",
+            "v4",
+            "v5",
+            "v6",
+            "v7",
+            "v8",
+            "v9",
+            "v10",
+            "v11",
+            "v12",
+            "v13",
+            "v14",
+            "v15",
+            "v16",
+            "v17",
+            "v18",
+            "v19",
+            "v20",
+            "v21",
+            "v22",
+            "v23",
+            "v24",
+            "v25",
+            "cc",
+            "memory");
+    }
 //! deal with remains
 #pragma omp parallel for
-      for (int j = out_cnt * 8; j < M; ++j) {
-        REMAIN
-        asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1_A53
-                         SGEMV_OUT_1_LEAKEY_RELU_BETA REMAIN_ASM);
-      }
-    } else {
-#pragma omp parallel for
-      for (int j = 0; j < out_cnt; j++) {
-        MAIN_LOOP
-        asm volatile(SGEMV_IN_8_BIAS SGEMV_KERNEL_8_A53 SGEMV_OUT_8_LEAKEY_RELU
-                         MAIN_ASM);
-      }
-//! deal with remains
-#pragma omp parallel for
-      for (int j = out_cnt * 8; j < M; ++j) {
-        REMAIN
-        asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1_A53 SGEMV_OUT_1_LEAKEY_RELU
-                         REMAIN_ASM);
-      }
+    for (int j = out_cnt * 8; j < M; ++j) {
+      REMAIN
+      asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_LEAKEY_RELU
+                   : [in] "+r"(ptr_in),
+                     [w0] "+r"(ptr_w0),
+                     [cnt] "+r"(cnt_loop),
+                     [tail] "+r"(tail_loop)
+                   : [out] "r"(ptr_out), [bias0] "r"(bias0), [alpha] "r"(alpha)
+                   : "v0",
+                     "v1",
+                     "v2",
+                     "v3",
+                     "v4",
+                     "v5",
+                     "v8",
+                     "v9",
+                     "v10",
+                     "v11",
+                     "v16",
+                     "v17",
+                     "cc",
+                     "memory");
     }
   }
 #else  // __aarch64__
