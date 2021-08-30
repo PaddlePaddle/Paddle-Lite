@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+/* Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
 using namespace metal;
 
 kernel void FUNC3_(elementwise_add,
-                   PRELU_TYPE,
+                   ACT_TYPE,
                    P)(texture2d_array<P, access::read> inputX [[texture(0)]],
                       texture2d_array<P, access::read> inputY [[texture(1)]],
                       texture2d_array<P, access::write> outTexture
@@ -91,6 +91,9 @@ kernel void FUNC3_(elementwise_add,
   output.y = output.y > 0 ? output.y : (alpha_value * output.y);
   output.z = output.z > 0 ? output.z : (alpha_value * output.z);
   output.w = output.w > 0 ? output.w : (alpha_value * output.w);
+#endif
+#ifdef RELU
+  output = fmax(output, 0.0);
 #endif
 
   outTexture.write(output, gid.xy, gid.z);

@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+/* Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -19,22 +19,28 @@ using namespace metal;
 
 #define P float
 
+#define RELU relu
+#define RELU_TYPE relu
+#include "ElementwiseAddActKernel.inc.metal"
+#undef RELU_TYPE
+#undef RELU
+
 #define PRELU_CHANNEL prelu_channel
-#define PRELU_TYPE channel
-#include "ElementwiseAddPreluKernel.inc.metal"
-#undef PRELU_TYPE
+#define RELU_TYPE channel
+#include "ElementwiseAddActKernel.inc.metal"
+#undef RELU_TYPE
 #undef PRELU_CHANNEL
 
 #define PRELU_ELEMENT element
-#define PRELU_TYPE prelu_element
-#include "ElementwiseAddPreluKernel.inc.metal"
-#undef PRELU_TYPE
+#define RELU_TYPE prelu_element
+#include "ElementwiseAddActKernel.inc.metal"
+#undef RELU_TYPE
 #undef PRELU_ELEMENT
 
 #define PRELU_OTHER other
-#define PRELU_TYPE prelu_other
-#include "ElementwiseAddPreluKernel.inc.metal"
-#undef PRELU_TYPE
+#define RELU_TYPE prelu_other
+#include "ElementwiseAddActKernel.inc.metal"
+#undef RELU_TYPE
 #undef PRELU_OTHER
 
 #undef P
@@ -42,21 +48,27 @@ using namespace metal;
 #define P half
 
 #define PRELU_CHANNEL channel
-#define PRELU_TYPE channel
-#include "ElementwiseAddPreluKernel.inc.metal"
-#undef PRELU_TYPE
+#define RELU_TYPE channel
+#include "ElementwiseAddActKernel.inc.metal"
+#undef RELU_TYPE
 #undef PRELU_CHANNEL
 
 #define PRELU_ELEMENT element
-#define PRELU_TYPE prelu_element
-#include "ElementwiseAddPreluKernel.inc.metal"
-#undef PRELU_TYPE
+#define RELU_TYPE prelu_element
+#include "ElementwiseAddActKernel.inc.metal"
+#undef RELU_TYPE
 #undef PRELU_ELEMENT
 
 #define PRELU_OTHER other
-#define PRELU_TYPE prelu_other
-#include "ElementwiseAddPreluKernel.inc.metal"
-#undef PRELU_TYPE
+#define RELU_TYPE prelu_other
+#include "ElementwiseAddActKernel.inc.metal"
+#undef RELU_TYPE
 #undef PRELU_OTHER
+
+#define RELU relu
+#define RELU_TYPE relu
+#include "ElementwiseAddActKernel.inc.metal"
+#undef RELU_TYPE
+#undef RELU
 
 #undef P

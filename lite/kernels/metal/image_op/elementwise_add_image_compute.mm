@@ -1,4 +1,4 @@
-// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -85,6 +85,17 @@ void ElementwiseAddImageCompute::init_for_run() {
         should_use_mps = false;
     }
 #endif
+
+  if (!param_.is_type<param_t>()) {
+    const auto& param = this->Param<perators::FusionElementwiseActivationParam>();
+    auto act_t =param.act_type;
+    VLOG(4) << "elementwise_add act: " << act_t;
+    if (act_t != "relu") {
+      LOG(FATAL) << "Unsupported Activation type: " << act_t << ", support Relu only.";
+    }
+    should_use_mps = false;
+    fuse_flag_ = true;
+  }
 
     use_mps_ = should_use_mps;
     if (use_mps_) {
@@ -175,7 +186,7 @@ void ElementwiseAddImageCompute::setup_without_mps() {
     params_buffer_ =
         std::make_shared<MetalBuffer>(metal_context_, sizeof(element_params), &element_params);
 
-    function_name_ = "elementwise_add";
+    function_name_ = fuse_flag_ ? "elementwise_add_relu":"elementwise_add";
 
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
@@ -276,6 +287,40 @@ REGISTER_LITE_KERNEL(elementwise_add,
     .Finalize();
 
 REGISTER_LITE_KERNEL(elementwise_add,
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::ElementwiseAddImageCompute,
+    def)
+    .BindInput("X",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("Y",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(fusion_elementwise_add_activation,
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::ElementwiseAddImageCompute,
+    def)
+    .BindInput("X",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("Y",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(fusion_elementwise_add_activation,
     kMetal,
     kFP16,
     kMetalTexture2DArray,

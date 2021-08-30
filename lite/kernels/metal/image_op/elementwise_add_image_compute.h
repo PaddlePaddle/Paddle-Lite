@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -74,6 +74,8 @@ class ElementwiseAddImageCompute
     id<MTLComputePipelineState> pipline_;
     std::string function_name_;
     MetalContext* metal_context_;
+
+    bool fuse_flag_{false};
 };
 
 }  // namespace metal
