@@ -16,9 +16,9 @@
 #include <Eigen/Core>
 #include <string>
 #include <vector>
+#include "lite/backends/x86/math/avx/conv_utils.h"
 #include "lite/backends/x86/math/blas.h"
 #include "lite/backends/x86/math/conv_bias.h"
-#include "lite/backends/x86/math/avx/conv_utils.h"
 #include "lite/backends/x86/math/im2col.h"
 #include "lite/backends/x86/math/vol2col.h"
 #include "lite/core/kernel.h"
