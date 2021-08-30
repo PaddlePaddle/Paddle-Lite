@@ -6,6 +6,7 @@ else()
   return()
 endif()
 
+set(lite_kernel_deps ${lite_kernel_deps} fluid_data_type jit_kernel_helper x86_math CACHE INTERNAL "")
 
 add_kernel(activation_compute_x86 X86 basic SRCS activation_compute.cc)
 add_kernel(scale_compute_x86 X86 basic SRCS scale_compute.cc)
@@ -71,8 +72,6 @@ add_kernel(interpolate_compute_x86 X86 basic SRCS interpolate_compute.cc)
 add_kernel(pow_compute_x86 X86 extra SRCS pow_compute.cc)
 add_kernel(rnn_compute_x86 X86 basic SRCS rnn_compute.cc)
 add_kernel(conv_transpose_x86 X86 basic SRCS conv_transpose_compute.cc)
-
-set(lite_kernel_deps ${lite_kernel_deps} math_function fluid_data_type jit_kernel_helper CACHE INTERNAL "")
 
 lite_cc_test(test_conv2d_compute_x86 SRCS conv_compute_test.cc DEPS kernels)
 lite_cc_test(test_mul_compute_x86 SRCS mul_compute_test.cc DEPS kernels)

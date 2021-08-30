@@ -3,6 +3,7 @@ if(LITE_WITH_FPGA OR LITE_WITH_BM OR LITE_WITH_MLU OR (NOT LITE_WITH_X86 AND NOT
 endif()
 
 set(test_kernel_deps
+    core
     ops
     kernels
 )

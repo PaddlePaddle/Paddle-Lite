@@ -10,6 +10,7 @@ else()
 endif()
 
 message(STATUS "compile with lite ARM kernels")
+set(lite_kernel_deps ${lite_kernel_deps} math_arm CACHE INTERNAL "")
 
 # 1. basic kernels for basic models
 # for conv op

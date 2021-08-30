@@ -11,8 +11,8 @@ limitations under the License. */
 
 #include "lite/backends/x86/math/gru_compute.h"
 #include "lite/backends/x86/math/blas.h"
-#include "lite/backends/x86/math/detail/gru_cpu_kernel.h"
-#include "lite/backends/x86/math/detail/gru_kernel.h"
+#include "lite/backends/x86/math/gru_cpu_kernel.h"
+#include "lite/backends/x86/math/gru_kernel.h"
 
 namespace paddle {
 namespace lite {

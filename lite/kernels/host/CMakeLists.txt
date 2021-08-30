@@ -5,6 +5,7 @@ else()
 endif()
 
 message(STATUS "compile with lite host kernels")
+set(lite_kernel_deps ${lite_kernel_deps} math_host CACHE INTERNAL "")
 
 # basic kernels
 add_kernel(range_compute_host Host basic SRCS range_compute.cc)
