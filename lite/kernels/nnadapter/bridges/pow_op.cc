@@ -49,13 +49,16 @@ int PowConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto factor = op_info->GetAttr<float>("factor");
   NNAdapterOperand* factor_operand = converter->AddFloat32ConstantOperand(
       &factor, DDim({static_cast<int64_t>(1)}));
+  // Fuse code operand
+  int32_t fuse_code_value = NNADAPTER_FUSED_NONE;
+  auto fuse_code_operand = converter->AddInt32ConstantOperand(fuse_code_value);
   // Output operand
   NNAdapterOperand* output_operand =
       converter->AddFloat32VariableOperand(out_dims, out_name);
 
   // Pow operation
-  std::vector<NNAdapterOperand*> input_operands = {input_operand,
-                                                   factor_operand};
+  std::vector<NNAdapterOperand*> input_operands = {
+      input_operand, factor_operand, fuse_code_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   converter->AddOperation(NNADAPTER_POW, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;

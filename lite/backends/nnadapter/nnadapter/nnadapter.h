@@ -123,6 +123,13 @@ typedef enum {
   NNADAPTER_MODEL_OUTPUT = 4,
 } NNAdapterOperandLifetimeCode;
 
+typedef enum {
+  NNADAPTER_PAD_MODE_UNKNOWN = 0,
+  NNADAPTER_PAD_MODE_CONSTANT = 1,
+  NNADAPTER_PAD_MODE_REFLECT = 2,
+  NNADAPTER_PAD_MODE_REPLICATE = 3,
+  NNADAPTER_PAD_MODE_EDGE = 4,
+} NNAdapterPadModeCode;
 /**
  * Operation codes.
  *
@@ -1136,6 +1143,9 @@ typedef enum {
    * Available since version 1.
    */
   NNADAPTER_UNSQUEEZE,
+  NNADAPTER_EXP,
+  NNADAPTER_PAD,
+  NNADAPTER_STACK,
 } NNAdapterOperationCode;
 
 /**

@@ -30,7 +30,7 @@ int NormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto scope = op->scope();
   VLOG(3) << "Converting " << op_type << " ...";
 
-  // Get input and output
+  // Get input, output vars and op attributes
   auto x_name = op_info->Input("X").front();
   auto x_scale_name = "X0_scale";
   auto has_x_scale = op_info->HasInputScale(x_scale_name, true);
@@ -47,13 +47,18 @@ int NormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto out = scope->FindMutableTensor(out_name);
   auto out_dims = out->dims();
 
+  float porder;
+  bool keepdim;
+  if (op_type == "p_norm") {
+    porder = op_info->GetAttr<float>("porder");
+    keepdim = op_info->GetAttr<bool>("keepdim");
+  } else {
+    porder = 2;
+    keepdim = true;
+  }
   auto axis = op_info->GetAttr<int>("axis");
   auto epsilon = op_info->GetAttr<float>("epsilon");
-
-  // Norm type is 2
-  auto p_operand = converter->AddInt32ConstantOperand(2);
-  auto axis_operand = converter->AddInt32ConstantOperand(axis);
-  auto epsilon_operand = converter->AddFloat32ConstantOperand(epsilon);
+  if (axis < 0) axis = x_dims.size() + axis;
 
   // Input operand
   NNAdapterOperand* input_operand = nullptr;
@@ -77,9 +82,23 @@ int NormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     output_operand = converter->AddFloat32VariableOperand(out_dims, out_name);
   }
 
+  // P, axis, epsilon and keepdim
+  int p = 0;
+  if (porder == INFINITY) {
+    p = INT_MAX;
+  } else if (porder == -INFINITY) {
+    p = INT_MIN;
+  } else {
+    p = static_cast<int>(porder);
+  }
+  auto p_operand = converter->AddInt32ConstantOperand(p);
+  auto axis_operand = converter->AddInt32ConstantOperand(axis);
+  auto epsilon_operand = converter->AddFloat32ConstantOperand(epsilon);
+  auto keepdim_operand = converter->AddBool8ConstantOperand(keepdim);
+
   // Norm operation
   std::vector<NNAdapterOperand*> input_operands = {
-      input_operand, axis_operand, p_operand, epsilon_operand};
+      input_operand, axis_operand, p_operand, epsilon_operand, keepdim_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   converter->AddOperation(
       NNADAPTER_LP_NORMALIZATION, &input_operands, &output_operands);
@@ -92,5 +111,8 @@ int NormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace paddle
 
 REGISTER_SUBGRAPH_BRIDGE(norm,
+                         kNNAdapter,
+                         paddle::lite::subgraph::nnadapter::NormConverter);
+REGISTER_SUBGRAPH_BRIDGE(p_norm,
                          kNNAdapter,
                          paddle::lite::subgraph::nnadapter::NormConverter);

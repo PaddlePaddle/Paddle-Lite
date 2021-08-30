@@ -272,6 +272,9 @@ void TestPad3d(const Place& place, float abs_error = 2e-5) {
                                         pad_back};
               for (std::string pad_mode :
                    {"constant", "reflect", "replicate", "circular"}) {
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+                if (pad_mode != "constant" || pad_front != pad_back) continue;
+#endif
                 VLOG(4) << "pad3d pad_mode: " << pad_mode
                         << ", pad_val: " << pad_value
                         << ", padding: " << paddings[0] << ", " << paddings[1]
@@ -292,10 +295,19 @@ void TestPad3d(const Place& place, float abs_error = 2e-5) {
 
 TEST(pad3d, precision) {
   Place place;
-#ifdef LITE_WITH_ARM
-  place = TARGET(kHost);
-  TestPad3d(place, 2e-5);
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#else
+  return;
 #endif
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kHost);
+#endif
+
+  TestPad3d(place, abs_error);
 }
 
 }  // namespace lite

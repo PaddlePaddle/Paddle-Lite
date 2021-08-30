@@ -196,6 +196,7 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
       case NNADAPTER_DIV:
       case NNADAPTER_MAX:
       case NNADAPTER_MIN:
+      case NNADAPTER_POW:
         input_args = {"input0", "input1", "fuse_code"};
         output_args = {"output"};
         break;
@@ -273,6 +274,7 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
       case NNADAPTER_TANH:
       case NNADAPTER_LOG:
       case NNADAPTER_ABS:
+      case NNADAPTER_EXP:
         input_args = {"input"};
         output_args = {"output"};
         break;
@@ -286,10 +288,6 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         break;
       case NNADAPTER_CLIP:
         input_args = {"input", "min", "max"};
-        output_args = {"output"};
-        break;
-      case NNADAPTER_POW:
-        input_args = {"input", "factor"};
         output_args = {"output"};
         break;
       case NNADAPTER_REDUCE_MEAN:
@@ -374,6 +372,10 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
                       "fuse_code",
                       "dilation_width",
                       "dilation_height"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_PAD:
+        input_args = {"input", "pads", "mode", "value"};
         output_args = {"output"};
         break;
       default:
@@ -533,6 +535,8 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(TANH);
     NNADAPTER_TYPE_TO_STRING(TRANSPOSE);
     NNADAPTER_TYPE_TO_STRING(UNSQUEEZE);
+    NNADAPTER_TYPE_TO_STRING(EXP);
+    NNADAPTER_TYPE_TO_STRING(PAD)
     default:
       name = "UNKNOWN";
       break;

@@ -83,6 +83,8 @@ int ActConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     unary_act_operation_type = NNADAPTER_LOG;
   } else if (op_type == "abs") {
     unary_act_operation_type = NNADAPTER_ABS;
+  } else if (op_type == "exp") {
+    unary_act_operation_type = NNADAPTER_EXP;
   } else {
     LOG(WARNING) << "Unsupported activation type: " << op_type;
     return FAILED;
@@ -113,5 +115,8 @@ REGISTER_SUBGRAPH_BRIDGE(log,
                          kNNAdapter,
                          paddle::lite::subgraph::nnadapter::ActConverter);
 REGISTER_SUBGRAPH_BRIDGE(abs,
+                         kNNAdapter,
+                         paddle::lite::subgraph::nnadapter::ActConverter);
+REGISTER_SUBGRAPH_BRIDGE(exp,
                          kNNAdapter,
                          paddle::lite::subgraph::nnadapter::ActConverter);

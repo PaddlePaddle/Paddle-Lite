@@ -413,6 +413,33 @@ NNAdapterOperandPrecisionCode Precision2NNAdapterScalarPrecisionCode(
   return precision_code;
 }
 
+NNAdapterPadModeCode PadMode2NNAdapterPadModeCode(std::string mode) {
+  NNAdapterPadModeCode pad_mode_code = NNADAPTER_PAD_MODE_CONSTANT;
+  if (mode == "constant") {
+    pad_mode_code = NNADAPTER_PAD_MODE_CONSTANT;
+    return pad_mode_code;
+  }
+
+  if (mode == "reflect") {
+    pad_mode_code = NNADAPTER_PAD_MODE_REFLECT;
+    return pad_mode_code;
+  }
+
+  // replicate is the same as edge
+  if (mode == "replicate") {
+    pad_mode_code = NNADAPTER_PAD_MODE_REPLICATE;
+    return pad_mode_code;
+  }
+
+  if (mode == "edge") {
+    pad_mode_code = NNADAPTER_PAD_MODE_EDGE;
+    return pad_mode_code;
+  }
+
+  LOG(FATAL) << "Unsupported mode type: " << mode;
+  return NNADAPTER_PAD_MODE_UNKNOWN;
+}
+
 }  // namespace nnadapter
 }  // namespace subgraph
 }  // namespace lite

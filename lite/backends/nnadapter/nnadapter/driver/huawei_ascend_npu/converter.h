@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <limits.h>
 #include <map>
 #include <memory>
 #include <string>
@@ -136,6 +137,7 @@ class Program {
   int ConvertHardSigmoid(hal::Operation* operation);
   int ConvertSqueeze(hal::Operation* operation);
   int ConvertUnsqueeze(hal::Operation* operation);
+  int ConvertPad(hal::Operation* operation);
 
  private:
   Context* context_{nullptr};

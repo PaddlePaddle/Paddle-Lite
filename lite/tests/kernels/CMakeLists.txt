@@ -82,6 +82,7 @@ lite_cc_test(test_kernel_expand_compute SRCS expand_compute_test.cc DEPS ${test_
 lite_cc_test(test_kernel_expand_as_compute SRCS expand_as_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_matmul_compute SRCS matmul_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_flatten_compute SRCS flatten_compute_test.cc DEPS ${test_kernel_deps})
+lite_cc_test(test_kernel_p_norm_compute SRCS p_norm_compute_test.cc DEPS ${test_kernel_deps})
 #lite_cc_test(test_kernel_crf_decoding_compute SRCS crf_decoding_compute_test.cc DEPS ${test_kernel_deps})
 #lite_cc_test(test_uniform_random_compute SRCS uniform_random_compute_test.cc DEPS ${test_kernel_deps})
 
