@@ -20,9 +20,9 @@ Paddle Lite已支持Rockchip NPU的预测部署。
 ### 已支持的Paddle模型
 
 #### 模型
-- mobilenet_v1_int8_224_per_layer
-- resnet50_int8_224_per_layer
-- ssd_mobilenet_v1_relu_voc_int8_300_per_layer
+- [mobilenet_v1_int8_224_per_layer](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_int8_224_per_layer.tar.gz)
+- [resnet50_int8_224_per_layer](https://paddlelite-demo.bj.bcebos.com/models/resnet50_int8_224_per_layer.tar.gz)
+- [ssd_mobilenet_v1_relu_voc_int8_300_per_layer](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_relu_voc_int8_300_per_layer.tar.gz)
 
 #### 性能
 - 测试环境
@@ -291,6 +291,96 @@ Paddle Lite已支持Rockchip NPU的预测部署。
   ./build.sh linux armhf
   ```
 
+### 更新模型
+- 通过Paddle训练或X2Paddle转换得到MobileNetv1 foat32模型[mobilenet_v1_fp32_224](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224_fluid.tar.gz)
+- 通过Paddle+PaddleSlim后量化方式，生成[mobilenet_v1_int8_224_per_layer量化模型](https://paddlelite-demo.bj.bcebos.com/devices/rockchip/mobilenet_v1_int8_224_fluid.tar.gz)
+- 下载[PaddleSlim-quant-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/tools/PaddleSlim-quant-demo.tar.gz)，解压后清单如下：
+    ```shell
+    - PaddleSlim-quant-demo
+      - image_classification_demo
+        - quant_post # 后量化
+          - quant_post_rockchip_npu.sh # Rockchip NPU 一键量化脚本
+          - README.md # 环境配置说明，涉及PaddlePaddle、PaddleSlim的版本选择、编译和安装步骤
+          - datasets # 量化所需要的校准数据集合
+            - ILSVRC2012_val_100 # 从ImageNet2012验证集挑选的100张图片
+          - inputs # 待量化的fp32模型
+            - mobilenet_v1
+            - resnet50
+          - outputs # 产出的全量化模型
+          - scripts # 后量化内置脚本
+    ```
+- 查看README.md完成PaddlePaddle和PaddleSlim的安装
+- 直接执行./quant_post_rockchip_npu.sh即可在outputs目录下生成mobilenet_v1_int8_224_per_layer量化模型
+  ```shell
+  -----------  Configuration Arguments -----------
+  activation_bits: 8
+  activation_quantize_type: moving_average_abs_max
+  algo: KL
+  batch_nums: 10
+  batch_size: 10
+  data_dir: ../dataset/ILSVRC2012_val_100
+  is_full_quantize: 1
+  is_use_cache_file: 0
+  model_path: ../models/mobilenet_v1
+  optimize_model: 1
+  output_path: ../outputs/mobilenet_v1
+  quantizable_op_type: conv2d,depthwise_conv2d,mul
+  use_gpu: 0
+  use_slim: 1
+  weight_bits: 8
+  weight_quantize_type: abs_max
+  ------------------------------------------------
+  quantizable_op_type:['conv2d', 'depthwise_conv2d', 'mul']
+  2021-08-30 05:52:10,048-INFO: Load model and set data loader ...
+  2021-08-30 05:52:10,129-INFO: Optimize FP32 model ...
+  I0830 05:52:10.139564 14447 graph_pattern_detector.cc:91] ---  detected 14 subgraphs
+  I0830 05:52:10.148236 14447 graph_pattern_detector.cc:91] ---  detected 13 subgraphs
+  2021-08-30 05:52:10,167-INFO: Collect quantized variable names ...
+  2021-08-30 05:52:10,168-WARNING: feed is not supported for quantization.
+  2021-08-30 05:52:10,169-WARNING: fetch is not supported for quantization.
+  2021-08-30 05:52:10,170-INFO: Preparation stage ...
+  2021-08-30 05:52:11,853-INFO: Run batch: 0
+  2021-08-30 05:52:16,963-INFO: Run batch: 5
+  2021-08-30 05:52:21,037-INFO: Finish preparation stage, all batch:10
+  2021-08-30 05:52:21,048-INFO: Sampling stage ...
+  2021-08-30 05:52:31,800-INFO: Run batch: 0
+  2021-08-30 05:53:23,443-INFO: Run batch: 5
+  2021-08-30 05:54:03,773-INFO: Finish sampling stage, all batch: 10
+  2021-08-30 05:54:03,774-INFO: Calculate KL threshold ...
+  2021-08-30 05:54:28,580-INFO: Update the program ...
+  2021-08-30 05:54:29,194-INFO: The quantized model is saved in ../outputs/mobilenet_v1
+  post training quantization finish, and it takes 139.42292165756226.
+
+
+  --------start eval int8 model: mobilenet_v1-------------
+  /usr/lib/python3/dist-packages/pkg_resources/_vendor/pyparsing.py:696: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3,and in 3.9 it will stop working
+    collections.MutableMapping.register(ParseResults)
+  /usr/lib/python3/dist-packages/pkg_resources/_vendor/pyparsing.py:2273: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3,and in 3.9 it will stop working
+    elif isinstance( exprs, collections.Sequence ):
+  /usr/lib/python3/dist-packages/setuptools/depends.py:2: DeprecationWarning: the imp module is deprecated in favour of importlib; see the module's documentation for alternative uses
+    import imp
+  -----------  Configuration Arguments -----------
+  batch_size: 20
+  class_dim: 1000
+  data_dir: ../dataset/ILSVRC2012_val_100
+  image_shape: 3,224,224
+  inference_model: ../outputs/mobilenet_v1
+  input_img_save_path: ./img_txt
+  save_input_img: False
+  test_samples: -1
+  use_gpu: 0
+  ------------------------------------------------
+  Testbatch 0, acc1 0.8, acc5 1.0, time 1.63 sec
+  End test: test_acc1 0.76, test_acc5 0.92
+  --------finish eval int8 model: mobilenet_v1-------------
+  ```
+  - 参考[模型转化方法](../user_guides/model_optimize_tool)，利用opt工具转换生成Rockchip NPU模型，仅需要将valid_targets设置为rknpu,arm即可。
+  ```shell
+  $ ./opt --model_dir=mobilenet_v1_int8_224_for_rockchip_npu_fluid \
+      --optimize_out_type=naive_buffer \
+      --optimize_out=opt_model \
+      --valid_targets=rknpu,arm
+  ```
 ### 更新支持Rockchip NPU的Paddle Lite库
 
 - 下载PaddleLite源码和Rockchip NPU DDK

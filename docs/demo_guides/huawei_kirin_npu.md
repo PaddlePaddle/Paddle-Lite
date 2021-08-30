@@ -22,15 +22,15 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 ### 已支持的Paddle模型
 
 #### 模型
-- mobilenet_v1_fp32_224
-- resnet50_fp32_224
-- ssd_mobilenet_v1_relu_voc_fp32_300
+- [mobilenet_v1_fp32_224](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224.tar.gz)
+- [resnet50_fp32_224](https://paddlelite-demo.bj.bcebos.com/models/resnet50_fp32_224.tar.gz)
+- [ssd_mobilenet_v1_relu_voc_fp32_300](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_relu_voc_fp32_300.tar.gz)
 
 #### 性能
 - 测试环境
   - 编译环境
     - Ubuntu 16.04，NDK-r17c with GCC for Android arm64-v8a
-    - HIAI DDK 版本：v330
+    - HIAI DDK 版本：v510
 
   - 硬件环境
     - Kirin 810
@@ -268,32 +268,32 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
   - 图分析和优化：由一些列pass（优化器）组成，pass是用于描述一个计算图优化生成另一个计算图的过程；例如conv2d_bn_fuse_pass，它用于将模型中每一个conv2d、batch_norm相连的算子对融合成一个conv2d算子以便获得性能上的提升；
   - 运行时程序的生成和执行：按照拓扑顺序遍历最终优化后的计算图，生成算子kernel列表，依次执行每一个算子kernel后即完成一次模型的推理。
 - PaddleLite是如何支持华为NPU呢？
-  - 为了支持华为Kirin NPU，我们额外增加了（如上图标黄的区域）：Subgraph detection pass、NPU subgraph op kernel和Paddle2HiAI op/tensor bridges。其中Subgraph detection pass是后续自定义子图划分涉及的关键步骤；
-  - Subgraph detection pass：该pass的作用是遍历计算图中所有的算子节点，标记能够转成HiAI IR的算子节点，然后通过图分割算法，将那些支持转为HiAI IR的、相邻的算子节点融合成一个subgraph（子图）算子节点（需要注意的是，这个阶段算子节点并没有真正转为HiAI IR，更没有生成HiAI模型）；
-  - NPU subgraph op kernel：根据Subgraph detection pass的分割结果，在生成的算子kernel列表中，可能存在多个subgraph算子kernel；每个subgraph算子kernel，都会将它所包裹的、能够转成HiAI IR的、所有Paddle算子，如上图右半部所示，依次调用对应的op bridge，组网生成一个HiAI Graph，最终，调用HiAI Runtime APIs生成并执行华为Kirin NPU模型；
-  - Paddle2HiAI op/tensor bridges：Paddle算子/张量转HiAI IR/tensor的桥接器，其目的是将Paddle算子、输入、输出张量转为HiAI组网IR和常量张量。
+  - 为了支持华为Kirin NPU，我们额外增加了（如上图标黄的区域）：NNAdapter subgraph detection pass、NNAdapter subgraph op kernel和Paddle2NNAdapter converters。其中NNAdapter subgraph detection pass是后续自定义子图划分涉及的关键步骤；
+  - NNAdapter subgraph detection pass：该pass的作用是遍历计算图中所有的算子节点，标记能够转成NNAdapter+HiAI算子的节点，然后通过图分割算法，将那些支持转为HiAI IR的、相邻的算子节点融合成一个subgraph（子图）算子节点（需要注意的是，这个阶段算子节点并没有真正转为HiAI IR，更没有生成HiAI模型）；
+  - NNAdapter subgraph op kernel：根据NNAdapter subgraph detection pass的分割结果，在生成的算子kernel列表中，可能存在多个subgraph算子kernel；每个subgraph算子kernel，都会将它所包裹的、能够转成NNAdapter+HiAI 算子的Paddle算子，如上图右半部所示，依次调用对应的converter，组网生成一个NNAdapter+HiAI model，最终，调用HiAI Runtime APIs生成并执行华为Kirin NPU模型；
+  - Paddle2NNAdapter converters：Paddle算子/张量转NNAdapter+HiAI算子的桥接器，其目的是将Paddle算子、输入、输出张量最终转为HiAI组网IR和常量张量。
 
 ### 编写配置文件完成自定义子图分割，生成华为Kirin NPU与ARM CPU的异构模型
 
-- 为什么需要进行手动子图划分？如果模型中存在不支持转HiAI IR的算子，Subgraph detection pass会在没有人工干预的情况下，可能将计算图分割为许多小的子图，而出现如下问题：
+- 为什么需要进行手动子图划分？如果模型中存在不支持转HiAI IR的算子，NNAdapter subgraph detection pass会在没有人工干预的情况下，可能将计算图分割为许多小的子图，而出现如下问题：
   - 过多的子图会产生频繁的CPU<->NPU数据传输和NPU任务调度，影响整体性能；
   - 由于华为Kirin NPU模型暂时不支持dynamic shape，因此，如果模型中存在输入和输出不定长的算子（例如一些检测类算子，NLP类算子），在模型推理过程中，可能会因输入、输出shape变化而不断生成HiAI模型，从而导致性能变差，更有可能使得HiAI模型生成失败。
   - Kirin NPU HiAI 内部存在少量Bug，会导致HiAI模型生成失败或者错误的子图融合，最终导致模型推理失败或错误。
 - 实现原理
-  - Subgraph detection pass在执行分割任务前，通过读取指定配置文件的方式获得禁用华为Kirin NPU的算子列表，实现人为干预分割结果的目的。
+  - NNAdapter subgraph detection pass在执行分割任务前，通过读取指定配置文件的方式获得禁用华为Kirin NPU的算子列表，实现人为干预分割结果的目的。
 - 具体步骤（以ssd_mobilenet_v1_relu_voc_fp32_300目标检测示例程序为例）
   - 步骤1：查看ssd_mobilenet_v1_relu_voc_fp32_300的模型结构，具体是将PaddleLite-generic-demo/ssd_detection_demo/assets/models/ssd_mobilenet_v1_relu_voc_fp32_300目录下的__model__拖入[Netron页面](https://lutzroeder.github.io/netron/)即得到如下图所示的网络结构（部分）：
 
     ![ssd_mobilenet_v1_relu_voc_fp32_300_netron](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/ssd_mobilenet_v1_relu_voc_fp32_300_netron.jpeg)
 
-  - 步骤2：由于Kirin HiAI内部进行了错误的子图融合，本例中将强制设置两个transpose2算子运行在ARM CPU上。同时，查阅[算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/bridges/paddle_use_bridges.h)可知，Kirin NPU不支持flatten2、box_coder、multiclass_nums这三个算子。
+  - 步骤2：由于Kirin HiAI内部进行了错误的子图融合，本例中将强制设置两个transpose2算子运行在ARM CPU上。
     ```shell
     注意：
-    1. 在run_with_adb.sh line9，可看到'#SUBGRAPH_PARTITION_CONFIG_FILE=subgraph_partition_config_file.txt',
+    1. 在run_with_adb.sh 可看到'#SUBGRAPH_PARTITION_CONFIG_FILE=subgraph_partition_config_file.txt',
     删除'#'即可使能自定义子图分割配置文件。
-    2. demo中包含了kernel优选的过程，将根据目标平台以及自定义子图分配配置文件筛选出在目标平台上运行的算子。
+    1. demo中已经包含了类似opt工具优化生成nb模型的功能。
 
-    # 不使能自定义子图分割配置文件，Kirin NPU得出错误的预测结果
+    # 如果不使用自定义子图分割配置文件，Kirin NPU将得出错误的预测结果
     $ cd PaddleLite-generic-demo/ssd_detection_demo/shell
     $ ./run_with_adb.sh ssd_mobilenet_v1_relu_voc_fp32_300 android arm64-v8a huawei_kirin_npu
     ...
@@ -317,9 +317,9 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 
     --------------------------------------------------------------------
 
-    # 使能自定义子图分割配置文件，Kirin NPU得出正确的预测结果
+    # 如果使用自定义子图分割配置文件，Kirin NPU将得出正确的预测结果
     $ cd PaddleLite-generic-demo/ssd_detection_demo/shell
-    $ vim run_with_adb.sh 将line9行首'#'删除
+    $ vim run_with_adb.sh 将'#SUBGRAPH_PARTITION_CONFIG_FILE=subgraph_partition_config_file.txt'行首'#'删除
     $ ./run_with_adb.sh ssd_mobilenet_v1_relu_voc_fp32_300 android arm64-v8a huawei_kirin_npu
     ...
     iter 0 cost: 23.389999 ms
@@ -337,42 +337,45 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
     Postprocess time: 0.007000 ms
     ```
 
-  - 步骤3：如果直接使用opt工具生成华为Kirin NPU模型，会发现整个网络被分割成3个子图（即3个subgraph op），它们都将运行在华为Kirin NPU上；
+  - 步骤3：如果直接使用opt工具生成华为Kirin NPU模型，会发现整个网络被分割成1个子图（即1个subgraph op），它们都将运行在华为Kirin NPU上；
 
     ```shell
+    注意：
+    1）opt工具日志中包含各个算子的详细信息。
+    2）为了方便查看优化后的模型，opt命令将`optimize_out_type`参数设置为protobuf，执行成功后将opt_model目录下的model文件复制为__model__并拖入Netron页面进行可视化。
+
     $ cd PaddleLite-generic-demo/ssd_detection_demo/assets/models
     $ GLOG_v=5 ./opt --model_dir=./ssd_mobilenet_v1_relu_voc_fp32_300 \
         --optimize_out_type=protobuf \
         --optimize_out=opt_model \
-        --valid_targets=npu,arm
-      ...
-      [4  8/23 11:15:43.892 ...ite/lite/core/optimizer/mir/ssa_graph.cc:27 CheckBidirectionalConnection] node count 236
-      [4  8/23 11:15:43.892 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement feed host/any/any
-      [4  8/23 11:15:43.892 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement subgraph npu/any/NCHW
-      [4  8/23 11:15:43.892 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement flatten2 host/any/any
-      [4  8/23 11:15:43.892 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement flatten2 host/any/any
-      [4  8/23 11:15:43.892 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement flatten2 host/any/any
-      [4  8/23 11:15:43.892 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement flatten2 host/any/any
-      [4  8/23 11:15:43.892 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement flatten2 host/any/any
-      [4  8/23 11:15:43.892 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement flatten2 host/any/any
-      [4  8/23 11:15:43.892 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement flatten2 host/any/any
-      [4  8/23 11:15:43.892 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement flatten2 host/any/any
-      [4  8/23 11:15:43.892 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement flatten2 host/any/any
-      [4  8/23 11:15:43.892 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement flatten2 host/any/any
-      [4  8/23 11:15:43.892 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement subgraph npu/any/NCHW
-      [4  8/23 11:15:43.892 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement flatten2 host/any/any
-      [4  8/23 11:15:43.892 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement flatten2 host/any/any
-      [4  8/23 11:15:43.892 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement subgraph npu/any/NCHW
-      [4  8/23 11:15:43.892 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement box_coder arm/float/NCHW
-      [4  8/23 11:15:43.892 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement multiclass_nms host/float/NCHW
-      [4  8/23 11:15:43.892 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement fetch host/any/any
-      [1  8/23 11:15:43.892 ...re/optimizer/mir/generate_program_pass.h:41 GenProgram] insts.size: 1
-      [4  8/23 11:15:43.920 ...e-Lite/lite/model_parser/model_parser.cc:307 SaveModelPb] Save protobuf model in 'opt_model'' successfully
-
-    注意：为了方便查看优化后的模型，上述命令将`optimize_out_type`参数设置为protobuf，执行成功后将opt_model目录下的model文件复制为__model__并拖入Netron页面进行可视化。
+        --valid_targets=huawei_kirin_npu,arm
+      
+    Loading topology data from ./ssd_mobilenet_v1_relu_voc_fp32_300/__model__
+    Loading non-combined params data from ./ssd_mobilenet_v1_relu_voc_fp32_300
+    1. Model is successfully loaded!
+    subgraph clusters: 1
+    digraph G {
+    node_1150[label="batch_norm_0.tmp_3"]
+    node_1154[label="batch_norm_1.tmp_3"]
+    node_1190[label="batch_norm_10.tmp_3"]
+    node_1194[label="batch_norm_11.tmp_3"]
+    ...
+    node_1426->node_1427
+    node_1427->node_1428
+    node_1428->node_1429
+    } // end G
+    subgraph operators:
+    feed:feed:image
+    conv2d:image,conv1_weights,conv1_bn_offset:batch_norm_0.tmp_3
+    depthwise_conv2d:batch_norm_0.tmp_3,conv2_1_dw_weights,conv2_1_dw_bn_offset:batch_norm_1.tmp_3
+    conv2d:batch_norm_1.tmp_3,conv2_1_sep_weights,conv2_1_sep_bn_offset:batch_norm_2.tmp_3
+    ...
+    box_coder:concat_0.tmp_0,concat_1.tmp_0,reshape2_0.tmp_0:box_coder_0.tmp_0
+    multiclass_nms:box_coder_0.tmp_0,transpose_12.tmp_0:save_infer_model/scale_0.tmp_0
+    fetch:save_infer_model/scale_0.tmp_0:fetch
     ```
 
-    ![ssd_mobilenet_v1_relu_voc_fp32_300_auto_split_netron](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/ssd_mobilenet_v1_relu_voc_fp32_300_auto_split_netron.jpeg)
+    ![ssd_mobilenet_v1_relu_voc_fp32_300_opt_auto_split_netron](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/ssd_mobilenet_v1_relu_voc_fp32_300_opt_auto_split_netron.jpeg)
 
   - 步骤4：为了获得正确的推理结果，我们需强制设置两个transpose2算子运行在ARM CPU上。那么，我们就需要通过环境变量SUBGRAPH_CUSTOM_PARTITION_CONFIG_FILE设置『自定义子图分割配置文件』，实现人为干预分割结果；
 
@@ -385,35 +388,23 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
     $ GLOG_v=5 ./opt --model_dir=./ssd_mobilenet_v1_relu_voc_fp32_300 \
         --optimize_out_type=protobuf \
         --optimize_out=opt_model \
-        --valid_targets=npu,arm
+        --valid_targets=huawei_kirin_npu,arm
       ...
-      [4  8/23 11:29:45.853 ...ite/lite/core/optimizer/mir/ssa_graph.cc:27 CheckBidirectionalConnection] node count 238
-      [4  8/23 11:29:45.853 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement feed host/any/any
-      [4  8/23 11:29:45.853 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement subgraph npu/any/NCHW
-      [4  8/23 11:29:45.853 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement transpose2 arm/any/NCHW
-      [4  8/23 11:29:45.853 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement transpose2 arm/any/NCHW
-      [4  8/23 11:29:45.853 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement flatten2 host/any/any
-      [4  8/23 11:29:45.853 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement flatten2 host/any/any
-      [4  8/23 11:29:45.853 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement flatten2 host/any/any
-      [4  8/23 11:29:45.853 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement flatten2 host/any/any
-      [4  8/23 11:29:45.853 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement flatten2 host/any/any
-      [4  8/23 11:29:45.853 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement flatten2 host/any/any
-      [4  8/23 11:29:45.853 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement flatten2 host/any/any
-      [4  8/23 11:29:45.853 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement flatten2 host/any/any
-      [4  8/23 11:29:45.853 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement flatten2 host/any/any
-      [4  8/23 11:29:45.853 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement flatten2 host/any/any
-      [4  8/23 11:29:45.853 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement subgraph npu/any/NCHW
-      [4  8/23 11:29:45.853 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement flatten2 host/any/any
-      [4  8/23 11:29:45.853 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement flatten2 host/any/any
-      [4  8/23 11:29:45.853 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement subgraph npu/any/NCHW
-      [4  8/23 11:29:45.853 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement box_coder arm/float/NCHW
-      [4  8/23 11:29:45.853 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement multiclass_nms host/float/NCHW
-      [4  8/23 11:29:45.853 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement fetch host/any/any
-      [1  8/23 11:29:45.853 ...re/optimizer/mir/generate_program_pass.h:41 GenProgram] insts.size: 1
-      [4  8/23 11:29:45.893 ...e-Lite/lite/model_parser/model_parser.cc:307 SaveModelPb] Save protobuf model in 'opt_model'' successfully
+      [4  8/30 14:31:50.298 ...ite/lite/core/optimizer/mir/ssa_graph.cc:27 CheckBidirectionalConnection] node count 226
+      [4  8/30 14:31:50.299 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement feed host/any/any
+      [4  8/30 14:31:50.299 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement subgraph nnadapter/any/NCHW
+      [4  8/30 14:31:50.299 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement transpose2 arm/any/NCHW
+      [4  8/30 14:31:50.299 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement subgraph nnadapter/any/NCHW
+      [4  8/30 14:31:50.299 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement transpose2 arm/any/NCHW
+      [4  8/30 14:31:50.299 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement subgraph nnadapter/any/NCHW
+      [4  8/30 14:31:50.299 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement box_coder arm/float/NCHW
+      [4  8/30 14:31:50.299 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement multiclass_nms host/float/NCHW
+      [4  8/30 14:31:50.299 ...e/optimizer/mir/generate_program_pass.cc:46 Apply] Statement fetch host/any/any
+      [1  8/30 14:31:50.299 ...re/optimizer/mir/generate_program_pass.h:41 GenProgram] insts.size: 1
+      [4  8/30 14:31:50.346 ...e-Lite/lite/model_parser/model_parser.cc:307 SaveModelPb] Save protobuf model in 'opt_model'' successfully
     ```
 
-    ![ssd_mobilenet_v1_relu_voc_fp32_300_manual_split_netron](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/ssd_mobilenet_v1_relu_voc_fp32_300_manual_split_netron.jpeg)
+    ![ssd_mobilenet_v1_relu_voc_fp32_300_opt_manual_split_netron](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/ssd_mobilenet_v1_relu_voc_fp32_300_opt_manual_split_netron.jpeg)
 
   - 步骤5：上述步骤中，PaddleLite-generic-demo/ssd_detection_demo/assets/models/ssd_mobilenet_v1_relu_voc_fp32_300/subgraph_partition_config_file.txt是示例自带的『自定义子图分割配置文件』，它的格式是什么样的呢？
     - 每行记录由『算子类型:输入张量名列表:输出张量名列表』组成（即以分号分隔算子类型、输入和输出张量名列表），以逗号分隔输入、输出张量名列表中的每个张量名；
@@ -431,54 +422,6 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
     - 重新在Netron打开PaddleLite-generic-demo/ssd_detection_demo/assets/models/ssd_mobilenet_v1_relu_voc_fp32_300模型，以其中一个transpose2节点为例，点击改节点即可在右侧看到输入、输出张量信息:
 
       ![ssd_mobilenet_v1_relu_voc_fp32_300_find_custom_split_node_netron](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/ssd_mobilenet_v1_relu_voc_fp32_300_find_custom_split_node_netron.jpeg)
-      
-    - 同时，在opt工具生成优化模型的日志中，搜索『subgraph operators:』，也可以看到各个算子的详细信息
-      
-      ```shell
-      subgraph operators: 
-      feed:feed:image
-      conv2d:image,conv1_weights,conv1_bn_offset:batch_norm_0.tmp_3
-      depthwise_conv2d:batch_norm_0.tmp_3,conv2_1_dw_weights,conv2_1_dw_bn_offset:batch_norm_1.tmp_3
-      conv2d:batch_norm_1.tmp_3,conv2_1_sep_weights,conv2_1_sep_bn_offset:batch_norm_2.tmp_3
-      depthwise_conv2d:batch_norm_2.tmp_3,conv2_2_dw_weights,conv2_2_dw_bn_offset:batch_norm_3.tmp_3
-      conv2d:batch_norm_3.tmp_3,conv2_2_sep_weights,conv2_2_sep_bn_offset:batch_norm_4.tmp_3
-      depthwise_conv2d:batch_norm_4.tmp_3,conv3_1_dw_weights,conv3_1_dw_bn_offset:batch_norm_5.tmp_3
-      conv2d:batch_norm_5.tmp_3,conv3_1_sep_weights,conv3_1_sep_bn_offset:batch_norm_6.tmp_3
-      depthwise_conv2d:batch_norm_6.tmp_3,conv3_2_dw_weights,conv3_2_dw_bn_offset:batch_norm_7.tmp_3
-      conv2d:batch_norm_7.tmp_3,conv3_2_sep_weights,conv3_2_sep_bn_offset:batch_norm_8.tmp_3
-      depthwise_conv2d:batch_norm_8.tmp_3,conv4_1_dw_weights,conv4_1_dw_bn_offset:batch_norm_9.tmp_3
-      ...
-      ...
-      ...
-      conv2d:conv2d_24.w_0,batch_norm_26.tmp_3,conv2d_24.b_0:conv2d_24.tmp_1
-      transpose2:conv2d_24.tmp_1:transpose_2.tmp_0,transpose_2.tmp_1
-      flatten2:transpose_2.tmp_0:flatten_2.tmp_0,flatten_2.tmp_1
-      conv2d:conv2d_23.w_0,batch_norm_22.tmp_3,conv2d_23.b_0:conv2d_23.tmp_1
-      transpose2:conv2d_23.tmp_1:transpose_1.tmp_0,transpose_1.tmp_1
-      flatten2:transpose_1.tmp_0:flatten_1.tmp_0,flatten_1.tmp_1
-      conv2d:conv2d_29.w_0,batch_norm_30.tmp_3,conv2d_29.b_0:conv2d_29.tmp_1
-      transpose2:conv2d_29.tmp_1:transpose_7.tmp_0,transpose_7.tmp_1
-      flatten2:transpose_7.tmp_0:flatten_7.tmp_0,flatten_7.tmp_1
-      conv2d:conv2d_33.w_0,batch_norm_34.tmp_3,conv2d_33.b_0:conv2d_33.tmp_1
-      transpose2:conv2d_33.tmp_1:transpose_11.tmp_0,transpose_11.tmp_1
-      flatten2:transpose_11.tmp_0:flatten_11.tmp_0,flatten_11.tmp_1
-      concat:flatten_1.tmp_0,flatten_3.tmp_0,flatten_5.tmp_0,flatten_7.tmp_0,flatten_9.tmp_0,flatten_11.tmp_0:concat_3.tmp_0
-      reshape2:concat_3.tmp_0:reshape2_1.tmp_0,reshape2_1.tmp_1
-      softmax:reshape2_1.tmp_0:softmax_0.tmp_0
-      transpose2:softmax_0.tmp_0:transpose_12.tmp_0,transpose_12.tmp_1
-      conv2d:conv2d_22.w_0,batch_norm_22.tmp_3,conv2d_22.b_0:conv2d_22.tmp_1
-      transpose2:conv2d_22.tmp_1:transpose_0.tmp_0,transpose_0.tmp_1
-      flatten2:transpose_0.tmp_0:flatten_0.tmp_0,flatten_0.tmp_1
-      transpose2:conv2d_28.tmp_1:transpose_6.tmp_0,transpose_6.tmp_1
-      flatten2:transpose_6.tmp_0:flatten_6.tmp_0,flatten_6.tmp_1
-      transpose2:conv2d_32.tmp_1:transpose_10.tmp_0,transpose_10.tmp_1
-      flatten2:transpose_10.tmp_0:flatten_10.tmp_0,flatten_10.tmp_1
-      concat:flatten_0.tmp_0,flatten_2.tmp_0,flatten_4.tmp_0,flatten_6.tmp_0,flatten_8.tmp_0,flatten_10.tmp_0:concat_2.tmp_0
-      reshape2:concat_2.tmp_0:reshape2_0.tmp_0,reshape2_0.tmp_1
-      box_coder:concat_0.tmp_0,concat_1.tmp_0,reshape2_0.tmp_0:box_coder_0.tmp_0
-      multiclass_nms:box_coder_0.tmp_0,transpose_12.tmp_0:save_infer_model/scale_0.tmp_0
-      fetch:save_infer_model/scale_0.tmp_0:fetch
-      ```
 
     
 ## 其它说明
