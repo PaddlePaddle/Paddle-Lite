@@ -169,16 +169,6 @@ class TestCase {
   std::shared_ptr<lite::OpLite> CreateSubgraphOp();
   void CreateInstruction();
 
-  // Check shape
-  // TODO(Superjomn) Move this method to utils or DDim?
-  bool ShapeEquals(const DDim& a, const DDim& b) {
-    if (a.size() != b.size()) return false;
-    for (size_t i = 0; i < a.size(); i++) {
-      if (a[i] != b[i]) return false;
-    }
-    return true;
-  }
-
   // Copy the host tensors to the device tensors if needed by the instruction.
   void PrepareInputsForInstruction();
 

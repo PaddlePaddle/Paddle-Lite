@@ -196,12 +196,12 @@ NNADAPTER_EXPORT void CopyOperandTypeWithDimensions(
   dst_type->dimension_count = src_type.dimension_count;
   memcpy(dst_type->dimensions,
          src_type.dimensions,
-         NNADAPTER_MAX_SIZE_OF_DIMENSIONS);
+         NNADAPTER_MAX_SIZE_OF_DIMENSIONS * sizeof(int32_t));
   dst_type->dynamic_dimension_count = src_type.dynamic_dimension_count;
   memcpy(dst_type->dynamic_dimensions,
          src_type.dynamic_dimensions,
          NNADAPTER_MAX_SIZE_OF_DYNAMIC_DIMENSIONS *
-             NNADAPTER_MAX_SIZE_OF_DIMENSIONS);
+             NNADAPTER_MAX_SIZE_OF_DIMENSIONS * sizeof(int32_t));
 }
 
 NNADAPTER_EXPORT void CopyOperandTypeWithPrecision(
