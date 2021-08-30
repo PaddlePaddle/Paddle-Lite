@@ -354,7 +354,7 @@ NNAdapterOperand* Converter::AddOperand(
     bool copy,
     const std::string& name,
     const std::vector<std::vector<int64_t>>& dynamic_dimensions,
-    bool is_shape_operand = false) {
+    bool is_shape_operand) {
   NNAdapterOperandType type;
   memset(&type, 0, sizeof(NNAdapterOperandType));
   if (dimensions.size() > 0) {

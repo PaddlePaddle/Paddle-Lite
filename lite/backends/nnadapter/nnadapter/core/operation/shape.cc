@@ -35,10 +35,12 @@ int PrepareShape(hal::Operation* operation) {
   for (uint32_t i = 0; i < in_type.dynamic_dimension_count; i++) {
     out_type.dynamic_dimensions[i][0] = shape_size;
   }
+  out_type.precision = NNADAPTER_TENSOR_INT32;
 
   if (out_type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {
     uint32_t size = static_cast<uint32_t>(sizeof(hal::TemporaryShape));
     void* shape_ptr = malloc(size);
+    memset(shape_ptr, 0, size);
     output_operand->length = size;
     output_operand->buffer = shape_ptr;
     hal::TemporaryShape* tmp_shape =

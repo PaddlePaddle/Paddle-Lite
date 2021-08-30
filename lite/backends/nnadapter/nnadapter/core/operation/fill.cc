@@ -25,18 +25,55 @@ namespace operation {
 int PrepareFill(hal::Operation* operation) {
   FILL_OPERATION_EXTRACT_INPUTS_OUTPUTS
   // Infer the shape and type of output operands
-  NNADAPTER_CHECK_EQ(shape_operand->type.lifetime, NNADAPTER_TEMPORARY_SHAPE);
-  //   if(shape_operand->length>0){
 
-  //   }
-  //   int32_t shape_size = input_operand->type.dimension_count;
-  //   output_operand->type.dimensions[0] = shape_size;
-  //   output_operand->type.dynamic_dimension_count =
-  //       input_operand->type.dynamic_dimension_count;
-  //   for (uint32_t i = 0; i < input_operand->type.dynamic_dimension_count;
-  //   i++) {
-  //     output_operand->type.dynamic_dimensions[i][0] = shape_size;
-  //   }
+  auto& shape_type = shape_operand->type;
+  auto& out_type = output_operand->type;
+  if (shape_type.lifetime == NNADAPTER_CONSTANT_COPY) {
+    uint32_t length = shape_operand->length;
+    auto shape_precision = shape_type.precision;
+    switch (shape_precision) {
+      case NNADAPTER_TENSOR_INT32: {
+        int32_t* shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);
+        out_type.dimension_count = length;
+        memcpy(out_type.dimensions, shape_data, length * sizeof(int32_t));
+        break;
+      }
+      case NNADAPTER_TENSOR_INT64: {
+        int64_t* shape_data = reinterpret_cast<int64_t*>(shape_operand->buffer);
+        out_type.dimension_count = length;
+        for (uint32_t i = 0; i < length; i++) {
+          out_type.dimensions[i] = static_cast<int32_t>(shape_data[i]);
+        }
+        break;
+      }
+      default:
+        NNADAPTER_LOG(ERROR) << "Unsupported shape precision: "
+                             << static_cast<int32_t>(shape_precision);
+        break;
+    }
+  } else if (shape_type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {
+    auto tmp_shape =
+        reinterpret_cast<hal::TemporaryShape*>(shape_operand->buffer);
+    auto shape = tmp_shape->shape;
+    out_type.dimension_count = static_cast<uint32_t>(shape.size());
+    memcpy(out_type.dimensions,
+           shape.data(),
+           sizeof(int32_t) * out_type.dimension_count);
+    auto dynamic_shape = tmp_shape->dynamic_shape;
+    out_type.dynamic_dimension_count =
+        static_cast<uint32_t>(dynamic_shape.size());
+    for (size_t i = 0; i < dynamic_shape.size(); i++) {
+      memcpy(out_type.dynamic_dimensions[i],
+             dynamic_shape[i].data(),
+             sizeof(int32_t) * dynamic_shape[i].size());
+    }
+  } else {
+    NNADAPTER_LOG(ERROR) << "Unsupported shape lifetime: "
+                         << static_cast<int32_t>(shape_type.lifetime);
+  }
+
+  out_type.precision = value_operand->type.precision;
+
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
 }

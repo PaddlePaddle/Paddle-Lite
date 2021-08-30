@@ -1413,8 +1413,7 @@ int NNAdapterModel_addOperand(NNAdapterModel* model,
 int NNAdapterModel_setOperandValue(NNAdapterOperand* operand,
                                    void* buffer,
                                    uint32_t length,
-                                   bool copy,
-                                   bool temporary_shape);
+                                   bool copy);
 /**
  * Get the type of an operand.
  *
