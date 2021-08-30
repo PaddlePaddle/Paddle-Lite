@@ -14,7 +14,7 @@ limitations under the License. */
 
 #ifdef __AVX__
 
-#include "lite/backends/x86/math/detail/activation_functions.h"
+#include "lite/backends/x86/math/activation_functions.h"
 #include "lite/backends/x86/math/avx_mathfuns.h"
 
 namespace paddle {
