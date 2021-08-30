@@ -15,6 +15,7 @@
 #include "lite/kernels/nnadapter/converter/converter.h"
 #include <memory>
 #include <utility>
+#include "lite/core/subgraph/subgraph_bridge_registry.h"
 #include "lite/kernels/nnadapter/utility.h"
 
 namespace paddle {
@@ -28,14 +29,15 @@ namespace nnadapter {
 #undef __NNADAPTER_CONVERTER_ALL_H__
 #undef REGISTER_CONVERTER
 
-int Converter::Apply(int block_idx,
-                     const cpp::ProgramDesc* program_desc,
-                     Scope* exec_scope,
-                     const std::vector<Variable>& input_vars,
-                     std::vector<Variable>* output_vars,
-                     std::vector<NNAdapterOperand*>* input_operands,
-                     std::vector<NNAdapterOperand*>* output_operands) {
-  CHECK(program_desc);
+int Converter::Apply(
+    int block_idx,
+    const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
+    Scope* exec_scope,
+    const std::vector<Variable>& input_vars,
+    std::vector<Variable>* output_vars,
+    std::vector<NNAdapterOperand*>* input_operands,
+    std::vector<NNAdapterOperand*>* output_operands) {
+  CHECK(program_desc.get());
   CHECK(exec_scope);
   auto block_size = program_desc->BlocksSize();
   CHECK(block_size) << "No block found!";
@@ -99,23 +101,39 @@ int Converter::Apply(int block_idx,
             << i << "th input '" << name << "'.";
     (*input_operands)[i] = operand;
   }
-  // Convert the Paddle ops to some API calls of NNAdapter model builder
-  for (size_t op_idx = 0; op_idx < op_size; op_idx++) {
-    auto op_desc = block_desc->GetOp<cpp::OpDesc>(op_idx);
-    CHECK(op_desc);
-    std::string op_type = op_desc->Type();
-    auto op_info = std::make_shared<OpInfo>(*op_desc);
+
+  std::unique_ptr<RuntimeProgram> runtime_program(
+      new RuntimeProgram(program_desc, exec_scope, block_idx));
+  const auto& bridges = subgraph::SubgraphBridgeRegistry::Instance();
+  CHECK(runtime_program) << "The runtime program is not initialized!";
+  CHECK_GT(runtime_program->instructions(kRootBlockIdx).size(), 0)
+      << "No instructions found in the runtime program!";
+  const auto& insts = runtime_program->instructions(kRootBlockIdx);
+  for (auto& inst : insts) {
+    auto op = const_cast<OpLite*>(inst.op());
+    CHECK(op);
+    op->CheckShape();
+    op->InferShape();
+    auto op_info = const_cast<OpInfo*>(op->op_info());
+    auto op_type = op_info->Type();
     VLOG(5) << "Converting " << op_type << " ...";
 #define REGISTER_CONVERTER(__op_type__, __func_name__, ...) \
   if (op_type == #__op_type__) {                            \
-    __func_name__(this, op_info.get(), exec_scope);         \
+    __func_name__(this, op_info, exec_scope);               \
     continue;                                               \
   }
 #include "lite/kernels/nnadapter/converter/all.h"  // NOLINT
 #undef __NNADAPTER_CONVERTER_ALL_H__
 #undef REGISTER_CONVERTER
-    LOG(FATAL) << "Unsupported type '" << op_type << "' of " << op_idx
-               << "th op in block " << block_idx;
+    if (bridges.Exists(op_type, TARGET(kNNAdapter))) {
+      auto kernel = inst.kernel();
+      CHECK(bridges.Select(op_type, TARGET(kNNAdapter))(
+          reinterpret_cast<void*>(sub_converter.get()),
+          op,
+          const_cast<KernelBase*>(kernel)));
+      continue;
+    }
+    LOG(FATAL) << "Unsupported type '" << op_type << "' in block " << block_idx;
   }
   // Query the output operands, and update if exists the useless output
   // variables such as 'XShape' in reshape2 and transpose2
@@ -281,7 +299,13 @@ NNAdapterOperand* Converter::AddOutputOperand(
                     false);
 }
 
-NNAdapterOperandType* Converter::GetOperandType(NNAdapterOperand* operand) {
+NNAdapterOperand* Converter::AddShapeOperand(const std::string& name) {
+  return AddOperand(
+      {}, PRECISION(kUnk), nullptr, 0, 0, nullptr, false, name, {}, true);
+}
+
+const NNAdapterOperandType* Converter::GetOperandType(
+    NNAdapterOperand* operand) {
   NNAdapterOperandType* type = nullptr;
   NNAdapterModel_getOperandType_invoke(operand, &type);
   CHECK(type);

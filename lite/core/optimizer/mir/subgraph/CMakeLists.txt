@@ -1,16 +1,7 @@
-if (WITH_TESTING)
-    lite_cc_library(subgraph_detector SRCS subgraph_detector.cc DEPS mir_pass types subgraph_op gtest gflags)
-else()
-    lite_cc_library(subgraph_detector SRCS subgraph_detector.cc DEPS mir_pass types subgraph_op)
-endif()
-
-lite_cc_library(subgraph_pass
-    SRCS subgraph_pass.cc
-    DEPS mir_pass types context ${mir_fusers} subgraph_detector)
 if (WITH_TESTING AND NOT LITE_WITH_CUDA AND NOT LITE_WITH_XPU)
     lite_cc_test(test_subgraph_detector
         SRCS subgraph_detector_test.cc
-        DEPS subgraph_detector mir_passes gflags model_parser cxx_api
+        DEPS core gflags model_parser cxx_api
         ARGS --model_dir=${LITE_MODEL_DIR}/mobilenet_v1 SERIAL)
     add_dependencies(test_subgraph_detector
         extern_lite_download_mobilenet_v1_tar_gz
@@ -21,7 +12,7 @@ if (WITH_TESTING AND NOT LITE_WITH_CUDA AND NOT LITE_WITH_XPU)
     endif()
     lite_cc_test(test_subgraph_pass
         SRCS subgraph_pass_test.cc
-        DEPS mir_passes paddle_api_full paddle_api_light gflags
+        DEPS core paddle_api_full paddle_api_light gflags
         ARGS --model_dir=${LITE_MODEL_DIR}/mobilenet_v1
              --optimized_model_dir=${LITE_MODEL_DIR}/lite_model_opt SERIAL)
     add_dependencies(test_subgraph_pass
@@ -32,6 +23,3 @@ if (WITH_TESTING AND NOT LITE_WITH_CUDA AND NOT LITE_WITH_XPU)
         set_target_properties(test_subgraph_pass PROPERTIES LINK_FLAGS "${LINK_FLAGS}")
     endif()
 endif()
-
-set(mir_subgraphs subgraph_pass CACHE INTERNAL "mir_subgraphs")
-message(STATUS "----> mir_subgraphs: ${mir_subgraphs}")

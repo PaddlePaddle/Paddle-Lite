@@ -215,7 +215,7 @@
     ```
 - 在paddlelite/lite/tests/kernels/CMakeLists.txt中添加
     ```cmake
-    lite_cc_test(test_kernel_argmax_compute SRCS argmax_compute_test.cc DEPS arena_framework ${x86_kernels} ${arm_kernels} ${lite_ops} ${host_kernels})
+    lite_cc_test(test_kernel_argmax_compute SRCS argmax_compute_test.cc DEPS ${x86_kernels} ${arm_kernels} ${lite_ops} ${host_kernels})
     ```
 ## 6. 编译运行
 - 在paddlelite目录中，执行```./lite/tools/ci_build.sh build_test_arm```，该脚本会创建手机模拟器，并编译运行所有单测（花费时间较久）。如果运行无误，则表明添加argmax成功。
