@@ -90,13 +90,14 @@ void TuneCache::SyncFromFbs(
   const auto* tune_map_desc = desc->tune_map();
   CHECK(tune_map_desc);
   for (const auto& pair : *tune_map_desc) {
-    std::vector<int> xyz_vec(3);
+    std::vector<int> tune_vec;
     const auto& value = *(pair->value());
-    const size_t size = value.size() * sizeof(int);
+    for (const auto& element : value) {
+      tune_vec.push_back(element);
+    }
     // To avoid additional dependencies, standard library components are used
     // here.
-    std::memcpy(xyz_vec.data(), value.data(), size);
-    tune_map_.insert({pair->key()->str(), std::move(xyz_vec)});
+    tune_map_.insert({pair->key()->str(), std::move(tune_vec)});
   }
 }
 
