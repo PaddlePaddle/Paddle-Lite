@@ -74,11 +74,29 @@ class LITE_API OptBase {
   // 1.2 Print help info for executable opt bin
   void PrintExecutableBinHelpInfo();
   // 2. PrintOpsInfo
-  void PrintOpsInfo(const std::set<std::string> &valid_ops =
-                        {});  // print supported ops on target_types
-  void PrintAllOps();         // print all ops
-  void PrintSupportedOps();   // print ops supported on valid_places_
-  void DisplayKernelsInfo();  // Display kernel information
+  void PrintOpsInfo(const std::set<std::string> &valid_ops = {},
+                    const std::vector<std::string> valid_targets =
+                        {"kHost",
+                         "kX86",
+                         "kCUDA",
+                         "kARM",
+                         "kMetal",
+                         "kOpenCL",
+                         "kFPGA",
+                         "kNPU",
+                         "kXPU",
+                         "kRKNPU",
+                         "kAPU",
+                         "kHuaweiAscendNPU",
+                         "kImaginationNNA",
+                         "kIntelFPGA",
+                         "kNNAdapter",
+                         "kBM",
+                         "kAny",
+                         "kUnk"});  // print supported ops on target_types
+  void PrintAllOps();               // print all ops
+  void PrintSupportedOps();         // print ops supported on valid_places_
+  void DisplayKernelsInfo();        // Display kernel information
   // 3. Check if this model is supported
   void CheckIfModelSupported(bool print_ops_info = true);
 
