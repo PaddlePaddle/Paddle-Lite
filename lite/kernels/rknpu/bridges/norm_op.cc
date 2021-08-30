@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/operators/norm_op.h"
-#include "lite/core/subgraph_bridge_registry.h"
+#include "lite/core/subgraph/subgraph_bridge_registry.h"
 #include "lite/kernels/rknpu/bridges/graph.h"
 #include "lite/kernels/rknpu/bridges/utility.h"
 

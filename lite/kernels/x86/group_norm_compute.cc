@@ -73,6 +73,8 @@ REGISTER_LITE_KERNEL(group_norm,
     .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Y", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("Mean", {LiteType::GetTensorTy(TARGET(kX86))})
+    .BindOutput("Variance", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("SavedMean", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("SavedVariance", {LiteType::GetTensorTy(TARGET(kX86))})
     .Finalize();

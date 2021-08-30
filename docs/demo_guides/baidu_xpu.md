@@ -172,6 +172,7 @@ Paddle Lite已支持百度XPU在x86和arm服务器（例如飞腾 FT-2000+/64）
   ```
 
 - 替换库文件和头文件
+
   ```shell
   cd PaddleLite-linux-demo/image_classification_demo/shell
   ./update_libs.sh <lite_inference_dir> <demo_libs_dir>
@@ -180,6 +181,24 @@ Paddle Lite已支持百度XPU在x86和arm服务器（例如飞腾 FT-2000+/64）
   ```
 
   备注：替换头文件后需要重新编译示例程序
+
+- windows版本的编译适配
+
+  1)Paddle-Lite使用XPU kernel的方案
+
+  ```shell
+  $ cd Paddle-Lite
+  $ lite\tools\build_windows.bat with_extra without_python use_vs2017 with_dynamic_crt  with_baidu_xpu baidu_xpu_sdk_root D:\xpu_toolchain_windows\output
+  ```
+
+  2)Paddle-Lite使用XPU XTCL子图方案
+
+  ```shell
+  $ cd Paddle-Lite
+  $ lite\tools\build_windows.bat with_extra without_python use_vs2017 with_dynamic_crt  with_baidu_xpu with_baidu_xpu_xtcl baidu_xpu_sdk_root D:\xpu_toolchain_windows\output
+  ```
+
+  编译脚本`build_windows.bat`使用可参考[源码编译(Windows)](../source_compile/compile_windows.md)进行环境配置和查找相应编译参数
 
 ## 其它说明
 

@@ -249,9 +249,7 @@ void NNAdapterSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   std::set<std::string> supported_ops;
   std::vector<std::string> supported_device_names;
   std::string device_names;
-  auto enable = GetBoolFromEnv("NNADAPTER_ENABLE_CONVERTER");
-  LOG(INFO) << "GetBoolFromEnv(NNADAPTER_ENABLE_CONVERTER)   " << enable;
-  if (enable) {
+
 #define REGISTER_CONVERTER(__op_type__, __func_name__, __device_names__) \
   device_names = __device_names__;                                       \
   device_names.erase(                                                    \
@@ -264,7 +262,7 @@ void NNAdapterSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 #include "lite/kernels/nnadapter/converter/all.h"
 #undef __NNADAPTER_CONVERTER_ALL_H__
 #undef REGISTER_CONVERTER
-  } else {
+
 // TODO(hong19860320) Remove the following code after all op bridges are
 // migrated to the new converters
 #define USE_SUBGRAPH_BRIDGE(op_type_, target_, device_names_)            \
@@ -278,7 +276,7 @@ void NNAdapterSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   }
 #include "lite/kernels/nnadapter/bridges/paddle_use_bridges.h"
 #undef USE_SUBGRAPH_BRIDGE
-  }
+
   auto teller = [&](Node* node) {
     if (!node->IsStmt()) return false;
     auto& stmt = node->AsStmt();

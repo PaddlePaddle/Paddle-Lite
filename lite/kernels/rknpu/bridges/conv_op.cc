@@ -14,7 +14,7 @@
 
 #include "lite/operators/conv_op.h"
 #include <algorithm>
-#include "lite/core/subgraph_bridge_registry.h"
+#include "lite/core/subgraph/subgraph_bridge_registry.h"
 #include "lite/kernels/rknpu/bridges/graph.h"
 #include "lite/kernels/rknpu/bridges/utility.h"
 

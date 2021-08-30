@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/metal/image_op/relu_image_compute.h"
+#include "lite/kernels/metal/image_op/activation_image_compute.h"
 #include "lite/core/op_registry.h"
 #include <cmath>
 #include <gtest/gtest.h>
@@ -61,7 +61,7 @@ TEST(relu_metal, retrive_op) {
 }
 
 TEST(relu_metal, init) {
-    ReluImageCompute<float, PRECISION(kFloat)> relu;
+    ActivationImageCompute<float, PRECISION(kFloat)> relu;
     ASSERT_EQ(relu.precision(), PRECISION(kFloat));
     ASSERT_EQ(relu.target(), TARGET(kMetal));
 }
@@ -148,7 +148,7 @@ TEST(relu_metal, compute) {
                                         }
 
                                         // prepare kernel params and run
-                                        ReluImageCompute<float, PRECISION(kFloat)> relu;
+                                        ActivationImageCompute<float, PRECISION(kFloat)> relu;
                                         std::unique_ptr<KernelContext> ctx(new KernelContext);
                                         ctx->As<ContextMetal>().InitOnce();
 
@@ -160,6 +160,7 @@ TEST(relu_metal, compute) {
 
                                         relu.SetContext(std::move(ctx));
                                         operators::ActivationParam param;
+                                        param.active_type = lite_api::ActivationType::kRelu;
                                         param.X = &x_dev;
                                         param.Out = &y_dev;
                                         relu.SetParam(param);
@@ -196,7 +197,7 @@ TEST(relu_metal_half, retrive_op_half) {
 }
 
 TEST(relu_metal_half, init) {
-    ReluImageCompute<MetalHalf, PRECISION(kFP16)> relu_half;
+    ActivationImageCompute<MetalHalf, PRECISION(kFP16)> relu_half;
     ASSERT_EQ(relu_half.precision(), PRECISION(kFP16));
     ASSERT_EQ(relu_half.target(), TARGET(kMetal));
 }
@@ -289,11 +290,12 @@ TEST(relu_metal_half, compute) {
                                         }
 
                                         // prepare kernel params and run
-                                        ReluImageCompute<MetalHalf, PRECISION(kFP16)> relu;
+                                        ActivationImageCompute<MetalHalf, PRECISION(kFP16)> relu;
                                         std::unique_ptr<KernelContext> ctx(new KernelContext);
                                         ctx->As<ContextMetal>().InitOnce();
                                         relu.SetContext(std::move(ctx));
                                         operators::ActivationParam param;
+                                        param.active_type = lite_api::ActivationType::kRelu;
                                         param.X = &x_dev;
                                         param.Out = &y_dev;
                                         relu.SetParam(param);
