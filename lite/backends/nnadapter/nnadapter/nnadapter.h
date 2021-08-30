@@ -682,7 +682,7 @@ typedef enum {
    * * 0: input, a NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: axis, a NNADAPTER_INT32 scalar. Defaults to 1.
+   * * 1: axis, an 1-D NNADAPTER_TENSOR_INT32. Defaults to [1].
    * It represents the dimension along which softmax will be performed.
    * It should be in range [-R, R), where R is the rank of input,
    * negative value works the same way as axis+R.
@@ -691,6 +691,8 @@ typedef enum {
    * only 1 or 2 are supported. Defaults to 2.
    * * 3: epsilon, a NNADAPTER_FLOAT32 scalar,
    * specifying the lower limit of normalization
+   * * 4: keepdim, a NNADAPTER_BOOL8 scalar.
+   * Keep the reduced dimension or not, default 1 mean keep reduced dimension.
    *
    * Outputs:
    * * 0: output, a tensor with the same shape and type as input.
@@ -832,6 +834,8 @@ typedef enum {
    * Inputs:
    * * 0: input0, a NNADAPTER_TENSOR_FLOAT32 tensor.
    * * 1: input1, a NNADAPTER_TENSOR_FLOAT32 tensor.
+   * * 2: fuse_code, a NNADAPTER_INT32 scalar, Specifies the activation to the
+   * result, must be one of NNAdapterFuseCode values.
    *
    * Outputs:
    * * 0: output, the result with the same type as input.

@@ -33,8 +33,14 @@ int Program::ConvertLpNormalization(hal::Operation* operation) {
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   // Axis
-  auto axis = *reinterpret_cast<int32_t*>(input_operands[1]->buffer);
-  NNADAPTER_VLOG(5) << "axis: " << axis;
+  auto axis_operand = input_operands[1];
+  auto axis_count = axis_operand->length / sizeof(int32_t);
+  auto axis_data = reinterpret_cast<int32_t*>(axis_operand->buffer);
+  ge::Operator::OpListInt axis;
+  for (uint32_t i = 0; i < axis_count; i++) {
+    NNADAPTER_VLOG(5) << "axis[" << i << "]=" << axis_data[i];
+    axis.push_back(axis_data[i]);
+  }
   // P
   auto p = *reinterpret_cast<int32_t*>(input_operands[2]->buffer);
   NNADAPTER_VLOG(5) << "p: " << p;
@@ -54,7 +60,7 @@ int Program::ConvertLpNormalization(hal::Operation* operation) {
   if (p == 2 && keepdim) {
     auto l2_norm_name = GetOperatorName(output_operand);
     auto l2_norm_op = std::make_shared<ge::op::L2Normalize>(l2_norm_name);
-    l2_norm_op->set_attr_axis(ge::Operator::OpListInt({axis}));
+    l2_norm_op->set_attr_axis(axis);
     l2_norm_op->set_attr_eps(epsilon);
     SET_INPUT(l2_norm_op, x, input_operator);
     MAP_OUTPUT(l2_norm_op, y, output_operand);
@@ -63,7 +69,7 @@ int Program::ConvertLpNormalization(hal::Operation* operation) {
     auto p_norm_name = GetOperatorName(output_operand);
     auto p_norm_op = std::make_shared<ge::op::LpNorm>(p_norm_name);
     p_norm_op->set_attr_p(p);
-    p_norm_op->set_attr_axes(ge::Operator::OpListInt({axis}));
+    p_norm_op->set_attr_axes(axis);
     p_norm_op->set_attr_epsilon(epsilon);
     p_norm_op->set_attr_keepdim(keepdim);
     SET_INPUT(p_norm_op, x, input_operator);
@@ -80,7 +86,7 @@ int Program::ConvertLpNormalization(hal::Operation* operation) {
 
     auto reduce_name = GetOperatorName(output_operand) + "/reduce";
     auto reduce_op = std::make_shared<ge::op::ReduceSumD>(reduce_name);
-    reduce_op->set_attr_axes(ge::Operator::OpListInt({axis}));
+    reduce_op->set_attr_axes(axis);
     reduce_op->set_attr_keep_dims(keepdim);
     SET_INPUT(reduce_op, x, power_operator_1);
     auto reduce_operator = MAP_OUTPUT(reduce_op, y, output_operand);

@@ -59,6 +59,7 @@ int NormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto axis = op_info->GetAttr<int>("axis");
   auto epsilon = op_info->GetAttr<float>("epsilon");
   if (axis < 0) axis = x_dims.size() + axis;
+  std::vector<int32_t> axis_data({axis});
 
   // Input operand
   NNAdapterOperand* input_operand = nullptr;
@@ -92,7 +93,8 @@ int NormConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     p = static_cast<int>(porder);
   }
   auto p_operand = converter->AddInt32ConstantOperand(p);
-  auto axis_operand = converter->AddInt32ConstantOperand(axis);
+  auto axis_operand = converter->AddInt32ConstantOperand(
+      &axis_data[0], DDim({static_cast<int64_t>(axis_data.size())}));
   auto epsilon_operand = converter->AddFloat32ConstantOperand(epsilon);
   auto keepdim_operand = converter->AddBool8ConstantOperand(keepdim);
 

@@ -781,7 +781,9 @@ TEST(Activation_exp, precision) {
   return;
 #endif
 #elif defined(LITE_WITH_ARM)
-  Place place(TARGET(kARM));
+  place = TARGET(kARM));
+#else
+  return;
 #endif
   for (auto dims : std::vector<std::vector<int64_t>>{
            {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
