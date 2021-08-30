@@ -44,6 +44,8 @@ function prepare_thirdparty {
         tar xzf third-party-ea5576.tar.gz
     else
         git submodule update --init --recursive
+        rm -rf $workspace/third-party/glog/src/extern_glog-build
+        rm -rf $workspace/third-party/protobuf-host/src/extern_protobuf-build
     fi
     cd -
 }
