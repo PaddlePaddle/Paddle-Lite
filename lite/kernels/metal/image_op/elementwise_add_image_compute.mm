@@ -87,7 +87,7 @@ void ElementwiseAddImageCompute::init_for_run() {
 #endif
 
   if (!param_.is_type<param_t>()) {
-    const auto& param = this->Param<perators::FusionElementwiseActivationParam>();
+    const auto& param = this->Param<operators::FusionElementwiseActivationParam>();
     auto act_t =param.act_type;
     VLOG(4) << "elementwise_add act: " << act_t;
     if (act_t != "relu") {
