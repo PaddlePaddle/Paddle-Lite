@@ -30,7 +30,8 @@ void sgemv(const int M,
            float *y,
            float beta,
            bool flag_bias,
-           const float *bias);
+           const float *bias,
+           const ARMContext *ctx);
 
 void sgemv_relu(const int M,
                 const int N,
@@ -39,7 +40,8 @@ void sgemv_relu(const int M,
                 float *y,
                 float beta,
                 bool flag_bias,
-                const float *bias);
+                const float *bias,
+                const ARMContext *ctx);
 
 void sgemv_relu6(const int M,
                  const int N,
@@ -49,7 +51,8 @@ void sgemv_relu6(const int M,
                  float beta,
                  bool flag_bias,
                  const float *bias,
-                 const float six);
+                 const float six,
+                 const ARMContext *ctx);
 
 void sgemv_leakey_relu(const int M,
                        const int N,
@@ -59,7 +62,8 @@ void sgemv_leakey_relu(const int M,
                        float beta,
                        bool flag_bias,
                        const float *bias,
-                       const float alpha);
+                       const float alpha,
+                       const ARMContext *ctx);
 
 void sgemv_trans(const int M,
                  const int N,
@@ -95,16 +99,16 @@ bool sgemv(const float *A,
   } else {
     if (flag_act) {
       if (act == lite_api::ActivationType::kRelu) {
-        sgemv_relu(M, N, A, x, y, beta, is_bias, bias);
+        sgemv_relu(M, N, A, x, y, beta, is_bias, bias, ctx);
       } else if (act == lite_api::ActivationType::kRelu6) {
-        sgemv_relu6(M, N, A, x, y, beta, is_bias, bias, six);
+        sgemv_relu6(M, N, A, x, y, beta, is_bias, bias, six, ctx);
       } else if (act == lite_api::ActivationType::kLeakyRelu) {
-        sgemv_leakey_relu(M, N, A, x, y, beta, is_bias, bias, alpha);
+        sgemv_leakey_relu(M, N, A, x, y, beta, is_bias, bias, alpha, ctx);
       } else {
         LOG(FATAL) << "sgemv only support relu, relu6, leakey relu fusion";
       }
     } else {
-      sgemv(M, N, A, x, y, beta, is_bias, bias);
+      sgemv(M, N, A, x, y, beta, is_bias, bias, ctx);
     }
   }
   return true;
@@ -1740,33 +1744,7 @@ void sgemv_trans(const int M,
   if (flag_bias) {                             \
     bias0 = bias[j];                           \
   }
-#endif
-void sgemv(const int M,
-           const int N,
-           const float *A,
-           const float *x,
-           float *y,
-           float beta,
-           bool flag_bias,
-           bool has_a53,
-           const float *bias) {
-  float *data_out = y;
-  const float *data_in = x;
-  const float *weights_ptr = A;
-  bool has_a53 = (ctx->arch() == kA53);
-  bool has_a35 = (ctx->arch() == kA35);
 
-  int cnt = N >> 3;
-  int tail = N & 7;
-  bool has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
-  float32x4_t vbeta = vdupq_n_f32(beta);
-
-#ifdef __aarch64__
-  int out_cnt = M >> 3;
-  if (has_a35) {
-    cnt = N >> 2;
-    tail = N & 3;
-  }
 #define MAIN_ASM                                                        \
   : [in] "+r"(ptr_in), [w0] "+r"(ptr_w0), [w1] "+r"(ptr_w1), \
     [w2] "+r"(ptr_w2), [w3] "+r"(ptr_w3), [w4] "+r"(ptr_w4), \
@@ -1784,6 +1762,66 @@ void sgemv(const int M,
   : [out] "r"(ptr_out), [bias0] "r"(bias0), [beta] "r"(beta)\
   : "v0", "v1", "v8", "v9", "v10", "v11", "v16", "v17", "x20", "cc", "memory"
 
+#else
+#define MAIN_LOOP                                    \
+  int out_idx = j * 4;                               \
+  float *ptr_out = data_out + out_idx;               \
+  const float *ptr_in = data_in;                     \
+  const float *ptr_w0 = weights_ptr + (N * out_idx); \
+  const float *ptr_w1 = ptr_w0 + N;                  \
+  const float *ptr_w2 = ptr_w1 + N;                  \
+  const float *ptr_w3 = ptr_w2 + N;                  \
+  float bias0 = 0.f;                                 \
+  float bias1 = 0.f;                                 \
+  float bias2 = 0.f;                                 \
+  float bias3 = 0.f;                                 \
+  if (flag_bias) {                                   \
+    bias0 = bias[out_idx];                           \
+    bias1 = bias[out_idx + 1];                       \
+    bias2 = bias[out_idx + 2];                       \
+    bias3 = bias[out_idx + 3];                       \
+  }                                                  \
+  int cnt_loop = cnt;                                \
+  int tail_loop = tail;
+
+#define REMAIN                                 \
+  float *ptr_out = data_out + j;               \
+  const float *ptr_in = data_in;               \
+  const float *ptr_w0 = weights_ptr + (N * j); \
+  int cnt_loop = cnt;                          \
+  int tail_loop = tail;                        \
+  float bias0 = 0.f;                           \
+  if (flag_bias) {                             \
+    bias0 = bias[j];                           \
+  }
+
+#endif
+void sgemv(const int M,
+           const int N,
+           const float *A,
+           const float *x,
+           float *y,
+           float beta,
+           bool flag_bias,
+           const float *bias,
+           const ARMContext *ctx) {
+  float *data_out = y;
+  const float *data_in = x;
+  const float *weights_ptr = A;
+  bool has_a53 = (ctx->arch() == kA53);
+  bool has_a35 = (ctx->arch() == kA35);
+
+  int cnt = N >> 3;
+  int tail = N & 7;
+  bool has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
+  float32x4_t vbeta = vdupq_n_f32(beta);
+
+#ifdef __aarch64__
+  int out_cnt = M >> 3;
+  if (has_a35) {
+    cnt = N >> 2;
+    tail = N & 3;
+  }
   if (has_a53) {
     if (has_beta) {
 #pragma omp parallel for
@@ -1870,96 +1908,100 @@ void sgemv(const int M,
   }
 #else  // __aarch64__
   int out_cnt = M >> 2;
+  if (has_beta) {
 #pragma omp parallel for
-  for (int j = 0; j < out_cnt; j++) {
-    int out_idx = j * 4;
-    float *ptr_out = data_out + out_idx;
-    const float *ptr_in = data_in;
-    const float *ptr_w0 = weights_ptr + (N * out_idx);
-    const float *ptr_w1 = ptr_w0 + N;
-    const float *ptr_w2 = ptr_w1 + N;
-    const float *ptr_w3 = ptr_w2 + N;
-    float bias0 = 0.f;
-    float bias1 = 0.f;
-    float bias2 = 0.f;
-    float bias3 = 0.f;
-    if (flag_bias) {
-      bias0 = bias[out_idx];
-      bias1 = bias[out_idx + 1];
-      bias2 = bias[out_idx + 2];
-      bias3 = bias[out_idx + 3];
+    for (int j = 0; j < out_cnt; j++) {
+      MAIN_LOOP
+      asm volatile(SGEMV_IN_4_BIAS SGEMV_KERNEL_4 SGEMV_OUT_4_BETA
+                   : [in] "+r"(ptr_in),
+                     [w0] "+r"(ptr_w0),
+                     [w1] "+r"(ptr_w1),
+                     [w2] "+r"(ptr_w2),
+                     [w3] "+r"(ptr_w3),
+                     [cnt] "+r"(cnt_loop),
+                     [tail] "+r"(tail_loop)
+                   : [out] "r"(ptr_out),
+                     [bias0] "r"(bias0),
+                     [bias1] "r"(bias1),
+                     [bias2] "r"(bias2),
+                     [bias3] "r"(bias3),
+                     [vbeta] "w"(vbeta)
+                   : "q0",
+                     "q1",
+                     "q2",
+                     "q3",
+                     "q4",
+                     "q5",
+                     "q6",
+                     "q7",
+                     "q8",
+                     "q9",
+                     "q10",
+                     "q11",
+                     "q12",
+                     "q13",
+                     "cc",
+                     "memory");
     }
-    int cnt_loop = cnt;
-    int tail_loop = tail;
-    // clang-format off
-    if (has_beta) {
-        asm volatile(SGEMV_IN_4_BIAS SGEMV_KERNEL_4 SGEMV_OUT_4
-                  : [in] "+r"(ptr_in),
-                    [w0] "+r"(ptr_w0),
-                    [w1] "+r"(ptr_w1),
-                    [w2] "+r"(ptr_w2),
-                    [w3] "+r"(ptr_w3),
-                    [cnt] "+r"(cnt_loop),
-                    [tail] "+r"(tail_loop)
-                  : [out] "r"(ptr_out),
-                    [bias0] "r"(bias0),
-                    [bias1] "r"(bias1),
-                    [bias2] "r"(bias2),
-                    [bias3] "r"(bias3),
-                    [vbeta] "w" (vbeta)
-                  : "q0", "q1", "q2", "q3", "q4",
-                    "q5", "q6", "q7", "q8", "q9",
-                    "q10", "q11", "q12", "q13", "cc",
-                    "memory");
-    } else {
-        asm volatile(SGEMV_IN_4_BIAS SGEMV_KERNEL_4 SGEMV_OUT_4
-                  : [in] "+r"(ptr_in),
-                    [w0] "+r"(ptr_w0),
-                    [w1] "+r"(ptr_w1),
-                    [w2] "+r"(ptr_w2),
-                    [w3] "+r"(ptr_w3),
-                    [cnt] "+r"(cnt_loop),
-                    [tail] "+r"(tail_loop)
-                  : [out] "r"(ptr_out),
-                    [bias0] "r"(bias0),
-                    [bias1] "r"(bias1),
-                    [bias2] "r"(bias2),
-                    [bias3] "r"(bias3)
-                  : "q0", "q1", "q2", "q3", "q4",
-                    "q5", "q6", "q7", "q8", "q9",
-                    "q10", "q11", "q12", "q13", "cc",
-                    "memory");
-    }
-    // clang-format on
-  }
 //! deal with remains
 #pragma omp parallel for
-  for (int j = out_cnt * 4; j < M; ++j) {
-    float *ptr_out = data_out + j;
-    const float *ptr_in = data_in;
-    const float *ptr_w0 = weights_ptr + (N * j);
-    int cnt_loop = cnt;
-    int tail_loop = tail;
-    float bias0 = 0.f;
-    if (flag_bias) {
-      bias0 = bias[j];
+    for (int j = out_cnt * 4; j < M; ++j) {
+      REMAIN
+      asm volatile(
+          SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_BETA
+          : [in] "+r"(ptr_in),
+            [w0] "+r"(ptr_w0),
+            [cnt] "+r"(cnt_loop),
+            [tail] "+r"(tail_loop)
+          : [out] "r"(ptr_out), [bias0] "r"(bias0), [beta] "r"(beta)
+          : "q0", "q1", "q4", "q12", "q13", "q14", "q15", "cc", "memory");
     }
-    if (has_beta) {
-      asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_BETA
+  } else {
+#pragma omp parallel for
+    for (int j = 0; j < out_cnt; j++) {
+      MAIN_LOOP
+      asm volatile(SGEMV_IN_4_BIAS SGEMV_KERNEL_4 SGEMV_OUT_4
                    : [in] "+r"(ptr_in),
                      [w0] "+r"(ptr_w0),
+                     [w1] "+r"(ptr_w1),
+                     [w2] "+r"(ptr_w2),
+                     [w3] "+r"(ptr_w3),
                      [cnt] "+r"(cnt_loop),
                      [tail] "+r"(tail_loop)
-                   : [out] "r"(ptr_out), [bias0] "r"(bias0), [beta] "r"(beta)
-                   : "q0", "q1", "q12", "q13", "q14", "q15", "cc", "memory");
-    } else {
-      asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1
-                   : [in] "+r"(ptr_in),
-                     [w0] "+r"(ptr_w0),
-                     [cnt] "+r"(cnt_loop),
-                     [tail] "+r"(tail_loop)
-                   : [out] "r"(ptr_out), [bias0] "r"(bias0)
-                   : "q0", "q1", "q12", "q13", "q14", "q15", "cc", "memory");
+                   : [out] "r"(ptr_out),
+                     [bias0] "r"(bias0),
+                     [bias1] "r"(bias1),
+                     [bias2] "r"(bias2),
+                     [bias3] "r"(bias3)
+                   : "q0",
+                     "q1",
+                     "q2",
+                     "q3",
+                     "q4",
+                     "q5",
+                     "q6",
+                     "q7",
+                     "q8",
+                     "q9",
+                     "q10",
+                     "q11",
+                     "q12",
+                     "q13",
+                     "cc",
+                     "memory");
+    }
+//! deal with remains
+#pragma omp parallel for
+    for (int j = out_cnt * 4; j < M; ++j) {
+      REMAIN
+      asm volatile(
+          SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1
+          : [in] "+r"(ptr_in),
+            [w0] "+r"(ptr_w0),
+            [cnt] "+r"(cnt_loop),
+            [tail] "+r"(tail_loop)
+          : [out] "r"(ptr_out), [bias0] "r"(bias0)
+          : "q0", "q1", "q4", "q12", "q13", "q14", "q15", "cc", "memory");
     }
   }
 #endif  // __aarch64__
@@ -1972,8 +2014,8 @@ void sgemv_relu(const int M,
                 float *y,
                 float beta,
                 bool flag_bias,
-                bool has_a53,
-                const float *bias) {
+                const float *bias,
+                const ARMContext *ctx) {
   float *data_out = y;
   const float *data_in = x;
   const float *weights_ptr = A;
@@ -2084,96 +2126,100 @@ void sgemv_relu(const int M,
   }
 #else  // __aarch64__
   int out_cnt = M >> 2;
+  if (has_beta) {
 #pragma omp parallel for
-  for (int j = 0; j < out_cnt; j++) {
-    int out_idx = j * 4;
-    float *ptr_out = data_out + out_idx;
-    const float *ptr_in = data_in;
-    const float *ptr_w0 = weights_ptr + (N * out_idx);
-    const float *ptr_w1 = ptr_w0 + N;
-    const float *ptr_w2 = ptr_w1 + N;
-    const float *ptr_w3 = ptr_w2 + N;
-    float bias0 = 0.f;
-    float bias1 = 0.f;
-    float bias2 = 0.f;
-    float bias3 = 0.f;
-    if (flag_bias) {
-      bias0 = bias[out_idx];
-      bias1 = bias[out_idx + 1];
-      bias2 = bias[out_idx + 2];
-      bias3 = bias[out_idx + 3];
+    for (int j = 0; j < out_cnt; j++) {
+      MAIN_LOOP
+      asm volatile(SGEMV_IN_4_BIAS SGEMV_KERNEL_4 SGEMV_OUT_4_RELU_BETA
+                   : [in] "+r"(ptr_in),
+                     [w0] "+r"(ptr_w0),
+                     [w1] "+r"(ptr_w1),
+                     [w2] "+r"(ptr_w2),
+                     [w3] "+r"(ptr_w3),
+                     [cnt] "+r"(cnt_loop),
+                     [tail] "+r"(tail_loop)
+                   : [out] "r"(ptr_out),
+                     [bias0] "r"(bias0),
+                     [bias1] "r"(bias1),
+                     [bias2] "r"(bias2),
+                     [bias3] "r"(bias3),
+                     [vbeta] "w"(vbeta)
+                   : "q0",
+                     "q1",
+                     "q2",
+                     "q3",
+                     "q4",
+                     "q5",
+                     "q6",
+                     "q7",
+                     "q8",
+                     "q9",
+                     "q10",
+                     "q11",
+                     "q12",
+                     "q13",
+                     "cc",
+                     "memory");
     }
-    int cnt_loop = cnt;
-    int tail_loop = tail;
-    // clang-format off
-    if (has_beta) {
-        asm volatile(SGEMV_IN_4_BIAS SGEMV_KERNEL_4 SGEMV_OUT_4_RELU_BETA
-                  : [in] "+r"(ptr_in),
-                    [w0] "+r"(ptr_w0),
-                    [w1] "+r"(ptr_w1),
-                    [w2] "+r"(ptr_w2),
-                    [w3] "+r"(ptr_w3),
-                    [cnt] "+r"(cnt_loop),
-                    [tail] "+r"(tail_loop)
-                  : [out] "r"(ptr_out),
-                    [bias0] "r"(bias0),
-                    [bias1] "r"(bias1),
-                    [bias2] "r"(bias2),
-                    [bias3] "r"(bias3),
-                    [vbeta] "w"(vbeta)
-                  : "q0", "q1", "q2", "q3", "q4",
-                    "q5", "q6", "q7", "q8", "q9",
-                    "q10", "q11", "q12", "q13", "cc",
-                    "memory");
-    } else {
-      asm volatile(SGEMV_IN_4_BIAS SGEMV_KERNEL_4 SGEMV_OUT_4_RELU
-                  : [in] "+r"(ptr_in),
-                    [w0] "+r"(ptr_w0),
-                    [w1] "+r"(ptr_w1),
-                    [w2] "+r"(ptr_w2),
-                    [w3] "+r"(ptr_w3),
-                    [cnt] "+r"(cnt_loop),
-                    [tail] "+r"(tail_loop)
-                  : [out] "r"(ptr_out),
-                    [bias0] "r"(bias0),
-                    [bias1] "r"(bias1),
-                    [bias2] "r"(bias2),
-                    [bias3] "r"(bias3)
-                  : "q0", "q1", "q2", "q3", "q4",
-                    "q5", "q6", "q7", "q8", "q9",
-                    "q10", "q11", "q12", "q13", "cc",
-                    "memory");
-    }
-    // clang-format on
-  }
 //! deal with remains
 #pragma omp parallel for
-  for (int j = out_cnt * 4; j < M; ++j) {
-    float *ptr_out = data_out + j;
-    const float *ptr_in = data_in;
-    const float *ptr_w0 = weights_ptr + (N * j);
-    int cnt_loop = cnt;
-    int tail_loop = tail;
-    float bias0 = 0.f;
-    if (flag_bias) {
-      bias0 = bias[j];
+    for (int j = out_cnt * 4; j < M; ++j) {
+      REMAIN
+      asm volatile(
+          SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_RELU_BETA
+          : [in] "+r"(ptr_in),
+            [w0] "+r"(ptr_w0),
+            [cnt] "+r"(cnt_loop),
+            [tail] "+r"(tail_loop)
+          : [out] "r"(ptr_out), [bias0] "r"(bias0), [beta] "r"(beta)
+          : "q0", "q1", "q4", "q12", "q13", "q14", "q15", "cc", "memory");
     }
-    if (has_beta) {
-      asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_RELU_BETA
+  } else {
+#pragma omp parallel for
+    for (int j = 0; j < out_cnt; j++) {
+      MAIN_LOOP
+      asm volatile(SGEMV_IN_4_BIAS SGEMV_KERNEL_4 SGEMV_OUT_4_RELU
                    : [in] "+r"(ptr_in),
                      [w0] "+r"(ptr_w0),
+                     [w1] "+r"(ptr_w1),
+                     [w2] "+r"(ptr_w2),
+                     [w3] "+r"(ptr_w3),
                      [cnt] "+r"(cnt_loop),
                      [tail] "+r"(tail_loop)
-                   : [out] "r"(ptr_out), [bias0] "r"(bias0), [beta] "r"(beta)
-                   : "q0", "q1", "q12", "q13", "q14", "q15", "cc", "memory");
-    } else {
-      asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_RELU
-                   : [in] "+r"(ptr_in),
-                     [w0] "+r"(ptr_w0),
-                     [cnt] "+r"(cnt_loop),
-                     [tail] "+r"(tail_loop)
-                   : [out] "r"(ptr_out), [bias0] "r"(bias0)
-                   : "q0", "q1", "q12", "q13", "q14", "q15", "cc", "memory");
+                   : [out] "r"(ptr_out),
+                     [bias0] "r"(bias0),
+                     [bias1] "r"(bias1),
+                     [bias2] "r"(bias2),
+                     [bias3] "r"(bias3)
+                   : "q0",
+                     "q1",
+                     "q2",
+                     "q3",
+                     "q4",
+                     "q5",
+                     "q6",
+                     "q7",
+                     "q8",
+                     "q9",
+                     "q10",
+                     "q11",
+                     "q12",
+                     "q13",
+                     "cc",
+                     "memory");
+    }
+//! deal with remains
+#pragma omp parallel for
+    for (int j = out_cnt * 4; j < M; ++j) {
+      REMAIN
+      asm volatile(
+          SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_RELU
+          : [in] "+r"(ptr_in),
+            [w0] "+r"(ptr_w0),
+            [cnt] "+r"(cnt_loop),
+            [tail] "+r"(tail_loop)
+          : [out] "r"(ptr_out), [bias0] "r"(bias0)
+          : "q0", "q1", "q4", "q12", "q13", "q14", "q15", "cc", "memory");
     }
   }
 #endif  // __aarch64__
@@ -2187,7 +2233,8 @@ void sgemv_relu6(const int M,
                  float beta,
                  bool flag_bias,
                  const float *bias,
-                 const float six) {
+                 const float six,
+                 const ARMContext *ctx) {
   float *data_out = y;
   const float *data_in = x;
   const float *weights_ptr = A;
@@ -2299,83 +2346,46 @@ void sgemv_relu6(const int M,
   }
 #else  // __aarch64__
   int out_cnt = M >> 2;
+  if (has_beta) {
 #pragma omp parallel for
-  for (int j = 0; j < out_cnt; j++) {
-    int out_idx = j * 4;
-    float *ptr_out = data_out + out_idx;
-    const float *ptr_in = data_in;
-    const float *ptr_w0 = weights_ptr + (N * out_idx);
-    const float *ptr_w1 = ptr_w0 + N;
-    const float *ptr_w2 = ptr_w1 + N;
-    const float *ptr_w3 = ptr_w2 + N;
-    float bias0 = 0.f;
-    float bias1 = 0.f;
-    float bias2 = 0.f;
-    float bias3 = 0.f;
-    if (flag_bias) {
-      bias0 = bias[out_idx];
-      bias1 = bias[out_idx + 1];
-      bias2 = bias[out_idx + 2];
-      bias3 = bias[out_idx + 3];
-    }
-    int cnt_loop = cnt;
-    int tail_loop = tail;
-    // clang-format off
-    if (has_beta) {
+    for (int j = 0; j < out_cnt; j++) {
+      MAIN_LOOP
       asm volatile(SGEMV_IN_4_BIAS SGEMV_KERNEL_4 SGEMV_OUT_4_RELU6_BETA
-                  : [in] "+r"(ptr_in),
-                    [w0] "+r"(ptr_w0),
-                    [w1] "+r"(ptr_w1),
-                    [w2] "+r"(ptr_w2),
-                    [w3] "+r"(ptr_w3),
-                    [cnt] "+r"(cnt_loop),
-                    [tail] "+r"(tail_loop)
-                  : [out] "r"(ptr_out),
-                    [bias0] "r"(bias0),
-                    [bias1] "r"(bias1),
-                    [bias2] "r"(bias2),
-                    [bias3] "r"(bias3),
-                    [six] "r" (six),
-                    [vbeta] "w"(vbeta)
-                  : "q0", "q1", "q2", "q3", "q4",
-                    "q5", "q6", "q7", "q8", "q9",
-                    "q10", "q11", "q12", "q13", "cc",
-                    "memory");
-    } else {
-      asm volatile(SGEMV_IN_4_BIAS SGEMV_KERNEL_4 SGEMV_OUT_4_RELU6
-                  : [in] "+r"(ptr_in),
-                    [w0] "+r"(ptr_w0),
-                    [w1] "+r"(ptr_w1),
-                    [w2] "+r"(ptr_w2),
-                    [w3] "+r"(ptr_w3),
-                    [cnt] "+r"(cnt_loop),
-                    [tail] "+r"(tail_loop)
-                  : [out] "r"(ptr_out),
-                    [bias0] "r"(bias0),
-                    [bias1] "r"(bias1),
-                    [bias2] "r"(bias2),
-                    [bias3] "r"(bias3),
-                    [six] "r" (six)
-                  : "q0", "q1", "q2", "q3", "q4",
-                    "q5", "q6", "q7", "q8", "q9",
-                    "q10", "q11", "q12", "q13", "cc",
-                    "memory");
+                   : [in] "+r"(ptr_in),
+                     [w0] "+r"(ptr_w0),
+                     [w1] "+r"(ptr_w1),
+                     [w2] "+r"(ptr_w2),
+                     [w3] "+r"(ptr_w3),
+                     [cnt] "+r"(cnt_loop),
+                     [tail] "+r"(tail_loop)
+                   : [out] "r"(ptr_out),
+                     [bias0] "r"(bias0),
+                     [bias1] "r"(bias1),
+                     [bias2] "r"(bias2),
+                     [bias3] "r"(bias3),
+                     [six] "r"(six),
+                     [vbeta] "w"(vbeta)
+                   : "q0",
+                     "q1",
+                     "q2",
+                     "q3",
+                     "q4",
+                     "q5",
+                     "q6",
+                     "q7",
+                     "q8",
+                     "q9",
+                     "q10",
+                     "q11",
+                     "q12",
+                     "q13",
+                     "cc",
+                     "memory");
     }
-    // clang-format on
-  }
 //! deal with remains
 #pragma omp parallel for
-  for (int j = out_cnt * 4; j < M; ++j) {
-    float *ptr_out = data_out + j;
-    const float *ptr_in = data_in;
-    const float *ptr_w0 = weights_ptr + (N * j);
-    int cnt_loop = cnt;
-    int tail_loop = tail;
-    float bias0 = 0.f;
-    if (flag_bias) {
-      bias0 = bias[j];
-    }
-    if (has_beta) {
+    for (int j = out_cnt * 4; j < M; ++j) {
+      REMAIN
       asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_RELU6_BETA
                    : [in] "+r"(ptr_in),
                      [w0] "+r"(ptr_w0),
@@ -2385,15 +2395,74 @@ void sgemv_relu6(const int M,
                      [bias0] "r"(bias0),
                      [six] "r"(six),
                      [beta] "r"(beta)
-                   : "q0", "q1", "q12", "q13", "q14", "q15", "cc", "memory");
-    } else {
+                   : "q0",
+                     "q1",
+                     "q2",
+                     "q3",
+                     "q4",
+                     "q12",
+                     "q13",
+                     "q14",
+                     "q15",
+                     "cc",
+                     "memory");
+    }
+  } else {
+#pragma omp parallel for
+    for (int j = 0; j < out_cnt; j++) {
+      MAIN_LOOP
+      asm volatile(SGEMV_IN_4_BIAS SGEMV_KERNEL_4 SGEMV_OUT_4_RELU6
+                   : [in] "+r"(ptr_in),
+                     [w0] "+r"(ptr_w0),
+                     [w1] "+r"(ptr_w1),
+                     [w2] "+r"(ptr_w2),
+                     [w3] "+r"(ptr_w3),
+                     [cnt] "+r"(cnt_loop),
+                     [tail] "+r"(tail_loop)
+                   : [out] "r"(ptr_out),
+                     [bias0] "r"(bias0),
+                     [bias1] "r"(bias1),
+                     [bias2] "r"(bias2),
+                     [bias3] "r"(bias3),
+                     [six] "r"(six)
+                   : "q0",
+                     "q1",
+                     "q2",
+                     "q3",
+                     "q4",
+                     "q5",
+                     "q6",
+                     "q7",
+                     "q8",
+                     "q9",
+                     "q10",
+                     "q11",
+                     "q12",
+                     "q13",
+                     "cc",
+                     "memory");
+    }
+//! deal with remains
+#pragma omp parallel for
+    for (int j = out_cnt * 4; j < M; ++j) {
+      REMAIN
       asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_RELU6
                    : [in] "+r"(ptr_in),
                      [w0] "+r"(ptr_w0),
                      [cnt] "+r"(cnt_loop),
                      [tail] "+r"(tail_loop)
                    : [out] "r"(ptr_out), [bias0] "r"(bias0), [six] "r"(six)
-                   : "q0", "q1", "q12", "q13", "q14", "q15", "cc", "memory");
+                   : "q0",
+                     "q1",
+                     "q2",
+                     "q3",
+                     "q4",
+                     "q12",
+                     "q13",
+                     "q14",
+                     "q15",
+                     "cc",
+                     "memory");
     }
   }
 #endif  // __aarch64__
@@ -2407,7 +2476,8 @@ void sgemv_leakey_relu(const int M,
                        float beta,
                        bool flag_bias,
                        const float *bias,
-                       const float alpha) {
+                       const float alpha,
+                       const ARMContext *ctx) {
   float *data_out = y;
   const float *data_in = x;
   const float *weights_ptr = A;
@@ -2517,108 +2587,132 @@ void sgemv_leakey_relu(const int M,
   }
 #else  // __aarch64__
   int out_cnt = M >> 2;
+  if (has_beta) {
 #pragma omp parallel for
-  for (int j = 0; j < out_cnt; j++) {
-    int out_idx = j * 4;
-    float *ptr_out = data_out + out_idx;
-    const float *ptr_in = data_in;
-    const float *ptr_w0 = weights_ptr + (N * out_idx);
-    const float *ptr_w1 = ptr_w0 + N;
-    const float *ptr_w2 = ptr_w1 + N;
-    const float *ptr_w3 = ptr_w2 + N;
-    float bias0 = 0.f;
-    float bias1 = 0.f;
-    float bias2 = 0.f;
-    float bias3 = 0.f;
-    if (flag_bias) {
-      bias0 = bias[out_idx];
-      bias1 = bias[out_idx + 1];
-      bias2 = bias[out_idx + 2];
-      bias3 = bias[out_idx + 3];
-    }
-    int cnt_loop = cnt;
-    int tail_loop = tail;
-    // clang-format off
-    if (has_beta) {
+    for (int j = 0; j < out_cnt; j++) {
+      MAIN_LOOP
       asm volatile(SGEMV_IN_4_BIAS SGEMV_KERNEL_4 SGEMV_OUT_4_LEAKEY_RELU_BETA
-                  : [in] "+r"(ptr_in),
-                    [w0] "+r"(ptr_w0),
-                    [w1] "+r"(ptr_w1),
-                    [w2] "+r"(ptr_w2),
-                    [w3] "+r"(ptr_w3),
-                    [cnt] "+r"(cnt_loop),
-                    [tail] "+r"(tail_loop)
-                  : [out] "r"(ptr_out),
-                    [bias0] "r"(bias0),
-                    [bias1] "r"(bias1),
-                    [bias2] "r"(bias2),
-                    [bias3] "r"(bias3),
-                    [alpha] "r" (alpha),
-                    [vbeta] "w"(vbeta)
-                  : "q0", "q1", "q2", "q3", "q4",
-                    "q5", "q6", "q7", "q8", "q9",
-                    "q10", "q11", "q12", "q13", "cc",
-                    "memory");
-    } else {
-      asm volatile(SGEMV_IN_4_BIAS SGEMV_KERNEL_4 SGEMV_OUT_4_LEAKEY_RELU
-                  : [in] "+r"(ptr_in),
-                    [w0] "+r"(ptr_w0),
-                    [w1] "+r"(ptr_w1),
-                    [w2] "+r"(ptr_w2),
-                    [w3] "+r"(ptr_w3),
-                    [cnt] "+r"(cnt_loop),
-                    [tail] "+r"(tail_loop)
-                  : [out] "r"(ptr_out),
-                    [bias0] "r"(bias0),
-                    [bias1] "r"(bias1),
-                    [bias2] "r"(bias2),
-                    [bias3] "r"(bias3),
-                    [alpha] "r" (alpha)
-                  : "q0", "q1", "q2", "q3", "q4",
-                    "q5", "q6", "q7", "q8", "q9",
-                    "q10", "q11", "q12", "q13", "cc",
-                    "memory");
+                   : [in] "+r"(ptr_in),
+                     [w0] "+r"(ptr_w0),
+                     [w1] "+r"(ptr_w1),
+                     [w2] "+r"(ptr_w2),
+                     [w3] "+r"(ptr_w3),
+                     [cnt] "+r"(cnt_loop),
+                     [tail] "+r"(tail_loop)
+                   : [out] "r"(ptr_out),
+                     [bias0] "r"(bias0),
+                     [bias1] "r"(bias1),
+                     [bias2] "r"(bias2),
+                     [bias3] "r"(bias3),
+                     [alpha] "r"(alpha),
+                     [vbeta] "w"(vbeta)
+                   : "q0",
+                     "q1",
+                     "q2",
+                     "q3",
+                     "q4",
+                     "q5",
+                     "q6",
+                     "q7",
+                     "q8",
+                     "q9",
+                     "q10",
+                     "q11",
+                     "q12",
+                     "q13",
+                     "cc",
+                     "memory");
     }
-    // clang-format on
-  }
 //! deal with remains
 #pragma omp parallel for
-  for (int j = out_cnt * 4; j < M; ++j) {
-    float *ptr_out = data_out + j;
-    const float *ptr_in = data_in;
-    const float *ptr_w0 = weights_ptr + (N * j);
-    int cnt_loop = cnt;
-    int tail_loop = tail;
-    float bias0 = 0.f;
-    if (flag_bias) {
-      bias0 = bias[j];
+    for (int j = out_cnt * 4; j < M; ++j) {
+      REMAIN
+      asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_LEAKEY_RELU_BETA
+                   : [in] "+r"(ptr_in),
+                     [w0] "+r"(ptr_w0),
+                     [cnt] "+r"(cnt_loop),
+                     [tail] "+r"(tail_loop)
+                   : [out] "r"(ptr_out),
+                     [bias0] "r"(bias0),
+                     [alpha] "r"(alpha),
+                     [beta] "r"(beta)
+                   : "q0",
+                     "q1",
+                     "q2",
+                     "q3",
+                     "q4",
+                     "q12",
+                     "q13",
+                     "q14",
+                     "q15",
+                     "cc",
+                     "memory");
     }
-    if (has_beta) {
-      asm volatile(
-          SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_LEAKEY_RELU_BETA
-          : [in] "+r"(ptr_in),
-            [w0] "+r"(ptr_w0),
-            [cnt] "+r"(cnt_loop),
-            [tail] "+r"(tail_loop)
-          : [out] "r"(ptr_out),
-            [bias0] "r"(bias0),
-            [alpha] "r"(alpha),
-            [beta] "r"(beta)
-          : "q0", "q1", "q3", "q4", "q12", "q13", "q14", "q15", "cc", "memory");
-    } else {
-      asm volatile(
-          SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_LEAKEY_RELU
-          : [in] "+r"(ptr_in),
-            [w0] "+r"(ptr_w0),
-            [cnt] "+r"(cnt_loop),
-            [tail] "+r"(tail_loop)
-          : [out] "r"(ptr_out), [bias0] "r"(bias0), [alpha] "r"(alpha)
-          : "q0", "q1", "q3", "q4", "q12", "q13", "q14", "q15", "cc", "memory");
+  } else {
+#pragma omp parallel for
+    for (int j = 0; j < out_cnt; j++) {
+      MAIN_LOOP
+      asm volatile(SGEMV_IN_4_BIAS SGEMV_KERNEL_4 SGEMV_OUT_4_LEAKEY_RELU
+                   : [in] "+r"(ptr_in),
+                     [w0] "+r"(ptr_w0),
+                     [w1] "+r"(ptr_w1),
+                     [w2] "+r"(ptr_w2),
+                     [w3] "+r"(ptr_w3),
+                     [cnt] "+r"(cnt_loop),
+                     [tail] "+r"(tail_loop)
+                   : [out] "r"(ptr_out),
+                     [bias0] "r"(bias0),
+                     [bias1] "r"(bias1),
+                     [bias2] "r"(bias2),
+                     [bias3] "r"(bias3),
+                     [alpha] "r"(alpha)
+                   : "q0",
+                     "q1",
+                     "q2",
+                     "q3",
+                     "q4",
+                     "q5",
+                     "q6",
+                     "q7",
+                     "q8",
+                     "q9",
+                     "q10",
+                     "q11",
+                     "q12",
+                     "q13",
+                     "cc",
+                     "memory");
+    }
+//! deal with remains
+#pragma omp parallel for
+    for (int j = out_cnt * 4; j < M; ++j) {
+      REMAIN
+      asm volatile(SGEMV_IN_1_BIAS SGEMV_KERNEL_1 SGEMV_OUT_1_LEAKEY_RELU
+                   : [in] "+r"(ptr_in),
+                     [w0] "+r"(ptr_w0),
+                     [cnt] "+r"(cnt_loop),
+                     [tail] "+r"(tail_loop)
+                   : [out] "r"(ptr_out), [bias0] "r"(bias0), [alpha] "r"(alpha)
+                   : "q0",
+                     "q1",
+                     "q2",
+                     "q3",
+                     "q4",
+                     "q12",
+                     "q13",
+                     "q14",
+                     "q15",
+                     "cc",
+                     "memory");
     }
   }
 #endif  // __aarch64__
 }
 
+#undef MAIN_LOOP
+#undef REMAIN
+#undef MAIN_ASM
+#undef REMAIN_ASM
 }  // namespace math
 }  // namespace arm
 }  // namespace lite
