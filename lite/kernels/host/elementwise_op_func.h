@@ -107,7 +107,7 @@ enum class BroadcastType {
 };
 
 /**
- * Get broadcast type, x_dims and x_dims must have same dim_size. The dimension
+ * Get broadcast type, x_dims and y_dims must have same dim_size. The dimension
  * which will be broadcast should be set to 1, and the 1 at high dimension
  * should not be omitted
  * e.g. x_dims=[3,1,1,5] and y_dims=[1,2,4,1] is fine, but y_dims should not be
@@ -441,6 +441,7 @@ BatchElementWiseArg<Elem_t, DimValue_t>::ToStaticArg() {
   }
   StaticBatchElementWiseArg ret(
       ElemNumPerBatch(), BatchNum(), BcastType(), offset);
+  return ret;
 }
 
 template <class T>
