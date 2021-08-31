@@ -15,6 +15,7 @@
 #pragma once
 
 #include <memory>
+#include <set>
 #include <string>
 #include "lite/core/optimizer/mir/pattern_matcher_high_api.h"
 
@@ -34,6 +35,17 @@ class ConvElementwiseTreeFuser : public FuseBase {
     conv_has_prelu_alpha_ = conv_has_prelu_alpha;
     elementwise_type_ = elementwise_type;
   }
+  size_t apply_impl(SSAGraph* graph) {
+    BuildPattern();
+    PerformPatternMatcher(graph);
+
+    for (const auto& matched : key2nodes_) {
+      InsertNewNode(graph, matched);
+    }
+
+    GraphSafeRemoveNodes(graph, nodes2rm_);
+    return key2nodes_.size();
+  }
 
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
@@ -48,6 +60,7 @@ class ConvElementwiseTreeFuser : public FuseBase {
   PMNode* conv_output_;
   PMNode* conv_;
   PMNode* elementwise_;
+  std::set<const Node*> nodes2rm_;
 };
 
 }  // namespace fusion
