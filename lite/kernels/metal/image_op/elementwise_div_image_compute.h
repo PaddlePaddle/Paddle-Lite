@@ -33,8 +33,7 @@ namespace kernels {
 namespace metal {
 
 class ElementwiseDivImageCompute
-    : public KernelLite<TARGET(kMetal), PRECISION(kFloat),
-        DATALAYOUT(kMetalTexture2DArray)> {
+    : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {
     using param_t = operators::ElementwiseParam;
 
    public:
