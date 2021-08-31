@@ -430,6 +430,21 @@ NNAdapterPadModeCode PadMode2NNAdapterPadModeCode(std::string mode) {
   return NNADAPTER_PAD_MODE_NONE;
 }
 
+NNAdapterPadCode PaddingAlgorithm2PadCode(
+    const std::string& padding_algorithm) {
+  NNAdapterPadCode pad_code;
+  if (padding_algorithm == "EXPLICIT" || padding_algorithm.empty()) {
+    pad_code = NNADAPTER_PAD_NONE;
+  } else if (padding_algorithm == "SAME") {
+    pad_code = NNADAPTER_PAD_SAME;
+  } else if (padding_algorithm == "VALID") {
+    pad_code = NNADAPTER_PAD_VALID;
+  } else {
+    LOG(FATAL) << "Unsupported padding_algorithm: " << padding_algorithm;
+  }
+  return pad_code;
+}
+
 }  // namespace nnadapter
 }  // namespace subgraph
 }  // namespace lite

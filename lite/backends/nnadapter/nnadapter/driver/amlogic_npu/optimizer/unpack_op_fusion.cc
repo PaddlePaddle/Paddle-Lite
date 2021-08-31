@@ -54,6 +54,8 @@ void UnpackOpFusion(hal::Model* model) {
     auto& output_operands = operation->output_operands;
     switch (operation->type) {
       case NNADAPTER_CONV_2D:
+        UnpackActivations(model, output_operands[0], input_operands[8]);
+        break;
       case NNADAPTER_CONV_2D_TRANSPOSE:
         UnpackActivations(model, output_operands[0], input_operands[10]);
         break;

@@ -50,6 +50,8 @@ std::weak_ptr<VarDesc> VarDesc::Written(const OpDescBase& op_desc) {
     if (mutable_) {
       mutable_ = !mutable_;
       desc = shared_from_this();
+    } else if (persistable_) {
+      desc = shared_from_this();
     } else {
       desc = NewDescendant();
     }

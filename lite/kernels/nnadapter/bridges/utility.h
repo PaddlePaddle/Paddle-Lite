@@ -169,6 +169,8 @@ NNAdapterOperandPrecisionCode Precision2NNAdapterScalarPrecisionCode(
 
 NNAdapterPadModeCode PadMode2NNAdapterPadModeCode(std::string mode);
 
+NNAdapterPadCode PaddingAlgorithm2PadCode(const std::string& padding_algorithm);
+
 }  // namespace nnadapter
 }  // namespace subgraph
 }  // namespace lite
