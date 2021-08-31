@@ -150,9 +150,9 @@ void ConvElementwiseTreeFuser::InsertNewNode(SSAGraph* graph,
   }
 
   // NOTE: Mark these node as intermediate at this place.
-  conv_output_->AsIntermediate();
-  conv_->AsIntermediate();
-  elementwise_->AsIntermediate();
+  nodes2rm_.insert(matched.at("conv"));
+  nodes2rm_.insert(matched.at("conv_output"));
+  nodes2rm_.insert(matched.at("elementwise"));
 
   auto op_desc = GenOpDesc(matched);
   auto conv_op_new = LiteOpRegistry::Global().Create(conv_type_);
