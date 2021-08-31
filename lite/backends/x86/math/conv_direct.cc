@@ -112,34 +112,34 @@ void conv_direct_3x3s2(const float* i_data,
   // fetch bs_i th input feature map
   for (int bs_i = 0; bs_i < bs; bs_i++) {
     memset(trans_out, 0, sizeof(float) * trans_out_size);
-    // fetch the ic_i th channel in this input feature map
-    for (int ic_i = 0; ic_i < wc; ic_i++) {
-      const float* input_start_address = i_data + bs_i * ichw + ic_i * ihw;
 
-      // fetch oc_gi th group kernel,there are BLOCK kernels
-      // in it. we only need to deal with its ic_i channel !
-      // oc_gi is oc_group_i !
-      for (int oc_gi = 0; oc_gi < oc_expand; oc_gi += BLOCK) {
-        // Now, we need compute the conv of one planar feature map and BLOCK
-        // planar kernel
-        // the  planar feature map's starting address
-        const float* kernel_start_address =
-            trans_weight + oc_gi * wchw +
-            ic_i * whwB;  // the first kernel's address in this BLOCK
-        float* output_start_address = trans_out + oc_gi * ohw;
+    // Handle upper boundary！
+    // We dealt with the boundary from the beginning
+    for (int oh_i = 0; oh_i < o_upper; oh_i++) {
+      for (int ow_i = 0; ow_i < ow; ow_i++) {
+        // oh_i and ow_i is the index of the output.
+        // Next, calculate the index of their corresponding input.
+        // These two are in the upper left corner of the corresponding
+        // input!
+        int ih_i = oh_i * strideh - ph;
+        int iw_i = ow_i * stridew - pw;
 
-        // Handle upper boundary！
-        for (int oh_i = 0; oh_i < o_upper; oh_i++) {
-          for (int ow_i = 0; ow_i < ow; ow_i++) {
+        // fetch the ic_i th channel in this input feature map
+        for (int ic_i = 0; ic_i < wc; ic_i++) {
+          const float* input_start_address = i_data + bs_i * ichw + ic_i * ihw;
+
+          // fetch oc_gi th group kernel,there are BLOCK kernels
+          // in it. we only need to deal with its ic_i channel !
+          // oc_gi is oc_group_i !
+          for (int oc_gi = 0; oc_gi < oc_expand; oc_gi += BLOCK) {
+            // Now, we need compute the conv of one planar feature map and BLOCK
+            // planar kernel
+            // the  planar feature map's starting address
+            const float* kernel_start_address =
+                trans_weight + oc_gi * wchw +
+                ic_i * whwB;  // the first kernel's address in this BLOCK
             float* output_address =
-                output_start_address + oh_i * ow * BLOCK + ow_i * BLOCK;
-
-            // oh_i and ow_i is the index of the output.
-            // Next, calculate the index of their corresponding input.
-            // These two are in the upper left corner of the corresponding
-            // input!
-            int ih_i = oh_i * strideh - ph;
-            int iw_i = ow_i * stridew - pw;
+                trans_out + oc_gi * ohw + oh_i * ow * BLOCK + ow_i * BLOCK;
 
 // Let's start the convolution of 3x3!
 #ifdef __AVX__
@@ -175,56 +175,31 @@ void conv_direct_3x3s2(const float* i_data,
 #endif
           }
         }
-        // Handle lower boundary！
-        for (int oh_i = o_down; oh_i < oh; oh_i++) {
-          for (int ow_i = 0; ow_i < ow; ow_i++) {
-            float* output_address =
-                output_start_address + oh_i * ow * BLOCK + ow_i * BLOCK;
-            int ih_i = oh_i * strideh - ph;
-            int iw_i = ow_i * stridew - pw;
-#ifdef __AVX__
-            __m256 res = _mm256_loadu_ps(output_address);
-#else
-            __m128 res = _mm_loadu_ps(output_address);
-#endif
-            for (int i = 0; i < 3; i++)
-              for (int j = 0; j < 3; j++) {
-                int new_ih_i = ih_i + i;
-                int new_iw_i = iw_i + j;
-                if (new_ih_i < 0 || new_ih_i >= ih || new_iw_i < 0 ||
-                    new_iw_i >= iw)
-                  continue;
-                const float* input_address =
-                    input_start_address + new_ih_i * iw + new_iw_i;
-#ifdef __AVX__
-                __m256 input = _mm256_set1_ps(*input_address);
-                __m256 w =
-                    _mm256_loadu_ps(kernel_start_address + (i * 3 + j) * BLOCK);
-                res = _mm256_fmadd_ps(input, w, res);
-#else
-                __m128 input = _mm_set1_ps(*input_address);
-                __m128 w =
-                    _mm_loadu_ps(kernel_start_address + (i * 3 + j) * BLOCK);
-                res = _mm_fmadd_ps(input, w, res);
-#endif
-              }
-#ifdef __AVX__
-            _mm256_storeu_ps(output_address, res);
-#else
-            _mm_storeu_ps(output_address, res);
-#endif
-          }
-        }
+      }
+    }
 
-        // Handle left boundary！
-        for (int oh_i = 0; oh_i < oh; oh_i++) {
-          if ((oh_i >= 0 && oh_i < o_upper) || (oh_i >= o_down && oh_i < oh))
-            continue;
-          for (int ow_i = 0; ow_i < o_left; ow_i++) {
+    // Handle lower boundary！
+    for (int oh_i = o_down; oh_i < oh; oh_i++) {
+      for (int ow_i = 0; ow_i < ow; ow_i++) {
+        int ih_i = oh_i * strideh - ph;
+        int iw_i = ow_i * stridew - pw;
+
+        // fetch the ic_i th channel in this input feature map
+        for (int ic_i = 0; ic_i < wc; ic_i++) {
+          const float* input_start_address = i_data + bs_i * ichw + ic_i * ihw;
+          // fetch oc_gi th group kernel,there are BLOCK kernels
+          // in it. we only need to deal with its ic_i channel !
+          // oc_gi is oc_group_i !
+          for (int oc_gi = 0; oc_gi < oc_expand; oc_gi += BLOCK) {
+            // Now, we need compute the conv of one planar feature map and BLOCK
+            // planar kernel
+            // the  planar feature map's starting address
+            const float* kernel_start_address =
+                trans_weight + oc_gi * wchw +
+                ic_i * whwB;  // the first kernel's address in this BLOCK
             float* output_address =
-                output_start_address + oh_i * ow * BLOCK + ow_i * BLOCK;
-            int ih_i = oh_i * strideh - ph;
-            int iw_i = ow_i * stridew - pw;
+                trans_out + oc_gi * ohw + oh_i * ow * BLOCK + ow_i * BLOCK;
+
 #ifdef __AVX__
             __m256 res = _mm256_loadu_ps(output_address);
 #else
@@ -258,15 +233,33 @@ void conv_direct_3x3s2(const float* i_data,
 #endif
           }
         }
-        // Handle right boundary！
-        for (int oh_i = 0; oh_i < oh; oh_i++) {
-          if ((oh_i >= 0 && oh_i < o_upper) || (oh_i >= o_down && oh_i < oh))
-            continue;
-          for (int ow_i = o_right; ow_i < ow; ow_i++) {
+      }
+    }
+
+    // Handle left boundary！
+    for (int oh_i = 0; oh_i < oh; oh_i++) {
+      if ((oh_i >= 0 && oh_i < o_upper) || (oh_i >= o_down && oh_i < oh))
+        continue;
+      for (int ow_i = 0; ow_i < o_left; ow_i++) {
+        int ih_i = oh_i * strideh - ph;
+        int iw_i = ow_i * stridew - pw;
+
+        // fetch the ic_i th channel in this input feature map
+        for (int ic_i = 0; ic_i < wc; ic_i++) {
+          const float* input_start_address = i_data + bs_i * ichw + ic_i * ihw;
+          // fetch oc_gi th group kernel,there are BLOCK kernels
+          // in it. we only need to deal with its ic_i channel !
+          // oc_gi is oc_group_i !
+          for (int oc_gi = 0; oc_gi < oc_expand; oc_gi += BLOCK) {
+            // Now, we need compute the conv of one planar feature map and BLOCK
+            // planar kernel
+            // the  planar feature map's starting address
+            const float* kernel_start_address =
+                trans_weight + oc_gi * wchw +
+                ic_i * whwB;  // the first kernel's address in this BLOCK
             float* output_address =
-                output_start_address + oh_i * ow * BLOCK + ow_i * BLOCK;
-            int ih_i = oh_i * strideh - ph;
-            int iw_i = ow_i * stridew - pw;
+                trans_out + oc_gi * ohw + oh_i * ow * BLOCK + ow_i * BLOCK;
+
 #ifdef __AVX__
             __m256 res = _mm256_loadu_ps(output_address);
 #else
@@ -300,6 +293,84 @@ void conv_direct_3x3s2(const float* i_data,
 #endif
           }
         }
+      }
+    }
+    // Handle right boundary！
+    for (int oh_i = 0; oh_i < oh; oh_i++) {
+      if ((oh_i >= 0 && oh_i < o_upper) || (oh_i >= o_down && oh_i < oh))
+        continue;
+      for (int ow_i = o_right; ow_i < ow; ow_i++) {
+        int ih_i = oh_i * strideh - ph;
+        int iw_i = ow_i * stridew - pw;
+
+        // fetch the ic_i th channel in this input feature map
+        for (int ic_i = 0; ic_i < wc; ic_i++) {
+          const float* input_start_address = i_data + bs_i * ichw + ic_i * ihw;
+          // fetch oc_gi th group kernel,there are BLOCK kernels
+          // in it. we only need to deal with its ic_i channel !
+          // oc_gi is oc_group_i !
+          for (int oc_gi = 0; oc_gi < oc_expand; oc_gi += BLOCK) {
+            // Now, we need compute the conv of one planar feature map and BLOCK
+            // planar kernel
+            // the  planar feature map's starting address
+            const float* kernel_start_address =
+                trans_weight + oc_gi * wchw +
+                ic_i * whwB;  // the first kernel's address in this BLOCK
+            float* output_address =
+                trans_out + oc_gi * ohw + oh_i * ow * BLOCK + ow_i * BLOCK;
+
+#ifdef __AVX__
+            __m256 res = _mm256_loadu_ps(output_address);
+#else
+            __m128 res = _mm_loadu_ps(output_address);
+#endif
+            for (int i = 0; i < 3; i++)
+              for (int j = 0; j < 3; j++) {
+                int new_ih_i = ih_i + i;
+                int new_iw_i = iw_i + j;
+                if (new_ih_i < 0 || new_ih_i >= ih || new_iw_i < 0 ||
+                    new_iw_i >= iw)
+                  continue;
+                const float* input_address =
+                    input_start_address + new_ih_i * iw + new_iw_i;
+#ifdef __AVX__
+                __m256 input = _mm256_set1_ps(*input_address);
+                __m256 w =
+                    _mm256_loadu_ps(kernel_start_address + (i * 3 + j) * BLOCK);
+                res = _mm256_fmadd_ps(input, w, res);
+#else
+                __m128 input = _mm_set1_ps(*input_address);
+                __m128 w =
+                    _mm_loadu_ps(kernel_start_address + (i * 3 + j) * BLOCK);
+                res = _mm_fmadd_ps(input, w, res);
+#endif
+              }
+#ifdef __AVX__
+            _mm256_storeu_ps(output_address, res);
+#else
+            _mm_storeu_ps(output_address, res);
+#endif
+          }
+        }
+      }
+    }
+
+    // fetch the ic_i th channel in this input feature map
+    for (int ic_i = 0; ic_i < wc; ic_i++) {
+      const float* input_start_address = i_data + bs_i * ichw + ic_i * ihw;
+
+      // fetch oc_gi th group kernel,there are BLOCK kernels
+      // in it. we only need to deal with its ic_i channel !
+      // oc_gi is oc_group_i !
+      for (int oc_gi = 0; oc_gi < oc_expand; oc_gi += BLOCK) {
+        // Now, we need compute the conv of one planar feature map and BLOCK
+        // planar kernel
+        // the  planar feature map's starting address
+        const float* kernel_start_address =
+            trans_weight + oc_gi * wchw +
+            ic_i * whwB;  // the first kernel's address in this BLOCK
+        float* output_start_address = trans_out + oc_gi * ohw;
+
 /* So far, we have dealt with the special boundary,and now we begin to deal with
  * the general situation */
 

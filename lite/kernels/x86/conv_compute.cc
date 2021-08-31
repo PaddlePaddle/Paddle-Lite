@@ -92,8 +92,8 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   /// select conv impl
   if (dw_kernel && kps_equal && no_dilation && flag_dw && (groups & 3) == 0) {
     impl_ = new DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>;
-  } else if (ih >= 256 && ih <= 320 && iw <= 320 && iw >= 256 && chin >= 3 &&
-             chout <= 32 && chout % 8 == 0 && groups == 1 && kernel_h == 3 &&
+  } else if (ih >= 112 && ih <= 400 && iw >= 112 && iw <= 400 && chin >= 3 &&
+             chout <= 24 && chout % 8 == 0 && groups == 1 && kernel_h == 3 &&
              stride_h == 2 && nodilations && kps_equal && pad_all_equal &&
              flag_p01) {
     impl_ = new DirectConv<PRECISION(kFloat), PRECISION(kFloat)>();
