@@ -52,6 +52,10 @@ function publish_inference_lib {
   for python_version in ${PYTHON_VERSION[@]}; do
     # Step1. Compiling python installer on mac
     ./lite/tools/build.sh \
+      --build_extra=ON \
+      --with_exception=ON \
+      --with_profile=OFF \
+      --with_precision_profile=OFF \
       --build_python=ON \
       --python_version=$python_version \
       --build_opencl=$BUILD_OPENCL \
@@ -61,6 +65,7 @@ function publish_inference_lib {
     if [ ${BUILD_OPENCL} = ON ]; then
       build_dir=build.lite.x86.opencl
     fi
+
     if [ -d ${build_dir}/inference_lite_lib/python/install/dist ]; then
       # test python installer
       cd ${build_dir}
@@ -95,6 +100,23 @@ function publish_inference_lib {
       echo -e "*     ./lite/tools/build.sh --with_python=ON --python_version=$python_version"
       echo "**************************************************************************************"
       exit 1
+    fi
+
+    # Test x86 cxx demo
+    local cxx_demo_dir=${build_dir}/inference_lite_lib/demo/cxx/
+    if [ -d ${cxx_demo_dir} ]; then
+      # full demo
+      cd ${cxx_demo_dir}/mobilenetv1_full/
+      sh build.sh
+      ./mobilenet_full_api $WORKSPACE/${build_dir}/mobilenet_v1  1,3,224,224  10  2  0
+      
+      # light demo
+      cd ${cxx_demo_dir}/mobilenetv1_light/
+      sh build.sh
+      ./mobilenet_light_api $WORKSPACE/${build_dir}/mobilenet_v1_x86_opencl.nb 1,3,224,224  10  2  0
+    else 
+      echo -e "Directory: ${cxx_demo_dir} not found!"
+      exit 1 
     fi
   done
 }
