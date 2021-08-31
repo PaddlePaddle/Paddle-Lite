@@ -149,7 +149,7 @@ void ConvElementwiseTreeFuser::InsertNewNode(SSAGraph* graph,
     return;
   }
 
-  // NOTE: Mark these node as intermediate at this place.
+  // NOTE: Mark these node as intermediate at this place is not valid.
   nodes2rm_.insert(matched.at("conv"));
   nodes2rm_.insert(matched.at("conv_output"));
   nodes2rm_.insert(matched.at("elementwise"));
