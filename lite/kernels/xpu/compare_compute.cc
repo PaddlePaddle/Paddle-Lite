@@ -34,19 +34,16 @@ void CompareCompute<PType, T, Functor>::Run() {
   auto& param = this->template Param<operators::CompareParam>();
   const size_t x_size = param.X->numel();
   const size_t y_size = param.Y->numel();
+  CHECK_EQ(x_size, y_size) << "CompareCompute only supports x_size == y_size "
+                              "for xpu at this moment.";
   bool* z = param.Out->template mutable_data<bool>(TARGET(kXPU));
   const auto* x = param.X->template data<T>();
   const auto* y = param.Y->template data<T>();
 
   auto& ctx = this->ctx_->template As<XPUContext>();
-  if (x_size == y_size) {
-    Functor comp_func;
-    int r = comp_func(ctx.GetRawContext(), x, y, z, x_size);
-    CHECK_EQ(r, 0);
-  } else {
-    LOG(FATAL) << "CompareCompute only supports x_size == y_size for "
-                  "xpu at this moment, however them are not equal now";
-  }
+  Functor comp_func;
+  int r = comp_func(ctx.GetRawContext(), x, y, z, x_size);
+  CHECK_EQ(r, 0);
 }
 
 }  // namespace xpu
@@ -60,47 +57,56 @@ using less_than_float = paddle::lite::kernels::xpu::CompareCompute<
     paddle::lite::kernels::xpu::LessThanFunctor<float>>;
 REGISTER_LITE_KERNEL(less_than, kXPU, kFloat, kAny, less_than_float, def)
     .BindInput("X",
-               {LiteType::GetTensorTy(
-                   TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kAny), -1)})
+               {LiteType::GetTensorTy(TARGET(kXPU),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kAny))})
     .BindInput("Y",
-               {LiteType::GetTensorTy(
-                   TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kAny), -1)})
+               {LiteType::GetTensorTy(TARGET(kXPU),
+                                      PRECISION(kFloat),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(
-                    TARGET(kXPU), PRECISION(kBool), DATALAYOUT(kAny), -1)})
+                {LiteType::GetTensorTy(TARGET(kXPU),
+                                       PRECISION(kBool),
+                                       DATALAYOUT(kAny))})
     .BindPaddleOpVersion("less_than", 1)
     .Finalize();
 
 using less_than_int32 = paddle::lite::kernels::xpu::CompareCompute<
-    PRECISION(kInt32),
+    PRECISION(kFloat),
     int,
     paddle::lite::kernels::xpu::LessThanFunctor<int>>;
-REGISTER_LITE_KERNEL(less_than, kXPU, kInt32, kAny, less_than_int32, def)
+REGISTER_LITE_KERNEL(less_than, kXPU, kFloat, kAny, less_than_int32, int32)
     .BindInput("X",
-               {LiteType::GetTensorTy(
-                   TARGET(kXPU), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
+               {LiteType::GetTensorTy(TARGET(kXPU),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
     .BindInput("Y",
-               {LiteType::GetTensorTy(
-                   TARGET(kXPU), PRECISION(kInt32), DATALAYOUT(kAny), -1)})
+               {LiteType::GetTensorTy(TARGET(kXPU),
+                                      PRECISION(kInt32),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(
-                    TARGET(kXPU), PRECISION(kBool), DATALAYOUT(kAny), -1)})
+                {LiteType::GetTensorTy(TARGET(kXPU),
+                                       PRECISION(kBool),
+                                       DATALAYOUT(kAny))})
     .BindPaddleOpVersion("less_than", 1)
     .Finalize();
 
 using less_than_int64 = paddle::lite::kernels::xpu::CompareCompute<
-    PRECISION(kInt64),
+    PRECISION(kFloat),
     int64_t,
     paddle::lite::kernels::xpu::LessThanFunctor<int64_t>>;
-REGISTER_LITE_KERNEL(less_than, kXPU, kInt64, kAny, less_than_int64, def)
+REGISTER_LITE_KERNEL(less_than, kXPU, kFloat, kAny, less_than_int64, int64)
     .BindInput("X",
-               {LiteType::GetTensorTy(
-                   TARGET(kXPU), PRECISION(kInt64), DATALAYOUT(kAny), -1)})
+               {LiteType::GetTensorTy(TARGET(kXPU),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
     .BindInput("Y",
-               {LiteType::GetTensorTy(
-                   TARGET(kXPU), PRECISION(kInt64), DATALAYOUT(kAny), -1)})
+               {LiteType::GetTensorTy(TARGET(kXPU),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
     .BindOutput("Out",
-                {LiteType::GetTensorTy(
-                    TARGET(kXPU), PRECISION(kBool), DATALAYOUT(kAny), -1)})
+                {LiteType::GetTensorTy(TARGET(kXPU),
+                                       PRECISION(kBool),
+                                       DATALAYOUT(kAny))})
     .BindPaddleOpVersion("less_than", 1)
     .Finalize();
