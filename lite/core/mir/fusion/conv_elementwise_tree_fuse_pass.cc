@@ -45,7 +45,7 @@ void ConvElementwiseTreeFusePass::Apply(
                   << "  elementwise_type: " << elementwise_type;
           fusion::ConvElementwiseTreeFuser fuser(
               conv_type, conv_has_bias, conv_has_prelu_alpha, elementwise_type);
-          fuser(graph.get());
+          fuser.apply_impl(graph.get());
         }
       }
     }
