@@ -65,6 +65,9 @@ lite_cc_test(test_depthwise_conv2d_image_opencl SRCS depthwise_conv2d_image_comp
 lite_cc_test(test_conv_transpose_image_opencl SRCS conv_transpose_image_compute_test.cc
              DEPS conv_transpose_opencl_image core)
 
+lite_cc_test(test_depthwise_conv2d_transpose_image_opencl SRCS depthwise_conv2d_transpose_image_compute_test.cc
+             DEPS conv_transpose_opencl_image core)
+
 lite_cc_test(test_nearest_interp_image_opencl SRCS nearest_interp_image_compute_test.cc
              DEPS nearest_interp_opencl_image layout_opencl_image core)
 

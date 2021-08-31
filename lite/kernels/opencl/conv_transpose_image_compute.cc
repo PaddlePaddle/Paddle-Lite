@@ -27,6 +27,18 @@ void ConvTransposeImageCompute::PrepareForRun() {
   const bool is_mali = context.cl_context()->IsArmMali();
 
   conv_param_ = param_.get_mutable<param_t>();
+  auto x_dims = conv_param_->x->dims();
+  input_tensor_n_ = x_dims[0];
+  input_tensor_c_ = x_dims[1];
+  input_tensor_h_ = x_dims[2];
+  input_tensor_w_ = x_dims[3];
+
+  auto output_dims = conv_param_->output->dims();
+  output_tensor_n_ = output_dims[0];
+  output_tensor_c_ = output_dims[1];
+  output_tensor_h_ = output_dims[2];
+  output_tensor_w_ = output_dims[3];
+
   auto filter_dims = conv_param_->filter->dims();
   filter_tensor_c_ = filter_dims[1];
   filter_tensor_h_ = filter_dims[2];
@@ -56,6 +68,7 @@ void ConvTransposeImageCompute::PrepareForRun() {
   std::vector<float> filter_cpu_trans(conv_param_->filter->numel());
   DDimLite filter_trans_dims{
       {filter_dims[1], filter_dims[0], filter_dims[2], filter_dims[3]}};
+
   // Convert filter layout from IOHW to OIHW
   IOHW2OIHW<float, int64_t>(filter_cpu,
                             filter_cpu_trans.data(),
@@ -63,13 +76,30 @@ void ConvTransposeImageCompute::PrepareForRun() {
                             filter_trans_dims[1],
                             filter_trans_dims[2],
                             filter_trans_dims[3]);
-
   filter_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
   tensor_hold_filter_image_ = std::unique_ptr<Tensor>(new Tensor);
   tensor_hold_bias_image_ = std::unique_ptr<Tensor>(new Tensor);
 
   if (groups_ == 1) {
     std::string kernel_name = "conv2d_transpose";
+    kernel_func_names_.push_back(kernel_name);
+
+    CLImageConverterNBlock converter;
+    const DDim& filter_image_dims =
+        converter.InitImageDimInfoWith(filter_trans_dims);
+    filter_image_w_ = filter_image_dims[0];  // ((C + 3) / 4) * 4;
+    filter_image_h_ = filter_image_dims[1];  // ((N + 3) / 4) * H * W;
+    tensor_hold_filter_image_->Resize({1, filter_image_w_, filter_image_h_, 4});
+    auto* filter_image_data = MUTABLE_DATA_CPU(tensor_hold_filter_image_);
+
+    converter.NCHWToImage(
+        filter_cpu_trans.data(), filter_image_data, filter_trans_dims);
+    MUTABLE_DATA_GPU(
+        filter_gpu_image_, filter_image_w_, filter_image_h_, filter_image_data);
+  } else if (groups_ > 1 && (groups_ == input_tensor_c_) &&
+             (groups_ == output_tensor_c_)) {
+    // for depthwsie conv transpose
+    std::string kernel_name = "depthwise_conv2d_transpose";
     kernel_func_names_.push_back(kernel_name);
 
     CLImageConverterNBlock converter;
@@ -85,6 +115,7 @@ void ConvTransposeImageCompute::PrepareForRun() {
     MUTABLE_DATA_GPU(
         filter_gpu_image_, filter_image_w_, filter_image_h_, filter_image_data);
   } else {
+    LOG(INFO) << groups_ << " " << input_tensor_c_ << " " << output_tensor_c_;
     LOG(FATAL)
         << "conv2d_transpose image compute not support this condition yet!";
   }
@@ -180,7 +211,12 @@ void ConvTransposeImageCompute::PrepareForRun() {
                << conv_param_->scale_activation_type;
   }
 
-  kernel_func_paths_.push_back("image/conv2d_transpose_kernel.cl");
+  if (groups_ == 1) {
+    kernel_func_paths_.push_back("image/conv2d_transpose_kernel.cl");
+  } else if (groups_ > 1 && (groups_ == input_tensor_c_) &&
+             (groups_ == output_tensor_c_)) {
+    kernel_func_paths_.push_back("image/depthwise_conv2d_transpose_kernel.cl");
+  }
   VLOG(1) << "kernel_func_names_[0]:" << kernel_func_names_[0]
           << " kernel_func_paths_[0]:" << kernel_func_paths_[0];
   build_options_.push_back(build_options_single);
@@ -209,19 +245,11 @@ void ConvTransposeImageCompute::ReInitWhenNeeded() {
     is_first_epoch_for_run_ = false;
     last_input_dims_ = x_dims;
 
-    input_tensor_n_ = x_dims[0];
-    input_tensor_c_ = x_dims[1];
-    input_tensor_h_ = x_dims[2];
-    input_tensor_w_ = x_dims[3];
     auto x_image_shape = InitImageDimInfoWith(x_dims);
     input_image_h_ = x_image_shape["height"];
     input_image_w_ = x_image_shape["width"];
 
     auto output_dims = conv_param_->output->dims();
-    output_tensor_n_ = output_dims[0];
-    output_tensor_c_ = output_dims[1];
-    output_tensor_h_ = output_dims[2];
-    output_tensor_w_ = output_dims[3];
     auto output_image_shape = InitImageDimInfoWith(output_dims);
     output_image_h_ = output_image_shape["height"];
     output_image_w_ = output_image_shape["width"];
@@ -247,6 +275,8 @@ void ConvTransposeImageCompute::SetGlobalWorkSize() {
   global_work_size_ = cl::NDRange{static_cast<size_t>(gws[0]),
                                   static_cast<size_t>(gws[1]),
                                   static_cast<size_t>(gws[2])};
+  LOG(INFO) << "global_work_size_: " << gws[0] << " " << gws[1] << " "
+            << gws[2];
 }
 
 void ConvTransposeImageCompute::SetArgs() {
@@ -254,6 +284,8 @@ void ConvTransposeImageCompute::SetArgs() {
   const int pad_h = filter_tensor_h_ - 1 - pad_up_;
   const int align_w = stride_w_ - 1 - pad_w;
   const int align_h = stride_h_ - 1 - pad_h;
+  LOG(INFO) << "pad_w, pad_h: " << pad_w << " " << pad_h;
+  LOG(INFO) << "align_w, align_h: " << align_w << " " << align_h;
   cl_int2 pad_wh = {pad_w, pad_h};
   cl_int2 align_wh = {align_w, align_h};
 
@@ -370,4 +402,23 @@ REGISTER_LITE_KERNEL(conv2d_transpose,
                                        PRECISION(kFP16),
                                        DATALAYOUT(kImageDefault))})
     .BindPaddleOpVersion("conv2d_transpose", 1)
+    .Finalize();
+
+REGISTER_LITE_KERNEL(depthwise_conv2d_transpose,
+                     kOpenCL,
+                     kFP16,
+                     kImageDefault,
+                     paddle::lite::kernels::opencl::ConvTransposeImageCompute,
+                     image2d)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Output",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kFP16),
+                                       DATALAYOUT(kImageDefault))})
+    .BindPaddleOpVersion("depthwise_conv2d_transpose", 1)
     .Finalize();
