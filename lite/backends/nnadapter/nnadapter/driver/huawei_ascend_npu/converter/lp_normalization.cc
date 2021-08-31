@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "core/operation/lp_normalization.h"
 #include "driver/huawei_ascend_npu/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -20,43 +21,16 @@ namespace nnadapter {
 namespace huawei_ascend_npu {
 
 int Program::ConvertLpNormalization(hal::Operation* operation) {
-  auto& input_operands = operation->input_operands;
-  auto& output_operands = operation->output_operands;
-  auto input_count = input_operands.size();
-  auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 5);
-  NNADAPTER_CHECK_EQ(output_count, 1);
-  // Input
-  auto input_operand = input_operands[0];
-  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
-  // Output
-  auto output_operand = output_operands[0];
-  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
-  // Axis
-  auto axis_operand = input_operands[1];
-  auto axis_count = axis_operand->length / sizeof(int32_t);
-  auto axis_data = reinterpret_cast<int32_t*>(axis_operand->buffer);
+  LP_NORMALIZATION_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  // Convert to GE operators
   ge::Operator::OpListInt axis;
   for (uint32_t i = 0; i < axis_count; i++) {
-    NNADAPTER_VLOG(5) << "axis[" << i << "]=" << axis_data[i];
     axis.push_back(axis_data[i]);
   }
-  // P
-  auto p = *reinterpret_cast<int32_t*>(input_operands[2]->buffer);
-  NNADAPTER_VLOG(5) << "p: " << p;
-  // Epsilon
-  auto epsilon = *reinterpret_cast<float*>(input_operands[3]->buffer);
-  NNADAPTER_VLOG(5) << "epsilon: " << epsilon;
-  // Keepdim
-  auto keepdim = *reinterpret_cast<bool*>(input_operands[4]->buffer);
-  NNADAPTER_VLOG(5) << "keepdim: " << keepdim;
-
   auto input_operator = GetMappedOperator(input_operand);
   if (!input_operator) {
     input_operator = ConvertOperand(input_operand);
   }
-
-  // Convert to GE operators
   if (p == 2 && keepdim) {
     auto l2_norm_name = GetOperatorName(output_operand);
     auto l2_norm_op = std::make_shared<ge::op::L2Normalize>(l2_norm_name);

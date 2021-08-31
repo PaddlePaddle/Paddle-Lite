@@ -781,7 +781,7 @@ TEST(Activation_exp, precision) {
   return;
 #endif
 #elif defined(LITE_WITH_ARM)
-  place = TARGET(kARM));
+  place = TARGET(kARM);
 #else
   return;
 #endif

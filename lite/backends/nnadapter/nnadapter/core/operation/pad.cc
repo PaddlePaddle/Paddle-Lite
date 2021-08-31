@@ -12,17 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __NNADAPTER_CORE_OPERATION_ALL_H__  // NOLINT
-#define __NNADAPTER_CORE_OPERATION_ALL_H__
+#include "core/operation/pad.h"
+#include "core/hal/types.h"
+#include "utility/debug.h"
+#include "utility/logging.h"
+#include "utility/modeling.h"
+#include "utility/utility.h"
 
-REGISTER_OPERATION(CONV_2D, PrepareConv2D)
-REGISTER_OPERATION(SOFTMAX, PrepareSoftmax)
-REGISTER_OPERATION(ABS, PrepareUnaryActivations)
-REGISTER_OPERATION(LOG, PrepareUnaryActivations)
-REGISTER_OPERATION(RELU, PrepareUnaryActivations)
-REGISTER_OPERATION(RELU6, PrepareUnaryActivations)
-REGISTER_OPERATION(SIGMOID, PrepareUnaryActivations)
-REGISTER_OPERATION(TANH, PrepareUnaryActivations)
-REGISTER_OPERATION(PAD, PreparePad)
+namespace nnadapter {
+namespace operation {
 
-#endif  // NOLINT
+int PreparePad(hal::Operation* operation) {
+  PAD_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  // Infer the shape and type of output operands
+  CopyOperandTypeExceptQuantParams(&output_operand->type, input_operand->type);
+  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
+  return NNADAPTER_NO_ERROR;
+}
+
+}  // namespace operation
+}  // namespace nnadapter

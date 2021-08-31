@@ -123,13 +123,6 @@ typedef enum {
   NNADAPTER_MODEL_OUTPUT = 4,
 } NNAdapterOperandLifetimeCode;
 
-typedef enum {
-  NNADAPTER_PAD_MODE_UNKNOWN = 0,
-  NNADAPTER_PAD_MODE_CONSTANT = 1,
-  NNADAPTER_PAD_MODE_REFLECT = 2,
-  NNADAPTER_PAD_MODE_REPLICATE = 3,
-  NNADAPTER_PAD_MODE_EDGE = 4,
-} NNAdapterPadModeCode;
 /**
  * Operation codes.
  *
@@ -506,7 +499,7 @@ typedef enum {
    * https://numpy.org/doc/stable/user/basics.broadcasting.html).
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_TENSOR_FLOAT32,
+   * * 0: input0, a NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
    * * 1: input1, a tensor with the same type as input0.
@@ -526,7 +519,7 @@ typedef enum {
    * output = e^input
    *
    * Inputs:
-   * * 0: input0, a NNADAPTER_TENSOR_FLOAT32,
+   * * 0: input, a NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
    *
@@ -706,7 +699,7 @@ typedef enum {
    * https://numpy.org/doc/stable/user/basics.broadcasting.html).
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_TENSOR_FLOAT32,
+   * * 0: input0, a NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
    * * 1: input1, a tensor with the same type as input0.
@@ -769,7 +762,7 @@ typedef enum {
    * https://numpy.org/doc/stable/user/basics.broadcasting.html).
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_TENSOR_FLOAT32,
+   * * 0: input0, a NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
    * * 1: input1, a tensor with the same type as input0.
@@ -1196,7 +1189,7 @@ typedef enum {
  * Available since version 1.
  */
 typedef enum {
-  /** NO fused activation function. */
+  /** No fused activation function. */
   NNADAPTER_FUSED_NONE = 0,
   /** Fused ReLU activation function. */
   NNADAPTER_FUSED_RELU = 1,
@@ -1216,6 +1209,20 @@ typedef enum {
   NNADAPTER_GPU = 1,
   NNADAPTER_ACCELERATOR = 2,
 } NNAdapterDeviceCode;
+
+/**
+ * Pad modes.
+ *
+ * Available since version 1.
+ */
+typedef enum {
+  /** No pad mode. */
+  NNADAPTER_PAD_MODE_NONE = 0,
+  NNADAPTER_PAD_MODE_CONSTANT = 1,
+  NNADAPTER_PAD_MODE_REFLECT = 2,
+  NNADAPTER_PAD_MODE_REPLICATE = 3,
+  NNADAPTER_PAD_MODE_EDGE = 4,
+} NNAdapterPadModeCode;
 
 typedef int32_t NNAdapterDeviceType;
 

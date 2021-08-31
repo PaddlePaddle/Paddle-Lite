@@ -414,30 +414,20 @@ NNAdapterOperandPrecisionCode Precision2NNAdapterScalarPrecisionCode(
 }
 
 NNAdapterPadModeCode PadMode2NNAdapterPadModeCode(std::string mode) {
-  NNAdapterPadModeCode pad_mode_code = NNADAPTER_PAD_MODE_CONSTANT;
   if (mode == "constant") {
-    pad_mode_code = NNADAPTER_PAD_MODE_CONSTANT;
-    return pad_mode_code;
+    return NNADAPTER_PAD_MODE_CONSTANT;
   }
-
   if (mode == "reflect") {
-    pad_mode_code = NNADAPTER_PAD_MODE_REFLECT;
-    return pad_mode_code;
+    return NNADAPTER_PAD_MODE_REFLECT;
   }
-
-  // replicate is the same as edge
   if (mode == "replicate") {
-    pad_mode_code = NNADAPTER_PAD_MODE_REPLICATE;
-    return pad_mode_code;
+    return NNADAPTER_PAD_MODE_REPLICATE;
   }
-
   if (mode == "edge") {
-    pad_mode_code = NNADAPTER_PAD_MODE_EDGE;
-    return pad_mode_code;
+    return NNADAPTER_PAD_MODE_EDGE;
   }
-
   LOG(FATAL) << "Unsupported mode type: " << mode;
-  return NNADAPTER_PAD_MODE_UNKNOWN;
+  return NNADAPTER_PAD_MODE_NONE;
 }
 
 }  // namespace nnadapter

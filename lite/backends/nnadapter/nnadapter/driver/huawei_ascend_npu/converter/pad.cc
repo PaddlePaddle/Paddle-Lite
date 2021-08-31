@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "core/operation/pad.h"
 #include "driver/huawei_ascend_npu/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -20,40 +21,16 @@ namespace nnadapter {
 namespace huawei_ascend_npu {
 
 int Program::ConvertPad(hal::Operation* operation) {
-  auto& input_operands = operation->input_operands;
-  auto& output_operands = operation->output_operands;
-  auto input_count = input_operands.size();
-  auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 4);
-  NNADAPTER_CHECK_EQ(output_count, 1);
-  // Input
-  auto input_operand = input_operands[0];
-  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
-  // Pads
-  auto pads_operand = input_operands[1];
-  NNADAPTER_VLOG(5) << "pads: " << OperandToString(pads_operand);
-  // Mode
-  auto mode_operand = input_operands[2];
-  auto mode_code = *reinterpret_cast<int32_t*>(mode_operand->buffer);
-  std::string mode = ConvertPadMode(mode_code);
+  PAD_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  // Convert to GE operators
   NNADAPTER_CHECK_EQ(mode, "constant")
       << "Ascend npu only support mode=constant right now, "
          "but received mode is "
       << mode;
-  NNADAPTER_VLOG(5) << "mode: " << OperandToString(mode_operand);
-  // Value
-  auto value_operand = input_operands[3];
-  auto value = *reinterpret_cast<float*>(value_operand->buffer);
-  NNADAPTER_VLOG(5) << "value: " << OperandToString(value_operand);
   NNADAPTER_CHECK_LT(std::abs(value), 1e-6)
       << "Ascend npu only support constant_values=0 right now, "
          "but received constant_value is "
       << value;
-  // Output
-  auto output_operand = output_operands[0];
-  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
-
-  // Convert to GE operators
   auto input_operator = GetMappedOperator(input_operand);
   if (!input_operator) {
     input_operator = ConvertOperand(input_operand);
