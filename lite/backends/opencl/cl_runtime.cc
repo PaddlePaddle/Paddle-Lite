@@ -38,7 +38,7 @@ void CLRuntime::Flush(const int index) {
 
 CLRuntime::~CLRuntime() {
 #ifdef LITE_WITH_LOG
-  LOG(INFO) << "is_cl_runtime_initialized_:" << is_cl_runtime_initialized_;
+  LOG(INFO) << "~CLRuntime(): start";
 #endif
   if (is_cl_runtime_initialized_ == false) {
     return;
@@ -50,10 +50,14 @@ CLRuntime::~CLRuntime() {
   }
   // For controlling the destruction order
   command_queue_.reset();
+  LOG(INFO) << "command_queue_.use_count(): " << command_queue_.use_count();
+  LOG(INFO) << "command queue destroy done";
   context_.reset();
+  LOG(INFO) << "context_.use_count(): " << context_.use_count();
   device_.reset();
   platform_.reset();
   device_info_.clear();
+  LOG(INFO) << "~CLRuntime(): end";
 }
 
 bool CLRuntime::Init() {

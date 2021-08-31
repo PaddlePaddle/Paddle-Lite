@@ -28,6 +28,7 @@ namespace lite {
 class CLContext {
  public:
   ~CLContext() {
+    LOG(INFO) << "~CLContext(): start";
     GetCommandQueue().finish();
     for (size_t kidx = 0; kidx < kernels_.size(); ++kidx) {
       // Note(ysh329): Don't need `clReleaseKernel`
@@ -41,6 +42,7 @@ class CLContext {
     }
     CLRuntime::Global()->program_map().clear();
     VLOG(4) << "release cl::Program, cl::Kernel finished.";
+    LOG(INFO) << "~CLContext(): end";
   }
 
   cl::CommandQueue &GetCommandQueue();
