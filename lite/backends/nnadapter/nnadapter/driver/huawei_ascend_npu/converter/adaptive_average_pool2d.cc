@@ -24,14 +24,14 @@ int Program::ConvertAdaptiveAvgPool2D(hal::Operation* operation) {
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
   auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 13);
+  NNADAPTER_CHECK_EQ(input_count, 3);
   NNADAPTER_CHECK_EQ(output_count, 1);
   // Input
   auto input_operand = input_operands[0];
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
   // Filter
-  auto filter_width = *reinterpret_cast<int32_t*>(input_operands[7]->buffer);
-  auto filter_height = *reinterpret_cast<int32_t*>(input_operands[8]->buffer);
+  auto filter_width = *reinterpret_cast<int32_t*>(input_operands[1]->buffer);
+  auto filter_height = *reinterpret_cast<int32_t*>(input_operands[2]->buffer);
   NNADAPTER_VLOG(5) << "filter=[" << filter_width << "," << filter_height
                     << "]";
   // Adaptive

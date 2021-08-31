@@ -142,20 +142,26 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
 
   // 2-D Pooling operation
-  std::vector<NNAdapterOperand*> input_operands = {
-      input_operand,
-      padding_width_left_operand,
-      padding_width_right_operand,
-      padding_height_top_operand,
-      padding_height_bottom_operand,
-      stride_width_operand,
-      stride_height_operand,
-      filter_width_operand,
-      filter_height_operand,
-      fuse_code_operand,
-      ceil_mode_operand,
-      count_include_pad_operand,
-      adaptive_operand};
+  std::vector<NNAdapterOperand*> input_operands;
+  if (adaptive) {
+    input_operands.push_back(input_operand);
+    input_operands.push_back(filter_width_operand);
+    input_operands.push_back(filter_height_operand);
+  } else {
+    input_operands.push_back(input_operand);
+    input_operands.push_back(padding_width_left_operand);
+    input_operands.push_back(padding_width_right_operand);
+    input_operands.push_back(padding_height_top_operand);
+    input_operands.push_back(padding_height_bottom_operand);
+    input_operands.push_back(stride_width_operand);
+    input_operands.push_back(stride_height_operand);
+    input_operands.push_back(filter_width_operand);
+    input_operands.push_back(filter_height_operand);
+    input_operands.push_back(fuse_code_operand);
+    input_operands.push_back(ceil_mode_operand);
+    input_operands.push_back(count_include_pad_operand);
+  }
+
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   NNAdapterOperationType pool2d_operation_type;
   if (adaptive) {

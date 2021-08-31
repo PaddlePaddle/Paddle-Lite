@@ -24,7 +24,7 @@ int Program::ConvertPool2D(hal::Operation* operation) {
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
   auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 13);
+  NNADAPTER_CHECK_EQ(input_count, 12);
   NNADAPTER_CHECK_EQ(output_count, 1);
   // Input
   auto input_operand = input_operands[0];
