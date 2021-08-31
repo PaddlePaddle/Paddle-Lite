@@ -106,6 +106,15 @@ REGISTER_LITE_OP(fusion_elementwise_min_activation,
 REGISTER_LITE_OP(fusion_elementwise_div_activation,
                  paddle::lite::operators::FusionElementwiseActivationOp);
 
+#ifdef LITE_WITH_X86
+REGISTER_LITE_OP(fusion_elementwise_floordiv_activation,
+                 paddle::lite::operators::FusionElementwiseActivationOp);
+REGISTER_LITE_OP(fusion_elementwise_mod_activation,
+                 paddle::lite::operators::FusionElementwiseActivationOp);
+REGISTER_LITE_OP(fusion_elementwise_pow_activation,
+                 paddle::lite::operators::FusionElementwiseActivationOp);
+#endif
+
 // #ifdef LITE_WITH_TRAIN
 // REGISTER_LITE_OP(
 //     fusion_elementwise_sub_activation_grad,
