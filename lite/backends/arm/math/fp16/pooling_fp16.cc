@@ -434,6 +434,7 @@ void pooling_basic_fp16(POOLING_PARAM,
   "sub %[dr2], %[dr2], #32\n"          \
   "3: \n"
 
+#endif
 #define POOL_CNT_COMPUTE                                    \
   int size_channel_out = wout * hout;                       \
   int size_channel_in = win * hin;                          \
@@ -908,8 +909,6 @@ void pooling_basic_fp16(POOLING_PARAM,
     dr2 += 4;                                                              \
     dr_out += 4;                                                           \
   }
-
-#endif
 
 void pooling_global_max_fp16(POOLING_PARAM) {
   int size_channel_in = win * hin;

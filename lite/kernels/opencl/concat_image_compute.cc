@@ -137,12 +137,20 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       }
     }
 
+    std::string kernel_file;
+    if (kernel_func_name_ == "concat2" ||
+        kernel_func_name_ == "Concat2InputAxis1") {
+      kernel_file = "image/concat_default_kernel.cl";
+    } else {
+      kernel_file = "image/concat_kernel.cl";
+    }
+
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
 
     context.cl_context()->AddKernel(kernel_func_name_,
                                     (kernel_func_name_ == "concat_mul_buffer")
                                         ? "buffer/concat_kernel.cl"
-                                        : "image/concat_kernel.cl",
+                                        : kernel_file,
                                     build_options_,
                                     time_stamp_);
   }

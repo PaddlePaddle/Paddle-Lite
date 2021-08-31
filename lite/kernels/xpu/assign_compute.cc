@@ -88,3 +88,19 @@ REGISTER_LITE_KERNEL(assign,
                                        PRECISION(kInt64),
                                        DATALAYOUT(kAny))})
     .Finalize();
+
+REGISTER_LITE_KERNEL(assign,
+                     kXPU,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::xpu::AssignCompute<int8_t>,
+                     bool)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kXPU),
+                                      PRECISION(kBool),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kXPU),
+                                       PRECISION(kBool),
+                                       DATALAYOUT(kAny))})
+    .Finalize();
