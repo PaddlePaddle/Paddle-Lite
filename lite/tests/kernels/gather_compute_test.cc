@@ -94,8 +94,8 @@ class GatherComputeTest : public arena::TestCase {
   DDim x_dims_{{5, 4, 2, 3}};
   DDim index_dims_{{2, 1}};
   DDim axis_dims_{{1}};
-  int axis_{0};
   bool is_use_axis_tensor_{false};
+  int axis_{0};
 
  public:
   GatherComputeTest(const Place& place,
