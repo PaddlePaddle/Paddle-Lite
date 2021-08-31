@@ -2036,6 +2036,10 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
                 *(output + k) =
                     *(output + k) >= 0 ? *(output + k) : *(output + k) * val;
               }
+            } else {
+              for (size_t k = 0; k < mindex; k++) {
+                *(output + k) = *(output + k) * vscale + vbias;
+              }
             }
             output =
                 reinterpret_cast<float*>((uintptr_t)output + output_stride);
