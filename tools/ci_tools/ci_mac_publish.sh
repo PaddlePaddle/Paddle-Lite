@@ -54,8 +54,8 @@ function publish_inference_lib {
     ./lite/tools/build.sh \
       --build_extra=ON \
       --with_exception=ON \
-      --with_profile=OFF \
-      --with_precision_profile=OFF \
+      --with_profile=ON \
+      --with_precision_profile=ON \
       --build_python=ON \
       --python_version=$python_version \
       --build_opencl=$BUILD_OPENCL \

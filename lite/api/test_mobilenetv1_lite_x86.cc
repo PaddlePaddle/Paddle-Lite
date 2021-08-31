@@ -28,11 +28,8 @@ namespace lite {
 
 TEST(Mobilenet_v1, test_mobilenetv1_lite_x86) {
   lite_api::CxxConfig config;
-  config.set_model_dir(FLAGS_model_dir);
-#ifndef LITE_WITH_OPENCL
-  config.set_valid_places({lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
-                           lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
-#else
+
+#ifdef LITE_WITH_OPENCL
   config.set_valid_places(
       {Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)},
        Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)},
@@ -72,7 +69,11 @@ TEST(Mobilenet_v1, test_mobilenetv1_lite_x86) {
   // CL_PRECISION_FP32: 1, force fp32
   // CL_PRECISION_FP16: 2, force fp16
   config.set_opencl_precision(CL_PRECISION_FP32);
+#else
+  config.set_valid_places({lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
+                           lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
 #endif
+
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
   auto input_tensor = predictor->GetInput(0);
