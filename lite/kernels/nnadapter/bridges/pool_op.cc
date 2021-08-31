@@ -129,9 +129,6 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto count_include_pad_operand =
       converter->AddBool8ConstantOperand(count_include_pad);
 
-  // Adaptive operand
-  auto adaptive_operand = converter->AddBool8ConstantOperand(adaptive);
-
   // Output operand
   NNAdapterOperand* output_operand = nullptr;
   if (has_out_scale) {

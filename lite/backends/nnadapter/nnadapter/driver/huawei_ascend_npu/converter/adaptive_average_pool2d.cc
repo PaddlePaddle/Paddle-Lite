@@ -34,8 +34,6 @@ int Program::ConvertAdaptiveAvgPool2D(hal::Operation* operation) {
   auto filter_height = *reinterpret_cast<int32_t*>(input_operands[2]->buffer);
   NNADAPTER_VLOG(5) << "filter=[" << filter_width << "," << filter_height
                     << "]";
-  // Adaptive
-  bool adaptive = *reinterpret_cast<int8_t*>(input_operands[12]->buffer);
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
