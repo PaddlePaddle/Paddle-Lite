@@ -8,6 +8,8 @@ message(STATUS "compile with lite host kernels")
 set(lite_kernel_deps ${lite_kernel_deps} math_host CACHE INTERNAL "")
 
 # basic kernels
+add_kernel(feed_compute_host Host basic SRCS feed_compute.cc)
+add_kernel(fetch_compute_host Host basic SRCS fetch_compute.cc)
 add_kernel(range_compute_host Host basic SRCS range_compute.cc)
 add_kernel(split_compute_host Host basic SRCS split_compute.cc)
 add_kernel(reshape_compute_host Host basic SRCS reshape_compute.cc)
