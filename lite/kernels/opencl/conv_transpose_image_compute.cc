@@ -96,8 +96,7 @@ void ConvTransposeImageCompute::PrepareForRun() {
         filter_cpu_trans.data(), filter_image_data, filter_trans_dims);
     MUTABLE_DATA_GPU(
         filter_gpu_image_, filter_image_w_, filter_image_h_, filter_image_data);
-  } else if (groups_ > 1 && (groups_ == input_tensor_c_) &&
-             (groups_ == output_tensor_c_)) {
+  } else if ((groups_ == input_tensor_c_) && (groups_ == output_tensor_c_)) {
     // for depthwsie conv transpose
     std::string kernel_name = "depthwise_conv2d_transpose";
     kernel_func_names_.push_back(kernel_name);
@@ -115,9 +114,9 @@ void ConvTransposeImageCompute::PrepareForRun() {
     MUTABLE_DATA_GPU(
         filter_gpu_image_, filter_image_w_, filter_image_h_, filter_image_data);
   } else {
-    LOG(INFO) << groups_ << " " << input_tensor_c_ << " " << output_tensor_c_;
     LOG(FATAL)
-        << "conv2d_transpose image compute not support this condition yet!";
+        << "conv2d_transpose image compute not support this condition yet! "
+        << groups_ << " " << input_tensor_c_ << " " << output_tensor_c_;
   }
 
   // build options
@@ -213,8 +212,7 @@ void ConvTransposeImageCompute::PrepareForRun() {
 
   if (groups_ == 1) {
     kernel_func_paths_.push_back("image/conv2d_transpose_kernel.cl");
-  } else if (groups_ > 1 && (groups_ == input_tensor_c_) &&
-             (groups_ == output_tensor_c_)) {
+  } else if ((groups_ == input_tensor_c_) && (groups_ == output_tensor_c_)) {
     kernel_func_paths_.push_back("image/depthwise_conv2d_transpose_kernel.cl");
   }
   VLOG(1) << "kernel_func_names_[0]:" << kernel_func_names_[0]
