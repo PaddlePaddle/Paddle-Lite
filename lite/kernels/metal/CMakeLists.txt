@@ -30,7 +30,9 @@ add_kernel(scale_metal_image METAL basic SRCS image_op/scale_image_compute.mm DE
 add_kernel(slice_metal_compute METAL basic SRCS image_op/slice_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(softmax_metal_image METAL basic SRCS image_op/softmax_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(split_metal_image METAL basic SRCS image_op/split_image_compute.mm DEPS metal_target_wrapper)
+add_kernel(shuffle_channel_metal_compute METAL basic SRCS image_op/shuffle_channel_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(transpose_metal_image METAL basic SRCS image_op/transpose_image_compute.mm DEPS metal_target_wrapper)
+
 # add_kernel(batch_norm_metal_image METAL basic SRCS image_op/batch_norm_image_compute.mm METAL_DEPS metal_target_wrapper)
 # add_kernel(mul_metal_image METAL basic SRCS image_op/mul_image_compute.mm DEPS metal_target_wrapper)
 # add_kernel(elementwise_max_metal_image METAL basic SRCS image_op/elementwise_max_image_compute.mm DEPS metal_target_wrapper)

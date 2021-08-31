@@ -1116,14 +1116,7 @@ TEST(Activation_hard_sigmoid_fp32, precision) {
 TEST(Activation_hard_sigmoid_fp32, performance) {
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_NNADAPTER)
-  place = TARGET(kNNAdapter);
-#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
-  abs_error = 1e-2;
-#else
-  return;
-#endif
-#elif defined(LITE_WITH_ARM)
+#if defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #else
   return;
@@ -1226,14 +1219,7 @@ TEST(Activation_prelu_fp16, precision) {
 TEST(Activation_hard_sigmoid_fp16, performance) {
   Place place;
   float abs_error = 2e-3;
-#if defined(LITE_WITH_NNADAPTER)
-  place = Place(TARGET(kNNAdapter), PRECISION(kFP16));
-#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
-  abs_error = 1e-2;
-#else
-  return;
-#endif
-#elif defined(LITE_WITH_ARM)
+#if defined(LITE_WITH_ARM)
   place = Place(TARGET(kARM), PRECISION(kFP16));
 #else
   return;

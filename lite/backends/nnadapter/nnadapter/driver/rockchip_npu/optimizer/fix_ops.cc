@@ -36,12 +36,12 @@ static void FixRELUDepthwiseConv2D(hal::Model* model,
   // the consumers has a depthwise conv2d operation and insert a dummy ADD
   // operation
   auto operations = GetOperandConsumers(model, output_operand);
-  for (auto& operation : operations) {
-    if (operation->type != NNADAPTER_CONV_2D) continue;
+  for (auto& operation_consumer : operations) {
+    if (operation_consumer->type != NNADAPTER_CONV_2D) continue;
     NNADAPTER_CHECK_GT(output_operand->type.dimension_count, 1);
-    auto group =
-        *reinterpret_cast<int32_t*>(operation->input_operands[9]->buffer);
-    auto is_depthwise_mode =
+    auto group = *reinterpret_cast<int32_t*>(
+        operation_consumer->input_operands[6]->buffer);
+    bool is_depthwise_mode =
         (group != 1 && output_operand->type.dimensions[1] == group);
     if (is_depthwise_mode) {
       AddDummyOperation(model, output_operand);

@@ -190,6 +190,11 @@ struct HardSwishParam {
     float scale;
 };
 
+struct ShuffleChannelParam {
+  uint32_t group;
+  uint32_t channel_per_group;
+};
+
 struct SplitParam {
   int32_t idim[4];
   int32_t axis;

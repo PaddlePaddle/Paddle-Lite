@@ -26,30 +26,10 @@ USE_SUBGRAPH_BRIDGE(fc,
                     kNNAdapter,
                     "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
                     "npu,amlogic_npu,imagination_nna");
-USE_SUBGRAPH_BRIDGE(softmax,
-                    kNNAdapter,
-                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
-                    "npu,amlogic_npu,imagination_nna");
 USE_SUBGRAPH_BRIDGE(pool2d,
                     kNNAdapter,
                     "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
                     "npu,amlogic_npu,imagination_nna");
-USE_SUBGRAPH_BRIDGE(
-    sigmoid,
-    kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
-USE_SUBGRAPH_BRIDGE(relu,
-                    kNNAdapter,
-                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
-                    "npu,amlogic_npu,imagination_nna");
-USE_SUBGRAPH_BRIDGE(relu6,
-                    kNNAdapter,
-                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
-                    "npu,amlogic_npu,imagination_nna");
-USE_SUBGRAPH_BRIDGE(
-    tanh,
-    kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
 USE_SUBGRAPH_BRIDGE(
     elementwise_add,
     kNNAdapter,
@@ -127,13 +107,11 @@ USE_SUBGRAPH_BRIDGE(cast, kNNAdapter, "huawei_ascend_npu");
 USE_SUBGRAPH_BRIDGE(shape, kNNAdapter, "huawei_ascend_npu");
 USE_SUBGRAPH_BRIDGE(assign, kNNAdapter, "huawei_ascend_npu");
 USE_SUBGRAPH_BRIDGE(assign_value, kNNAdapter, "huawei_ascend_npu");
-USE_SUBGRAPH_BRIDGE(abs, kNNAdapter, "huawei_ascend_npu");
 USE_SUBGRAPH_BRIDGE(norm, kNNAdapter, "huawei_ascend_npu");
 USE_SUBGRAPH_BRIDGE(fill_constant, kNNAdapter, "huawei_ascend_npu");
 USE_SUBGRAPH_BRIDGE(deformable_conv, kNNAdapter, "huawei_ascend_npu");
 USE_SUBGRAPH_BRIDGE(conv2d_transpose, kNNAdapter, "amlogic_npu");
 USE_SUBGRAPH_BRIDGE(pow, kNNAdapter, "huawei_ascend_npu");
-USE_SUBGRAPH_BRIDGE(log, kNNAdapter, "huawei_ascend_npu");
 USE_SUBGRAPH_BRIDGE(batch_norm, kNNAdapter, "huawei_ascend_npu");
 USE_SUBGRAPH_BRIDGE(clip, kNNAdapter, "huawei_ascend_npu");
 USE_SUBGRAPH_BRIDGE(leaky_relu, kNNAdapter, "huawei_ascend_npu");
