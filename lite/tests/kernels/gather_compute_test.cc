@@ -304,7 +304,7 @@ TEST(Gather, precision) {
 
   for (auto x_dims : std::vector<std::vector<int64_t>>{{5, 7, 10, 12}}) {
     for (auto index_dims : std::vector<std::vector<int64_t>>{{3}, {7}, {10}}) {
-      for (auto has_axis_tensor : {false, true}) {
+      for (auto has_axis_tensor : {false}) {
         lite_api::shape_t axis_dims{{1}};
         for (auto axis : {0, 1, 2}) {
 #if ((defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)) || \
