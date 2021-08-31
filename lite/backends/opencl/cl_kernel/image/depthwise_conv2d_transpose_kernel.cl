@@ -69,13 +69,12 @@ __kernel void depthwise_conv2d_transpose(
   int in_idx = mul24(ic, input_shape.x);
   for (int k_y = valid_kernel_height, idx_h = kernel_start_y; k_y >= 0;
        k_y -= stride_shape.y, idx_h++) {
-    int in_y_idx =
-        mad24(out_n_idx, input_shape.y, idx_h);  // height idx of input image2d
+    int in_y_idx = mad24(out_n_idx, input_shape.y, idx_h);
     int in_nh_value = select(in_y_idx, -1, idx_h < 0 || idx_h >= input_shape.y);
     int in_width0 = kernel_start_x;
 
     for (int k_x = valid_kernel_width; k_x >= 0; k_x -= stride_shape.x) {
-      kernel_y = mad24(k_y, kernel_shape.x, k_x /* + kernel_y_base*/);
+      kernel_y = mad24(k_y, kernel_shape.x, k_x);
 
       weights0 = READ_IMG_TYPE(
           CL_DTYPE_CHAR, filter, SAMPLER, (int2)(kernel_x_0, kernel_y));
