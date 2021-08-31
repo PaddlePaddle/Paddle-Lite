@@ -16,8 +16,8 @@
 
 #include <algorithm>
 #include <vector>
-#include "lite/model_parser/base/io.h"
-#include "lite/model_parser/base/param_desc.h"
+#include "lite/core/model/base/io.h"
+#include "lite/core/model/base/param_desc.h"
 #include "lite/model_parser/pb/utils.h"
 
 namespace paddle {

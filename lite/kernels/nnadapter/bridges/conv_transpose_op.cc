@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/subgraph_bridge_registry.h"
+#include "lite/core/subgraph/subgraph_bridge_registry.h"
 #include "lite/kernels/nnadapter/bridges/converter.h"
 #include "lite/kernels/nnadapter/bridges/utility.h"
 #include "lite/operators/conv_op.h"
@@ -63,7 +63,7 @@ int ConvTransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK_EQ(filter_dims.size(), 4L);
   CHECK_EQ(output_dims[0], batch_size);
   CHECK_EQ(filter_dims[0], input_channel_size);
-  auto strides = op_info->GetAttr<std::vector<int>>("strides");
+  std::vector<int> strides = op_info->GetAttr<std::vector<int>>("strides");
   std::vector<int> paddings = op_info->GetAttr<std::vector<int>>("paddings");
   auto groups = op_info->GetAttr<int>("groups");
   std::vector<int> dilations = op_info->GetAttr<std::vector<int>>("dilations");
@@ -204,26 +204,39 @@ int ConvTransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     }
   }
 
-  // Paddings, strides, dilations and group operands
-  auto padding_width_left_operand =
-      converter->AddInt32ConstantOperand(paddings[2]);
-  auto padding_width_right_operand =
-      converter->AddInt32ConstantOperand(paddings[3]);
-  auto padding_height_top_operand =
-      converter->AddInt32ConstantOperand(paddings[0]);
-  auto padding_height_bottom_operand =
-      converter->AddInt32ConstantOperand(paddings[1]);
-  auto stride_width_operand = converter->AddInt32ConstantOperand(strides[1]);
-  auto stride_height_operand = converter->AddInt32ConstantOperand(strides[0]);
-  auto dilation_width_operand =
-      converter->AddInt32ConstantOperand(dilations[1]);
-  auto dilation_height_operand =
-      converter->AddInt32ConstantOperand(dilations[0]);
+  // Auto_pad operand
+  auto auto_pad_operand = converter->AddInt32ConstantOperand(
+      static_cast<int32_t>(PaddingAlgorithm2PadCode(padding_algorithm)));
+
+  // Pads operand(optional)
+  auto pads_operand = converter->AddInt32ConstantOperand(
+      paddings.data(), DDim({static_cast<int64_t>(paddings.size())}));
+
+  // Strides operand
+  auto strides_operand = converter->AddInt32ConstantOperand(
+      strides.data(), DDim({static_cast<int64_t>(strides.size())}));
+
+  // Group operand
   auto group_operand = converter->AddInt32ConstantOperand(groups);
-  auto output_padding_width_operand = converter->AddInt32ConstantOperand(
-      output_padding.size() == 2 ? output_padding[1] : 0);
-  auto output_padding_height_operand = converter->AddInt32ConstantOperand(
-      output_padding.size() == 2 ? output_padding[0] : 0);
+
+  // Dilations operand
+  auto dilations_operand = converter->AddInt32ConstantOperand(
+      dilations.data(), DDim({static_cast<int64_t>(dilations.size())}));
+
+  // Output_padding operand
+  NNAdapterOperand* output_padding_operand = nullptr;
+  if (!output_padding.empty()) {
+    output_padding_operand = converter->AddInt32ConstantOperand(
+        output_padding.data(),
+        DDim({static_cast<int64_t>(output_padding.size())}));
+  }
+
+  // Output_shape operand
+  NNAdapterOperand* output_shape_operand = nullptr;
+  if (!output_size.empty()) {
+    output_shape_operand = converter->AddInt32ConstantOperand(
+        output_size.data(), DDim({static_cast<int64_t>(output_size.size())}));
+  }
 
   // Fuse code operand
   int32_t fuse_code_value = NNADAPTER_FUSED_NONE;
@@ -250,22 +263,17 @@ int ConvTransposeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
 
   // Conv2D transpose operation
-  std::vector<NNAdapterOperand*> input_operands = {
-      input_operand,
-      filter_operand,
-      bias_operand,
-      padding_width_left_operand,
-      padding_width_right_operand,
-      padding_height_top_operand,
-      padding_height_bottom_operand,
-      stride_width_operand,
-      stride_height_operand,
-      group_operand,
-      fuse_code_operand,
-      dilation_width_operand,
-      dilation_height_operand,
-      output_padding_width_operand,
-      output_padding_height_operand};
+  std::vector<NNAdapterOperand*> input_operands = {input_operand,
+                                                   filter_operand,
+                                                   bias_operand,
+                                                   auto_pad_operand,
+                                                   pads_operand,
+                                                   strides_operand,
+                                                   group_operand,
+                                                   dilations_operand,
+                                                   output_padding_operand,
+                                                   output_shape_operand,
+                                                   fuse_code_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   converter->AddOperation(
       NNADAPTER_CONV_2D_TRANSPOSE, &input_operands, &output_operands);

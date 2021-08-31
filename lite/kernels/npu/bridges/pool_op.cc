@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/operators/pool_op.h"
-#include "lite/core/subgraph_bridge_registry.h"
+#include "lite/core/subgraph/subgraph_bridge_registry.h"
 #include "lite/kernels/npu/bridges/graph.h"
 #include "lite/kernels/npu/bridges/utility.h"
 
