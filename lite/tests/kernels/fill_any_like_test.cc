@@ -36,11 +36,7 @@ class FillAnyLikeComputeTester : public arena::TestCase {
                            const DDim& x_dims,
                            const float value = 1.f,
                            const int dtype = 5)
-      : TestCase(place, alias), x_dims_(x_dims), value_(value), dtype_(dtype) {
-    if (dtype_ == -1) {
-      dtype_ = 5;
-    }
-  }
+      : TestCase(place, alias), x_dims_(x_dims), value_(value), dtype_(dtype) {}
 
   void RunBaseline(Scope* scope) override {
     auto* out = scope->NewTensor(out_);
@@ -65,6 +61,7 @@ class FillAnyLikeComputeTester : public arena::TestCase {
         }
         break;
       }
+      case -1:  // same as input dtype
       case 5: {
         auto value = static_cast<float>(value_);
         auto* out_data = out->template mutable_data<float>();
@@ -99,7 +96,7 @@ void TestFillAnyLike(Place place,
                      float value = 1.f,
                      int dtype = 5) {
   std::vector<std::vector<int64_t>> x_shapes{
-      {2, 3, 4, 5} /*, {2, 3, 4}, {3, 4}, {4}*/};
+      {2, 3, 4, 5}, {2, 3, 4}, {3, 4}, {4}};
   for (auto x_shape : x_shapes) {
     std::unique_ptr<arena::TestCase> tester(new FillAnyLikeComputeTester(
         place, "def", DDim(x_shape), value, dtype));
@@ -124,7 +121,7 @@ TEST(fill_any_like, precision) {
 
   TestFillAnyLike(place, abs_error, 1.f, -1);
   TestFillAnyLike(place, abs_error, 1.f, 2);
-  TestFillAnyLike(place, abs_error, 1.f, 3);
+  // TestFillAnyLike(place, abs_error, 1.f, 3);
   TestFillAnyLike(place, abs_error, 1.f, 5);
 }
 

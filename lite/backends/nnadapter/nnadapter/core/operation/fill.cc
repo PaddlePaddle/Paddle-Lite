@@ -24,8 +24,8 @@ namespace operation {
 
 int PrepareFill(hal::Operation* operation) {
   FILL_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  // Infer the shape and type of output operands
 
+  // Infer the shape and type of output operands
   auto& shape_type = shape_operand->type;
   auto& out_type = output_operand->type;
   if (shape_type.lifetime == NNADAPTER_CONSTANT_COPY) {
@@ -34,14 +34,16 @@ int PrepareFill(hal::Operation* operation) {
     switch (shape_precision) {
       case NNADAPTER_TENSOR_INT32: {
         int32_t* shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);
-        out_type.dimension_count = length;
-        memcpy(out_type.dimensions, shape_data, length * sizeof(int32_t));
+        uint32_t size = length / sizeof(int32_t);
+        out_type.dimension_count = size;
+        memcpy(out_type.dimensions, shape_data, size * sizeof(int32_t));
         break;
       }
       case NNADAPTER_TENSOR_INT64: {
         int64_t* shape_data = reinterpret_cast<int64_t*>(shape_operand->buffer);
-        out_type.dimension_count = length;
-        for (uint32_t i = 0; i < length; i++) {
+        uint32_t size = length / sizeof(int64_t);
+        out_type.dimension_count = size;
+        for (uint32_t i = 0; i < size; i++) {
           out_type.dimensions[i] = static_cast<int32_t>(shape_data[i]);
         }
         break;
@@ -70,6 +72,7 @@ int PrepareFill(hal::Operation* operation) {
   } else {
     NNADAPTER_LOG(ERROR) << "Unsupported shape lifetime: "
                          << static_cast<int32_t>(shape_type.lifetime);
+    return NNADAPTER_INVALID_PARAMETER;
   }
 
   out_type.precision = value_operand->type.precision;
