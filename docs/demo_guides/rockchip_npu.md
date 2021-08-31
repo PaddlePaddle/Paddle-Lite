@@ -351,14 +351,6 @@ Paddle Lite已支持Rockchip NPU的预测部署。
   2021-08-30 05:54:29,194-INFO: The quantized model is saved in ../outputs/mobilenet_v1
   post training quantization finish, and it takes 139.42292165756226.
 
-
-  --------start eval int8 model: mobilenet_v1-------------
-  /usr/lib/python3/dist-packages/pkg_resources/_vendor/pyparsing.py:696: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3,and in 3.9 it will stop working
-    collections.MutableMapping.register(ParseResults)
-  /usr/lib/python3/dist-packages/pkg_resources/_vendor/pyparsing.py:2273: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3,and in 3.9 it will stop working
-    elif isinstance( exprs, collections.Sequence ):
-  /usr/lib/python3/dist-packages/setuptools/depends.py:2: DeprecationWarning: the imp module is deprecated in favour of importlib; see the module's documentation for alternative uses
-    import imp
   -----------  Configuration Arguments -----------
   batch_size: 20
   class_dim: 1000
@@ -376,7 +368,7 @@ Paddle Lite已支持Rockchip NPU的预测部署。
   ```
   - 参考[模型转化方法](../user_guides/model_optimize_tool)，利用opt工具转换生成Rockchip NPU模型，仅需要将valid_targets设置为rknpu,arm即可。
   ```shell
-  $ ./opt --model_dir=mobilenet_v1_int8_224_for_rockchip_npu_fluid \
+  $ ./opt --model_dir=mobilenet_v1_int8_224_per_layer \
       --optimize_out_type=naive_buffer \
       --optimize_out=opt_model \
       --valid_targets=rknpu,arm
