@@ -440,7 +440,7 @@ NNAdapterPadCode PaddingAlgorithm2PadCode(
   } else if (padding_algorithm == "VALID") {
     pad_code = NNADAPTER_PAD_VALID;
   } else {
-    LOG(FATAL) << "Unsupported padding_algorithm: " << padding_algorithm;
+    LOG(FATAL) << "Unsupported padding algorithm: " << padding_algorithm;
   }
   return pad_code;
 }

@@ -14,35 +14,30 @@
 
 #pragma once
 
-#include <string>
-
 namespace nnadapter {
 namespace operation {
 
-#define PAD_OPERATION_EXTRACT_INPUTS_OUTPUTS                          \
-  auto& input_operands = operation->input_operands;                   \
-  auto& output_operands = operation->output_operands;                 \
-  auto input_count = input_operands.size();                           \
-  auto output_count = output_operands.size();                         \
-  NNADAPTER_CHECK_EQ(input_count, 4);                                 \
-  NNADAPTER_CHECK_EQ(output_count, 1);                                \
-  /* Input */                                                         \
-  auto input_operand = input_operands[0];                             \
-  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);   \
-  /* Pads */                                                          \
-  auto pads_operand = input_operands[1];                              \
-  NNADAPTER_VLOG(5) << "pads: " << OperandToString(pads_operand);     \
-  /* Mode */                                                          \
-  auto mode_operand = input_operands[2];                              \
-  auto mode_code = *reinterpret_cast<int32_t*>(mode_operand->buffer); \
-  std::string mode = ConvertPadMode(mode_code);                       \
-  NNADAPTER_VLOG(5) << "mode: " << OperandToString(mode_operand);     \
-  /* Value */                                                         \
-  auto value_operand = input_operands[3];                             \
-  auto value = *reinterpret_cast<float*>(value_operand->buffer);      \
-  NNADAPTER_VLOG(5) << "value: " << OperandToString(value_operand);   \
-  /* Output */                                                        \
-  auto output_operand = output_operands[0];                           \
+#define PAD_OPERATION_EXTRACT_INPUTS_OUTPUTS                        \
+  auto& input_operands = operation->input_operands;                 \
+  auto& output_operands = operation->output_operands;               \
+  auto input_count = input_operands.size();                         \
+  auto output_count = output_operands.size();                       \
+  NNADAPTER_CHECK_EQ(input_count, 4);                               \
+  NNADAPTER_CHECK_EQ(output_count, 1);                              \
+  /* Input */                                                       \
+  auto input_operand = input_operands[0];                           \
+  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand); \
+  /* Pads */                                                        \
+  auto pads_operand = input_operands[1];                            \
+  NNADAPTER_VLOG(5) << "pads: " << OperandToString(pads_operand);   \
+  /* Mode */                                                        \
+  auto mode_operand = input_operands[2];                            \
+  NNADAPTER_VLOG(5) << "mode: " << OperandToString(mode_operand);   \
+  /* Value */                                                       \
+  auto value_operand = input_operands[3];                           \
+  NNADAPTER_VLOG(5) << "value: " << OperandToString(value_operand); \
+  /* Output */                                                      \
+  auto output_operand = output_operands[0];                         \
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
 }  // namespace operation

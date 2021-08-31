@@ -23,6 +23,9 @@ namespace huawei_ascend_npu {
 int Program::ConvertPad(hal::Operation* operation) {
   PAD_OPERATION_EXTRACT_INPUTS_OUTPUTS
   // Convert to GE operators
+  auto mode_code = *reinterpret_cast<int32_t*>(mode_operand->buffer);
+  std::string mode = ConvertPadMode(mode_code);
+  auto value = *reinterpret_cast<float*>(value_operand->buffer);
   NNADAPTER_CHECK_EQ(mode, "constant")
       << "Ascend npu only support mode=constant right now, "
          "but received mode is "

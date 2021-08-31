@@ -305,6 +305,8 @@ TEST(pad3d, precision) {
 #endif
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kHost);
+#else
+  return;
 #endif
 
   TestPad3d(place, abs_error);
