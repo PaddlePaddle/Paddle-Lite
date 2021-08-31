@@ -64,8 +64,6 @@ int Program::ConvertPool2D(hal::Operation* operation) {
   bool count_include_pad =
       *reinterpret_cast<int8_t*>(input_operands[11]->buffer);
   NNADAPTER_VLOG(5) << "count_include_pad=" << count_include_pad;
-  // Adaptive
-  bool adaptive = *reinterpret_cast<int8_t*>(input_operands[12]->buffer);
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
@@ -76,43 +74,34 @@ int Program::ConvertPool2D(hal::Operation* operation) {
     input_operator = ConvertOperand(input_operand);
   }
   auto pool2d_name = GetOperatorName(output_operand);
-
-  if (adaptive) {
-    auto pool2d_op = std::make_shared<ge::op::AdaptiveAvgPool2d>(pool2d_name);
-    pool2d_op->set_attr_output_size(
-        ge::Operator::OpListInt({filter_height, filter_width}));
-    SET_INPUT(pool2d_op, x, input_operator);
-    MAP_OUTPUT(pool2d_op, y, output_operand);
+  auto pool2d_op = std::make_shared<ge::op::Pooling>(pool2d_name);
+  if (operation->type == NNADAPTER_AVERAGE_POOL_2D) {
+    pool2d_op->set_attr_mode(1);
+    NNADAPTER_CHECK(!count_include_pad) << "Only count_include_pad=false is "
+                                           "supported for the pooling type "
+                                           "'avg' in GE";
+  } else if (operation->type == NNADAPTER_MAX_POOL_2D) {
+    pool2d_op->set_attr_mode(0);
   } else {
-    auto pool2d_op = std::make_shared<ge::op::Pooling>(pool2d_name);
-    if (operation->type == NNADAPTER_AVERAGE_POOL_2D) {
-      pool2d_op->set_attr_mode(1);
-      NNADAPTER_CHECK(!count_include_pad) << "Only count_include_pad=false is "
-                                             "supported for the pooling type "
-                                             "'avg' in GE";
-    } else if (operation->type == NNADAPTER_MAX_POOL_2D) {
-      pool2d_op->set_attr_mode(0);
-    } else {
-      NNADAPTER_LOG(FATAL) << "Unsupported pooling operation type "
-                           << OperationTypeToString(operation->type)
-                           << " is found.";
-    }
-    pool2d_op->set_attr_global_pooling(global_pooling);
-    pool2d_op->set_attr_window(
-        ge::Operator::OpListInt({filter_height, filter_width}));
-    pool2d_op->set_attr_pad(ge::Operator::OpListInt({padding_height_bottom,
-                                                     padding_height_top,
-                                                     padding_width_right,
-                                                     padding_width_left}));
-    pool2d_op->set_attr_stride(
-        ge::Operator::OpListInt({stride_height, stride_width}));
-    // "0" (ceil mode) or "1" (floor mode). Defaults to "0"
-    if (!ceil_mode) {
-      pool2d_op->set_attr_ceil_mode(1);
-    }
-    SET_INPUT(pool2d_op, x, input_operator);
-    MAP_OUTPUT(pool2d_op, y, output_operand);
+    NNADAPTER_LOG(FATAL) << "Unsupported pooling operation type "
+                         << OperationTypeToString(operation->type)
+                         << " is found.";
   }
+  pool2d_op->set_attr_global_pooling(global_pooling);
+  pool2d_op->set_attr_window(
+      ge::Operator::OpListInt({filter_height, filter_width}));
+  pool2d_op->set_attr_pad(ge::Operator::OpListInt({padding_height_bottom,
+                                                   padding_height_top,
+                                                   padding_width_right,
+                                                   padding_width_left}));
+  pool2d_op->set_attr_stride(
+      ge::Operator::OpListInt({stride_height, stride_width}));
+  // "0" (ceil mode) or "1" (floor mode). Defaults to "0"
+  if (!ceil_mode) {
+    pool2d_op->set_attr_ceil_mode(1);
+  }
+  SET_INPUT(pool2d_op, x, input_operator);
+  MAP_OUTPUT(pool2d_op, y, output_operand);
   return NNADAPTER_NO_ERROR;
 }
 

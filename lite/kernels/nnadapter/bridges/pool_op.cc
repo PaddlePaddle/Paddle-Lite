@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -158,7 +158,9 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       adaptive_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   NNAdapterOperationType pool2d_operation_type;
-  if (pooling_type == "max") {
+  if (adaptive) {
+    pool2d_operation_type = NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D;
+  } else if (pooling_type == "max") {
     pool2d_operation_type = NNADAPTER_MAX_POOL_2D;
   } else if (pooling_type == "avg") {
     pool2d_operation_type = NNADAPTER_AVERAGE_POOL_2D;
