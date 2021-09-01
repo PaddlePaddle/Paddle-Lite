@@ -46,7 +46,8 @@ DEFINE_string(input_shape,
               "1,3,224,224",
               "set input shapes according to the model, "
               "separated by colon and comma, "
-              "such as 1,3,244,244");
+              "such as 1,3,244,244 for only one input, "
+              "1,3,224,224:1,5 for two inputs");
 DEFINE_string(input_data_path,
               "",
               "the path of input image, if not set "
@@ -123,7 +124,8 @@ void PrintUsage() {
       "    the model is combined formate, such as `xx.pdiparams`. Otherwise, \n"
       "    it is not necessary to set it.) type: string \n"
       "  --input_shape (Set input shapes according to the model, separated by\n"
-      "    colon and comma, such as 1,3,244,244) type: string\n"
+      "    colon and comma, such as 1,3,244,244 for only one input;\n"
+      "    1,3,224,224:1,5 for two inputs) type: string\n"
       "    default: 1,3,224,224 \n"
       "  --input_data_path (The path of input image, if not set\n"
       "    input_data_path, the input will be 1.0.) type: string \n "
