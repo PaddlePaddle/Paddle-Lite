@@ -37,7 +37,8 @@ void BoxCoderImageCompute::PrepareForRun() {
     prior_box_var_buffer_ = param.prior_box_var->data<MetalHalf, MetalImage>();
     target_box_buffer_ = param.target_box->data<MetalHalf, MetalImage>();
 
-    output_buffer_ = param.proposals->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
+    output_buffer_ =
+        param.proposals->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
 #endif
     std::string function_name = "box_coder";
 
@@ -76,7 +77,12 @@ BoxCoderImageCompute::~BoxCoderImageCompute() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(box_coder, kMetal, kFloat, kMetalTexture2DArray, paddle::lite::kernels::metal::BoxCoderImageCompute, def)
+REGISTER_LITE_KERNEL(box_coder,
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::BoxCoderImageCompute,
+    def)
     .BindInput("PriorBox",
         {LiteType::GetTensorTy(TARGET(kMetal),
             PRECISION(kFloat),
@@ -95,7 +101,12 @@ REGISTER_LITE_KERNEL(box_coder, kMetal, kFloat, kMetalTexture2DArray, paddle::li
             DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(box_coder, kMetal, kFP16, kMetalTexture2DArray, paddle::lite::kernels::metal::BoxCoderImageCompute, def)
+REGISTER_LITE_KERNEL(box_coder,
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::BoxCoderImageCompute,
+    def)
     .BindInput("PriorBox",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .BindInput("PriorBoxVar",

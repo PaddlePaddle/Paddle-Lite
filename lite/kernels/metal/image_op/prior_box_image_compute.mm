@@ -68,8 +68,10 @@ void PriorBoxImageCompute::PrepareForRun() {
         }
     }
 
-    new_aspect_ratio_buffer_ = std::make_shared<MetalBuffer>(metal_context_, output_aspect_ratios.size() * sizeof(float), output_aspect_ratios.data());
-    variances_buffer_ = std::make_shared<MetalBuffer>(metal_context_, param.variances_.size() * sizeof(float), param.variances_.data());
+    new_aspect_ratio_buffer_ = std::make_shared<MetalBuffer>(
+        metal_context_, output_aspect_ratios.size() * sizeof(float), output_aspect_ratios.data());
+    variances_buffer_ = std::make_shared<MetalBuffer>(
+        metal_context_, param.variances_.size() * sizeof(float), param.variances_.data());
 
     auto max_sizes_size = (uint32_t)(param.max_sizes.size());
     auto min_sizes_size = (uint32_t)(param.min_sizes.size());
@@ -91,13 +93,13 @@ void PriorBoxImageCompute::PrepareForRun() {
         aspect_ratios_size,
         min_sizes_size,
         max_sizes_size};
-    param_buffer_ = std::make_shared<MetalBuffer>(metal_context_, sizeof(metal_param), &metal_param);
+    param_buffer_ =
+        std::make_shared<MetalBuffer>(metal_context_, sizeof(metal_param), &metal_param);
 
     function_name_ = "prior_box";
-    
-    if (param.min_max_aspect_ratios_order) 
-        function_name_ = "prior_box_MinMaxAspectRatiosOrder";
-    
+
+    if (param.min_max_aspect_ratios_order) function_name_ = "prior_box_MinMaxAspectRatiosOrder";
+
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     pipline_ = [backend pipline:function_name_];
@@ -136,7 +138,12 @@ PriorBoxImageCompute::~PriorBoxImageCompute() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(prior_box, kMetal, kFloat, kMetalTexture2DArray, paddle::lite::kernels::metal::PriorBoxImageCompute, def)
+REGISTER_LITE_KERNEL(prior_box,
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::PriorBoxImageCompute,
+    def)
     .BindInput("Input",
         {LiteType::GetTensorTy(TARGET(kMetal),
             PRECISION(kFloat),
@@ -155,7 +162,12 @@ REGISTER_LITE_KERNEL(prior_box, kMetal, kFloat, kMetalTexture2DArray, paddle::li
             DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(prior_box, kMetal, kFP16, kMetalTexture2DArray, paddle::lite::kernels::metal::PriorBoxImageCompute, def)
+REGISTER_LITE_KERNEL(prior_box,
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::PriorBoxImageCompute,
+    def)
     .BindInput("Input",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .BindOutput("Image",
