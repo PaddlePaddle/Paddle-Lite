@@ -44,7 +44,6 @@ template <typename IndexType, typename AxisType, typename DataType>
 void GatherV2Func(const operators::GatherParam& param, const int axis) {
   auto* index_data = param.Index->data<IndexType>();
   auto* input_data = param.X->data<DataType>();
-  auto* out_data = param.Out->mutable_data<DataType>();
 
   int index_size = param.Index->numel();
   int input_size = param.X->numel();
@@ -60,12 +59,19 @@ void GatherV2Func(const operators::GatherParam& param, const int axis) {
 
   int inner_dim_size = 1;
   int outer_dim_size = 1;
+  std::vector<int64_t> out_dim_vec;
   for (int i = 0; i < axis_index; i++) {
     inner_dim_size *= input_dim[i];
+    out_dim_vec.push_back(input_dim[i]);
   }
+  out_dim_vec.push_back(index_size);
   for (size_t i = axis_index + 1; i < input_dim.size(); i++) {
     outer_dim_size *= input_dim[i];
+    out_dim_vec.push_back(input_dim[i]);
   }
+
+  param.Out->Resize(DDim(out_dim_vec));
+  auto* out_data = param.Out->mutable_data<DataType>();
 
   int out_index = 0;
   for (int i = 0; i < inner_dim_size; i++) {
