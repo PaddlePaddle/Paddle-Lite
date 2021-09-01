@@ -28,6 +28,7 @@ namespace lite {
 
 TEST(Mobilenet_v1, test_mobilenetv1_lite_x86) {
   lite_api::CxxConfig config;
+  config.set_model_dir(FLAGS_model_dir);
 
 #ifdef LITE_WITH_OPENCL
   config.set_valid_places(
