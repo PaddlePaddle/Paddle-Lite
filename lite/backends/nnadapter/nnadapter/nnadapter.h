@@ -1142,7 +1142,8 @@ typedef enum {
   NNADAPTER_UNSQUEEZE,
 
   /**
-   * Remove dimensions of input which size is 1
+   * Applies adaptive 2-D max pooling across the input according to input and
+   * output size.
    *
    * Inputs:
    * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
