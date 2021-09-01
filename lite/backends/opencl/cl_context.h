@@ -88,7 +88,6 @@ class CLContext {
  private:
   std::vector<std::shared_ptr<cl::Kernel>> kernels_;
   std::map<std::string, int> kernel_offset_;
-  std::map<std::string, cl::NDRange> tuned_lwss_map_;
 };
 
 }  // namespace lite
