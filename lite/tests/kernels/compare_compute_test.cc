@@ -162,7 +162,9 @@ void TestCompare(Place place,
                  std::string op,
                  std::vector<int64_t> x_dims,
                  std::vector<int64_t> y_dims,
-                 int axis) {
+                 int axis,
+                 std::string alias = "def") {
+#if !defined(LITE_WITH_XPU)
   if (typeid(T) == typeid(float)) {
     place.precision = PRECISION(kFloat);
   } else if (typeid(T) == typeid(int32_t)) {
@@ -172,32 +174,33 @@ void TestCompare(Place place,
   } else {
     LOG(FATAL) << "unsupported dtype";
   }
+#endif
 
   std::unique_ptr<arena::TestCase> tester = nullptr;
   if (op == "equal") {
     tester = static_cast<std::unique_ptr<arena::TestCase>>(
         new CompareComputeTester<T, EqualFunctor>(
-            place, "def", op, DDim(x_dims), DDim(y_dims), axis));
+            place, alias, op, DDim(x_dims), DDim(y_dims), axis));
   } else if (op == "not_equal") {
     tester = static_cast<std::unique_ptr<arena::TestCase>>(
         new CompareComputeTester<T, NotEqualFunctor>(
-            place, "def", op, DDim(x_dims), DDim(y_dims), axis));
+            place, alias, op, DDim(x_dims), DDim(y_dims), axis));
   } else if (op == "less_than") {
     tester = static_cast<std::unique_ptr<arena::TestCase>>(
         new CompareComputeTester<T, LessThanFunctor>(
-            place, "def", op, DDim(x_dims), DDim(y_dims), axis));
+            place, alias, op, DDim(x_dims), DDim(y_dims), axis));
   } else if (op == "less_equal") {
     tester = static_cast<std::unique_ptr<arena::TestCase>>(
         new CompareComputeTester<T, LessEqualFunctor>(
-            place, "def", op, DDim(x_dims), DDim(y_dims), axis));
+            place, alias, op, DDim(x_dims), DDim(y_dims), axis));
   } else if (op == "greater_than") {
     tester = static_cast<std::unique_ptr<arena::TestCase>>(
         new CompareComputeTester<T, GreaterThanFunctor>(
-            place, "def", op, DDim(x_dims), DDim(y_dims), axis));
+            place, alias, op, DDim(x_dims), DDim(y_dims), axis));
   } else if (op == "greater_equal") {
     tester = static_cast<std::unique_ptr<arena::TestCase>>(
         new CompareComputeTester<T, GreaterEqualFunctor>(
-            place, "def", op, DDim(x_dims), DDim(y_dims), axis));
+            place, alias, op, DDim(x_dims), DDim(y_dims), axis));
   } else {
     LOG(FATAL) << "unsupported type";
   }
@@ -239,10 +242,11 @@ TEST(Compare_OP_ARM, precision) {
 TEST(Compare_OP_XPU, precision) {
   Place place{TARGET(kXPU)};
   float abs_error = 1e-5;
-  std::cout << "test xpu compare" << std::endl;
   TestCompare<float>(place, abs_error, "less_than", {3, 4}, {3, 4}, -1);
-  TestCompare<int32_t>(place, abs_error, "less_than", {3, 4}, {3, 4}, -1);
-  TestCompare<int64_t>(place, abs_error, "less_than", {3, 4}, {3, 4}, -1);
+  TestCompare<int32_t>(
+      place, abs_error, "less_than", {3, 4}, {3, 4}, -1, "int32");
+  TestCompare<int64_t>(
+      place, abs_error, "less_than", {3, 4}, {3, 4}, -1, "int64");
 }
 #endif
 

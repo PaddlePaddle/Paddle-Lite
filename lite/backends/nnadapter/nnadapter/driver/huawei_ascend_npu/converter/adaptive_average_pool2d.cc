@@ -24,15 +24,16 @@ int Program::ConvertAdaptiveAvgPool2D(hal::Operation* operation) {
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
   auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 3);
+  NNADAPTER_CHECK_EQ(input_count, 2);
   NNADAPTER_CHECK_EQ(output_count, 1);
   // Input
   auto input_operand = input_operands[0];
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
-  // Filter
-  auto filter_width = *reinterpret_cast<int32_t*>(input_operands[1]->buffer);
-  auto filter_height = *reinterpret_cast<int32_t*>(input_operands[2]->buffer);
-  NNADAPTER_VLOG(5) << "filter=[" << filter_width << "," << filter_height
+  // Output size
+  auto kernel_buffer = reinterpret_cast<int32_t*>(input_operands[1]->buffer);
+  auto kernel_height = kernel_buffer[0];
+  auto kernel_width = kernel_buffer[1];
+  NNADAPTER_VLOG(5) << "filter=[" << kernel_height << "," << kernel_width
                     << "]";
   // Output
   auto output_operand = output_operands[0];
@@ -46,7 +47,7 @@ int Program::ConvertAdaptiveAvgPool2D(hal::Operation* operation) {
   auto pool2d_name = GetOperatorName(output_operand);
   auto pool2d_op = std::make_shared<ge::op::AdaptiveAvgPool2d>(pool2d_name);
   pool2d_op->set_attr_output_size(
-      ge::Operator::OpListInt({filter_height, filter_width}));
+      ge::Operator::OpListInt({kernel_height, kernel_width}));
   SET_INPUT(pool2d_op, x, input_operator);
   MAP_OUTPUT(pool2d_op, y, output_operand);
   return NNADAPTER_NO_ERROR;
