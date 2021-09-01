@@ -841,6 +841,8 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
       } else {
         LOG(FATAL) << "unsupported kernel id : " << func_id;
       }
+
+      kernel_func_paths_[0] = "image/conv2d_1x1_opt_kernel.cl";
       context.cl_context()->AddKernel(kernel_func_names_[0],
                                       kernel_func_paths_[0],
                                       build_options_[0],
