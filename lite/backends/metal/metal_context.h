@@ -28,22 +28,36 @@ class MetalContext {
     MetalContext();
     ~MetalContext();
 
-    //external
+    // external
     void set_program(RuntimeProgram* program = nullptr);
     void wait_all_completed();
 
-    //config
+    // config
     void set_metal_path(std::string path);
-    void set_use_mps(bool flag) { use_mps_ = flag; }
-    void set_use_aggressive(bool flag) { use_aggressive_ = flag; }
-    
-    bool use_mps() const { return use_mps_; }
-    bool use_quadruple() const { return use_aggressive_; }
-    bool use_winograde() const { return use_aggressive_; }
+    void set_use_mps(bool flag) {
+        use_mps_ = flag;
+    }
+    void set_use_aggressive(bool flag) {
+        use_aggressive_ = flag;
+    }
 
-    //ptr
-    void* backend() const { return mContext; }
-    RuntimeProgram* program() const { return program_; }
+    bool use_mps() const {
+        return use_mps_;
+    }
+    bool use_quadruple() const {
+        return use_aggressive_;
+    }
+    bool use_winograde() const {
+        return use_aggressive_;
+    }
+
+    // ptr
+    void* backend() const {
+        return mContext;
+    }
+    RuntimeProgram* program() const {
+        return program_;
+    }
 
    private:
     bool use_mps_{false};
