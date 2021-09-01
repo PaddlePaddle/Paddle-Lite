@@ -370,8 +370,8 @@ void TestEltFuseAct(Place place, float abs_error) {
 
 #ifdef LITE_WITH_X86
 void TestEltFuseActFloat(Place place, float abs_error) {
-  for (auto elt_type : std::vector<std::string>{
-           "add", "sub", "mul", "div", "min", "max", "floordiv", "pow"}) {
+  for (auto elt_type :
+       std::vector<std::string>{"add", "sub", "mul", "div", "min", "max"}) {
     TestElt<float>(
         place, abs_error, elt_type, {2, 13, 4, 5}, {2, 13, 4, 5}, 0, "relu");
     TestElt<float>(
