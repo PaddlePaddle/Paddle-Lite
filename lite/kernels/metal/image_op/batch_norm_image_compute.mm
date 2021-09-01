@@ -65,12 +65,9 @@ void BatchNormImageCompute::setup_without_mps() {
     auto bias_dims = param.bias->dims();
     auto scale_dims = param.scale->dims();
     auto count = param.variance->dims().production();
-
-    if (bias_dims.production() == count &&
-        scale_dims.production() == count) {
-    } else {
-        LOG(FATAL) << "batchnorm: param error";
-    }
+    
+    CHECK_EQ(bias_dims.production(), count) << "batchnorm: param error";
+    CHECK_EQ(scale_dims.production(), count) << "batchnorm: param error";
 
     auto mean_raw_ptr = param.mean->template data<float>();
     auto bias_raw_ptr = param.bias->template data<float>();
@@ -80,8 +77,8 @@ void BatchNormImageCompute::setup_without_mps() {
     bias_buffer_ = std::make_shared<MetalBuffer>(metal_context_, bias_dims, METAL_PRECISION_TYPE::HALF);
     scale_buffer_ = std::make_shared<MetalBuffer>(metal_context_, scale_dims, METAL_PRECISION_TYPE::HALF);
 
-    auto scale_ptr = (float*)TargetWrapperMetal::Malloc(sizeof(float) * count);
-    auto bias_ptr = (float*)TargetWrapperMetal::Malloc(sizeof(float) * count);
+    auto scale_ptr = (float*)TargetWrapperHost::Malloc(sizeof(float) * count);
+    auto bias_ptr = (float*)TargetWrapperHost::Malloc(sizeof(float) * count);
     for (int i = 0; i < count; i++) {
         auto inv_std = 1.0f / std::sqrt(variance_raw_ptr[i] + param.epsilon);
         bias_ptr[i] = bias_raw_ptr[i] - mean_raw_ptr[i] * inv_std * scale_raw_ptr[i];
@@ -90,8 +87,8 @@ void BatchNormImageCompute::setup_without_mps() {
     bias_buffer_->CopyFromNCHW<float>(bias_ptr);
     scale_buffer_->CopyFromNCHW<float>(scale_ptr);
 
-    free(bias_ptr);
-    free(scale_ptr);
+    TargetWrapperHost::Free(bias_ptr);
+    TargetWrapperHost::Free(scale_ptr);
 
     function_name_ = "batchnorm";
     // pipline

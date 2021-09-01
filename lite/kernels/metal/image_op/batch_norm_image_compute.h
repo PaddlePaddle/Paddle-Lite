@@ -33,8 +33,7 @@ namespace kernels {
 namespace metal {
 
 class BatchNormImageCompute
-    : public KernelLite<TARGET(kMetal), PRECISION(kFloat),
-        DATALAYOUT(kMetalTexture2DArray)> {
+    : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {
     using param_t = operators::BatchNormParam;
 
    public:
@@ -53,7 +52,7 @@ class BatchNormImageCompute
 
     const MetalImage* input_buffer_;
     MetalImage* output_buffer_{nullptr};
-    
+
     std::shared_ptr<MetalBuffer> bias_buffer_;
     std::shared_ptr<MetalBuffer> scale_buffer_;
 
