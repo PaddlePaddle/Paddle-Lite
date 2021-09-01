@@ -15,8 +15,10 @@
 #pragma once
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
+#include "lite/kernels/nnadapter/bridges/converter.h"
 #include "lite/kernels/nnadapter/engine.h"
 #include "lite/kernels/nnadapter/utility.h"
 
@@ -31,12 +33,14 @@ const int UNSUPPORTED_FEATURE = 2;
 
 class Converter {
  public:
-  explicit Converter(NNAdapterModel* model) : model_(model) {}
+  explicit Converter(NNAdapterModel* model) : model_(model) {
+    sub_converter.reset(new subgraph::nnadapter::Converter(model_, &operands_));
+  }
   ~Converter() {}
 
   // Convert a block_desc with tensors to a NNAdapter model
   int Apply(int block_idx,
-            const cpp::ProgramDesc* program_desc,
+            const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
             Scope* exec_scope,
             const std::vector<Variable>& input_vars,
             std::vector<Variable>* output_vars,
@@ -75,6 +79,7 @@ class Converter {
       uint32_t quant_channel_dim = 0) {
     return AddConstantOperand(&value,
                               DDim(std::vector<int64_t>({1})),
+                              lite_api::PrecisionTypeTrait<T>::Type(),
                               true,
                               quant_scales,
                               quant_channel_dim);
@@ -86,10 +91,14 @@ class Converter {
       const std::vector<float>& quant_scales = {},
       uint32_t quant_channel_dim = 0) {
     if (dimensions.empty()) {
-      dimensions = DDim({std::vector<int64_t>(values.size())});
+      dimensions = DDim({static_cast<int64_t>(values.size())});
     }
-    return AddConstantOperand(
-        values.data(), dimensions, true, quant_scales, quant_channel_dim);
+    return AddConstantOperand(values.data(),
+                              dimensions,
+                              lite_api::PrecisionTypeTrait<T>::Type(),
+                              true,
+                              quant_scales,
+                              quant_channel_dim);
   }
   // Add a constant operand from a tensor
   NNAdapterOperand* AddConstantOperand(
@@ -140,7 +149,7 @@ class Converter {
       uint32_t quant_channel_dim = 0);
   // Get the type of a operand, which includes precision, dimension and
   // quantization parameters
-  NNAdapterOperandType* GetOperandType(NNAdapterOperand* operand);
+  const NNAdapterOperandType* GetOperandType(NNAdapterOperand* operand);
   // Add a operation with input and output operands
   NNAdapterOperation* AddOperation(
       NNAdapterOperationType type,
@@ -169,6 +178,7 @@ class Converter {
                        bool copy = true);
   NNAdapterModel* model_{nullptr};
   std::map<std::string, std::vector<NNAdapterOperand*>> operands_;
+  std::shared_ptr<subgraph::nnadapter::Converter> sub_converter{nullptr};
 };
 
 }  // namespace nnadapter

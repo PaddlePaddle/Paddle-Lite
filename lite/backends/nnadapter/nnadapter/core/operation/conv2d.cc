@@ -34,16 +34,16 @@ int PrepareConv2D(hal::Operation* operation) {
     output_dimensions[2] =
         input_dimensions[2] == NNADAPTER_UNKNOWN
             ? NNADAPTER_UNKNOWN
-            : ((input_dimensions[2] +
-                (padding_height_top + padding_height_bottom) - dkernel) /
+            : ((input_dimensions[2] + (pad_height_top + pad_height_bottom) -
+                dkernel) /
                    stride_height +
                1);
     dkernel = dilation_width * (filter_width - 1) + 1;
     output_dimensions[3] =
         input_dimensions[3] == NNADAPTER_UNKNOWN
             ? NNADAPTER_UNKNOWN
-            : ((input_dimensions[3] +
-                (padding_width_left + padding_width_right) - dkernel) /
+            : ((input_dimensions[3] + (pad_width_left + pad_width_right) -
+                dkernel) /
                    stride_width +
                1);
   };

@@ -269,6 +269,8 @@ void ConvertVectorToNNDimensions(const std::vector<int64_t>& input_dimensions,
 DDim ConvertNNDimensionsToDDim(int32_t* input_dimensions,
                                uint32_t input_dimension_count);
 
+NNAdapterPadCode PaddingAlgorithm2PadCode(const std::string& padding_algorithm);
+
 }  // namespace nnadapter
 }  // namespace kernels
 }  // namespace lite
