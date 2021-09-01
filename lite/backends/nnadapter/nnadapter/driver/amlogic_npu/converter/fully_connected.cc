@@ -53,10 +53,7 @@ int ConvertFullyConnected(Converter* converter, hal::Operation* operation) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
   auto weight_tensor = converter->ConvertOperand(weight_operand);
-  auto bias_tensor = converter->GetMappedTensor(bias_operand);
-  if (!bias_tensor) {
-    bias_tensor = converter->ConvertOperand(input_operand);
-  }
+  auto bias_tensor = converter->ConvertOperand(bias_operand);
   auto output_tensor = converter->ConvertOperand(output_operand);
   aml::nn::FCAttr attr;
   attr.weights = num_units;
