@@ -31,8 +31,8 @@ void PriorBoxImageCompute::PrepareForRun() {
 #ifdef LITE_WITH_METAL_FULL
 #else
     input_buffer_ = param.input->data<MetalHalf, MetalImage>();
-    image_buffer_ = param.input->data<MetalHalf, MetalImage>();
-    output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, box_dims);
+    image_buffer_ = param.image->data<MetalHalf, MetalImage>();
+    output_buffer_ = param.boxes->mutable_data<MetalHalf, MetalImage>(metal_context_, box_dims);
 #endif
 
     assert(param.min_sizes.size() == 1);

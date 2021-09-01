@@ -46,11 +46,11 @@ class PriorBoxImageCompute
    private:
     void run_without_mps();
     const MetalImage* input_buffer_;
+    const MetalImage* image_buffer_;
     MetalImage* output_buffer_{nullptr};
     std::shared_ptr<MetalBuffer> param_buffer_;
     std::shared_ptr<MetalBuffer> new_aspect_ratio_buffer_;
-    MetalImage* variances_buffer_;
-    const MetalImage* image_buffer_;
+    std::shared_ptr<MetalBuffer> variances_buffer_;
 
     id<MTLComputePipelineState> pipline_;
     std::string function_name_;

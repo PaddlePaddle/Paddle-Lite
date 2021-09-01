@@ -11,6 +11,7 @@ message(STATUS "compile with lite Metal kernels")
 # image kernel      #
 #####################
 add_kernel(activation_metal_image METAL basic SRCS image_op/activation_image_compute.mm DEPS metal_target_wrapper)
+add_kernel(box_coder_metal_image METAL basic SRCS image_op/box_coder_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(concat_metal_image METAL basic SRCS image_op/concat_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(conv2d_metal_image METAL basic SRCS image_op/conv2d_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(depthwise_conv2d_metal_image METAL basic SRCS image_op/depthwise_conv2d_image_compute.mm DEPS metal_target_wrapper)
@@ -26,6 +27,7 @@ add_kernel(io_copy_metal_image METAL basic SRCS image_op/io_copy_image_compute.m
 add_kernel(matmul_metal_compute METAL basic SRCS image_op/matmul_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(pad2d_metal_compute METAL basic SRCS image_op/pad2d_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(pool_metal_image METAL basic SRCS image_op/pool_image_compute.mm DEPS metal_target_wrapper)
+add_kernel(prior_box_metal_image METAL basic SRCS image_op/prior_box_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(reshape_metal_image METAL basic SRCS image_op/reshape_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(scale_metal_image METAL basic SRCS image_op/scale_image_compute.mm DEPS metal_target_wrapper)
 add_kernel(slice_metal_compute METAL basic SRCS image_op/slice_image_compute.mm DEPS metal_target_wrapper)
@@ -46,9 +48,7 @@ add_kernel(transpose_metal_image METAL basic SRCS image_op/transpose_image_compu
 # add_kernel(pixel_shuffle_metal_image METAL basic SRCS image_op/pixel_shuffle_image_compute.mm DEPS metal_target_wrapper)
 # add_kernel(rsqrt_metal_image METAL basic SRCS image_op/rsqrt_image_compute.mm METAL_DEPS metal_target_wrapper)
 # add_kernel(tanh_metal_image METAL basic SRCS image_op/tanh_image_compute.mm DEPS metal_target_wrapper)
-# add_kernel(prior_box_metal_image METAL basic SRCS image_op/prior_box_image_compute.mm DEPS metal_target_wrapper)
 # add_kernel(conv2d_transpose_metal_image METAL basic SRCS image_op/conv2d_transpose_image_compute.mm DEPS metal_target_wrapper)
-# add_kernel(box_coder_metal_image METAL basic SRCS image_op/box_coder_image_compute.mm DEPS metal_target_wrapper)
 
 add_library(METAL_BASE STATIC IMPORTED )
 set_target_properties(METAL_BASE PROPERTIES IMPORTED_LOCATION ${METAL_LIBRARY})
