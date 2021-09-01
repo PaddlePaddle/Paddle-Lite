@@ -147,8 +147,6 @@ class Converter {
   NNAdapterOperand* AddOutputOperand(
       const std::vector<float>& quant_scales = {},
       uint32_t quant_channel_dim = 0);
-  // Add a named variable operand to store temporary shape info
-  NNAdapterOperand* AddShapeOperand(const std::string& name);
   // Get the type of a operand, which includes precision, dimension and
   // quantization parameters
   const NNAdapterOperandType* GetOperandType(NNAdapterOperand* operand);
@@ -157,6 +155,11 @@ class Converter {
       NNAdapterOperationType type,
       std::vector<NNAdapterOperand*>* input_operands,
       std::vector<NNAdapterOperand*>* output_operands);
+  // Add shape operation with input name and output name
+  NNAdapterOperand* AddShapeOperation(
+      const std::string& input_name,
+      const std::string& output_name,
+      NNAdapterOperandPrecisionCode output_precision = NNADAPTER_TENSOR_INT32);
 
  private:
   // Add a operand from a NNAdapter type, only for internal use
@@ -172,8 +175,7 @@ class Converter {
       const void* buffer = nullptr,
       bool copy = true,
       const std::string& name = "",
-      const std::vector<std::vector<int64_t>>& dynamic_dimensions = {},
-      bool is_shape_operand = false);
+      const std::vector<std::vector<int64_t>>& dynamic_dimensions = {});
   // Set the value of a constant operand
   void SetOperandValue(NNAdapterOperand* operand,
                        const void* buffer,

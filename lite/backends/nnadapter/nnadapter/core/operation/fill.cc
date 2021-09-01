@@ -28,7 +28,7 @@ int PrepareFill(hal::Operation* operation) {
   // Infer the shape and type of output operands
   auto& shape_type = shape_operand->type;
   auto& out_type = output_operand->type;
-  if (shape_type.lifetime == NNADAPTER_CONSTANT_COPY) {
+  if (IsConstantOperand(shape_operand)) {
     uint32_t length = shape_operand->length;
     auto shape_precision = shape_type.precision;
     switch (shape_precision) {
@@ -50,25 +50,21 @@ int PrepareFill(hal::Operation* operation) {
       }
       default:
         NNADAPTER_LOG(ERROR) << "Unsupported shape precision: "
-                             << static_cast<int32_t>(shape_precision);
+                             << OperandPrecisionCodeToString(shape_precision);
         break;
     }
   } else if (shape_type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {
     auto tmp_shape =
-        reinterpret_cast<hal::TemporaryShape*>(shape_operand->buffer);
-    auto shape = tmp_shape->shape;
-    out_type.dimension_count = static_cast<uint32_t>(shape.size());
+        reinterpret_cast<NNAdapterOperandDimensionType*>(shape_operand->buffer);
+    out_type.dimension_count = tmp_shape->count;
     memcpy(out_type.dimensions,
-           shape.data(),
-           sizeof(int32_t) * out_type.dimension_count);
-    auto dynamic_shape = tmp_shape->dynamic_shape;
-    out_type.dynamic_dimension_count =
-        static_cast<uint32_t>(dynamic_shape.size());
-    for (size_t i = 0; i < dynamic_shape.size(); i++) {
-      memcpy(out_type.dynamic_dimensions[i],
-             dynamic_shape[i].data(),
-             sizeof(int32_t) * dynamic_shape[i].size());
-    }
+           tmp_shape->data,
+           NNADAPTER_MAX_SIZE_OF_DIMENSIONS * sizeof(int32_t));
+    out_type.dynamic_dimension_count = tmp_shape->dynamic_count;
+    memcpy(out_type.dynamic_dimensions,
+           tmp_shape->dynamic_data,
+           NNADAPTER_MAX_SIZE_OF_DYNAMIC_DIMENSIONS *
+               NNADAPTER_MAX_SIZE_OF_DIMENSIONS * sizeof(int32_t));
   } else {
     NNADAPTER_LOG(ERROR) << "Unsupported shape lifetime: "
                          << static_cast<int32_t>(shape_type.lifetime);

@@ -31,31 +31,29 @@ int PrepareShape(hal::Operation* operation) {
   out_type.dimension_count = 1;
   int32_t shape_size = in_type.dimension_count;
   out_type.dimensions[0] = shape_size;
-  out_type.dynamic_dimension_count = in_type.dynamic_dimension_count;
-  for (uint32_t i = 0; i < in_type.dynamic_dimension_count; i++) {
-    out_type.dynamic_dimensions[i][0] = shape_size;
+  if (dtype == static_cast<int32_t>(NNADAPTER_TENSOR_INT32)) {
+    out_type.precision = NNADAPTER_TENSOR_INT32;
+  } else if (dtype == static_cast<int32_t>(NNADAPTER_TENSOR_INT64)) {
+    out_type.precision = NNADAPTER_TENSOR_INT64;
   }
-  out_type.precision = NNADAPTER_TENSOR_INT32;
 
-  if (out_type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {
-    uint32_t size = static_cast<uint32_t>(sizeof(hal::TemporaryShape));
-    void* shape_ptr = malloc(size);
-    memset(shape_ptr, 0, size);
-    output_operand->length = size;
-    output_operand->buffer = shape_ptr;
-    hal::TemporaryShape* tmp_shape =
-        reinterpret_cast<hal::TemporaryShape*>(shape_ptr);
-    for (uint32_t i = 0; i < in_type.dimension_count; i++) {
-      tmp_shape->shape.push_back(in_type.dimensions[i]);
-    }
-    for (uint32_t i = 0; i < in_type.dynamic_dimension_count; i++) {
-      tmp_shape->dynamic_shape.push_back({});
-      for (uint32_t j = 0; j < in_type.dimension_count; j++) {
-        tmp_shape->dynamic_shape.back().push_back(
-            in_type.dynamic_dimensions[i][j]);
-      }
-    }
-  }
+  out_type.lifetime = NNADAPTER_TEMPORARY_SHAPE;
+  uint32_t size = static_cast<uint32_t>(sizeof(NNAdapterOperandDimensionType));
+  void* shape_ptr = malloc(size);
+  memset(shape_ptr, 0, size);
+  output_operand->length = size;
+  output_operand->buffer = shape_ptr;
+  NNAdapterOperandDimensionType* tmp_shape =
+      reinterpret_cast<NNAdapterOperandDimensionType*>(shape_ptr);
+  tmp_shape->count = in_type.dimension_count;
+  memcpy(tmp_shape->data,
+         in_type.dimensions,
+         NNADAPTER_MAX_SIZE_OF_DIMENSIONS * sizeof(int32_t));
+  tmp_shape->dynamic_count = in_type.dynamic_dimension_count;
+  memcpy(tmp_shape->dynamic_data,
+         in_type.dynamic_dimensions,
+         NNADAPTER_MAX_SIZE_OF_DYNAMIC_DIMENSIONS *
+             NNADAPTER_MAX_SIZE_OF_DIMENSIONS * sizeof(int32_t));
 
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;

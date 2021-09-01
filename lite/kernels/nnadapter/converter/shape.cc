@@ -20,24 +20,9 @@ namespace kernels {
 namespace nnadapter {
 
 int ConvertShape(Converter* converter, OpInfo* op, Scope* scope) {
-  // Input operand
   auto x_name = op->Input("Input").front();
-  auto* input_operand = converter->GetMappedOperand(x_name);
-
-  // Dtype operand
-  auto dtype_operand = converter->AddConstantOperand(
-      static_cast<int32_t>(NNADAPTER_TENSOR_INT32));
-
-  // Shape operand
   auto out_name = op->Output("Out").front();
-  auto shape_operand = converter->AddShapeOperand(out_name);
-
-  // Shape operation
-  std::vector<NNAdapterOperand*> shape_input_operands = {input_operand,
-                                                         dtype_operand};
-  std::vector<NNAdapterOperand*> shape_output_operands = {shape_operand};
-  converter->AddOperation(
-      NNADAPTER_SHAPE, &shape_input_operands, &shape_output_operands);
+  converter->AddShapeOperation(x_name, out_name);
   return NO_ERROR;
 }
 

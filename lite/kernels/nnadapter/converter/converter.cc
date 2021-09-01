@@ -299,11 +299,6 @@ NNAdapterOperand* Converter::AddOutputOperand(
                     false);
 }
 
-NNAdapterOperand* Converter::AddShapeOperand(const std::string& name) {
-  return AddOperand(
-      {}, PRECISION(kUnk), nullptr, 0, 0, nullptr, false, name, {}, true);
-}
-
 const NNAdapterOperandType* Converter::GetOperandType(
     NNAdapterOperand* operand) {
   NNAdapterOperandType* type = nullptr;
@@ -326,6 +321,33 @@ NNAdapterOperation* Converter::AddOperation(
                                      &operation);
   CHECK(operation);
   return operation;
+}
+
+NNAdapterOperand* Converter::AddShapeOperation(
+    const std::string& input_name,
+    const std::string& output_name,
+    NNAdapterOperandPrecisionCode output_precision) {
+  // Input operand
+  auto* input_operand = GetMappedOperand(input_name);
+
+  // Dtype operand
+  CHECK(output_precision == NNADAPTER_TENSOR_INT32 ||
+        output_precision == NNADAPTER_TENSOR_INT64)
+      << "Shape's output's precision only support NNADAPTER_TENSOR_INT32 or "
+         "NNADAPTER_TENSOR_INT64, but received "
+      << static_cast<int32_t>(output_precision);
+  auto dtype_operand =
+      AddConstantOperand(static_cast<int32_t>(output_precision));
+
+  // Shape operand
+  auto shape_operand = AddOutputOperand(output_name);
+
+  // Shape operation
+  std::vector<NNAdapterOperand*> shape_input_operands = {input_operand,
+                                                         dtype_operand};
+  std::vector<NNAdapterOperand*> shape_output_operands = {shape_operand};
+  AddOperation(NNADAPTER_SHAPE, &shape_input_operands, &shape_output_operands);
+  return shape_operand;
 }
 
 NNAdapterOperand* Converter::AddOperand(NNAdapterOperandType* type,
@@ -353,8 +375,7 @@ NNAdapterOperand* Converter::AddOperand(
     const void* buffer,
     bool copy,
     const std::string& name,
-    const std::vector<std::vector<int64_t>>& dynamic_dimensions,
-    bool is_shape_operand) {
+    const std::vector<std::vector<int64_t>>& dynamic_dimensions) {
   NNAdapterOperandType type;
   memset(&type, 0, sizeof(NNAdapterOperandType));
   if (dimensions.size() > 0) {
@@ -394,9 +415,6 @@ NNAdapterOperand* Converter::AddOperand(
     }
   } else {
     // Basic type, without any quantization parameters
-  }
-  if (is_shape_operand) {
-    type.lifetime = NNADAPTER_TEMPORARY_SHAPE;
   }
   auto operand = AddOperand(&type, name);
   if (buffer) {
