@@ -62,4 +62,3 @@ class CastImageCompute
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-

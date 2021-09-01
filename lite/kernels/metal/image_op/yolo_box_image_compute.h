@@ -33,8 +33,7 @@ namespace kernels {
 namespace metal {
 
 class YoloBoxImageCompute
-    : public KernelLite<TARGET(kMetal), PRECISION(kFloat),
-        DATALAYOUT(kMetalTexture2DArray)> {
+    : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {
     using param_t = operators::YoloBoxParam;
 
    public:
@@ -58,7 +57,7 @@ class YoloBoxImageCompute
     const MetalImage* input_buffer_x_;
     const int32_t* input_imgSize_;
     std::shared_ptr<MetalBuffer> params_buffer_;
-            
+
     id<MTLBuffer> anchors_buffer_;
     id<MTLBuffer> intermediate_input_x_;
     id<MTLBuffer> intermediate_boxes_;
