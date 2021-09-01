@@ -1199,7 +1199,7 @@ function test_model_optimize_tool_compile {
     cd $workspace
     cd build
     # Compile opt tool
-    cmake .. -DWITH_LITE=ON -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON -DWITH_TESTING=OFF -DLITE_BUILD_EXTRA=ON
+    cmake .. -DWITH_LITE=ON -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON -DWITH_TESTING=OFF -DLITE_BUILD_EXTRA=ON -DWITH_MKL=OFF
     make opt -j$NUM_CORES_FOR_COMPILE
     # Check whether opt can transform quantized mobilenetv1 successfully.
     cd lite/api && chmod +x ./opt
