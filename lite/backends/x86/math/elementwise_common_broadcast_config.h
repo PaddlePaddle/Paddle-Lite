@@ -15,7 +15,6 @@
 #pragma once
 
 #include <cmath>
-#include <iostream>
 #include "lite/backends/x86/math/detail/activation_functions.h"
 
 #if defined(__AVX__)
