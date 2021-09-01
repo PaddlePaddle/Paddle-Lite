@@ -177,6 +177,9 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
         case NNADAPTER_POW:
           ConvertPow(operation);
           break;
+        case NNADAPTER_CUM_SUM:
+          ConvertCumSum(operation);
+          break;
         case NNADAPTER_BATCH_NORMALIZATION:
           ConvertBatchNormalization(operation);
           break;
