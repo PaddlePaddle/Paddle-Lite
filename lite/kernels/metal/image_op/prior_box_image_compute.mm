@@ -28,13 +28,11 @@ void PriorBoxImageCompute::PrepareForRun() {
 
     const auto& param = this->Param<param_t>();
     auto box_dims = param.boxes->dims();
-    auto variances_dims = param.variances->dims();
 #ifdef LITE_WITH_METAL_FULL
 #else
     input_buffer_ = param.input->data<MetalHalf, MetalImage>();
     image_buffer_ = param.input->data<MetalHalf, MetalImage>();
     output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, box_dims);
-    variances_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, variances_dims);
 #endif
 
     assert(param.min_sizes.size() == 1);
@@ -71,6 +69,7 @@ void PriorBoxImageCompute::PrepareForRun() {
     }
 
     new_aspect_ratio_buffer_ = std::make_shared<MetalBuffer>(metal_context_, output_aspect_ratios.size() * sizeof(float), output_aspect_ratios.data());
+    variances_buffer_ = std::make_shared<MetalBuffer>(metal_context_, param.variances_.size() * sizeof(float), param.variances_.data());
 
     auto max_sizes_size = (uint32_t)(param.max_sizes.size());
     auto min_sizes_size = (uint32_t)(param.min_sizes.size());
@@ -122,7 +121,7 @@ void PriorBoxImageCompute::run_without_mps() {
 
     [encoder setBuffer:(new_aspect_ratio_buffer_->buffer()) offset:(0) atIndex:(1)];
     [encoder setBuffer:(param_buffer_->buffer()) offset:(0) atIndex:(1)];
-    [encoder setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(2)];
+    [encoder setBuffer:(variance_buffer_->buffer()) offset:(0) atIndex:(2)];
 
     [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
     [backend commit];
@@ -130,7 +129,6 @@ void PriorBoxImageCompute::run_without_mps() {
 
 PriorBoxImageCompute::~PriorBoxImageCompute() {
     TargetWrapperMetal::FreeImage(output_buffer_);
-    TargetWrapperMetal::FreeImage(variances_buffer_);
 }
 
 }  // namespace metal
