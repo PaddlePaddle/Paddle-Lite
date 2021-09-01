@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "core/operation/pool2d.h"
 #include "driver/rockchip_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -20,55 +21,7 @@ namespace nnadapter {
 namespace rockchip_npu {
 
 int ConvertPool2D(Converter* converter, hal::Operation* operation) {
-  auto& input_operands = operation->input_operands;
-  auto& output_operands = operation->output_operands;
-  auto input_count = input_operands.size();
-  auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 12);
-  NNADAPTER_CHECK_EQ(output_count, 1);
-  // Input
-  auto input_operand = input_operands[0];
-  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
-  // Paddings
-  auto padding_width_left =
-      *reinterpret_cast<int32_t*>(input_operands[1]->buffer);
-  auto padding_width_right =
-      *reinterpret_cast<int32_t*>(input_operands[2]->buffer);
-  auto padding_height_top =
-      *reinterpret_cast<int32_t*>(input_operands[3]->buffer);
-  auto padding_height_bottom =
-      *reinterpret_cast<int32_t*>(input_operands[4]->buffer);
-  NNADAPTER_VLOG(5) << "paddings=[" << padding_width_left << ","
-                    << padding_width_right << "," << padding_height_top << ","
-                    << padding_height_bottom << "]";
-  // Strides
-  auto stride_width = *reinterpret_cast<int32_t*>(input_operands[5]->buffer);
-  auto stride_height = *reinterpret_cast<int32_t*>(input_operands[6]->buffer);
-  NNADAPTER_VLOG(5) << "strides=[" << stride_width << "," << stride_height
-                    << "]";
-  // Filter
-  auto filter_width = *reinterpret_cast<int32_t*>(input_operands[7]->buffer);
-  auto filter_height = *reinterpret_cast<int32_t*>(input_operands[8]->buffer);
-  NNADAPTER_VLOG(5) << "filter=[" << filter_width << "," << filter_height
-                    << "]";
-  bool global_pooling = filter_width == input_operand->type.dimensions[3] &&
-                        filter_height == input_operand->type.dimensions[2];
-  NNADAPTER_VLOG(5) << "global_pooling=" << global_pooling;
-  // Fuse code
-  auto fuse_code = *reinterpret_cast<int32_t*>(input_operands[9]->buffer);
-  NNADAPTER_VLOG(5) << "fuse_code=" << fuse_code;
-  // Ceil mode
-  bool ceil_mode = *reinterpret_cast<int8_t*>(input_operands[10]->buffer);
-  NNADAPTER_VLOG(5) << "ceil_mode=" << ceil_mode;
-  // Count include pad
-  bool count_include_pad =
-      *reinterpret_cast<int8_t*>(input_operands[11]->buffer);
-  NNADAPTER_VLOG(5) << "count_include_pad=" << count_include_pad;
-  NNADAPTER_CHECK_EQ(count_include_pad, false)
-      << "rknpu_ddk doesn't support count_include_pad=true";
-  // Output
-  auto output_operand = output_operands[0];
-  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
+  POOL_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to rknpu tensors and operators
   auto input_tensor = converter->GetMappedTensor(input_operand);
@@ -77,17 +30,18 @@ int ConvertPool2D(Converter* converter, hal::Operation* operation) {
   }
   auto output_tensor = converter->ConvertOperand(output_operand);
   rk::nn::PoolAttr attr;
-  attr.ksize[0] = filter_width;
-  attr.ksize[1] = filter_height;
+  attr.ksize[0] = kernel_width;
+  attr.ksize[1] = kernel_height;
   attr.stride[0] = stride_width;
   attr.stride[1] = stride_height;
-  attr.pad[0] = padding_width_left;
-  attr.pad[1] = padding_width_right;
-  attr.pad[2] = padding_height_top;
-  attr.pad[3] = padding_height_bottom;
+  attr.pad[0] = pad_width_left;
+  attr.pad[1] = pad_width_right;
+  attr.pad[2] = pad_height_top;
+  attr.pad[3] = pad_height_bottom;
   attr.pad_type = rk::nn::PadType::AUTO;
-  attr.global_pooling = false;  // TODO(hong19860320) fix the order of kernel
-                                // when global_pooling=true in rknpu_ddk
+  // TODO(hong19860320) fix the order of kernel when global_pooling=true in
+  // rknpu_ddk
+  attr.global_pooling = false;
   attr.round_type = ceil_mode ? rk::nn::RoundType::ROUND_CEIL
                               : rk::nn::RoundType::ROUND_FLOOR;
   std::vector<std::shared_ptr<rk::nn::Tensor>> input_tensors = {input_tensor};
