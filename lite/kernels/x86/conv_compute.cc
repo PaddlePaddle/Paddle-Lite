@@ -76,8 +76,10 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   }
 
   /// select conv impl
-  if (dw_kernel && kps_equal && no_dilation && flag_dw && (groups & 3) == 0) {
-    impl_ = new DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>;
+  if (this->device_ctx->avx_level() != AVXType :: AVX_NONE) {
+    if (dw_kernel && kps_equal && no_dilation && flag_dw && (groups & 3) == 0) {
+      impl_ = new DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>;
+    }
   }
 
   if (impl_) {
