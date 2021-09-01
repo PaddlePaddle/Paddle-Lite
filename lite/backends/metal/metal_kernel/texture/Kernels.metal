@@ -61,7 +61,7 @@ kernel void texture2d_int_to_2d_array(
   if (gid.x >= inTexture.get_width() || gid.y >= inTexture.get_height()) {
     return;
   }
-  const ftype4 input = inTexture.read(gid.xy);
+  const ftype4 input = static_cast<ftype4>(inTexture.read(gid.xy));
   outTexture.write(input, gid.xy, 0);
 }
 
