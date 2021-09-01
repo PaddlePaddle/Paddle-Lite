@@ -1,12 +1,12 @@
 if(LITE_WITH_FPGA)
   set(IS_FAKED_KERNEL false CACHE INTERNAL "")
+  set(lite_kernel_deps ${lite_kernel_deps} ${fpga_deps} CACHE INTERNAL "")
+  set(fpga_deps fpga_target_wrapper kernel_fpga)
 elseif(LITE_ON_MODEL_OPTIMIZE_TOOL OR LITE_WITH_PYTHON)
   set(IS_FAKED_KERNEL true CACHE INTERNAL "")
 else()
   return()
 endif()
-
-set(fpga_deps fpga_target_wrapper kernel_fpga)
 
 add_kernel(activation_compute_fpga FPGA basic SRCS activation_compute.cc)
 add_kernel(cast_compute_fpga FPGA basic SRCS cast_compute.cc)
@@ -50,7 +50,6 @@ add_kernel(slice_compute_fpga FPGA basic SRCS slice_compute.cc)
 
 add_kernel(unsqueeze_compute_fpga FPGA basic SRCS unsqueeze_compute.cc)
 
-set(lite_kernel_deps ${lite_kernel_deps} ${fpga_deps} CACHE INTERNAL "")
 
 # lite_cc_test(test_acivation_fpga SRCS activation_compute_test.cc DEPS kernels)
 lite_cc_test(test_conv_fpga SRCS conv_compute_test.cc DEPS kernels)

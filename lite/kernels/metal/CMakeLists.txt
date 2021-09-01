@@ -1,13 +1,15 @@
 if(LITE_WITH_METAL)
   set(IS_FAKED_KERNEL false CACHE INTERNAL "")
+  set(metal_kernel_deps ops metal_target_wrapper)
+  find_library(METAL_LIBRARY Metal REQUIRED)
+  set(lite_kernel_deps ${lite_kernel_deps} metal_target_wrapper CACHE INTERNAL "")
 elseif(LITE_ON_MODEL_OPTIMIZE_TOOL OR LITE_WITH_PYTHON)
   set(IS_FAKED_KERNEL true CACHE INTERNAL "")
 else()
   return()
 endif()
 
-set(metal_kernel_deps ops metal_target_wrapper)
-find_library(METAL_LIBRARY Metal REQUIRED)
+
 
 message(STATUS "compile with lite Metal kernels")
 
@@ -56,13 +58,12 @@ add_kernel(transpose_metal_image METAL basic SRCS image_op/transpose_image_compu
 add_library(METAL_BASE STATIC IMPORTED )
 set_target_properties(METAL_BASE PROPERTIES IMPORTED_LOCATION ${METAL_LIBRARY})
 
-set(lite_kernel_deps ${lite_kernel_deps} metal_target_wrapper CACHE INTERNAL "")
 
 lite_cc_test(test_batch_norm_metal_image_metal SRCS image_op/batch_norm_image_compute_test.mm
         DEPS kernels ${METAL_BASE} ${tensor_lite} core )
 
 lite_cc_test(test_activation_metal_image_metal SRCS image_op/activation_image_compute_test.mm
-        DEPS activation_metal_image io_copy_metal_image op_registry program metal_target_wrapper ${METAL_BASE} ${tensor_lite} core)
+        DEPS activation_metal_image io_copy_metal_image metal_target_wrapper ${METAL_BASE} ${tensor_lite} core)
 
 lite_cc_test(test_pool_metal_image_metal SRCS image_op/pool_image_compute_test.mm
         DEPS kernels ${METAL_BASE} ${tensor_lite} core )

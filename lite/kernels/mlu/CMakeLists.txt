@@ -1,5 +1,6 @@
 if(LITE_WITH_MLU)
   set(IS_FAKED_KERNEL false CACHE INTERNAL "")
+  set(lite_kernel_deps ${lite_kernel_deps} ${mlu_subgraph_bridges} ${target_wrapper_mlu} CACHE INTERNAL "")
 elseif(LITE_ON_MODEL_OPTIMIZE_TOOL OR LITE_WITH_PYTHON)
   set(IS_FAKED_KERNEL true CACHE INTERNAL "")
 else()
@@ -12,5 +13,3 @@ add_kernel(io_copy_compute_mlu MLU basic SRCS io_copy_compute.cc)
 add_kernel(calib_compute_mlu MLU basic SRCS calib_compute.cc)
 # depend on transpose function in backend/x86/math/math_function
 add_kernel(layout_compute_mlu MLU basic SRCS layout_compute.cc)
-
-set(lite_kernel_deps ${lite_kernel_deps} ${mlu_subgraph_bridges} ${target_wrapper_mlu} CACHE INTERNAL "")

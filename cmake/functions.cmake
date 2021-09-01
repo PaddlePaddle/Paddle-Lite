@@ -44,7 +44,8 @@ set(fake_kernels_src_list "${CMAKE_BINARY_DIR}/fake_kernels_src_list.txt")
 file(WRITE ${fake_kernels_src_list} "") # clean
 
 # add a kernel for some specific device
-set(IS_FAKED_KERNEL false)
+set(IS_FAKED_KERNEL false CACHE INTERNAL "judget faked kernel")
+set(cuda_kernels CACHE INTERNAL "cuda kernels")
 # device: one of (Host, ARM, X86, NPU, MLU, HUAWEI_ASCEND_NPU, APU, FPGA, OPENCL, CUDA, BM, RKNPU IMAGINATION_NNA)
 # level: one of (basic, extra)
 function(add_kernel TARGET device level)
@@ -59,7 +60,7 @@ function(add_kernel TARGET device level)
     endif()
 
     # apppend faked kernels into fake kernels source list.(this is useful in opt tool)
-    if(${IS_FAKED_KERNE})
+    if(${IS_FAKED_KERNEL})
       foreach(src ${args_SRCS})
         file(APPEND ${fake_kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
       endforeach()
@@ -87,11 +88,66 @@ function(add_kernel TARGET device level)
       return()
     endif()
 
+    if ("${device}" STREQUAL "CUDA")
+        if (NOT LITE_WITH_CUDA)
+            foreach(src ${args_SRCS})
+                file(APPEND ${fake_kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
+            endforeach()
+            return()
+        endif()
+        set(cuda_kernels "${cuda_kernels};${TARGET}" CACHE INTERNAL "")
+        foreach(src ${args_SRCS})
+          file(APPEND ${kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
+        endforeach()
+        nv_library(${TARGET} SRCS ${args_SRCS} DEPS ${args_DEPS})
+        return()
+    endif()
+
     # compile actual kernels
     foreach(src ${args_SRCS})
         file(APPEND ${kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
         set(KERNELS_SRC ${KERNELS_SRC} "${CMAKE_CURRENT_SOURCE_DIR}/${src}" CACHE INTERNAL "kernels source")
         set(__lite_cc_files ${__lite_cc_files} "${CMAKE_CURRENT_SOURCE_DIR}/${src}" CACHE INTERNAL "")
     endforeach()
+
+endfunction()
+
+
+
+
+
+function(cc_binary TARGET_NAME)
+  set(options "")
+  set(oneValueArgs "")
+  set(multiValueArgs SRCS DEPS)
+  cmake_parse_arguments(cc_binary "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+  add_executable(${TARGET_NAME} ${cc_binary_SRCS})
+  if(cc_binary_DEPS)
+    target_link_libraries(${TARGET_NAME} ${cc_binary_DEPS})
+    add_dependencies(${TARGET_NAME} ${cc_binary_DEPS})
+    common_link(${TARGET_NAME})
+  endif()
+  get_property(os_dependency_modules GLOBAL PROPERTY OS_DEPENDENCY_MODULES)
+  target_link_libraries(${TARGET_NAME} ${os_dependency_modules})
+  find_fluid_modules(${TARGET_NAME})
+endfunction(cc_binary)
+
+# Add a unit-test name to file for latter offline manual test.
+set(offline_test_registry_file "${CMAKE_BINARY_DIR}/lite_tests.txt")
+file(WRITE ${offline_test_registry_file} "") # clean
+
+function(lite_cc_test TARGET)
+  if(NOT WITH_TESTING)
+      return()
+  endif()
+  set(options "")
+  set(oneValueArgs "")
+
+  set(multiValueArgs SRCS DEPS)
+  cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+  cc_binary(${TARGET} SRCS ${args_SRCS} DEPS ${deps} core_tester)
+  file(APPEND ${offline_test_registry_file} "${TARGET}\n")
+  add_dependencies(${TARGET} bundle_full_api)
+  target_link_libraries(${TARGET} ${CMAKE_BINARY_DIR}/libpaddle_api_full_bundled.a)
 
 endfunction()

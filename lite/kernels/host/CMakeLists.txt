@@ -1,11 +1,11 @@
 if(LITE_ON_MODEL_OPTIMIZE_TOOL)
   set(IS_FAKED_KERNEL true CACHE INTERNAL "")
 else()
+  set(lite_kernel_deps ${lite_kernel_deps} math_host CACHE INTERNAL "")
   set(IS_FAKED_KERNEL false CACHE INTERNAL "")
 endif()
 
 message(STATUS "compile with lite host kernels")
-set(lite_kernel_deps ${lite_kernel_deps} math_host CACHE INTERNAL "")
 
 # basic kernels
 add_kernel(feed_compute_host Host basic SRCS feed_compute.cc)

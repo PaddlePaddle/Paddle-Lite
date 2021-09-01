@@ -1,8 +1,9 @@
 # NOTE we leave the add_kernel not protected by LITE_WITH_LIGHT_WEIGHT_FRAMEWORK so that all the kernels will be registered
 # to the model_optimize_tool.
 
-if(LITE_WITH_ARM)
+if(LITE_WITH_ARM AND NOT LITE_ON_MODEL_OPTIMIZE_TOOL)
   set(IS_FAKED_KERNEL false CACHE INTERNAL "")
+  set(lite_kernel_deps ${lite_kernel_deps} math_arm CACHE INTERNAL "")
 elseif(LITE_ON_MODEL_OPTIMIZE_TOOL OR LITE_WITH_PYTHON)
   set(IS_FAKED_KERNEL true CACHE INTERNAL "")
 else()
@@ -10,7 +11,6 @@ else()
 endif()
 
 message(STATUS "compile with lite ARM kernels")
-set(lite_kernel_deps ${lite_kernel_deps} math_arm CACHE INTERNAL "")
 
 # 1. basic kernels for basic models
 # for conv op

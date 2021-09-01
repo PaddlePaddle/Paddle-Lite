@@ -1,5 +1,7 @@
 if (NOT LITE_WITH_X86)
-  return ()
+  return()
+elseif(LITE_ON_MODEL_OPTIMIZE_TOOL)
+  return()
 endif ()
 
 configure_file (cupti_lib_path.h.in ${CMAKE_CURRENT_BINARY_DIR}/cupti_lib_path.h)

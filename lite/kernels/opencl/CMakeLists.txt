@@ -1,12 +1,14 @@
 if(LITE_WITH_OPENCL)
   set(IS_FAKED_KERNEL false CACHE INTERNAL "")
+  set(cl_kernel_deps ops cl_runtime cl_context cl_wrapper cl_target_wrapper cl_image_converter)
+  set(lite_kernel_deps ${lite_kernel_deps} ${cl_kernel_deps} CACHE INTERNAL "")
 elseif(LITE_ON_MODEL_OPTIMIZE_TOOL OR LITE_WITH_PYTHON)
   set(IS_FAKED_KERNEL true CACHE INTERNAL "")
 else()
   return()
 endif()
 
-set(cl_kernel_deps ops cl_runtime cl_context cl_wrapper cl_target_wrapper cl_image_converter)
+
 
 #####################
 # image kernel      #
@@ -156,7 +158,7 @@ add_kernel(matmul_opencl_buffer OPENCL basic SRCS matmul_buffer_compute.cc)
 # extra
 # wait to add ...
 
-set(lite_kernel_deps ${lite_kernel_deps} ${cl_kernel_deps} CACHE INTERNAL "")
+
 
 ######################
 # buffer kernel test #
