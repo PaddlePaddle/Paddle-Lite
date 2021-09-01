@@ -3,6 +3,8 @@ if(LITE_WITH_METAL)
   set(metal_kernel_deps ops metal_target_wrapper)
   find_library(METAL_LIBRARY Metal REQUIRED)
   set(lite_kernel_deps ${lite_kernel_deps} metal_target_wrapper CACHE INTERNAL "")
+  add_library(METAL_BASE STATIC IMPORTED )
+  set_target_properties(METAL_BASE PROPERTIES IMPORTED_LOCATION ${METAL_LIBRARY})
 elseif(LITE_ON_MODEL_OPTIMIZE_TOOL OR LITE_WITH_PYTHON)
   set(IS_FAKED_KERNEL true CACHE INTERNAL "")
 else()
@@ -56,8 +58,8 @@ add_kernel(transpose_metal_image METAL basic SRCS image_op/transpose_image_compu
 # add_kernel(box_coder_metal_image METAL basic SRCS image_op/box_coder_image_compute.mm)
 
 
-add_library(METAL_BASE STATIC IMPORTED )
-set_target_properties(METAL_BASE PROPERTIES IMPORTED_LOCATION ${METAL_LIBRARY})
+
+
 
 
 lite_cc_test(test_batch_norm_metal_image_metal SRCS image_op/batch_norm_image_compute_test.mm

@@ -105,8 +105,6 @@ add_subdirectory(imagination_nna)
 add_subdirectory(intel_fpga)
 add_subdirectory(nnadapter)
 
-lite_cc_library(kernels SRCS ${KERNELS_SRC} DEPS ${lite_kernel_deps})
-add_dependencies(kernels utils)
 #-------------------------------post_process----------------------------------------------------------------
 # tricks to create headfiles for opt
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/all_kernel_faked_dir)
@@ -121,7 +119,8 @@ execute_process(
     RESULT_VARIABLE result)
 
 file(GLOB all_kernel_faked_src ${CMAKE_BINARY_DIR}/all_kernel_faked_dir/*.cc)
-target_sources(kernels PUBLIC ${all_kernel_faked_src})
+lite_cc_library(kernels SRCS ${KERNELS_SRC} ${all_kernel_faked_src} DEPS ${lite_kernel_deps})
+add_dependencies(kernels utils)
 
 # create headfile to restore ops info sorted by suppported platforms
 execute_process(

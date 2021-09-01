@@ -10,6 +10,7 @@ execute_process(
 execute_process(
     COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/parse_kernel_registry.py
     ${kernels_src_list}
+    ${fake_kernels_src_list}
     ${CMAKE_BINARY_DIR}/lite/api/paddle_use_kernels.h
     "${LITE_OPTMODEL_DIR}/.tailored_kernels_list"
     ${LITE_BUILD_TAILOR}
