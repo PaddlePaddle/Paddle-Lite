@@ -31,11 +31,27 @@ class SparseConvDetectPass : public ProgramPass {
   int ComputeSparseZeros(const lite::Tensor* weights, const int num);
 
   template <typename T>
+  int ComputeSparseZeros(const lite::Tensor* weights,
+                         int* num_build_nonzeroes,
+                         const int height,
+                         const int width);
+
+  template <typename T>
   int ComputeSparseWeight(const lite::Tensor* w_tensor,
                           const int M,
                           const int K,
                           const int N,
                           const int num_nonzeroes,
+                          lite::Tensor* nonzero_output_tensor,
+                          lite::Tensor* oc_nonzeros_tensor,
+                          lite::Tensor* diffs_tensor);
+  template <typename T>
+  int ComputeSparseWeight(const lite::Tensor* w_tensor,
+                          const int M,
+                          const int K,
+                          const int N,
+                          const int num_nonzeroes,
+                          const int num_build_nonzeroes,
                           lite::Tensor* nonzero_output_tensor,
                           lite::Tensor* oc_nonzeros_tensor,
                           lite::Tensor* diffs_tensor);
@@ -52,10 +68,15 @@ class SparseConvDetectPass : public ProgramPass {
                                  OpInfo* op_info,
                                  const std::string& name);
 
+  void SetSparseThreshold(float sparse_threshold) {
+    sparse_threshold_ = sparse_threshold;
+  }
+
  private:
-  float thread_hold_{0.4f};
+  float sparse_threshold_{0.5f};
 };
 
 }  // namespace mir
 }  // namespace lite
 }  // namespace paddle
+

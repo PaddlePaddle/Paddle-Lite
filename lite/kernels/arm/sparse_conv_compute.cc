@@ -155,7 +155,7 @@ void SparseConvCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                                    im_size,
                                                    param,
                                                    &ctx);
-  KERNEL_FUNC_NAME("sparse_conv_fp32_pipelined")
+  KERNEL_FUNC_NAME("sparse_conv_int8_fp32_pipelined")
 }
 
 template <>
@@ -196,7 +196,7 @@ void SparseConvCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
                                                    im_size,
                                                    param,
                                                    &ctx);
-  KERNEL_FUNC_NAME("sparse_conv_fp32_pipelined")
+  KERNEL_FUNC_NAME("sparse_conv_int8_int8_pipelined")
 }
 
 }  // namespace arm
