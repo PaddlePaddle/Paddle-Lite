@@ -23,12 +23,6 @@ using namespace metal;
 #define P half
 #endif
 
-#define RELU relu
-#define ACT_TYPE relu
-#include "ElementwiseAddActKernel.inc.metal"
-#undef ACT_TYPE
-#undef RELU
-
 #define PRELU_CHANNEL prelu_channel
 #define ACT_TYPE channel
 #include "ElementwiseAddActKernel.inc.metal"
