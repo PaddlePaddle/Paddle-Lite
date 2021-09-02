@@ -231,7 +231,7 @@ function make_tiny_publish_so {
       -DLITE_ON_TINY_PUBLISH=ON
 
   # Step4. Compile libs: cxx_lib, java_lib
-  make publish_inference -j
+  make publish_inference -j$NUM_PROC
   cd - > /dev/null
 }
 
