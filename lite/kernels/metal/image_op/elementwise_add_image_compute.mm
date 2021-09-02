@@ -35,8 +35,7 @@ void ElementwiseAddImageCompute::PrepareForRun() {
 }
 
 void ElementwiseAddImageCompute::ReInitWhenNeeded() {
-    const auto& param = this->Param<param_t>();
-    auto input_dims = param.X->dims();
+    auto input_dims = elementwise_param_.X->dims();
 
     if (last_input_dims_ != input_dims) {
         release_memory();
@@ -47,15 +46,21 @@ void ElementwiseAddImageCompute::ReInitWhenNeeded() {
 }
 
 void ElementwiseAddImageCompute::init_memory() {
-    const auto& param = this->Param<param_t>();
-    auto output_dims = param.Out->dims();
-    auto input_dims = param.X->dims();
+    if (!param_.is_type<param_t>()) {
+        fuse_flag_ = true;
+        elementwise_param_ = this->Param<operators::FusionElementwiseActivationParam>();
+    } else {
+        fuse_flag_ = false;
+        elementwise_param_ = this->Param<operators::ElementwiseActivationParam>();
+    }
+    auto output_dims = elementwise_param_.Out->dims();
+    auto input_dims = elementwise_param_.X->dims();
 
 #ifdef LITE_WITH_METAL_FULL
 #else
-    output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
-    input_buffer_x_ = param.X->data<MetalHalf, MetalImage>();
-    input_buffer_y_ = param.Y->data<MetalHalf, MetalImage>();
+    output_buffer_ = elementwise_param_.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
+    input_buffer_x_ = elementwise_param_.X->data<MetalHalf, MetalImage>();
+    input_buffer_y_ = elementwise_param_.Y->data<MetalHalf, MetalImage>();
 #endif
     last_input_dims_ = input_dims;
 }
@@ -86,15 +91,13 @@ void ElementwiseAddImageCompute::init_for_run() {
     }
 #endif
 
-  if (!param_.is_type<param_t>()) {
-    const auto& param = this->Param<perators::FusionElementwiseActivationParam>();
-    auto act_t =param.act_type;
+  if (fuse_flag_) {
+    auto act_t =elementwise_param_.act_type;
     VLOG(4) << "elementwise_add act: " << act_t;
     if (act_t != "relu") {
       LOG(FATAL) << "Unsupported Activation type: " << act_t << ", support Relu only.";
     }
     should_use_mps = false;
-    fuse_flag_ = true;
   }
 
     use_mps_ = should_use_mps;
@@ -133,9 +136,8 @@ void ElementwiseAddImageCompute::run_without_mps() {
 }
 
 void ElementwiseAddImageCompute::setup_without_mps() {
-    const auto& param = this->Param<param_t>();
-    auto output_dims = param.Out->dims();
-    auto input_dims = param.X->dims();
+    auto output_dims = elementwise_param_.Out->dims();
+    auto input_dims = elementwise_param_.X->dims();
 
     std::vector<int> xdim, ydim;
     for (int i = 0; i < 4; i++) {
@@ -143,7 +145,7 @@ void ElementwiseAddImageCompute::setup_without_mps() {
         ydim.push_back((int)input_buffer_y_->dim_[i]);
     }
 
-    auto axis = param.axis;
+    auto axis = elementwise_param_.axis;
     int params_axis = 0;
     if (axis == -1) {
         params_axis = 4 - (int)(input_buffer_y_->tensor_dim_.size());
@@ -213,7 +215,6 @@ void ElementwiseAddImageCompute::run_with_mps() {
 void ElementwiseAddImageCompute::setup_with_mps() {
     if (@available(iOS 11.3, *)) {
         auto backend = (__bridge MetalContextImp*)metal_context_->backend();
-        //
         mps_add_op_ = (__bridge_retained void*)[[MPSCNNAdd alloc] initWithDevice:backend.device];
         // MPS input and output
         auto input_x_c = MAX(4, static_cast<int>(input_buffer_x_->tensor_dim_[1]));

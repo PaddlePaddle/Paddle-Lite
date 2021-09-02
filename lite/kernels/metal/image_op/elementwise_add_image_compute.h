@@ -76,6 +76,7 @@ class ElementwiseAddImageCompute
     MetalContext* metal_context_;
 
     bool fuse_flag_{false};
+    const param_t* elementwise_param_{nullptr};
 };
 
 }  // namespace metal
