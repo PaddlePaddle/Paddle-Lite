@@ -20,27 +20,27 @@ using namespace metal;
 #define P float
 
 #define RELU relu
-#define RELU_TYPE relu
+#define ACT_TYPE relu
 #include "ElementwiseAddActKernel.inc.metal"
-#undef RELU_TYPE
+#undef ACT_TYPE
 #undef RELU
 
 #define PRELU_CHANNEL prelu_channel
-#define RELU_TYPE channel
+#define ACT_TYPE channel
 #include "ElementwiseAddActKernel.inc.metal"
-#undef RELU_TYPE
+#undef ACT_TYPE
 #undef PRELU_CHANNEL
 
 #define PRELU_ELEMENT element
-#define RELU_TYPE prelu_element
+#define ACT_TYPE prelu_element
 #include "ElementwiseAddActKernel.inc.metal"
-#undef RELU_TYPE
+#undef ACT_TYPE
 #undef PRELU_ELEMENT
 
 #define PRELU_OTHER other
-#define RELU_TYPE prelu_other
+#define ACT_TYPE prelu_other
 #include "ElementwiseAddActKernel.inc.metal"
-#undef RELU_TYPE
+#undef ACT_TYPE
 #undef PRELU_OTHER
 
 #undef P
@@ -48,27 +48,27 @@ using namespace metal;
 #define P half
 
 #define PRELU_CHANNEL channel
-#define RELU_TYPE channel
+#define ACT_TYPE channel
 #include "ElementwiseAddActKernel.inc.metal"
-#undef RELU_TYPE
+#undef ACT_TYPE
 #undef PRELU_CHANNEL
 
 #define PRELU_ELEMENT element
-#define RELU_TYPE prelu_element
+#define ACT_TYPE prelu_element
 #include "ElementwiseAddActKernel.inc.metal"
-#undef RELU_TYPE
+#undef ACT_TYPE
 #undef PRELU_ELEMENT
 
 #define PRELU_OTHER other
-#define RELU_TYPE prelu_other
+#define ACT_TYPE prelu_other
 #include "ElementwiseAddActKernel.inc.metal"
-#undef RELU_TYPE
+#undef ACT_TYPE
 #undef PRELU_OTHER
 
 #define RELU relu
-#define RELU_TYPE relu
+#define ACT_TYPE relu
 #include "ElementwiseAddActKernel.inc.metal"
-#undef RELU_TYPE
+#undef ACT_TYPE
 #undef RELU
 
 #undef P
