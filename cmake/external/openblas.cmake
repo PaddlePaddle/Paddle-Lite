@@ -70,7 +70,11 @@ INCLUDE_DIRECTORIES(${CBLAS_INC_DIR})
 # FIXME(gangliao): generate cblas target to track all high performance
 # linear algebra libraries for cc_library(xxx SRCS xxx.c DEPS cblas)
 SET(dummyfile ${CMAKE_CURRENT_BINARY_DIR}/cblas_dummy.c)
-FILE(WRITE ${dummyfile} "const char *dummy_cblas = \"${dummyfile}\";")
+FILE(WRITE ${dummyfile}_tmp "const char *dummy_cblas = \"${dummyfile}\";")
+execute_process(
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different "${dummyfile}_tmp" "${dummyfile}"
+  COMMAND ${CMAKE_COMMAND} -E remove "${dummyfile}_tmp")
+
 ADD_LIBRARY(cblas STATIC ${dummyfile})
 
 IF("${CBLAS_PROVIDER}" STREQUAL "MKLML")

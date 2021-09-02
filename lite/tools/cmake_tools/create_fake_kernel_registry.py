@@ -22,6 +22,8 @@ Usage: to generate `all_kernel_faked.cc`, `all_kernel_faked.cc` is used for
 from __future__ import print_function
 import sys
 import os
+import filecmp
+import shutil
 import logging
 from ast import RegisterLiteKernelParser
 from utils import *
@@ -156,12 +158,16 @@ def parse_fake_kernels_from_path(list_path):
                         out_src_lines.append(io)
                     out_lines.append("    .Finalize();")
                     out_lines.append("")
-                    out_lines.append(gen_use_kernel_statement(k.op_type, k.target, k.precision, k.data_layout, k.alias))
                     out_src_lines.append("    .Finalize();")
                     out_src_lines.append("")
-                    out_src_lines.append(gen_use_kernel_statement(k.op_type, k.target, k.precision, k.data_layout, k.alias))
-                    with open(os.path.join(src_dest_path, '%s.cc' %(kernel_name)), 'w') as file:
+                    tmp_src = os.path.join(src_dest_path, '%s.cc' %(kernel_name))
+                    dst = os.path.join(src_dest_path, '%s.cc_tmp' %(kernel_name))
+                    with open(os.path.join(src_dest_path, '%s.cc_tmp' %(kernel_name)), 'w') as file:
                         file.write('\n'.join(out_src_lines))
+                    if not os.path.exists(dst) or not filecmp.cmp(dst, tmp_src):
+                        shutil.move(tmp_src, dst)
+                    else:
+                        os.remove(tmp_src)
 
 def parse_sppported_kernels_from_path(list_path):
     with open(list_path) as f:
