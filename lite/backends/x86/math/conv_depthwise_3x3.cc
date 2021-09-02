@@ -14,9 +14,9 @@ limitations under the License. */
 
 #include <time.h>
 #include <vector>
+#include "lite/backends/x86/math/avx_mathfuns.h"
 #include "lite/backends/x86/math/conv_depthwise_direct.h"
 #include "lite/backends/x86/math/conv_utils.h"
-#include "lite/backends/x86/math/avx_mathfuns.h"
 #include "lite/core/memory.h"
 #ifdef __AVX__
 #include <immintrin.h>
