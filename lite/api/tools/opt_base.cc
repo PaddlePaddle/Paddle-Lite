@@ -55,7 +55,7 @@ void OptBase::SetQuantType(const std::string& quant_type) {
 
 void OptBase::SetSparseThreshold(float sparse_threshold) {
   if (sparse_threshold < 0.0 || sparse_threshold > 1.0) {
-    OPT_LOG_FATAL << "Please set sparse_threshold between 0.0 and 1.0."
+    OPT_LOG_FATAL << "Please set sparse_threshold between 0.0 and 1.0.";
   } else {
     opt_config_.set_sparse_threshold(sparse_threshold);
   }

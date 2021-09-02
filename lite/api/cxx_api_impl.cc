@@ -18,9 +18,9 @@
 #include <string>
 #include "lite/api/paddle_api.h"
 #include "lite/core/device_info.h"
-#include "lite/core/mir/sparse_conv_detect_pass.h"
 #include "lite/core/optimizer/mir/pass_manager.h"
 #include "lite/core/optimizer/mir/post_quant_dynamic_pass.h"
+#include "lite/core/optimizer/mir/sparse_conv_detect_pass.h"
 #include "lite/core/version.h"
 
 #ifndef LITE_ON_TINY_PUBLISH

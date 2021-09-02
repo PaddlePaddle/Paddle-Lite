@@ -111,8 +111,8 @@ int main(int argc, char** argv) {
     opt.SetQuantModel(true);
     opt.SetQuantType(FLAGS_quant_type);
   }
-  if (FLAGS_sparse_threshold >= 0.0 && FlAGS_sparse_threshold <= 1.0) {
-    opt.SetSparseThreshold(FLAGS_sparse_threshold)
+  if (FLAGS_sparse_threshold >= 0.0 && FLAGS_sparse_threshold <= 1.0) {
+    opt.SetSparseThreshold(FLAGS_sparse_threshold);
   }
   if (FLAGS_print_all_ops) {
     opt.PrintAllOps();

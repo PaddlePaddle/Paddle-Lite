@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/mir/sparse_conv_detect_pass.h"
+#include "lite/core/optimizer/mir/sparse_conv_detect_pass.h"
 #include <math.h>
 #include <list>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
-#include "lite/core/mir/pass_registry.h"
+#include "lite/core/optimizer/mir/pass_registry.h"
 #include "lite/utils/string.h"
 
 namespace paddle {
@@ -486,4 +486,3 @@ REGISTER_MIR_PASS(sparse_conv_detect_pass,
     .ExcludeTargets({TARGET(kHuaweiAscendNPU)})
     .ExcludeTargets({TARGET(kX86)})
     .ExcludeTargets({TARGET(kImaginationNNA)});
-
