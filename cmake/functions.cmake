@@ -149,5 +149,6 @@ function(lite_cc_test TARGET)
   file(APPEND ${offline_test_registry_file} "${TARGET}\n")
   add_dependencies(${TARGET} bundle_full_api)
   target_link_libraries(${TARGET} ${CMAKE_BINARY_DIR}/libpaddle_api_full_bundled.a)
-
+  # collect targets need to compile for lite
+  add_dependencies(lite_compile_deps ${TARGET})
 endfunction()
