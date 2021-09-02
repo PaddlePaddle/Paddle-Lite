@@ -20,7 +20,7 @@
 
 using namespace metal;
 
-kernel void FUNC3_(elementwise_add, ACT_TYPE)(texture2d_array<P, access::read> inputX[[texture(0)]],
+kernel void FUNC2_(elementwise_add, ACT_TYPE)(texture2d_array<P, access::read> inputX[[texture(0)]],
     texture2d_array<P, access::read> inputY[[texture(1)]],
     texture2d_array<P, access::write> outTexture[[texture(2)]],
     constant ElementwiseAddParam& pm[[buffer(0)]],

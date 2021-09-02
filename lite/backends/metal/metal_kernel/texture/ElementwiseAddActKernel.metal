@@ -17,7 +17,11 @@
 #include "Common.metal"
 using namespace metal;
 
+#if LITE_WITH_METAL_FULL
 #define P float
+#else
+#define P half
+#endif
 
 #define RELU relu
 #define ACT_TYPE relu
@@ -43,32 +47,3 @@ using namespace metal;
 #undef ACT_TYPE
 #undef PRELU_OTHER
 
-#undef P
-
-#define P half
-
-#define PRELU_CHANNEL channel
-#define ACT_TYPE channel
-#include "ElementwiseAddActKernel.inc.metal"
-#undef ACT_TYPE
-#undef PRELU_CHANNEL
-
-#define PRELU_ELEMENT element
-#define ACT_TYPE prelu_element
-#include "ElementwiseAddActKernel.inc.metal"
-#undef ACT_TYPE
-#undef PRELU_ELEMENT
-
-#define PRELU_OTHER other
-#define ACT_TYPE prelu_other
-#include "ElementwiseAddActKernel.inc.metal"
-#undef ACT_TYPE
-#undef PRELU_OTHER
-
-#define RELU relu
-#define ACT_TYPE relu
-#include "ElementwiseAddActKernel.inc.metal"
-#undef ACT_TYPE
-#undef RELU
-
-#undef P
