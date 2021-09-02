@@ -27,6 +27,7 @@
 #include "lite/utils/string.h"
 #include "lite/utils/timer.h"
 
+// Model options
 DEFINE_string(optimized_model_path,
               "",
               "the path of the model that is optimized by opt.");
@@ -52,8 +53,15 @@ DEFINE_string(input_data_path,
               "",
               "the path of input image, if not set "
               "input_data_path, the input of model will be 1.0.");
+DEFINE_bool(show_output, false, "Wether to show the output in shell.");
+
+// Common runtime parameters
 DEFINE_int32(warmup, 0, "warmup times");
 DEFINE_int32(repeats, 1, "repeats times");
+DEFINE_double(run_delay,
+              -1.0,
+              "The delay in seconds between subsequent benchmark runs. "
+              "Non-positive values mean use no delay.");
 DEFINE_int32(power_mode,
              3,
              "arm power mode: "
@@ -68,7 +76,48 @@ DEFINE_string(result_path,
 DEFINE_bool(use_fp16,
             false,
             "Register fp16 arm-cpu kernel when optimized model");
-DEFINE_bool(show_output, false, "Wether to show the output in shell.");
+
+// GPU options
+DEFINE_bool(use_gpu, false, "Use gpu to do inference.");
+DEFINE_string(gpu_backend,
+              "opencl",
+              "To use a particular gpu backend for execution, "
+              "and fail if unsuccessful. Should be one of: opencl, metal.");
+DEFINE_string(
+    gpu_precision,
+    "fp16",
+    "Allow to process computation in lower precision than fp32 in GPU."
+    "By default, it's enabled and is fp16.");
+DEFINE_string(
+    opencl_cache_dir,
+    "",
+    "Set a directory in which kernel binary and tuned file will be stored.");
+DEFINE_string(opencl_kernel_cache_file,
+              "paddle_lite_opencl_kernel.bin",
+              "Set opencl kernel binary filename. "
+              "We strongly recommend each model has a unique binary name.");
+DEFINE_string(opencl_tuned_file,
+              "paddle_lite_opencl_tuned.params",
+              "Set opencl tuned filename."
+              "We strongly recommend each model has a unique binary name.");
+
+// Profiling options (TODO)
+DEFINE_bool(report_peak_memory_footprint,
+            false,
+            "Whether to report the peak memory footprint by periodically "
+            "checking the memory footprint. Internally, a separate thread "
+            " will be spawned for this periodic check. Therefore, "
+            "the performance benchmark result could be affected.");
+DEFINE_int32(memory_footprint_check_interval_ms,
+             5,
+             "The interval in millisecond between two consecutive memory "
+             "footprint checks. This is only used when "
+             "--report_peak_memory_footprint is set to true.");
+DEFINE_bool(verbose,
+            true,
+            "Whether to log parameters whose values are not set. "
+            "By default, only log those parameters that are set "
+            "by parsing their values from the commandline flags.");
 
 namespace paddle {
 namespace lite_api {
