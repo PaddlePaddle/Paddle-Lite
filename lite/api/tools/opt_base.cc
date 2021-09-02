@@ -53,6 +53,14 @@ void OptBase::SetQuantType(const std::string& quant_type) {
   }
 }
 
+void OptBase::SetSparseThreshold(float sparse_threshold) {
+  if (sparse_threshold < 0.0 || sparse_threshold > 1.0) {
+    OPT_LOG_FATAL << "Please set sparse_threshold between 0.0 and 1.0."
+  } else {
+    opt_config_.set_sparse_threshold(sparse_threshold);
+  }
+}
+
 void OptBase::SetPassesInternal(
     const std::vector<std::string>& passes_internal) {
   opt_config_.set_passes_internal(passes_internal);
@@ -365,6 +373,8 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "  Arguments of mode quantization in opt:\n"
       "        `--quant_model=(true|false)`\n"
       "        `--quant_type=(QUANT_INT8|QUANT_INT16)`\n"
+      "  Arguements of sparse convolution in opt: \n"
+      "        `--sparse_threshold=(float)`\n"
       "  Arguments of enable_fp16 in opt: \n"
       "        `--enable_fp16=(true|false)`\n"
       "  Arguments of model checking and ops information:\n"

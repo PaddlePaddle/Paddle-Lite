@@ -35,6 +35,11 @@ def main():
         help="{true, false} Whether to enable FP16 calculation, FP16 "
              "calculation will cause a lower precision but higher inference speed.")
 
+   # arguments of sparsification
+   parser.add_argument("--sparse_threshold", type=float, default=0.5,
+        help="Set a value to determine the lower bound for sparse pass."
+             "0.5 means sparse pass will be skipped if the current weight sparsity is smaller than 0.5.")
+
    # arguments of help information
     parser.add_argument('--version', action='version', version=a.version())
     parser.add_argument("--print_supported_ops", type=str, default="false",\
@@ -87,6 +92,8 @@ def main():
     if args.quant_model == "true":
         a.set_quant_model(True)
         a.set_quant_type(args.quant_type)
+    if args.sparse_threshold >= 0.0 and args.sparse_threshold <= 1.0:
+        a.set_sparse_threshold(args.sparse_threshold)
     """ print ops info """
     if args.print_all_ops == "true":
          a.print_all_ops()

@@ -53,6 +53,7 @@ class LITE_API OptBase {
   void RecordModelInfo(bool record_strip_info = true);
   void SetQuantModel(bool quant_model);
   void SetQuantType(const std::string &quant_type);
+  void SetSparseThreshold(const float sparse_threshold = 0.5f);
   // set optimized_model type
   void SetModelType(std::string model_type = "naive_buffer");
   // internal inference for developer, not recommanded.
