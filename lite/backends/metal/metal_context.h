@@ -21,7 +21,6 @@
 
 namespace paddle {
 namespace lite {
-class RuntimeProgram;
 
 class MetalContext {
    public:
@@ -29,7 +28,6 @@ class MetalContext {
     ~MetalContext();
 
     // external
-    void set_program(RuntimeProgram* program = nullptr);
     void wait_all_completed();
 
     // config
@@ -55,15 +53,11 @@ class MetalContext {
     void* backend() const {
         return mContext;
     }
-    RuntimeProgram* program() const {
-        return program_;
-    }
 
    private:
     bool use_mps_{false};
     bool use_aggressive_{false};
     void* mContext = nullptr;
-    RuntimeProgram* program_ = nullptr;
 };
 }  // namespace lite
 }  // namespace paddle

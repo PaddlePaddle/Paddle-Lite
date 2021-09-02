@@ -30,10 +30,6 @@ MetalContext::~MetalContext() {
     mContext = nullptr;
 }
 
-void MetalContext::set_program(RuntimeProgram* program) {
-    program_ = program;
-}
-
 void MetalContext::wait_all_completed() {
     [(__bridge MetalContextImp*)mContext waitAllCompleted];
     [(__bridge MetalContextImp*)mContext fetch_data_from_gpu];

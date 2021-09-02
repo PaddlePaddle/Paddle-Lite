@@ -451,13 +451,6 @@ void RuntimeProgram::Run() {
   }
 #endif
 
-#ifdef LITE_WITH_METAL
-  if (metal_ctx_) {
-    MetalContext* cmd_ctx = (*metal_ctx_).As<MTLContext>().context();
-    cmd_ctx->set_program(this);
-  }
-#endif
-
 #ifdef LITE_WITH_FPGA
   Monitor& monitor = Monitor::get_instance();
   monitor.inferStart();
