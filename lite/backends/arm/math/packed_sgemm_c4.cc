@@ -2027,14 +2027,12 @@ void sgemm_prepack_c4_small(int M,
   const int ldb_byte = 4 * N * sizeof(float);
   const int kcnt = k_round >> 2;
 #ifdef __aarch64__
-  float32x4_t vzero = vdupq_n_f32(0.f);
-#endif
-  for (int m = 0; m < mloop; ++m) {
-    const float* b = B;
-    int n = N;
-#ifdef __aarch64__
-    // clang-format off
-    if (ctx->arch() == kA35) {
+  if (ctx->arch() == kA35) {
+    float32x4_t vzero = vdupq_n_f32(0.f);
+    for (int m = 0; m < mloop; ++m) {
+      const float* b = B;
+      int n = N;
+      // clang-format off
       for (; n > 7; n -= 8) {
         int cnt = kcnt;
         const float* a_ptr = A_packed;
@@ -2383,7 +2381,14 @@ void sgemm_prepack_c4_small(int M,
           );
         b += 4;
       }
-    } else {
+    A_packed += lda;
+  }
+} else {
+  float32x4_t vzero = vdupq_n_f32(0.f);
+  for (int m = 0; m < mloop; ++m) {
+    const float* b = B;
+    int n = N;
+    // clang-format off
       for (; n > 7; n -= 8) {
         int cnt = kcnt;
         const float* a_ptr = A_packed;
@@ -2636,9 +2641,15 @@ void sgemm_prepack_c4_small(int M,
              );
         b += 4;
       }
-    }
+    A_packed += lda;
+}
+}
+}
 // clang-format on
 #else
+  for (int m = 0; m < mloop; ++m) {
+    const float* b = B;
+    int n = N;
     for (; n > 7; n -= 8) {
       int cnt = kcnt;
       const float* a_ptr = A_packed;
@@ -2894,10 +2905,10 @@ void sgemm_prepack_c4_small(int M,
       // clang-format on
       b += 4;
     }
-#endif
     A_packed += lda;
   }
 }
+#endif
 
 void sgemm_prepack_c8_int16_small(int M,
                                   int N,
