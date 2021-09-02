@@ -58,7 +58,8 @@ void ElementwiseAddImageCompute::init_memory() {
 
 #ifdef LITE_WITH_METAL_FULL
 #else
-    output_buffer_ = elementwise_param_->Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
+    output_buffer_ =
+        elementwise_param_->Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
     input_buffer_x_ = elementwise_param_->X->data<MetalHalf, MetalImage>();
     input_buffer_y_ = elementwise_param_->Y->data<MetalHalf, MetalImage>();
 #endif
@@ -91,15 +92,16 @@ void ElementwiseAddImageCompute::init_for_run() {
     }
 #endif
 
-  if (fuse_flag_) {
-    const auto* op_param = static_cast<const operators::FusionElementwiseActivationParam*>(elementwise_param_);
-    auto act_t = op_param.act_type;
-    VLOG(4) << "elementwise_add act: " << act_t;
-    if (act_t != "relu") {
-      LOG(FATAL) << "Unsupported Activation type: " << act_t << ", support Relu only.";
+    if (fuse_flag_) {
+        const auto* op_param =
+            static_cast<const operators::FusionElementwiseActivationParam*>(elementwise_param_);
+        auto act_t = op_param.act_type;
+        VLOG(4) << "elementwise_add act: " << act_t;
+        if (act_t != "relu") {
+            LOG(FATAL) << "Unsupported Activation type: " << act_t << ", support Relu only.";
+        }
+        should_use_mps = false;
     }
-    should_use_mps = false;
-  }
 
     use_mps_ = should_use_mps;
     if (use_mps_) {
@@ -162,8 +164,7 @@ void ElementwiseAddImageCompute::setup_without_mps() {
     int add_by_channel = 0;
     if (input_buffer_y_->tensor_dim_.size() == 1 &&
         (axis == 1 ||
-            (axis == -1 &&
-                input_buffer_y_->tensor_dim_[0] == input_buffer_x_->dim_[3]))) {
+            (axis == -1 && input_buffer_y_->tensor_dim_[0] == input_buffer_x_->dim_[3]))) {
         add_by_channel = 1;
     }
     if (add_by_channel == 1 || params_fast == 1) {
@@ -189,7 +190,7 @@ void ElementwiseAddImageCompute::setup_without_mps() {
     params_buffer_ =
         std::make_shared<MetalBuffer>(metal_context_, sizeof(element_params), &element_params);
 
-    function_name_ = fuse_flag_ ? "elementwise_add_relu":"elementwise_add";
+    function_name_ = fuse_flag_ ? "elementwise_add_relu" : "elementwise_add";
 
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
