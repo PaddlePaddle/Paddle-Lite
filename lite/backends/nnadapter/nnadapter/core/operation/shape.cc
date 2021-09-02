@@ -38,19 +38,18 @@ int PrepareShape(hal::Operation* operation) {
   }
 
   out_type.lifetime = NNADAPTER_TEMPORARY_SHAPE;
-  uint32_t size = static_cast<uint32_t>(sizeof(NNAdapterOperandDimensionType));
-  void* shape_ptr = malloc(size);
-  memset(shape_ptr, 0, size);
-  output_operand->length = size;
-  output_operand->buffer = shape_ptr;
-  NNAdapterOperandDimensionType* tmp_shape =
-      reinterpret_cast<NNAdapterOperandDimensionType*>(shape_ptr);
-  tmp_shape->count = in_type.dimension_count;
-  memcpy(tmp_shape->data,
+  output_operand->length = sizeof(NNAdapterOperandDimensionType);
+  output_operand->buffer = malloc(output_operand->length);
+  NNADAPTER_CHECK(output_operand->buffer) << "Out of memory!";
+  memset(output_operand->buffer, 0, output_operand->length);
+  NNAdapterOperandDimensionType* shape_hints =
+      reinterpret_cast<NNAdapterOperandDimensionType*>(output_operand->buffer);
+  shape_hints->count = in_type.dimension_count;
+  memcpy(shape_hints->data,
          in_type.dimensions,
          NNADAPTER_MAX_SIZE_OF_DIMENSIONS * sizeof(int32_t));
-  tmp_shape->dynamic_count = in_type.dynamic_dimension_count;
-  memcpy(tmp_shape->dynamic_data,
+  shape_hints->dynamic_count = in_type.dynamic_dimension_count;
+  memcpy(shape_hints->dynamic_data,
          in_type.dynamic_dimensions,
          NNADAPTER_MAX_SIZE_OF_DYNAMIC_DIMENSIONS *
              NNADAPTER_MAX_SIZE_OF_DIMENSIONS * sizeof(int32_t));

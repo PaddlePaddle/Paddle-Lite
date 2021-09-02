@@ -323,13 +323,17 @@ NNAdapterOperation* Converter::AddOperation(
   return operation;
 }
 
+NNAdapterOperation* Converter::AddOperation(
+    NNAdapterOperationType type,
+    std::vector<NNAdapterOperand*> input_operands,
+    std::vector<NNAdapterOperand*> output_operands) {
+  return AddOperation(type, &input_operands, &output_operands);
+}
+
 NNAdapterOperand* Converter::AddShapeOperation(
-    const std::string& input_name,
+    NNAdapterOperand* input_operand,
     const std::string& output_name,
     NNAdapterOperandPrecisionCode output_precision) {
-  // Input operand
-  auto* input_operand = GetMappedOperand(input_name);
-
   // Dtype operand
   CHECK(output_precision == NNADAPTER_TENSOR_INT32 ||
         output_precision == NNADAPTER_TENSOR_INT64)
@@ -343,10 +347,8 @@ NNAdapterOperand* Converter::AddShapeOperation(
   auto shape_operand = AddOutputOperand(output_name);
 
   // Shape operation
-  std::vector<NNAdapterOperand*> shape_input_operands = {input_operand,
-                                                         dtype_operand};
-  std::vector<NNAdapterOperand*> shape_output_operands = {shape_operand};
-  AddOperation(NNADAPTER_SHAPE, &shape_input_operands, &shape_output_operands);
+  AddOperation(
+      NNADAPTER_SHAPE, {input_operand, dtype_operand}, {shape_operand});
   return shape_operand;
 }
 

@@ -22,7 +22,8 @@ namespace nnadapter {
 int ConvertShape(Converter* converter, OpInfo* op, Scope* scope) {
   auto x_name = op->Input("Input").front();
   auto out_name = op->Output("Out").front();
-  converter->AddShapeOperation(x_name, out_name);
+  auto input_operand = converter->GetMappedOperand(x_name);
+  converter->AddShapeOperation(input_operand, out_name);
   return NO_ERROR;
 }
 

@@ -23,14 +23,13 @@ int ConvertFillAnyLike(Converter* converter, OpInfo* op, Scope* scope) {
   // Use "shape" + "fill" to implement "fill_any_like"
   // Shape operand
   auto x_name = op->Input("X").front();
-  auto out_name = op->Output("Out").front();
-  auto shape_operand = converter->AddShapeOperation(x_name, out_name);
+  auto input_operand = converter->GetMappedOperand(x_name);
+  auto shape_operand = converter->AddShapeOperation(input_operand);
 
   // Value operand
   NNAdapterOperand* value_operand = nullptr;
   float value = op->GetAttr<float>("value");
   int dtype = op->GetAttr<int>("dtype");
-  auto* input_operand = converter->GetMappedOperand(x_name);
   auto input_precision = converter->GetOperandType(input_operand)->precision;
   if (dtype == -1) {
     switch (input_precision) {
@@ -67,13 +66,12 @@ int ConvertFillAnyLike(Converter* converter, OpInfo* op, Scope* scope) {
   }
 
   // Output operand
+  auto out_name = op->Output("Out").front();
   NNAdapterOperand* output_operand = converter->AddOutputOperand(out_name);
 
   // Fill operation
-  std::vector<NNAdapterOperand*> input_operands = {shape_operand,
-                                                   value_operand};
-  std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  converter->AddOperation(NNADAPTER_FILL, &input_operands, &output_operands);
+  converter->AddOperation(
+      NNADAPTER_FILL, {shape_operand, value_operand}, {output_operand});
   return NO_ERROR;
 }
 

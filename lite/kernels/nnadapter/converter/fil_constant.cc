@@ -47,7 +47,7 @@ int ConvertFillConstant(Converter* converter, OpInfo* op, Scope* scope) {
 
   // Value operand
   NNAdapterOperand* value_operand = nullptr;
-  if (op->HasInput("ValueTensor") && !op->Input("ValueTensor").empty()) {
+  if (HasInput(op, scope, "ValueTensor")) {
     auto value_name = op->Input("ValueTensor").front();
     value_operand = converter->GetMappedOperand(value_name);
   } else if (op->HasInput("str_value") &&
@@ -90,10 +90,8 @@ int ConvertFillConstant(Converter* converter, OpInfo* op, Scope* scope) {
   auto out_operand = converter->AddOutputOperand(out_name);
 
   // Fill operation
-  std::vector<NNAdapterOperand*> input_operands = {shape_operand,
-                                                   value_operand};
-  std::vector<NNAdapterOperand*> output_operands = {out_operand};
-  converter->AddOperation(NNADAPTER_FILL, &input_operands, &output_operands);
+  converter->AddOperation(
+      NNADAPTER_FILL, {shape_operand, value_operand}, {out_operand});
   return NO_ERROR;
 }
 
