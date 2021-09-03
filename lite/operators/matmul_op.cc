@@ -145,9 +145,18 @@ bool MatMulOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   param_.X = GetVar<lite::Tensor>(scope, X);
   param_.Y = GetVar<lite::Tensor>(scope, Y);
   param_.Out = GetMutableVar<lite::Tensor>(scope, Out);
-  param_.transpose_X = op_desc.GetAttr<bool>("transpose_X");
-  param_.transpose_Y = op_desc.GetAttr<bool>("transpose_Y");
-  param_.alpha = op_desc.GetAttr<float>("alpha");
+  if (op_desc.HasAttr("transpose_X"))
+    param_.transpose_X = op_desc.GetAttr<bool>("transpose_X");
+  else
+    param_.transpose_X = false;
+  if (op_desc.HasAttr("transpose_Y"))
+    param_.transpose_Y = op_desc.GetAttr<bool>("transpose_Y");
+  else
+    param_.transpose_Y = false;
+  if (op_desc.HasAttr("alpha"))
+    param_.alpha = op_desc.GetAttr("alpha");
+  else
+    param_.alpha = 1.0;
 
   const OpInfo *op_info = dynamic_cast<const OpInfo *>(&op_desc);
   if (op_info != nullptr && op_info->HasAttr("enable_int8")) {
