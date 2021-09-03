@@ -152,7 +152,8 @@ void SquareCompute::Run() {
       x_data, output_data, x_dims.production(), ctx.threads());
 }
 
-void HardSwishCompute::Run() {
+template <>
+void HardSwishCompute<PRECISION(kFloat)>::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto x_dims = param.X->dims();

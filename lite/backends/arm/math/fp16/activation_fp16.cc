@@ -245,10 +245,10 @@ void act_hard_sigmoid<float16_t>(const float16_t* din,
 template <>
 void act_hard_swish<float16_t>(const float16_t* din,
                                float16_t* dout,
-                               int size,
-                               float threshold,
-                               float scale,
-                               float offset,
+                               const int size,
+                               const float threshold,
+                               const float scale,
+                               const float offset,
                                int threads) {
   int cnt = size >> 5;
   int remain = size & 31;
@@ -267,37 +267,37 @@ void act_hard_swish<float16_t>(const float16_t* din,
     float16x8_t vdin1 = vld1q_f16(din + 8);
     float16x8_t vdin2 = vld1q_f16(din + 16);
     float16x8_t vdin3 = vld1q_f16(din + 24);
-    float16x8_t vtmp0 = vminq_fp16(
-        vthreshold_8, vmaxq_fp16(vzero_8, vaddq_fp16(vdin0, voffset_8)));
+    float16x8_t vtmp0 = vminq_f16(
+        vthreshold_8, vmaxq_f16(vzero_8, vaddq_f16(vdin0, voffset_8)));
     float16x8_t vsum0 = vmulq_f16(vscale_8, vdin0);
-    float16x8_t vtmp1 = vminq_fp16(
-        vthreshold_8, vmaxq_fp16(vzero_8, vaddq_fp16(vdin1, voffset_8)));
+    float16x8_t vtmp1 = vminq_f16(
+        vthreshold_8, vmaxq_f16(vzero_8, vaddq_f16(vdin1, voffset_8)));
     float16x8_t vsum1 = vmulq_f16(vscale_8, vdin1);
-    float16x8_t vtmp2 = vminq_fp16(
-        vthreshold_8, vmaxq_fp16(vzero_8, vaddq_fp16(vdin2, voffset_8)));
+    float16x8_t vtmp2 = vminq_f16(
+        vthreshold_8, vmaxq_f16(vzero_8, vaddq_f16(vdin2, voffset_8)));
     float16x8_t vsum2 = vmulq_f16(vscale_8, vdin2);
-    float16x8_t vtmp3 = vminq_fp16(
-        vthreshold_8, vmaxq_fp16(vzero_8, vaddq_fp16(vdin3, voffset_8)));
+    float16x8_t vtmp3 = vminq_f16(
+        vthreshold_8, vmaxq_f16(vzero_8, vaddq_f16(vdin3, voffset_8)));
     float16x8_t vsum3 = vmulq_f16(vscale_8, vdin3);
     float16x8_t vres0 = vmulq_f16(vsum0, vtmp0);
     float16x8_t vres1 = vmulq_f16(vsum1, vtmp1);
     float16x8_t vres2 = vmulq_f16(vsum2, vtmp2);
     float16x8_t vres3 = vmulq_f16(vsum3, vtmp3);
-    vst1q_f16(vres0, dout);
-    vst1q_f16(vres1, dout + 8);
-    vst1q_f16(vres2, dout + 16);
-    vst1q_f16(vres3, dout + 24);
+    vst1q_f16(dout, vres0);
+    vst1q_f16(dout + 8, vres1);
+    vst1q_f16(dout + 16, vres2);
+    vst1q_f16(dout + 24, vres3);
     din += 32;
     dout += 32;
   }
   for (int i = 0; i < cnt_8; i++) {
     float16x8_t vdin0 = vld1q_f16(din);
     din += 8;
-    float16x8_t vtmp0 = vminq_fp16(
-        vthreshold_8, vmaxq_fp16(vzero_8, vaddq_fp16(vdin0, voffset_8)));
+    float16x8_t vtmp0 = vminq_f16(
+        vthreshold_8, vmaxq_f16(vzero_8, vaddq_f16(vdin0, voffset_8)));
     float16x8_t vsum0 = vmulq_f16(vscale_8, vdin0);
     float16x8_t vres0 = vmulq_f16(vsum0, vtmp0);
-    vst1q_f16(vres0, dout);
+    vst1q_f16(dout, vres0);
     dout += 8;
   }
   for (int i = 0; i < remain_8; i++) {
