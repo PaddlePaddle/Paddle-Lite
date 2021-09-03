@@ -34,10 +34,10 @@ void ConvElementwiseTreeFuser::BuildPattern() {
                                 ->AsInput();
 
   // create intermediate nodes
-  conv_output_ = VarNode("conv_output")
-                     ->assert_is_op_output(conv_type_, "Output")
-                     ->assert_is_op_input(elementwise_type_, "Y")
-                     ->assert_only_one_output();
+  auto* conv_output = VarNode("conv_output")
+                          ->assert_is_op_output(conv_type_, "Output")
+                          ->assert_is_op_input(elementwise_type_, "Y")
+                          ->assert_only_one_output();
 
   // create op nodes
   // The pass will not been applied if conv1x1 has already applied this pass.
@@ -65,12 +65,12 @@ void ConvElementwiseTreeFuser::BuildPattern() {
            ((!has_act_type) || (has_act_type && act_type == "relu"));
   };
 
-  conv_ = OpNode("conv", conv_type_)
-              ->assert_is_op(conv_type_)
-              ->assert_node_satisfied(conv_teller);
-  elementwise_ = OpNode("elementwise", elementwise_type_)
-                     ->assert_is_op(elementwise_type_)
-                     ->assert_node_satisfied(elementwise_teller);
+  auto* conv = OpNode("conv", conv_type_)
+                   ->assert_is_op(conv_type_)
+                   ->assert_node_satisfied(conv_teller);
+  auto* elementwise = OpNode("elementwise", elementwise_type_)
+                          ->assert_is_op(elementwise_type_)
+                          ->assert_node_satisfied(elementwise_teller);
 
   // create output node
   auto* elementwise_output = VarNode("elementwise_output")
@@ -93,8 +93,8 @@ void ConvElementwiseTreeFuser::BuildPattern() {
                            ->AsInput();
     conv_inputs.push_back(conv_alpha);
   }
-  conv_->LinksFrom(conv_inputs).LinksTo({conv_output_});
-  elementwise_->LinksFrom({elementwise_input, conv_output_})
+  conv->LinksFrom(conv_inputs).LinksTo({conv_output});
+  elementwise->LinksFrom({elementwise_input, conv_output})
       .LinksTo({elementwise_output});
 }
 
@@ -149,7 +149,7 @@ void ConvElementwiseTreeFuser::InsertNewNode(SSAGraph* graph,
     return;
   }
 
-  // NOTE: Mark these node as intermediate at this place is not valid.
+  // NOTE: push these note to nodes2rm_.
   nodes2rm_.insert(matched.at("conv"));
   nodes2rm_.insert(matched.at("conv_output"));
   nodes2rm_.insert(matched.at("elementwise"));
