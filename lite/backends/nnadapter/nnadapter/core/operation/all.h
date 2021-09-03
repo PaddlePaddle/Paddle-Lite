@@ -23,5 +23,6 @@ REGISTER_OPERATION(RELU, PrepareUnaryActivations)
 REGISTER_OPERATION(RELU6, PrepareUnaryActivations)
 REGISTER_OPERATION(SIGMOID, PrepareUnaryActivations)
 REGISTER_OPERATION(TANH, PrepareUnaryActivations)
+REGISTER_OPERATION(CUM_SUM, PrepareCumSum)
 
 #endif  // NOLINT
