@@ -54,6 +54,10 @@ void XPUMultiEncoderCompute::PrepareForRun() {
   encoder_param_.n_layers = param.n_layers;
   encoder_param_.pretrans_b = true;
   encoder_param_.use_l3 = true;
+  if (param.input_max.size()) {
+      encoder_param_.input_max = param.input_max;
+      encoder_param_.weight_max = param.weight_max;
+  }
   encoder_param_.slice_starts = param.slice_starts;
   encoder_param_.slice_ends = param.slice_ends;
   encoder_param_.slice_axes = param.slice_axes;
@@ -94,7 +98,8 @@ int XPUMultiEncoderCompute::bert_encoder_run() {
         arg_fc_bias_,                                    /* fc_biass */
         arg_ln_scale_,                                   /* ln_scales */
         arg_ln_bias_,                                    /* ln_biass */
-        param.fc_weight_max->data<float>(),              /* fc_weights_max */
+        /* fc_weights_max = param.weight_max */
+        param.fc_weight_max->data<float>(),
         encoder_param_);
   } else {
     r = xdnn::bert_encoder_transformer_int16<float, int16_t, float>(
