@@ -95,7 +95,7 @@ void ElementwiseAddImageCompute::init_for_run() {
     if (fuse_flag_) {
         const auto* op_param =
             static_cast<const operators::FusionElementwiseActivationParam*>(elementwise_param_);
-        auto act_t = op_param.act_type;
+        auto act_t = op_param->act_type;
         VLOG(4) << "elementwise_add act: " << act_t;
         if (act_t != "relu") {
             LOG(FATAL) << "Unsupported Activation type: " << act_t << ", support Relu only.";
