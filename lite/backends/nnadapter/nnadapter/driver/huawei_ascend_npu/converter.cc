@@ -101,6 +101,8 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
         case NNADAPTER_SUB:
         case NNADAPTER_MUL:
         case NNADAPTER_DIV:
+        case NNADAPTER_MAX:
+        case NNADAPTER_MIN:
           ConvertElementwise(operation);
           break;
         case NNADAPTER_AVERAGE_POOL_2D:
@@ -166,11 +168,17 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
         case NNADAPTER_HARD_SIGMOID:
           ConvertHardSigmoid(operation);
           break;
+        case NNADAPTER_SQUEEZE:
+          ConvertSqueeze(operation);
+          break;
         case NNADAPTER_UNSQUEEZE:
           ConvertUnsqueeze(operation);
           break;
         case NNADAPTER_POW:
           ConvertPow(operation);
+          break;
+        case NNADAPTER_CUM_SUM:
+          ConvertCumSum(operation);
           break;
         case NNADAPTER_BATCH_NORMALIZATION:
           ConvertBatchNormalization(operation);
@@ -384,6 +392,12 @@ std::shared_ptr<Operator> Program::AddInt32ConstantOperator(
   return AddInt32ConstantOperator(
       &values[0],
       dimensions.empty() ? std::vector<int32_t>({num_values}) : dimensions);
+}
+
+std::shared_ptr<Operator> Program::AddInt32ConstantOperator(
+    const int32_t values) {
+  auto num_values_vec = std::vector<int32_t>({values});
+  return AddInt32ConstantOperator(&num_values_vec[0], std::vector<int32_t>());
 }
 
 std::shared_ptr<Operator> Program::AddFloat32ConstantOperator(

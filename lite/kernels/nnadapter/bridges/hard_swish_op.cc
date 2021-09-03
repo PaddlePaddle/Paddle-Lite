@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include <cmath>
-#include "lite/core/subgraph_bridge_registry.h"
+#include "lite/core/subgraph/subgraph_bridge_registry.h"
 #include "lite/kernels/nnadapter/bridges/converter.h"
 #include "lite/kernels/nnadapter/bridges/utility.h"
 
@@ -82,9 +82,8 @@ int HardSwishConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   input_operands.push_back(threshold_operand);
   // y = MUL(HARD_SWISH(x, alpha=1/threshold, beta=offset/threshold), threshold
   // / scale);
-  auto hardswish_operation = converter->AddOperation(NNADAPTER_HARD_SWISH);
-  converter->SetOperation(
-      hardswish_operation, &input_operands, &output_operands);
+  converter->AddOperation(
+      NNADAPTER_HARD_SWISH, &input_operands, &output_operands);
   if (fabs(mul_factor - 1.0f) >= 1e-5f) {
     auto mul_factor_operand = converter->AddFloat32ConstantOperand(
         &mul_factor, DDim({static_cast<int64_t>(1)}));
@@ -96,9 +95,8 @@ int HardSwishConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     std::vector<NNAdapterOperand*> mul_inputs_operands = {
         output_operand, mul_factor_operand, fuse_code_operand};
     std::vector<NNAdapterOperand*> mul_output_operands = {immediate_operand};
-    auto mul_operation = converter->AddOperation(NNADAPTER_MUL);
-    converter->SetOperation(
-        mul_operation, &mul_output_operands, &mul_output_operands);
+    converter->AddOperation(
+        NNADAPTER_MUL, &mul_output_operands, &mul_output_operands);
   }
   return REBUILD_WHEN_SHAPE_CHANGED;
 }

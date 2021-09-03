@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/subgraph_bridge_registry.h"
+#include "lite/core/subgraph/subgraph_bridge_registry.h"
 #include "lite/kernels/nnadapter/bridges/converter.h"
 #include "lite/kernels/nnadapter/bridges/utility.h"
 
@@ -106,8 +106,7 @@ int SplitConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Split operation
   std::vector<NNAdapterOperand*> input_operands = {
       input_operand, axis_operand, split_operand};
-  auto split_operation = converter->AddOperation(NNADAPTER_SPLIT);
-  converter->SetOperation(split_operation, &input_operands, &output_operands);
+  converter->AddOperation(NNADAPTER_SPLIT, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

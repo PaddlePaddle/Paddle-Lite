@@ -24,6 +24,12 @@
 #endif
 #endif
 
+#ifndef DISALLOW_COPY_AND_ASSIGN
+#define DISALLOW_COPY_AND_ASSIGN(class__) \
+  class__(const class__&) = delete;       \
+  class__& operator=(const class__&) = delete;
+#endif
+
 #define NNADAPTER_AS_STR(x) #x
 #define NNADAPTER_AS_SYM(x) x
 #define NNADAPTER_AS_STR2(x) NNADAPTER_AS_STR(x)

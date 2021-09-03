@@ -30,21 +30,21 @@ limitations under the License. */
 #ifdef CL_DTYPE_float
 #define CL_DTYPE float
 #define CL_DTYPE_CHAR f
+#define CL_COMPUTE_DTYPE float
+#define CL_COMPUTE_DTYPE_CHAR f
+#endif  // CL_DTYPE_float
+
+#ifdef CL_DTYPE_half
+#define CL_DTYPE half
+#define CL_DTYPE_CHAR h
 #ifdef CL_DTYPE_FLOAT_FORCE
 #define CL_COMPUTE_DTYPE float
 #define CL_COMPUTE_DTYPE_CHAR f
 #else
 #define CL_COMPUTE_DTYPE half
 #define CL_COMPUTE_DTYPE_CHAR h
-#endif
-#endif
-
-#ifdef CL_DTYPE_half
-#define CL_DTYPE half
-#define CL_DTYPE_CHAR h
-#define CL_COMPUTE_DTYPE half
-#define CL_COMPUTE_DTYPE_CHAR h
-#endif
+#endif  // CL_DTYPE_FLOAT_FORCE
+#endif  // CL_DTYPE_half
 
 /////////////////////////////////
 // GET_VEC_TYPE
@@ -55,6 +55,7 @@ limitations under the License. */
 #define CL_DTYPE4 VECTORIZED_TYPE(CL_DTYPE, 4)
 #define CL_DTYPE16 VECTORIZED_TYPE(CL_DTYPE, 16)
 #define CL_COMPUTE_DTYPE4 VECTORIZED_TYPE(CL_COMPUTE_DTYPE, 4)
+#define CL_COMPUTE_DTYPE16 VECTORIZED_TYPE(CL_COMPUTE_DTYPE, 16)
 
 /////////////////////////////////
 // CONVERT_TYPE_TO
@@ -137,49 +138,52 @@ inline CL_DTYPE activation(CL_DTYPE in, CL_DTYPE prelu_alpha) {
   return output;
 }
 
-inline CL_DTYPE4 activation_type4(CL_DTYPE4 in, CL_DTYPE4 prelu_alpha) {
-  CL_DTYPE4 output = in;
+inline CL_COMPUTE_DTYPE4 activation_type4(CL_COMPUTE_DTYPE4 in,
+                                          CL_COMPUTE_DTYPE4 prelu_alpha) {
+  CL_COMPUTE_DTYPE4 output = in;
 #ifdef PRELU
-  output = select(prelu_alpha * in, in, isgreaterequal(in, (CL_DTYPE4)0));
+  output =
+      select(prelu_alpha * in, in, isgreaterequal(in, (CL_COMPUTE_DTYPE4)0));
 #endif
 
 #ifdef RELU
-  output = fmax(in, (CL_DTYPE4)0);
+  output = fmax(in, (CL_COMPUTE_DTYPE4)0);
 #endif
 
 #ifdef RELU6
-  in = fmax((CL_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f), in);
-  output = fmin((CL_DTYPE4)(6.0f, 6.0f, 6.0f, 6.0f), in);
+  in = fmax((CL_COMPUTE_DTYPE4)(0.0f, 0.0f, 0.0f, 0.0f), in);
+  output = fmin((CL_COMPUTE_DTYPE4)(6.0f, 6.0f, 6.0f, 6.0f), in);
 #endif
 
 #ifdef LEAKY_RELU
-  output = select(
-      (CL_DTYPE4)(LEAKY_RELU_ALPHA)*in, in, isgreaterequal(in, (CL_DTYPE4)0));
+  output = select((CL_COMPUTE_DTYPE4)(LEAKY_RELU_ALPHA)*in,
+                  in,
+                  isgreaterequal(in, (CL_COMPUTE_DTYPE4)0));
 #endif
 
 #ifdef HARD_SWISH
-  output = fmin(fmax(in + (CL_DTYPE4)ACT_OFFSET, (CL_DTYPE4)0),
-                (CL_DTYPE4)ACT_THRESHOLD) *
-           in / (CL_DTYPE4)ACT_SCALE;
+  output = fmin(fmax(in + (CL_COMPUTE_DTYPE4)ACT_OFFSET, (CL_COMPUTE_DTYPE4)0),
+                (CL_COMPUTE_DTYPE4)ACT_THRESHOLD) *
+           in / (CL_COMPUTE_DTYPE4)ACT_SCALE;
 #endif
 
 #ifdef HARD_SIGMOID
-  output =
-      clamp(in * (CL_DTYPE4)HARD_SIGMOID_SLOPE + (CL_DTYPE4)HARD_SIGMOID_OFFSET,
-            (CL_DTYPE4)0.0,
-            (CL_DTYPE4)1.0);
+  output = clamp(in * (CL_COMPUTE_DTYPE4)HARD_SIGMOID_SLOPE +
+                     (CL_COMPUTE_DTYPE4)HARD_SIGMOID_OFFSET,
+                 (CL_COMPUTE_DTYPE4)0.0,
+                 (CL_COMPUTE_DTYPE4)1.0);
 #endif
 
   return output;
 }
 
 // fuse scale for Elementwise ops
-inline CL_DTYPE4 fuse_scale(CL_DTYPE4 in,
-                            __private float scale,
-                            __private float bias,
-                            __private float alpha) {
-  CL_DTYPE4 out =
-      CONVERT_TYPE_TO(scale, CL_DTYPE) * in + CONVERT_TYPE_TO(bias, CL_DTYPE);
+inline CL_COMPUTE_DTYPE4 fuse_scale(CL_COMPUTE_DTYPE4 in,
+                                    __private float scale,
+                                    __private float bias,
+                                    __private float alpha) {
+  CL_COMPUTE_DTYPE4 out = CONVERT_TYPE_TO(scale, CL_COMPUTE_DTYPE) * in +
+                          CONVERT_TYPE_TO(bias, CL_COMPUTE_DTYPE);
 #ifdef FUSE_SCALE_RELU6
   out = clamp(out, (CL_DTYPE4)(0.f), (CL_DTYPE4)(/*alpha=*/6.f));
 #endif

@@ -18,7 +18,7 @@
 #include <memory>
 #include <utility>
 #include <vector>
-#include "lite/model_parser/base/io.h"
+#include "lite/core/model/base/io.h"
 #include "lite/model_parser/flatbuffers/traits.h"
 
 namespace paddle {

@@ -16,11 +16,11 @@
 
 @implementation MPSConvDataSource
 
-- (MPSDataType)dataType {
+- (MPSDataType)dataType API_AVAILABLE(ios(11.0)) {
 	return MPSDataTypeFloat16;
 }
 
-- (MPSCNNConvolutionDescriptor * __nonnull) descriptor {
+- (MPSCNNConvolutionDescriptor * __nonnull) descriptor API_AVAILABLE(ios(10.0)) {
 	return _descriptor;
 }
 

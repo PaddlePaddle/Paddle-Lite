@@ -38,13 +38,33 @@ void SigmoidImageCompute::PrepareForRun() {
     output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
 #endif
 
+    setup_without_mps();
+}
+
+void SigmoidImageCompute::Run() {
+    @autoreleasepool {
+        run_without_mps();
+    }
+}
+
+void SigmoidImageCompute::setup_without_mps() {
+>>>>>>> 29fd1e6... [metal] autoreleasepool;(eg: keep predict in one resident thread )
     function_name_ = "sigmoid";
+    if (param.has_active) {
+        if (param.active_type == lite_api::ActivationType::kSigmoid) {
+            function_name_ = "sigmoid";
+        } else {
+             function_name_ = "hard_sigmoid";
+        } else {
+            LOG(FATAL) << "[metal] unsupported Activation type";
+        }
+    }
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     pipline_ = [backend pipline:function_name_];
 }
 
-void SigmoidImageCompute::Run() {
+void SigmoidImageCompute::run_without_mps() {
     auto pipline = pipline_;
     auto outTexture = output_buffer_->image();
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
@@ -83,6 +103,34 @@ REGISTER_LITE_KERNEL(sigmoid,
     .Finalize();
 
 REGISTER_LITE_KERNEL(sigmoid,
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::SigmoidImageCompute,
+    def)
+    .BindInput("X",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(hard_sigmoid,
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::SigmoidImageCompute,
+    def)
+    .BindInput("X",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(hard_sigmoid,
     kMetal,
     kFP16,
     kMetalTexture2DArray,

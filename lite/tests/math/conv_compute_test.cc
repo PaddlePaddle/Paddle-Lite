@@ -14,7 +14,7 @@
 
 #include "lite/tests/math/conv_ut.h"
 
-#ifdef LITE_WITH_ARM
+#if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
 void test_conv_fp32(const std::vector<DDim>& input_dims,
                     const DDim& weight_dim,
                     int group,
@@ -62,6 +62,7 @@ void test_conv_fp32(const std::vector<DDim>& input_dims,
 
   for (auto& cls : power_mode) {
     for (auto& th : thread_num) {
+#ifdef LITE_WITH_ARM
       paddle::lite::kernels::arm::ConvCompute<PRECISION(kFloat),
                                               PRECISION(kFloat)>
           conv;
@@ -69,6 +70,14 @@ void test_conv_fp32(const std::vector<DDim>& input_dims,
           new paddle::lite::KernelContext);
       auto& ctx = ctx1->As<paddle::lite::ARMContext>();
       ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
+#else
+      paddle::lite::kernels::x86::Conv2dCompute<PRECISION(kFloat),
+                                                PRECISION(kFloat)>
+          conv;
+      std::unique_ptr<paddle::lite::KernelContext> ctx1(
+          new paddle::lite::KernelContext);
+#endif
+
       /// set param and context
       for (auto& dim_in : input_dims) {
         param.x->Resize(dim_in);
@@ -488,6 +497,7 @@ TEST(TestConvRand, test_conv_rand) {
 
 #if 1  /// custom
 TEST(TestConvCustom, test_conv_fp32_custom_size) {
+  LOG(INFO) << "test";
   CHECK_EQ(FLAGS_in_channel % FLAGS_group, 0)
       << "input channel must be divided by group";
   CHECK_EQ(FLAGS_out_channel % FLAGS_group, 0)

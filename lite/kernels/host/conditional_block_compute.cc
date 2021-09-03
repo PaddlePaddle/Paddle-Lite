@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/host/conditional_block_compute.h"
+#include "lite/kernels/host/while_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -31,9 +32,7 @@ void ConditionalBlockCompute::Run() {
   auto& param = this->Param<param_t>();
   bool need_run = true;
   if (param.is_scalar_condition) {
-    auto* cond = param.cond;
-    auto* cond_data = cond->data<bool>();
-    need_run = cond_data[0];
+    need_run = GetCondData(param.cond);
   } else {
     for (auto input : param.inputs) {
       if (input == nullptr || !input->IsInitialized() ||

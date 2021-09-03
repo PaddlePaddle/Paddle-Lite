@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/subgraph_bridge_registry.h"
+#include "lite/core/subgraph/subgraph_bridge_registry.h"
 #include "lite/kernels/nnadapter/bridges/converter.h"
 #include "lite/kernels/nnadapter/bridges/utility.h"
 #include "lite/operators/reshape_op.h"
@@ -90,8 +90,7 @@ int FlattenConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<NNAdapterOperand*> input_operands = {input_operand,
                                                    shape_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  auto reshape_operation = converter->AddOperation(NNADAPTER_RESHAPE);
-  converter->SetOperation(reshape_operation, &input_operands, &output_operands);
+  converter->AddOperation(NNADAPTER_RESHAPE, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

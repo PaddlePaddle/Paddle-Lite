@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/subgraph_bridge_registry.h"
+#include "lite/core/subgraph/subgraph_bridge_registry.h"
 #include "lite/kernels/nnadapter/bridges/converter.h"
 #include "lite/kernels/nnadapter/bridges/utility.h"
 
@@ -73,10 +73,8 @@ int LeakyReluConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // LeakyRelu operation
   std::vector<NNAdapterOperand*> input_operands{input_operand, alpha_operand};
   std::vector<NNAdapterOperand*> output_operands{output_operand};
-  NNAdapterOperation* activation_operation =
-      converter->AddOperation(NNADAPTER_LEAKY_RELU);
-  converter->SetOperation(
-      activation_operation, &input_operands, &output_operands);
+  converter->AddOperation(
+      NNADAPTER_LEAKY_RELU, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

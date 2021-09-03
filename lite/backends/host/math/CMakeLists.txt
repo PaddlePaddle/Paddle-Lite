@@ -15,4 +15,4 @@ lite_cc_library(math_host SRCS
     reverse.cc
     topk.cc
     yolo_box.cc
-    DEPS context)
+    DEPS core)

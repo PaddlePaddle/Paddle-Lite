@@ -2,14 +2,12 @@ if(NOT LITE_WITH_NNADAPTER)
   return()
 endif()
 
-lite_cc_library(subgraph_bridge_utility_nnadapter SRCS utility.cc DEPS tensor)
+lite_cc_library(subgraph_bridge_utility_nnadapter SRCS utility.cc DEPS core)
 lite_cc_library(subgraph_bridge_converter_nnadapter SRCS converter.cc DEPS nnadapter_wrapper subgraph_bridge_utility_nnadapter)
 
-set(nnadapter_subgraph_bridge_deps subgraph_bridge_registry subgraph_bridge_utility_nnadapter subgraph_bridge_converter_nnadapter)
+set(nnadapter_subgraph_bridge_deps core subgraph_bridge_utility_nnadapter subgraph_bridge_converter_nnadapter)
 
 lite_cc_library(subgraph_bridge_conv_op_nnadapter SRCS conv_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
-lite_cc_library(subgraph_bridge_unary_act_op_nnadapter SRCS unary_act_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
-lite_cc_library(subgraph_bridge_softmax_op_nnadapter SRCS softmax_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_fill_constant_op_nnadapter SRCS fill_constant_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_pool_op_nnadapter SRCS pool_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_fc_op_nnadapter SRCS fc_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
@@ -30,6 +28,7 @@ lite_cc_library(subgraph_bridge_deformable_conv_nnadapter SRCS deformable_conv_o
 lite_cc_library(subgraph_bridge_conv_transpose_op_nnadapter SRCS conv_transpose_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_hard_swish_op_nnadapter SRCS hard_swish_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_hard_sigmoid_op_nnadapter SRCS hard_sigmoid_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_squeeze_op_nnadapter SRCS squeeze_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_unsqueeze_op_nnadapter SRCS unsqueeze_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_pow_op_nnadapter SRCS pow_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_batch_normalization_op_nnadapter SRCS batch_normalization_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
@@ -42,12 +41,10 @@ lite_cc_library(subgraph_bridge_range_op_nnadapter SRCS range_op.cc DEPS ${nnada
 lite_cc_library(subgraph_bridge_leaky_relu_op_nnadapter SRCS leaky_relu_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 
 set(nnadapter_subgraph_bridges
-        subgraph_bridge_registry
+        core
         subgraph_bridge_utility_nnadapter
         subgraph_bridge_converter_nnadapter
         subgraph_bridge_conv_op_nnadapter
-        subgraph_bridge_unary_act_op_nnadapter
-        subgraph_bridge_softmax_op_nnadapter
         subgraph_bridge_fill_constant_op_nnadapter
         subgraph_bridge_pool_op_nnadapter
         subgraph_bridge_fc_op_nnadapter
@@ -68,6 +65,7 @@ set(nnadapter_subgraph_bridges
         subgraph_bridge_conv_transpose_op_nnadapter
         subgraph_bridge_hard_swish_op_nnadapter
         subgraph_bridge_hard_sigmoid_op_nnadapter
+        subgraph_bridge_squeeze_op_nnadapter
         subgraph_bridge_unsqueeze_op_nnadapter
         subgraph_bridge_pow_op_nnadapter
         subgraph_bridge_batch_normalization_op_nnadapter

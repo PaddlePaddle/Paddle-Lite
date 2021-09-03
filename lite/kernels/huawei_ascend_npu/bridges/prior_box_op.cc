@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/operators/prior_box_op.h"
-#include "lite/core/subgraph_bridge_registry.h"
+#include "lite/core/subgraph/subgraph_bridge_registry.h"
 #include "lite/kernels/huawei_ascend_npu/bridges/graph.h"
 #include "lite/kernels/huawei_ascend_npu/bridges/utility.h"
 

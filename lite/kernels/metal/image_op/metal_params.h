@@ -149,6 +149,11 @@ struct PixelShuffleMetalParam {
     int upscale_factor;
 };
 
+struct ShuffleChannelMetalParam {
+    uint32_t group;
+    uint32_t channel_per_group;
+};
+
 struct LrnMetalParam {
     int n;
     int channelN;
@@ -159,6 +164,11 @@ struct LrnMetalParam {
 
 struct InstanceNormReluMetalParam {
     uint16_t hasReluOp;
+};
+
+struct HardSigmoidMetalParam {
+    float slope;
+    float offset;
 };
 
 struct HardSwishMetalParam {

@@ -21,19 +21,19 @@ namespace subgraph {
 namespace nnadapter {
 
 bool Converter::HasOperand(const std::string& name) {
-  return operands_.find(name) != operands_.end();
+  return operands_->find(name) != operands_->end();
 }
 
 NNAdapterOperand* Converter::GetOperand(std::string name) {
   CHECK(HasOperand(name)) << "Operand '" << name << "' is not found!";
-  return operands_[name];
+  return (*operands_)[name].back();
 }
 
 NNAdapterOperand* Converter::AddOperand(NNAdapterOperand* operand,
                                         const std::string& name) {
   CHECK(operand);
   CHECK(!name.empty());
-  operands_[name] = operand;
+  (*operands_)[name].emplace_back(operand);
   return operand;
 }
 
@@ -224,45 +224,40 @@ NNAdapterOperand* Converter::AddInt64VariableOperand(const DDim& dimensions,
   return AddVariableOperand(dimensions, name, NNADAPTER_TENSOR_INT64);
 }
 
-NNAdapterOperation* Converter::AddOperation(NNAdapterOperationType type) {
+NNAdapterOperation* Converter::AddOperation(
+    NNAdapterOperationType type,
+    std::vector<NNAdapterOperand*>* input_operands,
+    std::vector<NNAdapterOperand*>* output_operands) {
   NNAdapterOperation* operation = nullptr;
-  NNAdapterModel_addOperation_invoke(model_, type, &operation);
-  return operation;
-}
-
-void Converter::SetOperation(NNAdapterOperation* operation,
-                             std::vector<NNAdapterOperand*>* input_operands,
-                             std::vector<NNAdapterOperand*>* output_operands) {
-  NNAdapterModel_setOperation_invoke(operation,
+  NNAdapterModel_addOperation_invoke(model_,
+                                     type,
                                      input_operands->size(),
-                                     &((*input_operands)[0]),
+                                     input_operands->data(),
                                      output_operands->size(),
-                                     &((*output_operands)[0]));
+                                     output_operands->data(),
+                                     &operation);
+  return operation;
 }
 
 NNAdapterOperand* Converter::AddOperand(NNAdapterOperandType* type,
                                         const std::string& name) {
   NNAdapterOperand* operand = nullptr;
+  NNAdapterModel_addOperand_invoke(model_, type, &operand);
   if (!name.empty()) {
     if (HasOperand(name)) {
-      LOG(WARNING) << "Operand '" << name << "' already exists!";
-      operand = operands_[name];
+      (*operands_)[name].emplace_back(operand);
     } else {
-      NNAdapterModel_addOperand_invoke(model_, type, &operand);
-      operands_[name] = operand;
+      (*operands_)[name] = std::vector<NNAdapterOperand*>{operand};
     }
-  } else {
-    // Anonymous operand
-    NNAdapterModel_addOperand_invoke(model_, type, &operand);
   }
   return operand;
 }
 
-void Converter::SetOperand(NNAdapterOperand* operand,
-                           void* buffer,
-                           size_t length,
-                           bool copy) {
-  NNAdapterModel_setOperand_invoke(operand, buffer, length, copy);
+void Converter::SetOperandValue(NNAdapterOperand* operand,
+                                void* buffer,
+                                size_t length,
+                                bool copy) {
+  NNAdapterModel_setOperandValue_invoke(operand, buffer, length, copy);
 }
 
 NNAdapterOperand* Converter::AddOperand(const DDim& dimensions,
@@ -303,7 +298,7 @@ NNAdapterOperand* Converter::AddOperand(const DDim& dimensions,
     // Constant operand
     auto length =
         PrecisionLength(precision) * (!is_scalar ? dimensions.production() : 1);
-    SetOperand(operand, buffer, length, copy);
+    SetOperandValue(operand, buffer, length, copy);
   } else {
     // Variable/Input/Output operand
   }

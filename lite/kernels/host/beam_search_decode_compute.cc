@@ -306,5 +306,5 @@ REGISTER_LITE_KERNEL(beam_search_decode,
     .BindOutput("SentenceIds",
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .BindOutput("SentenceScores",
-                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
     .Finalize();

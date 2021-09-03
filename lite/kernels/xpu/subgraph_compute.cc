@@ -13,14 +13,13 @@
 // limitations under the License.
 
 #include "lite/kernels/xpu/subgraph_compute.h"
-#include <sys/time.h>
-#include <time.h>
 #include <utility>
 #include "lite/backends/xpu/device.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/xpu/bridges/graph.h"
 #include "lite/kernels/xpu/bridges/paddle_use_bridges.h"
 #include "lite/kernels/xpu/bridges/utility.h"
+#include "lite/utils/timer.h"
 
 namespace paddle {
 namespace lite {
@@ -162,14 +161,11 @@ bool SubgraphEngine::LaunchDeviceProgram() {
     device_program_->SetInput(input_names_[i], &device_itensors_[i]);
   }
   // Run the XPU model
-  auto GetCurrentUS = []() -> double {
-    struct timeval time;
-    gettimeofday(&time, NULL);
-    return 1e+6 * time.tv_sec + time.tv_usec;
-  };
-  auto start_time = GetCurrentUS();
+  auto start_time = lite::Timer::GetCurrentUS();
   device_program_->Run();
-  VLOG(3) << "[XPU] Process cost " << GetCurrentUS() - start_time << " us";
+  VLOG(3) << "[XPU] Process cost " << lite::Timer::GetCurrentUS() - start_time
+          << " us";
+
   for (size_t i = 0; i < device_otensors_.size(); i++) {
     // Update the data pointer of DLTensor to track the origin output tensors
     device_otensors_[i].data =

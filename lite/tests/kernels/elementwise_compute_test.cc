@@ -251,6 +251,11 @@ void TestElt(Place place,
     return;
   }
 #endif
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  if (elt_type == std::string("pow")) {
+    return;
+  }
+#endif
   std::unique_ptr<arena::TestCase> tester(new ElementwiseComputeTester<T>(
       place, "def", elt_type, x_shape, y_shape, axis, act_type));
   arena::Arena arena(std::move(tester), place, abs_error);
@@ -358,12 +363,19 @@ TEST(Elementwise, precision) {
   Place place;
   float abs_error = 2e-5;
 
-#if defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 5e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // use fp16 in npu
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kHuaweiAscendNPU);
-  abs_error = 1e-2;  // precision_mode default is force_fp16
+  abs_error = 5e-2;  // precision_mode default is force_fp16
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_ARM)
@@ -405,7 +417,6 @@ void TestEltX86(Place place,
 TEST(elementwise_x86, precison) {
   Place place(TARGET(kX86));
   float abs_error = 1e-5;
-
   for (auto op : std::vector<std::string>{
            "add", "sub", "mul", "div", "floordiv", "max", "min"}) {
     TestEltX86<float>(place, abs_error, op, "def");
