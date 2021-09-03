@@ -297,12 +297,12 @@ function build_test_server {
     mkdir -p ./build
     cd ./build
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
-#    assert_api_spec_approvals
+    assert_api_spec_approvals
     cmake_x86_for_CI
     build
 
-#    test_server
-#    test_model_optimize_tool_compile
+    test_server
+    test_model_optimize_tool_compile
 }
 
 # Build the code and run lite server tests. This is executed in the CI system.
