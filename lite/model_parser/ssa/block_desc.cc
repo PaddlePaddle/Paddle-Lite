@@ -1,4 +1,4 @@
-// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,27 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#include "lite/model_parser/ssa/block_desc.h"
 
-#include "lite/core/framework.pb.h"
-#include "lite/model_parser/base/traits.h"
-#include "lite/utils/logging.h"
 namespace paddle {
 namespace lite {
-namespace pb {
+namespace general {
+namespace ssa {
 
-lite::VarDataType ConvertVarType(
-    ::paddle::framework::proto::VarType_Type pb_type);
-
-::paddle::framework::proto::VarType_Type ConvertVarType(
-    lite::VarDataType var_type);
-
-inline bool IsParamVarDesc(const paddle::framework::proto::VarDesc& var) {
-  return var.type().type() ==
-             paddle::framework::proto::VarType_Type_LOD_TENSOR &&
-         var.persistable();
+BlockDesc::BlockDesc(const general::BlockDesc& current, BlockDesc* parent) {
+  idx_ = current.Idx();
+  if (parent) {
+    scope_.reset(new RootVarScope{current, parent->mutable_scope()});
+    parent_ = parent;
+    parent_->AddKid(this);
+  } else {
+    scope_.reset(new RootVarScope{current, nullptr});
+  }
 }
-
-}  // namespace pb
+}  // namespace ssa
+}  // namespace general
 }  // namespace lite
 }  // namespace paddle

@@ -18,22 +18,41 @@ namespace paddle {
 namespace lite {
 namespace general {
 
+ProgramDesc::ProgramDesc(const ProgramDesc& other) { CopyFrom(other); }
+
+ProgramDesc& ProgramDesc::operator=(const ProgramDesc& other) {
+  CopyFrom(other);
+  return *this;
+}
+
+void ProgramDesc::CopyFrom(const ProgramDesc& other) {
+  version_ = other.Version();
+  blocks_.clear();
+  for (const auto& block : other.blocks()) {
+    blocks_.emplace_back(new BlockDesc(*block));
+  }
+}
+
 template <>
 BlockDesc* ProgramDesc::GetBlock<BlockDesc>(int32_t idx) {
-  CHECK_LT(idx, BlocksSize()) << "idx >= blocks.size()";
-  return &blocks_[idx];
+  CHECK_GE(idx, 0)
+      << "The index value should be greater than or equal to zero.";
+  CHECK_LT(idx, static_cast<int32_t>(BlocksSize())) << "idx >= blocks.size()";
+  return blocks_[idx].get();
 }
 
 template <>
 BlockDesc const* ProgramDesc::GetBlock<BlockDesc>(int32_t idx) const {
-  CHECK_LT(idx, BlocksSize()) << "idx >= blocks.size()";
-  return &blocks_[idx];
+  CHECK_GE(idx, 0)
+      << "The index value should be greater than or equal to zero.";
+  CHECK_LT(idx, static_cast<int32_t>(BlocksSize())) << "idx >= blocks.size()";
+  return blocks_[idx].get();
 }
 
 template <>
 BlockDesc* ProgramDesc::AddBlock<BlockDesc>() {
-  blocks_.emplace_back();
-  return &blocks_.back();
+  blocks_.emplace_back(new BlockDesc);
+  return blocks_.back().get();
 }
 
 template <>
