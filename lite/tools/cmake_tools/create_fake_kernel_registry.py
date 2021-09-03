@@ -160,12 +160,13 @@ def parse_fake_kernels_from_path(list_path):
                     out_lines.append("")
                     out_src_lines.append("    .Finalize();")
                     out_src_lines.append("")
-                    tmp_src = os.path.join(src_dest_path, '%s.cc' %(kernel_name))
-                    dst = os.path.join(src_dest_path, '%s.cc_tmp' %(kernel_name))
+                    dst = os.path.join(src_dest_path, '%s.cc' %(kernel_name))
+                    tmp_src = os.path.join(src_dest_path, '%s.cc_tmp' %(kernel_name))
                     with open(os.path.join(src_dest_path, '%s.cc_tmp' %(kernel_name)), 'w') as file:
                         file.write('\n'.join(out_src_lines))
-                    if not os.path.exists(dst) or not filecmp.cmp(dst, tmp_src):
-                        shutil.move(tmp_src, dst)
+                    if os.path.exists(dst):
+                        if not filecmp.cmp(dst, tmp_src):
+                            shutil.move(tmp_src, dst)
                     else:
                         os.remove(tmp_src)
 
