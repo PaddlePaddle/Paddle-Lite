@@ -27,6 +27,7 @@ REGISTER_CONVERTER(softmax,
                    ConvertSoftmax,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
                    "npu,amlogic_npu,imagination_nna");
+REGISTER_CONVERTER(cumsum, ConvertCumsum, "huawei_ascend_npu");
 REGISTER_CONVERTER(
     sigmoid,
     ConvertUnaryActivations,

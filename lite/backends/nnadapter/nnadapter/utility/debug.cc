@@ -313,6 +313,10 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         input_args = {"input", "axis"};
         output_args = {"output"};
         break;
+      case NNADAPTER_CUM_SUM:
+        input_args = {"input", "axis", "exclusive", "reverse"};
+        output_args = {"output"};
+        break;
       case NNADAPTER_SPLIT:
         input_args = {"input", "axis", "split"};
         output_args.resize(output_count);
@@ -527,6 +531,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(SIGMOID);
     NNADAPTER_TYPE_TO_STRING(SLICE);
     NNADAPTER_TYPE_TO_STRING(SOFTMAX);
+    NNADAPTER_TYPE_TO_STRING(CUM_SUM)
     NNADAPTER_TYPE_TO_STRING(SPLIT);
     NNADAPTER_TYPE_TO_STRING(SQUEEZE);
     NNADAPTER_TYPE_TO_STRING(SUB);

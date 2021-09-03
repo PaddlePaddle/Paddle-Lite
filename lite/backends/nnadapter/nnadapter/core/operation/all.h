@@ -18,11 +18,12 @@
 REGISTER_OPERATION(CONV_2D, PrepareConv2D)
 REGISTER_OPERATION(SOFTMAX, PrepareSoftmax)
 REGISTER_OPERATION(ABS, PrepareUnaryActivations)
+REGISTER_OPERATION(EXP, PrepareUnaryActivations)
 REGISTER_OPERATION(LOG, PrepareUnaryActivations)
 REGISTER_OPERATION(RELU, PrepareUnaryActivations)
 REGISTER_OPERATION(RELU6, PrepareUnaryActivations)
 REGISTER_OPERATION(SIGMOID, PrepareUnaryActivations)
 REGISTER_OPERATION(TANH, PrepareUnaryActivations)
-REGISTER_OPERATION(EXP, PrepareUnaryActivations)
+REGISTER_OPERATION(CUM_SUM, PrepareCumSum)
 
 #endif  // NOLINT

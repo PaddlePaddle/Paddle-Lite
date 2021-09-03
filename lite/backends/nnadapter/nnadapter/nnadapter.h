@@ -435,6 +435,29 @@ typedef enum {
   NNADAPTER_CONV_2D_TRANSPOSE,
 
   /**
+   * Performs cumulative sum of the input elements along the given axis.
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: axis, A NNADAPTER_INT32 scalar. Defaults to -1. It represents the
+   * dimension along which softmax will be performed. It should be in range [-R,
+   * R), where R is the rank of input, negative value works the same way as
+   * axis+R.
+   * * 2: exclusive, A NNADAPTER_NOOL8 scalar. If set to true, the top element
+   * will not be include. Default false.
+   * * 3: reverse, A NNADAPTER_NOOL8 scalar, whether to perform the cumsum in
+   * the reversed direction. Default false.
+   *
+   * Outputs:
+   * * 0: output, a tensor with the same type as input.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_CUM_SUM,
+
+  /**
    * Compute 2-D deformable convolution on 4-D input.
    *
    * Inputs:
