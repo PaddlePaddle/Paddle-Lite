@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/x86/conv_depthwise.h"
+#include "lite/backends/x86/math/conv_depthwise_int8.h"
 #include "lite/backends/x86/math/conv_depthwise_pack4.h"
 #include "lite/backends/x86/math/conv_depthwise_pack8.h"
 #include "lite/backends/x86/math/conv_utils.h"
@@ -21,6 +22,9 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace x86 {
+
+template <>
+void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {}
 
 template <>
 void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
@@ -165,8 +169,12 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
   }
 }
 
+#define CONV_DW_INT8_PARAM                                                 \
+  o_data, i_data, w_data, b_data, bs, ic, iw, ih, oh, ow, flag_act, alpha, \
+      w_scale_, ctx
+template <>
 void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
-  //!  todo add implementation
+  //! todo add implementation
 }
 
 PROFILE_INFO(kInt8, kFloat)
@@ -213,12 +221,13 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
   }
 }
 
+template <>
 void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
-  //!  todo add implementation
+  //! todo add implementation
 }
 
 PROFILE_INFO(kInt8, kInt8)
-
+#undef CONV_DW_INT8_PARAM
 }  // namespace x86
 }  // namespace kernels
 }  // namespace lite

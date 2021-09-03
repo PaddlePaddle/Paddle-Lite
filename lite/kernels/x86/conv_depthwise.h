@@ -29,6 +29,7 @@ class DepthwiseConv : public KernelLite<TARGET(kX86), Ptype> {
  public:
   DepthwiseConv() = default;
   ~DepthwiseConv() {}
+  void PrepareForRun() override;
   virtual void Run();
 
 #ifdef LITE_WITH_PROFILE
@@ -60,7 +61,6 @@ class DepthwiseConv : public KernelLite<TARGET(kX86), Ptype> {
   Tensor output_pack_;
   bool flag_trans_bias_{true};
   std::vector<float> w_scale_;
-  Tensor weights_;
   Tensor bias_;
 };
 
