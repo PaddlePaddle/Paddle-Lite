@@ -145,7 +145,7 @@ function(lite_cc_test TARGET)
 
   set(multiValueArgs SRCS DEPS)
   cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-  cc_binary(${TARGET} SRCS ${args_SRCS} DEPS ${deps} core_tester)
+  cc_binary(${TARGET} SRCS ${args_SRCS} DEPS ${args_DEPS} core_tester gflags glog gtest)
   file(APPEND ${offline_test_registry_file} "${TARGET}\n")
   add_dependencies(${TARGET} bundle_full_api)
   target_link_libraries(${TARGET} ${CMAKE_BINARY_DIR}/libpaddle_api_full_bundled.a)
