@@ -143,12 +143,51 @@ function(lite_cc_test TARGET)
   set(options "")
   set(oneValueArgs "")
 
-  set(multiValueArgs SRCS DEPS)
+  set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS METAL_DEPS ARM_DEPS FPGA_DEPS INTEL_FPGA_DEPS BM_DEPS
+        IMAGINATION_NNA_DEPS RKNPU_DEPS NPU_DEPS XPU_DEPS MLU_DEPS HUAWEI_ASCEND_NPU_DEPS APU_DEPS NNADAPTER_DEPS PROFILE_DEPS
+        LIGHT_DEPS HVY_DEPS EXCLUDE_COMPILE_DEPS CV_DEPS
+        ARGS
+        COMPILE_LEVEL # (basic|extra)
+  )
   cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-  cc_binary(${TARGET} SRCS ${args_SRCS} DEPS ${args_DEPS} core_tester gflags glog gtest)
+  set(deps "")
+  lite_deps(deps
+            DEPS ${args_DEPS}
+            X86_DEPS ${args_X86_DEPS}
+            CUDA_DEPS ${args_CUDA_DEPS}
+            CL_DEPS ${args_CL_DEPS}
+            METAL_DEPS ${args_METAL_DEPS}
+            ARM_DEPS ${args_ARM_DEPS}
+            FPGA_DEPS ${args_FPGA_DEPS}
+            INTEL_FPGA_DEPS ${args_INTEL_FPGA_DEPS}
+            NPU_DEPS ${args_NPU_DEPS}
+            APU_DEPS ${args_APU_DEPS}
+            XPU_DEPS ${args_XPU_DEPS}
+            RKNPU_DEPS ${args_RKNPU_DEPS}
+            BM_DEPS ${args_BM_DEPS}
+            IMAGINATION_NNA_DEPS ${args_IMAGINATION_NNA_DEPS}
+            NNADAPTER_DEPS ${args_NNADAPTER_DEPS}
+            PROFILE_DEPS ${args_PROFILE_DEPS}
+            LIGHT_DEPS ${args_LIGHT_DEPS}
+            HVY_DEPS ${args_HVY_DEPS}
+            CV_DEPS ${args_CV_DEPS}
+            MLU_DEPS ${args_MLU_DEPS}
+            HUAWEI_ASCEND_NPU_DEPS ${args_HUAWEI_ASCEND_NPU_DEPS}
+            )
+  if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+    cc_binary(${TARGET} SRCS ${args_SRCS} DEPS ${deps} core_tester gflags gtest logging)
+  else()
+    cc_binary(${TARGET} SRCS ${args_SRCS} DEPS ${deps} core_tester gflags gtest glog)
+  endif()
   file(APPEND ${offline_test_registry_file} "${TARGET}\n")
   add_dependencies(${TARGET} bundle_full_api)
   target_link_libraries(${TARGET} ${CMAKE_BINARY_DIR}/libpaddle_api_full_bundled.a)
+  # windows
+  if(NOT WIN32)
+    target_compile_options(${TARGET} BEFORE PRIVATE -Wno-ignored-qualifiers)
+  endif()
   # collect targets need to compile for lite
-  add_dependencies(lite_compile_deps ${TARGET})
+  if (NOT args_EXCLUDE_COMPILE_DEPS)
+      add_dependencies(lite_compile_deps ${TARGET})
+  endif()
 endfunction()
