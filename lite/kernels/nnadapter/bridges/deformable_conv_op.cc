@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/subgraph_bridge_registry.h"
+#include "lite/core/subgraph/subgraph_bridge_registry.h"
 #include "lite/kernels/nnadapter/bridges/converter.h"
 #include "lite/kernels/nnadapter/bridges/utility.h"
 
@@ -52,17 +52,16 @@ int DeformableConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto offset_scale_name = "Offset0_scale";
   auto has_offset_scale = op_info->HasInputScale(offset_scale_name, true);
   auto offset_scale = has_offset_scale
-                          ? op_info->GetInputScale(offset_scale_name, true)
-                          : std::vector<float>({});
+                          ? op_info->GetInputScale(offset_scale_name, true)[0]
+                          : 0.f;
   auto offset = scope->FindMutableTensor(offset_name);
   auto offset_dims = offset->dims();
 
   auto mask_name = op_info->Input("Mask").front();
   auto mask_scale_name = "Mask0_scale";
   auto has_mask_scale = op_info->HasInputScale(mask_scale_name, true);
-  auto mask_scale = has_mask_scale
-                        ? op_info->GetInputScale(mask_scale_name, true)
-                        : std::vector<float>({});
+  auto mask_scale =
+      has_mask_scale ? op_info->GetInputScale(mask_scale_name, true)[0] : 0.f;
   auto mask = scope->FindMutableTensor(mask_name);
   auto mask_dims = mask->dims();
 
@@ -133,26 +132,29 @@ int DeformableConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Offset operand
   NNAdapterOperand* offset_operand = nullptr;
-  if (has_offset_scale) {
-    auto offset_data = offset->mutable_data<int8_t>();
-    offset_operand = converter->AddQuant8ConstantOperand(
-        offset_data, offset_dims, offset_scale[0], false);
+  if (converter->HasOperand(offset_name)) {
+    offset_operand = converter->GetOperand(offset_name);
   } else {
-    auto offset_data = offset->mutable_data<float>();
-    offset_operand =
-        converter->AddFloat32ConstantOperand(offset_data, offset_dims, false);
+    if (has_offset_scale) {
+      offset_operand = converter->AddQuant8VariableOperand(
+          offset_dims, offset_scale, offset_name);
+    } else {
+      offset_operand =
+          converter->AddFloat32VariableOperand(offset_dims, offset_name);
+    }
   }
 
   // Mask operand
   NNAdapterOperand* mask_operand = nullptr;
-  if (has_mask_scale) {
-    auto mask_data = mask->mutable_data<int8_t>();
-    mask_operand = converter->AddQuant8ConstantOperand(
-        mask_data, mask_dims, mask_scale[0], false);
+  if (converter->HasOperand(mask_name)) {
+    mask_operand = converter->GetOperand(mask_name);
   } else {
-    auto mask_data = mask->mutable_data<float>();
-    mask_operand =
-        converter->AddFloat32ConstantOperand(mask_data, mask_dims, false);
+    if (has_mask_scale) {
+      mask_operand =
+          converter->AddQuant8VariableOperand(mask_dims, mask_scale, mask_name);
+    } else {
+      mask_operand = converter->AddFloat32VariableOperand(mask_dims, mask_name);
+    }
   }
 
   // Filter operand
@@ -284,10 +286,8 @@ int DeformableConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       dilation_width_operand,
       dilation_height_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  auto deformable_conv2d_operation =
-      converter->AddOperation(NNADAPTER_DEFORMABLE_CONV_2D);
-  converter->SetOperation(
-      deformable_conv2d_operation, &input_operands, &output_operands);
+  converter->AddOperation(
+      NNADAPTER_DEFORMABLE_CONV_2D, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

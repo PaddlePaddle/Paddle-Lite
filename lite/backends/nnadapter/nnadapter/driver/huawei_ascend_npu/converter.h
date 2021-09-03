@@ -90,6 +90,7 @@ class Program {
       const void* values,
       NNAdapterOperandPrecisionCode precision,
       const std::vector<int32_t>& dimensions = {});
+  std::shared_ptr<Operator> AddInt32ConstantOperator(const int32_t values);
   std::shared_ptr<Operator> AddInt32ConstantOperator(
       const int32_t* values, const std::vector<int32_t>& dimensions);
   std::shared_ptr<Operator> AddInt32ConstantOperator(
@@ -111,6 +112,7 @@ class Program {
   int ConvertPool2D(hal::Operation* operation);
   int ConvertElementwise(hal::Operation* operation);
   int ConvertSoftmax(hal::Operation* operation);
+  int ConvertCumSum(hal::Operation* operation);
   int ConvertActivation(hal::Operation* operation);
   int ConvertReshape(hal::Operation* operation);
   int ConvertTranspose(hal::Operation* operation);
@@ -133,6 +135,7 @@ class Program {
   int ConvertDeformableConv2d(hal::Operation* operation);
   int ConvertHardSwish(hal::Operation* operation);
   int ConvertHardSigmoid(hal::Operation* operation);
+  int ConvertSqueeze(hal::Operation* operation);
   int ConvertUnsqueeze(hal::Operation* operation);
 
  private:

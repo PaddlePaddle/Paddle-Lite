@@ -26,6 +26,7 @@ void ConvElementwiseTreeFuser::BuildPattern() {
   auto* conv_input =
       VarNode("conv_input")->assert_is_op_input(conv_type_, "Input")->AsInput();
   auto* conv_filter = VarNode("conv_filter")
+                          ->assert_is_persistable_var()
                           ->assert_is_op_input(conv_type_, "Filter")
                           ->AsInput();
   auto* elementwise_input = VarNode("elementwise_input")
@@ -36,9 +37,17 @@ void ConvElementwiseTreeFuser::BuildPattern() {
   auto* conv_output = VarNode("conv_output")
                           ->assert_is_op_output(conv_type_, "Output")
                           ->assert_is_op_input(elementwise_type_, "Y")
-                          ->AsIntermediate();
+                          ->assert_only_one_output();
 
   // create op nodes
+  // The pass will not been applied if conv1x1 has already applied this pass.
+  auto conv_teller = [](const Node* node) -> bool {
+    bool has_fuse_elementwise_op_type =
+        const_cast<Node*>(node)->AsStmt().op_info()->HasAttr(
+            "fuse_elementwise_op_type");
+    return (!has_fuse_elementwise_op_type);
+  };
+  // Limitation of elementwise
   auto elementwise_teller = [](const Node* node) -> bool {
     int axis =
         const_cast<Node*>(node)->AsStmt().op_info()->GetAttr<int>("axis");
@@ -55,12 +64,13 @@ void ConvElementwiseTreeFuser::BuildPattern() {
     return (axis == -1) && (!fuse_scale) &&
            ((!has_act_type) || (has_act_type && act_type == "relu"));
   };
-  auto* conv =
-      OpNode("conv", conv_type_)->assert_is_op(conv_type_)->AsIntermediate();
+
+  auto* conv = OpNode("conv", conv_type_)
+                   ->assert_is_op(conv_type_)
+                   ->assert_node_satisfied(conv_teller);
   auto* elementwise = OpNode("elementwise", elementwise_type_)
                           ->assert_is_op(elementwise_type_)
-                          ->assert_node_satisfied(elementwise_teller)
-                          ->AsIntermediate();
+                          ->assert_node_satisfied(elementwise_teller);
 
   // create output node
   auto* elementwise_output = VarNode("elementwise_output")
@@ -71,13 +81,15 @@ void ConvElementwiseTreeFuser::BuildPattern() {
   // consider two special cases: conv with bias, conv with prelu alpha
   std::vector<PMNode*> conv_inputs{conv_input, conv_filter};
   if (conv_has_bias_) {
-    auto* conv_bias =
-        VarNode("conv_bias")->assert_is_op_input(conv_type_, "Bias");
+    auto* conv_bias = VarNode("conv_bias")
+                          ->assert_is_op_input(conv_type_, "Bias")
+                          ->assert_is_persistable_var();
     conv_inputs.push_back(conv_bias);
   }
   if (conv_has_prelu_alpha_) {
     auto* conv_alpha = VarNode("conv_alpha")
                            ->assert_is_op_input(conv_type_, "Prelu_alpha")
+                           ->assert_is_persistable_var()
                            ->AsInput();
     conv_inputs.push_back(conv_alpha);
   }
@@ -136,6 +148,11 @@ void ConvElementwiseTreeFuser::InsertNewNode(SSAGraph* graph,
             << conv_filter_dims << ". Skip this pass!";
     return;
   }
+
+  // NOTE: push these note to nodes2rm_.
+  nodes2rm_.insert(matched.at("conv"));
+  nodes2rm_.insert(matched.at("conv_output"));
+  nodes2rm_.insert(matched.at("elementwise"));
 
   auto op_desc = GenOpDesc(matched);
   auto conv_op_new = LiteOpRegistry::Global().Create(conv_type_);

@@ -19,10 +19,10 @@
 #include <vector>
 
 #include "lite/api/paddle_place.h"
+#include "lite/core/model/base/apis.h"
 #include "lite/core/scope.h"
 #include "lite/core/tensor.h"
 #include "lite/core/types.h"
-#include "lite/model_parser/base/apis.h"
 #include "lite/model_parser/cpp_desc.h"
 #include "lite/utils/all.h"
 /*
@@ -108,6 +108,8 @@ struct SubgraphParam : ParamBase {
   std::vector<std::string> output_names{};
   std::vector<std::string> input_data_names{};
   std::vector<std::string> output_data_names{};
+  std::vector<float> input_data_scales{};
+  std::vector<float> output_data_scales{};
   int block_idx{-1};
   std::shared_ptr<const cpp::ProgramDesc> program_desc{nullptr};
   Scope* exec_scope{nullptr};

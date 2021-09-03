@@ -17,7 +17,7 @@
 #include <memory>
 #include <vector>
 
-#include "lite/model_parser/general/program_desc.h"
+#include "lite/core/model/general/program_desc.h"
 #include "lite/model_parser/ssa/block_desc.h"
 
 namespace paddle {

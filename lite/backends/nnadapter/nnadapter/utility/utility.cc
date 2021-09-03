@@ -22,75 +22,94 @@
 
 namespace nnadapter {
 
-NNADAPTER_EXPORT bool IsPerLayerQuantization(
-    NNAdapterOperandPrecisionCode type) {
+NNADAPTER_EXPORT bool IsPerLayerQuantType(NNAdapterOperandPrecisionCode type) {
   return type == NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER ||
          type == NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER ||
+         type == NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_LAYER ||
+         type == NNADAPTER_TENSOR_QUANT_UINT16_ASYMM_PER_LAYER ||
          type == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER ||
          type == NNADAPTER_TENSOR_QUANT_UINT32_ASYMM_PER_LAYER;
 }
 
-NNADAPTER_EXPORT bool IsPerChannelQuantization(
+NNADAPTER_EXPORT bool IsPerChannelQuantType(
     NNAdapterOperandPrecisionCode type) {
   return type == NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL ||
+         type == NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_CHANNEL ||
          type == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL;
 }
 
-NNADAPTER_EXPORT bool IsAsymmetricQuantization(
+NNADAPTER_EXPORT bool IsAsymmetricQuantType(
     NNAdapterOperandPrecisionCode type) {
   return type == NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER ||
+         type == NNADAPTER_TENSOR_QUANT_UINT16_ASYMM_PER_LAYER ||
          type == NNADAPTER_TENSOR_QUANT_UINT32_ASYMM_PER_LAYER;
 }
 
-NNADAPTER_EXPORT bool IsSymmetricQuantization(
-    NNAdapterOperandPrecisionCode type) {
+NNADAPTER_EXPORT bool IsSymmetricQuantType(NNAdapterOperandPrecisionCode type) {
   return type == NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER ||
          type == NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL ||
+         type == NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_LAYER ||
+         type == NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_CHANNEL ||
          type == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER ||
          type == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL;
 }
 
-NNADAPTER_EXPORT bool IsAsymmPerLayerQuantization(
+NNADAPTER_EXPORT bool IsAsymmPerLayerQuantType(
     NNAdapterOperandPrecisionCode type) {
-  return IsAsymmetricQuantization(type) && IsPerLayerQuantization(type);
+  return IsAsymmetricQuantType(type) && IsPerLayerQuantType(type);
 }
 
-NNADAPTER_EXPORT bool IsSymmPerLayerQuantization(
+NNADAPTER_EXPORT bool IsSymmPerLayerQuantType(
     NNAdapterOperandPrecisionCode type) {
-  return IsSymmetricQuantization(type) && IsPerLayerQuantization(type);
+  return IsSymmetricQuantType(type) && IsPerLayerQuantType(type);
 }
 
-NNADAPTER_EXPORT bool IsSymmPerChannelQuantization(
+NNADAPTER_EXPORT bool IsSymmPerChannelQuantType(
     NNAdapterOperandPrecisionCode type) {
-  return IsSymmetricQuantization(type) && IsPerChannelQuantization(type);
+  return IsSymmetricQuantType(type) && IsPerChannelQuantType(type);
 }
 
-NNADAPTER_EXPORT bool IsUInt8AsymmPerLayerQuantization(
+NNADAPTER_EXPORT bool IsUInt8AsymmPerLayerQuantType(
     NNAdapterOperandPrecisionCode type) {
   return type == NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER;
 }
 
-NNADAPTER_EXPORT bool IsInt8SymmPerLayerQuantization(
+NNADAPTER_EXPORT bool IsInt8SymmPerLayerQuantType(
     NNAdapterOperandPrecisionCode type) {
   return type == NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER;
 }
 
-NNADAPTER_EXPORT bool IsInt8SymmPerChannelQuantization(
+NNADAPTER_EXPORT bool IsInt8SymmPerChannelQuantType(
     NNAdapterOperandPrecisionCode type) {
   return type == NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL;
 }
 
-NNADAPTER_EXPORT bool IsUInt32AsymmPerLayerQuantization(
+NNADAPTER_EXPORT bool IsUInt16AsymmPerLayerQuantType(
+    NNAdapterOperandPrecisionCode type) {
+  return type == NNADAPTER_TENSOR_QUANT_UINT16_ASYMM_PER_LAYER;
+}
+
+NNADAPTER_EXPORT bool IsInt16SymmPerLayerQuantType(
+    NNAdapterOperandPrecisionCode type) {
+  return type == NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_LAYER;
+}
+
+NNADAPTER_EXPORT bool IsInt16SymmPerChannelQuantType(
+    NNAdapterOperandPrecisionCode type) {
+  return type == NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_CHANNEL;
+}
+
+NNADAPTER_EXPORT bool IsUInt32AsymmPerLayerQuantType(
     NNAdapterOperandPrecisionCode type) {
   return type == NNADAPTER_TENSOR_QUANT_UINT32_ASYMM_PER_LAYER;
 }
 
-NNADAPTER_EXPORT bool IsInt32SymmPerLayerQuantization(
+NNADAPTER_EXPORT bool IsInt32SymmPerLayerQuantType(
     NNAdapterOperandPrecisionCode type) {
   return type == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER;
 }
 
-NNADAPTER_EXPORT bool IsInt32SymmPerChannelQuantization(
+NNADAPTER_EXPORT bool IsInt32SymmPerChannelQuantType(
     NNAdapterOperandPrecisionCode type) {
   return type == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL;
 }
@@ -114,6 +133,9 @@ GetOperandPrecisionDataLength(NNAdapterOperandPrecisionCode type) {
     case NNADAPTER_TENSOR_INT16:
     case NNADAPTER_TENSOR_UINT16:
     case NNADAPTER_TENSOR_FLOAT16:
+    case NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_LAYER:
+    case NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_CHANNEL:
+    case NNADAPTER_TENSOR_QUANT_UINT16_ASYMM_PER_LAYER:
       return 2;
     case NNADAPTER_INT32:
     case NNADAPTER_UINT32:
@@ -145,6 +167,56 @@ GetOperandTypeBufferLength(const NNAdapterOperandType& type) {
   auto production =
       ProductionOfDimensions(type.dimensions, type.dimension_count);
   return GetOperandPrecisionDataLength(type.precision) * production;
+}
+
+NNADAPTER_EXPORT void CopyOperandType(NNAdapterOperandType* dst_type,
+                                      const NNAdapterOperandType& src_type) {
+  NNADAPTER_CHECK(dst_type);
+  if (IsSymmPerChannelQuantType(dst_type->precision) &&
+      dst_type->symm_per_channel_params.scales) {
+    free(dst_type->symm_per_channel_params.scales);
+  }
+  memset(dst_type, 0, sizeof(NNAdapterOperandType));
+  memcpy(dst_type, &src_type, sizeof(NNAdapterOperandType));
+  if (IsSymmPerChannelQuantType(src_type.precision) &&
+      src_type.symm_per_channel_params.scales) {
+    uint32_t scale_size =
+        src_type.symm_per_channel_params.scale_count * sizeof(float);
+    auto scales = reinterpret_cast<float*>(malloc(scale_size));
+    NNADAPTER_CHECK(scales) << "Failed to allocate the scale buffer for a symm "
+                               "per-channel quant type!";
+    memcpy(scales, src_type.symm_per_channel_params.scales, scale_size);
+    dst_type->symm_per_channel_params.scales = scales;
+  }
+}
+
+NNADAPTER_EXPORT void CopyOperandTypeWithDimensions(
+    NNAdapterOperandType* dst_type, const NNAdapterOperandType& src_type) {
+  NNADAPTER_CHECK(dst_type);
+  dst_type->dimension_count = src_type.dimension_count;
+  memcpy(dst_type->dimensions,
+         src_type.dimensions,
+         NNADAPTER_MAX_SIZE_OF_DIMENSIONS * sizeof(int32_t));
+  dst_type->dynamic_dimension_count = src_type.dynamic_dimension_count;
+  memcpy(dst_type->dynamic_dimensions,
+         src_type.dynamic_dimensions,
+         NNADAPTER_MAX_SIZE_OF_DYNAMIC_DIMENSIONS *
+             NNADAPTER_MAX_SIZE_OF_DIMENSIONS * sizeof(int32_t));
+}
+
+NNADAPTER_EXPORT void CopyOperandTypeWithPrecision(
+    NNAdapterOperandType* dst_type, const NNAdapterOperandType& src_type) {
+  NNADAPTER_CHECK(dst_type);
+  dst_type->precision = src_type.precision;
+  dst_type->layout = src_type.layout;
+  dst_type->lifetime = src_type.lifetime;
+}
+
+NNADAPTER_EXPORT void CopyOperandTypeExceptQuantParams(
+    NNAdapterOperandType* dst_type, const NNAdapterOperandType& src_type) {
+  NNADAPTER_CHECK(dst_type);
+  CopyOperandTypeWithPrecision(dst_type, src_type);
+  CopyOperandTypeWithDimensions(dst_type, src_type);
 }
 
 NNADAPTER_EXPORT int64_t ProductionOfDimensions(

@@ -231,11 +231,16 @@ inline void prepack_input_nxwc4(const float16_t* din,
           "vtrn.16   q2, q3\n"
           "vtrn.32  q0, q2\n"
           "vtrn.32  q1, q3\n"
-          // "vtrn.64  q0, q2\n"
-          // "vtrn.64  q1, q3\n"
+
           "subs %[cnt], #1\n"
-          "vst1.32 {d0-d3}, [%[ptr_out]]!\n"
-          "vst1.32 {d4-d7}, [%[ptr_out]]!\n"
+          "vst1.32 {d0}, [%[ptr_out]]!\n"
+          "vst1.32 {d4}, [%[ptr_out]]!\n"
+          "vst1.32 {d2}, [%[ptr_out]]!\n"
+          "vst1.32 {d6}, [%[ptr_out]]!\n"
+          "vst1.32 {d1}, [%[ptr_out]]!\n"
+          "vst1.32 {d5}, [%[ptr_out]]!\n"
+          "vst1.32 {d3}, [%[ptr_out]]!\n"
+          "vst1.32 {d7}, [%[ptr_out]]!\n"
           "bne    1b\n"
           : [cnt] "+r"(cnt),
             [r0] "+r"(ptr_c0),

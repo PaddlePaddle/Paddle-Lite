@@ -434,6 +434,10 @@ TEST(Conv2d, precision) {
   abs_error = 1e-2;
   // TODO(shentanyue): enable later
   return;
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kX86);
+  TestConvKsize(place, abs_error);
+  return;
 #else
   return;
 #endif
@@ -443,7 +447,9 @@ TEST(Conv2d, precision) {
   TestConvDilations(place, abs_error);
   TestConvStrides(place, abs_error);
   TestConvPaddings(place, abs_error);
+#if !defined(LITE_WITH_NNADAPTER)
   TestConvPaddingAlgorithm(place, abs_error);
+#endif
   TestConvBias(place, abs_error);
   TestConvAct(place, abs_error);
 }

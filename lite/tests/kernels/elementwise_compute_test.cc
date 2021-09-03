@@ -251,6 +251,11 @@ void TestElt(Place place,
     return;
   }
 #endif
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  if (elt_type == std::string("pow")) {
+    return;
+  }
+#endif
   std::unique_ptr<arena::TestCase> tester(new ElementwiseComputeTester<T>(
       place, "def", elt_type, x_shape, y_shape, axis, act_type));
   arena::Arena arena(std::move(tester), place, abs_error);

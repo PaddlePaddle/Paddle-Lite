@@ -29,16 +29,16 @@ static void MakeQuantParamsSameAs(hal::Operand* reference_operand,
   auto& target_type = target_operand->type;
   auto reference_precision = reference_type.precision;
   auto target_precision = target_type.precision;
-  if (IsAsymmPerLayerQuantization(reference_precision) &&
-      IsAsymmPerLayerQuantization(target_precision)) {
+  if (IsAsymmPerLayerQuantType(reference_precision) &&
+      IsAsymmPerLayerQuantType(target_precision)) {
     if (fabs(target_type.asymm_per_layer_params.scale -
              reference_type.asymm_per_layer_params.scale) > 1e-7) {
       NNADAPTER_CHECK(target_type.lifetime != NNADAPTER_MODEL_INPUT &&
                       target_type.lifetime != NNADAPTER_MODEL_OUTPUT);
     }
     target_type.asymm_per_layer_params = reference_type.asymm_per_layer_params;
-  } else if (IsSymmPerLayerQuantization(reference_precision) &&
-             IsSymmPerLayerQuantization(target_precision)) {
+  } else if (IsSymmPerLayerQuantType(reference_precision) &&
+             IsSymmPerLayerQuantType(target_precision)) {
     if (fabs(target_type.symm_per_layer_params.scale -
              reference_type.symm_per_layer_params.scale) > 1e-7) {
       NNADAPTER_CHECK(target_type.lifetime != NNADAPTER_MODEL_INPUT &&

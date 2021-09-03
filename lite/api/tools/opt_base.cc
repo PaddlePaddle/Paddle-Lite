@@ -86,13 +86,43 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(
           Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)});
       valid_places_.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kInt32), DATALAYOUT(kNCHW)});
+      valid_places_.emplace_back(
           TARGET(kARM));  // enable kARM CPU kernel when no opencl kernel
-    } else if (target_repr == "x86") {
+    } else if (target_repr == "arm_metal") {
+      valid_places_.emplace_back(Place{
+          TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)});
+      valid_places_.emplace_back(Place{
+          TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray)});
+      valid_places_.emplace_back(TARGET(kARM));
+      valid_places_.emplace_back(TARGET(kHost));
+    } else if (target_repr == "x86_metal") {
+      valid_places_.emplace_back(Place{
+          TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)});
+      valid_places_.emplace_back(Place{
+          TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray)});
       valid_places_.emplace_back(TARGET(kX86));
+      valid_places_.emplace_back(TARGET(kHost));
+    } else if (target_repr == "x86") {
+      valid_places_.emplace_back(Place{TARGET(kX86), PRECISION(kFloat)});
+      valid_places_.emplace_back(Place{TARGET(kX86), PRECISION(kInt64)});
+    } else if (target_repr == "x86_opencl") {
+      valid_places_.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)});
+      valid_places_.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)});
+      valid_places_.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageDefault)});
+      valid_places_.emplace_back(
+          Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)});
+      valid_places_.emplace_back(Place{TARGET(kX86), PRECISION(kFloat)});
+      valid_places_.emplace_back(Place{TARGET(kX86), PRECISION(kInt64)});
     } else if (target_repr == "npu") {
       valid_places_.emplace_back(TARGET(kNPU));
     } else if (target_repr == "xpu") {
       valid_places_.emplace_back(TARGET(kXPU));
+    } else if (target_repr == "mlu") {
+      valid_places_.emplace_back(TARGET(kMLU));
     } else if (target_repr == "rknpu") {
       valid_places_.emplace_back(TARGET(kRKNPU));
       valid_places_.emplace_back(
@@ -133,6 +163,9 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(TARGET(kNNAdapter));
       valid_places_.emplace_back(
           TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
+      nnadapter_device_names.push_back(target_repr);
+    } else if (target_repr == "bm") {
+      valid_places_.emplace_back(TARGET(kBM));
       nnadapter_device_names.push_back(target_repr);
     } else {
       OPT_LOG_FATAL << lite::string_format(
@@ -352,24 +385,8 @@ void OptBase::PrintExecutableBinHelpInfo() {
 }
 
 // 2. Print supported info of inputed ops
-void OptBase::PrintOpsInfo(const std::set<std::string>& valid_ops) {
-  std::vector<std::string> lite_supported_targets = {"kHost",
-                                                     "kX86",
-                                                     "kCUDA",
-                                                     "kARM",
-                                                     "kMetal",
-                                                     "kOpenCL",
-                                                     "kFPGA",
-                                                     "kNPU",
-                                                     "kXPU",
-                                                     "kRKNPU",
-                                                     "kAPU",
-                                                     "kHuaweiAscendNPU",
-                                                     "kImaginationNNA",
-                                                     "kIntelFPGA",
-                                                     "kNNAdapter",
-                                                     "kAny",
-                                                     "kUnk"};
+void OptBase::PrintOpsInfo(const std::set<std::string>& valid_ops,
+                           const std::vector<std::string> valid_targets) {
   // Get the lengh of the first column: maximum length of the op_type
   size_t maximum_optype_length = 0;
   for (auto it = supported_ops.begin(); it != supported_ops.end(); it++) {
@@ -379,8 +396,8 @@ void OptBase::PrintOpsInfo(const std::set<std::string>& valid_ops) {
   }
   // Print the first row: OP_nam taget1 target2 ...
   std::cout << std::setw(maximum_optype_length) << "OP_name";
-  for (size_t i = 0; i < lite_supported_targets.size(); i++) {
-    std::string i_th_substr = lite_supported_targets[i].substr(1);
+  for (size_t i = 0; i < valid_targets.size(); i++) {
+    std::string i_th_substr = valid_targets[i].substr(1);
     std::cout << std::setw(i_th_substr.size() + 5) << i_th_substr;
   }
   std::cout << std::endl;
@@ -394,11 +411,11 @@ void OptBase::PrintOpsInfo(const std::set<std::string>& valid_ops) {
     std::cout << std::setw(maximum_optype_length) << *op;
     // Print OP info.
     auto ops_valid_places = supported_ops.at(*op);
-    for (size_t i = 0; i < lite_supported_targets.size(); i++) {
-      std::string i_th_substr = lite_supported_targets[i].substr(1);
+    for (size_t i = 0; i < valid_targets.size(); i++) {
+      std::string i_th_substr = valid_targets[i].substr(1);
       if (std::find(ops_valid_places.begin(),
                     ops_valid_places.end(),
-                    lite_supported_targets[i]) != ops_valid_places.end()) {
+                    valid_targets[i]) != ops_valid_places.end()) {
         std::cout << std::setw(i_th_substr.size() + 5) << "Y";
       } else {
         std::cout << std::setw(i_th_substr.size() + 5) << " ";
@@ -443,7 +460,11 @@ void OptBase::PrintSupportedOps() {
     valid_ops.insert(ops.begin(), ops.end());
   }
   // 3. Print support info of these ops
-  PrintOpsInfo(valid_ops);
+  std::set<std::string> valid_targets_set;
+  for (auto& it : target_types) valid_targets_set.insert(TargetRepr(it));
+  std::vector<std::string> valid_targets(valid_targets_set.begin(),
+                                         valid_targets_set.end());
+  PrintOpsInfo(valid_ops, valid_targets);
 }
 
 // test whether this model is supported
@@ -493,7 +514,13 @@ void OptBase::CheckIfModelSupported(bool print_ops_info) {
   // 3. Print ops_info of input model and check if this model is supported
   if (print_ops_info) {
     OPT_LOG << "OPs in the input model include:";
-    PrintOpsInfo(input_model_ops);
+    std::set<std::string> valid_targets_set;
+    for (auto& it : valid_places_)
+      valid_targets_set.insert(TargetRepr(it.target));
+    valid_targets_set.insert(TargetRepr(TARGET(kHost)));
+    std::vector<std::string> valid_targets(valid_targets_set.begin(),
+                                           valid_targets_set.end());
+    PrintOpsInfo(input_model_ops, valid_targets);
   }
   if (!unsupported_ops.empty()) {
     std::string unsupported_ops_str = *unsupported_ops.begin();

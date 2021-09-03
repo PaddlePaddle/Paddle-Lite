@@ -351,6 +351,10 @@ RuntimeProgram::RuntimeProgram(
 #endif
 
       auto kernels = op->CreateKernels({place});
+      if (kernels.size() == 0 && place.target == TargetType::kARM) {
+        place.target = TargetType::kHost;
+        kernels = op->CreateKernels({place});
+      }
       CHECK_GT(kernels.size(), 0) << kernels_error_message;
       auto it = std::find_if(
           kernels.begin(), kernels.end(), [&](std::unique_ptr<KernelBase>& it) {

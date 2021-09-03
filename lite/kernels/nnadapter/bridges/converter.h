@@ -28,7 +28,10 @@ namespace nnadapter {
 
 class Converter {
  public:
-  explicit Converter(NNAdapterModel* model) : model_(model) {}
+  explicit Converter(
+      NNAdapterModel* model,
+      std::map<std::string, std::vector<NNAdapterOperand*>>* operands = nullptr)
+      : model_(model), operands_(operands) {}
   ~Converter() {}
 
   // NNAdapter operand
@@ -100,18 +103,18 @@ class Converter {
   NNAdapterOperand* AddConstantOperand(const Tensor* tensor);
   NNAdapterOperand* AddOperand(const Tensor* tensor, const std::string& name);
   // NNAdapter operation
-  NNAdapterOperation* AddOperation(NNAdapterOperationType type);
-  void SetOperation(NNAdapterOperation* operation,
-                    std::vector<NNAdapterOperand*>* input_operands,
-                    std::vector<NNAdapterOperand*>* output_operands);
+  NNAdapterOperation* AddOperation(
+      NNAdapterOperationType type,
+      std::vector<NNAdapterOperand*>* input_operands,
+      std::vector<NNAdapterOperand*>* output_operands);
 
  private:
   NNAdapterOperand* AddOperand(NNAdapterOperandType* type,
                                const std::string& name = "");
-  void SetOperand(NNAdapterOperand* operand,
-                  void* buffer,
-                  size_t length,
-                  bool copy = true);
+  void SetOperandValue(NNAdapterOperand* operand,
+                       void* buffer,
+                       size_t length,
+                       bool copy = true);
   NNAdapterOperand* AddOperand(const DDim& dimensions,
                                NNAdapterOperandPrecisionCode precision,
                                float* quant_scales = nullptr,
@@ -120,8 +123,8 @@ class Converter {
                                void* buffer = nullptr,
                                bool copy = true,
                                const std::string& name = "");
-  std::map<std::string, NNAdapterOperand*> operands_;
   NNAdapterModel* model_{nullptr};
+  std::map<std::string, std::vector<NNAdapterOperand*>>* operands_;
 };
 
 }  // namespace nnadapter

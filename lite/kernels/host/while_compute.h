@@ -46,6 +46,8 @@ class WhileCompute
   std::unique_ptr<RuntimeProgram> program_;
 };
 
+bool GetCondData(const Tensor* cond);
+
 }  // namespace host
 }  // namespace kernels
 }  // namespace lite

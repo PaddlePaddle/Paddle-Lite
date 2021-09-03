@@ -76,6 +76,7 @@ class CLContext {
   std::set<cl::NDRange, CompareByRange> DefaultLocalWorkSize(
       const cl::NDRange &global_work_size,
       register size_t max_work_size,
+      size_t tune_type = 0,
       const int &divitor = 2,
       const bool &tune_reverse = false,
       const size_t &user_defined_max_work_size = 0);
@@ -87,7 +88,6 @@ class CLContext {
  private:
   std::vector<std::shared_ptr<cl::Kernel>> kernels_;
   std::map<std::string, int> kernel_offset_;
-  std::map<std::string, cl::NDRange> tuned_lwss_map_;
 };
 
 }  // namespace lite

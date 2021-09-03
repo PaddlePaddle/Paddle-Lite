@@ -19,6 +19,7 @@
 #include <utility>
 #include <vector>
 #include "core/hal/types.h"
+#include "utility/micros.h"
 
 namespace nnadapter {
 namespace runtime {
@@ -62,7 +63,7 @@ class Device {
 
 class DeviceManager {
  public:
-  static DeviceManager& Global();
+  static DeviceManager& get();
   DeviceManager();
   ~DeviceManager();
   size_t Count();
@@ -72,8 +73,7 @@ class DeviceManager {
  private:
   std::mutex mutex_;
   std::vector<std::pair<void*, std::pair<void*, hal::Device*>>> devices_;
-  DeviceManager(const DeviceManager&) = delete;
-  DeviceManager& operator=(const DeviceManager&) = delete;
+  DISALLOW_COPY_AND_ASSIGN(DeviceManager);
 };
 
 }  // namespace runtime
