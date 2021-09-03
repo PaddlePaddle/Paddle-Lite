@@ -165,6 +165,7 @@ void LightPredictor::PrepareFeedFetch() {
   input_names_.resize(feeds.size());
   output_names_.resize(fetchs.size());
   input_precisions_.resize(feeds.size());
+  input_shapes_.resize(feeds.size());
   for (size_t i = 0; i < feeds.size(); i++) {
     input_names_[feeds[i]->GetAttr<int>("col")] =
         feeds[i]->Output("Out").front();
@@ -175,6 +176,7 @@ void LightPredictor::PrepareFeedFetch() {
   }
   for (size_t i = 0; i < feeds.size(); i++) {
     input_precisions_[i] = GetInput(i)->precision();
+    input_shapes_[i] = GetInput(i)->dims().Vectorize();
   }
 }
 
@@ -353,12 +355,18 @@ void LightPredictor::WeightFP32ToFP16() {
 void LightPredictor::CheckInputValid() {
   for (size_t idx = 0; idx < input_precisions_.size(); ++idx) {
     if (GetInput(idx)->precision() != input_precisions_[idx]) {
-      LOG(WARNING) << " Error input tensor precision type. Input index (" << idx
-                   << ") Tensor name (" << input_names_[idx]
-                   << ") Require Precision type ("
+      LOG(WARNING) << " error input tensor precision type. input index (" << idx
+                   << ") tensor name (" << input_names_[idx]
+                   << ") require precision type ("
                    << PrecisionToStr(input_precisions_[idx])
-                   << ") Input Precision type ("
+                   << ") input precision type ("
                    << PrecisionToStr(GetInput(idx)->precision()) << ").";
+    }
+    if (GetInput(idx)->dims().Vectorize() != input_shapes_[idx]) {
+      LOG(WARNING) << " error input tensor shape. input index (" << idx
+                   << ") tensor name (" << input_names_[idx]
+                   << ") require shape of (" << input_shapes_[idx]
+                   << ") input tensor's shape (" << input_shapes_[idx] << ").";
     }
   }
 }
