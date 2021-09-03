@@ -219,7 +219,7 @@ REGISTER_LITE_KERNEL(
                                        DATALAYOUT(kImageDefault))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(box_coder,
+REGISTER_LITE_KERNEL(box_coder_no_pass,
                      kOpenCL,
                      kFP16,
                      kImageDefault,
