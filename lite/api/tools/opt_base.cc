@@ -197,6 +197,8 @@ void OptBase::Run() {
   if (model_set_dir_ != "") {
     RunOptimizeFromModelSet(record_strip_info_);
   } else {
+    MobileConfig M1;
+    auto test_predictor = lite_api::CreatePaddlePredictor(M1);
     auto opt_predictor = lite_api::CreatePaddlePredictor(opt_config_);
     opt_predictor->SaveOptimizedModel(
         lite_out_name_, model_type_, record_strip_info_);
