@@ -117,10 +117,11 @@ typedef enum {
  */
 typedef enum {
   NNADAPTER_TEMPORARY_VARIABLE = 0,
-  NNADAPTER_CONSTANT_COPY = 1,
-  NNADAPTER_CONSTANT_REFERENCE = 2,
-  NNADAPTER_MODEL_INPUT = 3,
-  NNADAPTER_MODEL_OUTPUT = 4,
+  NNADAPTER_TEMPORARY_SHAPE = 1,
+  NNADAPTER_CONSTANT_COPY = 2,
+  NNADAPTER_CONSTANT_REFERENCE = 3,
+  NNADAPTER_MODEL_INPUT = 4,
+  NNADAPTER_MODEL_OUTPUT = 5,
 } NNAdapterOperandLifetimeCode;
 
 /**
@@ -1302,6 +1303,19 @@ typedef struct NNAdapterAsymmPerLayerQuantParams {
 } NNAdapterAsymmPerLayerQuantParams;
 
 /**
+ * The type of operand's dimensions, include shape and dynamic shape.
+ *
+ * Available since version 1.
+ */
+typedef struct NNAdapterOperandDimensionType {
+  uint32_t count;
+  int32_t data[NNADAPTER_MAX_SIZE_OF_DIMENSIONS];
+  uint32_t dynamic_count;
+  int32_t dynamic_data[NNADAPTER_MAX_SIZE_OF_DYNAMIC_DIMENSIONS]
+                      [NNADAPTER_MAX_SIZE_OF_DIMENSIONS];
+} NNAdapterOperandDimensionType;
+
+/**
  * The type of an operand, include both scalars and tensors.
  *
  * Available since version 1.
@@ -1322,6 +1336,14 @@ typedef struct NNAdapterOperandType {
    * The buffer lifetime, e.g read only, don't set it manually.
    */
   NNAdapterOperandLifetimeCode lifetime;
+
+  /**
+   * The data dimensions, will replace
+   * dimension_count/dimensions/dynamic_dimension_count/dynamic_dimensions in
+   * the future.
+   *
+   */
+  // NNAdapterOperandDimensionType dimensions;
 
   /**
    * The number of dimensions.
