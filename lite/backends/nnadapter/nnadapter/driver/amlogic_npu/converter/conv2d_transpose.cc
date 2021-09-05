@@ -11,35 +11,32 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 #include "core/operation/conv2d_transpose.h"
-#include "driver/amlogic_npu/converter.h"
+#include "driver/amlogic_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace amlogic_npu {
-
-int Program::ConvertConv2DTranspose(hal::Operation* operation) {
+int ConvertConv2DTranspose(Converter* converter, hal::Operation* operation) {
   CONV_2D_TRANSPOSE_OPERATION_EXTRACT_INPUTS_OUTPUTS
-
   // Convert to amlnpu tensors and operators
-  auto input_tensor = GetMappedTensor(input_operand);
+  auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
-    input_tensor = ConvertOperand(input_operand);
+    input_tensor = converter->ConvertOperand(input_operand);
   }
   std::shared_ptr<aml::nn::Tensor> filter_tensor = nullptr;
   if (is_depthwise_mode) {
-    filter_tensor = ConvertOperand(filter_operand,
-                                   {filter_channel_size,
-                                    output_channel_size,
-                                    filter_height,
-                                    filter_width});
+    filter_tensor = converter->ConvertOperand(filter_operand,
+                                              {filter_channel_size,
+                                               output_channel_size,
+                                               filter_height,
+                                               filter_width});
   } else {
-    filter_tensor = ConvertOperand(filter_operand);
+    filter_tensor = converter->ConvertOperand(filter_operand);
   }
-  auto bias_tensor = ConvertOperand(bias_operand);
-  auto output_tensor = ConvertOperand(output_operand);
+  auto bias_tensor = converter->ConvertOperand(bias_operand);
+  auto output_tensor = converter->ConvertOperand(output_operand);
   aml::nn::Conv2DAttr attr;
   attr.ksize[0] = filter_height;
   attr.ksize[1] = filter_width;
@@ -64,10 +61,10 @@ int Program::ConvertConv2DTranspose(hal::Operation* operation) {
       input_tensor, filter_tensor, bias_tensor};
   std::vector<std::shared_ptr<aml::nn::Tensor>> output_tensors = {
       output_tensor};
-  graph_->AddOperator(aml::nn::OperatorType::DECONVOLUTION,
-                      input_tensors,
-                      output_tensors,
-                      &attr);
+  converter->AddOperator(aml::nn::OperatorType::DECONVOLUTION,
+                         input_tensors,
+                         output_tensors,
+                         &attr);
   return NNADAPTER_NO_ERROR;
 }
 

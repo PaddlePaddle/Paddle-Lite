@@ -771,14 +771,34 @@ TEST(Activation_log, precision) {
 }
 
 TEST(Activation_exp, precision) {
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 5e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
+#endif
   for (auto dims : std::vector<std::vector<int64_t>>{
            {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
-    TestAct(place, "def", 0.01, 6., "all", 0., 1.0, DDim(dims), "exp", EXP);
+    TestAct(place,
+            "def",
+            0.01,
+            6.,
+            "all",
+            0.,
+            1.0,
+            DDim(dims),
+            "exp",
+            EXP,
+            abs_error);
   }
-#endif
 }
 
 TEST(Activation_floor, precision) {

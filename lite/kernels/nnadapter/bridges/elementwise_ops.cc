@@ -244,7 +244,7 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     output_operand = converter->AddFloat32VariableOperand(out_dims, out_name);
   }
 
-  // ADD, SUB, MUL, DIV, MAX and MIN operation
+  // ADD, SUB, MUL, DIV, MAX, MIN and POW operation
   std::vector<NNAdapterOperand*> input_operands = {
       input0_operand, input1_operand, fuse_code_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
@@ -267,6 +267,9 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   } else if (op_type == "elementwise_min" ||
              op_type == "fusion_elementwise_min_activation") {
     eltwise_operation_type = NNADAPTER_MIN;
+  } else if (op_type == "elementwise_pow" ||
+             op_type == "fusion_elementwise_pow_activation") {
+    eltwise_operation_type = NNADAPTER_POW;
   } else {
     LOG(WARNING) << "Unsupported elementwise op type: " << op_type;
     return FAILED;
@@ -306,6 +309,10 @@ REGISTER_SUBGRAPH_BRIDGE(
     kNNAdapter,
     paddle::lite::subgraph::nnadapter::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(
+    elementwise_pow,
+    kNNAdapter,
+    paddle::lite::subgraph::nnadapter::ElementwiseConverter);
+REGISTER_SUBGRAPH_BRIDGE(
     fusion_elementwise_add_activation,
     kNNAdapter,
     paddle::lite::subgraph::nnadapter::ElementwiseConverter);
@@ -327,5 +334,9 @@ REGISTER_SUBGRAPH_BRIDGE(
     paddle::lite::subgraph::nnadapter::ElementwiseConverter);
 REGISTER_SUBGRAPH_BRIDGE(
     fusion_elementwise_max_activation,
+    kNNAdapter,
+    paddle::lite::subgraph::nnadapter::ElementwiseConverter);
+REGISTER_SUBGRAPH_BRIDGE(
+    fusion_elementwise_pow_activation,
     kNNAdapter,
     paddle::lite::subgraph::nnadapter::ElementwiseConverter);

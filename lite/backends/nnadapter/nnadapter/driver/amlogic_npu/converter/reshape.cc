@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/amlogic_npu/converter.h"
+#include "driver/amlogic_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace amlogic_npu {
 
-int Program::ConvertReshape(hal::Operation* operation) {
+int ConvertReshape(Converter* converter, hal::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
@@ -46,11 +46,11 @@ int Program::ConvertReshape(hal::Operation* operation) {
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
   // Convert to amlnpu tensors and operators
-  auto input_tensor = GetMappedTensor(input_operand);
+  auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
-    input_tensor = ConvertOperand(input_operand);
+    input_tensor = converter->ConvertOperand(input_operand);
   }
-  auto output_tensor = ConvertOperand(output_operand);
+  auto output_tensor = converter->ConvertOperand(output_operand);
   aml::nn::ReshapeAttr attr;
   for (uint32_t i = 0; i < output_operand->type.dimension_count; i++) {
     attr.shapes.push_back(output_operand->type.dimensions[i]);
@@ -58,7 +58,7 @@ int Program::ConvertReshape(hal::Operation* operation) {
   std::vector<std::shared_ptr<aml::nn::Tensor>> input_tensors = {input_tensor};
   std::vector<std::shared_ptr<aml::nn::Tensor>> output_tensors = {
       output_tensor};
-  graph_->AddOperator(
+  converter->AddOperator(
       aml::nn::OperatorType::RESHAPE, input_tensors, output_tensors, &attr);
   return NNADAPTER_NO_ERROR;
 }

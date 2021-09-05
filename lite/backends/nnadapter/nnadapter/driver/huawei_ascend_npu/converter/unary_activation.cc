@@ -52,6 +52,7 @@ int Program::ConvertActivation(hal::Operation* operation) {
     CONVERT_UNARY_ACTIVATION(TANH, Tanh);
     CONVERT_UNARY_ACTIVATION(LOG, Log);
     CONVERT_UNARY_ACTIVATION(ABS, Abs);
+    CONVERT_UNARY_ACTIVATION(EXP, Exp);
 #undef CONVERT_UNARY_ACTIVATION
     default:
       NNADAPTER_LOG(FATAL) << "Unsupported activation operation type "
