@@ -42,7 +42,7 @@ class ElementwiseAddImageCompute
     void ReInitWhenNeeded() override;
     void Run() override;
     void SaveOutput() override {
-        MetalDebug::SaveOutput("elementwise_add", output_buffer_);
+        MetalDebug::SaveOutput(function_name_, output_buffer_);
     };
     virtual ~ElementwiseAddImageCompute();
 

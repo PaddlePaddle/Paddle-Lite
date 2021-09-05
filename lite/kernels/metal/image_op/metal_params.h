@@ -69,6 +69,7 @@ struct SoftmaxMetalParam2 {
 struct ScaleMetalParam {
     float scale;
     float abias;
+    ActivationMetalParam activationParam;
 };
 
 struct ReshapeMetalParam {
