@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <limits.h>
 #include <map>
 #include <memory>
 #include <string>
@@ -112,6 +113,7 @@ class Program {
   int ConvertPool2D(hal::Operation* operation);
   int ConvertElementwise(hal::Operation* operation);
   int ConvertSoftmax(hal::Operation* operation);
+  int ConvertCumSum(hal::Operation* operation);
   int ConvertActivation(hal::Operation* operation);
   int ConvertReshape(hal::Operation* operation);
   int ConvertTranspose(hal::Operation* operation);
@@ -136,6 +138,7 @@ class Program {
   int ConvertHardSigmoid(hal::Operation* operation);
   int ConvertSqueeze(hal::Operation* operation);
   int ConvertUnsqueeze(hal::Operation* operation);
+  int ConvertPad(hal::Operation* operation);
 
  private:
   Context* context_{nullptr};

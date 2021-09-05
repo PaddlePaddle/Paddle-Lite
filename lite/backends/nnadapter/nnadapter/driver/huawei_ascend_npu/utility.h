@@ -95,6 +95,7 @@ std::vector<int64_t> ConvertDimensions(const int32_t* input_dimensions,
 std::vector<int64_t> ConvertDimensions(
     const std::vector<int32_t>& input_dimensions);
 int32_t ConvertFuseCode(int32_t input_fuse_code);
+std::string ConvertPadMode(int pad_mode_code);
 
 }  // namespace huawei_ascend_npu
 }  // namespace nnadapter
