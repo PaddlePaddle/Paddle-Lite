@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/amlogic_npu/converter.h"
+#include "driver/amlogic_npu/engine.h"
+#include <unistd.h>
 #include <algorithm>
 #include <vector>
+#include "driver/amlogic_npu/converter/converter.h"
 #include "driver/amlogic_npu/optimizer/unpack_op_fusion.h"
 #include "optimizer/symm2asymm.h"
 #include "utility/debug.h"
@@ -27,7 +29,7 @@ namespace nnadapter {
 namespace amlogic_npu {
 
 Context::Context(void* device, const char* properties) : device_(device) {
-  // TODO(hong19860320) create the raw context from rknpu_ddk
+  // TODO(hong19860320) create the raw context from amlnpu_ddk
 }
 
 Context::~Context() {}
@@ -38,71 +40,41 @@ void Program::Clear() {
   tensors_.clear();
   input_types_.clear();
   output_types_.clear();
+  dump_graph_path_ = "";
+  dump_graph_buffer_ = nullptr;
 }
 
 int Program::Build(hal::Model* model, hal::Cache* cache) {
   Clear();
+  if (model && cache->dir && cache->token) {
+    dump_graph_path_ = string_format("%s/%s.dat", cache->dir, cache->token);
+  }
+  dump_graph_buffer_ = &cache->buffer;
+  return cache->buffer.empty() ? BuildFromModel(model) : BuildFromCache(cache);
+}
+
+int Program::BuildFromModel(hal::Model* model) {
   // Convert the quantization parameters of the operands in the NNAdapter model
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
   UnpackOpFusion(model);
   ConvertQuantizationSymmToAsymm(model);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
   // Convert a NNAdapter model to a amlnpu graph
-  graph_ = std::make_shared<aml::nn::Graph>();
-  if (!graph_) {
-    return NNADAPTER_OUT_OF_MEMORY;
-  }
-  std::vector<hal::Operation*> operations =
-      SortOperationsInTopologicalOrder(model);
-  for (auto operation : operations) {
-    NNADAPTER_VLOG(5) << "Converting " << OperationTypeToString(operation->type)
-                      << " ...";
-    switch (operation->type) {
-      case NNADAPTER_ADD:
-      case NNADAPTER_SUB:
-      case NNADAPTER_MUL:
-      case NNADAPTER_DIV:
-        ConvertElementwise(operation);
-        break;
-      case NNADAPTER_AVERAGE_POOL_2D:
-      case NNADAPTER_MAX_POOL_2D:
-        ConvertPool2D(operation);
-        break;
-      case NNADAPTER_CONV_2D:
-        ConvertConv2D(operation);
-        break;
-      case NNADAPTER_CONV_2D_TRANSPOSE:
-        ConvertConv2DTranspose(operation);
-        break;
-      case NNADAPTER_CONCAT:
-        ConvertConcat(operation);
-        break;
-      case NNADAPTER_FULLY_CONNECTED:
-        ConvertFullyConnected(operation);
-        break;
-      case NNADAPTER_HARD_SIGMOID:
-      case NNADAPTER_RELU:
-      case NNADAPTER_RELU6:
-      case NNADAPTER_SIGMOID:
-      case NNADAPTER_TANH:
-        ConvertActivation(operation);
-        break;
-      case NNADAPTER_SOFTMAX:
-        ConvertSoftmax(operation);
-        break;
-      case NNADAPTER_RESHAPE:
-        ConvertReshape(operation);
-        break;
-      case NNADAPTER_TRANSPOSE:
-        ConvertTranspose(operation);
-        break;
-      default:
-        NNADAPTER_LOG(FATAL) << "Unsupported operation("
-                             << OperationTypeToString(operation->type)
-                             << ") is found.";
-        break;
+  graph_from_cache_ = false;
+  if (!dump_graph_path_.empty()) {
+    graph_ = std::make_shared<aml::nn::Graph>(
+        const_cast<char*>(dump_graph_path_.c_str()));
+    if (!graph_) {
+      return NNADAPTER_OUT_OF_MEMORY;
+    }
+  } else {
+    graph_ = std::make_shared<aml::nn::Graph>();
+    if (!graph_) {
+      return NNADAPTER_OUT_OF_MEMORY;
     }
   }
+  Converter converter(graph_.get(), &tensors_);
+  NNADAPTER_CHECK_EQ(converter.Apply(model), NNADAPTER_NO_ERROR);
   // Indentify the inputs and outputs
   auto input_count = model->input_operands.size();
   NNADAPTER_VLOG(3) << "Model input count: " << input_count;
@@ -133,9 +105,60 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     output_types_[i] = type;
   }
   graph_->SetInputsOutputs(input_tensors, output_tensors);
-  // Create an execution to build the graph to the device-specific program.
+  // Create an execution to build the graph to the device-related program.
   execution_ = std::make_shared<aml::nn::Exection>(graph_.get());
   execution_->Build();
+  NNADAPTER_VLOG(3) << "Build success.";
+  return NNADAPTER_NO_ERROR;
+}
+
+int Program::BuildFromCache(hal::Cache* cache) {
+  graph_ = std::make_shared<aml::nn::Graph>();
+  if (!graph_) {
+    return NNADAPTER_OUT_OF_MEMORY;
+  }
+  // Load graph from cache buffer
+  if (graph_from_cache_ == false) {
+    if (graph_->LoadCache(reinterpret_cast<char*>(cache->buffer.data()),
+                          cache->buffer.size()) != aml::nn::AML_SUCCESS) {
+      NNADAPTER_LOG(FATAL) << "Failed to load cache graph from buffer!";
+      return NNADAPTER_DEVICE_INTERNAL_ERROR;
+    } else {
+      NNADAPTER_VLOG(3) << "first time to Load cache !";
+      graph_from_cache_ = true;
+    }
+  }
+  NNADAPTER_VLOG(3) << "Load cache graph from buffer success.";
+  // Indentify the inputs and outputs
+  auto input_count = cache->input_types.size();
+  NNADAPTER_VLOG(3) << "Model input count: " << input_count;
+  std::vector<std::shared_ptr<aml::nn::Tensor>> input_tensors;
+  if (input_count > 0) {
+    input_tensors.resize(input_count);
+    input_types_ = cache->input_types;
+    for (size_t i = 0; i < input_count; i++) {
+      const auto& type = cache->input_types[i];
+      input_tensors[i] = CreateAmlTensor(
+          graph_.get(), string_format("model_input_%d", i), &type);
+      NNADAPTER_CHECK(input_tensors[i]);
+    }
+  }
+  auto output_count = cache->output_types.size();
+  NNADAPTER_VLOG(3) << "Model output count: " << output_count;
+  NNADAPTER_CHECK_GT(output_count, 0);
+  std::vector<std::shared_ptr<aml::nn::Tensor>> output_tensors(output_count);
+  output_types_ = cache->output_types;
+  for (size_t i = 0; i < output_count; i++) {
+    const auto& type = cache->output_types[i];
+    output_tensors[i] = CreateAmlTensor(
+        graph_.get(), string_format("model_output_%d", i), &type);
+    NNADAPTER_CHECK(output_tensors[i]);
+  }
+  // graph_->SetInputsOutputs(input_tensors, output_tensors);
+  // Create an execution to build the graph to the device-specific program.
+  execution_ = std::make_shared<aml::nn::Exection>(graph_.get());
+  // execution_->Build();
+  NNADAPTER_VLOG(3) << "Build success.";
   return NNADAPTER_NO_ERROR;
 }
 
@@ -169,9 +192,13 @@ int Program::Execute(uint32_t input_count,
     input_info[arg.index].size = length;
     input_info[arg.index].pass_through = false;
     input_info[arg.index].type =
-        static_cast<int>(ConvertPrecision(type->precision));
+        static_cast<int>(ConvertToAmlPrecisionType(type->precision));
     input_info[arg.index].layout =
-        static_cast<int>(ConvertDataLayout(type->layout));
+        static_cast<int>(ConvertToAmlDataLayoutType(type->layout));
+    if (graph_from_cache_ == true) {
+      execution_->SwapIObuffer(0, i, reinterpret_cast<char*>(buffer));
+      NNADAPTER_LOG(INFO) << "Input SwapIObuffer " << buffer;
+    }
   }
   for (uint32_t i = 0; i < output_count; i++) {
     auto& arg = output_arguments[i];
@@ -180,6 +207,9 @@ int Program::Execute(uint32_t input_count,
     NNADAPTER_CHECK(arg.memory);
     NNADAPTER_CHECK(arg.access);
     auto type = &output_types_[arg.index];
+    // TODO(hong19860320) Get the dimensions of the outputs from amlnpu_ddk
+    // according to the dynamic dimensions of the inputs, fill them to 'type'
+    // and call the 'access' function to re-allocate the host output memory
     auto buffer = arg.access(arg.memory, type);
     NNADAPTER_CHECK(buffer);
     auto length = GetOperandTypeBufferLength(*type);
@@ -189,14 +219,20 @@ int Program::Execute(uint32_t input_count,
     output_info[arg.index].size = length;
     output_info[arg.index].want_float = false;
     output_info[arg.index].type =
-        static_cast<int>(ConvertPrecision(type->precision));
+        static_cast<int>(ConvertToAmlPrecisionType(type->precision));
     output_info[arg.index].layout =
-        static_cast<int>(ConvertDataLayout(type->layout));
+        static_cast<int>(ConvertToAmlDataLayoutType(type->layout));
+    if (graph_from_cache_ == true) {
+      execution_->SwapIObuffer(1, i, reinterpret_cast<char*>(buffer));
+      NNADAPTER_LOG(INFO) << "Output SwapIObuffer " << buffer;
+    }
   }
   auto start_time = GetCurrentUS();
+
   NNADAPTER_CHECK_EQ(execution_->SetInputs(input_info), aml::nn::AML_SUCCESS);
   NNADAPTER_CHECK_EQ(execution_->Run(), aml::nn::AML_SUCCESS);
   NNADAPTER_CHECK_EQ(execution_->GetOutputs(output_info), aml::nn::AML_SUCCESS);
+
   NNADAPTER_VLOG(3) << "Process cost " << GetCurrentUS() - start_time << " us";
   for (uint32_t i = 0; i < output_count; i++) {
     auto type = &output_types_[i];
@@ -209,89 +245,18 @@ int Program::Execute(uint32_t input_count,
                      reinterpret_cast<int8_t*>(buffer));
     }
   }
-  return NNADAPTER_NO_ERROR;
-}
-
-std::string Program::GetTensorName(hal::Operand* operand) {
-  auto operand_id = OperandIdToString(operand);
-  auto index = 0;
-  auto it = tensors_.find(operand);
-  if (it != tensors_.end()) {
-    index = it->second.size();
-  }
-  return operand_id + string_format("_%d", index);
-}
-
-std::shared_ptr<aml::nn::Tensor> Program::GetMappedTensor(
-    hal::Operand* operand) {
-  auto it = tensors_.find(operand);
-  if (it != tensors_.end()) {
-    return it->second.back();
-  }
-  return nullptr;
-}
-
-std::shared_ptr<aml::nn::Tensor> Program::UpdateTensorMap(
-    hal::Operand* operand, std::shared_ptr<aml::nn::Tensor> tensor) {
-  auto it = tensors_.find(operand);
-  if (it == tensors_.end()) {
-    auto result = tensors_.insert(std::make_pair(
-        operand, std::vector<std::shared_ptr<aml::nn::Tensor>>()));
-    NNADAPTER_CHECK(result.second);
-    it = result.first;
-  }
-  it->second.push_back(tensor);
-  return tensor;
-}
-
-std::shared_ptr<aml::nn::Tensor> Program::ConvertOperand(
-    hal::Operand* operand, std::vector<int32_t> dimensions) {
-  if (dimensions.empty()) {
-    for (uint32_t i = 0; i < operand->type.dimension_count; i++) {
-      dimensions.push_back(operand->type.dimensions[i]);
+  // Read data from the dump graph file and fill to cache
+  if (!dump_graph_path_.empty()) {
+    if (ReadFile(dump_graph_path_, dump_graph_buffer_)) {
+      NNADAPTER_LOG(INFO) << "Read the dump graph file " << dump_graph_path_
+                          << " success.";
+    } else {
+      NNADAPTER_LOG(INFO) << "Failed to read the dump graph file "
+                          << dump_graph_path_ << "!";
     }
+    dump_graph_path_ = "";
   }
-  auto attr = std::make_shared<aml::nn::TensorAttr>();
-  attr->name = GetTensorName(operand);
-  attr->role = !IsConstantOperand(operand) ? aml::nn::TensorRole::VAR
-                                           : aml::nn::TensorRole::CONST;
-  attr->dims = ConvertDimensions(&dimensions[0], dimensions.size());
-  attr->precision = ConvertPrecision(operand->type.precision);
-  attr->layout = ConvertDataLayout(operand->type.layout);
-  switch (operand->type.precision) {
-    case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER:
-      attr->qntBits = 8;
-      attr->qntType = aml::nn::QuantizationType::AFFINE_ASYMMETRIC;
-      attr->qntParamAffineAsymmetric.scale.resize(1);
-      attr->qntParamAffineAsymmetric.scale[0] =
-          operand->type.asymm_per_layer_params.scale;
-      attr->qntParamAffineAsymmetric.zero_point.resize(1);
-      attr->qntParamAffineAsymmetric.zero_point[0] =
-          operand->type.asymm_per_layer_params.zero_point;
-      break;
-    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER:
-      attr->qntBits = 32;
-      attr->qntType = aml::nn::QuantizationType::SYMMETRIC;
-      attr->qntParamSymmetric.scale.resize(1);
-      attr->qntParamSymmetric.scale[0] =
-          operand->type.symm_per_layer_params.scale;
-      break;
-    default:
-      NNADAPTER_LOG(FATAL) << "Can not convert an operand@0x" << std::hex
-                           << operand << " with precision="
-                           << OperandPrecisionCodeToString(
-                                  operand->type.precision)
-                           << " to aml::nn::Tensor !";
-      break;
-  }
-  auto tensor = graph_->CreateTensor(
-      attr,
-      operand->buffer,
-      IsModelInputOperand(operand) || IsModelOutputOperand(operand));
-  NNADAPTER_CHECK(tensor);
-  // Use to find the tensor based on the pointer of operand
-  UpdateTensorMap(operand, tensor);
-  return tensor;
+  return NNADAPTER_NO_ERROR;
 }
 
 }  // namespace amlogic_npu

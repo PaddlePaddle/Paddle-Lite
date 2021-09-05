@@ -14,7 +14,6 @@
 
 #ifndef __NNADAPTER_CONVERTER_ALL_H__  // NOLINT
 #define __NNADAPTER_CONVERTER_ALL_H__
-
 REGISTER_CONVERTER(conv2d,
                    ConvertConv2D,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
