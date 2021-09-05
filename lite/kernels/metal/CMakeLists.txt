@@ -47,7 +47,7 @@ add_kernel(transpose_metal_image METAL basic SRCS image_op/transpose_image_compu
 # add_kernel(pixel_shuffle_metal_image METAL basic SRCS image_op/pixel_shuffle_image_compute.mm DEPS metal_target_wrapper)
 # add_kernel(rsqrt_metal_image METAL basic SRCS image_op/rsqrt_image_compute.mm METAL_DEPS metal_target_wrapper)
 # add_kernel(tanh_metal_image METAL basic SRCS image_op/tanh_image_compute.mm DEPS metal_target_wrapper)
-#add_kernel(prior_box_metal_image METAL basic SRCS image_op/prior_box_image_compute.mm DEPS metal_target_wrapper)
+# add_kernel(prior_box_metal_image METAL basic SRCS image_op/prior_box_image_compute.mm DEPS metal_target_wrapper)
 # add_kernel(conv2d_transpose_metal_image METAL basic SRCS image_op/conv2d_transpose_image_compute.mm DEPS metal_target_wrapper)
 
 add_library(METAL_BASE STATIC IMPORTED )
