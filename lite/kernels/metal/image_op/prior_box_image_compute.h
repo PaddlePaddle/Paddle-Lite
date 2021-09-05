@@ -42,7 +42,7 @@ class PriorBoxImageCompute
     void SaveOutput() override {
         MetalDebug::SaveOutput(function_name_, output_buffer_);
     };
-	virtual ~PriorBoxImageCompute();
+    virtual ~PriorBoxImageCompute();
 
    private:
     void run_without_mps();

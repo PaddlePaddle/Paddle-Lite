@@ -12,38 +12,38 @@
  See the License for the specific language governing permissions and
  limitations under the License. */
 
-#include <metal_stdlib>
 #include "Common.metal"
+#include <metal_stdlib>
 using namespace metal;
 
-kernel void boxcoder(texture2d_array<ftype, access::read> priorBox [[texture(0)]],
-                    texture2d_array<ftype, access::read> priorBoxVar [[texture(1)]],
-                    texture2d_array<ftype, access::read> targetBox [[texture(2)]],
-                    texture2d_array<ftype, access::write> output [[texture(3)]],
-                    uint3 gid [[thread_position_in_grid]]) {
-  ftype4 p = priorBox.read(uint2(0, gid.x), gid.z);
-  ftype4 pv = priorBoxVar.read(uint2(0, gid.x), gid.z);
-  ftype4 t;
-  t[0] = targetBox.read(uint2(0, gid.x), gid.z)[0];
-  t[1] = targetBox.read(uint2(1, gid.x), gid.z)[0];
-  t[2] = targetBox.read(uint2(2, gid.x), gid.z)[0];
-  t[3] = targetBox.read(uint2(3, gid.x), gid.z)[0];
+kernel void boxcoder(texture2d_array<ftype, access::read> priorBox[[texture(0)]],
+    texture2d_array<ftype, access::read> priorBoxVar[[texture(1)]],
+    texture2d_array<ftype, access::read> targetBox[[texture(2)]],
+    texture2d_array<ftype, access::write> output[[texture(3)]],
+    uint3 gid[[thread_position_in_grid]]) {
+    ftype4 p = priorBox.read(uint2(0, gid.x), gid.z);
+    ftype4 pv = priorBoxVar.read(uint2(0, gid.x), gid.z);
+    ftype4 t;
+    t[0] = targetBox.read(uint2(0, gid.x), gid.z)[0];
+    t[1] = targetBox.read(uint2(1, gid.x), gid.z)[0];
+    t[2] = targetBox.read(uint2(2, gid.x), gid.z)[0];
+    t[3] = targetBox.read(uint2(3, gid.x), gid.z)[0];
 
-  ftype px = (p.x + p.z) / 2;
-  ftpe py = (p.y + p.w) / 2;
-  ftype pw = p.z - p.x;
-  ftype ph = p.w - p.y;
+    ftype px = (p.x + p.z) / 2;
+    ftpe py = (p.y + p.w) / 2;
+    ftype pw = p.z - p.x;
+    ftype ph = p.w - p.y;
 
-  P tx = pv.x * t.x * pw + px;
-  P ty = pv.y * t.y * ph + py;
-  P tw = exp(pv.z * t.z) * pw;
-  P th = exp(pv.w * t.w) * ph;
+    P tx = pv.x * t.x * pw + px;
+    P ty = pv.y * t.y * ph + py;
+    P tw = exp(pv.z * t.z) * pw;
+    P th = exp(pv.w * t.w) * ph;
 
-  ftype4 r;
-  r.x = tx - tw / 2;
-  r.y = ty - th / 2;
-  r.z = tx + tw / 2;
-  r.w = ty + th / 2;
+    ftype4 r;
+    r.x = tx - tw / 2;
+    r.y = ty - th / 2;
+    r.z = tx + tw / 2;
+    r.w = ty + th / 2;
 
-  output.write(r, gid.xy, gid.z);
+    output.write(r, gid.xy, gid.z);
 }

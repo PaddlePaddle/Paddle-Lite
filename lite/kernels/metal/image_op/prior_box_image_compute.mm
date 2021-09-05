@@ -69,12 +69,14 @@ void PriorBoxImageCompute::PrepareForRun() {
             output_aspect_ratios.push_back(1.0f / ar);
         }
     }
-	auto aspect_ratios_size = (uint32_t)(output_aspect_ratios.size());
+    auto aspect_ratios_size = (uint32_t)(output_aspect_ratios.size());
 
-    new_aspect_ratio_buffer_ = std::make_shared<MetalBuffer>(
-        metal_context_, output_aspect_ratios.size() * sizeof(float), static_cast<void*>(output_aspect_ratios.data()));
-    variances_buffer_ = std::make_shared<MetalBuffer>(
-       metal_context_, param.variances_.size() * sizeof(float), static_cast<void*>(param.variances_.data()));
+    new_aspect_ratio_buffer_ = std::make_shared<MetalBuffer>(metal_context_,
+        output_aspect_ratios.size() * sizeof(float),
+        static_cast<void*>(output_aspect_ratios.data()));
+    variances_buffer_ = std::make_shared<MetalBuffer>(metal_context_,
+        param.variances_.size() * sizeof(float),
+        static_cast<void*>(param.variances_.data()));
 
     auto max_sizes_size = (uint32_t)(param.max_sizes.size());
     auto min_sizes_size = (uint32_t)(param.min_sizes.size());
