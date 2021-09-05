@@ -42,6 +42,7 @@ class BoxCoderImageCompute
     void SaveOutput() override {
         MetalDebug::SaveOutput(function_name_, output_buffer_);
     };
+	virtual ~BoxCoderImageCompute();
 
    private:
     void run_without_mps();

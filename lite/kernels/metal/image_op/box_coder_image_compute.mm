@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/metal/image_op/box_coder_image_compute.h"
+#include "lite/backends/metal/metal_context_imp.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
 #include <algorithm>
@@ -23,7 +24,7 @@ namespace kernels {
 namespace metal {
 
 void BoxCoderImageCompute::PrepareForRun() {
-    auto& context = ctx_->As<ContextMetal>();
+    auto& context = ctx_->As<MTLContext>();
     metal_context_ = (MetalContext*)context.context();
 
     const auto& param = this->Param<param_t>();

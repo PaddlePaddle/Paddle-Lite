@@ -42,12 +42,14 @@ class PriorBoxImageCompute
     void SaveOutput() override {
         MetalDebug::SaveOutput(function_name_, output_buffer_);
     };
+	virtual ~PriorBoxImageCompute();
 
    private:
     void run_without_mps();
     const MetalImage* input_buffer_;
     const MetalImage* image_buffer_;
-    MetalImage* output_buffer_{nullptr};
+    MetalImage* output_box_{nullptr};
+    MetalImage* output_variances_{nullptr};
     std::shared_ptr<MetalBuffer> param_buffer_;
     std::shared_ptr<MetalBuffer> new_aspect_ratio_buffer_;
     std::shared_ptr<MetalBuffer> variances_buffer_;
