@@ -40,7 +40,7 @@ class PriorBoxImageCompute
     void PrepareForRun() override;
     void Run() override;
     void SaveOutput() override {
-        MetalDebug::SaveOutput(function_name_, output_buffer_);
+        MetalDebug::SaveOutput(function_name_, output_box_);
     };
     virtual ~PriorBoxImageCompute();
 

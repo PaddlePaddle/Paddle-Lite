@@ -76,7 +76,7 @@ void PriorBoxImageCompute::PrepareForRun() {
         static_cast<void*>(output_aspect_ratios.data()));
     variances_buffer_ = std::make_shared<MetalBuffer>(metal_context_,
         param.variances_.size() * sizeof(float),
-        static_cast<void*>(param.variances_.data()));
+        (void*)(param.variances_.data()));
 
     auto max_sizes_size = (uint32_t)(param.max_sizes.size());
     auto min_sizes_size = (uint32_t)(param.min_sizes.size());
