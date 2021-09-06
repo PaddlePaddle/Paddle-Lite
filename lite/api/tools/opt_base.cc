@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include "lite/api/tools/opt_base.h"
-
+#include <fstream>
+#include "lite/core/optimizer/mir/dot.h"
+#include "lite/core/scope.h"
 namespace paddle {
 namespace lite_api {
 
@@ -125,6 +127,8 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(TARGET(kXPU));
     } else if (target_repr == "mlu") {
       valid_places_.emplace_back(TARGET(kMLU));
+    } else if (target_repr == "bm") {
+      valid_places_.emplace_back(TARGET(kBM));
     } else if (target_repr == "rknpu") {
       valid_places_.emplace_back(TARGET(kRKNPU));
       valid_places_.emplace_back(
@@ -165,9 +169,6 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(TARGET(kNNAdapter));
       valid_places_.emplace_back(
           TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
-      nnadapter_device_names.push_back(target_repr);
-    } else if (target_repr == "bm") {
-      valid_places_.emplace_back(TARGET(kBM));
       nnadapter_device_names.push_back(target_repr);
     } else {
       OPT_LOG_FATAL << lite::string_format(
@@ -372,6 +373,9 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "  Arguments of model checking and ops information:\n"
       "        `--print_all_ops=true`   Display all the valid operators of "
       "Paddle-Lite\n"
+      "        `--print_all_ops_in_md_format=true`   Display all the valid "
+      "operators of "
+      "Paddle-Lite in markdown format\n"
       "        `--print_supported_ops=true  "
       "--valid_targets=(arm|opencl|x86|arm_metal|x86_metal|npu|xpu|huawei_"
       "ascend_npu|imagination_nna|intel_fpga|rockchip_npu|mediatek_apu|huawei_"
@@ -381,7 +385,11 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "--valid_targets=(arm|opencl|x86|arm_metal|x86_metal|npu|xpu|huawei_"
       "ascend_npu|imagination_nna|intel_fpga|rockchip_npu|mediatek_apu|huawei_"
       "kirin_npu|amlogic_npu)`"
-      "  Display operators in the input model\n";
+      "  Display operators in the input model\n"
+      "  Arguments of optimized nb model visualization: \n"
+      "        `--optimized_nb_model_path=<optimized_nb_model_dir>`\n"
+      "        "
+      "`--visualization_file_output_path=<visualization_file_output_path>`\n";
   OPT_LOG << "paddlelite opt version:" << opt_version;
   OPT_LOG << help_info;
 }
@@ -628,6 +636,61 @@ void OptBase::CheckIfModelSupported(bool print_ops_info) {
     OPT_LOG << "Paddle-Lite supports this model!";
     exit(1);
   }
+}
+
+std::vector<std::string> OptBase::VisualizeOptimizedNBModel(
+    const std::string& model_dir, const std::string& output_path) {
+  // Load naive buffer model
+  std::shared_ptr<lite::Scope>scope = std::make_shared<lite::Scope>();
+  std::shared_ptr<lite::cpp::ProgramDesc>program = std::make_shared<lite::cpp::ProgramDesc>();
+  LoadModelNaiveFromFile(model_dir, scope.get(), program.get());
+  CHECK(program.get());
+
+  paddle::lite::mir::Dot dot;
+  using Attr = paddle::lite::mir::Dot::Attr;
+  const std::vector<Attr> op_attrs{Attr("style", "filled"),
+                                   Attr("fillcolor", "yellow")};
+  const std::vector<Attr> var_attrs{Attr("style", "filled"),
+                                    Attr("fillcolor", "gray"),
+                                    Attr("shape", "record")};
+  const std::vector<Attr> edge_attrs{};
+
+  std::fstream fs;
+  std::vector<std::string> res{};
+  for (size_t block_idx = 0; block_idx < program->BlocksSize(); block_idx++) {
+    dot.Clear();
+    const lite::cpp::BlockDesc* block =
+        program->GetBlock<lite::cpp::BlockDesc>(block_idx);
+    for (size_t var_idx = 0; var_idx < block->VarsSize(); var_idx++) {
+      const lite::cpp::VarDesc* var =
+          block->GetVar<lite::cpp::VarDesc>(var_idx);
+      dot.AddNode(var->Name(), var_attrs);
+    }
+    for (size_t op_idx = 0; op_idx < block->OpsSize(); op_idx++) {
+      const lite::cpp::OpDesc* op = block->GetOp<lite::cpp::OpDesc>(op_idx);
+      const std::string op_indx_str = std::to_string(op_idx);
+      dot.AddNode(op_indx_str, op_attrs, op->Type());
+      for (auto& var_name : op->input_vars()) {
+        dot.AddEdge(var_name, op_indx_str, edge_attrs);
+      }
+      for (auto& var_name : op->output_vars()) {
+        dot.AddEdge(op_indx_str, var_name, edge_attrs);
+      }
+    }
+    std::string graph = dot.Build();
+
+    std::string file_name = "Block_" + std::to_string(block_idx);
+    if (output_path.empty())
+      LOG(FATAL) << "output_path is empty, please set output_path to save "
+                    "visualization file";
+    else
+      fs.open(output_path + "/" + file_name + ".dot", std::ios::out);
+    CHECK(fs) << "output path error";
+    fs.write(graph.c_str(), graph.size());
+    res.emplace_back(std::move(file_name));
+  }
+  fs.close();
+  return res;
 }
 }  // namespace lite_api
 }  // namespace paddle

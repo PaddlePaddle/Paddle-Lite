@@ -68,6 +68,14 @@ DEFINE_bool(print_all_ops_in_md_format,
             false,
             "Print all the valid operators of Paddle-Lite to modify docs");
 DEFINE_bool(print_model_ops, false, "Print operators in the input model");
+DEFINE_string(optimized_nb_model_path,
+              "",
+              "path of the optimized nb model, this argument is use for the "
+              "VisualizeOptimizedModel API");
+DEFINE_string(visualization_file_output_path,
+              "",
+              "output path of the visualization file, this argument is use for "
+              "the VisualizeOptimizedModel API");
 
 int main(int argc, char** argv) {
   auto opt = paddle::lite_api::OptBase();
@@ -129,6 +137,11 @@ int main(int argc, char** argv) {
   }
   if (FLAGS_print_all_ops_in_md_format) {
     opt.PrintAllSupportedOpsInMdformat();
+    return 0;
+  }
+  if (FLAGS_optimized_nb_model_path != "" && FLAGS_visualization_file_output_path != "") {
+    opt.VisualizeOptimizedNBModel(FLAGS_optimized_nb_model_path,
+                                  FLAGS_visualization_file_output_path);
     return 0;
   }
   if ((FLAGS_model_dir == "" &&
