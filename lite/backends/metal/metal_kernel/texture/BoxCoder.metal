@@ -30,14 +30,14 @@ kernel void boxcoder(texture2d_array<ftype, access::read> priorBox[[texture(0)]]
     t[3] = targetBox.read(uint2(3, gid.x), gid.z)[0];
 
     ftype px = (p.x + p.z) / 2;
-    ftpe py = (p.y + p.w) / 2;
+    ftype py = (p.y + p.w) / 2;
     ftype pw = p.z - p.x;
     ftype ph = p.w - p.y;
 
-    P tx = pv.x * t.x * pw + px;
-    P ty = pv.y * t.y * ph + py;
-    P tw = exp(pv.z * t.z) * pw;
-    P th = exp(pv.w * t.w) * ph;
+    ftype tx = pv.x * t.x * pw + px;
+    ftype ty = pv.y * t.y * ph + py;
+    ftype tw = exp(pv.z * t.z) * pw;
+    ftype th = exp(pv.w * t.w) * ph;
 
     ftype4 r;
     r.x = tx - tw / 2;
