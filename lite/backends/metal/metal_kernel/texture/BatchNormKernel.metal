@@ -13,34 +13,21 @@
  limitations under the License. */
 
 #include <metal_stdlib>
+#include "Common.metal"
+
 using namespace metal;
 
-kernel void batchnorm(texture2d_array<float, access::read> inTexture
-                      [[texture(0)]],
-                      texture2d_array<float, access::write> outTexture
-                      [[texture(1)]],
-                      const device float4* nscale [[buffer(0)]],
-                      const device float4* nbias [[buffer(1)]],
+kernel void batchnorm(texture2d_array<ftype, access::read> inTexture [[texture(0)]],
+                      texture2d_array<ftype, access::write> outTexture [[texture(1)]],
+                      const device ftype4* nscale [[buffer(0)]],
+                      const device ftype4* nbias [[buffer(1)]],
                       uint3 gid [[thread_position_in_grid]]) {
-  if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
-      gid.z >= outTexture.get_array_size())
-    return;
-  const float4 input = inTexture.read(gid.xy, gid.z);
-  float4 output = input * nscale[gid.z] + nbias[gid.z];
-  outTexture.write(output, gid.xy, gid.z);
-}
 
-kernel void batchnorm_half(texture2d_array<half, access::read> inTexture
-                           [[texture(0)]],
-                           texture2d_array<half, access::write> outTexture
-                           [[texture(1)]],
-                           const device half4* newScale [[buffer(0)]],
-                           const device half4* newBias [[buffer(1)]],
-                           uint3 gid [[thread_position_in_grid]]) {
   if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
       gid.z >= outTexture.get_array_size())
     return;
-  const half4 input = inTexture.read(gid.xy, gid.z);
-  half4 output = input * newScale[gid.z] + newBias[gid.z];
+
+  const ftype4 input = inTexture.read(gid.xy, gid.z);
+  ftype4 output = input * nscale[gid.z] + nbias[gid.z];
   outTexture.write(output, gid.xy, gid.z);
 }

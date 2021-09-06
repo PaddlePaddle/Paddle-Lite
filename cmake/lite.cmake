@@ -636,67 +636,6 @@ function(add_subgraph_bridge)
   endforeach()
 endfunction(add_subgraph_bridge)
 
-set(ops CACHE INTERNAL "ops")
-set(ops_src_list "${CMAKE_BINARY_DIR}/ops_src_list.txt")
-file(WRITE ${ops_src_list} "") # clean
-if(LITE_BUILD_TAILOR)
-  set(tailored_ops_list_path "${LITE_OPTMODEL_DIR}/.tailored_ops_source_list")
-  file(STRINGS ${tailored_ops_list_path} tailored_ops_list)
-endif()
-# add an operator
-# level: one of (basic, extra)
-function(add_operator TARGET level)
-    set(options "")
-    set(oneValueArgs "")
-    set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS METAL_DEPS ARM_DEPS FPGA_DEPS INTEL_FPGA_DEPS BM_DEPS IMAGINATION_NNA_DEPS NPU_DEPS XPU_DEPS MLU_DEPS HUAWEI_ASCEND_NPU_DEPS APU_DEPS NNADAPTER_DEPS PROFILE_DEPS
-        LIGHT_DEPS HVY_DEPS EXCLUDE_COMPILE_DEPS
-        ARGS)
-    cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-
-    if ("${level}" STREQUAL "extra" AND (NOT LITE_BUILD_EXTRA))
-        return()
-    endif()
-
-    if ("${level}" STREQUAL "train" AND (NOT LITE_WITH_TRAIN))
-        return()
-    endif()
-
-    foreach(src ${args_SRCS})
-      if(LITE_BUILD_TAILOR)
-        list(FIND tailored_ops_list ${src} _index)
-        if (${_index} EQUAL -1)
-          return()
-        endif()
-      endif()
-      file(APPEND ${ops_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
-    endforeach()
-
-    set(ops "${ops};${TARGET}" CACHE INTERNAL "source")
-
-    lite_cc_library(${TARGET} SRCS ${args_SRCS}
-              DEPS ${args_DEPS}
-              X86_DEPS ${args_X86_DEPS}
-              CUDA_DEPS ${args_CUDA_DEPS}
-              CL_DEPS ${args_CL_DEPS}
-              METAL_DEPS ${args_METAL_DEPS}
-              ARM_DEPS ${args_ARM_DEPS}
-              FPGA_DEPS ${args_FPGA_DEPS}
-              INTEL_FPGA_DEPS ${args_INTEL_FPGA_DEPS}
-              NPU_DEPS ${args_NPU_DEPS}
-              APU_DEPS ${args_APU_DEPS}
-              XPU_DEPS ${args_XPU_DEPS}
-              RKNPU_DEPS ${args_RKNPU_DEPS}
-              BM_DEPS ${args_BM_DEPS}
-              MLU_DEPS ${args_MLU_DEPS}
-              IMAGINATION_NNA_DEPS ${args_IMAGINATION_NNA_DEPS}
-              NNADAPTER_DEPS ${args_NNADAPTER_DEPS}
-              HUAWEI_ASCEND_NPU_DEPS ${args_HUAWEI_ASCEND_NPU_DEPS}
-              PROFILE_DEPS ${args_PROFILE_DEPS}
-              LIGHT_DEPS ${args_LIGHT_DEPS}
-              HVY_DEPS ${args_HVY_DEPS}
-      )
-endfunction()
-
 #only for windows 
 function(create_static_lib TARGET_NAME)
   set(libs ${ARGN})

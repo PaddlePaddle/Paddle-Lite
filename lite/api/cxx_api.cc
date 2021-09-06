@@ -358,8 +358,12 @@ void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &program_desc,
   }
 
   if (IsQuantizedMode(program_desc_)) {
-    inner_places.insert(inner_places.begin(),
-                        Place{TARGET(kARM), PRECISION(kInt8)});
+    for (auto &valid_place : valid_places) {
+      if (valid_place.target == TARGET(kARM)) {
+        inner_places.insert(inner_places.begin(),
+                            Place{TARGET(kARM), PRECISION(kInt8)});
+      }
+    }
   }
 
   Program program(program_desc_, scope_, inner_places);

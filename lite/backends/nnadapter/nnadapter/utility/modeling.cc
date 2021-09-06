@@ -599,6 +599,7 @@ NNADAPTER_EXPORT std::vector<hal::Operation*> SortOperationsInTopologicalOrder(
         lifetime = operand->type.lifetime;
       }
       if (lifetime == NNADAPTER_TEMPORARY_VARIABLE ||
+          lifetime == NNADAPTER_TEMPORARY_SHAPE ||
           lifetime == NNADAPTER_MODEL_OUTPUT) {
         count++;
         map.insert(
