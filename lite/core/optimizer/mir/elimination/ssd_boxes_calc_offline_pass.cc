@@ -54,6 +54,13 @@ void SSDBoxesCalcOfflinePass::RemovePriorboxPattern(
     auto input_t = &(input_var->Get<lite::Tensor>());
     auto img_h = image_t->dims()[2];
     auto img_w = image_t->dims()[3];
+    if (input_t->dims()[2] < 0 || input_t->dims()[3] < 0 || img_h < 0 ||
+        img_w < 0) {
+      // early stop to avoid exception when calc priorbox
+      VLOG(4) << "Please store model's input shape in .pdmodel. "
+                 "This pass will skip.";
+      continue;
+    }
     // Get priorbox's output tensor
     auto boxes_var = scope->FindVar(op_desc->Output("Boxes").front());
     auto boxes_t = boxes_var->GetMutable<lite::Tensor>();
@@ -78,9 +85,18 @@ void SSDBoxesCalcOfflinePass::RemovePriorboxPattern(
       min_max_aspect_ratios_order =
           op_desc->GetAttr<bool>("min_max_aspect_ratios_order");
     }
-    auto max_sizes = op_desc->GetAttr<std::vector<float>>("max_sizes");
-    auto min_sizes = op_desc->GetAttr<std::vector<float>>("min_sizes");
-    auto aspect_ratios = op_desc->GetAttr<std::vector<float>>("aspect_ratios");
+    std::vector<float> max_sizes;
+    if (op_desc->HasAttr("max_sizes")) {
+      max_sizes = op_desc->GetAttr<std::vector<float>>("max_sizes");
+    }
+    std::vector<float> min_sizes;
+    if (op_desc->HasAttr("min_sizes")) {
+      min_sizes = op_desc->GetAttr<std::vector<float>>("min_sizes");
+    }
+    std::vector<float> aspect_ratios;
+    if (op_desc->HasAttr("aspect_ratios")) {
+      aspect_ratios = op_desc->GetAttr<std::vector<float>>("aspect_ratios");
+    }
     std::vector<float> aspect_ratios_vec;
     ExpandAspectRatios(aspect_ratios, is_flip, &aspect_ratios_vec);
     auto variances = op_desc->GetAttr<std::vector<float>>("variances");
@@ -397,6 +413,7 @@ void SSDBoxesCalcOfflinePass::ComputeDensityPriorBox(
   // Compute output shape
   int win1 = input->dims()[3];
   int hin1 = input->dims()[2];
+
   DDim shape_out({hin1, win1, prior_num_, 4});
   (*boxes)->Resize(shape_out);
   (*variances)->Resize(shape_out);
@@ -442,7 +459,6 @@ void SSDBoxesCalcOfflinePass::ComputeDensityPriorBox(
               int shift = step_average / density;
               float box_width_ratio = fixed_size_[s] * sqrt(ar);
               float box_height_ratio = fixed_size_[s] / sqrt(ar);
-
               for (int p = 0; p < density; ++p) {
                 for (int c = 0; c < density; ++c) {
                   float center_x_temp =
