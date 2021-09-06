@@ -190,4 +190,12 @@ function(lite_cc_test TARGET)
   if (NOT args_EXCLUDE_COMPILE_DEPS)
       add_dependencies(lite_compile_deps ${TARGET})
   endif()
+
+  common_link(${TARGET})
+  add_test(NAME ${TARGET}
+          COMMAND ${TARGET} ${args_ARGS}
+          WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+  # No unit test should exceed 10 minutes.
+  set_tests_properties(${TARGET} PROPERTIES TIMEOUT 600)
+
 endfunction()
