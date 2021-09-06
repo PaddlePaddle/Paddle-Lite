@@ -26,6 +26,7 @@
 // stores the map that records the source_file path of each kernel.
 #include "kernel_src_map.h"  // NOLINT
 #include "lite/api/cxx_api.h"
+#include "lite/api/light_api.h"
 // version of Paddle-lite
 #include "lite/core/version.h"
 // model parser functions to pre-load model to verify if this model is supported
@@ -101,6 +102,9 @@ class LITE_API OptBase {
   void CheckIfModelSupported(bool print_ops_info = true);
   void PrintAllSupportedOpsInMdformat();  // print all ops in markdown format to
                                           // modify doc
+  std::vector<std::string> VisualizeOptimizedNBModel(
+      const std::string &model_dir, const std::string &output_path);
+
  private:
   bool enable_fp16_{false};
   CxxConfig opt_config_;

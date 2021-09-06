@@ -274,6 +274,12 @@ std::vector<std::string> PaddlePredictor::GetParamNames() {
   return null_result;
 }
 
+const std::shared_ptr<const lite::cpp::ProgramDesc>
+PaddlePredictor::GetProgramDesc() const {
+  LOG(FATAL) << "The GetProgramDesc API is not implemented.";
+  return nullptr;
+}
+
 void PaddlePredictor::SaveOptimizedModel(const std::string &model_dir,
                                          LiteModelType model_type,
                                          bool record_info) {

@@ -40,7 +40,10 @@ void LightPredictor::Build(const std::string& lite_model_file,
 #endif
   BuildRuntimeProgram(program_desc_);
   PrepareFeedFetch();
+
+#ifdef DLITE_ON_MODEL_OPTIMIZE_TOOL
   program_desc_.reset();
+#endif
 }
 
 void LightPredictor::Build(const std::string& model_dir,
@@ -147,6 +150,13 @@ std::vector<std::string> LightPredictor::GetOutputNames() {
 const std::vector<PrecisionType>& LightPredictor::GetInputPrecisions() const {
   return input_precisions_;
 }
+
+const std::shared_ptr<const lite::cpp::ProgramDesc>
+LightPredictor::GetProgramDesc() const {
+  CHECK(program_desc_);
+  return program_desc_;
+}
+
 // append the names of inputs and outputs into input_names_ and output_names_
 void LightPredictor::PrepareFeedFetch() {
   std::vector<const cpp::OpDesc*> feeds;

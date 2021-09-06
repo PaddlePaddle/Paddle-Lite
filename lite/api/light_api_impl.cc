@@ -17,10 +17,10 @@
 #include "lite/api/paddle_api.h"
 #include "lite/core/version.h"
 #include "lite/model_parser/model_parser.h"
-#ifndef LITE_ON_TINY_PUBLISH
-#include "lite/api/paddle_use_kernels.h"
-#include "lite/api/paddle_use_ops.h"
-#endif
+// #ifndef LITE_ON_TINY_PUBLISH
+// #include "lite/api/paddle_use_kernels.h"
+// #include "lite/api/paddle_use_ops.h"
+// #endif
 
 #if (defined LITE_WITH_X86) && (defined PADDLE_WITH_MKLML) && \
     !(defined LITE_ON_MODEL_OPTIMIZE_TOOL)
@@ -161,6 +161,11 @@ std::vector<std::string> LightPredictorImpl::GetInputNames() {
 
 std::vector<std::string> LightPredictorImpl::GetOutputNames() {
   return raw_predictor_->GetOutputNames();
+}
+
+const std::shared_ptr<const lite::cpp::ProgramDesc>
+LightPredictorImpl::GetProgramDesc() const {
+  return raw_predictor_->GetProgramDesc();
 }
 
 bool LightPredictorImpl::TryShrinkMemory() {

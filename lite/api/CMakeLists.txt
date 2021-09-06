@@ -600,7 +600,7 @@ endif()
 if (LITE_WITH_PYTHON)
     add_subdirectory(python)
     # add library for opt_base
-    lite_cc_library(opt_base SRCS tools/opt_base.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc
+    lite_cc_library(opt_base SRCS tools/opt_base.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc light_api.cc light_api_impl.cc
         DEPS core utils model_parser)
     add_dependencies(opt_base framework_proto all_kernel_faked)
 endif()
@@ -613,7 +613,7 @@ endif()
 
 if (LITE_ON_MODEL_OPTIMIZE_TOOL)
     message(STATUS "Compiling opt")
-    lite_cc_binary(opt SRCS tools/opt.cc tools/opt_base.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc $<TARGET_OBJECTS:all_kernel_faked>
+    lite_cc_binary(opt SRCS tools/opt.cc tools/opt_base.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc $<TARGET_OBJECTS:all_kernel_faked> light_api.cc light_api_impl.cc
         DEPS gflags utils ${host_kernels} core ops model_parser)
     add_dependencies(opt all_kernel_faked)
 endif(LITE_ON_MODEL_OPTIMIZE_TOOL)

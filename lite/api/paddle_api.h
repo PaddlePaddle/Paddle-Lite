@@ -24,6 +24,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "lite/model_parser/cpp_desc.h"
 #include "paddle_place.h"  // NOLINT
 
 namespace paddle {
@@ -123,6 +124,9 @@ class LITE_API PaddlePredictor {
   /// Get a mutable tensor, return null if on one called `name` exists
   /// internal infereces API, not recommanded.
   virtual std::unique_ptr<Tensor> GetMutableTensor(const std::string& name);
+
+  virtual const std::shared_ptr<const paddle::lite::cpp::ProgramDesc>
+  GetProgramDesc() const;
 
   /// Persist the optimized model to disk. This API is only supported by
   /// CxxConfig, and the persisted model can be reused for MobileConfig.

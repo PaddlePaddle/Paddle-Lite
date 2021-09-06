@@ -91,6 +91,7 @@ class LITE_API LightPredictor {
   std::vector<std::string> GetOutputNames();
   // get input tensor precision type
   const std::vector<PrecisionType>& GetInputPrecisions() const;
+  const std::shared_ptr<const lite::cpp::ProgramDesc> GetProgramDesc() const;
   void PrepareFeedFetch();
   Scope* scope() { return scope_.get(); }
 
@@ -152,6 +153,8 @@ class LightPredictorImpl : public lite_api::PaddlePredictor {
   std::string GetVersion() const override;
   std::vector<std::string> GetInputNames() override;
   std::vector<std::string> GetOutputNames() override;
+  const std::shared_ptr<const lite::cpp::ProgramDesc> GetProgramDesc()
+      const override;
 
   std::unique_ptr<const lite_api::Tensor> GetTensor(
       const std::string& name) const override;

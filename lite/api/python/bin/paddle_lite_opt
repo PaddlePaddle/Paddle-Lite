@@ -4,7 +4,7 @@
 from __future__ import print_function
 import paddlelite.lite as lite
 import argparse
-
+import subprocess
 
 def main():
     """ main funcion """
@@ -43,6 +43,9 @@ def main():
     parser.add_argument("--print_all_ops", type=str, default="false",\
         help="{true, false}\
                Print all the valid operators of Paddle-Lite")
+    parser.add_argument("--print_all_ops_in_md_format", type=str, default="false",\
+        help="{true, false}\
+               Print all the valid operators of Paddle-Lite in markdown format")
     parser.add_argument("--print_model_ops", type=str, default="false",\
         help="{true, false}\
                Print operators in the input model")
@@ -59,6 +62,12 @@ def main():
     parser.add_argument("--model_set", type=str, required=False,\
         help="path of the models set. This option will be used to specific \
               tailoring")
+
+    # arguments of visualization optimized nb model
+    parser.add_argument("--optimized_nb_model_path", type=str, required=False,\
+        help="path of the optimized nb model, this argument is use for the VisualizeOptimizedModel API")
+    parser.add_argument("--visualization_file_output_path", type=str, required=False,\
+        help="output path of the visualization file, this argument is use for the VisualizeOptimizedModel API")
 
     args = parser.parse_args()
     """ input opt params """
@@ -91,6 +100,9 @@ def main():
     if args.print_all_ops == "true":
          a.print_all_ops()
          return 0
+    if args.print_all_ops_in_md_format == "true":
+         a.print_all_ops_in_md_dormat()
+         return 0
     if args.print_supported_ops == "true":
          a.print_supported_ops()
          return 0
@@ -100,6 +112,15 @@ def main():
     if args.print_model_ops == "true":
          a.check_if_model_supported(True);
          return 0
+    """ visualize optimized naive buffer model """
+    if args.optimized_nb_model_path is not None and args.visualization_file_output_path is not None:
+        file_names = a.visualize_optimized_nb_model(args.optimized_nb_model_path, args.visualization_file_output_path)
+        for file_name in file_names:
+          dot_path = args.visualization_file_output_path + file_name + ".dot"
+          pdf_path = args.visualization_file_output_path + file_name + ".pdf"
+          cmd = ["dot", "-Tpdf", dot_path, "-o", pdf_path]
+          subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return 0
     if ((args.model_dir is None) and (args.model_file is None or args.param_file is None) and (args.model_set is None)) or (args.optimize_out is None):
          a.executablebin_help()
          return 1
