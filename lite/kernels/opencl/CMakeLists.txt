@@ -2,7 +2,7 @@ if ((NOT LITE_ON_MODEL_OPTIMIZE_TOOL) AND (NOT LITE_WITH_PYTHON) AND (NOT LITE_W
     return ()
 endif()
 
-set(cl_kernel_deps op_params cl_runtime cl_context cl_wrapper cl_target_wrapper cl_image_converter)
+set(cl_kernel_deps ops cl_runtime cl_context cl_wrapper cl_target_wrapper cl_image_converter)
 
 #####################
 # image kernel      #
