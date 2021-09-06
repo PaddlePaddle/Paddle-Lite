@@ -339,8 +339,7 @@ int32_t ConvertFuseCodeToGEActMode(int32_t fuse_code) {
       return 14;
     default:
       NNADAPTER_LOG(FATAL) << "Failed to convert the NNAdapter fuse code("
-                           << FuseCodeToString(fuse_code)
-                           << ") to a GE activation operator!";
+                           << fuse_code << ") to a GE activation operator!";
       break;
   }
   return 0;
@@ -348,15 +347,15 @@ int32_t ConvertFuseCodeToGEActMode(int32_t fuse_code) {
 
 std::string ConvertAutoPadCodeToGEPadMode(NNAdapterAutoPadCode auto_pad_code) {
   switch (auto_pad_code) {
-    case NNADAPTER_PAD_NONE:
+    case NNADAPTER_AUTO_PAD_NONE:
       return "SPECIFIC";
-    case NNADAPTER_PAD_SAME:
+    case NNADAPTER_AUTO_PAD_SAME:
       return "SAME";
-    case NNADAPTER_PAD_VALID:
+    case NNADAPTER_AUTO_PAD_VALID:
       return "VALID";
     default:
-      NNADAPTER_LOG(FATAL) << "Failed to convert the NNAdapter pad code("
-                           << PadCodeToString(auto_pad_code)
+      NNADAPTER_LOG(FATAL) << "Failed to convert the NNAdapter auto_pad code("
+                           << AutoPadCodeToString(auto_pad_code)
                            << ") to GE pad mode!";
       break;
   }
