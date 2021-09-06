@@ -31,8 +31,10 @@ static bool HasOutputThreshold(const OpInfo* op_info,
   } else {
     std::string argname;
     int index;
-    if (op_info->GetOutputArgname(name, &argname) &&
-        op_info->GetOutputIndex(name, &index)) {
+    if (op_info->HasAttr("out_threshold")) {
+      res = true;
+    } else if (op_info->GetOutputArgname(name, &argname) &&
+               op_info->GetOutputIndex(name, &index)) {
       res = op_info->HasAttr(argname + to_string(index) + "_threshold");
     }
   }
@@ -45,6 +47,8 @@ static float GetOutputThreshold(const OpInfo* op_info,
   std::string threshold_name;
   if (is_threshold_name) {
     threshold_name = name;
+  } else if (op_info->HasAttr("out_threshold")) {
+    threshold_name = "out_threshold";
   } else {
     std::string argname;
     int index;

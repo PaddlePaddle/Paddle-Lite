@@ -89,7 +89,7 @@ int ConvertConv2D(Converter* converter, OpInfo* op, Scope* scope) {
         << "Missing the quant params '" << input_scale_name
         << "' for the input '" << input_name << "'";
     CHECK(IsValidSymmPerLayerQuantParams(output_scales))
-        << "Missing the quant params '" << input_scale_name
+        << "Missing the quant params '" << output_scale_name
         << "' for the output '" << output_name << "'";
     is_quant_mode = true;
   }
@@ -205,18 +205,20 @@ int ConvertConv2D(Converter* converter, OpInfo* op, Scope* scope) {
                                       true,
                                       bias_scales);
   }
-  // Paddings, strides, dilations and group operands
-  auto padding_width_left_operand = converter->AddConstantOperand(paddings[2]);
-  auto padding_width_right_operand = converter->AddConstantOperand(paddings[3]);
-  auto padding_height_top_operand = converter->AddConstantOperand(paddings[0]);
-  auto padding_height_bottom_operand =
-      converter->AddConstantOperand(paddings[1]);
-  auto stride_width_operand = converter->AddConstantOperand(strides[1]);
-  auto stride_height_operand = converter->AddConstantOperand(strides[0]);
-  auto dilation_width_operand = converter->AddConstantOperand(dilations[1]);
-  auto dilation_height_operand = converter->AddConstantOperand(dilations[0]);
+  // Auto_pad operand
+  auto auto_pad_operand = converter->AddConstantOperand(
+      static_cast<int32_t>(PaddingAlgorithm2PadCode(padding_algorithm)));
+  // Pads operand(optional)
+  auto pads_operand = converter->AddConstantOperand(paddings);
+  // Strides operand
+  auto strides_operand = converter->AddConstantOperand(strides);
+  // Group operand
   auto group_operand = converter->AddConstantOperand(groups);
+  // Dilations operand
+  auto dilations_operand = converter->AddConstantOperand(dilations);
   // Fuse code operand
+  std::vector<std::string> activation_support_split_ops{"leaky_relu"};
+  bool conv_with_act_fusion = true;
   int32_t fuse_code_value = NNADAPTER_FUSED_NONE;
   if (act_type == "relu") {
     fuse_code_value = NNADAPTER_FUSED_RELU;
@@ -225,29 +227,48 @@ int ConvertConv2D(Converter* converter, OpInfo* op, Scope* scope) {
   } else if (act_type == "relu6") {
     fuse_code_value = NNADAPTER_FUSED_RELU6;
   } else if (!act_type.empty()) {
-    LOG(WARNING) << "Unsupported activation type: " << act_type;
-    return UNSUPPORTED_FEATURE;
+    if (std::find(activation_support_split_ops.begin(),
+                  activation_support_split_ops.end(),
+                  act_type) == activation_support_split_ops.end()) {
+      LOG(WARNING) << "Unsupported activation type: " << act_type;
+      return UNSUPPORTED_FEATURE;
+    }
+    VLOG(5) << "Split conv + " << act_type
+            << " fusion operator into two operators!";
+    conv_with_act_fusion = false;
   }
   auto fuse_code_operand = converter->AddConstantOperand(fuse_code_value);
   // Output operand
   auto output_operand = converter->AddOutputOperand(output_name, output_scales);
   // Conv2D operation
-  std::vector<NNAdapterOperand*> input_operands = {
-      input_operand,
-      filter_operand,
-      bias_operand,
-      padding_width_left_operand,
-      padding_width_right_operand,
-      padding_height_top_operand,
-      padding_height_bottom_operand,
-      stride_width_operand,
-      stride_height_operand,
-      group_operand,
-      fuse_code_operand,
-      dilation_width_operand,
-      dilation_height_operand};
+  std::vector<NNAdapterOperand*> input_operands = {input_operand,
+                                                   filter_operand,
+                                                   bias_operand,
+                                                   auto_pad_operand,
+                                                   pads_operand,
+                                                   strides_operand,
+                                                   group_operand,
+                                                   dilations_operand,
+                                                   fuse_code_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   converter->AddOperation(NNADAPTER_CONV_2D, &input_operands, &output_operands);
+
+  // Activation operation without fusion
+  if (!conv_with_act_fusion) {
+    std::vector<NNAdapterOperand*> activation_input_operands{output_operand};
+    auto activation_output_operand = converter->AddOutputOperand(output_name);
+    std::vector<NNAdapterOperand*> activation_output_operands{
+        activation_output_operand};
+    if (act_type == "leaky_relu") {
+      auto alpha = op->GetAttr<float>("leaky_relu_alpha");
+      auto alpha_operand = converter->AddConstantOperand(alpha);
+      activation_input_operands.push_back(alpha_operand);
+      converter->AddOperation(NNADAPTER_LEAKY_RELU,
+                              &activation_input_operands,
+                              &activation_output_operands);
+    }
+  }
+
   return NO_ERROR;
 }
 

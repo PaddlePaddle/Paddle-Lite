@@ -62,8 +62,14 @@ void ScaleImageCompute::run_without_mps() {
 
 void ScaleImageCompute::setup_without_mps() {
     const auto& param = this->Param<param_t>();
-
-    ScaleMetalParam metal_param{param.scale, param.bias};
+    
+    // relu
+    ActivationMetalParam activation_params{0, 0.0, 0.0, 0.0, 0.0};
+    if (param.activation_type == "relu6") {
+        activation_params.activationType = (uint16_t)lite_api::ActivationType::kRelu6;
+        activation_params.threshold = param.alpha;
+    }
+    ScaleMetalParam metal_param{param.scale, param.bias, activation_params};
     params_buffer_ =
         std::make_shared<MetalBuffer>(metal_context_, sizeof(metal_param), &metal_param);
 
