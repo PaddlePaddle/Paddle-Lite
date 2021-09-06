@@ -612,9 +612,8 @@ endif()
 
 if (LITE_ON_MODEL_OPTIMIZE_TOOL)
     message(STATUS "Compiling opt")
-    lite_cc_binary(opt SRCS tools/opt.cc tools/opt_base.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc $<TARGET_OBJECTS:all_kernel_faked>
+    lite_cc_binary(opt SRCS tools/opt.cc tools/opt_base.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc ${all_kernel_faked_src}
         DEPS gflags utils ${host_kernels} core ops model_parser)
-    add_dependencies(opt all_kernel_faked)
 endif(LITE_ON_MODEL_OPTIMIZE_TOOL)
 
 if(NOT WITH_COVERAGE)

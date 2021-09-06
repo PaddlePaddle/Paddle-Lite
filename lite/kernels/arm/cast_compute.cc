@@ -157,11 +157,3 @@ REGISTER_LITE_KERNEL(
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
     .Finalize();
-
-#ifdef LITE_BUILD_EXTRA
-REGISTER_LITE_KERNEL(
-    cast, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::CastCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
-    .Finalize();
-#endif  // LITE_BUILD_EXTRA
