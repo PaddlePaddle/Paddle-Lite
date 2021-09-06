@@ -124,11 +124,13 @@ opt.set_valid_places("arm,opencl")
 
 启用`Float16 训练后量化`。将模型中权重数据量化为`Float16`对模型精度有一点影响，运行耗时和内存占用几乎降低一半。
 
-- `sparse_threshold(float)`-支持参数区间为`[0,1]`
-
-### `sparse_threshold(float)`
+### `set_sparse_threshold(float)`
 
 设置稀疏化阈值。例如，设置为0.5时，意思是对于某层参数，如果该参数的0元素比例小于0.5的话，则不走`sparse pass`。
+
+参数：
+
+- `sparse_threshold(float)`-支持参数区间为`[0,1]`
 
 ### `run()`
 
