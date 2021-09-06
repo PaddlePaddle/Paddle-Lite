@@ -261,78 +261,62 @@ ge::DataType GetGEDataType<bool>() {
   return ge::DT_BOOL;
 }
 
-ge::DataType ConvertPrecision(NNAdapterOperandPrecisionCode input_precision) {
-  ge::DataType output_precision = ge::DT_FLOAT;
-  switch (input_precision) {
+ge::DataType ConvertToGEPrecision(
+    NNAdapterOperandPrecisionCode precision_code) {
+  switch (precision_code) {
     case NNADAPTER_TENSOR_BOOL8:
-      output_precision = ge::DT_BOOL;
-      break;
+      return ge::DT_BOOL;
     case NNADAPTER_TENSOR_INT8:
-      output_precision = ge::DT_INT8;
-      break;
+      return ge::DT_INT8;
     case NNADAPTER_TENSOR_INT16:
-      output_precision = ge::DT_INT16;
-      break;
+      return ge::DT_INT16;
     case NNADAPTER_TENSOR_INT32:
-      output_precision = ge::DT_INT32;
-      break;
+      return ge::DT_INT32;
     case NNADAPTER_TENSOR_INT64:
-      output_precision = ge::DT_INT64;
-      break;
+      return ge::DT_INT64;
     case NNADAPTER_TENSOR_UINT8:
-      output_precision = ge::DT_UINT8;
-      break;
+      return ge::DT_UINT8;
     case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER:
-      output_precision = ge::DT_QUINT8;
-      break;
+      return ge::DT_QUINT8;
     case NNADAPTER_TENSOR_UINT16:
-      output_precision = ge::DT_UINT16;
-      break;
+      return ge::DT_UINT16;
     case NNADAPTER_TENSOR_UINT32:
-      output_precision = ge::DT_UINT32;
-      break;
+      return ge::DT_UINT32;
     case NNADAPTER_TENSOR_UINT64:
-      output_precision = ge::DT_UINT64;
-      break;
+      return ge::DT_UINT64;
     case NNADAPTER_TENSOR_FLOAT16:
-      output_precision = ge::DT_FLOAT16;
-      break;
+      return ge::DT_FLOAT16;
     case NNADAPTER_TENSOR_FLOAT32:
-      output_precision = ge::DT_FLOAT;
-      break;
+      return ge::DT_FLOAT;
     case NNADAPTER_TENSOR_FLOAT64:
-      output_precision = ge::DT_DOUBLE;
-      break;
+      return ge::DT_DOUBLE;
     default:
       NNADAPTER_LOG(FATAL)
           << "Failed to convert the NNAdapter operand precision code("
-          << OperandPrecisionCodeToString(input_precision)
-          << ") to ge::DataType !";
+          << OperandPrecisionCodeToString(precision_code)
+          << ") to ge::DataType!";
       break;
   }
-  return output_precision;
+  return ge::DT_FLOAT;
 }
 
-ge::Format ConvertDataLayout(NNAdapterOperandLayoutCode input_layout) {
-  ge::Format output_layout = ge::FORMAT_NCHW;
-  switch (input_layout) {
+ge::Format ConvertToGEDataLayout(NNAdapterOperandLayoutCode layout_code) {
+  switch (layout_code) {
     case NNADAPTER_NCHW:
-      output_layout = ge::FORMAT_NCHW;
-      break;
+      return ge::FORMAT_NCHW;
     case NNADAPTER_NHWC:
-      output_layout = ge::FORMAT_NHWC;
-      break;
+      return ge::FORMAT_NHWC;
     default:
       NNADAPTER_LOG(FATAL)
           << "Failed to convert the NNAdapter operand layout code("
-          << OperandLayoutCodeToString(input_layout) << ") to ge::Format !";
+          << OperandLayoutCodeToString(layout_code) << ") to ge::Format!";
       break;
   }
-  return output_layout;
+  return ge::FORMAT_NCHW;
 }
 
-std::vector<int64_t> ConvertDimensions(const int32_t* input_dimensions,
-                                       uint32_t input_dimensions_count) {
+std::vector<int64_t> ConvertToGEDimensions(const int32_t* input_dimensions,
+                                           uint32_t input_dimensions_count) {
   std::vector<int64_t> output_dimensions;
   for (uint32_t i = 0; i < input_dimensions_count; i++) {
     output_dimensions.push_back(input_dimensions[i]);
@@ -340,30 +324,43 @@ std::vector<int64_t> ConvertDimensions(const int32_t* input_dimensions,
   return output_dimensions;
 }
 
-std::vector<int64_t> ConvertDimensions(
+std::vector<int64_t> ConvertToGEDimensions(
     const std::vector<int32_t>& input_dimensions) {
-  return ConvertDimensions(&input_dimensions[0], input_dimensions.size());
+  return ConvertToGEDimensions(&input_dimensions[0], input_dimensions.size());
 }
 
-int32_t ConvertFuseCode(int32_t input_fuse_code) {
-  int output_act_mode;
-  switch (input_fuse_code) {
+int32_t ConvertFuseCodeToGEActMode(int32_t fuse_code) {
+  switch (fuse_code) {
     case NNADAPTER_FUSED_RELU:
-      output_act_mode = 1;
-      break;
+      return 1;
     case NNADAPTER_FUSED_RELU1:
-      output_act_mode = 7;
-      break;
+      return 7;
     case NNADAPTER_FUSED_RELU6:
-      output_act_mode = 14;
-      break;
+      return 14;
     default:
       NNADAPTER_LOG(FATAL) << "Failed to convert the NNAdapter fuse code("
-                           << input_fuse_code
+                           << FuseCodeToString(fuse_code)
                            << ") to a GE activation operator!";
       break;
   }
-  return output_act_mode;
+  return 0;
+}
+
+std::string ConvertAutoPadCodeToGEPadMode(NNAdapterAutoPadCode auto_pad_code) {
+  switch (auto_pad_code) {
+    case NNADAPTER_PAD_NONE:
+      return "SPECIFIC";
+    case NNADAPTER_PAD_SAME:
+      return "SAME";
+    case NNADAPTER_PAD_VALID:
+      return "VALID";
+    default:
+      NNADAPTER_LOG(FATAL) << "Failed to convert the NNAdapter pad code("
+                           << PadCodeToString(auto_pad_code)
+                           << ") to GE pad mode!";
+      break;
+  }
+  return "SPECIFIC";
 }
 
 }  // namespace huawei_kirin_npu

@@ -192,7 +192,7 @@ typedef enum {
    * H_in, W_in].
    * * 1: auto_pad, a NNADAPTER_INT32 scalar. 0 means "EXPLICIT" so that
    * paddings is used. 1 means "SAME". 2 means "VALID". It must be one of
-   * NNAdapterPadCode values.
+   * NNAdapterAutoPadCode values.
    * * 2: pads, a NNADAPTER_INT32 tensor, with shape [4] and data {height_top,
    * height_bottom, width_left, width_right}, or with shape[0] and no data.
    * * 3: kernel_shape, a NNADAPTER_INT32 tensor, with shape [2] and data
@@ -347,7 +347,7 @@ typedef enum {
    * bias_scale[i] = input_scale * filter_scale[i] for each output channel.
    * * 3: auto_pad, a NNADAPTER_INT32 scalar. 0 means "EXPLICIT" so that
    * paddings is used. 1 means "SAME". 2 means "VALID". It must be one of
-   * NNAdapterPadCode.
+   * NNAdapterAutoPadCode.
    * * 4: pads, a NNADAPTER_INT32 tensor, with shape [4] and data {height_top,
    * height_bottom, width_left, width_right}, or with shape[0] and no data.
    * * 5: strides, a NNADAPTER_INT32 tensor, with shape [2] and data
@@ -403,7 +403,7 @@ typedef enum {
    * bias_scale[i] = input_scale * filter_scale[i] for each output channel.
    * * 3: auto_pad, a NNADAPTER_INT32 scalar. 0 means "EXPLICIT" so that
    * paddings is used. 1 means "SAME". 2 means "VALID". It must be one of
-   * NNAdapterPadCode.
+   * NNAdapterAutoPadCode.
    * * 4: pads, a NNADAPTER_INT32 tensor, with shape [4] and data {height_top,
    * height_bottom, width_left, width_right}, or shape[0] and no data.
    * * 5: strides, a NNADAPTER_INT32 tensor, with shape [2] and data
@@ -751,7 +751,7 @@ typedef enum {
    * H_in, W_in].
    * * 1: auto_pad, a NNADAPTER_INT32 scalar. 0 means "EXPLICIT" so that
    * paddings is used. 1 means "SAME". 2 means "VALID". It must be one of
-   * NNAdapterPadCode values.
+   * NNAdapterAutoPadCode values.
    * * 2: pads, a NNADAPTER_INT32 tensor, with shape [4] and data {height_top,
    * height_bottom, width_left, width_right}, or with shape[0] and no data.
    * * 3: kernel_shape, a NNADAPTER_INT32 tensor, with shape [2] and data
@@ -836,7 +836,7 @@ typedef enum {
    * with value [x0_begin, x0_end, x1_begin, x1_end,...].
    * * 2: mode, a NNADAPTER_INT32 scalar.
    * Supported modes: `constant`(default), `reflect`, `edge`.
-   * It should be a value of NNAdapterPadMode.
+   * It should be a value of NNAdapterPadModeCode.
    * * 3: value, a scalar with the same type as input,
    * only be used if the mode is "constant".
    *
@@ -1234,13 +1234,13 @@ typedef enum {
  */
 typedef enum {
   /** Use explicit pads. */
-  NNADAPTER_PAD_NONE = 0,
+  NNADAPTER_AUTO_PAD_NONE = 0,
   /** Results in padding evenly to the left/right or up/down of the input such
      that output has the same height/width dimension as the input.*/
-  NNADAPTER_PAD_SAME = 1,
+  NNADAPTER_AUTO_PAD_SAME = 1,
   /** No padding. */
-  NNADAPTER_PAD_VALID = 2,
-} NNAdapterPadCode;
+  NNADAPTER_AUTO_PAD_VALID = 2,
+} NNAdapterAutoPadCode;
 
 /**
  * Device codes.

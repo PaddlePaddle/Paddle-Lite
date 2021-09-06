@@ -659,19 +659,19 @@ DDim ConvertNNDimensionsToDDim(int32_t* input_dimensions,
   return DDim(output_dimensions);
 }
 
-NNAdapterPadCode PaddingAlgorithm2PadCode(
+NNAdapterAutoPadCode PaddingAlgorithm2AutoPadCode(
     const std::string& padding_algorithm) {
-  NNAdapterPadCode pad_code;
+  NNAdapterAutoPadCode auto_pad_code;
   if (padding_algorithm == "EXPLICIT" || padding_algorithm.empty()) {
-    pad_code = NNADAPTER_PAD_NONE;
+    auto_pad_code = NNADAPTER_AUTO_PAD_NONE;
   } else if (padding_algorithm == "SAME") {
-    pad_code = NNADAPTER_PAD_SAME;
+    auto_pad_code = NNADAPTER_AUTO_PAD_SAME;
   } else if (padding_algorithm == "VALID") {
-    pad_code = NNADAPTER_PAD_VALID;
+    auto_pad_code = NNADAPTER_AUTO_PAD_VALID;
   } else {
     LOG(FATAL) << "Unsupported padding_algorithm: " << padding_algorithm;
   }
-  return pad_code;
+  return auto_pad_code;
 }
 
 }  // namespace nnadapter
