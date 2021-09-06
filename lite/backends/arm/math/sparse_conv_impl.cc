@@ -26,9 +26,11 @@ namespace math {
  * \brief the input type is float, and the output type is also float.
  * @param A sparse weight data
  * @param B dense input data
- * @param widx_dmap An array of int32_t values storing scaled [by sizeof(input element)] difference 
+ * @param widx_dmap An array of int32_t values storing scaled [by sizeof(input
+ * element)] difference
  * between input channels corresponding to successive non-zero element
- * @param nidx_nnzmap the number of non-zero kernel elements per each output channel
+ * @param nidx_nnzmap the number of non-zero kernel elements per each output
+ * channel
  * @param bias
  * @param output
  * @param M
@@ -71,9 +73,11 @@ void sparse_conv_fp32_pipelined(const float* A,
  * \brief the input type is int8, and the output type is also float.
  * @param A sparse weight data
  * @param B dense input data
- * @param widx_dmap An array of int32_t values storing scaled [by sizeof(input element)] difference 
+ * @param widx_dmap An array of int32_t values storing scaled [by sizeof(input
+ * element)] difference
  * between input channels corresponding to successive non-zero element
- * @param nidx_nnzmap the number of non-zero kernel elements per each output channel
+ * @param nidx_nnzmap the number of non-zero kernel elements per each output
+ * channel
  * @param bias
  * @param output
  * @param M
@@ -117,9 +121,11 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
  * \brief the input type is int8, and the output type is also int8.
  * @param A sparse weight data
  * @param B dense input data
- * @param widx_dmap An array of int32_t values storing scaled [by sizeof(input element)] difference 
+ * @param widx_dmap An array of int32_t values storing scaled [by sizeof(input
+ * element)] difference
  * between input channels corresponding to successive non-zero element
- * @param nidx_nnzmap the number of non-zero kernel elements per each output channel
+ * @param nidx_nnzmap the number of non-zero kernel elements per each output
+ * channel
  * @param bias
  * @param output
  * @param M

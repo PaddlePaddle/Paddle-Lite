@@ -133,9 +133,12 @@ int SparseConvDetectPass::ComputeSparseWeight(
  * \brief Sparse representation of weights consists of three components:
  * @param w_tensor original dense weight data.
  * @param num_nonzeroes the number of non-zero kernel elements.
- * @param nonzero_output_tensor An array of float values storing non-zero kernel elements.
- * @param oc_nonzeros_tensor the number of non-zero kernel elements per each output channel.
- * @param diffs_tensor An array of int32_t values storing scaled [by sizeof(input element)] difference 
+ * @param nonzero_output_tensor An array of float values storing non-zero kernel
+ * elements.
+ * @param oc_nonzeros_tensor the number of non-zero kernel elements per each
+ * output channel.
+ * @param diffs_tensor An array of int32_t values storing scaled [by
+ * sizeof(input element)] difference
  * between input channels corresponding to successive non-zero element.
  */
 template int SparseConvDetectPass::ComputeSparseWeight<float>(
@@ -162,11 +165,16 @@ template int SparseConvDetectPass::ComputeSparseWeight<int8_t>(
  * \brief Sparse representation of weights consists of three components:
  * @param w_tensor original dense weight data.
  * @param num_nonzeroes the number of non-zero kernel elements.
- * @param num_build_nonzeroes the number of non-zero kernel elements after reconstruction, 
- * the number of non-zeros in each output channel is a multiple of 4, otherwise zero-padded.
- * @param nonzero_output_tensor An array of float values storing non-zero kernel elements.
- * @param oc_nonzeros_tensor the number of non-zero kernel elements per each output channel.
- * @param diffs_tensor An array of int32_t values storing scaled [by sizeof(input element)] difference 
+ * @param num_build_nonzeroes the number of non-zero kernel elements after
+ * reconstruction,
+ * the number of non-zeros in each output channel is a multiple of 4, otherwise
+ * zero-padded.
+ * @param nonzero_output_tensor An array of float values storing non-zero kernel
+ * elements.
+ * @param oc_nonzeros_tensor the number of non-zero kernel elements per each
+ * output channel.
+ * @param diffs_tensor An array of int32_t values storing scaled [by
+ * sizeof(input element)] difference
  * between input channels corresponding to successive non-zero element.
  */
 template int SparseConvDetectPass::ComputeSparseWeight<float>(
@@ -409,7 +417,8 @@ void SparseConvDetectPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
                                                oc_nonzeros_t,
                                                ic_diffs_t);
       }
-      VLOG(4) << "zero_num: " << zero_num << " weight_num: " << weight_num << " first_ic: " << first_ic;
+      VLOG(4) << "zero_num: " << zero_num << " weight_num: " << weight_num
+              << " first_ic: " << first_ic;
       nonzeros_output_t->set_persistable(true);
       oc_nonzeros_t->set_persistable(true);
       ic_diffs_t->set_persistable(true);

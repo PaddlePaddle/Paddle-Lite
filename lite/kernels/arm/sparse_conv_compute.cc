@@ -79,7 +79,8 @@ void SparseConvCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
         param.activation_param.Relu_clipped_coef / param.output_scale;
   }
   //! update leaky_relu parameter
-  if (param.activation_param.active_type == lite_api::ActivationType::kLeakyRelu) {
+  if (param.activation_param.active_type ==
+      lite_api::ActivationType::kLeakyRelu) {
     param.activation_param.Leaky_relu_alpha =
         param.activation_param.Leaky_relu_alpha / param.output_scale;
   }
