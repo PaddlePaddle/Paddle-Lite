@@ -21,7 +21,7 @@ namespace lite {
 namespace subgraph {
 namespace nnadapter {
 
-DDim infer_shape(const std::vector<const Tensor*>& inputs, int in_axis) {
+DDim concat_infer_shape(const std::vector<const Tensor*>& inputs, int in_axis) {
   std::vector<DDim> input_dims;
   for (auto* tensor : inputs) {
     input_dims.push_back(tensor->dims());
@@ -48,8 +48,8 @@ DDim infer_shape(const std::vector<const Tensor*>& inputs, int in_axis) {
 }
 
 NNAdapterOperand* ConcatOperands(Converter* converter,
+                                 Scope* scope,
                                  const std::vector<std::string>& input_names,
-                                 const DDim& input_dims,
                                  const DDim& output_dims,
                                  const std::string& output_name,
                                  int axis) {
@@ -61,6 +61,8 @@ NNAdapterOperand* ConcatOperands(Converter* converter,
     std::vector<NNAdapterOperand*> input_operands;
     for (size_t i = 0; i < input_names.size(); i++) {
       auto input_name = input_names[i];
+      auto input = scope->FindMutableTensor(input_name);
+      auto input_dims = input->dims();
       NNAdapterOperand* input_operand = nullptr;
       if (converter->HasOperand(input_name)) {
         input_operand = converter->GetOperand(input_name);
@@ -137,12 +139,16 @@ int StackConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   for (auto x_name : x_names) {
     x_tensor_list.push_back(scope->FindMutableTensor(x_name));
   }
-  auto output_dims = infer_shape(x_tensor_list, axis);
+  auto concat_axis = axis;
+  if (axis == x0_rank) {
+    concat_axis = axis - 1;
+  }
+  auto output_dims = concat_infer_shape(x_tensor_list, concat_axis);
 
   // Concat input operand
-  std::string concat_name = x_names[0] + "/concat";
+  std::string concat_name = output_name + "/concat";
   auto input_concat_operand = ConcatOperands(
-      converter, x_names, x0_dims, output_dims, concat_name, axis);
+      converter, scope, x_names, output_dims, concat_name, concat_axis);
 
   // Reshape output operand
   std::vector<int64_t> shape_data(x0_dims.Vectorize());
