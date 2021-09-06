@@ -34,6 +34,8 @@ namespace lite {
 const int XPU_MAX_LOD_SIZE = 32;
 // MAX(lod[i + 1] - lod[i]) = 512
 const int XPU_MAX_LOD_SEQ_LEN = 512;
+// QUANT SCALE NUM == XPU CDNN NUM
+const int XPU_QUANT_SCALE_NUM = 6;
 
 using TargetWrapperXPU = TargetWrapper<TARGET(kXPU)>;
 
