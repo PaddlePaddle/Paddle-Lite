@@ -42,7 +42,7 @@ add_kernel(softmax_metal_image METAL basic SRCS image_op/softmax_image_compute.m
 add_kernel(split_metal_image METAL basic SRCS image_op/split_image_compute.mm)
 add_kernel(shuffle_channel_metal_compute METAL basic SRCS image_op/shuffle_channel_image_compute.mm)
 add_kernel(transpose_metal_image METAL basic SRCS image_op/transpose_image_compute.mm)
-add_kernel(yolo_box_metal_image METAL basic SRCS image_op/yolo_box_image_compute.mm DEPS metal_target_wrapper)
+add_kernel(yolo_box_metal_image METAL basic SRCS image_op/yolo_box_image_compute.mm)
 
 # add_kernel(batch_norm_metal_image METAL basic SRCS image_op/batch_norm_image_compute.mm)
 # add_kernel(mul_metal_image METAL basic SRCS image_op/mul_image_compute.mm)
@@ -63,13 +63,13 @@ add_kernel(yolo_box_metal_image METAL basic SRCS image_op/yolo_box_image_compute
 
 
 lite_cc_test(test_batch_norm_metal_image_metal SRCS image_op/batch_norm_image_compute_test.mm
-        DEPS kernels ${METAL_BASE} ${tensor_lite} core )
+        DEPS kernels ${METAL_BASE} ${tensor_lite} core)
 
 lite_cc_test(test_activation_metal_image_metal SRCS image_op/activation_image_compute_test.mm
-        DEPS activation_metal_image io_copy_metal_image metal_target_wrapper ${METAL_BASE} ${tensor_lite} core)
+        DEPS kernels ${METAL_BASE} ${tensor_lite} core)
 
 lite_cc_test(test_pool_metal_image_metal SRCS image_op/pool_image_compute_test.mm
-        DEPS kernels ${METAL_BASE} ${tensor_lite} core )
+        DEPS kernels ${METAL_BASE} ${tensor_lite} core)
 
 lite_cc_test(test_dw_metal_image_metal SRCS image_op/conv2d_image_compute_test.mm
-        DEPS kernels ${METAL_BASE} ${tensor_lite} core )
+        DEPS kernels ${METAL_BASE} ${tensor_lite} core)

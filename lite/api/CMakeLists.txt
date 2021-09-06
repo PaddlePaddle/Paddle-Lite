@@ -440,6 +440,7 @@ if (LITE_ON_MODEL_OPTIMIZE_TOOL)
     message(STATUS "Compiling opt")
     lite_cc_binary(opt SRCS tools/opt.cc tools/opt_base.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc
         DEPS gflags utils kernels core ops model_parser)
+endif()
 
 if(NOT WITH_COVERAGE)
     lite_cc_test(test_paddle_api SRCS paddle_api_test.cc DEPS paddle_api_full paddle_api_light
