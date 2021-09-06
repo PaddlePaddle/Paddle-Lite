@@ -87,7 +87,6 @@ namespace mir {
 //                   |                                    |
 //                   |                                    |
 //                   ----------- OP: box coder -----------
-//                            or depsity_prior_box
 //                                     |
 //                                     |
 //                                     v
