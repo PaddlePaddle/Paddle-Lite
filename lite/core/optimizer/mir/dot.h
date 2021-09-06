@@ -156,6 +156,12 @@ class Dot {
     return ss.str();
   }
 
+  void Clear() {
+    nodes_.clear();
+    edges_.clear();
+    attrs_.clear();
+  }
+
  private:
   std::map<std::string, Node> nodes_;
   std::vector<Edge> edges_;
