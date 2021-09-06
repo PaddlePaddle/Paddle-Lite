@@ -26,6 +26,7 @@ extern NSString* cString2NSString(std::string cStr);
 @property (strong, nonatomic, readonly) id<MTLDevice> device;
 
 - (void)setMetalPath:(std::string)path;
+- (void)setMetalDevice:(void*)device;
 
 - (id<MTLBuffer>)newDeviceBuffer:(NSUInteger)size access:(paddle::lite::METAL_ACCESS_FLAG)access;
 - (id<MTLBuffer>)newDeviceBuffer:(NSUInteger)size
@@ -59,6 +60,10 @@ extern NSString* cString2NSString(std::string cStr);
                 pipline:(id<MTLComputePipelineState>)pipline
         threadsPerGroup:(MTLSize)threadsPerGroup
                  groups:(MTLSize)groups;
+
+// pre-process
+- (MPSImageLanczosScale*)lanczosScalePtrCreate;
+- (id<MTLTexture>)lanczosTextureCreate:(NSArray*)dims;
 
 // memory reuse
 - (void)set_use_memory_reuse:(bool)flag;

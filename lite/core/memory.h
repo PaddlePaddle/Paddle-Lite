@@ -210,6 +210,14 @@ class Buffer {
     metal_use_image2d_ = false;
     dim_ = DDimLite({static_cast<int64_t>(count)});
   }
+
+  void ResetLazyMetalData(void* ptr) {
+    CHECK_EQ(own_data_, true) << "Can not reset unowned buffer.";
+    Free();
+    target_ = TARGET(kMetal);
+    metal_use_texture_ = true;
+    data_ = TargetWrapperMetal::MallocMTLData(ptr);
+  }
 #endif
 
   void Free() {
@@ -220,6 +228,11 @@ class Buffer {
         TargetFree(target_, data_, "cl_use_image2d_");
       } else if (metal_use_image2d_) {
       }
+    }
+    if (metal_use_texture_) {
+#ifdef LITE_WITH_METAL
+      TargetWrapperMetal::FreeMTLData(data_);
+#endif  // LITE_WITH_METAL
     }
     data_ = nullptr;
     target_ = TargetType::kHost;
@@ -247,6 +260,7 @@ class Buffer {
   size_t cl_image2d_height_{0};  // only used for OpenCL Image2D
 
   bool metal_use_image2d_{false};  // only used for Metal Image2D
+  bool metal_use_texture_{false};  // only used for Metal Image2D
   DDim dim_;
 
   bool transpose_{false};

@@ -35,6 +35,10 @@ class TargetWrapper<TARGET(kMetal)> {
 
     static void FreeImage(void* image);
 
+    static void* MallocMTLData(void* ptr);
+
+    static void FreeMTLData(void* ptr);
+
     static void* Malloc(size_t size);
 
     static void Free(void* ptr);

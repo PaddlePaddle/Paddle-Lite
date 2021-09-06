@@ -39,6 +39,10 @@ void MetalContext::set_metal_path(std::string path) {
     [(__bridge MetalContextImp*)mContext setMetalPath:path];
 }
 
+void MetalContext::set_metal_device(void* device) {
+    [(__bridge MetalContextImp*)mContext setMetalDevice:device];
+}
+
 void MetalContext::set_use_memory_reuse(bool flag) {
     if (@available(iOS 10.0, *)) {
         use_memory_reuse_ = flag;

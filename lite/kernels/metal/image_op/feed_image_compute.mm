@@ -15,6 +15,7 @@
 #include "lite/kernels/metal/image_op/feed_image_compute.h"
 #include "lite/backends/metal/metal_context_imp.h"
 #include "lite/backends/metal/metal_debug.h"
+#include "lite/backends/metal/metal_mtl_data.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/program.h"
 #include "lite/core/tensor.h"
@@ -31,7 +32,7 @@ void FeedImageCompute::PrepareForRun() {
     metal_context_ = (MetalContext*)context.context();
 
     init_memory();
-    setup_without_mps();
+    setup_pipeline();
 }
 
 void FeedImageCompute::ReInitWhenNeeded() {
@@ -60,29 +61,42 @@ void FeedImageCompute::init_memory() {
 
 void FeedImageCompute::Run() {
     @autoreleasepool {
-            run_without_mps();
+        const auto& param = this->Param<param_t>();
+        Tensor& input_tensor = param.feed_list->at(param.col);
+        if (input_tensor.metal_data_type() == Tensor::MetalDataType::kRaw) {
+            run_raw();
+        } else if (input_tensor.metal_data_type() == Tensor::MetalDataType::kMetal) {
+            run_mtl_texture();
+        }
     }
 }
 
-void FeedImageCompute::setup_without_mps() {
+void FeedImageCompute::setup_pipeline() {
     const auto& param = this->Param<param_t>();
-
     Tensor& input_tensor = param.feed_list->at(param.col);
-    auto input_dims = input_tensor.dims();
-    auto input_c = input_dims[1];
-    if (input_c == 1) {
-        function_name_ = "buf_to_tex";
-    } else if (input_c == 3) {
-        function_name_ = "buf_to_tex_c_3";
-    } else {
-        function_name_ = "buf_to_tex_c_n";
+    if (input_tensor.metal_data_type() == Tensor::MetalDataType::kRaw) {
+        if (input_tensor.precision() == lite_api::PrecisionType::kFloat) {
+            setup_float();
+        }
+    } else if (input_tensor.metal_data_type() == Tensor::MetalDataType::kMetal) {
+        setup_mtl_texture();
     }
-    // pipline
-    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
-    pipline_ = [backend pipline:function_name_];
 }
 
-void FeedImageCompute::run_without_mps() {
+#pragma mark - float&int32
+
+void FeedImageCompute::run_raw() {
+    const auto& param = this->Param<param_t>();
+    Tensor& input_tensor = param.feed_list->at(param.col);
+    
+    if (input_tensor.precision() == lite_api::PrecisionType::kFloat) {
+        run_float();
+    } else if (input_tensor.precision() == lite_api::PrecisionType::kInt32) {
+        run_int32();
+    }
+}
+
+void FeedImageCompute::run_float() {
     auto pipline = pipline_;
     auto outTexture = output_buffer_->image();
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
@@ -103,10 +117,96 @@ void FeedImageCompute::run_without_mps() {
     [backend commit];
 }
 
+void FeedImageCompute::setup_float() {
+    const auto& param = this->Param<param_t>();
+
+    Tensor& input_tensor = param.feed_list->at(param.col);
+    auto input_dims = input_tensor.dims();
+    auto input_c = input_dims[1];
+    if (input_c == 1) {
+        function_name_ = "buf_to_tex";
+    } else if (input_c == 3) {
+        function_name_ = "buf_to_tex_c_3";
+    } else {
+        function_name_ = "buf_to_tex_c_n";
+    }
+    // pipline
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
+    pipline_ = [backend pipline:function_name_];
+}
+
+void FeedImageCompute::run_int32() {
+    const auto& param = this->Param<param_t>();
+    
+    auto output_int32_ = param.out->mutable_data<int32_t>();
+
+    Tensor& input_tensor = param.feed_list->at(param.col);
+    auto input_dims = input_tensor.dims();
+    auto input_int32 = input_tensor.data<int32_t>();
+
+    auto len = input_dims.production() * sizeof(int32_t);
+    memcpy(output_int32_, input_int32, len);
+}
+
+#pragma mark - texture
+
+void FeedImageCompute::run_mtl_texture() {
+    const auto& param = this->Param<param_t>();
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
+
+    Tensor& input_tensor = param.feed_list->at(param.col);
+    auto input_dims = input_tensor.dims();
+    if (input_dims.size() != 4) {
+        return;
+    }
+    //is need scale
+    id<MTLTexture> inTexture = input_tensor.data<MetalMTLData>()->image();
+    if (input_dims[2] != inTexture.height ||  input_dims[3] != inTexture.width) {
+        auto cmdbuf = [backend commandBuffer];
+        [(__bridge MPSImageLanczosScale*)lanczos_ encodeToCommandBuffer:cmdbuf
+                                                          sourceTexture:inTexture
+                                                     destinationTexture:resize_texture_];
+        [backend commit:cmdbuf];
+    }
+    // texture to texture_array
+    do {
+        auto pipline = pipline_;
+        auto outTexture = output_buffer_->image();
+
+        auto encoder = [backend commandEncoder];
+        [encoder setTexture:resize_texture_ atIndex:(0)];
+        [encoder setTexture:(output_buffer_->image()) atIndex:(1)];
+
+        [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
+        [backend commit];
+    } while (0);
+}
+
+void FeedImageCompute::setup_mtl_texture() {
+    const auto& param = this->Param<param_t>();
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
+  
+    Tensor& input_tensor = param.feed_list->at(param.col);
+    auto input_dims = input_tensor.dims();
+    NSMutableArray *dimsAry = [NSMutableArray arrayWithCapacity:3];
+    for (int i = 0; i < input_dims.size(); i++) {
+        [dimsAry addObject:@(input_dims[i])];
+    }
+    resize_texture_ = [backend lanczosTextureCreate:dimsAry];
+    lanczos_ = (__bridge_retained void*)[backend lanczosScalePtrCreate];
+    function_name_ = "texture2d_to_2d_array";
+    pipline_ = [backend pipline:function_name_];
+}
+
+#pragma mark - internal
+
 void FeedImageCompute::release_memory() {
     if(lanczos_) {
         CFRelease(lanczos_);
         lanczos_ = nullptr;
+    }
+    if (resize_texture_) {
+      resize_texture_ = nil;
     }
     TargetWrapperMetal::FreeImage(output_buffer_);
 }
@@ -122,24 +222,11 @@ FeedImageCompute::~FeedImageCompute() {
 
 REGISTER_LITE_KERNEL(feed,
     kMetal,
-    kFloat,
-    kMetalTexture2DArray,
+    kAny,
+    kAny,
     paddle::lite::kernels::metal::FeedImageCompute,
     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny))})
     .BindOutput("Out",
-        {LiteType::GetTensorTy(TARGET(kMetal),
-            PRECISION(kFloat),
-            DATALAYOUT(kMetalTexture2DArray))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(feed,
-    kMetal,
-    kFP16,
-    kMetalTexture2DArray,
-    paddle::lite::kernels::metal::FeedImageCompute,
-    def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
-    .BindOutput("Out",
-        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kAny), DATALAYOUT(kAny))})
     .Finalize();

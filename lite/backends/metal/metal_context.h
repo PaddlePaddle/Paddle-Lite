@@ -31,6 +31,7 @@ class MetalContext {
     void wait_all_completed();
 
     // config
+    void set_metal_device(void* device);
     void set_metal_path(std::string path);
     void set_use_mps(bool flag) {
         use_mps_ = flag;

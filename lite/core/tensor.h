@@ -146,6 +146,20 @@ class TensorLite {
     dims_ = DDimLite({static_cast<int64_t>(count)});
     return static_cast<MetalBuffer *>(buffer_->data());
   }
+
+  enum class MetalDataType : int {
+    kRaw = 0,
+    kMetal = 1,
+  };
+  MetalDataType metal_data_type_{MetalDataType::kRaw};
+  MetalDataType metal_data_type() const { return metal_data_type_; }
+
+  void *mutable_metal_data(void *ptr) {
+    target_ = TARGET(kMetal);
+    metal_data_type_ = MetalDataType::kMetal;
+    buffer_->ResetLazyMetalData(ptr);
+    return ptr;
+  }
 #endif
 
   // T is the data type and R is the return type

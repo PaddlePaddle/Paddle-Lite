@@ -58,6 +58,8 @@ struct LITE_API Tensor {
   template <typename T>
   T* mutable_data(TargetType type = TargetType::kHost) const;
 
+  void* mutable_metal_data(void* ptr) const;
+
   // Share external memory. Note: ensure that the data pointer is in a valid
   // state
   // during the prediction process.
@@ -176,6 +178,7 @@ class LITE_API ConfigBase {
   std::string metal_path_;
   bool metal_use_mps_{false};
   bool metal_use_aggressive_{false};
+  void* metal_device_{nullptr};
   bool metal_use_memory_reuse_{false};
 
  public:
@@ -284,11 +287,13 @@ class LITE_API ConfigBase {
   void set_metal_lib_path(const std::string& path);
   void set_metal_use_mps(bool flag);
   void set_metal_use_aggressive(bool flag);
+  void set_metal_device(void* device);
   void set_metal_use_memory_reuse(bool flag);
 
   std::string metal_lib_path() const { return metal_path_; }
   bool metal_use_mps() const { return metal_use_mps_; }
   bool metal_use_aggressive() const { return metal_use_aggressive_; }
+  void* metal_device() const { return metal_device_; }
   bool metal_use_memory_reuse() const { return metal_use_memory_reuse_; }
 };
 

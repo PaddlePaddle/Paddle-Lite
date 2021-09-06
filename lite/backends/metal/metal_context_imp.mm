@@ -29,6 +29,7 @@ extern NSString* cString2NSString(std::string cStr) {
     bool use_memory_reuse_;
     std::vector<paddle::lite::kernels::metal::FetchImageCompute *> _fetch_vector;
 }
+@property (strong, nonatomic) NSString* libPath;
 @property (strong, nonatomic) id<MTLDevice> device;
 @property (strong, nonatomic) id<MTLLibrary> library;
 @property (strong, nonatomic) id<MTLCommandQueue> commandQueue;
@@ -71,11 +72,30 @@ extern NSString* cString2NSString(std::string cStr) {
 - (void)setMetalPath:(std::string)path {
     NSString *pathStr = cString2NSString(path);
     if (pathStr) {
-        _library = [self.device newLibraryWithFile:pathStr error:NULL];
+        self.libPath = pathStr;
+        self.library = [self.device newLibraryWithFile:pathStr error:NULL];
     }
     if (nil == _library) {
         LOG(INFO) << "Can't load metallib: "
                   << [pathStr cStringUsingEncoding:NSUTF8StringEncoding];
+    }
+}
+
+- (void)setMetalDevice:(void *)device {
+    if (!device) {
+        return;
+    }
+    id<MTLDevice> mtl = (__bridge id<MTLDevice>)device;
+    if (mtl) {
+        self.device = mtl;
+        self.commandQueue = [_device newCommandQueue];
+#if defined (METAL_DEBUG_GPU_CAPTURE)
+        [self startCapture];
+#endif
+        self.commandBuffer = [self.commandQueue commandBuffer];
+    }
+    if (self.libPath) {
+        [self setMetalPath:self.libPath.UTF8String];
     }
 }
 
@@ -248,6 +268,27 @@ extern NSString* cString2NSString(std::string cStr) {
     [encoder setComputePipelineState:pipline];
     [encoder dispatchThreadgroups:groups threadsPerThreadgroup:threadsPerGroup];
     [encoder endEncoding];
+}
+
+#pragma mark pre-process
+
+- (MPSImageLanczosScale *)lanczosScalePtrCreate {
+    MPSImageLanczosScale *lanczos = [[MPSImageLanczosScale alloc] initWithDevice:self.device];
+    return lanczos;
+}
+
+- (id<MTLTexture>)lanczosTextureCreate:(NSArray *)dims {
+    MTLTextureDescriptor *textureDesc = [[MTLTextureDescriptor alloc] init];
+    textureDesc.textureType = MTLTextureType2D;
+    textureDesc.width = [dims[3] intValue];
+    textureDesc.height = [dims[2] intValue];
+    textureDesc.depth = ([dims[1] intValue] + 3) / 4;
+    textureDesc.pixelFormat = MTLPixelFormatRGBA16Float;
+    textureDesc.usage = MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;;
+    textureDesc.storageMode = MTLStorageModeShared;
+    
+    id<MTLTexture> texture = [self.device newTextureWithDescriptor:textureDesc];
+    return texture;
 }
 
 #pragma mark memory reuse
