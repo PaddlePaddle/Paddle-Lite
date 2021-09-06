@@ -174,8 +174,9 @@ class LITE_API ConfigBase {
   int x86_math_num_threads_ = 1;
 
   std::string metal_path_;
-  bool metal_use_mps_;
-  bool metal_use_aggressive_;
+  bool metal_use_mps_{false};
+  bool metal_use_aggressive_{false};
+  bool metal_use_memory_reuse_{false};
 
  public:
   explicit ConfigBase(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1);
@@ -283,10 +284,12 @@ class LITE_API ConfigBase {
   void set_metal_lib_path(const std::string& path);
   void set_metal_use_mps(bool flag);
   void set_metal_use_aggressive(bool flag);
+  void set_metal_use_memory_reuse(bool flag);
 
   std::string metal_lib_path() const { return metal_path_; }
   bool metal_use_mps() const { return metal_use_mps_; }
   bool metal_use_aggressive() const { return metal_use_aggressive_; }
+  bool metal_use_memory_reuse() const { return metal_use_memory_reuse_; }
 };
 
 class LITE_API CxxModelBuffer {

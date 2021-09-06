@@ -28,6 +28,7 @@
 #include <functional>  // for multiplies
 #include <memory>
 #include <numeric>
+#include <sstream>
 #include <string>
 #include <vector>
 #include "lite/core/dim.h"
@@ -122,10 +123,16 @@ class TensorLite {
   typename std::enable_if<IsImage<R>::value, R>::type *mutable_data(
       MetalContext *context,
       const DDim &dim,
-      std::vector<int> transport = {0, 2, 3, 1}) {
+      std::vector<int> transport = {0, 2, 3, 1},
+      bool reuse = true) {
     dims_ = dim;
     target_ = TARGET(kMetal);
-    buffer_->ResetLazyMetalImage<T>(context, dim, transport);
+    long ptr_this = reinterpret_cast<long>(this);
+    std::string ptr;
+    std::stringstream stream;
+    stream << ptr_this;
+    stream >> ptr;
+    buffer_->ResetLazyMetalImage<T>(context, dim, transport, reuse, ptr);
     return static_cast<MetalImage *>(buffer_->data());
   }
 

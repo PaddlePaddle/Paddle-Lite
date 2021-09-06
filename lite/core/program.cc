@@ -419,12 +419,14 @@ RuntimeProgram::RuntimeProgram(
 #ifdef LITE_WITH_METAL
 void RuntimeProgram::ConfigMetalContext(std::string lib_path,
                                         bool use_mps,
-                                        bool use_aggressive) {
+                                        bool use_aggressive,
+                                        bool use_memory_reuse_) {
   if (!metal_ctx_) return;
   MetalContext* context = (*metal_ctx_).As<MTLContext>().context();
   context->set_metal_path(lib_path);
   context->set_use_mps(use_mps);
   context->set_use_aggressive(use_aggressive);
+  context->set_use_memory_reuse(use_memory_reuse_);
 }
 
 void RuntimeProgram::SaveOutput() {

@@ -381,6 +381,13 @@ void ConfigBase::set_metal_use_aggressive(bool flag) {
   return;
 }
 
+void ConfigBase::set_metal_use_memory_reuse(bool flag) {
+#ifdef LITE_WITH_METAL
+  metal_use_memory_reuse_ = flag;
+#endif
+  return;
+}
+
 #ifdef LITE_WITH_X86
 void ConfigBase::set_x86_math_num_threads(int threads) {
   x86_math_num_threads_ = threads;

@@ -33,10 +33,6 @@ extern NSString* cString2NSString(std::string cStr);
                           access:(paddle::lite::METAL_ACCESS_FLAG)access;
 - (id<MTLTexture>)newTextureWithDescriptor:(MTLTextureDescriptor*)desc;
 
-- (id<MTLHeap>)newHeapForTexDesc:(MTLTextureDescriptor*)desc;
-- (bool)isNeedNewHeap:(id<MTLHeap>)heap texDesc:(MTLTextureDescriptor*)desc;
-- (id<MTLTexture>)newTextureWithDescriptor:(MTLTextureDescriptor*)desc heap:(id<MTLHeap>)heap;
-
 // for MPS
 - (id<MTLCommandBuffer>)commandBuffer;
 - (void)commit:(id<MTLCommandBuffer>)cmdBuf;
@@ -63,6 +59,16 @@ extern NSString* cString2NSString(std::string cStr);
                 pipline:(id<MTLComputePipelineState>)pipline
         threadsPerGroup:(MTLSize)threadsPerGroup
                  groups:(MTLSize)groups;
+
+// memory reuse
+- (void)set_use_memory_reuse:(bool)flag;
+- (void)setHeap:(id<MTLHeap>)heap key:(std::string)ptr API_AVAILABLE(ios(10.0));
+- (id<MTLHeap>)getHeap:(std::string)ptr API_AVAILABLE(ios(10.0));
+- (id<MTLHeap>)newHeapWithDescriptor:(MTLTextureDescriptor*)desc API_AVAILABLE(ios(10.0));
+- (bool)isNewHeapWithDescriptor:(MTLTextureDescriptor*)desc
+                           heap:(id<MTLHeap>)heap API_AVAILABLE(ios(10.0));
+- (id<MTLTexture>)newTextureWithDescriptor:(MTLTextureDescriptor*)desc
+                                      heap:(id<MTLHeap>)heap API_AVAILABLE(ios(10.0));
 
 @end
 
