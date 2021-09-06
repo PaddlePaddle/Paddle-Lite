@@ -21,21 +21,16 @@
 
 namespace paddle {
 namespace lite {
-class RuntimeProgram;
 
 class MetalContext {
    public:
     MetalContext();
     ~MetalContext();
-    /// device
-    void PrepareDevices();
-    int GetDevicesNum();
-    void* GetDeviceByID(int id);
-    const void* GetDefaultDevice();
 
-    void CreateCommandBuffer(RuntimeProgram* program = nullptr);
-    void WaitAllCompleted();
+    // external
+    void wait_all_completed();
 
+    // config
     void set_metal_path(std::string path);
     void set_use_mps(bool flag) {
         use_mps_ = flag;
@@ -43,6 +38,7 @@ class MetalContext {
     void set_use_aggressive(bool flag) {
         use_aggressive_ = flag;
     }
+
     bool use_mps() const {
         return use_mps_;
     }
@@ -53,21 +49,15 @@ class MetalContext {
         return use_aggressive_;
     }
 
+    // ptr
     void* backend() const {
         return mContext;
-    }
-
-    RuntimeProgram* program() const {
-        return program_;
     }
 
    private:
     bool use_mps_{false};
     bool use_aggressive_{false};
     void* mContext = nullptr;
-    bool got_devices_{false};
-    std::string metal_path_;
-    RuntimeProgram* program_ = nullptr;
 };
 }  // namespace lite
 }  // namespace paddle

@@ -156,6 +156,7 @@ bool BuildOMModelToBuffer(
   ge::ModelBufferData om_buffer;
   std::map<ge::AscendString, ge::AscendString> options;
   options.insert(std::make_pair(ge::ir_option::LOG_LEVEL, "error"));
+  options.insert(std::make_pair(ge::ir_option::OP_DEBUG_LEVEL, "0"));
   ATC_CALL(aclgrphBuildModel(ir_graph, options, om_buffer));
   // Copy from om model buffer
   model_buffer->resize(om_buffer.length);
@@ -439,6 +440,30 @@ std::vector<int64_t> ConvertDimensions(const int32_t* input_dimensions,
 std::vector<int64_t> ConvertDimensions(
     const std::vector<int32_t>& input_dimensions) {
   return ConvertDimensions(&input_dimensions[0], input_dimensions.size());
+}
+
+std::string ConvertPadMode(int pad_mode_code) {
+  std::string pad_mode;
+  switch (pad_mode_code) {
+    case NNADAPTER_PAD_MODE_CONSTANT:
+      pad_mode = "constant";
+      break;
+    case NNADAPTER_PAD_MODE_REFLECT:
+      pad_mode = "reflect";
+      break;
+    case NNADAPTER_PAD_MODE_REPLICATE:
+      pad_mode = "replicate";
+      break;
+    case NNADAPTER_PAD_MODE_EDGE:
+      pad_mode = "edge";
+      break;
+    default:
+      NNADAPTER_LOG(FATAL)
+          << "Failed to convert the NNAdapter operand pad mode code("
+          << pad_mode_code << ") to pad mode !";
+      break;
+  }
+  return pad_mode;
 }
 
 }  // namespace huawei_ascend_npu
