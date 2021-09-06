@@ -1,8 +1,6 @@
 if (NOT LITE_ON_TINY_PUBLISH)
     add_subdirectory(pb)
 endif()
-#add_subdirectory(base)
-#add_subdirectory(general)
 add_subdirectory(naive_buffer)
 add_subdirectory(flatbuffers)
 add_subdirectory(ssa)
