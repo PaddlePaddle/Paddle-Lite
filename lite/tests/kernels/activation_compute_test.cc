@@ -1287,6 +1287,61 @@ TEST(Activation_prelu_fp16, performance) {
   }
 }
 
+TEST(Activation_hard_swish_fp16, precision) {
+  Place place;
+  float abs_error = 2e-3;
+#ifdef LITE_WITH_ARM
+  place = Place(TARGET(kARM), PRECISION(kFP16));
+#else
+  return;
+#endif
+  for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 32, 32},
+                                                     {1, 2, 3, 4},
+                                                     {1, 3, 2, 4},
+                                                     {2, 3, 4},
+                                                     {5, 4},
+                                                     {8}}) {
+    TestAct<float16_t>(place,
+                       "def",
+                       0.01,
+                       6.,
+                       "all",
+                       0.,
+                       1.0,
+                       DDim(dims),
+                       "hard_swish",
+                       HARD_SWISH,
+                       abs_error);
+  }
+}
+
+TEST(Activation_hard_swish_fp16, performance) {
+  Place place;
+  float abs_error = 2e-3;
+#ifdef LITE_WITH_ARM
+  place = Place(TARGET(kARM), PRECISION(kFP16));
+#else
+  return;
+#endif
+  for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 32, 32},
+                                                     {1, 2, 3, 4},
+                                                     {1, 3, 2, 4},
+                                                     {2, 3, 4},
+                                                     {5, 4},
+                                                     {8}}) {
+    TestActPerformance<float16_t>(place,
+                                  "def",
+                                  0.01,
+                                  6.,
+                                  "all",
+                                  0.,
+                                  1.0,
+                                  DDim(dims),
+                                  "hard_swish",
+                                  HARD_SWISH,
+                                  abs_error);
+  }
+}
 #endif
 }  // namespace lite
 }  // namespace paddle
