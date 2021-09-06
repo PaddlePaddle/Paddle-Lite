@@ -53,18 +53,19 @@ int AssignValueConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
 
   NNAdapterOperand* values_operand = nullptr;
+  DDim values_dims = ConvertDimensions(shape_data.data(), shape_data.size());
   if (dtype == static_cast<int>(lite::core::FluidType::INT32)) {
-    values_operand = converter->AddInt32ConstantOperand(
-        &int32_values[0], DDim({static_cast<int>(shape_data.size())}));
+    values_operand =
+        converter->AddInt32ConstantOperand(&int32_values[0], values_dims);
   } else if (dtype == static_cast<int>(lite::core::FluidType::FP32)) {
-    values_operand = converter->AddFloat32ConstantOperand(
-        &fp32_values[0], DDim({static_cast<int>(shape_data.size())}));
+    values_operand =
+        converter->AddFloat32ConstantOperand(&fp32_values[0], values_dims);
   } else if (dtype == static_cast<int>(lite::core::FluidType::INT64)) {
-    values_operand = converter->AddInt64ConstantOperand(
-        &int64_values[0], DDim({static_cast<int>(shape_data.size())}));
+    values_operand =
+        converter->AddInt64ConstantOperand(&int64_values[0], values_dims);
   } else if (dtype == static_cast<int>(lite::core::FluidType::BOOL)) {
-    values_operand = converter->AddInt32ConstantOperand(
-        &bool_values[0], DDim({static_cast<int>(shape_data.size())}));
+    values_operand =
+        converter->AddInt32ConstantOperand(&bool_values[0], values_dims);
   } else {
     LOG(WARNING) << "Unsupported dtype for assign_value_op: " << dtype;
     return FAILED;

@@ -104,7 +104,8 @@ class SquareCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~SquareCompute() = default;
 };
 
-class HardSwishCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+template <PrecisionType PType>
+class HardSwishCompute : public KernelLite<TARGET(kARM), PType> {
  public:
   using param_t = operators::ActivationParam;
 

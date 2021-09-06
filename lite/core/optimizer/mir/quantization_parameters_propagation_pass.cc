@@ -31,8 +31,10 @@ static bool HasOutputThreshold(const OpInfo* op_info,
   } else {
     std::string argname;
     int index;
-    if (op_info->GetOutputArgname(name, &argname) &&
-        op_info->GetOutputIndex(name, &index)) {
+    if (op_info->HasAttr("out_threshold")) {
+      res = true;
+    } else if (op_info->GetOutputArgname(name, &argname) &&
+               op_info->GetOutputIndex(name, &index)) {
       res = op_info->HasAttr(argname + to_string(index) + "_threshold");
     }
   }
@@ -45,6 +47,8 @@ static float GetOutputThreshold(const OpInfo* op_info,
   std::string threshold_name;
   if (is_threshold_name) {
     threshold_name = name;
+  } else if (op_info->HasAttr("out_threshold")) {
+    threshold_name = "out_threshold";
   } else {
     std::string argname;
     int index;
@@ -58,13 +62,11 @@ static float GetOutputThreshold(const OpInfo* op_info,
 void QuantizationParametersPropagationPass::Apply(
     const std::unique_ptr<SSAGraph>& graph) {
   VLOG(5) << "\n" << Visualize(graph.get());
-  // Propagete the input scale of the quantized ops(conv2d, fc)
-  const std::unordered_set<std::string> highest_pirority_quantized_op_types = {
-      "conv2d", "depthwise_conv2d", "fc", "mul", "conv2d_transpose"};
+  // Propagete the input scale which is from fake_quantize_xxx and
+  // fake_quantize_dequantize_xxx op
   for (auto& op_node : graph->StmtTopologicalOrder()) {
     if (!op_node->IsStmt()) continue;
     auto op_info = op_node->AsStmt().mutable_op_info();
-    if (!highest_pirority_quantized_op_types.count(op_info->Type())) continue;
     for (auto in_var_node : op_node->inlinks) {
       CHECK(in_var_node->IsArg());
       auto in_var_name = in_var_node->arg()->name;
@@ -74,8 +76,7 @@ void QuantizationParametersPropagationPass::Apply(
         if (!in_op_node->IsStmt()) continue;
         auto in_op_info = in_op_node->AsStmt().mutable_op_info();
         if (HasOutputThreshold(in_op_info, in_var_name, false)) {
-          // If it's a quantized op, update its output scale by using the input
-          // scale of the highest pirority quantized ops
+          // Use this input scale to update the output scale of the quantized op
           in_op_info->SetOutputScale(in_var_name, in_var_scale, false);
         }
       }

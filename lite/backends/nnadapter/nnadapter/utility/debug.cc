@@ -196,24 +196,31 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
       case NNADAPTER_DIV:
       case NNADAPTER_MAX:
       case NNADAPTER_MIN:
+      case NNADAPTER_POW:
         input_args = {"input0", "input1", "fuse_code"};
         output_args = {"output"};
         break;
       case NNADAPTER_AVERAGE_POOL_2D:
+        input_args = {"input",
+                      "auto_pad",
+                      "pads",
+                      "kernel_shape",
+                      "strides",
+                      "ceil_mode",
+                      "count_include_pad",
+                      "fuse_code"};
+        output_args = {"output"};
+        break;
       case NNADAPTER_MAX_POOL_2D:
         input_args = {"input",
-                      "padding_left",
-                      "padding_right",
-                      "padding_top",
-                      "padding_bottom",
-                      "stride_width",
-                      "stride_height",
-                      "filter_width",
-                      "filter_height",
-                      "fuse_code",
+                      "auto_pad",
+                      "pads",
+                      "kernel_shape",
+                      "strides",
                       "ceil_mode",
-                      "count_include_pad"};
-        output_args = {"output"};
+                      "return_indices",
+                      "fuse_code"};
+        output_args = {"output", "indices"};
         break;
       case NNADAPTER_CONCAT:
         input_args.resize(input_count);
@@ -227,34 +234,26 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         input_args = {"input",
                       "filter",
                       "bias",
-                      "padding_left",
-                      "padding_right",
-                      "padding_top",
-                      "padding_bottom",
-                      "stride_width",
-                      "stride_height",
+                      "auto_pad",
+                      "pads",
+                      "strides",
                       "group",
-                      "fuse_code",
-                      "dilation_width",
-                      "dilation_height"};
+                      "dilations",
+                      "fuse_code"};
         output_args = {"output"};
         break;
       case NNADAPTER_CONV_2D_TRANSPOSE:
         input_args = {"input",
                       "filter",
                       "bias",
-                      "padding_left",
-                      "padding_right",
-                      "padding_top",
-                      "padding_bottom",
-                      "stride_width",
-                      "stride_height",
+                      "auto_pad",
+                      "pads",
+                      "strides",
                       "group",
-                      "fuse_code",
-                      "dilation_width",
-                      "dilation_height",
-                      "output_padding_width",
-                      "output_padding_height"};
+                      "dilations",
+                      "output_padding",
+                      "output_shape",
+                      "fuse_code"};
         output_args = {"output"};
         break;
       case NNADAPTER_FULLY_CONNECTED:
@@ -273,6 +272,7 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
       case NNADAPTER_TANH:
       case NNADAPTER_LOG:
       case NNADAPTER_ABS:
+      case NNADAPTER_EXP:
         input_args = {"input"};
         output_args = {"output"};
         break;
@@ -286,10 +286,6 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         break;
       case NNADAPTER_CLIP:
         input_args = {"input", "min", "max"};
-        output_args = {"output"};
-        break;
-      case NNADAPTER_POW:
-        input_args = {"input", "factor"};
         output_args = {"output"};
         break;
       case NNADAPTER_REDUCE_MEAN:
@@ -315,6 +311,10 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         break;
       case NNADAPTER_SOFTMAX:
         input_args = {"input", "axis"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_CUM_SUM:
+        input_args = {"input", "axis", "exclusive", "reverse"};
         output_args = {"output"};
         break;
       case NNADAPTER_SPLIT:
@@ -374,6 +374,10 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
                       "fuse_code",
                       "dilation_width",
                       "dilation_height"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_PAD:
+        input_args = {"input", "pads", "mode", "value"};
         output_args = {"output"};
         break;
       default:
@@ -478,6 +482,7 @@ NNADAPTER_EXPORT std::string OperandLifetimeCodeToString(
   std::string name;
   switch (type) {
     NNADAPTER_TYPE_TO_STRING(TEMPORARY_VARIABLE);
+    NNADAPTER_TYPE_TO_STRING(TEMPORARY_SHAPE);
     NNADAPTER_TYPE_TO_STRING(CONSTANT_COPY);
     NNADAPTER_TYPE_TO_STRING(CONSTANT_REFERENCE);
     NNADAPTER_TYPE_TO_STRING(MODEL_INPUT);
@@ -527,12 +532,15 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(SIGMOID);
     NNADAPTER_TYPE_TO_STRING(SLICE);
     NNADAPTER_TYPE_TO_STRING(SOFTMAX);
+    NNADAPTER_TYPE_TO_STRING(CUM_SUM)
     NNADAPTER_TYPE_TO_STRING(SPLIT);
     NNADAPTER_TYPE_TO_STRING(SQUEEZE);
     NNADAPTER_TYPE_TO_STRING(SUB);
     NNADAPTER_TYPE_TO_STRING(TANH);
     NNADAPTER_TYPE_TO_STRING(TRANSPOSE);
     NNADAPTER_TYPE_TO_STRING(UNSQUEEZE);
+    NNADAPTER_TYPE_TO_STRING(EXP);
+    NNADAPTER_TYPE_TO_STRING(PAD)
     default:
       name = "UNKNOWN";
       break;

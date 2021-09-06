@@ -413,6 +413,38 @@ NNAdapterOperandPrecisionCode Precision2NNAdapterScalarPrecisionCode(
   return precision_code;
 }
 
+NNAdapterPadModeCode PadMode2NNAdapterPadModeCode(std::string mode) {
+  if (mode == "constant") {
+    return NNADAPTER_PAD_MODE_CONSTANT;
+  }
+  if (mode == "reflect") {
+    return NNADAPTER_PAD_MODE_REFLECT;
+  }
+  if (mode == "replicate") {
+    return NNADAPTER_PAD_MODE_REPLICATE;
+  }
+  if (mode == "edge") {
+    return NNADAPTER_PAD_MODE_EDGE;
+  }
+  LOG(FATAL) << "Unsupported mode type: " << mode;
+  return NNADAPTER_PAD_MODE_NONE;
+}
+
+NNAdapterPadCode PaddingAlgorithm2PadCode(
+    const std::string& padding_algorithm) {
+  NNAdapterPadCode pad_code;
+  if (padding_algorithm == "EXPLICIT" || padding_algorithm.empty()) {
+    pad_code = NNADAPTER_PAD_NONE;
+  } else if (padding_algorithm == "SAME") {
+    pad_code = NNADAPTER_PAD_SAME;
+  } else if (padding_algorithm == "VALID") {
+    pad_code = NNADAPTER_PAD_VALID;
+  } else {
+    LOG(FATAL) << "Unsupported padding algorithm: " << padding_algorithm;
+  }
+  return pad_code;
+}
+
 }  // namespace nnadapter
 }  // namespace subgraph
 }  // namespace lite
