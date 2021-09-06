@@ -21,6 +21,22 @@ namespace lite {
 namespace arm {
 namespace math {
 
+/**
+ * \brief Sparse calculation implementation of 1x1 convolution,
+ * \brief the input type is float, and the output type is also float.
+ * @param A sparse weight data
+ * @param B dense input data
+ * @param widx_dmap An array of int32_t values storing scaled [by sizeof(input element)] difference 
+ * between input channels corresponding to successive non-zero element
+ * @param nidx_nnzmap the number of non-zero kernel elements per each output channel
+ * @param bias
+ * @param output
+ * @param M
+ * @param N
+ * @param K
+ * @param param
+ * @param ctx
+ */
 void sparse_conv_fp32_pipelined(const float* A,
                                 const float* B,
                                 const int32_t* widx_dmap,
@@ -50,6 +66,22 @@ void sparse_conv_fp32_pipelined(const float* A,
   return;
 }
 
+/**
+ * \brief Sparse calculation implementation of 1x1 convolution,
+ * \brief the input type is int8, and the output type is also float.
+ * @param A sparse weight data
+ * @param B dense input data
+ * @param widx_dmap An array of int32_t values storing scaled [by sizeof(input element)] difference 
+ * between input channels corresponding to successive non-zero element
+ * @param nidx_nnzmap the number of non-zero kernel elements per each output channel
+ * @param bias
+ * @param output
+ * @param M
+ * @param N
+ * @param K
+ * @param param
+ * @param ctx
+ */
 void sparse_conv_int8_fp32_pipelined(const int8_t* A,
                                      const int8_t* B,
                                      const int32_t* widx_dmap,
@@ -80,6 +112,22 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   return;
 }
 
+/**
+ * \brief Sparse calculation implementation of 1x1 convolution,
+ * \brief the input type is int8, and the output type is also int8.
+ * @param A sparse weight data
+ * @param B dense input data
+ * @param widx_dmap An array of int32_t values storing scaled [by sizeof(input element)] difference 
+ * between input channels corresponding to successive non-zero element
+ * @param nidx_nnzmap the number of non-zero kernel elements per each output channel
+ * @param bias
+ * @param output
+ * @param M
+ * @param N
+ * @param K
+ * @param param
+ * @param ctx
+ */
 void sparse_conv_int8_int8_pipelined(const int8_t* A,
                                      const int8_t* B,
                                      const int32_t* widx_dmap,

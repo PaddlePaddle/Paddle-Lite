@@ -36,9 +36,9 @@ def main():
              "calculation will cause a lower precision but higher inference speed.")
 
    # arguments of sparsification
-   parser.add_argument("--sparse_threshold", type=float, default=0.5,
-        help="Set a value to determine the lower bound for sparse pass."
-             "0.5 means sparse pass will be skipped if the current weight sparsity is smaller than 0.5.")
+   parser.add_argument("--sparse_threshold", type=float, default=0.5,\
+        help="Set a value to determine the lower bound for sparse pass. \
+              0.5 means sparse pass will be skipped if the current weight sparsity is smaller than 0.5.")
 
    # arguments of help information
     parser.add_argument('--version', action='version', version=a.version())
