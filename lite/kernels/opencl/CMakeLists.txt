@@ -44,6 +44,7 @@ add_kernel(clip_opencl_image OPENCL basic SRCS clip_image_compute.cc DEPS ${cl_k
 add_kernel(softmax_opencl_image OPENCL basic SRCS softmax_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(greater_than_opencl_image OPENCL basic SRCS greater_than_image_compute.cc DEPS ${cl_kernel_deps})
 add_kernel(fc_opencl_image OPENCL basic SRCS fc_image_compute.cc DEPS ${cl_kernel_deps})
+add_kernel(argmax_opencl_image OPENCL basic SRCS argmax_image_compute.cc DEPS ${cl_kernel_deps})
 # extra
 # wait to add ...
 
@@ -128,6 +129,12 @@ lite_cc_test(test_fc_image_opencl SRCS fc_image_compute_test.cc
 
 lite_cc_test(test_softmax_image_opencl SRCS softmax_image_compute_test.cc
              DEPS softmax_opencl_image core)
+
+lite_cc_test(test_argmax_image_opencl SRCS argmax_image_compute_test.cc
+             DEPS argmax_opencl_image core)
+ 
+ lite_cc_test(test_max_image_opencl SRCS max_image_compute_test.cc
+             DEPS trigonometric_opencl_image core)
 
 ######################
 # buffer kernel      #

@@ -19,9 +19,13 @@
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/kernels/opencl/test_helper.h"
+#include "lite/tests/utils/fill_data.h"
 
 #define FP16_MAX_DIFF (5e-1)
-
+#define FP32_ABS_DIFF (1e-7)
+#define FP32_RELATIVE_DIFF (1e-6)
+#define FP16_ABS_DIFF (1e-3)
+#define FP16_RELATIVE_DIFF (1e-3)
 namespace paddle {
 namespace lite {
 
