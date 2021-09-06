@@ -21,7 +21,7 @@ namespace lite {
 MetalContext::MetalContext() {
     mContext = (__bridge_retained void*)[[MetalContextImp alloc] init];
     if (mContext) {
-        got_devices_ = true;
+
     }
 }
 
@@ -30,37 +30,14 @@ MetalContext::~MetalContext() {
     mContext = nullptr;
 }
 
-void MetalContext::PrepareDevices() {
-    if (got_devices_) return;
-}
-
-int MetalContext::GetDevicesNum() {
-    if (!got_devices_) {
-        return 0;
-    }
-    return 1;
-}
-
-void* MetalContext::GetDeviceByID(int id) {
-    return nullptr;
-}
-
-void MetalContext::CreateCommandBuffer(RuntimeProgram* program) {
-    program_ = program;
-}
-
-void MetalContext::WaitAllCompleted() {
+void MetalContext::wait_all_completed() {
     [(__bridge MetalContextImp*)mContext waitAllCompleted];
     [(__bridge MetalContextImp*)mContext fetch_data_from_gpu];
 }
 
-const void* MetalContext::GetDefaultDevice() {
-    return nullptr;
-}
-
 void MetalContext::set_metal_path(std::string path) {
-    metal_path_ = path;
     [(__bridge MetalContextImp*)mContext setMetalPath:path];
 }
+
 }
 }

@@ -41,7 +41,8 @@ class Context {
 
 class Program {
  public:
-  explicit Program(Context* context) : context_(context) {}
+  explicit Program(Context* context)
+      : context_(context), graph_from_cache_(false) {}
   ~Program();
 
   int Build(hal::Model* model, hal::Cache* cache);
@@ -52,25 +53,9 @@ class Program {
 
  private:
   void Clear();
-  // Operand converters
-  std::string GetTensorName(hal::Operand* operand);
-  std::shared_ptr<aml::nn::Tensor> GetMappedTensor(hal::Operand* operand);
-  std::shared_ptr<aml::nn::Tensor> UpdateTensorMap(
-      hal::Operand* operand, std::shared_ptr<aml::nn::Tensor> tensor);
-  std::shared_ptr<aml::nn::Tensor> ConvertOperand(
-      hal::Operand* operand, std::vector<int32_t> dimensions = {});
-
-  // Operation converters
-  int ConvertActivation(hal::Operation* operation);
-  int ConvertConcat(hal::Operation* operation);
-  int ConvertConv2D(hal::Operation* operation);
-  int ConvertConv2DTranspose(hal::Operation* operation);
-  int ConvertElementwise(hal::Operation* operation);
-  int ConvertFullyConnected(hal::Operation* operation);
-  int ConvertPool2D(hal::Operation* operation);
-  int ConvertSoftmax(hal::Operation* operation);
-  int ConvertReshape(hal::Operation* operation);
-  int ConvertTranspose(hal::Operation* operation);
+  // Build from model or cache
+  int BuildFromModel(hal::Model* model);
+  int BuildFromCache(hal::Cache* cache);
 
  private:
   Context* context_{nullptr};
@@ -81,6 +66,9 @@ class Program {
   std::shared_ptr<aml::nn::Exection> execution_{nullptr};
   std::vector<NNAdapterOperandType> input_types_;
   std::vector<NNAdapterOperandType> output_types_;
+  std::string dump_graph_path_;
+  std::vector<uint8_t>* dump_graph_buffer_{nullptr};
+  bool graph_from_cache_;
 };
 
 }  // namespace amlogic_npu

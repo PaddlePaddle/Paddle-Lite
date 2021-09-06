@@ -87,6 +87,8 @@ int ConvertUnaryActivations(Converter* converter, OpInfo* op, Scope* scope) {
     unary_act_operation_type = NNADAPTER_LOG;
   } else if (op_type == "abs") {
     unary_act_operation_type = NNADAPTER_ABS;
+  } else if (op_type == "exp") {
+    unary_act_operation_type = NNADAPTER_EXP;
   } else {
     LOG(WARNING) << "Unsupported unary activation type: " << op_type;
     return UNSUPPORTED_FEATURE;

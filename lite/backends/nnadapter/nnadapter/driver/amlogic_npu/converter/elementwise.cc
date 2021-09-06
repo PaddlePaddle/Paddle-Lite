@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/amlogic_npu/converter.h"
+#include "driver/amlogic_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace amlogic_npu {
 
-int Program::ConvertElementwise(hal::Operation* operation) {
+int ConvertElementwise(Converter* converter, hal::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
@@ -42,15 +42,15 @@ int Program::ConvertElementwise(hal::Operation* operation) {
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
   // Convert to amlnpu tensors and operators
-  auto input0_tensor = GetMappedTensor(input0_operand);
+  auto input0_tensor = converter->GetMappedTensor(input0_operand);
   if (!input0_tensor) {
-    input0_tensor = ConvertOperand(input0_operand);
+    input0_tensor = converter->ConvertOperand(input0_operand);
   }
-  auto input1_tensor = GetMappedTensor(input1_operand);
+  auto input1_tensor = converter->GetMappedTensor(input1_operand);
   if (!input1_tensor) {
-    input1_tensor = ConvertOperand(input1_operand);
+    input1_tensor = converter->ConvertOperand(input1_operand);
   }
-  auto output_tensor = ConvertOperand(output_operand);
+  auto output_tensor = converter->ConvertOperand(output_operand);
   std::vector<std::shared_ptr<aml::nn::Tensor>> input_tensors = {input0_tensor,
                                                                  input1_tensor};
   std::vector<std::shared_ptr<aml::nn::Tensor>> output_tensors = {
@@ -69,7 +69,7 @@ int Program::ConvertElementwise(hal::Operation* operation) {
                          << OperationTypeToString(operation->type)
                          << " is found.";
   }
-  graph_->AddOperator(op_type, input_tensors, output_tensors, nullptr);
+  converter->AddOperator(op_type, input_tensors, output_tensors, nullptr);
   return NNADAPTER_NO_ERROR;
 }
 

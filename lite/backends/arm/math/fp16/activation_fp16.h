@@ -33,6 +33,14 @@ void act_hard_sigmoid(const T* din,
                       int threads);
 
 template <typename T>
+void act_hard_swish(const T* din,
+                    T* dout,
+                    const int size,
+                    const float threshold,
+                    const float scale,
+                    const float offset,
+                    int threads);
+template <typename T>
 void act_prelu(const T* din,
                T* dout,
                int outer_size,
