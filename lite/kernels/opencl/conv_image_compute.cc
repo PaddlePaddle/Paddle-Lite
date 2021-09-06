@@ -269,6 +269,7 @@ void ConvImageCompute::PrepareForRun() {
         kernel_func_names_.push_back("conv2d_1x1_opt");
       }
       kernel_func_paths_.push_back("image/conv2d_1x1_default_kernel.cl");
+      kernel_func_paths_.push_back("image/conv2d_1x1_opt_kernel.cl");
 
       CLImageConverterNWBlock converter;
       const DDim& filter_image_dims =
@@ -820,6 +821,7 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
                                       static_cast<size_t>(tuned_in_map[5])};
       int func_id = tuned_in_map[6];
       if (func_id == 0) {
+        return;
       } else if (func_id == 1) {
         kernel_func_names_[0] = "conv2d_1x1_h1w5c1";
         w_blk_ = UP_DIV(default_w_blk_, 5);
@@ -842,7 +844,7 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
         LOG(FATAL) << "unsupported kernel id : " << func_id;
       }
       context.cl_context()->AddKernel(kernel_func_names_[0],
-                                      kernel_func_paths_[0],
+                                      kernel_func_paths_[1],
                                       build_options_[0],
                                       time_stamp_);
       kernel_key.str("");
@@ -866,7 +868,6 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
       kernel_num = 1;
     } else {
       kernel_num = 6;
-      kernel_func_paths_[0] = "image/conv2d_1x1_opt_kernel.cl";
     }
     for (size_t i = 0; i < kernel_num; i++) {
       if (i == 1) {
@@ -877,7 +878,7 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
                         static_cast<size_t>(UP_DIV(default_w_blk_, 5)),
                         static_cast<size_t>(default_nh_blk_)};
         context.cl_context()->AddKernel(kernel_func_names_[0],
-                                        kernel_func_paths_[0],
+                                        kernel_func_paths_[1],
                                         build_options_[0],
                                         time_stamp_);
       }
@@ -889,7 +890,7 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
                         static_cast<size_t>(UP_DIV(default_w_blk_, 7)),
                         static_cast<size_t>(default_nh_blk_)};
         context.cl_context()->AddKernel(kernel_func_names_[0],
-                                        kernel_func_paths_[0],
+                                        kernel_func_paths_[1],
                                         build_options_[0],
                                         time_stamp_);
       }
@@ -901,7 +902,7 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
                         static_cast<size_t>(UP_DIV(default_w_blk_, 2)),
                         static_cast<size_t>(default_nh_blk_)};
         context.cl_context()->AddKernel(kernel_func_names_[0],
-                                        kernel_func_paths_[0],
+                                        kernel_func_paths_[1],
                                         build_options_[0],
                                         time_stamp_);
       }
@@ -913,7 +914,7 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
                         static_cast<size_t>(UP_DIV(default_w_blk_, 2)),
                         static_cast<size_t>(UP_DIV(default_nh_blk_, 2))};
         context.cl_context()->AddKernel(kernel_func_names_[0],
-                                        kernel_func_paths_[0],
+                                        kernel_func_paths_[1],
                                         build_options_[0],
                                         time_stamp_);
       }
@@ -925,7 +926,7 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
                         static_cast<size_t>(UP_DIV(default_w_blk_, 2)),
                         static_cast<size_t>(UP_DIV(default_nh_blk_, 2))};
         context.cl_context()->AddKernel(kernel_func_names_[0],
-                                        kernel_func_paths_[0],
+                                        kernel_func_paths_[1],
                                         build_options_[0],
                                         time_stamp_);
       }
