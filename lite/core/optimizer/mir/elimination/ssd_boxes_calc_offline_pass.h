@@ -27,8 +27,8 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-// Prior-box don't depend on feature-map data, only depend on image &
-// feature-map size,
+// Prior_box/Density_prior_box don't depend on feature-map data, only depend on
+// image & feature-map size,
 // so if the shape is determined, we can calculate it offline in opt stage,
 // and the reshape(2) & flatten(2) & concat which linked with prior-box can
 // be calculate offline too.
@@ -39,7 +39,8 @@ namespace mir {
 //       |                       |                 |                       |
 //       |                       |                 |                       |
 //       |                       |                 |                       |
-//       ----- OP: prior box -----                 ------OP: prior box-----
+//       ----- OP: prior_box ----                  ------OP: prior_box-----
+//          or depsity_prior_box                      or depsity_prior_box
 //                  |                                           |
 //                  |                                           |
 //                  |                                           |
@@ -86,6 +87,7 @@ namespace mir {
 //                   |                                    |
 //                   |                                    |
 //                   ----------- OP: box coder -----------
+//                            or depsity_prior_box
 //                                     |
 //                                     |
 //                                     v
@@ -102,24 +104,27 @@ class SSDBoxesCalcOfflinePass : public mir::StmtPass {
   void ExpandAspectRatios(const std::vector<float>& input_aspect_ratior,
                           bool flip,
                           std::vector<float>* output_aspect_ratior);
-  void ComputePriorbox(const lite::Tensor* input,
-                       const lite::Tensor* image,
-                       lite::Tensor** boxes,
-                       lite::Tensor** variances,
-                       const std::vector<float>& min_size_,
-                       const std::vector<float>& max_size_,
-                       const std::vector<float>& aspect_ratio_,
-                       const std::vector<float>& variance_,
-                       int img_w_,
-                       int img_h_,
-                       float step_w_,
-                       float step_h_,
-                       float offset_,
-                       int prior_num_,
-                       bool is_flip_,
-                       bool is_clip_,
-                       const std::vector<std::string>& order_,
-                       bool min_max_aspect_ratios_order);
+  void ComputeDensityPriorBox(const lite::Tensor* input,
+                              const lite::Tensor* image,
+                              lite::Tensor** boxes,
+                              lite::Tensor** variances,
+                              const std::vector<float>& min_size_,
+                              const std::vector<float>& fixed_size_,
+                              const std::vector<float>& fixed_ratio_,
+                              const std::vector<int>& density_size_,
+                              const std::vector<float>& max_size_,
+                              const std::vector<float>& aspect_ratio_,
+                              const std::vector<float>& variance_,
+                              int img_w_,
+                              int img_h_,
+                              float step_w_,
+                              float step_h_,
+                              float offset_,
+                              int prior_num_,
+                              bool is_flip_,
+                              bool is_clip_,
+                              const std::vector<std::string>& order_,
+                              bool min_max_aspect_ratios_order);
   void ComputeReshape(const lite::Tensor* in, lite::Tensor* out);
   void ComputeFlatten(const lite::Tensor* in, lite::Tensor* out);
   void ComputeConcat(const std::vector<lite::Tensor*> inputs,

@@ -38,7 +38,9 @@ void SSDBoxesCalcOfflinePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 void SSDBoxesCalcOfflinePass::RemovePriorboxPattern(
     const std::unique_ptr<SSAGraph>& graph) {
   for (auto& node : graph->StmtTopologicalOrder()) {
-    if (node->AsStmt().picked_kernel().op_type() != "prior_box") continue;
+    if (node->AsStmt().picked_kernel().op_type() != "prior_box" &&
+        node->AsStmt().picked_kernel().op_type() != "density_prior_box")
+      continue;
 
     std::set<const Node*> nodes2rm_;
     auto& priorbox_instruct = node->AsStmt();
@@ -66,6 +68,11 @@ void SSDBoxesCalcOfflinePass::RemovePriorboxPattern(
     if (op_desc->HasAttr("clip")) {
       is_clip = op_desc->GetAttr<bool>("clip");
     }
+
+    std::vector<std::string> order;
+    if (op_desc->HasAttr("order")) {
+      order = op_desc->GetAttr<std::vector<std::string>>("order");
+    }
     auto min_max_aspect_ratios_order = false;
     if (op_desc->HasAttr("min_max_aspect_ratios_order")) {
       min_max_aspect_ratios_order =
@@ -89,28 +96,84 @@ void SSDBoxesCalcOfflinePass::RemovePriorboxPattern(
     if (op_desc->HasAttr("offset")) {
       offset = op_desc->GetAttr<float>("offset");
     }
-    int prior_num =
-        (aspect_ratios_vec.size() * min_sizes.size()) + max_sizes.size();
-    const std::vector<std::string> order_tmp;
+
     // Calc priorbox
-    ComputePriorbox(input_t,
-                    image_t,
-                    &boxes_t,
-                    &variances_t,
-                    min_sizes,
-                    max_sizes,
-                    aspect_ratios_vec,
-                    variances,
-                    img_w,
-                    img_h,
-                    step_w,
-                    step_h,
-                    offset,
-                    prior_num,
-                    is_flip,
-                    is_clip,
-                    order_tmp,
-                    min_max_aspect_ratios_order);
+    int prior_num;
+    if (node->AsStmt().picked_kernel().op_type() == "prior_box") {
+      prior_num =
+          (aspect_ratios_vec.size() * min_sizes.size()) + max_sizes.size();
+
+      ComputeDensityPriorBox(input_t,
+                             image_t,
+                             &boxes_t,
+                             &variances_t,
+                             min_sizes,
+                             std::vector<float>(),
+                             std::vector<float>(),
+                             std::vector<int>(),
+                             max_sizes,
+                             aspect_ratios_vec,
+                             variances,
+                             img_w,
+                             img_h,
+                             step_w,
+                             step_h,
+                             offset,
+                             prior_num,
+                             is_flip,
+                             is_clip,
+                             order,
+                             min_max_aspect_ratios_order);
+    } else {
+      std::vector<int> density_sizes;
+      auto fixed_sizes = op_desc->GetAttr<std::vector<float>>("fixed_sizes");
+      auto fixed_ratios = op_desc->GetAttr<std::vector<float>>("fixed_ratios");
+      if (op_desc->HasAttr("density_sizes")) {
+        density_sizes = op_desc->GetAttr<std::vector<int>>("density_sizes");
+      }
+      if (op_desc->HasAttr("densities")) {
+        density_sizes = op_desc->GetAttr<std::vector<int>>("densities");
+      }
+
+      size_t prior_num = aspect_ratios_vec.size() * min_sizes.size();
+      prior_num += max_sizes.size();
+      if (fixed_sizes.size() > 0) {
+        prior_num = fixed_sizes.size() * fixed_ratios.size();
+      }
+      if (density_sizes.size() > 0) {
+        for (size_t i = 0; i < density_sizes.size(); ++i) {
+          if (fixed_ratios.size() > 0) {
+            prior_num +=
+                (fixed_ratios.size() * ((pow(density_sizes[i], 2)) - 1));
+          } else {
+            prior_num +=
+                ((fixed_ratios.size() + 1) * ((pow(density_sizes[i], 2)) - 1));
+          }
+        }
+      }
+
+      ComputeDensityPriorBox(input_t,
+                             image_t,
+                             &boxes_t,
+                             &variances_t,
+                             min_sizes,
+                             fixed_sizes,
+                             fixed_ratios,
+                             density_sizes,
+                             max_sizes,
+                             aspect_ratios_vec,
+                             variances,
+                             img_w,
+                             img_h,
+                             step_w,
+                             step_h,
+                             offset,
+                             prior_num,
+                             is_flip,
+                             is_clip,
+                             order,
+                             false);
+    }
     // Offline calc priorbox, only retain output tensor as persistable tensor
     boxes_t->set_persistable(true);
     variances_t->set_persistable(true);
@@ -309,12 +372,15 @@ void SSDBoxesCalcOfflinePass::ExpandAspectRatios(
   }
 }
 
-void SSDBoxesCalcOfflinePass::ComputePriorbox(
+void SSDBoxesCalcOfflinePass::ComputeDensityPriorBox(
     const lite::Tensor* input,
     const lite::Tensor* image,
     lite::Tensor** boxes,
     lite::Tensor** variances,
     const std::vector<float>& min_size_,
+    const std::vector<float>& fixed_size_,
+    const std::vector<float>& fixed_ratio_,
+    const std::vector<int>& density_size_,
     const std::vector<float>& max_size_,
     const std::vector<float>& aspect_ratio_,
     const std::vector<float>& variance_,
@@ -353,6 +419,7 @@ void SSDBoxesCalcOfflinePass::ComputePriorbox(
     step_h = static_cast<float>(img_height) / height;
   }
   float offset = offset_;
+  int step_average = static_cast<int>((step_w + step_h) * 0.5);  // add
   int channel_size = height * width * prior_num_ * 4;
   int idx = 0;
   for (int h = 0; h < height; ++h) {
@@ -361,79 +428,211 @@ void SSDBoxesCalcOfflinePass::ComputePriorbox(
       float center_y = (h + offset) * step_h;
       float box_width;
       float box_height;
-      float* min_buf =
-          reinterpret_cast<float*>(host::malloc(sizeof(float) * 4));
-      float* max_buf =
-          reinterpret_cast<float*>(host::malloc(sizeof(float) * 4));
-      float* com_buf = reinterpret_cast<float*>(
-          host::malloc(sizeof(float) * aspect_ratio_.size() * 4));
+      if (fixed_size_.size() > 0) {
+        // add
+        for (size_t s = 0; s < fixed_size_.size(); ++s) {
+          int fixed_size = fixed_size_[s];
+          box_width = fixed_size;
+          box_height = fixed_size;
 
-      for (auto s = 0; s < min_size_.size(); ++s) {
-        int min_idx = 0;
-        int max_idx = 0;
-        int com_idx = 0;
-        int min_size = min_size_[s];
-        // First prior: aspect_ratio = 1, size = min_size
-        box_width = box_height = min_size;
-        //! xmin
-        min_buf[min_idx++] = (center_x - box_width / 2.f) / img_width;
-        //! ymin
-        min_buf[min_idx++] = (center_y - box_height / 2.f) / img_height;
-        //! xmax
-        min_buf[min_idx++] = (center_x + box_width / 2.f) / img_width;
-        //! ymax
-        min_buf[min_idx++] = (center_y + box_height / 2.f) / img_height;
+          if (fixed_ratio_.size() > 0) {
+            for (size_t r = 0; r < fixed_ratio_.size(); ++r) {
+              float ar = fixed_ratio_[r];
+              int density = density_size_[s];
+              int shift = step_average / density;
+              float box_width_ratio = fixed_size_[s] * sqrt(ar);
+              float box_height_ratio = fixed_size_[s] / sqrt(ar);
 
-        if (max_size_.size() > 0) {
-          int max_size = max_size_[s];
-          //! Second prior: aspect_ratio = 1, size = sqrt(min_size * max_size)
-          box_width = box_height = sqrtf(min_size * max_size);
-          //! xmin
-          max_buf[max_idx++] = (center_x - box_width / 2.f) / img_width;
-          //! ymin
-          max_buf[max_idx++] = (center_y - box_height / 2.f) / img_height;
-          //! xmax
-          max_buf[max_idx++] = (center_x + box_width / 2.f) / img_width;
-          //! ymax
-          max_buf[max_idx++] = (center_y + box_height / 2.f) / img_height;
-        }
+              for (int p = 0; p < density; ++p) {
+                for (int c = 0; c < density; ++c) {
+                  float center_x_temp =
+                      center_x - step_average / 2.0f + shift / 2.f + c * shift;
+                  float center_y_temp =
+                      center_y - step_average / 2.0f + shift / 2.f + p * shift;
+                  // xmin
+                  _cpu_data[idx++] =
+                      (center_x_temp - box_width_ratio / 2.f) / img_width >= 0
+                          ? (center_x_temp - box_width_ratio / 2.f) / img_width
+                          : 0;
+                  // ymin
+                  _cpu_data[idx++] =
+                      (center_y_temp - box_height_ratio / 2.f) / img_height >= 0
+                          ? (center_y_temp - box_height_ratio / 2.f) /
+                                img_height
+                          : 0;
+                  // xmax
+                  _cpu_data[idx++] =
+                      (center_x_temp + box_width_ratio / 2.f) / img_width <= 1
+                          ? (center_x_temp + box_width_ratio / 2.f) / img_width
+                          : 1;
+                  // ymax
+                  _cpu_data[idx++] =
+                      (center_y_temp + box_height_ratio / 2.f) / img_height <= 1
+                          ? (center_y_temp + box_height_ratio / 2.f) /
+                                img_height
+                          : 1;
+                }
+              }
+            }
+          } else {
+            // this code for density anchor box
+            if (density_size_.size() > 0) {
+              CHECK_EQ(fixed_size_.size(), density_size_.size())
+                  << "fixed_size_ should be same with density_size_";
+              int density = density_size_[s];
+              int shift = fixed_size_[s] / density;
 
-        //! Rest of priors
-        for (auto r = 0; r < aspect_ratio_.size(); ++r) {
-          float ar = aspect_ratio_[r];
-          if (fabs(ar - 1.) < 1e-6) {
-            continue;
+              for (int r = 0; r < density; ++r) {
+                for (int c = 0; c < density; ++c) {
+                  float center_x_temp =
+                      center_x - fixed_size / 2.f + shift / 2.f + c * shift;
+                  float center_y_temp =
+                      center_y - fixed_size / 2.f + shift / 2.f + r * shift;
+                  // xmin
+                  _cpu_data[idx++] =
+                      (center_x_temp - box_width / 2.f) / img_width >= 0
+                          ? (center_x_temp - box_width / 2.f) / img_width
+                          : 0;
+                  // ymin
+                  _cpu_data[idx++] =
+                      (center_y_temp - box_height / 2.f) / img_height >= 0
+                          ? (center_y_temp - box_height / 2.f) / img_height
+                          : 0;
+                  // xmax
+                  _cpu_data[idx++] =
+                      (center_x_temp + box_width / 2.f) / img_width <= 1
+                          ? (center_x_temp + box_width / 2.f) / img_width
+                          : 1;
+                  // ymax
+                  _cpu_data[idx++] =
+                      (center_y_temp + box_height / 2.f) / img_height <= 1
+                          ? (center_y_temp + box_height / 2.f) / img_height
+                          : 1;
+                }
+              }
+            }
+
+            // rest of priors: will never come here!!!
+            for (size_t r = 0; r < aspect_ratio_.size(); ++r) {
+              float ar = aspect_ratio_[r];
+
+              if (fabs(ar - 1.) < 1e-6) {
+                continue;
+              }
+
+              int density = density_size_[s];
+              int shift = fixed_size_[s] / density;
+              float box_width_ratio = fixed_size_[s] * sqrt(ar);
+              float box_height_ratio = fixed_size_[s] / sqrt(ar);
+
+              for (int p = 0; p < density; ++p) {
+                for (int c = 0; c < density; ++c) {
+                  float center_x_temp =
+                      center_x - fixed_size / 2.f + shift / 2.f + c * shift;
+                  float center_y_temp =
+                      center_y - fixed_size / 2.f + shift / 2.f + p * shift;
+                  // xmin
+                  _cpu_data[idx++] =
+                      (center_x_temp - box_width_ratio / 2.f) / img_width >= 0
+                          ? (center_x_temp - box_width_ratio / 2.f) / img_width
+                          : 0;
+                  // ymin
+                  _cpu_data[idx++] =
+                      (center_y_temp - box_height_ratio / 2.f) / img_height >= 0
+                          ? (center_y_temp - box_height_ratio / 2.f) /
+                                img_height
+                          : 0;
+                  // xmax
+                  _cpu_data[idx++] =
+                      (center_x_temp + box_width_ratio / 2.f) / img_width <= 1
+                          ? (center_x_temp + box_width_ratio / 2.f) / img_width
+                          : 1;
+                  // ymax
+                  _cpu_data[idx++] =
+                      (center_y_temp + box_height_ratio / 2.f) / img_height <= 1
+                          ? (center_y_temp + box_height_ratio / 2.f) /
+                                img_height
+                          : 1;
+                }
+              }
+            }
           }
-          box_width = min_size * sqrt(ar);
-          box_height = min_size / sqrt(ar);
+        }
+      } else {
+        float* min_buf =
+            reinterpret_cast<float*>(host::malloc(sizeof(float) * 4));
+        float* max_buf =
+            reinterpret_cast<float*>(host::malloc(sizeof(float) * 4));
+        float* com_buf = reinterpret_cast<float*>(
+            host::malloc(sizeof(float) * aspect_ratio_.size() * 4));
+
+        for (auto s = 0; s < min_size_.size(); ++s) {
+          int min_idx = 0;
+          int max_idx = 0;
+          int com_idx = 0;
+          int min_size = min_size_[s];
+          // First prior: aspect_ratio = 1, size = min_size
+          box_width = box_height = min_size;
           //! xmin
-          com_buf[com_idx++] = (center_x - box_width / 2.f) / img_width;
+          min_buf[min_idx++] = (center_x - box_width / 2.f) / img_width;
           //! ymin
-          com_buf[com_idx++] = (center_y - box_height / 2.f) / img_height;
+          min_buf[min_idx++] = (center_y - box_height / 2.f) / img_height;
           //! xmax
-          com_buf[com_idx++] = (center_x + box_width / 2.f) / img_width;
+          min_buf[min_idx++] = (center_x + box_width / 2.f) / img_width;
           //! ymax
-          com_buf[com_idx++] = (center_y + box_height / 2.f) / img_height;
+          min_buf[min_idx++] = (center_y + box_height / 2.f) / img_height;
+
+          if (max_size_.size() > 0) {
+            int max_size = max_size_[s];
+            //! Second prior: aspect_ratio = 1, size = sqrt(min_size * max_size)
+            box_width = box_height = sqrtf(min_size * max_size);
+            //! xmin
+            max_buf[max_idx++] = (center_x - box_width / 2.f) / img_width;
+            //! ymin
+            max_buf[max_idx++] = (center_y - box_height / 2.f) / img_height;
+            //! xmax
+            max_buf[max_idx++] = (center_x + box_width / 2.f) / img_width;
+            //! ymax
+            max_buf[max_idx++] = (center_y + box_height / 2.f) / img_height;
+          }
+
+          //! Rest of priors
+          for (auto r = 0; r < aspect_ratio_.size(); ++r) {
+            float ar = aspect_ratio_[r];
+            if (fabs(ar - 1.) < 1e-6) {
+              continue;
+            }
+            box_width = min_size * sqrt(ar);
+            box_height = min_size / sqrt(ar);
+            //! xmin
+            com_buf[com_idx++] = (center_x - box_width / 2.f) / img_width;
+            //! ymin
+            com_buf[com_idx++] = (center_y - box_height / 2.f) / img_height;
+            //! xmax
+            com_buf[com_idx++] = (center_x + box_width / 2.f) / img_width;
+            //! ymax
+            com_buf[com_idx++] = (center_y + box_height / 2.f) / img_height;
+          }
+          if (min_max_aspect_ratios_order) {
+            memcpy(_cpu_data + idx, min_buf, sizeof(float) * min_idx);
+            idx += min_idx;
+            memcpy(_cpu_data + idx, max_buf, sizeof(float) * max_idx);
+            idx += max_idx;
+            memcpy(_cpu_data + idx, com_buf, sizeof(float) * com_idx);
+            idx += com_idx;
+          } else {
+            memcpy(_cpu_data + idx, min_buf, sizeof(float) * min_idx);
+            idx += min_idx;
+            memcpy(_cpu_data + idx, com_buf, sizeof(float) * com_idx);
+            idx += com_idx;
+            memcpy(_cpu_data + idx, max_buf, sizeof(float) * max_idx);
+            idx += max_idx;
+          }
         }
-        if (min_max_aspect_ratios_order) {
-          memcpy(_cpu_data + idx, min_buf, sizeof(float) * min_idx);
-          idx += min_idx;
-          memcpy(_cpu_data + idx, max_buf, sizeof(float) * max_idx);
-          idx += max_idx;
-          memcpy(_cpu_data + idx, com_buf, sizeof(float) * com_idx);
-          idx += com_idx;
-        } else {
-          memcpy(_cpu_data + idx, min_buf, sizeof(float) * min_idx);
-          idx += min_idx;
-          memcpy(_cpu_data + idx, com_buf, sizeof(float) * com_idx);
-          idx += com_idx;
-          memcpy(_cpu_data + idx, max_buf, sizeof(float) * max_idx);
-          idx += max_idx;
-        }
+        host::free(min_buf);
+        host::free(max_buf);
+        host::free(com_buf);
       }
-      host::free(min_buf);
-      host::free(max_buf);
-      host::free(com_buf);
     }
   }
   //! Clip the prior's coordinate such that it is within [0, 1]
