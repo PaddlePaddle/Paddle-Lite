@@ -12,40 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/amlogic_npu/converter.h"
+#include "core/operation/unary_activations.h"
+#include "driver/amlogic_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace amlogic_npu {
 
-int Program::ConvertActivation(hal::Operation* operation) {
-  auto& input_operands = operation->input_operands;
-  auto& output_operands = operation->output_operands;
-  auto input_count = input_operands.size();
-  auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 1);
-  NNADAPTER_CHECK_EQ(output_count, 1);
-  // Input
-  auto input_operand = input_operands[0];
-  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
-  // Output
-  auto output_operand = output_operands[0];
-  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
-
+int ConvertUnaryActivations(Converter* converter, hal::Operation* operation) {
+  UNARY_ACTIVATIONS_OPERATION_EXTRACT_INPUTS_OUTPUTS
   // Convert to amlnpu tensors and operators
-  auto input_tensor = GetMappedTensor(input_operand);
+  auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
-    input_tensor = ConvertOperand(input_operand);
+    input_tensor = converter->ConvertOperand(input_operand);
   }
-  auto output_tensor = ConvertOperand(output_operand);
+  auto output_tensor = converter->ConvertOperand(output_operand);
   std::vector<std::shared_ptr<aml::nn::Tensor>> input_tensors = {input_tensor};
   std::vector<std::shared_ptr<aml::nn::Tensor>> output_tensors = {
       output_tensor};
   aml::nn::OperatorType op_type;
-  if (operation->type == NNADAPTER_HARD_SIGMOID) {
-    op_type = aml::nn::OperatorType::HARD_SIGMOID;
-  } else if (operation->type == NNADAPTER_SIGMOID) {
+  if (operation->type == NNADAPTER_SIGMOID) {
     op_type = aml::nn::OperatorType::SIGMOID;
   } else if (operation->type == NNADAPTER_RELU) {
     op_type = aml::nn::OperatorType::RELU;
@@ -58,7 +45,7 @@ int Program::ConvertActivation(hal::Operation* operation) {
                          << OperationTypeToString(operation->type)
                          << " is found.";
   }
-  graph_->AddOperator(op_type, input_tensors, output_tensors, nullptr);
+  converter->AddOperator(op_type, input_tensors, output_tensors, nullptr);
   return NNADAPTER_NO_ERROR;
 }
 

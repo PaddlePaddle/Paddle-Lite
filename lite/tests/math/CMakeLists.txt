@@ -13,6 +13,7 @@ if((NOT LITE_WITH_OPENCL AND NOT LITE_WITH_FPGA AND NOT LITE_WITH_MLU) AND (LITE
     if(LITE_BUILD_EXTRA)
         lite_cc_test(deformable_conv_compute_test SRCS deformable_conv_compute_test.cc DEPS kernels ops)
         lite_cc_test(layout_compute_test SRCS layout_compute_test.cc DEPS kernels ops)
+
     endif()
     if (LITE_WITH_ARM82_FP16)
         if(${ANDROID_NDK_MAJOR})

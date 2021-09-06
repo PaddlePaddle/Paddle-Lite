@@ -14,7 +14,6 @@
 
 #ifndef __NNADAPTER_CONVERTER_ALL_H__  // NOLINT
 #define __NNADAPTER_CONVERTER_ALL_H__
-
 REGISTER_CONVERTER(conv2d,
                    ConvertConv2D,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
@@ -27,6 +26,7 @@ REGISTER_CONVERTER(softmax,
                    ConvertSoftmax,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
                    "npu,amlogic_npu,imagination_nna");
+REGISTER_CONVERTER(cumsum, ConvertCumsum, "huawei_ascend_npu");
 REGISTER_CONVERTER(
     sigmoid,
     ConvertUnaryActivations,
@@ -44,6 +44,10 @@ REGISTER_CONVERTER(
     ConvertUnaryActivations,
     "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
 REGISTER_CONVERTER(abs, ConvertUnaryActivations, "huawei_ascend_npu");
+REGISTER_CONVERTER(exp, ConvertUnaryActivations, "huawei_ascend_npu");
 REGISTER_CONVERTER(log, ConvertUnaryActivations, "huawei_ascend_npu");
+REGISTER_CONVERTER(shape, ConvertShape, "huawei_ascend_npu");
+REGISTER_CONVERTER(fill_constant, ConvertFillConstant, "huawei_ascend_npu");
+REGISTER_CONVERTER(fill_any_like, ConvertFillAnyLike, "huawei_ascend_npu");
 
 #endif  // NOLINT

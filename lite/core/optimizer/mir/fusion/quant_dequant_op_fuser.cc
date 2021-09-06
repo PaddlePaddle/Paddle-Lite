@@ -538,7 +538,7 @@ void QuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
       // PaddleLite only supports this int8 ops for now
       // TODO(pjc) : support conv2d_transpose
       if (op_type == "mul" || op_type == "matmul" || op_type == "conv2d" ||
-          op_type == "depthwise_conv2d") {
+          op_type == "depthwise_conv2d" || op_type == "conv2d_transpose") {
 #ifndef LITE_WITH_FPGA
         op_info.SetAttr("enable_int8", true);
 #endif

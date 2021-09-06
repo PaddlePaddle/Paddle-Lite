@@ -186,6 +186,7 @@ if (WITH_TESTING)
     lite_cc_library(lite_api_test_helper SRCS lite_api_test_helper.cc
       DEPS core target_wrapper_host model_parser
            ops kernels)
+
 endif()
 if(LITE_WITH_FPGA)
     set(light_api_deps ${light_api_deps} ${fpga_deps})
@@ -231,6 +232,7 @@ if (NOT LITE_ON_TINY_PUBLISH)
                         SRCS cxx_api.cc
                         DEPS ${cxx_api_deps} ops
                         CV_DEPS paddle_cv_arm)
+
 endif()
 
 # for light api
@@ -253,7 +255,7 @@ if(WITH_TESTING)
     if(NOT WITH_COVERAGE)
         lite_cc_test(test_cxx_api SRCS cxx_api_test.cc
            DEPS cxx_api lite_api_test_helper
-           ops
+           ops kernels
            EXCLUDE_COMPILE_DEPS "ON"
            ARGS --model_dir=${LITE_MODEL_DIR}/lite_naive_model
                 --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
@@ -380,7 +382,6 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
 
 endif()
 
-
 lite_cc_library(paddle_api SRCS paddle_api.cc DEPS ops core)
 
 #-----------------------------------------------------------------------------------------------------
@@ -394,6 +395,7 @@ if (NOT LITE_ON_TINY_PUBLISH)
     lite_cc_library(paddle_api_full SRCS cxx_api_impl.cc DEPS cxx_api paddle_api_light
         ops paddle_api framework_proto core utils kernels
         CV_DEPS paddle_cv_arm)
+
     # The final inference library for just MobileConfig.
     bundle_static_library(paddle_api_full paddle_api_full_bundled bundle_full_api)
     target_link_libraries(paddle_api_full ${cuda_deps})
@@ -407,7 +409,7 @@ endif()
 # TODO(Superjomn) support latter.
 if(NOT WITH_COVERAGE)
     lite_cc_test(test_light_api SRCS light_api_test.cc
-        DEPS paddle_api_full paddle_api_light ops
+        DEPS paddle_api_full paddle_api_light ops kernels
         ARGS --optimized_model=${LITE_MODEL_DIR}/lite_naive_model_opt SERIAL)
 
     lite_cc_test(test_apis SRCS apis_test.cc
@@ -438,7 +440,6 @@ if (LITE_ON_MODEL_OPTIMIZE_TOOL)
     message(STATUS "Compiling opt")
     lite_cc_binary(opt SRCS tools/opt.cc tools/opt_base.cc cxx_api_impl.cc paddle_api.cc cxx_api.cc
         DEPS gflags utils kernels core ops model_parser)
-endif(LITE_ON_MODEL_OPTIMIZE_TOOL)
 
 if(NOT WITH_COVERAGE)
     lite_cc_test(test_paddle_api SRCS paddle_api_test.cc DEPS paddle_api_full paddle_api_light

@@ -12,19 +12,20 @@ else()
 endif()
 
 
-
 message(STATUS "compile with lite Metal kernels")
 
 #####################
 # image kernel      #
 #####################
 add_kernel(activation_metal_image METAL basic SRCS image_op/activation_image_compute.mm)
+add_kernel(batch_norm_metal_image METAL basic SRCS image_op/batch_norm_image_compute.mm)
 add_kernel(concat_metal_image METAL basic SRCS image_op/concat_image_compute.mm)
 add_kernel(conv2d_metal_image METAL basic SRCS image_op/conv2d_image_compute.mm)
 add_kernel(depthwise_conv2d_metal_image METAL basic SRCS image_op/depthwise_conv2d_image_compute.mm)
 add_kernel(dropout_metal_image METAL basic SRCS image_op/dropout_image_compute.mm)
 add_kernel(elementwise_add_metal_image METAL basic SRCS image_op/elementwise_add_image_compute.mm)
 add_kernel(elementwise_mul_metal_image METAL basic SRCS image_op/elementwise_mul_image_compute.mm)
+add_kernel(elementwise_sub_metal_image METAL basic SRCS image_op/elementwise_sub_image_compute.mm)
 add_kernel(exp_metal_image METAL basic SRCS image_op/exp_image_compute.mm)
 add_kernel(fc_metal_image METAL basic SRCS image_op/fc_image_compute.mm)
 add_kernel(feed_metal_image METAL basic SRCS image_op/feed_image_compute.mm)
@@ -41,6 +42,8 @@ add_kernel(softmax_metal_image METAL basic SRCS image_op/softmax_image_compute.m
 add_kernel(split_metal_image METAL basic SRCS image_op/split_image_compute.mm)
 add_kernel(shuffle_channel_metal_compute METAL basic SRCS image_op/shuffle_channel_image_compute.mm)
 add_kernel(transpose_metal_image METAL basic SRCS image_op/transpose_image_compute.mm)
+add_kernel(yolo_box_metal_image METAL basic SRCS image_op/yolo_box_image_compute.mm DEPS metal_target_wrapper)
+
 # add_kernel(batch_norm_metal_image METAL basic SRCS image_op/batch_norm_image_compute.mm)
 # add_kernel(mul_metal_image METAL basic SRCS image_op/mul_image_compute.mm)
 # add_kernel(elementwise_max_metal_image METAL basic SRCS image_op/elementwise_max_image_compute.mm)
@@ -56,9 +59,6 @@ add_kernel(transpose_metal_image METAL basic SRCS image_op/transpose_image_compu
 # add_kernel(prior_box_metal_image METAL basic SRCS image_op/prior_box_image_compute.mm)
 # add_kernel(conv2d_transpose_metal_image METAL basic SRCS image_op/conv2d_transpose_image_compute.mm)
 # add_kernel(box_coder_metal_image METAL basic SRCS image_op/box_coder_image_compute.mm)
-
-
-
 
 
 

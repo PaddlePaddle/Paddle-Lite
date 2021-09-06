@@ -89,7 +89,7 @@ int ConvertConv2D(Converter* converter, OpInfo* op, Scope* scope) {
         << "Missing the quant params '" << input_scale_name
         << "' for the input '" << input_name << "'";
     CHECK(IsValidSymmPerLayerQuantParams(output_scales))
-        << "Missing the quant params '" << input_scale_name
+        << "Missing the quant params '" << output_scale_name
         << "' for the output '" << output_name << "'";
     is_quant_mode = true;
   }
