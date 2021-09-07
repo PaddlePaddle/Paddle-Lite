@@ -205,6 +205,16 @@ struct ConcatParam {
 
 #define V VX
 #define R 2
+#define N 6
+#define P ftype
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
+#undef V
+
+#define V VX
+#define R 2
 #define N 5
 #define P ftype
 #include "ConcatKernel.inc.metal"
