@@ -587,6 +587,19 @@ NNADAPTER_EXPORT std::string DeviceCodeToString(NNAdapterDeviceCode type) {
   return name;
 }
 
+NNADAPTER_EXPORT std::string AutoPadCodeToString(NNAdapterAutoPadCode type) {
+  std::string name;
+  switch (type) {
+    NNADAPTER_TYPE_TO_STRING(AUTO_PAD_NONE);
+    NNADAPTER_TYPE_TO_STRING(AUTO_PAD_SAME);
+    NNADAPTER_TYPE_TO_STRING(AUTO_PAD_VALID);
+    default:
+      name = "UNKNOWN";
+      break;
+  }
+  return name;
+}
+
 #undef NNADAPTER_TYPE_TO_STRING
 
 NNADAPTER_EXPORT std::string OperandPrecisionCodeToSymbol(

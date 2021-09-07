@@ -22,10 +22,26 @@ namespace mediatek_apu {
 
 int Program::ConvertConv2D(hal::Operation* operation) {
   CONV2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  // Dynamic shapes are still not supported
+  NNADAPTER_CHECK_EQ(input_operand->type.dynamic_dimension_count, 0);
+  operation::UpdateConv2DPadAndDilation(input_operand->type.dimensions[1],
+                                        filter_height,
+                                        auto_pad,
+                                        &pad_height_top,
+                                        &pad_height_bottom,
+                                        stride_height,
+                                        &dilation_height);
+  operation::UpdateConv2DPadAndDilation(input_operand->type.dimensions[2],
+                                        filter_width,
+                                        auto_pad,
+                                        &pad_width_left,
+                                        &pad_width_right,
+                                        stride_width,
+                                        &dilation_width);
   // NHWC
   input_channel_size = input_operand->type.dimensions[3];
-  is_depthwise_mode = (group != 1 && input_channel_size == group);
-  NNADAPTER_VLOG(5) << "update depthwise mode(" << is_depthwise_mode << ").";
+  is_depthwise_mode = group != 1 && input_channel_size == group;
+  NNADAPTER_VLOG(5) << "Update depthwise mode(" << is_depthwise_mode << ").";
   NNADAPTER_CHECK_EQ(dilation_height, 1)
       << "MediaTek APU only supports dilations = [1,1]";
   NNADAPTER_CHECK_EQ(dilation_width, 1)
@@ -53,7 +69,8 @@ int Program::ConvertConv2D(hal::Operation* operation) {
   auto padding_height_bottom_index = AddInt32ConstantOperand(pad_height_bottom);
   auto stride_width_index = AddInt32ConstantOperand(stride_width);
   auto stride_height_index = AddInt32ConstantOperand(stride_height);
-  auto fuse_code_index = AddInt32ConstantOperand(ConvertFuseCode(fuse_code));
+  auto fuse_code_index =
+      AddInt32ConstantOperand(ConvertFuseCodeToNeuronFuseCode(fuse_code));
   auto output_index = ConvertOperand(output_operand);
   std::vector<uint32_t> input_indexes = {input_index,
                                          filter_index,
