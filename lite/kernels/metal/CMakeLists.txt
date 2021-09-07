@@ -3,7 +3,6 @@ if ((NOT LITE_ON_MODEL_OPTIMIZE_TOOL) AND (NOT LITE_WITH_PYTHON) AND (NOT LITE_W
 endif()
 
 set(metal_kernel_deps ops metal_target_wrapper)
-find_library(METAL_LIBRARY Metal REQUIRED)
 
 message(STATUS "compile with lite Metal kernels")
 
@@ -52,17 +51,19 @@ add_kernel(yolo_box_metal_image METAL basic SRCS image_op/yolo_box_image_compute
 # add_kernel(conv2d_transpose_metal_image METAL basic SRCS image_op/conv2d_transpose_image_compute.mm DEPS metal_target_wrapper)
 # add_kernel(box_coder_metal_image METAL basic SRCS image_op/box_coder_image_compute.mm DEPS metal_target_wrapper)
 
-add_library(METAL_BASE STATIC IMPORTED )
-set_target_properties(METAL_BASE PROPERTIES IMPORTED_LOCATION ${METAL_LIBRARY})
-
-lite_cc_test(test_batch_norm_metal_image_metal SRCS image_op/batch_norm_image_compute_test.mm
-        DEPS batch_norm_metal_image io_copy_metal_image metal_target_wrapper ${METAL_BASE} ${tensor_lite} core )
-
-lite_cc_test(test_activation_metal_image_metal SRCS image_op/activation_image_compute_test.mm
-        DEPS activation_metal_image io_copy_metal_image op_registry program metal_target_wrapper ${METAL_BASE} ${tensor_lite} op_registry program context )
-
-lite_cc_test(test_pool_metal_image_metal SRCS image_op/pool_image_compute_test.mm
-        DEPS pool_metal_image io_copy_metal_image metal_target_wrapper ${METAL_BASE} ${tensor_lite} core )
-
-lite_cc_test(test_dw_metal_image_metal SRCS image_op/conv2d_image_compute_test.mm
-        DEPS conv2d_metal_image io_copy_metal_image metal_target_wrapper ${METAL_BASE} ${tensor_lite} core )
+if(LITE_WITH_METAL)
+  add_library(METAL_BASE STATIC IMPORTED )
+  set_target_properties(METAL_BASE PROPERTIES IMPORTED_LOCATION ${METAL_LIBRARY})
+  
+  lite_cc_test(test_batch_norm_metal_image_metal SRCS image_op/batch_norm_image_compute_test.mm
+          DEPS batch_norm_metal_image io_copy_metal_image metal_target_wrapper ${METAL_BASE} ${tensor_lite} core)
+  
+  lite_cc_test(test_activation_metal_image_metal SRCS image_op/activation_image_compute_test.mm
+          DEPS activation_metal_image io_copy_metal_image metal_target_wrapper ${METAL_BASE} ${tensor_lite} op_registry program context)
+  
+  lite_cc_test(test_pool_metal_image_metal SRCS image_op/pool_image_compute_test.mm
+          DEPS pool_metal_image io_copy_metal_image metal_target_wrapper ${METAL_BASE} ${tensor_lite} core)
+  
+  lite_cc_test(test_dw_metal_image_metal SRCS image_op/conv2d_image_compute_test.mm
+          DEPS conv2d_metal_image io_copy_metal_image metal_target_wrapper ${METAL_BASE} ${tensor_lite} core)
+endif()
