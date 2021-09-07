@@ -4,7 +4,7 @@
 
 本文介绍如何将 Paddle Lite 源代码通过 Android NDK 交叉构建适用于 Android 平台的发布包。
 
-说明：本文适用于 Paddle Lite v2.6 及以上版本，面向对源代码有修改需求的开发者。如果您需要的是 Paddle Lite 正式版本，请直接前往下载我们预先编译的发布包。
+说明：本文适用于 Paddle Lite v2.6 及以上版本，面向对源代码有修改需求的开发者。如果您需要的是 Paddle Lite 正式版本，请直接 [前往下载](https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html)我们预先编译的发布包。
 
 ## 二、环境
 
