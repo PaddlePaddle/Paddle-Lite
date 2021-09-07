@@ -241,6 +241,73 @@ void act_hard_sigmoid<float16_t>(const float16_t* din,
     ++dout;
   }
 }
+
+template <>
+void act_hard_swish<float16_t>(const float16_t* din,
+                               float16_t* dout,
+                               const int size,
+                               const float threshold,
+                               const float scale,
+                               const float offset,
+                               int threads) {
+  int cnt = size >> 5;
+  int remain = size & 31;
+  float scale_r = 1. / scale;
+
+  int cnt_8 = remain >> 3;
+  int remain_8 = remain & 7;
+
+  float16x8_t vzero_8 = vdupq_n_f16(float16_t(0));
+  float16x8_t vthreshold_8 = vdupq_n_f16(float16_t(threshold));
+  float16x8_t vscale_8 = vdupq_n_f16(float16_t(scale_r));
+  float16x8_t voffset_8 = vdupq_n_f16(float16_t(offset));
+
+  for (int i = 0; i < cnt; i++) {
+    float16x8_t vdin0 = vld1q_f16(din);
+    float16x8_t vdin1 = vld1q_f16(din + 8);
+    float16x8_t vdin2 = vld1q_f16(din + 16);
+    float16x8_t vdin3 = vld1q_f16(din + 24);
+    float16x8_t vtmp0 = vminq_f16(
+        vthreshold_8, vmaxq_f16(vzero_8, vaddq_f16(vdin0, voffset_8)));
+    float16x8_t vsum0 = vmulq_f16(vscale_8, vdin0);
+    float16x8_t vtmp1 = vminq_f16(
+        vthreshold_8, vmaxq_f16(vzero_8, vaddq_f16(vdin1, voffset_8)));
+    float16x8_t vsum1 = vmulq_f16(vscale_8, vdin1);
+    float16x8_t vtmp2 = vminq_f16(
+        vthreshold_8, vmaxq_f16(vzero_8, vaddq_f16(vdin2, voffset_8)));
+    float16x8_t vsum2 = vmulq_f16(vscale_8, vdin2);
+    float16x8_t vtmp3 = vminq_f16(
+        vthreshold_8, vmaxq_f16(vzero_8, vaddq_f16(vdin3, voffset_8)));
+    float16x8_t vsum3 = vmulq_f16(vscale_8, vdin3);
+    float16x8_t vres0 = vmulq_f16(vsum0, vtmp0);
+    float16x8_t vres1 = vmulq_f16(vsum1, vtmp1);
+    float16x8_t vres2 = vmulq_f16(vsum2, vtmp2);
+    float16x8_t vres3 = vmulq_f16(vsum3, vtmp3);
+    vst1q_f16(dout, vres0);
+    vst1q_f16(dout + 8, vres1);
+    vst1q_f16(dout + 16, vres2);
+    vst1q_f16(dout + 24, vres3);
+    din += 32;
+    dout += 32;
+  }
+  for (int i = 0; i < cnt_8; i++) {
+    float16x8_t vdin0 = vld1q_f16(din);
+    din += 8;
+    float16x8_t vtmp0 = vminq_f16(
+        vthreshold_8, vmaxq_f16(vzero_8, vaddq_f16(vdin0, voffset_8)));
+    float16x8_t vsum0 = vmulq_f16(vscale_8, vdin0);
+    float16x8_t vres0 = vmulq_f16(vsum0, vtmp0);
+    vst1q_f16(dout, vres0);
+    dout += 8;
+  }
+  for (int i = 0; i < remain_8; i++) {
+    dout[0] =
+        std::min(std::max(0.f, din[0] + offset), threshold) * din[0] * scale_r;
+    din++;
+    dout++;
+  }
+}
+
 template <>
 void act_prelu<float16_t>(const float16_t* din,
                           float16_t* dout,

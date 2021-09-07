@@ -11,7 +11,6 @@ else()
   return()
 endif()
 
-
 message(STATUS "compile with lite Metal kernels")
 
 #####################
@@ -61,15 +60,16 @@ add_kernel(yolo_box_metal_image METAL basic SRCS image_op/yolo_box_image_compute
 # add_kernel(box_coder_metal_image METAL basic SRCS image_op/box_coder_image_compute.mm)
 
 
+if(LITE_WITH_METAL)
+  lite_cc_test(test_batch_norm_metal_image_metal SRCS image_op/batch_norm_image_compute_test.mm
+          DEPS kernels ${METAL_BASE} ${tensor_lite} core)
 
-lite_cc_test(test_batch_norm_metal_image_metal SRCS image_op/batch_norm_image_compute_test.mm
-        DEPS kernels ${METAL_BASE} ${tensor_lite} core)
+  lite_cc_test(test_activation_metal_image_metal SRCS image_op/activation_image_compute_test.mm
+          DEPS kernels ${METAL_BASE} ${tensor_lite} core)
 
-lite_cc_test(test_activation_metal_image_metal SRCS image_op/activation_image_compute_test.mm
-        DEPS kernels ${METAL_BASE} ${tensor_lite} core)
+  lite_cc_test(test_pool_metal_image_metal SRCS image_op/pool_image_compute_test.mm
+          DEPS kernels ${METAL_BASE} ${tensor_lite} core)
 
-lite_cc_test(test_pool_metal_image_metal SRCS image_op/pool_image_compute_test.mm
-        DEPS kernels ${METAL_BASE} ${tensor_lite} core)
-
-lite_cc_test(test_dw_metal_image_metal SRCS image_op/conv2d_image_compute_test.mm
-        DEPS kernels ${METAL_BASE} ${tensor_lite} core)
+  lite_cc_test(test_dw_metal_image_metal SRCS image_op/conv2d_image_compute_test.mm
+          DEPS kernels ${METAL_BASE} ${tensor_lite} core)
+endif()

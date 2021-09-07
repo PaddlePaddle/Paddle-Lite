@@ -101,6 +101,25 @@ void HardSigmoidCompute<PRECISION(kFP16)>::Run() {
   lite::arm::math::fp16::act_hard_sigmoid<float16_t>(
       x_data, output_data, x_dims.production(), slope, offset, ctx.threads());
 }
+
+template <>
+void HardSwishCompute<PRECISION(kFP16)>::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  auto x_dims = param.X->dims();
+  auto x_data = param.X->data<float16_t>();
+  auto output_data = param.Out->mutable_data<float16_t>();
+  float threshold = param.hard_swish_threshold;
+  float scale = param.hard_swish_scale;
+  float offset = param.hard_swish_offset;
+  lite::arm::math::fp16::act_hard_swish<float16_t>(x_data,
+                                                   output_data,
+                                                   x_dims.production(),
+                                                   threshold,
+                                                   scale,
+                                                   offset,
+                                                   ctx.threads());
+}
 #endif
 
 void SqrtCompute::Run() {
@@ -133,7 +152,8 @@ void SquareCompute::Run() {
       x_data, output_data, x_dims.production(), ctx.threads());
 }
 
-void HardSwishCompute::Run() {
+template <>
+void HardSwishCompute<PRECISION(kFloat)>::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
   auto x_dims = param.X->dims();
@@ -248,6 +268,17 @@ REGISTER_LITE_KERNEL(
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .Finalize();
+
+REGISTER_LITE_KERNEL(
+    hard_swish,
+    kARM,
+    kFP16,
+    kNCHW,
+    paddle::lite::kernels::arm::HardSwishCompute<PRECISION(kFP16)>,
+    def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .Finalize();
 #endif  // ENABLE_ARM_FP16
 
 REGISTER_LITE_KERNEL(relu_clipped,
@@ -304,12 +335,13 @@ REGISTER_LITE_KERNEL(
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
-REGISTER_LITE_KERNEL(hard_swish,
-                     kARM,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::arm::HardSwishCompute,
-                     def)
+REGISTER_LITE_KERNEL(
+    hard_swish,
+    kARM,
+    kFloat,
+    kNCHW,
+    paddle::lite::kernels::arm::HardSwishCompute<PRECISION(kFloat)>,
+    def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
