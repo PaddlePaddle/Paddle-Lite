@@ -35,8 +35,8 @@ def main():
         help="{true, false} Whether to enable FP16 calculation, FP16 "
              "calculation will cause a lower precision but higher inference speed.")
 
-   # arguments of sparsification
-   parser.add_argument("--sparse_threshold", type=float, default=0.5,\
+    # arguments of sparsification
+    parser.add_argument("--sparse_threshold", type=float, default=0.5,\
         help="Set a value to determine the lower bound for sparse pass. \
               0.5 means sparse pass will be skipped if the current weight sparsity is smaller than 0.5.")
 
