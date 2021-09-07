@@ -33,7 +33,7 @@ execute_process(
 
 
 if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK OR (NOT LITE_WITH_LOG))
-  lite_cc_library(place SRCS paddle_place.cc DEPS logging)
+  lite_cc_library(place SRCS paddle_place.cc DEPS utils)
 else()
   lite_cc_library(place SRCS paddle_place.cc DEPS glog)
 endif()
@@ -387,7 +387,7 @@ lite_cc_library(paddle_api SRCS paddle_api.cc DEPS ops core)
 #-----------------------------------------------------------------------------------------------------
 # The final inference library for both CxxConfig and MobileConfig.
 if (LITE_ON_TINY_PUBLISH)
-    lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api stream model_parser)
+    lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api model_parser)
 else()
     lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api core utils kernels ops model_parser)
 endif()
