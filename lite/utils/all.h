@@ -23,7 +23,7 @@
 
 #include "lite/utils/any.h"
 #include "lite/utils/check.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 #include "lite/utils/hash.h"
 #include "lite/utils/io.h"
 #include "lite/utils/macros.h"

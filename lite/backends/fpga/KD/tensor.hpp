@@ -25,7 +25,7 @@ limitations under the License. */
 #include <string>
 #include <vector>
 
-#include "lite/utils/logging.h"
+#include "lite/utils/log/logging.h"
 
 #include "lite/backends/fpga/KD/dl_engine.hpp"
 #include "lite/backends/fpga/KD/float16.hpp"

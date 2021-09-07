@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/backends/npu/device.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 #include "lite/utils/io.h"
 
 namespace paddle {

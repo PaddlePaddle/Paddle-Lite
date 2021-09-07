@@ -16,7 +16,7 @@
 #include "lite/backends/metal/metal_context_imp.h"
 #include "lite/backends/metal/metal_half.h"
 #include "lite/backends/metal/target_wrapper.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 namespace paddle {
 namespace lite {

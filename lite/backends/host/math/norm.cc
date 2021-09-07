@@ -14,7 +14,7 @@
 
 #include "lite/backends/host/math/norm.h"
 #include <cmath>
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 namespace paddle {
 namespace lite {

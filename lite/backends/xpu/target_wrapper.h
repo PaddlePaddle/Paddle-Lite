@@ -18,7 +18,7 @@
 #include <mutex>                                  // NOLINT
 #include "lite/backends/xpu/xpu_header_sitter.h"  // xpu_free
 #include "lite/core/target_wrapper.h"             // TargetWrapper
-#include "lite/utils/cp_logging.h"                // CHECK_EQ
+#include "lite/utils/log/cp_logging.h"                // CHECK_EQ
 #include "lite/utils/macros.h"
 
 #define XPU_CALL(func)                                        \
