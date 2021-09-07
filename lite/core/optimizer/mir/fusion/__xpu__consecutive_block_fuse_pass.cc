@@ -266,8 +266,14 @@ class XPUConsecutiveBlockFuser : public FuseBase {
 
     auto* filter0_t = scope->FindMutableTensor(filter_name[0]);
     auto* filter1_t = scope->FindMutableTensor(filter_name[1]);
-    int filter0_numel = filter0_t->numel();
-    int filter1_numel = filter1_t->numel();
+    auto filter0_numel = filter0_t->numel();
+    auto filter1_numel = filter1_t->numel();
+    CHECK_GT(static_cast<size_t>(filter0_numel) * sizeof(float),
+             static_cast<size_t>(filter0_numel));
+    CHECK_GT(static_cast<size_t>(filter1_numel) * sizeof(float),
+             static_cast<size_t>(filter1_numel));
+    CHECK_GT(static_cast<size_t>(filter0_numel + filter1_numel) * sizeof(float),
+             static_cast<size_t>(filter0_numel) * sizeof(float));
     std::unique_ptr<float[]> encode_filter_int16(
         new float[filter0_numel + filter1_numel]);
     float* filter0_on_host = filter0_t->mutable_data<float>();
@@ -304,8 +310,14 @@ class XPUConsecutiveBlockFuser : public FuseBase {
     if (block0_with_bias_ && block1_with_bias_) {
       auto* bias0_t = scope->FindMutableTensor(bias_name[0]);
       auto* bias1_t = scope->FindMutableTensor(bias_name[1]);
-      int bias0_numel = bias0_t->numel();
-      int bias1_numel = bias1_t->numel();
+      auto bias0_numel = bias0_t->numel();
+      auto bias1_numel = bias1_t->numel();
+      CHECK_GT(static_cast<size_t>(bias0_numel) * sizeof(float),
+               static_cast<size_t>(bias0_numel));
+      CHECK_GT(static_cast<size_t>(bias1_numel) * sizeof(float),
+               static_cast<size_t>(bias1_numel));
+      CHECK_GT(static_cast<size_t>(bias0_numel + bias1_numel) * sizeof(float),
+               static_cast<size_t>(bias0_numel) * sizeof(float));
       std::unique_ptr<float[]> encode_bias(
           new float[bias0_numel + bias1_numel]);
       float* bias0_on_host = bias0_t->mutable_data<float>();

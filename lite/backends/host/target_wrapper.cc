@@ -23,6 +23,8 @@ const int MALLOC_ALIGN = 64;
 
 void* TargetWrapper<TARGET(kHost)>::Malloc(size_t size) {
   size_t offset = sizeof(void*) + MALLOC_ALIGN - 1;
+  CHECK(size);
+  CHECK_GT(offset + size, size);
   char* p = static_cast<char*>(malloc(offset + size));
   CHECK(p) << "Error occurred in TargetWrapper::Malloc period: no enough for "
               "mallocing "
