@@ -64,4 +64,4 @@ if (WITH_TESTING)
 endif()
 
 # timer unit test
-lite_cc_test(test_timer SRCS timer_test.cc DEPS utils ${utils_DEPS})
+lite_cc_test(test_timer SRCS timer_test.cc DEPS utils)
