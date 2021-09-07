@@ -86,11 +86,10 @@ __kernel void conv2d_transpose(
       int in_width0 = kernel_start_x;
       for (int k_x = valid_kernel_width; k_x >= 0; k_x -= stride_shape.x) {
 #ifndef IS_DEPTHWISE
-        kernel_y = mad24(k_y,
-                         kernel_shape.x,
+        kernel_y = mad24(k_y, kernel_shape.x,
                          k_x + kernel_y_base);  // (k_y * k_w + k_x) + k_y_base
 #else
-      kernel_y = mad24(k_y, kernel_shape.x, k_x);
+      	kernel_y = mad24(k_y, kernel_shape.x, k_x);
 #endif
         weights0 = READ_IMG_TYPE(
             CL_DTYPE_CHAR, filter, SAMPLER, (int2)(kernel_x_0, kernel_y));
