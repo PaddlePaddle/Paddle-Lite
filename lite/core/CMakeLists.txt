@@ -117,7 +117,7 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
 endif ()
 
 lite_cc_test (test_scope SRCS scope_test.cc DEPS core)
-lite_cc_test (test_kernel SRCS kernel_test.cc DEPS core any)
+lite_cc_test (test_kernel SRCS kernel_test.cc DEPS core utils)
 lite_cc_test (test_op SRCS op_lite_test.cc DEPS core)
 lite_cc_test (test_tensor SRCS lite_tensor_test.cc DEPS core)
 lite_cc_test (test_type_system SRCS type_system_test.cc DEPS core utils)

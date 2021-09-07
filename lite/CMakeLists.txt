@@ -507,7 +507,7 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                 COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/lac_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
                 COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/cxx/makefiles/lac_demo/Makefile.${ARM_TARGET_OS}.${ARM_TARGET_ARCH_ABI}" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/lac_demo/Makefile"
             )
-            add_dependencies(publish_inference_android_cxx_demos logging gflags)
+            add_dependencies(publish_inference_android_cxx_demos gflags)
             add_dependencies(publish_inference_cxx_lib publish_inference_android_cxx_demos)
         else()
             # copy

@@ -12,11 +12,10 @@ include_directories(${JNI_INCLUDE_DIRS} ${_classDir} ${_stubDir})
 if (NOT LITE_ON_TINY_PUBLISH)
     lite_cc_library(paddle_lite_jni MODULE 
         SRCS paddle_lite_jni.cc tensor_jni.cc
-        DEPS ${lib_DEPS}
-        ARM_DEPS ${arm_kernels} NPU_DEPS ${npu_kernels})
+        DEPS ${lib_DEPS} kernels)
     # Unlike static library, module library has to link target to be able to work
     # as a single .so lib.
-    target_link_libraries(paddle_lite_jni ${lib_DEPS} ${arm_kernels} ${npu_kernels})
+    target_link_libraries(paddle_lite_jni ${lib_DEPS} kernels)
     if (LITE_WITH_NPU)
         # Strips the symbols of our protobuf functions to fix the conflicts during
         # loading HIAI builder libs (libhiai_ir.so and libhiai_ir_build.so)
