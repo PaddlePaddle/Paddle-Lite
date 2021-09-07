@@ -479,9 +479,7 @@ TEST(Conv2d, precision) {
   TestConvDilations(place, abs_error);
   TestConvStrides(place, abs_error);
   TestConvPaddings(place, abs_error);
-#if !defined(LITE_WITH_NNADAPTER)
   TestConvPaddingAlgorithm(place, abs_error);
-#endif
   TestConvBias(place, abs_error);
   TestConvAct(place, abs_error);
   TestConvDepthwise(place, abs_error);

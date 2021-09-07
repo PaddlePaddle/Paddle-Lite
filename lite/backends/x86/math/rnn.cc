@@ -19,7 +19,7 @@
 #include <xmmintrin.h>
 #endif
 
-#include "lite/backends/x86/math/detail/activation_functions.h"
+#include "lite/backends/x86/math/activation_functions.h"
 #include "lite/backends/x86/math/rnn.h"
 
 namespace paddle {

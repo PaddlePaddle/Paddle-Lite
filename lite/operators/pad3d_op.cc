@@ -42,7 +42,7 @@ bool Pad3dOpLite::InferShapeImpl() const {
     out_d = x_dims[1] + param_.paddings[4] + param_.paddings[5];
     out_h = x_dims[2] + param_.paddings[2] + param_.paddings[3];
     out_w = x_dims[3] + param_.paddings[0] + param_.paddings[1];
-    param_.Out->Resize(lite::DDim({x_dims[0], out_d, out_h, out_w, x_dims[1]}));
+    param_.Out->Resize(lite::DDim({x_dims[0], out_d, out_h, out_w, x_dims[4]}));
   } else {
     param_.Out->Resize(lite::DDim({x_dims[0], x_dims[1], out_d, out_h, out_w}));
   }

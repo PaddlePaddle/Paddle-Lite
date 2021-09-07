@@ -504,18 +504,18 @@ void softmax_inner1_large_axis_fp16(const float16_t* din,
       dout_sum_ptr3++;
     }
 
-    float16_t sum_inv0 = 1.f / sum_data0;
     float16_t* dout_res_ptr0 = dout_ptr0;
-    float16_t sum_inv1 = 1.f / sum_data1;
     float16_t* dout_res_ptr1 = dout_ptr1;
-    float16_t sum_inv2 = 1.f / sum_data2;
     float16_t* dout_res_ptr2 = dout_ptr2;
-    float16_t sum_inv3 = 1.f / sum_data3;
     float16_t* dout_res_ptr3 = dout_ptr3;
-    float16x8_t vinv0 = vdupq_n_f16(sum_inv0);
-    float16x8_t vinv1 = vdupq_n_f16(sum_inv1);
-    float16x8_t vinv2 = vdupq_n_f16(sum_inv2);
-    float16x8_t vinv3 = vdupq_n_f16(sum_inv3);
+    float16x8_t vsum_data0 = vdupq_n_f16(sum_data0);
+    float16x8_t vsum_data1 = vdupq_n_f16(sum_data1);
+    float16x8_t vsum_data2 = vdupq_n_f16(sum_data2);
+    float16x8_t vsum_data3 = vdupq_n_f16(sum_data3);
+    float16x8_t vinv0 = vrecpeq_f16(vsum_data0);
+    float16x8_t vinv1 = vrecpeq_f16(vsum_data1);
+    float16x8_t vinv2 = vrecpeq_f16(vsum_data2);
+    float16x8_t vinv3 = vrecpeq_f16(vsum_data3);
     // get softmax result
     for (int j = 0; j < cmp_cnt; j++) {
       float16x8_t vout0 = vld1q_f16(dout_res_ptr0);
@@ -627,9 +627,9 @@ void softmax_inner1_large_axis_fp16(const float16_t* din,
       dout_sum_ptr0++;
     }
 
-    float16_t vsum_inv0 = 1.f / sum_data0;
     float16_t* dout_res_ptr0 = dout_ptr0;
-    float16x8_t vinv0 = vdupq_n_f16(vsum_inv0);
+    float16x8_t vsum_data0 = vdupq_n_f16(sum_data0);
+    float16x8_t vinv0 = vrecpeq_f16(vsum_data0);
     // get softmax result
     for (int j = 0; j < cmp_cnt; j++) {
       float16x8_t vout0 = vld1q_f16(dout_res_ptr0);

@@ -34,7 +34,7 @@ int Program::ConvertCast(hal::Operation* operation) {
       *reinterpret_cast<NNAdapterOperandPrecisionCode*>(
           input_operands[1]->buffer);
   NNADAPTER_VLOG(5) << "dtype: " << dtype;
-  ge::DataType otype = ConvertPrecision(dtype);
+  ge::DataType otype = ConvertToGEPrecision(dtype);
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);

@@ -58,7 +58,8 @@ int Program::ConvertFullyConnected(hal::Operation* operation) {
   }
   auto weight_index = ConvertOperand(weight_operand);
   auto bias_index = ConvertOperand(bias_operand);
-  auto fuse_code_index = AddInt32ConstantOperand(ConvertFuseCode(fuse_code));
+  auto fuse_code_index =
+      AddInt32ConstantOperand(ConvertFuseCodeToNeuronFuseCode(fuse_code));
   auto output_index = ConvertOperand(output_operand);
   std::vector<uint32_t> input_indexes = {
       input_index, weight_index, bias_index, fuse_code_index};

@@ -47,10 +47,11 @@ int Program::ConvertConv2D(hal::Operation* operation) {
   auto bias_operator = ConvertOperand(bias_operand);
   auto conv_name = GetOperatorName(output_operand);
   std::shared_ptr<Operator> conv_operator = nullptr;
+  auto pad_mode = ConvertAutoPadCodeToGEPadMode(auto_pad);
   if (use_depthwise_conv && is_depthwise_mode) {
     auto depthwise_conv_op =
         std::make_shared<hiai::op::ConvolutionDepthwise>(conv_name);
-    depthwise_conv_op->set_attr_pad_mode("SPECIFIC");
+    depthwise_conv_op->set_attr_pad_mode(pad_mode);
     depthwise_conv_op->set_attr_pads(ge::AttrValue::LIST_INT(
         {pad_height_top, pad_height_bottom, pad_width_left, pad_width_right}));
     depthwise_conv_op->set_attr_dilations(
@@ -63,7 +64,7 @@ int Program::ConvertConv2D(hal::Operation* operation) {
     conv_operator = MAP_OUTPUT(depthwise_conv_op, y, output_operand);
   } else {
     auto normal_conv_op = std::make_shared<hiai::op::Convolution>(conv_name);
-    normal_conv_op->set_attr_pad_mode("SPECIFIC");
+    normal_conv_op->set_attr_pad_mode(pad_mode);
     normal_conv_op->set_attr_pads(ge::AttrValue::LIST_INT(
         {pad_height_top, pad_height_bottom, pad_width_left, pad_width_right}));
     normal_conv_op->set_attr_dilations(
@@ -79,7 +80,7 @@ int Program::ConvertConv2D(hal::Operation* operation) {
   if (fuse_code != NNADAPTER_FUSED_NONE) {
     auto act_name = GetOperatorName(output_operand);
     auto act_op = std::make_shared<hiai::op::Activation>(act_name);
-    act_op->set_attr_mode(ConvertFuseCode(fuse_code));
+    act_op->set_attr_mode(ConvertFuseCodeToGEActMode(fuse_code));
     SET_INPUT(act_op, x, conv_operator);
     MAP_OUTPUT(act_op, y, output_operand);
   }
