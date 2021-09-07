@@ -21,21 +21,25 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
+static void FinalizeAscendDevice() {
+  NNADAPTER_VLOG(5) << "Finalize AscendCL.";
+  // The following APIs can only be called once in one process
+  // TODO(hong19860320) fix the problem destruction order that the resource of
+  // GE is released before the function is called.
+  // ge::aclgrphBuildFinalize();
+  aclFinalize();
+}
+
 void InitializeAscendDevice() {
-  NNADAPTER_VLOG(5) << "Intialize the system and allocate resources.";
+  NNADAPTER_VLOG(5) << "Initialize AscendCL.";
   // The following APIs can only be called once in one process
   aclInit(NULL);
   std::map<ge::AscendString, ge::AscendString> global_options;
   global_options.insert(
       std::make_pair(ge::ir_option::SOC_VERSION, "Ascend310"));
   ge::aclgrphBuildInitialize(global_options);
-}
-
-void FinalizeAscendDevice() {
-  NNADAPTER_VLOG(5) << "Release the resources.";
-  // The following APIs can only be called once in one process
-  ge::aclgrphBuildFinalize();
-  aclFinalize();
+  // Register 'FinalizeAscendDevice' to be called at normal process termination
+  atexit(FinalizeAscendDevice);
 }
 
 const std::string ACLErrorToString(int error) {
