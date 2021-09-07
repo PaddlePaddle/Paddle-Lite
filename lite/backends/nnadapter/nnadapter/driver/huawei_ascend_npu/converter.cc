@@ -173,6 +173,9 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
         case NNADAPTER_SQUEEZE:
           ConvertSqueeze(operation);
           break;
+        case NNADAPTER_STACK:
+          ConvertStack(operation);
+          break;
         case NNADAPTER_UNSQUEEZE:
           ConvertUnsqueeze(operation);
           break;

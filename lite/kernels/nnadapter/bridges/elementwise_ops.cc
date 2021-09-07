@@ -23,9 +23,8 @@ namespace nnadapter {
 
 NNAdapterOperand* ReshapeOperands(Converter* converter,
                                   const OpInfo* op_info,
-                                  const std::string& input_name,
-                                  std::string input_scale_name,
-                                  const DDim& input_dims,
+                                  NNAdapterOperand* input_operand,
+                                  const std::string& input_scale_name,
                                   std::vector<int32_t> shape_data,
                                   const std::string& output_name) {
   NNAdapterOperand* output_operand = nullptr;
@@ -33,32 +32,20 @@ NNAdapterOperand* ReshapeOperands(Converter* converter,
     output_operand = converter->GetOperand(output_name);
   } else {
     // Reshape inputs
-    auto has_out_scale = op_info->HasInputScale(input_scale_name, true);
-    auto out_scale =
-        has_out_scale ? op_info->GetInputScale(input_scale_name, true)[0] : 0.f;
     std::vector<NNAdapterOperand*> input_operands;
-    NNAdapterOperand* input_operand = nullptr;
-    if (converter->HasOperand(input_name)) {
-      input_operand = converter->GetOperand(input_name);
-    } else {
-      if (has_out_scale) {
-        input_operand = converter->AddQuant8VariableOperand(
-            input_dims, out_scale, input_name);
-      } else {
-        input_operand =
-            converter->AddFloat32VariableOperand(input_dims, input_name);
-      }
-    }
     input_operands.push_back(input_operand);
     // Reshape shape
-    auto shape_operand = converter->AddInt32ConstantOperand(
-        &shape_data[0], DDim({static_cast<int64_t>(shape_data.size())}));
-    input_operands.push_back(shape_operand);
-    // Reshape output
     std::vector<int64_t> shape_data_int64;
     for (auto ele : shape_data) {
       shape_data_int64.push_back(static_cast<int64_t>(ele));
     }
+    auto shape_operand = converter->AddInt32ConstantOperand(
+        &shape_data[0], DDim({static_cast<int64_t>(shape_data.size())}));
+    input_operands.push_back(shape_operand);
+    // Reshape output
+    auto has_out_scale = op_info->HasInputScale(input_scale_name, true);
+    auto out_scale =
+        has_out_scale ? op_info->GetInputScale(input_scale_name, true)[0] : 0.f;
     if (has_out_scale) {
       output_operand = converter->AddQuant8VariableOperand(
           DDim(shape_data_int64), out_scale, output_name);
@@ -188,28 +175,28 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
         for (int i = 0; i < y_rank; i++) {
           y_shape[i + axis] = y_dims[i];
         }
-        NNAdapterOperand* y_reshape_operand = ReshapeOperands(converter,
-                                                              op_info,
-                                                              y_name,
-                                                              y_scale_name,
-                                                              y_dims,
-                                                              y_shape,
-                                                              new_y_shape_name);
-        input1_operand = y_reshape_operand;
+        auto input1_before_reshape_operand = GenerateInputOperand(
+            converter, y, y_dims, y_name, has_y_scale, y_scale);
+        input1_operand = ReshapeOperands(converter,
+                                         op_info,
+                                         input1_before_reshape_operand,
+                                         y_scale_name,
+                                         y_shape,
+                                         new_y_shape_name);
         input0_operand = GenerateInputOperand(
             converter, x, x_dims, x_name, has_x_scale, x_scale);
       } else {
         for (int i = 0; i < x_rank; i++) {
           x_shape[i + axis] = x_dims[i];
         }
-        NNAdapterOperand* x_reshape_operand = ReshapeOperands(converter,
-                                                              op_info,
-                                                              x_name,
-                                                              x_scale_name,
-                                                              x_dims,
-                                                              x_shape,
-                                                              new_x_shape_name);
-        input0_operand = x_reshape_operand;
+        auto input0_before_reshape_operand = GenerateInputOperand(
+            converter, x, x_dims, x_name, has_x_scale, x_scale);
+        input0_operand = ReshapeOperands(converter,
+                                         op_info,
+                                         input0_before_reshape_operand,
+                                         x_scale_name,
+                                         x_shape,
+                                         new_x_shape_name);
         input1_operand = GenerateInputOperand(
             converter, y, y_dims, y_name, has_y_scale, y_scale);
       }
