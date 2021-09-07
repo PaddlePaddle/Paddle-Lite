@@ -29,6 +29,8 @@ REGISTER_CONVERTER(softmax,
 REGISTER_CONVERTER(cumsum, ConvertCumsum, "huawei_ascend_npu");
 REGISTER_CONVERTER(reshape, ConvertReshape, "huawei_ascend_npu");
 REGISTER_CONVERTER(reshape2, ConvertReshape, "huawei_ascend_npu");
+REGISTER_CONVERTER(unsqueeze, ConvertUnsqueeze, "huawei_ascend_npu");
+REGISTER_CONVERTER(unsqueeze2, ConvertUnsqueeze, "huawei_ascend_npu");
 REGISTER_CONVERTER(
     elementwise_add,
     ConvertElementwise,
