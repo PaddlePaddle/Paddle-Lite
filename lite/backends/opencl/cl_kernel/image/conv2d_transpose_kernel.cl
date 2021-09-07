@@ -71,8 +71,8 @@ __kernel void conv2d_transpose(
     int in_idx = mul24(ic, input_shape.x);
     kernel_x_0 = ic << 2;
 #else
-    int in_idx = mul24(out_c_blk_idx, input_shape.x);
-    kernel_x_0 = out_c_blk_idx << 2;
+  int in_idx = mul24(out_c_blk_idx, input_shape.x);
+  kernel_x_0 = out_c_blk_idx << 2;
 #endif
     kernel_x_1 = kernel_x_0 + 1;
     kernel_x_2 = kernel_x_0 + 2;
@@ -90,7 +90,7 @@ __kernel void conv2d_transpose(
                          kernel_shape.x,
                          k_x + kernel_y_base);  // (k_y * k_w + k_x) + k_y_base
 #else
-        kernel_y = mad24(k_y, kernel_shape.x, k_x);
+      kernel_y = mad24(k_y, kernel_shape.x, k_x);
 #endif
         weights0 = READ_IMG_TYPE(
             CL_DTYPE_CHAR, filter, SAMPLER, (int2)(kernel_x_0, kernel_y));
@@ -116,10 +116,10 @@ __kernel void conv2d_transpose(
         out0 = mad(in0.z, weights2, out0);
         out0 = mad(in0.w, weights3, out0);
 #else
-        out0.x += in0.x * weights0.x;
-        out0.y += in0.y * weights1.x;
-        out0.z += in0.z * weights2.x;
-        out0.w += in0.w * weights3.x;
+      out0.x += in0.x * weights0.x;
+      out0.y += in0.y * weights1.x;
+      out0.z += in0.z * weights2.x;
+      out0.w += in0.w * weights3.x;
 #endif
         in_width0++;
       }
