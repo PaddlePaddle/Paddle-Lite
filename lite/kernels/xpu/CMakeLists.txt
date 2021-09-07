@@ -1,7 +1,8 @@
 if(LITE_WITH_XPU)
   set(IS_FAKED_KERNEL false CACHE INTERNAL "")
   if(NOT LITE_WITH_XTCL)
-    set(lite_kernel_deps ${lite_kernel_deps} target_wrapper_xpu CACHE INTERNAL "")
+    add_subdirectory(bridges)
+    set(lite_kernel_deps ${lite_kernel_deps} target_wrapper_xpu device_xpu ${xpu_subgraph_bridges} CACHE INTERNAL "")
   endif()
 elseif(LITE_ON_MODEL_OPTIMIZE_TOOL OR LITE_WITH_PYTHON)
   set(IS_FAKED_KERNEL true CACHE INTERNAL "")
@@ -11,9 +12,7 @@ endif()
 
 
 if(LITE_WITH_XTCL)
-  add_subdirectory(bridges)
   add_kernel(subgraph_compute_xpu XPU basic SRCS subgraph_compute.cc)
-  set(lite_kernel_deps ${lite_kernel_deps} ${xpu_subgraph_bridges} CACHE INTERNAL "")
 else()
   # basic
   add_kernel(rnn_compute_xpu XPU basic SRCS rnn_compute.cc)
