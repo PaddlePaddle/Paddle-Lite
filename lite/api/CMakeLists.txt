@@ -229,7 +229,6 @@ if (NOT LITE_ON_TINY_PUBLISH)
     lite_cc_library(cxx_api
                         SRCS cxx_api.cc
                         DEPS ${cxx_api_deps} ops utils)
-
 endif()
 
 # for light api

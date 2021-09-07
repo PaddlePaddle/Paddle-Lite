@@ -74,9 +74,8 @@ int ConvertSoftmax(Converter* converter, OpInfo* op, Scope* scope) {
   }
   auto output_operand = converter->AddOutputOperand(out_name, out_scales);
   // Softmax operation
-  std::vector<NNAdapterOperand*> input_operands = {input_operand, axis_operand};
-  std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  converter->AddOperation(NNADAPTER_SOFTMAX, &input_operands, &output_operands);
+  converter->AddOperation(
+      NNADAPTER_SOFTMAX, {input_operand, axis_operand}, {output_operand});
   return NO_ERROR;
 }
 

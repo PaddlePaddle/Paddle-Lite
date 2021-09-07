@@ -22,16 +22,16 @@ namespace huawei_ascend_npu {
 
 int Program::ConvertPad(hal::Operation* operation) {
   PAD_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
   // Convert to GE operators
-  auto mode_code = *reinterpret_cast<int32_t*>(mode_operand->buffer);
-  std::string mode = ConvertPadMode(mode_code);
+  std::string pad_mode = ConvertPadModeCodeToGEPadMode(mode);
   auto value = *reinterpret_cast<float*>(value_operand->buffer);
-  NNADAPTER_CHECK_EQ(mode, "constant")
-      << "Ascend npu only support mode=constant right now, "
+  NNADAPTER_CHECK_EQ(pad_mode, "constant")
+      << "HuaewiAscendNPU only support mode=constant right now, "
          "but received mode is "
-      << mode;
+      << pad_mode;
   NNADAPTER_CHECK_LT(std::abs(value), 1e-6)
-      << "Ascend npu only support constant_values=0 right now, "
+      << "HuaewiAscendNPU only support constant_values=0 right now, "
          "but received constant_value is "
       << value;
   auto input_operator = GetMappedOperator(input_operand);
@@ -45,7 +45,7 @@ int Program::ConvertPad(hal::Operation* operation) {
   auto value_operator = ConvertOperand(value_operand);
   auto pad_name = GetOperatorName(output_operand);
   auto pad_op = std::make_shared<ge::op::PadV3>(pad_name);
-  pad_op->set_attr_mode(mode);
+  pad_op->set_attr_mode(pad_mode);
   SET_INPUT(pad_op, x, input_operator);
   SET_INPUT(pad_op, paddings, pads_operator);
   SET_INPUT(pad_op, constant_values, value_operator);

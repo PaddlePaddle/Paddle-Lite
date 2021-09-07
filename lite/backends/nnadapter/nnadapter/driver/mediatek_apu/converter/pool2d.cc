@@ -36,7 +36,8 @@ int Program::ConvertPool2D(hal::Operation* operation) {
   auto stride_height_index = AddInt32ConstantOperand(stride_height);
   auto filter_width_index = AddInt32ConstantOperand(kernel_width);
   auto filter_height_index = AddInt32ConstantOperand(kernel_height);
-  auto fuse_code_index = AddInt32ConstantOperand(ConvertFuseCode(fuse_code));
+  auto fuse_code_index =
+      AddInt32ConstantOperand(ConvertFuseCodeToNeuronFuseCode(fuse_code));
   auto output_index = ConvertOperand(output_operand);
   std::vector<uint32_t> input_indexes = {input_index,
                                          padding_width_left_index,
