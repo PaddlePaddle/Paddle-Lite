@@ -42,6 +42,7 @@ add_kernel(split_metal_image METAL basic SRCS image_op/split_image_compute.mm)
 add_kernel(shuffle_channel_metal_compute METAL basic SRCS image_op/shuffle_channel_image_compute.mm)
 add_kernel(transpose_metal_image METAL basic SRCS image_op/transpose_image_compute.mm)
 add_kernel(yolo_box_metal_image METAL basic SRCS image_op/yolo_box_image_compute.mm)
+add_kernel(transpose_metal_image METAL basic SRCS image_op/transpose_image_compute.mm DEPS metal_target_wrapper)
 
 # add_kernel(batch_norm_metal_image METAL basic SRCS image_op/batch_norm_image_compute.mm)
 # add_kernel(mul_metal_image METAL basic SRCS image_op/mul_image_compute.mm)

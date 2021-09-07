@@ -15,13 +15,28 @@
 #include <metal_stdlib>
 
 #include "Common.metal"
+
 using namespace metal;
 
+inline ftype4 get_bias(uint3 gid,
+                       constant ElementwiseAddParam &addParam,
+                       texture2d_array<ftype, access::sample> biasTexture) {
+  ftype4 output = ftype4(0.0);
+  if (addParam.fast == 1) {
+    output = biasTexture.read(gid.xy, gid.z);
+  } else if (addParam.addByChannel == 1) {
+    output = biasTexture.read(uint2(0, 0), gid.z);
+  } else {
+  }
+  return output;
+}
+
 kernel void conv_transpose2x2_stride2(
-    texture2d_array<float, access::sample> inTexture [[texture(0)]],
-    texture2d_array<float, access::write> outTexture [[texture(1)]],
+    texture2d_array<ftype, access::sample> inTexture [[texture(0)]],
+    texture2d_array<ftype, access::sample> biasTexture [[texture(1)]],
+    texture2d_array<ftype, access::write> outTexture [[texture(2)]],
     constant MetalConvTransposeParam &param [[buffer(0)]],
-    const device float4 *weights [[buffer(1)]],
+    const device ftype4 *weights [[buffer(1)]],
     uint3 gid [[thread_position_in_grid]]) {
   if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
       gid.z >= outTexture.get_array_size()) {
@@ -39,14 +54,18 @@ kernel void conv_transpose2x2_stride2(
 
   constexpr sampler sample(
       coord::pixel, filter::nearest, address::clamp_to_zero);
-  float4 output = float4(0.0);
+  ftype4 output = ftype4(0.0);
+  if (param.hasAddOp) {
+    output = get_bias(gid, param.addParam, biasTexture);
+  }
+  
   for (int i = 0; i < input_array_size; ++i) {
-    float4 input = inTexture.sample(sample, float2(input_x, input_y), i);
+    ftype4 input = inTexture.sample(sample, float2(input_x, input_y), i);
 
-    float4 kernel_slice0 = weights[kernel_to + input_array_size * 4 * 0 + i];
-    float4 kernel_slice1 = weights[kernel_to + input_array_size * 4 * 1 + i];
-    float4 kernel_slice2 = weights[kernel_to + input_array_size * 4 * 2 + i];
-    float4 kernel_slice3 = weights[kernel_to + input_array_size * 4 * 3 + i];
+    ftype4 kernel_slice0 = weights[kernel_to + input_array_size * 4 * 0 + i];
+    ftype4 kernel_slice1 = weights[kernel_to + input_array_size * 4 * 1 + i];
+    ftype4 kernel_slice2 = weights[kernel_to + input_array_size * 4 * 2 + i];
+    ftype4 kernel_slice3 = weights[kernel_to + input_array_size * 4 * 3 + i];
 
     output.x += dot(input, kernel_slice0);
 
@@ -58,49 +77,6 @@ kernel void conv_transpose2x2_stride2(
   }
 
   outTexture.write(output, gid.xy, gid.z);
-}
-
-kernel void conv_transpose2x2_stride2_half(
-    texture2d_array<half, access::sample> inTexture [[texture(0)]],
-    texture2d_array<half, access::write> outTexture [[texture(1)]],
-    constant MetalConvTransposeParam &param [[buffer(0)]],
-    const device half4 *weights [[buffer(1)]],
-    uint3 gid [[thread_position_in_grid]]) {
-  if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
-      gid.z >= outTexture.get_array_size()) {
-    return;
-  }
-
-  int input_array_size = inTexture.get_array_size();
-  int kernel_index_x = gid.x % 2;
-  int kernel_index_y = gid.y % 2;
-  int kernel_index = kernel_index_y * 2 + kernel_index_x;
-  int kernel_to =
-      gid.z * input_array_size * 4 * 4 + (kernel_index * input_array_size);
-  int input_x = gid.x / 2;
-  int input_y = gid.y / 2;
-
-  constexpr sampler sample(
-      coord::pixel, filter::nearest, address::clamp_to_zero);
-  float4 output = float4(0.0);
-  for (int i = 0; i < input_array_size; ++i) {
-    half4 input = inTexture.sample(sample, float2(input_x, input_y), i);
-
-    half4 kernel_slice0 = weights[kernel_to + input_array_size * 4 * 0 + i];
-    half4 kernel_slice1 = weights[kernel_to + input_array_size * 4 * 1 + i];
-    half4 kernel_slice2 = weights[kernel_to + input_array_size * 4 * 2 + i];
-    half4 kernel_slice3 = weights[kernel_to + input_array_size * 4 * 3 + i];
-
-    output.x += dot(float4(input), float4(kernel_slice0));
-
-    output.y += dot(float4(input), float4(kernel_slice1));
-
-    output.z += dot(float4(input), float4(kernel_slice2));
-
-    output.w += dot(float4(input), float4(kernel_slice3));
-  }
-
-  outTexture.write(half4(output), gid.xy, gid.z);
 }
 
 // kernel void conv_transpose(texture2d_array<float, access::sample> inTexture
@@ -172,12 +148,12 @@ kernel void conv_transpose2x2_stride2_half(
 //}
 //
 
-kernel void conv_transpose3x3_stride2x2_half(
-    texture2d_array<half, access::sample> inTexture [[texture(0)]],
-    texture2d_array<half, access::sample> biasTexture [[texture(1)]],
-    texture2d_array<half, access::write> outTexture [[texture(2)]],
+kernel void conv_transpose3x3_stride2(
+    texture2d_array<ftype, access::sample> inTexture [[texture(0)]],
+    texture2d_array<ftype, access::sample> biasTexture [[texture(1)]],
+    texture2d_array<ftype, access::write> outTexture [[texture(2)]],
     constant MetalConvTransposeParam &param [[buffer(0)]],
-    const device half4 *weights [[buffer(1)]],
+    const device ftype4 *weights [[buffer(1)]],
     uint3 gid [[thread_position_in_grid]]) {
   if (gid.x >= inTexture.get_width() || gid.y >= inTexture.get_height() ||
       gid.z >= outTexture.get_array_size()) {
@@ -187,21 +163,21 @@ kernel void conv_transpose3x3_stride2x2_half(
       coord::pixel, filter::nearest, address::clamp_to_zero);
   uint input_array_size = inTexture.get_array_size();
   uint weightTo = input_array_size * gid.z * 4 * 9;
-  half4 w;
-  half4 input1, input2, input3, input4;
-  half4 output1, output2, output3, output4;
+  ftype4 w;
+  ftype4 input1, input2, input3, input4;
+  ftype4 output1, output2, output3, output4;
   uint ox = 2 * gid.x, oy = 2 * gid.y;
   if (param.hasAddOp == 1) {
     constant ElementwiseAddParam &addParam = param.addParam;
-    output1 = getBiasHalf(uint3(ox, oy, gid.z), addParam, biasTexture);
-    output2 = getBiasHalf(uint3(ox + 1, oy, gid.z), addParam, biasTexture);
-    output3 = getBiasHalf(uint3(ox, oy + 1, gid.z), addParam, biasTexture);
-    output4 = getBiasHalf(uint3(ox + 1, oy + 1, gid.z), addParam, biasTexture);
+    output1 = get_bias(uint3(ox, oy, gid.z), addParam, biasTexture);
+    output2 = get_bias(uint3(ox + 1, oy, gid.z), addParam, biasTexture);
+    output3 = get_bias(uint3(ox, oy + 1, gid.z), addParam, biasTexture);
+    output4 = get_bias(uint3(ox + 1, oy + 1, gid.z), addParam, biasTexture);
   } else {
-    output1 = half4(0);
-    output2 = half4(0);
-    output3 = half4(0);
-    output4 = half4(0);
+    output1 = ftype4(0);
+    output2 = ftype4(0);
+    output3 = ftype4(0);
+    output4 = ftype4(0);
   }
 
   for (ushort i = 0; i < input_array_size; ++i) {
