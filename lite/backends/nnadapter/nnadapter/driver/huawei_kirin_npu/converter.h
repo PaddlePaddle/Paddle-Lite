@@ -171,7 +171,7 @@ class Program {
   ({                                                                           \
     auto shape = ge::Shape();                                                  \
     auto format = ge::FORMAT_NCHW;                                             \
-    auto dtype = ConvertPrecision(dst->type.precision);                        \
+    auto dtype = ConvertToGEPrecision(dst->type.precision);                    \
     auto tensor_desc = std::make_shared<ge::TensorDesc>(shape, format, dtype); \
     UpdateOperatorMap(                                                         \
         dst, std::make_shared<Operator>(src, tensor_desc, #name, -1));         \
@@ -181,7 +181,7 @@ class Program {
   ({                                                                           \
     auto shape = ge::Shape();                                                  \
     auto format = ge::FORMAT_NCHW;                                             \
-    auto dtype = ConvertPrecision(dst->type.precision);                        \
+    auto dtype = ConvertToGEPrecision(dst->type.precision);                    \
     auto tensor_desc = std::make_shared<ge::TensorDesc>(shape, format, dtype); \
     UpdateOperatorMap(                                                         \
         dst, std::make_shared<Operator>(src, tensor_desc, #name, index));      \

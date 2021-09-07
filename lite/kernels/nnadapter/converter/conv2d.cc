@@ -77,7 +77,7 @@ int ConvertConv2D(Converter* converter, OpInfo* op, Scope* scope) {
   }
   VLOG(5) << "padding_algorithm:" << padding_algorithm;
   // Check depthwise mode
-  bool is_depthwise_mode = op_type == "depthwise_conv2d" || (groups != 1);
+  bool is_depthwise_mode = op_type == "depthwise_conv2d";
   VLOG(5) << "depthwise mode(" << is_depthwise_mode << ").";
   // Check quantization mode
   bool is_quant_mode = false;
@@ -89,7 +89,7 @@ int ConvertConv2D(Converter* converter, OpInfo* op, Scope* scope) {
         << "Missing the quant params '" << input_scale_name
         << "' for the input '" << input_name << "'";
     CHECK(IsValidSymmPerLayerQuantParams(output_scales))
-        << "Missing the quant params '" << input_scale_name
+        << "Missing the quant params '" << output_scale_name
         << "' for the output '" << output_name << "'";
     is_quant_mode = true;
   }
@@ -99,6 +99,13 @@ int ConvertConv2D(Converter* converter, OpInfo* op, Scope* scope) {
   auto input_operand = converter->GetMappedOperand(input_name);
   CHECK(input_operand);
   auto input_type = converter->GetOperandType(input_operand);
+  // Check depthwise mode according to the dimensions
+  auto input_channel_size = input_type->dimensions[1];
+  // Should not support dynamic shape for input channel size
+  CHECK(input_channel_size != NNADAPTER_UNKNOWN);
+  is_depthwise_mode |= (groups != 1 && input_channel_size == groups &&
+                        output_channel_size % input_channel_size == 0);
+  VLOG(5) << "Update depthwise mode(" << is_depthwise_mode << ").";
   // Filter operand
   NNAdapterOperand* filter_operand = nullptr;
   std::vector<float> bias_scales;
@@ -193,21 +200,21 @@ int ConvertConv2D(Converter* converter, OpInfo* op, Scope* scope) {
   } else {
     // Add dummy zero bias operand
     // Use int32 as the data type of bias if it is a quantized type
-    auto bias_size =
+    std::vector<int8_t> zeros(
         output_channel_size *
-        (is_quant_mode ? sizeof(int32_t)
-                       : GetNNOperandPrecisionDataLength(*input_type));
-    std::vector<int8_t> zeros(bias_size, 0);
-    bias_operand =
-        converter->AddConstantOperand(reinterpret_cast<void*>(zeros.data()),
-                                      DDim({output_channel_size}),
-                                      input_type->precision,
-                                      true,
-                                      bias_scales);
+            (is_quant_mode ? sizeof(int32_t)
+                           : GetNNOperandPrecisionDataLength(*input_type)),
+        0);
+    bias_operand = converter->AddConstantOperand(
+        reinterpret_cast<void*>(zeros.data()),
+        DDim({output_channel_size}),
+        is_quant_mode ? NNADAPTER_TENSOR_INT32 : input_type->precision,
+        true,
+        bias_scales);
   }
   // Auto_pad operand
   auto auto_pad_operand = converter->AddConstantOperand(
-      static_cast<int32_t>(PaddingAlgorithm2PadCode(padding_algorithm)));
+      static_cast<int32_t>(PaddingAlgorithm2AutoPadCode(padding_algorithm)));
   // Pads operand(optional)
   auto pads_operand = converter->AddConstantOperand(paddings);
   // Strides operand
@@ -217,58 +224,46 @@ int ConvertConv2D(Converter* converter, OpInfo* op, Scope* scope) {
   // Dilations operand
   auto dilations_operand = converter->AddConstantOperand(dilations);
   // Fuse code operand
-  std::vector<std::string> activation_support_split_ops{"leaky_relu"};
-  bool conv_with_act_fusion = true;
   int32_t fuse_code_value = NNADAPTER_FUSED_NONE;
   if (act_type == "relu") {
     fuse_code_value = NNADAPTER_FUSED_RELU;
+    act_type = "";
   } else if (act_type == "relu1") {
     fuse_code_value = NNADAPTER_FUSED_RELU1;
+    act_type = "";
   } else if (act_type == "relu6") {
     fuse_code_value = NNADAPTER_FUSED_RELU6;
-  } else if (!act_type.empty()) {
-    if (std::find(activation_support_split_ops.begin(),
-                  activation_support_split_ops.end(),
-                  act_type) == activation_support_split_ops.end()) {
-      LOG(WARNING) << "Unsupported activation type: " << act_type;
-      return UNSUPPORTED_FEATURE;
-    }
-    VLOG(5) << "Split conv + " << act_type
-            << " fusion operator into two operators!";
-    conv_with_act_fusion = false;
+    act_type = "";
   }
   auto fuse_code_operand = converter->AddConstantOperand(fuse_code_value);
   // Output operand
   auto output_operand = converter->AddOutputOperand(output_name, output_scales);
   // Conv2D operation
-  std::vector<NNAdapterOperand*> input_operands = {input_operand,
-                                                   filter_operand,
-                                                   bias_operand,
-                                                   auto_pad_operand,
-                                                   pads_operand,
-                                                   strides_operand,
-                                                   group_operand,
-                                                   dilations_operand,
-                                                   fuse_code_operand};
-  std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  converter->AddOperation(NNADAPTER_CONV_2D, &input_operands, &output_operands);
-
-  // Activation operation without fusion
-  if (!conv_with_act_fusion) {
-    std::vector<NNAdapterOperand*> activation_input_operands{output_operand};
-    auto activation_output_operand = converter->AddOutputOperand(output_name);
-    std::vector<NNAdapterOperand*> activation_output_operands{
-        activation_output_operand};
+  converter->AddOperation(NNADAPTER_CONV_2D,
+                          {input_operand,
+                           filter_operand,
+                           bias_operand,
+                           auto_pad_operand,
+                           pads_operand,
+                           strides_operand,
+                           group_operand,
+                           dilations_operand,
+                           fuse_code_operand},
+                          {output_operand});
+  // Unpack the fused activations
+  if (!act_type.empty()) {
+    auto fused_act_output_operand =
+        converter->AddOutputOperand(output_name, output_scales);
     if (act_type == "leaky_relu") {
       auto alpha = op->GetAttr<float>("leaky_relu_alpha");
       auto alpha_operand = converter->AddConstantOperand(alpha);
-      activation_input_operands.push_back(alpha_operand);
       converter->AddOperation(NNADAPTER_LEAKY_RELU,
-                              &activation_input_operands,
-                              &activation_output_operands);
+                              {output_operand, alpha_operand},
+                              {fused_act_output_operand});
+    } else {
+      LOG(FATAL) << "Failed to unpack the fused activation type: " << act_type;
     }
   }
-
   return NO_ERROR;
 }
 

@@ -1,23 +1,19 @@
-set(PYBIND_DEPS pybind python paddle_api_light paddle_api utils)
+set(PYBIND_DEPS pybind python)
 if (NOT LITE_ON_TINY_PUBLISH)
-   set(PYBIND_DEPS ${PYBIND_DEPS} paddle_api_full opt_base)
+   set(PYBIND_DEPS ${PYBIND_DEPS} ${full_lib_DEPS} opt_base fbs_headers)
 endif()
 
 if(WIN32)
-   lite_cc_library(lite_pybind SHARED SRCS pybind.cc   DEPS ${PYBIND_DEPS} fbs_headers ${external_libs_DEPS})
+   lite_cc_library(lite_pybind SHARED SRCS pybind.cc DEPS ${PYBIND_DEPS} ${external_libs_DEPS})
    get_property (os_dependency_modules GLOBAL PROPERTY OS_DEPENDENCY_MODULES)
    target_link_libraries(lite_pybind ${os_dependency_modules})
 else()
-   message(STATUS "HUZHIQIANG: ${external_libs_DEPS}")
-   lite_cc_library(lite_pybind SHARED SRCS pybind.cc DEPS ${PYBIND_DEPS} fbs_headers ${external_libs_DEPS})
-   target_sources(lite_pybind PUBLIC ${__lite_cc_files})
+   lite_cc_library(lite_pybind SHARED SRCS pybind.cc DEPS ${PYBIND_DEPS} ${external_libs_DEPS})
 endif(WIN32)
 
 if (WITH_XBYAK)
    add_dependencies(lite_pybind extern_xbyak)
 endif()
-
-target_link_libraries(lite_pybind $<TARGET_OBJECTS:all_kernel_faked>)
 
 if (LITE_ON_TINY_PUBLISH)
    set_target_properties(lite_pybind PROPERTIES COMPILE_FLAGS "-flto -fdata-sections")

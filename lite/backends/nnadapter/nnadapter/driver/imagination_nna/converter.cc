@@ -275,7 +275,8 @@ imgdnn_tensor Program::AddTensor(int32_t* dimensions,
   desc.type = type;
   NNADAPTER_CHECK(dimensions);
   NNADAPTER_CHECK_GT(dimension_count, 0);
-  ConvertDimensions(dimensions, dimension_count, desc.size, &desc.dimensions);
+  ConvertToImgdnnDimensions(
+      dimensions, dimension_count, desc.size, &desc.dimensions);
   if (quant_scales && quant_scale_count > 0) {
     // Quantization types
     if (quant_scale_count > 1) {
@@ -354,7 +355,7 @@ imgdnn_tensor Program::AddTensor(const NNAdapterOperandType* type,
   }
   return AddTensor(dimensions.data(),
                    dimensions.size(),
-                   ConvertPrecision(type->precision),
+                   ConvertToImgdnnPrecision(type->precision),
                    quant_scales,
                    zero_point,
                    quant_scale_count,

@@ -19,7 +19,7 @@
 #include <xmmintrin.h>
 #endif
 
-#include "lite/backends/x86/math/detail/activation_functions.h"
+#include "lite/backends/x86/math/activation_functions.h"
 #include "lite/backends/x86/math/rnn.h"
 
 namespace paddle {
@@ -27,7 +27,7 @@ namespace lite {
 namespace x86 {
 namespace math {
 
-using namespace paddle::lite::x86::math::detail::forward;
+using paddle::lite::x86::math::detail::forward;
 
 void vector_dot(
     float* out, const float* in, const float* v1, int size, const float* v2) {

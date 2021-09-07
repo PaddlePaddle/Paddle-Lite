@@ -22,7 +22,9 @@ namespace runtime {
 
 Model::~Model() {
   for (auto& operand : model_.operands) {
-    if (operand.type.lifetime == NNADAPTER_CONSTANT_COPY && operand.buffer) {
+    if ((operand.type.lifetime == NNADAPTER_CONSTANT_COPY ||
+         operand.type.lifetime == NNADAPTER_TEMPORARY_SHAPE) &&
+        operand.buffer) {
       free(operand.buffer);
     }
     if ((operand.type.precision ==

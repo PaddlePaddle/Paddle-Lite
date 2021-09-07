@@ -17,7 +17,6 @@
 #include "lite/backends/x86/math/conv_depthwise_pack4.h"
 #include "lite/backends/x86/math/conv_depthwise_pack8.h"
 #include "lite/backends/x86/math/conv_utils.h"
-
 namespace paddle {
 namespace lite {
 namespace kernels {

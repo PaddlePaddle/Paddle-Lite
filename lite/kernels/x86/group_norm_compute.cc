@@ -15,7 +15,7 @@
 #include "lite/kernels/x86/group_norm_compute.h"
 #include <immintrin.h>
 #include <cmath>
-#include "lite/backends/x86/math/group_norm.h"
+#include "lite/backends/x86/math/avx/group_norm.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
 

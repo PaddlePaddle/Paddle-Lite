@@ -156,6 +156,7 @@ bool BuildOMModelToBuffer(
   ge::ModelBufferData om_buffer;
   std::map<ge::AscendString, ge::AscendString> options;
   options.insert(std::make_pair(ge::ir_option::LOG_LEVEL, "error"));
+  options.insert(std::make_pair(ge::ir_option::OP_DEBUG_LEVEL, "0"));
   ATC_CALL(aclgrphBuildModel(ir_graph, options, om_buffer));
   // Copy from om model buffer
   model_buffer->resize(om_buffer.length);
@@ -274,7 +275,7 @@ ge::DataType GetGEDataType<bool>() {
   return ge::DT_BOOL;
 }
 
-ge::DataType ConvertACLDataType(aclDataType input_data_type) {
+ge::DataType ConvertACLDataTypeToGEDataType(aclDataType input_data_type) {
   ge::DataType output_data_type = ge::DT_FLOAT;
   switch (input_data_type) {
     case ACL_FLOAT:
@@ -307,7 +308,7 @@ ge::DataType ConvertACLDataType(aclDataType input_data_type) {
   return output_data_type;
 }
 
-ge::Format ConvertACLFormat(aclFormat input_format) {
+ge::Format ConvertACLFormatToGEFormat(aclFormat input_format) {
   ge::Format output_format = ge::FORMAT_NCHW;
   switch (input_format) {
     case ACL_FORMAT_NCHW:
@@ -328,7 +329,7 @@ ge::Format ConvertACLFormat(aclFormat input_format) {
   return output_format;
 }
 
-std::vector<int64_t> ConvertACLDimensions(
+std::vector<int64_t> ConvertACLDimsToGEDims(
     const aclmdlIODims& input_dimensions) {
   std::vector<int64_t> output_dimensions(input_dimensions.dimCount);
   for (size_t i = 0; i < input_dimensions.dimCount; i++) {
@@ -337,98 +338,82 @@ std::vector<int64_t> ConvertACLDimensions(
   return output_dimensions;
 }
 
-void ConvertACLDimensions(const aclmdlIODims& input_dimensions,
-                          int32_t* output_dimensions,
-                          uint32_t* output_dimensions_count) {
+void ConvertACLDimsToGEDims(const aclmdlIODims& input_dimensions,
+                            int32_t* output_dimensions,
+                            uint32_t* output_dimensions_count) {
   for (size_t i = 0; i < input_dimensions.dimCount; i++) {
     output_dimensions[i] = static_cast<int32_t>(input_dimensions.dims[i]);
   }
 }
 
-ge::DataType ConvertPrecision(NNAdapterOperandPrecisionCode input_precision) {
-  ge::DataType output_precision = ge::DT_FLOAT;
-  switch (input_precision) {
+ge::DataType ConvertToGEPrecision(
+    NNAdapterOperandPrecisionCode precision_code) {
+  switch (precision_code) {
     case NNADAPTER_TENSOR_BOOL8:
     case NNADAPTER_BOOL8:
-      output_precision = ge::DT_BOOL;
-      break;
+      return ge::DT_BOOL;
     case NNADAPTER_TENSOR_INT8:
     case NNADAPTER_INT8:
-      output_precision = ge::DT_INT8;
-      break;
+      return ge::DT_INT8;
     case NNADAPTER_TENSOR_INT16:
     case NNADAPTER_INT16:
-      output_precision = ge::DT_INT16;
-      break;
+      return ge::DT_INT16;
     case NNADAPTER_TENSOR_INT32:
     case NNADAPTER_INT32:
-      output_precision = ge::DT_INT32;
-      break;
+      return ge::DT_INT32;
     case NNADAPTER_TENSOR_INT64:
     case NNADAPTER_INT64:
-      output_precision = ge::DT_INT64;
-      break;
+      return ge::DT_INT64;
     case NNADAPTER_TENSOR_UINT8:
     case NNADAPTER_UINT8:
-      output_precision = ge::DT_UINT8;
-      break;
+      return ge::DT_UINT8;
     case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER:
-      output_precision = ge::DT_QUINT8;
-      break;
+      return ge::DT_QUINT8;
     case NNADAPTER_TENSOR_UINT16:
     case NNADAPTER_UINT16:
-      output_precision = ge::DT_UINT16;
-      break;
+      return ge::DT_UINT16;
     case NNADAPTER_TENSOR_UINT32:
     case NNADAPTER_UINT32:
-      output_precision = ge::DT_UINT32;
-      break;
+      return ge::DT_UINT32;
     case NNADAPTER_TENSOR_UINT64:
     case NNADAPTER_UINT64:
-      output_precision = ge::DT_UINT64;
-      break;
+      return ge::DT_UINT64;
     case NNADAPTER_TENSOR_FLOAT16:
     case NNADAPTER_FLOAT16:
-      output_precision = ge::DT_FLOAT16;
-      break;
+      return ge::DT_FLOAT16;
     case NNADAPTER_TENSOR_FLOAT32:
     case NNADAPTER_FLOAT32:
-      output_precision = ge::DT_FLOAT;
-      break;
+      return ge::DT_FLOAT;
     case NNADAPTER_TENSOR_FLOAT64:
     case NNADAPTER_FLOAT64:
-      output_precision = ge::DT_DOUBLE;
-      break;
+      return ge::DT_DOUBLE;
     default:
       NNADAPTER_LOG(FATAL)
           << "Failed to convert the NNAdapter operand precision code("
-          << OperandPrecisionCodeToString(input_precision)
+          << OperandPrecisionCodeToString(precision_code)
           << ") to ge::DataType !";
       break;
   }
-  return output_precision;
+  return ge::DT_FLOAT;
 }
 
-ge::Format ConvertDataLayout(NNAdapterOperandLayoutCode input_layout) {
-  ge::Format output_layout = ge::FORMAT_NCHW;
-  switch (input_layout) {
+ge::Format ConvertToGEDataLayout(NNAdapterOperandLayoutCode layout_code) {
+  switch (layout_code) {
     case NNADAPTER_NCHW:
-      output_layout = ge::FORMAT_NCHW;
-      break;
+      return ge::FORMAT_NCHW;
     case NNADAPTER_NHWC:
-      output_layout = ge::FORMAT_NHWC;
-      break;
+      return ge::FORMAT_NHWC;
     default:
       NNADAPTER_LOG(FATAL)
           << "Failed to convert the NNAdapter operand layout code("
-          << OperandLayoutCodeToString(input_layout) << ") to ge::Format !";
+          << OperandLayoutCodeToString(layout_code) << ") to ge::Format !";
       break;
   }
-  return output_layout;
+  return ge::FORMAT_NCHW;
 }
 
-std::vector<int64_t> ConvertDimensions(const int32_t* input_dimensions,
-                                       uint32_t input_dimensions_count) {
+std::vector<int64_t> ConvertToGEDimensions(const int32_t* input_dimensions,
+                                           uint32_t input_dimensions_count) {
   std::vector<int64_t> output_dimensions;
   for (uint32_t i = 0; i < input_dimensions_count; i++) {
     output_dimensions.push_back(input_dimensions[i]);
@@ -436,9 +421,28 @@ std::vector<int64_t> ConvertDimensions(const int32_t* input_dimensions,
   return output_dimensions;
 }
 
-std::vector<int64_t> ConvertDimensions(
+std::vector<int64_t> ConvertToGEDimensions(
     const std::vector<int32_t>& input_dimensions) {
-  return ConvertDimensions(&input_dimensions[0], input_dimensions.size());
+  return ConvertToGEDimensions(&input_dimensions[0], input_dimensions.size());
+}
+
+std::string ConvertPadModeCodeToGEPadMode(int pad_mode_code) {
+  switch (pad_mode_code) {
+    case NNADAPTER_PAD_MODE_CONSTANT:
+      return "constant";
+    case NNADAPTER_PAD_MODE_REFLECT:
+      return "reflect";
+    case NNADAPTER_PAD_MODE_REPLICATE:
+      return "replicate";
+    case NNADAPTER_PAD_MODE_EDGE:
+      return "edge";
+    default:
+      NNADAPTER_LOG(FATAL)
+          << "Failed to convert the NNAdapter operand pad mode code("
+          << pad_mode_code << ") to pad mode !";
+      break;
+  }
+  return "constant";
 }
 
 }  // namespace huawei_ascend_npu

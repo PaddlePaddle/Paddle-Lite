@@ -48,7 +48,8 @@ int Program::ConvertElementwise(hal::Operation* operation) {
   if (input1_index == INVALID_INDEX) {
     input1_index = ConvertOperand(input1_operand);
   }
-  auto fuse_code_index = AddInt32ConstantOperand(ConvertFuseCode(fuse_code));
+  auto fuse_code_index =
+      AddInt32ConstantOperand(ConvertFuseCodeToNeuronFuseCode(fuse_code));
   auto output_index = ConvertOperand(output_operand);
   NeuronOperationType op_type;
   if (operation->type == NNADAPTER_ADD) {
