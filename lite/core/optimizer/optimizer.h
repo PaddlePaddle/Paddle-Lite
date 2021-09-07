@@ -29,6 +29,7 @@
 #include "lite/core/optimizer/mir/ssa_graph.h"
 #include "lite/core/optimizer/mir/static_kernel_pick_pass.h"
 #include "lite/core/optimizer/mir/type_target_cast_pass.h"
+#include "lite/core/optimizer/mir/x86_int8_attribute_pass.h"
 #include "lite/core/program.h"
 #include "lite/core/types.h"
 #include "lite/model_parser/model_parser.h"
