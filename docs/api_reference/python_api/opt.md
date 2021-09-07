@@ -126,7 +126,7 @@ opt.set_valid_places("arm,opencl")
 
 ### `set_sparse_threshold(float)`
 
-设置稀疏化阈值。例如，设置为0.5时，意思是对于某层参数，如果该参数的0元素比例小于0.5的话，则不走`sparse pass`。
+设置稀疏化阈值。例如，设置为0.5时，意思是对于某层参数，如果该参数的0元素比例小于0.5的话，则不走`sparse pass`。该API目前只在ARM上有效。
 
 参数：
 

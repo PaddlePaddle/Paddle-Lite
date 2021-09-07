@@ -11,6 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+// This pass intends to improve the latency performance of the convolutional
+// operations with the kernel size of 1x1. In practice, the pass requires the
+// convolutional weights to be sparse. And, the sparser the weights
+// are, the more latency improvement we would potentially obtain.
 
 #include "lite/core/optimizer/mir/sparse_conv_detect_pass.h"
 #include <math.h>
