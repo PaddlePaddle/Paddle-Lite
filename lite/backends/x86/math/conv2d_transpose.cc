@@ -14,7 +14,7 @@ limitations under the License. */
 
 #include "lite/backends/x86/math/conv2d_transpose.h"
 #include <string.h>
-#include "lite/backends/x86/math/avx_mathfuns.h"
+#include "lite/backends/x86/math/avx/avx_mathfuns.h"
 
 #ifdef __AVX__
 #include <immintrin.h>

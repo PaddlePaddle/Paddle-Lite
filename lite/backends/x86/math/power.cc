@@ -15,7 +15,7 @@
 #include "lite/backends/x86/math/power.h"
 #include <immintrin.h>
 #include <cmath>
-#include "lite/backends/x86/math/avx_mathfuns.h"
+#include "lite/backends/x86/math/avx/avx_mathfuns.h"
 
 namespace paddle {
 namespace lite {

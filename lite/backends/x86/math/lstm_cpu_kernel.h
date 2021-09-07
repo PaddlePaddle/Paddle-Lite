@@ -14,7 +14,7 @@ limitations under the License. */
 
 #pragma once
 #include <type_traits>
-#include "lite/backends/x86/math/detail/activation_functions.h"
+#include "lite/backends/x86/math/activation_functions.h"
 #include "lite/backends/x86/math/lstm_compute.h"
 
 #if defined(_WIN32)

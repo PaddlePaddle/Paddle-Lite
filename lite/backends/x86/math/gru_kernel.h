@@ -14,7 +14,7 @@ limitations under the License. */
 
 #pragma once
 #include <type_traits>
-#include "lite/backends/x86/math/detail/activation_functions.h"
+#include "lite/backends/x86/math/activation_functions.h"
 #include "lite/utils/macros.h"
 
 // TODO(guosheng): refine code style in gru_kernel
