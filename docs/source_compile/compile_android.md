@@ -4,7 +4,7 @@
 
 本文介绍如何将 Paddle Lite 源代码通过 Android NDK 交叉构建适用于 Android 平台的发布包。
 
-说明：本文适用于 Paddle Lite v2.6 及以上版本，面向对源代码有修改需求的开发者。如果您需要的是 Paddle Lite 正式版本，请直接 [前往下载](https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html)我们预先编译的发布包。
+说明：本文适用于 Paddle Lite v2.6 及以上版本，面向对源代码有修改需求的开发者。如果您需要的是 Paddle Lite 正式版本，请直接 [前往下载](https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html) 我们预先编译的发布包。
 
 ## 二、环境
 
@@ -146,7 +146,7 @@ Paddle-Lite 默认支持的最低安卓版本如下表所示，使用者可以�
 
 ## 四、验证
 
-位于 `Paddle-Lite/build.lite.android.armv8.gcc/inference_lite_lib.android.armv8`:
+以 armv8 为例，正确的构建步骤完成后，会在 `Paddle-Lite/build.lite.android.armv8.gcc/inference_lite_lib.android.armv8` 生成下列文件。
 
 ```shell
 inference_lite_lib.android.armv8/
