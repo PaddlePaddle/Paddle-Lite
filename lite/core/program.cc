@@ -268,9 +268,6 @@ RuntimeProgram::RuntimeProgram(
   if (opencl_valid) {
     unique_opencl_ctx->As<OpenCLContext>().InitOnce();
   }
-#elif LITE_WITH_METAL
-  metal_ctx_ = std::make_unique<KernelContext>();
-  (*metal_ctx_).As<MTLContext>().InitOnce();
 #endif
   CHECK(program_desc);
   auto block_size = program_desc->BlocksSize();
@@ -397,6 +394,10 @@ RuntimeProgram::RuntimeProgram(
     }
 #elif LITE_WITH_METAL
     if (kernel->target() == TARGET(kMetal)) {
+      if (!metal_ctx_) {
+        metal_ctx_ = std::make_unique<KernelContext>();
+        (*metal_ctx_).As<MTLContext>().InitOnce();
+      }
       std::unique_ptr<KernelContext> ctx(new KernelContext());
       (*metal_ctx_).As<MTLContext>().CopySharedTo(&ctx->As<MTLContext>());
       kernel->SetContext(std::move(ctx));
@@ -419,6 +420,7 @@ RuntimeProgram::RuntimeProgram(
 void RuntimeProgram::ConfigMetalContext(std::string lib_path,
                                         bool use_mps,
                                         bool use_aggressive) {
+  if (!metal_ctx_) return;
   MetalContext* context = (*metal_ctx_).As<MTLContext>().context();
   context->set_metal_path(lib_path);
   context->set_use_mps(use_mps);
@@ -447,11 +449,6 @@ void RuntimeProgram::Run() {
     annotation_one_loop.generate(register_layer_names_.back(),
                                  lite::Color::Engine);
   }
-#endif
-
-#ifdef LITE_WITH_METAL
-  MetalContext* cmd_ctx = (*metal_ctx_).As<MTLContext>().context();
-  cmd_ctx->CreateCommandBuffer(this);
 #endif
 
 #ifdef LITE_WITH_FPGA
@@ -506,8 +503,10 @@ void RuntimeProgram::Run() {
   }
 
 #ifdef LITE_WITH_METAL
-  MetalContext* wait_ctx = (*metal_ctx_).As<MTLContext>().context();
-  wait_ctx->WaitAllCompleted();
+  if (metal_ctx_) {
+    MetalContext* wait_ctx = (*metal_ctx_).As<MTLContext>().context();
+    wait_ctx->wait_all_completed();
+  }
 #endif
 
 #ifdef LITE_WITH_PROFILE

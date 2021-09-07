@@ -56,10 +56,8 @@ void WhileCompute::PrepareForRun() {
 void WhileCompute::Run() {
   auto &param = this->Param<param_t>();
   auto cond = param.cond;
-  bool need_run = GetCondData(cond);
-  while (need_run) {
+  while (GetCondData(cond)) {
     program_->Run();
-    need_run = GetCondData(cond);
   }
 }
 

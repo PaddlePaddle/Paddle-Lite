@@ -23,6 +23,9 @@ namespace kernels {
 namespace x86 {
 
 template <>
+void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {}
+
+template <>
 void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto& param = this->Param<param_t>();
   CHECK(this->ctx_);
@@ -144,6 +147,86 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
 
 PROFILE_INFO(kFloat, kFloat)
 
+template <>
+void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
+  auto& param = this->Param<param_t>();
+
+  //! update scale
+  w_scale_ = param.weight_scale;
+  if (w_scale_.size() != 1 && w_scale_.size() != param.filter->dims()[0]) {
+    LOG(FATAL) << "weights scale size must equal to filter size";
+    return;
+  }
+  if (w_scale_.size() == 1) {
+    for (int i = 0; i < param.filter->dims()[0] - 1; ++i) {
+      w_scale_.push_back(w_scale_[0]);
+    }
+  }
+  float input_scale = param.input_scale;
+  for (auto& ws : w_scale_) {
+    ws *= input_scale;
+  }
+}
+
+#define CONV_DW_INT8_PARAM                                                 \
+  o_data, i_data, w_data, b_data, bs, ic, iw, ih, oh, ow, flag_act, alpha, \
+      w_scale_, ctx
+template <>
+void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
+  //! todo add implementation
+}
+
+PROFILE_INFO(kInt8, kFloat)
+
+template <>
+void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
+  auto& param = this->Param<param_t>();
+
+  //! update scale
+  w_scale_ = param.weight_scale;
+  if (w_scale_.size() != 1 && w_scale_.size() != param.filter->dims()[0]) {
+    LOG(FATAL) << "weights scale size must equal to filter size";
+    return;
+  }
+  if (w_scale_.size() == 1) {
+    for (int i = 0; i < param.filter->dims()[0] - 1; ++i) {
+      w_scale_.push_back(w_scale_[0]);
+    }
+  }
+  float input_scale = param.input_scale;
+  for (auto& ws : w_scale_) {
+    ws *= input_scale;
+  }
+  //!  update bias
+  if (param.bias) {
+    bias_.Resize(param.bias->dims());
+    auto ptr = bias_.mutable_data<float>();
+    auto ptr_in = param.bias->data<float>();
+    for (int i = 0; i < bias_.numel(); ++i) {
+      ptr[i] = ptr_in[i] / param.output_scale;
+    }
+    flag_trans_bias_ = true;
+  }
+  //! update relu6 parameter
+  if (param.activation_param.active_type == lite_api::ActivationType::kRelu6) {
+    param.activation_param.Relu_clipped_coef =
+        param.activation_param.Relu_clipped_coef / param.output_scale;
+  }
+  //! update leakyRelu parameter
+  if (param.activation_param.active_type ==
+      lite_api::ActivationType::kLeakyRelu) {
+    param.activation_param.Leaky_relu_alpha =
+        param.activation_param.Leaky_relu_alpha / param.output_scale;
+  }
+}
+
+template <>
+void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
+  //! todo add implementation
+}
+
+PROFILE_INFO(kInt8, kInt8)
+#undef CONV_DW_INT8_PARAM
 }  // namespace x86
 }  // namespace kernels
 }  // namespace lite
