@@ -21,8 +21,8 @@
 // posix_memalign
 #include "lite/backends/x86/cpu_info.h"
 #include "lite/backends/x86/jit/macro.h"
-#include "lite/utils/log/cp_logging.h"
 #include "lite/utils/env.h"
+#include "lite/utils/log/cp_logging.h"
 
 #ifndef _WIN32
 #define posix_memalign_free free

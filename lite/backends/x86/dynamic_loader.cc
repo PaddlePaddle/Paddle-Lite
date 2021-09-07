@@ -20,8 +20,8 @@ limitations under the License. */
 #include "lite/backends/x86/cupti_lib_path.h"
 #include "lite/backends/x86/port.h"
 #include "lite/backends/x86/warpctc_lib_path.h"
-#include "lite/utils/log/cp_logging.h"
 #include "lite/utils/env.h"
+#include "lite/utils/log/cp_logging.h"
 
 // DEFINE_string(cudnn_dir,
 //               "",
