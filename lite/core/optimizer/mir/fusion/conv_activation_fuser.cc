@@ -87,6 +87,11 @@ cpp::OpDesc ConvActivationFuser::GenOpDesc(const key2nodes_t& matched) {
 
   op_desc.SetAttr("with_act", true);
   op_desc.SetAttr("act_type", act_type_);
+  if (act_op_desc.HasAttr("out_threshold")) {
+    float out_threshold = act_op_desc.GetAttr<float>("out_threshold");
+    op_desc.SetAttr("out_threshold", out_threshold);
+    VLOG(4) << "conv+relu fusion,out_threshold:" << out_threshold;
+  }
   if (act_type_ == "relu") {
     op_desc.SetAttr("fuse_relu", true);
   } else if (act_type_ == "relu6") {

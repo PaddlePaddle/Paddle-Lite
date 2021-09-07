@@ -140,8 +140,17 @@ void NCHW2NHWCDataLayoutConverter::ConvertPool2D(hal::Operation* operation) {
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
   auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 12);
-  NNADAPTER_CHECK_EQ(output_count, 1);
+  NNADAPTER_CHECK_EQ(input_count, 8);
+  auto operation_type = operation->type;
+  if (operation_type == NNADAPTER_AVERAGE_POOL_2D) {
+    NNADAPTER_CHECK_EQ(output_count, 1);
+  } else if (operation_type == NNADAPTER_MAX_POOL_2D) {
+    NNADAPTER_CHECK_EQ(output_count, 2);
+  } else {
+    NNADAPTER_LOG(FATAL) << "Unsupported pooling operation type "
+                         << OperationTypeToString(operation->type)
+                         << " is found.";
+  }
   auto input_operand = input_operands[0];
   auto input_dimension_count = input_operand->type.dimension_count;
   NNADAPTER_CHECK_EQ(input_dimension_count, 4);
@@ -222,22 +231,25 @@ void NCHW2NHWCDataLayoutConverter::ConvertConv2D(hal::Operation* operation) {
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
   auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 13);
+  NNADAPTER_CHECK_EQ(input_count, 9);
   NNADAPTER_CHECK_EQ(output_count, 1);
   auto input_operand = input_operands[0];
   auto input_dimension_count = input_operand->type.dimension_count;
   NNADAPTER_CHECK_EQ(input_dimension_count, 4);
-  auto input_channel_size = input_operand->type.dimensions[3];
   auto filter_operand = input_operands[1];
   bool is_per_channel = filter_operand->type.precision ==
                         NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL;
   NNADAPTER_VLOG(5) << "is_per_channel:" << is_per_channel;
-  auto group = *reinterpret_cast<int32_t*>(input_operands[9]->buffer);
-  // Check depthwise mode
-  bool is_depthwise_mode = group != 1 && input_channel_size == group;
-  NNADAPTER_VLOG(5) << "depthwise mode(" << is_depthwise_mode << ").";
+  auto group = *reinterpret_cast<int32_t*>(input_operands[6]->buffer);
   // Force to apply the dimorder vector of NCHW2NHWC conversion
   auto input_permutation = GetPermutation(input_operand);
+  // Check depthwise mode
+  auto input_channel_index = TransposeAxis(1 /* NCHW */, input_permutation);
+  NNADAPTER_CHECK_GE(input_channel_index, 0);
+  NNADAPTER_CHECK_LT(input_channel_index, input_dimension_count);
+  auto input_channel_size = input_operand->type.dimensions[input_channel_index];
+  bool is_depthwise_mode = group != 1 && input_channel_size == group;
+  NNADAPTER_VLOG(5) << "depthwise mode(" << is_depthwise_mode << ").";
   auto transpose_input_permutation =
       MultiplyPermutation(InversePermutation(input_permutation), kNCHW2NHWC);
   if (!IsIdentityPermutation(transpose_input_permutation)) {
@@ -425,6 +437,7 @@ void NCHW2NHWCDataLayoutConverter::Apply(hal::Model* model) {
       case NNADAPTER_HARD_SWISH:
       case NNADAPTER_SIGMOID:
       case NNADAPTER_ABS:
+      case NNADAPTER_EXP:
         ConvertActivation(operation);
         break;
       case NNADAPTER_RESHAPE:

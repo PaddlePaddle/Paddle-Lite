@@ -37,7 +37,7 @@ kernel void elementwise_add(texture2d_array<ftype, access::read> inputX
   }
   // add at C channel
   else if (pm.addByChannel == 1) {
-    ry = inputY.read(uint2(gid.z, 0), 0);
+    ry = inputY.read(uint2(0, 0), gid.z);
   } else {
     // X coordinate GPU NHNC
     int32_t x_xyzn[4] = {int32_t(gid.x), int32_t(gid.y), int32_t(gid.z), 0};
@@ -125,3 +125,67 @@ kernel void elementwise_mul(texture2d_array<ftype, access::read> inputX
   ftype4 r = rx * ry;
   outTexture.write(r, gid.xy, gid.z);
 }
+
+kernel void elementwise_div(texture2d_array<ftype, access::read> inputX
+                            [[texture(0)]],
+                            texture2d_array<ftype, access::read> inputY
+                            [[texture(1)]],
+                            texture2d_array<ftype, access::write> outTexture
+                            [[texture(2)]],
+                            constant ElementwiseParam &pm [[buffer(0)]],
+                            uint3 gid [[thread_position_in_grid]]) {
+  if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
+      gid.z >= outTexture.get_array_size())
+    return;
+  ftype4 rx, ry;
+  rx = inputX.read(gid.xy, gid.z);
+  if (pm.byChannel == 1) {
+    ry = inputY.read(uint2(0, 0), gid.z);
+  } else {
+    ry = inputY.read(gid.xy, gid.z);
+  }
+  ftype4 r = rx / ry;
+  outTexture.write(r, gid.xy, gid.z);
+}
+
+kernel void elementwise_add_relu(texture2d_array<ftype, access::read> inputX[[texture(0)]],
+    texture2d_array<ftype, access::read> inputY[[texture(1)]],
+    texture2d_array<ftype, access::write> outTexture[[texture(2)]],
+    constant ElementwiseAddParam& pm[[buffer(0)]],
+    uint3 gid[[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
+        gid.z >= outTexture.get_array_size())
+        return;
+    ftype4 rx, ry;
+    rx = inputX.read(gid.xy, gid.z);
+    if (pm.fast == 1) {
+        ry = inputY.read(gid.xy, gid.z);
+    } else if (pm.addByChannel == 1) {
+        ry = inputY.read(uint2(0, 0), gid.z);
+    } else {
+        int32_t x_xyzn[4] = {int32_t(gid.x), int32_t(gid.y), int32_t(gid.z), 0}, x_abcd[4],
+                t_abcd[4];
+        int32_t y_abcd[4] = {0, 0, 0, 0}, y_xyzn[4];
+        int32_t xtrans[4] = {pm.xtrans[0], pm.xtrans[1], pm.xtrans[2], pm.xtrans[3]};
+        int32_t ytrans[4] = {pm.ytrans[0], pm.ytrans[1], pm.ytrans[2], pm.ytrans[3]};
+        int32_t yshift = 4 - pm.ylen - pm.axis;
+        for (int n = 0; n < 4; n++) {
+            x_xyzn[3] = n;
+            xyzn2abcd(pm.xdim[3], x_xyzn, x_abcd);
+            invtrans(xtrans, x_abcd, t_abcd);
+            for (int k = pm.axis; k < (pm.axis + pm.ylen); k++) {
+                y_abcd[yshift + k] = t_abcd[k];
+            }
+            trans(ytrans, y_abcd, t_abcd);
+            abcd2xyzn(pm.ydim[3], t_abcd, y_xyzn);
+            ry[n] = inputY.read(uint2(y_xyzn[0], y_xyzn[1]), y_xyzn[2])[y_xyzn[3]];
+        }
+    }
+    ftype4 output = rx + ry;
+
+    // relu
+    output = fmax(output, 0.0);
+
+    outTexture.write(output, gid.xy, gid.z);
+}
+
