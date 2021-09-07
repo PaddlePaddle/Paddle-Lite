@@ -190,6 +190,8 @@ if (LITE_WITH_OPENCL)
 endif()
 
 if (LITE_WITH_METAL)
+    find_library(METAL_LIBRARY Metal REQUIRED)
+    find_library(FOUNDATION_LIBRARY Foundation)
     add_definitions("-DLITE_WITH_METAL")
 endif()
 

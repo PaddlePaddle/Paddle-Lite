@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include "lite/backends/x86/math/conv_utils.h"
+#include "lite/backends/x86/math/avx/conv_utils.h"
 #include <algorithm>
 
 namespace paddle {
