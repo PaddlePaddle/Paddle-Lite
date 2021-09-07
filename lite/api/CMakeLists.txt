@@ -535,13 +535,13 @@ lite_cc_library(paddle_api SRCS paddle_api.cc DEPS ops core)
 #-----------------------------------------------------------------------------------------------------
 # The final inference library for both CxxConfig and MobileConfig.
 if (LITE_ON_TINY_PUBLISH)
-    lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api stream)
+    lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api stream model_parser)
 else()
-    lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api core utils)
+    lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api core utils model_parser)
 endif()
 if (NOT LITE_ON_TINY_PUBLISH)
     lite_cc_library(paddle_api_full SRCS cxx_api_impl.cc DEPS cxx_api paddle_api_light
-        ops paddle_api framework_proto core utils
+        ops paddle_api framework_proto core utils model_parser
         ARM_DEPS ${arm_kernels}
         CV_DEPS paddle_cv_arm
         NPU_DEPS ${npu_kernels}
@@ -619,7 +619,7 @@ endif(LITE_ON_MODEL_OPTIMIZE_TOOL)
 
 if(NOT WITH_COVERAGE)
     lite_cc_test(test_paddle_api SRCS paddle_api_test.cc DEPS paddle_api_full paddle_api_light
-      ops
+      ops model_parser
       ARM_DEPS ${arm_kernels}
       CV_DEPS paddle_cv_arm
       NPU_DEPS ${npu_kernels}
@@ -643,7 +643,7 @@ endif()
 
 # Some bins
 if(NOT IOS)
-    lite_cc_binary(test_model_bin SRCS tools/model_test.cc DEPS paddle_api_full paddle_api_light gflags utils core
+    lite_cc_binary(test_model_bin SRCS tools/model_test.cc DEPS paddle_api_full paddle_api_light gflags utils core model_parser
         ops ${host_kernels} ${full_lib_DEPS} ${external_libs_DEPS}
         ARM_DEPS ${arm_kernels}
         CV_DEPS paddle_cv_arm
@@ -662,7 +662,7 @@ if(NOT IOS)
         CUDA_DEPS ${cuda_kernels}
         HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels})
     
-    lite_cc_binary(test_model_detection_bin SRCS model_test_detection.cc DEPS paddle_api_full paddle_api_light gflags utils core
+    lite_cc_binary(test_model_detection_bin SRCS model_test_detection.cc DEPS paddle_api_full paddle_api_light gflags utils core model_parser
         ops ${host_kernels} ${external_libs_DEPS}
         ARM_DEPS ${arm_kernels}
         CV_DEPS paddle_cv_arm
@@ -681,7 +681,7 @@ if(NOT IOS)
         CUDA_DEPS ${cuda_kernels}
         HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels})
     
-    lite_cc_binary(test_model_classify_bin SRCS model_test_classify.cc DEPS paddle_api_full paddle_api_light gflags utils core
+    lite_cc_binary(test_model_classify_bin SRCS model_test_classify.cc DEPS paddle_api_full paddle_api_light gflags utils core model_parser
         ops ${host_kernels} ${external_libs_DEPS}
         ARM_DEPS ${arm_kernels}
         CV_DEPS paddle_cv_arm
@@ -700,7 +700,7 @@ if(NOT IOS)
         CUDA_DEPS ${cuda_kernels}
         HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels})
 
-    lite_cc_binary(benchmark_bin SRCS tools/benchmark.cc DEPS paddle_api_full paddle_api_light gflags utils core
+    lite_cc_binary(benchmark_bin SRCS tools/benchmark.cc DEPS paddle_api_full paddle_api_light gflags utils core model_parser
         ops ${host_kernels} ${external_libs_DEPS}
         ARM_DEPS ${arm_kernels}
         CV_DEPS paddle_cv_arm
@@ -718,7 +718,7 @@ if(NOT IOS)
         CUDA_DEPS ${cuda_kernels}
         HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels})
     
-    lite_cc_binary(multithread_test SRCS lite_multithread_test.cc DEPS paddle_api_full paddle_api_light gflags utils core
+    lite_cc_binary(multithread_test SRCS lite_multithread_test.cc DEPS paddle_api_full paddle_api_light gflags utils core model_parser
         ops ${host_kernels} ${external_libs_DEPS}
         ARM_DEPS ${arm_kernels}
         CV_DEPS paddle_cv_arm
@@ -737,7 +737,7 @@ if(NOT IOS)
         X86_DEPS ${x86_kernels}
         CUDA_DEPS ${cuda_kernels})
 
-    lite_cc_binary(test_transformer SRCS transform_test.cc DEPS paddle_api_full paddle_api_light gflags utils core
+    lite_cc_binary(test_transformer SRCS transform_test.cc DEPS paddle_api_full paddle_api_light gflags utils core model_parser
         ops ${host_kernels} ${external_libs_DEPS}
         ARM_DEPS ${arm_kernels}
         CV_DEPS paddle_cv_arm
