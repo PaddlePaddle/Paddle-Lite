@@ -70,7 +70,7 @@ lite_cc_test(test_conv_transpose_image_opencl SRCS conv_transpose_image_compute_
              DEPS kernels core)
 
 lite_cc_test(test_depthwise_conv2d_transpose_image_opencl SRCS depthwise_conv2d_transpose_image_compute_test.cc
-             DEPS conv_transpose_opencl_image core)
+             DEPS kernels core)
 
 lite_cc_test(test_nearest_interp_image_opencl SRCS nearest_interp_image_compute_test.cc
              DEPS kernels core)
