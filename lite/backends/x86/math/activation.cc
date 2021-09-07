@@ -16,7 +16,7 @@
 
 #ifdef __AVX__
 #include <immintrin.h>
-#include "lite/backends/x86/math/avx_mathfuns.h"
+#include "lite/backends/x86/math/avx/avx_mathfuns.h"
 #else
 #include <emmintrin.h>
 #include <smmintrin.h>

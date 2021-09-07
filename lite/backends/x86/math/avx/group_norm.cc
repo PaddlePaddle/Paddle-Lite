@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/backends/x86/math/group_norm.h"
+#include "lite/backends/x86/math/avx/group_norm.h"
 #include <immintrin.h>
 #include <stdio.h>
 #include <cmath>

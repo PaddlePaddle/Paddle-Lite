@@ -41,7 +41,7 @@
 
   (this is the zlib license)
 */
-#include "lite/backends/x86/math/avx_mathfuns.h"
+#include "lite/backends/x86/math/avx/avx_mathfuns.h"
 
 #ifdef __AVX__
 namespace paddle {
