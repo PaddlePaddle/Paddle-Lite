@@ -165,6 +165,10 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     input1_operand = GenerateInputOperand(
         converter, y, y_dims, y_name, has_y_scale, y_scale);
   } else {
+    input0_operand = GenerateInputOperand(
+        converter, x, x_dims, x_name, has_x_scale, x_scale);
+    input1_operand = GenerateInputOperand(
+        converter, y, y_dims, y_name, has_y_scale, y_scale);
     if (x_rank != y_rank) {
       std::string new_x_shape_name = x_name + "new_shape";
       std::string new_y_shape_name = y_name + "new_shape";
@@ -175,36 +179,23 @@ int ElementwiseConverter(void* ctx, OpLite* op, KernelBase* kernel) {
         for (int i = 0; i < y_rank; i++) {
           y_shape[i + axis] = y_dims[i];
         }
-        auto input1_before_reshape_operand = GenerateInputOperand(
-            converter, y, y_dims, y_name, has_y_scale, y_scale);
         input1_operand = ReshapeOperands(converter,
                                          op_info,
-                                         input1_before_reshape_operand,
+                                         input1_operand,
                                          y_scale_name,
                                          y_shape,
                                          new_y_shape_name);
-        input0_operand = GenerateInputOperand(
-            converter, x, x_dims, x_name, has_x_scale, x_scale);
       } else {
         for (int i = 0; i < x_rank; i++) {
           x_shape[i + axis] = x_dims[i];
         }
-        auto input0_before_reshape_operand = GenerateInputOperand(
-            converter, x, x_dims, x_name, has_x_scale, x_scale);
         input0_operand = ReshapeOperands(converter,
                                          op_info,
-                                         input0_before_reshape_operand,
+                                         input0_operand,
                                          x_scale_name,
                                          x_shape,
                                          new_x_shape_name);
-        input1_operand = GenerateInputOperand(
-            converter, y, y_dims, y_name, has_y_scale, y_scale);
       }
-    } else {
-      input0_operand = GenerateInputOperand(
-          converter, x, x_dims, x_name, has_x_scale, x_scale);
-      input1_operand = GenerateInputOperand(
-          converter, y, y_dims, y_name, has_y_scale, y_scale);
     }
   }
 
