@@ -54,16 +54,7 @@ inline float16x8_t expq_ps_f16(float16x8_t x) {
   float32x4_t vb = vcvt_f32_f16(vget_low_f16(x));
   float32x4_t vexpa = exp_ps(va);
   float32x4_t vexpb = exp_ps(vb);
-  float16x8_t vres;
-  float16x4_t vresa = vcvt_f16_f32(vexpa);
-  float16x4_t vresb = vcvt_f16_f32(vexpb);
-  for (int i = 0; i < 3; i++) {
-    vres[i + 4] = vresa[i];
-  }
-  for (int i = 0; i < 3; i++) {
-    vres[i] = vresb[i];
-  }
-  return vres;
+  return vcombine_f16(vcvt_f16_f32(vexpa), vcvt_f16_f32(vexpb));
 }
 
 inline float16x4_t exp_ps_f16(float16x4_t x) {
