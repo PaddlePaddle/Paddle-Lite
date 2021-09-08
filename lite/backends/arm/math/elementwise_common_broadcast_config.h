@@ -219,7 +219,11 @@ struct DivConfig {};
 template <>
 struct DivConfig<float16_t> : public BasicConfig<float16_t> {
   constexpr static auto naive_op = naive_div<float16_t>;
+#ifdef __aarch64__
   constexpr static auto neon_op = vdivq_f16;
+#else
+  constexpr static auto neon_op = vrecpeq_f16;
+#endif
 };
 #endif
 

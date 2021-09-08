@@ -46,63 +46,50 @@ int NeuronOperandDataTypeLength(int data_type) {
   return 0;
 }
 
-int ConvertPrecision(NNAdapterOperandPrecisionCode input_precision) {
-  int output_precision = 0;
-  switch (input_precision) {
+int ConvertToNeuronPrecision(NNAdapterOperandPrecisionCode precision_code) {
+  switch (precision_code) {
     case NNADAPTER_BOOL8:
-      output_precision = NEURON_BOOL;
-      break;
+      return NEURON_BOOL;
     case NNADAPTER_FLOAT16:
-      output_precision = NEURON_FLOAT16;
-      break;
+      return NEURON_FLOAT16;
     case NNADAPTER_FLOAT32:
-      output_precision = NEURON_FLOAT32;
-      break;
+      return NEURON_FLOAT32;
     case NNADAPTER_INT32:
-      output_precision = NEURON_INT32;
-      break;
+      return NEURON_INT32;
     case NNADAPTER_UINT32:
-      output_precision = NEURON_UINT32;
-      break;
+      return NEURON_UINT32;
     case NNADAPTER_TENSOR_BOOL8:
-      output_precision = NEURON_TENSOR_BOOL8;
-      break;
+      return NEURON_TENSOR_BOOL8;
     case NNADAPTER_TENSOR_FLOAT16:
-      output_precision = NEURON_TENSOR_FLOAT16;
-      break;
+      return NEURON_TENSOR_FLOAT16;
     case NNADAPTER_TENSOR_FLOAT32:
-      output_precision = NEURON_TENSOR_FLOAT32;
-      break;
+      return NEURON_TENSOR_FLOAT32;
     case NNADAPTER_TENSOR_INT32:
-      output_precision = NEURON_TENSOR_INT32;
-      break;
+      return NEURON_TENSOR_INT32;
     case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER:
-      output_precision = NEURON_TENSOR_QUANT8_SYMM;
-      break;
+      return NEURON_TENSOR_QUANT8_SYMM;
     case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL:
-      output_precision = NEURON_TENSOR_QUANT8_SYMM_PER_CHANNEL;
-      break;
+      return NEURON_TENSOR_QUANT8_SYMM_PER_CHANNEL;
     case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER:
-      output_precision = NEURON_TENSOR_QUANT8_ASYMM;
-      break;
+      return NEURON_TENSOR_QUANT8_ASYMM;
     default:
       NNADAPTER_LOG(FATAL)
           << "Failed to convert the NNAdapter operand precision code("
-          << OperandPrecisionCodeToString(input_precision)
+          << OperandPrecisionCodeToString(precision_code)
           << ") to the Neuron operand precision code!";
       break;
   }
-  return output_precision;
+  return 0;
 }
 
-int ConvertDataLayout(NNAdapterOperandLayoutCode input_layout) {
-  NNADAPTER_CHECK_EQ(input_layout, NNADAPTER_NHWC)
+int ConvertToNeuronDataLayout(NNAdapterOperandLayoutCode layout_code) {
+  NNADAPTER_CHECK_EQ(layout_code, NNADAPTER_NHWC)
       << "Neuron only supports NHWC data layout!";
   return 0;
 }
 
-std::vector<uint32_t> ConvertDimensions(int32_t* input_dimensions,
-                                        uint32_t input_dimensions_count) {
+std::vector<uint32_t> ConvertToNeuronDimensions(
+    int32_t* input_dimensions, uint32_t input_dimensions_count) {
   std::vector<uint32_t> output_dimensions(input_dimensions_count);
   for (size_t i = 0; i < input_dimensions_count; i++) {
     auto dimension = input_dimensions[i];
@@ -112,27 +99,22 @@ std::vector<uint32_t> ConvertDimensions(int32_t* input_dimensions,
   return output_dimensions;
 }
 
-int32_t ConvertFuseCode(int32_t input_fuse_code) {
-  int output_fuse_code = NEURON_FUSED_NONE;
-  switch (input_fuse_code) {
+int32_t ConvertFuseCodeToNeuronFuseCode(int32_t fuse_code) {
+  switch (fuse_code) {
     case NNADAPTER_FUSED_NONE:
-      output_fuse_code = NEURON_FUSED_NONE;
-      break;
+      return NEURON_FUSED_NONE;
     case NNADAPTER_FUSED_RELU:
-      output_fuse_code = NEURON_FUSED_RELU;
-      break;
+      return NEURON_FUSED_RELU;
     case NNADAPTER_FUSED_RELU1:
-      output_fuse_code = NEURON_FUSED_RELU1;
-      break;
+      return NEURON_FUSED_RELU1;
     case NNADAPTER_FUSED_RELU6:
-      output_fuse_code = NEURON_FUSED_RELU6;
-      break;
+      return NEURON_FUSED_RELU6;
     default:
       NNADAPTER_LOG(FATAL) << "Failed to convert the NNAdapter fuse code("
-                           << input_fuse_code << ") to the Neuron fuse code!";
+                           << fuse_code << ") to the Neuron fuse code!";
       break;
   }
-  return output_fuse_code;
+  return NEURON_FUSED_NONE;
 }
 
 }  // namespace mediatek_apu

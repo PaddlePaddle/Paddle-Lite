@@ -11,24 +11,21 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 #include "core/operation/pool2d.h"
-#include "driver/amlogic_npu/converter.h"
+#include "driver/amlogic_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace amlogic_npu {
-
-int Program::ConvertPool2D(hal::Operation* operation) {
+int ConvertPool2D(Converter* converter, hal::Operation* operation) {
   POOL_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
-
   // Convert to amlnpu tensors and operators
-  auto input_tensor = GetMappedTensor(input_operand);
+  auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
-    input_tensor = ConvertOperand(input_operand);
+    input_tensor = converter->ConvertOperand(input_operand);
   }
-  auto output_tensor = ConvertOperand(output_operand);
+  auto output_tensor = converter->ConvertOperand(output_operand);
   aml::nn::PoolAttr attr;
   attr.ksize[0] = kernel_width;
   attr.ksize[1] = kernel_height;
@@ -39,9 +36,8 @@ int Program::ConvertPool2D(hal::Operation* operation) {
   attr.pad[2] = pad_height_top;
   attr.pad[3] = pad_height_bottom;
   attr.pad_type = aml::nn::PadType::AUTO;
-  // TODO(hong19860320) fix the order of kernel when global_pooling=true in
-  // rknpu_ddk
-  attr.global_pooling = false;
+  attr.global_pooling = false;  // TODO(hong19860320) fix the order of kernel
+                                // when global_pooling=true in amlnpu_ddk
   attr.round_type = ceil_mode ? aml::nn::RoundType::ROUND_CEIL
                               : aml::nn::RoundType::ROUND_FLOOR;
   std::vector<std::shared_ptr<aml::nn::Tensor>> input_tensors = {input_tensor};
@@ -56,7 +52,7 @@ int Program::ConvertPool2D(hal::Operation* operation) {
                          << OperationTypeToString(operation->type)
                          << " is found.";
   }
-  graph_->AddOperator(
+  converter->AddOperator(
       aml::nn::OperatorType::POOL, input_tensors, output_tensors, &attr);
   return NNADAPTER_NO_ERROR;
 }

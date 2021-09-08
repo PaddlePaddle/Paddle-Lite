@@ -196,6 +196,7 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
       case NNADAPTER_DIV:
       case NNADAPTER_MAX:
       case NNADAPTER_MIN:
+      case NNADAPTER_POW:
         input_args = {"input0", "input1", "fuse_code"};
         output_args = {"output"};
         break;
@@ -271,6 +272,7 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
       case NNADAPTER_TANH:
       case NNADAPTER_LOG:
       case NNADAPTER_ABS:
+      case NNADAPTER_EXP:
         input_args = {"input"};
         output_args = {"output"};
         break;
@@ -284,10 +286,6 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         break;
       case NNADAPTER_CLIP:
         input_args = {"input", "min", "max"};
-        output_args = {"output"};
-        break;
-      case NNADAPTER_POW:
-        input_args = {"input", "factor"};
         output_args = {"output"};
         break;
       case NNADAPTER_REDUCE_MEAN:
@@ -313,6 +311,10 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         break;
       case NNADAPTER_SOFTMAX:
         input_args = {"input", "axis"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_CUM_SUM:
+        input_args = {"input", "axis", "exclusive", "reverse"};
         output_args = {"output"};
         break;
       case NNADAPTER_SPLIT:
@@ -372,6 +374,10 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
                       "fuse_code",
                       "dilation_width",
                       "dilation_height"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_PAD:
+        input_args = {"input", "pads", "mode", "value"};
         output_args = {"output"};
         break;
       default:
@@ -476,6 +482,7 @@ NNADAPTER_EXPORT std::string OperandLifetimeCodeToString(
   std::string name;
   switch (type) {
     NNADAPTER_TYPE_TO_STRING(TEMPORARY_VARIABLE);
+    NNADAPTER_TYPE_TO_STRING(TEMPORARY_SHAPE);
     NNADAPTER_TYPE_TO_STRING(CONSTANT_COPY);
     NNADAPTER_TYPE_TO_STRING(CONSTANT_REFERENCE);
     NNADAPTER_TYPE_TO_STRING(MODEL_INPUT);
@@ -525,12 +532,15 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(SIGMOID);
     NNADAPTER_TYPE_TO_STRING(SLICE);
     NNADAPTER_TYPE_TO_STRING(SOFTMAX);
+    NNADAPTER_TYPE_TO_STRING(CUM_SUM)
     NNADAPTER_TYPE_TO_STRING(SPLIT);
     NNADAPTER_TYPE_TO_STRING(SQUEEZE);
     NNADAPTER_TYPE_TO_STRING(SUB);
     NNADAPTER_TYPE_TO_STRING(TANH);
     NNADAPTER_TYPE_TO_STRING(TRANSPOSE);
     NNADAPTER_TYPE_TO_STRING(UNSQUEEZE);
+    NNADAPTER_TYPE_TO_STRING(EXP);
+    NNADAPTER_TYPE_TO_STRING(PAD)
     default:
       name = "UNKNOWN";
       break;
@@ -570,6 +580,19 @@ NNADAPTER_EXPORT std::string DeviceCodeToString(NNAdapterDeviceCode type) {
     NNADAPTER_TYPE_TO_STRING(CPU);
     NNADAPTER_TYPE_TO_STRING(GPU);
     NNADAPTER_TYPE_TO_STRING(ACCELERATOR);
+    default:
+      name = "UNKNOWN";
+      break;
+  }
+  return name;
+}
+
+NNADAPTER_EXPORT std::string AutoPadCodeToString(NNAdapterAutoPadCode type) {
+  std::string name;
+  switch (type) {
+    NNADAPTER_TYPE_TO_STRING(AUTO_PAD_NONE);
+    NNADAPTER_TYPE_TO_STRING(AUTO_PAD_SAME);
+    NNADAPTER_TYPE_TO_STRING(AUTO_PAD_VALID);
     default:
       name = "UNKNOWN";
       break;

@@ -40,32 +40,32 @@ namespace x86 {
   int n = hout * wout;                  \
   int k = chin * kw * kh / group;
 
+#define PREPARE_PARAM                                                         \
+  auto& param = this->Param<param_t>();                                       \
+  const int input_channel = param.x->dims()[1];                               \
+  const int output_channel = param.filter->dims()[0];                         \
+  const int groups = param.groups;                                            \
+  const int kernel_h = param.filter->dims()[2];                               \
+  const int kernel_w = param.filter->dims()[3];                               \
+  const int stride_h = param.strides[0];                                      \
+  const int stride_w = param.strides[1];                                      \
+  auto paddings = *param.paddings;                                            \
+  auto dilations = *param.dilations;                                          \
+  bool dw_kernel = (input_channel == groups && output_channel == groups);     \
+  bool ks_equal = (stride_h == stride_w) && (kernel_h == kernel_w);           \
+  bool no_dilation = (dilations[0] == 1) && (dilations[1] == 1);              \
+  bool kps_equal = (paddings[0] == paddings[2]) && ks_equal;                  \
+  bool pads_equal =                                                           \
+      ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));         \
+  bool flag_dw_3x3 =                                                          \
+      (kernel_h == 3) && (kernel_w == 3) && (stride_h == 1 || stride_h == 2); \
+  bool flag_dw_5x5 =                                                          \
+      (kernel_h == 5) && (kernel_w == 5) && (stride_h == 1 || stride_h == 2);
+
 template <>
 void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
-  auto& param = this->Param<param_t>();
-
-  const int input_channel = param.x->dims()[1];
-  const int output_channel = param.filter->dims()[0];
-  const int groups = param.groups;
-
-  const int kernel_h = param.filter->dims()[2];
-  const int kernel_w = param.filter->dims()[3];
-
-  const int stride_h = param.strides[0];
-  const int stride_w = param.strides[1];
-  auto paddings = *param.paddings;
-  auto dilations = *param.dilations;
-  bool dw_kernel = (input_channel == groups && output_channel == groups);
-  bool ks_equal = (stride_h == stride_w) && (kernel_h == kernel_w);
-  bool no_dilation = (dilations[0] == 1) && (dilations[1] == 1);
-  bool kps_equal = (paddings[0] == paddings[2]) && ks_equal;
-  bool pads_equal =
-      ((paddings[0] == paddings[1]) && (paddings[2] == paddings[3]));
-  bool flag_dw_3x3 =
-      (kernel_h == 3) && (kernel_w == 3) && (stride_h == 1 || stride_h == 2);
-  bool flag_dw_5x5 =
-      (kernel_h == 5) && (kernel_w == 5) && (stride_h == 1 || stride_h == 2);
-  // todo add conv_5x5_depthwise implement
+  PREPARE_PARAM
+  //! todo add conv_5x5_depthwise implement
   flag_dw_5x5 = false;
   bool flag_dw = flag_dw_3x3 || flag_dw_5x5;
   if (kernel_w == 1 && stride_w == 1 && paddings[0] == 0 && kps_equal &&
@@ -75,7 +75,7 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
     flag_1x1gemm_ = false;
   }
 
-  /// select conv impl
+  //! select conv impl
   if (dw_kernel && kps_equal && no_dilation && flag_dw && (groups & 3) == 0) {
     impl_ = new DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>;
   }
@@ -165,12 +165,136 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                            n);
       }
     }
-    // bias and activate
+    //! bias and activate
     lite::x86::math::fill_bias_act(
         dout_batch, bias_ptr, chout, wout * hout, flag_bias, &act_param);
   }
   if (!flag_1x1gemm_) TargetFree(TARGET(kX86), col_data);
 }
+
+template <>
+void Conv2dCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
+  PREPARE_PARAM
+  //! todo add conv_5x5_depthwise implement
+  flag_dw_5x5 = false;
+  bool flag_dw = flag_dw_3x3 || flag_dw_5x5;
+  if (kernel_w == 1 && stride_w == 1 && paddings[0] == 0 && kps_equal &&
+      pads_equal) {
+    flag_1x1gemm_ = true;
+  } else {
+    flag_1x1gemm_ = false;
+  }
+
+  //! select conv impl
+  if (dw_kernel && kps_equal && no_dilation && flag_dw) {
+    impl_ = new DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>;
+  } else {
+    //! update scale
+    w_scale_ = param.weight_scale;
+    if (w_scale_.size() != 1 && w_scale_.size() != param.filter->dims()[0]) {
+      LOG(FATAL) << "weights scale size must equal to filter size";
+      return;
+    }
+    if (w_scale_.size() == 1) {
+      for (int i = 0; i < param.filter->dims()[0] - 1; ++i) {
+        w_scale_.push_back(w_scale_[0]);
+      }
+    }
+    float input_scale = param.input_scale;
+    for (auto& ws : w_scale_) {
+      ws *= input_scale;
+    }
+  }
+
+  if (impl_) {
+    impl_->SetContext(std::move(this->ctx_));
+    impl_->SetParam(param);
+    impl_->PrepareForRun();
+    is_first_epoch_ = false;
+  }
+}
+
+template <>
+void Conv2dCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
+  if (impl_) {
+    return impl_->Run();
+  }
+  //! todo add int8 gemm
+}
+
+template <>
+void Conv2dCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
+  PREPARE_PARAM
+  // todo add conv_5x5_depthwise implement
+  flag_dw_5x5 = false;
+  bool flag_dw = flag_dw_3x3 || flag_dw_5x5;
+  if (kernel_w == 1 && stride_w == 1 && paddings[0] == 0 && kps_equal &&
+      pads_equal) {
+    flag_1x1gemm_ = true;
+  } else {
+    flag_1x1gemm_ = false;
+  }
+
+  //! select conv impl
+  if (dw_kernel && kps_equal && no_dilation && flag_dw) {
+    impl_ = new DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>;
+  } else {
+    //! update scale
+    w_scale_ = param.weight_scale;
+    if (w_scale_.size() != 1 && w_scale_.size() != param.filter->dims()[0]) {
+      LOG(FATAL) << "weights scale size must equal to filter size";
+      return;
+    }
+    if (w_scale_.size() == 1) {
+      for (int i = 0; i < param.filter->dims()[0] - 1; ++i) {
+        w_scale_.push_back(w_scale_[0]);
+      }
+    }
+    float input_scale = param.input_scale;
+    float output_scale = param.output_scale;
+    for (auto& ws : w_scale_) {
+      ws = ws * input_scale / output_scale;
+    }
+    //!  update bias
+    if (param.bias) {
+      bias_.Resize(param.bias->dims());
+      auto ptr = bias_.mutable_data<float>();
+      auto ptr_in = param.bias->data<float>();
+      for (int i = 0; i < bias_.numel(); ++i) {
+        ptr[i] = ptr_in[i] / param.output_scale;
+      }
+      flag_trans_bias_ = true;
+    }
+    //! update relu6 parameter
+    if (param.activation_param.active_type ==
+        lite_api::ActivationType::kRelu6) {
+      param.activation_param.Relu_clipped_coef =
+          param.activation_param.Relu_clipped_coef / param.output_scale;
+    }
+    //! update leakyRelu parameter
+    if (param.activation_param.active_type ==
+        lite_api::ActivationType::kLeakyRelu) {
+      param.activation_param.Leaky_relu_alpha =
+          param.activation_param.Leaky_relu_alpha / param.output_scale;
+    }
+  }
+
+  if (impl_) {
+    impl_->SetContext(std::move(this->ctx_));
+    impl_->SetParam(param);
+    impl_->PrepareForRun();
+    is_first_epoch_ = false;
+  }
+}
+
+template <>
+void Conv2dCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
+  if (impl_) {
+    return impl_->Run();
+  }
+  //! todo add int8 gemm
+}
+#undef PREPARE_PARAM
 #undef INIT_PARAM
 }  // namespace x86
 }  // namespace kernels

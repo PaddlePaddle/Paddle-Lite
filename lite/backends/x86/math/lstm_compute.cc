@@ -13,8 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "lite/backends/x86/math/lstm_compute.h"
-#include "lite/backends/x86/math/detail/lstm_cpu_kernel.h"
-#include "lite/backends/x86/math/detail/lstm_kernel.h"
+#include "lite/backends/x86/math/lstm_cpu_kernel.h"
+#include "lite/backends/x86/math/lstm_kernel.h"
 
 namespace paddle {
 namespace lite {

@@ -32,32 +32,32 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-template <typename P, PrecisionType PTYPE>
 class BatchNormImageCompute
-    : public KernelLite<TARGET(kMetal), PTYPE, DATALAYOUT(kMetalTexture2DArray)> {
+    : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {
     using param_t = operators::BatchNormParam;
 
    public:
     void PrepareForRun() override;
     void Run() override;
     void SaveOutput() override {
-        MetalDebug::SaveOutput("batch_norm", output_buffer_);
+        MetalDebug::SaveOutput(
+            (use_mps_ ? ("MPS_" + function_name_) : function_name_), output_buffer_);
     };
+    virtual ~BatchNormImageCompute();
 
    private:
-    const MetalImage* input_buffer_;
-    MetalImage* output_buffer_;
-    std::shared_ptr<MetalBuffer> params_buffer_;
+    bool use_mps_{false};
+    void setup_without_mps();
+    void run_without_mps();
 
-    std::shared_ptr<MetalBuffer> mean_buffer_;
-    std::shared_ptr<MetalBuffer> variance_buffer_;
+    const MetalImage* input_buffer_;
+    MetalImage* output_buffer_{nullptr};
 
     std::shared_ptr<MetalBuffer> bias_buffer_;
     std::shared_ptr<MetalBuffer> scale_buffer_;
 
-    std::shared_ptr<MetalKernel> kernel_;
-    std::shared_ptr<MetalQueue> queue_;
-    std::shared_ptr<MetalEncoder> encoder_;
+    id<MTLComputePipelineState> pipline_;
+    std::string function_name_;
     MetalContext* metal_context_;
 };
 

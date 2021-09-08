@@ -21,6 +21,22 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
+bool CheckEmbeddingIds(const int64_t* idx,
+                       size_t idx_len,
+                       size_t table_len,
+                       int64_t padding_idx) {
+  CHECK_GT(idx_len, 0);
+  CHECK_GT(table_len, 0);
+  for (auto i = 0; i < idx_len; i++) {
+    if (idx[i] >= table_len || idx[i] < 0) {
+      if (idx[i] != padding_idx) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 void XPUEmbeddingWithEltwiseAddCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
 
@@ -90,6 +106,11 @@ void XPUEmbeddingWithEltwiseAddCompute::Run() {
                sizeof(int64_t) *
                    (cpu_seq_lod[batch_idx + 1] - cpu_seq_lod[batch_idx]));
       }
+      CHECK_EQ(CheckEmbeddingIds(&idx_remove_pad[i][0],
+                                 idx_len,
+                                 param.Tables[i]->dims()[0],
+                                 param.padding_idx),
+               true);
       XPU_CALL(xpu_memcpy(idx_xpu_ptr + i * idx_len,
                           &idx_remove_pad[i][0],
                           sizeof(int64_t) * idx_len,
@@ -102,6 +123,11 @@ void XPUEmbeddingWithEltwiseAddCompute::Run() {
     int64_t* idx_xpu_ptr = static_cast<int64_t*>(idx_guard_->addr_);
     for (size_t i = 0; i < emb_layer_num; ++i) {
       CHECK_EQ(idx_len, param.Ids[i]->numel());
+      CHECK_EQ(CheckEmbeddingIds(param.Ids[i]->data<int64_t>(),
+                                 idx_len,
+                                 param.Tables[i]->dims()[0],
+                                 param.padding_idx),
+               true);
       XPU_CALL(xpu_memcpy(idx_xpu_ptr + idx_len * i,
                           param.Ids[i]->data<int64_t>(),
                           sizeof(int64_t) * idx_len,
