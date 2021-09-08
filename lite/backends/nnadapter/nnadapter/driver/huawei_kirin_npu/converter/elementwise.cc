@@ -72,7 +72,7 @@ int Program::ConvertElementwise(hal::Operation* operation) {
   if (fuse_code != NNADAPTER_FUSED_NONE) {
     auto act_name = GetOperatorName(output_operand);
     auto act_op = std::make_shared<hiai::op::Activation>(act_name);
-    act_op->set_attr_mode(ConvertFuseCode(fuse_code));
+    act_op->set_attr_mode(ConvertFuseCodeToGEActMode(fuse_code));
     SET_INPUT(act_op, x, eltwise_operator);
     MAP_OUTPUT(act_op, y, output_operand);
   }
