@@ -139,10 +139,10 @@ lite_cc_test(test_softmax_image_opencl SRCS softmax_image_compute_test.cc
              DEPS kernels core)
 
 lite_cc_test(test_argmax_image_opencl SRCS argmax_image_compute_test.cc
-             DEPS argmax_opencl_image core)
+             DEPS kernels core)
  
  lite_cc_test(test_max_image_opencl SRCS max_image_compute_test.cc
-             DEPS max_opencl_image core)
+             DEPS kernels core)
 
 ######################
 # buffer kernel      #

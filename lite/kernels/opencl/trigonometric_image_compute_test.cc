@@ -21,6 +21,7 @@
 #include "lite/kernels/opencl/test_helper.h"
 
 #define FP16_MAX_DIFF (5e-1)
+
 namespace paddle {
 namespace lite {
 
