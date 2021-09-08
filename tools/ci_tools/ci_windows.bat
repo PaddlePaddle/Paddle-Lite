@@ -66,7 +66,7 @@ git config --local user.email "paddle_ci@example.com"
 git merge --no-edit origin/%branch%
 git log --pretty=oneline -10
 
-rem echo %python_bin_name% | lite\tools\build_windows.bat
+echo %python_bin_name% | lite\tools\build_windows.bat
 
 set whl_path=%code_path%\build.lite.x86\inference_lite_lib\python\install\dist
 if exist %whl_path% (
