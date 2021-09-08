@@ -69,10 +69,20 @@ git log --pretty=oneline -10
 echo %python_bin_name% | lite\tools\build_windows.bat
 
 set whl_path=%code_path%\build.lite.x86\inference_lite_lib\python\install\dist
-if exist %whl_path% (
-    exit 0
-) else (
+set full_lib_path=%code_path%\build.lite.x86\inference_lite_lib\cxx\lib\libpaddle_api_full_bundled.lib
+set light_lib_path=%code_path%\build.lite.x86\inference_lite_lib\cxx\lib\libpaddle_api_light_bundled.lib
+if not exist %whl_path% (
     echo ".whl is not exist"
+    exit 1
+)
+
+if not exist %full_lib_path% (
+    echo "full lib is not exist"
+    exit 1
+)
+
+if not exist %light_lib_path% (
+    echo "light lib is not exist"
     exit 1
 )
 
