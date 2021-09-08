@@ -58,6 +58,11 @@ git branch -D test
 git fetch origin pull/%agile_pull_id%/head
 git checkout -b test FETCH_HEAD
 git branch
+
+:: Merge the latest branch
+git config --local user.name "PaddleCI"
+git config --local user.email "paddle_ci@example.com"
+git merge --no-edit origin/%branch%
 git log --pretty=oneline -10
 
 rem echo %python_bin_name% | lite\tools\build_windows.bat
