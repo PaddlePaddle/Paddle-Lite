@@ -9,7 +9,8 @@ set cmd="main"
 
 set python_bin=C:\Python27\python.exe
 set home_path=C:\xly\workspace
-set code_path=%home_path%\py27\Paddle-Lite
+set xly_root=C:\xly
+set code_path=%xly_root%\py27\Paddle-Lite
 set work_path=%agile_pull_id%_%agile_revision_id%
 set python_bin_name=%python_bin%
 
@@ -131,9 +132,6 @@ set ce_tools=C:\xiaowen01
 set opt_model_path=%ce_tools%\auto_test_ce\script
 set light_api_model=%opt_model_path%\mobilenet_v1.nb
 set full_api_model=%opt_model_path%\..\fluid_models_uncombined\mobilenet_v1
-
-set code_path=%home_path%\py27\Paddle-Lite
-set python_bin_name=%py27_bin%
 
 set whl_path=%home_path%\%work_path%\inference_lite_lib\python\install\dist
 :: install lite lib
