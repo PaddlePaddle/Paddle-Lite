@@ -117,9 +117,9 @@ bool AclModelClient::GetModelIOTensorDim(
     auto data_type = aclmdlGetInputDataType(model_desc_, i);
     auto format = aclmdlGetInputFormat(model_desc_, i);
     std::string name(aclmdlGetInputNameByIndex(model_desc_, i));
-    ge::TensorDesc ge_tensor_desc(ge::Shape(ConvertACLDimensions(dims)),
-                                  ConvertACLFormat(format),
-                                  ConvertACLDataType(data_type));
+    ge::TensorDesc ge_tensor_desc(ge::Shape(ConvertACLDimsToGEDims(dims)),
+                                  ConvertACLFormatToGEFormat(format),
+                                  ConvertACLDataTypeToGEDataType(data_type));
     ge_tensor_desc.SetName(name.c_str());
     input_tensor_descs->push_back(ge_tensor_desc);
   }
@@ -131,9 +131,9 @@ bool AclModelClient::GetModelIOTensorDim(
     auto data_type = aclmdlGetOutputDataType(model_desc_, i);
     auto format = aclmdlGetOutputFormat(model_desc_, i);
     std::string name(aclmdlGetOutputNameByIndex(model_desc_, i));
-    ge::TensorDesc ge_tensor_desc(ge::Shape(ConvertACLDimensions(dims)),
-                                  ConvertACLFormat(format),
-                                  ConvertACLDataType(data_type));
+    ge::TensorDesc ge_tensor_desc(ge::Shape(ConvertACLDimsToGEDims(dims)),
+                                  ConvertACLFormatToGEFormat(format),
+                                  ConvertACLDataTypeToGEDataType(data_type));
     ge_tensor_desc.SetName(name.c_str());
     output_tensor_descs->push_back(ge_tensor_desc);
   }
@@ -293,7 +293,8 @@ bool AclModelClient::Process(uint32_t input_count,
     aclmdlIODims dimensions;
     ACL_CALL(aclmdlGetCurOutputDims(model_desc_, i, &dimensions));
     NNADAPTER_CHECK_EQ(dimensions.dimCount, type->dimension_count);
-    ConvertACLDimensions(dimensions, type->dimensions, &type->dimension_count);
+    ConvertACLDimsToGEDims(
+        dimensions, type->dimensions, &type->dimension_count);
     auto host_ptr = arg->access(arg->memory, type);
     NNADAPTER_CHECK(host_ptr);
     auto length = GetOperandTypeBufferLength(*type);

@@ -23,6 +23,22 @@ namespace imagination_nna {
 
 int Program::ConvertConv2D(hal::Operation* operation) {
   CONV2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  // Dynamic shapes are still not supported
+  NNADAPTER_CHECK_EQ(input_operand->type.dynamic_dimension_count, 0);
+  operation::UpdateConv2DPadAndDilation(input_operand->type.dimensions[2],
+                                        filter_height,
+                                        auto_pad,
+                                        &pad_height_top,
+                                        &pad_height_bottom,
+                                        stride_height,
+                                        &dilation_height);
+  operation::UpdateConv2DPadAndDilation(input_operand->type.dimensions[3],
+                                        filter_width,
+                                        auto_pad,
+                                        &pad_width_left,
+                                        &pad_width_right,
+                                        stride_width,
+                                        &dilation_width);
 
   // Convert to imgdnn tensors and operators
   auto input_tensor = GetMappedTensor(input_operand);

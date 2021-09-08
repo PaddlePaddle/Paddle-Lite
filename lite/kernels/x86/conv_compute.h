@@ -16,9 +16,9 @@
 #include <Eigen/Core>
 #include <string>
 #include <vector>
+#include "lite/backends/x86/math/avx/conv_utils.h"
 #include "lite/backends/x86/math/blas.h"
 #include "lite/backends/x86/math/conv_bias.h"
-#include "lite/backends/x86/math/conv_utils.h"
 #include "lite/backends/x86/math/im2col.h"
 #include "lite/backends/x86/math/vol2col.h"
 #include "lite/core/kernel.h"
@@ -76,6 +76,10 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), Ptype> {
   using param_t = operators::ConvParam;
   KernelLite<TARGET(kX86), Ptype>* impl_{nullptr};
   bool flag_1x1gemm_{false};
+  bool flag_trans_bias_{true};
+  std::vector<float> w_scale_;
+  Tensor weights_;
+  Tensor bias_;
 };
 
 }  // namespace x86

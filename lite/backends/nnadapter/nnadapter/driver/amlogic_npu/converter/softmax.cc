@@ -22,6 +22,7 @@ namespace amlogic_npu {
 
 int ConvertSoftmax(Converter* converter, hal::Operation* operation) {
   SOFTMAX_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
   // Convert to amlnpu tensors and operators
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
