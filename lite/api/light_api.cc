@@ -370,8 +370,9 @@ void LightPredictor::CheckInputValid() {
   auto CompareShape = [](const std::vector<int64_t>& shape1,
                          const std::vector<int64_t>& shape2) -> bool {
     // shapes must be the same
-    if (shape1.size() != shape2.size()) { return false;
-    // the first element is not considered, as it's usually a batch num.
+    if (shape1.size() != shape2.size()) {
+      return false;
+      // the first element is not considered, as it's usually a batch num.
     } else if (shape1.size() == 1) {
       return true;
     } else {
