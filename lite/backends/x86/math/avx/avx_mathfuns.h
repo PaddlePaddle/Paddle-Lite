@@ -34,6 +34,17 @@ void sincos256_ps(v8sf x, v8sf *s, v8sf *c);
 #define _mm256_fmadd_ps(a, b, c) _mm256_add_ps(c, _mm256_mul_ps(a, b))
 #endif
 
+#ifndef __AVX512__
+#define _mm256_loadu_epi8(ptr) \
+  _mm256_loadu_si256(reinterpret_cast<__m256i const *>(ptr))
+#define _mm_loadu_epi8(ptr) \
+  _mm_loadu_si128(reinterpret_cast<__m128i const *>(ptr))
+#define _mm256_storeu_epi8(ptr) \
+  _mm256_storeu_si256(reinterpret_cast<__m256i const *>(ptr))
+#define _mm_storeu_epi8(ptr) \
+  _mm_storeu_si128(reinterpret_cast<__m128i const *>(ptr))
+#endif
+
 }  // namespace math
 }  // namespace x86
 }  // namespace lite
