@@ -81,7 +81,8 @@ void ConvTransposeImageCompute::PrepareForRun() {
   filter_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
   tensor_hold_filter_image_ = std::unique_ptr<Tensor>(new Tensor);
   tensor_hold_bias_image_ = std::unique_ptr<Tensor>(new Tensor);
-
+  // build options
+  std::string build_options_single{""};
   if (groups_ == 1) {
     std::string kernel_name = "conv2d_transpose";
     kernel_func_names_.push_back(kernel_name);
@@ -101,7 +102,7 @@ void ConvTransposeImageCompute::PrepareForRun() {
   } else if ((groups_ == input_tensor_c_) && (groups_ == output_tensor_c_)) {
     // for depthwsie conv transpose
     std::string kernel_name = "conv2d_transpose";
-    build_options_.push_back(" -DIS_DEPTHWISE ");
+    build_options_single += " -DIS_DEPTHWISE ";
     kernel_func_names_.push_back(kernel_name);
 
     CLImageConverterNBlock converter;
@@ -121,9 +122,6 @@ void ConvTransposeImageCompute::PrepareForRun() {
         << "conv2d_transpose image compute not support this condition yet! "
         << groups_ << " " << input_tensor_c_ << " " << output_tensor_c_;
   }
-
-  // build options
-  std::string build_options_single{""};
 
   // bias options
   if (has_bias_) {
@@ -216,11 +214,8 @@ void ConvTransposeImageCompute::PrepareForRun() {
   kernel_func_paths_.push_back("image/conv2d_transpose_kernel.cl");
   VLOG(1) << "kernel_func_names_[0]:" << kernel_func_names_[0]
           << " kernel_func_paths_[0]:" << kernel_func_paths_[0];
-  if (build_options_.size() == 0) {
-    build_options_.push_back(build_options_single);
-  } else {
-    build_options_[0] += build_options_single;
-  }
+
+  build_options_.push_back(build_options_single);
   for (size_t i = 0; i < kernel_func_names_.size(); i++) {
     context.cl_context()->AddKernel(kernel_func_names_[i],
                                     kernel_func_paths_[i],
