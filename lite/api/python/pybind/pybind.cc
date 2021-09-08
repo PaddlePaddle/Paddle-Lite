@@ -69,6 +69,7 @@ void BindLiteOpt(py::module *m) {
       .def("set_model_type", &OptBase::SetModelType)
       .def("set_quant_model", &OptBase::SetQuantModel)
       .def("set_quant_type", &OptBase::SetQuantType)
+      .def("set_sparse_model", &OptBase::SetSparseModel)
       .def("set_sparse_threshold", &OptBase::SetSparseThreshold)
       .def("record_model_info", &OptBase::RecordModelInfo)
       .def("set_passes_internal", &OptBase::SetPassesInternal)

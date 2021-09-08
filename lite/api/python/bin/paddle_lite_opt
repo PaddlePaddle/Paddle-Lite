@@ -36,9 +36,12 @@ def main():
              "calculation will cause a lower precision but higher inference speed.")
 
     # arguments of sparsification
-    parser.add_argument("--sparse_threshold", type=float, default=0.5,\
+    parser.add_argument("--sparse_model", type=str, default="false",
+        help="{true, false} Use sparse_conv_detect_pass sparsify"
+             "the 1x1conv weights. Default false.")
+    parser.add_argument("--sparse_threshold", type=float, default=0.6,\
         help="Set a value to determine the lower bound for sparse pass. \
-              0.5 means sparse pass will be skipped if the current weight sparsity is smaller than 0.5.")
+              0.6 means sparse pass will be skipped if the current weight sparsity is smaller than 0.6.")
 
    # arguments of help information
     parser.add_argument('--version', action='version', version=a.version())
@@ -92,7 +95,8 @@ def main():
     if args.quant_model == "true":
         a.set_quant_model(True)
         a.set_quant_type(args.quant_type)
-    if args.sparse_threshold >= 0.0 and args.sparse_threshold <= 1.0:
+    if args.sparse_model == "true":
+        a.set_sparse_model(True)
         a.set_sparse_threshold(args.sparse_threshold)
     """ print ops info """
     if args.print_all_ops == "true":

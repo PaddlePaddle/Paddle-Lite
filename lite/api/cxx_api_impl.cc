@@ -108,11 +108,15 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
       CHECK(pass);
       pass->SetQuantType(config.quant_type());
     }
-    auto *sparse_detect_pass =
-        mir::PassManager::Global().LookUp<mir::SparseConvDetectPass>(
-            "sparse_conv_detect_pass");
-    CHECK(sparse_detect_pass);
-    sparse_detect_pass->SetSparseThreshold(config.sparse_threshold());
+
+    if (config.sparse_model()) {
+      passes.push_back("sparse_conv_detect_pass");
+      auto *sparse_detect_pass =
+          mir::PassManager::Global().LookUp<mir::SparseConvDetectPass>(
+              "sparse_conv_detect_pass");
+      CHECK(sparse_detect_pass);
+      sparse_detect_pass->SetSparseThreshold(config.sparse_threshold());
+    }
     raw_predictor_->Build(config, places, passes);
   } else {
     raw_predictor_->PrepareFeedFetch();
