@@ -22,6 +22,8 @@ namespace amlogic_npu {
 
 int ConvertElementwise(Converter* converter, hal::Operation* operation) {
   ELEMENTWISE_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  NNADAPTER_CHECK_EQ(fuse_code, NNADAPTER_FUSED_NONE)
+      << "Unsupported fuse_code(" << fuse_code << ") is found.";
 
   // Convert to amlnpu tensors and operators
   auto input0_tensor = converter->GetMappedTensor(input0_operand);

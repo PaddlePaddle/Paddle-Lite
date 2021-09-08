@@ -22,7 +22,6 @@ namespace amlogic_npu {
 
 int ConvertUnsqueeze(Converter* converter, hal::Operation* operation) {
   UNSQUEEZE_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  NNADAPTER_CHECK_LE(shape_count, 4);
 
   // Convert to amlnpu tensors and operators
   auto input_tensor = converter->GetMappedTensor(input_operand);

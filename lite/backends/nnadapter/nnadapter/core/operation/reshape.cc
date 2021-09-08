@@ -27,8 +27,7 @@ int PrepareReshape(hal::Operation* operation) {
   RESHAPE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
-  NNADAPTER_CHECK(shape_operand->type.lifetime == NNADAPTER_CONSTANT_COPY ||
-                  shape_operand->type.lifetime == NNADAPTER_CONSTANT_REFERENCE)
+  NNADAPTER_CHECK(IsConstantOperand(shape_operand))
       << "Only support constant shape now.";
   auto& in_type = input_operand->type;
   bool input_has_unk_dim = false;

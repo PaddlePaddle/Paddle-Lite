@@ -19,17 +19,6 @@ namespace lite {
 namespace kernels {
 namespace nnadapter {
 
-NNAdapterOperand* AddUnsqueeze(Converter* converter,
-                               NNAdapterOperand* input_operand,
-                               const std::vector<int32_t>& axes,
-                               const std::vector<float>& quant_scales = {}) {
-  auto axes_operand = converter->AddConstantOperand(axes);
-  auto output_operand = converter->AddOutputOperand(quant_scales);
-  converter->AddOperation(
-      NNADAPTER_UNSQUEEZE, {input_operand, axes_operand}, {output_operand});
-  return output_operand;
-}
-
 int ConvertElementwise(Converter* converter, OpInfo* op, Scope* scope) {
   // X operand
   NNAdapterOperand* x_operand = nullptr;
@@ -94,7 +83,8 @@ int ConvertElementwise(Converter* converter, OpInfo* op, Scope* scope) {
           *y_tensor, DDim(shape), false, y_scales);
     } else {
       CHECK(!axes.empty());
-      y_operand = AddUnsqueeze(converter, y_operand, axes, y_scales);
+      y_operand =
+          converter->AddUnsqueezeOperation(y_operand, axes, "", y_scales);
     }
   } else if (y_rank > x_rank) {
     if (x_persistable) {
@@ -105,7 +95,8 @@ int ConvertElementwise(Converter* converter, OpInfo* op, Scope* scope) {
           *x_tensor, DDim(shape), false, x_scales);
     } else {
       CHECK(!axes.empty());
-      x_operand = AddUnsqueeze(converter, x_operand, axes, x_scales);
+      x_operand =
+          converter->AddUnsqueezeOperation(x_operand, axes, "", x_scales);
     }
   }
 
