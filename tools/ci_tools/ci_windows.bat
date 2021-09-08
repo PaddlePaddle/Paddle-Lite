@@ -127,7 +127,8 @@ exit /b %EXCODE%
 goto:eof
 
 :run_python_demo
-set opt_model_path=%home_path%\auto_test_ce\script
+set ce_tools=C:\xiaowen01
+set opt_model_path=%ce_tools%\auto_test_ce\script
 set light_api_model=%opt_model_path%\mobilenet_v1.nb
 set full_api_model=%opt_model_path%\..\fluid_models_uncombined\mobilenet_v1
 
