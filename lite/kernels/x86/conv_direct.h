@@ -17,8 +17,8 @@
 #include <cmath>
 #include <string>
 #include <vector>
-#include "lite/backends/x86/math/conv_direct.h"
 #include "lite/backends/x86/math/avx/conv_utils.h"
+#include "lite/backends/x86/math/conv_direct.h"
 #include "lite/core/context.h"
 #include "lite/core/kernel.h"
 #include "lite/core/target_wrapper.h"
