@@ -371,7 +371,8 @@ uint32_t Program::AddOperand(int32_t* dimensions,
   type.type = precision;
   std::vector<uint32_t> converted_dimensions;
   if (dimensions && dimension_count > 0) {
-    converted_dimensions = ConvertDimensions(dimensions, dimension_count);
+    converted_dimensions =
+        ConvertToNeuronDimensions(dimensions, dimension_count);
     type.dimensions = &converted_dimensions[0];
   }
   type.dimensionCount = converted_dimensions.size();

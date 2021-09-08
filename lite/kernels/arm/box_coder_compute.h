@@ -30,6 +30,15 @@ class BoxCoderCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
   virtual ~BoxCoderCompute() = default;
 };
 
+class BoxCoderFp16Compute : public KernelLite<TARGET(kARM), PRECISION(kFP16)> {
+ public:
+  using param_t = operators::BoxCoderParam;
+
+  void Run() override;
+
+  virtual ~BoxCoderFp16Compute() = default;
+};
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite

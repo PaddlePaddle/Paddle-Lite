@@ -24,11 +24,11 @@ namespace mediatek_apu {
 int NeuronOperandDataTypeLength(int data_type);
 
 // Convert NNAdapter types to Neuron types
-int ConvertPrecision(NNAdapterOperandPrecisionCode input_precision);
-int ConvertDataLayout(NNAdapterOperandLayoutCode input_layout);
-std::vector<uint32_t> ConvertDimensions(int32_t* input_dimensions,
-                                        uint32_t input_dimensions_count);
-int32_t ConvertFuseCode(int32_t input_code);
+int ConvertToNeuronPrecision(NNAdapterOperandPrecisionCode precision_code);
+int ConvertToNeuronDataLayout(NNAdapterOperandLayoutCode layout_code);
+std::vector<uint32_t> ConvertToNeuronDimensions(
+    int32_t* input_dimensions, uint32_t input_dimensions_count);
+int32_t ConvertFuseCodeToNeuronFuseCode(int32_t fuse_code);
 
 }  // namespace mediatek_apu
 }  // namespace nnadapter
