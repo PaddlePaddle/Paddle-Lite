@@ -37,7 +37,7 @@ goto round
 
 :main
 if NOT EXIST "%home_path%" (
-    md "%home_path%"
+    mkdir "%home_path%"
 )
 cd %home_path%
 
@@ -45,7 +45,7 @@ echo path: %work_path%
 if exist "%work_path%" (
     rmdir "%work_path%" /s/q
 )
-md %work_path%
+mkdir %work_path%
 
 cd %code_path%
 echo %code_path%
