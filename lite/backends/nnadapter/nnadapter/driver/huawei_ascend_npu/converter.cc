@@ -28,11 +28,7 @@ namespace huawei_ascend_npu {
 
 Device::Device() { InitializeAscendDevice(); }
 
-Device::~Device() {
-  // TODO(hong19860320) fix the problem destruction order that the resource of
-  // ACL is released before the function is called.
-  // FinalizeAscendDevice();
-}
+Device::~Device() {}
 
 Context::Context(void* device, const char* properties) : device_(device) {
   // Extract the runtime parameters from the context properties
