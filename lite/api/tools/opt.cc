@@ -67,10 +67,10 @@ DEFINE_bool(print_all_ops,
 DEFINE_bool(print_model_ops, false, "Print operators in the input model");
 DEFINE_bool(sparse_model,
             false,
-            "Use sparse_conv_detect_pass to sparsify the 1x1conv weights.")
-    DEFINE_double(sparse_threshold,
-                  0.6,
-                  "Set 0.6 as the lower bound for the sparse conv pass.");
+            "Use sparse_conv_detect_pass to sparsify the 1x1conv weights.");
+DEFINE_double(sparse_threshold,
+              0.6,
+              "Set 0.6 as the lower bound for the sparse conv pass.");
 
 int main(int argc, char** argv) {
   auto opt = paddle::lite_api::OptBase();
