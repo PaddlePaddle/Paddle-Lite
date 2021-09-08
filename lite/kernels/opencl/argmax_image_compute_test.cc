@@ -64,17 +64,13 @@ void argmax_baseline(const float* x_data,
 void test(const lite_api::CLPrecisionType p,
           bool keepdims,
           const int axis,
-          const int n,
-          const int c,
-          const int h,
-          const int w) {
+          DDim x_dim) {
   std::unique_ptr<KernelContext> context(new KernelContext);
   context->As<OpenCLContext>().InitOnce();
   CLRuntime::Global()->set_precision(p);
   const bool fp16_flag = (p == lite_api::CLPrecisionType::CL_PRECISION_FP16);
   LOG(INFO) << "\n\t[  START  ] Test Precision="
-            << lite_api::CLPrecisionTypeToStr(p) << " n=" << n << " c=" << c
-            << " h=" << h << " w=" << w << " axis=" << axis;
+            << lite_api::CLPrecisionTypeToStr(p) << " axis=" << axis;
 
   auto kernels = KernelRegistry::Global().Create(
       "argmax", TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
@@ -90,10 +86,11 @@ void test(const lite_api::CLPrecisionType p,
   kernel->SetParam(param);
   kernel->SetContext(std::move(context));
 
-  DDim x_dim = DDim(std::vector<DDim::value_type>{n, c, h, w});
-  int64_t nchw[] = {x_dim[0], x_dim[1], x_dim[2], x_dim[3]};
-  std::vector<int64_t> output_shape(nchw, nchw + 4);
-  output_shape[axis] = 1;
+  std::vector<int64_t> output_shape;
+  for (size_t i = 0; i < x_dim.size(); i++) {
+    output_shape.push_back(x_dim[i]);
+  }
+  output_shape[axis] = 1L;
   DDim out_dim(output_shape);
 
   x.Resize(x_dim);
@@ -169,7 +166,7 @@ void test(const lite_api::CLPrecisionType p,
             << " x_dim=" << x_dim << " axis=" << axis;
 }
 
-TEST(argmax, compute_basic) {
+void test_argmax_opencl_4d() {
   for (const auto precision_type :
        {lite_api::CLPrecisionType::CL_PRECISION_FP32}) {
     for (bool keepdims : {true}) {
@@ -178,7 +175,8 @@ TEST(argmax, compute_basic) {
           for (int c : {4, 5}) {
             for (int h : {2, 10}) {
               for (int w : {2, 17}) {
-                test(precision_type, keepdims, axis, n, c, h, w);
+                auto x_dims = DDim(std::vector<int64_t>({n, c, h, w}));
+                test(precision_type, keepdims, axis, x_dims);
               }
             }
           }
@@ -186,6 +184,46 @@ TEST(argmax, compute_basic) {
       }
     }
   }
+}
+
+void test_argmax_opencl_3d() {
+  for (const auto precision_type :
+       {lite_api::CLPrecisionType::CL_PRECISION_FP32}) {
+    for (bool keepdims : {true}) {
+      for (int axis : {0, 1, 2}) {
+        for (int c : {4, 5}) {
+          for (int h : {2, 10}) {
+            for (int w : {2, 17}) {
+              auto x_dims = DDim(std::vector<int64_t>({c, h, w}));
+              test(precision_type, keepdims, axis, x_dims);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+void test_argmax_opencl_2d() {
+  for (const auto precision_type :
+       {lite_api::CLPrecisionType::CL_PRECISION_FP32}) {
+    for (bool keepdims : {true}) {
+      for (int axis : {0, 1}) {
+        for (int h : {2, 10}) {
+          for (int w : {2, 17}) {
+            auto x_dims = DDim(std::vector<int64_t>({h, w}));
+            test(precision_type, keepdims, axis, x_dims);
+          }
+        }
+      }
+    }
+  }
+}
+
+TEST(argmax, compute_basic) {
+  test_argmax_opencl_4d();
+  test_argmax_opencl_3d();
+  test_argmax_opencl_2d();
 }
 
 }  // namespace lite

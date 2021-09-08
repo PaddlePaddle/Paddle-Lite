@@ -189,21 +189,26 @@ class MaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
       switch (axis_[0]) {
         case 0:
           kernel_func_name_ = "max_n";
+          std::cout << "--->max_n" << std::endl;
           break;
         case 1:
           kernel_func_name_ = "max_c";
+          std::cout << "--->max_c" << std::endl;
           break;
         case 2:
           kernel_func_name_ = "max_h";
+          std::cout << "--->max_h" << std::endl;
           break;
         case 3:
           kernel_func_name_ = "max_w";
+          std::cout << "--->max_w" << std::endl;
           break;
         default:
           LOG(FATAL) << "invalid dim: " << dim[0];
       }
     } else {
       kernel_func_name_ = "max_multi_axis";
+      std::cout << "--->max_multi_axis" << std::endl;
     }
 
     create_build_options();
@@ -453,22 +458,6 @@ REGISTER_LITE_KERNEL(acos,
                      kFP16,
                      kImageDefault,
                      paddle::lite::kernels::opencl::AcosComputeImage2D,
-                     image2d)
-    .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kImageDefault))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                       PRECISION(kFP16),
-                                       DATALAYOUT(kImageDefault))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(max,
-                     kOpenCL,
-                     kFP16,
-                     kImageDefault,
-                     paddle::lite::kernels::opencl::MaxComputeImage2D,
                      image2d)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
