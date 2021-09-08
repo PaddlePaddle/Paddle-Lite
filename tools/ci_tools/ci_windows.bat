@@ -5,7 +5,7 @@ setlocal enabledelayedexpansion
 set branch=%1%
 set agile_pull_id=%2%
 set agile_revision_id=%3%
-set cmd="main"
+set cmd=%4%
 
 set python_bin=C:\Python27\python.exe
 set home_path=C:\xly\workspace
@@ -16,22 +16,22 @@ set python_bin_name=%python_bin%
 
 :round
 @echo off
-if /I "%1"=="build" (
+if "%cmd%"=="main" (
     goto main
-) else if /I "%1"=="run_full_demo" (
+) else if "%cmd%"=="run_full_demo" (
     goto run_full_demo
-) else if /I  "%1"=="run_light_demo" (
+) else if "%cmd%"=="run_light_demo" (
     goto run_light_demo
-) else if /I  "%1"=="run_python_demo" (
+) else if "%cmd%"=="run_python_demo" (
     goto run_python_demo
-) else if /I  "%1"=="help" (
+) else if "%cmd%"=="help" (
       call:print_usage
       goto:eof
 ) else (
     goto main
 )
-shift
-goto round
+::shift
+::goto round
 
 
 
