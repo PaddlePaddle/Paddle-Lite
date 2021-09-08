@@ -86,46 +86,19 @@ void SoftmaxImageCompute::setup_without_mps() {
     const auto& param = this->Param<param_t>();
     auto input_dims = param.x->dims();
 
-    auto axis = param.axis;
-    if (axis < 0) {
-        axis += input_dims.size();
+    if (input_dims.size() - param.axis != 3 && input_dims.size() != 2) {
+        LOG(FATAL) << "only support input with rank(dim)=2 or doing softmax in C channel";
+        return;
     }
 
-    std::string function_name = "softmax";
-    if (input_dims.size() == 4) {
-        if (axis == 1) {
-            function_name = "softmax_c_d3_common";
-        } else if (axis == 2) {
-            function_name = "softmax_h_d3_common";
-        } else if (axis == 3) {
-            function_name = "softmax_w_d3_common";
-        }
-    } else if (input_dims.size() == 3) {
-        if (axis == 0) {
-            function_name = "softmax_c_d3_common";
-        } else if (axis == 1) {
-            function_name = "softmax_h_d3_common";
-        } else if (axis == 2) {
-            function_name = "softmax_w_d3_common";
-        }
-    } else if (input_dims.size() == 2 || input_dims.size() == 1) {
-        if (axis == 0) {
-            function_name = "softmax_h_2d_common";
-        } else if (axis == 1) {
-            function_name = "softmax_w_2d_common";
-        }
-    }
-    function_name_ = function_name;
-
+    function_name_ = "softmax";
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     pipline_ = [backend pipline:function_name_];
 
-    SoftmaxMetalParam2 metal_param{
-        (int)input_buffer_->pad_to_four_dim_[0],
-        (int)input_buffer_->pad_to_four_dim_[1],
-        (int)input_buffer_->pad_to_four_dim_[2],
-        (int)input_buffer_->pad_to_four_dim_[3],
+    SoftmaxMetalParam metal_param{
+        (int)input_buffer_->tensor_dim_[0],
+        (int)input_buffer_->tensor_dim_[1]
     };
     params_buffer_ =
         std::make_shared<MetalBuffer>(metal_context_, sizeof(metal_param), &metal_param);
