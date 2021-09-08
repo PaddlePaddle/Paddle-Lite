@@ -49,8 +49,8 @@ md %work_path%
 
 cd %code_path%
 echo %code_path%
-del /f /s /q "build.lite.x86"  >nul 2>&1
-del /f /s /q "third-party"  >nul 2>&1
+rmdir  "build.lite.x86" /s /q
+rmdir  "third-party" /s /q
 
 git checkout %branch%
 git pull
@@ -170,7 +170,7 @@ cd %home_path%
 echo "============clean==========="
 echo work_path: %work_path%
 if exist "%work_path%" (
-    del /f /s /q "%work_path%"  >nul 2>&1
+    rmdir "%work_path%" /s /q
 )
 if %ERRORLEVEL% NEQ 0 set EXCODE=%ERRORLEVEL%
 echo EXCODE: %EXCODE%
