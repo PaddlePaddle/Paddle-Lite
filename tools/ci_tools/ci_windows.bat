@@ -4,12 +4,13 @@ setlocal enabledelayedexpansion
 
 set branch=%1%
 set agile_pull_id=%2%
+set agile_revision_id=%3%
 set cmd="main"
 
 set python_bin=C:\Python27\python.exe
 set home_path=C:\xly\workspace
 set code_path=%home_path%\py27\Paddle-Lite
-set work_path=%AGILE_PULL_ID%_%AGILE_REVISION%
+set work_path=%agile_pull_id%_%agile_revision_id%
 set python_bin_name=%python_bin%
 
 :round
@@ -22,8 +23,6 @@ if /I "%1"=="build" (
     goto run_light_demo
 ) else if /I  "%1"=="run_python_demo" (
     goto run_python_demo
-) else if /I  "%1"=="without_avx" (
-    set WITH_AVX=OFF
 ) else if /I  "%1"=="help" (
       call:print_usage
       goto:eof
@@ -43,7 +42,7 @@ cd %home_path%
 
 echo path: %work_path%
 if exist "%work_path%" (
-    del /f /s /q "%work_path%"  >nul 2>&1
+    rmdir "%work_path%" /s/q
 )
 md %work_path%
 
@@ -71,7 +70,7 @@ if exist %whl_path% (
     exit 1
 )
 
-rem xcopy  %code_path%\build.lite.x86\inference_lite_lib %home_path%\%work_path% /s/h/e/k/f/c
+xcopy  %code_path%\build.lite.x86\inference_lite_lib %home_path%\%work_path% /s/h/e/k/f/c
 
 if %ERRORLEVEL% NEQ 0 set EXCODE=%ERRORLEVEL%
 
@@ -116,6 +115,52 @@ if exist %cxx_bin_name% (
     echo "build demo api fail,mobilenet_light_api.exe is not exist"
     exit 1
 )
+
+if %ERRORLEVEL% NEQ 0 set EXCODE=%ERRORLEVEL%
+echo EXCODE: %EXCODE%
+exit /b %EXCODE%
+goto:eof
+
+:run_python_demo
+set opt_model_path=%home_path%\auto_test_ce\script
+set light_api_model=%opt_model_path%\mobilenet_v1.nb
+set full_api_model=%opt_model_path%\..\fluid_models_uncombined\mobilenet_v1
+
+set code_path=%home_path%\py27\Paddle-Lite
+set python_bin_name=%py27_bin%
+
+set whl_path=%home_path%\%work_path%\inference_lite_lib\python\install\dist
+:: install lite lib
+cd %whl_path%
+for /F %%i in ('dir /B') do ( set whl_name=%%i)
+echo y | %python_bin_name% -m pip uninstall %whl_name%
+%python_bin_name% -m pip install %whl_name%
+
+cd %opt_model_path%
+%python_bin_name% run_opt_model_use_python.py
+for /F %%i in ('dir /b /a-d . ^| find /v /c "::"') do set file_num=%%i
+echo %file_num%
+if %file_num% LSS 22 (
+    echo "exist model opt fail"
+    exit 1
+)
+:: for /F %%i in (dir /S/B | findstr /I nb | find /v /c "&#@") do ( set opted_model_num=%%i) 
+:: echo opted_model_num
+
+set python_demo_path=%home_path%\%work_path%\inference_lite_lib\demo\python
+%python_bin_name% %python_demo_path%\mobilenetv1_light_api.py --model_dir=%light_api_model%
+%python_bin_name% %python_demo_path%\mobilenetv1_full_api.py --model_dir=%full_api_model%
+
+set cxx_demo_path=%home_path%\%work_path%\inference_lite_lib\demo\cxx
+set cxx_light_demo_path=%cxx_demo_path%\mobilenetv1_light
+cd %cxx_light_demo_path%
+set cxx_bin_name=mobilenet_light_api.exe
+%cxx_light_demo_path%\build\Release\%cxx_bin_name% %light_api_model%
+
+set cxx_full_demo_path=%cxx_demo_path%\mobilenetv1_full
+cd %cxx_full_demo_path%
+set cxx_bin_name=mobilenet_full_api.exe
+%cxx_full_demo_path%\build\Release\%cxx_bin_name% %full_api_model%
 
 cd %home_path%
 echo "============clean==========="
