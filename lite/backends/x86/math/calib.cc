@@ -35,8 +35,8 @@ void fp32_to_int8(const float* din,
   int cnt = inner_size >> 4;
   int remain = inner_size & 15;
 #endif
-  int rem_cnt = cnt >> 3;
-  int rem_rem = cnt & 7;
+  int rem_cnt = remain >> 3;
+  int rem_rem = remain & 7;
   int64_t loop_size = outer_size * axis_size;
 #pragma omp parallel for
   for (int j = 0; j < loop_size; ++j) {
@@ -152,8 +152,8 @@ void int8_to_fp32(const int8_t* in,
   int cnt = inner_size >> 4;
   int remain = inner_size & 15;
 #endif
-  int rem_cnt = cnt >> 2;
-  int rem_rem = cnt & 3;
+  int rem_cnt = remain >> 2;
+  int rem_rem = remain & 3;
   int64_t loop_size = axis_size * outer_size;
 #pragma omp parallel for
   for (int64_t n = 0; n < loop_size; ++n) {
@@ -221,7 +221,7 @@ void int8_to_fp32(const int8_t* in,
       din_c += 4;
       dout_c += 4;
     }
-    for (int i = 0; i < remain; ++i) {
+    for (int i = 0; i < rem_rem; ++i) {
       dout_c[i] = in_scale * din_c[i];
     }
   }
