@@ -24,8 +24,6 @@
 #include "lite/core/version.h"
 #include "lite/utils/timer.h"
 
-#define LITE_WITH_PROFILE
-
 int main(int argc, char* argv[]) {
   return paddle::lite_api::Benchmark(argc, argv);
 }

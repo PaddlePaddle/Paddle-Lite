@@ -9,7 +9,7 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_GPU=OFF \
                                -DLITE_WITH_ARM=ON \
                                -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON"
 
-readonly NUM_PROC=${LITE_BUILD_THREADS:-8}
+readonly NUM_PROC=${LITE_BUILD_THREADS:-12}
 
 # global variables
 CMAKE_EXTRA_OPTIONS=""
@@ -315,6 +315,13 @@ function make_full_publish_so {
   cd - > /dev/null
 }
 
+function set_benchmark_options {
+  BUILD_EXTRA=ON
+  WITH_EXCEPTION=ON
+  BUILD_JAVA=ON
+  WITH_OPENCL=ON
+}
+
 function make_all_tests {
   local os=$1
   local abi=$2
@@ -334,6 +341,10 @@ function make_all_tests {
   if [ ${os} == "android" ]; then
     set_android_api_level
     CMAKE_EXTRA_OPTIONS=${CMAKE_EXTRA_OPTIONS}" "${CMAKE_API_LEVEL_OPTIONS}
+  fi
+
+  if [ $4 == "benchmark" ]; then
+    set_benchmark_options
   fi
 
   prepare_workspace $root_dir $build_directory
@@ -536,6 +547,10 @@ function make_x86_tests {
     BUILD_EXTRA=ON
   fi
 
+  if [ $1 == "benchmark" ]; then
+    set_benchmark_options
+  fi
+
   if [ -d $build_directory ]
   then
     rm -rf $build_directory
@@ -576,7 +591,11 @@ function make_x86_tests {
             -DPY_VERSION=$PY_VERSION \
             $PYTHON_EXECUTABLE_OPTION
 
-  make lite_compile_deps -j$NUM_PROC
+  if [ $1 == "benchmark" ]; then
+    make benchmark_bin -j$NUM_PROC
+  else
+    make lite_compile_deps -j$NUM_PROC
+  fi
   cd -
 }
 
@@ -842,6 +861,10 @@ function main {
                ;;
             test_x86)
                make_x86_tests
+               shift
+               ;;
+            x86_benchmark)
+               make_x86_tests benchmark
                shift
                ;;
             *)
