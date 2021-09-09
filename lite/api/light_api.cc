@@ -392,7 +392,7 @@ void LightPredictor::CheckInputValid() {
                  << ") Input precision type ("
                  << PrecisionToStr(GetInput(idx)->precision()) << ").";
     }
-    if (CompareShape(GetInput(idx)->dims().Vectorize(), input_shapes_[idx])) {
+    if (!CompareShape(GetInput(idx)->dims().Vectorize(), input_shapes_[idx])) {
       LOG(FATAL) << " Error input tensor shape. Input index (" << idx
                  << ") Tensor name (" << input_names_[idx]
                  << ") Require shape of ("
