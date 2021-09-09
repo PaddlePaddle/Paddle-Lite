@@ -86,7 +86,7 @@ if not exist %light_lib_path% (
     exit 1
 )
 
-xcopy  %code_path%\build.lite.x86\inference_lite_lib %home_path%\%work_path% /s/h/e/k/f/c
+echo d | xcopy %code_path%\build.lite.x86\inference_lite_lib %home_path%\%work_path%\inference_lite_lib /s/h/e/k/f/c
 
 if %ERRORLEVEL% NEQ 0 set EXCODE=%ERRORLEVEL%
 
