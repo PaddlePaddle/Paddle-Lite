@@ -191,6 +191,9 @@ void Run(const std::string& model_file,
   ss << "power_mode: " << FLAGS_power_mode << std::endl;
   ss << "warmup: " << FLAGS_warmup << std::endl;
   ss << "repeats: " << FLAGS_repeats << std::endl;
+  if (FLAGS_run_delay > 0.f) {
+    ss << "run_delay(sec): " << FLAGS_run_delay << std::endl;
+  }
   ss << "result_path: " << FLAGS_result_path << std::endl;
   ss << "\n======= Backend Info =======\n";
   ss << "backend: " << FLAGS_backend << std::endl;
