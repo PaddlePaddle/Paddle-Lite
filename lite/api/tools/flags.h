@@ -61,7 +61,8 @@ static const char result_path_msg[] = "Save benchmark info to the file.";
 // Backend options
 static const char backend_msg[] =
     "To use a particular backend for execution. "
-    "Should be one of: cpu, opencl, x86_opencl.";
+    "Should be one of: arm|opencl|x86|x86_opencl|"
+    "npu|xpu|";
 static const char cpu_precision_msg[] =
     "Register fp32 or fp16 arm-cpu kernel when optimized model. "
     "Should be one of: fp32, fp16.";
@@ -69,7 +70,8 @@ static const char gpu_precision_msg[] =
     "Set precision of computation in GPU. "
     "Should be one of: fp32, fp16.";
 static const char opencl_cache_dir_msg[] =
-    "A directory in which kernel binary and tuned file will be stored.";
+    "A directory in which kernel binary and tuned file will be stored."
+    "Kernel cache & tune both are OFF if --opencl_cache_dir is not set.";
 static const char opencl_kernel_cache_file_msg[] =
     "Set opencl kernel binary filename. "
     "We strongly recommend each model has a unique binary name.";

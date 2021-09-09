@@ -1,4 +1,4 @@
-// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -125,7 +125,7 @@ std::string get_device_info() {
   auto get_cmd_result = [](const std::string cmd) -> std::string {
     FILE* pipe = popen(cmd.c_str(), "r");
     if (!pipe) {
-      LOG(ERROR) << "Could not get command return data.";
+      std::cerr << "Could not get command return data!" << std::endl;
     }
     char ret[1024];
     fgets(ret, sizeof(ret), pipe);
@@ -197,7 +197,8 @@ void SetBackendConfig(lite_api::MobileConfig& config) {  // NOLINT
     } else if (FLAGS_opencl_tune_mode == "exhaustive") {
       tune_mode = CL_TUNE_EXHAUSTIVE;
     } else {
-      LOG(ERROR) << "Illegal opencl tune mode: " << FLAGS_opencl_tune_mode;
+      std::cerr << "Illegal opencl tune mode: " << FLAGS_opencl_tune_mode
+                << std::endl;
     }
     config.set_opencl_tune(
         tune_mode, FLAGS_opencl_cache_dir, FLAGS_opencl_tuned_file);
@@ -236,7 +237,8 @@ void OutputOptModel(const std::string& save_optimized_model_path) {
       paddle::lite::string_format("rm -rf %s", previous_opt_model.c_str())
           .c_str());
   if (ret == 0) {
-    LOG(INFO) << "Delete previous optimized model: " << previous_opt_model;
+    std::cout << "Delete previous optimized model: " << previous_opt_model
+              << std::endl;
   }
 
   opt.Run();
@@ -250,10 +252,10 @@ void OutputOptModel(const std::string& save_optimized_model_path) {
      << std::endl;
   ss << "Save optimized model to " << save_optimized_model_path + ".nb"
      << std::endl;
-  LOG(INFO) << ss.str();
+  std::cout << ss.str() << std::endl;
   std::ofstream ofs(FLAGS_result_path, std::ios::app);
   if (!ofs.is_open()) {
-    LOG(FATAL) << "Fail to open result file: " << FLAGS_result_path;
+    std::cerr << "Fail to open result file: " << FLAGS_result_path << std::endl;
   }
   ofs << ss.str();
   ofs.close();

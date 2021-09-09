@@ -320,6 +320,11 @@ function set_benchmark_options {
   WITH_EXCEPTION=ON
   BUILD_JAVA=ON
   WITH_OPENCL=ON
+  if [ ${WITH_PROFILE} == "ON"]; then
+    WITH_LOG=ON
+  else
+    WITH_LOG=OFF
+  fi
 }
 
 function make_all_tests {
@@ -352,6 +357,7 @@ function make_all_tests {
       ${CMAKE_COMMON_OPTIONS} \
       ${CMAKE_EXTRA_OPTIONS} \
       -DWITH_TESTING=ON \
+      -DLITE_WITH_LOG=${WITH_LOG} \
       -DLITE_WITH_PROFILE=${WITH_PROFILE} \
       -DLITE_WITH_LTO=${WITH_LTO} \
       -DLITE_WITH_PRECISION_PROFILE=${WITH_PRECISION_PROFILE} \

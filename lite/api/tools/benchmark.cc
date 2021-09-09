@@ -44,14 +44,15 @@ int Benchmark(int argc, char** argv) {
       (!FLAGS_uncombined_model_dir.empty() ||
        (!FLAGS_model_file.empty() && !FLAGS_param_file.empty()));
   if (!is_origin_model && !is_opt_model) {
-    LOG(ERROR) << "\nNo model path is set!\n";
+    std::cerr << "\nNo model path is set!" << std::endl;
     gflags::ProgramUsage();
     exit(0);
   }
   if (!FLAGS_uncombined_model_dir.empty() &&
       (!FLAGS_model_file.empty() && !FLAGS_param_file.empty())) {
-    LOG(ERROR) << "Both --uncombined_model_dir and --model_file --param_file "
-                  "are set. Only need to set one model format!";
+    std::cerr << "Both --uncombined_model_dir and --model_file --param_file "
+                 "are set. Only need to set one model format!"
+              << std::endl;
     gflags::ProgramUsage();
     exit(0);
   }
@@ -104,7 +105,8 @@ void Run(const std::string& model_file,
   } else {
     std::fstream fs(FLAGS_input_data_path);
     if (!fs.is_open()) {
-      LOG(FATAL) << "open input image " << FLAGS_input_data_path << " error.";
+      std::cout << "Open input image " << FLAGS_input_data_path << " error."
+                << std::endl;
     }
     for (int i = 0; i < input_num; i++) {
       fs >> input_data[i];
@@ -120,6 +122,7 @@ void Run(const std::string& model_file,
     } else {
       predictor->Run();
     }
+    timer.SleepInMs(FLAGS_run_delay);
   }
 
   // Run
@@ -127,6 +130,7 @@ void Run(const std::string& model_file,
     timer.Start();
     predictor->Run();
     perf_vct.push_back(timer.Stop());
+    timer.SleepInMs(FLAGS_run_delay);
   }
 
   // Get output
@@ -176,7 +180,9 @@ void Run(const std::string& model_file,
 #endif
   ss << "\n======= Model Info =======\n";
   ss << "optimized_model_file: " << model_file << std::endl;
-  ss << "input_data_path: " << FLAGS_input_data_path << std::endl;
+  ss << "input_data_path: "
+     << (FLAGS_input_data_path.empty() ? "All 1.f" : FLAGS_input_data_path)
+     << std::endl;
   ss << "input_shape: " << Vector2Str(input_shape) << std::endl;
   ss << out_ss.str();
   ss << "\n======= Runtime Info =======\n";
@@ -209,10 +215,10 @@ void Run(const std::string& model_file,
     ss << "init  = " << std::setw(12) << "Not supported yet" << std::endl;
     ss << "avg   = " << std::setw(12) << "Not supported yet" << std::endl;
   }
-  LOG(INFO) << ss.str();
+  std::cout << ss.str() << std::endl;
   std::ofstream ofs(FLAGS_result_path, std::ios::app);
   if (!ofs.is_open()) {
-    LOG(FATAL) << "Fail to open result file: " << FLAGS_result_path;
+    std::cout << "Fail to open result file: " << FLAGS_result_path << std::endl;
   }
   ofs << ss.str();
   ofs.close();
