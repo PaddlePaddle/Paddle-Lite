@@ -147,6 +147,49 @@ typedef enum {
   NNADAPTER_ABS,
 
   /**
+ * Applies adaptive 2-D average pooling across the input according to input and
+ * output size.
+ *
+ * Inputs:
+ * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
+ * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+ * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor
+ * with shape [N, C_in, H_in, W_in].
+ * * 1: output_shape, A NNADAPTER_TENSOR_INT32 or
+ * NNADAPTER_TENSOR_INT64 tensor, with shape [2], with value [H_out, H_out].
+ *
+ * Outputs:
+ * * 0: output, A tensor with the same shape and type as input.
+ *
+ * Available since version 1.
+ */
+  NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D,
+
+  /**
+   * Applies adaptive 2-D max pooling across the input according to input and
+   * output size.
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor
+   * with shape [N, C_in, H_in, W_in].
+   * * 1: output_shape, A NNADAPTER_TENSOR_INT32 or
+   * NNADAPTER_TENSOR_INT64 tensor, with shape [2], with value [H_out, H_out].
+   * * 2: return_indices, a NNADAPTER_BOOL8 scalar, whether to return index of
+   * output. Defaults to false
+   * * 3: return_indices_dtype, a NNADAPTER_INT32 scalar, the value of
+   * NNADAPTER_TENSOR_INT32 or
+   * NNADAPTER_TENSOR_INT64. Specifies the dtype of the indices.
+   * Outputs:
+   * * 0: output, A tensor with the same shape and type as input.
+   * * 1:
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_ADAPTIVE_MAX_POOL_2D,
+
+  /**
    * Performs element-wise binary addition(with Numpy-style broadcasting
    * https://numpy.org/doc/stable/user/basics.broadcasting.html).
    *
@@ -1140,25 +1183,6 @@ typedef enum {
    * Available since version 1.
    */
   NNADAPTER_UNSQUEEZE,
-
-  /**
-   * Applies adaptive 2-D max pooling across the input according to input and
-   * output size.
-   *
-   * Inputs:
-   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
-   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
-   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor
-   * with shape [N, C_in, H_in, W_in].
-   * * 1: output_shape, A NNADAPTER_TENSOR_INT32 or
-   * NNADAPTER_TENSOR_INT64 tensor, with shape [2], with value [H_out, H_out].
-   *
-   * Outputs:
-   * * 0: output, A tensor with the same shape and type as input.
-   *
-   * Available since version 1.
-   */
-  NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D,
 } NNAdapterOperationCode;
 
 /**

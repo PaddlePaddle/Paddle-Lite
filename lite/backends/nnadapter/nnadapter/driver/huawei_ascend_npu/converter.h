@@ -110,7 +110,7 @@ class Program {
   int ConvertFullyConnected(hal::Operation* operation);
   int ConvertFill(hal::Operation* operation);
   int ConvertPool2D(hal::Operation* operation);
-  int ConvertAdaptiveAvgPool2D(hal::Operation* operation);
+  int ConvertAdaptivePool2D(hal::Operation* operation);
   int ConvertElementwise(hal::Operation* operation);
   int ConvertSoftmax(hal::Operation* operation);
   int ConvertActivation(hal::Operation* operation);

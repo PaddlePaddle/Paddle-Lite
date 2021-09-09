@@ -162,7 +162,14 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   NNAdapterOperationType pool2d_operation_type;
   if (adaptive) {
-    pool2d_operation_type = NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D;
+    if (pooling_type == "avg") {
+      pool2d_operation_type = NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D;
+    } else if (pooling_type == "max") {
+      pool2d_operation_type = NNADAPTER_ADAPTIVE_MAX_POOL_2D;
+    } else {
+      LOG(WARNING) << "Unsupported adaptive pooling type: " << pooling_type;
+      return FAILED;
+    }
   } else if (pooling_type == "max") {
     pool2d_operation_type = NNADAPTER_MAX_POOL_2D;
     input_operands.insert(input_operands.begin() + 6, return_indices_operand);
