@@ -43,7 +43,7 @@ float* compute_elementwise_both_const(OpLite* op) {
   auto output = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
   auto output_dims = output->dims();
   CHECK(output->data_size());
-  CHECK_GT(sizeof(float) * output->data_size(), output->data_size());
+  CHECK_GT(SIZE_MAX / sizeof(float), output->data_size());
   float* cpu_data =
       static_cast<float*>(malloc(sizeof(float) * output->data_size()));
   CHECK(cpu_data != nullptr);
