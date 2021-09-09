@@ -129,6 +129,7 @@ class Program {
   int ConvertRange(hal::Operation* operation);
   int ConvertCast(hal::Operation* operation);
   int ConvertShape(hal::Operation* operation);
+  int ConvertStack(hal::Operation* operation);
   int ConvertAssign(hal::Operation* operation);
   int ConvertResizeNearest(hal::Operation* operation);
   int ConvertResizeLinear(hal::Operation* operation);

@@ -447,23 +447,27 @@ endif()
 
 # Some bins
 if(NOT IOS)
-    lite_cc_binary(test_model_bin SRCS tools/model_test.cc DEPS paddle_api_full paddle_api_light gflags utils core model_parser
-        ops kernels ${full_lib_DEPS} ${external_libs_DEPS} utils)
+    lite_cc_binary(test_model_bin SRCS tools/model_test.cc DEPS paddle_api_full paddle_api_light gflags utils core
+        ops kernels ${full_lib_DEPS}
+        CV_DEPS paddle_cv_arm)
     
-    lite_cc_binary(test_model_detection_bin SRCS model_test_detection.cc DEPS paddle_api_full paddle_api_light gflags utils core model_parser
-        ops kernels ${external_libs_DEPS} utils)
+    lite_cc_binary(test_model_detection_bin SRCS model_test_detection.cc DEPS paddle_api_full paddle_api_light gflags utils core
+        ops kernels
+        CV_DEPS paddle_cv_arm)
     
-    lite_cc_binary(test_model_classify_bin SRCS model_test_classify.cc DEPS paddle_api_full paddle_api_light gflags utils core model_parser
-        ops kernels ${external_libs_DEPS} utils)
+    lite_cc_binary(test_model_classify_bin SRCS model_test_classify.cc DEPS paddle_api_full paddle_api_light gflags utils core
+        ops kernels
+        CV_DEPS paddle_cv_arm)
 
-    lite_cc_binary(benchmark_bin SRCS tools/benchmark.cc DEPS paddle_api_full paddle_api_light gflags utils core model_parser
-        ops kernels ${external_libs_DEPS} utils)
+    lite_cc_binary(benchmark_bin SRCS tools/benchmark.cc DEPS paddle_api_full paddle_api_light gflags utils core
+        ops kernels
+        CV_DEPS paddle_cv_arm)
     
     lite_cc_binary(multithread_test SRCS lite_multithread_test.cc DEPS paddle_api_full paddle_api_light gflags utils core model_parser
         ops kernels utils)
 
     lite_cc_binary(test_transformer SRCS transform_test.cc DEPS paddle_api_full paddle_api_light gflags utils core model_parser
-        ops ${external_libs_DEPS} kernels utils)
+        ops kernels utils)
 endif()
 
 #lite_cc_binary(cxx_api_bin SRCS cxx_api_bin.cc

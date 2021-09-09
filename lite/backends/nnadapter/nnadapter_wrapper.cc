@@ -33,6 +33,13 @@ NNAdapterWrapper::NNAdapterWrapper() {
   }
 }
 
+NNAdapterWrapper::~NNAdapterWrapper() {
+  if (library_) {
+    dlclose(library_);
+    library_ = nullptr;
+  }
+}
+
 bool NNAdapterWrapper::Initialize() {
   const std::vector<std::string> candidate_paths = {
       "libnnadapter.so",
