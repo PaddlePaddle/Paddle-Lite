@@ -28,11 +28,7 @@ namespace huawei_ascend_npu {
 
 Device::Device() { InitializeAscendDevice(); }
 
-Device::~Device() {
-  // TODO(hong19860320) fix the problem destruction order that the resource of
-  // ACL is released before the function is called.
-  // FinalizeAscendDevice();
-}
+Device::~Device() {}
 
 Context::Context(void* device, const char* properties) : device_(device) {
   // Extract the runtime parameters from the context properties
@@ -172,6 +168,9 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
           break;
         case NNADAPTER_SQUEEZE:
           ConvertSqueeze(operation);
+          break;
+        case NNADAPTER_STACK:
+          ConvertStack(operation);
           break;
         case NNADAPTER_UNSQUEEZE:
           ConvertUnsqueeze(operation);
@@ -365,10 +364,11 @@ std::shared_ptr<Operator> Program::AddConstantOperator(
   NNADAPTER_CHECK(values)
       << "The values of constant operator should not be nullptr.";
   auto num_values = ProductionOfDimensions(dimensions);
-  auto shape = dimensions.size() > 0 ? ge::Shape(ConvertDimensions(dimensions))
-                                     : ge::Shape();
+  auto shape = dimensions.size() > 0
+                   ? ge::Shape(ConvertToGEDimensions(dimensions))
+                   : ge::Shape();
   auto tensor_desc = std::make_shared<ge::TensorDesc>(
-      shape, ge::FORMAT_NCHW, ConvertPrecision(precision));
+      shape, ge::FORMAT_NCHW, ConvertToGEPrecision(precision));
   // Add anonymous constant operator
   auto name = GetOperatorName(nullptr);
   auto op = std::make_shared<ge::op::Const>();
@@ -422,10 +422,11 @@ std::shared_ptr<Operator> Program::ConvertOperand(
       dimensions.push_back(operand->type.dimensions[i]);
     }
   }
-  auto shape = dimensions.size() > 0 ? ge::Shape(ConvertDimensions(dimensions))
-                                     : ge::Shape();
+  auto shape = dimensions.size() > 0
+                   ? ge::Shape(ConvertToGEDimensions(dimensions))
+                   : ge::Shape();
   auto tensor_desc = std::make_shared<ge::TensorDesc>(
-      shape, ge::FORMAT_NCHW, ConvertPrecision(operand->type.precision));
+      shape, ge::FORMAT_NCHW, ConvertToGEPrecision(operand->type.precision));
   auto name = GetOperatorName(operand);
   if (IsConstantOperand(operand)) {
     auto op = std::make_shared<ge::op::Const>(name);

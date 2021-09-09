@@ -223,6 +223,7 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         output_args = {"output", "indices"};
         break;
       case NNADAPTER_CONCAT:
+      case NNADAPTER_STACK:
         input_args.resize(input_count);
         for (int i = 0; i < input_count - 1; i++) {
           input_args[i] = string_format("input%d", i);
@@ -518,7 +519,9 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(LEAKY_RELU)
     NNADAPTER_TYPE_TO_STRING(LOG)
     NNADAPTER_TYPE_TO_STRING(LP_NORMALIZATION)
+    NNADAPTER_TYPE_TO_STRING(MAX);
     NNADAPTER_TYPE_TO_STRING(MAX_POOL_2D);
+    NNADAPTER_TYPE_TO_STRING(MIN);
     NNADAPTER_TYPE_TO_STRING(MUL);
     NNADAPTER_TYPE_TO_STRING(POW);
     NNADAPTER_TYPE_TO_STRING(RELU);
@@ -531,6 +534,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(SHAPE)
     NNADAPTER_TYPE_TO_STRING(SIGMOID);
     NNADAPTER_TYPE_TO_STRING(SLICE);
+    NNADAPTER_TYPE_TO_STRING(STACK);
     NNADAPTER_TYPE_TO_STRING(SOFTMAX);
     NNADAPTER_TYPE_TO_STRING(CUM_SUM)
     NNADAPTER_TYPE_TO_STRING(SPLIT);
@@ -580,6 +584,19 @@ NNADAPTER_EXPORT std::string DeviceCodeToString(NNAdapterDeviceCode type) {
     NNADAPTER_TYPE_TO_STRING(CPU);
     NNADAPTER_TYPE_TO_STRING(GPU);
     NNADAPTER_TYPE_TO_STRING(ACCELERATOR);
+    default:
+      name = "UNKNOWN";
+      break;
+  }
+  return name;
+}
+
+NNADAPTER_EXPORT std::string AutoPadCodeToString(NNAdapterAutoPadCode type) {
+  std::string name;
+  switch (type) {
+    NNADAPTER_TYPE_TO_STRING(AUTO_PAD_NONE);
+    NNADAPTER_TYPE_TO_STRING(AUTO_PAD_SAME);
+    NNADAPTER_TYPE_TO_STRING(AUTO_PAD_VALID);
     default:
       name = "UNKNOWN";
       break;

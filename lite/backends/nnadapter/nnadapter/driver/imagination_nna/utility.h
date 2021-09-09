@@ -22,13 +22,14 @@ namespace nnadapter {
 namespace imagination_nna {
 
 // Convert NNAdapter types to imgdnn types
-imgdnn_type ConvertPrecision(NNAdapterOperandPrecisionCode input_precision);
-imgdnn_dimensions_order ConvertDataLayout(
-    NNAdapterOperandLayoutCode input_layout);
-void ConvertDimensions(int32_t* input_dimensions,
-                       uint32_t input_dimensions_count,
-                       size_t* output_dimensions,
-                       unsigned int* output_dimensions_count);
+imgdnn_type ConvertToImgdnnPrecision(
+    NNAdapterOperandPrecisionCode precision_code);
+imgdnn_dimensions_order ConvertToImgdnnDataLayout(
+    NNAdapterOperandLayoutCode layout_code);
+void ConvertToImgdnnDimensions(int32_t* input_dimensions,
+                               uint32_t input_dimensions_count,
+                               size_t* output_dimensions,
+                               unsigned int* output_dimensions_count);
 
 }  // namespace imagination_nna
 }  // namespace nnadapter

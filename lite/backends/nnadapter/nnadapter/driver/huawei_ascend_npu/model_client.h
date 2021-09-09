@@ -40,6 +40,8 @@ class AclModelClient {
                hal::Argument* output_arguments);
 
  private:
+  void InitAclClientEnv(int device_id);
+  void FinalizeAclClientEnv();
   bool CreateModelIODataset();
   void DestroyDataset(aclmdlDataset** dataset);
 
