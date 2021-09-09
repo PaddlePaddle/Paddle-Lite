@@ -20,7 +20,7 @@
 namespace nnadapter {
 namespace huawei_kirin_npu {
 
-int Program::ConvertReshape(hal::Operation* operation) {
+int Program::ConvertUnsqueeze(hal::Operation* operation) {
   UNSQUEEZE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators

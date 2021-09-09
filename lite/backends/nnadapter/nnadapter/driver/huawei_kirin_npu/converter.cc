@@ -95,6 +95,9 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
         case NNADAPTER_RESHAPE:
           ConvertReshape(operation);
           break;
+        case NNADAPTER_UNSQUEEZE:
+          ConvertUnsqueeze(operation);
+          break;
         case NNADAPTER_SOFTMAX:
           ConvertSoftmax(operation);
           break;
