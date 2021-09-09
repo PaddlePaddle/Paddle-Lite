@@ -176,14 +176,15 @@ typedef enum {
    * with shape [N, C_in, H_in, W_in].
    * * 1: output_shape, A NNADAPTER_TENSOR_INT32 or
    * NNADAPTER_TENSOR_INT64 tensor, with shape [2], with value [H_out, H_out].
-   * * 2: return_indices, a NNADAPTER_BOOL8 scalar, whether to return index of
+   * * 2: return_indices, A NNADAPTER_BOOL8 scalar, whether to return index of
    * output. Defaults to false
-   * * 3: return_indices_dtype, a NNADAPTER_INT32 scalar, the value of
+   * * 3: return_indices_dtype, A NNADAPTER_INT32 scalar, the value of
    * NNADAPTER_TENSOR_INT32 or
    * NNADAPTER_TENSOR_INT64. Specifies the dtype of the indices.
    * Outputs:
    * * 0: output, A tensor with the same shape and type as input.
-   * * 1:
+   * * 1: indices, A NNADAPTER_TENSOR_INT64 tensor, with the same shape as
+   * output, indicates the indices of the current feature map.
    *
    * Available since version 1.
    */
