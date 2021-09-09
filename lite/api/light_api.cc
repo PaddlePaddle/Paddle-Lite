@@ -385,19 +385,19 @@ void LightPredictor::CheckInputValid() {
 
   for (size_t idx = 0; idx < input_precisions_.size(); ++idx) {
     if (GetInput(idx)->precision() != input_precisions_[idx]) {
-      LOG(FATAL) << " Error input tensor precision type. Input index (" << idx
-                 << ") Tensor name (" << input_names_[idx]
-                 << ") Require precision type ("
-                 << PrecisionToStr(input_precisions_[idx])
-                 << ") Input precision type ("
-                 << PrecisionToStr(GetInput(idx)->precision()) << ").";
+      LOG(WARNING) << " Error input tensor precision type. Input index (" << idx
+                   << ") Tensor name (" << input_names_[idx]
+                   << ") Require precision type ("
+                   << PrecisionToStr(input_precisions_[idx])
+                   << ") Input precision type ("
+                   << PrecisionToStr(GetInput(idx)->precision()) << ").";
     }
     if (!CompareShape(GetInput(idx)->dims().Vectorize(), input_shapes_[idx])) {
-      LOG(FATAL) << " Error input tensor shape. Input index (" << idx
-                 << ") Tensor name (" << input_names_[idx]
-                 << ") Require shape of (" << ShapeToStr(input_shapes_[idx])
-                 << ") Input tensor's shape ("
-                 << ShapeToStr(GetInput(idx)->dims().Vectorize()) << ").";
+      LOG(WARNING) << " Error input tensor shape. Input index (" << idx
+                   << ") Tensor name (" << input_names_[idx]
+                   << ") Require shape of (" << ShapeToStr(input_shapes_[idx])
+                   << ") Input tensor's shape ("
+                   << ShapeToStr(GetInput(idx)->dims().Vectorize()) << ").";
     }
   }
 }
