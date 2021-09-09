@@ -13,33 +13,30 @@
 // limitations under the License.
 
 #pragma once
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
+
+#include <string>
+#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
 namespace arm {
+namespace math {
+namespace fp16 {
+typedef __fp16 float16_t;
 
-class BoxCoderCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
- public:
-  using param_t = operators::BoxCoderParam;
+void decode_bboxes(const int batch_num,
+                   const int axis,
+                   const float16_t* loc_data,
+                   const float16_t* prior_data,
+                   const float16_t* variance_data,
+                   const bool var_len4,
+                   const std::string code_type,
+                   const bool normalized,
+                   const int num_priors,
+                   float16_t* bbox_data);
 
-  void Run() override;
-
-  virtual ~BoxCoderCompute() = default;
-};
-
-class BoxCoderFp16Compute : public KernelLite<TARGET(kARM), PRECISION(kFP16)> {
- public:
-  using param_t = operators::BoxCoderParam;
-
-  void Run() override;
-
-  virtual ~BoxCoderFp16Compute() = default;
-};
-
+}  // namespace fp16
+}  // namespace math
 }  // namespace arm
-}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
