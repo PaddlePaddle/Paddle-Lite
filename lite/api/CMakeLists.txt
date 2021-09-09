@@ -463,7 +463,7 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
        set(LINK_FLAGS "-Wl,--version-script ${PADDLE_SOURCE_DIR}/lite/core/lite.map")
        set_target_properties(test_mobilenetv1 PROPERTIES LINK_FLAGS "${LINK_FLAGS}")
     endif()
-    
+
     lite_cc_test(test_mobilenetv1_int16 SRCS mobilenetv1_int16_test.cc
        DEPS ${lite_model_test_DEPS} ${light_lib_DEPS}
        CL_DEPS ${opencl_kernels}
@@ -472,7 +472,7 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl
             --model_dir=${LITE_MODEL_DIR}/mobilenet_v1_int16 SERIAL)
     add_dependencies(test_mobilenetv1 extern_lite_download_mobilenet_v1_int16_tar_gz)
-    
+
     lite_cc_test(test_mobilenetv1_opt_quant SRCS mobilenetv1_opt_quant_test.cc
        DEPS ${lite_model_test_DEPS} ${light_lib_DEPS} paddle_api_full
        ARGS --model_dir=${LITE_MODEL_DIR}/mobilenet_v1 SERIAL)
@@ -661,7 +661,7 @@ if(NOT IOS)
         X86_DEPS ${x86_kernels}
         CUDA_DEPS ${cuda_kernels}
         HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels})
-    
+
     lite_cc_binary(test_model_detection_bin SRCS model_test_detection.cc DEPS paddle_api_full paddle_api_light gflags utils core
         ${ops} ${host_kernels} ${external_libs_DEPS}
         ARM_DEPS ${arm_kernels}
@@ -680,7 +680,7 @@ if(NOT IOS)
         X86_DEPS ${x86_kernels}
         CUDA_DEPS ${cuda_kernels}
         HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels})
-    
+
     lite_cc_binary(test_model_classify_bin SRCS model_test_classify.cc DEPS paddle_api_full paddle_api_light gflags utils core
         ${ops} ${host_kernels} ${external_libs_DEPS}
         ARM_DEPS ${arm_kernels}
@@ -700,7 +700,7 @@ if(NOT IOS)
         CUDA_DEPS ${cuda_kernels}
         HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels})
 
-    lite_cc_binary(benchmark_bin SRCS tools/benchmark.cc DEPS paddle_api_full paddle_api_light gflags utils core
+    lite_cc_binary(benchmark_bin SRCS tools/benchmark.cc tools/flags.cc DEPS paddle_api_full paddle_api_light gflags utils core
         ${ops} ${host_kernels} ${external_libs_DEPS}
         ARM_DEPS ${arm_kernels}
         CV_DEPS paddle_cv_arm
@@ -717,7 +717,7 @@ if(NOT IOS)
         X86_DEPS ${x86_kernels}
         CUDA_DEPS ${cuda_kernels}
         HUAWEI_ASCEND_NPU_DEPS ${huawei_ascend_npu_kernels})
-    
+
     lite_cc_binary(multithread_test SRCS lite_multithread_test.cc DEPS paddle_api_full paddle_api_light gflags utils core
         ${ops} ${host_kernels} ${external_libs_DEPS}
         ARM_DEPS ${arm_kernels}
