@@ -24,6 +24,7 @@
 #include <vector>
 #include "lite/api/paddle_api.h"
 #include "lite/api/tools/flags.h"
+#include "lite/api/tools/opt_base.h"
 #include "lite/core/device_info.h"
 #include "lite/utils/cp_logging.h"
 #include "lite/utils/string.h"
@@ -215,56 +216,30 @@ void SetBackendConfig(lite_api::MobileConfig& config) {  // NOLINT
 }
 
 void OutputOptModel(const std::string& save_optimized_model_path) {
-  lite_api::CxxConfig config;
+  auto opt = paddle::lite_api::OptBase();
+
   if (!FLAGS_uncombined_model_dir.empty()) {
-    config.set_model_dir(FLAGS_uncombined_model_dir);
+    opt.SetModelDir(FLAGS_uncombined_model_dir);
   } else {
-    config.set_model_file(FLAGS_model_file);
-    config.set_param_file(FLAGS_param_file);
+    opt.SetModelFile(FLAGS_model_file);
+    opt.SetParamFile(FLAGS_param_file);
+  }
+  opt.SetOptimizeOut(save_optimized_model_path);
+
+  if (FLAGS_backend != "") {
+    if (FLAGS_cpu_precision == "fp16") opt.EnableFloat16();
+    opt.SetValidPlaces(FLAGS_backend);
   }
 
-  std::vector<Place> valid_places;
-  if (FLAGS_backend == "opencl") {
-    valid_places = {
-        Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)},
-        Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)},
-        Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageDefault)},
-        Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)},
-        Place{TARGET(kOpenCL), PRECISION(kInt32), DATALAYOUT(kNCHW)},
-        Place{TARGET(kARM)},
-    };
-  } else if (FLAGS_backend == "x86_opencl") {
-    valid_places = {
-        Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)},
-        Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)},
-        Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageDefault)},
-        Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)},
-        Place{TARGET(kOpenCL), PRECISION(kInt32), DATALAYOUT(kNCHW)},
-        Place{TARGET(kX86), PRECISION(kFloat)},
-        Place{TARGET(kHost), PRECISION(kFloat)},
-    };
-  } else {
-    valid_places = {
-        Place{TARGET(kARM), PRECISION(kInt32)},
-        Place{TARGET(kARM), PRECISION(kInt64)},
-    };
-    if (FLAGS_cpu_precision == "fp16") {
-      valid_places.emplace_back(Place{TARGET(kARM), PRECISION(kFP16)});
-    }
-    valid_places.emplace_back(Place{TARGET(kARM), PRECISION(kFloat)});
-  }
-  config.set_valid_places(valid_places);
-
-  auto predictor = lite_api::CreatePaddlePredictor(config);
-
-  int ret = system(paddle::lite::string_format(
-                       "rm -rf %s", save_optimized_model_path.c_str())
-                       .c_str());
+  auto previous_opt_model = save_optimized_model_path + ".nb";
+  int ret = system(
+      paddle::lite::string_format("rm -rf %s", previous_opt_model.c_str())
+          .c_str());
   if (ret == 0) {
-    LOG(INFO) << "Delete old optimized model " << save_optimized_model_path;
+    LOG(INFO) << "Delete previous optimized model: " << previous_opt_model;
   }
-  predictor->SaveOptimizedModel(save_optimized_model_path,
-                                LiteModelType::kNaiveBuffer);
+
+  opt.Run();
 
   STL::stringstream ss;
   ss << "\n======= Opt Info =======\n";

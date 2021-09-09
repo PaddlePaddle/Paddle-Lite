@@ -466,7 +466,7 @@ if(NOT IOS)
         ops kernels
         CV_DEPS paddle_cv_arm)
 
-    lite_cc_binary(benchmark_bin SRCS tools/benchmark.cc tools/flags.cc DEPS paddle_api_full paddle_api_light gflags utils core
+    lite_cc_binary(benchmark_bin SRCS tools/benchmark.cc tools/flags.cc tools/opt_base.cc DEPS paddle_api_full paddle_api_light gflags utils core
         ops kernels
         CV_DEPS paddle_cv_arm)
     
