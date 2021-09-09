@@ -159,15 +159,16 @@ void FeedImageCompute::run_mtl_texture() {
     if (input_dims.size() != 4) {
         return;
     }
-    //is need scale
-    id<MTLTexture> inTexture = input_tensor.data<MetalMTLData>()->image();
-    if (input_dims[2] != inTexture.height ||  input_dims[3] != inTexture.width) {
+    //need scale
+    do {
+        id<MTLTexture> inTexture = input_tensor.data<MetalMTLData>()->image();
         auto cmdbuf = [backend commandBuffer];
         [(__bridge MPSImageLanczosScale*)lanczos_ encodeToCommandBuffer:cmdbuf
                                                           sourceTexture:inTexture
                                                      destinationTexture:resize_texture_];
         [backend commit:cmdbuf];
-    }
+    } while (0);
+    
     // texture to texture_array
     do {
         auto pipline = pipline_;
