@@ -16,6 +16,8 @@
 // by 0 will get the correct result in ElementWise OP.
 
 #include "lite/kernels/x86/elementwise_compute.h"
+#include <string>
+#include <vector>
 #include "lite/backends/x86/math/elementwise.h"
 #include "lite/backends/x86/math/elementwise_common_broadcast_config.h"
 #include "lite/kernels/host/elementwise_op_func.h"
@@ -589,18 +591,6 @@ REGISTER_LITE_KERNEL(
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    fusion_elementwise_floordiv_activation,
-    kX86,
-    kFloat,
-    kNCHW,
-    paddle::lite::kernels::x86::ElementwiseFloorDivActivationCompute<float>,
-    def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
-    .Finalize();
-
 REGISTER_LITE_KERNEL(elementwise_pow,
                      kX86,
                      kFloat,
@@ -632,18 +622,6 @@ REGISTER_LITE_KERNEL(elementwise_pow,
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(
-    fusion_elementwise_pow_activation,
-    kX86,
-    kFloat,
-    kNCHW,
-    paddle::lite::kernels::x86::ElementwisePowActivationCompute<float>,
-    def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(elementwise_mod,
