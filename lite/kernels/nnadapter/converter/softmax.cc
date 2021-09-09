@@ -33,7 +33,10 @@ int ConvertSoftmax(Converter* converter, OpInfo* op, Scope* scope) {
   if (op->HasOutputScale(out_scale_name, true)) {
     out_scales = op->GetOutputScale(out_scale_name, true);
   }
-  auto axis = op->GetAttr<int>("axis");
+  int axis = -1;
+  if (op->HasAttr("axis")) {
+    auto axis = op->GetAttr<int>("axis");
+  }
   // Check quantization mode
   bool is_quant_mode = IsValidSymmPerLayerQuantParams(out_scales);
   if (is_quant_mode) {
