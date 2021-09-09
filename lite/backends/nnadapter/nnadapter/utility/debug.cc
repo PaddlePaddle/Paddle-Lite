@@ -221,6 +221,15 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
                       "fuse_code"};
         output_args = {"output", "indices"};
         break;
+      case NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D:
+        input_args = {"input", "output_shape"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_ADAPTIVE_MAX_POOL_2D:
+        input_args = {
+            "input", "output_shape", "return_indices", "return_indices_dtype"};
+        output_args = {"output", "indices"};
+        break;
       case NNADAPTER_CONCAT:
         input_args.resize(input_count);
         for (int i = 0; i < input_count - 1; i++) {
@@ -492,6 +501,8 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
   std::string name;
   switch (type) {
     NNADAPTER_TYPE_TO_STRING(ABS)
+    NNADAPTER_TYPE_TO_STRING(ADAPTIVE_AVERAGE_POOL_2D)
+    NNADAPTER_TYPE_TO_STRING(ADAPTIVE_MAX_POOL_2D)
     NNADAPTER_TYPE_TO_STRING(ADD);
     NNADAPTER_TYPE_TO_STRING(ASSIGN)
     NNADAPTER_TYPE_TO_STRING(AVERAGE_POOL_2D);

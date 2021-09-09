@@ -111,7 +111,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
           break;
         case NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D:
         case NNADAPTER_ADAPTIVE_MAX_POOL_2D:
-          ConvertAdaptiveAvgPool2D(operation);
+          ConvertAdaptivePool2D(operation);
           break;
         case NNADAPTER_CONCAT:
           ConvertConcat(operation);

@@ -35,30 +35,27 @@ int Program::ConvertAdaptivePool2D(hal::Operation* operation) {
     pool2d_op->set_attr_output_size(
         ge::Operator::OpListInt({kernel_height, kernel_width}));
     SET_INPUT(pool2d_op, x, input_operator);
-    auto adaptive_pool2d_op = MAP_OUTPUT(pool2d_op, y, output_operand);
-    auto out_shape = ge::Shape();
-    auto format = ge::FORMAT_NCHW;
-    auto dtype = ge::DT_INT32;
-    auto tensor_desc =
-        std::make_shared<ge::TensorDesc>(out_shape, format, dtype);
+    auto adaptive_pool2d_operator = MAP_OUTPUT(pool2d_op, y, output_operand);
+    auto tensor_desc = std::make_shared<ge::TensorDesc>(
+        ge::Shape(), ge::FORMAT_NCHW, ge::DT_INT32);
     pool2d_op->update_output_desc_argmax(*tensor_desc);
     auto argmax_op =
         std::make_shared<Operator>(pool2d_op, tensor_desc, "argmax", -1);
     // Cast op
-    auto cast_op = std::make_shared<ge::op::Cast>("dummy_cast");
-    cast_op->set_attr_dst_type(ge::DT_FLOAT);
-    SET_INPUT(cast_op, x, argmax_op);
-    auto cast_operator = MAP_OUTPUT(cast_op, y, output_operand);
+    auto dummy_cast_op = std::make_shared<ge::op::Cast>("dummy_cast");
+    dummy_cast_op->set_attr_dst_type(ge::DT_FLOAT);
+    SET_INPUT(dummy_cast_op, x, argmax_op);
+    auto dummy_cast_operator = MAP_OUTPUT(dummy_cast_op, y, output_operand);
     // Sub op
-    auto sub_op = std::make_shared<ge::op::Sub>("dummy_sub");
-    SET_INPUT(sub_op, x1, cast_operator);
-    SET_INPUT(sub_op, x2, cast_operator);
-    auto sub_operator = MAP_OUTPUT(sub_op, y, output_operand);
+    auto dummy_sub_op = std::make_shared<ge::op::Sub>("dummy_sub");
+    SET_INPUT(dummy_sub_op, x1, dummy_cast_operator);
+    SET_INPUT(dummy_sub_op, x2, dummy_cast_operator);
+    auto dummy_sub_operator = MAP_OUTPUT(dummy_sub_op, y, output_operand);
     // Add op
-    auto add_op = std::make_shared<ge::op::Add>("dummy_add");
-    SET_INPUT(add_op, x1, adaptive_pool2d_op);
-    SET_INPUT(add_op, x2, sub_operator);
-    auto add_operator = MAP_OUTPUT(add_op, y, output_operand);
+    auto dummy_add_op = std::make_shared<ge::op::Add>("dummy_add");
+    SET_INPUT(dummy_add_op, x1, adaptive_pool2d_operator);
+    SET_INPUT(dummy_add_op, x2, dummy_sub_operator);
+    MAP_OUTPUT(dummy_add_op, y, output_operand);
   } else {
     auto pool2d_op = std::make_shared<ge::op::AdaptiveAvgPool2d>(pool2d_name);
     pool2d_op->set_attr_output_size(
