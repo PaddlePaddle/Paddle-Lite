@@ -61,8 +61,7 @@ static const char result_path_msg[] = "Save benchmark info to the file.";
 // Backend options
 static const char backend_msg[] =
     "To use a particular backend for execution. "
-    "Should be one of: cpu, opencl, metal, "
-    "x86_opencl.";
+    "Should be one of: cpu, opencl, x86_opencl.";
 static const char cpu_precision_msg[] =
     "Register fp32 or fp16 arm-cpu kernel when optimized model. "
     "Should be one of: fp32, fp16.";

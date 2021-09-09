@@ -24,6 +24,8 @@
 #include "lite/core/version.h"
 #include "lite/utils/timer.h"
 
+#define LITE_WITH_PROFILE
+
 int main(int argc, char* argv[]) {
   return paddle::lite_api::Benchmark(argc, argv);
 }
@@ -180,6 +182,7 @@ void Run(const std::string& model_file,
   ss << "input_shape: " << Vector2Str(input_shape) << std::endl;
   ss << out_ss.str();
   ss << "\n======= Runtime Info =======\n";
+  ss << "benchmark_bin version: " << lite::version() << std::endl;
   ss << "threads: " << FLAGS_threads << std::endl;
   ss << "power_mode: " << FLAGS_power_mode << std::endl;
   ss << "warmup: " << FLAGS_warmup << std::endl;
@@ -188,15 +191,12 @@ void Run(const std::string& model_file,
   ss << "\n======= Backend Info =======\n";
   ss << "backend: " << FLAGS_backend << std::endl;
   ss << "cpu precision: " << FLAGS_cpu_precision << std::endl;
-  if (FLAGS_backend == "opencl" || FLAGS_backend == "metal" ||
-      FLAGS_backend == "x86_opencl") {
+  if (FLAGS_backend == "opencl" || FLAGS_backend == "x86_opencl") {
     ss << "gpu precision: " << FLAGS_gpu_precision << std::endl;
-    if (FLAGS_backend != "metal") {
-      ss << "opencl_cache_dir: " << FLAGS_opencl_cache_dir << std::endl;
-      ss << "opencl_kernel_cache_file: " << FLAGS_opencl_kernel_cache_file
-         << std::endl;
-      ss << "opencl_tuned_file: " << FLAGS_opencl_tuned_file << std::endl;
-    }
+    ss << "opencl_cache_dir: " << FLAGS_opencl_cache_dir << std::endl;
+    ss << "opencl_kernel_cache_file: " << FLAGS_opencl_kernel_cache_file
+       << std::endl;
+    ss << "opencl_tuned_file: " << FLAGS_opencl_tuned_file << std::endl;
   }
   ss << "\n======= Perf Info =======\n";
   ss << std::fixed << std::left;
@@ -208,8 +208,8 @@ void Run(const std::string& model_file,
   ss << "avg   = " << std::setw(12) << perf_avg << std::endl;
   if (FLAGS_enable_memory_profile) {
     ss << "\nMemory Usage(unit: kB):\n";
-    ss << "init  = " << std::setw(12) << init_time << std::endl;
-    ss << "avg   = " << std::setw(12) << first_time << std::endl;
+    ss << "init  = " << std::setw(12) << "Not supported yet" << std::endl;
+    ss << "avg   = " << std::setw(12) << "Not supported yet" << std::endl;
   }
   LOG(INFO) << ss.str();
   std::ofstream ofs(FLAGS_result_path, std::ios::app);
