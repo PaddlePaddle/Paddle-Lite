@@ -115,6 +115,7 @@ class Program {
   int ConvertSoftmax(hal::Operation* operation);
   int ConvertCumSum(hal::Operation* operation);
   int ConvertActivation(hal::Operation* operation);
+  int ConvertPRelu(hal::Operation* operation);
   int ConvertReshape(hal::Operation* operation);
   int ConvertTranspose(hal::Operation* operation);
   int ConvertConcat(hal::Operation* operation);

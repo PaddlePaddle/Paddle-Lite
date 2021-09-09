@@ -133,6 +133,9 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
         case NNADAPTER_LOG:
           ConvertActivation(operation);
           break;
+        case NNADAPTER_PRELU:
+          ConvertPRelu(operation);
+          break;
         case NNADAPTER_RESHAPE:
           ConvertReshape(operation);
           break;
