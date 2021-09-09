@@ -371,7 +371,8 @@ class ActivationComputeTester : public arena::TestCase {
         prelu_alpha_data[i] =
             sign * static_cast<float>(i % 128) * 0.013f + 0.001;
       }
-      SetCommonTensor(prelu_alpha_, alpha_dims, prelu_alpha_data.data());
+      SetCommonTensor(
+          prelu_alpha_, alpha_dims, prelu_alpha_data.data(), {}, true);
     }
   }
 };
@@ -430,7 +431,6 @@ void TestActPerformance(const Place& place,
   arena.TestPerformance();
 }
 
-/*
 TEST(Activation_relu, precision) {
   Place place;
   float abs_error = 2e-5;
@@ -546,7 +546,6 @@ TEST(Activation_relu_clipped, precision) {
     }
   }
 }
-*/
 
 TEST(Activation_prelu, precision) {
   LOG(INFO) << "test prelu op";
@@ -586,7 +585,6 @@ TEST(Activation_prelu, precision) {
   }
 }
 
-/*
 TEST(Activation_sigmoid, precision) {
   Place place;
   float abs_error = 2e-5;
@@ -1353,6 +1351,6 @@ TEST(Activation_hard_swish_fp16, performance) {
   }
 }
 #endif
-*/
+
 }  // namespace lite
 }  // namespace paddle

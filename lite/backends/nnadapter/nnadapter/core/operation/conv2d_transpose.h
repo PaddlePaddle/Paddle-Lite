@@ -31,12 +31,12 @@ namespace operation {
   /* Filter */                                                                 \
   auto filter_operand = input_operands[1];                                     \
   NNADAPTER_VLOG(5) << "filter: " << OperandToString(filter_operand);          \
-  auto output_channel_size = filter_operand->type.dimensions[0];               \
-  auto filter_channel_size = filter_operand->type.dimensions[1];               \
+  NNADAPTER_CHECK_EQ(input_channel_size, filter_operand->type.dimensions[0]);  \
+  auto output_channel_size = filter_operand->type.dimensions[1];               \
   auto filter_height = filter_operand->type.dimensions[2];                     \
   auto filter_width = filter_operand->type.dimensions[3];                      \
-  NNADAPTER_VLOG(5) << "filter_dims: [" << output_channel_size << ", "         \
-                    << filter_channel_size << ", " << filter_height << ", "    \
+  NNADAPTER_VLOG(5) << "filter_dims: [" << input_channel_size << ", "          \
+                    << output_channel_size << ", " << filter_height << ", "    \
                     << filter_width << "]";                                    \
   /* Bias */                                                                   \
   auto bias_operand = input_operands[2];                                       \
@@ -85,16 +85,11 @@ namespace operation {
     NNADAPTER_CHECK_EQ(output_padding_size, 2U);                               \
     auto output_padding_buffer =                                               \
         reinterpret_cast<int32_t*>(input_operands[8]->buffer);                 \
-    auto output_padding_height = output_padding_buffer[0];                     \
-    auto output_padding_width = output_padding_buffer[1];                      \
+    output_padding_height = output_padding_buffer[0];                          \
+    output_padding_width = output_padding_buffer[1];                           \
   }                                                                            \
   NNADAPTER_VLOG(5) << "output_padding = [" << output_padding_height << ", "   \
                     << output_padding_width << "]";                            \
-  if (output_padding_height != 0 || output_padding_width != 0) {               \
-    NNADAPTER_LOG(WARNING)                                                     \
-        << "Only support output_padding_height/output_padding_width == 0.";    \
-    return NNADAPTER_INVALID_PARAMETER;                                        \
-  }                                                                            \
   /* Output_shape */                                                           \
   int output_shape_height = -1;                                                \
   int output_shape_width = -1;                                                 \
@@ -104,8 +99,8 @@ namespace operation {
     NNADAPTER_CHECK_EQ(output_shape_size, 2U);                                 \
     auto output_shape_buffer =                                                 \
         reinterpret_cast<int32_t*>(input_operands[9]->buffer);                 \
-    auto output_shape_height = output_shape_buffer[0];                         \
-    auto output_shape_width = output_shape_buffer[1];                          \
+    output_shape_height = output_shape_buffer[0];                              \
+    output_shape_width = output_shape_buffer[1];                               \
   }                                                                            \
   NNADAPTER_VLOG(5) << "output_shape = [" << output_shape_height << ", "       \
                     << output_shape_width << "]";                              \
