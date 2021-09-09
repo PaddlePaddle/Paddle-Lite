@@ -1135,6 +1135,25 @@ typedef enum {
   NNADAPTER_SQUEEZE,
 
   /**
+   * Join a sequence of tensors along a new axis.
+   * All input tensors must have the same shape.
+   *
+   * Inputs:
+   * * 0 ~ n-1: input0 ~ inputn-1, a NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: axis, a NNADAPTER_INT32 scalar. It represents the dimension along
+   * which axis to stack. It should be in range [-R-1, R+1), where R is the rank
+   * of input, negative value works the same way as axis+R+1.
+   *
+   * Outputs:
+   * * 0: output, the result with the same type as the inputs.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_STACK,
+
+  /**
    * Performs element-wise binary subtraction(with Numpy-style broadcasting
    * https://numpy.org/doc/stable/user/basics.broadcasting.html).
    *
