@@ -61,7 +61,7 @@ class FeedImageCompute : public KernelLite<TARGET(kMetal), PRECISION(kAny), DATA
 
    private:
     std::shared_ptr<MetalBuffer> input_buffer_;
-    std::shared_ptr<MetalBuffer> param_buffer_;
+    std::shared_ptr<MetalBuffer> params_buffer_{nullptr};
     MetalImage* output_buffer_{nullptr};
 
     id<MTLComputePipelineState> pipline_;

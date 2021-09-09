@@ -19,6 +19,7 @@
 #include "lite/core/op_registry.h"
 #include "lite/core/program.h"
 #include "lite/core/tensor.h"
+#include "lite/kernels/metal/image_op/metal_params.h"
 
 using namespace std;
 
@@ -112,6 +113,7 @@ void FeedImageCompute::run_float() {
     auto encoder = [backend commandEncoder];
     [encoder setBuffer:input_buffer_->buffer() offset:(0) atIndex:(0)];
     [encoder setTexture:(output_buffer_->image()) atIndex:(0)];
+    [encoder setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(1)];
 
     [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
     [backend commit];
@@ -122,14 +124,16 @@ void FeedImageCompute::setup_float() {
 
     Tensor& input_tensor = param.feed_list->at(param.col);
     auto input_dims = input_tensor.dims();
-    auto input_c = input_dims[1];
-    if (input_c == 1) {
-        function_name_ = "buf_to_tex";
-    } else if (input_c == 3) {
-        function_name_ = "buf_to_tex_c_3";
-    } else {
-        function_name_ = "buf_to_tex_c_n";
+    auto irank = input_dims.size();
+    std::vector<int> idm = {1, 1, 1, 1};
+    for (int i = 0; i < irank; i++) {
+        idm[4 - irank + i] = (int)(input_dims[i]);
     }
+    FeedMetalParam metal_params{(int)irank, {idm[0], idm[1], idm[2], idm[3]}};
+    params_buffer_ =
+        std::make_shared<MetalBuffer>(metal_context_, sizeof(metal_params), &metal_params);
+    
+    function_name_ = "buf_to_tex_c_n";
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     pipline_ = [backend pipline:function_name_];
