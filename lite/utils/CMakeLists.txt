@@ -40,7 +40,7 @@ endif()
 # 3. self-defined log will be included in tiny_publish mode
 if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK OR LITE_ON_MODEL_OPTIMIZE_TOOL OR LITE_WITH_PYTHON OR (NOT LITE_WITH_LOG))
   set(UTILS_SRC ${UTILS_SRC} ${LOG_SRC})
-  lite_cc_test(test_logging SRCS logging_test.cc DEPS utils)
+  lite_cc_test(test_logging SRCS ${CMAKE_CURRENT_SOURCE_DIR}/log/logging_test.cc DEPS utils)
 else()
    set(UTILS_DEPS ${UTILS_DEPS} glog)
 endif()
