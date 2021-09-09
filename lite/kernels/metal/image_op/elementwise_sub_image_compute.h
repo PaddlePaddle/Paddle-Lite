@@ -26,38 +26,34 @@
 
 #include "lite/backends/metal/metal_context.h"
 #include "lite/backends/metal/metal_debug.h"
-#include "lite/kernels/metal/image_op/reshape_image_compute.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace metal {
 
-template <typename P, PrecisionType PTYPE>
 class ElementwiseSubImageCompute
-    : public KernelLite<TARGET(kMetal), PTYPE, DATALAYOUT(kMetalTexture2DArray)> {
+    : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {
     using param_t = operators::ElementwiseParam;
 
    public:
     void PrepareForRun() override;
     void Run() override;
     void SaveOutput() override {
-        MetalDebug::SaveOutput("elementwise_sub", output_buffer_);
+        MetalDebug::SaveOutput(function_name_, output_buffer_);
     };
+    virtual ~ElementwiseSubImageCompute();
 
    private:
+    void setup_without_mps();
+
+    MetalImage* output_buffer_{nullptr};
     const MetalImage* input_buffer_x_;
     const MetalImage* input_buffer_y_;
     std::shared_ptr<MetalBuffer> params_buffer_;
-    MetalImage* output_buffer_;
 
-    DDim input_x_mul_dim_;
-    ReshapeImageCompute<P, PTYPE> reshape_;
-    Tensor shape_out_dev;
-    bool insert_shape = false;
-    std::shared_ptr<MetalKernel> kernel_;
-    std::shared_ptr<MetalQueue> queue_;
-    std::shared_ptr<MetalEncoder> encoder_;
+    id<MTLComputePipelineState> pipline_;
+    std::string function_name_;
     MetalContext* metal_context_;
 };
 

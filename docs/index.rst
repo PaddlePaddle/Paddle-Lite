@@ -38,6 +38,7 @@ Welcome to Paddle-Lite's documentation!
   quick_start/java_demo
   quick_start/python_demo
   quick_start/quant_post_dynamic_demo
+  quick_start/roadmap
 
 .. toctree::
   :maxdepth: 1
@@ -78,7 +79,7 @@ Welcome to Paddle-Lite's documentation!
   :name: sec-source-compile
 
   source_compile/compile_env
-  source_compile/compile_andriod
+  source_compile/compile_android
   source_compile/compile_ios
   source_compile/compile_linux
   source_compile/compile_windows
@@ -117,7 +118,7 @@ Welcome to Paddle-Lite's documentation!
   :caption: Roadmap
   :name: sec-roadmap
 
-  introduction/roadmap
+  quick_start/roadmap
 
 .. toctree::
   :maxdepth: 1

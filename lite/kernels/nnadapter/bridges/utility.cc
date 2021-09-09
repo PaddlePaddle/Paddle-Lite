@@ -413,19 +413,36 @@ NNAdapterOperandPrecisionCode Precision2NNAdapterScalarPrecisionCode(
   return precision_code;
 }
 
-NNAdapterPadCode PaddingAlgorithm2PadCode(
-    const std::string& padding_algorithm) {
-  NNAdapterPadCode pad_code;
-  if (padding_algorithm == "EXPLICIT" || padding_algorithm.empty()) {
-    pad_code = NNADAPTER_PAD_NONE;
-  } else if (padding_algorithm == "SAME") {
-    pad_code = NNADAPTER_PAD_SAME;
-  } else if (padding_algorithm == "VALID") {
-    pad_code = NNADAPTER_PAD_VALID;
-  } else {
-    LOG(FATAL) << "Unsupported padding_algorithm: " << padding_algorithm;
+NNAdapterPadModeCode PadMode2NNAdapterPadModeCode(std::string mode) {
+  if (mode == "constant") {
+    return NNADAPTER_PAD_MODE_CONSTANT;
   }
-  return pad_code;
+  if (mode == "reflect") {
+    return NNADAPTER_PAD_MODE_REFLECT;
+  }
+  if (mode == "replicate") {
+    return NNADAPTER_PAD_MODE_REPLICATE;
+  }
+  if (mode == "edge") {
+    return NNADAPTER_PAD_MODE_EDGE;
+  }
+  LOG(FATAL) << "Unsupported mode type: " << mode;
+  return NNADAPTER_PAD_MODE_NONE;
+}
+
+NNAdapterAutoPadCode PaddingAlgorithm2AutoPadCode(
+    const std::string& padding_algorithm) {
+  NNAdapterAutoPadCode auto_pad_code;
+  if (padding_algorithm == "EXPLICIT" || padding_algorithm.empty()) {
+    auto_pad_code = NNADAPTER_AUTO_PAD_NONE;
+  } else if (padding_algorithm == "SAME") {
+    auto_pad_code = NNADAPTER_AUTO_PAD_SAME;
+  } else if (padding_algorithm == "VALID") {
+    auto_pad_code = NNADAPTER_AUTO_PAD_VALID;
+  } else {
+    LOG(FATAL) << "Unsupported padding algorithm: " << padding_algorithm;
+  }
+  return auto_pad_code;
 }
 
 }  // namespace nnadapter

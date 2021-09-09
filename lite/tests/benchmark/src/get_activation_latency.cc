@@ -242,7 +242,7 @@ int main(int argc, char** argv) {
       t0.Stop();
     }
   } else if (act_type == 10) {
-    paddle::lite::kernels::arm::HardSwishCompute act_compute;
+    paddle::lite::kernels::arm::HardSwishCompute<PRECISION(kFloat)> act_compute;
     act_compute.SetParam(act_param);
     std::unique_ptr<paddle::lite::KernelContext> ctx1(
         new paddle::lite::KernelContext);

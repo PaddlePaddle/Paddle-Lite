@@ -191,7 +191,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Auto_pad operand
   auto auto_pad_operand = converter->AddInt32ConstantOperand(
-      static_cast<int32_t>(PaddingAlgorithm2PadCode(padding_algorithm)));
+      static_cast<int32_t>(PaddingAlgorithm2AutoPadCode(padding_algorithm)));
 
   // Pads operand(optional)
   auto pads_operand = converter->AddInt32ConstantOperand(

@@ -206,26 +206,6 @@ typedef paddle::lite::kernels::opencl::BoxCoderComputeImage BoxCoder_image;
 REGISTER_LITE_KERNEL(
     box_coder, kOpenCL, kFP16, kImageDefault, BoxCoder_image, ImageDefault)
     .BindInput("PriorBox",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
-    .BindInput("PriorBoxVar",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
-    .BindInput("TargetBox",
-               {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kImageDefault))})
-    .BindOutput("OutputBox",
-                {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                       PRECISION(kFP16),
-                                       DATALAYOUT(kImageDefault))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(box_coder,
-                     kOpenCL,
-                     kFP16,
-                     kImageDefault,
-                     BoxCoder_image,
-                     ImageDefaultNoUseSSDBoxesCalcOfflinePass)
-    .BindInput("PriorBox",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
