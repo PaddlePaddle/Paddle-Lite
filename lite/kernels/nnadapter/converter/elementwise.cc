@@ -83,8 +83,7 @@ int ConvertElementwise(Converter* converter, OpInfo* op, Scope* scope) {
           *y_tensor, DDim(shape), false, y_scales);
     } else {
       CHECK(!axes.empty());
-      y_operand =
-          converter->AddUnsqueezeOperation(y_operand, axes, "", y_scales);
+      y_operand = converter->AddUnsqueezeOperation(y_operand, axes, "");
     }
   } else if (y_rank > x_rank) {
     if (x_persistable) {
@@ -95,8 +94,7 @@ int ConvertElementwise(Converter* converter, OpInfo* op, Scope* scope) {
           *x_tensor, DDim(shape), false, x_scales);
     } else {
       CHECK(!axes.empty());
-      x_operand =
-          converter->AddUnsqueezeOperation(x_operand, axes, "", x_scales);
+      x_operand = converter->AddUnsqueezeOperation(x_operand, axes, "");
     }
   }
 

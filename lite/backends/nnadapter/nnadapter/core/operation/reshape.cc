@@ -29,72 +29,51 @@ int PrepareReshape(hal::Operation* operation) {
   // Infer the shape and type of output operands
   NNADAPTER_CHECK(IsConstantOperand(shape_operand))
       << "Only support constant shape now.";
-  auto& in_type = input_operand->type;
-  bool input_has_unk_dim = false;
-  for (uint32_t i = 0; i < in_type.dimension_count; i++) {
-    if (in_type.dimensions[i] == NNADAPTER_UNKNOWN) {
-      NNADAPTER_CHECK(!input_has_unk_dim)
-          << "Only support input has one dimension = -1.";
-      input_has_unk_dim = true;
-    }
-  }
-  bool shape_has_unk_dim = false;
+  auto in_type = input_operand->type;
+  auto& out_type = output_operand->type;
+  CopyOperandType(&out_type, in_type);
+  out_type.dimension_count = shape_count;
   for (uint32_t i = 0; i < shape_count; i++) {
-    if (shape_data[i] == 0) {
-      NNADAPTER_CHECK_LT(i, in_type.dimension_count);
+    if (shape_data[i] == 0 && in_type.dimensions[i] != NNADAPTER_UNKNOWN) {
       shape_data[i] = in_type.dimensions[i];
     }
-    if (shape_data[i] == -1) {
-      NNADAPTER_CHECK(!shape_has_unk_dim)
-          << "Only support shape has one dimension = -1.";
-      shape_has_unk_dim = true;
-    }
-  }
-  if (shape_has_unk_dim && !input_has_unk_dim) {
-    int64_t size = 1;
-    for (uint32_t i = 0; i < in_type.dimension_count; i++) {
-      size *= static_cast<int64_t>(in_type.dimensions[i]);
-    }
-    uint32_t unk_idx = 0;
-    for (uint32_t i = 0; i < shape_count; i++) {
-      if (shape_data[i] != -1) {
-        size /= static_cast<int64_t>(shape_data[i]);
-      } else {
-        unk_idx = i;
-      }
-    }
-    shape_data[unk_idx] = static_cast<int32_t>(size);
-    shape_has_unk_dim = false;
   }
 
   auto infer_output_shape = [&](int32_t* input_dimensions,
                                 int32_t* output_dimensions) {
-    memcpy(output_dimensions, shape_data, shape_count * sizeof(int32_t));
-    if (shape_has_unk_dim) {
-      int64_t size = 1;
-      for (uint32_t i = 0; i < in_type.dimension_count; i++) {
-        size *= static_cast<int64_t>(input_dimensions[i]);
+    for (uint32_t i = 0; i < shape_count; i++) {
+      output_dimensions[i] =
+          shape_data[i] == 0 ? input_dimensions[i] : shape_data[i];
+    }
+    int64_t size = 1;
+    for (uint32_t i = 0; i < in_type.dimension_count; i++) {
+      if (in_type.dimensions[i] == NNADAPTER_UNKNOWN) {
+        size = -1;
+        break;
+      } else {
+        size *= static_cast<int64_t>(in_type.dimensions[i]);
       }
-      uint32_t unk_idx = 0;
+    }
+    if (size != -1) {
+      int32_t unk_idx = -1;
       for (uint32_t i = 0; i < shape_count; i++) {
-        if (shape_data[i] != -1) {
-          size /= static_cast<int64_t>(shape_data[i]);
+        if (output_dimensions[i] == -1) {
+          NNADAPTER_CHECK_EQ(unk_idx, -1) << "Should only has one unk idx.";
+          unk_idx = -1;
         } else {
-          unk_idx = i;
+          size /= static_cast<int64_t>(output_dimensions[i]);
         }
       }
-      output_dimensions[unk_idx] = static_cast<int32_t>(size);
+      if (unk_idx != -1) {
+        output_dimensions[unk_idx] = size;
+      }
     }
   };
-  auto& out_type = output_operand->type;
-  out_type.dimension_count = shape_count;
-  out_type.dynamic_dimension_count = in_type.dynamic_dimension_count;
   infer_output_shape(in_type.dimensions, out_type.dimensions);
   for (uint32_t i = 0; i < in_type.dynamic_dimension_count; i++) {
     infer_output_shape(in_type.dynamic_dimensions[i],
                        out_type.dynamic_dimensions[i]);
   }
-  out_type.precision = in_type.precision;
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
 }

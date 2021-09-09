@@ -355,12 +355,10 @@ NNAdapterOperand* Converter::AddShapeOperation(
 NNAdapterOperand* Converter::AddUnsqueezeOperation(
     NNAdapterOperand* input_operand,
     const std::vector<int32_t>& axes,
-    const std::string& out_name,
-    const std::vector<float>& quant_scales,
-    uint32_t quant_channel_dim) {
+    const std::string& out_name) {
   auto axes_operand = AddConstantOperand(axes);
-  auto output_operand =
-      AddOutputOperand(out_name, quant_scales, quant_channel_dim);
+  // Copy scales from input in PrepareUnsqueeze
+  auto output_operand = AddOutputOperand(out_name);
   AddOperation(
       NNADAPTER_UNSQUEEZE, {input_operand, axes_operand}, {output_operand});
   return output_operand;

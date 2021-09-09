@@ -29,7 +29,7 @@ int PrepareUnsqueeze(hal::Operation* operation) {
   // Infer the shape and type of output operands
   auto in_type = input_operand->type;
   auto& out_type = output_operand->type;
-  CopyOperandTypeExceptQuantParams(&out_type, in_type);
+  CopyOperandType(&out_type, in_type);
   out_type.dimension_count += axes_count;
   auto infer_output_shape = [&](int32_t* input_dimensions,
                                 int32_t* output_dimensions) {
