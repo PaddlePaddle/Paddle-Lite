@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "core/operation/adaptive_pool2d.h"
 #include "driver/huawei_ascend_npu/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -21,24 +22,7 @@ namespace nnadapter {
 namespace huawei_ascend_npu {
 
 int Program::ConvertAdaptivePool2D(hal::Operation* operation) {
-  auto& input_operands = operation->input_operands;
-  auto& output_operands = operation->output_operands;
-  auto input_count = input_operands.size();
-  auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 2);
-  NNADAPTER_CHECK_EQ(output_count, 1);
-  // Input
-  auto input_operand = input_operands[0];
-  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
-  // Output size
-  auto kernel_buffer = reinterpret_cast<int32_t*>(input_operands[1]->buffer);
-  auto kernel_height = kernel_buffer[0];
-  auto kernel_width = kernel_buffer[1];
-  NNADAPTER_VLOG(5) << "filter=[" << kernel_height << "," << kernel_width
-                    << "]";
-  // Output
-  auto output_operand = output_operands[0];
-  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
+  ADAPTIVE_POOL_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
   auto input_operator = GetMappedOperator(input_operand);
