@@ -3,9 +3,9 @@
 if (LITE_ON_TINY_PUBLISH)
     set(CMAKE_CXX_FLAGS_RELEASE "-Os -DNDEBUG")
     set(CMAKE_C_FLAGS_RELEASE "-Os -DNDEBUG")
-    set(lib_DEPS light_api paddle_api paddle_api_light)
+    set(lib_DEPS light_api paddle_api paddle_api_light model_parser utils core kernels ops)
 else()
-    set(lib_DEPS light_api cxx_api paddle_api_full paddle_api paddle_api_light)
+    set(lib_DEPS light_api cxx_api paddle_api_full paddle_api paddle_api_light model_parser utils core kernels ops)
 endif()
 
 include_directories(${JNI_INCLUDE_DIRS} ${_classDir} ${_stubDir})
@@ -15,7 +15,7 @@ if (NOT LITE_ON_TINY_PUBLISH)
         DEPS ${lib_DEPS} kernels)
     # Unlike static library, module library has to link target to be able to work
     # as a single .so lib.
-    target_link_libraries(paddle_lite_jni ${lib_DEPS} kernels)
+    target_link_libraries(paddle_lite_jni ${lib_DEPS})
     if (LITE_WITH_NPU)
         # Strips the symbols of our protobuf functions to fix the conflicts during
         # loading HIAI builder libs (libhiai_ir.so and libhiai_ir_build.so)
