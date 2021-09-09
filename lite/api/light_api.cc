@@ -395,10 +395,9 @@ void LightPredictor::CheckInputValid() {
     if (!CompareShape(GetInput(idx)->dims().Vectorize(), input_shapes_[idx])) {
       LOG(FATAL) << " Error input tensor shape. Input index (" << idx
                  << ") Tensor name (" << input_names_[idx]
-                 << ") Require shape of ("
-                 << ShapeToStr(GetInput(idx)->dims().Vectorize())
-                 << ") Input tensor's shape (" << ShapeToStr(input_shapes_[idx])
-                 << ").";
+                 << ") Require shape of (" << ShapeToStr(input_shapes_[idx])
+                 << ") Input tensor's shape ("
+                 << ShapeToStr(GetInput(idx)->dims().Vectorize()) << ").";
     }
   }
 }
