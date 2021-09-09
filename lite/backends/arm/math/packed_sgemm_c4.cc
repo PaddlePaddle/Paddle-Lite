@@ -2495,269 +2495,269 @@ void sgemm_prepack_c4_small(int M,
           );
         b += 4;
       }
-    A_packed += lda;
-  }
-} else {
-  float32x4_t vzero = vdupq_n_f32(0.f);
-  for (int m = 0; m < mloop; ++m) {
-    const float* b = B;
-    int n = N;
-    // clang-format off
-      for (; n > 7; n -= 8) {
-        int cnt = kcnt;
-        const float* a_ptr = A_packed;
-        const float* b_ptr = b;
-          asm volatile(
-            "0:\n"
-            /* load a0, a1 */
-            "ld1  {v16.4s, v17.4s}, [%[a]], #32 \n"
-            /* load b0, b1 */
-            "ld1  {v0.4s,  v1.4s}, [%[b]], #32 \n"
-            /* load b2, b3 */
-            "ld1  {v2.4s,  v3.4s},  [%[b]], #32 \n"
-            /* load a2, a3 */
-            "fmul v8.4s,  v16.4s, v0.s[0] \n"
-            "fmul v9.4s,  v16.4s, v1.s[0] \n"
-            "fmul v10.4s, v16.4s, v2.s[0] \n"
-            "fmul v11.4s, v16.4s, v3.s[0] \n"
-            "ld1  {v18.4s, v19.4s}, [%[a]], #32 \n"
-            "prfm pldl1keep, [%[b]]       \n"
-            "fmla v8.4s,  v17.4s, v0.s[1] \n"
-            "fmla v9.4s,  v17.4s, v1.s[1] \n"
-            "fmla v10.4s, v17.4s, v2.s[1] \n"
-            "fmla v11.4s, v17.4s, v3.s[1] \n"
-            /* load b4, b5 */
-            "ld1  {v4.4s, v5.4s}, [%[b]], #32 \n"
-            "fmla v8.4s,  v18.4s, v0.s[2] \n"
-            "fmla v9.4s,  v18.4s, v1.s[2] \n"
-            "fmla v10.4s, v18.4s, v2.s[2] \n"
-            "fmla v11.4s, v18.4s, v3.s[2] \n"
-            /* load b6, b7 */
-            "ld1  {v6.4s, v7.4s}, [%[b]], #32 \n"
-            "fmla v8.4s,  v19.4s, v0.s[3] \n"
-            "fmla v9.4s,  v19.4s, v1.s[3] \n"
-            "fmla v10.4s, v19.4s, v2.s[3] \n"
-            "fmla v11.4s, v19.4s, v3.s[3] \n"
-            "sub  %[b],   %[b],   #128    \n"
-            "fmul v12.4s, v16.4s, v4.s[0] \n"
-            "fmul v13.4s, v16.4s, v5.s[0] \n"
-            "fmul v14.4s, v16.4s, v6.s[0] \n"
-            "fmul v15.4s, v16.4s, v7.s[0] \n"
-            "add  %[b],   %[b],   %[ldb]  \n"
-            "fmla v12.4s, v17.4s, v4.s[1] \n"
-            "fmla v13.4s, v17.4s, v5.s[1] \n"
-            "fmla v14.4s, v17.4s, v6.s[1] \n"
-            "fmla v15.4s, v17.4s, v7.s[1] \n"
-            /* load a0, a1 */
-            "ld1  {v16.4s, v17.4s}, [%[a]], #32 \n"
-            "fmla v12.4s, v18.4s, v4.s[2] \n"
-            "fmla v13.4s, v18.4s, v5.s[2] \n"
-            "fmla v14.4s, v18.4s, v6.s[2] \n"
-            "fmla v15.4s, v18.4s, v7.s[2] \n"
-            /* load b0, b1 */
-            "ld1  {v0.4s,  v1.4s}, [%[b]], #32 \n"
-            "fmla v12.4s, v19.4s, v4.s[3] \n"
-            "fmla v13.4s, v19.4s, v5.s[3] \n"
-            "fmla v14.4s, v19.4s, v6.s[3] \n"
-            "fmla v15.4s, v19.4s, v7.s[3] \n"
-            "subs %w[cnt], %w[cnt], #1    \n"
-            "beq  2f                      \n"
-            "1:\n"
-            /* load b2, b3 */
-            "ld1  {v2.4s,  v3.4s},  [%[b]], #32 \n"
-            "fmla v8.4s,  v16.4s, v0.s[0] \n"
-            "fmla v9.4s,  v16.4s, v1.s[0] \n"
-            "fmla v10.4s, v16.4s, v2.s[0] \n"
-            "fmla v11.4s, v16.4s, v3.s[0] \n"
-            /* load a2, a3 */
-            "ld1  {v18.4s, v19.4s}, [%[a]], #32 \n"
-            "prfm pldl1keep, [%[b]]       \n"
-            "fmla v8.4s,  v17.4s, v0.s[1] \n"
-            "fmla v9.4s,  v17.4s, v1.s[1] \n"
-            "fmla v10.4s, v17.4s, v2.s[1] \n"
-            "fmla v11.4s, v17.4s, v3.s[1] \n"
-            /* load b4, b5 */
-            "ld1  {v4.4s, v5.4s}, [%[b]], #32 \n"
-            "fmla v8.4s,  v18.4s, v0.s[2] \n"
-            "fmla v9.4s,  v18.4s, v1.s[2] \n"
-            "fmla v10.4s, v18.4s, v2.s[2] \n"
-            "fmla v11.4s, v18.4s, v3.s[2] \n"
-            /* load b6, b7 */
-            "ld1  {v6.4s, v7.4s}, [%[b]], #32 \n"
-            "fmla v8.4s,  v19.4s, v0.s[3] \n"
-            "fmla v9.4s,  v19.4s, v1.s[3] \n"
-            "fmla v10.4s, v19.4s, v2.s[3] \n"
-            "fmla v11.4s, v19.4s, v3.s[3] \n"
-            "sub  %[b],   %[b],   #128    \n"
-            "fmla v12.4s, v16.4s, v4.s[0] \n"
-            "fmla v13.4s, v16.4s, v5.s[0] \n"
-            "fmla v14.4s, v16.4s, v6.s[0] \n"
-            "fmla v15.4s, v16.4s, v7.s[0] \n"
-            "add  %[b],   %[b],   %[ldb]  \n"
-            "fmla v12.4s, v17.4s, v4.s[1] \n"
-            "fmla v13.4s, v17.4s, v5.s[1] \n"
-            "fmla v14.4s, v17.4s, v6.s[1] \n"
-            "fmla v15.4s, v17.4s, v7.s[1] \n"
-            /* load a0, a1 */
-            "ld1  {v16.4s, v17.4s}, [%[a]], #32 \n"
-            "fmla v12.4s, v18.4s, v4.s[2] \n"
-            "fmla v13.4s, v18.4s, v5.s[2] \n"
-            "fmla v14.4s, v18.4s, v6.s[2] \n"
-            "fmla v15.4s, v18.4s, v7.s[2] \n"
-            /* load b0, b1 */
-            "ld1  {v0.4s,  v1.4s}, [%[b]], #32 \n"
-            "fmla v12.4s, v19.4s, v4.s[3] \n"
-            "fmla v13.4s, v19.4s, v5.s[3] \n"
-            "fmla v14.4s, v19.4s, v6.s[3] \n"
-            "fmla v15.4s, v19.4s, v7.s[3] \n"
-            "subs %w[cnt], %w[cnt], #1    \n"
-            "bne  1b                      \n"
-            "2:\n"
-            "st1  {v8.4s,  v9.4s,  v10.4s, v11.4s}, [%[c]], #64 \n"
-            "st1  {v12.4s, v13.4s, v14.4s, v15.4s}, [%[c]], #64 \n"
+      A_packed += lda;
+    }
+  } else {
+    float32x4_t vzero = vdupq_n_f32(0.f);
+    for (int m = 0; m < mloop; ++m) {
+      const float* b = B;
+      int n = N;
+      // clang-format off
+        for (; n > 7; n -= 8) {
+          int cnt = kcnt;
+          const float* a_ptr = A_packed;
+          const float* b_ptr = b;
+            asm volatile(
+              "0:\n"
+              /* load a0, a1 */
+              "ld1  {v16.4s, v17.4s}, [%[a]], #32 \n"
+              /* load b0, b1 */
+              "ld1  {v0.4s,  v1.4s}, [%[b]], #32 \n"
+              /* load b2, b3 */
+              "ld1  {v2.4s,  v3.4s},  [%[b]], #32 \n"
+              /* load a2, a3 */
+              "fmul v8.4s,  v16.4s, v0.s[0] \n"
+              "fmul v9.4s,  v16.4s, v1.s[0] \n"
+              "fmul v10.4s, v16.4s, v2.s[0] \n"
+              "fmul v11.4s, v16.4s, v3.s[0] \n"
+              "ld1  {v18.4s, v19.4s}, [%[a]], #32 \n"
+              "prfm pldl1keep, [%[b]]       \n"
+              "fmla v8.4s,  v17.4s, v0.s[1] \n"
+              "fmla v9.4s,  v17.4s, v1.s[1] \n"
+              "fmla v10.4s, v17.4s, v2.s[1] \n"
+              "fmla v11.4s, v17.4s, v3.s[1] \n"
+              /* load b4, b5 */
+              "ld1  {v4.4s, v5.4s}, [%[b]], #32 \n"
+              "fmla v8.4s,  v18.4s, v0.s[2] \n"
+              "fmla v9.4s,  v18.4s, v1.s[2] \n"
+              "fmla v10.4s, v18.4s, v2.s[2] \n"
+              "fmla v11.4s, v18.4s, v3.s[2] \n"
+              /* load b6, b7 */
+              "ld1  {v6.4s, v7.4s}, [%[b]], #32 \n"
+              "fmla v8.4s,  v19.4s, v0.s[3] \n"
+              "fmla v9.4s,  v19.4s, v1.s[3] \n"
+              "fmla v10.4s, v19.4s, v2.s[3] \n"
+              "fmla v11.4s, v19.4s, v3.s[3] \n"
+              "sub  %[b],   %[b],   #128    \n"
+              "fmul v12.4s, v16.4s, v4.s[0] \n"
+              "fmul v13.4s, v16.4s, v5.s[0] \n"
+              "fmul v14.4s, v16.4s, v6.s[0] \n"
+              "fmul v15.4s, v16.4s, v7.s[0] \n"
+              "add  %[b],   %[b],   %[ldb]  \n"
+              "fmla v12.4s, v17.4s, v4.s[1] \n"
+              "fmla v13.4s, v17.4s, v5.s[1] \n"
+              "fmla v14.4s, v17.4s, v6.s[1] \n"
+              "fmla v15.4s, v17.4s, v7.s[1] \n"
+              /* load a0, a1 */
+              "ld1  {v16.4s, v17.4s}, [%[a]], #32 \n"
+              "fmla v12.4s, v18.4s, v4.s[2] \n"
+              "fmla v13.4s, v18.4s, v5.s[2] \n"
+              "fmla v14.4s, v18.4s, v6.s[2] \n"
+              "fmla v15.4s, v18.4s, v7.s[2] \n"
+              /* load b0, b1 */
+              "ld1  {v0.4s,  v1.4s}, [%[b]], #32 \n"
+              "fmla v12.4s, v19.4s, v4.s[3] \n"
+              "fmla v13.4s, v19.4s, v5.s[3] \n"
+              "fmla v14.4s, v19.4s, v6.s[3] \n"
+              "fmla v15.4s, v19.4s, v7.s[3] \n"
+              "subs %w[cnt], %w[cnt], #1    \n"
+              "beq  2f                      \n"
+              "1:\n"
+              /* load b2, b3 */
+              "ld1  {v2.4s,  v3.4s},  [%[b]], #32 \n"
+              "fmla v8.4s,  v16.4s, v0.s[0] \n"
+              "fmla v9.4s,  v16.4s, v1.s[0] \n"
+              "fmla v10.4s, v16.4s, v2.s[0] \n"
+              "fmla v11.4s, v16.4s, v3.s[0] \n"
+              /* load a2, a3 */
+              "ld1  {v18.4s, v19.4s}, [%[a]], #32 \n"
+              "prfm pldl1keep, [%[b]]       \n"
+              "fmla v8.4s,  v17.4s, v0.s[1] \n"
+              "fmla v9.4s,  v17.4s, v1.s[1] \n"
+              "fmla v10.4s, v17.4s, v2.s[1] \n"
+              "fmla v11.4s, v17.4s, v3.s[1] \n"
+              /* load b4, b5 */
+              "ld1  {v4.4s, v5.4s}, [%[b]], #32 \n"
+              "fmla v8.4s,  v18.4s, v0.s[2] \n"
+              "fmla v9.4s,  v18.4s, v1.s[2] \n"
+              "fmla v10.4s, v18.4s, v2.s[2] \n"
+              "fmla v11.4s, v18.4s, v3.s[2] \n"
+              /* load b6, b7 */
+              "ld1  {v6.4s, v7.4s}, [%[b]], #32 \n"
+              "fmla v8.4s,  v19.4s, v0.s[3] \n"
+              "fmla v9.4s,  v19.4s, v1.s[3] \n"
+              "fmla v10.4s, v19.4s, v2.s[3] \n"
+              "fmla v11.4s, v19.4s, v3.s[3] \n"
+              "sub  %[b],   %[b],   #128    \n"
+              "fmla v12.4s, v16.4s, v4.s[0] \n"
+              "fmla v13.4s, v16.4s, v5.s[0] \n"
+              "fmla v14.4s, v16.4s, v6.s[0] \n"
+              "fmla v15.4s, v16.4s, v7.s[0] \n"
+              "add  %[b],   %[b],   %[ldb]  \n"
+              "fmla v12.4s, v17.4s, v4.s[1] \n"
+              "fmla v13.4s, v17.4s, v5.s[1] \n"
+              "fmla v14.4s, v17.4s, v6.s[1] \n"
+              "fmla v15.4s, v17.4s, v7.s[1] \n"
+              /* load a0, a1 */
+              "ld1  {v16.4s, v17.4s}, [%[a]], #32 \n"
+              "fmla v12.4s, v18.4s, v4.s[2] \n"
+              "fmla v13.4s, v18.4s, v5.s[2] \n"
+              "fmla v14.4s, v18.4s, v6.s[2] \n"
+              "fmla v15.4s, v18.4s, v7.s[2] \n"
+              /* load b0, b1 */
+              "ld1  {v0.4s,  v1.4s}, [%[b]], #32 \n"
+              "fmla v12.4s, v19.4s, v4.s[3] \n"
+              "fmla v13.4s, v19.4s, v5.s[3] \n"
+              "fmla v14.4s, v19.4s, v6.s[3] \n"
+              "fmla v15.4s, v19.4s, v7.s[3] \n"
+              "subs %w[cnt], %w[cnt], #1    \n"
+              "bne  1b                      \n"
+              "2:\n"
+              "st1  {v8.4s,  v9.4s,  v10.4s, v11.4s}, [%[c]], #64 \n"
+              "st1  {v12.4s, v13.4s, v14.4s, v15.4s}, [%[c]], #64 \n"
+              : [a] "+r" (a_ptr),
+                [b] "+r" (b_ptr),
+                [c] "+r" (C),
+                [cnt] "+r" (cnt)
+              : [ldb]  "r" (ldb_byte),
+                [vzero] "w" (vzero)
+              : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9",
+                "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18",
+                "v19", "cc", "memory"
+              );
+          b += 4 * 8;
+        }
+        for (; n > 3; n -= 4) {
+          int cnt = kcnt;
+          const float* a_ptr = A_packed;
+          const float* b_ptr = b;
+            asm volatile(
+              "0:\n"
+              /* load a0, a1 */
+              "ld1  {v16.4s, v17.4s}, [%[a]], #32 \n"
+              /* load b0-b3 */
+              "ld1  {v0.4s,  v1.4s},  [%[b]], #32 \n"
+              "ld1  {v2.4s,  v3.4s},  [%[b]], #32 \n"
+              "fmul v8.4s,  v16.4s, v0.s[0] \n"
+              "fmul v9.4s,  v16.4s, v1.s[0] \n"
+              "fmul v10.4s, v16.4s, v2.s[0] \n"
+              "fmul v11.4s, v16.4s, v3.s[0] \n"
+              /* load a2, a3 */
+              "ld1  {v18.4s, v19.4s}, [%[a]], #32 \n"
+              "sub  %[b],   %[b],   #64     \n"
+              "fmla v8.4s,  v17.4s, v0.s[1] \n"
+              "fmla v9.4s,  v17.4s, v1.s[1] \n"
+              "fmla v10.4s, v17.4s, v2.s[1] \n"
+              "fmla v11.4s, v17.4s, v3.s[1] \n"
+              "add  %[b],   %[b],   %[ldb]  \n"
+              "fmla v8.4s,  v18.4s, v0.s[2] \n"
+              "fmla v9.4s,  v18.4s, v1.s[2] \n"
+              "fmla v10.4s, v18.4s, v2.s[2] \n"
+              "fmla v11.4s, v18.4s, v3.s[2] \n"
+              /* load a0, a1 */
+              "ld1  {v16.4s, v17.4s}, [%[a]], #32 \n"
+              "fmla v8.4s,  v19.4s, v0.s[3] \n"
+              "fmla v9.4s,  v19.4s, v1.s[3] \n"
+              "fmla v10.4s, v19.4s, v2.s[3] \n"
+              "fmla v11.4s, v19.4s, v3.s[3] \n"
+              "subs %w[cnt], %w[cnt], #1    \n"
+              "beq  2f                      \n"
+              "1:\n"
+              /* load b0-b3 */
+              "ld1  {v0.4s,  v1.4s},  [%[b]], #32 \n"
+              "ld1  {v2.4s,  v3.4s},  [%[b]], #32 \n"
+              "fmla v8.4s,  v16.4s, v0.s[0] \n"
+              "fmla v9.4s,  v16.4s, v1.s[0] \n"
+              "fmla v10.4s, v16.4s, v2.s[0] \n"
+              "fmla v11.4s, v16.4s, v3.s[0] \n"
+              /* load a2, a3 */
+              "ld1  {v18.4s, v19.4s}, [%[a]], #32 \n"
+              "sub  %[b],   %[b],   #64     \n"
+              "fmla v8.4s,  v17.4s, v0.s[1] \n"
+              "fmla v9.4s,  v17.4s, v1.s[1] \n"
+              "fmla v10.4s, v17.4s, v2.s[1] \n"
+              "fmla v11.4s, v17.4s, v3.s[1] \n"
+              "add  %[b],   %[b],   %[ldb]  \n"
+              "fmla v8.4s,  v18.4s, v0.s[2] \n"
+              "fmla v9.4s,  v18.4s, v1.s[2] \n"
+              "fmla v10.4s, v18.4s, v2.s[2] \n"
+              "fmla v11.4s, v18.4s, v3.s[2] \n"
+              /* load a0, a1 */
+              "ld1  {v16.4s, v17.4s}, [%[a]], #32 \n"
+              "fmla v8.4s,  v19.4s, v0.s[3] \n"
+              "fmla v9.4s,  v19.4s, v1.s[3] \n"
+              "fmla v10.4s, v19.4s, v2.s[3] \n"
+              "fmla v11.4s, v19.4s, v3.s[3] \n"
+              "subs %w[cnt], %w[cnt], #1    \n"
+              "bne  1b                      \n"
+              "2:\n"
+              "st1  {v8.4s,  v9.4s,  v10.4s, v11.4s}, [%[c]], #64 \n"
             : [a] "+r" (a_ptr),
               [b] "+r" (b_ptr),
               [c] "+r" (C),
               [cnt] "+r" (cnt)
             : [ldb]  "r" (ldb_byte),
               [vzero] "w" (vzero)
-            : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9",
-              "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18",
+            : "v0", "v1", "v2", "v3", "v8", "v9",
+              "v10", "v11", "v16", "v17", "v18",
               "v19", "cc", "memory"
             );
-        b += 4 * 8;
-      }
-      for (; n > 3; n -= 4) {
-        int cnt = kcnt;
-        const float* a_ptr = A_packed;
-        const float* b_ptr = b;
-          asm volatile(
-            "0:\n"
-            /* load a0, a1 */
-            "ld1  {v16.4s, v17.4s}, [%[a]], #32 \n"
-            /* load b0-b3 */
-            "ld1  {v0.4s,  v1.4s},  [%[b]], #32 \n"
-            "ld1  {v2.4s,  v3.4s},  [%[b]], #32 \n"
-            "fmul v8.4s,  v16.4s, v0.s[0] \n"
-            "fmul v9.4s,  v16.4s, v1.s[0] \n"
-            "fmul v10.4s, v16.4s, v2.s[0] \n"
-            "fmul v11.4s, v16.4s, v3.s[0] \n"
-            /* load a2, a3 */
-            "ld1  {v18.4s, v19.4s}, [%[a]], #32 \n"
-            "sub  %[b],   %[b],   #64     \n"
-            "fmla v8.4s,  v17.4s, v0.s[1] \n"
-            "fmla v9.4s,  v17.4s, v1.s[1] \n"
-            "fmla v10.4s, v17.4s, v2.s[1] \n"
-            "fmla v11.4s, v17.4s, v3.s[1] \n"
-            "add  %[b],   %[b],   %[ldb]  \n"
-            "fmla v8.4s,  v18.4s, v0.s[2] \n"
-            "fmla v9.4s,  v18.4s, v1.s[2] \n"
-            "fmla v10.4s, v18.4s, v2.s[2] \n"
-            "fmla v11.4s, v18.4s, v3.s[2] \n"
-            /* load a0, a1 */
-            "ld1  {v16.4s, v17.4s}, [%[a]], #32 \n"
-            "fmla v8.4s,  v19.4s, v0.s[3] \n"
-            "fmla v9.4s,  v19.4s, v1.s[3] \n"
-            "fmla v10.4s, v19.4s, v2.s[3] \n"
-            "fmla v11.4s, v19.4s, v3.s[3] \n"
-            "subs %w[cnt], %w[cnt], #1    \n"
-            "beq  2f                      \n"
-            "1:\n"
-            /* load b0-b3 */
-            "ld1  {v0.4s,  v1.4s},  [%[b]], #32 \n"
-            "ld1  {v2.4s,  v3.4s},  [%[b]], #32 \n"
-            "fmla v8.4s,  v16.4s, v0.s[0] \n"
-            "fmla v9.4s,  v16.4s, v1.s[0] \n"
-            "fmla v10.4s, v16.4s, v2.s[0] \n"
-            "fmla v11.4s, v16.4s, v3.s[0] \n"
-            /* load a2, a3 */
-            "ld1  {v18.4s, v19.4s}, [%[a]], #32 \n"
-            "sub  %[b],   %[b],   #64     \n"
-            "fmla v8.4s,  v17.4s, v0.s[1] \n"
-            "fmla v9.4s,  v17.4s, v1.s[1] \n"
-            "fmla v10.4s, v17.4s, v2.s[1] \n"
-            "fmla v11.4s, v17.4s, v3.s[1] \n"
-            "add  %[b],   %[b],   %[ldb]  \n"
-            "fmla v8.4s,  v18.4s, v0.s[2] \n"
-            "fmla v9.4s,  v18.4s, v1.s[2] \n"
-            "fmla v10.4s, v18.4s, v2.s[2] \n"
-            "fmla v11.4s, v18.4s, v3.s[2] \n"
-            /* load a0, a1 */
-            "ld1  {v16.4s, v17.4s}, [%[a]], #32 \n"
-            "fmla v8.4s,  v19.4s, v0.s[3] \n"
-            "fmla v9.4s,  v19.4s, v1.s[3] \n"
-            "fmla v10.4s, v19.4s, v2.s[3] \n"
-            "fmla v11.4s, v19.4s, v3.s[3] \n"
-            "subs %w[cnt], %w[cnt], #1    \n"
-            "bne  1b                      \n"
-            "2:\n"
-            "st1  {v8.4s,  v9.4s,  v10.4s, v11.4s}, [%[c]], #64 \n"
-          : [a] "+r" (a_ptr),
-            [b] "+r" (b_ptr),
-            [c] "+r" (C),
-            [cnt] "+r" (cnt)
-          : [ldb]  "r" (ldb_byte),
-            [vzero] "w" (vzero)
-          : "v0", "v1", "v2", "v3", "v8", "v9",
-            "v10", "v11", "v16", "v17", "v18",
-            "v19", "cc", "memory"
-          );
-        b += 4 * 4;
-      }
-      for (; n > 0; n--) {
-        int cnt = kcnt;
-        const float* a_ptr = A_packed;
-        const float* b_ptr = b;
-           asm volatile(
-             "0:\n"
-             /* load a0, a1 */
-             "ld1  {v16.4s, v17.4s}, [%[a]], #32 \n"
-             /* load b0 */
-             "ld1  {v0.4s},  [%[b]], #16  \n"
-             "fmul v8.4s,  v16.4s, v0.s[0] \n"
-             "fmul v9.4s,  v17.4s, v0.s[1] \n"
-             /* load a2, a3 */
-             "ld1  {v18.4s, v19.4s}, [%[a]], #32 \n"
-             "sub  %[b],   %[b],   #16     \n"
-             "subs %w[cnt], %w[cnt], #1    \n"
-             "add  %[b],   %[b],   %[ldb]  \n"
-             "fmla v8.4s,  v18.4s, v0.s[2] \n"
-             "fmla v9.4s,  v19.4s, v0.s[3] \n"
-              /* load a0, a1 */
-             "ld1  {v16.4s, v17.4s}, [%[a]], #32 \n"
-             "beq  2f                      \n"
-             "1:\n"
-             /* load b0 */
-             "ld1  {v0.4s},  [%[b]], #16  \n"
-             "fmla v8.4s,  v16.4s, v0.s[0] \n"
-             "fmla v9.4s,  v17.4s, v0.s[1] \n"
-             /* load a2, a3 */
-             "ld1  {v18.4s, v19.4s}, [%[a]], #32 \n"
-             "sub  %[b],   %[b],   #16     \n"
-             "subs %w[cnt], %w[cnt], #1    \n"
-             "add  %[b],   %[b],   %[ldb]  \n"
-             "fmla v8.4s,  v18.4s, v0.s[2] \n"
-             "fmla v9.4s,  v19.4s, v0.s[3] \n"
-              /* load a0, a1 */
-             "ld1  {v16.4s, v17.4s}, [%[a]], #32 \n"
-             "bne  1b                      \n"
-             "2:\n"
-             "fadd v8.4s,  v8.4s,  v9.4s   \n"
-             "st1  {v8.4s}, [%[c]], #16    \n"
-             : [a] "+r" (a_ptr),
-               [b] "+r" (b_ptr),
-               [c] "+r" (C),
-               [cnt] "+r" (cnt)
-             : [ldb]  "r" (ldb_byte),
-               [vzero] "w" (vzero)
-             : "v0", "v8", "v9", "v16", "v17", 
-               "v18", "v19", "cc", "memory"
-             );
-        b += 4;
-      }
-    A_packed += lda;
-}
-}
+          b += 4 * 4;
+        }
+        for (; n > 0; n--) {
+          int cnt = kcnt;
+          const float* a_ptr = A_packed;
+          const float* b_ptr = b;
+             asm volatile(
+               "0:\n"
+               /* load a0, a1 */
+               "ld1  {v16.4s, v17.4s}, [%[a]], #32 \n"
+               /* load b0 */
+               "ld1  {v0.4s},  [%[b]], #16  \n"
+               "fmul v8.4s,  v16.4s, v0.s[0] \n"
+               "fmul v9.4s,  v17.4s, v0.s[1] \n"
+               /* load a2, a3 */
+               "ld1  {v18.4s, v19.4s}, [%[a]], #32 \n"
+               "sub  %[b],   %[b],   #16     \n"
+               "subs %w[cnt], %w[cnt], #1    \n"
+               "add  %[b],   %[b],   %[ldb]  \n"
+               "fmla v8.4s,  v18.4s, v0.s[2] \n"
+               "fmla v9.4s,  v19.4s, v0.s[3] \n"
+                /* load a0, a1 */
+               "ld1  {v16.4s, v17.4s}, [%[a]], #32 \n"
+               "beq  2f                      \n"
+               "1:\n"
+               /* load b0 */
+               "ld1  {v0.4s},  [%[b]], #16  \n"
+               "fmla v8.4s,  v16.4s, v0.s[0] \n"
+               "fmla v9.4s,  v17.4s, v0.s[1] \n"
+               /* load a2, a3 */
+               "ld1  {v18.4s, v19.4s}, [%[a]], #32 \n"
+               "sub  %[b],   %[b],   #16     \n"
+               "subs %w[cnt], %w[cnt], #1    \n"
+               "add  %[b],   %[b],   %[ldb]  \n"
+               "fmla v8.4s,  v18.4s, v0.s[2] \n"
+               "fmla v9.4s,  v19.4s, v0.s[3] \n"
+                /* load a0, a1 */
+               "ld1  {v16.4s, v17.4s}, [%[a]], #32 \n"
+               "bne  1b                      \n"
+               "2:\n"
+               "fadd v8.4s,  v8.4s,  v9.4s   \n"
+               "st1  {v8.4s}, [%[c]], #16    \n"
+               : [a] "+r" (a_ptr),
+                 [b] "+r" (b_ptr),
+                 [c] "+r" (C),
+                 [cnt] "+r" (cnt)
+               : [ldb]  "r" (ldb_byte),
+                 [vzero] "w" (vzero)
+               : "v0", "v8", "v9", "v16", "v17", 
+                 "v18", "v19", "cc", "memory"
+               );
+          b += 4;
+        }
+      A_packed += lda;
+    }
+  }
 }
 // clang-format on
 #else
