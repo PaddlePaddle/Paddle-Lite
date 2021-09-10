@@ -59,8 +59,8 @@ cd $workspace
 # step 5. pack compiling results and optimized models
 result_name=android_lib_opencl
 rm -rf $result_name && mkdir $result_name
-cp -rf build.lite.android.armv7.$TOOL_CHAIN/inference_lite_lib.android.armv7.opencl $result_name/armv7.$TOOL_CHAIN
-cp -rf build.lite.android.armv8.$TOOL_CHAIN/inference_lite_lib.android.armv8.opencl $result_name/armv8.$TOOL_CHAIN
+cp -rf build.lite.android.armv7.$TOOL_CHAIN.opencl/inference_lite_lib.android.armv7.opencl $result_name/armv7.opencl.$TOOL_CHAIN
+cp -rf build.lite.android.armv8.$TOOL_CHAIN.opencl/inference_lite_lib.android.armv8.opencl $result_name/armv8.opencl.$TOOL_CHAIN
 cp build.opt/lite/api/opt $result_name/
 mv build.opt/lite/api/optimized_model $result_name
 
