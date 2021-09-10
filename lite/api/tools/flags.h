@@ -35,7 +35,7 @@ static const char param_file_msg[] =
 static const char input_shape_msg[] =
     "Set input shapes according to the model, "
     "separated by comma and colon, "
-    "such as 1,3,244,244 for only one input, "
+    "such as 1,3,224,224 for only one input, "
     "1,3,224,224:1,5 for two inputs.";
 static const char input_data_path_msg[] =
     "The path of input image, if not set "

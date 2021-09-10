@@ -22,7 +22,7 @@ DEFINE_string(optimized_model_path, "", optimized_model_path_msg);
 DEFINE_string(uncombined_model_dir, "", uncombined_model_dir_msg);
 DEFINE_string(model_file, "", model_file_msg);
 DEFINE_string(param_file, "", param_file_msg);
-DEFINE_string(input_shape, "1,3,224,224", input_shape_msg);
+DEFINE_string(input_shape, "", input_shape_msg);
 DEFINE_string(input_data_path, "", input_data_path_msg);
 DEFINE_bool(show_output_elem, false, show_output_elem_msg);
 

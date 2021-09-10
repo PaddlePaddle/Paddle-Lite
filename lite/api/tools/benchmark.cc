@@ -37,42 +37,25 @@ int Benchmark(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
   // Check flags validation
-  bool is_opt_model =
-      (FLAGS_uncombined_model_dir.empty() && FLAGS_model_file.empty() &&
-       FLAGS_param_file.empty() && !FLAGS_optimized_model_path.empty());
-  bool is_origin_model =
-      (!FLAGS_uncombined_model_dir.empty() ||
-       (!FLAGS_model_file.empty() && !FLAGS_param_file.empty()));
-  if (!is_origin_model && !is_opt_model) {
-    std::cerr << "\nNo model path is set!" << std::endl;
-    gflags::ProgramUsage();
+  if (!CheckFlagsValid()) {
+    std::cout << gflags::ProgramUsage();
     exit(0);
   }
-  if (!FLAGS_uncombined_model_dir.empty() &&
-      (!FLAGS_model_file.empty() && !FLAGS_param_file.empty())) {
-    std::cerr << "Both --uncombined_model_dir and --model_file --param_file "
-                 "are set. Only need to set one model format!"
-              << std::endl;
-    gflags::ProgramUsage();
-    exit(0);
-  }
-  if (FLAGS_backend.empty()) {
-    std::cerr << "Must set --backend option!" << std::endl;
-    gflags::ProgramUsage();
-    exit(0);
-  }
-
-  // Get input shape
-  std::vector<int64_t> input_shape = GetInputShape(FLAGS_input_shape);
 
   // Get optimized model file if necessary
   std::string opt_model_path = FLAGS_optimized_model_path;
+  bool is_origin_model =
+      (!FLAGS_uncombined_model_dir.empty() ||
+       (!FLAGS_model_file.empty() && !FLAGS_param_file.empty()));
   if (is_origin_model) {
     if (opt_model_path.empty()) {
       opt_model_path = "opt";
     }
     OutputOptModel(opt_model_path);
   }
+
+  // Get input shape
+  auto input_shape = GetInputShape(FLAGS_input_shape);
 
   // Run
   Run(opt_model_path + ".nb", input_shape);

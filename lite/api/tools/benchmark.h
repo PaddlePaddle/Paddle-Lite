@@ -150,6 +150,37 @@ std::string get_device_info() {
 }
 #endif  // __ANDROID__
 
+bool CheckFlagsValid() {
+  bool ret = true;
+  bool is_opt_model =
+      (FLAGS_uncombined_model_dir.empty() && FLAGS_model_file.empty() &&
+       FLAGS_param_file.empty() && !FLAGS_optimized_model_path.empty());
+  bool is_origin_model =
+      (!FLAGS_uncombined_model_dir.empty() ||
+       (!FLAGS_model_file.empty() && !FLAGS_param_file.empty()));
+  if (!is_origin_model && !is_opt_model) {
+    std::cerr << "\nNo model path is set!" << std::endl;
+    ret = false;
+  }
+  if (!FLAGS_uncombined_model_dir.empty() &&
+      (!FLAGS_model_file.empty() && !FLAGS_param_file.empty())) {
+    std::cerr << "Both --uncombined_model_dir and --model_file --param_file "
+                 "are set. Only need to set one model format!"
+              << std::endl;
+    ret = false;
+  }
+  if (FLAGS_backend.empty()) {
+    std::cerr << "Must set --backend option!" << std::endl;
+    ret = false;
+  }
+  if (FLAGS_input_shape.empty()) {
+    std::cerr << "Must set --input_shape option!" << std::endl;
+    ret = false;
+  }
+
+  return ret;
+}
+
 const std::string PrintUsage() {
   STL::stringstream ss;
   ss << "\nNote: \n"
@@ -159,12 +190,16 @@ const std::string PrintUsage() {
         "or set --model_file and param_file for combined paddle model. \n"
         "For example: \n"
         "  For optimized model : ./benchmark_bin "
-        "--optimized_model_path=/data/local/tmp/mobilenetv1_opt.nb \n"
+        "--optimized_model_path=/data/local/tmp/mobilenetv1_opt.nb "
+        "--input_shape=1,3,224,224 --backend=arm \n\n"
         "  For uncombined model: ./benchmark_bin "
-        "--uncombined_model_dir=/data/local/tmp/mobilenetv1 \n"
+        "--uncombined_model_dir=/data/local/tmp/mobilenetv1 "
+        "--input_shape=1,3,224,224 --backend=arm \n\n"
         "  For combined model  : ./benchmark_bin "
         "--model_file=/data/local/tmp/mobilenetv1/model "
-        "--param_file=/data/local/tmp/mobilenetv1/params \n";
+        "--param_file=/data/local/tmp/mobilenetv1/params "
+        "--input_shape=1,3,224,224 --backend=arm \n\n"
+        "For detailed usage info: ./benchmark_bin --help \n\n";
 
   return ss.str();
 }
