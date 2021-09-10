@@ -17,6 +17,7 @@
 #include <utility>
 #include "driver/huawei_ascend_npu/optimizer/fix_multiple_outputs_ops.h"
 #include "driver/huawei_ascend_npu/optimizer/fix_no_inputs_ops.h"
+#include "driver/huawei_ascend_npu/optimizer/fix_operators_constraint_pass.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -85,6 +86,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
     FixMultipleOutputsOps(model);
     FixNoInputsOps(model);
+    NNADAPTER_CHECK_EQ(FixOperatorsConstraintPass(model), NNADAPTER_NO_ERROR);
     NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
     // Convert a NNAdapter model to a GE graph
     std::vector<hal::Operation*> operations =
@@ -380,6 +382,15 @@ std::shared_ptr<Operator> Program::AddConstantOperator(
   auto constant_operator = std::make_shared<Operator>(op, tensor_desc, "", -1);
   UpdateOperatorMap(nullptr, constant_operator);
   return constant_operator;
+}
+
+std::shared_ptr<Operator> Program::AddZeroConstantOperator(
+    NNAdapterOperandPrecisionCode precision,
+    const std::vector<int32_t>& dimensions) {
+  auto precision_data_length = GetOperandPrecisionDataLength(precision);
+  auto num_values = ProductionOfDimensions(dimensions);
+  std::vector<uint8_t> zero_values(precision_data_length * num_values, 0);
+  return AddConstantOperator(&zero_values[0], precision, dimensions);
 }
 
 std::shared_ptr<Operator> Program::AddInt32ConstantOperator(
