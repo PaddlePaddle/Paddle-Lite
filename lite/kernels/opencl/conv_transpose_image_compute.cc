@@ -406,3 +406,4 @@ REGISTER_LITE_KERNEL(depthwise_conv2d_transpose,
                                        DATALAYOUT(kImageDefault))})
     .BindPaddleOpVersion("depthwise_conv2d_transpose", 1)
     .Finalize();
+
