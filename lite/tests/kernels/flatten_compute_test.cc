@@ -90,19 +90,14 @@ void TestFlatten(Place place, float abs_error) {
   }
 }
 
+#if defined(LITE_WITH_NNADAPTER) && defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
 TEST(flatten, precision) {
   LOG(INFO) << "test flatten op";
-  Place place;
+  Place place = TARGET(kNNAdapter);
   float abs_error = 1e-5;
-#if defined(LITE_WITH_HUAWEI_ASCEND_NPU)
-  place = TARGET(kHuaweiAscendNPU);
-  abs_error = 1e-2;  // precision_mode default is force_fp16
-#else
-  return;
-#endif
-
   TestFlatten(place, abs_error);
 }
+#endif
 
 static std::vector<int64_t> GetOutputShape(const DDim in_dims,
                                            int start_axis,
@@ -191,9 +186,13 @@ TEST(flatten_contiguous_range, precision) {
   LOG(INFO) << "test flatten_contiguous_range op";
   Place place;
   float abs_error = 1e-5;
-#if defined(LITE_WITH_HUAWEI_ASCEND_NPU)
-  place = TARGET(kHuaweiAscendNPU);
+#if defined(LITE_WITH_NNADAPTER)
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kNNAdapter);
   abs_error = 1e-2;  // precision_mode default is force_fp16
+#else
+  return;
+#endif
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kHost);
 #else

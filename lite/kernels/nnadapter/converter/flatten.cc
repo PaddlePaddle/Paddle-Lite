@@ -1,0 +1,107 @@
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "lite/kernels/nnadapter/converter/converter.h"
+
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace nnadapter {
+
+int ConvertFlatten(Converter* converter, OpInfo* op, Scope* scope) {
+  auto x_name = op->Input("X").front();
+  auto out_name = op->Output("Out").front();
+  auto axis = op->GetAttr<int>("axis");
+
+  auto input_operand = converter->GetMappedOperand(x_name);
+  auto input_type = converter->GetOperandType(input_operand);
+  axis = axis < 0 ? axis + input_type->dimension_count : axis;
+  NNAdapterOperand* output_operand = nullptr;
+  if (axis == 0) {
+    // If dimension_count == 1, directly convert to reshape with shape[1,-1],
+    // else need convert to flatten + reshape
+    if (input_type->dimension_count > 1) {
+      auto start_operand =
+          converter->AddConstantOperand(static_cast<int32_t>(0));
+      auto stop_operand = converter->AddConstantOperand(
+          static_cast<int32_t>(input_type->dimension_count - 1));
+      output_operand = converter->AddOutputOperand(out_name + "/flatten_0");
+      converter->AddOperation(NNADAPTER_FLATTEN,
+                              {input_operand, start_operand, stop_operand},
+                              {output_operand});
+      input_operand = output_operand;
+    }
+    auto shape_operand =
+        converter->AddConstantOperand(std::vector<int32_t>{1, -1});
+    output_operand = converter->AddOutputOperand(out_name);
+    converter->AddOperation(
+        NNADAPTER_RESHAPE, {input_operand, shape_operand}, {output_operand});
+  } else if (axis == input_type->dimension_count - 1) {
+    // start == stop 会怎样？
+    auto start_operand = converter->AddConstantOperand(static_cast<int32_t>(0));
+    auto stop_operand =
+        converter->AddConstantOperand(static_cast<int32_t>(axis - 1));
+    auto output_operand = converter->AddOutputOperand(out_name);
+    converter->AddOperation(NNADAPTER_FLATTEN,
+                            {input_operand, start_operand, stop_operand},
+                            {output_operand});
+  } else {
+    // step1: flatten [0,axis)
+    auto start_operand = converter->AddConstantOperand(static_cast<int32_t>(0));
+    auto stop_operand =
+        converter->AddConstantOperand(static_cast<int32_t>(axis - 1));
+    output_operand = converter->AddOutputOperand(out_name + "/flatten_0_axis");
+    converter->AddOperation(NNADAPTER_FLATTEN,
+                            {input_operand, start_operand, stop_operand},
+                            {output_operand});
+    // step2: flatten [axis, -1)
+    auto output_type = converter->GetOperandType(output_operand);
+    int32_t start = output_type->dimension_count == input_type->dimension_count
+                        ? axis
+                        : axis - 1;
+    input_operand = output_operand;
+    start_operand = converter->AddConstantOperand(static_cast<int32_t>(start));
+    stop_operand = converter->AddConstantOperand(static_cast<int32_t>(-1));
+    output_operand = converter->AddOutputOperand(out_name);
+    converter->AddOperation(NNADAPTER_FLATTEN,
+                            {input_operand, start_operand, stop_operand},
+                            {output_operand});
+  }
+  return NO_ERROR;
+}
+
+int ConvertFlattenContiguousRange(Converter* converter,
+                                  OpInfo* op,
+                                  Scope* scope) {
+  auto x_name = op->Input("X").front();
+  auto out_name = op->Output("Out").front();
+  auto start_axis = op->GetAttr<int>("start_axis");
+  auto stop_axis = op->GetAttr<int>("stop_axis");
+
+  auto input_operand = converter->GetMappedOperand(x_name);
+  NNAdapterOperand* output_operand = converter->AddOutputOperand(out_name);
+  auto start_operand =
+      converter->AddConstantOperand(static_cast<int32_t>(start_axis));
+  auto stop_operand =
+      converter->AddConstantOperand(static_cast<int32_t>(stop_axis));
+  converter->AddOperation(NNADAPTER_FLATTEN,
+                          {input_operand, start_operand, stop_operand},
+                          {output_operand});
+  return NO_ERROR;
+}
+
+}  // namespace nnadapter
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle

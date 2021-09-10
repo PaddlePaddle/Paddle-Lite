@@ -113,6 +113,7 @@ class Program {
   int ConvertConv2D(hal::Operation* operation);
   int ConvertFullyConnected(hal::Operation* operation);
   int ConvertFill(hal::Operation* operation);
+  int ConvertFlatten(hal::Operation* operation);
   int ConvertPool2D(hal::Operation* operation);
   int ConvertElementwise(hal::Operation* operation);
   int ConvertSoftmax(hal::Operation* operation);
