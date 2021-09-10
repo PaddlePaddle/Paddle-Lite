@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __NNADAPTER_DRIVER_AMLOGIC_CONVERTER_ALL_H__  // NOLINT
-#define __NNADAPTER_DRIVER_AMLOGIC_CONVERTER_ALL_H__
+#ifndef __NNADAPTER_DRIVER_AMLOGIC_NPU_CONVERTER_ALL_H__  // NOLINT
+#define __NNADAPTER_DRIVER_AMLOGIC_NPU_CONVERTER_ALL_H__
 
 REGISTER_CONVERTER(CONV_2D, ConvertConv2D)
 REGISTER_CONVERTER(CONV_2D_TRANSPOSE, ConvertConv2DTranspose)

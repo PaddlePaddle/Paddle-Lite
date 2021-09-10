@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/imagination_nna/converter.h"
+#include "driver/imagination_nna/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -21,7 +21,7 @@
 namespace nnadapter {
 namespace imagination_nna {
 
-int Program::ConvertFullyConnected(hal::Operation* operation) {
+int ConvertFullyConnected(Converter* converter, hal::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
@@ -53,9 +53,9 @@ int Program::ConvertFullyConnected(hal::Operation* operation) {
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
   // Convert to imgdnn tensors and operators
-  auto input_tensor = GetMappedTensor(input_operand);
+  auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
-    input_tensor = ConvertOperand(input_operand);
+    input_tensor = converter->ConvertOperand(input_operand);
   }
   // Transpose weight tensor from (m,k) to (k,m)
   std::vector<uint8_t> transpose_weight_data(num_units * input_size);
@@ -68,24 +68,27 @@ int Program::ConvertFullyConnected(hal::Operation* operation) {
                 transpose_weight_dimensions.data());
   NNADAPTER_CHECK(
       IsUInt8AsymmPerLayerQuantType(weight_operand->type.precision));
-  auto transpose_weight_tensor = AddQuant8ConstantTensor(
+  auto transpose_weight_tensor = converter->AddQuant8ConstantTensor(
       transpose_weight_data.data(),
       transpose_weight_dimensions.data(),
       transpose_weight_dimensions.size(),
       weight_operand->type.asymm_per_layer_params.scale,
       weight_operand->type.asymm_per_layer_params.zero_point);
   // Expand bias tensor from (c) to (1, c)
-  auto bias_tensor =
-      ConvertOperand(bias_operand, {1, bias_operand->type.dimensions[0]});
+  auto bias_tensor = converter->ConvertOperand(
+      bias_operand, {1, bias_operand->type.dimensions[0]});
   NNADAPTER_CHECK(
       IsUInt8AsymmPerLayerQuantType(output_operand->type.precision));
   imgdnn_quant_param output_quant_param;
   output_quant_param.scale = output_operand->type.asymm_per_layer_params.scale;
   output_quant_param.zero_point =
       output_operand->type.asymm_per_layer_params.zero_point;
-  auto output_tensor = imgdnn_mgr_.CreateFullyConnectedLayer(
-      input_tensor, transpose_weight_tensor, bias_tensor, output_quant_param);
-  UpdateTensorMap(output_operand, output_tensor);
+  auto output_tensor = ADD_OPERATOR(CreateFullyConnectedLayer,
+                                    input_tensor,
+                                    transpose_weight_tensor,
+                                    bias_tensor,
+                                    output_quant_param);
+  converter->UpdateTensorMap(output_operand, output_tensor);
   return NNADAPTER_NO_ERROR;
 }
 

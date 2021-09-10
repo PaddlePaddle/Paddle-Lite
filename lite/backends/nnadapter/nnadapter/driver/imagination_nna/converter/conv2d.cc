@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "core/operation/conv2d.h"
-#include "driver/imagination_nna/converter.h"
+#include "driver/imagination_nna/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/utility.h"
@@ -21,7 +21,7 @@
 namespace nnadapter {
 namespace imagination_nna {
 
-int Program::ConvertConv2D(hal::Operation* operation) {
+int ConvertConv2D(Converter* converter, hal::Operation* operation) {
   CONV2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
   // Dynamic shapes are still not supported
   NNADAPTER_CHECK_EQ(input_operand->type.dynamic_dimension_count, 0);
@@ -41,14 +41,14 @@ int Program::ConvertConv2D(hal::Operation* operation) {
                                         &dilation_width);
 
   // Convert to imgdnn tensors and operators
-  auto input_tensor = GetMappedTensor(input_operand);
+  auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
-    input_tensor = ConvertOperand(input_operand);
+    input_tensor = converter->ConvertOperand(input_operand);
   }
-  auto filter_tensor = ConvertOperand(filter_operand);
+  auto filter_tensor = converter->ConvertOperand(filter_operand);
   // Expand bias tensor from (c) to (1, c)
-  auto bias_tensor =
-      ConvertOperand(bias_operand, {1, bias_operand->type.dimensions[0]});
+  auto bias_tensor = converter->ConvertOperand(
+      bias_operand, {1, bias_operand->type.dimensions[0]});
   unsigned int ksizes[2] = {static_cast<unsigned int>(filter_height),
                             static_cast<unsigned int>(filter_width)};
   unsigned int strides[2] = {static_cast<unsigned int>(stride_height),
@@ -67,31 +67,32 @@ int Program::ConvertConv2D(hal::Operation* operation) {
   output_quant_param.scale = output_operand->type.asymm_per_layer_params.scale;
   output_quant_param.zero_point =
       output_operand->type.asymm_per_layer_params.zero_point;
-  auto output_tensor = imgdnn_mgr_.CreateConvolutionLayer(input_tensor,
-                                                          filter_tensor,
-                                                          bias_tensor,
-                                                          output_quant_param,
-                                                          strides,
-                                                          pad_to_begin,
-                                                          pad_to_end,
-                                                          dilations,
-                                                          is_depthwise_mode);
+  auto output_tensor = ADD_OPERATOR(CreateConvolutionLayer,
+                                    input_tensor,
+                                    filter_tensor,
+                                    bias_tensor,
+                                    output_quant_param,
+                                    strides,
+                                    pad_to_begin,
+                                    pad_to_end,
+                                    dilations,
+                                    is_depthwise_mode);
   // fuse RELU ?
   if (fuse_code == NNADAPTER_FUSED_NONE) {
   } else if (fuse_code == NNADAPTER_FUSED_RELU) {
-    output_tensor = imgdnn_mgr_.CreateReLULayer(
-        output_tensor, true, 0.0, false, 0.0, false);
+    output_tensor = ADD_OPERATOR(
+        CreateReLULayer, output_tensor, true, 0.0, false, 0.0, false);
   } else if (fuse_code == NNADAPTER_FUSED_RELU1) {
-    output_tensor =
-        imgdnn_mgr_.CreateReLULayer(output_tensor, true, 0.0, true, 1.0, false);
+    output_tensor = ADD_OPERATOR(
+        CreateReLULayer, output_tensor, true, 0.0, true, 1.0, false);
   } else if (fuse_code == NNADAPTER_FUSED_RELU6) {
-    output_tensor =
-        imgdnn_mgr_.CreateReLULayer(output_tensor, true, 0.0, true, 6.0, false);
+    output_tensor = ADD_OPERATOR(
+        CreateReLULayer, output_tensor, true, 0.0, true, 6.0, false);
   } else {
     NNADAPTER_LOG(FATAL) << "Unsupported fuse_code(" << fuse_code
                          << ") is found.";
   }
-  UpdateTensorMap(output_operand, output_tensor);
+  converter->UpdateTensorMap(output_operand, output_tensor);
   return NNADAPTER_NO_ERROR;
 }
 
