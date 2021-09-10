@@ -55,7 +55,7 @@ int Benchmark(int argc, char** argv) {
   }
 
   // Get input shape
-  auto input_shape = GetInputShape(FLAGS_input_shape);
+  auto input_shape = lite::GetInputShape(FLAGS_input_shape);
 
   // Run
   Run(opt_model_path + ".nb", input_shape);
@@ -85,7 +85,7 @@ void Run(const std::string& model_file,
   auto input_tensor = predictor->GetInput(0);
   input_tensor->Resize(input_shape);
   auto input_data = input_tensor->mutable_data<float>();
-  int64_t input_num = ShapeProduction(input_shape);
+  int64_t input_num = lite::ShapeProduction(input_shape);
   if (FLAGS_input_data_path.empty()) {
     for (int i = 0; i < input_num; ++i) {
       input_data[i] = 1.f;
@@ -131,20 +131,21 @@ void Run(const std::string& model_file,
     out_ss << "\n--- output tensor " << tidx << " ---\n";
     auto out_shape = output_tensor->shape();
     auto out_data = output_tensor->data<float>();
-    auto out_mean = compute_mean<float>(out_data, ShapeProduction(out_shape));
-    auto out_std_dev = compute_standard_deviation<float>(
-        out_data, ShapeProduction(out_shape), true, out_mean);
+    auto ele_num = lite::ShapeProduction(out_shape);
+    auto out_mean = lite::compute_mean<float>(out_data, ele_num);
+    auto out_std_dev = lite::compute_standard_deviation<float>(
+        out_data, ele_num, true, out_mean);
 
-    out_ss << "output shape(NCHW): " << ShapePrint(out_shape) << std::endl;
-    out_ss << "output tensor " << tidx
-           << " elem num: " << ShapeProduction(out_shape) << std::endl;
+    out_ss << "output shape(NCHW): " << lite::ShapePrint(out_shape)
+           << std::endl;
+    out_ss << "output tensor " << tidx << " elem num: " << ele_num << std::endl;
     out_ss << "output tensor " << tidx << " mean value: " << out_mean
            << std::endl;
     out_ss << "output tensor " << tidx << " standard deviation: " << out_std_dev
            << std::endl;
 
     if (FLAGS_show_output_elem) {
-      for (int i = 0; i < ShapeProduction(out_shape); ++i) {
+      for (int i = 0; i < ele_num; ++i) {
         out_ss << "out[" << tidx << "][" << i
                << "]:" << output_tensor->data<float>()[i] << std::endl;
       }
@@ -171,7 +172,7 @@ void Run(const std::string& model_file,
   ss << "input_data_path: "
      << (FLAGS_input_data_path.empty() ? "All 1.f" : FLAGS_input_data_path)
      << std::endl;
-  ss << "input_shape: " << Vector2Str(input_shape) << std::endl;
+  ss << "input_shape: " << lite::Vector2Str(input_shape) << std::endl;
   ss << out_ss.str();
   ss << "\n======= Runtime Info =======\n";
   ss << "benchmark_bin version: " << lite::version() << std::endl;
