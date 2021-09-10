@@ -27,6 +27,7 @@
 #include "lite/api/tools/opt_base.h"
 #include "lite/core/device_info.h"
 #include "lite/utils/cp_logging.h"
+#include "lite/utils/model_util.h"
 #include "lite/utils/string.h"
 
 namespace paddle {
@@ -35,90 +36,6 @@ namespace lite_api {
 int Benchmark(int argc, char** argv);
 void Run(const std::string& model_file,
          const std::vector<int64_t>& input_shape);
-
-template <class T>
-std::string Vector2Str(const std::vector<T>& input) {
-  std::stringstream ss;
-  for (int i = 0; i < input.size() - 1; i++) {
-    ss << input[i] << ",";
-  }
-  ss << input.back();
-  return ss.str();
-}
-
-template <class T>
-T ShapeProduction(const std::vector<T>& shape) {
-  T num = 1;
-  for (auto i : shape) {
-    num *= i;
-  }
-  return num;
-}
-
-std::string ShapePrint(const std::vector<shape_t>& shapes) {
-  std::string shapes_str{""};
-  for (size_t shape_idx = 0; shape_idx < shapes.size(); ++shape_idx) {
-    auto shape = shapes[shape_idx];
-    std::string shape_str;
-    for (auto i : shape) {
-      shape_str += std::to_string(i) + ",";
-    }
-    shapes_str += shape_str;
-    shapes_str +=
-        (shape_idx != 0 && shape_idx == shapes.size() - 1) ? "" : " : ";
-  }
-  return shapes_str;
-}
-
-std::string ShapePrint(const shape_t& shape) {
-  std::string shape_str{""};
-  for (auto i : shape) {
-    shape_str += std::to_string(i) + " ";
-  }
-  return shape_str;
-}
-
-std::vector<int64_t> GetInputShape(const std::string& str_shape) {
-  std::vector<int64_t> shape;
-  std::string tmp_str = str_shape;
-  while (!tmp_str.empty()) {
-    int dim = atoi(tmp_str.data());
-    shape.push_back(dim);
-    size_t next_offset = tmp_str.find(",");
-    if (next_offset == std::string::npos) {
-      break;
-    } else {
-      tmp_str = tmp_str.substr(next_offset + 1);
-    }
-  }
-  return shape;
-}
-
-template <typename T>
-double compute_mean(const T* in, const size_t length) {
-  double sum = 0.;
-  for (size_t i = 0; i < length; ++i) {
-    sum += in[i];
-  }
-  return sum / length;
-}
-
-template <typename T>
-double compute_standard_deviation(const T* in,
-                                  const size_t length,
-                                  bool has_mean = false,
-                                  double mean = 10000) {
-  if (!has_mean) {
-    mean = compute_mean<T>(in, length);
-  }
-
-  double variance = 0.;
-  for (size_t i = 0; i < length; ++i) {
-    variance += std::pow((in[i] - mean), 2);
-  }
-  variance /= length;
-  return std::sqrt(variance);
-}
 
 #ifdef __ANDROID__
 std::string get_device_info() {
