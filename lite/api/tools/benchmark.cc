@@ -56,6 +56,11 @@ int Benchmark(int argc, char** argv) {
     gflags::ProgramUsage();
     exit(0);
   }
+  if (FLAGS_backend.empty()) {
+    std::cerr << "Must set --backend option!" << std::endl;
+    gflags::ProgramUsage();
+    exit(0);
+  }
 
   // Get input shape
   std::vector<int64_t> input_shape = GetInputShape(FLAGS_input_shape);

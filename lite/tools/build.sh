@@ -622,6 +622,12 @@ function print_usage {
     echo -e "compile all arm tests (ios not support):"
     echo -e "   ./build.sh --arm_os=<os> --arm_abi=<abi> --arm_lang=<lang> test"
     echo
+    echo -e "compile benchmark_bin for android:"
+    echo -e "   ./build.sh --arm_os=<os> --arm_abi=<abi> --arm_lang=<lang> --with_profile=<ON|OFF> benchmark"
+    echo
+    echo -e "compile benchmark_bin for x86 linux:"
+    echo -e "   ./build.sh --with_avx=ON --with_profile=<ON|OFF> x86_benchmark"
+    echo
     echo -e "optional argument:"
     echo -e "--with_log: (OFF|ON); controls whether to print log information, default is ON"
     echo -e "--with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF"

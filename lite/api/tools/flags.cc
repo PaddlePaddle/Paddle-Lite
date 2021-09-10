@@ -35,7 +35,7 @@ DEFINE_int32(threads, 1, threads_msg);
 DEFINE_string(result_path, "result.txt", result_path_msg);
 
 // Backend options
-DEFINE_string(backend, "cpu", backend_msg);
+DEFINE_string(backend, "", backend_msg);
 DEFINE_string(cpu_precision, "fp32", cpu_precision_msg);
 DEFINE_string(gpu_precision, "fp16", gpu_precision_msg);
 DEFINE_string(opencl_cache_dir, "", opencl_cache_dir_msg);
