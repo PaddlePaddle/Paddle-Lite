@@ -318,7 +318,7 @@ function make_full_publish_so {
 function set_benchmark_options {
   BUILD_EXTRA=ON
   WITH_EXCEPTION=ON
-  BUILD_JAVA=ON
+  BUILD_JAVA=OFF
   WITH_OPENCL=ON
   if [ ${WITH_PROFILE} == "ON"]; then
     WITH_LOG=ON
