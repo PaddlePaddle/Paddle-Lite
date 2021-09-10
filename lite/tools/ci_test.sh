@@ -278,7 +278,7 @@ function run_unit_test_on_remote_device() {
     fi
 
     # Run the model on the remote device
-    $remote_device_run $remote_device_name shell "cd $remote_device_work_dir; export GLOG_v=$UNIT_TEST_LOG_LEVEL; LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. $command_line"
+    $remote_device_run $remote_device_name shell "ulimit -s unlimited; cd $remote_device_work_dir; export GLOG_v=$UNIT_TEST_LOG_LEVEL; LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. $command_line"
 }
 
 function build_and_test_on_remote_device() {

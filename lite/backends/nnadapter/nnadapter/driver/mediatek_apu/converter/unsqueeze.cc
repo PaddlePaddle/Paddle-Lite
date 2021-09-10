@@ -1,4 +1,4 @@
-// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,30 +13,31 @@
 // limitations under the License.
 
 #include "core/operation/unsqueeze.h"
-#include "driver/huawei_ascend_npu/converter.h"
+#include "driver/mediatek_apu/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
-namespace huawei_ascend_npu {
+namespace mediatek_apu {
 
 int Program::ConvertUnsqueeze(hal::Operation* operation) {
   UNSQUEEZE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
-  // Convert to GE operators
-  auto input_operator = GetMappedOperator(input_operand);
-  if (!input_operator) {
-    input_operator = ConvertOperand(input_operand);
+  // Convert to Neuron operands and operations
+  auto input_index = GetMappedIndex(input_operand);
+  if (input_index == INVALID_INDEX) {
+    input_index = ConvertOperand(input_operand);
   }
-  auto unsqueeze_name = GetOperatorName(output_operand);
-  auto unsqueeze_op = std::make_shared<ge::op::Unsqueeze>(unsqueeze_name);
-  std::vector<int> axes(axes_ptr, axes_ptr + axes_count);
-  unsqueeze_op->set_attr_axes(
-      ge::Operator::OpListInt(axes.begin(), axes.end()));
-  SET_INPUT(unsqueeze_op, x, input_operator);
-  MAP_OUTPUT(unsqueeze_op, y, output_operand);
+  auto shape_index = AddInt32ConstantOperand(
+      output_operand->type.dimensions, output_operand->type.dimension_count);
+  auto output_index = ConvertOperand(output_operand);
+  std::vector<uint32_t> input_indexes = {input_index, shape_index};
+  std::vector<uint32_t> output_indexes = {output_index};
+  NNADAPTER_CHECK_EQ(
+      AddOperation(NEURON_RESHAPE, &input_indexes, &output_indexes),
+      NEURON_NO_ERROR);
   return NNADAPTER_NO_ERROR;
 }
 
-}  // namespace huawei_ascend_npu
+}  // namespace mediatek_apu
 }  // namespace nnadapter

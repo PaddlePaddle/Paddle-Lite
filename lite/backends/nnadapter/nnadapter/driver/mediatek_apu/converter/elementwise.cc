@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "core/operation/elementwise.h"
 #include "driver/mediatek_apu/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -20,24 +21,7 @@ namespace nnadapter {
 namespace mediatek_apu {
 
 int Program::ConvertElementwise(hal::Operation* operation) {
-  auto& input_operands = operation->input_operands;
-  auto& output_operands = operation->output_operands;
-  auto input_count = input_operands.size();
-  auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 3);
-  NNADAPTER_CHECK_EQ(output_count, 1);
-  // Input0
-  auto input0_operand = input_operands[0];
-  NNADAPTER_VLOG(5) << "input0: " << OperandToString(input0_operand);
-  // Input1
-  auto input1_operand = input_operands[1];
-  NNADAPTER_VLOG(5) << "input1: " << OperandToString(input1_operand);
-  // Fuse code
-  auto fuse_code = *reinterpret_cast<int32_t*>(input_operands[2]->buffer);
-  NNADAPTER_VLOG(5) << "fuse_code=" << fuse_code;
-  // Output
-  auto output_operand = output_operands[0];
-  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
+  ELEMENTWISE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to Neuron operands and operations
   auto input0_index = GetMappedIndex(input0_operand);

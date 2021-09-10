@@ -20,6 +20,12 @@ SHELL_FOLDER=$(cd "$(dirname "$0")";pwd)
 WORKSPACE=${SHELL_FOLDER%tools/ci_tools*}
 # OpenCL
 BUILD_OPENCL=ON
+# Common options
+BUILD_EXTRA=ON
+WITH_EXCEPTION=ON
+WITH_PROFILE=ON
+WITH_PRECISION_PROFILE=ON
+
 # Model download url
 mobilenet_v1_url=http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz
 
@@ -55,12 +61,17 @@ function publish_inference_lib {
       --build_python=ON \
       --python_version=$python_version \
       --build_opencl=$BUILD_OPENCL \
+      --build_extra=$BUILD_EXTRA \
+      --with_exception=$WITH_EXCEPTION \
+      --with_profile=$WITH_PROFILE \
+      --with_precision_profile=$WITH_PRECISION_PROFILE \
       x86
     # Step2. Checking results: cplus and python inference lib.
     build_dir=build.lite.x86
     if [ ${BUILD_OPENCL} = ON ]; then
       build_dir=build.lite.x86.opencl
     fi
+
     if [ -d ${build_dir}/inference_lite_lib/python/install/dist ]; then
 #      macOS python installer is not supported because pybind is compatible to MacOs of high version
 #      # test python installer
@@ -93,8 +104,27 @@ function publish_inference_lib {
       # Error message.
       echo "**************************************************************************************"
       echo -e "* Mac python installer compiling task failed on the following instruction:"
-      echo -e "*     ./lite/tools/build.sh --with_python=ON --python_version=$python_version"
+      echo -e "*     ./lite/tools/build.sh --with_python=ON --python_version=$python_version
+      --build_opencl=$BUILD_OPENCL --build_extra=$BUILD_EXTRA --with_exception=$WITH_EXCEPTION
+      --with_profile=$WITH_PROFILE --with_precision_profile=$WITH_PRECISION_PROFILE x86"
       echo "**************************************************************************************"
+      exit 1
+    fi
+
+    # Test x86 cxx demo
+    local cxx_demo_dir=${WORKSPACE}/${build_dir}/inference_lite_lib/demo/cxx/
+    if [ -d ${cxx_demo_dir} ]; then
+      # full demo
+      cd ${cxx_demo_dir}/mobilenetv1_full/
+      sh build.sh
+      ./mobilenet_full_api $WORKSPACE/${build_dir}/mobilenet_v1  1,3,224,224  10  2  0
+
+      # light demo
+      cd ${cxx_demo_dir}/mobilenetv1_light/
+      sh build.sh
+      ./mobilenet_light_api $WORKSPACE/${build_dir}/mobilenet_v1_x86_opencl.nb 1,3,224,224  10  2  0
+    else
+      echo -e "Directory: ${cxx_demo_dir} not found!"
       exit 1
     fi
   done
@@ -103,4 +133,4 @@ function publish_inference_lib {
 # Compiling test
 for version in ${PYTHON_VERSION[@]}; do
     publish_inference_lib $version
-done    
+done
