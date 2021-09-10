@@ -48,7 +48,6 @@ int Program::ConvertFullyConnected(hal::Operation* operation) {
   // Fuse code
   auto fuse_code = *reinterpret_cast<int32_t*>(input_operands[3]->buffer);
   NNADAPTER_VLOG(5) << "fuse_code=" << fuse_code;
-  NNADAPTER_CHECK_EQ(fuse_code, NNADAPTER_FUSED_NONE);
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);

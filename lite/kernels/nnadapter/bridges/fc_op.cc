@@ -67,8 +67,6 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (op_info->HasAttr("activation_type")) {
     activation_type = op_info->GetAttr<std::string>("activation_type");
   }
-  CHECK(activation_type.empty()) << "Unsupport activation_type "
-                                 << activation_type << " is found.";
 
   // Input operand
   NNAdapterOperand* input_operand = nullptr;
@@ -157,8 +155,18 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
 
   // Fuse code operand
+  NNAdapterFuseCode fuse_code = NNADAPTER_FUSED_NONE;
+  if (activation_type == "relu") {
+    fuse_code = NNADAPTER_FUSED_RELU;
+  } else if (activation_type == "relu1") {
+    fuse_code = NNADAPTER_FUSED_RELU1;
+  } else if (activation_type == "relu6") {
+    fuse_code = NNADAPTER_FUSED_RELU6;
+  } else {
+    return;
+  }
   auto fuse_code_operand =
-      converter->AddInt32ConstantOperand(NNADAPTER_FUSED_NONE);
+      converter->AddInt32ConstantOperand(fuse_code);
 
   // Output operand
   NNAdapterOperand* output_operand = nullptr;
@@ -182,6 +190,33 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   converter->AddOperation(
       NNADAPTER_FULLY_CONNECTED, &input_operands, &output_operands);
+  // Activation
+  auto activation_operand =
+      converter->AddFloat32VariableOperand(input_dims, out_name);
+  if (!activation_type.empty()) {
+    NNAdapterOperationType act_type;
+    if (activation_type == "sigmoid") {
+      act_type = NNADAPTER_SIGMOID;
+    } else if (activation_type == "relu") {
+      act_type = NNADAPTER_RELU;
+    } else if (activation_type == "relu6") {
+      act_type = NNADAPTER_RELU6;
+    } else if (activation_type == "tanh") {
+      act_type = NNADAPTER_TANH;
+    } else if (activation_type == "log") {
+      act_type = NNADAPTER_LOG;
+    } else if (activation_type == "abs") {
+      act_type = NNADAPTER_ABS;
+    } else {
+      LOG(WARNING) << "Unsupported unary activation type: " << activation_type;
+      return FAILED;
+    }
+    std::vector<NNAdapterOperand*> act_inputs_operands = {output_operand};
+    std::vector<NNAdapterOperand*> act_output_operands = {activation_operand};
+    converter->AddOperation(
+        act_type, &act_inputs_operands, &act_output_operands);
+    output_operand = activation_operand;
+  }
   // Create Reshape layer if rank is not equal to 2, convert the shape of output
   if (out_rank != 2) {
     std::vector<int32_t> out_shape;
