@@ -75,6 +75,7 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), Ptype> {
  private:
   using param_t = operators::ConvParam;
   KernelLite<TARGET(kX86), Ptype>* impl_{nullptr};
+  Context<TargetType::kX86>* device_ctx;
   bool flag_1x1gemm_{false};
   bool flag_trans_bias_{true};
   std::vector<float> w_scale_;
