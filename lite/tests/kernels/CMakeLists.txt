@@ -3,20 +3,9 @@ if(LITE_WITH_FPGA OR LITE_WITH_BM OR LITE_WITH_MLU OR (NOT LITE_WITH_X86 AND NOT
 endif()
 
 set(test_kernel_deps
+    core
     ops
-    ${host_kernels}
-    ${arm_kernels}
-    ${x86_kernels}
-    ${cuda_kernels}
-    ${xpu_kernels}
-    ${npu_kernels}
-    ${huawei_ascend_npu_kernels}
-    ${rknpu_kernels}
-    ${apu_kernels}
-    ${imagination_nna_kernels}
-    ${bm_kernels}
-    ${opencl_kernels}
-    ${nnadapter_kernels}
+    kernels
 )
 
 lite_cc_test(test_kernel_conv_compute SRCS conv_compute_test.cc DEPS ${test_kernel_deps})
@@ -80,6 +69,7 @@ lite_cc_test(test_kernel_squeeze_compute SRCS squeeze_compute_test.cc DEPS ${tes
 lite_cc_test(test_kernel_slice_compute SRCS slice_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_expand_compute SRCS expand_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_expand_as_compute SRCS expand_as_compute_test.cc DEPS ${test_kernel_deps})
+lite_cc_test(test_kernel_expand_v2_compute SRCS expand_v2_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_matmul_compute SRCS matmul_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_flatten_compute SRCS flatten_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_p_norm_compute SRCS p_norm_compute_test.cc DEPS ${test_kernel_deps})

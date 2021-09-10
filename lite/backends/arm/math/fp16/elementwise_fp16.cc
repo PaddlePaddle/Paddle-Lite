@@ -515,7 +515,9 @@ namespace fp16 {
 elmentwise_simple_compute(add);
 elmentwise_simple_compute(mul);
 elmentwise_simple_compute(sub);
+#ifdef __aarch64__
 elmentwise_simple_compute(div);
+#endif
 }  // namespace fp16
 }  // namespace math
 }  // namespace arm

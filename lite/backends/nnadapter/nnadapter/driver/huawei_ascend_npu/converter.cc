@@ -17,6 +17,7 @@
 #include <utility>
 #include "driver/huawei_ascend_npu/optimizer/fix_multiple_outputs_ops.h"
 #include "driver/huawei_ascend_npu/optimizer/fix_no_inputs_ops.h"
+#include "driver/huawei_ascend_npu/optimizer/fix_operators_constraint_pass.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -28,11 +29,7 @@ namespace huawei_ascend_npu {
 
 Device::Device() { InitializeAscendDevice(); }
 
-Device::~Device() {
-  // TODO(hong19860320) fix the problem destruction order that the resource of
-  // ACL is released before the function is called.
-  // FinalizeAscendDevice();
-}
+Device::~Device() {}
 
 Context::Context(void* device, const char* properties) : device_(device) {
   // Extract the runtime parameters from the context properties
@@ -89,6 +86,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
     FixMultipleOutputsOps(model);
     FixNoInputsOps(model);
+    NNADAPTER_CHECK_EQ(FixOperatorsConstraintPass(model), NNADAPTER_NO_ERROR);
     NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
     // Convert a NNAdapter model to a GE graph
     std::vector<hal::Operation*> operations =
@@ -172,6 +170,9 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
           break;
         case NNADAPTER_SQUEEZE:
           ConvertSqueeze(operation);
+          break;
+        case NNADAPTER_STACK:
+          ConvertStack(operation);
           break;
         case NNADAPTER_UNSQUEEZE:
           ConvertUnsqueeze(operation);
@@ -365,10 +366,11 @@ std::shared_ptr<Operator> Program::AddConstantOperator(
   NNADAPTER_CHECK(values)
       << "The values of constant operator should not be nullptr.";
   auto num_values = ProductionOfDimensions(dimensions);
-  auto shape = dimensions.size() > 0 ? ge::Shape(ConvertDimensions(dimensions))
-                                     : ge::Shape();
+  auto shape = dimensions.size() > 0
+                   ? ge::Shape(ConvertToGEDimensions(dimensions))
+                   : ge::Shape();
   auto tensor_desc = std::make_shared<ge::TensorDesc>(
-      shape, ge::FORMAT_NCHW, ConvertPrecision(precision));
+      shape, ge::FORMAT_NCHW, ConvertToGEPrecision(precision));
   // Add anonymous constant operator
   auto name = GetOperatorName(nullptr);
   auto op = std::make_shared<ge::op::Const>();
@@ -380,6 +382,15 @@ std::shared_ptr<Operator> Program::AddConstantOperator(
   auto constant_operator = std::make_shared<Operator>(op, tensor_desc, "", -1);
   UpdateOperatorMap(nullptr, constant_operator);
   return constant_operator;
+}
+
+std::shared_ptr<Operator> Program::AddZeroConstantOperator(
+    NNAdapterOperandPrecisionCode precision,
+    const std::vector<int32_t>& dimensions) {
+  auto precision_data_length = GetOperandPrecisionDataLength(precision);
+  auto num_values = ProductionOfDimensions(dimensions);
+  std::vector<uint8_t> zero_values(precision_data_length * num_values, 0);
+  return AddConstantOperator(&zero_values[0], precision, dimensions);
 }
 
 std::shared_ptr<Operator> Program::AddInt32ConstantOperator(
@@ -422,10 +433,11 @@ std::shared_ptr<Operator> Program::ConvertOperand(
       dimensions.push_back(operand->type.dimensions[i]);
     }
   }
-  auto shape = dimensions.size() > 0 ? ge::Shape(ConvertDimensions(dimensions))
-                                     : ge::Shape();
+  auto shape = dimensions.size() > 0
+                   ? ge::Shape(ConvertToGEDimensions(dimensions))
+                   : ge::Shape();
   auto tensor_desc = std::make_shared<ge::TensorDesc>(
-      shape, ge::FORMAT_NCHW, ConvertPrecision(operand->type.precision));
+      shape, ge::FORMAT_NCHW, ConvertToGEPrecision(operand->type.precision));
   auto name = GetOperatorName(operand);
   if (IsConstantOperand(operand)) {
     auto op = std::make_shared<ge::op::Const>(name);

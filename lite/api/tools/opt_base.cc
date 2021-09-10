@@ -53,6 +53,30 @@ void OptBase::SetQuantType(const std::string& quant_type) {
   }
 }
 
+void OptBase::SetSparseModel(bool sparse_model) {
+  opt_config_.set_sparse_model(sparse_model);
+}
+
+void OptBase::SetSparseThreshold(float sparse_threshold) {
+  // sparse_model mode only supported on Arm.
+  TargetType target;
+  for (size_t i = 0; i < valid_places_.size(); i++) {
+    target = valid_places_[i].target;
+    if (target != TargetType::kARM) {
+      LOG(WARNING) << "sparse_model mode only supported on Arm. The model will "
+                      "be optimized to dense format.";
+      opt_config_.set_sparse_model(false);
+      break;
+    }
+  }
+  // threshold must be between 0 and 1.
+  if (sparse_threshold < 0.0 || sparse_threshold > 1.0) {
+    OPT_LOG_FATAL << "Please set sparse_threshold between 0.0 and 1.0.";
+  } else {
+    opt_config_.set_sparse_threshold(sparse_threshold);
+  }
+}
+
 void OptBase::SetPassesInternal(
     const std::vector<std::string>& passes_internal) {
   opt_config_.set_passes_internal(passes_internal);
@@ -106,6 +130,8 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
     } else if (target_repr == "x86") {
       valid_places_.emplace_back(Place{TARGET(kX86), PRECISION(kFloat)});
       valid_places_.emplace_back(Place{TARGET(kX86), PRECISION(kInt64)});
+      valid_places_.emplace_back(Place{TARGET(kX86), PRECISION(kInt8)});
+      valid_places_.emplace_back(Place{TARGET(kX86), PRECISION(kAny)});
     } else if (target_repr == "x86_opencl") {
       valid_places_.emplace_back(
           Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)});
@@ -314,9 +340,9 @@ void OptBase::PrintHelpInfo() {
       "default\n"
       "        `set_lite_out(output_optimize_model_dir)`\n"
       "        "
-      "`set_valid_places(arm|opencl|x86|arm_metal|x86_metal|npu|xpu|rknpu|apu|"
-      "huawei_ascend_npu|imagination_nna|intel_fpga|rockchip_npu|mediatek_apu|"
-      "huawei_kirin_npu|amlogic_npu)`"
+      "`set_valid_places(arm|opencl|x86|x86_opencl|arm_metal|x86_metal|npu|xpu|"
+      "rknpu|apu|huawei_ascend_npu|imagination_nna|intel_fpga|rockchip_npu|"
+      "mediatek_apu|huawei_kirin_npu|amlogic_npu)`"
       "\n"
       "        `record_model_info(false|true)`: refer to whether to record ops "
       "info for striping lib, false by default`\n"
@@ -358,27 +384,30 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "        `--optimize_out_type=(protobuf|naive_buffer)`\n"
       "        `--optimize_out=<output_optimize_model_dir>`\n"
       "        "
-      "`--valid_targets=(arm|opencl|x86|arm_metal|x86_metal|npu|xpu|huawei_"
-      "ascend_npu|imagination_nna|intel_fpga|rockchip_npu|mediatek_apu|huawei_"
-      "kirin_npu)`\n"
+      "`--valid_targets=(arm|opencl|x86|x86_opencl|arm_metal|x86_metal|npu|xpu|"
+      "huawei_ascend_npu|imagination_nna|intel_fpga|rockchip_npu|mediatek_apu|"
+      "huawei_kirin_npu)`\n"
       "        `--record_tailoring_info=(true|false)`\n"
       "  Arguments of mode quantization in opt:\n"
       "        `--quant_model=(true|false)`\n"
       "        `--quant_type=(QUANT_INT8|QUANT_INT16)`\n"
+      "  Arguements of sparse convolution in opt: \n"
+      "        `--sparse_model=(true|false)`\n"
+      "        `--sparse_threshold=(float)`\n"
       "  Arguments of enable_fp16 in opt: \n"
       "        `--enable_fp16=(true|false)`\n"
       "  Arguments of model checking and ops information:\n"
       "        `--print_all_ops=true`   Display all the valid operators of "
       "Paddle-Lite\n"
       "        `--print_supported_ops=true  "
-      "--valid_targets=(arm|opencl|x86|arm_metal|x86_metal|npu|xpu|huawei_"
-      "ascend_npu|imagination_nna|intel_fpga|rockchip_npu|mediatek_apu|huawei_"
-      "kirin_npu)`"
+      "--valid_targets=(arm|opencl|x86|x86_opencl|arm_metal|x86_metal|npu|xpu|"
+      "huawei_ascend_npu|imagination_nna|intel_fpga|rockchip_npu|mediatek_apu|"
+      "huawei_kirin_npu)`"
       "  Display valid operators of input targets\n"
       "        `--print_model_ops=true  --model_dir=<model_param_dir> "
-      "--valid_targets=(arm|opencl|x86|arm_metal|x86_metal|npu|xpu|huawei_"
-      "ascend_npu|imagination_nna|intel_fpga|rockchip_npu|mediatek_apu|huawei_"
-      "kirin_npu|amlogic_npu)`"
+      "--valid_targets=(arm|opencl|x86|x86_opencl|arm_metal|x86_metal|npu|xpu|"
+      "huawei_ascend_npu|imagination_nna|intel_fpga|rockchip_npu|mediatek_apu|"
+      "huawei_kirin_npu|amlogic_npu)`"
       "  Display operators in the input model\n";
   OPT_LOG << "paddlelite opt version:" << opt_version;
   OPT_LOG << help_info;

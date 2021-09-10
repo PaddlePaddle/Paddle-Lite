@@ -102,6 +102,9 @@ class Program {
   std::shared_ptr<Operator> AddFloat32ConstantOperator(
       const std::vector<float>& values,
       const std::vector<int32_t>& dimensions = {});
+  std::shared_ptr<Operator> AddZeroConstantOperator(
+      NNAdapterOperandPrecisionCode precision,
+      const std::vector<int32_t>& dimensions);
   // Convert a constant and model input operand and map to a operator
   std::shared_ptr<Operator> ConvertOperand(
       hal::Operand* operand, std::vector<int32_t> dimensions = {});
@@ -129,6 +132,7 @@ class Program {
   int ConvertRange(hal::Operation* operation);
   int ConvertCast(hal::Operation* operation);
   int ConvertShape(hal::Operation* operation);
+  int ConvertStack(hal::Operation* operation);
   int ConvertAssign(hal::Operation* operation);
   int ConvertResizeNearest(hal::Operation* operation);
   int ConvertResizeLinear(hal::Operation* operation);
@@ -189,7 +193,7 @@ class Program {
   ({                                                                           \
     auto shape = ge::Shape();                                                  \
     auto format = ge::FORMAT_NCHW;                                             \
-    auto dtype = ConvertPrecision(dst->type.precision);                        \
+    auto dtype = ConvertToGEPrecision(dst->type.precision);                    \
     auto tensor_desc = std::make_shared<ge::TensorDesc>(shape, format, dtype); \
     src->update_output_desc_##name(*tensor_desc);                              \
     UpdateOperatorMap(                                                         \
@@ -200,7 +204,7 @@ class Program {
   ({                                                                           \
     auto shape = ge::Shape();                                                  \
     auto format = ge::FORMAT_NCHW;                                             \
-    auto dtype = ConvertPrecision(dst->type.precision);                        \
+    auto dtype = ConvertToGEPrecision(dst->type.precision);                    \
     auto tensor_desc = std::make_shared<ge::TensorDesc>(shape, format, dtype); \
     src->update_dynamic_output_desc_##name(index, *tensor_desc);               \
     UpdateOperatorMap(                                                         \

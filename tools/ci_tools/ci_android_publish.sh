@@ -17,6 +17,8 @@ set -e
 ARCH=(armv8 armv7)
 # Toolchain: gcc or clang, default gcc.
 TOOLCHAIN=(gcc clang)
+# OpenCL
+OPENCL=(OFF ON)
 # Absolute path of Paddle-Lite source code.
 SHELL_FOLDER=$(cd "$(dirname "$0")";pwd)
 WORKSPACE=${SHELL_FOLDER%tools/ci_tools*}
@@ -36,12 +38,13 @@ WORKSPACE=${SHELL_FOLDER%tools/ci_tools*}
 function publish_inference_lib {
   local arch=$1
   local toolchain=$2
-  local with_extra=$3
+  local with_opencl=$3
+  local with_extra=$4
   cd $WORKSPACE
   # Remove Compiling Cache
   rm -rf build*
   # Compiling inference library
-  ./lite/tools/build_android.sh --arch=$arch --toolchain=$toolchain  --with_extra=$with_extra  --with_static_lib=ON
+  ./lite/tools/build_android.sh --arch=$arch --toolchain=$toolchain --with_extra=$with_extra --with_opencl=$with_opencl --with_static_lib=ON
   # Checking results: cplus and java inference lib.
   if [ -d build*/inference*/cxx/lib ] && [ -d build*/inference*/java/so ]; then
     cxx_results=$(ls build*/inference*/cxx/lib | wc -l)
@@ -53,7 +56,7 @@ function publish_inference_lib {
   # Error message.
   echo "**************************************************************************************"
   echo -e "* Android compiling task failed on the following instruction:"
-  echo -e "*     ./lite/tools/build_android.sh --arch=$arch --toolchain=$toolchain  --with_extra=ON"
+  echo -e "*     ./lite/tools/build_android.sh --arch=$arch --toolchain=$toolchain --with_opencl=$with_opencl --with_extra=ON"
   echo "**************************************************************************************"
   exit 1
 }
@@ -62,7 +65,9 @@ function publish_inference_lib {
 # Compiling test
 for arch in ${ARCH[@]}; do
   for toolchain in ${TOOLCHAIN[@]}; do
-    cd $WORKSPACE
-    publish_inference_lib $arch $toolchain ON
+    for opencl in ${OPENCL[@]}; do
+      cd $WORKSPACE
+      publish_inference_lib $arch $toolchain $opencl ON
+    done
   done
-done    
+done
