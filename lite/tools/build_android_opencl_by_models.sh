@@ -51,7 +51,7 @@ sort -n ./model_info/tailored_ops_source_list | uniq > ./model_info/.tailored_op
 
 rm -rf $(ls ./models_opt | grep -v .nb)
 
-# step 4. compiling iOS lib
+# step 4. compiling android lib
 cd $workspace
 ./lite/tools/build_android.sh --with_strip=ON --opt_model_dir=$workspace/build.opt/lite/api/model_info --with_log=$WITH_LOG --arch=armv8 --with_cv=$WITH_CV --toolchain=$TOOL_CHAIN --with_exception=$WITH_EXCEPTION --with_static_lib=ON --android_stl=$ANDROID_STL --with_opencl=$WITH_OPENCL
 ./lite/tools/build_android.sh --with_strip=ON --opt_model_dir=$workspace/build.opt/lite/api/model_info --with_log=$WITH_LOG --arch=armv7 --with_cv=$WITH_CV --toolchain=$TOOL_CHAIN --with_exception=$WITH_EXCEPTION --with_static_lib=ON --android_stl=$ANDROID_STL --with_opencl=$WITH_OPENCL
