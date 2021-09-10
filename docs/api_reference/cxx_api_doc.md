@@ -28,7 +28,7 @@ std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>
 
 - 返回值
 
-    `PaddlePredictor`指针
+  `PaddlePredictor`指针
 
 ## CxxConfig
 
@@ -80,6 +80,7 @@ const std::string& model_dir() const;
 返回设置的模型文件夹路径。
 
 - 返回值
+
   模型文件夹路径
 
 
@@ -103,8 +104,9 @@ std::string model_file() const
 
 获取设置模型文件路径，加载combined形式模型时使用。
 
-- 返回
-    模型文件路径
+- 返回值
+
+  模型文件路径
 
 ### `set_param_file`
 
@@ -145,7 +147,7 @@ predictor = create_paddle_predictor(config)
 
 - 返回值 
 
-    模型参数文件路径
+  模型参数文件路径
 
 ### `set_valid_places`
 ```c++
@@ -184,7 +186,7 @@ PowerMode power_mode() const;
 
 - 返回值
 
-    设置的CPU能耗模式
+  设置的CPU能耗模式
 
 ### `set_threads`
 
@@ -211,6 +213,7 @@ int threads() const;
 *注意：此函数只在使用`LITE_WITH_ARM`编译选项下生效。*
 
 - 返回值 
+
   工作线程数
 
 ### `set_x86_math_num_threads`
@@ -219,7 +222,7 @@ int threads() const;
 void set_x86_math_num_threads(int threads);
 ```
 
-设置CPU Math库线程数，CPU核心数支持情况下可加速预测。默认为1，并且仅在x86下有效。
+设置CPU数学库计算时使用的线程数，CPU核心数支持情况下可加速预测。默认为1，并且仅在x86下有效。
 
 - 参数
 
@@ -231,10 +234,11 @@ void set_x86_math_num_threads(int threads);
 int x86_math_num_threads() const;
 ```
 
-返回CPU Math库线程数，CPU核心数支持情况下可加速预测。仅在x86下有效。
+返回CPU数学库计算时设置的线程数，CPU核心数支持情况下可加速预测。仅在x86下有效。
 
 - 返回值
-  CPU Math库线程数。
+
+  CPU数学库设置的线程数。
 
 ## MobileConfig
 
@@ -295,6 +299,7 @@ const std::string& model_dir() const;
 获取设置的模型文件夹路径。
 
 - 返回值
+
   模型文件夹路径。
 
 
