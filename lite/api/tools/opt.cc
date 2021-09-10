@@ -65,6 +65,12 @@ DEFINE_bool(print_all_ops,
             false,
             "Print all the valid operators of Paddle-Lite");
 DEFINE_bool(print_model_ops, false, "Print operators in the input model");
+DEFINE_bool(sparse_model,
+            false,
+            "Use sparse_conv_detect_pass to sparsify the 1x1conv weights.");
+DEFINE_double(sparse_threshold,
+              0.6,
+              "Set 0.6 as the lower bound for the sparse conv pass.");
 
 int main(int argc, char** argv) {
   auto opt = paddle::lite_api::OptBase();
@@ -107,6 +113,10 @@ int main(int argc, char** argv) {
   if (FLAGS_quant_model) {
     opt.SetQuantModel(true);
     opt.SetQuantType(FLAGS_quant_type);
+  }
+  if (FLAGS_sparse_model) {
+    opt.SetSparseModel(true);
+    opt.SetSparseThreshold(FLAGS_sparse_threshold);
   }
   if (FLAGS_print_all_ops) {
     opt.PrintAllOps();

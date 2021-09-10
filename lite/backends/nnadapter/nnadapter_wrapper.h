@@ -136,6 +136,7 @@ class NNAdapterWrapper final {
   NNAdapterWrapper();
   NNAdapterWrapper(const NNAdapterWrapper&) = delete;
   NNAdapterWrapper& operator=(const NNAdapterWrapper&) = delete;
+  ~NNAdapterWrapper();
   bool Initialize();
   bool initialized_{false};
   bool supported_{false};

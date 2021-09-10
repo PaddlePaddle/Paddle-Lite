@@ -31,12 +31,28 @@ AclModelClient::AclModelClient(int device_id) {
   NNADAPTER_VLOG(3) << "device_count: " << device_count;
   NNADAPTER_CHECK_GE(device_id, 0);
   NNADAPTER_CHECK_LT(device_id, device_count);
-  ACL_CALL(aclrtSetDevice(device_id));
-  device_id_ = device_id;
+  InitAclClientEnv(device_id);
 }
 
 AclModelClient::~AclModelClient() {
   UnloadModel();
+  FinalizeAclClientEnv();
+}
+
+void AclModelClient::InitAclClientEnv(int device_id) {
+  device_id_ = device_id;
+  NNADAPTER_VLOG(5) << "ACL set device(device_id_=" << device_id_ << ")";
+  ACL_CALL(aclrtSetDevice(device_id_));
+  NNADAPTER_VLOG(5) << "ACL create context";
+  ACL_CALL(aclrtCreateContext(&context_, device_id_));
+}
+
+void AclModelClient::FinalizeAclClientEnv() {
+  NNADAPTER_VLOG(5) << "Destroy ACL context";
+  if (context_ != nullptr) {
+    ACL_CALL(aclrtDestroyContext(context_));
+    context_ = nullptr;
+  }
   NNADAPTER_VLOG(5) << "Reset ACL device(device_id_=" << device_id_ << ")";
   ACL_CALL(aclrtResetDevice(device_id_));
 }
@@ -219,6 +235,7 @@ bool AclModelClient::Process(uint32_t input_count,
     NNADAPTER_LOG(FATAL) << "No ACL model is loaded.";
     return false;
   }
+  ACL_CALL(aclrtSetCurrentContext(context_));
   auto FindArgumentByIndex = [&](
       hal::Argument* arguments, int index, uint32_t count) {
     for (uint32_t i = 0; i < count; i++) {
