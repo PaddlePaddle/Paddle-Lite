@@ -21,7 +21,7 @@ namespace nnadapter {
 namespace mediatek_apu {
 
 int Program::ConvertConv2D(hal::Operation* operation) {
-  CONV2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  CONV_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
   // Dynamic shapes are still not supported
   NNADAPTER_CHECK_EQ(input_operand->type.dynamic_dimension_count, 0);
   operation::UpdateConv2DPadAndDilation(input_operand->type.dimensions[1],

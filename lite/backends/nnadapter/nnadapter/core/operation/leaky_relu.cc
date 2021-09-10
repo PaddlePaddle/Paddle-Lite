@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "core/operation/softmax.h"
+#include "core/operation/leaky_relu.h"
 #include "core/hal/types.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -22,8 +22,8 @@
 namespace nnadapter {
 namespace operation {
 
-int PrepareSoftmax(hal::Operation* operation) {
-  SOFTMAX_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int PrepareLeakyRelu(hal::Operation* operation) {
+  LEAKY_RELU_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
   CopyOperandTypeExceptQuantParams(&output_operand->type, input_operand->type);

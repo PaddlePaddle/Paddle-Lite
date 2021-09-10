@@ -21,7 +21,7 @@ namespace nnadapter {
 namespace huawei_kirin_npu {
 
 int Program::ConvertConv2D(hal::Operation* operation) {
-  CONV2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  CONV_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
   auto input_operator = GetMappedOperator(input_operand);
