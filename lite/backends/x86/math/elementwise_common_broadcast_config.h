@@ -15,7 +15,7 @@
 #pragma once
 
 #include <cmath>
-#include "lite/backends/x86/math/detail/activation_functions.h"
+#include "lite/backends/x86/math/activation_functions.h"
 
 #if defined(__AVX__)
 #include <immintrin.h>
