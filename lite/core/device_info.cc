@@ -603,7 +603,7 @@ void DeviceInfo::SetFP32Info(int argc, ...) {
 void DeviceInfo::SetCacheInfo(int cache_id, int argc, ...) {
   va_list arg_ptr;
   va_start(arg_ptr, argc);
-  std::vector<int>* cache;
+  std::vector<int>* cache = nullptr;
   switch (cache_id) {
     case 0:
       cache = &L1_cache_;

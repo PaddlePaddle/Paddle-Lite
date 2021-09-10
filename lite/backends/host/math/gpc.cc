@@ -450,7 +450,8 @@ static void add_st_edge(st_node **st,
     den = ((*st)->xt - (*st)->xb) - (edge->xt - edge->xb);
 
     /* If new edge and ST edge don't cross */
-    if ((edge->xt >= (*st)->xt) || (edge->dx == (*st)->dx) ||
+    if ((edge->xt >= (*st)->xt) ||
+        (fabs(edge->dx - (*st)->dx) <= DBL_EPSILON) ||
         (fabs(den) <= DBL_EPSILON)) {
       /* No intersection - insert edge here (before the ST edge) */
       existing_node = *st;
@@ -904,7 +905,7 @@ void gpc_polygon_clip(gpc_op op,
     /* === SCANBEAM BOUNDARY PROCESSING ================================ */
     /* If LMT node corresponding to yb exists */
     if (local_min) {
-      if (local_min->y == yb) {
+      if (fabs(local_min->y - yb) <= DBL_EPSILON) {
         /* Add edges starting at this local minimum to the AET */
         for (edge = local_min->first_bound; edge; edge = edge->next_bound) {
           add_edge_to_aet(&aet, edge, NULL);
@@ -932,7 +933,7 @@ void gpc_polygon_clip(gpc_op op,
       /* Bundle edges above the scanbeam boundary if they coincide */
       if (next_edge->bundle[ABOVE][next_edge->type]) {
         if (gpc_eq(e0->xb, next_edge->xb) && gpc_eq(e0->dx, next_edge->dx) &&
-            (e0->top.y != yb)) {
+            (fabs(e0->top.y - yb) > DBL_EPSILON)) {
           next_edge->bundle[ABOVE][next_edge->type] ^=
               e0->bundle[ABOVE][next_edge->type];
           next_edge->bundle[ABOVE][!next_edge->type] =
@@ -1091,14 +1092,14 @@ void gpc_polygon_clip(gpc_op op,
               cf = edge->outp[ABOVE];
               break;
             case LED:
-              if (edge->bot.y == yb) {
+              if (fabs(edge->bot.y - yb) <= DBL_EPSILON) {
                 add_left(edge->outp[BELOW], xb, yb);
               }
               edge->outp[ABOVE] = edge->outp[BELOW];
               px = xb;
               break;
             case RED:
-              if (edge->bot.y == yb) {
+              if (fabs(edge->bot.y - yb) <= DBL_EPSILON) {
                 add_right(edge->outp[BELOW], xb, yb);
               }
               edge->outp[ABOVE] = edge->outp[BELOW];
@@ -1113,7 +1114,7 @@ void gpc_polygon_clip(gpc_op op,
 
     /* Delete terminating edges from the AET, otherwise compute xt */
     for (edge = aet; edge; edge = edge->next) {
-      if (edge->top.y == yb) {
+      if (fabs(edge->top.y - yb) <= DBL_EPSILON) {
         prev_edge = edge->prev;
         next_edge = edge->next;
         if (prev_edge) {
@@ -1137,7 +1138,7 @@ void gpc_polygon_clip(gpc_op op,
           }
         }
       } else {
-        if (edge->top.y == yt) {
+        if (fabs(edge->top.y - yt) <= DBL_EPSILON) {
           edge->xt = edge->top.x;
         } else {
           edge->xt = edge->bot.x + edge->dx * (yt - edge->bot.y);
@@ -1332,7 +1333,7 @@ void gpc_polygon_clip(gpc_op op,
       for (edge = aet; edge; edge = next_edge) {
         next_edge = edge->next;
         succ_edge = edge->succ;
-        if ((edge->top.y == yt) && succ_edge) {
+        if ((fabs(edge->top.y - yt) <= DBL_EPSILON) && succ_edge) {
           /* Replace AET edge by its successor */
           succ_edge->outp[BELOW] = edge->outp[ABOVE];
           succ_edge->bstate[BELOW] = edge->bstate[ABOVE];
