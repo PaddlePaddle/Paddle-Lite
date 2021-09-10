@@ -98,6 +98,7 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       conv3x3_winograd_int8.cc
       conv_winograd_3x3.cc
       conv_impl.cc
+      sparse_conv_impl.cc
       softmax.cc
       scale.cc
       pooling.cc

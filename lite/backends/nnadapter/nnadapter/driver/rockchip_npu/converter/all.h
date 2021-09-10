@@ -30,6 +30,7 @@ REGISTER_CONVERTER(RELU, ConvertUnaryActivations)
 REGISTER_CONVERTER(RELU6, ConvertUnaryActivations)
 REGISTER_CONVERTER(TANH, ConvertUnaryActivations)
 REGISTER_CONVERTER(RESHAPE, ConvertReshape)
+REGISTER_CONVERTER(UNSQUEEZE, ConvertUnsqueeze)
 REGISTER_CONVERTER(TRANSPOSE, ConvertTranspose)
 
 #endif  // NOLINT
