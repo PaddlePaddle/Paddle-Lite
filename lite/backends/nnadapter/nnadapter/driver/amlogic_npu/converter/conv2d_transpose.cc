@@ -52,7 +52,7 @@ int ConvertConv2DTranspose(Converter* converter, hal::Operation* operation) {
   attr.pad[3] = pad_height_bottom;
   attr.group = group;
   attr.multiplier = 0;
-  attr.weights = filter_channel_size;
+  attr.weights = output_channel_size;
   attr.dilation[0] = dilation_width;
   attr.dilation[1] = dilation_height;
   attr.pad_type = aml::nn::PadType::AUTO;

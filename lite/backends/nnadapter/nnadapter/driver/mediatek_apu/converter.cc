@@ -127,6 +127,9 @@ int Program::BuildFromModel(hal::Model* model) {
       case NNADAPTER_RESHAPE:
         ConvertReshape(operation);
         break;
+      case NNADAPTER_UNSQUEEZE:
+        ConvertUnsqueeze(operation);
+        break;
       case NNADAPTER_TRANSPOSE:
         ConvertTranspose(operation);
         break;
