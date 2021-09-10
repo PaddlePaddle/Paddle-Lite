@@ -42,17 +42,20 @@ int Program::ConvertAdaptivePool2D(hal::Operation* operation) {
     auto argmax_op =
         std::make_shared<Operator>(pool2d_op, tensor_desc, "argmax", -1);
     // Cast op
-    auto dummy_cast_op = std::make_shared<ge::op::Cast>("dummy_cast");
+    auto dummy_cast_name = pool2d_name + "/dummy_cast";
+    auto dummy_cast_op = std::make_shared<ge::op::Cast>(dummy_cast_name);
     dummy_cast_op->set_attr_dst_type(ge::DT_FLOAT);
     SET_INPUT(dummy_cast_op, x, argmax_op);
     auto dummy_cast_operator = MAP_OUTPUT(dummy_cast_op, y, output_operand);
     // Sub op
-    auto dummy_sub_op = std::make_shared<ge::op::Sub>("dummy_sub");
+    auto dummy_sub_name = pool2d_name + "/dummy_sub";
+    auto dummy_sub_op = std::make_shared<ge::op::Sub>(dummy_sub_name);
     SET_INPUT(dummy_sub_op, x1, dummy_cast_operator);
     SET_INPUT(dummy_sub_op, x2, dummy_cast_operator);
     auto dummy_sub_operator = MAP_OUTPUT(dummy_sub_op, y, output_operand);
     // Add op
-    auto dummy_add_op = std::make_shared<ge::op::Add>("dummy_add");
+    auto dummy_add_name = pool2d_name + "/dummy_add";
+    auto dummy_add_op = std::make_shared<ge::op::Add>(dummy_add_name);
     SET_INPUT(dummy_add_op, x1, adaptive_pool2d_operator);
     SET_INPUT(dummy_add_op, x2, dummy_sub_operator);
     MAP_OUTPUT(dummy_add_op, y, output_operand);
