@@ -228,7 +228,7 @@ void set_x86_math_num_threads(int threads);
 
 - 参数
 
-    - `threads(int)`: CPU Math库线程数。
+    - `threads`: CPU数学库的线程数。
 
 ### `x86_math_num_threads`
 
@@ -293,7 +293,7 @@ void set_model_dir(const std::string& x);
 
 - 参数
 
-    - `x` - 模型文件夹路径
+    - `x`: 模型文件夹路径
 
 ### `model_dir`
 
@@ -307,7 +307,7 @@ const std::string& model_dir() const;
   模型文件夹路径。
 
 
-### `set_model_from_buffer(model_buffer)`
+### `set_model_from_buffer`
 
 ```c++
 void set_model_from_buffer(const std::string& x);
@@ -631,21 +631,22 @@ class TargetType;
 ```
 `TargetType`为目标设备硬件类型，用户可以根据应用场景选择硬件平台类型。
 
-枚举型变量`TargetType`的所有可能取值包括：
-
-`{kX86, kCUDA, kARM, kOpenCL, kFPGA, kNPU}`
+枚举型变量`TargetType`的所有可能取值包括：`{kX86, kCUDA, kARM, kOpenCL, kFPGA, kNPU}`
 
 ## PrecisionType
+
+\#include &lt;[paddle\_place.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/v2.9.1/lite/api/paddle_place.h)&gt;
+
 ```c++
 class PrecisionType;
 ```
 `PrecisionType`为模型中Tensor的数据精度，默认值为FP32(float32)。
 
-枚举型变量`PrecisionType`的所有可能取值包括：
-
-`{kFloat, kInt8, kInt32, kInt64}`
+枚举型变量`PrecisionType`的所有可能取值包括：`{kFloat, kInt8, kInt32, kInt64}`
 
 ## DataLayoutType
+
+\#include &lt;[paddle\_place.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/v2.9.1/lite/api/paddle_place.h)&gt;
 
 ```c++
 class DataLayoutType;
@@ -658,7 +659,6 @@ class DataLayoutType;
 
  \#include &lt;[paddle\_place.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/v2.9.1/lite/api/paddle_place.h)&gt;
 
-```
 `Place`是`TargetType`、`PrecisionType`和`DataLayoutType`的集合，说明运行时的设备类型、数据精度和数据格式。
 
 示例：
@@ -767,7 +767,6 @@ void Resize(const shape_t& shape);
 ```c++
 shape_t shape() const;
 ```
-
 
 获取Tensor的维度信息。
 
