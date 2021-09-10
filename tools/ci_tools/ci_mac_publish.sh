@@ -91,7 +91,7 @@ function publish_inference_lib {
 #      paddle_lite_opt
 #      paddle_lite_opt --model_dir=mobilenet_v1 --optimize_out=mobilenet_v1_arm
 #      paddle_lite_opt --model_dir=mobilenet_v1 --valid_targets=x86 --optimize_out=mobilenet_v1_x86
-#      paddle_lite_opt --model_dir=mobilenet_v1 --valid_targets=x86,opencl --optimize_out=mobilenet_v1_x86_opencl
+#      paddle_lite_opt --model_dir=mobilenet_v1 --valid_targets=x86_opencl --optimize_out=mobilenet_v1_x86_opencl
 #      # test inference demo
 #      cd inference_lite_lib/demo/python
 #      python$python_version mobilenetv1_full_api.py  --model_dir=$WORKSPACE/${build_dir}/mobilenet_v1
