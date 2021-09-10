@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "core/operation/reshape.h"
+#include "core/operation/unsqueeze.h"
 #include "driver/amlogic_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -20,9 +20,8 @@
 namespace nnadapter {
 namespace amlogic_npu {
 
-int ConvertReshape(Converter* converter, hal::Operation* operation) {
-  RESHAPE_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  NNADAPTER_CHECK_LE(shape_count, 4);
+int ConvertUnsqueeze(Converter* converter, hal::Operation* operation) {
+  UNSQUEEZE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to amlnpu tensors and operators
   auto input_tensor = converter->GetMappedTensor(input_operand);
@@ -31,6 +30,7 @@ int ConvertReshape(Converter* converter, hal::Operation* operation) {
   }
   auto output_tensor = converter->ConvertOperand(output_operand);
   aml::nn::ReshapeAttr attr;
+  NNADAPTER_CHECK_LE(output_operand->type.dimension_count, 4);
   for (uint32_t i = 0; i < output_operand->type.dimension_count; i++) {
     attr.shapes.push_back(output_operand->type.dimensions[i]);
   }
