@@ -48,8 +48,8 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto out_dims = out->dims();
   auto pooling_type = op_info->GetAttr<std::string>("pooling_type");
   auto global_pooling = op_info->GetAttr<bool>("global_pooling");
-  auto return_indices = false;
-  auto return_indices_dtype = NNADAPTER_INT32;
+  bool return_indices = false;
+  int return_indices_dtype = NNADAPTER_INT32;
   std::vector<int> ksize = op_info->GetAttr<std::vector<int>>("ksize");
   std::vector<int> paddings = op_info->GetAttr<std::vector<int>>("paddings");
   std::vector<int> strides = op_info->GetAttr<std::vector<int>>("strides");
