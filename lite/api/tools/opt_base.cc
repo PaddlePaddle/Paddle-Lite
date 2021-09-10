@@ -53,6 +53,30 @@ void OptBase::SetQuantType(const std::string& quant_type) {
   }
 }
 
+void OptBase::SetSparseModel(bool sparse_model) {
+  opt_config_.set_sparse_model(sparse_model);
+}
+
+void OptBase::SetSparseThreshold(float sparse_threshold) {
+  // sparse_model mode only supported on Arm.
+  TargetType target;
+  for (size_t i = 0; i < valid_places_.size(); i++) {
+    target = valid_places_[i].target;
+    if (target != TargetType::kARM) {
+      LOG(WARNING) << "sparse_model mode only supported on Arm. The model will "
+                      "be optimized to dense format.";
+      opt_config_.set_sparse_model(false);
+      break;
+    }
+  }
+  // threshold must be between 0 and 1.
+  if (sparse_threshold < 0.0 || sparse_threshold > 1.0) {
+    OPT_LOG_FATAL << "Please set sparse_threshold between 0.0 and 1.0.";
+  } else {
+    opt_config_.set_sparse_threshold(sparse_threshold);
+  }
+}
+
 void OptBase::SetPassesInternal(
     const std::vector<std::string>& passes_internal) {
   opt_config_.set_passes_internal(passes_internal);
@@ -367,6 +391,9 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "  Arguments of mode quantization in opt:\n"
       "        `--quant_model=(true|false)`\n"
       "        `--quant_type=(QUANT_INT8|QUANT_INT16)`\n"
+      "  Arguements of sparse convolution in opt: \n"
+      "        `--sparse_model=(true|false)`\n"
+      "        `--sparse_threshold=(float)`\n"
       "  Arguments of enable_fp16 in opt: \n"
       "        `--enable_fp16=(true|false)`\n"
       "  Arguments of model checking and ops information:\n"

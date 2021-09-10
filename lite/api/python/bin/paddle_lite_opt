@@ -35,6 +35,14 @@ def main():
         help="{true, false} Whether to enable FP16 calculation, FP16 "
              "calculation will cause a lower precision but higher inference speed.")
 
+    # arguments of sparsification
+    parser.add_argument("--sparse_model", type=str, default="false",
+        help="{true, false} Use sparse_conv_detect_pass sparsify"
+             "the 1x1conv weights. Default false.")
+    parser.add_argument("--sparse_threshold", type=float, default=0.6,\
+        help="Set a value to determine the lower bound for sparse pass. \
+              0.6 means sparse pass will be skipped if the current weight sparsity is smaller than 0.6.")
+
    # arguments of help information
     parser.add_argument('--version', action='version', version=a.version())
     parser.add_argument("--print_supported_ops", type=str, default="false",\
@@ -87,6 +95,9 @@ def main():
     if args.quant_model == "true":
         a.set_quant_model(True)
         a.set_quant_type(args.quant_type)
+    if args.sparse_model == "true":
+        a.set_sparse_model(True)
+        a.set_sparse_threshold(args.sparse_threshold)
     """ print ops info """
     if args.print_all_ops == "true":
          a.print_all_ops()
