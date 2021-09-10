@@ -555,9 +555,11 @@ function make_x86_tests {
 
   if [ $1 == "benchmark" ]; then
     set_benchmark_options
-    # Turn off opencl. Additional third party library need to be installed on
-    # Linux. Otherwise opencl is not supported on Linux.
-    WITH_OPENCL=OFF
+    if [ ${os_name} == "Linux" ]; then
+      # Turn off opencl. Additional third party library need to be installed on
+      # Linux. Otherwise opencl is not supported on Linux.
+      WITH_OPENCL=OFF
+    fi
   fi
 
   if [ -d $build_directory ]
