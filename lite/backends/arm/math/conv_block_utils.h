@@ -21,7 +21,7 @@
 #include "lite/backends/arm/math/type_trans.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/operators/op_params.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 namespace paddle {
 namespace lite {

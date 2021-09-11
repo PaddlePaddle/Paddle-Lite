@@ -19,7 +19,7 @@
 #include "lite/core/tensor.h"
 #include "lite/kernels/opencl/test_helper.h"
 #include "lite/operators/reshape_op.h"
-#include "lite/utils/logging.h"
+#include "lite/utils/log/logging.h"
 
 #define FP16_MAX_DIFF (5e-1)
 

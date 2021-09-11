@@ -14,7 +14,7 @@
 
 #include "lite/backends/arm/math/im2sequence.h"
 #include <arm_neon.h>
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 namespace paddle {
 namespace lite {

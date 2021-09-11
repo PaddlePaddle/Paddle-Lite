@@ -1,29 +1,52 @@
+# source code for unit tests
+FILE(GLOB_RECURSE UNIT_TEST_SRC ${CMAKE_CURRENT_SOURCE_DIR}/*test*)
+
+# protobuf parser source code
+FILE(GLOB_RECURSE PB_PARSER_SRC ${CMAKE_CURRENT_SOURCE_DIR}/pb/*.cc)
+LIST(REMOVE_ITEM PB_PARSER_SRC ${UNIT_TEST_SRC})
+
+# flatbuffer parser source code
+FILE(GLOB_RECURSE FLAT_PARSER_SRC ${CMAKE_CURRENT_SOURCE_DIR}/flatbuffers/*.cc)
+LIST(REMOVE_ITEM FLAT_PARSER_SRC ${UNIT_TEST_SRC})
+
+# ssa graph parser source code (this is used for removing circle struct from optimized model)
+FILE(GLOB_RECURSE SSA_PARSER_SRC ${CMAKE_CURRENT_SOURCE_DIR}/ssa/*.cc)
+LIST(REMOVE_ITEM SSA_PARSER_SRC ${UNIT_TEST_SRC})
+
+# ssa graph parser source code (this is used for removing circle struct from optimized model)
+FILE(GLOB_RECURSE NAIVE_PARSER_SRC ${CMAKE_CURRENT_SOURCE_DIR}/naive_buffer/*.cc)
+LIST(REMOVE_ITEM NAIVE_PARSER_SRC ${UNIT_TEST_SRC})
+
+# common code for core module
+FILE(GLOB MODEL_PARSER_BASE_SRC ${CMAKE_CURRENT_SOURCE_DIR}/*.cc)
+LIST(REMOVE_ITEM MODEL_PARSER_BASE_SRC ${UNIT_TEST_SRC} ${CMAKE_CURRENT_SOURCE_DIR}/compatibility.cc)
+
+
+set(MODEL_PARSER_SRC ${MODEL_PARSER_BASE_SRC} ${FLAT_PARSER_SRC})
+set(MODEL_PAESER_DEPS "")
+
+
 if (NOT LITE_ON_TINY_PUBLISH)
-    add_subdirectory(pb)
+   set(MODEL_PARSER_SRC ${MODEL_PARSER_SRC} ${PB_PARSER_SRC} ${SSA_PARSER_SRC} ${NAIVE_PARSER_SRC})
+   set(MODEL_PAESER_DEPS ${MODEL_PAESER_DEPS} framework_proto)
 endif()
-#add_subdirectory(base)
-#add_subdirectory(general)
+
+if (LITE_WITH_CUDA AND NOT LITE_ON_TINY_PUBLISH)
+    set(MODEL_PARSER_SRC ${MODEL_PARSER_SRC} ${CMAKE_CURRENT_SOURCE_DIR}/compatibility.cc)
+endif()
+
+
+lite_cc_library(model_parser SRCS ${MODEL_PARSER_SRC} DEPS ${MODEL_PAESER_DEPS})
+add_dependencies(model_parser fbs_headers)
+
+
 add_subdirectory(naive_buffer)
 add_subdirectory(flatbuffers)
 add_subdirectory(ssa)
 
 
 
-if (NOT LITE_ON_TINY_PUBLISH)
-    lite_cc_library(compatible_pb SRCS compatible_pb.cc
-      DEPS ${naive_wrapper} ${pb_wrapper} framework_proto
-fbs_io ssa_program)
-else()
-    lite_cc_library(compatible_pb SRCS compatible_pb.cc DEPS ${naive_wrapper} fbs_io)
-endif()
-
-lite_cc_library(model_parser SRCS model_parser.cc DEPS
-    target_wrapper_host
-    compatible_pb
-    core
-    paddle_api
-    CUDA_DEPS target_wrapper_cuda)
-lite_cc_test(test_compatible_pb SRCS compatible_pb_test.cc DEPS compatible_pb)
+lite_cc_test(test_compatible_pb SRCS compatible_pb_test.cc DEPS model_parser)
 
 
 #TODO(Superjomn) enable it again.
@@ -38,9 +61,5 @@ endif()
 
 
 if (LITE_WITH_CUDA AND NOT LITE_ON_TINY_PUBLISH)
-    lite_cc_library(compatibility SRCS compatibility.cc DEPS
-        core
-        compatible_pb
-        ${naive_wrapper})
-    lite_cc_test(test_compatibility SRCS compatibility_test.cc DEPS compatibility leaky_relu_compute_cuda)
+    lite_cc_test(test_compatibility SRCS compatibility_test.cc DEPS kernels core core)
 endif()

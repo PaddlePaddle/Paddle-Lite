@@ -14,7 +14,7 @@ limitations under the License. */
 
 #include "lite/backends/opencl/cl_image_converter.h"
 #include <vector>
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 namespace paddle {
 namespace lite {
