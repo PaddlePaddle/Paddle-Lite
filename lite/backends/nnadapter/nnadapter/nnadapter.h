@@ -866,6 +866,26 @@ typedef enum {
   NNADAPTER_POW,
 
   /**
+   * Applies the prelu activation to the input tensor. The output is calculated
+   * using this formula:
+   * output = input, if input >=0;
+   * output = slope * input, if input < 0;
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32 or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor with shape [N, C, ...].
+   * * 1: slope, a tensor, with shape [1] or [C].
+   * 1) If input's type is NNADAPTER_TENSOR_FLOAT32, its type must be the same
+   * type.
+   *
+   * Outputs:
+   * * 0: output, a tensor with the same shape and type as input.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_PRELU,
+
+  /**
   * Outputs a 1-D Tensor with spaced values within a given interval.
   *
   * Inputs:
