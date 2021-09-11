@@ -75,7 +75,7 @@ function publish_inference_lib {
     if [ -d ${build_dir}/inference_lite_lib/python/install/dist ]; then
 #      macOS python installer is not supported because pybind is compatible to MacOs of high version
 #      # test python installer
-#      cd ${build_dir}
+      cd ${build_dir}
 #      cd inference_lite_lib/python/install/dist/
 #
 #      # Here is a temporary solution for pip bug on macOS,
@@ -120,9 +120,9 @@ function publish_inference_lib {
       ./mobilenet_full_api $WORKSPACE/${build_dir}/mobilenet_v1  1,3,224,224  10  2  0
 
       # light demo
-      cd ${cxx_demo_dir}/mobilenetv1_light/
-      sh build.sh
-      ./mobilenet_light_api $WORKSPACE/${build_dir}/mobilenet_v1_x86_opencl.nb 1,3,224,224  10  2  0
+#      cd ${cxx_demo_dir}/mobilenetv1_light/
+#      sh build.sh
+#      ./mobilenet_light_api $WORKSPACE/${build_dir}/mobilenet_v1_x86_opencl.nb 1,3,224,224  10  2  0
     else
       echo -e "Directory: ${cxx_demo_dir} not found!"
       exit 1
