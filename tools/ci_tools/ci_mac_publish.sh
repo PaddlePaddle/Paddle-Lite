@@ -85,8 +85,8 @@ function publish_inference_lib {
 #      macOS10_installer_name=$(ls | sed 's/11/10/g')
 #      mv $installer_name $macOS10_installer_name && cd -
 #      python$python_version -m pip install --force-reinstall  inference_lite_lib/python/install/dist/*.whl
-#      # download test model
-#      prepare_model mobilenet_v1 $mobilenet_v1_url
+      # download test model
+      prepare_model mobilenet_v1 $mobilenet_v1_url
 #      # test opt
 #      paddle_lite_opt
 #      paddle_lite_opt --model_dir=mobilenet_v1 --optimize_out=mobilenet_v1_arm
