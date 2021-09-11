@@ -12,11 +12,11 @@
  See the License for the specific language governing permissions and
  limitations under the License. */
 
-#include "Common.metal"
 #include <metal_stdlib>
+#include "Common.metal"
 using namespace metal;
 
-kernel void boxcoder(texture2d_array<ftype, access::read> priorBox[[texture(0)]],
+kernel void box_coder(texture2d_array<ftype, access::read> priorBox[[texture(0)]],
     texture2d_array<ftype, access::read> priorBoxVar[[texture(1)]],
     texture2d_array<ftype, access::read> targetBox[[texture(2)]],
     texture2d_array<ftype, access::write> output[[texture(3)]],

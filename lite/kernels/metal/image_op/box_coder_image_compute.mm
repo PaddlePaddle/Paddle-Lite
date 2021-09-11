@@ -41,7 +41,7 @@ void BoxCoderImageCompute::PrepareForRun() {
     output_buffer_ =
         param.proposals->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
 #endif
-    std::string function_name = "box_coder";
+    function_name_ = "box_coder";
 
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
@@ -62,8 +62,8 @@ void BoxCoderImageCompute::run_without_mps() {
     auto encoder = [backend commandEncoder];
     [encoder setTexture:(prior_box_buffer_->image()) atIndex:(0)];
     [encoder setTexture:(prior_box_var_buffer_->image()) atIndex:(1)];
-    [encoder setTexture:(target_box_buffer_->image()) atIndex:(1)];
-    [encoder setTexture:(output_buffer_->image()) atIndex:(2)];
+    [encoder setTexture:(target_box_buffer_->image()) atIndex:(2)];
+    [encoder setTexture:(output_buffer_->image()) atIndex:(3)];
 
     [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
     [backend commit];
