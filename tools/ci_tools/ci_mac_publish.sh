@@ -85,8 +85,8 @@ function publish_inference_lib {
 #      macOS10_installer_name=$(ls | sed 's/11/10/g')
 #      mv $installer_name $macOS10_installer_name && cd -
 #      python$python_version -m pip install --force-reinstall  inference_lite_lib/python/install/dist/*.whl
-#      # download test model
-#      prepare_model mobilenet_v1 $mobilenet_v1_url
+      # download test model
+      prepare_model mobilenet_v1 $mobilenet_v1_url
 #      # test opt
 #      paddle_lite_opt
 #      paddle_lite_opt --model_dir=mobilenet_v1 --optimize_out=mobilenet_v1_arm
@@ -119,10 +119,10 @@ function publish_inference_lib {
       sh build.sh
       ./mobilenet_full_api $WORKSPACE/${build_dir}/mobilenet_v1  1,3,224,224  10  2  0
 
-      # light demo
-      cd ${cxx_demo_dir}/mobilenetv1_light/
-      sh build.sh
-      ./mobilenet_light_api $WORKSPACE/${build_dir}/mobilenet_v1_x86_opencl.nb 1,3,224,224  10  2  0
+#      # light demo
+#      cd ${cxx_demo_dir}/mobilenetv1_light/
+#      sh build.sh
+#      ./mobilenet_light_api $WORKSPACE/${build_dir}/mobilenet_v1_x86_opencl.nb 1,3,224,224  10  2  0
     else
       echo -e "Directory: ${cxx_demo_dir} not found!"
       exit 1
