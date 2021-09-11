@@ -54,17 +54,17 @@ int Benchmark(int argc, char** argv) {
     OutputOptModel(opt_model_path);
   }
 
-  // Get input shape
-  auto input_shape = lite::GetInputShape(FLAGS_input_shape);
+  // Get input shapes
+  auto input_shapes = lite::GetShapes(FLAGS_input_shape);
 
   // Run
-  Run(opt_model_path + ".nb", input_shape);
+  Run(opt_model_path + ".nb", input_shapes);
 
   return 0;
 }
 
 void Run(const std::string& model_file,
-         const std::vector<int64_t>& input_shape) {
+         const std::vector<std::vector<int64_t>>& input_shapes) {
   lite::Timer timer;
   std::vector<float> perf_vct;
 
@@ -81,23 +81,27 @@ void Run(const std::string& model_file,
   auto predictor = CreatePaddlePredictor(config);
   float init_time = timer.Stop();
 
-  // Set input
-  auto input_tensor = predictor->GetInput(0);
-  input_tensor->Resize(input_shape);
-  auto input_data = input_tensor->mutable_data<float>();
-  int64_t input_num = lite::ShapeProduction(input_shape);
-  if (FLAGS_input_data_path.empty()) {
-    for (int i = 0; i < input_num; ++i) {
-      input_data[i] = 1.f;
-    }
-  } else {
-    std::fstream fs(FLAGS_input_data_path);
-    if (!fs.is_open()) {
-      std::cout << "Open input image " << FLAGS_input_data_path << " error."
-                << std::endl;
-    }
-    for (int i = 0; i < input_num; i++) {
-      fs >> input_data[i];
+  // Set inputs
+  for (auto i = 0; i < input_shapes.size(); i++) {
+    auto input_tensor = predictor->GetInput(i);
+    input_tensor->Resize(input_shapes[i]);
+    // NOTE: Change input data type to other type as you need.
+    auto input_data = input_tensor->mutable_data<float>();
+    auto input_num = lite::ShapeProduction(input_shapes[i]);
+    if (FLAGS_input_data_path.empty()) {
+      for (auto j = 0; j < input_num; j++) {
+        input_data[j] = 1.f;
+      }
+    } else {
+      auto paths = lite::SplitString(FLAGS_input_data_path);
+      std::fstream fs(paths[i]);
+      if (!fs.is_open()) {
+        std::cout << "Open input image " << paths[i] << " error." << std::endl;
+      }
+      for (int k = 0; k < input_num; k++) {
+        fs >> input_data[k];
+      }
+      fs.close();
     }
   }
 
@@ -172,7 +176,7 @@ void Run(const std::string& model_file,
   ss << "input_data_path: "
      << (FLAGS_input_data_path.empty() ? "All 1.f" : FLAGS_input_data_path)
      << std::endl;
-  ss << "input_shape: " << lite::Vector2Str(input_shape) << std::endl;
+  ss << "input_shape: " << FLAGS_input_shape << std::endl;
   ss << out_ss.str();
   ss << "\n======= Runtime Info =======\n";
   ss << "benchmark_bin version: " << lite::version() << std::endl;

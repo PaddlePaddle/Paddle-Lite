@@ -38,8 +38,11 @@ static const char input_shape_msg[] =
     "such as 1,3,224,224 for only one input, "
     "1,3,224,224:1,5 for two inputs.";
 static const char input_data_path_msg[] =
-    "The path of input image, if not set "
-    "input_data_path, the input of model will be 1.0.";
+    "Set the path(s) of model input, "
+    "separated by comma and colon, "
+    "such as /path/to/in.txt for only one input, "
+    "/path/to/in0.txt:/path/to/in1.txt for two inputs."
+    "The input of model will be 1.0 if this option in not set.";
 static const char show_output_elem_msg[] =
     "Show each output tensor's all elements.";
 

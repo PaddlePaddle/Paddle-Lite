@@ -1,4 +1,4 @@
-// Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ namespace lite_api {
 
 int Benchmark(int argc, char** argv);
 void Run(const std::string& model_file,
-         const std::vector<int64_t>& input_shape);
+         const std::vector<std::vector<int64_t>>& input_shape);
 
 #ifdef __ANDROID__
 std::string get_device_info() {
@@ -94,6 +94,19 @@ bool CheckFlagsValid() {
     std::cerr << "Must set --input_shape option!" << std::endl;
     ret = false;
   }
+  if (!FLAGS_input_data_path.empty()) {
+    auto paths = lite::SplitString(FLAGS_input_data_path);
+    auto shapes = lite::SplitString(FLAGS_input_shape);
+    if (paths.size() != shapes.size()) {
+      std::cerr << lite::string_format(
+                       "Option invalid: --input_data_path=%s  --input_shape=%s "
+                       "\nThe num of input tensors is ambiguous.",
+                       FLAGS_input_data_path.c_str(),
+                       FLAGS_input_shape.c_str())
+                << std::endl;
+      ret = false;
+    }
+  }
 
   return ret;
 }
@@ -105,7 +118,7 @@ const std::string PrintUsage() {
         "\n"
         "  Otherwise, set --uncombined_model_dir for uncomnbined paddle model "
         "or set --model_file and param_file for combined paddle model. \n"
-        "For example: \n"
+        "For example (Android): \n"
         "  For optimized model : ./benchmark_bin "
         "--optimized_model_path=/data/local/tmp/mobilenetv1_opt.nb "
         "--input_shape=1,3,224,224 --backend=arm \n\n"
@@ -116,6 +129,23 @@ const std::string PrintUsage() {
         "--model_file=/data/local/tmp/mobilenetv1/model "
         "--param_file=/data/local/tmp/mobilenetv1/params "
         "--input_shape=1,3,224,224 --backend=arm \n\n"
+        "For example (Linux): \n"
+        "  You should add the directory of libmklml_intel.so to "
+        "LD_LIBRARY_PATH before running benchmark_bin as following because "
+        "benchmark_bin on Linux is dependent on libmklml_intel.so. \n"
+        "  export "
+        "LD_LIBRARY_PATH=./build.lite.x86_tests/third_party/install/mklml/lib/"
+        ":$LD_LIBRARY_PATH \n"
+        "  For optimized model : ./benchmark_bin "
+        "--optimized_model_path=/path/to/mbilenetv1_opt.nb "
+        "--input_shape=1,3,224,224 --backend=x86 \n\n"
+        "  For uncombined model: ./benchmark_bin "
+        "--uncombined_model_dir=/path/to/mobilenetv1 "
+        "--input_shape=1,3,224,224 --backend=x86 \n\n"
+        "  For combined model  : ./benchmark_bin "
+        "--model_file=/path/to/mobilenetv1/model "
+        "--param_file=/path/to/mobilenetv1/params "
+        "--input_shape=1,3,224,224 --backend=x86 \n\n"
         "For detailed usage info: ./benchmark_bin --help \n\n";
 
   return ss.str();
@@ -186,8 +216,7 @@ void OutputOptModel(const std::string& save_optimized_model_path) {
 
   auto previous_opt_model = save_optimized_model_path + ".nb";
   int ret = system(
-      paddle::lite::string_format("rm -rf %s", previous_opt_model.c_str())
-          .c_str());
+      lite::string_format("rm -rf %s", previous_opt_model.c_str()).c_str());
   if (ret == 0) {
     std::cout << "Delete previous optimized model: " << previous_opt_model
               << std::endl;

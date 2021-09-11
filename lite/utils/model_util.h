@@ -30,6 +30,22 @@ std::string Vector2Str(const std::vector<T>& input) {
   return ss.str();
 }
 
+std::vector<std::string> SplitString(const std::string& str_in,
+                                     const std::string& mark = ":") {
+  std::vector<std::string> str_out;
+  std::string tmp_str = str_in;
+  while (!tmp_str.empty()) {
+    size_t next_offset = tmp_str.find(mark);
+    str_out.push_back(tmp_str.substr(0, next_offset));
+    if (next_offset == std::string::npos) {
+      break;
+    } else {
+      tmp_str = tmp_str.substr(next_offset + 1);
+    }
+  }
+  return str_out;
+}
+
 template <class T>
 T ShapeProduction(const std::vector<T>& shape) {
   T num = 1;
@@ -62,20 +78,25 @@ std::string ShapePrint(const std::vector<int64_t>& shape) {
   return shape_str;
 }
 
-std::vector<int64_t> GetInputShape(const std::string& str_shape) {
-  std::vector<int64_t> shape;
-  std::string tmp_str = str_shape;
-  while (!tmp_str.empty()) {
-    int dim = atoi(tmp_str.data());
-    shape.push_back(dim);
-    size_t next_offset = tmp_str.find(",");
-    if (next_offset == std::string::npos) {
-      break;
-    } else {
-      tmp_str = tmp_str.substr(next_offset + 1);
+std::vector<std::vector<int64_t>> GetShapes(const std::string& raw_shapes) {
+  std::vector<std::vector<int64_t>> shapes;
+  auto str_shapes = SplitString(raw_shapes);
+  for (auto str_shape : str_shapes) {
+    std::vector<int64_t> shape;
+    std::string tmp_str = str_shape;
+    while (!tmp_str.empty()) {
+      int dim = atoi(tmp_str.data());
+      shape.push_back(dim);
+      size_t next_offset = tmp_str.find(",");
+      if (next_offset == std::string::npos) {
+        break;
+      } else {
+        tmp_str = tmp_str.substr(next_offset + 1);
+      }
     }
+    shapes.push_back(shape);
   }
-  return shape;
+  return shapes;
 }
 
 template <typename T>
