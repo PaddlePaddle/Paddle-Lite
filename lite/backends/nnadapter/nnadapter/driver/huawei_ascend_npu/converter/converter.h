@@ -15,10 +15,12 @@
 #pragma once
 
 #include <limits.h>
+
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
+
 #include "driver/huawei_ascend_npu/utility.h"
 #include "op_proto/built-in/inc/all_ops.h"
 #include "utility/debug.h"
@@ -52,15 +54,21 @@ class Operator {
 
 class Converter {
  public:
-  explicit Converter(
-      std::map<hal::Operand*, std::vector<std::shared_ptr<Operator>>>*
-          operators)
-      : operators_(operators) {}
-  ~Converter() {}
+  explicit Program(Context* context) : context_(context) {}
+  ~Program();
 
-  // Convert a NNAdapter model to GE graph and operators
-  int Apply(hal::Model* model);
-  // Mapping a GE operator to a NNAdapter operand
+  int Build(hal::Model* model, hal::Cache* cache);
+  int Execute(uint32_t input_count,
+              hal::Argument* input_arguments,
+              uint32_t output_count,
+              hal::Argument* output_arguments);
+
+ private:
+  void Clear();
+  int32_t global_idx;
+  // Operand converters
+
+  std::string GetOperatorName(hal::Operand* operand);
   std::shared_ptr<Operator> GetMappedOperator(hal::Operand* operand);
   std::shared_ptr<Operator> UpdateOperatorMap(hal::Operand* operand,
                                               std::shared_ptr<Operator> op);
@@ -97,12 +105,62 @@ class Converter {
   std::shared_ptr<Operator> ConvertOperand(
       hal::Operand* operand, std::vector<int32_t> dimensions = {});
 
+  // Operation converters
+  int ConvertConv2D(hal::Operation* operation);
+  int ConvertFullyConnected(hal::Operation* operation);
+  int ConvertFill(hal::Operation* operation);
+  int ConvertPool2D(hal::Operation* operation);
+  int ConvertElementwise(hal::Operation* operation);
+  int ConvertSoftmax(hal::Operation* operation);
+  int ConvertCumSum(hal::Operation* operation);
+  int ConvertActivation(hal::Operation* operation);
+  int ConvertReshape(hal::Operation* operation);
+  int ConvertTranspose(hal::Operation* operation);
+  int ConvertConcat(hal::Operation* operation);
+  int ConvertSplit(hal::Operation* operation);
+  int ConvertPow(hal::Operation* operation);
+  int ConvertBatchNormalization(hal::Operation* operation);
+  int ConvertClip(hal::Operation* operation);
+  int ConvertLeakyRelu(hal::Operation* operation);
+  int ConvertSlice(hal::Operation* operation);
+  int ConvertReduceMean(hal::Operation* operation);
+  int ConvertExpand(hal::Operation* operation);
+  int ConvertRange(hal::Operation* operation);
+  int ConvertCast(hal::Operation* operation);
+  int ConvertShape(hal::Operation* operation);
+  int ConvertStack(hal::Operation* operation);
+  int ConvertAssign(hal::Operation* operation);
+  int ConvertResizeNearest(hal::Operation* operation);
+  int ConvertResizeLinear(hal::Operation* operation);
+  int ConvertInstanceNormalization(hal::Operation* operation);
+  int ConvertLpNormalization(hal::Operation* operation);
+  int ConvertDeformableConv2d(hal::Operation* operation);
+  int ConvertHardSwish(hal::Operation* operation);
+  int ConvertHardSigmoid(hal::Operation* operation);
+  int ConvertSqueeze(hal::Operation* operation);
+  int ConvertUnsqueeze(hal::Operation* operation);
+  int ConvertPad(hal::Operation* operation);
+
  private:
   std::map<hal::Operand*, std::vector<std::shared_ptr<Operator>>>* operators_{
       nullptr};
   // Only for generating the unique name for GE operator
   uint32_t operator_index_{0};
 };
+
+// Create operator
+#define CREATE_OPERATOR(op_type, output_operand, custom_name)              \
+  {                                                                        \
+    std::string op_name;                                                   \
+    auto operand_name = GetOperatorName(output_operand);                   \
+    if (custom_name.empty()) {                                             \
+      op_name = string_format("%s_%s", op_type, output_operand);           \
+    } else {                                                               \
+      op_name =                                                            \
+          string_format("%s_%s_%s", op_type, custom_name, output_operand); \
+    }                                                                      \
+    std::make_shared<ge::op::##op_type>(op_name);                          \
+  }
 
 // Set one of dynamic inputs of a ge::Operator and update its tensor desc
 #define SET_INPUT(dst, name, src)                                 \

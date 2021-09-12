@@ -46,9 +46,30 @@ int PadConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                           ? op_info->GetOutputScale(output_scale_name, true)[0]
                           : 0.f;
   auto output = scope->FindMutableTensor(output_name);
-  auto pads = op_info->GetAttr<std::vector<int>>("paddings");
   auto mode = op_info->GetAttr<std::string>("mode");
-  auto value = op_info->GetAttr<float>("value");
+  float value;
+  std::vector<int> pads;
+  if (op_type == "pad2d") {
+    value = op_info->GetAttr<float>("pad_value");
+    if (op_info->HasAttr("variable_padding") &&
+        op_info->GetAttr<bool>("variable_paddings")) {
+      auto Paddings =
+          scope->FindMutableTensor(op_info->Input("Paddings").front());
+      auto ptr = Paddings->data<int>();
+      if (Paddings->dims().size() < 4) {
+        LOG(FATAL) << "Paddings size must be four: %d \n",
+            static_cast<int>(Paddings->dims().size());
+        return FAILED;
+      }
+      pads = {ptr[0], ptr[1], ptr[2], ptr[3]};
+    } else {
+      pads = op_info->GetAttr<std::vector<int>>("paddings");
+    }
+  } else {
+    value = op_info->GetAttr<float>("pad_value");
+    pads = op_info->GetAttr<std::vector<int>>("paddings");
+  }
+
   auto data_format = op_info->GetAttr<std::string>("data_format");
   std::vector<int> paddings;
   if (data_format == "NCDHW") {
@@ -71,17 +92,17 @@ int PadConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                     input_dims[4]});
   } else if (data_format == "NCHW") {
     CHECK_EQ(pads.size(), 4);
-    paddings = {0, 0, 0, 0, pads[2], pads[3], pads[0], pads[1]};
+    paddings = {0, 0, 0, 0, pads[0], pads[1], pads[2], pads[3]};
     output->Resize({input_dims[0],
                     input_dims[1],
-                    input_dims[2] + pads[2] + pads[3],
-                    input_dims[3] + pads[0] + pads[1]});
+                    input_dims[2] + pads[0] + pads[1],
+                    input_dims[3] + pads[2] + pads[3]});
   } else if (data_format == "NHWC") {
     CHECK_EQ(pads.size(), 4);
-    paddings = {0, 0, pads[2], pads[3], pads[0], pads[1], 0, 0};
+    paddings = {0, 0, pads[0], pads[1], pads[2], pads[3], 0, 0};
     output->Resize({input_dims[0],
-                    input_dims[1] + pads[2] + pads[3],
-                    input_dims[2] + pads[0] + pads[1],
+                    input_dims[1] + pads[0] + pads[1],
+                    input_dims[2] + pads[2] + pads[3],
                     input_dims[3]});
   } else if (data_format == "NCL") {
     CHECK_EQ(pads.size(), 2);
@@ -144,5 +165,8 @@ int PadConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 }  // namespace paddle
 
 REGISTER_SUBGRAPH_BRIDGE(pad3d,
+                         kNNAdapter,
+                         paddle::lite::subgraph::nnadapter::PadConverter);
+REGISTER_SUBGRAPH_BRIDGE(pad2d,
                          kNNAdapter,
                          paddle::lite::subgraph::nnadapter::PadConverter);
