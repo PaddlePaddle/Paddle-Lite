@@ -82,7 +82,7 @@ void Run(const std::string& model_file,
   float init_time = timer.Stop();
 
   // Set inputs
-  for (auto i = 0; i < input_shapes.size(); i++) {
+  for (size_t i = 0; i < input_shapes.size(); i++) {
     auto input_tensor = predictor->GetInput(i);
     input_tensor->Resize(input_shapes[i]);
     // NOTE: Change input data type to other type as you need.
@@ -130,7 +130,7 @@ void Run(const std::string& model_file,
   STL::stringstream out_ss;
   out_ss << "output tensor num: " << output_tensor_num;
 
-  for (auto tidx = 0; tidx < output_tensor_num; ++tidx) {
+  for (size_t tidx = 0; tidx < output_tensor_num; ++tidx) {
     std::unique_ptr<const Tensor> output_tensor = predictor->GetOutput(tidx);
     out_ss << "\n--- output tensor " << tidx << " ---\n";
     auto out_shape = output_tensor->shape();
