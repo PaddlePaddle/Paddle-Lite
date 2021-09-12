@@ -19,8 +19,13 @@
 
 namespace nnadapter {
 namespace amlogic_npu {
+
 int ConvertConv2DTranspose(Converter* converter, hal::Operation* operation) {
   CONV_2D_TRANSPOSE_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  NNADAPTER_CHECK_EQ(output_padding_height, 0)
+      << "Only support output_padding_height/output_padding_width == 0.";
+  NNADAPTER_CHECK_EQ(output_padding_width, 0)
+      << "Only support output_padding_height/output_padding_width == 0.";
 
   // Convert to amlnpu tensors and operators
   auto input_tensor = converter->GetMappedTensor(input_operand);
@@ -29,11 +34,9 @@ int ConvertConv2DTranspose(Converter* converter, hal::Operation* operation) {
   }
   std::shared_ptr<aml::nn::Tensor> filter_tensor = nullptr;
   if (is_depthwise_mode) {
-    filter_tensor = converter->ConvertOperand(filter_operand,
-                                              {filter_channel_size,
-                                               output_channel_size,
-                                               filter_height,
-                                               filter_width});
+    filter_tensor = converter->ConvertOperand(
+        filter_operand,
+        {output_channel_size, input_channel_size, filter_height, filter_width});
   } else {
     filter_tensor = converter->ConvertOperand(filter_operand);
   }
@@ -50,7 +53,7 @@ int ConvertConv2DTranspose(Converter* converter, hal::Operation* operation) {
   attr.pad[3] = pad_height_bottom;
   attr.group = group;
   attr.multiplier = 0;
-  attr.weights = filter_channel_size;
+  attr.weights = output_channel_size;
   attr.dilation[0] = dilation_width;
   attr.dilation[1] = dilation_height;
   attr.pad_type = aml::nn::PadType::AUTO;

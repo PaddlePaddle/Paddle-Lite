@@ -19,6 +19,7 @@
 
 namespace nnadapter {
 namespace amlogic_npu {
+
 int ConvertConv2D(Converter* converter, hal::Operation* operation) {
   CONV_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
   // Dynamic shapes are still not supported

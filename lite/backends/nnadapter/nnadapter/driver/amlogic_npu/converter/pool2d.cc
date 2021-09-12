@@ -19,6 +19,7 @@
 
 namespace nnadapter {
 namespace amlogic_npu {
+
 int ConvertPool2D(Converter* converter, hal::Operation* operation) {
   POOL_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
 

@@ -12,8 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/utils/timer.h"
+#include "core/operation/prelu.h"
+#include "core/hal/types.h"
+#include "utility/debug.h"
+#include "utility/logging.h"
+#include "utility/modeling.h"
+#include "utility/utility.h"
 
-namespace paddle {
-namespace lite {}  // namespace lite
-}  // namespace paddle
+namespace nnadapter {
+namespace operation {
+
+int PreparePRelu(hal::Operation* operation) {
+  PRELU_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
+  // Infer the shape and type of output operands
+  CopyOperandTypeExceptQuantParams(&output_operand->type, input_operand->type);
+  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
+  return NNADAPTER_NO_ERROR;
+}
+
+}  // namespace operation
+}  // namespace nnadapter

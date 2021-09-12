@@ -23,7 +23,7 @@
 #include "lite/backends/x86/jit/kernel_base.h"
 #include "lite/backends/x86/jit/kernel_key.h"
 #include "lite/backends/x86/jit/kernel_pool.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 #include "lite/utils/macros.h"
 
 namespace paddle {

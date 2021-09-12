@@ -17,7 +17,7 @@
  * friendly for mobile.
  */
 
-#include "lite/utils/logging.h"
+#include "lite/utils/log/logging.h"
 #include <iomanip>
 #include "lite/utils/env.h"
 
