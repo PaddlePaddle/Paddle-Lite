@@ -15,10 +15,12 @@
 #pragma once
 
 #include <limits.h>
+
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
+
 #include "driver/huawei_ascend_npu/utility.h"
 #include "op_proto/built-in/inc/all_ops.h"
 #include "utility/string.h"
@@ -82,7 +84,9 @@ class Program {
 
  private:
   void Clear();
+  int32_t global_idx;
   // Operand converters
+
   std::string GetOperatorName(hal::Operand* operand);
   std::shared_ptr<Operator> GetMappedOperator(hal::Operand* operand);
   std::shared_ptr<Operator> UpdateOperatorMap(hal::Operand* operand,
@@ -133,6 +137,7 @@ class Program {
   int ConvertAssign(hal::Operation* operation);
   int ConvertResizeNearest(hal::Operation* operation);
   int ConvertResizeLinear(hal::Operation* operation);
+  int ConvertInstanceNormalization(hal::Operation* operation);
   int ConvertLpNormalization(hal::Operation* operation);
   int ConvertDeformableConv2d(hal::Operation* operation);
   int ConvertHardSwish(hal::Operation* operation);
@@ -149,6 +154,20 @@ class Program {
   std::vector<NNAdapterOperandType> input_types_;
   std::vector<NNAdapterOperandType> output_types_;
 };
+
+// Create operator
+#define CREATE_OPERATOR(op_type, output_operand, custom_name)              \
+  {                                                                        \
+    std::string op_name;                                                   \
+    auto operand_name = GetOperatorName(output_operand);                   \
+    if (custom_name.empty()) {                                             \
+      op_name = string_format("%s_%s", op_type, output_operand);           \
+    } else {                                                               \
+      op_name =                                                            \
+          string_format("%s_%s_%s", op_type, custom_name, output_operand); \
+    }                                                                      \
+    std::make_shared<ge::op::##op_type>(op_name);                          \
+  }
 
 // Set one of dynamic inputs of a ge::Operator and update its tensor desc
 #define SET_INPUT(dst, name, src)                                 \

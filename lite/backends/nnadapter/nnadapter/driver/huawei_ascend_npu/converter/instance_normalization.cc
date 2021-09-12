@@ -12,27 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "core/operation/instance_normalization.h"
 #include "driver/huawei_ascend_npu/converter.h"
-#include "core/operation/leaky_relu.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int Program::ConvertLeakyRelu(hal::Operation* operation) {
-  LEAKY_RELU_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int Program::ConvertInstanceNormalization(hal::Operation* operation) {
+  INSTANCE_NORMALIZATION_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
   auto input_operator = GetMappedOperator(input_operand);
-  if (!input_operator) {
+  if (input_operator == nullptr) {
     input_operator = ConvertOperand(input_operand);
   }
-  auto act_name = GetOperatorName(output_operand);
-  auto act_op = std::make_shared<ge::op::LeakyRelu>(act_name);
-  act_op->set_attr_negative_slope(alpha);
-  SET_INPUT(act_op, x, input_operator);
-  MAP_OUTPUT(act_op, y, output_operand);
+  auto scale_operator = GetMappedOperator(scale_operand);
+  if (scale_operator == nullptr) {
+    scale_operator = ConvertOperand(scale_operand);
+  }
+  auto bias_operator = GetMappedOperator(bias_operand);
+  if (bias_operator == nullptr) {
+    bias_operator = ConvertOperand(bias_operand);
+  }
+  auto instance_norm_name = GetOperatorName(output_operand);
+  auto instance_norm_op = std::make_shared<ge::op::InstanceNorm>(instance_norm_name);
+  instance_norm_op->set_attr_data_format("NCHW");
+  instance_norm_op->set_attr_epsilon(epsilon);
+  SET_INPUT(instance_norm_op, x, input_operator);
+  SET_INPUT(instance_norm_op, beta, bias_operator);
+  SET_INPUT(instance_norm_op, gamma, scale_operator);
+  MAP_OUTPUT(instance_norm_op, y, output_operand);
   return NNADAPTER_NO_ERROR;
 }
 

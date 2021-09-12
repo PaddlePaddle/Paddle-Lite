@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,29 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/huawei_ascend_npu/converter.h"
 #include "core/operation/leaky_relu.h"
+#include "core/hal/types.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/modeling.h"
+#include "utility/utility.h"
 
 namespace nnadapter {
-namespace huawei_ascend_npu {
+namespace operation {
 
-int Program::ConvertLeakyRelu(hal::Operation* operation) {
+int PrepareLeakyRelu(hal::Operation* operation) {
   LEAKY_RELU_OPERATION_EXTRACT_INPUTS_OUTPUTS
-
-  // Convert to GE operators
-  auto input_operator = GetMappedOperator(input_operand);
-  if (!input_operator) {
-    input_operator = ConvertOperand(input_operand);
-  }
-  auto act_name = GetOperatorName(output_operand);
-  auto act_op = std::make_shared<ge::op::LeakyRelu>(act_name);
-  act_op->set_attr_negative_slope(alpha);
-  SET_INPUT(act_op, x, input_operator);
-  MAP_OUTPUT(act_op, y, output_operand);
+  // Infer the shape and type of output operands
+  CopyOperandTypeExceptQuantParams(&output_operand->type, input_operand->type);
+  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
 }
 
-}  // namespace huawei_ascend_npu
+}  // namespace operation
 }  // namespace nnadapter

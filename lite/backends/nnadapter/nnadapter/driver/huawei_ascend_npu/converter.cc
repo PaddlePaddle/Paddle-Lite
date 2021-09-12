@@ -166,6 +166,9 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
         case NNADAPTER_HARD_SIGMOID:
           ConvertHardSigmoid(operation);
           break;
+        case NNADAPTER_INSTANCE_NORMALIZATION:
+          ConvertInstanceNormalization(operation);
+          break;
         case NNADAPTER_SQUEEZE:
           ConvertSqueeze(operation);
           break;
@@ -289,7 +292,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     }
   }
   auto output_count = output_types_.size();
-  NNADAPTER_CHECK_EQ(output_tensor_descs.size(), output_count);
+  // NNADAPTER_CHECK_EQ(output_tensor_descs.size(), output_count);
   for (size_t i = 0; i < output_count; i++) {
     auto type = &output_types_[i];
     auto dimensions = output_tensor_descs[i].GetShape();
@@ -326,14 +329,15 @@ int Program::Execute(uint32_t input_count,
   return NNADAPTER_NO_ERROR;
 }
 
+
+
 std::string Program::GetOperatorName(hal::Operand* operand) {
   auto operand_id = OperandIdToString(operand);
-  auto index = 0;
   auto it = operators_.find(operand);
   if (it != operators_.end()) {
-    index = it->second.size();
+    Program::global_idx += 1;
   }
-  return operand_id + string_format("_%d", index);
+  return operand_id + string_format("_%d", Program::global_idx);
 }
 
 std::shared_ptr<Operator> Program::GetMappedOperator(hal::Operand* operand) {

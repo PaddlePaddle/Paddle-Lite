@@ -678,6 +678,8 @@ typedef enum {
    */
   NNADAPTER_LEAKY_RELU,
 
+  NNADAPTER_INSTANCE_NORMALIZATION,
+
   /**
    * Applies the log activation to the input tensor element-wise. The output is
    * calculated using this formula: output = log(input)

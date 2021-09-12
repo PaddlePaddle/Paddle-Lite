@@ -172,7 +172,17 @@ TEST(InstanceNorm, precision) {
   Place place;
   float abs_error = 3e-3;
   std::vector<std::string> ignored_outs = {};
-#if defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+  ignored_outs = {"saved_mean", "saved_variance"};
+  // TODO(shentanyue): enable later
+  return;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
   ignored_outs = {"saved_mean", "saved_variance"};

@@ -358,6 +358,10 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         input_args = {"input", "scale", "bias", "mean", "variance", "epsilon"};
         output_args = {"output"};
         break;
+      case NNADAPTER_INSTANCE_NORMALIZATION:
+        input_args = {"input", "scale", "bias", "episilon", "fuse_code"};
+        output_args = {"output"};
+        break;
       case NNADAPTER_DEFORMABLE_CONV_2D:
         input_args = {"input",
                       "offset",
@@ -516,6 +520,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(FULLY_CONNECTED);
     NNADAPTER_TYPE_TO_STRING(HARD_SIGMOID);
     NNADAPTER_TYPE_TO_STRING(HARD_SWISH);
+    NNADAPTER_TYPE_TO_STRING(INSTANCE_NORMALIZATION);
     NNADAPTER_TYPE_TO_STRING(LEAKY_RELU)
     NNADAPTER_TYPE_TO_STRING(LOG)
     NNADAPTER_TYPE_TO_STRING(LP_NORMALIZATION)
