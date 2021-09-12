@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #include "core/operation/pool2d.h"
 #include "driver/amlogic_npu/converter/converter.h"
 #include "utility/debug.h"

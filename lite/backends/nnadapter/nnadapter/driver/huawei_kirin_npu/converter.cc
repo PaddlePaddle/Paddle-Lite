@@ -90,7 +90,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
         case NNADAPTER_RELU6:
         case NNADAPTER_SIGMOID:
         case NNADAPTER_TANH:
-          ConvertActivation(operation);
+          ConvertUnaryActivations(operation);
           break;
         case NNADAPTER_RESHAPE:
           ConvertReshape(operation);

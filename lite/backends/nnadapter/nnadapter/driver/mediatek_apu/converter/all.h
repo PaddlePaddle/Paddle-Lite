@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __NNADAPTER_DRIVER_ROCKCHIP_NPU_CONVERTER_ALL_H__  // NOLINT
-#define __NNADAPTER_DRIVER_ROCKCHIP_NPU_CONVERTER_ALL_H__
+#ifndef __NNADAPTER_DRIVER_MEDIATEK_APU_CONVERTER_ALL_H__  // NOLINT
+#define __NNADAPTER_DRIVER_MEDIATEK_APU_CONVERTER_ALL_H__
 
 REGISTER_CONVERTER(ADD, ConvertElementwise)
 REGISTER_CONVERTER(AVERAGE_POOL_2D, ConvertPool2D)

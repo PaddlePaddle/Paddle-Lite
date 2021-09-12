@@ -19,7 +19,7 @@
 namespace nnadapter {
 namespace huawei_kirin_npu {
 
-int Program::ConvertActivation(hal::Operation* operation) {
+int Program::ConvertUnaryActivations(hal::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();

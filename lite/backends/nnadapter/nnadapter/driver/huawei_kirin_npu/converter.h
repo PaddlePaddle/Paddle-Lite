@@ -115,7 +115,7 @@ class Program {
   int ConvertPool2D(hal::Operation* operation);
   int ConvertElementwise(hal::Operation* operation);
   int ConvertSoftmax(hal::Operation* operation);
-  int ConvertActivation(hal::Operation* operation);
+  int ConvertUnaryActivations(hal::Operation* operation);
   int ConvertReshape(hal::Operation* operation);
   int ConvertUnsqueeze(hal::Operation* operation);
   int ConvertTranspose(hal::Operation* operation);

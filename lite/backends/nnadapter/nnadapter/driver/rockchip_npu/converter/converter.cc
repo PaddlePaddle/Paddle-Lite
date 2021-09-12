@@ -16,9 +16,6 @@
 #include <unistd.h>
 #include <algorithm>
 #include <vector>
-#include "driver/rockchip_npu/optimizer/fix_ops.h"
-#include "driver/rockchip_npu/optimizer/unpack_op_fusion.h"
-#include "optimizer/symm2asymm.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"

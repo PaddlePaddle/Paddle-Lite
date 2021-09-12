@@ -61,7 +61,7 @@ int Program::ConvertFullyConnected(hal::Operation* operation) {
   // Reshape the input operator to 2-D tensor {batch_size, input_size} if the
   // dimension_count not equal 2
   if (input_operand->type.dimension_count != 2) {
-    auto reshape_name = GetOperatorName(input_operand) + "/reshape";
+    auto reshape_name = GetOperatorName(output_operand) + "/reshape";
     auto reshape_op = std::make_shared<ge::op::Reshape>(reshape_name);
     auto shape_operator = AddInt32ConstantOperator(
         std::vector<int32_t>({static_cast<int32_t>(batch_size), input_size}));
