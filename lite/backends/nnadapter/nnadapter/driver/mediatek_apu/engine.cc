@@ -52,7 +52,6 @@ void Program::Clear() {
     model_ = nullptr;
   }
   operand_indexes_.clear();
-  operand_index_ = 0;
   operand_buffers_.clear();
   input_types_.clear();
   output_types_.clear();
@@ -81,7 +80,6 @@ int Program::BuildFromModel(hal::Model* model) {
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
   // Convert the NNAdapter model to Neuron model
   operand_indexes_.clear();
-  operand_index_ = 0;
   uint32_t version;
   Neuron_getVersion_invoke(&version);
   NNADAPTER_VLOG(3) << "Neuron Adapter version: " << version;
@@ -91,7 +89,7 @@ int Program::BuildFromModel(hal::Model* model) {
                          << ")!";
     return result;
   }
-  Converter converter(model_, &operand_indexes_, &operand_index_);
+  Converter converter(model_, &operand_indexes_);
   NNADAPTER_CHECK_EQ(converter.Apply(model), NNADAPTER_NO_ERROR);
   // Indentify the inputs and outputs
   auto input_count = model->input_operands.size();

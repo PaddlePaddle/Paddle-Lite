@@ -29,11 +29,8 @@ class Converter {
  public:
   explicit Converter(
       NeuronModel* model,
-      std::map<hal::Operand*, std::vector<uint32_t>>* operand_indexes,
-      uint32_t* operand_index)
-      : model_(model),
-        operand_indexes_(operand_indexes),
-        operand_index_(operand_index) {}
+      std::map<hal::Operand*, std::vector<uint32_t>>* operand_indexes)
+      : model_(model), operand_indexes_(operand_indexes) {}
   ~Converter() {}
 
   // Convert a NNAdapter model to Neuron model and operand index
@@ -94,7 +91,7 @@ class Converter {
  private:
   NeuronModel* model_{nullptr};
   std::map<hal::Operand*, std::vector<uint32_t>>* operand_indexes_{nullptr};
-  uint32_t* operand_index_{nullptr};
+  uint32_t operand_index_{0};
 };
 
 }  // namespace mediatek_apu

@@ -18,10 +18,13 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "driver/mediatek_apu/utility.h"
+#include "driver/huawei_kirin_npu/converter/converter.h"
+#include "driver/huawei_kirin_npu/utility.h"
+#include "graph/op/all_ops.h"
+#include "utility/string.h"
 
 namespace nnadapter {
-namespace mediatek_apu {
+namespace huawei_kirin_npu {
 
 class Device {
  public:
@@ -34,9 +37,18 @@ class Context {
   explicit Context(void* device, const char* properties);
   ~Context();
 
+  int freq_level() { return freq_level_; }
+  int framework_type() { return framework_type_; }
+  int model_type() { return model_type_; }
+  int device_type() { return device_type_; }
+
  private:
   void* device_{nullptr};
   void* context_{nullptr};
+  int freq_level_{3};
+  int framework_type_{0};
+  int model_type_{0};
+  int device_type_{0};
 };
 
 class Program {
@@ -52,23 +64,18 @@ class Program {
 
  private:
   void Clear();
-  // Build from model or cache
-  int BuildFromModel(hal::Model* model);
-  int BuildFromCache(hal::Cache* cache);
 
  private:
   Context* context_{nullptr};
-  // Map NNAdapter operand to Neuron operand index
-  std::map<hal::Operand*, std::vector<uint32_t>> operand_indexes_;
-  std::vector<void*> operand_buffers_;
-  NeuronModel* model_{nullptr};
-  NeuronCompilation* compilation_{nullptr};
-  NeuronExecution* execution_{nullptr};
+  // Map NNAdapter operand to GE operator
+  std::map<hal::Operand*, std::vector<std::shared_ptr<Operator>>> operators_;
+  std::string model_name_{""};
+  std::shared_ptr<hiai::AiModelMngerClient> model_client_{nullptr};
+  std::vector<std::shared_ptr<hiai::AiTensor>> input_tensors_{};
+  std::vector<std::shared_ptr<hiai::AiTensor>> output_tensors_{};
   std::vector<NNAdapterOperandType> input_types_;
   std::vector<NNAdapterOperandType> output_types_;
-  std::string dump_graph_path_;
-  std::vector<uint8_t>* dump_graph_buffer_{nullptr};
 };
 
-}  // namespace mediatek_apu
+}  // namespace huawei_kirin_npu
 }  // namespace nnadapter

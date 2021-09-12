@@ -31,6 +31,7 @@ namespace mediatek_apu {
 #undef REGISTER_CONVERTER
 
 int Converter::Apply(hal::Model* model) {
+  operand_index_ = 0;
   // Convert the NNAdapter operations to the Neuron operations
   std::vector<hal::Operation*> operations =
       SortOperationsInTopologicalOrder(model);
@@ -124,7 +125,7 @@ uint32_t Converter::AddOperand(int32_t* dimensions,
   }
   NNADAPTER_CHECK_EQ(NeuronModel_addOperand_invoke(model_, &type),
                      NEURON_NO_ERROR);
-  auto index = (*operand_index_)++;
+  auto index = operand_index_++;
   if (buffer) {
     // Constant operand
     auto length = NeuronOperandDataTypeLength(precision) *
