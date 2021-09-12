@@ -17,28 +17,23 @@
 namespace nnadapter {
 namespace operation {
 
-#define CONCAT_OPERATION_EXTRACT_INPUTS_OUTPUTS                             \
+#define EXPAND_OPERATION_EXTRACT_INPUTS_OUTPUTS                             \
   auto& input_operands = operation->input_operands;                         \
   auto& output_operands = operation->output_operands;                       \
   auto input_count = input_operands.size();                                 \
   auto output_count = output_operands.size();                               \
-  NNADAPTER_CHECK_GE(input_count, 2);                                       \
+  NNADAPTER_CHECK_EQ(input_count, 2);                                       \
   NNADAPTER_CHECK_EQ(output_count, 1);                                      \
-  /* Inputs */                                                              \
-  for (int i = 0; i < input_count - 1; i++) {                               \
-    NNADAPTER_VLOG(5) << "input" << i << ": "                               \
-                      << OperandToString(input_operands[i]);                \
-  }                                                                         \
-  /* Axis */                                                                \
-  auto axis =                                                               \
-      *reinterpret_cast<int32_t*>(input_operands[input_count - 1]->buffer); \
-  if (axis < 0) {                                                           \
-    axis += input_operands[0]->type.dimension_count;                        \
-  }                                                                         \
-  NNADAPTER_VLOG(5) << "axis=" << axis;                                     \
+  /* Input */                                                               \
+  auto input_operand = input_operands[0];                                   \
+  NNADAPTER_VLOG(5) << "input_operand: " << OperandToString(input_operand); \
+  /* Shape */                                                               \
+  auto shape_operand = input_operands[1];                                   \
+  NNADAPTER_VLOG(5) << "shape operand: "                                    \
+                    << OperandValueToString(shape_operand);                 \
   /* Output */                                                              \
   auto output_operand = output_operands[0];                                 \
-  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
+  NNADAPTER_VLOG(5) << "output_operand: " << OperandToString(output_operand);
 
 }  // namespace operation
 }  // namespace nnadapter

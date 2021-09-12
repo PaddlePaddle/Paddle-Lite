@@ -13,27 +13,26 @@
 // limitations under the License.
 
 #include "core/operation/prelu.h"
-#include "driver/huawei_ascend_npu/converter.h"
+#include "driver/huawei_ascend_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int Program::ConvertPRelu(hal::Operation* operation) {
+int ConvertPRelu(Converter* converter, hal::Operation* operation) {
   PRELU_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
-  auto input_operator = GetMappedOperator(input_operand);
+  auto input_operator = converter->GetMappedOperator(input_operand);
   if (input_operator == nullptr) {
-    input_operator = ConvertOperand(input_operand);
+    input_operator = converter->ConvertOperand(input_operand);
   }
-  auto slope_operator = GetMappedOperator(slope_operand);
+  auto slope_operator = converter->GetMappedOperator(slope_operand);
   if (slope_operator == nullptr) {
-    slope_operator = ConvertOperand(slope_operand);
+    slope_operator = converter->ConvertOperand(slope_operand);
   }
-  auto prelu_name = GetOperatorName(output_operand);
-  auto prelu_op = std::make_shared<ge::op::PRelu>(prelu_name);
+  auto prelu_op = converter->AddOperator<ge::op::PRelu>(output_operand);
   SET_INPUT(prelu_op, x, input_operator);
   SET_INPUT(prelu_op, weight, slope_operator);
   MAP_OUTPUT(prelu_op, y, output_operand);

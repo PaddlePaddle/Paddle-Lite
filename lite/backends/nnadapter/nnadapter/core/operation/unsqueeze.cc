@@ -35,7 +35,8 @@ int PrepareUnsqueeze(hal::Operation* operation) {
                                 int32_t* output_dimensions) {
     uint32_t cur_size = in_type.dimension_count;
     for (uint32_t i = 0; i < axes_count; i++) {
-      int32_t axis = axes_ptr[i] < 0 ? axes_ptr[i] + cur_size + 1 : axes_ptr[i];
+      int32_t axis =
+          axes_data[i] < 0 ? axes_data[i] + cur_size + 1 : axes_data[i];
       NNADAPTER_CHECK_GE(axis, 0);
       NNADAPTER_CHECK_LE(axis, cur_size);
       for (uint32_t j = cur_size; j > axis; j--) {

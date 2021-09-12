@@ -17,7 +17,7 @@
 namespace nnadapter {
 namespace operation {
 
-#define UNSQUEEZE_OPERATION_EXTRACT_INPUTS_OUTPUTS                   \
+#define SQUEEZE_OPERATION_EXTRACT_INPUTS_OUTPUTS                     \
   auto& input_operands = operation->input_operands;                  \
   auto& output_operands = operation->output_operands;                \
   auto input_count = input_operands.size();                          \

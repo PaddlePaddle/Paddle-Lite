@@ -13,23 +13,22 @@
 // limitations under the License.
 
 #include "core/operation/leaky_relu.h"
-#include "driver/huawei_ascend_npu/converter.h"
+#include "driver/huawei_ascend_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int Program::ConvertLeakyRelu(hal::Operation* operation) {
+int ConvertLeakyRelu(Converter* converter, hal::Operation* operation) {
   LEAKY_RELU_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
-  auto input_operator = GetMappedOperator(input_operand);
+  auto input_operator = converter->GetMappedOperator(input_operand);
   if (!input_operator) {
-    input_operator = ConvertOperand(input_operand);
+    input_operator = converter->ConvertOperand(input_operand);
   }
-  auto act_name = GetOperatorName(output_operand);
-  auto act_op = std::make_shared<ge::op::LeakyRelu>(act_name);
+  auto act_op = converter->AddOperator<ge::op::LeakyRelu>(output_operand);
   act_op->set_attr_negative_slope(alpha);
   SET_INPUT(act_op, x, input_operator);
   MAP_OUTPUT(act_op, y, output_operand);
