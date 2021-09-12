@@ -42,6 +42,8 @@ MEDIATEK_APU_SDK_ROOT="$(pwd)/apu_ddk" # Download APU SDK from https://paddlelit
 WITH_NNADAPTER=OFF
 NNADAPTER_WITH_HUAWEI_KIRIN_NPU=OFF
 NNADAPTER_HUAWEI_KIRIN_NPU_SDK_ROOT="$(pwd)/hiai_ddk_lib_330"
+NNADAPTER_WITH_AMLOGIC_NPU=OFF
+NNADAPTER_AMLOGIC_NPU_SDK_ROOT="$(pwd)/amlnpu_ddk"
 NNADAPTER_WITH_MEDIATEK_APU=OFF
 NNADAPTER_MEDIATEK_APU_SDK_ROOT="$(pwd)/apu_ddk" # Download APU SDK from https://paddlelite-demo.bj.bcebos.com/devices/mediatek/apu_ddk.tar.gz
 # options of compiling OPENCL lib.
@@ -216,6 +218,8 @@ function make_tiny_publish_so {
       -DLITE_WITH_NNADAPTER=$WITH_NNADAPTER \
       -DNNADAPTER_WITH_HUAWEI_KIRIN_NPU=$NNADAPTER_WITH_HUAWEI_KIRIN_NPU \
       -DNNADAPTER_HUAWEI_KIRIN_NPU_SDK_ROOT=$NNADAPTER_HUAWEI_KIRIN_NPU_SDK_ROOT \
+      -DNNADAPTER_WITH_AMLOGIC_NPU=$NNADAPTER_WITH_AMLOGIC_NPU \
+      -DNNADAPTER_HUAWEI_AMLOGIC_SDK_ROOT=$NNADAPTER_AMLOGIC_NPU_SDK_ROOT \
       -DNNADAPTER_WITH_MEDIATEK_APU=$NNADAPTER_WITH_MEDIATEK_APU \
       -DNNADAPTER_MEDIATEK_APU_SDK_ROOT=$NNADAPTER_MEDIATEK_APU_SDK_ROOT \
       -DLITE_WITH_OPENCL=$WITH_OPENCL \
@@ -282,6 +286,8 @@ function make_full_publish_so {
       -DLITE_WITH_NNADAPTER=$WITH_NNADAPTER \
       -DNNADAPTER_WITH_HUAWEI_KIRIN_NPU=$NNADAPTER_WITH_HUAWEI_KIRIN_NPU \
       -DNNADAPTER_HUAWEI_KIRIN_NPU_SDK_ROOT=$NNADAPTER_HUAWEI_KIRIN_NPU_SDK_ROOT \
+      -DNNADAPTER_WITH_AMLOGIC_NPU=$NNADAPTER_WITH_AMLOGIC_NPU \
+      -DNNADAPTER_AMLOGIC_NPU_SDK_ROOT=$NNADAPTER_AMLOGIC_NPU_SDK_ROOT \
       -DNNADAPTER_WITH_MEDIATEK_APU=$NNADAPTER_WITH_MEDIATEK_APU \
       -DNNADAPTER_MEDIATEK_APU_SDK_ROOT=$NNADAPTER_MEDIATEK_APU_SDK_ROOT \
       -DLITE_WITH_OPENCL=$WITH_OPENCL \
@@ -472,6 +478,14 @@ function main {
                 ;;
             --nnadapter_huawei_kirin_npu_sdk_root=*)
                 NNADAPTER_HUAWEI_KIRIN_NPU_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_with_amlogic_npu=*)
+                NNADAPTER_WITH_AMLOGIC_NPU="${i#*=}"
+                shift
+                ;;
+            --nnadapter_amlogic_npu_sdk_root=*)
+                NNADAPTER_AMLOGIC_NPU_SDK_ROOT="${i#*=}"
                 shift
                 ;;
             --nnadapter_with_mediatek_apu=*)

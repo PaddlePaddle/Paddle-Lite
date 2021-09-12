@@ -31,12 +31,28 @@ AclModelClient::AclModelClient(int device_id) {
   NNADAPTER_VLOG(3) << "device_count: " << device_count;
   NNADAPTER_CHECK_GE(device_id, 0);
   NNADAPTER_CHECK_LT(device_id, device_count);
-  ACL_CALL(aclrtSetDevice(device_id));
-  device_id_ = device_id;
+  InitAclClientEnv(device_id);
 }
 
 AclModelClient::~AclModelClient() {
   UnloadModel();
+  FinalizeAclClientEnv();
+}
+
+void AclModelClient::InitAclClientEnv(int device_id) {
+  device_id_ = device_id;
+  NNADAPTER_VLOG(5) << "ACL set device(device_id_=" << device_id_ << ")";
+  ACL_CALL(aclrtSetDevice(device_id_));
+  NNADAPTER_VLOG(5) << "ACL create context";
+  ACL_CALL(aclrtCreateContext(&context_, device_id_));
+}
+
+void AclModelClient::FinalizeAclClientEnv() {
+  NNADAPTER_VLOG(5) << "Destroy ACL context";
+  if (context_ != nullptr) {
+    ACL_CALL(aclrtDestroyContext(context_));
+    context_ = nullptr;
+  }
   NNADAPTER_VLOG(5) << "Reset ACL device(device_id_=" << device_id_ << ")";
   ACL_CALL(aclrtResetDevice(device_id_));
 }
@@ -117,9 +133,9 @@ bool AclModelClient::GetModelIOTensorDim(
     auto data_type = aclmdlGetInputDataType(model_desc_, i);
     auto format = aclmdlGetInputFormat(model_desc_, i);
     std::string name(aclmdlGetInputNameByIndex(model_desc_, i));
-    ge::TensorDesc ge_tensor_desc(ge::Shape(ConvertACLDimensions(dims)),
-                                  ConvertACLFormat(format),
-                                  ConvertACLDataType(data_type));
+    ge::TensorDesc ge_tensor_desc(ge::Shape(ConvertACLDimsToGEDims(dims)),
+                                  ConvertACLFormatToGEFormat(format),
+                                  ConvertACLDataTypeToGEDataType(data_type));
     ge_tensor_desc.SetName(name.c_str());
     input_tensor_descs->push_back(ge_tensor_desc);
   }
@@ -131,9 +147,9 @@ bool AclModelClient::GetModelIOTensorDim(
     auto data_type = aclmdlGetOutputDataType(model_desc_, i);
     auto format = aclmdlGetOutputFormat(model_desc_, i);
     std::string name(aclmdlGetOutputNameByIndex(model_desc_, i));
-    ge::TensorDesc ge_tensor_desc(ge::Shape(ConvertACLDimensions(dims)),
-                                  ConvertACLFormat(format),
-                                  ConvertACLDataType(data_type));
+    ge::TensorDesc ge_tensor_desc(ge::Shape(ConvertACLDimsToGEDims(dims)),
+                                  ConvertACLFormatToGEFormat(format),
+                                  ConvertACLDataTypeToGEDataType(data_type));
     ge_tensor_desc.SetName(name.c_str());
     output_tensor_descs->push_back(ge_tensor_desc);
   }
@@ -219,6 +235,7 @@ bool AclModelClient::Process(uint32_t input_count,
     NNADAPTER_LOG(FATAL) << "No ACL model is loaded.";
     return false;
   }
+  ACL_CALL(aclrtSetCurrentContext(context_));
   auto FindArgumentByIndex = [&](
       hal::Argument* arguments, int index, uint32_t count) {
     for (uint32_t i = 0; i < count; i++) {
@@ -293,7 +310,8 @@ bool AclModelClient::Process(uint32_t input_count,
     aclmdlIODims dimensions;
     ACL_CALL(aclmdlGetCurOutputDims(model_desc_, i, &dimensions));
     NNADAPTER_CHECK_EQ(dimensions.dimCount, type->dimension_count);
-    ConvertACLDimensions(dimensions, type->dimensions, &type->dimension_count);
+    ConvertACLDimsToGEDims(
+        dimensions, type->dimensions, &type->dimension_count);
     auto host_ptr = arg->access(arg->memory, type);
     NNADAPTER_CHECK(host_ptr);
     auto length = GetOperandTypeBufferLength(*type);

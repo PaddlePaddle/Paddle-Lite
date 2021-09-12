@@ -18,7 +18,7 @@
 
 #include "lite/api/paddle_api.h"
 #include "lite/api/test_helper.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 #include "lite/utils/string.h"
 
 DEFINE_string(model_file, "", "model file path of combined protobuf model");

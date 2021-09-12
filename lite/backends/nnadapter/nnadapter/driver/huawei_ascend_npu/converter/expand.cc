@@ -15,6 +15,7 @@
 #include "driver/huawei_ascend_npu/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/modeling.h"
 
 namespace nnadapter {
 namespace huawei_ascend_npu {
@@ -26,13 +27,16 @@ int Program::ConvertExpand(hal::Operation* operation) {
   auto output_count = output_operands.size();
   NNADAPTER_CHECK_EQ(input_count, 2);
   NNADAPTER_CHECK_EQ(output_count, 1);
-
   // Input
   auto input_operand = input_operands[0];
   NNADAPTER_VLOG(5) << "input_operand: " << OperandToString(input_operand);
   // Shape
   auto shape_operand = input_operands[1];
-  NNADAPTER_VLOG(5) << "shape_operand: " << OperandToString(shape_operand);
+  if (!IsConstantOperand(shape_operand)) {
+    NNADAPTER_LOG(ERROR) << "Shape input only support const tensor.";
+    return NNADAPTER_INVALID_PARAMETER;
+  }
+  NNADAPTER_VLOG(5) << "shape operand: " << OperandValueToString(shape_operand);
   // Output
   auto output_operand = output_operands[0];
   NNADAPTER_VLOG(5) << "output_operand: " << OperandToString(output_operand);

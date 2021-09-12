@@ -5,7 +5,7 @@ FILE(GLOB_RECURSE UNIT_TEST_SRC ${CMAKE_CURRENT_SOURCE_DIR}/*test*)
 FILE(GLOB_RECURSE PROFILE_SRC ${CMAKE_CURRENT_SOURCE_DIR}/profile/*.cc)
 LIST(REMOVE_ITEM PROFILE_SRC ${UNIT_TEST_SRC})
 
-# profiler source code
+# model defination source code
 FILE(GLOB_RECURSE MODEL_SRC ${CMAKE_CURRENT_SOURCE_DIR}/model/*.cc)
 LIST(REMOVE_ITEM MODEL_SRC ${UNIT_TEST_SRC})
 
@@ -48,7 +48,7 @@ endif()
 if(NOT LITE_ON_TINY_PUBLISH)
   proto_library(framework_proto SRCS framework.proto)
   set(CORE_SRC ${CORE_SRC} ${OPTIMIZER_SRC})
-  set(CORE_DEPS ${CORE_DEPS} framework_proto ${subgraph_op})
+  set(CORE_DEPS ${CORE_DEPS} framework_proto)
 endif()
 
 if (LITE_WITH_PROFILE)
@@ -61,8 +61,8 @@ if (LITE_WITH_NPU OR LITE_WITH_XTCL OR LITE_WITH_BM OR LITE_WITH_RKNPU OR LITE_W
 endif ()
 
 lite_cc_library(core SRCS ${CORE_SRC}
-  DEPS target_wrapper_host place fbs_headers ${CORE_DEPS}
-  X86_DEPS target_wrapper_x86 eigen3
+  DEPS target_wrapper_host place fbs_headers ${CORE_DEPS} ops
+  X86_DEPS eigen3
   CUDA_DEPS target_wrapper_cuda cuda_context
   XPU_DEPS target_wrapper_xpu
   CL_DEPS cl_target_wrapper cl_context
@@ -72,7 +72,6 @@ lite_cc_library(core SRCS ${CORE_SRC}
   BM_DEPS target_wrapper_bm
   MLU_DEPS target_wrapper_mlu
   NNADAPTER_DEPS nnadapter_wrapper)
-
 
 #-------------------------------------------- GET CODE META INFO ------------------------------------------
 if (LITE_WITH_CODE_META_INFO)
@@ -118,7 +117,7 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
 endif ()
 
 lite_cc_test (test_scope SRCS scope_test.cc DEPS core)
-lite_cc_test (test_kernel SRCS kernel_test.cc DEPS core any)
+lite_cc_test (test_kernel SRCS kernel_test.cc DEPS core utils)
 lite_cc_test (test_op SRCS op_lite_test.cc DEPS core)
 lite_cc_test (test_tensor SRCS lite_tensor_test.cc DEPS core)
 lite_cc_test (test_type_system SRCS type_system_test.cc DEPS core utils)

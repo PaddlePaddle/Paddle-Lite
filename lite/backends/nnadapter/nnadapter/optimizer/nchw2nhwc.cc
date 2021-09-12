@@ -437,6 +437,7 @@ void NCHW2NHWCDataLayoutConverter::Apply(hal::Model* model) {
       case NNADAPTER_HARD_SWISH:
       case NNADAPTER_SIGMOID:
       case NNADAPTER_ABS:
+      case NNADAPTER_EXP:
         ConvertActivation(operation);
         break;
       case NNADAPTER_RESHAPE:

@@ -16,8 +16,8 @@ limitations under the License. */
 #include "lite/backends/opencl/utils/cache.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/core/version.h"
-#include "lite/utils/cp_logging.h"
 #include "lite/utils/io.h"
+#include "lite/utils/log/cp_logging.h"
 #include "lite/utils/string.h"
 
 namespace paddle {

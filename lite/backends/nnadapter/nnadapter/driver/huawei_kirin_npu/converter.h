@@ -117,6 +117,7 @@ class Program {
   int ConvertSoftmax(hal::Operation* operation);
   int ConvertActivation(hal::Operation* operation);
   int ConvertReshape(hal::Operation* operation);
+  int ConvertUnsqueeze(hal::Operation* operation);
   int ConvertTranspose(hal::Operation* operation);
   int ConvertConcat(hal::Operation* operation);
   int ConvertSplit(hal::Operation* operation);
@@ -171,7 +172,7 @@ class Program {
   ({                                                                           \
     auto shape = ge::Shape();                                                  \
     auto format = ge::FORMAT_NCHW;                                             \
-    auto dtype = ConvertPrecision(dst->type.precision);                        \
+    auto dtype = ConvertToGEPrecision(dst->type.precision);                    \
     auto tensor_desc = std::make_shared<ge::TensorDesc>(shape, format, dtype); \
     UpdateOperatorMap(                                                         \
         dst, std::make_shared<Operator>(src, tensor_desc, #name, -1));         \
@@ -181,7 +182,7 @@ class Program {
   ({                                                                           \
     auto shape = ge::Shape();                                                  \
     auto format = ge::FORMAT_NCHW;                                             \
-    auto dtype = ConvertPrecision(dst->type.precision);                        \
+    auto dtype = ConvertToGEPrecision(dst->type.precision);                    \
     auto tensor_desc = std::make_shared<ge::TensorDesc>(shape, format, dtype); \
     UpdateOperatorMap(                                                         \
         dst, std::make_shared<Operator>(src, tensor_desc, #name, index));      \

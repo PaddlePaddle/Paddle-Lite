@@ -127,6 +127,9 @@ int Program::BuildFromModel(hal::Model* model) {
       case NNADAPTER_RESHAPE:
         ConvertReshape(operation);
         break;
+      case NNADAPTER_UNSQUEEZE:
+        ConvertUnsqueeze(operation);
+        break;
       case NNADAPTER_TRANSPOSE:
         ConvertTranspose(operation);
         break;
@@ -371,7 +374,8 @@ uint32_t Program::AddOperand(int32_t* dimensions,
   type.type = precision;
   std::vector<uint32_t> converted_dimensions;
   if (dimensions && dimension_count > 0) {
-    converted_dimensions = ConvertDimensions(dimensions, dimension_count);
+    converted_dimensions =
+        ConvertToNeuronDimensions(dimensions, dimension_count);
     type.dimensions = &converted_dimensions[0];
   }
   type.dimensionCount = converted_dimensions.size();

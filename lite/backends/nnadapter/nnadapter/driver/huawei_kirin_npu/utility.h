@@ -65,13 +65,14 @@ template <>
 ge::DataType GetGEDataType<bool>();
 
 // Convert NNAdapter types to GE types
-ge::DataType ConvertPrecision(NNAdapterOperandPrecisionCode input_precision);
-ge::Format ConvertDataLayout(NNAdapterOperandLayoutCode input_layout);
-std::vector<int64_t> ConvertDimensions(const int32_t* input_dimensions,
-                                       uint32_t input_dimensions_count);
-std::vector<int64_t> ConvertDimensions(
+ge::DataType ConvertToGEPrecision(NNAdapterOperandPrecisionCode precision_code);
+ge::Format ConvertToGEDataLayout(NNAdapterOperandLayoutCode layout_code);
+std::vector<int64_t> ConvertToGEDimensions(const int32_t* input_dimensions,
+                                           uint32_t input_dimensions_count);
+std::vector<int64_t> ConvertToGEDimensions(
     const std::vector<int32_t>& input_dimensions);
-int32_t ConvertFuseCode(int32_t input_fuse_code);
+int32_t ConvertFuseCodeToGEActMode(int32_t fuse_code);
+std::string ConvertAutoPadCodeToGEPadMode(NNAdapterAutoPadCode auto_pad_code);
 
 }  // namespace huawei_kirin_npu
 }  // namespace nnadapter

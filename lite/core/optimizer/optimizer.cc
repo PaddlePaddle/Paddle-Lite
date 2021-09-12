@@ -138,10 +138,11 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "op_transformation_pass",                   //
        "remove_scale1_pass",                       //
        "adaptive_1x1_pool2d_convert_global_pass",  //
-       "lite_conv_elementwise_fuse_pass",          // conv-elemwise-bn
-       "lite_conv_bn_fuse_pass",                   //
-       "lite_conv_elementwise_fuse_pass",          // conv-bn-elemwise
-       "lite_conv_conv_fuse_pass",                 //
+
+       "lite_conv_elementwise_fuse_pass",  // conv-elemwise-bn
+       "lite_conv_bn_fuse_pass",           //
+       "lite_conv_elementwise_fuse_pass",  // conv-bn-elemwise
+       "lite_conv_conv_fuse_pass",         //
        // TODO(Superjomn) Refine the fusion related design to select fusion
        // kernels for devices automatically.
        "lite_conv_activation_fuse_pass",              //
@@ -293,6 +294,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
   const std::string pqd_pass{"post_quant_dynamic_pass"};
   const std::string pqd_depend_pass{"lite_quant_dequant_fuse_pass"};
   const std::string fp16_pass{"fp16_attribute_pass"};
+  const std::string x86_int8_pass{"x86_int8_attribute_pass"};
 
   for (const std::string& pass : passes) {
     if (pass == msa_pass) {
@@ -314,6 +316,15 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
     if (place.target == TARGET(kARM)) {
       if (place.precision == PRECISION(kFP16)) {
         passes_local.push_back(fp16_pass);
+        break;
+      }
+    }
+  }
+
+  for (auto place : valid_places) {
+    if (place.target == TARGET(kX86)) {
+      if (place.precision == PRECISION(kInt8)) {
+        passes_local.push_back(x86_int8_pass);
         break;
       }
     }

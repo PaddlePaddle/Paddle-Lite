@@ -67,6 +67,12 @@ void ConvElementwiseFuser::InsertNewNode(SSAGraph* graph,
                                          const key2nodes_t& matched) {
   auto conv_instruct = matched.at("conv2d")->stmt();
   auto conv_op_desc = conv_instruct->mutable_op_info();
+  cpp::OpDesc add_op_desc = *matched.at("add")->stmt()->op_info();
+  if (add_op_desc.HasAttr("out_threshold")) {
+    float out_threshold = add_op_desc.GetAttr<float>("out_threshold");
+    conv_op_desc->SetAttr("out_threshold", out_threshold);
+    VLOG(4) << "conv+eltadd fusion,out_threshold:" << out_threshold;
+  }
   auto* scope = conv_instruct->op()->scope();
 
   /////////////////////////////////////////////////////////////////////////////////////
