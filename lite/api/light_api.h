@@ -83,6 +83,7 @@ class LITE_API LightPredictor {
 
   const lite::Tensor* GetTensor(const std::string& name) const {
     auto* var = program_->exec_scope()->FindVar(name);
+    CHECK(var) << "no fatch variable " << name << " in exec_scope";
     return &var->Get<lite::Tensor>();
   }
 

@@ -44,8 +44,6 @@ add_subdirectory(naive_buffer)
 add_subdirectory(flatbuffers)
 add_subdirectory(ssa)
 
-
-
 lite_cc_test(test_compatible_pb SRCS compatible_pb_test.cc)
 
 

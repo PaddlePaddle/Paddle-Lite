@@ -1,7 +1,3 @@
-if(MSVC)
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj")
-endif()
-
 #----------------------------------------------- NOT CHANGE ---------------------------------------
 # A trick to generate the paddle_use_kernels.h
 execute_process(
@@ -25,7 +21,7 @@ execute_process(
     ${LITE_BUILD_TAILOR}
     ${LITE_BUILD_EXTRA}
     RESULT_VARIABLE result)
-
+#----------------------------------------------- NOT CHANGE ---------------------------------------
 
 
 
@@ -40,6 +36,9 @@ set(external_libs_DEPS "" CACHE INTERNAL "")
 if (LITE_ON_TINY_PUBLISH)
     set(CMAKE_CXX_FLAGS_RELEASE "-Os -DNDEBUG")
     set(CMAKE_C_FLAGS_RELEASE "-Os -DNDEBUG")
+endif()
+if(MSVC)
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj")
 endif()
 
 if(LITE_WITH_FPGA)
@@ -200,7 +199,6 @@ else()
         endif()
     endif()
 endif()
-
 
 
 

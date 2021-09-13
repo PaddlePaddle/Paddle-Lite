@@ -222,6 +222,15 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
                       "fuse_code"};
         output_args = {"output", "indices"};
         break;
+      case NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D:
+        input_args = {"input", "output_shape"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_ADAPTIVE_MAX_POOL_2D:
+        input_args = {
+            "input", "output_shape", "return_indices", "return_indices_dtype"};
+        output_args = {"output", "indices"};
+        break;
       case NNADAPTER_CONCAT:
       case NNADAPTER_STACK:
         input_args.resize(input_count);
@@ -279,6 +288,10 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         break;
       case NNADAPTER_LEAKY_RELU:
         input_args = {"input", "alpha"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_PRELU:
+        input_args = {"input", "slope"};
         output_args = {"output"};
         break;
       case NNADAPTER_SLICE:
@@ -499,13 +512,15 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNAdapterOperationType type) {
   std::string name;
   switch (type) {
-    NNADAPTER_TYPE_TO_STRING(ABS)
+    NNADAPTER_TYPE_TO_STRING(ABS);
+    NNADAPTER_TYPE_TO_STRING(ADAPTIVE_AVERAGE_POOL_2D);
+    NNADAPTER_TYPE_TO_STRING(ADAPTIVE_MAX_POOL_2D);
     NNADAPTER_TYPE_TO_STRING(ADD);
-    NNADAPTER_TYPE_TO_STRING(ASSIGN)
+    NNADAPTER_TYPE_TO_STRING(ASSIGN);
     NNADAPTER_TYPE_TO_STRING(AVERAGE_POOL_2D);
     NNADAPTER_TYPE_TO_STRING(BATCH_NORMALIZATION);
-    NNADAPTER_TYPE_TO_STRING(CAST)
-    NNADAPTER_TYPE_TO_STRING(CLIP)
+    NNADAPTER_TYPE_TO_STRING(CAST);
+    NNADAPTER_TYPE_TO_STRING(CLIP);
     NNADAPTER_TYPE_TO_STRING(CONCAT);
     NNADAPTER_TYPE_TO_STRING(CONV_2D);
     NNADAPTER_TYPE_TO_STRING(CONV_2D_TRANSPOSE);
@@ -516,9 +531,10 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(FULLY_CONNECTED);
     NNADAPTER_TYPE_TO_STRING(HARD_SIGMOID);
     NNADAPTER_TYPE_TO_STRING(HARD_SWISH);
-    NNADAPTER_TYPE_TO_STRING(LEAKY_RELU)
-    NNADAPTER_TYPE_TO_STRING(LOG)
-    NNADAPTER_TYPE_TO_STRING(LP_NORMALIZATION)
+    NNADAPTER_TYPE_TO_STRING(LEAKY_RELU);
+    NNADAPTER_TYPE_TO_STRING(PRELU);
+    NNADAPTER_TYPE_TO_STRING(LOG);
+    NNADAPTER_TYPE_TO_STRING(LP_NORMALIZATION);
     NNADAPTER_TYPE_TO_STRING(MAX);
     NNADAPTER_TYPE_TO_STRING(MAX_POOL_2D);
     NNADAPTER_TYPE_TO_STRING(MIN);
@@ -531,7 +547,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(RESHAPE);
     NNADAPTER_TYPE_TO_STRING(RESIZE_NEAREST);
     NNADAPTER_TYPE_TO_STRING(RESIZE_LINEAR);
-    NNADAPTER_TYPE_TO_STRING(SHAPE)
+    NNADAPTER_TYPE_TO_STRING(SHAPE);
     NNADAPTER_TYPE_TO_STRING(SIGMOID);
     NNADAPTER_TYPE_TO_STRING(SLICE);
     NNADAPTER_TYPE_TO_STRING(STACK);
@@ -544,7 +560,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(TRANSPOSE);
     NNADAPTER_TYPE_TO_STRING(UNSQUEEZE);
     NNADAPTER_TYPE_TO_STRING(EXP);
-    NNADAPTER_TYPE_TO_STRING(PAD)
+    NNADAPTER_TYPE_TO_STRING(PAD);
     default:
       name = "UNKNOWN";
       break;

@@ -111,13 +111,16 @@ class Program {
 
   // Operation converters
   int ConvertConv2D(hal::Operation* operation);
+  int ConvertConv2DTranspose(hal::Operation* operation);
   int ConvertFullyConnected(hal::Operation* operation);
   int ConvertFill(hal::Operation* operation);
   int ConvertPool2D(hal::Operation* operation);
+  int ConvertAdaptivePool2D(hal::Operation* operation);
   int ConvertElementwise(hal::Operation* operation);
   int ConvertSoftmax(hal::Operation* operation);
   int ConvertCumSum(hal::Operation* operation);
   int ConvertActivation(hal::Operation* operation);
+  int ConvertPRelu(hal::Operation* operation);
   int ConvertReshape(hal::Operation* operation);
   int ConvertTranspose(hal::Operation* operation);
   int ConvertConcat(hal::Operation* operation);
