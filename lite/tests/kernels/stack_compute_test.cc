@@ -16,6 +16,7 @@
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/test/arena/framework.h"
+#include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
 namespace lite {
@@ -85,11 +86,7 @@ class StackComputeTester : public arena::TestCase {
 
   void PrepareData() override {
     std::vector<T> data(dims_.production());
-
-    for (int i = 0; i < dims_.production(); i++) {
-      data[i] = i * 1.01;
-    }
-
+    fill_data_rand(data.data(), -1.f, 1.f, dims_.production());
     SetCommonTensor<T>(input1_, dims_, data.data());
     SetCommonTensor<T>(input2_, dims_, data.data());
   }
@@ -98,7 +95,7 @@ class StackComputeTester : public arena::TestCase {
 template <class T = float>
 void test_stack(Place place, float abs_error) {
   place.precision = lite_api::PrecisionTypeTrait<T>::Type();
-  for (float axis : {0, 1, 3}) {
+  for (float axis : {0, 1, 3, 4}) {
     std::unique_ptr<arena::TestCase> tester(
         new StackComputeTester<T>(place, "def", axis));
     arena::Arena arena(std::move(tester), place, abs_error);

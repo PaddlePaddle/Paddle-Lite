@@ -16,36 +16,84 @@
 #include "core/hal/types.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/micros.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
 
 namespace nnadapter {
 namespace operation {
 
+NNADAPTER_EXPORT void UpdateConv2DPadAndDilation(
+    int32_t input_size,
+    int32_t filter_height_or_width,
+    NNAdapterAutoPadCode auto_pad,
+    int32_t* pad_top_or_left,
+    int32_t* pad_bottom_or_right,
+    int32_t stride_height_or_width,
+    int32_t* dilation_height_or_width) {
+  NNADAPTER_CHECK_NE(input_size, NNADAPTER_UNKNOWN);
+  if (auto_pad == NNADAPTER_AUTO_PAD_SAME) {
+    auto output_size =
+        (input_size + stride_height_or_width - 1) / stride_height_or_width;
+    auto pad_size = (output_size - 1) * stride_height_or_width +
+                    filter_height_or_width - input_size;
+    pad_size = pad_size < 0 ? 0 : pad_size;
+    *pad_top_or_left = pad_size / 2;
+    *pad_bottom_or_right = pad_size - *pad_top_or_left;
+    *dilation_height_or_width = 1;
+  } else if (auto_pad == NNADAPTER_AUTO_PAD_VALID) {
+    *pad_top_or_left = 0;
+    *pad_bottom_or_right = 0;
+  }
+}
+
+NNADAPTER_EXPORT int32_t
+CalcConv2DOutputSize(int32_t input_size,
+                     int32_t filter_height_or_width,
+                     NNAdapterAutoPadCode auto_pad,
+                     int32_t pad_top_or_left,
+                     int32_t pad_bottom_or_right,
+                     int32_t stride_height_or_width,
+                     int32_t dilation_height_or_width) {
+  if (input_size == NNADAPTER_UNKNOWN) {
+    return NNADAPTER_UNKNOWN;
+  }
+  UpdateConv2DPadAndDilation(input_size,
+                             filter_height_or_width,
+                             auto_pad,
+                             &pad_top_or_left,
+                             &pad_bottom_or_right,
+                             stride_height_or_width,
+                             &dilation_height_or_width);
+  auto dkernel = dilation_height_or_width * (filter_height_or_width - 1) + 1;
+  return (input_size + (pad_top_or_left + pad_bottom_or_right) - dkernel) /
+             stride_height_or_width +
+         1;
+}
+
 int PrepareConv2D(hal::Operation* operation) {
-  CONV2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  CONV_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
   // Infer the shape and type of output operands
   CopyOperandTypeExceptQuantParams(&output_operand->type, input_operand->type);
   auto infer_output_shape = [&](int32_t* input_dimensions,
                                 int32_t* output_dimensions) {
     output_dimensions[0] = input_dimensions[0];
     output_dimensions[1] = output_channel_size;
-    int dkernel = dilation_height * (filter_height - 1) + 1;
-    output_dimensions[2] =
-        input_dimensions[2] == NNADAPTER_UNKNOWN
-            ? NNADAPTER_UNKNOWN
-            : ((input_dimensions[2] + (pad_height_top + pad_height_bottom) -
-                dkernel) /
-                   stride_height +
-               1);
-    dkernel = dilation_width * (filter_width - 1) + 1;
-    output_dimensions[3] =
-        input_dimensions[3] == NNADAPTER_UNKNOWN
-            ? NNADAPTER_UNKNOWN
-            : ((input_dimensions[3] + (pad_width_left + pad_width_right) -
-                dkernel) /
-                   stride_width +
-               1);
+    output_dimensions[2] = CalcConv2DOutputSize(input_dimensions[2],
+                                                filter_height,
+                                                auto_pad,
+                                                pad_height_top,
+                                                pad_height_bottom,
+                                                stride_height,
+                                                dilation_height);
+    output_dimensions[3] = CalcConv2DOutputSize(input_dimensions[3],
+                                                filter_width,
+                                                auto_pad,
+                                                pad_width_left,
+                                                pad_width_right,
+                                                stride_width,
+                                                dilation_width);
   };
   infer_output_shape(input_operand->type.dimensions,
                      output_operand->type.dimensions);

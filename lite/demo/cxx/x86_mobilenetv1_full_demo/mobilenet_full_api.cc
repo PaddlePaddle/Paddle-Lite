@@ -140,26 +140,44 @@ void RunModel(std::string model_dir,
   // 1. Create CxxConfig
   CxxConfig config;
   config.set_model_dir(model_dir);
-#ifdef DEMO_WITH_OPENCL
-  config.set_valid_places(
-      {Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)},
-       Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)},
-       Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageDefault)},
-       Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)},
-       Place{TARGET(kOpenCL), PRECISION(kInt32), DATALAYOUT(kNCHW)},
-       Place{TARGET(kX86), PRECISION(kFloat)},
-       Place{TARGET(kHost), PRECISION(kFloat)}});
 
   bool is_opencl_backend_valid =
       ::IsOpenCLBackendValid(false /*check_fp16_valid = false*/);
   std::cout << "is_opencl_backend_valid:" << is_opencl_backend_valid
             << std::endl;
+  std::string optimized_model_dir = "mobilenet_v1_x86";
+
   if (!is_opencl_backend_valid) {
     config.set_valid_places({Place{TARGET(kX86), PRECISION(kFloat)},
                              Place{TARGET(kHost), PRECISION(kFloat)}});
     std::cout << "OpenCL is not valid on your device. Fallback to cpu."
               << std::endl;
   } else {
+    config.set_valid_places(
+        {Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)},
+         Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)},
+         Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageDefault)},
+         Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)},
+         Place{TARGET(kOpenCL), PRECISION(kInt32), DATALAYOUT(kNCHW)},
+         Place{TARGET(kX86), PRECISION(kFloat)},
+         Place{TARGET(kHost), PRECISION(kFloat)}});
+
+    // Set opencl kernel binary.
+    // Large addtitional prepare time is cost due to algorithm selecting and
+    // building kernel from source code.
+    // Prepare time can be reduced dramitically after building algorithm file
+    // and OpenCL kernel binary on the first running.
+    // The 1st running time will be a bit longer due to the compiling time if
+    // you don't call `set_opencl_binary_path_name` explicitly.
+    // So call `set_opencl_binary_path_name` explicitly is strongly
+    // recommended.
+
+    // Make sure you have write permission of the binary path.
+    // We strongly recommend each model has a unique binary name.
+    const std::string bin_path = "./";
+    const std::string bin_name = "lite_opencl_kernel.bin";
+    config.set_opencl_binary_path_name(bin_path, bin_name);
+
     // opencl tune option
     // CL_TUNE_NONE: 0
     // CL_TUNE_RAPID: 1
@@ -173,15 +191,16 @@ void RunModel(std::string model_dir,
     // CL_PRECISION_FP32: 1, force fp32
     // CL_PRECISION_FP16: 2, force fp16
     config.set_opencl_precision(CL_PRECISION_FP32);
+
+    optimized_model_dir += "_opencl";
   }
-#else
-  config.set_valid_places({Place{TARGET(kX86), PRECISION(kFloat)},
-                           Place{TARGET(kHost), PRECISION(kFloat)}});
-#endif
 
   // 2. Create PaddlePredictor by CxxConfig
   std::shared_ptr<PaddlePredictor> predictor =
       CreatePaddlePredictor<CxxConfig>(config);
+
+  predictor->SaveOptimizedModel(optimized_model_dir,
+                                LiteModelType::kNaiveBuffer);
 
   // 3. Prepare input data
   for (int j = 0; j < input_shapes.size(); ++j) {

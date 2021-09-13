@@ -13,15 +13,18 @@
 // limitations under the License.
 
 #include "lite/kernels/x86/conv_depthwise.h"
-#include "lite/backends/x86/math/conv_depthwise_pack4.h"
-#include "lite/backends/x86/math/conv_depthwise_pack8.h"
-#include "lite/backends/x86/math/conv_utils.h"
+#include "lite/backends/x86/math/avx/conv_depthwise_pack4.h"
+#include "lite/backends/x86/math/avx/conv_depthwise_pack8.h"
+#include "lite/backends/x86/math/avx/conv_utils.h"
+#include "lite/backends/x86/math/conv_depthwise_direct.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace x86 {
-
+#define CONV_DW_PARAM                                                         \
+  i_data, o_data, bs, oc, oh, ow, ic, ih, iw, w_data, b_data, pad, flag_bias, \
+      act_param
 template <>
 void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {}
 
@@ -34,6 +37,37 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   CHECK_EQ(input_dims.size(), 4UL);
   int batch_size = param.x->dims()[0];
   int input_channel = param.x->dims()[1];
+
+  if ((*param.paddings)[0] == 1) {
+    const auto* i_data = param.x->data<float>();
+    const auto* w_data = param.filter->data<float>();
+    const auto* b_data = param.bias ? param.bias->data<float>() : nullptr;
+    auto act_param = param.activation_param;
+    const auto stride = param.strides[1];
+    auto pad = (*param.paddings)[2];
+    bool flag_bias = param.bias != nullptr;
+    auto* o_data = param.output->mutable_data<float>();
+
+    auto x_dims = param.x->dims();
+    auto w_dims = param.filter->dims();
+    auto o_dims = param.output->dims();
+
+    int iw = x_dims[3];
+    int ih = x_dims[2];
+    int ic = x_dims[1];
+    int bs = x_dims[0];
+    int oh = o_dims[2];
+    int ow = o_dims[3];
+    int oc = o_dims[1];
+
+    if (stride == 1) {
+      lite::x86::math::conv_depthwise_3x3s1_p1_direct(CONV_DW_PARAM);
+    } else if (stride == 2) {
+      lite::x86::math::conv_depthwise_3x3s2_p1_direct(CONV_DW_PARAM);
+    }
+    KERNEL_FUNC_NAME("conv_depthwise_direct")
+    return;
+  }
 
   const int pack_size =
       input_channel % 8 == 0 ? 8 : input_channel % 4 == 0 ? 4 : 1;

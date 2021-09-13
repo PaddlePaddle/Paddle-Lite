@@ -1,9 +1,5 @@
-
-
-file(GLOB jit_kernel_mix_cc RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "*.cc")
-cc_library(jit_kernel_mix SRCS ${jit_kernel_mix_cc} DEPS jit_kernel_base)
-
-set(JIT_KERNEL_DEPS ${JIT_KERNEL_DEPS} jit_kernel_mix PARENT_SCOPE)
+file(GLOB jit_kernel_mix_cc "${CMAKE_CURRENT_SOURCE_DIR}/*.cc")
+set(X86_JIT_MORE_SRC ${X86_JIT_MORE_SRC} ${jit_kernel_mix_cc} CACHE INTERNAL "")
 
 USE_JITKERNEL_MORE_LITE(kVSigmoid, mix)
 USE_JITKERNEL_MORE_LITE(kVTanh, mix)

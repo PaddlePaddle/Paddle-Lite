@@ -20,7 +20,7 @@ namespace kernels {
 namespace nnadapter {
 
 int ConvertUnaryActivations(Converter* converter, OpInfo* op, Scope* scope) {
-  // Extract op attributes
+  // Extract the inputs, outputs and attributes
   auto op_type = op->Type();
   auto x_name = op->Input("X").front();
   auto x_scale_name = "X0_scale";
@@ -72,8 +72,6 @@ int ConvertUnaryActivations(Converter* converter, OpInfo* op, Scope* scope) {
   }
   auto output_operand = converter->AddOutputOperand(out_name, out_scales);
   // Unary activation operation
-  std::vector<NNAdapterOperand*> input_operands{input_operand};
-  std::vector<NNAdapterOperand*> output_operands{output_operand};
   NNAdapterOperationType unary_act_operation_type;
   if (op_type == "sigmoid") {
     unary_act_operation_type = NNADAPTER_SIGMOID;
@@ -94,7 +92,7 @@ int ConvertUnaryActivations(Converter* converter, OpInfo* op, Scope* scope) {
     return UNSUPPORTED_FEATURE;
   }
   converter->AddOperation(
-      unary_act_operation_type, &input_operands, &output_operands);
+      unary_act_operation_type, {input_operand}, {output_operand});
   return NO_ERROR;
 }
 

@@ -18,7 +18,7 @@
 #include <cmath>
 #include <string>
 #include <thread>  // NOLINT(build/c++11)
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 #include "lite/utils/string.h"
 
 namespace paddle {

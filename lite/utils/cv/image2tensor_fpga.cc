@@ -20,7 +20,7 @@
 #include <fstream>
 #include <iostream>
 
-#include "lite/utils/logging.h"
+#include "lite/utils/log/logging.h"
 
 namespace paddle {
 namespace lite {

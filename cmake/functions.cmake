@@ -34,3 +34,173 @@ function(add_operator TARGET level)
       set(OPS_SRC ${OPS_SRC} "${CMAKE_CURRENT_SOURCE_DIR}/${src}" CACHE INTERNAL "source")
     endforeach()
 endfunction()
+
+
+set(kernels_src_list "${CMAKE_BINARY_DIR}/kernels_src_list.txt")
+file(WRITE ${kernels_src_list} "") # clean
+
+# file to record faked kernels for opt python lib
+set(fake_kernels_src_list "${CMAKE_BINARY_DIR}/fake_kernels_src_list.txt")
+file(WRITE ${fake_kernels_src_list} "") # clean
+
+# add a kernel for some specific device
+set(IS_FAKED_KERNEL false CACHE INTERNAL "judget faked kernel")
+set(cuda_kernels CACHE INTERNAL "cuda kernels")
+# device: one of (Host, ARM, X86, NPU, MLU, HUAWEI_ASCEND_NPU, APU, FPGA, OPENCL, CUDA, BM, RKNPU IMAGINATION_NNA)
+# level: one of (basic, extra)
+function(add_kernel TARGET device level)
+    set(options "")
+    set(oneValueArgs "")
+    set(multiValueArgs SRCS )
+    cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+
+    if (("${level}" STREQUAL "extra" AND (NOT LITE_BUILD_EXTRA)) OR ("${level}" STREQUAL "train" AND (NOT LITE_WITH_TRAIN)))
+        return()
+    endif()
+
+    # apppend faked kernels into fake kernels source list.(this is useful in opt tool)
+    if(${IS_FAKED_KERNEL})
+      foreach(src ${args_SRCS})
+        file(APPEND ${fake_kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
+      endforeach()
+      return()
+    endif()
+
+    # strp lib according to useful kernel names.
+    if(LITE_BUILD_TAILOR)
+      set(dst_file "")
+      foreach(src ${args_SRCS})
+        string(TOLOWER "${device}" device_name) # ARM => arm, Host => host
+        get_filename_component(filename ${src} NAME_WE) # conv_compute.cc => conv_compute
+        set(kernel_tailor_src_dir "${CMAKE_BINARY_DIR}/kernel_tailor_src_dir")
+        set(suffix "for_strip")
+        set(dst_file ${dst_file} "${kernel_tailor_src_dir}/${filename}_${device_name}_${suffix}.cc") # conv_compute_arm.cc
+        if("${device}" STREQUAL "METAL")
+          set(dst_file ${dst_file} "${kernel_tailor_src_dir}/${filename}_${device_name}_${suffix}.mm") # conv_compute_apple_metal_for_strip.mm
+        endif()
+        if(NOT EXISTS ${dst_file})
+          return()
+        endif()
+      endforeach()
+      file(APPEND ${kernels_src_list} "${dst_file}\n")
+      set(KERNELS_SRC ${KERNELS_SRC} "${dst_file}" CACHE INTERNAL "kernels source")
+      set(__lite_cc_files ${__lite_cc_files} ${dst_file} CACHE INTERNAL "")
+      return()
+    endif()
+
+    if ("${device}" STREQUAL "CUDA")
+        if (NOT LITE_WITH_CUDA)
+            foreach(src ${args_SRCS})
+                file(APPEND ${fake_kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
+            endforeach()
+            return()
+        endif()
+        set(cuda_kernels "${cuda_kernels};${TARGET}" CACHE INTERNAL "")
+        foreach(src ${args_SRCS})
+          file(APPEND ${kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
+        endforeach()
+        nv_library(${TARGET} SRCS ${args_SRCS} DEPS ${args_DEPS})
+        return()
+    endif()
+
+    # compile actual kernels
+    foreach(src ${args_SRCS})
+        file(APPEND ${kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
+        set(KERNELS_SRC ${KERNELS_SRC} "${CMAKE_CURRENT_SOURCE_DIR}/${src}" CACHE INTERNAL "kernels source")
+        set(__lite_cc_files ${__lite_cc_files} "${CMAKE_CURRENT_SOURCE_DIR}/${src}" CACHE INTERNAL "")
+    endforeach()
+
+endfunction()
+
+
+
+
+
+function(cc_binary TARGET_NAME)
+  set(options "")
+  set(oneValueArgs "")
+  set(multiValueArgs SRCS DEPS)
+  cmake_parse_arguments(cc_binary "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+  add_executable(${TARGET_NAME} ${cc_binary_SRCS})
+  if(cc_binary_DEPS)
+    target_link_libraries(${TARGET_NAME} ${cc_binary_DEPS})
+    add_dependencies(${TARGET_NAME} ${cc_binary_DEPS})
+    common_link(${TARGET_NAME})
+  endif()
+  get_property(os_dependency_modules GLOBAL PROPERTY OS_DEPENDENCY_MODULES)
+  target_link_libraries(${TARGET_NAME} ${os_dependency_modules})
+  find_fluid_modules(${TARGET_NAME})
+endfunction(cc_binary)
+
+# Add a unit-test name to file for latter offline manual test.
+set(offline_test_registry_file "${CMAKE_BINARY_DIR}/lite_tests.txt")
+file(WRITE ${offline_test_registry_file} "") # clean
+
+function(lite_cc_test TARGET)
+  if(NOT WITH_TESTING)
+      return()
+  endif()
+  set(options "")
+  set(oneValueArgs "")
+
+  set(multiValueArgs SRCS DEPS X86_DEPS CUDA_DEPS CL_DEPS METAL_DEPS ARM_DEPS FPGA_DEPS INTEL_FPGA_DEPS BM_DEPS
+        IMAGINATION_NNA_DEPS RKNPU_DEPS NPU_DEPS XPU_DEPS MLU_DEPS HUAWEI_ASCEND_NPU_DEPS APU_DEPS NNADAPTER_DEPS PROFILE_DEPS
+        LIGHT_DEPS HVY_DEPS EXCLUDE_COMPILE_DEPS CV_DEPS
+        ARGS
+        COMPILE_LEVEL # (basic|extra)
+  )
+  cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+  set(deps "")
+  lite_deps(deps
+            DEPS ${args_DEPS}
+            X86_DEPS ${args_X86_DEPS}
+            CUDA_DEPS ${args_CUDA_DEPS}
+            CL_DEPS ${args_CL_DEPS}
+            METAL_DEPS ${args_METAL_DEPS}
+            ARM_DEPS ${args_ARM_DEPS}
+            FPGA_DEPS ${args_FPGA_DEPS}
+            INTEL_FPGA_DEPS ${args_INTEL_FPGA_DEPS}
+            NPU_DEPS ${args_NPU_DEPS}
+            APU_DEPS ${args_APU_DEPS}
+            XPU_DEPS ${args_XPU_DEPS}
+            RKNPU_DEPS ${args_RKNPU_DEPS}
+            BM_DEPS ${args_BM_DEPS}
+            IMAGINATION_NNA_DEPS ${args_IMAGINATION_NNA_DEPS}
+            NNADAPTER_DEPS ${args_NNADAPTER_DEPS}
+            PROFILE_DEPS ${args_PROFILE_DEPS}
+            LIGHT_DEPS ${args_LIGHT_DEPS}
+            HVY_DEPS ${args_HVY_DEPS}
+            CV_DEPS ${args_CV_DEPS}
+            MLU_DEPS ${args_MLU_DEPS}
+            HUAWEI_ASCEND_NPU_DEPS ${args_HUAWEI_ASCEND_NPU_DEPS}
+            )
+  if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+    cc_binary(${TARGET} SRCS ${args_SRCS} DEPS ${deps} core_tester gflags gtest)
+  else()
+    cc_binary(${TARGET} SRCS ${args_SRCS} DEPS ${deps} core_tester gflags gtest glog)
+  endif()
+  file(APPEND ${offline_test_registry_file} "${TARGET}\n")
+  add_dependencies(${TARGET} bundle_full_api)
+  if(NOT WIN32)
+    target_link_libraries(${TARGET} ${CMAKE_BINARY_DIR}/libpaddle_api_full_bundled.a)
+  else()
+    target_link_libraries(${TARGET} ${CMAKE_BINARY_DIR}/lite/api/${CMAKE_BUILD_TYPE}/libpaddle_api_full_bundled.lib)
+  endif()
+  # windows
+  if(NOT WIN32)
+    target_compile_options(${TARGET} BEFORE PRIVATE -Wno-ignored-qualifiers)
+  endif()
+  # collect targets need to compile for lite
+  if (NOT args_EXCLUDE_COMPILE_DEPS)
+      add_dependencies(lite_compile_deps ${TARGET})
+  endif()
+
+  common_link(${TARGET})
+  add_test(NAME ${TARGET}
+          COMMAND ${TARGET} ${args_ARGS}
+          WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+  # No unit test should exceed 10 minutes.
+  set_tests_properties(${TARGET} PROPERTIES TIMEOUT 600)
+
+endfunction()

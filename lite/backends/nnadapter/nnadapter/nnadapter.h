@@ -148,6 +148,50 @@ typedef enum {
   NNADAPTER_ABS,
 
   /**
+ * Applies adaptive 2-D average pooling across the input according to input and
+ * output size.
+ *
+ * Inputs:
+ * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
+ * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+ * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor
+ * with shape [N, C_in, H_in, W_in].
+ * * 1: output_shape, A NNADAPTER_TENSOR_INT32 or
+ * NNADAPTER_TENSOR_INT64 tensor, with shape [2], with value [H_out, H_out].
+ *
+ * Outputs:
+ * * 0: output, A tensor with the same shape and type as input.
+ *
+ * Available since version 1.
+ */
+  NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D,
+
+  /**
+   * Applies adaptive 2-D max pooling across the input according to input and
+   * output size.
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor
+   * with shape [N, C_in, H_in, W_in].
+   * * 1: output_shape, A NNADAPTER_TENSOR_INT32 or
+   * NNADAPTER_TENSOR_INT64 tensor, with shape [2], with value [H_out, H_out].
+   * * 2: return_indices, A NNADAPTER_BOOL8 scalar, whether to return index of
+   * output. Defaults to false
+   * * 3: return_indices_dtype, A NNADAPTER_INT32 scalar, the value of
+   * NNADAPTER_TENSOR_INT32 or
+   * NNADAPTER_TENSOR_INT64. Specifies the dtype of the indices.
+   * Outputs:
+   * * 0: output, A tensor with the same shape and type as input.
+   * * 1: indices, A NNADAPTER_TENSOR_INT64 tensor, with the same shape as
+   * output, indicates the indices of the current feature map.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_ADAPTIVE_MAX_POOL_2D,
+
+  /**
    * Performs element-wise binary addition(with Numpy-style broadcasting
    * https://numpy.org/doc/stable/user/basics.broadcasting.html).
    *
@@ -192,7 +236,7 @@ typedef enum {
    * H_in, W_in].
    * * 1: auto_pad, a NNADAPTER_INT32 scalar. 0 means "EXPLICIT" so that
    * paddings is used. 1 means "SAME". 2 means "VALID". It must be one of
-   * NNAdapterPadCode values.
+   * NNAdapterAutoPadCode values.
    * * 2: pads, a NNADAPTER_INT32 tensor, with shape [4] and data {height_top,
    * height_bottom, width_left, width_right}, or with shape[0] and no data.
    * * 3: kernel_shape, a NNADAPTER_INT32 tensor, with shape [2] and data
@@ -347,7 +391,7 @@ typedef enum {
    * bias_scale[i] = input_scale * filter_scale[i] for each output channel.
    * * 3: auto_pad, a NNADAPTER_INT32 scalar. 0 means "EXPLICIT" so that
    * paddings is used. 1 means "SAME". 2 means "VALID". It must be one of
-   * NNAdapterPadCode.
+   * NNAdapterAutoPadCode.
    * * 4: pads, a NNADAPTER_INT32 tensor, with shape [4] and data {height_top,
    * height_bottom, width_left, width_right}, or with shape[0] and no data.
    * * 5: strides, a NNADAPTER_INT32 tensor, with shape [2] and data
@@ -403,7 +447,7 @@ typedef enum {
    * bias_scale[i] = input_scale * filter_scale[i] for each output channel.
    * * 3: auto_pad, a NNADAPTER_INT32 scalar. 0 means "EXPLICIT" so that
    * paddings is used. 1 means "SAME". 2 means "VALID". It must be one of
-   * NNAdapterPadCode.
+   * NNAdapterAutoPadCode.
    * * 4: pads, a NNADAPTER_INT32 tensor, with shape [4] and data {height_top,
    * height_bottom, width_left, width_right}, or shape[0] and no data.
    * * 5: strides, a NNADAPTER_INT32 tensor, with shape [2] and data
@@ -751,7 +795,7 @@ typedef enum {
    * H_in, W_in].
    * * 1: auto_pad, a NNADAPTER_INT32 scalar. 0 means "EXPLICIT" so that
    * paddings is used. 1 means "SAME". 2 means "VALID". It must be one of
-   * NNAdapterPadCode values.
+   * NNAdapterAutoPadCode values.
    * * 2: pads, a NNADAPTER_INT32 tensor, with shape [4] and data {height_top,
    * height_bottom, width_left, width_right}, or with shape[0] and no data.
    * * 3: kernel_shape, a NNADAPTER_INT32 tensor, with shape [2] and data
@@ -836,7 +880,7 @@ typedef enum {
    * with value [x0_begin, x0_end, x1_begin, x1_end,...].
    * * 2: mode, a NNADAPTER_INT32 scalar.
    * Supported modes: `constant`(default), `reflect`, `edge`.
-   * It should be a value of NNAdapterPadMode.
+   * It should be a value of NNAdapterPadModeCode.
    * * 3: value, a scalar with the same type as input,
    * only be used if the mode is "constant".
    *
@@ -864,6 +908,26 @@ typedef enum {
    * Available since version 1.
    */
   NNADAPTER_POW,
+
+  /**
+   * Applies the prelu activation to the input tensor. The output is calculated
+   * using this formula:
+   * output = input, if input >=0;
+   * output = slope * input, if input < 0;
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32 or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor with shape [N, C, ...].
+   * * 1: slope, a tensor, with shape [1] or [C].
+   * 1) If input's type is NNADAPTER_TENSOR_FLOAT32, its type must be the same
+   * type.
+   *
+   * Outputs:
+   * * 0: output, a tensor with the same shape and type as input.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_PRELU,
 
   /**
   * Outputs a 1-D Tensor with spaced values within a given interval.
@@ -1135,6 +1199,25 @@ typedef enum {
   NNADAPTER_SQUEEZE,
 
   /**
+   * Join a sequence of tensors along a new axis.
+   * All input tensors must have the same shape.
+   *
+   * Inputs:
+   * * 0 ~ n-1: input0 ~ inputn-1, a NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: axis, a NNADAPTER_INT32 scalar. It represents the dimension along
+   * which axis to stack. It should be in range [-R-1, R+1), where R is the rank
+   * of input, negative value works the same way as axis+R+1.
+   *
+   * Outputs:
+   * * 0: output, the result with the same type as the inputs.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_STACK,
+
+  /**
    * Performs element-wise binary subtraction(with Numpy-style broadcasting
    * https://numpy.org/doc/stable/user/basics.broadcasting.html).
    *
@@ -1234,13 +1317,13 @@ typedef enum {
  */
 typedef enum {
   /** Use explicit pads. */
-  NNADAPTER_PAD_NONE = 0,
+  NNADAPTER_AUTO_PAD_NONE = 0,
   /** Results in padding evenly to the left/right or up/down of the input such
      that output has the same height/width dimension as the input.*/
-  NNADAPTER_PAD_SAME = 1,
+  NNADAPTER_AUTO_PAD_SAME = 1,
   /** No padding. */
-  NNADAPTER_PAD_VALID = 2,
-} NNAdapterPadCode;
+  NNADAPTER_AUTO_PAD_VALID = 2,
+} NNAdapterAutoPadCode;
 
 /**
  * Device codes.
