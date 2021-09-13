@@ -28,7 +28,9 @@ namespace lite {
 //  return res;
 //}
 
-using float16_t = lite_api::float16_t;
+#ifdef ENABLE_ARM_FP16
+typedef __fp16 float16_t;
+#endif
 
 #define ELT(MATHOP)                                                          \
   for (int n = 0; n < xn; n++) {                                             \
