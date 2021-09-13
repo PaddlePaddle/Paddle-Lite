@@ -881,6 +881,12 @@ namespace math {
   "bif    v21.16b,   v3.16b,   v2.16b  \n" /* choose*/             \
   "9:\n"
 
+/**
+ * The data block size for sparse matrix calculation is Mx48, that is, the
+ * parameter
+ * matrix size is MxK, the activation matrix is Kx48, and the required data is
+ * MxKxKx48.
+ */
 #define SPARSE_F32_F32_W48_V8_OUT       \
   SPARSE_F32_F32_W48_V8_KERNEL          \
   SPARSE_F32_F32_W48_V8_RELU            \
@@ -894,6 +900,12 @@ namespace math {
   "stp   q28, q29,  [%[c_ptr], #128]\n" \
   "stp   q30, q31,  [%[c_ptr], #160]\n"
 
+/**
+ * The data block size for sparse matrix calculation is Mx32, that is, the
+ * parameter
+ * matrix size is MxK, the activation matrix is Kx48, and the required data is
+ * MxKxKx32.
+ */
 #define SPARSE_F32_F32_W32_V8_OUT      \
   SPARSE_F32_F32_W32_V8_KERNEL         \
   SPARSE_F32_F32_W32_V8_RELU           \
@@ -905,6 +917,12 @@ namespace math {
   "stp   q25, q26,  [%[c_ptr], #64]\n" \
   "stp   q27, q28,  [%[c_ptr], #96]\n"
 
+/**
+ * The data block size for sparse matrix calculation is Mx16, that is, the
+ * parameter
+ * matrix size is MxK, the activation matrix is Kx16, and the required data is
+ * MxKxKx16.
+ */
 #define SPARSE_F32_F32_W16_V8_OUT  \
   SPARSE_F32_F32_W16_V8_KERNEL     \
   SPARSE_F32_F32_W16_V8_RELU       \
@@ -914,6 +932,12 @@ namespace math {
   "stp   q21, q22,  [%[c_ptr]]\n"  \
   "stp   q23, q24,  [%[c_ptr], #32]\n"
 
+/**
+ * The data block size for sparse matrix calculation is Mx8, that is, the
+ * parameter
+ * matrix size is MxK, the activation matrix is Kx8, and the required data is
+ * MxKxKx8.
+ */
 #define SPARSE_F32_F32_W8_V8_OUT  \
   SPARSE_F32_F32_W8_V8_KERNEL     \
   SPARSE_F32_F32_W8_V8_RELU       \
@@ -922,6 +946,12 @@ namespace math {
   /* store result */              \
   "stp   q21, q22,  [%[c_ptr]]\n"
 
+/**
+ * The data block size for sparse matrix calculation is Mx4, that is, the
+ * parameter
+ * matrix size is MxK, the activation matrix is Kx4, and the required data is
+ * MxKxKx4.
+ */
 #define SPARSE_F32_F32_W4_V8_OUT  \
   SPARSE_F32_F32_W4_V8_KERNEL     \
   SPARSE_F32_F32_W4_V8_RELU       \
@@ -931,8 +961,13 @@ namespace math {
   "str   q21,  [%[c_ptr]]\n"
 
 /**
- * \brief Sparse calculation implementation of 1x1 convolution,
- * \brief the input type is float, and the output type is also float.
+ * \brief Sparse calculation implementation of 1x1 convolution, both input and
+ * output are f32.
+ * Sparse matrix multiplication is calculated in blocks, the block size is Mx48,
+ * that is,
+ * the parameter matrix is MxK, and the activation matrix is Kx48; when N is
+ * less than 48,
+ * it is calculated in blocks of Mx32, Mx16, Mx8, and Mx4 in turn;
  * @param A sparse weight data
  * @param B dense input data
  * @param widx_dmap An array of int32_t values storing scaled [by sizeof(input
@@ -1729,6 +1764,12 @@ void sparse_conv_fp32_pipelined(const float* A,
   "bif    v21.16b,   v3.16b,   v2.16b  \n" /* choose*/             \
   "9:\n"
 
+/**
+ * The data block size for sparse matrix calculation is Mx48, that is, the
+ * parameter
+ * matrix size is MxK, the activation matrix is Kx48, and the required data is
+ * MxKxKx48.
+ */
 #define SPARSE_INT8_F32_W48_V8_OUT      \
   SPARSE_INT8_F32_W48_V8_KERNEL         \
   SPARSE_INT8_F32_W48_V8_RELU           \
@@ -1742,6 +1783,12 @@ void sparse_conv_fp32_pipelined(const float* A,
   "stp   q28, q29,  [%[c_ptr], #128]\n" \
   "stp   q30, q31,  [%[c_ptr], #160]\n"
 
+/**
+ * The data block size for sparse matrix calculation is Mx32, that is, the
+ * parameter
+ * matrix size is MxK, the activation matrix is Kx32, and the required data is
+ * MxKxKx32.
+ */
 #define SPARSE_INT8_F32_W32_V8_OUT     \
   SPARSE_INT8_F32_W32_V8_KERNEL        \
   SPARSE_INT8_F32_W32_V8_RELU          \
@@ -1753,6 +1800,12 @@ void sparse_conv_fp32_pipelined(const float* A,
   "stp   q25, q26,  [%[c_ptr], #64]\n" \
   "stp   q27, q28,  [%[c_ptr], #96]\n"
 
+/**
+ * The data block size for sparse matrix calculation is Mx16, that is, the
+ * parameter
+ * matrix size is MxK, the activation matrix is Kx16, and the required data is
+ * MxKxKx16.
+ */
 #define SPARSE_INT8_F32_W16_V8_OUT  \
   SPARSE_INT8_F32_W16_V8_KERNEL     \
   SPARSE_INT8_F32_W16_V8_RELU       \
@@ -1762,6 +1815,12 @@ void sparse_conv_fp32_pipelined(const float* A,
   "stp   q21, q22,  [%[c_ptr]]\n"   \
   "stp   q23, q24,  [%[c_ptr], #32]\n"
 
+/**
+ * The data block size for sparse matrix calculation is Mx8, that is, the
+ * parameter
+ * matrix size is MxK, the activation matrix is Kx8, and the required data is
+ * MxKxKx8.
+ */
 #define SPARSE_INT8_F32_W8_V8_OUT  \
   SPARSE_INT8_F32_W8_V8_KERNEL     \
   SPARSE_INT8_F32_W8_V8_RELU       \
@@ -1770,6 +1829,12 @@ void sparse_conv_fp32_pipelined(const float* A,
   /* store result */               \
   "stp   q21, q22,  [%[c_ptr]]\n"
 
+/**
+ * The data block size for sparse matrix calculation is Mx4, that is, the
+ * parameter
+ * matrix size is MxK, the activation matrix is Kx4, and the required data is
+ * MxKxKx4.
+ */
 #define SPARSE_INT8_F32_W4_V8_OUT  \
   SPARSE_INT8_F32_W4_V8_KERNEL     \
   SPARSE_INT8_F32_W4_V8_RELU       \
@@ -1779,8 +1844,13 @@ void sparse_conv_fp32_pipelined(const float* A,
   "str   q21,  [%[c_ptr]]\n"
 
 /**
- * \brief Sparse calculation implementation of 1x1 convolution,
- * \brief the input type is int8, and the output type is also float.
+ * \brief Sparse calculation implementation of 1x1 convolution, the input-output
+ * type is int8-f32.
+ * Sparse matrix multiplication is calculated in blocks, the block size is Mx48,
+ * that is,
+ * the parameter matrix is MxK, and the activation matrix is Kx48; when N is
+ * less than 48,
+ * it is calculated in blocks of Mx32, Mx16, Mx8, and Mx4 in turn;
  * @param A sparse weight data
  * @param B dense input data
  * @param widx_dmap An array of int32_t values storing scaled [by sizeof(input
@@ -2575,6 +2645,12 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   "bif    v21.16b,   v3.16b,   v2.16b  \n" /* choose*/             \
   "9:\n"
 
+/**
+ * The data block size for sparse matrix calculation is Mx48, that is, the
+ * parameter
+ * matrix size is MxK, the activation matrix is Kx48, and the required data is
+ * MxKxKx48.
+ */
 #define SPARSE_INT8_INT8_W48_V8_OUT                                      \
   SPARSE_INT8_INT8_W48_V8_KERNEL                                         \
   SPARSE_INT8_INT8_W48_V8_RELU                                           \
@@ -2639,6 +2715,12 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   "stp   q21, q22,  [%[c_ptr]]\n"                                        \
   "str   q23,  [%[c_ptr], #32]\n"
 
+/**
+ * The data block size for sparse matrix calculation is Mx32, that is, the
+ * parameter
+ * matrix size is MxK, the activation matrix is Kx32, and the required data is
+ * MxKxKx32.
+ */
 #define SPARSE_INT8_INT8_W32_V8_OUT                                      \
   SPARSE_INT8_INT8_W32_V8_KERNEL                                         \
   SPARSE_INT8_INT8_W32_V8_RELU                                           \
@@ -2684,6 +2766,12 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   "sqxtn2 v22.16b, v19.8h\n" /*  cvt int16 to int8 */ /* store result */ \
   "stp   q21, q22,  [%[c_ptr]]\n"
 
+/**
+ * The data block size for sparse matrix calculation is Mx16, that is, the
+ * parameter
+ * matrix size is MxK, the activation matrix is Kx16, and the required data is
+ * MxKxKx16.
+ */
 #define SPARSE_INT8_INT8_W16_V8_OUT                                      \
   SPARSE_INT8_INT8_W16_V8_KERNEL                                         \
   SPARSE_INT8_INT8_W16_V8_RELU                                           \
@@ -2710,6 +2798,12 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   "sqxtn2 v21.16b, v17.8h\n" /*  cvt int16 to int8 */ /* store result */ \
   "str   q21,  [%[c_ptr]]\n"
 
+/**
+ * The data block size for sparse matrix calculation is Mx8, that is, the
+ * parameter
+ * matrix size is MxK, the activation matrix is Kx8, and the required data is
+ * MxKxKx8.
+ */
 #define SPARSE_INT8_INT8_W8_V8_OUT                                             \
   SPARSE_INT8_INT8_W8_V8_KERNEL                                                \
   SPARSE_INT8_INT8_W8_V8_RELU                                                  \
@@ -2727,6 +2821,12 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   "sqxtn  v21.8b, v16.8h\n" /*  cvt int16 to int8 */ /* store result */        \
   "str   d21,  [%[c_ptr]]\n"
 
+/**
+ * The data block size for sparse matrix calculation is Mx4, that is, the
+ * parameter
+ * matrix size is MxK, the activation matrix is Kx4, and the required data is
+ * MxKxKx4.
+ */
 #define SPARSE_INT8_INT8_W4_V8_OUT                                            \
   SPARSE_INT8_INT8_W4_V8_KERNEL                                               \
   SPARSE_INT8_INT8_W4_V8_RELU                                                 \
@@ -2741,8 +2841,13 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   "str   s21,  [%[c_ptr]]\n"
 
 /**
- * \brief Sparse calculation implementation of 1x1 convolution,
- * \brief the input type is int8, and the output type is also int8.
+ * \brief Sparse calculation implementation of 1x1 convolution, both input and
+ * output are int8.
+ * Sparse matrix multiplication is calculated in blocks, the block size is Mx48,
+ * that is,
+ * the parameter matrix is MxK, and the activation matrix is Kx48; when N is
+ * less than 48,
+ * it is calculated in blocks of Mx32, Mx16, Mx8, and Mx4 in turn;
  * @param A sparse weight data
  * @param B dense input data
  * @param widx_dmap An array of int32_t values storing scaled [by sizeof(input
@@ -3022,8 +3127,13 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
 #else  // armv7
 
 /**
- * \brief Sparse calculation implementation of 1x1 convolution,
- * \brief the input type is float, and the output type is also float.
+ * \brief Sparse calculation implementation of 1x1 convolution, both input and
+ * output are f32.
+ * Sparse matrix multiplication is calculated in blocks, the block size is Mx48,
+ * that is,
+ * the parameter matrix is MxK, and the activation matrix is Kx48; when N is
+ * less than 48,
+ * it is calculated in blocks of Mx32, Mx16, Mx8, and Mx4 in turn;
  * @param A sparse weight data
  * @param B dense input data
  * @param widx_dmap An array of int32_t values storing scaled [by sizeof(input
@@ -3069,8 +3179,13 @@ void sparse_conv_fp32_pipelined(const float* A,
 }
 
 /**
- * \brief Sparse calculation implementation of 1x1 convolution,
- * \brief the input type is int8, and the output type is also float.
+ * \brief Sparse calculation implementation of 1x1 convolution, the input-output
+ * type is int8-f32.
+ * Sparse matrix multiplication is calculated in blocks, the block size is Mx48,
+ * that is,
+ * the parameter matrix is MxK, and the activation matrix is Kx48; when N is
+ * less than 48,
+ * it is calculated in blocks of Mx32, Mx16, Mx8, and Mx4 in turn;
  * @param A sparse weight data
  * @param B dense input data
  * @param widx_dmap An array of int32_t values storing scaled [by sizeof(input
@@ -3117,8 +3232,13 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
 }
 
 /**
- * \brief Sparse calculation implementation of 1x1 convolution,
- * \brief the input type is int8, and the output type is also int8.
+ * \brief Sparse calculation implementation of 1x1 convolution, both input and
+ * output are int8.
+ * Sparse matrix multiplication is calculated in blocks, the block size is Mx48,
+ * that is,
+ * the parameter matrix is MxK, and the activation matrix is Kx48; when N is
+ * less than 48,
+ * it is calculated in blocks of Mx32, Mx16, Mx8, and Mx4 in turn;
  * @param A sparse weight data
  * @param B dense input data
  * @param widx_dmap An array of int32_t values storing scaled [by sizeof(input
