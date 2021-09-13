@@ -273,28 +273,27 @@ namespace math {
     dr2 += 12;                                                               \
     doutr += 192;                                                            \
   }
-#define MID_PROCESS_PAD_1(dr0, dr1, doutr)                                   \
-  for (; w < win_new - 14; w += 12) {                                        \
-    __m128i vzero0 = _mm_set1_epi8(0);                                       \
-    __m128i vzero1 = _mm_set1_epi8(0);                                       \
-    __m128i vzero2 = _mm_set1_epi8(0);                                       \
-    __m128i vin_r0 = _mm_loadu_si128(reinterpret_cast<__m128i const*>(dr0)); \
-    __m128i vin_r1 = _mm_loadu_si128(reinterpret_cast<__m128i const*>(dr1)); \
-    /* 01234567->12345678 */                                                 \
-    __m128i vin_r01 = _mm_shuffle_epi8(vin_r0, vb1);                         \
-    __m128i vin_r11 = _mm_shuffle_epi8(vin_r1, vb1);                         \
-    /* 01234567->23456789 */                                                 \
-    __m128i vin_r02 = _mm_shuffle_epi8(vin_r0, vb2);                         \
-    __m128i vin_r12 = _mm_shuffle_epi8(vin_r1, vb2);                         \
-    /* 01234567->012a 345a 678a */                                           \
-    __m128i vin_00 = _mm_shuffle_epi8(vin_r0, vmask);                        \
-    __m128i vin_10 = _mm_shuffle_epi8(vin_r1, vmask);                        \
-    /* 12345678-> 123a 456a 789a */                                          \
-    __m128i vin_01 = _mm_shuffle_epi8(vin_r01, vmask);                       \
-    __m128i vin_11 = _mm_shuffle_epi8(vin_r11, vmask);                       \
-    /* 23456789-> 234a 567a 8910a */                                         \
-    __m128i vin_02 = _mm_shuffle_epi8(vin_r02, vmask);                       \
-    __m128i vin_12 = _mm_shuffle_epi8(vin_r12, vmask);
+#define MID_PROCESS_PAD_1(dr0, dr1, doutr)                                 \
+  __m128i vzero0 = _mm_set1_epi8(0);                                       \
+  __m128i vzero1 = _mm_set1_epi8(0);                                       \
+  __m128i vzero2 = _mm_set1_epi8(0);                                       \
+  __m128i vin_r0 = _mm_loadu_si128(reinterpret_cast<__m128i const*>(dr0)); \
+  __m128i vin_r1 = _mm_loadu_si128(reinterpret_cast<__m128i const*>(dr1)); \
+  /* 01234567->12345678 */                                                 \
+  __m128i vin_r01 = _mm_shuffle_epi8(vin_r0, vb1);                         \
+  __m128i vin_r11 = _mm_shuffle_epi8(vin_r1, vb1);                         \
+  /* 01234567->23456789 */                                                 \
+  __m128i vin_r02 = _mm_shuffle_epi8(vin_r0, vb2);                         \
+  __m128i vin_r12 = _mm_shuffle_epi8(vin_r1, vb2);                         \
+  /* 01234567->012a 345a 678a */                                           \
+  __m128i vin_00 = _mm_shuffle_epi8(vin_r0, vmask);                        \
+  __m128i vin_10 = _mm_shuffle_epi8(vin_r1, vmask);                        \
+  /* 12345678-> 123a 456a 789a */                                          \
+  __m128i vin_01 = _mm_shuffle_epi8(vin_r01, vmask);                       \
+  __m128i vin_11 = _mm_shuffle_epi8(vin_r11, vmask);                       \
+  /* 23456789-> 234a 567a 8910a */                                         \
+  __m128i vin_02 = _mm_shuffle_epi8(vin_r02, vmask);                       \
+  __m128i vin_12 = _mm_shuffle_epi8(vin_r12, vmask);
 
 #define TOP_MID_PAD_1                                                         \
   /* a0b0c0d0, a1b1c1d1 -> a0a1b0b1c0d0d0d1 */                                \
@@ -302,8 +301,7 @@ namespace math {
       vzero0, vin_00, vin_10, vzero1, vin_01, vin_11, vzero2, vin_02, vin_12) \
   dr0 += 12;                                                                  \
   dr1 += 12;                                                                  \
-  doutr += 192;                                                               \
-  }
+  doutr += 192;
 
 #define BOT_MID_PAD_1                                                         \
   /* a0b0c0d0, a1b1c1d1 -> a0a1b0b1c0d0d0d1 */                                \
@@ -311,44 +309,40 @@ namespace math {
       vin_00, vin_10, vzero0, vin_01, vin_11, vzero1, vin_02, vin_12, vzero2) \
   dr0 += 12;                                                                  \
   dr1 += 12;                                                                  \
-  doutr += 192;                                                               \
-//}
+  doutr += 192;
 
-#define MID_PROCESS_PAD_2(dr0, doutr)                                        \
-  for (; w < win_new - 14; w += 12) {                                        \
-    __m128i vzero0 = _mm_set1_epi8(0);                                       \
-    __m128i vzero1 = _mm_set1_epi8(0);                                       \
-    __m128i vzero2 = _mm_set1_epi8(0);                                       \
-    __m128i vin_r0 = _mm_loadu_si128(reinterpret_cast<__m128i const*>(dr0)); \
-    __m128i vin_10 = _mm_set1_epi8(0);                                       \
-    __m128i vin_11 = _mm_set1_epi8(0);                                       \
-    __m128i vin_12 = _mm_set1_epi8(0);                                       \
-    /* 01234567->12345678  */                                                \
-    __m128i vin_r01 = _mm_shuffle_epi8(vin_r0, vb1);                         \
-    /* 01234567->23456789 */                                                 \
-    __m128i vin_r02 = _mm_shuffle_epi8(vin_r0, vb2);                         \
-    /* 01234567->012a 345a 678a */                                           \
-    __m128i vin_00 = _mm_shuffle_epi8(vin_r0, vmask);                        \
-    /* 12345678-> 123a 456a 789a */                                          \
-    __m128i vin_01 = _mm_shuffle_epi8(vin_r01, vmask);                       \
-    /* 23456789-> 234a 567a 8910a */                                         \
-    __m128i vin_02 = _mm_shuffle_epi8(vin_r02, vmask);
+#define MID_PROCESS_PAD_2(dr0, doutr)                                      \
+  __m128i vzero0 = _mm_set1_epi8(0);                                       \
+  __m128i vzero1 = _mm_set1_epi8(0);                                       \
+  __m128i vzero2 = _mm_set1_epi8(0);                                       \
+  __m128i vin_r0 = _mm_loadu_si128(reinterpret_cast<__m128i const*>(dr0)); \
+  __m128i vin_10 = _mm_set1_epi8(0);                                       \
+  __m128i vin_11 = _mm_set1_epi8(0);                                       \
+  __m128i vin_12 = _mm_set1_epi8(0);                                       \
+  /* 01234567->12345678  */                                                \
+  __m128i vin_r01 = _mm_shuffle_epi8(vin_r0, vb1);                         \
+  /* 01234567->23456789 */                                                 \
+  __m128i vin_r02 = _mm_shuffle_epi8(vin_r0, vb2);                         \
+  /* 01234567->012a 345a 678a */                                           \
+  __m128i vin_00 = _mm_shuffle_epi8(vin_r0, vmask);                        \
+  /* 12345678-> 123a 456a 789a */                                          \
+  __m128i vin_01 = _mm_shuffle_epi8(vin_r01, vmask);                       \
+  /* 23456789-> 234a 567a 8910a */                                         \
+  __m128i vin_02 = _mm_shuffle_epi8(vin_r02, vmask);
 
 #define TOP_MID_PAD_2                                                         \
   /* a0b0c0d0, a1b1c1d1 -> a0a1b0b1c0d0d0d1 */                                \
   DATA_PACK(                                                                  \
       vzero0, vin_00, vin_10, vzero1, vin_01, vin_11, vzero2, vin_02, vin_12) \
   dr0 += 12;                                                                  \
-  doutr += 192;                                                               \
-  }
+  doutr += 192;
 
 #define BOT_MID_PAD_2                                                         \
   /* a0b0c0d0, a1b1c1d1 -> a0a1b0b1c0d0d0d1 */                                \
   DATA_PACK(                                                                  \
       vin_00, vin_10, vzero0, vin_01, vin_11, vzero1, vin_02, vin_12, vzero2) \
   dr0 += 12;                                                                  \
-  doutr += 192;                                                               \
-//}
+  doutr += 192;
 
 // a0b0c0d0 a1b1c1d1 a2b2c2d2 -> a0a1a20 b0b1b20 c0c1c20 d0d1d20
 inline void transpose3x4_4x4_ps(__m128i& row0,  // NOLINT
@@ -409,15 +403,19 @@ void prepack_input_im2col_s1_int8(const int8_t* din,
       int8_t* doutr = dout_ptr;
       // mid-cnt
       if (hin >= 2) {
-        MID_PROCESS_PAD_1(dr0, dr1, doutr)
-        TOP_MID_PAD_1
+        for (; w < win_new - 14; w += 12) {
+          MID_PROCESS_PAD_1(dr0, dr1, doutr)
+          TOP_MID_PAD_1
+        }
         if (w < win_new) {
           auto tmp_ptr = zero_ptr;
           RIGHT_PROCESS(tmp_ptr, dr0, dr1, doutr)
         }
       } else {
-        MID_PROCESS_PAD_2(dr0, doutr)
-        TOP_MID_PAD_2
+        for (; w < win_new - 14; w += 12) {
+          MID_PROCESS_PAD_2(dr0, doutr)
+          TOP_MID_PAD_2
+        }
         if (w < win_new) {
           auto tmp_ptr = zero_ptr;
           RIGHT_PROCESS(tmp_ptr, dr0, tmp_ptr, doutr)
@@ -434,8 +432,10 @@ void prepack_input_im2col_s1_int8(const int8_t* din,
       int w = 0;
       const int8_t* dr0 = din_ptr;
       int8_t* doutr = dout_ptr;
-      MID_PROCESS_PAD_2(dr0, doutr)
-      TOP_MID_PAD_2
+      for (; w < win_new - 14; w += 12) {
+        MID_PROCESS_PAD_2(dr0, doutr)
+        TOP_MID_PAD_2
+      }
       if (w < win_new) {
         auto tmp_ptr = zero_ptr;
         RIGHT_PROCESS(tmp_ptr, tmp_ptr, dr0, doutr)
@@ -449,15 +449,19 @@ void prepack_input_im2col_s1_int8(const int8_t* din,
       doutr = dout_ptr;
       // mid-cnt
       if (hin >= 2) {
-        MID_PROCESS_PAD_1(dr0, dr1, doutr)
-        TOP_MID_PAD_1
+        for (; w < win_new - 14; w += 12) {
+          MID_PROCESS_PAD_1(dr0, dr1, doutr)
+          TOP_MID_PAD_1
+        }
         if (w < win_new) {
           auto tmp_ptr = zero_ptr;
           RIGHT_PROCESS(tmp_ptr, dr0, dr1, doutr)
         }
       } else {
-        MID_PROCESS_PAD_2(dr0, doutr)
-        TOP_MID_PAD_2
+        for (; w < win_new - 14; w += 12) {
+          MID_PROCESS_PAD_2(dr0, doutr)
+          TOP_MID_PAD_2
+        }
         if (w < win_new) {
           auto tmp_ptr = zero_ptr;
           RIGHT_PROCESS(tmp_ptr, dr0, tmp_ptr, doutr)
@@ -485,16 +489,20 @@ void prepack_input_im2col_s1_int8(const int8_t* din,
       int8_t* doutr = dout_ptr;
       int w = 0;
       if (h == hin_new - 1) {
-        MID_PROCESS_PAD_1(dr0, dr1, doutr)
-        BOT_MID_PAD_1
+        for (; w < win_new - 14; w += 12) {
+          MID_PROCESS_PAD_1(dr0, dr1, doutr)
+          BOT_MID_PAD_1
+        }
         if (w < win_new) {
           auto tmp_ptr = zero_ptr;
           RIGHT_PROCESS(dr0, dr1, tmp_ptr, doutr)
         }
       }
       if (h == hin_new - 2) {
-        MID_PROCESS_PAD_2(dr0, doutr)
-        BOT_MID_PAD_2
+        for (; w < win_new - 14; w += 12) {
+          MID_PROCESS_PAD_2(dr0, doutr)
+          BOT_MID_PAD_2
+        }
         if (w < win_new) {
           auto tmp_ptr = zero_ptr;
           RIGHT_PROCESS(dr0, tmp_ptr, tmp_ptr, doutr)
@@ -510,16 +518,20 @@ void prepack_input_im2col_s1_int8(const int8_t* din,
       auto tmp_ptr = zero_ptr;
       if (hin >= 2) {
         LEFT_PROCESS(tmp_ptr, dr0, dr1, doutr);
-        MID_PROCESS_PAD_1(dr0, dr1, doutr)
-        TOP_MID_PAD_1
+        for (; w < win_new - 14; w += 12) {
+          MID_PROCESS_PAD_1(dr0, dr1, doutr)
+          TOP_MID_PAD_1
+        }
         if (w < win_new) {
           tmp_ptr = zero_ptr;
           RIGHT_PROCESS(tmp_ptr, dr0, dr1, doutr)
         }
       } else {
         LEFT_PROCESS(tmp_ptr, dr0, tmp_ptr, doutr);
-        MID_PROCESS_PAD_2(dr0, doutr)
-        TOP_MID_PAD_2
+        for (; w < win_new - 14; w += 12) {
+          MID_PROCESS_PAD_2(dr0, doutr)
+          TOP_MID_PAD_2
+        }
         if (w < win_new) {
           tmp_ptr = zero_ptr;
           RIGHT_PROCESS(tmp_ptr, dr0, tmp_ptr, doutr)
@@ -538,8 +550,10 @@ void prepack_input_im2col_s1_int8(const int8_t* din,
       int8_t* doutr = dout_ptr;
       auto tmp_ptr = zero_ptr;
       LEFT_PROCESS(tmp_ptr, tmp_ptr, dr0, doutr);
-      MID_PROCESS_PAD_2(dr0, doutr)
-      TOP_MID_PAD_2
+      for (; w < win_new - 14; w += 12) {
+        MID_PROCESS_PAD_2(dr0, doutr)
+        TOP_MID_PAD_2
+      }
       if (w < win_new) {
         auto tmp_ptr = zero_ptr;
         RIGHT_PROCESS(tmp_ptr, tmp_ptr, dr0, doutr)
@@ -562,8 +576,10 @@ void prepack_input_im2col_s1_int8(const int8_t* din,
           RIGHT_PROCESS(tmp_ptr, dr0, dr1, doutr)
         }
       } else {
-        MID_PROCESS_PAD_2(dr0, doutr)
-        TOP_MID_PAD_2
+        for (; w < win_new - 14; w += 12) {
+          MID_PROCESS_PAD_2(dr0, doutr)
+          TOP_MID_PAD_2
+        }
         if (w < win_new) {
           auto tmp_ptr = zero_ptr;
           RIGHT_PROCESS(tmp_ptr, dr0, tmp_ptr, doutr)
@@ -594,8 +610,10 @@ void prepack_input_im2col_s1_int8(const int8_t* din,
       int w = 0;
       if (h == hin_new - 2) {
         LEFT_PROCESS(dr0, dr1, tmp_ptr0, doutr)
-        MID_PROCESS_PAD_1(dr0, dr1, doutr)
-        BOT_MID_PAD_1
+        for (; w < win_new - 14; w += 12) {
+          MID_PROCESS_PAD_1(dr0, dr1, doutr)
+          BOT_MID_PAD_1
+        }
         if (w < win_new) {
           auto tmp_ptr = zero_ptr;
           RIGHT_PROCESS(dr0, dr1, tmp_ptr, doutr)
@@ -603,8 +621,10 @@ void prepack_input_im2col_s1_int8(const int8_t* din,
       }
       if (h == hin_new - 1) {
         LEFT_PROCESS(dr0, tmp_ptr0, tmp_ptr0, doutr)
-        MID_PROCESS_PAD_2(dr0, doutr)
-        BOT_MID_PAD_2
+        for (; w < win_new - 14; w += 12) {
+          MID_PROCESS_PAD_2(dr0, doutr)
+          BOT_MID_PAD_2
+        }
         if (w < win_new) {
           auto tmp_ptr = zero_ptr;
           RIGHT_PROCESS(dr0, tmp_ptr, tmp_ptr, doutr)
@@ -634,8 +654,10 @@ void prepack_input_im2col_s1_int8(const int8_t* din,
       int8_t* doutr = dout_ptr;
       tmp_ptr = zero_ptr;
       LEFT_PROCESS_MORE(tmp_ptr, tmp_ptr, dr0, doutr);
-      MID_PROCESS_PAD_2(dr0, doutr)
-      TOP_MID_PAD_2
+      for (; w < win_new - 14; w += 12) {
+        MID_PROCESS_PAD_2(dr0, doutr)
+        TOP_MID_PAD_2
+      }
       if (w < win_new) {
         tmp_ptr = zero_ptr;
         RIGHT_PROCESS(tmp_ptr, tmp_ptr, dr0, doutr)
@@ -651,15 +673,19 @@ void prepack_input_im2col_s1_int8(const int8_t* din,
       LEFT_PROCESS_MORE(tmp_ptr, dr0, dr1, doutr);
       // mid-cnt
       if (hin >= 2) {
-        MID_PROCESS_PAD_1(dr0, dr1, doutr)
-        TOP_MID_PAD_1
+        for (; w < win_new - 14; w += 12) {
+          MID_PROCESS_PAD_1(dr0, dr1, doutr)
+          TOP_MID_PAD_1
+        }
         if (w < win_new) {
           auto tmp_ptr = zero_ptr;
           RIGHT_PROCESS(tmp_ptr, dr0, dr1, doutr)
         }
       } else {
-        MID_PROCESS_PAD_2(dr0, doutr)
-        TOP_MID_PAD_2
+        for (; w < win_new - 14; w += 12) {
+          MID_PROCESS_PAD_2(dr0, doutr)
+          TOP_MID_PAD_2
+        }
         if (w < win_new) {
           auto tmp_ptr = zero_ptr;
           RIGHT_PROCESS(tmp_ptr, dr0, tmp_ptr, doutr)
@@ -690,8 +716,10 @@ void prepack_input_im2col_s1_int8(const int8_t* din,
       w = 0;
       if (h == hin_new - 2) {
         LEFT_PROCESS_MORE(tmp_ptr0, dr1, dr0, doutr)
-        MID_PROCESS_PAD_1(dr0, dr1, doutr)
-        BOT_MID_PAD_1
+        for (; w < win_new - 14; w += 12) {
+          MID_PROCESS_PAD_1(dr0, dr1, doutr)
+          BOT_MID_PAD_1
+        }
         if (w < win_new) {
           auto tmp_ptr = zero_ptr;
           RIGHT_PROCESS(tmp_ptr, dr0, dr1, doutr)
@@ -699,8 +727,10 @@ void prepack_input_im2col_s1_int8(const int8_t* din,
       }
       if (h == hin_new - 1) {
         LEFT_PROCESS_MORE(tmp_ptr0, tmp_ptr0, dr0, doutr)
-        MID_PROCESS_PAD_2(dr0, doutr)
-        BOT_MID_PAD_2
+        for (; w < win_new - 14; w += 12) {
+          MID_PROCESS_PAD_2(dr0, doutr)
+          BOT_MID_PAD_2
+        }
         if (w < win_new) {
           auto tmp_ptr = zero_ptr;
           RIGHT_PROCESS(tmp_ptr, dr0, tmp_ptr, doutr)
