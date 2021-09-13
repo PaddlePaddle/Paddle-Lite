@@ -43,13 +43,15 @@ int Program::ConvertConv2DTranspose(hal::Operation* operation) {
   if (bias_operator == nullptr) {
     bias_operator = ConvertOperand(bias_operand);
   }
+  std::shared_ptr<Operator> conv2d_transpose_operator = nullptr;
   auto conv2d_transpose_name = GetOperatorName(output_operand);
   auto conv2d_transpose_op =
       std::make_shared<ge::op::Conv2DTransposeD>(conv2d_transpose_name);
   SET_INPUT(conv2d_transpose_op, x, input_operator);
   SET_INPUT(conv2d_transpose_op, filter, filter_operator);
   SET_INPUT(conv2d_transpose_op, bias, bias_operator);
-  MAP_OUTPUT(conv2d_transpose_op, y, output_operand);
+  conv2d_transpose_operator =
+      MAP_OUTPUT(conv2d_transpose_op, y, output_operand);
   conv2d_transpose_op->set_attr_input_size(
       ge::Operator::OpListInt({input_operand->type.dimensions[0],
                                output_channel_size,
@@ -65,6 +67,26 @@ int Program::ConvertConv2DTranspose(hal::Operation* operation) {
   conv2d_transpose_op->set_attr_data_format("NCHW");
   conv2d_transpose_op->set_attr_output_padding(ge::Operator::OpListInt(
       {0, 0, output_padding_height, output_padding_width}));
+
+  // fuse activations
+  auto act_name = GetOperatorName(output_operand);
+  switch (fuse_code) {
+#define CONVERT_UNARY_ACTIVATION(type, class_name)                \
+  case NNADAPTER_FUSED_##type: {                                  \
+    auto act_op = std::make_shared<ge::op::class_name>(act_name); \
+    SET_INPUT(act_op, x, conv2d_transpose_operator);              \
+    MAP_OUTPUT(act_op, y, output_operand);                        \
+  } break;
+    CONVERT_UNARY_ACTIVATION(RELU, Relu);
+    CONVERT_UNARY_ACTIVATION(RELU6, Relu6);
+#undef CONVERT_UNARY_ACTIVATION
+    case NNADAPTER_FUSED_NONE:
+      break;
+    default:
+      NNADAPTER_LOG(FATAL) << "Unsupported fuse_code(" << fuse_code
+                           << ") is found.";
+      break;
+  }
   return NNADAPTER_NO_ERROR;
 }
 
