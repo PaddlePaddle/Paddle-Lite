@@ -119,6 +119,7 @@ class Program {
   int ConvertSoftmax(hal::Operation* operation);
   int ConvertActivation(hal::Operation* operation);
   int ConvertReshape(hal::Operation* operation);
+  int ConvertFlatten(hal::Operation* operation);
   int ConvertUnsqueeze(hal::Operation* operation);
   int ConvertTranspose(hal::Operation* operation);
   int ConvertConcat(hal::Operation* operation);

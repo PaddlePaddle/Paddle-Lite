@@ -598,7 +598,7 @@ typedef enum {
    * * 0: input, a NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
-   * * 1: start_axis, a NNADAPTER_INT32 scalar, first dim to flatten
+   * * 1: start_axis, a NNADAPTER_INT32 scalar, first dim to flatten.
    * * 2: end_axis, a NNADAPTER_INT32 scalar, last dim to flatten.
    *
    * Outputs:

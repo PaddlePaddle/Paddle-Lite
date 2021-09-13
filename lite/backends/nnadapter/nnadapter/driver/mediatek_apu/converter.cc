@@ -124,6 +124,9 @@ int Program::BuildFromModel(hal::Model* model) {
       case NNADAPTER_TANH:
         ConvertActivation(operation);
         break;
+      case NNADAPTER_FLATTEN:
+        ConvertFlatten(operation);
+        break;
       case NNADAPTER_RESHAPE:
         ConvertReshape(operation);
         break;

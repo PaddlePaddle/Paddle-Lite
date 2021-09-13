@@ -73,10 +73,17 @@ REGISTER_CONVERTER(log, ConvertUnaryActivations, "huawei_ascend_npu");
 REGISTER_CONVERTER(shape, ConvertShape, "huawei_ascend_npu");
 REGISTER_CONVERTER(fill_constant, ConvertFillConstant, "huawei_ascend_npu");
 REGISTER_CONVERTER(fill_any_like, ConvertFillAnyLike, "huawei_ascend_npu");
-REGISTER_CONVERTER(flatten, ConvertFlatten, "huawei_ascend_npu");
-REGISTER_CONVERTER(flatten2, ConvertFlatten, "huawei_ascend_npu");
-REGISTER_CONVERTER(flatten_contiguous_range,
-                   ConvertFlattenContiguousRange,
-                   "huawei_ascend_npu");
+REGISTER_CONVERTER(
+    flatten,
+    ConvertFlatten,
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
+REGISTER_CONVERTER(
+    flatten2,
+    ConvertFlatten,
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
+REGISTER_CONVERTER(
+    flatten_contiguous_range,
+    ConvertFlattenContiguousRange,
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
 
 #endif  // NOLINT

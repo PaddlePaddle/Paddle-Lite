@@ -121,6 +121,7 @@ class Program {
   int ConvertTranspose(hal::Operation* operation);
   int ConvertConcat(hal::Operation* operation);
   int ConvertSplit(hal::Operation* operation);
+  int ConvertFlatten(hal::Operation* operation);
 
  private:
   Context* context_{nullptr};

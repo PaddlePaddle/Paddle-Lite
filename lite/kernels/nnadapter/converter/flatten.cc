@@ -48,7 +48,6 @@ int ConvertFlatten(Converter* converter, OpInfo* op, Scope* scope) {
     converter->AddOperation(
         NNADAPTER_RESHAPE, {input_operand, shape_operand}, {output_operand});
   } else if (axis == input_type->dimension_count - 1) {
-    // start == stop 会怎样？
     auto start_operand = converter->AddConstantOperand(static_cast<int32_t>(0));
     auto stop_operand =
         converter->AddConstantOperand(static_cast<int32_t>(axis - 1));
