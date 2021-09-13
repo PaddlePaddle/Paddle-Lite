@@ -20,6 +20,7 @@
 #include "lite/core/device_info.h"
 #include "lite/core/optimizer/mir/pass_manager.h"
 #include "lite/core/optimizer/mir/post_quant_dynamic_pass.h"
+#include "lite/core/optimizer/mir/sparse_conv_detect_pass.h"
 #include "lite/core/version.h"
 
 #ifndef LITE_ON_TINY_PUBLISH
@@ -106,6 +107,15 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
           "post_quant_dynamic_pass");
       CHECK(pass);
       pass->SetQuantType(config.quant_type());
+    }
+
+    if (config.sparse_model()) {
+      passes.push_back("sparse_conv_detect_pass");
+      auto *sparse_detect_pass =
+          mir::PassManager::Global().LookUp<mir::SparseConvDetectPass>(
+              "sparse_conv_detect_pass");
+      CHECK(sparse_detect_pass);
+      sparse_detect_pass->SetSparseThreshold(config.sparse_threshold());
     }
     raw_predictor_->Build(config, places, passes);
   } else {

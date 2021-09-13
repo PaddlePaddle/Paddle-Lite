@@ -2,12 +2,6 @@ if(LITE_WITH_FPGA OR LITE_WITH_BM OR LITE_WITH_MLU OR (NOT LITE_WITH_X86 AND NOT
   return()
 endif()
 
-set(test_kernel_deps
-    core
-    ops
-    kernels
-)
-
 lite_cc_test(test_kernel_conv_compute SRCS conv_compute_test.cc)
 lite_cc_test(test_kernel_conv_transpose_compute SRCS conv_transpose_compute_test.cc)
 lite_cc_test(test_kernel_deformable_conv_compute SRCS deformable_conv_compute_test.cc)
@@ -69,6 +63,7 @@ lite_cc_test(test_kernel_squeeze_compute SRCS squeeze_compute_test.cc)
 lite_cc_test(test_kernel_slice_compute SRCS slice_compute_test.cc)
 lite_cc_test(test_kernel_expand_compute SRCS expand_compute_test.cc)
 lite_cc_test(test_kernel_expand_as_compute SRCS expand_as_compute_test.cc)
+lite_cc_test(test_kernel_expand_v2_compute SRCS expand_v2_compute_test.cc)
 lite_cc_test(test_kernel_matmul_compute SRCS matmul_compute_test.cc)
 lite_cc_test(test_kernel_flatten_compute SRCS flatten_compute_test.cc)
 lite_cc_test(test_kernel_p_norm_compute SRCS p_norm_compute_test.cc)

@@ -70,16 +70,19 @@ void ConvTransposeImageCompute::PrepareForRun() {
       {filter_dims[1], filter_dims[0], filter_dims[2], filter_dims[3]}};
 
   // Convert filter layout from IOHW to OIHW
-  IOHW2OIHW<float, int64_t>(filter_cpu,
-                            filter_cpu_trans.data(),
-                            filter_trans_dims[0],
-                            filter_trans_dims[1],
-                            filter_trans_dims[2],
-                            filter_trans_dims[3]);
+  if (filter_dims.size() == 4 && filter_dims[1] > 1) {
+    IOHW2OIHW<float, int64_t>(filter_cpu,
+                              filter_cpu_trans.data(),
+                              filter_trans_dims[0],
+                              filter_trans_dims[1],
+                              filter_trans_dims[2],
+                              filter_trans_dims[3]);
+  }
   filter_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
   tensor_hold_filter_image_ = std::unique_ptr<Tensor>(new Tensor);
   tensor_hold_bias_image_ = std::unique_ptr<Tensor>(new Tensor);
-
+  // build options
+  std::string build_options_single{""};
   if (groups_ == 1) {
     std::string kernel_name = "conv2d_transpose";
     kernel_func_names_.push_back(kernel_name);
@@ -98,7 +101,8 @@ void ConvTransposeImageCompute::PrepareForRun() {
         filter_gpu_image_, filter_image_w_, filter_image_h_, filter_image_data);
   } else if ((groups_ == input_tensor_c_) && (groups_ == output_tensor_c_)) {
     // for depthwsie conv transpose
-    std::string kernel_name = "depthwise_conv2d_transpose";
+    std::string kernel_name = "conv2d_transpose";
+    build_options_single += " -DIS_DEPTHWISE ";
     kernel_func_names_.push_back(kernel_name);
 
     CLImageConverterNBlock converter;
@@ -110,7 +114,7 @@ void ConvTransposeImageCompute::PrepareForRun() {
     auto* filter_image_data = MUTABLE_DATA_CPU(tensor_hold_filter_image_);
 
     converter.NCHWToImage(
-        filter_cpu_trans.data(), filter_image_data, filter_trans_dims);
+        (float*)filter_cpu, filter_image_data, filter_trans_dims);
     MUTABLE_DATA_GPU(
         filter_gpu_image_, filter_image_w_, filter_image_h_, filter_image_data);
   } else {
@@ -118,9 +122,6 @@ void ConvTransposeImageCompute::PrepareForRun() {
         << "conv2d_transpose image compute not support this condition yet! "
         << groups_ << " " << input_tensor_c_ << " " << output_tensor_c_;
   }
-
-  // build options
-  std::string build_options_single{""};
 
   // bias options
   if (has_bias_) {
@@ -210,13 +211,10 @@ void ConvTransposeImageCompute::PrepareForRun() {
                << conv_param_->scale_activation_type;
   }
 
-  if (groups_ == 1) {
-    kernel_func_paths_.push_back("image/conv2d_transpose_kernel.cl");
-  } else if ((groups_ == input_tensor_c_) && (groups_ == output_tensor_c_)) {
-    kernel_func_paths_.push_back("image/depthwise_conv2d_transpose_kernel.cl");
-  }
+  kernel_func_paths_.push_back("image/conv2d_transpose_kernel.cl");
   VLOG(1) << "kernel_func_names_[0]:" << kernel_func_names_[0]
           << " kernel_func_paths_[0]:" << kernel_func_paths_[0];
+
   build_options_.push_back(build_options_single);
   for (size_t i = 0; i < kernel_func_names_.size(); i++) {
     context.cl_context()->AddKernel(kernel_func_names_[i],

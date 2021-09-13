@@ -57,6 +57,7 @@ add_kernel(pow_compute_arm ARM extra SRCS pow_compute.cc)
 add_kernel(norm_compute_arm ARM extra SRCS norm_compute.cc)
 add_kernel(group_norm_compute ARM extra SRCS group_norm_compute.cc)
 ## 3. extra kernels
+add_kernel(sparse_conv_compute_arm ARM extra SRCS sparse_conv_compute.cc)
 add_kernel(lrn_compute_arm ARM extra SRCS lrn_compute.cc)
 add_kernel(decode_bboxes_compute_arm ARM extra SRCS decode_bboxes_compute.cc)
 add_kernel(axpy_compute_arm ARM extra SRCS axpy_compute.cc)
