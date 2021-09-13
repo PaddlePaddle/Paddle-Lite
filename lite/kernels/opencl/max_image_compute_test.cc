@@ -240,7 +240,8 @@ void max_test(const lite_api::CLPrecisionType p,
 
 void test_max_opencl_4d() {
   for (const auto precision_type :
-       {lite_api::CLPrecisionType::CL_PRECISION_FP32}) {
+       {lite_api::CLPrecisionType::CL_PRECISION_FP32,
+        lite_api::CLPrecisionType::CL_PRECISION_FP16}) {
     std::vector<std::vector<int>> reduce_dim{{},
                                              {0},
                                              {1},
@@ -269,7 +270,8 @@ void test_max_opencl_4d() {
 
 void test_max_opencl_3d() {
   for (const auto precision_type :
-       {lite_api::CLPrecisionType::CL_PRECISION_FP32}) {
+       {lite_api::CLPrecisionType::CL_PRECISION_FP32,
+        lite_api::CLPrecisionType::CL_PRECISION_FP16}) {
     std::vector<std::vector<int>> reduce_dim{{}, {0}, {1}, {2}, {0, 1}, {1, 2}};
     for (int c : {1, 3}) {
       for (int h : {1, 3}) {
@@ -286,7 +288,8 @@ void test_max_opencl_3d() {
 
 void test_max_opencl_2d() {
   for (const auto precision_type :
-       {lite_api::CLPrecisionType::CL_PRECISION_FP32}) {
+       {lite_api::CLPrecisionType::CL_PRECISION_FP32,
+        lite_api::CLPrecisionType::CL_PRECISION_FP16}) {
     std::vector<std::vector<int>> reduce_dim{{}, {0}, {1}};
     for (int h : {2, 3}) {
       for (int w : {2, 3}) {
@@ -308,4 +311,4 @@ TEST(max, compute_basic) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(max, kOpenCL, kFP16, kImageDefault, image2d);
+USE_LITE_KERNEL(reduce_max, kOpenCL, kFP16, kImageDefault, image2d);

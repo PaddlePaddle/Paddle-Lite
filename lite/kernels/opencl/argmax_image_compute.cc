@@ -134,8 +134,14 @@ class ArgmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
   }
 
   void create_build_options() {
-    std::string init = " -DDATAINIT=-FLT_MAX ";
-    build_options_ = init;
+    const bool fp16_support =
+        CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
+    std::string init_max =
+        fp16_support ? " -DDATAINIT=-HALF_MAX " : " -DDATAINIT=-FLT_MAX ";
+    std::string flag_type =
+        fp16_support ? " -DFLAG_TYPE4=short4 " : " -DFLAG_TYPE4=int4 ";
+
+    build_options_ = init_max + flag_type;
   }
 
 #ifdef LITE_WITH_PROFILE
@@ -165,7 +171,7 @@ class ArgmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(argmax,
+REGISTER_LITE_KERNEL(arg_max,
                      kOpenCL,
                      kFP16,
                      kImageDefault,

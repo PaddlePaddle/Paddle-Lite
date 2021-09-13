@@ -28,7 +28,7 @@ __kernel void argmax_n(__read_only image2d_t input,
   CL_DTYPE4 cur_idx = (CL_DTYPE4)(DATAINIT);
   CL_DTYPE4 max_idx = (CL_DTYPE4)(DATAINIT);
 
-  int4 flag_v = (int4)(0);
+  FLAG_TYPE4 flag_v = (FLAG_TYPE4)(0);
 
   for (unsigned short i = 0; i < in_nchw.x; i++) {
     cur_data = READ_IMG_TYPE(
@@ -57,7 +57,7 @@ __kernel void argmax_c(__read_only image2d_t input,
   CL_DTYPE4 cur_idx = (CL_DTYPE4)(DATAINIT);
   CL_DTYPE4 max_idx = (CL_DTYPE4)(DATAINIT);
 
-  int4 flag_v = (int4)(0);
+  FLAG_TYPE4 flag_v = (FLAG_TYPE4)(0);
 
   for (unsigned short i = 0; i < c4_n; i++) {
     cur_data = READ_IMG_TYPE(
@@ -124,7 +124,7 @@ __kernel void argmax_h(__read_only image2d_t input,
   CL_DTYPE4 cur_idx = (CL_DTYPE4)(DATAINIT);
   CL_DTYPE4 max_idx = (CL_DTYPE4)(DATAINIT);
 
-  int4 flag_v = (int4)(0);
+  FLAG_TYPE4 flag_v = (FLAG_TYPE4)(0);
 
   for (unsigned short i = 0; i < in_nchw.z; i++) {
     cur_data = READ_IMG_TYPE(
@@ -153,7 +153,7 @@ __kernel void argmax_w(__read_only image2d_t input,
   CL_DTYPE4 cur_idx = (CL_DTYPE4)(DATAINIT);
   CL_DTYPE4 max_idx = (CL_DTYPE4)(DATAINIT);
 
-  int4 flag_v = (int4)(0);
+  FLAG_TYPE4 flag_v = (FLAG_TYPE4)(0);
 
   for (unsigned short i = 0; i < in_nchw.w; i++) {
     cur_data = READ_IMG_TYPE(

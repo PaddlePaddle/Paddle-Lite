@@ -29,8 +29,8 @@ namespace paddle {
 namespace lite {
 
 template <typename indtype, typename outdtype>
-void argmax_baseline(const float* x_data,
-                     float* out_data,
+void argmax_baseline(const indtype* x_data,
+                     outdtype* out_data,
                      const DDim input_dims,
                      const DDim output_dims,
                      int axis) {
@@ -73,7 +73,7 @@ void test(const lite_api::CLPrecisionType p,
             << lite_api::CLPrecisionTypeToStr(p) << " axis=" << axis;
 
   auto kernels = KernelRegistry::Global().Create(
-      "argmax", TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
+      "arg_max", TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
   ASSERT_FALSE(kernels.empty());
   auto kernel = std::move(kernels.front());
 
@@ -99,7 +99,7 @@ void test(const lite_api::CLPrecisionType p,
   std::vector<float> x_cpu(x_dim.production());
   std::vector<float> out_from_cpu(out_dim.production());
   std::vector<float> out_from_gpu(out_dim.production());
-  fill_data_rand(x_cpu.data(), -1.f, 1.f, x_dim.production());
+  fill_data_rand(x_cpu.data(), -100.f, 100.f, x_dim.production());
 
   CLImageConverterDefault* default_converter = new CLImageConverterDefault();
   DDim x_image_shape = default_converter->InitImageDimInfoWith(x_dim);
@@ -134,8 +134,13 @@ void test(const lite_api::CLPrecisionType p,
       out_image_data.data(), out_from_gpu.data(), out_image_shape, out_dim);
 
   // run cpu ref
-  argmax_baseline<float, float>(
-      x_cpu.data(), out_from_cpu.data(), x_dim, out_dim, axis);
+  if (fp16_flag) {
+    argmax_baseline<float, float>(
+        x_cpu.data(), out_from_cpu.data(), x_dim, out_dim, axis);
+  } else {
+    argmax_baseline<float, float>(
+        x_cpu.data(), out_from_cpu.data(), x_dim, out_dim, axis);
+  }
 
   VLOG(4) << "output_data vs output_ref_data";
   auto relative_diff_thres =
@@ -167,14 +172,14 @@ void test(const lite_api::CLPrecisionType p,
 }
 
 void test_argmax_opencl_4d() {
-  for (const auto precision_type :
-       {lite_api::CLPrecisionType::CL_PRECISION_FP32}) {
-    for (bool keepdims : {true}) {
-      for (int axis : {0, 1, 2, 3}) {
-        for (int n : {4, 17}) {
-          for (int c : {4, 5}) {
-            for (int h : {2, 10}) {
-              for (int w : {2, 17}) {
+  for (bool keepdims : {true}) {
+    for (int axis : {0, 1, 2, 3}) {
+      for (int n : {2, 3, 4, 5, 6}) {
+        for (int c : {5, 6, 7, 8, 9}) {
+          for (int h : {2, 3, 4, 5, 6}) {
+            for (int w : {2, 3, 4, 5, 6}) {
+              for (const auto precision_type :
+                   {lite_api::CLPrecisionType::CL_PRECISION_FP32}) {
                 auto x_dims = DDim(std::vector<int64_t>({n, c, h, w}));
                 test(precision_type, keepdims, axis, x_dims);
               }
@@ -187,13 +192,13 @@ void test_argmax_opencl_4d() {
 }
 
 void test_argmax_opencl_3d() {
-  for (const auto precision_type :
-       {lite_api::CLPrecisionType::CL_PRECISION_FP32}) {
-    for (bool keepdims : {true}) {
-      for (int axis : {0, 1, 2}) {
-        for (int c : {4, 5}) {
-          for (int h : {2, 10}) {
-            for (int w : {2, 17}) {
+  for (bool keepdims : {true}) {
+    for (int axis : {0, 1, 2}) {
+      for (int c : {4, 4}) {
+        for (int h : {2, 10}) {
+          for (int w : {2, 17}) {
+            for (const auto precision_type :
+                 {lite_api::CLPrecisionType::CL_PRECISION_FP32}) {
               auto x_dims = DDim(std::vector<int64_t>({c, h, w}));
               test(precision_type, keepdims, axis, x_dims);
             }
@@ -205,12 +210,12 @@ void test_argmax_opencl_3d() {
 }
 
 void test_argmax_opencl_2d() {
-  for (const auto precision_type :
-       {lite_api::CLPrecisionType::CL_PRECISION_FP32}) {
-    for (bool keepdims : {true}) {
-      for (int axis : {0, 1}) {
-        for (int h : {2, 10}) {
-          for (int w : {2, 17}) {
+  for (bool keepdims : {true}) {
+    for (int axis : {0, 1}) {
+      for (int h : {2, 10}) {
+        for (int w : {2, 17}) {
+          for (const auto precision_type :
+               {lite_api::CLPrecisionType::CL_PRECISION_FP32}) {
             auto x_dims = DDim(std::vector<int64_t>({h, w}));
             test(precision_type, keepdims, axis, x_dims);
           }
@@ -229,4 +234,4 @@ TEST(argmax, compute_basic) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(argmax, kOpenCL, kFP16, kImageDefault, def);
+USE_LITE_KERNEL(arg_max, kOpenCL, kFP16, kImageDefault, def);
