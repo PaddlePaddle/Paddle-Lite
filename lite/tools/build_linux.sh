@@ -19,7 +19,7 @@ WITH_STATIC_LIB=OFF
 WITH_CV=OFF
 # controls whether to print log information, default is ON.
 WITH_LOG=ON
-# controls whether to throw the exception when error occurs, default is OFF 
+# controls whether to throw the exception when error occurs, default is OFF
 WITH_EXCEPTION=OFF
 # options of striping lib according to input model.
 WITH_STRIP=OFF
@@ -34,7 +34,7 @@ WITH_ROCKCHIP_NPU=OFF
 ROCKCHIP_NPU_SDK_ROOT="$(pwd)/rknpu_ddk"  # Download RKNPU SDK from https://github.com/airockchip/rknpu_ddk.git
 # options of compiling imagination NNA lib
 WITH_IMAGINATION_NNA=OFF
-IMAGINATION_NNA_SDK_ROOT="$(pwd)/imagination_nna_sdk" 
+IMAGINATION_NNA_SDK_ROOT="$(pwd)/imagination_nna_sdk"
 # options of compiling NNAdapter lib
 WITH_NNADAPTER=OFF
 NNADAPTER_WITH_ROCKCHIP_NPU=OFF
@@ -56,7 +56,7 @@ WITH_HUAWEI_ASCEND_NPU=OFF
 HUAWEI_ASCEND_NPU_DDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux"
 # options of compiling intel fpga.
 WITH_INTEL_FPGA=OFF
-INTEL_FPGA_SDK_ROOT="$(pwd)/intel_fpga_sdk" 
+INTEL_FPGA_SDK_ROOT="$(pwd)/intel_fpga_sdk"
 # options of adding training ops
 WITH_TRAIN=OFF
 # options of building tiny publish so
@@ -64,6 +64,8 @@ WITH_TINY_PUBLISH=ON
 # options of profiling
 WITH_PROFILE=OFF
 WITH_PRECISION_PROFILE=OFF
+# option of benchmark, default is OFF
+WITH_BENCHMARK=OFF
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
@@ -83,6 +85,27 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
                             -DCMAKE_BUILD_TYPE=Release \
                             -DWITH_MKLDNN=OFF \
                             -DWITH_TESTING=OFF"
+
+# function of set options for benchmark
+function set_benchmark_options {
+  with_light_weight_framework=OFF
+  WITH_EXTRA=ON
+  WITH_EXCEPTION=ON
+  # Turn off opencl. Additional third party library need to be installed on
+  # Linux. Otherwise opencl is not supported on Linux. See link for more info:
+  # https://software.intel.com/content/www/us/en/develop/articles/opencl-drivers.html
+  if [ "${ARCH}" == "x86" ]; then
+    WITH_OPENCL=OFF
+  else
+    WITH_OPENCL=ON
+  fi
+  if [ ${WITH_PROFILE} == "ON" ] || [ ${WITH_PRECISION_PROFILE} == "ON" ]; then
+    WITH_LOG=ON
+  else
+    WITH_LOG=OFF
+  fi
+}
+
 # mutable options for linux compiling.
 function init_cmake_mutable_options {
     if [ "$WITH_PYTHON" = "ON" -a "$WITH_TINY_PUBLISH" = "ON" ]; then
@@ -122,6 +145,10 @@ function init_cmake_mutable_options {
 
     if [ "${WITH_HUAWEI_ASCEND_NPU}" == "ON" ]; then
         WITH_EXTRA=ON
+    fi
+
+    if [ "${WITH_BENCHMARK}" == "ON" ]; then
+        set_benchmark_options
     fi
 
     cmake_mutable_options="-DLITE_WITH_ARM=$with_arm \
@@ -209,7 +236,7 @@ function prepare_opencl_source_code {
     OPENCL_KERNELS_PATH=$root_dir/lite/backends/opencl/cl_kernel
     mkdir -p ${GEN_CODE_PATH_OPENCL}
     touch $GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
-    python $root_dir/lite/tools/cmake_tools/gen_opencl_code.py $OPENCL_KERNELS_PATH $GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc 
+    python $root_dir/lite/tools/cmake_tools/gen_opencl_code.py $OPENCL_KERNELS_PATH $GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
 }
 
 # 3.3 prepare third_party libraries for compiling
@@ -275,7 +302,11 @@ function make_publish_so {
         ${CMAKE_COMMON_OPTIONS} \
         ${cmake_mutable_options}
 
-    make publish_inference -j$NUM_PROC
+    if [ "${WITH_BENCHMARK}" == "ON" ]; then
+        make benchmark_bin -j$NUM_PROC
+    else
+        make publish_inference -j$NUM_PROC
+    fi
     cd - > /dev/null
 }
 ####################################################################################################
@@ -303,6 +334,10 @@ function print_usage {
     echo -e "|     --with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF                                            |"
     echo -e "|     --with_profile: (OFF|ON); controls whether to profile speed, default is OFF                                                                      |"
     echo -e "|     --with_precision_profile: (OFF|ON); controls whether to profile precision, default is OFF                                                        |"
+    echo -e "|     --with_benchmark: (OFF|ON); controls whether to compile benchmark binary, default is OFF                                                         |"
+    echo -e "|                                                                                                                                                      |"
+    echo -e "|  arguments of benchmark binary compiling:                                                                                                            |"
+    echo -e "|     ./lite/tools/build_linux.sh --with_benchmark=ON full_publish                                                                                                 |"
     echo -e "|                                                                                                                                                      |"
     echo -e "|  arguments of striping lib according to input model:                                                                                                 |"
     echo -e "|     ./lite/tools/build_linux.sh --with_strip=ON --opt_model_dir=YourOptimizedModelDir                                                                |"
@@ -521,6 +556,11 @@ function main {
                 ;;
             --with_precision_profile=*)
                 WITH_PRECISION_PROFILE="${i#*=}"
+                shift
+                ;;
+            # compiling lib with benchmark feature, default OFF.
+            --with_benchmark=*)
+                WITH_BENCHMARK="${i#*=}"
                 shift
                 ;;
             # ON or OFF, default OFF

@@ -86,7 +86,7 @@ static const char opencl_tune_mode_msg[] =
 
 // Profiling options
 static const char enable_op_time_profile_msg[] =
-    "Whether to run with op time profiling.";
+    "Whether to run with op time profiling. Not supported yet";
 static const char enable_memory_profile_msg[] =
     "Whether to report the memory usage by periodically "
     "checking the memory footprint. Internally, a separate thread "
