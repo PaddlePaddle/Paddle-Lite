@@ -14,7 +14,6 @@
 
 #include "lite/backends/host/math/slice.h"
 #include <algorithm>
-#include "lite/utils/cp_logging.h"
 
 namespace paddle {
 namespace lite {
