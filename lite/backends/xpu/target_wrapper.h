@@ -83,6 +83,15 @@ class TargetWrapper<TARGET(kXPU)> {
         tls_raw_ctx_->_xpu1_conv_selector.set_autotune_file(
             conv_autotune_file.c_str());
       }
+      int devid = -1;
+      uint64_t max_l3_size = 0;
+      XPU_CALL(xpu_current_device(&devid));
+      XPU_CALL(xpu_device_get_attr(
+          &max_l3_size, XPUDeviceAttr(XPUATTR_MEM_L3_CAPACITY), devid));
+      if (local_l3_size > max_l3_size) {
+        local_l3_size = max_l3_size;
+      }
+      CHECK_LE(shared_l3_size, max_l3_size);
     }
     return tls_raw_ctx_;
   }
