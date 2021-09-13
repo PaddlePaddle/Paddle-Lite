@@ -22,7 +22,7 @@
 #include "lite/api/paddle_use_passes.h"
 #include "lite/api/test_helper.h"
 #include "lite/tests/api/ILSVRC2012_utility.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 DEFINE_string(data_dir, "", "data dir");
 DEFINE_int32(images_num,

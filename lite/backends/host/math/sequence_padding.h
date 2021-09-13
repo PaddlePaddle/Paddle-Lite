@@ -19,7 +19,7 @@ limitations under the License. */
 #include "lite/backends/x86/fluid/lod.h"
 #include "lite/core/context.h"
 #include "lite/core/tensor.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 namespace paddle {
 namespace lite {

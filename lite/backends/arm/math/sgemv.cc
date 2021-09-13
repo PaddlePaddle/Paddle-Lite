@@ -16,7 +16,7 @@
 #include <arm_neon.h>
 #include <algorithm>
 #include <memory>
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 namespace paddle {
 namespace lite {

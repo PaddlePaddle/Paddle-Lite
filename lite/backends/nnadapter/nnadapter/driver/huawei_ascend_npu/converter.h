@@ -102,19 +102,25 @@ class Program {
   std::shared_ptr<Operator> AddFloat32ConstantOperator(
       const std::vector<float>& values,
       const std::vector<int32_t>& dimensions = {});
+  std::shared_ptr<Operator> AddZeroConstantOperator(
+      NNAdapterOperandPrecisionCode precision,
+      const std::vector<int32_t>& dimensions);
   // Convert a constant and model input operand and map to a operator
   std::shared_ptr<Operator> ConvertOperand(
       hal::Operand* operand, std::vector<int32_t> dimensions = {});
 
   // Operation converters
   int ConvertConv2D(hal::Operation* operation);
+  int ConvertConv2DTranspose(hal::Operation* operation);
   int ConvertFullyConnected(hal::Operation* operation);
   int ConvertFill(hal::Operation* operation);
   int ConvertPool2D(hal::Operation* operation);
+  int ConvertAdaptivePool2D(hal::Operation* operation);
   int ConvertElementwise(hal::Operation* operation);
   int ConvertSoftmax(hal::Operation* operation);
   int ConvertCumSum(hal::Operation* operation);
   int ConvertActivation(hal::Operation* operation);
+  int ConvertPRelu(hal::Operation* operation);
   int ConvertReshape(hal::Operation* operation);
   int ConvertTranspose(hal::Operation* operation);
   int ConvertConcat(hal::Operation* operation);
@@ -129,6 +135,7 @@ class Program {
   int ConvertRange(hal::Operation* operation);
   int ConvertCast(hal::Operation* operation);
   int ConvertShape(hal::Operation* operation);
+  int ConvertStack(hal::Operation* operation);
   int ConvertAssign(hal::Operation* operation);
   int ConvertResizeNearest(hal::Operation* operation);
   int ConvertResizeLinear(hal::Operation* operation);

@@ -17,6 +17,7 @@
 #include <utility>
 #include "driver/huawei_ascend_npu/optimizer/fix_multiple_outputs_ops.h"
 #include "driver/huawei_ascend_npu/optimizer/fix_no_inputs_ops.h"
+#include "driver/huawei_ascend_npu/optimizer/fix_operators_constraint_pass.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -28,11 +29,7 @@ namespace huawei_ascend_npu {
 
 Device::Device() { InitializeAscendDevice(); }
 
-Device::~Device() {
-  // TODO(hong19860320) fix the problem destruction order that the resource of
-  // ACL is released before the function is called.
-  // FinalizeAscendDevice();
-}
+Device::~Device() {}
 
 Context::Context(void* device, const char* properties) : device_(device) {
   // Extract the runtime parameters from the context properties
@@ -89,6 +86,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
     FixMultipleOutputsOps(model);
     FixNoInputsOps(model);
+    NNADAPTER_CHECK_EQ(FixOperatorsConstraintPass(model), NNADAPTER_NO_ERROR);
     NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
     // Convert a NNAdapter model to a GE graph
     std::vector<hal::Operation*> operations =
@@ -110,6 +108,10 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
         case NNADAPTER_MAX_POOL_2D:
           ConvertPool2D(operation);
           break;
+        case NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D:
+        case NNADAPTER_ADAPTIVE_MAX_POOL_2D:
+          ConvertAdaptivePool2D(operation);
+          break;
         case NNADAPTER_CONCAT:
           ConvertConcat(operation);
           break;
@@ -121,6 +123,9 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
           break;
         case NNADAPTER_CONV_2D:
           ConvertConv2D(operation);
+          break;
+        case NNADAPTER_CONV_2D_TRANSPOSE:
+          ConvertConv2DTranspose(operation);
           break;
         case NNADAPTER_FULLY_CONNECTED:
           ConvertFullyConnected(operation);
@@ -136,6 +141,9 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
         case NNADAPTER_EXP:
         case NNADAPTER_LOG:
           ConvertActivation(operation);
+          break;
+        case NNADAPTER_PRELU:
+          ConvertPRelu(operation);
           break;
         case NNADAPTER_RESHAPE:
           ConvertReshape(operation);
@@ -172,6 +180,9 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
           break;
         case NNADAPTER_SQUEEZE:
           ConvertSqueeze(operation);
+          break;
+        case NNADAPTER_STACK:
+          ConvertStack(operation);
           break;
         case NNADAPTER_UNSQUEEZE:
           ConvertUnsqueeze(operation);
@@ -381,6 +392,15 @@ std::shared_ptr<Operator> Program::AddConstantOperator(
   auto constant_operator = std::make_shared<Operator>(op, tensor_desc, "", -1);
   UpdateOperatorMap(nullptr, constant_operator);
   return constant_operator;
+}
+
+std::shared_ptr<Operator> Program::AddZeroConstantOperator(
+    NNAdapterOperandPrecisionCode precision,
+    const std::vector<int32_t>& dimensions) {
+  auto precision_data_length = GetOperandPrecisionDataLength(precision);
+  auto num_values = ProductionOfDimensions(dimensions);
+  std::vector<uint8_t> zero_values(precision_data_length * num_values, 0);
+  return AddConstantOperator(&zero_values[0], precision, dimensions);
 }
 
 std::shared_ptr<Operator> Program::AddInt32ConstantOperator(

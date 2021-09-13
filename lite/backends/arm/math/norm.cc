@@ -16,7 +16,7 @@
 #include <arm_neon.h>
 #include <cmath>
 #include "lite/backends/arm/math/funcs.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 namespace paddle {
 namespace lite {
