@@ -21,7 +21,11 @@
 #include "lite/tests/utils/tensor_utils.h"
 
 #ifdef LITE_WITH_ARM
+#include "lite/backends/arm/math/funcs.h"
 #include "lite/kernels/arm/conv_compute.h"
+#else
+#include "lite/backends/x86/math/calib.h"
+#include "lite/kernels/x86/conv_compute.h"
 #endif  // LITE_WITH_ARM
 
 DEFINE_int32(power_mode,
@@ -123,8 +127,7 @@ void release_param(ConvParam* param) {
   delete param->bias;
 }
 
-#ifdef LITE_WITH_ARM
-#include "lite/backends/arm/math/funcs.h"
+#if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
 void test_conv_int8(const DDim& dim_in,
                     const DDim& weight_dim,
                     int group,
@@ -137,7 +140,9 @@ void test_conv_int8(const DDim& dim_in,
                     const std::vector<int>& power_mode,
                     const float six = 6.f,
                     const float alpha = 1.f) {
+#ifdef LITE_WITH_ARM
   paddle::lite::DeviceInfo::Init();
+#endif
   ConvParam param_int8_out;
   ConvParam param_fp32_out;
 
@@ -208,20 +213,28 @@ void test_conv_int8(const DDim& dim_in,
 
   auto wptr_fp32 = weight_fp32.mutable_data<float>();
   auto bptr_fp32 = flag_bias ? bias_fp32.data<float>() : nullptr;
-
+#ifdef LITE_WITH_ARM
   paddle::lite::arm::math::int8_to_fp32(param_int8_out.filter->data<int8_t>(),
                                         wptr_fp32,
                                         scale_w.data(),
                                         weight_dim[0],
                                         1,
                                         weight_dim.count(1, 4));
-
+#else
+  paddle::lite::x86::math::int8_to_fp32(param_int8_out.filter->data<int8_t>(),
+                                        wptr_fp32,
+                                        scale_w.data(),
+                                        weight_dim[0],
+                                        1,
+                                        weight_dim.count(1, 4));
+#endif
   for (auto& cls : power_mode) {
     for (auto& th : thread_num) {
       std::unique_ptr<paddle::lite::KernelContext> ctx1(
           new paddle::lite::KernelContext);
       std::unique_ptr<paddle::lite::KernelContext> ctx2(
           new paddle::lite::KernelContext);
+#ifdef LITE_WITH_ARM
       auto& ctx_tmp1 = ctx1->As<paddle::lite::ARMContext>();
       ctx_tmp1.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), th);
       auto& ctx_tmp2 = ctx2->As<paddle::lite::ARMContext>();
@@ -233,6 +246,17 @@ void test_conv_int8(const DDim& dim_in,
       paddle::lite::kernels::arm::ConvCompute<PRECISION(kInt8),
                                               PRECISION(kFloat)>
           conv_int8_fp32;
+#else
+      auto& ctx_tmp1 = ctx1->As<paddle::lite::X86Context>();
+      auto& ctx_tmp2 = ctx2->As<paddle::lite::X86Context>();
+
+      paddle::lite::kernels::x86::Conv2dCompute<PRECISION(kInt8),
+                                                PRECISION(kInt8)>
+          conv_int8_int8;
+      paddle::lite::kernels::x86::Conv2dCompute<PRECISION(kInt8),
+                                                PRECISION(kFloat)>
+          conv_int8_fp32;
+#endif
       conv_int8_int8.SetContext(std::move(ctx1));
       conv_int8_fp32.SetContext(std::move(ctx2));
 
@@ -276,16 +300,27 @@ void test_conv_int8(const DDim& dim_in,
       Tensor tout_basic_fp32;
       Tensor tout_basic_int8;
 
-      paddle::lite::fill_tensor_rand(*param_int8_out.x, -127, 127);
+      // paddle::lite::fill_tensor_rand(*param_int8_out.x, -127, 127);
+      LOG(INFO) << "const: ";
+      paddle::lite::fill_tensor_const(*param_int8_out.x, 1);
       param_fp32_out.x->CopyDataFrom(*param_int8_out.x);
 
       auto din_fp32 = tin_fp32.mutable_data<float>();
+#ifdef LITE_WITH_ARM
       paddle::lite::arm::math::int8_to_fp32(param_int8_out.x->data<int8_t>(),
                                             din_fp32,
                                             scale_in.data(),
                                             1,
                                             1,
                                             dim_in.production());
+#else
+      paddle::lite::x86::math::int8_to_fp32(param_int8_out.x->data<int8_t>(),
+                                            din_fp32,
+                                            scale_in.data(),
+                                            1,
+                                            1,
+                                            dim_in.production());
+#endif
 
       if (FLAGS_check_result) {
         tout_basic_fp32.set_precision(PRECISION(kFloat));
@@ -319,12 +354,21 @@ void test_conv_int8(const DDim& dim_in,
                                  flag_act,
                                  six,
                                  alpha);
+#ifdef LITE_WITH_ARM
         paddle::lite::arm::math::fp32_to_int8(dout_basic_fp32,
                                               dout_basic_int8,
                                               scale_out.data(),
                                               1,
                                               1,
                                               dim_out.production());
+#else
+        paddle::lite::x86::math::fp32_to_int8(dout_basic_fp32,
+                                              dout_basic_int8,
+                                              scale_out.data(),
+                                              1,
+                                              1,
+                                              dim_out.production());
+#endif
       }
       double gops = 2.0 * dim_out.production() * dim_in[1] * weight_dim[2] *
                     weight_dim[3] / group;

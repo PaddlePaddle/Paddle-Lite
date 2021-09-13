@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include "lite/core/context.h"
 
 namespace paddle {
 namespace lite {
