@@ -60,10 +60,8 @@ int Program::ConvertBatchNormalization(hal::Operation* operation) {
   auto mean_operator = ConvertOperand(mean_operand);
   auto variance_operator = ConvertOperand(variance_operand);
   auto batch_norm_name = GetOperatorName(output_operand);
-  auto batch_norm_op = std::make_shared<ge::op::BatchNorm>(batch_norm_name);
+  auto batch_norm_op = std::make_shared<ge::op::BNInfer>(batch_norm_name);
   batch_norm_op->set_attr_epsilon(epsilon);
-  batch_norm_op->set_attr_data_format("NCHW");
-  batch_norm_op->set_attr_is_training(false);
   SET_INPUT(batch_norm_op, x, input_operator);
   SET_INPUT(batch_norm_op, scale, scale_operator);
   SET_INPUT(batch_norm_op, offset, offset_operator);
