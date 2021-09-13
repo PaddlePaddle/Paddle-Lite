@@ -16,7 +16,7 @@
 #include <gtest/gtest.h>
 #include <vector>
 #include "lite/api/paddle_api.h"
-#include "lite/api/test_helper.h"
+#include "lite/api/test/test_helper.h"
 #include "lite/core/op_registry.h"
 
 namespace paddle {

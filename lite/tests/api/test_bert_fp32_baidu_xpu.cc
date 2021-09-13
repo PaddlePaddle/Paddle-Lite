@@ -20,7 +20,7 @@
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
-#include "lite/api/test_helper.h"
+#include "lite/api/test/test_helper.h"
 #include "lite/tests/api/bert_utility.h"
 #include "lite/utils/log/cp_logging.h"
 
