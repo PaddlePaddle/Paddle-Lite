@@ -20,7 +20,7 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int ConvertActivation(Converter* converter, hal::Operation* operation) {
+int ConvertUnaryActivations(Converter* converter, hal::Operation* operation) {
   UNARY_ACTIVATIONS_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
