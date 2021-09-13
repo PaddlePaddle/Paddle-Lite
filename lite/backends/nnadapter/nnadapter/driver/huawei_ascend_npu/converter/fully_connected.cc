@@ -71,7 +71,7 @@ int Program::ConvertFullyConnected(hal::Operation* operation) {
   auto weight_operator = ConvertOperand(weight_operand);
   auto bias_operator = ConvertOperand(bias_operand);
   // Use MatMul instead of FullyConnection to avoid outputing the 4-D tensor
-  auto matmul_name = GetOperatorName(output_operand);
+  auto matmul_name = GetOperatorName(output_operand) + "/matmul";
   auto matmul_op = std::make_shared<ge::op::MatMul>(matmul_name);
   matmul_op->set_attr_transpose_x1(false);
   matmul_op->set_attr_transpose_x2(
@@ -79,7 +79,28 @@ int Program::ConvertFullyConnected(hal::Operation* operation) {
   SET_INPUT(matmul_op, x1, input_operator);
   SET_INPUT(matmul_op, x2, weight_operator);
   SET_INPUT(matmul_op, bias, bias_operator);
-  MAP_OUTPUT(matmul_op, y, output_operand);
+  auto matmul_operator = MAP_OUTPUT(matmul_op, y, output_operand);
+
+  // fuse activations
+  auto act_name = GetOperatorName(output_operand) + "/activation";
+  switch (fuse_code) {
+#define CONVERT_UNARY_ACTIVATION(type, class_name)                \
+  case NNADAPTER_FUSED_##type: {                                  \
+    auto act_op = std::make_shared<ge::op::class_name>(act_name); \
+    SET_INPUT(act_op, x, matmul_operator);                        \
+    MAP_OUTPUT(act_op, y, output_operand);                        \
+  } break;
+    CONVERT_UNARY_ACTIVATION(RELU, Relu);
+    CONVERT_UNARY_ACTIVATION(RELU6, Relu6);
+// TODO(lsy): support relu1.
+#undef CONVERT_UNARY_ACTIVATION
+    case NNADAPTER_FUSED_NONE:
+      break;
+    default:
+      NNADAPTER_LOG(FATAL) << "Unsupported fuse_code(" << fuse_code
+                           << ") is found.";
+      break;
+  }
   return NNADAPTER_NO_ERROR;
 }
 

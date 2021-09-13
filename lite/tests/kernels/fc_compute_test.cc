@@ -258,7 +258,7 @@ void TestFCHelper(Place place,
                                                        DDim(wdims),
                                                        DDim(bdims),
                                                        in_num_col_dims,
-                                                       false,
+                                                       true,
                                                        false));
   arena::Arena arena(std::move(tester), place, abs_error);
   arena.TestPrecision();
@@ -268,7 +268,7 @@ void TestFCnD(Place place, float abs_error) {
   TestFCHelper(place, abs_error, {2, 3, 4}, {4, 5}, {5}, 2);
   TestFCHelper(place, abs_error, {2, 3, 4}, {12, 5}, {5}, 1);
   TestFCHelper(place, abs_error, {2, 3, 4, 5}, {5, 6}, {6}, 3);
-  TestFCHelper(place, abs_error, {2, 3, 4, 5}, {20, 6}, {6}, 2);
+  TestFCHelper(place, abs_error, {2, 3, 4, 5}, {20, 6}, {6}, 2;
   TestFCHelper(place, abs_error, {2, 3, 4, 5}, {60, 6}, {6}, 1);
 }
 
@@ -297,7 +297,7 @@ TEST(FcOP, precision) {
   return;
 #endif
 
-  TestFC2D(place, abs_error);
+  TestFC2D(place, abs_error, true);
   TestFCnD(place, abs_error);
 }
 
