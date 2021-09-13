@@ -21,7 +21,7 @@ limitations under the License. */
 #include "lite/backends/opencl/cl_runtime.h"
 #include "lite/backends/opencl/target_wrapper.h"
 #include "lite/core/tensor.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 DEFINE_string(cl_path, "/data/local/tmp/opencl", "The OpenCL kernels path.");
 

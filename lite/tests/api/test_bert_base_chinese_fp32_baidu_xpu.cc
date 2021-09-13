@@ -22,7 +22,7 @@
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
 #include "lite/api/test_helper.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 DEFINE_string(data_dir, "", "data dir");
 DEFINE_int32(warmup_num, 1, "warmup rounds");

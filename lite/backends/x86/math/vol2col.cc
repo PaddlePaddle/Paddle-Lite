@@ -14,7 +14,7 @@ limitations under the License. */
 
 #include "lite/backends/x86/math/vol2col.h"
 #include <vector>
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 namespace paddle {
 namespace lite {

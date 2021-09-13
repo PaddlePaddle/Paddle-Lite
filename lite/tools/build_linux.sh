@@ -141,6 +141,7 @@ function init_cmake_mutable_options {
 
     if [ "${WITH_BAIDU_XPU}" == "ON" ]; then
         WITH_EXTRA=ON
+        WITH_TINY_PUBLISH=OFF
     fi
 
     if [ "${WITH_HUAWEI_ASCEND_NPU}" == "ON" ]; then

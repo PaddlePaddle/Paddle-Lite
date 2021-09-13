@@ -13,14 +13,30 @@
 // limitations under the License.
 
 #pragma once
+#include "lite/core/context.h"
 
 namespace paddle {
 namespace lite {
+namespace x86 {
+namespace math {
 
-// The Index of first Block in Program. also called root block.
-constexpr int kRootBlockIdx = 0;
-// The Parent Index of root Block, this block does not exist.
-constexpr int kNoneBlockIdx = -1;
+void conv_direct_3x3s2(const float* i_data,
+                       const float* trans_weight,
+                       int bs,
+                       int ic,
+                       int ih,
+                       int iw,
+                       int oc,
+                       int oc_expand,
+                       float* o_data,
+                       int oh,
+                       int ow,
+                       int ph,
+                       int pw,
+                       const float* bias,
+                       lite_api::ActivationType active_type);
 
+}  // namespace math
+}  // namespace x86
 }  // namespace lite
 }  // namespace paddle

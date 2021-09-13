@@ -16,7 +16,7 @@
 #include "lite/backends/metal/metal_context_imp.h"
 #include "lite/backends/metal/metal_half.h"
 #include "lite/backends/metal/target_wrapper.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 namespace paddle {
 namespace lite {
@@ -124,14 +124,8 @@ void MetalImage::InitTexture() {
         // eg: conv2d biasTexture, which come from io_copy_host_to_metal
         // attention: tensor.size=1、2
         switch (tensor_dim_.size()) {
-            case 4: {
-                // attention: This situation has not been encountered
-                LOG(FATAL) << "metal_image: InitTexture(0123) - tensor dim = 4";
-            } break;
-            case 3: {
-                // attention: This situation has not been encountered
-                LOG(FATAL) << "metal_image: InitTexture(0123) - tensor dim = 3";
-            } break;
+            case 4:
+            case 3:
             case 2:
             case 1: {
                 desc_.width = static_cast<NSUInteger>(dim[2]);
