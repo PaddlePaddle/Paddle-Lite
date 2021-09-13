@@ -49,7 +49,12 @@ int Benchmark(int argc, char** argv) {
        (!FLAGS_model_file.empty() && !FLAGS_param_file.empty()));
   if (is_origin_model) {
     if (opt_model_path.empty()) {
-      opt_model_path = "opt";
+      std::string path = FLAGS_uncombined_model_dir;
+      if (FLAGS_uncombined_model_dir.empty()) {
+        auto pos = FLAGS_model_file.find_last_of("/");
+        path = FLAGS_model_file.substr(0, pos);
+      }
+      opt_model_path = path + "/opt";
     }
     OutputOptModel(opt_model_path);
   }
@@ -94,9 +99,9 @@ void Run(const std::string& model_file,
       }
     } else {
       auto paths = lite::SplitString(FLAGS_input_data_path);
-      std::fstream fs(paths[i]);
+      std::ifstream fs(paths[i]);
       if (!fs.is_open()) {
-        std::cout << "Open input image " << paths[i] << " error." << std::endl;
+        std::cerr << "Open input image " << paths[i] << " error." << std::endl;
       }
       for (int k = 0; k < input_num; k++) {
         fs >> input_data[k];
@@ -127,7 +132,7 @@ void Run(const std::string& model_file,
 
   // Get output
   size_t output_tensor_num = predictor->GetOutputNames().size();
-  STL::stringstream out_ss;
+  std::stringstream out_ss;
   out_ss << "output tensor num: " << output_tensor_num;
 
   for (size_t tidx = 0; tidx < output_tensor_num; ++tidx) {
@@ -165,11 +170,11 @@ void Run(const std::string& model_file,
   float perf_avg =
       std::accumulate(perf_vct.begin(), perf_vct.end(), 0.0) / FLAGS_repeats;
 
-  STL::stringstream ss;
+  std::stringstream ss;
   ss.precision(3);
 #ifdef __ANDROID__
   ss << "\n======= Device Info =======\n";
-  ss << get_device_info();
+  ss << GetDeviceInfo();
 #endif
   ss << "\n======= Model Info =======\n";
   ss << "optimized_model_file: " << model_file << std::endl;
@@ -212,12 +217,7 @@ void Run(const std::string& model_file,
     ss << "avg   = " << std::setw(12) << "Not supported yet" << std::endl;
   }
   std::cout << ss.str() << std::endl;
-  std::ofstream ofs(FLAGS_result_path, std::ios::app);
-  if (!ofs.is_open()) {
-    std::cout << "Fail to open result file: " << FLAGS_result_path << std::endl;
-  }
-  ofs << ss.str();
-  ofs.close();
+  StoreBenchmarkResult(ss.str());
 }
 
 }  // namespace lite_api

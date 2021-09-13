@@ -32,7 +32,7 @@ DEFINE_int32(repeats, 1, repeats_msg);
 DEFINE_double(run_delay, -1.0, run_delay_msg);
 DEFINE_int32(power_mode, 0, power_mode_msg);
 DEFINE_int32(threads, 1, threads_msg);
-DEFINE_string(result_path, "result.txt", result_path_msg);
+DEFINE_string(result_path, "", result_path_msg);
 
 // Backend options
 DEFINE_string(backend, "", backend_msg);

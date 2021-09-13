@@ -26,7 +26,7 @@
 #include "lite/api/tools/flags.h"
 #include "lite/api/tools/opt_base.h"
 #include "lite/core/device_info.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 #include "lite/utils/model_util.h"
 #include "lite/utils/string.h"
 
@@ -38,7 +38,7 @@ void Run(const std::string& model_file,
          const std::vector<std::vector<int64_t>>& input_shape);
 
 #ifdef __ANDROID__
-std::string get_device_info() {
+std::string GetDeviceInfo() {
   auto get_cmd_result = [](const std::string cmd) -> std::string {
     FILE* pipe = popen(cmd.c_str(), "r");
     if (!pipe) {
@@ -66,6 +66,18 @@ std::string get_device_info() {
   return ret;
 }
 #endif  // __ANDROID__
+
+void StoreBenchmarkResult(const std::string res) {
+  if (!FLAGS_result_path.empty()) {
+    std::ofstream fs(FLAGS_result_path, std::ios::app);
+    if (!fs.is_open()) {
+      std::cerr << "Fail to open result file: " << FLAGS_result_path
+                << std::endl;
+    }
+    fs << res;
+    fs.close();
+  }
+}
 
 bool CheckFlagsValid() {
   bool ret = true;
@@ -112,7 +124,7 @@ bool CheckFlagsValid() {
 }
 
 const std::string PrintUsage() {
-  STL::stringstream ss;
+  std::stringstream ss;
   ss << "\nNote: \n"
         "  If load the optimized model, set --optimized_model_path. "
         "\n"
@@ -129,12 +141,12 @@ const std::string PrintUsage() {
         "--model_file=/data/local/tmp/mobilenetv1/model "
         "--param_file=/data/local/tmp/mobilenetv1/params "
         "--input_shape=1,3,224,224 --backend=arm \n\n"
-        "For example (Linux): \n"
-        "  You should add the directory of libmklml_intel.so to "
-        "LD_LIBRARY_PATH before running benchmark_bin as following because "
-        "benchmark_bin on Linux is dependent on libmklml_intel.so. \n"
+        "For example (Linux/OSX): \n"
+        "  You should add the directory of libmklml_intel.so/libmklml.dylib. "
+        "to LD_LIBRARY_PATH before running benchmark_bin as following because "
+        "benchmark_bin on Linux is dependent on it. \n"
         "  export "
-        "LD_LIBRARY_PATH=./build.lite.x86_tests/third_party/install/mklml/lib/"
+        "LD_LIBRARY_PATH=./build.lite.linux*/third_party/install/mklml/lib/"
         ":$LD_LIBRARY_PATH \n"
         "  For optimized model : ./benchmark_bin "
         "--optimized_model_path=/path/to/mbilenetv1_opt.nb "
@@ -224,7 +236,7 @@ void OutputOptModel(const std::string& save_optimized_model_path) {
 
   opt.Run();
 
-  STL::stringstream ss;
+  std::stringstream ss;
   ss << "\n======= Opt Info =======\n";
   ss << "Load paddle model from "
      << (FLAGS_uncombined_model_dir.empty()
@@ -234,12 +246,8 @@ void OutputOptModel(const std::string& save_optimized_model_path) {
   ss << "Save optimized model to " << save_optimized_model_path + ".nb"
      << std::endl;
   std::cout << ss.str() << std::endl;
-  std::ofstream ofs(FLAGS_result_path, std::ios::app);
-  if (!ofs.is_open()) {
-    std::cerr << "Fail to open result file: " << FLAGS_result_path << std::endl;
-  }
-  ofs << ss.str();
-  ofs.close();
+
+  StoreBenchmarkResult(ss.str());
 }
 
 }  // namespace lite_api
