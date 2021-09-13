@@ -108,6 +108,10 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
         case NNADAPTER_MAX_POOL_2D:
           ConvertPool2D(operation);
           break;
+        case NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D:
+        case NNADAPTER_ADAPTIVE_MAX_POOL_2D:
+          ConvertAdaptivePool2D(operation);
+          break;
         case NNADAPTER_CONCAT:
           ConvertConcat(operation);
           break;
@@ -119,6 +123,9 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
           break;
         case NNADAPTER_CONV_2D:
           ConvertConv2D(operation);
+          break;
+        case NNADAPTER_CONV_2D_TRANSPOSE:
+          ConvertConv2DTranspose(operation);
           break;
         case NNADAPTER_FULLY_CONNECTED:
           ConvertFullyConnected(operation);
@@ -134,6 +141,9 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
         case NNADAPTER_EXP:
         case NNADAPTER_LOG:
           ConvertActivation(operation);
+          break;
+        case NNADAPTER_PRELU:
+          ConvertPRelu(operation);
           break;
         case NNADAPTER_RESHAPE:
           ConvertReshape(operation);

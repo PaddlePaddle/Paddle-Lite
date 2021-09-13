@@ -21,7 +21,7 @@
 #include <string>
 #include <vector>
 #include "lite/api/cxx_api.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 #include "lite/utils/timer.h"
 
 // for eval

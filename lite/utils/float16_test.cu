@@ -15,7 +15,7 @@ limitations under the License. */
 #include <bitset>
 #include <iostream>
 #include <typeindex>
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 #define ARITHMETIC_KERNEL(op_type, sign)                                 \
   __global__ void op_type(const half* in1, const half* in2, half* out) { \

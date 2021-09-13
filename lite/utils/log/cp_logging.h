@@ -21,10 +21,10 @@
 
 #if defined(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || \
     defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON)
-#include "lite/utils/logging.h"
+#include "lite/utils/log/logging.h"
 #else
 #ifndef LITE_WITH_LOG
-#include "lite/utils/logging.h"
+#include "lite/utils/log/logging.h"
 #else
 #include <glog/logging.h>
 #endif

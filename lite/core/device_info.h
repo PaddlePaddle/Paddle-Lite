@@ -20,7 +20,7 @@
 #include "lite/api/paddle_api.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/core/tensor.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 #include "lite/utils/macros.h"
 
 #ifdef LITE_WITH_METAL

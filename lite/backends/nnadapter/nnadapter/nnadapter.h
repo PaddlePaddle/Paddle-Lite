@@ -148,6 +148,50 @@ typedef enum {
   NNADAPTER_ABS,
 
   /**
+ * Applies adaptive 2-D average pooling across the input according to input and
+ * output size.
+ *
+ * Inputs:
+ * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
+ * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+ * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor
+ * with shape [N, C_in, H_in, W_in].
+ * * 1: output_shape, A NNADAPTER_TENSOR_INT32 or
+ * NNADAPTER_TENSOR_INT64 tensor, with shape [2], with value [H_out, H_out].
+ *
+ * Outputs:
+ * * 0: output, A tensor with the same shape and type as input.
+ *
+ * Available since version 1.
+ */
+  NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D,
+
+  /**
+   * Applies adaptive 2-D max pooling across the input according to input and
+   * output size.
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor
+   * with shape [N, C_in, H_in, W_in].
+   * * 1: output_shape, A NNADAPTER_TENSOR_INT32 or
+   * NNADAPTER_TENSOR_INT64 tensor, with shape [2], with value [H_out, H_out].
+   * * 2: return_indices, A NNADAPTER_BOOL8 scalar, whether to return index of
+   * output. Defaults to false
+   * * 3: return_indices_dtype, A NNADAPTER_INT32 scalar, the value of
+   * NNADAPTER_TENSOR_INT32 or
+   * NNADAPTER_TENSOR_INT64. Specifies the dtype of the indices.
+   * Outputs:
+   * * 0: output, A tensor with the same shape and type as input.
+   * * 1: indices, A NNADAPTER_TENSOR_INT64 tensor, with the same shape as
+   * output, indicates the indices of the current feature map.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_ADAPTIVE_MAX_POOL_2D,
+
+  /**
    * Performs element-wise binary addition(with Numpy-style broadcasting
    * https://numpy.org/doc/stable/user/basics.broadcasting.html).
    *
@@ -884,6 +928,26 @@ typedef enum {
    * Available since version 1.
    */
   NNADAPTER_POW,
+
+  /**
+   * Applies the prelu activation to the input tensor. The output is calculated
+   * using this formula:
+   * output = input, if input >=0;
+   * output = slope * input, if input < 0;
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32 or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor with shape [N, C, ...].
+   * * 1: slope, a tensor, with shape [1] or [C].
+   * 1) If input's type is NNADAPTER_TENSOR_FLOAT32, its type must be the same
+   * type.
+   *
+   * Outputs:
+   * * 0: output, a tensor with the same shape and type as input.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_PRELU,
 
   /**
   * Outputs a 1-D Tensor with spaced values within a given interval.

@@ -1,4 +1,4 @@
-// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,15 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#include <gtest/gtest.h>
+#include "lite/utils/log/cp_logging.h"
 
 namespace paddle {
 namespace lite {
 
-// The Index of first Block in Program. also called root block.
-constexpr int kRootBlockIdx = 0;
-// The Parent Index of root Block, this block does not exist.
-constexpr int kNoneBlockIdx = -1;
+TEST(logging, basic) {
+  CHECK_EQ(1, 1) << "error";
+  CHECK_EQ(0 + 1, 1) << "error";
+  CHECK_GT(12, 1);
+
+  int a;
+  CHECK(&a);
+}
 
 }  // namespace lite
 }  // namespace paddle

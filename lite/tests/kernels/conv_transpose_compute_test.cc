@@ -403,7 +403,24 @@ void TestConvDepthWiseS2(Place place, float abs_error = 2e-5) {
 TEST(Conv_transpose, precision) {
   float abs_error = 2e-5;
   Place place;
-#if defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+  TestConvTransposeKsize(place, abs_error);
+  TestConvTransposeStrides(place, abs_error);
+  TestConvTransposePaddings(place, abs_error);
+  // TestConvTransposeGroups(place, abs_error);
+  TestConvTransposeDilations(place, abs_error);
+  TestConvTransposePaddingAlgorithm(place, abs_error);
+  TestConvTransposeOutputSize(place, abs_error);
+  TestConvTransposeOutputPadding(place, abs_error);
+  // TestConvTransposeBiasRelu(place, abs_error);
+  return;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 5e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_ARM)
