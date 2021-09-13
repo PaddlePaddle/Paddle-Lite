@@ -127,6 +127,9 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
         case NNADAPTER_CONV_2D_TRANSPOSE:
           ConvertConv2DTranspose(operation);
           break;
+        case NNADAPTER_MAT_MUL:
+          ConvertMatMul(operation);
+          break;
         case NNADAPTER_FULLY_CONNECTED:
           ConvertFullyConnected(operation);
           break;

@@ -34,11 +34,15 @@ int PrepareMatMul(hal::Operation* operation) {
       const bool transpose_y) -> std::vector<int32_t> {
     NNADAPTER_CHECK_GE(x_shape.size(), 1UL);
     NNADAPTER_CHECK_GE(y_shape.size(), 1UL);
+    bool squeeze_first = false;
+    bool squeeze_last = false;
     if (x_shape.size() == 1) {
       x_shape.insert(x_shape.begin(), 1);
+      squeeze_first = true;
     }
     if (y_shape.size() == 1) {
       y_shape.push_back(1);
+      squeeze_last = true;
     }
     auto x_size = x_shape.size();
     auto y_size = y_shape.size();
@@ -73,14 +77,25 @@ int PrepareMatMul(hal::Operation* operation) {
     } else {
       out_shape.push_back(y_shape.back());
     }
+    if (squeeze_first) {
+      NNADAPTER_CHECK_EQ(*out_shape.begin(), 1);
+      out_shape.erase(out_shape.begin());
+    }
+    if (squeeze_last) {
+      NNADAPTER_CHECK_EQ(*out_shape.end(), 1);
+      out_shape.erase(out_shape.end());
+    }
+    if (out_shape.empty()) {
+      out_shape.push_back(1);
+    }
     return out_shape;
   };
 
-  const auto& x_type = x_operand->type;
+  const auto x_type = x_operand->type;
   auto x_size = x_type.dimension_count;
   auto x_shape =
       std::vector<int32_t>(x_type.dimensions, x_type.dimensions + x_size);
-  const auto& y_type = y_operand->type;
+  const auto y_type = y_operand->type;
   auto y_size = y_type.dimension_count;
   auto y_shape =
       std::vector<int32_t>(y_type.dimensions, y_type.dimensions + y_size);
@@ -99,9 +114,11 @@ int PrepareMatMul(hal::Operation* operation) {
     y_shape = std::vector<int32_t>(y_type.dynamic_dimensions[i],
                                    y_type.dynamic_dimensions[i] + y_size);
     out_shape = infer_output_shape(x_shape, y_shape, transpose_x, transpose_y);
+    NNADAPTER_CHECK_EQ(out_type.dimension_count,
+                       static_cast<uint32_t>(out_shape.size()));
     memcpy(out_type.dynamic_dimensions[i],
            out_shape.data(),
-           out_type.dimension_count);
+           out_shape.size() * sizeof(int32_t));
   }
 
   out_type.precision = x_type.precision;

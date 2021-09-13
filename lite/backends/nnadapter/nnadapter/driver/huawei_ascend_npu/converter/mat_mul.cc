@@ -22,6 +22,9 @@ namespace huawei_ascend_npu {
 
 int Program::ConvertMatMul(hal::Operation* operation) {
   MAT_MUL_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  // TODO(zhupengyang): support by reshape or squeeze
+  NNADAPTER_CHECK_NE(x_operand->type.dimension_count, 1);
+  NNADAPTER_CHECK_NE(y_operand->type.dimension_count, 1);
 
   // Convert to GE operators
   auto x_operator = GetMappedOperator(x_operand);

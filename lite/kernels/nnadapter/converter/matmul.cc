@@ -53,23 +53,22 @@ int ConvertMatmul(Converter* converter, OpInfo* op, Scope* scope) {
   auto output_operand = converter->AddOutputOperand(out_name);
 
   // Mat_mul operation
-  std::vector<NNAdapterOperand*> input_operands{
-      x_operand, y_operand, transpose_x_operand, transpose_y_operand};
-  std::vector<NNAdapterOperand*> output_operands{output_operand};
-  converter->AddOperation(NNADAPTER_MAT_MUL, &input_operands, &output_operands);
+  converter->AddOperation(
+      NNADAPTER_MAT_MUL,
+      {x_operand, y_operand, transpose_x_operand, transpose_y_operand},
+      {output_operand});
 
   // Use elementwise_add to calculate alpha
   float alpha = op->GetAttr<float>("alpha");
   if (std::abs(alpha - 1.f) > 1e-5) {
-    auto add_y_operand = converter->AddConstantOperand(1.f);
+    auto add_y_operand = converter->AddConstantOperand(alpha);
     auto add_fuse_code_operand = converter->AddConstantOperand(
         static_cast<int32_t>(NNADAPTER_FUSED_NONE));
     auto add_out_operand = converter->AddOutputOperand(out_name);
-    std::vector<NNAdapterOperand*> add_input_operands{
-        output_operand, add_y_operand, add_fuse_code_operand};
-    std::vector<NNAdapterOperand*> output_operands = {add_out_operand};
     converter->AddOperation(
-        NNADAPTER_MUL, &add_input_operands, &output_operands);
+        NNADAPTER_MUL,
+        {output_operand, add_y_operand, add_fuse_code_operand},
+        {add_out_operand});
   }
   return NO_ERROR;
 }
