@@ -252,7 +252,7 @@ void MetalImage::CopyFromNCHW(const SP* src) {
                 }
             }
         } else if (tensor_dim_.size() == 3) {
-            LOG(FATAL) << "MetalImage: CopyFromNCHW - tensor dim = 3";
+            // LOG(FATAL) << "MetalImage: CopyFromNCHW - tensor dim = 3";
         } else {
             // dimension bellow 4 similar to texture desc
             size_t n = dim_[0];
