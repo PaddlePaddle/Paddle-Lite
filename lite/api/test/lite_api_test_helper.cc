@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/api/lite_api_test_helper.h"
+#include "lite/api/test/lite_api_test_helper.h"
 #include <vector>
 
 DEFINE_string(model_dir, "", "");

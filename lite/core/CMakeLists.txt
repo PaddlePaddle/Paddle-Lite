@@ -61,7 +61,7 @@ if (LITE_WITH_NPU OR LITE_WITH_XTCL OR LITE_WITH_BM OR LITE_WITH_RKNPU OR LITE_W
 endif ()
 
 lite_cc_library(core SRCS ${CORE_SRC}
-  DEPS target_wrapper_host place fbs_headers ${CORE_DEPS} ops
+  DEPS target_wrapper_host fbs_headers ${CORE_DEPS}
   X86_DEPS eigen3
   CUDA_DEPS target_wrapper_cuda cuda_context
   XPU_DEPS target_wrapper_xpu
@@ -116,11 +116,11 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
   return ()
 endif ()
 
-lite_cc_test (test_scope SRCS scope_test.cc DEPS core)
-lite_cc_test (test_kernel SRCS kernel_test.cc DEPS core utils)
-lite_cc_test (test_op SRCS op_lite_test.cc DEPS core)
-lite_cc_test (test_tensor SRCS lite_tensor_test.cc DEPS core)
-lite_cc_test (test_type_system SRCS type_system_test.cc DEPS core utils)
-lite_cc_test (test_types SRCS types_test.cc DEPS core)
-lite_cc_test (test_memory SRCS memory_test.cc DEPS core)
-lite_cc_test (test_context SRCS context_test.cc DEPS core)
+lite_cc_test (test_scope SRCS scope_test.cc)
+lite_cc_test (test_kernel SRCS kernel_test.cc)
+lite_cc_test (test_op SRCS op_lite_test.cc)
+lite_cc_test (test_tensor SRCS lite_tensor_test.cc)
+lite_cc_test (test_type_system SRCS type_system_test.cc)
+lite_cc_test (test_types SRCS types_test.cc)
+lite_cc_test (test_memory SRCS memory_test.cc)
+lite_cc_test (test_context SRCS context_test.cc)
