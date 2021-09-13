@@ -300,9 +300,9 @@ void test_conv_int8(const DDim& dim_in,
       Tensor tout_basic_fp32;
       Tensor tout_basic_int8;
 
-      // paddle::lite::fill_tensor_rand(*param_int8_out.x, -127, 127);
-      LOG(INFO) << "const: ";
-      paddle::lite::fill_tensor_const(*param_int8_out.x, 1);
+      paddle::lite::fill_tensor_rand(*param_int8_out.x, 0, 10);
+      // LOG(INFO) << "const: ";
+      // paddle::lite::fill_tensor_const(*param_int8_out.x, 1);
       param_fp32_out.x->CopyDataFrom(*param_int8_out.x);
 
       auto din_fp32 = tin_fp32.mutable_data<float>();

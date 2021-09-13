@@ -169,7 +169,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
 }
 
 #define CONV_DW_INT8_PARAM                                              \
-  o_data, i_data, w_data, b_data, bs, ic, iw, ih, oh, ow, pad_h, pad_w, \
+  o_data, i_data, w_data, b_data, bs, ic, ih, iw, oh, ow, pad_h, pad_w, \
       flag_act, alpha, w_scale_.data(), &ctx
 template <>
 void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {

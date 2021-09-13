@@ -92,148 +92,148 @@ namespace math {
   vin_12 = _mm_packs_epi16(v8_16_0, v8_16_1);                               \
   vc = _mm_packs_epi16(v11_16_0, v11_16_1);                                 \
   /* store */                                                               \
-  _mm_storeu_si128(reinterpret_cast<__m128i*>(dout_ptr), vzero0);           \
-  _mm_storeu_si128(reinterpret_cast<__m128i*>(dout_ptr + 16), vzero1);      \
-  _mm_storeu_si128(reinterpret_cast<__m128i*>(dout_ptr + 32), vzero2);      \
-  _mm_storeu_si128(reinterpret_cast<__m128i*>(dout_ptr + 48), vin_00);      \
-  _mm_storeu_si128(reinterpret_cast<__m128i*>(dout_ptr + 64), vin_01);      \
-  _mm_storeu_si128(reinterpret_cast<__m128i*>(dout_ptr + 80), vin_02);      \
-  _mm_storeu_si128(reinterpret_cast<__m128i*>(dout_ptr + 96), vin_10);      \
-  _mm_storeu_si128(reinterpret_cast<__m128i*>(dout_ptr + 112), vin_11);     \
-  _mm_storeu_si128(reinterpret_cast<__m128i*>(dout_ptr + 128), vin_12);     \
-  _mm_storeu_si128(reinterpret_cast<__m128i*>(dout_ptr + 144), va);         \
-  _mm_storeu_si128(reinterpret_cast<__m128i*>(dout_ptr + 160), vb);         \
-  _mm_storeu_si128(reinterpret_cast<__m128i*>(dout_ptr + 176), vc);
+  _mm_storeu_si128(reinterpret_cast<__m128i*>(doutr), vzero0);              \
+  _mm_storeu_si128(reinterpret_cast<__m128i*>(doutr + 16), vzero1);         \
+  _mm_storeu_si128(reinterpret_cast<__m128i*>(doutr + 32), vzero2);         \
+  _mm_storeu_si128(reinterpret_cast<__m128i*>(doutr + 48), vin_00);         \
+  _mm_storeu_si128(reinterpret_cast<__m128i*>(doutr + 64), vin_01);         \
+  _mm_storeu_si128(reinterpret_cast<__m128i*>(doutr + 80), vin_02);         \
+  _mm_storeu_si128(reinterpret_cast<__m128i*>(doutr + 96), vin_10);         \
+  _mm_storeu_si128(reinterpret_cast<__m128i*>(doutr + 112), vin_11);        \
+  _mm_storeu_si128(reinterpret_cast<__m128i*>(doutr + 128), vin_12);        \
+  _mm_storeu_si128(reinterpret_cast<__m128i*>(doutr + 144), va);            \
+  _mm_storeu_si128(reinterpret_cast<__m128i*>(doutr + 160), vb);            \
+  _mm_storeu_si128(reinterpret_cast<__m128i*>(doutr + 176), vc);
 
-#define RIGHT_PROCESS(dr0, dr1, dr2, dout_ptr) \
-  for (; w < win_new - 2; w++) {               \
-    *dout_ptr++ = dr0[0];                      \
-    *dout_ptr++ = dr0[1];                      \
-    *dout_ptr++ = dr0[2];                      \
-    *dout_ptr++ = 0;                           \
-    *dout_ptr++ = dr1[0];                      \
-    *dout_ptr++ = dr1[1];                      \
-    *dout_ptr++ = dr1[2];                      \
-    *dout_ptr++ = 0;                           \
-    *dout_ptr++ = dr2[0];                      \
-    *dout_ptr++ = dr2[1];                      \
-    *dout_ptr++ = dr2[2];                      \
-    *dout_ptr++ = 0;                           \
-    *dout_ptr++ = 0;                           \
-    *dout_ptr++ = 0;                           \
-    *dout_ptr++ = 0;                           \
-    *dout_ptr++ = 0;                           \
-    dr0++;                                     \
-    dr1++;                                     \
-    dr2++;                                     \
-  }                                            \
-  if (w == win_new - 2) {                      \
-    *dout_ptr++ = dr0[0];                      \
-    *dout_ptr++ = dr0[1];                      \
-    *dout_ptr++ = 0;                           \
-    *dout_ptr++ = 0;                           \
-    *dout_ptr++ = dr1[0];                      \
-    *dout_ptr++ = dr1[1];                      \
-    *dout_ptr++ = 0;                           \
-    *dout_ptr++ = 0;                           \
-    *dout_ptr++ = dr2[0];                      \
-    *dout_ptr++ = dr2[1];                      \
-    *dout_ptr++ = 0;                           \
-    *dout_ptr++ = 0;                           \
-    *dout_ptr++ = 0;                           \
-    *dout_ptr++ = 0;                           \
-    *dout_ptr++ = 0;                           \
-    *dout_ptr++ = 0;                           \
-    dr0++;                                     \
-    dr1++;                                     \
-    dr2++;                                     \
-  }                                            \
-  if (w == win_new - 1) {                      \
-    *dout_ptr++ = dr0[0];                      \
-    *dout_ptr++ = 0;                           \
-    *dout_ptr++ = 0;                           \
-    *dout_ptr++ = 0;                           \
-    *dout_ptr++ = dr1[0];                      \
-    *dout_ptr++ = 0;                           \
-    *dout_ptr++ = 0;                           \
-    *dout_ptr++ = 0;                           \
-    *dout_ptr++ = dr2[0];                      \
-    *dout_ptr++ = 0;                           \
-    *dout_ptr++ = 0;                           \
-    *dout_ptr++ = 0;                           \
-    *dout_ptr++ = 0;                           \
-    *dout_ptr++ = 0;                           \
-    *dout_ptr++ = 0;                           \
-    *dout_ptr++ = 0;                           \
-    dr0++;                                     \
-    dr1++;                                     \
-    dr2++;                                     \
+#define RIGHT_PROCESS(dr0, dr1, dr2, doutr) \
+  for (; w < win_new - 2; w++) {            \
+    *doutr++ = dr0[0];                      \
+    *doutr++ = dr0[1];                      \
+    *doutr++ = dr0[2];                      \
+    *doutr++ = 0;                           \
+    *doutr++ = dr1[0];                      \
+    *doutr++ = dr1[1];                      \
+    *doutr++ = dr1[2];                      \
+    *doutr++ = 0;                           \
+    *doutr++ = dr2[0];                      \
+    *doutr++ = dr2[1];                      \
+    *doutr++ = dr2[2];                      \
+    *doutr++ = 0;                           \
+    *doutr++ = 0;                           \
+    *doutr++ = 0;                           \
+    *doutr++ = 0;                           \
+    *doutr++ = 0;                           \
+    dr0++;                                  \
+    dr1++;                                  \
+    dr2++;                                  \
+  }                                         \
+  if (w == win_new - 2) {                   \
+    *doutr++ = dr0[0];                      \
+    *doutr++ = dr0[1];                      \
+    *doutr++ = 0;                           \
+    *doutr++ = 0;                           \
+    *doutr++ = dr1[0];                      \
+    *doutr++ = dr1[1];                      \
+    *doutr++ = 0;                           \
+    *doutr++ = 0;                           \
+    *doutr++ = dr2[0];                      \
+    *doutr++ = dr2[1];                      \
+    *doutr++ = 0;                           \
+    *doutr++ = 0;                           \
+    *doutr++ = 0;                           \
+    *doutr++ = 0;                           \
+    *doutr++ = 0;                           \
+    *doutr++ = 0;                           \
+    dr0++;                                  \
+    dr1++;                                  \
+    dr2++;                                  \
+  }                                         \
+  if (w == win_new - 1) {                   \
+    *doutr++ = dr0[0];                      \
+    *doutr++ = 0;                           \
+    *doutr++ = 0;                           \
+    *doutr++ = 0;                           \
+    *doutr++ = dr1[0];                      \
+    *doutr++ = 0;                           \
+    *doutr++ = 0;                           \
+    *doutr++ = 0;                           \
+    *doutr++ = dr2[0];                      \
+    *doutr++ = 0;                           \
+    *doutr++ = 0;                           \
+    *doutr++ = 0;                           \
+    *doutr++ = 0;                           \
+    *doutr++ = 0;                           \
+    *doutr++ = 0;                           \
+    *doutr++ = 0;                           \
+    dr0++;                                  \
+    dr1++;                                  \
+    dr2++;                                  \
   }
 
-#define LEFT_PROCESS(dr0, dr1, dr2, dout_ptr) \
-  if (win_new >= 2) {                         \
-    *dout_ptr++ = 0;                          \
-    *dout_ptr++ = dr0[0];                     \
-    *dout_ptr++ = dr0[1];                     \
-    *dout_ptr++ = 0;                          \
-    *dout_ptr++ = 0;                          \
-    *dout_ptr++ = dr1[0];                     \
-    *dout_ptr++ = dr1[1];                     \
-    *dout_ptr++ = 0;                          \
-    *dout_ptr++ = 0;                          \
-    *dout_ptr++ = dr2[0];                     \
-    *dout_ptr++ = dr2[1];                     \
-    *dout_ptr++ = 0;                          \
-    *dout_ptr++ = 0;                          \
-    *dout_ptr++ = 0;                          \
-    *dout_ptr++ = 0;                          \
-    *dout_ptr++ = 0;                          \
-    w++;                                      \
-  } else {                                    \
-    *dout_ptr++ = 0;                          \
-    *dout_ptr++ = dr0[0];                     \
-    *dout_ptr++ = 0;                          \
-    *dout_ptr++ = 0;                          \
-    *dout_ptr++ = 0;                          \
-    *dout_ptr++ = dr1[0];                     \
-    *dout_ptr++ = 0;                          \
-    *dout_ptr++ = 0;                          \
-    *dout_ptr++ = 0;                          \
-    *dout_ptr++ = dr2[0];                     \
-    *dout_ptr++ = 0;                          \
-    *dout_ptr++ = 0;                          \
-    *dout_ptr++ = 0;                          \
-    *dout_ptr++ = 0;                          \
-    *dout_ptr++ = 0;                          \
-    *dout_ptr++ = 0;                          \
-    w++;                                      \
+#define LEFT_PROCESS(dr0, dr1, dr2, doutr) \
+  if (win_new >= 2) {                      \
+    *doutr++ = 0;                          \
+    *doutr++ = dr0[0];                     \
+    *doutr++ = dr0[1];                     \
+    *doutr++ = 0;                          \
+    *doutr++ = 0;                          \
+    *doutr++ = dr1[0];                     \
+    *doutr++ = dr1[1];                     \
+    *doutr++ = 0;                          \
+    *doutr++ = 0;                          \
+    *doutr++ = dr2[0];                     \
+    *doutr++ = dr2[1];                     \
+    *doutr++ = 0;                          \
+    *doutr++ = 0;                          \
+    *doutr++ = 0;                          \
+    *doutr++ = 0;                          \
+    *doutr++ = 0;                          \
+    w++;                                   \
+  } else {                                 \
+    *doutr++ = 0;                          \
+    *doutr++ = dr0[0];                     \
+    *doutr++ = 0;                          \
+    *doutr++ = 0;                          \
+    *doutr++ = 0;                          \
+    *doutr++ = dr1[0];                     \
+    *doutr++ = 0;                          \
+    *doutr++ = 0;                          \
+    *doutr++ = 0;                          \
+    *doutr++ = dr2[0];                     \
+    *doutr++ = 0;                          \
+    *doutr++ = 0;                          \
+    *doutr++ = 0;                          \
+    *doutr++ = 0;                          \
+    *doutr++ = 0;                          \
+    *doutr++ = 0;                          \
+    w++;                                   \
   }
-#define LEFT_PROCESS_MORE(dr0, dr1, dr2, dout_ptr) \
-  for (; w < pad_w - 2; w++) {                     \
-    memset(dout_ptr, 0, sizeof(int8_t) * 16);      \
-    dout_ptr += 16;                                \
-  }                                                \
-  /* pad_w = 2 */                                  \
-  *dout_ptr++ = 0;                                 \
-  *dout_ptr++ = 0;                                 \
-  *dout_ptr++ = dr0[0];                            \
-  *dout_ptr++ = 0;                                 \
-  *dout_ptr++ = 0;                                 \
-  *dout_ptr++ = 0;                                 \
-  *dout_ptr++ = dr1[0];                            \
-  *dout_ptr++ = 0;                                 \
-  *dout_ptr++ = 0;                                 \
-  *dout_ptr++ = 0;                                 \
-  *dout_ptr++ = dr2[0];                            \
-  *dout_ptr++ = 0;                                 \
-  *dout_ptr++ = 0;                                 \
-  *dout_ptr++ = 0;                                 \
-  *dout_ptr++ = 0;                                 \
-  *dout_ptr++ = 0;                                 \
-  w++;                                             \
-  /* pad_w = 1 */                                  \
-  LEFT_PROCESS(dr0, dr1, dr2, dout_ptr)
-#define MID_PROCESS(dr0, dr1, dr2, dout_ptr)                                 \
+#define LEFT_PROCESS_MORE(dr0, dr1, dr2, doutr) \
+  for (; w < pad_w - 2; w++) {                  \
+    memset(doutr, 0, sizeof(int8_t) * 16);      \
+    doutr += 16;                                \
+  }                                             \
+  /* pad_w = 2 */                               \
+  *doutr++ = 0;                                 \
+  *doutr++ = 0;                                 \
+  *doutr++ = dr0[0];                            \
+  *doutr++ = 0;                                 \
+  *doutr++ = 0;                                 \
+  *doutr++ = 0;                                 \
+  *doutr++ = dr1[0];                            \
+  *doutr++ = 0;                                 \
+  *doutr++ = 0;                                 \
+  *doutr++ = 0;                                 \
+  *doutr++ = dr2[0];                            \
+  *doutr++ = 0;                                 \
+  *doutr++ = 0;                                 \
+  *doutr++ = 0;                                 \
+  *doutr++ = 0;                                 \
+  *doutr++ = 0;                                 \
+  w++;                                          \
+  /* pad_w = 1 */                               \
+  LEFT_PROCESS(dr0, dr1, dr2, doutr)
+#define MID_PROCESS(dr0, dr1, dr2, doutr)                                    \
   for (; w < win_new - 14; w += 12) {                                        \
     __m128i vin_r0 = _mm_loadu_si128(reinterpret_cast<__m128i const*>(dr0)); \
     __m128i vin_r1 = _mm_loadu_si128(reinterpret_cast<__m128i const*>(dr1)); \
@@ -271,9 +271,9 @@ namespace math {
     dr0 += 12;                                                               \
     dr1 += 12;                                                               \
     dr2 += 12;                                                               \
-    dout_ptr += 192;                                                         \
+    doutr += 192;                                                            \
   }
-#define MID_PROCESS_PAD_1(dr0, dr1, dout_ptr)                                \
+#define MID_PROCESS_PAD_1(dr0, dr1, doutr)                                   \
   for (; w < win_new - 14; w += 12) {                                        \
     __m128i vzero0 = _mm_set1_epi8(0);                                       \
     __m128i vzero1 = _mm_set1_epi8(0);                                       \
@@ -302,7 +302,7 @@ namespace math {
       vzero0, vin_00, vin_10, vzero1, vin_01, vin_11, vzero2, vin_02, vin_12) \
   dr0 += 12;                                                                  \
   dr1 += 12;                                                                  \
-  dout_ptr += 192;                                                            \
+  doutr += 192;                                                               \
   }
 
 #define BOT_MID_PAD_1                                                         \
@@ -311,9 +311,10 @@ namespace math {
       vin_00, vin_10, vzero0, vin_01, vin_11, vzero1, vin_02, vin_12, vzero2) \
   dr0 += 12;                                                                  \
   dr1 += 12;                                                                  \
-  dout_ptr += 192;
+  doutr += 192;                                                               \
+//}
 
-#define MID_PROCESS_PAD_2(dr0, dout_ptr)                                     \
+#define MID_PROCESS_PAD_2(dr0, doutr)                                        \
   for (; w < win_new - 14; w += 12) {                                        \
     __m128i vzero0 = _mm_set1_epi8(0);                                       \
     __m128i vzero1 = _mm_set1_epi8(0);                                       \
@@ -336,9 +337,9 @@ namespace math {
 #define TOP_MID_PAD_2                                                         \
   /* a0b0c0d0, a1b1c1d1 -> a0a1b0b1c0d0d0d1 */                                \
   DATA_PACK(                                                                  \
-      vzero0, vin_10, vin_00, vzero1, vin_11, vin_01, vzero2, vin_12, vin_02) \
+      vzero0, vin_00, vin_10, vzero1, vin_01, vin_11, vzero2, vin_02, vin_12) \
   dr0 += 12;                                                                  \
-  dout_ptr += 192;                                                            \
+  doutr += 192;                                                               \
   }
 
 #define BOT_MID_PAD_2                                                         \
@@ -346,7 +347,8 @@ namespace math {
   DATA_PACK(                                                                  \
       vin_00, vin_10, vzero0, vin_01, vin_11, vzero1, vin_02, vin_12, vzero2) \
   dr0 += 12;                                                                  \
-  dout_ptr += 192;
+  doutr += 192;                                                               \
+//}
 
 // a0b0c0d0 a1b1c1d1 a2b2c2d2 -> a0a1a20 b0b1b20 c0c1c20 d0d1d20
 inline void transpose3x4_4x4_ps(__m128i& row0,  // NOLINT
@@ -389,7 +391,7 @@ void prepack_input_im2col_s1_int8(const int8_t* din,
   const int8_t* din_ptr = din;
   int win_new = win + pad_w;
   int hin_new = hin + pad_h;
-  __m256i voffset = _mm256_set1_epi16(128);
+  __m256i voffset = _mm256_set1_epi16(0);
   __m128i vb1 =
       _mm_set_epi8(-127, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1);
   __m128i vb2 =
@@ -398,7 +400,6 @@ void prepack_input_im2col_s1_int8(const int8_t* din,
       -127, 11, 10, 9, -127, 8, 7, 6, -127, 5, 4, 3, -127, 2, 1, 0);
   int8_t zero_ptr[32];
   memset(zero_ptr, 0, sizeof(int8_t) * 32);
-  LOG(INFO) << "pad_h: " << pad_h << ", pad_w: " << pad_w;
   if (pad_w == 0) {
     // top
     if (pad_h == 1) {  // top only support pad_h = 0 or 1
@@ -505,11 +506,8 @@ void prepack_input_im2col_s1_int8(const int8_t* din,
     const int8_t* dr1 = din_ptr + win;
     int8_t* doutr = dout_ptr;
     int w = 0;
-    // LOG(INFO) << "win: " << win << ", win_round: " << win_round;
-    // LOG(INFO) << "hin: " << hin << ", hin_round: " << hin_round;
     if (pad_h == 1) {
       auto tmp_ptr = zero_ptr;
-      // LOG(INFO) << "LEFT_PROCESS";
       if (hin >= 2) {
         LEFT_PROCESS(tmp_ptr, dr0, dr1, doutr);
         MID_PROCESS_PAD_1(dr0, dr1, doutr)
@@ -519,16 +517,12 @@ void prepack_input_im2col_s1_int8(const int8_t* din,
           RIGHT_PROCESS(tmp_ptr, dr0, dr1, doutr)
         }
       } else {
-        // printf("dr0: %x \n", dr0);
         LEFT_PROCESS(tmp_ptr, dr0, tmp_ptr, doutr);
-        // printf("-dr0: %x \n", dr0);
         MID_PROCESS_PAD_2(dr0, doutr)
         TOP_MID_PAD_2
-        // printf("--dr0: %x \n", dr0);
         if (w < win_new) {
           tmp_ptr = zero_ptr;
           RIGHT_PROCESS(tmp_ptr, dr0, tmp_ptr, doutr)
-          //  printf("---dr0: %x \n", dr0);
         }
       }
       h++;
@@ -740,38 +734,15 @@ inline void store_data_dtype_8(float* dout,
                                __m256 vbias) {
   // int32 -> fp32
   __m256 vout = _mm256_cvtepi32_ps(vin);
-  LOG(INFO) << "out_8-fp32: ";
-  for (int i = 0; i < 8; i++) {
-    printf("%f ", (reinterpret_cast<float*>(&vout))[i]);
-  }
-  printf("\n");
-  LOG(INFO) << "scale: " << (reinterpret_cast<float*>(&vscale))[0]
-            << "bias: " << (reinterpret_cast<float*>(&vbias))[0];
   // * scale + bias
   __m256 vres = _mm256_fmadd_ps(vout, vscale, vbias);
-  LOG(INFO) << "out_8-fp32*scale + bias: ";
-  for (int i = 0; i < 8; i++) {
-    printf("%f ", (reinterpret_cast<float*>(&vres))[i]);
-  }
-  printf("\n");
   // a0b0c0d0a4b4c4d4 -> a0a4b0b4c0c4d0d4
   __m128 vres_0 = _mm256_extractf128_ps(vres, 0);
   __m128 vres_1 = _mm256_extractf128_ps(vres, 1);
-  LOG(INFO) << "final-0: ";
-  for (int i = 0; i < 4; i++) {
-    printf("%f ", (reinterpret_cast<float*>(&vres_0))[i]);
-  }
-  printf("\n");
-  LOG(INFO) << "final-1: ";
-  for (int i = 0; i < 4; i++) {
-    printf("%f ", (reinterpret_cast<float*>(&vres_1))[i]);
-  }
-  printf("\n");
   // a0a4b0b4
   _mm_storeu_ps(dout, _mm_unpacklo_ps(vres_0, vres_1));
   // c0c4d0d4
   _mm_storeu_ps(dout + 4, _mm_unpackhi_ps(vres_0, vres_1));
-  // LOG(INFO) << "dout: " << dout[0] << ", " << dout[1];
 }
 template <>
 inline void store_data_dtype_8(int8_t* dout,
@@ -781,32 +752,11 @@ inline void store_data_dtype_8(int8_t* dout,
   __m128 vmax = _mm_set1_ps(-127);
   // int32 -> fp32
   __m256 vout = _mm256_cvtepi32_ps(vin);
-  LOG(INFO) << "out_8-fp32: ";
-  for (int i = 0; i < 8; i++) {
-    printf("%f ", (reinterpret_cast<float*>(&vout))[i]);
-  }
-  printf("\n");
   // * scale + bias
   __m256 vres = _mm256_fmadd_ps(vout, vscale, vbias);
-  LOG(INFO) << "out_8-fp32*scale + bias: "
-            << (reinterpret_cast<float*>(&vscale))[0];
-  for (int i = 0; i < 8; i++) {
-    printf("%f ", (reinterpret_cast<float*>(&vres))[i]);
-  }
-  printf("\n");
   // a0b0c0d0a4b4c4d4 -> a0a4b0b4c0c4d0d4
   __m128 vres_0_0 = _mm256_extractf128_ps(vres, 0);
   __m128 vres_1_0 = _mm256_extractf128_ps(vres, 1);
-  LOG(INFO) << "final-0: ";
-  for (int i = 0; i < 4; i++) {
-    printf("%f ", (reinterpret_cast<float*>(&vres_0_0))[i]);
-  }
-  printf("\n");
-  LOG(INFO) << "final-1: ";
-  for (int i = 0; i < 4; i++) {
-    printf("%f ", (reinterpret_cast<float*>(&vres_1_0))[i]);
-  }
-  // printf("\n");
   // -127
   __m128 vres_0 = _mm_blendv_ps(vmax, vres_0_0, _mm_cmpgt_ps(vres_0_0, vmax));
   __m128 vres_1 = _mm_blendv_ps(vmax, vres_1_0, _mm_cmpgt_ps(vres_1_0, vmax));
@@ -815,24 +765,14 @@ inline void store_data_dtype_8(int8_t* dout,
   // c0c4d0d4
   __m128 vout1 = _mm_unpackhi_ps(vres_0, vres_1);
   // fp32 -> int32
-  __m128i v0_i32 = _mm_cvttps_epi32(vout0);
-  __m128i v1_i32 = _mm_cvttps_epi32(vout1);
+  __m128i v0_i32 = _mm_cvtps_epi32(vout0);
+  __m128i v1_i32 = _mm_cvtps_epi32(vout1);
   // int32 -> int16
   __m128i v0_i16 = _mm_packs_epi32(v0_i32, v0_i32);
   __m128i v1_i16 = _mm_packs_epi32(v1_i32, v1_i32);
   // int16 -> int8
   __m128i v0_i8 = _mm_packs_epi16(v0_i16, v0_i16);
   __m128i v1_i8 = _mm_packs_epi16(v1_i16, v1_i16);
-  // LOG(INFO) << "final-0-int8: ";
-  // for (int i = 0; i < 4; i++) {
-  //   printf("%d ", (reinterpret_cast<int8_t*>(&v0_i8))[i]);
-  // }
-  // printf("\n");
-  // LOG(INFO) << "final-1-int8: ";
-  // for (int i = 0; i < 4; i++) {
-  //   printf("%d ", (reinterpret_cast<int8_t*>(&v1_i8))[i]);
-  // }
-  // printf("\n");
   _mm_storel_epi64(reinterpret_cast<__m128i*>(dout),
                    _mm_unpacklo_epi32(v0_i8, v1_i8));
 }
@@ -922,7 +862,6 @@ void conv_3x3s1_dw_int8(Dtype* dout,
   int pre_in_size = hin_round * win_round;
   int cnt = wout >> 3;
   int remain = wout % 8;
-  // LOG(INFO) << "cnt: " << cnt << ", remain: " << remain;
   __m128i vmask = _mm_set_epi8(
       -127, -127, -127, -127, -127, 8, 7, 6, -127, 5, 4, 3, -127, 2, 1, 0);
   __m128i vone = _mm_set1_epi16(1);
@@ -937,24 +876,13 @@ void conv_3x3s1_dw_int8(Dtype* dout,
 
 #pragma omp parallel for
   for (int n = 0; n < omp_num; ++n) {
-    // LOG(INFO) << "n: " << n << ", omp_num: " << omp_num;
     const int8_t* din_batch = din + n * size_in_channel;
     Dtype* dout_batch = dout + n * size_out_channel;
     int now_c = n % chin;
     // im2col data [num, chin, h, w] -> [num, chin, outh, outw, 9 + 7(0)]
     // int8 -> int16 -> +128 ->uint16 -> int8
-    LOG(INFO) << "prepack_input_im2col_s1_int8";
-    for (int i = 0; i < size_in_channel; i++) {
-      printf("%d ", din_batch[i]);
-      if ((i + 1) % win == 0) printf("\n");
-    }
     prepack_input_im2col_s1_int8(
         din_batch, pre_din, pad_w, pad_h, win, hin, win_round, hout);
-    LOG(INFO) << "out: ";
-    for (int i = 0; i < win_round * hout; i++) {
-      printf("%d ", pre_din[i]);
-      if ((i + 1) % 16 == 0) printf("\n");
-    }
     float bias_val = flag_bias ? static_cast<const float>(bias[now_c]) : 0;
     const int8_t* weight_ptr = weights + now_c * 9;
     __m128 vscale = _mm_set1_ps(scale[now_c]);
@@ -964,26 +892,10 @@ void conv_3x3s1_dw_int8(Dtype* dout,
     // w00w01w02w10w11w12w20w21w22w00w01w02..
     __m128i weight_val =
         _mm_loadu_si128(reinterpret_cast<__m128i const*>(weight_ptr));
-    // LOG(INFO) << "ori: ";
-    // for (int i = 0; i < 16; i++){
-    //   printf("%d ", (reinterpret_cast<int8_t*>(&weight_val))[i]);
-    // }
-    // printf("\n");
     // set - w00w01w02-0-w10w11w12-0-w20w21w22-0-0000
     __m128i vw_temp = _mm_shuffle_epi8(weight_val, vmask);
-    // LOG(INFO) << "now: ";
-    // for (int i = 0; i < 16; i++){
-    //   printf("%d ", (reinterpret_cast<int8_t*>(&vw_temp))[i]);
-    // }
-    // printf("\n");
     __m256i vw = _mm256_broadcastsi128_si256(vw_temp);
-    // LOG(INFO) << "vw: ";
-    // for (int i = 0; i < 32; i++){
-    //   printf("%d ", (reinterpret_cast<int8_t*>(&vw))[i]);
-    // }
-    // printf("\n");
     for (int h = 0; h < hout; h++) {
-      // LOG(INFO) << "h: " << h;
       int8_t* pre_din_ptr = pre_din;
       Dtype* dout_ptr = dout_batch;
       for (int w = 0; w < cnt; w++) {
@@ -999,11 +911,6 @@ void conv_3x3s1_dw_int8(Dtype* dout,
         __m256i vout1 = _mm256_set1_epi32(0);
         __m256i vout2 = _mm256_set1_epi32(0);
         __m256i vout3 = _mm256_set1_epi32(0);
-// LOG(INFO) << "vin0: ";
-// for (int i = 0; i < 32; i++) {
-//   printf("%d ", (reinterpret_cast<int8_t*>(&vin0))[i]);
-// }
-// printf("\n");
 #ifdef __AVX512__
         // u8 * s8 -> s32 32x8
         vout0 = _mm256_dpbusd_epi32(vout0, vin0, vw);
@@ -1016,21 +923,11 @@ void conv_3x3s1_dw_int8(Dtype* dout,
         __m256i vsum1 = _mm256_maddubs_epi16(vin1, vw);
         __m256i vsum2 = _mm256_maddubs_epi16(vin2, vw);
         __m256i vsum3 = _mm256_maddubs_epi16(vin3, vw);
-        // LOG(INFO) << "1-int16: ";
-        // for (int i = 0; i < 16; i++) {
-        //   printf("%d ", (reinterpret_cast<int16_t*>(&vsum0))[i]);
-        // }
-        // printf("\n");
         // s16 * s16 = s32
         vout0 = _mm256_madd_epi16(vsum0, vone_l);
         vout1 = _mm256_madd_epi16(vsum1, vone_l);
         vout2 = _mm256_madd_epi16(vsum2, vone_l);
         vout3 = _mm256_madd_epi16(vsum3, vone_l);
-// LOG(INFO) << "1-int32: ";
-// for (int i = 0; i < 8; i++) {
-//   printf("%d ", (reinterpret_cast<int32_t*>(&vout0))[i]);
-// }
-// printf("\n");
 #endif
         // a0a2b0b2a4a6b4b6
         __m256i vres0 = _mm256_hadd_epi32(vout0, vout1);
@@ -1038,11 +935,6 @@ void conv_3x3s1_dw_int8(Dtype* dout,
         __m256i vres1 = _mm256_hadd_epi32(vout2, vout3);
         // a0b0c0d0a4b4c4d4
         __m256i vres = _mm256_hadd_epi32(vres0, vres1);
-        // LOG(INFO) << "out_8-int32: ";
-        // for (int i = 0; i < 8; i++) {
-        //   printf("%d ", (reinterpret_cast<int32_t*>(&vres))[i]);
-        // }
-        // printf("\n");
         store_data_dtype_8<Dtype>(dout_ptr, vres, vscale_l, vbias_l);
         dout_ptr += 8;
         pre_din_ptr += 128;
@@ -1090,11 +982,8 @@ void conv_3x3s1_dw_int8(Dtype* dout,
       pre_din += win_round;
       dout_batch += wout;
     }
-    // LOG(INFO) << "h-end";
   }
-  LOG(INFO) << "end";
   TargetFree(TARGET(kX86), pre_din);
-  LOG(INFO) << "free-end";
 }
 template void conv_3x3s1_dw_int8(float* dout,
                                  const int8_t* din,
@@ -1129,7 +1018,11 @@ template void conv_3x3s1_dw_int8(int8_t* dout,
                                  const float* scale,
                                  X86Context* ctx);
 #undef MID_PROCESS_PAD_2
+#undef TOP_MID_PAD_2
+#undef BOT_MID_PAD_2
 #undef MID_PROCESS_PAD_1
+#undef TOP_MID_PAD_1
+#undef BOT_MID_PAD_1
 #undef MID_PROCESS
 #undef LEFT_PROCESS_MORE
 #undef LEFT_PROCESS
