@@ -17,7 +17,7 @@
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/test/arena/framework.h"
-//#include "lite/tests/utils/fill_data.h"
+// #include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
 namespace lite {
@@ -27,6 +27,8 @@ namespace lite {
 //  fill_data_rand<int>(&res, beg, end, 1);
 //  return res;
 //}
+
+using float16_t = lite_api::float16_t;
 
 #define ELT(MATHOP)                                                          \
   for (int n = 0; n < xn; n++) {                                             \
@@ -208,26 +210,33 @@ class ElementwiseComputeTester : public arena::TestCase {
     } else {
       LOG(FATAL) << "unsupported op";
     }
-
+#ifdef LITE_WITH_X86
     if (!act_type_.empty()) {
       if (act_type_ == "relu") {
         for (int i = 0; i < x_dims_.production(); i++) {
           out_data[i] = std::max(static_cast<T>(0), out_data[i]);
         }
-      }
-#ifdef LITE_WITH_X86
-      else if (act_type_ == "tanh") {
+      } else if (act_type_ == "tanh") {
         for (int i = 0; i < x_dims_.production(); i++)
           out_data[i] = NaiveTanh(out_data[i]);
       } else if (act_type_ == "sigmoid") {
         for (int i = 0; i < x_dims_.production(); i++)
           out_data[i] = NaiveSigmoid(out_data[i]);
-      }
-#endif
-      else {
+      } else {
         LOG(FATAL) << "unsupported act_type:" << act_type_;
       }
     }
+#else
+    if (!act_type_.empty()) {
+      if (act_type_ == "relu") {
+        for (int i = 0; i < x_dims_.production(); i++) {
+          out_data[i] = std::max(static_cast<T>(0), out_data[i]);
+        }
+      } else {
+        LOG(FATAL) << "unsupported act_type:" << act_type_;
+      }
+    }
+#endif
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
