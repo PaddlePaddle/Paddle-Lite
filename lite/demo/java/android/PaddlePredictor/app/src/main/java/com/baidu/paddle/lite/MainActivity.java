@@ -61,23 +61,17 @@ public class MainActivity extends AppCompatActivity {
     public static String getVersionInfo(String modelName, Context context) {
         String modelPath = copyFromAssetsToCache(modelName, context);
         MobileConfig config = new MobileConfig();
-        config.setModelDir(modelPath);
+        config.setModelFromFile(modelPath);
         PaddlePredictor predictor = PaddlePredictor.createPaddlePredictor(config);
         return predictor.getVersion();
     }
 
     public static String copyFromAssetsToCache(String modelPath, Context context) {
         String newPath = context.getCacheDir() + "/" + modelPath;
-        // String newPath = "/sdcard/" + modelPath;
         File desDir = new File(newPath);
-
         try {
-            if (!desDir.exists()) {
-                desDir.mkdir();
-            }
-            for (String fileName : context.getAssets().list(modelPath)) {
-                InputStream stream = context.getAssets().open(modelPath + "/" + fileName);
-                OutputStream output = new BufferedOutputStream(new FileOutputStream(newPath + "/" + fileName));
+                InputStream stream = context.getAssets().open(modelPath);
+                OutputStream output = new BufferedOutputStream(new FileOutputStream(newPath));
 
                 byte data[] = new byte[1024];
                 int count;
@@ -89,20 +83,19 @@ public class MainActivity extends AppCompatActivity {
                 output.flush();
                 output.close();
                 stream.close();
-            }
-
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
         return desDir.getPath();
     }
+
+
 
     public static Tensor runModel(String modelName, long[] dims, float[] inputBuffer, Context context) {
         String modelPath = copyFromAssetsToCache(modelName, context);
 
         MobileConfig config = new MobileConfig();
-        config.setModelDir(modelPath);
+        config.setModelFromFile(modelPath);
         config.setPowerMode(PowerMode.LITE_POWER_HIGH);
         config.setThreads(1);
         PaddlePredictor predictor = PaddlePredictor.createPaddlePredictor(config);
