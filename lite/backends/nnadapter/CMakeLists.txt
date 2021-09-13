@@ -4,11 +4,5 @@ endif()
 
 add_subdirectory(nnadapter)
 
-if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK OR (NOT LITE_WITH_LOG))
-  set(log_lib utils)
-else()
-  set(log_lib glog)
-endif()
-
-lite_cc_library(nnadapter_wrapper SRCS nnadapter_wrapper.cc DEPS ${log_lib})
+lite_cc_library(nnadapter_wrapper SRCS nnadapter_wrapper.cc DEPS utils)
 add_dependencies(nnadapter_wrapper nnadapter ${NNADAPTER_DRIVERS})

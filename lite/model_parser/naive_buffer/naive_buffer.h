@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <deque>
 #include <memory>
 #include <string>
 #include <vector>

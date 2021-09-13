@@ -13,24 +13,22 @@
 // limitations under the License.
 
 #include "core/operation/unsqueeze.h"
-#include "driver/huawei_ascend_npu/converter.h"
+#include "driver/huawei_ascend_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int Program::ConvertUnsqueeze(hal::Operation* operation) {
+int ConvertUnsqueeze(Converter* converter, hal::Operation* operation) {
   UNSQUEEZE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
-  auto input_operator = GetMappedOperator(input_operand);
+  auto input_operator = converter->GetMappedOperator(input_operand);
   if (!input_operator) {
-    input_operator = ConvertOperand(input_operand);
+    input_operator = converter->ConvertOperand(input_operand);
   }
-  auto unsqueeze_name = GetOperatorName(output_operand);
-  auto unsqueeze_op = std::make_shared<ge::op::Unsqueeze>(unsqueeze_name);
-  std::vector<int> axes(axes_ptr, axes_ptr + axes_count);
+  auto unsqueeze_op = converter->AddOperator<ge::op::Unsqueeze>(output_operand);
   unsqueeze_op->set_attr_axes(
       ge::Operator::OpListInt(axes.begin(), axes.end()));
   SET_INPUT(unsqueeze_op, x, input_operator);

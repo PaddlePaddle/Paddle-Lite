@@ -12,34 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/huawei_kirin_npu/converter.h"
+#include "core/operation/unary_activations.h"
+#include "driver/huawei_kirin_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace huawei_kirin_npu {
 
-int Program::ConvertActivation(hal::Operation* operation) {
-  auto& input_operands = operation->input_operands;
-  auto& output_operands = operation->output_operands;
-  auto input_count = input_operands.size();
-  auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 1);
-  NNADAPTER_CHECK_EQ(output_count, 1);
-  // Input
-  auto input_operand = input_operands[0];
-  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
-  // Output
-  auto output_operand = output_operands[0];
-  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
+int ConvertUnaryActivations(Converter* converter, hal::Operation* operation) {
+  UNARY_ACTIVATIONS_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
-  auto input_operator = GetMappedOperator(input_operand);
+  auto input_operator = converter->GetMappedOperator(input_operand);
   if (!input_operator) {
-    input_operator = ConvertOperand(input_operand);
+    input_operator = converter->ConvertOperand(input_operand);
   }
-  auto act_name = GetOperatorName(output_operand);
-  auto act_op = std::make_shared<hiai::op::Activation>(act_name);
+  auto act_op = converter->AddOperator<hiai::op::Activation>(output_operand);
   SET_INPUT(act_op, x, input_operator);
   switch (operation->type) {
     case NNADAPTER_SIGMOID:

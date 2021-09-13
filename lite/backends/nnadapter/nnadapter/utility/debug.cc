@@ -671,8 +671,9 @@ NNADAPTER_EXPORT std::string OperandPrecisionCodeToSymbol(
 }
 
 NNADAPTER_EXPORT std::string OperandToString(hal::Operand* operand) {
-  return OperandIdToString(operand) + "\n" +
-         OperandTypeToString(&operand->type);
+  return operand ? (OperandIdToString(operand) + "\n" +
+                    OperandTypeToString(&operand->type))
+                 : "nullptr";
 }
 
 NNADAPTER_EXPORT std::string OperandIdToString(hal::Operand* operand) {
