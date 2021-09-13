@@ -157,6 +157,7 @@ class AsinComputeImage2D : public TrigonometricComputeImage2D {
 class AcosComputeImage2D : public TrigonometricComputeImage2D {
   std::string KernelFunctionName() override { return "trigonometric_acos"; }
 };
+
 }  // namespace opencl
 }  // namespace kernels
 }  // namespace lite
