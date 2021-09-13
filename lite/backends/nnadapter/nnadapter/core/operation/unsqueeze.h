@@ -14,28 +14,32 @@
 
 #pragma once
 
+#include <vector>
+
 namespace nnadapter {
 namespace operation {
 
-#define UNSQUEEZE_OPERATION_EXTRACT_INPUTS_OUTPUTS                   \
-  auto& input_operands = operation->input_operands;                  \
-  auto& output_operands = operation->output_operands;                \
-  auto input_count = input_operands.size();                          \
-  auto output_count = output_operands.size();                        \
-  NNADAPTER_CHECK_EQ(input_count, 2);                                \
-  NNADAPTER_CHECK_EQ(output_count, 1);                               \
-  /* Input */                                                        \
-  auto input_operand = input_operands[0];                            \
-  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);  \
-  /* Axes */                                                         \
-  auto axes_operand = input_operands[1];                             \
-  auto axes_count = axes_operand->length / sizeof(int32_t);          \
-  auto axes_data = reinterpret_cast<int32_t*>(axes_operand->buffer); \
-  for (uint32_t i = 0; i < axes_count; i++) {                        \
-    NNADAPTER_VLOG(5) << "axes[" << i << "]: " << axes_data[i];      \
-  }                                                                  \
-  /* Output */                                                       \
-  auto output_operand = output_operands[0];                          \
+#define UNSQUEEZE_OPERATION_EXTRACT_INPUTS_OUTPUTS                     \
+  auto& input_operands = operation->input_operands;                    \
+  auto& output_operands = operation->output_operands;                  \
+  auto input_count = input_operands.size();                            \
+  auto output_count = output_operands.size();                          \
+  NNADAPTER_CHECK_EQ(input_count, 2);                                  \
+  NNADAPTER_CHECK_EQ(output_count, 1);                                 \
+  /* Input */                                                          \
+  auto input_operand = input_operands[0];                              \
+  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);    \
+  /* Axes */                                                           \
+  auto axes_operand = input_operands[1];                               \
+  NNADAPTER_VLOG(5) << "axes: " << OperandToString(axes_operand);      \
+  auto axes_count = axes_operand->length / sizeof(int32_t);            \
+  auto axes_data = reinterpret_cast<int32_t*>(axes_operand->buffer);   \
+  auto axes = std::vector<int32_t>(axes_data, axes_data + axes_count); \
+  for (size_t i = 0; i < axes.size(); i++) {                           \
+    NNADAPTER_VLOG(5) << "axes[" << i << "]: " << axes[i];             \
+  }                                                                    \
+  /* Output */                                                         \
+  auto output_operand = output_operands[0];                            \
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
 }  // namespace operation

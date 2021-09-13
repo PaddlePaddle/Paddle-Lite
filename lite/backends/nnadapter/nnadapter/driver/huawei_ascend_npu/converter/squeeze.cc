@@ -29,7 +29,6 @@ int ConvertSqueeze(Converter* converter, hal::Operation* operation) {
     input_operator = converter->ConvertOperand(input_operand);
   }
   auto squeeze_op = converter->AddOperator<ge::op::Squeeze>(output_operand);
-  std::vector<int> axes(axes_data, axes_data + axes_count);
   squeeze_op->set_attr_axis(ge::Operator::OpListInt(axes.begin(), axes.end()));
   SET_INPUT(squeeze_op, x, input_operator);
   MAP_OUTPUT(squeeze_op, y, output_operand);

@@ -29,7 +29,6 @@ int ConvertUnsqueeze(Converter* converter, hal::Operation* operation) {
     input_operator = converter->ConvertOperand(input_operand);
   }
   auto unsqueeze_op = converter->AddOperator<ge::op::Unsqueeze>(output_operand);
-  std::vector<int> axes(axes_data, axes_data + axes_count);
   unsqueeze_op->set_attr_axes(
       ge::Operator::OpListInt(axes.begin(), axes.end()));
   SET_INPUT(unsqueeze_op, x, input_operator);

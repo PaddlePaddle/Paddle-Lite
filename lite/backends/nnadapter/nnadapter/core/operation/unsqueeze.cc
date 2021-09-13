@@ -29,14 +29,13 @@ int PrepareUnsqueeze(hal::Operation* operation) {
   // Infer the shape and type of output operands
   auto in_type = input_operand->type;
   auto& out_type = output_operand->type;
-  CopyOperandType(&out_type, in_type);
-  out_type.dimension_count += axes_count;
+  CopyOperandTypeWithQuantParams(&out_type, in_type);
+  out_type.dimension_count += axes.size();
   auto infer_output_shape = [&](int32_t* input_dimensions,
                                 int32_t* output_dimensions) {
     uint32_t cur_size = in_type.dimension_count;
-    for (uint32_t i = 0; i < axes_count; i++) {
-      int32_t axis =
-          axes_data[i] < 0 ? axes_data[i] + cur_size + 1 : axes_data[i];
+    for (size_t i = 0; i < axes.size(); i++) {
+      int32_t axis = axes[i] < 0 ? axes[i] + cur_size + 1 : axes[i];
       NNADAPTER_CHECK_GE(axis, 0);
       NNADAPTER_CHECK_LE(axis, cur_size);
       for (uint32_t j = cur_size; j > axis; j--) {
