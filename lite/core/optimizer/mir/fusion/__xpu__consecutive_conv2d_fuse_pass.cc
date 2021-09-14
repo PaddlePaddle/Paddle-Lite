@@ -197,7 +197,7 @@ class XPUConsecutiveConv2dFuser : public FuseBase {
     op_desc.SetAttr<bool>("has_branch", false);
 
     std::unique_ptr<float[]> encode_filter_float(
-        new float[encode_filter_size.back()]);
+        new float[static_cast<uint64_t>(encode_filter_size.back())]);
     for (int i = 0; i < filter_name.size(); i++) {
       auto* filter_t = scope->FindMutableTensor(filter_name[i]);
       float* filter_on_host = filter_t->mutable_data<float>();
