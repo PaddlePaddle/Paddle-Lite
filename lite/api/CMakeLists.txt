@@ -5,8 +5,8 @@ else()
 endif()
 
 if (LITE_ON_TINY_PUBLISH)
-    set(CMAKE_CXX_FLAGS_RELEASE "-Os -DNDEBUG")
-    set(CMAKE_C_FLAGS_RELEASE "-Os -DNDEBUG")
+    set(CMAKE_CXX_FLAGS_RELEASE "-Os -DNDEBUG -Wall -O2 -U_FORTIFY_SOURCE -fstack-protector-all")
+    set(CMAKE_C_FLAGS_RELEASE "-Os -DNDEBUG -Wall -O2 -U_FORTIFY_SOURCE -fstack-protector-all")
 endif()
 
 set(light_lib_DEPS light_api paddle_api paddle_api_light)
