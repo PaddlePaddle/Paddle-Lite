@@ -87,9 +87,7 @@ if (NOT LITE_ON_TINY_PUBLISH)
     if(LITE_WITH_CUDA)
         target_link_libraries(paddle_full_api_shared ${math_cuda} "-Wl,--whole-archive" kernels "-Wl,--no-whole-archive")
     endif(LITE_WITH_CUDA)
-    if(LITE_WITH_CV)
-      target_link_libraries(paddle_full_api_shared "-Wl,--whole-archive" utils "-Wl,--no-whole-archive")
-    endif(LITE_WITH_CV)
+
 
     if(WIN32)
         target_link_libraries(paddle_full_api_shared shlwapi.lib)
