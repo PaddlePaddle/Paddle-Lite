@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <string>
 #include "lite/backends/arm/math/funcs.h"
+#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
@@ -29,8 +30,7 @@ void act_relu<float>(const float* din, float* dout, int size, int threads) {
   int neon_loop_cnt = nums_per_thread >> 4;
   int neon_loop_remain = nums_per_thread - (neon_loop_cnt << 4);
   float32x4_t vzero = vdupq_n_f32(0.f);
-#pragma omp parallel for
-  for (int i = 0; i < threads; ++i) {
+  LITE_PARALLEL_BEGIN(i, tid, threads) {
     const float* ptr_in_thread = din + i * nums_per_thread;
     float* ptr_out_thread = dout + i * nums_per_thread;
     int cnt = neon_loop_cnt;
@@ -89,6 +89,7 @@ void act_relu<float>(const float* din, float* dout, int size, int threads) {
       ptr_out_thread++;
     }
   }
+  LITE_PARALLEL_END();
   float* out_ptr_remain = dout + threads * nums_per_thread;
   const float* in_ptr_remain = din + threads * nums_per_thread;
   for (int j = 0; j < remain; ++j) {
@@ -110,8 +111,7 @@ void act_relu_neg<float>(const float* din,
   int neon_loop_remain = nums_per_thread - (neon_loop_cnt << 4);
   float32x4_t vzero = vdupq_n_f32(0.f);
   float32x4_t valpha = vdupq_n_f32(negative_slope);
-#pragma omp parallel for
-  for (int i = 0; i < threads; ++i) {
+  LITE_PARALLEL_BEGIN(i, tid, threads) {
     const float* ptr_in_thread = din + i * nums_per_thread;
     float* ptr_out_thread = dout + i * nums_per_thread;
     int cnt = neon_loop_cnt;
@@ -211,6 +211,7 @@ void act_relu_neg<float>(const float* din,
       ptr_out_thread++;
     }
   }
+  LITE_PARALLEL_END();
   float* out_ptr_remain = dout + threads * nums_per_thread;
   const float* in_ptr_remain = din + threads * nums_per_thread;
   for (int j = 0; j < remain; ++j) {
@@ -231,8 +232,7 @@ void act_clipped_relu<float>(
   int neon_loop_remain = nums_per_thread - (neon_loop_cnt << 4);
   float32x4_t vzero = vdupq_n_f32(0.f);
   float32x4_t vclip = vdupq_n_f32(coef);
-#pragma omp parallel for
-  for (int i = 0; i < threads; ++i) {
+  LITE_PARALLEL_BEGIN(i, tid, threads) {
     const float* ptr_in_thread = din + i * nums_per_thread;
     float* ptr_out_thread = dout + i * nums_per_thread;
     int cnt = neon_loop_cnt;
@@ -315,6 +315,7 @@ void act_clipped_relu<float>(
       ptr_out_thread++;
     }
   }
+  LITE_PARALLEL_END();
   float* out_ptr_remain = dout + threads * nums_per_thread;
   const float* in_ptr_remain = din + threads * nums_per_thread;
   for (int j = 0; j < remain; ++j) {
@@ -342,8 +343,7 @@ void act_prelu<float>(const float* din,
     for (int n = 0; n < outer_size; n++) {
       const float* data_in_batch = din + n * stride_size;
       float* data_out_batch = dout + n * stride_size;
-#pragma omp parallel for
-      for (int c = 0; c < channel_size; c++) {
+      LITE_PARALLEL_BEGIN(c, tid, channel_size) {
         const float* data_in_c = data_in_batch + c * inner_size;
         float* data_out_c = data_out_batch + c * inner_size;
 
@@ -448,6 +448,7 @@ void act_prelu<float>(const float* din,
           data_in_c++;
         }
       }
+      LITE_PARALLEL_END();
     }
   } else {  // mode = element
     int stride_size = inner_size * channel_size;
@@ -479,8 +480,7 @@ void act_sigmoid<float>(const float* din, float* dout, int size, int threads) {
   int neon_loop_remain_dim4 = nums_per_thread - (neon_loop_cnt_dim4 << 2);
 
   float32x4_t vzero = vdupq_n_f32(0.f);
-#pragma omp parallel for
-  for (int i = 0; i < threads; ++i) {
+  LITE_PARALLEL_BEGIN(i, tid, threads) {
     float32x4_t exp_vec = vdupq_n_f32(0.0f);
     float32x4_t recip = vdupq_n_f32(0.0f);
     const float* ptr_in_thread = din + i * nums_per_thread;
@@ -501,6 +501,7 @@ void act_sigmoid<float>(const float* din, float* dout, int size, int threads) {
       ptr_out_thread++;
     }
   }
+  LITE_PARALLEL_END();
   float* ptr_out = dout + threads * nums_per_thread;
   const float* ptr_in = din + threads * nums_per_thread;
   for (int j = 0; j < remain; ++j) {
@@ -517,8 +518,7 @@ void act_tanh<float>(const float* din, float* dout, int size, int threads) {
   int remain = size - threads * nums_per_thread;
   int neon_loop_cnt_dim4 = nums_per_thread >> 2;
   int neon_loop_remain_dim4 = nums_per_thread - (neon_loop_cnt_dim4 << 2);
-#pragma omp parallel for
-  for (int i = 0; i < threads; ++i) {
+  LITE_PARALLEL_BEGIN(i, tid, threads) {
     float32x4_t exp_plus_vec = vdupq_n_f32(0.0f);
     float32x4_t exp_minus_vec = vdupq_n_f32(0.0f);
     float32x4_t exp_sum_vec = vdupq_n_f32(0.0f);
@@ -546,6 +546,7 @@ void act_tanh<float>(const float* din, float* dout, int size, int threads) {
       ptr_out_thread++;
     }
   }
+  LITE_PARALLEL_END();
   float* ptr_out = dout + threads * nums_per_thread;
   const float* ptr_in = din + threads * nums_per_thread;
   for (int j = 0; j < remain; ++j) {
@@ -567,8 +568,7 @@ void act_swish<float>(
   const float beta = coef;
   float32x4_t vbeta = vdupq_n_f32(beta);
   float32x4_t vone = vdupq_n_f32(1.f);
-#pragma omp parallel for
-  for (int i = 0; i < threads; ++i) {
+  LITE_PARALLEL_BEGIN(i, tid, threads) {
     const float* ptr_in_thread = din + i * nums_per_thread;
     float* ptr_out_thread = dout + i * nums_per_thread;
     for (int k = 0; k < neon_loop_cnt_dim4; ++k) {
@@ -589,6 +589,7 @@ void act_swish<float>(
       ptr_out_thread++;
     }
   }
+  LITE_PARALLEL_END();
   float* ptr_out = dout + threads * nums_per_thread;
   const float* ptr_in = din + threads * nums_per_thread;
   for (int j = 0; j < remain; ++j) {
@@ -606,8 +607,7 @@ void act_log<float>(const float* din, float* dout, int size, int threads) {
   int neon_loop_remain_dim4 = nums_per_thread - (neon_loop_cnt_dim4 << 2);
 
   float32x4_t vzero = vdupq_n_f32(0.f);
-#pragma omp parallel for
-  for (int i = 0; i < threads; ++i) {
+  LITE_PARALLEL_BEGIN(i, tid, threads) {
     float32x4_t exp_vec = vdupq_n_f32(0.0f);
     const float* ptr_in_thread = din + i * nums_per_thread;
     float* ptr_out_thread = dout + i * nums_per_thread;
@@ -623,6 +623,7 @@ void act_log<float>(const float* din, float* dout, int size, int threads) {
       ptr_out_thread++;
     }
   }
+  LITE_PARALLEL_END();
   float* ptr_out = dout + threads * nums_per_thread;
   const float* ptr_in = din + threads * nums_per_thread;
   for (int j = 0; j < remain; ++j) {
@@ -640,8 +641,7 @@ void act_exp<float>(const float* din, float* dout, int size, int threads) {
   int neon_loop_remain_dim4 = nums_per_thread - (neon_loop_cnt_dim4 << 2);
 
   float32x4_t vzero = vdupq_n_f32(0.f);
-#pragma omp parallel for
-  for (int i = 0; i < threads; ++i) {
+  LITE_PARALLEL_BEGIN(i, tid, threads) {
     float32x4_t exp_vec = vdupq_n_f32(0.0f);
     const float* ptr_in_thread = din + i * nums_per_thread;
     float* ptr_out_thread = dout + i * nums_per_thread;
@@ -657,6 +657,7 @@ void act_exp<float>(const float* din, float* dout, int size, int threads) {
       ptr_out_thread++;
     }
   }
+  LITE_PARALLEL_END();
   float* ptr_out = dout + threads * nums_per_thread;
   const float* ptr_in = din + threads * nums_per_thread;
   for (int j = 0; j < remain; ++j) {
@@ -801,8 +802,7 @@ void act_hard_swish<float>(const float* din,
   zero = vdupq_n_f32(0.);
   threshold_v = vdupq_n_f32(threshold);
 
-#pragma omp parallel for
-  for (int i = 0; i < threads; i++) {
+  LITE_PARALLEL_BEGIN(i, tid, threads) {
     const float* ptr_in_thread = ptr_in + i * nums_per_thread;
     float* ptr_out_thread = ptr_out + i * nums_per_thread;
     for (int j = 0; j < neon_loop_cnt_dim4; j++) {
@@ -825,7 +825,7 @@ void act_hard_swish<float>(const float* din,
       ptr_out_thread++;
     }
   }
-
+  LITE_PARALLEL_END();
   ptr_out = dout + threads * nums_per_thread;
   ptr_in = din + threads * nums_per_thread;
   for (int i = 0; i < remain; i++) {
@@ -918,8 +918,7 @@ void act_elu<float>(
   float32x4_t vone = vdupq_n_f32(1.f);
   int cnt = neon_loop_remain_dim16 >> 2;
   int remain = neon_loop_remain_dim16 & 3;
-#pragma omp parallel for
-  for (int i = 0; i < threads; i++) {
+  LITE_PARALLEL_BEGIN(i, tid, threads) {
     const float* ptr_in_thread = din + i * nums_per_thread;
     float* ptr_out_thread = dout + i * nums_per_thread;
     for (int k = 0; k < neon_loop_cnt_dim16; ++k) {
@@ -979,6 +978,7 @@ void act_elu<float>(
       ptr_out_thread++;
     }
   }
+  LITE_PARALLEL_END();
   float* ptr_out = dout + threads * nums_per_thread;
   const float* ptr_in = din + threads * nums_per_thread;
   for (int j = 0; j < thread_remain; j++) {

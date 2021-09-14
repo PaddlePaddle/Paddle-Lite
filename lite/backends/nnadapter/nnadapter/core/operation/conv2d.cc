@@ -72,7 +72,8 @@ CalcConv2DOutputSize(int32_t input_size,
 }
 
 int PrepareConv2D(hal::Operation* operation) {
-  CONV2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  CONV_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
   // Infer the shape and type of output operands
   CopyOperandTypeExceptQuantParams(&output_operand->type, input_operand->type);
   auto infer_output_shape = [&](int32_t* input_dimensions,

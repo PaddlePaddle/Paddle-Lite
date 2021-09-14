@@ -22,7 +22,7 @@ from ast import RegisterLiteOpParser
 from ast import RegisterSubgraphBridgeParser
 from ast import RegisterNNadapterBridgeParser
 
-if len(sys.argv) != 6:
+if len(sys.argv) != 7:
     print("Error: record_supported_kernel_op.py requires five inputs!")
     sys.exit(1)
 kernels_list_path = sys.argv[1]
@@ -30,6 +30,7 @@ faked_kernels_list_path = sys.argv[2]
 ops_list_path = sys.argv[3]
 subgraph_bridge_list_path = sys.argv[4]
 kernel_op_map_dest_path = sys.argv[5]
+with_extra = sys.argv[6]
 
 out_lines = [
 '''
@@ -150,7 +151,7 @@ with open(ops_list_path) as f:
     for path in paths:
         str_info = open(path.strip()).read()
         op_parser = RegisterLiteOpParser(str_info)
-        ops = op_parser.parse("ON")
+        ops = op_parser.parse(with_extra)
         for op in ops:
             if "_grad" in op:
                 continue

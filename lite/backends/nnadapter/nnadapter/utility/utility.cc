@@ -212,6 +212,19 @@ NNADAPTER_EXPORT void CopyOperandTypeWithPrecision(
   dst_type->lifetime = src_type.lifetime;
 }
 
+NNADAPTER_EXPORT void CopyOperandTypeWithQuantParams(
+    NNAdapterOperandType* dst_type, const NNAdapterOperandType& src_type) {
+  NNADAPTER_CHECK(dst_type);
+  if (dst_type->symm_per_channel_params.scales ||
+      dst_type->symm_per_layer_params.scale > 0) {
+    // Skip copying the quant params if dst_type already has the valid quant
+    // params
+    CopyOperandTypeExceptQuantParams(dst_type, src_type);
+  } else {
+    CopyOperandType(dst_type, src_type);
+  }
+}
+
 NNADAPTER_EXPORT void CopyOperandTypeExceptQuantParams(
     NNAdapterOperandType* dst_type, const NNAdapterOperandType& src_type) {
   NNADAPTER_CHECK(dst_type);

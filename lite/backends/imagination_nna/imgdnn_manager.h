@@ -22,7 +22,7 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
-#include "lite/utils/logging.h"
+#include "lite/utils/log/logging.h"
 
 namespace paddle {
 namespace lite {

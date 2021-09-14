@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #include "core/operation/pool2d.h"
 #include "driver/amlogic_npu/converter/converter.h"
 #include "utility/debug.h"
@@ -18,8 +19,10 @@
 
 namespace nnadapter {
 namespace amlogic_npu {
+
 int ConvertPool2D(Converter* converter, hal::Operation* operation) {
   POOL_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
   // Convert to amlnpu tensors and operators
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
