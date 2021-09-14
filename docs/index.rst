@@ -79,7 +79,7 @@ Welcome to Paddle-Lite's documentation!
   :name: sec-source-compile
 
   source_compile/compile_env
-  source_compile/compile_andriod
+  source_compile/compile_android
   source_compile/compile_ios
   source_compile/compile_linux
   source_compile/compile_windows

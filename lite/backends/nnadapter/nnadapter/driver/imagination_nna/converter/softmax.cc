@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "core/operation/softmax.h"
-#include "driver/imagination_nna/converter.h"
+#include "driver/imagination_nna/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/utility.h"
@@ -21,21 +21,21 @@
 namespace nnadapter {
 namespace imagination_nna {
 
-int Program::ConvertSoftmax(hal::Operation* operation) {
+int ConvertSoftmax(Converter* converter, hal::Operation* operation) {
   SOFTMAX_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to imgdnn tensors and operators
-  auto input_tensor = GetMappedTensor(input_operand);
+  auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
-    input_tensor = ConvertOperand(input_operand);
+    input_tensor = converter->ConvertOperand(input_operand);
   }
   imgdnn_quant_param output_quant_param;
   output_quant_param.scale = output_operand->type.asymm_per_layer_params.scale;
   output_quant_param.zero_point =
       output_operand->type.asymm_per_layer_params.zero_point;
-  auto output_tensor = imgdnn_mgr_.CreateSoftmaxLayer(
-      input_tensor, 1.0f, axis, output_quant_param);
-  UpdateTensorMap(output_operand, output_tensor);
+  auto output_tensor = ADD_OPERATOR(
+      CreateSoftmaxLayer, input_tensor, 1.0f, axis, output_quant_param);
+  converter->UpdateTensorMap(output_operand, output_tensor);
   return NNADAPTER_NO_ERROR;
 }
 

@@ -32,6 +32,7 @@ BUILD_ARM82_FP16=OFF
 # options of striping lib according to input model.
 OPTMODEL_DIR=""
 WITH_STRIP=OFF
+WITH_THREAD_POOL=OFF
 # options of compiling NPU lib.
 WITH_HUAWEI_KIRIN_NPU=OFF
 HUAWEI_KIRIN_NPU_SDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
@@ -42,6 +43,8 @@ MEDIATEK_APU_SDK_ROOT="$(pwd)/apu_ddk" # Download APU SDK from https://paddlelit
 WITH_NNADAPTER=OFF
 NNADAPTER_WITH_HUAWEI_KIRIN_NPU=OFF
 NNADAPTER_HUAWEI_KIRIN_NPU_SDK_ROOT="$(pwd)/hiai_ddk_lib_330"
+NNADAPTER_WITH_AMLOGIC_NPU=OFF
+NNADAPTER_AMLOGIC_NPU_SDK_ROOT="$(pwd)/amlnpu_ddk"
 NNADAPTER_WITH_MEDIATEK_APU=OFF
 NNADAPTER_MEDIATEK_APU_SDK_ROOT="$(pwd)/apu_ddk" # Download APU SDK from https://paddlelite-demo.bj.bcebos.com/devices/mediatek/apu_ddk.tar.gz
 # options of compiling OPENCL lib.
@@ -197,6 +200,14 @@ function make_tiny_publish_so {
       ARCH=armv8
   fi
 
+  if [ "$NDK_ROOT" ]; then
+      NDK_NAME=$(echo $NDK_ROOT | egrep -o "android-ndk-r[0-9]{2}")
+      NDK_VERSION=$(echo $NDK_NAME | egrep -o "[0-9]{2}")
+      if [ "$NDK_VERSION" -gt 17 ]; then
+          TOOLCHAIN=clang
+      fi
+  fi
+
   # android api level for android version
   set_android_api_level
 
@@ -216,13 +227,16 @@ function make_tiny_publish_so {
       -DLITE_WITH_NNADAPTER=$WITH_NNADAPTER \
       -DNNADAPTER_WITH_HUAWEI_KIRIN_NPU=$NNADAPTER_WITH_HUAWEI_KIRIN_NPU \
       -DNNADAPTER_HUAWEI_KIRIN_NPU_SDK_ROOT=$NNADAPTER_HUAWEI_KIRIN_NPU_SDK_ROOT \
+      -DNNADAPTER_WITH_AMLOGIC_NPU=$NNADAPTER_WITH_AMLOGIC_NPU \
+      -DNNADAPTER_HUAWEI_AMLOGIC_SDK_ROOT=$NNADAPTER_AMLOGIC_NPU_SDK_ROOT \
       -DNNADAPTER_WITH_MEDIATEK_APU=$NNADAPTER_WITH_MEDIATEK_APU \
       -DNNADAPTER_MEDIATEK_APU_SDK_ROOT=$NNADAPTER_MEDIATEK_APU_SDK_ROOT \
       -DLITE_WITH_OPENCL=$WITH_OPENCL \
       -DARM_TARGET_ARCH_ABI=$ARCH \
       -DARM_TARGET_LANG=$TOOLCHAIN \
       -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
-      -DANDROID_STL_TYPE=$ANDROID_STL"
+      -DANDROID_STL_TYPE=$ANDROID_STL \
+      -DLITE_THREAD_POOL=$WITH_THREAD_POOL"
 
   cmake $workspace \
       ${CMAKE_COMMON_OPTIONS} \
@@ -263,6 +277,15 @@ function make_full_publish_so {
       TOOLCHAIN=clang
       ARCH=armv8
   fi
+
+  if [ "$NDK_ROOT" ]; then
+      NDK_NAME=$(echo $NDK_ROOT | egrep -o "android-ndk-r[0-9]{2}")
+      NDK_VERSION=$(echo $NDK_NAME | egrep -o "[0-9]{2}")
+      if [ "$NDK_VERSION" -gt 17 ]; then
+          TOOLCHAIN=clang
+      fi
+  fi
+
   # android api level for android version
   set_android_api_level
 
@@ -282,6 +305,8 @@ function make_full_publish_so {
       -DLITE_WITH_NNADAPTER=$WITH_NNADAPTER \
       -DNNADAPTER_WITH_HUAWEI_KIRIN_NPU=$NNADAPTER_WITH_HUAWEI_KIRIN_NPU \
       -DNNADAPTER_HUAWEI_KIRIN_NPU_SDK_ROOT=$NNADAPTER_HUAWEI_KIRIN_NPU_SDK_ROOT \
+      -DNNADAPTER_WITH_AMLOGIC_NPU=$NNADAPTER_WITH_AMLOGIC_NPU \
+      -DNNADAPTER_AMLOGIC_NPU_SDK_ROOT=$NNADAPTER_AMLOGIC_NPU_SDK_ROOT \
       -DNNADAPTER_WITH_MEDIATEK_APU=$NNADAPTER_WITH_MEDIATEK_APU \
       -DNNADAPTER_MEDIATEK_APU_SDK_ROOT=$NNADAPTER_MEDIATEK_APU_SDK_ROOT \
       -DLITE_WITH_OPENCL=$WITH_OPENCL \
@@ -416,6 +441,11 @@ function main {
                 WITH_STRIP="${i#*=}"
                 shift
                 ;;
+            # ON or OFF, default OFF
+            --with_thread_pool=*)
+                WITH_THREAD_POOL="${i#*=}"
+                shift
+                ;;
             # string, absolute path to optimized model dir
             --opt_model_dir=*)
                 OPTMODEL_DIR="${i#*=}"
@@ -472,6 +502,14 @@ function main {
                 ;;
             --nnadapter_huawei_kirin_npu_sdk_root=*)
                 NNADAPTER_HUAWEI_KIRIN_NPU_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_with_amlogic_npu=*)
+                NNADAPTER_WITH_AMLOGIC_NPU="${i#*=}"
+                shift
+                ;;
+            --nnadapter_amlogic_npu_sdk_root=*)
+                NNADAPTER_AMLOGIC_NPU_SDK_ROOT="${i#*=}"
                 shift
                 ;;
             --nnadapter_with_mediatek_apu=*)

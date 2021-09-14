@@ -17,7 +17,7 @@
 #include <string>
 #include <vector>
 #include "lite/api/paddle_place.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 #define LITE_MODEL_INTERFACE_NOT_IMPLEMENTED                \
   LOG(FATAL) << "This additional interface is temporarily " \

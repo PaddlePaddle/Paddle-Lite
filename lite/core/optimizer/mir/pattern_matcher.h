@@ -28,7 +28,7 @@
 #include "lite/core/optimizer/mir/node.h"
 #include "lite/core/optimizer/mir/ssa_graph.h"
 #include "lite/model_parser/pb/op_desc.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 #include "lite/utils/replace_stl/stream.h"
 #include "lite/utils/string.h"
 

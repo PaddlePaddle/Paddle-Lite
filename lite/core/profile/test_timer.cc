@@ -18,7 +18,7 @@
 #include "lite/core/context.h"
 #include "lite/core/profile/profiler.h"
 #include "lite/core/profile/timer.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 namespace paddle {
 namespace lite {

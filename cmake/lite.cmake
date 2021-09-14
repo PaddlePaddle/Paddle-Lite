@@ -257,8 +257,15 @@ function(lite_cc_binary TARGET)
             HUAWEI_ASCEND_NPU_DEPS ${args_HUAWEI_ASCEND_NPU_DEPS}
             )
     cc_binary(${TARGET} SRCS ${args_SRCS} DEPS ${deps})
+
+    # link to paddle-lite static lib automatically
+    add_dependencies(${TARGET} bundle_full_api)
+
     if(NOT WIN32)
+      target_link_libraries(${TARGET} ${CMAKE_BINARY_DIR}/libpaddle_api_full_bundled.a)
       target_compile_options(${TARGET} BEFORE PRIVATE -Wno-ignored-qualifiers)
+    else()
+      target_link_libraries(${TARGET} ${CMAKE_BINARY_DIR}/lite/api/${CMAKE_BUILD_TYPE}/libpaddle_api_full_bundled.lib)
     endif()
     if (NOT APPLE AND NOT WIN32)
         # strip binary target to reduce size

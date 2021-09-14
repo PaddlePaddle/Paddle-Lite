@@ -20,7 +20,7 @@ limitations under the License. */
 #include <mutex>  // NOLINT
 #endif            // !_WIN32
 
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 namespace paddle {
 namespace lite {

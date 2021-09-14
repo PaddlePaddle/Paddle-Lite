@@ -17,7 +17,7 @@
 #include "lite/backends/metal/metal_debug.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
-#include "metal_params.h"
+#include "lite/kernels/metal/image_op/metal_params.h"
 
 namespace paddle {
 namespace lite {
@@ -32,13 +32,13 @@ void SplitImageCompute::PrepareForRun() {
 #ifdef LITE_WITH_METAL_FULL
 #else
     input_buffer_ = param.x->data<MetalHalf, MetalImage>();
-    
+
     auto outputs = param.output;
     size_t num = outputs.size();
     for (int i = 0; i < num; i++) {
         auto output_dims = outputs[i]->dims();
-        auto output_image = outputs[i]->template mutable_data<MetalHalf, MetalImage>
-            (metal_context_, output_dims);
+        auto output_image =
+            outputs[i]->template mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
         output_buffers_.emplace_back(output_image);
     }
 #endif
@@ -75,13 +75,13 @@ void SplitImageCompute::setup_without_mps() {
     auto outputs = param.output;
     size_t num = outputs.size();
     int irank = (int)input_buffer_->tensor_dim_.size();
-    
+
     // intput dims: CPU NCHW
     std::vector<int> idm = {1, 1, 1, 1};
     for (int i = 0; i < irank; i++) {
         idm[4 - irank + i] = (int)input_buffer_->tensor_dim_[i];
     }
-    
+
     int axis = int(4 - input_buffer_->tensor_dim_.size() + param.axis);
     auto* axis_tensor = param.axis_tensor;
     if (axis_tensor != nullptr) {
@@ -91,7 +91,7 @@ void SplitImageCompute::setup_without_mps() {
     if (axis < 0) {
         axis += input_buffer_->tensor_dim_.size();
     }
-    
+
     std::vector<int> trans = {0, 2, 3, 1};
     if (input_buffer_->tensor_dim_.size() < 4) {
         trans = {0, 1, 2, 3};
@@ -145,20 +145,18 @@ void SplitImageCompute::setup_without_mps() {
     if (v_ == "normal") {
         throw std::logic_error("ERROR: unsupported split type");
     }
-    
-    SplitMetalParam metal_param = {
-        {idm[0], idm[1], idm[2], idm[3]},
+
+    SplitMetalParam metal_param = {{idm[0], idm[1], idm[2], idm[3]},
         static_cast<int>(axis),
         0,
         {trans[0], trans[1], trans[2], trans[3]},
-        {(int)vdim[0], (int)vdim[1], (int)vdim[2], (int)vdim[3]}
-    };
+        {(int)vdim[0], (int)vdim[1], (int)vdim[2], (int)vdim[3]}};
 
     params_buffer_ =
         std::make_shared<MetalBuffer>(metal_context_, sizeof(metal_param), &metal_param);
 
     std::string function_name =
-            "split_" + std::to_string(irank) + "_" + std::to_string(num) + "_" + v_;
+        "split_" + std::to_string(irank) + "_" + std::to_string(num) + "_" + v_;
     function_name_ = function_name;
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
@@ -177,11 +175,11 @@ SplitImageCompute::~SplitImageCompute() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(split,
-                     kMetal,
-                     kFloat,
-                     kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::SplitImageCompute,
-                     def)
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::SplitImageCompute,
+    def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal),
             PRECISION(kFloat),
@@ -197,11 +195,11 @@ REGISTER_LITE_KERNEL(split,
     .Finalize();
 
 REGISTER_LITE_KERNEL(split,
-                     kMetal,
-                     kFP16,
-                     kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::SplitImageCompute,
-                     def)
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::SplitImageCompute,
+    def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .BindInput("AxisTensor",

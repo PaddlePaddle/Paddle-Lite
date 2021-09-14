@@ -27,13 +27,8 @@ execute_process(
     ${LITE_BUILD_EXTRA}
     RESULT_VARIABLE result)
 
-
-
-
-
-
 if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK OR (NOT LITE_WITH_LOG))
-  lite_cc_library(place SRCS paddle_place.cc DEPS logging)
+  lite_cc_library(place SRCS paddle_place.cc DEPS utils)
 else()
   lite_cc_library(place SRCS paddle_place.cc DEPS glog)
 endif()
@@ -43,8 +38,8 @@ if (LITE_ON_TINY_PUBLISH)
     set(CMAKE_C_FLAGS_RELEASE "-Os -DNDEBUG")
 endif()
 
-set(light_lib_DEPS light_api paddle_api paddle_api_light utils core kernels CACHE INTERNAL "")
-set(full_lib_DEPS paddle_api paddle_api_light  paddle_api_full framework_proto core utils kernels CACHE INTERNAL "")
+set(light_lib_DEPS light_api paddle_api paddle_api_light utils core kernels model_parser CACHE INTERNAL "")
+set(full_lib_DEPS paddle_api paddle_api_light  paddle_api_full framework_proto core utils kernels model_parser CACHE INTERNAL "")
 set(external_libs_DEPS "" CACHE INTERNAL "")
 if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH_SW OR LITE_WITH_BM OR LITE_WITH_HUAWEI_ASCEND_NPU OR ARM_TARGET_OS STREQUAL "android" OR ARM_TARGET_OS STREQUAL "armlinux"))
     #full api dynamic library
@@ -68,14 +63,12 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
         target_link_libraries(paddle_full_api_shared ${math_cuda} "-Wl,--whole-archive" kernels "-Wl,--no-whole-archive")
     endif(LITE_WITH_CUDA)
     if(LITE_WITH_CV)
-      target_link_libraries(paddle_full_api_shared "-Wl,--whole-archive" paddle_cv_arm "-Wl,--no-whole-archive")
+      target_link_libraries(paddle_full_api_shared "-Wl,--whole-archive" utils "-Wl,--no-whole-archive")
     endif(LITE_WITH_CV)
 
     #light api dynamic library
     lite_cc_library(paddle_light_api_shared SHARED SRCS paddle_api.cc light_api.cc light_api_impl.cc
-                  DEPS ${light_lib_DEPS} ${external_libs_DEPS}
-                  CV_DEPS paddle_cv_arm
-                  )
+                  DEPS ${light_lib_DEPS} ${external_libs_DEPS} utils)
 
     if(WIN32)
         target_link_libraries(paddle_full_api_shared shlwapi.lib)
@@ -230,9 +223,7 @@ if (NOT LITE_ON_TINY_PUBLISH)
     target_wrapper_host model_parser core)
     lite_cc_library(cxx_api
                         SRCS cxx_api.cc
-                        DEPS ${cxx_api_deps} ops
-                        CV_DEPS paddle_cv_arm)
-
+                        DEPS ${cxx_api_deps} ops utils)
 endif()
 
 # for light api
@@ -244,8 +235,7 @@ if(LITE_WITH_CUDA)
 endif()
 lite_cc_library(light_api SRCS light_api.cc
         DEPS core target_wrapper_host
-            ${light_api_deps} ops
-        CV_DEPS paddle_cv_arm)
+            ${light_api_deps} ops utils)
 
 include(ExternalProject)
 set(LITE_DEMO_INSTALL_DIR "${THIRD_PARTY_PATH}/inference_demo" CACHE STRING
@@ -382,19 +372,22 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
 
 endif()
 
+if (LITE_THREAD_POOL)
+  lite_cc_library(paddle_api SRCS paddle_api.cc DEPS ops core thread_pool)
+else()
 lite_cc_library(paddle_api SRCS paddle_api.cc DEPS ops core)
+endif()
 
 #-----------------------------------------------------------------------------------------------------
 # The final inference library for both CxxConfig and MobileConfig.
 if (LITE_ON_TINY_PUBLISH)
-    lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api stream)
+    lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api model_parser)
 else()
-    lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api core utils kernels ops)
+    lite_cc_library(paddle_api_light SRCS light_api_impl.cc DEPS light_api paddle_api core utils kernels ops model_parser)
 endif()
 if (NOT LITE_ON_TINY_PUBLISH)
     lite_cc_library(paddle_api_full SRCS cxx_api_impl.cc DEPS cxx_api paddle_api_light
-        ops paddle_api framework_proto core utils kernels
-        CV_DEPS paddle_cv_arm)
+        ops paddle_api framework_proto core utils kernels model_parser utils)
 
     # The final inference library for just MobileConfig.
     bundle_static_library(paddle_api_full paddle_api_full_bundled bundle_full_api)
@@ -444,8 +437,7 @@ endif()
 
 if(NOT WITH_COVERAGE)
     lite_cc_test(test_paddle_api SRCS paddle_api_test.cc DEPS paddle_api_full paddle_api_light
-      ops kernels
-      CV_DEPS paddle_cv_arm
+      ops kernels model_parser utils
       ARGS --model_dir=${LITE_MODEL_DIR}/lite_naive_model SERIAL)
     if (WITH_TESTING)
         add_dependencies(test_paddle_api extern_lite_download_lite_naive_model_tar_gz)
@@ -455,28 +447,26 @@ endif()
 # Some bins
 if(NOT IOS)
     lite_cc_binary(test_model_bin SRCS tools/model_test.cc DEPS paddle_api_full paddle_api_light gflags utils core
-        ops kernels ${full_lib_DEPS} ${external_libs_DEPS}
+        ops kernels ${full_lib_DEPS}
         CV_DEPS paddle_cv_arm)
     
     lite_cc_binary(test_model_detection_bin SRCS model_test_detection.cc DEPS paddle_api_full paddle_api_light gflags utils core
-        ops kernels ${external_libs_DEPS}
+        ops kernels
         CV_DEPS paddle_cv_arm)
     
     lite_cc_binary(test_model_classify_bin SRCS model_test_classify.cc DEPS paddle_api_full paddle_api_light gflags utils core
-        ops kernels ${external_libs_DEPS}
-        CV_DEPS paddle_cv_arm)
-
-    lite_cc_binary(benchmark_bin SRCS tools/benchmark.cc DEPS paddle_api_full paddle_api_light gflags utils core
-        ops kernels ${external_libs_DEPS}
-        CV_DEPS paddle_cv_arm)
-    
-    lite_cc_binary(multithread_test SRCS lite_multithread_test.cc DEPS paddle_api_full paddle_api_light gflags utils core
         ops kernels
         CV_DEPS paddle_cv_arm)
 
-    lite_cc_binary(test_transformer SRCS transform_test.cc DEPS paddle_api_full paddle_api_light gflags utils core
-        ops ${external_libs_DEPS} kernels
+    lite_cc_binary(benchmark_bin SRCS tools/benchmark.cc DEPS paddle_api_full paddle_api_light gflags utils core
+        ops kernels
         CV_DEPS paddle_cv_arm)
+    
+    lite_cc_binary(multithread_test SRCS lite_multithread_test.cc DEPS paddle_api_full paddle_api_light gflags utils core model_parser
+        ops kernels utils)
+
+    lite_cc_binary(test_transformer SRCS transform_test.cc DEPS paddle_api_full paddle_api_light gflags utils core model_parser
+        ops kernels utils)
 endif()
 
 #lite_cc_binary(cxx_api_bin SRCS cxx_api_bin.cc

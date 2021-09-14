@@ -16,7 +16,7 @@
 #include <gtest/gtest.h>
 #include <chrono>  // NOLINT
 #include <thread>  // NOLINT
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 namespace paddle {
 namespace lite {
