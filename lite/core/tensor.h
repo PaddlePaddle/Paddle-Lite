@@ -194,6 +194,7 @@ class TensorLite {
   void ResetBuffer(std::shared_ptr<Buffer> buffer, size_t memory_size);
 
   TargetType target() const { return target_; }
+  void set_target(TargetType target) { target_ = target; }
 
   template <typename T>
   TensorLite Slice(int64_t begin, int64_t end) const;
