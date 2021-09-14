@@ -29,16 +29,7 @@ int ConvertFlatten(Converter* converter, OpInfo* op, Scope* scope) {
   axis = axis < 0 ? axis + input_type->dimension_count : axis;
   NNAdapterOperand* output_operand = nullptr;
   if (axis == 0) {
-    // If dimension_count == 1, directly convert to reshape with shape[1,-1],
-    // else need convert to flatten + reshape
-    if (input_type->dimension_count > 1) {
-      output_operand =
-          converter->AddFlattenOperation(output_operand,
-                                         0,
-                                         input_type->dimension_count - 1,
-                                         out_name + "/flatten_0");
-      input_operand = output_operand;
-    }
+    // Directly convert to reshape with shape[1,-1],
     auto shape_operand =
         converter->AddConstantOperand(std::vector<int32_t>{1, -1});
     output_operand = converter->AddOutputOperand(out_name);
@@ -52,10 +43,10 @@ int ConvertFlatten(Converter* converter, OpInfo* op, Scope* scope) {
         input_operand, 0, axis - 1, out_name + "/flatten_0_axis");
     // step2: flatten [axis, -1)
     auto output_type = converter->GetOperandType(output_operand);
-    int32_t start = output_type->dimension_count == input_type->dimension_count
-                        ? axis
-                        : axis - 1;
-    converter->AddFlattenOperation(output_operand, start, -1, out_name);
+    int32_t start_axis =
+        output_type->dimension_count == input_type->dimension_count ? axis
+                                                                    : axis - 1;
+    converter->AddFlattenOperation(output_operand, start_axis, -1, out_name);
   }
   return NO_ERROR;
 }

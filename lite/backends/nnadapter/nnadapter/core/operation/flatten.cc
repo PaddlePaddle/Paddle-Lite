@@ -25,54 +25,44 @@ namespace operation {
 int PrepareFlatten(hal::Operation* operation) {
   FLATTEN_OPERATION_EXTRACT_INPUTS_OUTPUTS
   CopyOperandTypeWithQuantParams(&output_operand->type, input_operand->type);
+  output_operand->type.dimension_count =
+      input_operand->type.dimension_count - end_axis + start_axis;
   // Infer the shape and type of output operands
   auto infer_output_shape = [&](int32_t* input_dimensions,
                                 int32_t* output_dimensions,
                                 const uint32_t input_dimension_count,
-                                int32_t start,
-                                int32_t stop) {
-    stop = stop < 0 ? stop + input_dimension_count : stop;
-    uint32_t input_dimension_index = 0;
+                                int32_t start_axis,
+                                int32_t end_axis) {
     uint32_t output_dimension_index = 0;
-    // Init output dim with value 1.
-    for (int i = 0; i < input_dimension_count; i++) {
-      output_dimensions[i] = 1;
+    for (int i = 0; i < start_axis; i++) {
+      output_dimensions[output_dimension_index++] = input_dimensions[i];
     }
-    // Calc dim
-    while (input_dimension_index < input_dimension_count) {
-      if (input_dimension_index >= start && input_dimension_index <= stop) {
-        if (input_dimensions[input_dimension_index] != NNADAPTER_UNKNOWN) {
-          output_dimensions[output_dimension_index] *=
-              input_dimensions[input_dimension_index];
-        } else {
-          output_dimensions[output_dimension_index] = NNADAPTER_UNKNOWN;
-        }
-        if (input_dimension_index == stop &&
-            input_dimension_index < input_dimension_count) {
-          output_dimension_index++;
-        }
+    int32_t outer = 1;
+    for (int i = start_axis; i <= end_axis; i++) {
+      if (input_dimensions[i] == NNADAPTER_UNKNOWN ||
+          outer == NNADAPTER_UNKNOWN) {
+        outer = NNADAPTER_UNKNOWN;
       } else {
-        output_dimensions[output_dimension_index] =
-            input_dimensions[input_dimension_index];
-        output_dimension_index++;
+        outer *= input_dimensions[i];
       }
-      input_dimension_index++;
     }
-    return output_dimension_index;
+    output_dimensions[output_dimension_index++] = outer;
+    for (int i = end_axis + 1; i < input_dimension_count; i++) {
+      output_dimensions[output_dimension_index++] = input_dimensions[i];
+    }
   };
-  output_operand->type.dimension_count =
-      infer_output_shape(input_operand->type.dimensions,
-                         output_operand->type.dimensions,
-                         input_operand->type.dimension_count,
-                         start,
-                         stop);
+  infer_output_shape(input_operand->type.dimensions,
+                     output_operand->type.dimensions,
+                     input_operand->type.dimension_count,
+                     start_axis,
+                     end_axis);
 
   for (uint32_t i = 0; i < input_operand->type.dynamic_dimension_count; i++) {
     infer_output_shape(input_operand->type.dynamic_dimensions[i],
                        output_operand->type.dynamic_dimensions[i],
                        input_operand->type.dimension_count,
-                       start,
-                       stop);
+                       start_axis,
+                       end_axis);
   }
 
   return NNADAPTER_NO_ERROR;

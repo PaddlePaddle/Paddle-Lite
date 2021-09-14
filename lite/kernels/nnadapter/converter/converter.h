@@ -171,8 +171,8 @@ class Converter {
                                           const std::string& out_name = "");
   // Add flatten operation with input operand, start, end, out_name
   NNAdapterOperand* AddFlattenOperation(NNAdapterOperand* input_operand,
-                                        const int32_t start,
-                                        const int32_t end,
+                                        const int32_t start_axis,
+                                        const int32_t end_axis,
                                         const std::string& out_name = "");
 
  private:

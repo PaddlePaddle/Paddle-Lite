@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "core/operation/flatten.h"
-#include "driver/huawei_ascend_npu/converter.h"
+#include "driver/huawei_ascend_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"

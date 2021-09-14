@@ -73,7 +73,7 @@ int RangeAllOperandsIsConstantLimitPass(hal::Model* model,
                                         hal::Operation* operation) {
   NNADAPTER_VLOG(5) << "Enter RangeAllOperandsIsConstantLimitPass";
   RANGE_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  for (operand : input_operands) {
+  for (auto operand : input_operands) {
     if (!IsConstantOperand(operand)) {
       NNADAPTER_LOG(ERROR) << "range input operands only support constant!";
       return NNADAPTER_INVALID_PARAMETER;

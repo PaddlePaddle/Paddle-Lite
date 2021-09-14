@@ -25,16 +25,16 @@ int ConvertFlattenContiguousRange(Converter* converter,
   auto x_name = op->Input("X").front();
   auto out_name = op->Output("Out").front();
   auto start_axis = op->GetAttr<int>("start_axis");
-  auto stop_axis = op->GetAttr<int>("stop_axis");
+  auto end_axis = op->GetAttr<int>("stop_axis");
 
   auto input_operand = converter->GetMappedOperand(x_name);
   NNAdapterOperand* output_operand = converter->AddOutputOperand(out_name);
-  auto start_operand =
+  auto start_axis_operand =
       converter->AddConstantOperand(static_cast<int32_t>(start_axis));
-  auto stop_operand =
-      converter->AddConstantOperand(static_cast<int32_t>(stop_axis));
+  auto end_axis_operand =
+      converter->AddConstantOperand(static_cast<int32_t>(end_axis));
   converter->AddOperation(NNADAPTER_FLATTEN,
-                          {input_operand, start_operand, stop_operand},
+                          {input_operand, start_axis_operand, end_axis_operand},
                           {output_operand});
   return NO_ERROR;
 }
