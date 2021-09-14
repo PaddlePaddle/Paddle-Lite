@@ -77,8 +77,8 @@ imgdnn_tensor Converter::UpdateTensorMap(hal::Operand* operand,
   return tensor;
 }
 
-imgdnn_tensor Converter::AddTensor(int32_t* dimensions,
-                                   uint32_t dimension_count,
+imgdnn_tensor Converter::AddTensor(int32_t* dimensions_data,
+                                   uint32_t dimensions_count,
                                    imgdnn_type type,
                                    const float* quant_scales,
                                    const int32_t* zero_point,
@@ -88,10 +88,10 @@ imgdnn_tensor Converter::AddTensor(int32_t* dimensions,
   imgdnn_tensor tensor = nullptr;
   imgdnn_tensor_descriptor desc;
   desc.type = type;
-  NNADAPTER_CHECK(dimensions);
-  NNADAPTER_CHECK_GT(dimension_count, 0);
+  NNADAPTER_CHECK(dimensions_data);
+  NNADAPTER_CHECK_GT(dimensions_count, 0);
   ConvertToImgdnnDimensions(
-      dimensions, dimension_count, desc.size, &desc.dimensions);
+      dimensions_data, dimensions_count, desc.size, &desc.dimensions);
   if (quant_scales && quant_scale_count > 0) {
     // Quantization types
     if (quant_scale_count > 1) {
@@ -136,8 +136,8 @@ imgdnn_tensor Converter::AddTensor(const NNAdapterOperandType* type,
                                    void* buffer,
                                    std::vector<int32_t> dimensions) {
   if (dimensions.empty()) {
-    for (uint32_t i = 0; i < type->dimension_count; i++) {
-      dimensions.push_back(type->dimensions[i]);
+    for (uint32_t i = 0; i < type->dimensions.count; i++) {
+      dimensions.push_back(type->dimensions.data[i]);
     }
   }
   NNADAPTER_CHECK_EQ(type->layout, NNADAPTER_NCHW);
@@ -179,12 +179,12 @@ imgdnn_tensor Converter::AddTensor(const NNAdapterOperandType* type,
 }
 
 imgdnn_tensor Converter::AddQuant8ConstantTensor(uint8_t* values,
-                                                 int32_t* dimensions,
-                                                 uint32_t dimension_count,
+                                                 int32_t* dimensions_data,
+                                                 uint32_t dimensions_count,
                                                  float quant_scale,
                                                  int32_t zero_point) {
-  return AddTensor(dimensions,
-                   dimension_count,
+  return AddTensor(dimensions_data,
+                   dimensions_count,
                    IMGDNN_TYPE_Q_U8,
                    &quant_scale,
                    &zero_point,
@@ -194,13 +194,13 @@ imgdnn_tensor Converter::AddQuant8ConstantTensor(uint8_t* values,
 }
 
 imgdnn_tensor Converter::AddQuant8ConstantTensor(int8_t* values,
-                                                 int32_t* dimensions,
-                                                 uint32_t dimension_count,
+                                                 int32_t* dimensions_data,
+                                                 uint32_t dimensions_count,
                                                  float* quant_scales,
                                                  uint32_t quant_scale_count,
                                                  uint32_t quant_channel_dim) {
-  return AddTensor(dimensions,
-                   dimension_count,
+  return AddTensor(dimensions_data,
+                   dimensions_count,
                    IMGDNN_TYPE_Q_I8,
                    quant_scales,
                    nullptr,
@@ -210,11 +210,11 @@ imgdnn_tensor Converter::AddQuant8ConstantTensor(int8_t* values,
 }
 
 imgdnn_tensor Converter::AddQuant32ConstantTensor(int32_t* values,
-                                                  int32_t* dimensions,
-                                                  uint32_t dimension_count,
+                                                  int32_t* dimensions_data,
+                                                  uint32_t dimensions_count,
                                                   float quant_scale) {
-  return AddTensor(dimensions,
-                   dimension_count,
+  return AddTensor(dimensions_data,
+                   dimensions_count,
                    IMGDNN_TYPE_I32,
                    &quant_scale,
                    nullptr,

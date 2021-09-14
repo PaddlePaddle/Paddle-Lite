@@ -36,11 +36,11 @@ int ConvertFullyConnected(Converter* converter, hal::Operation* operation) {
   // Transpose weight tensor from (m,k) to (k,m)
   std::vector<uint8_t> transpose_weight_data(num_units * input_size);
   std::vector<int32_t> transpose_weight_dimensions(
-      weight_operand->type.dimension_count);
+      weight_operand->type.dimensions.count);
   TransposeData(reinterpret_cast<uint8_t*>(weight_operand->buffer),
                 transpose_weight_data.data(),
                 {1, 0},
-                weight_operand->type.dimensions,
+                weight_operand->type.dimensions.data,
                 transpose_weight_dimensions.data());
   NNADAPTER_CHECK(
       IsUInt8AsymmPerLayerQuantType(weight_operand->type.precision));
@@ -52,7 +52,7 @@ int ConvertFullyConnected(Converter* converter, hal::Operation* operation) {
       weight_operand->type.asymm_per_layer_params.zero_point);
   // Expand bias tensor from (c) to (1, c)
   auto bias_tensor = converter->ConvertOperand(
-      bias_operand, {1, bias_operand->type.dimensions[0]});
+      bias_operand, {1, bias_operand->type.dimensions.data[0]});
   NNADAPTER_CHECK(
       IsUInt8AsymmPerLayerQuantType(output_operand->type.precision));
   imgdnn_quant_param output_quant_param;

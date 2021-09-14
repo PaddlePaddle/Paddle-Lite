@@ -30,7 +30,7 @@ namespace operation {
   /* Offset */                                                                 \
   auto offset_operand = input_operands[1];                                     \
   NNADAPTER_VLOG(5) << "offset: " << OperandToString(offset_operand);          \
-  auto offset_channel = offset_operand->type.dimensions[1];                    \
+  auto offset_channel = offset_operand->type.dimensions.data[1];               \
   NNADAPTER_VLOG(5) << "offset_channel: " << offset_channel;                   \
   /* Mask */                                                                   \
   auto mask_operand = input_operands[2];                                       \
@@ -38,10 +38,10 @@ namespace operation {
   /* Filter */                                                                 \
   auto filter_operand = input_operands[3];                                     \
   NNADAPTER_VLOG(5) << "filter: " << OperandToString(filter_operand);          \
-  auto output_channel_size = filter_operand->type.dimensions[0];               \
-  auto filter_channel_size = filter_operand->type.dimensions[1];               \
-  auto filter_height = filter_operand->type.dimensions[2];                     \
-  auto filter_width = filter_operand->type.dimensions[3];                      \
+  auto output_channel_size = filter_operand->type.dimensions.data[0];          \
+  auto filter_channel_size = filter_operand->type.dimensions.data[1];          \
+  auto filter_height = filter_operand->type.dimensions.data[2];                \
+  auto filter_width = filter_operand->type.dimensions.data[3];                 \
   NNADAPTER_VLOG(5) << "filter dims = [" << output_channel_size << ","         \
                     << filter_channel_size << "," << filter_height << ","      \
                     << filter_width << "]";                                    \

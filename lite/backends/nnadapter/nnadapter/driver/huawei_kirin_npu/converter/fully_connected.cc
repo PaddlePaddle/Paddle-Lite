@@ -23,8 +23,8 @@ namespace huawei_kirin_npu {
 int ConvertFullyConnected(Converter* converter, hal::Operation* operation) {
   FULLY_CONNECTED_OPERATION_EXTRACT_INPUTS_OUTPUTS
   auto batch_size =
-      ProductionOfDimensions(input_operand->type.dimensions,
-                             input_operand->type.dimension_count) /
+      ProductionOfDimensions(input_operand->type.dimensions.data,
+                             input_operand->type.dimensions.count) /
       input_size;
   NNADAPTER_VLOG(5) << "batch_size: " << batch_size;
 
@@ -35,8 +35,8 @@ int ConvertFullyConnected(Converter* converter, hal::Operation* operation) {
     input_operator = converter->ConvertOperand(input_operand);
   }
   // Reshape the input operator to 2-D tensor {batch_size, input_size} if the
-  // dimension_count not equal 2
-  if (input_operand->type.dimension_count != 2) {
+  // dimensions_count not equal 2
+  if (input_operand->type.dimensions.count != 2) {
     auto reshape_op = converter->AddOperator<hiai::op::Reshape>(input_operand);
     auto shape_operator = converter->AddInt32ConstantOperator(
         {static_cast<int32_t>(batch_size), input_size});
