@@ -21,30 +21,11 @@
 #include <vector>
 #include "driver/huawei_ascend_npu/utility.h"
 #include "op_proto/built-in/inc/all_ops.h"
+#include "utility/debug.h"
 #include "utility/string.h"
 
 namespace nnadapter {
 namespace huawei_ascend_npu {
-
-class Device {
- public:
-  Device();
-  ~Device();
-};
-
-class Context {
- public:
-  explicit Context(void* device, const char* properties);
-  int GetFirstDeviceID() {
-    return selected_device_ids_.empty() ? 0 : selected_device_ids_[0];
-  }
-  ~Context();
-
- private:
-  void* device_{nullptr};
-  void* context_{nullptr};
-  std::vector<int> selected_device_ids_;
-};
 
 class Operator {
  public:
@@ -69,24 +50,31 @@ class Operator {
   int component_index_{-1};
 };
 
-class Program {
+class Converter {
  public:
-  explicit Program(Context* context) : context_(context) {}
-  ~Program();
+  explicit Converter(
+      std::map<hal::Operand*, std::vector<std::shared_ptr<Operator>>>*
+          operators)
+      : operators_(operators) {}
+  ~Converter() {}
 
-  int Build(hal::Model* model, hal::Cache* cache);
-  int Execute(uint32_t input_count,
-              hal::Argument* input_arguments,
-              uint32_t output_count,
-              hal::Argument* output_arguments);
-
- private:
-  void Clear();
-  // Operand converters
-  std::string GetOperatorName(hal::Operand* operand);
+  // Convert a NNAdapter model to GE graph and operators
+  int Apply(hal::Model* model);
+  // Mapping a GE operator to a NNAdapter operand
   std::shared_ptr<Operator> GetMappedOperator(hal::Operand* operand);
   std::shared_ptr<Operator> UpdateOperatorMap(hal::Operand* operand,
                                               std::shared_ptr<Operator> op);
+  template <typename T>
+  std::shared_ptr<T> AddOperator(hal::Operand* operand = nullptr,
+                                 const std::string& custom_name = "") {
+    std::string operand_id = OperandIdToString(operand);
+    std::string operator_name = string_format("op_%d_%s_%s_%s",
+                                              operator_index_++,
+                                              typeid(T).name(),
+                                              operand_id.c_str(),
+                                              custom_name.c_str());
+    return std::make_shared<T>(operator_name);
+  }
   std::shared_ptr<Operator> AddConstantOperator(
       const void* values,
       NNAdapterOperandPrecisionCode precision,
@@ -109,52 +97,11 @@ class Program {
   std::shared_ptr<Operator> ConvertOperand(
       hal::Operand* operand, std::vector<int32_t> dimensions = {});
 
-  // Operation converters
-  int ConvertConv2D(hal::Operation* operation);
-  int ConvertConv2DTranspose(hal::Operation* operation);
-  int ConvertFullyConnected(hal::Operation* operation);
-  int ConvertMatMul(hal::Operation* operation);
-  int ConvertFill(hal::Operation* operation);
-  int ConvertPool2D(hal::Operation* operation);
-  int ConvertAdaptivePool2D(hal::Operation* operation);
-  int ConvertElementwise(hal::Operation* operation);
-  int ConvertSoftmax(hal::Operation* operation);
-  int ConvertCumSum(hal::Operation* operation);
-  int ConvertActivation(hal::Operation* operation);
-  int ConvertPRelu(hal::Operation* operation);
-  int ConvertReshape(hal::Operation* operation);
-  int ConvertTranspose(hal::Operation* operation);
-  int ConvertConcat(hal::Operation* operation);
-  int ConvertSplit(hal::Operation* operation);
-  int ConvertPow(hal::Operation* operation);
-  int ConvertBatchNormalization(hal::Operation* operation);
-  int ConvertClip(hal::Operation* operation);
-  int ConvertLeakyRelu(hal::Operation* operation);
-  int ConvertSlice(hal::Operation* operation);
-  int ConvertReduceMean(hal::Operation* operation);
-  int ConvertExpand(hal::Operation* operation);
-  int ConvertRange(hal::Operation* operation);
-  int ConvertCast(hal::Operation* operation);
-  int ConvertShape(hal::Operation* operation);
-  int ConvertStack(hal::Operation* operation);
-  int ConvertAssign(hal::Operation* operation);
-  int ConvertResizeNearest(hal::Operation* operation);
-  int ConvertResizeLinear(hal::Operation* operation);
-  int ConvertLpNormalization(hal::Operation* operation);
-  int ConvertDeformableConv2d(hal::Operation* operation);
-  int ConvertHardSwish(hal::Operation* operation);
-  int ConvertHardSigmoid(hal::Operation* operation);
-  int ConvertSqueeze(hal::Operation* operation);
-  int ConvertUnsqueeze(hal::Operation* operation);
-  int ConvertPad(hal::Operation* operation);
-
  private:
-  Context* context_{nullptr};
-  // Map NNAdapter operand to GE operator
-  std::map<hal::Operand*, std::vector<std::shared_ptr<Operator>>> operators_;
-  std::shared_ptr<AclModelClient> model_client_{nullptr};
-  std::vector<NNAdapterOperandType> input_types_;
-  std::vector<NNAdapterOperandType> output_types_;
+  std::map<hal::Operand*, std::vector<std::shared_ptr<Operator>>>* operators_{
+      nullptr};
+  // Only for generating the unique name for GE operator
+  uint32_t operator_index_{0};
 };
 
 // Set one of dynamic inputs of a ge::Operator and update its tensor desc
@@ -200,7 +147,7 @@ class Program {
     auto dtype = ConvertToGEPrecision(dst->type.precision);                    \
     auto tensor_desc = std::make_shared<ge::TensorDesc>(shape, format, dtype); \
     src->update_output_desc_##name(*tensor_desc);                              \
-    UpdateOperatorMap(                                                         \
+    converter->UpdateOperatorMap(                                              \
         dst, std::make_shared<Operator>(src, tensor_desc, #name, -1));         \
   })
 
@@ -211,7 +158,7 @@ class Program {
     auto dtype = ConvertToGEPrecision(dst->type.precision);                    \
     auto tensor_desc = std::make_shared<ge::TensorDesc>(shape, format, dtype); \
     src->update_dynamic_output_desc_##name(index, *tensor_desc);               \
-    UpdateOperatorMap(                                                         \
+    converter->UpdateOperatorMap(                                              \
         dst, std::make_shared<Operator>(src, tensor_desc, #name, index));      \
   })
 

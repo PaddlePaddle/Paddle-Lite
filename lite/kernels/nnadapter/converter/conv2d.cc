@@ -21,7 +21,7 @@ namespace kernels {
 namespace nnadapter {
 
 int ConvertConv2D(Converter* converter, OpInfo* op, Scope* scope) {
-  // Extract op attributes
+  // Extract the inputs, outputs and attributes
   auto op_type = op->Type();
   auto input_name = op->Input("Input").front();
   auto input_scale_name = "Input0_scale";

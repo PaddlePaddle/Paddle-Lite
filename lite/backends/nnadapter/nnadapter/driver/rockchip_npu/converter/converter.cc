@@ -16,9 +16,6 @@
 #include <unistd.h>
 #include <algorithm>
 #include <vector>
-#include "driver/rockchip_npu/optimizer/fix_ops.h"
-#include "driver/rockchip_npu/optimizer/unpack_op_fusion.h"
-#include "optimizer/symm2asymm.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -31,7 +28,7 @@ namespace rockchip_npu {
 #define REGISTER_CONVERTER(__op_type__, __func_name__) \
   extern int __func_name__(Converter* converter, hal::Operation* operation);
 #include "driver/rockchip_npu/converter/all.h"  // NOLINT
-#undef __NNADAPTER_DRIVER_ROCKCHIP_CONVERTER_ALL_H__
+#undef __NNADAPTER_DRIVER_ROCKCHIP_NPU_CONVERTER_ALL_H__
 #undef REGISTER_CONVERTER
 
 int Converter::Apply(hal::Model* model) {
@@ -47,7 +44,7 @@ int Converter::Apply(hal::Model* model) {
     __func_name__(this, operation);                    \
     break;
 #include "driver/rockchip_npu/converter/all.h"  // NOLINT
-#undef __NNADAPTER_DRIVER_ROCKCHIP_CONVERTER_ALL_H__
+#undef __NNADAPTER_DRIVER_ROCKCHIP_NPU_CONVERTER_ALL_H__
 #undef REGISTER_CONVERTER
       default:
         NNADAPTER_LOG(FATAL) << "Unsupported operation("

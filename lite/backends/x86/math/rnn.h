@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#pragma once
+
 #include <string>
 #include "lite/core/tensor.h"
 #include "lite/utils/log/logging.h"

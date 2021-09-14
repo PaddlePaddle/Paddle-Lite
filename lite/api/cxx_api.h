@@ -245,6 +245,7 @@ class LITE_API Predictor {
   std::vector<std::string> output_names_;
   std::vector<Place> valid_places_;
   std::vector<PrecisionType> input_precisions_;
+  std::vector<std::vector<int64_t>> input_shapes_;
 };
 
 class CxxPaddleApiImpl : public lite_api::PaddlePredictor {

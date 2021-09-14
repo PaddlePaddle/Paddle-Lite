@@ -13,14 +13,14 @@
 // limitations under the License.
 
 #include "core/operation/conv2d_transpose.h"
-#include "driver/huawei_ascend_npu/converter.h"
+#include "driver/huawei_ascend_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int Program::ConvertConv2DTranspose(hal::Operation* operation) {
+int ConvertConv2DTranspose(Converter* converter, hal::Operation* operation) {
   CONV_2D_TRANSPOSE_OPERATION_EXTRACT_INPUTS_OUTPUTS
   auto out_dims = output_operand->type.dimensions;
   NNADAPTER_CHECK_NE(out_dims[2], NNADAPTER_UNKNOWN)
@@ -31,21 +31,20 @@ int Program::ConvertConv2DTranspose(hal::Operation* operation) {
   NNADAPTER_CHECK_EQ(group, 1);
 
   // Convert to GE operators
-  auto input_operator = GetMappedOperator(input_operand);
+  auto input_operator = converter->GetMappedOperator(input_operand);
   if (input_operator == nullptr) {
-    input_operator = ConvertOperand(input_operand);
+    input_operator = converter->ConvertOperand(input_operand);
   }
-  auto filter_operator = GetMappedOperator(filter_operand);
+  auto filter_operator = converter->GetMappedOperator(filter_operand);
   if (filter_operator == nullptr) {
-    filter_operator = ConvertOperand(filter_operand);
+    filter_operator = converter->ConvertOperand(filter_operand);
   }
-  auto bias_operator = GetMappedOperator(bias_operand);
+  auto bias_operator = converter->GetMappedOperator(bias_operand);
   if (bias_operator == nullptr) {
-    bias_operator = ConvertOperand(bias_operand);
+    bias_operator = converter->ConvertOperand(bias_operand);
   }
-  auto conv2d_transpose_name = GetOperatorName(output_operand);
   auto conv2d_transpose_op =
-      std::make_shared<ge::op::Conv2DTransposeD>(conv2d_transpose_name);
+      converter->AddOperator<ge::op::Conv2DTransposeD>(output_operand);
   SET_INPUT(conv2d_transpose_op, x, input_operator);
   SET_INPUT(conv2d_transpose_op, filter, filter_operator);
   SET_INPUT(conv2d_transpose_op, bias, bias_operator);
