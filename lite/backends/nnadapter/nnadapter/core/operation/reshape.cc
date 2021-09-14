@@ -31,7 +31,7 @@ int PrepareReshape(hal::Operation* operation) {
       << "Only support constant shape now.";
   auto in_type = input_operand->type;
   auto& out_type = output_operand->type;
-  CopyOperandType(&out_type, in_type);
+  CopyOperandTypeWithQuantParams(&out_type, in_type);
   out_type.dimension_count = shape_count;
   for (uint32_t i = 0; i < shape_count; i++) {
     if (shape_data[i] == 0 && in_type.dimensions[i] != NNADAPTER_UNKNOWN) {
@@ -59,7 +59,7 @@ int PrepareReshape(hal::Operation* operation) {
       for (uint32_t i = 0; i < shape_count; i++) {
         if (output_dimensions[i] == -1) {
           NNADAPTER_CHECK_EQ(unk_idx, -1) << "Should only has one unk idx.";
-          unk_idx = -1;
+          unk_idx = i;
         } else {
           size /= static_cast<int64_t>(output_dimensions[i]);
         }

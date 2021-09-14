@@ -13,28 +13,27 @@
 // limitations under the License.
 
 #include "core/operation/unsqueeze.h"
-#include "driver/mediatek_apu/converter.h"
+#include "driver/mediatek_apu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace mediatek_apu {
 
-int Program::ConvertUnsqueeze(hal::Operation* operation) {
+int ConvertUnsqueeze(Converter* converter, hal::Operation* operation) {
   UNSQUEEZE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to Neuron operands and operations
-  auto input_index = GetMappedIndex(input_operand);
+  auto input_index = converter->GetMappedIndex(input_operand);
   if (input_index == INVALID_INDEX) {
-    input_index = ConvertOperand(input_operand);
+    input_index = converter->ConvertOperand(input_operand);
   }
-  auto shape_index = AddInt32ConstantOperand(
+  auto shape_index = converter->AddInt32ConstantOperand(
       output_operand->type.dimensions, output_operand->type.dimension_count);
-  auto output_index = ConvertOperand(output_operand);
-  std::vector<uint32_t> input_indexes = {input_index, shape_index};
-  std::vector<uint32_t> output_indexes = {output_index};
+  auto output_index = converter->ConvertOperand(output_operand);
   NNADAPTER_CHECK_EQ(
-      AddOperation(NEURON_RESHAPE, &input_indexes, &output_indexes),
+      converter->AddOperation(
+          NEURON_RESHAPE, {input_index, shape_index}, {output_index}),
       NEURON_NO_ERROR);
   return NNADAPTER_NO_ERROR;
 }

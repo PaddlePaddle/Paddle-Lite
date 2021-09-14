@@ -19,7 +19,7 @@
 namespace nnadapter {
 namespace operation {
 
-#define CONV2D_OPERATION_EXTRACT_INPUTS_OUTPUTS                                \
+#define CONV_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS                               \
   auto& input_operands = operation->input_operands;                            \
   auto& output_operands = operation->output_operands;                          \
   auto input_count = input_operands.size();                                    \

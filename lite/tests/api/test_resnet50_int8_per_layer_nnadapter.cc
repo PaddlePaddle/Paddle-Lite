@@ -19,7 +19,6 @@
 #include "lite/api/test/lite_api_test_helper.h"
 #include "lite/api/test/test_helper.h"
 #include "lite/tests/api/ILSVRC2012_utility.h"
-#include "lite/utils/log/cp_logging.h"
 
 DEFINE_string(data_dir, "", "data dir");
 DEFINE_int32(iteration, 100, "iteration times to run");

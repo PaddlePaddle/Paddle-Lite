@@ -291,7 +291,7 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
     注意：
     1. 在run_with_adb.sh 可看到'#SUBGRAPH_PARTITION_CONFIG_FILE=subgraph_partition_config_file.txt',
     删除'#'即可使能自定义子图分割配置文件。
-    1. demo中已经包含了类似opt工具优化生成nb模型的功能。
+    2. demo中已经包含了类似opt工具优化生成nb模型的功能。
 
     # 如果不使用自定义子图分割配置文件，Kirin NPU将得出错误的预测结果
     $ cd PaddleLite-generic-demo/ssd_detection_demo/shell

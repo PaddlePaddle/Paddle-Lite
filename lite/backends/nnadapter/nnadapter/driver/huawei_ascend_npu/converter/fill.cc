@@ -13,27 +13,26 @@
 // limitations under the License.
 
 #include "core/operation/fill.h"
-#include "driver/huawei_ascend_npu/converter.h"
+#include "driver/huawei_ascend_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int Program::ConvertFill(hal::Operation* operation) {
+int ConvertFill(Converter* converter, hal::Operation* operation) {
   FILL_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
-  auto shape_operator = GetMappedOperator(shape_operand);
+  auto shape_operator = converter->GetMappedOperator(shape_operand);
   if (shape_operator == nullptr) {
-    shape_operator = ConvertOperand(shape_operand);
+    shape_operator = converter->ConvertOperand(shape_operand);
   }
-  auto value_operator = GetMappedOperator(value_operand);
+  auto value_operator = converter->GetMappedOperator(value_operand);
   if (value_operator == nullptr) {
-    value_operator = ConvertOperand(value_operand);
+    value_operator = converter->ConvertOperand(value_operand);
   }
-  auto fill_name = GetOperatorName(output_operand);
-  auto fill_op = std::make_shared<ge::op::Fill>(fill_name);
+  auto fill_op = converter->AddOperator<ge::op::Fill>(output_operand);
   SET_INPUT(fill_op, dims, shape_operator);
   SET_INPUT(fill_op, value, value_operator);
   MAP_OUTPUT(fill_op, y, output_operand);

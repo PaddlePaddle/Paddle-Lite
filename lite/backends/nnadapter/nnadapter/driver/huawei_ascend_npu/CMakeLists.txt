@@ -21,7 +21,7 @@ add_definitions(-DNNADAPTER_DRIVER_NAME=${DRIVER_NAME})
 include(dependencies.cmake)
 aux_source_directory(converter CONVERTERS)
 aux_source_directory(optimizer OPTIMIZERS)
-set(DRIVER_SRCS utility.cc ${OPTIMIZERS} model_client.cc converter.cc ${CONVERTERS} driver.cc)
+set(DRIVER_SRCS utility.cc ${OPTIMIZERS} ${CONVERTERS} model_client.cc engine.cc driver.cc)
 set(DRIVER_DEPS ${NNADAPTER_CORE} ${NNADAPTER_UTILITIES} ${${DEVICE_NAME}_deps})
 
 add_library(${DRIVER_NAME} SHARED ${DRIVER_SRCS})

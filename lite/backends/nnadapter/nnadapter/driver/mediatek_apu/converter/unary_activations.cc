@@ -12,33 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/mediatek_apu/converter.h"
+#include "core/operation/unary_activations.h"
+#include "driver/mediatek_apu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace mediatek_apu {
 
-int Program::ConvertActivation(hal::Operation* operation) {
-  auto& input_operands = operation->input_operands;
-  auto& output_operands = operation->output_operands;
-  auto input_count = input_operands.size();
-  auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 1);
-  NNADAPTER_CHECK_EQ(output_count, 1);
-  // Input
-  auto input_operand = input_operands[0];
-  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
-  // Output
-  auto output_operand = output_operands[0];
-  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
+int ConvertUnaryActivations(Converter* converter, hal::Operation* operation) {
+  UNARY_ACTIVATIONS_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to Neuron operands and operations
-  auto input_index = GetMappedIndex(input_operand);
+  auto input_index = converter->GetMappedIndex(input_operand);
   if (input_index == INVALID_INDEX) {
-    input_index = ConvertOperand(input_operand);
+    input_index = converter->ConvertOperand(input_operand);
   }
-  auto output_index = ConvertOperand(output_operand);
+  auto output_index = converter->ConvertOperand(output_operand);
   NeuronOperationType op_type;
   if (operation->type == NNADAPTER_SIGMOID) {
     op_type = NEURON_LOGISTIC;
@@ -53,10 +43,9 @@ int Program::ConvertActivation(hal::Operation* operation) {
                          << OperationTypeToString(operation->type)
                          << " is found.";
   }
-  std::vector<uint32_t> input_indexes = {input_index};
-  std::vector<uint32_t> output_indexes = {output_index};
-  NNADAPTER_CHECK_EQ(AddOperation(op_type, &input_indexes, &output_indexes),
-                     NEURON_NO_ERROR);
+  NNADAPTER_CHECK_EQ(
+      converter->AddOperation(op_type, {input_index}, {output_index}),
+      NEURON_NO_ERROR);
   return NNADAPTER_NO_ERROR;
 }
 

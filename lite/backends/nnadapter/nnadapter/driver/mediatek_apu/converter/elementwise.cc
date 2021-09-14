@@ -13,28 +13,28 @@
 // limitations under the License.
 
 #include "core/operation/elementwise.h"
-#include "driver/mediatek_apu/converter.h"
+#include "driver/mediatek_apu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace mediatek_apu {
 
-int Program::ConvertElementwise(hal::Operation* operation) {
+int ConvertElementwise(Converter* converter, hal::Operation* operation) {
   ELEMENTWISE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to Neuron operands and operations
-  auto input0_index = GetMappedIndex(input0_operand);
+  auto input0_index = converter->GetMappedIndex(input0_operand);
   if (input0_index == INVALID_INDEX) {
-    input0_index = ConvertOperand(input0_operand);
+    input0_index = converter->ConvertOperand(input0_operand);
   }
-  auto input1_index = GetMappedIndex(input1_operand);
+  auto input1_index = converter->GetMappedIndex(input1_operand);
   if (input1_index == INVALID_INDEX) {
-    input1_index = ConvertOperand(input1_operand);
+    input1_index = converter->ConvertOperand(input1_operand);
   }
-  auto fuse_code_index =
-      AddInt32ConstantOperand(ConvertFuseCodeToNeuronFuseCode(fuse_code));
-  auto output_index = ConvertOperand(output_operand);
+  auto fuse_code_index = converter->AddInt32ConstantOperand(
+      ConvertFuseCodeToNeuronFuseCode(fuse_code));
+  auto output_index = converter->ConvertOperand(output_operand);
   NeuronOperationType op_type;
   if (operation->type == NNADAPTER_ADD) {
     op_type = NEURON_ADD;
@@ -49,11 +49,11 @@ int Program::ConvertElementwise(hal::Operation* operation) {
                          << OperationTypeToString(operation->type)
                          << " is found.";
   }
-  std::vector<uint32_t> input_indexes = {
-      input0_index, input1_index, fuse_code_index};
-  std::vector<uint32_t> output_indexes = {output_index};
-  NNADAPTER_CHECK_EQ(AddOperation(op_type, &input_indexes, &output_indexes),
-                     NEURON_NO_ERROR);
+  NNADAPTER_CHECK_EQ(
+      converter->AddOperation(op_type,
+                              {input0_index, input1_index, fuse_code_index},
+                              {output_index}),
+      NEURON_NO_ERROR);
   return NNADAPTER_NO_ERROR;
 }
 
