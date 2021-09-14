@@ -447,10 +447,10 @@ TEST(elementwise_broadcast, compute_i32) {
           if ((res != 0) && ((res < 0) != (r < 0))) res += r;
           return res;
         }));
-    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<int32_t>(
-        TARGET(kX86), "int32", "pow", "", [](int32_t l, int32_t r) {
-          return std::pow(l, r);
-        }));
+    // EXPECT_TRUE(paddle::lite::RunOnRandomArgs<int32_t>(
+    //     TARGET(kX86), "int32", "pow", "", [](int32_t l, int32_t r) {
+    //       return std::pow(l, r);
+    //     }));
   }
 }
 
@@ -499,10 +499,10 @@ TEST(elementwise_broadcast, compute_i64) {
           if ((res != 0) && ((res < 0) != (r < 0))) res += r;
           return res;
         }));
-    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<int64_t>(
-        TARGET(kX86), "int64", "pow", "", [](int64_t l, int64_t r) {
-          return std::pow(l, r);
-        }));
+    // EXPECT_TRUE(paddle::lite::RunOnRandomArgs<int64_t>(
+    //     TARGET(kX86), "int64", "pow", "", [](int64_t l, int64_t r) {
+    //       return std::pow(l, r);
+    //     }));
   }
 }
 
