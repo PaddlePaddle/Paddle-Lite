@@ -15,6 +15,8 @@
 #include "driver/huawei_ascend_npu/optimizer/fix_operators_constraint_pass.h"
 #include <cmath>
 #include <vector>
+#include "core/operation/expand.h"
+#include "core/operation/range.h"
 #include "core/operation/reduce_mean.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -30,6 +32,16 @@ int FixOperatorsConstraintPass(hal::Model* model) {
   NNADAPTER_VLOG(5) << "Enter FixOperatorsConstraintPass";
   for (auto operation : operations) {
     switch (operation->type) {
+      case NNADAPTER_EXPAND: {
+        NNADAPTER_CHECK_EQ(
+            ExpandShapeOperandIsConstantLimitPass(model, operation),
+            NNADAPTER_NO_ERROR);
+      } break;
+      case NNADAPTER_RANGE: {
+        NNADAPTER_CHECK_EQ(
+            RangeAllOperandsIsConstantLimitPass(model, operation),
+            NNADAPTER_NO_ERROR);
+      } break;
       case NNADAPTER_REDUCE_MEAN: {
         NNADAPTER_CHECK_EQ(ReduceMeanAsModelOutputPass(model, operation),
                            NNADAPTER_NO_ERROR);
@@ -53,6 +65,30 @@ int ReduceMeanAsModelOutputPass(hal::Model* model, hal::Operation* operation) {
   auto reduce_all = axes_size == input_operand->type.dimension_count;
   if (!keep_dim && reduce_all && IsModelOutputOperand(output_operand)) {
     AddDummyOperation(model, output_operand);
+  }
+  return NNADAPTER_NO_ERROR;
+}
+
+int RangeAllOperandsIsConstantLimitPass(hal::Model* model,
+                                        hal::Operation* operation) {
+  NNADAPTER_VLOG(5) << "Enter RangeAllOperandsIsConstantLimitPass";
+  RANGE_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  for (operand : input_operands) {
+    if (!IsConstantOperand(operand)) {
+      NNADAPTER_LOG(ERROR) << "range input operands only support constant!";
+      return NNADAPTER_INVALID_PARAMETER;
+    }
+  }
+  return NNADAPTER_NO_ERROR;
+}
+
+int ExpandShapeOperandIsConstantLimitPass(hal::Model* model,
+                                          hal::Operation* operation) {
+  NNADAPTER_VLOG(5) << "Enter ExpandShapeOperandIsConstantLimitPass";
+  EXPAND_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  if (!IsConstantOperand(shape_operand)) {
+    NNADAPTER_LOG(ERROR) << "Expand shape operand only support constant!";
+    return NNADAPTER_INVALID_PARAMETER;
   }
   return NNADAPTER_NO_ERROR;
 }
