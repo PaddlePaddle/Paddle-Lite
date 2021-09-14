@@ -35,148 +35,34 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
 
   auto input_dims = param.x->dims();
   CHECK_EQ(input_dims.size(), 4UL);
-  int batch_size = param.x->dims()[0];
-  int input_channel = param.x->dims()[1];
 
-  if ((*param.paddings)[0] == 1) {
-    const auto* i_data = param.x->data<float>();
-    const auto* w_data = param.filter->data<float>();
-    const auto* b_data = param.bias ? param.bias->data<float>() : nullptr;
-    auto act_param = param.activation_param;
-    const auto stride = param.strides[1];
-    auto pad = (*param.paddings)[2];
-    bool flag_bias = param.bias != nullptr;
-    auto* o_data = param.output->mutable_data<float>();
-
-    auto x_dims = param.x->dims();
-    auto w_dims = param.filter->dims();
-    auto o_dims = param.output->dims();
-
-    int iw = x_dims[3];
-    int ih = x_dims[2];
-    int ic = x_dims[1];
-    int bs = x_dims[0];
-    int oh = o_dims[2];
-    int ow = o_dims[3];
-    int oc = o_dims[1];
-
-    if (stride == 1) {
-      lite::x86::math::conv_depthwise_3x3s1_p1_direct(CONV_DW_PARAM);
-    } else if (stride == 2) {
-      lite::x86::math::conv_depthwise_3x3s2_p1_direct(CONV_DW_PARAM);
-    }
-    KERNEL_FUNC_NAME("conv_depthwise_direct")
-    return;
-  }
-
-  const int pack_size =
-      input_channel % 8 == 0 ? 8 : input_channel % 4 == 0 ? 4 : 1;
-  const int pack_num = input_channel / pack_size;
-
-  if (pack_size == 8) {
-    // lite::x86::math::pack8_m256(param.x, &input_pack_, pack_num, false);
-    // lite::x86::math::padding8_m256(
-    //    &input_pack_, &input_padding_, *(param.paddings));
-    lite::x86::math::pack_padding8_m256(
-        param.x, &input_padding_, pack_num, *(param.paddings));
-  } else if (pack_size == 4) {
-    lite::x86::math::pack4_m128(param.x, &input_pack_, pack_num, false);
-    lite::x86::math::padding4_m128(
-        &input_pack_, &input_padding_, *(param.paddings));
-  } else {
-    lite::x86::math::padding1_float(
-        param.x, &input_padding_, *(param.paddings));
-  }
-
-  // filter [oc, ic/groups=1, kh, kw]
-  auto filter_dims = param.filter->dims();
-  CHECK_EQ(filter_dims.size(), 4UL);
-  int kernel_h = param.filter->dims()[2];
-  int kernel_w = param.filter->dims()[3];
-
-  // filter [oc, 1, ih, iw] & pack_size=8 => [oc/8, ih, iw, 8]
-  // filter [oc, 1, ih, iw] & pack_size=4 => [ic/4, ih, iw, 4]
-  if (pack_size == 8) {
-    lite::x86::math::pack8_m256(param.filter, &filter_pack_, pack_num, true);
-  } else if (pack_size == 4) {
-    lite::x86::math::pack4_m128(param.filter, &filter_pack_, pack_num, true);
-  }
-
-  // attributes
-  const int stride_h = param.strides[0];
-  const int stride_w = param.strides[1];
-  const int dilation_h = (*param.dilations)[0];
-  const int dilation_w = (*param.dilations)[1];
-
-  // act type
+  const auto* i_data = param.x->data<float>();
+  const auto* w_data = param.filter->data<float>();
+  const auto* b_data = param.bias ? param.bias->data<float>() : nullptr;
   auto act_param = param.activation_param;
-  bool has_act = act_param.has_active;
-  auto act_type = act_param.active_type;
+  const auto stride = param.strides[1];
+  auto pad = (*param.paddings)[2];
+  bool flag_bias = param.bias != nullptr;
+  auto* o_data = param.output->mutable_data<float>();
 
-  // output [bs, oc, oh, ow]
-  CHECK_EQ(param.output->dims().size(), 4UL);
-  const int in_h = input_padding_.dims()[2], in_w = input_padding_.dims()[3];
-  const int kernel_extend_h = dilation_h * (kernel_h - 1) + 1;
-  const int kernel_extend_w = dilation_w * (kernel_w - 1) + 1;
-  int output_height = (in_h - kernel_extend_h) / stride_h + 1;
-  int output_width = (in_w - kernel_extend_w) / stride_w + 1;
-  // output_trans [bs, oc/8, oh, ow, 8]
-  // output_trans [bs, oc/4, oh, ow, 4]
-  output_pack_.Resize(
-      {batch_size, pack_num, output_height, output_width, pack_size});
+  auto x_dims = param.x->dims();
+  auto w_dims = param.filter->dims();
+  auto o_dims = param.output->dims();
 
-  if (pack_size == 8) {
-    if (kernel_h == 3 && kernel_w == 3 && stride_h == 1 && stride_w == 1 &&
-        dilation_h == 1 && dilation_w == 1) {
-      lite::x86::math::conv_depthwise_3x3s1_m256(&input_padding_,
-                                                 &output_pack_,
-                                                 &filter_pack_,
-                                                 param.bias,
-                                                 has_act,
-                                                 act_type);
-      KERNEL_FUNC_NAME("conv_depthwise_3x3s1_m256")
-    } else if (kernel_h == 3 && kernel_w == 3 && stride_h == 2 &&
-               stride_w == 2 && dilation_h == 1 && dilation_w == 1) {
-      lite::x86::math::conv_depthwise_3x3s2_m256(&input_padding_,
-                                                 &output_pack_,
-                                                 &filter_pack_,
-                                                 param.bias,
-                                                 has_act,
-                                                 act_type);
-      KERNEL_FUNC_NAME("conv_depthwise_3x3s2_m256")
-    } else {
-      lite::x86::math::conv_depthwise_m256(&input_padding_,
-                                           &output_pack_,
-                                           &filter_pack_,
-                                           param.bias,
-                                           stride_h,
-                                           stride_w,
-                                           dilation_h,
-                                           dilation_w,
-                                           has_act,
-                                           act_type);
-      KERNEL_FUNC_NAME("conv_depthwise_m256")
-    }
-  } else if (pack_size == 4) {
-    lite::x86::math::conv_depthwise_m128(&input_padding_,
-                                         &output_pack_,
-                                         &filter_pack_,
-                                         param.bias,
-                                         stride_h,
-                                         stride_w,
-                                         dilation_h,
-                                         dilation_w,
-                                         has_act,
-                                         act_type);
-    KERNEL_FUNC_NAME("conv_depthwise_m128")
+  int iw = x_dims[3];
+  int ih = x_dims[2];
+  int ic = x_dims[1];
+  int bs = x_dims[0];
+  int oh = o_dims[2];
+  int ow = o_dims[3];
+  int oc = o_dims[1];
+
+  if (stride == 1) {
+    lite::x86::math::conv_depthwise_3x3s1_p01_direct(CONV_DW_PARAM);
+  } else if (stride == 2) {
+    lite::x86::math::conv_depthwise_3x3s2_p01_direct(CONV_DW_PARAM);
   }
-
-  // [bs, oh, ow, oc] => [bs, oc, oh, ow]
-  if (pack_size == 8) {
-    lite::x86::math::unpack8_m256(&output_pack_, param.output);
-  } else if (pack_size == 4) {
-    lite::x86::math::unpack4_m128(&output_pack_, param.output);
-  }
+  KERNEL_FUNC_NAME("conv_depthwise_direct")
 }
 
 PROFILE_INFO(kFloat, kFloat)

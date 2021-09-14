@@ -89,11 +89,12 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   const int iw = param.x->dims()[3];
 
   //! select conv impl
-  if (this->device_ctx->avx_level() != AVXType::AVX_NONE) {
-    if (dw_kernel && kps_equal && no_dilation && flag_dw && (groups & 3) == 0) {
-      impl_ = new DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>;
-    }
+
+  if (dw_kernel && kps_equal && no_dilation && flag_dw && flag_p01) {
+    impl_ = new DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>;
+    VLOG(3) << "invoking conv_depthwise_3x3s1 or conv_depthwise_3x3s2";
   }
+
   if (ih >= 112 && ih <= 400 && iw >= 112 && iw <= 400 && input_channel >= 3 &&
       output_channel <= 24 && output_channel % 8 == 0 && groups == 1 &&
       kernel_h == 3 && stride_h == 2 && nodilations && kps_equal &&
