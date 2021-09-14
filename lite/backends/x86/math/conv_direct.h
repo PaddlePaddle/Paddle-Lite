@@ -34,7 +34,8 @@ void conv_direct_3x3s2(const float* i_data,
                        int ph,
                        int pw,
                        const float* bias,
-                       lite_api::ActivationType active_type);
+                       lite_api::ActivationType active_type,
+                       lite_api::ActivationParam act_param);
 
 }  // namespace math
 }  // namespace x86

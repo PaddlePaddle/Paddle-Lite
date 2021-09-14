@@ -64,7 +64,8 @@ void DirectConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                      ph,
                                      pw,
                                      b_data,
-                                     act_param.active_type);
+                                     act_param.active_type,
+                                     act_param);
 }
 }  // namespace x86
 }  // namespace kernels

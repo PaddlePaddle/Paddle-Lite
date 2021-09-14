@@ -133,7 +133,8 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                                  &filter_pack_,
                                                  param.bias,
                                                  has_act,
-                                                 act_type);
+                                                 act_type,
+                                                 act_param);
       KERNEL_FUNC_NAME("conv_depthwise_3x3s1_m256")
     } else if (kernel_h == 3 && kernel_w == 3 && stride_h == 2 &&
                stride_w == 2 && dilation_h == 1 && dilation_w == 1) {
@@ -142,7 +143,8 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                                  &filter_pack_,
                                                  param.bias,
                                                  has_act,
-                                                 act_type);
+                                                 act_type,
+                                                 act_param);
       KERNEL_FUNC_NAME("conv_depthwise_3x3s2_m256")
     } else {
       lite::x86::math::conv_depthwise_m256(&input_padding_,
@@ -154,7 +156,8 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                            dilation_h,
                                            dilation_w,
                                            has_act,
-                                           act_type);
+                                           act_type,
+                                           act_param);
       KERNEL_FUNC_NAME("conv_depthwise_m256")
     }
   } else if (pack_size == 4) {
@@ -167,7 +170,8 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                          dilation_h,
                                          dilation_w,
                                          has_act,
-                                         act_type);
+                                         act_type,
+                                         act_param);
     KERNEL_FUNC_NAME("conv_depthwise_m128")
   }
 

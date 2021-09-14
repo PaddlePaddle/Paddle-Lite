@@ -22,6 +22,14 @@ namespace math {
 template <typename T>
 void mish(const T* din, T* dout, int size, float threshold);
 
+template <typename T>
+void hard_swish(const T* din,
+                T* dout,
+                int size,
+                float scale,
+                float offset,
+                float threshold);
+
 }  // namespace math
 }  // namespace x86
 }  // namespace lite
