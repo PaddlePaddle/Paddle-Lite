@@ -16,7 +16,7 @@
 #include <utility>
 #include "driver/huawei_ascend_npu/optimizer/fix_multiple_outputs_ops.h"
 #include "driver/huawei_ascend_npu/optimizer/fix_no_inputs_ops.h"
-#include "driver/huawei_ascend_npu/optimizer/fix_operators_constraint_pass.h"
+#include "driver/huawei_ascend_npu/optimizer/fix_op_constraints.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -84,7 +84,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
     FixMultipleOutputsOps(model);
     FixNoInputsOps(model);
-    NNADAPTER_CHECK_EQ(FixOperatorsConstraintPass(model), NNADAPTER_NO_ERROR);
+    NNADAPTER_CHECK_EQ(FixOpConstraints(model), NNADAPTER_NO_ERROR);
     NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
     // Convert a NNAdapter model to a GE graph
     Converter converter(&operators_);

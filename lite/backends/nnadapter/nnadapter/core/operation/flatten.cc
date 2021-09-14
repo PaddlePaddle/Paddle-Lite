@@ -25,6 +25,8 @@ namespace operation {
 int PrepareFlatten(hal::Operation* operation) {
   FLATTEN_OPERATION_EXTRACT_INPUTS_OUTPUTS
   CopyOperandTypeWithQuantParams(&output_operand->type, input_operand->type);
+  end_axis =
+      end_axis < 0 ? input_operand->type.dimension_count + end_axis : end_axis;
   output_operand->type.dimension_count =
       input_operand->type.dimension_count - end_axis + start_axis;
   // Infer the shape and type of output operands

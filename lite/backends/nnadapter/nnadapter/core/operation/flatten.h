@@ -27,14 +27,12 @@ namespace operation {
   /* Input */                                                               \
   auto input_operand = input_operands[0];                                   \
   NNADAPTER_VLOG(5) << "input operand: " << OperandToString(input_operand); \
-  /* Start */                                                               \
-  auto start_operand = input_operands[1];                                   \
-  auto start = *reinterpret_cast<int32_t*>(start_operand->buffer);          \
-  NNADAPTER_VLOG(5) << "start: " << start;                                  \
-  /* Stop */                                                                \
-  auto stop_operand = input_operands[2];                                    \
-  auto stop = *reinterpret_cast<int32_t*>(stop_operand->buffer);            \
-  NNADAPTER_VLOG(5) << "stop: " << stop;                                    \
+  /* start_axis */                                                          \
+  auto start_axis = *reinterpret_cast<int32_t*>(input_operands[1]->buffer); \
+  NNADAPTER_VLOG(5) << "start_axis: " << start_axis;                        \
+  /* end_axis */                                                            \
+  auto end_axis = *reinterpret_cast<int32_t*>(input_operands[2]->buffer);   \
+  NNADAPTER_VLOG(5) << "end_axis: " << end_axis;                            \
   /* Output */                                                              \
   auto output_operand = output_operands[0];                                 \
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);

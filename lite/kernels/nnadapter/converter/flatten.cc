@@ -36,16 +36,13 @@ int ConvertFlatten(Converter* converter, OpInfo* op, Scope* scope) {
     converter->AddOperation(
         NNADAPTER_RESHAPE, {input_operand, shape_operand}, {output_operand});
   } else if (axis == input_type->dimension_count - 1) {
-    converter->AddFlattenOperation(output_operand, 0, axis - 1, out_name);
+    converter->AddFlattenOperation(input_operand, 0, axis - 1, out_name);
   } else {
-    // step1: flatten [0,axis)
+    // step1: flatten [0, axis)
     output_operand = converter->AddFlattenOperation(
         input_operand, 0, axis - 1, out_name + "/flatten_0_axis");
     // step2: flatten [axis, -1)
-    auto output_type = converter->GetOperandType(output_operand);
-    int32_t start_axis =
-        output_type->dimension_count == input_type->dimension_count ? axis
-                                                                    : axis - 1;
+    int32_t start_axis = axis == 1 ? axis : axis - 1;
     converter->AddFlattenOperation(output_operand, start_axis, -1, out_name);
   }
   return NO_ERROR;

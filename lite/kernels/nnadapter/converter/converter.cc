@@ -368,14 +368,13 @@ NNAdapterOperand* Converter::AddFlattenOperation(
     NNAdapterOperand* input_operand,
     const int32_t start_axis,
     const int32_t end_axis,
-    const std::string& out_name = "") {
+    const std::string& out_name) {
   if (start_axis == end_axis) {
     return input_operand;
   }
   auto start_axis_operand =
-      converter->AddConstantOperand(static_cast<int32_t>(start_axis));
-  auto end_axis_operand =
-      converter->AddConstantOperand(static_cast<int32_t>(end_axis));
+      AddConstantOperand(static_cast<int32_t>(start_axis));
+  auto end_axis_operand = AddConstantOperand(static_cast<int32_t>(end_axis));
   auto output_operand = AddOutputOperand(out_name);
   AddOperation(NNADAPTER_FLATTEN,
                {input_operand, start_axis_operand, end_axis_operand},

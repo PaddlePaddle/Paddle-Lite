@@ -21,20 +21,17 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int Program::ConvertFlatten(hal::Operation* operation) {
+int ConvertFlatten(Converter* converter, hal::Operation* operation) {
   FLATTEN_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
-  auto input_operator = GetMappedOperator(input_operand);
+  auto input_operator = converter->GetMappedOperator(input_operand);
   if (!input_operator) {
-    input_operator = ConvertOperand(input_operand);
+    input_operator = converter->ConvertOperand(input_operand);
   }
-  auto start_operator = ConvertOperand(start_operand);
-  auto stop_operator = ConvertOperand(stop_operand);
-  auto flatten_name = GetOperatorName(output_operand);
-  auto flatten_op = std::make_shared<ge::op::FlattenV2>(flatten_name);
-  flatten_op->set_attr_axis(start);
-  flatten_op->set_attr_end_axis(stop);
+  auto flatten_op = converter->AddOperator<ge::op::FlattenV2>(output_operand);
+  flatten_op->set_attr_axis(start_axis);
+  flatten_op->set_attr_end_axis(end_axis);
   SET_INPUT(flatten_op, x, input_operator);
   MAP_OUTPUT(flatten_op, y, output_operand);
   return NNADAPTER_NO_ERROR;

@@ -19,12 +19,7 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int FixOperatorsConstraintPass(hal::Model* model);
-int ExpandShapeOperandIsConstantLimitPass(hal::Model* model,
-                                          hal::Operation* operation);
-int RangeAllOperandsIsConstantLimitPass(hal::Model* model,
-                                        hal::Operation* operation);
-int ReduceMeanAsModelOutputPass(hal::Model* model, hal::Operation* operation);
+int FixOpConstraints(hal::Model* model);
 
 }  // namespace huawei_ascend_npu
 }  // namespace nnadapter

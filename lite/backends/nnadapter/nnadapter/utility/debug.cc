@@ -275,7 +275,7 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         output_args = {"output"};
         break;
       case NNADAPTER_FLATTEN:
-        input_args = {"input", "start", "end"};
+        input_args = {"input", "start_axis", "end_axis"};
         output_args = {"output"};
         break;
       case NNADAPTER_HARD_SIGMOID:
