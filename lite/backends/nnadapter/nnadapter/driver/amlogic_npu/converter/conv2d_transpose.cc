@@ -19,6 +19,7 @@
 
 namespace nnadapter {
 namespace amlogic_npu {
+
 int ConvertConv2DTranspose(Converter* converter, hal::Operation* operation) {
   CONV_2D_TRANSPOSE_OPERATION_EXTRACT_INPUTS_OUTPUTS
   NNADAPTER_CHECK_EQ(output_padding_height, 0)

@@ -13,20 +13,20 @@
 // limitations under the License.
 
 #include "core/operation/conv2d.h"
-#include "driver/huawei_kirin_npu/converter.h"
+#include "driver/huawei_kirin_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace huawei_kirin_npu {
 
-int Program::ConvertConv2D(hal::Operation* operation) {
-  CONV2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int ConvertConv2D(Converter* converter, hal::Operation* operation) {
+  CONV_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
-  auto input_operator = GetMappedOperator(input_operand);
+  auto input_operator = converter->GetMappedOperator(input_operand);
   if (!input_operator) {
-    input_operator = ConvertOperand(input_operand);
+    input_operator = converter->ConvertOperand(input_operand);
   }
   // Check depthwise mode, and decide whether use ConvolutionDepthwise
   bool use_depthwise_conv =
@@ -41,16 +41,15 @@ int Program::ConvertConv2D(hal::Operation* operation) {
                               "ConvolutionDepthwise, but may lead poor "
                               "performance.";
   }
-  auto filter_operator = ConvertOperand(filter_operand);
+  auto filter_operator = converter->ConvertOperand(filter_operand);
   NNADAPTER_CHECK_EQ(bias_operand->type.dimension_count, 1);
   NNADAPTER_CHECK_EQ(bias_operand->type.dimensions[0], output_channel_size);
-  auto bias_operator = ConvertOperand(bias_operand);
-  auto conv_name = GetOperatorName(output_operand);
+  auto bias_operator = converter->ConvertOperand(bias_operand);
   std::shared_ptr<Operator> conv_operator = nullptr;
   auto pad_mode = ConvertAutoPadCodeToGEPadMode(auto_pad);
   if (use_depthwise_conv && is_depthwise_mode) {
     auto depthwise_conv_op =
-        std::make_shared<hiai::op::ConvolutionDepthwise>(conv_name);
+        converter->AddOperator<hiai::op::ConvolutionDepthwise>(output_operand);
     depthwise_conv_op->set_attr_pad_mode(pad_mode);
     depthwise_conv_op->set_attr_pads(ge::AttrValue::LIST_INT(
         {pad_height_top, pad_height_bottom, pad_width_left, pad_width_right}));
@@ -63,7 +62,8 @@ int Program::ConvertConv2D(hal::Operation* operation) {
     SET_INPUT(depthwise_conv_op, bias, bias_operator);
     conv_operator = MAP_OUTPUT(depthwise_conv_op, y, output_operand);
   } else {
-    auto normal_conv_op = std::make_shared<hiai::op::Convolution>(conv_name);
+    auto normal_conv_op =
+        converter->AddOperator<hiai::op::Convolution>(output_operand);
     normal_conv_op->set_attr_pad_mode(pad_mode);
     normal_conv_op->set_attr_pads(ge::AttrValue::LIST_INT(
         {pad_height_top, pad_height_bottom, pad_width_left, pad_width_right}));
@@ -78,8 +78,7 @@ int Program::ConvertConv2D(hal::Operation* operation) {
     conv_operator = MAP_OUTPUT(normal_conv_op, y, output_operand);
   }
   if (fuse_code != NNADAPTER_FUSED_NONE) {
-    auto act_name = GetOperatorName(output_operand);
-    auto act_op = std::make_shared<hiai::op::Activation>(act_name);
+    auto act_op = converter->AddOperator<hiai::op::Activation>(output_operand);
     act_op->set_attr_mode(ConvertFuseCodeToGEActMode(fuse_code));
     SET_INPUT(act_op, x, conv_operator);
     MAP_OUTPUT(act_op, y, output_operand);

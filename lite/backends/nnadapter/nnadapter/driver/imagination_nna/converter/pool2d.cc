@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "core/operation/pool2d.h"
-#include "driver/imagination_nna/converter.h"
+#include "driver/imagination_nna/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/utility.h"
@@ -21,13 +21,13 @@
 namespace nnadapter {
 namespace imagination_nna {
 
-int Program::ConvertPool2D(hal::Operation* operation) {
+int ConvertPool2D(Converter* converter, hal::Operation* operation) {
   POOL_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to imgdnn tensors and operators
-  auto input_tensor = GetMappedTensor(input_operand);
+  auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
-    input_tensor = ConvertOperand(input_operand);
+    input_tensor = converter->ConvertOperand(input_operand);
   }
   imgdnn_pooling_type pool_type;
   if (operation->type == NNADAPTER_AVERAGE_POOL_2D) {
@@ -55,15 +55,16 @@ int Program::ConvertPool2D(hal::Operation* operation) {
   output_quant_param.scale = output_operand->type.asymm_per_layer_params.scale;
   output_quant_param.zero_point =
       output_operand->type.asymm_per_layer_params.zero_point;
-  auto output_tensor = imgdnn_mgr_.CreatePoolingLayer(input_tensor,
-                                                      output_quant_param,
-                                                      ksizes,
-                                                      strides,
-                                                      pad_to_begin,
-                                                      pad_to_end,
-                                                      flag,
-                                                      pool_type);
-  UpdateTensorMap(output_operand, output_tensor);
+  auto output_tensor = ADD_OPERATOR(CreatePoolingLayer,
+                                    input_tensor,
+                                    output_quant_param,
+                                    ksizes,
+                                    strides,
+                                    pad_to_begin,
+                                    pad_to_end,
+                                    flag,
+                                    pool_type);
+  converter->UpdateTensorMap(output_operand, output_tensor);
   return NNADAPTER_NO_ERROR;
 }
 

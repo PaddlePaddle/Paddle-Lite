@@ -12,43 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/huawei_ascend_npu/converter.h"
+#include "core/operation/expand.h"
+#include "driver/huawei_ascend_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
+#include "utility/utility.h"
 
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int Program::ConvertExpand(hal::Operation* operation) {
-  auto& input_operands = operation->input_operands;
-  auto& output_operands = operation->output_operands;
-  auto input_count = input_operands.size();
-  auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 2);
-  NNADAPTER_CHECK_EQ(output_count, 1);
-  // Input
-  auto input_operand = input_operands[0];
-  NNADAPTER_VLOG(5) << "input_operand: " << OperandToString(input_operand);
-  // Shape
-  auto shape_operand = input_operands[1];
+int ConvertExpand(Converter* converter, hal::Operation* operation) {
+  EXPAND_OPERATION_EXTRACT_INPUTS_OUTPUTS
   if (!IsConstantOperand(shape_operand)) {
     NNADAPTER_LOG(ERROR) << "Shape input only support const tensor.";
     return NNADAPTER_INVALID_PARAMETER;
   }
-  NNADAPTER_VLOG(5) << "shape operand: " << OperandValueToString(shape_operand);
-  // Output
-  auto output_operand = output_operands[0];
-  NNADAPTER_VLOG(5) << "output_operand: " << OperandToString(output_operand);
 
   // Convert to GE operators
-  auto input_operator = GetMappedOperator(input_operand);
+  auto input_operator = converter->GetMappedOperator(input_operand);
   if (!input_operator) {
-    input_operator = ConvertOperand(input_operand);
+    input_operator = converter->ConvertOperand(input_operand);
   }
-  auto shape_operator = ConvertOperand(shape_operand);
-  auto expand_name = GetOperatorName(output_operand);
-  auto expand_op = std::make_shared<ge::op::Expand>(expand_name);
+  auto shape_operator = converter->ConvertOperand(shape_operand);
+  auto expand_op = converter->AddOperator<ge::op::Expand>(output_operand);
   SET_INPUT(expand_op, x, input_operator);
   SET_INPUT(expand_op, shape, shape_operator);
   MAP_OUTPUT(expand_op, y, output_operand);
