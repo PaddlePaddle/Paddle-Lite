@@ -408,18 +408,6 @@ REGISTER_LITE_KERNEL(elementwise_add,
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    fusion_elementwise_add_activation,
-    kX86,
-    kFloat,
-    kNCHW,
-    paddle::lite::kernels::x86::ElementwiseAddActivationCompute<float>,
-    def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
-    .Finalize();
-
 REGISTER_LITE_KERNEL(elementwise_sub,
                      kX86,
                      kFloat,
@@ -453,18 +441,6 @@ REGISTER_LITE_KERNEL(elementwise_sub,
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(
-    fusion_elementwise_sub_activation,
-    kX86,
-    kFloat,
-    kNCHW,
-    paddle::lite::kernels::x86::ElementwiseSubActivationCompute<float>,
-    def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
-    .Finalize();
-
 REGISTER_LITE_KERNEL(elementwise_mul,
                      kX86,
                      kFloat,
@@ -496,18 +472,6 @@ REGISTER_LITE_KERNEL(elementwise_mul,
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(
-    fusion_elementwise_mul_activation,
-    kX86,
-    kFloat,
-    kNCHW,
-    paddle::lite::kernels::x86::ElementwiseMulActivationCompute<float>,
-    def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(elementwise_div,
@@ -544,18 +508,6 @@ REGISTER_LITE_KERNEL(elementwise_div,
     .Finalize();
 
 REGISTER_LITE_KERNEL(
-    fusion_elementwise_div_activation,
-    kX86,
-    kFloat,
-    kNCHW,
-    paddle::lite::kernels::x86::ElementwiseDivActivationCompute<float>,
-    def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(
     elementwise_floordiv,
     kX86,
     kFloat,
@@ -572,7 +524,7 @@ REGISTER_LITE_KERNEL(
     kX86,
     kFloat,
     kNCHW,
-    paddle::lite::kernels::x86::ElementwiseFloorDivCompute<int32_t>,
+    paddle::lite::kernels::x86::ElementwiseFloorDivCompute<int>,
     int32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
@@ -600,28 +552,6 @@ REGISTER_LITE_KERNEL(elementwise_pow,
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(elementwise_pow,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::ElementwisePowCompute<int>,
-                     int32)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(elementwise_pow,
-                     kX86,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::x86::ElementwisePowCompute<int64_t>,
-                     int64)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(elementwise_mod,
@@ -677,30 +607,6 @@ REGISTER_LITE_KERNEL(elementwise_max,
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(
-    fusion_elementwise_max_activation,
-    kX86,
-    kFloat,
-    kNCHW,
-    paddle::lite::kernels::x86::ElementwiseMaxActivationCompute<float>,
-    def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(
-    fusion_elementwise_min_activation,
-    kX86,
-    kFloat,
-    kNCHW,
-    paddle::lite::kernels::x86::ElementwiseMinActivationCompute<float>,
-    def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(elementwise_min,
