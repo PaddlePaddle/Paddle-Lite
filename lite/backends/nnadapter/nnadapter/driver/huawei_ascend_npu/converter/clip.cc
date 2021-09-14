@@ -12,48 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/huawei_ascend_npu/converter.h"
+#include "core/operation/clip.h"
+#include "driver/huawei_ascend_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int Program::ConvertClip(hal::Operation* operation) {
-  auto& input_operands = operation->input_operands;
-  auto& output_operands = operation->output_operands;
-  auto input_count = input_operands.size();
-  auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 3);
-  NNADAPTER_CHECK_EQ(output_count, 1);
-  // Input
-  auto input_operand = input_operands[0];
-  NNADAPTER_VLOG(5) << "input_operand: " << OperandToString(input_operand);
-  // Min
-  auto min_operand = input_operands[1];
-  NNADAPTER_VLOG(5) << "min_operand: " << OperandToString(min_operand);
-  // Max
-  auto max_operand = input_operands[2];
-  NNADAPTER_VLOG(5) << "max_operand: " << OperandToString(max_operand);
-  // Output
-  auto output_operand = output_operands[0];
-  NNADAPTER_VLOG(5) << "output_operand: " << OperandToString(output_operand);
+int ConvertClip(Converter* converter, hal::Operation* operation) {
+  CLIP_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
-  auto input_operator = GetMappedOperator(input_operand);
+  auto input_operator = converter->GetMappedOperator(input_operand);
   if (!input_operator) {
-    input_operator = ConvertOperand(input_operand);
+    input_operator = converter->ConvertOperand(input_operand);
   }
-  auto min_operator = GetMappedOperator(min_operand);
+  auto min_operator = converter->GetMappedOperator(min_operand);
   if (!min_operator) {
-    min_operator = ConvertOperand(min_operand);
+    min_operator = converter->ConvertOperand(min_operand);
   }
-  auto max_operator = GetMappedOperator(max_operand);
+  auto max_operator = converter->GetMappedOperator(max_operand);
   if (!max_operator) {
-    max_operator = ConvertOperand(max_operand);
+    max_operator = converter->ConvertOperand(max_operand);
   }
-  auto clip_name = GetOperatorName(output_operand);
-  auto clip_op = std::make_shared<ge::op::ClipByValue>(clip_name);
+  auto clip_op = converter->AddOperator<ge::op::ClipByValue>(output_operand);
   SET_INPUT(clip_op, x, input_operator);
   SET_INPUT(clip_op, clip_value_min, min_operator);
   SET_INPUT(clip_op, clip_value_max, max_operator);

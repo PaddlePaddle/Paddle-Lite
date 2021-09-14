@@ -26,6 +26,9 @@ LIST(REMOVE_ITEM SUBGRAPH_SRC ${UNIT_TEST_SRC})
 FILE(GLOB CORE_BASE_SRC ${CMAKE_CURRENT_SOURCE_DIR}/*.cc)
 LIST(REMOVE_ITEM CORE_BASE_SRC ${UNIT_TEST_SRC})
 
+if (LITE_THREAD_POOL)
+  lite_cc_library(thread_pool SRCS thread_pool.cc)
+endif()
 
 set (tensor_extra_deps "")
 if (LITE_WITH_FPGA)

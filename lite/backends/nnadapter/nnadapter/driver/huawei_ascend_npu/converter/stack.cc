@@ -13,28 +13,27 @@
 // limitations under the License.
 
 #include "core/operation/stack.h"
-#include "driver/huawei_ascend_npu/converter.h"
+#include "driver/huawei_ascend_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int Program::ConvertStack(hal::Operation* operation) {
+int ConvertStack(Converter* converter, hal::Operation* operation) {
   STACK_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
   auto N = input_count - 1;
-  auto stack_name = GetOperatorName(output_operand);
-  auto stack_op = std::make_shared<ge::op::Pack>(stack_name);
+  auto stack_op = converter->AddOperator<ge::op::Pack>(output_operand);
   stack_op->set_attr_axis(axis);
   stack_op->set_attr_N(N);
   stack_op->create_dynamic_input_x(N);
   for (int i = 0; i < N; i++) {
     auto input_operand = input_operands[i];
-    auto input_operator = GetMappedOperator(input_operand);
+    auto input_operator = converter->GetMappedOperator(input_operand);
     if (!input_operator) {
-      input_operator = ConvertOperand(input_operand);
+      input_operator = converter->ConvertOperand(input_operand);
     }
     SET_DYNAMIC_INPUT(stack_op, x, i, input_operator);
   }

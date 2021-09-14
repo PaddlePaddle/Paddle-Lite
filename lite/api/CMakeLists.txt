@@ -27,11 +27,6 @@ execute_process(
     ${LITE_BUILD_EXTRA}
     RESULT_VARIABLE result)
 
-
-
-
-
-
 if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK OR (NOT LITE_WITH_LOG))
   lite_cc_library(place SRCS paddle_place.cc DEPS utils)
 else()
@@ -377,7 +372,11 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
 
 endif()
 
+if (LITE_THREAD_POOL)
+  lite_cc_library(paddle_api SRCS paddle_api.cc DEPS ops core thread_pool)
+else()
 lite_cc_library(paddle_api SRCS paddle_api.cc DEPS ops core)
+endif()
 
 #-----------------------------------------------------------------------------------------------------
 # The final inference library for both CxxConfig and MobileConfig.

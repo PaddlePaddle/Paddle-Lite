@@ -414,13 +414,15 @@ void TestConvAct(Place place, float abs_error = 2e-5) {
 }
 
 void TestConvDepthwise(Place place, float abs_error = 2e-5) {
-  for (int64_t n : {1, 2, 3, 4}) {
-    for (int64_t win = 3; win < 40; win++) {
-      for (int64_t ch_in = 1; ch_in < 33; ch_in++) {
-        std::vector<int64_t> dims{n, ch_in, win, win};
-        for (auto stride : {1, 2}) {
-          for (auto pad : {0, 1}) {
-            for (auto bias : {false, true}) {
+  // Using a limited set can prevent unit test timeout and reduce CI
+  // time-consuming
+  for (int64_t n : {1, 3, 4}) {
+    for (auto win : {3, 4, 5, 7, 16, 30}) {
+      std::vector<int64_t> dims{n, 32, win, win};
+      for (auto stride : {1, 2}) {
+        for (auto pad : {0, 1}) {
+          for (auto bias : {false, true}) {
+            for (auto act : {"relu", "leaky_relu"}) {
               std::unique_ptr<arena::TestCase> tester(
                   new ConvComputeTester(place,
                                         "def",

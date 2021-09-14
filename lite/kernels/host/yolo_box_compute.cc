@@ -14,52 +14,27 @@
 
 #include "lite/kernels/host/yolo_box_compute.h"
 #include <vector>
-#include "lite/backends/host/math/yolo_box.h"
 
-namespace paddle {
-namespace lite {
-namespace kernels {
-namespace host {
+#ifdef ENABLE_ARM_FP16
+using fp16_yolo = paddle::lite::kernels::host::YoloBoxCompute<float16_t,
+                                                              TARGET(kARM),
+                                                              PRECISION(kFP16)>;
+REGISTER_LITE_KERNEL(yolo_box, kARM, kFP16, kNCHW, fp16_yolo, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindInput("ImgSize",
+               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Boxes",
+                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .BindOutput("Scores",
+                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
+    .Finalize();
+#endif  // ENABLE_ARM_FP16
 
-void YoloBoxCompute::Run() {
-  auto& param = Param<operators::YoloBoxParam>();
-  lite::Tensor* X = param.X;
-  lite::Tensor* ImgSize = param.ImgSize;
-  lite::Tensor* Boxes = param.Boxes;
-  lite::Tensor* Scores = param.Scores;
-  std::vector<int> anchors = param.anchors;
-  int class_num = param.class_num;
-  float conf_thresh = param.conf_thresh;
-  int downsample_ratio = param.downsample_ratio;
-  bool clip_bbox = param.clip_bbox;
-  float scale_x_y = param.scale_x_y;
-  float bias = -0.5 * (scale_x_y - 1.);
-  Boxes->clear();
-  Scores->clear();
-  lite::host::math::YoloBox(X,
-                            ImgSize,
-                            Boxes,
-                            Scores,
-                            anchors,
-                            class_num,
-                            conf_thresh,
-                            downsample_ratio,
-                            clip_bbox,
-                            scale_x_y,
-                            bias);
-}
-
-}  // namespace host
-}  // namespace kernels
-}  // namespace lite
-}  // namespace paddle
-
-REGISTER_LITE_KERNEL(yolo_box,
-                     kHost,
-                     kFloat,
-                     kNCHW,
-                     paddle::lite::kernels::host::YoloBoxCompute,
-                     def)
+using fp32_yolo =
+    paddle::lite::kernels::host::YoloBoxCompute<float,
+                                                TARGET(kHost),
+                                                PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(yolo_box, kHost, kFloat, kNCHW, fp32_yolo, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
     .BindInput("ImgSize",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})

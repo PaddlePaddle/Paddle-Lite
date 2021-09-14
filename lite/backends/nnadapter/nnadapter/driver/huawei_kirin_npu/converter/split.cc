@@ -12,57 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/huawei_kirin_npu/converter.h"
+#include "core/operation/split.h"
+#include "driver/huawei_kirin_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace huawei_kirin_npu {
 
-int Program::ConvertSplit(hal::Operation* operation) {
-  auto& input_operands = operation->input_operands;
-  auto& output_operands = operation->output_operands;
-  auto input_count = input_operands.size();
-  auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 3);
-  NNADAPTER_CHECK_GE(output_count, 1);
-  // Input
-  auto input_operand = input_operands[0];
-  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
-  // Axis
-  auto axis_operand = input_operands[1];
-  auto axis = *reinterpret_cast<int32_t*>(axis_operand->buffer);
-  if (axis < 0) {
-    axis += input_operand->type.dimension_count;
-  }
-  NNADAPTER_VLOG(5) << "axis=" << axis;
-  // Split
-  auto split_operand = input_operands[2];
-  auto split_count = split_operand->length / sizeof(int32_t);
-  auto split_data = reinterpret_cast<int32_t*>(split_operand->buffer);
-  NNADAPTER_CHECK_EQ(split_count, output_count);
-  int split_sum = 0;
-  for (uint32_t i = 0; i < split_count; i++) {
-    NNADAPTER_VLOG(5) << "split[" << i << "]=" << split_data[i];
-    split_sum += split_data[i];
-  }
-  NNADAPTER_CHECK_EQ(split_sum, input_operand->type.dimensions[axis]);
-  // Output
-  for (size_t i = 0; i < output_count; i++) {
-    NNADAPTER_VLOG(5) << "output" << i << ": "
-                      << OperandToString(output_operands[i]);
-  }
+int ConvertSplit(Converter* converter, hal::Operation* operation) {
+  SPLIT_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
-  auto input_operator = GetMappedOperator(input_operand);
+  auto input_operator = converter->GetMappedOperator(input_operand);
   if (!input_operator) {
-    input_operator = ConvertOperand(input_operand);
+    input_operator = converter->ConvertOperand(input_operand);
   }
-  auto split_operator = AddInt32ConstantOperator(
+  auto split_operator = converter->AddInt32ConstantOperator(
       std::vector<int32_t>(split_data, split_data + split_count));
-  auto axis_operator = AddInt32ConstantOperator(std::vector<int32_t>({axis}));
-  auto split_name = GetOperatorName(output_operands[0]);
-  auto split_op = std::make_shared<hiai::op::SplitV>(split_name);
+  auto axis_operator =
+      converter->AddInt32ConstantOperator(std::vector<int32_t>({axis}));
+  auto split_op = converter->AddOperator<hiai::op::SplitV>(output_operands[0]);
   split_op->set_attr_num_split(split_count);
   SET_INPUT(split_op, x, input_operator);
   SET_INPUT(split_op, size_splits, split_operator);

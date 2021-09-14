@@ -13,23 +13,22 @@
 // limitations under the License.
 
 #include "core/operation/shape.h"
-#include "driver/huawei_ascend_npu/converter.h"
+#include "driver/huawei_ascend_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int Program::ConvertShape(hal::Operation* operation) {
+int ConvertShape(Converter* converter, hal::Operation* operation) {
   SHAPE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
-  auto input_operator = GetMappedOperator(input_operand);
+  auto input_operator = converter->GetMappedOperator(input_operand);
   if (!input_operator) {
-    input_operator = ConvertOperand(input_operand);
+    input_operator = converter->ConvertOperand(input_operand);
   }
-  auto shape_name = GetOperatorName(output_operand);
-  auto shape_op = std::make_shared<ge::op::Shape>(shape_name);
+  auto shape_op = converter->AddOperator<ge::op::Shape>(output_operand);
   switch (dtype) {
     case NNADAPTER_TENSOR_INT32:
       shape_op->set_attr_dtype(ge::DT_INT32);

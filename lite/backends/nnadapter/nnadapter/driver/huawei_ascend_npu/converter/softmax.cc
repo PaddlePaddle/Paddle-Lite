@@ -13,23 +13,22 @@
 // limitations under the License.
 
 #include "core/operation/softmax.h"
-#include "driver/huawei_ascend_npu/converter.h"
+#include "driver/huawei_ascend_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int Program::ConvertSoftmax(hal::Operation* operation) {
+int ConvertSoftmax(Converter* converter, hal::Operation* operation) {
   SOFTMAX_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
-  auto input_operator = GetMappedOperator(input_operand);
+  auto input_operator = converter->GetMappedOperator(input_operand);
   if (!input_operator) {
-    input_operator = ConvertOperand(input_operand);
+    input_operator = converter->ConvertOperand(input_operand);
   }
-  auto softmax_name = GetOperatorName(output_operand);
-  auto softmax_op = std::make_shared<ge::op::SoftmaxV2>(softmax_name);
+  auto softmax_op = converter->AddOperator<ge::op::SoftmaxV2>(output_operand);
   softmax_op->set_attr_axes({axis});
   SET_INPUT(softmax_op, x, input_operator);
   MAP_OUTPUT(softmax_op, y, output_operand);
