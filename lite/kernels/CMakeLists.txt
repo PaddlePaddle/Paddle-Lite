@@ -122,14 +122,6 @@ file(GLOB all_kernel_faked_src ${CMAKE_BINARY_DIR}/all_kernel_faked_dir/*.cc)
 lite_cc_library(kernels SRCS ${KERNELS_SRC} ${all_kernel_faked_src} DEPS ${lite_kernel_deps})
 add_dependencies(kernels utils)
 
-if(WITH_AVX AND AVX_FOUND)
-   if(WIN32)
-      set_target_properties(kernels PROPERTIES COMPILE_FLAGS "/arch:AVX2 /DAVX2 /fp:strict")
-   else()
-      set_target_properties(kernels PROPERTIES COMPILE_FLAGS "-mfma -mf16c -mavx2")
-   endif()
-endif()
-
 # create headfile to restore ops info sorted by suppported platforms
 execute_process(
     COMMAND python ${CMAKE_SOURCE_DIR}/lite/tools/cmake_tools/record_supported_kernel_op.py
