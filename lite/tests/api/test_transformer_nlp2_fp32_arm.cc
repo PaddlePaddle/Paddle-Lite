@@ -16,8 +16,8 @@
 #include <gtest/gtest.h>
 #include <cstring>
 #include <vector>
-#include "lite/api/test/lite_api_test_helper.h"
 #include "lite/api/paddle_api.h"
+#include "lite/api/test/lite_api_test_helper.h"
 #include "lite/api/test/test_helper.h"
 #include "lite/utils/log/cp_logging.h"
 
