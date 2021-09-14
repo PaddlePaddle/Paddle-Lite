@@ -202,10 +202,11 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   converter->AddOperation(
       NNADAPTER_FULLY_CONNECTED, &input_operands, &output_operands);
+
   // Activation
-  auto activation_operand =
-      converter->AddFloat32VariableOperand(DDim({M, N}), out_name);
   if (!activation_type.empty()) {
+    auto activation_operand =
+        converter->AddFloat32VariableOperand(DDim({M, N}), out_name);
     NNAdapterOperationType act_type;
     if (activation_type == "sigmoid") {
       act_type = NNADAPTER_SIGMOID;
