@@ -2513,8 +2513,12 @@ struct CosSimParam : ParamBase {
 };
 
 struct WriteBackParam : ParamBase {
+  bool tensor_array_copy{false};
   const lite::Tensor* x{};
   lite::Tensor* y{};
+
+  std::vector<lite::Tensor>* array_x{};
+  std::vector<lite::Tensor>* array_y{};
 };
 
 struct UniqueWithCountsParam : ParamBase {
