@@ -24,7 +24,7 @@ namespace operation {
 
 int PrepareFlatten(hal::Operation* operation) {
   FLATTEN_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  CopyOperandTypeExceptQuantParams(&output_operand->type, input_operand->type);
+  CopyOperandTypeWithQuantParams(&output_operand->type, input_operand->type);
   // Infer the shape and type of output operands
   auto infer_output_shape = [&](int32_t* input_dimensions,
                                 int32_t* output_dimensions,
@@ -41,8 +41,12 @@ int PrepareFlatten(hal::Operation* operation) {
     // Calc dim
     while (input_dimension_index < input_dimension_count) {
       if (input_dimension_index >= start && input_dimension_index <= stop) {
-        output_dimensions[output_dimension_index] *=
-            input_dimensions[input_dimension_index];
+        if (input_dimensions[input_dimension_index] != NNADAPTER_UNKNOWN) {
+          output_dimensions[output_dimension_index] *=
+              input_dimensions[input_dimension_index];
+        } else {
+          output_dimensions[output_dimension_index] = NNADAPTER_UNKNOWN;
+        }
         if (input_dimension_index == stop &&
             input_dimension_index < input_dimension_count) {
           output_dimension_index++;

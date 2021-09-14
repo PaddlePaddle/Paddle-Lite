@@ -364,6 +364,24 @@ NNAdapterOperand* Converter::AddUnsqueezeOperation(
   return output_operand;
 }
 
+NNAdapterOperand* Converter::AddFlattenOperation(
+    NNAdapterOperand* input_operand,
+    const int32_t start,
+    const int32_t end,
+    const std::string& out_name = "") {
+  if (start == end) {
+    return input_operand;
+  }
+  auto start_operand =
+      converter->AddConstantOperand(static_cast<int32_t>(start));
+  auto end_operand = converter->AddConstantOperand(static_cast<int32_t>(end));
+  auto output_operand = AddOutputOperand(out_name);
+  AddOperation(NNADAPTER_FLATTEN,
+               {input_operand, start_operand, end_operand},
+               {output_operand});
+  return output_operand;
+}
+
 NNAdapterOperand* Converter::AddOperand(NNAdapterOperandType* type,
                                         const std::string& name) {
   NNAdapterOperand* operand = nullptr;

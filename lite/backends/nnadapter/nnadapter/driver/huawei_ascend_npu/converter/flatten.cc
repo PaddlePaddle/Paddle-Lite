@@ -23,6 +23,7 @@ namespace huawei_ascend_npu {
 
 int Program::ConvertFlatten(hal::Operation* operation) {
   FLATTEN_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
   // Convert to GE operators
   auto input_operator = GetMappedOperator(input_operand);
   if (!input_operator) {

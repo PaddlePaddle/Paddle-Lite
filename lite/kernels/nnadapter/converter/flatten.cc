@@ -32,14 +32,11 @@ int ConvertFlatten(Converter* converter, OpInfo* op, Scope* scope) {
     // If dimension_count == 1, directly convert to reshape with shape[1,-1],
     // else need convert to flatten + reshape
     if (input_type->dimension_count > 1) {
-      auto start_operand =
-          converter->AddConstantOperand(static_cast<int32_t>(0));
-      auto stop_operand = converter->AddConstantOperand(
-          static_cast<int32_t>(input_type->dimension_count - 1));
-      output_operand = converter->AddOutputOperand(out_name + "/flatten_0");
-      converter->AddOperation(NNADAPTER_FLATTEN,
-                              {input_operand, start_operand, stop_operand},
-                              {output_operand});
+      output_operand =
+          converter->AddFlattenOperation(output_operand,
+                                         0,
+                                         input_type->dimension_count - 1,
+                                         out_name + "/flatten_0");
       input_operand = output_operand;
     }
     auto shape_operand =
@@ -48,55 +45,18 @@ int ConvertFlatten(Converter* converter, OpInfo* op, Scope* scope) {
     converter->AddOperation(
         NNADAPTER_RESHAPE, {input_operand, shape_operand}, {output_operand});
   } else if (axis == input_type->dimension_count - 1) {
-    auto start_operand = converter->AddConstantOperand(static_cast<int32_t>(0));
-    auto stop_operand =
-        converter->AddConstantOperand(static_cast<int32_t>(axis - 1));
-    auto output_operand = converter->AddOutputOperand(out_name);
-    converter->AddOperation(NNADAPTER_FLATTEN,
-                            {input_operand, start_operand, stop_operand},
-                            {output_operand});
+    converter->AddFlattenOperation(output_operand, 0, axis - 1, out_name);
   } else {
     // step1: flatten [0,axis)
-    auto start_operand = converter->AddConstantOperand(static_cast<int32_t>(0));
-    auto stop_operand =
-        converter->AddConstantOperand(static_cast<int32_t>(axis - 1));
-    output_operand = converter->AddOutputOperand(out_name + "/flatten_0_axis");
-    converter->AddOperation(NNADAPTER_FLATTEN,
-                            {input_operand, start_operand, stop_operand},
-                            {output_operand});
+    output_operand = converter->AddFlattenOperation(
+        input_operand, 0, axis - 1, out_name + "/flatten_0_axis");
     // step2: flatten [axis, -1)
     auto output_type = converter->GetOperandType(output_operand);
     int32_t start = output_type->dimension_count == input_type->dimension_count
                         ? axis
                         : axis - 1;
-    input_operand = output_operand;
-    start_operand = converter->AddConstantOperand(static_cast<int32_t>(start));
-    stop_operand = converter->AddConstantOperand(static_cast<int32_t>(-1));
-    output_operand = converter->AddOutputOperand(out_name);
-    converter->AddOperation(NNADAPTER_FLATTEN,
-                            {input_operand, start_operand, stop_operand},
-                            {output_operand});
+    converter->AddFlattenOperation(output_operand, start, -1, out_name);
   }
-  return NO_ERROR;
-}
-
-int ConvertFlattenContiguousRange(Converter* converter,
-                                  OpInfo* op,
-                                  Scope* scope) {
-  auto x_name = op->Input("X").front();
-  auto out_name = op->Output("Out").front();
-  auto start_axis = op->GetAttr<int>("start_axis");
-  auto stop_axis = op->GetAttr<int>("stop_axis");
-
-  auto input_operand = converter->GetMappedOperand(x_name);
-  NNAdapterOperand* output_operand = converter->AddOutputOperand(out_name);
-  auto start_operand =
-      converter->AddConstantOperand(static_cast<int32_t>(start_axis));
-  auto stop_operand =
-      converter->AddConstantOperand(static_cast<int32_t>(stop_axis));
-  converter->AddOperation(NNADAPTER_FLATTEN,
-                          {input_operand, start_operand, stop_operand},
-                          {output_operand});
   return NO_ERROR;
 }
 

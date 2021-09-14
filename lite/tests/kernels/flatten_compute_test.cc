@@ -90,14 +90,22 @@ void TestFlatten(Place place, float abs_error) {
   }
 }
 
-#if defined(LITE_WITH_NNADAPTER) && defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
 TEST(flatten, precision) {
   LOG(INFO) << "test flatten op";
-  Place place = TARGET(kNNAdapter);
+  Place place;
   float abs_error = 1e-5;
+#if defined(LITE_WITH_NNADAPTER)
+  Place place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#else
+  return;
+#endif
   TestFlatten(place, abs_error);
 }
-#endif
 
 static std::vector<int64_t> GetOutputShape(const DDim in_dims,
                                            int start_axis,
