@@ -212,8 +212,10 @@ endif()
 # test_model_bin
 if(NOT IOS AND NOT LITE_ON_TINY_PUBLISH)
     lite_cc_binary(test_model_bin SRCS tools/model_test.cc
+        DEPS gflags
         CV_DEPS paddle_cv_arm)
     lite_cc_binary(benchmark_bin SRCS tools/benchmark.cc
+        DEPS gflags
         CV_DEPS paddle_cv_arm)
 endif()
 
