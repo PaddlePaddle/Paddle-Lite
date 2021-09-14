@@ -67,13 +67,12 @@ int ConvertConv2DTranspose(Converter* converter, hal::Operation* operation) {
       {0, 0, output_padding_height, output_padding_width}));
 
   // fuse activations
-  auto act_name = GetOperatorName(output_operand);
   switch (fuse_code) {
-#define CONVERT_UNARY_ACTIVATION(type, class_name)                \
-  case NNADAPTER_FUSED_##type: {                                  \
-    auto act_op = std::make_shared<ge::op::class_name>(act_name); \
-    SET_INPUT(act_op, x, conv2d_transpose_operator);              \
-    MAP_OUTPUT(act_op, y, output_operand);                        \
+#define CONVERT_UNARY_ACTIVATION(type, class_name)                            \
+  case NNADAPTER_FUSED_##type: {                                              \
+    auto act_op = converter->AddOperator<ge::op::class_name>(output_operand); \
+    SET_INPUT(act_op, x, conv2d_transpose_operator);                          \
+    MAP_OUTPUT(act_op, y, output_operand);                                    \
   } break;
     CONVERT_UNARY_ACTIVATION(RELU, Relu);
     CONVERT_UNARY_ACTIVATION(RELU6, Relu6);

@@ -13,30 +13,29 @@
 // limitations under the License.
 
 #include "core/operation/mat_mul.h"
-#include "driver/huawei_ascend_npu/converter.h"
+#include "driver/huawei_ascend_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int Program::ConvertMatMul(hal::Operation* operation) {
+int ConvertMatMul(Converter* converter, hal::Operation* operation) {
   MAT_MUL_OPERATION_EXTRACT_INPUTS_OUTPUTS
   // TODO(zhupengyang): support by reshape or squeeze
   NNADAPTER_CHECK_NE(x_operand->type.dimension_count, 1);
   NNADAPTER_CHECK_NE(y_operand->type.dimension_count, 1);
 
   // Convert to GE operators
-  auto x_operator = GetMappedOperator(x_operand);
+  auto x_operator = converter->GetMappedOperator(x_operand);
   if (x_operator == nullptr) {
-    x_operator = ConvertOperand(x_operand);
+    x_operator = converter->ConvertOperand(x_operand);
   }
-  auto y_operator = GetMappedOperator(y_operand);
+  auto y_operator = converter->GetMappedOperator(y_operand);
   if (y_operator == nullptr) {
-    y_operator = ConvertOperand(y_operand);
+    y_operator = converter->ConvertOperand(y_operand);
   }
-  auto mat_mul_name = GetOperatorName(output_operand);
-  auto mat_mul_op = std::make_shared<ge::op::BatchMatMul>(mat_mul_name);
+  auto mat_mul_op = converter->AddOperator<ge::op::BatchMatMul>(output_operand);
   mat_mul_op->set_attr_adj_x1(transpose_x);
   mat_mul_op->set_attr_adj_x2(transpose_y);
   SET_INPUT(mat_mul_op, x1, x_operator);
