@@ -24,6 +24,8 @@ if (NOT ${gen_code_ret_v7} STREQUAL "0")
   message(FATAL_ERROR "generating dotprod code quit with error: ${gen_code_ret_v7}")
 endif ()
 
+return()
+
 set(HAS_ARM_MATH_LIB_DIR OFF)
 # will search name as "libmath_arm.${os}.${abi}.${lang}.a"
 if(ARM_MATH_LIB_DIR AND EXISTS "${ARM_MATH_LIB_DIR}")

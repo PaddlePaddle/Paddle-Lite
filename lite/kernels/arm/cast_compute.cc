@@ -14,7 +14,7 @@
 
 #include "lite/kernels/arm/cast_compute.h"
 #include <algorithm>
-#include "lite/backends/arm/math/funcs.h"
+// #include "lite/backends/arm/math/funcs.h"
 #ifdef ENABLE_ARM_FP16
 #include "lite/backends/arm/math/fp16/funcs_fp16.h"
 #endif

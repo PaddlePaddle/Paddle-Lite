@@ -87,7 +87,7 @@ if (LITE_BUILD_TAILOR)
     endforeach()
 endif()
 
-add_subdirectory(host)
+# add_subdirectory(host)
 add_subdirectory(arm)
 add_subdirectory(cuda)
 add_subdirectory(x86)
