@@ -25,9 +25,9 @@ namespace math {
 #define DATA_PACK(                                                          \
     vzero0, vin_00, vin_10, vzero1, vin_01, vin_11, vzero2, vin_02, vin_12) \
   __m128i va, vb, vc;                                                       \
-  transpose3x4_4x4_ps(vzero0, vin_00, vin_10, va); /* 0 3 6 9 */            \
-  transpose3x4_4x4_ps(vzero1, vin_01, vin_11, vb); /* 1 4 7 10 */           \
-  transpose3x4_4x4_ps(vzero2, vin_02, vin_12, vc);                          \
+  transpose3x4_4x4_epi(vzero0, vin_00, vin_10, va); /* 0 3 6 9 */           \
+  transpose3x4_4x4_epi(vzero1, vin_01, vin_11, vb); /* 1 4 7 10 */          \
+  transpose3x4_4x4_epi(vzero2, vin_02, vin_12, vc);                         \
   /* 2 5 8 11 */ /* int8 -> int16 */                                        \
   __m256i vzero0_16 = _mm256_cvtepi8_epi16(vzero0);                         \
   __m256i vin3_16 = _mm256_cvtepi8_epi16(vin_00);                           \
@@ -249,7 +249,7 @@ namespace math {
     /* 01234567->012a 345a 678a */                                           \
     __m128i vin_00 = _mm_shuffle_epi8(vin_r0, vmask);                        \
     __m128i vin_10 = _mm_shuffle_epi8(vin_r1, vmask);                        \
-    __m128i vin_20 = _mm_shuffle_epi8(vin_r1, vmask);                        \
+    __m128i vin_20 = _mm_shuffle_epi8(vin_r2, vmask);                        \
     /* 12345678-> 123a 456a 789a */                                          \
     __m128i vin_01 = _mm_shuffle_epi8(vin_r01, vmask);                       \
     __m128i vin_11 = _mm_shuffle_epi8(vin_r11, vmask);                       \
@@ -345,17 +345,17 @@ namespace math {
   doutr += 192;
 
 // a0b0c0d0 a1b1c1d1 a2b2c2d2 -> a0a1a20 b0b1b20 c0c1c20 d0d1d20
-inline void transpose3x4_4x4_ps(__m128i& row0,  // NOLINT
-                                __m128i& row1,  // NOLINT
-                                __m128i& row2,  // NOLINT
-                                __m128i& row3   // NOLINT
-                                ) {
+inline void transpose3x4_4x4_epi(__m128i& row0,  // NOLINT
+                                 __m128i& row1,  // NOLINT
+                                 __m128i& row2,  // NOLINT
+                                 __m128i& row3   // NOLINT
+                                 ) {
   __m128i tmp0 = _mm_unpacklo_epi32(row0, row1);  // a0a1b0b1
   __m128i tmp1 = _mm_unpackhi_epi32(row0, row1);  // c0c1d0d1
   // int32 -> fp32
-  __m128 v0 = _mm_cvtepi32_ps(row2);
-  __m128 v1 = _mm_cvtepi32_ps(tmp0);
-  __m128 v2 = _mm_cvtepi32_ps(tmp1);
+  __m128 v0 = _mm_cvtepi32_ps(row2);  // a2b2c2d2
+  __m128 v1 = _mm_cvtepi32_ps(tmp0);  // a0a1b0b1
+  __m128 v2 = _mm_cvtepi32_ps(tmp1);  // c0c1d0d1
   // a0a1a2b2
   __m128 v00 = _mm_shuffle_ps(v1, v0, 0x44);
   // b0b1b2c2
@@ -488,7 +488,7 @@ void prepack_input_im2col_s1_int8(const int8_t* din,
       const int8_t* dr1 = din_ptr + win;
       int8_t* doutr = dout_ptr;
       int w = 0;
-      if (h == hin_new - 1) {
+      if (h == hin_new - 2) {
         for (; w < win_new - 14; w += 12) {
           MID_PROCESS_PAD_1(dr0, dr1, doutr)
           BOT_MID_PAD_1
@@ -498,7 +498,7 @@ void prepack_input_im2col_s1_int8(const int8_t* din,
           RIGHT_PROCESS(dr0, dr1, tmp_ptr, doutr)
         }
       }
-      if (h == hin_new - 2) {
+      if (h == hin_new - 1) {
         for (; w < win_new - 14; w += 12) {
           MID_PROCESS_PAD_2(dr0, doutr)
           BOT_MID_PAD_2
@@ -900,10 +900,10 @@ void conv_3x3s1_dw_int8(Dtype* dout,
   int rem_cnt = remain >> 1;
   int rem_rem = remain & 1;
   bool flag_bias = bias ? true : false;
-  int8_t* pre_din = static_cast<int8_t*>(TargetMalloc(
-      TARGET(kX86),
-      std::max(pre_in_size * sizeof(int8_t), 32 * sizeof(int8_t))));
-
+  int8_t* pre_din = static_cast<int8_t*>(
+      TargetMalloc(TARGET(kX86),
+                   std::max(pre_in_size * omp_num * sizeof(int8_t),
+                            32 * omp_num * sizeof(int8_t))));
 #pragma omp parallel for
   for (int n = 0; n < omp_num; ++n) {
     const int8_t* din_batch = din + n * size_in_channel;
