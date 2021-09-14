@@ -17,7 +17,7 @@ limitations under the License. */
 #include <vector>
 #include "lite/backends/x86/fluid/float16.h"
 #include "lite/core/tensor.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 #include "unsupported/Eigen/CXX11/Tensor"
 
 namespace paddle {

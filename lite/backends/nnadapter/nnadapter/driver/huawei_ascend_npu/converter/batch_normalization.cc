@@ -12,55 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/huawei_ascend_npu/converter.h"
+#include "core/operation/batch_normalization.h"
+#include "driver/huawei_ascend_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int Program::ConvertBatchNormalization(hal::Operation* operation) {
-  auto& input_operands = operation->input_operands;
-  auto& output_operands = operation->output_operands;
-  auto input_count = input_operands.size();
-  auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 6);
-  NNADAPTER_CHECK_EQ(output_count, 1);
-  // Input
-  auto input_operand = input_operands[0];
-  NNADAPTER_VLOG(5) << "input_operand: " << OperandToString(input_operand);
-  // Scale
-  auto scale_operand = input_operands[1];
-  NNADAPTER_VLOG(5) << "scale_operand: " << OperandToString(scale_operand);
-  // Bias
-  auto bias_operand = input_operands[2];
-  NNADAPTER_VLOG(5) << "bias_operand: " << OperandToString(bias_operand);
-  // Mean
-  auto mean_operand = input_operands[3];
-  NNADAPTER_VLOG(5) << "mean_operand: " << OperandToString(mean_operand);
-  // Variance
-  auto variance_operand = input_operands[4];
-  NNADAPTER_VLOG(5) << "variance_operand: "
-                    << OperandToString(variance_operand);
-  // Epsilon
-  auto epsilon_operand = input_operands[5];
-  auto epsilon = *reinterpret_cast<float*>(epsilon_operand->buffer);
-  NNADAPTER_VLOG(5) << "epsilon :" << epsilon;
-  // Output
-  auto output_operand = output_operands[0];
-  NNADAPTER_VLOG(5) << "output_operand: " << OperandToString(output_operand);
+int ConvertBatchNormalization(Converter* converter, hal::Operation* operation) {
+  BATCH_NORMALIZATION_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
-  auto input_operator = GetMappedOperator(input_operand);
+  auto input_operator = converter->GetMappedOperator(input_operand);
   if (!input_operator) {
-    input_operator = ConvertOperand(input_operand);
+    input_operator = converter->ConvertOperand(input_operand);
   }
-  auto scale_operator = ConvertOperand(scale_operand);
-  auto offset_operator = ConvertOperand(bias_operand);
-  auto mean_operator = ConvertOperand(mean_operand);
-  auto variance_operator = ConvertOperand(variance_operand);
-  auto batch_norm_name = GetOperatorName(output_operand);
-  auto batch_norm_op = std::make_shared<ge::op::BatchNorm>(batch_norm_name);
+  auto scale_operator = converter->ConvertOperand(scale_operand);
+  auto offset_operator = converter->ConvertOperand(bias_operand);
+  auto mean_operator = converter->ConvertOperand(mean_operand);
+  auto variance_operator = converter->ConvertOperand(variance_operand);
+  auto batch_norm_op =
+      converter->AddOperator<ge::op::BatchNorm>(output_operand);
   batch_norm_op->set_attr_epsilon(epsilon);
   batch_norm_op->set_attr_data_format("NCHW");
   batch_norm_op->set_attr_is_training(false);

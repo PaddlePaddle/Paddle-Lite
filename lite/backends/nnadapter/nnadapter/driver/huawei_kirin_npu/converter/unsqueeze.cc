@@ -13,26 +13,25 @@
 // limitations under the License.
 
 #include "core/operation/unsqueeze.h"
-#include "driver/huawei_kirin_npu/converter.h"
+#include "driver/huawei_kirin_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace huawei_kirin_npu {
 
-int Program::ConvertUnsqueeze(hal::Operation* operation) {
+int ConvertUnsqueeze(Converter* converter, hal::Operation* operation) {
   UNSQUEEZE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
-  auto input_operator = GetMappedOperator(input_operand);
+  auto input_operator = converter->GetMappedOperator(input_operand);
   if (!input_operator) {
-    input_operator = ConvertOperand(input_operand);
+    input_operator = converter->ConvertOperand(input_operand);
   }
-  auto reshape_name = GetOperatorName(output_operand);
-  auto reshape_op = std::make_shared<hiai::op::Reshape>(reshape_name);
+  auto reshape_op = converter->AddOperator<hiai::op::Reshape>(output_operand);
   auto shape_count = output_operand->type.dimension_count;
   auto shape_data = output_operand->type.dimensions;
-  auto shape_operator = AddInt32ConstantOperator(
+  auto shape_operator = converter->AddInt32ConstantOperator(
       std::vector<int32_t>(shape_data, shape_data + shape_count));
   SET_INPUT(reshape_op, x, input_operator);
   SET_INPUT(reshape_op, shape, shape_operator);

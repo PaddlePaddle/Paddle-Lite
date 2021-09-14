@@ -102,7 +102,7 @@ class Converter {
  private:
   rk::nn::Graph* graph_{nullptr};
   std::map<hal::Operand*, std::vector<std::shared_ptr<rk::nn::Tensor>>>*
-      tensors_;
+      tensors_{nullptr};
 };
 
 }  // namespace rockchip_npu

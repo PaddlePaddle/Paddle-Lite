@@ -51,6 +51,7 @@ lite_cc_test(test_kernel_multiclass_nms_compute SRCS multiclass_nms_compute_test
 lite_cc_test(test_kernel_multiclass_nms3_compute SRCS multiclass_nms3_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_batch_norm_compute SRCS batch_norm_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_pool_compute SRCS pool_compute_test.cc DEPS ${test_kernel_deps})
+lite_cc_test(test_kernel_adaptive_pool_compute SRCS adaptive_pool_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_fill_constant_compute SRCS fill_constant_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_fill_zeros_like_compute SRCS fill_zeros_like_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_fill_constant_batch_size_like_compute SRCS fill_constant_batch_size_like_compute_test.cc DEPS ${test_kernel_deps})

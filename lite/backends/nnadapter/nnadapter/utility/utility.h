@@ -51,6 +51,8 @@ void CopyOperandTypeWithDimensions(NNAdapterOperandType* dst_type,
                                    const NNAdapterOperandType& src_type);
 void CopyOperandTypeWithPrecision(NNAdapterOperandType* dst_type,
                                   const NNAdapterOperandType& src_type);
+void CopyOperandTypeWithQuantParams(NNAdapterOperandType* dst_type,
+                                    const NNAdapterOperandType& src_type);
 void CopyOperandTypeExceptQuantParams(NNAdapterOperandType* dst_type,
                                       const NNAdapterOperandType& src_type);
 
