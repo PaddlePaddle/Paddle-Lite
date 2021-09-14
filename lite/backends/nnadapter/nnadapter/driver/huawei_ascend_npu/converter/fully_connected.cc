@@ -55,16 +55,15 @@ int ConvertFullyConnected(Converter* converter, hal::Operation* operation) {
   SET_INPUT(matmul_op, x1, input_operator);
   SET_INPUT(matmul_op, x2, weight_operator);
   SET_INPUT(matmul_op, bias, bias_operator);
-  auto matmul_operator = MAP_OUTPUT(matmul_op, y, output_operand);
+  std::shared_ptr<Operator> matmul_operator = MAP_OUTPUT(matmul_op, y, output_operand);
 
   // fuse activations
   switch (fuse_code) {
-#define CONVERT_UNARY_ACTIVATION(type, class_name)                           \
-  case NNADAPTER_FUSED_##type: {                                             \
-    auto act_op = converter->AddOperator<ge::op::class_name>(output_operand, \
-                                                             #class_name);   \
-    SET_INPUT(act_op, x, matmul_operator);                                   \
-    MAP_OUTPUT(act_op, y, output_operand);                                   \
+#define CONVERT_UNARY_ACTIVATION(type, class_name)                            \
+  case NNADAPTER_FUSED_##type: {                                              \
+    auto act_op = converter->AddOperator<ge::op::class_name>(output_operand); \
+    SET_INPUT(act_op, x, matmul_operator);                                    \
+    MAP_OUTPUT(act_op, y, output_operand);                                    \
   } break;
     CONVERT_UNARY_ACTIVATION(RELU, Relu);
     CONVERT_UNARY_ACTIVATION(RELU6, Relu6);

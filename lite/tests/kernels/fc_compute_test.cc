@@ -268,7 +268,7 @@ void TestFCnD(Place place, float abs_error) {
   TestFCHelper(place, abs_error, {2, 3, 4}, {4, 5}, {5}, 2);
   TestFCHelper(place, abs_error, {2, 3, 4}, {12, 5}, {5}, 1);
   TestFCHelper(place, abs_error, {2, 3, 4, 5}, {5, 6}, {6}, 3);
-  TestFCHelper(place, abs_error, {2, 3, 4, 5}, {20, 6}, {6}, 2;
+  TestFCHelper(place, abs_error, {2, 3, 4, 5}, {20, 6}, {6}, 2);
   TestFCHelper(place, abs_error, {2, 3, 4, 5}, {60, 6}, {6}, 1);
 }
 
