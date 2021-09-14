@@ -64,6 +64,7 @@
 #include "lite/backends/arm/math/sgemv.h"
 #include "lite/backends/arm/math/slice.h"
 #include "lite/backends/arm/math/softmax.h"
+#include "lite/backends/arm/math/sparse_conv_impl.h"
 #include "lite/backends/arm/math/split_merge_lod_tenosr.h"
 
 namespace paddle {
