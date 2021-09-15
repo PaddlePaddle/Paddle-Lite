@@ -309,8 +309,8 @@ int64_t GetNNOperandPrecisionDataLength(
 }
 
 int64_t GetNNOperandTypeBufferLength(const NNAdapterOperandType& operand_type) {
-  auto production = ProductionOfDimensions(operand_type.dimensions,
-                                           operand_type.dimension_count);
+  auto production = ProductionOfDimensions(operand_type.dimensions.data,
+                                           operand_type.dimensions.count);
   return GetNNOperandPrecisionDataLength(operand_type.precision) * production;
 }
 
