@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -156,6 +156,7 @@ int ComputeSparseWeight(const Tensor* w_tensor,
   return first_ic;
 }
 
+#ifdef LITE_WITH_ARM
 bool test_spmm_fp32(bool tra,
                     bool trb,
                     int m,
@@ -248,7 +249,6 @@ bool test_spmm_fp32(bool tra,
     act_param.active_type =
         (paddle::lite_api::ActivationType)1;  // 2-relu6 4-leakyrelu
   }
-#ifdef LITE_WITH_ARM
   int num_build_nonzeroes = 0;
   int zero_num;
   int ch_out = m;
@@ -360,9 +360,27 @@ bool test_spmm_fp32(bool tra,
       return false;
     }
   }
-#endif
   return true;
 }
+#else
+bool test_spmm_fp32(bool tra,
+                    bool trb,
+                    int m,
+                    int n,
+                    int k,
+                    int lda,
+                    int ldb,
+                    int ldc,
+                    float alpha,
+                    float beta,
+                    bool has_bias,
+                    bool has_relu,
+                    int cls,
+                    int ths,
+                    float sparsity) {
+  return true;
+}
+#endif
 
 TEST(TestSpmmF32, test_func_spmm_f32) {
   if (FLAGS_basic_test) {

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -108,6 +108,7 @@ int ComputeSparseWeight(const Tensor* w_tensor,
   return first_ic;
 }
 
+#ifdef LITE_WITH_ARM
 bool test_spmm_int8(bool tra,
                     bool trb,
                     int m,
@@ -189,7 +190,7 @@ bool test_spmm_int8(bool tra,
             << ", transB: " << (trb ? "true" : "false")
             << ", relu_type: " << relu_type
             << ", bias: " << (has_bias ? "true" : "false");
-#ifdef LITE_WITH_ARM
+
   int lda = tra ? m : k;
   int ldb = trb ? k : n;
   int ldc = n;
@@ -430,9 +431,22 @@ bool test_spmm_int8(bool tra,
       }
     }
   }
-#endif
   return true;
 }
+#else
+bool test_spmm_int8(bool tra,
+                    bool trb,
+                    int m,
+                    int n,
+                    int k,
+                    bool has_bias,
+                    int relu_type,
+                    int cls,
+                    int ths,
+                    float sparsity) {
+  return true;
+}
+#endif
 
 TEST(TestLiteSpmmInt8, spmm_prepacked_int8) {
   if (FLAGS_basic_test) {
