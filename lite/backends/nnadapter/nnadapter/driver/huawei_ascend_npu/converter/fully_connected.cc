@@ -24,8 +24,8 @@ namespace huawei_ascend_npu {
 int ConvertFullyConnected(Converter* converter, hal::Operation* operation) {
   FULLY_CONNECTED_OPERATION_EXTRACT_INPUTS_OUTPUTS
   auto batch_size =
-      ProductionOfDimensions(input_operand->type.dimensions,
-                             input_operand->type.dimension_count) /
+      ProductionOfDimensions(input_operand->type.dimensions.data,
+                             input_operand->type.dimensions.count) /
       input_size;
   NNADAPTER_VLOG(5) << "batch_size: " << batch_size;
 
@@ -35,8 +35,8 @@ int ConvertFullyConnected(Converter* converter, hal::Operation* operation) {
     input_operator = converter->ConvertOperand(input_operand);
   }
   // Reshape the input operator to 2-D tensor {batch_size, input_size} if the
-  // dimension_count not equal 2
-  if (input_operand->type.dimension_count != 2) {
+  // dimensions_count not equal 2
+  if (input_operand->type.dimensions.count != 2) {
     auto reshape_op =
         converter->AddOperator<ge::op::Reshape>(input_operand, "reshape");
     auto shape_operator = converter->AddInt32ConstantOperator(
@@ -55,7 +55,8 @@ int ConvertFullyConnected(Converter* converter, hal::Operation* operation) {
   SET_INPUT(matmul_op, x1, input_operator);
   SET_INPUT(matmul_op, x2, weight_operator);
   SET_INPUT(matmul_op, bias, bias_operator);
-  std::shared_ptr<Operator> matmul_operator = MAP_OUTPUT(matmul_op, y, output_operand);
+  std::shared_ptr<Operator> matmul_operator =
+      MAP_OUTPUT(matmul_op, y, output_operand);
 
   // fuse activations
   switch (fuse_code) {
