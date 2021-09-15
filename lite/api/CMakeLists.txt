@@ -65,9 +65,9 @@ if(LITE_WITH_CUDA)
 endif()
 
 
-lite_cc_library(paddle_api_light SRCS ${LIGHT_API_SRC} DEPS ${light_lib_DEPS} ${external_libs_DEPS} kernels)
+lite_cc_library(paddle_api_light SRCS ${LIGHT_API_SRC} DEPS ${light_lib_DEPS} ${external_libs_DEPS})
 if(NOT LITE_ON_TINY_PUBLISH)
-  lite_cc_library(paddle_api_full SRCS ${FULL_API_SRC} DEPS ${full_lib_DEPS} ${external_libs_DEPS} kernels)
+  lite_cc_library(paddle_api_full SRCS ${FULL_API_SRC} DEPS ${full_lib_DEPS} ${external_libs_DEPS})
 endif()
 
 
