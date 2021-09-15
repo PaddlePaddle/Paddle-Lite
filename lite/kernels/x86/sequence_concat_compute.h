@@ -58,6 +58,7 @@ class SequenceConcatCompute
     std::vector<int64_t> out_dims;
     for (const auto& tensor : param.X) {
       const auto x_dims = tensor->dims();
+      CHECK(x_dims[0]);
       if (out_dims.empty()) {
         out_dims = x_dims.Vectorize();
       }

@@ -95,17 +95,28 @@ void TestModel(const std::vector<Place>& valid_places,
   }
   auto first_target = valid_places[0].target;
 
+  float relative_err_max = 0.f;
   if (first_target == TARGET(kOpenCL) || first_target == TARGET(kNPU)) {
     ASSERT_EQ(out->dims().production(), 1000);
     double eps = first_target == TARGET(kOpenCL) ? 0.25 : 0.1;
     for (int i = 0; i < ref.size(); ++i) {
       for (int j = 0; j < ref[i].size(); ++j) {
-        auto result = pdata[j * step + (out->dims()[1] * i)];
-        auto diff = std::fabs((result - ref[i][j]) / ref[i][j]);
-        VLOG(3) << diff;
-        EXPECT_LT(diff, eps);
+        auto idx = j * step + (out->dims()[1] * i);
+        auto result = pdata[idx];
+        auto relative_err = std::fabs((result - ref[i][j]) / ref[i][j]);
+        VLOG(3) << lite::string_format(
+            "relative_err[%d]: %f \tresult: %f \tref: %f",
+            idx,
+            relative_err,
+            result,
+            ref[i][j]);
+        if (relative_err > relative_err_max) {
+          relative_err_max = relative_err;
+        }
       }
     }
+    VLOG(3) << lite::string_format("max relative err: %f", relative_err_max);
+    EXPECT_LT(relative_err_max, eps);
   } else {
     ASSERT_EQ(out->dims().size(), 2);
     ASSERT_EQ(out->dims()[0], 1);
