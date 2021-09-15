@@ -196,6 +196,10 @@ endif()
 
 
 #-----------------------------------------------------------------------------------------------------
+if(WITH_TESTING)
+    add_subdirectory(test)
+endif()
+
 # java API
 if (LITE_WITH_JAVA AND LITE_WITH_ARM)
     add_subdirectory(android)

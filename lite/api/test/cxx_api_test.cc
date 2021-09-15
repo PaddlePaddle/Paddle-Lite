@@ -19,13 +19,14 @@
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
-#include "lite/api/test/lite_api_test_helper.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 
 // For training.
 DEFINE_string(startup_program_path, "", "");
 DEFINE_string(main_program_path, "", "");
+DEFINE_string(model_dir, "", "");
+DEFINE_string(optimized_model, "", "");
 
 namespace paddle {
 namespace lite {
