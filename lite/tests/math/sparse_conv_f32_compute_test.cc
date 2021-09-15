@@ -258,6 +258,9 @@ bool test_spmm_fp32(bool tra,
   zero_num =
       ComputeSparseZeros<float>(&ta, &num_build_nonzeroes, ch_out, ch_in);
   int nonzero_num = weight_num - zero_num;
+  if (nonzero_num <= 0) {
+    return true;
+  }
   Tensor nonzeros_output_t;
   Tensor oc_nonzeros_t;
   Tensor ic_diffs_t;
@@ -372,8 +375,8 @@ TEST(TestSpmmF32, test_func_spmm_f32) {
         for (auto& k : {1, 109, 512}) {
           for (auto& tra : {false}) {
             for (auto& trb : {false}) {
-              for (auto& alpha : {1.f, 0.5f}) {
-                for (auto& beta : {0.f, 0.5f}) {
+              for (auto& alpha : {1.f}) {
+                for (auto& beta : {0.f}) {
                   for (auto& offset : {0}) {
                     for (auto& has_bias : {false, true}) {
                       for (auto& has_relu : {false, true}) {

@@ -251,6 +251,9 @@ bool test_spmm_int8(bool tra,
   int weight_num = m * k;
   zero_num = ComputeSparseZeros<int8_t>(&ta, weight_num);
   int nonzero_num = weight_num - zero_num;
+  if (nonzero_num <= 0) {
+    return true;
+  }
   Tensor nonzeros_output_t;
   Tensor oc_nonzeros_t;
   Tensor ic_diffs_t;
