@@ -2,7 +2,7 @@
 # The git version of CI is 2.7.4. This script is not compatible with git version 1.7.1.
 set -ex
 
-TESTS_FILE="./lite_tests.txt"
+TESTS_FILE="/projs/framework/miaochen/Paddle-Lite/lite_tests.txt"
 LIBS_FILE="./lite_libs.txt"
 LITE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../" && pwd)"
 
@@ -991,6 +991,61 @@ function amlogic_npu_build_and_test() {
     build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE amlogic_npu_build_target amlogic_npu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR "$(readlink -f ./amlnpu_ddk)"
 }
 
+# Cambricon MLU
+function cambricon_mlu_build_target() {
+    local os=$1
+    # local arch=$2
+    local arch=x86
+    local toolchain=$3
+    local sdk_root_dir=/projs/framework/miaochen/temp/tensorflow/install_dir/usr/local/neuware/
+
+    # Build all of tests
+    rm -rf $BUILD_DIR
+    mkdir -p $BUILD_DIR
+    cd $BUILD_DIR
+    prepare_workspace $ROOT_DIR $BUILD_DIR
+    cmake .. \
+        -DWITH_GPU=OFF \
+        -DWITH_MKL=OFF \
+        -DWITH_LITE=ON \
+        -DLITE_WITH_CUDA=OFF \
+        -DLITE_WITH_X86=ON \
+        -DLITE_WITH_ARM=OFF \
+        -DWITH_ARM_DOTPROD=OFF \
+        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
+        -DWITH_TESTING=ON \
+        -DLITE_BUILD_EXTRA=OFF \
+        -DLITE_WITH_TRAIN=OFF \
+        -DLITE_WITH_NNADAPTER=ON \
+        -DNNADAPTER_WITH_CAMBRICON_MLU=ON \
+        -DNNADAPTER_CAMBRICON_MLU_SDK_ROOT="$sdk_root_dir" \
+        -DARM_TARGET_OS=$os -DARM_TARGET_ARCH_ABI=$arch -DARM_TARGET_LANG=$toolchain
+    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
+    export GLOG_v=$UNIT_TEST_LOG_LEVEL
+    local unit_test_check_items=(${UNIT_TEST_CHECK_LIST//,/ })
+    for test_name in $(cat $TESTS_FILE); do
+        local is_matched=0
+        for unit_test_check_item in ${unit_test_check_items[@]}; do
+            if [[ "$unit_test_check_item" == "$test_name" ]]; then
+                echo "$test_name on the checklist."
+                is_matched=1
+                break
+            fi
+        done
+        # black list
+        if [[ $is_matched -eq 1 && $UNIT_TEST_FILTER_TYPE -eq 0 ]]; then
+            continue
+        fi
+        # white list
+        if [[ $is_matched -eq 0 && $UNIT_TEST_FILTER_TYPE -eq 1 ]]; then
+            continue
+        fi
+        ctest -V -R ^$test_name$
+    done
+}
+
 # Baidu XPU
 function baidu_xpu_build_and_test() {
     local with_xtcl=$1
@@ -1131,6 +1186,10 @@ function main() {
             ;;
         amlogic_npu_build_and_test)
             amlogic_npu_build_and_test
+            shift
+            ;;
+        cambricon_mlu_build_and_test)
+            cambricon_mlu_build_target
             shift
             ;;
         baidu_xpu_disable_xtcl_build_and_test)

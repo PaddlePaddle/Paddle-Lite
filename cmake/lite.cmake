@@ -132,13 +132,13 @@ function (lite_deps TARGET)
 
   if (LITE_WITH_IMAGINATION_NNA)
     foreach(var ${lite_deps_IMAGINATION_NNA_DEPS})
-	    set(deps ${deps} ${var})
+      set(deps ${deps} ${var})
     endforeach(var)
   endif()
 
   if (LITE_WITH_NNADAPTER)
     foreach(var ${lite_deps_NNADAPTER_DEPS})
-	    set(deps ${deps} ${var})
+      set(deps ${deps} ${var})
     endforeach(var)
   endif()
 
@@ -186,6 +186,7 @@ function(lite_cc_library TARGET)
             METAL_DEPS ${args_METAL_DEPS}
             BM_DEPS ${args_BM_DEPS}
             IMAGINATION_NNA_DEPS ${args_IMAGINATION_NNA_DEPS}
+            CAMBRICON_MLU_DEPS ${args_CAMBRICON_MLU_DEPS}
             NNADAPTER_DEPS ${args_NNADAPTER_DEPS}
             RKNPU_DEPS ${args_RKNPU_DEPS}
             ARM_DEPS ${args_ARM_DEPS}
@@ -248,6 +249,7 @@ function(lite_cc_binary TARGET)
             RKNPU_DEPS ${args_RKNPU_DEPS}
             BM_DEPS ${args_BM_DEPS}
             IMAGINATION_NNA_DEPS ${args_IMAGINATION_NNA_DEPS}
+            CAMBRICON_MLU_DEPS ${args_CAMBRICON_MLU_DEPS}
             NNADAPTER_DEPS ${args_NNADAPTER_DEPS}
             PROFILE_DEPS ${args_PROFILE_DEPS}
             LIGHT_DEPS ${args_LIGHT_DEPS}

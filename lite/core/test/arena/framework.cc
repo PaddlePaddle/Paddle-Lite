@@ -49,6 +49,8 @@ std::shared_ptr<lite::OpLite> TestCase::CreateSubgraphOp() {
                                                        {"imagination_nna"});
 #elif defined(NNADAPTER_WITH_AMLOGIC_NPU)
   ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope, {"amlogic_npu"});
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope, {"cambricon_mlu"});
 #endif
   // Create a new block desc to wrap the original op desc
   auto sub_program_desc = std::make_shared<cpp::ProgramDesc>();
