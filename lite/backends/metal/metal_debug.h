@@ -43,7 +43,9 @@ class MetalDebug {
         enable_ = flag;
     }
 
-    static void SaveOutput(std::string name, const MetalImage* image, DumpMode mode = DumpMode::kBoth) {
+    static void SaveOutput(std::string name,
+        const MetalImage* image,
+        DumpMode mode = DumpMode::kBoth) {
         print_log(name, image);
     }
 
