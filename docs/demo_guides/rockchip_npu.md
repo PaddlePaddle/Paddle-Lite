@@ -55,7 +55,7 @@ Paddle Lite已支持Rockchip NPU的预测部署。
 ### 已支持（或部分支持）NNAdapter的Paddle算子
 可以通过访问[https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/bridges/paddle_use_bridges.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/bridges/paddle_use_bridges.h)获得最新的算子支持列表。
 
-**不经过NNAdapter标准算子转换，而是直接将Paddle算子转换成HiAI IR的方案可点击[链接](https://paddle-lite.readthedocs.io/zh/release-v2.9/demo_guides/rockchip_npu.html)**。
+**不经过NNAdapter标准算子转换，而是直接将Paddle算子转换成Rockchip NPU IR的方案可点击[链接](https://paddle-lite.readthedocs.io/zh/release-v2.9/demo_guides/rockchip_npu.html)**。
 
 ## 参考示例演示
 

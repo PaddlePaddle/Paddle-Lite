@@ -31,8 +31,9 @@ std::string OperandLifetimeCodeToString(NNAdapterOperandLifetimeCode type);
 std::string OperationTypeToString(NNAdapterOperationType type);
 std::string FuseCodeToString(NNAdapterFuseCode type);
 std::string DeviceCodeToString(NNAdapterDeviceCode type);
-std::string DimensionsToString(const int32_t* dimensions,
-                               uint32_t dimension_count);
+std::string AutoPadCodeToString(NNAdapterAutoPadCode type);
+std::string DimensionsToString(const int32_t* dimensions_data,
+                               uint32_t dimensions_count);
 std::string OperandToString(hal::Operand* operand);
 std::string OperandIdToString(hal::Operand* operand);
 std::string OperandTypeToString(NNAdapterOperandType* type);

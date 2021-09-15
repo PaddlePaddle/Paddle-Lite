@@ -20,8 +20,12 @@
 #include "lite/core/device_info.h"
 #include "lite/core/optimizer/mir/pass_manager.h"
 #include "lite/core/optimizer/mir/post_quant_dynamic_pass.h"
+#include "lite/core/optimizer/mir/sparse_conv_detect_pass.h"
 #include "lite/core/version.h"
-
+#ifdef LITE_USE_THREAD_POOL
+#include "lite/core/parallel_defines.h"
+#include "lite/core/thread_pool.h"
+#endif
 #ifndef LITE_ON_TINY_PUBLISH
 #include "lite/api/paddle_use_passes.h"
 #endif
@@ -38,6 +42,14 @@ namespace lite {
 
 void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   config_ = config;
+  mode_ = config.power_mode();
+  threads_ = config.threads();
+#ifdef LITE_USE_THREAD_POOL
+  int thread_num = ThreadPool::Init(threads_);
+  if (thread_num > 1) {
+    ThreadPool::AcquireThreadPool();
+  }
+#endif
   if (!status_is_cloned_) {
     auto places = config.valid_places();
     std::vector<std::string> passes = config.get_passes_internal();
@@ -107,13 +119,21 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
       CHECK(pass);
       pass->SetQuantType(config.quant_type());
     }
+
+    if (config.sparse_model()) {
+      passes.push_back("sparse_conv_detect_pass");
+      auto *sparse_detect_pass =
+          mir::PassManager::Global().LookUp<mir::SparseConvDetectPass>(
+              "sparse_conv_detect_pass");
+      CHECK(sparse_detect_pass);
+      sparse_detect_pass->SetSparseThreshold(config.sparse_threshold());
+    }
     raw_predictor_->Build(config, places, passes);
   } else {
     raw_predictor_->PrepareFeedFetch();
     CHECK(raw_predictor_) << "The Predictor can not be nullptr in Clone mode.";
   }
-  mode_ = config.power_mode();
-  threads_ = config.threads();
+
 #ifdef LITE_WITH_NPU
   // Store the model-level configuration into scope for kernels, and use
   // exe_scope to store the execution-level configuration
@@ -205,6 +225,12 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
     }
     Run();
   }
+#endif
+}
+
+CxxPaddleApiImpl::~CxxPaddleApiImpl() {
+#ifdef LITE_USE_THREAD_POOL
+  ThreadPool::ReleaseThreadPool();
 #endif
 }
 

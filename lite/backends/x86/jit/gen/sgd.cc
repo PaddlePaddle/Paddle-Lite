@@ -17,7 +17,7 @@
 #include <memory>
 #include <vector>
 #include "lite/backends/x86/jit/registry.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 namespace paddle {
 namespace lite {

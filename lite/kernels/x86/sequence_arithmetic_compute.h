@@ -36,6 +36,8 @@ class SequenceArithmeticCompute
     auto out = param.Out;
     int op_type = param.op_type;
 
+    CHECK(x->dims()[0]);
+
     out->Resize(x->dims());
     out->set_lod(x->lod());
 
@@ -50,8 +52,12 @@ class SequenceArithmeticCompute
     // sum
     if (op_type == 1) {
       for (int i = 0; i < seq_num; i++) {
+        CHECK_GT(x_seq_offset[i + 1], x_seq_offset[i]);
+        CHECK_GT(y_seq_offset[i + 1], y_seq_offset[i]);
         int len_x = (x_seq_offset[i + 1] - x_seq_offset[i]) * inner_size;
         int len_y = (y_seq_offset[i + 1] - y_seq_offset[i]) * inner_size;
+        CHECK(len_x > 0);
+        CHECK(len_y > 0);
         auto input_x = x_data + x_seq_offset[i] * inner_size;
         auto input_y = y_data + y_seq_offset[i] * inner_size;
         auto t_out = out_data + x_seq_offset[i] * inner_size;
@@ -68,8 +74,12 @@ class SequenceArithmeticCompute
     // sub
     if (op_type == 2) {
       for (int i = 0; i < seq_num; i++) {
+        CHECK_GT(x_seq_offset[i + 1], x_seq_offset[i]);
+        CHECK_GT(y_seq_offset[i + 1], y_seq_offset[i]);
         int len_x = (x_seq_offset[i + 1] - x_seq_offset[i]) * inner_size;
         int len_y = (y_seq_offset[i + 1] - y_seq_offset[i]) * inner_size;
+        CHECK(len_x > 0);
+        CHECK(len_y > 0);
         auto input_x = x_data + x_seq_offset[i] * inner_size;
         auto input_y = y_data + y_seq_offset[i] * inner_size;
         auto t_out = out_data + x_seq_offset[i] * inner_size;
@@ -86,8 +96,12 @@ class SequenceArithmeticCompute
     // mul
     if (op_type == 3) {
       for (int i = 0; i < seq_num; i++) {
+        CHECK_GT(x_seq_offset[i + 1], x_seq_offset[i]);
+        CHECK_GT(y_seq_offset[i + 1], y_seq_offset[i]);
         int len_x = (x_seq_offset[i + 1] - x_seq_offset[i]) * inner_size;
         int len_y = (y_seq_offset[i + 1] - y_seq_offset[i]) * inner_size;
+        CHECK(len_x > 0);
+        CHECK(len_y > 0);
         auto input_x = x_data + x_seq_offset[i] * inner_size;
         auto input_y = y_data + y_seq_offset[i] * inner_size;
         auto t_out = out_data + x_seq_offset[i] * inner_size;

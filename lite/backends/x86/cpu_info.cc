@@ -31,7 +31,7 @@
 #endif  // _WIN32
 
 #include <algorithm>
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 #include "lite/utils/env.h"
 

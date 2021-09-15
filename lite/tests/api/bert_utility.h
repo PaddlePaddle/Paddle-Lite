@@ -19,8 +19,8 @@
 #include <string>
 #include <vector>
 #include "lite/api/paddle_api.h"
-#include "lite/utils/cp_logging.h"
 #include "lite/utils/io.h"
+#include "lite/utils/log/cp_logging.h"
 #include "lite/utils/string.h"
 
 namespace paddle {

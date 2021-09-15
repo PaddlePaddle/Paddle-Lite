@@ -20,7 +20,7 @@ namespace kernels {
 namespace nnadapter {
 
 int ConvertSoftmax(Converter* converter, OpInfo* op, Scope* scope) {
-  // Extract op attributes
+  // Extract the inputs, outputs and attributes
   auto x_name = op->Input("X").front();
   auto x_scale_name = "X0_scale";
   std::vector<float> x_scales;
@@ -33,7 +33,10 @@ int ConvertSoftmax(Converter* converter, OpInfo* op, Scope* scope) {
   if (op->HasOutputScale(out_scale_name, true)) {
     out_scales = op->GetOutputScale(out_scale_name, true);
   }
-  auto axis = op->GetAttr<int>("axis");
+  int axis = -1;
+  if (op->HasAttr("axis")) {
+    axis = op->GetAttr<int>("axis");
+  }
   // Check quantization mode
   bool is_quant_mode = IsValidSymmPerLayerQuantParams(out_scales);
   if (is_quant_mode) {
@@ -74,9 +77,8 @@ int ConvertSoftmax(Converter* converter, OpInfo* op, Scope* scope) {
   }
   auto output_operand = converter->AddOutputOperand(out_name, out_scales);
   // Softmax operation
-  std::vector<NNAdapterOperand*> input_operands = {input_operand, axis_operand};
-  std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  converter->AddOperation(NNADAPTER_SOFTMAX, &input_operands, &output_operands);
+  converter->AddOperation(
+      NNADAPTER_SOFTMAX, {input_operand, axis_operand}, {output_operand});
   return NO_ERROR;
 }
 

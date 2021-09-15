@@ -155,6 +155,20 @@ class Converter {
       NNAdapterOperationType type,
       std::vector<NNAdapterOperand*>* input_operands,
       std::vector<NNAdapterOperand*>* output_operands);
+  // Add a operation with input and output operands
+  NNAdapterOperation* AddOperation(
+      NNAdapterOperationType type,
+      std::vector<NNAdapterOperand*> input_operands,
+      std::vector<NNAdapterOperand*> output_operands);
+  // Add shape operation with input operand, output name, output precision
+  NNAdapterOperand* AddShapeOperation(
+      NNAdapterOperand* input_operand,
+      const std::string& output_name = "",
+      NNAdapterOperandPrecisionCode output_precision = NNADAPTER_TENSOR_INT32);
+  // Add unsqueeze operation with input operand, axes, out_name, quant_scales
+  NNAdapterOperand* AddUnsqueezeOperation(NNAdapterOperand* input_operand,
+                                          const std::vector<int32_t>& axes,
+                                          const std::string& out_name = "");
 
  private:
   // Add a operand from a NNAdapter type, only for internal use

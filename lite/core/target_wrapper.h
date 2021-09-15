@@ -18,7 +18,7 @@
 #include <sstream>
 #include <string>
 #include "lite/api/paddle_place.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 #ifdef LITE_WITH_CUDA
 #include <cuda.h>

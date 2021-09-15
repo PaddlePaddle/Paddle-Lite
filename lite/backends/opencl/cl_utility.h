@@ -15,7 +15,7 @@ limitations under the License. */
 #pragma once
 
 #include "lite/backends/opencl/cl_include.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 #include "lite/utils/string.h"
 
 namespace paddle {

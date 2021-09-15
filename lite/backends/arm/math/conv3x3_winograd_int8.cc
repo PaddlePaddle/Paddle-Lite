@@ -15,6 +15,7 @@
 #include "lite/backends/arm/math/conv_block_utils.h"
 #include "lite/backends/arm/math/conv_impl.h"
 #include "lite/backends/arm/math/packed_sgemm_c4.h"
+#include "lite/core/parallel_defines.h"
 #ifdef ARM_WITH_OMP
 #include <omp.h>
 #endif
@@ -161,9 +162,13 @@ void conv_compute_2x2_3x3_int8(const int8_t* input,
     Dtype* output_ptr = output + ni * out_n_stride;
 
     const int16_t* weight_ptr = weight;
-#pragma omp parallel for num_threads(threads)
-    for (int tbi = 0; tbi < block_count; ++tbi) {
-#ifdef ARM_WITH_OMP
+    LITE_PARALLEL_BEGIN(tbi, tid, block_count) {
+#ifdef LITE_USE_THREAD_POOL
+      int16_t* tmp_data =
+          g_tmp_data + tid * tmp_data_thread_stride_size / sizeof(int16_t);
+      int32_t* trans_tmp_data = g_trans_tmp_data + tid * 32;
+      int8_t* trans_remain_tmp_data = g_trans_remain_tmp_data + tid * 128;
+#elif defined(ARM_WITH_OMP)
       int16_t* tmp_data =
           g_tmp_data +
           omp_get_thread_num() * tmp_data_thread_stride_size / sizeof(int16_t);
@@ -300,6 +305,7 @@ void conv_compute_2x2_3x3_int8(const int8_t* input,
       }
       //*/
     }  // for block_count
+    LITE_PARALLEL_END();
     for (int ci = 0; ci < oc_8; ++ci) {
       write_int32_nchwc8_to_nchw(output_c8 + ci * oc_8_stride,
                                  output_ptr,
@@ -468,9 +474,16 @@ void conv_compute_4x4_3x3_int8(const int8_t* input,
     int32_t* output_c8 = (int32_t*)(input_c8 + ic_8 * ic_8_stride);  // NOLINT
     Dtype* output_ptr = output + ni * out_n_stride;
     const int16_t* weight_ptr = weight;
-#pragma omp parallel for num_threads(threads)
-    for (int tbi = 0; tbi < block_count; ++tbi) {
-#ifdef ARM_WITH_OMP
+    LITE_PARALLEL_BEGIN(tbi, tid, block_count) {
+#ifdef LITE_USE_THREAD_POOL
+      int16_t* tmp_data =
+          g_tmp_data + tid * tmp_data_thread_stride_size / sizeof(int16_t);
+      int16_t* trans_tmp_data = g_trans_tmp_data + tid * 288;
+      int8_t* trans_remain_tmp_data = g_trans_remain_tmp_data + tid * 288;
+      int32_t* trans_tmp_output_data = g_trans_tmp_output_data + tid * 192;
+      int32_t* trans_remain_tmp_output_data =
+          g_trans_remain_tmp_output_data + tid * 128;
+#elif defined(ARM_WITH_OMP)
       int16_t* tmp_data =
           g_tmp_data +
           omp_get_thread_num() * tmp_data_thread_stride_size / sizeof(int16_t);
@@ -657,6 +670,7 @@ void conv_compute_4x4_3x3_int8(const int8_t* input,
       }
       //*/
     }  // for block_count
+    LITE_PARALLEL_END();
     for (int ci = 0; ci < oc_8; ++ci) {
       write_int32_nchwc8_to_nchw(output_c8 + ci * oc_8_stride,
                                  output_ptr,

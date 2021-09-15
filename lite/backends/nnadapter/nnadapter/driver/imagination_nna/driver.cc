@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/imagination_nna/converter.h"
+#include "driver/imagination_nna/engine.h"
 #include "utility/logging.h"
 #include "utility/micros.h"
 

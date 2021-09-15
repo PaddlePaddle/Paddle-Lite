@@ -22,7 +22,7 @@
 #include "graph/graph.h"
 #include "graph/tensor.h"
 #include "graph/types.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 #include "lite/utils/replace_stl/stream.h"
 
 /*

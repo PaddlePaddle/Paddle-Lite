@@ -268,8 +268,10 @@ void ConvertVectorToNNDimensions(const std::vector<int64_t>& input_dimensions,
                                  uint32_t* output_dimension_count = nullptr);
 DDim ConvertNNDimensionsToDDim(int32_t* input_dimensions,
                                uint32_t input_dimension_count);
-
-NNAdapterPadCode PaddingAlgorithm2PadCode(const std::string& padding_algorithm);
+// Convert the attribute 'padding_algorithm' in Conv2d/DepthwiseConv2d to
+// NNAdapterAutoPadCode
+NNAdapterAutoPadCode PaddingAlgorithm2AutoPadCode(
+    const std::string& padding_algorithm);
 
 }  // namespace nnadapter
 }  // namespace kernels

@@ -16,7 +16,7 @@
 
 #include "lite/core/framework.pb.h"
 #include "lite/core/model/base/traits.h"
-#include "lite/utils/logging.h"
+#include "lite/utils/log/logging.h"
 namespace paddle {
 namespace lite {
 namespace pb {
