@@ -446,7 +446,6 @@ void TestConvDepthwise(Place place, float abs_error = 2e-5) {
     }
   }
 }
-}
 
 TEST(Conv2d, precision) {
   float abs_error = 2e-5;
