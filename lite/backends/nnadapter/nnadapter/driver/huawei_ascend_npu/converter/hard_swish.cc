@@ -34,10 +34,11 @@ int ConvertHardSwish(Converter* converter, hal::Operation* operation) {
   // Clip Max
   auto clip_max = 1.0;
   std::vector<int32_t> input_dimensions(
-      input_operand->type.dimensions,
-      input_operand->type.dimensions + input_operand->type.dimension_count);
-  auto count = ProductionOfDimensions(input_operand->type.dimensions,
-                                      input_operand->type.dimension_count);
+      input_operand->type.dimensions.data,
+      input_operand->type.dimensions.data +
+          input_operand->type.dimensions.count);
+  auto count = ProductionOfDimensions(input_operand->type.dimensions.data,
+                                      input_operand->type.dimensions.count);
   NNADAPTER_VLOG(5) << "count: " << count;
 
   // Convert to GE operators

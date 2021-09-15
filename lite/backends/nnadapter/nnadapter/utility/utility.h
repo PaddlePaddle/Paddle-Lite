@@ -57,19 +57,19 @@ void CopyOperandTypeExceptQuantParams(NNAdapterOperandType* dst_type,
                                       const NNAdapterOperandType& src_type);
 
 // Caculate the production of the given dimensions
-int64_t ProductionOfDimensions(const int32_t* input_dimensions,
-                               uint32_t input_dimension_count);
+int64_t ProductionOfDimensions(const int32_t* input_dimensions_data,
+                               uint32_t input_dimensions_count);
 int64_t ProductionOfDimensions(const std::vector<int32_t>& input_dimensions);
 // Transpose the given dimensions, similar to numpy.transpose
 void TransposeDimensions(int32_t* input_dimensions,
                          const std::vector<int32_t>& permutation,
                          int32_t* output_dimensions_ptr = nullptr);
 // Reshape the given dimensions, similar to numpy.reshape
-void ReshapeDimensions(int32_t* input_dimensions,
-                       uint32_t* input_dimension_count,
+void ReshapeDimensions(int32_t* input_dimensions_data,
+                       uint32_t* input_dimensions_count,
                        const std::vector<int32_t>& dimensions,
-                       int32_t* output_dimensions_ptr = nullptr,
-                       uint32_t* output_dimension_count_ptr = nullptr);
+                       int32_t* output_dimensions_data_ptr = nullptr,
+                       uint32_t* output_dimensions_count_ptr = nullptr);
 
 // Initialize an identity dimorder vector from the given rank, such as (0, 1, 2,
 // 3) for rank=4

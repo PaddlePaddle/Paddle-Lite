@@ -26,34 +26,23 @@ int PrepareShape(hal::Operation* operation) {
   SHAPE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
-  auto& in_type = input_operand->type;
-  auto& out_type = output_operand->type;
-  out_type.dimension_count = 1;
-  int32_t shape_size = in_type.dimension_count;
-  out_type.dimensions[0] = shape_size;
+  auto& input_type = input_operand->type;
+  auto& output_type = output_operand->type;
+  output_type.dimensions.count = 1;
+  int32_t shape_size = input_type.dimensions.count;
+  output_type.dimensions.data[0] = shape_size;
   if (dtype == static_cast<int32_t>(NNADAPTER_TENSOR_INT32)) {
-    out_type.precision = NNADAPTER_TENSOR_INT32;
+    output_type.precision = NNADAPTER_TENSOR_INT32;
   } else if (dtype == static_cast<int32_t>(NNADAPTER_TENSOR_INT64)) {
-    out_type.precision = NNADAPTER_TENSOR_INT64;
+    output_type.precision = NNADAPTER_TENSOR_INT64;
   }
-
-  out_type.lifetime = NNADAPTER_TEMPORARY_SHAPE;
+  output_type.lifetime = NNADAPTER_TEMPORARY_SHAPE;
   output_operand->length = sizeof(NNAdapterOperandDimensionType);
   output_operand->buffer = malloc(output_operand->length);
   NNADAPTER_CHECK(output_operand->buffer) << "Out of memory!";
   memset(output_operand->buffer, 0, output_operand->length);
-  NNAdapterOperandDimensionType* shape_hints =
-      reinterpret_cast<NNAdapterOperandDimensionType*>(output_operand->buffer);
-  shape_hints->count = in_type.dimension_count;
-  memcpy(shape_hints->data,
-         in_type.dimensions,
-         NNADAPTER_MAX_SIZE_OF_DIMENSIONS * sizeof(int32_t));
-  shape_hints->dynamic_count = in_type.dynamic_dimension_count;
-  memcpy(shape_hints->dynamic_data,
-         in_type.dynamic_dimensions,
-         NNADAPTER_MAX_SIZE_OF_DYNAMIC_DIMENSIONS *
-             NNADAPTER_MAX_SIZE_OF_DIMENSIONS * sizeof(int32_t));
-
+  *reinterpret_cast<NNAdapterOperandDimensionType*>(output_operand->buffer) =
+      input_type.dimensions;
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
 }

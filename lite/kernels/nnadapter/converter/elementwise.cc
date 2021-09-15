@@ -55,8 +55,8 @@ int ConvertElementwise(Converter* converter, OpInfo* op, Scope* scope) {
   // Check whether the two dimensions are compatiable(Numpy-style broadcasting
   // https://numpy.org/doc/stable/user/basics.broadcasting.html).
   // Unsqueeze the small rank
-  uint32_t x_rank = converter->GetOperandType(x_operand)->dimension_count;
-  uint32_t y_rank = converter->GetOperandType(y_operand)->dimension_count;
+  uint32_t x_rank = converter->GetOperandType(x_operand)->dimensions.count;
+  uint32_t y_rank = converter->GetOperandType(y_operand)->dimensions.count;
   uint32_t max_rank = std::max(x_rank, y_rank);
   int32_t axis = op->GetAttr<int32_t>("axis");
   if (axis < 0) {

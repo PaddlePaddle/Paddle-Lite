@@ -22,10 +22,10 @@ namespace huawei_ascend_npu {
 
 int ConvertConv2DTranspose(Converter* converter, hal::Operation* operation) {
   CONV_2D_TRANSPOSE_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  auto out_dims = output_operand->type.dimensions;
-  NNADAPTER_CHECK_NE(out_dims[2], NNADAPTER_UNKNOWN)
+  auto output_dimensions = output_operand->type.dimensions.data;
+  NNADAPTER_CHECK_NE(output_dimensions[2], NNADAPTER_UNKNOWN)
       << "AscendNPU must set out shape.";
-  NNADAPTER_CHECK_NE(out_dims[3], NNADAPTER_UNKNOWN)
+  NNADAPTER_CHECK_NE(output_dimensions[3], NNADAPTER_UNKNOWN)
       << "AscendNPU must set out shape.";
   // Group of AscendNPU may be different from paddle.
   NNADAPTER_CHECK_EQ(group, 1);
@@ -50,10 +50,10 @@ int ConvertConv2DTranspose(Converter* converter, hal::Operation* operation) {
   SET_INPUT(conv2d_transpose_op, bias, bias_operator);
   MAP_OUTPUT(conv2d_transpose_op, y, output_operand);
   conv2d_transpose_op->set_attr_input_size(
-      ge::Operator::OpListInt({input_operand->type.dimensions[0],
+      ge::Operator::OpListInt({input_operand->type.dimensions.data[0],
                                output_channel_size,
-                               out_dims[2],
-                               out_dims[3]}));
+                               output_dimensions[2],
+                               output_dimensions[3]}));
   conv2d_transpose_op->set_attr_strides(
       ge::Operator::OpListInt({1, 1, stride_height, stride_width}));
   conv2d_transpose_op->set_attr_pads(ge::Operator::OpListInt(
