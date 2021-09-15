@@ -36,7 +36,7 @@ static int ReduceMeanAsModelOutputFixScalarOutput(hal::Model* model,
                                                   hal::Operation* operation) {
   NNADAPTER_VLOG(5) << "Enter ReduceMeanAsModelOutputFixScalarOutput";
   REDUCE_MEAN_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  auto reduce_all = axes_size == input_operand->type.dimension_count;
+  auto reduce_all = axes_size == input_operand->type.dimensions.count;
   if (!keep_dim && reduce_all && IsModelOutputOperand(output_operand)) {
     AddDummyOperation(model, output_operand);
   }

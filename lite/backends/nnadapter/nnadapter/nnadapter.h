@@ -1439,39 +1439,10 @@ typedef struct NNAdapterOperandType {
   NNAdapterOperandLifetimeCode lifetime;
 
   /**
-   * The data dimensions, will replace
-   * dimension_count/dimensions/dynamic_dimension_count/dynamic_dimensions in
-   * the future.
+   * The data dimensions
    *
    */
-  // NNAdapterOperandDimensionType dimensions;
-
-  /**
-   * The number of dimensions.
-   *
-   * Must be 0 for scalars.
-   */
-  uint32_t dimension_count;
-
-  /**
-   * The dimensions of the tensor.
-   * Use NNADAPTER_UNKNOWN for dynamic shape.
-   */
-  int32_t dimensions[NNADAPTER_MAX_SIZE_OF_DIMENSIONS];
-
-  /**
-   * The gear count of dynamic dimensions.
-   *
-   */
-  uint32_t dynamic_dimension_count;
-
-  /**
-   * The dynamic dimensions of the tensor.
-   * Should not contains NNADAPTER_UNKNOWN because it requires the real
-   * dimensions.
-   */
-  int32_t dynamic_dimensions[NNADAPTER_MAX_SIZE_OF_DYNAMIC_DIMENSIONS]
-                            [NNADAPTER_MAX_SIZE_OF_DIMENSIONS];
+  NNAdapterOperandDimensionType dimensions;
 
   /**
    * The quantization parameters.
@@ -1734,8 +1705,8 @@ void NNAdapterExecution_destroy(NNAdapterExecution* execution);
  *
  * typedef struct {
  *   NNAdapterOperandPrecisionCode precision;
- *   uint32_t dimension_count;
- *   int32_t dimensions[NNADAPTER_MAX_SIZE_OF_DIMENSIONS];
+ *   uint32_t dimensions_count;
+ *   int32_t dimensions_data[NNADAPTER_MAX_SIZE_OF_DIMENSIONS];
  *   void* buffer;
  *   size_t length;
  * } Memory;
@@ -1743,7 +1714,8 @@ void NNAdapterExecution_destroy(NNAdapterExecution* execution);
  * void* access_input_memory(void* memory, NNAdapterOperandType* type) {
  *   Memory* handle = static_cast<Memory*>(memory);
  *   // Return the dimensions and the host buffer to driver HAL
- *   memcpy(type->dimensions, handle->dimensions, handle->dimension_count);
+ *   memcpy(type->dimensions.data, handle->dimensions_data,
+ * handle->dimensions_count);
  *   return handle->buffer;
  * }
  *
@@ -1770,7 +1742,9 @@ int NNAdapterExecution_setInput(NNAdapterExecution* execution,
  *   }
  *   // Tell the output dimensions to user and return the host buffer to driver
  * HAL
- *   memcpy(handle->dimensions, type->dimensions, type->dimension_count);
+ *   memcpy(handle->dimensions_data, type->dimensions.data,
+ * type->dimensions.count);
+ *   handle->dimensions_count = type->dimensions.count;
  *   return handle->buffer;
  * }
  *

@@ -52,7 +52,6 @@ void PoolImageCompute::PrepareForRun() {
         }
     }
     if (param.global_pooling) {
-        should_use_mps = false;
     }
     use_mps_ = should_use_mps;
     if (use_mps_) {
@@ -180,6 +179,8 @@ void PoolImageCompute::setup_with_mps() {
         auto input_dims = param.x->dims();
         kw = (int)input_dims[3];
         kh = (int)input_dims[2];
+        pw = 0;
+        ph = 0;
     }
     int offsetX = static_cast<int>(((int)(kw - 1) + 1) / 2 - pw);
     int offsetY = static_cast<int>(((int)(kh - 1) + 1) / 2 - ph);

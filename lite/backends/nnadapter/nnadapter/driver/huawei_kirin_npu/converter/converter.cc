@@ -128,8 +128,8 @@ std::shared_ptr<Operator> Converter::AddFloat32ConstantOperator(
 std::shared_ptr<Operator> Converter::ConvertOperand(
     hal::Operand* operand, std::vector<int32_t> dimensions) {
   if (dimensions.empty()) {
-    for (uint32_t i = 0; i < operand->type.dimension_count; i++) {
-      dimensions.push_back(operand->type.dimensions[i]);
+    for (uint32_t i = 0; i < operand->type.dimensions.count; i++) {
+      dimensions.push_back(operand->type.dimensions.data[i]);
     }
   }
   auto shape = dimensions.size() > 0

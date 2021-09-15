@@ -412,14 +412,12 @@ NNAdapterOperand* Converter::AddOperand(
   memset(&type, 0, sizeof(NNAdapterOperandType));
   if (dimensions.size() > 0) {
     ConvertDDimToNNDimensions(
-        dimensions, type.dimensions, &type.dimension_count);
+        dimensions, type.dimensions.data, &type.dimensions.count);
   }
-  type.dynamic_dimension_count = dynamic_dimensions.size();
-  if (type.dynamic_dimension_count > 0) {
-    for (uint32_t i = 0; i < type.dynamic_dimension_count; i++) {
-      ConvertVectorToNNDimensions(dynamic_dimensions[i],
-                                  type.dynamic_dimensions[i]);
-    }
+  type.dimensions.dynamic_count = dynamic_dimensions.size();
+  for (uint32_t i = 0; i < type.dimensions.dynamic_count; i++) {
+    ConvertVectorToNNDimensions(dynamic_dimensions[i],
+                                type.dimensions.dynamic_data[i]);
   }
   const auto UNKNOWN_PRECISION =
       static_cast<NNAdapterOperandPrecisionCode>(NNADAPTER_UNKNOWN);

@@ -27,11 +27,6 @@ execute_process(
     ${LITE_BUILD_EXTRA}
     RESULT_VARIABLE result)
 
-
-
-
-
-
 if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK OR (NOT LITE_WITH_LOG))
   lite_cc_library(place SRCS paddle_place.cc DEPS utils)
 else()

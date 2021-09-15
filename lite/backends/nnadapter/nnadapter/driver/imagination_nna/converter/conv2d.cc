@@ -24,15 +24,15 @@ namespace imagination_nna {
 int ConvertConv2D(Converter* converter, hal::Operation* operation) {
   CONV_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
   // Dynamic shapes are still not supported
-  NNADAPTER_CHECK_EQ(input_operand->type.dynamic_dimension_count, 0);
-  operation::UpdateConv2DPadAndDilation(input_operand->type.dimensions[2],
+  NNADAPTER_CHECK_EQ(input_operand->type.dimensions.dynamic_count, 0);
+  operation::UpdateConv2DPadAndDilation(input_operand->type.dimensions.data[2],
                                         filter_height,
                                         auto_pad,
                                         &pad_height_top,
                                         &pad_height_bottom,
                                         stride_height,
                                         &dilation_height);
-  operation::UpdateConv2DPadAndDilation(input_operand->type.dimensions[3],
+  operation::UpdateConv2DPadAndDilation(input_operand->type.dimensions.data[3],
                                         filter_width,
                                         auto_pad,
                                         &pad_width_left,
@@ -48,7 +48,7 @@ int ConvertConv2D(Converter* converter, hal::Operation* operation) {
   auto filter_tensor = converter->ConvertOperand(filter_operand);
   // Expand bias tensor from (c) to (1, c)
   auto bias_tensor = converter->ConvertOperand(
-      bias_operand, {1, bias_operand->type.dimensions[0]});
+      bias_operand, {1, bias_operand->type.dimensions.data[0]});
   unsigned int ksizes[2] = {static_cast<unsigned int>(filter_height),
                             static_cast<unsigned int>(filter_width)};
   unsigned int strides[2] = {static_cast<unsigned int>(stride_height),
