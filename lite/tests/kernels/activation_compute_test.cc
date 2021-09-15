@@ -400,8 +400,11 @@ void TestAct(const Place& place,
                                      dims,
                                      type,
                                      act_type));
+   LOG(INFO) << "????";  
   arena::Arena arena(std::move(tester), place, abs_error);
+   LOG(INFO) << "!!!!";    
   arena.TestPrecision();
+   LOG(INFO) << "....";   
 }
 
 template <class T = float>
