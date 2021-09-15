@@ -35,6 +35,36 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   int batch_size = param.x->dims()[0];
   int input_channel = param.x->dims()[1];
 
+  if (param.filter->dims()[2] == 5) {
+    const auto* i_data = param.x->data<float>();
+    const auto* w_data = param.filter->data<float>();
+    const auto* b_data = param.bias ? param.bias->data<float>() : nullptr;
+    auto act_param = param.activation_param;
+    //const auto stride = param.strides[1];
+    auto pad = (*param.paddings)[2];
+    bool flag_bias = param.bias != nullptr;
+    auto* o_data = param.output->mutable_data<float>();
+
+    auto x_dims = param.x->dims();
+    auto w_dims = param.filter->dims();
+    auto o_dims = param.output->dims();
+
+    int iw = x_dims[3];
+    int ih = x_dims[2];
+    int ic = x_dims[1];
+    int bs = x_dims[0];
+    int oh = o_dims[2];
+    int ow = o_dims[3];
+    int oc = o_dims[1];
+    int stride = param.strides[1];
+
+    int w_stride = w_dims[2] * w_dims[3];
+    //lite::x86::math::pack8_m256(param.filter, &filter_pack_, 8, true);
+    //const auto* w_data =  filter_pack_.data<float>();           
+    lite::x86::math::depthwise_direct_new(CONV_DW_PARAM, w_stride, stride);
+    return;
+  }
+
   if ((*param.paddings)[0] == 1) {
     const auto* i_data = param.x->data<float>();
     const auto* w_data = param.filter->data<float>();

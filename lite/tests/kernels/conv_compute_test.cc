@@ -145,6 +145,8 @@ class ConvComputeTester : public arena::TestCase {
       auto bias = scope->FindTensor(bias_);
       bias_data = bias->data<float>();
     }
+
+    //std :: cout << " input ptr " <<  input_data << std :: endl;
     for (int n = 0; n < batch_size; ++n) {
       for (int g = 0; g < groups_; ++g) {
         for (int oc = 0; oc < out_c_group; ++oc) {
@@ -158,6 +160,7 @@ class ConvComputeTester : public arena::TestCase {
                       ? (is_channel_bias ? bias_data[g * out_c_group + oc]
                                          : bias_data[out_idx])
                       : 0;
+              //std :: cout << " bias ref " << out_value << " ptr " << bias_data << std :: endl; 
               // + out_value *= beta;
               for (int ic = 0; ic < in_c_group; ++ic) {
                 for (int kh = 0; kh < kernel_h; ++kh) {
@@ -232,6 +235,7 @@ class ConvComputeTester : public arena::TestCase {
     SetCommonTensor(filter_, filter_dims, dfilter.data(), {}, true);
 
     if (with_bias_) {
+      //std :: cout << " o_ch " << out_channels_ << std :: endl;
       DDim bias_dims(std::vector<int64_t>{out_channels_});
       std::vector<float> dbias(bias_dims.production());
       fill_data_rand(din.data(), -1.f, 1.f, bias_dims.production());
@@ -414,35 +418,75 @@ void TestConvAct(Place place, float abs_error = 2e-5) {
 }
 
 void TestConvDepthwise(Place place, float abs_error = 2e-5) {
-  for (int64_t n : {1, 2, 3, 4}) {
-    for (int64_t win = 3; win < 30; win++) {
-      std::vector<int64_t> dims{n, 32, win, win};
-      for (auto stride : {1, 2}) {
-        for (auto pad : {1}) {
-          for (auto bias : {false, true}) {
-            for (auto act : {"relu", "leaky_relu"}) {
-              std::unique_ptr<arena::TestCase> tester(
+
+/*              std::unique_ptr<arena::TestCase> tester(
                   new ConvComputeTester(place,
                                         "def",
-                                        DDim(dims),
-                                        32,
-                                        3,
-                                        {stride, stride},
-                                        {pad, pad},
-                                        32,
+                                        DDim({1, 1, 9, 9}),
+                                        1,
+                                        5,
+                                        {1, 1},
+                                        {0, 0},
+                                        1,
                                         {1, 1},
                                         "",
-                                        bias,
-                                        true,
-                                        act));
+                                        false,
+                                        false,
+                                        "relu"));
               arena::Arena arena(std::move(tester), place, abs_error);
-              arena.TestPrecision();
+              arena.TestPrecision();  
+              std :: cout << " aaaaa " << std :: endl;*/
+  for (int64_t n : {1, 2, 3, 4}) {
+    for (int64_t win = 5; win < 80; win++) {
+      for (int64_t ch_in = 1; ch_in < 40; ch_in++) {
+        int64_t group = ch_in;
+        std::vector<int64_t> dims{n, ch_in, win, win};
+        for (auto stride : {2}) {
+          for (auto pad : {0,1,2,3,4,5}) {
+            for (auto bias : {false, true}) {
+              for (auto act : {"relu", "leaky_relu"}) {
+                std :: cout << " eeeeeeeeeeeeeeeeeeeeeee eeeeeeeeeeeeeee  eeeeee " << " n " << n << " win " << win << " ch_in " << ch_in << " pad " << pad << std :: endl; 
+                
+                std::unique_ptr<arena::TestCase> tester(
+                   new ConvComputeTester(place,
+                                          "def",
+                                          DDim(dims),
+                                          ch_in,
+                                          5,
+                                          {stride, stride},
+                                          {pad, pad},
+                                          group,
+                                          {1, 1},
+                                          "",
+                                          bias,
+                                          true,
+                                          act));
+                arena::Arena arena(std::move(tester), place, abs_error);
+                arena.TestPrecision();
+                //return;
+              }
             }
           }
         }
       }
     }
   }
+                /*std::unique_ptr<arena::TestCase> tester(
+                   new ConvComputeTester(place,
+                                          "def",
+                                          DDim({1, 9, 5, 5}),
+                                          9,
+                                          5,
+                                          {1, 1},
+                                          {2, 2},
+                                          9,
+                                          {1, 1},
+                                          "",
+                                          true,
+                                          false,
+                                          "relu"));
+                arena::Arena arena(std::move(tester), place, abs_error);
+                arena.TestPrecision(); */
 }
 
 TEST(Conv2d, precision) {
@@ -468,7 +512,9 @@ TEST(Conv2d, precision) {
   return;
 #elif defined(LITE_WITH_X86)
   place = TARGET(kX86);
-  TestConvKsize(place, abs_error);
+
+  TestConvDepthwise(place, abs_error); 
+  //TestConvKsize(place, abs_error);
   return;
 #else
   return;

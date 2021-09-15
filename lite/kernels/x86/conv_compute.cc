@@ -66,7 +66,7 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   bool flag_dw_5x5 =
       (kernel_h == 5) && (kernel_w == 5) && (stride_h == 1 || stride_h == 2);
   // todo add conv_5x5_depthwise implement
-  flag_dw_5x5 = false;
+  //flag_dw_5x5 = false;
   bool flag_dw = flag_dw_3x3 || flag_dw_5x5;
   if (kernel_w == 1 && stride_w == 1 && paddings[0] == 0 && kps_equal &&
       pads_equal) {
@@ -77,7 +77,7 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
 
   /// select conv impl
   if (this->device_ctx->avx_level() != AVXType::AVX_NONE) {
-    if (dw_kernel && kps_equal && no_dilation && flag_dw && (groups & 3) == 0) {
+    if (dw_kernel && kps_equal && no_dilation && flag_dw) {
       impl_ = new DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>;
     }
   }
