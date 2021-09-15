@@ -551,10 +551,12 @@ TEST(Activation_prelu, precision) {
   LOG(INFO) << "test prelu op";
   Place place;
   float abs_error = 2e-5;
+  std::vector<std::string> modes{"all", "channel", "element"};
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
+  modes = {"all", "channel"};
 #else
   return;
 #endif
@@ -569,7 +571,7 @@ TEST(Activation_prelu, precision) {
   return;
 #endif
   for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 2, 4}}) {
-    for (auto mode : {"all", "channel" /*, "element"*/}) {
+    for (auto mode : modes) {
       TestAct(place,
               "def",
               0.01,

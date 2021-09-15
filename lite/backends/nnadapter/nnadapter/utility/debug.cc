@@ -266,6 +266,10 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
                       "fuse_code"};
         output_args = {"output"};
         break;
+      case NNADAPTER_MAT_MUL:
+        input_args = {"x", "y", "transpose_x", "transpose_y"};
+        output_args = {"output"};
+        break;
       case NNADAPTER_FULLY_CONNECTED:
         input_args = {"input", "weight", "bias", "fuse_code"};
         output_args = {"output"};
@@ -524,7 +528,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(CONCAT);
     NNADAPTER_TYPE_TO_STRING(CONV_2D);
     NNADAPTER_TYPE_TO_STRING(CONV_2D_TRANSPOSE);
-    NNADAPTER_TYPE_TO_STRING(DEFORMABLE_CONV_2D)
+    NNADAPTER_TYPE_TO_STRING(DEFORMABLE_CONV_2D);
     NNADAPTER_TYPE_TO_STRING(DIV);
     NNADAPTER_TYPE_TO_STRING(EXPAND);
     NNADAPTER_TYPE_TO_STRING(FILL);
@@ -535,6 +539,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(PRELU);
     NNADAPTER_TYPE_TO_STRING(LOG);
     NNADAPTER_TYPE_TO_STRING(LP_NORMALIZATION);
+    NNADAPTER_TYPE_TO_STRING(MAT_MUL);
     NNADAPTER_TYPE_TO_STRING(MAX);
     NNADAPTER_TYPE_TO_STRING(MAX_POOL_2D);
     NNADAPTER_TYPE_TO_STRING(MIN);
