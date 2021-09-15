@@ -91,7 +91,7 @@ int PrepareMatMul(hal::Operation* operation) {
     return out_shape;
   };
 
-  const auto x_type = x_operand->type;
+  const auto& x_type = x_operand->type;
   auto x_size = x_type.dimension_count;
   auto x_shape =
       std::vector<int32_t>(x_type.dimensions, x_type.dimensions + x_size);

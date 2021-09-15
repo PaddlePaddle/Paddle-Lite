@@ -59,7 +59,7 @@ int ConvertMatmul(Converter* converter, OpInfo* op, Scope* scope) {
       {x_operand, y_operand, transpose_x_operand, transpose_y_operand},
       {output_operand});
 
-  // Use elementwise_add to calculate alpha
+  // Use elementwise_mul to calculate alpha
   float alpha = op->GetAttr<float>("alpha");
   if (std::abs(alpha - 1.f) > 1e-5) {
     auto add_y_operand = converter->AddConstantOperand(alpha);
