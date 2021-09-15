@@ -145,7 +145,7 @@ void hard_swish(const float* din,
   int cnt = size >> 5;
   int remain = size & 31;
   __m256 vec_zero = _mm256_set1_ps(0.f);
-  __m256 vec_scale = _mm256_set1_ps(scale);
+  __m256 vec_scale = _mm256_set1_ps(1.0 / scale);
   __m256 vec_threshold = _mm256_set1_ps(threshold);
   __m256 vec_offset = _mm256_set1_ps(offset);
 #else
@@ -153,7 +153,7 @@ void hard_swish(const float* din,
   int remain = size & 15;
 #endif
   __m128 vec_zero_128 = _mm_set1_ps(0.f);
-  __m128 vec_scale_128 = _mm_set1_ps(scale);
+  __m128 vec_scale_128 = _mm_set1_ps(1.0 / scale);
   __m128 vec_threshold_128 = _mm_set1_ps(threshold);
   __m128 vec_offset_128 = _mm_set1_ps(offset);
   int cnt_4 = remain >> 2;
@@ -223,8 +223,9 @@ void hard_swish(const float* din,
   }
   for (int i = 0; i < rem_4; i++) {
     dout[0] =
-        std::min(std::max(0.f, din[0] + offset), threshold) * din[0] * scale;
+        std::min(std::max(0.f, din[0] + offset), threshold) * din[0] / scale;
     dout++;
+    din++;
   }
 }
 

@@ -868,7 +868,7 @@ void conv_direct_3x3s2(const float* i_data,
 #ifdef __AVX__
             __m256 vzero = _mm256_set1_ps(0.f);
             __m256 voffset = _mm256_set1_ps(act_param.hard_swish_offset);
-            __m256 vscale = _mm256_set1_ps(act_param.hard_swish_scale);
+            __m256 vscale = _mm256_set1_ps(1.0 / act_param.hard_swish_scale);
             __m256 vthreshold = _mm256_set1_ps(act_param.hard_swish_threshold);
             row0 = _mm256_mul_ps(
                 _mm256_min_ps(
@@ -913,7 +913,7 @@ void conv_direct_3x3s2(const float* i_data,
 #else
             __m128 vzero = _mm_set1_ps(0.f);
             __m256 voffset = _mm_set1_ps(act_param.hard_swish_offset);
-            __m256 vscale = _mm_set1_ps(act_param.hard_swish_scale);
+            __m256 vscale = _mm_set1_ps(1.0 / act_param.hard_swish_scale);
             __m256 vthreshold = _mm_set1_ps(act_param.hard_swish_threshold);
             row0 = _mm_mul_ps(_mm_min_ps(vthreshold, __mm_max_ps(
                    __mm_add_ps(row0, voffset), vzero)),
@@ -1003,8 +1003,8 @@ void conv_direct_3x3s2(const float* i_data,
 #ifdef __AVX__
             __m256 val_offset =
                 _mm256_add_ps(row, _mm256_set1_ps(act_param.hard_swish_offset));
-            __m256 val_scale =
-                _mm256_mul_ps(row, _mm256_set1_ps(act_param.hard_swish_scale));
+            __m256 val_scale = _mm256_mul_ps(
+                row, _mm256_set1_ps(1.0 / act_param.hard_swish_scale));
             __m256 val =
                 _mm256_min_ps(_mm256_set1_ps(act_param.hard_swish_threshold),
                               _mm256_max_ps(val_offset, _mm256_setzero_ps()));
@@ -1013,7 +1013,7 @@ void conv_direct_3x3s2(const float* i_data,
             __m128 val_offset =
                 _mm_add_ps(row, _mm_set1_ps(act_param.hard_swish_offset));
             __m128 val_scale =
-                _mm_mul_ps(row, _mm_set1_ps(act_param.hard_swish_scale));
+                _mm_mul_ps(row, _mm_set1_ps(1.0 / act_param.hard_swish_scale));
             __m128 val = _mm_min_ps(_mm_set1_ps(act_param.hard_swish_threshold),
                                     __mm_max_ps(val_offset, _mm_setzero_ps()))
                 row = _mm_mul_ps(val, val_scale);

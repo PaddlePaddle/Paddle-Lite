@@ -751,7 +751,7 @@ __m256 activation8_m256(__m256 input,
     __m256 _val_offset =
         _mm256_add_ps(input, _mm256_set1_ps(act_param.hard_swish_offset));
     __m256 _val_scale =
-        _mm256_mul_ps(input, _mm256_set1_ps(act_param.hard_swish_scale));
+        _mm256_mul_ps(input, _mm256_set1_ps(1.0 / act_param.hard_swish_scale));
     __m256 _val =
         _mm256_min_ps(_mm256_set1_ps(act_param.hard_swish_threshold),
                       _mm256_max_ps(_val_offset, _mm256_setzero_ps()));
@@ -779,7 +779,7 @@ __m128 activation4_m128(__m128 input,
     __m128 _val_offset =
         _mm_add_ps(input, _mm_set1_ps(act_param.hard_swish_offset));
     __m128 _val_scale =
-        _mm_mul_ps(input, _mm_set1_ps(act_param.hard_swish_scale));
+        _mm_mul_ps(input, _mm_set1_ps(1.0 / act_param.hard_swish_scale));
     __m128 _val = _mm_min_ps(_mm_set1_ps(act_param.hard_swish_threshold),
                              _mm_max_ps(_val_offset, _mm_setzero_ps()));
     return _mm_mul_ps(_val, _val_scale);
@@ -801,7 +801,7 @@ float activation1_float(float input,
   } else if (act_type == lite_api::ActivationType::kHardSwish) {
     return ((std::min)(act_param.hard_swish_threshold,
                        (std::max)(0.f, input + act_param.hard_swish_offset)) *
-            input * act_param.hard_swish_scale);
+            input / act_param.hard_swish_scale);
   } else {
     LOG(FATAL) << "[X86] activation type not supported";
   }

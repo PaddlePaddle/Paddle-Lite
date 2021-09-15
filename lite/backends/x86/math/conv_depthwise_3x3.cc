@@ -298,7 +298,7 @@ void conv_depthwise_3x3s2_p1_direct(
                   _mm_mul_ps(_mm_and_ps(_mm_cmplt_ps(r1_128, zero), r1_128),
                              negative_slope));
             } else if (act_type == lite_api::ActivationType::kHardSwish) {
-              __m128 vscale = _mm_set1_ps(act_param.hard_swish_scale);
+              __m128 vscale = _mm_set1_ps(1.0 / act_param.hard_swish_scale);
               __m128 voffset = _mm_set1_ps(act_param.hard_swish_offset);
               __m128 vthreshold = _mm_set1_ps(act_param.hard_swish_threshold);
               r0_128 = _mm_mul_ps(
@@ -566,7 +566,8 @@ void conv_depthwise_3x3s2_p1_direct(
                           zero,
                           _mm_add_ps(
                               r0, _mm_set1_ps(act_param.hard_swish_offset)))),
-                  _mm_mul_ps(r0, _mm_set1_ps(act_param.hard_swish_scale)));
+                  _mm_mul_ps(r0,
+                             _mm_set1_ps(1.0 / act_param.hard_swish_scale)));
             } else {
               LOG(FATAL) << "[X86] activation type not supported";
             }
@@ -939,7 +940,7 @@ void conv_depthwise_3x3s1_p1_direct(
                   _mm256_mul_ps(_mm256_and_ps(_mm256_cmp_ps(r3, zero, 17), r3),
                                 negative_slope));
             } else if (act_type == lite_api::ActivationType::kHardSwish) {
-              __m256 vscale = _mm256_set1_ps(act_param.hard_swish_scale);
+              __m256 vscale = _mm256_set1_ps(1.0 / act_param.hard_swish_scale);
               __m256 voffset = _mm256_set1_ps(act_param.hard_swish_offset);
               __m256 vthreshold =
                   _mm256_set1_ps(act_param.hard_swish_threshold);
@@ -1263,7 +1264,7 @@ void conv_depthwise_3x3s1_p1_direct(
                               _mm_mul_ps(_mm_and_ps(_mm_cmplt_ps(r1, zero), r1),
                                          negative_slope));
             } else if (act_type == lite_api::ActivationType::kHardSwish) {
-              __m128 vscale = _mm_set1_ps(act_param.hard_swish_scale);
+              __m128 vscale = _mm_set1_ps(1.0 / act_param.hard_swish_scale);
               __m128 voffset = _mm_set1_ps(act_param.hard_swish_offset);
               __m128 vthreshold = _mm_set1_ps(act_param.hard_swish_threshold);
               r0 = _mm_mul_ps(
