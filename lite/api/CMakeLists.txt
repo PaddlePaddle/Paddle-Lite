@@ -65,9 +65,9 @@ if(LITE_WITH_CUDA)
 endif()
 
 
-lite_cc_library(paddle_api_light SRCS ${LIGHT_API_SRC} DEPS ${light_lib_DEPS} ${external_libs_DEPS})
+lite_cc_library(paddle_api_light SRCS ${LIGHT_API_SRC} DEPS ${light_lib_DEPS} ${external_libs_DEPS} kernels)
 if(NOT LITE_ON_TINY_PUBLISH)
-  lite_cc_library(paddle_api_full SRCS ${FULL_API_SRC} DEPS ${full_lib_DEPS} ${external_libs_DEPS})
+  lite_cc_library(paddle_api_full SRCS ${FULL_API_SRC} DEPS ${full_lib_DEPS} ${external_libs_DEPS} kernels)
 endif()
 
 
@@ -214,10 +214,10 @@ endif()
 # test_model_bin
 if(NOT IOS AND NOT LITE_ON_TINY_PUBLISH)
     lite_cc_binary(test_model_bin SRCS tools/model_test.cc
-        DEPS gflags kernels
+        DEPS gflags
         CV_DEPS paddle_cv_arm)
     lite_cc_binary(benchmark_bin SRCS tools/benchmark.cc
-        DEPS gflags kernels
+        DEPS gflags
         CV_DEPS paddle_cv_arm)
 endif()
 
