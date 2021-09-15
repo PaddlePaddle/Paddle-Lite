@@ -26,9 +26,9 @@ int PrepareFlatten(hal::Operation* operation) {
   FLATTEN_OPERATION_EXTRACT_INPUTS_OUTPUTS
   CopyOperandTypeWithQuantParams(&output_operand->type, input_operand->type);
   end_axis =
-      end_axis < 0 ? input_operand->type.dimension_count + end_axis : end_axis;
-  output_operand->type.dimension_count =
-      input_operand->type.dimension_count - end_axis + start_axis;
+      end_axis < 0 ? input_operand->type.dimensions.count + end_axis : end_axis;
+  output_operand->type.dimensions.count =
+      input_operand->type.dimensions.count - end_axis + start_axis;
   // Infer the shape and type of output operands
   auto infer_output_shape = [&](int32_t* input_dimensions,
                                 int32_t* output_dimensions,
@@ -53,16 +53,16 @@ int PrepareFlatten(hal::Operation* operation) {
       output_dimensions[output_dimension_index++] = input_dimensions[i];
     }
   };
-  infer_output_shape(input_operand->type.dimensions,
-                     output_operand->type.dimensions,
-                     input_operand->type.dimension_count,
+  infer_output_shape(input_operand->type.dimensions.data,
+                     output_operand->type.dimensions.data,
+                     input_operand->type.dimensions.count,
                      start_axis,
                      end_axis);
 
-  for (uint32_t i = 0; i < input_operand->type.dynamic_dimension_count; i++) {
-    infer_output_shape(input_operand->type.dynamic_dimensions[i],
-                       output_operand->type.dynamic_dimensions[i],
-                       input_operand->type.dimension_count,
+  for (uint32_t i = 0; i < input_operand->type.dimensions.dynamic_count; i++) {
+    infer_output_shape(input_operand->type.dimensions.dynamic_data[i],
+                       output_operand->type.dimensions.dynamic_data[i],
+                       input_operand->type.dimensions.count,
                        start_axis,
                        end_axis);
   }

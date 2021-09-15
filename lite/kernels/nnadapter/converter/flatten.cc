@@ -26,7 +26,7 @@ int ConvertFlatten(Converter* converter, OpInfo* op, Scope* scope) {
 
   auto input_operand = converter->GetMappedOperand(x_name);
   auto input_type = converter->GetOperandType(input_operand);
-  axis = axis < 0 ? axis + input_type->dimension_count : axis;
+  axis = axis < 0 ? axis + input_type->dimensions.count : axis;
   NNAdapterOperand* output_operand = nullptr;
   if (axis == 0) {
     // Directly convert to reshape with shape[1,-1],
@@ -35,7 +35,7 @@ int ConvertFlatten(Converter* converter, OpInfo* op, Scope* scope) {
     output_operand = converter->AddOutputOperand(out_name);
     converter->AddOperation(
         NNADAPTER_RESHAPE, {input_operand, shape_operand}, {output_operand});
-  } else if (axis == input_type->dimension_count - 1) {
+  } else if (axis == input_type->dimensions.count - 1) {
     converter->AddFlattenOperation(input_operand, 0, axis - 1, out_name);
   } else {
     // step1: flatten [0, axis)

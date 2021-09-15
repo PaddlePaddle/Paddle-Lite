@@ -13,31 +13,31 @@
 // limitations under the License.
 
 #include "core/operation/flatten.h"
-#include "driver/mediatek_apu/converter.h"
+#include "driver/mediatek_apu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace mediatek_apu {
 
-int Program::ConvertFlatten(hal::Operation* operation) {
+int ConvertFlatten(Converter* converter, hal::Operation* operation) {
   FLATTEN_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to Neuron operands and operations
-  auto input_index = GetMappedIndex(input_operand);
+  auto input_index = converter->GetMappedIndex(input_operand);
   if (input_index == INVALID_INDEX) {
-    input_index = ConvertOperand(input_operand);
+    input_index = converter->ConvertOperand(input_operand);
   }
-  auto output_index = ConvertOperand(output_operand);
+  auto output_index = converter->ConvertOperand(output_operand);
   std::vector<int32_t> shape;
-  for (uint32_t i = 0; i < output_operand->type.dimension_count; i++) {
-    shape.push_back(output_operand->type.dimensions[i]);
+  for (uint32_t i = 0; i < output_operand->type.dimensions.count; i++) {
+    shape.push_back(output_operand->type.dimensions.data[i]);
   }
-  auto shape_index = AddInt32ConstantOperand(&shape[0], shape.size());
-  std::vector<uint32_t> input_indexes = {input_index, shape_index};
-  std::vector<uint32_t> output_indexes = {output_index};
+  auto shape_index =
+      converter->AddInt32ConstantOperand(&shape[0], shape.size());
   NNADAPTER_CHECK_EQ(
-      AddOperation(NEURON_RESHAPE, &input_indexes, &output_indexes),
+      converter->AddOperation(
+          NEURON_RESHAPE, {input_index, shape_index}, {output_index}),
       NEURON_NO_ERROR);
   return NNADAPTER_NO_ERROR;
 }
