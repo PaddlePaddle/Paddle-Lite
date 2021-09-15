@@ -268,18 +268,18 @@ bool AclModelClient::Process(uint32_t input_count,
     // Query and verify the input dimensions from ACL runtime
     aclmdlIODims dimensions;
     ACL_CALL(aclmdlGetInputDims(model_desc_, i, &dimensions));
-    NNADAPTER_CHECK_GE(dimensions.dimCount, type->dimension_count);
+    NNADAPTER_CHECK_GE(dimensions.dimCount, type->dimensions.count);
     bool dynamic_shape = false;
     for (size_t j = 0; j < dimensions.dimCount; j++) {
       auto& dimension = dimensions.dims[j];
       if (dimension == -1) {
-        dimension = type->dimensions[j];
+        dimension = type->dimensions.data[j];
         dynamic_shape = true;
       } else {
-        NNADAPTER_CHECK_EQ(dimension, type->dimensions[j])
+        NNADAPTER_CHECK_EQ(dimension, type->dimensions.data[j])
             << "The " << j << "th dimension of the " << i
             << "th input does not match, expect " << dimension
-            << " but recevied " << type->dimensions[j];
+            << " but recevied " << type->dimensions.data[j];
       }
     }
     if (dynamic_shape) {
@@ -309,9 +309,9 @@ bool AclModelClient::Process(uint32_t input_count,
     auto type = &output_types->at(i);
     aclmdlIODims dimensions;
     ACL_CALL(aclmdlGetCurOutputDims(model_desc_, i, &dimensions));
-    NNADAPTER_CHECK_EQ(dimensions.dimCount, type->dimension_count);
+    NNADAPTER_CHECK_EQ(dimensions.dimCount, type->dimensions.count);
     ConvertACLDimsToGEDims(
-        dimensions, type->dimensions, &type->dimension_count);
+        dimensions, type->dimensions.data, &type->dimensions.count);
     auto host_ptr = arg->access(arg->memory, type);
     NNADAPTER_CHECK(host_ptr);
     auto length = GetOperandTypeBufferLength(*type);
