@@ -67,8 +67,6 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (op_info->HasAttr("activation_type")) {
     activation_type = op_info->GetAttr<std::string>("activation_type");
   }
-  CHECK(activation_type.empty()) << "Unsupport activation_type "
-                                 << activation_type << " is found.";
 
   // Input operand
   NNAdapterOperand* input_operand = nullptr;
@@ -157,8 +155,30 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
 
   // Fuse code operand
-  auto fuse_code_operand =
-      converter->AddInt32ConstantOperand(NNADAPTER_FUSED_NONE);
+  std::vector<std::string> activation_support_split_ops{
+      "sigmoid", "tan", "log", "abs"};
+  NNAdapterFuseCode fuse_code = NNADAPTER_FUSED_NONE;
+  if (activation_type == "relu") {
+    fuse_code = NNADAPTER_FUSED_RELU;
+    activation_type = "";
+  } else if (activation_type == "relu1") {
+    fuse_code = NNADAPTER_FUSED_RELU1;
+    activation_type = "";
+  } else if (activation_type == "relu6") {
+    fuse_code = NNADAPTER_FUSED_RELU6;
+    activation_type = "";
+  } else if (!activation_type.empty()) {
+    if (std::find(activation_support_split_ops.begin(),
+                  activation_support_split_ops.end(),
+                  activation_type) == activation_support_split_ops.end()) {
+      LOG(WARNING) << "NNadapter doesn't supported activation type : "
+                   << activation_type << " fusion!";
+      return FAILED;
+    }
+    VLOG(5) << "Split fc + " << activation_type
+            << " fusion operator into two operators!";
+  }
+  auto fuse_code_operand = converter->AddInt32ConstantOperand(fuse_code);
 
   // Output operand
   NNAdapterOperand* output_operand = nullptr;
@@ -182,6 +202,30 @@ int FCConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   converter->AddOperation(
       NNADAPTER_FULLY_CONNECTED, &input_operands, &output_operands);
+
+  // Activation
+  if (!activation_type.empty()) {
+    auto activation_operand =
+        converter->AddFloat32VariableOperand(DDim({M, N}), out_name);
+    NNAdapterOperationType act_type;
+    if (activation_type == "sigmoid") {
+      act_type = NNADAPTER_SIGMOID;
+    } else if (activation_type == "tanh") {
+      act_type = NNADAPTER_TANH;
+    } else if (activation_type == "log") {
+      act_type = NNADAPTER_LOG;
+    } else if (activation_type == "abs") {
+      act_type = NNADAPTER_ABS;
+    } else {
+      LOG(WARNING) << "Unsupported unary activation type: " << activation_type;
+      return FAILED;
+    }
+    std::vector<NNAdapterOperand*> act_inputs_operands = {output_operand};
+    std::vector<NNAdapterOperand*> act_output_operands = {activation_operand};
+    converter->AddOperation(
+        act_type, &act_inputs_operands, &act_output_operands);
+    output_operand = activation_operand;
+  }
   // Create Reshape layer if rank is not equal to 2, convert the shape of output
   if (out_rank != 2) {
     std::vector<int32_t> out_shape;
