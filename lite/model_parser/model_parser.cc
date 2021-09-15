@@ -800,6 +800,7 @@ void LoadModelNaiveFromFile(const std::string &filename,
                     "you use the correct interface and model file.";
       break;
   }
+  VLOG(4) << "paddle_version:" << cpp_prog->Version();
   VLOG(4) << "Load naive buffer model in '" << filename << "' successfully";
 }
 #ifndef LITE_ON_TINY_PUBLISH
