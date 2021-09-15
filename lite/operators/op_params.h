@@ -630,6 +630,9 @@ struct PoolParam : ParamBase {
     }
     return output_tensor_ptrs_cache_.get();
   }
+#ifdef LITE_WITH_XPU
+  bool pad_zero{false};
+#endif
 };
 
 // For Dropout op
