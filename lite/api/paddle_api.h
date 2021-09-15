@@ -397,7 +397,7 @@ class LITE_API CxxConfig : public ConfigBase {
   // XPU only, set the size of the workspace memory from L3 cache for the
   // current thread.
   // **DEPRECATED**, use set_xpu_l3_cache_method() in the future
-  void set_xpu_workspace_l3_size_per_thread(int l3_size = 0xfffc00);
+  void set_xpu_workspace_l3_size_per_thread(int l3_size = 0x4000000);
   void set_xpu_l3_cache_method(size_t l3_size, bool locked = false);
 
   void set_xpu_conv_autotune(bool autotune = true,

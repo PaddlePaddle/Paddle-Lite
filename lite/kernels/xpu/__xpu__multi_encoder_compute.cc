@@ -29,9 +29,42 @@ static std::vector<const T*> prepare_weight(
   return result;
 }
 
+template <typename T>
+std::vector<const T*>* XPUMultiEncoderCompute::get_weight() {
+  LOG(FATAL) << "Invalid Weight Type";
+  return nullptr;
+}
+
+template <>
+std::vector<const int16_t*>* XPUMultiEncoderCompute::get_weight() {
+  return &arg_fc_weight_int16_;
+}
+
+template <>
+std::vector<const int8_t*>* XPUMultiEncoderCompute::get_weight() {
+  return &arg_fc_weight_int8_;
+}
+
+template <>
+std::vector<const float*>* XPUMultiEncoderCompute::get_weight() {
+  return &arg_fc_weight_fp32_;
+}
+
 void XPUMultiEncoderCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
-
+  // prepare bias
+  for (auto* fc_bias : param.fc_bias) {
+    arg_fc_bias_.push_back(fc_bias->data<float>());
+  }
+  // prepare scale
+  for (auto* ln_scale : param.ln_scale) {
+    arg_ln_scale_.push_back(ln_scale->data<float>());
+  }
+  // prepare ln_bias
+  for (auto* ln_bias : param.ln_bias) {
+    arg_ln_bias_.push_back(ln_bias->data<float>());
+  }
+  // prepare weights
   if (param.precision == "int16") {
     arg_fc_weight_int16_ = prepare_weight<int16_t>(param.fc_weight);
   } else if (param.precision == "int8") {
@@ -39,145 +72,175 @@ void XPUMultiEncoderCompute::PrepareForRun() {
   } else if (param.precision == "int31") {
     arg_fc_weight_fp32_ = prepare_weight<float>(param.fc_weight);
   }
-  for (auto* fc_bias : param.fc_bias) {
-    arg_fc_bias_.push_back(fc_bias->data<float>());
+  // prepare weight_max
+  weight_max_guard_ = TargetWrapperXPU::MallocScratchPad(
+      param.fc_weight_max->numel() * lite::XPU_QUANT_SCALE_NUM * sizeof(float));
+  float* weight_max_ptr = reinterpret_cast<float*>(weight_max_guard_->addr_);
+  for (int i = 0; i < param.fc_weight_max->numel(); i++) {
+    float* cur_weight_max_ptr = weight_max_ptr + i * lite::XPU_QUANT_SCALE_NUM;
+    std::vector<float> cpu_max(lite::XPU_QUANT_SCALE_NUM,
+                               param.fc_weight_max->data<float>()[i]);
+    lite::TargetWrapperXPU::MemcpySync(
+        cur_weight_max_ptr,
+        cpu_max.data(),
+        sizeof(float) * lite::XPU_QUANT_SCALE_NUM,
+        IoDirection::HtoD);
+    fc_weight_max_.push_back(cur_weight_max_ptr);
   }
-  for (auto* ln_scale : param.ln_scale) {
-    arg_ln_scale_.push_back(ln_scale->data<float>());
-  }
-  for (auto* ln_bias : param.ln_bias) {
-    arg_ln_bias_.push_back(ln_bias->data<float>());
-  }
-
-  encoder_param_.head_num = param.head_num;
-  encoder_param_.size_per_head = param.size_per_head;
-  encoder_param_.n_layers = param.n_layers;
-  encoder_param_.pretrans_b = true;
-  encoder_param_.use_l3 = true;
   if (param.input_max.size()) {
-      encoder_param_.input_max = param.input_max;
-      encoder_param_.weight_max = param.weight_max;
+    input_max_guard_ = TargetWrapperXPU::MallocScratchPad(
+        param.input_max.size() * lite::XPU_QUANT_SCALE_NUM * sizeof(float));
+    float* input_max_ptr = reinterpret_cast<float*>(input_max_guard_->addr_);
+    for (int i = 0; i < param.input_max.size(); i++) {
+      float* cur_input_max_ptr = input_max_ptr + i * lite::XPU_QUANT_SCALE_NUM;
+      std::vector<float> cpu_max(lite::XPU_QUANT_SCALE_NUM, param.input_max[i]);
+      lite::TargetWrapperXPU::MemcpySync(
+          cur_input_max_ptr,
+          cpu_max.data(),
+          sizeof(float) * lite::XPU_QUANT_SCALE_NUM,
+          IoDirection::HtoD);
+      fc_input_max_.push_back(cur_input_max_ptr);
+    }
   }
-  encoder_param_.slice_starts = param.slice_starts;
-  encoder_param_.slice_ends = param.slice_ends;
-  encoder_param_.slice_axes = param.slice_axes;
-  if (param.act_type == "relu") {
-    encoder_param_.act_type = xdnn::Activation_t::RELU;
-  } else if (param.act_type == "gelu") {
-    encoder_param_.act_type = xdnn::Activation_t::GELU;
+  // prepare act_type
+  if (param.act_type == "gelu") {
+    qkv_act = xdnn::Activation_t::GELU;
+  } else if (param.act_type != "relu") {
+    CHECK(false) << "Invalid QKV Activation Type: " << param.act_type;
   }
+  // prepare with sice
+  if ((param.slice_starts.size() > 0 && param.slice_starts[0] == 0) &&
+      (param.slice_ends.size() > 0 && param.slice_ends[0] == 1) &&
+      (param.slice_axes.size() > 0 && param.slice_axes[0] == 1)) {
+    slice_idx = 0;
+  }
+  // prepare input_cast and output_cast guard_
+  cast_in_guard_ = TargetWrapperXPU::MallocScratchPad(4 * 1024 * 1024);
+  cast_out_guard_ = TargetWrapperXPU::MallocScratchPad(4 * 1024 * 1024);
 }
 
-int XPUMultiEncoderCompute::bert_encoder_run() {
+template <typename T, typename TW, typename TGEMM>
+void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
-  ctx.GetRawContext()->qkv_fusion = param.enable_qkv_fusion;
 
-  int r = -1;
-  if (param.precision == "int31") {
-    r = xdnn::bert_encoder_transformer_int31(
-        ctx.GetRawContext(),                             /* context */
-        param.input->data<float>(),                      /* from_tensor */
-        param.input->data<float>(),                      /* to_tensor */
-        param.mask->data<float>(),                       /* att_mask */
-        param.output->mutable_data<float>(TARGET(kXPU)), /* output */
-        arg_fc_weight_fp32_,                             /* fc_weights */
-        arg_fc_bias_,                                    /* fc_biass */
-        arg_ln_scale_,                                   /* ln_scales */
-        arg_ln_bias_,                                    /* ln_biass */
-        param.fc_weight_max->data<float>(),              /* fc_weights_max */
-        encoder_param_);
-  } else if (param.precision == "int8") {
-    r = xdnn::bert_encoder_transformer_int8<float, int8_t, float>(
-        ctx.GetRawContext(),                             /* context */
-        param.input->data<float>(),                      /* from_tensor */
-        param.input->data<float>(),                      /* to_tensor */
-        param.mask->data<float>(),                       /* att_mask */
-        param.output->mutable_data<float>(TARGET(kXPU)), /* output */
-        arg_fc_weight_int8_,                             /* fc_weights */
-        arg_fc_bias_,                                    /* fc_biass */
-        arg_ln_scale_,                                   /* ln_scales */
-        arg_ln_bias_,                                    /* ln_biass */
-        /* fc_weights_max = param.weight_max */
-        param.fc_weight_max->data<float>(),
-        encoder_param_);
+  xdnn::VectorParam<int> query_lod;
+  if (param.SeqLod && param.SeqLod->data<int>()) {
+    // vsl
+    query_lod = {param.SeqLod->data<int>(),
+                 static_cast<int>(param.SeqLod->numel()),
+                 nullptr};
+    xdnn::QKVAttnParam qkv_attn_param(query_lod, /* lod */
+                                      param.head_num,
+                                      param.size_per_head,
+                                      qkv_act,
+                                      slice_idx,
+                                      true /* qkv fusion */);
+
+    if (std::is_same<TW, int8_t>::value) {
+      CHECK(fc_input_max_.size() > 0) << "only quanted int8 model support vsl";
+    }
+    int r = xdnn::transformer_encoder<T, TW, TGEMM>(
+        ctx.GetRawContext(),
+        in,
+        *(XPUMultiEncoderCompute::get_weight<TW>()),
+        out,
+        fc_input_max_,
+        fc_weight_max_,
+        arg_fc_bias_,
+        arg_ln_scale_,
+        arg_ln_bias_,
+        qkv_attn_param);
+    CHECK_EQ(r, 0);
   } else {
-    r = xdnn::bert_encoder_transformer_int16<float, int16_t, float>(
-        ctx.GetRawContext(),                             /* context */
-        param.input->data<float>(),                      /* from_tensor */
-        param.input->data<float>(),                      /* to_tensor */
-        param.mask->data<float>(),                       /* att_mask */
-        param.output->mutable_data<float>(TARGET(kXPU)), /* output */
-        arg_fc_weight_int16_,                            /* fc_weights */
-        arg_fc_bias_,                                    /* fc_biass */
-        arg_ln_scale_,                                   /* ln_scales */
-        arg_ln_bias_,                                    /* ln_biass */
-        param.fc_weight_max->data<float>(),              /* fc_weights_max */
-        encoder_param_);
+    if (std::is_same<TW, int8_t>::value) {
+      CHECK(fc_input_max_.size() == 0)
+          << "only original model support int8 without vsl";
+    }
+    // no vsl
+    int batch = static_cast<int>(param.input->dims()[0]);
+    int max_seqlen = static_cast<int>(param.input->dims()[1]);
+    xdnn::QKVAttnParam qkv_attn_param(
+        batch,
+        max_seqlen,
+        param.head_num,
+        param.size_per_head,
+        {batch, param.head_num, max_seqlen, max_seqlen},
+        qkv_act,
+        slice_idx,
+        true);
+    int r = xdnn::transformer_encoder<T, TW, TGEMM>(
+        ctx.GetRawContext(),
+        in,
+        *(XPUMultiEncoderCompute::get_weight<TW>()),
+        out,
+        fc_input_max_,
+        fc_weight_max_,
+        arg_fc_bias_,
+        arg_ln_scale_,
+        arg_ln_bias_,
+        qkv_attn_param,
+        param.mask->data<float>());
+    CHECK_EQ(r, 0);
   }
-  return r;
-}
-
-int XPUMultiEncoderCompute::transformer_encoder_run() {
-  auto& param = this->Param<param_t>();
-  auto& ctx = this->ctx_->As<XPUContext>();
-  ctx.GetRawContext()->qkv_fusion = param.enable_qkv_fusion;
-
-  int r = -1;
-  if (param.precision == "int31") {
-    LOG(FATAL) << "Not support int31 at now";
-  } else if (param.precision == "int8") {
-    LOG(FATAL) << "Not support int8 at now";
-  } else {
-    r = xdnn::transformer_encoder_int16<float, int16_t, float>(
-        ctx.GetRawContext(),                             /* context */
-        param.input->data<float>(),                      /* from_tensor */
-        param.input->data<float>(),                      /* to_tensor */
-        param.mask->data<float>(),                       /* att_mask */
-        param.output->mutable_data<float>(TARGET(kXPU)), /* output */
-        arg_fc_weight_int16_,                            /* fc_weights */
-        arg_fc_bias_,                                    /* fc_biass */
-        arg_ln_scale_,                                   /* ln_scales */
-        arg_ln_bias_,                                    /* ln_biass */
-        param.fc_weight_max->data<float>(),              /* fc_weights_max */
-        encoder_param_);
-  }
-  return r;
 }
 
 void XPUMultiEncoderCompute::Run() {
   auto& param = this->Param<param_t>();
-  std::vector<int64_t> mask_shape = param.mask->dims().Vectorize();
-  encoder_param_.mask_shape =
-      std::vector<int>(mask_shape.begin(), mask_shape.end());
-  encoder_param_.slice_starts = param.slice_starts;
-  encoder_param_.slice_ends = param.slice_ends;
-  encoder_param_.slice_axes = param.slice_axes;
-  const bool norm_before_ = param.norm_before;
-  if (param.SeqLod && param.SeqLod->data<int>()) {
-    auto& ctx = this->ctx_->As<XPUContext>();
-    ctx.GetRawContext()->batch_split_type = -1;  // disable auto split batch
-    encoder_param_.seq_lod.resize(param.SeqLod->numel());
-    memcpy(encoder_param_.seq_lod.data(),
-           param.SeqLod->data<int>(),
-           sizeof(int) * param.SeqLod->numel());
-    encoder_param_.adaptive_seqlen = true;
-    encoder_param_.batch_size = param.SeqLod->numel() - 1;
-    encoder_param_.from_seq_len = param.PadSeqLen->data<int>()[0];
-    encoder_param_.to_seq_len = param.PadSeqLen->data<int>()[0];
+  auto& ctx = this->ctx_->As<XPUContext>();
+  const float* in = param.input->data<float>();
+  float* out = param.output->mutable_data<float>(TARGET(kXPU));
+  if (ctx.GetRawContext()->dev().type() == xdnn::kXPU1) {
+    if (param.precision == "int8") {
+      run_encoder<float, int8_t, int8_t>(in, out);
+    } else if (param.precision == "int16") {
+      run_encoder<float, int16_t, int16_t>(in, out);
+    } else if (param.precision == "int31") {
+      run_encoder<float, float, int>(in, out);
+    } else {
+      CHECK(false);
+    }
   } else {
-    encoder_param_.adaptive_seqlen = false;
-    encoder_param_.batch_size = param.input->dims()[0];
-    encoder_param_.from_seq_len = param.input->dims()[1];
-    encoder_param_.to_seq_len = param.input->dims()[1];
+    cast_in_guard_->Reserve(param.input->numel() * sizeof(float));
+    cast_out_guard_->Reserve(param.output->numel() * sizeof(float));
+    if (param.precision == "int8") {
+      int r = xdnn::cast_v2<float, float16>(
+          ctx.GetRawContext(),
+          in,
+          reinterpret_cast<float16*>(cast_in_guard_->addr_),
+          param.input->numel());
+      CHECK_EQ(r, 0);
+      run_encoder<float16, int8_t, int8_t>(
+          reinterpret_cast<const float16*>(cast_in_guard_->addr_),
+          reinterpret_cast<float16*>(cast_out_guard_->addr_));
+      r = xdnn::cast_v2<float16, float>(
+          ctx.GetRawContext(),
+          reinterpret_cast<float16*>(cast_out_guard_->addr_),
+          out,
+          param.output->numel());
+      CHECK_EQ(r, 0);
+    } else if (param.precision == "int16") {
+      int r = xdnn::cast_v2<float, float16>(
+          ctx.GetRawContext(),
+          in,
+          reinterpret_cast<float16*>(cast_in_guard_->addr_),
+          param.input->numel());
+      CHECK_EQ(r, 0);
+      run_encoder<float16, int16_t, int16_t>(
+          reinterpret_cast<const float16*>(cast_in_guard_->addr_),
+          reinterpret_cast<float16*>(cast_out_guard_->addr_));
+      r = xdnn::cast_v2<float16, float>(
+          ctx.GetRawContext(),
+          reinterpret_cast<float16*>(cast_out_guard_->addr_),
+          out,
+          param.output->numel());
+      CHECK_EQ(r, 0);
+    } else if (param.precision == "int31") {
+      run_encoder<float, float, int>(in, out);
+    } else {
+      CHECK(false);
+    }
   }
-  int r = -1;
-  if (norm_before_) {
-    r = transformer_encoder_run();
-  } else {
-    r = bert_encoder_run();
-  }
-  CHECK_EQ(r, 0);
 }
 
 }  // namespace xpu
