@@ -32,11 +32,8 @@ int ConvertBatchNormalization(Converter* converter, hal::Operation* operation) {
   auto offset_operator = converter->ConvertOperand(bias_operand);
   auto mean_operator = converter->ConvertOperand(mean_operand);
   auto variance_operator = converter->ConvertOperand(variance_operand);
-  auto batch_norm_op =
-      converter->AddOperator<ge::op::BatchNorm>(output_operand);
+  auto batch_norm_op = converter->AddOperator<ge::op::BNInfer>(output_operand);
   batch_norm_op->set_attr_epsilon(epsilon);
-  batch_norm_op->set_attr_data_format("NCHW");
-  batch_norm_op->set_attr_is_training(false);
   SET_INPUT(batch_norm_op, x, input_operator);
   SET_INPUT(batch_norm_op, scale, scale_operator);
   SET_INPUT(batch_norm_op, offset, offset_operator);
