@@ -130,12 +130,14 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
     query_lod = {param.SeqLod->data<int>(),
                  static_cast<int>(param.SeqLod->numel()),
                  nullptr};
+    int max_pad_seqlen = slice_idx == -1 ? param.SeqLod->data<int>()[0] : -1;
     xdnn::QKVAttnParam qkv_attn_param(query_lod, /* lod */
                                       param.head_num,
                                       param.size_per_head,
                                       qkv_act,
                                       slice_idx,
-                                      true /* qkv fusion */);
+                                      true /* qkv fusion */,
+                                      max_pad_seqlen);
 
     if (std::is_same<TW, int8_t>::value) {
       CHECK(fc_input_max_.size() > 0) << "only quanted int8 model support vsl";
@@ -160,15 +162,19 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
     // no vsl
     int batch = static_cast<int>(param.input->dims()[0]);
     int max_seqlen = static_cast<int>(param.input->dims()[1]);
-    xdnn::QKVAttnParam qkv_attn_param(
-        batch,
-        max_seqlen,
-        param.head_num,
-        param.size_per_head,
-        {batch, param.head_num, max_seqlen, max_seqlen},
-        qkv_act,
-        slice_idx,
-        true);
+
+    std::vector<int64_t> mask_shape = param.mask->dims().Vectorize();
+    std::vector<int> encoder_mask_shape =
+        std::vector<int>(mask_shape.begin(), mask_shape.end());
+
+    xdnn::QKVAttnParam qkv_attn_param(batch,
+                                      max_seqlen,
+                                      param.head_num,
+                                      param.size_per_head,
+                                      encoder_mask_shape,
+                                      qkv_act,
+                                      slice_idx,
+                                      true);
     int r = xdnn::transformer_encoder<T, TW, TGEMM>(
         ctx.GetRawContext(),
         in,
