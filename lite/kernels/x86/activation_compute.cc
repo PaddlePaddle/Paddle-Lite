@@ -129,7 +129,7 @@ REGISTER_LITE_KERNEL(hard_swish,
                      kX86,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::HardSwishCompute<float>,
+                     paddle::lite::kernels::x86::HardSwishComputeCompute<float>,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kX86))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})

@@ -939,25 +939,30 @@ void conv_depthwise_3x3s1_p1_direct(
                   _mm256_mul_ps(_mm256_and_ps(_mm256_cmp_ps(r3, zero, 17), r3),
                                 negative_slope));
             } else if (act_type == lite_api::ActivationType::kHardSwish) {
-              __m128 vscale = _mm_set1_ps(act_param.hard_swish_scale);
-              __m128 voffset = _mm_set1_ps(act_param.hard_swish_offset);
-              __m128 vthreshold = _mm_set1_ps(act_param.hard_swish_threshold);
-              r0 = _mm_mul_ps(
-                  _mm_min_ps(vthreshold,
-                             _mm_max_ps(zero, _mm_add_ps(r0, voffset))),
-                  _mm_mul_ps(r0, vscale));
-              r1 = _mm_mul_ps(
-                  _mm_min_ps(vthreshold,
-                             _mm_max_ps(zero, _mm_add_ps(r1, voffset))),
-                  _mm_mul_ps(r1, vscale));
-              r2 = _mm_mul_ps(
-                  _mm_min_ps(vthreshold,
-                             _mm_max_ps(zero, _mm_add_ps(r2, voffset))),
-                  _mm_mul_ps(r2, vscale));
-              r3 = _mm_mul_ps(
-                  _mm_min_ps(vthreshold,
-                             _mm_max_ps(zero, _mm_add_ps(r3, voffset))),
-                  _mm_mul_ps(r3, vscale));
+              __m256 vscale = _mm256_set1_ps(act_param.hard_swish_scale);
+              __m256 voffset = _mm256_set1_ps(act_param.hard_swish_offset);
+              __m256 vthreshold =
+                  _mm256_set1_ps(act_param.hard_swish_threshold);
+              r0 = _mm256_mul_ps(
+                  _mm256_min_ps(
+                      vthreshold,
+                      _mm256_max_ps(zero, _mm256_add_ps(r0, voffset))),
+                  _mm256_mul_ps(r0, vscale));
+              r1 = _mm256_mul_ps(
+                  _mm256_min_ps(
+                      vthreshold,
+                      _mm256_max_ps(zero, _mm256_add_ps(r1, voffset))),
+                  _mm256_mul_ps(r1, vscale));
+              r2 = _mm256_mul_ps(
+                  _mm256_min_ps(
+                      vthreshold,
+                      _mm256_max_ps(zero, _mm256_add_ps(r2, voffset))),
+                  _mm256_mul_ps(r2, vscale));
+              r3 = _mm256_mul_ps(
+                  _mm256_min_ps(
+                      vthreshold,
+                      _mm256_max_ps(zero, _mm256_add_ps(r3, voffset))),
+                  _mm256_mul_ps(r3, vscale));
             }
           } else {
             LOG(FATAL) << "[X86] activation type not supported";

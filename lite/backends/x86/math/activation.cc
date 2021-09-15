@@ -172,10 +172,10 @@ void hard_swish(const float* din,
     __m256 vsum1 = _mm256_mul_ps(vin1, vec_scale);
     __m256 vsum2 = _mm256_mul_ps(vin2, vec_scale);
     __m256 vsum3 = _mm256_mul_ps(vin3, vec_scale);
-    __m256 vres0 = _mm256_min_ps(_m256_max_ps(vadd0, vec_zero), vec_threshold);
-    __m256 vres1 = _mm256_min_ps(_m256_max_ps(vadd1, vec_zero), vec_threshold);
-    __m256 vres2 = _mm256_min_ps(_m256_max_ps(vadd2, vec_zero), vec_threshold);
-    __m256 vres3 = _mm256_min_ps(_m256_max_ps(vadd3, vec_zero), vec_threshold);
+    __m256 vres0 = _mm256_min_ps(_mm256_max_ps(vadd0, vec_zero), vec_threshold);
+    __m256 vres1 = _mm256_min_ps(_mm256_max_ps(vadd1, vec_zero), vec_threshold);
+    __m256 vres2 = _mm256_min_ps(_mm256_max_ps(vadd2, vec_zero), vec_threshold);
+    __m256 vres3 = _mm256_min_ps(_mm256_max_ps(vadd3, vec_zero), vec_threshold);
     _mm256_storeu_ps(dout, _mm256_mul_ps(vres0, vsum0));
     _mm256_storeu_ps(dout + 8, _mm256_mul_ps(vres1, vsum1));
     _mm256_storeu_ps(dout + 16, _mm256_mul_ps(vres2, vsum2));

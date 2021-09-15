@@ -734,7 +734,7 @@ void pack_padding8_m256(lite::Tensor* input,
 
 __m256 activation8_m256(__m256 input,
                         const lite_api::ActivationType act_type,
-                        const lite_api::ActivationParam act_param) {
+                        const operators::ActivationParam act_param) {
   if (act_type == lite_api::ActivationType::kRelu) {
     return _mm256_max_ps(input, _mm256_setzero_ps());
   } else if (act_type == lite_api::ActivationType::kRelu6) {
@@ -752,11 +752,10 @@ __m256 activation8_m256(__m256 input,
         _mm256_add_ps(input, _mm256_set1_ps(act_param.hard_swish_offset));
     __m256 _val_scale =
         _mm256_mul_ps(input, _mm256_set1_ps(act_param.hard_swish_scale));
-    __m256 _val = _mm256_min_ps(
-        _mm256_set1_ps(act_param.hard_swish_threshold),
-        __mm256_max_ps(_val_offset,
-                       _mm256_setzero_ps())) return _mm256_mul_ps(_val,
-                                                                  _val_scale);
+    __m256 _val =
+        _mm256_min_ps(_mm256_set1_ps(act_param.hard_swish_threshold),
+                      _mm256_max_ps(_val_offset, _mm256_setzero_ps()));
+    return _mm256_mul_ps(_val, _val_scale);
   } else {
     LOG(FATAL) << "[X86] activation type not supported";
   }
@@ -765,7 +764,7 @@ __m256 activation8_m256(__m256 input,
 
 __m128 activation4_m128(__m128 input,
                         const lite_api::ActivationType act_type,
-                        const lite_api::ActivationParam act_param) {
+                        const operators::ActivationParam act_param) {
   if (act_type == lite_api::ActivationType::kRelu) {
     return _mm_max_ps(input, _mm_setzero_ps());
   } else if (act_type == lite_api::ActivationType::kRelu6) {
@@ -781,10 +780,9 @@ __m128 activation4_m128(__m128 input,
         _mm_add_ps(input, _mm_set1_ps(act_param.hard_swish_offset));
     __m128 _val_scale =
         _mm_mul_ps(input, _mm_set1_ps(act_param.hard_swish_scale));
-    __m128 _val = _mm_min_ps(
-        _mm256_set1_ps(act_param.hard_swish_threshold),
-        __mm_max_ps(_val_offset,
-                    _mm_setzero_ps())) return _mm_mul_ps(_val, _val_scale);
+    __m128 _val = _mm_min_ps(_mm_set1_ps(act_param.hard_swish_threshold),
+                             _mm_max_ps(_val_offset, _mm_setzero_ps()));
+    return _mm_mul_ps(_val, _val_scale);
   } else {
     LOG(FATAL) << "[X86] activation type not supported";
   }
@@ -793,7 +791,7 @@ __m128 activation4_m128(__m128 input,
 
 float activation1_float(float input,
                         const lite_api::ActivationType act_type,
-                        const lite_api::ActivationParam act_param) {
+                        const operators::ActivationParam act_param) {
   if (act_type == lite_api::ActivationType::kRelu) {
     return (std::max)(input, 0.f);
   } else if (act_type == lite_api::ActivationType::kRelu6) {

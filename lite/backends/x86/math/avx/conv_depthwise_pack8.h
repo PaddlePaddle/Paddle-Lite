@@ -15,6 +15,7 @@
 #pragma once
 
 #include "lite/core/tensor.h"
+#include "lite/operators/op_params.h"
 
 namespace paddle {
 namespace lite {
@@ -27,7 +28,7 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
                                lite::Tensor* bias,
                                const bool has_act,
                                const lite_api::ActivationType act_type,
-                               const lite_api::ActivationParam act_param);
+                               const operators::ActivationParam act_param);
 
 void conv_depthwise_3x3s2_m256(lite::Tensor* input,
                                lite::Tensor* output,
@@ -35,7 +36,7 @@ void conv_depthwise_3x3s2_m256(lite::Tensor* input,
                                lite::Tensor* bias,
                                const bool has_act,
                                const lite_api::ActivationType act_type,
-                               const lite_api::ActivationParam act_param);
+                               const operators::ActivationParam act_param);
 
 void conv_depthwise_m256(lite::Tensor* input,
                          lite::Tensor* output,
@@ -47,7 +48,7 @@ void conv_depthwise_m256(lite::Tensor* input,
                          const int dilation_w,
                          const bool has_act,
                          const lite_api::ActivationType act_type,
-                         const lite_api::ActivationParam act_param);
+                         const operators::ActivationParam act_param);
 
 }  // namespace math
 }  // namespace x86

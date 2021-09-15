@@ -17,6 +17,7 @@
 #include <immintrin.h>
 #include <vector>
 #include "lite/core/tensor.h"
+#include "lite/operators/op_params.h"
 
 namespace paddle {
 namespace lite {
@@ -77,13 +78,13 @@ void pack_padding8_m256(lite::Tensor* input,
 // for activation - only support relu, relu6, leakyRelu, hard_swish
 __m256 activation8_m256(__m256 input,
                         const lite_api::ActivationType act_type,
-                        const lite_api::ActivationParam act_param);
+                        const operators::ActivationParam act_param);
 __m128 activation4_m128(__m128 input,
                         const lite_api::ActivationType act_type,
-                        const lite_api::ActivationParam act_param);
+                        const operators::ActivationParam act_param);
 float activation1_float(float input,
                         const lite_api::ActivationType act_type,
-                        const lite_api::ActivationParam act_param);
+                        const operators::ActivationParam act_param);
 template <typename Dtype>
 void im2col(const Dtype* data_im,
             int channels,

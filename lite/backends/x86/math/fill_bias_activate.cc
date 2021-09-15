@@ -276,7 +276,7 @@ static void activate_hardswish_inplace_bias(float *data,
     __m256 vec_bias = _mm256_set1_ps(bias[i]);
 #endif
     __m128 vec_bias_128 = _mm_set1_ps(bias[i]);
-    float *tmp_data = data + j * channel_size;
+    float *tmp_data = data + i * channel_size;
 
     for (int j = 0; j < cnt; j++) {
 #ifdef __AVX__
@@ -293,13 +293,13 @@ static void activate_hardswish_inplace_bias(float *data,
       __m256 vsum2 = _mm256_mul_ps(vin2, vec_scale);
       __m256 vsum3 = _mm256_mul_ps(vin3, vec_scale);
       __m256 vres0 =
-          _mm256_min_ps(_m256_max_ps(vadd0, vec_zero), vec_threshold);
+          _mm256_min_ps(_mm256_max_ps(vadd0, vec_zero), vec_threshold);
       __m256 vres1 =
-          _mm256_min_ps(_m256_max_ps(vadd1, vec_zero), vec_threshold);
+          _mm256_min_ps(_mm256_max_ps(vadd1, vec_zero), vec_threshold);
       __m256 vres2 =
-          _mm256_min_ps(_m256_max_ps(vadd2, vec_zero), vec_threshold);
+          _mm256_min_ps(_mm256_max_ps(vadd2, vec_zero), vec_threshold);
       __m256 vres3 =
-          _mm256_min_ps(_m256_max_ps(vadd3, vec_zero), vec_threshold);
+          _mm256_min_ps(_mm256_max_ps(vadd3, vec_zero), vec_threshold);
       _mm256_storeu_ps(tmp_data, _mm256_mul_ps(vres0, vsum0));
       _mm256_storeu_ps(tmp_data + 8, _mm256_mul_ps(vres0, vsum1));
       _mm256_storeu_ps(tmp_data + 16, _mm256_mul_ps(vres0, vsum2));
@@ -351,12 +351,8 @@ static void activate_hardswish_inplace_bias(float *data,
   }
 }
 
-static void activate_hardswish_inplace(float *data,
-                                       const float *bias,
-                                       int len,
-                                       float scale,
-                                       float threshold,
-                                       float offset) {
+static void activate_hardswish_inplace(
+    float *data, int len, float scale, float threshold, float offset) {
 #ifdef __AVX__
   int cnt = len >> 5;
   int remain = len & 31;
@@ -389,10 +385,10 @@ static void activate_hardswish_inplace(float *data,
     __m256 vsum1 = _mm256_mul_ps(vin1, vec_scale);
     __m256 vsum2 = _mm256_mul_ps(vin2, vec_scale);
     __m256 vsum3 = _mm256_mul_ps(vin3, vec_scale);
-    __m256 vres0 = _mm256_min_ps(_m256_max_ps(vadd0, vec_zero), vec_threshold);
-    __m256 vres1 = _mm256_min_ps(_m256_max_ps(vadd1, vec_zero), vec_threshold);
-    __m256 vres2 = _mm256_min_ps(_m256_max_ps(vadd2, vec_zero), vec_threshold);
-    __m256 vres3 = _mm256_min_ps(_m256_max_ps(vadd3, vec_zero), vec_threshold);
+    __m256 vres0 = _mm256_min_ps(_mm256_max_ps(vadd0, vec_zero), vec_threshold);
+    __m256 vres1 = _mm256_min_ps(_mm256_max_ps(vadd1, vec_zero), vec_threshold);
+    __m256 vres2 = _mm256_min_ps(_mm256_max_ps(vadd2, vec_zero), vec_threshold);
+    __m256 vres3 = _mm256_min_ps(_mm256_max_ps(vadd3, vec_zero), vec_threshold);
     _mm256_storeu_ps(tmp_data, _mm256_mul_ps(vres0, vsum0));
     _mm256_storeu_ps(tmp_data + 8, _mm256_mul_ps(vres1, vsum1));
     _mm256_storeu_ps(tmp_data + 16, _mm256_mul_ps(vres2, vsum2));

@@ -44,7 +44,7 @@ void conv_direct_3x3s2(const float* i_data,
                        int pw,
                        const float* bias,
                        lite_api::ActivationType active_type,
-                       lite_api::ActivationParam act_param) {
+                       operators::ActivationParam act_param) {
   constexpr int ww = 3;
   constexpr int wh = 3;
   constexpr int strideh = 2;
@@ -870,30 +870,46 @@ void conv_direct_3x3s2(const float* i_data,
             __m256 voffset = _mm256_set1_ps(act_param.hard_swish_offset);
             __m256 vscale = _mm256_set1_ps(act_param.hard_swish_scale);
             __m256 vthreshold = _mm256_set1_ps(act_param.hard_swish_threshold);
-            row0 = _mm256_mul_ps(_mm256_min_ps(vthreshold,
-                   __mm256_max_ps(__mm256_add_ps(row0, voffset), vzero)),
-                   _mm256_mul_ps(row0, vscale);
-            row1 = _mm256_mul_ps(_mm256_min_ps(vthreshold,
-                   __mm256_max_ps(__mm256_add_ps(row1, voffset), vzero)),
-                   _mm256_mul_ps(row1, vscale);
-            row2 = _mm256_mul_ps(_mm256_min_ps(vthreshold,
-                   __mm256_max_ps(__mm256_add_ps(row2, voffset), vzero)),
-                   _mm256_mul_ps(row2, vscale);
-            row3 = _mm256_mul_ps(_mm256_min_ps(vthreshold,
-                   __mm256_max_ps(__mm256_add_ps(row3, voffset), vzero)),
-                   _mm256_mul_ps(row3, vscale);
-            row4 = _mm256_mul_ps(_mm256_min_ps(vthreshold,
-                   __mm256_max_ps(__mm256_add_ps(row4, voffset), vzero)),
-                   _mm256_mul_ps(row4, vscale);
-            row5 = _mm256_mul_ps(_mm256_min_ps(vthreshold,
-                   __mm256_max_ps(__mm256_add_ps(row5, voffset), vzero)),
-                   _mm256_mul_ps(row5, vscale);
-            row6 = _mm256_mul_ps(_mm256_min_ps(vthreshold,
-                   __mm256_max_ps(__mm256_add_ps(row6, voffset), vzero)),
-                   _mm256_mul_ps(row6, vscale);
-            row7 = _mm256_mul_ps(_mm256_min_ps(vthreshold,
-                   __mm256_max_ps(__mm256_add_ps(row7, voffset), vzero)),
-                  _mm256_mul_ps(row7, vscale);
+            row0 = _mm256_mul_ps(
+                _mm256_min_ps(
+                    vthreshold,
+                    _mm256_max_ps(_mm256_add_ps(row0, voffset), vzero)),
+                _mm256_mul_ps(row0, vscale));
+            row1 = _mm256_mul_ps(
+                _mm256_min_ps(
+                    vthreshold,
+                    _mm256_max_ps(_mm256_add_ps(row1, voffset), vzero)),
+                _mm256_mul_ps(row1, vscale));
+            row2 = _mm256_mul_ps(
+                _mm256_min_ps(
+                    vthreshold,
+                    _mm256_max_ps(_mm256_add_ps(row2, voffset), vzero)),
+                _mm256_mul_ps(row2, vscale));
+            row3 = _mm256_mul_ps(
+                _mm256_min_ps(
+                    vthreshold,
+                    _mm256_max_ps(_mm256_add_ps(row3, voffset), vzero)),
+                _mm256_mul_ps(row3, vscale));
+            row4 = _mm256_mul_ps(
+                _mm256_min_ps(
+                    vthreshold,
+                    _mm256_max_ps(_mm256_add_ps(row4, voffset), vzero)),
+                _mm256_mul_ps(row4, vscale));
+            row5 = _mm256_mul_ps(
+                _mm256_min_ps(
+                    vthreshold,
+                    _mm256_max_ps(_mm256_add_ps(row5, voffset), vzero)),
+                _mm256_mul_ps(row5, vscale));
+            row6 = _mm256_mul_ps(
+                _mm256_min_ps(
+                    vthreshold,
+                    _mm256_max_ps(_mm256_add_ps(row6, voffset), vzero)),
+                _mm256_mul_ps(row6, vscale));
+            row7 = _mm256_mul_ps(
+                _mm256_min_ps(
+                    vthreshold,
+                    _mm256_max_ps(_mm256_add_ps(row7, voffset), vzero)),
+                _mm256_mul_ps(row7, vscale));
 #else
             __m128 vzero = _mm_set1_ps(0.f);
             __m256 voffset = _mm_set1_ps(act_param.hard_swish_offset);
@@ -963,7 +979,8 @@ void conv_direct_3x3s2(const float* i_data,
           } else if (active_type == lite_api::ActivationType::kRelu6) {
 #ifdef __AVX__
             row = _mm256_max_ps(row, _mm256_set1_ps(0.f));
-            row = _mm256_min_ps(row, _mm256_set1_ps(Relu_clipped_coef));
+            row =
+                _mm256_min_ps(row, _mm256_set1_ps(act_param.Relu_clipped_coef));
 #else
             row = _mm_max_ps(row, _mm_set1_ps(0.f));
             row = _mm_min_ps(row, _mm_set1_ps(6.f));
@@ -990,8 +1007,8 @@ void conv_direct_3x3s2(const float* i_data,
                 _mm256_mul_ps(row, _mm256_set1_ps(act_param.hard_swish_scale));
             __m256 val =
                 _mm256_min_ps(_mm256_set1_ps(act_param.hard_swish_threshold),
-                              __mm256_max_ps(val_offset, _mm256_setzero_ps()))
-                    row = _mm256_mul_ps(val, val_scale);
+                              _mm256_max_ps(val_offset, _mm256_setzero_ps()));
+            row = _mm256_mul_ps(val, val_scale);
 #else
             __m128 val_offset =
                 _mm_add_ps(row, _mm_set1_ps(act_param.hard_swish_offset));
