@@ -58,7 +58,14 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     dump_graph_path_ = string_format("%s/%s.dat", cache->dir, cache->token);
   }
   dump_graph_buffer_ = &cache->buffer;
-  return cache->buffer.empty() ? BuildFromModel(model) : BuildFromCache(cache);
+  if (cache->buffer.empty()) {
+    NNADAPTER_CHECK_EQ(BuildFromModel(model), NNADAPTER_NO_ERROR);
+  } else {
+    NNADAPTER_CHECK_EQ(BuildFromCache(cache), NNADAPTER_NO_ERROR);
+  }
+  mm_engine_.reset(mm_model_->CreateIEngine());
+  mm_context_.reset(mm_engine_->CreateIContext());
+  return NNADAPTER_NO_ERROR;
 }
 
 int Program::BuildFromCache(hal::Cache* cache) {
@@ -123,8 +130,6 @@ int Program::Execute(uint32_t input_count,
   NNADAPTER_VLOG(3) << "Execute begining.";
   std::vector<magicmind::IRTTensor*> inputs = {};
   std::vector<magicmind::IRTTensor*> outputs = {};
-  mm_engine_.reset(mm_model_->CreateIEngine());
-  mm_context_.reset(mm_engine_->CreateIContext());
   magicmind::CreateInputTensors(mm_context_.get(), &inputs);
   for (uint32_t i = 0; i < input_count; i++) {
     void* ptr = nullptr;
@@ -140,7 +145,7 @@ int Program::Execute(uint32_t input_count,
     MLU_CNRT_CHECK(cnrtMalloc(&ptr, length));
     MLU_CNRT_CHECK(cnrtMemcpy(ptr, buffer, length, CNRT_MEM_TRANS_DIR_HOST2DEV));
     inputs[i]->SetData(ptr);
-    inputs[i]->SetDimensions(ConvertDims(type->dimensions, type->dimension_count));
+    inputs[i]->SetDimensions(ConvertToMagicMindDims(type->dimensions.data, type->dimension.count));
   }
   mm_context_->Enqueue(inputs, &outputs, queue_);
   MLU_CNRT_CHECK(cnrtSyncQueue(queue_));

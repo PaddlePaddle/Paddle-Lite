@@ -19,7 +19,7 @@
 namespace nnadapter {
 namespace cambricon_mlu {
 
-magicmind::DataType ConvertPrecision(NNAdapterOperandPrecisionCode input_precision) {
+magicmind::DataType ConvertToMagicMindDtype(NNAdapterOperandPrecisionCode input_precision) {
   magicmind::DataType output_precision;
   switch (input_precision) {
     case NNADAPTER_BOOL8:
@@ -71,7 +71,7 @@ magicmind::DataType ConvertPrecision(NNAdapterOperandPrecisionCode input_precisi
   return output_precision;
 }
 
-magicmind::Layout ConvertDataLayout(
+magicmind::Layout ConvertToMagicMindDataLayout(
     NNAdapterOperandLayoutCode input_layout) {
   magicmind::Layout output_layout;
   switch (input_layout) {
@@ -91,8 +91,8 @@ magicmind::Layout ConvertDataLayout(
   return output_layout;
 }
 
-magicmind::Dims ConvertDims(const int32_t* input_dimensions,
-                            uint32_t input_dimensions_count) {
+magicmind::Dims ConvertToMagicMindDims(const int32_t* input_dimensions,
+                                       uint32_t input_dimensions_count) {
   std::vector<int64_t> output_dimensions;
   for (uint32_t i = 0; i < input_dimensions_count; i++) {
     output_dimensions.push_back(static_cast<int64_t>(input_dimensions[i]));

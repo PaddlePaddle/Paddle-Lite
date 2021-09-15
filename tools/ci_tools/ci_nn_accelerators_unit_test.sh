@@ -2,7 +2,7 @@
 # The git version of CI is 2.7.4. This script is not compatible with git version 1.7.1.
 set -ex
 
-TESTS_FILE="/projs/framework/miaochen/Paddle-Lite/lite_tests.txt"
+TESTS_FILE="./lite_tests.txt"
 LIBS_FILE="./lite_libs.txt"
 LITE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../" && pwd)"
 
@@ -994,10 +994,9 @@ function amlogic_npu_build_and_test() {
 # Cambricon MLU
 function cambricon_mlu_build_target() {
     local os=$1
-    # local arch=$2
-    local arch=x86
+    local arch=$2
     local toolchain=$3
-    local sdk_root_dir=/projs/framework/miaochen/temp/tensorflow/install_dir/usr/local/neuware/
+    local sdk_root_dir=$4
 
     # Build all of tests
     rm -rf $BUILD_DIR
@@ -1006,7 +1005,7 @@ function cambricon_mlu_build_target() {
     prepare_workspace $ROOT_DIR $BUILD_DIR
     cmake .. \
         -DWITH_GPU=OFF \
-        -DWITH_MKL=OFF \
+        -DWITH_MKL=ON \
         -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=ON \
@@ -1018,8 +1017,8 @@ function cambricon_mlu_build_target() {
         -DLITE_WITH_TRAIN=OFF \
         -DLITE_WITH_NNADAPTER=ON \
         -DNNADAPTER_WITH_CAMBRICON_MLU=ON \
-        -DNNADAPTER_CAMBRICON_MLU_SDK_ROOT="$sdk_root_dir" \
-        -DARM_TARGET_OS=$os -DARM_TARGET_ARCH_ABI=$arch -DARM_TARGET_LANG=$toolchain
+        -DNNADAPTER_CAMBRICON_MLU_SDK_ROOT="$sdk_root_dir"
+
     make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"

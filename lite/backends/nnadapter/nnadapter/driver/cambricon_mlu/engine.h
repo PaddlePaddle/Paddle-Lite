@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef LITE_BACKENDS_NNADAPTER_NNADAPTER_DRIVER_CAMBRICON_MLU_ENGINE_H_
-#define LITE_BACKENDS_NNADAPTER_NNADAPTER_DRIVER_CAMBRICON_MLU_ENGINE_H_
+#pragma once
 
 #include <map>
 #include <memory>
@@ -86,5 +85,3 @@ class Program {
 
 }  // namespace cambricon_mlu
 }  // namespace nnadapter
-
-#endif  // LITE_BACKENDS_NNADAPTER_NNADAPTER_DRIVER_CAMBRICON_MLU_ENGINE_H_

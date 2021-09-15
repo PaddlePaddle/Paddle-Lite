@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef LITE_BACKENDS_NNADAPTER_NNADAPTER_DRIVER_CAMBRICON_MLU_UTILITY_H_
-#define LITE_BACKENDS_NNADAPTER_NNADAPTER_DRIVER_CAMBRICON_MLU_UTILITY_H_
+#pragma once
 
 #include <interface_network.h>
 #include <interface_builder.h>
@@ -30,11 +29,11 @@ namespace cambricon_mlu {
       << (msg) << " " << cnrtGetErrorStr(msg)
 
 // Convert NNAdapter types to magicmind dtype
-magicmind::DataType ConvertPrecision(NNAdapterOperandPrecisionCode input_precision);
+magicmind::DataType ConvertToMagicMindDtype(NNAdapterOperandPrecisionCode input_precision);
 // Convert NNAdapter operand layout to magicmind layout
-magicmind::Layout ConvertDataLayout(NNAdapterOperandLayoutCode input_layout);
+magicmind::Layout ConvertToMagicMindDataLayout(NNAdapterOperandLayoutCode input_layout);
 // Convert NNAdapter dims to magicmind dims
-magicmind::Dims ConvertDims(const int32_t* input_dimensions, uint32_t input_dimensions_count);
+magicmind::Dims ConvertToMagicMindDims(const int32_t* input_dimensions, uint32_t input_dimensions_count);
 
 template <typename T>
 struct MMDestroyer {
@@ -50,5 +49,3 @@ using MMUniquePtrType = std::unique_ptr<T, MMDestroyer<T>>;
 
 }  // namespace cambricon_mlu
 }  // namespace nnadapter
-
-#endif  // LITE_BACKENDS_NNADAPTER_NNADAPTER_DRIVER_CAMBRICON_MLU_UTILITY_H_

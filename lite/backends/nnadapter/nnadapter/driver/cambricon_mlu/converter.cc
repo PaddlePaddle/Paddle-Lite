@@ -30,7 +30,7 @@ namespace cambricon_mlu {
 #define REGISTER_CONVERTER(__op_type__, __func_name__) \
   extern int __func_name__(Converter* converter, hal::Operation* operation);
 #include "driver/cambricon_mlu/converter/all.h"  // NOLINT
-#undef LITE_BACKENDS_NNADAPTER_NNADAPTER_DRIVER_CAMBRICON_MLU_CONVERTER_ALL_H_
+#undef __NNADAPTER_DRIVER_CAMBRICON_MLU_CONVERTER_ALL_H__
 #undef REGISTER_CONVERTER
 
 magicmind::INetwork* Converter::network() { return network_; }
@@ -48,7 +48,7 @@ int Converter::Apply(hal::Model* model) {
     __func_name__(this, operation);                    \
     break;
 #include "driver/cambricon_mlu/converter/all.h"  // NOLINT
-#undef LITE_BACKENDS_NNADAPTER_NNADAPTER_DRIVER_CAMBRICON_MLU_CONVERTER_ALL_H_
+#undef __NNADAPTER_DRIVER_CAMBRICON_MLU_CONVERTER_ALL_H__
 #undef REGISTER_CONVERTER
       default:
         NNADAPTER_LOG(FATAL) << "Unsupported operation("
@@ -86,11 +86,11 @@ magicmind::ITensor* Converter::AddTensor(const NNAdapterOperandType* type,
                                          std::vector<int64_t> dimensions) {
   NNADAPTER_CHECK(buffer);
   if (dimensions.empty()) {
-    for (uint32_t i = 0; i < type->dimension_count; i++) {
-      dimensions.push_back(static_cast<int64_t>(type->dimensions[i]));
+    for (uint32_t i = 0; i < type->dimensions.count; i++) {
+      dimensions.push_back(static_cast<int64_t>(type->dimensions.data[i]));
     }
   }
-  auto mm_dtype = ConvertPrecision(type->precision);
+  auto mm_dtype = ConvertToMagicMindDtype(type->precision);
   auto const_node = network_->AddIConstNode(mm_dtype, magicmind::Dims(dimensions), buffer);
   if (const_node == nullptr) {
     NNADAPTER_LOG(FATAL) << "Failed to add const node.";
@@ -101,11 +101,11 @@ magicmind::ITensor* Converter::AddTensor(const NNAdapterOperandType* type,
 magicmind::ITensor* Converter::AddTensor(const NNAdapterOperandType* type,
                                          std::vector<int64_t> dimensions) {
   if (dimensions.empty()) {
-    for (uint32_t i = 0; i < type->dimension_count; i++) {
-      dimensions.push_back(static_cast<int64_t>(type->dimensions[i]));
+    for (uint32_t i = 0; i < type->dimensions.count; i++) {
+      dimensions.push_back(static_cast<int64_t>(type->dimensions.data[i]));
     }
   }
-  auto mm_dtype = ConvertPrecision(type->precision);
+  auto mm_dtype = ConvertToMagicMindDtype(type->precision);
   return network_->AddInput(mm_dtype, magicmind::Dims(dimensions));
 }
 
