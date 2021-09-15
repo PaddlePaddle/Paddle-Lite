@@ -219,6 +219,7 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
                       "strides",
                       "ceil_mode",
                       "return_indices",
+                      "return_indices_dtype",
                       "fuse_code"};
         output_args = {"output", "indices"};
         break;
@@ -377,17 +378,12 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
                       "mask",
                       "filter",
                       "bias",
-                      "padding_left",
-                      "padding_right",
-                      "padding_top",
-                      "padding_bottom",
-                      "stride_width",
-                      "stride_height",
+                      "pads",
+                      "strides",
                       "group",
-                      "deformable_groups",
-                      "fuse_code",
-                      "dilation_width",
-                      "dilation_height"};
+                      "deformable_group",
+                      "dilations",
+                      "fuse_code"};
         output_args = {"output"};
         break;
       case NNADAPTER_PAD:

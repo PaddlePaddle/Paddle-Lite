@@ -171,21 +171,22 @@ typedef enum {
    * output size.
    *
    * Inputs:
-   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
+   * * 0: input, a NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor
    * with shape [N, C_in, H_in, W_in].
-   * * 1: output_shape, A NNADAPTER_TENSOR_INT32 or
+   * * 1: output_shape, a NNADAPTER_TENSOR_INT32 or
    * NNADAPTER_TENSOR_INT64 tensor, with shape [2], with value [H_out, H_out].
-   * * 2: return_indices, A NNADAPTER_BOOL8 scalar, whether to return index of
+   * * 2: return_indices, a NNADAPTER_BOOL8 scalar, whether to return index of
    * output. Defaults to false
-   * * 3: return_indices_dtype, A NNADAPTER_INT32 scalar, the value of
-   * NNADAPTER_TENSOR_INT32 or
-   * NNADAPTER_TENSOR_INT64. Specifies the dtype of the indices.
+   * * 3: return_indices_dtype, a NNADAPTER_INT32 scalar, must be one of
+   * NNADAPTER_TENSOR_INT32 or NNADAPTER_TENSOR_INT64, specifies the dtype of
+   * the indices.
    * Outputs:
-   * * 0: output, A tensor with the same shape and type as input.
-   * * 1: indices, A NNADAPTER_TENSOR_INT64 tensor, with the same shape as
-   * output, indicates the indices of the current feature map.
+   * * 0: output, a tensor with the same shape and type as input.
+   * * 1: indices, a NNADAPTER_TENSOR_INT32 or NNADAPTER_TENSOR_INT64 tensor,
+   * with the same shape as output, indicates the indices of the current feature
+   * map.
    *
    * Available since version 1.
    */
@@ -237,11 +238,12 @@ typedef enum {
    * * 1: auto_pad, a NNADAPTER_INT32 scalar. 0 means "EXPLICIT" so that
    * paddings is used. 1 means "SAME". 2 means "VALID". It must be one of
    * NNAdapterAutoPadCode values.
-   * * 2: pads, a NNADAPTER_INT32 tensor, with shape [4] and data {height_top,
+   * * 2: pads, a NNADAPTER_TENSOR_INT32 tensor, with shape [4] and data
+   * {height_top,
    * height_bottom, width_left, width_right}, or with shape[0] and no data.
-   * * 3: kernel_shape, a NNADAPTER_INT32 tensor, with shape [2] and data
+   * * 3: kernel_shape, a NNADAPTER_TENSOR_INT32 tensor, with shape [2] and data
    * {kernel_height, kernel_width}.
-   * * 4: strides, a NNADAPTER_INT32 tensor, with shape [2] and data
+   * * 4: strides, a NNADAPTER_TENSOR_INT32 tensor, with shape [2] and data
    * {height_stride, width_stride}.
    * * 5: ceil_mode, A NNADAPTER_BOOL8 scalar, whether to use ceil or floor
    * (default) to compute the output shape. Defaults to false
@@ -392,15 +394,16 @@ typedef enum {
    * * 3: auto_pad, a NNADAPTER_INT32 scalar. 0 means "EXPLICIT" so that
    * paddings is used. 1 means "SAME". 2 means "VALID". It must be one of
    * NNAdapterAutoPadCode.
-   * * 4: pads, a NNADAPTER_INT32 tensor, with shape [4] and data {height_top,
+   * * 4: pads, a NNADAPTER_TENSOR_INT32 tensor, with shape [4] and data
+   * {height_top,
    * height_bottom, width_left, width_right}, or with shape[0] and no data.
-   * * 5: strides, a NNADAPTER_INT32 tensor, with shape [2] and data
+   * * 5: strides, a NNADAPTER_TENSOR_INT32 tensor, with shape [2] and data
    * {height_stride, width_stride}.
    * * 6: group, A NNADAPTER_INT32 scalar.
    *      1) For a normal convolution, group must be 1.
    *      2) For a depthwise convolution, the formula should be satisfied:
    * group=C_out=C_in.
-   * * 7: dilations, a NNADAPTER_INT32 tensor, with shape [2] and data
+   * * 7: dilations, a NNADAPTER_TENSOR_INT32 tensor, with shape [2] and data
    * {dilations_height, dilations_width}.
    * * 8: fuse_code, A NNADAPTER_INT32 scalar, must be one of NNAdapterFuseCode
    * values.
@@ -448,20 +451,23 @@ typedef enum {
    * * 3: auto_pad, a NNADAPTER_INT32 scalar. 0 means "EXPLICIT" so that
    * paddings is used. 1 means "SAME". 2 means "VALID". It must be one of
    * NNAdapterAutoPadCode.
-   * * 4: pads, a NNADAPTER_INT32 tensor, with shape [4] and data {height_top,
+   * * 4: pads, a NNADAPTER_TENSOR_INT32 tensor, with shape [4] and data
+   * {height_top,
    * height_bottom, width_left, width_right}, or shape[0] and no data.
-   * * 5: strides, a NNADAPTER_INT32 tensor, with shape [2] and data
+   * * 5: strides, a NNADAPTER_TENSOR_INT32 tensor, with shape [2] and data
    * {height_stride, width_stride}.
    * * 6: group, A NNADAPTER_INT32 scalar.
    *      1) For a normal convolution, group must be 1.
    *      2) For a depthwise convolution, the formula should be satisfied:
    * group=C_out=C_in.
-   * * 7: dilations, a NNADAPTER_INT32 tensor, with shape [2] and data
+   * * 7: dilations, a NNADAPTER_TENSOR_INT32 tensor, with shape [2] and data
    * {dilations_height, dilations_width}.
-   * * 8: output_padding, a NNADAPTER_INT32 tensor, with shape [2] and data
+   * * 8: output_padding, a NNADAPTER_TENSOR_INT32 tensor, with shape [2] and
+   * data
    * {output_pad_height, output_pad_width}, or shape[0] and no data.
-   * * 9: output_shape, a NNADAPTER_INT32 tensor, with shape [2] and data
-   * {output_height, output_width}, or shape[0] and no data.
+   * * 9: output_shape, a NNADAPTER_TENSOR_INT32 or NNADAPTER_TENSOR_INT64
+   * tensor, with shape [2] and data {output_height, output_width}, or shape[0]
+   * and no data.
    * * 10: fuse_code, A NNADAPTER_INT32 scalar, must be one of NNAdapterFuseCode
    * values.
    *
@@ -534,22 +540,21 @@ typedef enum {
    *      3) If filter's type is NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL,
    * its type should be NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL, and
    * bias_scale[i] = input_scale * filter_scale[i] for each output channel.
-   * * 5: padding_width_left, a NNADAPTER_INT32 scalar.
-   * * 6: padding_width_right, a NNADAPTER_INT32 scalar.
-   * * 7: padding_height_top, a NNADAPTER_INT32 scalar.
-   * * 8: padding_height_bottom, a NNADAPTER_INT32 scalar.
-   * * 9: stride_width, a NNADAPTER_INT32 scalar.
-   * * 10: stride_height, a NNADAPTER_INT32 scalar.
-   * * 11: group, a NNADAPTER_INT32 scalar.
+   * * 5: pads, a NNADAPTER_TENSOR_INT32 tensor, with shape [4] and data
+   * {height_top, height_bottom, width_left, width_right}, or with shape[0] and
+   * no data.
+   * * 6: strides, a NNADAPTER_TENSOR_INT32 tensor, with shape [2] and data
+   * {height_stride, width_stride}.
+   * * 7: group, a NNADAPTER_INT32 scalar.
    *      1) For a normal convolution, group must be 1.
    *      2) For a depthwise convolution, the formula should be satisfied:
    * group=C_out=C_in.
-   * * 12: deformable_groups, a NNADAPTER_INT32 scalar.
-   * Specify the c-axis grouping number of input x.
-   * * 13: fuse_code, a NNADAPTER_INT32 scalar, must be one of NNAdapterFuseCode
+   * * 8: deformable_group, a NNADAPTER_INT32 scalar. Specify the c-axis
+   * grouping number of input x.
+   * * 9: dilations, a NNADAPTER_TENSOR_INT32 tensor, with shape [2] and data
+   * {dilations_height, dilations_width}.
+   * * 10: fuse_code, A NNADAPTER_INT32 scalar, must be one of NNAdapterFuseCode
    * values.
-   * * 14: dilation_width, a NNADAPTER_INT32 scalar. Defaults to 1.
-   * * 15: dilation_height, a NNADAPTER_INT32 scalar. Defaults to 1.
    *
    * Outputs:
    * * 0: output, the output 4-D tensor with shape [N, C_out, H_out, W_out], its
@@ -796,17 +801,21 @@ typedef enum {
    * * 1: auto_pad, a NNADAPTER_INT32 scalar. 0 means "EXPLICIT" so that
    * paddings is used. 1 means "SAME". 2 means "VALID". It must be one of
    * NNAdapterAutoPadCode values.
-   * * 2: pads, a NNADAPTER_INT32 tensor, with shape [4] and data {height_top,
+   * * 2: pads, a NNADAPTER_TENSOR_INT32 tensor, with shape [4] and data
+   * {height_top,
    * height_bottom, width_left, width_right}, or with shape[0] and no data.
-   * * 3: kernel_shape, a NNADAPTER_INT32 tensor, with shape [2] and data
+   * * 3: kernel_shape, a NNADAPTER_TENSOR_INT32 tensor, with shape [2] and data
    * {kernel_height, kernel_width}.
-   * * 4: strides, a NNADAPTER_INT32 tensor, with shape [2] and data
+   * * 4: strides, a NNADAPTER_TENSOR_INT32 tensor, with shape [2] and data
    * {height_stride, width_stride}.
-   * * 5: ceil_mode, A NNADAPTER_BOOL8 scalar, whether to use ceil or floor
+   * * 5: ceil_mode, a NNADAPTER_BOOL8 scalar, whether to use ceil or floor
    * (default) to compute the output shape. Defaults to false.
    * * 6: return_indices, A NNADAPTER_BOOL8 scalar, whether to return index of
    * output. Defaults to false.
-   * * 7: fuse_code, A NNADAPTER_INT32 scalar, must be one of NNAdapterFuseCode
+   * * 7: return_indices_dtype, a NNADAPTER_INT32 scalar, must be one of
+   * NNADAPTER_TENSOR_INT32 or NNADAPTER_TENSOR_INT64, specifies the dtype of
+   * the indices.
+   * * 8: fuse_code, a NNADAPTER_INT32 scalar, must be one of NNAdapterFuseCode
    * values.
    *
    * Outputs:
@@ -822,8 +831,9 @@ typedef enum {
    * filter_height) / stride_height + 1)
    *         W_out = ceil((W_in + padding_width_left + padding_width_right -
    * filter_width) / stride_width + 1)
-   * * 1: indices, a NNADAPTER_TENSOR_INT64 tensor, with the same shape as
-   * output, indicates the indices of the current feature map.
+   * * 1: indices, a NNADAPTER_TENSOR_INT32 or NNADAPTER_TENSOR_INT64 tensor,
+   * with the same shape as output, indicates the indices of the current feature
+   * map.
    *
    * Available since version 1.
    */
