@@ -420,7 +420,7 @@ void TestConvDepthwise(Place place, float abs_error = 2e-5) {
     for (auto win : {3, 4, 5, 7, 16, 30}) {
       std::vector<int64_t> dims{n, 32, win, win};
       for (auto stride : {1, 2}) {
-        for (auto pad : {0, 1}) {
+        for (auto pad : {0, 1, 2}) {
           for (auto bias : {false, true}) {
             for (auto act : {"relu", "leaky_relu"}) {
               std::unique_ptr<arena::TestCase> tester(
