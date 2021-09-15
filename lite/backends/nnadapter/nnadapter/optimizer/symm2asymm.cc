@@ -103,6 +103,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(hal::Model* model) {
       case NNADAPTER_RELU6:
       case NNADAPTER_RESHAPE:
       case NNADAPTER_TANH:
+      case NNADAPTER_FLATTEN:
       case NNADAPTER_TRANSPOSE:
       case NNADAPTER_HARD_SIGMOID:
       case NNADAPTER_HARD_SWISH: {
