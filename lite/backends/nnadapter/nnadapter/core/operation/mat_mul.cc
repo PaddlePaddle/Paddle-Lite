@@ -27,13 +27,21 @@ int PrepareMatMul(hal::Operation* operation) {
   MAT_MUL_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
-  auto infer_output_shape = [&](
-      std::vector<int32_t> x_shape,
-      std::vector<int32_t> y_shape,
-      const bool transpose_x,
-      const bool transpose_y) -> std::vector<int32_t> {
-    NNADAPTER_CHECK_GE(x_shape.size(), 1UL);
-    NNADAPTER_CHECK_GE(y_shape.size(), 1UL);
+  const auto& x_type = x_operand->type;
+  const auto& y_type = y_operand->type;
+  auto x_size = x_type.dimensions.count;
+  auto y_size = y_type.dimensions.count;
+  NNADAPTER_CHECK_GE(x_size, 1U);
+  NNADAPTER_CHECK_GE(y_size, 1U);
+
+  auto infer_output_shape = [&](const int32_t* x_dims,
+                                const int32_t* y_dims,
+                                const bool transpose_x,
+                                const bool transpose_y,
+                                uint32_t* out_count,
+                                int32_t* out_dims) {
+    std::vector<int32_t> x_shape(x_dims, x_dims + x_size);
+    std::vector<int32_t> y_shape(y_dims, y_dims + y_size);
     bool squeeze_first = false;
     bool squeeze_last = false;
     if (x_shape.size() == 1) {
@@ -44,8 +52,6 @@ int PrepareMatMul(hal::Operation* operation) {
       y_shape.push_back(1);
       squeeze_last = true;
     }
-    auto x_size = x_shape.size();
-    auto y_size = y_shape.size();
     if (x_size < y_size) {
       x_shape.insert(x_shape.begin(), y_size - x_size, 1);
     } else if (y_size < x_size) {
@@ -88,37 +94,27 @@ int PrepareMatMul(hal::Operation* operation) {
     if (out_shape.empty()) {
       out_shape.push_back(1);
     }
-    return out_shape;
+    out_count[0] = out_shape.size();
+    memcpy(out_dims, out_shape.data(), out_shape.size() * sizeof(int32_t));
   };
 
-  const auto& x_type = x_operand->type;
-  auto x_size = x_type.dimension_count;
-  auto x_shape =
-      std::vector<int32_t>(x_type.dimensions, x_type.dimensions + x_size);
-  const auto y_type = y_operand->type;
-  auto y_size = y_type.dimension_count;
-  auto y_shape =
-      std::vector<int32_t>(y_type.dimensions, y_type.dimensions + y_size);
-  auto out_shape =
-      infer_output_shape(x_shape, y_shape, transpose_x, transpose_y);
   auto& out_type = output_operand->type;
-  out_type.dimension_count = static_cast<uint32_t>(out_shape.size());
-  memcpy(out_type.dimensions,
-         out_shape.data(),
-         out_shape.size() * sizeof(int32_t));
-
-  out_type.dynamic_dimension_count = x_type.dynamic_dimension_count;
-  for (uint32_t i = 0; i < out_type.dynamic_dimension_count; i++) {
-    x_shape = std::vector<int32_t>(x_type.dynamic_dimensions[i],
-                                   x_type.dynamic_dimensions[i] + x_size);
-    y_shape = std::vector<int32_t>(y_type.dynamic_dimensions[i],
-                                   y_type.dynamic_dimensions[i] + y_size);
-    out_shape = infer_output_shape(x_shape, y_shape, transpose_x, transpose_y);
-    NNADAPTER_CHECK_EQ(out_type.dimension_count,
-                       static_cast<uint32_t>(out_shape.size()));
-    memcpy(out_type.dynamic_dimensions[i],
-           out_shape.data(),
-           out_shape.size() * sizeof(int32_t));
+  infer_output_shape(x_type.dimensions.data,
+                     y_type.dimensions.data,
+                     transpose_x,
+                     transpose_y,
+                     &(out_type.dimensions.count),
+                     out_type.dimensions.data);
+  out_type.dimensions.dynamic_count = x_type.dimensions.dynamic_count;
+  for (uint32_t i = 0; i < out_type.dimensions.dynamic_count; i++) {
+    uint32_t out_count;
+    infer_output_shape(x_type.dimensions.dynamic_data[i],
+                       y_type.dimensions.dynamic_data[i],
+                       transpose_x,
+                       transpose_y,
+                       &out_count,
+                       out_type.dimensions.dynamic_data[i]);
+    NNADAPTER_CHECK_EQ(out_count, out_type.dimensions.count);
   }
 
   out_type.precision = x_type.precision;
