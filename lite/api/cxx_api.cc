@@ -381,6 +381,9 @@ void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &program_desc,
   program_ =
       RunDefaultOptimizer(std::move(program), inner_places, factor, passes);
 
+  if (program_desc->HasVersion())
+    program_->set_version(program_desc->Version());
+
   PrepareFeedFetch();
   // Verify if the ops version of current runtime program is
   // the same with that in models.

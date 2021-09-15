@@ -100,7 +100,7 @@ int ConvertConv2D(Converter* converter, OpInfo* op, Scope* scope) {
   CHECK(input_operand);
   auto input_type = converter->GetOperandType(input_operand);
   // Check depthwise mode according to the dimensions
-  auto input_channel_size = input_type->dimensions[1];
+  auto input_channel_size = input_type->dimensions.data[1];
   // Should not support dynamic shape for input channel size
   CHECK(input_channel_size != NNADAPTER_UNKNOWN);
   is_depthwise_mode |= (groups != 1 && input_channel_size == groups &&

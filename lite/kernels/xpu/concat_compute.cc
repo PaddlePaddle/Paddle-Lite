@@ -66,6 +66,8 @@ void ConcatCompute<InType>::Run() {
                                out->numel());
 
     CHECK_EQ(r, 0);
+  } else {
+    out->set_target(TARGET(kXPU));
   }
 }
 

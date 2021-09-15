@@ -65,8 +65,8 @@ void OptBase::SetSparseThreshold(float sparse_threshold) {
   for (size_t i = 0; i < valid_places_.size(); i++) {
     target = valid_places_[i].target;
     if (target != TargetType::kARM) {
-      LOG(WARNING) << "sparse_model mode only supported on Arm. The model will "
-                      "be optimized to dense format.";
+      OPT_LOG << "sparse_model mode only supported on Arm. The model will "
+                 "be optimized to dense format.";
       opt_config_.set_sparse_model(false);
       break;
     }

@@ -26,6 +26,7 @@ namespace ssa {
 
 PlainProgramDesc::PlainProgramDesc(const general::ProgramDesc& program_desc)
     : src_desc_{&program_desc} {
+  if (program_desc.HasVersion()) version_ = program_desc.Version();
   blocks_.resize(src_desc_->BlocksSize());
   block_visited_.resize(src_desc_->BlocksSize());
   InitBlocks();
@@ -195,7 +196,7 @@ void PlainProgramDesc::InsertOpOfBlocks() {
 
 ProgramDescConverter::ProgramDescConverter(const PlainProgramDesc& program_desc)
     : src_desc_{&program_desc} {
-  desc_.SetVersion(0);
+  desc_.SetVersion(program_desc.Version());
   InitBlocks();
 }
 

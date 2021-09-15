@@ -30,7 +30,7 @@ namespace operation {
   /* Axis */                                                          \
   auto axis = *reinterpret_cast<int32_t*>(input_operands[1]->buffer); \
   if (axis < 0) {                                                     \
-    axis += input_operand->type.dimension_count;                      \
+    axis += input_operand->type.dimensions.count;                     \
   }                                                                   \
   NNADAPTER_VLOG(5) << "axis=" << axis;                               \
   /* Output */                                                        \

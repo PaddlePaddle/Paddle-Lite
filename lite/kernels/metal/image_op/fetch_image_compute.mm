@@ -118,13 +118,14 @@ void FetchImageCompute::setup_without_mps() {
 
     std::vector<int> transpose_nhwc = {0, 2, 3, 1};
     std::vector<int> transpose_nchw = {0, 1, 2, 3};
-    if (input_buffer_->transpose_ == transpose_nhwc) {
-        function_name_ = "fetch";
-    } else if (input_buffer_->transpose_ == transpose_nchw) {
-        LOG(FATAL) << "fetch: all transpose should be {0, 2, 3, 1}";
-    } else {
-        LOG(FATAL) << "fetch: unsupported tensor transpose";
-    }
+    function_name_ = "fetch";
+    // if (input_buffer_->transpose_ == transpose_nhwc) {
+    //     function_name_ = "fetch";
+    // } else if (input_buffer_->transpose_ == transpose_nchw) {
+    //     LOG(FATAL) << "fetch: all transpose should be {0, 2, 3, 1}";
+    // } else {
+    //     LOG(FATAL) << "fetch: unsupported tensor transpose";
+    // }
 
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();

@@ -76,8 +76,8 @@ uint32_t Converter::UpdateIndexMap(hal::Operand* operand, uint32_t index) {
   return index;
 }
 
-uint32_t Converter::AddOperand(int32_t* dimensions,
-                               uint32_t dimension_count,
+uint32_t Converter::AddOperand(int32_t* dimensions_data,
+                               uint32_t dimensions_count,
                                int precision,
                                float* quant_scales,
                                int32_t* zero_point,
@@ -88,9 +88,9 @@ uint32_t Converter::AddOperand(int32_t* dimensions,
   memset(&type, 0, sizeof(NeuronOperandType));
   type.type = precision;
   std::vector<uint32_t> converted_dimensions;
-  if (dimensions && dimension_count > 0) {
+  if (dimensions_data && dimensions_count > 0) {
     converted_dimensions =
-        ConvertToNeuronDimensions(dimensions, dimension_count);
+        ConvertToNeuronDimensions(dimensions_data, dimensions_count);
     type.dimensions = &converted_dimensions[0];
   }
   type.dimensionCount = converted_dimensions.size();
@@ -129,7 +129,7 @@ uint32_t Converter::AddOperand(int32_t* dimensions,
   if (buffer) {
     // Constant operand
     auto length = NeuronOperandDataTypeLength(precision) *
-                  ProductionOfDimensions(dimensions, dimension_count);
+                  ProductionOfDimensions(dimensions_data, dimensions_count);
     NNADAPTER_CHECK_EQ(
         NeuronModel_setOperandValue_invoke(model_, index, buffer, length),
         NEURON_NO_ERROR);
@@ -197,10 +197,10 @@ uint32_t Converter::AddFloat32ConstantOperand(float* values,
 }
 
 uint32_t Converter::AddInt32ConstantOperand(int32_t* values,
-                                            int32_t* dimensions,
-                                            uint32_t dimension_count) {
-  return AddOperand(dimensions,
-                    dimension_count,
+                                            int32_t* dimensions_data,
+                                            uint32_t dimensions_count) {
+  return AddOperand(dimensions_data,
+                    dimensions_count,
                     NEURON_TENSOR_INT32,
                     nullptr,
                     nullptr,
@@ -210,10 +210,10 @@ uint32_t Converter::AddInt32ConstantOperand(int32_t* values,
 }
 
 uint32_t Converter::AddFloat32ConstantOperand(float* values,
-                                              int32_t* dimensions,
-                                              uint32_t dimension_count) {
-  return AddOperand(dimensions,
-                    dimension_count,
+                                              int32_t* dimensions_data,
+                                              uint32_t dimensions_count) {
+  return AddOperand(dimensions_data,
+                    dimensions_count,
                     NEURON_TENSOR_FLOAT32,
                     nullptr,
                     nullptr,
@@ -223,13 +223,13 @@ uint32_t Converter::AddFloat32ConstantOperand(float* values,
 }
 
 uint32_t Converter::AddQuant8ConstantOperand(int8_t* values,
-                                             int32_t* dimensions,
-                                             uint32_t dimension_count,
+                                             int32_t* dimensions_data,
+                                             uint32_t dimensions_count,
                                              float* quant_scales,
                                              uint32_t quant_scale_count,
                                              uint32_t quant_channel_dim) {
-  return AddOperand(dimensions,
-                    dimension_count,
+  return AddOperand(dimensions_data,
+                    dimensions_count,
                     NEURON_TENSOR_QUANT8_SYMM_PER_CHANNEL,
                     quant_scales,
                     nullptr,
@@ -239,12 +239,12 @@ uint32_t Converter::AddQuant8ConstantOperand(int8_t* values,
 }
 
 uint32_t Converter::AddQuant8ConstantOperand(uint8_t* values,
-                                             int32_t* dimensions,
-                                             uint32_t dimension_count,
+                                             int32_t* dimensions_data,
+                                             uint32_t dimensions_count,
                                              float quant_scale,
                                              int32_t zero_point) {
-  return AddOperand(dimensions,
-                    dimension_count,
+  return AddOperand(dimensions_data,
+                    dimensions_count,
                     NEURON_TENSOR_QUANT8_ASYMM,
                     &quant_scale,
                     &zero_point,
@@ -254,11 +254,11 @@ uint32_t Converter::AddQuant8ConstantOperand(uint8_t* values,
 }
 
 uint32_t Converter::AddQuant32ConstantOperand(int32_t* values,
-                                              int32_t* dimensions,
-                                              uint32_t dimension_count,
+                                              int32_t* dimensions_data,
+                                              uint32_t dimensions_count,
                                               float quant_scale) {
-  return AddOperand(dimensions,
-                    dimension_count,
+  return AddOperand(dimensions_data,
+                    dimensions_count,
                     NEURON_TENSOR_INT32,
                     &quant_scale,
                     nullptr,
@@ -267,12 +267,12 @@ uint32_t Converter::AddQuant32ConstantOperand(int32_t* values,
                     values);
 }
 
-uint32_t Converter::AddQuant8VariableOperand(int32_t* dimensions,
-                                             uint32_t dimension_count,
+uint32_t Converter::AddQuant8VariableOperand(int32_t* dimensions_data,
+                                             uint32_t dimensions_count,
                                              float quant_scale,
                                              int32_t zero_point) {
-  return AddOperand(dimensions,
-                    dimension_count,
+  return AddOperand(dimensions_data,
+                    dimensions_count,
                     NEURON_TENSOR_QUANT8_ASYMM,
                     &quant_scale,
                     &zero_point,
@@ -285,8 +285,8 @@ uint32_t Converter::ConvertOperand(hal::Operand* operand,
   auto& type = operand->type;
   auto buffer = operand->buffer;
   if (dimensions.empty()) {
-    for (uint32_t i = 0; i < type.dimension_count; i++) {
-      dimensions.push_back(type.dimensions[i]);
+    for (uint32_t i = 0; i < type.dimensions.count; i++) {
+      dimensions.push_back(type.dimensions.data[i]);
     }
   }
   auto is_constant_copy = type.lifetime == NNADAPTER_CONSTANT_COPY;

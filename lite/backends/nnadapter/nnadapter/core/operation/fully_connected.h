@@ -30,16 +30,16 @@ namespace operation {
   /* Weight */                                                             \
   auto weight_operand = input_operands[1];                                 \
   NNADAPTER_VLOG(5) << "weight: " << OperandToString(weight_operand);      \
-  NNADAPTER_CHECK_EQ(weight_operand->type.dimension_count, 2);             \
-  auto num_units = weight_operand->type.dimensions[0];                     \
+  NNADAPTER_CHECK_EQ(weight_operand->type.dimensions.count, 2);            \
+  auto num_units = weight_operand->type.dimensions.data[0];                \
   NNADAPTER_VLOG(5) << "num_units: " << num_units;                         \
-  auto input_size = weight_operand->type.dimensions[1];                    \
+  auto input_size = weight_operand->type.dimensions.data[1];               \
   NNADAPTER_VLOG(5) << "input_size: " << input_size;                       \
   /* Bias */                                                               \
   auto bias_operand = input_operands[2];                                   \
   NNADAPTER_VLOG(5) << "bias: " << OperandToString(bias_operand);          \
-  NNADAPTER_CHECK_EQ(bias_operand->type.dimension_count, 1);               \
-  NNADAPTER_CHECK_EQ(num_units, bias_operand->type.dimensions[0]);         \
+  NNADAPTER_CHECK_EQ(bias_operand->type.dimensions.count, 1);              \
+  NNADAPTER_CHECK_EQ(num_units, bias_operand->type.dimensions.data[0]);    \
   /* Fuse code */                                                          \
   auto fuse_code = *reinterpret_cast<int32_t*>(input_operands[3]->buffer); \
   NNADAPTER_VLOG(5) << "fuse_code=" << fuse_code;                          \

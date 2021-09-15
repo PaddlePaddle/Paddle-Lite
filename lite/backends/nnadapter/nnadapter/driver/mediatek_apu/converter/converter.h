@@ -38,8 +38,8 @@ class Converter {
   // Mapping a Neuron operand index to a NNAdapter operand
   uint32_t GetMappedIndex(hal::Operand* operand);
   uint32_t UpdateIndexMap(hal::Operand* operand, uint32_t index);
-  uint32_t AddOperand(int32_t* dimensions,
-                      uint32_t dimension_count,
+  uint32_t AddOperand(int32_t* dimensions_data,
+                      uint32_t dimensions_count,
                       int precision,
                       float* quant_scales = nullptr,
                       int32_t* zero_point = nullptr,
@@ -55,32 +55,32 @@ class Converter {
   uint32_t AddInt32ConstantOperand(int32_t* values, uint32_t num_values);
   uint32_t AddFloat32ConstantOperand(float* values, uint32_t num_values);
   uint32_t AddInt32ConstantOperand(int32_t* values,
-                                   int32_t* dimensions,
-                                   uint32_t dimension_count);
+                                   int32_t* dimensions_data,
+                                   uint32_t dimensions_count);
   uint32_t AddFloat32ConstantOperand(float* values,
-                                     int32_t* dimensions,
-                                     uint32_t dimension_count);
+                                     int32_t* dimensions_data,
+                                     uint32_t dimensions_count);
   // Quant8 constant operand with symmetric per-channel quantizion
   uint32_t AddQuant8ConstantOperand(int8_t* values,
-                                    int32_t* dimensions,
-                                    uint32_t dimension_count,
+                                    int32_t* dimensions_data,
+                                    uint32_t dimensions_count,
                                     float* quant_scales,
                                     uint32_t quant_scale_count,
                                     uint32_t quant_channel_dim = 0);
   // Quant8 constant operand with asymmetric per-layer quantizion
   uint32_t AddQuant8ConstantOperand(uint8_t* values,
-                                    int32_t* dimensions,
-                                    uint32_t dimension_count,
+                                    int32_t* dimensions_data,
+                                    uint32_t dimensions_count,
                                     float quant_scale,
                                     int32_t zero_point);
   // Quant32 constant operand with symmetric per-layer quantizion
   uint32_t AddQuant32ConstantOperand(int32_t* values,
-                                     int32_t* dimensions,
-                                     uint32_t dimension_count,
+                                     int32_t* dimensions_data,
+                                     uint32_t dimensions_count,
                                      float quant_scale);
   // Quant8 variable operand with asymmetric per-layer quantizion
-  uint32_t AddQuant8VariableOperand(int32_t* dimensions,
-                                    uint32_t dimension_count,
+  uint32_t AddQuant8VariableOperand(int32_t* dimensions_data,
+                                    uint32_t dimensions_count,
                                     float quant_scale,
                                     int32_t zero_point);
   // Convert a constant and model input operand and map to a Neuron operand
