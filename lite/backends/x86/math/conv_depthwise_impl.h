@@ -64,22 +64,6 @@ void conv_depthwise_5x5s1s2(const float* din,
                           bool flag_bias,
                           const operators::ActivationParam act_param,
 			              int stride);
-void conv_depthwise_5x5s1s2_(const float* din,
-                          float* dout,
-                          int num,
-                          int ch_out,
-                          int h_out,
-                          int w_out,
-                          int ch_in,
-                          int h_in,
-                          int w_in,
-                          const float* weights,
-                          const float* bias,
-                          int pad,
-                          bool flag_bias,
-                          const operators::ActivationParam act_param,
-			              int stride);
-//void conv_depthwise5x5_nhwc8(const float* din, float* dout, int c, const float* weight, const float* bias, bool flag_bias, const operators::ActivationParam act_param);
 }  // namespace math
 }  // namespace x86
 }  // namespace lite

@@ -145,8 +145,6 @@ class ConvComputeTester : public arena::TestCase {
       auto bias = scope->FindTensor(bias_);
       bias_data = bias->data<float>();
     }
-
-    //std :: cout << " input ptr " <<  input_data << std :: endl;
     for (int n = 0; n < batch_size; ++n) {
       for (int g = 0; g < groups_; ++g) {
         for (int oc = 0; oc < out_c_group; ++oc) {
@@ -160,8 +158,6 @@ class ConvComputeTester : public arena::TestCase {
                       ? (is_channel_bias ? bias_data[g * out_c_group + oc]
                                          : bias_data[out_idx])
                       : 0;
-              //std :: cout << " bias ref " << out_value << " ptr " << bias_data << std :: endl; 
-              // + out_value *= beta;
               for (int ic = 0; ic < in_c_group; ++ic) {
                 for (int kh = 0; kh < kernel_h; ++kh) {
                   for (int kw = 0; kw < kernel_w; ++kw) {
@@ -235,7 +231,6 @@ class ConvComputeTester : public arena::TestCase {
     SetCommonTensor(filter_, filter_dims, dfilter.data(), {}, true);
 
     if (with_bias_) {
-      //std :: cout << " o_ch " << out_channels_ << std :: endl;
       DDim bias_dims(std::vector<int64_t>{out_channels_});
       std::vector<float> dbias(bias_dims.production());
       fill_data_rand(din.data(), -1.f, 1.f, bias_dims.production());
@@ -423,7 +418,7 @@ void TestConvDepthwise(Place place, float abs_error = 2e-5) {
   for (int64_t n : {1, 3, 4}) {
     for (auto win : {3, 4, 7, 16, 30}) {
       for (auto kw : {3, 5}) {
-        win = std :: max(win, kw);
+        win = std::max(win, kw);
         for (auto ch : {2, 7, 9, 16}) {
           std::vector<int64_t> dims{n, 32, win, win};
           for (auto stride : {1, 2}) {
@@ -479,9 +474,7 @@ TEST(Conv2d, precision) {
   return;
 #elif defined(LITE_WITH_X86)
   place = TARGET(kX86);
-
-  TestConvDepthwise(place, abs_error); 
-  //TestConvKsize(place, abs_error);
+  TestConvKsize(place, abs_error);
   return;
 #else
   return;
