@@ -69,8 +69,7 @@ void conv_trans_weights_numc_c3(const float* din,
 
   const float* from_address = din;
   for (int wn_i = 0; wn_i < chout; wn_i++) {
-    for (int wc_i = 0; wc_i < chin; wc_i++)  // chin=3!
-    {
+    for (int wc_i = 0; wc_i < chin; wc_i++) {  // chin=3!
       for (int wh_i = 0; wh_i < wh; wh_i++) {
         for (int ww_i = 0; ww_i < ww; ww_i++) {
           int dst_index = wn_i / block * wh * ww * chin * block +
