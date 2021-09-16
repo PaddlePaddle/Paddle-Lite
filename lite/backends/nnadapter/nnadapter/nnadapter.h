@@ -771,6 +771,26 @@ typedef enum {
   NNADAPTER_LP_NORMALIZATION,
 
   /**
+   * Matrix product that behaves like numpy.matmul.
+   *
+   * Inputs:
+   * * 0: x, A NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: y, a tensor with the same type as input.
+   * * 2: transpose_x, a NNADAPTER_BOOL8 scalar, whether to transpose the last
+   * two dimensions of x before multiplication.
+   * * 3: transpose_y, a NNADAPTER_BOOL8 scalar, whether to transpose the last
+   * two dimensions of y before multiplication.
+   *
+   * Outputs:
+   * * 0: output, a tensor with the same type as x.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_MAT_MUL,
+
+  /**
    * Performs element-wise binary maximum(with Numpy-style broadcasting
    * https://numpy.org/doc/stable/user/basics.broadcasting.html).
    *

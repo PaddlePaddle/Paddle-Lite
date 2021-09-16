@@ -44,7 +44,7 @@ BUILD_APU=OFF
 APU_DDK_ROOT="$(pwd)/apu_sdk_lib/"
 BUILD_RKNPU=OFF
 RKNPU_DDK_ROOT="$(pwd)/rknpu/"
-WITH_HUAWEI_ASCEND_NPU=OFF # Huawei Ascend Builder/Runtime Libs on X86 host 
+WITH_HUAWEI_ASCEND_NPU=OFF # Huawei Ascend Builder/Runtime Libs on X86 host
 # default installation path, ensure acllib/atc/opp directories are all in this root dir
 HUAWEI_ASCEND_NPU_DDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux"
 PYTHON_EXECUTABLE_OPTION=""
@@ -52,7 +52,7 @@ IOS_DEPLOYMENT_TARGET=9.0
 # min android api level
 MIN_ANDROID_API_LEVEL_ARMV7=16
 MIN_ANDROID_API_LEVEL_ARMV8=21
-# android api level, which can also be set to a specific number 
+# android api level, which can also be set to a specific number
 ANDROID_API_LEVEL="Default"
 CMAKE_API_LEVEL_OPTIONS=""
 
@@ -96,7 +96,7 @@ function prepare_opencl_source_code {
     OPENCL_KERNELS_PATH=$root_dir/lite/backends/opencl/cl_kernel
     mkdir -p ${GEN_CODE_PATH_OPENCL}
     touch $GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
-    python $root_dir/lite/tools/cmake_tools/gen_opencl_code.py $OPENCL_KERNELS_PATH $GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc 
+    python $root_dir/lite/tools/cmake_tools/gen_opencl_code.py $OPENCL_KERNELS_PATH $GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
 }
 
 function prepare_thirdparty {
@@ -164,7 +164,7 @@ function make_tiny_publish_so {
   if [ ${os} == "armlinux" ]; then
     BUILD_JAVA=OFF
   fi
-  
+
   if [ ${os} == "android" ]; then
     set_android_api_level
     CMAKE_EXTRA_OPTIONS=${CMAKE_EXTRA_OPTIONS}" "${CMAKE_API_LEVEL_OPTIONS}
@@ -317,6 +317,18 @@ function make_full_publish_so {
   cd - > /dev/null
 }
 
+function set_benchmark_options {
+  BUILD_EXTRA=ON
+  WITH_EXCEPTION=ON
+  BUILD_JAVA=OFF
+  WITH_OPENCL=ON
+  if [ ${WITH_PROFILE} == "ON" ] || [ ${WITH_PRECISION_PROFILE} == "ON" ]; then
+    WITH_LOG=ON
+  else
+    WITH_LOG=OFF
+  fi
+}
+
 function make_all_tests {
   local os=$1
   local abi=$2
@@ -337,17 +349,23 @@ function make_all_tests {
     set_android_api_level
     CMAKE_EXTRA_OPTIONS=${CMAKE_EXTRA_OPTIONS}" "${CMAKE_API_LEVEL_OPTIONS}
   fi
- 
+
+  if [ $4 == "benchmark" ]; then
+    set_benchmark_options
+  fi
+
   prepare_workspace $root_dir $build_directory
   cmake $root_dir \
       ${CMAKE_COMMON_OPTIONS} \
       ${CMAKE_EXTRA_OPTIONS} \
       -DWITH_TESTING=ON \
+      -DLITE_WITH_LOG=${WITH_LOG} \
       -DLITE_WITH_PROFILE=${WITH_PROFILE} \
       -DLITE_WITH_LTO=${WITH_LTO} \
       -DLITE_WITH_PRECISION_PROFILE=${WITH_PRECISION_PROFILE} \
       -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
       -DLITE_WITH_CV=$BUILD_CV \
+      -DLITE_WITH_OPENCL=$WITH_OPENCL \
       -DLITE_WITH_NPU=$BUILD_NPU \
       -DNPU_DDK_ROOT=$NPU_DDK_ROOT \
       -DLITE_WITH_XPU=$BUILD_XPU \
@@ -363,7 +381,11 @@ function make_all_tests {
       -DLITE_WITH_ARM82_INT8_SDOT=$BUILD_ARM82_INT8_SDOT \
       -DARM_TARGET_OS=${os} -DARM_TARGET_ARCH_ABI=${abi} -DARM_TARGET_LANG=${lang}
 
-  make lite_compile_deps -j$NUM_PROC
+  if [ $4 == "benchmark" ]; then
+    make benchmark_bin -j$NUM_PROC
+  else
+    make lite_compile_deps -j$NUM_PROC
+  fi
   cd - > /dev/null
 }
 
@@ -441,7 +463,7 @@ function make_cuda {
             -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
             -DXPU_SDK_URL=$XPU_SDK_URL \
             -DXPU_SDK_ENV=$XPU_SDK_ENV
- 
+
   make -j$NUM_PROC
   make publish_inference -j$NUM_PROC
   cd -
@@ -457,7 +479,7 @@ function make_x86 {
     export CXX=g++ # Huawei Ascend NPU need g++
     build_directory=$BUILD_DIR/build.lite.huawei_ascend_npu
   fi
-  
+
   if [ ${WITH_OPENCL} == "ON" ]; then
     BUILD_EXTRA=ON
     build_directory=$BUILD_DIR/build.lite.x86.opencl
@@ -522,7 +544,7 @@ function make_x86_tests {
     export CXX=g++ # Huawei Ascend NPU need g++
     build_directory=$BUILD_DIR/build.lite.huawei_ascend_npu
   fi
-  
+
   if [ ${WITH_OPENCL} == "ON" ]; then
     BUILD_EXTRA=ON
     build_directory=$BUILD_DIR/build.lite.x86.opencl
@@ -531,6 +553,15 @@ function make_x86_tests {
 
   if [ ${BUILD_PYTHON} == "ON" ]; then
     BUILD_EXTRA=ON
+  fi
+
+  if [ $1 == "benchmark" ]; then
+    set_benchmark_options
+    if [ ${os_name} == "Linux" ]; then
+      # Turn off opencl. Additional third party library need to be installed on
+      # Linux. Otherwise opencl is not supported on Linux.
+      WITH_OPENCL=OFF
+    fi
   fi
 
   if [ -d $build_directory ]
@@ -573,7 +604,11 @@ function make_x86_tests {
             -DPY_VERSION=$PY_VERSION \
             $PYTHON_EXECUTABLE_OPTION
 
-  make lite_compile_deps -j$NUM_PROC
+  if [ $1 == "benchmark" ]; then
+    make benchmark_bin -j$NUM_PROC
+  else
+    make lite_compile_deps -j$NUM_PROC
+  fi
   cd -
 }
 
@@ -593,6 +628,12 @@ function print_usage {
     echo
     echo -e "compile all arm tests (ios not support):"
     echo -e "   ./build.sh --arm_os=<os> --arm_abi=<abi> --arm_lang=<lang> test"
+    echo
+    echo -e "compile benchmark_bin for android:"
+    echo -e "   ./build.sh --arm_os=<os> --arm_abi=<abi> --arm_lang=<lang> --with_profile=<ON|OFF> benchmark"
+    echo
+    echo -e "compile benchmark_bin for x86 linux:"
+    echo -e "   ./build.sh --with_avx=ON --with_profile=<ON|OFF> x86_benchmark"
     echo
     echo -e "optional argument:"
     echo -e "--with_log: (OFF|ON); controls whether to print log information, default is ON"
@@ -806,15 +847,19 @@ function main {
                 shift
                 ;;
             tiny_publish)
-                make_tiny_publish_so $ARM_OS $ARM_ABI $ARM_LANG $ANDROID_STL 
+                make_tiny_publish_so $ARM_OS $ARM_ABI $ARM_LANG $ANDROID_STL
                 shift
                 ;;
             full_publish)
-                make_full_publish_so $ARM_OS $ARM_ABI $ARM_LANG $ANDROID_STL 
+                make_full_publish_so $ARM_OS $ARM_ABI $ARM_LANG $ANDROID_STL
                 shift
                 ;;
             test)
                 make_all_tests $ARM_OS $ARM_ABI $ARM_LANG
+                shift
+                ;;
+            benchmark)
+                make_all_tests $ARM_OS $ARM_ABI $ARM_LANG benchmark
                 shift
                 ;;
             ios)
@@ -840,7 +885,11 @@ function main {
             test_x86)
                make_x86_tests
                shift
-               ;; 
+               ;;
+            x86_benchmark)
+               make_x86_tests benchmark
+               shift
+               ;;
             *)
                 # unknown option
                 print_usage
