@@ -60,23 +60,22 @@ __kernel void conv2d_transpose(
       kernel_shape.y - mad24(kernel_start_y, stride_shape.y, padding_shape.y) +
       out_h_idx - 1;
 
-  int kernel_x_0, kernel_x_1, kernel_x_2, kernel_x_3, kernel_y;
 #ifndef IS_DEPTHWISE
-  int kernel_y_base = mul24(out_c_blk_idx, kernel_size);
+  int kernel_x_0, kernel_x_1, kernel_x_2, kernel_x_3, kernel_y;
 #endif
   CL_DTYPE4 in0;
   CL_DTYPE4 weights0, weights1, weights2, weights3;
 #ifndef IS_DEPTHWISE
   for (int ic = 0; ic < input_c_blks; ic++) {
+    int kernel_y_base = mul24(ic, kernel_size);
     int in_idx = mul24(ic, input_shape.x);
-    kernel_x_0 = ic << 2;
-#else
-  int in_idx = mul24(out_c_blk_idx, input_shape.x);
-  kernel_x_0 = out_c_blk_idx << 2;
-#endif
+    kernel_x_0 = out_c_blk_idx << 2;
     kernel_x_1 = kernel_x_0 + 1;
     kernel_x_2 = kernel_x_0 + 2;
     kernel_x_3 = kernel_x_0 + 3;
+#else
+  int in_idx = mul24(out_c_blk_idx, input_shape.x);
+#endif
     for (int k_y = valid_kernel_height, idx_h = kernel_start_y; k_y >= 0;
          k_y -= stride_shape.y, idx_h++) {
       int in_y_idx = mad24(
@@ -89,9 +88,8 @@ __kernel void conv2d_transpose(
         kernel_y = mad24(k_y,
                          kernel_shape.x,
                          k_x + kernel_y_base);  // (k_y * k_w + k_x) + k_y_base
-#else
-      kernel_y = mad24(k_y, kernel_shape.x, k_x);
 #endif
+#ifndef IS_DEPTHWISE
         weights0 = READ_IMG_TYPE(
             CL_DTYPE_CHAR, filter, SAMPLER, (int2)(kernel_x_0, kernel_y));
         weights1 = READ_IMG_TYPE(
@@ -100,7 +98,11 @@ __kernel void conv2d_transpose(
             CL_DTYPE_CHAR, filter, SAMPLER, (int2)(kernel_x_2, kernel_y));
         weights3 = READ_IMG_TYPE(
             CL_DTYPE_CHAR, filter, SAMPLER, (int2)(kernel_x_3, kernel_y));
-
+#else
+      int kernel_x = mad24(out_c_blk_idx, kernel_shape.x, k_x);
+      weights0 =
+          READ_IMG_TYPE(CL_DTYPE_CHAR, filter, SAMPLER, (int2)(kernel_x, k_y));
+#endif
         int in_width_value0 = in_width0;
         in_width_value0 =
             select(in_idx + in_width_value0,
@@ -111,15 +113,27 @@ __kernel void conv2d_transpose(
                             SAMPLER,
                             (int2)(in_width_value0, in_nh_value));
 #ifndef IS_DEPTHWISE
-        out0 = mad(in0.x, weights0, out0);
-        out0 = mad(in0.y, weights1, out0);
-        out0 = mad(in0.z, weights2, out0);
-        out0 = mad(in0.w, weights3, out0);
+        out0.x = mad(in0.x, weights0.x, out0.x);
+        out0.x = mad(in0.y, weights0.y, out0.x);
+        out0.x = mad(in0.z, weights0.z, out0.x);
+        out0.x = mad(in0.w, weights0.w, out0.x);
+
+        out0.y = mad(in0.x, weights1.x, out0.y);
+        out0.y = mad(in0.y, weights1.y, out0.y);
+        out0.y = mad(in0.z, weights1.z, out0.y);
+        out0.y = mad(in0.w, weights1.w, out0.y);
+
+        out0.z = mad(in0.x, weights2.x, out0.z);
+        out0.z = mad(in0.y, weights2.y, out0.z);
+        out0.z = mad(in0.z, weights2.z, out0.z);
+        out0.z = mad(in0.w, weights2.w, out0.z);
+
+        out0.w = mad(in0.x, weights3.x, out0.w);
+        out0.w = mad(in0.y, weights3.y, out0.w);
+        out0.w = mad(in0.z, weights3.z, out0.w);
+        out0.w = mad(in0.w, weights3.w, out0.w);
 #else
-      out0.x += in0.x * weights0.x;
-      out0.y += in0.y * weights1.x;
-      out0.z += in0.z * weights2.x;
-      out0.w += in0.w * weights3.x;
+      out0 = mad(in0, weights0, out0);
 #endif
         in_width0++;
       }
