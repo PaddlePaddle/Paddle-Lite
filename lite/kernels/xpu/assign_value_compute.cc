@@ -30,16 +30,16 @@ void AssignValueCompute::Run() {
   CHECK_GT(param.shape.size(), 0UL);
   if (dtype == static_cast<int>(lite::core::FluidType::INT32)) {
     auto* out = param.Out->mutable_data<int>(TARGET(kXPU));
-    XPU_CALL(xpu_memcpy(out,
-                        int32_values.data(),
-                        sizeof(int) * int32_values.size(),
-                        XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+    lite::TargetWrapperXPU::MemcpySync(out,
+                                       int32_values.data(),
+                                       sizeof(int) * int32_values.size(),
+                                       IoDirection::HtoD);
   } else if (dtype == static_cast<int>(lite::core::FluidType::FP32)) {
     auto* out = param.Out->mutable_data<float>(TARGET(kXPU));
-    XPU_CALL(xpu_memcpy(out,
-                        fp32_values.data(),
-                        sizeof(float) * fp32_values.size(),
-                        XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+    lite::TargetWrapperXPU::MemcpySync(out,
+                                       fp32_values.data(),
+                                       sizeof(float) * fp32_values.size(),
+                                       IoDirection::HtoD);
   } else {
     LOG(FATAL) << "Unsupported dtype for assign_value_op:" << dtype;
   }

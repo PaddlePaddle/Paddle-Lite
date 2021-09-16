@@ -14,6 +14,8 @@
 
 #include "lite/api/tools/opt_base.h"
 #include <fstream>
+#include <memory>
+#include <utility>
 #include "lite/core/optimizer/mir/dot.h"
 #include "lite/core/scope.h"
 namespace paddle {

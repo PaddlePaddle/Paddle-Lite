@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/backends/xpu/target_wrapper.h"
+#include <limits>
 #include "lite/utils/macros.h"
 
 namespace paddle {
@@ -55,7 +56,6 @@ void TargetWrapperXPU::MemcpySync(void* dst,
       XPU_CALL(xpu_memcpy(dst, src, size, XPU_HOST_TO_DEVICE));
       break;
     case IoDirection::DtoH:
-      // TODO(weihaoji): remove xpu_wait
       XPU_CALL(xpu_wait());
       XPU_CALL(xpu_memcpy(dst, src, size, XPU_DEVICE_TO_HOST));
       break;
@@ -120,7 +120,8 @@ void TargetWrapperXPU::FreeL3Cache() {
 
 LITE_THREAD_LOCAL std::string
     TargetWrapperXPU::multi_encoder_precision;  // NOLINT
-LITE_THREAD_LOCAL size_t TargetWrapperXPU::local_l3_size{0xfffc00};
+LITE_THREAD_LOCAL size_t TargetWrapperXPU::local_l3_size{
+    std::numeric_limits<size_t>::max()};
 LITE_THREAD_LOCAL bool TargetWrapperXPU::conv_autotune{false};
 LITE_THREAD_LOCAL std::string TargetWrapperXPU::conv_autotune_file;  // NOLINT
 LITE_THREAD_LOCAL xdnn::Context* TargetWrapperXPU::tls_raw_ctx_{nullptr};

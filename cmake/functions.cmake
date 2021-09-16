@@ -196,6 +196,20 @@ function(lite_cc_test TARGET)
       add_dependencies(lite_compile_deps ${TARGET})
   endif()
 
+  # link to dynamic runtime lib
+  if(LITE_WITH_RKNPU)
+      target_link_libraries(${TARGET} ${rknpu_runtime_libs})
+  endif()
+  if(LITE_WITH_IMAGINATION_NNA)
+      target_link_libraries(${TARGET} ${imagination_nna_builder_libs} ${imagination_nna_runtime_libs})
+  endif()
+  if(LITE_WITH_HUAWEI_ASCEND_NPU)
+      target_link_libraries(${TARGET} ${huawei_ascend_npu_runtime_libs} ${huawei_ascend_npu_builder_libs})
+  endif()
+  if(LITE_WITH_NPU)
+      target_link_libraries(${TARGET} ${npu_builder_libs} ${npu_runtime_libs})
+  endif()
+
   common_link(${TARGET})
   add_test(NAME ${TARGET}
           COMMAND ${TARGET} ${args_ARGS}

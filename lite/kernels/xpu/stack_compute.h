@@ -27,15 +27,9 @@ class StackCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::StackParam;
 
-  virtual void PrepareForRun();
-
   virtual void Run();
 
   virtual ~StackCompute() = default;
-
- private:
-  XPUScratchPadGuard x_ptr_guard_;
-  std::vector<const float*> x_ptr_cpu_;
 };
 
 }  // namespace xpu
