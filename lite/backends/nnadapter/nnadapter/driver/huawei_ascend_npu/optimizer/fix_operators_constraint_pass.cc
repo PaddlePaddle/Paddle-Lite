@@ -15,7 +15,7 @@
 #include "driver/huawei_ascend_npu/optimizer/fix_operators_constraint_pass.h"
 #include <cmath>
 #include <vector>
-#include "core/operation/reduce_mean.h"
+#include "core/operation/reduce.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -49,7 +49,7 @@ int FixOperatorsConstraintPass(hal::Model* model) {
 */
 int ReduceMeanAsModelOutputPass(hal::Model* model, hal::Operation* operation) {
   NNADAPTER_VLOG(5) << "Enter ReduceMeanAsModelOutputPass";
-  REDUCE_MEAN_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  REDUCE_OPERATION_EXTRACT_INPUTS_OUTPUTS
   auto reduce_all = axes_size == input_operand->type.dimensions.count;
   if (!keep_dim && reduce_all && IsModelOutputOperand(output_operand)) {
     AddDummyOperation(model, output_operand);
