@@ -140,9 +140,9 @@ void TestInstanceNorm(Place place,
                       float abs_error = 6e-5,
                       std::vector<std::string> ignored_outs = {}) {
   for (auto& n : {1, 3}) {
-    for (auto& c : {3, 4, 16}) {
-      for (auto& h : {4, 16, 33}) {
-        for (auto& w : {4, 5, 34}) {
+    for (auto& c : {1, 3, 16}) {
+      for (auto& h : {1, 4, 33}) {
+        for (auto& w : {1, 5, 34}) {
           for (auto& has_scale_bias : {true, false}) {
             DDim dim_in({n, c, h, w});
             float epsilon = 1e-5f;

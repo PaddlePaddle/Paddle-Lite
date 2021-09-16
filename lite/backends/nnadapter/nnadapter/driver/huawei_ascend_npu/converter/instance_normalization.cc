@@ -49,9 +49,9 @@ int ConvertInstanceNormalization(Converter* converter,
       input_operand->type.dimensions.data + 2,
       input_operand->type.dimensions.data +
           input_operand->type.dimensions.count);
-  auto tmp_beta_operator =
+  auto dummy_beta_operator =
       converter->AddFloat32ConstantOperator(betas, input_dimensions);
-  auto tmp_gamma_operator =
+  auto dummy_gamma_operator =
       converter->AddFloat32ConstantOperator(gammas, input_dimensions);
   // Use layer norm instead of instance norm
   auto layer_norm_op =
@@ -60,8 +60,8 @@ int ConvertInstanceNormalization(Converter* converter,
   layer_norm_op->set_attr_begin_norm_axis(2);
   layer_norm_op->set_attr_begin_params_axis(2);
   SET_INPUT(layer_norm_op, x, input_operator);
-  SET_INPUT(layer_norm_op, beta, tmp_beta_operator);
-  SET_INPUT(layer_norm_op, gamma, tmp_gamma_operator);
+  SET_INPUT(layer_norm_op, beta, dummy_beta_operator);
+  SET_INPUT(layer_norm_op, gamma, dummy_gamma_operator);
   MAP_OUTPUT(layer_norm_op, y, output_operand);
   auto layer_norm_operator = MAP_OUTPUT(layer_norm_op, y, output_operand);
   // Use eltwise_mul op to process scale

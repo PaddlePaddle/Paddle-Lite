@@ -47,10 +47,9 @@ int PadConverter(void* ctx, OpLite* op, KernelBase* kernel) {
                           : 0.f;
   auto output = scope->FindMutableTensor(output_name);
   auto mode = op_info->GetAttr<std::string>("mode");
-  float value;
+  auto value = op_info->GetAttr<float>("pad_value");
   std::vector<int> pads;
   if (op_type == "pad2d") {
-    value = op_info->GetAttr<float>("pad_value");
     if (op_info->HasAttr("variable_padding") &&
         op_info->GetAttr<bool>("variable_paddings")) {
       auto Paddings =
@@ -66,7 +65,6 @@ int PadConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       pads = op_info->GetAttr<std::vector<int>>("paddings");
     }
   } else {
-    value = op_info->GetAttr<float>("pad_value");
     pads = op_info->GetAttr<std::vector<int>>("paddings");
   }
 
