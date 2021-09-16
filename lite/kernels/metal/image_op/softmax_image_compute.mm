@@ -41,8 +41,8 @@ void SoftmaxImageCompute::PrepareForRun() {
     bool should_use_mps = false;
     if (@available(iOS 10.0, *)) {
         if (metal_context_->use_mps()) {
-            int input_c = static_cast<int>(input_buffer_->tensor_dim_[1]);
-            int output_c = static_cast<int>(output_buffer_->tensor_dim_[1]);
+            int input_c = static_cast<int>(input_buffer_->dim_[3]);
+            int output_c = static_cast<int>(output_buffer_->dim_[3]);
             if (input_c >= 3 && output_c >= 3) {
                 should_use_mps = true;
             }
@@ -155,8 +155,8 @@ void SoftmaxImageCompute::setup_with_mps() {
             (__bridge_retained void*)[[MPSCNNSoftMax alloc] initWithDevice:backend.device];
         ((__bridge MPSCNNSoftMax*)mps_softmax_op_).edgeMode = MPSImageEdgeModeZero;
         // MPS in and out
-        auto input_c = static_cast<int>(input_buffer_->tensor_dim_[1]);
-        auto output_c = static_cast<int>(output_buffer_->tensor_dim_[1]);
+        auto input_c = static_cast<int>(input_buffer_->dim_[3]);
+        auto output_c = static_cast<int>(output_buffer_->dim_[3]);
         mps_input_image_ =
             (__bridge_retained void*)[[MPSImage alloc] initWithTexture:input_buffer_->image()
                                                        featureChannels:input_c];

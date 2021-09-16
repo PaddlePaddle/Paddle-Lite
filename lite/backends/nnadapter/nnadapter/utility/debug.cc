@@ -219,6 +219,7 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
                       "strides",
                       "ceil_mode",
                       "return_indices",
+                      "return_indices_dtype",
                       "fuse_code"};
         output_args = {"output", "indices"};
         break;
@@ -276,6 +277,10 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         break;
       case NNADAPTER_FILL:
         input_args = {"shape", "value"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_FLATTEN:
+        input_args = {"input", "start_axis", "end_axis"};
         output_args = {"output"};
         break;
       case NNADAPTER_HARD_SIGMOID:
@@ -385,17 +390,12 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
                       "mask",
                       "filter",
                       "bias",
-                      "padding_left",
-                      "padding_right",
-                      "padding_top",
-                      "padding_bottom",
-                      "stride_width",
-                      "stride_height",
+                      "pads",
+                      "strides",
                       "group",
-                      "deformable_groups",
-                      "fuse_code",
-                      "dilation_width",
-                      "dilation_height"};
+                      "deformable_group",
+                      "dilations",
+                      "fuse_code"};
         output_args = {"output"};
         break;
       case NNADAPTER_PAD:
@@ -536,6 +536,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(DIV);
     NNADAPTER_TYPE_TO_STRING(EXPAND);
     NNADAPTER_TYPE_TO_STRING(FILL);
+    NNADAPTER_TYPE_TO_STRING(FLATTEN);
     NNADAPTER_TYPE_TO_STRING(FULLY_CONNECTED);
     NNADAPTER_TYPE_TO_STRING(GATHER);
     NNADAPTER_TYPE_TO_STRING(HARD_SIGMOID);

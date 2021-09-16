@@ -69,6 +69,7 @@ void PropagateQuantParams(hal::Model* model) {
     auto& output_operands = operation->output_operands;
     switch (operation->type) {
       case NNADAPTER_AVERAGE_POOL_2D:
+      case NNADAPTER_FLATTEN:
       case NNADAPTER_MAX_POOL_2D:
       case NNADAPTER_RELU:
       case NNADAPTER_RELU6:

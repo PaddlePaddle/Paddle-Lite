@@ -75,13 +75,14 @@ function(add_kernel TARGET device level)
         get_filename_component(filename ${src} NAME_WE) # conv_compute.cc => conv_compute
         set(kernel_tailor_src_dir "${CMAKE_BINARY_DIR}/kernel_tailor_src_dir")
         set(suffix "for_strip")
-        set(dst_file ${dst_file} "${kernel_tailor_src_dir}/${filename}_${device_name}_${suffix}.cc") # conv_compute_arm.cc
+        set(src_file "${kernel_tailor_src_dir}/${filename}_${device_name}_${suffix}.cc") # conv_compute_arm.cc
         if("${device}" STREQUAL "METAL")
-          set(dst_file ${dst_file} "${kernel_tailor_src_dir}/${filename}_${device_name}_${suffix}.mm") # conv_compute_apple_metal_for_strip.mm
+          set(src_file "${kernel_tailor_src_dir}/${filename}_${device_name}_${suffix}.mm") # conv_compute_apple_metal_for_strip.mm
         endif()
-        if(NOT EXISTS ${dst_file})
+        if(NOT EXISTS ${src_file})
           return()
         endif()
+        set(dst_file ${dst_file} "${src_file}")
       endforeach()
       file(APPEND ${kernels_src_list} "${dst_file}\n")
       set(KERNELS_SRC ${KERNELS_SRC} "${dst_file}" CACHE INTERNAL "kernels source")

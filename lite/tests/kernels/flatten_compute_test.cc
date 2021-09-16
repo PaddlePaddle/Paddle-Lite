@@ -94,13 +94,16 @@ TEST(flatten, precision) {
   LOG(INFO) << "test flatten op";
   Place place;
   float abs_error = 1e-5;
-#if defined(LITE_WITH_HUAWEI_ASCEND_NPU)
-  place = TARGET(kHuaweiAscendNPU);
-  abs_error = 1e-2;  // precision_mode default is force_fp16
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
 #else
   return;
 #endif
-
+#else
+  return;
+#endif
   TestFlatten(place, abs_error);
 }
 
@@ -191,9 +194,13 @@ TEST(flatten_contiguous_range, precision) {
   LOG(INFO) << "test flatten_contiguous_range op";
   Place place;
   float abs_error = 1e-5;
-#if defined(LITE_WITH_HUAWEI_ASCEND_NPU)
-  place = TARGET(kHuaweiAscendNPU);
+#if defined(LITE_WITH_NNADAPTER)
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kNNAdapter);
   abs_error = 1e-2;  // precision_mode default is force_fp16
+#else
+  return;
+#endif
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kHost);
 #else
