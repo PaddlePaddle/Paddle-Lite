@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/backends/metal/metal_context_imp.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 #include "lite/kernels/metal/image_op/fetch_image_compute.h"
 
 // debug macro

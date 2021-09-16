@@ -414,8 +414,10 @@ void TestConvAct(Place place, float abs_error = 2e-5) {
 }
 
 void TestConvDepthwise(Place place, float abs_error = 2e-5) {
-  for (int64_t n : {1, 2, 3, 4}) {
-    for (int64_t win = 3; win < 30; win++) {
+  // Using a limited set can prevent unit test timeout and reduce CI
+  // time-consuming
+  for (int64_t n : {1, 3, 4}) {
+    for (auto win : {3, 4, 7, 16, 30}) {
       std::vector<int64_t> dims{n, 32, win, win};
       for (auto stride : {1, 2}) {
         for (auto pad : {1}) {

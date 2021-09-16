@@ -30,7 +30,7 @@ namespace amlogic_npu {
 #define REGISTER_CONVERTER(__op_type__, __func_name__) \
   extern int __func_name__(Converter* converter, hal::Operation* operation);
 #include "driver/amlogic_npu/converter/all.h"  // NOLINT
-#undef __NNADAPTER_DRIVER_AMLOGIC_CONVERTER_ALL_H__
+#undef __NNADAPTER_DRIVER_AMLOGIC_NPU_CONVERTER_ALL_H__
 #undef REGISTER_CONVERTER
 
 int Converter::Apply(hal::Model* model) {
@@ -46,7 +46,7 @@ int Converter::Apply(hal::Model* model) {
     __func_name__(this, operation);                    \
     break;
 #include "driver/amlogic_npu/converter/all.h"  // NOLINT
-#undef __NNADAPTER_DRIVER_AMLOGIC_CONVERTER_ALL_H__
+#undef __NNADAPTER_DRIVER_AMLOGIC_NPU_CONVERTER_ALL_H__
 #undef REGISTER_CONVERTER
       default:
         NNADAPTER_LOG(FATAL) << "Unsupported operation("
@@ -92,16 +92,16 @@ std::shared_ptr<aml::nn::Tensor> Converter::UpdateTensorMap(
 
 std::shared_ptr<aml::nn::Tensor> Converter::AddConstantTensor(
     void* values,
-    int32_t* dimensions,
-    uint32_t dimension_count,
+    int32_t* dimensions_data,
+    uint32_t dimensions_count,
     aml::nn::PrecisionType precision,
     const float* quant_scale,
     const int32_t* zero_point) {
   auto name = GetTensorName(nullptr);
   auto tensor = CreateAmlTensor(graph_,
                                 name,
-                                dimensions,
-                                dimension_count,
+                                dimensions_data,
+                                dimensions_count,
                                 precision,
                                 quant_scale,
                                 zero_point,
@@ -114,15 +114,15 @@ std::shared_ptr<aml::nn::Tensor> Converter::AddConstantTensor(
 
 std::shared_ptr<aml::nn::Tensor> Converter::AddVariableTensor(
     const std::string& name,
-    int32_t* dimensions,
-    uint32_t dimension_count,
+    int32_t* dimensions_data,
+    uint32_t dimensions_count,
     aml::nn::PrecisionType precision,
     const float* quant_scale,
     const int32_t* zero_point) {
   return CreateAmlTensor(graph_,
                          name,
-                         dimensions,
-                         dimension_count,
+                         dimensions_data,
+                         dimensions_count,
                          precision,
                          quant_scale,
                          zero_point,
@@ -132,13 +132,13 @@ std::shared_ptr<aml::nn::Tensor> Converter::AddVariableTensor(
 
 std::shared_ptr<aml::nn::Tensor> Converter::AddQuant8ConstantTensor(
     uint8_t* values,
-    int32_t* dimensions,
-    uint32_t dimension_count,
+    int32_t* dimensions_data,
+    uint32_t dimensions_count,
     float quant_scale,
     int32_t zero_point) {
   return AddConstantTensor(values,
-                           dimensions,
-                           dimension_count,
+                           dimensions_data,
+                           dimensions_count,
                            aml::nn::PrecisionType::UINT8,
                            &quant_scale,
                            &zero_point);
@@ -146,12 +146,12 @@ std::shared_ptr<aml::nn::Tensor> Converter::AddQuant8ConstantTensor(
 
 std::shared_ptr<aml::nn::Tensor> Converter::AddQuant32ConstantTensor(
     int32_t* values,
-    int32_t* dimensions,
-    uint32_t dimension_count,
+    int32_t* dimensions_data,
+    uint32_t dimensions_count,
     float quant_scale) {
   return AddConstantTensor(values,
-                           dimensions,
-                           dimension_count,
+                           dimensions_data,
+                           dimensions_count,
                            aml::nn::PrecisionType::INT32,
                            &quant_scale,
                            nullptr);
@@ -159,13 +159,13 @@ std::shared_ptr<aml::nn::Tensor> Converter::AddQuant32ConstantTensor(
 
 std::shared_ptr<aml::nn::Tensor> Converter::AddQuant8VariableTensor(
     const std::string& name,
-    int32_t* dimensions,
-    uint32_t dimension_count,
+    int32_t* dimensions_data,
+    uint32_t dimensions_count,
     float quant_scale,
     int32_t zero_point) {
   return AddVariableTensor(name,
-                           dimensions,
-                           dimension_count,
+                           dimensions_data,
+                           dimensions_count,
                            aml::nn::PrecisionType::UINT8,
                            &quant_scale,
                            &zero_point);

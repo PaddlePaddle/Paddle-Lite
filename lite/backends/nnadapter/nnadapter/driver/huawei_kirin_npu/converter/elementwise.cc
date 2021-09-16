@@ -13,34 +13,34 @@
 // limitations under the License.
 
 #include "core/operation/elementwise.h"
-#include "driver/huawei_kirin_npu/converter.h"
+#include "driver/huawei_kirin_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace huawei_kirin_npu {
 
-int Program::ConvertElementwise(hal::Operation* operation) {
+int ConvertElementwise(Converter* converter, hal::Operation* operation) {
   ELEMENTWISE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
-  auto input0_operator = GetMappedOperator(input0_operand);
+  auto input0_operator = converter->GetMappedOperator(input0_operand);
   if (!input0_operator) {
-    input0_operator = ConvertOperand(input0_operand);
+    input0_operator = converter->ConvertOperand(input0_operand);
   }
-  auto input1_operator = GetMappedOperator(input1_operand);
+  auto input1_operator = converter->GetMappedOperator(input1_operand);
   if (!input1_operator) {
-    input1_operator = ConvertOperand(input1_operand);
+    input1_operator = converter->ConvertOperand(input1_operand);
   }
-  auto eltwise_name = GetOperatorName(output_operand);
   std::shared_ptr<Operator> eltwise_operator = nullptr;
   switch (operation->type) {
-#define CONVERT_ELEMENTWISE(type, class_name)                               \
-  case NNADAPTER_##type: {                                                  \
-    auto eltwise_op = std::make_shared<hiai::op::class_name>(eltwise_name); \
-    SET_INPUT(eltwise_op, x1, input0_operator);                             \
-    SET_INPUT(eltwise_op, x2, input1_operator);                             \
-    eltwise_operator = MAP_OUTPUT(eltwise_op, y, output_operand);           \
+#define CONVERT_ELEMENTWISE(type, class_name)                         \
+  case NNADAPTER_##type: {                                            \
+    auto eltwise_op =                                                 \
+        converter->AddOperator<hiai::op::class_name>(output_operand); \
+    SET_INPUT(eltwise_op, x1, input0_operator);                       \
+    SET_INPUT(eltwise_op, x2, input1_operator);                       \
+    eltwise_operator = MAP_OUTPUT(eltwise_op, y, output_operand);     \
   } break;
     CONVERT_ELEMENTWISE(ADD, Add);
     CONVERT_ELEMENTWISE(SUB, Sub);
@@ -54,8 +54,7 @@ int Program::ConvertElementwise(hal::Operation* operation) {
       break;
   }
   if (fuse_code != NNADAPTER_FUSED_NONE) {
-    auto act_name = GetOperatorName(output_operand);
-    auto act_op = std::make_shared<hiai::op::Activation>(act_name);
+    auto act_op = converter->AddOperator<hiai::op::Activation>(output_operand);
     act_op->set_attr_mode(ConvertFuseCodeToGEActMode(fuse_code));
     SET_INPUT(act_op, x, eltwise_operator);
     MAP_OUTPUT(act_op, y, output_operand);

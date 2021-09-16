@@ -32,6 +32,7 @@ BUILD_ARM82_FP16=OFF
 # options of striping lib according to input model.
 OPTMODEL_DIR=""
 WITH_STRIP=OFF
+WITH_THREAD_POOL=OFF
 # options of compiling NPU lib.
 WITH_HUAWEI_KIRIN_NPU=OFF
 HUAWEI_KIRIN_NPU_SDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
@@ -54,6 +55,8 @@ WITH_TRAIN=OFF
 WITH_PROFILE=OFF
 # option of precision profile, default is OFF
 WITH_PRECISION_PROFILE=OFF
+# option of benchmark, default is OFF
+WITH_BENCHMARK=OFF
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
@@ -80,6 +83,19 @@ os_name=`uname -s`
 if [ ${os_name} == "Darwin" ]; then
    ulimit -n 1024
 fi
+
+# function of set options for benchmark
+function set_benchmark_options {
+  WITH_EXTRA=ON
+  WITH_EXCEPTION=ON
+  BUILD_JAVA=OFF
+  WITH_OPENCL=ON
+  if [ ${WITH_PROFILE} == "ON" ] || [ ${WITH_PRECISION_PROFILE} == "ON" ]; then
+    WITH_LOG=ON
+  else
+    WITH_LOG=OFF
+  fi
+}
 #####################################################################################################
 
 
@@ -199,6 +215,14 @@ function make_tiny_publish_so {
       ARCH=armv8
   fi
 
+  if [ "$NDK_ROOT" ]; then
+      NDK_NAME=$(echo $NDK_ROOT | egrep -o "android-ndk-r[0-9]{2}")
+      NDK_VERSION=$(echo $NDK_NAME | egrep -o "[0-9]{2}")
+      if [ "$NDK_VERSION" -gt 17 ]; then
+          TOOLCHAIN=clang
+      fi
+  fi
+
   # android api level for android version
   set_android_api_level
 
@@ -226,7 +250,8 @@ function make_tiny_publish_so {
       -DARM_TARGET_ARCH_ABI=$ARCH \
       -DARM_TARGET_LANG=$TOOLCHAIN \
       -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
-      -DANDROID_STL_TYPE=$ANDROID_STL"
+      -DANDROID_STL_TYPE=$ANDROID_STL \
+      -DLITE_THREAD_POOL=$WITH_THREAD_POOL"
 
   cmake $workspace \
       ${CMAKE_COMMON_OPTIONS} \
@@ -267,6 +292,19 @@ function make_full_publish_so {
       TOOLCHAIN=clang
       ARCH=armv8
   fi
+
+  if [ "${WITH_BENCHMARK}" == "ON" ]; then
+      set_benchmark_options
+  fi
+  
+  if [ "$NDK_ROOT" ]; then
+      NDK_NAME=$(echo $NDK_ROOT | egrep -o "android-ndk-r[0-9]{2}")
+      NDK_VERSION=$(echo $NDK_NAME | egrep -o "[0-9]{2}")
+      if [ "$NDK_VERSION" -gt 17 ]; then
+          TOOLCHAIN=clang
+      fi
+  fi
+
   # android api level for android version
   set_android_api_level
 
@@ -304,7 +342,11 @@ function make_full_publish_so {
       ${cmake_api_level_options} \
       ${cmake_mutable_options}
 
-  make publish_inference -j$NUM_PROC
+  if [ "${WITH_BENCHMARK}" == "ON" ]; then
+    make benchmark_bin -j$NUM_PROC
+  else
+    make publish_inference -j$NUM_PROC
+  fi
   cd - > /dev/null
 }
 
@@ -339,6 +381,10 @@ function print_usage {
     echo -e "|                       |------------------------------------|-------|-------|                                                         |"
     echo -e "|                       |Supported Minimum Android API Level |  16   |  21   |                                                         |"
     echo -e "|                       |Supported Minimum Android Version   |  4.1  |  5.0  |                                                         |"
+    echo -e "|     --with_benchmark: (OFF|ON); controls whether to compile benchmark binary, default is OFF                                         |"
+    echo -e "|                                                                                                                                      |"
+    echo -e "|  arguments of benchmark binary compiling:(armv8, gcc, c++_static)                                                                    |"
+    echo -e "|     ./lite/tools/build_android.sh --with_benchmark=ON full_publish                                                                   |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of striping lib according to input model:(armv8, gcc, c++_static)                                                         |"
     echo -e "|     ./lite/tools/build_android.sh --with_strip=ON --opt_model_dir=YourOptimizedModelDir                                              |"
@@ -420,6 +466,11 @@ function main {
             # ON or OFF, default OFF
             --with_strip=*)
                 WITH_STRIP="${i#*=}"
+                shift
+                ;;
+            # ON or OFF, default OFF
+            --with_thread_pool=*)
+                WITH_THREAD_POOL="${i#*=}"
                 shift
                 ;;
             # string, absolute path to optimized model dir
@@ -514,6 +565,11 @@ function main {
             # compiling lib with precision profile, default OFF.
             --with_precision_profile=*)
                 WITH_PRECISION_PROFILE="${i#*=}"
+                shift
+                ;;
+            # compiling lib with benchmark feature, default OFF.
+            --with_benchmark=*)
+                WITH_BENCHMARK="${i#*=}"
                 shift
                 ;;
             # controls whether to include FP16 kernels, default is OFF

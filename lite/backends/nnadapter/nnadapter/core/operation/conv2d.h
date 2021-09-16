@@ -19,7 +19,7 @@
 namespace nnadapter {
 namespace operation {
 
-#define CONV2D_OPERATION_EXTRACT_INPUTS_OUTPUTS                                \
+#define CONV_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS                               \
   auto& input_operands = operation->input_operands;                            \
   auto& output_operands = operation->output_operands;                          \
   auto input_count = input_operands.size();                                    \
@@ -29,14 +29,14 @@ namespace operation {
   /* Input */                                                                  \
   auto input_operand = input_operands[0];                                      \
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);            \
-  auto input_channel_size = input_operand->type.dimensions[1];                 \
+  auto input_channel_size = input_operand->type.dimensions.data[1];            \
   /* Filter */                                                                 \
   auto filter_operand = input_operands[1];                                     \
   NNADAPTER_VLOG(5) << "filter: " << OperandToString(filter_operand);          \
-  auto output_channel_size = filter_operand->type.dimensions[0];               \
-  auto filter_channel_size = filter_operand->type.dimensions[1];               \
-  auto filter_height = filter_operand->type.dimensions[2];                     \
-  auto filter_width = filter_operand->type.dimensions[3];                      \
+  auto output_channel_size = filter_operand->type.dimensions.data[0];          \
+  auto filter_channel_size = filter_operand->type.dimensions.data[1];          \
+  auto filter_height = filter_operand->type.dimensions.data[2];                \
+  auto filter_width = filter_operand->type.dimensions.data[3];                 \
   NNADAPTER_VLOG(5) << "filter dims = [" << output_channel_size << ","         \
                     << filter_channel_size << "," << filter_height << ","      \
                     << filter_width << "]";                                    \

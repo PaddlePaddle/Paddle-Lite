@@ -15,7 +15,7 @@
 #include "lite/utils/string.h"
 #include <gtest/gtest.h>
 #include <string>
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 namespace paddle {
 namespace lite {

@@ -16,10 +16,10 @@
 #include <gtest/gtest.h>
 #include <cstring>
 #include <vector>
-#include "lite/api/lite_api_test_helper.h"
 #include "lite/api/paddle_api.h"
-#include "lite/api/test_helper.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/api/test/lite_api_test_helper.h"
+#include "lite/api/test/test_helper.h"
+#include "lite/utils/log/cp_logging.h"
 
 DEFINE_string(data_dir, "", "data dir");
 

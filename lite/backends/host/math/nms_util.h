@@ -17,7 +17,7 @@
 #include <utility>
 #include <vector>
 #include "lite/backends/host/math/poly_util.h"
-
+#include "lite/core/tensor.h"
 namespace paddle {
 namespace lite {
 namespace host {

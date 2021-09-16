@@ -16,7 +16,7 @@
 #include "lite/backends/metal/metal_context_imp.h"
 #include "lite/backends/metal/metal_half.h"
 #include "lite/backends/metal/target_wrapper.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 namespace paddle {
 namespace lite {
@@ -262,7 +262,7 @@ void MetalImage::CopyFromNCHW(const SP* src) {
                 }
             }
         } else if (tensor_dim_.size() == 3) {
-            LOG(FATAL) << "MetalImage: CopyFromNCHW - tensor dim = 3";
+            // LOG(FATAL) << "MetalImage: CopyFromNCHW - tensor dim = 3";
         } else {
             // dimension bellow 4 similar to texture desc
             size_t n = (size_t)dim_[0];

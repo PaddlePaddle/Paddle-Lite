@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "core/operation/reduce_mean.h"
-#include "driver/huawei_ascend_npu/converter.h"
+#include "driver/huawei_ascend_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -21,16 +21,17 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int Program::ConvertReduceMean(hal::Operation* operation) {
+int ConvertReduceMean(Converter* converter, hal::Operation* operation) {
   REDUCE_MEAN_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
   // Convert to GE operators
-  auto input_operator = GetMappedOperator(input_operand);
+  auto input_operator = converter->GetMappedOperator(input_operand);
   if (!input_operator) {
-    input_operator = ConvertOperand(input_operand);
+    input_operator = converter->ConvertOperand(input_operand);
   }
-  auto axes_operator = ConvertOperand(axes_operand);
-  auto reduce_mean_name = GetOperatorName(output_operand);
-  auto reduce_mean_op = std::make_shared<ge::op::ReduceMean>(reduce_mean_name);
+  auto axes_operator = converter->ConvertOperand(axes_operand);
+  auto reduce_mean_op =
+      converter->AddOperator<ge::op::ReduceMean>(output_operand);
   reduce_mean_op->set_attr_keep_dims(keep_dim);
   SET_INPUT(reduce_mean_op, x, input_operator);
   SET_INPUT(reduce_mean_op, axes, axes_operator);

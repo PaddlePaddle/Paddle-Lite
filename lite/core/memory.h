@@ -20,7 +20,7 @@
 #include "lite/api/paddle_place.h"
 #include "lite/core/dim.h"
 #include "lite/core/target_wrapper.h"
-#include "lite/utils/logging.h"
+#include "lite/utils/log/logging.h"
 #include "lite/utils/macros.h"
 
 #ifdef LITE_WITH_OPENCL

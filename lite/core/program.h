@@ -256,6 +256,10 @@ class LITE_API RuntimeProgram {
 
   size_t block_size() { return instructions_.size(); }
 
+  void set_version(const int64_t version) { version_ = version; }
+
+  const int64_t get_version() const { return version_; }
+
 #ifndef LITE_ON_TINY_PUBLISH
   // Update the ops and vars of all of blocks to the given program_desc
   // according to the instructions
@@ -275,6 +279,7 @@ class LITE_API RuntimeProgram {
   RuntimeProgram(const RuntimeProgram&) = delete;
   std::vector<std::vector<Instruction>> instructions_;
   Scope* exec_scope_{};
+  int64_t version_{0};
 
 #ifdef LITE_WITH_METAL
   std::unique_ptr<KernelContext> metal_ctx_{nullptr};

@@ -27,15 +27,15 @@ int PrepareUnsqueeze(hal::Operation* operation) {
   UNSQUEEZE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
-  auto in_type = input_operand->type;
-  auto& out_type = output_operand->type;
-  CopyOperandType(&out_type, in_type);
-  out_type.dimension_count += axes_count;
+  auto input_type = input_operand->type;
+  auto& output_type = output_operand->type;
+  CopyOperandTypeWithQuantParams(&output_type, input_type);
+  output_type.dimensions.count += axes.size();
   auto infer_output_shape = [&](int32_t* input_dimensions,
                                 int32_t* output_dimensions) {
-    uint32_t cur_size = in_type.dimension_count;
-    for (uint32_t i = 0; i < axes_count; i++) {
-      int32_t axis = axes_ptr[i] < 0 ? axes_ptr[i] + cur_size + 1 : axes_ptr[i];
+    uint32_t cur_size = input_type.dimensions.count;
+    for (size_t i = 0; i < axes.size(); i++) {
+      int32_t axis = axes[i] < 0 ? axes[i] + cur_size + 1 : axes[i];
       NNADAPTER_CHECK_GE(axis, 0);
       NNADAPTER_CHECK_LE(axis, cur_size);
       for (uint32_t j = cur_size; j > axis; j--) {
@@ -45,10 +45,10 @@ int PrepareUnsqueeze(hal::Operation* operation) {
       cur_size++;
     }
   };
-  infer_output_shape(in_type.dimensions, out_type.dimensions);
-  for (uint32_t i = 0; i < in_type.dynamic_dimension_count; i++) {
-    infer_output_shape(in_type.dynamic_dimensions[i],
-                       out_type.dynamic_dimensions[i]);
+  infer_output_shape(input_type.dimensions.data, output_type.dimensions.data);
+  for (uint32_t i = 0; i < input_type.dimensions.dynamic_count; i++) {
+    infer_output_shape(input_type.dimensions.dynamic_data[i],
+                       output_type.dimensions.dynamic_data[i]);
   }
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;

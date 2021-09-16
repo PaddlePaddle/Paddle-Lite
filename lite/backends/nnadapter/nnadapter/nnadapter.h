@@ -148,6 +148,50 @@ typedef enum {
   NNADAPTER_ABS,
 
   /**
+ * Applies adaptive 2-D average pooling across the input according to input and
+ * output size.
+ *
+ * Inputs:
+ * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
+ * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+ * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor
+ * with shape [N, C_in, H_in, W_in].
+ * * 1: output_shape, A NNADAPTER_TENSOR_INT32 or
+ * NNADAPTER_TENSOR_INT64 tensor, with shape [2], with value [H_out, H_out].
+ *
+ * Outputs:
+ * * 0: output, A tensor with the same shape and type as input.
+ *
+ * Available since version 1.
+ */
+  NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D,
+
+  /**
+   * Applies adaptive 2-D max pooling across the input according to input and
+   * output size.
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor
+   * with shape [N, C_in, H_in, W_in].
+   * * 1: output_shape, A NNADAPTER_TENSOR_INT32 or
+   * NNADAPTER_TENSOR_INT64 tensor, with shape [2], with value [H_out, H_out].
+   * * 2: return_indices, A NNADAPTER_BOOL8 scalar, whether to return index of
+   * output. Defaults to false
+   * * 3: return_indices_dtype, A NNADAPTER_INT32 scalar, the value of
+   * NNADAPTER_TENSOR_INT32 or
+   * NNADAPTER_TENSOR_INT64. Specifies the dtype of the indices.
+   * Outputs:
+   * * 0: output, A tensor with the same shape and type as input.
+   * * 1: indices, A NNADAPTER_TENSOR_INT64 tensor, with the same shape as
+   * output, indicates the indices of the current feature map.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_ADAPTIVE_MAX_POOL_2D,
+
+  /**
    * Performs element-wise binary addition(with Numpy-style broadcasting
    * https://numpy.org/doc/stable/user/basics.broadcasting.html).
    *
@@ -722,6 +766,26 @@ typedef enum {
   NNADAPTER_LP_NORMALIZATION,
 
   /**
+   * Matrix product that behaves like numpy.matmul.
+   *
+   * Inputs:
+   * * 0: x, A NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: y, a tensor with the same type as input.
+   * * 2: transpose_x, a NNADAPTER_BOOL8 scalar, whether to transpose the last
+   * two dimensions of x before multiplication.
+   * * 3: transpose_y, a NNADAPTER_BOOL8 scalar, whether to transpose the last
+   * two dimensions of y before multiplication.
+   *
+   * Outputs:
+   * * 0: output, a tensor with the same type as x.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_MAT_MUL,
+
+  /**
    * Performs element-wise binary maximum(with Numpy-style broadcasting
    * https://numpy.org/doc/stable/user/basics.broadcasting.html).
    *
@@ -864,6 +928,26 @@ typedef enum {
    * Available since version 1.
    */
   NNADAPTER_POW,
+
+  /**
+   * Applies the prelu activation to the input tensor. The output is calculated
+   * using this formula:
+   * output = input, if input >=0;
+   * output = slope * input, if input < 0;
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_TENSOR_FLOAT32 or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor with shape [N, C, ...].
+   * * 1: slope, a tensor, with shape [1] or [C].
+   * 1) If input's type is NNADAPTER_TENSOR_FLOAT32, its type must be the same
+   * type.
+   *
+   * Outputs:
+   * * 0: output, a tensor with the same shape and type as input.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_PRELU,
 
   /**
   * Outputs a 1-D Tensor with spaced values within a given interval.
@@ -1357,39 +1441,10 @@ typedef struct NNAdapterOperandType {
   NNAdapterOperandLifetimeCode lifetime;
 
   /**
-   * The data dimensions, will replace
-   * dimension_count/dimensions/dynamic_dimension_count/dynamic_dimensions in
-   * the future.
+   * The data dimensions
    *
    */
-  // NNAdapterOperandDimensionType dimensions;
-
-  /**
-   * The number of dimensions.
-   *
-   * Must be 0 for scalars.
-   */
-  uint32_t dimension_count;
-
-  /**
-   * The dimensions of the tensor.
-   * Use NNADAPTER_UNKNOWN for dynamic shape.
-   */
-  int32_t dimensions[NNADAPTER_MAX_SIZE_OF_DIMENSIONS];
-
-  /**
-   * The gear count of dynamic dimensions.
-   *
-   */
-  uint32_t dynamic_dimension_count;
-
-  /**
-   * The dynamic dimensions of the tensor.
-   * Should not contains NNADAPTER_UNKNOWN because it requires the real
-   * dimensions.
-   */
-  int32_t dynamic_dimensions[NNADAPTER_MAX_SIZE_OF_DYNAMIC_DIMENSIONS]
-                            [NNADAPTER_MAX_SIZE_OF_DIMENSIONS];
+  NNAdapterOperandDimensionType dimensions;
 
   /**
    * The quantization parameters.
@@ -1652,8 +1707,8 @@ void NNAdapterExecution_destroy(NNAdapterExecution* execution);
  *
  * typedef struct {
  *   NNAdapterOperandPrecisionCode precision;
- *   uint32_t dimension_count;
- *   int32_t dimensions[NNADAPTER_MAX_SIZE_OF_DIMENSIONS];
+ *   uint32_t dimensions_count;
+ *   int32_t dimensions_data[NNADAPTER_MAX_SIZE_OF_DIMENSIONS];
  *   void* buffer;
  *   size_t length;
  * } Memory;
@@ -1661,7 +1716,8 @@ void NNAdapterExecution_destroy(NNAdapterExecution* execution);
  * void* access_input_memory(void* memory, NNAdapterOperandType* type) {
  *   Memory* handle = static_cast<Memory*>(memory);
  *   // Return the dimensions and the host buffer to driver HAL
- *   memcpy(type->dimensions, handle->dimensions, handle->dimension_count);
+ *   memcpy(type->dimensions.data, handle->dimensions_data,
+ * handle->dimensions_count);
  *   return handle->buffer;
  * }
  *
@@ -1688,7 +1744,9 @@ int NNAdapterExecution_setInput(NNAdapterExecution* execution,
  *   }
  *   // Tell the output dimensions to user and return the host buffer to driver
  * HAL
- *   memcpy(handle->dimensions, type->dimensions, type->dimension_count);
+ *   memcpy(handle->dimensions_data, type->dimensions.data,
+ * type->dimensions.count);
+ *   handle->dimensions_count = type->dimensions.count;
  *   return handle->buffer;
  * }
  *
