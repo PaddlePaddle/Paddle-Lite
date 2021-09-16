@@ -76,7 +76,8 @@ size_t CpuTotalPhysicalMemory() {
   mib[1] = HW_MEMSIZE;
   int64_t size = 0;
   size_t len = sizeof(size);
-  if (sysctl(mib, 2, &size, &len, NULL, 0) == 0) return (size_t)size;
+  if (sysctl(mib, 2, &size, &len, NULL, 0) == 0)
+    return static_cast<size_t>(size);
   return 0L;
 #elif defined(_WIN32)
   MEMORYSTATUSEX sMeminfo;

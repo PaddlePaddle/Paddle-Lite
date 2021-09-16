@@ -113,8 +113,9 @@ void ConvTransposeImageCompute::PrepareForRun() {
     tensor_hold_filter_image_->Resize({1, filter_image_w_, filter_image_h_, 4});
     auto* filter_image_data = MUTABLE_DATA_CPU(tensor_hold_filter_image_);
 
-    converter.NCHWToImage(
-        (float*)filter_cpu, filter_image_data, filter_trans_dims);
+    converter.NCHWToImage(reinterpret_cast<float*>(filter_cpu),
+                          filter_image_data,
+                          filter_trans_dims);
     MUTABLE_DATA_GPU(
         filter_gpu_image_, filter_image_w_, filter_image_h_, filter_image_data);
   } else {

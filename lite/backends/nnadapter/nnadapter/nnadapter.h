@@ -634,6 +634,24 @@ typedef enum {
    */
   NNADAPTER_FILL,
 
+  /*
+   * According to the given start_axis and end_axis flattens successive
+   * dimensions.
+   *
+   * Inputs:
+   * * 0: input, a NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: start_axis, a NNADAPTER_INT32 scalar, first dim to flatten.
+   * * 2: end_axis, a NNADAPTER_INT32 scalar, last dim to flatten.
+   *
+   * Outputs:
+   * * 0: output, a tensor with the same type as input.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_FLATTEN,
+
   /**
    * Add a fully connected layer.
    * The output is calculated using this formula:
