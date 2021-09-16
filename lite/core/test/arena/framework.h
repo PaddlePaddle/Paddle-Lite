@@ -207,7 +207,7 @@ class Arena {
   bool TestPrecision(const std::vector<std::string>& exclude_outs = {}) {
     tester_->RunBaseline(tester_->baseline_scope());
     tester_->RunInstruction();
-
+    LOG(INFO) << "gelu ???";
     bool success = true;
     size_t out_var_idx = 0;
     for (auto& out : tester_->op_desc().OutputArgumentNames()) {
@@ -221,6 +221,7 @@ class Arena {
         success = success && CompareTensor(out, var);
       }
     }
+    LOG(INFO) << "gelu ...";
     return success;
   }
 
