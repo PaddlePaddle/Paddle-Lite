@@ -210,6 +210,10 @@ function(lite_cc_test TARGET)
   if(LITE_WITH_NPU)
       target_link_libraries(${TARGET} ${npu_builder_libs} ${npu_runtime_libs})
   endif()
+  if(LITE_WITH_CUDA)
+      get_property(cuda_deps GLOBAL PROPERTY CUDA_MODULES)
+      target_link_libraries(${TARGET} ${cuda_deps})
+  endif()
 
   common_link(${TARGET})
   add_test(NAME ${TARGET}
