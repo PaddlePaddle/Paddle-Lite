@@ -12,10 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include <vector>
 #include "lite/backends/x86/math/avx/avx_mathfuns.h"
 #include "lite/backends/x86/math/avx/conv_utils.h"
-#include "lite/backends/x86/math/conv_depthwise_direct.h"
+#include "lite/backends/x86/math/conv_depthwise_impl.h"
 #include "lite/core/memory.h"
 #ifdef __AVX__
 #include <immintrin.h>
