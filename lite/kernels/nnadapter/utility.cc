@@ -465,6 +465,8 @@ NNAdapterOperandPrecisionCode ConvertFluidDataTypeToNNPrecisionCode(
   switch (fluid_dtype) {
     case 0:  // BOOL = 0;
       return NNADAPTER_TENSOR_BOOL8;
+    case 2:  // INT32 = 2
+      return NNADAPTER_TENSOR_INT32;
     case 3:  // INT64 = 3
       return NNADAPTER_TENSOR_INT64;
     case 4:  // FP16 = 4
