@@ -92,6 +92,7 @@ function build_and_test_benchmark {
             --repeats=5
       done
     else # arm
+      echo "skip armlinux"
       # TODO:
       # copy $exe_file & $model_dir to target device
       # Run

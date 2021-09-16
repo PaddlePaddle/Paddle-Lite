@@ -6,4 +6,4 @@
 - `ci_android_unit_test.sh`: checking unit tests on android backend.
 - `ci_android_opencl_unit_test.sh`: checking unit tests on opencl android backend.
 - `ci_android_install.sh`: compile the stripped lib and test its usability.
-- `ci_benchmark.sh`: compile benchmark binary for Android(arm, opencl), Linux(x86) and run test.
+- `ci_benchmark.sh`: compile benchmark binary for Android(arm, opencl), Linux(x86, arm) and run test.
