@@ -50,13 +50,16 @@ class FeedImageCompute
    private:
     void init_memory();
     void release_memory();
+    void setup_pipeline();
 
-    void run_without_mps();
-    void setup_without_mps();
+    void run_raw();
+    void run_int32();
+    void run_float();
+    void setup_float();
 
    private:
     std::shared_ptr<MetalBuffer> input_buffer_;
-    std::shared_ptr<MetalBuffer> param_buffer_;
+    std::shared_ptr<MetalBuffer> params_buffer_{nullptr};
     MetalImage* output_buffer_{nullptr};
 
     id<MTLComputePipelineState> pipline_;

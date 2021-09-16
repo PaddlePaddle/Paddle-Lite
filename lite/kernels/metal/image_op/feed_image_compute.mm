@@ -18,6 +18,7 @@
 #include "lite/core/op_registry.h"
 #include "lite/core/program.h"
 #include "lite/core/tensor.h"
+#include "lite/kernels/metal/image_op/metal_params.h"
 
 using namespace std;
 
@@ -31,7 +32,7 @@ void FeedImageCompute::PrepareForRun() {
     metal_context_ = (MetalContext*)context.context();
 
     init_memory();
-    setup_without_mps();
+    setup_pipeline();
 }
 
 void FeedImageCompute::ReInitWhenNeeded() {
@@ -60,29 +61,28 @@ void FeedImageCompute::init_memory() {
 
 void FeedImageCompute::Run() {
     @autoreleasepool {
-            run_without_mps();
+        run_raw();
     }
 }
 
-void FeedImageCompute::setup_without_mps() {
+void FeedImageCompute::setup_pipeline() {
+    setup_float();
+}
+
+#pragma mark - float&int32
+
+void FeedImageCompute::run_raw() {
     const auto& param = this->Param<param_t>();
-
     Tensor& input_tensor = param.feed_list->at(param.col);
-    auto input_dims = input_tensor.dims();
-    auto input_c = input_dims[1];
-    if (input_c == 1) {
-        function_name_ = "buf_to_tex";
-    } else if (input_c == 3) {
-        function_name_ = "buf_to_tex_c_3";
-    } else {
-        function_name_ = "buf_to_tex_c_n";
+    
+    if (input_tensor.precision() == lite_api::PrecisionType::kFloat) {
+        run_float();
+    } else if (input_tensor.precision() == lite_api::PrecisionType::kInt32) {
+        run_int32();
     }
-    // pipline
-    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
-    pipline_ = [backend pipline:function_name_];
 }
 
-void FeedImageCompute::run_without_mps() {
+void FeedImageCompute::run_float() {
     auto pipline = pipline_;
     auto outTexture = output_buffer_->image();
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
@@ -98,9 +98,43 @@ void FeedImageCompute::run_without_mps() {
     auto encoder = [backend commandEncoder];
     [encoder setBuffer:input_buffer_->buffer() offset:(0) atIndex:(0)];
     [encoder setTexture:(output_buffer_->image()) atIndex:(0)];
+    [encoder setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(1)];
 
     [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
     [backend commit];
+}
+
+void FeedImageCompute::setup_float() {
+    const auto& param = this->Param<param_t>();
+
+    Tensor& input_tensor = param.feed_list->at(param.col);
+    auto input_dims = input_tensor.dims();
+    auto irank = input_dims.size();
+    std::vector<int> idm = {1, 1, 1, 1};
+    for (int i = 0; i < irank; i++) {
+        idm[4 - irank + i] = (int)(input_dims[i]);
+    }
+    FeedMetalParam metal_params{(int)irank, {idm[0], idm[1], idm[2], idm[3]}};
+    params_buffer_ =
+        std::make_shared<MetalBuffer>(metal_context_, sizeof(metal_params), &metal_params);
+    
+    function_name_ = "buf_to_tex_c_n";
+    // pipline
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
+    pipline_ = [backend pipline:function_name_];
+}
+
+void FeedImageCompute::run_int32() {
+    const auto& param = this->Param<param_t>();
+    
+    auto output_int32_ = param.out->mutable_data<int32_t>();
+
+    Tensor& input_tensor = param.feed_list->at(param.col);
+    auto input_dims = input_tensor.dims();
+    auto input_int32 = input_tensor.data<int32_t>();
+
+    auto len = input_dims.production() * sizeof(int32_t);
+    memcpy(output_int32_, input_int32, len);
 }
 
 void FeedImageCompute::release_memory() {
@@ -142,4 +176,15 @@ REGISTER_LITE_KERNEL(feed,
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
     .BindOutput("Out",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(feed,
+    kMetal,
+    kAny,
+    kAny,
+    paddle::lite::kernels::metal::FeedImageCompute,
+    def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny))})
+    .BindOutput("Out",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kAny), DATALAYOUT(kAny))})
     .Finalize();
