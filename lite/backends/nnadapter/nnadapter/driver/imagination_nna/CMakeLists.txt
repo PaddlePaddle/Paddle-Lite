@@ -21,8 +21,8 @@ add_definitions(-DNNADAPTER_DRIVER_NAME=${DRIVER_NAME})
 include(dependencies.cmake)
 
 aux_source_directory(converter CONVERTERS)
-set(DRIVER_SRCS imgdnn_manager.cc utility.cc ${CONVERTERS} converter.cc driver.cc)
-set(DRIVER_DEPS ${NNADAPTER_UTILITIES} nnadapter_optimizer_symm2asymm ${${DEVICE_NAME}_deps})
+set(DRIVER_SRCS imgdnn_manager.cc utility.cc ${CONVERTERS} engine.cc driver.cc)
+set(DRIVER_DEPS ${NNADAPTER_CORE} ${NNADAPTER_UTILITIES} nnadapter_optimizer_symm2asymm ${${DEVICE_NAME}_deps})
 
 add_library(${DRIVER_NAME} SHARED ${DRIVER_SRCS})
 target_link_libraries(${DRIVER_NAME} "-Wl,--start-group" ${DRIVER_DEPS} "-Wl,--end-group")

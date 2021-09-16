@@ -19,7 +19,6 @@
 #include "lite/api/paddle_api.h"
 #include "lite/api/test_helper.h"
 #include "lite/tests/api/ILSVRC2012_utility.h"
-#include "lite/utils/cp_logging.h"
 
 DEFINE_string(data_dir, "", "data dir");
 DEFINE_int32(iteration, 100, "iteration times to run");
@@ -49,10 +48,10 @@ TEST(MobileNetV1, test_resnet50_int8_per_layer_nnadapter) {
 #endif
 #if defined(NNADAPTER_WITH_ROCKCHIP_NPU)
   nnadapter_device_names.emplace_back("rockchip_npu");
-  out_accuracy_threshold = 0.75f;
+  out_accuracy_threshold = 0.76f;
 #elif defined(NNADAPTER_WITH_MEDIATEK_APU)
   nnadapter_device_names.emplace_back("mediatek_apu");
-  out_accuracy_threshold = 0.77f;
+  out_accuracy_threshold = 0.75f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;
@@ -132,6 +131,7 @@ TEST(MobileNetV1, test_resnet50_int8_per_layer_nnadapter) {
 
   std::string labels_dir = FLAGS_data_dir + std::string("/labels.txt");
   float out_accuracy = CalOutAccuracy(out_rets, labels_dir);
+  LOG(INFO) << "out_accuracy: " << out_accuracy;
   ASSERT_GE(out_accuracy, out_accuracy_threshold);
 }
 

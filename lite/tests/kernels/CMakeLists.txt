@@ -3,20 +3,9 @@ if(LITE_WITH_FPGA OR LITE_WITH_BM OR LITE_WITH_MLU OR (NOT LITE_WITH_X86 AND NOT
 endif()
 
 set(test_kernel_deps
-    ${ops}
-    ${host_kernels}
-    ${arm_kernels}
-    ${x86_kernels}
-    ${cuda_kernels}
-    ${xpu_kernels}
-    ${npu_kernels}
-    ${huawei_ascend_npu_kernels}
-    ${rknpu_kernels}
-    ${apu_kernels}
-    ${imagination_nna_kernels}
-    ${bm_kernels}
-    ${opencl_kernels}
-    ${nnadapter_kernels}
+    core
+    ops
+    kernels
 )
 
 lite_cc_test(test_kernel_conv_compute SRCS conv_compute_test.cc DEPS ${test_kernel_deps})
@@ -62,6 +51,7 @@ lite_cc_test(test_kernel_multiclass_nms_compute SRCS multiclass_nms_compute_test
 lite_cc_test(test_kernel_multiclass_nms3_compute SRCS multiclass_nms3_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_batch_norm_compute SRCS batch_norm_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_pool_compute SRCS pool_compute_test.cc DEPS ${test_kernel_deps})
+lite_cc_test(test_kernel_adaptive_pool_compute SRCS adaptive_pool_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_fill_constant_compute SRCS fill_constant_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_fill_zeros_like_compute SRCS fill_zeros_like_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_fill_constant_batch_size_like_compute SRCS fill_constant_batch_size_like_compute_test.cc DEPS ${test_kernel_deps})
@@ -80,8 +70,10 @@ lite_cc_test(test_kernel_squeeze_compute SRCS squeeze_compute_test.cc DEPS ${tes
 lite_cc_test(test_kernel_slice_compute SRCS slice_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_expand_compute SRCS expand_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_expand_as_compute SRCS expand_as_compute_test.cc DEPS ${test_kernel_deps})
+lite_cc_test(test_kernel_expand_v2_compute SRCS expand_v2_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_matmul_compute SRCS matmul_compute_test.cc DEPS ${test_kernel_deps})
 lite_cc_test(test_kernel_flatten_compute SRCS flatten_compute_test.cc DEPS ${test_kernel_deps})
+lite_cc_test(test_kernel_p_norm_compute SRCS p_norm_compute_test.cc DEPS ${test_kernel_deps})
 #lite_cc_test(test_kernel_crf_decoding_compute SRCS crf_decoding_compute_test.cc DEPS ${test_kernel_deps})
 #lite_cc_test(test_uniform_random_compute SRCS uniform_random_compute_test.cc DEPS ${test_kernel_deps})
 
@@ -93,6 +85,7 @@ if(LITE_BUILD_EXTRA)
     lite_cc_test(test_sequence_reverse SRCS sequence_reverse_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_correlation SRCS correlation_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_cos_sim SRCS cos_sim_test.cc DEPS ${test_kernel_deps})
+    lite_cc_test(test_fill_any_like SRCS fill_any_like_test.cc DEPS ${test_kernel_deps})
     #lite_cc_test(test_kernel_sequence_pool_compute SRCS sequence_pool_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_sequence_conv_compute SRCS sequence_conv_compute_test.cc DEPS ${test_kernel_deps})
     lite_cc_test(test_kernel_unsqueeze_compute SRCS unsqueeze_compute_test.cc DEPS ${test_kernel_deps})

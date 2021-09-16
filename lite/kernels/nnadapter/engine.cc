@@ -55,7 +55,7 @@ void* AccessModelInput(void* memory, NNAdapterOperandType* type) {
   auto tensor = static_cast<Tensor*>(memory);
   // Fill the dimensions and get the host buffer address of model inputs
   ConvertDDimToNNDimensions(
-      tensor->dims(), type->dimensions, &type->dimension_count);
+      tensor->dims(), type->dimensions.data, &type->dimensions.count);
   return tensor->raw_data();
 }
 
@@ -65,7 +65,7 @@ void* AccessModelOutput(void* memory, NNAdapterOperandType* type) {
   auto tensor = static_cast<Tensor*>(memory);
   auto precision = ConvertNNPrecisionCodeToPrecisionType(type->precision);
   auto dimensions =
-      ConvertNNDimensionsToDDim(type->dimensions, type->dimension_count);
+      ConvertNNDimensionsToDDim(type->dimensions.data, type->dimensions.count);
   tensor->Resize(dimensions);
 #define TENSOR_MUTABLE_DATA(ptype, dtype) \
   case PRECISION(ptype):                  \
@@ -137,82 +137,15 @@ bool Program::BuildAndCacheToFile(
   CHECK(!model_cache_token.empty());
   int result = NNAdapterModel_create_invoke(&model_);
   std::vector<NNAdapterOperand *> input_operands, output_operands;
-  auto enable = GetBoolFromEnv("NNADAPTER_ENABLE_CONVERTER");
-  LOG(INFO) << "GetBoolFromEnv(NNADAPTER_ENABLE_CONVERTER)   " << enable;
-  if (enable) {
-    Converter converter(model_);
-    if (converter.Apply(block_idx,
-                        program_desc.get(),
-                        exec_scope,
-                        input_vars,
-                        output_vars,
-                        &input_operands,
-                        &output_operands) != NO_ERROR) {
-      return false;
-    }
-  } else {
-    // TODO(hong19860320) Remove the following code after all op bridges are
-    // migrated to the new converters
-    subgraph::nnadapter::Converter converter(model_);
-    std::unique_ptr<RuntimeProgram> runtime_program(
-        new RuntimeProgram(program_desc, exec_scope, block_idx));
-    const auto& bridges = subgraph::SubgraphBridgeRegistry::Instance();
-    CHECK(runtime_program) << "The runtime program is not initialized!";
-    CHECK_GT(runtime_program->instructions(kRootBlockIdx).size(), 0)
-        << "No instructions found in the runtime program!";
-    const auto& insts = runtime_program->instructions(kRootBlockIdx);
-    int status = 0;
-    for (auto& inst : insts) {
-      auto op = const_cast<OpLite*>(inst.op());
-      CHECK(op);
-      op->CheckShape();
-      op->InferShape();
-      std::string op_type = op->op_info()->Type();
-      if (!bridges.Exists(op_type, TARGET(kNNAdapter))) {
-        return false;
-      }
-      auto kernel = inst.kernel();
-      status |= bridges.Select(op_type, TARGET(kNNAdapter))(
-          reinterpret_cast<void*>(&converter),
-          op,
-          const_cast<KernelBase*>(kernel));
-      if (subgraph::CHECK_FAILED(status)) {
-        return false;
-      }
-    }
-    // Query and indentify the input and output operands
-    auto input_count = input_vars.size();
-    input_operands.resize(input_count);
-    for (size_t i = 0; i < input_count; i++) {
-      const auto& name = input_vars[i].name;
-      CHECK(converter.HasOperand(name)) << "No operand found for input '"
-                                        << name << "'!";
-      auto operand = converter.GetOperand(name);
-      input_operands[i] = operand;
-      VLOG(3) << "Found an operand @0x" << string_format("%x", operand)
-              << " for input '" << name << "'.";
-    }
-    // Update if exists the useless output variables such as 'XShape' in
-    // reshape2
-    // and transpose2
-    std::vector<Variable> valid_output_vars;
-    auto output_count = output_vars->size();
-    for (size_t i = 0; i < output_count; i++) {
-      const auto& name = output_vars->at(i).name;
-      if (!converter.HasOperand(name)) {
-        LOG(WARNING) << "No operand found for output '" << name << "'!";
-        continue;
-      }
-      auto operand = converter.GetOperand(name);
-      output_operands.push_back(operand);
-      VLOG(3) << "Found an operand @0x" << string_format("%x", operand)
-              << " for output '" << name << "'.";
-      valid_output_vars.emplace_back(output_vars->at(i));
-    }
-    CHECK_GT(valid_output_vars.size(), 0);
-    if (valid_output_vars.size() != output_count) {
-      *output_vars = valid_output_vars;
-    }
+  Converter converter(model_);
+  if (converter.Apply(block_idx,
+                      program_desc,
+                      exec_scope,
+                      input_vars,
+                      output_vars,
+                      &input_operands,
+                      &output_operands) != NO_ERROR) {
+    return false;
   }
   NNAdapterModel_identifyInputsAndOutputs_invoke(model_,
                                                  input_operands.size(),

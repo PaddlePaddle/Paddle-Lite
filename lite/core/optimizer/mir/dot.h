@@ -22,7 +22,7 @@
 #include <map>
 #include <string>
 #include <vector>
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 #include "lite/utils/replace_stl/stream.h"
 #include "lite/utils/string.h"
 
@@ -154,6 +154,12 @@ class Dot {
     }
     ss << "} // end G";
     return ss.str();
+  }
+
+  void Clear() {
+    nodes_.clear();
+    edges_.clear();
+    attrs_.clear();
   }
 
  private:

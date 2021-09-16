@@ -17,7 +17,7 @@ limitations under the License. */
 #include <functional>
 #include <string>
 #include "lite/backends/x86/cpu_info.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 #ifdef PADDLE_WITH_MKLML
 #include "lite/backends/x86/mklml.h"

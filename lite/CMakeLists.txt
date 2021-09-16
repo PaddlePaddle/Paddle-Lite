@@ -52,6 +52,8 @@ if (WITH_TESTING)
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "mobilenet_v1_int8_per_layer.tar.gz")
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "mobilenet_v1_int8_per_channel.tar.gz")
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "resnet50_int8_per_layer.tar.gz")
+    lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "ssd_mobilenet_v1_relu_voc_fp32_300.tar.gz")
+    lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "ssd_mobilenet_v1_relu_voc_int8_300_per_layer.tar.gz")
     if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
 	    lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "mobilenet_v1_int16.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "resnet50.tar.gz")
@@ -92,6 +94,7 @@ if (WITH_TESTING)
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "lac_data_txt.tar.gz")
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "transformer_nlp2_data_txt.tar.gz")
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "roadsign_data_128.tar.gz")
+    lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "PASCALVOC2012_500.tar.gz")
 endif()
 
 # ----------------------------- PUBLISH -----------------------------
@@ -507,7 +510,7 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                 COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/lac_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
                 COMMAND cp "${CMAKE_SOURCE_DIR}/lite/demo/cxx/makefiles/lac_demo/Makefile.${ARM_TARGET_OS}.${ARM_TARGET_ARCH_ABI}" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/lac_demo/Makefile"
             )
-            add_dependencies(publish_inference_android_cxx_demos logging gflags)
+            add_dependencies(publish_inference_android_cxx_demos gflags)
             add_dependencies(publish_inference_cxx_lib publish_inference_android_cxx_demos)
         else()
             # copy

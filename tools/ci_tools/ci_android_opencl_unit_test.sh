@@ -8,7 +8,7 @@ WORKSPACE=${SHELL_FOLDER%tools/ci_tools*}
 TESTS_FILE="./lite_tests.txt"
 NUM_PROC=4
 
-skip_list=("test_model_parser" "test_mobilenetv1" "test_mobilenetv2" \
+skip_list=("test_model_parser" \
             "test_resnet50" "test_inceptionv4" "test_light_api" "test_apis" \
             "test_paddle_api" "test_cxx_api" "test_gen_code" \
             "test_mobilenetv1_int8" "test_subgraph_pass" \

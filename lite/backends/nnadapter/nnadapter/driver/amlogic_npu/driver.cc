@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/amlogic_npu/converter.h"
+#include "driver/amlogic_npu/engine.h"
 #include "utility/logging.h"
 #include "utility/micros.h"
 

@@ -23,6 +23,7 @@ void fp16_to_fp32(const float16_t* in, float* out, int size) {
   int remain = size & 63;
   int remain_cnt = remain >> 3;
   int remain_remain = remain & 7;
+#ifdef __aarch64__
   asm volatile(
       "cmp %w[cnt], #1\n"
       "blt 1f\n"
@@ -105,6 +106,7 @@ void fp16_to_fp32(const float16_t* in, float* out, int size) {
         "v21",
         "v22",
         "v23");
+#endif
 }
 
 void fp32_to_fp16(const float* in, float16_t* out, int size) {
@@ -112,6 +114,7 @@ void fp32_to_fp16(const float* in, float16_t* out, int size) {
   int remain = size & 63;
   int remain_cnt = remain >> 3;
   int remain_remain = remain & 7;
+#ifdef __aarch64__
   asm volatile(
       "cmp %w[cnt], #1\n"
       "blt 1f\n"
@@ -194,6 +197,7 @@ void fp32_to_fp16(const float* in, float16_t* out, int size) {
         "v21",
         "v22",
         "v23");
+#endif
 }
 }  // namespace fp16
 }  // namespace math

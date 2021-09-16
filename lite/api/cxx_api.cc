@@ -228,6 +228,7 @@ void Predictor::PrepareFeedFetch() {
   input_names_.resize(feeds.size());
   output_names_.resize(fetchs.size());
   input_precisions_.resize(feeds.size());
+  input_shapes_.resize(feeds.size());
   for (size_t i = 0; i < feeds.size(); i++) {
     input_names_[feeds[i]->GetAttr<int>("col")] =
         feeds[i]->Output("Out").front();
@@ -238,6 +239,7 @@ void Predictor::PrepareFeedFetch() {
   }
   for (size_t i = 0; i < feeds.size(); i++) {
     input_precisions_[i] = GetInput(i)->precision();
+    input_shapes_[i] = GetInput(i)->dims().Vectorize();
   }
 }
 
@@ -358,8 +360,12 @@ void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &program_desc,
   }
 
   if (IsQuantizedMode(program_desc_)) {
-    inner_places.insert(inner_places.begin(),
-                        Place{TARGET(kARM), PRECISION(kInt8)});
+    for (auto &valid_place : valid_places) {
+      if (valid_place.target == TARGET(kARM)) {
+        inner_places.insert(inner_places.begin(),
+                            Place{TARGET(kARM), PRECISION(kInt8)});
+      }
+    }
   }
 
   Program program(program_desc_, scope_, inner_places);
@@ -374,6 +380,9 @@ void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &program_desc,
 
   program_ =
       RunDefaultOptimizer(std::move(program), inner_places, factor, passes);
+
+  if (program_desc->HasVersion())
+    program_->set_version(program_desc->Version());
 
   PrepareFeedFetch();
   // Verify if the ops version of current runtime program is
@@ -498,14 +507,52 @@ bool Predictor::TryShrinkMemory() {
 }
 
 void Predictor::CheckInputValid() {
+  // convert shape into a string
+  auto ShapeToStr = [](std::vector<int64_t> shape) -> std::string {
+    if (!shape.size()) return "Empty vector!";
+    std::string shape_str{""};
+    for (size_t i = 0; i < shape.size(); i++) {
+      shape_str += std::to_string(shape[i]);
+      if (i != shape.size() - 1) {
+        shape_str += "x";
+      }
+    }
+    return shape_str;
+  };
+
+  // compare shapes
+  auto CompareShape = [](const std::vector<int64_t> &shape1,
+                         const std::vector<int64_t> &shape2) -> bool {
+    // shapes must be the same
+    if (shape1.size() != shape2.size()) {
+      return false;
+      // the first element is not considered, as it's usually a batch num.
+    } else if (shape1.size() == 1) {
+      return true;
+    } else {
+      for (size_t i = 1; i < shape1.size(); i++) {
+        if (shape1[i] != shape2[i]) return false;
+      }
+    }
+    return true;
+  };
+
   for (size_t idx = 0; idx < input_precisions_.size(); ++idx) {
     if (GetInput(idx)->precision() != input_precisions_[idx]) {
       LOG(WARNING) << " Error input tensor precision type. Input index (" << idx
                    << ") Tensor name (" << input_names_[idx]
-                   << ") Require Precision type ("
+                   << ") Require precision type ("
                    << PrecisionToStr(input_precisions_[idx])
-                   << ") Input Precision type ("
+                   << ") Input precision type ("
                    << PrecisionToStr(GetInput(idx)->precision()) << ").";
+    }
+    if (!CompareShape(GetInput(idx)->dims().Vectorize(), input_shapes_[idx])) {
+      LOG(WARNING) << " Error input tensor shape. Input index (" << idx
+                   << ") Tensor name (" << input_names_[idx]
+                   << ") Require shape of ("
+                   << ShapeToStr(GetInput(idx)->dims().Vectorize())
+                   << ") Input tensor's shape ("
+                   << ShapeToStr(input_shapes_[idx]) << ").";
     }
   }
 }

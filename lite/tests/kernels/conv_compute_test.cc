@@ -418,52 +418,35 @@ void TestConvAct(Place place, float abs_error = 2e-5) {
 }
 
 void TestConvDepthwise(Place place, float abs_error = 2e-5) {
-
-/*              std::unique_ptr<arena::TestCase> tester(
-                  new ConvComputeTester(place,
-                                        "def",
-                                        DDim({1, 1, 9, 9}),
-                                        1,
-                                        5,
-                                        {1, 1},
-                                        {0, 0},
-                                        1,
-                                        {1, 1},
-                                        "",
-                                        false,
-                                        false,
-                                        "relu"));
-              arena::Arena arena(std::move(tester), place, abs_error);
-              arena.TestPrecision();  
-              std :: cout << " aaaaa " << std :: endl;*/
-  for (int64_t n : {1, 2, 3, 4}) {
-    for (int64_t win = 5; win < 80; win++) {
-      for (int64_t ch_in = 1; ch_in < 40; ch_in++) {
-        int64_t group = ch_in;
-        std::vector<int64_t> dims{n, ch_in, win, win};
-        for (auto stride : {2}) {
-          for (auto pad : {0,1,2,3,4,5}) {
-            for (auto bias : {false, true}) {
-              for (auto act : {"relu", "leaky_relu"}) {
-                std :: cout << " eeeeeeeeeeeeeeeeeeeeeee eeeeeeeeeeeeeee  eeeeee " << " n " << n << " win " << win << " ch_in " << ch_in << " pad " << pad << std :: endl; 
-                
-                std::unique_ptr<arena::TestCase> tester(
-                   new ConvComputeTester(place,
-                                          "def",
-                                          DDim(dims),
-                                          ch_in,
-                                          5,
-                                          {stride, stride},
-                                          {pad, pad},
-                                          group,
-                                          {1, 1},
-                                          "",
-                                          bias,
-                                          true,
-                                          act));
-                arena::Arena arena(std::move(tester), place, abs_error);
-                arena.TestPrecision();
-                //return;
+  // Using a limited set can prevent unit test timeout and reduce CI
+  // time-consuming
+  for (int64_t n : {1, 3, 4}) {
+    for (auto win : {3, 4, 7, 16, 30}) {
+      for (auto kw : {3, 5}) {
+        win = std :: max(win, kw);
+        for (auto ch : {2, 7, 9, 16}) {
+          std::vector<int64_t> dims{n, 32, win, win};
+          for (auto stride : {1, 2}) {
+            for (auto pad : {0, 1}) {
+              for (auto bias : {false, true}) {
+                for (auto act : {"relu", "leaky_relu"}) {
+                  std::unique_ptr<arena::TestCase> tester(
+                      new ConvComputeTester(place,
+                                            "def",
+                                            DDim(dims),
+                                            ch,
+                                            kw,
+                                            {stride, stride},
+                                            {pad, pad},
+                                            ch,
+                                            {1, 1},
+                                            "",
+                                            bias,
+                                            true,
+                                            act));
+                  arena::Arena arena(std::move(tester), place, abs_error);
+                  arena.TestPrecision();
+                }
               }
             }
           }
@@ -471,22 +454,6 @@ void TestConvDepthwise(Place place, float abs_error = 2e-5) {
       }
     }
   }
-                /*std::unique_ptr<arena::TestCase> tester(
-                   new ConvComputeTester(place,
-                                          "def",
-                                          DDim({1, 9, 5, 5}),
-                                          9,
-                                          5,
-                                          {1, 1},
-                                          {2, 2},
-                                          9,
-                                          {1, 1},
-                                          "",
-                                          true,
-                                          false,
-                                          "relu"));
-                arena::Arena arena(std::move(tester), place, abs_error);
-                arena.TestPrecision(); */
 }
 
 TEST(Conv2d, precision) {

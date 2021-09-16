@@ -309,8 +309,8 @@ int64_t GetNNOperandPrecisionDataLength(
 }
 
 int64_t GetNNOperandTypeBufferLength(const NNAdapterOperandType& operand_type) {
-  auto production = ProductionOfDimensions(operand_type.dimensions,
-                                           operand_type.dimension_count);
+  auto production = ProductionOfDimensions(operand_type.dimensions.data,
+                                           operand_type.dimensions.count);
   return GetNNOperandPrecisionDataLength(operand_type.precision) * production;
 }
 
@@ -657,6 +657,21 @@ DDim ConvertNNDimensionsToDDim(int32_t* input_dimensions,
     output_dimensions[i] = static_cast<int64_t>(input_dimensions[i]);
   }
   return DDim(output_dimensions);
+}
+
+NNAdapterAutoPadCode PaddingAlgorithm2AutoPadCode(
+    const std::string& padding_algorithm) {
+  NNAdapterAutoPadCode auto_pad_code;
+  if (padding_algorithm == "EXPLICIT" || padding_algorithm.empty()) {
+    auto_pad_code = NNADAPTER_AUTO_PAD_NONE;
+  } else if (padding_algorithm == "SAME") {
+    auto_pad_code = NNADAPTER_AUTO_PAD_SAME;
+  } else if (padding_algorithm == "VALID") {
+    auto_pad_code = NNADAPTER_AUTO_PAD_VALID;
+  } else {
+    LOG(FATAL) << "Unsupported padding_algorithm: " << padding_algorithm;
+  }
+  return auto_pad_code;
 }
 
 }  // namespace nnadapter

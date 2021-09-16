@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include "lite/api/tools/opt_base.h"
-
+#include <fstream>
+#include "lite/core/optimizer/mir/dot.h"
+#include "lite/core/scope.h"
 namespace paddle {
 namespace lite_api {
 
@@ -50,6 +52,30 @@ void OptBase::SetQuantType(const std::string& quant_type) {
     opt_config_.set_quant_type(lite_api::QuantType::QUANT_INT16);
   } else {
     OPT_LOG_FATAL << "Unsupported quant type: " << quant_type;
+  }
+}
+
+void OptBase::SetSparseModel(bool sparse_model) {
+  opt_config_.set_sparse_model(sparse_model);
+}
+
+void OptBase::SetSparseThreshold(float sparse_threshold) {
+  // sparse_model mode only supported on Arm.
+  TargetType target;
+  for (size_t i = 0; i < valid_places_.size(); i++) {
+    target = valid_places_[i].target;
+    if (target != TargetType::kARM) {
+      OPT_LOG << "sparse_model mode only supported on Arm. The model will "
+                 "be optimized to dense format.";
+      opt_config_.set_sparse_model(false);
+      break;
+    }
+  }
+  // threshold must be between 0 and 1.
+  if (sparse_threshold < 0.0 || sparse_threshold > 1.0) {
+    OPT_LOG_FATAL << "Please set sparse_threshold between 0.0 and 1.0.";
+  } else {
+    opt_config_.set_sparse_threshold(sparse_threshold);
   }
 }
 
@@ -106,6 +132,8 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
     } else if (target_repr == "x86") {
       valid_places_.emplace_back(Place{TARGET(kX86), PRECISION(kFloat)});
       valid_places_.emplace_back(Place{TARGET(kX86), PRECISION(kInt64)});
+      valid_places_.emplace_back(Place{TARGET(kX86), PRECISION(kInt8)});
+      valid_places_.emplace_back(Place{TARGET(kX86), PRECISION(kAny)});
     } else if (target_repr == "x86_opencl") {
       valid_places_.emplace_back(
           Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)});
@@ -123,6 +151,8 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(TARGET(kXPU));
     } else if (target_repr == "mlu") {
       valid_places_.emplace_back(TARGET(kMLU));
+    } else if (target_repr == "bm") {
+      valid_places_.emplace_back(TARGET(kBM));
     } else if (target_repr == "rknpu") {
       valid_places_.emplace_back(TARGET(kRKNPU));
       valid_places_.emplace_back(
@@ -163,9 +193,6 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(TARGET(kNNAdapter));
       valid_places_.emplace_back(
           TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
-      nnadapter_device_names.push_back(target_repr);
-    } else if (target_repr == "bm") {
-      valid_places_.emplace_back(TARGET(kBM));
       nnadapter_device_names.push_back(target_repr);
     } else {
       OPT_LOG_FATAL << lite::string_format(
@@ -314,9 +341,9 @@ void OptBase::PrintHelpInfo() {
       "default\n"
       "        `set_lite_out(output_optimize_model_dir)`\n"
       "        "
-      "`set_valid_places(arm|opencl|x86|arm_metal|x86_metal|npu|xpu|rknpu|apu|"
-      "huawei_ascend_npu|imagination_nna|intel_fpga|rockchip_npu|mediatek_apu|"
-      "huawei_kirin_npu|amlogic_npu)`"
+      "`set_valid_places(arm|opencl|x86|x86_opencl|arm_metal|x86_metal|npu|xpu|"
+      "rknpu|apu|huawei_ascend_npu|imagination_nna|intel_fpga|rockchip_npu|"
+      "mediatek_apu|huawei_kirin_npu|amlogic_npu)`"
       "\n"
       "        `record_model_info(false|true)`: refer to whether to record ops "
       "info for striping lib, false by default`\n"
@@ -358,28 +385,38 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "        `--optimize_out_type=(protobuf|naive_buffer)`\n"
       "        `--optimize_out=<output_optimize_model_dir>`\n"
       "        "
-      "`--valid_targets=(arm|opencl|x86|arm_metal|x86_metal|npu|xpu|huawei_"
-      "ascend_npu|imagination_nna|intel_fpga|rockchip_npu|mediatek_apu|huawei_"
-      "kirin_npu)`\n"
+      "`--valid_targets=(arm|opencl|x86|x86_opencl|arm_metal|x86_metal|npu|xpu|"
+      "huawei_ascend_npu|imagination_nna|intel_fpga|rockchip_npu|mediatek_apu|"
+      "huawei_kirin_npu)`\n"
       "        `--record_tailoring_info=(true|false)`\n"
       "  Arguments of mode quantization in opt:\n"
       "        `--quant_model=(true|false)`\n"
       "        `--quant_type=(QUANT_INT8|QUANT_INT16)`\n"
+      "  Arguements of sparse convolution in opt: \n"
+      "        `--sparse_model=(true|false)`\n"
+      "        `--sparse_threshold=(float)`\n"
       "  Arguments of enable_fp16 in opt: \n"
       "        `--enable_fp16=(true|false)`\n"
       "  Arguments of model checking and ops information:\n"
       "        `--print_all_ops=true`   Display all the valid operators of "
       "Paddle-Lite\n"
+      "        `--print_all_ops_in_md_format=true`   Display all the valid "
+      "operators of "
+      "Paddle-Lite in markdown format\n"
       "        `--print_supported_ops=true  "
-      "--valid_targets=(arm|opencl|x86|arm_metal|x86_metal|npu|xpu|huawei_"
-      "ascend_npu|imagination_nna|intel_fpga|rockchip_npu|mediatek_apu|huawei_"
-      "kirin_npu)`"
+      "--valid_targets=(arm|opencl|x86|x86_opencl|arm_metal|x86_metal|npu|xpu|"
+      "huawei_ascend_npu|imagination_nna|intel_fpga|rockchip_npu|mediatek_apu|"
+      "huawei_kirin_npu)`"
       "  Display valid operators of input targets\n"
       "        `--print_model_ops=true  --model_dir=<model_param_dir> "
-      "--valid_targets=(arm|opencl|x86|arm_metal|x86_metal|npu|xpu|huawei_"
-      "ascend_npu|imagination_nna|intel_fpga|rockchip_npu|mediatek_apu|huawei_"
-      "kirin_npu|amlogic_npu)`"
-      "  Display operators in the input model\n";
+      "--valid_targets=(arm|opencl|x86|x86_opencl|arm_metal|x86_metal|npu|xpu|"
+      "huawei_ascend_npu|imagination_nna|intel_fpga|rockchip_npu|mediatek_apu|"
+      "huawei_kirin_npu|amlogic_npu)`"
+      "  Display operators in the input model\n"
+      "  Arguments of optimized nb model visualization: \n"
+      "        `--optimized_nb_model_path=<optimized_nb_model_dir>`\n"
+      "        "
+      "`--visualization_file_output_path=<visualization_file_output_path>`\n";
   OPT_LOG << "paddlelite opt version:" << opt_version;
   OPT_LOG << help_info;
 }
@@ -429,7 +466,7 @@ void OptBase::DisplayKernelsInfo() {  // Display kernel information
   OPT_LOG << ::paddle::lite::KernelRegistry::Global().DebugString();
 }
 void OptBase::PrintAllOps() {
-  // 1. Get supported ops on these targets
+  // 1. Get all supported ops
   std::set<std::string> valid_ops;
   for (size_t i = 0; i < supported_ops_target.size(); i++) {
     auto ops = supported_ops_target[i];
@@ -437,6 +474,83 @@ void OptBase::PrintAllOps() {
   }
   // 2. Print support info of these ops
   PrintOpsInfo(valid_ops);
+}
+
+void OptBase::PrintAllSupportedOpsInMdformat() {
+  // 1. Get all supported ops
+  std::set<std::string> valid_ops;
+  for (size_t i = 0; i < supported_ops_target.size(); i++) {
+    auto ops = supported_ops_target[i];
+    valid_ops.insert(ops.begin(), ops.end());
+  }
+  std::cout << "The number of supported operators is : " << supported_ops.size()
+            << "\n";
+  const std::vector<std::string> valid_targets = {"kHost",
+                                                  "kX86",
+                                                  "kCUDA",
+                                                  "kARM",
+                                                  "kOpenCL",
+                                                  "kFPGA",
+                                                  "kNPU",
+                                                  "kXPU",
+                                                  "kRKNPU",
+                                                  "kAPU",
+                                                  "kHuaweiAscendNPU",
+                                                  "kImaginationNNA",
+                                                  "kIntelFPGA",
+                                                  "kBM"};
+  const std::vector<std::string> readable_valid_targets = {"Host",
+                                                           "X86",
+                                                           "CUDA",
+                                                           "ARM",
+                                                           "OpenCL",
+                                                           "FPGA",
+                                                           "华为NPU",
+                                                           "百度XPU",
+                                                           "瑞芯微NPU",
+                                                           "联发科APU",
+                                                           "华为升腾NPU",
+                                                           "颖脉NNA",
+                                                           "英特尔FPGA",
+                                                           "比特大陆"};
+  // Print the first row: OP_nam taget1 target2 ...
+  std::cout << "| "
+            << "OP_name ";
+  for (size_t i = 0; i < readable_valid_targets.size(); i++) {
+    std::cout << "| " << readable_valid_targets[i] << " ";
+  }
+  std::cout << "\n";
+
+  // Print the second row
+  std::cout << "|-:|";
+  for (size_t i = 0; i < readable_valid_targets.size(); i++) {
+    std::cout << "-|"
+              << " ";
+  }
+  std::cout << "\n";
+
+  // Print the name of supported ops and mark if it's supported by each target
+  // print the support info of inputed ops: valid_ops
+  for (auto op = valid_ops.begin(); op != valid_ops.end(); op++) {
+    // Check: If this kernel doesn't match any operator, we will skip it.
+    if (supported_ops.find(*op) == supported_ops.end()) {
+      continue;
+    }
+    std::cout << "| " << *op << " ";
+    // Print OP info.
+    auto ops_valid_places = supported_ops.at(*op);
+    for (size_t i = 0; i < valid_targets.size(); i++) {
+      if (std::find(ops_valid_places.begin(),
+                    ops_valid_places.end(),
+                    valid_targets[i]) != ops_valid_places.end()) {
+        std::cout << "| "
+                  << "Y ";
+      } else {
+        std::cout << "|   ";
+      }
+    }
+    std::cout << "|\n";
+  }
 }
 
 void OptBase::PrintSupportedOps() {
@@ -549,6 +663,71 @@ void OptBase::CheckIfModelSupported(bool print_ops_info) {
     OPT_LOG << "Paddle-Lite supports this model!";
     exit(1);
   }
+}
+
+std::vector<std::string> OptBase::VisualizeOptimizedNBModel(
+    const std::string& model_dir, const std::string& output_path) {
+  // Load naive buffer model
+  std::shared_ptr<lite::Scope> scope = std::make_shared<lite::Scope>();
+  std::shared_ptr<lite::cpp::ProgramDesc> program =
+      std::make_shared<lite::cpp::ProgramDesc>();
+  LoadModelNaiveFromFile(model_dir, scope.get(), program.get());
+  CHECK(program.get());
+
+  paddle::lite::mir::Dot dot;
+  using Attr = paddle::lite::mir::Dot::Attr;
+  const std::vector<Attr> op_attrs{Attr("style", "filled"),
+                                   Attr("fillcolor", "yellow")};
+  const std::vector<Attr> var_attrs{Attr("style", "filled"),
+                                    Attr("fillcolor", "gray"),
+                                    Attr("shape", "record")};
+  const std::vector<Attr> edge_attrs{};
+
+  std::fstream fs;
+  std::vector<std::string> res{};
+  std::set<std::string> vars{};
+  for (size_t block_idx = 0; block_idx < program->BlocksSize(); block_idx++) {
+    dot.Clear();
+    vars.clear();
+    const lite::cpp::BlockDesc* block =
+        program->GetBlock<lite::cpp::BlockDesc>(block_idx);
+    for (size_t op_idx = 0; op_idx < block->OpsSize(); op_idx++) {
+      const lite::cpp::OpDesc* op = block->GetOp<lite::cpp::OpDesc>(op_idx);
+      for (auto& in : op->input_vars()) {
+        vars.insert(in);
+      }
+      for (auto& out : op->output_vars()) {
+        vars.insert(out);
+      }
+    }
+    for (auto& var : vars) {
+      dot.AddNode(var, var_attrs);
+    }
+    for (size_t op_idx = 0; op_idx < block->OpsSize(); op_idx++) {
+      const lite::cpp::OpDesc* op = block->GetOp<lite::cpp::OpDesc>(op_idx);
+      const std::string op_indx_str = std::to_string(op_idx);
+      dot.AddNode(op_indx_str, op_attrs, op->Type());
+      for (auto& var_name : op->input_vars()) {
+        dot.AddEdge(var_name, op_indx_str, edge_attrs);
+      }
+      for (auto& var_name : op->output_vars()) {
+        dot.AddEdge(op_indx_str, var_name, edge_attrs);
+      }
+    }
+    std::string graph = dot.Build();
+
+    std::string file_name = "Block_" + std::to_string(block_idx);
+    if (output_path.empty())
+      LOG(FATAL) << "output_path is empty, please set output_path to save "
+                    "visualization file";
+    else
+      fs.open(output_path + "/" + file_name + ".dot", std::ios::out);
+    CHECK(fs.is_open()) << "output path error";
+    fs.write(graph.c_str(), graph.size());
+    res.emplace_back(std::move(file_name));
+    fs.close();
+  }
+  return res;
 }
 }  // namespace lite_api
 }  // namespace paddle

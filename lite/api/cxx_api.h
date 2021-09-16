@@ -245,6 +245,7 @@ class LITE_API Predictor {
   std::vector<std::string> output_names_;
   std::vector<Place> valid_places_;
   std::vector<PrecisionType> input_precisions_;
+  std::vector<std::vector<int64_t>> input_shapes_;
 };
 
 class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
@@ -257,7 +258,7 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
       : raw_predictor_(raw_predictor) {
     status_is_cloned_ = true;
   }
-
+  virtual ~CxxPaddleApiImpl();
   /// Create a new predictor from a config.
   void Init(const lite_api::CxxConfig& config);
 

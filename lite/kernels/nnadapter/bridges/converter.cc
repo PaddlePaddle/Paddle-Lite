@@ -21,19 +21,19 @@ namespace subgraph {
 namespace nnadapter {
 
 bool Converter::HasOperand(const std::string& name) {
-  return operands_.find(name) != operands_.end();
+  return operands_->find(name) != operands_->end();
 }
 
 NNAdapterOperand* Converter::GetOperand(std::string name) {
   CHECK(HasOperand(name)) << "Operand '" << name << "' is not found!";
-  return operands_[name];
+  return (*operands_)[name].back();
 }
 
 NNAdapterOperand* Converter::AddOperand(NNAdapterOperand* operand,
                                         const std::string& name) {
   CHECK(operand);
   CHECK(!name.empty());
-  operands_[name] = operand;
+  (*operands_)[name].emplace_back(operand);
   return operand;
 }
 
@@ -242,17 +242,13 @@ NNAdapterOperation* Converter::AddOperation(
 NNAdapterOperand* Converter::AddOperand(NNAdapterOperandType* type,
                                         const std::string& name) {
   NNAdapterOperand* operand = nullptr;
+  NNAdapterModel_addOperand_invoke(model_, type, &operand);
   if (!name.empty()) {
     if (HasOperand(name)) {
-      LOG(WARNING) << "Operand '" << name << "' already exists!";
-      operand = operands_[name];
+      (*operands_)[name].emplace_back(operand);
     } else {
-      NNAdapterModel_addOperand_invoke(model_, type, &operand);
-      operands_[name] = operand;
+      (*operands_)[name] = std::vector<NNAdapterOperand*>{operand};
     }
-  } else {
-    // Anonymous operand
-    NNAdapterModel_addOperand_invoke(model_, type, &operand);
   }
   return operand;
 }
@@ -276,7 +272,7 @@ NNAdapterOperand* Converter::AddOperand(const DDim& dimensions,
   memset(&type, 0, sizeof(NNAdapterOperandType));
   bool is_scalar = dimensions.size() == 0;
   if (!is_scalar) {
-    ConvertDimensions(dimensions, type.dimensions, &type.dimension_count);
+    ConvertDimensions(dimensions, type.dimensions.data, &type.dimensions.count);
   }
   type.precision = precision;
   if (quant_scales && quant_scale_count > 0) {

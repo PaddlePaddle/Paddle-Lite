@@ -21,7 +21,7 @@
 #include "lite/core/op_registry.h"
 #include "lite/kernels/opencl/image_helper.h"
 #include "lite/operators/op_params.h"
-#include "lite/utils/logging.h"
+#include "lite/utils/log/logging.h"
 #include "lite/utils/replace_stl/stream.h"
 #ifdef LITE_WITH_PROFILE
 #include "lite/core/profile/profiler.h"
@@ -205,26 +205,6 @@ typedef paddle::lite::kernels::opencl::BoxCoderComputeImage BoxCoder_image;
 
 REGISTER_LITE_KERNEL(
     box_coder, kOpenCL, kFP16, kImageDefault, BoxCoder_image, ImageDefault)
-    .BindInput("PriorBox",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
-    .BindInput("PriorBoxVar",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
-    .BindInput("TargetBox",
-               {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kImageDefault))})
-    .BindOutput("OutputBox",
-                {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                       PRECISION(kFP16),
-                                       DATALAYOUT(kImageDefault))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(box_coder,
-                     kOpenCL,
-                     kFP16,
-                     kImageDefault,
-                     BoxCoder_image,
-                     ImageDefaultNoUseSSDBoxesCalcOfflinePass)
     .BindInput("PriorBox",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
