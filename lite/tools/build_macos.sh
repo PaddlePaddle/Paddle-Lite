@@ -26,6 +26,7 @@ WITH_AVX=ON
 WITH_EXCEPTION=OFF
 WITH_PROFILE=OFF
 WITH_PRECISION_PROFILE=OFF
+WITH_BENCHMARK=OFF
 WITH_LTO=OFF
 BUILD_ARM82_FP16=OFF
 BUILD_ARM82_INT8_SDOT=OFF
@@ -40,7 +41,7 @@ BUILD_APU=OFF
 APU_DDK_ROOT="$(pwd)/apu_sdk_lib/"
 BUILD_RKNPU=OFF
 RKNPU_DDK_ROOT="$(pwd)/rknpu/"
-WITH_HUAWEI_ASCEND_NPU=OFF # Huawei Ascend Builder/Runtime Libs on X86 host 
+WITH_HUAWEI_ASCEND_NPU=OFF # Huawei Ascend Builder/Runtime Libs on X86 host
 # default installation path, ensure acllib/atc/opp directories are all in this root dir
 HUAWEI_ASCEND_NPU_DDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux_gcc4.8.5"
 PYTHON_EXECUTABLE_OPTION=""
@@ -90,7 +91,7 @@ function prepare_opencl_source_code {
     OPENCL_KERNELS_PATH=$root_dir/lite/backends/opencl/cl_kernel
     mkdir -p ${GEN_CODE_PATH_OPENCL}
     touch $GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
-    python $root_dir/lite/tools/cmake_tools/gen_opencl_code.py $OPENCL_KERNELS_PATH $GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc 
+    python $root_dir/lite/tools/cmake_tools/gen_opencl_code.py $OPENCL_KERNELS_PATH $GEN_CODE_PATH_OPENCL/opencl_kernels_source.cc
 }
 
 function prepare_thirdparty {
@@ -104,6 +105,19 @@ function prepare_thirdparty {
     else
         git submodule update --init --recursive
     fi
+}
+
+# function of set options for benchmark
+function set_benchmark_options {
+  BUILD_EXTRA=ON
+  WITH_EXCEPTION=ON
+  WITH_OPENCL=ON
+
+  if [ ${WITH_PROFILE} == "ON" ] || [ ${WITH_PRECISION_PROFILE} == "ON" ]; then
+    WITH_LOG=ON
+  else
+    WITH_LOG=OFF
+  fi
 }
 
 function make_armosx {
@@ -157,11 +171,15 @@ function make_x86 {
   root_dir=$(pwd)
   build_directory=$BUILD_DIR/build.lite.x86
 
+  if [ "${WITH_BENCHMARK}" == "ON" ]; then
+    set_benchmark_options
+  fi
+
   if [ ${WITH_HUAWEI_ASCEND_NPU} == "ON" ]; then
     export CXX=g++ # Huawei Ascend NPU need g++
     build_directory=$BUILD_DIR/build.lite.huawei_ascend_npu
   fi
-  
+
   if [ ${WITH_OPENCL} == "ON" ]; then
     BUILD_EXTRA=ON
     build_directory=$BUILD_DIR/build.lite.x86.opencl
@@ -216,7 +234,11 @@ function make_x86 {
             -DPY_VERSION=$PY_VERSION \
             $PYTHON_EXECUTABLE_OPTION
 
-  make publish_inference -j$NUM_PROC
+  if [ "${WITH_BENCHMARK}" == "ON" ]; then
+    make benchmark_bin -j$NUM_PROC
+  else
+    make publish_inference -j$NUM_PROC
+  fi
   cd -
 }
 
@@ -235,6 +257,10 @@ function print_usage {
     echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                   |"
     echo -e "|     --with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF                            |"
     echo -e "|     --build_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)  |"
+    echo -e "|     --with_benchmark: (OFF|ON); controls whether to compile benchmark binary, default is OFF, only support macos x86                 |"
+    echo -e "|                                                                                                                                      |"
+    echo -e "|  arguments of benchmark binary compiling for macos x86:                                                                              |"
+    echo -e "|     ./lite/tools/build_macos.sh --with_benchmark=ON x86                                                                              |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of striping lib according to input model:(armv8, gcc, c++_static)                                                         |"
     echo -e "|     ./lite/tools/build_macos.sh --with_strip=ON --opt_model_dir=YourOptimizedModelDir                                                |"
@@ -269,7 +295,7 @@ function main {
             --build_dir=*)
                 BUILD_DIR="${i#*=}"
                 shift
-		;;
+		        ;;
             --opt_model_dir=*)
                 OPTMODEL_DIR="${i#*=}"
                 OPTMODEL_DIR=$(readlinkf $OPTMODEL_DIR)
@@ -312,6 +338,10 @@ function main {
                 ;;
             --with_precision_profile=*)
                 WITH_PRECISION_PROFILE="${i#*=}"
+                shift
+                ;;
+            --with_benchmark=*)
+                WITH_BENCHMARK="${i#*=}"
                 shift
                 ;;
             --with_lto=*)
@@ -397,7 +427,7 @@ function main {
                make_x86
                shift
                ;;
-           help)
+            help)
                 print_usage
                 exit 0
                 ;;

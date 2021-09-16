@@ -39,14 +39,14 @@ function build_and_test_benchmark {
   cd $WORKSPACE
 
   # Remove Compiling Cache
-  rm -rf build*
+  rm -rf build.*
 
   # Compiling
   cmd_line="./lite/tools/build_${os}.sh --arch=$arch --toolchain=$toolchain --with_benchmark=ON full_publish"
   ${cmd_line}
 
   # Checking results
-  local exe_file=$(ls build*/lite/api/${exe})
+  local exe_file=$(ls build.*/lite/api/${exe})
   if [ ! -f $exe_file ]; then
     echo -e "\e[1;31m $exe_file is not exist! \e[0m"
     echo -e "Android compiling task failed on the following instruction:\n $cmd"
@@ -76,7 +76,7 @@ function build_and_test_benchmark {
   elif [[ "$os" == "linux" ]]; then
     if [[ "$arch" == "x86" ]]; then
       local mklml_so_name="libmklml_intel.so"
-      local mklml_so_path=$(find ./build* -name $mklml_so_name | head -n 1)
+      local mklml_so_path=$(find ./build.* -name $mklml_so_name | head -n 1)
       if [[ -z "$mklml_so_path" ]]; then
         echo -e "\e[1;31m mklml.so not found! \e[0m"
         exit 1
@@ -91,6 +91,10 @@ function build_and_test_benchmark {
             --warmup=2 \
             --repeats=5
       done
+    else # arm
+      # TODO:
+      # copy $exe_file & $model_dir to target device
+      # Run
     fi
   fi
 }
@@ -114,7 +118,7 @@ function main() {
   done
 
   os="linux"
-  for arch in x86; do
+  for arch in x86 armv8; do
     for toolchain in gcc; do
       build_and_test_benchmark $os $arch $toolchain $model_dir
     done

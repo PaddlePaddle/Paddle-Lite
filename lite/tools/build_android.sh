@@ -281,6 +281,10 @@ function make_full_publish_so {
 
   prepare_workspace $workspace $build_directory
 
+  if [ "${WITH_BENCHMARK}" == "ON" ]; then
+      set_benchmark_options
+  fi
+
   if [ "${WITH_OPENCL}" == "ON" ]; then
       prepare_opencl_source_code $workspace $build_dir
   fi
@@ -293,10 +297,6 @@ function make_full_publish_so {
       ARCH=armv8
   fi
 
-  if [ "${WITH_BENCHMARK}" == "ON" ]; then
-      set_benchmark_options
-  fi
-  
   if [ "$NDK_ROOT" ]; then
       NDK_NAME=$(echo $NDK_ROOT | egrep -o "android-ndk-r[0-9]{2}")
       NDK_VERSION=$(echo $NDK_NAME | egrep -o "[0-9]{2}")
