@@ -22,11 +22,12 @@ namespace operation {
   auto& output_operands = operation->output_operands;                          \
   auto input_count = input_operands.size();                                    \
   auto output_count = output_operands.size();                                  \
-  NNADAPTER_CHECK_EQ(input_count, 8);                                          \
   auto operation_type = operation->type;                                       \
   if (operation_type == NNADAPTER_AVERAGE_POOL_2D) {                           \
+    NNADAPTER_CHECK_EQ(input_count, 8);                                        \
     NNADAPTER_CHECK_EQ(output_count, 1);                                       \
   } else if (operation_type == NNADAPTER_MAX_POOL_2D) {                        \
+    NNADAPTER_CHECK_EQ(input_count, 9);                                        \
     NNADAPTER_CHECK_EQ(output_count, 2);                                       \
   } else {                                                                     \
     NNADAPTER_LOG(FATAL) << "Unsupported pooling operation type "              \
@@ -86,8 +87,21 @@ namespace operation {
                          << OperationTypeToString(operation->type)             \
                          << " is found.";                                      \
   }                                                                            \
+  /* Return_indices_type(only for max_pool) */                                 \
+  NNAdapterOperandPrecisionCode indices_type;                                  \
+  if (operation_type == NNADAPTER_MAX_POOL_2D) {                               \
+    indices_type = static_cast<NNAdapterOperandPrecisionCode>(                 \
+        *reinterpret_cast<int32_t*>(input_operands[7]->buffer));               \
+    NNADAPTER_VLOG(5) << "indices_type = "                                     \
+                      << OperandPrecisionCodeToString(indices_type);           \
+  }                                                                            \
   /* Fuse code */                                                              \
-  auto fuse_code = *reinterpret_cast<int32_t*>(input_operands[7]->buffer);     \
+  int32_t fuse_code = 0;                                                       \
+  if (operation_type == NNADAPTER_AVERAGE_POOL_2D) {                           \
+    fuse_code = *reinterpret_cast<int32_t*>(input_operands[7]->buffer);        \
+  } else {                                                                     \
+    fuse_code = *reinterpret_cast<int32_t*>(input_operands[8]->buffer);        \
+  }                                                                            \
   NNADAPTER_VLOG(5) << "fuse_code = " << fuse_code;                            \
   /* Output */                                                                 \
   auto output_operand = output_operands[0];                                    \

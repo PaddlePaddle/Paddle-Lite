@@ -141,11 +141,12 @@ void NCHW2NHWCDataLayoutConverter::ConvertPool2D(hal::Operation* operation) {
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
   auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 8);
   auto operation_type = operation->type;
   if (operation_type == NNADAPTER_AVERAGE_POOL_2D) {
+    NNADAPTER_CHECK_EQ(input_count, 8);
     NNADAPTER_CHECK_EQ(output_count, 1);
   } else if (operation_type == NNADAPTER_MAX_POOL_2D) {
+    NNADAPTER_CHECK_EQ(input_count, 9);
     NNADAPTER_CHECK_EQ(output_count, 2);
   } else {
     NNADAPTER_LOG(FATAL) << "Unsupported pooling operation type "

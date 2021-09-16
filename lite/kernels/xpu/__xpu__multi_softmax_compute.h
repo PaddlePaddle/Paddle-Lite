@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,8 +14,6 @@
 
 #pragma once
 
-#include <vector>
-#include "lite/backends/xpu/target_wrapper.h"  // XPUScratchPadGuard
 #include "lite/core/kernel.h"
 
 namespace paddle {
@@ -23,13 +21,19 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-class StackCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+class MultiSoftmaxCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
-  using param_t = operators::StackParam;
+  using param_t = operators::XPUMultiSoftmaxParam;
+
+  void PrepareForRun() override;
 
   virtual void Run();
 
-  virtual ~StackCompute() = default;
+  virtual ~MultiSoftmaxCompute() = default;
+
+ private:
+  xdnn::VectorParam<int> query_lod;
+  XPUScratchPadGuard xpu_lod_guard_;
 };
 
 }  // namespace xpu

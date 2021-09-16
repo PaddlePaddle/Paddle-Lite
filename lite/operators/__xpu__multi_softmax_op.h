@@ -13,26 +13,32 @@
 // limitations under the License.
 
 #pragma once
-
-#include <vector>
-#include "lite/backends/xpu/target_wrapper.h"  // XPUScratchPadGuard
-#include "lite/core/kernel.h"
+#include <string>
+#include "lite/core/op_lite.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace xpu {
+namespace operators {
 
-class StackCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+class XPUMultiSoftmaxOp : public OpLite {
  public:
-  using param_t = operators::StackParam;
+  XPUMultiSoftmaxOp() {}
 
-  virtual void Run();
+  explicit XPUMultiSoftmaxOp(const std::string &op_type) : OpLite(op_type) {}
 
-  virtual ~StackCompute() = default;
+  bool CheckShape() const override;
+
+  bool InferShapeImpl() const override;
+
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+  std::string DebugString() const override { return "XPUMultiSoftmax"; }
+
+ private:
+  mutable XPUMultiSoftmaxParam param_;
 };
 
-}  // namespace xpu
-}  // namespace kernels
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle

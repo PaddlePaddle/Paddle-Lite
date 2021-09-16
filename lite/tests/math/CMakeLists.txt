@@ -9,6 +9,8 @@ if((NOT LITE_WITH_OPENCL AND NOT LITE_WITH_FPGA AND NOT LITE_WITH_MLU) AND (LITE
     lite_cc_test(conv_int8_compute_test SRCS conv_int8_compute_test.cc)
     lite_cc_test(pool_compute_test SRCS pool_compute_test.cc)
     #lite_cc_test(deformable_conv_compute_test SRCS deformable_conv_compute_test.cc)
+    lite_cc_test(sparse_conv_int8_compute_test SRCS sparse_conv_int8_compute_test.cc)
+    lite_cc_test(sparse_conv_f32_compute_test SRCS sparse_conv_f32_compute_test.cc)
 
     if(LITE_BUILD_EXTRA)
         lite_cc_test(deformable_conv_compute_test SRCS deformable_conv_compute_test.cc)

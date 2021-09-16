@@ -21,40 +21,17 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-bool CheckEmbeddingIds(const int64_t* idx,
-                       size_t idx_len,
-                       size_t table_len,
-                       int64_t padding_idx) {
-  CHECK_GT(idx_len, 0);
-  CHECK_GT(table_len, 0);
-  for (auto i = 0; i < idx_len; i++) {
-    if (idx[i] >= table_len || idx[i] < 0) {
-      if (idx[i] != padding_idx) {
-        return false;
-      }
-    }
-  }
-  return true;
-}
-
 void XPUEmbeddingWithEltwiseAddCompute::PrepareForRun() {
   auto& param = this->Param<param_t>();
-
-  arg_ids_.reserve(param.Ids.size());
-  arg_tables_.reserve(param.Tables.size());
+  CHECK_GT(param.Tables.size(), 0);
+  auto embed_dim = param.Tables[0]->dims()[1];
   for (auto* table : param.Tables) {
     auto& table_dims = table->dims();
     CHECK_EQ(table_dims.size(), 2); /* shape like [table_len, embed_dim] */
+    CHECK_EQ(table_dims[1], embed_dim);
     table_lens_cpu_.push_back(table_dims[0]);
+    arg_tables_.push_back(table->data<float>());
   }
-
-  size_t lens_size = table_lens_cpu_.size() * sizeof(int);
-  table_lens_guard_ = TargetWrapperXPU::MallocScratchPad(lens_size);
-  XPU_CALL(xpu_memcpy(table_lens_guard_->addr_,
-                      &table_lens_cpu_[0],
-                      lens_size,
-                      XPU_HOST_TO_DEVICE));
-  idx_guard_ = TargetWrapperXPU::MallocScratchPad(32768 * sizeof(int64_t));
 }
 
 void XPUEmbeddingWithEltwiseAddCompute::Run() {
@@ -63,18 +40,16 @@ void XPUEmbeddingWithEltwiseAddCompute::Run() {
   auto& id_dims = param.Ids[0]->dims();
   int idx_len = id_dims[0] * id_dims[1];
   int emb_layer_num = param.Ids.size();
-  auto& table_dims = param.Tables[0]->dims();
-  int embed_dim = table_dims[1];
-  for (size_t i = 0; i < param.Tables.size(); ++i) {
-    arg_tables_[i] = param.Tables[i]->data<float>();
-  }
+  int embed_dim = param.Tables[0]->dims()[1];
+  std::vector<std::vector<int>> int_idx(emb_layer_num,
+                                        std::vector<int>(idx_len, 0));
+  std::vector<xdnn::VectorParam<int>> arg_ids_;
+
   if (param.Mask && param.Mask->data<float>()) {
     auto& mask_dims = param.Mask->dims();
     auto batch_size = mask_dims[0];
     auto pad_seq_len = mask_dims[1];
     param.PadSeqLen->mutable_data<int>()[0] = pad_seq_len;
-    CHECK_EQ(batch_size, id_dims[0]);
-    CHECK_EQ(idx_len, param.Mask->numel());
     auto* seq_lod = param.SeqLod;
     seq_lod->Resize({batch_size + 1});
     std::vector<int> cpu_seq_lod{0};
@@ -94,59 +69,39 @@ void XPUEmbeddingWithEltwiseAddCompute::Run() {
     memcpy(seq_lod_ptr, cpu_seq_lod.data(), cpu_seq_lod.size() * sizeof(int));
     idx_len = cpu_seq_lod.back();
 
-    idx_guard_->Reserve(emb_layer_num * idx_len * sizeof(int64_t));
-    int64_t* idx_xpu_ptr = static_cast<int64_t*>(idx_guard_->addr_);
-    std::vector<std::vector<int64_t>> idx_remove_pad(
-        emb_layer_num, std::vector<int64_t>(idx_len, 0));
     for (size_t i = 0; i < emb_layer_num; ++i) {
       auto* idx_pad_ptr = param.Ids[i]->data<int64_t>();
       for (auto batch_idx = 0; batch_idx < batch_size; batch_idx++) {
-        memcpy(&idx_remove_pad[i][cpu_seq_lod[batch_idx]],
-               idx_pad_ptr + batch_idx * pad_seq_len,
-               sizeof(int64_t) *
-                   (cpu_seq_lod[batch_idx + 1] - cpu_seq_lod[batch_idx]));
+        for (auto j = 0;
+             j < cpu_seq_lod[batch_idx + 1] - cpu_seq_lod[batch_idx];
+             j++) {
+          int_idx[i][cpu_seq_lod[batch_idx] + j] =
+              static_cast<int>(idx_pad_ptr[batch_idx * pad_seq_len + j]);
+        }
       }
-      CHECK_EQ(CheckEmbeddingIds(&idx_remove_pad[i][0],
-                                 idx_len,
-                                 param.Tables[i]->dims()[0],
-                                 param.padding_idx),
-               true);
-      XPU_CALL(xpu_memcpy(idx_xpu_ptr + i * idx_len,
-                          &idx_remove_pad[i][0],
-                          sizeof(int64_t) * idx_len,
-                          XPU_HOST_TO_DEVICE));
-      arg_ids_[i] = idx_xpu_ptr + i * idx_len;
+      arg_ids_.push_back(
+          xdnn::VectorParam<int>{int_idx[i].data(), idx_len, nullptr});
     }
     param.Out->Resize({1, idx_len, embed_dim});
   } else {
-    idx_guard_->Reserve(emb_layer_num * idx_len * sizeof(int64_t));
-    int64_t* idx_xpu_ptr = static_cast<int64_t*>(idx_guard_->addr_);
-    for (size_t i = 0; i < emb_layer_num; ++i) {
-      CHECK_EQ(idx_len, param.Ids[i]->numel());
-      CHECK_EQ(CheckEmbeddingIds(param.Ids[i]->data<int64_t>(),
-                                 idx_len,
-                                 param.Tables[i]->dims()[0],
-                                 param.padding_idx),
-               true);
-      XPU_CALL(xpu_memcpy(idx_xpu_ptr + idx_len * i,
-                          param.Ids[i]->data<int64_t>(),
-                          sizeof(int64_t) * idx_len,
-                          XPU_HOST_TO_DEVICE));
-      arg_ids_[i] = idx_xpu_ptr + idx_len * i;
+    for (size_t i = 0; i < emb_layer_num; i++) {
+      for (size_t j = 0; j < idx_len; j++) {
+        int_idx[i][j] = static_cast<int>(param.Ids[i]->data<int64_t>()[j]);
+      }
+      arg_ids_.push_back(
+          xdnn::VectorParam<int>{int_idx[i].data(), idx_len, nullptr});
     }
   }
-  int r = xdnn::embedding_with_ewadd<float, int64_t, false, false>(
-      ctx.GetRawContext(),                         /* context */
-      embed_dim,                                   /* embed_dim */
-      idx_len,                                     /* idx_len */
-      emb_layer_num,                               /* emb_layer_num */
-      param.padding_idx,                           /* padding_idx */
-      &arg_tables_[0],                             /* tables */
-      &arg_ids_[0],                                /* indices */
-      static_cast<int*>(table_lens_guard_->addr_), /* table_lens */
-      nullptr,                                     /* scale_after_emb */
-      nullptr,                                     /* scale_after_ewadd */
-      param.Out->mutable_data<float>(TARGET(kXPU)) /* top */);
+  int r = xdnn::multi_embedding_fusion<float, float, int>(
+      ctx.GetRawContext(),
+      arg_tables_, /* tables */
+      param.Out->mutable_data<float>(TARGET(kXPU)),
+      arg_ids_,
+      table_lens_cpu_,
+      embed_dim,
+      std::vector<float>(table_lens_cpu_.size(), 1.0f),
+      std::vector<int>(table_lens_cpu_.size(),
+                       static_cast<int>(param.padding_idx)));
   CHECK_EQ(r, 0);
 }
 
