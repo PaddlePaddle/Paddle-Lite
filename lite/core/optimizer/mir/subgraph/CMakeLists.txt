@@ -1,7 +1,6 @@
 if (WITH_TESTING AND NOT LITE_WITH_CUDA AND NOT LITE_WITH_XPU)
     lite_cc_test(test_subgraph_detector
         SRCS subgraph_detector_test.cc
-        DEPS core gflags model_parser cxx_api
         ARGS --model_dir=${LITE_MODEL_DIR}/mobilenet_v1 SERIAL)
     add_dependencies(test_subgraph_detector
         extern_lite_download_mobilenet_v1_tar_gz
@@ -12,7 +11,6 @@ if (WITH_TESTING AND NOT LITE_WITH_CUDA AND NOT LITE_WITH_XPU)
     endif()
     lite_cc_test(test_subgraph_pass
         SRCS subgraph_pass_test.cc
-        DEPS core paddle_api_full gflags
         ARGS --model_dir=${LITE_MODEL_DIR}/mobilenet_v1
              --optimized_model_dir=${LITE_MODEL_DIR}/lite_model_opt SERIAL)
     add_dependencies(test_subgraph_pass

@@ -17,7 +17,7 @@
 #include <cmath>
 
 #include "lite/api/paddle_api.h"
-#include "lite/api/test_helper.h"
+#include "lite/api/test/test_helper.h"
 #include "lite/utils/log/cp_logging.h"
 #include "lite/utils/string.h"
 
