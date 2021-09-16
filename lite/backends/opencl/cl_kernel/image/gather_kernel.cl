@@ -1,28 +1,5 @@
 #include <cl_common.h>
 
-__kernel void gather(__read_only image2d_t input,
-                              __read_only image2d_t index,
-                              __write_only image2d_t outputImage,
-                              int w) {
-  int x = get_global_id(0);
-  int2 coords_l;
-  coords_l.x=x;//w
-  coords_l.y=0;//h
-  CL_DTYPE4 id = READ_IMG_TYPE(CL_DTYPE_CHAR, index, SAMPLER, coords_l);
-  int2 coords;
-    coords.y = id.x;
-
-  int2 coords_;
-      coords_.y = x;
-  for ( int i = 0; i < w; i++ ){
-      coords.x = i;
-      coords_.x = i;
-      CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, coords);
-
-       WRITE_IMG_TYPE(CL_DTYPE_CHAR, outputImage, coords_, in);
-  }
-
-}
 __kernel void gather_axis0(__read_only image2d_t input,
                               __read_only image2d_t index,
                               __write_only image2d_t outputImage) {
