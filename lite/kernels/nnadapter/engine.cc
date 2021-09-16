@@ -55,7 +55,7 @@ void* AccessModelInput(void* memory, NNAdapterOperandType* type) {
   auto tensor = static_cast<Tensor*>(memory);
   // Fill the dimensions and get the host buffer address of model inputs
   ConvertDDimToNNDimensions(
-      tensor->dims(), type->dimensions, &type->dimension_count);
+      tensor->dims(), type->dimensions.data, &type->dimensions.count);
   return tensor->raw_data();
 }
 
@@ -65,7 +65,7 @@ void* AccessModelOutput(void* memory, NNAdapterOperandType* type) {
   auto tensor = static_cast<Tensor*>(memory);
   auto precision = ConvertNNPrecisionCodeToPrecisionType(type->precision);
   auto dimensions =
-      ConvertNNDimensionsToDDim(type->dimensions, type->dimension_count);
+      ConvertNNDimensionsToDDim(type->dimensions.data, type->dimensions.count);
   tensor->Resize(dimensions);
 #define TENSOR_MUTABLE_DATA(ptype, dtype) \
   case PRECISION(ptype):                  \

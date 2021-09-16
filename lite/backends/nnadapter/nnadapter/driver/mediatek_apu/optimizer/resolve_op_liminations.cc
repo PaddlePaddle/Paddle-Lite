@@ -31,29 +31,30 @@ static void ResolveSoftmax(hal::Model* model, hal::Operation* operation) {
   NNADAPTER_CHECK_EQ(input_count, 2);
   NNADAPTER_CHECK_EQ(output_count, 1);
   auto input_operand = input_operands[0];
-  auto input_dimensions = input_operand->type.dimensions;
-  auto input_dimension_count = input_operand->type.dimension_count;
+  auto input_dimensions_data = input_operand->type.dimensions.data;
+  auto input_dimensions_count = input_operand->type.dimensions.count;
   // Axis
   auto axis = reinterpret_cast<int32_t*>(input_operands[1]->buffer);
   if (*axis < 0) {
-    *axis += input_operand->type.dimension_count;
+    *axis += input_operand->type.dimensions.count;
   }
   auto output_operand = output_operands[0];
   // MediaTek APU only supports 2D or 4D input
-  if (input_dimension_count != 2 && input_dimension_count != 4) {
+  if (input_dimensions_count != 2 && input_dimensions_count != 4) {
     bool is_ends_with_1 = true;
-    for (uint32_t i = *axis + 1; i < input_dimension_count; i++) {
-      if (input_dimensions[i] != 1) {
+    for (uint32_t i = *axis + 1; i < input_dimensions_count; i++) {
+      if (input_dimensions_data[i] != 1) {
         is_ends_with_1 = false;
       }
     }
     auto input_count =
-        ProductionOfDimensions(input_dimensions, input_dimension_count);
-    auto axis_count = input_dimensions[*axis];
+        ProductionOfDimensions(input_dimensions_data, input_dimensions_count);
+    auto axis_count = input_dimensions_data[*axis];
     auto remain_count = input_count / axis_count;
     std::vector<int32_t> output_dimensions(
-        output_operand->type.dimensions,
-        output_operand->type.dimensions + output_operand->type.dimension_count);
+        output_operand->type.dimensions.data,
+        output_operand->type.dimensions.data +
+            output_operand->type.dimensions.count);
     std::vector<int32_t> reshape_input_dimensions = {
         static_cast<int32_t>(remain_count), static_cast<int32_t>(axis_count)};
     if (is_ends_with_1) {
@@ -65,22 +66,22 @@ static void ResolveSoftmax(hal::Model* model, hal::Operation* operation) {
           AddReshapeOperation(model, output_operand, output_dimensions);
     } else {
       // Transpose (1, 192(axis), 128) to (1, 128, 192(axis))
-      std::vector<int32_t> transpose_input_permutation(input_dimension_count);
-      for (uint32_t i = 0; i < input_dimension_count; i++) {
+      std::vector<int32_t> transpose_input_permutation(input_dimensions_count);
+      for (uint32_t i = 0; i < input_dimensions_count; i++) {
         if (i < *axis) {
           transpose_input_permutation[i] = i;
         } else if (i > *axis) {
           transpose_input_permutation[i - 1] = i;
         } else {
-          transpose_input_permutation[input_dimension_count - 1] = *axis;
+          transpose_input_permutation[input_dimensions_count - 1] = *axis;
         }
       }
       auto transpose_input_operand = AddTransposeOperation(
           model, input_operand, transpose_input_permutation);
       std::vector<int32_t> transpose_input_dimensions(
-          transpose_input_operand->type.dimensions,
-          transpose_input_operand->type.dimensions +
-              transpose_input_operand->type.dimension_count);
+          transpose_input_operand->type.dimensions.data,
+          transpose_input_operand->type.dimensions.data +
+              transpose_input_operand->type.dimensions.count);
       // Reshape (1, 128, 192(axis)) to (384, 192(axis))
       auto reshape_transpose_input_operand = AddReshapeOperation(
           model, transpose_input_operand, reshape_input_dimensions);

@@ -40,7 +40,7 @@ endif()
 # 3. self-defined log will be included in tiny_publish mode
 if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK OR LITE_ON_MODEL_OPTIMIZE_TOOL OR LITE_WITH_PYTHON OR (NOT LITE_WITH_LOG))
   set(UTILS_SRC ${UTILS_SRC} ${LOG_SRC})
-  lite_cc_test(test_logging SRCS ${CMAKE_CURRENT_SOURCE_DIR}/log/logging_test.cc DEPS utils)
+  lite_cc_test(test_logging SRCS ${CMAKE_CURRENT_SOURCE_DIR}/log/logging_test.cc)
 else()
    set(UTILS_DEPS ${UTILS_DEPS} glog)
 endif()
@@ -53,7 +53,7 @@ lite_cc_library(utils SRCS ${UTILS_SRC} DEPS ${UTILS_DEPS})
 ###########################################################
 #  unit tests
 ###########################################################
-lite_cc_test(test_varient SRCS varient_test.cc DEPS utils)
+lite_cc_test(test_varient SRCS varient_test.cc)
 lite_cc_test(test_utils_string SRCS string_test.cc)
 # fp16 unit test
 if (WITH_TESTING)
@@ -64,4 +64,4 @@ if (WITH_TESTING)
 endif()
 
 # timer unit test
-lite_cc_test(test_timer SRCS timer_test.cc DEPS utils)
+lite_cc_test(test_timer SRCS timer_test.cc)

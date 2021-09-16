@@ -141,8 +141,8 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
       NNADAPTER_VLOG(3) << "HiAI input tensors[" << i << "]: " << n << "," << c
                         << "," << h << "," << w;
       NNADAPTER_CHECK_EQ(
-          ProductionOfDimensions(input_types_[i].dimensions,
-                                 input_types_[i].dimension_count),
+          ProductionOfDimensions(input_types_[i].dimensions.data,
+                                 input_types_[i].dimensions.count),
           n * c * h * w);
       input_tensors_[i].reset(new hiai::AiTensor);
       input_tensors_[i]->Init(&(input_dimensions[i]));
@@ -158,9 +158,10 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     auto w = output_dimensions[i].GetWidth();
     NNADAPTER_VLOG(3) << "HiAI output tensors[" << i << "]: " << n << "," << c
                       << "," << h << "," << w;
-    NNADAPTER_CHECK_EQ(ProductionOfDimensions(output_types_[i].dimensions,
-                                              output_types_[i].dimension_count),
-                       n * c * h * w);
+    NNADAPTER_CHECK_EQ(
+        ProductionOfDimensions(output_types_[i].dimensions.data,
+                               output_types_[i].dimensions.count),
+        n * c * h * w);
     output_tensors_[i].reset(new hiai::AiTensor);
     output_tensors_[i]->Init(&(output_dimensions[i]));
   }

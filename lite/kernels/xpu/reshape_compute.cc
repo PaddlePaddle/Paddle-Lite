@@ -29,7 +29,10 @@ void ReshapeCompute<T>::Run() {
   auto x = param.x;
   auto output = param.output;
   auto output_dims = output->dims();
-  if (output_dims.production() == 0) return;
+  if (output_dims.production() == 0) {
+    output->set_target(TARGET(kXPU));
+    return;
+  }
 
   if (param.inplace) {
     auto output_lod = output->lod();

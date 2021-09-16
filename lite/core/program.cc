@@ -238,6 +238,7 @@ void RuntimeProgram::SaveRuntimProgramIntoProgramDesc(
     std::shared_ptr<cpp::ProgramDesc> program_desc) {
   CheckProgramDescValidity(program_desc, instructions_.size());
   size_t block_size = program_desc->BlocksSize();
+  program_desc->SetVersion(get_version());
   for (size_t block_idx = 0; block_idx < block_size; ++block_idx) {
     std::set<std::string> already_added_vars;
     const std::map<std::string, cpp::VarDesc> origin_var_maps =

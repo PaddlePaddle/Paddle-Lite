@@ -211,12 +211,8 @@ class MaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
   }
 
   void create_build_options() {
-    std::string init_fp32 = " -DDATAINIT=-FLT_MAX ";
-    std::string init_fp16 = " -DDATAINIT=-HALF_MAX ";
-    build_options_ =
-        (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16)
-            ? init_fp16
-            : init_fp32;
+    std::string init_max = " -DDATAINIT=-FLT_MAX ";
+    build_options_ = init_max;
   }
 
 #ifdef LITE_WITH_PROFILE

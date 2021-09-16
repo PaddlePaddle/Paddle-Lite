@@ -42,8 +42,9 @@ int ConvertConv2D(Converter* converter, hal::Operation* operation) {
                               "performance.";
   }
   auto filter_operator = converter->ConvertOperand(filter_operand);
-  NNADAPTER_CHECK_EQ(bias_operand->type.dimension_count, 1);
-  NNADAPTER_CHECK_EQ(bias_operand->type.dimensions[0], output_channel_size);
+  NNADAPTER_CHECK_EQ(bias_operand->type.dimensions.count, 1);
+  NNADAPTER_CHECK_EQ(bias_operand->type.dimensions.data[0],
+                     output_channel_size);
   auto bias_operator = converter->ConvertOperand(bias_operand);
   std::shared_ptr<Operator> conv_operator = nullptr;
   auto pad_mode = ConvertAutoPadCodeToGEPadMode(auto_pad);
