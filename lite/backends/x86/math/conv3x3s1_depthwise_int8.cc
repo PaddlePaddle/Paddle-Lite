@@ -904,15 +904,19 @@ void conv_3x3s1_dw_int8(Dtype* dout,
       TargetMalloc(TARGET(kX86),
                    std::max(pre_in_size * omp_num * sizeof(int8_t),
                             32 * omp_num * sizeof(int8_t))));
-#pragma omp parallel for
   for (int n = 0; n < omp_num; ++n) {
     const int8_t* din_batch = din + n * size_in_channel;
-    Dtype* dout_batch = dout + n * size_out_channel;
-    int now_c = n % chin;
+    int8_t* out_ptr = pre_din + n * pre_in_size;
     // im2col data [num, chin, h, w] -> [num, chin, outh, outw, 9 + 7(0)]
     // int8 -> int16 -> +128 ->uint16 -> int8
     prepack_input_im2col_s1_int8(
-        din_batch, pre_din, pad_w, pad_h, win, hin, win_round, hout);
+        din_batch, out_ptr, pad_w, pad_h, win, hin, win_round, hout);
+  }
+#pragma omp parallel for
+  for (int n = 0; n < omp_num; ++n) {
+    int8_t* pre_din_ptr0 = pre_din + n * pre_in_size;
+    Dtype* dout_batch = dout + n * size_out_channel;
+    int now_c = n % chin;
     float bias_val = flag_bias ? static_cast<const float>(bias[now_c]) : 0;
     const int8_t* weight_ptr = weights + now_c * 9;
     __m128 vscale = _mm_set1_ps(scale[now_c]);
@@ -926,7 +930,7 @@ void conv_3x3s1_dw_int8(Dtype* dout,
     __m128i vw_temp = _mm_shuffle_epi8(weight_val, vmask);
     __m256i vw = _mm256_broadcastsi128_si256(vw_temp);
     for (int h = 0; h < hout; h++) {
-      int8_t* pre_din_ptr = pre_din;
+      int8_t* pre_din_ptr = pre_din_ptr0;
       Dtype* dout_ptr = dout_batch;
       for (int w = 0; w < cnt; w++) {
         __m256i vin0 =
@@ -1009,7 +1013,7 @@ void conv_3x3s1_dw_int8(Dtype* dout,
         __m128i vres = _mm_hadd_epi32(vres0, vres0);
         store_data_dtype_1(dout_ptr, vres, vscale, vbias);
       }
-      pre_din += win_round;
+      pre_din_ptr0 += win_round;
       dout_batch += wout;
     }
   }
