@@ -1,0 +1,218 @@
+
+//
+// Created by chenyaohuang on 2021/9/7.
+//
+
+#include <gtest/gtest.h>
+#include <algorithm>
+#include <random>
+#include "lite/backends/opencl/target_wrapper.h"
+#include "lite/core/op_registry.h"
+#include "lite/core/tensor.h"
+#include <ctime>
+namespace paddle {
+namespace lite {
+
+template <typename dtype>
+void fill_data(dtype *x, const int length, int set_value = -1) {
+  if (set_value == -1) {
+    for (size_t idx = 0; idx < length; ++idx) {
+      x[idx] = idx;
+    }
+  }
+  else if(set_value == 250){//index
+    for (size_t idx = 0; idx < length; ++idx) {
+      x[idx] =length-1-idx;
+    }
+  }
+  else if (set_value != -1) {
+    for (size_t idx = 0; idx < length; ++idx) {
+      x[idx] = set_value;
+    }
+  }
+}
+
+
+
+// #define PRINT_RESULT
+// image
+TEST(gather_image, compute) {
+//std::cout<<"路过"<<"\n";
+
+// dims
+const int n = 1;
+const int c = 1;
+const int h = 7;
+const int w = 3;
+
+const DDim x_dim = DDim(std::vector<DDim::value_type>{h, w});
+// y_dim / axis / relu_flag
+std::vector<DDim> index_dim_v{DDim(std::vector<DDim::value_type>{2}),
+                              DDim(std::vector<DDim::value_type>{h})};
+const DDim axis_dim = DDim(std::vector<DDim::value_type>{1});
+//std::vector<bool> relu_flag_v{false, true, false, false};
+std::vector<float> axis_map{1,0,1,0,0};
+
+// start loop
+double time_mi=1000000000000,time_mx=0;
+for (size_t case_idx = 0; case_idx < 5; ++case_idx) {
+auto index_dim = index_dim_v[case_idx&1];
+//auto relu_flag = relu_flag_v[case_idx&1];
+auto axis_m=axis_map[case_idx];
+DDim out_dim;
+if(axis_m==0)
+out_dim = DDim(std::vector<DDim::value_type>{index_dim[0],w});
+else
+out_dim = DDim(std::vector<DDim::value_type>{h,index_dim[0]});
+
+
+
+// tensor
+VLOG(4) << "set tensors about op param";
+lite::Tensor ga_x, ga_index, ga_out,ga_axis;
+ga_x.Resize(x_dim);
+ga_index.Resize(index_dim);
+ga_out.Resize(out_dim);
+ga_axis.Resize(axis_dim);
+// initialize tensors
+VLOG(4) << "initialize tensors";
+paddle::lite::CLImageConverterDefault default_convertor;
+// x
+std::vector<float> x_v(x_dim.production());
+//std::cout<<"x的总大小:  "<<x_dim.production()<<"\n";
+fill_data<float>(x_v.data(), x_v.size());  // fill with index value
+auto x_img_shape = default_convertor.InitImageDimInfoWith(x_dim);  // w, h
+auto x_img_w = x_img_shape[0];
+auto x_img_h = x_img_shape[1];
+std::vector<half_t> x_img_v(x_img_w * x_img_h * 4);  // 4: RGBA
+default_convertor.NCHWToImage(x_v.data(), x_img_v.data(), x_dim);
+
+ga_x.mutable_data<half_t, cl::Image2D>(
+    x_img_w, x_img_h, x_img_v.data());
+
+// index
+std::vector<float> index_v(index_dim.production());
+fill_data<float>(index_v.data(), index_v.size(),250);  // fill with index value
+//index_v[0]=1;
+auto index_img_shape = default_convertor.InitImageDimInfoWith(index_dim);  // w, h
+auto index_img_w = index_img_shape[0];
+auto index_img_h = index_img_shape[1];
+std::vector<half_t> index_img_v(index_img_w * index_img_h * 4);  // 4: RGBA
+default_convertor.NCHWToImage(index_v.data(), index_img_v.data(), index_dim);
+ga_index.mutable_data<half_t, cl::Image2D>(
+    index_img_w, index_img_h, index_img_v.data());
+//for(int i=0;i<)
+
+
+
+//axis
+std::vector<float> axis_v(axis_dim.production());
+axis_v[0]=axis_m;
+auto axis_img_shape = default_convertor.InitImageDimInfoWith(axis_dim);  // w, h
+auto axis_img_w = axis_img_shape[0];
+auto axis_img_h = axis_img_shape[1];
+std::vector<half_t> axis_img_v(axis_img_w * axis_img_h * 4);  // 4: RGBA
+default_convertor.NCHWToImage(axis_v.data(), axis_img_v.data(), axis_dim);
+ga_axis.mutable_data<half_t, cl::Image2D>(
+    axis_img_w, axis_img_h, axis_img_v.data());
+VLOG(1)<<"axis   "<<axis_v[0];
+
+// out
+auto out_img_shape =
+    default_convertor.InitImageDimInfoWith(out_dim);  // w, h
+auto out_img_w = out_img_shape[0];
+auto out_img_h = out_img_shape[1];
+ga_out.mutable_data<half_t, cl::Image2D>(out_img_w, out_img_h);
+
+std::vector<half_t> out_img_v(out_img_w * out_img_h * 4);
+fill_data<half_t>(
+    out_img_v.data(), out_img_v.size(), 0);  // fill with zero value
+
+std::vector<float> out_v(out_dim.production());
+
+
+
+operators::GatherParam gaParam;
+gaParam.X = &ga_x;
+gaParam.Index = &ga_index;
+gaParam.Out = &ga_out;
+gaParam.Axis = &ga_axis;
+
+auto op_param =  gaParam;
+
+// set kernel
+auto ga_img_kernels =
+    KernelRegistry::Global().Create("gather",
+                                    TARGET(kOpenCL),
+                                    PRECISION(kFP16),
+                                    DATALAYOUT(kImageDefault));
+ASSERT_FALSE(ga_img_kernels.empty());
+
+auto ga_img_kernel = std::move(ga_img_kernels.front());
+VLOG(4) << "get eleadd kernel: " << ga_img_kernel->doc();
+
+// set context and kernel args
+VLOG(4) << "set context and kernel args";
+std::unique_ptr<KernelContext> context(new KernelContext);
+context->As<OpenCLContext>().InitOnce();
+
+ga_img_kernel->SetParam(op_param);
+std::unique_ptr<KernelContext> ga_img_context(new KernelContext);
+context->As<OpenCLContext>().CopySharedTo(
+    &(ga_img_context->As<OpenCLContext>()));
+ga_img_kernel->SetContext(std::move(ga_img_context));
+
+// run kernel
+VLOG(4) << "run kernel";
+std::cout<< "run kernel"<<"\n";
+clock_t start,finish;
+start = clock();
+ga_img_kernel->Launch();
+// download gpu result to cpu
+const size_t cl_image2d_row_pitch{0};
+const size_t cl_image2d_slice_pitch{0};
+
+CLRuntime::Global()->command_queue().finish();
+finish = clock();
+double time_= (double)(finish - start)/CLOCKS_PER_SEC;
+std::cout<<"运行时间：    "<<time_<<std::endl;
+std::cout<<"mi : "<<time_mi<<"  mx  :"<<time_mx<<std::endl;
+if(time_<time_mi)
+time_mi=time_;
+if(time_>time_mx)
+time_mx=time_;
+std::cout<<"赋值后mi : "<<time_mi<<"  mx  :"<<time_mx<<std::endl;
+
+TargetWrapperCL::ImgcpySync(out_img_v.data(),
+    ga_out.data<half_t, cl::Image2D>(),
+    out_img_w,
+    out_img_h,
+    cl_image2d_row_pitch,
+    cl_image2d_slice_pitch,
+    IoDirection::DtoH);
+start = clock();
+default_convertor.ImageToNCHW(
+    out_img_v.data(), out_v.data(), out_img_shape, out_dim);
+std::cout<<"输出开始"<<"\n";
+
+for (int eidx = 0; eidx < out_dim[0]; eidx++) {
+for(int j=0;j<out_dim[1];j++){
+auto value = out_v[eidx*out_dim[1]+j];
+std::cout<<value;
+std::cout<<" ";
+}
+std::cout<<"\n";
+
+}
+
+
+
+
+}
+std::cout<<"最大时间："<<time_mx<<"秒\n最小时间： "<<time_mi<<"秒"<<std::endl;
+}
+
+}  // namespace lite
+}  // namespace paddle
+
+USE_LITE_KERNEL(gather, kOpenCL, kFP16, kImageDefault, def);
