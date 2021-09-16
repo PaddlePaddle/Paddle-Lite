@@ -33,7 +33,6 @@ int ConvertSoftmax(Converter* converter, OpInfo* op, Scope* scope) {
   if (op->HasOutputScale(out_scale_name, true)) {
     out_scales = op->GetOutputScale(out_scale_name, true);
   }
-
   int axis = -1;
   if (op->HasAttr("axis")) {
     axis = op->GetAttr<int>("axis");

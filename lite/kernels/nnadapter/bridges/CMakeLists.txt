@@ -36,7 +36,6 @@ lite_cc_library(subgraph_bridge_reduce_mean_op_nnadapter SRCS reduce_mean_op.cc 
 lite_cc_library(subgraph_bridge_dropout_op_nnadapter SRCS dropout_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_expand_op_nnadapter SRCS expand_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_range_op_nnadapter SRCS range_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
-lite_cc_library(subgraph_bridge_leaky_relu_op_nnadapter SRCS leaky_relu_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_pad_op_nnadapter SRCS pad_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_stack_op_nnadapter SRCS stack_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 

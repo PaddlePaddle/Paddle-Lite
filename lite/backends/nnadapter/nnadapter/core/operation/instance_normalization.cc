@@ -24,6 +24,7 @@ namespace operation {
 
 int PrepareInstanceNormalization(hal::Operation* operation) {
   INSTANCE_NORMALIZATION_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
   // Infer the shape and type of output operands
   CopyOperandTypeExceptQuantParams(&output_operand->type, input_operand->type);
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);

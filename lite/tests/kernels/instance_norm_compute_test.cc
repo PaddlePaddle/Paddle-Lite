@@ -139,15 +139,18 @@ class InstanceNormComputeTest : public arena::TestCase {
 void TestInstanceNorm(Place place,
                       float abs_error = 6e-5,
                       std::vector<std::string> ignored_outs = {}) {
-  for (auto& n : {1, 3, 16}) {
-    for (auto& c : {1, 4, 16}) {
-      for (auto& h : {1, 16, 33, 56}) {
-        for (auto& w : {1, 5, 34, 55}) {
+  for (auto& n : {1, 3}) {
+    for (auto& c : {3, 4, 16}) {
+      for (auto& h : {4, 16, 33}) {
+        for (auto& w : {4, 5, 34}) {
           for (auto& has_scale_bias : {true, false}) {
             DDim dim_in({n, c, h, w});
             float epsilon = 1e-5f;
             std::unique_ptr<arena::TestCase> tester(new InstanceNormComputeTest(
                 place, "def", dim_in, epsilon, has_scale_bias));
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+            if (!has_scale_bias) continue;
+#endif
 #ifdef LITE_WITH_ARM
             if (place == TARGET(kARM)) {
               auto& ctx = tester->context()->As<ARMContext>();
@@ -177,8 +180,6 @@ TEST(InstanceNorm, precision) {
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
   ignored_outs = {"saved_mean", "saved_variance"};
-  // TODO(shentanyue): enable later
-  return;
 #else
   return;
 #endif
