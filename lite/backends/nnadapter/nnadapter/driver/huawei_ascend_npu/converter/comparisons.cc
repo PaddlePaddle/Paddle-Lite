@@ -20,7 +20,7 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int ConvertArgComparisons(Converter* converter, hal::Operation* operation) {
+int ConvertComparisons(Converter* converter, hal::Operation* operation) {
   COMPARISONS_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
