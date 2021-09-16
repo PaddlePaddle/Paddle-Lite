@@ -31,13 +31,16 @@ void LayerNormCompute::Run() {
   float epsilon = param.epsilon;
 
   int r = xdnn::layer_norm(ctx.GetRawContext(),    /* context */
-                           matrix_dim[0],          /* m */
-                           matrix_dim[1],          /* n */
                            param.X->data<float>(), /* in */
                            param.Y->mutable_data<float>(TARGET(kXPU)), /* out */
+                           matrix_dim[0],                              /* m */
+                           matrix_dim[1],                              /* n */
+                           epsilon,                    /* epsilon */
                            param.Scale->data<float>(), /* scale */
                            param.Bias->data<float>(),  /* bias */
-                           epsilon /* epsilon */);
+                           nullptr,
+                           nullptr);
+
   CHECK_EQ(r, 0);
 }
 
