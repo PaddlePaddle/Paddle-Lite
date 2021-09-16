@@ -21,15 +21,6 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-void StackCompute::PrepareForRun() {
-  auto& param = this->Param<param_t>();
-
-  int n = param.X.size();
-  x_ptr_guard_ =
-      TargetWrapperXPU::MallocScratchPad(n * 8 /* sizeof(__global__ float*) */);
-  x_ptr_cpu_.reserve(n);
-}
-
 void StackCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
@@ -37,25 +28,26 @@ void StackCompute::Run() {
   int n = param.X.size();
   auto x_dims = param.X[0]->dims();
   int axis = param.axis;
-  // XXX(miaotianxiang): +1?
-  if (axis < 0) axis += (x_dims.size() + 1);
-  auto matrix = x_dims.Flatten2D(axis);
-  int height = matrix[0];
-  int width = matrix[1];
-
-  for (int i = 0; i < n; ++i) {
-    x_ptr_cpu_[i] = param.X[i]->data<float>();
+  if (axis < 0) {
+    axis += (x_dims.size() + 1);
   }
-  XPU_CALL(xpu_memcpy(
-      x_ptr_guard_->addr_, &x_ptr_cpu_[0], n * 8, XPU_HOST_TO_DEVICE));
+  std::vector<int> x_shape;
+  auto y_dim = param.Out->dims();
+  for (int i = 0; i < y_dim.size(); i++) {
+    x_shape.push_back(y_dim[i]);
+  }
+  x_shape[axis] = 1;
+  std::vector<std::vector<int>> xdims_list(n, x_shape);
 
-  int r = xdnn::stack_forward(
-      ctx.GetRawContext(), /* context */
-      height,              /* height */
-      width,               /* width */
-      n,                   /* n */
-      x_ptr_guard_->addr_, /* x_ptr */
-      param.Out->mutable_data<float>(TARGET(kXPU)) /* out */);
+  std::vector<const float*> x_list(n, nullptr);
+  for (int i = 0; i < n; ++i) {
+    x_list[i] = param.X[i]->data<float>();
+  }
+  int r = xdnn::concat<float>(ctx.GetRawContext(),
+                              x_list,
+                              param.Out->mutable_data<float>(TARGET(kXPU)),
+                              xdims_list,
+                              axis);
   CHECK_EQ(r, 0);
 }
 

@@ -1973,6 +1973,13 @@ struct XPUSoftmaxTopkParam : ParamBase {
   int K{1};
 };
 
+struct XPUMultiSoftmaxParam : ParamBase {
+  const lite::Tensor* input{};
+  lite::Tensor* concat_output{};
+  std::vector<lite::Tensor*> output;
+  std::vector<int> lod;
+};
+
 struct XPUBlockFuseParam : ParamBase {
   const lite::Tensor* input{nullptr};
   const lite::Tensor* filter{nullptr};
