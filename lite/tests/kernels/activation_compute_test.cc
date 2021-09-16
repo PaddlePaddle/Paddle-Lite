@@ -399,9 +399,9 @@ void TestAct(const Place& place,
                                      elu_alpha,
                                      dims,
                                      type,
-                                     act_type)); 
-  arena::Arena arena(std::move(tester), place, abs_error);    
-  arena.TestPrecision();   
+                                     act_type));
+  arena::Arena arena(std::move(tester), place, abs_error);
+  arena.TestPrecision();
 }
 
 template <class T = float>
