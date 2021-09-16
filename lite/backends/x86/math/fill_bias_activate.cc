@@ -301,9 +301,9 @@ static void activate_hardswish_inplace_bias(float *data,
       __m256 vres3 =
           _mm256_min_ps(_mm256_max_ps(vadd3, vec_zero), vec_threshold);
       _mm256_storeu_ps(tmp_data, _mm256_mul_ps(vres0, vsum0));
-      _mm256_storeu_ps(tmp_data + 8, _mm256_mul_ps(vres0, vsum1));
-      _mm256_storeu_ps(tmp_data + 16, _mm256_mul_ps(vres0, vsum2));
-      _mm256_storeu_ps(tmp_data + 24, _mm256_mul_ps(vres0, vsum3));
+      _mm256_storeu_ps(tmp_data + 8, _mm256_mul_ps(vres1, vsum1));
+      _mm256_storeu_ps(tmp_data + 16, _mm256_mul_ps(vres2, vsum2));
+      _mm256_storeu_ps(tmp_data + 24, _mm256_mul_ps(vres3, vsum3));
       tmp_data += 32;
 #else
       __m128 vin0 = _mm_add_ps(_mm_loadu_ps(tmp_data), vec_bias_128);
@@ -327,9 +327,9 @@ static void activate_hardswish_inplace_bias(float *data,
       __m128 vres3 =
           _mm_min_ps(_mm_max_ps(vadd3, vec_zero_128), vec_threshold_128);
       _mm_storeu_ps(tmp_data, _mm_mul_ps(vres0, vsum0));
-      _mm_storeu_ps(tmp_data + 4, _mm_mul_ps(vres0, vsum1));
-      _mm_storeu_ps(tmp_data + 8, _mm_mul_ps(vres0, vsum2));
-      _mm_storeu_ps(tmp_data + 12, _mm_mul_ps(vres0, vsum3));
+      _mm_storeu_ps(tmp_data + 4, _mm_mul_ps(vres1, vsum1));
+      _mm_storeu_ps(tmp_data + 8, _mm_mul_ps(vres2, vsum2));
+      _mm_storeu_ps(tmp_data + 12, _mm_mul_ps(vres3, vsum3));
       tmp_data += 16;
 #endif
     }
