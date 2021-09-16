@@ -30,9 +30,9 @@ int ConvertUnsqueeze(Converter* converter, hal::Operation* operation) {
   }
   auto output_tensor = converter->ConvertOperand(output_operand);
   aml::nn::ReshapeAttr attr;
-  NNADAPTER_CHECK_LE(output_operand->type.dimension_count, 4);
-  for (uint32_t i = 0; i < output_operand->type.dimension_count; i++) {
-    attr.shapes.push_back(output_operand->type.dimensions[i]);
+  NNADAPTER_CHECK_LE(output_operand->type.dimensions.count, 4);
+  for (uint32_t i = 0; i < output_operand->type.dimensions.count; i++) {
+    attr.shapes.push_back(output_operand->type.dimensions.data[i]);
   }
   std::vector<std::shared_ptr<aml::nn::Tensor>> input_tensors = {input_tensor};
   std::vector<std::shared_ptr<aml::nn::Tensor>> output_tensors = {

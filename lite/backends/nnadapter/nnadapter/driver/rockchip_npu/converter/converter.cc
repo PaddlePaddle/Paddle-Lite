@@ -90,16 +90,16 @@ std::shared_ptr<rk::nn::Tensor> Converter::UpdateTensorMap(
 
 std::shared_ptr<rk::nn::Tensor> Converter::AddConstantTensor(
     void* values,
-    int32_t* dimensions,
-    uint32_t dimension_count,
+    int32_t* dimensions_data,
+    uint32_t dimensions_count,
     rk::nn::PrecisionType precision,
     const float* quant_scale,
     const int32_t* zero_point) {
   auto name = GetTensorName(nullptr);
   auto tensor = CreateRknnTensor(graph_,
                                  name,
-                                 dimensions,
-                                 dimension_count,
+                                 dimensions_data,
+                                 dimensions_count,
                                  precision,
                                  quant_scale,
                                  zero_point,
@@ -112,15 +112,15 @@ std::shared_ptr<rk::nn::Tensor> Converter::AddConstantTensor(
 
 std::shared_ptr<rk::nn::Tensor> Converter::AddVariableTensor(
     const std::string& name,
-    int32_t* dimensions,
-    uint32_t dimension_count,
+    int32_t* dimensions_data,
+    uint32_t dimensions_count,
     rk::nn::PrecisionType precision,
     const float* quant_scale,
     const int32_t* zero_point) {
   return CreateRknnTensor(graph_,
                           name,
-                          dimensions,
-                          dimension_count,
+                          dimensions_data,
+                          dimensions_count,
                           precision,
                           quant_scale,
                           zero_point,
@@ -130,13 +130,13 @@ std::shared_ptr<rk::nn::Tensor> Converter::AddVariableTensor(
 
 std::shared_ptr<rk::nn::Tensor> Converter::AddQuant8ConstantTensor(
     uint8_t* values,
-    int32_t* dimensions,
-    uint32_t dimension_count,
+    int32_t* dimensions_data,
+    uint32_t dimensions_count,
     float quant_scale,
     int32_t zero_point) {
   return AddConstantTensor(values,
-                           dimensions,
-                           dimension_count,
+                           dimensions_data,
+                           dimensions_count,
                            rk::nn::PrecisionType::UINT8,
                            &quant_scale,
                            &zero_point);
@@ -144,12 +144,12 @@ std::shared_ptr<rk::nn::Tensor> Converter::AddQuant8ConstantTensor(
 
 std::shared_ptr<rk::nn::Tensor> Converter::AddQuant32ConstantTensor(
     int32_t* values,
-    int32_t* dimensions,
-    uint32_t dimension_count,
+    int32_t* dimensions_data,
+    uint32_t dimensions_count,
     float quant_scale) {
   return AddConstantTensor(values,
-                           dimensions,
-                           dimension_count,
+                           dimensions_data,
+                           dimensions_count,
                            rk::nn::PrecisionType::INT32,
                            &quant_scale,
                            nullptr);
@@ -157,13 +157,13 @@ std::shared_ptr<rk::nn::Tensor> Converter::AddQuant32ConstantTensor(
 
 std::shared_ptr<rk::nn::Tensor> Converter::AddQuant8VariableTensor(
     const std::string& name,
-    int32_t* dimensions,
-    uint32_t dimension_count,
+    int32_t* dimensions_data,
+    uint32_t dimensions_count,
     float quant_scale,
     int32_t zero_point) {
   return AddVariableTensor(name,
-                           dimensions,
-                           dimension_count,
+                           dimensions_data,
+                           dimensions_count,
                            rk::nn::PrecisionType::UINT8,
                            &quant_scale,
                            &zero_point);

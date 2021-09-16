@@ -28,8 +28,9 @@ int ConvertUnsqueeze(Converter* converter, hal::Operation* operation) {
   if (input_index == INVALID_INDEX) {
     input_index = converter->ConvertOperand(input_operand);
   }
-  auto shape_index = converter->AddInt32ConstantOperand(
-      output_operand->type.dimensions, output_operand->type.dimension_count);
+  auto shape_index =
+      converter->AddInt32ConstantOperand(output_operand->type.dimensions.data,
+                                         output_operand->type.dimensions.count);
   auto output_index = converter->ConvertOperand(output_operand);
   NNADAPTER_CHECK_EQ(
       converter->AddOperation(

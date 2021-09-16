@@ -55,6 +55,8 @@ WITH_TRAIN=OFF
 WITH_PROFILE=OFF
 # option of precision profile, default is OFF
 WITH_PRECISION_PROFILE=OFF
+# option of benchmark, default is OFF
+WITH_BENCHMARK=OFF
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
@@ -81,6 +83,19 @@ os_name=`uname -s`
 if [ ${os_name} == "Darwin" ]; then
    ulimit -n 1024
 fi
+
+# function of set options for benchmark
+function set_benchmark_options {
+  WITH_EXTRA=ON
+  WITH_EXCEPTION=ON
+  BUILD_JAVA=OFF
+  WITH_OPENCL=ON
+  if [ ${WITH_PROFILE} == "ON" ] || [ ${WITH_PRECISION_PROFILE} == "ON" ]; then
+    WITH_LOG=ON
+  else
+    WITH_LOG=OFF
+  fi
+}
 #####################################################################################################
 
 
@@ -278,6 +293,10 @@ function make_full_publish_so {
       ARCH=armv8
   fi
 
+  if [ "${WITH_BENCHMARK}" == "ON" ]; then
+      set_benchmark_options
+  fi
+  
   if [ "$NDK_ROOT" ]; then
       NDK_NAME=$(echo $NDK_ROOT | egrep -o "android-ndk-r[0-9]{2}")
       NDK_VERSION=$(echo $NDK_NAME | egrep -o "[0-9]{2}")
@@ -323,7 +342,11 @@ function make_full_publish_so {
       ${cmake_api_level_options} \
       ${cmake_mutable_options}
 
-  make publish_inference -j$NUM_PROC
+  if [ "${WITH_BENCHMARK}" == "ON" ]; then
+    make benchmark_bin -j$NUM_PROC
+  else
+    make publish_inference -j$NUM_PROC
+  fi
   cd - > /dev/null
 }
 
@@ -358,6 +381,10 @@ function print_usage {
     echo -e "|                       |------------------------------------|-------|-------|                                                         |"
     echo -e "|                       |Supported Minimum Android API Level |  16   |  21   |                                                         |"
     echo -e "|                       |Supported Minimum Android Version   |  4.1  |  5.0  |                                                         |"
+    echo -e "|     --with_benchmark: (OFF|ON); controls whether to compile benchmark binary, default is OFF                                         |"
+    echo -e "|                                                                                                                                      |"
+    echo -e "|  arguments of benchmark binary compiling:(armv8, gcc, c++_static)                                                                    |"
+    echo -e "|     ./lite/tools/build_android.sh --with_benchmark=ON full_publish                                                                   |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of striping lib according to input model:(armv8, gcc, c++_static)                                                         |"
     echo -e "|     ./lite/tools/build_android.sh --with_strip=ON --opt_model_dir=YourOptimizedModelDir                                              |"
@@ -538,6 +565,11 @@ function main {
             # compiling lib with precision profile, default OFF.
             --with_precision_profile=*)
                 WITH_PRECISION_PROFILE="${i#*=}"
+                shift
+                ;;
+            # compiling lib with benchmark feature, default OFF.
+            --with_benchmark=*)
+                WITH_BENCHMARK="${i#*=}"
                 shift
                 ;;
             # controls whether to include FP16 kernels, default is OFF

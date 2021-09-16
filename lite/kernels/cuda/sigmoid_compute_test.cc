@@ -21,7 +21,7 @@
 #include <utility>
 #include <vector>
 
-#include "lite/api/test_helper.h"
+#include "lite/api/test/test_helper.h"
 #include "lite/backends/cuda/target_wrapper.h"
 #include "lite/utils/float16.h"
 

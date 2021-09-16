@@ -1,6 +1,6 @@
 set(PYBIND_DEPS pybind python)
 if (NOT LITE_ON_TINY_PUBLISH)
-   set(PYBIND_DEPS ${PYBIND_DEPS} ${full_lib_DEPS} opt_base fbs_headers)
+   set(PYBIND_DEPS ${PYBIND_DEPS} ${full_lib_DEPS} paddle_api_full opt_base fbs_headers)
 endif()
 
 if(WIN32)

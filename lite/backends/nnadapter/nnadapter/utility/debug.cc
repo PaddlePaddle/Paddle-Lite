@@ -266,6 +266,10 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
                       "fuse_code"};
         output_args = {"output"};
         break;
+      case NNADAPTER_MAT_MUL:
+        input_args = {"x", "y", "transpose_x", "transpose_y"};
+        output_args = {"output"};
+        break;
       case NNADAPTER_FULLY_CONNECTED:
         input_args = {"input", "weight", "bias", "fuse_code"};
         output_args = {"output"};
@@ -524,7 +528,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(CONCAT);
     NNADAPTER_TYPE_TO_STRING(CONV_2D);
     NNADAPTER_TYPE_TO_STRING(CONV_2D_TRANSPOSE);
-    NNADAPTER_TYPE_TO_STRING(DEFORMABLE_CONV_2D)
+    NNADAPTER_TYPE_TO_STRING(DEFORMABLE_CONV_2D);
     NNADAPTER_TYPE_TO_STRING(DIV);
     NNADAPTER_TYPE_TO_STRING(EXPAND);
     NNADAPTER_TYPE_TO_STRING(FILL);
@@ -535,6 +539,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(PRELU);
     NNADAPTER_TYPE_TO_STRING(LOG);
     NNADAPTER_TYPE_TO_STRING(LP_NORMALIZATION);
+    NNADAPTER_TYPE_TO_STRING(MAT_MUL);
     NNADAPTER_TYPE_TO_STRING(MAX);
     NNADAPTER_TYPE_TO_STRING(MAX_POOL_2D);
     NNADAPTER_TYPE_TO_STRING(MIN);
@@ -582,13 +587,13 @@ NNADAPTER_EXPORT std::string FuseCodeToString(NNAdapterFuseCode type) {
   return name;
 }
 
-NNADAPTER_EXPORT std::string DimensionsToString(const int32_t* dimensions,
-                                                uint32_t dimension_count) {
+NNADAPTER_EXPORT std::string DimensionsToString(const int32_t* dimensions_data,
+                                                uint32_t dimensions_count) {
   std::string text;
-  if (dimension_count >= 1) {
-    text = string_format("%d", dimensions[0]);
-    for (uint32_t i = 1; i < dimension_count; i++) {
-      text += string_format(",%d", dimensions[i]);
+  if (dimensions_count >= 1) {
+    text = string_format("%d", dimensions_data[0]);
+    for (uint32_t i = 1; i < dimensions_count; i++) {
+      text += string_format(",%d", dimensions_data[i]);
     }
   }
   return text;
@@ -687,8 +692,8 @@ NNADAPTER_EXPORT std::string OperandValueToString(hal::Operand* operand) {
   auto is_constant_copy = type.lifetime == NNADAPTER_CONSTANT_COPY;
   auto is_constant_reference = type.lifetime == NNADAPTER_CONSTANT_REFERENCE;
   auto is_constant = is_constant_copy || is_constant_reference;
-  auto is_scalar = type.dimension_count == 0;
-  auto is_vector = type.dimension_count == 1;
+  auto is_scalar = type.dimensions.count == 0;
+  auto is_vector = type.dimensions.count == 1;
   // Only peek the value from the constant scalar operand
   if (is_constant && is_scalar) {
 #define OPERAND_SCALAR_VALUE_TO_STRING(ntype, dtype, dspecifier)               \
@@ -717,7 +722,7 @@ NNADAPTER_EXPORT std::string OperandValueToString(hal::Operand* operand) {
 #undef OPERAND_SCALAR_VALUE_TO_STRING
   } else {
     if (is_constant && is_vector) {
-      auto count = type.dimensions[0];
+      auto count = type.dimensions.data[0];
       if (count > 0 && count <= 4) {
 #define OPERAND_VECTOR_VALUE_TO_STRING(ntype, dtype, dspecifier)               \
   case NNADAPTER_##ntype:                                                      \
@@ -771,8 +776,9 @@ NNADAPTER_EXPORT std::string OperandValueToString(hal::Operand* operand) {
 #undef OPERAND_VECTOR_VALUE_TO_STRING
     }
     // Dimensions2String
-    label +=
-        ":[" + DimensionsToString(type.dimensions, type.dimension_count) + "]";
+    label += ":[" +
+             DimensionsToString(type.dimensions.data, type.dimensions.count) +
+             "]";
   }
   return string_format("%s:%s",
                        label.c_str(),
@@ -788,8 +794,8 @@ NNADAPTER_EXPORT std::string OperandTypeToString(NNAdapterOperandType* type) {
   os << " lifetime: " << OperandLifetimeCodeToString(type->lifetime)
      << std::endl;
   os << " dimensions: [";
-  for (uint32_t i = 0; i < type->dimension_count; i++) {
-    os << type->dimensions[i] << ",";
+  for (uint32_t i = 0; i < type->dimensions.count; i++) {
+    os << type->dimensions.data[i] << ",";
   }
   os << "]" << std::endl;
   switch (type->precision) {
