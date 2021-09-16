@@ -21,18 +21,22 @@ namespace lite {
 namespace operators {
 
 bool XPUEmbeddingWithEltwiseAddOp::CheckShape() const {
-  CHECK_OR_FALSE(param_.Ids.size() == param_.Tables.size());
-
-  auto& id_dims = param_.Ids[0]->dims();
-  auto& table_dims = param_.Tables[0]->dims();
-
-  int id_rank = id_dims.size();
-
-  CHECK_EQ_OR_FALSE(table_dims.size(), 2);
-  // id_dims must be [batch_size, seq_len] or [batch_size, seq_len, 1]
-  CHECK(id_rank == 2 || id_rank == 3) << "unsupported id_rank: " << id_rank;
-
+  CHECK_EQ(param_.Ids.size(), param_.Tables.size());
+  auto ids_dim = param_.Ids[0]->dims();
+  auto id_rank = ids_dim.size();
+  CHECK(id_rank == 2 || (id_rank == 3 && ids_dim[2] == 1))
+      << "unsupported id_rank: " << id_rank;
+  for (size_t i = 1; i < param_.Ids.size(); i++) {
+    CHECK_EQ(id_rank, param_.Ids[i]->dims().size());
+    for (size_t j = 0; j < id_rank; j++) {
+      CHECK_EQ(ids_dim[j], param_.Ids[i]->dims()[j]);
+    }
+  }
   if (param_.Mask != nullptr) {
+    CHECK_EQ(id_rank, param_.Mask->dims().size());
+    for (size_t j = 0; j < id_rank; j++) {
+      CHECK_EQ(ids_dim[j], param_.Mask->dims()[j]);
+    }
     CHECK(param_.SeqLod != nullptr);
     CHECK(param_.PadSeqLen != nullptr);
   }
