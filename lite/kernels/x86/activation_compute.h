@@ -383,7 +383,6 @@ class HardSwishComputeCompute
     auto x_dims = param.X->dims();
     auto x_data = param.X->template data<T>();
     auto output_data = param.Out->template mutable_data<T>();
-    float threshold = param.threshold;
     lite::x86::math::hard_swish<T>(x_data,
                                    output_data,
                                    x_dims.production(),
