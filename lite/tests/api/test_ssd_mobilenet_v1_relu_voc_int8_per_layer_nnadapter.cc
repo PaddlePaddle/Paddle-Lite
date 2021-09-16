@@ -15,9 +15,9 @@
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include <vector>
-#include "lite/api/lite_api_test_helper.h"
 #include "lite/api/paddle_api.h"
-#include "lite/api/test_helper.h"
+#include "lite/api/test/lite_api_test_helper.h"
+#include "lite/api/test/test_helper.h"
 #include "lite/tests/api/PASCALVOC2012_utility.h"
 
 DEFINE_string(data_dir, "", "data dir");

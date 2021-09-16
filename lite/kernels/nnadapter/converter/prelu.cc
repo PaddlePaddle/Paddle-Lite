@@ -33,7 +33,7 @@ int ConvertPRelu(Converter* converter, OpInfo* op, Scope* scope) {
     slope_operand = converter->AddConstantOperand(
         *slope_tensor, DDim({slope_tensor->numel()}));
   } else if (mode == "element") {
-    slope_operand = converter->AddConstantOperand(slope_tensor);
+    slope_operand = converter->AddConstantOperand(*slope_tensor);
   } else {
     LOG(ERROR) << "Not support prelu mode: " << mode;
     return PARAMETER_ERROR;
@@ -48,11 +48,8 @@ int ConvertPRelu(Converter* converter, OpInfo* op, Scope* scope) {
     converter->AddOperation(
         NNADAPTER_PRELU, {input_operand, slope_operand}, {output_operand});
   } else {
-    auto fuse_code_operand = converter->AddConstantOperand(
-        static_cast<int32_t>(NNADAPTER_FUSED_NONE));
-    converter->AddOperation(NNADAPTER_ADD,
-                            {input_operand, slope_operand, fuse_code_operand},
-                            {output_operand});
+    // TODO(zhupengyang): support by max/mul/add/cast
+    LOG(ERROR) << "Not support prelu mode: " << mode;
   }
   return NO_ERROR;
 }

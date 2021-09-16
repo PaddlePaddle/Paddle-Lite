@@ -48,8 +48,6 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   auto out_dims = out->dims();
   auto pooling_type = op_info->GetAttr<std::string>("pooling_type");
   auto global_pooling = op_info->GetAttr<bool>("global_pooling");
-  bool return_indices = false;
-  int return_indices_dtype = NNADAPTER_INT32;
   std::vector<int> ksize = op_info->GetAttr<std::vector<int>>("ksize");
   std::vector<int> paddings = op_info->GetAttr<std::vector<int>>("paddings");
   std::vector<int> strides = op_info->GetAttr<std::vector<int>>("strides");
@@ -133,6 +131,10 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Return_indices(optional), only for max_pool
   auto return_indices_operand = converter->AddBool8ConstantOperand(false);
 
+  // Return_indices_type(optional), only for max_pool
+  auto return_indices_type_operand = converter->AddInt32ConstantOperand(
+      static_cast<int32_t>(NNADAPTER_TENSOR_INT32));
+
   // Fuse code operand
   auto fuse_code_operand =
       converter->AddInt32ConstantOperand(NNADAPTER_FUSED_NONE);
@@ -168,8 +170,9 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       pool2d_operation_type = NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D;
     } else if (pooling_type == "max") {
       pool2d_operation_type = NNADAPTER_ADAPTIVE_MAX_POOL_2D;
-      LOG(WARNING) << "return_indices: " << return_indices;
-      LOG(WARNING) << "return_indices_dtype:" << return_indices_dtype;
+      input_operands.push_back(return_indices_operand);
+      input_operands.push_back(return_indices_type_operand);
+      output_operands.push_back(nullptr);
     } else {
       LOG(WARNING) << "Unsupported adaptive pooling type: " << pooling_type;
       return FAILED;
@@ -177,6 +180,8 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   } else if (pooling_type == "max") {
     pool2d_operation_type = NNADAPTER_MAX_POOL_2D;
     input_operands.insert(input_operands.begin() + 6, return_indices_operand);
+    input_operands.insert(input_operands.begin() + 7,
+                          return_indices_type_operand);
     output_operands.push_back(nullptr);
   } else if (pooling_type == "avg") {
     pool2d_operation_type = NNADAPTER_AVERAGE_POOL_2D;

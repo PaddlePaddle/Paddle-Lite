@@ -219,6 +219,7 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
                       "strides",
                       "ceil_mode",
                       "return_indices",
+                      "return_indices_dtype",
                       "fuse_code"};
         output_args = {"output", "indices"};
         break;
@@ -264,6 +265,10 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
                       "output_padding",
                       "output_shape",
                       "fuse_code"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_MAT_MUL:
+        input_args = {"x", "y", "transpose_x", "transpose_y"};
         output_args = {"output"};
         break;
       case NNADAPTER_FULLY_CONNECTED:
@@ -381,17 +386,12 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
                       "mask",
                       "filter",
                       "bias",
-                      "padding_left",
-                      "padding_right",
-                      "padding_top",
-                      "padding_bottom",
-                      "stride_width",
-                      "stride_height",
+                      "pads",
+                      "strides",
                       "group",
-                      "deformable_groups",
-                      "fuse_code",
-                      "dilation_width",
-                      "dilation_height"};
+                      "deformable_group",
+                      "dilations",
+                      "fuse_code"};
         output_args = {"output"};
         break;
       case NNADAPTER_PAD:
@@ -528,7 +528,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(CONCAT);
     NNADAPTER_TYPE_TO_STRING(CONV_2D);
     NNADAPTER_TYPE_TO_STRING(CONV_2D_TRANSPOSE);
-    NNADAPTER_TYPE_TO_STRING(DEFORMABLE_CONV_2D)
+    NNADAPTER_TYPE_TO_STRING(DEFORMABLE_CONV_2D);
     NNADAPTER_TYPE_TO_STRING(DIV);
     NNADAPTER_TYPE_TO_STRING(EXPAND);
     NNADAPTER_TYPE_TO_STRING(FILL);
@@ -539,6 +539,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(LEAKY_RELU);
     NNADAPTER_TYPE_TO_STRING(LOG);
     NNADAPTER_TYPE_TO_STRING(LP_NORMALIZATION);
+    NNADAPTER_TYPE_TO_STRING(MAT_MUL);
     NNADAPTER_TYPE_TO_STRING(MAX);
     NNADAPTER_TYPE_TO_STRING(MAX_POOL_2D);
     NNADAPTER_TYPE_TO_STRING(MIN);
