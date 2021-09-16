@@ -67,6 +67,7 @@ int ConvertDeformableConv2d(Converter* converter, hal::Operation* operation) {
   // Slice offset_x in the channel dimension
   auto x_begin_operator =
       converter->AddInt32ConstantOperator(std::vector<int32_t>({1}));
+  auto offset_channel = offset_operand->type.dimensions.data[1];
   auto x_end_operator = converter->AddInt32ConstantOperator(
       std::vector<int32_t>({offset_channel}));
   auto x_strides_operator = converter->AddInt32ConstantOperator(2);
@@ -129,17 +130,14 @@ int ConvertDeformableConv2d(Converter* converter, hal::Operation* operation) {
   auto deformable_offsets_op =
       converter->AddOperator<ge::op::DeformableOffsets>(output_operand);
   deformable_offsets_op->set_attr_strides(
-      ge::Operator::OpListInt({1, 1, stride_height, stride_width}));
+      ge::Operator::OpListInt({1, 1, strides[0], strides[1]}));
   deformable_offsets_op->set_attr_pads(
-      ge::Operator::OpListInt({padding_height_top,
-                               padding_height_bottom,
-                               padding_width_left,
-                               padding_width_right}));
+      ge::Operator::OpListInt(pads.begin(), pads.end()));
   deformable_offsets_op->set_attr_ksize(
       ge::Operator::OpListInt({filter_height, filter_width}));
   deformable_offsets_op->set_attr_dilations(
-      ge::Operator::OpListInt({1, 1, dilation_height, dilation_width}));
-  deformable_offsets_op->set_attr_deformable_groups(deformable_groups);
+      ge::Operator::OpListInt({1, 1, dilations[0], dilations[1]}));
+  deformable_offsets_op->set_attr_deformable_groups(deformable_group);
   deformable_offsets_op->set_attr_data_format("NCHW");
   deformable_offsets_op->set_attr_modulated(true);
   SET_INPUT(deformable_offsets_op, x, input_operator);
