@@ -137,6 +137,7 @@ void UpdateBiasQuantParamsAndValues(hal::Model* model) {
       case NNADAPTER_ADD:
       case NNADAPTER_CONCAT:
       case NNADAPTER_DIV:
+      case NNADAPTER_FLATTEN:
       case NNADAPTER_HARD_SIGMOID:
       case NNADAPTER_HARD_SWISH:
       case NNADAPTER_MAX_POOL_2D:
