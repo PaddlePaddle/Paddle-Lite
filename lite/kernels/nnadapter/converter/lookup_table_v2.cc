@@ -20,43 +20,44 @@ namespace kernels {
 namespace nnadapter {
 
 int ConvertLookupTableV2(Converter* converter, OpInfo* op, Scope* scope) {
-  // X operand
-  NNAdapterOperand* x_operand = nullptr;
-  auto x_name = op->Input("X").front();
-  auto x_tensor = scope->FindTensor(x_name);
-  if (x_tensor->persistable()) {
-    x_operand = converter->AddConstantOperand(*x_tensor);
+  // Input operand
+  NNAdapterOperand* input_operand = nullptr;
+  auto input_name = op->Input("W").front();
+  auto input_tensor = scope->FindTensor(input_name);
+  if (input_tensor->persistable()) {
+    input_operand = converter->AddConstantOperand(*input_tensor);
   } else {
-    x_operand = converter->GetMappedOperand(x_name);
+    input_operand = converter->GetMappedOperand(input_name);
   }
 
-  // Y operand
-  NNAdapterOperand* y_operand = nullptr;
-  auto y_name = op->Input("Y").front();
-  auto y_tensor = scope->FindTensor(y_name);
-  if (y_tensor->persistable()) {
-    y_operand = converter->AddConstantOperand(*y_tensor);
+  // Indices operand
+  NNAdapterOperand* indices_operand = nullptr;
+  auto indices_name = op->Input("Ids").front();
+  auto indices_tensor = scope->FindTensor(indices_name);
+  if (indices_tensor->persistable()) {
+    indices_operand = converter->AddConstantOperand(*indices_tensor);
   } else {
-    y_operand = converter->GetMappedOperand(y_name);
+    indices_operand = converter->GetMappedOperand(indices_name);
   }
 
-  // Transpose_x operand
-  bool transpose_x = op->GetAttr<bool>("trans_x");
-  auto transpose_x_operand = converter->AddConstantOperand(transpose_x);
+  // Axis operand
+  auto axis_operand = converter->AddConstantOperand<int>(0);
 
-  // Transpose_y operand
-  bool transpose_y = op->GetAttr<bool>("trans_y");
-  auto transpose_y_operand = converter->AddConstantOperand(transpose_y);
+  // Padding_idx
+  if (op->HasAttr("padding_idx")) {
+    // TODO(zhupengyang): support padding_idx later.
+    CHECK_EQ(op->GetAttr<int64_t>("padding_idx"), -1L)
+        << "Only support padding_idx = -1";
+  }
 
   // Output operand
   auto out_name = op->Output("Out").front();
   auto output_operand = converter->AddOutputOperand(out_name);
 
   // Mat_mul operation
-  converter->AddOperation(
-      NNADAPTER_MAT_MUL,
-      {x_operand, y_operand, transpose_x_operand, transpose_y_operand},
-      {output_operand});
+  converter->AddOperation(NNADAPTER_GATHER,
+                          {input_operand, indices_operand, axis_operand},
+                          {output_operand});
   return NO_ERROR;
 }
 

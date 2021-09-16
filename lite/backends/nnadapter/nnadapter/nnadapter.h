@@ -684,7 +684,11 @@ typedef enum {
    * which gather will be performed. It should be in range [-R, R), where R is
    * the rank of input, negative value works the same way as axis+R.
    *
+   * Outputs
+   * * 0: output, a tensor with the same type as input, of rank with rank "R1 +
+   * (R - 1)".
    *
+   * Available since version 1.
    */
   NNADAPTER_GATHER,
 
