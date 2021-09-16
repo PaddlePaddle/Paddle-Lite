@@ -98,6 +98,9 @@ function set_benchmark_options {
     WITH_OPENCL=OFF
   else
     WITH_OPENCL=ON
+    if [ "${ARCH}" == "armv8" ] || [ "${ARCH}" == "armv7hf" ]; then
+      with_light_weight_framework=ON
+    fi
   fi
   if [ ${WITH_PROFILE} == "ON" ] || [ ${WITH_PRECISION_PROFILE} == "ON" ]; then
     WITH_LOG=ON
