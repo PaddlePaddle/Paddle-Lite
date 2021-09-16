@@ -78,10 +78,13 @@ void fp32_to_int8(const float* din,
       __m256i vres1_8 = _mm256_packs_epi16(vres1_16, vres1_16);
       __m256i vres2_8 = _mm256_packs_epi16(vres2_16, vres2_16);
       __m256i vres3_8 = _mm256_packs_epi16(vres3_16, vres3_16);
-      *(reinterpret_cast<int*>(dout)) = _mm256_extract_epi32(vres0_8, 0);
-      *(reinterpret_cast<int*>(dout + 8)) = _mm256_extract_epi32(vres1_8, 0);
-      *(reinterpret_cast<int*>(dout + 16)) = _mm256_extract_epi32(vres2_8, 0);
-      *(reinterpret_cast<int*>(dout + 24)) = _mm256_extract_epi32(vres3_8, 0);
+      *(reinterpret_cast<int*>(dout)) = (reinterpret_cast<int*>(&vres0_8))[0];
+      *(reinterpret_cast<int*>(dout + 8)) =
+          (reinterpret_cast<int*>(&vres1_8))[0];
+      *(reinterpret_cast<int*>(dout + 16)) =
+          (reinterpret_cast<int*>(&vres2_8))[0];
+      *(reinterpret_cast<int*>(dout + 24)) =
+          (reinterpret_cast<int*>(&vres3_8))[0];
       din_c += 32;
       dout_c += 32;
     }
