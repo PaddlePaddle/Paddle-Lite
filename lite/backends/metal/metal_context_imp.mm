@@ -147,7 +147,6 @@ extern NSString* cString2NSString(std::string cStr) {
     if(use_one_cmdbuf_){
         
     } else {
-      
         [_commandBuffer commit];
         [_waitings addObject:_commandBuffer];
         _commandBuffer = [_commandQueue commandBuffer];
@@ -194,7 +193,7 @@ extern NSString* cString2NSString(std::string cStr) {
             }
             [buffer waitUntilCompleted];
             if (buffer.error) {
-                LOG(INFO) << "[METAL]: " << buffer.error.localizedDescription.UTF8String;
+                VLOG(4) << "[METAL]: " << buffer.error.localizedDescription.UTF8String;
             }
         }
         [_waitings removeAllObjects];
@@ -247,7 +246,7 @@ extern NSString* cString2NSString(std::string cStr) {
     MTLSize threadsPerGroup = MTLSize{.width = width, .height = height, .depth = 1};
     MTLSize groups = MTLSize{.width = groupWidth, .height = groupHeight, .depth = slices};
     if (groups.width <= 0 ||  groups.height <= 0 ||  groups.depth <= 0) {
-      LOG(INFO) << "[METAL]: " << "dispatch thread groups 1.{" << groups.width
+        VLOG(4) << "[METAL]: " << "dispatch thread groups 1.{" << groups.width
         << "," << groups.height << "," << groups.depth << "}";
       return;
     }
@@ -261,7 +260,7 @@ extern NSString* cString2NSString(std::string cStr) {
         threadsPerGroup:(MTLSize)threadsPerGroup
                  groups:(MTLSize)groups {
     if (groups.width <= 0 ||  groups.height <= 0 ||  groups.depth <= 0) {
-      LOG(INFO) << "[METAL]: " << "dispatch thread groups 2.{" << groups.width
+        VLOG(4) << "[METAL]: " << "dispatch thread groups 2.{" << groups.width
         << "," << groups.height << "," << groups.depth << "}";
       return;
     }
