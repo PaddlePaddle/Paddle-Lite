@@ -195,6 +195,7 @@ struct GeluFunctor : public BaseActivationFunctor<T> {
     auto out_data = out.data();
     int n = std::min(x.size(), out.size());
     std::memset(out_data, 0, n * sizeof(T));
+
     paddle::lite::x86::math::CBlas<T>::AXPY(
         n, static_cast<T>(M_SQRT1_2), x_data, 1, out_data, 1);
     paddle::lite::x86::math::CBlas<T>::VMERF(n, out_data, out_data, VML_LA);
