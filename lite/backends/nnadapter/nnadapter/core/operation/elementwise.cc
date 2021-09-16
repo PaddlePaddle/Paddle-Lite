@@ -24,10 +24,10 @@
 namespace nnadapter {
 namespace operation {
 
-NNADAPTER_EXPORT int32_t
-CalcEltwiseBinaryOperationsOutputSize(const NNAdapterOperandType& input0_type,
-                                      const NNAdapterOperandType& input1_type,
-                                      NNAdapterOperandType* output_type) {
+NNADAPTER_EXPORT void CalcEltwiseBinaryOperationsOutputSize(
+    const NNAdapterOperandType& input0_type,
+    const NNAdapterOperandType& input1_type,
+    NNAdapterOperandType* output_type) {
   // Infer the shape and type of output operands
   int32_t input0_size = input0_type.dimensions.count;
   int32_t input1_size = input1_type.dimensions.count;

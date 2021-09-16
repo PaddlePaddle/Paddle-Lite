@@ -41,7 +41,7 @@ namespace operation {
 
 // Calculate the dimensions of the output operand of elementwise binary
 // operations with broadcasting
-int32_t CalcEltwiseBinaryOperationsOutputSize(
+void CalcEltwiseBinaryOperationsOutputSize(
     const NNAdapterOperandType& input0_type,
     const NNAdapterOperandType& input1_type,
     NNAdapterOperandType* output_type);
