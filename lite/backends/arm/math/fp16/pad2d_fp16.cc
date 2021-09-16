@@ -123,7 +123,6 @@ void pad_edge_fp16(const float16_t* din,
     const float16_t* din_s = din + s * spatial_size_in;
     float16_t* dout_s = dout + s * spatial_size_out;
     float16_t* dout_med = dout_s + w * pad_top;
-#ifdef __aarch64__
     for (int j = 0; j < h_in; ++j) {
       float16_t edge_val = din_s[0];
       float16x4_t vedge = vdup_n_f16(edge_val);
@@ -165,7 +164,6 @@ void pad_edge_fp16(const float16_t* din,
         *dout_med++ = edge_val;
       }
     }
-#endif
 
     // process bottom
     float16_t* dout_bottom = dout_med;
@@ -216,7 +214,6 @@ void pad_reflect_fp16(const float16_t* din,
 
     // process med
     float16_t* dout_med = dout_s + w * pad_top;
-#ifdef __aarch64__
     for (int j = 0; j < h_in; ++j) {
       for (int i = 0; i < left_loop; ++i) {
         float16x4_t val =
@@ -270,7 +267,6 @@ void pad_reflect_fp16(const float16_t* din,
         *dout_med++ = *remain--;
       }
     }
-#endif
     // process bottom
     float16_t* dout_bottom = dout_med;
     float16_t* dout_bottom_reflect = dout_med - (w << 1);
