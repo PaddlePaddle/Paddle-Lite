@@ -83,6 +83,7 @@ class LITE_API LightPredictor {
 
   const lite::Tensor* GetTensor(const std::string& name) const {
     auto* var = program_->exec_scope()->FindVar(name);
+    CHECK(var) << "no fatch variable " << name << " in exec_scope";
     return &var->Get<lite::Tensor>();
   }
 
@@ -134,12 +135,13 @@ class LITE_API LightPredictor {
   std::vector<std::string> input_names_;
   std::vector<std::string> output_names_;
   std::vector<PrecisionType> input_precisions_;
+  std::vector<std::vector<int64_t>> input_shapes_;
 };
 
 class LightPredictorImpl : public lite_api::PaddlePredictor {
  public:
   LightPredictorImpl() = default;
-
+  virtual ~LightPredictorImpl();
   std::unique_ptr<lite_api::Tensor> GetInput(int i) override;
 
   std::unique_ptr<const lite_api::Tensor> GetOutput(int i) const override;

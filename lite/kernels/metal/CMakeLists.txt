@@ -18,6 +18,7 @@ message(STATUS "compile with lite Metal kernels")
 #####################
 add_kernel(activation_metal_image METAL basic SRCS image_op/activation_image_compute.mm)
 add_kernel(batch_norm_metal_image METAL basic SRCS image_op/batch_norm_image_compute.mm)
+add_kernel(box_coder_metal_image METAL basic SRCS image_op/box_coder_image_compute.mm)
 add_kernel(concat_metal_image METAL basic SRCS image_op/concat_image_compute.mm)
 add_kernel(conv2d_metal_image METAL basic SRCS image_op/conv2d_image_compute.mm)
 add_kernel(depthwise_conv2d_metal_image METAL basic SRCS image_op/depthwise_conv2d_image_compute.mm)
@@ -58,7 +59,6 @@ add_kernel(conv2d_transpose_metal_image METAL basic SRCS image_op/conv2d_transpo
 # add_kernel(tanh_metal_image METAL basic SRCS image_op/tanh_image_compute.mm)
 # add_kernel(prior_box_metal_image METAL basic SRCS image_op/prior_box_image_compute.mm)
 # add_kernel(conv2d_transpose_metal_image METAL basic SRCS image_op/conv2d_transpose_image_compute.mm)
-# add_kernel(box_coder_metal_image METAL basic SRCS image_op/box_coder_image_compute.mm)
 
 
 if(LITE_WITH_METAL)

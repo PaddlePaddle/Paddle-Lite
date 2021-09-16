@@ -317,6 +317,8 @@ class LITE_API CxxConfig : public ConfigBase {
   std::vector<std::string> passes_internal_{};
   bool quant_model_{false};  // Enable post_quant_dynamic in opt
   QuantType quant_type_{QuantType::QUANT_INT16};
+  bool sparse_model_{false};  // Enable sparse_conv_detect_pass in opt
+  float sparse_threshold_{0.6f};
   std::map<int, std::vector<std::shared_ptr<void>>>
       preferred_inputs_for_warmup_;
 #ifdef LITE_WITH_CUDA
@@ -395,7 +397,7 @@ class LITE_API CxxConfig : public ConfigBase {
   // XPU only, set the size of the workspace memory from L3 cache for the
   // current thread.
   // **DEPRECATED**, use set_xpu_l3_cache_method() in the future
-  void set_xpu_workspace_l3_size_per_thread(int l3_size = 0xfffc00);
+  void set_xpu_workspace_l3_size_per_thread(int l3_size = 0x4000000);
   void set_xpu_l3_cache_method(size_t l3_size, bool locked = false);
 
   void set_xpu_conv_autotune(bool autotune = true,
@@ -430,6 +432,13 @@ class LITE_API CxxConfig : public ConfigBase {
   bool quant_model() const { return quant_model_; }
   void set_quant_type(QuantType quant_type) { quant_type_ = quant_type; }
   QuantType quant_type() const { return quant_type_; }
+
+  void set_sparse_model(bool sparse_model) { sparse_model_ = sparse_model; }
+  bool sparse_model() const { return sparse_model_; }
+  void set_sparse_threshold(float sparse_threshold) {
+    sparse_threshold_ = sparse_threshold;
+  }
+  float sparse_threshold() const { return sparse_threshold_; }
 };
 
 /// MobileConfig is the config for the light weight predictor, it will skip

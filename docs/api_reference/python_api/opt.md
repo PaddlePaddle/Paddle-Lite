@@ -124,6 +124,24 @@ opt.set_valid_places("arm,opencl")
 
 启用`Float16 训练后量化`。将模型中权重数据量化为`Float16`对模型精度有一点影响，运行耗时和内存占用几乎降低一半。
 
+
+### `set_sparse_model(bool)`
+
+设置是否使用 `opt` 中的模型稀疏化功能。此功能目前只可以在ARM平台编译模型时开启。
+
+参数：
+
+- `sparse_model(bool)`
+
+### `set_sparse_threshold(float)`
+
+设置稀疏化阈值。例如，设置为0.6时，意思是对于某层参数，如果该参数的0元素比例小于0.6的话，则不走`sparse pass`。
+
+参数：
+
+- `sparse_threshold(float)`-支持参数区间为`[0,1]`
+
+
 ### `run()`
 
 执行模型优化，用以上接口设置完 `模型路径`、`model_type`、`optimize_out`和`valid_places`后，执行`run()`接口会根据以上设置转化模型，转化后模型保存在当前路径下。

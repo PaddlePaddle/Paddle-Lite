@@ -110,7 +110,7 @@ add_kernel(box_clip_compute Host extra SRCS box_clip_compute.cc)
 
 
 if(LITE_BUILD_EXTRA AND LITE_WITH_x86)
-  lite_cc_test(test_where_index_compute_host SRCS where_index_compute.cc DEPS kernels)
-  lite_cc_test(test_pixel_shuffle_compute_host SRCS pixel_shuffle_compute.cc DEPS kernels)
-  lite_cc_test(test_one_hot_compute_host SRCS one_hot_compute_test.cc DEPS kernels)
+  lite_cc_test(test_where_index_compute_host SRCS where_index_compute.cc)
+  lite_cc_test(test_pixel_shuffle_compute_host SRCS pixel_shuffle_compute.cc)
+  lite_cc_test(test_one_hot_compute_host SRCS one_hot_compute_test.cc)
 endif()

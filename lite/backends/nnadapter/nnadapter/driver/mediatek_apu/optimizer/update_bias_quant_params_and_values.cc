@@ -59,8 +59,8 @@ static void UpdateBiasScaleWithInputScaleXWeightScale(
     float new_bias_scale = input_scale * weight_scale;
     bool update_bias_scale = std::fabs(new_bias_scale - old_bias_scale) > 1e-7f;
     if (update_bias_scale) {
-      NNADAPTER_CHECK_EQ(bias_type.dimension_count, 1);
-      auto channel_size = bias_type.dimensions[0];
+      NNADAPTER_CHECK_EQ(bias_type.dimensions.count, 1);
+      auto channel_size = bias_type.dimensions.data[0];
       auto quant_bias_data = reinterpret_cast<int32_t*>(bias_operand->buffer);
       std::vector<float> float_bias_data(channel_size);
       DequantizeData<int32_t>(quant_bias_data,
@@ -93,8 +93,8 @@ static void UpdateBiasScaleWithInputScaleXWeightScale(
           std::fabs(new_bias_scale[i] - old_bias_scale[i]) > 1e-7f;
     }
     if (update_bias_scale) {
-      NNADAPTER_CHECK_EQ(bias_type.dimension_count, 1);
-      NNADAPTER_CHECK_EQ(bias_type.dimensions[0], channel_size);
+      NNADAPTER_CHECK_EQ(bias_type.dimensions.count, 1);
+      NNADAPTER_CHECK_EQ(bias_type.dimensions.data[0], channel_size);
       auto quant_bias_data = reinterpret_cast<int32_t*>(bias_operand->buffer);
       std::vector<float> float_bias_data(channel_size);
       DequantizeData<int32_t>(quant_bias_data,
@@ -137,6 +137,7 @@ void UpdateBiasQuantParamsAndValues(hal::Model* model) {
       case NNADAPTER_ADD:
       case NNADAPTER_CONCAT:
       case NNADAPTER_DIV:
+      case NNADAPTER_FLATTEN:
       case NNADAPTER_HARD_SIGMOID:
       case NNADAPTER_HARD_SWISH:
       case NNADAPTER_MAX_POOL_2D:

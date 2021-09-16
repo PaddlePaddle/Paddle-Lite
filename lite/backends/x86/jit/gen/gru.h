@@ -17,7 +17,7 @@
 #include <string>
 #include "lite/backends/x86/jit/gen/act.h"
 #include "lite/backends/x86/jit/gen/jitcode.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 namespace paddle {
 namespace lite {

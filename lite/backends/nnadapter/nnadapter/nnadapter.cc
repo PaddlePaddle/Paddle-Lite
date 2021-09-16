@@ -77,7 +77,7 @@ NNADAPTER_EXPORT int NNAdapterDevice_acquire(const char* name,
 }
 
 NNADAPTER_EXPORT void NNAdapterDevice_release(NNAdapterDevice* device) {
-  if (!device) {
+  if (device) {
     auto d = reinterpret_cast<nnadapter::runtime::Device*>(device);
     delete d;
   }
@@ -144,7 +144,7 @@ NNADAPTER_EXPORT int NNAdapterContext_create(NNAdapterDevice** devices,
 }
 
 NNADAPTER_EXPORT void NNAdapterContext_destroy(NNAdapterContext* context) {
-  if (!context) {
+  if (context) {
     auto x = reinterpret_cast<nnadapter::runtime::Context*>(context);
     delete x;
   }
@@ -164,7 +164,7 @@ NNADAPTER_EXPORT int NNAdapterModel_create(NNAdapterModel** model) {
 }
 
 NNADAPTER_EXPORT void NNAdapterModel_destroy(NNAdapterModel* model) {
-  if (!model) {
+  if (model) {
     auto m = reinterpret_cast<nnadapter::runtime::Model*>(model);
     delete m;
   }
@@ -309,7 +309,7 @@ NNADAPTER_EXPORT int NNAdapterCompilation_create(
 
 NNADAPTER_EXPORT void NNAdapterCompilation_destroy(
     NNAdapterCompilation* compilation) {
-  if (!compilation) {
+  if (compilation) {
     auto c = reinterpret_cast<nnadapter::runtime::Compilation*>(compilation);
     delete c;
   }
@@ -355,7 +355,7 @@ NNADAPTER_EXPORT int NNAdapterExecution_create(
 
 NNADAPTER_EXPORT void NNAdapterExecution_destroy(
     NNAdapterExecution* execution) {
-  if (!execution) {
+  if (execution) {
     auto e = reinterpret_cast<nnadapter::runtime::Execution*>(execution);
     delete e;
   }

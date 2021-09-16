@@ -16,7 +16,7 @@
 #include <vector>
 #include "lite/backends/arm/math/gemm_prepacked_int8.h"
 #include "lite/backends/arm/math/packed_sgemm.h"
-#include "lite/utils/logging.h"
+#include "lite/utils/log/logging.h"
 
 namespace paddle {
 namespace lite {

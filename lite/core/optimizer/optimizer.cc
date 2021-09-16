@@ -138,10 +138,11 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "op_transformation_pass",                   //
        "remove_scale1_pass",                       //
        "adaptive_1x1_pool2d_convert_global_pass",  //
-       "lite_conv_elementwise_fuse_pass",          // conv-elemwise-bn
-       "lite_conv_bn_fuse_pass",                   //
-       "lite_conv_elementwise_fuse_pass",          // conv-bn-elemwise
-       "lite_conv_conv_fuse_pass",                 //
+
+       "lite_conv_elementwise_fuse_pass",  // conv-elemwise-bn
+       "lite_conv_bn_fuse_pass",           //
+       "lite_conv_elementwise_fuse_pass",  // conv-bn-elemwise
+       "lite_conv_conv_fuse_pass",         //
        // TODO(Superjomn) Refine the fusion related design to select fusion
        // kernels for devices automatically.
        "lite_conv_activation_fuse_pass",              //
@@ -200,6 +201,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "__xpu__link_previous_out_max_pass",
        "fix_mismatched_precision_pass",
        "__xpu__dynamic_lstm_fuse_pass",
+       "__xpu__multi_softmax_fuse_pass",
        "ssd_boxes_calc_offline_pass",
        // Only for fully quantized model, infer the output scale and fix the
        // attribute 'enable_int8' for all of the quantized ops.

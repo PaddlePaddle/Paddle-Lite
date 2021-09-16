@@ -21,7 +21,7 @@ limitations under the License. */
 #include "lite/backends/x86/fluid/for_range.h"
 #include "lite/backends/x86/fluid/transform.h"
 #include "lite/backends/x86/math/math_function.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 #include "lite/utils/variant.h"
 
 namespace paddle {

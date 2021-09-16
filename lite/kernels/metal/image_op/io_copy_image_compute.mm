@@ -43,8 +43,8 @@ class IoCopyHostToMetalTexture
         auto input_dims = param.x->dims();
         auto src = param.x->template data<float>();
         // scene: have not metal kernel, so use CPU kernel then return to GPU
-        if ((input_dims.size() == 4 && input_dims[1] <= 4) ||
-            (input_dims.size() == 3 && input_dims[0] <= 4)) {
+        if ((input_dims.size() == 4) ||
+            (input_dims.size() == 3)) {
             output_buffer_ = param.y->template mutable_data<MetalHalf, MetalImage>(
                 metal_context_, param.y->dims());
         }

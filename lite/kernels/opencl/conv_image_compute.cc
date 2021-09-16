@@ -821,6 +821,13 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
                                       static_cast<size_t>(tuned_in_map[5])};
       int func_id = tuned_in_map[6];
       if (func_id == 0) {
+        context.cl_context()->AddKernel(kernel_func_names_[0],
+                                        kernel_func_paths_[0],
+                                        build_options_[0],
+                                        time_stamp_);
+        kernel_key.str("");
+        kernel_key << kernel_func_names_[0] << build_options_[0] << time_stamp_;
+        kernel_ = context.cl_context()->GetKernel(kernel_key.str());
         return;
       } else if (func_id == 1) {
         kernel_func_names_[0] = "conv2d_1x1_h1w5c1";

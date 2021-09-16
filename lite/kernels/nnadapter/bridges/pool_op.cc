@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -131,6 +131,10 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Return_indices(optional), only for max_pool
   auto return_indices_operand = converter->AddBool8ConstantOperand(false);
 
+  // Return_indices_type(optional), only for max_pool
+  auto return_indices_type_operand = converter->AddInt32ConstantOperand(
+      static_cast<int32_t>(NNADAPTER_TENSOR_INT32));
+
   // Fuse code operand
   auto fuse_code_operand =
       converter->AddInt32ConstantOperand(NNADAPTER_FUSED_NONE);
@@ -145,20 +149,39 @@ int PoolConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   }
 
   // 2-D Pooling operation
-  std::vector<NNAdapterOperand*> input_operands = {
-      input_operand,
-      auto_pad_operand,
-      pads_operand,
-      kernel_shape_operand,
-      strides_operand,
-      ceil_mode_operand,
-      fuse_code_operand,
-  };
+  std::vector<NNAdapterOperand*> input_operands;
+  if (adaptive) {
+    input_operands.push_back(input_operand);
+    input_operands.push_back(kernel_shape_operand);
+  } else {
+    input_operands.push_back(input_operand);
+    input_operands.push_back(auto_pad_operand);
+    input_operands.push_back(pads_operand);
+    input_operands.push_back(kernel_shape_operand);
+    input_operands.push_back(strides_operand);
+    input_operands.push_back(ceil_mode_operand);
+    input_operands.push_back(fuse_code_operand);
+  }
+
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
   NNAdapterOperationType pool2d_operation_type;
-  if (pooling_type == "max") {
+  if (adaptive) {
+    if (pooling_type == "avg") {
+      pool2d_operation_type = NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D;
+    } else if (pooling_type == "max") {
+      pool2d_operation_type = NNADAPTER_ADAPTIVE_MAX_POOL_2D;
+      input_operands.push_back(return_indices_operand);
+      input_operands.push_back(return_indices_type_operand);
+      output_operands.push_back(nullptr);
+    } else {
+      LOG(WARNING) << "Unsupported adaptive pooling type: " << pooling_type;
+      return FAILED;
+    }
+  } else if (pooling_type == "max") {
     pool2d_operation_type = NNADAPTER_MAX_POOL_2D;
     input_operands.insert(input_operands.begin() + 6, return_indices_operand);
+    input_operands.insert(input_operands.begin() + 7,
+                          return_indices_type_operand);
     output_operands.push_back(nullptr);
   } else if (pooling_type == "avg") {
     pool2d_operation_type = NNADAPTER_AVERAGE_POOL_2D;

@@ -72,7 +72,8 @@ CalcConv2DOutputSize(int32_t input_size,
 }
 
 int PrepareConv2D(hal::Operation* operation) {
-  CONV2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  CONV_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
   // Infer the shape and type of output operands
   CopyOperandTypeExceptQuantParams(&output_operand->type, input_operand->type);
   auto infer_output_shape = [&](int32_t* input_dimensions,
@@ -94,11 +95,11 @@ int PrepareConv2D(hal::Operation* operation) {
                                                 stride_width,
                                                 dilation_width);
   };
-  infer_output_shape(input_operand->type.dimensions,
-                     output_operand->type.dimensions);
-  for (uint32_t i = 0; i < input_operand->type.dynamic_dimension_count; i++) {
-    infer_output_shape(input_operand->type.dynamic_dimensions[i],
-                       output_operand->type.dynamic_dimensions[i]);
+  infer_output_shape(input_operand->type.dimensions.data,
+                     output_operand->type.dimensions.data);
+  for (uint32_t i = 0; i < input_operand->type.dimensions.dynamic_count; i++) {
+    infer_output_shape(input_operand->type.dimensions.dynamic_data[i],
+                       output_operand->type.dimensions.dynamic_data[i]);
   }
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;

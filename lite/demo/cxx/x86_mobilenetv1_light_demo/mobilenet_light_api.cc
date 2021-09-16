@@ -156,6 +156,7 @@ void RunModel(std::string model_dir,
   }
   std::cout << "is_opencl_backend_valid:" << is_opencl_backend_valid
             << std::endl;
+
   if (is_opencl_backend_valid) {
     // Set opencl kernel binary.
     // Large addtitional prepare time is cost due to algorithm selecting and

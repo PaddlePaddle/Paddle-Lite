@@ -20,7 +20,7 @@ namespace kernels {
 namespace nnadapter {
 
 int ConvertUnaryActivations(Converter* converter, OpInfo* op, Scope* scope) {
-  // Extract op attributes
+  // Extract the inputs, outputs and attributes
   auto op_type = op->Type();
   auto x_name = op->Input("X").front();
   auto x_scale_name = "X0_scale";

@@ -257,9 +257,37 @@ function(lite_cc_binary TARGET)
             HUAWEI_ASCEND_NPU_DEPS ${args_HUAWEI_ASCEND_NPU_DEPS}
             )
     cc_binary(${TARGET} SRCS ${args_SRCS} DEPS ${deps})
+
+    # link to paddle-lite static lib automatically
+    add_dependencies(${TARGET} bundle_full_api)
+
+
+
     if(NOT WIN32)
+      target_link_libraries(${TARGET} ${CMAKE_BINARY_DIR}/libpaddle_api_full_bundled.a)
       target_compile_options(${TARGET} BEFORE PRIVATE -Wno-ignored-qualifiers)
+    else()
+      target_link_libraries(${TARGET} ${CMAKE_BINARY_DIR}/lite/api/${CMAKE_BUILD_TYPE}/libpaddle_api_full_bundled.lib)
     endif()
+
+
+    # link to dynamic runtime lib
+    if(LITE_WITH_RKNPU)
+        target_link_libraries(${TARGET} ${rknpu_runtime_libs})
+    endif()
+    if(LITE_WITH_IMAGINATION_NNA)
+        target_link_libraries(${TARGET} ${imagination_nna_builder_libs} ${imagination_nna_runtime_libs})
+    endif()
+    if(LITE_WITH_HUAWEI_ASCEND_NPU)
+        target_link_libraries(${TARGET} ${huawei_ascend_npu_runtime_libs} ${huawei_ascend_npu_builder_libs})
+    endif()
+    if(LITE_WITH_NPU)
+        target_link_libraries(${TARGET} ${npu_builder_libs} ${npu_runtime_libs})
+    endif()
+
+
+
+
     if (NOT APPLE AND NOT WIN32)
         # strip binary target to reduce size
         if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")

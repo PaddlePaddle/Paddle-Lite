@@ -18,7 +18,7 @@
 #include <mutex>                                  // NOLINT
 #include "lite/backends/xpu/xpu_header_sitter.h"  // xpu_free
 #include "lite/core/target_wrapper.h"             // TargetWrapper
-#include "lite/utils/cp_logging.h"                // CHECK_EQ
+#include "lite/utils/log/cp_logging.h"            // CHECK_EQ
 #include "lite/utils/macros.h"
 
 #define XPU_CALL(func)                                        \
@@ -34,6 +34,8 @@ namespace lite {
 const int XPU_MAX_LOD_SIZE = 32;
 // MAX(lod[i + 1] - lod[i]) = 512
 const int XPU_MAX_LOD_SEQ_LEN = 512;
+// QUANT SCALE NUM == XPU CDNN NUM
+const int XPU_QUANT_SCALE_NUM = 6;
 
 using TargetWrapperXPU = TargetWrapper<TARGET(kXPU)>;
 
@@ -81,6 +83,15 @@ class TargetWrapper<TARGET(kXPU)> {
         tls_raw_ctx_->_xpu1_conv_selector.set_autotune_file(
             conv_autotune_file.c_str());
       }
+      int devid = -1;
+      uint64_t max_l3_size = 0;
+      XPU_CALL(xpu_current_device(&devid));
+      XPU_CALL(xpu_device_get_attr(
+          &max_l3_size, XPUDeviceAttr(XPUATTR_MEM_L3_CAPACITY), devid));
+      if (local_l3_size > max_l3_size) {
+        local_l3_size = max_l3_size;
+      }
+      CHECK_LE(shared_l3_size, max_l3_size);
     }
     return tls_raw_ctx_;
   }

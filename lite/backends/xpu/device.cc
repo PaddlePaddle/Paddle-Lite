@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/backends/xpu/device.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 namespace paddle {
 namespace lite {
@@ -44,8 +44,14 @@ std::unique_ptr<xtcl::network::xRuntimeInstance> Device::Build(
   compiler.SetParams(*params);  // Set the data of constant tensors
   compiler.Build();
   VLOG(3) << "[XPU] Build done";
+
+  int device_id = 0;
+  auto device_str = std::getenv("XPU_VISIBLE_DEVICES");
+  if (device_str && atoi(device_str)) device_id = atoi(device_str);
+  VLOG(3) << "[XPU] device id: " << device_id;
+
   return std::unique_ptr<xtcl::network::xRuntimeInstance>(
-      new xtcl::network::xRuntimeInstance(compiler.CreateRuntimeInstance()));
+      compiler.CreateRuntimeInstancePtr(device_id));
 }
 
 }  // namespace xpu
