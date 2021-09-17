@@ -20,7 +20,7 @@
 #include "lite/core/op_registry.h"
 #include "lite/core/program.h"
 #include "lite/kernels/metal/image_op/metal_params.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 namespace paddle {
 namespace lite {
