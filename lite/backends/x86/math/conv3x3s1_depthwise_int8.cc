@@ -28,70 +28,6 @@ namespace math {
   transpose3x4_4x4_epi(vzero0, vin_00, vin_10, va); /* 0 3 6 9 */           \
   transpose3x4_4x4_epi(vzero1, vin_01, vin_11, vb); /* 1 4 7 10 */          \
   transpose3x4_4x4_epi(vzero2, vin_02, vin_12, vc);                         \
-  /* 2 5 8 11 */ /* int8 -> int16 */                                        \
-  __m256i vzero0_16 = _mm256_cvtepi8_epi16(vzero0);                         \
-  __m256i vin3_16 = _mm256_cvtepi8_epi16(vin_00);                           \
-  __m256i vin6_16 = _mm256_cvtepi8_epi16(vin_10);                           \
-  __m256i vin9_16 = _mm256_cvtepi8_epi16(va);                               \
-  __m256i vzero1_16 = _mm256_cvtepi8_epi16(vzero1);                         \
-  __m256i vin4_16 = _mm256_cvtepi8_epi16(vin_01);                           \
-  __m256i vin7_16 = _mm256_cvtepi8_epi16(vin_11);                           \
-  __m256i vin10_16 = _mm256_cvtepi8_epi16(vb);                              \
-  __m256i vzero2_16 = _mm256_cvtepi8_epi16(vzero2);                         \
-  __m256i vin5_16 = _mm256_cvtepi8_epi16(vin_02);                           \
-  __m256i vin8_16 = _mm256_cvtepi8_epi16(vin_12);                           \
-  __m256i vin11_16 = _mm256_cvtepi8_epi16(vc);                              \
-  /* int16 +128 */                                                          \
-  __m256i v0_16 = _mm256_add_epi16(vzero0_16, voffset);                     \
-  __m256i v3_16 = _mm256_add_epi16(vin3_16, voffset);                       \
-  __m256i v6_16 = _mm256_add_epi16(vin6_16, voffset);                       \
-  __m256i v9_16 = _mm256_add_epi16(vin9_16, voffset);                       \
-  __m256i v1_16 = _mm256_add_epi16(vzero1_16, voffset);                     \
-  __m256i v4_16 = _mm256_add_epi16(vin4_16, voffset);                       \
-  __m256i v7_16 = _mm256_add_epi16(vin7_16, voffset);                       \
-  __m256i v10_16 = _mm256_add_epi16(vin10_16, voffset);                     \
-  __m256i v2_16 = _mm256_add_epi16(vzero2_16, voffset);                     \
-  __m256i v5_16 = _mm256_add_epi16(vin5_16, voffset);                       \
-  __m256i v8_16 = _mm256_add_epi16(vin8_16, voffset);                       \
-  __m256i v11_16 = _mm256_add_epi16(vin11_16, voffset);                     \
-  /* int16 -> int8 */                                                       \
-  __m128i v0_16_0 = _mm256_extractf128_si256(v0_16, 0);                     \
-  __m128i v0_16_1 = _mm256_extractf128_si256(v0_16, 1);                     \
-  __m128i v3_16_0 = _mm256_extractf128_si256(v3_16, 0);                     \
-  __m128i v3_16_1 = _mm256_extractf128_si256(v3_16, 1);                     \
-  __m128i v6_16_0 = _mm256_extractf128_si256(v6_16, 0);                     \
-  __m128i v6_16_1 = _mm256_extractf128_si256(v6_16, 1);                     \
-  vzero0 = _mm_packs_epi16(v0_16_0, v0_16_1);                               \
-  __m128i v9_16_0 = _mm256_extractf128_si256(v9_16, 0);                     \
-  __m128i v9_16_1 = _mm256_extractf128_si256(v9_16, 1);                     \
-  vin_00 = _mm_packs_epi16(v3_16_0, v3_16_1);                               \
-  __m128i v1_16_0 = _mm256_extractf128_si256(v1_16, 0);                     \
-  __m128i v1_16_1 = _mm256_extractf128_si256(v1_16, 1);                     \
-  vin_10 = _mm_packs_epi16(v6_16_0, v6_16_1);                               \
-  __m128i v4_16_0 = _mm256_extractf128_si256(v4_16, 0);                     \
-  __m128i v4_16_1 = _mm256_extractf128_si256(v4_16, 1);                     \
-  va = _mm_packs_epi16(v9_16_0, v9_16_1);                                   \
-  __m128i v7_16_0 = _mm256_extractf128_si256(v7_16, 0);                     \
-  __m128i v7_16_1 = _mm256_extractf128_si256(v7_16, 1);                     \
-  vzero1 = _mm_packs_epi16(v1_16_0, v1_16_1);                               \
-  __m128i v10_16_0 = _mm256_extractf128_si256(v10_16, 0);                   \
-  __m128i v10_16_1 = _mm256_extractf128_si256(v10_16, 1);                   \
-  vin_01 = _mm_packs_epi16(v4_16_0, v4_16_1);                               \
-  __m128i v2_16_0 = _mm256_extractf128_si256(v2_16, 0);                     \
-  __m128i v2_16_1 = _mm256_extractf128_si256(v2_16, 1);                     \
-  vin_11 = _mm_packs_epi16(v7_16_0, v7_16_1);                               \
-  __m128i v5_16_0 = _mm256_extractf128_si256(v5_16, 0);                     \
-  __m128i v5_16_1 = _mm256_extractf128_si256(v5_16, 1);                     \
-  vb = _mm_packs_epi16(v10_16_0, v10_16_1);                                 \
-  __m128i v8_16_0 = _mm256_extractf128_si256(v8_16, 0);                     \
-  __m128i v8_16_1 = _mm256_extractf128_si256(v8_16, 1);                     \
-  __m128i v11_16_0 = _mm256_extractf128_si256(v11_16, 0);                   \
-  __m128i v11_16_1 = _mm256_extractf128_si256(v11_16, 1);                   \
-  vzero2 = _mm_packs_epi16(v2_16_0, v2_16_1);                               \
-  vin_02 = _mm_packs_epi16(v5_16_0, v5_16_1);                               \
-  vin_12 = _mm_packs_epi16(v8_16_0, v8_16_1);                               \
-  vc = _mm_packs_epi16(v11_16_0, v11_16_1);                                 \
-  /* store */                                                               \
   _mm_storeu_si128(reinterpret_cast<__m128i*>(doutr), vzero0);              \
   _mm_storeu_si128(reinterpret_cast<__m128i*>(doutr + 16), vzero1);         \
   _mm_storeu_si128(reinterpret_cast<__m128i*>(doutr + 32), vzero2);         \
@@ -904,6 +840,8 @@ void conv_3x3s1_dw_int8(Dtype* dout,
       TargetMalloc(TARGET(kX86),
                    std::max(pre_in_size * omp_num * sizeof(int8_t),
                             32 * omp_num * sizeof(int8_t))));
+  // LOG(INFO) << "prepack_input_im2col_s1_int8: ";
+  // auto start = clock();
   for (int n = 0; n < omp_num; ++n) {
     const int8_t* din_batch = din + n * size_in_channel;
     int8_t* out_ptr = pre_din + n * pre_in_size;
@@ -912,13 +850,16 @@ void conv_3x3s1_dw_int8(Dtype* dout,
     prepack_input_im2col_s1_int8(
         din_batch, out_ptr, pad_w, pad_h, win, hin, win_round, hout);
   }
+// auto end = clock();
+// LOG(INFO) << "im2col duration: " << (end-start) * 1000.0 /CLOCKS_PER_SEC;
+// start = clock();
 #pragma omp parallel for
   for (int n = 0; n < omp_num; ++n) {
     int8_t* pre_din_ptr0 = pre_din + n * pre_in_size;
     Dtype* dout_batch = dout + n * size_out_channel;
     int now_c = n % chin;
     float bias_val = flag_bias ? static_cast<const float>(bias[now_c]) : 0;
-    const int8_t* weight_ptr = weights + now_c * 9;
+    const int8_t* weight_ptr = weights + now_c * w_stride;
     __m128 vscale = _mm_set1_ps(scale[now_c]);
     __m128 vbias = _mm_set1_ps(bias_val);
     __m256 vscale_l = _mm256_set1_ps(scale[now_c]);
@@ -1017,6 +958,8 @@ void conv_3x3s1_dw_int8(Dtype* dout,
       dout_batch += wout;
     }
   }
+  // end = clock();
+  // LOG(INFO) << "compute duration: " << (end-start) * 1000.0 /CLOCKS_PER_SEC;
   TargetFree(TARGET(kX86), pre_din);
 }
 template void conv_3x3s1_dw_int8(float* dout,
