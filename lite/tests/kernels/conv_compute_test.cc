@@ -471,7 +471,6 @@ TEST(Conv2d, precision) {
 #elif defined(LITE_WITH_X86)
   place = TARGET(kX86);
   TestConvKsize(place, abs_error);
-  TestConvAct(place, abs_error);
   return;
 #else
   return;
