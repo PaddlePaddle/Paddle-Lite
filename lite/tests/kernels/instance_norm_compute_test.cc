@@ -150,6 +150,7 @@ void TestInstanceNorm(Place place,
                 place, "def", dim_in, epsilon, has_scale_bias));
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
             if (!has_scale_bias) continue;
+            if (w == 1 && h == 1 && (n != 1 || c != 1)) continue;
 #endif
 #ifdef LITE_WITH_ARM
             if (place == TARGET(kARM)) {
