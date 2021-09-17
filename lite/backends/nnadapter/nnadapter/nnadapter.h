@@ -694,6 +694,28 @@ typedef enum {
   NNADAPTER_FULLY_CONNECTED,
 
   /**
+   * Output is obtained by gathering entries of axis of x indexed by index and
+   * concatenate them together.
+   *
+   * Inputs:
+   * * 0: input, a NNADAPTER_TENSOR_FLOAT32, NNADAPTER_TENSOR_INT32,
+   * NNADAPTER_TENSOR_INT64, NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: indices, a NNADAPTER_TENSOR_INT32 or NNADAPTER_TENSOR_INT64 tensor,
+   * with rank R1, with values between [-k, k-1] along axis of size k.
+   * * 2: axis, A NNADAPTER_INT32 scalar. It represents the dimension along
+   * which gather will be performed. It should be in range [-R, R), where R is
+   * the rank of input, negative value works the same way as axis+R.
+   *
+   * Outputs
+   * * 0: output, a tensor with the same type as input, of rank with rank "R1 +
+   * (R - 1)".
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_GATHER,
+
+  /**
    * Applies the hard-sigmoid activation to the input tensor element-wise.
    * The output is calculated using this formula:
    *     output = max(0, min(1, alpha * input + beta))

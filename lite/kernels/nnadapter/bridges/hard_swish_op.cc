@@ -96,7 +96,7 @@ int HardSwishConverter(void* ctx, OpLite* op, KernelBase* kernel) {
         output_operand, mul_factor_operand, fuse_code_operand};
     std::vector<NNAdapterOperand*> mul_output_operands = {immediate_operand};
     converter->AddOperation(
-        NNADAPTER_MUL, &mul_output_operands, &mul_output_operands);
+        NNADAPTER_MUL, &mul_inputs_operands, &mul_output_operands);
   }
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
