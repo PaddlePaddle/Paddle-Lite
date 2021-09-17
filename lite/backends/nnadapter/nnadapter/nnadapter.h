@@ -766,6 +766,60 @@ typedef enum {
   NNADAPTER_GATHER,
 
   /**
+   * Applies the Gaussian Error Linear Units activation to the input tensor
+   * element-wise. Refer to https://arxiv.org/abs/1606.08415 for more details.
+   *
+   * Inputs:
+   * * 0: input, a NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: approximate, a NNADAPTER_BOOL8 scalar, whether to enable
+   * approximation.
+   *
+   * Outputs:
+   * * 0: output, a tensor with the same shape and type as input.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_GELU,
+
+  /**
+   * Performs element-wise binary greater relational operation(with Numpy-style
+   * broadcasting https://numpy.org/doc/stable/user/basics.broadcasting.html).
+   * output = input0 > input1
+   *
+   * Inputs:
+   * * 0: input0, a NNADAPTER_TENSOR_FLOAT32, NNADAPTER_TENSOR_BOOL8,
+   * NNADAPTER_TENSOR_INT32, NNADAPTER_TENSOR_INT64,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: input1, a tensor with the same type as input0.
+   *
+   * Outputs:
+   * * 0: output, a NNADAPTER_TENSOR_BOOL8 tensor.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_GREATER,
+
+  /**
+   * Performs element-wise binary greater_equal relational operation(with
+   * Numpy-style broadcasting
+   * https://numpy.org/doc/stable/user/basics.broadcasting.html).
+   * output = input0 >= input1
+   *
+   * Inputs:
+   * * 0: input0, a NNADAPTER_TENSOR_FLOAT32, NNADAPTER_TENSOR_BOOL8,
+   * NNADAPTER_TENSOR_INT32, NNADAPTER_TENSOR_INT64,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: input1, a tensor with the same type as input0.
+   *
+   * Outputs:
+   * * 0: output, a NNADAPTER_TENSOR_BOOL8 tensor.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_GREATER_EQUAL,
+
+  /**
    * Applies the hard-sigmoid activation to the input tensor element-wise.
    * The output is calculated using this formula:
    *     output = max(0, min(1, alpha * input + beta))

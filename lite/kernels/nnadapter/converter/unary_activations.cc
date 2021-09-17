@@ -90,7 +90,7 @@ int ConvertUnaryActivations(Converter* converter, OpInfo* op, Scope* scope) {
     unary_act_operation_type = NNADAPTER_EXP;
   } else if (op_type == "swish") {
     auto beta = op->GetAttr<float>("beta");
-    CHECK(fabs(beta - 1.0f) < 1e-5f) << "Only supports beta = 1.0";
+    CHECK_LT(fabs(beta - 1.0f), 1e-5f) << "Only supports beta = 1.0";
     unary_act_operation_type = NNADAPTER_SWISH;
   } else {
     LOG(WARNING) << "Unsupported unary activation type: " << op_type;

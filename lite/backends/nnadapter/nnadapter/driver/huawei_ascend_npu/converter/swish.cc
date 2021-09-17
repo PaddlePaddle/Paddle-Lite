@@ -24,7 +24,7 @@ int ConvertSwish(Converter* converter, hal::Operation* operation) {
   UNARY_ACTIVATIONS_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
-  // output = input / sigmoid(input)
+  // output = input * sigmoid(input)
   auto input_operator = converter->GetMappedOperator(input_operand);
   if (!input_operator) {
     input_operator = converter->ConvertOperand(input_operand);
@@ -32,7 +32,7 @@ int ConvertSwish(Converter* converter, hal::Operation* operation) {
   auto sigmoid_op = converter->AddOperator<ge::op::Sigmoid>(output_operand);
   SET_INPUT(sigmoid_op, x, input_operator);
   auto sigmoid_operator = MAP_OUTPUT(sigmoid_op, y, output_operand);
-  auto eltwise_op = converter->AddOperator<ge::op::Xdivy>(output_operand);
+  auto eltwise_op = converter->AddOperator<ge::op::Mul>(output_operand);
   SET_INPUT(eltwise_op, x1, input_operator);
   SET_INPUT(eltwise_op, x2, sigmoid_operator);
   MAP_OUTPUT(eltwise_op, y, output_operand);
