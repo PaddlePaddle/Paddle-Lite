@@ -794,7 +794,6 @@ inline void prepack_input_nxwc8_fp16_dw(const float16_t* din,
   int stride = size_w << 3;
   int pad_l_stride = pad_l << 3;
   int pad_r_stride = pad_r << 3;
-
   for (int h = hs; h < he; ++h) {
     const float16_t* ptr_c0 = din + h * width + cs * size_c;
     const float16_t* ptr_c1 = ptr_c0 + size_c;
@@ -923,28 +922,22 @@ inline void prepack_input_nxwc8_fp16_dw(const float16_t* din,
           "vtrn.16   q2, q3\n"
           "vtrn.16   q4, q5\n"
           "vtrn.16   q6, q7\n"
+          //
           "vtrn.32  q0, q2\n"
           "vtrn.32  q1, q3\n"
           "vtrn.32  q4, q6\n"
           "vtrn.32  q5, q7\n"
 
-          "vst1.16 {d0}, [%[ptr_out]]!\n"
-          "vst1.16 {d8}, [%[ptr_out]]!\n"
-          "vst1.16 {d2}, [%[ptr_out]]!\n"
-          "vst1.16 {d10}, [%[ptr_out]]!\n"
+          "vswp    d1, d8\n"
+          "vswp    d3, d10\n"
+          "vswp    d5, d12\n"
+          "vswp    d7, d14\n"
+
           "subs %[cnt], #1\n"
-          "vst1.16 {d4}, [%[ptr_out]]!\n"
-          "vst1.16 {d12}, [%[ptr_out]]!\n"
-          "vst1.16 {d6}, [%[ptr_out]]!\n"
-          "vst1.16 {d14}, [%[ptr_out]]!\n"
-          "vst1.16 {d1}, [%[ptr_out]]!\n"
-          "vst1.16 {d9}, [%[ptr_out]]!\n"
-          "vst1.16 {d3}, [%[ptr_out]]!\n"
-          "vst1.16 {d11}, [%[ptr_out]]!\n"
-          "vst1.16 {d5}, [%[ptr_out]]!\n"
-          "vst1.16 {d13}, [%[ptr_out]]!\n"
-          "vst1.16 {d7}, [%[ptr_out]]!\n"
-          "vst1.16 {d15}, [%[ptr_out]]!\n"
+          "vst1.16 {d0-d3}, [%[ptr_out]]!\n"
+          "vst1.16 {d4-d7}, [%[ptr_out]]!\n"
+          "vst1.16 {d8-d11}, [%[ptr_out]]!\n"
+          "vst1.16 {d12-d15}, [%[ptr_out]]!\n"
           "bne    1b\n"
           : [cnt] "+r"(cnt),
             [r0] "+r"(ptr_c0),
