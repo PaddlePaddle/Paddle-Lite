@@ -24,7 +24,8 @@ namespace huawei_ascend_npu {
 
 int ConvertTopK(Converter* converter, hal::Operation* operation) {
   TOP_K_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  NNADAPTER_CHECK_EQ(axis, input_operand->type.dimensions.count - 1)
+  NNADAPTER_CHECK_EQ(axis,
+                     static_cast<int>(input_operand->type.dimensions.count) - 1)
       << "HuaweiAscendNPU only support last dimsion.";
 
   // Convert to GE operators

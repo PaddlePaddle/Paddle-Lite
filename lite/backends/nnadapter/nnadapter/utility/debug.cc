@@ -349,6 +349,11 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
             "input", "k", "axis", "largest", "sorted", "return_indices_type"};
         output_args = {"output", "indices"};
         break;
+      case NNADAPTER_ARG_MAX:
+      case NNADAPTER_ARG_MIN:
+        input_args = {"input", "axis", "keepdim", "dtype"};
+        output_args = {"output"};
+        break;
       case NNADAPTER_SPLIT:
         input_args = {"input", "axis", "split"};
         output_args.resize(output_count);
@@ -529,6 +534,8 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(ADAPTIVE_AVERAGE_POOL_2D);
     NNADAPTER_TYPE_TO_STRING(ADAPTIVE_MAX_POOL_2D);
     NNADAPTER_TYPE_TO_STRING(ADD);
+    NNADAPTER_TYPE_TO_STRING(ARG_MAX);
+    NNADAPTER_TYPE_TO_STRING(ARG_MIN);
     NNADAPTER_TYPE_TO_STRING(ASSIGN);
     NNADAPTER_TYPE_TO_STRING(AVERAGE_POOL_2D);
     NNADAPTER_TYPE_TO_STRING(BATCH_NORMALIZATION);

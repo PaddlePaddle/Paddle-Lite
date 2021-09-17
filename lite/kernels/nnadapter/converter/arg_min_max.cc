@@ -34,9 +34,13 @@ int ConvertArgMinMax(Converter* converter, OpInfo* op, Scope* scope) {
       converter->AddConstantOperand(static_cast<int8_t>(keepdim));
 
   // Dtype operand
-  auto dtype = ConvertFluidDataTypeToNNPrecisionCode(op->GetAttr<int>("dtype"));
-  auto dtype_operand =
-      converter->AddConstantOperand(static_cast<int32_t>(dtype));
+  int dtype = op->GetAttr<int>("dtype");
+  // Default int64
+  if (dtype < 0) {
+    dtype = 3;
+  }
+  auto dtype_operand = converter->AddConstantOperand(
+      static_cast<int32_t>(ConvertFluidDataTypeToNNPrecisionCode(dtype)));
 
   // Output operand
   auto out_name = op->Output("Out").front();

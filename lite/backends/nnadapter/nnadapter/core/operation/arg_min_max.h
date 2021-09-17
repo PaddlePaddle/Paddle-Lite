@@ -29,6 +29,9 @@ namespace operation {
   NNADAPTER_VLOG(5) << "input_operand: " << OperandToString(input_operand); \
   /* Axis */                                                                \
   auto axis = *reinterpret_cast<int32_t*>(input_operands[1]->buffer);       \
+  if (axis < 0) {                                                           \
+    axis += input_operand->type.dimensions.count;                           \
+  }                                                                         \
   NNADAPTER_VLOG(5) << "axis: " << axis;                                    \
   /* Keepdim */                                                             \
   bool keepdim = *reinterpret_cast<int8_t*>(input_operands[2]->buffer);     \
