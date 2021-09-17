@@ -111,4 +111,5 @@ USE_MIR_PASS(__xpu__squeeze_excitation_fuse_pass);
 USE_MIR_PASS(__xpu__bigru_fuse_pass);
 USE_MIR_PASS(__xpu__dynamic_lstm_fuse_pass);
 USE_MIR_PASS(__xpu__multi_softmax_fuse_pass);
+USE_MIR_PASS(__xpu__max_pooling_pad_zero_detect_fuse_pass);
 USE_MIR_PASS(x86_int8_attribute_pass);
