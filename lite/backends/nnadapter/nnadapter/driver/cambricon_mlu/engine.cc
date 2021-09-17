@@ -145,7 +145,7 @@ int Program::Execute(uint32_t input_count,
     MLU_CNRT_CHECK(cnrtMalloc(&ptr, length));
     MLU_CNRT_CHECK(cnrtMemcpy(ptr, buffer, length, CNRT_MEM_TRANS_DIR_HOST2DEV));
     inputs[i]->SetData(ptr);
-    inputs[i]->SetDimensions(ConvertToMagicMindDims(type->dimensions.data, type->dimension.count));
+    inputs[i]->SetDimensions(ConvertToMagicMindDims(type->dimensions.data, type->dimensions.count));
   }
   mm_context_->Enqueue(inputs, &outputs, queue_);
   MLU_CNRT_CHECK(cnrtSyncQueue(queue_));
