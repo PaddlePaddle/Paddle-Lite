@@ -42,8 +42,6 @@ class ConvComputeTester : public arena::TestCase {
   bool with_act_ = false;
   std::string act_type_;
   float leaky_relu_alpha_ = 0.1;
-  float hard_swish_offset_ = 3.;
-  float hard_swish_threshold_ = 6.;
   bool with_depthwise_ = false;
   bool with_fuse_relu_ = false;
 
@@ -185,12 +183,6 @@ class ConvComputeTester : public arena::TestCase {
                 } else if (act_type_ == "leaky_relu") {
                   out_value =
                       std::max(out_value, out_value * leaky_relu_alpha_);
-                } else if (act_type_ == "hard_swish") {
-                  float sum = out_value / leaky_relu_alpha_;
-                  out_value =
-                      std::min(hard_swish_threshold_,
-                               std::max(0.f, out_value + hard_swish_offset_));
-                  out_value = out_value * sum;
                 } else {
                   LOG(FATAL) << "unsupported";
                 }
@@ -224,11 +216,6 @@ class ConvComputeTester : public arena::TestCase {
       op_desc->SetAttr("act_type", act_type_);
       if (act_type_ == "leaky_relu") {
         op_desc->SetAttr("leaky_relu_alpha", leaky_relu_alpha_);
-      }
-      if (act_type_ == "hard_swish") {
-        op_desc->SetAttr("hard_swish_scale", leaky_relu_alpha_);
-        op_desc->SetAttr("hard_swish_threshold", hard_swish_threshold_);
-        op_desc->SetAttr("hard_swish_offset", hard_swish_offset_);
       }
     }
   }
@@ -422,25 +409,6 @@ void TestConvAct(Place place, float abs_error = 2e-5) {
                                 0.1));
       arena::Arena arena1(std::move(tester1), place, abs_error);
       arena1.TestPrecision();
-#if defined(LITE_WITH_X86)
-      std::unique_ptr<arena::TestCase> tester2(
-          new ConvComputeTester(place,
-                                "def",
-                                DDim(dims),
-                                out_channels,
-                                3,
-                                {1, 1},
-                                {0, 0},
-                                1,
-                                {1, 1},
-                                "",
-                                false,
-                                true,
-                                "hard_swish",
-                                0.1));
-      arena::Arena arena2(std::move(tester2), place, 2e-4);
-      arena2.TestPrecision();
-#endif
     }
   }
 }
