@@ -403,6 +403,9 @@ function(bundle_static_library tgt_name bundled_tgt_name fake_target)
     return()
   endif()
 
+  add_custom_target(${fake_target})
+  add_dependencies(${fake_target} ${tgt_name})
+
   if(NOT IOS AND NOT APPLE)
     file(WRITE ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in
       "CREATE ${bundled_tgt_full_name}\n" )
@@ -423,9 +426,6 @@ function(bundle_static_library tgt_name bundled_tgt_name fake_target)
     if (CMAKE_INTERPROCEDURAL_OPTIMIZATION)
       set(ar_tool ${CMAKE_CXX_COMPILER_AR})
     endif()
-
-    add_custom_target(${fake_target})
-    add_dependencies(${fake_target} ${tgt_name})
 
     add_custom_command(
       TARGET ${fake_target} PRE_BUILD
