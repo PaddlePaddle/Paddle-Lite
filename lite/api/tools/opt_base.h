@@ -42,7 +42,7 @@ namespace lite_api {
 /// predictors.
 class LITE_API OptBase {
  public:
-  OptBase() = default;
+  OptBase() { InitSupportedOpInfo(); };
   void SetModelSetDir(const std::string &model_set_path);
   void SetModelDir(const std::string &model_dir_path);
   void SetModelFile(const std::string &model_path);
@@ -78,24 +78,22 @@ class LITE_API OptBase {
   // 2. PrintOpsInfo
   void PrintOpsInfo(const std::set<std::string> &valid_ops = {},
                     const std::vector<std::string> valid_targets =
-                        {"kHost",
-                         "kX86",
-                         "kCUDA",
-                         "kARM",
-                         "kMetal",
+                        {"kARM",
                          "kOpenCL",
-                         "kFPGA",
-                         "kNPU",
+                         "kMetal",
                          "kXPU",
-                         "kRKNPU",
-                         "kAPU",
-                         "kHuaweiAscendNPU",
-                         "kImaginationNNA",
-                         "kIntelFPGA",
-                         "kNNAdapter",
+                         "kHost",
+                         "kX86",
                          "kBM",
-                         "kAny",
-                         "kUnk"});  // print supported ops on target_types
+                         "kIntelFPGA",
+                         "kMLU",
+                         "huawei_ascend_npu",
+                         "mediatek_apu",
+                         "rockchip_npu",
+                         "huawei_kirin_npu",
+                         "imagination_nna",
+                         "amlogic_npu",
+                         "kUnK"});  // print supported ops on target_types
   void PrintAllOps();               // print all ops
   void PrintSupportedOps();         // print ops supported on valid_places_
   void DisplayKernelsInfo();        // Display kernel information
@@ -118,7 +116,10 @@ class LITE_API OptBase {
   // Dir path of a set of models, this should be combined with model
   std::string model_set_dir_;
   bool record_strip_info_{false};
+  std::map<std::string, std::set<std::string>> target_supported_ops_{};
+  std::map<std::string, std::set<std::string>> all_supported_ops_{};
   void RunOptimizeFromModelSet(bool record_strip_info = false);
+  void InitSupportedOpInfo();
 };
 
 }  // namespace lite_api

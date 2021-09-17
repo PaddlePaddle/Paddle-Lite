@@ -71,7 +71,7 @@ with open(faked_kernels_list_path) as f:
         with open(path.strip()) as g:
             c = g.read()
             kernel_parser = RegisterLiteKernelParser(c)
-            kernel_parser.parse(with_extra, enable_arm_fp16)
+            kernel_parser.parse(with_extra, "ON")
 
             for k in kernel_parser.kernels:
                   kernel = "%s,%s,%s,%s,%s" % (

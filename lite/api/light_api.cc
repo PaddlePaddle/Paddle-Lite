@@ -165,7 +165,6 @@ void LightPredictor::PrepareFeedFetch() {
   input_names_.resize(feeds.size());
   output_names_.resize(fetchs.size());
   input_precisions_.resize(feeds.size());
-  input_shapes_.resize(feeds.size());
   for (size_t i = 0; i < feeds.size(); i++) {
     input_names_[feeds[i]->GetAttr<int>("col")] =
         feeds[i]->Output("Out").front();
@@ -176,7 +175,6 @@ void LightPredictor::PrepareFeedFetch() {
   }
   for (size_t i = 0; i < feeds.size(); i++) {
     input_precisions_[i] = GetInput(i)->precision();
-    input_shapes_[i] = GetInput(i)->dims().Vectorize();
   }
 }
 
@@ -353,36 +351,6 @@ void LightPredictor::WeightFP32ToFP16() {
 #endif
 
 void LightPredictor::CheckInputValid() {
-  // convert shape into a string
-  auto ShapeToStr = [](std::vector<int64_t> shape) -> std::string {
-    if (!shape.size()) return "Empty vector!";
-    std::string shape_str{""};
-    for (size_t i = 0; i < shape.size(); i++) {
-      shape_str += std::to_string(shape[i]);
-      if (i != shape.size() - 1) {
-        shape_str += "x";
-      }
-    }
-    return shape_str;
-  };
-
-  // compare shapes
-  auto CompareShape = [](const std::vector<int64_t>& shape1,
-                         const std::vector<int64_t>& shape2) -> bool {
-    // shapes must be the same
-    if (shape1.size() != shape2.size()) {
-      return false;
-      // the first element is not considered, as it's usually a batch num.
-    } else if (shape1.size() == 1) {
-      return true;
-    } else {
-      for (size_t i = 1; i < shape1.size(); i++) {
-        if (shape1[i] != shape2[i]) return false;
-      }
-    }
-    return true;
-  };
-
   for (size_t idx = 0; idx < input_precisions_.size(); ++idx) {
     if (GetInput(idx)->precision() != input_precisions_[idx]) {
       LOG(WARNING) << " Error input tensor precision type. Input index (" << idx
@@ -391,13 +359,6 @@ void LightPredictor::CheckInputValid() {
                    << PrecisionToStr(input_precisions_[idx])
                    << ") Input precision type ("
                    << PrecisionToStr(GetInput(idx)->precision()) << ").";
-    }
-    if (!CompareShape(GetInput(idx)->dims().Vectorize(), input_shapes_[idx])) {
-      LOG(WARNING) << " Error input tensor shape. Input index (" << idx
-                   << ") Tensor name (" << input_names_[idx]
-                   << ") Require shape of (" << ShapeToStr(input_shapes_[idx])
-                   << ") Input tensor's shape ("
-                   << ShapeToStr(GetInput(idx)->dims().Vectorize()) << ").";
     }
   }
 }
