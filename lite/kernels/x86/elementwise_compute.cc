@@ -48,7 +48,7 @@ DDim trim_trailing_singular_dims(const DDim& dims) {
 }
 
 /*
- * Out = X ⊙ Y
+ * Out = X point dot Y
  * If Y's shape does not match X' shape, they will be reshaped.
  * For example:
  * 1. shape(X) = (2, 3, 4, 5), shape(Y) = (3, 4), with axis=1
@@ -356,19 +356,26 @@ void elementwise_compute_template(paddle::lite::KernelBase* kernel,
     }                                                                         \
   }
 
-ElementwiseOpCompute(Add) ElementwiseOpActivationCompute(Add)
-    ElementwiseOpCompute(Sub) ElementwiseOpActivationCompute(Sub)
-        ElementwiseOpCompute(Mul) ElementwiseOpActivationCompute(Mul)
-            ElementwiseOpCompute(Div) ElementwiseOpActivationCompute(Div)
-                ElementwiseOpCompute(FloorDiv) ElementwiseOpActivationCompute(
-                    FloorDiv) ElementwiseOpCompute(Max)
-                    ElementwiseOpActivationCompute(Max)
-                        ElementwiseOpCompute(Min)
-                            ElementwiseOpActivationCompute(Min)
-                                ElementwiseOpCompute(Mod)
-                                    ElementwiseOpActivationCompute(Mod)
-                                        ElementwiseOpCompute(Pow)
-                                            ElementwiseOpActivationCompute(Pow)
+// clang-format off
+ElementwiseOpCompute(Add)
+ElementwiseOpActivationCompute(Add)
+ElementwiseOpCompute(Sub)
+ElementwiseOpActivationCompute(Sub)
+ElementwiseOpCompute(Mul)
+ElementwiseOpActivationCompute(Mul)
+ElementwiseOpCompute(Div)
+ElementwiseOpActivationCompute(Div)
+ElementwiseOpCompute(FloorDiv)
+ElementwiseOpActivationCompute(FloorDiv)
+ElementwiseOpCompute(Max)
+ElementwiseOpActivationCompute(Max)
+ElementwiseOpCompute(Min)
+ElementwiseOpActivationCompute(Min)
+ElementwiseOpCompute(Mod)
+ElementwiseOpActivationCompute(Mod)
+ElementwiseOpCompute(Pow)
+ElementwiseOpActivationCompute(Pow)
+// clang-format on
 
 }  // namespace x86
 }  // namespace kernels
