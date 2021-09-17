@@ -199,11 +199,8 @@ void TestArgmax(const Place& place) {
 
 TEST(Argmax, precision) {
   Place place;
-#if defined(LITE_WITH_NNADAPTER)
+#if defined(LITE_WITH_NNADAPTER) && defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kNNAdapter);
-#if !defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
-  return;
-#endif
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #elif defined(LITE_WITH_X86)
