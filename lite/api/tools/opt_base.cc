@@ -18,6 +18,7 @@
 #include <utility>
 #include "lite/core/optimizer/mir/dot.h"
 #include "lite/core/scope.h"
+#include "lite/utils/string.h"
 namespace paddle {
 namespace lite_api {
 
@@ -117,6 +118,11 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
           Place{TARGET(kOpenCL), PRECISION(kInt32), DATALAYOUT(kNCHW)});
       valid_places_.emplace_back(
           TARGET(kARM));  // enable kARM CPU kernel when no opencl kernel
+    } else if (target_repr == "metal") {
+      valid_places_.emplace_back(Place{
+          TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)});
+      valid_places_.emplace_back(Place{
+          TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray)});
     } else if (target_repr == "arm_metal") {
       valid_places_.emplace_back(Place{
           TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)});
@@ -147,21 +153,12 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
           Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)});
       valid_places_.emplace_back(Place{TARGET(kX86), PRECISION(kFloat)});
       valid_places_.emplace_back(Place{TARGET(kX86), PRECISION(kInt64)});
-    } else if (target_repr == "npu") {
-      valid_places_.emplace_back(TARGET(kNPU));
     } else if (target_repr == "xpu") {
       valid_places_.emplace_back(TARGET(kXPU));
     } else if (target_repr == "mlu") {
       valid_places_.emplace_back(TARGET(kMLU));
     } else if (target_repr == "bm") {
       valid_places_.emplace_back(TARGET(kBM));
-    } else if (target_repr == "rknpu") {
-      valid_places_.emplace_back(TARGET(kRKNPU));
-      valid_places_.emplace_back(
-          TARGET(kRKNPU), PRECISION(kInt8), DATALAYOUT(kNCHW));
-    } else if (target_repr == "apu") {
-      valid_places_.emplace_back(
-          Place{TARGET(kAPU), PRECISION(kInt8), DATALAYOUT(kNCHW)});
     } else if (target_repr == "imagination_nna") {
       valid_places_.emplace_back(TARGET(kNNAdapter));
       valid_places_.emplace_back(
@@ -343,8 +340,8 @@ void OptBase::PrintHelpInfo() {
       "default\n"
       "        `set_lite_out(output_optimize_model_dir)`\n"
       "        "
-      "`set_valid_places(arm|opencl|x86|x86_opencl|arm_metal|x86_metal|npu|xpu|"
-      "rknpu|apu|huawei_ascend_npu|imagination_nna|intel_fpga|rockchip_npu|"
+      "`set_valid_places(arm|opencl|x86|metal|xpu|bm|mlu|intel_fpga|"
+      "huawei_ascend_npu|imagination_nna|rockchip_npu|"
       "mediatek_apu|huawei_kirin_npu|amlogic_npu)`"
       "\n"
       "        `record_model_info(false|true)`: refer to whether to record ops "
@@ -387,9 +384,9 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "        `--optimize_out_type=(protobuf|naive_buffer)`\n"
       "        `--optimize_out=<output_optimize_model_dir>`\n"
       "        "
-      "`--valid_targets=(arm|opencl|x86|x86_opencl|arm_metal|x86_metal|npu|xpu|"
-      "huawei_ascend_npu|imagination_nna|intel_fpga|rockchip_npu|mediatek_apu|"
-      "huawei_kirin_npu)`\n"
+      "`--valid_targets=(arm|opencl|x86|metal|xpu|bm|mlu|intel_fpga|"
+      "huawei_ascend_npu|imagination_nna|rockchip_npu|mediatek_apu|"
+      "huawei_kirin_npu|amlogic_npu)`\n"
       "        `--record_tailoring_info=(true|false)`\n"
       "  Arguments of mode quantization in opt:\n"
       "        `--quant_model=(true|false)`\n"
@@ -406,13 +403,13 @@ void OptBase::PrintExecutableBinHelpInfo() {
       "operators of "
       "Paddle-Lite in markdown format\n"
       "        `--print_supported_ops=true  "
-      "--valid_targets=(arm|opencl|x86|x86_opencl|arm_metal|x86_metal|npu|xpu|"
-      "huawei_ascend_npu|imagination_nna|intel_fpga|rockchip_npu|mediatek_apu|"
-      "huawei_kirin_npu)`"
+      "--valid_targets=(arm|opencl|x86|metal|xpu|bm|mlu|intel_fpga|"
+      "huawei_ascend_npu|imagination_nna|rockchip_npu|mediatek_apu|"
+      "huawei_kirin_npu|amlogic_npu)`"
       "  Display valid operators of input targets\n"
       "        `--print_model_ops=true  --model_dir=<model_param_dir> "
-      "--valid_targets=(arm|opencl|x86|x86_opencl|arm_metal|x86_metal|npu|xpu|"
-      "huawei_ascend_npu|imagination_nna|intel_fpga|rockchip_npu|mediatek_apu|"
+      "--valid_targets=(arm|opencl|x86|metal|xpu|bm|mlu|intel_fpga|"
+      "huawei_ascend_npu|imagination_nna|rockchip_npu|mediatek_apu|"
       "huawei_kirin_npu|amlogic_npu)`"
       "  Display operators in the input model\n"
       "  Arguments of optimized nb model visualization: \n"
@@ -428,7 +425,8 @@ void OptBase::PrintOpsInfo(const std::set<std::string>& valid_ops,
                            const std::vector<std::string> valid_targets) {
   // Get the lengh of the first column: maximum length of the op_type
   size_t maximum_optype_length = 0;
-  for (auto it = supported_ops.begin(); it != supported_ops.end(); it++) {
+  for (auto it = all_supported_ops_.begin(); it != all_supported_ops_.end();
+       it++) {
     maximum_optype_length = it->first.size() > maximum_optype_length
                                 ? it->first.size()
                                 : maximum_optype_length;
@@ -436,28 +434,26 @@ void OptBase::PrintOpsInfo(const std::set<std::string>& valid_ops,
   // Print the first row: OP_nam taget1 target2 ...
   std::cout << std::setw(maximum_optype_length) << "OP_name";
   for (size_t i = 0; i < valid_targets.size(); i++) {
-    std::string i_th_substr = valid_targets[i].substr(1);
-    std::cout << std::setw(i_th_substr.size() + 5) << i_th_substr;
+    std::cout << std::setw(valid_targets[i].size() + 2) << valid_targets[i];
   }
   std::cout << std::endl;
   // Print the name of supported ops and mark if it's supported by each target
   // print the support info of inputed ops: valid_ops
   for (auto op = valid_ops.begin(); op != valid_ops.end(); op++) {
     // Check: If this kernel doesn't match any operator, we will skip it.
-    if (supported_ops.find(*op) == supported_ops.end()) {
+    if (all_supported_ops_.find(*op) == all_supported_ops_.end()) {
       continue;
     }
     std::cout << std::setw(maximum_optype_length) << *op;
     // Print OP info.
-    auto ops_valid_places = supported_ops.at(*op);
+    auto ops_valid_places = all_supported_ops_.at(*op);
     for (size_t i = 0; i < valid_targets.size(); i++) {
-      std::string i_th_substr = valid_targets[i].substr(1);
       if (std::find(ops_valid_places.begin(),
                     ops_valid_places.end(),
                     valid_targets[i]) != ops_valid_places.end()) {
-        std::cout << std::setw(i_th_substr.size() + 5) << "Y";
+        std::cout << std::setw(valid_targets[i].size() + 2) << "Y";
       } else {
-        std::cout << std::setw(i_th_substr.size() + 5) << " ";
+        std::cout << std::setw(valid_targets[i].size() + 2) << " ";
       }
     }
     std::cout << std::endl;
@@ -470,8 +466,8 @@ void OptBase::DisplayKernelsInfo() {  // Display kernel information
 void OptBase::PrintAllOps() {
   // 1. Get all supported ops
   std::set<std::string> valid_ops;
-  for (size_t i = 0; i < supported_ops_target.size(); i++) {
-    auto ops = supported_ops_target[i];
+  for (auto& elem : target_supported_ops_) {
+    auto ops = elem.second;
     valid_ops.insert(ops.begin(), ops.end());
   }
   // 2. Print support info of these ops
@@ -481,40 +477,41 @@ void OptBase::PrintAllOps() {
 void OptBase::PrintAllSupportedOpsInMdformat() {
   // 1. Get all supported ops
   std::set<std::string> valid_ops;
-  for (size_t i = 0; i < supported_ops_target.size(); i++) {
-    auto ops = supported_ops_target[i];
-    valid_ops.insert(ops.begin(), ops.end());
+  for (auto& elem : target_supported_ops_) {
+    valid_ops.insert(elem.second.begin(), elem.second.end());
   }
   std::cout << "The number of supported operators is : " << supported_ops.size()
             << "\n";
-  const std::vector<std::string> valid_targets = {"kHost",
-                                                  "kX86",
-                                                  "kCUDA",
-                                                  "kARM",
+  const std::vector<std::string> valid_targets = {"kARM",
                                                   "kOpenCL",
-                                                  "kFPGA",
-                                                  "kNPU",
+                                                  "kMetal",
                                                   "kXPU",
-                                                  "kRKNPU",
-                                                  "kAPU",
-                                                  "kHuaweiAscendNPU",
-                                                  "kImaginationNNA",
+                                                  "kHost",
+                                                  "kX86",
+                                                  "kBM",
+                                                  "kMLU",
                                                   "kIntelFPGA",
-                                                  "kBM"};
-  const std::vector<std::string> readable_valid_targets = {"Host",
-                                                           "X86",
-                                                           "CUDA",
-                                                           "ARM",
+                                                  "huawei_ascend_npu",
+                                                  "mediatek_apu",
+                                                  "rockchip_npu",
+                                                  "huawei_kirin_npu",
+                                                  "imagination_nna",
+                                                  "amlogic_npu"};
+  const std::vector<std::string> readable_valid_targets = {"ARM",
                                                            "OpenCL",
-                                                           "FPGA",
-                                                           "华为NPU",
+                                                           "Metal",
                                                            "百度XPU",
-                                                           "瑞芯微NPU",
-                                                           "联发科APU",
-                                                           "华为升腾NPU",
-                                                           "颖脉NNA",
+                                                           "Host",
+                                                           "X86",
+                                                           "比特大陆NPU",
+                                                           "寒武纪MLU",
                                                            "英特尔FPGA",
-                                                           "比特大陆"};
+                                                           "华为昇腾NPU",
+                                                           "联发科APU",
+                                                           "瑞芯微NPU	",
+                                                           "华为麒麟NPU",
+                                                           "颖脉NNA",
+                                                           "晶晨NPU"};
   // Print the first row: OP_nam taget1 target2 ...
   std::cout << "| "
             << "OP_name ";
@@ -535,12 +532,12 @@ void OptBase::PrintAllSupportedOpsInMdformat() {
   // print the support info of inputed ops: valid_ops
   for (auto op = valid_ops.begin(); op != valid_ops.end(); op++) {
     // Check: If this kernel doesn't match any operator, we will skip it.
-    if (supported_ops.find(*op) == supported_ops.end()) {
+    if (all_supported_ops_.find(*op) == all_supported_ops_.end()) {
       continue;
     }
     std::cout << "| " << *op << " ";
     // Print OP info.
-    auto ops_valid_places = supported_ops.at(*op);
+    auto ops_valid_places = all_supported_ops_.at(*op);
     for (size_t i = 0; i < valid_targets.size(); i++) {
       if (std::find(ops_valid_places.begin(),
                     ops_valid_places.end(),
@@ -557,46 +554,49 @@ void OptBase::PrintAllSupportedOpsInMdformat() {
 
 void OptBase::PrintSupportedOps() {
   // 1. Get the valid hardware targets
-  std::vector<TargetType> target_types = {};
+  std::set<std::string> valid_targets = {};
   for (size_t i = 0; i < valid_places_.size(); i++) {
-    target_types.push_back(valid_places_[i].target);
+    std::string target = TargetRepr(valid_places_[i].target);
+    if (target == "kNNAdapter") {
+      CHECK(opt_config_.nnadapter_device_names().size());
+      for (auto& device : opt_config_.nnadapter_device_names())
+        valid_targets.insert(device);
+    } else {
+      valid_targets.insert(target);
+    }
   }
-  std::string targets_str = TargetToStr(target_types[0]);
-  for (size_t i = 1; i < target_types.size(); i++) {
-    targets_str = targets_str + TargetToStr(target_types[i]);
+  std::string targets_str{};
+  for (auto& target : valid_targets) {
+    targets_str = targets_str + " " + target;
   }
   OPT_LOG << "Supported OPs on '" << targets_str << "': ";
-  target_types.push_back(TARGET(kHost));
-  target_types.push_back(TARGET(kUnk));
+  valid_targets.insert(TargetRepr(TARGET(kHost)));
+  valid_targets.insert(TargetRepr(TARGET(kUnk)));
 
   // 2. Get supported ops on these targets
   std::set<std::string> valid_ops;
-  for (size_t i = 0; i < target_types.size(); i++) {
-    auto ops = supported_ops_target[static_cast<int>(target_types[i])];
+  for (auto& target : valid_targets) {
+    auto ops = target_supported_ops_.at(target);
     valid_ops.insert(ops.begin(), ops.end());
   }
-  // 3. Print support info of these ops
-  std::set<std::string> valid_targets_set;
-  for (auto& it : target_types) valid_targets_set.insert(TargetRepr(it));
-  std::vector<std::string> valid_targets(valid_targets_set.begin(),
-                                         valid_targets_set.end());
-  PrintOpsInfo(valid_ops, valid_targets);
+
+  PrintOpsInfo(
+      valid_ops,
+      std::vector<std::string>(valid_targets.begin(), valid_targets.end()));
 }
 
 // test whether this model is supported
 void OptBase::CheckIfModelSupported(bool print_ops_info) {
   // 1. parse valid places and valid targets
-  auto valid_ops = supported_ops_target[static_cast<int>(TARGET(kHost))];
-  auto valid_unktype_ops = supported_ops_target[static_cast<int>(TARGET(kUnk))];
-  valid_ops.insert(
-      valid_ops.end(), valid_unktype_ops.begin(), valid_unktype_ops.end());
+  auto valid_ops = target_supported_ops_.at("kHost");
+  auto valid_unktype_ops = target_supported_ops_.at("kUnk");
+  valid_ops.insert(valid_unktype_ops.begin(), valid_unktype_ops.end());
   for (size_t i = 0; i < valid_places_.size(); i++) {
-    auto target = valid_places_[i].target;
-    auto ops = supported_ops_target[static_cast<int>(target)];
-    valid_ops.insert(valid_ops.end(), ops.begin(), ops.end());
+    std::string target = TargetRepr(valid_places_[i].target);
+    // get valid ops
+    auto ops = target_supported_ops_.at(target);
+    valid_ops.insert(ops.begin(), ops.end());
   }
-  // get valid ops
-  std::set<std::string> valid_ops_set(valid_ops.begin(), valid_ops.end());
 
   // 2.Load model into program to get ops in model
   bool is_combined_params_form = false;
@@ -622,7 +622,7 @@ void OptBase::CheckIfModelSupported(bool print_ops_info) {
       auto& op_desc = *current_block->GetOp<lite::cpp::OpDesc>(i);
       auto op_type = op_desc.Type();
       input_model_ops.insert(op_type);
-      if (valid_ops_set.count(op_type) == 0) {
+      if (valid_ops.count(op_type) == 0) {
         unsupported_ops.insert(op_type);
       }
     }
@@ -731,5 +731,105 @@ std::vector<std::string> OptBase::VisualizeOptimizedNBModel(
   }
   return res;
 }
+
+void OptBase::InitSupportedOpInfo() {
+  // collected targets in compile time, which are in head file
+  // supported_kernel_op_info.h
+  std::vector<std::string> collect_targets = {"kUnk",
+                                              "kHost",
+                                              "kX86",
+                                              "kCUDA",
+                                              "kARM",
+                                              "kOpenCL",
+                                              "kAny",
+                                              "kFPGA",
+                                              "kNPU",
+                                              "kXPU",
+                                              "kBM",
+                                              "kMLU",
+                                              "kRKNPU",
+                                              "kAPU",
+                                              "kHuaweiAscendNPU",
+                                              "kImaginationNNA",
+                                              "kIntelFPGA",
+                                              "kMetal",
+                                              "kNNAdapter"};
+
+  // ignore some old targets
+  std::set<std::string> valid_target{"kARM",
+                                     "kOpenCL",
+                                     "kMetal",
+                                     "kXPU",
+                                     "kHost",
+                                     "kIntelFPGA",
+                                     "kX86",
+                                     "kBM",
+                                     "kMLU",
+                                     "huawei_ascend_npu",
+                                     "mediatek_apu",
+                                     "rockchip_npu",
+                                     "huawei_kirin_npu",
+                                     "imagination_nna",
+                                     "amlogic_npu",
+                                     "kUnk"};
+  for (size_t idx = 0; idx < supported_ops_target.size(); idx++) {
+    if (valid_target.find(collect_targets[idx]) != valid_target.end()) {
+      auto& support_ops = target_supported_ops_[collect_targets[idx]];
+      support_ops.insert(supported_ops_target[idx].begin(),
+                         supported_ops_target[idx].end());
+    }
+  }
+
+  for (auto& elem : supported_ops) {
+    for (auto target : elem.second) {
+      all_supported_ops_[elem.first].insert(target);
+    }
+  }
+
+  // collect operators supported by nnadapter
+  // operators in head file paddle_use_bridges.h
+  std::string device_names{};
+#define USE_SUBGRAPH_BRIDGE(op_type_, target_, device_names_)     \
+  device_names = #device_names_;                                  \
+  device_names.erase(                                             \
+      std::remove(device_names.begin(), device_names.end(), '"'), \
+      device_names.end());                                        \
+  device_names.erase(                                             \
+      std::remove(device_names.begin(), device_names.end(), ' '), \
+      device_names.end());                                        \
+  for (auto& device_name : lite::Split(device_names, ",")) {      \
+    target_supported_ops_[device_name].emplace(#op_type_);        \
+    all_supported_ops_[#op_type_].emplace(device_name);           \
+  }
+#include "lite/kernels/nnadapter/bridges/paddle_use_bridges.h"
+#undef USE_SUBGRAPH_BRIDGE
+
+// collect operators supported by nnadapter
+// operators in head file converter/all.h
+#define REGISTER_CONVERTER(op_type_, func_name_, device_names_)   \
+  device_names = #device_names_;                                  \
+  device_names.erase(                                             \
+      std::remove(device_names.begin(), device_names.end(), '"'), \
+      device_names.end());                                        \
+  device_names.erase(                                             \
+      std::remove(device_names.begin(), device_names.end(), ' '), \
+      device_names.end());                                        \
+  for (auto& device_name : lite::Split(device_names, ",")) {      \
+    target_supported_ops_[device_name].emplace(#op_type_);        \
+    all_supported_ops_[#op_type_].emplace(device_name);           \
+  }
+#include "lite/kernels/nnadapter/converter/all.h"
+#undef REGISTER_CONVERTER
+
+// collect operators supported by mlu, bm, xpu
+#define USE_SUBGRAPH_BRIDGE(op_type_, target_)        \
+  target_supported_ops_[#target_].emplace(#op_type_); \
+  all_supported_ops_[#op_type_].emplace(#target_);
+#include "lite/kernels/bm/bridges/paddle_use_bridges.h"
+#include "lite/kernels/mlu/bridges/paddle_use_bridges.h"
+#include "lite/kernels/xpu/bridges/paddle_use_bridges.h"
+#undef USE_SUBGRAPH_BRIDGE
+}
+
 }  // namespace lite_api
 }  // namespace paddle

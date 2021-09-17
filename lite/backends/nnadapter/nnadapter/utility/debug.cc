@@ -340,6 +340,10 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         input_args = {"input", "axis", "exclusive", "reverse"};
         output_args = {"output"};
         break;
+      case NNADAPTER_GATHER:
+        input_args = {"input", "indices", "axis"};
+        output_args = {"output"};
+        break;
       case NNADAPTER_SPLIT:
         input_args = {"input", "axis", "split"};
         output_args.resize(output_count);
@@ -534,6 +538,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(FILL);
     NNADAPTER_TYPE_TO_STRING(FLATTEN);
     NNADAPTER_TYPE_TO_STRING(FULLY_CONNECTED);
+    NNADAPTER_TYPE_TO_STRING(GATHER);
     NNADAPTER_TYPE_TO_STRING(HARD_SIGMOID);
     NNADAPTER_TYPE_TO_STRING(HARD_SWISH);
     NNADAPTER_TYPE_TO_STRING(LEAKY_RELU);
