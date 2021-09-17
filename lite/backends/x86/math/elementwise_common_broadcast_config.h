@@ -17,6 +17,10 @@
 #include <cmath>
 #include "lite/backends/x86/math/activation_functions.h"
 
+#if defined(__AVX__) && !defined(__SSE4_2__)
+#define __SSE4_2__ 1
+#endif
+
 #if defined(__AVX__)
 #include <immintrin.h>
 #endif
