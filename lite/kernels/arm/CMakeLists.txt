@@ -25,7 +25,7 @@ add_kernel(batch_norm_compute_arm ARM basic SRCS batch_norm_compute.cc DEPS ${li
 add_kernel(elementwise_compute_arm ARM basic SRCS elementwise_compute.cc DEPS ${lite_kernel_deps} math_arm)
 
 add_kernel(pool_compute_arm ARM basic SRCS pool_compute.cc DEPS ${lite_kernel_deps} math_arm)
-add_kernel(concat_compute_arm ARM basic SRCS concat_compute.cc DEPS ${lite_kernel_deps})
+add_kernel(concat_compute_arm ARM basic SRCS concat_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(pad2d_compute_arm ARM basic SRCS pad2d_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(calib_compute_arm ARM basic SRCS calib_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(transpose_compute_arm ARM basic SRCS transpose_compute.cc DEPS ${lite_kernel_deps} math_arm)
@@ -35,7 +35,7 @@ add_kernel(conv_transpose_compute_arm ARM basic SRCS conv_transpose_compute.cc D
 add_kernel(interpolate_compute_arm ARM basic SRCS interpolate_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(box_coder_compute_arm ARM basic SRCS box_coder_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(slice_compute_arm ARM basic SRCS slice_compute.cc DEPS ${lite_kernel_deps} math_arm)
-add_kernel(cast_compute_arm ARM basic SRCS cast_compute.cc DEPS ${lite_kernel_deps} math_arm)
+add_kernel(cast_compute_arm ARM basic SRCS cast_compute.cc DEPS ${lite_kernel_deps})
 add_kernel(reduce_mean_compute_arm ARM basic SRCS reduce_mean_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(affine_channel_compute_arm ARM basic SRCS affine_channel_compute.cc DEPS ${lite_kernel_deps} math_arm)
 add_kernel(affine_grid_compute_arm ARM basic SRCS affine_grid_compute.cc DEPS ${lite_kernel_deps} math_arm)
