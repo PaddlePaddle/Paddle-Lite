@@ -47,6 +47,8 @@ int ConvertConv2D(Converter* converter, hal::Operation* operation) {
   // Check depthwise mode, and decide whether use ConvolutionDepthwise
   std::shared_ptr<Operator> filter_operator = nullptr;
   bool use_depthwise_conv = false;  // Whether use ge::op::DepthwiseConv2D ?
+  // ge::op::DepthwiseConv2D only support stride_height == stride_width
+  is_depthwise_mode = is_depthwise_mode && (stride_height == stride_width);
   if (is_depthwise_mode && dilation_width == 1 && dilation_height == 1) {
     use_depthwise_conv = true;
     // [C_out, 1, filter_height, filter_width] -> [1, C_out, filter_height,
