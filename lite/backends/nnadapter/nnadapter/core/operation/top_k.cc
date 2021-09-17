@@ -29,7 +29,7 @@ int PrepareTopK(hal::Operation* operation) {
   auto input_type = input_operand->type;
   auto& output_type = output_operand->type;
   CopyOperandTypeExceptQuantParams(&output_type, input_type);
-  NNADAPTER_CHECK_GT(axis, 0);
+  NNADAPTER_CHECK_GE(axis, 0);
   NNADAPTER_CHECK_LT(axis, input_type.dimensions.count);
   output_type.dimensions.data[axis] = k;
   for (uint32_t i = 0; i < input_type.dimensions.dynamic_count; i++) {

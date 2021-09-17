@@ -23,7 +23,7 @@ namespace operation {
   auto input_count = input_operands.size();                              \
   auto output_count = output_operands.size();                            \
   NNADAPTER_CHECK_EQ(input_count, 6);                                    \
-  NNADAPTER_CHECK_EQ(output_count, 1);                                   \
+  NNADAPTER_CHECK_EQ(output_count, 2);                                   \
   /* Input */                                                            \
   auto input_operand = input_operands[0];                                \
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);      \
