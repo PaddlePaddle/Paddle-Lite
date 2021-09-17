@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/optimizer/mir/memory_optimize_pass.h"
+#include "lite/core/optimizer/mir/xpu_memory_optimize_pass.h"
 #include <cctype>
 #include <memory>
 #include <utility>
@@ -29,10 +29,11 @@ typedef struct {
   std::string name;
   int cluster;
   std::pair<int, int> lifetime;
+  int life_interval;
   std::set<std::string> adj;
-} MemNode;
+} XPUMemNode;
 
-void MemoryOptimizePass::CollectLifeCycleByDevice(
+void XPUMemoryOptimizePass::CollectLifeCycleByDevice(
     std::map<std::string, lifecycle_map_t>* lifecycles, SSAGraph* graph) {
   max_lifecycle_ = 0;
 
@@ -66,6 +67,7 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
       "conditional_block_infer",
       "merge_lod_tensor_infer",
       "merge_lod_tensor",
+      "flatten_contiguous_range",
       "equal",
       "lod_reset",
       "yolo_box",
@@ -74,33 +76,23 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
       "fetch",
       "cast",
       "expand",
+      "io_copy_once",
+      "scale",
   };
 
-  auto insert_invalid_op_nodes_for_specific_target = [&](
-      std::set<std::string> op_node_set, TargetType specific_target) {
-    std::set<std::string> invalid_op_nodes_opencl = {
-        "layout", "fc", "yolo_box", "shape", "slice"};
-    for (auto& op_node : graph->StmtTopologicalOrder()) {
-      if (!op_node->IsStmt()) continue;
-      TargetType op_target_type = op_node->AsStmt().place().target;
-      if (op_target_type == specific_target &&
-          specific_target == TARGET(kOpenCL)) {
-        invalid_op_nodes.insert(invalid_op_nodes_opencl.begin(),
-                                invalid_op_nodes_opencl.end());
-        break;
-      }
-      // else if // you can add more targets
-    }
-  };
-
-  if (has_x86_opencl()) {
-    LOG(INFO) << "skip x86 opencl target for reuse memory pass";
-    return;
-  }
+  auto insert_invalid_op_nodes_for_specific_target =
+      [&](std::set<std::string> op_node_set) {
+        for (auto& op_node : graph->StmtTopologicalOrder()) {
+          if (!op_node->IsStmt()) continue;
+          TargetType op_target_type = op_node->AsStmt().place().target;
+          if (op_target_type != TARGET(kXPU)) {
+            invalid_op_nodes.insert(op_node->AsStmt().op_info()->Type());
+          }
+        }
+      };
 
   VLOG(4) << "invalid_op_nodes.size();" << invalid_op_nodes.size();
-  insert_invalid_op_nodes_for_specific_target(invalid_op_nodes,
-                                              TARGET(kOpenCL));
+  insert_invalid_op_nodes_for_specific_target(invalid_op_nodes);
   VLOG(4) << "invalid_op_nodes.size();" << invalid_op_nodes.size();
 
   // Collect the invalid input and output variables that will not be reused.
@@ -164,6 +156,11 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
 
   for (auto& op_node : graph->StmtTopologicalOrder()) {
     if (op_node->IsStmt()) {
+      if (op_node->AsStmt().op_info()->Type() == "io_copy_once") {
+        continue;
+      }
+      VLOG(4) << op_node->AsStmt().op_info()->Type() << " life is "
+              << max_lifecycle_;
       std::vector<Node*> var_nodes(op_node->inlinks.begin(),
                                    op_node->inlinks.end());
       var_nodes.insert(
@@ -173,6 +170,8 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
         auto& arg = var_node->AsArg();
         if (arg.is_weight || arg.is_persist) continue;
         std::string var_name = arg.name;
+        VLOG(4) << "OP VAR NAME IS " << var_name;
+        if (var_name.find("_xpu_max") != std::string::npos) continue;
         if (invalid_var_names.count(var_name)) continue;
         TargetType target_type = arg.type->target();
         if (is_host(target_type)) target_type = TARGET(kHost);
@@ -193,18 +192,34 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
   LOG(INFO) << "There are " << (*lifecycles).size() << " types device var.";
 }
 
-void MemoryOptimizePass::MakeReusePlan(
+void XPUMemoryOptimizePass::MakeReusePlan(
     const lifecycle_map_t& lifecycles,
     std::map<std::string, std::string>* node2cluster) {
-  std::vector<MemNode> mem_nodes;
+  std::vector<XPUMemNode> mem_nodes;
   std::vector<std::string> cluster;
   for (auto& data : lifecycles) {
-    MemNode temp_node;
+    XPUMemNode temp_node;
     temp_node.name = data.first;
     temp_node.cluster = -1;
     temp_node.lifetime = data.second;
+    temp_node.life_interval = data.second.second - data.second.first;
     mem_nodes.push_back(temp_node);
   }
+  // Sort Node with life_interval to optimize L3 usage by Greedy Way later
+  struct {
+    bool operator()(XPUMemNode a, XPUMemNode b) const {
+      if (a.life_interval < b.life_interval) {
+        return true;
+      } else if (a.life_interval == b.life_interval) {
+        return a.lifetime.first < b.lifetime.first;
+      } else {
+        return false;
+      }
+    }
+  } customLess;
+
+  std::sort(mem_nodes.begin(), mem_nodes.end(), customLess);
+
   auto overlap = [](std::pair<int, int> a, std::pair<int, int> b) -> bool {
     return b.second >= a.first && a.second >= b.first;
   };
@@ -218,13 +233,16 @@ void MemoryOptimizePass::MakeReusePlan(
     }
   }
 
-  // Generating Memory Reuse Strategy Based on Greedy Way
+  // Generating XPUMemory Reuse Strategy Based on Greedy Way
   // The vars can be reused if there is no overlap between them.
   for (size_t i = 0; i < mem_nodes.size(); i++) {
-    if (mem_nodes[i].cluster >= 0) continue;
+    if (mem_nodes[i].cluster >= 0 || mem_nodes[i].life_interval == 0) continue;
     int cluster_index = cluster.size();
     mem_nodes[i].cluster = cluster_index;
     (*node2cluster)[mem_nodes[i].name] = mem_nodes[i].name;
+    VLOG(4) << "Mapping Tensor Cluster: " << mem_nodes[i].name
+            << ", life time is " << mem_nodes[i].lifetime.first << " --> "
+            << mem_nodes[i].lifetime.second;
     cluster.push_back(mem_nodes[i].name);
     std::set<std::string> cluster_adj = mem_nodes[i].adj;
     for (size_t j = i + 1; j < mem_nodes.size(); j++) {
@@ -232,6 +250,9 @@ void MemoryOptimizePass::MakeReusePlan(
           (cluster_adj.find(mem_nodes[j].name) == cluster_adj.end())) {
         (*node2cluster)[mem_nodes[j].name] = mem_nodes[i].name;
         mem_nodes[j].cluster = cluster_index;
+        VLOG(4) << mem_nodes[j].name << ", life time is "
+                << mem_nodes[j].lifetime.first << " --> "
+                << mem_nodes[j].lifetime.second;
         for (auto& n : mem_nodes[j].adj) {
           cluster_adj.insert(n);
         }
@@ -243,7 +264,7 @@ void MemoryOptimizePass::MakeReusePlan(
   }
 }
 
-void MemoryOptimizePass::PerformReusePlan(
+void XPUMemoryOptimizePass::PerformReusePlan(
     SSAGraph* graph, const std::map<std::string, std::string>& reuse_table) {
   int node_append_idx = 0;
   for (auto& op_node : graph->StmtTopologicalOrder()) {
@@ -319,7 +340,7 @@ void MemoryOptimizePass::PerformReusePlan(
   }
 }
 
-void MemoryOptimizePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+void XPUMemoryOptimizePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   // Memory optimization.
   // We will perform the following operation:
   // 1. Collect all var's lifetime, then classify them according to the device.
@@ -333,6 +354,9 @@ void MemoryOptimizePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   std::map<std::string, lifecycle_map_t> lifecycles;
   CollectLifeCycleByDevice(&lifecycles, graph.get());
   for (auto& ele : lifecycles) {
+    if (ele.first != "xpu") {
+      continue;
+    }
     std::map<std::string, std::string> node2cluster;
     MakeReusePlan(ele.second, &node2cluster);
     PerformReusePlan(graph.get(), node2cluster);
@@ -343,11 +367,13 @@ void MemoryOptimizePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(memory_optimize_pass, paddle::lite::mir::MemoryOptimizePass)
-    .BindTargets({TARGET(kARM), TARGET(kOpenCL)})
-    .ExcludeTargets({TARGET(kNPU),
+REGISTER_MIR_PASS(xpu_memory_optimize_pass,
+                  paddle::lite::mir::XPUMemoryOptimizePass)
+    .BindTargets({TARGET(kXPU)})
+    .ExcludeTargets({TARGET(kARM),
+                     TARGET(kNPU),
+                     TARGET(kOpenCL),
                      TARGET(kBM),
-                     TARGET(kXPU),
                      TARGET(kRKNPU),
                      TARGET(kAPU),
                      TARGET(kMLU),

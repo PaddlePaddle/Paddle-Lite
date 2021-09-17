@@ -34,6 +34,10 @@
 #include "lite/core/memory.h"
 #include "lite/utils/replace_stl/stream.h"
 
+#ifdef LITE_WITH_XPU
+#include "lite/backends/xpu/xpu_buffer.h"
+#endif
+
 namespace paddle {
 namespace lite {
 
@@ -147,12 +151,22 @@ class TensorLite {
   // For other devices, T and R may be the same type.
   template <typename T, typename R = T>
   R *mutable_data(TargetType target) {
+#ifdef LITE_WITH_XPU
+    if (target_ != target && target == TargetType::kXPU) {
+      buffer_.reset(new XPUBuffer);
+    }
+#endif
     target_ = target;
     return mutable_data<T, R>();
   }
 
   template <typename T, typename R = T>
   R *mutable_data(TargetType target, size_t memory_size) {
+#ifdef LITE_WITH_XPU
+    if (target_ != target && target == TargetType::kXPU) {
+      buffer_.reset(new XPUBuffer);
+    }
+#endif
     precision_ = lite_api::PrecisionTypeTrait<T>::Type();
     memory_size_ = memory_size;
     buffer_->ResetLazy(target, memory_size_);
