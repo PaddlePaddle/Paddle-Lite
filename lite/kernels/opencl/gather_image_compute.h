@@ -29,7 +29,7 @@
 
 namespace paddle {
 namespace lite {
-s namespace kernels {
+ namespace kernels {
   namespace opencl {
 
   class GatherImageCompute : public KernelLite<TARGET(kOpenCL),
