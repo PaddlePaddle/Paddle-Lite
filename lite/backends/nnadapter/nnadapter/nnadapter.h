@@ -852,6 +852,34 @@ typedef enum {
   NNADAPTER_HARD_SWISH,
 
   /**
+   * Applies Instance Normalization over a N-D input (N>2) as described
+   * in the paper https://arxiv.org/abs/1607.08022.
+   * y = scale * (x - mean) / sqrt(variance + epsilon) + bias,
+   * where mean and variance are computed per instance per channel.
+   *
+   * Inputs:
+   * * 0: input, a NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor with shape [N,C,...]
+   * * 1: scale, a tensor, with shape [C].
+   *      1) If input's type is NNADAPTER_TENSOR_FLOAT32, its type must be the
+   * same type.
+   * * 2: bias, a tensor with the same shape as scale.
+   *      1) If input's type is NNADAPTER_TENSOR_FLOAT32, its type must be the
+   * same type.
+   * * 3: epsilon, a NNADAPTER_FLOAT32 scalar. Defaults to 1e-5.
+   * The small value added to the variance to prevent division by zero.
+   * * 4: fuse_code, a NNADAPTER_INT32 scalar, must be one of NNAdapterFuseCode
+   * values.
+   *
+   * Outputs:
+   * * 0: output, a tensor with the same shape and type as input.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_INSTANCE_NORMALIZATION,
+
+  /**
    * Applies the Leaky ReLU activation to the input tensor element-wise. The
    * output is calculated using this formula: output = input, if input >=0
    * output = alpha * input, if input < 0

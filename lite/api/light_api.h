@@ -135,7 +135,6 @@ class LITE_API LightPredictor {
   std::vector<std::string> input_names_;
   std::vector<std::string> output_names_;
   std::vector<PrecisionType> input_precisions_;
-  std::vector<std::vector<int64_t>> input_shapes_;
 };
 
 class LightPredictorImpl : public lite_api::PaddlePredictor {
