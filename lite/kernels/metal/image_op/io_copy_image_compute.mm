@@ -43,15 +43,14 @@ class IoCopyHostToMetalTexture
         auto input_dims = param.x->dims();
         auto src = param.x->template data<float>();
         // scene: have not metal kernel, so use CPU kernel then return to GPU
-        if ((input_dims.size() == 4) ||
-            (input_dims.size() == 3)) {
+        if (input_dims.size() == 4 || input_dims.size() == 3) {
             output_buffer_ = param.y->template mutable_data<MetalHalf, MetalImage>(
                 metal_context_, param.y->dims());
         }
         // scene: op params, resident memory can be initialized once
         else {
             output_buffer_ = param.y->template mutable_data<MetalHalf, MetalImage>(
-                metal_context_, param.y->dims(), {0, 1, 2, 3});
+                metal_context_, param.y->dims(), {0, 1, 2, 3}, false);
             output_buffer_->src_tensor_ = (void*)param.x;
             output_buffer_->CopyFromNCHW<float>(src);
             function_name_ = "host_to_metal-prepare";

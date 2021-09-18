@@ -99,7 +99,9 @@ class LITE_API LightPredictor {
   void ConfigMetalContext(const lite_api::MobileConfig& config) {
     program_->ConfigMetalContext(config.metal_lib_path(),
                                  config.metal_use_mps(),
-                                 config.metal_use_aggressive());
+                                 config.metal_use_aggressive(),
+                                 config.metal_use_memory_reuse(),
+                                 config.metal_device());
   }
 #endif
 
