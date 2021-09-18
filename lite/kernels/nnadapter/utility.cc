@@ -541,6 +541,45 @@ NNAdapterOperandPrecisionCode ConvertPrecisionTypeToNNPrecisionCode(
   return NNADAPTER_TENSOR_FLOAT32;
 }
 
+NNAdapterOperationType ConvertUnaryActTypeToNNOperationType(
+    const std::string& unary_act_op_type) {
+  NNAdapterOperationType unary_act_op_code = NNADAPTER_UNKNOWN;
+  if (unary_act_op_type == "sigmoid") {
+    unary_act_op_code = NNADAPTER_SIGMOID;
+  } else if (unary_act_op_type == "relu") {
+    unary_act_op_code = NNADAPTER_RELU;
+  } else if (unary_act_op_type == "relu6") {
+    unary_act_op_code = NNADAPTER_RELU6;
+  } else if (unary_act_op_type == "tanh") {
+    unary_act_op_code = NNADAPTER_TANH;
+  } else if (unary_act_op_type == "log") {
+    unary_act_op_code = NNADAPTER_LOG;
+  } else if (unary_act_op_type == "abs") {
+    unary_act_op_code = NNADAPTER_ABS;
+  } else if (unary_act_op_type == "exp") {
+    unary_act_op_code = NNADAPTER_EXP;
+  } else {
+    LOG(WARNING) << "Unable to convert a unary activation type("
+                 << unary_act_op_type << ") to a NNAdapter operation type!";
+  }
+  return unary_act_op_code;
+}
+
+NNAdapterAutoPadCode ConvertPaddingAlgorithmToNNAutoPadCode(
+    const std::string& padding_algorithm) {
+  NNAdapterAutoPadCode auto_pad_code;
+  if (padding_algorithm == "EXPLICIT" || padding_algorithm.empty()) {
+    auto_pad_code = NNADAPTER_AUTO_PAD_NONE;
+  } else if (padding_algorithm == "SAME") {
+    auto_pad_code = NNADAPTER_AUTO_PAD_SAME;
+  } else if (padding_algorithm == "VALID") {
+    auto_pad_code = NNADAPTER_AUTO_PAD_VALID;
+  } else {
+    LOG(FATAL) << "Unsupported padding_algorithm: " << padding_algorithm;
+  }
+  return auto_pad_code;
+}
+
 template <>
 PrecisionType ConvertPODTypeToPrecisionType<bool>() {
   return PRECISION(kBool);
@@ -659,21 +698,6 @@ DDim ConvertNNDimensionsToDDim(int32_t* input_dimensions,
     output_dimensions[i] = static_cast<int64_t>(input_dimensions[i]);
   }
   return DDim(output_dimensions);
-}
-
-NNAdapterAutoPadCode PaddingAlgorithm2AutoPadCode(
-    const std::string& padding_algorithm) {
-  NNAdapterAutoPadCode auto_pad_code;
-  if (padding_algorithm == "EXPLICIT" || padding_algorithm.empty()) {
-    auto_pad_code = NNADAPTER_AUTO_PAD_NONE;
-  } else if (padding_algorithm == "SAME") {
-    auto_pad_code = NNADAPTER_AUTO_PAD_SAME;
-  } else if (padding_algorithm == "VALID") {
-    auto_pad_code = NNADAPTER_AUTO_PAD_VALID;
-  } else {
-    LOG(FATAL) << "Unsupported padding_algorithm: " << padding_algorithm;
-  }
-  return auto_pad_code;
 }
 
 }  // namespace nnadapter
