@@ -17,19 +17,29 @@
 namespace nnadapter {
 namespace operation {
 
-#define LEAKY_RELU_OPERATION_EXTRACT_INPUTS_OUTPUTS                         \
+#define ARG_MIN_MAX_OPERATION_EXTRACT_INPUTS_OUTPUTS                        \
   auto& input_operands = operation->input_operands;                         \
   auto& output_operands = operation->output_operands;                       \
   auto input_count = input_operands.size();                                 \
   auto output_count = output_operands.size();                               \
-  NNADAPTER_CHECK_EQ(input_count, 2);                                       \
+  NNADAPTER_CHECK_EQ(input_count, 4);                                       \
   NNADAPTER_CHECK_EQ(output_count, 1);                                      \
   /* Input */                                                               \
   auto input_operand = input_operands[0];                                   \
   NNADAPTER_VLOG(5) << "input_operand: " << OperandToString(input_operand); \
-  /* Alpha */                                                               \
-  float alpha = *reinterpret_cast<float*>(input_operands[1]->buffer);       \
-  NNADAPTER_VLOG(5) << "alpha: " << alpha;                                  \
+  /* Axis */                                                                \
+  auto axis = *reinterpret_cast<int32_t*>(input_operands[1]->buffer);       \
+  if (axis < 0) {                                                           \
+    axis += input_operand->type.dimensions.count;                           \
+  }                                                                         \
+  NNADAPTER_VLOG(5) << "axis: " << axis;                                    \
+  /* Keepdim */                                                             \
+  bool keepdim = *reinterpret_cast<int8_t*>(input_operands[2]->buffer);     \
+  NNADAPTER_VLOG(5) << "keepdim: " << keepdim;                              \
+  /* Dtype */                                                               \
+  auto dtype = static_cast<NNAdapterOperandPrecisionCode>(                  \
+      *reinterpret_cast<int32_t*>(input_operands[3]->buffer));              \
+  NNADAPTER_VLOG(5) << "dtype: " << dtype;                                  \
   /* Output */                                                              \
   auto output_operand = output_operands[0];                                 \
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);

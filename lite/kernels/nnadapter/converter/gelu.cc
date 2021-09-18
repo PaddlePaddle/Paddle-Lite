@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cmath>
 #include "lite/kernels/nnadapter/converter/converter.h"
 
 namespace paddle {
@@ -20,7 +19,7 @@ namespace lite {
 namespace kernels {
 namespace nnadapter {
 
-int ConvertUnaryActivations(Converter* converter, OpInfo* op, Scope* scope) {
+int ConvertGelu(Converter* converter, OpInfo* op, Scope* scope) {
   // Extract the inputs, outputs and attributes
   auto op_type = op->Type();
   auto x_name = op->Input("X").front();
@@ -35,6 +34,7 @@ int ConvertUnaryActivations(Converter* converter, OpInfo* op, Scope* scope) {
   if (op->HasOutputScale(out_scale_name, true)) {
     out_scales = op->GetOutputScale(out_scale_name, true);
   }
+  auto approximate = op->GetAttr<bool>("approximate");
   // Check quantization mode
   bool is_quant_mode = IsValidSymmPerLayerQuantParams(out_scales);
   if (is_quant_mode) {
@@ -48,6 +48,8 @@ int ConvertUnaryActivations(Converter* converter, OpInfo* op, Scope* scope) {
   auto input_operand = converter->GetMappedOperand(x_name);
   CHECK(input_operand);
   auto input_type = converter->GetOperandType(input_operand);
+  // Approximate operand
+  auto approximate_operand = converter->AddConstantOperand(approximate);
   // Output operand
   if (is_quant_mode) {
     if (IsNNInt8SymmPerLayerQuantType(*input_type)) {
@@ -72,32 +74,9 @@ int ConvertUnaryActivations(Converter* converter, OpInfo* op, Scope* scope) {
     }
   }
   auto output_operand = converter->AddOutputOperand(out_name, out_scales);
-  // Unary activation operation
-  NNAdapterOperationType unary_act_operation_type;
-  if (op_type == "sigmoid") {
-    unary_act_operation_type = NNADAPTER_SIGMOID;
-  } else if (op_type == "relu") {
-    unary_act_operation_type = NNADAPTER_RELU;
-  } else if (op_type == "relu6") {
-    unary_act_operation_type = NNADAPTER_RELU6;
-  } else if (op_type == "tanh") {
-    unary_act_operation_type = NNADAPTER_TANH;
-  } else if (op_type == "log") {
-    unary_act_operation_type = NNADAPTER_LOG;
-  } else if (op_type == "abs") {
-    unary_act_operation_type = NNADAPTER_ABS;
-  } else if (op_type == "exp") {
-    unary_act_operation_type = NNADAPTER_EXP;
-  } else if (op_type == "swish") {
-    auto beta = op->GetAttr<float>("beta");
-    CHECK_LT(fabs(beta - 1.0f), 1e-5f) << "Only supports beta = 1.0";
-    unary_act_operation_type = NNADAPTER_SWISH;
-  } else {
-    LOG(WARNING) << "Unsupported unary activation type: " << op_type;
-    return UNSUPPORTED_FEATURE;
-  }
+  // GELU operation
   converter->AddOperation(
-      unary_act_operation_type, {input_operand}, {output_operand});
+      NNADAPTER_GELU, {input_operand, approximate_operand}, {output_operand});
   return NO_ERROR;
 }
 
