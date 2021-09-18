@@ -29,7 +29,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include(system)
 include(functions)
-include(cross_compiling/preproject)
+include(os/common)
 
 project(paddle CXX C)
 message(STATUS "CXX compiler: ${CMAKE_CXX_COMPILER}, version: "
@@ -234,7 +234,7 @@ endif()
 # for mobile
 if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     message(STATUS "Building the mobile framework")
-    include(cross_compiling/postproject)
+    include(os/postproject)
     include(device/npu) # check and prepare NPU DDK
     include(device/xpu) # check and prepare XPU SDK
     include(device/apu) # check and prepare APU SDK 
