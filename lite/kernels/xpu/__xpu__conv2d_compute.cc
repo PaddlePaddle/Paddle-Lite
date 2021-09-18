@@ -98,10 +98,9 @@ void XPUConv2dCompute<T, PType>::Run() {
   int act_type = param.act_type.front();
   float* output_max =
       param.output_max->template mutable_data<float>(TARGET(kXPU));
-  float* output = param.output->template mutable_data<float>(TARGET(kXPU));
   const auto* bias =
       param.has_bias ? param.bias->template data<float>() : nullptr;
-  const auto* branch =
+  const float* branch =
       param.has_branch ? param.branch->template data<float>() : nullptr;
   const float* input_max =
       param.input_max ? param.input_max->template data<float>() : nullptr;
@@ -112,29 +111,83 @@ void XPUConv2dCompute<T, PType>::Run() {
   } else if (act_type == 15) {
     act.hard_sigmoid_slope = param.act_param.front();
   }
-  int r = xdnn::conv2d_fusion<float, T, float, T>(
-      ctx.GetRawContext(),
-      param.input->template data<float>(),
-      quant_filter_,
-      output,
-      batch,
-      img_c,
-      img_h,
-      img_w,
-      filter_num,
-      std::vector<int>{win_h, win_w},
-      param.strides,
-      paddings,
-      dilations,
-      groups,
-      input_max,
-      filter_max_,
-      output_max,
-      true,
-      bias,
-      branch,
-      act);
-  CHECK_EQ(r, 0);
+  if (branch != nullptr && param.output->dims() != param.branch->dims()) {
+    CHECK_EQ(act_type, 0);
+    if (branch_broadcast_guard_.get() == nullptr) {
+      branch_broadcast_guard_ = TargetWrapperXPU::MallocScratchPad(
+          param.output->numel() * sizeof(float));
+    } else {
+      branch_broadcast_guard_->Reserve(param.output->numel() * sizeof(float));
+    }
+    int r = xdnn::conv2d_fusion<float, T, float, T>(
+        ctx.GetRawContext(),
+        param.input->template data<float>(),
+        quant_filter_,
+        reinterpret_cast<float*>(branch_broadcast_guard_->addr_),
+        batch,
+        img_c,
+        img_h,
+        img_w,
+        filter_num,
+        std::vector<int>{win_h, win_w},
+        param.strides,
+        paddings,
+        dilations,
+        groups,
+        input_max,
+        filter_max_,
+        output_max,
+        true,
+        bias,
+        nullptr,
+        act);
+
+    CHECK_EQ(r, 0);
+
+    auto conv_out_shape = param.output->dims().Vectorize();
+    auto branch_shape = param.branch->dims().Vectorize();
+    std::vector<int> xshape =
+        std::vector<int>(conv_out_shape.begin(), conv_out_shape.end());
+    std::vector<int> yshape =
+        std::vector<int>(branch_shape.begin(), branch_shape.end());
+    if (branch_shape > conv_out_shape) {
+      param.output->Resize(lite::DDim(branch_shape));
+    }
+    float* output = param.output->template mutable_data<float>(TARGET(kXPU));
+    r = xdnn::broadcast_add<float>(
+        ctx.GetRawContext(),
+        reinterpret_cast<float*>(branch_broadcast_guard_->addr_),
+        branch,
+        output,
+        xshape,
+        yshape);
+    CHECK_EQ(r, 0);
+  } else {
+    float* output = param.output->template mutable_data<float>(TARGET(kXPU));
+    int r = xdnn::conv2d_fusion<float, T, float, T>(
+        ctx.GetRawContext(),
+        param.input->template data<float>(),
+        quant_filter_,
+        output,
+        batch,
+        img_c,
+        img_h,
+        img_w,
+        filter_num,
+        std::vector<int>{win_h, win_w},
+        param.strides,
+        paddings,
+        dilations,
+        groups,
+        input_max,
+        filter_max_,
+        output_max,
+        true,
+        bias,
+        branch,
+        act);
+    CHECK_EQ(r, 0);
+  }
 }
 
 }  // namespace xpu
