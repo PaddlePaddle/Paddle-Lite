@@ -1,5 +1,6 @@
 #include <cl_common.h>
 
+// axis=0
 __kernel void gather_axis0(__read_only image2d_t input,
                            __read_only image2d_t index,
                            __write_only image2d_t outputImage) {

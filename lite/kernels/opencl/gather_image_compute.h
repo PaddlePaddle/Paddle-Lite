@@ -28,7 +28,7 @@
 #include "lite/backends/opencl/cl_utility.h"
 
 namespace paddle {
-namespace lite {
+namespace lite {s
 namespace kernels {
 namespace opencl {
 
@@ -54,9 +54,7 @@ class GatherImageCompute : public KernelLite<TARGET(kOpenCL),
   }
 #endif
 
-  std::string doc() const override {
-    return "ElementwiseAdd using cl::Image2D, kFP16";
-  }
+  std::string doc() const override { return "gather using cl::Image2D, kFP16"; }
 
  protected:
   param_t* ga_param_{nullptr};
@@ -67,7 +65,7 @@ class GatherImageCompute : public KernelLite<TARGET(kOpenCL),
       {static_cast<DDim::value_type>(1), static_cast<DDim::value_type>(1)}));
   DDim out_img_shape_ = DDim(std::vector<DDim::value_type>(
       {static_cast<DDim::value_type>(1), static_cast<DDim::value_type>(1)}));
-  int axis_ = 0;
+  int axis_ = 0;//axis默认
   bool axis_change = false;
   std::string kernel_func_name_{"gather"};
   std::string build_options_{""};

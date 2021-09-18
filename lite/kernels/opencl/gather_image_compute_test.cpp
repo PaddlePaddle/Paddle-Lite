@@ -30,6 +30,7 @@ void fill_data(dtype *x, const int length, int set_value = -1) {
   } else if (set_value == 250) {  // index
     for (size_t idx = 0; idx < length; ++idx) {
       x[idx] = length - 1 - idx;
+      //   x[idx] =idx;
     }
   } else if (set_value != -1) {
     for (size_t idx = 0; idx < length; ++idx) {
@@ -37,7 +38,39 @@ void fill_data(dtype *x, const int length, int set_value = -1) {
     }
   }
 }
-
+template <typename dtype>
+void gather_compute_ref(const dtype *x_data,
+                        const dtype *index_data,
+                        int axis,
+                        dtype *out_data,
+                        const DDim &x_dims,
+                        const DDim &index_dims) {
+  //  std::cout<<"cpu输出开始"<<x_dims[1]<<std::endl;
+  if (axis == 0) {
+    for (int i = 0; i < index_dims[0]; i++) {
+      for (int j = 0; j < x_dims[1]; j++) {
+        int idx = index_data[i] * x_dims[1] + j;
+        out_data[i * x_dims[1] + j] = x_data[idx];
+        //        std::cout << x_data[idx]<<"/"<< out_data[i*x_dims[1]+j];
+        //         std::cout<<" ";
+      }
+      //      std::cout<<"\n";
+    }
+  } else if (axis == 1) {
+    for (int i = 0; i < x_dims[0]; i++) {
+      for (int j = 0; j < index_dims[0]; j++) {
+        int idx = i * x_dims[1] + index_data[j];
+        out_data[i * index_dims[0] + j] = x_data[idx];
+        //   std::cout << x_data[idx]<<"/"<< out_data[i*index_dims[0]+j];
+        //   std::cout<<" ";
+      }
+      //    std::cout<<"\n";
+    }
+  } else {
+    LOG(FATAL) << "axis超出支持范围！ axis: " << axis;
+    CHECK_EQ(1, 0);
+  }
+}
 // #define PRINT_RESULT
 // image
 TEST(gather_image, compute) {
@@ -174,11 +207,13 @@ TEST(gather_image, compute) {
     CLRuntime::Global()->command_queue().finish();
     finish = clock();
     double time_ = static_cast<double>(finish - start) / CLOCKS_PER_SEC;
+    std::cout << "run第：" << case_idx << std::endl;
     std::cout << "运行时间：    " << time_ << std::endl;
-    std::cout << "mi : " << time_mi << "  mx  :" << time_mx << std::endl;
+    //   std::cout << "mi : " << time_mi << "  mx  :" << time_mx << std::endl;
     if (time_ < time_mi) time_mi = time_;
     if (time_ > time_mx) time_mx = time_;
-    std::cout << "赋值后mi : " << time_mi << "  mx  :" << time_mx << std::endl;
+    //  std::cout << "赋值后mi : " << time_mi << "  mx  :" << time_mx <<
+    //  std::endl;
 
     TargetWrapperCL::ImgcpySync(out_img_v.data(),
                                 ga_out.data<half_t, cl::Image2D>(),
@@ -190,18 +225,30 @@ TEST(gather_image, compute) {
     start = clock();
     default_convertor.ImageToNCHW(
         out_img_v.data(), out_v.data(), out_img_shape, out_dim);
-    std::cout << "输出开始"
-              << "\n";
-
+    //    std::cout << "输出开始"
+    //             << "\n";
+    std::unique_ptr<float[]> out_ref(new float[out_dim.production()]);
+    gather_compute_ref<float>(
+        x_v.data(), index_v.data(), axis_v[0], out_ref.get(), x_dim, index_dim);
+    int bug = 0;
     for (int eidx = 0; eidx < out_dim[0]; eidx++) {
       for (int j = 0; j < out_dim[1]; j++) {
         auto value = out_v[eidx * out_dim[1] + j];
-        std::cout << value;
-        std::cout << " ";
+        if (value != out_ref[eidx * out_dim[1] + j]) bug++;
+        //     std::cout<<"存在错误："<<out_ref.get()[eidx * out_dim[1] + j]<<"
+        //     "<<value<<std::endl;
+        //    std::cout << value;
+        //    std::cout << " ";
       }
-      std::cout << "\n";
+      //   std::cout << "\n";
     }
-  }
+    if (bug > 1) {
+      VLOG(1) << "cpu结果与GPU结果校验错误，bug：" << bug;
+      CHECK_EQ(bug, 0);
+    } else {
+      std::cout << "cpu结果与GPU结果校验正确\n" << std::endl;
+    }
+  }  // 测试组for循环
   std::cout << "最大时间：" << time_mx << "秒\n最小时间： " << time_mi << "秒"
             << std::endl;
 }

@@ -303,7 +303,6 @@ void GatherImageCompute::Run() {
 
 namespace ocl = paddle::lite::kernels::opencl;
 
-
 REGISTER_LITE_KERNEL(
     gather, kOpenCL, kFP16, kImageDefault, ocl::GatherImageCompute, def)
     .BindInput("X",
