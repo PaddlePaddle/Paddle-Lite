@@ -94,7 +94,9 @@ class XPUL3Planner {
         record_map.push_back(block_idx);
       }
     }
-
+    if (records.size() <= 0) {
+      return;
+    }
     std::vector<node> res(records[0]);
     for (size_t block_idx = 1; block_idx < records.size(); block_idx++) {
       std::vector<node> new_nodes;

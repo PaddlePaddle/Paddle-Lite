@@ -78,6 +78,8 @@ void XPUMemoryOptimizePass::CollectLifeCycleByDevice(
       "expand",
       "io_copy_once",
       "scale",
+      "__xpu__resnet50",
+      "softmax",
   };
 
   auto insert_invalid_op_nodes_for_specific_target =
