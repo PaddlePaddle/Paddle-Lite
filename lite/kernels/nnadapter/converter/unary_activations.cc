@@ -82,7 +82,6 @@ int ConvertUnaryActivations(Converter* converter, OpInfo* op, Scope* scope) {
     unary_act_operation_type = ConvertUnaryActTypeToNNOperationType(op_type);
     CHECK(unary_act_operation_type != NNADAPTER_UNKNOWN)
         << "Unsupported unary activation type: " << op_type;
-    return UNSUPPORTED_FEATURE;
   }
   converter->AddOperation(
       unary_act_operation_type, {input_operand}, {output_operand});
