@@ -31,7 +31,9 @@ std::weak_ptr<VarDesc> VarDesc::latest() {
 
 std::weak_ptr<VarDesc> VarDesc::Read(const OpDescBase& op_desc) {
   targets_.push_back(&op_desc);
-  std::shared_ptr<VarDesc> desc;
+  if (GetType() == VarDataType::LOD_TENSOR_ARRAY) {
+    if (mutable_) mutable_ = !mutable_;
+  }
   return latest();
 }
 
@@ -46,7 +48,8 @@ std::weak_ptr<VarDesc> VarDesc::NewDescendant() {
 
 std::weak_ptr<VarDesc> VarDesc::Written(const OpDescBase& op_desc) {
   std::weak_ptr<VarDesc> desc;
-  if (GetType() == VarDataType::LOD_TENSOR) {
+  if (GetType() == VarDataType::LOD_TENSOR ||
+      GetType() == VarDataType::LOD_TENSOR_ARRAY) {
     if (mutable_) {
       mutable_ = !mutable_;
       desc = shared_from_this();

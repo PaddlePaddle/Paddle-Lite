@@ -28,6 +28,7 @@
 #include <functional>  // for multiplies
 #include <memory>
 #include <numeric>
+#include <sstream>
 #include <string>
 #include <vector>
 #include "lite/core/dim.h"
@@ -122,10 +123,16 @@ class TensorLite {
   typename std::enable_if<IsImage<R>::value, R>::type *mutable_data(
       MetalContext *context,
       const DDim &dim,
-      std::vector<int> transport = {0, 2, 3, 1}) {
+      std::vector<int> transport = {0, 2, 3, 1},
+      bool reuse = true) {
     dims_ = dim;
     target_ = TARGET(kMetal);
-    buffer_->ResetLazyMetalImage<T>(context, dim, transport);
+    long ptr_this = reinterpret_cast<long>(this);
+    std::string ptr;
+    std::stringstream stream;
+    stream << ptr_this;
+    stream >> ptr;
+    buffer_->ResetLazyMetalImage<T>(context, dim, transport, reuse, ptr);
     return static_cast<MetalImage *>(buffer_->data());
   }
 
@@ -138,6 +145,20 @@ class TensorLite {
     buffer_->ResetLazyMetalBuffer<T>(context, count, access);
     dims_ = DDimLite({static_cast<int64_t>(count)});
     return static_cast<MetalBuffer *>(buffer_->data());
+  }
+
+  enum class MetalDataType : int {
+    kRaw = 0,
+    kMetal = 1,
+  };
+  MetalDataType metal_data_type_{MetalDataType::kRaw};
+  MetalDataType metal_data_type() const { return metal_data_type_; }
+
+  void *mutable_metal_data(void *ptr) {
+    target_ = TARGET(kMetal);
+    metal_data_type_ = MetalDataType::kMetal;
+    buffer_->ResetLazyMetalData(ptr);
+    return ptr;
   }
 #endif
 

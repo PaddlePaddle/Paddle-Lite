@@ -27,8 +27,6 @@ namespace lite {
 namespace x86 {
 namespace math {
 
-using namespace paddle::lite::x86::math::detail::forward;
-
 void vector_dot(
     float* out, const float* in, const float* v1, int size, const float* v2) {
 #if defined(__AVX__)
@@ -49,7 +47,7 @@ void vector_dot(
       vec_v1 = _mm256_loadu_ps(v1 + i);
       _mm256_storeu_ps(out + i, _mm256_mul_ps(vec_in, vec_v1));
     }
-    _mm256_zeroupper();
+// _mm256_zeroupper();
 #endif
 #if defined(__SSE__)
     for (; i + 3 < size; i += 4) {
@@ -92,11 +90,11 @@ void act_relu<float>(const float* din, float* dout, int size, int threads) {
 #ifdef __AVX__
   for (; i + 7 < size; i += 8) {
     __m256 a = _mm256_loadu_ps(din + i);
-    _mm256_storeu_ps(dout + i, avx::Relu(a));
+    _mm256_storeu_ps(dout + i, lite::x86::math::detail::forward::avx::Relu(a));
   }
 #endif
   for (; i < size; i++) {
-    dout[i] = Relu<float>(din[i]);
+    dout[i] = lite::x86::math::detail::forward::Relu<float>(din[i]);
   }
 }
 
@@ -107,11 +105,12 @@ void act_sigmoid<float>(const float* din, float* dout, int size, int threads) {
 #ifdef __AVX__
   for (; i + 7 < size; i += 8) {
     __m256 a = _mm256_loadu_ps(din + i);
-    _mm256_storeu_ps(dout + i, avx::Sigmoid(a));
+    _mm256_storeu_ps(dout + i,
+                     lite::x86::math::detail::forward::avx::Sigmoid(a));
   }
 #endif
   for (; i < size; i++) {
-    dout[i] = Sigmoid<float>(din[i]);
+    dout[i] = lite::x86::math::detail::forward::Sigmoid<float>(din[i]);
   }
 }
 
@@ -122,11 +121,11 @@ void act_tanh<float>(const float* din, float* dout, int size, int threads) {
 #ifdef __AVX__
   for (; i + 7 < size; i += 8) {
     __m256 a = _mm256_loadu_ps(din + i);
-    _mm256_storeu_ps(dout + i, avx::Tanh(a));
+    _mm256_storeu_ps(dout + i, lite::x86::math::detail::forward::avx::Tanh(a));
   }
 #endif
   for (; i < size; i++) {
-    dout[i] = Tanh<float>(din[i]);
+    dout[i] = lite::x86::math::detail::forward::Tanh<float>(din[i]);
   }
 }
 
@@ -152,7 +151,7 @@ void fill_bias_fc(float* out, const float* bias, int num, int channel) {
       vec_data = _mm256_loadu_ps(ptr + i);
       _mm256_storeu_ps(ptr + i, _mm256_add_ps(vec_data, vec_bias));
     }
-    _mm256_zeroupper();
+// _mm256_zeroupper();
 #endif
 #ifdef __SSE__
     for (; i + 3 < channel; i += 4) {

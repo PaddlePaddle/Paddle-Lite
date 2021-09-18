@@ -12,30 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "core/operation/reduce_mean.h"
+#include "core/operation/unary_activations.h"
 #include "driver/huawei_ascend_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
-#include "utility/modeling.h"
 
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int ConvertReduceMean(Converter* converter, hal::Operation* operation) {
-  REDUCE_MEAN_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int ConvertSwish(Converter* converter, hal::Operation* operation) {
+  UNARY_ACTIVATIONS_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
+  // output = input * sigmoid(input)
   auto input_operator = converter->GetMappedOperator(input_operand);
   if (!input_operator) {
     input_operator = converter->ConvertOperand(input_operand);
   }
-  auto axes_operator = converter->ConvertOperand(axes_operand);
-  auto reduce_mean_op =
-      converter->AddOperator<ge::op::ReduceMean>(output_operand);
-  reduce_mean_op->set_attr_keep_dims(keep_dim);
-  SET_INPUT(reduce_mean_op, x, input_operator);
-  SET_INPUT(reduce_mean_op, axes, axes_operator);
-  MAP_OUTPUT(reduce_mean_op, y, output_operand);
+  auto sigmoid_op = converter->AddOperator<ge::op::Sigmoid>(output_operand);
+  SET_INPUT(sigmoid_op, x, input_operator);
+  auto sigmoid_operator = MAP_OUTPUT(sigmoid_op, y, output_operand);
+  auto eltwise_op = converter->AddOperator<ge::op::Mul>(output_operand);
+  SET_INPUT(eltwise_op, x1, input_operator);
+  SET_INPUT(eltwise_op, x2, sigmoid_operator);
+  MAP_OUTPUT(eltwise_op, y, output_operand);
   return NNADAPTER_NO_ERROR;
 }
 

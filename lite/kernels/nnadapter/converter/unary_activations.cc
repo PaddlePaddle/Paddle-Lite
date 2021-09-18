@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cmath>
 #include "lite/kernels/nnadapter/converter/converter.h"
 
 namespace paddle {
@@ -87,6 +88,10 @@ int ConvertUnaryActivations(Converter* converter, OpInfo* op, Scope* scope) {
     unary_act_operation_type = NNADAPTER_ABS;
   } else if (op_type == "exp") {
     unary_act_operation_type = NNADAPTER_EXP;
+  } else if (op_type == "swish") {
+    auto beta = op->GetAttr<float>("beta");
+    CHECK_LT(fabs(beta - 1.0f), 1e-5f) << "Only supports beta = 1.0";
+    unary_act_operation_type = NNADAPTER_SWISH;
   } else {
     LOG(WARNING) << "Unsupported unary activation type: " << op_type;
     return UNSUPPORTED_FEATURE;

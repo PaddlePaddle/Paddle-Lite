@@ -66,6 +66,8 @@ WITH_PROFILE=OFF
 WITH_PRECISION_PROFILE=OFF
 # option of benchmark, default is OFF
 WITH_BENCHMARK=OFF
+# option of light weight framework, default is OFF
+WITH_LIGHT_WEIGHT_FRAMEWORK=OFF
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
@@ -88,15 +90,16 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
 
 # function of set options for benchmark
 function set_benchmark_options {
-  with_light_weight_framework=OFF
   WITH_EXTRA=ON
   WITH_EXCEPTION=ON
-  # Turn off opencl. Additional third party library need to be installed on
-  # Linux. Otherwise opencl is not supported on Linux. See link for more info:
-  # https://software.intel.com/content/www/us/en/develop/articles/opencl-drivers.html
   if [ "${ARCH}" == "x86" ]; then
+    # Turn off opencl. Additional third party library need to be installed on
+    # Linux. Otherwise opencl is not supported on Linux. See link for more info:
+    # https://software.intel.com/content/www/us/en/develop/articles/opencl-drivers.html
     WITH_OPENCL=OFF
+    WITH_LIGHT_WEIGHT_FRAMEWORK=OFF
   else
+    WITH_LIGHT_WEIGHT_FRAMEWORK=ON
     WITH_OPENCL=ON
   fi
   if [ ${WITH_PROFILE} == "ON" ] || [ ${WITH_PRECISION_PROFILE} == "ON" ]; then
@@ -125,13 +128,13 @@ function init_cmake_mutable_options {
     if [ "${ARCH}" == "x86" ]; then
         with_x86=ON
         arm_target_os=""
-        with_light_weight_framework=OFF
+        WITH_LIGHT_WEIGHT_FRAMEWORK=OFF
         WITH_TINY_PUBLISH=OFF
     else
         with_arm=ON
         arm_arch=$ARCH
         arm_target_os=armlinux
-        with_light_weight_framework=ON
+        WITH_LIGHT_WEIGHT_FRAMEWORK=ON
         WITH_AVX=OFF
     fi
 
@@ -157,7 +160,7 @@ function init_cmake_mutable_options {
                         -DARM_TARGET_ARCH_ABI=$arm_arch \
                         -DARM_TARGET_OS=$arm_target_os \
                         -DARM_TARGET_LANG=$TOOLCHAIN \
-                        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=$with_light_weight_framework \
+                        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=$WITH_LIGHT_WEIGHT_FRAMEWORK \
                         -DLITE_BUILD_EXTRA=$WITH_EXTRA \
                         -DLITE_WITH_PYTHON=$WITH_PYTHON \
                         -DPY_VERSION=$PY_VERSION \
@@ -338,7 +341,7 @@ function print_usage {
     echo -e "|     --with_benchmark: (OFF|ON); controls whether to compile benchmark binary, default is OFF                                                         |"
     echo -e "|                                                                                                                                                      |"
     echo -e "|  arguments of benchmark binary compiling:                                                                                                            |"
-    echo -e "|     ./lite/tools/build_linux.sh --with_benchmark=ON full_publish                                                                                                 |"
+    echo -e "|     ./lite/tools/build_linux.sh --with_benchmark=ON full_publish                                                                                     |"
     echo -e "|                                                                                                                                                      |"
     echo -e "|  arguments of striping lib according to input model:                                                                                                 |"
     echo -e "|     ./lite/tools/build_linux.sh --with_strip=ON --opt_model_dir=YourOptimizedModelDir                                                                |"
