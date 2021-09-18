@@ -153,10 +153,11 @@ void test_expand_v2(Place place,
 }
 
 TEST(ExpandV2, precision) {
+  Place place;
 #if defined(LITE_WITH_NNADAPTER) && defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
-  Place place = TARGET(kNNAdapter);
+  place = TARGET(kNNAdapter);
 #elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
-  Place place = TARGET(kXPU);
+  place = TARGET(kXPU);
 #else
   return;
 #endif
