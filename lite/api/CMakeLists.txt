@@ -58,7 +58,9 @@ if ((NOT LITE_ON_TINY_PUBLISH) AND (LITE_WITH_CUDA OR LITE_WITH_X86 OR LITE_WITH
     lite_cc_library(paddle_full_api_shared SHARED SRCS paddle_api.cc light_api.cc cxx_api.cc cxx_api_impl.cc light_api_impl.cc
                   DEPS ${full_lib_DEPS} ${external_libs_DEPS})
     add_dependencies(paddle_full_api_shared fbs_headers)
-
+    if (LITE_WITH_CUDA)
+        target_link_libraries(paddle_full_api_shared "-Wl,--whole-archive" ${math_cuda} "-Wl,--no-whole-archive")
+    endif()
     if(LITE_WITH_CV)
       target_link_libraries(paddle_full_api_shared "-Wl,--whole-archive" utils "-Wl,--no-whole-archive")
     endif(LITE_WITH_CV)
