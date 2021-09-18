@@ -379,6 +379,9 @@ void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &program_desc,
   program_ =
       RunDefaultOptimizer(std::move(program), inner_places, factor, passes);
 
+  if (program_desc->HasVersion())
+    program_->set_version(program_desc->Version());
+
   PrepareFeedFetch();
   // Verify if the ops version of current runtime program is
   // the same with that in models.
@@ -506,9 +509,9 @@ void Predictor::CheckInputValid() {
     if (GetInput(idx)->precision() != input_precisions_[idx]) {
       LOG(WARNING) << " Error input tensor precision type. Input index (" << idx
                    << ") Tensor name (" << input_names_[idx]
-                   << ") Require Precision type ("
+                   << ") Require precision type ("
                    << PrecisionToStr(input_precisions_[idx])
-                   << ") Input Precision type ("
+                   << ") Input precision type ("
                    << PrecisionToStr(GetInput(idx)->precision()) << ").";
     }
   }

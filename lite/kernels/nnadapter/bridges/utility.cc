@@ -111,12 +111,12 @@ bool IsLayoutCompatible(const NNAdapterOperandType* target,
 
 bool IsDimensionCompatible(const NNAdapterOperandType* target,
                            const DDim& reference) {
-  bool compatiable = target->dimension_count == reference.size();
+  bool compatiable = target->dimensions.count == reference.size();
   if (compatiable) {
-    for (size_t i = 0; i < target->dimension_count; i++) {
+    for (size_t i = 0; i < target->dimensions.count; i++) {
       // -1 mean Any for dynamic shape
-      if (target->dimensions[i] != -1 &&
-          target->dimensions[i] != reference[i]) {
+      if (target->dimensions.data[i] != -1 &&
+          target->dimensions.data[i] != reference[i]) {
         compatiable = false;
         break;
       }
@@ -430,19 +430,19 @@ NNAdapterPadModeCode PadMode2NNAdapterPadModeCode(std::string mode) {
   return NNADAPTER_PAD_MODE_NONE;
 }
 
-NNAdapterPadCode PaddingAlgorithm2PadCode(
+NNAdapterAutoPadCode PaddingAlgorithm2AutoPadCode(
     const std::string& padding_algorithm) {
-  NNAdapterPadCode pad_code;
+  NNAdapterAutoPadCode auto_pad_code;
   if (padding_algorithm == "EXPLICIT" || padding_algorithm.empty()) {
-    pad_code = NNADAPTER_PAD_NONE;
+    auto_pad_code = NNADAPTER_AUTO_PAD_NONE;
   } else if (padding_algorithm == "SAME") {
-    pad_code = NNADAPTER_PAD_SAME;
+    auto_pad_code = NNADAPTER_AUTO_PAD_SAME;
   } else if (padding_algorithm == "VALID") {
-    pad_code = NNADAPTER_PAD_VALID;
+    auto_pad_code = NNADAPTER_AUTO_PAD_VALID;
   } else {
     LOG(FATAL) << "Unsupported padding algorithm: " << padding_algorithm;
   }
-  return pad_code;
+  return auto_pad_code;
 }
 
 }  // namespace nnadapter

@@ -156,7 +156,6 @@ class BatchNormComputeTest : public arena::TestCase {
 };
 
 TEST(BatchNorm, precision) {
-  LOG(INFO) << "test BatchNorm op";
   float abs_error = 2e-5;
   Place place;
 #if defined(LITE_WITH_NNADAPTER)

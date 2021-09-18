@@ -18,7 +18,7 @@
 #include "lite/core/op_registry.h"
 #include "lite/kernels/opencl/image_helper.h"
 #include "lite/operators/op_params.h"
-#include "lite/utils/logging.h"
+#include "lite/utils/log/logging.h"
 #include "lite/utils/replace_stl/stream.h"
 #ifdef LITE_WITH_PROFILE
 #include "lite/core/profile/profiler.h"

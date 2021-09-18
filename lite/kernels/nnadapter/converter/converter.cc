@@ -352,6 +352,36 @@ NNAdapterOperand* Converter::AddShapeOperation(
   return shape_operand;
 }
 
+NNAdapterOperand* Converter::AddUnsqueezeOperation(
+    NNAdapterOperand* input_operand,
+    const std::vector<int32_t>& axes,
+    const std::string& out_name) {
+  auto axes_operand = AddConstantOperand(axes);
+  // Copy scales from input in PrepareUnsqueeze
+  auto output_operand = AddOutputOperand(out_name);
+  AddOperation(
+      NNADAPTER_UNSQUEEZE, {input_operand, axes_operand}, {output_operand});
+  return output_operand;
+}
+
+NNAdapterOperand* Converter::AddFlattenOperation(
+    NNAdapterOperand* input_operand,
+    const int32_t start_axis,
+    const int32_t end_axis,
+    const std::string& out_name) {
+  if (start_axis == end_axis) {
+    return input_operand;
+  }
+  auto start_axis_operand =
+      AddConstantOperand(static_cast<int32_t>(start_axis));
+  auto end_axis_operand = AddConstantOperand(static_cast<int32_t>(end_axis));
+  auto output_operand = AddOutputOperand(out_name);
+  AddOperation(NNADAPTER_FLATTEN,
+               {input_operand, start_axis_operand, end_axis_operand},
+               {output_operand});
+  return output_operand;
+}
+
 NNAdapterOperand* Converter::AddOperand(NNAdapterOperandType* type,
                                         const std::string& name) {
   NNAdapterOperand* operand = nullptr;
@@ -382,14 +412,12 @@ NNAdapterOperand* Converter::AddOperand(
   memset(&type, 0, sizeof(NNAdapterOperandType));
   if (dimensions.size() > 0) {
     ConvertDDimToNNDimensions(
-        dimensions, type.dimensions, &type.dimension_count);
+        dimensions, type.dimensions.data, &type.dimensions.count);
   }
-  type.dynamic_dimension_count = dynamic_dimensions.size();
-  if (type.dynamic_dimension_count > 0) {
-    for (uint32_t i = 0; i < type.dynamic_dimension_count; i++) {
-      ConvertVectorToNNDimensions(dynamic_dimensions[i],
-                                  type.dynamic_dimensions[i]);
-    }
+  type.dimensions.dynamic_count = dynamic_dimensions.size();
+  for (uint32_t i = 0; i < type.dimensions.dynamic_count; i++) {
+    ConvertVectorToNNDimensions(dynamic_dimensions[i],
+                                type.dimensions.dynamic_data[i]);
   }
   const auto UNKNOWN_PRECISION =
       static_cast<NNAdapterOperandPrecisionCode>(NNADAPTER_UNKNOWN);

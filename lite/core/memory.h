@@ -20,7 +20,7 @@
 #include "lite/api/paddle_place.h"
 #include "lite/core/dim.h"
 #include "lite/core/target_wrapper.h"
-#include "lite/utils/logging.h"
+#include "lite/utils/log/logging.h"
 #include "lite/utils/macros.h"
 
 #ifdef LITE_WITH_OPENCL
@@ -180,7 +180,9 @@ class Buffer {
   template <typename T>
   void ResetLazyMetalImage(MetalContext* context,
                            const DDim& dim,
-                           std::vector<int> transpose = {0, 2, 3, 1}) {
+                           std::vector<int> transpose,
+                           bool reuse,
+                           std::string sptr) {
     CHECK_EQ(own_data_, true) << "Can not reset unowned buffer.";
     Free();
     dim_ = dim;
@@ -188,6 +190,13 @@ class Buffer {
     metal_use_image2d_ = true;
     space_ = sizeof(T) * dim.production();
     data_ = TargetWrapperMetal::MallocImage<T>(context, dim, transpose);
+    // memory reuse
+    MetalImage* image = static_cast<MetalImage*>(data_);
+    if (context->use_memory_reuse() && reuse) {
+      image->initImageReuse(context, sptr);
+    } else {
+      image->initImage(context);
+    }
   }
 
   template <typename T>
@@ -201,6 +210,14 @@ class Buffer {
     metal_use_image2d_ = false;
     dim_ = DDimLite({static_cast<int64_t>(count)});
   }
+
+  void ResetLazyMetalData(void* ptr) {
+    CHECK_EQ(own_data_, true) << "Can not reset unowned buffer.";
+    Free();
+    target_ = TARGET(kMetal);
+    metal_use_texture_ = true;
+    data_ = TargetWrapperMetal::MallocMTLData(ptr);
+  }
 #endif
 
   void Free() {
@@ -211,6 +228,11 @@ class Buffer {
         TargetFree(target_, data_, "cl_use_image2d_");
       } else if (metal_use_image2d_) {
       }
+    }
+    if (metal_use_texture_) {
+#ifdef LITE_WITH_METAL
+      TargetWrapperMetal::FreeMTLData(data_);
+#endif  // LITE_WITH_METAL
     }
     data_ = nullptr;
     target_ = TargetType::kHost;
@@ -238,6 +260,7 @@ class Buffer {
   size_t cl_image2d_height_{0};  // only used for OpenCL Image2D
 
   bool metal_use_image2d_{false};  // only used for Metal Image2D
+  bool metal_use_texture_{false};  // only used for Metal Image2D
   DDim dim_;
 
   bool transpose_{false};

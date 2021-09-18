@@ -250,6 +250,11 @@ struct SliceMetalParam {
     int oC;
 };
 
+struct FeedMetalParam {
+    int isize;
+    int idim[4];
+};
+
 struct FetchMetalParam {
     int isize;
     int idim[4];

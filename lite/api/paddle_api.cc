@@ -109,6 +109,14 @@ T *Tensor::mutable_data(TargetType type) const {
   return tensor(raw_tensor_)->mutable_data<T>(type);
 }
 
+void *Tensor::mutable_metal_data(void *ptr) const {
+#ifdef LITE_WITH_METAL
+  return tensor(raw_tensor_)->mutable_metal_data(ptr);
+#else
+  return nullptr;
+#endif
+}
+
 template const double *Tensor::data<double>() const;
 template const float *Tensor::data<float>() const;
 template const int64_t *Tensor::data<int64_t>() const;
@@ -360,6 +368,13 @@ void ConfigBase::set_threads(int threads) {
 #endif
 }
 
+void ConfigBase::set_metal_device(void *device) {
+#ifdef LITE_WITH_METAL
+  metal_device_ = device;
+#endif
+  return;
+}
+
 void ConfigBase::set_metal_lib_path(const std::string &path) {
 #ifdef LITE_WITH_METAL
   metal_path_ = path;
@@ -377,6 +392,13 @@ void ConfigBase::set_metal_use_mps(bool flag) {
 void ConfigBase::set_metal_use_aggressive(bool flag) {
 #ifdef LITE_WITH_METAL
   metal_use_aggressive_ = flag;
+#endif
+  return;
+}
+
+void ConfigBase::set_metal_use_memory_reuse(bool flag) {
+#ifdef LITE_WITH_METAL
+  metal_use_memory_reuse_ = flag;
 #endif
   return;
 }

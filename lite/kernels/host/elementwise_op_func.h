@@ -441,6 +441,7 @@ BatchElementWiseArg<Elem_t, DimValue_t>::ToStaticArg() {
   }
   StaticBatchElementWiseArg ret(
       ElemNumPerBatch(), BatchNum(), BcastType(), offset);
+  return ret;
 }
 
 template <class T>

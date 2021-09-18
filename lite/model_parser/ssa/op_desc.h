@@ -59,6 +59,10 @@ class OpDescBase {
     return outputs_;
   }
 
+  virtual bool tensor_array_copy() const { return false; }
+
+  virtual void set_tensor_array_copy() {}
+
  protected:
   void UpdateVarBlockIdx(const std::weak_ptr<VarDesc>& var_desc,
                          int32_t op_block_idx);
@@ -160,6 +164,14 @@ class WhileOp : public BlockOpDesc {
       inputs_[cond_key_].emplace_back(var_desc);
       extra_inputs_.emplace_back(var_desc);
     }
+    for (const auto& var : raw_desc.Input(proto_->InKey())) {
+      auto var_desc = scope.GetRootVarDesc(var).lock();
+      inputs_[proto_->InKey()].emplace_back(var_desc);
+    }
+    for (const auto& var : raw_desc.Output(proto_->OutKey())) {
+      auto var_desc = scope.GetRootVarDesc(var).lock();
+      outputs_[proto_->OutKey()].emplace_back(var_desc);
+    }
   }
 
  private:
@@ -245,13 +257,18 @@ class WriteBackOp : public OpDescBase {
  public:
   WriteBackOp(const std::weak_ptr<VarDesc>& src,
               const std::weak_ptr<VarDesc>& dst,
-              int32_t block_idx);
+              int32_t block_idx,
+              bool tensor_array_copy);
 
   const general::OpDesc& src_raw_desc() const override { return fake_desc_; }
 
   std::string type() const override { return type_; }
 
   std::vector<std::weak_ptr<VarDesc>> input_lod_deps() const;
+
+  bool tensor_array_copy() const override { return tensor_array_copy_; }
+
+  void set_tensor_array_copy() override { tensor_array_copy_ = true; }
 
  private:
   void AddInput(const std::string& param,
@@ -264,9 +281,12 @@ class WriteBackOp : public OpDescBase {
   static constexpr char const input_lod_deps_[] = "Dep_LoDTensor";
   static constexpr char const input_lod_array_deps_[] = "Dep_LoDTensorArray";
   static constexpr char const input_src_[] = "Src_LoDTensor";
+  static constexpr char const input_src_array_[] = "Src_LoDTensorArray";
   // For directed acyclic, input is used as output here.
   static constexpr char const input_dst_[] = "Dst_LoDTensor";
+  static constexpr char const input_dst_array_[] = "Dst_LoDTensorArray";
   general::OpDesc fake_desc_;
+  bool tensor_array_copy_{false};
 };
 
 }  // namespace ssa

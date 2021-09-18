@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,6 +34,10 @@ class TargetWrapper<TARGET(kMetal)> {
     static void* MallocImage(MetalContext* context, const DDim dim, std::vector<int> transport);
 
     static void FreeImage(void* image);
+
+    static void* MallocMTLData(void* ptr);
+
+    static void FreeMTLData(void* ptr);
 
     static void* Malloc(size_t size);
 

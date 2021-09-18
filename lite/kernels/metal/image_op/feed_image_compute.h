@@ -1,4 +1,4 @@
-// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,8 +34,7 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-class FeedImageCompute
-    : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {
+class FeedImageCompute : public KernelLite<TARGET(kMetal), PRECISION(kAny), DATALAYOUT(kAny)> {
     using param_t = operators::FeedParam;
 
    public:
@@ -50,13 +49,19 @@ class FeedImageCompute
    private:
     void init_memory();
     void release_memory();
+    void setup_pipeline();
 
-    void run_without_mps();
-    void setup_without_mps();
+    void run_raw();
+    void run_int32();
+    void run_float();
+    void setup_float();
+
+    void run_mtl_texture();
+    void setup_mtl_texture();
 
    private:
     std::shared_ptr<MetalBuffer> input_buffer_;
-    std::shared_ptr<MetalBuffer> param_buffer_;
+    std::shared_ptr<MetalBuffer> params_buffer_{nullptr};
     MetalImage* output_buffer_{nullptr};
 
     id<MTLComputePipelineState> pipline_;
@@ -65,6 +70,7 @@ class FeedImageCompute
     DDim last_input_dims_{};
 
     void* lanczos_{nullptr};
+    id<MTLTexture> resize_texture_;
 };
 
 }  // namespace metal

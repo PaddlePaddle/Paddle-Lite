@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cmath>
 #include "lite/kernels/nnadapter/converter/converter.h"
 
 namespace paddle {
@@ -20,7 +21,7 @@ namespace kernels {
 namespace nnadapter {
 
 int ConvertUnaryActivations(Converter* converter, OpInfo* op, Scope* scope) {
-  // Extract op attributes
+  // Extract the inputs, outputs and attributes
   auto op_type = op->Type();
   auto x_name = op->Input("X").front();
   auto x_scale_name = "X0_scale";
@@ -72,8 +73,6 @@ int ConvertUnaryActivations(Converter* converter, OpInfo* op, Scope* scope) {
   }
   auto output_operand = converter->AddOutputOperand(out_name, out_scales);
   // Unary activation operation
-  std::vector<NNAdapterOperand*> input_operands{input_operand};
-  std::vector<NNAdapterOperand*> output_operands{output_operand};
   NNAdapterOperationType unary_act_operation_type;
   if (op_type == "sigmoid") {
     unary_act_operation_type = NNADAPTER_SIGMOID;
@@ -89,12 +88,16 @@ int ConvertUnaryActivations(Converter* converter, OpInfo* op, Scope* scope) {
     unary_act_operation_type = NNADAPTER_ABS;
   } else if (op_type == "exp") {
     unary_act_operation_type = NNADAPTER_EXP;
+  } else if (op_type == "swish") {
+    auto beta = op->GetAttr<float>("beta");
+    CHECK_LT(fabs(beta - 1.0f), 1e-5f) << "Only supports beta = 1.0";
+    unary_act_operation_type = NNADAPTER_SWISH;
   } else {
     LOG(WARNING) << "Unsupported unary activation type: " << op_type;
     return UNSUPPORTED_FEATURE;
   }
   converter->AddOperation(
-      unary_act_operation_type, &input_operands, &output_operands);
+      unary_act_operation_type, {input_operand}, {output_operand});
   return NO_ERROR;
 }
 

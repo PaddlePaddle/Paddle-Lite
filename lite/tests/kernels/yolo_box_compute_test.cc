@@ -21,12 +21,15 @@
 
 namespace paddle {
 namespace lite {
-
 namespace {
-inline float sigmoid(float x) { return 1.f / (1.f + expf(-x)); }
+template <typename T>
+inline float sigmoid(T x) {
+  return 1.f / (1.f + expf(-x));
+}
 
-inline void get_yolo_box(float* box,
-                         const float* x,
+template <typename T>
+inline void get_yolo_box(T* box,
+                         const T* x,
                          const int* anchors,
                          int i,
                          int j,
@@ -55,8 +58,9 @@ inline int get_entry_index(int batch,
   return (batch * an_num + an_idx) * an_stride + entry * stride + hw_idx;
 }
 
-inline void calc_detection_box(float* boxes,
-                               float* box,
+template <typename T>
+inline void calc_detection_box(T* boxes,
+                               T* box,
                                const int box_idx,
                                const int img_height,
                                const int img_width) {
@@ -65,19 +69,20 @@ inline void calc_detection_box(float* boxes,
   boxes[box_idx + 2] = box[0] + box[2] / 2;
   boxes[box_idx + 3] = box[1] + box[3] / 2;
 
-  boxes[box_idx] = boxes[box_idx] > 0 ? boxes[box_idx] : static_cast<float>(0);
+  boxes[box_idx] = boxes[box_idx] > 0 ? boxes[box_idx] : static_cast<T>(0);
   boxes[box_idx + 1] =
-      boxes[box_idx + 1] > 0 ? boxes[box_idx + 1] : static_cast<float>(0);
+      boxes[box_idx + 1] > 0 ? boxes[box_idx + 1] : static_cast<T>(0);
   boxes[box_idx + 2] = boxes[box_idx + 2] < img_width - 1
                            ? boxes[box_idx + 2]
-                           : static_cast<float>(img_width - 1);
+                           : static_cast<T>(img_width - 1);
   boxes[box_idx + 3] = boxes[box_idx + 3] < img_height - 1
                            ? boxes[box_idx + 3]
-                           : static_cast<float>(img_height - 1);
+                           : static_cast<T>(img_height - 1);
 }
 
-inline void calc_label_score(float* scores,
-                             const float* input,
+template <typename T>
+inline void calc_label_score(T* scores,
+                             const T* input,
                              const int label_idx,
                              const int score_idx,
                              const int class_num,
@@ -89,6 +94,7 @@ inline void calc_label_score(float* scores,
 }
 }  // namespace
 
+template <typename T>
 class YoloBoxComputeTester : public arena::TestCase {
  protected:
   // common attributes for this op.
@@ -111,7 +117,7 @@ class YoloBoxComputeTester : public arena::TestCase {
                        const std::string& alias,
                        std::vector<int> anchors,
                        int class_num,
-                       float conf_thresh,
+                       T conf_thresh,
                        int downsample_ratio)
       : TestCase(place, alias),
         anchors_(anchors),
@@ -129,7 +135,7 @@ class YoloBoxComputeTester : public arena::TestCase {
     auto* imgsize = ImgSize;
     auto anchors = anchors_;
     int class_num = class_num_;
-    float conf_thresh = conf_thresh_;
+    T conf_thresh = conf_thresh_;
     int downsample_ratio = downsample_ratio_;
 
     const int n = in->dims()[0];
@@ -153,10 +159,10 @@ class YoloBoxComputeTester : public arena::TestCase {
     const int an_stride = (class_num + 5) * stride;
 
     auto anchors_data = anchors.data();
-    const float* in_data = in->data<float>();
+    const T* in_data = in->data<T>();
     const int* imgsize_data = imgsize->data<int>();
-    float* boxes_data = boxes->mutable_data<float>();
-    float* scores_data = scores->mutable_data<float>();
+    T* boxes_data = boxes->mutable_data<T>();
+    T* scores_data = scores->mutable_data<T>();
 
 #ifdef LITE_WITH_LOG
     VLOG(4) << "x_n:" << n;
@@ -174,7 +180,7 @@ class YoloBoxComputeTester : public arena::TestCase {
     VLOG(4) << "scale_x_y_:" << scale_x_y_;
 #endif
 
-    float box[4];
+    T box[4];
     for (int i = 0; i < n; i++) {
       int img_height = imgsize_data[2 * i];
       int img_width = imgsize_data[2 * i + 1];
@@ -183,24 +189,24 @@ class YoloBoxComputeTester : public arena::TestCase {
           for (int l = 0; l < w; l++) {
             int obj_idx =
                 get_entry_index(i, j, k * w + l, an_num, an_stride, stride, 4);
-            float conf = sigmoid(in_data[obj_idx]);
+            T conf = sigmoid(in_data[obj_idx]);
             if (conf < conf_thresh) {
               continue;
             }
             int box_idx =
                 get_entry_index(i, j, k * w + l, an_num, an_stride, stride, 0);
-            get_yolo_box(box,
-                         in_data,
-                         anchors_data,
-                         l,
-                         k,
-                         j,
-                         h,
-                         in_size,
-                         box_idx,
-                         stride,
-                         img_height,
-                         img_width);
+            get_yolo_box<T>(box,
+                            in_data,
+                            anchors_data,
+                            l,
+                            k,
+                            j,
+                            h,
+                            in_size,
+                            box_idx,
+                            stride,
+                            img_height,
+                            img_width);
             box_idx = (i * b_num + j * stride + k * w + l) * 4;
             calc_detection_box(boxes_data, box, box_idx, img_height, img_width);
 
@@ -235,7 +241,7 @@ class YoloBoxComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
-    std::vector<float> data0(_dims0_.production());
+    std::vector<T> data0(_dims0_.production());
     for (int i = 0; i < _dims0_.production(); i++) {
       data0[i] = i * 1.1;
     }
@@ -248,12 +254,13 @@ class YoloBoxComputeTester : public arena::TestCase {
   }
 };
 
+template <typename T>
 void TestYoloBox(Place place, float abs_error) {
   for (int class_num : {1, 4}) {
     for (float conf_thresh : {0.01, 0.2}) {
       for (int downsample_ratio : {16, 32}) {
         std::vector<int> anchor{10, 13, 16, 30, 33, 30};
-        std::unique_ptr<arena::TestCase> tester(new YoloBoxComputeTester(
+        std::unique_ptr<arena::TestCase> tester(new YoloBoxComputeTester<T>(
             place, "def", anchor, class_num, conf_thresh, downsample_ratio));
         arena::Arena arena(std::move(tester), place, abs_error);
         arena.TestPrecision();
@@ -276,8 +283,16 @@ TEST(YoloBox, precision) {
   return;
 #endif
 
-  TestYoloBox(place, abs_error);
+  TestYoloBox<float>(place, abs_error);
 }
+
+#ifdef ENABLE_ARM_FP16
+TEST(YoloBoxFP16, precision) {
+  Place place;
+  place = Place(TARGET(kARM), PRECISION(kFP16));
+  TestYoloBox<lite_api::float16_t>(place, 2e-5);
+}
+#endif
 
 }  // namespace lite
 }  // namespace paddle

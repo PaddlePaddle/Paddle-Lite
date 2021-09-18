@@ -371,7 +371,8 @@ class ActivationComputeTester : public arena::TestCase {
         prelu_alpha_data[i] =
             sign * static_cast<float>(i % 128) * 0.013f + 0.001;
       }
-      SetCommonTensor(prelu_alpha_, alpha_dims, prelu_alpha_data.data());
+      SetCommonTensor(
+          prelu_alpha_, alpha_dims, prelu_alpha_data.data(), {}, true);
     }
   }
 };
@@ -550,7 +551,16 @@ TEST(Activation_prelu, precision) {
   LOG(INFO) << "test prelu op";
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_OPENCL)
+  std::vector<std::string> modes{"all", "channel", "element"};
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+  modes = {"all", "channel"};
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
   abs_error = 1e-2;  // Using fp16 in OPENCL
 #elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
@@ -561,7 +571,7 @@ TEST(Activation_prelu, precision) {
   return;
 #endif
   for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 2, 4}}) {
-    for (auto mode : {"all", "channel", "element"}) {
+    for (auto mode : modes) {
       TestAct(place,
               "def",
               0.01,
@@ -666,7 +676,16 @@ TEST(Activation_tanh, precision) {
 TEST(Activation_swish, precision) {
   Place place;
   float abs_error = 2e-5;
-#ifdef LITE_WITH_ARM
+  std::vector<float> coefs{0.01, 0.1};
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+  coefs = {1.};
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #else
   return;
@@ -674,7 +693,7 @@ TEST(Activation_swish, precision) {
 
   for (auto dims : std::vector<std::vector<int64_t>>{
            {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
-    for (auto coef : {0.01, 0.1}) {
+    for (auto coef : coefs) {
       TestAct(place,
               "def",
               0.01,
@@ -886,7 +905,14 @@ TEST(Activation_square, precision) {
 TEST(Activation_gelu, precision) {
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
   abs_error = 1e-4;
 #elif defined(LITE_WITH_X86)
@@ -1343,5 +1369,6 @@ TEST(Activation_hard_swish_fp16, performance) {
   }
 }
 #endif
+
 }  // namespace lite
 }  // namespace paddle
