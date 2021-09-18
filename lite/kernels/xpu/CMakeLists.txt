@@ -60,6 +60,7 @@ else()
   add_kernel(grid_sampler_compute_xpu XPU basic SRCS grid_sampler_compute.cc)
   add_kernel(fill_zeros_like_compute_xpu XPU basic SRCS fill_zeros_like_compute.cc)
   add_kernel(reduce_compute_xpu XPU basic SRCS reduce_compute.cc)
+  add_kernel(expand_v2_compute_xpu XPU basic SRCS expand_v2_compute.cc)
 
   # extra
   add_kernel(lookup_table_compute_xpu XPU extra SRCS lookup_table_compute.cc)
@@ -96,6 +97,7 @@ else()
   add_kernel(logical_compute_xpu XPU extra SRCS logical_compute.cc)
   add_kernel(compare_compute_xpu XPU extra SRCS compare_compute.cc)
   add_kernel(is_empty_compute_xpu XPU extra SRCS is_empty_compute.cc)
+  add_kernel(shape_compute_xpu XPU extra SRCS shape_compute.cc)
 
   # extra(fused kernel)
   add_kernel(__xpu__resnet50_compute_xpu XPU extra SRCS __xpu__resnet50_compute.cc)
