@@ -1,23 +1,22 @@
-# 项目构建（Android）
+# 使用 Linux x86 构建 / 目标终端为 Android 
+
 
 ## 一、简介
 
-本文介绍如何将 Paddle Lite 源代码通过 Android NDK 交叉构建适用于 Android 平台的发布包。
+本文介绍在 Linux x86 操作系统环境下，如何将 Paddle Lite 源代码通过 Android NDK 交叉构建预测库发布包。
 
-说明：本文适用于 Paddle Lite v2.6 及以上版本，面向对源代码有修改需求的开发者。如果您需要的是 Paddle Lite 正式版本，请直接 [前往下载](https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html) 我们预先编译的发布包。
+说明：本文适用于 Paddle Lite v2.6 及以上版本，面向对源代码有修改需求的开发者。如果您需要的是 Paddle Lite 正式版本，请直接 [前往下载](https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html) 我们预先构建发布的预测库包。
 
-## 二、环境
+## 二、环境配置
 
-### 2.1 Linux 开发环境
-
-#### 2.1.1 环境要求
+### 2.1 环境要求
 
 - gcc、g++、git、make、wget、python、adb
 - Java Environment
 - CMake（请使用 3.10 或以上版本）
 - Android NDK（支持 ndk-r17c 及之后的所有 NDK 版本, 注意从 ndk-r18 开始，NDK 交叉编译工具仅支持 Clang, 不支持 GCC）
 
-#### 2.1.2 安装命令
+### 2.2 安装命令
 
 以 Ubuntu 为例，安装命令如下：
 
@@ -58,44 +57,6 @@ source ~/.bashrc
 
 其它 Linux 发行版安装步骤类似，在此不再赘述。
 
-### 2.2 Mac OS 开发环境
-
-#### 2.2.1 环境要求
-
-- gcc、git、make、curl、unzip、java
-- CMake（请使用 3.10 版本）
-- Android NDK（支持 ndk-r17c 及之后的所有 NDK 版本, 注意从 ndk-r18 开始，NDK 交叉编译工具仅支持 Clang, 不支持 GCC）
-
-
-#### 2.1.2 安装命令
-
-
-```bash
-# 1. Install basic software
-brew install curl gcc git make unzip wget
-
-# 2. Install cmake
-mkdir /usr/local/Cellar/cmake/ && cd /usr/local/Cellar/cmake/
-wget https://cmake.org/files/v3.10/cmake-3.10.2-Darwin-x86_64.tar.gz
-tar zxf ./cmake-3.10.2-Darwin-x86_64.tar.gz
-mv cmake-3.10.2-Darwin-x86_64/CMake.app/Contents/ ./3.10.2
-ln -s /usr/local/Cellar/cmake/3.10.2/bin/cmake /usr/local/bin/cmake
-
-# 3. Download Android NDK for Mac
-#    recommand android-ndk-r17c-darwin-x86_64
-#    ref: https://developer.android.com/ndk/downloads
-#    Note: Skip this step if NDK installed
-cd ~/Documents && curl -O https://dl.google.com/android/repository/android-ndk-r17c-darwin-x86_64.zip
-cd ~/Library && unzip ~/Documents/android-ndk-r17c-darwin-x86_64.zip
-
-# 4. Add environment ${NDK_ROOT} to `~/.bash_profile` 
-echo "export NDK_ROOT=~/Library/android-ndk-r17c" >> ~/.bash_profile
-source ~/.bash_profile
-
-# 5. Install Java Environment 
-brew cask install java
-
-```
 
 ## 三、构建
 
@@ -115,21 +76,27 @@ cd Paddle-Lite && git checkout 2.9
 ./lite/tools/build_android.sh
 ```
 
-**提示：** 编译过程中，如出现源码编译耗时过长，通常是第三方库下载过慢或失败导致。请在 git clone 完 Paddle-Lite 仓库代码后，手动删除本地仓库根目录下的 third-party 目录。编译脚本会自动下载存储于国内 CDN 的第三方依赖的压缩包，节省从 git repo 同步第三方库代码的时间。
+**提示：** *编译过程中，如出现源码编译耗时过长，通常是第三方库下载过慢或失败导致。请在 git clone 完 Paddle-Lite 仓库代码后，手动删除本地仓库根目录下的 third-party 目录。编译脚本会自动下载存储于国内 CDN 的第三方依赖的压缩包，节省从 git repo 同步第三方库代码的时间。*
 
 ### 3.2 构建参数
 
-```shell
---arch: (armv8|armv7)        arm版本，默认为armv8
---toolchain: (gcc|clang)     编译器类型，默认为gcc
---android_stl: (c++_static|c++_shared)   NDK stl库链接方法，默认为静态链接c++_static
---with_java: (OFF|ON)        是否编译Java预测库, 默认为 ON
---with_cv: (OFF|ON)          是否编译CV相关预处理库, 默认为 OFF
---with_log: (OFF|ON)         是否输出日志信息, 默认为 ON
---with_exception: (OFF|ON)   是否在错误发生时抛出异常，默认为 OFF   
---with_extra: (OFF|ON)       是否编译OCR/NLP模型相关kernel&OP，默认为OFF，只编译CV模型相关kernel&OP
---android_api_level: (num)   指定编译时支持的最低Android API Level，默认为Default
-```
+build_android.sh 的构建参数
+
+| 参数 | 说明 | 可选范围 | 默认值 |
+| :-- | :-- | :-- | :-- |
+| arch          |  目标 ARM 架构   |  armv8 / armv7   |  armv8   |
+| toolchain   |  工具链  |  gcc / clang |  armv8   |
+| android_stl   |  链接到的 Android STL 类型  |  c++\_static / c++\_shared  |  c++\_static   |
+| with_java   |  是否发布 Java  |  OFF / ON  |  ON   |
+| with_static\_lib   |  是否发布静态库  |  OFF / ON  |  OFF   |
+| with_cv   |  是否将 cv 函数编译到库中  |  OFF / ON  |  OFF   |
+| with_log   |  是否打印日志  |  OFF / ON |  ON   |
+| with_exception   |  是否开启异常  |  OFF / ON  |  OFF   |
+| with_extra   |  是否编译完整算子（支持序列相关模型，如 OCR 和 NLP）  |  OFF / ON  | ——   |
+| with_profile   |  是否打开耗时分析  |  OFF / ON  |  OFF   |
+| with_precision\_profile   |  是否打开精度分析  |  OFF / ON  |  OFF   |
+| with_arm82\_fp16   |  是否开启半精度算子  |  OFF / ON  |  OFF   |
+| android_api\_level   |  安卓用户接口等级  |  16～27  |  armv7:16 / armv8:21   |
 
 Paddle-Lite 默认支持的最低安卓版本如下表所示，使用者可以通过`--android_api_level`选项设定一个具体的数值，该数值应不低于下表中最低支持的 Android API Level。
 
@@ -138,7 +105,24 @@ Paddle-Lite 默认支持的最低安卓版本如下表所示，使用者可以�
 | Supported Minimum Android API Level          |  16   |  21   |
 | Supported Minimum Android Platform Version   |  4.1  |  5.0  |
 
-### 3.3 更多信息
+### 3.3 多设备支持
+
+#### 3.3.1 OpenCL
+
+| 参数 | 说明 | 可选范围 | 默认值 |
+| :-- | :-- | :-- | :-- |
+| with_opencl | 是否包含 OpenCL 编译 |  OFF / ON   |  OFF   |
+
+
+#### 3.3.2 Huawei Ascend NPU
+
+| 参数 | 说明 | 可选范围 | 默认值 |
+| :-- | :-- | :-- | :-- |
+| with_huawei\_kirin\_npu |  是否编译包含 NPU 的预测库  | OFF/ON |  armv8   |
+| huawei_kirin\_npu\_sdk\_root |  Huawei HiAi DDK 文件的绝对路径，可从以下网址下载： https://developer.huawei.com/consumer/cn/hiai  |  gcc / clang |  armv8   |
+
+
+### 3.4 更多信息
 
 - 根据模型包含算子进行预测库裁剪，请参考 [裁剪预测库](https://paddle-lite.readthedocs.io/zh/latest/source_compile/library_tailoring.html)。
 - 编译异构设备的 Android 预测库，请参考 [部署示例](https://paddle-lite.readthedocs.io/zh/latest/index.html)。
@@ -146,7 +130,7 @@ Paddle-Lite 默认支持的最低安卓版本如下表所示，使用者可以�
 
 ## 四、验证
 
-以 armv8 为例，正确的构建步骤完成后，会在 `Paddle-Lite/build.lite.android.armv8.gcc/inference_lite_lib.android.armv8` 生成下列文件。
+按上述构建选项中的默认项执行 build_android.sh，成功后会在 `Paddle-Lite/build.lite.android.armv8.gcc/inference_lite_lib.android.armv8` 生成下列文件。
 
 ```shell
 inference_lite_lib.android.armv8/
