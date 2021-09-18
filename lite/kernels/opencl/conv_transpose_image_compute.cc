@@ -96,7 +96,7 @@ void ConvTransposeImageCompute::PrepareForRun() {
     auto* filter_image_data = MUTABLE_DATA_CPU(tensor_hold_filter_image_);
 
     converter.NCHWToImage(
-        filter_cpu_trans.data(), filter_image_data, filter_trans_dims);
+        reinterpret_cast<float*>(filter_cpu), filter_image_data, filter_dims);
     MUTABLE_DATA_GPU(
         filter_gpu_image_, filter_image_w_, filter_image_h_, filter_image_data);
   } else if ((groups_ == input_tensor_c_) && (groups_ == output_tensor_c_)) {
