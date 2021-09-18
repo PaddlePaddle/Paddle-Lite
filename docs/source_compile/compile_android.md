@@ -92,7 +92,7 @@ build_android.sh 的构建参数
 | with_cv   |  是否将 cv 函数编译到库中  |  OFF / ON  |  OFF   |
 | with_log   |  是否打印日志  |  OFF / ON |  ON   |
 | with_exception   |  是否开启异常  |  OFF / ON  |  OFF   |
-| with_extra   |  是否编译完整算子（支持序列相关模型，如 OCR 和 NLP）  |  OFF / ON  | ——   |
+| with_extra   |  是否编译完整算子（支持序列相关模型，如 OCR 和 NLP）  |  OFF / ON  | OFF   |
 | with_profile   |  是否打开耗时分析  |  OFF / ON  |  OFF   |
 | with_precision\_profile   |  是否打开精度分析  |  OFF / ON  |  OFF   |
 | with_arm82\_fp16   |  是否开启半精度算子  |  OFF / ON  |  OFF   |
