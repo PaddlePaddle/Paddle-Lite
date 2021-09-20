@@ -114,13 +114,14 @@ std::pair<void*, hal::Device*>* DeviceManager::Find(const char* name) {
     }
   }
   // Load if the driver of target device is not registered.
-  std::string symbol = std::string(NNADAPTER_AS_STR2(NNADAPTER_DRIVER_PREFIX)) +
-                       std::string("_") + name;
-  std::string path = std::string("lib") + symbol + std::string(".so");
+  std::string symbol =
+      std::string(NNADAPTER_AS_STR2(NNADAPTER_DEVICE_SYMBOL_PREFIX)) + name;
+  std::string path = std::string("lib") + name + std::string(".so");
   void* library = dlopen(path.c_str(), RTLD_NOW);
   if (!library) {
-    NNADAPTER_LOG(ERROR) << "Failed to load the nnadapter driver for '" << name
-                         << "' from " << path << ", " << dlerror();
+    NNADAPTER_LOG(ERROR)
+        << "Failed to load the nnadapter device HAL library for '" << name
+        << "' from " << path << ", " << dlerror();
     return nullptr;
   }
   auto device = reinterpret_cast<hal::Device*>(dlsym(library, symbol.c_str()));
