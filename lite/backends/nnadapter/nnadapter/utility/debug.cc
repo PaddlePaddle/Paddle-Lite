@@ -283,8 +283,6 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         input_args = {"input", "start_axis", "end_axis"};
         output_args = {"output"};
         break;
-      case NNADAPTER_HARD_SIGMOID:
-      case NNADAPTER_HARD_SWISH:
       case NNADAPTER_RELU:
       case NNADAPTER_RELU6:
       case NNADAPTER_SIGMOID:
@@ -294,6 +292,11 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
       case NNADAPTER_EXP:
       case NNADAPTER_SWISH:
         input_args = {"input"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_HARD_SIGMOID:
+      case NNADAPTER_HARD_SWISH:
+        input_args = {"input", "alpha", "beta"};
         output_args = {"output"};
         break;
       case NNADAPTER_LEAKY_RELU:

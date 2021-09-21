@@ -828,6 +828,8 @@ typedef enum {
    * Inputs:
    * * 0: input, a NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: alpha, a NNADAPTER_FLOAT32 scalar.
+   * * 2: beta, a NNADAPTER_FLOAT32 scalar.
    *
    * Outputs:
    * * 0: output, a tensor with the same shape and type as input.
@@ -844,6 +846,8 @@ typedef enum {
    * Inputs:
    * * 0: input, a NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: alpha, a NNADAPTER_FLOAT32 scalar.
+   * * 2: beta, a NNADAPTER_FLOAT32 scalar.
    *
    * Outputs:
    * * 0: output, a tensor with the same shape and type as input.
