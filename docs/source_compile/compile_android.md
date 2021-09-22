@@ -85,7 +85,7 @@ build_android.sh 的构建参数
 | 参数 | 说明 | 可选范围 | 默认值 |
 | :-- | :-- | :-- | :-- |
 | arch          |  目标 ARM 架构   |  armv8 / armv7   |  armv8   |
-| toolchain   |  工具链  |  gcc / clang |  armv8   |
+| toolchain   |  工具链  |  gcc / clang |  gcc   |
 | android_stl   |  链接到的 Android STL 类型  |  c++\_static / c++\_shared  |  c++\_static   |
 | with_java   |  是否发布 Java  |  OFF / ON  |  ON   |
 | with_static\_lib   |  是否发布静态库  |  OFF / ON  |  OFF   |
