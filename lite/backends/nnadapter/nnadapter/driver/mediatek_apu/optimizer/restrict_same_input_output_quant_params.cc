@@ -72,11 +72,7 @@ void RestrictSameInputOutputQuantParams(hal::Model* model) {
               model, operation, input_operands[i], output_operands[0]);
         }
         break;
-      case NNADAPTER_AVERAGE_POOL_2D:
       case NNADAPTER_FLATTEN:
-      case NNADAPTER_MAX_POOL_2D:
-      case NNADAPTER_RELU:
-      case NNADAPTER_RELU6:
       case NNADAPTER_RESHAPE:
       case NNADAPTER_TRANSPOSE:
       case NNADAPTER_UNSQUEEZE:
@@ -90,13 +86,17 @@ void RestrictSameInputOutputQuantParams(hal::Model* model) {
         }
         break;
       case NNADAPTER_ADD:
+      case NNADAPTER_AVERAGE_POOL_2D:
       case NNADAPTER_CONV_2D:
       case NNADAPTER_CONV_2D_TRANSPOSE:
       case NNADAPTER_DIV:
       case NNADAPTER_FULLY_CONNECTED:
       case NNADAPTER_HARD_SIGMOID:
       case NNADAPTER_HARD_SWISH:
+      case NNADAPTER_MAX_POOL_2D:
       case NNADAPTER_MUL:
+      case NNADAPTER_RELU:
+      case NNADAPTER_RELU6:
       case NNADAPTER_SIGMOID:
       case NNADAPTER_SOFTMAX:
       case NNADAPTER_SUB:
