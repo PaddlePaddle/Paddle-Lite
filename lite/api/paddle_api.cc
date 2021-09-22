@@ -516,6 +516,10 @@ void CxxConfig::set_xpu_workspace_l3_size_per_thread(int l3_size) {
 #endif
 }
 
+// local_l3 <= 0 , locked == false: NO USE L3
+// local_l3 > 0, locked == false : USE local l3
+// locked == true : USE Shared L3
+// default : locked = false, local_l3 = max_l3_size;
 void CxxConfig::set_xpu_l3_cache_method(size_t l3_size, bool locked) {
 #ifdef LITE_WITH_XPU
   static std::mutex set_l3_mutex;
@@ -531,8 +535,10 @@ void CxxConfig::set_xpu_l3_cache_method(size_t l3_size, bool locked) {
           << "Enlarge XPU Shared L3 Cache Is Not Allowed.";
     }
     lite::TargetWrapperXPU::local_l3_size = 0;
+    lite::TargetWrapperXPU::need_l3_mutex = true;
   } else {
     lite::TargetWrapperXPU::local_l3_size = l3_size;
+    lite::TargetWrapperXPU::need_l3_mutex = false;
   }
 #else
   LOG(WARNING) << "The invoking of the function "
