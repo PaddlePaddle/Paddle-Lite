@@ -152,9 +152,15 @@ void test_expand_v2(Place place,
   arena.TestPrecision();
 }
 
-#if defined(LITE_WITH_NNADAPTER) && defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
 TEST(ExpandV2, precision) {
-  Place place = TARGET(kNNAdapter);
+  Place place;
+#if defined(LITE_WITH_NNADAPTER) && defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kNNAdapter);
+#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  place = TARGET(kXPU);
+#else
+  return;
+#endif
   float abs_error = 3e-2;
   test_expand_v2<float>(
       place, abs_error, std::vector<int>({3, 1}), std::vector<int>({3, 4}));
@@ -165,7 +171,6 @@ TEST(ExpandV2, precision) {
   test_expand_v2<float, true>(
       place, abs_error, std::vector<int>({3, 1}), std::vector<int>({3, 3, 4}));
 }
-#endif
 
 }  // namespace lite
 }  // namespace paddle
