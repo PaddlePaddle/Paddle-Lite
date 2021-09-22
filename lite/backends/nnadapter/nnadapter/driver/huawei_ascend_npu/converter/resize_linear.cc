@@ -22,11 +22,9 @@ namespace huawei_ascend_npu {
 
 int ConvertResizeLinear(Converter* converter, hal::Operation* operation) {
   RESIZE_LINEAR_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  if (align_mode == 0 && !align_corners) {
-    NNADAPTER_LOG(FATAL) << "align_mode = 0 && align_corners = false isn't "
-                            "supported in Huawei Ascend NPU DDK";
-    return NNADAPTER_INVALID_PARAMETER;
-  }
+  NNADAPTER_CHECK(!(align_mode == 0 && align_corners))
+      << "HuiweiAscendNPU does not support align_mode=0 and "
+         "align_corners=true.";
 
   // Convert to GE operators
   auto resize_linear_op =
@@ -51,6 +49,11 @@ int ConvertResizeLinear(Converter* converter, hal::Operation* operation) {
     return NNADAPTER_INVALID_PARAMETER;
   }
   resize_linear_op->set_attr_align_corners(align_corners);
+  if (align_mode == 0) {
+    resize_linear_op->set_attr_half_pixel_centers(true);
+  } else {
+    resize_linear_op->set_attr_half_pixel_centers(false);
+  }
   MAP_OUTPUT(resize_linear_op, y, output_operand);
   return NNADAPTER_NO_ERROR;
 }
