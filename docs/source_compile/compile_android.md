@@ -114,12 +114,27 @@ Paddle-Lite 默认支持的最低安卓版本如下表所示，使用者可以�
 | with_opencl | 是否包含 OpenCL 编译 |  OFF / ON   |  OFF   |
 
 
-#### 3.3.2 Huawei Ascend NPU
+#### 3.3.2 NNAdapter 支持的硬件
+
+- 基本参数
 
 | 参数 | 说明 | 可选范围 | 默认值 |
 | :-- | :-- | :-- | :-- |
-| with_huawei\_kirin\_npu |  是否编译包含 NPU 的预测库  | OFF/ON |  armv8   |
-| huawei_kirin\_npu\_sdk\_root |  Huawei HiAi DDK 文件的绝对路径，可从以下网址下载： https://developer.huawei.com/consumer/cn/hiai  |  gcc / clang |  armv8   |
+| with\_nnadapter |  是否编译 NNAdapter  | OFF / ON |  OFF   |
+
+- 华为麒麟 NPU
+
+| 参数 | 说明 | 可选范围 | 默认值 |
+| :-- | :-- | :-- | :-- |
+| nnadapter\_with\_huawei\_kirin\_npu |  是否编译华为麒麟 NPU 的 NNAdapter HAL 库 | OFF / ON |  OFF   |
+| nnadapter\_huawei\_kirin\_npu\_sdk\_root |  设置华为 HiAI DDK 目录 |  [hiai_ddk_lib_510](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/hiai_ddk_lib_510.tar.gz) |  空值   |
+
+- 联发科 APU
+
+| 参数 | 说明 | 可选范围 | 默认值 |
+| :-- | :-- | :-- | :-- |
+| nnadapter\_with\_mediatek\_apu |  是否编译联发科 APU 的 NNAdapter HAL 库 | OFF / ON |  OFF   |
+| nnadapter\_mediatek\_apu\_sdk\_root |  设置联发科 Neuron Adapter SDK 目录 |  [apu_ddk](https://paddlelite-demo.bj.bcebos.com/devices/mediatek/apu_ddk.tar.gz) |  空值   |
 
 
 ### 3.4 更多信息
