@@ -29,56 +29,54 @@
 
 namespace paddle {
 namespace lite {
- namespace kernels {
-  namespace opencl {
+namespace kernels {
+namespace opencl {
 
-  class GatherImageCompute : public KernelLite<TARGET(kOpenCL),
-                                               PRECISION(kFP16),
-                                               DATALAYOUT(kImageDefault)> {
-   public:
-    using param_t = operators::GatherParam;
+class GatherImageCompute : public KernelLite<TARGET(kOpenCL),
+                                             PRECISION(kFP16),
+                                             DATALAYOUT(kImageDefault)> {
+ public:
+  using param_t = operators::GatherParam;
 
-    void PrepareForRun() override;
+  void PrepareForRun() override;
 
-    void ReInitWhenNeeded() override;
+  void ReInitWhenNeeded() override;
 
-    void GetGlobalWorkSize();
+  void GetGlobalWorkSize();
 
-    void Run() override;
+  void Run() override;
 
 #ifdef LITE_WITH_PROFILE
-    void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
-      ch->kernel_func_name = kernel_func_name_;
-      ch->cl_event =
-          event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
-    }
+  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = kernel_func_name_;
+    ch->cl_event =
+        event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
+  }
 #endif
 
-    std::string doc() const override {
-      return "gather using cl::Image2D, kFP16";
-    }
+  std::string doc() const override { return "gather using cl::Image2D, kFP16"; }
 
-   protected:
-    param_t* ga_param_{nullptr};
-    DDim last_x_dims_;
-    DDim x_img_shape_ = DDim(std::vector<DDim::value_type>(
-        {static_cast<DDim::value_type>(1), static_cast<DDim::value_type>(1)}));
-    DDim index_img_shape_ = DDim(std::vector<DDim::value_type>(
-        {static_cast<DDim::value_type>(1), static_cast<DDim::value_type>(1)}));
-    DDim out_img_shape_ = DDim(std::vector<DDim::value_type>(
-        {static_cast<DDim::value_type>(1), static_cast<DDim::value_type>(1)}));
-    int axis_ = 0;  // axis默认
-    bool axis_change = false;
-    std::string kernel_func_name_{"gather"};
-    std::string build_options_{""};
-    std::string time_stamp_{GetTimeStamp()};
-    bool first_epoch_for_reinit_{true};
-    cl::Kernel kernel_;
-    cl::NDRange global_work_size_ = cl::NDRange{
-        static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
-  };
+ protected:
+  param_t* ga_param_{nullptr};
+  DDim last_x_dims_;
+  DDim x_img_shape_ = DDim(std::vector<DDim::value_type>(
+      {static_cast<DDim::value_type>(1), static_cast<DDim::value_type>(1)}));
+  DDim index_img_shape_ = DDim(std::vector<DDim::value_type>(
+      {static_cast<DDim::value_type>(1), static_cast<DDim::value_type>(1)}));
+  DDim out_img_shape_ = DDim(std::vector<DDim::value_type>(
+      {static_cast<DDim::value_type>(1), static_cast<DDim::value_type>(1)}));
+  int axis_ = 0;  // axis默认
+  bool axis_change = false;
+  std::string kernel_func_name_{"gather"};
+  std::string build_options_{""};
+  std::string time_stamp_{GetTimeStamp()};
+  bool first_epoch_for_reinit_{true};
+  cl::Kernel kernel_;
+  cl::NDRange global_work_size_ = cl::NDRange{
+      static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
+};
 
-  }  // namespace opencl
+}  // namespace opencl
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
