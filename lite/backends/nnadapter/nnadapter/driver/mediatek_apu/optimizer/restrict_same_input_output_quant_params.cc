@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/mediatek_apu/optimizer/propagate_quant_params.h"
+#include "driver/mediatek_apu/optimizer/restrict_same_input_output_quant_params.h"
 #include <cmath>
 #include <vector>
 #include "utility/debug.h"
@@ -23,51 +23,55 @@
 namespace nnadapter {
 namespace mediatek_apu {
 
-static void MakeQuantParamsSameAs(hal::Operand* reference_operand,
-                                  hal::Operand* target_operand) {
-  auto& reference_type = reference_operand->type;
+static void RestrictSameInputOutputScale(hal::Model* model,
+                                         hal::Operation* operation,
+                                         hal::Operand* target_operand,
+                                         hal::Operand* reference_operand,
+                                         double threshold = 1e-5f) {
   auto& target_type = target_operand->type;
-  auto reference_precision = reference_type.precision;
+  auto& reference_type = reference_operand->type;
   auto target_precision = target_type.precision;
-  if (IsAsymmPerLayerQuantType(reference_precision) &&
-      IsAsymmPerLayerQuantType(target_precision)) {
+  auto reference_precision = reference_type.precision;
+  if (IsAsymmPerLayerQuantType(target_precision) &&
+      IsAsymmPerLayerQuantType(reference_precision)) {
     if (fabs(target_type.asymm_per_layer_params.scale -
-             reference_type.asymm_per_layer_params.scale) > 1e-7) {
-      NNADAPTER_CHECK(target_type.lifetime != NNADAPTER_MODEL_INPUT &&
-                      target_type.lifetime != NNADAPTER_MODEL_OUTPUT);
+             reference_type.asymm_per_layer_params.scale) > threshold) {
+      AddRequantOperation(model, operation, target_operand, reference_operand);
     }
-    target_type.asymm_per_layer_params = reference_type.asymm_per_layer_params;
-  } else if (IsSymmPerLayerQuantType(reference_precision) &&
-             IsSymmPerLayerQuantType(target_precision)) {
+  } else if (IsSymmPerLayerQuantType(target_precision) &&
+             IsSymmPerLayerQuantType(reference_precision)) {
     if (fabs(target_type.symm_per_layer_params.scale -
-             reference_type.symm_per_layer_params.scale) > 1e-7) {
-      NNADAPTER_CHECK(target_type.lifetime != NNADAPTER_MODEL_INPUT &&
-                      target_type.lifetime != NNADAPTER_MODEL_OUTPUT);
+             reference_type.symm_per_layer_params.scale) > threshold) {
+      AddRequantOperation(model, operation, target_operand, reference_operand);
     }
-    target_type.symm_per_layer_params = reference_type.symm_per_layer_params;
   } else {
-    NNADAPTER_LOG(FATAL) << "Unhandled case: reference_precision="
-                         << OperandPrecisionCodeToString(
-                                reference_type.precision)
-                         << ", target_precision="
-                         << OperandPrecisionCodeToString(target_precision);
+    NNADAPTER_LOG(FATAL) << "Unhandled case: target_precision="
+                         << OperandPrecisionCodeToString(target_precision)
+                         << ", reference_precision="
+                         << OperandPrecisionCodeToString(reference_precision);
   }
 }
 
-void PropagateQuantParams(hal::Model* model) {
+void RestrictSameInputOutputQuantParams(hal::Model* model) {
   std::vector<hal::Operation*> operations =
       SortOperationsInTopologicalOrder(model);
   auto operation_count = operations.size();
-  // Traverse the operations in reverse order, and propagate the quantization
-  // parameters of output operands to the input operands, make sure they share
-  // the same quantization parameters
-  for (int i = operation_count - 1; i >= 0; i--) {
-    auto operation = operations[i];
+  // Add a dummy ADD operation that does requantization to make the input and
+  // output share the same quantization parameters.
+  for (auto operation : operations) {
     NNADAPTER_VLOG(5) << "Converting " << OperationTypeToString(operation->type)
                       << " ...";
     auto& input_operands = operation->input_operands;
+    auto input_count = input_operands.size();
     auto& output_operands = operation->output_operands;
+    auto output_count = output_operands.size();
     switch (operation->type) {
+      case NNADAPTER_CONCAT:
+        for (uint32_t i = 0; i < input_count - 1; i++) {
+          RestrictSameInputOutputScale(
+              model, operation, input_operands[i], output_operands[0]);
+        }
+        break;
       case NNADAPTER_AVERAGE_POOL_2D:
       case NNADAPTER_FLATTEN:
       case NNADAPTER_MAX_POOL_2D:
@@ -75,11 +79,19 @@ void PropagateQuantParams(hal::Model* model) {
       case NNADAPTER_RELU6:
       case NNADAPTER_RESHAPE:
       case NNADAPTER_TRANSPOSE:
-        MakeQuantParamsSameAs(output_operands[0], input_operands[0]);
+      case NNADAPTER_UNSQUEEZE:
+        RestrictSameInputOutputScale(
+            model, operation, input_operands[0], output_operands[0]);
+        break;
+      case NNADAPTER_SPLIT:
+        for (uint32_t i = 0; i < output_count; i++) {
+          RestrictSameInputOutputScale(
+              model, operation, output_operands[i], input_operands[0]);
+        }
         break;
       case NNADAPTER_ADD:
-      case NNADAPTER_CONCAT:
       case NNADAPTER_CONV_2D:
+      case NNADAPTER_CONV_2D_TRANSPOSE:
       case NNADAPTER_DIV:
       case NNADAPTER_FULLY_CONNECTED:
       case NNADAPTER_HARD_SIGMOID:
