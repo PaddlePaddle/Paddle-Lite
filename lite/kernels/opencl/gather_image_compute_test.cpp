@@ -30,7 +30,6 @@ void fill_data(dtype *x, const int length, int set_value = -1) {
   } else if (set_value == 250) {  // index
     for (size_t idx = 0; idx < length; ++idx) {
       x[idx] = length - 1 - idx;
-      //   x[idx] =idx;
     }
   } else if (set_value != -1) {
     for (size_t idx = 0; idx < length; ++idx) {
@@ -45,37 +44,28 @@ void gather_compute_ref(const dtype *x_data,
                         dtype *out_data,
                         const DDim &x_dims,
                         const DDim &index_dims) {
-  //  std::cout<<"cpu输出开始"<<x_dims[1]<<std::endl;
   if (axis == 0) {
     for (int i = 0; i < index_dims[0]; i++) {
       for (int j = 0; j < x_dims[1]; j++) {
         int idx = index_data[i] * x_dims[1] + j;
         out_data[i * x_dims[1] + j] = x_data[idx];
-        //        std::cout << x_data[idx]<<"/"<< out_data[i*x_dims[1]+j];
-        //         std::cout<<" ";
       }
-      //      std::cout<<"\n";
     }
   } else if (axis == 1) {
     for (int i = 0; i < x_dims[0]; i++) {
       for (int j = 0; j < index_dims[0]; j++) {
         int idx = i * x_dims[1] + index_data[j];
         out_data[i * index_dims[0] + j] = x_data[idx];
-        //   std::cout << x_data[idx]<<"/"<< out_data[i*index_dims[0]+j];
-        //   std::cout<<" ";
       }
-      //    std::cout<<"\n";
     }
   } else {
-    LOG(FATAL) << "axis超出支持范围！ axis: " << axis;
+    LOG(FATAL) << "axis Out of support！ axis: " << axis;
     CHECK_EQ(1, 0);
   }
 }
 // #define PRINT_RESULT
 // image
 TEST(gather_image, compute) {
-  // std::cout<<"路过"<<"\n";
-
   // dims
   const int n = 1;
   const int c = 1;
@@ -83,18 +73,18 @@ TEST(gather_image, compute) {
   const int w = 3;
 
   const DDim x_dim = DDim(std::vector<DDim::value_type>{h, w});
-  // y_dim / axis / relu_flag
+
   std::vector<DDim> index_dim_v{DDim(std::vector<DDim::value_type>{2}),
                                 DDim(std::vector<DDim::value_type>{h})};
   const DDim axis_dim = DDim(std::vector<DDim::value_type>{1});
-  // std::vector<bool> relu_flag_v{false, true, false, false};
+
   std::vector<float> axis_map{1, 0, 1, 0, 0};
 
   // start loop
   double time_mi = 1000000000000, time_mx = 0;
   for (size_t case_idx = 0; case_idx < 5; ++case_idx) {
     auto index_dim = index_dim_v[case_idx & 1];
-    // auto relu_flag = relu_flag_v[case_idx&1];
+
     auto axis_m = axis_map[case_idx];
     DDim out_dim;
     if (axis_m == 0)
@@ -103,18 +93,18 @@ TEST(gather_image, compute) {
       out_dim = DDim(std::vector<DDim::value_type>{h, index_dim[0]});
 
     // tensor
-    VLOG(4) << "set tensors about op param";
+
     lite::Tensor ga_x, ga_index, ga_out, ga_axis;
     ga_x.Resize(x_dim);
     ga_index.Resize(index_dim);
     ga_out.Resize(out_dim);
     ga_axis.Resize(axis_dim);
     // initialize tensors
-    VLOG(4) << "initialize tensors";
+
     paddle::lite::CLImageConverterDefault default_convertor;
     // x
     std::vector<float> x_v(x_dim.production());
-    // std::cout<<"x的总大小:  "<<x_dim.production()<<"\n";
+
     fill_data<float>(x_v.data(), x_v.size());  // fill with index value
     auto x_img_shape = default_convertor.InitImageDimInfoWith(x_dim);  // w, h
     auto x_img_w = x_img_shape[0];
@@ -138,7 +128,6 @@ TEST(gather_image, compute) {
         index_v.data(), index_img_v.data(), index_dim);
     ga_index.mutable_data<half_t, cl::Image2D>(
         index_img_w, index_img_h, index_img_v.data());
-    // for(int i=0;i<)
 
     // axis
     std::vector<float> axis_v(axis_dim.production());
@@ -180,7 +169,7 @@ TEST(gather_image, compute) {
     ASSERT_FALSE(ga_img_kernels.empty());
 
     auto ga_img_kernel = std::move(ga_img_kernels.front());
-    VLOG(4) << "get eleadd kernel: " << ga_img_kernel->doc();
+    VLOG(4) << "get gather kernel: " << ga_img_kernel->doc();
 
     // set context and kernel args
     VLOG(4) << "set context and kernel args";
@@ -195,8 +184,7 @@ TEST(gather_image, compute) {
 
     // run kernel
     VLOG(4) << "run kernel";
-    std::cout << "run kernel"
-              << "\n";
+
     clock_t start, finish;
     start = clock();
     ga_img_kernel->Launch();
@@ -207,13 +195,11 @@ TEST(gather_image, compute) {
     CLRuntime::Global()->command_queue().finish();
     finish = clock();
     double time_ = static_cast<double>(finish - start) / CLOCKS_PER_SEC;
-    std::cout << "run第：" << case_idx << std::endl;
-    std::cout << "运行时间：    " << time_ << std::endl;
-    //   std::cout << "mi : " << time_mi << "  mx  :" << time_mx << std::endl;
+    std::cout << "run id：" << case_idx << std::endl;
+    std::cout << "run time：    " << time_ << std::endl;
+
     if (time_ < time_mi) time_mi = time_;
     if (time_ > time_mx) time_mx = time_;
-    //  std::cout << "赋值后mi : " << time_mi << "  mx  :" << time_mx <<
-    //  std::endl;
 
     TargetWrapperCL::ImgcpySync(out_img_v.data(),
                                 ga_out.data<half_t, cl::Image2D>(),
@@ -225,8 +211,7 @@ TEST(gather_image, compute) {
     start = clock();
     default_convertor.ImageToNCHW(
         out_img_v.data(), out_v.data(), out_img_shape, out_dim);
-    //    std::cout << "输出开始"
-    //             << "\n";
+
     std::unique_ptr<float[]> out_ref(new float[out_dim.production()]);
     gather_compute_ref<float>(
         x_v.data(), index_v.data(), axis_v[0], out_ref.get(), x_dim, index_dim);
@@ -235,22 +220,18 @@ TEST(gather_image, compute) {
       for (int j = 0; j < out_dim[1]; j++) {
         auto value = out_v[eidx * out_dim[1] + j];
         if (value != out_ref[eidx * out_dim[1] + j]) bug++;
-        //     std::cout<<"存在错误："<<out_ref.get()[eidx * out_dim[1] + j]<<"
-        //     "<<value<<std::endl;
-        //    std::cout << value;
-        //    std::cout << " ";
       }
-      //   std::cout << "\n";
     }
     if (bug > 1) {
-      VLOG(1) << "cpu结果与GPU结果校验错误，bug：" << bug;
+      VLOG(1) << "cpu Result and GPU result verification error，bug：" << bug;
       CHECK_EQ(bug, 0);
     } else {
-      std::cout << "cpu结果与GPU结果校验正确\n" << std::endl;
+      std::cout << "The CPU result and GPU result are verified to be correct\n"
+                << std::endl;
     }
-  }  // 测试组for循环
-  std::cout << "最大时间：" << time_mx << "秒\n最小时间： " << time_mi << "秒"
-            << std::endl;
+  }
+  std::cout << " Maximum time：" << time_mx << "秒\nMinimum time： " << time_mi
+            << "秒" << std::endl;
 }
 
 }  // namespace lite
