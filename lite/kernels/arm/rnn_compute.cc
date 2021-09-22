@@ -19,8 +19,8 @@
 #include <vector>
 #include "lite/backends/arm/math/concat.h"
 #include "lite/backends/arm/math/funcs.h"
-#include "lite/backends/arm/math/lstm.h"
 #include "lite/backends/arm/math/gru.h"
+#include "lite/backends/arm/math/lstm.h"
 #include "lite/backends/arm/math/sgemm.h"
 #include "lite/backends/host/math/split.h"
 
@@ -110,7 +110,7 @@ static void preprocess(ARMContext* ctx,
   DDim gate_dim;
   gate_dim.ConstructFrom(cache_input_dim);
   cache_input->Resize(gate_dim);
-  
+
   auto* i_data = input->data<float>();
   auto* w_data = weight.data<float>();
   auto* o_data = cache_input->mutable_data<float>();
@@ -151,9 +151,11 @@ static void preprocess(ARMContext* ctx,
     std::memcpy(bias_ptr, bias_src, bias_offt * sizeof(float));
     std::memset(
         bias_ptr + bias_offt, 0, (bias_hh.numel() - bias_offt) * sizeof(float));
-    lite::arm::math::fill_bias_fc(o_data, bias_tmp_hh.data<float>(), m, n, flag_act);
+    lite::arm::math::fill_bias_fc(
+        o_data, bias_tmp_hh.data<float>(), m, n, flag_act);
   } else {
-    lite::arm::math::fill_bias_fc(o_data, bias_hh.data<float>(), m, n, flag_act);
+    lite::arm::math::fill_bias_fc(
+        o_data, bias_hh.data<float>(), m, n, flag_act);
   }
 }
 
@@ -245,7 +247,6 @@ static void TransposeNormal(const Tensor& in,
   };
   transpose_helper(0, out->numel());
 }
-
 
 /******************************************************
 input:
@@ -447,12 +448,8 @@ static void gru_cell(ARMContext* ctx,
   lite_api::ActivationType gate_act = lite_api::ActivationType::kSigmoid_v2;
   lite_api::ActivationType cand_act = lite_api::ActivationType::kTanh_v2;
 
-  lite::arm::math::RnnGruUnitFunctorV2<float>::compute(ctx,
-                                                       gru_value,
-                                                       frame_size,
-                                                       batch_size,                                                 
-                                                       cand_act,
-                                                       gate_act);
+  lite::arm::math::RnnGruUnitFunctorV2<float>::compute(
+      ctx, gru_value, frame_size, batch_size, cand_act, gate_act);
 }
 
 static void RunRnnLayer(ARMContext* ctx,
@@ -592,12 +589,11 @@ static void RunRnnLayer(ARMContext* ctx,
                 size * sizeof(float));
   }
 
-  
   for (int i = 0; i < time_step; i++) {
     bool in_mask = (reverse_flag * i) >= mask_min_length;
     if (i > 0) {
       if (!has_allocate_mem_c) {
-         if (("LSTM" == mode) || ("GRU" == mode)) {
+        if (("LSTM" == mode) || ("GRU" == mode)) {
           init_c_temp.Resize(init_h[layer_idx].dims());
           init_c_temp.mutable_data<float>();
           init_c_holder = &init_c_temp;

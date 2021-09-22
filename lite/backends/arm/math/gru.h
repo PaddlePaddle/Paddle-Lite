@@ -161,7 +161,7 @@ void compute_kernel(RNNGRUValue<T> value,
                     int frame_size,
                     int batch_size,
                     lite_api::ActivationType active_node,
-                    lite_api::ActivationType active_gate){
+                    lite_api::ActivationType active_gate) {
   auto value_reset_gate = value.gate_value;
   auto value_update_gate = value.gate_value + frame_size;
   auto value_reset_output = value.reset_output_value;
@@ -197,7 +197,7 @@ void compute_kernel(RNNGRUValue<T> value,
     if (value.prev_out_value) {
       for (int i = 0; i < frame_size; i++) {
         value_output[i] = (1.f - value_update_gate[i]) * cell_state_value[i] +
-                           value_update_gate[i] * value_prev_out[i];
+                          value_update_gate[i] * value_prev_out[i];
       }
     } else {
       for (int i = 0; i < frame_size; i++) {
@@ -222,7 +222,7 @@ void compute_kernel<float>(RNNGRUValue<float> value,
                            int frame_size,
                            int batch_size,
                            lite_api::ActivationType active_node,
-                           lite_api::ActivationType active_gate){
+                           lite_api::ActivationType active_gate) {
   auto value_reset_gate = value.gate_value;
   auto value_update_gate = value.gate_value + frame_size;
   auto value_reset_output = value.reset_output_value;
@@ -232,7 +232,7 @@ void compute_kernel<float>(RNNGRUValue<float> value,
   auto value_prev_out = value.prev_out_value;
   int i = 0;
   float32x4_t vec_one = vdupq_n_f32(1.f);
-  
+
   for (int b = 0; b < batch_size; b++) {
     rnn_activation(value_reset_gate,
                    value_reset_gate,
@@ -245,14 +245,14 @@ void compute_kernel<float>(RNNGRUValue<float> value,
                    lite_api::ActivationType::kSigmoid_v2,
                    1);
 
-    for(i = 0; i + 3 < frame_size; i += 4) {
+    for (i = 0; i + 3 < frame_size; i += 4) {
       float32x4_t vec_out = vld1q_f32(value_reset_output + i);
       float32x4_t vec_reset = vld1q_f32(value_reset_gate + i);
       float32x4_t vec_bias = vld1q_f32(value_reset_bias + i);
       vec_out = vmulq_f32(vaddq_f32(vec_out, vec_bias), vec_reset);
       vst1q_f32(value_reset_output + i, vec_out);
-      vst1q_f32(cell_state_value + i, 
-        vaddq_f32(vec_out, vld1q_f32(cell_state_value + i)));
+      vst1q_f32(cell_state_value + i,
+                vaddq_f32(vec_out, vld1q_f32(cell_state_value + i)));
     }
     for (; i < frame_size; i++) {
       value_reset_output[i] =
@@ -267,25 +267,24 @@ void compute_kernel<float>(RNNGRUValue<float> value,
                    1);
 
     if (value.prev_out_value) {
-      for(i = 0; i + 3 < frame_size; i += 4) {
+      for (i = 0; i + 3 < frame_size; i += 4) {
         float32x4_t vec_vug = vld1q_f32(value_update_gate + i);
         float32x4_t vec_vpo = vld1q_f32(value_prev_out + i);
         float32x4_t vec_csv = vld1q_f32(cell_state_value + i);
         vec_vpo = vmulq_f32(vec_vug, vec_vpo);
-        float32x4_t vec_out = vmlaq_f32(vec_vpo,
-          vsubq_f32(vec_one, vec_vug), vec_csv);
+        float32x4_t vec_out =
+            vmlaq_f32(vec_vpo, vsubq_f32(vec_one, vec_vug), vec_csv);
         vst1q_f32(value_output + i, vec_out);
       }
       for (; i < frame_size; i++) {
         value_output[i] = (1.f - value_update_gate[i]) * cell_state_value[i] +
-                           value_update_gate[i] * value_prev_out[i];
+                          value_update_gate[i] * value_prev_out[i];
       }
     } else {
-      for(i = 0; i + 3 < frame_size; i += 4) {
+      for (i = 0; i + 3 < frame_size; i += 4) {
         float32x4_t vec_vug = vld1q_f32(value_update_gate + i);
         float32x4_t vec_csv = vld1q_f32(cell_state_value + i);
-        float32x4_t vec_out = vmulq_f32(
-          vsubq_f32(vec_one, vec_vug), vec_csv);
+        float32x4_t vec_out = vmulq_f32(vsubq_f32(vec_one, vec_vug), vec_csv);
         vst1q_f32(value_output + i, vec_out);
       }
       for (; i < frame_size; i++) {
@@ -307,7 +306,7 @@ void compute_kernel<float>(RNNGRUValue<float> value,
 
 template <typename T>
 struct RnnGruUnitFunctorV2 {
-  static void compute(ARMContext *ctx,
+  static void compute(ARMContext* ctx,
                       RNNGRUValue<T> value,
                       int frame_size,
                       int batch_size,
@@ -334,11 +333,7 @@ struct RnnGruUnitFunctorV2 {
                              act_param,
                              ctx);
     }
-    compute_kernel(value, 
-                   frame_size, 
-                   batch_size, 
-                   active_node, 
-                   active_gate);
+    compute_kernel(value, frame_size, batch_size, active_node, active_gate);
   }
 };
 
@@ -346,4 +341,3 @@ struct RnnGruUnitFunctorV2 {
 }  // namespace arm
 }  // namespace lite
 }  // namespace paddle
-
