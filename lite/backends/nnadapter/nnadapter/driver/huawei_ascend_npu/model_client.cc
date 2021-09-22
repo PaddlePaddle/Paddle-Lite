@@ -45,9 +45,18 @@ void AclModelClient::InitAclClientEnv(int device_id) {
   ACL_CALL(aclrtSetDevice(device_id_));
   NNADAPTER_VLOG(5) << "ACL create context";
   ACL_CALL(aclrtCreateContext(&context_, device_id_));
+  NNADAPTER_VLOG(5) << "ACL create stream";
+  ACL_CALL(aclrtCreateStream(&stream_));
+  _last_thread_id = std::this_thread::get_id();
 }
 
 void AclModelClient::FinalizeAclClientEnv() {
+  NNADAPTER_VLOG(5) << "Destroy ACL stream";
+  ACL_CALL(aclrtSynchronizeStream(stream_));
+  if (stream_ != nullptr) {
+    ACL_CALL(aclrtDestroyStream(stream_));
+    stream_ = nullptr;
+  }
   NNADAPTER_VLOG(5) << "Destroy ACL context";
   if (context_ != nullptr) {
     ACL_CALL(aclrtDestroyContext(context_));
@@ -235,7 +244,12 @@ bool AclModelClient::Process(uint32_t input_count,
     NNADAPTER_LOG(FATAL) << "No ACL model is loaded.";
     return false;
   }
-  ACL_CALL(aclrtSetCurrentContext(context_));
+  std::thread::id tid = std::this_thread::get_id();
+  if (tid != _last_thread_id) {
+    NNADAPTER_VLOG(5) << "Call aclrtSetCurrentContext";
+    ACL_CALL(aclrtSetCurrentContext(context_));
+    _last_thread_id = tid;
+  }
   auto FindArgumentByIndex = [&](
       hal::Argument* arguments, int index, uint32_t count) {
     for (uint32_t i = 0; i < count; i++) {

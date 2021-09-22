@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <thread>  // NOLINT
 #include <vector>
 #include "acl/acl.h"
 #include "core/hal/types.h"
@@ -46,7 +47,9 @@ class AclModelClient {
   void DestroyDataset(aclmdlDataset** dataset);
 
  private:
+  std::thread::id _last_thread_id;
   int device_id_{0};
+  aclrtStream stream_{nullptr};
   aclrtContext context_{nullptr};
   uint32_t model_id_{0};
   size_t model_memory_size_;
