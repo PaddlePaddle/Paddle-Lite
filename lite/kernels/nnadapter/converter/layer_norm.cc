@@ -19,7 +19,7 @@ namespace lite {
 namespace kernels {
 namespace nnadapter {
 
-int ConvertInstanceNorm(Converter* converter, OpInfo* op, Scope* scope) {
+int ConvertLayerNorm(Converter* converter, OpInfo* op, Scope* scope) {
   // Input operand
   auto x_name = op->Input("X").front();
   auto x_scale_name = "X0_scale";
@@ -31,7 +31,15 @@ int ConvertInstanceNorm(Converter* converter, OpInfo* op, Scope* scope) {
   auto x_dims = x_tensor->dims();
   auto input_operand =
       converter->AddInputOperand(x_name, *x_tensor, {}, true, x_scales);
+  // Begin norm axis operand
+  auto begin_norm_axis = op->GetAttr<int>("begin_norm_axis");
+  if (begin_norm_axis < 0) {
+    begin_norm_axis += x_dims.size();
+  }
+  auto begin_norm_axis_operand = converter->AddConstantOperand(begin_norm_axis);
   // Bias operand
+  auto scale_bias_nums =
+      x_dims.Slice(begin_norm_axis, x_dims.size()).production();
   NNAdapterOperand* bias_operand = nullptr;
   bool has_bias = op->HasInput("Bias");
   if (has_bias) {
@@ -41,7 +49,7 @@ int ConvertInstanceNorm(Converter* converter, OpInfo* op, Scope* scope) {
     bias_operand = converter->AddConstantOperand(*bias_tensor);
   } else {
     bias_operand =
-        converter->AddConstantOperand(std::vector<float>(x_dims[1], 0));
+        converter->AddConstantOperand(std::vector<float>(scale_bias_nums, 0));
   }
   // Scale operand
   NNAdapterOperand* scale_operand = nullptr;
@@ -53,7 +61,7 @@ int ConvertInstanceNorm(Converter* converter, OpInfo* op, Scope* scope) {
     scale_operand = converter->AddConstantOperand(*scale_tensor);
   } else {
     scale_operand =
-        converter->AddConstantOperand(std::vector<float>(x_dims[1], 1));
+        converter->AddConstantOperand(std::vector<float>(scale_bias_nums, 1));
   }
   // Epsilon operand
   auto epsilon = op->GetAttr<float>("epsilon");
@@ -75,11 +83,12 @@ int ConvertInstanceNorm(Converter* converter, OpInfo* op, Scope* scope) {
   // Output operand
   auto out_name = op->Output("Y").front();
   auto output_operand = converter->AddOutputOperand(out_name);
-  // InstanceNorm operand
-  converter->AddOperation(NNADAPTER_INSTANCE_NORMALIZATION,
+  // Layer operand
+  converter->AddOperation(NNADAPTER_LAYER_NORMALIZATION,
                           {input_operand,
                            scale_operand,
                            bias_operand,
+                           begin_norm_axis_operand,
                            epsilon_operand,
                            fuse_code_operand},
                           {output_operand});
@@ -93,14 +102,7 @@ int ConvertInstanceNorm(Converter* converter, OpInfo* op, Scope* scope) {
                               {output_operand, alpha_operand},
                               {fused_act_output_operand});
     } else {
-      // Unpack the fused unary activations
-      auto unary_act_operation_type =
-          ConvertUnaryActTypeToNNOperationType(act_type);
-      CHECK(unary_act_operation_type != NNADAPTER_UNKNOWN)
-          << "Failed to unpack the fused activation type: " << act_type;
-      converter->AddOperation(unary_act_operation_type,
-                              {output_operand},
-                              {fused_act_output_operand});
+      LOG(FATAL) << "Failed to unpack the fused activation type: " << act_type;
     }
   }
   return NO_ERROR;

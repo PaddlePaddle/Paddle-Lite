@@ -12,23 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/nnadapter/converter/converter.h"
+#include "core/operation/layer_normalization.h"
+#include "core/hal/types.h"
+#include "utility/debug.h"
+#include "utility/logging.h"
+#include "utility/modeling.h"
+#include "utility/utility.h"
 
-namespace paddle {
-namespace lite {
-namespace kernels {
 namespace nnadapter {
+namespace operation {
 
-int ConvertShape(Converter* converter, OpInfo* op, Scope* scope) {
-  auto input_name = op->Input("Input").front();
-  auto input_tensor = scope->FindTensor(input_name);
-  auto input_operand = converter->AddInputOperand(input_name, *input_tensor);
-  auto out_name = op->Output("Out").front();
-  converter->AddShapeOperation(input_operand, out_name);
-  return NO_ERROR;
+int PrepareLayerNormalization(hal::Operation* operation) {
+  LAYER_NORMALIZATION_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
+  // Infer the shape and type of output operands
+  CopyOperandTypeExceptQuantParams(&output_operand->type, input_operand->type);
+  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
+  return NNADAPTER_NO_ERROR;
 }
 
+}  // namespace operation
 }  // namespace nnadapter
-}  // namespace kernels
-}  // namespace lite
-}  // namespace paddle

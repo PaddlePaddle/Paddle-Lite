@@ -22,24 +22,26 @@ namespace nnadapter {
 
 int ConvertMatmul(Converter* converter, OpInfo* op, Scope* scope) {
   // X operand
-  NNAdapterOperand* x_operand = nullptr;
   auto x_name = op->Input("X").front();
   auto x_tensor = scope->FindTensor(x_name);
-  if (x_tensor->persistable()) {
-    x_operand = converter->AddConstantOperand(*x_tensor);
-  } else {
-    x_operand = converter->GetMappedOperand(x_name);
+  auto x_scale_name = "X0_scale";
+  std::vector<float> x_scales;
+  if (op->HasInputScale(x_scale_name, true)) {
+    x_scales = op->GetInputScale(x_scale_name, true);
   }
+  auto x_operand =
+      converter->AddInputOperand(x_name, *x_tensor, {}, true, x_scales);
 
   // Y operand
-  NNAdapterOperand* y_operand = nullptr;
   auto y_name = op->Input("Y").front();
   auto y_tensor = scope->FindTensor(y_name);
-  if (y_tensor->persistable()) {
-    y_operand = converter->AddConstantOperand(*y_tensor);
-  } else {
-    y_operand = converter->GetMappedOperand(y_name);
+  auto y_scale_name = "Y0_scale";
+  std::vector<float> y_scales;
+  if (op->HasInputScale(y_scale_name, true)) {
+    y_scales = op->GetInputScale(y_scale_name, true);
   }
+  auto y_operand =
+      converter->AddInputOperand(y_name, *y_tensor, {}, true, y_scales);
 
   // Transpose_x operand
   bool transpose_x = op->GetAttr<bool>("transpose_X");

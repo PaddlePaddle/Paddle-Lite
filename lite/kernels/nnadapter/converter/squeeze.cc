@@ -19,30 +19,33 @@ namespace lite {
 namespace kernels {
 namespace nnadapter {
 
-int ConvertFlattenContiguousRange(Converter* converter,
-                                  OpInfo* op,
-                                  Scope* scope) {
+int ConvertSqueeze(Converter* converter, OpInfo* op, Scope* scope) {
+  // Input operand
   auto x_name = op->Input("X").front();
+  auto x_tensor = scope->FindTensor(x_name);
   auto x_scale_name = "X0_scale";
   std::vector<float> x_scales;
   if (op->HasInputScale(x_scale_name, true)) {
     x_scales = op->GetInputScale(x_scale_name, true);
   }
-  auto out_name = op->Output("Out").front();
-  auto start_axis = op->GetAttr<int>("start_axis");
-  auto end_axis = op->GetAttr<int>("stop_axis");
-
-  auto x_tensor = scope->FindTensor(x_name);
   auto input_operand =
       converter->AddInputOperand(x_name, *x_tensor, {}, true, x_scales);
-  NNAdapterOperand* output_operand = converter->AddOutputOperand(out_name);
-  auto start_axis_operand =
-      converter->AddConstantOperand(static_cast<int32_t>(start_axis));
-  auto end_axis_operand =
-      converter->AddConstantOperand(static_cast<int32_t>(end_axis));
-  converter->AddOperation(NNADAPTER_FLATTEN,
-                          {input_operand, start_axis_operand, end_axis_operand},
-                          {output_operand});
+  // Axes operand
+  NNAdapterOperand* axes_operand = nullptr;
+  std::vector<int> axes;
+  if (op->HasAttr("axes")) {
+    axes = op->GetAttr<std::vector<int>>("axes");
+  }
+  if (!axes.empty()) {
+    axes_operand = converter->AddConstantOperand(axes);
+  }
+  // Output operand
+  auto out_name = op->Output("Out").front();
+  // Copy scales from input in PrepareSqueeze
+  auto output_operand = converter->AddOutputOperand(out_name);
+  // Squeeze operation
+  converter->AddOperation(
+      NNADAPTER_SQUEEZE, {input_operand, axes_operand}, {output_operand});
   return NO_ERROR;
 }
 

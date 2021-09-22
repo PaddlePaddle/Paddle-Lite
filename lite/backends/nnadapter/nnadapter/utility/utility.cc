@@ -201,7 +201,9 @@ NNADAPTER_EXPORT void CopyOperandTypeWithPrecision(
   NNADAPTER_CHECK(dst_type);
   dst_type->precision = src_type.precision;
   dst_type->layout = src_type.layout;
-  dst_type->lifetime = src_type.lifetime;
+  if (src_type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {
+    dst_type->lifetime = src_type.lifetime;
+  }
 }
 
 NNADAPTER_EXPORT void CopyOperandTypeWithQuantParams(

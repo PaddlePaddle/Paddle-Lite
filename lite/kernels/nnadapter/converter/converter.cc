@@ -116,6 +116,7 @@ int Converter::Apply(
     op->InferShape();
     auto op_info = const_cast<OpInfo*>(op->op_info());
     auto op_type = op_info->Type();
+
     VLOG(5) << "Converting " << op_type << " ...";
 #define REGISTER_CONVERTER(__op_type__, __func_name__, ...) \
   if (op_type == #__op_type__) {                            \
@@ -235,6 +236,29 @@ NNAdapterOperand* Converter::AddConstantOperand(
                     quant_channel_dim,
                     buffer,
                     copy);
+}
+
+NNAdapterOperand* Converter::AddInputOperand(
+    const std::string& input_name,
+    const Tensor& input_tensor,
+    DDim dimensions,
+    bool copy,
+    const std::vector<float>& quant_scales,
+    uint32_t quant_channel_dim) {
+  auto input_persistable = input_tensor.persistable();
+  if (dimensions.empty()) {
+    dimensions = input_tensor.dims();
+  } else {
+    CHECK_EQ(input_tensor.dims().production(), dimensions.production());
+  }
+  NNAdapterOperand* input_operand = nullptr;
+  if (input_persistable) {
+    input_operand = AddConstantOperand(
+        input_tensor, dimensions, copy, quant_scales, quant_channel_dim);
+  } else {
+    input_operand = GetMappedOperand(input_name);
+  }
+  return input_operand;
 }
 
 NNAdapterOperand* Converter::AddInputOperand(

@@ -43,7 +43,9 @@ int ConvertReshape(Converter* converter, OpInfo* op, Scope* scope) {
 
   // Convert to NNAdapter operands and operation
   // Input operand
-  auto input_operand = converter->GetMappedOperand(x_name);
+  auto x_tensor = scope->FindTensor(x_name);
+  auto input_operand =
+      converter->AddInputOperand(x_name, *x_tensor, {}, true, x_scales);
   CHECK(input_operand);
   auto input_type = converter->GetOperandType(input_operand);
   // Shape operand

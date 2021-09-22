@@ -30,7 +30,8 @@ int ConvertFillConstant(Converter* converter, OpInfo* op, Scope* scope) {
           shape_precision == PRECISION(kInt32))
         << "Shape's data type should be int32 or int64, but received "
         << lite_api::PrecisionToStr(shape_precision);
-    shape_operand = converter->GetMappedOperand(shape_name);
+    auto shape_tensor = scope->FindTensor(shape_name);
+    auto shape_operand = converter->AddInputOperand(shape_name, *shape_tensor);
   } else if (op->HasInput("ShapeTensorList") &&
              !op->Input("ShapeTensorList").empty()) {
     // TODO(zhupengyang): Use concat to generate shape_operand later

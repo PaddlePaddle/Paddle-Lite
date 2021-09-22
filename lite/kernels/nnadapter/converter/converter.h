@@ -122,6 +122,12 @@ class Converter {
       const std::vector<float>& quant_scales = {},
       uint32_t quant_channel_dim = 0);
   // Add a named input operand, should specify its dimensions and precision
+  NNAdapterOperand* AddInputOperand(const std::string& input_name,
+                                    const Tensor& tensor,
+                                    DDim dimensions = {},
+                                    bool copy = false,
+                                    const std::vector<float>& quant_scales = {},
+                                    uint32_t quant_channel_dim = 0);
   NNAdapterOperand* AddInputOperand(
       const std::string& name,
       const DDim& dimensions,
