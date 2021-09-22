@@ -34,6 +34,7 @@ int ConvertResizeLinear(Converter* converter, hal::Operation* operation) {
     input_operator = converter->ConvertOperand(input_operand);
   }
   SET_INPUT(resize_linear_op, x, input_operator);
+
   if (shape_operand != nullptr) {
     auto shape_operator = converter->GetMappedOperator(shape_operand);
     if (shape_operator == nullptr) {
@@ -41,13 +42,59 @@ int ConvertResizeLinear(Converter* converter, hal::Operation* operation) {
     }
     SET_INPUT(resize_linear_op, size, shape_operator);
   } else if (scales_operand != nullptr) {
-    NNADAPTER_LOG(WARNING) << "Not support scales now.";
-    return NNADAPTER_INVALID_PARAMETER;
+    // shape -> cast -> slice -> mul -> cast
+    output_operand->type.precision = NNADAPTER_TENSOR_INT32;
+    auto shape_op = converter->AddOperator<ge::op::Shape>(output_operand);
+    shape_op->set_attr_dtype(ge::DT_INT32);
+    SET_INPUT(shape_op, x, input_operator);
+    auto shape_operator = MAP_OUTPUT(shape_op, y, output_operand);
+
+    output_operand->type.precision = NNADAPTER_TENSOR_FLOAT32;
+    auto cast0_op = converter->AddOperator<ge::op::Cast>(output_operand);
+    cast0_op->set_attr_dst_type(ge::DT_FLOAT);
+    SET_INPUT(cast0_op, x, shape_operator);
+    auto cast0_operator = MAP_OUTPUT(cast0_op, y, output_operand);
+
+    auto starts_operator =
+        converter->AddInt32ConstantOperator(std::vector<int>{2});
+    auto ends_operator =
+        converter->AddInt32ConstantOperator(std::vector<int>{4});
+    auto axes_operator =
+        converter->AddInt32ConstantOperator(std::vector<int>{0});
+    auto steps_operator =
+        converter->AddInt32ConstantOperator(std::vector<int>{1});
+    auto slice_op =
+        converter->AddOperator<ge::op::StridedSliceV2>(output_operand);
+    SET_INPUT(slice_op, x, cast0_operator);
+    SET_INPUT(slice_op, begin, starts_operator);
+    SET_INPUT(slice_op, end, ends_operator);
+    SET_INPUT(slice_op, axes, axes_operator);
+    SET_INPUT(slice_op, strides, steps_operator);
+    auto slice_operator = MAP_OUTPUT(slice_op, y, output_operand);
+
+    auto scales_operator = converter->GetMappedOperator(scales_operand);
+    if (input_operator == nullptr) {
+      input_operator = converter->ConvertOperand(input_operand);
+    }
+    auto mul_op = converter->AddOperator<ge::op::Mul>(output_operand);
+    SET_INPUT(mul_op, x1, slice_operator);
+    SET_INPUT(mul_op, x2, scales_operator);
+    auto mul_operator = MAP_OUTPUT(mul_op, y, output_operand);
+
+    output_operand->type.precision = NNADAPTER_TENSOR_INT32;
+    auto cast1_op = converter->AddOperator<ge::op::Cast>(output_operand);
+    cast1_op->set_attr_dst_type(ge::DT_INT32);
+    SET_INPUT(cast1_op, x, mul_operator);
+    shape_operator = MAP_OUTPUT(cast1_op, y, output_operand);
+    output_operand->type.precision = NNADAPTER_TENSOR_FLOAT32;
+
+    SET_INPUT(resize_linear_op, size, shape_operator);
   } else {
     NNADAPTER_LOG(WARNING) << "Either shape_operand or scales_operand should "
                               "be set.";
     return NNADAPTER_INVALID_PARAMETER;
   }
+
   resize_linear_op->set_attr_align_corners(align_corners);
   if (align_mode == 0) {
     resize_linear_op->set_attr_half_pixel_centers(true);
