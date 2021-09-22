@@ -1,4 +1,4 @@
-// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,32 +13,38 @@
 // limitations under the License.
 
 #pragma once
-#include <string>
-#include "lite/core/op_lite.h"
+#include <vector>
+#include "lite/utils/log/cp_logging.h"
+#include "lite/utils/macros.h"
 
 namespace paddle {
 namespace lite {
-namespace operators {
 
-class XPUBlockFuseOp : public OpLite {
+struct XPUL3CacheBlock {
  public:
-  XPUBlockFuseOp() {}
-  explicit XPUBlockFuseOp(const std::string &op_type) : OpLite(op_type) {}
-
-  bool CheckShape() const override;
-
-  bool InferShapeImpl() const override;
-
-  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
-
-  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-
-  std::string DebugString() const override { return "BlockFuse Op"; }
+  void clear() {
+    addr_ = nullptr;
+    size_ = 0;
+    history_.clear();
+  }
+  void set(void* addr, size_t size) {
+    if (addr == nullptr || size == 0) {
+      LOG(FATAL) << "Set XPUL3CacheBlock Size as Zero";
+    }
+    addr_ = addr;
+    size_ = size;
+  }
+  void* data() { return addr_; }
+  size_t size() { return size_; }
+  void record(size_t size) { history_.push_back(size); }
 
  private:
-  mutable XPUBlockFuseParam param_;
+  void* addr_{nullptr};
+  size_t size_{0};
+
+ public:
+  std::vector<size_t> history_;
 };
 
-}  // namespace operators
 }  // namespace lite
 }  // namespace paddle

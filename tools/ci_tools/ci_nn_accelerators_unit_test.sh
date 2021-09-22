@@ -1027,7 +1027,6 @@ function baidu_xpu_build_and_test() {
     # Run all of unittests and model tests
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
     export GLOG_v=$UNIT_TEST_LOG_LEVEL
-    export XPU_CONV_AUTOTUNE=5
     local unit_test_check_items=(${UNIT_TEST_CHECK_LIST//,/ })
     for test_name in $(cat $TESTS_FILE); do
         local is_matched=0
