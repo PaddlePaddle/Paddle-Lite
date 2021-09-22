@@ -482,7 +482,13 @@ class MMDNNMatchConvTopk {
   int dim_in_;
   int out_channel_;
 
-  MMDNNFcOp xw_fc_;
+  const int16_t* match_weight_{nullptr};
+  XPUScratchPadGuard match_weight_max_guard_;
+  float* match_weight_max_{nullptr};
+  XPUScratchPadGuard in_max_guard_;
+  float* in_max_{nullptr};
+  XPUScratchPadGuard out_max_guard_;
+  float* out_max_{nullptr};
   const int16_t* conv_weight_{nullptr};
   float conv_weight_max_;
   XPUScratchPadGuard hbm_buffer_guard_;
@@ -525,12 +531,17 @@ class MMDNNMatchConvTopk {
     out_channel_ = out_channel;
     topks_ = topks;
 
-    xw_fc_.Init(input_w,
-                input_w_max,
-                nullptr,
-                dim_t_ * dim_in_,
-                dim_in_,
-                xdnn::Activation_t::LINEAR);
+    match_weight_ = input_w->data<int16_t>();
+    match_weight_max_guard_ =
+        TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
+    match_weight_max_ =
+        reinterpret_cast<float*>(match_weight_max_guard_->addr_);
+    FillMax(input_w_max, match_weight_max_);
+    in_max_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
+    in_max_ = reinterpret_cast<float*>(in_max_guard_->addr_);
+    out_max_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
+    out_max_ = reinterpret_cast<float*>(out_max_guard_->addr_);
+
     conv_weight_ = conv_w->data<int16_t>();
     conv_weight_max_ = conv_w_max;
 
@@ -644,21 +655,30 @@ class MMDNNMatchConvTopk {
     }
     seq_avg_topk_out = out->mutable_data<float>(TARGET(kXPU));
 
-    int max_width = std::max(left_seqlen_max, right_seqlen_max);
-    xw_fc_.Infer(ctx, left->data<float>(), left_seqlen_sum, xw_out);
     int r = 0;
-    r = xdnn::match_matrix_tensor(ctx,
-                                  batch,
-                                  xw_out,
-                                  right->data<float>(),
-                                  left_lod_32_,
-                                  right_lod_32_,
-                                  dim_t_,
-                                  dim_in_,
-                                  xwy_out,
-                                  xw_fc_.out_max,
-                                  xdnn::Activation_t::RELU,
-                                  max_width);
+    r = xdnn::findmax<float>(
+        ctx, left->data<float>(), left_seqlen_sum * dim_in_, in_max_);
+    CHECK_EQ(r, 0);
+    r = xdnn::match_matrix_tensor<float, int16_t, int>(
+        ctx,
+        left->data<float>(),
+        right->data<float>(),
+        match_weight_,
+        xwy_out,
+        dim_in_,
+        dim_t_,
+        true,
+        {left_lod_32_cpu.data(),
+         static_cast<int>(left_lod_32_cpu.size()),
+         left_lod_32_},
+        {right_lod_32_cpu.data(),
+         static_cast<int>(right_lod_32_cpu.size()),
+         right_lod_32_},
+        in_max_,
+        nullptr,
+        match_weight_max_,
+        xdnn::Activation_t::RELU,
+        xw_out);
     CHECK_EQ(r, 0);
     r = xdnn::search_varconv<float, int16_t>(
         ctx,
