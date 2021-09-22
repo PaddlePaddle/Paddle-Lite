@@ -56,6 +56,31 @@ REGISTER_CONVERTER(elementwise_max, ConvertElementwise, "huawei_ascend_npu");
 REGISTER_CONVERTER(elementwise_min, ConvertElementwise, "huawei_ascend_npu");
 REGISTER_CONVERTER(elementwise_pow, ConvertElementwise, "huawei_ascend_npu");
 REGISTER_CONVERTER(
+    fusion_elementwise_add_activation,
+    ConvertElementwise,
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
+REGISTER_CONVERTER(
+    fusion_elementwise_sub_activation,
+    ConvertElementwise,
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
+REGISTER_CONVERTER(
+    fusion_elementwise_mul_activation,
+    ConvertElementwise,
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
+REGISTER_CONVERTER(
+    fusion_elementwise_div_activation,
+    ConvertElementwise,
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
+REGISTER_CONVERTER(fusion_elementwise_min_activation,
+                   ConvertElementwise,
+                   "huawei_ascend_npu");
+REGISTER_CONVERTER(fusion_elementwise_max_activation,
+                   ConvertElementwise,
+                   "huawei_ascend_npu");
+REGISTER_CONVERTER(fusion_elementwise_pow_activation,
+                   ConvertElementwise,
+                   "huawei_ascend_npu");
+REGISTER_CONVERTER(
     sigmoid,
     ConvertUnaryActivations,
     "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
@@ -79,6 +104,8 @@ REGISTER_CONVERTER(log, ConvertUnaryActivations, "huawei_ascend_npu");
 REGISTER_CONVERTER(swish, ConvertUnaryActivations, "huawei_ascend_npu");
 REGISTER_CONVERTER(prelu, ConvertPRelu, "huawei_ascend_npu");
 REGISTER_CONVERTER(gelu, ConvertGelu, "huawei_ascend_npu");
+REGISTER_CONVERTER(hard_sigmoid, ConvertHardSigmoid, "huawei_ascend_npu");
+REGISTER_CONVERTER(hard_swish, ConvertHardSwish, "huawei_ascend_npu");
 REGISTER_CONVERTER(arg_max, ConvertArgMinMax, "huawei_ascend_npu");
 REGISTER_CONVERTER(arg_min, ConvertArgMinMax, "huawei_ascend_npu");
 REGISTER_CONVERTER(equal, ConvertComparisons, "huawei_ascend_npu");

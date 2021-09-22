@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cmath>
 #include "lite/kernels/nnadapter/converter/converter.h"
 
 namespace paddle {
@@ -20,9 +19,8 @@ namespace lite {
 namespace kernels {
 namespace nnadapter {
 
-int ConvertUnaryActivations(Converter* converter, OpInfo* op, Scope* scope) {
-  // Extract the inputs, outputs and attributes
-  auto op_type = op->Type();
+int ConvertHardSigmoid(Converter* converter, OpInfo* op, Scope* scope) {
+  // Extract op attributes
   auto x_name = op->Input("X").front();
   auto x_scale_name = "X0_scale";
   std::vector<float> x_scales;
@@ -35,6 +33,8 @@ int ConvertUnaryActivations(Converter* converter, OpInfo* op, Scope* scope) {
   if (op->HasOutputScale(out_scale_name, true)) {
     out_scales = op->GetOutputScale(out_scale_name, true);
   }
+  auto alpha = op->GetAttr<float>("slope");
+  auto beta = op->GetAttr<float>("offset");
   // Check quantization mode
   bool is_quant_mode = IsValidSymmPerLayerQuantParams(out_scales);
   if (is_quant_mode) {
@@ -48,13 +48,18 @@ int ConvertUnaryActivations(Converter* converter, OpInfo* op, Scope* scope) {
   auto input_operand = converter->GetMappedOperand(x_name);
   CHECK(input_operand);
   auto input_type = converter->GetOperandType(input_operand);
+  // Alpha operand
+  auto alpha_operand = converter->AddConstantOperand(alpha);
+  // Beta operand
+  auto beta_operand = converter->AddConstantOperand(beta);
   // Output operand
   if (is_quant_mode) {
     if (IsNNInt8SymmPerLayerQuantType(*input_type)) {
       std::vector<float> quant_scales;
       CHECK(GetNNSymmQuantParams(*input_type, &quant_scales));
       CHECK(IsSameSymmQuantParams(x_scales, quant_scales));
-      // TODO(hong19860320) Add a NNADAPTER_DEQUANT&NNADAPTER_QUANT operation to
+      // TODO(hong19860320) Add a NNADAPTER_DEQUANT and NNADAPTER_QUANT
+      // operation to
       // make the quant params obtained from a operand consistent with those
       // obtained from op_desc
     } else {
@@ -72,19 +77,10 @@ int ConvertUnaryActivations(Converter* converter, OpInfo* op, Scope* scope) {
     }
   }
   auto output_operand = converter->AddOutputOperand(out_name, out_scales);
-  // Unary activation operations
-  NNAdapterOperationType unary_act_operation_type;
-  if (op_type == "swish") {
-    auto beta = op->GetAttr<float>("beta");
-    CHECK_LT(fabs(beta - 1.0f), 1e-5f) << "Only supports beta = 1.0";
-    unary_act_operation_type = NNADAPTER_SWISH;
-  } else {
-    unary_act_operation_type = ConvertUnaryActTypeToNNOperationType(op_type);
-    CHECK(unary_act_operation_type != NNADAPTER_UNKNOWN)
-        << "Unsupported unary activation type: " << op_type;
-  }
-  converter->AddOperation(
-      unary_act_operation_type, {input_operand}, {output_operand});
+  // HardSigmoid operation
+  converter->AddOperation(NNADAPTER_HARD_SIGMOID,
+                          {input_operand, alpha_operand, beta_operand},
+                          {output_operand});
   return NO_ERROR;
 }
 

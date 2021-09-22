@@ -147,21 +147,22 @@ typedef enum {
   NNADAPTER_ABS,
 
   /**
- * Applies adaptive 2-D average pooling across the input according to input and
- * output size.
- *
- * Inputs:
- * * 0: input, a NNADAPTER_TENSOR_FLOAT32,
- * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor with shape [N, C_in,
- * H_in, W_in].
- * * 1: output_shape, a NNADAPTER_TENSOR_INT32 or
- * NNADAPTER_TENSOR_INT64 tensor, with shape [2], with value [H_out, H_out].
- *
- * Outputs:
- * * 0: output, a tensor with the same shape and type as input.
- *
- * Available since version 1.
- */
+   * Applies adaptive 2-D average pooling across the input according to input
+   * and
+   * output size.
+   *
+   * Inputs:
+   * * 0: input, a NNADAPTER_TENSOR_FLOAT32,
+   * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER 4-D tensor with shape [N, C_in,
+   * H_in, W_in].
+   * * 1: output_shape, a NNADAPTER_TENSOR_INT32 or
+   * NNADAPTER_TENSOR_INT64 tensor, with shape [2], with value [H_out, H_out].
+   *
+   * Outputs:
+   * * 0: output, a tensor with the same shape and type as input.
+   *
+   * Available since version 1.
+   */
   NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D,
 
   /**
@@ -827,6 +828,8 @@ typedef enum {
    * Inputs:
    * * 0: input, a NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: alpha, a NNADAPTER_FLOAT32 scalar.
+   * * 2: beta, a NNADAPTER_FLOAT32 scalar.
    *
    * Outputs:
    * * 0: output, a tensor with the same shape and type as input.
@@ -843,6 +846,8 @@ typedef enum {
    * Inputs:
    * * 0: input, a NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: alpha, a NNADAPTER_FLOAT32 scalar.
+   * * 2: beta, a NNADAPTER_FLOAT32 scalar.
    *
    * Outputs:
    * * 0: output, a tensor with the same shape and type as input.
