@@ -532,11 +532,11 @@ function huawei_kirin_npu_prepare_device() {
     fi
     $remote_device_run $remote_device_name push "$sdk_lib_dir/*" "$remote_device_work_dir"
 
-    # Copy NNAdapter library and driver HAL
-    local nnadapter_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
-    local nnadapter_driver_lib_path=$(find $BUILD_DIR/lite -name libnnadapter_driver_huawei_kirin_npu.so)
-    $remote_device_run $remote_device_name push "$nnadapter_lib_path" "$remote_device_work_dir"
-    $remote_device_run $remote_device_name push "$nnadapter_driver_lib_path" "$remote_device_work_dir"
+    # Copy NNAdapter runtime and device HAL libraries
+    local nnadapter_runtime_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
+    local nnadapter_device_lib_path=$(find $BUILD_DIR/lite -name libhuawei_kirin_npu.so)
+    $remote_device_run $remote_device_name push "$nnadapter_runtime_lib_path" "$remote_device_work_dir"
+    $remote_device_run $remote_device_name push "$nnadapter_device_lib_path" "$remote_device_work_dir"
 }
 
 function huawei_kirin_npu_build_target() {
@@ -621,11 +621,11 @@ function huawei_ascend_npu_build_and_test() {
             -DCMAKE_BUILD_TYPE=Release
         make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 
-        local nnadapter_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
-        local nnadapter_driver_lib_path=$(find $BUILD_DIR/lite -name libnnadapter_driver_huawei_ascend_npu.so)
-        local nnadapter_lib_dir=${nnadapter_lib_path%/*}
-        local nnadapter_driver_lib_dir=${nnadapter_driver_lib_path%/*}
-        export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$nnadapter_lib_dir:$nnadapter_driver_lib_dir"
+        local nnadapter_runtime_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
+        local nnadapter_device_lib_path=$(find $BUILD_DIR/lite -name libhuawei_ascend_npu.so)
+        local nnadapter_runtime_lib_dir=${nnadapter_runtime_lib_path%/*}
+        local nnadapter_device_lib_dir=${nnadapter_device_lib_path%/*}
+        export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$nnadapter_runtime_lib_dir:$nnadapter_device_lib_dir"
         export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
         export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/stub"
         export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$sdk_root_dir/fwkacllib/lib64:$sdk_root_dir/acllib/lib64:$sdk_root_dir/atc/lib64:$sdk_root_dir/opp/op_proto/built-in"
@@ -703,10 +703,10 @@ function rockchip_npu_prepare_device() {
     fi
     $remote_device_run $remote_device_name push "$sdk_lib_dir/librknpu_ddk.so" "$remote_device_work_dir"
 
-    # Copy NNAdapter library and driver HAL
-    local nnadapter_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
-    local nnadapter_driver_lib_path=$(find $BUILD_DIR/lite -name libnnadapter_driver_rockchip_npu.so)
-    $remote_device_run $remote_device_name push "$nnadapter_lib_path" "$remote_device_work_dir"
+    # Copy NNAdapter runtime and device HAL libraries
+    local nnadapter_runtime_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
+    local nnadapter_driver_lib_path=$(find $BUILD_DIR/lite -name librockchip_npu.so)
+    $remote_device_run $remote_device_name push "$nnadapter_runtime_lib_path" "$remote_device_work_dir"
     $remote_device_run $remote_device_name push "$nnadapter_driver_lib_path" "$remote_device_work_dir"
 }
 
@@ -774,11 +774,11 @@ function mediatek_apu_prepare_device() {
     $remote_device_run $remote_device_name shell "rm -rf $remote_device_work_dir"
     $remote_device_run $remote_device_name shell "mkdir -p $remote_device_work_dir"
 
-    # Copy NNAdapter library and driver HAL
-    local nnadapter_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
-    local nnadapter_driver_lib_path=$(find $BUILD_DIR/lite -name libnnadapter_driver_mediatek_apu.so)
-    $remote_device_run $remote_device_name push "$nnadapter_lib_path" "$remote_device_work_dir"
-    $remote_device_run $remote_device_name push "$nnadapter_driver_lib_path" "$remote_device_work_dir"
+    # Copy NNAdapter runtime and device HAL libraries
+    local nnadapter_runtime_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
+    local nnadapter_device_lib_path=$(find $BUILD_DIR/lite -name libmediatek_apu.so)
+    $remote_device_run $remote_device_name push "$nnadapter_runtime_lib_path" "$remote_device_work_dir"
+    $remote_device_run $remote_device_name push "$nnadapter_device_lib_path" "$remote_device_work_dir"
 
     # Use high performance mode
     $remote_device_run $remote_device_name root
@@ -867,11 +867,11 @@ function imagination_nna_prepare_device() {
     $remote_device_run $remote_device_name shell "mkdir -p $remote_device_work_dir/nna_config"
     $remote_device_run $remote_device_name push "$sdk_root_dir/nna-tools/config/*" "$remote_device_work_dir/nna_config/"
 
-    # Copy NNAdapter library and driver HAL
-    local nnadapter_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
-    local nnadapter_driver_lib_path=$(find $BUILD_DIR/lite -name libnnadapter_driver_imagination_nna.so)
-    $remote_device_run $remote_device_name push "$nnadapter_lib_path" "$remote_device_work_dir"
-    $remote_device_run $remote_device_name push "$nnadapter_driver_lib_path" "$remote_device_work_dir"
+    # Copy NNAdapter runtime and device HAL libraries
+    local nnadapter_runtime_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
+    local nnadapter_device_lib_path=$(find $BUILD_DIR/lite -name libimagination_nna.so)
+    $remote_device_run $remote_device_name push "$nnadapter_runtime_lib_path" "$remote_device_work_dir"
+    $remote_device_run $remote_device_name push "$nnadapter_device_lib_path" "$remote_device_work_dir"
 }
 
 function imagination_nna_build_target() {
@@ -950,11 +950,11 @@ function amlogic_npu_prepare_device() {
     fi
     $remote_device_run $remote_device_name push "$sdk_lib_dir/libamlnpu_ddk.so" "$remote_device_work_dir"
 
-    # Copy NNAdapter library and driver HAL
-    local nnadapter_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
-    local nnadapter_driver_lib_path=$(find $BUILD_DIR/lite -name libnnadapter_driver_amlogic_npu.so)
-    $remote_device_run $remote_device_name push "$nnadapter_lib_path" "$remote_device_work_dir"
-    $remote_device_run $remote_device_name push "$nnadapter_driver_lib_path" "$remote_device_work_dir"
+    # Copy NNAdapter runtime and device HAL libraries
+    local nnadapter_runtime_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
+    local nnadapter_device_lib_path=$(find $BUILD_DIR/lite -name libamlogic_npu.so)
+    $remote_device_run $remote_device_name push "$nnadapter_runtime_lib_path" "$remote_device_work_dir"
+    $remote_device_run $remote_device_name push "$nnadapter_device_lib_path" "$remote_device_work_dir"
 }
 
 function amlogic_npu_build_target() {
@@ -1027,7 +1027,6 @@ function baidu_xpu_build_and_test() {
     # Run all of unittests and model tests
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
     export GLOG_v=$UNIT_TEST_LOG_LEVEL
-    export XPU_CONV_AUTOTUNE=5
     local unit_test_check_items=(${UNIT_TEST_CHECK_LIST//,/ })
     for test_name in $(cat $TESTS_FILE); do
         local is_matched=0

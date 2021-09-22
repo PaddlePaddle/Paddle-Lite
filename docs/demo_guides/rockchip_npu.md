@@ -154,25 +154,25 @@ Paddle Lite已支持Rockchip NPU的预测部署。
       - libs
         - PaddleLite
           - linux
-            - arm64
+            - arm64 # Linux 64位系统
               - include # PaddleLite头文件
               - lib # PaddleLite库文件
-                - rockchip_npu # Rockchip NPU NNAdapter API运行时库、Driver HAL库、DDK
-                	- libnnadapter.so # NNAdapter API运行时库
-                	- libnnadapter_driver_rockchip_npu.so # Rockchip NPU NNAdapter Driver HAL库
-                  - librknpu_ddk.so # Rockchip NPU DDK
+                - rockchip_npu # 瑞芯微NPU DDK、NNAdapter运行时库、device HAL库
+                	- libnnadapter.so # NNAdapter运行时库
+                	- librockchip_npu.so # NNAdapter device HAL库
+                  - librknpu_ddk.so # 瑞芯微NPU DDK
                   - libGAL.so # 芯原DDK
                   - libVSC.so # 芯原DDK
                   - libOpenVX.so # 芯原DDK
                   - libgomp.so.1 # gnuomp库
                 - libpaddle_full_api_shared.so # 预编译PaddleLite full api库
                 - libpaddle_light_api_shared.so # 预编译PaddleLite light api库
-            - armhf
-              - include # PaddleLite头文件
+            - armhf # Linux 32位系统
+              - include
               - lib
-                - rockchip_npu # Rockchip NPU NNAdapter API运行时库和Driver HAL库
+                - rockchip_npu
                   - libnnadapter.so
-                  - libnnadapter_driver_rockchip_npu.so
+                  - librockchip_npu.so
                   - librknpu_ddk.so
                   - libGAL.so
                   - libVSC.so
@@ -399,13 +399,16 @@ Paddle Lite已支持Rockchip NPU的预测部署。
       ```
     - 替换头文件和库
       ```shell
-      # 替换 include 目录：
+      # 替换include目录
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/include/
-      # 替换 NNAdapter相关so：
-      $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libnnadapter* PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/rockchip_npu/
-      # 替换 libpaddle_full_api_shared.so或libpaddle_light_api_shared.so
-      $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
+      # 替换NNAdapter运行时库
+      $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/rockchip_npu/
+      # 替换NNAdapter device HAL库
+      $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/librockchip_npu.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/rockchip_npu/
+      # 替换libpaddle_light_api_shared.so
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
+      # 替换libpaddle_full_api_shared.so(仅在full_publish编译方式下)
+      $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
       ```
 
   - For RK1806/RV1126/RV1109 EVB
@@ -420,13 +423,16 @@ Paddle Lite已支持Rockchip NPU的预测部署。
       ```
     - 替换头文件和库
       ```shell
-      # 替换 include 目录：
+      # 替换include目录
       $ cp -rf build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/include/
-      # 替换 NNAdapter相关so：
-      $ cp -rf build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.nnadapter/cxx/lib/libnnadapter* PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/rockchip_npu/
-      # 替换 libpaddle_full_api_shared.so或libpaddle_light_api_shared.so
-      $ cp -rf build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/
+      # 替换NNAdapter运行时库
+      $ cp -rf build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/rockchip_npu/
+      # 替换NNAdapter device HAL库
+      $ cp -rf build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.nnadapter/cxx/lib/librockchip_npu.so PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/rockchip_npu/
+      # 替换libpaddle_light_api_shared.so
       $ cp -rf build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/
+      # 替换libpaddle_full_api_shared.so(仅在full_publish编译方式下)
+      $ cp -rf build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/
       ```
   
 - 替换头文件后需要重新编译示例程序

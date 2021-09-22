@@ -1,4 +1,4 @@
-// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,28 +13,23 @@
 // limitations under the License.
 
 #include "core/operation/hard_sigmoid_swish.h"
-#include "driver/huawei_ascend_npu/converter/converter.h"
+#include "core/hal/types.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/modeling.h"
+#include "utility/utility.h"
 
 namespace nnadapter {
-namespace huawei_ascend_npu {
+namespace operation {
 
-int ConvertHardSigmoid(Converter* converter, hal::Operation* operation) {
+int PrepareHardSigmoidSwish(hal::Operation* operation) {
   HARD_SIGMOID_SWISH_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
-  // Convert to GE operators
-  auto input_operator = converter->GetMappedOperator(input_operand);
-  if (!input_operator) {
-    input_operator = converter->ConvertOperand(input_operand);
-  }
-  auto act_op = converter->AddOperator<ge::op::HardSigmoid>(output_operand);
-  act_op->set_attr_alpha(alpha);
-  act_op->set_attr_beta(beta);
-  SET_INPUT(act_op, input_x, input_operator);
-  MAP_OUTPUT(act_op, output_y, output_operand);
+  // Infer the shape and type of output operands
+  CopyOperandTypeExceptQuantParams(&output_operand->type, input_operand->type);
+  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
 }
 
-}  // namespace huawei_ascend_npu
+}  // namespace operation
 }  // namespace nnadapter

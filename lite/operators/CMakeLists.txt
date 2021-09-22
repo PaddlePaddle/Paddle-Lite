@@ -212,7 +212,6 @@ add_operator(sequence_pool_grad train SRCS sequence_pool_grad_op.cc)
 # Only for XPU
 add_operator(__xpu__resnet50_op extra SRCS __xpu__resnet50_op.cc)
 add_operator(__xpu__softmax_topk_op extra SRCS __xpu__softmax_topk_op.cc)
-add_operator(__xpu__block_fuse_op extra SRCS __xpu__block_fuse_op.cc)
 add_operator(__xpu__multi_encoder_op extra SRCS __xpu__multi_encoder_op.cc)
 add_operator(__xpu__embedding_with_eltwise_add_op extra SRCS __xpu__embedding_with_eltwise_add_op.cc)
 add_operator(__xpu__fc_op extra SRCS __xpu__fc_op.cc)
@@ -225,7 +224,6 @@ add_operator(__xpu__generate_sequence_op extra SRCS __xpu__generate_sequence_op.
 add_operator(__xpu__logit_op extra SRCS __xpu__logit_op.cc)
 add_operator(__xpu__squeeze_excitation_op extra SRCS __xpu__squeeze_excitation_op.cc)
 add_operator(__xpu__bigru_op extra SRCS __xpu__bigru_op.cc)
-add_operator(__xpu__conv_pixel_shuffle_fuse_op extra SRCS __xpu__conv_pixel_shuffle_fuse_op.cc)
 add_operator(__xpu__dynamic_lstm_fuse_op extra SRCS __xpu__dynamic_lstm_fuse_op.cc)
 add_operator(__xpu__multi_softmax_op extra SRCS __xpu__multi_softmax_op.cc)
 
