@@ -135,7 +135,7 @@ class Buffer {
   size_t space() const { return space_; }
   bool own_data() const { return own_data_; }
 
-  void ResetLazy(TargetType target, size_t size) {
+  virtual void ResetLazy(TargetType target, size_t size) {
     if (target != target_ || space_ < size) {
       CHECK_EQ(own_data_, true) << "Can not reset unowned buffer.";
       Free();
@@ -220,7 +220,7 @@ class Buffer {
   }
 #endif
 
-  void Free() {
+  virtual void Free() {
     if (space_ > 0 && own_data_) {
       if (!cl_use_image2d_ && !metal_use_image2d_) {
         TargetFree(target_, data_);
@@ -239,20 +239,20 @@ class Buffer {
     space_ = 0;
   }
 
-  void CopyDataFrom(const Buffer& other, size_t nbytes) {
+  virtual void CopyDataFrom(const Buffer& other, size_t nbytes) {
     target_ = other.target_;
     ResizeLazy(nbytes);
     // TODO(Superjomn) support copy between different targets.
     TargetCopy(target_, data_, other.data_, nbytes);
   }
 
-  ~Buffer() { Free(); }
+  virtual ~Buffer() { Free(); }
 
   Buffer() = default;
   Buffer(const Buffer&) = delete;
   Buffer(Buffer&&) = default;
 
- private:
+ protected:
   // memory it actually malloced.
   size_t space_{0};
   bool cl_use_image2d_{false};   // only used for OpenCL Image2D
