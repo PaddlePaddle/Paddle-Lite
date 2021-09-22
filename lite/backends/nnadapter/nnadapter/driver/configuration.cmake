@@ -17,9 +17,9 @@
 # Enable throwing exception when check failed in logging.cc
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions -fasynchronous-unwind-tables -funwind-tables")
 
-# Add prefix to each of NNAdapter driver library, such as "libnnadapter_driver_rockchip_npu.so"
-set(NNADAPTER_DRIVER_PREFIX nnadapter_driver)
-add_definitions(-DNNADAPTER_DRIVER_PREFIX=${NNADAPTER_DRIVER_PREFIX})
+# Add prefix to the module symbol of each of NNAdapter device HAL library, such as "__nnadapter_driver__rockchip_npu"
+set(NNADAPTER_DEVICE_SYMBOL_PREFIX __nnadapter_device__)
+add_definitions(-DNNADAPTER_DEVICE_SYMBOL_PREFIX=${NNADAPTER_DEVICE_SYMBOL_PREFIX})
 
 # CANN libraries only supports old ABI of libstdc++, so need to set -D_GLIBCXX_USE_CXX11_ABI=0
 # and the common modules(utility and optimizer) needs to be compiled and linked separately if 

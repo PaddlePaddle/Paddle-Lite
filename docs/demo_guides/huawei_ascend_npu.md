@@ -147,16 +147,16 @@ $ npu-smi info
             - amd64
               - include # PaddleLite头文件
               - lib # PaddleLite库文件
-                - huawei_ascend_npu # 华为昇腾NPU NNAdapter API运行时库和Driver HAL库
-                	- libnnadapter.so # NNAdapter API运行时库
-                	- libnnadapter_driver_huawei_ascend_npu.so # 华为昇腾NPU NNAdapter driver HAL库
+                - huawei_ascend_npu # 华为昇腾NPU CANN库、NNAdapter运行时库、device HAL库
+                	- libnnadapter.so # NNAdapter运行时库
+                	- libhuawei_ascend_npu.so # NNAdapter device HAL库
                 - libiomp5.so # Intel OpenMP库
                 - libmklml_intel.so # Intel MKL库
                 - libmklml_gnu.so # GNU MKL库
                 - libpaddle_full_api_shared.so # 预编译PaddleLite full api库
                 - libpaddle_light_api_shared.so # 预编译PaddleLite light api库
             - arm64
-              - include # PaddleLite头文件
+              - include
               - lib
             - armhf
             	...
@@ -240,7 +240,7 @@ $ npu-smi info
 
 ### 更新支持华为昇腾NPU的Paddle Lite库
 
-- 下载PaddleLite源码：
+- 下载PaddleLite源码
 
   ```shell
   $ git clone https://github.com/PaddlePaddle/Paddle-Lite.git
@@ -248,39 +248,45 @@ $ npu-smi info
   $ git checkout <release-version-tag>
   ```
 
-- 编译full_publish for amd64 or arm64；
+- 编译并生成PaddleLite+NNAdapter+HuaweiAscendNPU for amd64 and arm64的部署库
 
-  ```shell
-  # amd64
-  $ ./lite/tools/build_linux.sh --arch=x86 --with_extra=ON --with_log=ON --with_exception=ON --with_nnadapter=ON --nnadapter_with_huawei_ascend_npu=ON --nnadapter_huawei_ascend_npu_sdk_root=/usr/local/Ascend/ascend-toolkit/latest full_publish
-  
-  # arm64
-  $ ./lite/tools/build_linux.sh --arch=armv8 --toolchain=gcc --with_extra=ON --with_log=ON --with_exception=ON --with_nnadapter=ON --nnadapter_with_huawei_ascend_npu=ON --nnadapter_huawei_ascend_npu_sdk_root=/usr/local/Ascend/ascend-toolkit/latest full_publish
-  ```
+  - For amd64
+    - full_publish编译
+      ```shell
+      $ ./lite/tools/build_linux.sh --arch=x86 --with_extra=ON --with_log=ON --with_exception=ON --with_nnadapter=ON --nnadapter_with_huawei_ascend_npu=ON --nnadapter_huawei_ascend_npu_sdk_root=/usr/local/Ascend/ascend-toolkit/latest full_publish
+      ```
 
-- 替换库文件和头文件（for amd64）
+    - 替换头文件和库
+      ```shell
+      # 替换include目录
+      $ cp -rf build.lite.linux.x86.gcc/inference_lite_lib/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/include/
+      # 替换NNAdapter运行时库
+      $ cp -rf build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/huawei_ascend_npu/
+      # 替换NNAdapter device HAL库
+      $ cp -rf build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libhuawei_ascend_npu.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/huawei_ascend_npu/
+      # 替换libpaddle_full_api_shared.so
+      $ cp -rf build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/
+      ```
 
-  ```shell
-  # 替换 include 目录：
-  $ cp -rf build.lite.linux.x86.gcc/inference_lite_lib/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/include/
-  # 替换 NNAdapter相关so：
-  $ cp -rf build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libnnadapter* PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/huawei_ascend_npu/
-  # 替换 libpaddle_full_api_shared.so
-  $ cp -rf build.lite.linux.x86.gcc/inference_lite_lib/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/
-  ```
+  - For arm64
+    - full_publish编译
+      ```shell
+      $ ./lite/tools/build_linux.sh --arch=armv8 --toolchain=gcc --with_extra=ON --with_log=ON --with_exception=ON --with_nnadapter=ON --nnadapter_with_huawei_ascend_npu=ON --nnadapter_huawei_ascend_npu_sdk_root=/usr/local/Ascend/ascend-toolkit/latest full_publish
+      ```
 
-- 替换库文件和头文件（for arm64）
+    - 替换头文件和库
+      ```shell
+      # 替换include目录
+      $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/include/
+      # 替换NNAdapter运行时库
+      $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/huawei_ascend_npu/
+      # 替换NNAdapter device HAL库
+      $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib/cxx/lib/libhuawei_ascend_npu.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/huawei_ascend_npu/
+      # 替换libpaddle_full_api_shared.so
+      $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
+      ```
 
-  ```shell
-  # 替换 include 目录：
-  $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/include/
-  # 替换 NNAdapter相关so：
-  $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib/cxx/lib/libnnadapter* PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/huawei_ascend_npu/
-  # 替换 libpaddle_full_api_shared.so
-  $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
-  ```
-
-  备注：替换库文件和头文件后需要重新编译示例程序
+- 替换头文件后需要重新编译示例程序
 
 ## 其他说明
 

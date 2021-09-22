@@ -89,7 +89,7 @@ models_names=$(ls models)
 ## step 2. convert models
 rm -rf models_opt && mkdir models_opt
 if [ "${WITH_METAL}" == "ON" ]; then
-  targets=arm_metal
+  targets=metal,arm
 else
   targets=arm
 fi

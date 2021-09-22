@@ -320,14 +320,6 @@ void MemoryOptimizePass::PerformReusePlan(
 }
 
 void MemoryOptimizePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-#ifdef LITE_WITH_XPU
-  const char* xpu_mem_optimize = std::getenv("XPU_MEMORY_OPTIMIZE");
-  if (xpu_mem_optimize == nullptr || std::strlen(xpu_mem_optimize) != 1 ||
-      std::isdigit(*xpu_mem_optimize) == 0 ||
-      std::atoi(xpu_mem_optimize) <= 0) {
-    return;
-  }
-#endif
   // Memory optimization.
   // We will perform the following operation:
   // 1. Collect all var's lifetime, then classify them according to the device.
@@ -352,9 +344,10 @@ void MemoryOptimizePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace paddle
 
 REGISTER_MIR_PASS(memory_optimize_pass, paddle::lite::mir::MemoryOptimizePass)
-    .BindTargets({TARGET(kARM), TARGET(kOpenCL), TARGET(kXPU)})
+    .BindTargets({TARGET(kARM), TARGET(kOpenCL)})
     .ExcludeTargets({TARGET(kNPU),
                      TARGET(kBM),
+                     TARGET(kXPU),
                      TARGET(kRKNPU),
                      TARGET(kAPU),
                      TARGET(kMLU),

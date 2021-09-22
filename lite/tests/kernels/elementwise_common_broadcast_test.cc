@@ -167,13 +167,13 @@ class ElementwiseComputeTester : public arena::TestCase {
   void PrepareData() override {
     std::vector<T> dx(x_dims_.production());
     for (size_t i = 0; i < dx.size(); i++) {
-      dx[i] = 1;
+      dx[i] = static_cast<T>(randint(2, 9));
     }
     SetCommonTensor(x_, x_dims_, dx.data());
 
     std::vector<T> dy(y_dims_.production());
     for (size_t i = 0; i < dy.size(); i++) {
-      dy[i] = 1;
+      dy[i] = static_cast<T>(randint(2, 5));
     }
     SetCommonTensor(y_, y_dims_, dy.data());
   }
@@ -286,6 +286,7 @@ bool RunOnRandomArgs(const Place& place,
   auto x_dim = std::vector<int64_t>(x_dim_cut.begin(), x_dim_cut.end());
   auto y_dim = std::vector<int64_t>(y_dim_cut.begin(), y_dim_cut.end());
   auto z_dim = std::vector<int64_t>(out_dim.begin(), out_dim.end());
+
   std::unique_ptr<arena::TestCase> tester(
       new ElementwiseComputeTester<T>(place,
                                       alias,
@@ -305,7 +306,7 @@ bool RunOnRandomArgs(const Place& place,
 }  // namespace lite
 }  // namespace paddle
 
-#ifdef LITE_WITH_ARM
+#if defined(LITE_WITH_ARM)
 
 TEST(elementwise_broadcast, compute_fp32) {
   const int TEST_RETEAT_NUM = 10;
@@ -356,6 +357,152 @@ TEST(elementwise_broadcast, compute_i32) {
         "div",
         "",
         [](int32_t l, int32_t r) { return l / r; }));
+  }
+}
+
+#endif  // LITE_WITH_ARM
+
+#if defined(LITE_WITH_X86)
+
+TEST(elementwise_broadcast, compute_fp32) {
+  const int TEST_RETEAT_NUM = 2;
+  for (int repeat_count = 0; repeat_count < TEST_RETEAT_NUM; ++repeat_count) {
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<float>(
+        TARGET(kX86), "def", "add", "", [](float l, float r) {
+          return l + r;
+        }));
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<float>(
+        TARGET(kX86), "def", "sub", "", [](float l, float r) {
+          return l - r;
+        }));
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<float>(
+        TARGET(kX86), "def", "mul", "", [](float l, float r) {
+          return l * r;
+        }));
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<float>(
+        TARGET(kX86), "def", "div", "", [](float l, float r) {
+          return l / r;
+        }));
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<float>(
+        TARGET(kX86), "def", "min", "", [](float l, float r) {
+          return l < r ? l : r;
+        }));
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<float>(
+        TARGET(kX86), "def", "max", "", [](float l, float r) {
+          return l > r ? l : r;
+        }));
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<float>(
+        TARGET(kX86), "def", "floordiv", "", [](float l, float r) {
+          return static_cast<float>(std::trunc(l / r));
+        }));
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<float>(
+        TARGET(kX86), "def", "pow", "", [](float l, float r) {
+          return std::pow(l, r);
+        }));
+  }
+}
+
+TEST(elementwise_broadcast, compute_i32) {
+  const int TEST_RETEAT_NUM = 2;
+  for (int repeat_count = 0; repeat_count < TEST_RETEAT_NUM; ++repeat_count) {
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<int32_t>(
+        paddle::lite::Place(TARGET(kX86)),
+        "int32",
+        "add",
+        "",
+        [](int32_t l, int32_t r) { return l + r; }));
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<int32_t>(
+        paddle::lite::Place(TARGET(kX86)),
+        "int32",
+        "sub",
+        "",
+        [](int32_t l, int32_t r) { return l - r; }));
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<int32_t>(
+        paddle::lite::Place(TARGET(kX86)),
+        "int32",
+        "mul",
+        "",
+        [](int32_t l, int32_t r) { return l * r; }));
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<int32_t>(
+        paddle::lite::Place(TARGET(kX86)),
+        "int32",
+        "div",
+        "",
+        [](int32_t l, int32_t r) { return l / r; }));
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<int32_t>(
+        TARGET(kX86), "int32", "min", "", [](int32_t l, int32_t r) {
+          return l < r ? l : r;
+        }));
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<int32_t>(
+        TARGET(kX86), "int32", "max", "", [](int32_t l, int32_t r) {
+          return l > r ? l : r;
+        }));
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<int32_t>(
+        TARGET(kX86), "int32", "floordiv", "", [](int32_t l, int32_t r) {
+          return static_cast<int32_t>(std::trunc(l / r));
+        }));
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<int32_t>(
+        TARGET(kX86), "int32", "mod", "", [](int32_t l, int32_t r) {
+          int32_t res = l % r;
+          if ((res != 0) && ((res < 0) != (r < 0))) res += r;
+          return res;
+        }));
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<int32_t>(
+        TARGET(kX86), "int32", "pow", "", [](int32_t l, int32_t r) {
+          return std::pow(l, r);
+        }));
+  }
+}
+
+TEST(elementwise_broadcast, compute_i64) {
+  const int TEST_RETEAT_NUM = 2;
+  for (int repeat_count = 0; repeat_count < TEST_RETEAT_NUM; ++repeat_count) {
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<int64_t>(
+        paddle::lite::Place(TARGET(kX86)),
+        "int64",
+        "add",
+        "",
+        [](int64_t l, int64_t r) { return l + r; }));
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<int64_t>(
+        paddle::lite::Place(TARGET(kX86)),
+        "int64",
+        "sub",
+        "",
+        [](int64_t l, int64_t r) { return l - r; }));
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<int64_t>(
+        paddle::lite::Place(TARGET(kX86)),
+        "int64",
+        "mul",
+        "",
+        [](int64_t l, int64_t r) { return l * r; }));
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<int64_t>(
+        paddle::lite::Place(TARGET(kX86)),
+        "int64",
+        "div",
+        "",
+        [](int64_t l, int64_t r) { return l / r; }));
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<int64_t>(
+        TARGET(kX86), "int64", "min", "", [](int64_t l, int64_t r) {
+          return l < r ? l : r;
+        }));
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<int64_t>(
+        TARGET(kX86), "int64", "max", "", [](int64_t l, int64_t r) {
+          return l > r ? l : r;
+        }));
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<int64_t>(
+        TARGET(kX86), "int64", "floordiv", "", [](int64_t l, int64_t r) {
+          return static_cast<int64_t>(std::trunc(l / r));
+        }));
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<int64_t>(
+        TARGET(kX86), "int64", "mod", "", [](int64_t l, int64_t r) {
+          int64_t res = l % r;
+          if ((res != 0) && ((res < 0) != (r < 0))) res += r;
+          return res;
+        }));
+    EXPECT_TRUE(paddle::lite::RunOnRandomArgs<int64_t>(
+        TARGET(kX86), "int64", "pow", "", [](int64_t l, int64_t r) {
+          return std::pow(l, r);
+        }));
   }
 }
 

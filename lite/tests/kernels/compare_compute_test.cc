@@ -164,7 +164,8 @@ void TestCompare(Place place,
                  std::vector<int64_t> y_dims,
                  int axis,
                  std::string alias = "def") {
-#if !defined(LITE_WITH_XPU)
+#if !defined(LITE_WITH_XPU) && !defined(LITE_WITH_NNADAPTER) && \
+    !defined(LITE_WITH_NPU)
   if (typeid(T) == typeid(float)) {
     place.precision = PRECISION(kFloat);
   } else if (typeid(T) == typeid(int32_t)) {
@@ -208,19 +209,37 @@ void TestCompare(Place place,
   arena.TestPrecision();
 }
 
-#if defined(LITE_WITH_NPU)
-TEST(Compare_OP_NPU, precision) {
-  Place place{TARGET(kNPU)};
-  float abs_error = 1e-2;
-
+TEST(Compare, precision) {
+  Place place;
+  float abs_error = 1e-5;
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_NPU)
+  place = TARGET(kNPU);
+  abs_error = 1e-2;
   TestCompare<float>(
       place, abs_error, "less_than", {2, 3, 4, 5}, {2, 3, 4, 5}, -1);
   TestCompare<float>(place, abs_error, "less_than", {2, 3, 4}, {2, 3, 4}, 0);
-}
-#elif defined(LITE_WITH_ARM)
-TEST(Compare_OP_ARM, precision) {
-  Place place{TARGET(kHost)};
-  float abs_error = 1e-5;
+  return;
+#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  place = TARGET(kXPU);
+  TestCompare<float>(place, abs_error, "less_than", {3, 4}, {3, 4}, -1);
+  TestCompare<int32_t>(
+      place, abs_error, "less_than", {3, 4}, {3, 4}, -1, "int32");
+  TestCompare<int64_t>(
+      place, abs_error, "less_than", {3, 4}, {3, 4}, -1, "int64");
+  return;
+#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+  place = TARGET(kHost);
+#else
+  return;
+#endif
+
   for (auto op : std::vector<std::string>{"equal",
                                           "not_equal",
                                           "less_than",
@@ -238,17 +257,6 @@ TEST(Compare_OP_ARM, precision) {
   TestCompare<int32_t>(place, abs_error, "less_than", {3, 4}, {3, 4}, -1);
   TestCompare<int64_t>(place, abs_error, "less_than", {3, 4}, {3, 4}, -1);
 }
-#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
-TEST(Compare_OP_XPU, precision) {
-  Place place{TARGET(kXPU)};
-  float abs_error = 1e-5;
-  TestCompare<float>(place, abs_error, "less_than", {3, 4}, {3, 4}, -1);
-  TestCompare<int32_t>(
-      place, abs_error, "less_than", {3, 4}, {3, 4}, -1, "int32");
-  TestCompare<int64_t>(
-      place, abs_error, "less_than", {3, 4}, {3, 4}, -1, "int64");
-}
-#endif
 
 }  // namespace lite
 }  // namespace paddle

@@ -38,7 +38,7 @@ static void activate_relu_inplace(float *data, int len, float alpha, int mode) {
       __m256 vec_data = _mm256_loadu_ps(data + i);
       _mm256_storeu_ps(data + i, _mm256_max_ps(vec_data, vec_zero));
     }
-    _mm256_zeroupper();
+// _mm256_zeroupper();
 #endif
 #ifdef __SSE__
     __m128 vec_zero_128 = _mm_set1_ps(0.f);
@@ -59,7 +59,7 @@ static void activate_relu_inplace(float *data, int len, float alpha, int mode) {
       _mm256_storeu_ps(
           data + i, _mm256_min_ps(_mm256_max_ps(vec_data, vec_zero), vec_alph));
     }
-    _mm256_zeroupper();
+// _mm256_zeroupper();
 #endif
 #ifdef __SSE__
     __m128 vec_zero_128 = _mm_set1_ps(0.f);
@@ -112,7 +112,7 @@ static void activate_relu_inplace_bias(float *data,
         vec_data = _mm256_add_ps(vec_bias, vec_data);
         _mm256_storeu_ps(tmp_data + i, _mm256_max_ps(vec_data, vec_zero));
       }
-      _mm256_zeroupper();
+// _mm256_zeroupper();
 #endif
 #ifdef __SSE__
       vec_bias_128 = _mm_set1_ps(bias[j]);
@@ -140,7 +140,7 @@ static void activate_relu_inplace_bias(float *data,
             tmp_data + i,
             _mm256_min_ps(_mm256_max_ps(vec_data, vec_zero), vec_alph));
       }
-      _mm256_zeroupper();
+// _mm256_zeroupper();
 #endif
 #ifdef __SSE__
       vec_bias_128 = _mm_set1_ps(bias[j]);
@@ -174,7 +174,7 @@ static void activate_lrelu_inplace(float *data, int len, float alpha) {
     __m256 vec_mask = _mm256_cmp_ps(vec_data, vec_zero, cmp_le_os);
     _mm256_storeu_ps(data + i, _mm256_blendv_ps(vec_data, vec_lr, vec_mask));
   }
-  _mm256_zeroupper();
+// _mm256_zeroupper();
 #endif
 #ifdef __SSE4_1__  // blendv need 4.1
   __m128 vec_zero_128 = _mm_set1_ps(0.f);
@@ -226,7 +226,7 @@ static void activate_lrelu_inplace_bias(float *data,
       _mm256_storeu_ps(tmp_data + i,
                        _mm256_blendv_ps(vec_data, vec_lr, vec_mask));
     }
-    _mm256_zeroupper();
+// _mm256_zeroupper();
 #endif
 #ifdef __SSE4_1__
     vec_bias_128 = _mm_set1_ps(bias[j]);
@@ -273,7 +273,7 @@ static void activate_none_inplace_bias(float *data,
       vec_data = _mm256_add_ps(vec_bias, vec_data);
       _mm256_storeu_ps(tmp_data + i, vec_data);
     }
-    _mm256_zeroupper();
+// _mm256_zeroupper();
 #endif
 #ifdef __SSE__
     vec_bias_128 = _mm_set1_ps(bias[j]);

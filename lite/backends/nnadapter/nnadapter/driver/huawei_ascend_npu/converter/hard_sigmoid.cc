@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "core/operation/hard_sigmoid.h"
+#include "core/operation/hard_sigmoid_swish.h"
 #include "driver/huawei_ascend_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -21,7 +21,7 @@ namespace nnadapter {
 namespace huawei_ascend_npu {
 
 int ConvertHardSigmoid(Converter* converter, hal::Operation* operation) {
-  HARD_SIGMOID_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  HARD_SIGMOID_SWISH_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
   auto input_operator = converter->GetMappedOperator(input_operand);
