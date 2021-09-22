@@ -27,6 +27,7 @@ void AssignValueCompute::Run() {
   int dtype = param.dtype;
   std::vector<float> fp32_values = param.fp32_values;
   std::vector<int> int32_values = param.int32_values;
+  std::vector<int64_t> int64_values = param.int64_values;
   CHECK_GT(param.shape.size(), 0UL);
   if (dtype == static_cast<int>(lite::core::FluidType::INT32)) {
     auto* out = param.Out->mutable_data<int>(TARGET(kXPU));
@@ -39,6 +40,12 @@ void AssignValueCompute::Run() {
     lite::TargetWrapperXPU::MemcpySync(out,
                                        fp32_values.data(),
                                        sizeof(float) * fp32_values.size(),
+                                       IoDirection::HtoD);
+  } else if (dtype == static_cast<int>(lite::core::FluidType::INT64)) {
+    auto* out = param.Out->mutable_data<int64_t>(TARGET(kXPU));
+    lite::TargetWrapperXPU::MemcpySync(out,
+                                       int64_values.data(),
+                                       sizeof(int64_t) * int64_values.size(),
                                        IoDirection::HtoD);
   } else {
     LOG(FATAL) << "Unsupported dtype for assign_value_op:" << dtype;
