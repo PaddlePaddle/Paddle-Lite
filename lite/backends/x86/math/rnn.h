@@ -85,7 +85,6 @@ inline void vector_dot(
       vec_v1 = _mm256_loadu_ps(v1 + i);
       _mm256_storeu_ps(out + i, _mm256_mul_ps(vec_in, vec_v1));
     }
-    _mm256_zeroupper();
 #endif
 #if defined(__SSE__)
     for (; i + 3 < size; i += 4) {
