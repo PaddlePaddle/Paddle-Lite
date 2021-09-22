@@ -33,7 +33,7 @@ class MatchMatrixTensorCompute
   virtual void Run();
 
  private:
-  XPUScratchPadGuard wx_max_xpu_guard_;
+  XPUScratchPadGuard weight_max_xpu_guard_;
   XPUScratchPadGuard offset_l_xpu_guard_;
   XPUScratchPadGuard offset_r_xpu_guard_;
 
