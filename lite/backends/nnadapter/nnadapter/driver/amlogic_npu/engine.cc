@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <vector>
 #include "driver/amlogic_npu/converter/converter.h"
+#include "driver/amlogic_npu/optimizer/restrict_same_input_output_quant_params.h"
 #include "driver/amlogic_npu/optimizer/unpack_op_fusion.h"
 #include "optimizer/symm2asymm.h"
 #include "utility/debug.h"
@@ -58,6 +59,7 @@ int Program::BuildFromModel(hal::Model* model) {
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
   UnpackOpFusion(model);
   ConvertQuantizationSymmToAsymm(model);
+  RestrictSameInputOutputQuantParams(model);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
   // Convert a NNAdapter model to a amlnpu graph
   graph_from_cache_ = false;
