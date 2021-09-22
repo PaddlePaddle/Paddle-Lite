@@ -168,7 +168,7 @@ void GatherImageCompute::GetGlobalWorkSize() {
 }
 
 void GatherImageCompute::Run() {
-  //  VLOG(1) << "走到了gather的Run()" ;
+  VLOG(1) << "走到了gather的Run()";
   auto* x = ga_param_->X;
   auto* index = ga_param_->Index;
   auto* out = ga_param_->Out;
