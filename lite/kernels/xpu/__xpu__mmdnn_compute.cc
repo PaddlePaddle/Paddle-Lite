@@ -558,12 +558,6 @@ class MMDNNMatchConvTopk {
     right_lod_32_guard_ = TargetWrapperXPU::MallocScratchPad(
         (upper_bound_batch + 1) * sizeof(int));
     right_lod_32_ = reinterpret_cast<int*>(right_lod_32_guard_->addr_);
-    match_lod_32_guard_ = TargetWrapperXPU::MallocScratchPad(
-        (upper_bound_batch + 1) * sizeof(int));
-    match_lod_32_ = reinterpret_cast<int*>(match_lod_32_guard_->addr_);
-    conv_lod_32_guard_ = TargetWrapperXPU::MallocScratchPad(
-        (upper_bound_batch + 1) * sizeof(int));
-    conv_lod_32_ = reinterpret_cast<int*>(conv_lod_32_guard_->addr_);
     topk_offset_32_guard_ = TargetWrapperXPU::MallocScratchPad(
         (upper_bound_batch + 1) * sizeof(int));
     topk_offset_32_ = reinterpret_cast<int*>(topk_offset_32_guard_->addr_);
@@ -606,8 +600,8 @@ class MMDNNMatchConvTopk {
                         right_lod_32_cpu.size() * sizeof(int),
                         XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 
-    std::vector<int> lod_match = {0};
-    std::vector<int> lod_conv = {0};
+    std::vector<int> seqlens_match;
+    std::vector<int> seqlens_conv;
     std::vector<int> lod_topk = {0};
     int x_mul_y_sum = 0;
     int left_seqlen_sum = 0;
@@ -619,8 +613,8 @@ class MMDNNMatchConvTopk {
       int len_y = right_lod[i + 1] - right_lod[i];
       int imgsize = len_x * len_y;
       x_mul_y_sum = x_mul_y_sum + imgsize;
-      lod_match.push_back(lod_match.back() + imgsize * dim_t_);
-      lod_conv.push_back(lod_conv.back() + imgsize * out_channel_);
+      seqlens_match.push_back(imgsize * dim_t_);
+      seqlens_conv.push_back(imgsize * out_channel_);
       lod_topk.push_back(lod_topk.back() + imgsize * (dim_t_ + out_channel_));
 
       left_seqlen_max = std::max(left_seqlen_max, len_x);
@@ -628,14 +622,6 @@ class MMDNNMatchConvTopk {
       left_seqlen_sum += len_x;
       right_seqlen_sum += len_y;
     }
-    XPU_CALL(xpu_memcpy(match_lod_32_,
-                        lod_match.data(),
-                        lod_match.size() * sizeof(int),
-                        XPUMemcpyKind::XPU_HOST_TO_DEVICE));
-    XPU_CALL(xpu_memcpy(conv_lod_32_,
-                        lod_conv.data(),
-                        lod_conv.size() * sizeof(int),
-                        XPUMemcpyKind::XPU_HOST_TO_DEVICE));
     XPU_CALL(xpu_memcpy(topk_offset_32_,
                         lod_topk.data(),
                         lod_topk.size() * sizeof(int),
@@ -697,13 +683,12 @@ class MMDNNMatchConvTopk {
         conv_weight_max_,
         xdnn::Activation_t::RELU);  // TODO(miaotianxiang):
     CHECK_EQ(r, 0);
-    r = xdnn::sequence_concat(ctx,
-                              xwy_out,
-                              match_lod_32_,
-                              conv_out,
-                              conv_lod_32_,
-                              seq_concat_out,
-                              batch);
+    r = xdnn::sequence_concat<float>(ctx,
+                                     {xwy_out, conv_out},
+                                     {seqlens_match, seqlens_conv},
+                                     seq_concat_out,
+                                     1);
+
     CHECK_EQ(r, 0);
     r = xdnn::sequence_topk_avg_pooling(ctx,
                                         seq_concat_out,

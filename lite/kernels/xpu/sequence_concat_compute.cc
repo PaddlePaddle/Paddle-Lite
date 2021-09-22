@@ -22,16 +22,6 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-void SequenceConcatCompute::PrepareForRun() {
-  lod0_xpu_guard_ =
-      TargetWrapperXPU::MallocScratchPad(XPU_MAX_LOD_SIZE * sizeof(int));
-  lod1_xpu_guard_ =
-      TargetWrapperXPU::MallocScratchPad(XPU_MAX_LOD_SIZE * sizeof(int));
-
-  lod0_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
-  lod1_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
-}
-
 template <typename T>
 inline LoD ConcatLoD(const std::vector<lite::Tensor*>& xs,
                      std::vector<lite::Tensor>* xs_in_order) {
@@ -100,30 +90,20 @@ void SequenceConcatCompute::Run() {
   auto lod1 = xs[1]->lod()[0];
   int batch_size = lod0.size() - 1;
 
-  int* lod0_xpu = reinterpret_cast<int*>(lod0_xpu_guard_->addr_);
-  int* lod1_xpu = reinterpret_cast<int*>(lod1_xpu_guard_->addr_);
-  for (int i = 0; i < lod0.size(); ++i) {
-    lod0_cpu[i] = lod0[i];
+  std::vector<int> seqlens_0_cpu(batch_size);
+  std::vector<int> seqlens_1_cpu(batch_size);
+  for (int i = 0; i < batch_size; ++i) {
+    seqlens_0_cpu[i] = lod0[i + 1] - lod0[i];
   }
-  for (int i = 0; i < lod1.size(); ++i) {
-    lod1_cpu[i] = lod1[i];
+  for (int i = 0; i < batch_size; ++i) {
+    seqlens_1_cpu[i] = lod1[i + 1] - lod1[i];
   }
-  XPU_CALL(xpu_memcpy(lod0_xpu,
-                      lod0_cpu.get(),
-                      lod0.size() * sizeof(int),
-                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
-  XPU_CALL(xpu_memcpy(lod1_xpu,
-                      lod1_cpu.get(),
-                      lod1.size() * sizeof(int),
-                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
-
-  int r = xdnn::sequence_concat(ctx.GetRawContext(),
-                                xs[0]->data<float>(),
-                                lod0_xpu,
-                                xs[1]->data<float>(),
-                                lod1_xpu,
-                                out->mutable_data<float>(TARGET(kXPU)),
-                                batch_size);
+  int r =
+      xdnn::sequence_concat<float>(ctx.GetRawContext(),
+                                   {xs[0]->data<float>(), xs[1]->data<float>()},
+                                   {seqlens_0_cpu, seqlens_1_cpu},
+                                   out->mutable_data<float>(TARGET(kXPU)),
+                                   1);
   CHECK_EQ(r, 0);
 }
 
