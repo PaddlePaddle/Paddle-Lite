@@ -64,12 +64,14 @@ void SequenceReverseCompute<T>::Run() {
                       lod.size() * sizeof(int),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 
-  int r = xdnn::sequence_reverse(ctx.GetRawContext(),
-                                 batch_size,
-                                 lod_xpu,
-                                 ele_cnt_in_4_byte,
-                                 reinterpret_cast<const float*>(x_data),
-                                 reinterpret_cast<float*>(y_data));
+  int r =
+      xdnn::sequence_reverse<float, int>(ctx.GetRawContext(),
+                                         reinterpret_cast<const float*>(x_data),
+                                         lod_xpu,
+                                         reinterpret_cast<float*>(y_data),
+                                         batch_size,
+                                         ele_cnt_in_4_byte);
+
   CHECK_EQ(r, 0);
 }
 
