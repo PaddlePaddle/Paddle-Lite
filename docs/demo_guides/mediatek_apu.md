@@ -108,9 +108,9 @@ Paddle Lite已支持MediaTek APU的预测部署。
             - armeabi-v7a
               - include
               - lib
-                - mediatek_apu
-                  - libnnadapter.so # NNAdapter API运行时库
-                  - libnnadapter_driver_mediatek_apu.so # Mediatek apu driver hal库
+                - mediatek_apu # 联发科APU Neuron Adapter库、NNAdapter运行时库、device HAL库
+                  - libnnadapter.so # NNAdapter运行时库
+                  - libmediatek_apu.so # NNAdapter device HAL库
               - libpaddle_full_api_shared.so # 预编译PaddleLite full api库
               - libpaddle_light_api_shared.so # 预编译PaddleLite light api库
               - libc++_shared.so
@@ -226,13 +226,16 @@ Paddle Lite已支持MediaTek APU的预测部署。
 
     - 替换头文件和库
       ```shell
-      # 替换 include 目录：
+      # 替换include目录
       $ cp -rf build.lite.android.armv8.clang/inference_lite_lib.android.armv8.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/include/
-      # 替换 NNAdapter相关so：
-      $ cp -rf build.lite.android.armv8.clang/inference_lite_lib.android.armv8.nnadapter/cxx/lib/libnnadapter* PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/mediatek_apu/
-      # 替换 libpaddle_full_api_shared.so或libpaddle_light_api_shared.so
-      $ cp -rf build.lite.android.armv8.clang/inference_lite_lib.android.armv8.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/
+      # 替换NNAdapter运行时库
+      $ cp -rf build.lite.android.armv8.clang/inference_lite_lib.android.armv8.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/mediatek_apu/
+      # 替换NNAdapter device HAL库
+      $ cp -rf build.lite.android.armv8.clang/inference_lite_lib.android.armv8.nnadapter/cxx/lib/libmediatek_apu.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/mediatek_apu/
+      # 替换libpaddle_light_api_shared.so
       $ cp -rf build.lite.android.armv8.clang/inference_lite_lib.android.armv8.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/
+      # 替换libpaddle_full_api_shared.so(仅在full_publish编译方式下)
+      $ cp -rf build.lite.android.armv8.clang/inference_lite_lib.android.armv8.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/
       ```
 
   - For armv7
@@ -248,13 +251,16 @@ Paddle Lite已支持MediaTek APU的预测部署。
 
     - 替换头文件和库
       ```shell
-      # 替换 include 目录：
+      # 替换include目录
       $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/include/
-      # 替换 NNAdapter相关so：
-      $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libnnadapter* PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/mediatek_apu/
-      # 替换 libpaddle_full_api_shared.so或libpaddle_light_api_shared.so
-      $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/
+      # 替换NNAdapter运行时库
+      $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/mediatek_apu/
+      # 替换NNAdapter device HAL库
+      $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libmediatek_apu.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/mediatek_apu/
+      # 替换libpaddle_light_api_shared.so
       $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/
+      # 替换libpaddle_full_api_shared.so(仅在full_publish编译方式下)
+      $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/
       ```
 
 - 替换头文件后需要重新编译示例程序
