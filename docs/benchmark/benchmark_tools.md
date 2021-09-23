@@ -16,12 +16,13 @@ Benchmark 工具可方便快捷地评测给定模型在如下硬件上运行时�
 - 安卓系统下的 ARM CPU / GPU
 - Linux 系统下的 X86 CPU / ARM CPU / ARM GPU
 - OSX 系统下的 CPU / GPU
+
 备注：本工具正在支持对运行在 M1 芯片上的模型进行性能测试
 
 # 在 Android 上运行性能测试
 ## 编译
 根据[源码编译](../source_compile/compile_env)准备编译环境，建议使用 Docker 配置交叉编译环境。
-拉取 Paddle-Lite 代码，切换到特定分支，然后在 Paddle-Lite 根目录下执行编译命令：
+拉取 [Paddle-Lite](https://github.com/PaddlePaddle/Paddle-Lite) 代码，切换到特定分支，然后在 Paddle-Lite 根目录下执行编译命令：
 ```
 ./lite/tools/build_android.sh --toolchain=clang --with_benchmark=ON full_publish
 ```
@@ -32,6 +33,7 @@ Benchmark 工具可方便快捷地评测给定模型在如下硬件上运行时�
 | toolchain             | 工具链           |  gcc / clang     |  gcc     |
 | with_profile          | 逐层时间 profile |  ON / OFF        |  OFF     |
 | with_precision_profile| 逐层精度 profile |  ON / OFF        |  OFF     |
+
 编译完成后，会生成`build.lite.*./lite/api/benchmark_bin`二进制文件。
 
 ## 运行
@@ -107,7 +109,7 @@ avg   = 32.723
 
 # 在 ARMLinux 上运行性能测试
 根据[源码编译](../source_compile/compile_env)准备编译环境，建议使用 Docker 配置交叉编译环境。
-拉取 Paddle-Lite 代码，切换到特定分支，然后在 Paddle-Lite 根目录下执行编译命令：
+拉取 [Paddle-Lite](https://github.com/PaddlePaddle/Paddle-Lite) 代码，切换到特定分支，然后在 Paddle-Lite 根目录下执行编译命令：
 ```
 ./lite/tools/build_linux.sh --arch=armv8 --with_benchmark=ON full_publish
 ```
@@ -118,6 +120,7 @@ avg   = 32.723
 | toolchain             | 工具链           |  gcc / clang     |  gcc     |
 | with_profile          | 逐层时间 profile |  ON / OFF        |  OFF     |
 | with_precision_profile| 逐层精度 profile |  ON / OFF        |  OFF     |
+
 编译完成后，会生成`build.lite.*./lite/api/benchmark_bin`二进制文件。
 
 ## 运行
@@ -188,7 +191,7 @@ avg   = 32.723
 # 在 Linux 上运行性能测试
 ## 编译
 根据[源码编译](../source_compile/compile_env)准备编译环境，建议使用 Docker 配置环境。
-拉取 Paddle-Lite 代码，切换到特定分支，然后在 Paddle-Lite 根目录下执行编译命令：
+拉取 [Paddle-Lite](https://github.com/PaddlePaddle/Paddle-Lite) 代码，切换到特定分支，然后在 Paddle-Lite 根目录下执行编译命令：
 ```
 ./lite/tools/build_linux.sh --arch=x86 --with_benchmark=ON full_publish
 ```
@@ -198,13 +201,14 @@ avg   = 32.723
 | toolchain             | 工具链           |  gcc / clang     |  gcc     |
 | with_profile          | 逐层时间 profile |  ON / OFF        |  OFF     |
 | with_precision_profile| 逐层精度 profile |  ON / OFF        |  OFF     |
+
 编译完成后，会生成`build.lite.*./lite/api/benchmark_bin`二进制文件。
 
 ## 运行
 运行所需文件：
 - Paddle 文件（combined 或 uncombined 格式均可）或已经`opt`工具离线优化后的`.nb`文件
 - 二进制文件`benchmark_bin`
-- libmklml_intel.so
+- `libmklml_intel.so`
 
 在待测试的 Linux 机器上操作例子如下：
 ```
@@ -263,7 +267,7 @@ avg   = 33.918
 # 在 OSX 上运行性能测试
 ## 编译
 根据[源码编译](../source_compile/compile_env)准备编译环境，可以使用 Docker 配置环境，也可以使用系统原生开发环境。
-拉取 Paddle-Lite 代码，切换到特定分支，然后在 Paddle-Lite 根目录下执行编译命令：
+拉取 [Paddle-Lite](https://github.com/PaddlePaddle/Paddle-Lite) 代码，切换到特定分支，然后在 Paddle-Lite 根目录下执行编译命令：
 ```
 ./lite/tools/build_macos.sh --with_benchmark=ON x86
 ```
@@ -273,13 +277,14 @@ avg   = 33.918
 | toolchain             | 工具链          |  gcc / clang     |  gcc     |
 | with_profile          | 逐层时间 profile |  ON / OFF        |  OFF     |
 | with_precision_profile| 逐层精度 profile |  ON / OFF        |  OFF     |
+
 编译完成后，会生成`build.lite.*./lite/api/benchmark_bin`二进制文件。
 
 ## 运行
 运行所需文件：
 - Paddle 文件（combined 或 uncombined 格式均可）或已经`opt`工具离线优化后的`.nb`文件
 - 二进制文件`benchmark_bin`
-- libmklml.dylib
+- `libmklml.dylib`
 
 在 OSX 机器上操作例子如下：
 ```
@@ -374,7 +379,7 @@ adb shell "cd /data/local/tmp/benchmark;
 ```
 
 ### 在新硬件（）上运行模型：
-TODO
+持续开发中。
 
 
 
