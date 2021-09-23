@@ -42,6 +42,8 @@ class PlainProgramDesc {
     return blocks_;
   }
 
+  int64_t Version() const { return version_; }
+
  protected:
   void InitBlock(const general::BlockDesc& current,
                  const general::BlockDesc* parent);
@@ -55,6 +57,7 @@ class PlainProgramDesc {
   std::vector<std::unique_ptr<BlockDesc>> blocks_;
   const general::ProgramDesc* src_desc_{nullptr};
   std::vector<bool> block_visited_;
+  int64_t version_{0};
 };
 
 // Convert plain program desc back to normal form.

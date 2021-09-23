@@ -13,6 +13,5 @@ if(LITE_WITH_CV AND (NOT LITE_WITH_OPENCL AND NOT LITE_WITH_FPGA AND NOT LITE_WI
                   nv12_to_bgra.cc
                   nv21_to_bgr.cc
                   nv21_to_bgra.cc
-                  nv21_resize.cc
-                  DEPS paddle_api place)
+                  nv21_resize.cc)
 endif()

@@ -15,6 +15,7 @@
 #include "lite/backends/arm/math/gemv_arm_int8.h"
 #include <arm_neon.h>
 #include "lite/backends/arm/math/saturate.h"
+#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
@@ -2158,8 +2159,7 @@ void gemv_int8_oth(const int8_t* A,
   int out_cnt = M >> 3;
   int remain = M & 7;
   if (remain > 0) out_cnt++;
-#pragma omp parallel for
-  for (int j = 0; j < out_cnt; j++) {
+  LITE_PARALLEL_BEGIN(j, tid, out_cnt) {
     int out_idx = j * 8;
     dtype* out_ptr = data_out + out_idx;
     dtype* out_p = out_ptr;
@@ -2243,13 +2243,13 @@ void gemv_int8_oth(const int8_t* A,
       }
     }
   }
+  LITE_PARALLEL_END();
 #else  //  __aarch64__
 
   int out_cnt = M >> 2;
   int remain = M & 3;
   if (remain > 0) out_cnt++;
-#pragma omp parallel for
-  for (int j = 0; j < out_cnt; j++) {
+  LITE_PARALLEL_BEGIN(j, tid, out_cnt) {
     int out_idx = j * 4;
     dtype* out_ptr = data_out + out_idx;
     dtype* out_p = out_ptr;
@@ -2305,6 +2305,7 @@ void gemv_int8_oth(const int8_t* A,
       }
     }
   }
+  LITE_PARALLEL_END();
 
 #endif  //  __aarch64__
 }
@@ -2336,8 +2337,7 @@ void gemv_int8_sdot(const int8_t* A,
   int8_t* ptr_w = data_in + Nup;
   lite::TargetWrapperHost::MemcpySync(ptr_w, A + (M - 1) * N, N);
 
-#pragma omp parallel for
-  for (int j = 0; j < out_cnt; j++) {
+  LITE_PARALLEL_BEGIN(j, tid, out_cnt) {
     int out_idx = j * 8;
     dtype* out_ptr = data_out + out_idx;
     dtype* out_p = out_ptr;
@@ -2424,6 +2424,7 @@ void gemv_int8_sdot(const int8_t* A,
       }
     }
   }
+  LITE_PARALLEL_END();
 }
 #endif  // __aarch64__ && sdot
 

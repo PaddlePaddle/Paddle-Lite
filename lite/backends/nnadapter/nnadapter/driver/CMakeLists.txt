@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set(NNADAPTER_DRIVERS CACHE INTERNAL "")
+set(NNADAPTER_DEVICES CACHE INTERNAL "")
 
 if(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   add_subdirectory(huawei_kirin_npu)

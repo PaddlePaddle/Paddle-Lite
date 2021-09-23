@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <limits.h>
+#include <math.h>
 #include <algorithm>
 #include <map>
 #include <memory>
@@ -164,6 +166,11 @@ NNAdapterOperandPrecisionCode Precision2NNAdapterTensorPrecisionCode(
 
 NNAdapterOperandPrecisionCode Precision2NNAdapterScalarPrecisionCode(
     PrecisionType precision);
+
+NNAdapterPadModeCode PadMode2NNAdapterPadModeCode(std::string mode);
+
+NNAdapterAutoPadCode PaddingAlgorithm2AutoPadCode(
+    const std::string& padding_algorithm);
 
 }  // namespace nnadapter
 }  // namespace subgraph

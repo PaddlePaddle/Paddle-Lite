@@ -64,7 +64,7 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK_EQ(filter_dims.size(), 4L);
   CHECK_EQ(output_dims[0], batch_size);
   CHECK_EQ(output_dims[1], output_channel_size);
-  auto strides = op_info->GetAttr<std::vector<int>>("strides");
+  std::vector<int> strides = op_info->GetAttr<std::vector<int>>("strides");
   std::vector<int> paddings = op_info->GetAttr<std::vector<int>>("paddings");
   auto groups = op_info->GetAttr<int>("groups");
   std::vector<int> dilations = op_info->GetAttr<std::vector<int>>("dilations");
@@ -189,22 +189,24 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     }
   }
 
-  // Paddings, strides, dilations and group operands
-  auto padding_width_left_operand =
-      converter->AddInt32ConstantOperand(paddings[2]);
-  auto padding_width_right_operand =
-      converter->AddInt32ConstantOperand(paddings[3]);
-  auto padding_height_top_operand =
-      converter->AddInt32ConstantOperand(paddings[0]);
-  auto padding_height_bottom_operand =
-      converter->AddInt32ConstantOperand(paddings[1]);
-  auto stride_width_operand = converter->AddInt32ConstantOperand(strides[1]);
-  auto stride_height_operand = converter->AddInt32ConstantOperand(strides[0]);
-  auto dilation_width_operand =
-      converter->AddInt32ConstantOperand(dilations[1]);
-  auto dilation_height_operand =
-      converter->AddInt32ConstantOperand(dilations[0]);
+  // Auto_pad operand
+  auto auto_pad_operand = converter->AddInt32ConstantOperand(
+      static_cast<int32_t>(PaddingAlgorithm2AutoPadCode(padding_algorithm)));
+
+  // Pads operand(optional)
+  auto pads_operand = converter->AddInt32ConstantOperand(
+      paddings.data(), DDim({static_cast<int64_t>(paddings.size())}));
+
+  // Strides operand
+  auto strides_operand = converter->AddInt32ConstantOperand(
+      strides.data(), DDim({static_cast<int64_t>(strides.size())}));
+
+  // Group operand
   auto group_operand = converter->AddInt32ConstantOperand(groups);
+
+  // Dilations operand
+  auto dilations_operand = converter->AddInt32ConstantOperand(
+      dilations.data(), DDim({static_cast<int64_t>(dilations.size())}));
 
   // Fuse code operand
   std::vector<std::string> activation_support_split_ops{"leaky_relu"};
@@ -253,20 +255,15 @@ int ConvConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     immediate_operand = converter->AddFloat32VariableOperand(output_dims);
   }
   // Conv2D operation
-  std::vector<NNAdapterOperand*> input_operands = {
-      input_operand,
-      filter_operand,
-      bias_operand,
-      padding_width_left_operand,
-      padding_width_right_operand,
-      padding_height_top_operand,
-      padding_height_bottom_operand,
-      stride_width_operand,
-      stride_height_operand,
-      group_operand,
-      fuse_code_operand,
-      dilation_width_operand,
-      dilation_height_operand};
+  std::vector<NNAdapterOperand*> input_operands = {input_operand,
+                                                   filter_operand,
+                                                   bias_operand,
+                                                   auto_pad_operand,
+                                                   pads_operand,
+                                                   strides_operand,
+                                                   group_operand,
+                                                   dilations_operand,
+                                                   fuse_code_operand};
   std::vector<NNAdapterOperand*> output_operands = {immediate_operand};
   converter->AddOperation(NNADAPTER_CONV_2D, &input_operands, &output_operands);
   // Activation operation without fusion

@@ -26,11 +26,11 @@ Paddle Lite支持[ARM Cortex-A系列处理器](https://en.wikipedia.org/wiki/ARM
 - ARMv8-A compatible(Apple A系列处理器, Nvidia tegra, Qualcomm Kryo, Falkor, Samsung Mongoose)
 
 ## 移动端GPU
-Paddle Lite支持移动端GPU和Nvidia端上GPU设备，支持列表如下：
+Paddle Lite支持多种移动端GPU，包括ARM Mali、Qualcomm Adreno、Apple A Series、Nvidia Tegra等系列GPU设备，支持列表如下：
 - ARM Mali G 系列
 - Qualcomm Adreno 系列
-  
-  Nvida tegra系列: tx1, tx2, nano, xavier
+- Apple A 系列
+- Nvida Tegra系列: Tegra X1, Tegra X2, Jetson Nano, Xavier
 
 ## FPGA
 Paddle Lite支持 **百度 FPGA**，支持列表如下：

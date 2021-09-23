@@ -14,7 +14,7 @@
 
 #include "lite/backends/opencl/utils/cache.h"
 #include <utility>
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 namespace paddle {
 namespace lite {

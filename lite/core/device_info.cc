@@ -603,7 +603,7 @@ void DeviceInfo::SetFP32Info(int argc, ...) {
 void DeviceInfo::SetCacheInfo(int cache_id, int argc, ...) {
   va_list arg_ptr;
   va_start(arg_ptr, argc);
-  std::vector<int>* cache;
+  std::vector<int>* cache = nullptr;
   switch (cache_id) {
     case 0:
       cache = &L1_cache_;
@@ -1144,7 +1144,7 @@ int DeviceInfo::Setup() {
 }
 
 void DeviceInfo::SetRunMode(lite_api::PowerMode mode, int thread_num) {
-#ifdef ARM_WITH_OMP
+#if defined(ARM_WITH_OMP) || defined(LITE_USE_THREAD_POOL)
   thread_num = std::min(thread_num, core_num_);
 #else
   thread_num = 1;  // force thread_num to 1 if OpenMP is disabled

@@ -225,6 +225,13 @@ NNAdapterOperandPrecisionCode ConvertPrecisionTypeToNNPrecisionCode(
     const float* quant_scales = nullptr,
     uint32_t quant_scale_count = 0,
     uint32_t quant_channel_dim = 0);
+// Convert a PaddleLite unary activation type to a NNAdapter operation type
+NNAdapterOperationType ConvertUnaryActTypeToNNOperationType(
+    const std::string& unary_act_op_type);
+// Convert the attribute 'padding_algorithm' in Conv2d/DepthwiseConv2d to
+// NNAdapterAutoPadCode
+NNAdapterAutoPadCode ConvertPaddingAlgorithmToNNAutoPadCode(
+    const std::string& padding_algorithm);
 
 // Convert a C/C++ POD types to a PaddleLite precision type
 template <typename T>

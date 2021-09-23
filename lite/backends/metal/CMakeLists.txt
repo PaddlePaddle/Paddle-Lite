@@ -26,9 +26,6 @@ add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/lite.metallib
         DEPENDS ${LITE_METAL_KERNELS_SRC}
         COMMENT "Built target lite.metallib")
 
-find_library(METAL_LIBRARY Metal REQUIRED)
-find_library(FOUNDATION_LIBRARY Foundation)
-
 lite_cc_library(metal_target_wrapper SRCS
         context.mm
         metal_buffer.mm
@@ -38,6 +35,7 @@ lite_cc_library(metal_target_wrapper SRCS
         metal_debug.mm
         metal_half.mm
         metal_image.mm
+        metal_mtl_data.mm
         mps_conv_datasource.m
         target_wrapper.mm
         )

@@ -19,7 +19,7 @@
 #include <cuda.h>
 #include <cuda_fp16.h>
 #include <cudnn.h>
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 #if (CUBLAS_VER_MAJOR * 10 + CUBLAS_VER_MINOR) >= 101
 #include <cublasLt.h>

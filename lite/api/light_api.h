@@ -83,6 +83,7 @@ class LITE_API LightPredictor {
 
   const lite::Tensor* GetTensor(const std::string& name) const {
     auto* var = program_->exec_scope()->FindVar(name);
+    CHECK(var) << "no fatch variable " << name << " in exec_scope";
     return &var->Get<lite::Tensor>();
   }
 
@@ -98,7 +99,9 @@ class LITE_API LightPredictor {
   void ConfigMetalContext(const lite_api::MobileConfig& config) {
     program_->ConfigMetalContext(config.metal_lib_path(),
                                  config.metal_use_mps(),
-                                 config.metal_use_aggressive());
+                                 config.metal_use_aggressive(),
+                                 config.metal_use_memory_reuse(),
+                                 config.metal_device());
   }
 #endif
 
@@ -139,7 +142,7 @@ class LITE_API LightPredictor {
 class LightPredictorImpl : public lite_api::PaddlePredictor {
  public:
   LightPredictorImpl() = default;
-
+  virtual ~LightPredictorImpl();
   std::unique_ptr<lite_api::Tensor> GetInput(int i) override;
 
   std::unique_ptr<const lite_api::Tensor> GetOutput(int i) const override;

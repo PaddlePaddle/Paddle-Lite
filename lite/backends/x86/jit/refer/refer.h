@@ -21,7 +21,7 @@
 #include "lite/backends/x86/jit/helper.h"
 #include "lite/backends/x86/jit/kernel_base.h"
 #include "lite/backends/x86/jit/macro.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 namespace paddle {
 namespace lite {

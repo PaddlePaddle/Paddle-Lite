@@ -309,8 +309,8 @@ int64_t GetNNOperandPrecisionDataLength(
 }
 
 int64_t GetNNOperandTypeBufferLength(const NNAdapterOperandType& operand_type) {
-  auto production = ProductionOfDimensions(operand_type.dimensions,
-                                           operand_type.dimension_count);
+  auto production = ProductionOfDimensions(operand_type.dimensions.data,
+                                           operand_type.dimensions.count);
   return GetNNOperandPrecisionDataLength(operand_type.precision) * production;
 }
 
@@ -465,6 +465,8 @@ NNAdapterOperandPrecisionCode ConvertFluidDataTypeToNNPrecisionCode(
   switch (fluid_dtype) {
     case 0:  // BOOL = 0;
       return NNADAPTER_TENSOR_BOOL8;
+    case 2:  // INT32 = 2
+      return NNADAPTER_TENSOR_INT32;
     case 3:  // INT64 = 3
       return NNADAPTER_TENSOR_INT64;
     case 4:  // FP16 = 4
@@ -537,6 +539,45 @@ NNAdapterOperandPrecisionCode ConvertPrecisionTypeToNNPrecisionCode(
       break;
   }
   return NNADAPTER_TENSOR_FLOAT32;
+}
+
+NNAdapterOperationType ConvertUnaryActTypeToNNOperationType(
+    const std::string& unary_act_op_type) {
+  NNAdapterOperationType unary_act_op_code = NNADAPTER_UNKNOWN;
+  if (unary_act_op_type == "sigmoid") {
+    unary_act_op_code = NNADAPTER_SIGMOID;
+  } else if (unary_act_op_type == "relu") {
+    unary_act_op_code = NNADAPTER_RELU;
+  } else if (unary_act_op_type == "relu6") {
+    unary_act_op_code = NNADAPTER_RELU6;
+  } else if (unary_act_op_type == "tanh") {
+    unary_act_op_code = NNADAPTER_TANH;
+  } else if (unary_act_op_type == "log") {
+    unary_act_op_code = NNADAPTER_LOG;
+  } else if (unary_act_op_type == "abs") {
+    unary_act_op_code = NNADAPTER_ABS;
+  } else if (unary_act_op_type == "exp") {
+    unary_act_op_code = NNADAPTER_EXP;
+  } else {
+    LOG(WARNING) << "Unable to convert a unary activation type("
+                 << unary_act_op_type << ") to a NNAdapter operation type!";
+  }
+  return unary_act_op_code;
+}
+
+NNAdapterAutoPadCode ConvertPaddingAlgorithmToNNAutoPadCode(
+    const std::string& padding_algorithm) {
+  NNAdapterAutoPadCode auto_pad_code;
+  if (padding_algorithm == "EXPLICIT" || padding_algorithm.empty()) {
+    auto_pad_code = NNADAPTER_AUTO_PAD_NONE;
+  } else if (padding_algorithm == "SAME") {
+    auto_pad_code = NNADAPTER_AUTO_PAD_SAME;
+  } else if (padding_algorithm == "VALID") {
+    auto_pad_code = NNADAPTER_AUTO_PAD_VALID;
+  } else {
+    LOG(FATAL) << "Unsupported padding_algorithm: " << padding_algorithm;
+  }
+  return auto_pad_code;
 }
 
 template <>

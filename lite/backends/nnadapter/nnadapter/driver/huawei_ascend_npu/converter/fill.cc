@@ -12,41 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/huawei_ascend_npu/converter.h"
+#include "core/operation/fill.h"
+#include "driver/huawei_ascend_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int Program::ConvertFill(hal::Operation* operation) {
-  auto& input_operands = operation->input_operands;
-  auto& output_operands = operation->output_operands;
-  auto input_count = input_operands.size();
-  auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 2);
-  NNADAPTER_CHECK_EQ(output_count, 1);
-  // Shape
-  auto shape_operand = input_operands[0];
-  NNADAPTER_VLOG(5) << "shape: " << OperandToString(shape_operand);
-  // Value
-  auto value_operand = input_operands[1];
-  NNADAPTER_VLOG(5) << "value: " << OperandToString(value_operand);
-  // Output
-  auto output_operand = output_operands[0];
-  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
+int ConvertFill(Converter* converter, hal::Operation* operation) {
+  FILL_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
-  auto shape_operator = GetMappedOperator(shape_operand);
+  auto shape_operator = converter->GetMappedOperator(shape_operand);
   if (shape_operator == nullptr) {
-    shape_operator = ConvertOperand(shape_operand);
+    shape_operator = converter->ConvertOperand(shape_operand);
   }
-  auto value_operator = GetMappedOperator(value_operand);
+  auto value_operator = converter->GetMappedOperator(value_operand);
   if (value_operator == nullptr) {
-    value_operator = ConvertOperand(value_operand);
+    value_operator = converter->ConvertOperand(value_operand);
   }
-  auto fill_name = GetOperatorName(output_operand);
-  auto fill_op = std::make_shared<ge::op::Fill>(fill_name);
+  auto fill_op = converter->AddOperator<ge::op::Fill>(output_operand);
   SET_INPUT(fill_op, dims, shape_operator);
   SET_INPUT(fill_op, value, value_operator);
   MAP_OUTPUT(fill_op, y, output_operand);

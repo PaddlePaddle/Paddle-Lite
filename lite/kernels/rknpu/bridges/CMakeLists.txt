@@ -1,25 +1,8 @@
-add_subgraph_bridge(SRCS act_op.cc
-                    batch_norm_op.cc
-                    concat_op.cc
-                    conv_op.cc
-                    elementwise_ops.cc
-                    fc_op.cc
-                    flatten_op.cc
-                    graph.cc
-                    norm_op.cc
-                    pad2d_op.cc
-                    pool_op.cc
-                    reshape2_op.cc
-                    scale_op.cc
-                    softmax_op.cc
-                    transpose2_op.cc
-                    utility.cc)
-
 if(NOT LITE_WITH_RKNPU)
   return()
 endif()
 
-lite_cc_library(subgraph_bridge_utility_rknpu SRCS utility.cc DEPS ${rknpu_builder_libs} tensor)
+lite_cc_library(subgraph_bridge_utility_rknpu SRCS utility.cc DEPS ${rknpu_builder_libs} core)
 lite_cc_library(subgraph_bridge_graph_rknpu SRCS graph.cc DEPS subgraph_bridge_utility_rknpu)
 
 set(rknpu_subgraph_bridge_deps core subgraph_bridge_utility_rknpu subgraph_bridge_graph_rknpu)

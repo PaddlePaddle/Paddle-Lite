@@ -14,16 +14,15 @@
 
 set(DEVICE_NAME huawei_ascend_npu)
 add_definitions(-DNNADAPTER_DEVICE_NAME=${DEVICE_NAME})
-
-set(DRIVER_NAME ${NNADAPTER_DRIVER_PREFIX}_${DEVICE_NAME})
-add_definitions(-DNNADAPTER_DRIVER_NAME=${DRIVER_NAME})
+add_definitions(-DNNADAPTER_DEVICE_SYMBOL=${NNADAPTER_DEVICE_SYMBOL_PREFIX}${DEVICE_NAME})
 
 include(dependencies.cmake)
+
 aux_source_directory(converter CONVERTERS)
 aux_source_directory(optimizer OPTIMIZERS)
-set(DRIVER_SRCS utility.cc ${OPTIMIZERS} model_client.cc converter.cc ${CONVERTERS} driver.cc)
-set(DRIVER_DEPS ${NNADAPTER_UTILITIES} ${${DEVICE_NAME}_deps})
+set(SRCS utility.cc ${OPTIMIZERS} ${CONVERTERS} model_client.cc engine.cc driver.cc)
+set(DEPS ${NNADAPTER_CORE} ${NNADAPTER_UTILITIES} ${${DEVICE_NAME}_deps})
 
-add_library(${DRIVER_NAME} SHARED ${DRIVER_SRCS})
-target_link_libraries(${DRIVER_NAME} "-Wl,--start-group" ${DRIVER_DEPS} "-Wl,--end-group")
-set(NNADAPTER_DRIVERS ${NNADAPTER_DRIVERS} ${DRIVER_NAME} CACHE INTERNAL "")
+add_library(${DEVICE_NAME} SHARED ${SRCS})
+target_link_libraries(${DEVICE_NAME} "-Wl,--start-group" ${DEPS} "-Wl,--end-group")
+set(NNADAPTER_DEVICES ${NNADAPTER_DEVICES} ${DEVICE_NAME} CACHE INTERNAL "")

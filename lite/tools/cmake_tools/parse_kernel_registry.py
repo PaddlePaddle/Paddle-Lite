@@ -17,15 +17,16 @@ import sys
 import logging
 from ast import RegisterLiteKernelParser
 
-if len(sys.argv) != 7:
-    print("Error: parse_kernel_registry.py requires six inputs!")
+if len(sys.argv) != 8:
+    print("Error: parse_kernel_registry.py requires seven inputs!")
     exit(1)
-ops_list_path = sys.argv[1]
-dest_path = sys.argv[2]
-minkernels_list_path = sys.argv[3]
-tailored = sys.argv[4]
-with_extra = sys.argv[5]
-enable_arm_fp16 = sys.argv[6]
+kernels_list_path = sys.argv[1]
+faked_kernels_list_path = sys.argv[2]
+dest_path = sys.argv[3]
+minkernels_list_path = sys.argv[4]
+tailored = sys.argv[5]
+with_extra = sys.argv[6]
+enable_arm_fp16 = sys.argv[7]
 
 out_lines = [
     '#pragma once',
@@ -37,7 +38,7 @@ if tailored == "ON":
     with open(minkernels_list_path) as fd:
         for line in fd:
             minlines.add(line.strip())
-with open(ops_list_path) as f:
+with open(kernels_list_path) as f:
     paths = set([path for path in f])
     for path in paths:
         with open(path.strip()) as g:
@@ -63,6 +64,34 @@ with open(ops_list_path) as f:
                      k.alias,
                   )
                   out_lines.append(key)
+
+with open(faked_kernels_list_path) as f:
+    paths = set([path for path in f])
+    for path in paths:
+        with open(path.strip()) as g:
+            c = g.read()
+            kernel_parser = RegisterLiteKernelParser(c)
+            kernel_parser.parse(with_extra, "ON")
+
+            for k in kernel_parser.kernels:
+                  kernel = "%s,%s,%s,%s,%s" % (
+                     k.op_type,
+                     k.target,
+                     k.precision,
+                     k.data_layout,
+                     k.alias,
+                  )
+                  if tailored == "ON":
+                      if kernel not in minlines: continue
+                  key = "USE_LITE_KERNEL(%s, %s, %s, %s, %s);" % (
+                     k.op_type,
+                     k.target,
+                     k.precision,
+                     k.data_layout,
+                     k.alias,
+                  )
+                  out_lines.append(key)
+
 
 with open(dest_path, 'w') as f:
     logging.info("write kernel list to %s" % dest_path)

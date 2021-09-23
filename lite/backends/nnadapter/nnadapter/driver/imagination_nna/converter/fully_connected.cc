@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/imagination_nna/converter.h"
+#include "core/operation/fully_connected.h"
+#include "driver/imagination_nna/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -21,71 +22,49 @@
 namespace nnadapter {
 namespace imagination_nna {
 
-int Program::ConvertFullyConnected(hal::Operation* operation) {
-  auto& input_operands = operation->input_operands;
-  auto& output_operands = operation->output_operands;
-  auto input_count = input_operands.size();
-  auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 4);
-  NNADAPTER_CHECK_EQ(output_count, 1);
-  // Input
-  auto input_operand = input_operands[0];
-  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
-  // Weight
-  auto weight_operand = input_operands[1];
-  NNADAPTER_VLOG(5) << "weight: " << OperandToString(weight_operand);
-  NNADAPTER_CHECK_EQ(weight_operand->type.dimension_count, 2);
-  auto num_units = weight_operand->type.dimensions[0];
-  auto input_size = weight_operand->type.dimensions[1];
-  // Bias
-  auto bias_operand = input_operands[2];
-  NNADAPTER_VLOG(5) << "bias: " << OperandToString(bias_operand);
-  NNADAPTER_CHECK_EQ(bias_operand->type.dimension_count, 1);
-  NNADAPTER_CHECK_EQ(num_units, bias_operand->type.dimensions[0]);
-  // Fuse code
-  auto fuse_code = *reinterpret_cast<int32_t*>(input_operands[3]->buffer);
-  NNADAPTER_VLOG(5) << "fuse_code=" << fuse_code;
+int ConvertFullyConnected(Converter* converter, hal::Operation* operation) {
+  FULLY_CONNECTED_OPERATION_EXTRACT_INPUTS_OUTPUTS
   NNADAPTER_CHECK_EQ(fuse_code, NNADAPTER_FUSED_NONE)
       << "imgdnn doesn't support fuse_code=" << fuse_code
       << " in fully connected layer";
-  // Output
-  auto output_operand = output_operands[0];
-  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
   // Convert to imgdnn tensors and operators
-  auto input_tensor = GetMappedTensor(input_operand);
+  auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
-    input_tensor = ConvertOperand(input_operand);
+    input_tensor = converter->ConvertOperand(input_operand);
   }
   // Transpose weight tensor from (m,k) to (k,m)
   std::vector<uint8_t> transpose_weight_data(num_units * input_size);
   std::vector<int32_t> transpose_weight_dimensions(
-      weight_operand->type.dimension_count);
+      weight_operand->type.dimensions.count);
   TransposeData(reinterpret_cast<uint8_t*>(weight_operand->buffer),
                 transpose_weight_data.data(),
                 {1, 0},
-                weight_operand->type.dimensions,
+                weight_operand->type.dimensions.data,
                 transpose_weight_dimensions.data());
   NNADAPTER_CHECK(
       IsUInt8AsymmPerLayerQuantType(weight_operand->type.precision));
-  auto transpose_weight_tensor = AddQuant8ConstantTensor(
+  auto transpose_weight_tensor = converter->AddQuant8ConstantTensor(
       transpose_weight_data.data(),
       transpose_weight_dimensions.data(),
       transpose_weight_dimensions.size(),
       weight_operand->type.asymm_per_layer_params.scale,
       weight_operand->type.asymm_per_layer_params.zero_point);
   // Expand bias tensor from (c) to (1, c)
-  auto bias_tensor =
-      ConvertOperand(bias_operand, {1, bias_operand->type.dimensions[0]});
+  auto bias_tensor = converter->ConvertOperand(
+      bias_operand, {1, bias_operand->type.dimensions.data[0]});
   NNADAPTER_CHECK(
       IsUInt8AsymmPerLayerQuantType(output_operand->type.precision));
   imgdnn_quant_param output_quant_param;
   output_quant_param.scale = output_operand->type.asymm_per_layer_params.scale;
   output_quant_param.zero_point =
       output_operand->type.asymm_per_layer_params.zero_point;
-  auto output_tensor = imgdnn_mgr_.CreateFullyConnectedLayer(
-      input_tensor, transpose_weight_tensor, bias_tensor, output_quant_param);
-  UpdateTensorMap(output_operand, output_tensor);
+  auto output_tensor = ADD_OPERATOR(CreateFullyConnectedLayer,
+                                    input_tensor,
+                                    transpose_weight_tensor,
+                                    bias_tensor,
+                                    output_quant_param);
+  converter->UpdateTensorMap(output_operand, output_tensor);
   return NNADAPTER_NO_ERROR;
 }
 

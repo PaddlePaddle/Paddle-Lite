@@ -12,48 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/huawei_kirin_npu/converter.h"
+#include "core/operation/concat.h"
+#include "driver/huawei_kirin_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace huawei_kirin_npu {
 
-int Program::ConvertConcat(hal::Operation* operation) {
-  auto& input_operands = operation->input_operands;
-  auto& output_operands = operation->output_operands;
-  auto input_count = input_operands.size();
-  auto output_count = output_operands.size();
-  NNADAPTER_CHECK_GE(input_count, 2);
-  NNADAPTER_CHECK_EQ(output_count, 1);
-  // Inputs
-  for (int i = 0; i < input_count - 1; i++) {
-    NNADAPTER_VLOG(5) << "input" << i << ": "
-                      << OperandToString(input_operands[i]);
-  }
-  // Axis
-  auto axis =
-      *reinterpret_cast<int32_t*>(input_operands[input_count - 1]->buffer);
-  if (axis < 0) {
-    axis += input_operands[0]->type.dimension_count;
-  }
-  NNADAPTER_VLOG(5) << "axis=" << axis;
-  // Output
-  auto output_operand = output_operands[0];
-  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
+int ConvertConcat(Converter* converter, hal::Operation* operation) {
+  CONCAT_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
   auto N = input_count - 1;
-  auto concat_name = GetOperatorName(output_operand);
-  auto concat_op = std::make_shared<hiai::op::ConcatD>(concat_name);
+  auto concat_op = converter->AddOperator<hiai::op::ConcatD>(output_operand);
   concat_op->set_attr_concat_dim(axis);
   concat_op->set_attr_N(N);
   concat_op->create_dynamic_input_x(N);
   for (int i = 0; i < N; i++) {
     auto input_operand = input_operands[i];
-    auto input_operator = GetMappedOperator(input_operand);
+    auto input_operator = converter->GetMappedOperator(input_operand);
     if (!input_operator) {
-      input_operator = ConvertOperand(input_operand);
+      input_operator = converter->ConvertOperand(input_operand);
     }
     // Start from 1 for dynamic input in HiAI
     SET_DYNAMIC_INPUT(concat_op, x, i + 1, input_operator);

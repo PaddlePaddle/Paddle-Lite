@@ -23,7 +23,7 @@
 #include "lite/core/type_system.h"
 #include "lite/kernels/opencl/image_helper.h"
 #include "lite/operators/op_params.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 #undef LITE_WITH_LOG
 

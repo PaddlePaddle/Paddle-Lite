@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "core/operation/reshape.h"
 #include "driver/rockchip_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -20,30 +21,8 @@ namespace nnadapter {
 namespace rockchip_npu {
 
 int ConvertReshape(Converter* converter, hal::Operation* operation) {
-  auto& input_operands = operation->input_operands;
-  auto& output_operands = operation->output_operands;
-  auto input_count = input_operands.size();
-  auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 2);
-  NNADAPTER_CHECK_EQ(output_count, 1);
-  // Input
-  auto input_operand = input_operands[0];
-  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
-  // Shape
-  auto shape_operand = input_operands[1];
-  auto shape_count = shape_operand->length / sizeof(int32_t);
-  auto shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);
-  for (uint32_t i = 0; i < shape_count; i++) {
-    NNADAPTER_VLOG(5) << "shape[" << i << "]=" << shape_data[i];
-  }
-  if (shape_count > 4) {
-    NNADAPTER_LOG(FATAL)
-        << "Only supports less than 4 dimensions, but shape has "
-        << shape_count;
-  }
-  // Output
-  auto output_operand = output_operands[0];
-  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
+  RESHAPE_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  NNADAPTER_CHECK_LE(shape_count, 4);
 
   // Convert to rknpu tensors and operators
   auto input_tensor = converter->GetMappedTensor(input_operand);
@@ -52,8 +31,8 @@ int ConvertReshape(Converter* converter, hal::Operation* operation) {
   }
   auto output_tensor = converter->ConvertOperand(output_operand);
   rk::nn::ReshapeAttr attr;
-  for (uint32_t i = 0; i < output_operand->type.dimension_count; i++) {
-    attr.shapes.push_back(output_operand->type.dimensions[i]);
+  for (uint32_t i = 0; i < output_operand->type.dimensions.count; i++) {
+    attr.shapes.push_back(output_operand->type.dimensions.data[i]);
   }
   std::vector<std::shared_ptr<rk::nn::Tensor>> input_tensors = {input_tensor};
   std::vector<std::shared_ptr<rk::nn::Tensor>> output_tensors = {output_tensor};

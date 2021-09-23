@@ -79,6 +79,7 @@ class Converter {
       uint32_t quant_channel_dim = 0) {
     return AddConstantOperand(&value,
                               DDim(std::vector<int64_t>({1})),
+                              lite_api::PrecisionTypeTrait<T>::Type(),
                               true,
                               quant_scales,
                               quant_channel_dim);
@@ -90,10 +91,14 @@ class Converter {
       const std::vector<float>& quant_scales = {},
       uint32_t quant_channel_dim = 0) {
     if (dimensions.empty()) {
-      dimensions = DDim({std::vector<int64_t>(values.size())});
+      dimensions = DDim({static_cast<int64_t>(values.size())});
     }
-    return AddConstantOperand(
-        values.data(), dimensions, true, quant_scales, quant_channel_dim);
+    return AddConstantOperand(values.data(),
+                              dimensions,
+                              lite_api::PrecisionTypeTrait<T>::Type(),
+                              true,
+                              quant_scales,
+                              quant_channel_dim);
   }
   // Add a constant operand from a tensor
   NNAdapterOperand* AddConstantOperand(
@@ -150,6 +155,25 @@ class Converter {
       NNAdapterOperationType type,
       std::vector<NNAdapterOperand*>* input_operands,
       std::vector<NNAdapterOperand*>* output_operands);
+  // Add a operation with input and output operands
+  NNAdapterOperation* AddOperation(
+      NNAdapterOperationType type,
+      std::vector<NNAdapterOperand*> input_operands,
+      std::vector<NNAdapterOperand*> output_operands);
+  // Add shape operation with input operand, output name, output precision
+  NNAdapterOperand* AddShapeOperation(
+      NNAdapterOperand* input_operand,
+      const std::string& output_name = "",
+      NNAdapterOperandPrecisionCode output_precision = NNADAPTER_TENSOR_INT32);
+  // Add unsqueeze operation with input operand, axes, out_name, quant_scales
+  NNAdapterOperand* AddUnsqueezeOperation(NNAdapterOperand* input_operand,
+                                          const std::vector<int32_t>& axes,
+                                          const std::string& out_name = "");
+  // Add flatten operation with input operand, start, end, out_name
+  NNAdapterOperand* AddFlattenOperation(NNAdapterOperand* input_operand,
+                                        const int32_t start_axis,
+                                        const int32_t end_axis,
+                                        const std::string& out_name = "");
 
  private:
   // Add a operand from a NNAdapter type, only for internal use

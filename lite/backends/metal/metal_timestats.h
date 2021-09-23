@@ -19,7 +19,7 @@
 #include <iostream>
 #include <string>
 
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 #ifdef USE_METAL_STATS
 #define METAL_TIME_STATS(object_name, stat_name) MetalTimeStats object_name(stat_name);

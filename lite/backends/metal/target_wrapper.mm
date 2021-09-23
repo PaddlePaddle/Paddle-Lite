@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 #include "lite/backends/metal/metal_buffer.h"
 #include "lite/backends/metal/metal_context_imp.h"
 #include "lite/backends/metal/metal_image.h"
+#include "lite/backends/metal/metal_mtl_data.h"
 #include <cassert>
 
 namespace paddle {
@@ -42,6 +43,18 @@ void TargetWrapperMetal::FreeImage(void* image) {
         delete (MetalImage*)image;
         image = nullptr;
     }
+}
+
+void* TargetWrapperMetal::MallocMTLData(void* ptr) {
+    auto texture = new MetalMTLData(ptr);
+    return (void*)texture;
+}
+
+void TargetWrapperMetal::FreeMTLData(void* ptr) {
+  if (ptr != nullptr) {
+      delete (MetalMTLData*)ptr;
+      ptr = nullptr;
+  }
 }
 
 void* TargetWrapperMetal::Malloc(size_t size) {

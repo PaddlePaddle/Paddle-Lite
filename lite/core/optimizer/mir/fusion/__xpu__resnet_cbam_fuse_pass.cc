@@ -1151,6 +1151,7 @@ class XPUResNetCbamFuser : public xpu::XPUFuseBase {
                                   const std::string& filter_name,
                                   std::vector<std::string>* max_filter_name) {
     auto* filter_t = scope->FindMutableTensor(filter_name);
+    CHECK(filter_t);
     int filter_len = filter_t->numel();
     float* filter_on_host = filter_t->mutable_data<float>();
 
@@ -1184,6 +1185,7 @@ class XPUResNetCbamFuser : public xpu::XPUFuseBase {
                                   const std::string& filter_name,
                                   std::vector<std::string>* max_filter_name) {
     auto* filter_t = scope->FindMutableTensor(filter_name);
+    CHECK(filter_t);
     auto filter_dims = filter_t->dims();
     int filter_len = filter_t->numel();
     float* filter_on_host = filter_t->mutable_data<float>();

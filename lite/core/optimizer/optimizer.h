@@ -29,6 +29,7 @@
 #include "lite/core/optimizer/mir/ssa_graph.h"
 #include "lite/core/optimizer/mir/static_kernel_pick_pass.h"
 #include "lite/core/optimizer/mir/type_target_cast_pass.h"
+#include "lite/core/optimizer/mir/x86_int8_attribute_pass.h"
 #include "lite/core/program.h"
 #include "lite/core/types.h"
 #include "lite/model_parser/model_parser.h"
@@ -38,7 +39,7 @@ namespace lite {
 
 // TODO(hong1986032) Support the following passes for the subblocks
 const std::set<std::string> kSubblockUnsupportedPasses(
-    {"memory_optimize_pass"});
+    {"memory_optimize_pass", "xpu_memory_optimize_pass"});
 
 /*
  * lite::Optimizer optimize a program. It utilize the mir passes to analysis the
