@@ -208,6 +208,20 @@ void SetBackendConfig(lite_api::MobileConfig& config) {  // NOLINT
     }
     config.set_opencl_precision(gpu_precision);
   }
+
+  std::vector<std::string> nnadapter_backends = {"imagination_nna",
+                                                 "rockchip_npu",
+                                                 "mediatek_apu",
+                                                 "huawei_kirin_npu",
+                                                 "huawei_ascend_npu",
+                                                 "amlogic_npu"};
+  if (std::find(nnadapter_backends.begin(),
+                nnadapter_backends.end(),
+                FLAGS_backend) != nnadapter_backends.end()) {
+    std::cout << "NNAdapter Backends: " << FLAGS_backend << std::endl;
+    config.set_nnadapter_device_names({FLAGS_backend});
+    config.set_nnadapter_context_properties(FLAGS_nnadapter_context_properties);
+  }
 }
 
 void OutputOptModel(const std::string& save_optimized_model_path) {

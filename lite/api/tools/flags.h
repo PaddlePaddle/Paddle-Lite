@@ -83,6 +83,8 @@ static const char opencl_tuned_file_msg[] =
     "We strongly recommend each model has a unique param name.";
 static const char opencl_tune_mode_msg[] =
     "Set opencl tune option: none, rapid, normal, exhaustive.";
+static const char nnadapter_context_properties_msg[] =
+    "Set nnadapter device hardware resources, default to null";
 
 // Profiling options
 static const char enable_op_time_profile_msg[] =
@@ -124,6 +126,8 @@ DECLARE_string(opencl_cache_dir);
 DECLARE_string(opencl_kernel_cache_file);
 DECLARE_string(opencl_tuned_file);
 DECLARE_string(opencl_tune_mode);
+DECLARE_string(nnadapter_device_name);
+DECLARE_string(nnadapter_context_properties);
 
 // Profiling options
 DECLARE_bool(enable_op_time_profile);
