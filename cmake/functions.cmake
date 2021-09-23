@@ -51,7 +51,7 @@ set(cuda_kernels CACHE INTERNAL "cuda kernels")
 function(add_kernel TARGET device level)
     set(options "")
     set(oneValueArgs "")
-    set(multiValueArgs SRCS )
+    set(multiValueArgs SRCS DEPS)
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
 
