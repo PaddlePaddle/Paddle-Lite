@@ -95,15 +95,18 @@ IOS 示例基于C++ API 开发，调用Paddle-Lite C++ API包括以下五步。�
 ```c++
 #include <iostream>
 // 引入C++ API
-#include "paddle_lite/paddle_api.h"
-#include "paddle_lite/paddle_use_ops.h"
-#include "paddle_lite/paddle_use_kernels.h"
+#include "include/paddle_api.h"
+#include "include/paddle_use_ops.h"
+#include "include/paddle_use_kernels.h"
 
 // 1. 设置MobileConfig
 MobileConfig config;
 config.set_model_from_file(<modelPath>); // 设置NaiveBuffer格式模型路径
 config.set_power_mode(LITE_POWER_NO_BIND); // 设置CPU运行模式
 config.set_threads(4); // 设置工作线程数
+// 如果需要使用Metal在GPU上加速预测，需要额外进行以下配置, 需将编译生成的lite.metallib拷贝到<metal_lib>路径下
+config.set_metal_lib_path(<metal_lib>);
+config.set_metal_use_mps(true);
 
 // 2. 创建PaddlePredictor
 std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>(config);
