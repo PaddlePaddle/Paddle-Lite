@@ -14,6 +14,9 @@
 
 #include "lite/kernels/host/prior_box_compute.h"
 #include <vector>
+
+namespace paddle {}  // namespace paddle
+
 using pb_fp32 = paddle::lite::kernels::host::PriorBoxCompute<float,
                                                              TARGET(kHost),
                                                              PRECISION(kFloat)>;

@@ -13,6 +13,9 @@
 // limitations under the License.
 
 #include "lite/kernels/host/multiclass_nms_compute.h"
+
+namespace paddle {}  // namespace paddle
+
 #ifdef ENABLE_ARM_FP16
 using float16_t = __fp16;
 
