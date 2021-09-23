@@ -19,7 +19,7 @@
 #include <typeinfo>
 #include <utility>
 
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 namespace paddle {
 namespace lite {

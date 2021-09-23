@@ -1,4 +1,4 @@
-// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -36,14 +36,17 @@ void ReluImageCompute::PrepareForRun() {
     output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
     input_buffer_ = param.X->data<MetalHalf, MetalImage>();
 #endif
-
-    function_name_ = "relu";
-    // pipline
-    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
-    pipline_ = [backend pipline:function_name_];
+    
+    setup_without_mps();
 }
 
 void ReluImageCompute::Run() {
+    @autoreleasepool {
+        run_without_mps();
+    }
+}
+
+void ReluImageCompute::run_without_mps() {
     auto pipline = pipline_;
     auto outTexture = output_buffer_->image();
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
@@ -54,6 +57,13 @@ void ReluImageCompute::Run() {
 
     [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
     [backend commit];
+}
+
+void ReluImageCompute::setup_without_mps() {
+    function_name_ = "relu";
+    // pipline
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
+    pipline_ = [backend pipline:function_name_];
 }
 
 ReluImageCompute::~ReluImageCompute() {
@@ -72,15 +82,17 @@ void Relu6ImageCompute::PrepareForRun() {
     output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
     input_buffer_ = param.X->data<MetalHalf, MetalImage>();
 #endif
-    Relu6MetalParam params{param.hard_swish_threshold};
-    params_buffer_ = std::make_shared<MetalBuffer>(metal_context_, sizeof(params), &params);
-    function_name_ = "relu6";
-    // pipline
-    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
-    pipline_ = [backend pipline:function_name_];
+    
+    setup_without_mps();
 }
 
 void Relu6ImageCompute::Run() {
+    @autoreleasepool {
+        run_without_mps();
+    }
+}
+
+void Relu6ImageCompute::run_without_mps() {
     auto pipline = pipline_;
     auto outTexture = output_buffer_->image();
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
@@ -92,6 +104,17 @@ void Relu6ImageCompute::Run() {
 
     [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
     [backend commit];
+}
+
+void Relu6ImageCompute::setup_without_mps() {
+    const auto& param = this->Param<param_t>();
+
+    Relu6MetalParam params{param.hard_swish_threshold};
+    params_buffer_ = std::make_shared<MetalBuffer>(metal_context_, sizeof(params), &params);
+    function_name_ = "relu6";
+    // pipline
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
+    pipline_ = [backend pipline:function_name_];
 }
 
 Relu6ImageCompute::~Relu6ImageCompute() {
@@ -110,15 +133,17 @@ void LeakyReluImageCompute::PrepareForRun() {
     output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
     input_buffer_ = param.X->data<MetalHalf, MetalImage>();
 #endif
-    LeakyReluMetalParam params{param.Leaky_relu_alpha};
-    params_buffer_ = std::make_shared<MetalBuffer>(metal_context_, sizeof(params), &params);
-    function_name_ = "leaky_relu";
-    // pipline
-    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
-    pipline_ = [backend pipline:function_name_];
+    
+    setup_without_mps();
 }
 
 void LeakyReluImageCompute::Run() {
+    @autoreleasepool {
+        run_without_mps();
+    }
+}
+
+void LeakyReluImageCompute::run_without_mps() {
     auto pipline = pipline_;
     auto outTexture = output_buffer_->image();
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
@@ -130,6 +155,17 @@ void LeakyReluImageCompute::Run() {
 
     [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
     [backend commit];
+}
+
+void LeakyReluImageCompute::setup_without_mps() {
+    const auto& param = this->Param<param_t>();
+
+    LeakyReluMetalParam params{param.Leaky_relu_alpha};
+    params_buffer_ = std::make_shared<MetalBuffer>(metal_context_, sizeof(params), &params);
+    function_name_ = "leaky_relu";
+    // pipline
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
+    pipline_ = [backend pipline:function_name_];
 }
 
 LeakyReluImageCompute::~LeakyReluImageCompute() {

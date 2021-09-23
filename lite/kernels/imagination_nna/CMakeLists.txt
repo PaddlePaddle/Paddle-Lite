@@ -1,3 +1,11 @@
-add_subdirectory(bridges)
+if(LITE_WITH_IMAGINATION_NNA)
+  set(IS_FAKED_KERNEL false CACHE INTERNAL "")
+  add_subdirectory(bridges)
+  set(lite_kernel_deps ${lite_kernel_deps} device_imagination_nna ${imagination_nna_subgraph_bridges} CACHE INTERNAL "")
+elseif(LITE_ON_MODEL_OPTIMIZE_TOOL OR LITE_WITH_PYTHON)
+  set(IS_FAKED_KERNEL true CACHE INTERNAL "")
+else()
+  return()
+endif()
 
-add_kernel(subgraph_compute_imagination_nna IMAGINATION_NNA basic SRCS subgraph_compute.cc DEPS ${lite_kernel_deps} device_imagination_nna subgraph_engine_base ${imagination_nna_subgraph_bridges})
+add_kernel(subgraph_compute_imagination_nna IMAGINATION_NNA basic SRCS subgraph_compute.cc)

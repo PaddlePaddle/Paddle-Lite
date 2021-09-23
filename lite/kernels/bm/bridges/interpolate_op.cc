@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include <bmcompiler_if.h>
-#include "lite/core/subgraph_bridge_registry.h"
+#include "lite/core/subgraph/subgraph_bridge_registry.h"
 #include "lite/kernels/bm/bridges/graph.h"
 
 namespace paddle {

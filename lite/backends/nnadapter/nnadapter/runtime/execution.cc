@@ -19,10 +19,9 @@ namespace nnadapter {
 namespace runtime {
 
 int Execution::SetInput(int32_t index,
-                        const int32_t* dimensions,
-                        uint32_t dimension_count,
-                        void* buffer,
-                        uint32_t length) {
+                        void* memory,
+                        void* (*access)(void* memory,
+                                        NNAdapterOperandType* type)) {
   hal::Argument* argument = nullptr;
   for (auto& input_argument : input_arguments_) {
     if (input_argument.index == index) {
@@ -35,18 +34,15 @@ int Execution::SetInput(int32_t index,
     argument = &input_arguments_.back();
     argument->index = index;
   }
-  argument->dimension_count = dimension_count;
-  memcpy(argument->dimensions, dimensions, sizeof(int32_t) * dimension_count);
-  argument->buffer = buffer;
-  argument->length = length;
+  argument->memory = memory;
+  argument->access = access;
   return NNADAPTER_NO_ERROR;
 }
 
 int Execution::SetOutput(int32_t index,
-                         const int32_t* dimensions,
-                         uint32_t dimension_count,
-                         void* buffer,
-                         uint32_t length) {
+                         void* memory,
+                         void* (*access)(void* memory,
+                                         NNAdapterOperandType* type)) {
   hal::Argument* argument = nullptr;
   for (auto& output_argument : output_arguments_) {
     if (output_argument.index == index) {
@@ -59,10 +55,8 @@ int Execution::SetOutput(int32_t index,
     argument = &output_arguments_.back();
     argument->index = index;
   }
-  argument->dimension_count = dimension_count;
-  memcpy(argument->dimensions, dimensions, sizeof(int32_t) * dimension_count);
-  argument->buffer = buffer;
-  argument->length = length;
+  argument->memory = memory;
+  argument->access = access;
   return NNADAPTER_NO_ERROR;
 }
 

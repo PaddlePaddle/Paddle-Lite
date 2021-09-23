@@ -19,10 +19,10 @@
 #include <vector>
 
 #include "lite/api/paddle_place.h"
+#include "lite/core/model/base/apis.h"
 #include "lite/core/scope.h"
 #include "lite/core/tensor.h"
 #include "lite/core/types.h"
-#include "lite/model_parser/base/apis.h"
 #include "lite/model_parser/cpp_desc.h"
 #include "lite/utils/all.h"
 /*
@@ -108,6 +108,8 @@ struct SubgraphParam : ParamBase {
   std::vector<std::string> output_names{};
   std::vector<std::string> input_data_names{};
   std::vector<std::string> output_data_names{};
+  std::vector<float> input_data_scales{};
+  std::vector<float> output_data_scales{};
   int block_idx{-1};
   std::shared_ptr<const cpp::ProgramDesc> program_desc{nullptr};
   Scope* exec_scope{nullptr};
@@ -450,6 +452,35 @@ struct ActivationGradParam : ParamBase {
   const lite::Tensor* Out_grad{};
 };
 
+// For Sparse Convolution op
+struct SparseConvParam : ParamBase {
+  const lite::Tensor* x{};
+  // An array of float values storing non-zero kernel elements
+  const lite::Tensor* nonzero_weights{};
+  /* An array of int32_t values storing scaled
+   * [by sizeof(input element)] difference  between input channels
+   * corresponding to successive non-zero element
+   */
+  const lite::Tensor* diffs{};
+  // the number of non-zero kernel elements per each output channel
+  const lite::Tensor* oc_nonzeros{};
+  const lite::Tensor* bias{nullptr};
+  lite::Tensor* output{};
+  int first_ic{0};
+  std::vector<int> strides{1, 1};
+  std::shared_ptr<std::vector<int>> paddings;
+  int groups{1};
+  std::shared_ptr<std::vector<int>> dilations;
+  // for activation
+  bool fuse_relu{false};
+  ActivationParam activation_param;
+  bool enable_int8{false};
+  float input_scale{1.0f};
+  std::vector<float> weight_scale{};
+  float output_scale{1.0f};
+  int bit_length{8};
+};
+
 // For Convolution op
 struct ConvParam : ParamBase {
   lite::Tensor* x{};
@@ -599,6 +630,9 @@ struct PoolParam : ParamBase {
     }
     return output_tensor_ptrs_cache_.get();
   }
+#ifdef LITE_WITH_XPU
+  bool pad_zero{false};
+#endif
 };
 
 // For Dropout op
@@ -915,6 +949,27 @@ struct ArgmaxParam : ParamBase {
   bool keepdims{false};
 };
 
+///----------------------- inverse operators ----------------------
+struct InverseParam : ParamBase {
+  lite::Tensor* Input{};
+  lite::Tensor* Output{};
+};
+
+///----------------------- index_select operators ----------------------
+struct Index_selectParam : ParamBase {
+  lite::Tensor* X{};
+  lite::Tensor* Index{};
+  lite::Tensor* Out{};
+  int dim{0};
+};
+
+///----------------------- reverse operators ----------------------
+struct ReverseParam : ParamBase {
+  lite::Tensor* X{};
+  lite::Tensor* Out{};
+  std::vector<int> Axis;
+};
+
 ///----------------------- axpy operators ----------------------
 struct AxpyParam : ParamBase {
   lite::Tensor* Scale{};
@@ -1210,6 +1265,7 @@ struct CompareParam : ParamBase {
   const lite::Tensor* Y{};
   bool force_cpu{0};
   int axis{-1};
+  bool fuse_greater_than{0};
   lite::Tensor* Out{};
 };
 
@@ -1920,6 +1976,13 @@ struct XPUSoftmaxTopkParam : ParamBase {
   int K{1};
 };
 
+struct XPUMultiSoftmaxParam : ParamBase {
+  const lite::Tensor* input{};
+  lite::Tensor* concat_output{};
+  std::vector<lite::Tensor*> output;
+  std::vector<int> lod;
+};
+
 struct XPUBlockFuseParam : ParamBase {
   const lite::Tensor* input{nullptr};
   const lite::Tensor* filter{nullptr};
@@ -2172,6 +2235,19 @@ struct XPUConvPixelShuffleFuseParam : ParamBase {
   bool has_bias_1{false};
 };
 
+struct XPUDynamicLstmFuseParam : ParamBase {
+  const lite::Tensor* input{nullptr};
+  const lite::Tensor* weight_0{nullptr};
+  const lite::Tensor* weight_1{nullptr};
+  const lite::Tensor* bias_0{nullptr};
+  const lite::Tensor* bias_1{nullptr};
+  const lite::Tensor* h0{nullptr};
+  const lite::Tensor* c0{nullptr};
+  lite::Tensor* hidden{nullptr};
+  bool has_h0{false};
+  bool is_reverse{false};
+};
+
 // For DeformableConvolution op
 struct DeformableConvParam : ParamBase {
   lite::Tensor* x{};
@@ -2279,11 +2355,11 @@ using SinParam = TrigonometricParam;
 using CosParam = TrigonometricParam;
 
 struct FlattenContiguousRangeParam : ParamBase {
-  lite::Tensor* x{};
-  lite::Tensor* out{};
-  lite::Tensor* xshape;
-  int start_axis;
-  int stop_axis;
+  const lite::Tensor* x{nullptr};
+  lite::Tensor* out{nullptr};
+  lite::Tensor* xshape{nullptr};
+  int start_axis{1};
+  int stop_axis{1};
 };
 
 struct LoDArrayLengthParam : ParamBase {
@@ -2438,11 +2514,29 @@ struct FlipParam : ParamBase {
   std::vector<int> axis;
 };
 
-struct WriteBackParam : ParamBase {
-  const lite::Tensor* x{};
-  lite::Tensor* y{};
+struct CosSimParam : ParamBase {
+  const lite::Tensor* x{nullptr};
+  const lite::Tensor* y{nullptr};
+  lite::Tensor* out{nullptr};
+  lite::Tensor* x_norm{nullptr};
+  lite::Tensor* y_norm{nullptr};
 };
 
+struct WriteBackParam : ParamBase {
+  bool tensor_array_copy{false};
+  const lite::Tensor* x{};
+  lite::Tensor* y{};
+
+  std::vector<lite::Tensor>* array_x{};
+  std::vector<lite::Tensor>* array_y{};
+};
+
+struct UniqueWithCountsParam : ParamBase {
+  const lite::Tensor* X{};
+  lite::Tensor* Out{};
+  lite::Tensor* Index{};
+  lite::Tensor* Count{};
+};
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

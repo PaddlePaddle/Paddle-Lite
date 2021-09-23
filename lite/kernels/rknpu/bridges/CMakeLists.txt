@@ -2,10 +2,10 @@ if(NOT LITE_WITH_RKNPU)
   return()
 endif()
 
-lite_cc_library(subgraph_bridge_utility_rknpu SRCS utility.cc DEPS ${rknpu_builder_libs} tensor)
+lite_cc_library(subgraph_bridge_utility_rknpu SRCS utility.cc DEPS ${rknpu_builder_libs} core)
 lite_cc_library(subgraph_bridge_graph_rknpu SRCS graph.cc DEPS subgraph_bridge_utility_rknpu)
 
-set(rknpu_subgraph_bridge_deps subgraph_bridge_registry subgraph_bridge_utility_rknpu subgraph_bridge_graph_rknpu)
+set(rknpu_subgraph_bridge_deps core subgraph_bridge_utility_rknpu subgraph_bridge_graph_rknpu)
 
 lite_cc_library(subgraph_bridge_conv_op_rknpu SRCS conv_op.cc DEPS ${rknpu_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_act_op_rknpu SRCS act_op.cc DEPS ${rknpu_subgraph_bridge_deps})
@@ -23,7 +23,7 @@ lite_cc_library(subgraph_bridge_flatten_ops_rknpu SRCS flatten_op.cc DEPS ${rknp
 lite_cc_library(subgraph_bridge_norm_ops_rknpu SRCS norm_op.cc DEPS ${rknpu_subgraph_bridge_deps})
 
 set(rknpu_subgraph_bridges
-        subgraph_bridge_registry
+        core
         subgraph_bridge_utility_rknpu
         subgraph_bridge_graph_rknpu
         subgraph_bridge_conv_op_rknpu

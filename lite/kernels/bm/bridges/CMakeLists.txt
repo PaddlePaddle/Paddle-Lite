@@ -5,7 +5,7 @@ endif()
 lite_cc_library(subgraph_bridge_utility_bm SRCS utility.cc DEPS)
 lite_cc_library(subgraph_bridge_graph_bm SRCS graph.cc DEPS subgraph_bridge_utility_bm)
 
-set(bm_subgraph_bridge_deps subgraph_bridge_registry subgraph_bridge_utility_bm subgraph_bridge_graph_bm)
+set(bm_subgraph_bridge_deps core subgraph_bridge_utility_bm subgraph_bridge_graph_bm)
 
 lite_cc_library(subgraph_bridge_act_op_bm SRCS act_op.cc DEPS ${bm_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_conv_op_bm SRCS conv_op.cc DEPS ${bm_subgraph_bridge_deps})
@@ -40,7 +40,7 @@ lite_cc_library(subgraph_bridge_act_enhance_op_bm SRCS act_enhance_op.cc DEPS ${
 lite_cc_library(subgraph_bridge_im2sequence_op_bm SRCS im2sequence_op.cc DEPS ${bm_subgraph_bridge_deps})
 
 set(bm_subgraph_bridges
-        subgraph_bridge_registry
+        core
         subgraph_bridge_graph_bm
         subgraph_bridge_im2sequence_op_bm
         subgraph_bridge_act_op_bm

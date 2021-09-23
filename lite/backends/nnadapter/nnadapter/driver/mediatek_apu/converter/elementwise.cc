@@ -12,38 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/mediatek_apu/converter.h"
+#include "core/operation/elementwise.h"
+#include "driver/mediatek_apu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace mediatek_apu {
 
-int Program::ConvertElementwise(hal::Operation* operation) {
-  auto& input_operands = operation->input_operands;
-  auto& output_operands = operation->output_operands;
-  auto input_count = input_operands.size();
-  auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 3);
-  NNADAPTER_CHECK_EQ(output_count, 1);
-  // Input0
-  auto input0_operand = input_operands[0];
-  NNADAPTER_VLOG(5) << "input0: " << OperandToString(input0_operand);
-  // Input1
-  auto input1_operand = input_operands[1];
-  NNADAPTER_VLOG(5) << "input1: " << OperandToString(input1_operand);
-  // Fuse code
-  auto fuse_code = *reinterpret_cast<int32_t*>(input_operands[2]->buffer);
-  NNADAPTER_VLOG(5) << "fuse_code=" << fuse_code;
-  // Output
-  auto output_operand = output_operands[0];
-  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
+int ConvertElementwise(Converter* converter, hal::Operation* operation) {
+  ELEMENTWISE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to Neuron operands and operations
-  auto input0_index = ConvertOperand(input0_operand);
-  auto input1_index = ConvertOperand(input1_operand);
-  auto fuse_code_index = AddInt32ConstantOperand(ConvertFuseCode(fuse_code));
-  auto output_index = ConvertOperand(output_operand);
+  auto input0_index = converter->GetMappedIndex(input0_operand);
+  if (input0_index == INVALID_INDEX) {
+    input0_index = converter->ConvertOperand(input0_operand);
+  }
+  auto input1_index = converter->GetMappedIndex(input1_operand);
+  if (input1_index == INVALID_INDEX) {
+    input1_index = converter->ConvertOperand(input1_operand);
+  }
+  auto fuse_code_index = converter->AddInt32ConstantOperand(
+      ConvertFuseCodeToNeuronFuseCode(fuse_code));
+  auto output_index = converter->ConvertOperand(output_operand);
   NeuronOperationType op_type;
   if (operation->type == NNADAPTER_ADD) {
     op_type = NEURON_ADD;
@@ -58,11 +49,11 @@ int Program::ConvertElementwise(hal::Operation* operation) {
                          << OperationTypeToString(operation->type)
                          << " is found.";
   }
-  std::vector<uint32_t> input_indexes = {
-      input0_index, input1_index, fuse_code_index};
-  std::vector<uint32_t> output_indexes = {output_index};
-  NNADAPTER_CHECK_EQ(AddOperation(op_type, &input_indexes, &output_indexes),
-                     NEURON_NO_ERROR);
+  NNADAPTER_CHECK_EQ(
+      converter->AddOperation(op_type,
+                              {input0_index, input1_index, fuse_code_index},
+                              {output_index}),
+      NEURON_NO_ERROR);
   return NNADAPTER_NO_ERROR;
 }
 

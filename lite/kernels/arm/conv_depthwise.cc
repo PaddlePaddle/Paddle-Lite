@@ -118,8 +118,6 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::ReInitWhenNeeded() {
   bool s1_trans =
       (!support_act_type_s1 || !pads_equal || !support_width_type_s1);
   bool s2_trans = (!support_pad_type_s2 || !support_width_type_s2);
-  (has_act == true && (act_type == lite_api::ActivationType::kRelu ||
-                       act_type == lite_api::ActivationType::kRelu6));
   /// select dw conv kernel
   if (kw == 3) {
     // trans weights
@@ -279,6 +277,12 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
       param.activation_param.active_type == lite_api::ActivationType::kRelu6) {
     param.activation_param.Relu_clipped_coef =
         param.activation_param.Relu_clipped_coef / param.output_scale;
+  }
+  //! update leakyRelu parameter
+  if (param.activation_param.active_type ==
+      lite_api::ActivationType::kLeakyRelu) {
+    param.activation_param.Leaky_relu_alpha =
+        param.activation_param.Leaky_relu_alpha / param.output_scale;
   }
 
   if (kw == 3) {

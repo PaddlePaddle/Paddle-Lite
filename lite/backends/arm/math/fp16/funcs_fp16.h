@@ -22,7 +22,9 @@
 #include "lite/backends/arm/math/fp16/conv3x3_depthwise_fp16.h"
 #include "lite/backends/arm/math/fp16/conv_block_utils_fp16.h"
 #include "lite/backends/arm/math/fp16/conv_impl_fp16.h"
+#include "lite/backends/arm/math/fp16/conv_transpose_depthwise_fp16.h"
 #include "lite/backends/arm/math/fp16/elementwise_fp16.h"
+#include "lite/backends/arm/math/fp16/fill_bias_act_fp16.h"
 #include "lite/backends/arm/math/fp16/gemm_c8_fp16.h"
 #include "lite/backends/arm/math/fp16/gemm_fp16.h"
 #include "lite/backends/arm/math/fp16/gemv_fp16.h"
@@ -52,16 +54,7 @@ inline float16x8_t expq_ps_f16(float16x8_t x) {
   float32x4_t vb = vcvt_f32_f16(vget_low_f16(x));
   float32x4_t vexpa = exp_ps(va);
   float32x4_t vexpb = exp_ps(vb);
-  float16x8_t vres;
-  float16x4_t vresa = vcvt_f16_f32(vexpa);
-  float16x4_t vresb = vcvt_f16_f32(vexpb);
-  for (int i = 0; i < 3; i++) {
-    vres[i + 4] = vresa[i];
-  }
-  for (int i = 0; i < 3; i++) {
-    vres[i] = vresb[i];
-  }
-  return vres;
+  return vcombine_f16(vcvt_f16_f32(vexpa), vcvt_f16_f32(vexpb));
 }
 
 inline float16x4_t exp_ps_f16(float16x4_t x) {
@@ -81,6 +74,79 @@ inline float16x4_t div_ps_f16(float16x4_t a, float16x4_t b) {
   float16x4_t reciprocal = vrecpe_f16(b);
   reciprocal = vmul_f16(vrecps_f16(b, reciprocal), reciprocal);
   return vmul_f16(a, reciprocal);
+}
+template <lite_api::ActivationType Act = lite_api::ActivationType::kIndentity>
+inline float16x8_t vactive_f16(const float16x8_t& x) {
+  return x;
+}
+
+template <>
+inline float16x8_t vactive_f16<lite_api::ActivationType::kRelu>(
+    const float16x8_t& x) {
+  float16x8_t __zero = vdupq_n_f16(0.f);
+  return vmaxq_f16(x, __zero);
+}
+
+template <>
+inline float16x8_t vactive_f16<lite_api::ActivationType::kRelu6>(
+    const float16x8_t& x) {
+  float16x8_t __zero = vdupq_n_f16(0.f);
+  float16x8_t __six = vdupq_n_f16(6.f);
+  return vminq_f16(vmaxq_f16(x, __zero), __six);
+}
+
+template <>
+inline float16x8_t vactive_f16<lite_api::ActivationType::kSigmoid>(
+    const float16x8_t& x) {
+  float16x8_t __one = vdupq_n_f16(1.f);
+  float16x8_t __x = vnegq_f16(x);
+  __x = expq_ps_f16(__x);
+  __x = vaddq_f16(__x, __one);
+  float16x8_t __out = vrecpeq_f16(__x);
+  return vmulq_f16(vrecpsq_f16(__x, __out), __out);
+}
+
+template <>
+inline float16x8_t vactive_f16<lite_api::ActivationType::kTanh>(
+    const float16x8_t& x) {
+  float16x8_t __one = vdupq_n_f16(1.f);
+  float16x8_t __x = vmulq_n_f16(x, -2.f);
+  __x = expq_ps_f16(__x);
+  __x = vaddq_f16(__x, __one);
+  float16x8_t __out = vrecpeq_f16(__x);
+  __out = vmulq_f16(vrecpsq_f16(__x, __out), __out);
+  __out = vmulq_n_f16(__out, 2.f);
+  return vsubq_f16(__out, __one);
+}
+
+template <lite_api::ActivationType Act = lite_api::ActivationType::kIndentity>
+inline float16_t active_f16(const float16_t& x) {
+  return x;
+}
+
+template <>
+inline float16_t active_f16<lite_api::ActivationType::kRelu>(
+    const float16_t& x) {
+  return (x > 0.f ? x : 0.f);
+}
+
+template <>
+inline float16_t active_f16<lite_api::ActivationType::kRelu6>(
+    const float16_t& x) {
+  float16_t max_val = (x > 0.f ? x : 0.f);
+  return max_val > 6.f ? 6.f : max_val;
+}
+
+template <>
+inline float16_t active_f16<lite_api::ActivationType::kSigmoid>(
+    const float16_t& x) {
+  return 1.f / (1.f + exp(-x));
+}
+
+template <>
+inline float16_t active_f16<lite_api::ActivationType::kTanh>(
+    const float16_t& x) {
+  return 2.f / (1.f + exp(-2.f * x)) - 1.f;
 }
 }  // namespace fp16
 }  // namespace math

@@ -44,9 +44,9 @@ static hal::Operand* AddOperand(hal::Model* model,
                                 bool copy = true) {
   auto operand = AddOperand(model);
   memset(&operand->type, 0, sizeof(NNAdapterOperandType));
-  operand->type.dimension_count = dimensions.size();
+  operand->type.dimensions.count = dimensions.size();
   if (!dimensions.empty()) {
-    memcpy(operand->type.dimensions,
+    memcpy(operand->type.dimensions.data,
            &dimensions[0],
            dimensions.size() * sizeof(int32_t));
   }
@@ -55,26 +55,19 @@ static hal::Operand* AddOperand(hal::Model* model,
     // Quant type
     if (quant_scale_count > 1) {
       // Symmetric per-channel quantization
-      NNADAPTER_CHECK(
-          !zero_point &&
-              precision == NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL ||
-          precision == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL);
+      NNADAPTER_CHECK(!zero_point && IsSymmPerChannelQuantType(precision));
       operand->type.symm_per_channel_params.scales = quant_scales;
       operand->type.symm_per_channel_params.scale_count = quant_scale_count;
       operand->type.symm_per_channel_params.channel_dim = quant_channel_dim;
     } else {
       if (zero_point) {
         // Asymmetric per-layer quantization
-        NNADAPTER_CHECK(
-            precision == NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER ||
-            precision == NNADAPTER_TENSOR_QUANT_UINT32_ASYMM_PER_LAYER);
+        NNADAPTER_CHECK(IsAsymmPerLayerQuantType(precision));
         operand->type.asymm_per_layer_params.scale = quant_scales[0];
         operand->type.asymm_per_layer_params.zero_point = zero_point[0];
       } else {
         // Symmetric per-layer quantization
-        NNADAPTER_CHECK(
-            precision == NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER ||
-            precision == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER);
+        NNADAPTER_CHECK(IsSymmPerLayerQuantType(precision));
         operand->type.symm_per_layer_params.scale = quant_scales[0];
       }
     }
@@ -83,8 +76,8 @@ static hal::Operand* AddOperand(hal::Model* model,
   }
   if (buffer) {
     // Constant operand
-    operand->length =
-        OperandPrecisionLength(precision) * ProductionOfDimensions(dimensions);
+    operand->length = GetOperandPrecisionDataLength(precision) *
+                      ProductionOfDimensions(dimensions);
     if (copy) {
       operand->buffer = malloc(operand->length);
       NNADAPTER_CHECK(operand->buffer != nullptr)
@@ -333,8 +326,9 @@ NNADAPTER_EXPORT hal::Operand* AddFloat32VariableOperand(
 
 NNADAPTER_EXPORT void ReshapeOperand(hal::Operand* operand,
                                      std::vector<int32_t> dimensions) {
-  ReshapeDimensions(
-      operand->type.dimensions, &operand->type.dimension_count, dimensions);
+  ReshapeDimensions(operand->type.dimensions.data,
+                    &operand->type.dimensions.count,
+                    dimensions);
 }
 
 NNADAPTER_EXPORT void TransposeOperand(hal::Operand* operand,
@@ -344,7 +338,7 @@ NNADAPTER_EXPORT void TransposeOperand(hal::Operand* operand,
       operand->type.lifetime == NNADAPTER_CONSTANT_REFERENCE;
   auto is_constant = is_constant_copy || is_constant_reference;
   NNADAPTER_CHECK(!permutation.empty()) << "Permutation is empty!";
-  NNADAPTER_CHECK_EQ(permutation.size(), operand->type.dimension_count)
+  NNADAPTER_CHECK_EQ(permutation.size(), operand->type.dimensions.count)
       << "The rank of permutation and operand mismatch!";
   if (is_constant) {
 #define OPERAND_TRANSPOSE_DATA(bytes, dtype)                          \
@@ -357,8 +351,8 @@ NNADAPTER_EXPORT void TransposeOperand(hal::Operand* operand,
     auto origin_buffer = operand->buffer;
     auto transform_buffer = malloc(operand->length);
     NNADAPTER_CHECK(transform_buffer) << "Out of memory!";
-    auto dimensions = operand->type.dimensions;
-    int bytes = OperandPrecisionLength(operand->type.precision);
+    auto dimensions = operand->type.dimensions.data;
+    int bytes = GetOperandPrecisionDataLength(operand->type.precision);
     switch (bytes) {
       OPERAND_TRANSPOSE_DATA(1, int8_t);
       OPERAND_TRANSPOSE_DATA(2, int16_t);
@@ -381,7 +375,7 @@ NNADAPTER_EXPORT void TransposeOperand(hal::Operand* operand,
 #undef OPERAND_TRANSPOSE_DATA
   } else {
     // Only transpose the dimensions the non-constant operands
-    TransposeDimensions(operand->type.dimensions, permutation);
+    TransposeDimensions(operand->type.dimensions.data, permutation);
   }
 }
 
@@ -437,6 +431,25 @@ NNADAPTER_EXPORT bool IsConstantOperand(hal::Operand* operand) {
          operand->type.lifetime == NNADAPTER_CONSTANT_REFERENCE;
 }
 
+NNADAPTER_EXPORT bool IsModelInputOperand(hal::Operand* operand) {
+  return operand->type.lifetime == NNADAPTER_MODEL_INPUT;
+}
+
+NNADAPTER_EXPORT bool IsModelOutputOperand(hal::Operand* operand) {
+  return operand->type.lifetime == NNADAPTER_MODEL_OUTPUT;
+}
+
+NNADAPTER_EXPORT bool IsOperationWithAllInputConstantOperands(
+    hal::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  for (auto input_operand : input_operands) {
+    if (!IsConstantOperand(input_operand)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 std::vector<hal::Operation*> GetOperandConsumers(hal::Model* model,
                                                  hal::Operand* operand) {
   std::vector<hal::Operation*> consumers;
@@ -450,7 +463,8 @@ std::vector<hal::Operation*> GetOperandConsumers(hal::Model* model,
   return consumers;
 }
 
-hal::Operation* GetOperandProducer(hal::Model* model, hal::Operand* operand) {
+NNADAPTER_EXPORT hal::Operation* GetOperandProducer(hal::Model* model,
+                                                    hal::Operand* operand) {
   hal::Operation* producer = nullptr;
   for (auto& operation : model->operations) {
     auto& output_operands = operation.output_operands;
@@ -464,6 +478,30 @@ hal::Operation* GetOperandProducer(hal::Model* model, hal::Operand* operand) {
   return producer;
 }
 
+NNADAPTER_EXPORT int GetModelInputOperandIndex(hal::Model* model,
+                                               hal::Operand* operand) {
+  if (IsModelInputOperand(operand)) {
+    for (size_t i = 0; i < model->input_operands.size(); i++) {
+      if (model->input_operands[i] == operand) {
+        return i;
+      }
+    }
+  }
+  return -1;
+}
+
+NNADAPTER_EXPORT int GetModelOutputOperandIndex(hal::Model* model,
+                                                hal::Operand* operand) {
+  if (IsModelOutputOperand(operand)) {
+    for (size_t i = 0; i < model->output_operands.size(); i++) {
+      if (model->output_operands[i] == operand) {
+        return i;
+      }
+    }
+  }
+  return -1;
+}
+
 NNADAPTER_EXPORT hal::Operand* AddTransposeOperation(
     hal::Model* model,
     hal::Operand* input_operand,
@@ -472,7 +510,7 @@ NNADAPTER_EXPORT hal::Operand* AddTransposeOperation(
   memcpy(&output_operand->type,
          &input_operand->type,
          sizeof(NNAdapterOperandType));
-  TransposeDimensions(output_operand->type.dimensions, permutation);
+  TransposeDimensions(output_operand->type.dimensions.data, permutation);
   // Update the inputs of the operations and the output of the model
   InsertOperand(model, input_operand, output_operand, true);
   auto perm_operand = AddInt32ConstantOperand(model, permutation);
@@ -490,8 +528,8 @@ NNADAPTER_EXPORT hal::Operand* AddReshapeOperation(hal::Model* model,
   memcpy(&output_operand->type,
          &input_operand->type,
          sizeof(NNAdapterOperandType));
-  ReshapeDimensions(output_operand->type.dimensions,
-                    &output_operand->type.dimension_count,
+  ReshapeDimensions(output_operand->type.dimensions.data,
+                    &output_operand->type.dimensions.count,
                     shape);
   // Update the inputs of the operations and the output of the model
   InsertOperand(model, input_operand, output_operand, true);
@@ -503,8 +541,62 @@ NNADAPTER_EXPORT hal::Operand* AddReshapeOperation(hal::Model* model,
   return output_operand;
 }
 
+NNADAPTER_EXPORT hal::Operand* AddDummyOperation(hal::Model* model,
+                                                 hal::Operand* input_operand) {
+  // Insert a new operand after input_operand
+  auto output_operand = AddOperand(model);
+  memcpy(&output_operand->type,
+         &input_operand->type,
+         sizeof(NNAdapterOperandType));
+  InsertOperand(model, input_operand, output_operand, true);
+  // Add a zero addend operand
+  auto zero_operand = AddOperand(model);
+  memcpy(
+      &zero_operand->type, &input_operand->type, sizeof(NNAdapterOperandType));
+  zero_operand->type.dimensions.count = 1;
+  zero_operand->type.dimensions.data[0] = 1;
+  zero_operand->length =
+      GetOperandPrecisionDataLength(zero_operand->type.precision);
+  zero_operand->buffer = malloc(zero_operand->length);
+  NNADAPTER_CHECK(zero_operand->buffer != nullptr)
+      << "Failed to allocate " << zero_operand->length
+      << " bytes for the buffer of an operand, out of memory!";
+  memset(zero_operand->buffer, 0, zero_operand->length);
+  zero_operand->type.lifetime = NNADAPTER_CONSTANT_COPY;
+  auto fuse_code_operand = AddInt32ConstantOperand(model, 0);
+  // Insert a new ADD operation between a new operand and output_operand
+  auto dummy_add_operation = AddOperation(model);
+  dummy_add_operation->type = NNADAPTER_ADD;
+  dummy_add_operation->input_operands = {
+      input_operand, zero_operand, fuse_code_operand};
+  dummy_add_operation->output_operands = {output_operand};
+  return output_operand;
+}
+
+NNADAPTER_EXPORT hal::Operand* AddUnaryOperation(
+    hal::Model* model,
+    hal::Operand* input_operand,
+    NNAdapterOperationType operation_type) {
+  // Insert a new operand after input_operand
+  auto output_operand = AddOperand(model);
+  memcpy(&output_operand->type,
+         &input_operand->type,
+         sizeof(NNAdapterOperandType));
+  InsertOperand(model, input_operand, output_operand, true);
+  auto unary_operation = AddOperation(model);
+  unary_operation->type = operation_type;
+  unary_operation->input_operands = {input_operand};
+  unary_operation->output_operands = {output_operand};
+  return output_operand;
+}
+
 NNADAPTER_EXPORT std::vector<hal::Operation*> SortOperationsInTopologicalOrder(
     hal::Model* model) {
+  NNADAPTER_VLOG(5) << "model total operands: " << model->operands.size();
+  NNADAPTER_VLOG(5) << "model input operands: " << model->input_operands.size();
+  NNADAPTER_VLOG(5) << "model output operands: "
+                    << model->output_operands.size();
+  NNADAPTER_VLOG(5) << "model total operations: " << model->operations.size();
   std::vector<hal::Operation*> operations;  // Operations in topological order
   std::vector<hal::Operation*> queue;
   // Use to find all of adjacent operations according to a given operand.
@@ -514,8 +606,12 @@ NNADAPTER_EXPORT std::vector<hal::Operation*> SortOperationsInTopologicalOrder(
   for (auto& operation : model->operations) {
     uint32_t count = 0;
     for (auto operand : operation.input_operands) {
-      auto lifetime = operand->type.lifetime;
+      NNAdapterOperandLifetimeCode lifetime{NNADAPTER_CONSTANT_COPY};
+      if (operand != nullptr) {
+        lifetime = operand->type.lifetime;
+      }
       if (lifetime == NNADAPTER_TEMPORARY_VARIABLE ||
+          lifetime == NNADAPTER_TEMPORARY_SHAPE ||
           lifetime == NNADAPTER_MODEL_OUTPUT) {
         count++;
         map.insert(

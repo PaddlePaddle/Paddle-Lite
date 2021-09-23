@@ -17,7 +17,7 @@
 #include <string>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
-#include "lite/core/arena/framework.h"
+#include "lite/core/test/arena/framework.h"
 #include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
@@ -95,7 +95,14 @@ TEST(Dropout, precision) {
   LOG(INFO) << "test dropout op";
   float abs_error = 2e-5;
   Place place;
-#if defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 2e-1;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
@@ -112,13 +119,17 @@ TEST(Dropout, precision) {
     for (auto dropout_prob : {0., 0.2, 1.}) {
       for (auto dropout_implementation :
            {"downgrade_in_infer", "upscale_in_train"}) {
-#ifdef LITE_WITH_NPU
+#if defined(LITE_WITH_NPU)
         if (dims.size() < 2) continue;
-#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+#endif
+#if (defined(LITE_WITH_NNADAPTER) &&               \
+     defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)) || \
+    defined(LITE_WITH_HUAWEI_ASCEND_NPU)
         const double eps = 1e-6;
         if (fabs(dropout_prob - 0.0) < eps || fabs(dropout_prob - 1.0) < eps ||
-            strcmp(dropout_implementation, "upscale_in_train") == 0)
+            strcmp(dropout_implementation, "upscale_in_train") == 0) {
           continue;
+        }
 #endif
         std::unique_ptr<arena::TestCase> tester(new DropoutComputeTester(
             place, "def", DDim(dims), dropout_prob, dropout_implementation));

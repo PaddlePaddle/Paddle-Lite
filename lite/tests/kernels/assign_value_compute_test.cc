@@ -15,7 +15,7 @@
 #include <gtest/gtest.h>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
-#include "lite/core/arena/framework.h"
+#include "lite/core/test/arena/framework.h"
 
 using paddle::lite::core::FluidType;
 
@@ -143,7 +143,19 @@ class AssignValueComputeTester : public arena::TestCase {
 
 TEST(AssignValue, precision) {
   Place place;
-#if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+  // TODO(shentanyue)
+  return;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
+#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
 #else
   return;
@@ -156,7 +168,7 @@ TEST(AssignValue, precision) {
           for (int w : {2}) {
             std::unique_ptr<arena::TestCase> tester(
                 new AssignValueComputeTester(place, "def", dtype, n, c, h, w));
-            arena::Arena arena(std::move(tester), place, 2e-5);
+            arena::Arena arena(std::move(tester), place, abs_error);
             arena.TestPrecision();
           }
         }

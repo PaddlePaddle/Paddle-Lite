@@ -16,11 +16,11 @@ limitations under the License. */
 #include <cmath>
 #include <vector>
 
+#include "lite/backends/x86/fluid/float16.h"
 #include "lite/core/context.h"
 #include "lite/core/op_lite.h"
 #include "lite/core/tensor.h"
-#include "lite/fluid/float16.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 // #include "lite/tensor_util.h"
 
 namespace paddle {

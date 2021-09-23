@@ -30,22 +30,21 @@ static void UpdateBiasScaleWithInputScaleXWeightScale(
   auto& input_type = input_operand->type;
   auto& weight_type = weight_operand->type;
   auto& bias_type = bias_operand->type;
-  bool is_symm_per_layer =
-      IsInt8SymmPerLayerQuantization(input_type.precision) &&
-      IsInt8SymmPerLayerQuantization(weight_type.precision) &&
-      IsInt32SymmPerLayerQuantization(bias_type.precision);
+  bool is_symm_per_layer = IsInt8SymmPerLayerQuantType(input_type.precision) &&
+                           IsInt8SymmPerLayerQuantType(weight_type.precision) &&
+                           IsInt32SymmPerLayerQuantType(bias_type.precision);
   bool is_symm_per_channel =
-      IsInt8SymmPerLayerQuantization(input_type.precision) &&
-      IsInt8SymmPerChannelQuantization(weight_type.precision) &&
-      IsInt32SymmPerChannelQuantization(bias_type.precision);
+      IsInt8SymmPerLayerQuantType(input_type.precision) &&
+      IsInt8SymmPerChannelQuantType(weight_type.precision) &&
+      IsInt32SymmPerChannelQuantType(bias_type.precision);
   bool is_asymm_per_layer =
-      IsUInt8AsymmPerLayerQuantization(input_type.precision) &&
-      IsUInt8AsymmPerLayerQuantization(weight_type.precision) &&
-      IsInt32SymmPerLayerQuantization(bias_type.precision);
+      IsUInt8AsymmPerLayerQuantType(input_type.precision) &&
+      IsUInt8AsymmPerLayerQuantType(weight_type.precision) &&
+      IsInt32SymmPerLayerQuantType(bias_type.precision);
   bool is_asymm_per_channel =
-      IsUInt8AsymmPerLayerQuantization(input_type.precision) &&
-      IsInt8SymmPerChannelQuantization(weight_type.precision) &&
-      IsInt32SymmPerChannelQuantization(bias_type.precision);
+      IsUInt8AsymmPerLayerQuantType(input_type.precision) &&
+      IsInt8SymmPerChannelQuantType(weight_type.precision) &&
+      IsInt32SymmPerChannelQuantType(bias_type.precision);
   NNADAPTER_CHECK(is_symm_per_layer || is_symm_per_channel ||
                   is_asymm_per_layer || is_asymm_per_channel);
   if (is_symm_per_layer || is_asymm_per_layer) {
@@ -60,8 +59,8 @@ static void UpdateBiasScaleWithInputScaleXWeightScale(
     float new_bias_scale = input_scale * weight_scale;
     bool update_bias_scale = std::fabs(new_bias_scale - old_bias_scale) > 1e-7f;
     if (update_bias_scale) {
-      NNADAPTER_CHECK_EQ(bias_type.dimension_count, 1);
-      auto channel_size = bias_type.dimensions[0];
+      NNADAPTER_CHECK_EQ(bias_type.dimensions.count, 1);
+      auto channel_size = bias_type.dimensions.data[0];
       auto quant_bias_data = reinterpret_cast<int32_t*>(bias_operand->buffer);
       std::vector<float> float_bias_data(channel_size);
       DequantizeData<int32_t>(quant_bias_data,
@@ -94,8 +93,8 @@ static void UpdateBiasScaleWithInputScaleXWeightScale(
           std::fabs(new_bias_scale[i] - old_bias_scale[i]) > 1e-7f;
     }
     if (update_bias_scale) {
-      NNADAPTER_CHECK_EQ(bias_type.dimension_count, 1);
-      NNADAPTER_CHECK_EQ(bias_type.dimensions[0], channel_size);
+      NNADAPTER_CHECK_EQ(bias_type.dimensions.count, 1);
+      NNADAPTER_CHECK_EQ(bias_type.dimensions.data[0], channel_size);
       auto quant_bias_data = reinterpret_cast<int32_t*>(bias_operand->buffer);
       std::vector<float> float_bias_data(channel_size);
       DequantizeData<int32_t>(quant_bias_data,
@@ -138,6 +137,7 @@ void UpdateBiasQuantParamsAndValues(hal::Model* model) {
       case NNADAPTER_ADD:
       case NNADAPTER_CONCAT:
       case NNADAPTER_DIV:
+      case NNADAPTER_FLATTEN:
       case NNADAPTER_HARD_SIGMOID:
       case NNADAPTER_HARD_SWISH:
       case NNADAPTER_MAX_POOL_2D:

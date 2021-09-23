@@ -77,6 +77,9 @@ class ConvOpLite : public OpLite {
     param_.x = scope->FindVar(X)->GetMutable<lite::Tensor>();
     param_.filter = scope->FindVar(Filter)->GetMutable<lite::Tensor>();
     param_.output = scope->FindVar(Out)->GetMutable<lite::Tensor>();
+    CHECK(param_.x);
+    CHECK(param_.filter);
+    CHECK(param_.output);
 
     param_.strides = op_desc.GetAttr<std::vector<int>>("strides");
     std::vector<int> paddings = op_desc.GetAttr<std::vector<int>>("paddings");

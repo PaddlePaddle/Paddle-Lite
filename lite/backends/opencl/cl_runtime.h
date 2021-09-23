@@ -118,6 +118,8 @@ class CLRuntime {
   lite_api::CLTuneMode auto_tune() { return auto_tune_; }
 
   size_t lws_repeats() { return lws_repeats_; }
+  bool tune_file_flag() { return have_tune_file_flag_; }
+  void set_del_flag() { del_tune_bin_flag_ = true; }
 
   void set_precision(
       lite_api::CLPrecisionType p = lite_api::CL_PRECISION_AUTO) {
@@ -140,6 +142,7 @@ class CLRuntime {
   lite_api::CLPrecisionType get_precision() { return precision_; }
 
   void SetBinaryPathName(const std::string& path, const std::string& name) {
+    binary_path_name_.clear();
     binary_path_name_.push_back(path);
     binary_path_name_.push_back(name);
   }
@@ -209,13 +212,18 @@ class CLRuntime {
 
   double GetSubmitTime(const cl::Event& event);
 
-  bool HasTunedLocalWorkSizeMap(const std::string& key, cl::NDRange* lws);
+  bool HasTunedLocalWorkSizeMap(const std::string& key,
+                                std::vector<int>* tuned_value);
 
-  void SetTunedLocalWorkSizeMap(const std::string& key, const cl::NDRange lws);
+  void SetTunedLocalWorkSizeMap(const std::string& key,
+                                const std::vector<int>& tune_vct);
 
  private:
   CLRuntime() { Init(); }
-
+  CLRuntime(const CLRuntime&) = delete;
+  CLRuntime(const CLRuntime&&) = delete;
+  CLRuntime& operator=(const CLRuntime&) = delete;
+  CLRuntime& operator=(const CLRuntime&&) = delete;
   ~CLRuntime();
 
   bool InitializePlatform();
@@ -283,10 +291,10 @@ class CLRuntime {
 
   // tuned param
   bool Serialize(const std::string file_name,
-                 const std::map<std::string, cl::NDRange>& map_data);
+                 const std::map<std::string, std::vector<int>>& map_data);
 
   bool Deserialize(const std::string file_name,
-                   std::map<std::string, cl::NDRange>* map_ptr);
+                   std::map<std::string, std::vector<int>>* map_ptr);
 
   std::map<std::string, size_t> device_info_;
 
@@ -325,12 +333,14 @@ class CLRuntime {
 
   std::map<std::string, std::unique_ptr<cl::Program>> programs_;
   std::map<std::string, cl::Program::Binaries> programs_precompiled_binary_;
-  std::map<std::string, cl::NDRange> tuned_lwss_map_;
+  std::map<std::string, std::vector<int>> tuned_lwss_map_;
   std::vector<std::string> binary_path_name_;
   std::vector<std::string> tuned_path_name_;
   // magic number for precompiled binary
   const std::string sn_key_{"lite_opencl_precompiled_binary_identifier"};
   bool gotten_bin_flag_{false};
+  bool del_tune_bin_flag_{false};
+  bool have_tune_file_flag_{false};
   // magic number for cl flush judgement
   const int opencl_flush_period_ = 10;
 };

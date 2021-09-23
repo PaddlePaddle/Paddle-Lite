@@ -15,7 +15,7 @@
 #include <gtest/gtest.h>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
-#include "lite/core/arena/framework.h"
+#include "lite/core/test/arena/framework.h"
 
 namespace paddle {
 namespace lite {
@@ -84,13 +84,13 @@ class NormComputeTester : public arena::TestCase {
     SetCommonTensor(input_, dims_, data.data());
   }
 };
-void test_norm(Place place) {
+void test_norm(Place place, float abs_error) {
   DDimLite dims{{3, 5, 4, 4}};
-  for (int axis : {1}) {
+  for (int axis : {1, 2, 3}) {
     for (float epsilon : {1e-9}) {
       std::unique_ptr<arena::TestCase> tester(
           new NormComputeTester(place, "def", axis, epsilon, dims));
-      arena::Arena arena(std::move(tester), place, 2e-5);
+      arena::Arena arena(std::move(tester), place, abs_error);
       arena.TestPrecision();
     }
   }
@@ -98,7 +98,18 @@ void test_norm(Place place) {
 
 TEST(Norm, precision) {
   Place place;
-#if defined(LITE_WITH_ARM)
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kHuaweiAscendNPU);
+  abs_error = 1e-2;  // use fp16
+#elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #elif defined(LITE_WITH_X86)
   place = TARGET(kHost);
@@ -106,7 +117,7 @@ TEST(Norm, precision) {
   return;
 #endif
 
-  test_norm(place);
+  test_norm(place, abs_error);
 }
 
 }  // namespace lite

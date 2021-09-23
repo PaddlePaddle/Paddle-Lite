@@ -16,6 +16,7 @@
 #include "lite/backends/arm/math/conv_block_utils.h"
 #include "lite/backends/arm/math/conv_impl.h"
 #include "lite/core/context.h"
+#include "lite/core/parallel_defines.h"
 #include "lite/operators/op_params.h"
 #ifdef ARM_WITH_OMP
 #include <omp.h>
@@ -148,9 +149,11 @@ void conv_3x3s2_direct_int8(const int8_t* din,
       const int8_t* cblock_inr3 = cblock_inr2 + in_len;
       const int8_t* cblock_inr4 = cblock_inr3 + in_len;
 
-#pragma omp parallel for num_threads(threads)
-      for (int c = 0; c < chout; c += hout_c_block) {
-#ifdef ARM_WITH_OMP
+      LITE_PARALLEL_COMMON_BEGIN(c, tid, chout, 0, hout_c_block) {
+#ifdef LITE_USE_THREAD_POOL
+        auto pre_out =
+            reinterpret_cast<int*>(pre_din + pre_in_size) + tid * pre_out_size;
+#elif defined(ARM_WITH_OMP)
         auto pre_out = reinterpret_cast<int*>(pre_din + pre_in_size) +
                        omp_get_thread_num() * pre_out_size;
 #else
@@ -470,6 +473,7 @@ void conv_3x3s2_direct_int8(const int8_t* din,
                                    ptr_write,
                                    scale + c);
       }
+      LITE_PARALLEL_COMMON_END();
     }
   }
 }
@@ -594,9 +598,12 @@ void conv_3x3s2_direct_int8(const int8_t* din,
       const int8_t* cblock_inr0 = pre_din;
       const int8_t* cblock_inr1 = cblock_inr0 + in_len;
       const int8_t* cblock_inr2 = cblock_inr1 + in_len;
-#pragma omp parallel for num_threads(threads)
-      for (int c = 0; c < chout; c += hout_c_block) {
-#ifdef ARM_WITH_OMP
+
+      LITE_PARALLEL_COMMON_BEGIN(c, tid, chout, 0, hout_c_block) {
+#ifdef LITE_USE_THREAD_POOL
+        int32_t* pre_out =
+            reinterpret_cast<int*>(pre_din + pre_in_size) + tid * pre_out_size;
+#elif defined(ARM_WITH_OMP)
         int32_t* pre_out = reinterpret_cast<int*>(pre_din + pre_in_size) +
                            omp_get_thread_num() * pre_out_size;
 #else
@@ -748,6 +755,7 @@ void conv_3x3s2_direct_int8(const int8_t* din,
                                    ptr_write,
                                    scale + c);
       }
+      LITE_PARALLEL_COMMON_END();
     }
   }
 }

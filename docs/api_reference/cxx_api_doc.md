@@ -464,6 +464,32 @@ std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>
 
 返回类型：`int`
 
+
+
+### `set_metal_lib_path(path)`
+
+用于iOS设备上使用Metal进行GPU预测时，配置metallib加载路径。
+
+参数：
+
+- `path(str)` - metallib库文件路径
+
+返回类型：`void`
+
+
+
+### `set_metal_use_mps(flag)`
+
+设置iOS设备上使用Metal进行GPU预测时，是否启用[Metal Performance Shaders](https://developer.apple.com/documentation/metalperformanceshaders)。若不设置，默认不使用（建议启用）。
+
+参数：
+
+- `flag(bool)` - 是否使用MPS
+
+返回：是否使用Metal Performance Shaders
+
+返回类型：`bool`
+
 ## PaddlePredictor
 
 ```c++
@@ -611,8 +637,6 @@ for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
 
 返回类型：`void`
 
-
-
 ### `GetVersion()`
 
 用于获取当前lib使用的代码版本。若代码有相应tag则返回tag信息，如`v2.0-beta`；否则返回代码的`branch(commitid)`，如`develop(7e44619)`。
@@ -624,6 +648,57 @@ for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
 返回：当前lib使用的代码版本信息
 
 返回类型：`std::string`
+
+### `TryShrinkMemory()`
+
+将模型运行过程创建的临时 `Tensor`全部释放，程序占用内存将明显降低
+注意：调用该接口后`Predictor`的输入输出数据也会被删除，如果想再次执行推理需要重新设置输入（调用`GetInput`接口获取输入`Tensor`，然后设置输入数据）
+
+参数：
+
+- `None`
+
+返回：调用成功返回`True`，调用失败返回`False`
+
+返回类型：`bool`
+
+代码示例：
+
+```c++
+//MobileNetV1
+
+// Status1. Predictor is created, memory usage is 22M
+MobileConfig config;
+config.set_model_dir("./mobilenet_v1");
+auto predictor = lite_api::CreatePaddlePredictor(config);
+
+/* Feed model's inputs */
+Tensor input_tensor = predictor->GetInput(0);
+input_tensor->Resize({1, 3, 224, 224});
+auto* data = input_tensor->mutable_data<float>();
+for (int i = 0; i < 1*3*224*224; ++i) {
+  data[i] = 1;
+}
+
+
+// Status2. Predictor has inference successfully, memory usage is 44M
+predictor->Run();
+
+// Status3. Release memory that used by intermediate tensors and ArmL3Cache, memory usage is reduced to 37M
+//       warning: inputs and outputs tensors data will be null after this API is applied
+predictor->TryShrinkMemory();
+
+
+// Warning: if you want to rerun this model, you need to feed model inputs again
+input_tensor = predictor->GetInput(0);
+input_tensor->Resize({1, 3, 224, 224});
+auto* data = input_tensor->mutable_data<float>();
+for (int i = 0; i < 1*3*224*224; ++i) {
+  data[i] = 1;
+}
+predictor->Run();
+
+```
 
 ## TargetType
 

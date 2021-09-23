@@ -15,16 +15,16 @@
 
 #include <string>
 #include <vector>
+#include "lite/backends/x86/fluid/eigen.h"
 #include "lite/backends/x86/math/blas.h"
-#include "lite/backends/x86/math/detail/gru_cpu_kernel.h"
-#include "lite/backends/x86/math/detail/gru_kernel.h"
 #include "lite/backends/x86/math/gru_compute.h"
+#include "lite/backends/x86/math/gru_cpu_kernel.h"
+#include "lite/backends/x86/math/gru_kernel.h"
 #include "lite/backends/x86/math/math_function.h"
 #include "lite/backends/x86/math/sequence2batch.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/types.h"
-#include "lite/fluid/eigen.h"
 
 // DECLARE_int32(paddle_num_threads);
 extern int32_t paddle_num_threads;

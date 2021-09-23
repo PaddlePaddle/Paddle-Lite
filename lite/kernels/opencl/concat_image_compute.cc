@@ -137,12 +137,20 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       }
     }
 
+    std::string kernel_file;
+    if (kernel_func_name_ == "concat2" ||
+        kernel_func_name_ == "Concat2InputAxis1") {
+      kernel_file = "image/concat_default_kernel.cl";
+    } else {
+      kernel_file = "image/concat_kernel.cl";
+    }
+
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
 
     context.cl_context()->AddKernel(kernel_func_name_,
                                     (kernel_func_name_ == "concat_mul_buffer")
                                         ? "buffer/concat_kernel.cl"
-                                        : "image/concat_kernel.cl",
+                                        : kernel_file,
                                     build_options_,
                                     time_stamp_);
   }
@@ -209,10 +217,10 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       int arg_cnt = 0;
       for (auto& input : inputs) {
         auto* input_image_p = GET_DATA_GPU(input);
-        kernel.setArg(arg_cnt++, *input_image_p);
+        status = kernel.setArg(arg_cnt++, *input_image_p);
         CL_CHECK_FATAL(status);
       }
-      kernel.setArg(arg_cnt++, *output_image_p);
+      status = kernel.setArg(arg_cnt++, *output_image_p);
       CL_CHECK_FATAL(status);
 
       for (auto& input : inputs) {
@@ -221,7 +229,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
           in_shape.s[4 - input->dims().size() + j] = input->dims()[j];
         }
         in_shape.s[1] = UP_DIV(in_shape.s[1], 4);
-        kernel.setArg(arg_cnt++, in_shape);
+        status = kernel.setArg(arg_cnt++, in_shape);
         CL_CHECK_FATAL(status);
       }
       cl_int4 out_shape = {1, 1, 1, 1};
@@ -229,7 +237,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
         out_shape.s[4 - output_tensor_dims.size() + j] = output_tensor_dims[j];
       }
       out_shape.s[1] = UP_DIV(out_shape.s[1], 4);
-      kernel.setArg(arg_cnt++, out_shape);
+      status = kernel.setArg(arg_cnt++, out_shape);
       CL_CHECK_FATAL(status);
 
       status = EnqueueNDRangeKernel(context,

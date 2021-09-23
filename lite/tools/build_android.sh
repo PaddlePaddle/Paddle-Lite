@@ -32,6 +32,7 @@ BUILD_ARM82_FP16=OFF
 # options of striping lib according to input model.
 OPTMODEL_DIR=""
 WITH_STRIP=OFF
+WITH_THREAD_POOL=OFF
 # options of compiling NPU lib.
 WITH_HUAWEI_KIRIN_NPU=OFF
 HUAWEI_KIRIN_NPU_SDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
@@ -42,6 +43,8 @@ MEDIATEK_APU_SDK_ROOT="$(pwd)/apu_ddk" # Download APU SDK from https://paddlelit
 WITH_NNADAPTER=OFF
 NNADAPTER_WITH_HUAWEI_KIRIN_NPU=OFF
 NNADAPTER_HUAWEI_KIRIN_NPU_SDK_ROOT="$(pwd)/hiai_ddk_lib_330"
+NNADAPTER_WITH_AMLOGIC_NPU=OFF
+NNADAPTER_AMLOGIC_NPU_SDK_ROOT="$(pwd)/amlnpu_ddk"
 NNADAPTER_WITH_MEDIATEK_APU=OFF
 NNADAPTER_MEDIATEK_APU_SDK_ROOT="$(pwd)/apu_ddk" # Download APU SDK from https://paddlelite-demo.bj.bcebos.com/devices/mediatek/apu_ddk.tar.gz
 # options of compiling OPENCL lib.
@@ -52,6 +55,8 @@ WITH_TRAIN=OFF
 WITH_PROFILE=OFF
 # option of precision profile, default is OFF
 WITH_PRECISION_PROFILE=OFF
+# option of benchmark, default is OFF
+WITH_BENCHMARK=OFF
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
@@ -78,6 +83,19 @@ os_name=`uname -s`
 if [ ${os_name} == "Darwin" ]; then
    ulimit -n 1024
 fi
+
+# function of set options for benchmark
+function set_benchmark_options {
+  WITH_EXTRA=ON
+  WITH_EXCEPTION=ON
+  BUILD_JAVA=OFF
+  WITH_OPENCL=ON
+  if [ ${WITH_PROFILE} == "ON" ] || [ ${WITH_PRECISION_PROFILE} == "ON" ]; then
+    WITH_LOG=ON
+  else
+    WITH_LOG=OFF
+  fi
+}
 #####################################################################################################
 
 
@@ -164,6 +182,11 @@ function set_android_api_level {
 # 4.1 function of tiny_publish compiling
 # here we only compile light_api lib
 function make_tiny_publish_so {
+
+  if [ ! -d third-party ]; then
+     git checkout third-party
+  fi
+
   # Step1. Create directory for compiling.
   build_dir=$workspace/build.lite.android.$ARCH.$TOOLCHAIN
   if [ "${WITH_OPENCL}" == "ON" ]; then
@@ -192,6 +215,14 @@ function make_tiny_publish_so {
       ARCH=armv8
   fi
 
+  if [ "$NDK_ROOT" ]; then
+      NDK_NAME=$(echo $NDK_ROOT | egrep -o "android-ndk-r[0-9]{2}")
+      NDK_VERSION=$(echo $NDK_NAME | egrep -o "[0-9]{2}")
+      if [ "$NDK_VERSION" -gt 17 ]; then
+          TOOLCHAIN=clang
+      fi
+  fi
+
   # android api level for android version
   set_android_api_level
 
@@ -211,13 +242,16 @@ function make_tiny_publish_so {
       -DLITE_WITH_NNADAPTER=$WITH_NNADAPTER \
       -DNNADAPTER_WITH_HUAWEI_KIRIN_NPU=$NNADAPTER_WITH_HUAWEI_KIRIN_NPU \
       -DNNADAPTER_HUAWEI_KIRIN_NPU_SDK_ROOT=$NNADAPTER_HUAWEI_KIRIN_NPU_SDK_ROOT \
+      -DNNADAPTER_WITH_AMLOGIC_NPU=$NNADAPTER_WITH_AMLOGIC_NPU \
+      -DNNADAPTER_HUAWEI_AMLOGIC_SDK_ROOT=$NNADAPTER_AMLOGIC_NPU_SDK_ROOT \
       -DNNADAPTER_WITH_MEDIATEK_APU=$NNADAPTER_WITH_MEDIATEK_APU \
       -DNNADAPTER_MEDIATEK_APU_SDK_ROOT=$NNADAPTER_MEDIATEK_APU_SDK_ROOT \
       -DLITE_WITH_OPENCL=$WITH_OPENCL \
       -DARM_TARGET_ARCH_ABI=$ARCH \
       -DARM_TARGET_LANG=$TOOLCHAIN \
       -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
-      -DANDROID_STL_TYPE=$ANDROID_STL"
+      -DANDROID_STL_TYPE=$ANDROID_STL \
+      -DLITE_THREAD_POOL=$WITH_THREAD_POOL"
 
   cmake $workspace \
       ${CMAKE_COMMON_OPTIONS} \
@@ -225,10 +259,7 @@ function make_tiny_publish_so {
       ${cmake_mutable_options}  \
       -DLITE_ON_TINY_PUBLISH=ON
 
-  # Step4. Compile libs: cxx_lib, java_lib, opencl_lib
-  if [ "${WITH_OPENCL}" == "ON" ]; then
-      make opencl_clhpp -j$NUM_PROC
-  fi
+  # Step4. Compile libs: cxx_lib, java_lib
   make publish_inference -j$NUM_PROC
   cd - > /dev/null
 }
@@ -250,6 +281,10 @@ function make_full_publish_so {
 
   prepare_workspace $workspace $build_directory
 
+  if [ "${WITH_BENCHMARK}" == "ON" ]; then
+      set_benchmark_options
+  fi
+
   if [ "${WITH_OPENCL}" == "ON" ]; then
       prepare_opencl_source_code $workspace $build_dir
   fi
@@ -261,6 +296,15 @@ function make_full_publish_so {
       TOOLCHAIN=clang
       ARCH=armv8
   fi
+
+  if [ "$NDK_ROOT" ]; then
+      NDK_NAME=$(echo $NDK_ROOT | egrep -o "android-ndk-r[0-9]{2}")
+      NDK_VERSION=$(echo $NDK_NAME | egrep -o "[0-9]{2}")
+      if [ "$NDK_VERSION" -gt 17 ]; then
+          TOOLCHAIN=clang
+      fi
+  fi
+
   # android api level for android version
   set_android_api_level
 
@@ -280,6 +324,8 @@ function make_full_publish_so {
       -DLITE_WITH_NNADAPTER=$WITH_NNADAPTER \
       -DNNADAPTER_WITH_HUAWEI_KIRIN_NPU=$NNADAPTER_WITH_HUAWEI_KIRIN_NPU \
       -DNNADAPTER_HUAWEI_KIRIN_NPU_SDK_ROOT=$NNADAPTER_HUAWEI_KIRIN_NPU_SDK_ROOT \
+      -DNNADAPTER_WITH_AMLOGIC_NPU=$NNADAPTER_WITH_AMLOGIC_NPU \
+      -DNNADAPTER_AMLOGIC_NPU_SDK_ROOT=$NNADAPTER_AMLOGIC_NPU_SDK_ROOT \
       -DNNADAPTER_WITH_MEDIATEK_APU=$NNADAPTER_WITH_MEDIATEK_APU \
       -DNNADAPTER_MEDIATEK_APU_SDK_ROOT=$NNADAPTER_MEDIATEK_APU_SDK_ROOT \
       -DLITE_WITH_OPENCL=$WITH_OPENCL \
@@ -296,12 +342,11 @@ function make_full_publish_so {
       ${cmake_api_level_options} \
       ${cmake_mutable_options}
 
-  # todo: third_party of opencl should be moved into git submodule and cmake later
-  if [ "${WITH_OPENCL}" == "ON" ]; then
-      make opencl_clhpp -j$NUM_PROC
+  if [ "${WITH_BENCHMARK}" == "ON" ]; then
+    make benchmark_bin -j$NUM_PROC
+  else
+    make publish_inference -j$NUM_PROC
   fi
-
-  make publish_inference -j$NUM_PROC
   cd - > /dev/null
 }
 
@@ -318,7 +363,7 @@ function print_usage {
     echo -e "|                                                                                                                                      |"
     echo -e "|  optional argument:                                                                                                                  |"
     echo -e "|     --arch: (armv8|armv7), default is armv8                                                                                          |"
-    echo -e "|     --toolchain: (gcc|clang), defalut is gcc                                                                                         |"
+    echo -e "|     --toolchain: (gcc|clang), default is gcc                                                                                         |"
     echo -e "|     --android_stl: (c++_static|c++_shared), default is c++_static                                                                    |"
     echo -e "|     --with_java: (OFF|ON); controls whether to publish java api lib, default is ON                                                   |"
     echo -e "|     --with_static_lib: (OFF|ON); controls whether to publish c++ api static lib, default is OFF                                      |"
@@ -336,6 +381,10 @@ function print_usage {
     echo -e "|                       |------------------------------------|-------|-------|                                                         |"
     echo -e "|                       |Supported Minimum Android API Level |  16   |  21   |                                                         |"
     echo -e "|                       |Supported Minimum Android Version   |  4.1  |  5.0  |                                                         |"
+    echo -e "|     --with_benchmark: (OFF|ON); controls whether to compile benchmark binary, default is OFF                                         |"
+    echo -e "|                                                                                                                                      |"
+    echo -e "|  arguments of benchmark binary compiling:(armv8, gcc, c++_static)                                                                    |"
+    echo -e "|     ./lite/tools/build_android.sh --with_benchmark=ON full_publish                                                                   |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of striping lib according to input model:(armv8, gcc, c++_static)                                                         |"
     echo -e "|     ./lite/tools/build_android.sh --with_strip=ON --opt_model_dir=YourOptimizedModelDir                                              |"
@@ -419,6 +468,11 @@ function main {
                 WITH_STRIP="${i#*=}"
                 shift
                 ;;
+            # ON or OFF, default OFF
+            --with_thread_pool=*)
+                WITH_THREAD_POOL="${i#*=}"
+                shift
+                ;;
             # string, absolute path to optimized model dir
             --opt_model_dir=*)
                 OPTMODEL_DIR="${i#*=}"
@@ -477,6 +531,14 @@ function main {
                 NNADAPTER_HUAWEI_KIRIN_NPU_SDK_ROOT="${i#*=}"
                 shift
                 ;;
+            --nnadapter_with_amlogic_npu=*)
+                NNADAPTER_WITH_AMLOGIC_NPU="${i#*=}"
+                shift
+                ;;
+            --nnadapter_amlogic_npu_sdk_root=*)
+                NNADAPTER_AMLOGIC_NPU_SDK_ROOT="${i#*=}"
+                shift
+                ;;
             --nnadapter_with_mediatek_apu=*)
                 NNADAPTER_WITH_MEDIATEK_APU="${i#*=}"
                 shift
@@ -503,6 +565,11 @@ function main {
             # compiling lib with precision profile, default OFF.
             --with_precision_profile=*)
                 WITH_PRECISION_PROFILE="${i#*=}"
+                shift
+                ;;
+            # compiling lib with benchmark feature, default OFF.
+            --with_benchmark=*)
+                WITH_BENCHMARK="${i#*=}"
                 shift
                 ;;
             # controls whether to include FP16 kernels, default is OFF

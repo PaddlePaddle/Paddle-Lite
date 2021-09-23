@@ -15,7 +15,7 @@
 #include <gtest/gtest.h>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
-#include "lite/core/arena/framework.h"
+#include "lite/core/test/arena/framework.h"
 
 namespace paddle {
 namespace lite {
@@ -111,24 +111,8 @@ void TestCumsumHelper(Place place,
                       const int axis = -1,
                       const bool flatten = false,
                       const bool exclusive = false,
-                      const bool reverse = false) {
-  auto precision = lite_api::PrecisionTypeTrait<T>::Type();
-  std::string alias("def");
-  switch (precision) {
-    case lite_api::PrecisionType::kFloat:
-      alias = std::string("float32");
-      break;
-    case lite_api::PrecisionType::kInt32:
-      alias = std::string("int32");
-      break;
-    case lite_api::PrecisionType::kInt64:
-      alias = std::string("int64");
-      break;
-    default:
-      LOG(FATAL) << "unsupported precision: "
-                 << lite_api::PrecisionToStr(precision);
-  }
-
+                      const bool reverse = false,
+                      const std::string& alias = "def") {
   std::unique_ptr<arena::TestCase> tester(new CumsumComputeTester<T>(
       place, alias, DDim(x_dims), axis, flatten, exclusive, reverse));
   arena::Arena arena(std::move(tester), place, abs_error);
@@ -136,7 +120,9 @@ void TestCumsumHelper(Place place,
 }
 
 template <class T = float>
-void TestCumsumAxis(Place place, float abs_error) {
+void TestCumsumAxis(Place place,
+                    float abs_error,
+                    const std::string& alias = "def") {
   std::vector<std::vector<int64_t>> shapes{
       {10}, {4, 5}, {3, 4, 5}, {2, 3, 4, 5}};
   std::vector<int> axes{-4, -3, -2, -1, 0, 1, 2, 3};
@@ -146,36 +132,49 @@ void TestCumsumAxis(Place place, float abs_error) {
       if (axis < (-1) * static_cast<int>(x_shape.size()) ||
           axis >= static_cast<int>(x_shape.size()))
         continue;
-      TestCumsumHelper<T>(place, abs_error, x_shape, axis);
+      TestCumsumHelper<T>(
+          place, abs_error, x_shape, axis, false, false, false, alias);
     }
   }
 }
 
 template <class T = float>
-void TestCumsumFlatten(Place place, float abs_error) {
+void TestCumsumFlatten(Place place,
+                       float abs_error,
+                       const std::string& alias = "def") {
   std::vector<std::vector<int64_t>> shapes{{10}, {2, 3, 4, 5}};
   for (auto x_shape : shapes) {
-    TestCumsumHelper<T>(place, abs_error, x_shape, -1, true);
+    TestCumsumHelper<T>(
+        place, abs_error, x_shape, -1, true, false, false, alias);
   }
 }
 
 TEST(cumsum, precision) {
   Place place;
   float abs_error = 1e-5;
-#if defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+  TestCumsumAxis<float>(place, abs_error);
+  return;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = TARGET(kHost);
 #else
   return;
 #endif
 
-  TestCumsumAxis<float>(place, abs_error);
-  TestCumsumFlatten<float>(place, abs_error);
+  TestCumsumAxis<float>(place, abs_error, "float32");
+  TestCumsumFlatten<float>(place, abs_error, "float32");
 
-  TestCumsumAxis<int32_t>(place, abs_error);
-  TestCumsumFlatten<int32_t>(place, abs_error);
+  TestCumsumAxis<int32_t>(place, abs_error, "int32");
+  TestCumsumFlatten<int32_t>(place, abs_error, "int32");
 
-  TestCumsumAxis<int64_t>(place, abs_error);
-  TestCumsumFlatten<int64_t>(place, abs_error);
+  TestCumsumAxis<int64_t>(place, abs_error, "int64");
+  TestCumsumFlatten<int64_t>(place, abs_error, "int64");
 }
 
 }  // namespace lite

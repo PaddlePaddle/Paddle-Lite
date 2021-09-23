@@ -12,39 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/rockchip_npu/converter.h"
+#include "core/operation/elementwise.h"
+#include "driver/rockchip_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace rockchip_npu {
 
-int Program::ConvertElementwise(hal::Operation* operation) {
-  auto& input_operands = operation->input_operands;
-  auto& output_operands = operation->output_operands;
-  auto input_count = input_operands.size();
-  auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 3);
-  NNADAPTER_CHECK_EQ(output_count, 1);
-  // Input0
-  auto input0_operand = input_operands[0];
-  NNADAPTER_VLOG(5) << "input0: " << OperandToString(input0_operand);
-  // Input1
-  auto input1_operand = input_operands[1];
-  NNADAPTER_VLOG(5) << "input1: " << OperandToString(input1_operand);
-  // Fuse code
-  auto fuse_code = *reinterpret_cast<int32_t*>(input_operands[2]->buffer);
-  NNADAPTER_VLOG(5) << "fuse_code=" << fuse_code;
+int ConvertElementwise(Converter* converter, hal::Operation* operation) {
+  ELEMENTWISE_OPERATION_EXTRACT_INPUTS_OUTPUTS
   NNADAPTER_CHECK_EQ(fuse_code, NNADAPTER_FUSED_NONE)
       << "Unsupported fuse_code(" << fuse_code << ") is found.";
-  // Output
-  auto output_operand = output_operands[0];
-  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
-  // Convert to rknn tensors and operators
-  auto input0_tensor = ConvertOperand(input0_operand);
-  auto input1_tensor = ConvertOperand(input1_operand);
-  auto output_tensor = ConvertOperand(output_operand);
+  // Convert to rknpu tensors and operators
+  auto input0_tensor = converter->GetMappedTensor(input0_operand);
+  if (!input0_tensor) {
+    input0_tensor = converter->ConvertOperand(input0_operand);
+  }
+  auto input1_tensor = converter->GetMappedTensor(input1_operand);
+  if (!input1_tensor) {
+    input1_tensor = converter->ConvertOperand(input1_operand);
+  }
+  auto output_tensor = converter->ConvertOperand(output_operand);
   std::vector<std::shared_ptr<rk::nn::Tensor>> input_tensors = {input0_tensor,
                                                                 input1_tensor};
   std::vector<std::shared_ptr<rk::nn::Tensor>> output_tensors = {output_tensor};
@@ -62,7 +52,7 @@ int Program::ConvertElementwise(hal::Operation* operation) {
                          << OperationTypeToString(operation->type)
                          << " is found.";
   }
-  graph_->AddOperator(op_type, input_tensors, output_tensors, nullptr);
+  converter->AddOperator(op_type, input_tensors, output_tensors, nullptr);
   return NNADAPTER_NO_ERROR;
 }
 

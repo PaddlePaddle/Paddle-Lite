@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include <cmath>
-#include "lite/core/subgraph_bridge_registry.h"
+#include "lite/core/subgraph/subgraph_bridge_registry.h"
 #include "lite/kernels/nnadapter/bridges/converter.h"
 #include "lite/kernels/nnadapter/bridges/utility.h"
 
@@ -108,9 +108,7 @@ int ScaleConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       std::vector<NNAdapterOperand*> input_operands = {
           input_operand, scale_operand, fuse_code_operand};
       std::vector<NNAdapterOperand*> output_operands = {immediate_operand};
-      auto eltwise_mul_operation = converter->AddOperation(NNADAPTER_MUL);
-      converter->SetOperation(
-          eltwise_mul_operation, &input_operands, &output_operands);
+      converter->AddOperation(NNADAPTER_MUL, &input_operands, &output_operands);
       input_operand = immediate_operand;
     }
     if (has_bias) {
@@ -131,9 +129,7 @@ int ScaleConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       std::vector<NNAdapterOperand*> input_operands = {
           input_operand, bias_operand, fuse_code_operand};
       std::vector<NNAdapterOperand*> output_operands = {output_operand};
-      auto eltwise_add_operation = converter->AddOperation(NNADAPTER_ADD);
-      converter->SetOperation(
-          eltwise_add_operation, &input_operands, &output_operands);
+      converter->AddOperation(NNADAPTER_ADD, &input_operands, &output_operands);
     }
   }
   return REBUILD_WHEN_SHAPE_CHANGED;

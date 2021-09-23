@@ -15,6 +15,7 @@
 #include "lite/backends/arm/math/conv_block_utils.h"
 #include "lite/backends/arm/math/conv_impl.h"
 #include "lite/core/context.h"
+#include "lite/core/parallel_defines.h"
 #ifdef ARM_WITH_OMP
 #include <omp.h>
 #endif
@@ -1722,7 +1723,6 @@ void conv_3x3s2_direct_fp32(const float* i_data,
   float* tmp_work_space = ctx->workspace_data<float>();
   float ptr_zero[win_round];  // NOLINT
   memset(ptr_zero, 0, sizeof(float) * win_round);
-  float ptr_write[wout_round];  // NOLINT
 
   //! l2_cache start
   float* pre_din = tmp_work_space;
@@ -1776,9 +1776,10 @@ void conv_3x3s2_direct_fp32(const float* i_data,
       const float* cblock_inr3 = cblock_inr2 + in_len;
       const float* cblock_inr4 = cblock_inr3 + in_len;
 
-#pragma omp parallel for num_threads(threads)
-      for (int c = 0; c < c_round_down; c += OUT_C_BLOCK) {
-#ifdef ARM_WITH_OMP
+      LITE_PARALLEL_COMMON_BEGIN(c, tid, c_round_down, 0, OUT_C_BLOCK) {
+#ifdef LITE_USE_THREAD_POOL
+        float* pre_out = pre_din + pre_in_size + tid * pre_out_size;
+#elif defined(ARM_WITH_OMP)
         float* pre_out =
             pre_din + pre_in_size + omp_get_thread_num() * pre_out_size;
 #else
@@ -1984,10 +1985,12 @@ void conv_3x3s2_direct_fp32(const float* i_data,
                           alpha,
                           bias_ptr);
       }
+      LITE_PARALLEL_COMMON_END();
 
-#pragma omp parallel for num_threads(threads)
-      for (int c = 0; c < c_remain; ++c) {
-#ifdef ARM_WITH_OMP
+      LITE_PARALLEL_BEGIN(c, tid, c_remain) {
+#ifdef LITE_USE_THREAD_POOL
+        float* pre_out = pre_din + pre_in_size + tid * pre_out_size;
+#elif defined(ARM_WITH_OMP)
         float* pre_out =
             pre_din + pre_in_size + omp_get_thread_num() * pre_out_size;
 #else
@@ -2316,6 +2319,7 @@ void conv_3x3s2_direct_fp32(const float* i_data,
                           alpha,
                           bias_ptr);
       }
+      LITE_PARALLEL_END();
     }
   }
 }
@@ -2427,7 +2431,6 @@ void conv_3x3s2_direct_fp32_c3(const float* i_data,
   float* tmp_work_space = ctx->workspace_data<float>();
   float ptr_zero[win_round];  // NOLINT
   memset(ptr_zero, 0, sizeof(float) * win_round);
-  float ptr_write[wout_round];  // NOLINT
 
   //! l2_cache start
   float* pre_din = tmp_work_space;
@@ -2459,7 +2462,7 @@ void conv_3x3s2_direct_fp32_c3(const float* i_data,
     }
   }
   for (int n = 0; n < bs; ++n) {
-    const float* din_batch = i_data + n * in_channel * size_in_channel;
+    const float* din_batch = i_data + n * ic * size_in_channel;
     float* dout_batch = o_data + n * oc * size_out_channel;
     for (int h = 0; h < oh; h += hout_r_block) {
       int h_kernel = hout_r_block;
@@ -2478,9 +2481,10 @@ void conv_3x3s2_direct_fp32_c3(const float* i_data,
       const float* cblock_inr2 = cblock_inr1 + in_len;
       const float* cblock_inr3 = cblock_inr2 + in_len;
       const float* cblock_inr4 = cblock_inr3 + in_len;
-#pragma omp parallel for num_threads(threads)
-      for (int c = 0; c < c_round_down; c += OUT_C_BLOCK) {
-#ifdef ARM_WITH_OMP
+      LITE_PARALLEL_COMMON_BEGIN(c, tid, c_round_down, 0, OUT_C_BLOCK) {
+#ifdef LITE_USE_THREAD_POOL
+        float* pre_out = pre_din + pre_in_size + tid * pre_out_size;
+#elif defined(ARM_WITH_OMP)
         float* pre_out =
             pre_din + pre_in_size + omp_get_thread_num() * pre_out_size;
 #else
@@ -2959,6 +2963,7 @@ void conv_3x3s2_direct_fp32_c3(const float* i_data,
                           alpha,
                           bias_ptr);
       }
+      LITE_PARALLEL_COMMON_END();
     }
   }
 }
@@ -3013,7 +3018,6 @@ void conv_3x3s2_direct_fp32_c3_a53(const float* i_data,
   float* tmp_work_space = ctx->workspace_data<float>();
   float ptr_zero[win_round];  // NOLINT
   memset(ptr_zero, 0, sizeof(float) * win_round);
-  float ptr_write[wout_round];  // NOLINT
 
   //! l2_cache start
   float* pre_din = tmp_work_space;
@@ -3045,7 +3049,7 @@ void conv_3x3s2_direct_fp32_c3_a53(const float* i_data,
     }
   }
   for (int n = 0; n < bs; ++n) {
-    const float* din_batch = i_data + n * in_channel * size_in_channel;
+    const float* din_batch = i_data + n * ic * size_in_channel;
     float* dout_batch = o_data + n * oc * size_out_channel;
     for (int h = 0; h < oh; h += hout_r_block) {
       int h_kernel = hout_r_block;
@@ -3064,9 +3068,10 @@ void conv_3x3s2_direct_fp32_c3_a53(const float* i_data,
       const float* cblock_inr2 = cblock_inr1 + in_len;
       const float* cblock_inr3 = cblock_inr2 + in_len;
       const float* cblock_inr4 = cblock_inr3 + in_len;
-#pragma omp parallel for num_threads(threads)
-      for (int c = 0; c < c_round_down; c += OUT_C_BLOCK) {
-#ifdef ARM_WITH_OMP
+      LITE_PARALLEL_COMMON_BEGIN(c, tid, c_round_down, 0, OUT_C_BLOCK) {
+#ifdef LITE_USE_THREAD_POOL
+        float* pre_out = pre_din + pre_in_size + tid * pre_out_size;
+#elif defined(ARM_WITH_OMP)
         float* pre_out =
             pre_din + pre_in_size + omp_get_thread_num() * pre_out_size;
 #else
@@ -3624,6 +3629,7 @@ void conv_3x3s2_direct_fp32_c3_a53(const float* i_data,
                           alpha,
                           bias_ptr);
       }
+      LITE_PARALLEL_COMMON_END();
     }
   }
 }

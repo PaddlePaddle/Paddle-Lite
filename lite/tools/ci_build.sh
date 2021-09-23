@@ -1,6 +1,6 @@
 #!/bin/bash
 # The git version of CI is 2.7.4. This script is not compatible with git version 1.7.1.
-set -ex
+set -e
 
 TESTS_FILE="./lite_tests.txt"
 LIBS_FILE="./lite_libs.txt"
@@ -207,7 +207,6 @@ function build_opencl {
     prepare_opencl_source_code $cur_dir $build_dir
 
     cmake_opencl ${os} ${abi} ${lang}
-    make opencl_clhpp -j$NUM_CORES_FOR_COMPILE
     build $TESTS_FILE
 }
 
@@ -1198,9 +1197,9 @@ function test_arm_model {
 
 function test_model_optimize_tool_compile {
     cd $workspace
-    cd build
+    rm -rf build && mkdir build && cd build
     # Compile opt tool
-    cmake .. -DWITH_LITE=ON -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON -DWITH_TESTING=OFF -DLITE_BUILD_EXTRA=ON
+    cmake .. -DWITH_LITE=ON -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON -DWITH_TESTING=OFF -DLITE_BUILD_EXTRA=ON -DWITH_MKL=OFF
     make opt -j$NUM_CORES_FOR_COMPILE
     # Check whether opt can transform quantized mobilenetv1 successfully.
     cd lite/api && chmod +x ./opt

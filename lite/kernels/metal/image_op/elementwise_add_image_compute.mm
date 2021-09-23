@@ -1,4 +1,4 @@
-// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,20 +30,46 @@ void ElementwiseAddImageCompute::PrepareForRun() {
     auto& context = ctx_->As<MTLContext>();
     metal_context_ = (MetalContext*)context.context();
 
-    const auto& param = this->Param<param_t>();
-    auto output_dims = param.Out->dims();
-    auto input_dims = param.X->dims();
+    init_memory();
+    init_for_run();
+}
+
+void ElementwiseAddImageCompute::ReInitWhenNeeded() {
+    auto input_dims = elementwise_param_->X->dims();
+
+    if (last_input_dims_ != input_dims) {
+        release_memory();
+        release_mps_memory();
+        init_memory();
+        init_for_run();
+    }
+}
+
+void ElementwiseAddImageCompute::init_memory() {
+    if (!param_.is_type<param_t>()) {
+        fuse_flag_ = true;
+        elementwise_param_ = param_.get_mutable<operators::FusionElementwiseActivationParam>();
+    } else {
+        fuse_flag_ = false;
+        elementwise_param_ = param_.get_mutable<operators::ElementwiseParam>();
+    }
+    auto output_dims = elementwise_param_->Out->dims();
+    auto input_dims = elementwise_param_->X->dims();
 
 #ifdef LITE_WITH_METAL_FULL
 #else
-    output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
-    input_buffer_x_ = param.X->data<MetalHalf, MetalImage>();
-    input_buffer_y_ = param.Y->data<MetalHalf, MetalImage>();
+    output_buffer_ =
+        elementwise_param_->Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
+    input_buffer_x_ = elementwise_param_->X->data<MetalHalf, MetalImage>();
+    input_buffer_y_ = elementwise_param_->Y->data<MetalHalf, MetalImage>();
 #endif
+    last_input_dims_ = input_dims;
+}
 
+void ElementwiseAddImageCompute::init_for_run() {
     // use MPS or not
     bool should_use_mps = false;
-    if (@available(iOS 10.0, *)) {
+    if (@available(iOS 11.3, *)) {
         if (metal_context_->use_mps()) {
             should_use_mps = true;
         }
@@ -56,12 +82,7 @@ void ElementwiseAddImageCompute::PrepareForRun() {
     }
 // X Y output
 #ifdef LITE_WITH_METAL_FULL
-    if ([input_buffer_x_->image() pixelFormat] == MTLPixelFormatRGBA32Float &&
-        [input_buffer_y_->image() pixelFormat] == MTLPixelFormatRGBA32Float &&
-        [output_buffer_->image() pixelFormat] == MTLPixelFormatRGBA32Float) {
-    } else {
-        should_use_mps = false;
-    }
+
 #else
     if ([input_buffer_x_->image() pixelFormat] == MTLPixelFormatRGBA16Float &&
         [input_buffer_y_->image() pixelFormat] == MTLPixelFormatRGBA16Float &&
@@ -70,6 +91,17 @@ void ElementwiseAddImageCompute::PrepareForRun() {
         should_use_mps = false;
     }
 #endif
+
+    if (fuse_flag_) {
+        const auto* op_param =
+            static_cast<const operators::FusionElementwiseActivationParam*>(elementwise_param_);
+        auto act_t = op_param->act_type;
+        VLOG(4) << "elementwise_add act: " << act_t;
+        if (act_t != "relu") {
+            LOG(FATAL) << "Unsupported Activation type: " << act_t << ", support Relu only.";
+        }
+        should_use_mps = false;
+    }
 
     use_mps_ = should_use_mps;
     if (use_mps_) {
@@ -80,10 +112,12 @@ void ElementwiseAddImageCompute::PrepareForRun() {
 }
 
 void ElementwiseAddImageCompute::Run() {
-    if (use_mps_) {
-        run_with_mps();
-    } else {
-        run_without_mps();
+    @autoreleasepool {
+        if (use_mps_) {
+            run_with_mps();
+        } else {
+            run_without_mps();
+        }
     }
 }
 
@@ -105,9 +139,8 @@ void ElementwiseAddImageCompute::run_without_mps() {
 }
 
 void ElementwiseAddImageCompute::setup_without_mps() {
-    const auto& param = this->Param<param_t>();
-    auto output_dims = param.Out->dims();
-    auto input_dims = param.X->dims();
+    auto output_dims = elementwise_param_->Out->dims();
+    auto input_dims = elementwise_param_->X->dims();
 
     std::vector<int> xdim, ydim;
     for (int i = 0; i < 4; i++) {
@@ -115,7 +148,7 @@ void ElementwiseAddImageCompute::setup_without_mps() {
         ydim.push_back((int)input_buffer_y_->dim_[i]);
     }
 
-    auto axis = param.axis;
+    auto axis = elementwise_param_->axis;
     int params_axis = 0;
     if (axis == -1) {
         params_axis = 4 - (int)(input_buffer_y_->tensor_dim_.size());
@@ -131,8 +164,7 @@ void ElementwiseAddImageCompute::setup_without_mps() {
     int add_by_channel = 0;
     if (input_buffer_y_->tensor_dim_.size() == 1 &&
         (axis == 1 ||
-            (axis == -1 &&
-                input_buffer_y_->tensor_dim_[0] == input_buffer_x_->dim_[3]))) {
+            (axis == -1 && input_buffer_y_->tensor_dim_[0] == input_buffer_x_->dim_[3]))) {
         add_by_channel = 1;
     }
     if (add_by_channel == 1 || params_fast == 1) {
@@ -158,7 +190,7 @@ void ElementwiseAddImageCompute::setup_without_mps() {
     params_buffer_ =
         std::make_shared<MetalBuffer>(metal_context_, sizeof(element_params), &element_params);
 
-    function_name_ = "elementwise_add";
+    function_name_ = fuse_flag_ ? "elementwise_add_relu" : "elementwise_add";
 
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
@@ -171,35 +203,42 @@ void ElementwiseAddImageCompute::run_with_mps() {
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     auto cmdbuf = [backend commandBuffer];
     if (mps_add_op_) {
-        [((__bridge MPSCNNAdd*)mps_add_op_)
-            encodeToCommandBuffer:cmdbuf
-                     primaryImage:(__bridge MPSImage*)mps_input_image_
-                   secondaryImage:(__bridge MPSImage*)mps_input_image_y_
-                 destinationImage:(__bridge MPSImage*)mps_output_image_];
+        if (@available(iOS 11.3, *)) {
+            [((__bridge MPSCNNAdd*)mps_add_op_)
+                encodeToCommandBuffer:cmdbuf
+                         primaryImage:(__bridge MPSImage*)mps_input_image_
+                       secondaryImage:(__bridge MPSImage*)mps_input_image_y_
+                     destinationImage:(__bridge MPSImage*)mps_output_image_];
+        }
     }
     [backend commit:cmdbuf];
 }
 
 void ElementwiseAddImageCompute::setup_with_mps() {
-    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
-    //
-    mps_add_op_ = (__bridge_retained void*)[[MPSCNNAdd alloc] initWithDevice:backend.device];
-    // MPS算子输入输出
-    auto input_x_c = MAX(4, static_cast<int>(input_buffer_x_->tensor_dim_[1]));
-    auto input_y_c = MAX(4, static_cast<int>(input_buffer_y_->tensor_dim_[1]));
-    auto output_c = MAX(4, static_cast<int>(output_buffer_->tensor_dim_[1]));
-    mps_input_image_ =
-        (__bridge_retained void*)[[MPSImage alloc] initWithTexture:input_buffer_x_->image()
-                                                   featureChannels:input_x_c];
-    mps_input_image_y_ =
-        (__bridge_retained void*)[[MPSImage alloc] initWithTexture:input_buffer_y_->image()
-                                                   featureChannels:input_y_c];
-    mps_output_image_ =
-        (__bridge_retained void*)[[MPSImage alloc] initWithTexture:output_buffer_->image()
-                                                   featureChannels:output_c];
+    if (@available(iOS 11.3, *)) {
+        auto backend = (__bridge MetalContextImp*)metal_context_->backend();
+        mps_add_op_ = (__bridge_retained void*)[[MPSCNNAdd alloc] initWithDevice:backend.device];
+        // MPS input and output
+        auto input_x_c = MAX(4, static_cast<int>(input_buffer_x_->tensor_dim_[1]));
+        auto input_y_c = MAX(4, static_cast<int>(input_buffer_y_->tensor_dim_[1]));
+        auto output_c = MAX(4, static_cast<int>(output_buffer_->tensor_dim_[1]));
+        mps_input_image_ =
+            (__bridge_retained void*)[[MPSImage alloc] initWithTexture:input_buffer_x_->image()
+                                                       featureChannels:input_x_c];
+        mps_input_image_y_ =
+            (__bridge_retained void*)[[MPSImage alloc] initWithTexture:input_buffer_y_->image()
+                                                       featureChannels:input_y_c];
+        mps_output_image_ =
+            (__bridge_retained void*)[[MPSImage alloc] initWithTexture:output_buffer_->image()
+                                                       featureChannels:output_c];
+    }
 }
 
-ElementwiseAddImageCompute::~ElementwiseAddImageCompute() {
+void ElementwiseAddImageCompute::release_memory() {
+    TargetWrapperMetal::FreeImage(output_buffer_);
+}
+
+void ElementwiseAddImageCompute::release_mps_memory() {
     if (mps_add_op_) {
         CFRelease(mps_add_op_);
         mps_add_op_ = nullptr;
@@ -216,7 +255,11 @@ ElementwiseAddImageCompute::~ElementwiseAddImageCompute() {
         CFRelease(mps_output_image_);
         mps_output_image_ = nullptr;
     }
-    TargetWrapperMetal::FreeImage(output_buffer_);
+}
+
+ElementwiseAddImageCompute::~ElementwiseAddImageCompute() {
+    release_memory();
+    release_mps_memory();
 }
 
 }  // namespace metal
@@ -247,6 +290,40 @@ REGISTER_LITE_KERNEL(elementwise_add,
     .Finalize();
 
 REGISTER_LITE_KERNEL(elementwise_add,
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::ElementwiseAddImageCompute,
+    def)
+    .BindInput("X",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("Y",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(fusion_elementwise_add_activation,
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::ElementwiseAddImageCompute,
+    def)
+    .BindInput("X",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("Y",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(fusion_elementwise_add_activation,
     kMetal,
     kFP16,
     kMetalTexture2DArray,

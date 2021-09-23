@@ -21,19 +21,19 @@ namespace subgraph {
 namespace nnadapter {
 
 bool Converter::HasOperand(const std::string& name) {
-  return operands_.find(name) != operands_.end();
+  return operands_->find(name) != operands_->end();
 }
 
 NNAdapterOperand* Converter::GetOperand(std::string name) {
   CHECK(HasOperand(name)) << "Operand '" << name << "' is not found!";
-  return operands_[name];
+  return (*operands_)[name].back();
 }
 
 NNAdapterOperand* Converter::AddOperand(NNAdapterOperand* operand,
                                         const std::string& name) {
-  CHECK(!operand);
+  CHECK(operand);
   CHECK(!name.empty());
-  operands_[name] = operand;
+  (*operands_)[name].emplace_back(operand);
   return operand;
 }
 
@@ -52,9 +52,25 @@ NNAdapterOperand* Converter::AddInt32ConstantOperand(int32_t value) {
       DDim(std::vector<int64_t>({})), NNADAPTER_INT32, nullptr, 0, 0, &value);
 }
 
+NNAdapterOperand* Converter::AddInt64ConstantOperand(int64_t value) {
+  return AddOperand(
+      DDim(std::vector<int64_t>({})), NNADAPTER_INT64, nullptr, 0, 0, &value);
+}
+
 NNAdapterOperand* Converter::AddFloat32ConstantOperand(float value) {
   return AddOperand(
       DDim(std::vector<int64_t>({})), NNADAPTER_FLOAT32, nullptr, 0, 0, &value);
+}
+
+NNAdapterOperand* Converter::AddFloat64ConstantOperand(double value) {
+  return AddOperand(
+      DDim(std::vector<int64_t>({})), NNADAPTER_FLOAT64, nullptr, 0, 0, &value);
+}
+
+NNAdapterOperand* Converter::AddBool8ConstantOperand(bool* values,
+                                                     const DDim& dimensions,
+                                                     bool copy) {
+  return AddOperand(dimensions, NNADAPTER_BOOL8, nullptr, 0, 0, values, copy);
 }
 
 NNAdapterOperand* Converter::AddInt32ConstantOperand(int32_t* values,
@@ -64,11 +80,25 @@ NNAdapterOperand* Converter::AddInt32ConstantOperand(int32_t* values,
       dimensions, NNADAPTER_TENSOR_INT32, nullptr, 0, 0, values, copy);
 }
 
+NNAdapterOperand* Converter::AddInt64ConstantOperand(int64_t* values,
+                                                     const DDim& dimensions,
+                                                     bool copy) {
+  return AddOperand(
+      dimensions, NNADAPTER_TENSOR_INT64, nullptr, 0, 0, values, copy);
+}
+
 NNAdapterOperand* Converter::AddFloat32ConstantOperand(float* values,
                                                        const DDim& dimensions,
                                                        bool copy) {
   return AddOperand(
       dimensions, NNADAPTER_TENSOR_FLOAT32, nullptr, 0, 0, values, copy);
+}
+
+NNAdapterOperand* Converter::AddFloat64ConstantOperand(double* values,
+                                                       const DDim& dimensions,
+                                                       bool copy) {
+  return AddOperand(
+      dimensions, NNADAPTER_TENSOR_FLOAT64, nullptr, 0, 0, values, copy);
 }
 
 NNAdapterOperand* Converter::AddQuant8ConstantOperand(int8_t* values,
@@ -142,57 +172,92 @@ NNAdapterOperand* Converter::AddQuant8VariableOperand(const DDim& dimensions,
                     name);
 }
 
+NNAdapterOperand* Converter::AddConstantOperand(const Tensor* tensor) {
+  auto tensor_precision = tensor->precision();
+  void* tensor_data = const_cast<void*>(tensor->raw_data());
+  auto nnadapter_tensor_precison =
+      Precision2NNAdapterTensorPrecisionCode(tensor_precision);
+  auto tensor_dims = tensor->dims();
+  return AddOperand(
+      tensor_dims, nnadapter_tensor_precison, nullptr, 0, 0, tensor_data, true);
+}
+
+NNAdapterOperand* Converter::AddOperand(const Tensor* tensor,
+                                        const std::string& name) {
+  auto tensor_precision = tensor->precision();
+  bool is_const_tensor = tensor->persistable();
+  auto dims = tensor->dims();
+  if (is_const_tensor) {
+    return AddConstantOperand(tensor);
+  } else {
+    auto nnadapter_tensor_precison =
+        Precision2NNAdapterTensorPrecisionCode(tensor_precision);
+    auto dims = tensor->dims();
+    return AddVariableOperand(dims, name, nnadapter_tensor_precison);
+  }
+}
+
+NNAdapterOperand* Converter::AddVariableOperand(
+    const DDim& dimensions,
+    const std::string& name,
+    NNAdapterOperandPrecisionCode precision) {
+  return AddOperand(dimensions, precision, nullptr, 0, 0, nullptr, false, name);
+}
+
 NNAdapterOperand* Converter::AddFloat32VariableOperand(
     const DDim& dimensions, const std::string& name) {
-  return AddOperand(dimensions,
-                    NNADAPTER_TENSOR_FLOAT32,
-                    nullptr,
-                    0,
-                    0,
-                    nullptr,
-                    false,
-                    name);
+  return AddVariableOperand(dimensions, name, NNADAPTER_TENSOR_FLOAT32);
 }
 
-NNAdapterOperation* Converter::AddOperation(NNAdapterOperationType type) {
+NNAdapterOperand* Converter::AddFloat64VariableOperand(
+    const DDim& dimensions, const std::string& name) {
+  return AddVariableOperand(dimensions, name, NNADAPTER_TENSOR_FLOAT64);
+}
+
+NNAdapterOperand* Converter::AddInt32VariableOperand(const DDim& dimensions,
+                                                     const std::string& name) {
+  return AddVariableOperand(dimensions, name, NNADAPTER_TENSOR_INT32);
+}
+
+NNAdapterOperand* Converter::AddInt64VariableOperand(const DDim& dimensions,
+                                                     const std::string& name) {
+  return AddVariableOperand(dimensions, name, NNADAPTER_TENSOR_INT64);
+}
+
+NNAdapterOperation* Converter::AddOperation(
+    NNAdapterOperationType type,
+    std::vector<NNAdapterOperand*>* input_operands,
+    std::vector<NNAdapterOperand*>* output_operands) {
   NNAdapterOperation* operation = nullptr;
-  NNAdapterModel_addOperation_invoke(model_, type, &operation);
-  return operation;
-}
-
-void Converter::SetOperation(NNAdapterOperation* operation,
-                             std::vector<NNAdapterOperand*>* input_operands,
-                             std::vector<NNAdapterOperand*>* output_operands) {
-  NNAdapterModel_setOperation_invoke(operation,
+  NNAdapterModel_addOperation_invoke(model_,
+                                     type,
                                      input_operands->size(),
-                                     &((*input_operands)[0]),
+                                     input_operands->data(),
                                      output_operands->size(),
-                                     &((*output_operands)[0]));
+                                     output_operands->data(),
+                                     &operation);
+  return operation;
 }
 
 NNAdapterOperand* Converter::AddOperand(NNAdapterOperandType* type,
                                         const std::string& name) {
   NNAdapterOperand* operand = nullptr;
+  NNAdapterModel_addOperand_invoke(model_, type, &operand);
   if (!name.empty()) {
     if (HasOperand(name)) {
-      LOG(WARNING) << "Operand '" << name << "' already exists!";
-      operand = operands_[name];
+      (*operands_)[name].emplace_back(operand);
     } else {
-      NNAdapterModel_addOperand_invoke(model_, type, &operand);
-      operands_[name] = operand;
+      (*operands_)[name] = std::vector<NNAdapterOperand*>{operand};
     }
-  } else {
-    // Anonymous operand
-    NNAdapterModel_addOperand_invoke(model_, type, &operand);
   }
   return operand;
 }
 
-void Converter::SetOperand(NNAdapterOperand* operand,
-                           void* buffer,
-                           size_t length,
-                           bool copy) {
-  NNAdapterModel_setOperand_invoke(operand, buffer, length, copy);
+void Converter::SetOperandValue(NNAdapterOperand* operand,
+                                void* buffer,
+                                size_t length,
+                                bool copy) {
+  NNAdapterModel_setOperandValue_invoke(operand, buffer, length, copy);
 }
 
 NNAdapterOperand* Converter::AddOperand(const DDim& dimensions,
@@ -207,7 +272,7 @@ NNAdapterOperand* Converter::AddOperand(const DDim& dimensions,
   memset(&type, 0, sizeof(NNAdapterOperandType));
   bool is_scalar = dimensions.size() == 0;
   if (!is_scalar) {
-    ConvertDimensions(dimensions, type.dimensions, &type.dimension_count);
+    ConvertDimensions(dimensions, type.dimensions.data, &type.dimensions.count);
   }
   type.precision = precision;
   if (quant_scales && quant_scale_count > 0) {
@@ -233,7 +298,7 @@ NNAdapterOperand* Converter::AddOperand(const DDim& dimensions,
     // Constant operand
     auto length =
         PrecisionLength(precision) * (!is_scalar ? dimensions.production() : 1);
-    SetOperand(operand, buffer, length, copy);
+    SetOperandValue(operand, buffer, length, copy);
   } else {
     // Variable/Input/Output operand
   }

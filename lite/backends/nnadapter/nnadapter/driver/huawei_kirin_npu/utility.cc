@@ -14,14 +14,13 @@
 
 #include "driver/huawei_kirin_npu/utility.h"
 #include "utility/debug.h"
-#include "utility/logging.h"
 
 namespace nnadapter {
 namespace huawei_kirin_npu {
 
 std::shared_ptr<hiai::AiModelMngerClient> LoadOMModelFromBuffer(
     const std::string& model_name,
-    std::vector<char>* model_buffer,
+    std::vector<uint8_t>* model_buffer,
     bool* model_comp,
     int freq_level,
     int framework_type,
@@ -44,7 +43,8 @@ std::shared_ptr<hiai::AiModelMngerClient> LoadOMModelFromBuffer(
   NNADAPTER_VLOG(3) << "freq_level: " << freq_level
                     << " framework_type: " << framework_type
                     << " model_type: " << model_type
-                    << " device_type: " << device_type;
+                    << " device_type: " << device_type
+                    << " model_name: " << model_name;
   auto model_desc = std::make_shared<hiai::AiModelDescription>(
       model_name, freq_level, framework_type, model_type, device_type);
   model_desc->SetModelBuffer(
@@ -114,14 +114,14 @@ std::shared_ptr<hiai::AiModelMngerClient> LoadOMModelFromBuffer(
         << "Failed to call AiModelMngerClient to load a HiAI OM model!";
     return nullptr;
   }
-  NNADAPTER_VLOG(3) << "Load successed.";
+  NNADAPTER_VLOG(3) << "Load a HiAI OM model success.";
   return model_client;
 }
 
 bool BuildOMModelToBuffer(
     std::vector<ge::Operator>& input_operators,   // NOLINT
     std::vector<ge::Operator>& output_operators,  // NOLINT
-    std::vector<char>* model_buffer) {
+    std::vector<uint8_t>* model_buffer) {
   // Convert a HiAI IR graph to a HiAI OM model
   ge::Graph ir_graph("graph");
   ir_graph.SetInputs(input_operators).SetOutputs(output_operators);
@@ -148,112 +148,218 @@ bool BuildOMModelToBuffer(
          reinterpret_cast<void*>(om_buffer.data),
          om_buffer.length);
   ir_build.ReleaseModelBuff(om_buffer);
-  NNADAPTER_VLOG(3) << "Build succeeded.";
+  NNADAPTER_VLOG(3) << "Build a HiAI OM model success.";
   return true;
 }
 
-ge::DataType ConvertPrecision(NNAdapterOperandPrecisionCode input_precision) {
-  ge::DataType output_precision = ge::DT_FLOAT;
-  switch (input_precision) {
+const std::string GEDataTypeToString(ge::DataType data_type) {
+  static const std::vector<std::string> datatype2strings{"DT_FLOAT=0",
+                                                         "DT_FLOAT16=1",
+                                                         "DT_INT8=2",
+                                                         "DT_INT32=3",
+                                                         "DT_UINT8=4",
+                                                         "Unknown=5",
+                                                         "DT_INT16=6",
+                                                         "DT_UINT16=7",
+                                                         "DT_UINT32=8",
+                                                         "DT_INT64=9",
+                                                         "DT_UINT64=10",
+                                                         "DT_DOUBLE=11",
+                                                         "DT_BOOL=12",
+                                                         "DT_STRING=13"};
+  auto index = static_cast<int>(data_type);
+  NNADAPTER_CHECK_LT(index, datatype2strings.size());
+  return datatype2strings[index];
+}
+
+const std::string GEFormatToString(ge::Format format) {
+  static const std::vector<std::string> format2strings = {
+      "FORMAT_NCHW = 0",
+      "FORMAT_NHWC = 1",
+      "FORMAT_ND = 2",
+      "FORMAT_NC1HWC0 = 3",
+      "FORMAT_FRACTAL_Z = 4",
+      "FORMAT_NC1C0HWPAD = 5",
+      "FORMAT_NHWC1C0 = 6",
+      "FORMAT_FSR_NCHW = 7",
+      "FORMAT_FRACTAL_DECONV = 8",
+      "FORMAT_C1HWNC0 = 9",
+      "FORMAT_FRACTAL_DECONV_TRANSPOSE = 10",
+      "FORMAT_FRACTAL_DECONV_SP_STRIDE_TRANS = 11",
+      "FORMAT_NC1HWC0_C04 = 12",
+      "FORMAT_FRACTAL_Z_C04 = 13",
+      "FORMAT_CHWN = 14",
+      "FORMAT_FRACTAL_DECONV_SP_STRIDE8_TRANS = 15",
+      "FORMAT_HWCN = 16",
+      "FORMAT_NC1KHKWHWC0 = 17",
+      "FORMAT_BN_WEIGHT = 18",
+      "FORMAT_FILTER_HWCK = 19",
+      "FORMAT_HASHTABLE_LOOKUP_LOOKUPS = 20",
+      "FORMAT_HASHTABLE_LOOKUP_KEYS = 21",
+      "FORMAT_HASHTABLE_LOOKUP_VALUE = 22",
+      "FORMAT_HASHTABLE_LOOKUP_OUTPUT = 23",
+      "FORMAT_HASHTABLE_LOOKUP_HITS = 24"};
+  auto index = static_cast<int>(format);
+  NNADAPTER_CHECK_LT(index, format2strings.size());
+  return format2strings[index];
+}
+
+const std::string GEShapeToString(ge::Shape shape) {
+  std::stringstream ss;
+  size_t dim_count = shape.GetDimNum();
+  if (dim_count == 0) {
+    ss << "{}";
+    return ss.str();
+  }
+  ss << "{";
+  for (size_t i = 0; i < dim_count - 1; i++) {
+    ss << shape.GetDim(i) << ",";
+  }
+  ss << shape.GetDim(dim_count - 1);
+  ss << "}";
+  return ss.str();
+}
+
+int64_t ProductionOfGEShape(ge::Shape shape) {
+  int64_t production = 1;
+  size_t dim_count = shape.GetDimNum();
+  for (size_t i = 0; i < dim_count; i++) {
+    auto dimension = shape.GetDim(i);
+    NNADAPTER_CHECK_GT(dimension, 0);
+    production *= dimension;
+  }
+  return production;
+}
+
+template <>
+ge::DataType GetGEDataType<float>() {
+  return ge::DT_FLOAT;
+}
+
+template <>
+ge::DataType GetGEDataType<int8_t>() {
+  return ge::DT_INT8;
+}
+
+template <>
+ge::DataType GetGEDataType<int16_t>() {
+  return ge::DT_INT16;
+}
+
+template <>
+ge::DataType GetGEDataType<int32_t>() {
+  return ge::DT_INT32;
+}
+
+template <>
+ge::DataType GetGEDataType<int64_t>() {
+  return ge::DT_INT64;
+}
+
+template <>
+ge::DataType GetGEDataType<bool>() {
+  return ge::DT_BOOL;
+}
+
+ge::DataType ConvertToGEPrecision(
+    NNAdapterOperandPrecisionCode precision_code) {
+  switch (precision_code) {
     case NNADAPTER_TENSOR_BOOL8:
-      output_precision = ge::DT_BOOL;
-      break;
+      return ge::DT_BOOL;
     case NNADAPTER_TENSOR_INT8:
-      output_precision = ge::DT_INT8;
-      break;
+      return ge::DT_INT8;
     case NNADAPTER_TENSOR_INT16:
-      output_precision = ge::DT_INT16;
-      break;
+      return ge::DT_INT16;
     case NNADAPTER_TENSOR_INT32:
-      output_precision = ge::DT_INT32;
-      break;
+      return ge::DT_INT32;
     case NNADAPTER_TENSOR_INT64:
-      output_precision = ge::DT_INT64;
-      break;
+      return ge::DT_INT64;
     case NNADAPTER_TENSOR_UINT8:
-      output_precision = ge::DT_UINT8;
-      break;
+      return ge::DT_UINT8;
     case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER:
-      output_precision = ge::DT_QUINT8;
-      break;
+      return ge::DT_QUINT8;
     case NNADAPTER_TENSOR_UINT16:
-      output_precision = ge::DT_UINT16;
-      break;
+      return ge::DT_UINT16;
     case NNADAPTER_TENSOR_UINT32:
-      output_precision = ge::DT_UINT32;
-      break;
+      return ge::DT_UINT32;
     case NNADAPTER_TENSOR_UINT64:
-      output_precision = ge::DT_UINT64;
-      break;
+      return ge::DT_UINT64;
     case NNADAPTER_TENSOR_FLOAT16:
-      output_precision = ge::DT_FLOAT16;
-      break;
+      return ge::DT_FLOAT16;
     case NNADAPTER_TENSOR_FLOAT32:
-      output_precision = ge::DT_FLOAT;
-      break;
+      return ge::DT_FLOAT;
     case NNADAPTER_TENSOR_FLOAT64:
-      output_precision = ge::DT_DOUBLE;
-      break;
+      return ge::DT_DOUBLE;
     default:
       NNADAPTER_LOG(FATAL)
           << "Failed to convert the NNAdapter operand precision code("
-          << OperandPrecisionCodeToString(input_precision)
-          << ") to HiAI ge::DataType !";
+          << OperandPrecisionCodeToString(precision_code)
+          << ") to ge::DataType!";
       break;
   }
-  return output_precision;
+  return ge::DT_FLOAT;
 }
 
-ge::Format ConvertDataLayout(NNAdapterOperandLayoutCode input_layout) {
-  ge::Format output_layout = ge::FORMAT_NCHW;
-  switch (input_layout) {
+ge::Format ConvertToGEDataLayout(NNAdapterOperandLayoutCode layout_code) {
+  switch (layout_code) {
     case NNADAPTER_NCHW:
-      output_layout = ge::FORMAT_NCHW;
-      break;
+      return ge::FORMAT_NCHW;
     case NNADAPTER_NHWC:
-      output_layout = ge::FORMAT_NHWC;
-      break;
+      return ge::FORMAT_NHWC;
     default:
       NNADAPTER_LOG(FATAL)
           << "Failed to convert the NNAdapter operand layout code("
-          << OperandLayoutCodeToString(input_layout)
-          << ") to HiAI ge::Format !";
+          << OperandLayoutCodeToString(layout_code) << ") to ge::Format!";
       break;
   }
-  return output_layout;
+  return ge::FORMAT_NCHW;
 }
 
-std::vector<int64_t> ConvertDimensions(int32_t* input_dimensions,
-                                       uint32_t input_dimensions_count) {
-  std::vector<int64_t> output_dimensions(input_dimensions_count);
+std::vector<int64_t> ConvertToGEDimensions(const int32_t* input_dimensions,
+                                           uint32_t input_dimensions_count) {
+  std::vector<int64_t> output_dimensions;
   for (uint32_t i = 0; i < input_dimensions_count; i++) {
-    output_dimensions[i] = input_dimensions[i];
+    output_dimensions.push_back(input_dimensions[i]);
   }
   return output_dimensions;
 }
 
-int32_t ConvertFuseCode(int32_t input_fuse_code) {
-  int output_act_mode;
-  switch (input_fuse_code) {
-    case NNADAPTER_FUSED_NONE:
-      output_act_mode = -1;
-      break;
+std::vector<int64_t> ConvertToGEDimensions(
+    const std::vector<int32_t>& input_dimensions) {
+  return ConvertToGEDimensions(&input_dimensions[0], input_dimensions.size());
+}
+
+int32_t ConvertFuseCodeToGEActMode(int32_t fuse_code) {
+  switch (fuse_code) {
     case NNADAPTER_FUSED_RELU:
-      output_act_mode = 1;
-      break;
+      return 1;
     case NNADAPTER_FUSED_RELU1:
-      output_act_mode = 7;
-      break;
+      return 7;
     case NNADAPTER_FUSED_RELU6:
-      output_act_mode = 14;
-      break;
+      return 14;
     default:
       NNADAPTER_LOG(FATAL) << "Failed to convert the NNAdapter fuse code("
-                           << input_fuse_code
-                           << ") to a HiAI activation operator!";
+                           << fuse_code << ") to a GE activation operator!";
       break;
   }
-  return output_act_mode;
+  return 0;
+}
+
+std::string ConvertAutoPadCodeToGEPadMode(NNAdapterAutoPadCode auto_pad_code) {
+  switch (auto_pad_code) {
+    case NNADAPTER_AUTO_PAD_NONE:
+      return "SPECIFIC";
+    case NNADAPTER_AUTO_PAD_SAME:
+      return "SAME";
+    case NNADAPTER_AUTO_PAD_VALID:
+      return "VALID";
+    default:
+      NNADAPTER_LOG(FATAL) << "Failed to convert the NNAdapter auto_pad code("
+                           << AutoPadCodeToString(auto_pad_code)
+                           << ") to GE pad mode!";
+      break;
+  }
+  return "SPECIFIC";
 }
 
 }  // namespace huawei_kirin_npu

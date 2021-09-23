@@ -247,7 +247,20 @@ void LightPredictor::DequantizeWeight() {
         auto input_names = op_desc->input_vars();
         for (auto& input_name : input_names) {
           std::string input_scale_name = input_name + "_quant_scale";
-          if (op_desc->HasAttr(input_scale_name)) {  // the input is quantized
+          size_t found = input_name.find("/target_trans");
+          std::string input_scale_name_alias = "";
+          if (found != std::string::npos) {
+            input_scale_name_alias =
+                input_name.substr(0, found) + "_quant_scale";
+          }
+          if (op_desc->HasAttr(input_scale_name) ||
+              (!input_scale_name_alias.empty() &&
+               op_desc->HasAttr(
+                   input_scale_name_alias))) {  // the input is quantized
+            if (!input_scale_name_alias.empty()) {
+              input_scale_name = input_scale_name_alias;
+              input_name = input_name.substr(0, found);
+            }
             auto input_tensor =
                 scope_->FindVar(input_name)->GetMutable<lite::Tensor>();
             tmp_tensor.CopyDataFrom(*input_tensor);
@@ -300,10 +313,13 @@ void LightPredictor::WeightFP32ToFP16() {
   std::shared_ptr<const cpp::ProgramDesc> program_desc = program_desc_;
   std::vector<std::string> fp16_ops{"conv2d",
                                     "depthwise_conv2d",
+                                    "conv2d_transpose",
                                     "fc",
+                                    "gru",
                                     "sequence_conv",
                                     "elementwise_add",
-                                    "elementwise_mul"};
+                                    "elementwise_mul",
+                                    "prelu"};
   for (size_t i = 0; i < program_desc->BlocksSize(); i++) {
     auto* block = program_desc->GetBlock<cpp::BlockDesc>(i);
     for (size_t k = 0; k < block->OpsSize(); ++k) {
@@ -339,9 +355,9 @@ void LightPredictor::CheckInputValid() {
     if (GetInput(idx)->precision() != input_precisions_[idx]) {
       LOG(WARNING) << " Error input tensor precision type. Input index (" << idx
                    << ") Tensor name (" << input_names_[idx]
-                   << ") Require Precision type ("
+                   << ") Require precision type ("
                    << PrecisionToStr(input_precisions_[idx])
-                   << ") Input Precision type ("
+                   << ") Input precision type ("
                    << PrecisionToStr(GetInput(idx)->precision()) << ").";
     }
   }

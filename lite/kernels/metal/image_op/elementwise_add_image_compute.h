@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -39,9 +39,10 @@ class ElementwiseAddImageCompute
 
    public:
     void PrepareForRun() override;
+    void ReInitWhenNeeded() override;
     void Run() override;
     void SaveOutput() override {
-        MetalDebug::SaveOutput("elementwise_add", output_buffer_);
+        MetalDebug::SaveOutput(function_name_, output_buffer_);
     };
     virtual ~ElementwiseAddImageCompute();
 
@@ -52,20 +53,30 @@ class ElementwiseAddImageCompute
     void* mps_input_image_y_{nullptr};
     void* mps_output_image_{nullptr};
 
+    void init_for_run();
+    void init_memory();
+    void release_memory();
+    void release_mps_memory();
+
     void setup_with_mps();
     void setup_without_mps();
 
     void run_with_mps();
     void run_without_mps();
 
+   private:
     MetalImage* output_buffer_{nullptr};
     const MetalImage* input_buffer_x_;
     const MetalImage* input_buffer_y_;
     std::shared_ptr<MetalBuffer> params_buffer_;
+    DDim last_input_dims_{};
 
     id<MTLComputePipelineState> pipline_;
     std::string function_name_;
     MetalContext* metal_context_;
+
+    bool fuse_flag_{false};
+    const param_t* elementwise_param_{nullptr};
 };
 
 }  // namespace metal

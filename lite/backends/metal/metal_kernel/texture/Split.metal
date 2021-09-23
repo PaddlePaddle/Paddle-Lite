@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+/* Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -17,14 +17,6 @@
 #include "Common.metal"
 
 using namespace metal;
-
-struct SplitParam {
-  int32_t idim[4];
-  int32_t axis;
-  int32_t offset;
-  int32_t trans[4];
-  int32_t vdim[4];
-};
 
 #define VNORMAL 1
 #define VX 2
@@ -69,6 +61,26 @@ struct SplitParam {
 #define V VZ
 #define R 4
 #define N 2
+#define P ftype
+#include "Split.inc.metal"
+#undef P
+#undef N
+#undef R
+#undef V
+
+#define V VZ
+#define R 4
+#define N 3
+#define P ftype
+#include "Split.inc.metal"
+#undef P
+#undef N
+#undef R
+#undef V
+
+#define V VZ
+#define R 4
+#define N 4
 #define P ftype
 #include "Split.inc.metal"
 #undef P

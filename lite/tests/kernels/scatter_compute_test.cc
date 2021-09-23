@@ -15,7 +15,7 @@
 #include <gtest/gtest.h>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
-#include "lite/core/arena/framework.h"
+#include "lite/core/test/arena/framework.h"
 
 namespace paddle {
 namespace lite {
@@ -27,20 +27,15 @@ void scatter_basic(const int64_t* indexs,
                    int num,
                    int size,
                    bool overwrite) {
-  for (int i = 0; i < num; i++) {
-    const float* din = src + indexs[i] * size;
-    memcpy(dst, din, sizeof(float) * size);
-    dst += size;
-  }
+  memset(reinterpret_cast<char*>(dst), 0, sizeof(float) * size * num);
   if (overwrite) {
-    for (int i = num; i < index_size; i++) {
-      const float* din = src + indexs[i] * size;
-      float* dout = dst + indexs[i] * size;
-      memcpy(dout, din, sizeof(float) * size);
+    for (int i = 0; i < index_size; i++) {
+      const float* din = src + i * size;
+      memcpy(dst + indexs[i] * size, din, sizeof(float) * size);
     }
   } else {
-    for (int i = num; i < index_size; i++) {
-      const float* din = src + indexs[i] * size;
+    for (int i = 0; i < index_size; i++) {
+      const float* din = src + i * size;
       float* dout = dst + indexs[i] * size;
       for (int j = 0; j < size; j++) {
         dout[j] += din[j];

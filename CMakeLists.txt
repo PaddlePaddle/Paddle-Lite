@@ -28,7 +28,8 @@ endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include(system)
-include(cross_compiling/preproject)
+include(functions)
+include(os/common)
 
 project(paddle CXX C)
 message(STATUS "CXX compiler: ${CMAKE_CXX_COMPILER}, version: "
@@ -47,6 +48,8 @@ if(WIN32)
     set(CMAKE_SUPPRESS_REGENERATION ON)
     set(CMAKE_STATIC_LIBRARY_PREFIX lib)
     add_definitions("/DGOOGLE_GLOG_DLL_DECL=")
+    add_definitions(-DGLOG_NO_ABBREVIATED_SEVERITIES)
+    add_definitions(-DNOMINMAX)
 
     if(MSVC_STATIC_CRT)
       set(CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS_DEBUG} /bigobj /MTd")
@@ -67,6 +70,9 @@ if(WIN32)
     set(CMAKE_STATIC_LINKER_FLAGS  "${CMAKE_STATIC_LINKER_FLAGS} ${PADDLE_LINK_FLAGS}")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${PADDLE_LINK_FLAGS}")
     set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${PADDLE_LINK_FLAGS}")
+    if(MSVC)
+      include(external/dirent)
+    endif()
 endif()
 
 if(NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
@@ -118,6 +124,7 @@ lite_option(LITE_WITH_NVTX      "Enable nvtx or not, please enable LITE_WITH_CUD
 lite_option(LITE_ON_TINY_PUBLISH "Publish tiny predictor lib." OFF)
 lite_option(LITE_ON_MODEL_OPTIMIZE_TOOL "Build the model optimize tool" OFF)
 lite_option(LITE_WITH_BENCHMARK_TEST "Build benchmark test cases" OFF)
+lite_option(LITE_THREAD_POOL    "Enable thread pool in lite" OFF)
 # publish options
 lite_option(LITE_BUILD_EXTRA    "Enable extra algorithm support in Lite, both kernels and operators" OFF)
 lite_option(LITE_BUILD_TAILOR   "Enable tailoring library according to model" OFF)
@@ -187,15 +194,15 @@ if (LITE_WITH_PYTHON)
 endif()
 
 if(LITE_WITH_RKNPU)
-   include(device/rknpu)
+   include(backends/rknpu)
 endif()
 
 if(LITE_WITH_IMAGINATION_NNA)
-	include(device/imagination_nna)
+	include(backends/imagination_nna)
 endif()
 
 if(LITE_WITH_INTEL_FPGA)
-	include(device/intel_fpga)
+	include(backends/intel_fpga)
 endif()
 
 # flatbuffer module for loading model
@@ -211,20 +218,27 @@ else()
             )
 endif()
 
+if (LITE_THREAD_POOL)
+  add_definitions(-DLITE_USE_THREAD_POOL)
+endif()
+
+if (LITE_THREAD_POOL OR ((ARM_TARGET_LANG STREQUAL "clang") AND (ARM_TARGET_ARCH_ABI STREQUAL "armv7")))
+    set(LITE_WITH_OPENMP OFF CACHE STRING "Disable OpenMP when Thread Pool is enabled" FORCE)
+endif()
+
 # for opencl
 if (LITE_WITH_OPENCL)
-    include(external/opencl-headers)
-    include(external/opencl-clhpp)
+    include_directories("${PADDLE_SOURCE_DIR}/third-party/opencl/include")
 endif()
 
 # for mobile
 if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     message(STATUS "Building the mobile framework")
-    include(cross_compiling/postproject)
-    include(device/npu) # check and prepare NPU DDK
-    include(device/xpu) # check and prepare XPU SDK
-    include(device/apu) # check and prepare APU SDK 
-    include(device/huawei_ascend_npu)  # check and prepare Ascend NPU SDK 
+    include(os/postproject)
+    include(backends/npu) # check and prepare NPU DDK
+    include(backends/xpu) # check and prepare XPU SDK
+    include(backends/apu) # check and prepare APU SDK 
+    include(backends/huawei_ascend_npu)  # check and prepare Ascend NPU SDK 
 
     # We compile the mobile deployment library when LITE_ON_TINY_PUBLISH=ON
     # So the following third party dependencies are not needed.
@@ -259,7 +273,7 @@ endif()
 ########################################################################################
 
 if(LITE_WITH_XPU)
-    include(device/xpu)
+    include(backends/xpu)
 endif()
 
 if(LITE_WITH_MLU)
@@ -267,7 +281,7 @@ if(LITE_WITH_MLU)
 endif()
 
 if(LITE_WITH_HUAWEI_ASCEND_NPU)
-    include(device/huawei_ascend_npu)
+    include(backends/huawei_ascend_npu)
 endif()
 
 include(coveralls)

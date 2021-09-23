@@ -161,6 +161,10 @@ void seq_pool_max(const T* din,
           din_ptr += width;
         }
       }
+    } else {
+      for (int64_t k = 0; k < width; ++k) {
+        dout_ptr[i * width + k] = 0;
+      }
     }
   }
 }

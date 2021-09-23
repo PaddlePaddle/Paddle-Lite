@@ -15,7 +15,7 @@
 #include <gtest/gtest.h>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
-#include "lite/core/arena/framework.h"
+#include "lite/core/test/arena/framework.h"
 
 namespace paddle {
 namespace lite {
@@ -226,7 +226,7 @@ void reduce_third_of_three(
     const float* src, float* dst, int first_in, int second_in, int third_in) {
   for (int i = 0; i < first_in; i++) {
     for (int j = 0; j < second_in; j++) {
-      dst[i * second_in + j] = src[i * second_in * third_in + j * second_in];
+      dst[i * second_in + j] = src[i * second_in * third_in + j * third_in];
       for (int k = 0; k < third_in; k++) {
         dst[i * second_in + j] =
             src[i * second_in * third_in + j * third_in + k] >

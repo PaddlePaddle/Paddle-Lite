@@ -12,42 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/mediatek_apu/converter.h"
+#include "core/operation/softmax.h"
+#include "driver/mediatek_apu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace mediatek_apu {
 
-int Program::ConvertSoftmax(hal::Operation* operation) {
-  auto& input_operands = operation->input_operands;
-  auto& output_operands = operation->output_operands;
-  auto input_count = input_operands.size();
-  auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 2);
-  NNADAPTER_CHECK_EQ(output_count, 1);
-  // Input
-  auto input_operand = input_operands[0];
-  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
-  // Axis
-  auto axis = *reinterpret_cast<int32_t*>(input_operands[1]->buffer);
-  if (axis < 0) {
-    axis += input_operand->type.dimension_count;
-  }
-  NNADAPTER_VLOG(5) << "axis=" << axis;
-  // Output
-  auto output_operand = output_operands[0];
-  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
+int ConvertSoftmax(Converter* converter, hal::Operation* operation) {
+  SOFTMAX_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to Neuron operands and operations
-  auto input_index = ConvertOperand(input_operand);
-  auto beta_index = AddFloat32ConstantOperand(1.0f);
-  auto axis_index = AddInt32ConstantOperand(axis);
-  auto output_index = ConvertOperand(output_operand);
-  std::vector<uint32_t> input_indexes = {input_index, beta_index, axis_index};
-  std::vector<uint32_t> output_indexes = {output_index};
+  auto input_index = converter->GetMappedIndex(input_operand);
+  if (input_index == INVALID_INDEX) {
+    input_index = converter->ConvertOperand(input_operand);
+  }
+  auto beta_index = converter->AddFloat32ConstantOperand(1.0f);
+  auto axis_index = converter->AddInt32ConstantOperand(axis);
+  auto output_index = converter->ConvertOperand(output_operand);
   NNADAPTER_CHECK_EQ(
-      AddOperation(NEURON_SOFTMAX, &input_indexes, &output_indexes),
+      converter->AddOperation(NEURON_SOFTMAX,
+                              {input_index, beta_index, axis_index},
+                              {output_index}),
       NEURON_NO_ERROR);
   return NNADAPTER_NO_ERROR;
 }

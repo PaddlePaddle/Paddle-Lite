@@ -18,10 +18,14 @@
 #include <string>
 #include "lite/api/paddle_api.h"
 #include "lite/core/device_info.h"
-#include "lite/core/mir/pass_manager.h"
-#include "lite/core/mir/post_quant_dynamic_pass.h"
+#include "lite/core/optimizer/mir/pass_manager.h"
+#include "lite/core/optimizer/mir/post_quant_dynamic_pass.h"
+#include "lite/core/optimizer/mir/sparse_conv_detect_pass.h"
 #include "lite/core/version.h"
-
+#ifdef LITE_USE_THREAD_POOL
+#include "lite/core/parallel_defines.h"
+#include "lite/core/thread_pool.h"
+#endif
 #ifndef LITE_ON_TINY_PUBLISH
 #include "lite/api/paddle_use_passes.h"
 #endif
@@ -38,6 +42,14 @@ namespace lite {
 
 void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
   config_ = config;
+  mode_ = config.power_mode();
+  threads_ = config.threads();
+#ifdef LITE_USE_THREAD_POOL
+  int thread_num = ThreadPool::Init(threads_);
+  if (thread_num > 1) {
+    ThreadPool::AcquireThreadPool();
+  }
+#endif
   if (!status_is_cloned_) {
     auto places = config.valid_places();
     std::vector<std::string> passes = config.get_passes_internal();
@@ -75,12 +87,20 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
 #if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
     defined(LITE_WITH_NNADAPTER)
     // Use scope to store the model-level configuration for the subgraph kernel
-    Context<TargetType::kNNAdapter>::SetNNAdapterDevices(
-        raw_predictor_->scope(), config.nnadapter_devices());
+    Context<TargetType::kNNAdapter>::SetNNAdapterDeviceNames(
+        raw_predictor_->scope(), config.nnadapter_device_names());
+    Context<TargetType::kNNAdapter>::SetNNAdapterContextProperties(
+        raw_predictor_->scope(), config.nnadapter_context_properties());
     Context<TargetType::kNNAdapter>::SetNNAdapterModelCacheDir(
         raw_predictor_->scope(), config.nnadapter_model_cache_dir());
     Context<TargetType::kNNAdapter>::SetNNAdapterModelCacheBuffers(
         raw_predictor_->scope(), config.nnadapter_model_cache_buffers());
+    Context<TargetType::kNNAdapter>::SetNNAdapterSubgraphPartitionConfigPath(
+        raw_predictor_->scope(),
+        config.nnadapter_subgraph_partition_config_path());
+    Context<TargetType::kNNAdapter>::SetNNAdapterSubgraphPartitionConfigBuffer(
+        raw_predictor_->scope(),
+        config.nnadapter_subgraph_partition_config_buffer());
 #endif
 
     auto use_layout_preprocess_pass =
@@ -99,13 +119,25 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
       CHECK(pass);
       pass->SetQuantType(config.quant_type());
     }
+
+    auto *sparse_detect_pass =
+        mir::PassManager::Global().LookUp<mir::SparseConvDetectPass>(
+            "sparse_conv_detect_pass");
+    CHECK(sparse_detect_pass);
+    if (config.sparse_model()) {
+      sparse_detect_pass->SetSparseThreshold(config.sparse_threshold());
+    } else {
+      // Pass in a value greater than 1.0 to turn off the sparse pass
+      // internally.
+      sparse_detect_pass->SetSparseThreshold(1.5);
+    }
+
     raw_predictor_->Build(config, places, passes);
   } else {
     raw_predictor_->PrepareFeedFetch();
     CHECK(raw_predictor_) << "The Predictor can not be nullptr in Clone mode.";
   }
-  mode_ = config.power_mode();
-  threads_ = config.threads();
+
 #ifdef LITE_WITH_NPU
   // Store the model-level configuration into scope for kernels, and use
   // exe_scope to store the execution-level configuration
@@ -197,6 +229,12 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
     }
     Run();
   }
+#endif
+}
+
+CxxPaddleApiImpl::~CxxPaddleApiImpl() {
+#ifdef LITE_USE_THREAD_POOL
+  ThreadPool::ReleaseThreadPool();
 #endif
 }
 

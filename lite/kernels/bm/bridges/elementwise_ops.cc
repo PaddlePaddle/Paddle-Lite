@@ -16,7 +16,8 @@
 #include <bmcompiler_if.h>
 #include <bmcompiler_if_lite.h>
 #include <bmcompiler_op_code.h>
-#include "lite/core/subgraph_bridge_registry.h"
+#include <cmath>
+#include "lite/core/subgraph/subgraph_bridge_registry.h"
 #include "lite/kernels/bm/bridges/graph.h"
 #include "lite/kernels/bm/bridges/utility.h"
 
@@ -41,6 +42,8 @@ float* compute_elementwise_both_const(OpLite* op) {
   auto output_var_name = op_info->Output("Out").front();
   auto output = scope->FindVar(output_var_name)->GetMutable<lite::Tensor>();
   auto output_dims = output->dims();
+  CHECK(output->data_size());
+  CHECK_GT(SIZE_MAX / sizeof(float), output->data_size());
   float* cpu_data =
       static_cast<float*>(malloc(sizeof(float) * output->data_size()));
   CHECK(cpu_data != nullptr);
@@ -61,6 +64,7 @@ float* compute_elementwise_both_const(OpLite* op) {
     }
   } else if (op_type == "elementwise_div") {
     for (size_t i = 0; i < output->data_size(); i++) {
+      CHECK(fabsf(y_data[i]) > 1e-6f) << "y_data can not equal zero";
       cpu_data[i] = x_data[i] / y_data[i];
     }
   }

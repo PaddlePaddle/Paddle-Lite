@@ -1,0 +1,6 @@
+lite_cc_library(cpp_op_desc SRCS op_desc.cc)
+lite_cc_library(cpp_var_desc SRCS var_desc.cc)
+lite_cc_library(cpp_block_desc SRCS block_desc.cc)
+lite_cc_library(cpp_program_desc SRCS program_desc.cc)
+lite_cc_library(cpp_op_version_map SRCS op_version_map.cc)
+set(cpp_wrapper cpp_program_desc cpp_block_desc cpp_op_version_map cpp_var_desc cpp_op_desc CACHE INTERNAL "")

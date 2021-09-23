@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 #include "lite/backends/huawei_ascend_npu/utils.h"
+#include "lite/core/model/base/var_desc.h"
 #include "lite/core/op_lite.h"
 #include "lite/utils/macros.h"
 
@@ -63,6 +64,10 @@ bool HasInputArg(const OpInfo* op_info,
                  const std::string& argname);
 
 ge::DataType CvtPrecisionType(PrecisionType itype);
+
+void CvtType(const VarDescAPI::VarDataType& idtype,
+             ge::DataType* odtype,
+             PrecisionType* ptype);
 
 ge::Format CvtDataLayoutType(DataLayoutType itype);
 

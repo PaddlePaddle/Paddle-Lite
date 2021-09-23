@@ -15,7 +15,7 @@
 #include <gtest/gtest.h>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
-#include "lite/core/arena/framework.h"
+#include "lite/core/test/arena/framework.h"
 #include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
@@ -259,7 +259,8 @@ void TestConvGroups(Place place, float abs_error = 2e-5) {
        std::vector<std::vector<int64_t>>{{1, 6, 3, 4}, {5, 12, 7, 8}}) {
     for (auto out_channels : {2, 3, 6}) {
       for (auto groups : {2, 3, 6}) {
-#if (defined LITE_WITH_NPU) || (defined LITE_WITH_HUAWEI_ASCEND_NPU)
+#if (defined LITE_WITH_NPU) || (defined LITE_WITH_HUAWEI_ASCEND_NPU) || \
+    (defined NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
         if (out_channels % groups != 0) continue;
 #endif
         std::unique_ptr<arena::TestCase> tester(new ConvComputeTester(
@@ -388,7 +389,9 @@ void TestConvAct(Place place, float abs_error = 2e-5) {
                                 "relu"));
       arena::Arena arena0(std::move(tester0), place, abs_error);
       arena0.TestPrecision();
-
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+      continue;
+#endif
       std::unique_ptr<arena::TestCase> tester1(
           new ConvComputeTester(place,
                                 "def",
@@ -410,19 +413,68 @@ void TestConvAct(Place place, float abs_error = 2e-5) {
   }
 }
 
+void TestConvDepthwise(Place place, float abs_error = 2e-5) {
+  // Using a limited set can prevent unit test timeout and reduce CI
+  // time-consuming
+  for (int64_t n : {1, 3, 4}) {
+    for (auto win : {3, 4, 7, 16, 30}) {
+      std::vector<int64_t> dims{n, 32, win, win};
+      for (auto stride : {1, 2}) {
+        for (auto pad : {1}) {
+          for (auto bias : {false, true}) {
+            for (auto act : {"relu", "leaky_relu"}) {
+              std::unique_ptr<arena::TestCase> tester(
+                  new ConvComputeTester(place,
+                                        "def",
+                                        DDim(dims),
+                                        32,
+                                        3,
+                                        {stride, stride},
+                                        {pad, pad},
+                                        32,
+                                        {1, 1},
+                                        "",
+                                        bias,
+                                        true,
+                                        act));
+              arena::Arena arena(std::move(tester), place, abs_error);
+              arena.TestPrecision();
+            }
+          }
+        }
+      }
+    }
+  }
+  std::unique_ptr<arena::TestCase> tester(new ConvComputeTester(
+      place, "def", DDim({1, 40, 16, 50}), 40, 3, {2, 1}, {1, 1}, 40));
+  arena::Arena arena(std::move(tester), place, abs_error);
+  arena.TestPrecision();
+}
+
 TEST(Conv2d, precision) {
   float abs_error = 2e-5;
   Place place;
-#if defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 5e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 5e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kHuaweiAscendNPU);
-  abs_error = 1e-2;  // precision_mode default is force_fp16
+  abs_error = 5e-2;  // precision_mode default is force_fp16
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
   abs_error = 1e-2;
   // TODO(shentanyue): enable later
+  return;
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kX86);
+  TestConvKsize(place, abs_error);
   return;
 #else
   return;
@@ -436,6 +488,7 @@ TEST(Conv2d, precision) {
   TestConvPaddingAlgorithm(place, abs_error);
   TestConvBias(place, abs_error);
   TestConvAct(place, abs_error);
+  TestConvDepthwise(place, abs_error);
 }
 
 }  // namespace lite

@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <memory>
+#include <string>
 #include <vector>
 #include "core/hal/types.h"
 #include "rknpu/rknpu_pub.h"
@@ -21,12 +23,31 @@
 namespace nnadapter {
 namespace rockchip_npu {
 
-rk::nn::PrecisionType ConvertPrecision(
+// Convert NNAdapter types to rknpu types
+rk::nn::PrecisionType ConvertToRknnPrecisionType(
     NNAdapterOperandPrecisionCode input_precision);
-rk::nn::DataLayoutType ConvertDataLayout(
+rk::nn::DataLayoutType ConvertToRknnDataLayoutType(
     NNAdapterOperandLayoutCode input_layout);
-std::vector<int32_t> ConvertDimensions(int32_t* input_dimensions,
-                                       uint32_t input_dimensions_count);
+std::vector<int32_t> ConvertToRknnDimensions(int32_t* input_dimensions,
+                                             uint32_t input_dimensions_count);
+
+// Create rknpu tensor base on NNAdapter types
+std::shared_ptr<rk::nn::Tensor> CreateRknnTensor(
+    rk::nn::Graph* graph,
+    const std::string& name,
+    int32_t* dimensions_data,
+    uint32_t dimensions_count,
+    rk::nn::PrecisionType precision,
+    const float* quant_scale = nullptr,
+    const int32_t* zero_point = nullptr,
+    void* buffer = nullptr,
+    rk::nn::DataLayoutType layout = rk::nn::DataLayoutType::NCHW);
+std::shared_ptr<rk::nn::Tensor> CreateRknnTensor(
+    rk::nn::Graph* graph,
+    const std::string& name,
+    const NNAdapterOperandType* type,
+    void* buffer = nullptr,
+    std::vector<int32_t> dimensions = {});
 
 }  // namespace rockchip_npu
 }  // namespace nnadapter

@@ -15,7 +15,7 @@
 #include <gtest/gtest.h>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
-#include "lite/core/arena/framework.h"
+#include "lite/core/test/arena/framework.h"
 #include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
@@ -60,7 +60,8 @@ int CalOffset(const std::vector<int>& strides, const std::vector<int>& index) {
 class TransposeComputeTester : public arena::TestCase {
  protected:
 // common attributes for this op.
-#if defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+#if defined(LITE_WITH_HUAWEI_ASCEND_NPU) || \
+    defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   std::string op_type_ = "transpose";
 #else
   std::string op_type_ = "transpose2";
@@ -161,6 +162,42 @@ void TestTranspose3D(Place place, float abs_error) {
   }
 }
 
+#ifdef ENABLE_ARM_FP16
+void TestTranspose4D_fp16(Place place, float abs_error) {
+  DDim x_dims{{1, 12, 19, 19}};
+  std::vector<std::vector<int>> axes{
+      {0, 2, 3, 1}, {0, 3, 1, 2},
+  };
+  for (auto axis : axes) {
+    std::unique_ptr<arena::TestCase> tester(
+        new TransposeComputeTester(place, "def", x_dims, axis));
+    arena::Arena arena(std::move(tester), place, abs_error);
+    arena.TestPrecision({"xshape"});
+  }
+}
+
+void TestTranspose3D_fp16(Place place, float abs_error) {
+  DDim x_dims{{1, 1917, 21}};
+  std::vector<std::vector<int>> axes{
+      {0, 2, 1}, {1, 0, 2}, {2, 1, 0},
+  };
+  for (auto axis : axes) {
+    std::unique_ptr<arena::TestCase> tester(
+        new TransposeComputeTester(place, "def", x_dims, axis));
+    arena::Arena arena(std::move(tester), place, abs_error);
+    arena.TestPrecision({"xshape"});
+  }
+}
+
+TEST(Transpose_fp16, precision) {
+  float abs_error = 2e-5;
+  Place place1(TARGET(kARM), PRECISION(kFP16));
+  TestTranspose4D_fp16(place1, abs_error);
+  TestTranspose3D_fp16(place1, abs_error);
+}
+
+#endif
+
 void TestTranspose4D(Place place, float abs_error) {
   DDim x_dims{{2, 3, 4, 5}};
   std::vector<std::vector<int>> axes {
@@ -182,7 +219,14 @@ void TestTranspose4D(Place place, float abs_error) {
 TEST(Transpose, precision) {
   float abs_error = 2e-5;
   Place place;
-#if defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)

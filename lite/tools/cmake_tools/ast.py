@@ -189,6 +189,12 @@ class KernelRegistry:
         return str
 
 
+class SubgraphBridgeRegistry:
+    def __init__(self):
+        self.op_type = ''
+        self.target = ''
+
+
 class RegisterLiteKernelParser(SyntaxParser):
 
     KEYWORD = 'REGISTER_LITE_KERNEL'
@@ -487,7 +493,21 @@ class RegisterLiteOpParser(SyntaxParser):
         super(RegisterLiteOpParser, self).__init__(str)
         self.ops = []
 
-    def parse(self):
+    def parse(self, with_extra):
+        extra_command = []
+        while self.cur_pos < len(self.str):
+            start = self.str.find("#ifdef LITE_BUILD_EXTRA", self.cur_pos)
+            if start != -1:
+                self.cur_pos = start
+                end = self.str.find("#endif  // LITE_BUILD_EXTRA", self.cur_pos)
+                if end != -1:
+                    extra_command += extra_command + list(range(start, end + 1))
+                    self.cur_pos = end + len("#endif  // LITE_BUILD_EXTRA") -1
+                else:
+                    break
+            else:
+                break
+        self.cur_pos = 0
         while self.cur_pos < len(self.str):
             start = self.str.find(self.KEYWORD, self.cur_pos)
             if start != -1:
@@ -497,6 +517,10 @@ class RegisterLiteOpParser(SyntaxParser):
                     skip commented code
                     '''
                     self.cur_pos = start + 1
+                    continue
+                # if with_extra == "OFF", extra kernels will not be parsed
+                if with_extra != "ON" and start in extra_command:
+                    self.cur_pos = start + len(self.KEYWORD) -1
                     continue
                 self.cur_pos = start
                 self.ops.append(self.__parse_register())
@@ -514,6 +538,132 @@ class RegisterLiteOpParser(SyntaxParser):
         
         self.eat_word()
         return self.token
+
+
+class RegisterSubgraphBridgeParser(SyntaxParser):
+    KEYWORD = 'REGISTER_SUBGRAPH_BRIDGE'
+
+    def __init__(self, str):
+        super(RegisterSubgraphBridgeParser, self).__init__(str)
+        self.subgraph_bridge = []
+
+    def parse(self):
+        self.cur_pos = 0
+        while self.cur_pos < len(self.str):
+            start = self.str.find(self.KEYWORD, self.cur_pos)
+            if start != -1:
+                #print 'str ', start, self.str[start-2: start]
+                if start != 0 and '/' in self.str[start-2: start]:
+                    '''
+                    skip commented code
+                    '''
+                    self.cur_pos = start + 1
+                    continue
+                self.cur_pos = start
+                k = SubgraphBridgeRegistry()
+                self.subgraph_bridge.append(self.parse_register(k))
+            else:
+                break
+
+    def parse_register(self, k):
+        self.eat_word()
+        assert self.token == self.KEYWORD
+        self.eat_spaces()
+
+        self.eat_left_parentheses()
+        self.eat_spaces()
+
+        self.eat_word()
+        k.op_type = self.token
+        self.eat_comma()
+        self.eat_spaces()
+
+        self.eat_word()
+        k.target = self.token
+        self.eat_comma()
+        self.eat_spaces()
+
+        return k
+
+
+class RegisterNNadapterBridgeParser(SyntaxParser):
+    KEYWORD = 'USE_SUBGRAPH_BRIDGE'
+
+    def __init__(self, str):
+        super(RegisterNNadapterBridgeParser, self).__init__(str)
+        self.subgraph_bridge = []
+    
+    def parse(self):
+        self.cur_pos = 0
+        while self.cur_pos < len(self.str):
+            start = self.str.find(self.KEYWORD, self.cur_pos)
+            if start != -1:
+                #print 'str ', start, self.str[start-2: start]
+                if start != 0 and '/' in self.str[start-2: start]:
+                    '''
+                    skip commented code
+                    '''
+                    self.cur_pos = start + 1
+                    continue
+                self.cur_pos = start
+                for k in self.parse_register():
+                    self.subgraph_bridge.append(k)
+            else:
+                break
+
+    def parse_register(self):
+
+        ks = list() 
+
+        self.eat_word()
+        assert self.token == self.KEYWORD
+        self.eat_spaces()
+
+        self.eat_left_parentheses()
+        self.eat_spaces()
+
+        self.eat_word()
+        op_type = self.token
+        self.eat_comma()
+        self.eat_spaces()
+
+        self.eat_word()
+        self.eat_comma()
+        self.eat_spaces()
+
+        
+        '''
+        "xx, yy"
+        '''
+        self.token = ''
+        assert self.cur == '"';
+        self.cur_pos += 1;
+
+        assert self.cur_pos < self.N
+        while self.cur != ')':
+            if(self.cur == ','):
+                temp = SubgraphBridgeRegistry()
+                temp.op_type = op_type
+                temp.target = self.token
+                ks.append(temp)
+                self.token = ''
+                self.cur_pos += 1
+            else:
+                if(self.cur != '"' and self.cur != ' ' and self.cur != '\n'):
+                    self.token += self.cur
+                self.cur_pos += 1
+            assert self.cur_pos < self.N
+        assert self.cur == ')'
+        temp = SubgraphBridgeRegistry()
+        temp.op_type = op_type
+        temp.target = self.token
+        ks.append(temp)
+        self.eat_right_parentheses()
+        self.eat_spaces()
+        self.eat_semicolon()
+        self.eat_spaces()
+
+        return ks
 
 
 if __name__ == '__main__':

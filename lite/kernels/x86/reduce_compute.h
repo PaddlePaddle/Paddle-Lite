@@ -14,9 +14,9 @@
 #pragma once
 
 #include <vector>
+#include "lite/backends/x86/fluid/eigen.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
-#include "lite/fluid/eigen.h"
 #include "lite/kernels/x86/reduce_op_function.h"
 
 namespace paddle {
@@ -49,6 +49,13 @@ struct MaxFunctor {
   template <typename X, typename Y, typename Dim>
   void operator()(X* x, Y* y, const Dim& dim) {
     y->device(lite::fluid::EigenDeviceType<TARGET(kX86)>()) = x->maximum(dim);
+  }
+};
+
+struct MinFunctor {
+  template <typename X, typename Y, typename Dim>
+  void operator()(X* x, Y* y, const Dim& dim) {
+    y->device(lite::fluid::EigenDeviceType<TARGET(kX86)>()) = x->minimum(dim);
   }
 };
 

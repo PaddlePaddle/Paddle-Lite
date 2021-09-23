@@ -15,7 +15,8 @@
 #include <gtest/gtest.h>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
-#include "lite/core/arena/framework.h"
+#include "lite/core/test/arena/framework.h"
+#include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
 namespace lite {
@@ -85,30 +86,34 @@ class StackComputeTester : public arena::TestCase {
 
   void PrepareData() override {
     std::vector<T> data(dims_.production());
-
-    for (int i = 0; i < dims_.production(); i++) {
-      data[i] = i * 1.01;
-    }
-
+    fill_data_rand(data.data(), -1.f, 1.f, dims_.production());
     SetCommonTensor<T>(input1_, dims_, data.data());
     SetCommonTensor<T>(input2_, dims_, data.data());
   }
 };
 
 template <class T = float>
-void test_stack(Place place) {
+void test_stack(Place place, float abs_error) {
   place.precision = lite_api::PrecisionTypeTrait<T>::Type();
-  for (float axis : {0, 1, 3}) {
+  for (float axis : {0, 1, 3, 4}) {
     std::unique_ptr<arena::TestCase> tester(
         new StackComputeTester<T>(place, "def", axis));
-    arena::Arena arena(std::move(tester), place, 2e-4);
+    arena::Arena arena(std::move(tester), place, abs_error);
     arena.TestPrecision();
   }
 }
 
 TEST(Stack, precision) {
   Place place;
-#if defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
+  float abs_error = 2e-4;
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-1;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kHost);
@@ -118,10 +123,10 @@ TEST(Stack, precision) {
   return;
 #endif
 
-  test_stack<float>(place);
+  test_stack<float>(place, abs_error);
 #ifndef LITE_WITH_XPU
   place = TARGET(kHost);
-  test_stack<float>(place);
+  test_stack<float>(place, abs_error);
 #endif
 }
 

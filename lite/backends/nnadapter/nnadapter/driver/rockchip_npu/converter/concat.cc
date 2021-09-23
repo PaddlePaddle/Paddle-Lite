@@ -12,46 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/rockchip_npu/converter.h"
+#include "core/operation/concat.h"
+#include "driver/rockchip_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace rockchip_npu {
 
-int Program::ConvertConcat(hal::Operation* operation) {
-  auto& input_operands = operation->input_operands;
-  auto& output_operands = operation->output_operands;
-  auto input_count = input_operands.size();
-  auto output_count = output_operands.size();
-  NNADAPTER_CHECK_GE(input_count, 2);
-  NNADAPTER_CHECK_EQ(output_count, 1);
-  // Inputs
-  for (int i = 0; i < input_count - 1; i++) {
-    NNADAPTER_VLOG(5) << "input" << i << ": "
-                      << OperandToString(input_operands[i]);
-  }
-  // Axis
-  auto axis =
-      *reinterpret_cast<int32_t*>(input_operands[input_count - 1]->buffer);
-  if (axis < 0) {
-    axis += input_operands[0]->type.dimension_count;
-  }
-  NNADAPTER_VLOG(5) << "axis=" << axis;
-  // Output
-  auto output_operand = output_operands[0];
-  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
+int ConvertConcat(Converter* converter, hal::Operation* operation) {
+  CONCAT_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
-  // Convert to rknn tensors and operators
+  // Convert to rknpu tensors and operators
   std::vector<std::shared_ptr<rk::nn::Tensor>> input_tensors;
   for (int i = 0; i < input_count - 1; i++) {
-    input_tensors.push_back(ConvertOperand(input_operands[i]));
+    auto input_operand = input_operands[i];
+    auto input_tensor = converter->GetMappedTensor(input_operand);
+    if (!input_tensor) {
+      input_tensor = converter->ConvertOperand(input_operand);
+    }
+    input_tensors.push_back(input_tensor);
   }
-  auto output_tensor = ConvertOperand(output_operand);
+  auto output_tensor = converter->ConvertOperand(output_operand);
   rk::nn::ConcatAttr attr;
   attr.axis = axis;
   std::vector<std::shared_ptr<rk::nn::Tensor>> output_tensors = {output_tensor};
-  graph_->AddOperator(
+  converter->AddOperator(
       rk::nn::OperatorType::CONCAT, input_tensors, output_tensors, &attr);
   return NNADAPTER_NO_ERROR;
 }

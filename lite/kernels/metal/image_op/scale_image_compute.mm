@@ -1,4 +1,4 @@
-// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -41,6 +41,12 @@ void ScaleImageCompute::PrepareForRun() {
 }
 
 void ScaleImageCompute::Run() {
+    @autoreleasepool {
+        run_without_mps();
+    }
+}
+
+void ScaleImageCompute::run_without_mps() {
     auto pipline = pipline_;
     auto outTexture = output_buffer_->image();
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
@@ -56,8 +62,14 @@ void ScaleImageCompute::Run() {
 
 void ScaleImageCompute::setup_without_mps() {
     const auto& param = this->Param<param_t>();
-
-    ScaleMetalParam metal_param{param.scale, param.bias};
+    
+    // relu
+    ActivationMetalParam activation_params{0, 0.0, 0.0, 0.0, 0.0};
+    if (param.activation_type == "relu6") {
+        activation_params.activationType = (uint16_t)lite_api::ActivationType::kRelu6;
+        activation_params.threshold = param.alpha;
+    }
+    ScaleMetalParam metal_param{param.scale, param.bias, activation_params};
     params_buffer_ =
         std::make_shared<MetalBuffer>(metal_context_, sizeof(metal_param), &metal_param);
 

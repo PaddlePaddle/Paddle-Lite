@@ -15,7 +15,7 @@
 #include <gtest/gtest.h>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
-#include "lite/core/arena/framework.h"
+#include "lite/core/test/arena/framework.h"
 #include "lite/tests/utils/fill_data.h"
 #include "lite/tests/utils/naive_math_impl.h"
 #ifdef LITE_WITH_X86
@@ -102,7 +102,6 @@ class FcOPTest : public arena::TestCase {
     CHECK(out);
     DDim out_dim = ComputeOutDim(x->dims(), w->dims(), in_num_col_dims_);
     out->Resize(out_dim);
-
     auto x_data = x->data<float>();
     auto w_data = w->data<float>();
     const float* b_data = nullptr;
@@ -259,7 +258,7 @@ void TestFCHelper(Place place,
                                                        DDim(wdims),
                                                        DDim(bdims),
                                                        in_num_col_dims,
-                                                       false,
+                                                       true,
                                                        false));
   arena::Arena arena(std::move(tester), place, abs_error);
   arena.TestPrecision();
@@ -276,7 +275,14 @@ void TestFCnD(Place place, float abs_error) {
 TEST(FcOP, precision) {
   Place place;
   float abs_error = 1e-4;
-#if defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 5e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 2e-1;  // Using fp16 in NPU
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
@@ -291,7 +297,7 @@ TEST(FcOP, precision) {
   return;
 #endif
 
-  TestFC2D(place, abs_error);
+  TestFC2D(place, abs_error, true);
   TestFCnD(place, abs_error);
 }
 

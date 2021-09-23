@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "lite/operators/reshape_op.h"
-#include "lite/core/subgraph_bridge_registry.h"
+#include "lite/core/subgraph/subgraph_bridge_registry.h"
 #include "lite/kernels/nnadapter/bridges/converter.h"
 #include "lite/kernels/nnadapter/bridges/utility.h"
 
@@ -21,6 +21,16 @@ namespace paddle {
 namespace lite {
 namespace subgraph {
 namespace nnadapter {
+
+// Some hardware don't support the zero dimension in shape, so replace it with
+// the real dimension
+void FixZeroDims(int32_t* shape,
+                 size_t shape_count,
+                 const DDim& reference_dims) {
+  for (size_t i = 0; i < shape_count; i++) {
+    shape[i] = shape[i] == 0 ? reference_dims[i] : shape[i];
+  }
+}
 
 int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   CHECK(ctx != nullptr);
@@ -73,13 +83,16 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
     } else {
       auto shape = scope->FindMutableTensor(shape_name);
       CHECK(shape->persistable());
-      auto shape_dims = shape->dims();
-      auto shape_data = shape->mutable_data<int>();
-      shape_operand = converter->AddInt32ConstantOperand(
-          shape_data, DDim({shape_dims.production()}));
+      auto shape_count = shape->dims().production();
+      std::vector<int> shape_data(shape->mutable_data<int>(),
+                                  shape->mutable_data<int>() + shape_count);
+      FixZeroDims(&shape_data[0], shape_count, x_dims);
+      shape_operand = converter->AddInt32ConstantOperand(&shape_data[0],
+                                                         DDim({shape_count}));
     }
   } else {
     std::vector<int> shape_data = op_info->GetAttr<std::vector<int>>("shape");
+    FixZeroDims(&shape_data[0], shape_data.size(), x_dims);
     shape_operand = converter->AddInt32ConstantOperand(
         &shape_data[0], DDim({static_cast<int64_t>(shape_data.size())}));
   }
@@ -98,8 +111,7 @@ int ReshapeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   std::vector<NNAdapterOperand*> input_operands = {input_operand,
                                                    shape_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  auto reshape_operation = converter->AddOperation(NNADAPTER_RESHAPE);
-  converter->SetOperation(reshape_operation, &input_operands, &output_operands);
+  converter->AddOperation(NNADAPTER_RESHAPE, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

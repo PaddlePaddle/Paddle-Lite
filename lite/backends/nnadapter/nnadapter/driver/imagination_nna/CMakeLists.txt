@@ -12,15 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set(NNADAPTER_DEVICE_NAME imagination_nna)
-add_definitions(-DNNADAPTER_DEVICE_NAME=${NNADAPTER_DEVICE_NAME})
+set(DEVICE_NAME imagination_nna)
+add_definitions(-DNNADAPTER_DEVICE_NAME=${DEVICE_NAME})
+add_definitions(-DNNADAPTER_DEVICE_SYMBOL=${NNADAPTER_DEVICE_SYMBOL_PREFIX}${DEVICE_NAME})
 
-set(NNADAPTER_DRIVER_NAME ${NNADAPTER_DRIVER_PREFIX}_${NNADAPTER_DEVICE_NAME})
-add_definitions(-DNNADAPTER_DRIVER_NAME=${NNADAPTER_DRIVER_NAME})
+include(dependencies.cmake)
 
-set(NNADAPTER_DRIVER_SRCS driver.cc)
-set(NNADAPTER_DRIVER_DEPS ${nnadapter_utility} ${nnadapter_driver} ${${NNADAPTER_DEVICE_NAME}_deps})
+aux_source_directory(converter CONVERTERS)
+set(SRCS imgdnn_manager.cc utility.cc ${CONVERTERS} engine.cc driver.cc)
+set(DEPS ${NNADAPTER_CORE} ${NNADAPTER_UTILITIES} nnadapter_optimizer_symm2asymm ${${DEVICE_NAME}_deps})
 
-add_library(${NNADAPTER_DRIVER_NAME} SHARED ${NNADAPTER_DRIVER_SRCS})
-target_link_libraries(${NNADAPTER_DRIVER_NAME} "-Wl,--start-group" ${NNADAPTER_DRIVER_DEPS} "-Wl,--end-group")
-set(nnadapter_driver ${nnadapter_driver} ${NNADAPTER_DRIVER_NAME} CACHE INTERNAL "")
+add_library(${DEVICE_NAME} SHARED ${SRCS})
+target_link_libraries(${DEVICE_NAME} "-Wl,--start-group" ${DEPS} "-Wl,--end-group")
+set(NNADAPTER_DEVICES ${NNADAPTER_DEVICES} ${DEVICE_NAME} CACHE INTERNAL "")

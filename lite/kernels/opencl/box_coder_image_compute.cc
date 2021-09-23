@@ -21,7 +21,7 @@
 #include "lite/core/op_registry.h"
 #include "lite/kernels/opencl/image_helper.h"
 #include "lite/operators/op_params.h"
-#include "lite/utils/logging.h"
+#include "lite/utils/log/logging.h"
 #include "lite/utils/replace_stl/stream.h"
 #ifdef LITE_WITH_PROFILE
 #include "lite/core/profile/profiler.h"
@@ -49,40 +49,49 @@ class BoxCoderComputeImage : public KernelLite<TARGET(kOpenCL),
                  << " doesn't support";
     }
 
-    // H2D: prior_box, prior_box
-    CLImageConverterNormal converter;
-    priorbox_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
-    priorboxvar_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
-    auto priorbox_cpu_image = std::unique_ptr<Tensor>(new Tensor);
-    auto priorboxvar_cpu_image = std::unique_ptr<Tensor>(new Tensor);
+    if (boxcoder_param_->prior_box->persistable() &&
+        boxcoder_param_->prior_box_var->persistable()) {
+      // ssd_boxes_calc_offline_pass was applied.
+      // prior_box & prior_box_var are as const weights now.
+      // So we need to copy prior_box & prior_box_var from cpu to gpu.
+      CLImageConverterNormal converter;
+      priorbox_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
+      priorboxvar_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
+      auto priorbox_cpu_image = std::unique_ptr<Tensor>(new Tensor);
+      auto priorboxvar_cpu_image = std::unique_ptr<Tensor>(new Tensor);
 
-    const auto* priorbox_cpu = boxcoder_param_->prior_box->data<float>();
-    const auto& priorbox_dims = boxcoder_param_->prior_box->dims();
-    auto image_shape = converter.InitImageDimInfoWith(priorbox_dims);
-    priorbox_cpu_image->Resize({1, image_shape[0], image_shape[1], 4});
-    auto* priorbox_image_data = MUTABLE_DATA_CPU(priorbox_cpu_image);
-    converter.NCHWToImage(
-        const_cast<float*>(priorbox_cpu), priorbox_image_data, priorbox_dims);
-    MUTABLE_DATA_GPU(priorbox_gpu_image_,
-                     image_shape[0],
-                     image_shape[1],
-                     priorbox_image_data);
+      const auto* priorbox_cpu = boxcoder_param_->prior_box->data<float>();
+      const auto& priorbox_dims = boxcoder_param_->prior_box->dims();
+      auto image_shape = converter.InitImageDimInfoWith(priorbox_dims);
+      priorbox_cpu_image->Resize({1, image_shape[0], image_shape[1], 4});
+      auto* priorbox_image_data = MUTABLE_DATA_CPU(priorbox_cpu_image);
+      converter.NCHWToImage(
+          const_cast<float*>(priorbox_cpu), priorbox_image_data, priorbox_dims);
+      MUTABLE_DATA_GPU(priorbox_gpu_image_,
+                       image_shape[0],
+                       image_shape[1],
+                       priorbox_image_data);
 
-    const auto* priorboxvar_cpu = boxcoder_param_->prior_box_var->data<float>();
-    const auto& priorboxvar_dims = boxcoder_param_->prior_box_var->dims();
-    image_shape = converter.InitImageDimInfoWith(priorboxvar_dims);
-    priorboxvar_cpu_image->Resize({1, image_shape[0], image_shape[1], 4});
-    auto* priorboxvar_image_data = MUTABLE_DATA_CPU(priorboxvar_cpu_image);
-    converter.NCHWToImage(const_cast<float*>(priorboxvar_cpu),
-                          priorboxvar_image_data,
-                          priorboxvar_dims);
-    MUTABLE_DATA_GPU(priorboxvar_gpu_image_,
-                     image_shape[0],
-                     image_shape[1],
-                     priorboxvar_image_data);
+      const auto* priorboxvar_cpu =
+          boxcoder_param_->prior_box_var->data<float>();
+      const auto& priorboxvar_dims = boxcoder_param_->prior_box_var->dims();
+      image_shape = converter.InitImageDimInfoWith(priorboxvar_dims);
+      priorboxvar_cpu_image->Resize({1, image_shape[0], image_shape[1], 4});
+      auto* priorboxvar_image_data = MUTABLE_DATA_CPU(priorboxvar_cpu_image);
+      converter.NCHWToImage(const_cast<float*>(priorboxvar_cpu),
+                            priorboxvar_image_data,
+                            priorboxvar_dims);
+      MUTABLE_DATA_GPU(priorboxvar_gpu_image_,
+                       image_shape[0],
+                       image_shape[1],
+                       priorboxvar_image_data);
 
-    priorbox_image_ = DATA_GPU(priorbox_gpu_image_);
-    priorboxvar_image_ = DATA_GPU(priorboxvar_gpu_image_);
+      priorbox_image_ = DATA_GPU(priorbox_gpu_image_);
+      priorboxvar_image_ = DATA_GPU(priorboxvar_gpu_image_);
+    } else {
+      priorbox_image_ = GET_DATA_GPU(boxcoder_param_->prior_box);
+      priorboxvar_image_ = GET_DATA_GPU(boxcoder_param_->prior_box_var);
+    }
 
     CHECK(context.cl_context() != nullptr);
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
@@ -197,9 +206,13 @@ typedef paddle::lite::kernels::opencl::BoxCoderComputeImage BoxCoder_image;
 REGISTER_LITE_KERNEL(
     box_coder, kOpenCL, kFP16, kImageDefault, BoxCoder_image, ImageDefault)
     .BindInput("PriorBox",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
     .BindInput("PriorBoxVar",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kFP16),
+                                      DATALAYOUT(kImageDefault))})
     .BindInput("TargetBox",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),

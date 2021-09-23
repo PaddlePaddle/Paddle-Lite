@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ class ElementwiseMulImageCompute
     virtual ~ElementwiseMulImageCompute();
 
    private:
+    void run_without_mps();
     void setup_without_mps();
 
     MetalImage* output_buffer_{nullptr};

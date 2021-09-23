@@ -18,13 +18,14 @@ import sys
 import logging
 from ast import RegisterLiteOpParser
 
-if len(sys.argv) != 5:
+if len(sys.argv) != 6:
     print("Error: parse_op_registry.py requires four inputs!")
     exit(1)
 ops_list_path = sys.argv[1]
 dest_path = sys.argv[2]
 minops_list_path = sys.argv[3]
 tailored = sys.argv[4]
+with_extra = sys.argv[5]
 out_lines = [
     '#pragma once',
     '#include "paddle_lite_factory_helper.h"',
@@ -43,7 +44,7 @@ if tailored == "ON":
 for path in paths:
     str_info = open(path.strip()).read()
     op_parser = RegisterLiteOpParser(str_info)
-    ops = op_parser.parse()
+    ops = op_parser.parse(with_extra)
     for op in ops:
         if tailored == "ON":
             if op not in minlines: continue

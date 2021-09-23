@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <string>
 #include "lite/backends/arm/math/funcs.h"
+#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
@@ -29,8 +30,7 @@ void act_relu<float>(const float* din, float* dout, int size, int threads) {
   int neon_loop_cnt = nums_per_thread >> 4;
   int neon_loop_remain = nums_per_thread - (neon_loop_cnt << 4);
   float32x4_t vzero = vdupq_n_f32(0.f);
-#pragma omp parallel for
-  for (int i = 0; i < threads; ++i) {
+  LITE_PARALLEL_BEGIN(i, tid, threads) {
     const float* ptr_in_thread = din + i * nums_per_thread;
     float* ptr_out_thread = dout + i * nums_per_thread;
     int cnt = neon_loop_cnt;
@@ -89,6 +89,7 @@ void act_relu<float>(const float* din, float* dout, int size, int threads) {
       ptr_out_thread++;
     }
   }
+  LITE_PARALLEL_END();
   float* out_ptr_remain = dout + threads * nums_per_thread;
   const float* in_ptr_remain = din + threads * nums_per_thread;
   for (int j = 0; j < remain; ++j) {
@@ -110,8 +111,7 @@ void act_relu_neg<float>(const float* din,
   int neon_loop_remain = nums_per_thread - (neon_loop_cnt << 4);
   float32x4_t vzero = vdupq_n_f32(0.f);
   float32x4_t valpha = vdupq_n_f32(negative_slope);
-#pragma omp parallel for
-  for (int i = 0; i < threads; ++i) {
+  LITE_PARALLEL_BEGIN(i, tid, threads) {
     const float* ptr_in_thread = din + i * nums_per_thread;
     float* ptr_out_thread = dout + i * nums_per_thread;
     int cnt = neon_loop_cnt;
@@ -211,6 +211,7 @@ void act_relu_neg<float>(const float* din,
       ptr_out_thread++;
     }
   }
+  LITE_PARALLEL_END();
   float* out_ptr_remain = dout + threads * nums_per_thread;
   const float* in_ptr_remain = din + threads * nums_per_thread;
   for (int j = 0; j < remain; ++j) {
@@ -231,8 +232,7 @@ void act_clipped_relu<float>(
   int neon_loop_remain = nums_per_thread - (neon_loop_cnt << 4);
   float32x4_t vzero = vdupq_n_f32(0.f);
   float32x4_t vclip = vdupq_n_f32(coef);
-#pragma omp parallel for
-  for (int i = 0; i < threads; ++i) {
+  LITE_PARALLEL_BEGIN(i, tid, threads) {
     const float* ptr_in_thread = din + i * nums_per_thread;
     float* ptr_out_thread = dout + i * nums_per_thread;
     int cnt = neon_loop_cnt;
@@ -315,6 +315,7 @@ void act_clipped_relu<float>(
       ptr_out_thread++;
     }
   }
+  LITE_PARALLEL_END();
   float* out_ptr_remain = dout + threads * nums_per_thread;
   const float* in_ptr_remain = din + threads * nums_per_thread;
   for (int j = 0; j < remain; ++j) {
@@ -342,8 +343,7 @@ void act_prelu<float>(const float* din,
     for (int n = 0; n < outer_size; n++) {
       const float* data_in_batch = din + n * stride_size;
       float* data_out_batch = dout + n * stride_size;
-#pragma omp parallel for
-      for (int c = 0; c < channel_size; c++) {
+      LITE_PARALLEL_BEGIN(c, tid, channel_size) {
         const float* data_in_c = data_in_batch + c * inner_size;
         float* data_out_c = data_out_batch + c * inner_size;
 
@@ -448,6 +448,7 @@ void act_prelu<float>(const float* din,
           data_in_c++;
         }
       }
+      LITE_PARALLEL_END();
     }
   } else {  // mode = element
     int stride_size = inner_size * channel_size;
@@ -479,8 +480,7 @@ void act_sigmoid<float>(const float* din, float* dout, int size, int threads) {
   int neon_loop_remain_dim4 = nums_per_thread - (neon_loop_cnt_dim4 << 2);
 
   float32x4_t vzero = vdupq_n_f32(0.f);
-#pragma omp parallel for
-  for (int i = 0; i < threads; ++i) {
+  LITE_PARALLEL_BEGIN(i, tid, threads) {
     float32x4_t exp_vec = vdupq_n_f32(0.0f);
     float32x4_t recip = vdupq_n_f32(0.0f);
     const float* ptr_in_thread = din + i * nums_per_thread;
@@ -501,6 +501,7 @@ void act_sigmoid<float>(const float* din, float* dout, int size, int threads) {
       ptr_out_thread++;
     }
   }
+  LITE_PARALLEL_END();
   float* ptr_out = dout + threads * nums_per_thread;
   const float* ptr_in = din + threads * nums_per_thread;
   for (int j = 0; j < remain; ++j) {
@@ -517,8 +518,7 @@ void act_tanh<float>(const float* din, float* dout, int size, int threads) {
   int remain = size - threads * nums_per_thread;
   int neon_loop_cnt_dim4 = nums_per_thread >> 2;
   int neon_loop_remain_dim4 = nums_per_thread - (neon_loop_cnt_dim4 << 2);
-#pragma omp parallel for
-  for (int i = 0; i < threads; ++i) {
+  LITE_PARALLEL_BEGIN(i, tid, threads) {
     float32x4_t exp_plus_vec = vdupq_n_f32(0.0f);
     float32x4_t exp_minus_vec = vdupq_n_f32(0.0f);
     float32x4_t exp_sum_vec = vdupq_n_f32(0.0f);
@@ -546,6 +546,7 @@ void act_tanh<float>(const float* din, float* dout, int size, int threads) {
       ptr_out_thread++;
     }
   }
+  LITE_PARALLEL_END();
   float* ptr_out = dout + threads * nums_per_thread;
   const float* ptr_in = din + threads * nums_per_thread;
   for (int j = 0; j < remain; ++j) {
@@ -567,8 +568,7 @@ void act_swish<float>(
   const float beta = coef;
   float32x4_t vbeta = vdupq_n_f32(beta);
   float32x4_t vone = vdupq_n_f32(1.f);
-#pragma omp parallel for
-  for (int i = 0; i < threads; ++i) {
+  LITE_PARALLEL_BEGIN(i, tid, threads) {
     const float* ptr_in_thread = din + i * nums_per_thread;
     float* ptr_out_thread = dout + i * nums_per_thread;
     for (int k = 0; k < neon_loop_cnt_dim4; ++k) {
@@ -589,6 +589,7 @@ void act_swish<float>(
       ptr_out_thread++;
     }
   }
+  LITE_PARALLEL_END();
   float* ptr_out = dout + threads * nums_per_thread;
   const float* ptr_in = din + threads * nums_per_thread;
   for (int j = 0; j < remain; ++j) {
@@ -606,8 +607,7 @@ void act_log<float>(const float* din, float* dout, int size, int threads) {
   int neon_loop_remain_dim4 = nums_per_thread - (neon_loop_cnt_dim4 << 2);
 
   float32x4_t vzero = vdupq_n_f32(0.f);
-#pragma omp parallel for
-  for (int i = 0; i < threads; ++i) {
+  LITE_PARALLEL_BEGIN(i, tid, threads) {
     float32x4_t exp_vec = vdupq_n_f32(0.0f);
     const float* ptr_in_thread = din + i * nums_per_thread;
     float* ptr_out_thread = dout + i * nums_per_thread;
@@ -623,6 +623,7 @@ void act_log<float>(const float* din, float* dout, int size, int threads) {
       ptr_out_thread++;
     }
   }
+  LITE_PARALLEL_END();
   float* ptr_out = dout + threads * nums_per_thread;
   const float* ptr_in = din + threads * nums_per_thread;
   for (int j = 0; j < remain; ++j) {
@@ -640,8 +641,7 @@ void act_exp<float>(const float* din, float* dout, int size, int threads) {
   int neon_loop_remain_dim4 = nums_per_thread - (neon_loop_cnt_dim4 << 2);
 
   float32x4_t vzero = vdupq_n_f32(0.f);
-#pragma omp parallel for
-  for (int i = 0; i < threads; ++i) {
+  LITE_PARALLEL_BEGIN(i, tid, threads) {
     float32x4_t exp_vec = vdupq_n_f32(0.0f);
     const float* ptr_in_thread = din + i * nums_per_thread;
     float* ptr_out_thread = dout + i * nums_per_thread;
@@ -657,6 +657,7 @@ void act_exp<float>(const float* din, float* dout, int size, int threads) {
       ptr_out_thread++;
     }
   }
+  LITE_PARALLEL_END();
   float* ptr_out = dout + threads * nums_per_thread;
   const float* ptr_in = din + threads * nums_per_thread;
   for (int j = 0; j < remain; ++j) {
@@ -801,8 +802,7 @@ void act_hard_swish<float>(const float* din,
   zero = vdupq_n_f32(0.);
   threshold_v = vdupq_n_f32(threshold);
 
-#pragma omp parallel for
-  for (int i = 0; i < threads; i++) {
+  LITE_PARALLEL_BEGIN(i, tid, threads) {
     const float* ptr_in_thread = ptr_in + i * nums_per_thread;
     float* ptr_out_thread = ptr_out + i * nums_per_thread;
     for (int j = 0; j < neon_loop_cnt_dim4; j++) {
@@ -825,7 +825,7 @@ void act_hard_swish<float>(const float* din,
       ptr_out_thread++;
     }
   }
-
+  LITE_PARALLEL_END();
   ptr_out = dout + threads * nums_per_thread;
   ptr_in = din + threads * nums_per_thread;
   for (int i = 0; i < remain; i++) {
@@ -884,7 +884,7 @@ template void sign<float>(const float* din, float* dout, int size, int threads);
 template <typename T>
 void softplus(const T* din, T* dout, int size, int threads) {
   for (int i = 0; i < size; ++i) {
-    dout[0] = log((T)1. + exp(din[i]));
+    dout[0] = log((T)1. + exp(din[0]));
     din++;
     dout++;
   }
@@ -918,8 +918,7 @@ void act_elu<float>(
   float32x4_t vone = vdupq_n_f32(1.f);
   int cnt = neon_loop_remain_dim16 >> 2;
   int remain = neon_loop_remain_dim16 & 3;
-#pragma omp parallel for
-  for (int i = 0; i < threads; i++) {
+  LITE_PARALLEL_BEGIN(i, tid, threads) {
     const float* ptr_in_thread = din + i * nums_per_thread;
     float* ptr_out_thread = dout + i * nums_per_thread;
     for (int k = 0; k < neon_loop_cnt_dim16; ++k) {
@@ -979,6 +978,7 @@ void act_elu<float>(
       ptr_out_thread++;
     }
   }
+  LITE_PARALLEL_END();
   float* ptr_out = dout + threads * nums_per_thread;
   const float* ptr_in = din + threads * nums_per_thread;
   for (int j = 0; j < thread_remain; j++) {
@@ -1018,7 +1018,111 @@ void act_gelu<float>(
     }
   }
 }
+template <>
+void mish(const float* din, float* dout, int size, float threshold) {
+  int cnt = size >> 4;
+  int remain = size & 15;
+  float32x4_t vthreshold = vdupq_n_f32(threshold);
+  float32x4_t vone = vdupq_n_f32(1.f);
+  float32x4_t minus_vthreshold = vdupq_n_f32(-threshold);
+  for (int64_t i = 0; i < cnt; i++) {
+    float32x4_t vx0 = vld1q_f32(din);
+    float32x4_t vx4 = vld1q_f32(din + 4);
+    float32x4_t vx8 = vld1q_f32(din + 8);
+    float32x4_t vx12 = vld1q_f32(din + 12);
 
+    uint32x4_t gt_0 = vcgtq_f32(vx0, vthreshold);
+    uint32x4_t gt_4 = vcgtq_f32(vx4, vthreshold);
+    uint32x4_t gt_8 = vcgtq_f32(vx8, vthreshold);
+    uint32x4_t gt_12 = vcgtq_f32(vx12, vthreshold);
+
+    uint32x4_t lt_0 = vcltq_f32(vx0, minus_vthreshold);
+    uint32x4_t lt_4 = vcltq_f32(vx4, minus_vthreshold);
+    uint32x4_t lt_8 = vcltq_f32(vx8, minus_vthreshold);
+    uint32x4_t lt_12 = vcltq_f32(vx12, minus_vthreshold);
+
+    float32x4_t data0 = vminq_f32(vx0, vdupq_n_f32(70.00008f));  // e^x
+    float32x4_t data4 = vminq_f32(vx4, vdupq_n_f32(70.00008f));
+    float32x4_t data8 = vminq_f32(vx8, vdupq_n_f32(70.00008f));
+    float32x4_t data12 = vminq_f32(vx12, vdupq_n_f32(70.00008f));
+    data0 = vmaxq_f32(data0, vdupq_n_f32(-70.00008f));
+    data4 = vmaxq_f32(data4, vdupq_n_f32(-70.00008f));
+    data8 = vmaxq_f32(data8, vdupq_n_f32(-70.00008f));
+    data12 = vmaxq_f32(data12, vdupq_n_f32(-70.00008f));
+
+    float32x4_t vleftx0 = exp_ps(data0);
+    float32x4_t vleftx4 = exp_ps(data4);
+    float32x4_t vleftx8 = exp_ps(data8);
+    float32x4_t vleftx12 = exp_ps(data12);
+
+    float32x4_t vmiddlex0 = log_ps(vaddq_f32(vleftx0, vone));  // ln(1+e^x)
+    float32x4_t vmiddlex4 = log_ps(vaddq_f32(vleftx4, vone));
+    float32x4_t vmiddlex8 = log_ps(vaddq_f32(vleftx8, vone));
+    float32x4_t vmiddlex12 = log_ps(vaddq_f32(vleftx12, vone));
+
+    float32x4_t sp0 = vbslq_f32(gt_0, vx0, vmiddlex0);
+    float32x4_t sp4 = vbslq_f32(gt_4, vx4, vmiddlex4);
+    float32x4_t sp8 = vbslq_f32(gt_8, vx8, vmiddlex8);
+    float32x4_t sp12 = vbslq_f32(gt_12, vx12, vmiddlex12);
+
+    sp0 = vbslq_f32(lt_0, vleftx0, sp0);
+    sp4 = vbslq_f32(lt_4, vleftx4, sp4);
+    sp8 = vbslq_f32(lt_8, vleftx8, sp8);
+    sp12 = vbslq_f32(lt_12, vleftx12, sp12);
+
+    sp0 = vminq_f32(sp0, vdupq_n_f32(70.00008f));
+    sp4 = vminq_f32(sp4, vdupq_n_f32(70.00008f));
+    sp8 = vminq_f32(sp8, vdupq_n_f32(70.00008f));
+    sp12 = vminq_f32(sp12, vdupq_n_f32(70.00008f));
+    sp0 = vmaxq_f32(sp0, vdupq_n_f32(-70.00008f));
+    sp4 = vmaxq_f32(sp4, vdupq_n_f32(-70.00008f));
+    sp8 = vmaxq_f32(sp8, vdupq_n_f32(-70.00008f));
+    sp12 = vmaxq_f32(sp12, vdupq_n_f32(-70.00008f));
+
+    float32x4_t exp_sp0 = exp_ps(sp0);
+    float32x4_t exp_sp4 = exp_ps(sp4);
+    float32x4_t exp_sp8 = exp_ps(sp8);
+    float32x4_t exp_sp12 = exp_ps(sp12);
+
+    float32x4_t exp_minussp0 = exp_ps(vnegq_f32(sp0));
+    float32x4_t exp_minussp4 = exp_ps(vnegq_f32(sp4));
+    float32x4_t exp_minussp8 = exp_ps(vnegq_f32(sp8));
+    float32x4_t exp_minussp12 = exp_ps(vnegq_f32(sp12));
+
+    float32x4_t exp_sum0 = vaddq_f32(exp_sp0, exp_minussp0);
+    float32x4_t exp_sum4 = vaddq_f32(exp_sp4, exp_minussp4);
+    float32x4_t exp_sum8 = vaddq_f32(exp_sp8, exp_minussp8);
+    float32x4_t exp_sum12 = vaddq_f32(exp_sp12, exp_minussp12);
+
+    float32x4_t exp_diff0 = vsubq_f32(exp_sp0, exp_minussp0);
+    float32x4_t exp_diff4 = vsubq_f32(exp_sp4, exp_minussp4);
+    float32x4_t exp_diff8 = vsubq_f32(exp_sp8, exp_minussp8);
+    float32x4_t exp_diff12 = vsubq_f32(exp_sp12, exp_minussp12);
+
+    float32x4_t res0 = vmulq_f32(vx0, div_ps(exp_diff0, exp_sum0));
+    float32x4_t res4 = vmulq_f32(vx4, div_ps(exp_diff4, exp_sum4));
+    float32x4_t res8 = vmulq_f32(vx8, div_ps(exp_diff8, exp_sum8));
+    float32x4_t res12 = vmulq_f32(vx12, div_ps(exp_diff12, exp_sum12));
+
+    vst1q_f32(dout, res0);
+    vst1q_f32(dout + 4, res4);
+    vst1q_f32(dout + 8, res8);
+    vst1q_f32(dout + 12, res12);
+    dout += 16;
+    din += 16;
+  }
+  for (int i = 0; i < remain; i++) {
+    float x = din[i];
+    float sp = 0.0f;
+    if (threshold > 0 && x > threshold)
+      sp = x;
+    else if (threshold > 0 && x < -threshold)
+      sp = expf(x);
+    else
+      sp = log1pf(expf(x));
+    dout[i] = x * std::tanh(sp);
+  }
+}
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

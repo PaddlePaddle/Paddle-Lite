@@ -109,6 +109,14 @@ T *Tensor::mutable_data(TargetType type) const {
   return tensor(raw_tensor_)->mutable_data<T>(type);
 }
 
+void *Tensor::mutable_metal_data(void *ptr) const {
+#ifdef LITE_WITH_METAL
+  return tensor(raw_tensor_)->mutable_metal_data(ptr);
+#else
+  return nullptr;
+#endif
+}
+
 template const double *Tensor::data<double>() const;
 template const float *Tensor::data<float>() const;
 template const int64_t *Tensor::data<int64_t>() const;
@@ -360,6 +368,13 @@ void ConfigBase::set_threads(int threads) {
 #endif
 }
 
+void ConfigBase::set_metal_device(void *device) {
+#ifdef LITE_WITH_METAL
+  metal_device_ = device;
+#endif
+  return;
+}
+
 void ConfigBase::set_metal_lib_path(const std::string &path) {
 #ifdef LITE_WITH_METAL
   metal_path_ = path;
@@ -377,6 +392,13 @@ void ConfigBase::set_metal_use_mps(bool flag) {
 void ConfigBase::set_metal_use_aggressive(bool flag) {
 #ifdef LITE_WITH_METAL
   metal_use_aggressive_ = flag;
+#endif
+  return;
+}
+
+void ConfigBase::set_metal_use_memory_reuse(bool flag) {
+#ifdef LITE_WITH_METAL
+  metal_use_memory_reuse_ = flag;
 #endif
   return;
 }
@@ -400,11 +422,11 @@ void ConfigBase::set_subgraph_model_cache_buffers(
       std::pair<std::vector<char>, std::vector<char>>(cfg, bin);
 }
 
-bool ConfigBase::check_nnadapter_device(
+bool ConfigBase::check_nnadapter_device_name(
     const std::string &nnadapter_device_name) {
   bool found = false;
 #ifdef LITE_WITH_NNADAPTER
-  found = lite::Context<TargetType::kNNAdapter>::CheckNNAdapterDevice(
+  found = lite::Context<TargetType::kNNAdapter>::CheckNNAdapterDeviceName(
       nnadapter_device_name);
 #else
   LOG(WARNING) << "The invoking of the function 'check_nnadapter_device' is "
@@ -414,13 +436,14 @@ bool ConfigBase::check_nnadapter_device(
 }
 
 void ConfigBase::set_nnadapter_model_cache_buffers(
-    const std::string &key, const std::vector<char> &buffer) {
+    const std::string &model_cache_token,
+    const std::vector<char> &model_cache_buffer) {
 #if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
     defined(LITE_WITH_NNADAPTER)
-  CHECK(!key.empty());
-  CHECK(!buffer.empty());
-  CHECK_EQ(nnadapter_model_cache_buffers_.count(key), 0);
-  nnadapter_model_cache_buffers_[key] = buffer;
+  CHECK(!model_cache_token.empty());
+  CHECK(!model_cache_buffer.empty());
+  CHECK_EQ(nnadapter_model_cache_buffers_.count(model_cache_token), 0);
+  nnadapter_model_cache_buffers_[model_cache_token] = model_cache_buffer;
 #else
   LOG(WARNING) << "The invoking of the function "
                   "'set_nnadapter_model_cache_buffers' is ignored, please "
@@ -493,6 +516,10 @@ void CxxConfig::set_xpu_workspace_l3_size_per_thread(int l3_size) {
 #endif
 }
 
+// local_l3 <= 0 , locked == false: NO USE L3
+// local_l3 > 0, locked == false : USE local l3
+// locked == true : USE Shared L3
+// default : locked = false, local_l3 = max_l3_size;
 void CxxConfig::set_xpu_l3_cache_method(size_t l3_size, bool locked) {
 #ifdef LITE_WITH_XPU
   static std::mutex set_l3_mutex;
@@ -508,8 +535,10 @@ void CxxConfig::set_xpu_l3_cache_method(size_t l3_size, bool locked) {
           << "Enlarge XPU Shared L3 Cache Is Not Allowed.";
     }
     lite::TargetWrapperXPU::local_l3_size = 0;
+    lite::TargetWrapperXPU::need_l3_mutex = true;
   } else {
     lite::TargetWrapperXPU::local_l3_size = l3_size;
+    lite::TargetWrapperXPU::need_l3_mutex = false;
   }
 #else
   LOG(WARNING) << "The invoking of the function "

@@ -15,11 +15,12 @@
 #include <gtest/gtest.h>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
-#include "lite/core/arena/framework.h"
+#include "lite/core/test/arena/framework.h"
 
 namespace paddle {
 namespace lite {
 
+template <typename T>
 static inline void box_coder_ref(lite::Tensor* proposals,
                                  const lite::Tensor* anchors,
                                  const lite::Tensor* bbox_deltas,
@@ -34,11 +35,11 @@ static inline void box_coder_ref(lite::Tensor* proposals,
     int out_len = 4;
     int var_len = 4;
     int delta_len = 4;
-    const float* anchor_data = anchors->data<float>();
-    const float* bbox_deltas_data = bbox_deltas->data<float>();
-    float* proposals_data = proposals->mutable_data<float>();
-    const float* variances_data = variances->data<float>();
-    float normalized = !box_normalized ? 1.f : 0;
+    const T* anchor_data = anchors->data<T>();
+    const T* bbox_deltas_data = bbox_deltas->data<T>();
+    T* proposals_data = proposals->mutable_data<T>();
+    const T* variances_data = variances->data<T>();
+    T normalized = !box_normalized ? 1.f : 0;
 
     for (int64_t row_id = 0; row_id < row; ++row_id) {
       for (int64_t col_id = 0; col_id < col; ++col_id) {
@@ -56,8 +57,8 @@ static inline void box_coder_ref(lite::Tensor* proposals,
             anchor_data_tmp[3] - anchor_data_tmp[1] + normalized;
         auto anchor_center_x = anchor_data_tmp[0] + 0.5 * anchor_width;
         auto anchor_center_y = anchor_data_tmp[1] + 0.5 * anchor_height;
-        float bbox_center_x = 0, bbox_center_y = 0;
-        float bbox_width = 0, bbox_height = 0;
+        T bbox_center_x = 0, bbox_center_y = 0;
+        T bbox_width = 0, bbox_height = 0;
 
         auto variances_data_tmp = variances_data + var_offset;
         bbox_center_x =
@@ -85,6 +86,7 @@ static inline void box_coder_ref(lite::Tensor* proposals,
   }
 }
 
+template <typename T>
 class BoxCoderComputeTester : public arena::TestCase {
  protected:
   // common attributes for this op.
@@ -126,13 +128,13 @@ class BoxCoderComputeTester : public arena::TestCase {
     auto* prior_box_var = scope->FindTensor(prior_box_var_);
     auto* target_box = scope->FindTensor(target_box_);
 
-    box_coder_ref(output_box,
-                  prior_box,
-                  target_box,
-                  prior_box_var,
-                  axis_,
-                  box_normalized_,
-                  code_type_);
+    box_coder_ref<T>(output_box,
+                     prior_box,
+                     target_box,
+                     prior_box_var,
+                     axis_,
+                     box_normalized_,
+                     code_type_);
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
@@ -148,9 +150,9 @@ class BoxCoderComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
-    std::vector<float> prior_box_data(prior_box_dims_.production());
-    std::vector<float> prior_box_var_data(prior_box_var_dims_.production());
-    std::vector<float> target_box_data(target_box_dims_.production());
+    std::vector<T> prior_box_data(prior_box_dims_.production());
+    std::vector<T> prior_box_var_data(prior_box_var_dims_.production());
+    std::vector<T> target_box_data(target_box_dims_.production());
 
     for (int i = 0; i < prior_box_dims_.production(); i++) {
       prior_box_data[i] = i * 1.1 / prior_box_dims_.production();
@@ -169,21 +171,22 @@ class BoxCoderComputeTester : public arena::TestCase {
   }
 };
 
+template <typename T>
 void test_box_coder(Place place) {
   for (int N : {1, 2, 3, 4}) {
     for (int M : {1, 3, 4, 8, 10}) {
       int axis = 0;
-      for (bool norm : {true, false}) {
+      for (bool norm : {true}) {
         for (std::string code_type : {"decode_center_size"}) {
           std::unique_ptr<arena::TestCase> tester(
-              new BoxCoderComputeTester(place,
-                                        "def",
-                                        axis,
-                                        norm,
-                                        code_type,
-                                        DDim({M, 4}),
-                                        DDim({M, 4}),
-                                        DDim({N, M, 4})));
+              new BoxCoderComputeTester<T>(place,
+                                           "def",
+                                           axis,
+                                           norm,
+                                           code_type,
+                                           DDim({M, 4}),
+                                           DDim({M, 4}),
+                                           DDim({N, M, 4})));
           arena::Arena arena(std::move(tester), place, 2e-5);
           arena.TestPrecision();
         }
@@ -192,14 +195,45 @@ void test_box_coder(Place place) {
   }
 }
 
+#ifdef ENABLE_ARM_FP16
+template <>
+void test_box_coder<lite_api::float16_t>(Place place) {
+  for (int N : {1, 2, 3, 4}) {
+    for (int M : {1, 3, 4, 8, 10}) {
+      int axis = 0;
+      for (bool norm : {true}) {
+        for (std::string code_type : {"decode_center_size"}) {
+          std::unique_ptr<arena::TestCase> tester(
+              new BoxCoderComputeTester<lite_api::float16_t>(place,
+                                                             "def",
+                                                             axis,
+                                                             norm,
+                                                             code_type,
+                                                             DDim({M, 4}),
+                                                             DDim({M, 4}),
+                                                             DDim({N, M, 4})));
+          arena::Arena arena(std::move(tester), place, 1.5e-1);
+          arena.TestPrecision();
+        }
+      }
+    }
+  }
+}
+#endif
+
 TEST(BoxCoder, precision) {
 #ifdef LITE_WITH_X86
   Place place(TARGET(kX86));
-  test_box_coder(place);
+  test_box_coder<float>(place);
 #endif
 #ifdef LITE_WITH_ARM
   Place place(TARGET(kARM));
-  test_box_coder(place);
+  test_box_coder<float>(place);
+#endif
+
+#ifdef ENABLE_ARM_FP16
+  Place place2(TARGET(kARM), PRECISION(kFP16));
+  test_box_coder<lite_api::float16_t>(place2);
 #endif
 }
 

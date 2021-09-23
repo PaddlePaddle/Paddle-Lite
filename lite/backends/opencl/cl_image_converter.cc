@@ -14,7 +14,7 @@ limitations under the License. */
 
 #include "lite/backends/opencl/cl_image_converter.h"
 #include <vector>
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 namespace paddle {
 namespace lite {
@@ -194,13 +194,21 @@ void CLImageConverterFolder::NCHWToImage(float *tensor,
     half_t *image_fp16 = static_cast<half_t *>(image);
 
     for (size_t h = 0; h < tdim[0]; h++) {
-      for (size_t w = 0; w < tdim[1]; w++) {
-        if (fp16_support_) {
-          image_fp16[(h * width + w / 4) * 4 + (w % 4)] =
-              Float2Half(tensor[h * tdim[1] + w]);
+      for (size_t w = 0; w < width * 4; w++) {
+        if (w < tdim[1]) {
+          if (fp16_support_) {
+            image_fp16[(h * width + w / 4) * 4 + (w % 4)] =
+                Float2Half(tensor[h * tdim[1] + w]);
+          } else {
+            image_fp32[(h * width + w / 4) * 4 + (w % 4)] =
+                tensor[h * tdim[1] + w];
+          }
         } else {
-          image_fp32[(h * width + w / 4) * 4 + (w % 4)] =
-              tensor[h * tdim[1] + w];
+          if (fp16_support_) {
+            image_fp16[(h * width + w / 4) * 4 + (w % 4)] = Float2Half(0.f);
+          } else {
+            image_fp32[(h * width + w / 4) * 4 + (w % 4)] = 0.f;
+          }
         }
       }
     }

@@ -16,11 +16,15 @@ set MSVC_STATIC_CRT=ON
 set WITH_STATIC_MKL=OFF
 set WITH_OPENCL=OFF
 set WITH_AVX=ON
+set WITH_BAIDU_XPU_XTCL=OFF
+set WITH_BAIDU_XPU=OFF
+set BUILD_TYPE=Release
 set CMAKE_GENERATOR=Visual Studio 14 2015
 set ARCH=""
 set WITH_STRIP=OFF
 set OPTMODEL_DIR=""
 set THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
+set BAIDU_XPU_SDK_ROOT=""
 
 set workspace=%source_path%
 set /a cores=%number_of_processors%-2 > null
@@ -56,6 +60,12 @@ if /I "%1"=="with_extra" (
     set WITH_OPENCL=ON
 ) else if /I  "%1"=="without_avx" (
     set WITH_AVX=OFF
+) else if /I  "%1"=="with_baidu_xpu" (
+    set WITH_BAIDU_XPU=ON
+) else if /I  "%1"=="with_baidu_xpu_xtcl" (
+    set WITH_BAIDU_XPU_XTCL=ON
+) else if /I  "%1"=="baidu_xpu_sdk_root" (
+    set BAIDU_XPU_SDK_ROOT="%2"
 ) else if /I  "%1"=="build_for_ci" (
     set BUILD_FOR_CI=ON
     set WITH_TESTING=ON
@@ -91,6 +101,9 @@ echo "|  WITH_STATIC_MKL=%WITH_STATIC_MKL%                                      
 echo "|  MSVC_STATIC_CRT=%MSVC_STATIC_CRT%                                                                  |"
 echo "|  WITH_OPENCL=%WITH_OPENCL%                                                                          |"
 echo "|  WITH_AVX=%WITH_AVX%                                                                                |"
+echo "|  WITH_BAIDU_XPU=%WITH_BAIDU_XPU%                                                                    |"
+echo "|  WITH_BAIDU_XPU_XTCL=%WITH_BAIDU_XPU_XTCL%                                                          |"
+echo "|  BAIDU_XPU_SDK_ROOT=%BAIDU_XPU_SDK_ROOT%                                                            |"
 echo "------------------------------------------------------------------------------------------------------|"
 
 
@@ -156,10 +169,15 @@ if "%CMAKE_GENERATOR%"=="Ninja" (
             -DWITH_MKL=ON      ^
             -DWITH_MKLDNN=OFF   ^
             -DWITH_AVX=%WITH_AVX% ^
+            -DCMAKE_BUILD_TYPE=%BUILD_TYPE% ^
+            -DTHIRD_PARTY_BUILD_TYPE=Release ^
             -DLITE_WITH_X86=ON  ^
             -DLITE_WITH_PROFILE=%WITH_PROFILE% ^
             -DLITE_WITH_PRECISION_PROFILE=%WITH_PRECISION_PROFILE% ^
             -DWITH_LITE=ON ^
+            -DLITE_WITH_XPU=%WITH_BAIDU_XPU% ^
+            -DLITE_WITH_XTCL=%WITH_BAIDU_XPU_XTCL% ^
+            -DXPU_SDK_ROOT=%BAIDU_XPU_SDK_ROOT%  ^
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF ^
             -DLITE_WITH_ARM=OFF ^
             -DLITE_WITH_OPENCL=%WITH_OPENCL% ^
@@ -174,22 +192,16 @@ if "%CMAKE_GENERATOR%"=="Ninja" (
 
 if "%BUILD_FOR_CI%"=="ON" (
     call "%vcvarsall_dir%" amd64
-    msbuild /m:%cores% /p:Configuration=Release lite\lite_compile_deps.vcxproj
+    msbuild /m:%cores% /p:Configuration=%BUILD_TYPE% lite\lite_compile_deps.vcxproj
     call:test_server
     cmake ..   -G "%CMAKE_GENERATOR% Win64" -T host=x64 -DWITH_LITE=ON -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON -DWITH_TESTING=OFF -DLITE_BUILD_EXTRA=ON
-    msbuild /m:%cores% /p:Configuration=Release lite\api\opt.vcxproj
+    msbuild /m:%cores% /p:Configuration=%BUILD_TYPE% lite\api\opt.vcxproj
 ) else if "%BUILD_PLATFORM%"=="x64" (
     call "%vcvarsall_dir%" amd64
-    if "%WITH_OPENCL%"=="ON" (
-        msbuild /maxcpucount:%cores% /p:Configuration=Release lite\opencl_clhpp.vcxproj
-    )
-    msbuild /maxcpucount:%cores% /p:Configuration=Release lite\publish_inference.vcxproj
+    msbuild /maxcpucount:%cores% /p:Configuration=%BUILD_TYPE% lite\publish_inference.vcxproj
 ) else (
     call "%vcvarsall_dir%" x86
-    if "%WITH_OPENCL%"=="ON" (
-        msbuild /maxcpucount:%cores% /p:Configuration=Release lite\opencl_clhpp.vcxproj
-    )
-    msbuild /maxcpucount:%cores% /p:Configuration=Release lite\publish_inference.vcxproj
+    msbuild /maxcpucount:%cores% /p:Configuration=%BUILD_TYPE% lite\publish_inference.vcxproj
 )
 goto:eof
 
@@ -211,7 +223,10 @@ goto:eof
             -DLITE_WITH_PROFILE=%WITH_PROFILE% ^
             -DLITE_WITH_PRECISION_PROFILE=%WITH_PRECISION_PROFILE% ^
             -DWITH_LITE=ON ^
-            -DCMAKE_BUILD_TYPE=Release ^
+            -DLITE_WITH_XPU=%WITH_BAIDU_XPU% ^
+            -DLITE_WITH_XTCL=%WITH_BAIDU_XPU_XTCL% ^
+            -DXPU_SDK_ROOT=%BAIDU_XPU_SDK_ROOT%  ^
+            -DCMAKE_BUILD_TYPE=%BUILD_TYPE% ^
             -DTHIRD_PARTY_BUILD_TYPE=Release ^
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF ^
             -DLITE_WITH_ARM=OFF ^
@@ -235,6 +250,9 @@ goto:eof
         if NOT EXIST "%workspace%\third-party-ea5576.tar.gz" (
             echo "The directory of third_party exists, the third-party-ea5576.tar.gz not exists."
             git submodule update --init --recursive
+            call:rm_rebuild_dir "%workspace%\third-party\glog\src\extern_glog-build"
+            call:rm_rebuild_dir "%workspace%\third-party\protobuf-host\src\extern_protobuf-build"
+
         ) else (
                echo "The directory of third_party exists, the third-party-ea5576.tar.gz exists."
                call:rm_rebuild_dir "%workspace%\third-party"
@@ -277,7 +295,7 @@ goto:eof
 goto:eof
 
 :set_vcvarsall_dir
-SET /P vcvarsall_dir="Please input the path of visual studio command Prompt, such as C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat   =======>"
+SET /P vcvarsall_dir="Please input the path of visual studio command Prompt, such as %vcvarsall_dir%   =======>"
 set tmp_var=!vcvarsall_dir!
 call:remove_space
 set vcvarsall_dir=!tmp_var!

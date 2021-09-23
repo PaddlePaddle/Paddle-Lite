@@ -16,8 +16,8 @@
 
 #include <vector>
 #include "lite/core/framework.pb.h"
-#include "lite/model_parser/base/apis.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/core/model/base/apis.h"
+#include "lite/utils/log/cp_logging.h"
 
 namespace paddle {
 namespace lite {

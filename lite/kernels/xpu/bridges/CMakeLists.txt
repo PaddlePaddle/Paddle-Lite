@@ -2,10 +2,10 @@ if (NOT LITE_WITH_XTCL)
   return ()
 endif ()
 
-lite_cc_library (subgraph_bridge_utility_xpu SRCS utility.cc DEPS ${xpu_builder_libs} tensor)
+lite_cc_library (subgraph_bridge_utility_xpu SRCS utility.cc DEPS ${xpu_builder_libs} core)
 lite_cc_library (subgraph_bridge_graph_xpu SRCS graph.cc DEPS subgraph_bridge_utility_xpu)
 
-set (xpu_subgraph_bridge_deps subgraph_bridge_registry subgraph_bridge_utility_xpu subgraph_bridge_graph_xpu)
+set (xpu_subgraph_bridge_deps core subgraph_bridge_utility_xpu subgraph_bridge_graph_xpu)
 
 lite_cc_library (subgraph_bridge_act_op_xpu SRCS act_op.cc DEPS ${xpu_subgraph_bridge_deps})
 lite_cc_library (subgraph_bridge_conv_op_xpu SRCS conv_op.cc DEPS ${xpu_subgraph_bridge_deps})
@@ -24,11 +24,15 @@ lite_cc_library (subgraph_bridge_reshape_op_xpu SRCS reshape_op.cc DEPS ${xpu_su
 lite_cc_library (subgraph_bridge_layer_norm_op_xpu SRCS layer_norm_op.cc DEPS ${xpu_subgraph_bridge_deps})
 lite_cc_library (subgraph_bridge_dropout_op_xpu SRCS dropout_op.cc DEPS ${xpu_subgraph_bridge_deps})
 lite_cc_library (subgraph_bridge_matmul_op_xpu SRCS matmul_op.cc DEPS ${xpu_subgraph_bridge_deps})
+lite_cc_library (subgraph_bridge_bmm_op_xpu SRCS bmm_op.cc DEPS ${xpu_subgraph_bridge_deps})
 lite_cc_library (subgraph_bridge_cast_op_xpu SRCS cast_op.cc DEPS ${xpu_subgraph_bridge_deps})
 lite_cc_library (subgraph_bridge_yolo_box_op_xpu SRCS yolo_box_op.cc DEPS ${xpu_subgraph_bridge_deps})
+lite_cc_library (subgraph_bridge_interpolate_v2_op_xpu SRCS interpolate_v2_op.cc DEPS ${xpu_subgraph_bidge_deps})
+lite_cc_library (subgraph_bridge_concat_op_xpu SRCS concat_op.cc DEPS ${xpu_subgraph_bridge_deps})
+lite_cc_library (subgraph_bridge_unsqueeze_op_xpu SRCS unsqueeze_op.cc DEPS ${xpu_subgraph_bridge_deps})
 
 set (xpu_subgraph_bridges
-  subgraph_bridge_registry
+  core
   subgraph_bridge_utility_xpu
   subgraph_bridge_graph_xpu
   subgraph_bridge_act_op_xpu
@@ -48,8 +52,12 @@ set (xpu_subgraph_bridges
   subgraph_bridge_layer_norm_op_xpu
   subgraph_bridge_dropout_op_xpu
   subgraph_bridge_matmul_op_xpu
+  subgraph_bridge_bmm_op_xpu
   subgraph_bridge_cast_op_xpu
   subgraph_bridge_yolo_box_op_xpu
+  subgraph_bridge_interpolate_v2_op_xpu
+  subgraph_bridge_concat_op_xpu
+  subgraph_bridge_unsqueeze_op_xpu
   CACHE INTERNAL "xpu_subgraph_bridges"
 )
 

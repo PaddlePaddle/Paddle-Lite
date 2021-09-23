@@ -36,28 +36,18 @@ static void FixRELUDepthwiseConv2D(hal::Model* model,
   // the consumers has a depthwise conv2d operation and insert a dummy ADD
   // operation
   auto operations = GetOperandConsumers(model, output_operand);
-  for (auto& operation : operations) {
-    if (operation->type != NNADAPTER_CONV_2D) continue;
-    NNADAPTER_CHECK_GT(output_operand->type.dimension_count, 1);
-    auto group =
-        *reinterpret_cast<int32_t*>(operation->input_operands[9]->buffer);
-    auto is_depthwise_mode =
-        (group != 1 && output_operand->type.dimensions[1] == group);
+  for (auto& operation_consumer : operations) {
+    if (operation_consumer->type != NNADAPTER_CONV_2D) continue;
+    NNADAPTER_CHECK_GT(output_operand->type.dimensions.count, 1);
+    auto group = *reinterpret_cast<int32_t*>(
+        operation_consumer->input_operands[6]->buffer);
+    auto input_channel_size = output_operand->type.dimensions.data[1];
+    auto output_channel_size =
+        operation_consumer->input_operands[1]->type.dimensions.data[0];
+    bool is_depthwise_mode = group != 1 && input_channel_size == group &&
+                             output_channel_size % input_channel_size == 0;
     if (is_depthwise_mode) {
-      auto dummy_add_operand = AddOperand(model);
-      memcpy(&dummy_add_operand->type,
-             &output_operand->type,
-             sizeof(NNAdapterOperandType));
-      InsertOperand(model, output_operand, dummy_add_operand, true);
-      int8_t dummy_addend_value = 0;
-      auto dummy_addend_operand = AddQuant8ConstantOperand(
-          model, &dummy_addend_value, std::vector<int32_t>({1}), 0.0f);
-      auto dummy_fuse_code_operand = AddInt32ConstantOperand(model, 0);
-      auto dummy_add_operation = AddOperation(model);
-      dummy_add_operation->type = NNADAPTER_ADD;
-      dummy_add_operation->input_operands = {
-          output_operand, dummy_addend_operand, dummy_fuse_code_operand};
-      dummy_add_operation->output_operands = {dummy_add_operand};
+      AddDummyOperation(model, output_operand);
       break;
     }
   }

@@ -15,7 +15,7 @@
 #include <gtest/gtest.h>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
-#include "lite/core/arena/framework.h"
+#include "lite/core/test/arena/framework.h"
 
 namespace paddle {
 namespace lite {
@@ -37,17 +37,13 @@ class ArgmaxComputeTester : public arena::TestCase {
                       int axis,
                       bool keepdims,
                       int dtype,
-                      int n,
-                      int c,
-                      int h,
-                      int w)
+                      DDim x_dims)
       : TestCase(place, alias),
         alias_(alias),
         axis_(axis),
         keepdims_(keepdims),
-        dtype_(dtype) {
-    dims_ = DDim(std::vector<int64_t>({n, c, h, w}));
-  }
+        dtype_(dtype),
+        dims_(x_dims) {}
 
   // template function for RunBaseline according to input_tensor precision type
   // and output tensor precision type(dtype)
@@ -99,7 +95,7 @@ class ArgmaxComputeTester : public arena::TestCase {
   // (dtype).
   template <typename T>
   void RunBaselineDtypeKernel(Scope* scope) {
-    if (alias_ == "fp32") {
+    if (alias_ == "fp32" || alias_ == "def") {
       RunBaselineKernel<float, T>(scope);
     } else if (alias_ == "int64") {
       RunBaselineKernel<int64_t, T>(scope);
@@ -109,10 +105,15 @@ class ArgmaxComputeTester : public arena::TestCase {
       RunBaselineKernel<int16_t, T>(scope);
     } else if (alias_ == "uint8") {
       RunBaselineKernel<uint8_t, T>(scope);
+    } else {
+      LOG(ERROR) << "Not support alias: " << alias_;
     }
   }
 
   void RunBaseline(Scope* scope) override {
+    if (axis_ < 0) {
+      axis_ += static_cast<int>(dims_.size());
+    }
     if (dtype_ == -1 || dtype_ == 3) {
       RunBaselineDtypeKernel<int64_t>(scope);
     } else if (dtype_ == 2) {
@@ -132,7 +133,7 @@ class ArgmaxComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
-    if (alias_ == "fp32") {
+    if (alias_ == "fp32" || alias_ == "def") {
       std::vector<float> data(dims_.production());
       for (int i = 0; i < dims_.production(); i++) {
         float sign = i % 3 == 0 ? -1.0f : 1.0f;
@@ -171,26 +172,24 @@ class ArgmaxComputeTester : public arena::TestCase {
 };
 
 void TestArgmax(const Place& place) {
-  for (int axis : {0, 1, 2, 3}) {
-    // attribute: keepdims
+  for (int axis : {-1, -2, 0, 2}) {
     for (bool keepdims : {false, true}) {
-      // attribute `dtype`: datatype of output tensor
       for (int dtype : {-1, 2, 3}) {
-        for (int n : {1, 3}) {
-          for (int c : {3, 6}) {
-            for (int h : {9, 18}) {
-              for (int w : {9, 18}) {
-                std::vector<std::string> alias_vec{
-                    "fp32", "int64", "int32", "int16", "uint8"};
-                for (std::string alias : alias_vec) {
-                  std::unique_ptr<arena::TestCase> tester(
-                      new ArgmaxComputeTester(
-                          place, alias, axis, keepdims, dtype, n, c, h, w));
-                  arena::Arena arena(std::move(tester), place, 2e-5);
-                  arena.TestPrecision();
-                }
-              }
-            }
+        for (auto x_shape :
+             std::vector<std::vector<int64_t>>{{1, 2, 3, 4}, {2, 3, 4, 5}}) {
+          int x_size = x_shape.size();
+          if (axis < -x_size || axis >= x_size) continue;
+#if defined(LITE_WITH_NNADAPTER)
+          std::vector<std::string> alias_vec{"def"};
+#else
+          std::vector<std::string> alias_vec{
+              "fp32", "int64", "int32", "int16", "uint8"};
+#endif
+          for (std::string alias : alias_vec) {
+            std::unique_ptr<arena::TestCase> tester(new ArgmaxComputeTester(
+                place, alias, axis, keepdims, dtype, DDim(x_shape)));
+            arena::Arena arena(std::move(tester), place, 2e-5);
+            arena.TestPrecision();
           }
         }
       }
@@ -200,7 +199,9 @@ void TestArgmax(const Place& place) {
 
 TEST(Argmax, precision) {
   Place place;
-#if defined(LITE_WITH_ARM)
+#if defined(LITE_WITH_NNADAPTER) && defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  place = TARGET(kNNAdapter);
+#elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #elif defined(LITE_WITH_X86)
   place = TARGET(kHost);

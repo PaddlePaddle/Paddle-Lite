@@ -31,7 +31,7 @@
 #include "lite/core/program.h"
 #include "lite/utils/io.h"
 #ifdef LITE_WITH_X86
-#include "lite/fluid/float16.h"
+#include "lite/backends/x86/fluid/float16.h"
 #endif
 
 #ifdef LITE_WITH_OPENCL
@@ -136,9 +136,8 @@ class PrecisionProfiler {
     MkDirRecur(log_dir_);
     const char* write_to_file_raw =
         std::getenv("PADDLELITE_PRECISION_WRITE_TO_FILE");
-    write_result_to_file_ = (write_to_file_raw && atoi(write_to_file_raw) > 0)
-                                ? atoi(write_to_file_raw) > 0
-                                : false;
+    write_result_to_file_ =
+        (write_to_file_raw && atoi(write_to_file_raw) > 0) ? true : false;
   }
 
   std::string GetSummaryHeader() {
@@ -235,6 +234,7 @@ class PrecisionProfiler {
   }
 
   void compute_tensor_precision_info(const Tensor* in,
+                                     const std::string op_name,
                                      DataLayoutType layout_type,
                                      double* mean,
                                      double* std_dev,
@@ -258,7 +258,9 @@ class PrecisionProfiler {
           *std_dev =
               compute_standard_deviation<float>(ptr, in->numel(), true, *mean);
           *ave_grow_rate = compute_average_grow_rate<float>(ptr, in->numel());
-          write_result_to_file&& write_tensorfile<float>(in, name, log_dir_);
+          if (write_result_to_file) {
+            write_tensorfile<float>(in, name, log_dir_);
+          }
           return;
         }
 #ifdef ENABLE_ARM_FP16
@@ -268,7 +270,9 @@ class PrecisionProfiler {
           *std_dev =
               compute_standard_deviation<__fp16>(ptr, in->numel(), true, *mean);
           *ave_grow_rate = compute_average_grow_rate<__fp16>(ptr, in->numel());
-          write_result_to_file&& write_tensorfile<__fp16>(in, name, log_dir_);
+          if (write_result_to_file) {
+            write_tensorfile<__fp16>(in, name, log_dir_);
+          }
           return;
         }
 #endif
@@ -276,7 +280,9 @@ class PrecisionProfiler {
           *mean = -333333333333;
           *std_dev = -33333333333;
           *ave_grow_rate = -33333333333;
-          write_result_to_file&& write_tensorfile<bool>(in, name, log_dir_);
+          if (write_result_to_file) {
+            write_tensorfile<bool>(in, name, log_dir_);
+          }
           return;
         }
         case PRECISION(kInt8): {
@@ -285,7 +291,9 @@ class PrecisionProfiler {
           *std_dev =
               compute_standard_deviation<int8_t>(ptr, in->numel(), true, *mean);
           *ave_grow_rate = compute_average_grow_rate<int8_t>(ptr, in->numel());
-          write_result_to_file&& write_tensorfile<int8_t>(in, name, log_dir_);
+          if (write_result_to_file) {
+            write_tensorfile<int8_t>(in, name, log_dir_);
+          }
           return;
         }
         case PRECISION(kInt32): {
@@ -294,7 +302,9 @@ class PrecisionProfiler {
           *std_dev = compute_standard_deviation<int32_t>(
               ptr, in->numel(), true, *mean);
           *ave_grow_rate = compute_average_grow_rate<int32_t>(ptr, in->numel());
-          write_result_to_file&& write_tensorfile<int32_t>(in, name, log_dir_);
+          if (write_result_to_file) {
+            write_tensorfile<int32_t>(in, name, log_dir_);
+          }
           return;
         }
         case PRECISION(kInt64): {
@@ -302,7 +312,9 @@ class PrecisionProfiler {
           *mean = compute_mean<int64_t>(ptr, in->numel());
           *std_dev = compute_standard_deviation<int64_t>(
               ptr, in->numel(), true, *mean);
-          write_result_to_file&& write_tensorfile<int64_t>(in, name, log_dir_);
+          if (write_result_to_file) {
+            write_tensorfile<int64_t>(in, name, log_dir_);
+          }
           return;
         }
         default:
@@ -321,8 +333,15 @@ class PrecisionProfiler {
       CLRuntime::Global()->command_queue().finish();
       switch (layout_type) {
         case DATALAYOUT(kImageDefault): {
+          auto in_dims = in->dims();
+          // special case
+          if ((in_dims.size() == 2) &&
+              (op_name == "fc" || op_name == "softmax")) {
+            in_dims = DDim(std::vector<DDim::value_type>(
+                {in->dims()[0], in->dims()[1], 1, 1}));
+          }
           paddle::lite::CLImageConverterDefault default_convertor;
-          auto image_shape = default_convertor.InitImageDimInfoWith(in->dims());
+          auto image_shape = default_convertor.InitImageDimInfoWith(in_dims);
           size_t im_w = image_shape[0];
           size_t im_h = image_shape[1];
           VLOG(1) << "image shape(W,H) of " << name << ": " << im_w << " "
@@ -345,8 +364,11 @@ class PrecisionProfiler {
                                       cl_image2d_row_pitch,
                                       cl_image2d_slice_pitch,
                                       IoDirection::DtoH);
+          // TODO(zhaoyang-star): Tensor shape padding mode will change from
+          // high-dim padding to low-dim padding to fit image2d.
+          // ImageConverter will be changed.
           default_convertor.ImageToNCHW(
-              in_data_v, real_out_v.data(), image_shape, in->dims());
+              in_data_v, real_out_v.data(), image_shape, in_dims);
           CHECK(real_out_v.size() == in->numel());
           *mean = compute_mean<float>(real_out_v.data(), real_out_v.size());
           *std_dev = compute_standard_deviation<float>(
@@ -354,13 +376,14 @@ class PrecisionProfiler {
           *ave_grow_rate = compute_average_grow_rate<float>(real_out_v.data(),
                                                             real_out_v.size());
           std::shared_ptr<lite::Tensor> real_out_t(new lite::Tensor);
-          real_out_t->Resize(in->dims());
+          real_out_t->Resize(in_dims);
           float* real_out_data = real_out_t->mutable_data<float>();
           memcpy(real_out_data,
                  real_out_v.data(),
                  real_out_v.size() * sizeof(float));
-          write_result_to_file&& write_tensorfile<float>(
-              real_out_t.get(), name, log_dir_);
+          if (write_result_to_file) {
+            write_tensorfile<float>(real_out_t.get(), name, log_dir_);
+          }
           return;
         }
         case DATALAYOUT(kNCHW): {
@@ -381,8 +404,9 @@ class PrecisionProfiler {
           memcpy(real_out_data,
                  in_data_v.data(),
                  in_data_v.size() * sizeof(float));
-          write_result_to_file&& write_tensorfile<float>(
-              real_out_t.get(), name, log_dir_);
+          if (write_result_to_file) {
+            write_tensorfile<float>(real_out_t.get(), name, log_dir_);
+          }
           return;
         }
         default:
@@ -409,7 +433,9 @@ class PrecisionProfiler {
               in_data_v.data(), in->numel(), true, *mean);
           *ave_grow_rate =
               compute_average_grow_rate<float>(in_data_v.data(), in->numel());
-          write_result_to_file&& write_tensorfile<float>(in, name, log_dir_);
+          if (write_result_to_file) {
+            write_tensorfile<float>(in, name, log_dir_);
+          }
           return;
         }
         case PRECISION(kInt32): {
@@ -424,7 +450,9 @@ class PrecisionProfiler {
               in_data_v.data(), in->numel(), true, *mean);
           *ave_grow_rate =
               compute_average_grow_rate<int>(in_data_v.data(), in->numel());
-          write_result_to_file&& write_tensorfile<float>(in, name, log_dir_);
+          if (write_result_to_file) {
+            write_tensorfile<int>(in, name, log_dir_);
+          }
           return;
         }
         case PRECISION(kInt64): {
@@ -439,7 +467,9 @@ class PrecisionProfiler {
               in_data_v.data(), in->numel(), true, *mean);
           *ave_grow_rate =
               compute_average_grow_rate<int64_t>(in_data_v.data(), in->numel());
-          write_result_to_file&& write_tensorfile<float>(in, name, log_dir_);
+          if (write_result_to_file) {
+            write_tensorfile<int64_t>(in, name, log_dir_);
+          }
           return;
         }
         case PRECISION(kFP16): {
@@ -460,7 +490,9 @@ class PrecisionProfiler {
               in_data_v.data(), in->numel(), true, *mean);
           *ave_grow_rate =
               compute_average_grow_rate<float>(in_data_v.data(), in->numel());
-          write_result_to_file&& write_tensorfile<float>(in, name, log_dir_);
+          if (write_result_to_file) {
+            write_tensorfile<float>(in, name, log_dir_);
+          }
           return;
         }
         default:
@@ -521,6 +553,7 @@ class PrecisionProfiler {
 
           if (tout->IsInitialized()) {
             compute_tensor_precision_info(tout,
+                                          op_name,
                                           type->layout(),
                                           &mean,
                                           &std_dev,
@@ -559,6 +592,7 @@ class PrecisionProfiler {
 
             if (tout->IsInitialized()) {
               compute_tensor_precision_info(tout,
+                                            op_name,
                                             type->layout(),
                                             &mean,
                                             &std_dev,

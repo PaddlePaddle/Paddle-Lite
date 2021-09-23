@@ -17,7 +17,7 @@
 #include <string>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
-#include "lite/core/arena/framework.h"
+#include "lite/core/test/arena/framework.h"
 #include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
@@ -91,7 +91,7 @@ template <class T>
 void SliceOneClass(const Tensor& items,
                    const int class_id,
                    Tensor* one_class_item) {
-  T* item_data = one_class_item->mutable_data<T>();
+  T* item_data = one_class_item->template mutable_data<T>();
   const T* items_data = items.data<T>();
   const int64_t num_item = items.dims()[0];
   const int64_t class_num = items.dims()[1];
@@ -268,7 +268,7 @@ void MultiClassOutput(const Tensor& scores,
   int64_t out_dim = box_size + 2;
   auto* scores_data = scores.data<T>();
   auto* bboxes_data = bboxes.data<T>();
-  auto* odata = outs->mutable_data<T>();
+  auto* odata = outs->template mutable_data<T>();
   const T* sdata;
   Tensor bbox;
   bbox.Resize({scores.dims()[0], box_size});
@@ -305,6 +305,7 @@ void MultiClassOutput(const Tensor& scores,
   }
 }
 
+template <typename T>
 class MulticlassNmsComputeTester : public arena::TestCase {
  protected:
   // common attributes for this op.
@@ -350,7 +351,14 @@ class MulticlassNmsComputeTester : public arena::TestCase {
     auto* scores = scope->FindTensor(scores_);
     auto* outs = scope->NewTensor(out_);
     CHECK(outs);
-    outs->set_precision(PRECISION(kFloat));
+    if (std::is_same<T, float>()) {
+      outs->set_precision(PRECISION(kFloat));
+    }
+#ifdef ENABALE_ARM_FP16
+    if (std::is_same<T, lite_api::float16_t>()) {
+      outs->set_precision(PRECISION(kFP16));
+    }
+#endif
 
     auto score_size = scores_dims_.size();
     std::vector<std::map<int, std::vector<int>>> all_indices;
@@ -363,28 +371,29 @@ class MulticlassNmsComputeTester : public arena::TestCase {
     int n = score_size == 3 ? batch_size : boxes->lod().back().size() - 1;
     for (int i = 0; i < n; ++i) {
       if (score_size == 3) {
-        scores_slice = scores->Slice<float>(i, i + 1);
+        scores_slice = scores->template Slice<T>(i, i + 1);
         scores_slice.Resize({scores_dims_[1], scores_dims_[2]});
-        boxes_slice = boxes->Slice<float>(i, i + 1);
+        boxes_slice = boxes->template Slice<T>(i, i + 1);
         boxes_slice.Resize({scores_dims_[2], box_dim});
       } else {
         auto boxes_lod = boxes->lod().back();
-        scores_slice = scores->Slice<float>(boxes_lod[i], boxes_lod[i + 1]);
-        boxes_slice = boxes->Slice<float>(boxes_lod[i], boxes_lod[i + 1]);
+        scores_slice =
+            scores->template Slice<T>(boxes_lod[i], boxes_lod[i + 1]);
+        boxes_slice = boxes->template Slice<T>(boxes_lod[i], boxes_lod[i + 1]);
       }
       std::map<int, std::vector<int>> indices;
-      MultiClassNMS<float>(scores_slice,
-                           boxes_slice,
-                           score_size,
-                           &indices,
-                           &num_nmsed_out,
-                           background_label_,
-                           nms_top_k_,
-                           keep_top_k_,
-                           normalized_,
-                           nms_threshold_,
-                           nms_eta_,
-                           score_threshold_);
+      MultiClassNMS<T>(scores_slice,
+                       boxes_slice,
+                       score_size,
+                       &indices,
+                       &num_nmsed_out,
+                       background_label_,
+                       nms_top_k_,
+                       keep_top_k_,
+                       normalized_,
+                       nms_threshold_,
+                       nms_eta_,
+                       score_threshold_);
       all_indices.push_back(indices);
       batch_starts.push_back(batch_starts.back() + num_nmsed_out);
     }
@@ -392,36 +401,38 @@ class MulticlassNmsComputeTester : public arena::TestCase {
     uint64_t num_kept = batch_starts.back();
     if (num_kept == 0) {
       outs->Resize({1, 1});
-      float* od = outs->mutable_data<float>();
+      T* od = outs->template mutable_data<T>();
       od[0] = -1;
       batch_starts = {0, 1};
     } else {
       outs->Resize({static_cast<int64_t>(num_kept), out_dim});
-      outs->mutable_data<float>();
+      outs->template mutable_data<T>();
       int offset = 0;
       int* oindices = nullptr;
       for (int i = 0; i < n; ++i) {
         if (score_size == 3) {
-          scores_slice = scores->Slice<float>(i, i + 1);
-          boxes_slice = boxes->Slice<float>(i, i + 1);
+          scores_slice = scores->template Slice<T>(i, i + 1);
+          boxes_slice = boxes->template Slice<T>(i, i + 1);
           scores_slice.Resize({scores_dims_[1], scores_dims_[2]});
           boxes_slice.Resize({scores_dims_[2], box_dim});
         } else {
           auto boxes_lod = boxes->lod().back();
-          scores_slice = scores->Slice<float>(boxes_lod[i], boxes_lod[i + 1]);
-          boxes_slice = boxes->Slice<float>(boxes_lod[i], boxes_lod[i + 1]);
+          scores_slice =
+              scores->template Slice<T>(boxes_lod[i], boxes_lod[i + 1]);
+          boxes_slice =
+              boxes->template Slice<T>(boxes_lod[i], boxes_lod[i + 1]);
         }
         int64_t s = static_cast<int64_t>(batch_starts[i]);
         int64_t e = static_cast<int64_t>(batch_starts[i + 1]);
         if (e > s) {
-          Tensor out = outs->Slice<float>(s, e);
-          MultiClassOutput<float>(scores_slice,
-                                  boxes_slice,
-                                  all_indices[i],
-                                  scores_dims_.size(),
-                                  &out,
-                                  oindices,
-                                  offset);
+          Tensor out = outs->template Slice<T>(s, e);
+          MultiClassOutput<T>(scores_slice,
+                              boxes_slice,
+                              all_indices[i],
+                              scores_dims_.size(),
+                              &out,
+                              oindices,
+                              offset);
         }
       }
     }
@@ -446,13 +457,13 @@ class MulticlassNmsComputeTester : public arena::TestCase {
   }
 
   void PrepareData() override {
-    std::vector<float> bboxes(bboxes_dims_.production());
+    std::vector<T> bboxes(bboxes_dims_.production());
     for (int i = 0; i < bboxes_dims_.production(); ++i) {
       bboxes[i] = i * 1. / bboxes_dims_.production();
     }
     SetCommonTensor(bboxes_, bboxes_dims_, bboxes.data());
 
-    std::vector<float> scores(scores_dims_.production());
+    std::vector<T> scores(scores_dims_.production());
     for (int i = 0; i < scores_dims_.production(); ++i) {
       scores[i] = i * 1. / scores_dims_.production();
     }
@@ -460,13 +471,14 @@ class MulticlassNmsComputeTester : public arena::TestCase {
   }
 };
 
+template <typename T>
 void TestMulticlassNms(Place place, float abs_error) {
   int N = 3;
   int M = 2500;
   for (int class_num : {2, 4, 10}) {
     std::vector<int64_t> bbox_shape{N, M, 4};
     std::vector<int64_t> score_shape{N, class_num, M};
-    std::unique_ptr<arena::TestCase> tester(new MulticlassNmsComputeTester(
+    std::unique_ptr<arena::TestCase> tester(new MulticlassNmsComputeTester<T>(
         place, "def", DDim(bbox_shape), DDim(score_shape)));
     arena::Arena arena(std::move(tester), place, abs_error);
     arena.TestPrecision();
@@ -482,8 +494,19 @@ TEST(multiclass_nms, precision) {
   return;
 #endif
 
-  TestMulticlassNms(place, abs_error);
+  TestMulticlassNms<float>(place, abs_error);
 }
+
+#if defined(ENABLE_ARM_FP16)
+TEST(multiclass_nmmsFP16, precison) {
+  float abs_error = 2e-5;
+  Place place;
+
+  place = Place(TARGET(kARM), PRECISION(kFP16));
+  using float16_t = __fp16;
+  TestMulticlassNms<float16_t>(place, abs_error);
+}
+#endif
 
 }  // namespace lite
 }  // namespace paddle

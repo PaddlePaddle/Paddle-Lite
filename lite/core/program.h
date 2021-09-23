@@ -207,6 +207,11 @@ class LITE_API RuntimeProgram {
       Scope* exec_scope,
       int block_idx = kRootBlockIdx);
   ~RuntimeProgram() {
+#ifdef LITE_WITH_OPENCL
+    // save program kernel cache & tuned params
+    CLRuntime::Global()->SaveProgram();
+    CLRuntime::Global()->SaveTuned();
+#endif  // LITE_WITH_OPENCL
 #ifdef LITE_WITH_PROFILE
     LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kCreate);
     LOG(INFO) << "\n" << profiler_.Summary(profile::Type::kDispatch);
@@ -251,22 +256,30 @@ class LITE_API RuntimeProgram {
 
   size_t block_size() { return instructions_.size(); }
 
+  void set_version(const int64_t version) { version_ = version; }
+
+  const int64_t get_version() const { return version_; }
+
 #ifndef LITE_ON_TINY_PUBLISH
   // Update the ops and vars of all of blocks to the given program_desc
   // according to the instructions
-  void SaveToProgram(std::shared_ptr<cpp::ProgramDesc> program_desc);
+  void SaveRuntimProgramIntoProgramDesc(
+      std::shared_ptr<cpp::ProgramDesc> program_desc);
 #endif
 
 #ifdef LITE_WITH_METAL
   void ConfigMetalContext(std::string lib_path,
                           bool use_mps = false,
-                          bool use_aggressive = false);
+                          bool use_aggressive = false,
+                          bool use_memory_reuse_ = false,
+                          void* device = nullptr);
 #endif
 
  private:
   RuntimeProgram(const RuntimeProgram&) = delete;
   std::vector<std::vector<Instruction>> instructions_;
   Scope* exec_scope_{};
+  int64_t version_{0};
 
 #ifdef LITE_WITH_METAL
   std::unique_ptr<KernelContext> metal_ctx_{nullptr};

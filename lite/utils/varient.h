@@ -20,7 +20,7 @@
 #include <typeinfo>
 #include <utility>
 #include "lite/utils/any.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 #include "lite/utils/string.h"
 // This is an equivalent implementation of boost::any. We implement this to
 // avoid including the whole boost library and keep the inference library small.

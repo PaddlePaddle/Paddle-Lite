@@ -69,6 +69,7 @@ struct SoftmaxMetalParam2 {
 struct ScaleMetalParam {
     float scale;
     float abias;
+    ActivationMetalParam activationParam;
 };
 
 struct ReshapeMetalParam {
@@ -149,6 +150,11 @@ struct PixelShuffleMetalParam {
     int upscale_factor;
 };
 
+struct ShuffleChannelMetalParam {
+    uint32_t group;
+    uint32_t channel_per_group;
+};
+
 struct LrnMetalParam {
     int n;
     int channelN;
@@ -159,6 +165,11 @@ struct LrnMetalParam {
 
 struct InstanceNormReluMetalParam {
     uint16_t hasReluOp;
+};
+
+struct HardSigmoidMetalParam {
+    float slope;
+    float offset;
 };
 
 struct HardSwishMetalParam {
@@ -239,6 +250,11 @@ struct SliceMetalParam {
     int oC;
 };
 
+struct FeedMetalParam {
+    int isize;
+    int idim[4];
+};
+
 struct FetchMetalParam {
     int isize;
     int idim[4];
@@ -251,6 +267,34 @@ struct Pad2dParam {
     uint16_t paddingRight;
     float padValue;
     uint16_t mode;
+};
+
+struct YoloBoxMetalParam {
+    int imgH;
+    int imgW;
+    int xN;
+    int xC;
+    int xH;
+    int xW;
+    int xStride;
+    int xSize;
+    int boxNum;
+    int anchorNum;
+    int anchorStride;
+    int classNum;
+    int clipBBox;
+    float confThresh;
+    float scale;
+    float bias;
+};
+
+struct CompareMetalParam {
+    int compareType;
+};
+
+struct CastMetalParam {
+    int inType;
+    int outType;
 };
 
 #endif  // LITE_KERNELS_METAL_IMAGE_OP_METAL_PARAMS_H_

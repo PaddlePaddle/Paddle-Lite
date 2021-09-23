@@ -16,7 +16,7 @@ limitations under the License. */
 #include <dlfcn.h>
 #include <string>
 #include <vector>
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 namespace paddle {
 namespace lite {
@@ -30,6 +30,13 @@ NNAdapterWrapper::NNAdapterWrapper() {
   if (!initialized_) {
     supported_ = Initialize();
     initialized_ = true;
+  }
+}
+
+NNAdapterWrapper::~NNAdapterWrapper() {
+  if (library_) {
+    dlclose(library_);
+    library_ = nullptr;
   }
 }
 
@@ -77,9 +84,9 @@ bool NNAdapterWrapper::Initialize() {
   NNADAPTER_LOAD_FUNCTION(NNAdapterModel_destroy)
   NNADAPTER_LOAD_FUNCTION(NNAdapterModel_finish)
   NNADAPTER_LOAD_FUNCTION(NNAdapterModel_addOperand)
-  NNADAPTER_LOAD_FUNCTION(NNAdapterModel_setOperand)
+  NNADAPTER_LOAD_FUNCTION(NNAdapterModel_setOperandValue)
+  NNADAPTER_LOAD_FUNCTION(NNAdapterModel_getOperandType)
   NNADAPTER_LOAD_FUNCTION(NNAdapterModel_addOperation)
-  NNADAPTER_LOAD_FUNCTION(NNAdapterModel_setOperation)
   NNADAPTER_LOAD_FUNCTION(NNAdapterModel_identifyInputsAndOutputs)
   NNADAPTER_LOAD_FUNCTION(NNAdapterCompilation_create)
   NNADAPTER_LOAD_FUNCTION(NNAdapterCompilation_destroy)

@@ -15,7 +15,7 @@
 #include <gtest/gtest.h>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
-#include "lite/core/arena/framework.h"
+#include "lite/core/test/arena/framework.h"
 
 namespace paddle {
 namespace lite {
@@ -146,6 +146,11 @@ class SliceComputeTester : public arena::TestCase {
         out_dims[axes_[i]] = end - start;
       }
     }
+
+    out->Resize(out_dims);
+    auto* out_data = out->mutable_data<float>();
+    slice_ref(input_data, in_dims.data(), axes_, starts_, ends_, out_data);
+
     if (decrease_axis_.size() > 0) {
       std::vector<int64_t> new_out_shape;
       for (size_t i = 0; i < decrease_axis_.size(); ++i) {
@@ -164,8 +169,6 @@ class SliceComputeTester : public arena::TestCase {
       out_dims = new_dims;
     }
     out->Resize(out_dims);
-    auto* out_data = out->mutable_data<float>();
-    slice_ref(input_data, in_dims.data(), axes_, starts_, ends_, out_data);
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
@@ -240,11 +243,34 @@ void test_slice(Place place) {
   arena.TestPrecision();
 }
 
+void test_slice_axes(Place place) {
+  std::vector<int> axes({1, 2});
+  std::vector<int> starts({1, 1});
+  std::vector<int> ends({2, 3});
+  std::vector<int> decrease_axis({});
+  DDim dims({2, 3, 4, 5});
+  std::unique_ptr<arena::TestCase> tester(new SliceComputeTester(
+      place, "def", axes, starts, ends, decrease_axis, dims));
+  arena::Arena arena(std::move(tester), place, 2e-4);
+  arena.TestPrecision();
+}
+
+void test_slice_decrease_axis(Place place) {
+  std::vector<int> axes({0});
+  std::vector<int> starts({0});
+  std::vector<int> ends({1});
+  std::vector<int> decrease_axis({0});
+  DDim dims({2, 3, 4, 5});
+  std::unique_ptr<arena::TestCase> tester(new SliceComputeTester(
+      place, "def", axes, starts, ends, decrease_axis, dims));
+  arena::Arena arena(std::move(tester), place, 2e-4);
+  arena.TestPrecision();
+}
+
 void test_slice_tensor(Place place) {
   std::vector<int> axes({0, 1, 2});
   std::vector<int> starts({2, 2, 2});
   std::vector<int> ends({5, 6, 7});
-
   std::vector<int> decrease_axis({});
   DDim dims({10, 10, 10});
   std::unique_ptr<arena::TestCase> tester(new SliceComputeTester(
@@ -275,7 +301,12 @@ void test_slice_tensor_list(Place place) {
 }
 
 TEST(Slice, precision) {
-#if defined(LITE_WITH_OPENCL)
+#if defined(LITE_WITH_NNADAPTER) && defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  Place place = TARGET(kNNAdapter);
+  test_slice(place);
+  test_slice_axes(place);
+  test_slice_decrease_axis(place);
+#elif defined(LITE_WITH_OPENCL)
   Place place = TARGET(kOpenCL);
   test_slice(place);
   test_slice_tensor(place);

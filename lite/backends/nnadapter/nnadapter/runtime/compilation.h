@@ -14,6 +14,9 @@
 
 #pragma once
 
+#include <memory>
+#include <string>
+#include <utility>
 #include <vector>
 #include "runtime/context.h"
 #include "runtime/model.h"
@@ -23,8 +26,16 @@ namespace runtime {
 
 class Compilation {
  public:
+  typedef struct {
+    Context::DeviceContext* device_context;
+    hal::Cache cache;
+  } Cache;
+  typedef struct {
+    Context::DeviceContext* device_context;
+    void* program;
+  } Program;
   Compilation(Model* model,
-              const char* cache_key,
+              const char* cache_token,
               void* cache_buffer,
               uint32_t cache_length,
               const char* cache_dir,
@@ -39,10 +50,21 @@ class Compilation {
               std::vector<hal::Argument>* output_arguments);
 
  private:
+  std::vector<std::pair<Context::DeviceContext*, Model*>> PartitionModel(
+      Context* context, Model* model);
+  // Serialize/deserialize the cached models into/from memory
+  bool Serialize(std::vector<uint8_t>* buffer);
+  bool Deserialize(void* buffer, uint64_t size);
+
+ private:
   Model* model_{nullptr};
-  hal::Cache cache_;
+  std::string cache_token_;
+  std::string cache_dir_;
+  std::vector<Cache> caches_;
+  std::vector<Program> programs_;
+  std::vector<NNAdapterOperandType> input_types_;
+  std::vector<NNAdapterOperandType> output_types_;
   Context* context_{nullptr};
-  void* program_{nullptr};
   bool completed_{false};
 };
 

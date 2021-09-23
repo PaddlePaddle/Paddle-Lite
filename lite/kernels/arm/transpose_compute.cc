@@ -17,6 +17,7 @@
 #include <vector>
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
+#include "lite/core/parallel_defines.h"
 #include "lite/core/tensor.h"
 #include "lite/core/type_system.h"
 
@@ -68,8 +69,7 @@ void transpose_mat(const float* din,
   for (int i = 0; i < num; ++i) {
     float* ptr_out = dout + i * size_in;
     const float* ptr_in = din + i * size_in;
-#pragma omp parallel for
-    for (int h = 0; h < nh; h++) {
+    LITE_PARALLEL_BEGIN(h, tid, nh) {
       const float* ptr_din_row = ptr_in + h * size_w;
       int tmp_h = h * 4;
       for (int w = 0; w < nw; w++) {
@@ -122,7 +122,8 @@ void transpose_mat(const float* din,
         ptr_din_row += 4;
       }
     }
-    // remian
+    LITE_PARALLEL_END();
+    // remain
     for (int h = 0; h < height; h++) {
       for (int w = nw * 4; w < width; w++) {
         const float* data_in_ptr = ptr_in + h * width + w;
@@ -147,7 +148,11 @@ void transpose_mat(const lite_api::float16_t* din,
                    const int width,
                    const int height) {
   int nw = width >> 3;
+#ifdef __aarch64__
   int nh = height >> 3;
+#else
+  int nh = height >> 2;
+#endif
   int size_in = width * height;
   int size_w = width << 3;
   int size_h = height << 3;
@@ -161,12 +166,16 @@ void transpose_mat(const lite_api::float16_t* din,
 #pragma omp parallel for
     for (int h = 0; h < nh; h++) {
       const lite_api::float16_t* ptr_din_row = ptr_in + h * size_w;
+#ifdef __aarch64__
       int tmp_h = h << 3;
+#else
+      int tmp_h = h << 2;
+#endif
       for (int w = 0; w < nw; w++) {
         INIT_PTR_4(lite_api::float16_t, ptr_out, size_h)
+#ifdef __aarch64__
         INIT_PTR_A4(lite_api::float16_t)
         INIT_PTR_B4(lite_api::float16_t)
-#ifdef __aarch64__
         asm volatile(
             "ldr q0, [%[din0]], #16\n"
             "ldr q1, [%[din1]], #16\n"
@@ -256,51 +265,32 @@ void transpose_mat(const lite_api::float16_t* din,
               "v14",
               "v15");
 #else
+        INIT_PTR_B4(lite_api::float16_t)
         asm volatile(
             "vld1.16 {d0-d1}, [%[din0]]!\n"
             "vld1.16 {d2-d3}, [%[din1]]!\n"
             "vld1.16 {d4-d5}, [%[din2]]!\n"
             "vld1.16 {d6-d7}, [%[din3]]!\n"
-            "vld1.16 {d8-d9}, [%[din4]]!\n"
-            "vld1.16 {d10-d11}, [%[din5]]!\n"
             // q0 =a0b0a2b2a4b4a6b6 q1 = a1b1a3b3a5b5a7b7
             "vtrn.16 q0, q1\n"
-            "vld1.16 {d12-d13}, [%[din6]]!\n"
-
             "vtrn.16 q2, q3\n"
-            "vld1.16 {d14-d15}, [%[din7]]!\n"
-
-            "vtrn.16 q4, q5\n"
-            "vtrn.16 q6, q7\n"
 
             // q0 = a0b0c0d0a4b4c4d4, q2 = a2b2c2d2a6b6c6d6
             "vtrn.32 q0, q2\n"
             "vtrn.32 q1, q3\n"
-            "vtrn.32 q4, q6\n"
-            "vtrn.32 q5, q7\n"
 
-            // q0 = a0b0c0d0e0f0g0h0, q4 = a4b4c4d4e4f4g4h4
-            "vtrn.64 q0, q4\n"
-            "vtrn.64 q1, q5\n"
-            "vtrn.64 q2, q6\n"
-            "vtrn.64 q3, q7\n"
-
-            "vst1.16 {d0-d1}, [%[dout0]]!\n"
-            "vst1.16 {d8-d9}, [%[dout4]]!\n"
-            "vst1.16 {d2-d3}, [%[dout1]]!\n"
-            "vst1.16 {d10-d11}, [%[dout5]]!\n"
-            "vst1.16 {d4-d5}, [%[dout2]]!\n"
-            "vst1.16 {d12-d13}, [%[dout6]]!\n"
-            "vst1.16 {d6-d7}, [%[dout3]]!\n"
-            "vst1.16 {d14-d15}, [%[dout7]]!\n"
+            "vst1.16 {d0}, [%[dout0]]!\n"
+            "vst1.16 {d2}, [%[dout1]]!\n"
+            "vst1.16 {d4}, [%[dout2]]!\n"
+            "vst1.16 {d6}, [%[dout3]]!\n"
+            "vst1.16 {d1}, [%[dout4]]!\n"
+            "vst1.16 {d3}, [%[dout5]]!\n"
+            "vst1.16 {d5}, [%[dout6]]!\n"
+            "vst1.16 {d7}, [%[dout7]]!\n"
             : [din0] "+r"(din0),
               [din1] "+r"(din1),
               [din2] "+r"(din2),
               [din3] "+r"(din3),
-              [din4] "+r"(din4),
-              [din5] "+r"(din5),
-              [din6] "+r"(din6),
-              [din7] "+r"(din7),
               [dout0] "+r"(dout0),
               [dout1] "+r"(dout1),
               [dout2] "+r"(dout2),
@@ -310,15 +300,15 @@ void transpose_mat(const lite_api::float16_t* din,
               [dout6] "+r"(dout6),
               [dout7] "+r"(dout7)
             :
-            : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7");
+            : "cc", "memory", "q0", "q1", "q2", "q3");
 #endif
         ptr_din_row += 8;
       }
       lite_api::float16_t* data_out_ptr0 = ptr_out + size_wh;
       for (int w = 0; w < remain_ww; w++) {
         INIT_PTR_4(lite_api::float16_t, data_out_ptr0, (4 * height))
-        INIT_PTR_A4(lite_api::float16_t)
 #ifdef __aarch64__
+        INIT_PTR_A4(lite_api::float16_t)
         asm volatile(
             "ldr d0, [%[din0]], #8\n"
             "ldr d1, [%[din1]], #8\n"
@@ -400,58 +390,50 @@ void transpose_mat(const lite_api::float16_t* din,
             "vld1.16 {d2}, [%[din1]]!\n"
             "vld1.16 {d4}, [%[din2]]!\n"
             "vld1.16 {d6}, [%[din3]]!\n"
-            "vld1.16 {d8}, [%[din4]]!\n"
-            "vld1.16 {d10}, [%[din5]]!\n"
             // q0 =a0b0a2b2 q1 = a1b1a3b3
             "vtrn.16 d0, d2\n"
-            "vld1.16 {d12}, [%[din6]]!\n"
-
             "vtrn.16 d4, d6\n"
-            "vld1.16 {d14}, [%[din7]]!\n"
-
-            "vtrn.16 d8, d10\n"
-            "vtrn.16 d12, d14\n"
 
             // q0 = a0b0c0d0, q2 = a2b2c2d2
             "vtrn.32 d0, d4\n"
             "vtrn.32 d2, d6\n"
-            "vtrn.32 d8, d12\n"
-            "vtrn.32 d10, d14\n"
 
             "vst1.16 {d0}, [%[dout0]]!\n"
             "vst1.16 {d4}, [%[dout2]]!\n"
             "vst1.16 {d2}, [%[dout1]]!\n"
             "vst1.16 {d6}, [%[dout3]]!\n"
-            "vst1.16 {d8}, [%[dout0]]!\n"
-            "vst1.16 {d12}, [%[dout2]]!\n"
-            "vst1.16 {d10}, [%[dout1]]!\n"
-            "vst1.16 {d14}, [%[dout3]]!\n"
             : [din0] "+r"(din0),
               [din1] "+r"(din1),
               [din2] "+r"(din2),
               [din3] "+r"(din3),
-              [din4] "+r"(din4),
-              [din5] "+r"(din5),
-              [din6] "+r"(din6),
-              [din7] "+r"(din7),
               [dout0] "+r"(dout0),
               [dout1] "+r"(dout1),
               [dout2] "+r"(dout2),
               [dout3] "+r"(dout3)
             :
-            : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7");
+            : "cc", "memory", "q0", "q1", "q2", "q3");
 #endif
         ptr_din_row += 4;
       }
-      lite_api::float16_t* data_out_ptr1 =
-          data_out_ptr0 + remain_ww * 4 * height + tmp_h;
       for (int w = 0; w < remain_ww_rem; w++) {
-        *data_out_ptr1 = *ptr_din_row++;
-        data_out_ptr0 += height;
+        INIT_PTR_4(lite_api::float16_t, data_out_ptr0, height)
+        INIT_PTR_A4(lite_api::float16_t)
+        *data_out_ptr++ = *din0;
+        *data_out_ptr++ = *din1;
+        *data_out_ptr++ = *din2;
+        *data_out_ptr++ = *din3;
+        *data_out_ptr++ = *din4;
+        *data_out_ptr++ = *din5;
+        *data_out_ptr++ = *din6;
+        *data_out_ptr++ = *din7;
       }
     }
-    // remian
+#ifdef __aarch64__
+    // remain
     for (int h = nh * 8; h < height; h++) {
+#else
+    for (int h = nh * 4; h < height; h++) {
+#endif
       for (int w = 0; w < width; w++) {
         const float16_t* data_in_ptr = ptr_in + h * width + w;
         float16_t* data_out_ptr = ptr_out + w * height + h;
@@ -518,7 +500,6 @@ void TransposeCompute::ReInitWhenNeeded() {
     _trans_num = input->dims().count(0, std::max(axis_diff[0], 0));
     _trans_w = input->dims().count(axis_diff[0] + 1, _num_axes);
     _trans_h = input->dims()[axis_diff[0]];
-
   } else {
     trans_mat = false;
     _new_steps = get_stride(output->dims());
@@ -556,9 +537,8 @@ void TransposeCompute_(const std::vector<int>& axis,
     reamin_dim *= out_dim[i];
   }
 
-#pragma omp parallel for collapse(2)
   for (int batch = 0; batch < out_dim[0]; ++batch) {
-    for (int j = 0; j < out_dim[1]; ++j) {
+    LITE_PARALLEL_BEGIN(j, tid, out_dim[1]) {
       size_t offset = batch * strides[permute - 1] + j * strides[permute - 2];
       Dtype* out_ptr = output_ptr + (batch * out_dim[1] + j) * reamin_dim;
       int indics[4] = {0, 0, 0, 0};
@@ -578,6 +558,7 @@ void TransposeCompute_(const std::vector<int>& axis,
         }
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 // Transpose

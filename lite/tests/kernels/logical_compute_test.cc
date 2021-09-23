@@ -15,7 +15,7 @@
 #include <gtest/gtest.h>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
-#include "lite/core/arena/framework.h"
+#include "lite/core/test/arena/framework.h"
 
 namespace paddle {
 namespace lite {
@@ -106,6 +106,7 @@ void TestLogical(Place place, float abs_error) {
   arena::Arena arena_and(std::move(logical_and_tester), place, abs_error);
   arena_and.TestPrecision();
 
+#if !defined(LITE_WITH_XPU)
   std::unique_ptr<arena::TestCase> logical_or_tester(
       new LogicalTester<_logical_or_func>(place, "def", "logical_or"));
   arena::Arena arena_or(std::move(logical_or_tester), place, abs_error);
@@ -115,6 +116,7 @@ void TestLogical(Place place, float abs_error) {
       new LogicalTester<_logical_xor_func>(place, "def", "logical_xor"));
   arena::Arena arena_xor(std::move(logical_xor_tester), place, abs_error);
   arena_xor.TestPrecision();
+#endif
 
   std::unique_ptr<arena::TestCase> logical_not_tester(
       new LogicalTester<_logical_not_func>(place, "def", "logical_not"));
@@ -127,6 +129,8 @@ TEST(Logical, precision) {
   float abs_error = 1e-5;
 #if defined(LITE_WITH_ARM)
   place = TARGET(kHost);
+#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  place = TARGET(kXPU);
 #else
   return;
 #endif

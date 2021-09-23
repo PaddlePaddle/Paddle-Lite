@@ -12,18 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/mediatek_apu/converter.h"
+#include "driver/mediatek_apu/engine.h"
 #include "utility/logging.h"
 #include "utility/micros.h"
 
 namespace nnadapter {
 namespace mediatek_apu {
 
-int CreateContext(void** context) {
-  if (!context) {
+int OpenDevice(void** device) {
+  auto d = new Device();
+  if (!d) {
+    *device = nullptr;
+    NNADAPTER_LOG(FATAL) << "Failed to open device for mediatek_apu.";
+    return NNADAPTER_OUT_OF_MEMORY;
+  }
+  *device = reinterpret_cast<void*>(d);
+  return NNADAPTER_NO_ERROR;
+}
+
+void CloseDevice(void* device) {
+  if (device) {
+    auto d = reinterpret_cast<Device*>(device);
+    delete d;
+  }
+}
+
+int CreateContext(void* device, const char* properties, void** context) {
+  if (!device || !context) {
     return NNADAPTER_INVALID_PARAMETER;
   }
-  auto c = new Context();
+  auto d = reinterpret_cast<Device*>(device);
+  auto c = new Context(d, properties);
   if (!c) {
     *context = nullptr;
     NNADAPTER_LOG(FATAL) << "Failed to create context for mediatek_apu.";
@@ -45,7 +64,7 @@ int CreateProgram(void* context,
                   hal::Cache* cache,
                   void** program) {
   NNADAPTER_LOG(INFO) << "Create program for mediatek_apu.";
-  if (!context || !(model && cache) || !program) {
+  if (!context || !(model || (cache && cache->buffer.size())) || !program) {
     return NNADAPTER_INVALID_PARAMETER;
   }
   *program = nullptr;
@@ -86,11 +105,13 @@ int ExecuteProgram(void* program,
 }  // namespace nnadapter
 
 NNADAPTER_EXPORT nnadapter::hal::Device NNADAPTER_AS_SYM2(
-    NNADAPTER_DRIVER_NAME) = {
+    NNADAPTER_DEVICE_SYMBOL) = {
     .name = NNADAPTER_AS_STR2(NNADAPTER_DEVICE_NAME),
     .vendor = "MediaTek",
     .type = NNADAPTER_ACCELERATOR,
     .version = 1,
+    .open_device = nnadapter::mediatek_apu::OpenDevice,
+    .close_device = nnadapter::mediatek_apu::CloseDevice,
     .create_context = nnadapter::mediatek_apu::CreateContext,
     .destroy_context = nnadapter::mediatek_apu::DestroyContext,
     .create_program = nnadapter::mediatek_apu::CreateProgram,

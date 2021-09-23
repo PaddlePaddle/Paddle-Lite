@@ -21,7 +21,7 @@
 #include <vector>
 #include "lite/api/paddle_api.h"
 #include "lite/core/op_lite.h"
-#include "lite/core/optimizer.h"
+#include "lite/core/optimizer/optimizer.h"
 #include "lite/core/program.h"
 #include "lite/core/types.h"
 #include "lite/model_parser/model_parser.h"
@@ -111,7 +111,7 @@ class LITE_API Predictor {
     if (!program_generated_) {
       GenRuntimeProgram();
     }
-    program_->SaveToProgram(program_desc_);
+    program_->SaveRuntimProgramIntoProgramDesc(program_desc_);
     // step 2. Create a predictor friom current program_desc_ and
     // runtime_program.
     auto predictor =
@@ -136,7 +136,7 @@ class LITE_API Predictor {
     if (!program_generated_) {
       GenRuntimeProgram();
     }
-    program_->SaveToProgram(program_desc_);
+    program_->SaveRuntimProgramIntoProgramDesc(program_desc_);
     // step 2. Create a predictor friom current program_desc_ and
     // runtime_program.
     auto predictor = std::make_shared<Predictor>(
@@ -164,7 +164,11 @@ class LITE_API Predictor {
     CheckInputValid();
 
 #ifdef LITE_WITH_XPU
-    lite::TargetWrapperXPU::MallocL3Cache();
+    std::vector<std::vector<int64_t>> query_shape;
+    for (size_t i = 0; i < input_names_.size(); i++) {
+      query_shape.push_back(std::vector<int64_t>(GetInput(i)->dims().data()));
+    }
+    lite::TargetWrapperXPU::MallocL3Cache(query_shape);
 #endif
 
     program_->Run();
@@ -257,7 +261,7 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
       : raw_predictor_(raw_predictor) {
     status_is_cloned_ = true;
   }
-
+  virtual ~CxxPaddleApiImpl();
   /// Create a new predictor from a config.
   void Init(const lite_api::CxxConfig& config);
 

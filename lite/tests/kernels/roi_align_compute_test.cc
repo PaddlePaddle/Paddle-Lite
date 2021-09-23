@@ -16,7 +16,7 @@
 #include <fstream>
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
-#include "lite/core/arena/framework.h"
+#include "lite/core/test/arena/framework.h"
 #include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
@@ -294,11 +294,12 @@ class RoiAlignComputeTester : public arena::TestCase {
         uint64_t new_end = *rois_lod0.rbegin() + bno + 1;
         rois_lod0.push_back(new_end);
         for (int i = 0; i < (bno + 1); ++i) {
-          float x1 = randint(0, width / spatial_scale_ - pooled_width_);
-          float y1 = randint(0, height / spatial_scale_ - pooled_height_);
+          float x1 = 1.f * randint(0, width / spatial_scale_ - pooled_width_);
+          float y1 = 1.f * randint(0, height / spatial_scale_ - pooled_height_);
 
-          float x2 = randint(x1 + pooled_width_, width / spatial_scale_);
-          float y2 = randint(y1 + pooled_height_, height / spatial_scale_);
+          float x2 = 1.f * randint(x1 + pooled_width_, width / spatial_scale_);
+          float y2 =
+              1.f * randint(y1 + pooled_height_, height / spatial_scale_);
 
           auto roi = std::vector<float>{x1, y1, x2, y2};
           rois.insert(rois.end(), roi.begin(), roi.end());
@@ -323,16 +324,16 @@ TEST(RoiAlign, precision) {
   // The unit test for roi_align needs the params,
   // which is obtained by runing model by paddle.
   LOG(INFO) << "test roi align op";
-#ifdef LITE_WITH_ARM
+#if defined(LITE_WITH_X86) || defined(LITE_WITH_ARM)
   {
-    Place place(TARGET(kARM));
+    Place place(TARGET(kHost));
     std::unique_ptr<arena::TestCase> tester(
         new RoiAlignComputeTester(place, "def", false));
     arena::Arena arena(std::move(tester), place, 2e-4);
     EXPECT_TRUE(arena.TestPrecision());
   }
   {
-    Place place(TARGET(kARM));
+    Place place(TARGET(kHost));
     std::unique_ptr<arena::TestCase> tester(
         new RoiAlignComputeTester(place, "def", true));
     arena::Arena arena(std::move(tester), place, 2e-4);

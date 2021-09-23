@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/subgraph_bridge_registry.h"
+#include "lite/core/subgraph/subgraph_bridge_registry.h"
 #include "lite/kernels/nnadapter/bridges/converter.h"
 #include "lite/kernels/nnadapter/bridges/utility.h"
 
@@ -85,8 +85,7 @@ int ConcatConverter(void* ctx, OpLite* op, KernelBase* kernel) {
 
   // Concat operation
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  auto concat_operation = converter->AddOperation(NNADAPTER_CONCAT);
-  converter->SetOperation(concat_operation, &input_operands, &output_operands);
+  converter->AddOperation(NNADAPTER_CONCAT, &input_operands, &output_operands);
   return REBUILD_WHEN_SHAPE_CHANGED;
 }
 

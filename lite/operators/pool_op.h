@@ -85,6 +85,11 @@ class PoolOpLite : public OpLite {
     }
     param_.paddings = std::make_shared<std::vector<int>>(paddings);
 
+#ifdef LITE_WITH_XPU
+    if (op_desc.HasAttr("pad_zero")) {
+      param_.pad_zero = op_desc.GetAttr<bool>("pad_zero");
+    }
+#endif
     return true;
   }
 

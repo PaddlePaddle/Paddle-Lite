@@ -12,69 +12,54 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/huawei_kirin_npu/converter.h"
+#include "core/operation/fully_connected.h"
+#include "driver/huawei_kirin_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/utility.h"
 
 namespace nnadapter {
 namespace huawei_kirin_npu {
 
-int Program::ConvertFullyConnected(hal::Operation* operation) {
-  auto& input_operands = operation->input_operands;
-  auto& output_operands = operation->output_operands;
-  auto input_count = input_operands.size();
-  auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 4);
-  NNADAPTER_CHECK_EQ(output_count, 1);
-  // Input
-  auto input_operand = input_operands[0];
-  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
-  // Weight
-  auto weight_operand = input_operands[1];
-  NNADAPTER_VLOG(5) << "weight: " << OperandToString(weight_operand);
-  NNADAPTER_CHECK_EQ(weight_operand->type.dimension_count, 2);
-  auto num_units = weight_operand->type.dimensions[0];
-  auto input_size = weight_operand->type.dimensions[1];
+int ConvertFullyConnected(Converter* converter, hal::Operation* operation) {
+  FULLY_CONNECTED_OPERATION_EXTRACT_INPUTS_OUTPUTS
   auto batch_size =
-      ProductionOfDimensions(input_operand->type.dimensions,
-                             input_operand->type.dimension_count) /
+      ProductionOfDimensions(input_operand->type.dimensions.data,
+                             input_operand->type.dimensions.count) /
       input_size;
-  // Bias
-  auto bias_operand = input_operands[2];
-  NNADAPTER_VLOG(5) << "bias: " << OperandToString(bias_operand);
-  NNADAPTER_CHECK_EQ(bias_operand->type.dimension_count, 1);
-  NNADAPTER_CHECK_EQ(num_units, bias_operand->type.dimensions[0]);
-  // Fuse code
-  auto fuse_code = *reinterpret_cast<int32_t*>(input_operands[3]->buffer);
-  NNADAPTER_VLOG(5) << "fuse_code=" << fuse_code;
-  // Output
-  auto output_operand = output_operands[0];
-  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
+  NNADAPTER_VLOG(5) << "batch_size: " << batch_size;
 
-  // Convert to HiAI operators
+  // Convert to GE operators
   // Add input operator and reshape it to (batch_size, input_size, 1, 1)
-  auto input_operator = ConvertOperand(input_operand);
-  auto reshaped_input_operator = AddOperator<ge::op::Reshape>();
-  reshaped_input_operator->set_input_tensor(*input_operator);
-  reshaped_input_operator->set_attr_shape({batch_size, input_size, 1, 1});
-  reshaped_input_operator->set_attr_axis(0);
-  // Add weight operator and reshape to to (num_units, input_size, 1, 1)
-  auto weight_operator =
-      ConvertOperand(weight_operand, {num_units, input_size, 1, 1});
-  // Add bias operator and reshape to to (1, num_units, 1, 1)
-  auto bias_operator = ConvertOperand(bias_operand, {1, num_units, 1, 1});
-  // Add fc operator and reshape back to the origin dimension of output operand
-  auto fc_operator = AddOperator<ge::op::FullConnection>(output_operand);
-  fc_operator->set_input_x(*reshaped_input_operator);
-  fc_operator->set_input_w(*weight_operator);
-  fc_operator->set_input_b(*bias_operator);
-  auto reshaped_fc_operator = AddOperator<ge::op::Reshape>(output_operand);
-  reshaped_fc_operator->set_input_tensor(*fc_operator);
-  auto output_dimensions = ConvertDimensions(
-      output_operand->type.dimensions, output_operand->type.dimension_count);
-  reshaped_fc_operator->set_attr_shape(ge::AttrValue::LIST_INT(
-      output_dimensions.begin(), output_dimensions.end()));
-  reshaped_fc_operator->set_attr_axis(0);
+  auto input_operator = converter->GetMappedOperator(input_operand);
+  if (!input_operator) {
+    input_operator = converter->ConvertOperand(input_operand);
+  }
+  // Reshape the input operator to 2-D tensor {batch_size, input_size} if the
+  // dimensions_count not equal 2
+  if (input_operand->type.dimensions.count != 2) {
+    auto reshape_op = converter->AddOperator<hiai::op::Reshape>(input_operand);
+    auto shape_operator = converter->AddInt32ConstantOperator(
+        {static_cast<int32_t>(batch_size), input_size});
+    SET_INPUT(reshape_op, x, input_operator);
+    SET_INPUT(reshape_op, shape, shape_operator);
+    input_operator = MAP_OUTPUT(reshape_op, y, input_operand);
+  }
+  auto weight_operator = converter->ConvertOperand(weight_operand);
+  auto bias_operator = converter->ConvertOperand(bias_operand);
+  // Use MatMul instead of FullyConnection to avoid outputing the 4-D tensor
+  auto matmul_op = converter->AddOperator<hiai::op::MatMul>(output_operand);
+  matmul_op->set_attr_transpose_x1(false);
+  matmul_op->set_attr_transpose_x2(
+      true);  // {num_units, input_size} -> {input_size, num_units}
+  SET_INPUT(matmul_op, x1, input_operator);
+  SET_INPUT(matmul_op, x2, weight_operator);
+  // SET_INPUT(matmul_op, bias, bias_operator);
+  auto matmul_operator = MAP_OUTPUT(matmul_op, y, output_operand);
+  // Add a Add operator to support bias(HiAI GE MatMul doesn't support bias)
+  auto add_op = converter->AddOperator<hiai::op::Add>(output_operand);
+  SET_INPUT(add_op, x1, matmul_operator);
+  SET_INPUT(add_op, x2, bias_operator);
+  MAP_OUTPUT(add_op, y, output_operand);
   return NNADAPTER_NO_ERROR;
 }
 

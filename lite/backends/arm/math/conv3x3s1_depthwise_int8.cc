@@ -151,8 +151,11 @@ namespace math {
   "st1    {v14.8b}, [%[ptr_out1]], #8     \n"
 
 #define MID_COMPUTE_S1                               \
+  "movi   v10.4s, #0x0\n"                            \
+  "movi   v11.4s, #0x0\n"                            \
   "movi   v12.4s, #0x0\n"                            \
   "movi   v13.4s, #0x0\n"                            \
+  "movi   v21.4s, #0x0\n"                            \
   "cmp  %[cnt], #1                \n"                \
   "blt 3f                         \n"                \
   "1:                             \n"                \
@@ -335,8 +338,11 @@ namespace math {
   "st1    {v18.8b}, [%[ptr_out1]], #8     \n"
 
 #define RIGHT_COMPUTE_S1                        \
-  "movi   v12.4s, #0x0                    \n"   \
-  "movi   v13.4s, #0x0                    \n"   \
+  "movi   v10.4s, #0x0\n"                       \
+  "movi   v11.4s, #0x0\n"                       \
+  "movi   v12.4s, #0x0\n"                       \
+  "movi   v13.4s, #0x0\n"                       \
+  "movi   v21.4s, #0x0\n"                       \
   "bne 1b                                 \n"   \
   "3:                                      \n"  \
   "ld1 {v20.16b}, [%[vmask]]            \n"     \
