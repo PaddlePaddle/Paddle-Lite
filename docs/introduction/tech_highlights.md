@@ -6,7 +6,7 @@
 
 ## 多硬件支持
 
-Lite 架构已经验证和完整支持从 Mobile 到 Server 多种硬件的支持需求，包括 ARM CPU, ARM GPU, Huawei NPU, Intel X86 CPU, NV GPU 等。 得益于对不同硬件适度的抽象，在Lite 框架本身清晰的同时支持不同硬件的特殊调度需求，使得Lite架构在框架的清晰程度和硬件的特定调度优化上达到很好的平衡，比如 Nvidia GPU 上复杂的 stream, event 分配，在 Lite 中可以清晰表示。
+Lite 架构已经验证和完整支持从 Mobile 到 Server 多种硬件的支持需求，包括 ARM CPU, ARM GPU, Apple GPU, Huawei NPU, Intel X86 CPU, NV GPU 等。 得益于对不同硬件适度的抽象，在Lite 框架本身清晰的同时支持不同硬件的特殊调度需求，使得Lite架构在框架的清晰程度和硬件的特定调度优化上达到很好的平衡，比如 Nvidia GPU 上复杂的 stream, event 分配，在 Lite 中可以清晰表示。
 
 多种硬件的 Kernel 在代码层和执行层均互不干扰，用户可以自由插拔任何硬件的支持。
 
