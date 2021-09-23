@@ -178,6 +178,9 @@ NNADAPTER_EXPORT void CopyOperandType(NNAdapterOperandType* dst_type,
   }
   memset(dst_type, 0, sizeof(NNAdapterOperandType));
   memcpy(dst_type, &src_type, sizeof(NNAdapterOperandType));
+  if (src_type.lifetime != NNADAPTER_TEMPORARY_SHAPE) {
+    dst_type->lifetime = NNADAPTER_TEMPORARY_VARIABLE;
+  }
   if (IsSymmPerChannelQuantType(src_type.precision) &&
       src_type.symm_per_channel_params.scales) {
     uint32_t scale_size =

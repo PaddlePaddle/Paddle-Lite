@@ -22,14 +22,12 @@ namespace nnadapter {
 int ConvertSqueeze(Converter* converter, OpInfo* op, Scope* scope) {
   // Input operand
   auto x_name = op->Input("X").front();
-  auto x_tensor = scope->FindTensor(x_name);
   auto x_scale_name = "X0_scale";
   std::vector<float> x_scales;
   if (op->HasInputScale(x_scale_name, true)) {
     x_scales = op->GetInputScale(x_scale_name, true);
   }
-  auto input_operand =
-      converter->AddInputOperand(x_name, *x_tensor, {}, true, x_scales);
+  auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
   // Axes operand
   NNAdapterOperand* axes_operand = nullptr;
   std::vector<int> axes;

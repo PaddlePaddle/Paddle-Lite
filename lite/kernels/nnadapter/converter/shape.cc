@@ -21,8 +21,7 @@ namespace nnadapter {
 
 int ConvertShape(Converter* converter, OpInfo* op, Scope* scope) {
   auto input_name = op->Input("Input").front();
-  auto input_tensor = scope->FindTensor(input_name);
-  auto input_operand = converter->AddInputOperand(input_name, *input_tensor);
+  auto input_operand = converter->AddInputOperand(scope, input_name);
   auto out_name = op->Output("Out").front();
   converter->AddShapeOperation(input_operand, out_name);
   return NO_ERROR;

@@ -29,8 +29,7 @@ int ConvertElementwise(Converter* converter, OpInfo* op, Scope* scope) {
   if (op->HasInputScale(x_scale_name, true)) {
     x_scales = op->GetInputScale(x_scale_name, true);
   }
-  auto x_operand =
-      converter->AddInputOperand(x_name, *x_tensor, {}, true, x_scales);
+  auto x_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
 
   // Y operand
   auto y_name = op->Input("Y").front();
@@ -41,8 +40,7 @@ int ConvertElementwise(Converter* converter, OpInfo* op, Scope* scope) {
   if (op->HasInputScale(y_scale_name, true)) {
     y_scales = op->GetInputScale(y_scale_name, true);
   }
-  auto y_operand =
-      converter->AddInputOperand(y_name, *y_tensor, {}, true, y_scales);
+  auto y_operand = converter->AddInputOperand(scope, y_name, {}, y_scales);
 
   // Check whether the two dimensions are compatiable(Numpy-style broadcasting
   // https://numpy.org/doc/stable/user/basics.broadcasting.html).

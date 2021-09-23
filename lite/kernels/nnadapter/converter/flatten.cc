@@ -29,10 +29,8 @@ int ConvertFlatten(Converter* converter, OpInfo* op, Scope* scope) {
   auto out_name = op->Output("Out").front();
   auto axis = op->GetAttr<int>("axis");
 
-  auto x_tensor = scope->FindTensor(x_name);
-  auto x_operand =
-      converter->AddInputOperand(x_name, *x_tensor, {}, true, x_scales);
-  auto input_type = converter->GetOperandType(x_operand);
+  auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
+  auto input_type = converter->GetOperandType(input_operand);
   axis = axis < 0 ? axis + input_type->dimensions.count : axis;
   NNAdapterOperand* output_operand = nullptr;
   if (axis == 0) {
@@ -41,13 +39,13 @@ int ConvertFlatten(Converter* converter, OpInfo* op, Scope* scope) {
         converter->AddConstantOperand(std::vector<int32_t>{1, -1});
     output_operand = converter->AddOutputOperand(out_name);
     converter->AddOperation(
-        NNADAPTER_RESHAPE, {x_operand, shape_operand}, {output_operand});
+        NNADAPTER_RESHAPE, {input_operand, shape_operand}, {output_operand});
   } else if (axis == input_type->dimensions.count - 1) {
-    converter->AddFlattenOperation(x_operand, 0, axis - 1, out_name);
+    converter->AddFlattenOperation(input_operand, 0, axis - 1, out_name);
   } else {
     // step1: flatten [0, axis)
     output_operand = converter->AddFlattenOperation(
-        x_operand, 0, axis - 1, out_name + "/flatten_0_axis");
+        input_operand, 0, axis - 1, out_name + "/flatten_0_axis");
     // step2: flatten [axis, -1)
     int32_t start_axis = axis == 1 ? axis : axis - 1;
     converter->AddFlattenOperation(output_operand, start_axis, -1, out_name);

@@ -45,7 +45,7 @@ int ConvertHardSigmoid(Converter* converter, OpInfo* op, Scope* scope) {
 
   // Convert to NNAdapter operands and operation
   // Input operand
-  auto input_operand = converter->GetMappedOperand(x_name);
+  auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
   CHECK(input_operand);
   auto input_type = converter->GetOperandType(input_operand);
   // Alpha operand

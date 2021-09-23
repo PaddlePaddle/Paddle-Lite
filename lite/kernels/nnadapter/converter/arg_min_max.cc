@@ -22,7 +22,12 @@ namespace nnadapter {
 int ConvertArgMinMax(Converter* converter, OpInfo* op, Scope* scope) {
   // Input operand
   auto x_name = op->Input("X").front();
-  auto input_operand = converter->GetMappedOperand(x_name);
+  auto x_scale_name = "X0_scale";
+  std::vector<float> x_scales;
+  if (op->HasInputScale(x_scale_name, true)) {
+    x_scales = op->GetInputScale(x_scale_name, true);
+  }
+  auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
 
   // Axis operand
   int axis = op->GetAttr<int64_t>("axis");

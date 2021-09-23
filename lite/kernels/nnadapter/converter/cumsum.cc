@@ -27,9 +27,7 @@ int ConvertCumsum(Converter* converter, OpInfo* op, Scope* scope) {
   if (op->HasInputScale(x_scale_name, true)) {
     x_scales = op->GetInputScale(x_scale_name, true);
   }
-  auto x_tensor = scope->FindTensor(x_name);
-  auto input_operand =
-      converter->AddInputOperand(x_name, *x_tensor, {}, true, x_scales);
+  auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
 
   // Axis operand
   int axis = op->GetAttr<int>("axis");

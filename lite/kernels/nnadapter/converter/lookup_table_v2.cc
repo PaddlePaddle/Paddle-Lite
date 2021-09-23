@@ -27,20 +27,18 @@ int ConvertLookupTableV2(Converter* converter, OpInfo* op, Scope* scope) {
   if (op->HasInputScale(input_scale_name, true)) {
     input_scales = op->GetInputScale(input_scale_name, true);
   }
-  auto input_tensor = scope->FindTensor(input_name);
-  auto input_operand = converter->AddInputOperand(
-      input_name, *input_tensor, {}, true, input_scales);
+  auto input_operand =
+      converter->AddInputOperand(scope, input_name, {}, input_scales);
 
   // Indices operand
   auto indices_name = op->Input("Ids").front();
-  auto indices_tensor = scope->FindTensor(indices_name);
   auto indices_scale_name = "Ids0_scale";
   std::vector<float> indices_scales;
   if (op->HasInputScale(indices_scale_name, true)) {
     indices_scales = op->GetInputScale(indices_scale_name, true);
   }
-  auto indices_operand = converter->AddInputOperand(
-      indices_name, *indices_tensor, {}, true, indices_scales);
+  auto indices_operand =
+      converter->AddInputOperand(scope, indices_name, {}, indices_scales);
 
   // Axis operand
   auto axis_operand = converter->AddConstantOperand<int>(0);

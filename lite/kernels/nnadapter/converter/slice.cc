@@ -27,10 +27,10 @@ int ConvertSlice(Converter* converter, OpInfo* op, Scope* scope) {
   if (op->HasInputScale(input_scale_name, true)) {
     input_scales = op->GetInputScale(input_scale_name, true);
   }
-  auto input_tensor = scope->FindTensor(input_name);
-  auto input_dims = input_tensor->dims();
-  auto input_operand = converter->AddInputOperand(
-      input_name, *input_tensor, {}, true, input_scales);
+  auto input_operand =
+      converter->AddInputOperand(scope, input_name, {}, input_scales);
+  CHECK(input_operand);
+  auto input_type = converter->GetOperandType(input_operand);
   // Axes operand
   auto axes = op->GetAttr<std::vector<int>>("axes");
   auto axes_size = static_cast<int>(axes.size());
@@ -42,8 +42,9 @@ int ConvertSlice(Converter* converter, OpInfo* op, Scope* scope) {
   auto ends_ori = op->GetAttr<std::vector<int>>("ends");
   std::vector<int> ends(axes_size, 0);
   for (int i = 0; i < axes_size; i++) {
-    ends[i] =
-        ends_ori[i] > input_dims[axes[i]] ? input_dims[axes[i]] : ends_ori[i];
+    auto dimensions_data = input_type->dimensions.data[axes[i]];
+    CHECK(dimensions_data != NNADAPTER_UNKNOWN);
+    ends[i] = ends_ori[i] > dimensions_data ? dimensions_data : ends_ori[i];
   }
   auto ends_operand = converter->AddConstantOperand(ends);
   // Steps operand
@@ -55,8 +56,6 @@ int ConvertSlice(Converter* converter, OpInfo* op, Scope* scope) {
     decrease_axis = op->GetAttr<std::vector<int>>("decrease_axis");
   }
   auto out_name = op->Output("Out").front();
-  auto out_tensor = scope->FindTensor(out_name);
-  auto out_dims = out_tensor->dims();
   std::string out_name_slice =
       decrease_axis.empty() ? out_name : out_name + "_squeeze_in";
   auto output_operand = converter->AddOutputOperand(out_name_slice);

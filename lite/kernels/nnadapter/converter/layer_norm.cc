@@ -27,19 +27,21 @@ int ConvertLayerNorm(Converter* converter, OpInfo* op, Scope* scope) {
   if (op->HasInputScale(x_scale_name, true)) {
     x_scales = op->GetInputScale(x_scale_name, true);
   }
-  auto x_tensor = scope->FindTensor(x_name);
-  auto x_dims = x_tensor->dims();
-  auto input_operand =
-      converter->AddInputOperand(x_name, *x_tensor, {}, true, x_scales);
+  auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
+  CHECK(input_operand);
+  auto input_type = converter->GetOperandType(input_operand);
   // Begin norm axis operand
   auto begin_norm_axis = op->GetAttr<int>("begin_norm_axis");
-  if (begin_norm_axis < 0) {
-    begin_norm_axis += x_dims.size();
-  }
   auto begin_norm_axis_operand = converter->AddConstantOperand(begin_norm_axis);
+  if (begin_norm_axis < 0) {
+    begin_norm_axis += input_type->dimensions.count;
+  }
   // Bias operand
-  auto scale_bias_nums =
-      x_dims.Slice(begin_norm_axis, x_dims.size()).production();
+  int32_t scale_bias_nums = 1;
+  for (int i = begin_norm_axis; i < input_type->dimensions.count; i++) {
+    CHECK(input_type->dimensions.data[i] != NNADAPTER_UNKNOWN);
+    scale_bias_nums *= input_type->dimensions.data[i];
+  }
   NNAdapterOperand* bias_operand = nullptr;
   bool has_bias = op->HasInput("Bias");
   if (has_bias) {

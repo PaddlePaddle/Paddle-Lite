@@ -31,12 +31,13 @@ int PrepareSqueeze(hal::Operation* operation) {
   auto& output_type = output_operand->type;
   CopyOperandTypeExceptQuantParams(&output_type, input_type);
   auto infer_output_shape = [&](int32_t* input_dimensions,
-                                int32_t* output_dimensions) {
+                                int32_t* output_dimensions,
+                                uint32_t input_dimensions_count) {
     size_t num_squeeze_dims = axes.size();
-    int cnt_squeezed_dims = 0;
+    uint32_t cnt_squeezed_dims = 0;
     bool should_squeeze[9] = {false};
     if (num_squeeze_dims == 0) {
-      for (size_t idx = 0; idx < input_type.dimensions.count; ++idx) {
+      for (size_t idx = 0; idx < input_dimensions_count; ++idx) {
         if (input_dimensions[idx] == 1) {
           should_squeeze[idx] = true;
           ++cnt_squeezed_dims;
@@ -45,7 +46,7 @@ int PrepareSqueeze(hal::Operation* operation) {
     } else {
       for (size_t idx = 0; idx < num_squeeze_dims; ++idx) {
         int current =
-            axes[idx] < 0 ? axes[idx] + input_type.dimensions.count : axes[idx];
+            axes[idx] < 0 ? axes[idx] + input_dimensions_count : axes[idx];
         // Check current index, the upper limit has been checked.
         NNADAPTER_CHECK_GE(current, 0)
             << "Invalid axis, the negative axis is out of range.";
@@ -60,20 +61,28 @@ int PrepareSqueeze(hal::Operation* operation) {
       }
     }
 
-    output_type.dimensions.count -= cnt_squeezed_dims;
-    for (size_t in_idx = 0, out_idx = 0; in_idx < input_type.dimensions.count;
+    for (size_t in_idx = 0, out_idx = 0; in_idx < input_dimensions_count;
          ++in_idx) {
       if (!should_squeeze[in_idx]) {
         output_dimensions[out_idx++] = input_dimensions[in_idx];
       }
     }
+    return cnt_squeezed_dims;
   };
 
-  infer_output_shape(input_type.dimensions.data, output_type.dimensions.data);
+  auto cnt_squeezed_dims = infer_output_shape(input_type.dimensions.data,
+                                              output_type.dimensions.data,
+                                              input_type.dimensions.count);
+  output_type.dimensions.count -= cnt_squeezed_dims;
+  // Dynamic dimensions
+  uint32_t dynamic_cnt_squeezed_dims = 0;
   for (uint32_t i = 0; i < input_type.dimensions.dynamic_count; i++) {
-    infer_output_shape(input_type.dimensions.dynamic_data[i],
-                       output_type.dimensions.dynamic_data[i]);
+    dynamic_cnt_squeezed_dims =
+        infer_output_shape(input_type.dimensions.dynamic_data[i],
+                           output_type.dimensions.dynamic_data[i],
+                           input_type.dimensions.count);
   }
+  output_type.dimensions.count -= dynamic_cnt_squeezed_dims;
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
 }

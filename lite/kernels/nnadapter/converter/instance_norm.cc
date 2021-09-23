@@ -27,33 +27,32 @@ int ConvertInstanceNorm(Converter* converter, OpInfo* op, Scope* scope) {
   if (op->HasInputScale(x_scale_name, true)) {
     x_scales = op->GetInputScale(x_scale_name, true);
   }
-  auto x_tensor = scope->FindTensor(x_name);
-  auto x_dims = x_tensor->dims();
-  auto input_operand =
-      converter->AddInputOperand(x_name, *x_tensor, {}, true, x_scales);
+  auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
+  CHECK(input_operand);
+  auto input_type = converter->GetOperandType(input_operand);
+  auto input_channel_size = input_type->dimensions.data[1];
+  CHECK(input_channel_size != NNADAPTER_UNKNOWN);
   // Bias operand
   NNAdapterOperand* bias_operand = nullptr;
-  bool has_bias = op->HasInput("Bias");
-  if (has_bias) {
+  if (HasInput(op, scope, "Bias")) {
     auto bias_name = op->Input("Bias").front();
     auto bias_tensor = scope->FindMutableTensor(bias_name);
     CHECK(bias_tensor->persistable());
     bias_operand = converter->AddConstantOperand(*bias_tensor);
   } else {
-    bias_operand =
-        converter->AddConstantOperand(std::vector<float>(x_dims[1], 0));
+    bias_operand = converter->AddConstantOperand(
+        std::vector<float>(input_channel_size, 0));
   }
   // Scale operand
   NNAdapterOperand* scale_operand = nullptr;
-  bool has_scale = op->HasInput("Scale");
-  if (has_scale) {
+  if (HasInput(op, scope, "Scale")) {
     auto scale_name = op->Input("Scale").front();
     auto scale_tensor = scope->FindMutableTensor(scale_name);
     CHECK(scale_tensor->persistable());
     scale_operand = converter->AddConstantOperand(*scale_tensor);
   } else {
-    scale_operand =
-        converter->AddConstantOperand(std::vector<float>(x_dims[1], 1));
+    scale_operand = converter->AddConstantOperand(
+        std::vector<float>(input_channel_size, 1));
   }
   // Epsilon operand
   auto epsilon = op->GetAttr<float>("epsilon");

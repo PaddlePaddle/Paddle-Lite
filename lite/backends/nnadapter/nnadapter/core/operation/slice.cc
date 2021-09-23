@@ -31,9 +31,6 @@ int PrepareSlice(hal::Operation* operation) {
   CopyOperandTypeExceptQuantParams(&output_operand->type, input_operand->type);
   auto infer_output_shape = [&](int32_t* input_dimensions,
                                 int32_t* output_dimensions) {
-    auto output_size =
-        output_operand->length / static_cast<uint32_t>(sizeof(int32_t));
-    memcpy(output_dimensions, input_dimensions, output_size * sizeof(int32_t));
     for (size_t i = 0; i < axes_count; ++i) {
       int dim_value = output_dimensions[axes[i]];
       if (dim_value > 0) {

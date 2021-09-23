@@ -27,9 +27,8 @@ int ConvertDeformableConv(Converter* converter, OpInfo* op, Scope* scope) {
   if (op->HasInputScale(input_scale_name, true)) {
     input_scales = op->GetInputScale(input_scale_name, true);
   }
-  auto input_tensor = scope->FindTensor(input_name);
-  auto input_operand = converter->AddInputOperand(
-      input_name, *input_tensor, {}, true, input_scales);
+  auto input_operand =
+      converter->AddInputOperand(scope, input_name, {}, input_scales);
 
   // Offset operand
   auto offset_name = op->Input("Offset").front();

@@ -21,7 +21,6 @@ namespace nnadapter {
 
 int ConvertComparisons(Converter* converter, OpInfo* op, Scope* scope) {
   // X operand
-  NNAdapterOperand* x_operand = nullptr;
   auto x_name = op->Input("X").front();
   auto x_tensor = scope->FindTensor(x_name);
   auto x_persistable = x_tensor->persistable();
@@ -30,27 +29,18 @@ int ConvertComparisons(Converter* converter, OpInfo* op, Scope* scope) {
   if (op->HasInputScale(x_scale_name, true)) {
     x_scales = op->GetInputScale(x_scale_name, true);
   }
-  if (x_persistable) {
-    x_operand = converter->AddConstantOperand(*x_tensor, {}, false, x_scales);
-  } else {
-    x_operand = converter->GetMappedOperand(x_name);
-  }
+  auto x_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
 
   // Y operand
-  NNAdapterOperand* y_operand = nullptr;
   auto y_name = op->Input("Y").front();
   auto y_tensor = scope->FindTensor(y_name);
-  auto y_persistable = y_tensor->persistable();
+  auto y_persistable = x_tensor->persistable();
   auto y_scale_name = "Y0_scale";
   std::vector<float> y_scales;
   if (op->HasInputScale(y_scale_name, true)) {
     y_scales = op->GetInputScale(y_scale_name, true);
   }
-  if (y_persistable) {
-    y_operand = converter->AddConstantOperand(*y_tensor, {}, false, y_scales);
-  } else {
-    y_operand = converter->GetMappedOperand(y_name);
-  }
+  auto y_operand = converter->AddInputOperand(scope, y_name, {}, y_scales);
 
   // Check whether the two dimensions are compatiable(Numpy-style broadcasting
   // https://numpy.org/doc/stable/user/basics.broadcasting.html).

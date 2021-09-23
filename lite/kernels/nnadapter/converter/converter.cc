@@ -239,25 +239,19 @@ NNAdapterOperand* Converter::AddConstantOperand(
 }
 
 NNAdapterOperand* Converter::AddInputOperand(
+    Scope* scope,
     const std::string& input_name,
-    const Tensor& input_tensor,
     DDim dimensions,
-    bool copy,
     const std::vector<float>& quant_scales,
     uint32_t quant_channel_dim) {
-  auto input_persistable = input_tensor.persistable();
-  if (dimensions.empty()) {
-    dimensions = input_tensor.dims();
-  } else {
-    CHECK_EQ(input_tensor.dims().production(), dimensions.production());
-  }
-  NNAdapterOperand* input_operand = nullptr;
-  if (input_persistable) {
+  NNAdapterOperand* input_operand = GetMappedOperand(input_name);
+  if (!input_operand) {
+    auto input_tensor = scope->FindTensor(input_name);
+    CHECK(input_tensor->persistable());
     input_operand = AddConstantOperand(
-        input_tensor, dimensions, copy, quant_scales, quant_channel_dim);
-  } else {
-    input_operand = GetMappedOperand(input_name);
+        *input_tensor, dimensions, false, quant_scales, quant_channel_dim);
   }
+
   return input_operand;
 }
 
