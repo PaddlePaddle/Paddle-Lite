@@ -284,9 +284,10 @@ function(lite_cc_binary TARGET)
     if(LITE_WITH_NPU)
         target_link_libraries(${TARGET} ${npu_builder_libs} ${npu_runtime_libs})
     endif()
-
-
-
+    if(LITE_WITH_CUDA)
+        get_property(cuda_deps GLOBAL PROPERTY CUDA_MODULES)
+        target_link_libraries(${TARGET} ${cuda_deps})
+    endif()
 
     if (NOT APPLE AND NOT WIN32)
         # strip binary target to reduce size
@@ -302,23 +303,6 @@ function(lite_cc_binary TARGET)
         add_dependencies(lite_compile_deps ${TARGET})
     endif()
 endfunction()
-
-
-# file to record subgraph bridges for new hardware
-set(subgraph_bridges_src_list "${CMAKE_BINARY_DIR}/subgraph_bridges_src_list.txt")
-file(WRITE ${subgraph_bridges_src_list} "") # clean
-
-# add a subgraph bridge for some new hardware which support some op by subgraph
-# device: such as npu, rknpu, apu, huawei_ascend_npu, imagination_nna, nnadapter
-function(add_subgraph_bridge)
-  set(options "")
-  set(oneValueArgs "")
-  set(multiValueArgs SRCS)
-  cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-  foreach(src ${args_SRCS})
-    file(APPEND ${subgraph_bridges_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
-  endforeach()
-endfunction(add_subgraph_bridge)
 
 #only for windows 
 function(create_static_lib TARGET_NAME)
@@ -403,6 +387,9 @@ function(bundle_static_library tgt_name bundled_tgt_name fake_target)
     return()
   endif()
 
+  add_custom_target(${fake_target})
+  add_dependencies(${fake_target} ${tgt_name})
+
   if(NOT IOS AND NOT APPLE)
     file(WRITE ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in
       "CREATE ${bundled_tgt_full_name}\n" )
@@ -425,8 +412,9 @@ function(bundle_static_library tgt_name bundled_tgt_name fake_target)
     endif()
 
     add_custom_command(
+      TARGET ${fake_target} PRE_BUILD
+      COMMAND rm -f ${bundled_tgt_full_name}
       COMMAND ${ar_tool} -M < ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar
-      OUTPUT ${bundled_tgt_full_name}
       COMMENT "Bundling ${bundled_tgt_name}"
       DEPENDS ${tgt_name}
       VERBATIM)
@@ -435,14 +423,12 @@ function(bundle_static_library tgt_name bundled_tgt_name fake_target)
       set(libfiles ${libfiles} $<TARGET_FILE:${lib}>)
     endforeach()
     add_custom_command(
+      TARGET ${fake_target} PRE_BUILD
+      COMMAND rm -f ${bundled_tgt_full_name}
       COMMAND /usr/bin/libtool -static -o ${bundled_tgt_full_name} ${libfiles}
       DEPENDS ${tgt_name}
-      OUTPUT ${bundled_tgt_full_name}
     )
   endif()
-
-  add_custom_target(${fake_target} ALL DEPENDS ${bundled_tgt_full_name})
-  add_dependencies(${fake_target} ${tgt_name})
 
   add_library(${bundled_tgt_name} STATIC IMPORTED)
   set_target_properties(${bundled_tgt_name}

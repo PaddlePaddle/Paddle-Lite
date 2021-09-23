@@ -630,6 +630,9 @@ struct PoolParam : ParamBase {
     }
     return output_tensor_ptrs_cache_.get();
   }
+#ifdef LITE_WITH_XPU
+  bool pad_zero{false};
+#endif
 };
 
 // For Dropout op
@@ -2520,8 +2523,12 @@ struct CosSimParam : ParamBase {
 };
 
 struct WriteBackParam : ParamBase {
+  bool tensor_array_copy{false};
   const lite::Tensor* x{};
   lite::Tensor* y{};
+
+  std::vector<lite::Tensor>* array_x{};
+  std::vector<lite::Tensor>* array_y{};
 };
 
 struct UniqueWithCountsParam : ParamBase {

@@ -38,6 +38,8 @@ namespace operation {
   auto input_operand = input_operands[0];                                      \
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);            \
   /* Auto pad: not support auto_pad. */                                        \
+  auto auto_pad = *reinterpret_cast<int32_t*>(input_operands[1]->buffer);      \
+  NNADAPTER_VLOG(5) << "auto_pad: " << auto_pad;                               \
   /* Pads: Pads are transed according to auto_pad, so pads are used. */        \
   uint32_t pads_size =                                                         \
       input_operands[2]->length / static_cast<uint32_t>(sizeof(int32_t));      \
@@ -78,14 +80,8 @@ namespace operation {
   /* Count include pad(for avg_pool) or return indices(for max_pool) */        \
   bool flag = *reinterpret_cast<int8_t*>(input_operands[6]->buffer);           \
   NNADAPTER_VLOG(5) << "count_include_pad/return_indices = " << flag;          \
-  if (operation->type == NNADAPTER_AVERAGE_POOL_2D) {                          \
-    NNADAPTER_CHECK(!flag) << "Only support count_include_pad = false.";       \
-  } else if (operation->type == NNADAPTER_MAX_POOL_2D) {                       \
+  if (operation->type == NNADAPTER_MAX_POOL_2D) {                              \
     NNADAPTER_CHECK(!flag) << "Only support return_indices = false.";          \
-  } else {                                                                     \
-    NNADAPTER_LOG(FATAL) << "Unsupported pooling operation type "              \
-                         << OperationTypeToString(operation->type)             \
-                         << " is found.";                                      \
   }                                                                            \
   /* Return_indices_type(only for max_pool) */                                 \
   NNAdapterOperandPrecisionCode indices_type;                                  \

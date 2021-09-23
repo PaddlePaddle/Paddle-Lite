@@ -22,6 +22,7 @@
 #include "lite/model_parser/pb/program_desc.h"
 #include "lite/model_parser/ssa/program_desc.h"
 
+#include "lite/core/optimizer/mir/dot.h"
 #include "lite/model_parser/model_parser.h"
 
 namespace paddle {
@@ -123,6 +124,45 @@ class ProgramDescGenerator {
   general::ProgramDesc program_desc_;
   int block_idx_{0};
 };
+
+void Visualize(const general::ProgramDesc& program) {
+  paddle::lite::mir::Dot dot;
+  using Attr = paddle::lite::mir::Dot::Attr;
+  const std::vector<Attr> op_attrs{Attr("style", "filled"),
+                                   Attr("fillcolor", "yellow")};
+  const std::vector<Attr> var_attrs{Attr("style", "filled"),
+                                    Attr("fillcolor", "gray"),
+                                    Attr("shape", "record")};
+  const std::vector<Attr> edge_attrs{};
+  std::set<std::string> vars{};
+  for (size_t block_idx = 0; block_idx < program.BlocksSize(); block_idx++) {
+    dot.Clear();
+    vars.clear();
+    const lite::cpp::BlockDesc* block =
+        program.GetBlock<lite::cpp::BlockDesc>(block_idx);
+    for (size_t op_idx = 0; op_idx < block->OpsSize(); op_idx++) {
+      const lite::cpp::OpDesc* op = block->GetOp<lite::cpp::OpDesc>(op_idx);
+      for (auto& in : op->input_vars()) vars.insert(in);
+      for (auto& out : op->output_vars()) vars.insert(out);
+    }
+    for (auto& ele : vars) {
+      dot.AddNode(ele, var_attrs);
+    }
+    for (size_t op_idx = 0; op_idx < block->OpsSize(); op_idx++) {
+      const lite::cpp::OpDesc* op = block->GetOp<lite::cpp::OpDesc>(op_idx);
+      const std::string op_indx_str = std::to_string(op_idx);
+      dot.AddNode(op_indx_str, op_attrs, op->Type());
+      for (auto& var_name : op->input_vars()) {
+        dot.AddEdge(var_name, op_indx_str, edge_attrs);
+      }
+      for (auto& var_name : op->output_vars()) {
+        dot.AddEdge(op_indx_str, var_name, edge_attrs);
+      }
+    }
+    std::string graph = dot.Build();
+    std::cout << graph << "\n";
+  }
+}
 
 // Here are some directed graphs used to represent loops to acyclics.
 // Unless otherwise specified, the single connection direction is downward,
@@ -240,12 +280,59 @@ void PrintGeneralProgram(const general::ProgramDesc& general_prog) {
  *                           Fetch[0,2]
  */
 
-TEST(SSAProgramTest, test) {
-  ProgramDescGenerator program_gen(BlockOps_0());
+// TEST(SSAProgramTest, test) {
+//   ProgramDescGenerator program_gen(BlockOps_0());
+//   general::ProgramDesc cpp_desc{program_gen.general_program()};
+//   ssa::PlainProgramDesc plain_program(cpp_desc);
+//   ssa::ProgramDescConverter converter(plain_program);
+//   PrintGeneralProgram(converter.general_program());
+// }
+
+std::vector<Op> test_2_BlockOps_1() {
+  std::vector<Op> ops;
+  ops.emplace_back(Op{"lod_array_length",
+                      {{"X", {"array_0.out"}}},
+                      {{"Out", {"array_length_0.tmp_0"}}}});
+  ops.emplace_back(
+      Op{"arg_max", {{"X", {"tmp_7"}}}, {{"Out", {"argmax_0.tmp_0"}}}});
+  ops.emplace_back(
+      Op{"write_to_array",
+         {{"X", {"argmax_0.tmp_0"}}, {"I", {"array_length_0.tmp_0"}}},
+         {{"Out", {"array_0.out"}}}});
+
+  return ops;
+}
+
+std::vector<Op> test_2_BlockOps_0() {
+  std::vector<Op> ops;
+  // ops.emplace_back(Op{"feed", {}, {{"Out", {"array_0.out"}}}});
+  ops.emplace_back(Op{"conditional_block",
+                      {{"Input", {"array_0.out", "tmp_7"}}},
+                      {{"Out", {"array_0.out"}}},
+                      test_2_BlockOps_1()});
+  return ops;
+}
+
+TEST(SSAProgramTest_2, test) {
+  ProgramDescGenerator program_gen(test_2_BlockOps_0());
   general::ProgramDesc cpp_desc{program_gen.general_program()};
+  Visualize(cpp_desc);
+  for (size_t block_idx = 0; block_idx < cpp_desc.BlocksSize(); block_idx++) {
+    const lite::general::BlockDesc* block =
+        cpp_desc.GetBlock<lite::general::BlockDesc>(block_idx);
+    for (size_t var_idx = 0; var_idx < block->VarsSize(); var_idx++) {
+      const lite::general::VarDesc* var =
+          block->GetVar<lite::general::VarDesc>(var_idx);
+      if (var->Name() == "array_0.out")
+        const_cast<lite::general::VarDesc*>(var)->SetType(
+            lite::VarDescAPI::Type::LOD_TENSOR_ARRAY);
+    }
+  }
   ssa::PlainProgramDesc plain_program(cpp_desc);
   ssa::ProgramDescConverter converter(plain_program);
-  PrintGeneralProgram(converter.general_program());
+  const general::ProgramDesc program = converter.general_program();
+  // PrintGeneralProgram(program);
+  Visualize(program);
 }
 
 }  // namespace general

@@ -270,7 +270,9 @@ class LITE_API RuntimeProgram {
 #ifdef LITE_WITH_METAL
   void ConfigMetalContext(std::string lib_path,
                           bool use_mps = false,
-                          bool use_aggressive = false);
+                          bool use_aggressive = false,
+                          bool use_memory_reuse_ = false,
+                          void* device = nullptr);
 #endif
 
  private:

@@ -120,14 +120,18 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
       pass->SetQuantType(config.quant_type());
     }
 
+    auto *sparse_detect_pass =
+        mir::PassManager::Global().LookUp<mir::SparseConvDetectPass>(
+            "sparse_conv_detect_pass");
+    CHECK(sparse_detect_pass);
     if (config.sparse_model()) {
-      passes.push_back("sparse_conv_detect_pass");
-      auto *sparse_detect_pass =
-          mir::PassManager::Global().LookUp<mir::SparseConvDetectPass>(
-              "sparse_conv_detect_pass");
-      CHECK(sparse_detect_pass);
       sparse_detect_pass->SetSparseThreshold(config.sparse_threshold());
+    } else {
+      // Pass in a value greater than 1.0 to turn off the sparse pass
+      // internally.
+      sparse_detect_pass->SetSparseThreshold(1.5);
     }
+
     raw_predictor_->Build(config, places, passes);
   } else {
     raw_predictor_->PrepareFeedFetch();

@@ -83,12 +83,6 @@ if (NOT LITE_ON_TINY_PUBLISH)
     bundle_static_library(paddle_api_full paddle_api_full_bundled bundle_full_api)
     bundle_static_library(paddle_api_light paddle_api_light_bundled bundle_light_api)
 
-
-    if(LITE_WITH_CUDA)
-        target_link_libraries(paddle_full_api_shared ${math_cuda} "-Wl,--whole-archive" kernels "-Wl,--no-whole-archive")
-    endif(LITE_WITH_CUDA)
-
-
     if(WIN32)
         target_link_libraries(paddle_full_api_shared shlwapi.lib)
         target_link_libraries(paddle_light_api_shared shlwapi.lib)

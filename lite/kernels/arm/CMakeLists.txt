@@ -80,6 +80,7 @@ add_kernel(sequence_expand_as_compute_arm ARM extra SRCS sequence_expand_as_comp
 add_kernel(matmul_v2_compute ARM extra SRCS matmul_v2_compute.cc)
 add_kernel(sum_compute ARM extra SRCS sum_compute.cc)
 
+
 # for OCR specific
 add_kernel(gru_unit_compute_arm ARM extra SRCS gru_unit_compute.cc)
 add_kernel(gru_compute_arm ARM extra SRCS gru_compute.cc)

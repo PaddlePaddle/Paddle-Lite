@@ -109,6 +109,14 @@ T *Tensor::mutable_data(TargetType type) const {
   return tensor(raw_tensor_)->mutable_data<T>(type);
 }
 
+void *Tensor::mutable_metal_data(void *ptr) const {
+#ifdef LITE_WITH_METAL
+  return tensor(raw_tensor_)->mutable_metal_data(ptr);
+#else
+  return nullptr;
+#endif
+}
+
 template const double *Tensor::data<double>() const;
 template const float *Tensor::data<float>() const;
 template const int64_t *Tensor::data<int64_t>() const;
@@ -360,6 +368,13 @@ void ConfigBase::set_threads(int threads) {
 #endif
 }
 
+void ConfigBase::set_metal_device(void *device) {
+#ifdef LITE_WITH_METAL
+  metal_device_ = device;
+#endif
+  return;
+}
+
 void ConfigBase::set_metal_lib_path(const std::string &path) {
 #ifdef LITE_WITH_METAL
   metal_path_ = path;
@@ -377,6 +392,13 @@ void ConfigBase::set_metal_use_mps(bool flag) {
 void ConfigBase::set_metal_use_aggressive(bool flag) {
 #ifdef LITE_WITH_METAL
   metal_use_aggressive_ = flag;
+#endif
+  return;
+}
+
+void ConfigBase::set_metal_use_memory_reuse(bool flag) {
+#ifdef LITE_WITH_METAL
+  metal_use_memory_reuse_ = flag;
 #endif
   return;
 }
@@ -494,6 +516,10 @@ void CxxConfig::set_xpu_workspace_l3_size_per_thread(int l3_size) {
 #endif
 }
 
+// local_l3 <= 0 , locked == false: NO USE L3
+// local_l3 > 0, locked == false : USE local l3
+// locked == true : USE Shared L3
+// default : locked = false, local_l3 = max_l3_size;
 void CxxConfig::set_xpu_l3_cache_method(size_t l3_size, bool locked) {
 #ifdef LITE_WITH_XPU
   static std::mutex set_l3_mutex;
@@ -509,8 +535,10 @@ void CxxConfig::set_xpu_l3_cache_method(size_t l3_size, bool locked) {
           << "Enlarge XPU Shared L3 Cache Is Not Allowed.";
     }
     lite::TargetWrapperXPU::local_l3_size = 0;
+    lite::TargetWrapperXPU::need_l3_mutex = true;
   } else {
     lite::TargetWrapperXPU::local_l3_size = l3_size;
+    lite::TargetWrapperXPU::need_l3_mutex = false;
   }
 #else
   LOG(WARNING) << "The invoking of the function "

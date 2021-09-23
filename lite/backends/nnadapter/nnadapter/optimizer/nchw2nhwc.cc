@@ -51,6 +51,7 @@ class NCHW2NHWCDataLayoutConverter {
   void ConvertPool2D(hal::Operation* operation);
   void ConvertConcat(hal::Operation* operation);
   void ConvertConv2D(hal::Operation* operation);
+  void ConvertFlatten(hal::Operation* operation);
   void ConvertFullyConnected(hal::Operation* operation);
   void ConvertActivation(hal::Operation* operation);
   void ConvertReshape(hal::Operation* operation);
@@ -335,6 +336,29 @@ void NCHW2NHWCDataLayoutConverter::ConvertReshape(hal::Operation* operation) {
   SetPermutation(output_operand, IdentityPermutation(output_dimensions_count));
 }
 
+void NCHW2NHWCDataLayoutConverter::ConvertFlatten(hal::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 3);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto input_operand = input_operands[0];
+  int input_dimensions_count = input_operand->type.dimensions.count;
+  auto output_operand = output_operands[0];
+  auto output_dimensions_count = output_operand->type.dimensions.count;
+  // Force to restore the dimorder vector of the input operand
+  auto input_permutation = GetPermutation(input_operand);
+  auto transpose_input_permutation = InversePermutation(input_permutation);
+  if (!IsIdentityPermutation(transpose_input_permutation)) {
+    auto transpose_input_operand = AddTransposeOperation(
+        model_, input_operand, transpose_input_permutation);
+    SetPermutation(transpose_input_operand,
+                   IdentityPermutation(input_dimensions_count));
+  }
+  SetPermutation(output_operand, IdentityPermutation(output_dimensions_count));
+}
+
 void NCHW2NHWCDataLayoutConverter::ConvertSoftmax(hal::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
@@ -431,6 +455,9 @@ void NCHW2NHWCDataLayoutConverter::Apply(hal::Model* model) {
         break;
       case NNADAPTER_CONV_2D:
         ConvertConv2D(operation);
+        break;
+      case NNADAPTER_FLATTEN:
+        ConvertFlatten(operation);
         break;
       case NNADAPTER_FULLY_CONNECTED:
         ConvertFullyConnected(operation);

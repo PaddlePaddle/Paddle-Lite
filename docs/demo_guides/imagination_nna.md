@@ -117,9 +117,9 @@ Paddle Lite已支持Imagination NNA的预测部署。
             - arm64
               - include
               - lib
-                - imagination_nna
-                  - libnnadapter_driver_imagination_nna.so # imagination nna driver hal库
-                  - libnnadapter.so # NNAdapter API运行时库
+                - imagination_nna # 颖脉NNA imgdnn DDK、NNAdapter运行时库、device HAL库
+                  - libimagination_nna.so # NNAdapter device HAL库
+                  - libnnadapter.so # NNAdapter运行时库
                   - libcrypto.so
                   ...
                 - libpaddle_full_api_shared.so # 预编译PaddleLite full api库
@@ -229,15 +229,19 @@ Paddle Lite已支持Imagination NNA的预测部署。
       ```shell
       $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_nnadapter=ON --nnadapter_with_imagination_nna=ON --nnadapter_imagination_nna_sdk_root=$(pwd)/imagination_nna_sdk full_publish
       ```
+
     - 替换头文件和库
       ```shell
-      # 替换 include 目录：
+      # 替换include目录
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/include/
-      # 替换 NNAdapter相关so：
-      $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libnnadapter* PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/imagination_nna/
-      # 替换 libpaddle_full_api_shared.so或libpaddle_light_api_shared.so
-      $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
+      # 替换NNAdapter运行时库
+      $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/imagination_nna/
+      # 替换NNAdapter device HAL库
+      $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libimagination_nna.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/imagination_nna/
+      # 替换libpaddle_light_api_shared.so
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
+      # 替换libpaddle_full_api_shared.so(仅在full_publish编译方式下)
+      $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
       ```
 
 - 替换头文件后需要重新编译示例程序
