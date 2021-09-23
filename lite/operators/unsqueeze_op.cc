@@ -132,7 +132,7 @@ bool Unsqueeze2Op::CheckShape() const {
 bool Unsqueeze2Op::InferShapeImpl() const {
   UnsqueezeOp::InferShapeImpl();
   auto x_dims = param_.X->dims();
-  std::vector<DDim::value_type> xshape_dims(x_dims.size() + 1, 0);
+  std::vector<DDim::value_type> xshape_dims(x_dims.size() + 1, 1);
   for (size_t i = 0; i < x_dims.size(); i++) {
     xshape_dims[i + 1] = x_dims[i];
   }
