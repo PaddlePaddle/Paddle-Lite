@@ -524,7 +524,9 @@ static void RunRnnLayer(ARMContext* ctx,
   std::vector<Tensor*> mask_tensor_list;
   int mask_min_length = time_step;
 
-  // to be verifying!
+  /*
+   to be verifying!
+  */
   if (has_sequence_length) {
     mask_matrix.Resize(DDimLite({time_step, input->dims()[1]}));
     create_mask_matrix(
@@ -629,7 +631,9 @@ static void RunRnnLayer(ARMContext* ctx,
                &weight_hh_tmp);
     }
 
-    // to be verifying!
+    /*
+     to be verifying!
+    */
     if (in_mask) {
       postprocess(ctx,
                   &output_tensors[i],
@@ -800,35 +804,6 @@ void RnnCompute::Run() {
   if (num_layers % 2 == 0) {
     output->CopyDataFrom(*output_holder);
   }
-
-  /////////////////////log input output///////////////////
-  double tmp = 0.0;
-  for (int i = 0; i < input->numel(); i++) {
-    tmp += input->data<float>()[i];
-  }
-  tmp = tmp / input->numel();
-  std::cout << "\n-------------in----------------\n"
-            << tmp << " " << input->dims()[0] << " " << input->dims()[1] << " "
-            << input->dims()[2] << " "
-            << "\n-----------------------------\n";
-  tmp = 0.0;
-  for (int i = 0; i < pre_state[0]->numel(); i++) {
-    tmp += pre_state[0]->data<float>()[i];
-  }
-  tmp = tmp / pre_state[0]->numel();
-  std::cout << "\n-------------sts----------------\n"
-            << tmp << " " << pre_state[0]->dims()[0] << " "
-            << pre_state[0]->dims()[1] << " " << pre_state[0]->dims()[2] << " "
-            << "\n-----------------------------\n";
-  tmp = 0.0;
-  for (int i = 0; i < output->numel(); i++) {
-    tmp += output->data<float>()[i];
-  }
-  tmp = tmp / output->numel();
-  std::cout << "\n--------------out---------------\n"
-            << tmp << " " << output->dims()[0] << " " << output->dims()[1]
-            << " " << output->dims()[2] << " "
-            << "\n-----------------------------\n";
 }
 }  // namespace arm
 }  // namespace kernels

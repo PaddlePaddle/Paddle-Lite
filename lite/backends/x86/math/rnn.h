@@ -27,6 +27,11 @@
 #include <xmmintrin.h>
 #endif
 
+#ifndef __FMA__
+#define _mm256_fmadd_ps(a, b, c) _mm256_add_ps((c), _mm256_mul_ps((a), (b)))
+#define _mm_fmadd_ps(a, b, c) _mm_add_ps((c), _mm_mul_ps((a), (b)))
+#endif
+
 namespace paddle {
 namespace lite {
 namespace x86 {
@@ -65,8 +70,11 @@ struct GRUMetaValue {
 //*********************************
 // if v2 isn't null: out[i] = in[i] + v1[i] * v2[i];
 // if v2 is null:    out[i] = in[i] * v1[i];
-inline void vector_dot(
-    float* out, const float* in, const float* v1, int size, const float* v2) {
+inline void vector_dot(float* out,
+                       const float* in,
+                       const float* v1,
+                       int size,
+                       const float* v2 = nullptr) {
 #if defined(__AVX__)
   __m256 vec_in, vec_v1, vec_v2;
 #endif
@@ -100,7 +108,7 @@ inline void vector_dot(
     i = 0;
 
 // in_out + v1 * v2
-#if defined(__AVX__) && defined(__FMA__)
+#if defined(__AVX__)
     for (; i + 7 < size; i += 8) {
       vec_in = _mm256_loadu_ps(in + i);
       vec_v1 = _mm256_loadu_ps(v1 + i);
