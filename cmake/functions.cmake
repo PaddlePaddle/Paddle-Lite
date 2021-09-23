@@ -51,7 +51,7 @@ set(cuda_kernels CACHE INTERNAL "cuda kernels")
 function(add_kernel TARGET device level)
     set(options "")
     set(oneValueArgs "")
-    set(multiValueArgs SRCS DEPS)
+    set(multiValueArgs SRCS)
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
 
@@ -101,7 +101,7 @@ function(add_kernel TARGET device level)
         foreach(src ${args_SRCS})
           file(APPEND ${kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
         endforeach()
-        nv_library(${TARGET} SRCS ${args_SRCS} DEPS ${args_DEPS})
+        nv_library(${TARGET} SRCS ${args_SRCS})
         return()
     endif()
 
