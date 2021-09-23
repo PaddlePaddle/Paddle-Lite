@@ -28,9 +28,8 @@ int ConvertUnsqueeze(Converter* converter, OpInfo* op, Scope* scope) {
     x_scales = op->GetInputScale(x_scale_name, true);
   }
   auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
-
-  // Axes operand
-  NNAdapterOperand* axes_operand = nullptr;
+  // Axes
+  std::vector<int32_t> axes;
   if (HasInput(op, scope, "AxesTensorList")) {
     LOG(WARNING) << "Not support AxesTensorList.";
     return UNSUPPORTED_FEATURE;
@@ -38,18 +37,12 @@ int ConvertUnsqueeze(Converter* converter, OpInfo* op, Scope* scope) {
     LOG(WARNING) << "Not support AxesTensor.";
     return UNSUPPORTED_FEATURE;
   } else {
-    std::vector<int> axes = op->GetAttr<std::vector<int>>("axes");
-    axes_operand = converter->AddConstantOperand(axes);
+    axes = op->GetAttr<std::vector<int>>("axes");
   }
-
-  // Output operand
+  // Output
   auto out_name = op->Output("Out").front();
-  // Copy scales from input in PrepareUnsqueeze
-  auto output_operand = converter->AddOutputOperand(out_name);
-
-  // Unsqueeze operation
-  converter->AddOperation(
-      NNADAPTER_UNSQUEEZE, {input_operand, axes_operand}, {output_operand});
+  // Add unsqueeze operation
+  converter->AddUnsqueezeOperation(input_operand, axes, out_name);
   return NO_ERROR;
 }
 

@@ -174,6 +174,16 @@ class Converter {
   NNAdapterOperand* AddUnsqueezeOperation(NNAdapterOperand* input_operand,
                                           const std::vector<int32_t>& axes,
                                           const std::string& out_name = "");
+  // Add squeeze operation with input operand, axes, out_name, quant_scales
+  NNAdapterOperand* AddSqueezeOperation(NNAdapterOperand* input_operand,
+                                        const std::vector<int32_t>& axes,
+                                        const std::string& out_name = "");
+  NNAdapterOperand* AddSliceOperation(NNAdapterOperand* input_operand,
+                                      const std::vector<int32_t>& axes,
+                                      const std::vector<int32_t>& starts,
+                                      const std::vector<int32_t>& ends,
+                                      const std::vector<int32_t>& steps,
+                                      const std::string& out_name = "");
   // Add flatten operation with input operand, start, end, out_name
   NNAdapterOperand* AddFlattenOperation(NNAdapterOperand* input_operand,
                                         const int32_t start_axis,

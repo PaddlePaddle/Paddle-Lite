@@ -116,7 +116,6 @@ int Converter::Apply(
     op->InferShape();
     auto op_info = const_cast<OpInfo*>(op->op_info());
     auto op_type = op_info->Type();
-
     VLOG(5) << "Converting " << op_type << " ...";
 #define REGISTER_CONVERTER(__op_type__, __func_name__, ...) \
   if (op_type == #__op_type__) {                            \
@@ -251,7 +250,6 @@ NNAdapterOperand* Converter::AddInputOperand(
     input_operand = AddConstantOperand(
         *input_tensor, dimensions, false, quant_scales, quant_channel_dim);
   }
-
   return input_operand;
 }
 
@@ -379,6 +377,43 @@ NNAdapterOperand* Converter::AddUnsqueezeOperation(
   auto output_operand = AddOutputOperand(out_name);
   AddOperation(
       NNADAPTER_UNSQUEEZE, {input_operand, axes_operand}, {output_operand});
+  return output_operand;
+}
+
+NNAdapterOperand* Converter::AddSqueezeOperation(
+    NNAdapterOperand* input_operand,
+    const std::vector<int32_t>& axes,
+    const std::string& out_name) {
+  NNAdapterOperand* axes_operand = nullptr;
+  if (!axes.empty()) {
+    axes_operand = AddConstantOperand(axes);
+  }
+  // Copy scales from input in PrepareSqueeze
+  auto output_operand = AddOutputOperand(out_name);
+  AddOperation(
+      NNADAPTER_SQUEEZE, {input_operand, axes_operand}, {output_operand});
+  return output_operand;
+}
+
+NNAdapterOperand* Converter::AddSliceOperation(
+    NNAdapterOperand* input_operand,
+    const std::vector<int32_t>& axes,
+    const std::vector<int32_t>& starts,
+    const std::vector<int32_t>& ends,
+    const std::vector<int32_t>& steps,
+    const std::string& out_name) {
+  auto axes_operand = AddConstantOperand(axes);
+  auto starts_operand = AddConstantOperand(starts);
+  auto ends_operand = AddConstantOperand(ends);
+  auto steps_operand = AddConstantOperand(steps);
+  auto output_operand = AddOutputOperand(out_name);
+  AddOperation(NNADAPTER_SLICE,
+               {input_operand,
+                axes_operand,
+                starts_operand,
+                ends_operand,
+                steps_operand},
+               {output_operand});
   return output_operand;
 }
 

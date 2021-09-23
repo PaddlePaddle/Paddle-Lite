@@ -31,52 +31,37 @@ int ConvertSlice(Converter* converter, OpInfo* op, Scope* scope) {
       converter->AddInputOperand(scope, input_name, {}, input_scales);
   CHECK(input_operand);
   auto input_type = converter->GetOperandType(input_operand);
-  // Axes operand
+  // Axes
   auto axes = op->GetAttr<std::vector<int>>("axes");
   auto axes_size = static_cast<int>(axes.size());
-  auto axes_operand = converter->AddConstantOperand(axes);
-  // Starts operand
+  // Starts
   auto starts = op->GetAttr<std::vector<int>>("starts");
-  auto starts_operand = converter->AddConstantOperand(starts);
-  // Ends operand
+  // Ends
   auto ends_ori = op->GetAttr<std::vector<int>>("ends");
   std::vector<int> ends(axes_size, 0);
   for (int i = 0; i < axes_size; i++) {
-    auto dimensions_data = input_type->dimensions.data[axes[i]];
-    CHECK(dimensions_data != NNADAPTER_UNKNOWN);
-    ends[i] = ends_ori[i] > dimensions_data ? dimensions_data : ends_ori[i];
+    auto dim = input_type->dimensions.data[axes[i]];
+    CHECK(dim != NNADAPTER_UNKNOWN);
+    ends[i] = ends_ori[i] > dim ? dim : ends_ori[i];
   }
-  auto ends_operand = converter->AddConstantOperand(ends);
-  // Steps operand
+  // Steps
   std::vector<int> steps(axes_size, 1);
-  auto steps_operand = converter->AddConstantOperand(steps);
-  // Output operand
+  // Decrease axis
   std::vector<int> decrease_axis;
   if (op->HasAttr("decrease_axis")) {
     decrease_axis = op->GetAttr<std::vector<int>>("decrease_axis");
   }
+  // Output
   auto out_name = op->Output("Out").front();
-  std::string out_name_slice =
-      decrease_axis.empty() ? out_name : out_name + "_squeeze_in";
-  auto output_operand = converter->AddOutputOperand(out_name_slice);
 
   // Slice operation
-  converter->AddOperation(NNADAPTER_SLICE,
-                          {input_operand,
-                           axes_operand,
-                           starts_operand,
-                           ends_operand,
-                           steps_operand},
-                          {output_operand});
+  auto slice_operand = converter->AddSliceOperation(
+      input_operand, axes, starts, ends, steps, out_name);
 
   // Use squeeze to process decrease_axis(attr)
   if (!decrease_axis.empty()) {
-    auto squeeze_axes_operand = converter->AddConstantOperand(decrease_axis);
-    auto squeeze_output_operand = converter->AddOutputOperand(out_name);
     // Squeeze operation
-    converter->AddOperation(NNADAPTER_SQUEEZE,
-                            {output_operand, squeeze_axes_operand},
-                            {squeeze_output_operand});
+    converter->AddSqueezeOperation(slice_operand, decrease_axis, out_name);
   }
 
   return NO_ERROR;

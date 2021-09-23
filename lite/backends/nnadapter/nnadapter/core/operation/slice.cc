@@ -32,13 +32,13 @@ int PrepareSlice(hal::Operation* operation) {
   auto infer_output_shape = [&](int32_t* input_dimensions,
                                 int32_t* output_dimensions) {
     for (size_t i = 0; i < axes_count; ++i) {
-      int dim_value = output_dimensions[axes[i]];
-      if (dim_value > 0) {
-        int start = starts[i] < 0 ? (starts[i] + dim_value) : starts[i];
-        int end = ends[i] < 0 ? (ends[i] + dim_value) : ends[i];
+      int dim = output_dimensions[axes[i]];
+      if (dim > 0) {
+        int start = starts[i] < 0 ? (starts[i] + dim) : starts[i];
+        int end = ends[i] < 0 ? (ends[i] + dim) : ends[i];
         start = std::max(start, 0);
         end = std::max(end, 0);
-        end = std::min(end, dim_value);
+        end = std::min(end, dim);
         output_dimensions[axes[i]] = end - start;
       }
     }

@@ -892,7 +892,7 @@ typedef enum {
    * * 0: input, a NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER or
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor with shape [N,C,...]
-   * * 1: scale, a tensor, with shape [C].
+   * * 1: scale, a tensor, with shape [H * W].
    *      1) If input's type is NNADAPTER_TENSOR_FLOAT32, its type must be the
    * same type.
    * * 2: bias, a tensor with the same shape as scale.

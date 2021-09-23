@@ -43,8 +43,7 @@ int ConvertLayerNorm(Converter* converter, OpInfo* op, Scope* scope) {
     scale_bias_nums *= input_type->dimensions.data[i];
   }
   NNAdapterOperand* bias_operand = nullptr;
-  bool has_bias = op->HasInput("Bias");
-  if (has_bias) {
+  if (op->HasInput("Bias")) {
     auto bias_name = op->Input("Bias").front();
     auto bias_tensor = scope->FindMutableTensor(bias_name);
     CHECK(bias_tensor->persistable());
@@ -55,8 +54,7 @@ int ConvertLayerNorm(Converter* converter, OpInfo* op, Scope* scope) {
   }
   // Scale operand
   NNAdapterOperand* scale_operand = nullptr;
-  bool has_scale = op->HasInput("Scale");
-  if (has_scale) {
+  if (op->HasInput("Scale")) {
     auto scale_name = op->Input("Scale").front();
     auto scale_tensor = scope->FindMutableTensor(scale_name);
     CHECK(scale_tensor->persistable());
@@ -104,7 +102,14 @@ int ConvertLayerNorm(Converter* converter, OpInfo* op, Scope* scope) {
                               {output_operand, alpha_operand},
                               {fused_act_output_operand});
     } else {
-      LOG(FATAL) << "Failed to unpack the fused activation type: " << act_type;
+      // Unpack the fused unary activations
+      auto unary_act_operation_type =
+          ConvertUnaryActTypeToNNOperationType(act_type);
+      CHECK(unary_act_operation_type != NNADAPTER_UNKNOWN)
+          << "Failed to unpack the fused activation type: " << act_type;
+      converter->AddOperation(unary_act_operation_type,
+                              {output_operand},
+                              {fused_act_output_operand});
     }
   }
   return NO_ERROR;

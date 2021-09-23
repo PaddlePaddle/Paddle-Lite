@@ -33,47 +33,47 @@ int PrepareSqueeze(hal::Operation* operation) {
   auto infer_output_shape = [&](int32_t* input_dimensions,
                                 int32_t* output_dimensions,
                                 uint32_t input_dimensions_count) {
-    size_t num_squeeze_dims = axes.size();
-    uint32_t cnt_squeezed_dims = 0;
-    bool should_squeeze[9] = {false};
-    if (num_squeeze_dims == 0) {
+    size_t axes_count = axes.size();
+    std::vector<int32_t> squeezed_dims;
+    if (axes_count == 0) {
       for (size_t idx = 0; idx < input_dimensions_count; ++idx) {
         if (input_dimensions[idx] == 1) {
-          should_squeeze[idx] = true;
-          ++cnt_squeezed_dims;
+          squeezed_dims.push_back(idx);
         }
       }
     } else {
-      for (size_t idx = 0; idx < num_squeeze_dims; ++idx) {
-        int current =
+      for (size_t idx = 0; idx < axes_count; ++idx) {
+        int axis =
             axes[idx] < 0 ? axes[idx] + input_dimensions_count : axes[idx];
-        // Check current index, the upper limit has been checked.
-        NNADAPTER_CHECK_GE(current, 0)
+        NNADAPTER_CHECK_GE(axis, 0)
             << "Invalid axis, the negative axis is out of range.";
-        NNADAPTER_CHECK_EQ(input_dimensions[current], 1)
+        NNADAPTER_CHECK_EQ(input_dimensions[axis], 1)
             << "Invalid axis index, the axis that "
                "will be squeezed should be equal "
                "to 1.";
-        if (!(should_squeeze[current])) {
-          ++cnt_squeezed_dims;
+        NNADAPTER_CHECK_GE(input_dimensions_count, axis)
+            << "Invalid axis index, axis needs to be smaller than the "
+               "dimension of input";
+        if (!(std::count(squeezed_dims.begin(), squeezed_dims.end(), axis))) {
+          squeezed_dims.push_back(axis);
         }
-        should_squeeze[current] = true;
       }
     }
 
     for (size_t in_idx = 0, out_idx = 0; in_idx < input_dimensions_count;
          ++in_idx) {
-      if (!should_squeeze[in_idx]) {
+      if (!(std::count(squeezed_dims.begin(), squeezed_dims.end(), in_idx))) {
         output_dimensions[out_idx++] = input_dimensions[in_idx];
       }
     }
-    return cnt_squeezed_dims;
+    return squeezed_dims.size();
   };
 
   auto cnt_squeezed_dims = infer_output_shape(input_type.dimensions.data,
                                               output_type.dimensions.data,
                                               input_type.dimensions.count);
-  output_type.dimensions.count -= cnt_squeezed_dims;
+  output_type.dimensions.count =
+      input_type.dimensions.count - cnt_squeezed_dims;
   // Dynamic dimensions
   uint32_t dynamic_cnt_squeezed_dims = 0;
   for (uint32_t i = 0; i < input_type.dimensions.dynamic_count; i++) {
@@ -82,7 +82,10 @@ int PrepareSqueeze(hal::Operation* operation) {
                            output_type.dimensions.dynamic_data[i],
                            input_type.dimensions.count);
   }
-  output_type.dimensions.count -= dynamic_cnt_squeezed_dims;
+  if (input_type.dimensions.dynamic_count > 0) {
+    output_type.dimensions.count =
+        input_type.dimensions.count - dynamic_cnt_squeezed_dims;
+  }
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
 }

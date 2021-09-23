@@ -28,22 +28,15 @@ int ConvertSqueeze(Converter* converter, OpInfo* op, Scope* scope) {
     x_scales = op->GetInputScale(x_scale_name, true);
   }
   auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
-  // Axes operand
-  NNAdapterOperand* axes_operand = nullptr;
-  std::vector<int> axes;
+  // Axes
+  std::vector<int32_t> axes;
   if (op->HasAttr("axes")) {
     axes = op->GetAttr<std::vector<int>>("axes");
   }
-  if (!axes.empty()) {
-    axes_operand = converter->AddConstantOperand(axes);
-  }
-  // Output operand
+  // Output
   auto out_name = op->Output("Out").front();
-  // Copy scales from input in PrepareSqueeze
-  auto output_operand = converter->AddOutputOperand(out_name);
-  // Squeeze operation
-  converter->AddOperation(
-      NNADAPTER_SQUEEZE, {input_operand, axes_operand}, {output_operand});
+  // Add squeeze operation
+  converter->AddSqueezeOperation(input_operand, axes, out_name);
   return NO_ERROR;
 }
 
