@@ -27,11 +27,15 @@ REGISTER_LITE_KERNEL(prior_box, kHost, kFloat, kNCHW, pb_fp32, def)
     .BindOutput("Variances", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
 #ifdef ENABLE_ARM_FP16
-using float16_t = __fp16;
-using pb_fp16 = paddle::lite::kernels::host::PriorBoxCompute<float16_t,
-                                                             TARGET(kARM),
-                                                             PRECISION(kFP16)>;
-REGISTER_LITE_KERNEL(prior_box, kARM, kFP16, kNCHW, pb_fp16, def)
+REGISTER_LITE_KERNEL(
+    prior_box,
+    kARM,
+    kFP16,
+    kNCHW,
+    paddle::lite::kernels::host::PriorBoxCompute<__fp16,
+                                                 TARGET(kARM),
+                                                 PRECISION(kFP16)>,
+    def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindInput("Image", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindOutput("Boxes",
