@@ -31,7 +31,7 @@ struct ConcatParam {
 #define VY 3
 #define VZ 4
 
-// R:input dim size N:input number V：direction
+// R:input dim size N:input number V: direction
 
 // >> normal mode (loop mode)
 
@@ -143,6 +143,16 @@ struct ConcatParam {
 #define V VZ
 #define R 5
 #define N 4
+#define P ftype
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
+#undef V
+
+#define V VZ
+#define R 4
+#define N 5
 #define P ftype
 #include "ConcatKernel.inc.metal"
 #undef P
