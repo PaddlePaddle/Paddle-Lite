@@ -27,6 +27,7 @@ REGISTER_LITE_KERNEL(prior_box, kHost, kFloat, kNCHW, pb_fp32, def)
     .BindOutput("Variances", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
 #ifdef ENABLE_ARM_FP16
+using float16_t = __fp16;
 using pb_fp16 = paddle::lite::kernels::host::PriorBoxCompute<float16_t,
                                                              TARGET(kARM),
                                                              PRECISION(kFP16)>;
