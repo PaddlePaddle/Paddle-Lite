@@ -14,6 +14,7 @@
 
 #include "driver/huawei_ascend_npu/utility.h"
 #include <map>
+#include <mutex>  // NOLINT
 #include <utility>
 #include "utility/debug.h"
 #include "utility/string.h"
@@ -21,25 +22,52 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-static void FinalizeAscendDevice() {
+static void FinalizeAscendCL() {
   NNADAPTER_VLOG(5) << "Finalize AscendCL.";
+  // The following APIs can only be called once in one process
+  aclFinalize();
+}
+
+void InitializeAscendCL() {
+  static std::mutex mtx;
+  static bool initialized = false;
+  mtx.lock();
+  if (!initialized) {
+    NNADAPTER_VLOG(5) << "Initialize AscendCL.";
+    // The following APIs can only be called once in one process
+    aclInit(NULL);
+    // Register 'FinalizeAscendCL' to be called at normal process termination
+    atexit(FinalizeAscendCL);
+    initialized = true;
+  }
+  mtx.unlock();
+}
+
+static void FinalizeGraphBuilder() {
+  NNADAPTER_VLOG(5) << "Finalize Graph Builder.";
   // The following APIs can only be called once in one process
   // TODO(hong19860320) fix the problem destruction order that the resource of
   // GE is released before the function is called.
   // ge::aclgrphBuildFinalize();
-  aclFinalize();
 }
 
-void InitializeAscendDevice() {
-  NNADAPTER_VLOG(5) << "Initialize AscendCL.";
-  // The following APIs can only be called once in one process
-  aclInit(NULL);
-  std::map<ge::AscendString, ge::AscendString> global_options;
-  global_options.insert(
-      std::make_pair(ge::ir_option::SOC_VERSION, "Ascend310"));
-  ge::aclgrphBuildInitialize(global_options);
-  // Register 'FinalizeAscendDevice' to be called at normal process termination
-  atexit(FinalizeAscendDevice);
+void InitializeGraphBuilder() {
+  static std::mutex mtx;
+  static bool initialized = false;
+  mtx.lock();
+  if (!initialized) {
+    NNADAPTER_VLOG(5) << "Initialize Graph Builder.";
+    // The following APIs can only be called once in one process
+    std::map<ge::AscendString, ge::AscendString> global_options;
+    global_options.insert(
+        std::make_pair(ge::ir_option::SOC_VERSION, "Ascend310"));
+    ge::aclgrphBuildInitialize(global_options);
+    // Register 'FinalizeGraphBuilder' to be called at normal process
+    // termination
+    atexit(FinalizeGraphBuilder);
+    initialized = true;
+  }
+  mtx.unlock();
 }
 
 const std::string ACLErrorToString(int error) {
@@ -142,6 +170,8 @@ bool BuildOMModelToBuffer(
     std::vector<ge::Operator>& input_operators,   // NOLINT
     std::vector<ge::Operator>& output_operators,  // NOLINT
     std::vector<uint8_t>* model_buffer) {
+  // Should initialize the GE graph builder before model building
+  InitializeGraphBuilder();
   // Convert the CANN IR graph to the CANN om model
   ge::Graph ir_graph("graph");
   // Set input operator attr index if node size > 1

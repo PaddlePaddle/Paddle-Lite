@@ -28,9 +28,12 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-// Prepare AscendCL environment and register AscendCL finalizer to be called at
+// Prepare AscendCL environment and register the finalizer to be called at
 // normal process termination
-void InitializeAscendDevice();
+void InitializeAscendCL();
+// Initialize the resources of the model builder and register the finalizer to
+// be called at normal process termination
+void InitializeGraphBuilder();
 
 // Utility of the calling and error handling of Ascend ATC and ACL APIs
 const std::string ACLErrorToString(int error);
