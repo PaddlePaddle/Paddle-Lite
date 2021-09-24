@@ -164,62 +164,89 @@ const std::string PrintUsage() {
 }
 
 void SetBackendConfig(lite_api::MobileConfig& config) {  // NOLINT
-  if (FLAGS_backend == "opencl" || FLAGS_backend == "x86_opencl") {
-    // Set opencl kernel binary.
-    // Large addtitional prepare time is cost due to algorithm selecting and
-    // building kernel from source code.
-    // Prepare time can be reduced dramitically after building algorithm file
-    // and OpenCL kernel binary on the first running.
-    // The 1st running time will be a bit longer due to the compiling time if
-    // you don't call `set_opencl_binary_path_name` explicitly.
-    // So call `set_opencl_binary_path_name` explicitly is strongly
-    // recommended.
-
-    // Make sure you have write permission of the binary path.
-    // We strongly recommend each model has a unique binary name.
-    config.set_opencl_binary_path_name(FLAGS_opencl_cache_dir,
-                                       FLAGS_opencl_kernel_cache_file);
-
-    // opencl tune option
-    auto tune_mode = CL_TUNE_NONE;
-    if (FLAGS_opencl_tune_mode == "none") {
-      tune_mode = CL_TUNE_NONE;
-    } else if (FLAGS_opencl_tune_mode == "normal") {
-      tune_mode = CL_TUNE_NORMAL;
-    } else if (FLAGS_opencl_tune_mode == "rapid") {
-      tune_mode = CL_TUNE_RAPID;
-    } else if (FLAGS_opencl_tune_mode == "exhaustive") {
-      tune_mode = CL_TUNE_EXHAUSTIVE;
-    } else {
-      std::cerr << "Illegal opencl tune mode: " << FLAGS_opencl_tune_mode
-                << std::endl;
-    }
-    config.set_opencl_tune(
-        tune_mode, FLAGS_opencl_cache_dir, FLAGS_opencl_tuned_file);
-
-    // opencl precision option
-    auto gpu_precision = CL_PRECISION_FP16;
-    if (FLAGS_gpu_precision == "auto") {
-      gpu_precision = CL_PRECISION_AUTO;
-    } else if (FLAGS_gpu_precision == "fp16") {
-      gpu_precision = CL_PRECISION_FP16;
-    } else if (FLAGS_gpu_precision == "fp32") {
-      gpu_precision = CL_PRECISION_FP32;
-    }
-    config.set_opencl_precision(gpu_precision);
-  }
-
+  auto target_list = lite::Split(FLAGS_backend, ",");
   std::vector<std::string> nnadapter_backends = {"imagination_nna",
                                                  "rockchip_npu",
                                                  "mediatek_apu",
                                                  "huawei_kirin_npu",
                                                  "huawei_ascend_npu",
                                                  "amlogic_npu"};
-  if (std::find(nnadapter_backends.begin(),
-                nnadapter_backends.end(),
-                FLAGS_backend) != nnadapter_backends.end()) {
-    std::cout << "NNAdapter Backends: " << FLAGS_backend << std::endl;
-    config.set_nnadapter_device_names({FLAGS_backend});
+  std::vector<std::string> nnadapter_devices;
+
+  if (target_list.size() < 1) {
+    std::cout << "No backends input!" << std::endl;
+    return;
+  }
+
+  if (target_list.size() == 1) {
+    if (FLAGS_backend == "opencl" || FLAGS_backend == "x86_opencl") {
+      // Set opencl kernel binary.
+      // Large addtitional prepare time is cost due to algorithm selecting and
+      // building kernel from source code.
+      // Prepare time can be reduced dramitically after building algorithm file
+      // and OpenCL kernel binary on the first running.
+      // The 1st running time will be a bit longer due to the compiling time if
+      // you don't call `set_opencl_binary_path_name` explicitly.
+      // So call `set_opencl_binary_path_name` explicitly is strongly
+      // recommended.
+
+      // Make sure you have write permission of the binary path.
+      // We strongly recommend each model has a unique binary name.
+      config.set_opencl_binary_path_name(FLAGS_opencl_cache_dir,
+                                         FLAGS_opencl_kernel_cache_file);
+
+      // opencl tune option
+      auto tune_mode = CL_TUNE_NONE;
+      if (FLAGS_opencl_tune_mode == "none") {
+        tune_mode = CL_TUNE_NONE;
+      } else if (FLAGS_opencl_tune_mode == "normal") {
+        tune_mode = CL_TUNE_NORMAL;
+      } else if (FLAGS_opencl_tune_mode == "rapid") {
+        tune_mode = CL_TUNE_RAPID;
+      } else if (FLAGS_opencl_tune_mode == "exhaustive") {
+        tune_mode = CL_TUNE_EXHAUSTIVE;
+      } else {
+        std::cerr << "Illegal opencl tune mode: " << FLAGS_opencl_tune_mode
+                  << std::endl;
+      }
+      config.set_opencl_tune(
+          tune_mode, FLAGS_opencl_cache_dir, FLAGS_opencl_tuned_file);
+
+      // opencl precision option
+      auto gpu_precision = CL_PRECISION_FP16;
+      if (FLAGS_gpu_precision == "auto") {
+        gpu_precision = CL_PRECISION_AUTO;
+      } else if (FLAGS_gpu_precision == "fp16") {
+        gpu_precision = CL_PRECISION_FP16;
+      } else if (FLAGS_gpu_precision == "fp32") {
+        gpu_precision = CL_PRECISION_FP32;
+      }
+      config.set_opencl_precision(gpu_precision);
+    }
+
+    if (std::find(nnadapter_backends.begin(),
+                  nnadapter_backends.end(),
+                  FLAGS_backend) != nnadapter_backends.end()) {
+      nnadapter_devices.push_back(FLAGS_backend);
+    }
+  }
+
+  if (target_list.size() > 1) {
+    for (auto& target : target_list) {
+      if (std::find(nnadapter_backends.begin(),
+                    nnadapter_backends.end(),
+                    target) != nnadapter_backends.end()) {
+        nnadapter_devices.push_back(target);
+      }
+    }
+  }
+
+  if (nnadapter_devices.size() >= 1) {
+    std::cout << "nnadapter_devices_check" << std::endl;
+    for (auto d : nnadapter_devices) {
+      std::cout << "[lsy-device]" << d << std::endl;
+    }
+    config.set_nnadapter_device_names(nnadapter_devices);
     config.set_nnadapter_context_properties(FLAGS_nnadapter_context_properties);
   }
 }
@@ -238,6 +265,7 @@ void OutputOptModel(const std::string& save_optimized_model_path) {
   if (FLAGS_backend != "") {
     if (FLAGS_cpu_precision == "fp16") opt.EnableFloat16();
     opt.SetValidPlaces(FLAGS_backend);
+    std::cout << "[lsy]SetValidPlaces: " << FLAGS_backend << std::endl;
   }
 
   auto previous_opt_model = save_optimized_model_path + ".nb";

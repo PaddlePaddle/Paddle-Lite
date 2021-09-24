@@ -213,7 +213,6 @@ if(NOT IOS AND NOT LITE_ON_TINY_PUBLISH)
     lite_cc_binary(benchmark_bin SRCS tools/benchmark.cc tools/flags.cc tools/opt_base.cc
         DEPS gflags
         CV_DEPS paddle_cv_arm)
-    target_link_libraries(benchmark_bin nnadapter)
 endif()
 
 # opt tool
