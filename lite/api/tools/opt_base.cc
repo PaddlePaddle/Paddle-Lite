@@ -598,7 +598,7 @@ void OptBase::CheckIfModelSupported(bool print_ops_info) {
       CHECK(opt_config_.nnadapter_device_names().size());
       for (auto& device : opt_config_.nnadapter_device_names()) {
         auto ops = target_supported_ops_.at(device);
-        valid_ops.insert(device);
+        valid_ops.insert(ops.begin(), ops.end());
       }
     } else {
       auto ops = target_supported_ops_.at(target);
