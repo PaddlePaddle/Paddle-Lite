@@ -111,3 +111,13 @@ REGISTER_LITE_KERNEL(
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt64))})
     .Finalize();
+
+#ifdef LITE_BUILD_EXTRA
+using reduce_prob_arm_int32_f =
+    paddle::lite::kernels::arm::ReduceProdCompute<int, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(
+    reduce_prod, kARM, kFloat, kNCHW, reduce_prob_arm_int32_f, int32)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
+    .Finalize();
+#endif  // LITE_BUILD_EXTRA

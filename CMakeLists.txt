@@ -29,7 +29,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include(system)
 include(functions)
-include(cross_compiling/preproject)
+include(os/common)
 
 project(paddle CXX C)
 message(STATUS "CXX compiler: ${CMAKE_CXX_COMPILER}, version: "
@@ -194,15 +194,15 @@ if (LITE_WITH_PYTHON)
 endif()
 
 if(LITE_WITH_RKNPU)
-   include(device/rknpu)
+   include(backends/rknpu)
 endif()
 
 if(LITE_WITH_IMAGINATION_NNA)
-	include(device/imagination_nna)
+	include(backends/imagination_nna)
 endif()
 
 if(LITE_WITH_INTEL_FPGA)
-	include(device/intel_fpga)
+	include(backends/intel_fpga)
 endif()
 
 # flatbuffer module for loading model
@@ -234,11 +234,11 @@ endif()
 # for mobile
 if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     message(STATUS "Building the mobile framework")
-    include(cross_compiling/postproject)
-    include(device/npu) # check and prepare NPU DDK
-    include(device/xpu) # check and prepare XPU SDK
-    include(device/apu) # check and prepare APU SDK 
-    include(device/huawei_ascend_npu)  # check and prepare Ascend NPU SDK 
+    include(os/postproject)
+    include(backends/npu) # check and prepare NPU DDK
+    include(backends/xpu) # check and prepare XPU SDK
+    include(backends/apu) # check and prepare APU SDK 
+    include(backends/huawei_ascend_npu)  # check and prepare Ascend NPU SDK 
 
     # We compile the mobile deployment library when LITE_ON_TINY_PUBLISH=ON
     # So the following third party dependencies are not needed.
@@ -273,7 +273,7 @@ endif()
 ########################################################################################
 
 if(LITE_WITH_XPU)
-    include(device/xpu)
+    include(backends/xpu)
 endif()
 
 if(LITE_WITH_MLU)
@@ -281,7 +281,7 @@ if(LITE_WITH_MLU)
 endif()
 
 if(LITE_WITH_HUAWEI_ASCEND_NPU)
-    include(device/huawei_ascend_npu)
+    include(backends/huawei_ascend_npu)
 endif()
 
 include(coveralls)

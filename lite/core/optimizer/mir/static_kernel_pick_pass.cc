@@ -92,9 +92,9 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     } else {
       bool out_type_int8 = true;
       // Quantized lstm has fp32 output
-      if (instruct.op_type() == "lstm" || instruct.op_type() == "gru"
-              || instruct.op_type() == "__xpu__multi_encoder"
-              || instruct.op_type() == "__xpu__fc") {
+      if (instruct.op_type() == "lstm" || instruct.op_type() == "gru" ||
+          instruct.op_type() == "__xpu__multi_encoder" ||
+          instruct.op_type() == "__xpu__fc") {
         out_type_int8 = false;
       }
       // Only if all ops linked to this op output has enable_int8 attr,
@@ -107,9 +107,9 @@ void StaticKernelPickPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
           CHECK(tmp_op->IsStmt());
           auto* tmp_op_info = tmp_op->AsStmt().op_info();
           if (!tmp_op_info->HasAttr("enable_int8") ||
-              tmp_op_info->Type() == "lstm" || tmp_op_info->Type() == "gru"
-              || instruct.op_type() == "__xpu__multi_encoder"
-              || instruct.op_type() == "__xpu__fc") {
+              tmp_op_info->Type() == "lstm" || tmp_op_info->Type() == "gru" ||
+              instruct.op_type() == "__xpu__multi_encoder" ||
+              instruct.op_type() == "__xpu__fc") {
             out_type_int8 = false;
             break;
           }

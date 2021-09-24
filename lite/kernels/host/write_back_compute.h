@@ -25,6 +25,9 @@ class WriteBackCompute
     : public KernelLite<TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
   void Run() override;
+
+ private:
+  void RunImplement(const lite::Tensor* x, lite::Tensor* y);
 };
 
 }  // namespace host

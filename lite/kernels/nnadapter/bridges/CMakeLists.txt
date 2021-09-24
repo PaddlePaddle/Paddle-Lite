@@ -24,8 +24,6 @@ lite_cc_library(subgraph_bridge_assign_value_op_nnadapter SRCS assign_value_op.c
 lite_cc_library(subgraph_bridge_assign_op_nnadapter SRCS assign_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_deformable_conv_nnadapter SRCS deformable_conv_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_conv_transpose_op_nnadapter SRCS conv_transpose_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
-lite_cc_library(subgraph_bridge_hard_swish_op_nnadapter SRCS hard_swish_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
-lite_cc_library(subgraph_bridge_hard_sigmoid_op_nnadapter SRCS hard_sigmoid_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_squeeze_op_nnadapter SRCS squeeze_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_unsqueeze_op_nnadapter SRCS unsqueeze_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_pow_op_nnadapter SRCS pow_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
@@ -36,7 +34,7 @@ lite_cc_library(subgraph_bridge_reduce_mean_op_nnadapter SRCS reduce_mean_op.cc 
 lite_cc_library(subgraph_bridge_dropout_op_nnadapter SRCS dropout_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_expand_op_nnadapter SRCS expand_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_range_op_nnadapter SRCS range_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
-lite_cc_library(subgraph_bridge_pad3d_op_nnadapter SRCS pad3d_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_pad_op_nnadapter SRCS pad_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_stack_op_nnadapter SRCS stack_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 
 set(nnadapter_subgraph_bridges
@@ -60,8 +58,6 @@ set(nnadapter_subgraph_bridges
         subgraph_bridge_assign_value_op_nnadapter
         subgraph_bridge_deformable_conv_nnadapter
         subgraph_bridge_conv_transpose_op_nnadapter
-        subgraph_bridge_hard_swish_op_nnadapter
-        subgraph_bridge_hard_sigmoid_op_nnadapter
         subgraph_bridge_squeeze_op_nnadapter
         subgraph_bridge_unsqueeze_op_nnadapter
         subgraph_bridge_pow_op_nnadapter
@@ -73,7 +69,7 @@ set(nnadapter_subgraph_bridges
         subgraph_bridge_expand_op_nnadapter
         subgraph_bridge_range_op_nnadapter
         subgraph_bridge_stack_op_nnadapter
-        subgraph_bridge_pad3d_op_nnadapter
+        subgraph_bridge_pad_op_nnadapter
         CACHE INTERNAL "nnadapter_subgraph_bridges")
 
 message(STATUS "+++++ nnadapter_subgraph_bridges: ${nnadapter_subgraph_bridges}")

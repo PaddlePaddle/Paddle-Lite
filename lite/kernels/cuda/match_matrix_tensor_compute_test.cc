@@ -17,7 +17,7 @@
 #include <memory>
 #include <utility>
 #include <vector>
-#include "lite/api/test_helper.h"
+#include "lite/api/test/test_helper.h"
 
 namespace paddle {
 namespace lite {

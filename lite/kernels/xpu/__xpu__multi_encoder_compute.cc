@@ -88,6 +88,7 @@ void XPUMultiEncoderCompute::PrepareForRun() {
     fc_weight_max_.push_back(cur_weight_max_ptr);
   }
   if (param.input_max.size()) {
+    // prepare input_max
     input_max_guard_ = TargetWrapperXPU::MallocScratchPad(
         param.input_max.size() * lite::XPU_QUANT_SCALE_NUM * sizeof(float));
     float* input_max_ptr = reinterpret_cast<float*>(input_max_guard_->addr_);
@@ -101,6 +102,9 @@ void XPUMultiEncoderCompute::PrepareForRun() {
           IoDirection::HtoD);
       fc_input_max_.push_back(cur_input_max_ptr);
     }
+    CHECK_EQ(fc_input_max_.size(), fc_weight_max_.size())
+        << "input and weight max shape unequal:" << fc_input_max_.size() << ","
+        << fc_weight_max_.size();
   }
   // prepare act_type
   if (param.act_type == "gelu") {
@@ -130,7 +134,7 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
     query_lod = {param.SeqLod->data<int>(),
                  static_cast<int>(param.SeqLod->numel()),
                  nullptr};
-    int max_pad_seqlen = slice_idx == -1 ? param.SeqLod->data<int>()[0] : -1;
+    int max_pad_seqlen = slice_idx == -1 ? param.PadSeqLen->data<int>()[0] : -1;
     xdnn::QKVAttnParam qkv_attn_param(query_lod, /* lod */
                                       param.head_num,
                                       param.size_per_head,
@@ -139,9 +143,6 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
                                       true /* qkv fusion */,
                                       max_pad_seqlen);
 
-    if (std::is_same<TW, int8_t>::value) {
-      CHECK(fc_input_max_.size() > 0) << "only quanted int8 model support vsl";
-    }
     int r = xdnn::transformer_encoder<T, TW, TGEMM>(
         ctx.GetRawContext(),
         in,
@@ -155,14 +156,9 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
         qkv_attn_param);
     CHECK_EQ(r, 0);
   } else {
-    if (std::is_same<TW, int8_t>::value) {
-      CHECK(fc_input_max_.size() == 0)
-          << "only original model support int8 without vsl";
-    }
     // no vsl
     int batch = static_cast<int>(param.input->dims()[0]);
     int max_seqlen = static_cast<int>(param.input->dims()[1]);
-
     std::vector<int64_t> mask_shape = param.mask->dims().Vectorize();
     std::vector<int> encoder_mask_shape =
         std::vector<int>(mask_shape.begin(), mask_shape.end());

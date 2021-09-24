@@ -630,6 +630,9 @@ struct PoolParam : ParamBase {
     }
     return output_tensor_ptrs_cache_.get();
   }
+#ifdef LITE_WITH_XPU
+  bool pad_zero{false};
+#endif
 };
 
 // For Dropout op
@@ -1973,6 +1976,13 @@ struct XPUSoftmaxTopkParam : ParamBase {
   int K{1};
 };
 
+struct XPUMultiSoftmaxParam : ParamBase {
+  const lite::Tensor* input{};
+  lite::Tensor* concat_output{};
+  std::vector<lite::Tensor*> output;
+  std::vector<int> lod;
+};
+
 struct XPUBlockFuseParam : ParamBase {
   const lite::Tensor* input{nullptr};
   const lite::Tensor* filter{nullptr};
@@ -2517,8 +2527,12 @@ struct CosSimParam : ParamBase {
 };
 
 struct WriteBackParam : ParamBase {
+  bool tensor_array_copy{false};
   const lite::Tensor* x{};
   lite::Tensor* y{};
+
+  std::vector<lite::Tensor>* array_x{};
+  std::vector<lite::Tensor>* array_y{};
 };
 
 struct UniqueWithCountsParam : ParamBase {

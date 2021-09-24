@@ -15,12 +15,12 @@
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include <vector>
-#include "lite/api/lite_api_test_helper.h"
 #include "lite/api/paddle_api.h"
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
-#include "lite/api/test_helper.h"
+#include "lite/api/test/lite_api_test_helper.h"
+#include "lite/api/test/test_helper.h"
 #include "lite/tests/api/ILSVRC2012_utility.h"
 #include "lite/utils/log/cp_logging.h"
 
@@ -41,6 +41,7 @@ TEST(resnet50, test_resnet50_fp32_baidu_xpu) {
                            lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
                            lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
   config.set_xpu_l3_cache_method(16773120, false);
+  config.set_xpu_conv_autotune(true);
   auto predictor = lite_api::CreatePaddlePredictor(config);
 
   std::string raw_data_dir = FLAGS_data_dir + std::string("/raw_data");

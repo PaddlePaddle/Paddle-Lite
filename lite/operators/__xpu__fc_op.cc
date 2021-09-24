@@ -112,13 +112,12 @@ bool XPUFcOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   if (op_desc.HasAttr("precision")) {
     param_.precision = op_desc.GetAttr<std::string>("precision");
   }
-  if (op_desc.HasAttr("enable_int8")
-          && op_desc.GetAttr<bool>("enable_int8")) {
-      CHECK(param_.precision == "int8")
-          << "enable_int8 precison:" << param_.precision;
-      param_.quant_input_max =
-          127 * op_desc.GetAttr<std::vector<float>>("X0_scale")[0];
-      param_.quant_w_max =
+  if (op_desc.HasAttr("enable_int8") && op_desc.GetAttr<bool>("enable_int8")) {
+    CHECK(param_.precision == "int8") << "enable_int8 precison:"
+                                      << param_.precision;
+    param_.quant_input_max =
+        127 * op_desc.GetAttr<std::vector<float>>("X0_scale")[0];
+    param_.quant_w_max =
         127 * op_desc.GetAttr<std::vector<float>>("Y0_scale")[0];
   }
   return true;

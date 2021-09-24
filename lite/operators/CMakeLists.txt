@@ -212,7 +212,6 @@ add_operator(sequence_pool_grad train SRCS sequence_pool_grad_op.cc)
 # Only for XPU
 add_operator(__xpu__resnet50_op extra SRCS __xpu__resnet50_op.cc)
 add_operator(__xpu__softmax_topk_op extra SRCS __xpu__softmax_topk_op.cc)
-add_operator(__xpu__block_fuse_op extra SRCS __xpu__block_fuse_op.cc)
 add_operator(__xpu__multi_encoder_op extra SRCS __xpu__multi_encoder_op.cc)
 add_operator(__xpu__embedding_with_eltwise_add_op extra SRCS __xpu__embedding_with_eltwise_add_op.cc)
 add_operator(__xpu__fc_op extra SRCS __xpu__fc_op.cc)
@@ -225,8 +224,8 @@ add_operator(__xpu__generate_sequence_op extra SRCS __xpu__generate_sequence_op.
 add_operator(__xpu__logit_op extra SRCS __xpu__logit_op.cc)
 add_operator(__xpu__squeeze_excitation_op extra SRCS __xpu__squeeze_excitation_op.cc)
 add_operator(__xpu__bigru_op extra SRCS __xpu__bigru_op.cc)
-add_operator(__xpu__conv_pixel_shuffle_fuse_op extra SRCS __xpu__conv_pixel_shuffle_fuse_op.cc)
 add_operator(__xpu__dynamic_lstm_fuse_op extra SRCS __xpu__dynamic_lstm_fuse_op.cc)
+add_operator(__xpu__multi_softmax_op extra SRCS __xpu__multi_softmax_op.cc)
 
 # Only for FPGA
 add_operator(fpga_conv_op extra SRCS __fpga__conv_op.cc)
@@ -236,20 +235,16 @@ add_dependencies(ops utils)
 
 if (NOT LITE_WITH_X86)
     if(NOT LITE_WITH_ARM)
-        lite_cc_test(test_one_hot_op SRCS one_hot_op_test.cc DEPS ops core ${op_deps} kernels)
+        lite_cc_test(test_one_hot_op SRCS one_hot_op_test.cc)
     endif()
-    lite_cc_test(test_fc_op SRCS fc_op_test.cc
-                DEPS ops core kernels)
-    lite_cc_test(test_pool_op SRCS pool_op_test.cc
-                DEPS ops core kernels)
-    lite_cc_test(test_scale_op SRCS scale_op_test.cc DEPS ops core)
-    lite_cc_test(test_softmax_op SRCS softmax_op_test.cc DEPS ops core)
-    #lite_cc_test(test_reshape_op SRCS reshape_op_test.cc DEPS ops core)
-    lite_cc_test(test_batch_norm_op SRCS batch_norm_op_test.cc DEPS ops core)
-    lite_cc_test(test_concat_op SRCS concat_op_test.cc DEPS ops core)
-    lite_cc_test(test_calib_op SRCS calib_op_test.cc DEPS ops core kernels)
-    lite_cc_test(test_transpose_op SRCS transpose_op_test.cc DEPS ops core)
+    lite_cc_test(test_fc_op SRCS fc_op_test.cc)
+    lite_cc_test(test_pool_op SRCS pool_op_test.cc)
+    lite_cc_test(test_scale_op SRCS scale_op_test.cc)
+    lite_cc_test(test_softmax_op SRCS softmax_op_test.cc)
+    lite_cc_test(test_batch_norm_op SRCS batch_norm_op_test.cc)
+    lite_cc_test(test_concat_op SRCS concat_op_test.cc)
+    lite_cc_test(test_calib_op SRCS calib_op_test.cc)
+    lite_cc_test(test_transpose_op SRCS transpose_op_test.cc)
     lite_cc_test(test_fusion_elementwise_activation_ops
-                 SRCS fusion_elementwise_activation_ops_test.cc
-                 DEPS ops core)
+                 SRCS fusion_elementwise_activation_ops_test.cc)
 endif()
