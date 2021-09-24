@@ -44,8 +44,6 @@ class LayoutComputeBufferChwToImageDefault
     auto& param = Param<param_t>();
     if (param.process_type == 1) {
       kernel_func_name_ = "buffer_to_image2d_with_pre255";
-    } else if (x_dims.size() == 2 && x_dims[0] == 1) {
-      kernel_func_name_ = "image2d_to_buffer_nc";
     }
     if (!fp16_support_) {
       build_options_ += " -DCL_DTYPE_FLOAT_FORCE";
@@ -183,8 +181,11 @@ class LayoutComputeImageDefaultToBufferChw
 
   void PrepareForRun() override {
     auto& param = Param<param_t>();
+    auto x_dims = param.x->dims();
     if (param.process_type == 1) {
       kernel_func_name_ = "image2d_to_buffer_with_post255";
+    } else if (x_dims.size() == 2 && x_dims[0] == 1) {
+      kernel_func_name_ = "image2d_to_buffer_nc";
     }
     if (!fp16_support_) {
       build_options_ += " -DCL_DTYPE_FLOAT_FORCE";
