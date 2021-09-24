@@ -32,7 +32,7 @@ void FetchImageCompute::PrepareForRun() {
 
     init_memory();
     setup_without_mps();
-    
+
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     [backend add_fetch_kernel_ptr:this];
 }
@@ -50,7 +50,7 @@ void FetchImageCompute::ReInitWhenNeeded() {
 void FetchImageCompute::init_memory() {
     const auto& param = this->Param<param_t>();
     auto input_dims = param.input->dims();
-    
+
 #ifdef LITE_WITH_METAL_FULL
 #else
     input_buffer_ = param.input->data<MetalHalf, MetalImage>();
@@ -60,7 +60,7 @@ void FetchImageCompute::init_memory() {
     if (param.col >= fetch_list->size()) {
         fetch_list->resize(param.col + 1);
     }
-    //output cpu date
+    // output cpu date
     Tensor* output_tensor = &fetch_list->at(param.col);
     output_tensor->clear();
     auto count = param.input->dims().production();
@@ -69,9 +69,9 @@ void FetchImageCompute::init_memory() {
     output_tensor->Resize(output_dims);
     auto data = output_tensor->template mutable_data<float>(TARGET(kHost), size);
     TargetWrapperMetal::MemsetSync(data, 0, size);
-    //output gpu buffer
+    // output gpu buffer
     output_buffer_ = make_shared<MetalBuffer>(metal_context_, output_dims, size);
-    
+
     last_input_dims_ = input_dims;
 }
 
