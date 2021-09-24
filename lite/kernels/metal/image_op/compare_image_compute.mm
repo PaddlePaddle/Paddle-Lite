@@ -139,3 +139,4 @@ REGISTER_LITE_KERNEL(equal,
                 PRECISION(kBool),
                 DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
+
