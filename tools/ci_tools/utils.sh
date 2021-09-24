@@ -1,6 +1,15 @@
 #!/bin/bash
 set -ex
 
+# Color
+RED_COLOR='\E[1;31m'   # red
+GREEN_COLOR='\E[1;32m' # green
+YELOW_COLOR='\E[1;33m' # yellow
+BLUE_COLOR='\E[1;34m'  # blue
+PINK='\E[1;35m'        # pink
+OFF_COLOR='\E[0m'      # off color
+
+
 # Download models into user specifical directory
 function prepare_models {
   rm -rf $1 && mkdir $1 && cd $1
@@ -39,17 +48,18 @@ function adb_device_check() {
 
 # Pick one or more devices
 function adb_device_pick() {
+  local names=""
   local adb_device_list=$1
   local adb_device_names=(${adb_device_list//,/ })
   for adb_device_name in ${adb_device_names[@]}; do
     adb_device_check $adb_device_name
     if [[ $? -eq 0 ]]; then
-      echo $adb_device_name "is available."
+      names="$names $adb_device_name"
     else
-      echo $adb_device_name "is not available!"
       return 1
     fi
   done
+  echo $names
   return 0
 }
 
@@ -69,12 +79,24 @@ function adb_device_run() {
       fi
     fi
     adb -s $adb_device_name push "$src_path" "$dst_path"
+  elif [[ "$adb_device_cmd" == "pull" ]]; then
+    local src_path=$3
+    local dst_path=$4
+    # adb pull don't support '/*', so replace it with '/.'
+    if [[ ${#src_path} -gt 2 ]]; then
+      local src_suffix=${src_path: -2}
+      if [[ "$src_suffix" == "/*" ]]; then
+        src_path=${src_path:0:-2}/.
+      fi
+    fi
+    adb -s $adb_device_name pull "$src_path" "$dst_path"
   elif [[ "$adb_device_cmd" == "root" ]]; then
     adb -s $adb_device_name root
   elif [[ "$adb_device_cmd" == "remount" ]]; then
     adb -s $adb_device_name remount
   else
-    echo "Unknown command $adb_device_cmd!"
+    echo "1 Unknown command $adb_device_cmd"
+    exit 1
   fi
 }
 
@@ -124,21 +146,18 @@ function ssh_device_run() {
   elif [[ "$ssh_device_cmd" == "test" ]]; then
     sshpass -p $ssh_device_usr_pwd ssh -o ConnectTimeout=60 -o StrictHostKeyChecking=no -p $ssh_device_port $ssh_device_usr_id@$ssh_device_ip_addr "exit 0" &>/dev/null
   else
-    echo "Unknown command $ssh_device_cmd!"
+    echo "2 Unknown command $ssh_device_cmd!"
     exit 1
   fi
 }
 
 # Android
 function android_prepare_device() {
-  local os=$1
-  local arch=$2
-  local toolchain=$3
-  local remote_device_name=$4
-  local remote_device_work_dir=$5
-  local remote_device_check=$6
-  local remote_device_run=$7
-  local model_dir=$8
+  local remote_device_name=$1
+  local remote_device_work_dir=$2
+  local remote_device_check=$3
+  local remote_device_run=$4
+  local model_dir=$5
 
   # Check device is available
   $remote_device_check $remote_device_name
@@ -156,6 +175,8 @@ function android_prepare_device() {
     echo "$remote_device_work_dir can't be root dir!"
     exit 1
   fi
+
+  # Create work dir & push model
   $remote_device_run $remote_device_name shell "rm -rf $remote_device_work_dir"
   $remote_device_run $remote_device_name shell "mkdir -p $remote_device_work_dir"
   $remote_device_run $remote_device_name push $model_dir $remote_device_work_dir
