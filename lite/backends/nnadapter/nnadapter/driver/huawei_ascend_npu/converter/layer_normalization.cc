@@ -33,8 +33,7 @@ int ConvertLayerNormalization(Converter* converter, hal::Operation* operation) {
       input_operand->type.dimensions.data + begin_norm_axis,
       input_operand->type.dimensions.data +
           input_operand->type.dimensions.count);
-  auto scale_operator =
-      converter->ConvertOperand(scale_operand, input_dimensions);
+  auto scale_operator = converter->ConvertOperand(scale_operand);
   auto bias_operator =
       converter->ConvertOperand(bias_operand, input_dimensions);
 
