@@ -129,7 +129,19 @@ REGISTER_LITE_KERNEL(tile, kHost, kInt64, kNCHW, tile_int64, def_int64)
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .Finalize();
-
+#ifdef LITE_BUILD_EXTRA
+using tile_int64_f =
+    paddle::lite::kernels::host::TileCompute<int64_t, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(tile, kHost, kFloat, kNCHW, tile_int64_f, def_int64)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
+    .BindInput("RepeatTimes",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindInput("repeat_times_tensor",
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
+    .Finalize();
+#endif  // LITE_BUILD_EXTRA
 using tile_int8 =
     paddle::lite::kernels::host::TileCompute<int8_t, PRECISION(kInt8)>;
 REGISTER_LITE_KERNEL(tile, kHost, kInt8, kNCHW, tile_int8, def_int8)
