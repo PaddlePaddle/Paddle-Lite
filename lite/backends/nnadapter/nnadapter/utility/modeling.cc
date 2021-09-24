@@ -590,6 +590,62 @@ NNADAPTER_EXPORT hal::Operand* AddUnaryOperation(
   return output_operand;
 }
 
+NNADAPTER_EXPORT hal::Operand* AddRequantOperation(
+    hal::Model* model,
+    hal::Operation* operation,
+    hal::Operand* target_operand,
+    hal::Operand* reference_operand) {
+  // Insert a new operand before output_operand
+  auto immediate_operand = AddOperand(model);
+  // Make the quantization parameters and precision of the immediate operand the
+  // same as output's
+  memcpy(&immediate_operand->type,
+         &reference_operand->type,
+         sizeof(NNAdapterOperandType));
+  // Update to the dimensions of input operand, and update the input operand of
+  // the operation with immediate_operand
+  immediate_operand->type.dimensions = target_operand->type.dimensions;
+  // Add a zero addend operand
+  auto zero_operand = AddOperand(model);
+  memset(&zero_operand->type, 0, sizeof(NNAdapterOperandType));
+  zero_operand->type.precision = reference_operand->type.precision;
+  zero_operand->type.dimensions.count = 1;
+  zero_operand->type.dimensions.data[0] = 1;
+  zero_operand->length =
+      GetOperandPrecisionDataLength(zero_operand->type.precision);
+  zero_operand->buffer = malloc(zero_operand->length);
+  NNADAPTER_CHECK(zero_operand->buffer != nullptr)
+      << "Failed to allocate " << zero_operand->length
+      << " bytes for the buffer of an operand, out of memory!";
+  memset(zero_operand->buffer, 0, zero_operand->length);
+  zero_operand->type.lifetime = NNADAPTER_CONSTANT_COPY;
+  auto fuse_code_operand = AddInt32ConstantOperand(model, 0);
+  // Insert a dummy ADD operation before or after target_operand
+  auto dummy_add_operation = AddOperation(model);
+  dummy_add_operation->type = NNADAPTER_ADD;
+  // After target_operand
+  for (auto& operand : operation->input_operands) {
+    if (operand == target_operand) {
+      dummy_add_operation->input_operands = {
+          target_operand, zero_operand, fuse_code_operand};
+      dummy_add_operation->output_operands = {immediate_operand};
+      operand = immediate_operand;
+      break;
+    }
+  }
+  // Before target_operand
+  for (auto& operand : operation->output_operands) {
+    if (operand == target_operand) {
+      dummy_add_operation->input_operands = {
+          immediate_operand, zero_operand, fuse_code_operand};
+      dummy_add_operation->output_operands = {target_operand};
+      operand = immediate_operand;
+      break;
+    }
+  }
+  return immediate_operand;
+}
+
 NNADAPTER_EXPORT std::vector<hal::Operation*> SortOperationsInTopologicalOrder(
     hal::Model* model) {
   NNADAPTER_VLOG(5) << "model total operands: " << model->operands.size();
