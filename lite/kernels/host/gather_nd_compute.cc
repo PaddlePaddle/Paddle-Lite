@@ -78,6 +78,9 @@ void GatherNdCompute::Run() {
     case PRECISION(kUInt8):                                   \
       GatherNd<uint8_t, index_data_type>(*x, *index, out);    \
       break;                                                  \
+    case PRECISION(kInt8):                                    \
+      GatherNd<int8_t, index_data_type>(*x, *index, out);     \
+      break;                                                  \
     case PRECISION(kBool):                                    \
       GatherNd<bool, index_data_type>(*x, *index, out);       \
       break;                                                  \
