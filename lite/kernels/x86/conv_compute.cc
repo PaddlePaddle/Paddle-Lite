@@ -89,7 +89,7 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
 
   //! select conv impl
   if (dw_kernel && kps_equal && no_dilation && flag_dw &&
-      (flag_dw_5x5 || flag_p01)) {
+      (flag_dw_5x5 || paddings[0] == 1)) {
     impl_ = new DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>;
   }
 
