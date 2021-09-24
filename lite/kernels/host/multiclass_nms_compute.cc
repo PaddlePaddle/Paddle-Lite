@@ -25,7 +25,7 @@ REGISTER_LITE_KERNEL(multiclass_nms, kARM, kFP16, kNCHW, nmsfp16, def)
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(multiclass_nms, kARM, kFP16, kNCHW, nmsfp16, def)
+REGISTER_LITE_KERNEL(multiclass_nms2, kARM, kFP16, kNCHW, nmsfp16, def)
     .BindInput("BBoxes",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindInput("Scores",
@@ -35,7 +35,7 @@ REGISTER_LITE_KERNEL(multiclass_nms, kARM, kFP16, kNCHW, nmsfp16, def)
                 {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
     .Finalize();
 
-REGISTER_LITE_KERNEL(multiclass_nms, kARM, kFP16, kNCHW, nmsfp16, def)
+REGISTER_LITE_KERNEL(multiclass_nms3, kARM, kFP16, kNCHW, nmsfp16, def)
     .BindInput("BBoxes",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindInput("Scores",
