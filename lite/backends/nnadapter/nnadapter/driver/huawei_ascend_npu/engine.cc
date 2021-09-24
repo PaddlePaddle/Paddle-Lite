@@ -25,7 +25,7 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-Device::Device() { InitializeAscendDevice(); }
+Device::Device() { InitializeAscendCL(); }
 
 Device::~Device() {}
 
