@@ -37,12 +37,13 @@ int ConvertLayerNorm(Converter* converter, OpInfo* op, Scope* scope) {
     begin_norm_axis += input_type->dimensions.count;
   }
   // Bias operand
-  std::vector<int64_t> dimensions;
-  uint32_t scale_bias_nums = 1;
+  std::vector<int64_t> scale_bias_shape;
+  uint32_t scale_bias_count = 1;
   for (int i = begin_norm_axis; i < input_type->dimensions.count; i++) {
-    CHECK(input_type->dimensions.data[i] != NNADAPTER_UNKNOWN);
-    dimensions.push_back(input_type->dimensions.data[i]);
-    scale_bias_nums *= input_type->dimensions.data[i];
+    auto dim = input_type->dimensions.data[i];
+    CHECK(dim != NNADAPTER_UNKNOWN);
+    scale_bias_shape.push_back(dim);
+    scale_bias_count *= dim;
   }
   NNAdapterOperand* bias_operand = nullptr;
   if (op->HasInput("Bias")) {
@@ -50,10 +51,10 @@ int ConvertLayerNorm(Converter* converter, OpInfo* op, Scope* scope) {
     auto bias_tensor = scope->FindMutableTensor(bias_name);
     CHECK(bias_tensor->persistable());
     bias_operand =
-        converter->AddConstantOperand(*bias_tensor, DDim(dimensions));
+        converter->AddConstantOperand(*bias_tensor, DDim(scale_bias_shape));
   } else {
     bias_operand = converter->AddConstantOperand(
-        std::vector<float>(scale_bias_nums, 0), DDim(dimensions));
+        std::vector<float>(scale_bias_count, 0), DDim(scale_bias_shape));
   }
   // Scale operand
   NNAdapterOperand* scale_operand = nullptr;
@@ -62,10 +63,10 @@ int ConvertLayerNorm(Converter* converter, OpInfo* op, Scope* scope) {
     auto scale_tensor = scope->FindMutableTensor(scale_name);
     CHECK(scale_tensor->persistable());
     scale_operand =
-        converter->AddConstantOperand(*scale_tensor, DDim(dimensions));
+        converter->AddConstantOperand(*scale_tensor, DDim(scale_bias_shape));
   } else {
     scale_operand = converter->AddConstantOperand(
-        std::vector<float>(scale_bias_nums, 1), DDim(dimensions));
+        std::vector<float>(scale_bias_count, 1), DDim(scale_bias_shape));
   }
   // Epsilon operand
   auto epsilon = op->GetAttr<float>("epsilon");

@@ -29,13 +29,8 @@ int ConvertLayerNormalization(Converter* converter, hal::Operation* operation) {
   if (input_operator == nullptr) {
     input_operator = converter->ConvertOperand(input_operand);
   }
-  std::vector<int32_t> input_dimensions(
-      input_operand->type.dimensions.data + begin_norm_axis,
-      input_operand->type.dimensions.data +
-          input_operand->type.dimensions.count);
   auto scale_operator = converter->ConvertOperand(scale_operand);
-  auto bias_operator =
-      converter->ConvertOperand(bias_operand, input_dimensions);
+  auto bias_operator = converter->ConvertOperand(bias_operand);
 
   // Layer normalization
   auto layer_norm_op =
