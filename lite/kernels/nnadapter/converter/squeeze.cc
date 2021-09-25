@@ -19,7 +19,7 @@ namespace lite {
 namespace kernels {
 namespace nnadapter {
 
-int ConvertUnsqueeze(Converter* converter, OpInfo* op, Scope* scope) {
+int ConvertSqueeze(Converter* converter, OpInfo* op, Scope* scope) {
   // Input operand
   auto x_name = op->Input("X").front();
   auto x_scale_name = "X0_scale";
@@ -30,19 +30,13 @@ int ConvertUnsqueeze(Converter* converter, OpInfo* op, Scope* scope) {
   auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
   // Axes
   std::vector<int32_t> axes;
-  if (HasInput(op, scope, "AxesTensorList")) {
-    LOG(WARNING) << "Not support AxesTensorList.";
-    return UNSUPPORTED_FEATURE;
-  } else if (HasInput(op, scope, "AxesTensor")) {
-    LOG(WARNING) << "Not support AxesTensor.";
-    return UNSUPPORTED_FEATURE;
-  } else {
+  if (op->HasAttr("axes")) {
     axes = op->GetAttr<std::vector<int>>("axes");
   }
   // Output
   auto out_name = op->Output("Out").front();
-  // Add unsqueeze operation
-  converter->AddUnsqueezeOperation(input_operand, axes, out_name);
+  // Add squeeze operation
+  converter->AddSqueezeOperation(input_operand, axes, out_name);
   return NO_ERROR;
 }
 

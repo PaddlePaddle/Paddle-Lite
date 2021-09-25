@@ -22,7 +22,13 @@ namespace nnadapter {
 int ConvertDeformableConv(Converter* converter, OpInfo* op, Scope* scope) {
   // Input operand
   auto input_name = op->Input("Input").front();
-  auto input_operand = converter->GetMappedOperand(input_name);
+  auto input_scale_name = "Input0_scale";
+  std::vector<float> input_scales;
+  if (op->HasInputScale(input_scale_name, true)) {
+    input_scales = op->GetInputScale(input_scale_name, true);
+  }
+  auto input_operand =
+      converter->AddInputOperand(scope, input_name, {}, input_scales);
 
   // Offset operand
   auto offset_name = op->Input("Offset").front();
