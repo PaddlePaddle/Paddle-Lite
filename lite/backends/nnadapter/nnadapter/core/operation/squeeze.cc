@@ -73,13 +73,10 @@ int PrepareSqueeze(hal::Operation* operation) {
                          input_type.dimensions.count);
   output_type.dimensions.count =
       input_type.dimensions.count - squeezed_dimensions_count;
-  // Dynamic dimensions
-  uint32_t dynamic_cnt_squeezed_dims = 0;
   for (uint32_t i = 0; i < input_type.dimensions.dynamic_count; i++) {
-    dynamic_cnt_squeezed_dims =
-        infer_output_shape(input_type.dimensions.dynamic_data[i],
-                           output_type.dimensions.dynamic_data[i],
-                           input_type.dimensions.count);
+    infer_output_shape(input_type.dimensions.dynamic_data[i],
+                       output_type.dimensions.dynamic_data[i],
+                       input_type.dimensions.count);
   }
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
