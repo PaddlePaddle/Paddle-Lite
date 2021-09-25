@@ -150,7 +150,7 @@ TEST(LayerNorm, precision) {
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
-  abs_error = 1e-2;
+  abs_error = 2e-2;
 #else
   return;
 #endif
