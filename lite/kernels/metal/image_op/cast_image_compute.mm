@@ -67,11 +67,13 @@ void CastImageCompute::setup_without_mps() {
 
     auto valid = true;
     // BOOL = 0;INT16 = 1;INT32 = 2;INT64 = 3;FP16 = 4;FP32 = 5;FP64 = 6;
-    if (param.in_dtype == 3 || param.in_dtype == 6 || param.out_dtype == 3 || param.out_dtype == 6) {
+    if (param.in_dtype == 3 || param.in_dtype == 6 || param.out_dtype == 3 ||
+        param.out_dtype == 6) {
         valid = false;
     }
     if (!valid) {
-        LOG(FATAL) << "cast from in_type(" << param.in_dtype << ") to out_type(" << param.out_dtype << ") is not supported.";
+        LOG(FATAL) << "cast from in_type(" << param.in_dtype << ") to out_type(" << param.out_dtype
+                   << ") is not supported.";
     }
 
     CastMetalParam metal_params = {(int)param.in_dtype, (int)param.out_dtype};
