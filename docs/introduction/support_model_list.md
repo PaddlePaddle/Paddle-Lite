@@ -3,6 +3,7 @@
 目前，Paddle-Lite 已严格验证 52 个模型的精度和性能。对视觉类模型做到了充分的支持，覆盖分类、检测和定位，也包含了特色的 OCR 模型的支持。对 NLP 模型也做到了广泛支持，包含翻译、语义表达等等。
 
 除了已严格验证的模型，Paddle-Lite 对其他 CV 和 NLP 模型也可以做到大概率支持。
+
 | 类别 | 类别细分 | 模型 | 支持平台 |
 |-|-|:-|:-|
 | CV | 分类 | MobileNetV1 | ARM，X86，HuaweiKirinNPU，RockchipNPU，MediatekAPU，BaiduXPU，HuaweiAscendNPU |
@@ -59,6 +60,7 @@
 | NLP | 语义表示 | ERNIE | BaiduXPU |
 
 **注意：** 
+
 1. 模型列表中 * 代表该模型链接来自[ PaddlePaddle/models ](https://github.com/PaddlePaddle/models)，否则为推理模型的下载链接
 2. 支持平台列表中 HuaweiKirinNPU* 代表 ARM + HuaweiKirinNPU 异构计算，否则为 HuaweiKirinNPU 计算
 3. 支持平台列表中 HuaweiAscendNPU* 代表 X86 或 ARM+HuaweiAscendNPU 异构计算，否则为 HuaweiAscendNPU 计算
