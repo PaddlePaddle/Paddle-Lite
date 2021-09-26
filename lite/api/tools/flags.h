@@ -65,7 +65,7 @@ static const char result_path_msg[] = "Save benchmark info to the file.";
 static const char backend_msg[] =
     "To use a particular backend for execution. "
     "Should be one of: arm|opencl|x86|x86_opencl|"
-    "npu|xpu|";
+    "npu|xpu|nnadapter|";
 static const char cpu_precision_msg[] =
     "Register fp32 or fp16 arm-cpu kernel when optimized model. "
     "Should be one of: fp32, fp16.";
@@ -83,6 +83,10 @@ static const char opencl_tuned_file_msg[] =
     "We strongly recommend each model has a unique param name.";
 static const char opencl_tune_mode_msg[] =
     "Set opencl tune option: none, rapid, normal, exhaustive.";
+static const char nnadapter_device_names_msg[] =
+    "Set nnadapter device names. "
+    "Should be one of: huawei_kirin_npu|huawei_ascend_npu|rockchip_npu|"
+    "imagination_nna|mediatek_apu|";
 static const char nnadapter_context_properties_msg[] =
     "Set nnadapter device hardware resources, default to null";
 
@@ -126,7 +130,7 @@ DECLARE_string(opencl_cache_dir);
 DECLARE_string(opencl_kernel_cache_file);
 DECLARE_string(opencl_tuned_file);
 DECLARE_string(opencl_tune_mode);
-DECLARE_string(nnadapter_device_name);
+DECLARE_string(nnadapter_device_names);
 DECLARE_string(nnadapter_context_properties);
 
 // Profiling options
