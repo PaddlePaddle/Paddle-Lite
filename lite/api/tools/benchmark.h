@@ -171,6 +171,10 @@ void SetBackendConfig(lite_api::MobileConfig& config) {  // NOLINT
                                                  "huawei_ascend_npu",
                                                  "amlogic_npu"};
 
+  auto backends_list = lite::Split(FLAGS_backend, ",");
+  bool with_nnadapter =
+      std::find(backends_list.begin(), backends_list.end(), "nnadapter") !=
+      backends_list.end();
   if (FLAGS_backend == "opencl" || FLAGS_backend == "x86_opencl") {
     // Set opencl kernel binary.
     // Large addtitional prepare time is cost due to algorithm selecting and
@@ -216,7 +220,7 @@ void SetBackendConfig(lite_api::MobileConfig& config) {  // NOLINT
     config.set_opencl_precision(gpu_precision);
   }
 
-  if (FLAGS_backend == "nnadapter") {
+  if (with_nnadapter) {
     std::vector<std::string> nnadapter_devices;
     auto device_list = lite::Split(FLAGS_nnadapter_device_names, ",");
 
@@ -230,11 +234,15 @@ void SetBackendConfig(lite_api::MobileConfig& config) {  // NOLINT
                     nnadapter_backends.end(),
                     device) != nnadapter_backends.end()) {
         nnadapter_devices.push_back(device);
+      } else {
+        std::cerr << "Find and ignore unsupport nnadapter device: " << device
+                  << std::endl;
       }
     }
 
     if (nnadapter_devices.size() == 0) {
-      std::cout << "No avaliable device found for nnadapter" << std::endl;
+      std::cerr << "No avaliable device found for nnadapter" << std::endl;
+      return;
     } else {
       config.set_nnadapter_device_names(nnadapter_devices);
       config.set_nnadapter_context_properties(
@@ -245,7 +253,6 @@ void SetBackendConfig(lite_api::MobileConfig& config) {  // NOLINT
 
 void OutputOptModel(const std::string& save_optimized_model_path) {
   auto opt = paddle::lite_api::OptBase();
-
   if (!FLAGS_uncombined_model_dir.empty()) {
     opt.SetModelDir(FLAGS_uncombined_model_dir);
   } else {
@@ -255,9 +262,25 @@ void OutputOptModel(const std::string& save_optimized_model_path) {
   opt.SetOptimizeOut(save_optimized_model_path);
 
   if (FLAGS_backend != "") {
+    auto backends_list = lite::Split(FLAGS_backend, ",");
+    bool with_nnadapter =
+        std::find(backends_list.begin(), backends_list.end(), "nnadapter") !=
+        backends_list.end();
     if (FLAGS_cpu_precision == "fp16") opt.EnableFloat16();
-    if (FLAGS_backend == "nnadapter") {
-      opt.SetValidPlaces(FLAGS_nnadapter_device_names);
+    if (with_nnadapter) {
+      std::string valid_places;
+      for (auto& backend : backends_list) {
+        if (backend != "nnadapter") {
+          valid_places += backend;
+          valid_places += ',';
+        }
+      }
+      if (FLAGS_nnadapter_device_names != "") {
+        valid_places += FLAGS_nnadapter_device_names;
+      } else {
+        valid_places.pop_back();
+      }
+      opt.SetValidPlaces(valid_places);
     } else {
       opt.SetValidPlaces(FLAGS_backend);
     }
