@@ -115,7 +115,7 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
     query_lod = {param.SeqLod->data<int>(),
                  static_cast<int>(param.SeqLod->numel()),
                  nullptr};
-    int max_pad_seqlen = slice_idx == -1 ? param.SeqLod->data<int>()[0] : -1;
+    int max_pad_seqlen = slice_idx == -1 ? param.PadSeqLen->data<int>()[0] : -1;
     xdnn::QKVAttnParam qkv_attn_param(query_lod, /* lod */
                                       param.head_num,
                                       param.size_per_head,
