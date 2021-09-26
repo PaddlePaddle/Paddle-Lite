@@ -14,7 +14,11 @@
 
 #include "lite/kernels/host/argsort_compute.h"
 
-namespace paddle {}  // namespace paddle
+namespace paddle {
+namespace lite {
+namespace kernels {}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle
 
 using argsort_fp32_compute = paddle::lite::kernels::host::ArgsortCompute<float>;
 REGISTER_LITE_KERNEL(

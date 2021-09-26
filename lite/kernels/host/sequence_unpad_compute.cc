@@ -14,7 +14,11 @@
 
 #include "lite/kernels/host/sequence_unpad_compute.h"
 
-namespace paddle {}  // namespace paddle
+namespace paddle {
+namespace lite {
+namespace kernels {}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle
 
 using SequenceUnpadFloat32 =
     paddle::lite::kernels::host::SequenceUnpadCompute<float>;

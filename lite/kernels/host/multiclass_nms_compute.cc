@@ -14,7 +14,11 @@
 
 #include "lite/kernels/host/multiclass_nms_compute.h"
 
-namespace paddle {}  // namespace paddle
+namespace paddle {
+namespace lite {
+namespace kernels {}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle
 
 #ifdef ENABLE_ARM_FP16
 REGISTER_LITE_KERNEL(multiclass_nms, kARM, kFP16, kNCHW, nmsfp16, def)
