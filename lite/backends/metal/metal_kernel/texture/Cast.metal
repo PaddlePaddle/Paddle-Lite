@@ -44,19 +44,23 @@ kernel void cast(texture2d_array<ftype, access::read> input[[texture(0)]],
     ftype4 in = input.read(gid.xy, gid.z);
     ftype4 out = ftype4(0.0);
 
-    switch (pm.inType) {
+    switch (pm.outType) {
         case BOOL:
-            out = in;
+            out = static_cast<bool4>(in);
             break;
         case INT16:
+            out = static_cast<short4>(in);
             break;
         case INT32:
-            break;
-        case INT64:
+            out = static_cast<int4>(in);
             break;
         case FP16:
+            out = static_cast<half4>(in);
             break;
         case FP32:
+            out = static_cast<float4>(in);
+            break;
+        case INT64:
             break;
         case FP64:
             break;
