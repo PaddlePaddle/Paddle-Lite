@@ -181,8 +181,11 @@ class LayoutComputeImageDefaultToBufferChw
 
   void PrepareForRun() override {
     auto& param = Param<param_t>();
+    auto x_dims = param.x->dims();
     if (param.process_type == 1) {
       kernel_func_name_ = "image2d_to_buffer_with_post255";
+    } else if (x_dims.size() == 2 && x_dims[0] == 1) {
+      kernel_func_name_ = "image2d_to_buffer_nc";
     }
     if (!fp16_support_) {
       build_options_ += " -DCL_DTYPE_FLOAT_FORCE";
@@ -269,37 +272,62 @@ class LayoutComputeImageDefaultToBufferChw
     int arg_idx = 0;
     cl_int status = kernel.setArg(arg_idx, *x_data);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(in_width));
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(in_height));
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *y_data);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(size_ch));
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(size_block));
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(size_batch));
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(C));
-    CL_CHECK_FATAL(status);
-#ifdef LITE_WITH_LOG
-    VLOG(2) << "gws:[3D]" << ((new_dims[1] + 3) / 4) << " " << new_dims[3]
-            << " " << (new_dims[0] * new_dims[2]);
-#endif
-    auto global_work_size =
-        cl::NDRange{static_cast<cl::size_type>((new_dims[1] + 3) / 4),
-                    static_cast<cl::size_type>(new_dims[3]),
-                    static_cast<cl::size_type>(new_dims[0] * new_dims[2])};
+    if (x_dims.size() == 2 &&
+        x_dims[0] == 1) {  // layout kernel specific for nc
+      auto global_work_size =
+          cl::NDRange{static_cast<cl::size_type>(x_image_shape["width"]),
+                      static_cast<cl::size_type>(x_image_shape["height"])};
 
-    status = EnqueueNDRangeKernel(context,
-                                  kernel,
-                                  cl::NullRange,
-                                  global_work_size,
-                                  cl::NullRange,
-                                  nullptr,
-                                  event_);
-    CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, *y_data);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx,
+                             static_cast<const int>(x_image_shape["width"]));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx,
+                             static_cast<const int>(x_image_shape["height"]));
+      CL_CHECK_FATAL(status);
+
+      status = EnqueueNDRangeKernel(context,
+                                    kernel,
+                                    cl::NullRange,
+                                    global_work_size,
+                                    cl::NullRange,
+                                    nullptr,
+                                    event_);
+      CL_CHECK_FATAL(status);
+    } else {
+      status = kernel.setArg(++arg_idx, static_cast<const int>(in_width));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, static_cast<const int>(in_height));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, *y_data);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, static_cast<const int>(size_ch));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, static_cast<const int>(size_block));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, static_cast<const int>(size_batch));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, static_cast<const int>(C));
+      CL_CHECK_FATAL(status);
+#ifdef LITE_WITH_LOG
+      VLOG(2) << "gws:[3D]" << ((new_dims[1] + 3) / 4) << " " << new_dims[3]
+              << " " << (new_dims[0] * new_dims[2]);
+#endif
+      auto global_work_size =
+          cl::NDRange{static_cast<cl::size_type>((new_dims[1] + 3) / 4),
+                      static_cast<cl::size_type>(new_dims[3]),
+                      static_cast<cl::size_type>(new_dims[0] * new_dims[2])};
+
+      status = EnqueueNDRangeKernel(context,
+                                    kernel,
+                                    cl::NullRange,
+                                    global_work_size,
+                                    cl::NullRange,
+                                    nullptr,
+                                    event_);
+      CL_CHECK_FATAL(status);
+    }
   }
 
   std::string doc() const override {

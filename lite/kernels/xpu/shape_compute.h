@@ -1,4 +1,4 @@
-// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,8 +13,6 @@
 // limitations under the License.
 
 #pragma once
-
-#include <vector>
 #include "lite/core/kernel.h"
 
 namespace paddle {
@@ -22,26 +20,12 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <typename TM, typename TW, PrecisionType PType>
-class XPUConvPixelShuffleCompute : public KernelLite<TARGET(kXPU), PType> {
+class ShapeCompute
+    : public KernelLite<TARGET(kXPU), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
-  using param_t = operators::XPUConvPixelShuffleFuseParam;
-
-  void PrepareForRun() override;
-
   void Run() override;
 
- private:
-  XPUScratchPadGuard quant_filter_guard_0_;
-  XPUScratchPadGuard quant_filter_guard_1_;
-  TW* quant_filter_0_;
-  TW* quant_filter_1_;
-  XPUScratchPadGuard filter_max_guard_0_;
-  XPUScratchPadGuard filter_max_guard_1_;
-  XPUScratchPadGuard mid_max;
-  float* filter_max_0_;
-  float* filter_max_1_;
-  float* mid_max_addr;
+  virtual ~ShapeCompute() = default;
 };
 
 }  // namespace xpu

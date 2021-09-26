@@ -79,6 +79,10 @@ class ElementwiseMulImageCompute
         kernel_func_name_ = "channel_mul_d3";
       } else if (bias_dim_size == 4) {
         kernel_func_name_ = "channel_mul_d4";
+        if (x_dims.size() == 1 &&
+            (x_dims[0] == 1 || x_dims[0] == bias_dims[3])) {
+          kernel_func_name_ = "elementwise_mul_n1c1h1";
+        }
       } else {
         LOG(FATAL) << "Unsupported ElementwiseMul with x_dims:" << x_dims
                    << " y_dims:" << bias_dims;
@@ -205,33 +209,61 @@ class ElementwiseMulImageCompute
         status = kernel.setArg(3, tensor_w);
         CL_CHECK_FATAL(status);
       } else if (bias_dim_size == 4) {
-        // kernel_func_name_ = "channel_mul_d4";
-        const int tensor_w = x_dims[x_dims.size() - 1];
-        cl_int status = kernel.setArg(0, *x_img);
-        CL_CHECK_FATAL(status);
-        status = kernel.setArg(1, *y_img);
-        CL_CHECK_FATAL(status);
-        status = kernel.setArg(2, *out_img);
-        CL_CHECK_FATAL(status);
-        status = kernel.setArg(3, tensor_w);
-        CL_CHECK_FATAL(status);
+        if (x_dims.size() == 1 &&
+            (x_dims[0] == 1 || x_dims[0] == bias_dims[3])) {
+          // kernel_func_name_ = "elementwise_mul_n1c1h1";
+          const int tensor_w = x_dims[x_dims.size() - 1];
+          cl_int status = kernel.setArg(0, *x_img);
+          CL_CHECK_FATAL(status);
+          status = kernel.setArg(1, *y_img);
+          CL_CHECK_FATAL(status);
+          status = kernel.setArg(2, *out_img);
+          CL_CHECK_FATAL(status);
+          status = kernel.setArg(3, tensor_w);
+          CL_CHECK_FATAL(status);
+        } else {
+          // kernel_func_name_ = "channel_mul_d4";
+          const int tensor_w = x_dims[x_dims.size() - 1];
+          cl_int status = kernel.setArg(0, *x_img);
+          CL_CHECK_FATAL(status);
+          status = kernel.setArg(1, *y_img);
+          CL_CHECK_FATAL(status);
+          status = kernel.setArg(2, *out_img);
+          CL_CHECK_FATAL(status);
+          status = kernel.setArg(3, tensor_w);
+          CL_CHECK_FATAL(status);
+        }
       } else {
         LOG(FATAL) << "Unsupported ElementwiseMul with x_dims:" << x_dims
                    << " y_dims:" << bias_dims;
       }
     }
 
-    auto global_work_size =
-        cl::NDRange{static_cast<cl::size_type>(x_img_width),
-                    static_cast<cl::size_type>(x_img_height)};
-    auto status = EnqueueNDRangeKernel(context,
-                                       kernel,
-                                       cl::NullRange,
-                                       global_work_size,
-                                       cl::NullRange,
-                                       nullptr,
-                                       event_);
-    CL_CHECK_FATAL(status);
+    if (x_dims.size() == 1 && (x_dims[0] == 1 || x_dims[0] == bias_dims[3])) {
+      auto global_work_size =
+          cl::NDRange{static_cast<cl::size_type>(out_img_shape[0]),
+                      static_cast<cl::size_type>(out_img_shape[1])};
+      auto status = EnqueueNDRangeKernel(context,
+                                         kernel,
+                                         cl::NullRange,
+                                         global_work_size,
+                                         cl::NullRange,
+                                         nullptr,
+                                         event_);
+      CL_CHECK_FATAL(status);
+    } else {
+      auto global_work_size =
+          cl::NDRange{static_cast<cl::size_type>(x_img_width),
+                      static_cast<cl::size_type>(x_img_height)};
+      auto status = EnqueueNDRangeKernel(context,
+                                         kernel,
+                                         cl::NullRange,
+                                         global_work_size,
+                                         cl::NullRange,
+                                         nullptr,
+                                         event_);
+      CL_CHECK_FATAL(status);
+    }
 #ifdef LITE_WITH_LOG
     VLOG(4) << "global_work_size:[2D]:" << x_img_width << " " << x_img_height;
 #endif

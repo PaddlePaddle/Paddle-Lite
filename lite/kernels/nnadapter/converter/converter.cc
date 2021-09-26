@@ -238,6 +238,22 @@ NNAdapterOperand* Converter::AddConstantOperand(
 }
 
 NNAdapterOperand* Converter::AddInputOperand(
+    Scope* scope,
+    const std::string& input_name,
+    DDim dimensions,
+    const std::vector<float>& quant_scales,
+    uint32_t quant_channel_dim) {
+  NNAdapterOperand* input_operand = GetMappedOperand(input_name);
+  if (!input_operand) {
+    auto input_tensor = scope->FindTensor(input_name);
+    CHECK(input_tensor->persistable());
+    input_operand = AddConstantOperand(
+        *input_tensor, dimensions, false, quant_scales, quant_channel_dim);
+  }
+  return input_operand;
+}
+
+NNAdapterOperand* Converter::AddInputOperand(
     const std::string& name,
     const DDim& dimensions,
     const std::vector<std::vector<int64_t>>& dynamic_dimensions,
@@ -361,6 +377,43 @@ NNAdapterOperand* Converter::AddUnsqueezeOperation(
   auto output_operand = AddOutputOperand(out_name);
   AddOperation(
       NNADAPTER_UNSQUEEZE, {input_operand, axes_operand}, {output_operand});
+  return output_operand;
+}
+
+NNAdapterOperand* Converter::AddSqueezeOperation(
+    NNAdapterOperand* input_operand,
+    const std::vector<int32_t>& axes,
+    const std::string& out_name) {
+  NNAdapterOperand* axes_operand = nullptr;
+  if (!axes.empty()) {
+    axes_operand = AddConstantOperand(axes);
+  }
+  // Copy scales from input in PrepareSqueeze
+  auto output_operand = AddOutputOperand(out_name);
+  AddOperation(
+      NNADAPTER_SQUEEZE, {input_operand, axes_operand}, {output_operand});
+  return output_operand;
+}
+
+NNAdapterOperand* Converter::AddSliceOperation(
+    NNAdapterOperand* input_operand,
+    const std::vector<int32_t>& axes,
+    const std::vector<int32_t>& starts,
+    const std::vector<int32_t>& ends,
+    const std::vector<int32_t>& steps,
+    const std::string& out_name) {
+  auto axes_operand = AddConstantOperand(axes);
+  auto starts_operand = AddConstantOperand(starts);
+  auto ends_operand = AddConstantOperand(ends);
+  auto steps_operand = AddConstantOperand(steps);
+  auto output_operand = AddOutputOperand(out_name);
+  AddOperation(NNADAPTER_SLICE,
+               {input_operand,
+                axes_operand,
+                starts_operand,
+                ends_operand,
+                steps_operand},
+               {output_operand});
   return output_operand;
 }
 

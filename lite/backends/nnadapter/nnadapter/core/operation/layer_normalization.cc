@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,14 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
+#include "core/operation/layer_normalization.h"
 #include "core/hal/types.h"
+#include "utility/debug.h"
+#include "utility/logging.h"
+#include "utility/modeling.h"
+#include "utility/utility.h"
 
 namespace nnadapter {
-namespace mediatek_apu {
+namespace operation {
 
-void UpdateBiasQuantParamsAndValues(hal::Model* model);
+int PrepareLayerNormalization(hal::Operation* operation) {
+  LAYER_NORMALIZATION_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
-}  // namespace mediatek_apu
+  // Infer the shape and type of output operands
+  CopyOperandTypeExceptQuantParams(&output_operand->type, input_operand->type);
+  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
+  return NNADAPTER_NO_ERROR;
+}
+
+}  // namespace operation
 }  // namespace nnadapter

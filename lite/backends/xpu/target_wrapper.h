@@ -14,11 +14,17 @@
 
 #pragma once
 
-#include <memory>                                 // std::unique_ptr
-#include <mutex>                                  // NOLINT
-#include "lite/backends/xpu/xpu_header_sitter.h"  // xpu_free
-#include "lite/core/target_wrapper.h"             // TargetWrapper
-#include "lite/utils/log/cp_logging.h"            // CHECK_EQ
+#include <algorithm>
+#include <map>
+#include <memory>
+#include <mutex>  // NOLINT
+#include <string>
+#include <vector>
+#include "lite/backends/xpu/xpu_header_sitter.h"
+#include "lite/backends/xpu/xpu_l3_cache_block.h"
+#include "lite/backends/xpu/xpu_l3_strategy.h"
+#include "lite/core/target_wrapper.h"
+#include "lite/utils/log/cp_logging.h"
 #include "lite/utils/macros.h"
 
 #define XPU_CALL(func)                                        \
@@ -41,10 +47,8 @@ using TargetWrapperXPU = TargetWrapper<TARGET(kXPU)>;
 
 struct XPUScratchPad {
   XPUScratchPad(void* addr, size_t size) : addr_(addr), size_(size) {}
-
   // XXX(miaotianxiang): |size_| increases monotonically
   void Reserve(size_t new_size);
-
   void* addr_{nullptr};
   size_t size_{0};
 };
@@ -75,6 +79,10 @@ class TargetWrapper<TARGET(kXPU)> {
     if (tls_raw_ctx_ == nullptr) {
       tls_raw_ctx_ = xdnn::create_context();
       CHECK(tls_raw_ctx_);
+      if (l3_planner_ == nullptr) {
+        l3_planner_ = new XPUL3Planner;
+      }
+      CHECK(l3_planner_);
       if (conv_autotune) {
         tls_raw_ctx_->_xpu1_conv_selector.set_autotune_loop(true);
         tls_raw_ctx_->_xpu1_conv_selector.set_inference_mode(true);
@@ -95,11 +103,14 @@ class TargetWrapper<TARGET(kXPU)> {
     }
     return tls_raw_ctx_;
   }
-  static void MallocL3Cache();
+  static void MallocL3Cache(
+      const std::vector<std::vector<int64_t>>& query_shape);
   static void FreeL3Cache();
   static bool IsSharedL3Created() {
     return shared_l3_ptr_ == nullptr ? false : true;
   }
+  static XPUL3CacheBlock* CreateL3CacheBlock();
+
   // **DEPRECATED**, use xpu_set_device() at the very beginning of each worker
   // thread
   static void SetDev(int dev_no = 0) {
@@ -111,17 +122,29 @@ class TargetWrapper<TARGET(kXPU)> {
     XPU_CALL(xpu_set_device(dev_no));
   }
 
+  // multi encoder config
   static LITE_THREAD_LOCAL std::string multi_encoder_precision;  // NOLINT
-  static LITE_THREAD_LOCAL size_t local_l3_size;
+  static LITE_THREAD_LOCAL bool multi_encoder_adaptive_seqlen;
+  // conv autotune config
   static LITE_THREAD_LOCAL bool conv_autotune;
   static LITE_THREAD_LOCAL std::string conv_autotune_file;  // NOLINT
-  static LITE_THREAD_LOCAL bool multi_encoder_adaptive_seqlen;
-  static size_t shared_l3_size;
+  // l3 cache config
+  static LITE_THREAD_LOCAL bool need_l3_mutex;    // model level l3 size
+  static LITE_THREAD_LOCAL size_t local_l3_size;  // model level l3 size
+  static size_t shared_l3_size;                   // model level l3 size
+  static LITE_THREAD_LOCAL std::vector<XPUL3CacheBlock*>
+      l3_block_dict;  // l3 cache block used between op layers
 
  private:
+  static void ScatterL3Cache(
+      void* l3_ptr,
+      size_t l3_size,
+      const std::vector<std::vector<int64_t>>& query_shape);
   static LITE_THREAD_LOCAL xdnn::Context* tls_raw_ctx_;
+  static LITE_THREAD_LOCAL void* local_l3_ptr_;
   static void* shared_l3_ptr_;
   static std::mutex mutex_l3_;
+  static LITE_THREAD_LOCAL XPUL3Planner* l3_planner_;
 };
 
 }  // namespace lite

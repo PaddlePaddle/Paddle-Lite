@@ -141,6 +141,19 @@ __kernel void image2d_to_buffer(__read_only image2d_t input,
   }
 }
 
+__kernel void image2d_to_buffer_nc(__read_only image2d_t input,
+                                   __global CL_DTYPE* out,
+                                   __private const int image_w,
+                                   __private const int image_h) {
+  const in_c = get_global_id(0);
+  const in_n = get_global_id(1);
+
+  CL_COMPUTE_DTYPE4 in =
+      READ_IMG_TYPE(CL_COMPUTE_DTYPE_CHAR, input, SAMPLER, (int2)(in_c, in_n));
+
+  out[in_n * image_w + in_c] = in.x;
+}
+
 #if 0  // NOTE(ysh329): keep, un-used from paddle-mobile
 ////////////////////////////////////////////////////////
 // buffer -> image2d_nw
