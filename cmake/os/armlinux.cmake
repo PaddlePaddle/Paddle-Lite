@@ -17,10 +17,13 @@ if(NOT ARM_TARGET_OS STREQUAL "armlinux")
 endif()
 
 set(ARMLINUX TRUE)
+set(ARM_TARGET_ARCH_ABI_LIST "armv8" "armv7" "armv7hf")
 add_definitions(-DLITE_WITH_LINUX)
 set(CMAKE_SYSTEM_NAME Linux)
 
-check_input_var(ARMLINUX_ARCH_ABI DEFAULT ${ARM_TARGET_ARCH_ABI} LIST "armv8" "armv7" "armv7hf")
+if(NOT ARM_TARGET_ARCH_ABI IN_LIST ARM_TARGET_ARCH_ABI_LIST)
+    message(FATAL_ERROR "ARM_TARGET_ARCH_ABI should be one of ${ARM_TARGET_ARCH_ABI_LIST}")
+endif()
 
 if(ARMLINUX_ARCH_ABI STREQUAL "armv8")
     set(CMAKE_SYSTEM_PROCESSOR aarch64)

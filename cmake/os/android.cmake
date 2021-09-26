@@ -17,6 +17,8 @@ if(NOT ARM_TARGET_OS STREQUAL "android")
 endif()
 
 set(ANDROID TRUE)
+set(ANDROID_ARCH_ABI_LIST "arm64-v8a" "armeabi-v7a" "armeabi-v6" "armeabi" "mips" "mips64" "x86" "x86_64")
+set(ANDROID_STL_TYPE_LIST "c++_static" "gnustl_static" "c++_shared")
 add_definitions(-DLITE_WITH_LINUX)
 add_definitions(-DLITE_WITH_ANDROID)
 
@@ -52,9 +54,17 @@ if(ARM_TARGET_ARCH_ABI STREQUAL "armv7")
     set(ANDROID_ARCH_ABI "armeabi-v7a")
 endif()
 
-check_input_var(ANDROID_ARCH_ABI DEFAULT ${ANDROID_ARCH_ABI} LIST "arm64-v8a" "armeabi-v7a"
-    "armeabi-v6" "armeabi" "mips" "mips64" "x86" "x86_64")
-check_input_var(ANDROID_STL_TYPE DEFAULT "c++_static" LIST "c++_static" "gnustl_static" "c++_shared")
+if(NOT ANDROID_ARCH_ABI IN_LIST ANDROID_ARCH_ABI_LIST)
+    message(FATAL_ERROR "ANDROID_ARCH_ABI must be one of ${ANDROID_ARCH_ABI_LIST}")
+endif()
+
+if(NOT DEFINED ANDROID_STL_TYPE)
+    set(ANDROID_STL_TYPE "c++_static")
+else()
+    if(NOT ANDROID_STL_TYPE IN_LIST ANDROID_STL_TYPE_LIST)
+        message(FATAL_ERROR "ANDROID_STL_TYPE must be one of ${ANDROID_STL_TYPE_LIST}")
+    endif()
+endif()
 
 if(ANDROID_ARCH_ABI STREQUAL "armeabi-v7a")
     message(STATUS "armeabi-v7a use softfp by default.")
