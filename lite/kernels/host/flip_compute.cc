@@ -16,7 +16,11 @@
 #include "lite/api/paddle_place.h"
 #include "lite/core/op_registry.h"
 
-namespace paddle {}  // namespace paddle
+namespace paddle {
+namespace lite {
+namespace kernels {}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle
 
 REGISTER_LITE_KERNEL(flip,
                      kHost,
