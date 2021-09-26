@@ -420,7 +420,7 @@ void TestConvDepthwise(Place place, float abs_error = 2e-5) {
       for (auto kw : {3, 5}) {
         win = std::max(win, kw);
         for (auto ch : {2, 7, 9, 16}) {
-          std::vector<int64_t> dims{n, 32, win, win};
+          std::vector<int64_t> dims{n, ch, win, win};
           for (auto stride : {1, 2}) {
             for (auto pad : {0, 1}) {
               for (auto bias : {false, true}) {
