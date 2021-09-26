@@ -37,7 +37,6 @@ Paddle Lite已支持Amlogic NPU的预测部署。
   - warmup=1, repeats=5，统计平均时间，单位是ms
   - 线程数为1，```paddle::lite_api::PowerMode CPU_POWER_MODE```设置为``` paddle::lite_api::PowerMode::LITE_POWER_HIGH ```
   - 分类模型的输入图像维度是{1，3，224，224}
-  - 在C308X和A311D上，为获取更好的性能，可以adb shell登录到板，然后执行etc/init.d/S81ipc-refapp stop（ /etc/init.d/S81ipc-refapp是内部集成的一套检测识别算法库，开机自启动，如果有自己算法，可以关闭或者删除）。
   
 - 测试结果
 
@@ -55,13 +54,13 @@ Paddle Lite已支持Amlogic NPU的预测部署。
 
 - C308X开发板
 
-  <img src="https://paddlelite-demo.bj.bcebos.com/devices/amlogic/C308X.jpeg" alt="C380X" style="zoom: 33%;" />
+  <img src="https://paddlelite-demo.bj.bcebos.com/devices/amlogic/C308X.jpg" alt="C380X" style="zoom: 33%;" />
 
   
 
 - A311D开发板
 
-   <img src="https://paddlelite-demo.bj.bcebos.com/devices/amlogic/A311D.jpeg" alt="A311D" style="zoom: 33%;" />
+   <img src="https://paddlelite-demo.bj.bcebos.com/devices/amlogic/A311D.jpg" alt="A311D" style="zoom: 33%;" />
 
 ### 准备设备环境
 
@@ -155,9 +154,9 @@ Paddle Lite已支持Amlogic NPU的预测部署。
               - include # PaddleLite头文件
               - lib # PaddleLite库文件
                 - amlogic_npu # Amlogic NPU DDK、NNAdapter运行时库、device HAL库
-                	- libnnadapter.so # NNAdapter运行时库
-                	- libamlogic_npu.so # NNAdapter device HAL库
-                  - libamlnpu_ddk.so # 瑞芯微NPU DDK
+                  - libnnadapter.so # NNAdapter运行时库
+                  - libamlogic_npu.so # NNAdapter device HAL库
+                  - libamlnpu_ddk.so # 晶晨NPU DDK
                   - libGAL.so # 芯原DDK
                   - libVSC.so # 芯原DDK
                   - libOpenVX.so # 芯原DDK
@@ -180,9 +179,9 @@ Paddle Lite已支持Amlogic NPU的预测部署。
               - include # PaddleLite头文件
               - lib # PaddleLite库文件
                 - amlogic_npu # Amlogic NPU DDK、NNAdapter运行时库、device HAL库
-                	- libnnadapter.so # NNAdapter运行时库
-                	- libamlogic_npu.so # NNAdapter device HAL库
-                  - libamlnpu_ddk.so # 瑞芯微NPU DDK
+                  - libnnadapter.so # NNAdapter运行时库
+                  - libamlogic_npu.so # NNAdapter device HAL库
+                  - libamlnpu_ddk.so # 晶晨NPU DDK
                   - libGAL.so # 芯原DDK
                   - libVSC.so # 芯原DDK
                   - libOpenVX.so # 芯原DDK
@@ -233,11 +232,12 @@ Paddle Lite已支持Amlogic NPU的预测部署。
     (A311D)
     warmup: 1 repeat: 15, average: 81.678067 ms, max: 81.945999 ms, min: 81.591003 ms
     results: 3
-  	Top0  Egyptian cat - 0.512545
-  	Top1  tabby, tabby cat - 0.402567
-  	Top2  tiger cat - 0.067904
-  	Preprocess time: 1.352000 ms
-  	Prediction time: 81.678067 ms
+    Top0  Egyptian cat - 0.512545
+    Top1  tabby, tabby cat - 0.402567
+    Top2  tiger cat - 0.067904
+    Preprocess time: 1.352000 ms
+    Prediction time: 81.678067 ms
+    Postprocess time: 0.407000 ms
   
   For S905D3(Android版)
   $ ./run_with_ssh.sh mobilenet_v1_int8_224_per_layer android armeabi-v7a cpu
@@ -278,6 +278,7 @@ Paddle Lite已支持Amlogic NPU的预测部署。
     Top2  tiger cat - 0.064347
     Preprocess time: 1.356000 ms
     Prediction time: 5.567867 ms
+    Postprocess time: 0.411000 ms
   
   For S905D3(Android版)
   $ ./run_with_adb.sh mobilenet_v1_int8_224_per_layer android armeabi-v7a amlogic_npu
