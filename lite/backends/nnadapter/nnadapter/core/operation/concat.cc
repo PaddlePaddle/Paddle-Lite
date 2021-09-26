@@ -48,13 +48,13 @@ int PrepareConcat(hal::Operation* operation) {
     }
   };
 
-  for (size_t i = 1; i < input_count; i++) {
+  for (size_t i = 1; i < input_count - 1; i++) {
     infer_output_shape(input_operands[i]->type.dimensions.data,
                        output_operand->type.dimensions.data,
                        input_operands[i]->type.dimensions.count);
   }
   for (uint32_t i = 0; i < output_operand->type.dimensions.dynamic_count; i++) {
-    for (size_t j = 1; j < input_count; j++) {
+    for (size_t j = 1; j < input_count - 1; j++) {
       infer_output_shape(input_operands[j]->type.dimensions.dynamic_data[i],
                          output_operand->type.dimensions.dynamic_data[i],
                          input_operands[j]->type.dimensions.count);

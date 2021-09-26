@@ -41,7 +41,7 @@ int ConvertResizeLinear(Converter* converter, hal::Operation* operation) {
       shape_operator = converter->ConvertOperand(shape_operand);
     }
     SET_INPUT(resize_linear_op, size, shape_operator);
-  } else if (scales_operand != nullptr) {
+  } else {
     // shape -> cast -> slice -> mul -> cast
     output_operand->type.precision = NNADAPTER_TENSOR_INT32;
     auto shape_op = converter->AddOperator<ge::op::Shape>(output_operand);
@@ -73,8 +73,8 @@ int ConvertResizeLinear(Converter* converter, hal::Operation* operation) {
     auto slice_operator = MAP_OUTPUT(slice_op, y, output_operand);
 
     auto scales_operator = converter->GetMappedOperator(scales_operand);
-    if (input_operator == nullptr) {
-      input_operator = converter->ConvertOperand(input_operand);
+    if (scales_operator == nullptr) {
+      scales_operator = converter->ConvertOperand(scales_operand);
     }
     auto mul_op = converter->AddOperator<ge::op::Mul>(output_operand);
     SET_INPUT(mul_op, x1, slice_operator);
@@ -89,10 +89,6 @@ int ConvertResizeLinear(Converter* converter, hal::Operation* operation) {
     output_operand->type.precision = NNADAPTER_TENSOR_FLOAT32;
 
     SET_INPUT(resize_linear_op, size, shape_operator);
-  } else {
-    NNADAPTER_LOG(WARNING) << "Either shape_operand or scales_operand should "
-                              "be set.";
-    return NNADAPTER_INVALID_PARAMETER;
   }
 
   resize_linear_op->set_attr_align_corners(align_corners);
