@@ -10,9 +10,19 @@ PINK='\E[1;35m'        # pink
 OFF_COLOR='\E[0m'      # off color
 
 
-# Download models into user specifical directory
+# Download models into user specific directory
 function prepare_models {
-  rm -rf $1 && mkdir $1 && cd $1
+  local model_zoo_dir=$1
+  local force_download=$2
+
+  if [[ "$force_download" == "OFF" && -d "$model_zoo_dir" ]]; then
+    return 0
+  fi
+
+  echo "wrong"
+  exit 1
+
+  rm -rf $model_zoo_dir && mkdir $model_zoo_dir && cd $model_zoo_dir
   # download compressed model recorded in $MODELS_URL
   for url in ${MODELS_URL[@]}; do
     wget $url
@@ -30,6 +40,7 @@ function prepare_models {
       exit 1
     fi
   done
+  cd -
 }
 
 # Check one device validation
@@ -95,7 +106,7 @@ function adb_device_run() {
   elif [[ "$adb_device_cmd" == "remount" ]]; then
     adb -s $adb_device_name remount
   else
-    echo "1 Unknown command $adb_device_cmd"
+    echo "Unknown command $adb_device_cmd"
     exit 1
   fi
 }
@@ -143,15 +154,16 @@ function ssh_device_run() {
     sshpass -p $ssh_device_usr_pwd ssh -o ConnectTimeout=60 -o StrictHostKeyChecking=no -p $ssh_device_port $ssh_device_usr_id@$ssh_device_ip_addr "$3"
   elif [[ "$ssh_device_cmd" == "push" ]]; then
     sshpass -p $ssh_device_usr_pwd scp -r -o ConnectTimeout=60 -o StrictHostKeyChecking=no -P $ssh_device_port $3 $ssh_device_usr_id@$ssh_device_ip_addr:$4
+  elif [[ "$ssh_device_cmd" == "pull" ]]; then
+    sshpass -p $ssh_device_usr_pwd scp -r -o ConnectTimeout=60 -o StrictHostKeyChecking=no -P $ssh_device_port $ssh_device_usr_id@$ssh_device_ip_addr:$4 $3
   elif [[ "$ssh_device_cmd" == "test" ]]; then
     sshpass -p $ssh_device_usr_pwd ssh -o ConnectTimeout=60 -o StrictHostKeyChecking=no -p $ssh_device_port $ssh_device_usr_id@$ssh_device_ip_addr "exit 0" &>/dev/null
   else
-    echo "2 Unknown command $ssh_device_cmd!"
+    echo "Unknown command $ssh_device_cmd!"
     exit 1
   fi
 }
 
-# Android
 function android_prepare_device() {
   local remote_device_name=$1
   local remote_device_work_dir=$2
@@ -176,8 +188,10 @@ function android_prepare_device() {
     exit 1
   fi
 
-  # Create work dir & push model
+  # Create work dir & push model if necessary
   $remote_device_run $remote_device_name shell "rm -rf $remote_device_work_dir"
   $remote_device_run $remote_device_name shell "mkdir -p $remote_device_work_dir"
-  $remote_device_run $remote_device_name push $model_dir $remote_device_work_dir
+  if [[ -n "$model_dir" ]]; then
+    $remote_device_run $remote_device_name push $model_dir $remote_device_work_dir
+  fi
 }
