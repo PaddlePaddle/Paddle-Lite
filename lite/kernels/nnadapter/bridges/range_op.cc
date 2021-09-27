@@ -33,10 +33,19 @@ int RangeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   // Get input and output vars and op attributes
   auto start_name = op_info->Input("Start").front();
   auto start = scope->FindMutableTensor(start_name);
+  auto start_dims = start->dims();
+  auto start_data = start->mutable_data<float>();
+
   auto ends_name = op_info->Input("End").front();
   auto ends = scope->FindMutableTensor(ends_name);
+  auto ends_dims = ends->dims();
+  auto ends_data = ends->mutable_data<float>();
+
   auto step_name = op_info->Input("Step").front();
   auto step = scope->FindMutableTensor(step_name);
+  auto step_dims = step->dims();
+  auto step_data = step->mutable_data<float>();
+
   auto out_name = op_info->Output("Out").front();
   auto out = scope->FindMutableTensor(out_name);
   auto out_dims = out->dims();
@@ -46,21 +55,30 @@ int RangeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   if (converter->HasOperand(start_name)) {
     start_operand = converter->GetOperand(start_name);
   } else {
-    start_operand = converter->AddOperand(start, start_name);
+    start_operand =
+        converter->AddFloat32ConstantOperand(start_data, start_dims, false);
+    VLOG(3) << "[DEBUG10] " << start_data[0];
+    // start_operand = converter->AddOperand(start, start_name);
   }
   // Ends operand
   NNAdapterOperand* ends_operand = nullptr;
   if (converter->HasOperand(ends_name)) {
     ends_operand = converter->GetOperand(ends_name);
   } else {
-    ends_operand = converter->AddOperand(ends, ends_name);
+    ends_operand =
+        converter->AddFloat32ConstantOperand(ends_data, ends_dims, false);
+    VLOG(3) << "[DEBUG10] " << step_data[0];
+    // ends_operand = converter->AddOperand(ends, ends_name);
   }
   // Step operand
   NNAdapterOperand* step_operand = nullptr;
   if (converter->HasOperand(step_name)) {
     step_operand = converter->GetOperand(step_name);
   } else {
-    step_operand = converter->AddOperand(step, step_name);
+    step_operand =
+        converter->AddFloat32ConstantOperand(step_data, step_dims, false);
+    VLOG(3) << "[DEBUG10] " << ends_data[0];
+    // step_operand = converter->AddOperand(step, step_name);
   }
   // Output operand
   NNAdapterOperandPrecisionCode out_type =

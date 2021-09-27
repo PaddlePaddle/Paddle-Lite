@@ -69,7 +69,7 @@ WITH_BENCHMARK=OFF
 # option of light weight framework, default is OFF
 WITH_LIGHT_WEIGHT_FRAMEWORK=OFF
 # num of threads used during compiling..
-readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
+readonly NUM_PROC=${LITE_BUILD_THREADS:-32}
 #####################################################################################################
 
 
@@ -198,6 +198,7 @@ function init_cmake_mutable_options {
                         -DINTEL_FPGA_SDK_ROOT=${INTEL_FPGA_SDK_ROOT} \
                         -DLITE_WITH_PROFILE=${WITH_PROFILE} \
                         -DLITE_WITH_PRECISION_PROFILE=${WITH_PRECISION_PROFILE} \
+                        -DWITH_TESTING=ON \
                         -DLITE_ON_TINY_PUBLISH=$WITH_TINY_PUBLISH"
 
 }
@@ -290,13 +291,13 @@ function make_publish_so {
         build_dir=${build_dir}.huawei_ascend_npu
     fi
 
-    if [ -d $build_dir ]; then
-        rm -rf $build_dir
-    fi
-    mkdir -p $build_dir
+    # if [ -d $build_dir ]; then
+    #     rm -rf $build_dir
+    # fi
+    # mkdir -p $build_dir
     cd $build_dir
 
-    prepare_workspace $workspace $build_dir
+    # prepare_workspace $workspace $build_dir
 
     if [ "${WITH_OPENCL}" = "ON" ]; then
         prepare_opencl_source_code $workspace $build_dir

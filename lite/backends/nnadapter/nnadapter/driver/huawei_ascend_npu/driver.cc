@@ -73,7 +73,9 @@ int CreateProgram(void* context,
   if (!p) {
     return NNADAPTER_OUT_OF_MEMORY;
   }
+  NNADAPTER_LOG(INFO) << "[DEBUG]Create program for huawei_ascend_npu build.";
   int result = p->Build(model, cache);
+  NNADAPTER_LOG(INFO) << "[DEBUG]Create program for huawei_ascend_npu build.";
   if (result == NNADAPTER_NO_ERROR) {
     *program = reinterpret_cast<void*>(p);
   }

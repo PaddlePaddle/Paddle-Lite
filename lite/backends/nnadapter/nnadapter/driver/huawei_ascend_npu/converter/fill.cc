@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "core/operation/fill.h"
+
 #include "driver/huawei_ascend_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -22,6 +23,34 @@ namespace huawei_ascend_npu {
 
 int ConvertFill(Converter* converter, hal::Operation* operation) {
   FILL_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
+  // If lite time of shape_operand and value_operand are
+  // NNADAPTER_CONSTANT_COPY,
+  // change to const op.
+  // if (shape_operand->type.lifetime == NNADAPTER_CONSTANT_COPY &&
+  //     value_operand->type.lifetime == NNADAPTER_CONSTANT_COPY) {
+  //   std::vector<int32_t> dimensions = {};
+  //   for (uint32_t i = 0; i < shape_operand->type.dimensions.count; i++) {
+  //     dimensions.push_back(shape_operand->type.dimensions.data[i]);
+  //   }
+  //   auto shape = dimensions.size() > 0
+  //                    ? ge::Shape(ConvertToGEDimensions(dimensions))
+  //                    : ge::Shape();
+  //   auto tensor_desc = std::make_shared<ge::TensorDesc>(
+  //       shape,
+  //       ge::FORMAT_NCHW,
+  //       ConvertToGEPrecision(value_operand->type.precision));
+  //   auto op = converter->AddOperator<ge::op::Const>(output_operand);
+  //   auto tensor = std::make_shared<ge::Tensor>();
+  //   tensor->SetTensorDesc(*tensor_desc);
+  //   tensor->SetData(reinterpret_cast<const uint8_t*>(value_operand->buffer),
+  //                   value_operand->length);
+  //   op->set_attr_value(*tensor);
+  //   auto constant_operator =
+  //       std::make_shared<Operator>(op, tensor_desc, "", -1);
+  //   converter->UpdateOperatorMap(output_operand, constant_operator);
+  //   return NNADAPTER_NO_ERROR;
+  // }
 
   // Convert to GE operators
   auto shape_operator = converter->GetMappedOperator(shape_operand);

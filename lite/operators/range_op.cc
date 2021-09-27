@@ -31,6 +31,7 @@ bool RangeOpLite::CheckShape() const {
 
 template <typename T>
 void GetSize(T start, T end, T step, int64_t* size) {
+  LOG(INFO) << "[DEBUG] Range GetSize start";
   CHECK(!std::equal_to<T>()(step, 0))
       << "The step of range op should not be 0.";
   CHECK(((start < end) && (step > 0)) || ((start > end) && (step < 0)))
@@ -45,21 +46,28 @@ void GetSize(T start, T end, T step, int64_t* size) {
 #pragma optimize("", off)
 #endif
 bool RangeOpLite::InferShapeImpl() const {
+  LOG(INFO) << "[DEBUG] Range infershape";
   int64_t size = 0;
   switch (param_.Start->precision()) {
     case PRECISION(kFloat):
+      LOG(INFO) << "[DEBUG] Range kFloat";
+      LOG(INFO) << "[DEBUG] Range Start" << param_.Start->data<float>()[0];
+      LOG(INFO) << "[DEBUG] Range End" << param_.End->data<float>()[0];
+      LOG(INFO) << "[DEBUG] Range Step" << param_.Step->data<float>()[0];
       GetSize(param_.Start->data<float>()[0],
               param_.End->data<float>()[0],
               param_.Step->data<float>()[0],
               &size);
       break;
     case PRECISION(kInt64):
+      LOG(INFO) << "[DEBUG] Range kInt64";
       GetSize(param_.Start->data<int64_t>()[0],
               param_.End->data<int64_t>()[0],
               param_.Step->data<int64_t>()[0],
               &size);
       break;
     case PRECISION(kInt32):
+      LOG(INFO) << "[DEBUG] Range kInt32";
       GetSize(param_.Start->data<int>()[0],
               param_.End->data<int>()[0],
               param_.Step->data<int>()[0],
