@@ -111,12 +111,12 @@ bool IsLayoutCompatible(const NNAdapterOperandType* target,
 
 bool IsDimensionCompatible(const NNAdapterOperandType* target,
                            const DDim& reference) {
-  bool compatiable = target->dimension_count == reference.size();
+  bool compatiable = target->dimensions.count == reference.size();
   if (compatiable) {
-    for (size_t i = 0; i < target->dimension_count; i++) {
+    for (size_t i = 0; i < target->dimensions.count; i++) {
       // -1 mean Any for dynamic shape
-      if (target->dimensions[i] != -1 &&
-          target->dimensions[i] != reference[i]) {
+      if (target->dimensions.data[i] != -1 &&
+          target->dimensions.data[i] != reference[i]) {
         compatiable = false;
         break;
       }

@@ -221,6 +221,7 @@ TensorLite TensorLite::Slice(int64_t begin, int64_t end) const {
   CHECK_GE(begin, 0);
   CHECK_LE(end, dims_[0]);
   CHECK_LT(begin, end);
+  CHECK(dims_[0]);
   if (dims_[0] == 1) {
     return *this;
   } else {
@@ -234,6 +235,7 @@ TensorLite TensorLite::Slice(int64_t begin, int64_t end) const {
     void *dst_data = dst.mutable_data<T>();
 
     T *src_data = const_cast<T *>(data<T>());
+    CHECK_GT(SIZE_MAX / sizeof(T), dst_dims.production());
     memcpy(dst_data,
            src_data + static_cast<size_t>(begin * base) * sizeof(T),
            dst_dims.production() * sizeof(T));
@@ -247,6 +249,7 @@ void TensorLite::Slice(TensorLite &dst, int64_t begin, int64_t end) const {
   CHECK_GE(begin, 0);
   CHECK_LE(end, dims_[0]);
   CHECK_LT(begin, end);
+  CHECK(dims_[0]);
 
   dst.target_ = target_;
   auto dst_dims = dims_;
@@ -257,6 +260,7 @@ void TensorLite::Slice(TensorLite &dst, int64_t begin, int64_t end) const {
   int64_t base = numel() / dims_[0];
 
   T *src_data = const_cast<T *>(data<T>());
+  CHECK_GT(SIZE_MAX / sizeof(T), dst_dims.production());
   memcpy(dst_data,
          src_data + static_cast<size_t>(begin * dst_dims.production()),
          dst_dims.production() * sizeof(T));

@@ -39,8 +39,8 @@ class Converter {
   ImgdnnManager* GetImgdnnMgr() { return imgdnn_mgr_; }
   imgdnn_tensor GetMappedTensor(hal::Operand* operand);
   imgdnn_tensor UpdateTensorMap(hal::Operand* operand, imgdnn_tensor tensor);
-  imgdnn_tensor AddTensor(int32_t* dimensions,
-                          uint32_t dimension_count,
+  imgdnn_tensor AddTensor(int32_t* dimensions_data,
+                          uint32_t dimensions_count,
                           imgdnn_type type,
                           const float* quant_scales,
                           const int32_t* zero_point,
@@ -52,21 +52,21 @@ class Converter {
                           std::vector<int32_t> dimensions);
   // Quant8 constant operand with asymmetric per-layer quantizion
   imgdnn_tensor AddQuant8ConstantTensor(uint8_t* values,
-                                        int32_t* dimensions,
-                                        uint32_t dimension_count,
+                                        int32_t* dimensions_data,
+                                        uint32_t dimensions_count,
                                         float quant_scale,
                                         int32_t zero_point);
   // Quant8 constant operand with symmetric per-channel quantizion
   imgdnn_tensor AddQuant8ConstantTensor(int8_t* values,
-                                        int32_t* dimensions,
-                                        uint32_t dimension_count,
+                                        int32_t* dimensions_data,
+                                        uint32_t dimensions_count,
                                         float* quant_scales,
                                         uint32_t quant_scale_count,
                                         uint32_t quant_channel_dim);
   // Quant32 constant operand with symmetric per-layer quantizion
   imgdnn_tensor AddQuant32ConstantTensor(int32_t* values,
-                                         int32_t* dimensions,
-                                         uint32_t dimension_count,
+                                         int32_t* dimensions_data,
+                                         uint32_t dimensions_count,
                                          float quant_scale);
   imgdnn_tensor ConvertOperand(hal::Operand* operand,
                                std::vector<int32_t> dimensions = {});

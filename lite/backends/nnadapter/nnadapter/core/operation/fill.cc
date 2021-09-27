@@ -27,7 +27,7 @@ int PrepareFill(hal::Operation* operation) {
 
   // Infer the shape and type of output operands
   auto& shape_type = shape_operand->type;
-  auto& out_type = output_operand->type;
+  auto& output_type = output_operand->type;
   if (IsConstantOperand(shape_operand)) {
     uint32_t length = shape_operand->length;
     auto shape_precision = shape_type.precision;
@@ -35,16 +35,16 @@ int PrepareFill(hal::Operation* operation) {
       case NNADAPTER_TENSOR_INT32: {
         int32_t* shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);
         uint32_t size = length / sizeof(int32_t);
-        out_type.dimension_count = size;
-        memcpy(out_type.dimensions, shape_data, size * sizeof(int32_t));
+        output_type.dimensions.count = size;
+        memcpy(output_type.dimensions.data, shape_data, size * sizeof(int32_t));
         break;
       }
       case NNADAPTER_TENSOR_INT64: {
         int64_t* shape_data = reinterpret_cast<int64_t*>(shape_operand->buffer);
         uint32_t size = length / sizeof(int64_t);
-        out_type.dimension_count = size;
+        output_type.dimensions.count = size;
         for (uint32_t i = 0; i < size; i++) {
-          out_type.dimensions[i] = static_cast<int32_t>(shape_data[i]);
+          output_type.dimensions.data[i] = static_cast<int32_t>(shape_data[i]);
         }
         break;
       }
@@ -54,25 +54,14 @@ int PrepareFill(hal::Operation* operation) {
         break;
     }
   } else if (shape_type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {
-    auto tmp_shape =
-        reinterpret_cast<NNAdapterOperandDimensionType*>(shape_operand->buffer);
-    out_type.dimension_count = tmp_shape->count;
-    memcpy(out_type.dimensions,
-           tmp_shape->data,
-           NNADAPTER_MAX_SIZE_OF_DIMENSIONS * sizeof(int32_t));
-    out_type.dynamic_dimension_count = tmp_shape->dynamic_count;
-    memcpy(out_type.dynamic_dimensions,
-           tmp_shape->dynamic_data,
-           NNADAPTER_MAX_SIZE_OF_DYNAMIC_DIMENSIONS *
-               NNADAPTER_MAX_SIZE_OF_DIMENSIONS * sizeof(int32_t));
+    output_type.dimensions = *reinterpret_cast<NNAdapterOperandDimensionType*>(
+        shape_operand->buffer);
   } else {
     NNADAPTER_LOG(ERROR) << "Unsupported shape lifetime: "
                          << static_cast<int32_t>(shape_type.lifetime);
     return NNADAPTER_INVALID_PARAMETER;
   }
-
-  out_type.precision = value_operand->type.precision;
-
+  output_type.precision = value_operand->type.precision;
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
 }

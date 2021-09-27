@@ -124,6 +124,9 @@ execute_process(
 file(GLOB all_kernel_faked_src ${CMAKE_BINARY_DIR}/all_kernel_faked_dir/*.cc)
 lite_cc_library(kernels SRCS ${KERNELS_SRC} ${all_kernel_faked_src} DEPS ${lite_kernel_deps})
 add_dependencies(kernels utils)
+if(LITE_WITH_CUDA)
+    target_link_libraries(kernels ${cuda_kernels})
+endif()
 
 # create headfile to restore ops info sorted by suppported platforms
 execute_process(
@@ -131,7 +134,6 @@ execute_process(
     ${kernels_src_list}
     ${fake_kernels_src_list}
     ${ops_src_list}
-    ${subgraph_bridges_src_list}
     ${CMAKE_BINARY_DIR}/supported_kernel_op_info.h
     ${LITE_BUILD_EXTRA}
     RESULT_VARIABLE result)

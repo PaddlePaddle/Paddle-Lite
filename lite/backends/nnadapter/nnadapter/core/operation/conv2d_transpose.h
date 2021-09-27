@@ -27,14 +27,15 @@ namespace operation {
   /* Input */                                                                  \
   auto input_operand = input_operands[0];                                      \
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);            \
-  auto input_channel_size = input_operand->type.dimensions[1];                 \
+  auto input_channel_size = input_operand->type.dimensions.data[1];            \
   /* Filter */                                                                 \
   auto filter_operand = input_operands[1];                                     \
   NNADAPTER_VLOG(5) << "filter: " << OperandToString(filter_operand);          \
-  NNADAPTER_CHECK_EQ(input_channel_size, filter_operand->type.dimensions[0]);  \
-  auto output_channel_size = filter_operand->type.dimensions[1];               \
-  auto filter_height = filter_operand->type.dimensions[2];                     \
-  auto filter_width = filter_operand->type.dimensions[3];                      \
+  NNADAPTER_CHECK_EQ(input_channel_size,                                       \
+                     filter_operand->type.dimensions.data[0]);                 \
+  auto output_channel_size = filter_operand->type.dimensions.data[1];          \
+  auto filter_height = filter_operand->type.dimensions.data[2];                \
+  auto filter_width = filter_operand->type.dimensions.data[3];                 \
   NNADAPTER_VLOG(5) << "filter_dims: [" << input_channel_size << ", "          \
                     << output_channel_size << ", " << filter_height << ", "    \
                     << filter_width << "]";                                    \

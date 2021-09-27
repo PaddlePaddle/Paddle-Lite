@@ -107,8 +107,8 @@ std::vector<int32_t> ConvertToRknnDimensions(int32_t* input_dimensions,
 std::shared_ptr<rk::nn::Tensor> CreateRknnTensor(
     rk::nn::Graph* graph,
     const std::string& name,
-    int32_t* dimensions,
-    uint32_t dimension_count,
+    int32_t* dimensions_data,
+    uint32_t dimensions_count,
     rk::nn::PrecisionType precision,
     const float* quant_scale,
     const int32_t* zero_point,
@@ -117,7 +117,7 @@ std::shared_ptr<rk::nn::Tensor> CreateRknnTensor(
   auto attr = std::make_shared<rk::nn::TensorAttr>();
   attr->name = name;
   attr->role = buffer ? rk::nn::TensorRole::CONST : rk::nn::TensorRole::VAR;
-  attr->dims = ConvertToRknnDimensions(dimensions, dimension_count);
+  attr->dims = ConvertToRknnDimensions(dimensions_data, dimensions_count);
   attr->precision = precision;
   attr->layout = layout;
   if (quant_scale) {
@@ -157,8 +157,8 @@ std::shared_ptr<rk::nn::Tensor> CreateRknnTensor(
     void* buffer,
     std::vector<int32_t> dimensions) {
   if (dimensions.empty()) {
-    for (uint32_t i = 0; i < type->dimension_count; i++) {
-      dimensions.push_back(type->dimensions[i]);
+    for (uint32_t i = 0; i < type->dimensions.count; i++) {
+      dimensions.push_back(type->dimensions.data[i]);
     }
   }
   auto precision = ConvertToRknnPrecisionType(type->precision);

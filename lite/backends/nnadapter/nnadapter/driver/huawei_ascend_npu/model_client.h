@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <thread>  // NOLINT
 #include <vector>
 #include "acl/acl.h"
 #include "core/hal/types.h"

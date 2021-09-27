@@ -26,9 +26,20 @@ void FillConstantBatchSizeLikeCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
   int write_size = param.out->numel();
-  if (write_size == 0) return;
+  if (write_size == 0) {
+    param.out->set_target(TARGET(kXPU));
+    return;
+  }
   int r = 0;
   switch (param.dtype) {
+    case 0: {
+      auto data = param.out->mutable_data<bool>(TARGET(kXPU));
+      r = xdnn::constant<bool>(ctx.GetRawContext(),
+                               data,
+                               write_size,
+                               static_cast<bool>(param.value));
+      break;
+    }
     case 1: {
       auto data = param.out->mutable_data<int16_t>(TARGET(kXPU));
       r = xdnn::constant<int16_t>(ctx.GetRawContext(),

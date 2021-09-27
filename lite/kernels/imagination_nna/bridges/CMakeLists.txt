@@ -1,12 +1,3 @@
-add_subgraph_bridge(SRCS act_op.cc
-                    batch_norm_op.cc
-                    conv_op.cc
-                    fc_op.cc
-                    graph.cc
-                    pool_op.cc
-                    softmax_op.cc
-                    utility.cc)
-
 if(NOT LITE_WITH_IMAGINATION_NNA)
   return()
 endif()

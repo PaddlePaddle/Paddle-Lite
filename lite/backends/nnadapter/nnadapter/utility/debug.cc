@@ -219,6 +219,7 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
                       "strides",
                       "ceil_mode",
                       "return_indices",
+                      "return_indices_dtype",
                       "fuse_code"};
         output_args = {"output", "indices"};
         break;
@@ -266,6 +267,10 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
                       "fuse_code"};
         output_args = {"output"};
         break;
+      case NNADAPTER_MAT_MUL:
+        input_args = {"x", "y", "transpose_x", "transpose_y"};
+        output_args = {"output"};
+        break;
       case NNADAPTER_FULLY_CONNECTED:
         input_args = {"input", "weight", "bias", "fuse_code"};
         output_args = {"output"};
@@ -274,8 +279,10 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         input_args = {"shape", "value"};
         output_args = {"output"};
         break;
-      case NNADAPTER_HARD_SIGMOID:
-      case NNADAPTER_HARD_SWISH:
+      case NNADAPTER_FLATTEN:
+        input_args = {"input", "start_axis", "end_axis"};
+        output_args = {"output"};
+        break;
       case NNADAPTER_RELU:
       case NNADAPTER_RELU6:
       case NNADAPTER_SIGMOID:
@@ -283,7 +290,13 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
       case NNADAPTER_LOG:
       case NNADAPTER_ABS:
       case NNADAPTER_EXP:
+      case NNADAPTER_SWISH:
         input_args = {"input"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_HARD_SIGMOID:
+      case NNADAPTER_HARD_SWISH:
+        input_args = {"input", "alpha", "beta"};
         output_args = {"output"};
         break;
       case NNADAPTER_LEAKY_RELU:
@@ -331,6 +344,20 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         input_args = {"input", "axis", "exclusive", "reverse"};
         output_args = {"output"};
         break;
+      case NNADAPTER_GATHER:
+        input_args = {"input", "indices", "axis"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_TOP_K:
+        input_args = {
+            "input", "k", "axis", "largest", "sorted", "return_indices_type"};
+        output_args = {"output", "indices"};
+        break;
+      case NNADAPTER_ARG_MAX:
+      case NNADAPTER_ARG_MIN:
+        input_args = {"input", "axis", "keepdim", "dtype"};
+        output_args = {"output"};
+        break;
       case NNADAPTER_SPLIT:
         input_args = {"input", "axis", "split"};
         output_args.resize(output_count);
@@ -371,27 +398,48 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         input_args = {"input", "scale", "bias", "mean", "variance", "epsilon"};
         output_args = {"output"};
         break;
+      case NNADAPTER_INSTANCE_NORMALIZATION:
+        input_args = {"input", "scale", "bias", "episilon", "fuse_code"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_LAYER_NORMALIZATION:
+        input_args = {"input",
+                      "scale",
+                      "bias",
+                      "begin_norm_axis",
+                      "episilon",
+                      "fuse_code"};
+        output_args = {"output"};
+        break;
       case NNADAPTER_DEFORMABLE_CONV_2D:
         input_args = {"input",
                       "offset",
                       "mask",
                       "filter",
                       "bias",
-                      "padding_left",
-                      "padding_right",
-                      "padding_top",
-                      "padding_bottom",
-                      "stride_width",
-                      "stride_height",
+                      "pads",
+                      "strides",
                       "group",
-                      "deformable_groups",
-                      "fuse_code",
-                      "dilation_width",
-                      "dilation_height"};
+                      "deformable_group",
+                      "dilations",
+                      "fuse_code"};
         output_args = {"output"};
         break;
       case NNADAPTER_PAD:
         input_args = {"input", "pads", "mode", "value"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_GELU:
+        input_args = {"input", "approximate"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_EQUAL:
+      case NNADAPTER_NOT_EQUAL:
+      case NNADAPTER_GREATER:
+      case NNADAPTER_GREATER_EQUAL:
+      case NNADAPTER_LESS:
+      case NNADAPTER_LESS_EQUAL:
+        input_args = {"input0", "input1"};
         output_args = {"output"};
         break;
       default:
@@ -516,6 +564,8 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(ADAPTIVE_AVERAGE_POOL_2D);
     NNADAPTER_TYPE_TO_STRING(ADAPTIVE_MAX_POOL_2D);
     NNADAPTER_TYPE_TO_STRING(ADD);
+    NNADAPTER_TYPE_TO_STRING(ARG_MAX);
+    NNADAPTER_TYPE_TO_STRING(ARG_MIN);
     NNADAPTER_TYPE_TO_STRING(ASSIGN);
     NNADAPTER_TYPE_TO_STRING(AVERAGE_POOL_2D);
     NNADAPTER_TYPE_TO_STRING(BATCH_NORMALIZATION);
@@ -524,22 +574,37 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(CONCAT);
     NNADAPTER_TYPE_TO_STRING(CONV_2D);
     NNADAPTER_TYPE_TO_STRING(CONV_2D_TRANSPOSE);
-    NNADAPTER_TYPE_TO_STRING(DEFORMABLE_CONV_2D)
+    NNADAPTER_TYPE_TO_STRING(CUM_SUM);
+    NNADAPTER_TYPE_TO_STRING(DEFORMABLE_CONV_2D);
     NNADAPTER_TYPE_TO_STRING(DIV);
+    NNADAPTER_TYPE_TO_STRING(EQUAL);
+    NNADAPTER_TYPE_TO_STRING(EXP);
     NNADAPTER_TYPE_TO_STRING(EXPAND);
     NNADAPTER_TYPE_TO_STRING(FILL);
+    NNADAPTER_TYPE_TO_STRING(FLATTEN);
     NNADAPTER_TYPE_TO_STRING(FULLY_CONNECTED);
+    NNADAPTER_TYPE_TO_STRING(GATHER);
+    NNADAPTER_TYPE_TO_STRING(GELU);
+    NNADAPTER_TYPE_TO_STRING(GREATER);
+    NNADAPTER_TYPE_TO_STRING(GREATER_EQUAL);
     NNADAPTER_TYPE_TO_STRING(HARD_SIGMOID);
     NNADAPTER_TYPE_TO_STRING(HARD_SWISH);
+    NNADAPTER_TYPE_TO_STRING(INSTANCE_NORMALIZATION);
+    NNADAPTER_TYPE_TO_STRING(LAYER_NORMALIZATION);
     NNADAPTER_TYPE_TO_STRING(LEAKY_RELU);
-    NNADAPTER_TYPE_TO_STRING(PRELU);
+    NNADAPTER_TYPE_TO_STRING(LESS);
+    NNADAPTER_TYPE_TO_STRING(LESS_EQUAL);
     NNADAPTER_TYPE_TO_STRING(LOG);
     NNADAPTER_TYPE_TO_STRING(LP_NORMALIZATION);
+    NNADAPTER_TYPE_TO_STRING(MAT_MUL);
     NNADAPTER_TYPE_TO_STRING(MAX);
     NNADAPTER_TYPE_TO_STRING(MAX_POOL_2D);
     NNADAPTER_TYPE_TO_STRING(MIN);
     NNADAPTER_TYPE_TO_STRING(MUL);
+    NNADAPTER_TYPE_TO_STRING(NOT_EQUAL);
+    NNADAPTER_TYPE_TO_STRING(PAD);
     NNADAPTER_TYPE_TO_STRING(POW);
+    NNADAPTER_TYPE_TO_STRING(PRELU);
     NNADAPTER_TYPE_TO_STRING(RELU);
     NNADAPTER_TYPE_TO_STRING(RELU6);
     NNADAPTER_TYPE_TO_STRING(RANGE);
@@ -552,15 +617,14 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(SLICE);
     NNADAPTER_TYPE_TO_STRING(STACK);
     NNADAPTER_TYPE_TO_STRING(SOFTMAX);
-    NNADAPTER_TYPE_TO_STRING(CUM_SUM)
     NNADAPTER_TYPE_TO_STRING(SPLIT);
     NNADAPTER_TYPE_TO_STRING(SQUEEZE);
     NNADAPTER_TYPE_TO_STRING(SUB);
+    NNADAPTER_TYPE_TO_STRING(SWISH);
     NNADAPTER_TYPE_TO_STRING(TANH);
+    NNADAPTER_TYPE_TO_STRING(TOP_K);
     NNADAPTER_TYPE_TO_STRING(TRANSPOSE);
     NNADAPTER_TYPE_TO_STRING(UNSQUEEZE);
-    NNADAPTER_TYPE_TO_STRING(EXP);
-    NNADAPTER_TYPE_TO_STRING(PAD);
     default:
       name = "UNKNOWN";
       break;
@@ -582,13 +646,13 @@ NNADAPTER_EXPORT std::string FuseCodeToString(NNAdapterFuseCode type) {
   return name;
 }
 
-NNADAPTER_EXPORT std::string DimensionsToString(const int32_t* dimensions,
-                                                uint32_t dimension_count) {
+NNADAPTER_EXPORT std::string DimensionsToString(const int32_t* dimensions_data,
+                                                uint32_t dimensions_count) {
   std::string text;
-  if (dimension_count >= 1) {
-    text = string_format("%d", dimensions[0]);
-    for (uint32_t i = 1; i < dimension_count; i++) {
-      text += string_format(",%d", dimensions[i]);
+  if (dimensions_count >= 1) {
+    text = string_format("%d", dimensions_data[0]);
+    for (uint32_t i = 1; i < dimensions_count; i++) {
+      text += string_format(",%d", dimensions_data[i]);
     }
   }
   return text;
@@ -687,8 +751,8 @@ NNADAPTER_EXPORT std::string OperandValueToString(hal::Operand* operand) {
   auto is_constant_copy = type.lifetime == NNADAPTER_CONSTANT_COPY;
   auto is_constant_reference = type.lifetime == NNADAPTER_CONSTANT_REFERENCE;
   auto is_constant = is_constant_copy || is_constant_reference;
-  auto is_scalar = type.dimension_count == 0;
-  auto is_vector = type.dimension_count == 1;
+  auto is_scalar = type.dimensions.count == 0;
+  auto is_vector = type.dimensions.count == 1;
   // Only peek the value from the constant scalar operand
   if (is_constant && is_scalar) {
 #define OPERAND_SCALAR_VALUE_TO_STRING(ntype, dtype, dspecifier)               \
@@ -717,7 +781,7 @@ NNADAPTER_EXPORT std::string OperandValueToString(hal::Operand* operand) {
 #undef OPERAND_SCALAR_VALUE_TO_STRING
   } else {
     if (is_constant && is_vector) {
-      auto count = type.dimensions[0];
+      auto count = type.dimensions.data[0];
       if (count > 0 && count <= 4) {
 #define OPERAND_VECTOR_VALUE_TO_STRING(ntype, dtype, dspecifier)               \
   case NNADAPTER_##ntype:                                                      \
@@ -771,8 +835,9 @@ NNADAPTER_EXPORT std::string OperandValueToString(hal::Operand* operand) {
 #undef OPERAND_VECTOR_VALUE_TO_STRING
     }
     // Dimensions2String
-    label +=
-        ":[" + DimensionsToString(type.dimensions, type.dimension_count) + "]";
+    label += ":[" +
+             DimensionsToString(type.dimensions.data, type.dimensions.count) +
+             "]";
   }
   return string_format("%s:%s",
                        label.c_str(),
@@ -788,8 +853,8 @@ NNADAPTER_EXPORT std::string OperandTypeToString(NNAdapterOperandType* type) {
   os << " lifetime: " << OperandLifetimeCodeToString(type->lifetime)
      << std::endl;
   os << " dimensions: [";
-  for (uint32_t i = 0; i < type->dimension_count; i++) {
-    os << type->dimensions[i] << ",";
+  for (uint32_t i = 0; i < type->dimensions.count; i++) {
+    os << type->dimensions.data[i] << ",";
   }
   os << "]" << std::endl;
   switch (type->precision) {

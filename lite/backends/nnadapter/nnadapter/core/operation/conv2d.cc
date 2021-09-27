@@ -95,11 +95,11 @@ int PrepareConv2D(hal::Operation* operation) {
                                                 stride_width,
                                                 dilation_width);
   };
-  infer_output_shape(input_operand->type.dimensions,
-                     output_operand->type.dimensions);
-  for (uint32_t i = 0; i < input_operand->type.dynamic_dimension_count; i++) {
-    infer_output_shape(input_operand->type.dynamic_dimensions[i],
-                       output_operand->type.dynamic_dimensions[i]);
+  infer_output_shape(input_operand->type.dimensions.data,
+                     output_operand->type.dimensions.data);
+  for (uint32_t i = 0; i < input_operand->type.dimensions.dynamic_count; i++) {
+    infer_output_shape(input_operand->type.dimensions.dynamic_data[i],
+                       output_operand->type.dimensions.dynamic_data[i]);
   }
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;

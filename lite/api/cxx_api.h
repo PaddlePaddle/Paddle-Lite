@@ -164,7 +164,11 @@ class LITE_API Predictor {
     CheckInputValid();
 
 #ifdef LITE_WITH_XPU
-    lite::TargetWrapperXPU::MallocL3Cache();
+    std::vector<std::vector<int64_t>> query_shape;
+    for (size_t i = 0; i < input_names_.size(); i++) {
+      query_shape.push_back(std::vector<int64_t>(GetInput(i)->dims().data()));
+    }
+    lite::TargetWrapperXPU::MallocL3Cache(query_shape);
 #endif
 
     program_->Run();
@@ -245,7 +249,6 @@ class LITE_API Predictor {
   std::vector<std::string> output_names_;
   std::vector<Place> valid_places_;
   std::vector<PrecisionType> input_precisions_;
-  std::vector<std::vector<int64_t>> input_shapes_;
 };
 
 class CxxPaddleApiImpl : public lite_api::PaddlePredictor {

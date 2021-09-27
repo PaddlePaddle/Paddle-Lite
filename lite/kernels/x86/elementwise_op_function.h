@@ -42,9 +42,6 @@ namespace x86 {
  *
  * New parameter: *mid_flag* is added to solve m*n*k & m*1*k
  * broadcast cases.
- * 3. shape(X) = (2, 3, 4, 5), shape(Y) = (2, 1, 4, 5)
- *    mid_flag should not be NULL.
- *    x.shape(2, 3, 20) * y.shape(2, 1, 20).broadcast(2, 3, 20)
  */
 inline void get_mid_dims(const lite::DDim &x_dims,
                          const lite::DDim &y_dims,
@@ -58,34 +55,20 @@ inline void get_mid_dims(const lite::DDim &x_dims,
   *post = 1;
   if (mid_flag != NULL) {
     *mid_flag = 0;
-    int mid = 0;
     for (int i = 0; i < axis; ++i) {
       (*pre) *= x_dims[i];
     }
     for (size_t i = 0; i < y_dims.size(); ++i) {
       if (x_dims[i + axis] != y_dims[i]) {
-        // only support single y_dims[i] = 1 now.
-        CHECK_EQ(*mid_flag, 0) << "Broadcast support y_dims with single 1.";
-        CHECK_EQ(y_dims[i], 1) << "Broadcast dimension mismatch.";
-        // m*n*k m*1*k
-        for (size_t j = 0; j < i; ++j) {
-          (*pre) *= y_dims[j];
-        }
-        *n = (std::max)(x_dims[i + axis], y_dims[i]);
+        CHECK_EQ(y_dims[i] == 1 || x_dims[i + axis] == 1, true)
+            << "Broadcast y or x dimension is not 1.";
         *mid_flag = 1;
-        mid = i;
-        break;
+        return;
       }
       (*n) *= y_dims[i];
     }
-    if (*mid_flag) {
-      for (size_t i = mid + 1; i < x_dims.size(); ++i) {
-        (*post) *= x_dims[i];
-      }
-    } else {
-      for (size_t i = axis + y_dims.size(); i < x_dims.size(); ++i) {
-        (*post) *= x_dims[i];
-      }
+    for (int i = axis + y_dims.size(); i < x_dims.size(); ++i) {
+      (*post) *= x_dims[i];
     }
   } else {  // for fused_elementwise_activation_op. keep the old version.
     for (int i = 0; i < axis; ++i) {
@@ -109,7 +92,7 @@ inline lite::DDim trim_trailing_singular_dims(const lite::DDim &dims) {
   for (; actual_dims_size != 0; --actual_dims_size) {
     if (dims[actual_dims_size - 1] != 1) break;
   }
-
+  if (actual_dims_size == dims.size()) return dims;
   std::vector<int64_t> trim_dims;
   trim_dims.resize(actual_dims_size);
   for (size_t i = 0; i < actual_dims_size; ++i) {
@@ -243,13 +226,19 @@ class TransformFunctor {
                    const lite::Tensor *y,
                    lite::Tensor *z,
                    const lite::Context<Target> &ctx,
-                   Functor func)
+                   Functor func,
+                   const bool is_xsize_larger = true)
       : x_(x->template data<T>()),
         y_(y->template data<T>()),
         z_(z->mutable_data<OutType>()),
         nx_(x->numel()),
         ctx_(ctx),
-        func_(func) {}
+        func_(func),
+        is_xsize_larger_(is_xsize_larger) {
+    if (is_xsize_larger_ == false) {
+      nx_ = y->numel();
+    }
+  }
 
   inline void Run() const {
     lite::fluid::Transform<Target> trans;
@@ -258,32 +247,38 @@ class TransformFunctor {
 
   inline void RunRowWise(int n, int pre) const {
     lite::fluid::Transform<Target> trans;
-    trans(ctx_,
-          x_,
-          x_ + nx_,
-          RowwiseTransformIterator<T, Target>(y_, n),
-          z_,
-          func_);
+    if (is_xsize_larger_) {
+      trans(ctx_,
+            x_,
+            x_ + nx_,
+            RowwiseTransformIterator<T, Target>(y_, n),
+            z_,
+            func_);
+    } else {
+      trans(ctx_,
+            y_,
+            y_ + nx_,
+            RowwiseTransformIterator<T, Target>(x_, n),
+            z_,
+            func_);
+    }
   }
 
   inline void RunMidWise(int n, int pre, int post) const {
     lite::fluid::Transform<Target> trans;
-    trans(ctx_,
-          x_,
-          x_ + nx_,
-          MidWiseTransformIterator<T, Target>(y_, n, post),
-          z_,
-          func_);
-  }
-
-  inline void RunMidRowWise(int n, int pre, int post) const {
-    lite::fluid::Transform<Target> trans;
-    for (int i = 0; i < pre; i++) {
+    if (is_xsize_larger_) {
       trans(ctx_,
-            x_ + i * n * post,
-            x_ + (i + 1) * n * post,
-            RowwiseTransformIterator<T, Target>(y_ + i * post, post),
-            z_ + i * n * post,
+            x_,
+            x_ + nx_,
+            MidWiseTransformIterator<T, Target>(y_, n, post),
+            z_,
+            func_);
+    } else {
+      trans(ctx_,
+            y_,
+            y_ + nx_,
+            MidWiseTransformIterator<T, Target>(x_, n, post),
+            z_,
             func_);
     }
   }
@@ -295,58 +290,206 @@ class TransformFunctor {
   int64_t nx_;
   const lite::Context<Target> &ctx_;
   Functor func_;
+  bool is_xsize_larger_;
 };
+
+inline void GetBroadcastDimsArrays(const DDim &x_dims,
+                                   const DDim &y_dims,
+                                   int *x_dims_array,
+                                   int *y_dims_array,
+                                   int *out_dims_array,
+                                   const int max_dim,
+                                   const int axis) {
+  CHECK_GE(axis, 0) << "Axis should be great than or equal to 0.";
+  CHECK_LT(axis, max_dim) << "Axis should be less than max(x_dim, y_dim).";
+
+  if (x_dims.size() > y_dims.size()) {
+    std::fill(y_dims_array, y_dims_array + axis, 1);
+    if (axis + y_dims.size() < max_dim) {
+      std::fill(y_dims_array + axis + y_dims.size(), y_dims_array + max_dim, 1);
+    }
+    for (int i = 0; i < x_dims.size(); i++) x_dims_array[i] = x_dims[i];
+    for (int i = 0; i < y_dims.size(); i++)
+      *(y_dims_array + axis + i) = y_dims[i];
+  } else {
+    std::fill(x_dims_array, x_dims_array + axis, 1);
+    if (axis + x_dims.size() < max_dim) {
+      std::fill(x_dims_array + axis + x_dims.size(), x_dims_array + max_dim, 1);
+    }
+    for (int i = 0; i < x_dims.size(); i++)
+      *(x_dims_array + axis + i) = x_dims[i];
+    for (int i = 0; i < y_dims.size(); i++) *(y_dims_array + i) = y_dims[i];
+  }
+
+  for (int i = 0; i < max_dim; i++) {
+    CHECK_EQ(x_dims_array[i] == y_dims_array[i] || x_dims_array[i] <= 1 ||
+                 y_dims_array[i] <= 1,
+             true)
+        << "Broadcast dimension mismatch. Operands could not be broadcast.";
+
+    if ((x_dims_array[i] > 1 || y_dims_array[i] > 1) ||
+        (x_dims_array[i] == 1 && y_dims_array[i] == 1)) {
+      out_dims_array[i] = std::max(x_dims_array[i], y_dims_array[i]);
+    } else {
+      out_dims_array[i] = -1;
+    }
+  }
+}
+
+inline int GetElementwiseIndex(const int *x_dims_array,
+                               const int max_dim,
+                               const int *index_array) {
+  int index_ = 0;
+  for (int i = 0; i < max_dim; i++) {
+    if (x_dims_array[i] > 1) {
+      index_ = index_ * x_dims_array[i] + index_array[i];
+    }
+  }
+  return index_;
+}
+
+inline void UpdateElementwiseIndexArray(const int *out_dims_array,
+                                        const int max_dim,
+                                        int *index_array) {
+  for (int i = max_dim - 1; i >= 0; --i) {
+    ++index_array[i];
+    if (index_array[i] >= out_dims_array[i]) {
+      index_array[i] -= out_dims_array[i];
+    } else {
+      break;
+    }
+  }
+}
+
+template <typename Functor, typename T, typename OutType = T>
+void CommonForwardBroadcastCPU(const Tensor *x,
+                               const Tensor *y,
+                               Tensor *z,
+                               int *x_dims_array,
+                               int *y_dims_array,
+                               int *out_dims_array,
+                               int max_dim,
+                               Functor func,
+                               const bool is_xsize_larger = true) {
+  std::vector<int> index_array(max_dim, 0);
+  const T *x_data = x->data<T>();
+  const T *y_data = y->data<T>();
+  CHECK_EQ(x_data != nullptr, true) << "The input X should not be empty.";
+  CHECK_EQ(y_data != nullptr, true) << "The input Y should not be empty.";
+
+  OutType *out_data = z->mutable_data<OutType>();
+  const int out_size = std::accumulate(
+      out_dims_array, out_dims_array + max_dim, 1, std::multiplies<int>());
+  int x_index, y_index;
+  for (int out_index = 0; out_index < out_size; ++out_index) {
+    x_index = GetElementwiseIndex(x_dims_array, max_dim, index_array.data());
+    y_index = GetElementwiseIndex(y_dims_array, max_dim, index_array.data());
+    if (is_xsize_larger) {
+      out_data[out_index] = func(x_data[x_index], y_data[y_index]);
+    } else {
+      out_data[out_index] = func(y_data[y_index], x_data[x_index]);
+    }
+
+    UpdateElementwiseIndexArray(out_dims_array, max_dim, index_array.data());
+  }
+}
+
+template <typename Functor, typename T, typename OutType = T>
+void CommonElementwiseBroadcastForward(const Tensor *x,
+                                       const Tensor *y,
+                                       Tensor *z,
+                                       const DDim &x_dims,
+                                       const DDim &y_dims,
+                                       Functor func,
+                                       int axis,
+                                       const bool is_xsize_larger = true) {
+  int max_dim = std::max(x_dims.size(), y_dims.size());
+  axis = (axis == -1 ? std::abs(x_dims.size() - y_dims.size()) : axis);
+  CHECK_GE(axis, 0) << "Axis should be great than or equal to 0.";
+  CHECK_LT(axis, max_dim) << "Axis should be less than max(x_dim, y_dim).";
+
+  std::vector<int> x_dims_array(max_dim);
+  std::vector<int> y_dims_array(max_dim);
+  std::vector<int> out_dims_array(max_dim);
+  GetBroadcastDimsArrays(x_dims,
+                         y_dims,
+                         x_dims_array.data(),
+                         y_dims_array.data(),
+                         out_dims_array.data(),
+                         max_dim,
+                         axis);
+
+  CommonForwardBroadcastCPU<Functor, T, OutType>(x,
+                                                 y,
+                                                 z,
+                                                 x_dims_array.data(),
+                                                 y_dims_array.data(),
+                                                 out_dims_array.data(),
+                                                 max_dim,
+                                                 func,
+                                                 is_xsize_larger);
+}
 
 template <typename Functor,
           lite::TargetType Target,
           typename T,
           typename OutType = T>
-
 void ElementwiseComputeEx(const lite::Context<Target> &ctx,
                           const lite::Tensor *x,
                           const lite::Tensor *y,
                           int axis,
                           Functor func,
                           lite::Tensor *z) {
-  TransformFunctor<Functor, T, Target, OutType> functor(x, y, z, ctx, func);
   auto x_dims = x->dims();
-  auto y_dims_untrimed = y->dims();
-  if (x_dims == y_dims_untrimed) {
+  auto y_dims = y->dims();
+  bool is_xsize_larger = true;
+  int max_dim = x_dims.size();
+  if (x_dims.size() < y_dims.size()) {
+    is_xsize_larger = false;
+    max_dim = y_dims.size();
+  }
+  TransformFunctor<Functor, T, Target, OutType> functor(
+      x, y, z, ctx, func, is_xsize_larger);
+  if (x_dims == y_dims) {
     functor.Run();
     return;
   }
-  int pre, n, post, mid_flag = 0;
-  if (x_dims.size() < y_dims_untrimed.size()) {
-    TransformFunctor<Functor, T, Target, OutType> functor2(y, x, z, ctx, func);
-    axis = (axis == -1 ? y_dims_untrimed.size() - x_dims.size() : axis);
-    CHECK(axis >= 0 && axis < static_cast<int>(y_dims_untrimed.size()))
-        << "Axis should be in range [0, y_dims)";
-    auto x_dims_untrimed = trim_trailing_singular_dims(x_dims);
-    axis = (x_dims_untrimed.size() == 0) ? y_dims_untrimed.size() : axis;
-    get_mid_dims(
-        y_dims_untrimed, x_dims_untrimed, axis, &pre, &n, &post, &mid_flag);
-    if (mid_flag) {
-      functor2.RunMidRowWise(n, pre, post);
-      return;
-    }
-    if (post == 1) {
-      functor2.RunRowWise(n, pre);
-      return;
-    } else {
-      functor2.RunMidWise(n, pre, post);
-      return;
-    }
+
+  int tmp = std::abs(static_cast<int>(x_dims.size()) -
+                     static_cast<int>(y_dims.size()));
+  axis = (axis == static_cast<int>(-1) ? tmp : axis);
+
+  CHECK_GE(axis, 0) << "Axis should be great than or equal to 0.";
+  CHECK_LT(axis, max_dim) << "Axis should be less than max(x_dim, y_dim).";
+
+  int pre, n, post, is_run_common_broadcast, axis_trim = 0;
+  if (is_xsize_larger) {
+    auto y_dims_trimed = trim_trailing_singular_dims(y_dims);
+    axis_trim = (y_dims_trimed.size() == 0) ? x_dims.size() : axis;
+    get_mid_dims(x_dims,
+                 y_dims_trimed,
+                 axis_trim,
+                 &pre,
+                 &n,
+                 &post,
+                 &is_run_common_broadcast);
+  } else {
+    auto x_dims_trimed = trim_trailing_singular_dims(x_dims);
+    axis_trim = (x_dims_trimed.size() == 0) ? y_dims.size() : axis;
+    get_mid_dims(y_dims,
+                 x_dims_trimed,
+                 axis_trim,
+                 &pre,
+                 &n,
+                 &post,
+                 &is_run_common_broadcast);
   }
-
-  axis = (axis == -1 ? x_dims.size() - y_dims_untrimed.size() : axis);
-  CHECK(axis >= 0 && axis < static_cast<int>(x_dims.size()))
-      << "Axis should be in range [0, x_dims)";
-  auto y_dims = trim_trailing_singular_dims(y_dims_untrimed);
-  axis = (y_dims.size() == 0) ? x_dims.size() : axis;
-  get_mid_dims(x_dims, y_dims, axis, &pre, &n, &post, &mid_flag);
-
-  if (mid_flag) {
-    functor.RunMidRowWise(n, pre, post);
+  // special case for common implementation.
+  // case 1: x=[2,3,1,5], y=[2,1,4,1]
+  // case 2: x=[2,3,4], y=[1,1,4]
+  if (is_run_common_broadcast == 1) {
+    CommonElementwiseBroadcastForward<Functor, T, OutType>(
+        x, y, z, x_dims, y_dims, func, axis, is_xsize_larger);
     return;
   }
   if (post == 1) {

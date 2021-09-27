@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <vector>
 
 namespace nnadapter {
 namespace operation {
@@ -22,7 +23,7 @@ namespace operation {
   auto& output_operands = operation->output_operands;                          \
   auto input_count = input_operands.size();                                    \
   auto output_count = output_operands.size();                                  \
-  NNADAPTER_CHECK_EQ(input_count, 16);                                         \
+  NNADAPTER_CHECK_EQ(input_count, 11);                                         \
   NNADAPTER_CHECK_EQ(output_count, 1);                                         \
   /* Input */                                                                  \
   auto input_operand = input_operands[0];                                      \
@@ -30,18 +31,16 @@ namespace operation {
   /* Offset */                                                                 \
   auto offset_operand = input_operands[1];                                     \
   NNADAPTER_VLOG(5) << "offset: " << OperandToString(offset_operand);          \
-  auto offset_channel = offset_operand->type.dimensions[1];                    \
-  NNADAPTER_VLOG(5) << "offset_channel: " << offset_channel;                   \
   /* Mask */                                                                   \
   auto mask_operand = input_operands[2];                                       \
   NNADAPTER_VLOG(5) << "mask: " << OperandToString(mask_operand);              \
   /* Filter */                                                                 \
   auto filter_operand = input_operands[3];                                     \
   NNADAPTER_VLOG(5) << "filter: " << OperandToString(filter_operand);          \
-  auto output_channel_size = filter_operand->type.dimensions[0];               \
-  auto filter_channel_size = filter_operand->type.dimensions[1];               \
-  auto filter_height = filter_operand->type.dimensions[2];                     \
-  auto filter_width = filter_operand->type.dimensions[3];                      \
+  auto output_channel_size = filter_operand->type.dimensions.data[0];          \
+  auto filter_channel_size = filter_operand->type.dimensions.data[1];          \
+  auto filter_height = filter_operand->type.dimensions.data[2];                \
+  auto filter_width = filter_operand->type.dimensions.data[3];                 \
   NNADAPTER_VLOG(5) << "filter dims = [" << output_channel_size << ","         \
                     << filter_channel_size << "," << filter_height << ","      \
                     << filter_width << "]";                                    \
@@ -49,40 +48,37 @@ namespace operation {
   auto bias_operand = input_operands[4];                                       \
   NNADAPTER_VLOG(5) << "bias: " << OperandToString(bias_operand);              \
   /* Paddings */                                                               \
-  auto padding_width_left =                                                    \
-      *reinterpret_cast<int32_t*>(input_operands[5]->buffer);                  \
-  auto padding_width_right =                                                   \
-      *reinterpret_cast<int32_t*>(input_operands[6]->buffer);                  \
-  auto padding_height_top =                                                    \
-      *reinterpret_cast<int32_t*>(input_operands[7]->buffer);                  \
-  auto padding_height_bottom =                                                 \
-      *reinterpret_cast<int32_t*>(input_operands[8]->buffer);                  \
-  NNADAPTER_VLOG(5) << "paddings=[" << padding_width_left << ","               \
-                    << padding_width_right << "," << padding_height_top << "," \
-                    << padding_height_bottom << "]";                           \
+  auto pads_buffer = reinterpret_cast<int32_t*>(input_operands[5]->buffer);    \
+  NNADAPTER_CHECK_EQ(input_operands[5]->length / sizeof(int32_t), 4);          \
+  std::vector<int32_t> pads(pads_buffer, pads_buffer + 4);                     \
+  for (size_t i = 0; i < pads.size(); i++) {                                   \
+    NNADAPTER_VLOG(5) << "pads[" << i << "]: " << pads[i];                     \
+  }                                                                            \
   /* Strides */                                                                \
-  auto stride_width = *reinterpret_cast<int32_t*>(input_operands[9]->buffer);  \
-  auto stride_height =                                                         \
-      *reinterpret_cast<int32_t*>(input_operands[10]->buffer);                 \
-  NNADAPTER_VLOG(5) << "strides=[" << stride_width << "," << stride_height     \
-                    << "]";                                                    \
+  auto strides_buffer = reinterpret_cast<int32_t*>(input_operands[6]->buffer); \
+  NNADAPTER_CHECK_EQ(input_operands[6]->length / sizeof(int32_t), 2);          \
+  std::vector<int32_t> strides(strides_buffer, strides_buffer + 2);            \
+  for (size_t i = 0; i < strides.size(); i++) {                                \
+    NNADAPTER_VLOG(5) << "strides[" << i << "]: " << strides[i];               \
+  }                                                                            \
   /* Group */                                                                  \
-  auto group = *reinterpret_cast<int32_t*>(input_operands[11]->buffer);        \
-  NNADAPTER_VLOG(5) << "group=" << group;                                      \
+  auto group = *reinterpret_cast<int32_t*>(input_operands[7]->buffer);         \
+  NNADAPTER_VLOG(5) << "group: " << group;                                     \
   /* Deformable groups */                                                      \
-  auto deformable_groups =                                                     \
-      *reinterpret_cast<int32_t*>(input_operands[12]->buffer);                 \
-  NNADAPTER_VLOG(5) << "deformable_groups=" << deformable_groups;              \
-  /* Fuse code */                                                              \
-  auto fuse_code = *reinterpret_cast<int32_t*>(input_operands[13]->buffer);    \
-  NNADAPTER_VLOG(5) << "fuse_code=" << fuse_code;                              \
+  auto deformable_group =                                                      \
+      *reinterpret_cast<int32_t*>(input_operands[8]->buffer);                  \
+  NNADAPTER_VLOG(5) << "deformable_group: " << deformable_group;               \
   /* Dilations */                                                              \
-  auto dilation_width =                                                        \
-      *reinterpret_cast<int32_t*>(input_operands[14]->buffer);                 \
-  auto dilation_height =                                                       \
-      *reinterpret_cast<int32_t*>(input_operands[15]->buffer);                 \
-  NNADAPTER_VLOG(5) << "dilations=[" << dilation_width << ","                  \
-                    << dilation_height << "]";                                 \
+  auto dilations_buffer =                                                      \
+      reinterpret_cast<int32_t*>(input_operands[9]->buffer);                   \
+  NNADAPTER_CHECK_EQ(input_operands[9]->length / sizeof(int32_t), 2);          \
+  std::vector<int32_t> dilations(dilations_buffer, dilations_buffer + 2);      \
+  for (size_t i = 0; i < dilations.size(); i++) {                              \
+    NNADAPTER_VLOG(5) << "dilations[" << i << "]: " << strides[i];             \
+  }                                                                            \
+  /* Fuse code */                                                              \
+  auto fuse_code = *reinterpret_cast<int32_t*>(input_operands[10]->buffer);    \
+  NNADAPTER_VLOG(5) << "fuse_code: " << fuse_code;                             \
   /* Output */                                                                 \
   auto output_operand = output_operands[0];                                    \
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);

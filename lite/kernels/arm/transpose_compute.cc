@@ -123,7 +123,7 @@ void transpose_mat(const float* din,
       }
     }
     LITE_PARALLEL_END();
-    // remian
+    // remain
     for (int h = 0; h < height; h++) {
       for (int w = nw * 4; w < width; w++) {
         const float* data_in_ptr = ptr_in + h * width + w;
@@ -415,15 +415,21 @@ void transpose_mat(const lite_api::float16_t* din,
 #endif
         ptr_din_row += 4;
       }
-      lite_api::float16_t* data_out_ptr1 =
-          data_out_ptr0 + remain_ww * 4 * height + tmp_h;
       for (int w = 0; w < remain_ww_rem; w++) {
-        *data_out_ptr1 = *ptr_din_row++;
-        data_out_ptr0 += height;
+        INIT_PTR_4(lite_api::float16_t, data_out_ptr0, height)
+        INIT_PTR_A4(lite_api::float16_t)
+        *data_out_ptr++ = *din0;
+        *data_out_ptr++ = *din1;
+        *data_out_ptr++ = *din2;
+        *data_out_ptr++ = *din3;
+        *data_out_ptr++ = *din4;
+        *data_out_ptr++ = *din5;
+        *data_out_ptr++ = *din6;
+        *data_out_ptr++ = *din7;
       }
     }
-// remian
 #ifdef __aarch64__
+    // remain
     for (int h = nh * 8; h < height; h++) {
 #else
     for (int h = nh * 4; h < height; h++) {
@@ -494,7 +500,6 @@ void TransposeCompute::ReInitWhenNeeded() {
     _trans_num = input->dims().count(0, std::max(axis_diff[0], 0));
     _trans_w = input->dims().count(axis_diff[0] + 1, _num_axes);
     _trans_h = input->dims()[axis_diff[0]];
-
   } else {
     trans_mat = false;
     _new_steps = get_stride(output->dims());

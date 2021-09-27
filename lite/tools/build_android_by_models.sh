@@ -51,7 +51,7 @@ cp ./model_info/tailored_ops_list ./model_info/.tailored_ops_list
 cp ./model_info/tailored_ops_source_list ./model_info/.tailored_ops_source_list
 rm -rf $(ls ./models_opt | grep -v .nb)
 
-# step 4. compiling iOS lib
+# step 4. compiling Android ARM lib
 cd $workspace
 ./lite/tools/build_android.sh --with_strip=ON --opt_model_dir=$workspace/build.opt/lite/api/model_info --with_log=$WITH_LOG --with_cv=$WITH_CV --toolchain=$TOOL_CHAIN --with_exception=$WITH_EXCEPTION --android_stl=$ANDROID_STL
 

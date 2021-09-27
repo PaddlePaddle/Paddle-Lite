@@ -23,15 +23,15 @@ namespace huawei_ascend_npu {
 int ConvertConv2D(Converter* converter, hal::Operation* operation) {
   CONV_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
   // Dynamic shapes are still not supported
-  NNADAPTER_CHECK_EQ(input_operand->type.dynamic_dimension_count, 0);
-  operation::UpdateConv2DPadAndDilation(input_operand->type.dimensions[2],
+  NNADAPTER_CHECK_EQ(input_operand->type.dimensions.dynamic_count, 0);
+  operation::UpdateConv2DPadAndDilation(input_operand->type.dimensions.data[2],
                                         filter_height,
                                         auto_pad,
                                         &pad_height_top,
                                         &pad_height_bottom,
                                         stride_height,
                                         &dilation_height);
-  operation::UpdateConv2DPadAndDilation(input_operand->type.dimensions[3],
+  operation::UpdateConv2DPadAndDilation(input_operand->type.dimensions.data[3],
                                         filter_width,
                                         auto_pad,
                                         &pad_width_left,
@@ -47,8 +47,12 @@ int ConvertConv2D(Converter* converter, hal::Operation* operation) {
   // Check depthwise mode, and decide whether use ConvolutionDepthwise
   std::shared_ptr<Operator> filter_operator = nullptr;
   bool use_depthwise_conv = false;  // Whether use ge::op::DepthwiseConv2D ?
-  if (is_depthwise_mode && dilation_width == 1 && dilation_height == 1) {
+  // ge::op::DepthwiseConv2D only support stride_height == stride_width
+  if (is_depthwise_mode && dilation_width == 1 && dilation_height == 1 &&
+      stride_height == stride_width) {
     use_depthwise_conv = true;
+  }
+  if (use_depthwise_conv && is_depthwise_mode) {
     // [C_out, 1, filter_height, filter_width] -> [1, C_out, filter_height,
     // filter_width]
     NNADAPTER_CHECK_EQ(filter_channel_size, 1);
@@ -59,8 +63,9 @@ int ConvertConv2D(Converter* converter, hal::Operation* operation) {
   } else {
     filter_operator = converter->ConvertOperand(filter_operand);
   }
-  NNADAPTER_CHECK_EQ(bias_operand->type.dimension_count, 1);
-  NNADAPTER_CHECK_EQ(bias_operand->type.dimensions[0], output_channel_size);
+  NNADAPTER_CHECK_EQ(bias_operand->type.dimensions.count, 1);
+  NNADAPTER_CHECK_EQ(bias_operand->type.dimensions.data[0],
+                     output_channel_size);
   auto bias_operator = converter->ConvertOperand(bias_operand);
   std::shared_ptr<Operator> conv_operator = nullptr;
   if (use_depthwise_conv && is_depthwise_mode) {

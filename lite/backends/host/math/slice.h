@@ -16,6 +16,7 @@
 
 #include <cstdint>
 #include <vector>
+#include "lite/utils/log/cp_logging.h"
 
 namespace paddle {
 namespace lite {

@@ -51,7 +51,7 @@ set(cuda_kernels CACHE INTERNAL "cuda kernels")
 function(add_kernel TARGET device level)
     set(options "")
     set(oneValueArgs "")
-    set(multiValueArgs SRCS )
+    set(multiValueArgs SRCS)
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
 
@@ -75,13 +75,14 @@ function(add_kernel TARGET device level)
         get_filename_component(filename ${src} NAME_WE) # conv_compute.cc => conv_compute
         set(kernel_tailor_src_dir "${CMAKE_BINARY_DIR}/kernel_tailor_src_dir")
         set(suffix "for_strip")
-        set(dst_file ${dst_file} "${kernel_tailor_src_dir}/${filename}_${device_name}_${suffix}.cc") # conv_compute_arm.cc
+        set(src_file "${kernel_tailor_src_dir}/${filename}_${device_name}_${suffix}.cc") # conv_compute_arm.cc
         if("${device}" STREQUAL "METAL")
-          set(dst_file ${dst_file} "${kernel_tailor_src_dir}/${filename}_${device_name}_${suffix}.mm") # conv_compute_apple_metal_for_strip.mm
+          set(src_file "${kernel_tailor_src_dir}/${filename}_${device_name}_${suffix}.mm") # conv_compute_apple_metal_for_strip.mm
         endif()
-        if(NOT EXISTS ${dst_file})
+        if(NOT EXISTS ${src_file})
           return()
         endif()
+        set(dst_file ${dst_file} "${src_file}")
       endforeach()
       file(APPEND ${kernels_src_list} "${dst_file}\n")
       set(KERNELS_SRC ${KERNELS_SRC} "${dst_file}" CACHE INTERNAL "kernels source")
@@ -100,7 +101,7 @@ function(add_kernel TARGET device level)
         foreach(src ${args_SRCS})
           file(APPEND ${kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
         endforeach()
-        nv_library(${TARGET} SRCS ${args_SRCS} DEPS ${args_DEPS})
+        nv_library(${TARGET} SRCS ${args_SRCS})
         return()
     endif()
 
@@ -194,6 +195,24 @@ function(lite_cc_test TARGET)
   # collect targets need to compile for lite
   if (NOT args_EXCLUDE_COMPILE_DEPS)
       add_dependencies(lite_compile_deps ${TARGET})
+  endif()
+
+  # link to dynamic runtime lib
+  if(LITE_WITH_RKNPU)
+      target_link_libraries(${TARGET} ${rknpu_runtime_libs})
+  endif()
+  if(LITE_WITH_IMAGINATION_NNA)
+      target_link_libraries(${TARGET} ${imagination_nna_builder_libs} ${imagination_nna_runtime_libs})
+  endif()
+  if(LITE_WITH_HUAWEI_ASCEND_NPU)
+      target_link_libraries(${TARGET} ${huawei_ascend_npu_runtime_libs} ${huawei_ascend_npu_builder_libs})
+  endif()
+  if(LITE_WITH_NPU)
+      target_link_libraries(${TARGET} ${npu_builder_libs} ${npu_runtime_libs})
+  endif()
+  if(LITE_WITH_CUDA)
+      get_property(cuda_deps GLOBAL PROPERTY CUDA_MODULES)
+      target_link_libraries(${TARGET} ${cuda_deps})
   endif()
 
   common_link(${TARGET})
