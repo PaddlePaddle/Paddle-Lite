@@ -65,9 +65,13 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
       lite::x86::math::conv_depthwise_3x3s2_p1_direct(CONV_DW_PARAM);
     }
   } else if (kh == 5) {
-    lite::x86::math::conv_depthwise_5x5s1s2(CONV_DW_PARAM, stride);
+    if (stride == 1) {
+      lite::x86::math::conv_depthwise_5x5s1(CONV_DW_PARAM);
+    } else if (stride == 2) {
+      lite::x86::math::conv_depthwise_5x5s2(CONV_DW_PARAM);
+    }
   } else {
-    LOG(FATAL) << "weights scale size must equal to filter size";
+    LOG(FATAL) << "kw and kh only support 3 or 5";
   }
   KERNEL_FUNC_NAME("conv_depthwise_direct")
 }

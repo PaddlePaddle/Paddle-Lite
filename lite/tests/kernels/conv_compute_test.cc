@@ -44,6 +44,7 @@ class ConvComputeTester : public arena::TestCase {
   float leaky_relu_alpha_ = 0.1;
   bool with_depthwise_ = false;
   bool with_fuse_relu_ = false;
+  float with_fuse_relu6_ = 6.f;
 
  public:
   ConvComputeTester(const Place& place,
@@ -179,6 +180,8 @@ class ConvComputeTester : public arena::TestCase {
               if (with_act_) {
                 if (act_type_ == "relu") {
                   out_value = out_value > 0 ? out_value : 0;
+                } else if (act_type_ == "relu6") {
+                  out_value = std::min(std::max(0.f, out_value), 6.f);
                 } else if (act_type_ == "leaky_relu") {
                   out_value =
                       std::max(out_value, out_value * leaky_relu_alpha_);
@@ -213,6 +216,9 @@ class ConvComputeTester : public arena::TestCase {
     if (with_act_) {
       op_desc->SetAttr("with_act", with_act_);
       op_desc->SetAttr("act_type", act_type_);
+      if (act_type_ == "relu6") {
+        op_desc->SetAttr("fuse_brelu_threshold", with_fuse_relu6_);
+      }
       if (act_type_ == "leaky_relu") {
         op_desc->SetAttr("leaky_relu_alpha", leaky_relu_alpha_);
       }
@@ -424,7 +430,7 @@ void TestConvDepthwise(Place place, float abs_error = 2e-5) {
           for (auto stride : {1, 2}) {
             for (auto pad : {0, 1}) {
               for (auto bias : {false, true}) {
-                for (auto act : {"relu", "leaky_relu"}) {
+                for (auto act : {"relu", "relu6", "leaky_relu"}) {
                   std::unique_ptr<arena::TestCase> tester(
                       new ConvComputeTester(place,
                                             "def",
@@ -479,6 +485,7 @@ TEST(Conv2d, precision) {
 #elif defined(LITE_WITH_X86)
   place = TARGET(kX86);
   TestConvKsize(place, abs_error);
+  TestConvDepthwise(place, abs_error);
   return;
 #else
   return;
