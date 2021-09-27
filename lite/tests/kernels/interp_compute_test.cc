@@ -453,14 +453,17 @@ void TestInterpAlignMode(Place place, float abs_error = 2e-5) {
             !align_corners) {
           continue;
         }
+#if defined(LITE_WITH_NNADAPTER) && defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+        if (align_mode == 0 && align_corners) continue;
+#endif
         std::unique_ptr<arena::TestCase> tester(
             new NearestInterpComputeTester(place,
                                            "def",
                                            DDim(x_dims),
                                            "bilinear",
-                                           0.7,
-                                           -1,
-                                           -1,
+                                           -1.,
+                                           5,
+                                           6,
                                            align_corners,
                                            align_mode));
         arena::Arena arena(std::move(tester), place, abs_error);
@@ -502,7 +505,21 @@ void TestInterpOuthw_fp16(Place place, float abs_error = 2e-5) {
 TEST(Interp, precision) {
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 5e-2;
+  TestInterpOuthw(place, abs_error);
+  TestInterpScale(place, abs_error);
+  TestInterpInputScale(place, abs_error);
+  TestInterpOutsize(place, abs_error);
+  TestInterpAlignCorners(place, abs_error);
+  TestInterpAlignMode(place, abs_error);
+  return;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // use fp16 in npu
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
@@ -529,18 +546,6 @@ TEST(Interp, precision) {
   TestInterpAlignCorners(place, abs_error);
   TestInterpAlignMode(place, abs_error);
 }
-
-#if defined(LITE_WITH_NNADAPTER) && defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
-TEST(Interp_nnadapter_huawei_ascend_npu, precision) {
-  Place place = TARGET(kNNAdapter);
-  float abs_error = 1e-2;
-
-  TestInterpOuthw(place, abs_error);
-  TestInterpSizetensor(place, abs_error);
-  TestInterpOutsize(place, abs_error);
-  TestInterpAlignCorners(place, abs_error);
-}
-#endif
 
 }  // namespace lite
 }  // namespace paddle
