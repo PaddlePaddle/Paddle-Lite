@@ -966,7 +966,7 @@ void conv_depthwise_3x3s1_p1_direct(
                   _mm256_mul_ps(r3, vscale));
             }
           } else {
-            LOG(FATAL) << "[X86] activation type not supported";
+            LOG(FATAL) << "[X86] activation type: " << static_cast<int>(act_type) << "not supported";
           }
 
           _mm256_maskstore_ps(doutr0, smask_, r0);
