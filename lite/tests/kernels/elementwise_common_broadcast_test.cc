@@ -506,4 +506,4 @@ TEST(elementwise_broadcast, compute_i64) {
   }
 }
 
-#endif  // LITE_WITH_ARM
+#endif  // LITE_WITH_X86

@@ -575,8 +575,8 @@ class PrecisionProfiler {
         std::string out_arg_name;
         op->op_info()->GetOutputArgname(out_name, &out_arg_name);
         auto type = kernel->GetOutputDeclType(out_arg_name);
-
-        if (type->IsTensor()) {
+        auto tmp = op_scope->FindVar(out_name);
+        if (tmp->IsType<Tensor>()) {
           const Tensor* tout =
               op_scope->FindVar(out_name)->GetMutable<Tensor>();
           double mean = -999999;
@@ -613,7 +613,7 @@ class PrecisionProfiler {
              << " " << setw(15) << left << mean_str << " " << setw(15) << left
              << std_dev_str << " " << setw(15) << left << ave_grow_rate_str
              << std::endl;
-        } else if (type->IsTensorList()) {
+        } else if (tmp->IsType<std::vector<Tensor>>()) {
           auto touts =
               op_scope->FindVar(out_name)->GetMutable<std::vector<Tensor>>();
           for (auto t : *touts) {
