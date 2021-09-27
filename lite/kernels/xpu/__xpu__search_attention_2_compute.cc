@@ -49,28 +49,32 @@ void XPUMmdnnSearchAttention2Compute::Run() {
   float alpha1 = param.alpha1;
 
   auto& input_lod = input->lod()[0];
-  std::vector<int> lod_32;
-  for (auto element : input_lod) {
-    lod_32.push_back(element);
-  }
-  XPUScratchPadGuard lod_32_xpu_guard =
-      TargetWrapperXPU::MallocScratchPad(lod_32.size() * sizeof(int));
-  int* lod_32_data = reinterpret_cast<int*>(lod_32_xpu_guard->addr_);
-  XPU_CALL(xpu_memcpy(lod_32_data,
-                      lod_32.data(),
-                      lod_32.size() * sizeof(int),
-                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
-
+  std::vector<int> m_lists;
+  std::vector<int> k_lists;
   int batch = input_lod.size() - 1;
   int seqlen_sum = input->dims()[0];  // cap_l
-  int seqlen_max = 0;                 // max_width
   int seqlen_square_sum = 0;
   for (int i = 0; i < batch; i++) {
     int seqlen = input_lod[i + 1] - input_lod[i];
-    seqlen_max = std::max(seqlen_max, seqlen);
     seqlen_square_sum += seqlen * seqlen;
+    m_lists.push_back(input_lod[i + 1] - input_lod[i]);
+    k_lists.push_back(dim_);
   }
 
+  XPUScratchPadGuard m_lists_xpu_guard =
+      TargetWrapperXPU::MallocScratchPad(m_lists.size() * sizeof(int));
+  int* m_lists_data = reinterpret_cast<int*>(m_lists_xpu_guard->addr_);
+  XPU_CALL(xpu_memcpy(m_lists_data,
+                      m_lists.data(),
+                      m_lists.size() * sizeof(int),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+  XPUScratchPadGuard k_lists_xpu_guard =
+      TargetWrapperXPU::MallocScratchPad(k_lists.size() * sizeof(int));
+  int* k_lists_data = reinterpret_cast<int*>(k_lists_xpu_guard->addr_);
+  XPU_CALL(xpu_memcpy(k_lists_data,
+                      k_lists.data(),
+                      k_lists.size() * sizeof(int),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
   LoD output_lod;
   output_lod.push_back(input_lod);
   output->set_lod(output_lod);
@@ -87,15 +91,13 @@ void XPUMmdnnSearchAttention2Compute::Run() {
       reinterpret_cast<float*>(output_max_xpu_guard_->addr_);
 
   // fc_out: [cap_l, dim_], reuse of output
-  // batchgemm0_out: [seqlen_square_sum]
-  // softmax_out: [seqlen_square_sum], reuse of batchgemm0_out
+  // softmax_out: [seqlen_square_sum]
   // output/batchgemm1_out: [cap_l, dim_]
   XPUScratchPadGuard internal_result_xpu_guard =
       TargetWrapperXPU::MallocScratchPad(seqlen_square_sum * sizeof(float));
   float* fc_out = output_data;
-  float* batchgemm0_out =
+  float* softmax_out =
       reinterpret_cast<float*>(internal_result_xpu_guard->addr_);
-  float* softmax_out = batchgemm0_out;
   float* batchgemm1_out = output_data;
 
   int r = 0;
@@ -119,36 +121,32 @@ void XPUMmdnnSearchAttention2Compute::Run() {
                      bias_data,
                      xdnn::Activation_t::LINEAR);
   CHECK_EQ(r, 0);
-  r = xdnn::search_noaligned_mat_mul(ctx.GetRawContext(),
-                                     0,
-                                     1,
-                                     batch,
-                                     lod_32_data,
-                                     seqlen_max,
-                                     dim_,
-                                     alpha0,
-                                     input_data,
-                                     fc_out,
-                                     batchgemm0_out);
+
+  r = xdnn::fc_batched_vsl<float, float, float, int, int16_t>(
+      ctx.GetRawContext(),
+      input_data,
+      fc_out,
+      softmax_out,
+      {m_lists.data(), static_cast<int>(m_lists.size()), m_lists_data},
+      {m_lists.data(), static_cast<int>(m_lists.size()), m_lists_data},
+      {k_lists.data(), static_cast<int>(k_lists.size()), k_lists_data},
+      false,
+      true,
+      alpha0,
+      true);
   CHECK_EQ(r, 0);
-  r = xdnn::search_seq_softmax(ctx.GetRawContext(),
-                               batchgemm0_out,
-                               softmax_out,
-                               lod_32_data,
-                               batch,
-                               seqlen_max);
-  CHECK_EQ(r, 0);
-  r = xdnn::search_noaligned_mat_mul(ctx.GetRawContext(),
-                                     0,
-                                     0,
-                                     batch,
-                                     lod_32_data,
-                                     seqlen_max,
-                                     dim_,
-                                     alpha1,
-                                     softmax_out,
-                                     input_data,
-                                     batchgemm1_out);
+  r = xdnn::fc_batched_vsl<float, float, float, int, int16_t>(
+      ctx.GetRawContext(),
+      softmax_out,
+      input_data,
+      batchgemm1_out,
+      {m_lists.data(), static_cast<int>(m_lists.size()), m_lists_data},
+      {k_lists.data(), static_cast<int>(k_lists.size()), k_lists_data},
+      {m_lists.data(), static_cast<int>(m_lists.size()), m_lists_data},
+      false,
+      false,
+      alpha1,
+      false);
   CHECK_EQ(r, 0);
 }
 
