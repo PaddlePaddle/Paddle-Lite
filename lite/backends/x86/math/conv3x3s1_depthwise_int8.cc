@@ -321,7 +321,6 @@ void prepack_input_im2col_s1_int8(const int8_t* din,
   const int8_t* din_ptr = din;
   int win_new = win + pad_w;
   int hin_new = hin + pad_h;
-  __m256i voffset = _mm256_set1_epi16(0);
   __m128i vb1 =
       _mm_set_epi8(-127, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1);
   __m128i vb2 =
