@@ -451,21 +451,21 @@ inline void prepack_input_nxwc4(const float16_t* din,
 #else
 #define INIT_C8                       \
   "cmp %[cnt], #1\n"                  \
-  "vld1.16 {d0-d3}, [%[din_ptr]]\n"   \
-  "vld1.16 {d4-d7}, [%[din_ptr]]\n"   \
+  "vld1.16 {d0-d3}, [%[din_ptr]]!\n"   \
+  "vld1.16 {d4-d7}, [%[din_ptr]]!\n"   \
   "pld [%[din_ptr]]\n"                \
   "blt 2f\n"
 
 #define PROCESS_C8                    \
   "1: \n"                             \
-  "vld1.16 {d8-d11}, [%[din_ptr]]\n"  \
-  "vld1.16 {d12-d15}, [%[din_ptr]]\n" \
+  "vld1.16 {d8-d11}, [%[din_ptr]]!\n"  \
+  "vld1.16 {d12-d15}, [%[din_ptr]]!\n" \
   "pld [%[din_ptr]]\n"
 
 #define PROCESS_C8_REMAIN             \
   "2: \n"                             \
-  "vld1.16 {d8-d11}, [%[din_ptr]]\n"  \
-  "vld1.16 {d12-d15}, [%[din_ptr]]\n"
+  "vld1.16 {d8-d11}, [%[din_ptr]]!\n"  \
+  "vld1.16 {d12-d15}, [%[din_ptr]]!\n"
 
 #define TRANS_C8                      \
   "vadd.f16 q0, q0, %q[vbias]    \n"  \
@@ -552,13 +552,13 @@ inline void prepack_input_nxwc4(const float16_t* din,
   "vst1.16 {d2-d3},   [%[doutc1r0]]!\n"  \
   "vst1.16 {d4-d5},   [%[doutc2r0]]!\n"  \
   "vst1.16 {d6-d7},   [%[doutc3r0]]!\n"  \
-  "vld1.16 {d0-d3},   [%[din_ptr]]  \n"  \
+  "vld1.16 {d0-d3},   [%[din_ptr]]!  \n"  \
   "subs    %[cnt],    #1            \n"  \
   "vst1.16 {d8-d9},   [%[doutc4r0]]!\n"  \
   "vst1.16 {d10-d11}, [%[doutc5r0]]!\n"  \
   "vst1.16 {d12-d13}, [%[doutc6r0]]!\n"  \
   "vst1.16 {d14-d15}, [%[doutc7r0]]!\n"  \
-  "vld1.16 {d4-d7},   [%[din_ptr]]  \n"  \
+  "vld1.16 {d4-d7},   [%[din_ptr]]!  \n"  \
   "pld    [%[din_ptr]]              \n"  \
   "bne 1b\n"
 
