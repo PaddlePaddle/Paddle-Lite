@@ -980,6 +980,8 @@ TEST(Activation_hard_swish, precision) {
   abs_error = 1e-2;  // Using fp16 in OPENCL
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kX86);
 #else
   return;
 #endif

@@ -22,6 +22,7 @@
 #include <smmintrin.h>
 #endif
 
+#include <algorithm>
 #include <cmath>
 
 namespace paddle {
