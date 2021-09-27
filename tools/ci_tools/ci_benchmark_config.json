@@ -14,6 +14,12 @@
                             "name":"armv7",
                             "device_id":[
                                 {
+                                    "name":"88Y4C19C23001523",
+                                    "alias":"kirin990",
+                                    "avg_time_baseline":"40.7225",
+                                    "avg_time_thres_scale":1.05
+                                },
+                                {
                                     "name":"bcd71650",
                                     "alias":"MI_9",
                                     "avg_time_baseline":"39.8934",
@@ -30,6 +36,12 @@
                         {
                             "name":"armv8",
                             "device_id":[
+                                {
+                                    "name":"88Y4C19C23001523",
+                                    "alias":"kirin990",
+                                    "avg_time_baseline":"38.1256",
+                                    "avg_time_thres_scale":1.05
+                                },
                                 {
                                     "name":"bcd71650",
                                     "alias":"MI_9",
@@ -53,6 +65,12 @@
                             "name":"armv7",
                             "device_id":[
                                 {
+                                    "name":"88Y4C19C23001523",
+                                    "alias":"kirin990",
+                                    "avg_time_baseline":"8.17851",
+                                    "avg_time_thres_scale":1.05
+                                },
+                                {
                                     "name":"bcd71650",
                                     "alias":"MI_9",
                                     "avg_time_baseline":"9.12193",
@@ -69,6 +87,12 @@
                         {
                             "name":"armv8",
                             "device_id":[
+                                {
+                                    "name":"88Y4C19C23001523",
+                                    "alias":"kirin990",
+                                    "avg_time_baseline":"7.43824",
+                                    "avg_time_thres_scale":1.05
+                                },
                                 {
                                     "name":"bcd71650",
                                     "alias":"MI_9",
@@ -99,6 +123,12 @@
                             "name":"armv7",
                             "device_id":[
                                 {
+                                    "name":"88Y4C19C23001523",
+                                    "alias":"kirin990",
+                                    "avg_time_baseline":"28.0762",
+                                    "avg_time_thres_scale":1.05
+                                },
+                                {
                                     "name":"bcd71650",
                                     "alias":"MI_9",
                                     "avg_time_baseline":"29.9536",
@@ -115,6 +145,12 @@
                         {
                             "name":"armv8",
                             "device_id":[
+                                {
+                                    "name":"88Y4C19C23001523",
+                                    "alias":"kirin990",
+                                    "avg_time_baseline":"24.893",
+                                    "avg_time_thres_scale":1.05
+                                },
                                 {
                                     "name":"bcd71650",
                                     "alias":"MI_9",
@@ -138,6 +174,12 @@
                             "name":"armv7",
                             "device_id":[
                                 {
+                                    "name":"88Y4C19C23001523",
+                                    "alias":"kirin990",
+                                    "avg_time_baseline":"9.24566",
+                                    "avg_time_thres_scale":1.05
+                                },
+                                {
                                     "name":"bcd71650",
                                     "alias":"MI_9",
                                     "avg_time_baseline":"11.2582",
@@ -154,6 +196,12 @@
                         {
                             "name":"armv8",
                             "device_id":[
+                                {
+                                    "name":"88Y4C19C23001523",
+                                    "alias":"kirin990",
+                                    "avg_time_baseline":"9.01118",
+                                    "avg_time_thres_scale":1.05
+                                },
                                 {
                                     "name":"bcd71650",
                                     "alias":"MI_9",
@@ -184,6 +232,12 @@
                             "name":"armv7",
                             "device_id":[
                                 {
+                                    "name":"88Y4C19C23001523",
+                                    "alias":"kirin990",
+                                    "avg_time_baseline":"21.9183",
+                                    "avg_time_thres_scale":1.05
+                                },
+                                {
                                     "name":"bcd71650",
                                     "alias":"MI_9",
                                     "avg_time_baseline":"18.7354",
@@ -200,6 +254,12 @@
                         {
                             "name":"armv8",
                             "device_id":[
+                                {
+                                    "name":"88Y4C19C23001523",
+                                    "alias":"kirin990",
+                                    "avg_time_baseline":"19.4333",
+                                    "avg_time_thres_scale":1.05
+                                },
                                 {
                                     "name":"bcd71650",
                                     "alias":"MI_9",
@@ -223,6 +283,12 @@
                             "name":"armv7",
                             "device_id":[
                                 {
+                                    "name":"88Y4C19C23001523",
+                                    "alias":"kirin990",
+                                    "avg_time_baseline":"9.21965",
+                                    "avg_time_thres_scale":1.05
+                                },
+                                {
                                     "name":"bcd71650",
                                     "alias":"MI_9",
                                     "avg_time_baseline":"7.69495",
@@ -239,6 +305,12 @@
                         {
                             "name":"armv8",
                             "device_id":[
+                                {
+                                    "name":"88Y4C19C23001523",
+                                    "alias":"kirin990",
+                                    "avg_time_baseline":"9.62215",
+                                    "avg_time_thres_scale":1.05
+                                },
                                 {
                                     "name":"bcd71650",
                                     "alias":"MI_9",
@@ -269,6 +341,12 @@
                             "name":"armv7",
                             "device_id":[
                                 {
+                                    "name":"88Y4C19C23001523",
+                                    "alias":"kirin990",
+                                    "avg_time_baseline":"7.29623",
+                                    "avg_time_thres_scale":1.05
+                                },
+                                {
                                     "name":"bcd71650",
                                     "alias":"MI_9",
                                     "avg_time_baseline":"6.40211",
@@ -285,6 +363,12 @@
                         {
                             "name":"armv8",
                             "device_id":[
+                                {
+                                    "name":"88Y4C19C23001523",
+                                    "alias":"kirin990",
+                                    "avg_time_baseline":"6.48428",
+                                    "avg_time_thres_scale":1.05
+                                },
                                 {
                                     "name":"bcd71650",
                                     "alias":"MI_9",
@@ -308,6 +392,12 @@
                             "name":"armv7",
                             "device_id":[
                                 {
+                                    "name":"88Y4C19C23001523",
+                                    "alias":"kirin990",
+                                    "avg_time_baseline":"6.52697",
+                                    "avg_time_thres_scale":1.05
+                                },
+                                {
                                     "name":"bcd71650",
                                     "alias":"MI_9",
                                     "avg_time_baseline":"6.74884",
@@ -324,6 +414,12 @@
                         {
                             "name":"armv8",
                             "device_id":[
+                                {
+                                    "name":"88Y4C19C23001523",
+                                    "alias":"kirin990",
+                                    "avg_time_baseline":"6.10287",
+                                    "avg_time_thres_scale":1.05
+                                },
                                 {
                                     "name":"bcd71650",
                                     "alias":"MI_9",
@@ -354,6 +450,12 @@
                             "name":"armv7",
                             "device_id":[
                                 {
+                                    "name":"88Y4C19C23001523",
+                                    "alias":"kirin990",
+                                    "avg_time_baseline":"233.174",
+                                    "avg_time_thres_scale":1.05
+                                },
+                                {
                                     "name":"bcd71650",
                                     "alias":"MI_9",
                                     "avg_time_baseline":"202.198",
@@ -370,6 +472,12 @@
                         {
                             "name":"armv8",
                             "device_id":[
+                                {
+                                    "name":"88Y4C19C23001523",
+                                    "alias":"kirin990",
+                                    "avg_time_baseline":"221.124",
+                                    "avg_time_thres_scale":1.05
+                                },
                                 {
                                     "name":"bcd71650",
                                     "alias":"MI_9",
@@ -393,6 +501,12 @@
                             "name":"armv7",
                             "device_id":[
                                 {
+                                    "name":"88Y4C19C23001523",
+                                    "alias":"kirin990",
+                                    "avg_time_baseline":"36.0317",
+                                    "avg_time_thres_scale":1.05
+                                },
+                                {
                                     "name":"bcd71650",
                                     "alias":"MI_9",
                                     "avg_time_baseline":"35.5003",
@@ -409,6 +523,12 @@
                         {
                             "name":"armv8",
                             "device_id":[
+                                {
+                                    "name":"88Y4C19C23001523",
+                                    "alias":"kirin990",
+                                    "avg_time_baseline":"36.0552",
+                                    "avg_time_thres_scale":1.05
+                                },
                                 {
                                     "name":"bcd71650",
                                     "alias":"MI_9",
@@ -439,6 +559,12 @@
                             "name":"armv7",
                             "device_id":[
                                 {
+                                    "name":"88Y4C19C23001523",
+                                    "alias":"kirin990",
+                                    "avg_time_baseline":"51.2924",
+                                    "avg_time_thres_scale":1.05
+                                },
+                                {
                                     "name":"bcd71650",
                                     "alias":"MI_9",
                                     "avg_time_baseline":"52.1411",
@@ -455,6 +581,12 @@
                         {
                             "name":"armv8",
                             "device_id":[
+                                {
+                                    "name":"88Y4C19C23001523",
+                                    "alias":"kirin990",
+                                    "avg_time_baseline":"46.3025",
+                                    "avg_time_thres_scale":1.05
+                                },
                                 {
                                     "name":"bcd71650",
                                     "alias":"MI_9",
@@ -478,6 +610,12 @@
                             "name":"armv7",
                             "device_id":[
                                 {
+                                    "name":"88Y4C19C23001523",
+                                    "alias":"kirin990",
+                                    "avg_time_baseline":"27.8955",
+                                    "avg_time_thres_scale":1.05
+                                },
+                                {
                                     "name":"bcd71650",
                                     "alias":"MI_9",
                                     "avg_time_baseline":"46.5947",
@@ -494,6 +632,12 @@
                         {
                             "name":"armv8",
                             "device_id":[
+                                {
+                                    "name":"88Y4C19C23001523",
+                                    "alias":"kirin990",
+                                    "avg_time_baseline":"27.0812",
+                                    "avg_time_thres_scale":1.05
+                                },
                                 {
                                     "name":"bcd71650",
                                     "alias":"MI_9",
