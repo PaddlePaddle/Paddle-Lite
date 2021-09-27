@@ -21,16 +21,17 @@ namespace nnadapter {
 
 int ConvertConcat(Converter* converter, OpInfo* op, Scope* scope) {
   // Input operand
-  auto input_names = op->Input("X");
+  auto x_names = op->Input("X");
   std::vector<NNAdapterOperand*> input_operands;
-  for (auto input_name : input_names) {
-    NNAdapterOperand* input_operand;
-    auto input_tensor = scope->FindTensor(input_name);
-    if (input_tensor->persistable()) {
-      input_operand = converter->AddConstantOperand(*input_tensor);
-    } else {
-      input_operand = converter->GetMappedOperand(input_name);
+  for (size_t i = 0; i < x_names.size(); i++) {
+    auto x_name = x_names[i];
+    auto x_scale_name = "X" + paddle::lite::to_string(i) + "_scale";
+    std::vector<float> x_scales;
+    if (op->HasInputScale(x_scale_name, true)) {
+      x_scales = op->GetInputScale(x_scale_name, true);
     }
+    auto input_operand =
+        converter->AddInputOperand(scope, x_name, {}, x_scales);
     input_operands.push_back(input_operand);
   }
 
@@ -41,7 +42,12 @@ int ConvertConcat(Converter* converter, OpInfo* op, Scope* scope) {
 
   // Output operand
   auto output_name = op->Output("Out").front();
-  auto output_operand = converter->AddOutputOperand(output_name);
+  auto out_scale_name = "Out0_scale";
+  std::vector<float> out_scales;
+  if (op->HasOutputScale(out_scale_name, true)) {
+    out_scales = op->GetOutputScale(out_scale_name, true);
+  }
+  auto output_operand = converter->AddOutputOperand(output_name, out_scales);
 
   // Concat operation
   converter->AddOperation(NNADAPTER_CONCAT, input_operands, {output_operand});

@@ -42,13 +42,7 @@ int ConvertInterpolate(Converter* converter, OpInfo* op, Scope* scope) {
     auto in_names = op->Input("SizeTensor");
     std::vector<NNAdapterOperand*> input_operands;
     for (auto in_name : in_names) {
-      NNAdapterOperand* in_operand = nullptr;
-      auto in_tensor = scope->FindTensor(in_name);
-      if (in_tensor->persistable()) {
-        in_operand = converter->AddConstantOperand(*in_tensor);
-      } else {
-        in_operand = converter->GetMappedOperand(in_name);
-      }
+      auto in_operand = converter->AddInputOperand(scope, in_name);
       input_operands.push_back(in_operand);
     }
     auto axis_operand = converter->AddConstantOperand<int>(0);
@@ -57,12 +51,7 @@ int ConvertInterpolate(Converter* converter, OpInfo* op, Scope* scope) {
     converter->AddOperation(NNADAPTER_CONCAT, input_operands, {shape_operand});
   } else if (HasInput(op, scope, "OutSize")) {
     auto shape_name = op->Input("OutSize").front();
-    auto shape_tensor = scope->FindTensor(shape_name);
-    if (shape_tensor->persistable()) {
-      shape_operand = converter->AddConstantOperand(*shape_tensor);
-    } else {
-      shape_operand = converter->GetMappedOperand(shape_name);
-    }
+    shape_operand = converter->AddInputOperand(scope, shape_name);
   } else if (op->HasAttr("out_h") && op->HasAttr("out_w")) {
     int out_h = op->GetAttr<int>("out_h");
     int out_w = op->GetAttr<int>("out_w");
@@ -91,7 +80,7 @@ int ConvertInterpolate(Converter* converter, OpInfo* op, Scope* scope) {
         scales_operand = converter->AddConstantOperand(
             std::vector<float>{scales_value[0], scales_value[1]});
       } else {
-        LOG(ERROR) << "Should only have 1 or 2 scales.";
+        LOG(FATAL) << "Should only have 1 or 2 scales.";
         return PARAMETER_ERROR;
       }
     } else {
@@ -121,7 +110,7 @@ int ConvertInterpolate(Converter* converter, OpInfo* op, Scope* scope) {
       scales_operand = converter->AddConstantOperand(scales);
     }
   } else {
-    VLOG(5) << op_type << " doesn't have 'Scale' or 'scale'.";
+    VLOG(5) << op_type << " doesn't have 'Scale'(tensor) or 'scale'(attr).";
   }
 
   CHECK(shape_operand != nullptr || scales_operand != nullptr);
@@ -156,7 +145,7 @@ int ConvertInterpolate(Converter* converter, OpInfo* op, Scope* scope) {
                        op_type) != linear_interp_ops.end()) {
     resize_operation_type = NNADAPTER_RESIZE_LINEAR;
   } else {
-    LOG(ERROR) << "Unsupported op_type: " << op_type;
+    LOG(FATAL) << "Unsupported op_type: " << op_type;
     return NO_ERROR;
   }
   converter->AddOperation(
