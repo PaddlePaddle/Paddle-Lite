@@ -13,13 +13,14 @@
 // limitations under the License.
 
 #include "lite/kernels/host/multiclass_nms_compute.h"
-#ifdef ENABLE_ARM_FP16
-using float16_t = __fp16;
 
-using nmsfp16 =
-    paddle::lite::kernels::host::MulticlassNmsCompute<float16_t,
-                                                      TARGET(kARM),
-                                                      PRECISION(kFP16)>;
+namespace paddle {
+namespace lite {
+namespace kernels {}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle
+
+#ifdef ENABLE_ARM_FP16
 REGISTER_LITE_KERNEL(multiclass_nms, kARM, kFP16, kNCHW, nmsfp16, def)
     .BindInput("BBoxes",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
