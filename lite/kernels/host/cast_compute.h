@@ -20,9 +20,9 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
-class CastCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
+class CastCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
  public:
   using param_t = operators::CastParam;
 
@@ -35,7 +35,7 @@ class CastCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
  private:
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
