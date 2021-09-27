@@ -43,7 +43,7 @@ Paddle用于推理的模型是通过[save_inference_model](https://www.paddlepad
 
 Paddle Lite在执行模型推理之前需要使用[模型优化工具opt](model_optimize_tool)来对模型进行优化，优化后的模型结构同样可以使用[Netron](https://lutzroeder.github.io/netron/)工具进行查看，但是必须保存为`protobuf`格式，而不是`naive_buffer`格式。
 
-**注意**: 为了减少第三方库的依赖、提高Lite预测框架的通用性，在移动端使用Lite API您需要准备Naive Buffer存储格式的模型(该模型格式是以`.nb`为后缀的单个文件)。但是Naive Buffer格式的模型为序列化模型，不支持可视化。
+**注意**: 为了减少第三方库的依赖、提高Lite预测框架的通用性，在移动端使用Lite API您需要准备Naive Buffer存储格式的模型(该模型格式是以`.nb`为后缀的单个文件)。但是Naive Buffer格式的模型为序列化模型，不支持通过[Netron](https://github.com/lutzroeder/netron)可视化，Naive Buffer格式模型的可视化参考文档[使用可执行文件opt工具](./opt/opt_bin)中的功能三。
 
 这里以[paddle_lite_opt](opt/opt_python)工具为例：
 
