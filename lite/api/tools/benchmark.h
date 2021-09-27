@@ -164,19 +164,25 @@ const std::string PrintUsage() {
 }
 
 void SetBackendConfig(lite_api::MobileConfig& config) {  // NOLINT
-  if (FLAGS_backend == "opencl" || FLAGS_backend == "x86_opencl") {
-    // Set opencl kernel binary.
-    // Large addtitional prepare time is cost due to algorithm selecting and
-    // building kernel from source code.
-    // Prepare time can be reduced dramitically after building algorithm file
-    // and OpenCL kernel binary on the first running.
-    // The 1st running time will be a bit longer due to the compiling time if
-    // you don't call `set_opencl_binary_path_name` explicitly.
-    // So call `set_opencl_binary_path_name` explicitly is strongly
-    // recommended.
+  if (FLAGS_backend == "opencl,arm" || FLAGS_backend == "opencl" ||
+      FLAGS_backend == "x86_opencl") {
+// Set opencl kernel binary.
+// Large addtitional prepare time is cost due to algorithm selecting and
+// building kernel from source code.
+// Prepare time can be reduced dramitically after building algorithm file
+// and OpenCL kernel binary on the first running.
+// The 1st running time will be a bit longer due to the compiling time if
+// you don't call `set_opencl_binary_path_name` explicitly.
+// So call `set_opencl_binary_path_name` explicitly is strongly
+// recommended.
 
-    // Make sure you have write permission of the binary path.
-    // We strongly recommend each model has a unique binary name.
+// Make sure you have write permission of the binary path.
+// We strongly recommend each model has a unique binary name.
+#ifdef __ANDROID__
+    if (FLAGS_opencl_cache_dir.empty()) {
+      FLAGS_opencl_cache_dir = "/data/local/tmp/";
+    }
+#endif  // __ANDROID__
     config.set_opencl_binary_path_name(FLAGS_opencl_cache_dir,
                                        FLAGS_opencl_kernel_cache_file);
 
