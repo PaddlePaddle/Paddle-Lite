@@ -89,38 +89,44 @@ function check_benchmark_result() {
   local model_name=$7
   local backend=$8
 
-    local toolchain_in_config=`jq -r .toolchain $config_path`
-    # Skip avg time check if toolchain not matched
-    if [[ "$toolchain" != "$toolchain_in_config" ]]; then
-      echo -e "$RED_COLOR Build with toolchain is $toolchain, while toolchain in $config_path is $toolchain_in_config. They are not matched! Skip avg time check! $OFF_COLOR"
-      continue
-    fi
-    local key_avg_time="avg"
-    local avg_time=$(grep $key_avg_time $res_file | awk '{print $3}' | tail -1)
-    local avg_time_baseline=`jq -r --arg v1 $model_name \
-                                   --arg v2 $backend \
-                                   --arg v3 $arch \
-                                   --arg v4 $remote_device_name \
-                                   '.model[] | select(.name == $v1) | .backends[] | select(.name == $v2) | .arch[] | select(.name == $v3) | .device_id[] | select(.name == $v4).avg_time_baseline' $config_path`
-    local avg_time_thres_scale=`jq -r --arg v1 $model_name \
-                                   --arg v2 $backend \
-                                   --arg v3 $arch \
-                                   --arg v4 $remote_device_name \
-                                   '.model[] | select(.name == $v1) | .backends[] | select(.name == $v2) | .arch[] | select(.name == $v3) | .device_id[] | select(.name == $v4).avg_time_thres_scale' $config_path`
+  if [[ "$config_path" == "" ]]; then
+    echo -e "$YELOW_COLOR $config_path is not set! Skip result check! $OFF_COLOR"
+    return 1
+  fi
 
-    local avg_time_thres=$(echo "${avg_time_baseline}*${avg_time_thres_scale}" | bc)
-    local device_alias=`jq -r --arg v1 $model_name \
-                              --arg v2 $backend \
-                              --arg v3 $arch \
-                              --arg v4 $remote_device_name \
-                              '.model[] | select(.name == $v1) | .backends[] | select(.name == $v2) | .arch[] | select(.name == $v3) | .device_id[] | select(.name == $v4).alias' $config_path`
-    if [ 1 -eq "$(echo "${avg_time} > ${avg_time_thres}" | bc)" ]; then
-      echo -e "$RED_COLOR avg_time[${avg_time}] > avg_time_thres[${avg_time_thres}] on device[$device_alias] !\nThis PR may reduce performace. Reject this PR. $OFF_COLOR"
-      exit 1
-    else
-      echo -e "$GREEN_COLOR avg_time[${avg_time}] <= avg_time_thres[${avg_time_thres}] on device[$device_alias] Passed. $OFF_COLOR"
-      # TODO: update .json automatically(after this pr is merged)
-    fi
+  local toolchain_in_config=`jq -r .toolchain $config_path`
+  # Skip avg time check if toolchain not matched
+  if [[ "$toolchain" != "$toolchain_in_config" ]]; then
+    echo -e "$RED_COLOR Build with toolchain is $toolchain, while toolchain in $config_path is $toolchain_in_config. They are not matched! Skip avg time check! $OFF_COLOR"
+    return 1
+  fi
+  local key_avg_time="avg"
+  local avg_time=$(grep $key_avg_time $res_file | awk '{print $3}' | tail -1)
+  local avg_time_baseline=`jq -r --arg v1 $model_name \
+                                  --arg v2 $backend \
+                                  --arg v3 $arch \
+                                  --arg v4 $remote_device_name \
+                                  '.model[] | select(.name == $v1) | .backends[] | select(.name == $v2) | .arch[] | select(.name == $v3) | .device_id[] | select(.name == $v4).avg_time_baseline' $config_path`
+  local avg_time_thres_scale=`jq -r --arg v1 $model_name \
+                                  --arg v2 $backend \
+                                  --arg v3 $arch \
+                                  --arg v4 $remote_device_name \
+                                  '.model[] | select(.name == $v1) | .backends[] | select(.name == $v2) | .arch[] | select(.name == $v3) | .device_id[] | select(.name == $v4).avg_time_thres_scale' $config_path`
+
+  local avg_time_thres=$(echo "${avg_time_baseline}*${avg_time_thres_scale}" | bc)
+  local device_alias=`jq -r --arg v1 $model_name \
+                            --arg v2 $backend \
+                            --arg v3 $arch \
+                            --arg v4 $remote_device_name \
+                            '.model[] | select(.name == $v1) | .backends[] | select(.name == $v2) | .arch[] | select(.name == $v3) | .device_id[] | select(.name == $v4).alias' $config_path`
+  if [ 1 -eq "$(echo "${avg_time} > ${avg_time_thres}" | bc)" ]; then
+    echo -e "$RED_COLOR avg_time[${avg_time}] > avg_time_thres[${avg_time_thres}] on device[$device_alias] !\nThis PR may reduce performace. Reject this PR. $OFF_COLOR"
+    exit 1
+  else
+    echo -e "$GREEN_COLOR avg_time[${avg_time}] <= avg_time_thres[${avg_time_thres}] on device[$device_alias] Passed. $OFF_COLOR"
+    # TODO: update .json automatically(after this pr is merged)
+  fi
+  return 0
 }
 
 function run_on_remote_device() {
@@ -266,9 +272,9 @@ function build_and_test_on_remote_device() {
   prepare_models $host_model_zoo_dir $force_download_models
 
   # 3. Prepare device environment for running, such as device check and push models to remote device, only once for one device
-  #for remote_device_name in $remote_device_names; do
-  #  $prepare_device_func $remote_device_name $remote_device_work_dir $remote_device_check $remote_device_run $host_model_zoo_dir
-  #done
+  for remote_device_name in $remote_device_names; do
+    $prepare_device_func $remote_device_name $remote_device_work_dir $remote_device_check $remote_device_run $host_model_zoo_dir
+  done
 
   # 4. Run
   local oss=(${os_list//,/ })
