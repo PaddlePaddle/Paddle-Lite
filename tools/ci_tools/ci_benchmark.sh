@@ -119,7 +119,7 @@ function check_benchmark_result() {
       exit 1
     else
       echo -e "$GREEN_COLOR avg_time[${avg_time}] <= avg_time_thres[${avg_time_thres}] on device[$device_alias] Passed. $OFF_COLOR"
-      # TODO: update .json automatically
+      # TODO: update .json automatically(after this pr is merged)
     fi
 }
 
@@ -192,7 +192,7 @@ function run_on_remote_device() {
   local cmd_line=""
   local model_file=`$remote_device_run $remote_device_name shell "cd ${remote_device_work_dir}; ls ${model_dir}/*.pdmodel"`
   local param_file=`$remote_device_run $remote_device_name shell "cd ${remote_device_work_dir}; ls ${model_dir}/*.pdiparams"`
-  local res_file="result.txt"
+  local res_file="result_${model_name}_${arch}_${toolchain}_${backend}_${remote_device_name}.txt"
   local model_name=$(basename $model_dir)
   local input_shape=`jq -r --arg v $model_name '.model[] | select(.name == $v).input_shape' $config_path`
   local backends=""
@@ -215,7 +215,7 @@ function run_on_remote_device() {
               --repeats=50 \
               --result_path=$res_file \
              "
-    echo -e "$GREEN_COLOR arch:${arch} toolchain:${toolchain} model:${model_name} backend:${backend} device[$remote_device_name] $OFF_COLOR"
+    echo -e "$GREEN_COLOR model:${model_name} arch:${arch} toolchain:${toolchain} backend:${backend} device:${remote_device_name} $OFF_COLOR"
     echo "cmd_line start..."
     # Run the model on the remote device
     $remote_device_run $remote_device_name shell "cd $remote_device_work_dir; LD_LIBRARY_PATH=$LD_LIBRARY_PATH:.; rm -rf $res_file; $cmd_line; cd -"
@@ -315,7 +315,19 @@ function android_build_and_test() {
       $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR
 }
 
+function check_command_exist() {
+  local cmd=$1
+  which "$cmd" >/dev/null 2>&1
+  if [ $? -ne 0 ]; then
+    echo -e "$RED_COLOR $cmd is not found! $OFF_COLOR"
+		exit 1
+  fi
+}
+
 function main() {
+  # Check requirements
+  check_command_exist "jq"
+
   # Parse command line.
   for i in "$@"; do
     case $i in
