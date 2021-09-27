@@ -31,9 +31,22 @@ arch -x86_64 ./lite/tools/build.sh build_optimize_tool
 ```
 该命令会编译x86格式的opt工具，但是不会影响工具的正常使用
 
-## 合并x2paddle和opt功能的一键脚本
+## 使用X2paddle导出Padde-Lite支持格式
 
-**背景**：如果想用Paddle-Lite运行第三方来源（tensorflow、caffe、onnx）模型，一般需要经过两次转化。即使用x2paddle工具将第三方模型转化为PaddlePaddle格式，再使用opt将PaddlePaddle模型转化为Padde-Lite可支持格式。
-为了简化这一过程，我们提供了：
+**背景**：如果想用Paddle-Lite运行第三方来源（TensorFlow、Caffe、ONNX、PyTorch）模型，一般需要经过两次转化。即使用x2paddle工具将第三方模型转化为PaddlePaddle格式，再使用opt将PaddlePaddle模型转化为Padde-Lite可支持格式。
 
- [合并x2paddle和opt的一键脚本](./opt/x2paddle&opt)
+**使用方法**：为了简化这一过程，X2Paddle集成了opt工具，提供一键转换API，以ONNX为例：
+
+ ```python
+from x2paddle.convert import onnx2paddle
+
+onnx2paddle(model_path, save_dir, 
+            convert_opt=True,
+            valid_places="arm",
+            model_type="naive_buffer")
+# model_path(str)为ONNX模型路径
+# save_dir(str)为转换后模型保存路径
+# convert_opt(bool)表示是否使用opt工具，默认为False
+# valid_places(str)指定转换类型，默认为arm
+# model_type(str)指定模型转化类型，默认为naive_buffer
+```
