@@ -219,7 +219,7 @@ void SetBackendConfig(lite_api::MobileConfig& config) {  // NOLINT
     }
     config.set_opencl_precision(gpu_precision);
   }
-
+  // nnadapter option
   if (with_nnadapter) {
     std::vector<std::string> nnadapter_devices;
     auto device_list = lite::Split(FLAGS_nnadapter_device_names, ",");
