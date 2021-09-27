@@ -69,6 +69,8 @@ void BindLiteOpt(py::module *m) {
       .def("set_model_type", &OptBase::SetModelType)
       .def("set_quant_model", &OptBase::SetQuantModel)
       .def("set_quant_type", &OptBase::SetQuantType)
+      .def("set_sparse_model", &OptBase::SetSparseModel)
+      .def("set_sparse_threshold", &OptBase::SetSparseThreshold)
       .def("record_model_info", &OptBase::RecordModelInfo)
       .def("set_passes_internal", &OptBase::SetPassesInternal)
       .def("run", &OptBase::Run)
@@ -79,7 +81,10 @@ void BindLiteOpt(py::module *m) {
       .def("print_supported_ops", &OptBase::PrintSupportedOps)
       .def("display_kernels_info", &OptBase::DisplayKernelsInfo)
       .def("print_all_ops", &OptBase::PrintAllOps)
-      .def("check_if_model_supported", &OptBase::CheckIfModelSupported);
+      .def("check_if_model_supported", &OptBase::CheckIfModelSupported)
+      .def("print_all_ops_in_md_dormat",
+           &OptBase::PrintAllSupportedOpsInMdformat)
+      .def("visualize_optimized_nb_model", &OptBase::VisualizeOptimizedNBModel);
 }
 #endif
 static void BindLiteLightPredictor(py::module *m);

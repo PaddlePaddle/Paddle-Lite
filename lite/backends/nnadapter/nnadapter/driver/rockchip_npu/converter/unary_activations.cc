@@ -22,6 +22,7 @@ namespace rockchip_npu {
 
 int ConvertUnaryActivations(Converter* converter, hal::Operation* operation) {
   UNARY_ACTIVATIONS_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
   // Convert to rknpu tensors and operators
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {

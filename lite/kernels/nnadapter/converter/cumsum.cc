@@ -22,7 +22,12 @@ namespace nnadapter {
 int ConvertCumsum(Converter* converter, OpInfo* op, Scope* scope) {
   // Input operand
   auto x_name = op->Input("X").front();
-  auto input_operand = converter->GetMappedOperand(x_name);
+  auto x_scale_name = "X0_scale";
+  std::vector<float> x_scales;
+  if (op->HasInputScale(x_scale_name, true)) {
+    x_scales = op->GetInputScale(x_scale_name, true);
+  }
+  auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
 
   // Axis operand
   int axis = op->GetAttr<int>("axis");
@@ -41,10 +46,10 @@ int ConvertCumsum(Converter* converter, OpInfo* op, Scope* scope) {
   auto output_operand = converter->AddOutputOperand(out_name);
 
   // Cumsum operation
-  std::vector<NNAdapterOperand*> input_operands = {
-      input_operand, axis_operand, exclusive_operand, reverse_operand};
-  std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  converter->AddOperation(NNADAPTER_CUM_SUM, &input_operands, &output_operands);
+  converter->AddOperation(
+      NNADAPTER_CUM_SUM,
+      {input_operand, axis_operand, exclusive_operand, reverse_operand},
+      {output_operand});
   return NO_ERROR;
 }
 

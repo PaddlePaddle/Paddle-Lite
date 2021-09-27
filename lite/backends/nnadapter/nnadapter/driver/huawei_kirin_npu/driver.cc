@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/huawei_kirin_npu/converter.h"
+#include "driver/huawei_kirin_npu/engine.h"
 #include "utility/logging.h"
 #include "utility/micros.h"
 
@@ -105,7 +105,7 @@ int ExecuteProgram(void* program,
 }  // namespace nnadapter
 
 NNADAPTER_EXPORT nnadapter::hal::Device NNADAPTER_AS_SYM2(
-    NNADAPTER_DRIVER_NAME) = {
+    NNADAPTER_DEVICE_SYMBOL) = {
     .name = NNADAPTER_AS_STR2(NNADAPTER_DEVICE_NAME),
     .vendor = "Huawei",
     .type = NNADAPTER_ACCELERATOR,

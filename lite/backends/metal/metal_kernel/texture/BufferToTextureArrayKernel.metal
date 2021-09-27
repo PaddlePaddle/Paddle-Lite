@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+/* Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -16,49 +16,45 @@
 
 #include "Common.metal"
 
+struct FeedParam {
+  int32_t isize;
+  int32_t idim[4];
+};
+
 using namespace metal;
 
-kernel void buf_to_tex(const device float *input [[buffer(0)]],
-                       texture2d_array<ftype, access::write> outTexture
-                       [[texture(0)]],
-                       uint3 gid [[thread_position_in_grid]]) {
-  if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) {
-    return;
-  }
-
-  float y = input[outTexture.get_width() * gid.y + gid.x];
-  outTexture.write(ftype4(y, 0.0f, 0.0f, 0.0f), gid.xy, gid.z);
-}
-
-kernel void buf_to_tex_c_3(const device float *input [[buffer(0)]],
-                           texture2d_array<ftype, access::write> outTexture
-                           [[texture(0)]],
-                           uint3 gid [[thread_position_in_grid]]) {
-  if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) {
-    return;
-  }
-
-  int offset = outTexture.get_width() * outTexture.get_height();
-  float y0 = input[outTexture.get_width() * gid.y + gid.x + 0 * offset];
-  float y1 = input[outTexture.get_width() * gid.y + gid.x + 1 * offset];
-  float y2 = input[outTexture.get_width() * gid.y + gid.x + 2 * offset];
-  outTexture.write(ftype4(y0, y1, y2, 0.0f), gid.xy, gid.z);
-}
-
 kernel void buf_to_tex_c_n(const device float *input [[buffer(0)]],
-                           texture2d_array<ftype, access::write> outTexture
-                           [[texture(0)]],
+                           texture2d_array<ftype, access::write> outTexture [[texture(0)]],
+                           constant FeedParam &param [[buffer(1)]],
                            uint3 gid [[thread_position_in_grid]]) {
-  if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
       gid.z >= outTexture.get_array_size()) {
-    return;
-  }
+        return;
+    }
 
-  int cLength = outTexture.get_width() * outTexture.get_height();
-  int inOffset = outTexture.get_width() * gid.y + gid.x;
-  float y0 = input[inOffset + (gid.z * 4 + 0) * cLength];
-  float y1 = input[inOffset + (gid.z * 4 + 1) * cLength];
-  float y2 = input[inOffset + (gid.z * 4 + 2) * cLength];
-  float y3 = input[inOffset + (gid.z * 4 + 3) * cLength];
-  outTexture.write(ftype4(y0, y1, y2, y3), gid.xy, gid.z);
+    int inMax = param.idim[0] * param.idim[1] * param.idim[2] * param.idim[3];
+    int page = outTexture.get_width() * outTexture.get_height();
+    int offset = outTexture.get_width() * gid.y + gid.x;
+    
+    float4 output = float4(0.0);
+    for(int i = 0; i < 4; i++) {
+        int index = offset + (gid.z * 4 + i) * page;
+        if(index < inMax) {
+            output[i] = input[index];
+        }
+    }
+    outTexture.write(ftype4(output.x, output.y, output.z, output.w), gid.xy, gid.z);
+}
+
+// half -> half
+kernel void buf_h_to_tex_h(const device half *input [[buffer(0)]],
+                           texture2d_array<half, access::write> outTexture [[texture(0)]],
+                           uint3 gid [[thread_position_in_grid]]){
+    if (gid.x >= outTexture.get_width() ||
+        gid.y >= outTexture.get_height()) {
+        return;
+    }
+    
+    half y = input[outTexture.get_width() * gid.y + gid.x];
+    outTexture.write(half4(y, 0.0f, 0.0f, 0.0f), gid.xy, gid.z);
 }

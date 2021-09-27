@@ -13,12 +13,13 @@
 // limitations under the License.
 
 #pragma once
+#include <deque>
 #include <memory>
 #include <string>
 #include <vector>
 #include "lite/core/types.h"
 #include "lite/utils/container.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 /*
  * This file contains the implementation of NaiveBuffer. We implement the basic

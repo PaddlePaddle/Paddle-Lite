@@ -25,6 +25,7 @@ void AssignCompute<T>::Run() {
   auto& param = Param<param_t>();
   CHECK(param.X) << "only support input is tensor";
   if (param.X == param.Out || param.X->numel() == 0) {
+    param.Out->set_target(TARGET(kXPU));
     return;
   }
 

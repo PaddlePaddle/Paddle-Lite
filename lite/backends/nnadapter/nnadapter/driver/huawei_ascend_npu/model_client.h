@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <thread>  // NOLINT
 #include <vector>
 #include "acl/acl.h"
 #include "core/hal/types.h"
@@ -40,6 +41,8 @@ class AclModelClient {
                hal::Argument* output_arguments);
 
  private:
+  void InitAclClientEnv(int device_id);
+  void FinalizeAclClientEnv();
   bool CreateModelIODataset();
   void DestroyDataset(aclmdlDataset** dataset);
 

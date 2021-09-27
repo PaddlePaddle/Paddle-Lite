@@ -13,23 +13,22 @@
 // limitations under the License.
 
 #include "core/operation/pool2d.h"
-#include "driver/huawei_kirin_npu/converter.h"
+#include "driver/huawei_kirin_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace huawei_kirin_npu {
 
-int Program::ConvertPool2D(hal::Operation* operation) {
+int ConvertPool2D(Converter* converter, hal::Operation* operation) {
   POOL_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
-  auto input_operator = GetMappedOperator(input_operand);
+  auto input_operator = converter->GetMappedOperator(input_operand);
   if (!input_operator) {
-    input_operator = ConvertOperand(input_operand);
+    input_operator = converter->ConvertOperand(input_operand);
   }
-  auto pool2d_name = GetOperatorName(output_operand);
-  auto pool2d_op = std::make_shared<hiai::op::PoolingD>(pool2d_name);
+  auto pool2d_op = converter->AddOperator<hiai::op::PoolingD>(output_operand);
   if (operation->type == NNADAPTER_AVERAGE_POOL_2D) {
     pool2d_op->set_attr_mode(1);
   } else if (operation->type == NNADAPTER_MAX_POOL_2D) {

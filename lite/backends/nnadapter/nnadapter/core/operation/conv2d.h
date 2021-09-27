@@ -14,10 +14,12 @@
 
 #pragma once
 
+#include "nnadapter.h"  // NOLINT
+
 namespace nnadapter {
 namespace operation {
 
-#define CONV2D_OPERATION_EXTRACT_INPUTS_OUTPUTS                                \
+#define CONV_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS                               \
   auto& input_operands = operation->input_operands;                            \
   auto& output_operands = operation->output_operands;                          \
   auto input_count = input_operands.size();                                    \
@@ -27,14 +29,14 @@ namespace operation {
   /* Input */                                                                  \
   auto input_operand = input_operands[0];                                      \
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);            \
-  auto input_channel_size = input_operand->type.dimensions[1];                 \
+  auto input_channel_size = input_operand->type.dimensions.data[1];            \
   /* Filter */                                                                 \
   auto filter_operand = input_operands[1];                                     \
   NNADAPTER_VLOG(5) << "filter: " << OperandToString(filter_operand);          \
-  auto output_channel_size = filter_operand->type.dimensions[0];               \
-  auto filter_channel_size = filter_operand->type.dimensions[1];               \
-  auto filter_height = filter_operand->type.dimensions[2];                     \
-  auto filter_width = filter_operand->type.dimensions[3];                      \
+  auto output_channel_size = filter_operand->type.dimensions.data[0];          \
+  auto filter_channel_size = filter_operand->type.dimensions.data[1];          \
+  auto filter_height = filter_operand->type.dimensions.data[2];                \
+  auto filter_width = filter_operand->type.dimensions.data[3];                 \
   NNADAPTER_VLOG(5) << "filter dims = [" << output_channel_size << ","         \
                     << filter_channel_size << "," << filter_height << ","      \
                     << filter_width << "]";                                    \
@@ -42,6 +44,9 @@ namespace operation {
   auto bias_operand = input_operands[2];                                       \
   NNADAPTER_VLOG(5) << "bias: " << OperandToString(bias_operand);              \
   /* Auto pad: not support auto_pad. */                                        \
+  auto auto_pad = static_cast<NNAdapterAutoPadCode>(                           \
+      *reinterpret_cast<int32_t*>(input_operands[3]->buffer));                 \
+  NNADAPTER_VLOG(5) << "auto_pad: " << AutoPadCodeToString(auto_pad);          \
   /* Pads: Pads are transed according to auto_pad, so pads are used. */        \
   uint32_t pads_size =                                                         \
       input_operands[4]->length / static_cast<uint32_t>(sizeof(int32_t));      \
@@ -83,8 +88,27 @@ namespace operation {
   auto output_operand = output_operands[0];                                    \
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);          \
   /* Check depthwise mode */                                                   \
-  bool is_depthwise_mode = (group != 1 && input_channel_size == group);        \
+  bool is_depthwise_mode = group != 1 && input_channel_size == group &&        \
+                           output_channel_size % input_channel_size == 0;      \
   NNADAPTER_VLOG(5) << "depthwise mode(" << is_depthwise_mode << ").";
+
+// Update the values of pad and dilation according to auto_pad and input_size
+void UpdateConv2DPadAndDilation(int32_t input_size,
+                                int32_t filter_height_or_width,
+                                NNAdapterAutoPadCode auto_pad,
+                                int32_t* pad_top_or_left,
+                                int32_t* pad_bottom_or_right,
+                                int32_t stride_height_or_width,
+                                int32_t* dilation_height_or_width);
+// Calculate the height or width of the output operand of Conv2D according to
+// the pads, dilation, stride and etc.
+int32_t CalcConv2DOutputSize(int32_t input_size,
+                             int32_t filter_height_or_width,
+                             NNAdapterAutoPadCode auto_pad,
+                             int32_t pad_top_or_left,
+                             int32_t pad_bottom_or_right,
+                             int32_t stride_height_or_width,
+                             int32_t dilation_height_or_width);
 
 }  // namespace operation
 }  // namespace nnadapter

@@ -106,25 +106,20 @@ class TopkV2ComputeTester : public arena::TestCase {
 
 template <typename T1, typename T2>
 void test_topk_v2(Place place, float abs_error) {
-  int caseNum = 0;
   for (auto x_shape :
        std::vector<std::vector<int64_t>>{{2, 3, 4, 5}, {3, 4, 5}, {4, 5}}) {
-    for (int axis : {-1, -2}) {
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+    for (int axis : {-1}) {
+#else
+    for (int axis : {-1, -2, 0}) {
+#endif
       for (int k : {2, 5}) {
-        std::cout << "start case " << caseNum++ << ":" << std::endl;
-        auto axis_valid = ((axis >= (-1 * (int)x_shape.size())) &&
-                           (axis < (int)x_shape.size()));
-        if (!axis_valid) {
-          LOG(INFO) << "the axis of topk_v2 must be [" << (-1 * x_shape.size())
-                    << ", " << x_shape.size() << "but you set axis is" << axis;
+        int x_size = x_shape.size();
+        if (axis < -1 * x_size || axis >= x_size) {
           continue;
         }
-        if (axis < 0) {
-          axis += x_shape.size();
-        }
-        if (x_shape[axis] < k) {
-          LOG(INFO) << "input of topk_v2 op must have >=" << k
-                    << " columns in axis of " << x_shape[axis];
+        int tmp_axis = axis < 0 ? axis + x_size : axis;
+        if (x_shape[tmp_axis] < k) {
           continue;
         }
         std::unique_ptr<arena::TestCase> tester(new TopkV2ComputeTester<T1, T2>(
@@ -138,13 +133,21 @@ void test_topk_v2(Place place, float abs_error) {
 
 TEST(Topk, precision) {
   Place place;
-#if defined(LITE_WITH_ARM)
-  place = TARGET(kHost);
   float abs_error = 2e-5;
-  test_topk_v2<float, int64_t>(place, abs_error);
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
 #else
   return;
 #endif
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kHost);
+#else
+  return;
+#endif
+
+  test_topk_v2<float, int64_t>(place, abs_error);
 }
 
 }  // namespace lite

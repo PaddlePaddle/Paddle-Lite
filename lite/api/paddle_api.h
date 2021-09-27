@@ -58,6 +58,8 @@ struct LITE_API Tensor {
   template <typename T>
   T* mutable_data(TargetType type = TargetType::kHost) const;
 
+  void* mutable_metal_data(void* ptr) const;
+
   // Share external memory. Note: ensure that the data pointer is in a valid
   // state
   // during the prediction process.
@@ -174,8 +176,10 @@ class LITE_API ConfigBase {
   int x86_math_num_threads_ = 1;
 
   std::string metal_path_;
-  bool metal_use_mps_;
-  bool metal_use_aggressive_;
+  bool metal_use_mps_{false};
+  bool metal_use_aggressive_{false};
+  void* metal_device_{nullptr};
+  bool metal_use_memory_reuse_{false};
 
  public:
   explicit ConfigBase(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1);
@@ -283,10 +287,14 @@ class LITE_API ConfigBase {
   void set_metal_lib_path(const std::string& path);
   void set_metal_use_mps(bool flag);
   void set_metal_use_aggressive(bool flag);
+  void set_metal_device(void* device);
+  void set_metal_use_memory_reuse(bool flag);
 
   std::string metal_lib_path() const { return metal_path_; }
   bool metal_use_mps() const { return metal_use_mps_; }
   bool metal_use_aggressive() const { return metal_use_aggressive_; }
+  void* metal_device() const { return metal_device_; }
+  bool metal_use_memory_reuse() const { return metal_use_memory_reuse_; }
 };
 
 class LITE_API CxxModelBuffer {
@@ -317,6 +325,8 @@ class LITE_API CxxConfig : public ConfigBase {
   std::vector<std::string> passes_internal_{};
   bool quant_model_{false};  // Enable post_quant_dynamic in opt
   QuantType quant_type_{QuantType::QUANT_INT16};
+  bool sparse_model_{false};  // Enable sparse_conv_detect_pass in opt
+  float sparse_threshold_{0.6f};
   std::map<int, std::vector<std::shared_ptr<void>>>
       preferred_inputs_for_warmup_;
 #ifdef LITE_WITH_CUDA
@@ -395,7 +405,7 @@ class LITE_API CxxConfig : public ConfigBase {
   // XPU only, set the size of the workspace memory from L3 cache for the
   // current thread.
   // **DEPRECATED**, use set_xpu_l3_cache_method() in the future
-  void set_xpu_workspace_l3_size_per_thread(int l3_size = 0xfffc00);
+  void set_xpu_workspace_l3_size_per_thread(int l3_size = 0x4000000);
   void set_xpu_l3_cache_method(size_t l3_size, bool locked = false);
 
   void set_xpu_conv_autotune(bool autotune = true,
@@ -430,6 +440,13 @@ class LITE_API CxxConfig : public ConfigBase {
   bool quant_model() const { return quant_model_; }
   void set_quant_type(QuantType quant_type) { quant_type_ = quant_type; }
   QuantType quant_type() const { return quant_type_; }
+
+  void set_sparse_model(bool sparse_model) { sparse_model_ = sparse_model; }
+  bool sparse_model() const { return sparse_model_; }
+  void set_sparse_threshold(float sparse_threshold) {
+    sparse_threshold_ = sparse_threshold;
+  }
+  float sparse_threshold() const { return sparse_threshold_; }
 };
 
 /// MobileConfig is the config for the light weight predictor, it will skip

@@ -452,6 +452,35 @@ struct ActivationGradParam : ParamBase {
   const lite::Tensor* Out_grad{};
 };
 
+// For Sparse Convolution op
+struct SparseConvParam : ParamBase {
+  const lite::Tensor* x{};
+  // An array of float values storing non-zero kernel elements
+  const lite::Tensor* nonzero_weights{};
+  /* An array of int32_t values storing scaled
+   * [by sizeof(input element)] difference  between input channels
+   * corresponding to successive non-zero element
+   */
+  const lite::Tensor* diffs{};
+  // the number of non-zero kernel elements per each output channel
+  const lite::Tensor* oc_nonzeros{};
+  const lite::Tensor* bias{nullptr};
+  lite::Tensor* output{};
+  int first_ic{0};
+  std::vector<int> strides{1, 1};
+  std::shared_ptr<std::vector<int>> paddings;
+  int groups{1};
+  std::shared_ptr<std::vector<int>> dilations;
+  // for activation
+  bool fuse_relu{false};
+  ActivationParam activation_param;
+  bool enable_int8{false};
+  float input_scale{1.0f};
+  std::vector<float> weight_scale{};
+  float output_scale{1.0f};
+  int bit_length{8};
+};
+
 // For Convolution op
 struct ConvParam : ParamBase {
   lite::Tensor* x{};
@@ -601,6 +630,9 @@ struct PoolParam : ParamBase {
     }
     return output_tensor_ptrs_cache_.get();
   }
+#ifdef LITE_WITH_XPU
+  bool pad_zero{false};
+#endif
 };
 
 // For Dropout op
@@ -1944,6 +1976,13 @@ struct XPUSoftmaxTopkParam : ParamBase {
   int K{1};
 };
 
+struct XPUMultiSoftmaxParam : ParamBase {
+  const lite::Tensor* input{};
+  lite::Tensor* concat_output{};
+  std::vector<lite::Tensor*> output;
+  std::vector<int> lod;
+};
+
 struct XPUBlockFuseParam : ParamBase {
   const lite::Tensor* input{nullptr};
   const lite::Tensor* filter{nullptr};
@@ -1985,6 +2024,8 @@ struct XPUMultiEncoderParam : ParamBase {
   std::vector<int> slice_starts{};
   std::vector<int> slice_ends{};
   std::vector<int> slice_decrease_axis{};
+  std::vector<float> input_max{};
+  std::vector<float> weight_max{};
   int n_layers{};
   int head_num{};
   int size_per_head{};
@@ -2016,6 +2057,8 @@ struct XPUFcParam : ParamBase {
 
   int act_type;
   float act_param;
+  float quant_input_max{0.f};
+  float quant_w_max{0.f};
   std::string precision{};
   bool has_bias{false};
   int in_num_col_dims{1};
@@ -2484,8 +2527,12 @@ struct CosSimParam : ParamBase {
 };
 
 struct WriteBackParam : ParamBase {
+  bool tensor_array_copy{false};
   const lite::Tensor* x{};
   lite::Tensor* y{};
+
+  std::vector<lite::Tensor>* array_x{};
+  std::vector<lite::Tensor>* array_y{};
 };
 
 struct UniqueWithCountsParam : ParamBase {

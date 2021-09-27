@@ -15,11 +15,10 @@
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include <vector>
-#include "lite/api/lite_api_test_helper.h"
 #include "lite/api/paddle_api.h"
-#include "lite/api/test_helper.h"
+#include "lite/api/test/lite_api_test_helper.h"
+#include "lite/api/test/test_helper.h"
 #include "lite/tests/api/ILSVRC2012_utility.h"
-#include "lite/utils/cp_logging.h"
 
 DEFINE_string(data_dir, "", "data dir");
 DEFINE_int32(iteration, 100, "iteration times to run");
@@ -52,7 +51,7 @@ TEST(MobileNetV1, test_mobilenet_v1_int8_per_layer_nnadapter) {
   out_accuracy_threshold = 0.79f;
 #elif defined(NNADAPTER_WITH_MEDIATEK_APU)
   nnadapter_device_names.emplace_back("mediatek_apu");
-  out_accuracy_threshold = 0.82f;
+  out_accuracy_threshold = 0.79f;
 #elif defined(NNADAPTER_WITH_IMAGINATION_NNA)
   nnadapter_device_names.emplace_back("imagination_nna");
   out_accuracy_threshold = 0.79f;

@@ -13,45 +13,70 @@
 // limitations under the License.
 
 #include "core/operation/pool2d.h"
-#include "driver/huawei_ascend_npu/converter.h"
+#include "driver/huawei_ascend_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int Program::ConvertPool2D(hal::Operation* operation) {
+int ConvertPool2D(Converter* converter, hal::Operation* operation) {
   POOL_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
-  auto input_operator = GetMappedOperator(input_operand);
+  auto input_operator = converter->GetMappedOperator(input_operand);
   if (!input_operator) {
-    input_operator = ConvertOperand(input_operand);
+    input_operator = converter->ConvertOperand(input_operand);
   }
-  auto pool2d_name = GetOperatorName(output_operand);
-  auto pool2d_op = std::make_shared<ge::op::Pooling>(pool2d_name);
   if (operation->type == NNADAPTER_AVERAGE_POOL_2D) {
-    pool2d_op->set_attr_mode(1);
+    auto pool2d_op = converter->AddOperator<ge::op::AvgPoolV2>(output_operand);
+    pool2d_op->set_attr_ksize(
+        ge::Operator::OpListInt({1, 1, kernel_height, kernel_width}));
+    pool2d_op->set_attr_strides(
+        ge::Operator::OpListInt({1, 1, stride_height, stride_width}));
+    auto GetPoolingPaddingMode = [&](int32_t auto_pad) {
+      switch (auto_pad) {
+        case NNADAPTER_AUTO_PAD_VALID:
+          return "VALID";
+        case NNADAPTER_AUTO_PAD_SAME:
+          return "SAME";
+        case NNADAPTER_AUTO_PAD_NONE:
+        default:
+          return "CALCULATED";
+      }
+    };
+    pool2d_op->set_attr_padding_mode(
+        ge::Operator::OpString(GetPoolingPaddingMode(auto_pad)));
+    pool2d_op->set_attr_pads(ge::Operator::OpListInt(
+        {pad_height_top, pad_height_bottom, pad_width_left, pad_width_right}));
+    pool2d_op->set_attr_global_pooling(global_pooling);
+    pool2d_op->set_attr_ceil_mode(ceil_mode);
+    if (flag) {
+      pool2d_op->set_attr_exclusive(0);
+    }
+    SET_INPUT(pool2d_op, x, input_operator);
+    MAP_OUTPUT(pool2d_op, y, output_operand);
   } else if (operation->type == NNADAPTER_MAX_POOL_2D) {
+    auto pool2d_op = converter->AddOperator<ge::op::Pooling>(output_operand);
     pool2d_op->set_attr_mode(0);
+    pool2d_op->set_attr_global_pooling(global_pooling);
+    pool2d_op->set_attr_window(
+        ge::Operator::OpListInt({kernel_height, kernel_width}));
+    pool2d_op->set_attr_pad(ge::Operator::OpListInt(
+        {pad_height_top, pad_height_bottom, pad_width_left, pad_width_right}));
+    pool2d_op->set_attr_stride(
+        ge::Operator::OpListInt({stride_height, stride_width}));
+    // "0" (ceil mode) or "1" (floor mode). Defaults to "0"
+    if (!ceil_mode) {
+      pool2d_op->set_attr_ceil_mode(1);
+    }
+    SET_INPUT(pool2d_op, x, input_operator);
+    MAP_OUTPUT(pool2d_op, y, output_operand);
   } else {
     NNADAPTER_LOG(FATAL) << "Unsupported pooling operation type "
                          << OperationTypeToString(operation->type)
                          << " is found.";
   }
-  pool2d_op->set_attr_global_pooling(global_pooling);
-  pool2d_op->set_attr_window(
-      ge::Operator::OpListInt({kernel_height, kernel_width}));
-  pool2d_op->set_attr_pad(ge::Operator::OpListInt(
-      {pad_height_top, pad_height_bottom, pad_width_left, pad_width_right}));
-  pool2d_op->set_attr_stride(
-      ge::Operator::OpListInt({stride_height, stride_width}));
-  // "0" (ceil mode) or "1" (floor mode). Defaults to "0"
-  if (!ceil_mode) {
-    pool2d_op->set_attr_ceil_mode(1);
-  }
-  SET_INPUT(pool2d_op, x, input_operator);
-  MAP_OUTPUT(pool2d_op, y, output_operand);
   return NNADAPTER_NO_ERROR;
 }
 

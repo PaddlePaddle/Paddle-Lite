@@ -417,7 +417,8 @@ void ElementwiseSubCompute<float16_t, PRECISION(kFP16)>::Run() {
 
 template <>
 void ElementwiseDivActivationCompute<float16_t, PRECISION(kFP16)>::Run() {
-  // auto& param = Param<operators::FusionElementwiseActivationParam>();
+// auto& param = Param<operators::FusionElementwiseActivationParam>();
+#ifdef __aarch64__
   auto& param =
       this->template Param<operators::FusionElementwiseActivationParam>();
   bool act_supported = false;
@@ -438,10 +439,14 @@ void ElementwiseDivActivationCompute<float16_t, PRECISION(kFP16)>::Run() {
   if (!act_supported) {
     LOG(FATAL) << "fp16 unsupported Activation type: " << param.act_type;
   }
+#else
+  LOG(FATAL) << "it doesn't support v7 fp16 elementwise_div_act compute";
+#endif
 }
 
 template <>
 void ElementwiseDivCompute<float16_t, PRECISION(kFP16)>::Run() {
+#ifdef __aarch64__
   elementwise_compute_template<operators::ElementwiseParam,
                                float16_t,
                                OprandSwapable::NO,
@@ -451,6 +456,9 @@ void ElementwiseDivCompute<float16_t, PRECISION(kFP16)>::Run() {
       lite::arm::math::fp16::elementwise_div_broadcast<float16_t>,
       lite::arm::math::fp16::elementwise_div<float16_t>,
       paddle::lite::kernels::host::naive_div<float16_t>);
+#else
+  LOG(FATAL) << "it doesn't support v7 fp16 elementwise_div compute";
+#endif
 }
 
 template <>

@@ -1,4 +1,4 @@
-// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -118,13 +118,14 @@ void FetchImageCompute::setup_without_mps() {
 
     std::vector<int> transpose_nhwc = {0, 2, 3, 1};
     std::vector<int> transpose_nchw = {0, 1, 2, 3};
-    if (input_buffer_->transpose_ == transpose_nhwc) {
-        function_name_ = "fetch";
-    } else if (input_buffer_->transpose_ == transpose_nchw) {
-        LOG(FATAL) << "fetch: all transpose should be {0, 2, 3, 1}";
-    } else {
-        LOG(FATAL) << "fetch: unsupported tensor transpose";
-    }
+    function_name_ = "fetch";
+    // if (input_buffer_->transpose_ == transpose_nhwc) {
+    //     function_name_ = "fetch";
+    // } else if (input_buffer_->transpose_ == transpose_nchw) {
+    //     LOG(FATAL) << "fetch: all transpose should be {0, 2, 3, 1}";
+    // } else {
+    //     LOG(FATAL) << "fetch: unsupported tensor transpose";
+    // }
 
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();

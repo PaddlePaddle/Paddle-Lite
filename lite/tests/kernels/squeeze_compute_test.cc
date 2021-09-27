@@ -197,7 +197,7 @@ class Squeeze2ComputeTester : public arena::TestCase {
 
 void test_squeeze(Place place) {
   for (std::vector<int> axes : {std::vector<int>({}),
-                                std::vector<int>({0, 2}),
+                                std::vector<int>({0}),
                                 std::vector<int>({0, -2})}) {
     for (int N : {1}) {
       for (int C : {3}) {
@@ -218,7 +218,7 @@ void test_squeeze(Place place) {
 
 void test_squeeze2(Place place) {
   for (std::vector<int> axes : {std::vector<int>({}),
-                                std::vector<int>({0, 2}),
+                                std::vector<int>({0}),
                                 std::vector<int>({0, -2})}) {
     for (int N : {1}) {
       for (int C : {3}) {

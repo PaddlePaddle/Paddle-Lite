@@ -12,80 +12,91 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/huawei_ascend_npu/converter.h"
+#include "core/operation/resize_linear.h"
+#include "driver/huawei_ascend_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int Program::ConvertResizeLinear(hal::Operation* operation) {
-  auto& input_operands = operation->input_operands;
-  auto& output_operands = operation->output_operands;
-  auto input_count = input_operands.size();
-  auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 5);
-  NNADAPTER_CHECK_EQ(output_count, 1);
-
-  // Input
-  auto* input_operand = input_operands[0];
-  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);
-  // Shape
-  auto* shape_operand = input_operands[1];
-  if (shape_operand != nullptr) {
-    NNADAPTER_VLOG(5) << "shape: " << OperandToString(shape_operand);
-  }
-  // Scales
-  auto* scales_operand = input_operands[2];
-  if (scales_operand != nullptr) {
-    NNADAPTER_VLOG(5) << "scales: " << OperandToString(scales_operand);
-  }
-  // Align_corners
-  auto* align_corners_operand = input_operands[3];
-  NNADAPTER_VLOG(5) << "align_corners: "
-                    << OperandToString(align_corners_operand);
-  bool align_corners =
-      reinterpret_cast<bool*>(align_corners_operand->buffer)[0];
-  // Align_mode
-  auto* align_mode_operand = input_operands[4];
-  if (align_mode_operand != nullptr) {
-    NNADAPTER_VLOG(5) << "align_mode: " << OperandToString(align_mode_operand);
-  }
-  int align_mode = reinterpret_cast<int32_t*>(align_mode_operand->buffer)[0];
-  if (align_mode == 0 && !align_corners) {
-    NNADAPTER_LOG(WARNING) << "align_mode = 0 && align_corners = false isn't "
-                              "supported in Huawei Ascend NPU DDK";
-    return NNADAPTER_INVALID_PARAMETER;
-  }
-
-  // Output
-  auto* output_operand = output_operands[0];
-  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
+int ConvertResizeLinear(Converter* converter, hal::Operation* operation) {
+  RESIZE_LINEAR_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  NNADAPTER_CHECK(!(align_mode == 0 && align_corners))
+      << "HuiweiAscendNPU does not support align_mode=0 and "
+         "align_corners=true.";
 
   // Convert to GE operators
-  auto resize_linear_name = GetOperatorName(output_operand);
   auto resize_linear_op =
-      std::make_shared<ge::op::ResizeBilinearV2>(resize_linear_name);
-  auto input_operator = GetMappedOperator(input_operand);
+      converter->AddOperator<ge::op::ResizeBilinearV2>(output_operand);
+  auto input_operator = converter->GetMappedOperator(input_operand);
   if (input_operator == nullptr) {
-    input_operator = ConvertOperand(input_operand);
+    input_operator = converter->ConvertOperand(input_operand);
   }
   SET_INPUT(resize_linear_op, x, input_operator);
+
   if (shape_operand != nullptr) {
-    auto shape_operator = GetMappedOperator(shape_operand);
+    auto shape_operator = converter->GetMappedOperator(shape_operand);
     if (shape_operator == nullptr) {
-      shape_operator = ConvertOperand(shape_operand);
+      shape_operator = converter->ConvertOperand(shape_operand);
     }
     SET_INPUT(resize_linear_op, size, shape_operator);
-  } else if (scales_operand != nullptr) {
-    NNADAPTER_LOG(WARNING) << "Not support scales now.";
-    return NNADAPTER_INVALID_PARAMETER;
   } else {
-    NNADAPTER_LOG(WARNING) << "Either shape_operand or scales_operand should "
-                              "be set.";
-    return NNADAPTER_INVALID_PARAMETER;
+    // shape -> cast -> slice -> mul -> cast
+    output_operand->type.precision = NNADAPTER_TENSOR_INT32;
+    auto shape_op = converter->AddOperator<ge::op::Shape>(output_operand);
+    shape_op->set_attr_dtype(ge::DT_INT32);
+    SET_INPUT(shape_op, x, input_operator);
+    auto shape_operator = MAP_OUTPUT(shape_op, y, output_operand);
+
+    output_operand->type.precision = NNADAPTER_TENSOR_FLOAT32;
+    auto cast0_op = converter->AddOperator<ge::op::Cast>(output_operand);
+    cast0_op->set_attr_dst_type(ge::DT_FLOAT);
+    SET_INPUT(cast0_op, x, shape_operator);
+    auto cast0_operator = MAP_OUTPUT(cast0_op, y, output_operand);
+
+    auto starts_operator =
+        converter->AddInt32ConstantOperator(std::vector<int>{2});
+    auto ends_operator =
+        converter->AddInt32ConstantOperator(std::vector<int>{4});
+    auto axes_operator =
+        converter->AddInt32ConstantOperator(std::vector<int>{0});
+    auto steps_operator =
+        converter->AddInt32ConstantOperator(std::vector<int>{1});
+    auto slice_op =
+        converter->AddOperator<ge::op::StridedSliceV2>(output_operand);
+    SET_INPUT(slice_op, x, cast0_operator);
+    SET_INPUT(slice_op, begin, starts_operator);
+    SET_INPUT(slice_op, end, ends_operator);
+    SET_INPUT(slice_op, axes, axes_operator);
+    SET_INPUT(slice_op, strides, steps_operator);
+    auto slice_operator = MAP_OUTPUT(slice_op, y, output_operand);
+
+    auto scales_operator = converter->GetMappedOperator(scales_operand);
+    if (scales_operator == nullptr) {
+      scales_operator = converter->ConvertOperand(scales_operand);
+    }
+    auto mul_op = converter->AddOperator<ge::op::Mul>(output_operand);
+    SET_INPUT(mul_op, x1, slice_operator);
+    SET_INPUT(mul_op, x2, scales_operator);
+    auto mul_operator = MAP_OUTPUT(mul_op, y, output_operand);
+
+    output_operand->type.precision = NNADAPTER_TENSOR_INT32;
+    auto cast1_op = converter->AddOperator<ge::op::Cast>(output_operand);
+    cast1_op->set_attr_dst_type(ge::DT_INT32);
+    SET_INPUT(cast1_op, x, mul_operator);
+    shape_operator = MAP_OUTPUT(cast1_op, y, output_operand);
+    output_operand->type.precision = NNADAPTER_TENSOR_FLOAT32;
+
+    SET_INPUT(resize_linear_op, size, shape_operator);
   }
+
   resize_linear_op->set_attr_align_corners(align_corners);
+  if (align_mode == 0) {
+    resize_linear_op->set_attr_half_pixel_centers(true);
+  } else {
+    resize_linear_op->set_attr_half_pixel_centers(false);
+  }
   MAP_OUTPUT(resize_linear_op, y, output_operand);
   return NNADAPTER_NO_ERROR;
 }

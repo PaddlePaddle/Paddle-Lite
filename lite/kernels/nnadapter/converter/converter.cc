@@ -238,6 +238,22 @@ NNAdapterOperand* Converter::AddConstantOperand(
 }
 
 NNAdapterOperand* Converter::AddInputOperand(
+    Scope* scope,
+    const std::string& input_name,
+    DDim dimensions,
+    const std::vector<float>& quant_scales,
+    uint32_t quant_channel_dim) {
+  NNAdapterOperand* input_operand = GetMappedOperand(input_name);
+  if (!input_operand) {
+    auto input_tensor = scope->FindTensor(input_name);
+    CHECK(input_tensor->persistable());
+    input_operand = AddConstantOperand(
+        *input_tensor, dimensions, false, quant_scales, quant_channel_dim);
+  }
+  return input_operand;
+}
+
+NNAdapterOperand* Converter::AddInputOperand(
     const std::string& name,
     const DDim& dimensions,
     const std::vector<std::vector<int64_t>>& dynamic_dimensions,
@@ -323,6 +339,102 @@ NNAdapterOperation* Converter::AddOperation(
   return operation;
 }
 
+NNAdapterOperation* Converter::AddOperation(
+    NNAdapterOperationType type,
+    std::vector<NNAdapterOperand*> input_operands,
+    std::vector<NNAdapterOperand*> output_operands) {
+  return AddOperation(type, &input_operands, &output_operands);
+}
+
+NNAdapterOperand* Converter::AddShapeOperation(
+    NNAdapterOperand* input_operand,
+    const std::string& output_name,
+    NNAdapterOperandPrecisionCode output_precision) {
+  // Dtype operand
+  CHECK(output_precision == NNADAPTER_TENSOR_INT32 ||
+        output_precision == NNADAPTER_TENSOR_INT64)
+      << "Shape's output's precision only support NNADAPTER_TENSOR_INT32 or "
+         "NNADAPTER_TENSOR_INT64, but received "
+      << static_cast<int32_t>(output_precision);
+  auto dtype_operand =
+      AddConstantOperand(static_cast<int32_t>(output_precision));
+
+  // Shape operand
+  auto shape_operand = AddOutputOperand(output_name);
+
+  // Shape operation
+  AddOperation(
+      NNADAPTER_SHAPE, {input_operand, dtype_operand}, {shape_operand});
+  return shape_operand;
+}
+
+NNAdapterOperand* Converter::AddUnsqueezeOperation(
+    NNAdapterOperand* input_operand,
+    const std::vector<int32_t>& axes,
+    const std::string& out_name) {
+  auto axes_operand = AddConstantOperand(axes);
+  // Copy scales from input in PrepareUnsqueeze
+  auto output_operand = AddOutputOperand(out_name);
+  AddOperation(
+      NNADAPTER_UNSQUEEZE, {input_operand, axes_operand}, {output_operand});
+  return output_operand;
+}
+
+NNAdapterOperand* Converter::AddSqueezeOperation(
+    NNAdapterOperand* input_operand,
+    const std::vector<int32_t>& axes,
+    const std::string& out_name) {
+  NNAdapterOperand* axes_operand = nullptr;
+  if (!axes.empty()) {
+    axes_operand = AddConstantOperand(axes);
+  }
+  // Copy scales from input in PrepareSqueeze
+  auto output_operand = AddOutputOperand(out_name);
+  AddOperation(
+      NNADAPTER_SQUEEZE, {input_operand, axes_operand}, {output_operand});
+  return output_operand;
+}
+
+NNAdapterOperand* Converter::AddSliceOperation(
+    NNAdapterOperand* input_operand,
+    const std::vector<int32_t>& axes,
+    const std::vector<int32_t>& starts,
+    const std::vector<int32_t>& ends,
+    const std::vector<int32_t>& steps,
+    const std::string& out_name) {
+  auto axes_operand = AddConstantOperand(axes);
+  auto starts_operand = AddConstantOperand(starts);
+  auto ends_operand = AddConstantOperand(ends);
+  auto steps_operand = AddConstantOperand(steps);
+  auto output_operand = AddOutputOperand(out_name);
+  AddOperation(NNADAPTER_SLICE,
+               {input_operand,
+                axes_operand,
+                starts_operand,
+                ends_operand,
+                steps_operand},
+               {output_operand});
+  return output_operand;
+}
+
+NNAdapterOperand* Converter::AddFlattenOperation(
+    NNAdapterOperand* input_operand,
+    const int32_t start_axis,
+    const int32_t end_axis,
+    const std::string& out_name) {
+  if (start_axis == end_axis) {
+    return input_operand;
+  }
+  auto start_axis_operand =
+      AddConstantOperand(static_cast<int32_t>(start_axis));
+  auto end_axis_operand = AddConstantOperand(static_cast<int32_t>(end_axis));
+  auto output_operand = AddOutputOperand(out_name);
+  AddOperation(NNADAPTER_FLATTEN,
+               {input_operand, start_axis_operand, end_axis_operand},
+               {output_operand});
+  return output_operand;
+}
+
 NNAdapterOperand* Converter::AddOperand(NNAdapterOperandType* type,
                                         const std::string& name) {
   NNAdapterOperand* operand = nullptr;
@@ -353,14 +465,12 @@ NNAdapterOperand* Converter::AddOperand(
   memset(&type, 0, sizeof(NNAdapterOperandType));
   if (dimensions.size() > 0) {
     ConvertDDimToNNDimensions(
-        dimensions, type.dimensions, &type.dimension_count);
+        dimensions, type.dimensions.data, &type.dimensions.count);
   }
-  type.dynamic_dimension_count = dynamic_dimensions.size();
-  if (type.dynamic_dimension_count > 0) {
-    for (uint32_t i = 0; i < type.dynamic_dimension_count; i++) {
-      ConvertVectorToNNDimensions(dynamic_dimensions[i],
-                                  type.dynamic_dimensions[i]);
-    }
+  type.dimensions.dynamic_count = dynamic_dimensions.size();
+  for (uint32_t i = 0; i < type.dimensions.dynamic_count; i++) {
+    ConvertVectorToNNDimensions(dynamic_dimensions[i],
+                                type.dimensions.dynamic_data[i]);
   }
   const auto UNKNOWN_PRECISION =
       static_cast<NNAdapterOperandPrecisionCode>(NNADAPTER_UNKNOWN);

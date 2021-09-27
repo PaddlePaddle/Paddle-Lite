@@ -19,79 +19,65 @@
 namespace nnadapter {
 namespace imagination_nna {
 
-imgdnn_type ConvertPrecision(NNAdapterOperandPrecisionCode input_precision) {
-  imgdnn_type output_precision;
-  switch (input_precision) {
+imgdnn_type ConvertToImgdnnPrecision(
+    NNAdapterOperandPrecisionCode precision_code) {
+  switch (precision_code) {
     case NNADAPTER_TENSOR_INT8:
-      output_precision = IMGDNN_TYPE_I8;
-      break;
+      return IMGDNN_TYPE_I8;
     case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER:
-      output_precision = IMGDNN_TYPE_Q_I8;
-      break;
+      return IMGDNN_TYPE_Q_I8;
     case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL:
-      output_precision = IMGDNN_TYPE_QPA_I8;
-      break;
+      return IMGDNN_TYPE_QPA_I8;
     case NNADAPTER_TENSOR_INT16:
-      output_precision = IMGDNN_TYPE_I16;
-      break;
+      return IMGDNN_TYPE_I16;
     case NNADAPTER_TENSOR_INT32:
     case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER:
     case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL:
-      output_precision = IMGDNN_TYPE_I32;
-      break;
+      return IMGDNN_TYPE_I32;
     case NNADAPTER_TENSOR_UINT8:
-      output_precision = IMGDNN_TYPE_U8;
-      break;
+      return IMGDNN_TYPE_U8;
     case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER:
-      output_precision = IMGDNN_TYPE_Q_U8;
-      break;
+      return IMGDNN_TYPE_Q_U8;
     case NNADAPTER_TENSOR_UINT16:
-      output_precision = IMGDNN_TYPE_U16;
-      break;
+      return IMGDNN_TYPE_U16;
     case NNADAPTER_TENSOR_UINT32:
     case NNADAPTER_TENSOR_QUANT_UINT32_ASYMM_PER_LAYER:
-      output_precision = IMGDNN_TYPE_U32;
-      break;
+      return IMGDNN_TYPE_U32;
     case NNADAPTER_TENSOR_FLOAT16:
-      output_precision = IMGDNN_TYPE_F16;
-      break;
+      return IMGDNN_TYPE_F16;
     case NNADAPTER_TENSOR_FLOAT32:
-      output_precision = IMGDNN_TYPE_F32;
-      break;
+      return IMGDNN_TYPE_F32;
     default:
       NNADAPTER_LOG(FATAL)
           << "Failed to convert the NNAdapter operand precision code("
-          << OperandPrecisionCodeToString(input_precision)
+          << OperandPrecisionCodeToString(precision_code)
           << ") to imgdnn_type !";
       break;
   }
-  return output_precision;
+  return IMGDNN_TYPE_F32;
 }
 
-imgdnn_dimensions_order ConvertDataLayout(
-    NNAdapterOperandLayoutCode input_layout) {
-  imgdnn_dimensions_order output_layout = IMGDNN_UNKNOWN;
-  switch (input_layout) {
+imgdnn_dimensions_order ConvertToImgdnnDataLayout(
+    NNAdapterOperandLayoutCode layout_code) {
+  switch (layout_code) {
     case NNADAPTER_NCHW:
-      output_layout = IMGDNN_NCHW;
-      break;
+      return IMGDNN_NCHW;
     case NNADAPTER_NHWC:
-      output_layout = IMGDNN_NHWC;
-      break;
+      return IMGDNN_NHWC;
     default:
       NNADAPTER_LOG(FATAL)
           << "Failed to convert the NNAdapter operand layout code("
-          << OperandLayoutCodeToString(input_layout)
+          << OperandLayoutCodeToString(layout_code)
           << ") to imgdnn_dimensions_order !";
       break;
   }
-  return output_layout;
+  return IMGDNN_UNKNOWN;
 }
 
-void ConvertDimensions(int32_t* input_dimensions,
-                       uint32_t input_dimensions_count,
-                       size_t* output_dimensions,
-                       unsigned int* output_dimensions_count) {
+void ConvertToImgdnnDimensions(int32_t* input_dimensions,
+                               uint32_t input_dimensions_count,
+                               size_t* output_dimensions,
+                               unsigned int* output_dimensions_count) {
   NNADAPTER_CHECK_LE(input_dimensions_count, IMGDNN_DESCRIPTOR_MAX_DIM);
   *output_dimensions_count = input_dimensions_count;
   for (uint32_t i = 0; i < input_dimensions_count; i++) {

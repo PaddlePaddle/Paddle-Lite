@@ -12,48 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/huawei_ascend_npu/converter.h"
+#include "core/operation/range.h"
+#include "driver/huawei_ascend_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int Program::ConvertRange(hal::Operation* operation) {
-  auto& input_operands = operation->input_operands;
-  auto& output_operands = operation->output_operands;
-  auto input_count = input_operands.size();
-  auto output_count = output_operands.size();
-  NNADAPTER_CHECK_EQ(input_count, 3);
-  NNADAPTER_CHECK_EQ(output_count, 1);
-  // Start
-  auto start_operand = input_operands[0];
-  NNADAPTER_VLOG(5) << "start_operand: " << OperandToString(start_operand);
-  // Limit
-  auto limit_operand = input_operands[1];
-  NNADAPTER_VLOG(5) << "limit_operand: " << OperandToString(limit_operand);
-  // Delta
-  auto delta_operand = input_operands[2];
-  NNADAPTER_VLOG(5) << "delta_operand: " << OperandToString(delta_operand);
-  // Output
-  auto output_operand = output_operands[0];
-  NNADAPTER_VLOG(5) << "output_operand: " << OperandToString(output_operand);
+int ConvertRange(Converter* converter, hal::Operation* operation) {
+  RANGE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
-  auto start_operator = GetMappedOperator(start_operand);
+  auto start_operator = converter->GetMappedOperator(start_operand);
   if (!start_operator) {
-    start_operator = ConvertOperand(start_operand);
+    start_operator = converter->ConvertOperand(start_operand);
   }
-  auto limit_operator = GetMappedOperator(limit_operand);
+  auto limit_operator = converter->GetMappedOperator(limit_operand);
   if (!limit_operator) {
-    limit_operator = ConvertOperand(limit_operand);
+    limit_operator = converter->ConvertOperand(limit_operand);
   }
-  auto delta_operator = GetMappedOperator(delta_operand);
+  auto delta_operator = converter->GetMappedOperator(delta_operand);
   if (!delta_operator) {
-    delta_operator = ConvertOperand(delta_operand);
+    delta_operator = converter->ConvertOperand(delta_operand);
   }
-  auto range_name = GetOperatorName(output_operand);
-  auto range_op = std::make_shared<ge::op::Range>(range_name);
+  auto range_op = converter->AddOperator<ge::op::Range>(output_operand);
   SET_INPUT(range_op, start, start_operator);
   SET_INPUT(range_op, limit, limit_operator);
   SET_INPUT(range_op, delta, delta_operator);

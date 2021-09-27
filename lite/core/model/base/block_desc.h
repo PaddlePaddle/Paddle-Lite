@@ -18,7 +18,7 @@
 #include <string>
 #include <vector>
 #include "lite/core/model/base/traits.h"
-#include "lite/utils/cp_logging.h"
+#include "lite/utils/log/cp_logging.h"
 
 namespace paddle {
 namespace lite {

@@ -28,9 +28,12 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-// Initialize/Finalize the system and allocate/free resources
-void InitializeAscendDevice();
-void FinalizeAscendDevice();
+// Prepare AscendCL environment and register the finalizer to be called at
+// normal process termination
+void InitializeAscendCL();
+// Initialize the resources of the model builder and register the finalizer to
+// be called at normal process termination
+void InitializeGraphBuilder();
 
 // Utility of the calling and error handling of Ascend ATC and ACL APIs
 const std::string ACLErrorToString(int error);
@@ -80,21 +83,22 @@ template <>
 ge::DataType GetGEDataType<bool>();
 
 // Convert ACL types to GE types
-ge::DataType ConvertACLDataType(aclDataType input_data_type);
-ge::Format ConvertACLFormat(aclFormat input_format);
-std::vector<int64_t> ConvertACLDimensions(const aclmdlIODims& input_dimensions);
-void ConvertACLDimensions(const aclmdlIODims& input_dimensions,
-                          int32_t* output_dimensions,
-                          uint32_t* output_dimensions_count);
+ge::DataType ConvertACLDataTypeToGEDataType(aclDataType input_data_type);
+ge::Format ConvertACLFormatToGEFormat(aclFormat input_format);
+std::vector<int64_t> ConvertACLDimsToGEDims(
+    const aclmdlIODims& input_dimensions);
+void ConvertACLDimsToGEDims(const aclmdlIODims& input_dimensions,
+                            int32_t* output_dimensions,
+                            uint32_t* output_dimensions_count);
 
 // Convert NNAdapter types to GE types
-ge::DataType ConvertPrecision(NNAdapterOperandPrecisionCode input_precision);
-ge::Format ConvertDataLayout(NNAdapterOperandLayoutCode input_layout);
-std::vector<int64_t> ConvertDimensions(const int32_t* input_dimensions,
-                                       uint32_t input_dimensions_count);
-std::vector<int64_t> ConvertDimensions(
+ge::DataType ConvertToGEPrecision(NNAdapterOperandPrecisionCode precision_code);
+ge::Format ConvertToGEDataLayout(NNAdapterOperandLayoutCode layout_code);
+std::vector<int64_t> ConvertToGEDimensions(const int32_t* input_dimensions,
+                                           uint32_t input_dimensions_count);
+std::vector<int64_t> ConvertToGEDimensions(
     const std::vector<int32_t>& input_dimensions);
-int32_t ConvertFuseCode(int32_t input_fuse_code);
+std::string ConvertPadModeCodeToGEPadMode(int pad_mode_code);
 
 }  // namespace huawei_ascend_npu
 }  // namespace nnadapter

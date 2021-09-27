@@ -42,8 +42,8 @@ class Converter {
   // Create and add a named or anonymous rknn tensor into the tensor pool
   std::shared_ptr<rk::nn::Tensor> AddTensor(
       const std::string& name,
-      int32_t* dimensions,
-      uint32_t dimension_count,
+      int32_t* dimensions_data,
+      uint32_t dimensions_count,
       rk::nn::PrecisionType precision,
       const float* quant_scale = nullptr,
       const int32_t* zero_point = nullptr,
@@ -56,36 +56,36 @@ class Converter {
       std::vector<int32_t> dimensions = {});
   std::shared_ptr<rk::nn::Tensor> AddConstantTensor(
       void* values,
-      int32_t* dimensions,
-      uint32_t dimension_count,
+      int32_t* dimensions_data,
+      uint32_t dimensions_count,
       rk::nn::PrecisionType precision,
       const float* quant_scale = nullptr,
       const int32_t* zero_point = nullptr);
   std::shared_ptr<rk::nn::Tensor> AddVariableTensor(
       const std::string& name,
-      int32_t* dimensions,
-      uint32_t dimension_count,
+      int32_t* dimensions_data,
+      uint32_t dimensions_count,
       rk::nn::PrecisionType precision,
       const float* quant_scale = nullptr,
       const int32_t* zero_point = nullptr);
   // Quant8 constant operand with asymmetric per-layer quantizion
   std::shared_ptr<rk::nn::Tensor> AddQuant8ConstantTensor(
       uint8_t* values,
-      int32_t* dimensions,
-      uint32_t dimension_count,
+      int32_t* dimensions_data,
+      uint32_t dimensions_count,
       float quant_scale,
       int32_t zero_point);
   // Quant32 constant operand with symmetric per-layer quantizion
   std::shared_ptr<rk::nn::Tensor> AddQuant32ConstantTensor(
       int32_t* values,
-      int32_t* dimensions,
-      uint32_t dimension_count,
+      int32_t* dimensions_data,
+      uint32_t dimensions_count,
       float quant_scale);
   // Quant8 variable operand with asymmetric per-layer quantizion
   std::shared_ptr<rk::nn::Tensor> AddQuant8VariableTensor(
       const std::string& name,
-      int32_t* dimensions,
-      uint32_t dimension_count,
+      int32_t* dimensions_data,
+      uint32_t dimensions_count,
       float quant_scale,
       int32_t zero_point);
   // Convert a NNAdapter operand to a rknn tensor
@@ -102,7 +102,7 @@ class Converter {
  private:
   rk::nn::Graph* graph_{nullptr};
   std::map<hal::Operand*, std::vector<std::shared_ptr<rk::nn::Tensor>>>*
-      tensors_;
+      tensors_{nullptr};
 };
 
 }  // namespace rockchip_npu

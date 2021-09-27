@@ -91,6 +91,15 @@ class XPUFcFuser : public FuseBase {
     } else if (GetStringFromEnv("XPU_ENCODER_PRECISION", "int16") == "int8" ||
                lite::TargetWrapperXPU::multi_encoder_precision == "int8") {
       precision = "int8";
+      if (op_desc.HasAttr("enable_int8") &&
+          op_desc.GetAttr<bool>("enable_int8")) {
+        CHECK(op_desc.HasAttr("X0_scale")) << " quant model fc no X0_scale";
+        CHECK(op_desc.HasAttr("Y0_scale")) << " quant model fc no Y0_scale";
+        VLOG(3) << "Use int8 quant model in XPUFcOp, InputMax:"
+                << 127 * op_desc.GetAttr<std::vector<float>>("X0_scale")[0]
+                << ", WeightMax: "
+                << 127 * op_desc.GetAttr<std::vector<float>>("Y0_scale")[0];
+      }
       VLOG(3) << "Use int8 in XPUFcOp";
     }
 #endif
@@ -134,7 +143,7 @@ class XPUFcFuser : public FuseBase {
         "in_num_col_dims",
         matched.at("mul")->stmt()->op_info()->GetAttr<int>("x_num_col_dims"));
 
-    std::string max_output_name = output_name + "_max";
+    std::string max_output_name = output_name + "_xpu_max";
     auto* max_output_node = graph->NewArgumentNode(max_output_name);
     max_output_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kNCHW));

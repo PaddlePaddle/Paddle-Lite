@@ -371,7 +371,8 @@ class ActivationComputeTester : public arena::TestCase {
         prelu_alpha_data[i] =
             sign * static_cast<float>(i % 128) * 0.013f + 0.001;
       }
-      SetCommonTensor(prelu_alpha_, alpha_dims, prelu_alpha_data.data());
+      SetCommonTensor(
+          prelu_alpha_, alpha_dims, prelu_alpha_data.data(), {}, true);
     }
   }
 };
@@ -550,7 +551,16 @@ TEST(Activation_prelu, precision) {
   LOG(INFO) << "test prelu op";
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_OPENCL)
+  std::vector<std::string> modes{"all", "channel", "element"};
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+  modes = {"all", "channel"};
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_OPENCL)
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
   abs_error = 1e-2;  // Using fp16 in OPENCL
 #elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
@@ -561,7 +571,7 @@ TEST(Activation_prelu, precision) {
   return;
 #endif
   for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 2, 4}}) {
-    for (auto mode : {"all", "channel", "element"}) {
+    for (auto mode : modes) {
       TestAct(place,
               "def",
               0.01,
@@ -666,7 +676,16 @@ TEST(Activation_tanh, precision) {
 TEST(Activation_swish, precision) {
   Place place;
   float abs_error = 2e-5;
-#ifdef LITE_WITH_ARM
+  std::vector<float> coefs{0.01, 0.1};
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+  coefs = {1.};
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #else
   return;
@@ -674,7 +693,7 @@ TEST(Activation_swish, precision) {
 
   for (auto dims : std::vector<std::vector<int64_t>>{
            {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
-    for (auto coef : {0.01, 0.1}) {
+    for (auto coef : coefs) {
       TestAct(place,
               "def",
               0.01,
@@ -771,14 +790,34 @@ TEST(Activation_log, precision) {
 }
 
 TEST(Activation_exp, precision) {
-#ifdef LITE_WITH_ARM
-  Place place(TARGET(kARM));
-
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 5e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
+#endif
   for (auto dims : std::vector<std::vector<int64_t>>{
            {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
-    TestAct(place, "def", 0.01, 6., "all", 0., 1.0, DDim(dims), "exp", EXP);
+    TestAct(place,
+            "def",
+            0.01,
+            6.,
+            "all",
+            0.,
+            1.0,
+            DDim(dims),
+            "exp",
+            EXP,
+            abs_error);
   }
-#endif
 }
 
 TEST(Activation_floor, precision) {
@@ -866,7 +905,14 @@ TEST(Activation_square, precision) {
 TEST(Activation_gelu, precision) {
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
   abs_error = 1e-4;
 #elif defined(LITE_WITH_X86)
@@ -934,6 +980,8 @@ TEST(Activation_hard_swish, precision) {
   abs_error = 1e-2;  // Using fp16 in OPENCL
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kX86);
 #else
   return;
 #endif
@@ -1267,6 +1315,62 @@ TEST(Activation_prelu_fp16, performance) {
   }
 }
 
+TEST(Activation_hard_swish_fp16, precision) {
+  Place place;
+  float abs_error = 2e-3;
+#ifdef LITE_WITH_ARM
+  place = Place(TARGET(kARM), PRECISION(kFP16));
+#else
+  return;
 #endif
+  for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 32, 32},
+                                                     {1, 2, 3, 4},
+                                                     {1, 3, 2, 4},
+                                                     {2, 3, 4},
+                                                     {5, 4},
+                                                     {8}}) {
+    TestAct<float16_t>(place,
+                       "def",
+                       0.01,
+                       6.,
+                       "all",
+                       0.,
+                       1.0,
+                       DDim(dims),
+                       "hard_swish",
+                       HARD_SWISH,
+                       abs_error);
+  }
+}
+
+TEST(Activation_hard_swish_fp16, performance) {
+  Place place;
+  float abs_error = 2e-3;
+#ifdef LITE_WITH_ARM
+  place = Place(TARGET(kARM), PRECISION(kFP16));
+#else
+  return;
+#endif
+  for (auto dims : std::vector<std::vector<int64_t>>{{1, 3, 32, 32},
+                                                     {1, 2, 3, 4},
+                                                     {1, 3, 2, 4},
+                                                     {2, 3, 4},
+                                                     {5, 4},
+                                                     {8}}) {
+    TestActPerformance<float16_t>(place,
+                                  "def",
+                                  0.01,
+                                  6.,
+                                  "all",
+                                  0.,
+                                  1.0,
+                                  DDim(dims),
+                                  "hard_swish",
+                                  HARD_SWISH,
+                                  abs_error);
+  }
+}
+#endif
+
 }  // namespace lite
 }  // namespace paddle

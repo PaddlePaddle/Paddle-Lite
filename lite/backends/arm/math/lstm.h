@@ -18,7 +18,7 @@
 #include <string>
 #include "lite/backends/arm/math/activation.h"
 #include "lite/core/tensor.h"
-#include "lite/utils/logging.h"
+#include "lite/utils/log/logging.h"
 namespace paddle {
 namespace lite {
 namespace arm {
