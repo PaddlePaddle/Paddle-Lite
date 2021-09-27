@@ -48,7 +48,7 @@ DEFINE_string(opencl_tuned_file,
 DEFINE_string(opencl_tune_mode, "normal", opencl_tune_mode_msg);
 DEFINE_string(nnadapter_device_names, "", nnadapter_device_names_msg);
 DEFINE_string(nnadapter_context_properties,
-              "null",
+              "",
               nnadapter_context_properties_msg);
 
 // Profiling options
