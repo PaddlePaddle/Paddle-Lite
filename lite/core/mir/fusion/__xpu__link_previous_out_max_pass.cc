@@ -59,8 +59,14 @@ class XPULinkMaxFuser : public FuseBase {
  public:
   explicit XPULinkMaxFuser(const std::string& op_type) { op_type_ = op_type; }
   void BuildPattern() override {
+    auto non_quant_teller = [](const Node* node) -> bool {
+      auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
+      return (!op_desc.HasAttr("enable_int8") ||
+              !op_desc.GetAttr<bool>("enable_int8"));
+    };
     auto* input = VarNode("input")->assert_is_op_input(op_type_, "Input");
-    auto* xpu_fusion_op = OpNode("xpu_fusion_op", op_type_);
+    auto* xpu_fusion_op = OpNode("xpu_fusion_op", op_type_)
+                              ->assert_node_satisfied(non_quant_teller);
     *input >> *xpu_fusion_op;
   }
 
