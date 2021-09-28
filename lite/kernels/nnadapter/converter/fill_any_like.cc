@@ -23,7 +23,12 @@ int ConvertFillAnyLike(Converter* converter, OpInfo* op, Scope* scope) {
   // Use "shape" + "fill" to implement "fill_any_like"
   // Shape operand
   auto x_name = op->Input("X").front();
-  auto input_operand = converter->GetMappedOperand(x_name);
+  auto x_scale_name = "X0_scale";
+  std::vector<float> x_scales;
+  if (op->HasInputScale(x_scale_name, true)) {
+    x_scales = op->GetInputScale(x_scale_name, true);
+  }
+  auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
   auto shape_operand = converter->AddShapeOperation(input_operand);
 
   // Value operand

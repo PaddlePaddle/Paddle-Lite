@@ -1,29 +1,151 @@
+# 使用 Linux x86 构建 / 目标终端为 Android 
 
-# 源码编译 (Android) 
 
-Paddle Lite提供了Android平台的官方Release预测库下载，我们优先推荐您直接下载[Paddle Lite预编译库](../quick_start/release_lib.html#android-toolchain-gcc)。
+## 一、简介
 
-**注意：** 以下编译方法只适用于release/v2.6.0及之后版本(包括 v2.6.0)。release/v2.3及之前版本(包括 v2.3)请参考[release/v2.3源码编译方法](v2.3_compile.md)。
+本文介绍在 Linux x86 操作系统环境下，如何将 Paddle Lite 源代码通过 Android NDK 交叉构建预测库发布包。
 
-如果您还没有配置好Andriod交叉编译环境，请先根据[编译环境准备](compile_env)中的内容，根据您的开发环境安装编译Android预测库所需的编译环境。运行编译脚本之前，请先检查环变量`NDK_ROOT`指向正确的Andriod NDK安装路径，之后可以下载并编译 Paddle-Lite源码。
+说明：本文适用于 Paddle Lite v2.6 及以上版本，面向对源代码有修改需求的开发者。如果您需要的是 Paddle Lite 正式版本，请直接 [前往下载](https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html) 我们预先构建发布的预测库包。
+
+## 二、环境配置
+
+### 2.1 环境要求
+
+- gcc、g++、git、make、wget、python、adb
+- Java Environment
+- CMake（请使用 3.10 或以上版本）
+- Android NDK（支持 ndk-r17c 及之后的所有 NDK 版本, 注意从 ndk-r18 开始，NDK 交叉编译工具仅支持 Clang, 不支持 GCC）
+
+### 2.2 安装命令
+
+以 Ubuntu 为例，安装命令如下：
 
 ```shell
-# 1. 下载Paddle-Lite源码 并切换到release分支
+# 1. Install basic software
+apt update
+apt-get install -y --no-install-recommends \
+  gcc g++ git make wget python unzip adb curl
+
+# 2. Prepare Java env.
+apt-get install -y default-jdk
+
+# 3. Install cmake 3.10 or above
+wget -c https://mms-res.cdn.bcebos.com/cmake-3.10.3-Linux-x86_64.tar.gz && \
+    tar xzf cmake-3.10.3-Linux-x86_64.tar.gz && \
+    mv cmake-3.10.3-Linux-x86_64 /opt/cmake-3.10 && \  
+    ln -s /opt/cmake-3.10/bin/cmake /usr/bin/cmake && \
+    ln -s /opt/cmake-3.10/bin/ccmake /usr/bin/ccmake
+
+# 4. Download Android NDK for linux-x86_64
+#     Note: Skip this step if NDK installed
+#     support android-ndk-r17c-linux-x86_64 and other later version such as ndk-r18b or ndk-r20b 
+#     ref: https://developer.android.com/ndk/downloads
+cd /tmp && curl -O https://dl.google.com/android/repository/android-ndk-r17c-linux-x86_64.zip
+cd /opt && unzip /tmp/android-ndk-r17c-linux-x86_64.zip
+
+# 5. Add environment ${NDK_ROOT} to `~/.bashrc` 
+echo "export NDK_ROOT=/opt/android-ndk-r17c" >> ~/.bashrc
+source ~/.bashrc
+
+# Note: To other ndk version, the step is similar to the above.
+# Take android-ndk-r20b-linux-x86_64 as example:
+cd /tmp && curl -O https://dl.google.com/android/repository/android-ndk-r20b-linux-x86_64.zip
+cd /opt && unzip /tmp/android-ndk-r20b-linux-x86_64.zip
+echo "export NDK_ROOT=/opt/android-ndk-r20b" >> ~/.bashrc
+source ~/.bashrc
+```
+
+其它 Linux 发行版安装步骤类似，在此不再赘述。
+
+
+## 三、构建
+
+### 3.1 构建步骤
+
+运行编译脚本之前，请先检查系统环境变量 `NDK_ROOT` 指向正确的 Android NDK 安装路径，之后可以下载并编译 Paddle-Lite 源码。
+
+```shell
+# 1. 下载 Paddle-Lite 源码并切换到 release 分支
 git clone https://github.com/PaddlePaddle/Paddle-Lite.git
-cd Paddle-Lite && git checkout 2.8-rc
+cd Paddle-Lite && git checkout 2.9
 
 # (可选) 删除此目录，编译脚本会自动从国内CDN下载第三方库文件
 # rm -rf third-party
 
-# 2. 编译Paddle-Lite Android预测库 (armv8, gcc编译, 静态链接ndk stl)
+# 2. 编译 Paddle-Lite Android 预测库
 ./lite/tools/build_android.sh
 ```
 
-**提示：** 编译过程中，如出现源码编译耗时过长，通常是第三方库下载过慢或失败导致。请在git clone完Paddle-Lite仓库代码后，手动删除本地仓库根目录下的third-party目录。编译脚本会自动下载存储于国内 CDN 的第三方依赖的压缩包，节省从git repo同步第三方库代码的时间。
+**提示：** *编译过程中，如出现源码编译耗时过长，通常是第三方库下载过慢或失败导致。请在 git clone 完 Paddle-Lite 仓库代码后，手动删除本地仓库根目录下的 third-party 目录。编译脚本会自动下载存储于国内 CDN 的第三方依赖的压缩包，节省从 git repo 同步第三方库代码的时间。*
 
-### 编译结果
+### 3.2 构建参数
 
-位于`Paddle-Lite/build.lite.android.armv8.gcc/inference_lite_lib.android.armv8`:
+build_android.sh 的构建参数
+
+| 参数 | 说明 | 可选范围 | 默认值 |
+| :-- | :-- | :-- | :-- |
+| arch          |  目标 ARM 架构   |  armv8 / armv7   |  armv8   |
+| toolchain   |  工具链  |  gcc / clang |  gcc   |
+| android_stl   |  链接到的 Android STL 类型  |  c++\_static / c++\_shared  |  c++\_static   |
+| with_java   |  是否发布 Java  |  OFF / ON  |  ON   |
+| with_static\_lib   |  是否发布静态库  |  OFF / ON  |  OFF   |
+| with_cv   |  是否将 cv 函数编译到库中  |  OFF / ON  |  OFF   |
+| with_log   |  是否打印日志  |  OFF / ON |  ON   |
+| with_exception   |  是否开启异常  |  OFF / ON  |  OFF   |
+| with_extra   |  是否编译完整算子（支持序列相关模型，如 OCR 和 NLP）  |  OFF / ON  | OFF   |
+| with_profile   |  是否打开耗时分析  |  OFF / ON  |  OFF   |
+| with_precision\_profile   |  是否打开精度分析  |  OFF / ON  |  OFF   |
+| with_arm82\_fp16   |  是否开启半精度算子  |  OFF / ON  |  OFF   |
+| android_api\_level   |  安卓用户接口等级  |  16～27  |  armv7:16 / armv8:21   |
+
+Paddle-Lite 默认支持的最低安卓版本如下表所示，使用者可以通过`--android_api_level`选项设定一个具体的数值，该数值应不低于下表中最低支持的 Android API Level。
+
+| Paddle-Lite Requird / ARM ABI                | armv7 | armv8 |
+| :-- | :-- | :-- |
+| Supported Minimum Android API Level          |  16   |  21   |
+| Supported Minimum Android Platform Version   |  4.1  |  5.0  |
+
+### 3.3 多设备支持
+
+#### 3.3.1 OpenCL
+
+| 参数 | 说明 | 可选范围 | 默认值 |
+| :-- | :-- | :-- | :-- |
+| with_opencl | 是否包含 OpenCL 编译 |  OFF / ON   |  OFF   |
+
+
+#### 3.3.2 NNAdapter 支持的硬件
+
+- 基本参数
+
+| 参数 | 说明 | 可选范围 | 默认值 |
+| :-- | :-- | :-- | :-- |
+| with\_nnadapter |  是否编译 NNAdapter  | OFF / ON |  OFF   |
+
+- 华为麒麟 NPU
+
+| 参数 | 说明 | 可选范围 | 默认值 |
+| :-- | :-- | :-- | :-- |
+| nnadapter\_with\_huawei\_kirin\_npu |  是否编译华为麒麟 NPU 的 NNAdapter HAL 库 | OFF / ON |  OFF   |
+| nnadapter\_huawei\_kirin\_npu\_sdk\_root |  设置华为 HiAI DDK 目录 |  [hiai_ddk_lib_510](https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/hiai_ddk_lib_510.tar.gz) |  空值   |
+
+- 联发科 APU
+
+| 参数 | 说明 | 可选范围 | 默认值 |
+| :-- | :-- | :-- | :-- |
+| nnadapter\_with\_mediatek\_apu |  是否编译联发科 APU 的 NNAdapter HAL 库 | OFF / ON |  OFF   |
+| nnadapter\_mediatek\_apu\_sdk\_root |  设置联发科 Neuron Adapter SDK 目录 |  [apu_ddk](https://paddlelite-demo.bj.bcebos.com/devices/mediatek/apu_ddk.tar.gz) |  空值   |
+
+
+### 3.4 更多信息
+
+- 根据模型包含算子进行预测库裁剪，请参考 [裁剪预测库](https://paddle-lite.readthedocs.io/zh/latest/source_compile/library_tailoring.html)。
+- 编译异构设备的 Android 预测库，请参考 [部署示例](https://paddle-lite.readthedocs.io/zh/latest/index.html)。
+
+
+## 四、验证
+
+按上述构建选项中的默认项执行 build_android.sh，成功后会在 `Paddle-Lite/build.lite.android.armv8.gcc/inference_lite_lib.android.armv8` 生成下列文件。
 
 ```shell
 inference_lite_lib.android.armv8/
@@ -50,73 +172,4 @@ inference_lite_lib.android.armv8/
 └── demo                                              C++ 和 Java 示例代码
     ├── cxx                                           C++ 预测库demo
     └── java                                          Java 预测库demo
-```
-
-### 编译命令
-
-- 默认编译方法: (armv8, gcc, c++_static)                                           
-```                                        shell
-./lite/tools/build_android.sh
-```
-
-- 打印 help 信息：
-
-```shell
-./lite/tools/build_android.sh help
-```
-
-- 其他可选编译命令：
-
-```shell
---arch: (armv8|armv7)        arm版本，默认为armv8
---toolchain: (gcc|clang)     编译器类型，默认为gcc
---android_stl: (c++_static|c++_shared)   NDK stl库链接方法，默认为静态链接c++_static
---with_java: (OFF|ON)        是否编译Java预测库, 默认为 ON
---with_cv: (OFF|ON)          是否编译CV相关预处理库, 默认为 OFF
---with_log: (OFF|ON)         是否输出日志信息, 默认为 ON
---with_exception: (OFF|ON)   是否在错误发生时抛出异常，默认为 OFF   
---with_extra: (OFF|ON)       是否编译OCR/NLP模型相关kernel&OP，默认为OFF，只编译CV模型相关kernel&OP
---android_api_level: (num)   指定编译时支持的最低Android API Level，默认为Default
-```
-
-- Android 版本支持情况
-Paddle-Lite 默认支持的最低安卓版本如下表所示，使用者可以通过`--android_api_level`选项设定一个具体的数值，该数值应不低于下表中最低支持的 Android API Level。
-
-| Paddle-Lite Requird / ARM ABI                | armv7 | armv8 |
-| :-- | :-- | :-- |
-| Supported Minimum Android API Level          |  16   |  21   |
-| Supported Minimum Android Platform Version   |  4.1  |  5.0  |
-
-- 裁剪预测库方法（只编译模型中的kernel&OP，降低预测库体积），详情请参考:  [裁剪预测库](library_tailoring)
-
-```shell
-./lite/tools/build_android.sh --with_strip=ON --opt_model_dir=%YourOptimizedModelDir%
-
-# 编译选项说明
---with_strip: (OFF|ON)   是否根据输入模型裁剪预测库，默认为OFF
---opt_model_dir          输入模型的绝对路径，需要为opt转化之后的模型
-```
-
-
-
-- 编译 Android npu 预测库方法，详情请参考：[PaddleLite使用华为NPU（Kirin SoC）预测部署](../demo_guides/huawei_kirin_npu)
-
-```shell
-./lite/tools/build_android.sh --with_huawei_kirin_npu=ON \
-                              --huawei_kirin_npu_sdk_root=%YourNpuSdkPath%
-
-# 编译选项说明
---with_huawei_kirin_npu: (OFF|ON)   是否编译编译huawei_kirin_npu 的预测库，默认为OFF
---huawei_kirin_npu_sdk_root         Huawei HiAi DDK文件的绝对路径，可从以下网址下载 
-                                    https://developer.huawei.com/consumer/cn/hiai/
-```
-
-
-- 编译Android opencl 预测库方法，详情请参考：[PaddleLite使用OpenCL预测部署](../demo_guides/opencl)
-
-```shell
-./lite/tools/build_android.sh --with_opencl=ON
-
-# 编译选项说明
---with_opencl: (OFF|ON);  是否编译opencl预测库, 默认为 OFF
 ```

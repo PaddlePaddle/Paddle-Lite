@@ -13,29 +13,15 @@
 // limitations under the License.
 
 #pragma once
-#include <stdint.h>
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
 
-namespace paddle {
-namespace lite {
-namespace kernels {
-namespace arm {
+#include "core/hal/types.h"
 
-class CastCompute : public KernelLite<TARGET(kARM), PRECISION(kAny)> {
- public:
-  using param_t = operators::CastParam;
+namespace nnadapter {
+namespace mediatek_apu {
 
-  void PrepareForRun() override;
+// Make the restriction that for int8 quantized concat, reshape, and transpose,
+// etc. the inputs and outputs must have the same quantization parameters.
+void RestrictSameInputOutputQuantParams(hal::Model* model);
 
-  void Run() override;
-
-  ~CastCompute() {}
-
- private:
-};
-
-}  // namespace arm
-}  // namespace kernels
-}  // namespace lite
-}  // namespace paddle
+}  // namespace mediatek_apu
+}  // namespace nnadapter

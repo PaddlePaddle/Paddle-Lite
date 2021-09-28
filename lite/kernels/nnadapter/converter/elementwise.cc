@@ -21,7 +21,6 @@ namespace nnadapter {
 
 int ConvertElementwise(Converter* converter, OpInfo* op, Scope* scope) {
   // X operand
-  NNAdapterOperand* x_operand = nullptr;
   auto x_name = op->Input("X").front();
   auto x_tensor = scope->FindTensor(x_name);
   auto x_persistable = x_tensor->persistable();
@@ -30,14 +29,9 @@ int ConvertElementwise(Converter* converter, OpInfo* op, Scope* scope) {
   if (op->HasInputScale(x_scale_name, true)) {
     x_scales = op->GetInputScale(x_scale_name, true);
   }
-  if (x_persistable) {
-    x_operand = converter->AddConstantOperand(*x_tensor, {}, false, x_scales);
-  } else {
-    x_operand = converter->GetMappedOperand(x_name);
-  }
+  auto input0_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
 
   // Y operand
-  NNAdapterOperand* y_operand = nullptr;
   auto y_name = op->Input("Y").front();
   auto y_tensor = scope->FindTensor(y_name);
   auto y_persistable = y_tensor->persistable();
@@ -46,17 +40,13 @@ int ConvertElementwise(Converter* converter, OpInfo* op, Scope* scope) {
   if (op->HasInputScale(y_scale_name, true)) {
     y_scales = op->GetInputScale(y_scale_name, true);
   }
-  if (y_persistable) {
-    y_operand = converter->AddConstantOperand(*y_tensor, {}, false, y_scales);
-  } else {
-    y_operand = converter->GetMappedOperand(y_name);
-  }
+  auto input1_operand = converter->AddInputOperand(scope, y_name, {}, y_scales);
 
   // Check whether the two dimensions are compatiable(Numpy-style broadcasting
   // https://numpy.org/doc/stable/user/basics.broadcasting.html).
   // Unsqueeze the small rank
-  uint32_t x_rank = converter->GetOperandType(x_operand)->dimensions.count;
-  uint32_t y_rank = converter->GetOperandType(y_operand)->dimensions.count;
+  uint32_t x_rank = converter->GetOperandType(input0_operand)->dimensions.count;
+  uint32_t y_rank = converter->GetOperandType(input1_operand)->dimensions.count;
   uint32_t max_rank = std::max(x_rank, y_rank);
   int32_t axis = op->GetAttr<int32_t>("axis");
   if (axis < 0) {
@@ -79,22 +69,22 @@ int ConvertElementwise(Converter* converter, OpInfo* op, Scope* scope) {
       std::vector<int64_t> shape = y_tensor->dims().Vectorize();
       shape.insert(shape.begin(), axis, 1);
       shape.insert(shape.end(), max_rank - shape.size(), 1);
-      y_operand = converter->AddConstantOperand(
+      input1_operand = converter->AddConstantOperand(
           *y_tensor, DDim(shape), false, y_scales);
     } else {
       CHECK(!axes.empty());
-      y_operand = converter->AddUnsqueezeOperation(y_operand, axes);
+      input1_operand = converter->AddUnsqueezeOperation(input1_operand, axes);
     }
   } else if (y_rank > x_rank) {
     if (x_persistable) {
       std::vector<int64_t> shape = x_tensor->dims().Vectorize();
       shape.insert(shape.begin(), axis, 1);
       shape.insert(shape.end(), max_rank - shape.size(), 1);
-      x_operand = converter->AddConstantOperand(
+      input0_operand = converter->AddConstantOperand(
           *x_tensor, DDim(shape), false, x_scales);
     } else {
       CHECK(!axes.empty());
-      x_operand = converter->AddUnsqueezeOperation(x_operand, axes);
+      input0_operand = converter->AddUnsqueezeOperation(input0_operand, axes);
     }
   }
 
@@ -152,7 +142,7 @@ int ConvertElementwise(Converter* converter, OpInfo* op, Scope* scope) {
     return UNSUPPORTED_FEATURE;
   }
   converter->AddOperation(eltwise_operation_type,
-                          {x_operand, y_operand, fuse_code_operand},
+                          {input0_operand, input1_operand, fuse_code_operand},
                           {output_operand});
 
   // Unpack the fused activations

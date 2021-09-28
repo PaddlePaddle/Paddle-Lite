@@ -21,10 +21,15 @@ namespace nnadapter {
 
 int ConvertFlatten(Converter* converter, OpInfo* op, Scope* scope) {
   auto x_name = op->Input("X").front();
+  auto x_scale_name = "X0_scale";
+  std::vector<float> x_scales;
+  if (op->HasInputScale(x_scale_name, true)) {
+    x_scales = op->GetInputScale(x_scale_name, true);
+  }
   auto out_name = op->Output("Out").front();
   auto axis = op->GetAttr<int>("axis");
 
-  auto input_operand = converter->GetMappedOperand(x_name);
+  auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
   auto input_type = converter->GetOperandType(input_operand);
   axis = axis < 0 ? axis + input_type->dimensions.count : axis;
   NNAdapterOperand* output_operand = nullptr;
