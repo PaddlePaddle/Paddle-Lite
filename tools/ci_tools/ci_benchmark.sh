@@ -285,8 +285,8 @@ function build_and_test_on_remote_device() {
       for toolchain in $toolchains; do
         # Build
         echo "Build with $os+$arch+$toolchain ..."
-        #$build_target_func $os $arch $toolchain
-        # TODO: only tested on android
+        $build_target_func $os $arch $toolchain
+        # TODO: only tested on android currently
         if [[ "$os" != "android" ]]; then
           continue
         fi

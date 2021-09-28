@@ -19,9 +19,6 @@ function prepare_models {
     return 0
   fi
 
-  echo "wrong"
-  exit 1
-
   rm -rf $model_zoo_dir && mkdir $model_zoo_dir && cd $model_zoo_dir
   # download compressed model recorded in $MODELS_URL
   for url in ${MODELS_URL[@]}; do
