@@ -463,9 +463,12 @@ void RnnCompute::Run() {
       RUN_LSTM_LAYER(i, &output_vec[1], true, 1);
 
       std::vector<Tensor*> output_vec_t = {&output_vec[0], &output_vec[1]};
-      lite::arm::math::concat_func<float>(output_vec_t, 2, output);
+      lite::arm::math::concat_func<float>(output_vec_t, 2, output_holder);
     } else {
       RUN_LSTM_LAYER(i, output_holder, false, 0);
+    }
+    if (num_layers % 2 == 0) {
+      output->CopyDataFrom(*output_holder);
     }
   }
 }
