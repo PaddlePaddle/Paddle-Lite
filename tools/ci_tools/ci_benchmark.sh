@@ -198,7 +198,6 @@ function run_on_remote_device() {
   local cmd_line=""
   local model_file=`$remote_device_run $remote_device_name shell "cd ${remote_device_work_dir}; ls ${model_dir}/*.pdmodel"`
   local param_file=`$remote_device_run $remote_device_name shell "cd ${remote_device_work_dir}; ls ${model_dir}/*.pdiparams"`
-  local res_file="result_${model_name}_${arch}_${toolchain}_${backend}_${remote_device_name}.txt"
   local model_name=$(basename $model_dir)
   local input_shape=`jq -r --arg v $model_name '.model[] | select(.name == $v).input_shape' $config_path`
   local backends=""
@@ -211,6 +210,7 @@ function run_on_remote_device() {
   fi
 
   for backend in ${backends[@]}; do
+    local res_file="result_${model_name}_${arch}_${toolchain}_${backend}_${remote_device_name}.txt"
     cmd_line="
               ./$target_name \
               --model_file=$model_file \
@@ -332,7 +332,7 @@ function check_command_exist() {
 
 function main() {
   # Check requirements
-  # check_command_exist "jq"
+  check_command_exist "jq"
 
   # Parse command line.
   for i in "$@"; do
