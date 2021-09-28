@@ -2864,7 +2864,7 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
                                      ARMContext* ctx) {
   auto act_param = param.activation_param;
   auto act_type = act_param.active_type;
-  valitile float alpha = 0.f;
+  volatile float alpha = 0.f;
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
   if (act_param.has_active) {
     if (act_type == lite_api::ActivationType::kRelu) {
