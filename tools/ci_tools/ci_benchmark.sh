@@ -332,7 +332,7 @@ function check_command_exist() {
 
 function main() {
   # Check requirements
-  check_command_exist "jq"
+  # check_command_exist "jq"
 
   # Parse command line.
   for i in "$@"; do
