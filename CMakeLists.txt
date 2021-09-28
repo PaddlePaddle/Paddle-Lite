@@ -173,7 +173,7 @@ endif()
 # for mobile
 if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     message(STATUS "Building the mobile framework")
-    include(os/postproject)
+    include(postproject)
     include(backends/npu) # check and prepare NPU DDK
     include(backends/xpu) # check and prepare XPU SDK
     include(backends/apu) # check and prepare APU SDK 
