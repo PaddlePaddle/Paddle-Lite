@@ -50,7 +50,7 @@ int ConvertHardSwish(Converter* converter, OpInfo* op, Scope* scope) {
   // output = MUL(HARD_SWISH(input, alpha = 1 / threshold, beta = offset /
   // threshold), threshold / scale);
   // Input operand
-  auto input_operand = converter->GetMappedOperand(x_name);
+  auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
   CHECK(input_operand);
   auto input_type = converter->GetOperandType(input_operand);
   // Alpha operand

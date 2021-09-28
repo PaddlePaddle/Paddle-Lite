@@ -50,6 +50,7 @@ Paddle Lite 提供了C++、Java、Python 三种 API 的完整使用示例和开�
 - [华为 NPU 示例](../demo_guides/huawei_kirin_npu)
 - [百度 XPU 示例](../demo_guides/baidu_xpu)
 - [瑞芯微 NPU 示例](../demo_guides/rockchip_npu)
+- [晶晨 NPU 示例](../demo_guides/amlogic_npu)
 - [联发科 APU 示例](../demo_guides/mediatek_apu)
 
 您也可以下载以下基于 Paddle Lite 开发的预测 APK 程序，安装到 Andriod 平台上，先睹为快：

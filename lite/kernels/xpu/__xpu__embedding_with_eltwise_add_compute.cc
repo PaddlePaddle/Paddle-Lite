@@ -64,6 +64,7 @@ void XPUEmbeddingWithEltwiseAddCompute::Run() {
         }
       }
       cpu_seq_lod.push_back(cpu_seq_lod.back() + cur_batch_seq_len);
+      CHECK_GT(cur_batch_seq_len, 0);
     }
     auto* seq_lod_ptr = seq_lod->mutable_data<int>();
     memcpy(seq_lod_ptr, cpu_seq_lod.data(), cpu_seq_lod.size() * sizeof(int));

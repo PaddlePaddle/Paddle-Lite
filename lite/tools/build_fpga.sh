@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+git submodule update --init --recursive
+
 build_dir=build_fpga
 mkdir -p ${build_dir}
 cd ${build_dir}

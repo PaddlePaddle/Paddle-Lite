@@ -21,24 +21,24 @@ namespace nnadapter {
 
 int ConvertLookupTableV2(Converter* converter, OpInfo* op, Scope* scope) {
   // Input operand
-  NNAdapterOperand* input_operand = nullptr;
   auto input_name = op->Input("W").front();
-  auto input_tensor = scope->FindTensor(input_name);
-  if (input_tensor->persistable()) {
-    input_operand = converter->AddConstantOperand(*input_tensor);
-  } else {
-    input_operand = converter->GetMappedOperand(input_name);
+  auto input_scale_name = "W0_scale";
+  std::vector<float> input_scales;
+  if (op->HasInputScale(input_scale_name, true)) {
+    input_scales = op->GetInputScale(input_scale_name, true);
   }
+  auto input_operand =
+      converter->AddInputOperand(scope, input_name, {}, input_scales);
 
   // Indices operand
-  NNAdapterOperand* indices_operand = nullptr;
   auto indices_name = op->Input("Ids").front();
-  auto indices_tensor = scope->FindTensor(indices_name);
-  if (indices_tensor->persistable()) {
-    indices_operand = converter->AddConstantOperand(*indices_tensor);
-  } else {
-    indices_operand = converter->GetMappedOperand(indices_name);
+  auto indices_scale_name = "Ids0_scale";
+  std::vector<float> indices_scales;
+  if (op->HasInputScale(indices_scale_name, true)) {
+    indices_scales = op->GetInputScale(indices_scale_name, true);
   }
+  auto indices_operand =
+      converter->AddInputOperand(scope, indices_name, {}, indices_scales);
 
   // Axis operand
   auto axis_operand = converter->AddConstantOperand<int>(0);

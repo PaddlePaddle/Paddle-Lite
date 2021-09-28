@@ -13,13 +13,29 @@
 // limitations under the License.
 
 #pragma once
+#include <stdint.h>
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
-#include "core/hal/types.h"
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace host {
 
-namespace nnadapter {
-namespace mediatek_apu {
+class CastCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
+ public:
+  using param_t = operators::CastParam;
 
-void PropagateQuantParams(hal::Model* model);
+  void PrepareForRun() override;
 
-}  // namespace mediatek_apu
-}  // namespace nnadapter
+  void Run() override;
+
+  ~CastCompute() {}
+
+ private:
+};
+
+}  // namespace host
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle

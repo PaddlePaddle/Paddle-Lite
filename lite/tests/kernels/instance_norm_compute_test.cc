@@ -140,8 +140,8 @@ void TestInstanceNorm(Place place,
                       float abs_error = 6e-5,
                       std::vector<std::string> ignored_outs = {}) {
   for (auto& n : {1, 3}) {
-    for (auto& c : {1, 3, 16}) {
-      for (auto& h : {1, 4, 33}) {
+    for (auto& c : {1, 3}) {
+      for (auto& h : {1, 33}) {
         for (auto& w : {1, 5, 34}) {
           for (auto& has_scale_bias : {true, false}) {
             DDim dim_in({n, c, h, w});
@@ -149,7 +149,6 @@ void TestInstanceNorm(Place place,
             std::unique_ptr<arena::TestCase> tester(new InstanceNormComputeTest(
                 place, "def", dim_in, epsilon, has_scale_bias));
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
-            if (!has_scale_bias) continue;
             if (w == 1 && h == 1 && (n != 1 || c != 1)) continue;
 #endif
 #ifdef LITE_WITH_ARM

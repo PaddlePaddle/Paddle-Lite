@@ -20,7 +20,6 @@
 #include "lite/backends/host/math/nms_util.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
-
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -409,3 +408,12 @@ class MulticlassNmsCompute : public KernelLite<TType, PType> {
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
+#ifdef ENABLE_ARM_FP16
+using float16_t = __fp16;
+
+using nmsfp16 =
+    paddle::lite::kernels::host::MulticlassNmsCompute<float16_t,
+                                                      TARGET(kARM),
+                                                      PRECISION(kFP16)>;
+#endif  // ENABLE_ARM_FP16
