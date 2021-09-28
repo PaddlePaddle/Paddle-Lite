@@ -54,6 +54,13 @@ void sgemm_prepack_c4_small(int M,
                             const float* B,
                             float* C,
                             ARMContext* ctx);
+void sgemm_prepack_c4_small_a35(int M,
+                                int N,
+                                int K,
+                                const float* A_packed,
+                                const float* B,
+                                float* C,
+                                ARMContext* ctx);
 void sgemm_prepack_c8_int16_small(int M,
                                   int N,
                                   int K,
