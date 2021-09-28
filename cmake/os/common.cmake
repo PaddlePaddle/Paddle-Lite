@@ -78,6 +78,9 @@ endif()
 if(ARM_TARGET_OS STREQUAL "armmacos")
   include(os/armmacos)
 endif()
+if(WIN32)
+  include(os/windows)
+endif()
 
 # Setting host toolchain
 set(HOST_C_COMPILER $ENV{CC})
@@ -123,3 +126,34 @@ if(NOT THIRD_PARTY_BUILD_TYPE)
 endif()
 
 message(STATUS "Lite ARM Compile ${ARM_TARGET_OS} with ${ARM_TARGET_ARCH_ABI} ${ARM_TARGET_LANG}")
+
+
+# moved from root cmakelist
+message(STATUS "CXX compiler: ${CMAKE_CXX_COMPILER}, version: "
+        "${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
+message(STATUS "C compiler: ${CMAKE_C_COMPILER}, version: "
+        "${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION}")
+message(STATUS "AR tools: ${CMAKE_AR}")
+
+if(NOT APPLE)
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed")
+endif()
+
+# TODO(Superjomn) Remove WITH_ANAKIN option if not needed latter.
+if(ANDROID OR IOS OR ARMLINUX OR ARMMACOS)
+    set(WITH_GPU OFF CACHE STRING
+            "Disable GPU when cross-compiling for Android and iOS" FORCE)
+    set(WITH_DSO OFF CACHE STRING
+            "Disable DSO when cross-compiling for Android and iOS" FORCE)
+    set(WITH_AVX OFF CACHE STRING
+            "Disable AVX when cross-compiling for Android and iOS" FORCE)
+    set(WITH_RDMA OFF CACHE STRING
+            "Disable RDMA when cross-compiling for Android and iOS" FORCE)
+    set(WITH_MKL OFF CACHE STRING
+            "Disable MKL when cross-compiling for Android and iOS" FORCE)
+endif()
+
+if(ANDROID OR IOS)
+    set(LITE_WITH_PYTHON OFF CACHE STRING
+            "Disable PYTHON when cross-compiling for Android and iOS" FORCE)
+endif()
