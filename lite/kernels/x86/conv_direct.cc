@@ -14,8 +14,8 @@
 
 #include "lite/kernels/x86/conv_direct.h"
 #include <cmath>
+#include "lite/backends/x86/math/conv3x3s2_direct_fp32.h"
 #include "lite/backends/x86/math/conv_bias.h"
-#include "lite/backends/x86/math/conv_direct.h"
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -47,24 +47,28 @@ void DirectConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   int oh = o_dims[2];
   int ow = o_dims[3];
 
-  memset(o_data, 0, sizeof(float) * oc * oh * ow * bs);
+  float* trans_out = static_cast<float*>(
+      TargetMalloc(TARGET(kX86), sizeof(float) * bs * oc_expand_ * oh * ow));
+  memset(trans_out, 0, sizeof(float) * oc * oh * ow * bs);
 
   auto act_param = param.activation_param;
-  lite::x86::math::conv_direct_3x3s2(i_data,
-                                     weights_.data<float>(),
-                                     bs,
-                                     ic,
-                                     ih,
-                                     iw,
-                                     oc,
-                                     oc_expand_,
-                                     o_data,
-                                     oh,
-                                     ow,
-                                     ph,
-                                     pw,
-                                     b_data,
-                                     act_param.active_type);
+  code_->run(i_data,
+             weights_.data<float>(),
+             trans_out,
+             bs,
+             ic,
+             ih,
+             iw,
+             oc,
+             oc_expand_,
+             oh,
+             ow,
+             ph,
+             pw);
+
+  lite::x86::math::conv_direct_3x3s2_tranpose_out(
+      bs, oc, oh, ow, o_data, trans_out, b_data, act_param.active_type);
+  TargetFree(TARGET(kX86), trans_out);
 }
 }  // namespace x86
 }  // namespace kernels
