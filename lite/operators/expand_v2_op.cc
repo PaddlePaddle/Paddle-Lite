@@ -46,7 +46,6 @@ bool ExpandV2OpLite::InferShapeImpl() const {
   CHECK_GE(x_shape.size(), expand_shape.size());
   auto diff = x_shape.size() - expand_shape.size();
   expand_shape.insert(expand_shape.begin(), diff, -1);
-
   for (size_t i = 0; i < expand_shape.size(); i++) {
     if (expand_shape[i] == -1) {
       expand_shape[i] = x_shape[i];
@@ -55,7 +54,8 @@ bool ExpandV2OpLite::InferShapeImpl() const {
     }
   }
 
-  param_.Out->Resize(out_dims);
+  std::vector<int64_t> out_shape(expand_shape.begin(), expand_shape.end());
+  param_.Out->Resize(out_shape);
   return true;
 }
 
