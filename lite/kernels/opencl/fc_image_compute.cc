@@ -178,7 +178,7 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
     auto& param = this->Param<operators::FcParam>();
 
     x_img_ = DATA_GPU(param.input);
-    out_img_ = MUTABLE_DATA_GPU(param.output, UP_DIV(n_, 4), m_, nullptr);
+    out_img_ = MUTABLE_DATA_GPU(param.output, n_, m_, nullptr);
 
     auto& kernel = kernel_;
     cl_int status;
@@ -197,6 +197,8 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
       status = kernel.setArg(arg_idx++, *alpha_img_);
       CL_CHECK_FATAL(status);
     }
+    status = kernel.setArg(arg_idx++, n_);
+    CL_CHECK_FATAL(status);
     status = kernel.setArg(arg_idx++, m_);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(arg_idx++, k_blks_);

@@ -192,7 +192,8 @@ __kernel void softmax_channel(__read_only image2d_t input,
 __kernel void softmax_1x1(__read_only image2d_t input,
                           __write_only image2d_t output,
                           __private const float4 mask,
-                          __private const int c_blks) {
+                          __private const int c_blks,
+                          __private const int c) {
   const int c_blk_idx = get_global_id(0);
   const int b_idx = get_global_id(1);
   const int tid = get_local_id(0);
@@ -265,6 +266,20 @@ __kernel void softmax_1x1(__read_only image2d_t input,
 #else
     CL_DTYPE4 res = exp(src) * sum;
 #endif
-    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(c_blk_idx, b_idx), res);
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(c_blk_idx * 4, b_idx), res);
+    if (c - c_blk_idx * 4 >= 2) {
+      res.x = res.y;
+      WRITE_IMG_TYPE(
+          CL_DTYPE_CHAR, output, (int2)(c_blk_idx * 4 + 1, b_idx), res);
+      if (c - c_blk_idx * 4 >= 3) {
+        res.x = res.z;
+        WRITE_IMG_TYPE(
+            CL_DTYPE_CHAR, output, (int2)(c_blk_idx * 4 + 2, b_idx), res);
+      }
+      if (c - c_blk_idx * 4 >= 4) {
+        res.x = res.w;
+        WRITE_IMG_TYPE(
+            CL_DTYPE_CHAR, output, (int2)(c_blk_idx * 4 + 3, b_idx), res);
+      }
+    }
   }
-}

@@ -91,11 +91,13 @@ class SoftmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
     status = kernel.setArg(1, *out_img);
     CL_CHECK_FATAL(status);
     if (onexone_flag_) {
-      auto mask_v = GetChannelMask(extend_in_dims[1]);
+      auto mask_v = GetChannelMask(extend_in_dims[3]);
       cl_float4 mask = {mask_v[0], mask_v[1], mask_v[2], mask_v[3]};
       status = kernel.setArg(2, mask);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(3, UP_DIV(static_cast<int>(extend_in_dims[1]), 4));
+      status = kernel.setArg(3, UP_DIV(static_cast<int>(extend_in_dims[3]), 4));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(4, extend_in_dims[3]);
       CL_CHECK_FATAL(status);
     } else if (axis_ == 3 || axis_ == 2) {
       status = kernel.setArg(2, static_cast<int>(extend_in_dims[0]));
@@ -189,13 +191,8 @@ class SoftmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
 
   const DDim ExtendInputDims(const DDim& in_dims) {
     auto extend_dims = std::vector<int64_t>{1, 1, 1, 1};
-    if (onexone_flag_) {
-      extend_dims[0] = in_dims[0];
-      extend_dims[1] = in_dims[1];
-    } else {
-      for (int i = 0; i < in_dims.size(); i++) {
-        extend_dims[4 - in_dims.size() + i] = in_dims[i];
-      }
+    for (int i = 0; i < in_dims.size(); i++) {
+      extend_dims[4 - in_dims.size() + i] = in_dims[i];
     }
     return DDim(extend_dims);
   }

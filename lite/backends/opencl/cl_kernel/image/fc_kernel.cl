@@ -37,6 +37,7 @@ __kernel void fc(__read_only image2d_t input,
 #ifdef ELT_FUSE
                  __read_only image2d_t second_input_image,
 #endif  // ELT_FUSE
+                 int w,
                  int batch,
                  int in_c_blks,
                  int out_c_blks) {
@@ -98,7 +99,7 @@ __kernel void fc(__read_only image2d_t input,
     output0 = fuse_scale(output0, 1.f, 0.f, 0.f);
 #endif
 
-    CL_DTYPE4 out0;
+    CL_DTYPE4 out0, out1, out2, out3;
     out0.x = CONVERT_TYPE_TO(output0.x, CL_DTYPE);
     out0.y = CONVERT_TYPE_TO(output0.y, CL_DTYPE);
     out0.z = CONVERT_TYPE_TO(output0.z, CL_DTYPE);
@@ -107,6 +108,19 @@ __kernel void fc(__read_only image2d_t input,
 #ifdef ELT_FUSE
     elt_fuse_func_wrapper(second_input_image, output_pos0, &out0);
 #endif
-    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, output_pos0, out0);
+    out1.x = out0.y;
+    out2.x = out0.z;
+    out3.x = out0.w;
+
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(out_c * 4, out_n), out0);
+    if (w - out_c * 4 >= 2) {
+      WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(out_c * 4 + 1, out_n), out1);
+    }
+    if (w - out_c * 4 >= 3) {
+      WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(out_c * 4 + 2, out_n), out2);
+    }
+    if (w - out_c * 4 >= 4) {
+      WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(out_c * 4 + 3, out_n), out3);
+    }
   }
 }
