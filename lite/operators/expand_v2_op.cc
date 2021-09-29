@@ -25,8 +25,6 @@ bool ExpandV2OpLite::CheckShape() const {
 }
 
 bool ExpandV2OpLite::InferShapeImpl() const {
-  const auto* x = param_.X;
-  auto* out = param_.Out;
   std::vector<int> expand_shape;
   if (param_.Shape != nullptr) {
     auto shape_data = param_.Shape->template data<int>();
@@ -42,16 +40,14 @@ bool ExpandV2OpLite::InferShapeImpl() const {
     expand_shape = param_.shape;
   }
 
-  const std::vector<int64_t> x_shape = x->dims().Vectorize();
-  CHECK_GE(x_shape.size(), expand_shape.size());
-  auto diff = x_shape.size() - expand_shape.size();
-  expand_shape.insert(expand_shape.begin(), diff, -1);
+  std::vector<int64_t> x_shape = param_.X->dims().Vectorize();
+  CHECK_GE(expand_shape.size(), x_shape.size());
+  x_shape.insert(x_shape.begin(), expand_shape.size() - x_shape.size(), 1);
   for (size_t i = 0; i < expand_shape.size(); i++) {
     if (expand_shape[i] == -1) {
       expand_shape[i] = x_shape[i];
-    } else {
-      CHECK_GE(expand_shape[i], x_shape[i]);
     }
+    CHECK_GE(expand_shape[i], x_shape[i]);
   }
 
   std::vector<int64_t> out_shape(expand_shape.begin(), expand_shape.end());

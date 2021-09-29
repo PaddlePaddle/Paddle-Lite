@@ -30,8 +30,9 @@ void ExpandV2Compute<T>::Run() {
   auto* out = param.Out;
   std::vector<int64_t> x_shape = x->dims().Vectorize();
   std::vector<int64_t> out_shape = out->dims().Vectorize();
-  sdt::vector<int> x_dims(x_shape.begin(), x_shape.end());
-  sdt::vector<int> out_dims(out_shape.begin(), out_shape.end());
+  std::vector<int> x_dims(x_shape.begin(), x_shape.end());
+  std::vector<int> out_dims(out_shape.begin(), out_shape.end());
+  x_dims.insert(x_dims.begin(), out_dims.size() - x_dims.size(), 1);
 
   int r = xdnn::broadcast<T>(ctx.GetRawContext(),
                              x->template data<T>(),
