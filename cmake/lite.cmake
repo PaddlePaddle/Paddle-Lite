@@ -272,6 +272,9 @@ function(lite_cc_binary TARGET)
 
 
     # link to dynamic runtime lib
+    if(LITE_WITH_XPU)
+        target_link_libraries(${TARGET} ${xpu_builder_libs} ${xpu_runtime_libs})
+    endif()
     if(LITE_WITH_RKNPU)
         target_link_libraries(${TARGET} ${rknpu_runtime_libs})
     endif()
