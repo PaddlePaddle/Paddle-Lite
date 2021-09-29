@@ -182,7 +182,8 @@ void Run(const std::string& model_file,
   ss << "\n======= Backend Info =======\n";
   ss << "backend: " << FLAGS_backend << std::endl;
   ss << "cpu precision: " << FLAGS_cpu_precision << std::endl;
-  if (FLAGS_backend == "opencl" || FLAGS_backend == "x86_opencl") {
+  if (FLAGS_backend == "opencl,arm" || FLAGS_backend == "opencl" ||
+      FLAGS_backend == "opencl,x86" || FLAGS_backend == "x86_opencl") {
     ss << "gpu precision: " << FLAGS_gpu_precision << std::endl;
     ss << "opencl_cache_dir: " << FLAGS_opencl_cache_dir << std::endl;
     ss << "opencl_kernel_cache_file: " << FLAGS_opencl_kernel_cache_file

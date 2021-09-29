@@ -42,6 +42,8 @@ REMOTE_DEVICE_TYPE=0
 REMOTE_DEVICE_LIST="2GX0119401000796,0123456789ABCDEF"
 # Work directory of the remote devices for running
 REMOTE_DEVICE_WORK_DIR="/data/local/tmp/benchmark_ci_test/"
+WARMUP=20
+REPEATS=600
 
 # Helper functions
 source ${SHELL_FOLDER}/utils.sh
@@ -217,8 +219,8 @@ function run_on_remote_device() {
               --param_file=$param_file \
               --input_shape=$input_shape \
               --backend=$backend \
-              --warmup=10 \
-              --repeats=50 \
+              --warmup=$WARMUP \
+              --repeats=$REPEATS \
               --result_path=$res_file \
              "
     echo -e "$GREEN_COLOR model:${model_name} arch:${arch} toolchain:${toolchain} backend:${backend} device:${remote_device_name} $OFF_COLOR"
@@ -371,6 +373,14 @@ function main() {
       ;;
     --config_path=*)
       CONFIG_PATH="${i#*=}"
+      shift
+      ;;
+    --warmup=*)
+      WARMUP="${i#*=}"
+      shift
+      ;;
+    --repeats=*)
+      REPEATS="${i#*=}"
       shift
       ;;
     android_build_and_test)
