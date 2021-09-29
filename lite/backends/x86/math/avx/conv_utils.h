@@ -74,6 +74,18 @@ void pack_padding8_m256(lite::Tensor* input,
                         const int channel_num,
                         const std::vector<int>& paddings);
 
+void packC8_with_Cleft(const float* din,
+                       float* dout,
+                       const std::vector<int>& pad,
+                       int h_in,
+                       int w_in,
+                       int channel);
+
+void unpackC8_with_Cleft(const float* din,
+                         float* dout,
+                         int size_out_channel,
+                         int channel);
+
 // for activation - only support relu, relu6
 __m256 activation8_m256(__m256 input, const lite_api::ActivationType act_type);
 __m128 activation4_m128(__m128 input, const lite_api::ActivationType act_type);
