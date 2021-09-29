@@ -1,13 +1,13 @@
 # 新增Layout
 
-下面以增加`kMetalTexture2DArray`、`kMetalTexture2D`为例，介绍如何增加新Layout。
+下面以增加`kMetalTexture2DArray`、`kMetalTexture2D`为例，介绍如何在Paddle-Lite中增加新的Layout。
 
 > **首先在paddle_place文件中注册Layout信息，Paddle-Lite中Place包含了Target、Layout、Precision信息，用来注册和选择模型中的具体Kernel。**
 
 
 ## 1. lite/api/paddle_place.h
 
-在`enum class DataLayoutType`中加入新的Layout，注意已有的Layout不能改变值，增加新Layout递增即可：
+在`enum class DataLayoutType`中加入新的Layout，注意已有的Layout不能改变值，增加新Layout递增取值即可：
 
 ```cpp
 enum class DataLayoutType : int {
@@ -19,8 +19,7 @@ enum class DataLayoutType : int {
   kImageNW = 6,       // for opencl image2d
   kAny = 2,           // any data layout
   kMetalTexture2DArray = 7,
-  kMetalTexture2D = 8,
-  NUM = 9,  // number of fields.
+  kMetalTexture2D = 8
 };
 ```
 
