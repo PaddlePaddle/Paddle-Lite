@@ -18,20 +18,82 @@ set(PADDLE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(PADDLE_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# c++ standard
 if(LITE_WITH_XTCL OR LITE_WITH_METAL)
     set(CMAKE_CXX_STANDARD 14)
 else()
     set(CMAKE_CXX_STANDARD 11)
 endif()
 
-# host system configurations
+# Host system configurations
 include(system)
-# paddlelite functions and macros
+# Paddlelite functions and macros
 include(functions)
-# target os configurations
+# Target os configurations
 include(os/common)
-# paddle project
+# Paddlelite project
 project(paddle CXX C)
+message(STATUS "CXX compiler: ${CMAKE_CXX_COMPILER}, version: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
+message(STATUS "C compiler: ${CMAKE_C_COMPILER}, version: ${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION}")
+message(STATUS "AR tools: ${CMAKE_AR}")
+
+################################ Exposed Configurations #######################################
+lite_option(WITH_DSO                           "Compile PaddlePaddle with dynamic linked CUDA"                        ON)
+lite_option(WITH_AVX                           "Compile PaddlePaddle with AVX intrinsics"                             ON IF ${AVX_FOUND})
+lite_option(WITH_TESTING                       "Compile PaddlePaddle with unit testing"                               OFF)
+lite_option(WITH_MKL                           "Compile PaddlePaddle with MKL support."                               ON IF ${AVX_FOUND})
+lite_option(WITH_ARM_DOTPROD                   "Compile PaddlePaddle with ARM dot production"                         ON)
+lite_option(WITH_SYSTEM_BLAS                   "Use system blas library"                                              OFF)
+# for lite, both server and mobile framework.
+lite_option(LITE_WITH_JAVA                     "Enable Java JNI lib in lite mode"                                     OFF)
+lite_option(LITE_WITH_STATIC_LIB               "Enable static cplus lib in lite mode"                                 OFF)
+lite_option(LITE_WITH_PYTHON                   "Enable Python api lib in lite mode"                                   OFF)
+lite_option(LITE_WITH_CUDA                     "Enable CUDA in lite mode"                                             OFF)
+lite_option(LITE_WITH_X86                      "Enable X86 in lite mode"                                              ON)
+lite_option(LITE_WITH_ARM                      "Enable ARM in lite mode"                                              OFF)
+lite_option(LITE_WITH_SW                       "Enable SW in lite mode"                                               OFF)
+lite_option(LITE_WITH_NPU                      "Enable NPU in lite mode"                                              OFF)
+lite_option(LITE_WITH_RKNPU                    "Enable RKNPU in lite mode"                                            OFF)
+lite_option(LITE_WITH_MLU                      "Enable MLU in lite mode"                                              OFF)
+lite_option(LITE_WITH_HUAWEI_ASCEND_NPU        "Enable HUAWEI_ASCEND_NPU in lite mode"                                OFF)
+lite_option(LITE_WITH_IMAGINATION_NNA          "Enable IMAGINATION_NNA in lite mode"                                  OFF)
+lite_option(LITE_WITH_NNADAPTER                "Enable NNAdapter in lite mode"                                        OFF)
+lite_option(LITE_WITH_XPU                      "Enable XPU in lite mode"                                              OFF)
+lite_option(LITE_WITH_XTCL                     "Enable XPU via XTCL"                                                  OFF IF LITE_WITH_XPU)
+lite_option(LITE_WITH_BM                       "Enable BM in lite mode"                                               OFF)
+lite_option(LITE_WITH_APU                      "Enable APU in lite mode"                                              OFF)
+lite_option(LITE_WITH_TRAIN                    "Enable training operators and kernels in lite"                        OFF)
+lite_option(LITE_WITH_OPENMP                   "Enable OpenMP in lite framework"                                      ON)
+lite_option(LITE_WITH_OPENCL                   "Enable OpenCL support in lite"                                        OFF)
+lite_option(LITE_WITH_METAL                    "Enable Metal support in lite"                                         OFF)
+lite_option(LITE_WITH_FPGA                     "Enable FPGA support in lite"                                          OFF)
+lite_option(LITE_WITH_INTEL_FPGA               "Enable Intel FPGA support in lite"                                    OFF)
+lite_option(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK   "Enable light-weight framework"                                        OFF)
+lite_option(LITE_WITH_PROFILE                  "Enable profile mode in lite framework"                                OFF)
+lite_option(LITE_WITH_PRECISION_PROFILE        "Enable precision profile in profile mode ON in lite"                  OFF)
+lite_option(LITE_WITH_LOG                      "Enable log printing or not."                                          ON)
+lite_option(LITE_WITH_EXCEPTION                "Enable throwing the exception when error occurs in lite"              OFF)
+lite_option(LITE_WITH_NVTX                     "Enable nvtx or not, please enable LITE_WITH_CUDA first."              OFF)
+lite_option(LITE_ON_TINY_PUBLISH               "Publish tiny predictor lib."                                          OFF)
+lite_option(LITE_ON_MODEL_OPTIMIZE_TOOL        "Build the model optimize tool"                                        OFF)
+lite_option(LITE_WITH_BENCHMARK_TEST           "Build benchmark test cases"                                           OFF)
+lite_option(LITE_THREAD_POOL                   "Enable thread pool in lite"                                           OFF)
+# publish options
+lite_option(LITE_BUILD_EXTRA                   "Enable extra algorithm support in Lite, both kernels and operators"   OFF)
+lite_option(LITE_BUILD_TAILOR                  "Enable tailoring library according to model"                          OFF)
+# cv build options
+lite_option(LITE_WITH_CV                       "Enable build cv image in lite"                                        OFF)
+lite_option(LITE_WITH_STATIC_CUDA              "Statically link cuda libraries."                                      OFF)
+lite_option(CUDA_WITH_FP16                     "Compile with cuda half support"                                       OFF)
+lite_option(LITE_WITH_ARM_CLANG                "when arm lang is clang, its ON."                                      OFF)
+lite_option(LITE_WITH_XCODE                    "when debug in xcode, its ON."                                         OFF)
+lite_option(LITE_WITH_ARM82_FP16               "when compile with arm v8.2 fp16, it's ON."                            OFF)
+lite_option(LITE_WITH_ARM82_INT8_SDOT          "when compile with arm v8.2 int8, it's ON."                            OFF)
+lite_option(LITE_WITH_CODE_META_INFO           "include git version in the header file."                              ON)
+
+# Thirdparty
+set(THIRD_PARTY_PATH "${CMAKE_BINARY_DIR}/third_party" CACHE STRING
+        "A path setting third party libraries download & build directories.")
 
 if(NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     find_package(CUDA QUIET)
@@ -39,66 +101,8 @@ endif()
 find_package(Git REQUIRED)
 find_package(Threads REQUIRED)
 
-# simd configurations
+# Simd configurations
 include(simd)
-
-################################ Exposed Configurations #######################################
-lite_option(WITH_DSO            "Compile PaddlePaddle with dynamic linked CUDA" ON)
-lite_option(WITH_AVX            "Compile PaddlePaddle with AVX intrinsics"      ON IF ${AVX_FOUND})
-lite_option(WITH_TESTING        "Compile PaddlePaddle with unit testing"        OFF)
-lite_option(WITH_MKL            "Compile PaddlePaddle with MKL support."        ON IF ${AVX_FOUND})
-lite_option(WITH_ARM_DOTPROD    "Compile PaddlePaddle with ARM dot production"  ON)
-lite_option(WITH_SYSTEM_BLAS    "Use system blas library"           OFF)
-
-# for lite, both server and mobile framework.
-lite_option(LITE_WITH_JAVA      "Enable Java JNI lib in lite mode" OFF)
-lite_option(LITE_WITH_STATIC_LIB      "Enable static cplus lib in lite mode" OFF)
-lite_option(LITE_WITH_PYTHON    "Enable Python api lib in lite mode" OFF)
-lite_option(LITE_WITH_CUDA      "Enable CUDA in lite mode" OFF)
-lite_option(LITE_WITH_X86       "Enable X86 in lite mode"  ON)
-lite_option(LITE_WITH_ARM       "Enable ARM in lite mode"  OFF)
-lite_option(LITE_WITH_SW        "Enable SW in lite mode"  OFF)
-lite_option(LITE_WITH_NPU       "Enable NPU in lite mode"  OFF)
-lite_option(LITE_WITH_RKNPU     "Enable RKNPU in lite mode"  OFF)
-lite_option(LITE_WITH_MLU       "Enable MLU in lite mode"  OFF)
-lite_option(LITE_WITH_HUAWEI_ASCEND_NPU  "Enable HUAWEI_ASCEND_NPU in lite mode"  OFF)
-lite_option(LITE_WITH_IMAGINATION_NNA    "Enable IMAGINATION_NNA in lite mode"  OFF)
-lite_option(LITE_WITH_NNADAPTER    "Enable NNAdapter in lite mode"  OFF)
-lite_option(LITE_WITH_XPU       "Enable XPU in lite mode"  OFF)
-lite_option(LITE_WITH_XTCL      "Enable XPU via XTCL"  OFF IF LITE_WITH_XPU)
-lite_option(LITE_WITH_BM        "Enable BM in lite mode"   OFF)
-lite_option(LITE_WITH_APU       "Enable APU in lite mode"  OFF)
-lite_option(LITE_WITH_TRAIN     "Enable training operators and kernels in lite" OFF)
-lite_option(LITE_WITH_OPENMP    "Enable OpenMP in lite framework" ON)
-lite_option(LITE_WITH_OPENCL    "Enable OpenCL support in lite" OFF)
-lite_option(LITE_WITH_METAL     "Enable Metal support in lite" OFF)
-lite_option(LITE_WITH_FPGA      "Enable FPGA support in lite" OFF)
-lite_option(LITE_WITH_INTEL_FPGA      "Enable Intel FPGA support in lite" OFF)
-lite_option(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK  "Enable light-weight framework" OFF)
-lite_option(LITE_WITH_PROFILE   "Enable profile mode in lite framework"  OFF)
-lite_option(LITE_WITH_PRECISION_PROFILE "Enable precision profile in profile mode ON in lite" OFF)
-lite_option(LITE_WITH_LOG       "Enable log printing or not." ON)
-lite_option(LITE_WITH_EXCEPTION "Enable throwing the exception when error occurs in lite" OFF)
-lite_option(LITE_WITH_NVTX      "Enable nvtx or not, please enable LITE_WITH_CUDA first." OFF)
-lite_option(LITE_ON_TINY_PUBLISH "Publish tiny predictor lib." OFF)
-lite_option(LITE_ON_MODEL_OPTIMIZE_TOOL "Build the model optimize tool" OFF)
-lite_option(LITE_WITH_BENCHMARK_TEST "Build benchmark test cases" OFF)
-lite_option(LITE_THREAD_POOL    "Enable thread pool in lite" OFF)
-# publish options
-lite_option(LITE_BUILD_EXTRA    "Enable extra algorithm support in Lite, both kernels and operators" OFF)
-lite_option(LITE_BUILD_TAILOR   "Enable tailoring library according to model" OFF)
-# cv build options
-lite_option(LITE_WITH_CV        "Enable build cv image in lite" OFF)
-lite_option(LITE_WITH_STATIC_CUDA "Statically link cuda libraries." OFF)
-lite_option(CUDA_WITH_FP16      "Compile with cuda half support" OFF)
-lite_option(LITE_WITH_ARM_CLANG "when arm lang is clang, its ON." OFF)
-lite_option(LITE_WITH_XCODE     "when debug in xcode, its ON." OFF)
-lite_option(LITE_WITH_ARM82_FP16  "when compile with arm v8.2 fp16, it's ON." OFF)
-lite_option(LITE_WITH_ARM82_INT8_SDOT  "when compile with arm v8.2 int8, it's ON." OFF)
-lite_option(LITE_WITH_CODE_META_INFO  "include git version in the header file." ON)
-
-set(THIRD_PARTY_PATH "${CMAKE_BINARY_DIR}/third_party" CACHE STRING
-        "A path setting third party libraries download & build directories.")
 
 # CMAKE_BUILD_TYPE
 if(NOT CMAKE_BUILD_TYPE)

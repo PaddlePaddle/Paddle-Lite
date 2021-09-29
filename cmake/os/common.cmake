@@ -23,6 +23,7 @@ set(ARM_TARGET_ARCH_ABI_LIST "armv8" "armv7" "armv7hf" "arm64-v8a" "armeabi-v7a"
 set(ARM_TARGET_LANG_LIST "gcc" "clang")
 set(ARM_TARGET_LIB_TYPE_LIST "static" "shared")
 
+# OS check
 if(NOT DEFINED ARM_TARGET_OS)
   set(ARM_TARGET_OS "android")
 else()
@@ -31,6 +32,7 @@ else()
   endif()
 endif()
 
+# Abi check
 if(NOT DEFINED ARM_TARGET_ARCH_ABI)
   set(ARM_TARGET_ARCH_ABI "armv8")
 else()
@@ -39,6 +41,7 @@ else()
   endif()
 endif()
 
+# Toolchain check
 if(NOT DEFINED ARM_TARGET_LANG)
   set(ARM_TARGET_LANG "gcc")
 else()
@@ -47,6 +50,7 @@ else()
   endif()
 endif()
 
+# Target lib check
 if(NOT DEFINED ARM_TARGET_LIB_TYPE)
   set(ARM_TARGET_LIB_TYPE "static")
 else()
@@ -55,6 +59,7 @@ else()
   endif()
 endif()
 
+# Toolchain config
 if (LITE_ON_TINY_PUBLISH OR LITE_WITH_LTO)
   if(ARM_TARGET_LANG STREQUAL "gcc")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto")
@@ -62,10 +67,10 @@ if (LITE_ON_TINY_PUBLISH OR LITE_WITH_LTO)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -flto=thin")
   endif()
 endif()
-
 message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 message(STATUS "CMAKE_CXX_FLAGS_RELEASE: ${CMAKE_CXX_FLAGS_RELEASE}")
 
+# OS settings
 if(ARM_TARGET_OS STREQUAL "android")
   include(os/android)
 endif()
@@ -82,10 +87,9 @@ if(WIN32)
   include(os/windows)
 endif()
 
-# Setting host toolchain
+# Detect origin host toolchain
 set(HOST_C_COMPILER $ENV{CC})
 set(HOST_CXX_COMPILER $ENV{CXX})
-
 if(IOS OR ARMMACOS)
     set(default_cc clang)
     set(default_cxx clang++)
@@ -93,47 +97,36 @@ else()
     set(default_cc gcc)
     set(default_cxx g++)
 endif()
-
 if(NOT HOST_C_COMPILER)
     find_program(HOST_C_COMPILER NAMES ${default_cc} PATH
         /usr/bin
         /usr/local/bin)
 endif()
-
 if(NOT HOST_CXX_COMPILER)
     find_program(HOST_CXX_COMPILER NAMES ${default_cxx} PATH
         /usr/bin
         /usr/local/bin)
 endif()
-
 if(NOT HOST_C_COMPILER OR NOT EXISTS ${HOST_C_COMPILER})
     MESSAGE(FATAL_ERROR "Cannot find host C compiler. export CC=/path/to/cc")
 ENDIF()
-
 if(NOT HOST_CXX_COMPILER OR NOT EXISTS ${HOST_CXX_COMPILER})
     MESSAGE(FATAL_ERROR "Cannot find host C compiler. export CC=/path/to/cc")
 ENDIF()
-
 MESSAGE(STATUS "Found host C compiler: " ${HOST_C_COMPILER})
 MESSAGE(STATUS "Found host CXX compiler: " ${HOST_CXX_COMPILER})
 
+# Build type
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Default use Release in android" FORCE)
 endif()
 
+# Third party build type
 if(NOT THIRD_PARTY_BUILD_TYPE)
     set(THIRD_PARTY_BUILD_TYPE "MinSizeRel" CACHE STRING "Default use MinSizeRel in android" FORCE)
 endif()
 
 message(STATUS "Lite ARM Compile ${ARM_TARGET_OS} with ${ARM_TARGET_ARCH_ABI} ${ARM_TARGET_LANG}")
-
-
-# moved from root cmakelist
-message(STATUS "CXX compiler: ${CMAKE_CXX_COMPILER}, version: "
-        "${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
-message(STATUS "C compiler: ${CMAKE_C_COMPILER}, version: "
-        "${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION}")
-message(STATUS "AR tools: ${CMAKE_AR}")
 
 if(NOT APPLE)
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed")
@@ -153,6 +146,7 @@ if(ANDROID OR IOS OR ARMLINUX OR ARMMACOS)
             "Disable MKL when cross-compiling for Android and iOS" FORCE)
 endif()
 
+# Python
 if(ANDROID OR IOS)
     set(LITE_WITH_PYTHON OFF CACHE STRING
             "Disable PYTHON when cross-compiling for Android and iOS" FORCE)
