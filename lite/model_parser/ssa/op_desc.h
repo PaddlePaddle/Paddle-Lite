@@ -146,6 +146,9 @@ class BlockOpDesc : public OpDescBase {
   }
   std::weak_ptr<BlockOpProto> proto() const { return proto_; }
 
+  virtual void UpdateInputOutput(const general::OpDesc& raw_desc,
+                                 const RootVarScope& scope) {}
+
  protected:
   std::shared_ptr<BlockOpProto> proto_;
   std::vector<std::weak_ptr<VarDesc>> extra_inputs_;
@@ -164,12 +167,16 @@ class WhileOp : public BlockOpDesc {
       inputs_[cond_key_].emplace_back(var_desc);
       extra_inputs_.emplace_back(var_desc);
     }
+  }
+
+  void UpdateInputOutput(const general::OpDesc& raw_desc,
+                         const RootVarScope& scope) {
     for (const auto& var : raw_desc.Input(proto_->InKey())) {
       auto var_desc = scope.GetRootVarDesc(var).lock();
       inputs_[proto_->InKey()].emplace_back(var_desc);
     }
     for (const auto& var : raw_desc.Output(proto_->OutKey())) {
-      auto var_desc = scope.GetRootVarDesc(var).lock();
+      auto var_desc = scope.GetRootVarDesc(var).lock()->Read(*this);
       outputs_[proto_->OutKey()].emplace_back(var_desc);
     }
   }
@@ -198,6 +205,18 @@ class ConditionalBlockOp : public BlockOpDesc {
       : BlockOpDesc{
             raw_desc,
             BlockOpProtoRegistry::instance().GetProto(raw_desc.Type())} {}
+
+  void UpdateInputOutput(const general::OpDesc& raw_desc,
+                         const RootVarScope& scope) {
+    for (const auto& var : raw_desc.Input(proto_->InKey())) {
+      auto var_desc = scope.GetRootVarDesc(var).lock();
+      inputs_[proto_->InKey()].emplace_back(var_desc);
+    }
+    for (const auto& var : raw_desc.Output(proto_->OutKey())) {
+      auto var_desc = scope.GetRootVarDesc(var).lock()->Read(*this);
+      outputs_[proto_->OutKey()].emplace_back(var_desc);
+    }
+  }
 };
 
 class BlockOpGen {

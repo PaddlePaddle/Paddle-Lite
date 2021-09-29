@@ -176,6 +176,8 @@ class LITE_API Predictor {
 #ifdef LITE_WITH_XPU
     lite::TargetWrapperXPU::FreeL3Cache();
 #endif
+
+    ClearTensorArray(program_desc_);
   }
 
   /// \brief Release all tmp tensor to compress the size of the memory pool.
@@ -238,6 +240,9 @@ class LITE_API Predictor {
   // check if the input tensor precision type is correct.
   // would be called in Run().
   void CheckInputValid();
+
+  void ClearTensorArray(
+      const std::shared_ptr<const cpp::ProgramDesc>& program_desc);
 
  private:
   std::shared_ptr<cpp::ProgramDesc> program_desc_;

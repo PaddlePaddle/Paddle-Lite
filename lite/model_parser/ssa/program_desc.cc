@@ -75,6 +75,7 @@ void PlainProgramDesc::InsertOpOfBlock(const general::BlockDesc& block_desc) {
       auto sub_id = raw_op->GetAttr<int>(op->proto().lock()->AttrKey());
       const auto& raw_sub = *(src_desc_->GetBlock<general::BlockDesc>(sub_id));
       InsertOpOfBlock(raw_sub);
+      op->UpdateInputOutput(*raw_op, *(dst_block->scope()));
       blocks_[sub_id]->SetBlockOpDesc(op.get());
       blocks_[sub_id]->AddBlockInputs(
           op->extra_inputs().cbegin(), op->extra_inputs().cend(), true);
