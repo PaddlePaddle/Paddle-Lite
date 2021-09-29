@@ -54,7 +54,7 @@ Paddle Lite已支持百度XPU在x86和arm服务器（例如飞腾 FT-2000+/64）
 
 ### 运行图像分类示例程序
 
-- 下载示例程序[PaddleLite-linux-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/baidu/PaddleLite-linux-demo.tar.gz)，解压后清单如下：
+- 下载示例程序[PaddleLite-linux-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/baidu/PaddleLite-linux-demo_v2_10_0.tar.gz)，解压后清单如下：
 
   ```shell
   - PaddleLite-linux-demo
