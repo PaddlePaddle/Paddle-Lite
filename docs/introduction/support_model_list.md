@@ -10,7 +10,6 @@
 | CV | 分类 | [MobileNetV2](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v2_fp32_224_fluid.tar.gz) | ARM, X86, GPU(OPENCL,METAL), HuaweiKirinNPU, BaiduXPU, HuaweiAscendNPU |
 | CV | 分类 | [MobileNetV3-large](https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/MobileNetV3_large_x1_0.tar.gz) | ARM, X86, GPU(OPENCL,METAL) |
 | CV | 分类 | [MobileNetV3-small](https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/MobileNetV3_small_x1_0.tar.gz) | ARM, X86, GPU(OPENCL,METAL) |
-| CV | 分类 | [SSD-MobileNetV3-large](https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/ssdlite_mobilenet_v3_large.tar.gz) | ARM, X86, GPU(OPENCL,METAL) |
 | CV | 分类 | DPN68 | ARM, X86 |
 | CV | 分类 | AlexNet | ARM, X86 |
 | CV | 分类 | DarkNet53 | ARM, X86 |
@@ -31,6 +30,7 @@
 | CV | 分类 | [VGG16](https://paddlepaddle-inference-banchmark.bj.bcebos.com/VGG16_inference.tar) | ARM, GPU(OPENCL), BaiduXPU, HuaweiAscendNPU |
 | CV | 分类 | [VGG19](https://paddlepaddle-inference-banchmark.bj.bcebos.com/VGG19_inference.tar) | ARM, GPU(OPENCL,METAL), BaiduXPU, HuaweiAscendNPU|
 | CV | 分类 | [GoogleNet](https://paddlepaddle-inference-banchmark.bj.bcebos.com/GoogleNet_inference.tar) | ARM, X86, BaiduXPU |
+| CV | 检测 | [SSD-MobileNetV3-large](https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/ssdlite_mobilenet_v3_large.tar.gz) | ARM, X86, GPU(OPENCL,METAL) |
 | CV | 检测 | [MobileNet-SSD](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_pascalvoc_fp32_300_fluid.tar.gz)-SSD | ARM, HuaweiKirinNPU*, HuaweiAscendNPU* |
 | CV | 检测 | [YOLOv3-MobileNetV3](https://paddlelite-demo.bj.bcebos.com/models/yolov3_mobilenet_v3_prune86_FPGM_320_fp32_fluid.tar.gz) | ARM, HuaweiKirinNPU*, HuaweiAscendNPU* |
 | CV | 检测 | [Faster RCNN](https://paddlepaddle-inference-banchmark.bj.bcebos.com/faster_rcnn.tar) | ARM |
