@@ -14,8 +14,8 @@
 
 #include "lite/kernels/arm/reduce_max_compute.h"
 #include <string>
-#include "lite/core/op_registry.h"
 #include "lite/backends/arm/math/funcs.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
@@ -130,8 +130,7 @@ void ReduceMaxCompute<T>::Run() {
         default:
           LOG(FATAL) << "error!!!";
       }
-    } 
-    else {
+    } else {
       LOG(FATAL) << "dim's size over than 1, which is not supported now!!";
     }  // x_dims == 2 && dim.size() == 1
   } else if (x_dims.size() == 1) {

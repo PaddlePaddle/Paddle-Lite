@@ -24,11 +24,11 @@ namespace math {
 
 template <typename T>
 inline void reduce_n(const T* src,
-              T* dst,
-              int num_in,
-              int channel_in,
-              int height_in,
-              int width_in){
+                     T* dst,
+                     int num_in,
+                     int channel_in,
+                     int height_in,
+                     int width_in) {
   int hw_size = height_in * width_in;
   int chw_size = channel_in * hw_size;
   int data_index, src_index, src_index0;
@@ -111,11 +111,11 @@ inline void reduce_all_of_three(
 
 template <typename T>
 inline void reduce_c(const T* src,
-              T* dst,
-              int num_in,
-              int channel_in,
-              int height_in,
-              int width_in) {
+                     T* dst,
+                     int num_in,
+                     int channel_in,
+                     int height_in,
+                     int width_in) {
   int hw_size = height_in * width_in;
   int chw_size = hw_size * channel_in;
   int data_index, src_index0, src_index;
@@ -137,11 +137,11 @@ inline void reduce_c(const T* src,
 
 template <typename T>
 inline void reduce_h(const T* src,
-              T* dst,
-              int num_in,
-              int channel_in,
-              int height_in,
-              int width_in) {
+                     T* dst,
+                     int num_in,
+                     int channel_in,
+                     int height_in,
+                     int width_in) {
   int cw_size = channel_in * width_in;
   int chw_size = cw_size * height_in;
   int hw_size = height_in * width_in;
@@ -164,11 +164,11 @@ inline void reduce_h(const T* src,
 
 template <typename T>
 inline void reduce_w(const T* src,
-              T* dst,
-              int num_in,
-              int channel_in,
-              int height_in,
-              int width_in) {
+                     T* dst,
+                     int num_in,
+                     int channel_in,
+                     int height_in,
+                     int width_in) {
   int ch_size = channel_in * height_in;
   int hw_size = height_in * width_in;
   int chw_size = ch_size * width_in;
@@ -193,11 +193,11 @@ inline void reduce_w(const T* src,
 
 template <typename T>
 inline void reduce_all(const T* src,
-                T* dst,
-                int num_in,
-                int channel_in,
-                int height_in,
-                int width_in) {
+                       T* dst,
+                       int num_in,
+                       int channel_in,
+                       int height_in,
+                       int width_in) {
   T max = src[0];
   int src_index;
   int n_id, c_id;
@@ -218,11 +218,11 @@ inline void reduce_all(const T* src,
 
 template <typename T>
 inline void reduce_nc(const T* src,
-               T* dst,
-               int num_in,
-               int channel_in,
-               int height_in,
-               int width_in) {
+                      T* dst,
+                      int num_in,
+                      int channel_in,
+                      int height_in,
+                      int width_in) {
   // reduce n first.
   DDimLite ddimA({1, channel_in, height_in, width_in});
   lite::Tensor tensor_tmp;
@@ -234,11 +234,11 @@ inline void reduce_nc(const T* src,
 
 template <typename T>
 inline void reduce_ch(const T* src,
-               T* dst,
-               int num_in,
-               int channel_in,
-               int height_in,
-               int width_in) {
+                      T* dst,
+                      int num_in,
+                      int channel_in,
+                      int height_in,
+                      int width_in) {
   // reduce c first
   DDimLite ddimA({num_in, 1, height_in, width_in});
   lite::Tensor tensor_tmp;
@@ -250,11 +250,11 @@ inline void reduce_ch(const T* src,
 
 template <typename T>
 inline void reduce_hw(const T* src,
-               T* dst,
-               int num_in,
-               int channel_in,
-               int height_in,
-               int width_in) {
+                      T* dst,
+                      int num_in,
+                      int channel_in,
+                      int height_in,
+                      int width_in) {
   // reduce h first
   DDimLite ddimA({num_in, channel_in, 1, width_in});
   lite::Tensor tensor_tmp;

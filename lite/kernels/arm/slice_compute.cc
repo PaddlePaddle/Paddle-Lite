@@ -24,9 +24,9 @@ namespace kernels {
 namespace arm {
 
 void DealTensorArray(const operators::SliceParam& param,
-                            const std::vector<int64_t>& starts,
-                            const std::vector<int64_t>& ends,
-                            bool out_is_array) {
+                     const std::vector<int64_t>& starts,
+                     const std::vector<int64_t>& ends,
+                     bool out_is_array) {
   auto in_array = param.XTensorList;
   // If the input is LoDTensorArray, the rank of input is 1.
   int64_t in_size = in_array->size();
@@ -209,7 +209,7 @@ void SliceCompute<T, PType>::Run() {
 
   // resize out dims
   if (decrease_axis.size() > 0) {
-    if (decrease_axis.size() == (size_t)in_dims.size()) {
+    if (decrease_axis.size() == static_cast<size_t>(in_dims.size())) {
       std::vector<int64_t> vec_origin_out_shape(decrease_axis.size(), 1);
       out->Resize(DDim(vec_origin_out_shape));
     } else {

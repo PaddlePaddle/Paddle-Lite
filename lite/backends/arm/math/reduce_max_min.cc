@@ -21,9 +21,7 @@ limitations under the License. */
 namespace paddle {
 namespace lite {
 namespace arm {
-namespace math {
-
-}  // namespace math
+namespace math {}  // namespace math
 }  // namespace arm
 }  // namespace lite
 }  // namespace paddle

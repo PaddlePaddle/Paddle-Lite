@@ -122,7 +122,7 @@ const Tensor* LightPredictor::GetOutput(size_t offset) {
   auto* out_var = program_->exec_scope()->FindVar(output_names_.at(offset));
   CHECK(out_var) << "no fatch variable " << output_names_.at(offset)
                  << " in exec_scope";
-  auto res = out_var->GetMutable<lite::Tensor>();        
+  auto res = out_var->GetMutable<lite::Tensor>();
   return res;
 }
 #else
@@ -401,7 +401,9 @@ void LightPredictor::ClearTensorArray(
     for (size_t var_idx = 0; var_idx < block->VarsSize(); var_idx++) {
       const cpp::VarDesc* var = block->GetVar<cpp::VarDesc>(var_idx);
       CHECK(var);
-      if (var->GetType() == lite::VarDataType::LOD_TENSOR_ARRAY) {
+
+      auto tmp = program_->exec_scope()->FindVar(var->Name());
+      if (tmp->IsType<std::vector<Tensor>>()) {
         std::vector<Tensor>* tensor_array_var =
             program_->exec_scope()->FindMutableTensorList(var->Name());
         CHECK(tensor_array_var);

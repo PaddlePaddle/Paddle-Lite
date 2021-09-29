@@ -28,17 +28,15 @@ enum class MaxMinType : bool { kMin = false, kMax = true };
 
 template <typename DataType>
 inline void reduce_one_line(const DataType* src,
-                     DataType* dst,
-                     int size,
-                     MaxMinType max_min_selector) {
+                            DataType* dst,
+                            int size,
+                            MaxMinType max_min_selector) {
   DataType tmp = src[0];
   for (int i = 0; i < size; i++) {
-    if(max_min_selector == MaxMinType::kMin) {
-      if(tmp > src[i])
-        tmp = src[i];
+    if (max_min_selector == MaxMinType::kMin) {
+      if (tmp > src[i]) tmp = src[i];
     } else {
-      if(tmp <= src[i])
-        tmp = src[i];
+      if (tmp <= src[i]) tmp = src[i];
     }
   }
   *dst = tmp;
@@ -46,25 +44,24 @@ inline void reduce_one_line(const DataType* src,
 
 template <typename DataType>
 inline void reduce_first_of_two(const DataType* src,
-                         DataType* dst,
-                         int first_in,
-                         int second_in,
-                         MaxMinType compare_functor) {}
+                                DataType* dst,
+                                int first_in,
+                                int second_in,
+                                MaxMinType compare_functor) {}
 
 template <typename DataType>
 inline void reduce_second_of_two(const DataType* src,
-                          DataType* dst,
-                          int first_in,
-                          int second_in,
-                          MaxMinType max_min_selector) {}
-
+                                 DataType* dst,
+                                 int first_in,
+                                 int second_in,
+                                 MaxMinType max_min_selector) {}
 
 template <>
 inline void reduce_second_of_two<float>(const float* src,
-                                 float* dst,
-                                 int first_in,
-                                 int second_in,
-                                 MaxMinType max_min_selector) {
+                                        float* dst,
+                                        int first_in,
+                                        int second_in,
+                                        MaxMinType max_min_selector) {
   // max_min_selector == true, do reduce max; else do reduce min
   for (int j = 0; j < second_in; j++) {
     dst[j * first_in] = src[j * first_in];
@@ -79,10 +76,10 @@ inline void reduce_second_of_two<float>(const float* src,
 
 template <>
 inline void reduce_first_of_two<float>(const float* src,
-                                float* dst,
-                                int first_in,
-                                int second_in,
-                                MaxMinType max_min_selector) {
+                                       float* dst,
+                                       int first_in,
+                                       int second_in,
+                                       MaxMinType max_min_selector) {
   // max_min_selector == true, do reduce max; else do reduce min
   for (int j = 0; j < first_in; j++) {
     dst[j] = src[j];
@@ -97,10 +94,10 @@ inline void reduce_first_of_two<float>(const float* src,
 
 template <>
 inline void reduce_second_of_two<int64_t>(const int64_t* src,
-                                   int64_t* dst,
-                                   int first_in,
-                                   int second_in,
-                                   MaxMinType max_min_selector) {
+                                          int64_t* dst,
+                                          int first_in,
+                                          int second_in,
+                                          MaxMinType max_min_selector) {
   // max_min_selector == true, do reduce max; else do reduce min
   for (int j = 0; j < second_in; j++) {
     dst[j * first_in] = src[j * first_in];
@@ -115,10 +112,10 @@ inline void reduce_second_of_two<int64_t>(const int64_t* src,
 
 template <>
 inline void reduce_first_of_two<int64_t>(const int64_t* src,
-                                  int64_t* dst,
-                                  int first_in,
-                                  int second_in,
-                                  MaxMinType max_min_selector) {
+                                         int64_t* dst,
+                                         int first_in,
+                                         int second_in,
+                                         MaxMinType max_min_selector) {
   // max_min_selector == true, do reduce max; else do reduce min
   for (int j = 0; j < first_in; j++) {
     dst[j] = src[j];
