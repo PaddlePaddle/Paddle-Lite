@@ -10,16 +10,16 @@ WITH_CV=ON
 WITH_EXTRA=ON
 WITH_EXCEPTION=ON
 WITH_METAL=OFF
-MODEL_DIRS=""
+MODEL_DIR=""
 
 function print_usage() {
     echo "----------------------------------------------------------------------------------------------------------------------------------------"
     echo -e "| Methods of compiling Padddle-Lite iOS library:                                                                                       |"
     echo "----------------------------------------------------------------------------------------------------------------------------------------"
     echo -e "|  compile iOS armv8+armv7 library:                                                                                                    |"
-    echo -e "|     ./lite/tools/build_ios_by_models.sh --model_dirs=${model_dirs}                                                                   |"
+    echo -e "|     ./lite/tools/build_ios_by_models.sh --model_dir=${model_dir}                                                                   |"
     echo -e "|  compile iOS armv8+armv7 library for GPU:                                                                                            |"
-    echo -e "|     ./lite/tools/build_ios_by_models.sh  --with_metal=ON --model_dirs=${model_dirs}                                                  |"
+    echo -e "|     ./lite/tools/build_ios_by_models.sh  --with_metal=ON --model_dir=${model_dir}                                                  |"
     echo -e "|  print help information:                                                                                                             |"
     echo -e "|     ./lite/tools/build_ios_by_models.sh help                                                                                         |"
     echo -e "|                                                                                                                                      |"
@@ -57,8 +57,8 @@ function init() {
           WITH_METAL="${i#*=}"
           shift
           ;;
-      --model_dirs=*)
-          MODEL_DIRS="${i#*=}"
+      --model_dir=*)
+          MODEL_DIR="${i#*=}"
           shift
           ;;
       help)
@@ -82,7 +82,7 @@ if [ ! -f build.opt/lite/api/opt ]; then
 ./lite/tools/build.sh build_optimize_tool
 fi
 cd build.opt/lite/api
-rm -rf models &&  cp -rf ${MODEL_DIRS} ./models
+rm -rf models &&  cp -rf ${MODEL_DIR} ./models
 
 ###  models names
 models_names=$(ls models)
