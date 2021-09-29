@@ -404,9 +404,11 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                     COMMAND cp "${CMAKE_SOURCE_DIR}/lite/api/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/include"
                     COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/paddle_use_kernels.h" "${INFER_LITE_PUBLISH_ROOT}/include"
                     COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/paddle_use_ops.h" "${INFER_LITE_PUBLISH_ROOT}/include"
-                    COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/libpaddle_api_light_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/lib"
                     COMMAND cp "${CMAKE_SOURCE_DIR}/lite/utils/cv/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/include"
                     )
+            if(${CMAKE_GENERATOR} STREQUAL "Xcode")
+                install(TARGETS paddle_api_light_bundled ARCHIVE DESTINATION ${INFER_LITE_PUBLISH_ROOT}/lib)
+            endif()
             add_dependencies(tiny_publish_lib paddle_api_light_bundled)
             add_dependencies(publish_inference tiny_publish_lib)
         else()
