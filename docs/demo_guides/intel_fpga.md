@@ -64,7 +64,7 @@ PaddleLite支持英特尔FPGA作为后端硬件进行模型推理，其主要特
 
 ### 运行图像检测示例程序
 
-- 下载示例程序[PaddleLite-linux-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/intel/PaddleLite-linux-demo.tar.gz)，解压后清单如下：
+- 下载示例程序[PaddleLite-linux-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/intel/PaddleLite-linux-demo_v2_10_0.tar.gz)，解压后清单如下：
 
   ```shell
   - PaddleLite-linux-demo
