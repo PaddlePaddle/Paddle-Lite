@@ -970,7 +970,9 @@ void unpackC8_with_Cleft(const float* din,
   }
 }
 
-__m256 activation8_m256(__m256 input, const lite_api::ActivationType act_type) {
+__m256 activation8_m256(__m256 input
+                        const lite_api::ActivationType act_type,
+                        const operators::ActivationParam act_param) {
   if (act_type == lite_api::ActivationType::kRelu) {
     return _mm256_max_ps(input, _mm256_setzero_ps());
   } else if (act_type == lite_api::ActivationType::kRelu6) {
