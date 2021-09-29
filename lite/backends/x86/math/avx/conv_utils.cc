@@ -732,9 +732,245 @@ void pack_padding8_m256(lite::Tensor* input,
   }
 }
 
-__m256 activation8_m256(__m256 input,
-                        const lite_api::ActivationType act_type,
-                        const operators::ActivationParam act_param) {
+void packC8_with_Cleft(const float* din,
+                       float* dout,
+                       const std::vector<int>& pad,
+                       int h_in,
+                       int w_in,
+                       int channel) {
+  int top = pad[0];
+  int bottom = pad[1];
+  int left = pad[2];
+  int right = pad[3];
+  int w_out = (w_in + left + right);
+  int h_out = (h_in + top + bottom);
+  int block_channel = 8;
+  const float* din_init = din;
+  float* dout_init = dout;
+
+  for (int c = 0; c < channel; c += block_channel) {
+    din = din_init + c * h_in * w_in;
+    dout = dout_init + c * w_out * h_out;
+
+    memset(dout, 0, top * w_out * block_channel * sizeof(float));
+    auto dout_block = dout + top * w_out * block_channel;
+
+    for (int i = 0; i < h_in; i++) {
+      float* douth = dout_block + i * w_out * block_channel;
+      const float* dinh = din + i * w_in;
+      memset(douth, 0, left * block_channel * sizeof(float));
+      douth += left * block_channel;
+      int kernel_size = h_in * w_in;
+      auto dinr0 = dinh;
+      auto dinr1 = dinr0 + kernel_size;
+      auto dinr2 = dinr1 + kernel_size;
+      auto dinr3 = dinr2 + kernel_size;
+      auto dinr4 = dinr3 + kernel_size;
+      auto dinr5 = dinr4 + kernel_size;
+      auto dinr6 = dinr5 + kernel_size;
+      auto dinr7 = dinr6 + kernel_size;
+
+      int j = 0;
+      if (c + 7 < channel) {
+        for (; j + 7 < w_in; j += 8) {
+          __m256 _row0 = _mm256_loadu_ps(dinr0);
+          __m256 _row1 = _mm256_loadu_ps(dinr1);
+          __m256 _row2 = _mm256_loadu_ps(dinr2);
+          __m256 _row3 = _mm256_loadu_ps(dinr3);
+          __m256 _row4 = _mm256_loadu_ps(dinr4);
+          __m256 _row5 = _mm256_loadu_ps(dinr5);
+          __m256 _row6 = _mm256_loadu_ps(dinr6);
+          __m256 _row7 = _mm256_loadu_ps(dinr7);
+          transpose8_ps(_row0, _row1, _row2, _row3, _row4, _row5, _row6, _row7);
+          _mm256_storeu_ps(douth, _row0);
+          _mm256_storeu_ps(douth + 8, _row1);
+          _mm256_storeu_ps(douth + 16, _row2);
+          _mm256_storeu_ps(douth + 24, _row3);
+          _mm256_storeu_ps(douth + 32, _row4);
+          _mm256_storeu_ps(douth + 40, _row5);
+          _mm256_storeu_ps(douth + 48, _row6);
+          _mm256_storeu_ps(douth + 56, _row7);
+          dinr0 += 8;
+          dinr1 += 8;
+          dinr2 += 8;
+          dinr3 += 8;
+          dinr4 += 8;
+          dinr5 += 8;
+          dinr6 += 8;
+          dinr7 += 8;
+          douth += 64;
+        }
+
+        for (; j < w_in; j++) {
+          douth[0] = *dinr0++;
+          douth[1] = *dinr1++;
+          douth[2] = *dinr2++;
+          douth[3] = *dinr3++;
+          douth[4] = *dinr4++;
+          douth[5] = *dinr5++;
+          douth[6] = *dinr6++;
+          douth[7] = *dinr7++;
+          douth += 8;
+        }
+      } else {
+        __m256 _row0 = _mm256_setzero_ps();
+        __m256 _row1 = _mm256_setzero_ps();
+        __m256 _row2 = _mm256_setzero_ps();
+        __m256 _row3 = _mm256_setzero_ps();
+        __m256 _row4 = _mm256_setzero_ps();
+        __m256 _row5 = _mm256_setzero_ps();
+        __m256 _row6 = _mm256_setzero_ps();
+        __m256 _row7 = _mm256_setzero_ps();
+        for (; j + 7 < w_in; j += 8) {
+          _row0 = _mm256_loadu_ps(dinr0);
+          if (channel - c > 1) _row1 = _mm256_loadu_ps(dinr1);
+          if (channel - c > 2) _row2 = _mm256_loadu_ps(dinr2);
+          if (channel - c > 3) _row3 = _mm256_loadu_ps(dinr3);
+          if (channel - c > 4) _row4 = _mm256_loadu_ps(dinr4);
+          if (channel - c > 5) _row5 = _mm256_loadu_ps(dinr5);
+          if (channel - c > 6) _row6 = _mm256_loadu_ps(dinr6);
+          transpose8_ps(_row0, _row1, _row2, _row3, _row4, _row5, _row6, _row7);
+          _mm256_storeu_ps(douth, _row0);
+          _mm256_storeu_ps(douth + 8, _row1);
+          _mm256_storeu_ps(douth + 16, _row2);
+          _mm256_storeu_ps(douth + 24, _row3);
+          _mm256_storeu_ps(douth + 32, _row4);
+          _mm256_storeu_ps(douth + 40, _row5);
+          _mm256_storeu_ps(douth + 48, _row6);
+          _mm256_storeu_ps(douth + 56, _row7);
+          dinr0 += 8;
+          dinr1 += 8;
+          dinr2 += 8;
+          dinr3 += 8;
+          dinr4 += 8;
+          dinr5 += 8;
+          dinr6 += 8;
+          dinr7 += 8;
+          douth += 64;
+        }
+
+        for (; j < w_in; j++) {
+          douth[0] = *dinr0++;
+          douth[1] = channel - c > 1 ? *dinr1++ : 0;
+          douth[2] = channel - c > 2 ? *dinr2++ : 0;
+          douth[3] = channel - c > 3 ? *dinr3++ : 0;
+          douth[4] = channel - c > 4 ? *dinr4++ : 0;
+          douth[5] = channel - c > 5 ? *dinr5++ : 0;
+          douth[6] = channel - c > 6 ? *dinr6++ : 0;
+          douth[7] = 0;
+          douth += 8;
+        }
+      }
+      memset(douth, 0, right * block_channel * sizeof(float));
+    }
+    memset(dout + (h_in + top) * w_out * block_channel,
+           0,
+           bottom * w_out * block_channel * sizeof(float));
+  }
+}
+
+void unpackC8_with_Cleft(const float* din,
+                         float* dout,
+                         int size_out_channel,
+                         int channel) {
+  int block_channel = 8;
+  float* dout_init = dout;
+
+  for (int c = 0; c < channel; c += block_channel) {
+    dout = dout_init + c * size_out_channel;
+    auto doutr0 = dout;
+    auto doutr1 = doutr0 + size_out_channel;
+    auto doutr2 = doutr1 + size_out_channel;
+    auto doutr3 = doutr2 + size_out_channel;
+    auto doutr4 = doutr3 + size_out_channel;
+    auto doutr5 = doutr4 + size_out_channel;
+    auto doutr6 = doutr5 + size_out_channel;
+    auto doutr7 = doutr6 + size_out_channel;
+    int j = 0;
+    if (c + 7 < channel) {
+      for (; j + 7 < size_out_channel; j += 8) {
+        __m256 _row0 = _mm256_loadu_ps(din);
+        __m256 _row1 = _mm256_loadu_ps(din + 8);
+        __m256 _row2 = _mm256_loadu_ps(din + 16);
+        __m256 _row3 = _mm256_loadu_ps(din + 24);
+        __m256 _row4 = _mm256_loadu_ps(din + 32);
+        __m256 _row5 = _mm256_loadu_ps(din + 40);
+        __m256 _row6 = _mm256_loadu_ps(din + 48);
+        __m256 _row7 = _mm256_loadu_ps(din + 56);
+        transpose8_ps(_row0, _row1, _row2, _row3, _row4, _row5, _row6, _row7);
+        _mm256_storeu_ps(doutr0, _row0);
+        _mm256_storeu_ps(doutr1, _row1);
+        _mm256_storeu_ps(doutr2, _row2);
+        _mm256_storeu_ps(doutr3, _row3);
+        _mm256_storeu_ps(doutr4, _row4);
+        _mm256_storeu_ps(doutr5, _row5);
+        _mm256_storeu_ps(doutr6, _row6);
+        _mm256_storeu_ps(doutr7, _row7);
+        doutr0 += 8;
+        doutr1 += 8;
+        doutr2 += 8;
+        doutr3 += 8;
+        doutr4 += 8;
+        doutr5 += 8;
+        doutr6 += 8;
+        doutr7 += 8;
+        din += 64;
+      }
+
+      for (; j < size_out_channel; j++) {
+        *doutr0++ = *din++;
+        *doutr1++ = *din++;
+        *doutr2++ = *din++;
+        *doutr3++ = *din++;
+        *doutr4++ = *din++;
+        *doutr5++ = *din++;
+        *doutr6++ = *din++;
+        *doutr7++ = *din++;
+      }
+    } else {
+      for (; j + 7 < size_out_channel; j += 8) {
+        __m256 _row0 = _mm256_loadu_ps(din);
+        __m256 _row1 = _mm256_loadu_ps(din + 8);
+        __m256 _row2 = _mm256_loadu_ps(din + 16);
+        __m256 _row3 = _mm256_loadu_ps(din + 24);
+        __m256 _row4 = _mm256_loadu_ps(din + 32);
+        __m256 _row5 = _mm256_loadu_ps(din + 40);
+        __m256 _row6 = _mm256_loadu_ps(din + 48);
+        __m256 _row7 = _mm256_loadu_ps(din + 56);
+        transpose8_ps(_row0, _row1, _row2, _row3, _row4, _row5, _row6, _row7);
+        _mm256_storeu_ps(doutr0, _row0);
+        if (channel - c > 1) _mm256_storeu_ps(doutr1, _row1);
+        if (channel - c > 2) _mm256_storeu_ps(doutr2, _row2);
+        if (channel - c > 3) _mm256_storeu_ps(doutr3, _row3);
+        if (channel - c > 4) _mm256_storeu_ps(doutr4, _row4);
+        if (channel - c > 5) _mm256_storeu_ps(doutr5, _row5);
+        if (channel - c > 6) _mm256_storeu_ps(doutr6, _row6);
+        doutr0 += 8;
+        doutr1 += 8;
+        doutr2 += 8;
+        doutr3 += 8;
+        doutr4 += 8;
+        doutr5 += 8;
+        doutr6 += 8;
+        doutr7 += 8;
+        din += 64;
+      }
+
+      for (; j < size_out_channel; j++) {
+        *doutr0++ = *din;
+        if (channel - c > 1) *doutr1++ = *(din + 1);
+        if (channel - c > 2) *doutr2++ = *(din + 2);
+        if (channel - c > 3) *doutr3++ = *(din + 3);
+        if (channel - c > 4) *doutr4++ = *(din + 4);
+        if (channel - c > 5) *doutr5++ = *(din + 5);
+        if (channel - c > 6) *doutr6++ = *(din + 6);
+        din += 8;
+      }
+    }
+  }
+}
+
+__m256 activation8_m256(__m256 input, const lite_api::ActivationType act_type) {
   if (act_type == lite_api::ActivationType::kRelu) {
     return _mm256_max_ps(input, _mm256_setzero_ps());
   } else if (act_type == lite_api::ActivationType::kRelu6) {
