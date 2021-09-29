@@ -14,10 +14,9 @@
 
 cmake_minimum_required(VERSION 3.0)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-include(lite_utils)
-
 set(PADDLE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(PADDLE_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if(LITE_WITH_XTCL OR LITE_WITH_METAL)
     set(CMAKE_CXX_STANDARD 14)
@@ -25,12 +24,13 @@ else()
     set(CMAKE_CXX_STANDARD 11)
 endif()
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
+# host system configurations
 include(system)
+# paddlelite functions and macros
 include(functions)
+# target os configurations
 include(os/common)
-
+# paddle project
 project(paddle CXX C)
 
 if(NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
@@ -39,6 +39,7 @@ endif()
 find_package(Git REQUIRED)
 find_package(Threads REQUIRED)
 
+# simd configurations
 include(simd)
 
 ################################ Exposed Configurations #######################################
