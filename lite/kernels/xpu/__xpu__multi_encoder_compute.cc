@@ -87,6 +87,25 @@ void XPUMultiEncoderCompute::PrepareForRun() {
         IoDirection::HtoD);
     fc_weight_max_.push_back(cur_weight_max_ptr);
   }
+  if (param.input_max.size()) {
+    // prepare input_max
+    input_max_guard_ = TargetWrapperXPU::MallocScratchPad(
+        param.input_max.size() * lite::XPU_QUANT_SCALE_NUM * sizeof(float));
+    float* input_max_ptr = reinterpret_cast<float*>(input_max_guard_->addr_);
+    for (int i = 0; i < param.input_max.size(); i++) {
+      float* cur_input_max_ptr = input_max_ptr + i * lite::XPU_QUANT_SCALE_NUM;
+      std::vector<float> cpu_max(lite::XPU_QUANT_SCALE_NUM, param.input_max[i]);
+      lite::TargetWrapperXPU::MemcpySync(
+          cur_input_max_ptr,
+          cpu_max.data(),
+          sizeof(float) * lite::XPU_QUANT_SCALE_NUM,
+          IoDirection::HtoD);
+      fc_input_max_.push_back(cur_input_max_ptr);
+    }
+    CHECK_EQ(fc_input_max_.size(), fc_weight_max_.size())
+        << "input and weight max shape unequal:" << fc_input_max_.size() << ","
+        << fc_weight_max_.size();
+  }
   // prepare act_type
   if (param.act_type == "gelu") {
     qkv_act = xdnn::Activation_t::GELU;
@@ -129,7 +148,7 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
         in,
         *(XPUMultiEncoderCompute::get_weight<TW>()),
         out,
-        {},
+        fc_input_max_,
         fc_weight_max_,
         arg_fc_bias_,
         arg_ln_scale_,
@@ -140,7 +159,6 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
     // no vsl
     int batch = static_cast<int>(param.input->dims()[0]);
     int max_seqlen = static_cast<int>(param.input->dims()[1]);
-
     std::vector<int64_t> mask_shape = param.mask->dims().Vectorize();
     std::vector<int> encoder_mask_shape =
         std::vector<int>(mask_shape.begin(), mask_shape.end());
@@ -158,7 +176,7 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
         in,
         *(XPUMultiEncoderCompute::get_weight<TW>()),
         out,
-        {},
+        fc_input_max_,
         fc_weight_max_,
         arg_fc_bias_,
         arg_ln_scale_,

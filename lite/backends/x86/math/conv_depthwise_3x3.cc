@@ -12,11 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
-#include <time.h>
-#include <vector>
 #include "lite/backends/x86/math/avx/avx_mathfuns.h"
 #include "lite/backends/x86/math/avx/conv_utils.h"
-#include "lite/backends/x86/math/conv_depthwise_direct.h"
+#include "lite/backends/x86/math/conv_depthwise_impl.h"
 #include "lite/core/memory.h"
 #ifdef __AVX__
 #include <immintrin.h>
@@ -310,7 +308,8 @@ void conv_depthwise_3x3s2_p1_direct(
                              _mm_max_ps(zero, _mm_add_ps(r1_128, voffset))),
                   _mm_mul_ps(r1_128, vscale));
             } else {
-              LOG(FATAL) << "[X86] activation type not supported";
+              LOG(FATAL) << "[X86] activation type: "
+                         << static_cast<int>(act_type) << "not supported";
             }
           }
           _mm_maskstore_ps(doutr0, mask, r0_128);
@@ -569,7 +568,8 @@ void conv_depthwise_3x3s2_p1_direct(
                   _mm_mul_ps(r0,
                              _mm_set1_ps(1.0 / act_param.hard_swish_scale)));
             } else {
-              LOG(FATAL) << "[X86] activation type not supported";
+              LOG(FATAL) << "[X86] activation type: "
+                         << static_cast<int>(act_type) << "not supported";
             }
           }
 
@@ -964,9 +964,10 @@ void conv_depthwise_3x3s1_p1_direct(
                       vthreshold,
                       _mm256_max_ps(zero, _mm256_add_ps(r3, voffset))),
                   _mm256_mul_ps(r3, vscale));
+            } else {
+              LOG(FATAL) << "[X86] activation type: "
+                         << static_cast<int>(act_type) << "not supported";
             }
-          } else {
-            LOG(FATAL) << "[X86] activation type not supported";
           }
 
           _mm256_maskstore_ps(doutr0, smask_, r0);
@@ -1276,7 +1277,8 @@ void conv_depthwise_3x3s1_p1_direct(
                              _mm_max_ps(zero, _mm_add_ps(r1, voffset))),
                   _mm_mul_ps(r1, vscale));
             } else {
-              LOG(FATAL) << "[X86] activation type not supported";
+              LOG(FATAL) << "[X86] activation type: "
+                         << static_cast<int>(act_type) << "not supported";
             }
           }
 
