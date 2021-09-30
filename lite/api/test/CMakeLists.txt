@@ -55,7 +55,13 @@ if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND WITH_TESTING)
     lite_cc_test(test_mobilenetv1 SRCS mobilenetv1_test.cc
        ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl
             --model_dir=${LITE_MODEL_DIR}/mobilenet_v1 SERIAL)
+    #cyh
+    lite_cc_test(test_mobilenetv1_feed_fetch_opencl SRCS mobilenetv1_feed_fetch_opencl_test.cpp
+            ARGS --cl_path=${CMAKE_SOURCE_DIR}/lite/backends/opencl
+            --model_dir=${LITE_MODEL_DIR}/mobilenet_v1 SERIAL)
     add_dependencies(test_mobilenetv1 extern_lite_download_mobilenet_v1_tar_gz)
+    #cyh
+    add_dependencies(test_mobilenetv1_feed_fetch_opencl extern_lite_download_mobilenet_v1_tar_gz)
     if(NOT WIN32)
        set(LINK_FLAGS "-Wl,--version-script ${PADDLE_SOURCE_DIR}/lite/core/lite.map")
        set_target_properties(test_mobilenetv1 PROPERTIES LINK_FLAGS "${LINK_FLAGS}")

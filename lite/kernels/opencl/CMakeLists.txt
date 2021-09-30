@@ -148,10 +148,12 @@ lite_cc_test(test_argmax_image_opencl SRCS argmax_image_compute_test.cc
 # buffer kernel      #
 ######################
 # basic
+add_kernel(feed_compute_opencl OPENCL basic SRCS feed_compute.cpp)
+add_kernel(fetch_compute_opencl OPENCL basic SRCS fetch_compute.cpp)
 #add_kernel(activation_opencl_buffer OPENCL basic SRCS activation_buffer_compute.cc)
 #add_kernel(conv_opencl_buffer OPENCL basic SRCS conv_buffer_compute.cc)
 #add_kernel(depthwise_conv2d_opencl OPENCL basic SRCS depthwise_conv2d_buffer_compute.cc)
-#add_kernel(pool_opencl_buffer OPENCL basic SRCS pool_buffer_compute.cc)
+#add_kernel(pool_opencl_buffer OPENCL basicci_build_cmake.sh SRCS pool_buffer_compute.cc)
 #add_kernel(concat_opencl_buffer OPENCL basic SRCS concat_buffer_compute.cc)
 add_kernel(fc_opencl_buffer OPENCL basic SRCS fc_buffer_compute.cc)
 # NOTE(ysh329): use fc as `mul`, and mul is not used.
