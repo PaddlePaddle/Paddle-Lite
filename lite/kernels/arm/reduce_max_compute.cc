@@ -137,7 +137,7 @@ void ReduceMaxCompute<T>::Run() {
     lite::arm::math::reduce_one_line<T>(
         input, output, x_dims[0], lite::arm::math::MaxMinType::kMax);
   } else {
-    LOG(FATAL) << "only support input with 2&3&4 dimensions now!!";
+    LOG(FATAL) << "only support input with 1 to 4 dimensions now!!";
   }  // x_dims == 2
 }
 

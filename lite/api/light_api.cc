@@ -122,8 +122,7 @@ const Tensor* LightPredictor::GetOutput(size_t offset) {
   auto* out_var = program_->exec_scope()->FindVar(output_names_.at(offset));
   CHECK(out_var) << "no fatch variable " << output_names_.at(offset)
                  << " in exec_scope";
-  auto res = out_var->GetMutable<lite::Tensor>();
-  return res;
+  return out_var->GetMutable<lite::Tensor>();
 }
 #else
 const lite::Tensor* LightPredictor::GetOutput(size_t offset) {

@@ -699,6 +699,7 @@ void Instruction::Run() {
   op_->InferShape();
   kernel_->Launch();
   has_run_ = true;
+
 #ifdef LITE_WITH_PROFILE
   if (first_epoch_for_profiler_) {
     kernel_->SetIsKernelTest(false);
