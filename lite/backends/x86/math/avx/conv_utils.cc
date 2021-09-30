@@ -731,7 +731,8 @@ void pack_padding8_m256(lite::Tensor* input,
     }
   }
 }
-
+// input  [bs, ic, ih, iw] => [bs, (ic + 7)/8, ih, iw, 8]
+// filter [oc, 01, ih, iw] => [01, (ic + 7)/8, ih, iw, 8] for depthwise
 void packC8_with_Cleft(const float* din,
                        float* dout,
                        const std::vector<int>& pad,
@@ -868,7 +869,7 @@ void packC8_with_Cleft(const float* din,
            bottom * w_out * block_channel * sizeof(float));
   }
 }
-
+// output_trans [bs, (oc + 7)/8, oh, ow, 8] => output [bs, oc, oh, ow]
 void unpackC8_with_Cleft(const float* din,
                          float* dout,
                          int size_out_channel,

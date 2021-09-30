@@ -303,7 +303,7 @@ void conv_depthwise_5x5s1(const float* din,
               r2 = _mm256_max_ps(r2, zero);
               r3 = _mm256_max_ps(r3, zero);
             } else if (act_type == lite_api::ActivationType::kRelu6) {
-              __m256 six = _mm256_set1_ps(6.f);
+              __m256 six = _mm256_set1_ps(act_param.Relu_clipped_coef);
               r0 = _mm256_min_ps(_mm256_max_ps(r0, zero), six);
               r1 = _mm256_min_ps(_mm256_max_ps(r1, zero), six);
               r2 = _mm256_min_ps(_mm256_max_ps(r2, zero), six);
@@ -323,8 +323,33 @@ void conv_depthwise_5x5s1(const float* din,
               r3 = _mm256_blendv_ps(r3,
                                     _mm256_mul_ps(negative_slope, r3),
                                     _mm256_cmp_ps(r3, zero, 2));
+            } else if (act_type == lite_api::ActivationType::kHardSwish) {
+              __m256 vscale = _mm256_set1_ps(1.0 / act_param.hard_swish_scale);
+              __m256 voffset = _mm256_set1_ps(act_param.hard_swish_offset);              
+              __m256 vthreshold =
+                  _mm256_set1_ps(act_param.hard_swish_threshold);
+              r0 = _mm256_mul_ps(
+                  _mm256_min_ps(
+                      vthreshold,
+                      _mm256_max_ps(zero, _mm256_add_ps(r0, voffset))),
+                  _mm256_mul_ps(r0, vscale));
+              r1 = _mm256_mul_ps(
+                  _mm256_min_ps(
+                      vthreshold,
+                      _mm256_max_ps(zero, _mm256_add_ps(r1, voffset))),
+                  _mm256_mul_ps(r1, vscale));
+              r2 = _mm256_mul_ps(
+                  _mm256_min_ps(
+                      vthreshold,
+                      _mm256_max_ps(zero, _mm256_add_ps(r2, voffset))),
+                  _mm256_mul_ps(r2, vscale));
+              r3 = _mm256_mul_ps(
+                  _mm256_min_ps(
+                      vthreshold,
+                      _mm256_max_ps(zero, _mm256_add_ps(r3, voffset))),
+                  _mm256_mul_ps(r3, vscale));
             } else {
-              LOG(FATAL) << "[X86] activation type not supported";
+              LOG(FATAL) << " [X86] activation type " << static_cast<int>(act_type) << " not supported ";              
             }
           }
 
@@ -358,7 +383,7 @@ void conv_depthwise_5x5s1(const float* din,
             if (act_type == lite_api::ActivationType::kRelu) {
               r = _mm256_max_ps(r, zero);
             } else if (act_type == lite_api::ActivationType::kRelu6) {
-              __m256 six = _mm256_set1_ps(6.f);
+              __m256 six = _mm256_set1_ps(act_param.Relu_clipped_coef);
               r = _mm256_min_ps(_mm256_max_ps(r, zero), six);
             } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
               __m256 negative_slope =
@@ -366,8 +391,18 @@ void conv_depthwise_5x5s1(const float* din,
               r = _mm256_blendv_ps(r,
                                    _mm256_mul_ps(negative_slope, r),
                                    _mm256_cmp_ps(r, zero, 2));
+            } else if (act_type == lite_api::ActivationType::kHardSwish) {
+              __m256 vscale = _mm256_set1_ps(1.0 / act_param.hard_swish_scale);
+              __m256 voffset = _mm256_set1_ps(act_param.hard_swish_offset);              
+              __m256 vthreshold =
+                  _mm256_set1_ps(act_param.hard_swish_threshold);
+              r = _mm256_mul_ps(
+                  _mm256_min_ps(
+                      vthreshold,
+                      _mm256_max_ps(zero, _mm256_add_ps(r, voffset))),
+                  _mm256_mul_ps(r, vscale));              
             } else {
-              LOG(FATAL) << "[X86] activation type not supported";
+              LOG(FATAL) << " [X86] activation type " << static_cast<int>(act_type) << " not supported ";              
             }
           }
           _mm256_storeu_ps(dout_block, r);
@@ -677,7 +712,7 @@ void conv_depthwise_5x5s2(const float* din,
               r2 = _mm256_max_ps(r2, zero);
               r3 = _mm256_max_ps(r3, zero);
             } else if (act_type == lite_api::ActivationType::kRelu6) {
-              __m256 six = _mm256_set1_ps(6.f);
+              __m256 six = _mm256_set1_ps(act_param.Relu_clipped_coef);
               r0 = _mm256_min_ps(_mm256_max_ps(r0, zero), six);
               r1 = _mm256_min_ps(_mm256_max_ps(r1, zero), six);
               r2 = _mm256_min_ps(_mm256_max_ps(r2, zero), six);
@@ -697,8 +732,33 @@ void conv_depthwise_5x5s2(const float* din,
               r3 = _mm256_blendv_ps(r3,
                                     _mm256_mul_ps(negative_slope, r3),
                                     _mm256_cmp_ps(r3, zero, 2));
+            } else if (act_type == lite_api::ActivationType::kHardSwish) {
+              __m256 vscale = _mm256_set1_ps(1.0 / act_param.hard_swish_scale);
+              __m256 voffset = _mm256_set1_ps(act_param.hard_swish_offset);              
+              __m256 vthreshold =
+                  _mm256_set1_ps(act_param.hard_swish_threshold);
+              r0 = _mm256_mul_ps(
+                  _mm256_min_ps(
+                      vthreshold,
+                      _mm256_max_ps(zero, _mm256_add_ps(r0, voffset))),
+                  _mm256_mul_ps(r0, vscale));
+              r1 = _mm256_mul_ps(
+                  _mm256_min_ps(
+                      vthreshold,
+                      _mm256_max_ps(zero, _mm256_add_ps(r1, voffset))),
+                  _mm256_mul_ps(r1, vscale));
+              r2 = _mm256_mul_ps(
+                  _mm256_min_ps(
+                      vthreshold,
+                      _mm256_max_ps(zero, _mm256_add_ps(r2, voffset))),
+                  _mm256_mul_ps(r2, vscale));
+              r3 = _mm256_mul_ps(
+                  _mm256_min_ps(
+                      vthreshold,
+                      _mm256_max_ps(zero, _mm256_add_ps(r3, voffset))),
+                  _mm256_mul_ps(r3, vscale));
             } else {
-              LOG(FATAL) << "[X86] activation type not supported";
+              LOG(FATAL) << " [X86] activation type " << static_cast<int>(act_type) << " not supported ";              
             }
           }
 
@@ -732,7 +792,7 @@ void conv_depthwise_5x5s2(const float* din,
             if (act_type == lite_api::ActivationType::kRelu) {
               r = _mm256_max_ps(r, zero);
             } else if (act_type == lite_api::ActivationType::kRelu6) {
-              __m256 six = _mm256_set1_ps(6.f);
+              __m256 six = _mm256_set1_ps(act_param.Relu_clipped_coef);
               r = _mm256_min_ps(_mm256_max_ps(r, zero), six);
             } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
               __m256 negative_slope =
@@ -740,8 +800,18 @@ void conv_depthwise_5x5s2(const float* din,
               r = _mm256_blendv_ps(r,
                                    _mm256_mul_ps(negative_slope, r),
                                    _mm256_cmp_ps(r, zero, 2));
+            } else if (act_type == lite_api::ActivationType::kHardSwish) {
+              __m256 vscale = _mm256_set1_ps(1.0 / act_param.hard_swish_scale);
+              __m256 voffset = _mm256_set1_ps(act_param.hard_swish_offset);              
+              __m256 vthreshold =
+                  _mm256_set1_ps(act_param.hard_swish_threshold);
+              r = _mm256_mul_ps(
+                  _mm256_min_ps(
+                      vthreshold,
+                      _mm256_max_ps(zero, _mm256_add_ps(r, voffset))),
+                  _mm256_mul_ps(r, vscale));              
             } else {
-              LOG(FATAL) << "[X86] activation type not supported";
+              LOG(FATAL) << " [X86] activation type " << static_cast<int>(act_type) << "not supported";              
             }
           }
           _mm256_storeu_ps(dout_block, r);
