@@ -16,7 +16,7 @@
 #include "lite/backends/x86/math/avx/conv_depthwise_pack4.h"
 #include "lite/backends/x86/math/avx/conv_depthwise_pack8.h"
 #include "lite/backends/x86/math/avx/conv_utils.h"
-#include "lite/backends/x86/math/conv_depthwise_direct.h"
+#include "lite/backends/x86/math/conv_depthwise_impl.h"
 
 namespace paddle {
 namespace lite {
@@ -56,11 +56,22 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   int oh = o_dims[2];
   int ow = o_dims[3];
   int oc = o_dims[1];
+  int kh = w_dims[2];
 
-  if (stride == 1) {
-    lite::x86::math::conv_depthwise_3x3s1_p01_direct(CONV_DW_PARAM);
-  } else if (stride == 2) {
-    lite::x86::math::conv_depthwise_3x3s2_p01_direct(CONV_DW_PARAM);
+  if (kh == 3) {
+    if (stride == 1) {
+      lite::x86::math::conv_depthwise_3x3s1_p01_direct(CONV_DW_PARAM);
+    } else if (stride == 2) {
+      lite::x86::math::conv_depthwise_3x3s2_p01_direct(CONV_DW_PARAM);
+    }
+  } else if (kh == 5) {
+    if (stride == 1) {
+      lite::x86::math::conv_depthwise_5x5s1(CONV_DW_PARAM);
+    } else if (stride == 2) {
+      lite::x86::math::conv_depthwise_5x5s2(CONV_DW_PARAM);
+    }
+  } else {
+    LOG(FATAL) << "kw and kh only support 3 or 5";
   }
   KERNEL_FUNC_NAME("conv_depthwise_direct")
 }

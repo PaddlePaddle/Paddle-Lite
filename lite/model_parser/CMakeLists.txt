@@ -44,15 +44,12 @@ add_subdirectory(naive_buffer)
 add_subdirectory(flatbuffers)
 add_subdirectory(ssa)
 
-
-
-lite_cc_test(test_compatible_pb SRCS compatible_pb_test.cc DEPS model_parser)
+lite_cc_test(test_compatible_pb SRCS compatible_pb_test.cc)
 
 
 #TODO(Superjomn) enable it again.
 if(NOT LITE_ON_MOBILE AND NOT LITE_ON_TINY_PUBLISH)
     lite_cc_test(test_model_parser SRCS model_parser_test.cc
-      DEPS core framework_proto model_parser
       ARGS --model_dir=${LITE_MODEL_DIR}/lite_naive_model)
     if(WITH_TESTING)
         add_dependencies(test_model_parser extern_lite_download_lite_naive_model_tar_gz)
@@ -61,5 +58,5 @@ endif()
 
 
 if (LITE_WITH_CUDA AND NOT LITE_ON_TINY_PUBLISH)
-    lite_cc_test(test_compatibility SRCS compatibility_test.cc DEPS kernels core core)
+    lite_cc_test(test_compatibility SRCS compatibility_test.cc)
 endif()

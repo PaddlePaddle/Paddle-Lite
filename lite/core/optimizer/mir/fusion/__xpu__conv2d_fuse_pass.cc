@@ -139,12 +139,15 @@ class XPUConv2dFuser : public FuseBase {
                           const std::string& act_type,
                           bool with_conv_bias,
                           bool with_bn,
-                          bool with_branch) {
+                          bool with_branch_x,
+                          bool with_branch_y) {
     conv_type_ = conv_type;
     act_type_ = act_type;
     with_conv_bias_ = with_conv_bias;
     with_bn_ = with_bn;
-    with_branch_ = with_branch;
+    with_branch_ = with_branch_x | with_branch_y;
+    with_branch_x_ = with_branch_x;
+    with_branch_y_ = with_branch_y;
   }
 
   void BuildPattern() override {
@@ -220,9 +223,19 @@ class XPUConv2dFuser : public FuseBase {
                          ->AsIntermediate();
     }
     // branch
-    if (with_branch_) {
+    if (with_branch_ && with_branch_x_) {
       ew_branch_add_in = VarNode("ew_branch_add_in")
                              ->assert_is_op_input("elementwise_add", "X")
+                             ->assert_var_not_persistable()
+                             ->AsInput();
+      ew_branch_add =
+          OpNode("ew_branch_add", "elementwise_add")->AsIntermediate();
+      ew_branch_add_out = VarNode("ew_branch_add_out")
+                              ->assert_is_op_output("elementwise_add", "Out");
+    } else if (with_branch_ && with_branch_y_) {
+      ew_branch_add_in = VarNode("ew_branch_add_in")
+                             ->assert_is_op_input("elementwise_add", "Y")
+                             ->assert_var_not_persistable()
                              ->AsInput();
       ew_branch_add =
           OpNode("ew_branch_add", "elementwise_add")->AsIntermediate();
@@ -258,8 +271,12 @@ class XPUConv2dFuser : public FuseBase {
     } else {
       bn_out = ew_bias_add_out;
     }
-    if (with_branch_) {
+    if (with_branch_ && with_branch_x_) {
       bn_out->assert_is_op_input("elementwise_add", "Y")->AsIntermediate();
+      *bn_out >> *ew_branch_add >> *ew_branch_add_out;
+      *ew_branch_add_in >> *ew_branch_add;
+    } else if (with_branch_ && with_branch_y_) {
+      bn_out->assert_is_op_input("elementwise_add", "X")->AsIntermediate();
       *bn_out >> *ew_branch_add >> *ew_branch_add_out;
       *ew_branch_add_in >> *ew_branch_add;
     } else {
@@ -465,7 +482,7 @@ class XPUConv2dFuser : public FuseBase {
     }
     op_desc.SetOutput("Output", {output_name});
 
-    std::string max_output_name = output_name + "_max";
+    std::string max_output_name = output_name + "_xpu_max";
     auto* max_output_node = graph->NewArgumentNode(max_output_name);
     max_output_node->arg()->type = LiteType::GetTensorTy(
         TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kNCHW));
@@ -496,6 +513,8 @@ class XPUConv2dFuser : public FuseBase {
   bool with_conv_bias_;
   bool with_bn_;
   bool with_branch_;
+  bool with_branch_x_;
+  bool with_branch_y_;
 };
 
 }  // namespace fusion
@@ -505,21 +524,28 @@ class XPUConv2dFusePass : public ProgramPass {
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
     if (GetBoolFromEnv("XPU_ENABLE_XTCL")) return;
     for (auto conv_type : {"conv2d", "depthwise_conv2d"}) {
-      for (auto with_branch : {true, false}) {
-        for (auto with_conv_bias : {true, false}) {
-          for (auto with_bn : {true, false}) {
-            for (auto act_type : {"relu",
-                                  "sigmoid",
-                                  "tanh",
-                                  "leaky_relu",
-                                  "hard_swish",
-                                  "hard_sigmoid",
-                                  "relu6",
-                                  "swish",
-                                  "linear"}) {
-              fusion::XPUConv2dFuser fuser(
-                  conv_type, act_type, with_conv_bias, with_bn, with_branch);
-              fuser(graph.get());
+      for (auto with_branch_x : {true, false}) {
+        for (auto with_branch_y : {true, false}) {
+          for (auto with_conv_bias : {true, false}) {
+            for (auto with_bn : {true, false}) {
+              for (auto act_type : {"relu",
+                                    "sigmoid",
+                                    "tanh",
+                                    "leaky_relu",
+                                    "hard_swish",
+                                    "hard_sigmoid",
+                                    "relu6",
+                                    "swish",
+                                    "linear"}) {
+                if (with_branch_x && with_branch_y) continue;
+                fusion::XPUConv2dFuser fuser(conv_type,
+                                             act_type,
+                                             with_conv_bias,
+                                             with_bn,
+                                             with_branch_x,
+                                             with_branch_y);
+                fuser(graph.get());
+              }
             }
           }
         }

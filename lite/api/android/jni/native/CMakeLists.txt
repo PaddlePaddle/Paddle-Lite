@@ -3,9 +3,9 @@
 if (LITE_ON_TINY_PUBLISH)
     set(CMAKE_CXX_FLAGS_RELEASE "-Os -DNDEBUG")
     set(CMAKE_C_FLAGS_RELEASE "-Os -DNDEBUG")
-    set(lib_DEPS light_api paddle_api paddle_api_light model_parser utils core kernels ops)
+    set(lib_DEPS paddle_api_light model_parser utils core kernels ops)
 else()
-    set(lib_DEPS light_api cxx_api paddle_api_full paddle_api paddle_api_light model_parser utils core kernels ops)
+    set(lib_DEPS paddle_api_full model_parser utils core kernels ops)
 endif()
 
 include_directories(${JNI_INCLUDE_DIRS} ${_classDir} ${_stubDir})

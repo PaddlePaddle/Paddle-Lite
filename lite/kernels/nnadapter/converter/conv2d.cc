@@ -96,11 +96,12 @@ int ConvertConv2D(Converter* converter, OpInfo* op, Scope* scope) {
 
   // Convert to NNAdapter operands and operation
   // Input operand
-  auto input_operand = converter->GetMappedOperand(input_name);
+  auto input_operand =
+      converter->AddInputOperand(scope, input_name, {}, input_scales);
   CHECK(input_operand);
   auto input_type = converter->GetOperandType(input_operand);
   // Check depthwise mode according to the dimensions
-  auto input_channel_size = input_type->dimensions[1];
+  auto input_channel_size = input_type->dimensions.data[1];
   // Should not support dynamic shape for input channel size
   CHECK(input_channel_size != NNADAPTER_UNKNOWN);
   is_depthwise_mode |= (groups != 1 && input_channel_size == groups &&
@@ -213,8 +214,8 @@ int ConvertConv2D(Converter* converter, OpInfo* op, Scope* scope) {
         bias_scales);
   }
   // Auto_pad operand
-  auto auto_pad_operand = converter->AddConstantOperand(
-      static_cast<int32_t>(PaddingAlgorithm2AutoPadCode(padding_algorithm)));
+  auto auto_pad_operand = converter->AddConstantOperand(static_cast<int32_t>(
+      ConvertPaddingAlgorithmToNNAutoPadCode(padding_algorithm)));
   // Pads operand(optional)
   auto pads_operand = converter->AddConstantOperand(paddings);
   // Strides operand
@@ -261,7 +262,14 @@ int ConvertConv2D(Converter* converter, OpInfo* op, Scope* scope) {
                               {output_operand, alpha_operand},
                               {fused_act_output_operand});
     } else {
-      LOG(FATAL) << "Failed to unpack the fused activation type: " << act_type;
+      // Unpack the fused unary activations
+      auto unary_act_operation_type =
+          ConvertUnaryActTypeToNNOperationType(act_type);
+      CHECK(unary_act_operation_type != NNADAPTER_UNKNOWN)
+          << "Failed to unpack the fused activation type: " << act_type;
+      converter->AddOperation(unary_act_operation_type,
+                              {output_operand},
+                              {fused_act_output_operand});
     }
   }
   return NO_ERROR;

@@ -238,6 +238,7 @@ void RuntimeProgram::SaveRuntimProgramIntoProgramDesc(
     std::shared_ptr<cpp::ProgramDesc> program_desc) {
   CheckProgramDescValidity(program_desc, instructions_.size());
   size_t block_size = program_desc->BlocksSize();
+  program_desc->SetVersion(get_version());
   for (size_t block_idx = 0; block_idx < block_size; ++block_idx) {
     std::set<std::string> already_added_vars;
     const std::map<std::string, cpp::VarDesc> origin_var_maps =
@@ -419,12 +420,16 @@ RuntimeProgram::RuntimeProgram(
 #ifdef LITE_WITH_METAL
 void RuntimeProgram::ConfigMetalContext(std::string lib_path,
                                         bool use_mps,
-                                        bool use_aggressive) {
+                                        bool use_aggressive,
+                                        bool use_memory_reuse_,
+                                        void* device) {
   if (!metal_ctx_) return;
   MetalContext* context = (*metal_ctx_).As<MTLContext>().context();
   context->set_metal_path(lib_path);
   context->set_use_mps(use_mps);
   context->set_use_aggressive(use_aggressive);
+  context->set_metal_device(device);
+  context->set_use_memory_reuse(use_memory_reuse_);
 }
 
 void RuntimeProgram::SaveOutput() {

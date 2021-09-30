@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include "nnadapter.h"  // NOLINT
+
 namespace nnadapter {
 namespace operation {
 
@@ -36,6 +38,13 @@ namespace operation {
   /* Output */                                                             \
   auto output_operand = output_operands[0];                                \
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
+
+// Calculate the dimensions of the output operand of elementwise binary
+// operations with broadcasting
+void CalcEltwiseBinaryOperationsOutputSize(
+    const NNAdapterOperandType& input0_type,
+    const NNAdapterOperandType& input1_type,
+    NNAdapterOperandType* output_type);
 
 }  // namespace operation
 }  // namespace nnadapter

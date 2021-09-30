@@ -15,9 +15,9 @@
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 #include <vector>
-#include "lite/api/lite_api_test_helper.h"
 #include "lite/api/paddle_api.h"
-#include "lite/api/test_helper.h"
+#include "lite/api/test/lite_api_test_helper.h"
+#include "lite/api/test/test_helper.h"
 #include "lite/tests/api/ILSVRC2012_utility.h"
 
 DEFINE_string(data_dir, "", "data dir");
@@ -51,7 +51,7 @@ TEST(MobileNetV1, test_resnet50_int8_per_layer_nnadapter) {
   out_accuracy_threshold = 0.76f;
 #elif defined(NNADAPTER_WITH_MEDIATEK_APU)
   nnadapter_device_names.emplace_back("mediatek_apu");
-  out_accuracy_threshold = 0.75f;
+  out_accuracy_threshold = 0.74f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;

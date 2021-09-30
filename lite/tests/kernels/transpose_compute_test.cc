@@ -162,6 +162,42 @@ void TestTranspose3D(Place place, float abs_error) {
   }
 }
 
+#ifdef ENABLE_ARM_FP16
+void TestTranspose4D_fp16(Place place, float abs_error) {
+  DDim x_dims{{1, 12, 19, 19}};
+  std::vector<std::vector<int>> axes{
+      {0, 2, 3, 1}, {0, 3, 1, 2},
+  };
+  for (auto axis : axes) {
+    std::unique_ptr<arena::TestCase> tester(
+        new TransposeComputeTester(place, "def", x_dims, axis));
+    arena::Arena arena(std::move(tester), place, abs_error);
+    arena.TestPrecision({"xshape"});
+  }
+}
+
+void TestTranspose3D_fp16(Place place, float abs_error) {
+  DDim x_dims{{1, 1917, 21}};
+  std::vector<std::vector<int>> axes{
+      {0, 2, 1}, {1, 0, 2}, {2, 1, 0},
+  };
+  for (auto axis : axes) {
+    std::unique_ptr<arena::TestCase> tester(
+        new TransposeComputeTester(place, "def", x_dims, axis));
+    arena::Arena arena(std::move(tester), place, abs_error);
+    arena.TestPrecision({"xshape"});
+  }
+}
+
+TEST(Transpose_fp16, precision) {
+  float abs_error = 2e-5;
+  Place place1(TARGET(kARM), PRECISION(kFP16));
+  TestTranspose4D_fp16(place1, abs_error);
+  TestTranspose3D_fp16(place1, abs_error);
+}
+
+#endif
+
 void TestTranspose4D(Place place, float abs_error) {
   DDim x_dims{{2, 3, 4, 5}};
   std::vector<std::vector<int>> axes {

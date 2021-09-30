@@ -97,50 +97,69 @@ void Pool2DCompute::Run() {
           true);
       CHECK_EQ(r, 0);
     } else {
-      const float* xpu_x_padded = nullptr;
-      std::vector<int> xpu_x_padded_dims{static_cast<int>(x_dims[0]),
-                                         static_cast<int>(x_dims[1]),
-                                         static_cast<int>(x_dims[2]),
-                                         static_cast<int>(x_dims[3])};
-      XPUScratchPadGuard xpu_x_padded_guard_;
-      if (paddings[0] == 0 && paddings[1] == 0 && paddings[2] == 0 &&
-          paddings[3] == 0) {
-        xpu_x_padded = param.x->data<float>();
+      if (param.pad_zero == true) {
+        int r = xdnn::max_pool2d<float>(
+            ctx.GetRawContext(),
+            param.x->data<float>(),
+            param.output->mutable_data<float>(TARGET(kXPU)),
+            nullptr,
+            x_dims[0],
+            x_dims[1],
+            x_dims[2],
+            x_dims[3],
+            ksize,
+            param.strides,
+            paddings,
+            true);
+        CHECK_EQ(r, 0);
       } else {
-        std::vector<int> pad_left{0, 0, paddings[0], paddings[2]};
-        std::vector<int> pad_right{0, 0, paddings[1], paddings[3]};
-        xpu_x_padded_dims[2] = xpu_x_padded_dims[2] + paddings[0] + paddings[1];
-        xpu_x_padded_dims[3] = xpu_x_padded_dims[3] + paddings[2] + paddings[3];
-        xpu_x_padded_guard_ = TargetWrapperXPU::MallocScratchPad(
-            sizeof(float) * xpu_x_padded_dims[0] * xpu_x_padded_dims[1] *
-            xpu_x_padded_dims[2] * xpu_x_padded_dims[3]);
-        xpu_x_padded = reinterpret_cast<float*>(xpu_x_padded_guard_->addr_);
-        int r = xdnn::pad<float>(ctx.GetRawContext(),
-                                 param.x->data<float>(),
-                                 const_cast<float*>(xpu_x_padded),
-                                 {static_cast<int>(x_dims[0]),
-                                  static_cast<int>(x_dims[1]),
-                                  static_cast<int>(x_dims[2]),
-                                  static_cast<int>(x_dims[3])},
-                                 pad_left,
-                                 pad_right,
-                                 -9999999.0f);
+        const float* xpu_x_padded = nullptr;
+        std::vector<int> xpu_x_padded_dims{static_cast<int>(x_dims[0]),
+                                           static_cast<int>(x_dims[1]),
+                                           static_cast<int>(x_dims[2]),
+                                           static_cast<int>(x_dims[3])};
+        XPUScratchPadGuard xpu_x_padded_guard_;
+        if (paddings[0] == 0 && paddings[1] == 0 && paddings[2] == 0 &&
+            paddings[3] == 0) {
+          xpu_x_padded = param.x->data<float>();
+        } else {
+          std::vector<int> pad_left{0, 0, paddings[0], paddings[2]};
+          std::vector<int> pad_right{0, 0, paddings[1], paddings[3]};
+          xpu_x_padded_dims[2] =
+              xpu_x_padded_dims[2] + paddings[0] + paddings[1];
+          xpu_x_padded_dims[3] =
+              xpu_x_padded_dims[3] + paddings[2] + paddings[3];
+          xpu_x_padded_guard_ = TargetWrapperXPU::MallocScratchPad(
+              sizeof(float) * xpu_x_padded_dims[0] * xpu_x_padded_dims[1] *
+              xpu_x_padded_dims[2] * xpu_x_padded_dims[3]);
+          xpu_x_padded = reinterpret_cast<float*>(xpu_x_padded_guard_->addr_);
+          int r = xdnn::pad<float>(ctx.GetRawContext(),
+                                   param.x->data<float>(),
+                                   const_cast<float*>(xpu_x_padded),
+                                   {static_cast<int>(x_dims[0]),
+                                    static_cast<int>(x_dims[1]),
+                                    static_cast<int>(x_dims[2]),
+                                    static_cast<int>(x_dims[3])},
+                                   pad_left,
+                                   pad_right,
+                                   -9999999.0f);
+          CHECK_EQ(r, 0);
+        }
+        int r = xdnn::max_pool2d<float>(
+            ctx.GetRawContext(),
+            xpu_x_padded,
+            param.output->mutable_data<float>(TARGET(kXPU)),
+            nullptr,
+            xpu_x_padded_dims[0],
+            xpu_x_padded_dims[1],
+            xpu_x_padded_dims[2],
+            xpu_x_padded_dims[3],
+            ksize,
+            param.strides,
+            {0, 0, 0, 0},
+            true);
         CHECK_EQ(r, 0);
       }
-      int r = xdnn::max_pool2d<float>(
-          ctx.GetRawContext(),
-          xpu_x_padded,
-          param.output->mutable_data<float>(TARGET(kXPU)),
-          nullptr,
-          xpu_x_padded_dims[0],
-          xpu_x_padded_dims[1],
-          xpu_x_padded_dims[2],
-          xpu_x_padded_dims[3],
-          ksize,
-          param.strides,
-          {0, 0, 0, 0},
-          true);
-      CHECK_EQ(r, 0);
     }
   }
 }

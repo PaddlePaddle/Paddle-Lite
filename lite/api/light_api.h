@@ -99,7 +99,9 @@ class LITE_API LightPredictor {
   void ConfigMetalContext(const lite_api::MobileConfig& config) {
     program_->ConfigMetalContext(config.metal_lib_path(),
                                  config.metal_use_mps(),
-                                 config.metal_use_aggressive());
+                                 config.metal_use_aggressive(),
+                                 config.metal_use_memory_reuse(),
+                                 config.metal_device());
   }
 #endif
 
@@ -135,7 +137,6 @@ class LITE_API LightPredictor {
   std::vector<std::string> input_names_;
   std::vector<std::string> output_names_;
   std::vector<PrecisionType> input_precisions_;
-  std::vector<std::vector<int64_t>> input_shapes_;
 };
 
 class LightPredictorImpl : public lite_api::PaddlePredictor {
