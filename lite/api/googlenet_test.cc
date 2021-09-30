@@ -19,7 +19,7 @@
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/api/paddle_use_passes.h"
-#include "lite/api/test/test_helper.h"
+#include "lite/api/test_helper.h"
 #include "lite/core/op_registry.h"
 
 DEFINE_string(optimized_model, "", "optimized_model");
@@ -77,14 +77,14 @@ void TestModel(const std::vector<Place>& valid_places,
 
   std::vector<std::vector<float>> ref;
   ref.emplace_back(std::vector<float>(
-      {0.00024139918, 0.00020566184, 0.00022418296, 0.00041731037,
-       0.0005366107,  0.00016948722, 0.00028638865, 0.0009257241,
-       0.00072681636, 8.531815e-05,  0.0002129998,  0.0021168243,
-       0.006387163,   0.0037145028,  0.0012812682,  0.00045948103,
-       0.00013535398, 0.0002483765,  0.00076759676, 0.0002773295}));
+      {0.00034298553f, 0.0008200012f, 0.0005046297f, 0.000839279f,
+       0.00052616704f, 0.0003447803f, 0.0010877076f, 0.00081762316f,
+       0.0003941339f,  0.0011430943f, 0.0008892841f, 0.00080191303f,
+       0.0004442384f,  0.000658702f,  0.0026721435f, 0.0013686896f,
+       0.0005618166f,  0.0006556497f, 0.0006984528f, 0.0014619455f}));
   auto* out = predictor.GetOutput(0);
   const auto* pdata = out->data<float>();
-  int step = 50;
+  int step = 51;
 
   // Get target and check result
   VLOG(1) << "valid_places.size():" << valid_places.size();
@@ -102,6 +102,7 @@ void TestModel(const std::vector<Place>& valid_places,
       for (int j = 0; j < ref[i].size(); ++j) {
         auto idx = j * step + (out->dims()[1] * i);
         auto result = pdata[idx];
+        std::cout << "idx: " << idx << "; result: " << result << std::endl;
         auto relative_err = std::fabs((result - ref[i][j]) / ref[i][j]);
         VLOG(3) << lite::string_format(
             "relative_err[%d]: %f \tresult: %f \tref: %f",
@@ -155,7 +156,7 @@ void TestModel(const std::vector<Place>& valid_places,
   }
 }
 
-TEST(ResNet50, test_arm) {
+TEST(GoogleNet, test_arm) {
   std::vector<Place> valid_places({
       Place{TARGET(kARM), PRECISION(kFloat)},
   });
@@ -164,7 +165,7 @@ TEST(ResNet50, test_arm) {
 }
 
 #ifdef LITE_WITH_OPENCL
-TEST(ResNet50, test_opencl) {
+TEST(GoogleNet, test_opencl) {
   std::vector<Place> valid_places({
       Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)},
       Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)},
