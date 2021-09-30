@@ -164,30 +164,25 @@ const std::string PrintUsage() {
 }
 
 void SetBackendConfig(lite_api::MobileConfig& config) {  // NOLINT
-  std::vector<std::string> nnadapter_backends = {"imagination_nna",
-                                                 "rockchip_npu",
-                                                 "mediatek_apu",
-                                                 "huawei_kirin_npu",
-                                                 "huawei_ascend_npu",
-                                                 "amlogic_npu"};
+  if (FLAGS_backend == "opencl,arm" || FLAGS_backend == "opencl" ||
+      FLAGS_backend == "opencl,x86" || FLAGS_backend == "x86_opencl") {
+// Set opencl kernel binary.
+// Large addtitional prepare time is cost due to algorithm selecting and
+// building kernel from source code.
+// Prepare time can be reduced dramitically after building algorithm file
+// and OpenCL kernel binary on the first running.
+// The 1st running time will be a bit longer due to the compiling time if
+// you don't call `set_opencl_binary_path_name` explicitly.
+// So call `set_opencl_binary_path_name` explicitly is strongly
+// recommended.
 
-  auto backends_list = lite::Split(FLAGS_backend, ",");
-  bool with_nnadapter =
-      std::find(backends_list.begin(), backends_list.end(), "nnadapter") !=
-      backends_list.end();
-  if (FLAGS_backend == "opencl" || FLAGS_backend == "x86_opencl") {
-    // Set opencl kernel binary.
-    // Large addtitional prepare time is cost due to algorithm selecting and
-    // building kernel from source code.
-    // Prepare time can be reduced dramitically after building algorithm file
-    // and OpenCL kernel binary on the first running.
-    // The 1st running time will be a bit longer due to the compiling time if
-    // you don't call `set_opencl_binary_path_name` explicitly.
-    // So call `set_opencl_binary_path_name` explicitly is strongly
-    // recommended.
-
-    // Make sure you have write permission of the binary path.
-    // We strongly recommend each model has a unique binary name.
+// Make sure you have write permission of the binary path.
+// We strongly recommend each model has a unique binary name.
+#ifdef __ANDROID__
+    if (FLAGS_opencl_cache_dir.empty()) {
+      FLAGS_opencl_cache_dir = "/data/local/tmp/";
+    }
+#endif  // __ANDROID__
     config.set_opencl_binary_path_name(FLAGS_opencl_cache_dir,
                                        FLAGS_opencl_kernel_cache_file);
 
@@ -221,6 +216,16 @@ void SetBackendConfig(lite_api::MobileConfig& config) {  // NOLINT
   }
 
   // nnadapter option
+  std::vector<std::string> nnadapter_backends = {"imagination_nna",
+                                                 "rockchip_npu",
+                                                 "mediatek_apu",
+                                                 "huawei_kirin_npu",
+                                                 "huawei_ascend_npu",
+                                                 "amlogic_npu"};
+  auto backends_list = lite::Split(FLAGS_backend, ",");
+  bool with_nnadapter =
+      std::find(backends_list.begin(), backends_list.end(), "nnadapter") !=
+      backends_list.end();
   if (with_nnadapter) {
     std::vector<std::string> nnadapter_devices;
     auto device_list = lite::Split(FLAGS_nnadapter_device_names, ",");
