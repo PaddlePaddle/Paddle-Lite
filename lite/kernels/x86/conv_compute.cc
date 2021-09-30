@@ -61,7 +61,7 @@ namespace x86 {
   bool flag_dw_3x3 =                                                          \
       (kernel_h == 3) && (kernel_w == 3) && (stride_h == 1 || stride_h == 2); \
   bool flag_dw_5x5 =                                                          \
-      (kernel_h == 5) && (kernel_w == 5) && (stride_h == 1 || stride_h == 2) && false;
+      (kernel_h == 5) && (kernel_w == 5) && (stride_h == 1 || stride_h == 2);
 
 template <>
 void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {

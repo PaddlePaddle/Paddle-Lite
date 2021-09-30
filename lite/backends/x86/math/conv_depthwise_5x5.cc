@@ -325,7 +325,7 @@ void conv_depthwise_5x5s1(const float* din,
                                     _mm256_cmp_ps(r3, zero, 2));
             } else if (act_type == lite_api::ActivationType::kHardSwish) {
               __m256 vscale = _mm256_set1_ps(1.0 / act_param.hard_swish_scale);
-              __m256 voffset = _mm256_set1_ps(act_param.hard_swish_offset);              
+              __m256 voffset = _mm256_set1_ps(act_param.hard_swish_offset);
               __m256 vthreshold =
                   _mm256_set1_ps(act_param.hard_swish_threshold);
               r0 = _mm256_mul_ps(
@@ -349,7 +349,8 @@ void conv_depthwise_5x5s1(const float* din,
                       _mm256_max_ps(zero, _mm256_add_ps(r3, voffset))),
                   _mm256_mul_ps(r3, vscale));
             } else {
-              LOG(FATAL) << " [X86] activation type " << static_cast<int>(act_type) << " not supported ";              
+              LOG(FATAL) << " [X86] activation type "
+                         << static_cast<int>(act_type) << " not supported ";
             }
           }
 
@@ -393,16 +394,16 @@ void conv_depthwise_5x5s1(const float* din,
                                    _mm256_cmp_ps(r, zero, 2));
             } else if (act_type == lite_api::ActivationType::kHardSwish) {
               __m256 vscale = _mm256_set1_ps(1.0 / act_param.hard_swish_scale);
-              __m256 voffset = _mm256_set1_ps(act_param.hard_swish_offset);              
+              __m256 voffset = _mm256_set1_ps(act_param.hard_swish_offset);
               __m256 vthreshold =
                   _mm256_set1_ps(act_param.hard_swish_threshold);
               r = _mm256_mul_ps(
-                  _mm256_min_ps(
-                      vthreshold,
-                      _mm256_max_ps(zero, _mm256_add_ps(r, voffset))),
-                  _mm256_mul_ps(r, vscale));              
+                  _mm256_min_ps(vthreshold,
+                                _mm256_max_ps(zero, _mm256_add_ps(r, voffset))),
+                  _mm256_mul_ps(r, vscale));
             } else {
-              LOG(FATAL) << " [X86] activation type " << static_cast<int>(act_type) << " not supported ";              
+              LOG(FATAL) << " [X86] activation type "
+                         << static_cast<int>(act_type) << " not supported ";
             }
           }
           _mm256_storeu_ps(dout_block, r);
@@ -734,7 +735,7 @@ void conv_depthwise_5x5s2(const float* din,
                                     _mm256_cmp_ps(r3, zero, 2));
             } else if (act_type == lite_api::ActivationType::kHardSwish) {
               __m256 vscale = _mm256_set1_ps(1.0 / act_param.hard_swish_scale);
-              __m256 voffset = _mm256_set1_ps(act_param.hard_swish_offset);              
+              __m256 voffset = _mm256_set1_ps(act_param.hard_swish_offset);
               __m256 vthreshold =
                   _mm256_set1_ps(act_param.hard_swish_threshold);
               r0 = _mm256_mul_ps(
@@ -758,7 +759,8 @@ void conv_depthwise_5x5s2(const float* din,
                       _mm256_max_ps(zero, _mm256_add_ps(r3, voffset))),
                   _mm256_mul_ps(r3, vscale));
             } else {
-              LOG(FATAL) << " [X86] activation type " << static_cast<int>(act_type) << " not supported ";              
+              LOG(FATAL) << " [X86] activation type "
+                         << static_cast<int>(act_type) << " not supported ";
             }
           }
 
@@ -802,16 +804,16 @@ void conv_depthwise_5x5s2(const float* din,
                                    _mm256_cmp_ps(r, zero, 2));
             } else if (act_type == lite_api::ActivationType::kHardSwish) {
               __m256 vscale = _mm256_set1_ps(1.0 / act_param.hard_swish_scale);
-              __m256 voffset = _mm256_set1_ps(act_param.hard_swish_offset);              
+              __m256 voffset = _mm256_set1_ps(act_param.hard_swish_offset);
               __m256 vthreshold =
                   _mm256_set1_ps(act_param.hard_swish_threshold);
               r = _mm256_mul_ps(
-                  _mm256_min_ps(
-                      vthreshold,
-                      _mm256_max_ps(zero, _mm256_add_ps(r, voffset))),
-                  _mm256_mul_ps(r, vscale));              
+                  _mm256_min_ps(vthreshold,
+                                _mm256_max_ps(zero, _mm256_add_ps(r, voffset))),
+                  _mm256_mul_ps(r, vscale));
             } else {
-              LOG(FATAL) << " [X86] activation type " << static_cast<int>(act_type) << "not supported";              
+              LOG(FATAL) << " [X86] activation type "
+                         << static_cast<int>(act_type) << "not supported";
             }
           }
           _mm256_storeu_ps(dout_block, r);
