@@ -75,8 +75,8 @@ void TypeLayoutTransformPass::ComplementInputs(
   CHECK(in->AsArg().type);
   VLOG(3) << "\n inst_in_tensor_name:" << inst_in_tensor_name
           << "\n in->AsArg().name:" << in->AsArg().name
-          << "\n *in->AsArg().type:" << *in->AsArg().type
-          << "\n *decl_arg_type:" << *decl_arg_type
+          << "\n *in->AsArg().type(from):" << *in->AsArg().type
+          << "\n *decl_arg_type(to):" << *decl_arg_type
           << "\n inst.op()->DebugString():" << inst.op()->DebugString();
 
   // TODO(ysh329): conflict if tensor with kARM target but kImageDefault(OpenCL
@@ -185,7 +185,8 @@ void TypeLayoutTransformPass::AddLayoutInst(
           (TargetCompatibleTo(*in_arg_ty, from) &&
            /* skip precision check: PrecisionCompatibleTo(*in_arg_ty, from) &&*/
            DeviceCompatibleTo(*in_arg_ty, from) &&
-           out_arg_ty->layout() == to.layout())) {
+           DataLayoutCompatible(*in_arg_ty, from) &&
+           (out_arg_ty->layout() == to.layout()))) {
         is_found = true;
       } else if (TypeCompatible(*in_arg_ty, from) &&
                  out_arg_ty->layout() == to.layout()) {

@@ -311,3 +311,65 @@ __kernel void image2d_to_buffer_with_post255(__read_only image2d_t input,
     out[index + size_ch * 3] = convert_uchar_sat(in.w);
   }
 }
+
+////////////////////////////////////////////////////////
+// image2d_folder -> image2d_default
+////////////////////////////////////////////////////////
+__kernel void image2d_folder_to_image2d_default(
+    __read_only image2d_t input,
+    __write_only image2d_t output,
+    __private const int out_image_w,
+    __private const int out_image_h) {
+  const int pos_x = get_global_id(0);
+  const int pos_y = get_global_id(1);
+
+  CL_DTYPE4 in =
+      READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(pos_x, pos_y));
+
+  CL_DTYPE4 out0 = 0.f;
+  CL_DTYPE4 out1 = 0.f;
+  CL_DTYPE4 out2 = 0.f;
+  CL_DTYPE4 out3 = 0.f;
+  out0.x = in.x;
+  out1.x = in.y;
+  out2.x = in.z;
+  out3.x = in.w;
+
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(pos_x * 4 + 0, pos_y), out0);
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(pos_x * 4 + 1, pos_y), out0);
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(pos_x * 4 + 2, pos_y), out0);
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(pos_x * 4 + 3, pos_y), out0);
+}
+
+////////////////////////////////////////////////////////
+// image2d_folder -> buffer
+////////////////////////////////////////////////////////
+__kernel void image2d_folder_to_buffer(__read_only image2d_t input,
+                                       __global float* output,
+                                       __private const int out_h,
+                                       __private const int out_w) {
+  const int pos_x = get_global_id(0);
+  const int pos_y = get_global_id(1);
+
+  CL_DTYPE4 in =
+      READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(pos_x, pos_y));
+
+  float4 out0 = 0.f;
+  float4 out1 = 0.f;
+  float4 out2 = 0.f;
+  float4 out3 = 0.f;
+  float4 out = convert_float4(in);
+
+  int outpos_base = out_w * pos_y + pos_x * 4;
+  int length = out_w * out_h;
+  output[outpos_base + 0] = out.x;
+  if (outpos_base + 1 <= length) {
+    output[outpos_base + pos_x * 4 + 1] = out.y;
+  }
+  if (outpos_base + 2 <= length) {
+    output[outpos_base + 2] = out.x;
+  }
+  if (outpos_base + 3 <= length) {
+    output[outpos_base + 3] = out.y;
+  }
+}

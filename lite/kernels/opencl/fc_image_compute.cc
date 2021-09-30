@@ -22,7 +22,7 @@ namespace opencl {
 
 class FcImageCompute : public KernelLite<TARGET(kOpenCL),
                                          PRECISION(kFP16),
-                                         DATALAYOUT(kImageDefault)> {
+                                         DATALAYOUT(kImageFolder)> {
  public:
   void PrepareForRun() override {
     auto& param = this->Param<operators::FcParam>();
@@ -317,7 +317,7 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
 REGISTER_LITE_KERNEL(fc,
                      kOpenCL,
                      kFP16,
-                     kImageDefault,
+                     kImageFolder,
                      paddle::lite::kernels::opencl::FcImageCompute,
                      image2d)
     .BindInput("Input",
@@ -330,5 +330,5 @@ REGISTER_LITE_KERNEL(fc,
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),
-                                       DATALAYOUT(kImageDefault))})
+                                       DATALAYOUT(kImageFolder))})
     .Finalize();

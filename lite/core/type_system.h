@@ -194,15 +194,18 @@ static bool DataLayoutCompatibleTo(const Type& a, const Type& b) {
   return a.IsVoid() ||                 //
          (a.layout() == b.layout() ||  //
           ((b.layout() == DATALAYOUT(kAny)) &&
-           (a.layout() != DATALAYOUT(kImageDefault))));
+           (a.layout() != DATALAYOUT(kImageDefault) ||
+            a.layout() != DATALAYOUT(kImageFolder))));
 }
 static bool DataLayoutCompatible(const Type& a, const Type& b) {
   return a.IsVoid() || b.IsVoid() ||   //
          (a.layout() == b.layout() ||  //
           ((b.layout() == DATALAYOUT(kAny)) &&
-           (a.layout() != DATALAYOUT(kImageDefault))) ||
+           (a.layout() != DATALAYOUT(kImageDefault) ||
+            a.layout() != DATALAYOUT(kImageFolder))) ||
           ((a.layout() == DATALAYOUT(kAny)) &&
-           (b.layout() != DATALAYOUT(kImageDefault))));
+           (b.layout() != DATALAYOUT(kImageDefault) ||
+            b.layout() != DATALAYOUT(kImageFolder))));
 }
 
 static bool PrecisionCompatibleTo(const Type& a, const Type& b) {
