@@ -57,7 +57,6 @@ void gemm_fuse_relu_bias_128(__m128* vec_data,
                              __m128 vec_alph,
                              __m128 vec_zero,
                              int act_mode) {
-  const int cmp_le_os = 2;
   __m128 vec_lr_128, vec_mask_128;
   *vec_data = _mm_add_ps(*vec_data, vec_bias);
   switch (act_mode) {
@@ -388,15 +387,14 @@ void gemm_kernel_loop_int8(int M,
 
   // SSE
   __m128i vec_C0_128, vec_C1_128;
-  __m128i vec_B0_128, vec_B1_128;
+  __m128i vec_B0_128;
   __m128i vec_A0_128, vec_A1_128, vec_tmp_128;
   __m128i vec_one_128 = _mm_set1_epi16(static_cast<int16_t>(1));
   // save result
   __m128i dst_vec_128;
   __m128 vec_bias_128[2];
   __m128 vec_scale_128[2];
-  __m128 dst_vec_ps0_128, dst_vec_ps1_128;
-  __m128 dst_vec_ps2_128, dst_vec_ps3_128;
+  __m128 dst_vec_ps0_128;
   // bias and relu
   __m128 vec_alph_128 = _mm_set1_ps(relu_alpha);
   __m128 vec_zero_128 = _mm_set1_ps(0.f);
@@ -406,12 +404,8 @@ void gemm_kernel_loop_int8(int M,
 
   // mask load, store
   int mask0[8] = {-1, -1, -1, -1, -1, -1, 0, 0};  // load or save 24 int8-data
-  int64_t mask1[2] = {-1, 0};                     // load or save 8 int8-data
-  int mask2[4] = {-1, 0, 0, 0};                   // load or save 4 int8-data
   __m256i vec_mask =
       _mm256_loadu_si256(reinterpret_cast<__m256i const*>(mask0));
-  __m128i vec_mask_1 = _mm_loadu_si128(reinterpret_cast<__m128i const*>(mask1));
-  __m128i vec_mask_2 = _mm_loadu_si128(reinterpret_cast<__m128i const*>(mask2));
 
   // block A
   for (idx_m = 0; idx_m + 1 < M; idx_m += 2) {

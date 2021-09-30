@@ -16,6 +16,8 @@ limitations under the License. */
 
 #ifdef __AVX2__
 
+#include <stdint.h>
+
 namespace paddle {
 namespace lite {
 namespace x86 {

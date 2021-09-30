@@ -25,6 +25,8 @@ namespace lite {
 namespace x86 {
 namespace math {
 
+typedef long long int __int64;  // NOLINT
+
 // *********************************** PrePack A
 // *******************************************
 #define TRANSPOSEA_4x16                                            \
@@ -83,8 +85,7 @@ namespace math {
   _mm_storel_pi(reinterpret_cast<__m64 *>(out_ptr), _mm_castsi128_ps(vec_out));
 
 // if K is not 4-aligned, need to pad zero
-static void packA_i8_notrans(int M, int K, int8_t *A, int8_t *pack_A) {
-  int8_t *a_ptr = A;
+void packA_i8_notrans(int M, int K, int8_t *A, int8_t *pack_A) {
   int8_t *out_ptr = pack_A;
   int loop_m = 0;
   int loop_k = 0;
@@ -200,8 +201,7 @@ static void packA_i8_notrans(int M, int K, int8_t *A, int8_t *pack_A) {
   vec_line[2] = _mm_setzero_si128(); \
   vec_line[3] = _mm_setzero_si128();
 
-static void packA_i8_trans(int M, int K, int8_t *A, int8_t *pack_A) {
-  int8_t *a_ptr = A;
+void packA_i8_trans(int M, int K, int8_t *A, int8_t *pack_A) {
   int8_t *out_ptr = pack_A;
   int loop_m = 0;
   int loop_k = 0;
@@ -429,18 +429,18 @@ Attention:
 
 #define LOAD_EPI64(num)                                                    \
   vec_line0 = _mm256_maskload_epi64(                                       \
-      reinterpret_cast<const int64_t *>(b_ptr + loop_k * stride + loop_n), \
+      reinterpret_cast<const __int64 *>(b_ptr + loop_k * stride + loop_n), \
       vec_mask_##num);                                                     \
   vec_line1 =                                                              \
-      _mm256_maskload_epi64(reinterpret_cast<const int64_t *>(             \
+      _mm256_maskload_epi64(reinterpret_cast<const __int64 *>(             \
                                 b_ptr + (loop_k + 1) * stride + loop_n),   \
                             vec_mask_##num);                               \
   vec_line2 =                                                              \
-      _mm256_maskload_epi64(reinterpret_cast<const int64_t *>(             \
+      _mm256_maskload_epi64(reinterpret_cast<const __int64 *>(             \
                                 b_ptr + (loop_k + 2) * stride + loop_n),   \
                             vec_mask_##num);                               \
   vec_line3 =                                                              \
-      _mm256_maskload_epi64(reinterpret_cast<const int64_t *>(             \
+      _mm256_maskload_epi64(reinterpret_cast<const __int64 *>(             \
                                 b_ptr + (loop_k + 3) * stride + loop_n),   \
                             vec_mask_##num);
 
@@ -484,7 +484,7 @@ Attention:
   switch (remain) {                                                            \
     case 1:                                                                    \
       vec_line0 = _mm256_maskload_epi64(                                       \
-          reinterpret_cast<const int64_t *>(b_ptr + loop_k * stride + loop_n), \
+          reinterpret_cast<const __int64 *>(b_ptr + loop_k * stride + loop_n), \
           vec_mask_##num);                                                     \
       vec_line1 = _mm256_setzero_si256();                                      \
       vec_line2 = _mm256_setzero_si256();                                      \
@@ -492,10 +492,10 @@ Attention:
       break;                                                                   \
     case 2:                                                                    \
       vec_line0 = _mm256_maskload_epi64(                                       \
-          reinterpret_cast<const int64_t *>(b_ptr + loop_k * stride + loop_n), \
+          reinterpret_cast<const __int64 *>(b_ptr + loop_k * stride + loop_n), \
           vec_mask_##num);                                                     \
       vec_line1 =                                                              \
-          _mm256_maskload_epi64(reinterpret_cast<const int64_t *>(             \
+          _mm256_maskload_epi64(reinterpret_cast<const __int64 *>(             \
                                     b_ptr + (loop_k + 1) * stride + loop_n),   \
                                 vec_mask_##num);                               \
       vec_line2 = _mm256_setzero_si256();                                      \
@@ -503,14 +503,14 @@ Attention:
       break;                                                                   \
     case 3:                                                                    \
       vec_line0 = _mm256_maskload_epi64(                                       \
-          reinterpret_cast<const int64_t *>(b_ptr + loop_k * stride + loop_n), \
+          reinterpret_cast<const __int64 *>(b_ptr + loop_k * stride + loop_n), \
           vec_mask_##num);                                                     \
       vec_line1 =                                                              \
-          _mm256_maskload_epi64(reinterpret_cast<const int64_t *>(             \
+          _mm256_maskload_epi64(reinterpret_cast<const __int64 *>(             \
                                     b_ptr + (loop_k + 1) * stride + loop_n),   \
                                 vec_mask_##num);                               \
       vec_line2 =                                                              \
-          _mm256_maskload_epi64(reinterpret_cast<const int64_t *>(             \
+          _mm256_maskload_epi64(reinterpret_cast<const __int64 *>(             \
                                     b_ptr + (loop_k + 2) * stride + loop_n),   \
                                 vec_mask_##num);                               \
       vec_line3 = _mm256_setzero_si256();                                      \
@@ -875,10 +875,7 @@ void packB_i82u8_notrans(int N, int K, int stride, int8_t *B, uint8_t *pack_B) {
 
 void packB_i82u8_trans(int N, int K, int step, int8_t *B, uint8_t *pack_B) {
   int loop_n = 0, loop_k = 0;
-  int block_k = 4;
-  int min_k = 0;
   int remain_k = 0;
-  int remain_n = 0, remain_32 = 0;
   int8_t *b_ptr = B;
   uint8_t *out_ptr = pack_B;
   int k_align4 = ((K + 3) / 4);
@@ -886,7 +883,6 @@ void packB_i82u8_trans(int N, int K, int step, int8_t *B, uint8_t *pack_B) {
 
   __m128 vec_line[4] = {0};
   __m128i veci_line[4] = {0};
-  __m128i vec_0 = _mm_set1_epi8(static_cast<char>(0));
   __m128 vecf_0 = _mm_set1_ps(0.f);
   __m256i vec_128_s16 =
       _mm256_set1_epi16(static_cast<int16_t>(TRANS_INT8_UINT8_OFFT));
