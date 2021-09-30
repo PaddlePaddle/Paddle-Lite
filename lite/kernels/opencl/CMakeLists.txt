@@ -148,6 +148,9 @@ lite_cc_test(test_argmax_image_opencl SRCS argmax_image_compute_test.cc
 # buffer kernel      #
 ######################
 # basic
+add_kernel(feed_Compute_Opencl OPENCL basic SRCS feed_compute.cpp)
+add_kernel(fetch_Compute_Opencl OPENCL basic SRCS fetch_compute.cpp)
+
 #add_kernel(activation_opencl_buffer OPENCL basic SRCS activation_buffer_compute.cc)
 #add_kernel(conv_opencl_buffer OPENCL basic SRCS conv_buffer_compute.cc)
 #add_kernel(depthwise_conv2d_opencl OPENCL basic SRCS depthwise_conv2d_buffer_compute.cc)

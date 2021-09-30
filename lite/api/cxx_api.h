@@ -170,8 +170,9 @@ class LITE_API Predictor {
     }
     lite::TargetWrapperXPU::MallocL3Cache(query_shape);
 #endif
-
+    VLOG(1) << "program_->Run(); run";
     program_->Run();
+    VLOG(1) << "program_->Run(); end";
 
 #ifdef LITE_WITH_XPU
     lite::TargetWrapperXPU::FreeL3Cache();
@@ -200,7 +201,7 @@ class LITE_API Predictor {
   void PrepareFeedFetch();
 
   // Get offset-th col of fetch results.
-  const lite::Tensor* GetOutput(size_t offset) const;
+  lite::Tensor* GetOutput(size_t offset) const;
   std::vector<const lite::Tensor*> GetOutputs() const;
 
   const cpp::ProgramDesc& program_desc() const;

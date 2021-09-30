@@ -77,7 +77,8 @@ void LightPredictor::Build(const std::string& model_dir,
   PrepareFeedFetch();
 }
 
-#if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL)
+#if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL) && \
+    !defined(LITE_WITH_OPENCL)
 Tensor* LightPredictor::GetInput(size_t offset) {
   CHECK(input_names_.size() > offset)
       << "The network has " << input_names_.size() << " inputs"
@@ -115,7 +116,7 @@ Tensor* LightPredictor::GetInputByName(const std::string& name) {
   }
 }
 
-#if !defined(LITE_WITH_METAL)
+#if !defined(LITE_WITH_METAL) && !defined(LITE_WITH_OPENCL)
 const Tensor* LightPredictor::GetOutput(size_t offset) {
   CHECK(output_names_.size() > offset)
       << "The network has " << output_names_.size() << " outputs"

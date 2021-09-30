@@ -466,7 +466,10 @@ void RuntimeProgram::Run() {
   auto& insts = instructions_[kRootBlockIdx];
   for (auto& inst : insts) {
     ++idx;
-#if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL)
+    VLOG(1) << "idx : " << idx << "  inst.is_feed_fetch_op()"
+            << inst.is_feed_fetch_op();
+#if !defined(LITE_WITH_FPGA) && !defined(LITE_WITH_METAL) && \
+    !defined(LITE_WITH_OPENCL)
     if (inst.is_feed_fetch_op()) continue;
 #endif
 #ifdef LITE_WITH_NVTX
@@ -485,8 +488,9 @@ void RuntimeProgram::Run() {
 #ifdef LITE_WITH_FPGA
     monitor.preRun(inst);
 #endif
-
+    VLOG(1) << "    inst.Run();run ";
     inst.Run();
+    VLOG(1) << "    inst.Run();end ";
 
 #ifdef LITE_WITH_FPGA
     monitor.postRun(inst);
@@ -695,9 +699,13 @@ void Instruction::Run() {
   if (op_->run_once() && has_run_) {
     return;
   }
-
+  VLOG(1) << "    op_->InferShape();run  ";
   op_->InferShape();
+  VLOG(1) << "    op_->InferShape();end  ";
+  VLOG(1) << "     kernel_->Launch();  kernel_: " << kernel_->GenParamTypeKey();
   kernel_->Launch();
+  VLOG(1) << "    kernel_->Launch();end  ";
+
   has_run_ = true;
 
 #ifdef LITE_WITH_PROFILE

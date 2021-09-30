@@ -30,25 +30,41 @@ DEFINE_int32(W, 224, "input_width");
 
 namespace paddle {
 namespace lite {
-
+// int test_id=1;
 void TestModel(const std::vector<Place>& valid_places,
                const std::string& model_dir = FLAGS_model_dir,
                bool save_model = false) {
+  // test_id++;
+  VLOG(1) << "NO :1";
   DeviceInfo::Init();
+  VLOG(1) << "NO :2";
   DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_NO_BIND, FLAGS_threads);
+  VLOG(1) << "NO :3";
   lite::Predictor predictor;
-
+  VLOG(1) << "NO :4";
   predictor.Build(model_dir, "", "", valid_places);
-
+  VLOG(1) << "predictor.Build end";
   auto* input_tensor = predictor.GetInput(0);
+  VLOG(1) << "NO :5";
   input_tensor->Resize(DDim(
       std::vector<DDim::value_type>({FLAGS_N, FLAGS_C, FLAGS_H, FLAGS_W})));
-  auto* data = input_tensor->mutable_data<float>();
-  auto item_size = input_tensor->dims().production();
-  for (int i = 0; i < item_size; i++) {
-    data[i] = 1;
-  }
+  VLOG(1) << "NO :6";
 
+  auto* data =
+      input_tensor->mutable_data<float, cl::Buffer>(TargetType::kOpenCL);
+  //  auto* data = input_tensor->mutable_data<float>(is_TargetType);
+  VLOG(1) << "NO :7";
+  auto item_size = input_tensor->dims().production();
+  VLOG(1) << "NO :8";
+  /* for (int i = 0; i < item_size; i++) {
+     data[i] = 1;
+   }*/
+  auto* mapped_x = static_cast<float*>(
+      TargetWrapperCL::Map(data, 0, sizeof(float) * item_size));
+  for (int i = 0; i < item_size; i++) {
+    mapped_x[i] = 1;
+  }
+  VLOG(1) << "NO :9";
   for (int i = 0; i < FLAGS_warmup; ++i) {
     predictor.Run();
   }
@@ -82,7 +98,11 @@ void TestModel(const std::vector<Place>& valid_places,
        0.0048292773,  0.0013995157,  0.0018453331,  0.0002428986,
        0.00020211363, 0.00013668182, 0.0005855956,  0.00025901722}));
   auto* out = predictor.GetOutput(0);
-  const auto* pdata = out->data<float>();
+  //  const auto* pdata = out->data<float>();
+  auto* out_data_ = out->mutable_data<float, cl::Buffer>(TargetType::kOpenCL);
+  auto otem_size = out->dims().production();
+  auto* pdata = static_cast<float*>(
+      TargetWrapperCL::Map(out_data_, 0, sizeof(float) * otem_size));
   int step = 50;
 
   // Get target and check result
@@ -124,6 +144,7 @@ void TestModel(const std::vector<Place>& valid_places,
       for (int j = 0; j < ref[i].size(); ++j) {
         auto result = pdata[j * step + (out->dims()[1] * i)];
         EXPECT_NEAR(result, ref[i][j], eps);
+        // ref[i][j]=result;//cyh
       }
     }
   }
@@ -172,7 +193,7 @@ TEST(MobileNetV1, test_arm) {
       Place{TARGET(kARM), PRECISION(kFloat)},
   });
 
-  TestModel(valid_places);
+  // TestModel(valid_places);
 }
 
 #ifdef LITE_WITH_OPENCL
