@@ -41,7 +41,8 @@ Paddle-Lite支持**根据模型裁剪预测库**功能。Paddle-Lite的一般编
           |-- var1
           |-- ...
 ```
-### Step 2-1. 编译Android 预测库
+### Step 2. 根据模型编译预测库
+#### 编译Android 预测库
 - 根据模型编译
 
 ``` shell
@@ -73,35 +74,39 @@ android_lib  (Android 编译产出)
  10 WITH_EXCEPTION=ON # （3）可以修改 ON：DEBUG选项（可回溯错误信息）
  11 TOOL_CHAIN=clang  #  (4) DNK 编译器： 可选择 clang 或着 gcc
 ```
-### Step 2-2. 编译iOS 预测库
+#### 编译iOS 预测库
 
 - 根据模型编译
 
 ``` shell
 cd Paddle-Lite 
-./lite/tools/build_ios_by_models.sh /models
+./lite/tools/build_ios_by_models.sh --model_dir=/models
 # “模型文件夹的绝对路径” 作为脚本输入
+```
+- 编译脚本选项参数说明
+
+```
+--with_metal: (OFF|ON)         是否编译iOS GPU预测库，默认为OFF
+--with_extra: (OFF|ON)         是否编译OCR/NLP模型相关kernel&OP，默认为OFF，只编译CV模型相关kernel&OP
+--with_cv: (OFF|ON)            是否编译CV相关预处理库, 默认为 OFF
+--with_exception: (OFF|ON)     是否在错误发生时抛出异常，默认为 OFF
+--model_dir: (Paddle模型目录)   Paddle模型目录，可以放多个模型，每个模型以子目录形式放置在该目录
+```
+
+也可以通过以下命令查看完整的参数选项
+```
+./lite/tools/build_ios_by_models.sh help
 ```
 
 - 编译产出
 
 ```shell
 # 编译产出位于： Paddle-Lite/iOS-lib
-iOS_lib  (Android 编译产出)
+iOS_lib  (iOS 编译产出)
    |---- armv7            （armv7 iOS预测库&demo)
    |---- armv8            （armv8 iOS预测库&demo)
    |---- opt              （模型转换工具opt)
    |---- optimized_model  （opt转化后的iOS移动端模型)
               |---- mobilenet_v1.nb
               |---- shufflenet_v1.nb
-```
-
-- 其他： 可以修改   `build_ios_by_models.sh` 以改变编译选项
-
-``` shell
-# Paddle-Lite/lite/tools/build_ios_by_models.sh
-
-  8 WITH_LOG=OFF      # （1）可以修改 ON：运行时输出日志  OFF： 运行时不输出日志
-  9 WITH_CV=ON        # （2）可以修改 ON：包含图像处理API OFF：不含图像处理API
- 10 WITH_EXCEPTION=ON # （3）可以修改 ON：DEBUG选项（可回溯错误信息）
 ```

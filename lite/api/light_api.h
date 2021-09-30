@@ -65,6 +65,7 @@ class LITE_API LightPredictor {
   void Run() {
     CheckInputValid();
     program_->Run();
+    ClearTensorArray(program_desc_);
   }
 
   /// \brief Release all tmp tensor to compress the size of the memory pool.
@@ -129,6 +130,9 @@ class LITE_API LightPredictor {
 #ifdef ENABLE_ARM_FP16
   void WeightFP32ToFP16();
 #endif
+
+  void ClearTensorArray(
+      const std::shared_ptr<const cpp::ProgramDesc>& program_desc);
 
  private:
   std::shared_ptr<Scope> scope_;
