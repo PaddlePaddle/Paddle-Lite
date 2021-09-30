@@ -277,7 +277,7 @@ static void activate_hardswish_inplace_bias(float *data,
       __m256 vin0 = _mm256_add_ps(_mm256_loadu_ps(tmp_data), vec_bias);
       __m256 vin1 = _mm256_add_ps(_mm256_loadu_ps(tmp_data + 8), vec_bias);
       __m256 vin2 = _mm256_add_ps(_mm256_loadu_ps(tmp_data + 16), vec_bias);
-      __m256 vin3 = _mm256_add_ps(_mm256_loadu_ps(tmp_data + 32), vec_bias);
+      __m256 vin3 = _mm256_add_ps(_mm256_loadu_ps(tmp_data + 24), vec_bias);
       __m256 vadd0 = _mm256_add_ps(vin0, vec_offset);
       __m256 vadd1 = _mm256_add_ps(vin1, vec_offset);
       __m256 vadd2 = _mm256_add_ps(vin2, vec_offset);
@@ -301,9 +301,9 @@ static void activate_hardswish_inplace_bias(float *data,
       tmp_data += 32;
 #else
       __m128 vin0 = _mm_add_ps(_mm_loadu_ps(tmp_data), vec_bias_128);
-      __m128 vin1 = _mm_add_ps(_mm_loadu_ps(tmp_data + 8), vec_bias_128);
-      __m128 vin2 = _mm_add_ps(_mm_loadu_ps(tmp_data + 16), vec_bias_128);
-      __m128 vin3 = _mm_add_ps(_mm_loadu_ps(tmp_data + 32), vec_bias_128);
+      __m128 vin1 = _mm_add_ps(_mm_loadu_ps(tmp_data + 4), vec_bias_128);
+      __m128 vin2 = _mm_add_ps(_mm_loadu_ps(tmp_data + 8), vec_bias_128);
+      __m128 vin3 = _mm_add_ps(_mm_loadu_ps(tmp_data + 12), vec_bias_128);
       __m128 vadd0 = _mm_add_ps(vin0, vec_offset_128);
       __m128 vadd1 = _mm_add_ps(vin1, vec_offset_128);
       __m128 vadd2 = _mm_add_ps(vin2, vec_offset_128);
