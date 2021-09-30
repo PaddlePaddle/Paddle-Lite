@@ -30,7 +30,8 @@ void conv_depthwise_m128(lite::Tensor* input,
                          const int dilation_h,
                          const int dilation_w,
                          const bool has_act,
-                         const lite_api::ActivationType act_type) {
+                         const lite_api::ActivationType act_type,
+                         const operators::ActivationParam act_param) {
   // input [bs, ic/8, ih, iw, 8]
   CHECK_EQ(input->dims().size(), 5UL);
   const int batch_size = input->dims()[0];
@@ -98,7 +99,7 @@ void conv_depthwise_m128(lite::Tensor* input,
           }
 
           if (has_act) {
-            _sum = activation4_m128(_sum, act_type);
+            _sum = activation4_m128(_sum, act_type, act_param);
           }
 
           _mm_storeu_ps(output_data, _sum);
