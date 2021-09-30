@@ -17,6 +17,8 @@ WITH_LOG=ON
 WITH_EXCEPTION=OFF
 # controls whether to use metal, default is OFF
 WITH_METAL=OFF
+# controls whether to build with profiler, default is OFF
+WITH_PROFILE=OFF
 # controls whether to build with Xcode, default is OFF
 WITH_XCODE=OFF
 # absolute path of Paddle-Lite.
@@ -87,7 +89,7 @@ function make_ios {
             -DLITE_WITH_METAL=$WITH_METAL \
             -DLITE_WITH_ARM=ON \
             -DLITE_WITH_XCODE=$WITH_XCODE \
-            -DLITE_WITH_PROFILE=ON \
+            -DLITE_WITH_PROFILE=${WITH_PROFILE} \
             -DLITE_ON_TINY_PUBLISH=ON \
             -DLITE_WITH_OPENMP=OFF \
             -DWITH_ARM_DOTPROD=OFF \
@@ -184,6 +186,10 @@ function main {
                 ;;
             --ios_deployment_target=*)
                 IOS_DEPLOYMENT_TARGET="${i#*=}"
+                shift
+                ;;
+            --with_profile=*)
+                WITH_PROFILE="${i#*=}"
                 shift
                 ;;
             --with_xcode=*)
