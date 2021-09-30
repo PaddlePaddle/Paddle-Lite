@@ -45,6 +45,7 @@ if (WITH_TESTING)
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "mobilenet_v1.tar.gz")
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "mobilenet_v2_relu.tar.gz")
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "inception_v4_simple.tar.gz")
+    lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "GoogleNet_inference.tar.gz")
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "inception_v4.tar.gz")
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "squeezenet.tar.gz")
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "mobilenet_v3_small_x1_0.tar.gz")
@@ -72,7 +73,6 @@ if (WITH_TESTING)
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "lac_fp32_arm.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "transformer_nlp2_fp32_arm.tar.gz")
     else()
-        lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "GoogleNet_inference.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "step_rnn.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "resnet50.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "resnet50_vd.tar.gz")
@@ -656,20 +656,20 @@ if (LITE_WITH_MLU)
 endif()
 
 if(LITE_WITH_NNADAPTER)
-  # Build the NNAdapter library and copy it to the publish directory
-  add_custom_target(publish_inference_nnadapter_library
+  # Build the NNAdapter runtime library and copy it to the publish directory
+  add_custom_target(publish_inference_nnadapter_runtime
       COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
       COMMAND cp -r "${CMAKE_BINARY_DIR}/lite/backends/nnadapter/nnadapter/libnnadapter.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
       DEPENDS nnadapter
       )
-  add_dependencies(publish_inference publish_inference_nnadapter_library)
-  # Build the NNAdapter drivers for all of the specified devices and copy it to the publish directory
-  foreach(driver_name ${NNADAPTER_DRIVERS})
-    add_custom_target(publish_inference_nnadapter_driver_${driver_name}
+  add_dependencies(publish_inference publish_inference_nnadapter_runtime)
+  # Build the NNAdapter device HAL libraries for all of the specified devices and copy it to the publish directory
+  foreach(device_name ${NNADAPTER_DEVICES})
+    add_custom_target(publish_inference_nnadapter_${device_name}
       COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
-      COMMAND cp -r "${CMAKE_BINARY_DIR}/lite/backends/nnadapter/nnadapter/driver/*/lib${driver_name}.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
-      DEPENDS ${driver_name}
+      COMMAND cp -r "${CMAKE_BINARY_DIR}/lite/backends/nnadapter/nnadapter/driver/*/lib${device_name}.so" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+      DEPENDS ${device_name}
       )
-    add_dependencies(publish_inference publish_inference_nnadapter_driver_${driver_name})
+    add_dependencies(publish_inference publish_inference_nnadapter_${device_name})
   endforeach()
 endif()

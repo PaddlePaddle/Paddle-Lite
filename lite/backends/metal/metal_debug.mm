@@ -22,7 +22,7 @@
 namespace paddle {
 namespace lite {
 
-void MetalDebug::print_log(const std::string& name, MetalImage* metalImg, int inCount) {
+void MetalDebug::print_log(const std::string& name, const MetalImage* metalImg, int inCount) {
     auto size = metalImg->tensor_dim_.production();
     float* data = (float*)TargetWrapperMetal::Malloc(sizeof(float) * size);
     metalImg->template CopyToNCHW<float>(data);

@@ -65,6 +65,7 @@ class LITE_API LightPredictor {
   void Run() {
     CheckInputValid();
     program_->Run();
+    ClearTensorArray(program_desc_);
   }
 
   /// \brief Release all tmp tensor to compress the size of the memory pool.
@@ -99,7 +100,9 @@ class LITE_API LightPredictor {
   void ConfigMetalContext(const lite_api::MobileConfig& config) {
     program_->ConfigMetalContext(config.metal_lib_path(),
                                  config.metal_use_mps(),
-                                 config.metal_use_aggressive());
+                                 config.metal_use_aggressive(),
+                                 config.metal_use_memory_reuse(),
+                                 config.metal_device());
   }
 #endif
 
@@ -128,6 +131,9 @@ class LITE_API LightPredictor {
   void WeightFP32ToFP16();
 #endif
 
+  void ClearTensorArray(
+      const std::shared_ptr<const cpp::ProgramDesc>& program_desc);
+
  private:
   std::shared_ptr<Scope> scope_;
   std::unique_ptr<RuntimeProgram> program_;
@@ -135,7 +141,6 @@ class LITE_API LightPredictor {
   std::vector<std::string> input_names_;
   std::vector<std::string> output_names_;
   std::vector<PrecisionType> input_precisions_;
-  std::vector<std::vector<int64_t>> input_shapes_;
 };
 
 class LightPredictorImpl : public lite_api::PaddlePredictor {

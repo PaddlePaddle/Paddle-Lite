@@ -33,9 +33,9 @@ namespace operation {
   auto axis =                                                               \
       *reinterpret_cast<int32_t*>(input_operands[input_count - 1]->buffer); \
   if (axis < 0) {                                                           \
-    axis += input_operands[0]->type.dimension_count;                        \
+    axis += input_operands[0]->type.dimensions.count;                       \
   }                                                                         \
-  NNADAPTER_VLOG(5) << "axis=" << axis;                                     \
+  NNADAPTER_VLOG(5) << "axis: " << axis;                                    \
   /* Output */                                                              \
   auto output_operand = output_operands[0];                                 \
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);

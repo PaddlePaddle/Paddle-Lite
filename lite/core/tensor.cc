@@ -48,6 +48,11 @@ void *TensorLite::mutable_data(size_t memory_size) {
 }
 
 void *TensorLite::mutable_data(TargetType target, size_t memory_size) {
+#ifdef LITE_WITH_XPU
+  if (target_ != target && target == TargetType::kXPU) {
+    buffer_.reset(new XPUBuffer);
+  }
+#endif
   target_ = target;
   return mutable_data(memory_size);
 }

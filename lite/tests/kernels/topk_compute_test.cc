@@ -106,22 +106,26 @@ void test_topk(Place place, float abs_error) {
 TEST(Topk, precision) {
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-3;  // Using fp16 in NPU
   // TODO(zhupengyang): enable later
   return;
+  test_topk<float, int>(place, abs_error);
 #elif defined(LITE_WITH_X86) || defined(LITE_WITH_ARM)
   place = TARGET(kHost);
 #else
   return;
 #endif
 
-#if defined(LITE_WITH_NPU)
-  test_topk<float, int>(place, abs_error);
-#else
   test_topk<float, int64_t>(place, abs_error);
-#endif
 }
 
 }  // namespace lite

@@ -28,6 +28,7 @@ add_kernel(argmax_compute_host Host basic SRCS argmax_compute.cc)
 add_kernel(assign_value_compute_host Host basic SRCS assign_value_compute.cc)
 add_kernel(yolo_box_compute_host Host basic SRCS yolo_box_compute.cc)
 add_kernel(write_back_compute_host Host basic SRCS write_back_compute.cc)
+add_kernel(cast_compute_host Host basic SRCS cast_compute.cc)
 
 # extra kernels
 add_kernel(reverse_compute_host Host extra SRCS reverse_compute.cc)
@@ -110,7 +111,7 @@ add_kernel(box_clip_compute Host extra SRCS box_clip_compute.cc)
 
 
 if(LITE_BUILD_EXTRA AND LITE_WITH_x86)
-  lite_cc_test(test_where_index_compute_host SRCS where_index_compute.cc DEPS kernels)
-  lite_cc_test(test_pixel_shuffle_compute_host SRCS pixel_shuffle_compute.cc DEPS kernels)
-  lite_cc_test(test_one_hot_compute_host SRCS one_hot_compute_test.cc DEPS kernels)
+  lite_cc_test(test_where_index_compute_host SRCS where_index_compute.cc)
+  lite_cc_test(test_pixel_shuffle_compute_host SRCS pixel_shuffle_compute.cc)
+  lite_cc_test(test_one_hot_compute_host SRCS one_hot_compute_test.cc)
 endif()

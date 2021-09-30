@@ -630,6 +630,9 @@ struct PoolParam : ParamBase {
     }
     return output_tensor_ptrs_cache_.get();
   }
+#ifdef LITE_WITH_XPU
+  bool pad_zero{false};
+#endif
 };
 
 // For Dropout op
@@ -1973,6 +1976,13 @@ struct XPUSoftmaxTopkParam : ParamBase {
   int K{1};
 };
 
+struct XPUMultiSoftmaxParam : ParamBase {
+  const lite::Tensor* input{};
+  lite::Tensor* concat_output{};
+  std::vector<lite::Tensor*> output;
+  std::vector<int> lod;
+};
+
 struct XPUBlockFuseParam : ParamBase {
   const lite::Tensor* input{nullptr};
   const lite::Tensor* filter{nullptr};
@@ -2014,6 +2024,8 @@ struct XPUMultiEncoderParam : ParamBase {
   std::vector<int> slice_starts{};
   std::vector<int> slice_ends{};
   std::vector<int> slice_decrease_axis{};
+  std::vector<float> input_max{};
+  std::vector<float> weight_max{};
   int n_layers{};
   int head_num{};
   int size_per_head{};
@@ -2045,6 +2057,8 @@ struct XPUFcParam : ParamBase {
 
   int act_type;
   float act_param;
+  float quant_input_max{0.f};
+  float quant_w_max{0.f};
   std::string precision{};
   bool has_bias{false};
   int in_num_col_dims{1};
@@ -2513,8 +2527,12 @@ struct CosSimParam : ParamBase {
 };
 
 struct WriteBackParam : ParamBase {
+  bool tensor_array_copy{false};
   const lite::Tensor* x{};
   lite::Tensor* y{};
+
+  std::vector<lite::Tensor>* array_x{};
+  std::vector<lite::Tensor>* array_y{};
 };
 
 struct UniqueWithCountsParam : ParamBase {

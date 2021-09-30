@@ -272,7 +272,7 @@ NNAdapterOperand* Converter::AddOperand(const DDim& dimensions,
   memset(&type, 0, sizeof(NNAdapterOperandType));
   bool is_scalar = dimensions.size() == 0;
   if (!is_scalar) {
-    ConvertDimensions(dimensions, type.dimensions, &type.dimension_count);
+    ConvertDimensions(dimensions, type.dimensions.data, &type.dimensions.count);
   }
   type.precision = precision;
   if (quant_scales && quant_scale_count > 0) {

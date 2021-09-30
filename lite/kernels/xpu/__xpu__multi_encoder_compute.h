@@ -34,16 +34,26 @@ class XPUMultiEncoderCompute
   virtual void Run();
 
  private:
-  int bert_encoder_run();
-  int transformer_encoder_run();
-
   std::vector<const int8_t *> arg_fc_weight_int8_;
   std::vector<const int16_t *> arg_fc_weight_int16_;
   std::vector<const float *> arg_fc_weight_fp32_;
   std::vector<const float *> arg_fc_bias_;
   std::vector<const float *> arg_ln_scale_;
   std::vector<const float *> arg_ln_bias_;
-  xdnn::EncoderParam encoder_param_;
+  std::vector<const float *> fc_weight_max_;
+  std::vector<const float *> fc_input_max_;
+  XPUScratchPadGuard weight_max_guard_;
+  XPUScratchPadGuard input_max_guard_;
+  XPUScratchPadGuard cast_in_guard_;
+  XPUScratchPadGuard cast_out_guard_;
+  xdnn::Activation_t qkv_act = xdnn::Activation_t::RELU;
+  int slice_idx = -1;
+
+  template <typename T>
+  std::vector<const T *> *get_weight();
+
+  template <typename T, typename TW, typename TGEMM>
+  void run_encoder(const T *in, T *out);
 };
 
 }  // namespace xpu

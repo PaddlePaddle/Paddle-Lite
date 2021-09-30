@@ -108,4 +108,5 @@ python -m pip install paddlelite==2.8
 - [华为NPU源码编译](../demo_guides/huawei_kirin_npu)
 - [百度XPU源码编译](../demo_guides/baidu_xpu)
 - [瑞芯微NPU源码编译](../demo_guides/rockchip_npu)
+- [晶晨NPU源码编译](../demo_guides/amlogic_npu)
 - [联发科APU源码编译](../demo_guides/mediatek_apu)

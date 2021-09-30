@@ -28,8 +28,7 @@ namespace operation {
   auto input_operand = input_operands[0];                                   \
   NNADAPTER_VLOG(5) << "input_operand: " << OperandToString(input_operand); \
   /* Alpha */                                                               \
-  auto alpha_operand = input_operands[1];                                   \
-  float alpha = *reinterpret_cast<float*>(alpha_operand->buffer);           \
+  float alpha = *reinterpret_cast<float*>(input_operands[1]->buffer);       \
   NNADAPTER_VLOG(5) << "alpha: " << alpha;                                  \
   /* Output */                                                              \
   auto output_operand = output_operands[0];                                 \

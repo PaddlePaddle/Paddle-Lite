@@ -16,7 +16,7 @@
 #include <utility>
 #include "driver/huawei_ascend_npu/optimizer/fix_multiple_outputs_ops.h"
 #include "driver/huawei_ascend_npu/optimizer/fix_no_inputs_ops.h"
-#include "driver/huawei_ascend_npu/optimizer/fix_operators_constraint_pass.h"
+#include "driver/huawei_ascend_npu/optimizer/fix_op_constraints.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -25,7 +25,7 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-Device::Device() { InitializeAscendDevice(); }
+Device::Device() { InitializeAscendCL(); }
 
 Device::~Device() {}
 
@@ -84,7 +84,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
     FixMultipleOutputsOps(model);
     FixNoInputsOps(model);
-    NNADAPTER_CHECK_EQ(FixOperatorsConstraintPass(model), NNADAPTER_NO_ERROR);
+    NNADAPTER_CHECK_EQ(FixOpConstraints(model), NNADAPTER_NO_ERROR);
     NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
     // Convert a NNAdapter model to a GE graph
     Converter converter(&operators_);
@@ -154,11 +154,11 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     auto dimensions = input_tensor_descs[i].GetShape();
     NNADAPTER_VLOG(3) << "CANN input tensors[" << i
                       << "]: " << GEShapeToString(dimensions) << " "
-                      << DimensionsToString(type->dimensions,
-                                            type->dimension_count);
-    NNADAPTER_CHECK_EQ(dimensions.GetDimNum(), type->dimension_count);
-    for (size_t j = 0; j < type->dimension_count; j++) {
-      auto dimension = type->dimensions[j];
+                      << DimensionsToString(type->dimensions.data,
+                                            type->dimensions.count);
+    NNADAPTER_CHECK_EQ(dimensions.GetDimNum(), type->dimensions.count);
+    for (size_t j = 0; j < type->dimensions.count; j++) {
+      auto dimension = type->dimensions.data[j];
       if (dimension != -1) {
         // Check if the dimension of the model inputs is not dynamic
         NNADAPTER_CHECK_EQ(dimension, dimensions.GetDim(j))
@@ -175,11 +175,11 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     auto dimensions = output_tensor_descs[i].GetShape();
     NNADAPTER_VLOG(3) << "CANN output tensors[" << i
                       << "]: " << GEShapeToString(dimensions) << " "
-                      << DimensionsToString(type->dimensions,
-                                            type->dimension_count);
-    NNADAPTER_CHECK_EQ(dimensions.GetDimNum(), type->dimension_count);
-    for (size_t j = 0; j < type->dimension_count; j++) {
-      auto dimension = type->dimensions[j];
+                      << DimensionsToString(type->dimensions.data,
+                                            type->dimensions.count);
+    NNADAPTER_CHECK_EQ(dimensions.GetDimNum(), type->dimensions.count);
+    for (size_t j = 0; j < type->dimensions.count; j++) {
+      auto dimension = type->dimensions.data[j];
       if (dimension != -1) {
         // Check if the dimension of the model outputs is not dynamic
         NNADAPTER_CHECK_EQ(dimension, dimensions.GetDim(j))

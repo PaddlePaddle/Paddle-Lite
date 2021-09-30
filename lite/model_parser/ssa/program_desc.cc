@@ -26,6 +26,7 @@ namespace ssa {
 
 PlainProgramDesc::PlainProgramDesc(const general::ProgramDesc& program_desc)
     : src_desc_{&program_desc} {
+  if (program_desc.HasVersion()) version_ = program_desc.Version();
   blocks_.resize(src_desc_->BlocksSize());
   block_visited_.resize(src_desc_->BlocksSize());
   InitBlocks();
@@ -74,9 +75,14 @@ void PlainProgramDesc::InsertOpOfBlock(const general::BlockDesc& block_desc) {
       auto sub_id = raw_op->GetAttr<int>(op->proto().lock()->AttrKey());
       const auto& raw_sub = *(src_desc_->GetBlock<general::BlockDesc>(sub_id));
       InsertOpOfBlock(raw_sub);
+      op->UpdateInputOutput(*raw_op, *(dst_block->scope()));
       blocks_[sub_id]->SetBlockOpDesc(op.get());
       blocks_[sub_id]->AddBlockInputs(
           op->extra_inputs().cbegin(), op->extra_inputs().cend(), true);
+      const auto& inputs = ConvertToSet(op->inputs());
+      const auto& outputs = ConvertToSet(op->outputs());
+      blocks_[sub_id]->AddBlockInputs(inputs.cbegin(), inputs.cend());
+      blocks_[sub_id]->AddBlockOutputs(outputs.cbegin(), outputs.cend());
       dst_block->AddOp(std::move(op));
     } else {
       std::unique_ptr<OpDescBase> op;
@@ -135,15 +141,24 @@ void PlainProgramDesc::InsertWriteBackOp(
     auto& pair = elem.second;
     if (!pair.first.expired() && !pair.second.expired()) {
       pair.second.lock()->ResetBlockIdx(pair.first.lock()->block_idx());
-      std::unique_ptr<OpDescBase> op{
-          new WriteBackOp{pair.second, pair.first, block->idx()}};
-      // Since tensor array does not meet the conditions of static single
-      // assignment, it is not listed as a dependent input of the while op.
-      auto input_lod_deps =
-          static_cast<WriteBackOp*>(op.get())->input_lod_deps();
-      block->AddOp(std::move(op));
-      block->AddBlockInputs(&pair.first, &pair.first + 1);
-      block->AddBlockInputs(input_lod_deps.begin(), input_lod_deps.end());
+      if (pair.second.lock()->GetType() == VarDataType::LOD_TENSOR_ARRAY) {
+        std::unique_ptr<OpDescBase> op{
+            new WriteBackOp{pair.second, pair.first, block->idx(), true}};
+        auto input_lod_deps =
+            static_cast<WriteBackOp*>(op.get())->input_lod_deps();
+        op->set_tensor_array_copy();
+        block->AddOp(std::move(op));
+        block->AddBlockInputs(&pair.first, &pair.first + 1);
+        block->AddBlockInputs(input_lod_deps.begin(), input_lod_deps.end());
+      } else {
+        std::unique_ptr<OpDescBase> op{
+            new WriteBackOp{pair.second, pair.first, block->idx(), false}};
+        auto input_lod_deps =
+            static_cast<WriteBackOp*>(op.get())->input_lod_deps();
+        block->AddOp(std::move(op));
+        block->AddBlockInputs(&pair.first, &pair.first + 1);
+        block->AddBlockInputs(input_lod_deps.begin(), input_lod_deps.end());
+      }
     }
   }
 }
@@ -195,7 +210,7 @@ void PlainProgramDesc::InsertOpOfBlocks() {
 
 ProgramDescConverter::ProgramDescConverter(const PlainProgramDesc& program_desc)
     : src_desc_{&program_desc} {
-  desc_.SetVersion(0);
+  desc_.SetVersion(program_desc.Version());
   InitBlocks();
 }
 
@@ -241,6 +256,9 @@ void ProgramDescConverter::InitBlockOps(const BlockDesc& src_block) {
   for (auto& src_op : src_block.ops()) {
     auto* dst_op = dst_block->AddOp<general::OpDesc>();
     *dst_op = src_op->src_raw_desc();
+    if (src_op->tensor_array_copy()) {
+      dst_op->SetAttr<bool>("tensor_array_copy", true);
+    }
     for (auto& input : src_op->inputs()) {
       std::vector<std::string> args;
       for (auto& var : input.second) {

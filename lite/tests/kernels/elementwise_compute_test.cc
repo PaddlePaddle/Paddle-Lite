@@ -17,10 +17,20 @@
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #include "lite/core/test/arena/framework.h"
-#include "lite/tests/utils/fill_data.h"
+// #include "lite/tests/utils/fill_data.h"
 
 namespace paddle {
 namespace lite {
+
+// int randint(int beg, int end) {
+//  int res = 0;
+//  fill_data_rand<int>(&res, beg, end, 1);
+//  return res;
+//}
+
+#ifdef ENABLE_ARM_FP16
+typedef __fp16 float16_t;
+#endif
 
 #define ELT(MATHOP)                                                          \
   for (int n = 0; n < xn; n++) {                                             \
@@ -100,6 +110,21 @@ float mod<float>(float a, float b) {
   float res = fmod(a, b);
   if ((res != 0) && ((b < 0) != (res < 0))) res += b;
   return res;
+}
+
+template <class T>
+T NaiveTanh(T a) {
+  float x = expf(a);
+  float y = expf(-a);
+  return (x - y) / (x + y);
+}
+
+template <class T>
+T NaiveSigmoid(T a) {
+  const T min = -40.0;  // SIGMOID_THRESHOLD_MIN;
+  const T max = 13.0;   // SIGMOID_THRESHOLD_MAX;
+  T tmp = (a < min) ? min : ((a > max) ? max : a);
+  return static_cast<T>(1.0) / (static_cast<T>(1.0) + std::exp(-tmp));
 }
 
 template <class T = float>
@@ -185,18 +210,35 @@ class ElementwiseComputeTester : public arena::TestCase {
     } else if (elt_type_ == "mod") {
       ELT(mod);
     } else {
-      LOG(FATAL) << "unsupported";
+      LOG(FATAL) << "unsupported op";
     }
-
+#ifdef LITE_WITH_X86
+    if (!act_type_.empty()) {
+      if (act_type_ == "relu") {
+        for (int i = 0; i < x_dims_.production(); i++) {
+          out_data[i] = std::max(static_cast<T>(0), out_data[i]);
+        }
+      } else if (act_type_ == "tanh") {
+        for (int i = 0; i < x_dims_.production(); i++)
+          out_data[i] = NaiveTanh(out_data[i]);
+      } else if (act_type_ == "sigmoid") {
+        for (int i = 0; i < x_dims_.production(); i++)
+          out_data[i] = NaiveSigmoid(out_data[i]);
+      } else {
+        LOG(FATAL) << "unsupported act_type:" << act_type_;
+      }
+    }
+#else
     if (!act_type_.empty()) {
       if (act_type_ == "relu") {
         for (int i = 0; i < x_dims_.production(); i++) {
           out_data[i] = std::max(static_cast<T>(0), out_data[i]);
         }
       } else {
-        LOG(FATAL) << "unsupported";
+        LOG(FATAL) << "unsupported act_type:" << act_type_;
       }
     }
+#endif
   }
 
   void PrepareOpDesc(cpp::OpDesc* op_desc) {
@@ -239,7 +281,8 @@ void TestElt(Place place,
              std::vector<int64_t> x_shape,
              std::vector<int64_t> y_shape,
              int axis,
-             std::string act_type = "") {
+             std::string act_type = "",
+             std::string func_type = "def") {
 #if defined(LITE_WITH_XPU)
   if ((y_shape.size() != 1 && x_shape.size() != y_shape.size()) ||
       elt_type != std::string("add") || !act_type.empty()) {
@@ -252,7 +295,7 @@ void TestElt(Place place,
   }
 #endif
   std::unique_ptr<arena::TestCase> tester(new ElementwiseComputeTester<T>(
-      place, "def", elt_type, x_shape, y_shape, axis, act_type));
+      place, func_type, elt_type, x_shape, y_shape, axis, act_type));
   arena::Arena arena(std::move(tester), place, abs_error);
   arena.TestPrecision();
 }
@@ -287,6 +330,40 @@ void TestEltTypes(Place place, float abs_error) {
     TestElt<int64_t>(
         arm_int64_place, abs_error, "floordiv", {2, 3, 4, 5}, {3}, 1);
   }
+
+  if (place.target == TARGET(kX86)) {
+    Place x86place(TARGET(kX86));
+    for (auto op : std::vector<std::string>{
+             "add", "sub", "mul", "div", "floordiv", "max", "min", "pow"}) {
+      TestElt<float>(x86place, abs_error, op, {2, 3, 4, 15}, {2, 3, 4, 15}, 0);
+      TestElt<int>(x86place,
+                   abs_error,
+                   op,
+                   {2, 3, 14, 5},
+                   {2, 3, 14, 5},
+                   0,
+                   "",
+                   "int32");
+      TestElt<int64_t>(x86place,
+                       abs_error,
+                       op,
+                       {2, 13, 4, 5},
+                       {2, 13, 4, 5},
+                       0,
+                       "",
+                       "int64");
+    }
+    TestElt<int>(x86place,
+                 abs_error,
+                 "mod",
+                 {12, 3, 4, 5},
+                 {12, 3, 4, 5},
+                 0,
+                 "",
+                 "int32");
+    TestElt<int64_t>(
+        x86place, abs_error, "mod", {2, 3, 4, 5}, {2, 3, 4, 5}, 0, "", "int64");
+  }
 }
 
 void TestEltFuseAct(Place place, float abs_error) {
@@ -296,6 +373,24 @@ void TestEltFuseAct(Place place, float abs_error) {
     TestElt(place, abs_error, elt_type, {2, 3, 4, 5}, {3}, 1, "relu");
   }
 }
+
+#ifdef LITE_WITH_X86
+void TestEltFuseActFloat(Place place, float abs_error) {
+  for (auto elt_type :
+       std::vector<std::string>{"add", "sub", "mul", "div", "min", "max"}) {
+    TestElt<float>(
+        place, abs_error, elt_type, {2, 13, 4, 5}, {2, 13, 4, 5}, 0, "relu");
+    TestElt<float>(
+        place, abs_error, elt_type, {2, 13, 4, 5}, {2, 13, 4, 5}, 0, "tanh");
+    TestElt<float>(
+        place, abs_error, elt_type, {2, 13, 4, 5}, {2, 13, 4, 5}, 0, "sigmoid");
+    TestElt<float>(place, abs_error, elt_type, {2, 3, 14, 5}, {3}, 1, "relu");
+    TestElt<float>(place, abs_error, elt_type, {2, 3, 14, 5}, {3}, 1, "tanh");
+    TestElt<float>(
+        place, abs_error, elt_type, {2, 3, 14, 5}, {3}, 1, "sigmoid");
+  }
+}
+#endif
 
 #ifdef ENABLE_ARM_FP16
 void TestFp16EltDims(Place place, float abs_error, std::string test_operator) {
@@ -375,6 +470,8 @@ TEST(Elementwise, precision) {
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kX86);
 #else
   return;
 #endif
@@ -389,41 +486,14 @@ TEST(Elementwise, precision) {
   TestFp16EltDims(place1, abs_error, "div");
   TestFp16EltFuseAct(place1, abs_error, "div");
 #endif
+
   TestEltDims(place, abs_error);
   TestEltTypes(place, abs_error);
   TestEltFuseAct(place, abs_error);
-}
-
-#if defined(LITE_WITH_X86)
-template <class T = float>
-void TestEltX86(Place place,
-                float abs_error,
-                std::string elt_type,
-                const std::string& alias = "def",
-                std::vector<int64_t> x_shape = {2, 3, 4, 5},
-                std::vector<int64_t> y_shape = {2, 3, 4, 5},
-                int axis = -1) {
-  std::unique_ptr<arena::TestCase> tester(new ElementwiseComputeTester<T>(
-      place, alias, elt_type, x_shape, y_shape, axis));
-  arena::Arena arena(std::move(tester), place, abs_error);
-  arena.TestPrecision();
-}
-
-TEST(elementwise_x86, precison) {
-  Place place(TARGET(kX86));
-  float abs_error = 1e-5;
-  for (auto op : std::vector<std::string>{
-           "add", "sub", "mul", "div", "floordiv", "max", "min"}) {
-    TestEltX86<float>(place, abs_error, op, "def");
-    TestEltX86<int>(place, abs_error, op, "int32");
-    TestEltX86<int64_t>(place, abs_error, op, "int64");
-  }
-
-  TestEltX86<float>(place, abs_error, "pow", "def");
-  TestEltX86<int>(place, abs_error, "mod", "int32");
-  TestEltX86<int64_t>(place, abs_error, "mod", "int64");
-}
+#ifdef LITE_WITH_X86
+  TestEltFuseActFloat(place, abs_error);
 #endif
+}
 
 }  // namespace lite
 }  // namespace paddle

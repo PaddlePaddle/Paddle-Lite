@@ -35,7 +35,7 @@ template <PrecisionType Ptype, PrecisionType OutType>
 class DirectConv : public KernelLite<TARGET(kX86), Ptype> {
  public:
   DirectConv() = default;
-  ~DirectConv(){};
+  ~DirectConv() {}
 
   virtual void Run();
 

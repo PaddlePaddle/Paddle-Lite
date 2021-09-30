@@ -165,7 +165,7 @@ GetOperandPrecisionDataLength(NNAdapterOperandPrecisionCode type) {
 NNADAPTER_EXPORT int64_t
 GetOperandTypeBufferLength(const NNAdapterOperandType& type) {
   auto production =
-      ProductionOfDimensions(type.dimensions, type.dimension_count);
+      ProductionOfDimensions(type.dimensions.data, type.dimensions.count);
   return GetOperandPrecisionDataLength(type.precision) * production;
 }
 
@@ -178,6 +178,9 @@ NNADAPTER_EXPORT void CopyOperandType(NNAdapterOperandType* dst_type,
   }
   memset(dst_type, 0, sizeof(NNAdapterOperandType));
   memcpy(dst_type, &src_type, sizeof(NNAdapterOperandType));
+  if (src_type.lifetime != NNADAPTER_TEMPORARY_SHAPE) {
+    dst_type->lifetime = NNADAPTER_TEMPORARY_VARIABLE;
+  }
   if (IsSymmPerChannelQuantType(src_type.precision) &&
       src_type.symm_per_channel_params.scales) {
     uint32_t scale_size =
@@ -193,15 +196,7 @@ NNADAPTER_EXPORT void CopyOperandType(NNAdapterOperandType* dst_type,
 NNADAPTER_EXPORT void CopyOperandTypeWithDimensions(
     NNAdapterOperandType* dst_type, const NNAdapterOperandType& src_type) {
   NNADAPTER_CHECK(dst_type);
-  dst_type->dimension_count = src_type.dimension_count;
-  memcpy(dst_type->dimensions,
-         src_type.dimensions,
-         NNADAPTER_MAX_SIZE_OF_DIMENSIONS * sizeof(int32_t));
-  dst_type->dynamic_dimension_count = src_type.dynamic_dimension_count;
-  memcpy(dst_type->dynamic_dimensions,
-         src_type.dynamic_dimensions,
-         NNADAPTER_MAX_SIZE_OF_DYNAMIC_DIMENSIONS *
-             NNADAPTER_MAX_SIZE_OF_DIMENSIONS * sizeof(int32_t));
+  dst_type->dimensions = src_type.dimensions;
 }
 
 NNADAPTER_EXPORT void CopyOperandTypeWithPrecision(
@@ -209,7 +204,9 @@ NNADAPTER_EXPORT void CopyOperandTypeWithPrecision(
   NNADAPTER_CHECK(dst_type);
   dst_type->precision = src_type.precision;
   dst_type->layout = src_type.layout;
-  dst_type->lifetime = src_type.lifetime;
+  if (src_type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {
+    dst_type->lifetime = src_type.lifetime;
+  }
 }
 
 NNADAPTER_EXPORT void CopyOperandTypeWithQuantParams(
@@ -233,10 +230,10 @@ NNADAPTER_EXPORT void CopyOperandTypeExceptQuantParams(
 }
 
 NNADAPTER_EXPORT int64_t ProductionOfDimensions(
-    const int32_t* input_dimensions, uint32_t input_dimension_count) {
+    const int32_t* input_dimensions_data, uint32_t input_dimensions_count) {
   int64_t production = 1;
-  for (uint32_t i = 0; i < input_dimension_count; i++) {
-    auto dimension = input_dimensions[i];
+  for (uint32_t i = 0; i < input_dimensions_count; i++) {
+    auto dimension = input_dimensions_data[i];
     NNADAPTER_CHECK_GT(dimension, 0);
     production *= dimension;
   }
@@ -306,13 +303,13 @@ NNADAPTER_EXPORT bool IsIdentityPermutation(
   return true;
 }
 
-NNADAPTER_EXPORT void ReshapeDimensions(int32_t* input_dimensions,
-                                        uint32_t* input_dimension_count,
+NNADAPTER_EXPORT void ReshapeDimensions(int32_t* input_dimensions_data,
+                                        uint32_t* input_dimensions_count,
                                         const std::vector<int32_t>& dimensions,
-                                        int32_t* output_dimensions_ptr,
-                                        uint32_t* output_dimension_count_ptr) {
+                                        int32_t* output_dimensions_data_ptr,
+                                        uint32_t* output_dimensions_count_ptr) {
   const int64_t input_size =
-      ProductionOfDimensions(input_dimensions, *input_dimension_count);
+      ProductionOfDimensions(input_dimensions_data, *input_dimensions_count);
   bool all_positive = std::all_of(
       dimensions.cbegin(), dimensions.cend(), [](int32_t i) { return i > 0; });
   // Only one dimension can be set to -1, whose size will be automatically
@@ -331,13 +328,13 @@ NNADAPTER_EXPORT void ReshapeDimensions(int32_t* input_dimensions,
           << "], dimensions[" << i << "] is also -1.";
       unk_dim_idx = i;
     } else if (dimensions[i] == copy_dim_val) {
-      NNADAPTER_CHECK_LT(static_cast<uint32_t>(i), *input_dimension_count)
+      NNADAPTER_CHECK_LT(static_cast<uint32_t>(i), *input_dimensions_count)
           << "The index of 0 in `dimensions` must be less than the "
-             "input_dimension_count. But received dimensions = ["
+             "input_dimensions_count. But received dimensions = ["
           << DimensionsToString(&dimensions[0], dimensions.size())
           << "], dimensions[" << i << "] = 0, input_dimensions = ["
-          << DimensionsToString(input_dimensions, *input_dimension_count)
-          << "], input_dimension_count = " << *input_dimension_count << ".";
+          << DimensionsToString(input_dimensions_data, *input_dimensions_count)
+          << "], input_dimensions_count = " << *input_dimensions_count << ".";
     } else {
       NNADAPTER_CHECK_GT(dimensions[i], 0)
           << "Each dimension value of 'dimensions' must not be negative except "
@@ -345,9 +342,9 @@ NNADAPTER_EXPORT void ReshapeDimensions(int32_t* input_dimensions,
           << DimensionsToString(&dimensions[0], dimensions.size())
           << "], dimensions[" << i << "] = " << dimensions[i] << ".";
     }
-    capacity *= (dimensions[i] ? dimensions[i] : input_dimensions[i]);
+    capacity *= (dimensions[i] ? dimensions[i] : input_dimensions_data[i]);
     output_dimensions[i] = (dimensions[i] ? static_cast<int32_t>(dimensions[i])
-                                          : input_dimensions[i]);
+                                          : input_dimensions_data[i]);
   }
   if (unk_dim_idx != -1) {
     if (all_positive) {
@@ -359,7 +356,7 @@ NNADAPTER_EXPORT void ReshapeDimensions(int32_t* input_dimensions,
       NNADAPTER_CHECK_EQ(output_dimensions[unk_dim_idx] * capacity, -input_size)
           << "The 'dimensions' is invalid. The input size must be divisible by "
              "known capacity of 'dimensions'. But received input_dimensions = ["
-          << DimensionsToString(input_dimensions, *input_dimension_count)
+          << DimensionsToString(input_dimensions_data, *input_dimensions_count)
           << "], input size = " << input_size << ", 'dimensions' is ["
           << DimensionsToString(&dimensions[0], dimensions.size())
           << "], known capacity of 'dimensions' is " << capacity << ".";
@@ -371,18 +368,18 @@ NNADAPTER_EXPORT void ReshapeDimensions(int32_t* input_dimensions,
       NNADAPTER_CHECK_EQ(capacity, input_size)
           << "The 'dimensions' is invalid. The input size must be equal to the "
              "capacity of 'dimensions'. But received input_dimensions = ["
-          << DimensionsToString(input_dimensions, *input_dimension_count)
+          << DimensionsToString(input_dimensions_data, *input_dimensions_count)
           << "], input size = " << input_size << ", 'dimensions' is ["
           << DimensionsToString(&dimensions[0], dimensions.size())
           << "], the capacity of 'dimensions' is " << capacity << ".";
     }
   }
-  if (!output_dimensions_ptr || !output_dimension_count_ptr) {
-    output_dimensions_ptr = input_dimensions;
-    output_dimension_count_ptr = input_dimension_count;
+  if (!output_dimensions_data_ptr || !output_dimensions_count_ptr) {
+    output_dimensions_data_ptr = input_dimensions_data;
+    output_dimensions_count_ptr = input_dimensions_count;
   }
-  *output_dimension_count_ptr = output_dimensions.size();
-  memcpy(output_dimensions_ptr,
+  *output_dimensions_count_ptr = output_dimensions.size();
+  memcpy(output_dimensions_data_ptr,
          &output_dimensions[0],
          output_dimensions.size() * sizeof(int32_t));
 }

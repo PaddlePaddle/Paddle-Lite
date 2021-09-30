@@ -32,20 +32,21 @@ void BatchNormCompute::Run() {
   for (int i = 0; i < x_dims.size(); i++) {
     x_shape[i] = x_dims[i];
   }
-
   int r =
-      xdnn::batch_norm_infer_forward(ctx.GetRawContext(),
-                                     epsilon,
-                                     x_shape[0],
-                                     x_shape[1],
-                                     x_shape[2],
-                                     x_shape[3],
-                                     param.x->data<float>(),
-                                     param.y->mutable_data<float>(TARGET(kXPU)),
-                                     param.scale->data<float>(),
-                                     param.bias->data<float>(),
-                                     param.mean->data<float>(),
-                                     param.variance->data<float>());
+      xdnn::batch_norm_infer<float>(ctx.GetRawContext(),
+                                    param.x->data<float>(),
+                                    param.y->mutable_data<float>(TARGET(kXPU)),
+                                    x_shape[0],
+                                    x_shape[1],
+                                    x_shape[2],
+                                    x_shape[3],
+                                    epsilon,
+                                    param.scale->data<float>(),
+                                    param.bias->data<float>(),
+                                    param.mean->data<float>(),
+                                    param.variance->data<float>(),
+                                    true);
+
   CHECK_EQ(r, 0);
 }
 

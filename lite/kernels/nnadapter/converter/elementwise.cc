@@ -21,7 +21,6 @@ namespace nnadapter {
 
 int ConvertElementwise(Converter* converter, OpInfo* op, Scope* scope) {
   // X operand
-  NNAdapterOperand* x_operand = nullptr;
   auto x_name = op->Input("X").front();
   auto x_tensor = scope->FindTensor(x_name);
   auto x_persistable = x_tensor->persistable();
@@ -30,14 +29,9 @@ int ConvertElementwise(Converter* converter, OpInfo* op, Scope* scope) {
   if (op->HasInputScale(x_scale_name, true)) {
     x_scales = op->GetInputScale(x_scale_name, true);
   }
-  if (x_persistable) {
-    x_operand = converter->AddConstantOperand(*x_tensor, {}, false, x_scales);
-  } else {
-    x_operand = converter->GetMappedOperand(x_name);
-  }
+  auto input0_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
 
   // Y operand
-  NNAdapterOperand* y_operand = nullptr;
   auto y_name = op->Input("Y").front();
   auto y_tensor = scope->FindTensor(y_name);
   auto y_persistable = y_tensor->persistable();
@@ -46,17 +40,13 @@ int ConvertElementwise(Converter* converter, OpInfo* op, Scope* scope) {
   if (op->HasInputScale(y_scale_name, true)) {
     y_scales = op->GetInputScale(y_scale_name, true);
   }
-  if (y_persistable) {
-    y_operand = converter->AddConstantOperand(*y_tensor, {}, false, y_scales);
-  } else {
-    y_operand = converter->GetMappedOperand(y_name);
-  }
+  auto input1_operand = converter->AddInputOperand(scope, y_name, {}, y_scales);
 
   // Check whether the two dimensions are compatiable(Numpy-style broadcasting
   // https://numpy.org/doc/stable/user/basics.broadcasting.html).
   // Unsqueeze the small rank
-  uint32_t x_rank = converter->GetOperandType(x_operand)->dimension_count;
-  uint32_t y_rank = converter->GetOperandType(y_operand)->dimension_count;
+  uint32_t x_rank = converter->GetOperandType(input0_operand)->dimensions.count;
+  uint32_t y_rank = converter->GetOperandType(input1_operand)->dimensions.count;
   uint32_t max_rank = std::max(x_rank, y_rank);
   int32_t axis = op->GetAttr<int32_t>("axis");
   if (axis < 0) {
@@ -79,22 +69,22 @@ int ConvertElementwise(Converter* converter, OpInfo* op, Scope* scope) {
       std::vector<int64_t> shape = y_tensor->dims().Vectorize();
       shape.insert(shape.begin(), axis, 1);
       shape.insert(shape.end(), max_rank - shape.size(), 1);
-      y_operand = converter->AddConstantOperand(
+      input1_operand = converter->AddConstantOperand(
           *y_tensor, DDim(shape), false, y_scales);
     } else {
       CHECK(!axes.empty());
-      y_operand = converter->AddUnsqueezeOperation(y_operand, axes);
+      input1_operand = converter->AddUnsqueezeOperation(input1_operand, axes);
     }
   } else if (y_rank > x_rank) {
     if (x_persistable) {
       std::vector<int64_t> shape = x_tensor->dims().Vectorize();
       shape.insert(shape.begin(), axis, 1);
       shape.insert(shape.end(), max_rank - shape.size(), 1);
-      x_operand = converter->AddConstantOperand(
+      input0_operand = converter->AddConstantOperand(
           *x_tensor, DDim(shape), false, x_scales);
     } else {
       CHECK(!axes.empty());
-      x_operand = converter->AddUnsqueezeOperation(x_operand, axes);
+      input0_operand = converter->AddUnsqueezeOperation(input0_operand, axes);
     }
   }
 
@@ -104,13 +94,13 @@ int ConvertElementwise(Converter* converter, OpInfo* op, Scope* scope) {
       op->HasAttr("act_type") ? op->GetAttr<std::string>("act_type") : "";
   if (act_type == "relu") {
     fuse_code_value = NNADAPTER_FUSED_RELU;
+    act_type = "";
   } else if (act_type == "relu1") {
     fuse_code_value = NNADAPTER_FUSED_RELU1;
+    act_type = "";
   } else if (act_type == "relu6") {
     fuse_code_value = NNADAPTER_FUSED_RELU6;
-  } else if (!act_type.empty()) {
-    LOG(WARNING) << "Unsupported activation type: " << act_type;
-    return UNSUPPORTED_FEATURE;
+    act_type = "";
   }
   auto fuse_code_operand = converter->AddConstantOperand(fuse_code_value);
 
@@ -152,8 +142,30 @@ int ConvertElementwise(Converter* converter, OpInfo* op, Scope* scope) {
     return UNSUPPORTED_FEATURE;
   }
   converter->AddOperation(eltwise_operation_type,
-                          {x_operand, y_operand, fuse_code_operand},
+                          {input0_operand, input1_operand, fuse_code_operand},
                           {output_operand});
+
+  // Unpack the fused activations
+  if (!act_type.empty()) {
+    auto fused_act_output_operand =
+        converter->AddOutputOperand(out_name, out_scales);
+    if (act_type == "leaky_relu") {
+      auto alpha = op->GetAttr<float>("leaky_relu_alpha");
+      auto alpha_operand = converter->AddConstantOperand(alpha);
+      converter->AddOperation(NNADAPTER_LEAKY_RELU,
+                              {output_operand, alpha_operand},
+                              {fused_act_output_operand});
+    } else {
+      // Unpack the fused unary activations
+      auto unary_act_operation_type =
+          ConvertUnaryActTypeToNNOperationType(act_type);
+      CHECK(unary_act_operation_type != NNADAPTER_UNKNOWN)
+          << "Failed to unpack the fused activation type: " << act_type;
+      converter->AddOperation(unary_act_operation_type,
+                              {output_operand},
+                              {fused_act_output_operand});
+    }
+  }
   return NO_ERROR;
 }
 

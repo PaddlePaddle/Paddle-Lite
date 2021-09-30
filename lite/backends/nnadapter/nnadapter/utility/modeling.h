@@ -121,6 +121,7 @@ bool InsertOperand(hal::Model* model,
 bool IsConstantOperand(hal::Operand* operand);
 bool IsModelInputOperand(hal::Operand* operand);
 bool IsModelOutputOperand(hal::Operand* operand);
+bool IsOperationWithAllInputConstantOperands(hal::Operation* operation);
 // Find the operations that consumes the operand
 std::vector<hal::Operation*> GetOperandConsumers(hal::Model* model,
                                                  hal::Operand* operand);
@@ -148,6 +149,19 @@ hal::Operand* AddDummyOperation(hal::Model* model, hal::Operand* input_operand);
 hal::Operand* AddUnaryOperation(hal::Model* model,
                                 hal::Operand* input_operand,
                                 NNAdapterOperationType operation_type);
+// Add a dummy ADD to simuate the REQUANT operation
+// i.e.
+// target_operand(target_quant_params)->CONCAT->reference_operand(reference_quant_params),
+// After applying this,
+// target_operand(target_quant_params)->ADD->immediate_operand(reference_quant_params)->CONCAT->reference_operand(reference_quant_params)
+// i.e.
+// reference_operand(reference_quant_params)->SPLIT->target_operand(target_quant_params),
+// After applying this,
+// reference_operand(reference_quant_params)->SPLIT->immediate_operand(reference_quant_params)->ADD->target_operand(target_quant_params)
+hal::Operand* AddRequantOperation(hal::Model* model,
+                                  hal::Operation* operation,
+                                  hal::Operand* target_operand,
+                                  hal::Operand* reference_operand);
 
 // Sort the operations of the specified model in topological order
 std::vector<hal::Operation*> SortOperationsInTopologicalOrder(
