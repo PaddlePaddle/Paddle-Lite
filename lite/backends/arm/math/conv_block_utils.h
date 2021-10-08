@@ -15,6 +15,7 @@
 #pragma once
 #include <arm_neon.h>
 #include <cmath>
+#include "lite/backends/arm/math/funcs.h"
 #include "lite/backends/arm/math/gemm_s8.h"
 #include "lite/backends/arm/math/saturate.h"
 #include "lite/backends/arm/math/sgemm.h"
