@@ -191,33 +191,22 @@ struct GeluFunctor : public BaseActivationFunctor<T> {
 // marco for NVCC.
 #if defined(PADDLE_WITH_MKLML) && !defined(_WIN32) && !defined(__APPLE__) && \
     !defined(__OSX__) && !defined(PADDLE_WITH_CUDA)
-    LOG(INFO) << "11111";
     auto x_data = x.data();
-    LOG(INFO) << "22222";    
     auto out_data = out.data();
-    LOG(INFO) << "33333";    
     int n = std::min(x.size(), out.size());
-    LOG(INFO) << "44444";
     std::memset(out_data, 0, n * sizeof(T));
-    LOG(INFO) << "55555";    
     paddle::lite::x86::math::CBlas<T>::AXPY(
         n, static_cast<T>(M_SQRT1_2), x_data, 1, out_data, 1);
-    LOG(INFO) << "66666";        
     paddle::lite::x86::math::CBlas<T>::VMERF(n, out_data, out_data, VML_LA);
     for (int i = 0; i < n; i++) {
       out_data[i] += static_cast<T>(1);
     }
-    LOG(INFO) << "77777";    
     paddle::lite::x86::math::CBlas<T>::VMUL(n, x_data, out_data, out_data);
-    LOG(INFO) << "88888";    
     for (int i = 0; i < n; i++) {
       out_data[i] *= static_cast<T>(0.5);
     }
-    LOG(INFO) << "99999";
 #else
-    LOG(INFO) << "aaaaa";
     auto temp = (x * static_cast<T>(M_SQRT1_2)).erf();
-    LOG(INFO) << "bbbbb";    
     out.device(d) = x * static_cast<T>(0.5) * (static_cast<T>(1) + temp);
 #endif
   }
