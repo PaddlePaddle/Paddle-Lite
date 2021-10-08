@@ -178,27 +178,6 @@ void TestModel(const std::vector<Place>& valid_places,
   }
 }
 
-#ifdef LITE_WITH_NPU
-TEST(MobileNetV1, test_npu) {
-  std::vector<Place> valid_places({
-      Place{TARGET(kARM), PRECISION(kFloat)},
-      Place{TARGET(kNPU), PRECISION(kFloat)},
-  });
-
-  TestModel(valid_places, FLAGS_model_dir, true /* save_model*/);
-
-  TestModel(valid_places, FLAGS_optimized_model, false /* save model */);
-}
-#endif  // LITE_WITH_NPU
-
-TEST(MobileNetV1, test_arm) {
-  std::vector<Place> valid_places({
-      Place{TARGET(kARM), PRECISION(kFloat)},
-  });
-
-  // TestModel(valid_places);
-}
-
 #ifdef LITE_WITH_OPENCL
 TEST(MobileNetV1, test_opencl) {
   std::vector<Place> valid_places({
