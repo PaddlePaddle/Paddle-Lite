@@ -185,7 +185,7 @@ TEST(MobileNetV1, test_opencl) {
       TARGET(kARM),  // enable kARM CPU kernel when no opencl kernel
   });
 
-  TestModel(valid_places);
+  // TestModel(valid_places);
 }
 #endif  // LITE_WITH_OPENCL
 
