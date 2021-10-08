@@ -1036,21 +1036,21 @@ void sparse_conv_fp32_pipelined(const float* A,
         uint32_t lave_num = nnz % 4;
         float vbias = (bias != nullptr) ? bias[i] : 0.0;
         // clang-format off
-              asm volatile(SPARSE_F32_F32_W48_V8_OUT  
-                : [a_ptr] "+r"(w),
-                  [b_ptr] "+r"(cur_B),
-                  [c_ptr] "+r"(cur_output),
-                  [k] "+r"(nnz),
-                  [n] "+r"(pair_num),
-                  [m] "+r"(lave_num),
-                  [widx_dmap] "+r"(dmap)
-                : [vbias] "r"(vbias),
-                  [vflag_act] "r"(flag_act),
-                  [valpha] "r"(alpha)
-                : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
-                  "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
-                  "v16", "v17", "v18", "v21", "v22", "v23", "v24", "v25", 
-                  "v26", "v27", "v28", "v30", "v31", "w1", "x1", "cc", "memory");
+            asm volatile(SPARSE_F32_F32_W48_V8_OUT  
+              : [a_ptr] "+r"(w),
+                [b_ptr] "+r"(cur_B),
+                [c_ptr] "+r"(cur_output),
+                [k] "+r"(nnz),
+                [n] "+r"(pair_num),
+                [m] "+r"(lave_num),
+                [widx_dmap] "+r"(dmap)
+              : [vbias] "r"(vbias),
+                [vflag_act] "r"(flag_act),
+                [valpha] "r"(alpha)
+              : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
+                "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
+                "v16", "v17", "v18", "v21", "v22", "v23", "v24", "v25", 
+                "v26", "v27", "v28", "v30", "v31", "w1", "x1", "cc", "memory");
         // clang-format on
       }
     }
