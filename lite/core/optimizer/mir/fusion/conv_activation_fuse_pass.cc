@@ -62,12 +62,15 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     act_types.push_back("hard_sigmoid");
     act_types.push_back("prelu");
   }
+
   if (!has_int8 && has_cuda) {
     act_types.push_back("leaky_relu");
   }
-  if (has_x86 && !has_metal) {
+  if (has_x86) {
     act_types.push_back("relu");
     act_types.push_back("relu6");
+    act_types.push_back("leaky_relu");
+    act_types.push_back("hard_swish");
   }
 
   if (has_metal) {
