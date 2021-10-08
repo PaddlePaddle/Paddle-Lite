@@ -50,6 +50,7 @@ add_kernel(greater_than_opencl_image OPENCL basic SRCS greater_than_image_comput
 add_kernel(fc_opencl_image OPENCL basic SRCS fc_image_compute.cc)
 add_kernel(argmax_opencl_image OPENCL basic SRCS argmax_image_compute.cc)
 add_kernel(max_opencl_image OPENCL basic SRCS max_image_compute.cc)
+add_kernel(matmul_opencl_image OPENCL basic SRCS matmul_image_compute.cc)
 # extra
 # wait to add ...
 
