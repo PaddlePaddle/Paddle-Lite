@@ -427,9 +427,6 @@ class LayoutComputeImageFolderToImageDefault
 
   void PrepareForRun() override {
     auto& param = Param<param_t>();
-    if (!fp16_support_) {
-      build_options_ += " -DCL_DTYPE_FLOAT_FORCE";
-    }
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(kernel_func_name_,
@@ -451,8 +448,8 @@ class LayoutComputeImageFolderToImageDefault
     auto x_dims = param.x->dims();
     auto y_dims = param.y->dims();
 
-    CLImageConverterDefault default_converter;
     CLImageConverterFolder folder_converter;
+    CLImageConverterDefault default_converter;
     auto x_image_shape = folder_converter.InitImageDimInfoWith(x_dims);
     auto y_image_shape = default_converter.InitImageDimInfoWith(y_dims);
 
@@ -461,11 +458,8 @@ class LayoutComputeImageFolderToImageDefault
     auto* x_data = GET_DATA_GPU(param.x);
 
 #ifdef LITE_WITH_LOG
-    VLOG(2) << "param.process_type:" << param.process_type;
     VLOG(2) << "x_dims:" << x_dims;
     VLOG(2) << "y_dims:" << y_dims;
-    VLOG(2) << "param.x->memory_size():" << param.x->memory_size();
-    VLOG(2) << "param.y->memory_size():" << param.y->memory_size();
     VLOG(2) << "x_image_shape(w,h):" << x_image_shape[0] << " "
             << x_image_shape[1];
     VLOG(2) << "y_image_shape(w,h):" << y_image_shape[0] << " "
@@ -559,11 +553,8 @@ class LayoutComputeImageFolderToBufferChw
     auto* x_data = GET_DATA_GPU(param.x);
 
 #ifdef LITE_WITH_LOG
-    VLOG(2) << "param.process_type:" << param.process_type;
     VLOG(2) << "x_dims:" << x_dims;
     VLOG(2) << "y_dims:" << y_dims;
-    VLOG(2) << "param.x->memory_size():" << param.x->memory_size();
-    VLOG(2) << "param.y->memory_size():" << param.y->memory_size();
     VLOG(2) << "x_image_shape(w,h):" << x_image_shape[0] << " "
             << x_image_shape[1];
 #endif
@@ -612,7 +603,7 @@ class LayoutComputeImageFolderToBufferChw
  private:
   std::string time_stamp_{GetTimeStamp()};
   std::string kernel_func_name_{"image2d_folder_to_buffer"};
-  std::string build_options_{""};
+  std::string build_options_{"-DCL_DTYPE_float "};
 };
 
 }  // namespace opencl
