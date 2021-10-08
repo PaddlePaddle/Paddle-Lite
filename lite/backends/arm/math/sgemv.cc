@@ -132,7 +132,7 @@ bool sgemv(const float *A,
                           bias,
                           act_param.Leaky_relu_alpha,
                           ctx);
-      } else if () {
+      } else if (act == lite_api::ActivationType::kHardSwish) {
         sgemv_hard_swish(M,
                          N,
                          A,
