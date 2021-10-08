@@ -15,6 +15,7 @@
 #include "lite/backends/arm/math/sparse_conv_impl.h"
 #include <arm_neon.h>
 #include <vector>
+#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
@@ -1014,42 +1015,6 @@ void sparse_conv_fp32_pipelined(const float* A,
   size_t nc = M;
   size_t output_stride = N * sizeof(float);
   size_t output_decrement = output_stride * nc - 48 * sizeof(float);
-  // while
-  //   SPARSE_LIKELY(mc >= 48 * sizeof(float)) {
-  //     const float* w = A;
-  //     const int32_t* dmap = widx_dmap;
-  //     const uint32_t* nnzmap = nidx_nnzmap;
-
-  //     for (size_t i = 0; i < nc; i++) {
-  //       uint32_t nnz = *nnzmap++;
-  //       uint32_t pair_num = nnz / 4;
-  //       uint32_t lave_num = nnz % 4;
-  //       float vbias = (bias != nullptr) ? bias[i] : 0.0;
-  //       // clang-format off
-  //           asm volatile(SPARSE_F32_F32_W48_V8_OUT
-  //             : [a_ptr] "+r"(w),
-  //               [b_ptr] "+r"(B),
-  //               [c_ptr] "+r"(output),
-  //               [k] "+r"(nnz),
-  //               [n] "+r"(pair_num),
-  //               [m] "+r"(lave_num),
-  //               [widx_dmap] "+r"(dmap)
-  //             : [vbias] "r"(vbias),
-  //               [vflag_act] "r"(flag_act),
-  //               [valpha] "r"(alpha)
-  //             : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
-  //               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
-  //               "v16", "v17", "v18", "v21", "v22", "v23", "v24", "v25",
-  //               "v26", "v27", "v28", "v30", "v31", "w1", "x1", "cc",
-  //               "memory");
-  //       // clang-format on
-  //       output = reinterpret_cast<float*>((uintptr_t)output + output_stride);
-  //     }
-  //     output = reinterpret_cast<float*>((uintptr_t)output -
-  //     output_decrement);
-  //     B += 48;
-  //     mc -= 48 * sizeof(float);
-  //   }
 
   size_t output_total = output_stride * nc;
   size_t mend = N / 48;
@@ -1057,7 +1022,7 @@ void sparse_conv_fp32_pipelined(const float* A,
   if (mend > 0) {
     LITE_PARALLEL_COMMON_BEGIN(mi, tid, mnum, 0, 48) {
       size_t cur_i = mi / 48;
-      float* cur_B = B + cur_i * 48;
+      const float* cur_B = B + cur_i * 48;
       float* cur_output = reinterpret_cast<float*>((uintptr_t)output +
                                                    48 * sizeof(float) * cur_i);
 
@@ -1087,13 +1052,9 @@ void sparse_conv_fp32_pipelined(const float* A,
                   "v16", "v17", "v18", "v21", "v22", "v23", "v24", "v25", 
                   "v26", "v27", "v28", "v30", "v31", "w1", "x1", "cc", "memory");
         // clang-format on
-        // output = reinterpret_cast<float*>((uintptr_t)output + output_stride);
       }
-      // output = reinterpret_cast<float*>((uintptr_t)output -
-      // output_decrement);
-      // B += 48;
-      // mc -= 48 * sizeof(float);
     }
+    LITE_PARALLEL_COMMON_END();
   }
   B += mend * 48;
   mc -= mend * 48 * sizeof(float);
