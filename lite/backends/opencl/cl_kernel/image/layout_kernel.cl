@@ -315,11 +315,10 @@ __kernel void image2d_to_buffer_with_post255(__read_only image2d_t input,
 ////////////////////////////////////////////////////////
 // image2d_folder -> image2d_default
 ////////////////////////////////////////////////////////
-__kernel void image2d_folder_to_image2d_default(
-    __read_only image2d_t input,
-    __write_only image2d_t output,
-    __private const int out_image_w,
-    __private const int out_image_h) {
+__kernel void image2d_folder_to_image2d_default(__read_only image2d_t input,
+                                                __write_only image2d_t output,
+                                                __private const int out_img_w,
+                                                __private const int out_img_h) {
   const int pos_x = get_global_id(0);
   const int pos_y = get_global_id(1);
 
@@ -335,10 +334,16 @@ __kernel void image2d_folder_to_image2d_default(
   out2.x = in.z;
   out3.x = in.w;
 
-  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(pos_x * 4 + 0, pos_y), out0);
-  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(pos_x * 4 + 1, pos_y), out0);
-  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(pos_x * 4 + 2, pos_y), out0);
-  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(pos_x * 4 + 3, pos_y), out0);
+  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(pos_x * 4, pos_y), out0);
+  if (pos_x * 4 + 1 < out_img_w) {
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(pos_x * 4 + 1, pos_y), out1);
+  }
+  if (pos_x * 4 + 2 < out_img_w) {
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(pos_x * 4 + 2, pos_y), out2);
+  }
+  if (pos_x * 4 + 3 < out_img_w) {
+    WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, (int2)(pos_x * 4 + 3, pos_y), out3);
+  }
 }
 
 ////////////////////////////////////////////////////////
@@ -348,8 +353,8 @@ __kernel void image2d_folder_to_buffer(__read_only image2d_t input,
                                        __global float* output,
                                        __private const int out_h,
                                        __private const int out_w) {
-  const int pos_x = get_global_id(0);
-  const int pos_y = get_global_id(1);
+  const int pos_x = get_global_id(0);  // 0-17
+  const int pos_y = get_global_id(1);  // 0
 
   CL_DTYPE4 in =
       READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(pos_x, pos_y));
@@ -362,14 +367,14 @@ __kernel void image2d_folder_to_buffer(__read_only image2d_t input,
 
   int outpos_base = out_w * pos_y + pos_x * 4;
   int length = out_w * out_h;
-  output[outpos_base + 0] = out.x;
-  if (outpos_base + 1 <= length) {
-    output[outpos_base + pos_x * 4 + 1] = out.y;
+  output[outpos_base] = out.x;
+  if (outpos_base + 1 < length) {
+    output[outpos_base + 1] = out.y;
   }
-  if (outpos_base + 2 <= length) {
-    output[outpos_base + 2] = out.x;
+  if (outpos_base + 2 < length) {
+    output[outpos_base + 2] = out.z;
   }
-  if (outpos_base + 3 <= length) {
-    output[outpos_base + 3] = out.y;
+  if (outpos_base + 3 < length) {
+    output[outpos_base + 3] = out.w;
   }
 }

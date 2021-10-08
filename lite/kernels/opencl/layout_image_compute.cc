@@ -223,18 +223,8 @@ class LayoutComputeImageDefaultToBufferChw
         new_dims[4 - x_dims.size() + j] = x_dims[j];
       }
     } else if (x_dims.size() < 5) {
-      // mainly for fc and softmax_1x1
-      // TODO(zhaoyang-star): Tensor shape padding mode will change from
-      // high-dim padding to low-dim padding to fit image2d.
-      // ImageConverter will be changed.
-      if (x_dims.size() == 2) {
-        for (int j = 0; j < x_dims.size(); ++j) {
-          new_dims[j] = x_dims[j];
-        }
-      } else {
-        for (int j = 0; j < x_dims.size(); ++j) {
-          new_dims[4 - x_dims.size() + j] = x_dims[j];
-        }
+      for (int j = 0; j < x_dims.size(); ++j) {
+        new_dims[4 - x_dims.size() + j] = x_dims[j];
       }
     } else {
       LOG(FATAL) << "unsupported layout tensor dims size, the dims size is: "
@@ -494,9 +484,9 @@ class LayoutComputeImageFolderToImageDefault
     CL_CHECK_FATAL(status);
     status = kernel.setArg(++arg_idx, *y_data);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(y_dims[0]));
+    status = kernel.setArg(++arg_idx, static_cast<const int>(y_image_shape[0]));
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(y_dims[1]));
+    status = kernel.setArg(++arg_idx, static_cast<const int>(y_image_shape[1]));
     CL_CHECK_FATAL(status);
 
     auto global_work_size =
