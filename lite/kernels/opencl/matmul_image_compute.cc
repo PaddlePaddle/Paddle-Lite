@@ -181,7 +181,7 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
                                   kernel,
                                   cl::NullRange,
                                   global_work_size_,
-                                  local_work_size_,  // cl::NullRange,//
+                                  local_work_size_,
                                   nullptr,
                                   event_);
     CL_CHECK_FATAL(status);
