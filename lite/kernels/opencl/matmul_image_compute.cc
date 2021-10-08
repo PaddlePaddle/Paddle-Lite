@@ -117,7 +117,7 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
   }
 
   void Run() override {
-    y_buf_ = GET_BUFFER_GPU(y_gpu_t_);
+    auto* y_buf_ = GET_BUFFER_GPU(y_gpu_t_);
     auto* x_img_ = GET_DATA_GPU(matmul_v2_param_->X);
     auto* out_img_ =
         MUTABLE_DATA_GPU(matmul_v2_param_->Out, UP_DIV(n_, 4), m_, nullptr);
@@ -212,7 +212,6 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
   std::string time_stamp_{GetTimeStamp()};
   bool first_epoch_for_reinit_{true};
   DDim last_x_dims_;
-  const cl::Buffer* y_buf_{nullptr};
   std::unique_ptr<Tensor> y_gpu_t_{nullptr};
 
   cl::NDRange global_work_size_;
