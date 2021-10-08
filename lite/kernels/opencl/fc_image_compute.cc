@@ -323,7 +323,7 @@ REGISTER_LITE_KERNEL(fc,
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
-                                      DATALAYOUT(kImageDefault))})
+                                      DATALAYOUT(kImageFolder))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("Alpha", {LiteType::GetTensorTy(TARGET(kHost))})

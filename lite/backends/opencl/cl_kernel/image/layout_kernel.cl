@@ -353,8 +353,8 @@ __kernel void image2d_folder_to_buffer(__read_only image2d_t input,
                                        __global float* output,
                                        __private const int out_h,
                                        __private const int out_w) {
-  const int pos_x = get_global_id(0);  // 0-17
-  const int pos_y = get_global_id(1);  // 0
+  const int pos_x = get_global_id(0);
+  const int pos_y = get_global_id(1);
 
   CL_DTYPE4 in =
       READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(pos_x, pos_y));
