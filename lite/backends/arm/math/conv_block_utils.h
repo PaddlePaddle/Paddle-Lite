@@ -1950,8 +1950,7 @@ inline bool write_to_output_c4_fp32(const float* din,
               ptr_din += w_stride;
             }
     } else if (act_param->active_type == lite_api::ActivationType::kHardSwish) {
-      float32x4_t scale = div_ps(vdupq_n_f32(1.0f),
-                          vdupq_n_f32(act_param->hard_swish_scale));
+      float32x4_t scale = vdupq_n_f32(1.0 / act_param->hard_swish_scale);
       float32x4_t offset = vdupq_n_f32(act_param->hard_swish_offset);
       float32x4_t threshold = vdupq_n_f32(act_param->hard_swish_threshold);
       for (int i = 0; i < size_h; i++) {
