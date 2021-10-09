@@ -81,7 +81,7 @@ void test(const lite_api::CLPrecisionType p,
             << " axis=" << axis;
 
   auto kernels = KernelRegistry::Global().Create(
-      "softmax", TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
+      "softmax", TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageFolder));
   ASSERT_FALSE(kernels.empty());
   auto kernel = std::move(kernels.front());
 
