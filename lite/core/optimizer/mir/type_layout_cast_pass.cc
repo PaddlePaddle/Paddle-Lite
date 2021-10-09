@@ -89,7 +89,8 @@ void TypeLayoutTransformPass::ComplementInputs(
   };
   auto* in_arg_type = const_cast<Type*>(in->AsArg().type);
   if (is_host(in_arg_type->target()) &&
-      in_arg_type->layout() == DATALAYOUT(kImageDefault)) {
+      (in_arg_type->layout() == DATALAYOUT(kImageDefault) ||
+       in_arg_type->layout() == DATALAYOUT(kImageFolder))) {
     return;
   }
 
