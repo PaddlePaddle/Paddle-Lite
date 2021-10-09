@@ -61,6 +61,8 @@ else()
   add_kernel(fill_zeros_like_compute_xpu XPU basic SRCS fill_zeros_like_compute.cc)
   add_kernel(reduce_compute_xpu XPU basic SRCS reduce_compute.cc)
   add_kernel(expand_v2_compute_xpu XPU basic SRCS expand_v2_compute.cc)
+  add_kernel(expand_compute_xpu XPU basic SRCS expand_compute.cc)
+  add_kernel(range_compute_xpu XPU basic SRCS range_compute.cc)
 
   # extra
   add_kernel(lookup_table_compute_xpu XPU extra SRCS lookup_table_compute.cc)
