@@ -1831,10 +1831,10 @@ void sgemv_trans(const int M,
 #define SGEMV_OUT_4_HARD_SWISH                               \
   /* end */                                                  \
   "4:                             @ end\n"                   \
-  "vdup.f32   q2, %[offset]       @ alpha for hardswish\n"   \
-  "vdup.f32   q3, %[scale]        @ alpha for hardswish\n"   \
+  "vld1.32    {d4-d5}, [%[scale_v]]! @ offset \n"            \
   "vmov.i32   q1, #0              @ zero for hardswish\n"    \
-  "vdup.f32   q4, %[threshold]    @ alpha for hardswish\n"   \
+  "vld1.32    {d6-d7}, [%[scale_v]]! @ scale \n"             \
+  "vld1.32    {d8-d9}, [%[scale_v]]! @ threshold \n"         \
   "vadd.f32   q5, q0, q2          @ vaddq_f32 \n"            \
   "vmul.f32   q6, q0, q3          @ vmulq_f32 \n"            \
   "vmax.f32   q5, q5, q1          \n"                        \
@@ -1929,10 +1929,10 @@ void sgemv_trans(const int M,
 #define SGEMV_OUT_4_HARD_SWISH_BETA                          \
   /* end */                                                  \
   "4:                             @ end\n"                   \
-  "vdup.f32   q2, %[offset]       @ alpha for hardswish\n"   \
-  "vdup.f32   q3, %[scale]        @ alpha for hardswish\n"   \
+  "vld1.32    {d4-d5}, [%[scale_v]]! @ offset \n"            \
   "vmov.i32   q1, #0              @ zero for hardswish\n"    \
-  "vdup.f32   q4, %[threshold]    @ alpha for hardswish\n"   \
+  "vld1.32    {d6-d7}, [%[scale_v]]! @ scale \n"             \
+  "vld1.32    {d8-d9}, [%[scale_v]]! @ threshold \n"         \
   "vadd.f32   q5, q0, q2          @ vaddq_f32 \n"            \
   "vmul.f32   q6, q0, q3          @ vmulq_f32 \n"            \
   "vld1.32    {d14-d15}, [%[out]] \n"                        \
@@ -1985,7 +1985,7 @@ void sgemv_trans(const int M,
   "vmla.f32 d0, d4, d2        \n"                        \
   "vst1.32 {d0[0]}, [%[out]]        @ save result\n"
 
-#define SGEMV_OUT_1_HARD_SWISH                                 \
+#define SGEMV_OUT_1_HARD_SWISH_BETA                            \
   /* end */                                                    \
   "4:                               @ end\n"                   \
   "vdup.f32   d3, %[offset]         @ alpha for leakey relu\n" \
@@ -3132,13 +3132,13 @@ void sgemv_hard_swish(const int M,
   const float *weights_ptr = A;
   int cnt = N >> 3;
   int tail = N & 7;
-  float32x4_t vscale = vdupq_n_f32(scale);
-  float32x4_t voffset = vdupq_n_f32(offset);
-  float32x4_t vthreshold = vdupq_n_f32(threshold);
   bool has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
   float32x4_t vbeta = vdupq_n_f32(beta);
 #ifdef __aarch64__
   int out_cnt = M >> 3;
+  float32x4_t vscale = vdupq_n_f32(scale);
+  float32x4_t voffset = vdupq_n_f32(offset);
+  float32x4_t vthreshold = vdupq_n_f32(threshold);
   if (has_beta) {
     LITE_PARALLEL_BEGIN(j, tid, out_cnt) {
       MAIN_LOOP
@@ -3302,9 +3302,22 @@ void sgemv_hard_swish(const int M,
   }
 #else   // __aarch64__
   int out_cnt = M >> 2;
+  float scale_v[12] = {offset,
+                       offset,
+                       offset,
+                       offset,
+                       scale,
+                       scale,
+                       scale,
+                       scale,
+                       threshold,
+                       threshold,
+                       threshold,
+                       threshold};
   if (has_beta) {
     LITE_PARALLEL_BEGIN(j, tid, out_cnt) {
       MAIN_LOOP
+      auto tmp_ptr = scale_v;
       asm volatile(SGEMV_IN_4_BIAS SGEMV_KERNEL_4 SGEMV_OUT_4_HARD_SWISH_BETA
                    : [in] "+r"(ptr_in),
                      [w0] "+r"(ptr_w0),
@@ -3312,15 +3325,13 @@ void sgemv_hard_swish(const int M,
                      [w2] "+r"(ptr_w2),
                      [w3] "+r"(ptr_w3),
                      [cnt] "+r"(cnt_loop),
+                     [scale_v] "+r"(tmp_ptr),
                      [tail] "+r"(tail_loop)
                    : [out] "r"(ptr_out),
                      [bias0] "r"(bias0),
                      [bias1] "r"(bias1),
                      [bias2] "r"(bias2),
                      [bias3] "r"(bias3),
-                     [scale] "r"(scale),
-                     [offset] "r"(offset),
-                     [threshold] "r"(threshold),
                      [vbeta] "w"(vbeta)
                    : "q0",
                      "q1",
@@ -3370,6 +3381,7 @@ void sgemv_hard_swish(const int M,
   } else {
     LITE_PARALLEL_BEGIN(j, tid, out_cnt) {
       MAIN_LOOP
+      auto tmp_ptr = scale_v;
       asm volatile(SGEMV_IN_4_BIAS SGEMV_KERNEL_4 SGEMV_OUT_4_HARD_SWISH
                    : [in] "+r"(ptr_in),
                      [w0] "+r"(ptr_w0),
@@ -3377,15 +3389,13 @@ void sgemv_hard_swish(const int M,
                      [w2] "+r"(ptr_w2),
                      [w3] "+r"(ptr_w3),
                      [cnt] "+r"(cnt_loop),
+                     [scale_v] "+r"(tmp_ptr),
                      [tail] "+r"(tail_loop)
                    : [out] "r"(ptr_out),
                      [bias0] "r"(bias0),
                      [bias1] "r"(bias1),
                      [bias2] "r"(bias2),
-                     [bias3] "r"(bias3),
-                     [scale] "r"(scale),
-                     [offset] "r"(offset),
-                     [threshold] "r"(threshold)
+                     [bias3] "r"(bias3)
                    : "q0",
                      "q1",
                      "q2",
