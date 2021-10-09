@@ -457,6 +457,138 @@ kernel void conv_2x2(texture2d_array<ftype, access::sample> inTexture
   outTexture.write(relu, gid.xy, gid.z);
 }
 
+kernel void conv_3x1(texture2d_array<ftype, access::sample> inTexture
+                     [[texture(0)]],
+                     texture2d_array<ftype, access::sample> biasTexture
+                     [[texture(1)]],
+                     texture2d_array<ftype, access::write> outTexture
+                     [[texture(2)]],
+                     constant MetalConvParam &param [[buffer(0)]],
+                     const device ftype4 *weights [[buffer(1)]],
+                     uint3 gid [[thread_position_in_grid]]) {
+  if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
+      gid.z >= outTexture.get_array_size()) {
+    return;
+  }
+
+  ushort2 stride = ushort2(param.strideX, param.strideY);
+  const ushort2 posInInput =
+      ushort2(gid.xy) * stride + ushort2(param.offsetX, param.offsetY);
+
+  constexpr sampler sample(
+      coord::pixel, filter::nearest, address::clamp_to_zero);
+
+  const uint kernelHXW = 3;
+
+  uint input_arr_size = inTexture.get_array_size();
+
+  uint weithTo = gid.z * kernelHXW * input_arr_size * 4;
+
+  ftype4 output = ftype4(0.0, 0.0, 0.0, 0.0);
+  if (param.hasAddOp) {
+    output = get_bias(gid, param.addParam, biasTexture);
+  }
+
+  ushort dilation_y = param.dilationY;
+  ftype4 input[3];
+
+  for (uint i = 0; i < input_arr_size; ++i) {
+    input[0] = inTexture.sample(
+        sample, float2(posInInput.x, posInInput.y - dilation_y), i);
+
+    input[1] = inTexture.sample(sample, float2(posInInput.x, posInInput.y), i);
+
+    input[2] = inTexture.sample(
+        sample, float2(posInInput.x, posInInput.y + dilation_y), i);
+
+    for (int j = 0; j < 3; ++j) {
+      ftype4 weight_x = weights[weithTo + 0 * kernelHXW * input_arr_size +
+                                j * input_arr_size + i];
+      output.x += dot(input[j], weight_x);
+
+      ftype4 weight_y = weights[weithTo + 1 * kernelHXW * input_arr_size +
+                                j * input_arr_size + i];
+      output.y += dot(input[j], weight_y);
+
+      ftype4 weight_z = weights[weithTo + 2 * kernelHXW * input_arr_size +
+                                j * input_arr_size + i];
+      output.z += dot(input[j], weight_z);
+
+      ftype4 weight_w = weights[weithTo + 3 * kernelHXW * input_arr_size +
+                                j * input_arr_size + i];
+      output.w += dot(input[j], weight_w);
+    }
+  }
+  ftype4 relu = activation(output, param.activationParam);
+  outTexture.write(relu, gid.xy, gid.z);
+}
+
+kernel void conv_1x3(texture2d_array<ftype, access::sample> inTexture
+                     [[texture(0)]],
+                     texture2d_array<ftype, access::sample> biasTexture
+                     [[texture(1)]],
+                     texture2d_array<ftype, access::write> outTexture
+                     [[texture(2)]],
+                     constant MetalConvParam &param [[buffer(0)]],
+                     const device ftype4 *weights [[buffer(1)]],
+                     uint3 gid [[thread_position_in_grid]]) {
+  if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
+      gid.z >= outTexture.get_array_size()) {
+    return;
+  }
+
+  ushort2 stride = ushort2(param.strideX, param.strideY);
+  const ushort2 posInInput =
+      ushort2(gid.xy) * stride + ushort2(param.offsetX, param.offsetY);
+
+  constexpr sampler sample(
+      coord::pixel, filter::nearest, address::clamp_to_zero);
+
+  const uint kernelHXW = 3;
+
+  uint input_arr_size = inTexture.get_array_size();
+
+  uint weithTo = gid.z * kernelHXW * input_arr_size * 4;
+
+  ftype4 output = ftype4(0.0, 0.0, 0.0, 0.0);
+  if (param.hasAddOp) {
+    output = get_bias(gid, param.addParam, biasTexture);
+  }
+
+  ushort dilation_x = param.dilationX;
+  ftype4 input[3];
+
+  for (uint i = 0; i < input_arr_size; ++i) {
+    input[0] = inTexture.sample(
+        sample, float2(posInInput.x - dilation_x, posInInput.y), i);
+
+    input[1] = inTexture.sample(sample, float2(posInInput.x, posInInput.y), i);
+
+    input[2] = inTexture.sample(
+        sample, float2(posInInput.x + dilation_x, posInInput.y), i);
+
+    for (int j = 0; j < 3; ++j) {
+      ftype4 weight_x = weights[weithTo + 0 * kernelHXW * input_arr_size +
+                                j * input_arr_size + i];
+      output.x += dot(input[j], weight_x);
+
+      ftype4 weight_y = weights[weithTo + 1 * kernelHXW * input_arr_size +
+                                j * input_arr_size + i];
+      output.y += dot(input[j], weight_y);
+
+      ftype4 weight_z = weights[weithTo + 2 * kernelHXW * input_arr_size +
+                                j * input_arr_size + i];
+      output.z += dot(input[j], weight_z);
+
+      ftype4 weight_w = weights[weithTo + 3 * kernelHXW * input_arr_size +
+                                j * input_arr_size + i];
+      output.w += dot(input[j], weight_w);
+    }
+  }
+  ftype4 relu = activation(output, param.activationParam);
+  outTexture.write(relu, gid.xy, gid.z);
+}
+
 kernel void conv_5x1(texture2d_array<ftype, access::sample> inTexture
                      [[texture(0)]],
                      texture2d_array<ftype, access::sample> biasTexture
@@ -580,6 +712,163 @@ kernel void conv_1x5(texture2d_array<ftype, access::sample> inTexture
         sample, float2(posInInput.x + 2 * dilation_x, posInInput.y), i);
 
     for (int j = 0; j < 5; ++j) {
+      ftype4 weight_x = weights[weithTo + 0 * kernelHXW * input_arr_size +
+                                j * input_arr_size + i];
+      output.x += dot(input[j], weight_x);
+
+      ftype4 weight_y = weights[weithTo + 1 * kernelHXW * input_arr_size +
+                                j * input_arr_size + i];
+      output.y += dot(input[j], weight_y);
+
+      ftype4 weight_z = weights[weithTo + 2 * kernelHXW * input_arr_size +
+                                j * input_arr_size + i];
+      output.z += dot(input[j], weight_z);
+
+      ftype4 weight_w = weights[weithTo + 3 * kernelHXW * input_arr_size +
+                                j * input_arr_size + i];
+      output.w += dot(input[j], weight_w);
+    }
+  }
+  ftype4 relu = activation(output, param.activationParam);
+  outTexture.write(relu, gid.xy, gid.z);
+}
+
+kernel void conv_7x1(texture2d_array<ftype, access::sample> inTexture
+                     [[texture(0)]],
+                     texture2d_array<ftype, access::sample> biasTexture
+                     [[texture(1)]],
+                     texture2d_array<ftype, access::write> outTexture
+                     [[texture(2)]],
+                     constant MetalConvParam &param [[buffer(0)]],
+                     const device ftype4 *weights [[buffer(1)]],
+                     uint3 gid [[thread_position_in_grid]]) {
+  if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
+      gid.z >= outTexture.get_array_size()) {
+    return;
+  }
+
+  ushort2 stride = ushort2(param.strideX, param.strideY);
+  const ushort2 posInInput =
+      ushort2(gid.xy) * stride + ushort2(param.offsetX, param.offsetY);
+
+  constexpr sampler sample(
+      coord::pixel, filter::nearest, address::clamp_to_zero);
+
+  const uint kernelHXW = 7;
+
+  uint input_arr_size = inTexture.get_array_size();
+
+  uint weithTo = gid.z * kernelHXW * input_arr_size * 4;
+
+  ftype4 output = ftype4(0.0, 0.0, 0.0, 0.0);
+  if (param.hasAddOp) {
+    output = get_bias(gid, param.addParam, biasTexture);
+  }
+
+  ushort dilation_y = param.dilationY;
+  ftype4 input[7];
+
+  for (uint i = 0; i < input_arr_size; ++i) {
+    input[0] = inTexture.sample(
+        sample, float2(posInInput.x, posInInput.y - 3 * dilation_y), i);
+
+    input[1] = inTexture.sample(
+        sample, float2(posInInput.x, posInInput.y - 2 * dilation_y), i);
+    
+    input[2] = inTexture.sample(
+        sample, float2(posInInput.x, posInInput.y - dilation_y), i);
+
+    input[3] = inTexture.sample(sample, float2(posInInput.x, posInInput.y), i);
+
+    input[4] = inTexture.sample(
+        sample, float2(posInInput.x, posInInput.y + dilation_y), i);
+
+    input[5] = inTexture.sample(
+        sample, float2(posInInput.x, posInInput.y + 2 * dilation_y), i);
+
+    input[6] = inTexture.sample(
+        sample, float2(posInInput.x, posInInput.y + 3 * dilation_y), i);
+
+
+    for (int j = 0; j < 7; ++j) {
+      ftype4 weight_x = weights[weithTo + 0 * kernelHXW * input_arr_size +
+                                j * input_arr_size + i];
+      output.x += dot(input[j], weight_x);
+
+      ftype4 weight_y = weights[weithTo + 1 * kernelHXW * input_arr_size +
+                                j * input_arr_size + i];
+      output.y += dot(input[j], weight_y);
+
+      ftype4 weight_z = weights[weithTo + 2 * kernelHXW * input_arr_size +
+                                j * input_arr_size + i];
+      output.z += dot(input[j], weight_z);
+
+      ftype4 weight_w = weights[weithTo + 3 * kernelHXW * input_arr_size +
+                                j * input_arr_size + i];
+      output.w += dot(input[j], weight_w);
+    }
+  }
+  ftype4 relu = activation(output, param.activationParam);
+  outTexture.write(relu, gid.xy, gid.z);
+}
+
+kernel void conv_1x7(texture2d_array<ftype, access::sample> inTexture
+                     [[texture(0)]],
+                     texture2d_array<ftype, access::sample> biasTexture
+                     [[texture(1)]],
+                     texture2d_array<ftype, access::write> outTexture
+                     [[texture(2)]],
+                     constant MetalConvParam &param [[buffer(0)]],
+                     const device ftype4 *weights [[buffer(1)]],
+                     uint3 gid [[thread_position_in_grid]]) {
+  if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
+      gid.z >= outTexture.get_array_size()) {
+    return;
+  }
+
+  ushort2 stride = ushort2(param.strideX, param.strideY);
+  const ushort2 posInInput =
+      ushort2(gid.xy) * stride + ushort2(param.offsetX, param.offsetY);
+
+  constexpr sampler sample(
+      coord::pixel, filter::nearest, address::clamp_to_zero);
+
+  const uint kernelHXW = 7;
+
+  uint input_arr_size = inTexture.get_array_size();
+
+  uint weithTo = gid.z * kernelHXW * input_arr_size * 4;
+
+  ftype4 output = ftype4(0.0, 0.0, 0.0, 0.0);
+  if (param.hasAddOp) {
+    output = get_bias(gid, param.addParam, biasTexture);
+  }
+
+  ushort dilation_x = param.dilationX;
+  ftype4 input[7];
+
+  for (uint i = 0; i < input_arr_size; ++i) {
+    input[0] = inTexture.sample(
+        sample, float2(posInInput.x - 3 * dilation_x, posInInput.y), i);
+
+    input[1] = inTexture.sample(
+        sample, float2(posInInput.x - 2 * dilation_x, posInInput.y), i);
+        
+    input[2] = inTexture.sample(
+        sample, float2(posInInput.x - dilation_x, posInInput.y), i);
+
+    input[3] = inTexture.sample(sample, float2(posInInput.x, posInInput.y), i);
+
+    input[4] = inTexture.sample(
+        sample, float2(posInInput.x + dilation_x, posInInput.y), i);
+
+    input[5] = inTexture.sample(
+        sample, float2(posInInput.x + 2 * dilation_x, posInInput.y), i);
+
+    input[6] = inTexture.sample(
+        sample, float2(posInInput.x + 3 * dilation_x, posInInput.y), i);
+
+    for (int j = 0; j < 7; ++j) {
       ftype4 weight_x = weights[weithTo + 0 * kernelHXW * input_arr_size +
                                 j * input_arr_size + i];
       output.x += dot(input[j], weight_x);

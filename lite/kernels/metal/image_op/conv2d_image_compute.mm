@@ -252,12 +252,20 @@ std::string Conv2dImageCompute::KernelFunctionName(const param_t& param,
             } else {
                 return "group_conv_3x3";
             }
+        } else if (filter_w == 1 && filter_h == 3) {
+            return "conv_3x1";
+        } else if (filter_w == 3 && filter_h == 1) {
+            return "conv_1x3";
         } else if (filter_w == 1 && filter_h == 5) {
             return "conv_5x1";
         } else if (filter_w == 5 && filter_h == 1) {
             return "conv_1x5";
         } else if (filter_w == 7 && filter_h == 7) {
             return "conv_7x7";
+        } else if (filter_w == 1 && filter_h == 7) {
+            return "conv_7x1";
+        } else if (filter_w == 7 && filter_h == 1) {
+            return "conv_1x7";
         } else {
             return "";
         }
