@@ -49,6 +49,8 @@ void MulCompute::Run() {
   CHECK_EQ(x_w, y_h) << "x_w must be equal with y_h";
   k_ = x_w;
   auto& ctx = this->ctx_->template As<ARMContext>();
+  operators::ActivationParam act_param;
+  act_param.has_active = false;
   if (n_ == 1) {
     lite::arm::math::sgemv(x_data,
                            y_data,
@@ -59,8 +61,7 @@ void MulCompute::Run() {
                            0.f,
                            false,
                            nullptr,
-                           false,
-                           lite_api::ActivationType::kIndentity,
+                           act_param,
                            &ctx);
 
   } else {
@@ -77,8 +78,6 @@ void MulCompute::Run() {
     if (is_tranposed_y) {
       ldb = k_;
     }
-    operators::ActivationParam act_param;
-    act_param.has_active = false;
     lite::arm::math::sgemm_prepack(is_tranposed_y,
                                    m_,
                                    n_,

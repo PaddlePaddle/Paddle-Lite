@@ -300,11 +300,8 @@ void DeformableConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
             0.f,
             is_bias,
             bias_group,
-            param.conv_param.activation_param.has_active,
-            param.conv_param.activation_param.active_type,
-            &ctx,
-            param.conv_param.activation_param.Relu_clipped_coef,
-            param.conv_param.activation_param.Leaky_relu_alpha);
+            param.conv_param.activation_param,
+            &ctx);
       } else {
         lite::arm::math::sgemm_prepack(
             false,
