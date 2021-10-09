@@ -48,8 +48,8 @@ class generate_gemm_s8u8_x86_kern {
                                        int M,
                                        int N,
                                        int K,
-                                       int8_t *A,
-                                       int8_t *B,
+                                       const int8_t *A,
+                                       const int8_t *B,
                                        int8_t *C,
                                        int ldc,
                                        const float *Sa,
@@ -65,11 +65,11 @@ class generate_gemm_s8u8_x86_kern {
   ~generate_gemm_s8u8_x86_kern() { gemm_int8_deinit(); }
 
   void packB_i82u8(
-      int N, int K, int stride, int8_t *B, uint8_t *pack_B, bool is_trans) {
+      int N, int K, int stride, const int8_t *B, uint8_t *pack_B, bool is_trans) {
     gemm_s8u8s8_runpackB(N, K, stride, B, pack_B, is_trans);
   }
 
-  void prepackA_i8(int M, int K, int8_t *A, int8_t *pack_A, bool is_trans) {
+  void prepackA_i8(int M, int K, const int8_t *A, int8_t *pack_A, bool is_trans) {
     memset(pack_A, 0, _M * _k_align4);
     gemm_s8u8s8_prepackA(M, K, A, pack_A, is_trans);
   }
@@ -79,7 +79,7 @@ class generate_gemm_s8u8_x86_kern {
     int block_m, block_n;
     int min_m, min_n;
     int8_t *cur_a = _pack_A;
-    int8_t *cur_b = _B;
+    const int8_t *cur_b = _B;
     int8_t *cur_c = _C;
     calc_block(_M, _N, _K, &block_m, &block_n);
     for (loop_n = 0; loop_n < _N; loop_n += block_n) {
@@ -210,8 +210,8 @@ class generate_gemm_s8u8_x86_kern {
   float *_Sa;
   float _Sb, _Sc;
   float *_scale;
-  int8_t *_A;
-  int8_t *_B;
+  const int8_t *_A;
+  const int8_t *_B;
   int8_t *_C;
   bool _C_is_int8, _is_trans_A, _is_trans_B;
   const float *scale;

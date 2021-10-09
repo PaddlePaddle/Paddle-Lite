@@ -12,6 +12,17 @@ if((NOT LITE_WITH_OPENCL AND NOT LITE_WITH_FPGA AND NOT LITE_WITH_MLU) AND (LITE
     lite_cc_test(sparse_conv_int8_compute_test SRCS sparse_conv_int8_compute_test.cc)
     lite_cc_test(sparse_conv_f32_compute_test SRCS sparse_conv_f32_compute_test.cc)
 
+    if(LITE_WITH_X86)
+        lite_cc_test(x86_gemm_s8u8_compute_test SRCS x86_gemm_s8u8_compute_test.cc)
+        if(WITH_AVX AND AVX_FOUND)
+          if(WIN32)
+              set_target_properties(x86_gemm_s8u8_compute_test PROPERTIES COMPILE_FLAGS "/arch:AVX2 /DAVX2 /fp:strict")
+          else()
+              set_target_properties(x86_gemm_s8u8_compute_test PROPERTIES COMPILE_FLAGS "-mfma -mf16c -mavx2")
+          endif()
+        endif()
+    endif()
+
     if(LITE_BUILD_EXTRA)
         lite_cc_test(deformable_conv_compute_test SRCS deformable_conv_compute_test.cc)
         lite_cc_test(layout_compute_test SRCS layout_compute_test.cc)

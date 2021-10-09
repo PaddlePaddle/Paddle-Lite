@@ -85,11 +85,12 @@ typedef long long int __int64;  // NOLINT
   _mm_storel_pi(reinterpret_cast<__m64 *>(out_ptr), _mm_castsi128_ps(vec_out));
 
 // if K is not 4-aligned, need to pad zero
-void packA_i8_notrans(int M, int K, int8_t *A, int8_t *pack_A) {
+void packA_i8_notrans(int M, int K, const int8_t *AA, int8_t *pack_A) {
   int8_t *out_ptr = pack_A;
   int loop_m = 0;
   int loop_k = 0;
   int remain_k = 0;
+  int8_t *A = const_cast<int8_t*>(AA);
 
   __m256i vec_line0, vec_line1, vec_lo, vec_hi;
   __m128i vec_line0_h, vec_line1_h, vec_lo_h, vec_hi_h;
@@ -201,12 +202,13 @@ void packA_i8_notrans(int M, int K, int8_t *A, int8_t *pack_A) {
   vec_line[2] = _mm_setzero_si128(); \
   vec_line[3] = _mm_setzero_si128();
 
-void packA_i8_trans(int M, int K, int8_t *A, int8_t *pack_A) {
+void packA_i8_trans(int M, int K, const int8_t *AA, int8_t *pack_A) {
   int8_t *out_ptr = pack_A;
   int loop_m = 0;
   int loop_k = 0;
   int remain_k = 0;
   int K_align = 0;
+  int8_t *A = const_cast<int8_t*>(AA);
 
   __m128i vec_12, vec_23, vec_out;
   __m128i vec_line[4];
@@ -558,12 +560,12 @@ Attention:
       break;                                                                 \
   }
 
-void packB_i82u8_notrans(int N, int K, int stride, int8_t *B, uint8_t *pack_B) {
+void packB_i82u8_notrans(int N, int K, int stride, const int8_t *B, uint8_t *pack_B) {
   int loop_n = 0;
   int loop_k = 0;
   int remain_k = 0;
   int k_align4 = 0;
-  int8_t *b_ptr = B;
+  int8_t *b_ptr = const_cast<int8_t*>(B);
   uint8_t *out_ptr = pack_B;
 
   __m256i vec_line0, vec_line1, vec_line2, vec_line3;
@@ -873,10 +875,10 @@ void packB_i82u8_notrans(int N, int K, int stride, int8_t *B, uint8_t *pack_B) {
                      veci_line[0]);                                        \
   }
 
-void packB_i82u8_trans(int N, int K, int step, int8_t *B, uint8_t *pack_B) {
+void packB_i82u8_trans(int N, int K, int step, const int8_t *B, uint8_t *pack_B) {
   int loop_n = 0, loop_k = 0;
   int remain_k = 0;
-  int8_t *b_ptr = B;
+  int8_t *b_ptr = const_cast<int8_t*>(B);
   uint8_t *out_ptr = pack_B;
   int k_align4 = ((K + 3) / 4);
   k_align4 = k_align4 * 4;
@@ -1065,7 +1067,7 @@ void packB_i82u8_trans(int N, int K, int step, int8_t *B, uint8_t *pack_B) {
 // PackA 's K dim need 4-aligned,
 // so it needs M * K_4aligned Bytes.
 void gemm_s8u8s8_prepackA(
-    int M, int K, int8_t *A, int8_t *pack_A, bool is_trans) {
+    int M, int K, const int8_t *A, int8_t *pack_A, bool is_trans) {
   if (is_trans) {
     packA_i8_trans(M, K, A, pack_A);
   } else {
@@ -1074,7 +1076,7 @@ void gemm_s8u8s8_prepackA(
 }
 
 void gemm_s8u8s8_runpackB(
-    int N, int K, int stride, int8_t *B, uint8_t *pack_B, bool is_trans) {
+    int N, int K, int stride, const int8_t *B, uint8_t *pack_B, bool is_trans) {
   if (is_trans) {
     packB_i82u8_trans(N, K, stride, B, pack_B);
   } else {

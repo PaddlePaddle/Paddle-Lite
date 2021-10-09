@@ -28,10 +28,10 @@ namespace math {
 // PackA 's K dim need 4-aligned,
 // so it needs M * K_4aligned Bytes.
 void gemm_s8u8s8_prepackA(
-    int M, int K, int8_t* A, int8_t* pack_A, bool is_trans);
+    int M, int K, const int8_t* A, int8_t* pack_A, bool is_trans);
 
 void gemm_s8u8s8_runpackB(
-    int N, int K, int stride, int8_t* B, uint8_t* pack_B, bool is_trans);
+    int N, int K, int stride, const int8_t* B, uint8_t* pack_B, bool is_trans);
 
 void gemm_kernel_loop_int8(int M,
                            int N,
