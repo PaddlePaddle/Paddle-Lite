@@ -1514,11 +1514,12 @@ void sgemv_trans(const int M,
   /* end */                                                 \
   "4:                           \n" /* end */               \
   "fmov   s2, %w[offset]        \n"                         \
-  "fmov   s3, %w[threshold]     \n"                         \
   "fmov   s1, %w[scale]         \n" /* mov alpha to s1  */  \
+  "movi   d6, #0                \n"                         \
+  "fmov   s3, %w[threshold]     \n"                         \
   "fadd   s4, s8, s2            \n"                         \
   "fmul   s5, s8, s1            \n"                         \
-  "fmax   s4, s4, #0.0          \n" /* cmp with zero*/      \
+  "fmax   s4, s4, s6            \n" /* cmp with zero*/      \
   "fmin   s4, s4, s3            \n"                         \
   "fmul   s8, s4, s5            \n"                         \
   "str s8, [%[out]]             \n" /* save result */
@@ -1675,16 +1676,18 @@ void sgemv_trans(const int M,
   /* end */                                                 \
   "4:                           \n" /* end */               \
   "fmov   s2, %w[offset]        \n"                         \
-  "fmov   s3, %w[threshold]     \n"                         \
   "fmov   s1, %w[scale]         \n" /* mov alpha to s1  */  \
+  "movi   d9, #0                \n"                         \
+  "fmov   s3, %w[threshold]     \n"                         \
   "ldr    s6, [%[out]]          \n"                         \
   "fmov   s7, %w[beta]          \n"                         \
   "fadd   s4, s8, s2            \n"                         \
   "fmul   s5, s8, s1            \n"                         \
-  "fmax   s4, s4, #0.0          \n" /* cmp with zero*/      \
+  "fmax   s4, s4, s9            \n" /* cmp with zero*/      \
   "fmin   s4, s4, s3            \n"                         \
   "fmul   s8, s4, s5            \n"                         \
-  "fmla   s8, s6, s7            \n"                         \
+  "fmul   s2, s6, s7            \n"                         \
+  "fadd   s8, s8, s2            \n"                         \
   "str s8, [%[out]]             \n" /* save result */
 #else  // __aarch64__
 
