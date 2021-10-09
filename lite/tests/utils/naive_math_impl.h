@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <algorithm>
 #include <cmath>
 
 template <typename type>
@@ -307,7 +308,10 @@ static void basic_gemv(int m,
                        bool flag_bias = false,
                        int flag_act = false,
                        float six = 6.f,
-                       float leakey_relu_alpha = 1.f) {
+                       float leakey_relu_alpha = 1.f,
+                       float scale = 6.f,
+                       float offset = 3.f,
+                       float threshold = 6.f) {
 #ifdef PADDLE_WITH_MKLML
 #pragma omp parallel for
 #endif
@@ -335,6 +339,10 @@ static void basic_gemv(int m,
         c[i] = c[i] < six ? c[i] : six;  // ut compute
       } else if (flag_act == 4) {        // leakey relu
         c[i] = tmp < (type2)0 ? (type2)(tmp * leakey_relu_alpha) : tmp;
+      } else if (flag_act == 10) {  // hard_swish
+        c[i] = std : min(static_cast<type2>(threshold),
+                         std::max(static_cast<type2>(0), tmp)) *
+                     static_cast<type2>(tmp * scale);
       }
     } else {
       c[i] = tmp;
