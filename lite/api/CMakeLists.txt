@@ -206,7 +206,7 @@ endif()
 if (LITE_WITH_PYTHON)
     # add library for opt_base
     add_subdirectory(python)
-    lite_cc_library(lite_pybind SHARED SRCS python/pybind/pybind.cc tools/opt_base.cc DEPS ${full_lib_DEPS} paddle_api_full ${external_libs_DEPS})
+    lite_cc_library(lite_pybind SHARED SRCS python/pybind/pybind.cc tools/opt_base.cc DEPS ${full_lib_DEPS} paddle_api_full ${external_libs_DEPS}  pybind python)
 endif()
 
 
