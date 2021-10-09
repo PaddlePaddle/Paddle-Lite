@@ -1029,7 +1029,7 @@ void sparse_conv_fp32_pipelined(const float* A,
       const float* w = A;
       const int32_t* dmap = widx_dmap;
       const uint32_t* nnzmap = nidx_nnzmap;
-
+      // LOG(INFO) << "cur_i: " << cur_i;
       for (size_t i = 0; i < nc; i++) {
         uint32_t nnz = *nnzmap++;
         uint32_t pair_num = nnz / 4;
@@ -1905,8 +1905,18 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   size_t output_stride = N * sizeof(float);
   size_t output_decrement = output_stride * nc - 48 * sizeof(float);
 
-  while
-    SPARSE_LIKELY(mc >= 48 * sizeof(int8_t)) {
+  // while
+  //   SPARSE_LIKELY(mc >= 48 * sizeof(int8_t)) {
+  size_t output_total = output_stride * nc;
+  size_t mend = N / 48;
+  size_t mnum = mend * 48;
+  if (mend > 0) {
+    LITE_PARALLEL_COMMON_BEGIN(mi, tid, mnum, 0, 48) {
+      size_t cur_i = mi / 48;
+      const int8_t* cur_B = B + cur_i * 48;
+      float* cur_output = reinterpret_cast<float*>((uintptr_t)output +
+                                                   48 * sizeof(float) * cur_i);
+
       const int8_t* w = A;
       const int32_t* dmap = widx_dmap;
       const uint32_t* nnzmap = nidx_nnzmap;
@@ -1919,8 +1929,8 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
         // clang-format off
           asm volatile(SPARSE_INT8_F32_W48_V8_OUT
             : [a_ptr] "+r"(w),
-              [b_ptr] "+r"(B),
-              [c_ptr] "+r"(output),
+              [b_ptr] "+r"(cur_B),
+              [c_ptr] "+r"(cur_output),
               [k] "+r"(nnz),
               [widx_dmap] "+r"(dmap)
             : [vscale] "r"(vsclae),
@@ -1932,12 +1942,19 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
                 "v16", "v17", "v18", "v21", "v22", "v23", "v24", "v25", 
                 "v26", "v27", "v28", "v30", "v31", "w1", "x1", "cc", "memory");
         // clang-format on
-        output = reinterpret_cast<float*>((uintptr_t)output + output_stride);
+        // output = reinterpret_cast<float*>((uintptr_t)output + output_stride);
       }
-      output = reinterpret_cast<float*>((uintptr_t)output - output_decrement);
-      B += 48;
-      mc -= 48 * sizeof(int8_t);
+      // output = reinterpret_cast<float*>((uintptr_t)output - output_decrement);
+      // B += 48;
+      // mc -= 48 * sizeof(int8_t);
     }
+    LITE_PARALLEL_COMMON_END();
+  }
+  B += mend * 48;
+  mc -= mend * 48 * sizeof(int8_t);
+  output =
+      reinterpret_cast<float*>((uintptr_t)output + 48 * sizeof(float) * mend);
+
   if
     SPARSE_UNLIKELY(mc != 0) {
       output_decrement += 16 * sizeof(float);
@@ -2895,8 +2912,18 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
   size_t output_stride = N * sizeof(int8_t);
   size_t output_decrement = output_stride * nc - 48 * sizeof(int8_t);
   float vmax[4] = {-127.0, -127.0, -127.0, -127.0};
-  while
-    SPARSE_LIKELY(mc >= 48 * sizeof(int8_t)) {
+  // while
+  //   SPARSE_LIKELY(mc >= 48 * sizeof(int8_t)) {
+  size_t output_total = output_stride * nc;
+  size_t mend = N / 48;
+  size_t mnum = mend * 48;
+  if (mend > 0) {
+    LITE_PARALLEL_COMMON_BEGIN(mi, tid, mnum, 0, 48) {
+      size_t cur_i = mi / 48;
+      const int8_t* cur_B = B + cur_i * 48;
+      int8_t* cur_output = reinterpret_cast<int8_t*>((uintptr_t)output +
+                                                   48 * sizeof(int8_t) * cur_i);
+
       const int8_t* w = A;
       const int32_t* dmap = widx_dmap;
       const uint32_t* nnzmap = nidx_nnzmap;
@@ -2909,8 +2936,8 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
         // clang-format off
           asm volatile(SPARSE_INT8_INT8_W48_V8_OUT
             : [a_ptr] "+r"(w),
-              [b_ptr] "+r"(B),
-              [c_ptr] "+r"(output),
+              [b_ptr] "+r"(cur_B),
+              [c_ptr] "+r"(cur_output),
               [k] "+r"(nnz),
               [widx_dmap] "+r"(dmap)
             : [vscale] "r"(vsclae),
@@ -2923,12 +2950,19 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
                 "v16", "v17", "v18", "v19", "v21", "v22", "v23", "v24", "v25", 
                 "v26", "v27", "v28", "v30", "v31", "w0", "w1", "x1", "cc", "memory");
         // clang-format on
-        output = reinterpret_cast<int8_t*>((uintptr_t)output + output_stride);
+        // output = reinterpret_cast<int8_t*>((uintptr_t)output + output_stride);
       }
-      output = reinterpret_cast<int8_t*>((uintptr_t)output - output_decrement);
-      B += 48;
-      mc -= 48 * sizeof(int8_t);
+      // output = reinterpret_cast<int8_t*>((uintptr_t)output - output_decrement);
+      // B += 48;
+      // mc -= 48 * sizeof(int8_t);
     }
+    LITE_PARALLEL_COMMON_END();
+  }
+  B += mend * 48;
+  mc -= mend * 48 * sizeof(int8_t);
+  output =
+      reinterpret_cast<int8_t*>((uintptr_t)output + 48 * sizeof(int8_t) * mend);
+
   if
     SPARSE_UNLIKELY(mc != 0) {
       output_decrement += 16 * sizeof(int8_t);
@@ -3694,8 +3728,17 @@ void sparse_conv_fp32_pipelined(const float* A,
   size_t nc = M;
   size_t output_stride = N * sizeof(float);
   size_t output_decrement = output_stride * nc - 48 * sizeof(float);
-  while
-    SPARSE_LIKELY(mc >= 48 * sizeof(float)) {
+  // while
+  //   SPARSE_LIKELY(mc >= 48 * sizeof(float)) {
+  size_t output_total = output_stride * nc;
+  size_t mend = N / 48;
+  size_t mnum = mend * 48;
+  if (mend > 0) {
+    LITE_PARALLEL_COMMON_BEGIN(mi, tid, mnum, 0, 48) {
+      size_t cur_i = mi / 48;
+      const float* cur_B = B + cur_i * 48;
+      float* cur_output = reinterpret_cast<float*>((uintptr_t)output +
+                                                   48 * sizeof(float) * cur_i);  
       const float* w = A;
       const int32_t* dmap = widx_dmap;
       const uint32_t* nnzmap = nidx_nnzmap;
@@ -3709,8 +3752,8 @@ void sparse_conv_fp32_pipelined(const float* A,
         // clang-format off
             asm volatile(SPARSE_F32_F32_W48_v7_OUT  
               : [a_ptr] "+r"(w),
-                [b_ptr] "+r"(B),
-                [c_ptr] "+r"(output),
+                [b_ptr] "+r"(cur_B),
+                [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
                 [n] "+r"(pair_num),
                 [m] "+r"(lave_num),
@@ -3740,14 +3783,21 @@ void sparse_conv_fp32_pipelined(const float* A,
                 "cc",
                 "memory");
         // clang-format on
-        output = reinterpret_cast<float*>((uintptr_t)output + output_stride);
+        // TODO(yingyu): check the modifications
+        // output = reinterpret_cast<float*>((uintptr_t)output + output_stride);
         w = w + lave_num;
         dmap = dmap + lave_num;
       }
-      output = reinterpret_cast<float*>((uintptr_t)output - output_decrement);
-      B += 48;
-      mc -= 48 * sizeof(float);
+      // output = reinterpret_cast<float*>((uintptr_t)output - output_decrement);
+      // B += 48;
+      // mc -= 48 * sizeof(float);
     }
+    LITE_PARALLEL_COMMON_END();
+  }
+  B += mend * 48;
+  mc -= mend * 48 * sizeof(float);
+  output =
+      reinterpret_cast<float*>((uintptr_t)output + 48 * sizeof(float) * mend);
 
   if
     SPARSE_UNLIKELY(mc != 0) {
@@ -4684,8 +4734,17 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   size_t output_stride = N * sizeof(float);
   size_t output_decrement = output_stride * nc - 48 * sizeof(float);
 
-  while
-    SPARSE_LIKELY(mc >= 48 * sizeof(int8_t)) {
+  // while
+  //   SPARSE_LIKELY(mc >= 48 * sizeof(int8_t)) {
+  size_t output_total = output_stride * nc;
+  size_t mend = N / 48;
+  size_t mnum = mend * 48;
+  if (mend > 0) {
+    LITE_PARALLEL_COMMON_BEGIN(mi, tid, mnum, 0, 48) {
+      size_t cur_i = mi / 48;
+      const int8_t* cur_B = B + cur_i * 48;
+      float* cur_output = reinterpret_cast<float*>((uintptr_t)output + 48 * sizeof(float) * cur_i);
+
       const int8_t* w = A;
       const int32_t* dmap = widx_dmap;
       const uint32_t* nnzmap = nidx_nnzmap;
@@ -4699,8 +4758,8 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
         // clang-format off
           asm volatile(SPARSE_INT8_F32_W48_v7_OUT
             : [a_ptr] "+r"(w),
-              [b_ptr] "+r"(B),
-              [c_ptr] "+r"(output),
+              [b_ptr] "+r"(cur_B),
+              [c_ptr] "+r"(cur_output),
               [k] "+r"(nnz),
               [widx_dmap] "+r"(dmap)
             : [vscale] "r"(vsclae),
@@ -4729,12 +4788,18 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
               "cc",
               "memory");
         // clang-format on
-        output = reinterpret_cast<float*>((uintptr_t)output + output_stride);
+        // output = reinterpret_cast<float*>((uintptr_t)output + output_stride);
       }
-      output = reinterpret_cast<float*>((uintptr_t)output - output_decrement);
-      B += 48;
-      mc -= 48 * sizeof(int8_t);
+      // output = reinterpret_cast<float*>((uintptr_t)output - output_decrement);
+      // B += 48;
+      // mc -= 48 * sizeof(int8_t);
     }
+    LITE_PARALLEL_COMMON_END();
+  }
+  B += mend * 48;
+  mc -= mend * 48 * sizeof(int8_t);
+  output = reinterpret_cast<float*>((uintptr_t)output + 48 * sizeof(float) * mend);
+
   if
     SPARSE_UNLIKELY(mc != 0) {
       output_decrement += 16 * sizeof(float);
@@ -5891,8 +5956,17 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
   size_t output_stride = N * sizeof(int8_t);
   size_t output_decrement = output_stride * nc - 48 * sizeof(int8_t);
   float vmax[4] = {-127.0, -127.0, -127.0, -127.0};
-  while
-    SPARSE_LIKELY(mc >= 48 * sizeof(int8_t)) {
+  // while
+  //   SPARSE_LIKELY(mc >= 48 * sizeof(int8_t)) {
+  size_t output_total = output_stride * nc;
+  size_t mend = N / 48;
+  size_t mnum = mend * 48;
+  if (mend > 0) {
+    LITE_PARALLEL_COMMON_BEGIN(mi, tid, mnum, 0, 48) {
+      size_t cur_i = mi / 48;
+      const int8_t* cur_B = B + cur_i * 48;
+      int8_t* cur_output = reinterpret_cast<int8_t*>((uintptr_t)output + 48 * sizeof(int8_t) * cur_i);
+
       const int8_t* w = A;
       const int32_t* dmap = widx_dmap;
       const uint32_t* nnzmap = nidx_nnzmap;
@@ -5906,8 +5980,8 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
         // clang-format off
           asm volatile(SPARSE_INT8_INT8_W48_v7_OUT
             : [a_ptr] "+r"(w),
-              [b_ptr] "+r"(B),
-              [c_ptr] "+r"(output),
+              [b_ptr] "+r"(cur_B),
+              [c_ptr] "+r"(cur_output),
               [k] "+r"(nnz),
               [widx_dmap] "+r"(dmap)
             : [vscale] "r"(vsclae),
@@ -5937,12 +6011,18 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
               "cc",
               "memory");
         // clang-format on
-        output = reinterpret_cast<int8_t*>((uintptr_t)output + output_stride);
+        // output = reinterpret_cast<int8_t*>((uintptr_t)output + output_stride);
       }
-      output = reinterpret_cast<int8_t*>((uintptr_t)output - output_decrement);
-      B += 48;
-      mc -= 48 * sizeof(int8_t);
+      // output = reinterpret_cast<int8_t*>((uintptr_t)output - output_decrement);
+      // B += 48;
+      // mc -= 48 * sizeof(int8_t);
     }
+    LITE_PARALLEL_COMMON_END();
+  }
+  B += mend * 48;
+  mc -= mend * 48 * sizeof(int8_t);
+  output = reinterpret_cast<int8_t*>((uintptr_t)output + 48 * sizeof(int8_t) * mend);
+
   if
     SPARSE_UNLIKELY(mc != 0) {
       output_decrement += 16 * sizeof(int8_t);
