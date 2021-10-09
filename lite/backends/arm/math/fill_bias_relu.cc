@@ -200,19 +200,6 @@ namespace math {
   "vbif q6, q7, q13             @ choose \n"
 
 #define FILL_HARD_SWISH                          \
-  "vcge.f32 q7, q3, %q[vzero]   @ vcgeq_u32 \n"  \
-  "vmul.f32 q8, q3, %q[vscale]  @ vmulq_f32 \n"  \
-  "vcge.f32 q9, q4, %q[vzero]   @ vcgeq_u32 \n"  \
-  "vmul.f32 q10, q4, %q[vscale]  @ vmulq_f32 \n" \
-  "vcge.f32 q11, q5, %q[vzero]   @ vcgeq_u32 \n" \
-  "vmul.f32 q12, q5, %q[vscale]  @ vmulq_f32 \n" \
-  "vbif q3, q8, q7               @ choose \n"    \
-  "vcge.f32 q13, q6, %q[vzero]   @ vcgeq_u32 \n" \
-  "vmul.f32 q7, q6, %q[vscale]  @ vmulq_f32 \n" \
-  "vbif q4, q10, q9              @ choose \n"    \
-  "vbif q5, q12, q11             @ choose \n"    \
-  "vbif q6, q7, q13             @ choose \n"
-
   "vadd.f32  q7,  q3,  %q[offset] @ add \n"      \
   "vadd.f32  q8,  q4,  %q[offset] @ add \n"      \
   "vadd.f32  q9,  q5,  %q[offset] @ add \n"      \
