@@ -136,7 +136,7 @@ typedef enum {
    * output = abs(input)
    *
    * Inputs:
-   * * 0: input0, a NNADAPTER_TENSOR_FLOAT32,
+   * * 0: input, a NNADAPTER_TENSOR_FLOAT32,
    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
    *
    * Outputs:
@@ -1814,7 +1814,7 @@ int NNAdapter_getDeviceCount(uint32_t* numDevices);
  *
  * Available since version 1.
  */
-int NNAdapterDevice_Acquire(const char* name, NNAdapterDevice** device);
+int NNAdapterDevice_acquire(const char* name, NNAdapterDevice** device);
 /**
  * Release the target device.
  *

@@ -113,6 +113,7 @@ Welcome to Paddle-Lite's documentation!
   develop_guides/add_layout
   develop_guides/add_new_pass
   develop_guides/add_hardware
+  develop_guides/nnadapter
 
 .. toctree::
   :maxdepth: 1
