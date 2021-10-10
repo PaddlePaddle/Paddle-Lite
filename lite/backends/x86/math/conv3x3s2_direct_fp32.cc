@@ -371,7 +371,8 @@ void conv_direct_3x3s2_tranpose_out(int bs,
                                     float* o_data,
                                     float* trans_out,
                                     const float* bias,
-                                    lite_api::ActivationType active_type) {
+                                    lite_api::ActivationType active_type,
+                                    operators::ActivationParam act_param) {
 #ifdef __AVX__
   constexpr int BLOCK = 8;
 #else
@@ -452,7 +453,7 @@ void conv_direct_3x3s2_tranpose_out(int bs,
           } else if (active_type == lite_api::ActivationType::kRelu6) {
 #ifdef __AVX__
             __m256 vzero = _mm256_set1_ps(0.f);
-            __m256 vsix = _mm256_set1_ps(6.f);
+            __m256 vsix = _mm256_set1_ps(act_param.Relu_clipped_coef);
             row0 = _mm256_max_ps(row0, vzero);
             row1 = _mm256_max_ps(row1, vzero);
             row2 = _mm256_max_ps(row2, vzero);
@@ -472,7 +473,7 @@ void conv_direct_3x3s2_tranpose_out(int bs,
 
 #else
             __m128 vzero = _mm_set1_ps(0.f);
-            __m128 vsix = _mm_set1_ps(6.f);
+            __m128 vsix = _mm_set1_ps(act_param.Relu_clipped_coef);
             row0 = _mm_max_ps(row0, vzero);
             row1 = _mm_max_ps(row1, vzero);
             row2 = _mm_max_ps(row2, vzero);
@@ -481,6 +482,115 @@ void conv_direct_3x3s2_tranpose_out(int bs,
             row1 = _mm_min_ps(row1, vsix);
             row2 = _mm_min_ps(row2, vsix);
             row3 = _mm_min_ps(row3, vsix);
+#endif
+
+          } else if (active_type == lite_api::ActivationType::kLeakyRelu) {
+#ifdef __AVX__
+            __m256 vzero = _mm256_set1_ps(0.f);
+            __m256 vscale = _mm256_set1_ps(act_param.Leaky_relu_alpha);
+            row0 = _mm256_blendv_ps(_mm256_mul_ps(row0, vscale),
+                                    row0,
+                                    _mm256_cmp_ps(row0, vzero, _CMP_GT_OS));
+            row1 = _mm256_blendv_ps(_mm256_mul_ps(row1, vscale),
+                                    row0,
+                                    _mm256_cmp_ps(row1, vzero, _CMP_GT_OS));
+            row2 = _mm256_blendv_ps(_mm256_mul_ps(row2, vscale),
+                                    row0,
+                                    _mm256_cmp_ps(row2, vzero, _CMP_GT_OS));
+            row3 = _mm256_blendv_ps(_mm256_mul_ps(row3, vscale),
+                                    row0,
+                                    _mm256_cmp_ps(row3, vzero, _CMP_GT_OS));
+            row4 = _mm256_blendv_ps(_mm256_mul_ps(row4, vscale),
+                                    row0,
+                                    _mm256_cmp_ps(row4, vzero, _CMP_GT_OS));
+            row5 = _mm256_blendv_ps(_mm256_mul_ps(row5, vscale),
+                                    row0,
+                                    _mm256_cmp_ps(row5, vzero, _CMP_GT_OS));
+            row6 = _mm256_blendv_ps(_mm256_mul_ps(row6, vscale),
+                                    row0,
+                                    _mm256_cmp_ps(row6, vzero, _CMP_GT_OS));
+            row7 = _mm256_blendv_ps(_mm256_mul_ps(row7, vscale),
+                                    row0,
+                                    _mm256_cmp_ps(row7, vzero, _CMP_GT_OS));
+#else
+            __m128 vzero = _mm_set1_ps(0.f);
+            __m128 vscale = _mm_set1_ps(act_param.Leaky_relu_alpha);
+            row0 = _mm_blendv_ps(_mm_mul_ps(row0, vscale),
+                                 row0,
+                                 _mm_cmp_ps(row0, vzero, _CMP_GT_OS));
+            row1 = _mm_blendv_ps(_mm_mul_ps(row1, vscale),
+                                 row0,
+                                 _mm_cmp_ps(row1, vzero, _CMP_GT_OS));
+            row2 = _mm_blendv_ps(_mm_mul_ps(row2, vscale),
+                                 row0,
+                                 _mm_cmp_ps(row2, vzero, _CMP_GT_OS));
+            row3 = _mm_blendv_ps(_mm_mul_ps(row3, vscale),
+                                 row0,
+                                 _mm_cmp_ps(row3, vzero, _CMP_GT_OS));
+#endif
+          } else if (active_type == lite_api::ActivationType::kHardSwish) {
+#ifdef __AVX__
+            __m256 vzero = _mm256_set1_ps(0.f);
+            __m256 voffset = _mm256_set1_ps(act_param.hard_swish_offset);
+            __m256 vscale = _mm256_set1_ps(1.0 / act_param.hard_swish_scale);
+            __m256 vthreshold = _mm256_set1_ps(act_param.hard_swish_threshold);
+            row0 = _mm256_mul_ps(
+                _mm256_min_ps(
+                    vthreshold,
+                    _mm256_max_ps(_mm256_add_ps(row0, voffset), vzero)),
+                _mm256_mul_ps(row0, vscale));
+            row1 = _mm256_mul_ps(
+                _mm256_min_ps(
+                    vthreshold,
+                    _mm256_max_ps(_mm256_add_ps(row1, voffset), vzero)),
+                _mm256_mul_ps(row1, vscale));
+            row2 = _mm256_mul_ps(
+                _mm256_min_ps(
+                    vthreshold,
+                    _mm256_max_ps(_mm256_add_ps(row2, voffset), vzero)),
+                _mm256_mul_ps(row2, vscale));
+            row3 = _mm256_mul_ps(
+                _mm256_min_ps(
+                    vthreshold,
+                    _mm256_max_ps(_mm256_add_ps(row3, voffset), vzero)),
+                _mm256_mul_ps(row3, vscale));
+            row4 = _mm256_mul_ps(
+                _mm256_min_ps(
+                    vthreshold,
+                    _mm256_max_ps(_mm256_add_ps(row4, voffset), vzero)),
+                _mm256_mul_ps(row4, vscale));
+            row5 = _mm256_mul_ps(
+                _mm256_min_ps(
+                    vthreshold,
+                    _mm256_max_ps(_mm256_add_ps(row5, voffset), vzero)),
+                _mm256_mul_ps(row5, vscale));
+            row6 = _mm256_mul_ps(
+                _mm256_min_ps(
+                    vthreshold,
+                    _mm256_max_ps(_mm256_add_ps(row6, voffset), vzero)),
+                _mm256_mul_ps(row6, vscale));
+            row7 = _mm256_mul_ps(
+                _mm256_min_ps(
+                    vthreshold,
+                    _mm256_max_ps(_mm256_add_ps(row7, voffset), vzero)),
+                _mm256_mul_ps(row7, vscale));
+#else
+            __m128 vzero = _mm_set1_ps(0.f);
+            __m256 voffset = _mm_set1_ps(act_param.hard_swish_offset);
+            __m256 vscale = _mm_set1_ps(1.0 / act_param.hard_swish_scale);
+            __m256 vthreshold = _mm_set1_ps(act_param.hard_swish_threshold);
+             row0 = _mm_mul_ps(_mm_min_ps(vthreshold, __mm_max_ps(
+                    __mm_add_ps(row0, voffset), vzero)),
+                    _mm_mul_ps(row0, vscale);
+             row1 = _mm_mul_ps(_mm_min_ps(vthreshold, __mm_max_ps(
+                    __mm_add_ps(row1, voffset), vzero)),
+                    _mm_mul_ps(row1, vscale);
+             row2 = _mm_mul_ps(_mm_min_ps(vthreshold, __mm_max_ps(
+                    __mm_add_ps(row2, voffset), vzero)),
+                    _mm_mul_ps(row2, vscale);
+             row3 = _mm_mul_ps(_mm_min_ps(vthreshold, __mm_max_ps(
+                    __mm_add_ps(row3, voffset), vzero)),
+                    _mm_mul_ps(row3, vscale);
 #endif
           } else if (active_type == lite_api::ActivationType::kIndentity) {
           } else {
@@ -526,10 +636,46 @@ void conv_direct_3x3s2_tranpose_out(int bs,
           } else if (active_type == lite_api::ActivationType::kRelu6) {
 #ifdef __AVX__
             row = _mm256_max_ps(row, _mm256_set1_ps(0.f));
-            row = _mm256_min_ps(row, _mm256_set1_ps(6.f));
+            row =
+                _mm256_min_ps(row, _mm256_set1_ps(act_param.Relu_clipped_coef));
 #else
             row = _mm_max_ps(row, _mm_set1_ps(0.f));
-            row = _mm_min_ps(row, _mm_set1_ps(6.f));
+            row = _mm_min_ps(row, _mm_set1_ps(act_param.Relu_clipped_coef));
+
+#endif
+          } else if (active_type == lite_api::ActivationType::kLeakyRelu) {
+#ifdef __AVX__
+            __m256 val_scale =
+                _mm256_mul_ps(row, _mm256_set1_ps(act_param.Leaky_relu_alpha));
+            row = _mm256_blendv_ps(
+                val_scale,
+                row,
+                _mm256_cmp_ps(row, _mm256_setzero_ps(), _CMP_GT_OS));
+#else
+            __m128 val_scale =
+                _mm_mul_ps(row, _mm_set1_ps(act_param.Leaky_relu_alpha));
+            row = _mm_blendv_ps(
+                val_scale, row, _mm_cmp_ps(row, _mm_setzero_ps(), _CMP_GT_OS));
+#endif
+          } else if (active_type == lite_api::ActivationType::kHardSwish) {
+#ifdef __AVX__
+            __m256 val_offset =
+                _mm256_add_ps(row, _mm256_set1_ps(act_param.hard_swish_offset));
+            __m256 val_scale = _mm256_mul_ps(
+                row, _mm256_set1_ps(1.0 / act_param.hard_swish_scale));
+            __m256 val =
+                _mm256_min_ps(_mm256_set1_ps(act_param.hard_swish_threshold),
+                              _mm256_max_ps(val_offset, _mm256_setzero_ps()));
+            row = _mm256_mul_ps(val, val_scale);
+#else
+            __m128 val_offset =
+                _mm_add_ps(row, _mm_set1_ps(act_param.hard_swish_offset));
+            __m128 val_scale =
+                _mm_mul_ps(row, _mm_set1_ps(1.0 / act_param.hard_swish_scale));
+            __m128 val = _mm_min_ps(_mm_set1_ps(act_param.hard_swish_threshold),
+                                    __mm_max_ps(val_offset, _mm_setzero_ps()))
+                row = _mm_mul_ps(val, val_scale);
+
 #endif
           } else if (active_type == lite_api::ActivationType::kIndentity) {
           } else {
@@ -555,7 +701,6 @@ void conv_direct_3x3s2_tranpose_out(int bs,
     }
   }
 }
-
 }  // namespace math
 }  // namespace x86
 }  // namespace lite

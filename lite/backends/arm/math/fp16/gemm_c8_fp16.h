@@ -27,7 +27,7 @@ namespace fp16 {
 typedef __fp16 float16_t;
 constexpr int MBLOCK_C8 = 8;
 constexpr int NBLOCK_C8 = 8;
-constexpr int KBLOCK_C8 = 4;
+constexpr int KBLOCK_C8 = 8;
 
 void gemm_prepack_c8_fp16(int M,
                           int N,

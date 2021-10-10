@@ -15,6 +15,7 @@
 #pragma once
 #include "lite/backends/x86/jit/gen/jitcode.h"
 #include "lite/core/context.h"
+#include "lite/operators/op_params.h"
 
 namespace paddle {
 namespace lite {
@@ -56,7 +57,8 @@ void conv_direct_3x3s2_tranpose_out(int bs,
                                     float* o_data,
                                     float* trans_out,
                                     const float* bias,
-                                    lite_api::ActivationType active_type);
+                                    lite_api::ActivationType active_type,
+                                    operators::ActivationParam act_param);
 
 }  // namespace math
 }  // namespace x86

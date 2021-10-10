@@ -66,8 +66,15 @@ void DirectConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
              ph,
              pw);
 
-  lite::x86::math::conv_direct_3x3s2_tranpose_out(
-      bs, oc, oh, ow, o_data, trans_out, b_data, act_param.active_type);
+  lite::x86::math::conv_direct_3x3s2_tranpose_out(bs,
+                                                  oc,
+                                                  oh,
+                                                  ow,
+                                                  o_data,
+                                                  trans_out,
+                                                  b_data,
+                                                  act_param.active_type,
+                                                  act_param);
   TargetFree(TARGET(kX86), trans_out);
 }
 }  // namespace x86
