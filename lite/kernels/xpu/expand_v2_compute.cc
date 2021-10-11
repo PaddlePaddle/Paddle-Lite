@@ -28,51 +28,17 @@ void ExpandV2Compute<T>::Run() {
   auto& ctx = this->ctx_->As<XPUContext>();
   const auto* x = param.X;
   auto* out = param.Out;
-  std::vector<int> expand_shape;
-  if (param.Shape != nullptr) {
-    auto Shape_data = param.Shape->template data<int>();
-    for (int64_t i = 0; i < param.Shape->numel(); i++) {
-      expand_shape.push_back(Shape_data[i]);
-    }
-  } else if (!param.expand_shapes_tensor.empty()) {
-    for (size_t i = 0; i < param.expand_shapes_tensor.size(); i++) {
-      expand_shape.push_back(
-          param.expand_shapes_tensor[i]->template data<int>()[0]);
-    }
-  } else {
-    expand_shape = param.shape;
-  }
-  std::vector<int> vec_in_dims;
-  DDim in_shape = x->dims();
-  for (int i = 0; i < in_shape.size(); ++i) {
-    vec_in_dims.push_back(static_cast<int>(in_shape[i]));
-  }
-  auto diff = expand_shape.size() - vec_in_dims.size();
-  vec_in_dims.insert(vec_in_dims.begin(), diff, 1);
-  std::vector<int> repeat_times(vec_in_dims.size());
-  for (size_t i = 0; i < vec_in_dims.size(); ++i) {
-    if (i < diff) {
-      repeat_times[i] = expand_shape[i];
-    } else if (expand_shape[i] > 0) {
-      if (vec_in_dims[i] != 1) {
-        repeat_times[i] = 1;
-      } else {
-        repeat_times[i] = expand_shape[i];
-      }
-    } else {
-      repeat_times[i] = 1;
-    }
-  }
-  std::vector<int> vec_out_dims(vec_in_dims.size());
-  for (size_t i = 0; i < vec_in_dims.size(); i++) {
-    vec_out_dims[i] = vec_in_dims[i] * repeat_times[i];
-  }
+  std::vector<int64_t> x_shape = x->dims().Vectorize();
+  std::vector<int64_t> out_shape = out->dims().Vectorize();
+  std::vector<int> x_dims(x_shape.begin(), x_shape.end());
+  std::vector<int> out_dims(out_shape.begin(), out_shape.end());
+  x_dims.insert(x_dims.begin(), out_dims.size() - x_dims.size(), 1);
 
   int r = xdnn::broadcast<T>(ctx.GetRawContext(),
                              x->template data<T>(),
                              out->template mutable_data<T>(TARGET(kXPU)),
-                             vec_in_dims,
-                             vec_out_dims);
+                             x_dims,
+                             out_dims);
   CHECK_EQ(r, 0);
 }
 
