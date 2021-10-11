@@ -641,7 +641,8 @@ REGISTER_LITE_KERNEL(conv2d_transpose, kARM, kFP16, kNCHW, ConvTranFp16, def)
     .BindPaddleOpVersion("conv2d_transpose", 1)
     .Finalize();
 
-REGISTER_LITE_KERNEL(depthwise_conv2d_transpose, kARM, kFP16, kNCHW, ConvTranFp16, def)
+REGISTER_LITE_KERNEL(
+    depthwise_conv2d_transpose, kARM, kFP16, kNCHW, ConvTranFp16, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindInput("Filter",
@@ -683,7 +684,8 @@ REGISTER_LITE_KERNEL(
     .BindPaddleOpVersion("conv2d_transpose", 1)
     .Finalize();
 
-REGISTER_LITE_KERNEL(depthwise_conv2d_transpose, kARM, kFloat, kNCHW, ConvTransFp32, def)
+REGISTER_LITE_KERNEL(
+    depthwise_conv2d_transpose, kARM, kFloat, kNCHW, ConvTransFp32, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kARM))})
