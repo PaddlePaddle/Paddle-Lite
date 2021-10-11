@@ -3055,7 +3055,7 @@ void loadb_trans(
 }
 
 #endif  // __aarch64__
-
+// clang-format off
 #ifdef __aarch64__
 #define INIT_4                                   \
   "prfm   pldl1keep, [%[a_ptr]]\n"               \
@@ -3230,46 +3230,49 @@ void loadb_trans(
   "bif    v29.16b,  v3.16b,   v2.16b  \n"
 
 #define HARD_SWISH1                                      \
-  "fadd   q4,  q8,  q1           \n"                     \
-  "fadd   q6,  q11, q1           \n"                     \
-  "fmul   q5,  q8,  q2           \n"                     \
-  "fmul   q7,  q11, q2           \n"                     \
-  "fmax   q4,  q4, q0            \n"                     \
-  "fmax   q6,  q6, q0            \n"                     \
-  "fmin   q4,  q4, q3            \n"                     \
-  "fmin   q6,  q6, q3            \n"                     \
-  "fmul   q8,  q4, q5            \n"                     \
-  "fmul   q11, q6, q7            \n"                     \
-  "fadd   q4,  q14, q1           \n"                     \
-  "fadd   q6,  q17, q1           \n"                     \
-  "fmul   q5,  q14, q2           \n"                     \
-  "fmul   q7,  q17, q2           \n"                     \
-  "fmax   q4,  q4, q0            \n"                     \
-  "fmax   q6,  q6, q0            \n"                     \
-  "fmin   q4,  q4, q3            \n"                     \
-  "fmin   q6,  q6, q3            \n"                     \
-  "fmul   q14, q4, q5            \n"                     \
-  "fmul   q17, q6, q7            \n" #define HARD_SWISH2 \
-  "fadd   q4,  q20, q1           \n"                     \
-  "fadd   q6,  q23, q1           \n"                     \
-  "fmul   q5,  q20, q2           \n"                     \
-  "fmul   q7,  q23, q2           \n"                     \
-  "fmax   q4,  q4, q0            \n"                     \
-  "fmax   q6,  q6, q0            \n"                     \
-  "fmin   q4,  q4, q3            \n"                     \
-  "fmin   q6,  q6, q3            \n"                     \
-  "fmul   q20, q4, q5            \n"                     \
-  "fmul   q23, q6, q7            \n"                     \
-  "fadd   q4,  q26, q1           \n"                     \
-  "fadd   q6,  q29, q1           \n"                     \
-  "fmul   q5,  q26, q2           \n"                     \
-  "fmul   q7,  q29, q2           \n"                     \
-  "fmax   q4,  q4, q0            \n"                     \
-  "fmax   q6,  q6, q0            \n"                     \
-  "fmin   q4,  q4, q3            \n"                     \
-  "fmin   q6,  q6, q3            \n"                     \
-  "fmul   q26, q4, q5            \n"                     \
-  "fmul   q29, q6, q7            \n"
+  "fadd   v4.4s,  v8.4s,  v1.4s           \n"            \
+  "fadd   v6.4s,  v11.4s, v1.4s           \n"            \
+  "fmul   v5.4s,  v8.4s,  v2.4s           \n"            \
+  "fmul   v7.4s,  v11.4s, v2.4s           \n"            \
+  "fmax   v4.4s,  v4.4s, v0.4s            \n"            \
+  "fmax   v6.4s,  v6.4s, v0.4s            \n"            \
+  "fmin   v4.4s,  v4.4s, v3.4s            \n"            \
+  "fmin   v6.4s,  v6.4s, v3.4s            \n"            \
+  "fmul   v8.4s,  v4.4s, v5.4s            \n"            \
+  "fmul   v11.4s, v6.4s, v7.4s            \n"            \
+  "fadd   v4.4s,  v14.4s, v1.4s           \n"            \
+  "fadd   v6.4s,  v17.4s, v1.4s           \n"            \
+  "fmul   v5.4s,  v14.4s, v2.4s           \n"            \
+  "fmul   v7.4s,  v17.4s, v2.4s           \n"            \
+  "fmax   v4.4s,  v4.4s, v0.4s            \n"            \
+  "fmax   v6.4s,  v6.4s, v0.4s            \n"            \
+  "fmin   v4.4s,  v4.4s, v3.4s            \n"            \
+  "fmin   v6.4s,  v6.4s, v3.4s            \n"            \
+  "fmul   v14.4s, v4.4s, v5.4s            \n"            \
+  "fmul   v17.4s, v6.4s, v7.4s            \n"
+
+#define HARD_SWISH2                                      \
+  "fadd   v4.4s,  v20.4s, v1.4s           \n"            \
+  "fadd   v6.4s,  v23.4s, v1.4s           \n"            \
+  "fmul   v5.4s,  v20.4s, v2.4s           \n"            \
+  "fmul   v7.4s,  v23.4s, v2.4s           \n"            \
+  "fmax   v4.4s,  v4.4s, v0.4s            \n"            \
+  "fmax   v6.4s,  v6.4s, v0.4s            \n"            \
+  "fmin   v4.4s,  v4.4s, v3.4s            \n"            \
+  "fmin   v6.4s,  v6.4s, v3.4s            \n"            \
+  "fmul   v20.4s,  v4.4s, v5.4s            \n"            \
+  "fmul   v23.4s, v6.4s, v7.4s            \n"            \
+  "fadd   v4.4s,  v26.4s, v1.4s           \n"            \
+  "fadd   v6.4s,  v29.4s, v1.4s           \n"            \
+  "fmul   v5.4s,  v26.4s, v2.4s           \n"            \
+  "fmul   v7.4s,  v29.4s, v2.4s           \n"            \
+  "fmax   v4.4s,  v4.4s, v0.4s            \n"            \
+  "fmax   v6.4s,  v6.4s, v0.4s            \n"            \
+  "fmin   v4.4s,  v4.4s, v3.4s            \n"            \
+  "fmin   v6.4s,  v6.4s, v3.4s            \n"            \
+  "fmul   v26.4s, v4.4s, v5.4s            \n"            \
+  "fmul   v29.4s, v6.4s, v7.4s            \n"
+// clang-format on
 void sgemm_prepacked_8x12(bool is_transB,
                           int M,
                           int N,
@@ -3676,12 +3679,12 @@ void sgemm_prepacked_8x12(bool is_transB,
                 //! leakey relu
                 "13:                           \n"
                 "cmp    %w[flag_act],  #3      \n" FADD_8
-                "bne    14\n"
+                "bne    15f\n"
                 "ld1    {v1.4s},  [%[alpha]]   \n" /* leakey relu alpha */
                 LEAKY1 LEAKY2
                 "b      20f                    \n" /* leakey relu end */
                 // hard swish
-                "14:                           \n"
+                "15:                           \n"
                 "ldr    q1,  [%[alpha], #0]    \n"
                 "ldr    q2,  [%[alpha], #16]   \n"
                 "movi   v0.4s,    #0           \n"
@@ -3756,7 +3759,7 @@ void sgemm_prepacked_8x12(bool is_transB,
           int tail = tail_pre;
           int k = k_pre;
           // clang-format off
-        asm volatile(
+          asm volatile(
             "prfm   pldl1keep, [%[a_ptr]]\n"       /* preload a*/
             "ldp	q2, q3, [%[bias_ptr]]\n"         /* load bias to q2, q3*/
             "dup	v8.4s,  v2.s[0]\n"               /* out0 = 0 */
@@ -4335,126 +4338,126 @@ void sgemm_prepacked_8x12(bool is_transB,
             "ldr    q2,  [%[alpha], #16]        \n" /* scale */
             "movi   v0.4s,    #0                \n" /* for hardswish */
             "ldr    q3,  [%[alpha], #32]        \n" /* threshold */
-            "fadd   q4,  q8, q1                 \n"
-            "fadd   q6,  q9, q1                 \n"
-            "fmul   q5,  q8, q2                 \n"
-            "fmul   q7,  q9, q2                 \n"
-            "fmax   q4,  q4, q0                 \n"
-            "fmax   q6,  q6, q0                 \n"
-            "fmax   q4,  q4, q3                 \n"
-            "fmax   q6,  q6, q3                 \n"
-            "fmul   q8,  q5, q4                 \n"
-            "fmul   q9,  q7, q6                 \n"
-            "fadd   q4,  q10, q1                 \n"
-            "fadd   q6,  q11, q1                 \n"
-            "fmul   q5,  q10, q2                 \n"
-            "fmul   q7,  q11, q2                 \n"
-            "fmax   q4,  q4, q0                 \n"
-            "fmax   q6,  q6, q0                 \n"
-            "fmax   q4,  q4, q3                 \n"
-            "fmax   q6,  q6, q3                 \n"
-            "fmul   q10,  q5, q4                 \n"
-            "fmul   q11,  q7, q6                 \n"
-            "fadd   q4,  q12, q1                 \n"
-            "fadd   q6,  q13, q1                 \n"
-            "fmul   q5,  q12, q2                 \n"
-            "fmul   q7,  q13, q2                 \n"
-            "fmax   q4,  q4, q0                 \n"
-            "fmax   q6,  q6, q0                 \n"
-            "fmax   q4,  q4, q3                 \n"
-            "fmax   q6,  q6, q3                 \n"
-            "fmul   q12,  q5, q4                 \n"
-            "fmul   q13,  q7, q6                 \n"
-            "fadd   q4,  q14, q1                 \n"
-            "fadd   q6,  q15, q1                 \n"
-            "fmul   q5,  q14, q2                 \n"
-            "fmul   q7,  q15, q2                 \n"
-            "fmax   q4,  q4, q0                 \n"
-            "fmax   q6,  q6, q0                 \n"
-            "fmax   q4,  q4, q3                 \n"
-            "fmax   q6,  q6, q3                 \n"
-            "fmul   q14,  q5, q4                 \n"
-            "fmul   q15,  q7, q6                 \n"
-            "fadd   q4,  q16, q1                 \n"
-            "fadd   q6,  q17, q1                 \n"
-            "fmul   q5,  q16, q2                 \n"
-            "fmul   q7,  q17, q2                 \n"
-            "fmax   q4,  q4, q0                 \n"
-            "fmax   q6,  q6, q0                 \n"
-            "fmax   q4,  q4, q3                 \n"
-            "fmax   q6,  q6, q3                 \n"
-            "fmul   q16,  q5, q4                 \n"
-            "fmul   q17,  q7, q6                 \n"
-            "fadd   q4,  q18, q1                 \n"
-            "fadd   q6,  q19, q1                 \n"
-            "fmul   q5,  q18, q2                 \n"
-            "fmul   q7,  q19, q2                 \n"
-            "fmax   q4,  q4, q0                 \n"
-            "fmax   q6,  q6, q0                 \n"
-            "fmax   q4,  q4, q3                 \n"
-            "fmax   q6,  q6, q3                 \n"
-            "fmul   q18,  q5, q4                 \n"
-            "fmul   q19,  q7, q6                 \n"
-            "fadd   q4,  q20, q1                 \n"
-            "fadd   q6,  q21, q1                 \n"
-            "fmul   q5,  q20, q2                 \n"
-            "fmul   q7,  q21, q2                 \n"
-            "fmax   q4,  q4, q0                 \n"
-            "fmax   q6,  q6, q0                 \n"
-            "fmax   q4,  q4, q3                 \n"
-            "fmax   q6,  q6, q3                 \n"
-            "fmul   q20,  q5, q4                 \n"
-            "fmul   q21,  q7, q6                 \n"
-            "fadd   q4,  q22, q1                 \n"
-            "fadd   q6,  q23, q1                 \n"
-            "fmul   q5,  q22, q2                 \n"
-            "fmul   q7,  q23, q2                 \n"
-            "fmax   q4,  q4, q0                 \n"
-            "fmax   q6,  q6, q0                 \n"
-            "fmax   q4,  q4, q3                 \n"
-            "fmax   q6,  q6, q3                 \n"
-            "fmul   q22,  q5, q4                 \n"
-            "fmul   q23,  q7, q6                 \n"
-            "fadd   q4,  q24, q1                 \n"
-            "fadd   q6,  q25, q1                 \n"
-            "fmul   q5,  q24, q2                 \n"
-            "fmul   q7,  q25, q2                 \n"
-            "fmax   q4,  q4, q0                 \n"
-            "fmax   q6,  q6, q0                 \n"
-            "fmax   q4,  q4, q3                 \n"
-            "fmax   q6,  q6, q3                 \n"
-            "fmul   q24,  q5, q4                 \n"
-            "fmul   q25,  q7, q6                 \n"
-            "fadd   q4,  q26, q1                 \n"
-            "fadd   q6,  q27, q1                 \n"
-            "fmul   q5,  q26, q2                 \n"
-            "fmul   q7,  q27, q2                 \n"
-            "fmax   q4,  q4, q0                 \n"
-            "fmax   q6,  q6, q0                 \n"
-            "fmax   q4,  q4, q3                 \n"
-            "fmax   q6,  q6, q3                 \n"
-            "fmul   q26,  q5, q4                 \n"
-            "fmul   q27,  q7, q6                 \n"
-            "fadd   q4,  q28, q1                 \n"
-            "fadd   q6,  q29, q1                 \n"
-            "fmul   q5,  q28, q2                 \n"
-            "fmul   q7,  q29, q2                 \n"
-            "fmax   q4,  q4, q0                 \n"
-            "fmax   q6,  q6, q0                 \n"
-            "fmax   q4,  q4, q3                 \n"
-            "fmax   q6,  q6, q3                 \n"
-            "fmul   q28,  q5, q4                 \n"
-            "fmul   q29,  q7, q6                 \n"
-            "fadd   q4,  q30, q1                 \n"
-            "fadd   q6,  q31, q1                 \n"
-            "fmul   q5,  q30, q2                 \n"
-            "fmul   q7,  q31, q2                 \n"
-            "fmax   q4,  q4, q0                 \n"
-            "fmax   q6,  q6, q0                 \n"
-            "fmax   q4,  q4, q3                 \n"
-            "fmax   q6,  q6, q3                 \n"
-            "fmul   q30,  q5, q4                 \n"
-            "fmul   q31,  q7, q6                 \n"
+            "fadd   v4.4s,  v8.4s, v1.4s        \n"
+            "fadd   v6.4s,  v9.4s, v1.4s        \n"
+            "fmul   v5.4s,  v8.4s, v2.4s        \n"
+            "fmul   v7.4s,  v9.4s, v2.4s        \n"
+            "fmax   v4.4s,  v4.4s, v0.4s        \n"
+            "fmax   v6.4s,  v6.4s, v0.4s        \n"
+            "fmin   v4.4s,  v4.4s, v3.4s        \n"
+            "fmin   v6.4s,  v6.4s, v3.4s        \n"
+            "fmul   v8.4s,  v5.4s, v4.4s        \n"
+            "fmul   v9.4s,  v7.4s, v6.4s        \n"
+            "fadd   v4.4s,  v10.4s, v1.4s        \n"
+            "fadd   v6.4s,  v11.4s, v1.4s        \n"
+            "fmul   v5.4s,  v10.4s, v2.4s        \n"
+            "fmul   v7.4s,  v11.4s, v2.4s        \n"
+            "fmax   v4.4s,  v4.4s, v0.4s        \n"
+            "fmax   v6.4s,  v6.4s, v0.4s        \n"
+            "fmin   v4.4s,  v4.4s, v3.4s        \n"
+            "fmin   v6.4s,  v6.4s, v3.4s        \n"
+            "fmul   v10.4s,  v5.4s, v4.4s        \n"
+            "fmul   v11.4s,  v7.4s, v6.4s        \n"
+            "fadd   v4.4s,  v12.4s, v1.4s        \n"
+            "fadd   v6.4s,  v13.4s, v1.4s        \n"
+            "fmul   v5.4s,  v12.4s, v2.4s        \n"
+            "fmul   v7.4s,  v13.4s, v2.4s        \n"
+            "fmax   v4.4s,  v4.4s, v0.4s        \n"
+            "fmax   v6.4s,  v6.4s, v0.4s        \n"
+            "fmin   v4.4s,  v4.4s, v3.4s        \n"
+            "fmin   v6.4s,  v6.4s, v3.4s        \n"
+            "fmul   v12.4s,  v5.4s, v4.4s        \n"
+            "fmul   v13.4s,  v7.4s, v6.4s        \n"
+            "fadd   v4.4s,  v14.4s, v1.4s        \n"
+            "fadd   v6.4s,  v15.4s, v1.4s        \n"
+            "fmul   v5.4s,  v14.4s, v2.4s        \n"
+            "fmul   v7.4s,  v15.4s, v2.4s        \n"
+            "fmax   v4.4s,  v4.4s, v0.4s        \n"
+            "fmax   v6.4s,  v6.4s, v0.4s        \n"
+            "fmin   v4.4s,  v4.4s, v3.4s        \n"
+            "fmin   v6.4s,  v6.4s, v3.4s        \n"
+            "fmul   v14.4s,  v5.4s, v4.4s        \n"
+            "fmul   v15.4s,  v7.4s, v6.4s        \n"
+            "fadd   v4.4s,  v16.4s, v1.4s        \n"
+            "fadd   v6.4s,  v17.4s, v1.4s        \n"
+            "fmul   v5.4s,  v16.4s, v2.4s        \n"
+            "fmul   v7.4s,  v17.4s, v2.4s        \n"
+            "fmax   v4.4s,  v4.4s, v0.4s        \n"
+            "fmax   v6.4s,  v6.4s, v0.4s        \n"
+            "fmin   v4.4s,  v4.4s, v3.4s        \n"
+            "fmin   v6.4s,  v6.4s, v3.4s        \n"
+            "fmul   v16.4s,  v5.4s, v4.4s        \n"
+            "fmul   v17.4s,  v7.4s, v6.4s        \n"
+            "fadd   v4.4s,  v18.4s, v1.4s        \n"
+            "fadd   v6.4s,  v19.4s, v1.4s        \n"
+            "fmul   v5.4s,  v18.4s, v2.4s        \n"
+            "fmul   v7.4s,  v19.4s, v2.4s        \n"
+            "fmax   v4.4s,  v4.4s, v0.4s        \n"
+            "fmax   v6.4s,  v6.4s, v0.4s        \n"
+            "fmin   v4.4s,  v4.4s, v3.4s        \n"
+            "fmin   v6.4s,  v6.4s, v3.4s        \n"
+            "fmul   v18.4s,  v5.4s, v4.4s        \n"
+            "fmul   v19.4s,  v7.4s, v6.4s        \n"
+            "fadd   v4.4s,  v20.4s, v1.4s        \n"
+            "fadd   v6.4s,  v21.4s, v1.4s        \n"
+            "fmul   v5.4s,  v20.4s, v2.4s        \n"
+            "fmul   v7.4s,  v21.4s, v2.4s        \n"
+            "fmax   v4.4s,  v4.4s, v0.4s        \n"
+            "fmax   v6.4s,  v6.4s, v0.4s        \n"
+            "fmin   v4.4s,  v4.4s, v3.4s        \n"
+            "fmin   v6.4s,  v6.4s, v3.4s        \n"
+            "fmul   v20.4s,  v5.4s, v4.4s        \n"
+            "fmul   v21.4s,  v7.4s, v6.4s        \n"
+            "fadd   v4.4s,  v22.4s, v1.4s        \n"
+            "fadd   v6.4s,  v23.4s, v1.4s        \n"
+            "fmul   v5.4s,  v22.4s, v2.4s        \n"
+            "fmul   v7.4s,  v23.4s, v2.4s        \n"
+            "fmax   v4.4s,  v4.4s, v0.4s        \n"
+            "fmax   v6.4s,  v6.4s, v0.4s        \n"
+            "fmin   v4.4s,  v4.4s, v3.4s        \n"
+            "fmin   v6.4s,  v6.4s, v3.4s        \n"
+            "fmul   v22.4s,  v5.4s, v4.4s        \n"
+            "fmul   v23.4s,  v7.4s, v6.4s        \n"
+            "fadd   v4.4s,  v24.4s, v1.4s        \n"
+            "fadd   v6.4s,  v25.4s, v1.4s        \n"
+            "fmul   v5.4s,  v24.4s, v2.4s        \n"
+            "fmul   v7.4s,  v25.4s, v2.4s        \n"
+            "fmax   v4.4s,  v4.4s, v0.4s        \n"
+            "fmax   v6.4s,  v6.4s, v0.4s        \n"
+            "fmin   v4.4s,  v4.4s, v3.4s        \n"
+            "fmin   v6.4s,  v6.4s, v3.4s        \n"
+            "fmul   v24.4s,  v5.4s, v4.4s        \n"
+            "fmul   v25.4s,  v7.4s, v6.4s        \n"
+            "fadd   v4.4s,  v26.4s, v1.4s        \n"
+            "fadd   v6.4s,  v27.4s, v1.4s        \n"
+            "fmul   v5.4s,  v26.4s, v2.4s        \n"
+            "fmul   v7.4s,  v27.4s, v2.4s        \n"
+            "fmax   v4.4s,  v4.4s, v0.4s        \n"
+            "fmax   v6.4s,  v6.4s, v0.4s        \n"
+            "fmin   v4.4s,  v4.4s, v3.4s        \n"
+            "fmin   v6.4s,  v6.4s, v3.4s        \n"
+            "fmul   v26.4s,  v5.4s, v4.4s        \n"
+            "fmul   v27.4s,  v7.4s, v6.4s        \n"
+            "fadd   v4.4s,  v28.4s, v1.4s        \n"
+            "fadd   v6.4s,  v29.4s, v1.4s        \n"
+            "fmul   v5.4s,  v28.4s, v2.4s        \n"
+            "fmul   v7.4s,  v29.4s, v2.4s        \n"
+            "fmax   v4.4s,  v4.4s, v0.4s        \n"
+            "fmax   v6.4s,  v6.4s, v0.4s        \n"
+            "fmin   v4.4s,  v4.4s, v3.4s        \n"
+            "fmin   v6.4s,  v6.4s, v3.4s        \n"
+            "fmul   v28.4s,  v5.4s, v4.4s        \n"
+            "fmul   v29.4s,  v7.4s, v6.4s        \n"
+            "fadd   v4.4s,  v30.4s, v1.4s        \n"
+            "fadd   v6.4s,  v31.4s, v1.4s        \n"
+            "fmul   v5.4s,  v30.4s, v2.4s        \n"
+            "fmul   v7.4s,  v31.4s, v2.4s        \n"
+            "fmax   v4.4s,  v4.4s, v0.4s        \n"
+            "fmax   v6.4s,  v6.4s, v0.4s        \n"
+            "fmin   v4.4s,  v4.4s, v3.4s        \n"
+            "fmin   v6.4s,  v6.4s, v3.4s        \n"
+            "fmul   v30.4s,  v5.4s, v4.4s        \n"
+            "fmul   v31.4s,  v7.4s, v6.4s        \n"
             "20:                                \n" /* act end */
             "st1 {v8.4s, v9.4s, v10.4s},[%[c_ptr0]], #48\n"   /* store r0 */
             "st1 {v11.4s, v12.4s, v13.4s},[%[c_ptr1]], #48\n" /* store r1 */
@@ -5049,7 +5052,7 @@ void sgemm_prepacked_8x12_a53(bool is_transB,
                 ///! leakey relu
                 "13:                           \n"
                 "cmp    %w[flag_act],  #3      \n" FADD_8
-                "bne    14\n"
+                "bne    14f\n"
                 "ld1    {v1.4s},  [%[alpha]]   \n" /* leakey relu alpha */
                 LEAKY1 LEAKY2
                 "b      20f                    \n" /* leakey relu end */
@@ -5601,126 +5604,126 @@ void sgemm_prepacked_8x12_a53(bool is_transB,
             "ldr    q2,  [%[alpha], #16]        \n" /* scale */
             "movi   v0.4s,    #0                \n" /* for hardswish */
             "ldr    q3,  [%[alpha], #32]        \n" /* threshold */
-            "fadd   q4,  q8, q1                 \n"
-            "fadd   q6,  q9, q1                 \n"
-            "fmul   q5,  q8, q2                 \n"
-            "fmul   q7,  q9, q2                 \n"
-            "fmax   q4,  q4, q0                 \n"
-            "fmax   q6,  q6, q0                 \n"
-            "fmax   q4,  q4, q3                 \n"
-            "fmax   q6,  q6, q3                 \n"
-            "fmul   q8,  q5, q4                 \n"
-            "fmul   q9,  q7, q6                 \n"
-            "fadd   q4,  q10, q1                 \n"
-            "fadd   q6,  q11, q1                 \n"
-            "fmul   q5,  q10, q2                 \n"
-            "fmul   q7,  q11, q2                 \n"
-            "fmax   q4,  q4, q0                 \n"
-            "fmax   q6,  q6, q0                 \n"
-            "fmax   q4,  q4, q3                 \n"
-            "fmax   q6,  q6, q3                 \n"
-            "fmul   q10,  q5, q4                 \n"
-            "fmul   q11,  q7, q6                 \n"
-            "fadd   q4,  q12, q1                 \n"
-            "fadd   q6,  q13, q1                 \n"
-            "fmul   q5,  q12, q2                 \n"
-            "fmul   q7,  q13, q2                 \n"
-            "fmax   q4,  q4, q0                 \n"
-            "fmax   q6,  q6, q0                 \n"
-            "fmax   q4,  q4, q3                 \n"
-            "fmax   q6,  q6, q3                 \n"
-            "fmul   q12,  q5, q4                 \n"
-            "fmul   q13,  q7, q6                 \n"
-            "fadd   q4,  q14, q1                 \n"
-            "fadd   q6,  q15, q1                 \n"
-            "fmul   q5,  q14, q2                 \n"
-            "fmul   q7,  q15, q2                 \n"
-            "fmax   q4,  q4, q0                 \n"
-            "fmax   q6,  q6, q0                 \n"
-            "fmax   q4,  q4, q3                 \n"
-            "fmax   q6,  q6, q3                 \n"
-            "fmul   q14,  q5, q4                 \n"
-            "fmul   q15,  q7, q6                 \n"
-            "fadd   q4,  q16, q1                 \n"
-            "fadd   q6,  q17, q1                 \n"
-            "fmul   q5,  q16, q2                 \n"
-            "fmul   q7,  q17, q2                 \n"
-            "fmax   q4,  q4, q0                 \n"
-            "fmax   q6,  q6, q0                 \n"
-            "fmax   q4,  q4, q3                 \n"
-            "fmax   q6,  q6, q3                 \n"
-            "fmul   q16,  q5, q4                 \n"
-            "fmul   q17,  q7, q6                 \n"
-            "fadd   q4,  q18, q1                 \n"
-            "fadd   q6,  q19, q1                 \n"
-            "fmul   q5,  q18, q2                 \n"
-            "fmul   q7,  q19, q2                 \n"
-            "fmax   q4,  q4, q0                 \n"
-            "fmax   q6,  q6, q0                 \n"
-            "fmax   q4,  q4, q3                 \n"
-            "fmax   q6,  q6, q3                 \n"
-            "fmul   q18,  q5, q4                 \n"
-            "fmul   q19,  q7, q6                 \n"
-            "fadd   q4,  q20, q1                 \n"
-            "fadd   q6,  q21, q1                 \n"
-            "fmul   q5,  q20, q2                 \n"
-            "fmul   q7,  q21, q2                 \n"
-            "fmax   q4,  q4, q0                 \n"
-            "fmax   q6,  q6, q0                 \n"
-            "fmax   q4,  q4, q3                 \n"
-            "fmax   q6,  q6, q3                 \n"
-            "fmul   q20,  q5, q4                 \n"
-            "fmul   q21,  q7, q6                 \n"
-            "fadd   q4,  q22, q1                 \n"
-            "fadd   q6,  q23, q1                 \n"
-            "fmul   q5,  q22, q2                 \n"
-            "fmul   q7,  q23, q2                 \n"
-            "fmax   q4,  q4, q0                 \n"
-            "fmax   q6,  q6, q0                 \n"
-            "fmax   q4,  q4, q3                 \n"
-            "fmax   q6,  q6, q3                 \n"
-            "fmul   q22,  q5, q4                 \n"
-            "fmul   q23,  q7, q6                 \n"
-            "fadd   q4,  q24, q1                 \n"
-            "fadd   q6,  q25, q1                 \n"
-            "fmul   q5,  q24, q2                 \n"
-            "fmul   q7,  q25, q2                 \n"
-            "fmax   q4,  q4, q0                 \n"
-            "fmax   q6,  q6, q0                 \n"
-            "fmax   q4,  q4, q3                 \n"
-            "fmax   q6,  q6, q3                 \n"
-            "fmul   q24,  q5, q4                 \n"
-            "fmul   q25,  q7, q6                 \n"
-            "fadd   q4,  q26, q1                 \n"
-            "fadd   q6,  q27, q1                 \n"
-            "fmul   q5,  q26, q2                 \n"
-            "fmul   q7,  q27, q2                 \n"
-            "fmax   q4,  q4, q0                 \n"
-            "fmax   q6,  q6, q0                 \n"
-            "fmax   q4,  q4, q3                 \n"
-            "fmax   q6,  q6, q3                 \n"
-            "fmul   q26,  q5, q4                 \n"
-            "fmul   q27,  q7, q6                 \n"
-            "fadd   q4,  q28, q1                 \n"
-            "fadd   q6,  q29, q1                 \n"
-            "fmul   q5,  q28, q2                 \n"
-            "fmul   q7,  q29, q2                 \n"
-            "fmax   q4,  q4, q0                 \n"
-            "fmax   q6,  q6, q0                 \n"
-            "fmax   q4,  q4, q3                 \n"
-            "fmax   q6,  q6, q3                 \n"
-            "fmul   q28,  q5, q4                 \n"
-            "fmul   q29,  q7, q6                 \n"
-            "fadd   q4,  q30, q1                 \n"
-            "fadd   q6,  q31, q1                 \n"
-            "fmul   q5,  q30, q2                 \n"
-            "fmul   q7,  q31, q2                 \n"
-            "fmax   q4,  q4, q0                 \n"
-            "fmax   q6,  q6, q0                 \n"
-            "fmax   q4,  q4, q3                 \n"
-            "fmax   q6,  q6, q3                 \n"
-            "fmul   q30,  q5, q4                 \n"
-            "fmul   q31,  q7, q6                 \n"
+            "fadd   v4.4s,  v8.4s, v1.4s        \n"
+            "fadd   v6.4s,  v9.4s, v1.4s        \n"
+            "fmul   v5.4s,  v8.4s, v2.4s        \n"
+            "fmul   v7.4s,  v9.4s, v2.4s        \n"
+            "fmax   v4.4s,  v4.4s, v0.4s        \n"
+            "fmax   v6.4s,  v6.4s, v0.4s        \n"
+            "fmin   v4.4s,  v4.4s, v3.4s        \n"
+            "fmin   v6.4s,  v6.4s, v3.4s        \n"
+            "fmul   v8.4s,  v5.4s, v4.4s        \n"
+            "fmul   v9.4s,  v7.4s, v6.4s        \n"
+            "fadd   v4.4s,  v10.4s, v1.4s        \n"
+            "fadd   v6.4s,  v11.4s, v1.4s        \n"
+            "fmul   v5.4s,  v10.4s, v2.4s        \n"
+            "fmul   v7.4s,  v11.4s, v2.4s        \n"
+            "fmax   v4.4s,  v4.4s, v0.4s        \n"
+            "fmax   v6.4s,  v6.4s, v0.4s        \n"
+            "fmin   v4.4s,  v4.4s, v3.4s        \n"
+            "fmin   v6.4s,  v6.4s, v3.4s        \n"
+            "fmul   v10.4s,  v5.4s, v4.4s        \n"
+            "fmul   v11.4s,  v7.4s, v6.4s        \n"
+            "fadd   v4.4s,  v12.4s, v1.4s        \n"
+            "fadd   v6.4s,  v13.4s, v1.4s        \n"
+            "fmul   v5.4s,  v12.4s, v2.4s        \n"
+            "fmul   v7.4s,  v13.4s, v2.4s        \n"
+            "fmax   v4.4s,  v4.4s, v0.4s        \n"
+            "fmax   v6.4s,  v6.4s, v0.4s        \n"
+            "fmin   v4.4s,  v4.4s, v3.4s        \n"
+            "fmin   v6.4s,  v6.4s, v3.4s        \n"
+            "fmul   v12.4s,  v5.4s, v4.4s        \n"
+            "fmul   v13.4s,  v7.4s, v6.4s        \n"
+            "fadd   v4.4s,  v14.4s, v1.4s        \n"
+            "fadd   v6.4s,  v15.4s, v1.4s        \n"
+            "fmul   v5.4s,  v14.4s, v2.4s        \n"
+            "fmul   v7.4s,  v15.4s, v2.4s        \n"
+            "fmax   v4.4s,  v4.4s, v0.4s        \n"
+            "fmax   v6.4s,  v6.4s, v0.4s        \n"
+            "fmin   v4.4s,  v4.4s, v3.4s        \n"
+            "fmin   v6.4s,  v6.4s, v3.4s        \n"
+            "fmul   v14.4s,  v5.4s, v4.4s        \n"
+            "fmul   v15.4s,  v7.4s, v6.4s        \n"
+            "fadd   v4.4s,  v16.4s, v1.4s        \n"
+            "fadd   v6.4s,  v17.4s, v1.4s        \n"
+            "fmul   v5.4s,  v16.4s, v2.4s        \n"
+            "fmul   v7.4s,  v17.4s, v2.4s        \n"
+            "fmax   v4.4s,  v4.4s, v0.4s        \n"
+            "fmax   v6.4s,  v6.4s, v0.4s        \n"
+            "fmin   v4.4s,  v4.4s, v3.4s        \n"
+            "fmin   v6.4s,  v6.4s, v3.4s        \n"
+            "fmul   v16.4s,  v5.4s, v4.4s        \n"
+            "fmul   v17.4s,  v7.4s, v6.4s        \n"
+            "fadd   v4.4s,  v18.4s, v1.4s        \n"
+            "fadd   v6.4s,  v19.4s, v1.4s        \n"
+            "fmul   v5.4s,  v18.4s, v2.4s        \n"
+            "fmul   v7.4s,  v19.4s, v2.4s        \n"
+            "fmax   v4.4s,  v4.4s, v0.4s        \n"
+            "fmax   v6.4s,  v6.4s, v0.4s        \n"
+            "fmin   v4.4s,  v4.4s, v3.4s        \n"
+            "fmin   v6.4s,  v6.4s, v3.4s        \n"
+            "fmul   v18.4s,  v5.4s, v4.4s        \n"
+            "fmul   v19.4s,  v7.4s, v6.4s        \n"
+            "fadd   v4.4s,  v20.4s, v1.4s        \n"
+            "fadd   v6.4s,  v21.4s, v1.4s        \n"
+            "fmul   v5.4s,  v20.4s, v2.4s        \n"
+            "fmul   v7.4s,  v21.4s, v2.4s        \n"
+            "fmax   v4.4s,  v4.4s, v0.4s        \n"
+            "fmax   v6.4s,  v6.4s, v0.4s        \n"
+            "fmin   v4.4s,  v4.4s, v3.4s        \n"
+            "fmin   v6.4s,  v6.4s, v3.4s        \n"
+            "fmul   v20.4s,  v5.4s, v4.4s        \n"
+            "fmul   v21.4s,  v7.4s, v6.4s        \n"
+            "fadd   v4.4s,  v22.4s, v1.4s        \n"
+            "fadd   v6.4s,  v23.4s, v1.4s        \n"
+            "fmul   v5.4s,  v22.4s, v2.4s        \n"
+            "fmul   v7.4s,  v23.4s, v2.4s        \n"
+            "fmax   v4.4s,  v4.4s, v0.4s        \n"
+            "fmax   v6.4s,  v6.4s, v0.4s        \n"
+            "fmin   v4.4s,  v4.4s, v3.4s        \n"
+            "fmin   v6.4s,  v6.4s, v3.4s        \n"
+            "fmul   v22.4s,  v5.4s, v4.4s        \n"
+            "fmul   v23.4s,  v7.4s, v6.4s        \n"
+            "fadd   v4.4s,  v24.4s, v1.4s        \n"
+            "fadd   v6.4s,  v25.4s, v1.4s        \n"
+            "fmul   v5.4s,  v24.4s, v2.4s        \n"
+            "fmul   v7.4s,  v25.4s, v2.4s        \n"
+            "fmax   v4.4s,  v4.4s, v0.4s        \n"
+            "fmax   v6.4s,  v6.4s, v0.4s        \n"
+            "fmin   v4.4s,  v4.4s, v3.4s        \n"
+            "fmin   v6.4s,  v6.4s, v3.4s        \n"
+            "fmul   v24.4s,  v5.4s, v4.4s        \n"
+            "fmul   v25.4s,  v7.4s, v6.4s        \n"
+            "fadd   v4.4s,  v26.4s, v1.4s        \n"
+            "fadd   v6.4s,  v27.4s, v1.4s        \n"
+            "fmul   v5.4s,  v26.4s, v2.4s        \n"
+            "fmul   v7.4s,  v27.4s, v2.4s        \n"
+            "fmax   v4.4s,  v4.4s, v0.4s        \n"
+            "fmax   v6.4s,  v6.4s, v0.4s        \n"
+            "fmin   v4.4s,  v4.4s, v3.4s        \n"
+            "fmin   v6.4s,  v6.4s, v3.4s        \n"
+            "fmul   v26.4s,  v5.4s, v4.4s        \n"
+            "fmul   v27.4s,  v7.4s, v6.4s        \n"
+            "fadd   v4.4s,  v28.4s, v1.4s        \n"
+            "fadd   v6.4s,  v29.4s, v1.4s        \n"
+            "fmul   v5.4s,  v28.4s, v2.4s        \n"
+            "fmul   v7.4s,  v29.4s, v2.4s        \n"
+            "fmax   v4.4s,  v4.4s, v0.4s        \n"
+            "fmax   v6.4s,  v6.4s, v0.4s        \n"
+            "fmin   v4.4s,  v4.4s, v3.4s        \n"
+            "fmin   v6.4s,  v6.4s, v3.4s        \n"
+            "fmul   v28.4s,  v5.4s, v4.4s        \n"
+            "fmul   v29.4s,  v7.4s, v6.4s        \n"
+            "fadd   v4.4s,  v30.4s, v1.4s        \n"
+            "fadd   v6.4s,  v31.4s, v1.4s        \n"
+            "fmul   v5.4s,  v30.4s, v2.4s        \n"
+            "fmul   v7.4s,  v31.4s, v2.4s        \n"
+            "fmax   v4.4s,  v4.4s, v0.4s        \n"
+            "fmax   v6.4s,  v6.4s, v0.4s        \n"
+            "fmin   v4.4s,  v4.4s, v3.4s        \n"
+            "fmin   v6.4s,  v6.4s, v3.4s        \n"
+            "fmul   v30.4s,  v5.4s, v4.4s        \n"
+            "fmul   v31.4s,  v7.4s, v6.4s        \n"
             "20:                                \n" // act end
 
             "st1 {v8.4s, v9.4s, v10.4s},[%[c_ptr0]], #48\n"   // store r0
@@ -6132,7 +6135,7 @@ void sgemm_prepacked_4x8(bool is_transB,
             "fcmge  v2.4s,    v12.4s, %[vzero].4s\n"
             "fmul   v3.4s,    v12.4s, %[valpha].4s\n"
             "fcmge  v4.4s,    v13.4s, %[vzero].4s\n"
-            "fmul   v5.4s,    v13.4s,   v1.4s   \n"
+            "fmul   v5.4s,    v13.4s, %[valpha].4s\n"
             "fcmge  v6.4s,    v14.4s, %[vzero].4s\n"
             "fmul   v7.4s,    v14.4s, %[valpha].4s\n"
             "fcmge  v0.4s,    v15.4s, %[vzero].4s\n"

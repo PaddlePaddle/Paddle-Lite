@@ -82,8 +82,7 @@ bool test_sgemm(bool tra,
                 int cls,
                 int ths,
                 float six = 6.f,
-                float alpha = 1.f,
-                float beta = 0.f) {
+                float scale = 1.f) {
   int size_a = tra ? k * lda : m * lda;
   int size_b = trb ? n * ldb : k * ldb;
 
@@ -132,10 +131,10 @@ bool test_sgemm(bool tra,
     act_param.Relu_clipped_coef = six;
   } else if (flag_act == 4) {
     act = paddle::lite_api::ActivationType::kLeakyRelu;
-    act_param.Leaky_relu_alpha = alpha;
+    act_param.Leaky_relu_alpha = scale;
   } else if (flag_act == 10) {
     act = paddle::lite_api::ActivationType::kHardSwish;
-    act_param.hard_swish_scale = alpha;
+    act_param.hard_swish_scale = scale;
     act_param.hard_swish_offset = 1.f;
     act_param.hard_swish_threshold = 6.f;
   }
@@ -147,7 +146,7 @@ bool test_sgemm(bool tra,
           << ", alpha: " << alpha << ", beta: " << beta
           << ", transA: " << (tra ? "true" : "false")
           << ", transB: " << (trb ? "true" : "false")
-          << ", relu: " << (has_relu ? "true" : "false")
+          << ", flag_act: " << flag_act
           << ", bias: " << (has_bias ? "true" : "false");
   if (FLAGS_check_result) {
     basic_gemm(tra,
@@ -167,7 +166,7 @@ bool test_sgemm(bool tra,
                has_bias,
                flag_act,
                six,
-               alpha,
+               act_param.Leaky_relu_alpha,
                act_param.hard_swish_scale,
                act_param.hard_swish_offset,
                act_param.hard_swish_threshold);
@@ -291,8 +290,7 @@ TEST(TestSgemm, test_func_sgemm_prepacked) {
                           }
                           int ldc = n + offset;
                           float six = 6.f;
-                          float alpha = 8.88f;
-                          float beta = 0.f;
+                          float scale = 8.88f;
                           auto flag = test_sgemm(tra,
                                                  trb,
                                                  m,
@@ -308,14 +306,13 @@ TEST(TestSgemm, test_func_sgemm_prepacked) {
                                                  FLAGS_power_mode,
                                                  th,
                                                  six,
-                                                 alpha,
-                                                 beta);
+                                                 scale);
                           if (flag) {
                             VLOG(4)
                                 << "test m = " << m << ", n=" << n
                                 << ", k=" << k
                                 << ", bias: " << (has_bias ? "true" : "false")
-                                << ", relu: " << (has_relu ? "true" : "false")
+                                << ", flag_act: " << flag_act
                                 << ", trans A: " << (tra ? "true" : "false")
                                 << ", trans B: " << (trb ? "true" : "false")
                                 << " passed\n";
@@ -324,7 +321,7 @@ TEST(TestSgemm, test_func_sgemm_prepacked) {
                                 << "test m = " << m << ", n=" << n
                                 << ", k=" << k
                                 << ", bias: " << (has_bias ? "true" : "false")
-                                << ", relu: " << (has_relu ? "true" : "false")
+                                << ", flag_act: " << flag_act
                                 << ", trans A: " << (tra ? "true" : "false")
                                 << ", trans B: " << (trb ? "true" : "false")
                                 << " failed\n";
@@ -374,10 +371,10 @@ TEST(TestSgemmCustom, test_func_sgemm_prepacked_custom) {
     LOG(FATAL) << "test m = " << FLAGS_M << ", n=" << FLAGS_N
                << ", k=" << FLAGS_K << ", trans A: " << FLAGS_traA
                << ", trans B: " << FLAGS_traB << ", bias: " << FLAGS_flag_bias
-               << ", relu: " << FLAGS_flag_relu << " failed!!";
+               << ", flag_act: " << FLAGS_flag_act << " failed!!";
   }
   LOG(INFO) << "test m = " << FLAGS_M << ", n=" << FLAGS_N << ", k=" << FLAGS_K
             << ", trans A: " << FLAGS_traA << ", trans B: " << FLAGS_traB
-            << ", bias: " << FLAGS_flag_bias << ", relu: " << FLAGS_flag_relu
+            << ", bias: " << FLAGS_flag_bias << ", flag_act: " << FLAGS_flag_act
             << " passed!!";
 }
