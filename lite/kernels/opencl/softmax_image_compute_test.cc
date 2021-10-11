@@ -81,7 +81,7 @@ void test(const lite_api::CLPrecisionType p,
             << " axis=" << axis;
 
   auto kernels = KernelRegistry::Global().Create(
-      "softmax", TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
+      "softmax", TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageFolder));
   ASSERT_FALSE(kernels.empty());
   auto kernel = std::move(kernels.front());
 
@@ -94,18 +94,7 @@ void test(const lite_api::CLPrecisionType p,
   kernel->SetParam(param);
   kernel->SetContext(std::move(context));
 
-  DDim x_ext_dim = DDim(std::vector<DDim::value_type>{1, 1, 1, 1});
-  if (x_dim.size() == 2 && axis != 0) {
-    x_ext_dim[0] = x_dim[0];
-    x_ext_dim[1] = x_dim[1];
-  } else {
-    for (int i = 0; i < x_dim.size(); i++) {
-      x_ext_dim[4 - x_dim.size() + i] = x_dim[i];
-    }
-  }
   DDim out_dim = x_dim;
-  DDim out_ext_dim = x_ext_dim;
-
   x.Resize(x_dim);
   out.Resize(out_dim);
 
@@ -114,16 +103,16 @@ void test(const lite_api::CLPrecisionType p,
   std::vector<float> out_from_gpu(out_dim.production());
   fill_data_rand(x_cpu.data(), -1.f, 1.f, x_dim.production());
 
-  CLImageConverterDefault* default_converter = new CLImageConverterDefault();
-  DDim x_image_shape = default_converter->InitImageDimInfoWith(x_ext_dim);
-  DDim out_image_shape = default_converter->InitImageDimInfoWith(out_ext_dim);
+  CLImageConverterFolder* folder_converter = new CLImageConverterFolder();
+  DDim x_image_shape = folder_converter->InitImageDimInfoWith(x_dim);
+  DDim out_image_shape = folder_converter->InitImageDimInfoWith(out_dim);
   VLOG(4) << "x_image_shape = " << x_image_shape[0] << " " << x_image_shape[1];
   VLOG(4) << "out_image_shape = " << out_image_shape[0] << " "
           << out_image_shape[1];
 
   const size_t dtype_size = fp16_flag ? sizeof(half_t) : sizeof(float);
   std::vector<char> x_image_data(x_image_shape.production() * 4 * dtype_size);
-  default_converter->NCHWToImage(x_cpu.data(), x_image_data.data(), x_ext_dim);
+  folder_converter->NCHWToImage(x_cpu.data(), x_image_data.data(), x_dim);
   MUTABLE_DATA_GPU(&x, x_image_shape[0], x_image_shape[1], x_image_data.data());
   auto* out_image =
       MUTABLE_DATA_GPU(&out, out_image_shape[0], out_image_shape[1], nullptr);
@@ -143,8 +132,8 @@ void test(const lite_api::CLPrecisionType p,
                               cl_image2d_row_pitch,
                               cl_image2d_slice_pitch,
                               IoDirection::DtoH);
-  default_converter->ImageToNCHW(
-      out_image_data.data(), out_from_gpu.data(), out_image_shape, out_ext_dim);
+  folder_converter->ImageToNCHW(
+      out_image_data.data(), out_from_gpu.data(), out_image_shape, out_dim);
 
   // run cpu ref
   softmax_baseline(x_cpu.data(), out_from_cpu.data(), x_dim, axis);
@@ -200,4 +189,4 @@ TEST(softmax, compute_basic) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(softmax, kOpenCL, kFP16, kImageDefault, def);
+USE_LITE_KERNEL(softmax, kOpenCL, kFP16, kImageFolder, def);

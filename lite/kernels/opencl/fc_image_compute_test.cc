@@ -89,7 +89,7 @@ void test(const lite_api::CLPrecisionType p,
             << " m=" << m << " n=" << n << " k=" << k;
 
   auto kernels = KernelRegistry::Global().Create(
-      "fc", TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
+      "fc", TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageFolder));
   ASSERT_FALSE(kernels.empty());
   auto kernel = std::move(kernels.front());
 
@@ -238,4 +238,4 @@ TEST(fc, compute_basic) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(fc, kOpenCL, kFP16, kImageDefault, image2d);
+USE_LITE_KERNEL(fc, kOpenCL, kFP16, kImageFolder, image2d);
