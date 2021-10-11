@@ -14,6 +14,8 @@ Paddle-Lite 提供了多种策略来自动优化原始的训练模型，其中�
 ```bash
 # 当前最新版本是 2.9
 pip install paddlelite==2.9
+# 当前最新版本是 1.3.2
+pip install x2paddle
 ```
 - `opt`转化和分析模型： 可通过**终端命令**或**Python脚本**调用
     - [终端命令方法](./opt/opt_python) （支持`Mac/Ubuntu`)
@@ -33,20 +35,28 @@ arch -x86_64 ./lite/tools/build.sh build_optimize_tool
 
 ## 使用X2paddle导出Padde-Lite支持格式
 
-**背景**：如果想用Paddle-Lite运行第三方来源（TensorFlow、Caffe、ONNX、PyTorch）模型，一般需要经过两次转化。即使用x2paddle工具将第三方模型转化为PaddlePaddle格式，再使用opt将PaddlePaddle模型转化为Padde-Lite可支持格式。
+**背景**：如果想用Paddle-Lite运行第三方来源（TensorFlow、Caffe、ONNX、PyTorch）模型，一般需要经过两次转化。即使用X2paddle工具将第三方模型转化为PaddlePaddle格式，再使用opt将PaddlePaddle模型转化为Padde-Lite可支持格式。
 
 **使用方法**：为了简化这一过程，X2Paddle集成了opt工具，提供一键转换API，以ONNX为例：
 
+***API方式***
  ```python
 from x2paddle.convert import onnx2paddle
 
-onnx2paddle(model_path, save_dir, 
-            convert_opt=True,
-            valid_places="arm",
-            model_type="naive_buffer")
+onnx2paddle(model_path, save_dir,
+            convert_to_lite=True,
+            lite_valid_places="arm",
+            lite_model_type="naive_buffer")
 # model_path(str)为ONNX模型路径
 # save_dir(str)为转换后模型保存路径
-# convert_opt(bool)表示是否使用opt工具，默认为False
-# valid_places(str)指定转换类型，默认为arm
-# model_type(str)指定模型转化类型，默认为naive_buffer
+# convert_to_lite(bool)表示是否使用opt工具，默认为False
+# lite_valid_places(str)指定转换类型，默认为arm
+# lite_model_type(str)指定模型转化类型，默认为naive_buffer
 ```
+
+***命令行方式***
+```shell
+x2paddle --framework=onnx --model=onnx_model.onnx --save_dir=pd_model --to_lite=True --lite_valid_places=arm --lite_model_type=naive_buffer
+```
+
+TensorFlow、Caffe以及Pytorch模型转换参考[X2PaddleAPI](https://github.com/PaddlePaddle/X2Paddle/tree/develop/docs/inference_model_convertor/convert2lite_api.md)
