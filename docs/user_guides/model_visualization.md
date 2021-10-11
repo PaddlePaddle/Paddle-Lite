@@ -168,7 +168,7 @@ $ export SUBGRAPH_CUSTOM_PARTITION_CONFIG_FILE=./subgraph_custom_partition_confi
 $ export GLOG_v=5 # 继续打开Lite的Debug Log信息
 $ paddle_lite_opt \
       --model_dir=./recognize_digits_model_non-combined/ \
-      --valid_targets=npu,arm \
+      --valid_targets=huawei_kirin_npu,arm \
       --optimize_out_type=protobuf \
       --optimize_out=model_opt_dir_npu > debug_log.txt 2>&1 #
 ```
