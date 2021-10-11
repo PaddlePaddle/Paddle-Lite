@@ -50,7 +50,7 @@ GetJitCode(const typename KernelTuple::attr_type& attr) {
   if (iter != creator_map.end()) {
     auto& creators = iter->second;
     for (auto& cur : creators) {
-      auto i = dynamic_cast<const JitCodeCreator<Attr>*>(cur.get());
+      auto i = static_cast<const JitCodeCreator<Attr>*>(cur.get());
       if (i && i->CanBeUsed(attr)) {
         auto p = i->CreateJitCode(attr);
         if (p) {
@@ -83,7 +83,7 @@ inline const Kernel* GetReferKernel() {
       << "Every Kernel should have reference function.";
   auto& ref_impls = ref_iter->second;
   for (auto& impl : ref_impls) {
-    auto i = dynamic_cast<const ReferKernel<KernelTuple>*>(impl.get());
+    auto i = static_cast<const ReferKernel<KernelTuple>*>(impl.get());
     if (i) {
       return i;
     }
@@ -94,7 +94,7 @@ inline const Kernel* GetReferKernel() {
 template <typename KernelTuple>
 inline typename KernelTuple::func_type GetReferFunc() {
   auto ker = GetReferKernel<KernelTuple>();
-  auto p = dynamic_cast<const ReferKernel<KernelTuple>*>(ker);
+  auto p = static_cast<const ReferKernel<KernelTuple>*>(ker);
   CHECK(p) << "The Refer kernel should exsit";
   return p->GetFunc();
 }
@@ -117,7 +117,7 @@ std::vector<const Kernel*> GetAllCandidateKernels(
   if (iter != pool.end()) {
     auto& impls = iter->second;
     for (auto& impl : impls) {
-      auto i = dynamic_cast<const KernelMore<KernelTuple>*>(impl.get());
+      auto i = static_cast<const KernelMore<KernelTuple>*>(impl.get());
       if (i && i->CanBeUsed(attr)) {
         res.emplace_back(i);
       }
@@ -140,11 +140,11 @@ GetAllCandidateFuncsWithTypes(const typename KernelTuple::attr_type& attr) {
   for (auto k : kers) {
     std::string name = k->ImplType();
     if (name == "JitCode") {
-      auto i = dynamic_cast<const GenBase*>(k);
+      auto i = static_cast<const GenBase*>(k);
       CHECK(i) << "jitcode kernel cast can not fail.";
       res.emplace_back(std::make_pair(name, i->template getCode<Func>()));
     } else {
-      auto i = dynamic_cast<const KernelMore<KernelTuple>*>(k);
+      auto i = static_cast<const KernelMore<KernelTuple>*>(k);
       CHECK(i) << "kernel cast can not fail.";
       res.emplace_back(std::make_pair(name, i->GetFunc()));
     }
