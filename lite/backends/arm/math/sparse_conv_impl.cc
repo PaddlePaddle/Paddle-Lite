@@ -1051,7 +1051,8 @@ void sparse_conv_fp32_pipelined(const float* A,
                 "v16", "v17", "v18", "v21", "v22", "v23", "v24", "v25", 
                 "v26", "v27", "v28", "v30", "v31", "w1", "x1", "cc", "memory");
         // clang-format on
-        cur_output = reinterpret_cast<float*>((uintptr_t)cur_output + output_stride);
+        cur_output =
+            reinterpret_cast<float*>((uintptr_t)cur_output + output_stride);
       }
     }
     LITE_PARALLEL_COMMON_END();
@@ -1940,7 +1941,8 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
                 "v16", "v17", "v18", "v21", "v22", "v23", "v24", "v25", 
                 "v26", "v27", "v28", "v30", "v31", "w1", "x1", "cc", "memory");
         // clang-format on
-        cur_output = reinterpret_cast<float*>((uintptr_t)cur_output + output_stride);
+        cur_output =
+            reinterpret_cast<float*>((uintptr_t)cur_output + output_stride);
       }
     }
     LITE_PARALLEL_COMMON_END();
@@ -2914,8 +2916,8 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
     LITE_PARALLEL_COMMON_BEGIN(mi, tid, mnum, 0, 48) {
       size_t cur_i = mi / 48;
       const int8_t* cur_B = B + cur_i * 48;
-      int8_t* cur_output = reinterpret_cast<int8_t*>((uintptr_t)output +
-                                                   48 * sizeof(int8_t) * cur_i);
+      int8_t* cur_output = reinterpret_cast<int8_t*>(
+          (uintptr_t)output + 48 * sizeof(int8_t) * cur_i);
 
       const int8_t* w = A;
       const int32_t* dmap = widx_dmap;
@@ -2943,7 +2945,8 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
                 "v16", "v17", "v18", "v19", "v21", "v22", "v23", "v24", "v25", 
                 "v26", "v27", "v28", "v30", "v31", "w0", "w1", "x1", "cc", "memory");
         // clang-format on
-        cur_output = reinterpret_cast<int8_t*>((uintptr_t)cur_output + output_stride);
+        cur_output =
+            reinterpret_cast<int8_t*>((uintptr_t)cur_output + output_stride);
       }
     }
     LITE_PARALLEL_COMMON_END();
@@ -3726,7 +3729,7 @@ void sparse_conv_fp32_pipelined(const float* A,
       size_t cur_i = mi / 48;
       const float* cur_B = B + cur_i * 48;
       float* cur_output = reinterpret_cast<float*>((uintptr_t)output +
-                                                   48 * sizeof(float) * cur_i);  
+                                                   48 * sizeof(float) * cur_i);
       const float* w = A;
       const int32_t* dmap = widx_dmap;
       const uint32_t* nnzmap = nidx_nnzmap;
@@ -3772,7 +3775,8 @@ void sparse_conv_fp32_pipelined(const float* A,
                 "memory");
         // clang-format on
         // TODO(yingyu): check the modifications
-        cur_output = reinterpret_cast<float*>((uintptr_t)cur_output + output_stride);
+        cur_output =
+            reinterpret_cast<float*>((uintptr_t)cur_output + output_stride);
         w = w + lave_num;
         dmap = dmap + lave_num;
       }
@@ -4726,7 +4730,8 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
     LITE_PARALLEL_COMMON_BEGIN(mi, tid, mnum, 0, 48) {
       size_t cur_i = mi / 48;
       const int8_t* cur_B = B + cur_i * 48;
-      float* cur_output = reinterpret_cast<float*>((uintptr_t)output + 48 * sizeof(float) * cur_i);
+      float* cur_output = reinterpret_cast<float*>((uintptr_t)output +
+                                                   48 * sizeof(float) * cur_i);
 
       const int8_t* w = A;
       const int32_t* dmap = widx_dmap;
@@ -4771,14 +4776,16 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
               "cc",
               "memory");
         // clang-format on
-        cur_output = reinterpret_cast<float*>((uintptr_t)cur_output + output_stride);
+        cur_output =
+            reinterpret_cast<float*>((uintptr_t)cur_output + output_stride);
       }
     }
     LITE_PARALLEL_COMMON_END();
   }
   B += mend * 48;
   mc -= mend * 48 * sizeof(int8_t);
-  output = reinterpret_cast<float*>((uintptr_t)output + 48 * sizeof(float) * mend);
+  output =
+      reinterpret_cast<float*>((uintptr_t)output + 48 * sizeof(float) * mend);
 
   if
     SPARSE_UNLIKELY(mc != 0) {
@@ -5943,7 +5950,8 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
     LITE_PARALLEL_COMMON_BEGIN(mi, tid, mnum, 0, 48) {
       size_t cur_i = mi / 48;
       const int8_t* cur_B = B + cur_i * 48;
-      int8_t* cur_output = reinterpret_cast<int8_t*>((uintptr_t)output + 48 * sizeof(int8_t) * cur_i);
+      int8_t* cur_output = reinterpret_cast<int8_t*>(
+          (uintptr_t)output + 48 * sizeof(int8_t) * cur_i);
 
       const int8_t* w = A;
       const int32_t* dmap = widx_dmap;
@@ -5989,14 +5997,16 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
               "cc",
               "memory");
         // clang-format on
-        output = reinterpret_cast<int8_t*>((uintptr_t)output + output_stride);
+        cur_output =
+            reinterpret_cast<int8_t*>((uintptr_t)cur_output + output_stride);
       }
     }
     LITE_PARALLEL_COMMON_END();
   }
   B += mend * 48;
   mc -= mend * 48 * sizeof(int8_t);
-  output = reinterpret_cast<int8_t*>((uintptr_t)output + 48 * sizeof(int8_t) * mend);
+  output =
+      reinterpret_cast<int8_t*>((uintptr_t)output + 48 * sizeof(int8_t) * mend);
 
   if
     SPARSE_UNLIKELY(mc != 0) {
