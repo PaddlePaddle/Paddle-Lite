@@ -62,7 +62,7 @@ cd mask_demo && bash run.sh
 ../mask_demo/: 9 files pushed, 0 skipped. 141.6 MB/s (28652282 bytes in 0.193s)
 Load detecion model succeed.
 ======= benchmark summary =======
-model_dir:mobilenet_v1_opt.nb
+model_dir: mask_detector_opt2.nb
 repeats:100
 first_duration: 35.951 
 max_duration: 34.009

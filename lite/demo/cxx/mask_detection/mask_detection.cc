@@ -198,13 +198,13 @@ void RunModel(std::string det_model_file,
   }
   avg_duration = sum_duration / static_cast<float>(repeats);
   std::cout << "\n======= benchmark summary =======\n"
-            << "model_dir:" << det_model_file << "\n"
-            << "repeats:" << repeats << "\n"
+            << "model_dir: " << det_model_file << "\n"
+            << "repeats: " << repeats << "\n"
             << "*** time info(ms) ***\n"
-            << "1st_duration:" << first_duration << "\n"
-            << "max_duration:" << max_duration << "\n"
-            << "min_duration:" << min_duration << "\n"
-            << "avg_duration:" << avg_duration << "\n"
+            << "1st_duration: " << first_duration << "\n"
+            << "max_duration: " << max_duration << "\n"
+            << "min_duration: " << min_duration << "\n"
+            << "avg_duration: " << avg_duration << "\n"
             << "detection pre_process time: " << detec_pre_end << "\n";
   std::cout << std::endl
       // Get Output Tensor
