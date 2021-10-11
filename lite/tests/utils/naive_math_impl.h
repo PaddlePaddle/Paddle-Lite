@@ -342,7 +342,7 @@ static void basic_gemv(int m,
       } else if (flag_act == 10) {  // hard_swish
         c[i] = std : min(static_cast<type2>(threshold),
                          std::max(static_cast<type2>(0), tmp)) *
-                     static_cast<type2>(tmp * scale);
+                     static_cast<type2>(tmp * 1.0 / scale);
       }
     } else {
       c[i] = tmp;

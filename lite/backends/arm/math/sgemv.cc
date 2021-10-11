@@ -478,8 +478,7 @@ void sgemv_trans(const int M,
           y[r] = beta * y[r] + (in_y[r] < 0.f ? alpha * in_y[r] : in_y[r]);
         }
       } else if (act == lite_api::ActivationType::kHardSwish) {
-        float32x4_t vscale =
-            div_ps(vzero, vdupq_n_f32(act_param.hard_swish_scale));
+        float32x4_t vscale = vdupq_n_f32(1.f / act_param.hard_swish_scale);
         float32x4_t voffset = vdupq_n_f32(act_param.hard_swish_offset);
         float32x4_t vthreshold = vdupq_n_f32(act_param.hard_swish_threshold);
         if (cnt4 > 0) {
@@ -487,8 +486,8 @@ void sgemv_trans(const int M,
           asm volatile(
               "1:\n"
               "ld1   {v0.4s},  [%[in_y]],   #16 \n"
-              "fadd  v4.4s,  v0.4s,  %[vscale].4s \n"
-              "fmul  v5.4s,  v0.4s,  %[vthreshold].4s \n"
+              "fadd  v4.4s,  v0.4s,  %[voffset].4s \n"
+              "fmul  v5.4s,  v0.4s,  %[vscale].4s \n"
               "fmax  v1.4s,  v4.4s,  %[vzero].4s\n"
               "fmin  v1.4s,  v1.4s,  %[vthreshold].4s\n"
               "fmul  v0.4s, v5.4s, v1.4s\n"
@@ -586,8 +585,7 @@ void sgemv_trans(const int M,
           y[r] = in_y[r] < 0.f ? alpha * in_y[r] : in_y[r];
         }
       } else if (act == lite_api::ActivationType::kHardSwish) {
-        float32x4_t vscale =
-            div_ps(vzero, vdupq_n_f32(act_param.hard_swish_scale));
+        float32x4_t vscale = vdupq_n_f32(1.f / act_param.hard_swish_scale);
         float32x4_t voffset = vdupq_n_f32(act_param.hard_swish_offset);
         float32x4_t vthreshold = vdupq_n_f32(act_param.hard_swish_threshold);
         if (cnt4 > 0) {
@@ -595,8 +593,8 @@ void sgemv_trans(const int M,
           asm volatile(
               "1:\n"
               "ld1   {v0.4s},  [%[in_y]],   #16 \n"
-              "fadd  v4.4s,  v0.4s,  %[vscale].4s \n"
-              "fmul  v5.4s,  v0.4s,  %[vthreshold].4s \n"
+              "fadd  v4.4s,  v0.4s,  %[voffset].4s \n"
+              "fmul  v5.4s,  v0.4s,  %[vscale].4s \n"
               "fmax  v1.4s,  v4.4s,  %[vzero].4s\n"
               "fmin  v1.4s,  v1.4s,  %[vthreshold].4s\n"
               "fmul  v0.4s, v5.4s, v1.4s\n"
@@ -894,8 +892,7 @@ void sgemv_trans(const int M,
           y[r] = beta * y[r] + (in_y[r] < 0.f ? alpha * in_y[r] : in_y[r]);
         }
       } else if (act == lite_api::ActivationType::kHardSwish) {
-        float32x4_t vscale =
-            div_ps(vzero, vdupq_n_f32(act_param.hard_swish_scale));
+        float32x4_t vscale = vdupq_n_f32(1.f / act_param.hard_swish_scale);
         float32x4_t voffset = vdupq_n_f32(act_param.hard_swish_offset);
         float32x4_t vthreshold = vdupq_n_f32(act_param.hard_swish_threshold);
         if (m_cnt4 > 0) {
@@ -906,7 +903,7 @@ void sgemv_trans(const int M,
               "vadd.f32 q3, q0,  %q[voffset]  \n"
               "vmul.f32 q4, q0,  %q[vscale]   \n"
               "vmax.f32 q5, q3,  %q[vzero]    \n"
-              "vmin.f32 q5, q3,  %q[vthreshold]\n"
+              "vmin.f32 q5, q5,  %q[vthreshold]\n"
               "vmul.f32 q0, q5, q4            \n"
               "vadd.f32 q0, q0, %q[vbeta]     \n"
               "subs %[cnt], %[cnt], #1        \n"
@@ -1004,8 +1001,7 @@ void sgemv_trans(const int M,
           y[r] = in_y[r] < 0.f ? alpha * in_y[r] : in_y[r];
         }
       } else if (act == lite_api::ActivationType::kHardSwish) {
-        float32x4_t vscale =
-            div_ps(vzero, vdupq_n_f32(act_param.hard_swish_scale));
+        float32x4_t vscale = vdupq_n_f32(1.f / act_param.hard_swish_scale);
         float32x4_t voffset = vdupq_n_f32(act_param.hard_swish_offset);
         float32x4_t vthreshold = vdupq_n_f32(act_param.hard_swish_threshold);
         if (m_cnt4 > 0) {
@@ -1016,7 +1012,7 @@ void sgemv_trans(const int M,
               "vadd.f32 q3, q0,  %q[voffset]  \n"
               "vmul.f32 q4, q0,  %q[vscale]   \n"
               "vmax.f32 q5, q3,  %q[vzero]    \n"
-              "vmin.f32 q5, q3,  %q[vthreshold]\n"
+              "vmin.f32 q5, q5,  %q[vthreshold]\n"
               "vmul.f32 q0, q5, q4            \n"
               "subs %[cnt], %[cnt], #1        \n"
               "vst1.32  {d0-d1}, [%[out_y]]!  \n"
@@ -1831,14 +1827,14 @@ void sgemv_trans(const int M,
 #define SGEMV_OUT_4_HARD_SWISH                               \
   /* end */                                                  \
   "4:                             @ end\n"                   \
-  "vld1.32    {d4-d5}, [%[scale_v]]! @ offset \n"            \
+  "vld1.32    {d4-d7}, [%[scale_v]]! @ offset \n"            \
   "vmov.i32   q1, #0              @ zero for hardswish\n"    \
-  "vld1.32    {d6-d7}, [%[scale_v]]! @ scale \n"             \
-  "vld1.32    {d8-d9}, [%[scale_v]]! @ threshold \n"         \
+  "vld1.32    {d8-d9}, [%[scale_v]]  @ threshold \n"         \
+  "sub        %[scale_v], #32     \n"                        \
   "vadd.f32   q5, q0, q2          @ vaddq_f32 \n"            \
   "vmul.f32   q6, q0, q3          @ vmulq_f32 \n"            \
   "vmax.f32   q5, q5, q1          \n"                        \
-  "vmax.f32   q5, q5, q4          \n"                        \
+  "vmin.f32   q5, q5, q4          \n"                        \
   "vmul.f32   q0, q5, q6          \n"                        \
   "vst1.32 {d0-d1}, [%[out]]      @ save result\n"
 
@@ -1929,15 +1925,15 @@ void sgemv_trans(const int M,
 #define SGEMV_OUT_4_HARD_SWISH_BETA                          \
   /* end */                                                  \
   "4:                             @ end\n"                   \
-  "vld1.32    {d4-d5}, [%[scale_v]]! @ offset \n"            \
+  "vld1.32    {d4-d7}, [%[scale_v]]! @ offset \n"            \
   "vmov.i32   q1, #0              @ zero for hardswish\n"    \
-  "vld1.32    {d6-d7}, [%[scale_v]]! @ scale \n"             \
-  "vld1.32    {d8-d9}, [%[scale_v]]! @ threshold \n"         \
+  "vld1.32    {d8-d9}, [%[scale_v]]  @ threshold \n"         \
+  "sub        %[scale_v], #32     \n"                        \
   "vadd.f32   q5, q0, q2          @ vaddq_f32 \n"            \
   "vmul.f32   q6, q0, q3          @ vmulq_f32 \n"            \
   "vld1.32    {d14-d15}, [%[out]] \n"                        \
   "vmax.f32   q5, q5, q1          \n"                        \
-  "vmax.f32   q5, q5, q4          \n"                        \
+  "vmin.f32   q5, q5, q4          \n"                        \
   "vmul.f32   q0, q5, q6          \n"                        \
   "vmla.f32   q0, q7, %q[vbeta]   \n"                        \
   "vst1.32 {d0-d1}, [%[out]]      @ save result\n"
@@ -3134,9 +3130,10 @@ void sgemv_hard_swish(const int M,
   int tail = N & 7;
   bool has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
   float32x4_t vbeta = vdupq_n_f32(beta);
+  float scale_r = 1.0 / scale;
 #ifdef __aarch64__
   int out_cnt = M >> 3;
-  float32x4_t vscale = vdupq_n_f32(scale);
+  float32x4_t vscale = vdupq_n_f32(scale_r);
   float32x4_t voffset = vdupq_n_f32(offset);
   float32x4_t vthreshold = vdupq_n_f32(threshold);
   if (has_beta) {
@@ -3200,7 +3197,7 @@ void sgemv_hard_swish(const int M,
                      [tail] "+r"(tail_loop)
                    : [out] "r"(ptr_out),
                      [bias0] "r"(bias0),
-                     [scale] "r"(scale),
+                     [scale] "r"(scale_r),
                      [threshold] "r"(threshold),
                      [offset] "r"(offset),
                      [beta] "r"(beta)
@@ -3280,7 +3277,7 @@ void sgemv_hard_swish(const int M,
                      [tail] "+r"(tail_loop)
                    : [out] "r"(ptr_out),
                      [bias0] "r"(bias0),
-                     [scale] "r"(scale),
+                     [scale] "r"(scale_r),
                      [offset] "r"(offset),
                      [threshold] "r"(threshold)
                    : "v0",
@@ -3306,10 +3303,10 @@ void sgemv_hard_swish(const int M,
                        offset,
                        offset,
                        offset,
-                       scale,
-                       scale,
-                       scale,
-                       scale,
+                       scale_r,
+                       scale_r,
+                       scale_r,
+                       scale_r,
                        threshold,
                        threshold,
                        threshold,
@@ -3361,7 +3358,7 @@ void sgemv_hard_swish(const int M,
                      [tail] "+r"(tail_loop)
                    : [out] "r"(ptr_out),
                      [bias0] "r"(bias0),
-                     [scale] "r"(scale),
+                     [scale] "r"(scale_r),
                      [offset] "r"(offset),
                      [threshold] "r"(threshold),
                      [beta] "r"(beta)
@@ -3424,7 +3421,7 @@ void sgemv_hard_swish(const int M,
                      [tail] "+r"(tail_loop)
                    : [out] "r"(ptr_out),
                      [bias0] "r"(bias0),
-                     [scale] "r"(scale),
+                     [scale] "r"(scale_r),
                      [offset] "r"(offset),
                      [threshold] "r"(threshold)
                    : "q0",
