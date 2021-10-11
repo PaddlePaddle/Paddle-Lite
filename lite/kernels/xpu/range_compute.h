@@ -22,7 +22,7 @@ namespace kernels {
 namespace xpu {
 
 template <typename T>    
-class RangeCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+class RangeCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kAny)> {
  public:
   using param_t = operators::RangeParam;
 
