@@ -118,15 +118,11 @@ struct variant {
     if (type_id == FastTypeId<T>()) {
       return *reinterpret_cast<const T*>(&data);
     } else {
-//#ifdef LITE_ON_TINY_PUBLISH
-//      LOG(FATAL) << "unmatched type, store as " << type_id
-//                 << " , but want to get " << typeid(T).name();
-//#else
-//      throw std::invalid_argument(
-//          string_format("unmatched type, store as %d, but want to get %s",
-//                        type_id,
-//                        typeid(T).name()));
-//#endif
+#ifdef LITE_ON_TINY_PUBLISH
+     LOG(FATAL) << "Error: unmatched data type, the data type stored in this varient is different from the data type you  want to obtain!";
+#else
+      throw std::invalid_argument("Error: unmatched data type, the data type stored in this varient is different from the data type you  want to obtain!");
+#endif
     }
     return *reinterpret_cast<const T*>(&data);
   }
