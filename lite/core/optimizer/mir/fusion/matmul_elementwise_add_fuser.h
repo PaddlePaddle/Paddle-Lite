@@ -25,13 +25,17 @@ namespace fusion {
 
 class MatmulElementwiseAddFuser : public FuseBase {
  public:
-  explicit MatmulElementwiseAddFuser(bool with_relu) : with_relu_(with_relu) {}
+  explicit MatmulElementwiseAddFuser(bool with_relu,
+                                     const std::unique_ptr<SSAGraph>& graph)
+      : with_relu_(with_relu), graph_(graph) {}
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
  private:
   cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
+  void CreatePattern();
   bool with_relu_;
+  const std::unique_ptr<SSAGraph>& graph_;
 };
 
 }  // namespace fusion

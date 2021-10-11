@@ -22,20 +22,13 @@ namespace lite {
 namespace mir {
 namespace fusion {
 
-void MatmulElementwiseAddFuser::BuildPattern() {
+void MatmulElementwiseAddFuser::CreatePattern() {
   // create nodes.
   auto* x = VarNode("x")->assert_is_op_input("matmul", "X");
   auto* W = VarNode("W")->assert_is_persistable_var()->assert_is_op_input(
       "matmul", "Y");
   auto* b = VarNode("b")->assert_is_persistable_var();
-  /*
-   * The mul op must satisfy the following conditions:
-   * 1. the transpose_X and transpose_Y attrs are false
-   * 2. the alpha attr is 1.0
-   */
   auto* matmul = OpNode("matmul", "matmul")
-                     ->assert_op_attr<bool>("transpose_X", false)
-                     ->assert_op_attr<bool>("transpose_Y", false)
                      ->assert_op_attr_satisfied<float>("alpha", [](float attr) {
                        return (std::fabs(attr - 1.0) < 1e-5);
                      });
@@ -66,6 +59,27 @@ void MatmulElementwiseAddFuser::BuildPattern() {
   }
 }
 
+void MatmulElementwiseAddFuser::BuildPattern() {
+  for (auto& node : graph_->StmtTopologicalOrder()) {
+    if (node->IsStmt() &&
+        node->AsStmt().picked_kernel().op_type() == "matmul") {
+      auto* scope = node->stmt()->op()->scope();
+      auto op_desc = node->stmt()->mutable_op_info();
+
+      bool transpose_x = op_desc->GetAttr<bool>("transpose_X");
+      bool transpose_y = op_desc->GetAttr<bool>("transpose_Y");
+      auto arg_y_name = op_desc->Input("Y").front();
+      auto& tensor_y = scope->FindVar(arg_y_name)->Get<lite::Tensor>();
+      bool is_persist = tensor_y.persistable();
+      if ((!transpose_x && !transpose_y) ||
+          (!transpose_x && transpose_y && is_persist)) {
+        CreatePattern();
+        return;
+      }
+    }
+  }
+}
+
 void MatmulElementwiseAddFuser::InsertNewNode(SSAGraph* graph,
                                               const key2nodes_t& matched) {
   auto op_desc = GenOpDesc(matched);
@@ -83,6 +97,16 @@ void MatmulElementwiseAddFuser::InsertNewNode(SSAGraph* graph,
   IR_NODE_LINK_TO(new_op_node, matched.at("Out"));
 }
 
+template <typename T>
+void transpose(T* dst, const T* src, const int src_rows, const int src_cols) {
+  CHECK(src && dst && src_rows > 0 && src_cols > 0);
+  for (int r = 0; r < src_rows; ++r) {
+    for (int c = 0; c < src_cols; ++c) {
+      dst[c * src_rows + r] = src[r * src_cols + c];
+    }
+  }
+}
+
 cpp::OpDesc MatmulElementwiseAddFuser::GenOpDesc(const key2nodes_t& matched) {
   auto op_desc = *matched.at("matmul")->stmt()->op_info();
 
@@ -95,7 +119,7 @@ cpp::OpDesc MatmulElementwiseAddFuser::GenOpDesc(const key2nodes_t& matched) {
                          op_desc.HasInputScale(input_y_name);
   if (is_quantized_op) {
     x_scale_vct = op_desc.GetInputScale(input_x_name);
-    y_scale_vct = op_desc.GetInputScale(op_desc.Input("Y").front());
+    y_scale_vct = op_desc.GetInputScale(input_y_name);
   }
   auto* scope = matched.at("matmul")->stmt()->op()->scope();
   auto x_shape = scope->FindVar(input_x_name)->Get<lite::Tensor>().dims();
@@ -104,6 +128,20 @@ cpp::OpDesc MatmulElementwiseAddFuser::GenOpDesc(const key2nodes_t& matched) {
   VLOG(4) << "y_shape: "
           << scope->FindVar(input_y_name)->Get<lite::Tensor>().dims();
   VLOG(4) << "x_num_col_dims: " << x_num_col_dims;
+
+  bool transpose_y = op_desc.GetAttr<bool>("transpose_Y");
+  if (transpose_y) {
+    auto* y_t = scope->FindVar(input_y_name)->GetMutable<lite::Tensor>();
+    auto y_dims = y_t->dims();
+    Tensor y_t_tmp;
+    y_t_tmp.CopyDataFrom(*y_t);  // in order to copy y_t's
+                                 // target_,lod_,precision_, etc,. to y_t_tmp
+    y_t_tmp.Resize({y_dims[1], y_dims[0]});
+    const float* src = y_t->data<float>();
+    float* dst = y_t_tmp.mutable_data<float>();
+    transpose<float>(dst, src, y_dims[0], y_dims[1]);
+    y_t->CopyDataFrom(y_t_tmp);
+  }
 
   op_desc.mutable_inputs()->clear();
   op_desc.mutable_outputs()->clear();
