@@ -15,7 +15,6 @@ Welcome to Paddle-Lite's documentation!
 
   introduction/tech_highlights
   introduction/architecture
-  introduction/support_hardware
   introduction/support_operation_list
   introduction/support_model_list
 
@@ -32,6 +31,7 @@ Welcome to Paddle-Lite's documentation!
   :caption: 快速开始
   :name: sec-quick-start
 
+  quick_start/support_hardware
   quick_start/tutorial
   quick_start/release_lib
   quick_start/cpp_demo
