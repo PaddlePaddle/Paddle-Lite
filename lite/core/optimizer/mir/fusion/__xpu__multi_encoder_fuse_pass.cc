@@ -1022,7 +1022,7 @@ class XPUMultiEncoderFuser {
                                                    weight_qkv_trans_int8.get(),
                                                    max_f,
                                                    qkv_len);
-        memcpy(weight_tensor_vec[0]->mutable_data<float>(),
+        memcpy(weight_tensor_vec[0]->mutable_data<int8_t>(),
                weight_qkv_trans_int8.get(),
                qkv_len * sizeof(int8_t));
       } else {
@@ -1032,7 +1032,7 @@ class XPUMultiEncoderFuser {
             weight_qkv_trans_int16.get(),
             max_f,
             qkv_len);
-        memcpy(weight_tensor_vec[0]->mutable_data<float>(),
+        memcpy(weight_tensor_vec[0]->mutable_data<int16_t>(),
                weight_qkv_trans_int16.get(),
                qkv_len * sizeof(int16_t));
       }
