@@ -27,7 +27,9 @@ class WriteBackCompute
   void Run() override;
 
  private:
-  void RunImplement(const lite::Tensor* x, lite::Tensor* y);
+  void RunImplement(const lite::Tensor* x,
+                    lite::Tensor* y,
+                    bool is_tensor_array_copy = false);
 };
 
 }  // namespace host

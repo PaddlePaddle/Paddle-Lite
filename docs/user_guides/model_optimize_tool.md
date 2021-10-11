@@ -27,11 +27,12 @@ pip install x2paddle
 ```shell
 ./lite/tools/build.sh build_optimize_tool
 ```
+
 如果在arm64架构的MacOS下编译opt工具失败，试着删除third-party目录并重新`git checkout third-party`，然后将上一条指令改为
 ```shell
 arch -x86_64 ./lite/tools/build.sh build_optimize_tool
 ```
-该命令会编译x86格式的opt工具，但是不会影响工具的正常使用
+该命令会编译x86格式的opt工具，但是不会影响工具的正常使用，编译成功后，在./build.opt/lite/api目录下，生成了可执行文件opt
 
 ## 使用X2paddle导出Padde-Lite支持格式
 
