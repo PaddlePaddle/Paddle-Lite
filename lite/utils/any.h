@@ -227,9 +227,8 @@ inline bool Any::is_type() const {
 template <typename T>
 inline void Any::check_type() const {
   CHECK_EQ((type_ == nullptr), false);
-  CHECK_EQ((type_->ptype_info == FastTypeId<T>()), true);
-//      << "Any struct is stored in the type " << type_->ptype_info->name()
-//      << ", but trying to obtain the type " << FastTypeId<T>().name() << ".";
+  CHECK_EQ((type_->ptype_info == FastTypeId<T>()), true)
+      << "Error: the data type stored in 'Any' struct is different from the data type you  want to obtain!";
 }
 
 template <typename T>
