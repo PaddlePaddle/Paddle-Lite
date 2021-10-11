@@ -57,7 +57,9 @@ struct variant_helper<F, Ts...> {
     else
       variant_helper<Ts...>::move(old_t, old_v, new_v);
   }
-  inline static void copy(FastTypeIdType old_t, const void* old_v, void* new_v) {
+  inline static void copy(FastTypeIdType old_t,
+                          const void* old_v,
+                          void* new_v) {
     if (old_t == FastTypeId<F>())
       new (new_v) F(*reinterpret_cast<const F*>(old_v));
     else
@@ -68,7 +70,9 @@ template <>
 struct variant_helper<> {
   inline static void destroy(FastTypeIdType id, void* data) {}
   inline static void move(FastTypeIdType old_t, void* old_v, void* new_v) {}
-  inline static void copy(FastTypeIdType old_t, const void* old_v, void* new_v) {}
+  inline static void copy(FastTypeIdType old_t,
+                          const void* old_v,
+                          void* new_v) {}
 };
 
 template <typename... Ts>
@@ -119,9 +123,13 @@ struct variant {
       return *reinterpret_cast<const T*>(&data);
     } else {
 #ifdef LITE_ON_TINY_PUBLISH
-     LOG(FATAL) << "Error: unmatched data type, the data type stored in this varient is different from the data type you  want to obtain!";
+      LOG(FATAL) << "Error: unmatched data type, the data type stored in this "
+                    "varient is different from the data type you  want to "
+                    "obtain!";
 #else
-      throw std::invalid_argument("Error: unmatched data type, the data type stored in this varient is different from the data type you  want to obtain!");
+      throw std::invalid_argument(
+          "Error: unmatched data type, the data type stored in this varient is "
+          "different from the data type you  want to obtain!");
 #endif
     }
     return *reinterpret_cast<const T*>(&data);
@@ -145,9 +153,13 @@ struct variant {
       return reinterpret_cast<T*>(&data);
     } else {
 #ifdef LITE_ON_TINY_PUBLISH
-     LOG(FATAL) << "Error: unmatched data type, the data type stored in this varient is different from the data type you  want to obtain!";
+      LOG(FATAL) << "Error: unmatched data type, the data type stored in this "
+                    "varient is different from the data type you  want to "
+                    "obtain!";
 #else
-      throw std::invalid_argument("Error: unmatched data type, the data type stored in this varient is different from the data type you  want to obtain!");
+      throw std::invalid_argument(
+          "Error: unmatched data type, the data type stored in this varient is "
+          "different from the data type you  want to obtain!");
 #endif
     }
   }

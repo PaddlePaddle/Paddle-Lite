@@ -228,7 +228,8 @@ template <typename T>
 inline void Any::check_type() const {
   CHECK_EQ((type_ == nullptr), false);
   CHECK_EQ((type_->ptype_info == FastTypeId<T>()), true)
-      << "Error: the data type stored in 'Any' struct is different from the data type you  want to obtain!";
+      << "Error: the data type stored in 'Any' struct is different from the "
+         "data type you  want to obtain!";
 }
 
 template <typename T>
