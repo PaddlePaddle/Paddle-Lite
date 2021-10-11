@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <algorithm>
 #include <cmath>
 
 template <typename type>
@@ -258,7 +259,12 @@ static void basic_gemm(bool trans_a,
                        int ldc,
                        const type2* bias,
                        bool flag_bias = false,
-                       bool flag_relu = false) {
+                       int flag_act = false,
+                       float six = 6.f,
+                       float leakey_relu_alpha = 1.f,
+                       float scale = 6.f,
+                       float offset = 3.f,
+                       float threshold = 6.f) {
 #ifdef PADDLE_WITH_MKLML
 #pragma omp parallel for
 #endif
@@ -285,8 +291,25 @@ static void basic_gemm(bool trans_a,
         sum += av * bv;
       }
       type2 tmp = alpha * sum + beta * c[i * ldc + j] + bias_data;
-      if (flag_relu) {
-        c[i * ldc + j] = tmp > (type2)0 ? tmp : (type2)0;
+      if (flag_act > 0) {
+        if (flag_act == 1) {  // relu
+          c[i * ldc + j] =
+              tmp > static_cast<type2>(0) ? tmp : static_cast<type2>(0);
+        } else if (flag_act == 2) {  // relu 6
+          c[i * ldc + j] =
+              tmp > static_cast<type2>(0) ? tmp : static_cast<type2>(0);
+          c[i * ldc + j] = c[i * ldc + j] < static_cast<type2>(six)
+                               ? c[i * ldc + j]
+                               : static_cast<type2>(six);
+        } else if (flag_act == 4) {  // leaky relu
+          c[i * ldc + j] = tmp < static_cast<type2>(0)
+                               ? static_cast<type2>(tmp * leakey_relu_alpha)
+                               : tmp;
+        } else if (flag_act == 10) {  // hard swish
+          c[i * ldc + j] = std::min(static_cast<type2>(threshold),
+                                    std::max(static_cast<type2>(0), tmp)) *
+                           static_cast<type2>(tmp * 1.0 / scale);
+        }
       } else {
         c[i * ldc + j] = tmp;
       }

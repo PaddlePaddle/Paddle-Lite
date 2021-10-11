@@ -342,7 +342,7 @@ void sgemm_prepacked_8x6_a35(bool is_transB,
       local_alpha = act_param.Leaky_relu_alpha;
     } else if (act_type == lite_api::ActivationType::kHardSwish) {
       flag_act = 0x04;
-      local_alpha = act_param.hard_swish_scale;
+      local_alpha = 1.0 / act_param.hard_swish_scale;
       for (int i = 0; i < 4; i++) {
         offset[i] = act_param.hard_swish_offset;
         threshold[i] = act_param.hard_swish_threshold;
@@ -1010,7 +1010,7 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
       flag_act = 0x04;
       for (int i = 0; i < 4; i++) {
         alpha[i] = act_param.hard_swish_offset;
-        alpha[i + 4] = act_param.hard_swish_scale;
+        alpha[i + 4] = 1.0 / act_param.hard_swish_scale;
         alpha[i + 8] = act_param.hard_swish_threshold;
       }
     }

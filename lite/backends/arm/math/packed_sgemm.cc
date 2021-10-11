@@ -3313,7 +3313,7 @@ void sgemm_prepacked_8x12(bool is_transB,
       flag_act = 0x04;
       for (int i = 0; i < 4; i++) {
         alpha[i] = act_param.hard_swish_offset;
-        alpha[i + 4] = act_param.hard_swish_scale;
+        alpha[i + 4] = 1.0 / act_param.hard_swish_scale;
         alpha[i + 8] = act_param.hard_swish_threshold;
       }
     }
@@ -4538,7 +4538,7 @@ void sgemm_prepacked_8x12_a53(bool is_transB,
       flag_act = 0x04;
       for (int i = 0; i < 4; i++) {
         alpha[i] = act_param.hard_swish_offset;
-        alpha[i + 4] = act_param.hard_swish_scale;
+        alpha[i + 4] = 1.0 / act_param.hard_swish_scale;
         alpha[i + 8] = act_param.hard_swish_threshold;
       }
     }
@@ -5806,7 +5806,7 @@ void sgemm_prepacked_4x8(bool is_transB,
       flag_act = 0x04;
       for (int i = 0; i < 4; i++) {
         alpha[i] = act_param.hard_swish_offset;
-        alpha[i + 4] = act_param.hard_swish_scale;
+        alpha[i + 4] = 1.0 / act_param.hard_swish_scale;
         alpha[i + 8] = act_param.hard_swish_threshold;
       }
     }
@@ -6265,7 +6265,7 @@ void sgemm_prepacked_4x4(bool is_transB,
       flag_act = 0x04;
       for (int i = 0; i < 4; i++) {
         alpha[i] = act_param.hard_swish_offset;
-        alpha[i + 4] = act_param.hard_swish_scale;
+        alpha[i + 4] = 1.0 / act_param.hard_swish_scale;
         alpha[i + 8] = act_param.hard_swish_threshold;
       }
     }
@@ -6661,7 +6661,7 @@ void sgemm_prepacked_6x8(bool is_transB,
       flag_act = 0x04;
       for (int i = 0; i < 4; i++) {
         alpha[i] = act_param.hard_swish_offset;
-        alpha[i + 4] = act_param.hard_swish_scale;
+        alpha[i + 4] = 1.0 / act_param.hard_swish_scale;
         alpha[i + 8] = act_param.hard_swish_threshold;
       }
     }
@@ -7747,7 +7747,7 @@ void sgemm_prepacked_4x8(bool is_transB,
       flag_act = 0x04;
       for (int i = 0; i < 4; i++) {
         alpha[i] = act_param.hard_swish_offset;
-        alpha[i + 4] = act_param.hard_swish_scale;
+        alpha[i + 4] = 1.0 / act_param.hard_swish_scale;
         alpha[i + 8] = act_param.hard_swish_threshold;
       }
     }
