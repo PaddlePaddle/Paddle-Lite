@@ -21,8 +21,6 @@
 #include <numeric>
 #include <string>
 #include <vector>
-#include "lite/api/paddle_use_kernels.h"
-#include "lite/api/paddle_use_ops.h"
 #include "lite/core/version.h"
 #include "lite/utils/timer.h"
 
