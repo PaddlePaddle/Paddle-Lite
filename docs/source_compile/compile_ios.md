@@ -22,7 +22,7 @@
 ```shell
 # 1. 下载 Paddle-Lite 源码并切换到 release 分支
 git clone https://github.com/PaddlePaddle/Paddle-Lite.git
-cd Paddle-Lite && git checkout 2.9
+cd Paddle-Lite && git checkout release/v2.9
 
 # (可选) 删除此目录，编译脚本会自动从国内 CDN 下载第三方库文件
 # rm -rf third-party
@@ -31,7 +31,7 @@ cd Paddle-Lite && git checkout 2.9
 ./lite/tools/build_ios.sh
 ```
 
-**提示：** 编译过程中，如出现源码编译耗时过长，通常是第三方库下载过慢或失败导致。请在 git clone 完 Paddle-Lite 仓库代码后，手动删除本地仓库根目录下的 third-party 目录。编译脚本会自动下载存储于国内 CDN 的第三方依赖的压缩包，节省从 git repo 同步第三方库代码的时间。
+**提示：** *编译过程中，如出现源码编译耗时过长，通常是第三方库下载过慢或失败导致。请在 git clone 完 Paddle-Lite 仓库代码后，手动删除本地仓库根目录下的 third-party 目录。编译脚本会自动下载存储于国内 CDN 的第三方依赖的压缩包，节省从 git repo 同步第三方库代码的时间。*
 
 ### 3.2 构建参数
 
