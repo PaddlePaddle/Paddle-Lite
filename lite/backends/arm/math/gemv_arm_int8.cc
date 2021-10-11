@@ -1262,7 +1262,13 @@ bool gemv_int8_trans_oth(const int8_t* A,
                          ARMContext* ctx) {
   dtype* data_out = y;
   const int8_t* data_in = A;
-  const int8_t* weights_ptr = x;
+  int N_floor_16 = (N - 1) >> 4;
+  N_floor_16 = N_floor_16 + 1;
+  N_floor_16 = N_floor_16 << 4;
+  int8_t* tmp_weight = static_cast<int8_t*>(
+      TargetMalloc(TARGET(kARM), N_floor_16 * sizeof(int8_t)));
+  memcpy(tmp_weight, x, N * sizeof(int8_t));
+  const int8_t* weights_ptr = tmp_weight;
   int out_cnt = M >> 4;
   int out_remain = M & 15;
   int zero_ptr[M];  // NOLINT
@@ -1783,6 +1789,7 @@ bool gemv_int8_trans_oth(const int8_t* A,
 #endif
   // write output
   write_gemv_out(zero_ptr, y, scale, bias_ptr, M, flag_act, act, six, alpha);
+  TargetFree(TARGET(kARM), tmp_weight);
   return true;
 }
 
