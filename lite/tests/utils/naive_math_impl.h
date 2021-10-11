@@ -341,7 +341,7 @@ static void basic_gemv(int m,
         c[i] = tmp < (type2)0 ? (type2)(tmp * leakey_relu_alpha) : tmp;
       } else if (flag_act == 10) {  // hard_swish
         c[i] = std::min(static_cast<type2>(threshold),
-                         std::max(static_cast<type2>(0), tmp)) *
+                         std::max(static_cast<type2>(0), tmp + offset)) *
                      static_cast<type2>(tmp * 1.0 / scale);
       }
     } else {
