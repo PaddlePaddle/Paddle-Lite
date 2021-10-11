@@ -109,7 +109,7 @@ bool test_sgemv(bool tra,
   }
   act_param.active_type = act;
   act_param.has_active = (flag_act > 0);
-  paddle::lite_api::if (FLAGS_check_result) {
+  if (FLAGS_check_result) {
     basic_gemv(m,
                k,
                da,
