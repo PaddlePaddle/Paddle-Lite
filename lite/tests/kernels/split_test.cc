@@ -248,7 +248,6 @@ void TestSplitSectionsTensorList(Place place,
 }
 
 TEST(Split_test, precision) {
-  LOG(INFO) << "test split op";
   float abs_error = 2e-5;
   Place place;
 #if defined(LITE_WITH_NNADAPTER)
@@ -262,9 +261,6 @@ TEST(Split_test, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kHuaweiAscendNPU);
   abs_error = 1e-2;  // precision_mode default is force_fp16
