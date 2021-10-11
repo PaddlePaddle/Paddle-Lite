@@ -87,11 +87,11 @@ REGISTER_LITE_KERNEL(expand, kXPU, kFloat, kAny, expand_xpu_float, def)
                                       PRECISION(kFloat),
                                       DATALAYOUT(kAny))})
     .BindInput("ExpandTimes",
-               {LiteType::GetTensorTy(TARGET(kXPU),
+               {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kInt32),
                                       DATALAYOUT(kAny))})
     .BindInput("expand_times_tensor",
-               {LiteType::GetTensorTy(TARGET(kXPU),
+               {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kInt32),
                                       DATALAYOUT(kAny))})
     .BindOutput("Out",
@@ -108,11 +108,11 @@ REGISTER_LITE_KERNEL(expand, kXPU, kFloat, kAny, expand_xpu_int32, def_int32)
                                       PRECISION(kInt32),
                                       DATALAYOUT(kAny))})
     .BindInput("ExpandTimes",
-               {LiteType::GetTensorTy(TARGET(kXPU),
+               {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kInt32),
                                       DATALAYOUT(kAny))})
     .BindInput("expand_times_tensor",
-               {LiteType::GetTensorTy(TARGET(kXPU),
+               {LiteType::GetTensorTy(TARGET(kHost),
                                       PRECISION(kInt32),
                                       DATALAYOUT(kAny))})
     .BindOutput("Out",
