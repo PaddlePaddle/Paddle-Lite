@@ -6683,8 +6683,7 @@ void sgemm_prepacked_6x8(bool is_transB,
 
   int has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
   //! merge tail_pre and flag_act
-  // tail_pre = (tail_pre << 2 | flag_act);
-  tail_pre = (tail_pre * 5 | flag_act);
+  tail_pre = tail_pre * 5 + flag_act;
 
   //! apanel is pre_compute outside gemm
   for (unsigned int x0 = 0; x0 < N; x0 += x_block) {
@@ -6783,6 +6782,7 @@ void sgemm_prepacked_6x8(bool is_transB,
           }
         }
         const float* a_ptr = a_ptr_l;
+        auto alpha_ptr = alpha;
         int tails = tail_pre;
         int k = k_pre;
         // clang-format off
@@ -7059,9 +7059,9 @@ void sgemm_prepacked_6x8(bool is_transB,
             "6:                                   @ no relu \n"
             "cmp        %[tails], #0              @ check no act\n"
             "beq        10f                       @ no act end  \n"
-            //!   relu6
             "cmp        %[tails], #2              @ check if has relu6\n"
             "bne        7f                        @ jump if no relu6 \n"
+            //!   relu6
             "vmov.u32   q0, #0                    @ for relu6\n"
             "vmax.f32   q4, q4, q0                @ for relu6\n"
             "vmax.f32   q5, q5, q0                @ for relu6\n"
@@ -7198,7 +7198,6 @@ void sgemm_prepacked_6x8(bool is_transB,
             "vmov.u32   q1,   #0                  @ for leakey relu \n"
             "vmul.f32   q12, q12, q2               \n"
             "vmul.f32   q13, q13, q3               \n"
-            "vmul.f32   q9, q9, q3                \n"
             "vadd.f32   q2, q14, q0               \n"
             "vadd.f32   q3, q15, q0               \n"
             "vmax.f32   q2, q2, q1                \n"
@@ -7209,8 +7208,7 @@ void sgemm_prepacked_6x8(bool is_transB,
             "sub        %[alpha], #32             \n"
             "vmov.u32   q1,   #0                  @ for leakey relu \n"
             "vmul.f32   q14, q14, q2               \n"
-            "vmul.f32   q15, q15, q3               \n"
-            // hardswish
+            "vmul.f32   q15, q15, q3               \n" // hardswish end
             "10:                                  @ act end  \n"
             "vst1.32    {d8-d11},   [%[c_ptr0]]!    @ store r0\n"
             "vst1.32    {d12-d15},  [%[c_ptr1]]!    @ store r1\n"
@@ -7226,11 +7224,11 @@ void sgemm_prepacked_6x8(bool is_transB,
               [c_ptr3] "+r"(c_ptr3),
               [c_ptr4] "+r"(c_ptr4),
               [c_ptr5] "+r"(c_ptr5),
+              [alpha] "+r"(alpha_ptr),
               [k] "+r"(k),
               [tails] "+r"(tails)
             : [bias_ptr] "r"(bias_local),
-              [beta] "r"(beta),
-              [alpha] "r" (alpha)
+              [beta] "r"(beta)
             : "q0","q1","q2","q3","q4",
               "q5","q6","q7","q8","q9","q10","q11",
               "q12","q13","q14","q15","cc","memory");
@@ -7851,6 +7849,7 @@ void sgemm_prepacked_4x8(bool is_transB,
           }
         }
         const float* a_ptr = a_ptr_l;
+        auto alpha_ptr = alpha;
         int tails = tail_pre;
         int k = k_pre;
         // clang-format off
@@ -8119,7 +8118,6 @@ void sgemm_prepacked_4x8(bool is_transB,
             "vmul.f32   q9,  q9,  q5               \n"
             "vmul.f32   q10, q10, q6               \n"
             "vmul.f32   q11, q11, q7               \n"
-
             "vadd.f32   q4, q12, q1                \n"
             "vadd.f32   q5, q13, q1                \n"
             "vadd.f32   q6, q14, q1                \n"
@@ -8152,11 +8150,11 @@ void sgemm_prepacked_4x8(bool is_transB,
               [c_ptr1] "+r"(c_ptr1),
               [c_ptr2] "+r"(c_ptr2),
               [c_ptr3] "+r"(c_ptr3),
+              [alpha] "+r"(alpha_ptr),
               [k] "+r"(k),
               [tails] "+r"(tails)
             : [bias_ptr] "r"(bias_local),
               [beta] "r"(beta),
-              [alpha] "r"(alpha),
               [flag_act] "r"(flag_act)
             : "q0","q1","q2","q3",
               "q4","q5","q6","q7","q8","q9","q10",

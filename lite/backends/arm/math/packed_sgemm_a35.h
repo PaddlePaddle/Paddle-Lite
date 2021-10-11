@@ -1027,8 +1027,7 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
   bool flag_p_remain = false;
   int remain = 0;
   //! merge tail_pre and flag_act
-  // tail_pre = (tail_pre << 2 | flag_act);
-  tail_pre = (tail_pre * 5 | flag_act);
+  tail_pre = (tail_pre * 5 + flag_act);
 
   int has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
 
