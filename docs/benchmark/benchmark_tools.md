@@ -449,7 +449,7 @@ export LD_LIBRARY_PATH=$WORKSPACE:$LD_LIBRARY_PATH
     --nnadapter_context_properties="HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0"
 ```
 
-#### 在 Huawei Rockchip NPU 上运行模型
+#### 在 Rockchip NPU 上运行模型
 ```shell
 拷贝 rockchip npu DDK、benchmark_bin、nnadapter.so、模型文件到设备目录`WORKSPACE`
 export LD_LIBRARY_PATH=$WORKSPACE:$LD_LIBRARY_PATH
