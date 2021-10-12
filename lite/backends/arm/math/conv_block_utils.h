@@ -1144,7 +1144,7 @@ inline bool write_to_output_c1_fp32(const float* din,
                                     bool flag_relu,
                                     float* trash_ptr,
                                     operators::ActivationParam* act_param,
-                                    float* bias_ptr == nullptr) {
+                                    const float* bias_ptr = nullptr) {
   if (cs > channel) {
     return true;
   }
@@ -1180,13 +1180,13 @@ inline bool write_to_output_c1_fp32(const float* din,
       if (act_param != nullptr && act_param->has_active) {
         if (act_param->active_type == lite_api::ActivationType::kRelu) {
           for (; j < width; ++j) {
-            *(doutc0_ptr++) = LITEMAX(din_hei_ptr[0], 0.f);
+            *(doutc0_ptr++) = LITEMAX((din_hei_ptr[0] + bias), 0.f);
             din_hei_ptr++;
           }
         } else if (act_param->active_type == lite_api::ActivationType::kRelu6) {
           float six = act_param->Relu_clipped_coef;
           for (; j < width; ++j) {
-            float tmp = LITEMAX(din_hei_ptr[0], 0.f);
+            float tmp = LITEMAX((din_hei_ptr[0] + bias), 0.f);
             *(doutc0_ptr++) = LITEMIN(tmp, six);
             din_hei_ptr++;
           }
@@ -1194,10 +1194,11 @@ inline bool write_to_output_c1_fp32(const float* din,
                    lite_api::ActivationType::kLeakyRelu) {
           float scale = act_param->Leaky_relu_alpha;
           for (; j < width; ++j) {
-            if (din_hei_ptr[0] >= 0) {
-              *(doutc0_ptr++) = din_hei_ptr[0];
+            auto tmp = din_hei_ptr[0] + bias;
+            if (tmp >= 0) {
+              *(doutc0_ptr++) = tmp;
             } else {
-              *(doutc0_ptr++) = din_hei_ptr[0] * scale;
+              *(doutc0_ptr++) = tmp * scale;
             }
             din_hei_ptr++;
           }
@@ -1207,8 +1208,9 @@ inline bool write_to_output_c1_fp32(const float* din,
           float offset = act_param->hard_swish_offset;
           float threshold = act_param->hard_swish_threshold;
           for (; j < width; ++j) {
-            doutc0_ptr++ = std::min(std::max(0, din_hei_ptr[0] + offset)) *
-                           din_hei_ptr[0] * scale;
+            auto tmp = din_hei_ptr[0] + bias;
+            *doutc0_ptr++ = std::min(threshold, std::max(0.f, (tmp + offset))) *
+                            tmp * scale;
             din_hei_ptr++;
           }
         } else {
@@ -1218,7 +1220,7 @@ inline bool write_to_output_c1_fp32(const float* din,
         }
       } else {
         for (; j < width; ++j) {
-          *(doutc0_ptr++) = *(din_hei_ptr++);
+          *(doutc0_ptr++) = *(din_hei_ptr++) + bias;
         }
       }
     }
@@ -1778,7 +1780,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                                     bool flag_relu,
                                     float* trash_ptr,
                                     operators::ActivationParam* act_param,
-                                    float* bias_ptr == nullptr) {
+                                    const float* bias_ptr = nullptr) {
   const int c4 = 4;
   const int w4 = 4;
   const int w_round = we - ws;
@@ -1811,7 +1813,7 @@ inline bool write_to_output_c4_fp32(const float* din,
   float bias[4] = {0.f, 0.f, 0.f, 0.f};
   if (bias_ptr) {
     for (int i = cs, k = 0; i < ce && i < channel; i++) {
-      bias[k++] = bias_ptr++;
+      bias[k++] = *bias_ptr++;
     }
   }
   float32x4_t vbias = vld1q_f32(bias);
@@ -1848,7 +1850,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                     [cnt] "+r"(cnt_col),
                     [ptr_din] "+r"(din_ptr)
                   : [remain] "r"(remain),
-                    [vbias] "w"(vbias)
+                    [vbias] "w"(vbias),
                     [tmp0] "r"(tmp0),
                     [tmp1] "r"(tmp1),
                     [tmp2] "r"(tmp2),
@@ -1877,7 +1879,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                    [ptr_din] "+r"(din_ptr),
                    [cnt] "+r"(cnt_col)
                  : [remain] "r"(remain),
-                   [vbias] "w"(vbias)
+                   [vbias] "w"(vbias),
                    [tmp0] "r"(tmp0),
                    [tmp1] "r"(tmp1),
                    [tmp2] "r"(tmp2),
@@ -1931,7 +1933,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                     [cnt] "+r"(cnt_col),
                     [ptr_din] "+r"(din_ptr)
                   : [remain] "r"(remain),
-                    [vbias] "w"(vbias)
+                    [vbias] "w"(vbias),
                     [six] "w"(six),
                     [tmp0] "r"(tmp0),
                     [tmp1] "r"(tmp1),
@@ -1962,7 +1964,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                    [cnt] "+r"(cnt_col)
                  : [remain] "r"(remain),
                    [six] "w"(six),
-                   [vbias] "w"(vbias)
+                   [vbias] "w"(vbias),
                    [tmp0] "r"(tmp0),
                    [tmp1] "r"(tmp1),
                    [tmp2] "r"(tmp2),
@@ -2016,7 +2018,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                     [cnt] "+r"(cnt_col),
                     [ptr_din] "+r"(din_ptr)
                   : [remain] "r"(remain),
-                    [vbias] "w"(vbias)
+                    [vbias] "w"(vbias),
                     [scale] "w"(scale),
                     [tmp0] "r"(tmp0),
                     [tmp1] "r"(tmp1),
@@ -2052,7 +2054,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                    [cnt] "+r"(cnt_col)
                  : [remain] "r"(remain),
                    [scale] "w"(scale),
-                   [vbias] "w"(vbias)
+                   [vbias] "w"(vbias),
                    [tmp0] "r"(tmp0),
                    [tmp1] "r"(tmp1),
                    [tmp2] "r"(tmp2),
@@ -2125,7 +2127,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                     [scale] "w"(scale),
                     [offset] "w"(offset),
                     [threshold] "w"(threshold),
-                    [vbias] "w"(vbias)
+                    [vbias] "w"(vbias),
                     [tmp0] "r"(tmp0),
                     [tmp1] "r"(tmp1),
                     [tmp2] "r"(tmp2),
@@ -2166,7 +2168,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                    [scale] "w"(scale),
                    [offset] "w"(offset),
                    [threshold] "w"(threshold),
-                   [vbias] "w"(vbias)
+                   [vbias] "w"(vbias),
                    [tmp0] "r"(tmp0),
                    [tmp1] "r"(tmp1),
                    [tmp2] "r"(tmp2),
@@ -2238,7 +2240,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                     [cnt] "+r"(cnt_col),
                     [ptr_din] "+r"(din_ptr)
                   : [remain] "r"(remain),
-                    [vbias] "w"(vbias)
+                    [vbias] "w"(vbias),
                     [tmp0] "r"(tmp0),
                     [tmp1] "r"(tmp1),
                     [tmp2] "r"(tmp2),
@@ -2267,7 +2269,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                    [ptr_din] "+r"(din_ptr),
                    [cnt] "+r"(cnt_col)
                  : [remain] "r"(remain),
-                   [vbias] "w"(vbias)
+                   [vbias] "w"(vbias),
                    [tmp0] "r"(tmp0),
                    [tmp1] "r"(tmp1),
                    [tmp2] "r"(tmp2),

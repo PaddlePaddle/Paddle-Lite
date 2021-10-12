@@ -473,7 +473,8 @@ static void conv_basic(const Dtype1* din,
                     std::min(static_cast<Dtype2>(threshold),
                              std::max(static_cast<Dtype2>(0),
                                       dst_data_ref[out_idx] + offset)) *
-                    static_cast<Dtype2>(dst_data_ref[out_idx] * 1.0 / scale);
+                    static_cast<Dtype2>(dst_data_ref[out_idx] * 1.0 /
+                                        hard_scale);
               } else {
                 printf("this act type: %d does not support \n", act_type);
               }

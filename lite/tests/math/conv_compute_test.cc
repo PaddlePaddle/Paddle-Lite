@@ -149,7 +149,7 @@ void test_conv_fp32(const std::vector<DDim>& input_dims,
                                    flag_act,
                                    six,
                                    leakey_relu_scale,
-                                   scale,
+                                   param.activation_param.hard_swish_scale,
                                    offset,
                                    threshold);
         }

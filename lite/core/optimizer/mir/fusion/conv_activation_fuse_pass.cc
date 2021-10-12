@@ -54,6 +54,7 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   if (has_arm) {
     act_types.push_back("relu6");
     act_types.push_back("leaky_relu");
+    act_types.push_back("hard_swish");
   }
   if (has_opencl) {
     act_types.push_back("relu6");
@@ -86,6 +87,14 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
         has_alpha = true;
       } else {
         has_alpha = false;
+      }
+      if (act_type == "hard_swish") {
+        if (has_arm) {
+          // it doesn't support conv_dw/int8_conv+hardswish
+          if (conv_type == "depthwise_conv2d" || has_int8) {
+            continue;
+          }
+        }
       }
       for (auto has_bias : {true, false}) {
         fusion::ConvActivationFuser fuser(
