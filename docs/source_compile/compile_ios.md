@@ -20,18 +20,18 @@
 ### 3.1 构建步骤
 
 ```shell
-# 1. 下载 Paddle-Lite 源码并切换到特定 release 分支，如 release/v2.10
+# 1. 下载 Paddle Lite 源码并切换到特定 release 分支，如 release/v2.10
 git clone https://github.com/PaddlePaddle/Paddle-Lite.git
 cd Paddle-Lite && git checkout release/v2.10
 
 # (可选) 删除此目录，编译脚本会自动从国内 CDN 下载第三方库文件
 # rm -rf third-party
 
-# 2. 编译 Paddle-Lite ios 预测库
+# 2. 编译 Paddle Lite ios 预测库
 ./lite/tools/build_ios.sh
 ```
 
-**提示：** *编译过程中，如出现源码编译耗时过长，通常是第三方库下载过慢或失败导致。请在 git clone 完 Paddle-Lite 仓库代码后，手动删除本地仓库根目录下的 third-party 目录。编译脚本会自动下载存储于国内 CDN 的第三方依赖的压缩包，节省从 git repo 同步第三方库代码的时间。*
+**提示：** *编译过程中，如出现源码编译耗时过长，通常是第三方库下载过慢或失败导致。请在 git clone 完 Paddle Lite 仓库代码后，手动删除本地仓库根目录下的 third-party 目录。编译脚本会自动下载存储于国内 CDN 的第三方依赖的压缩包，节省从 git repo 同步第三方库代码的时间。*
 
 ### 3.2 构建参数
 
@@ -53,7 +53,7 @@ build_ios.sh 的构建参数：
 
 ## 四、验证
 
-### 4.1 编译 Paddle-Lite iOS CPU 预测库 (armv8)
+### 4.1 编译 Paddle Lite iOS CPU 预测库 (armv8)
 执行`./lite/tools/build_ios.sh`，成功后会在`Paddle-Lite/build.ios.ios64.armv8/inference_lite_lib.android.armv8`下生成如下文件：
 
 ```shell
@@ -69,7 +69,7 @@ inference_lite_lib.ios64.armv8
 └── lib                                                    C++预测库（静态库）
     └── libpaddle_api_light_bundled.a
 ```
-### 4.2 编译 Paddle-Lite iOS GPU 预测库 (armv8)
+### 4.2 编译 Paddle Lite iOS GPU 预测库 (armv8)
 
 执行`./lite/tools/build_ios.sh --with_metal=ON`，成功后会在`Paddle-Lite/build.ios.metal.ios64.armv8/inference_lite_lib.ios64.armv8.metal`下生成如下文件：
 
