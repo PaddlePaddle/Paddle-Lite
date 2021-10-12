@@ -2612,12 +2612,16 @@ inline void act_switch_c8_fp32(const float* din_ptr,
                        "v19",
                        "v20");
 #else
-        asm volatile(NCHWC4_TRANS_FP32_COMPUTE NCHWC4_TRANS_FP32_RELU
-                         NCHWC4_TRANS_FP32_RELU6 NCHWC4_TRANS_FP32_STORE
+        asm volatile(NCHWC8_TRANS_FP32_COMPUTE NCHWC8_TRANS_FP32_RELU6
+                         NCHWC8_TRANS_FP32_STORE
                      : [doutc0r0] "+r"(doutc0_ptr),
                        [doutc1r0] "+r"(doutc1_ptr),
                        [doutc2r0] "+r"(doutc2_ptr),
                        [doutc3r0] "+r"(doutc3_ptr),
+                       [doutc4r0] "+r"(doutc4_ptr),
+                       [doutc5r0] "+r"(doutc5_ptr),
+                       [doutc6r0] "+r"(doutc6_ptr),
+                       [doutc7r0] "+r"(doutc7_ptr),
                        [ptr_din] "+r"(din_ptr),
                        [cnt] "+r"(cnt_loop)
                      : [six] "w"(six)
@@ -2631,6 +2635,12 @@ inline void act_switch_c8_fp32(const float* din_ptr,
                        "q5",
                        "q6",
                        "q7",
+                       "q9",
+                       "q10",
+                       "q11",
+                       "q12",
+                       "q13",
+                       "q14",
                        "q15");
 #endif
         break;
