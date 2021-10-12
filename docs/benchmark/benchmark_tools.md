@@ -451,7 +451,7 @@ export LD_LIBRARY_PATH=$WORKSPACE:$LD_LIBRARY_PATH
 
 #### 在 Rockchip NPU 上运行模型
 ```shell
-拷贝 rockchip npu DDK、benchmark_bin、nnadapter.so、模型文件到设备目录`WORKSPACE`
+拷贝 Rockchip npu DDK、benchmark_bin、nnadapter.so、模型文件到设备目录`WORKSPACE`
 export LD_LIBRARY_PATH=$WORKSPACE:$LD_LIBRARY_PATH
   ./benchmark_bin \
     --model_file=MobileNetV1/inference.pdmodel \
@@ -465,7 +465,7 @@ export LD_LIBRARY_PATH=$WORKSPACE:$LD_LIBRARY_PATH
 
 #### 在 Imagination NNA 上运行模型
 ```shell
-拷贝 imagination DDK、benchmark_bin、nnadapter.so、模型文件到设备目录`WORKSPACE`
+拷贝 Imagination DDK、benchmark_bin、nnadapter.so、模型文件到设备目录`WORKSPACE`
 export LD_LIBRARY_PATH=$WORKSPACE:$LD_LIBRARY_PATH
   ./benchmark_bin \
     --model_file=MobileNetV1/inference.pdmodel \
