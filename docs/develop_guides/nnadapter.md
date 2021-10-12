@@ -17,7 +17,16 @@
 ### NNAdapter HAL标准接口定义
 - 示例
 
-## 推理框架、NNAdapter和硬件SDK的调用关系
+## 推理框架与NNAdapter的调用过程
+### 推理框架与NNAdapter的一般调用过程
+![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_call_flow.png)
+
+### 应用程序、推理框架、NNAdapter和硬件SDK之间的详细调用过程
+![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_call_flow_detail_0.png)
+![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_call_flow_detail_1.png)
+![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_call_flow_detail_2.png)
+![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_call_flow_detail_3.png)
+![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_call_flow_detail_4.png)
 
 ## 附录
 
