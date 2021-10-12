@@ -83,17 +83,17 @@ cpp::OpDesc FillRangeFuser::GenOpDesc(const key2nodes_t& matched) {
   auto range = range_instruct->op();
   auto* range_scope = range->scope();
 
-  auto range_start_var_name{matched.at("start")->arg()->name};
+  auto range_start_var_name = matched.at("start")->arg()->name;
   auto range_start_tensor =
       range_scope->FindVar(range_start_var_name)->GetMutable<lite::Tensor>();
   auto* range_start_data = range_start_tensor->mutable_data<float>();
 
-  auto range_end_var_name{matched.at("end")->arg()->name};
+  auto range_end_var_name = matched.at("end")->arg()->name;
   auto range_end_tensor =
       range_scope->FindVar(range_end_var_name)->GetMutable<lite::Tensor>();
   auto* range_end_data = range_end_tensor->mutable_data<float>();
 
-  auto range_step_var_name{matched.at("step")->arg()->name};
+  auto range_step_var_name = matched.at("step")->arg()->name;
   auto range_step_tensor =
       range_scope->FindVar(range_step_var_name)->GetMutable<lite::Tensor>();
   auto* range_step_data = range_step_tensor->mutable_data<float>();
