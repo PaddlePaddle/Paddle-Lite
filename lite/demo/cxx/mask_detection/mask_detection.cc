@@ -168,9 +168,9 @@ void RunModel(std::string det_model_file,
   // Do PreProcess
   std::vector<float> detect_mean = {104.f, 117.f, 123.f};
   std::vector<float> detect_scale = {0.007843, 0.007843, 0.007843};
-  auto start = GetCurrentUS();
+  auto start_pre = GetCurrentUS();
   pre_process(img, s_width, s_height, detect_mean, detect_scale, data, false);
-  auto detec_pre_end = (GetCurrentUS() - start) / 1000.0;
+  auto detec_pre_end = (GetCurrentUS() - start_pre) / 1000.0;
 
   // Detection Model Run
   double sum_duration = 0.0;  // millisecond;
@@ -206,10 +206,10 @@ void RunModel(std::string det_model_file,
             << "min_duration: " << min_duration << "\n"
             << "avg_duration: " << avg_duration << "\n"
             << "detection pre_process time: " << detec_pre_end << "\n";
-  std::cout << std::endl
-      // Get Output Tensor
-      std::unique_ptr<const Tensor>
-          output_tensor0(std::move(predictor->GetOutput(0)));
+
+  // Get Output Tensor
+  std::unique_ptr<const Tensor> output_tensor0(
+      std::move(predictor->GetOutput(0)));
   auto* outptr = output_tensor0->data<float>();
   auto shape_out = output_tensor0->shape();
   int64_t out_len = ShapeProduction(shape_out);

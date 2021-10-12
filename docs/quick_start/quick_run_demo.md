@@ -61,18 +61,22 @@ cd mask_demo && bash run.sh
 # 运行成功后，将在控制台输出如下内容，可以打开test_img_result.jpg图片查看预测结果
 ../mask_demo/: 9 files pushed, 0 skipped. 141.6 MB/s (28652282 bytes in 0.193s)
 Load detecion model succeed.
+
 ======= benchmark summary =======
-model_dir: mask_detector_opt2.nb
-repeats:100
-first_duration: 35.951 
-max_duration: 34.009
-min_duration: 33.423
-avg_duration: 33.7388
+model_dir: pyramidbox_lite_v2_9_1_opt2.nb
+repeats: 100
+*** time info(ms) ***
+1st_duration: 124.481
+max_duration: 123.179
+min_duration: 40.093
+avg_duration: 41.2289
+detection pre_process time: 4.924
 Detecting face succeed.
+
 Load classification model succeed.
 detect face, location: x=237, y=107, width=194, height=255, wear mask: 1, prob: 0.987625
 detect face, location: x=61, y=238, width=166, height=213, wear mask: 1, prob: 0.925679
 detect face, location: x=566, y=176, width=245, height=294, wear mask: 1, prob: 0.550348
 write result to file: test_img_result.jpg, success.
-/data/local/tmp/mask_demo/test_img_result.jpg: 1 file pulled, 0 skipped. 13.7 MB/s (87742 bytes in 0.006s)
+/data/local/tmp/mask_demo/test_img_result.jpg: 1 file pulled, 0 skipped. 28.0 MB/s (279080 bytes in 0.010s)
 ```
