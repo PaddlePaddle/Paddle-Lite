@@ -122,6 +122,7 @@ if (NOT HAS_ARM_MATH_LIB_DIR)
       norm.cc
       pad2d.cc
       negative.cc
+      reduce_max.cc
       reduce_min.cc
       reduce_max_min.cc
       sequence_pool.cc

@@ -15,6 +15,8 @@
 #include "lite/kernels/arm/reduce_max_compute.h"
 #include <string>
 #include "lite/backends/arm/math/funcs.h"
+#include "lite/backends/arm/math/reduce_max.h"
+#include "lite/backends/arm/math/reduce_max_min.h"
 #include "lite/core/op_registry.h"
 
 namespace paddle {
@@ -134,11 +136,10 @@ void ReduceMaxCompute<T>::Run() {
       LOG(FATAL) << "dim's size over than 1, which is not supported now!!";
     }  // x_dims == 2 && dim.size() == 1
   } else if (x_dims.size() == 1) {
-    lite::arm::math::reduce_one_line<T>(
-        input, output, x_dims[0], lite::arm::math::MaxMinType::kMax);
+    lite::arm::math::reduce_one_line_max<T>(input, output, x_dims[0]);
   } else {
     LOG(FATAL) << "only support input with 1 to 4 dimensions now!!";
-  }  // x_dims == 2
+  }
 }
 
 }  // namespace arm
