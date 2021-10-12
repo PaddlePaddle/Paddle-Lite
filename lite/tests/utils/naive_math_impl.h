@@ -316,7 +316,7 @@ static void basic_gemm(bool trans_a,
             }
           } else {
             if (threshold > 0) {
-              c[i * ldc + j] = tatic_cast<type2>(0);
+              c[i * ldc + j] = static_cast<type2>(0);
             } else {
               c[i * ldc + j] =
                   static_cast<type2>(threshold * tmp * 1.0 / scale);
