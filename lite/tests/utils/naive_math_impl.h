@@ -306,10 +306,22 @@ static void basic_gemm(bool trans_a,
                                ? static_cast<type2>(tmp * leakey_relu_alpha)
                                : tmp;
         } else if (flag_act == 10) {  // hard swish
-          c[i * ldc + j] =
-              std::min(static_cast<type2>(threshold),
-                       std::max(static_cast<type2>(0), tmp + offset)) *
-              static_cast<type2>(tmp * 1.0 / scale);
+          auto tmp1 = tmp + offset;
+          if (tmp1 > 0) {
+            if (tmp1 < threshold) {
+              c[i * ldc + j] = static_cast<type2>(tmp1 * tmp * 1.0 / scale);
+            } else {
+              c[i * ldc + j] =
+                  static_cast<type2>(threshold * tmp * 1.0 / scale);
+            }
+          } else {
+            if (threshold > 0) {
+              c[i * ldc + j] = tatic_cast<type2>(0);
+            } else {
+              c[i * ldc + j] =
+                  static_cast<type2>(threshold * tmp * 1.0 / scale);
+            }
+          }
         }
       } else {
         c[i * ldc + j] = tmp;
