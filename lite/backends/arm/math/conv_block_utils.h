@@ -1609,7 +1609,8 @@ inline bool write_to_output_c4_fp32(const float* din,
                                     int width,
                                     bool flag_relu,
                                     float* trash_ptr,
-                                    operators::ActivationParam* act_param) {
+                                    operators::ActivationParam* act_param,
+                                    float* bias_ptr == nullptr) {
   const int c4 = 4;
   const int w4 = 4;
   const int w_round = we - ws;
@@ -1639,6 +1640,13 @@ inline bool write_to_output_c4_fp32(const float* din,
   float tmp1[4] = {0.f};
   float tmp2[4] = {0.f};
   float tmp3[4] = {0.f};
+  float bias[4] = {0.f, 0.f, 0.f, 0.f};
+  if (bias_ptr) {
+    for (int i = cs, k = 0; i < ce && i < channel; i++) {
+      bias[k++] = bias_ptr++;
+    }
+  }
+  float32x4_t vbias = vld1q_f32(bias);
   if (act_param != nullptr && act_param->has_active) {
     float32x4_t six = vdupq_n_f32(act_param->Relu_clipped_coef);
     float32x4_t scale = vdupq_n_f32(act_param->Leaky_relu_alpha);
