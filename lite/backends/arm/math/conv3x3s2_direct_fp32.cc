@@ -1970,20 +1970,21 @@ void conv_3x3s2_direct_fp32(const float* i_data,
           block_inr3 = block_inr2 + in_len;
           block_inr4 = block_inr3 + in_len;
         }
-        write_to_oc4_fp32(pre_out,
-                          dout_batch,
-                          c,
-                          c + OUT_C_BLOCK,
-                          h,
-                          h + h_kernel,
-                          0,
-                          wout_round,
-                          oc,
-                          oh,
-                          ow,
-                          flag_act,
-                          alpha,
-                          bias_ptr);
+        write_to_output_c4_fp32(pre_out,
+                                dout_batch,
+                                c,
+                                c + OUT_C_BLOCK,
+                                h,
+                                h + h_kernel,
+                                0,
+                                wout_round,
+                                oc,
+                                oh,
+                                ow,
+                                false,
+                                nullptr,
+                                act_param,
+                                bias_ptr);
       }
       LITE_PARALLEL_COMMON_END();
 
@@ -2304,20 +2305,21 @@ void conv_3x3s2_direct_fp32(const float* i_data,
           block_inr3 = block_inr2 + in_len;
           block_inr4 = block_inr3 + in_len;
         }
-        write_to_oc1_fp32(pre_out,
-                          dout_batch,
-                          c + c_round_down,
-                          c + c_round_down + 1,
-                          h,
-                          h + h_kernel,
-                          0,
-                          wout_round,
-                          oc,
-                          oh,
-                          ow,
-                          flag_act,
-                          alpha,
-                          bias_ptr);
+        write_to_output_c1_fp32(pre_out,
+                                dout_batch,
+                                c + c_round_down,
+                                c + c_round_down + 1,
+                                h,
+                                h + h_kernel,
+                                0,
+                                wout_round,
+                                oc,
+                                oh,
+                                ow,
+                                false,
+                                nullptr,
+                                act_param,
+                                bias_ptr);
       }
       LITE_PARALLEL_END();
     }
@@ -2948,20 +2950,21 @@ void conv_3x3s2_direct_fp32_c3(const float* i_data,
           block_inr2 = block_inr1 + in_len;
         }
 #endif  // __aarch64__
-        write_to_oc4_fp32(pre_out,
-                          dout_batch,
-                          c,
-                          c + OUT_C_BLOCK,
-                          h,
-                          h + h_kernel,
-                          0,
-                          wout_round,
-                          oc,
-                          oh,
-                          ow,
-                          flag_act,
-                          alpha,
-                          bias_ptr);
+        write_to_output_c4_fp32(pre_out,
+                                dout_batch,
+                                c,
+                                c + OUT_C_BLOCK,
+                                h,
+                                h + h_kernel,
+                                0,
+                                wout_round,
+                                oc,
+                                oh,
+                                ow,
+                                false,
+                                null_ptr,
+                                act_param,
+                                bias_ptr);
       }
       LITE_PARALLEL_COMMON_END();
     }
@@ -3614,20 +3617,21 @@ void conv_3x3s2_direct_fp32_c3_a53(const float* i_data,
         }
 #else   // not __aarch64__
 #endif  // __aarch64__
-        write_to_oc4_fp32(pre_out,
-                          dout_batch,
-                          c,
-                          c + OUT_C_BLOCK,
-                          h,
-                          h + h_kernel,
-                          0,
-                          wout_round,
-                          oc,
-                          oh,
-                          ow,
-                          flag_act,
-                          alpha,
-                          bias_ptr);
+        write_to_output_c4_fp32(pre_out,
+                                dout_batch,
+                                c,
+                                c + OUT_C_BLOCK,
+                                h,
+                                h + h_kernel,
+                                0,
+                                wout_round,
+                                oc,
+                                oh,
+                                ow,
+                                false,
+                                nullptr,
+                                act_param,
+                                bias_ptr);
       }
       LITE_PARALLEL_COMMON_END();
     }
