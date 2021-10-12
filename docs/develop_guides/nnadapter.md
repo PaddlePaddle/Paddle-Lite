@@ -8,8 +8,14 @@
 - 
 
 ## 实现方案
+![](https://paddlelite-demo.bj.bcebos.com/devices/generic/paddle_lite_with_nnadapter.png)
 
 ## 功能模块
+![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_arch.png)
+
+用户视角下各功能模块的关系
+
+![](https://paddlelite-demo.bj.bcebos.com/devices/generic/paddle_lite_and_nnadapter_dynamic_shared_library.png)
 
 ### NNAdapter API
 ### NNAdapter 标准算子
