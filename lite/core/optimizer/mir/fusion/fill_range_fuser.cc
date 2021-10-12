@@ -97,12 +97,6 @@ cpp::OpDesc FillRangeFuser::GenOpDesc(const key2nodes_t& matched) {
   auto range_step_tensor =
       range_scope->FindVar(range_step_var_name)->GetMutable<lite::Tensor>();
   auto* range_step_data = range_step_tensor->mutable_data<float>();
-  //   matched.at("start")->arg()->is_weight = true;
-  //   matched.at("end")->arg()->is_weight = true;
-  //   matched.at("step")->arg()->is_weight = true;
-  //   matched.at("start")->arg()->is_persist = true;
-  //   matched.at("end")->arg()->is_persist = true;
-  //   matched.at("step")->arg()->is_persist = true;
 
   if (range_start_tensor->data_size() != 1 ||
       range_end_tensor->data_size() != 1 ||
