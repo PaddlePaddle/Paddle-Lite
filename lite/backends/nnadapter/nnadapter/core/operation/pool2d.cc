@@ -76,12 +76,11 @@ NNADAPTER_EXPORT int32_t CalPoolOutputSize(int32_t input_size,
   return output_size;
 }
 
-int PrepareAdaptivePool2D(hal::Operation* operation) {
+int PreparePool2D(hal::Operation* operation) {
   POOL_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
   CopyOperandTypeExceptQuantParams(&output_operand->type, input_operand->type);
-  // auto& out_dimensions = output_operand->type.dimensions;
 
   auto infer_output_shape = [&](int32_t* input_dimensions,
                                 int32_t* output_dimensions) {

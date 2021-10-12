@@ -38,7 +38,7 @@ namespace operation {
   /* Input */                                                                  \
   auto input_operand = input_operands[0];                                      \
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);            \
-  /* Auto pad: not support auto_pad. */                                        \
+  /* Auto pad */                                                               \
   auto auto_pad = static_cast<NNAdapterAutoPadCode>(                           \
       *reinterpret_cast<int32_t*>(input_operands[3]->buffer));                 \
   NNADAPTER_VLOG(5) << "auto_pad: " << AutoPadCodeToString(auto_pad);          \

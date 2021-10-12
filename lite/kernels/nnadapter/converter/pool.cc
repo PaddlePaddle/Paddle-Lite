@@ -24,16 +24,15 @@ int ConvertPool(Converter* converter, OpInfo* op, Scope* scope) {
   auto x_name = op->Input("X").front();
   auto x_scale_name = "X0_scale";
   std::vector<float> x_scales = op->HasInputScale(x_scale_name, true)
-                                    ? x_scales =
-                                          op->GetInputScale(x_scale_name, true)
+                                    ? op->GetInputScale(x_scale_name, true)
                                     : std::vector<float>{};
   auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
 
   // Auto_pad operand
-  std::string padding_algorithm("");
-  if (op->HasAttr("padding_algorithm")) {
-    padding_algorithm = op->GetAttr<std::string>("padding_algorithm");
-  }
+  std::string padding_algorithm =
+      op->HasAttr("padding_algorithm")
+          ? op->GetAttr<std::string>("padding_algorithm")
+          : "";
   auto auto_pad_operand = converter->AddConstantOperand(static_cast<int32_t>(
       ConvertPaddingAlgorithmToNNAutoPadCode(padding_algorithm)));
 
@@ -65,11 +64,13 @@ int ConvertPool(Converter* converter, OpInfo* op, Scope* scope) {
   auto strides_operand = converter->AddConstantOperand(strides);
 
   // Ceil_mode(optional)
-  bool ceil_mode = op->HasAttr("ceil_mode") && op->GetAttr<bool>("ceil_mode");
+  bool ceil_mode =
+      op->HasAttr("ceil_mode") ? op->GetAttr<bool>("ceil_mode") : false;
   auto ceil_mode_operand = converter->AddConstantOperand(ceil_mode);
 
   // Count_include_pad(optional), only for avg_pool
-  bool exclusive = op->HasAttr("exclusive") && op->GetAttr<bool>("exclusive");
+  bool exclusive =
+      op->HasAttr("exclusive") ? op->GetAttr<bool>("exclusive") : true;
   auto count_include_pad_operand = converter->AddConstantOperand(!exclusive);
 
   // Return_indices(optional), only for max_pool
