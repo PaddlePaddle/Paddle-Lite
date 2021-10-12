@@ -64,12 +64,17 @@ class generate_gemm_s8u8_x86_kern {
 
   ~generate_gemm_s8u8_x86_kern() { gemm_int8_deinit(); }
 
-  void packB_i82u8(
-      int N, int K, int stride, const int8_t *B, uint8_t *pack_B, bool is_trans) {
+  void packB_i82u8(int N,
+                   int K,
+                   int stride,
+                   const int8_t *B,
+                   uint8_t *pack_B,
+                   bool is_trans) {
     gemm_s8u8s8_runpackB(N, K, stride, B, pack_B, is_trans);
   }
 
-  void prepackA_i8(int M, int K, const int8_t *A, int8_t *pack_A, bool is_trans) {
+  void prepackA_i8(
+      int M, int K, const int8_t *A, int8_t *pack_A, bool is_trans) {
     memset(pack_A, 0, _M * _k_align4);
     gemm_s8u8s8_prepackA(M, K, A, pack_A, is_trans);
   }

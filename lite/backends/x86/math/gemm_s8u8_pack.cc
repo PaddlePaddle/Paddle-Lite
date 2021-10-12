@@ -90,7 +90,7 @@ void packA_i8_notrans(int M, int K, const int8_t *AA, int8_t *pack_A) {
   int loop_m = 0;
   int loop_k = 0;
   int remain_k = 0;
-  int8_t *A = const_cast<int8_t*>(AA);
+  int8_t *A = const_cast<int8_t *>(AA);
 
   __m256i vec_line0, vec_line1, vec_lo, vec_hi;
   __m128i vec_line0_h, vec_line1_h, vec_lo_h, vec_hi_h;
@@ -208,7 +208,7 @@ void packA_i8_trans(int M, int K, const int8_t *AA, int8_t *pack_A) {
   int loop_k = 0;
   int remain_k = 0;
   int K_align = 0;
-  int8_t *A = const_cast<int8_t*>(AA);
+  int8_t *A = const_cast<int8_t *>(AA);
 
   __m128i vec_12, vec_23, vec_out;
   __m128i vec_line[4];
@@ -560,12 +560,13 @@ Attention:
       break;                                                                 \
   }
 
-void packB_i82u8_notrans(int N, int K, int stride, const int8_t *B, uint8_t *pack_B) {
+void packB_i82u8_notrans(
+    int N, int K, int stride, const int8_t *B, uint8_t *pack_B) {
   int loop_n = 0;
   int loop_k = 0;
   int remain_k = 0;
   int k_align4 = 0;
-  int8_t *b_ptr = const_cast<int8_t*>(B);
+  int8_t *b_ptr = const_cast<int8_t *>(B);
   uint8_t *out_ptr = pack_B;
 
   __m256i vec_line0, vec_line1, vec_line2, vec_line3;
@@ -875,10 +876,11 @@ void packB_i82u8_notrans(int N, int K, int stride, const int8_t *B, uint8_t *pac
                      veci_line[0]);                                        \
   }
 
-void packB_i82u8_trans(int N, int K, int step, const int8_t *B, uint8_t *pack_B) {
+void packB_i82u8_trans(
+    int N, int K, int step, const int8_t *B, uint8_t *pack_B) {
   int loop_n = 0, loop_k = 0;
   int remain_k = 0;
-  int8_t *b_ptr = const_cast<int8_t*>(B);
+  int8_t *b_ptr = const_cast<int8_t *>(B);
   uint8_t *out_ptr = pack_B;
   int k_align4 = ((K + 3) / 4);
   k_align4 = k_align4 * 4;
