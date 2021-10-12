@@ -90,6 +90,7 @@ function set_benchmark_options {
   WITH_EXCEPTION=ON
   BUILD_JAVA=OFF
   WITH_OPENCL=ON
+  WITH_NNADAPTER=ON
   if [ ${WITH_PROFILE} == "ON" ] || [ ${WITH_PRECISION_PROFILE} == "ON" ]; then
     WITH_LOG=ON
   else
