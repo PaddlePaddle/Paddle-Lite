@@ -28,16 +28,7 @@ class SequenceConcatCompute
  public:
   using param_t = operators::SequenceConcatParam;
 
-  void PrepareForRun() override;
-
   void Run() override;
-
- private:
-  XPUScratchPadGuard lod0_xpu_guard_;
-  XPUScratchPadGuard lod1_xpu_guard_;
-
-  std::unique_ptr<int[]> lod0_cpu;
-  std::unique_ptr<int[]> lod1_cpu;
 };
 
 }  // namespace xpu

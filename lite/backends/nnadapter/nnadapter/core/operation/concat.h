@@ -35,7 +35,7 @@ namespace operation {
   if (axis < 0) {                                                           \
     axis += input_operands[0]->type.dimensions.count;                       \
   }                                                                         \
-  NNADAPTER_VLOG(5) << "axis=" << axis;                                     \
+  NNADAPTER_VLOG(5) << "axis: " << axis;                                    \
   /* Output */                                                              \
   auto output_operand = output_operands[0];                                 \
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);

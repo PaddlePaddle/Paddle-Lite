@@ -22,7 +22,13 @@ namespace nnadapter {
 int ConvertDeformableConv(Converter* converter, OpInfo* op, Scope* scope) {
   // Input operand
   auto input_name = op->Input("Input").front();
-  auto input_operand = converter->GetMappedOperand(input_name);
+  auto input_scale_name = "Input0_scale";
+  std::vector<float> input_scales;
+  if (op->HasInputScale(input_scale_name, true)) {
+    input_scales = op->GetInputScale(input_scale_name, true);
+  }
+  auto input_operand =
+      converter->AddInputOperand(scope, input_name, {}, input_scales);
 
   // Offset operand
   auto offset_name = op->Input("Offset").front();
@@ -111,6 +117,27 @@ int ConvertDeformableConv(Converter* converter, OpInfo* op, Scope* scope) {
                            dilations_operand,
                            fuse_code_operand},
                           {output_operand});
+
+  // Unpack the fused activations
+  if (!act_type.empty()) {
+    auto fused_act_output_operand = converter->AddOutputOperand(out_name);
+    if (act_type == "leaky_relu") {
+      auto alpha = op->GetAttr<float>("leaky_relu_alpha");
+      auto alpha_operand = converter->AddConstantOperand(alpha);
+      converter->AddOperation(NNADAPTER_LEAKY_RELU,
+                              {output_operand, alpha_operand},
+                              {fused_act_output_operand});
+    } else {
+      // Unpack the fused unary activations
+      auto unary_act_operation_type =
+          ConvertUnaryActTypeToNNOperationType(act_type);
+      CHECK(unary_act_operation_type != NNADAPTER_UNKNOWN)
+          << "Failed to unpack the fused activation type: " << act_type;
+      converter->AddOperation(unary_act_operation_type,
+                              {output_operand},
+                              {fused_act_output_operand});
+    }
+  }
   return NO_ERROR;
 }
 

@@ -147,7 +147,14 @@ TEST(LayerNorm, precision) {
   LOG(INFO) << "test layer_norm op";
   float abs_error = 2e-5;
   Place place;
-#if defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 2e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)

@@ -2024,6 +2024,8 @@ struct XPUMultiEncoderParam : ParamBase {
   std::vector<int> slice_starts{};
   std::vector<int> slice_ends{};
   std::vector<int> slice_decrease_axis{};
+  std::vector<float> input_max{};
+  std::vector<float> weight_max{};
   int n_layers{};
   int head_num{};
   int size_per_head{};
@@ -2055,6 +2057,8 @@ struct XPUFcParam : ParamBase {
 
   int act_type;
   float act_param;
+  float quant_input_max{0.f};
+  float quant_w_max{0.f};
   std::string precision{};
   bool has_bias{false};
   int in_num_col_dims{1};
@@ -2523,8 +2527,12 @@ struct CosSimParam : ParamBase {
 };
 
 struct WriteBackParam : ParamBase {
+  bool tensor_array_copy{false};
   const lite::Tensor* x{};
   lite::Tensor* y{};
+
+  std::vector<lite::Tensor>* array_x{};
+  std::vector<lite::Tensor>* array_y{};
 };
 
 struct UniqueWithCountsParam : ParamBase {

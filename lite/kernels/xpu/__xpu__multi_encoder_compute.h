@@ -41,7 +41,9 @@ class XPUMultiEncoderCompute
   std::vector<const float *> arg_ln_scale_;
   std::vector<const float *> arg_ln_bias_;
   std::vector<const float *> fc_weight_max_;
+  std::vector<const float *> fc_input_max_;
   XPUScratchPadGuard weight_max_guard_;
+  XPUScratchPadGuard input_max_guard_;
   XPUScratchPadGuard cast_in_guard_;
   XPUScratchPadGuard cast_out_guard_;
   xdnn::Activation_t qkv_act = xdnn::Activation_t::RELU;

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,19 +22,28 @@
 #include "lite/api/test/test_helper.h"
 #include "lite/core/op_registry.h"
 
+DEFINE_string(optimized_model, "", "optimized_model");
+DEFINE_int32(N, 1, "input_batch");
+DEFINE_int32(C, 3, "input_channel");
+DEFINE_int32(H, 224, "input_height");
+DEFINE_int32(W, 224, "input_width");
+
 namespace paddle {
 namespace lite {
 
 #ifdef LITE_WITH_ARM
-void TestModel(const std::vector<Place>& valid_places) {
+void TestModel(const std::vector<Place>& valid_places,
+               const std::string& model_dir = FLAGS_model_dir,
+               bool save_model = false) {
   DeviceInfo::Init();
-  DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_HIGH, FLAGS_threads);
+  DeviceInfo::Global().SetRunMode(lite_api::LITE_POWER_NO_BIND, FLAGS_threads);
   lite::Predictor predictor;
 
-  predictor.Build(FLAGS_model_dir, "", "", valid_places);
+  predictor.Build(model_dir, "", "", valid_places);
 
   auto* input_tensor = predictor.GetInput(0);
-  input_tensor->Resize(DDim(std::vector<DDim::value_type>({1, 3, 224, 224})));
+  input_tensor->Resize(DDim(
+      std::vector<DDim::value_type>({FLAGS_N, FLAGS_C, FLAGS_H, FLAGS_W})));
   auto* data = input_tensor->mutable_data<float>();
   auto item_size = input_tensor->dims().production();
   for (int i = 0; i < item_size; i++) {
@@ -45,36 +54,103 @@ void TestModel(const std::vector<Place>& valid_places) {
     predictor.Run();
   }
 
-  auto start = GetCurrentUS();
+  double sum_duration = 0.0;  // millisecond;
   for (int i = 0; i < FLAGS_repeats; ++i) {
+    auto start = GetCurrentUS();
     predictor.Run();
+    auto duration = (GetCurrentUS() - start) / 1000.0;
+    sum_duration += duration;
+    VLOG(1) << "run_idx:" << i << " " << duration << " ms";
   }
 
-  LOG(INFO) << "================== Speed Report ===================";
-  LOG(INFO) << "Model: " << FLAGS_model_dir << ", threads num " << FLAGS_threads
-            << ", warmup: " << FLAGS_warmup << ", repeats: " << FLAGS_repeats
-            << ", spend " << (GetCurrentUS() - start) / FLAGS_repeats / 1000.0
-            << " ms in average.";
+  if (save_model) {
+    LOG(INFO) << "Save optimized model to " << FLAGS_optimized_model;
+    predictor.SaveModel(FLAGS_optimized_model);
+  }
 
-  std::vector<std::vector<float>> results;
-  // i = 1
-  results.emplace_back(std::vector<float>(
+  LOG(INFO) << "input shape(NCHW):" << FLAGS_N << " " << FLAGS_C << " "
+            << FLAGS_H << " " << FLAGS_W;
+  LOG(INFO) << "================== Speed Report ===================";
+  LOG(INFO) << "Model: " << model_dir << ", threads num " << FLAGS_threads
+            << ", warmup: " << FLAGS_warmup << ", repeats: " << FLAGS_repeats
+            << ", spend " << sum_duration / FLAGS_repeats << " ms in average.";
+
+  std::vector<std::vector<float>> ref;
+  ref.emplace_back(std::vector<float>(
       {0.00024139918, 0.00020566184, 0.00022418296, 0.00041731037,
        0.0005366107,  0.00016948722, 0.00028638865, 0.0009257241,
        0.00072681636, 8.531815e-05,  0.0002129998,  0.0021168243,
        0.006387163,   0.0037145028,  0.0012812682,  0.00045948103,
        0.00013535398, 0.0002483765,  0.00076759676, 0.0002773295}));
   auto* out = predictor.GetOutput(0);
-  ASSERT_EQ(out->dims().size(), 2);
-  ASSERT_EQ(out->dims()[0], 1);
-  ASSERT_EQ(out->dims()[1], 1000);
-
+  const auto* pdata = out->data<float>();
   int step = 50;
-  for (int i = 0; i < results.size(); ++i) {
-    for (int j = 0; j < results[i].size(); ++j) {
-      EXPECT_NEAR(out->data<float>()[j * step + (out->dims()[1] * i)],
-                  results[i][j],
-                  1e-6);
+
+  // Get target and check result
+  VLOG(1) << "valid_places.size():" << valid_places.size();
+  for (int i = 0; i < valid_places.size(); ++i) {
+    auto p = valid_places[i];
+    VLOG(1) << "valid_places[" << i << "]:" << p.DebugString();
+  }
+  auto first_target = valid_places[0].target;
+
+  float relative_err_max = 0.f;
+  if (first_target == TARGET(kOpenCL) || first_target == TARGET(kNPU)) {
+    ASSERT_EQ(out->dims().production(), 1000);
+    double eps = first_target == TARGET(kOpenCL) ? 0.13 : 0.1;
+    for (int i = 0; i < ref.size(); ++i) {
+      for (int j = 0; j < ref[i].size(); ++j) {
+        auto idx = j * step + (out->dims()[1] * i);
+        auto result = pdata[idx];
+        auto relative_err = std::fabs((result - ref[i][j]) / ref[i][j]);
+        VLOG(3) << lite::string_format(
+            "relative_err[%d]: %f \tresult: %f \tref: %f",
+            idx,
+            relative_err,
+            result,
+            ref[i][j]);
+        if (relative_err > relative_err_max) {
+          relative_err_max = relative_err;
+        }
+      }
+    }
+    VLOG(3) << lite::string_format("max relative err: %f", relative_err_max);
+    EXPECT_LT(relative_err_max, eps);
+  } else {
+    ASSERT_EQ(out->dims().size(), 2);
+    ASSERT_EQ(out->dims()[0], 1);
+    ASSERT_EQ(out->dims()[1], 1000);
+    double eps = 1e-6;
+    for (int i = 0; i < ref.size(); ++i) {
+      for (int j = 0; j < ref[i].size(); ++j) {
+        auto result = pdata[j * step + (out->dims()[1] * i)];
+        EXPECT_NEAR(result, ref[i][j], eps);
+      }
+    }
+  }
+
+  // Get detailed result
+  size_t output_tensor_num = predictor.GetOutputNames().size();
+  VLOG(1) << "output tensor num:" << output_tensor_num;
+
+  for (size_t tidx = 0; tidx < output_tensor_num; ++tidx) {
+    auto* output_tensor = predictor.GetOutput(tidx);
+    VLOG(1) << "============= output tensor " << tidx << " =============\n";
+    auto out_dims = output_tensor->dims();
+    auto out_data = output_tensor->data<float>();
+    auto out_mean = compute_mean<float>(out_data, out_dims.production());
+    auto out_std_dev = compute_standard_deviation<float>(
+        out_data, out_dims.production(), true, out_mean);
+
+    VLOG(1) << "output tensor dims:" << out_dims;
+    VLOG(1) << "output tensor elements num:" << out_dims.production();
+    VLOG(1) << "output tensor standard deviation:" << out_std_dev;
+    VLOG(1) << "output tensor mean value:" << out_mean;
+
+    // print result
+    for (int i = 0; i < out_dims.production(); ++i) {
+      VLOG(2) << "output_tensor->data<float>()[" << i
+              << "]:" << output_tensor->data<float>()[i];
     }
   }
 }
@@ -90,8 +166,11 @@ TEST(ResNet50, test_arm) {
 #ifdef LITE_WITH_OPENCL
 TEST(ResNet50, test_opencl) {
   std::vector<Place> valid_places({
-      Place{TARGET(kOpenCL), PRECISION(kFloat)},
-      Place{TARGET(kARM), PRECISION(kFloat)},
+      Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)},
+      Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)},
+      Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageDefault)},
+      Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)},
+      TARGET(kARM),  // enable kARM CPU kernel when no opencl kernel
   });
 
   TestModel(valid_places);

@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserved.
+/* Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -131,8 +131,8 @@ struct ConcatParam {
 #pragma mark z
 
 #define V VZ
-#define R 6
-#define N 4
+#define R 4
+#define N 6
 #define P ftype
 #include "ConcatKernel.inc.metal"
 #undef P
@@ -141,8 +141,8 @@ struct ConcatParam {
 #undef V
 
 #define V VZ
-#define R 5
-#define N 4
+#define R 4
+#define N 5
 #define P ftype
 #include "ConcatKernel.inc.metal"
 #undef P
@@ -173,6 +173,16 @@ struct ConcatParam {
 #define V VZ
 #define R 4
 #define N 2
+#define P ftype
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
+#undef V
+
+#define V VZ
+#define R 3
+#define N 5
 #define P ftype
 #include "ConcatKernel.inc.metal"
 #undef P

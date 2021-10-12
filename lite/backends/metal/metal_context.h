@@ -31,6 +31,7 @@ class MetalContext {
     void wait_all_completed();
 
     // config
+    void set_metal_device(void* device);
     void set_metal_path(std::string path);
     void set_use_mps(bool flag) {
         use_mps_ = flag;
@@ -38,6 +39,7 @@ class MetalContext {
     void set_use_aggressive(bool flag) {
         use_aggressive_ = flag;
     }
+    void set_use_memory_reuse(bool flag);
 
     bool use_mps() const {
         return use_mps_;
@@ -48,6 +50,9 @@ class MetalContext {
     bool use_winograde() const {
         return use_aggressive_;
     }
+    bool use_memory_reuse() const {
+        return use_memory_reuse_;
+    }
 
     // ptr
     void* backend() const {
@@ -57,6 +62,7 @@ class MetalContext {
    private:
     bool use_mps_{false};
     bool use_aggressive_{false};
+    bool use_memory_reuse_{false};
     void* mContext = nullptr;
 };
 }  // namespace lite

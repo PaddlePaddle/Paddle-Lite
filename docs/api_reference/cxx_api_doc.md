@@ -464,6 +464,32 @@ std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>
 
 返回类型：`int`
 
+
+
+### `set_metal_lib_path(path)`
+
+用于iOS设备上使用Metal进行GPU预测时，配置metallib加载路径。
+
+参数：
+
+- `path(str)` - metallib库文件路径
+
+返回类型：`void`
+
+
+
+### `set_metal_use_mps(flag)`
+
+设置iOS设备上使用Metal进行GPU预测时，是否启用[Metal Performance Shaders](https://developer.apple.com/documentation/metalperformanceshaders)。若不设置，默认不使用（建议启用）。
+
+参数：
+
+- `flag(bool)` - 是否使用MPS
+
+返回：是否使用Metal Performance Shaders
+
+返回类型：`bool`
+
 ## PaddlePredictor
 
 ```c++

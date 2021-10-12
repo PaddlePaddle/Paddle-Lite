@@ -37,8 +37,6 @@ class ExpandV2OpLite : public OpLite {
 
  private:
   mutable ExpandV2Param param_;
-  mutable std::vector<int> repeat_times_{};
-  mutable DDim new_in_dims_;
 };
 
 }  // namespace operators

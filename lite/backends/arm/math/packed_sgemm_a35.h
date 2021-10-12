@@ -387,14 +387,10 @@ void sgemm_prepacked_8x6_a35(bool is_transB,
 
       float bias_local[8] = {0};
       if (has_bias) {
-        bias_local[0] = bias[y];
-        bias_local[1] = bias[y + 1];
-        bias_local[2] = bias[y + 2];
-        bias_local[3] = bias[y + 3];
-        bias_local[4] = bias[y + 4];
-        bias_local[5] = bias[y + 5];
-        bias_local[6] = bias[y + 6];
-        bias_local[7] = bias[y + 7];
+        int i = 0;
+        for (; i < 8 && y + i < ymax; i++) {
+          bias_local[i] = bias[y + i];
+        }
       }
 
       float cout0[n_block];  // NOLINT
@@ -923,10 +919,10 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
 
       float bias_local[4] = {0};
       if (has_bias) {
-        bias_local[0] = bias[y];
-        bias_local[1] = bias[y + 1];
-        bias_local[2] = bias[y + 2];
-        bias_local[3] = bias[y + 3];
+        int i = 0;
+        for (; i < 4 && y + i < ymax; i++) {
+          bias_local[i] = bias[y + i];
+        }
       }
 
       float* c_ptr0 = C + y * ldc + x0;

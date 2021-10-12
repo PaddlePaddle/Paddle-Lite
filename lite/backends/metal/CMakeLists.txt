@@ -35,6 +35,7 @@ lite_cc_library(metal_target_wrapper SRCS
         metal_debug.mm
         metal_half.mm
         metal_image.mm
+        metal_mtl_data.mm
         mps_conv_datasource.m
         target_wrapper.mm
         )

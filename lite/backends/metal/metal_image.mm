@@ -27,7 +27,6 @@ MetalImage::MetalImage(MetalContext* context,
     const METAL_PRECISION_TYPE precision_type,
     const METAL_ACCESS_FLAG flag)
     : precision_type_(precision_type), flag_(flag) {
-    auto backend = (__bridge MetalContextImp*)context->backend();
     auto four_dim = FourDimFrom(in_dim);
 
     tensor_dim_ = in_dim;
@@ -36,20 +35,6 @@ MetalImage::MetalImage(MetalContext* context,
     transpose_ = std::move(in_transpose);
 
     InitTexture();
-    image_ = [backend newTextureWithDescriptor:desc_];
-}
-
-void MetalImage::UpdateDims(MetalContext* context,
-    const DDim& in_tensor_dim,
-    std::vector<int> in_transpose) {
-    auto backend = (__bridge MetalContextImp*)context->backend();
-    auto four_dim = FourDimFrom(in_tensor_dim);
-    tensor_dim_ = in_tensor_dim;
-    pad_to_four_dim_ = four_dim;
-
-    transpose_ = std::move(in_transpose);
-    InitTexture();
-    image_ = [backend newTextureWithDescriptor:desc_];
 }
 
 void MetalImage::InitTexture() {
@@ -194,13 +179,38 @@ DDim MetalImage::FourDimFrom(DDim in_dim) {
     return four_dim;
 }
 
-#if defined(__OBJC__)
-id<MTLTexture> MetalImage::image() const
-#else
-void* metal_image::image() const
-#endif
-{
+id<MTLTexture> MetalImage::image() const {
     return image_;
+}
+
+void MetalImage::initImage(MetalContext* context) {
+    auto backend = (__bridge MetalContextImp*)context->backend();
+    image_ = [backend newTextureWithDescriptor:desc_];
+}
+
+void MetalImage::initImageReuse(MetalContext* context, std::string ptr) {
+    if (@available(iOS 10.0, *)) {
+        initImageFromHeap(context, ptr);
+    } else {
+        initImage(context);
+    }
+}
+
+API_AVAILABLE(ios(10.0))
+void MetalImage::initImageFromHeap(MetalContext* context, std::string ptr) {
+    auto backend = (__bridge MetalContextImp*)context->backend();
+    id<MTLHeap> heap = [backend getHeap:ptr];
+    if (!heap) {
+        heap = [backend newHeapWithDescriptor:desc_];
+        [backend setHeap:heap key:ptr];
+    }
+    bool flag = [backend isNewHeapWithDescriptor:desc_ heap:heap];
+    if (flag) {
+        heap = [backend newHeapWithDescriptor:desc_];
+        [backend setHeap:heap key:ptr];
+    }
+    heap_ = heap;
+    image_ = [backend newTextureWithDescriptor:desc_ heap:heap];
 }
 
 int MetalImage::ElementCount() const {
@@ -230,10 +240,10 @@ void MetalImage::CopyFromNCHW(const SP* src) {
         auto nvalue = (MetalHalf*)TargetWrapperMetal::Malloc(sizeof(MetalHalf) * rcount);
         TargetWrapperMetal::MemsetSync(nvalue, 0, sizeof(MetalHalf) * rcount);
         if (tensor_dim_.size() == 4) {
-            size_t n = dim_[0];
-            size_t h = dim_[1];
-            size_t w = dim_[2];
-            size_t c = dim_[3];
+            size_t n = (size_t)dim_[0];
+            size_t h = (size_t)dim_[1];
+            size_t w = (size_t)dim_[2];
+            size_t c = (size_t)dim_[3];
             size_t p = (c * n + 3) / 4;
             size_t C = n * c;
             for (int i1 = 0; i1 < p; i1++) {
@@ -255,10 +265,10 @@ void MetalImage::CopyFromNCHW(const SP* src) {
             // LOG(FATAL) << "MetalImage: CopyFromNCHW - tensor dim = 3";
         } else {
             // dimension bellow 4 similar to texture desc
-            size_t n = dim_[0];
-            size_t h = dim_[1];
-            size_t w = dim_[2];
-            size_t c = dim_[3];
+            size_t n = (size_t)dim_[0];
+            size_t h = (size_t)dim_[1];
+            size_t w = (size_t)dim_[2];
+            size_t c = (size_t)dim_[3];
             size_t p = (c + 3) / 4;
             for (int i0 = 0; i0 < n; i0++) {
                 for (int i1 = 0; i1 < p; i1++) {
@@ -496,11 +506,13 @@ void MetalImage::CopyToNCHW(P* dst) const {
 }
 
 MetalImage::~MetalImage() {
-    if (nil != image_) {
-#if (!__has_feature(objc_arc))
-        [image_ release];
-#endif
+    if (image_) {
         image_ = nil;
+    }
+    if (@available(iOS 10.0, *)) {
+      if (heap_) {
+        heap_ = nil;
+      }
     }
 }
 

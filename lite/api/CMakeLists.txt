@@ -37,6 +37,7 @@ if(MSVC)
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj")
 endif()
 
+
 if(LITE_WITH_FPGA)
     set(external_libs_DEPS ${external_libs_DEPS} ${fpga_deps})
 endif()
@@ -70,7 +71,6 @@ if(NOT LITE_ON_TINY_PUBLISH)
   lite_cc_library(paddle_api_full SRCS ${FULL_API_SRC} DEPS ${full_lib_DEPS} ${external_libs_DEPS})
 endif()
 
-
 if (NOT LITE_ON_TINY_PUBLISH)
     #dynamic library
     lite_cc_library(paddle_light_api_shared SHARED SRCS ${LIGHT_API_SRC}
@@ -78,16 +78,14 @@ if (NOT LITE_ON_TINY_PUBLISH)
     lite_cc_library(paddle_full_api_shared SHARED SRCS ${FULL_API_SRC}
                   DEPS ${full_lib_DEPS} ${external_libs_DEPS} paddle_api_full)
     add_dependencies(paddle_full_api_shared fbs_headers)
+    if (LITE_WITH_CUDA)
+        target_link_libraries(paddle_full_api_shared "-Wl,--whole-archive" ${math_cuda} "-Wl,--no-whole-archive")
+    endif()
+
 
     #static library
     bundle_static_library(paddle_api_full paddle_api_full_bundled bundle_full_api)
     bundle_static_library(paddle_api_light paddle_api_light_bundled bundle_light_api)
-
-
-    if(LITE_WITH_CUDA)
-        target_link_libraries(paddle_full_api_shared ${math_cuda} "-Wl,--whole-archive" kernels "-Wl,--no-whole-archive")
-    endif(LITE_WITH_CUDA)
-
 
     if(WIN32)
         target_link_libraries(paddle_full_api_shared shlwapi.lib)
@@ -207,9 +205,11 @@ endif()
 # python API
 if (LITE_WITH_PYTHON)
     # add library for opt_base
-    lite_cc_library(opt_base SRCS tools/opt_base.cc DEPS framework_proto)
     add_subdirectory(python)
+    lite_cc_library(lite_pybind SHARED SRCS python/pybind/pybind.cc tools/opt_base.cc DEPS ${full_lib_DEPS} paddle_api_full ${external_libs_DEPS}  pybind python)
 endif()
+
+
 
 # test_model_bin
 if(NOT IOS AND NOT LITE_ON_TINY_PUBLISH)

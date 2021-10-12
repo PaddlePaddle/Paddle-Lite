@@ -540,6 +540,15 @@ function make_x86_tests {
   root_dir=$(pwd)
   build_directory=$BUILD_DIR/build.lite.x86_tests
 
+  if [ $1 == "benchmark" ]; then
+    set_benchmark_options
+    if [ ${os_name} == "Linux" ]; then
+      # Turn off opencl. Additional third party library need to be installed on
+      # Linux. Otherwise opencl is not supported on Linux.
+      WITH_OPENCL=OFF
+    fi
+  fi
+
   if [ ${WITH_HUAWEI_ASCEND_NPU} == "ON" ]; then
     export CXX=g++ # Huawei Ascend NPU need g++
     build_directory=$BUILD_DIR/build.lite.huawei_ascend_npu
@@ -553,15 +562,6 @@ function make_x86_tests {
 
   if [ ${BUILD_PYTHON} == "ON" ]; then
     BUILD_EXTRA=ON
-  fi
-
-  if [ $1 == "benchmark" ]; then
-    set_benchmark_options
-    if [ ${os_name} == "Linux" ]; then
-      # Turn off opencl. Additional third party library need to be installed on
-      # Linux. Otherwise opencl is not supported on Linux.
-      WITH_OPENCL=OFF
-    fi
   fi
 
   if [ -d $build_directory ]

@@ -90,6 +90,7 @@ function set_benchmark_options {
   WITH_EXCEPTION=ON
   BUILD_JAVA=OFF
   WITH_OPENCL=ON
+  WITH_NNADAPTER=ON
   if [ ${WITH_PROFILE} == "ON" ] || [ ${WITH_PRECISION_PROFILE} == "ON" ]; then
     WITH_LOG=ON
   else
@@ -243,7 +244,7 @@ function make_tiny_publish_so {
       -DNNADAPTER_WITH_HUAWEI_KIRIN_NPU=$NNADAPTER_WITH_HUAWEI_KIRIN_NPU \
       -DNNADAPTER_HUAWEI_KIRIN_NPU_SDK_ROOT=$NNADAPTER_HUAWEI_KIRIN_NPU_SDK_ROOT \
       -DNNADAPTER_WITH_AMLOGIC_NPU=$NNADAPTER_WITH_AMLOGIC_NPU \
-      -DNNADAPTER_HUAWEI_AMLOGIC_SDK_ROOT=$NNADAPTER_AMLOGIC_NPU_SDK_ROOT \
+      -DNNADAPTER_AMLOGIC_NPU_SDK_ROOT=$NNADAPTER_AMLOGIC_NPU_SDK_ROOT \
       -DNNADAPTER_WITH_MEDIATEK_APU=$NNADAPTER_WITH_MEDIATEK_APU \
       -DNNADAPTER_MEDIATEK_APU_SDK_ROOT=$NNADAPTER_MEDIATEK_APU_SDK_ROOT \
       -DLITE_WITH_OPENCL=$WITH_OPENCL \
@@ -281,6 +282,10 @@ function make_full_publish_so {
 
   prepare_workspace $workspace $build_directory
 
+  if [ "${WITH_BENCHMARK}" == "ON" ]; then
+      set_benchmark_options
+  fi
+
   if [ "${WITH_OPENCL}" == "ON" ]; then
       prepare_opencl_source_code $workspace $build_dir
   fi
@@ -293,10 +298,6 @@ function make_full_publish_so {
       ARCH=armv8
   fi
 
-  if [ "${WITH_BENCHMARK}" == "ON" ]; then
-      set_benchmark_options
-  fi
-  
   if [ "$NDK_ROOT" ]; then
       NDK_NAME=$(echo $NDK_ROOT | egrep -o "android-ndk-r[0-9]{2}")
       NDK_VERSION=$(echo $NDK_NAME | egrep -o "[0-9]{2}")
@@ -363,7 +364,7 @@ function print_usage {
     echo -e "|                                                                                                                                      |"
     echo -e "|  optional argument:                                                                                                                  |"
     echo -e "|     --arch: (armv8|armv7), default is armv8                                                                                          |"
-    echo -e "|     --toolchain: (gcc|clang), defalut is gcc                                                                                         |"
+    echo -e "|     --toolchain: (gcc|clang), default is gcc                                                                                         |"
     echo -e "|     --android_stl: (c++_static|c++_shared), default is c++_static                                                                    |"
     echo -e "|     --with_java: (OFF|ON); controls whether to publish java api lib, default is ON                                                   |"
     echo -e "|     --with_static_lib: (OFF|ON); controls whether to publish c++ api static lib, default is OFF                                      |"

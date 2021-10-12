@@ -43,27 +43,13 @@ int Benchmark(int argc, char** argv) {
   }
 
   // Get optimized model file if necessary
-  std::string opt_model_path = FLAGS_optimized_model_path;
-  bool is_origin_model =
-      (!FLAGS_uncombined_model_dir.empty() ||
-       (!FLAGS_model_file.empty() && !FLAGS_param_file.empty()));
-  if (is_origin_model) {
-    if (opt_model_path.empty()) {
-      std::string path = FLAGS_uncombined_model_dir;
-      if (FLAGS_uncombined_model_dir.empty()) {
-        auto pos = FLAGS_model_file.find_last_of("/");
-        path = FLAGS_model_file.substr(0, pos);
-      }
-      opt_model_path = path + "/opt";
-    }
-    OutputOptModel(opt_model_path);
-  }
+  OutputOptModel(FLAGS_optimized_model_path);
 
   // Get input shapes
   auto input_shapes = lite::GetShapes(FLAGS_input_shape);
 
   // Run
-  Run(opt_model_path + ".nb", input_shapes);
+  Run(FLAGS_optimized_model_path + ".nb", input_shapes);
 
   return 0;
 }
@@ -196,7 +182,8 @@ void Run(const std::string& model_file,
   ss << "\n======= Backend Info =======\n";
   ss << "backend: " << FLAGS_backend << std::endl;
   ss << "cpu precision: " << FLAGS_cpu_precision << std::endl;
-  if (FLAGS_backend == "opencl" || FLAGS_backend == "x86_opencl") {
+  if (FLAGS_backend == "opencl,arm" || FLAGS_backend == "opencl" ||
+      FLAGS_backend == "opencl,x86" || FLAGS_backend == "x86_opencl") {
     ss << "gpu precision: " << FLAGS_gpu_precision << std::endl;
     ss << "opencl_cache_dir: " << FLAGS_opencl_cache_dir << std::endl;
     ss << "opencl_kernel_cache_file: " << FLAGS_opencl_kernel_cache_file

@@ -28,11 +28,16 @@
 #include <functional>  // for multiplies
 #include <memory>
 #include <numeric>
+#include <sstream>
 #include <string>
 #include <vector>
 #include "lite/core/dim.h"
 #include "lite/core/memory.h"
 #include "lite/utils/replace_stl/stream.h"
+
+#ifdef LITE_WITH_XPU
+#include "lite/backends/xpu/xpu_buffer.h"
+#endif
 
 namespace paddle {
 namespace lite {
@@ -122,10 +127,16 @@ class TensorLite {
   typename std::enable_if<IsImage<R>::value, R>::type *mutable_data(
       MetalContext *context,
       const DDim &dim,
-      std::vector<int> transport = {0, 2, 3, 1}) {
+      std::vector<int> transport = {0, 2, 3, 1},
+      bool reuse = true) {
     dims_ = dim;
     target_ = TARGET(kMetal);
-    buffer_->ResetLazyMetalImage<T>(context, dim, transport);
+    long ptr_this = reinterpret_cast<long>(this);
+    std::string ptr;
+    std::stringstream stream;
+    stream << ptr_this;
+    stream >> ptr;
+    buffer_->ResetLazyMetalImage<T>(context, dim, transport, reuse, ptr);
     return static_cast<MetalImage *>(buffer_->data());
   }
 
@@ -139,6 +150,20 @@ class TensorLite {
     dims_ = DDimLite({static_cast<int64_t>(count)});
     return static_cast<MetalBuffer *>(buffer_->data());
   }
+
+  enum class MetalDataType : int {
+    kRaw = 0,
+    kMetal = 1,
+  };
+  MetalDataType metal_data_type_{MetalDataType::kRaw};
+  MetalDataType metal_data_type() const { return metal_data_type_; }
+
+  void *mutable_metal_data(void *ptr) {
+    target_ = TARGET(kMetal);
+    metal_data_type_ = MetalDataType::kMetal;
+    buffer_->ResetLazyMetalData(ptr);
+    return ptr;
+  }
 #endif
 
   // T is the data type and R is the return type
@@ -147,12 +172,22 @@ class TensorLite {
   // For other devices, T and R may be the same type.
   template <typename T, typename R = T>
   R *mutable_data(TargetType target) {
+#ifdef LITE_WITH_XPU
+    if (target_ != target && target == TargetType::kXPU) {
+      buffer_.reset(new XPUBuffer);
+    }
+#endif
     target_ = target;
     return mutable_data<T, R>();
   }
 
   template <typename T, typename R = T>
   R *mutable_data(TargetType target, size_t memory_size) {
+#ifdef LITE_WITH_XPU
+    if (target_ != target && target == TargetType::kXPU) {
+      buffer_.reset(new XPUBuffer);
+    }
+#endif
     precision_ = lite_api::PrecisionTypeTrait<T>::Type();
     memory_size_ = memory_size;
     buffer_->ResetLazy(target, memory_size_);
