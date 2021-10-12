@@ -32,7 +32,6 @@ int Converter::Apply(hal::Model* model) {
   // Convert the NNAdapter operations to GE operators
   std::vector<hal::Operation*> operations =
       SortOperationsInTopologicalOrder(model);
-  NNADAPTER_VLOG(5) << "DEBUG[10] ";
   for (auto operation : operations) {
     NNADAPTER_VLOG(5) << "Converting " << OperationTypeToString(operation->type)
                       << " ...";

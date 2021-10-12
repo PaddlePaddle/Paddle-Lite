@@ -64,13 +64,9 @@ int ConvertScale(Converter* converter, OpInfo* op, Scope* scope) {
           NNADAPTER_TENSOR_INT8,
           true,
           {fabs(scale)});
-      // scale_operand = converter->AddConstantOperand(quant_scale_data,
-      // DDim({static_cast<int64_t>(1)}), NNADAPTER_TENSOR_INT32, true,
-      // {fabs(scale)});
     } else {
       scale_operand = converter->AddConstantOperand(scale);
     }
-
     // Fuse code operand
     int32_t fuse_code_value = NNADAPTER_FUSED_NONE;
     auto fuse_code_operand = converter->AddConstantOperand(fuse_code_value);

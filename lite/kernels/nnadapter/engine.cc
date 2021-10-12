@@ -328,7 +328,6 @@ bool Engine::Run() {
   // Update the input dimensions to generate a key to find a compiled device
   // program
   auto input_count = input_vars_.size();
-  VLOG(5) << "DEBUG8: " << input_count;
   std::vector<std::vector<int64_t>> input_dims(input_count);
   for (size_t i = 0; i < input_count; i++) {
     input_dims[i] = input_vars_[i].value->dims().Vectorize();

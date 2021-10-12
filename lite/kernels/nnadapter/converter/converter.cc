@@ -112,15 +112,10 @@ int Converter::Apply(
   for (auto& inst : insts) {
     auto op = const_cast<OpLite*>(inst.op());
     CHECK(op);
+    op->CheckShape();
+    op->InferShape();
     auto op_info = const_cast<OpInfo*>(op->op_info());
     auto op_type = op_info->Type();
-    VLOG(5) << "[DEBUG] Converting " << op_type << " ...";
-    op->CheckShape();
-    VLOG(5) << "[DEBUG] Done CheckShape " << op_type << " ...";
-    op->InferShape();
-    VLOG(5) << "[DEBUG] Done InferShape " << op_type << " ...";
-    op_info = const_cast<OpInfo*>(op->op_info());
-    op_type = op_info->Type();
     VLOG(5) << "Converting " << op_type << " ...";
 #define REGISTER_CONVERTER(__op_type__, __func_name__, ...) \
   if (op_type == #__op_type__) {                            \

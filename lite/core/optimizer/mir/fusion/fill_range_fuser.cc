@@ -45,9 +45,6 @@ void FillRangeFuser::BuildPattern() {
   fill_range_start->AsIntermediate();
   fill_range_end->AsIntermediate();
   fill_range_step->AsIntermediate();
-  // start->AsIntermediate();
-  // end->AsIntermediate();
-  // step->AsIntermediate();
   range->AsIntermediate();
 }
 
@@ -61,14 +58,11 @@ void FillRangeFuser::InsertNewNode(SSAGraph* graph,
   range_op->Attach(op_desc, scope);
 
   auto* new_op_node = graph->GraphCreateInstructNode(range_op, valid_places);
-
   auto new_op = new_op_node->stmt()->op();
   auto* range_scope = new_op->scope();
   auto range_end_tensor = range_scope->FindVar(matched.at("end")->arg()->name)
                               ->GetMutable<lite::Tensor>();
   auto* range_end_data = range_end_tensor->mutable_data<float>();
-  LOG(INFO) << "[DEBUG3]range_end_data: " << range_end_tensor[0]
-            << "dims: " << range_end_tensor->data_size();
 
   IR_NODE_LINK_TO(matched.at("start"), new_op_node);
   IR_NODE_LINK_TO(matched.at("end"), new_op_node);
@@ -86,16 +80,9 @@ cpp::OpDesc FillRangeFuser::GenOpDesc(const key2nodes_t& matched) {
   auto start = fill_range_start_op_desc.GetAttr<float>("value");
   auto end = fill_range_end_op_desc.GetAttr<float>("value");
   auto step = fill_range_step_op_desc.GetAttr<float>("value");
-  // fill_range_start_op_desc.mutable_inputs()->clear();
-  // fill_range_start_op_desc.mutable_outputs()->clear();
-  // fill_range_end_op_desc.mutable_inputs()->clear();
-  // fill_range_end_op_desc.mutable_outputs()->clear();
-  // fill_range_step_op_desc.mutable_inputs()->clear();
-  // fill_range_step_op_desc.mutable_outputs()->clear();
 
   auto range_instruct = matched.at("range")->stmt();
   auto range_op_desc = range_instruct->mutable_op_info();
-  // cpp::OpDesc range_op_desc = range_instruct->op_info();
   auto range = range_instruct->op();
   auto* range_scope = range->scope();
 
@@ -103,19 +90,16 @@ cpp::OpDesc FillRangeFuser::GenOpDesc(const key2nodes_t& matched) {
   auto range_start_tensor =
       range_scope->FindVar(range_start_var_name)->GetMutable<lite::Tensor>();
   auto* range_start_data = range_start_tensor->mutable_data<float>();
-  // range_start_tensor->set_persistable(true);
 
   auto range_end_var_name{matched.at("end")->arg()->name};
   auto range_end_tensor =
       range_scope->FindVar(range_end_var_name)->GetMutable<lite::Tensor>();
   auto* range_end_data = range_end_tensor->mutable_data<float>();
-  // range_end_tensor->set_persistable(true);
 
   auto range_step_var_name{matched.at("step")->arg()->name};
   auto range_step_tensor =
       range_scope->FindVar(range_step_var_name)->GetMutable<lite::Tensor>();
   auto* range_step_data = range_step_tensor->mutable_data<float>();
-  // range_step_tensor->set_persistable(true);
   matched.at("start")->arg()->is_weight = true;
   matched.at("end")->arg()->is_weight = true;
   matched.at("step")->arg()->is_weight = true;
@@ -131,12 +115,6 @@ cpp::OpDesc FillRangeFuser::GenOpDesc(const key2nodes_t& matched) {
   range_start_data[0] = start;
   range_end_data[0] = end;
   range_step_data[0] = step;
-  LOG(INFO) << "[DEBUG2]range_start_data: " << range_start_data[0]
-            << "dims: " << range_start_tensor->data_size();
-  LOG(INFO) << "[DEBUG2]range_end_data: " << range_end_data[0]
-            << "dims: " << range_end_tensor->data_size();
-  LOG(INFO) << "[DEBUG2]range_step_data: " << range_step_data[0]
-            << "dims: " << range_step_tensor->data_size();
 
   range_op_desc->SetType("range");
   range_op_desc->SetInput("Start", {range_start_var_name});

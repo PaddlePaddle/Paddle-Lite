@@ -157,7 +157,6 @@ class Dot {
 
 NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
 #define APPEND_OPERAND_NODE(mode)                                           \
-  NNADAPTER_LOG(INFO) << "[DEBUG] Visualize start";                         \
   auto operand_id = OperandIdToString(operand);                             \
   std::string operand_label("nullptr");                                     \
   if (operand != nullptr) {                                                 \
@@ -169,24 +168,19 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
   }                                                                         \
   std::vector<Dot::Attr> attrs;                                             \
   auto& attr_args = mode ? output_args : input_args;                        \
-  NNADAPTER_LOG(INFO) << "[DEBUG] Visualize attr_args.size(): "             \
-                      << attr_args.size();                                  \
-  NNADAPTER_LOG(INFO) << "[DEBUG] Visualize i: " << i;                      \
+  << attr_args.size();                                                      \
   std::string attr_label = i < attr_args.size() ? attr_args[i] : "unknown"; \
   attrs.emplace_back("label", string_format("%d:%s", i, attr_label.c_str()));
 
   Dot dot;
   std::ostringstream os;
   auto operations = SortOperationsInTopologicalOrder(model);
-  NNADAPTER_LOG(INFO) << "[DEBUG] Visualize.";
   std::set<hal::Operand*> visited_operands;
   for (auto* operation : operations) {
     auto& input_operands = operation->input_operands;
     auto& output_operands = operation->output_operands;
     auto input_count = input_operands.size();
     auto output_count = output_operands.size();
-    NNADAPTER_LOG(INFO) << "[DEBUG] Visualize input_count: " << input_count;
-    NNADAPTER_LOG(INFO) << "[DEBUG] Visualize output_count: " << output_count;
     std::string operation_id = OperationIdToString(operation);
     std::string operation_label = OperationTypeToString(operation->type);
     dot.AddNode(operation_id,
@@ -196,7 +190,6 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
                  Dot::Attr("fillcolor", "yellow")},
                 operation_label);
     std::vector<std::string> input_args, output_args;
-    NNADAPTER_LOG(INFO) << "[DEBUG] Visualize switch." << operation->type;
     switch (operation->type) {
       case NNADAPTER_ADD:
       case NNADAPTER_SUB:
@@ -389,7 +382,6 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
       case NNADAPTER_UNSQUEEZE:
         input_args = {"input", "axes"};
         output_args = {"output"};
-        NNADAPTER_LOG(INFO) << "[DEBUG] Visualize NNADAPTER_UNSQUEEZE: ";
         break;
       case NNADAPTER_ASSIGN:
         input_args = {"input"};
@@ -455,25 +447,18 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         NNADAPTER_LOG(ERROR) << "unsupported op: "
                              << static_cast<int>(operation->type);
     }
-    NNADAPTER_LOG(INFO) << "[DEBUG] Visualize switch end.";
     for (size_t i = 0; i < input_count; i++) {
-      NNADAPTER_LOG(INFO) << "[DEBUG] Visualize switch 1111.";
       auto* operand = input_operands[i];
-      NNADAPTER_LOG(INFO) << "[DEBUG] Visualize switch 2222.";
       APPEND_OPERAND_NODE(0)
-      NNADAPTER_LOG(INFO) << "[DEBUG] Visualize switch 3333.";
       dot.AddEdge(operand_id, operation_id, attrs);
     }
-    NNADAPTER_LOG(INFO) << "[DEBUG] Visualize switch end2.";
     for (size_t i = 0; i < output_count; i++) {
       auto* operand = output_operands[i];
       APPEND_OPERAND_NODE(1)
       dot.AddEdge(operation_id, operand_id, attrs);
     }
-    NNADAPTER_LOG(INFO) << "[DEBUG] Visualize switch end3.";
   }
   os << dot.Build();
-  NNADAPTER_LOG(INFO) << "[DEBUG] Visualize switch end4.";
 
 #undef APPEND_OPERAND_NODE
   return os.str();
@@ -761,13 +746,9 @@ NNADAPTER_EXPORT std::string OperandIdToString(hal::Operand* operand) {
 }
 
 NNADAPTER_EXPORT std::string OperandValueToString(hal::Operand* operand) {
-  NNADAPTER_LOG(INFO) << "[DEBUG] OperandValueToString label";
   auto label = OperandIdToString(operand);
-  NNADAPTER_LOG(INFO) << "[DEBUG] OperandValueToString type";
   auto& type = operand->type;
-  NNADAPTER_LOG(INFO) << "[DEBUG] OperandValueToString buffer";
   auto buffer = operand->buffer;
-  NNADAPTER_LOG(INFO) << "[DEBUG] OperandValueToString start";
   auto is_constant_copy = type.lifetime == NNADAPTER_CONSTANT_COPY;
   auto is_constant_reference = type.lifetime == NNADAPTER_CONSTANT_REFERENCE;
   auto is_constant = is_constant_copy || is_constant_reference;
@@ -801,16 +782,12 @@ NNADAPTER_EXPORT std::string OperandValueToString(hal::Operand* operand) {
 #undef OPERAND_SCALAR_VALUE_TO_STRING
   } else {
     if (is_constant && is_vector) {
-      NNADAPTER_LOG(INFO) << "[DEBUG] OperandValueToString dimensions1";
       auto count = type.dimensions.data[0];
-      NNADAPTER_LOG(INFO) << "[DEBUG] OperandValueToString dimensions2";
       if (count > 0 && count <= 4) {
 #define OPERAND_VECTOR_VALUE_TO_STRING(ntype, dtype, dspecifier)               \
   case NNADAPTER_##ntype:                                                      \
-    NNADAPTER_LOG(INFO) << "[DEBUG] OperandValueToString dimensions2";         \
     label +=                                                                   \
         string_format("%" #dspecifier, (reinterpret_cast<dtype*>(buffer))[0]); \
-    NNADAPTER_LOG(INFO) << "[DEBUG] OperandValueToString dimensions2";         \
     for (uint32_t i = 1; i < count; i++) {                                     \
       label += string_format(",%" #dspecifier,                                 \
                              (reinterpret_cast<dtype*>(buffer))[i]);           \

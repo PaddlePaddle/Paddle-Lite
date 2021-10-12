@@ -694,7 +694,6 @@ NNADAPTER_EXPORT std::vector<hal::Operation*> SortOperationsInTopologicalOrder(
       }
     }
   }
-  NNADAPTER_VLOG(5) << "SortOperationsInTopologicalOrder end ";
   return operations;
 }
 

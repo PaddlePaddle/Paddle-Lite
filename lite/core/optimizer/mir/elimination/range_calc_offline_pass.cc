@@ -50,15 +50,12 @@ void RangeCalcOfflinePass::RemoveRangePattern(
     auto op_desc = range_instruct.mutable_op_info();
 
     // Get range's input tensor
-    LOG(INFO) << "[DEBUG]start input tensor ";
     auto start_var = scope->FindVar(op_desc->Input("Start").front());
     auto start_t = start_var->GetMutable<lite::Tensor>();
     auto start = start_t->mutable_data<float>()[0];
-    LOG(INFO) << "[DEBUG]start data " << start;
     auto end_var = scope->FindVar(op_desc->Input("End").front());
     auto end_t = end_var->GetMutable<lite::Tensor>();
     auto end = end_t->mutable_data<float>()[0];
-    LOG(INFO) << "[DEBUG]end data " << end;
     auto step_var = scope->FindVar(op_desc->Input("Step").front());
     auto step_t = step_var->GetMutable<lite::Tensor>();
     auto step = step_t->mutable_data<float>()[0];

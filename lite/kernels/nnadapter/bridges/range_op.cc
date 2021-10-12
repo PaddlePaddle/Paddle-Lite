@@ -57,8 +57,6 @@ int RangeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   } else {
     start_operand =
         converter->AddFloat32ConstantOperand(start_data, start_dims, false);
-    VLOG(3) << "[DEBUG10] " << start_data[0];
-    // start_operand = converter->AddOperand(start, start_name);
   }
   // Ends operand
   NNAdapterOperand* ends_operand = nullptr;
@@ -67,8 +65,6 @@ int RangeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   } else {
     ends_operand =
         converter->AddFloat32ConstantOperand(ends_data, ends_dims, false);
-    VLOG(3) << "[DEBUG10] " << step_data[0];
-    // ends_operand = converter->AddOperand(ends, ends_name);
   }
   // Step operand
   NNAdapterOperand* step_operand = nullptr;
@@ -77,8 +73,6 @@ int RangeConverter(void* ctx, OpLite* op, KernelBase* kernel) {
   } else {
     step_operand =
         converter->AddFloat32ConstantOperand(step_data, step_dims, false);
-    VLOG(3) << "[DEBUG10] " << ends_data[0];
-    // step_operand = converter->AddOperand(step, step_name);
   }
   // Output operand
   NNAdapterOperandPrecisionCode out_type =
