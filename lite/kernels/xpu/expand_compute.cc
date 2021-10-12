@@ -120,3 +120,23 @@ REGISTER_LITE_KERNEL(expand, kXPU, kFloat, kAny, expand_xpu_int32, def_int32)
                                        PRECISION(kInt32),
                                        DATALAYOUT(kAny))})
     .Finalize();
+
+using expand_xpu_int64 = paddle::lite::kernels::xpu::ExpandCompute<int64_t>;
+REGISTER_LITE_KERNEL(expand, kXPU, kFloat, kAny, expand_xpu_int64, def_int64)
+    .BindInput("X",
+               {LiteType::GetTensorTy(TARGET(kXPU),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
+    .BindInput("ExpandTimes",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
+    .BindInput("expand_times_tensor",
+               {LiteType::GetTensorTy(TARGET(kHost),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kAny))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kXPU),
+                                       PRECISION(kInt64),
+                                       DATALAYOUT(kAny))})
+    .Finalize();

@@ -84,11 +84,11 @@ class RangeComputeTester : public arena::TestCase {
 };
 
 template <class T>
-void test_range(Place place, float abs_error) {
-  place.precision = lite_api::PrecisionTypeTrait<T>::Type();
+void test_range(Place place, float abs_error, std::string alias="def") {
+  //place.precision = lite_api::PrecisionTypeTrait<T>::Type();
 
   std::unique_ptr<arena::TestCase> tester1(
-      new RangeComputeTester<T>(place, "def", 1, 10, 1));
+      new RangeComputeTester<T>(place, "def_int32", 1, 10, 1));
   arena::Arena arena(std::move(tester1), place, abs_error);
   arena.TestPrecision();
 
@@ -110,7 +110,7 @@ TEST(Range, precision) {
 #endif
 
   test_range<float>(place, abs_error);
-  //test_range<int>(place, abs_error);
+  test_range<int>(place, abs_error);
 }
 
 }  // namespace lite

@@ -53,16 +53,16 @@ void RangeCompute<T>::Run() {
 }  // namespace paddle
 
 //using range_xpu_float = paddle::lite::kernels::xpu::RangeCompute<float>;
-using range_xpu_float = paddle::lite::kernels::xpu::RangeCompute<float>;
-REGISTER_LITE_KERNEL(range, kXPU, kFloat, kAny, range_xpu_float, def)
+using range_float_f = paddle::lite::kernels::xpu::RangeCompute<float>;
+REGISTER_LITE_KERNEL(range, kXPU, kFloat, kAny, range_float_f, def)
     .BindInput("Start", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kAny)) })
     .BindInput("End", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kAny)) })
     .BindInput("Step", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kAny)) })
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat), DATALAYOUT(kAny)) })
     .Finalize();
 
-using range_xpu_int32 = paddle::lite::kernels::xpu::RangeCompute<int32_t>;
-REGISTER_LITE_KERNEL(range, kXPU, kFloat, kAny, range_xpu_int32, def_int32)
+using range_int32_f = paddle::lite::kernels::xpu::RangeCompute<int32_t>;
+REGISTER_LITE_KERNEL(range, kXPU, kFloat, kAny, range_int32_f, def_int32)
     .BindInput("Start", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny)) })
     .BindInput("End", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny)) })
     .BindInput("Step", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny)) })

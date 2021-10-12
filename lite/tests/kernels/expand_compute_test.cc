@@ -181,7 +181,7 @@ TEST(Expand, precision) {
   test_expand_4dim<float>(place, abs_error);
 #ifndef LITE_WITH_NPU
   test_expand_3dim<int>(place, abs_error);
-//   test_expand_4dim<int>(place, abs_error);
+   test_expand_4dim<int>(place, abs_error);
 //   test_expand_4dim<float, true>(place, abs_error);
 //   test_expand_4dim<float, false, true>(place, abs_error);
 //   test_expand_4dim<int, true, true>(place, abs_error);
