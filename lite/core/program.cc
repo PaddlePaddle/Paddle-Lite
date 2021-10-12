@@ -219,7 +219,6 @@ void AddVariableDescFromOpInfo(
         UpdateVarDescFromTensorInfo(v, var_name, op_type, scope);
       } else if (decl_type->IsTensorList() ||
                  var->IsType<std::vector<lite::Tensor>>()) {
-        << var_name;
         UpdateVarDescFromTensorListInfo(v, var_name, op_type, scope);
       } else if (decl_type->IsStepScope() &&
                  var->IsType<std::vector<lite::Scope*>>()) {
