@@ -26,7 +26,7 @@ Welcome to Paddle-Lite's documentation!
   
   benchmark/benchmark
   benchmark/benchmark_tools
-  benchmark/best_process
+  benchmark/ best_practices
 
 .. toctree::
   :maxdepth: 1
