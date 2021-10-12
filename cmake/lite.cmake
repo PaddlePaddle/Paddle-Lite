@@ -295,6 +295,9 @@ function(lite_cc_binary TARGET)
         get_property(cuda_deps GLOBAL PROPERTY CUDA_MODULES)
         target_link_libraries(${TARGET} ${cuda_deps})
     endif()
+    if(LITE_WITH_INTEL_FPGA)
+        target_link_libraries(${TARGET} ${intel_fpga_deps})
+    endif()
 
     if (NOT APPLE AND NOT WIN32)
         # strip binary target to reduce size
