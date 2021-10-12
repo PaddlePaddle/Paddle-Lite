@@ -576,11 +576,8 @@ void conv1x1s1_gemm(const float* i_data,
               0.f,
               flag_bias,
               bias_group,
-              act_param.has_active,
-              act_param.active_type,
-              ctx,
-              act_param.Relu_clipped_coef,
-              act_param.Leaky_relu_alpha);
+              act_param,
+              ctx);
       } else if (m == 1) {
         float bias_ptr[n];  // NOLINT
         if (flag_bias) {
@@ -598,11 +595,8 @@ void conv1x1s1_gemm(const float* i_data,
               0.f,
               flag_bias,
               bias_ptr,
-              act_param.has_active,
-              act_param.active_type,
-              ctx,
-              act_param.Relu_clipped_coef,
-              act_param.Leaky_relu_alpha);
+              act_param,
+              ctx);
       } else {
         sgemm_prepack(false,
                       m,
@@ -823,11 +817,8 @@ void conv_im2col_gemm(const float* i_data,
               0.f,
               flag_bias,
               bias_group,
-              act_param.has_active,
-              act_param.active_type,
-              ctx,
-              act_param.Relu_clipped_coef,
-              act_param.Leaky_relu_alpha);
+              act_param,
+              ctx);
       } else if (m == 1) {
         float bias_ptr[n];  // NOLINT
         if (flag_bias) {
@@ -844,11 +835,8 @@ void conv_im2col_gemm(const float* i_data,
               0.f,
               flag_bias,
               bias_ptr,
-              act_param.has_active,
-              act_param.active_type,
-              ctx,
-              act_param.Relu_clipped_coef,
-              act_param.Leaky_relu_alpha);
+              act_param,
+              ctx);
       } else {
         int ldb = n;
         sgemm_prepack(false,

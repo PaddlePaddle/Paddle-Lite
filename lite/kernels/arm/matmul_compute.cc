@@ -297,8 +297,7 @@ void MatMulCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                0.f,
                                false,
                                nullptr,
-                               false,
-                               lite_api::ActivationType::kIndentity,
+                               act_param,
                                &ctx);
         if (fabsf(alpha - 1.f) > 1e-8f) {
           for (size_t i = 0; i < param.Out->dims().production(); ++i) {
