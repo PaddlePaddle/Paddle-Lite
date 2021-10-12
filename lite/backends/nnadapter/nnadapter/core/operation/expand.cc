@@ -91,12 +91,6 @@ int PrepareExpand(hal::Operation* operation) {
                        input_type.dimensions.count,
                        output_type.dimensions.dynamic_data[i]);
   }
-  NNADAPTER_VLOG(5) << "[debug]shape: " << OperandToString(shape_operand);
-  uint32_t shape_count1 = shape_operand->length / sizeof(int32_t);
-  auto shape_data1 = reinterpret_cast<int32_t*>(shape_operand->buffer);
-  for (uint32_t i = 0; i < shape_count1; i++) {
-    NNADAPTER_VLOG(5) << "shape[" << i << "] = " << shape_data1[i];
-  }
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
 }

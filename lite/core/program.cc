@@ -70,9 +70,6 @@ void UpdatePersistableVarDesc(cpp::VarDesc* var,
     if (var != nullptr) {
       auto tensor = scope->FindVar(var_name)->GetMutable<Tensor>();
       if (tensor != nullptr && tensor->persistable()) {
-        // if (var_name.find("fill_constant")!= std::string::npos) {
-        //   LOG(INFO) << "[DEBUG5]: " << tensor->persistable();
-        // }
         var->SetPersistable(tensor->persistable());
       }
     }
@@ -81,10 +78,6 @@ void UpdatePersistableVarDesc(cpp::VarDesc* var,
     var->SetShape(previous_var_desc.GetShape());
     var->SetDataType(previous_var_desc.GetDataType());
   }
-  // if (var_name.find("fill_constant")!= std::string::npos) {
-  //   var->SetPersistable(true);
-  //   LOG(INFO) << "[DEBUG6]: " << var_name;
-  // }
 }
 
 void UpdateVarDescFromTensorInfo(cpp::VarDesc* var,
@@ -216,25 +209,17 @@ void AddVariableDescFromOpInfo(
 
     auto* var = scope->FindVar(var_name);
     auto it = origin_var_maps.find(var_name);
-    if (var_name.find("fill_constant") != std::string::npos) {
-      LOG(INFO) << "[DEBUG6]: " << it->second.Persistable();
-    }
 
-    // if (it != origin_var_maps.end() && (it->second.Persistable()) ||
-    // var_name.find("fill_constant") != std::string::npos) {
     if (it != origin_var_maps.end() && (it->second.Persistable())) {
-      LOG(INFO) << "[DEBUG4]: Enter UpdatePersistableVarDesc" << var_name;
       UpdatePersistableVarDesc(v, it->second, var_name, scope);
     } else {
       auto* decl_type =
           GetVariableDeclTypeFromOpInfo(var_name, op_info, kernel);
       if (decl_type->IsTensor() && var->IsType<lite::Tensor>()) {
-        LOG(INFO) << "[DEBUG3]: Enter UpdateVarDescFromTensorInfo" << var_name;
         UpdateVarDescFromTensorInfo(v, var_name, op_type, scope);
       } else if (decl_type->IsTensorList() ||
                  var->IsType<std::vector<lite::Tensor>>()) {
-        LOG(INFO) << "[DEBUG3]: Enter UpdateVarDescFromTensorListInfo"
-                  << var_name;
+        << var_name;
         UpdateVarDescFromTensorListInfo(v, var_name, op_type, scope);
       } else if (decl_type->IsStepScope() &&
                  var->IsType<std::vector<lite::Scope*>>()) {

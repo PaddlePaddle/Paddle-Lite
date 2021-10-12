@@ -125,7 +125,10 @@ REGISTER_CONVERTER(less_equal, ConvertComparisons, "huawei_ascend_npu");
 REGISTER_CONVERTER(less_than, ConvertComparisons, "huawei_ascend_npu");
 REGISTER_CONVERTER(top_k, ConvertTopK, "huawei_ascend_npu");
 REGISTER_CONVERTER(top_k_v2, ConvertTopK, "huawei_ascend_npu");
-REGISTER_CONVERTER(scale, ConvertScale, "huawei_ascend_npu");
+REGISTER_CONVERTER(
+    scale,
+    ConvertScale,
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
 REGISTER_CONVERTER(shape, ConvertShape, "huawei_ascend_npu");
 REGISTER_CONVERTER(slice, ConvertSlice, "huawei_ascend_npu");
 REGISTER_CONVERTER(squeeze, ConvertSqueeze, "huawei_ascend_npu");

@@ -168,7 +168,6 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
   }                                                                         \
   std::vector<Dot::Attr> attrs;                                             \
   auto& attr_args = mode ? output_args : input_args;                        \
-  << attr_args.size();                                                      \
   std::string attr_label = i < attr_args.size() ? attr_args[i] : "unknown"; \
   attrs.emplace_back("label", string_format("%d:%s", i, attr_label.c_str()));
 
