@@ -33,5 +33,6 @@
 
 - [使用 Linux x86 构建 / 目标终端为 Android](./compile_android.md)
 - [iOS 源码编译](./compile_ios.md)
-- [ARM Linux 源码编译](./compile_windows.md)
-- [MacOS M1 芯片源码编译](./compile_windows.md)
+- [Windows 源码编译](./compile_windows.md)
+- [ARM Linux 源码编译](./compile_linux.md)
+- [MacOS M1 芯片源码编译](./compile_armmacos.md)
