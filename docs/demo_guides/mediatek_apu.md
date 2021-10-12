@@ -172,10 +172,10 @@ Paddle Lite已支持MediaTek APU的预测部署。
   注意：
   1）请根据buid.sh配置正确的参数值。
   2）需在docker环境中编译。
-
+  
   # 对于arm64-v8a
   ./build.sh android arm64-v8a
-
+  
   # 对于armeabi-v7a
   ./build.sh android armeabi-v7a
   ```
@@ -216,51 +216,51 @@ Paddle Lite已支持MediaTek APU的预测部署。
   - For armv8
     - tiny_publish编译方式
       ```shell
-      $ ./lite/tools/build_android.sh --android_stl=c++_shared --with_extra=ON --with_log=ON --with_nnadapter=ON --nnadapter_mediatek_apu_sdk_root=ON --nnadapter_mediatek_apu_sdk_root=$(pwd)/apu_ddk
+      $ ./lite/tools/build_android.sh --android_stl=c++_shared --with_extra=ON --with_log=ON --with_nnadapter=ON --nnadapter_with_mediatek_apu=ON --nnadapter_mediatek_apu_sdk_root=$(pwd)/apu_ddk
       ```
 
     - full_publish编译方式
       ```shell
-      $ ./lite/tools/build_android.sh --android_stl=c++_shared --with_extra=ON --with_log=ON --with_nnadapter=ON --nnadapter_mediatek_apu_sdk_root=ON --nnadapter_mediatek_apu_sdk_root=$(pwd)/apu_ddk full_publish
+      $ ./lite/tools/build_android.sh --android_stl=c++_shared --with_extra=ON --with_log=ON --with_nnadapter=ON --nnadapter_with_mediatek_apu=ON --nnadapter_mediatek_apu_sdk_root=$(pwd)/apu_ddk full_publish
       ```
 
     - 替换头文件和库
       ```shell
       # 替换include目录
-      $ cp -rf build.lite.android.armv8.clang/inference_lite_lib.android.armv8.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/include/
+      $ cp -rf build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/include/
       # 替换NNAdapter运行时库
-      $ cp -rf build.lite.android.armv8.clang/inference_lite_lib.android.armv8.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/mediatek_apu/
+      $ cp -rf build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/mediatek_apu/
       # 替换NNAdapter device HAL库
-      $ cp -rf build.lite.android.armv8.clang/inference_lite_lib.android.armv8.nnadapter/cxx/lib/libmediatek_apu.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/mediatek_apu/
+      $ cp -rf build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.nnadapter/cxx/lib/libmediatek_apu.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/mediatek_apu/
       # 替换libpaddle_light_api_shared.so
-      $ cp -rf build.lite.android.armv8.clang/inference_lite_lib.android.armv8.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/
+      $ cp -rf build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/
       # 替换libpaddle_full_api_shared.so(仅在full_publish编译方式下)
-      $ cp -rf build.lite.android.armv8.clang/inference_lite_lib.android.armv8.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/
+      $ cp -rf build.lite.android.armv8.gcc/inference_lite_lib.android.armv8.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/
       ```
 
   - For armv7
     - tiny_publish编译方式
       ```shell
-      $ ./lite/tools/build_android.sh --arch=armv7 --android_stl=c++_shared --with_extra=ON --with_log=ON --with_nnadapter=ON --nnadapter_mediatek_apu_sdk_root=ON --nnadapter_mediatek_apu_sdk_root=$(pwd)/apu_ddk
+      $ ./lite/tools/build_android.sh --arch=armv7 --android_stl=c++_shared --with_extra=ON --with_log=ON --with_nnadapter=ON --nnadapter_with_mediatek_apu=ON --nnadapter_mediatek_apu_sdk_root=$(pwd)/apu_ddk
       ```
     
     - full_publish编译方式
       ```shell
-      $ ./lite/tools/build_android.sh --arch=armv7 --android_stl=c++_shared --with_extra=ON --with_log=ON --with_nnadapter=ON --nnadapter_mediatek_apu_sdk_root=ON --nnadapter_mediatek_apu_sdk_root=$(pwd)/apu_ddk full_publish
+      $ ./lite/tools/build_android.sh --arch=armv7 --android_stl=c++_shared --with_extra=ON --with_log=ON --with_nnadapter=ON --nnadapter_with_mediatek_apu=ON --nnadapter_mediatek_apu_sdk_root=$(pwd)/apu_ddk full_publish
       ```
 
     - 替换头文件和库
       ```shell
       # 替换include目录
-      $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/include/
+      $ cp -rf build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/include/
       # 替换NNAdapter运行时库
-      $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/mediatek_apu/
+      $ cp -rf build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/mediatek_apu/
       # 替换NNAdapter device HAL库
-      $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libmediatek_apu.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/mediatek_apu/
+      $ cp -rf build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libmediatek_apu.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/mediatek_apu/
       # 替换libpaddle_light_api_shared.so
-      $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/
+      $ cp -rf build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/
       # 替换libpaddle_full_api_shared.so(仅在full_publish编译方式下)
-      $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/
+      $ cp -rf build.lite.android.armv7.gcc/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/
       ```
 
 - 替换头文件后需要重新编译示例程序
