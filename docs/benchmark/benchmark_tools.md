@@ -26,8 +26,8 @@ Benchmark 工具可方便快捷地评测给定模型在如下硬件上运行时�
 ```
 ./lite/tools/build_android.sh --toolchain=clang --with_benchmark=ON full_publish
 ```
-
 可选参数：
+
 | 参数 | 说明 | 可选值 | 默认值 |
 | :-- | :-- | :-- | :-- |
 | arch                  | 目标 ARM 架构    |  armv7 / armv8   |  armv8   |
@@ -114,8 +114,8 @@ avg   = 32.723
 ```
 ./lite/tools/build_linux.sh --arch=armv8 --with_benchmark=ON full_publish
 ```
-
 可选参数：
+
 | 参数 | 说明 | 可选值 | 默认值 |
 | :-- | :-- | :-- | :-- |
 | arch                  | 目标 ARM 架构    |  armv7 / armv8   |  armv8   |
@@ -197,8 +197,8 @@ avg   = 32.723
 ```
 ./lite/tools/build_linux.sh --arch=x86 --with_benchmark=ON full_publish
 ```
-
 可选参数：
+
 | 参数 | 说明 | 可选值 | 默认值 |
 | :-- | :-- | :-- | :-- |
 | toolchain             | 工具链           |  gcc / clang     |  gcc     |
@@ -274,8 +274,8 @@ avg   = 33.918
 ```
 ./lite/tools/build_macos.sh --with_benchmark=ON x86
 ```
-
 可选参数：
+
 | 参数 | 说明 | 可选值 | 默认值 |
 | :-- | :-- | :-- | :-- |
 | toolchain             | 工具链          |  gcc / clang     |  gcc     |
