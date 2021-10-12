@@ -37,6 +37,7 @@ if(MSVC)
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj")
 endif()
 
+
 if(LITE_WITH_FPGA)
     set(external_libs_DEPS ${external_libs_DEPS} ${fpga_deps})
 endif()
@@ -69,7 +70,6 @@ lite_cc_library(paddle_api_light SRCS ${LIGHT_API_SRC} DEPS ${light_lib_DEPS} ${
 if(NOT LITE_ON_TINY_PUBLISH)
   lite_cc_library(paddle_api_full SRCS ${FULL_API_SRC} DEPS ${full_lib_DEPS} ${external_libs_DEPS})
 endif()
-
 
 if (NOT LITE_ON_TINY_PUBLISH)
     #dynamic library
@@ -205,9 +205,11 @@ endif()
 # python API
 if (LITE_WITH_PYTHON)
     # add library for opt_base
-    lite_cc_library(opt_base SRCS tools/opt_base.cc DEPS framework_proto)
     add_subdirectory(python)
+    lite_cc_library(lite_pybind SHARED SRCS python/pybind/pybind.cc tools/opt_base.cc DEPS ${full_lib_DEPS} paddle_api_full ${external_libs_DEPS}  pybind python)
 endif()
+
+
 
 # test_model_bin
 if(NOT IOS AND NOT LITE_ON_TINY_PUBLISH)
