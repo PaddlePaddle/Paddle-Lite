@@ -2013,7 +2013,7 @@ void NNAdapterExecution_destroy(NNAdapterExecution* execution);
  *
  * void* access_input_memory(void* memory, NNAdapterOperandType* type) {
  *   Memory* handle = static_cast<Memory*>(memory);
- *   // Return the dimensions and the host buffer to driver HAL
+ *   // Return the dimensions and the host buffer to HAL
  *   memcpy(type->dimensions.data, handle->dimensions_data,
  * handle->dimensions_count);
  *   return handle->buffer;
@@ -2040,8 +2040,8 @@ int NNAdapterExecution_setInput(NNAdapterExecution* execution,
  *     assert(handle->buffer);
  *     handle->length = request_length;
  *   }
- *   // Tell the output dimensions to user and return the host buffer to driver
- * HAL
+ *   // Tell the inference framework the output dimensions and return the host
+ * buffer to HAL
  *   memcpy(handle->dimensions_data, type->dimensions.data,
  * type->dimensions.count);
  *   handle->dimensions_count = type->dimensions.count;

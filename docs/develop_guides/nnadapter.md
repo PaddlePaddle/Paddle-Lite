@@ -41,6 +41,324 @@
     - device：存储创建后的设备实例。
   - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
 
+- NNAdapterDevice_release
+  ```c++
+  NNAdapterDevice_release(NNAdapterDevice* device)
+  ```
+  释放设备实例（注意：只有进程退出时，才会释放设备HAL层库）。
+  - 参数：
+    - device：需要销毁的设备实例。
+  - 返回值：无。
+
+- NNAdapterDevice_getName
+  ```c++
+  int NNAdapterDevice_getName(const NNAdapterDevice* device, const char** name)
+  ```
+  获得设备名称。
+  - 参数：
+    - device：设备实例。
+    - name：存储返回的设备名称。
+  - 返回值：无。
+
+- NNAdapterDevice_getVendor
+  ```c++
+  int NNAdapterDevice_getVendor(const NNAdapterDevice* device, const char** vendor)
+  ```
+  获得设备厂商名称。
+  - 参数：
+    - device：设备实例。
+    - vendor：存储返回的设备厂商名称。
+  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+
+- NNAdapterDevice_getType
+  ```c++
+  int NNAdapterDevice_getType(const NNAdapterDevice* device, NNAdapterDeviceType* type)
+  ```
+  获得设备类型。
+  - 参数：
+    - device：设备实例。
+    - type：存储返回的设备类型值，由`NNAdapterDeviceCode`定义，`NNADAPTER_CPU`代表CPU，`NNADAPTER_GPU`代表GPU，`NNADAPTER_ACCELERATOR`代表神经网络加速器。
+  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+
+- NNAdapterDevice_getVersion
+  ```c++
+  int NNAdapterDevice_getVersion(const NNAdapterDevice* device, int32_t* version)
+  ```
+  获取设备HAL动态链接库的版本值。
+  - 参数：
+    - device：设备实例。
+    - version：存储返回的设备HAL层库的版本值。
+  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+
+- NNAdapterContext_create
+  ```c++
+  int NNAdapterContext_create(NNAdapterDevice** devices, uint32_t num_devices, const char* properties, NNAdapterContext** context)
+  ```
+  为多种设备创建一个统一设备上下文，并通过key-value字符串的形式将设备的参数信息传递给每一个设备HAL层库。
+  - 参数：
+    - devices：设备实例列表。
+    - num_devices：`devices`中设备实例的个数。
+    - properties：设备参数信息，按照key-value字符串的形式表示设备参数信息，例如："HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0"表示只使用昇腾310卡中第0个核心。
+    - context：存储创建后的统一设备上下文实例。
+  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+
+- NNAdapterContext_destroy
+  ```c++
+  void NNAdapterContext_destroy(NNAdapterContext* context)
+  ```
+  销毁统一设备上下文实例。
+  - 参数：
+    - context：需要销毁的统一设备上下文实例。
+  - 返回值：无。
+
+- NNAdapterModel_create
+  ```c++
+  int NNAdapterModel_create(NNAdapterModel** model)
+  ```
+  创建一个空的、与设备无关的模型实例。
+  - 参数：
+    - model：存储创建后的模型实例。
+  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+
+- NNAdapterModel_destroy
+  ```c++
+  void NNAdapterModel_destroy(NNAdapterModel* model)
+  ```
+  销毁模型实例及相关资源。
+  - 参数：
+    - model：需要销毁的模型实例。
+  - 返回值：无。
+
+- NNAdapterModel_finish
+  ```c++
+  int NNAdapterModel_finish(NNAdapterModel* model)
+  ```
+  结束模型组网。
+  - 参数：
+    - model：模型实例。
+  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+
+- NNAdapterModel_addOperand
+  ```c++
+  int NNAdapterModel_addOperand(NNAdapterModel* model, const NNAdapterOperandType* type, NNAdapterOperand** operand)
+  ```
+  向模型中增加一个操作数，即神经网络模型中的张量。
+  - 参数：
+    - model：模型实例。
+    - type：操作数的类型，由`NNAdapterOperandType`定义，包含精度类型、数据布局、生命周期、维度信息和量化信息。
+    - operand：存储新增的操作数实例。
+  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+
+- NNAdapterModel_setOperandValue
+  ```c++
+  int NNAdapterModel_setOperandValue(NNAdapterOperand* operand, void* buffer, uint32_t length, bool copy)
+  ```
+  设置常量操作数的值。
+  - 参数：
+    - operand：操作数实例。
+    - buffer：常量数据的内存地址。
+    - lenght：常量数据的内存大小（字节）。
+    - copy：是否创建常量数据的内存副本，否则将直接引用`buffer`。后者要求在模型编译前都不允许修改`buffer`指向的内容。
+  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+
+- NNAdapterModel_getOperandType
+  ```c++
+  int NNAdapterModel_getOperandType(NNAdapterOperand* operand,  NNAdapterOperandType** type)
+  ```
+  查询操作数的类型。
+  - 参数：
+    - operand：操作数实例。
+    - type：存储返回的操作数类型。
+  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+
+- NNAdapterModel_addOperation
+  ```c++
+  int NNAdapterModel_addOperation(NNAdapterModel* model, NNAdapterOperationType type, uint32_t input_count, NNAdapterOperand** input_operands, uint32_t output_count, NNAdapterOperand** output_operands, NNAdapterOperation** operation)
+  ```
+  向模型中增加一个操作符，并设置它的输入、输出操作数，即神经网络模型中的算子。
+  - 参数：
+    - model：模型实例。
+    - type：操作符类型，由`NNAdapterOperationCode`定义，包含二维卷积`NNADAPTER_CONV_2D`，最大值池化`NNADAPTER_AVERAGE_POOL_2D`，均值池化`NNADAPTER_MAX_POOL_2D`等操作符。
+    - input_count：输入操作数的数量。
+    - input_operands：输入操作数列表，需严格按照每一个操作符的定义依次将对应的输入操作数加入到列表中。
+    - output_count：输出操作数的数量。
+    - output_operands：输出操作数列表，需严格按照每一个操作符的定义依次将对应的输出操作数加入到列表中。
+    - operation：存储新增的操作符实例。
+  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+
+- NNAdapterModel_identifyInputsAndOutputs
+  ```c++
+  int NNAdapterModel_identifyInputsAndOutputs(NNAdapterModel* model, uint32_t input_count, NNAdapterOperand** input_operands, uint32_t output_count, NNAdapterOperand** output_operands)
+  ```
+  标识模型的输入、输出操作数，其生命周期将被标记为`NNADAPTER_MODEL_INPUT`和`NNADAPTER_MODEL_OUTPUT`类型。
+  - 参数：
+    - model：模型实例。
+    - input_count：输入操作数的数量。
+    - input_operands：输入操作数列表，不约束每一个操作符顺序。
+    - output_count：输出操作数的数量。
+    - output_operands：输出操作数列表，不约束每一个操作符顺序。
+  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+
+- NNAdapterCompilation_create
+  ```c++
+  int NNAdapterCompilation_create(NNAdapterModel* model, const char* cache_token, void* cache_buffer, uint32_t cache_length, const char* cache_dir, NNAdapterContext* context, NNAdapterCompilation** compilation)
+  ```
+  创建一个编译实例，基于指定的统一设备上下文，为多种设备（当前版本仅支持一种设备）编译模型实例或直接加载模型缓存。如果同时设置模型实例和模型缓存参数，则优先加载模型缓存，因此存在以下三种情况：
+
+  1）当设置`cache_token`，`cache_buffer`和`cache_length`时，则直接从内存中加载模型缓存，此时将忽略`model`参数。
+
+  2）当设置`cache_token`和`cache_dir`时，将从<`cache_dir`>指定的目录中查找并尝试加载<`cache_token`>.nnc模型缓存文件，成功加载后将忽略`model`参数，否则在调用`NNAdapterCompilation_finish`完成模型实例`model`的在线编译后，在<`cache_dir`>目录中生成<`cache_token`>.nnc文件。
+
+  3）当`cache_token`，`cache_buffer`，`cache_length`和`cache_dir`均未被设置时，则在调用`NNAdapterCompilation_finish`后完成模型实例`model`的在线编译。需要注意的是，由于未设置`cache_token`和`cache_dir`，在编译完成后将不会生成模型缓存文件，将使得在模型首次推理时都会进行模型的在线编译，导致首次推理耗时过长。
+
+  - 参数：
+    - model：模型实例。
+    - cache_token：模型缓存唯一标识。
+    - cache_buffer：模型缓存的内存地址。
+    - cache_length：模型缓存的内存大小（字节），必须与`cache_buffer`成对使用。
+    - cache_dir：模型缓存的目录。
+    - context：统一设备上下文实例。
+    - compilation：存储创建的编译实例。
+  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+
+- NNAdapterCompilation_destroy
+  ```c++
+  void NNAdapterCompilation_destroy(NNAdapterCompilation* compilation)
+  ```
+  销毁编译实例。
+  - 参数：
+    - compilation：需要销毁的编译实例。
+  - 返回值：无。
+
+- NNAdapterCompilation_finish
+  ```c++
+  int NNAdapterCompilation_finish(NNAdapterCompilation* compilation)
+  ```
+  结束编译配置的设置，调用设备HAL层库对`NNAdapterCompilation_create`中的模型实例`model`进行在线编译并生成设备程序。
+  - 参数：
+    - compilation：编译实例。
+  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+
+- NNAdapterCompilation_queryInputsAndOutputs
+  ```c++
+  int NNAdapterCompilation_queryInputsAndOutputs(NNAdapterCompilation* compilation, uint32_t* input_count, NNAdapterOperandType** input_types, uint32_t* output_count, NNAdapterOperandType** output_types)
+  ```
+  查询编译后的模型的输入、输出操作数的数量和类型，必须在`NNAdapterCompilation_finish`执行后才能调用，可以通过以下两次调用获得输入、输出操作数数量和类型信息。
+
+  1）当`input_types`和`output_types`为NULL时，则仅查询输入、输出操作数的数量并将值存储在`input_count`和`output_count`。
+
+  2）当`input_types`和`output_types`不为NULL时，则将输入、输出操作数的类型依次存储在`input_types`和`output_types`（要求调用方根据`input_count`和`output_count`分配它们的内存）。
+
+  - 参数：
+    - compilation：编译实例。
+    - input_count：存储返回的输入操作数的数量，不允许为NULL。
+    - input_types：存储返回的输入操作数列表。
+    - output_count：存储返回的输出操作数的数量，不允许为NULL。
+    - output_types：存储返回的输出操作数列表。
+  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+
+- NNAdapterExecution_create
+  ```c++
+  int NNAdapterExecution_create(NNAdapterCompilation* compilation, NNAdapterExecution** execution)
+  ```
+  基于编译实例创建一个执行计划实例。
+  
+  为了方便理解`NNAdapterCompilation`和`NNAdapterExecution`的区别，可以将`NNAdapterCompilation`简单理解为已经编译好的设备代码，而`NNAdapterExecution`代表如何执行它，可以是顺序依次执行，也可以并行执行，可以是同步执行，也可以是异步执行，但目前NNAdapter仅支持同步顺序执行。
+
+  - 参数：
+    - compilation：编译实例。
+    - execution：存储创建的执行计划实例。
+  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+
+- NNAdapterExecution_destroy
+  ```c++
+  void NNAdapterExecution_destroy(NNAdapterExecution* execution)
+  ```
+  销毁执行计划实例。
+  - 参数：
+    - execution：需要销毁的执行计划实例。
+  - 返回值：无。
+
+- NNAdapterExecution_setInput
+  ```c++
+  int NNAdapterExecution_setInput(NNAdapterExecution* execution, int32_t index, void* memory, void* (*access)(void* memory, NNAdapterOperandType* type))
+  ```
+  设置执行计划输入操作数的内存实例和访问函数。
+
+  为了能够让HAL层库更加灵活的访问推理框架的张量对象，在设置执行计划的输入时，要求设置内存实例`memory`和内存实例访问函数`access`，例如：
+
+  ```c++
+  typedef struct {
+    NNAdapterOperandPrecisionCode precision;
+    uint32_t dimensions_count;
+    int32_t dimensions_data[NNADAPTER_MAX_SIZE_OF_DIMENSIONS];
+    void* buffer;
+    size_t length;
+  } Memory;
+
+  void* access_input_memory(void* memory, NNAdapterOperandType* type) {
+    Memory* handle = reinterpret_cast<Memory*>(memory);
+    // Return the dimensions and the host buffer to HAL
+    memcpy(type->dimensions.data, handle->dimensions_data, handle->dimensions_count);
+    return handle->buffer;
+  }
+  
+  Memory input;
+  NNAdapterExecution_setInput(execution, index, reinterpret_cast<void*>(&input), access_input_memory);
+  ```
+
+  - 参数：
+    - execution：执行计划实例。
+    - index：模型输入操作数的索引。
+    - memory：模型输入操作数的内存实例，不限定为具体的缓存首地址，用户可自行封装后通过std::reinterpret_cast<void*>()强制转为void*类型。
+    - access：内存实例访问函数，HAL层库将通过`access`函数访问`memory`获得host端缓存实际地址。
+  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+
+- NNAdapterExecution_setOutput
+  ```c++
+  int NNAdapterExecution_setOutput(NNAdapterExecution* execution, int32_t index, void* memory, void* (*access)(void* memory, NNAdapterOperandType* type))
+  ```
+  设置执行计划输出操作数的内存实例和访问函数。
+
+  基于`NNAdapterExecution_setInput`示例中的`memory`的定义实现输出内存实例的访问函数`access`：
+
+  ```c++
+  void* access_output_memory(void* memory, NNAdapterOperandType* type) {
+    Memory* handle = reinterpret_cast<Memory*>(memory);
+    // Get the buffer length according to the type->precision and type->dimensions
+    size_t request_length = GetBufferLength(type);
+    if (request_length > handle->length) {
+      free(handle->buffer);
+      handle->buffer = malloc(request_length);
+      assert(handle->buffer);
+      handle->length = request_length;
+    }
+    // Tell the inference framework the output dimensions and return the host buffer to HAL
+    memcpy(handle->dimensions_data, type->dimensions.data, type->dimensions.count);
+    handle->dimensions_count = type->dimensions.count;
+    return handle->buffer;
+  }
+  
+  Memory output;
+  NNAdapterExecution_setOutput(execution, index, reinterpret_cast<void*>(&output), access_output_memory);
+  ```
+
+  - 参数：
+    - execution：执行计划实例。
+    - index：模型输出操作数的索引。
+    - memory：模型输出操作数的内存实例，不限定为具体的缓存首地址，用户可自行封装后通过std::reinterpret_cast<void*>()强制转为void*类型。
+    - access：内存实例访问函数，HAL层库将通过`access`函数访问`memory`获得host端缓存实际地址。
+  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+
+- NNAdapterExecution_compute
+  ```c++
+  int NNAdapterExecution_compute(NNAdapterExecution* execution)
+  ```
+  同步调度执行计划实例。
+  - 参数：
+    - execution：执行计划实例。
+  - 返回值：无。
+
 ### NNAdapter 标准算子详细说明
 - NNADAPTER_ABS
 
