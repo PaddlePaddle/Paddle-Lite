@@ -35,16 +35,15 @@ Paddle Lite 当前支持所有同 时支持 AVX 及 FMA 指令集的 X86 CPU，�
   - 目标设备是 linux：执行命令`cat /proc/cpuinfo`查看
   - 目标设备是 windows：利用免费工具`CPU-Z`查看
 ### X86 CPU 环境准备及示例程序
-- [PaddleLite 使用 X86 预测部署](../demo_guides/x86)
+- [Paddle Lite 使用 X86 预测部署](../demo_guides/x86)
 
 ## 移动端 GPU
 Paddle Lite 支持多种移动端 GPU，包括 ARM Mali、Qualcomm Adreno、Apple A Series、Nvidia Tegra 等系列 GPU 设备，支持列表如下：
 - ARM Mali G 系列
 - Qualcomm Adreno 系列
 - Apple A 系列
-- Nvida Tegra 系列: Tegra X1, Tegra X2, Jetson Nano, Xavier
 ### 移动端 GPU 环境准备及示例程序
-- [PaddleLite 使用 OpenCL 预测部署](../demo_guides/opencl)
+- [Paddle Lite 使用 OpenCL 预测部署](../demo_guides/opencl)
 
 ## FPGA
 Paddle Lite 支持 **百度 FPGA**，支持列表如下：
@@ -58,8 +57,8 @@ Paddle Lite 支持 **英特尔 (Intel) FPGA**，支持列表如下：
   - 海运捷讯 C5TB（英特尔 FPGA Cyclone V）开发板
 
 ### FPGA 环境准备及示例程序
-- 百度 FPGA：[PaddleLite 使用 FPGA 预测部署](../demo_guides/fpga)
-- 英特尔 (Intel) FPGA：[PaddleLite 使用英特尔 FPGA 预测部署](../demo_guides/intel_fpga)
+- 百度 FPGA：[Paddle Lite 使用 FPGA 预测部署](../demo_guides/fpga)
+- 英特尔 (Intel) FPGA：[Paddle Lite 使用英特尔 FPGA 预测部署](../demo_guides/intel_fpga)
 
 
 ## 百度 (Baidu) XPU
@@ -68,7 +67,7 @@ Paddle Lite 支持百度 XPU，支持列表如下：
 - 百度昆仑818-300芯片
 
 ### 百度 (Baidu) XPU 环境准备及示例程序
-- [PaddleLite 使用百度 XPU 预测部署](../demo_guides/baidu_xpu)
+- [Paddle Lite 使用百度 XPU 预测部署](../demo_guides/baidu_xpu)
 
 ## 华为 (Huawei) 麒麟 NPU
 Paddle Lite 支持华为达芬奇架构麒麟 NPU，支持列表如下：
@@ -83,7 +82,7 @@ Paddle Lite 支持华为达芬奇架构麒麟 NPU，支持列表如下：
   * Kirin 810：HUAWEI nova 5系列，nova 6 SE，荣耀 9X 系列，荣耀 Play4T Pro
 
 ### 华为 (Huawei) 麒麟 NPU 环境准备及示例程序
-- [PaddleLite 使用华为麒麟 NPU 预测部署](../demo_guides/huawei_kirin_npu)
+- [Paddle Lite 使用华为麒麟 NPU 预测部署](../demo_guides/huawei_kirin_npu)
 
 ## 华为 (Huawei) 昇腾 NPU
 Paddle Lite 已支持华为昇腾 NPU（Ascend310）在 X86 和 ARM 服务器上进行预测部署
@@ -92,34 +91,34 @@ Paddle Lite 已支持华为昇腾 NPU（Ascend310）在 X86 和 ARM 服务器上
   * Atlas 200 DK 开发者套件
   * Atlas 800 推理服务器（型号：3000/3010）
 ### 华为 (Huawei) 昇腾 NPU 环境准备及示例程序
-- [PaddleLite 使用华为昇腾 NPU 预测部署](../demo_guides/huawei_ascend_npu)
+- [Paddle Lite 使用华为昇腾 NPU 预测部署](../demo_guides/huawei_ascend_npu)
 
 ## 瑞芯微 (Rockchip) NPU
 Paddle Lite 支持 瑞芯微 (Rockchip) NPU，支持列表如下：
 - 支持芯片：RK1808, RK1806，暂不支持 RK3399Pro
 - 支持设备：RK1808/1806 EVB，TB-RK1808S0
 ### 瑞芯微 (Rockchip) NPU 环境准备及示例程序
-- [PaddleLite 使用瑞芯微 NPU 预测部署](../demo_guides/rockchip_npu)
+- [Paddle Lite 使用瑞芯微 NPU 预测部署](../demo_guides/rockchip_npu)
 
 ## 联发科 (MediaTek) APU
 Paddle Lite 支持 联发科 (MediaTek) APU，支持列表如下：
 - 支持芯片：MT8168/MT8175，及其他智能芯片
 - 支持设备：MT8168-P2V1 Tablej
 ### 联发科 (MediaTek) APU 环境准备及示例程序
-- [PaddleLite 使用联发科 APU 预测部署](../demo_guides/mediatek_apu)
+- [Paddle Lite 使用联发科 APU 预测部署](../demo_guides/mediatek_apu)
 
 ## 晶晨（Amlogic）NPU
 Paddle Lite 支持 晶晨（Amlogic）NPU, 支持列表如下：
 - 支持芯片：C308X，A311D，S905D3(Android 版本)
 ### 晶晨（Amlogic）NPU 环境准备及示例程序
-- [PaddleLite 使用 Amlogic NPU 预测部署](../demo_guides/amlogic_npu)
+- [Paddle Lite 使用 Amlogic NPU 预测部署](../demo_guides/amlogic_npu)
 
 ## 颖脉 (Imagination) NNA
 Paddle Lite 支持 颖脉 (Imagination) NNA，支持列表如下：
 - 支持芯片：紫光展锐虎贲 T7510
 - 支持设备：海信 F50，Roc1 开发板(基于 T7510 的微型电脑主板)
 ### 颖脉 (Imagination) NNA 环境准备及示例程序
-- [PaddleLite 使用颖脉 NNA 预测部署](../demo_guides/imagination_nna)
+- [Paddle Lite 使用颖脉 NNA 预测部署](../demo_guides/imagination_nna)
 
 ## 比特大陆（Bitmain）TPU
 Paddle Lite 支持 比特大陆（Bitmain）TPU，支持列表如下：
@@ -128,4 +127,4 @@ Paddle Lite 支持 比特大陆（Bitmain）TPU，支持列表如下：
   * Sophon SC3 加速卡 (BM1682 X86 PCI-E)
   * Sophon SC5 加速卡 (BM1684 X86 PCI-E)
 ### 比特大陆（Bitmain）TPU 环境准备及示例程序
-- [PaddleLite 使用 Bitmain Sophon BM1682/BM1684 预测部署](../demo_guides/bitmain)
+- [Paddle Lite 使用 Bitmain Sophon BM1682/BM1684 预测部署](../demo_guides/bitmain)
