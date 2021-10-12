@@ -28,11 +28,11 @@ int ConvertSplit(Converter* converter, hal::Operation* operation) {
   if (!input_operator) {
     input_operator = converter->ConvertOperand(input_operand);
   }
-  auto split_operator = converter->AddInt32ConstantOperator(
-      std::vector<int32_t>(split_data, split_data + split_count));
+  auto split_operator = converter->AddInt32ConstantOperator(split);
   auto axis_operator =
       converter->AddInt32ConstantOperator(std::vector<int32_t>({axis}));
   auto split_op = converter->AddOperator<hiai::op::SplitV>(output_operands[0]);
+  int split_count = split.size();
   split_op->set_attr_num_split(split_count);
   SET_INPUT(split_op, x, input_operator);
   SET_INPUT(split_op, size_splits, split_operator);

@@ -67,15 +67,14 @@ int ConvertSplit(Converter* converter, OpInfo* op, Scope* scope) {
     std::vector<int> sections(num, size / num);
     split_operand = converter->AddConstantOperand(sections);
   } else if (HasInput(op, scope, "SectionsTensorList")) {
-    // Concat to split_operand
-    std::vector<NNAdapterOperand*> input_operands;
+    std::vector<int> sections;
     auto names = op->Input("SectionsTensorList");
     for (auto name : names) {
-      input_operands.push_back(converter->AddInputOperand(scope, name));
+      auto section_tensor = scope->FindTensor(name);
+      CHECK(section_tensor->persistable());
+      sections.push_back(section_tensor->data<int>()[0]);
     }
-    input_operands.push_back(converter->AddConstantOperand<int>(0));
-    split_operand = converter->AddOutputOperand();
-    converter->AddOperation(NNADAPTER_CONCAT, input_operands, {split_operand});
+    split_operand = converter->AddConstantOperand(sections);
   } else {
     std::vector<int> sections = op->GetAttr<std::vector<int>>("sections");
     split_operand = converter->AddConstantOperand(sections);
