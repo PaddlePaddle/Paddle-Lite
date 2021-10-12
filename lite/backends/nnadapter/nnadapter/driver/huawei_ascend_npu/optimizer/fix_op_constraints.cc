@@ -16,7 +16,6 @@
 #include <cmath>
 #include <vector>
 #include "core/operation/expand.h"
-#include "core/operation/range.h"
 #include "core/operation/reduce.h"
 #include "utility/debug.h"
 #include "utility/logging.h"

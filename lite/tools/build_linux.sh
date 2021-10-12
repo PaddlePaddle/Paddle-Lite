@@ -69,7 +69,7 @@ WITH_BENCHMARK=OFF
 # option of light weight framework, default is OFF
 WITH_LIGHT_WEIGHT_FRAMEWORK=OFF
 # num of threads used during compiling..
-readonly NUM_PROC=${LITE_BUILD_THREADS:-32}
+readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
 
 

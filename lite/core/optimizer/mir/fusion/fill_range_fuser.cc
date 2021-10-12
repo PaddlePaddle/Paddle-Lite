@@ -57,12 +57,9 @@ void FillRangeFuser::InsertNewNode(SSAGraph* graph,
   auto& valid_places = range->valid_places();
   range_op->Attach(op_desc, scope);
 
+  // Create new range op node
   auto* new_op_node = graph->GraphCreateInstructNode(range_op, valid_places);
   auto new_op = new_op_node->stmt()->op();
-  auto* range_scope = new_op->scope();
-  auto range_end_tensor = range_scope->FindVar(matched.at("end")->arg()->name)
-                              ->GetMutable<lite::Tensor>();
-  auto* range_end_data = range_end_tensor->mutable_data<float>();
 
   IR_NODE_LINK_TO(matched.at("start"), new_op_node);
   IR_NODE_LINK_TO(matched.at("end"), new_op_node);
@@ -100,12 +97,12 @@ cpp::OpDesc FillRangeFuser::GenOpDesc(const key2nodes_t& matched) {
   auto range_step_tensor =
       range_scope->FindVar(range_step_var_name)->GetMutable<lite::Tensor>();
   auto* range_step_data = range_step_tensor->mutable_data<float>();
-  matched.at("start")->arg()->is_weight = true;
-  matched.at("end")->arg()->is_weight = true;
-  matched.at("step")->arg()->is_weight = true;
-  matched.at("start")->arg()->is_persist = true;
-  matched.at("end")->arg()->is_persist = true;
-  matched.at("step")->arg()->is_persist = true;
+  //   matched.at("start")->arg()->is_weight = true;
+  //   matched.at("end")->arg()->is_weight = true;
+  //   matched.at("step")->arg()->is_weight = true;
+  //   matched.at("start")->arg()->is_persist = true;
+  //   matched.at("end")->arg()->is_persist = true;
+  //   matched.at("step")->arg()->is_persist = true;
 
   if (range_start_tensor->data_size() != 1 ||
       range_end_tensor->data_size() != 1 ||
