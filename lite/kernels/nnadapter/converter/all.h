@@ -116,6 +116,7 @@ REGISTER_CONVERTER(hard_swish, ConvertHardSwish, "huawei_ascend_npu");
 REGISTER_CONVERTER(arg_max, ConvertArgMinMax, "huawei_ascend_npu");
 REGISTER_CONVERTER(arg_min, ConvertArgMinMax, "huawei_ascend_npu");
 REGISTER_CONVERTER(equal, ConvertComparisons, "huawei_ascend_npu");
+REGISTER_CONVERTER(expand_v2, ConvertExpandV2, "huawei_ascend_npu")
 REGISTER_CONVERTER(not_equal, ConvertComparisons, "huawei_ascend_npu");
 REGISTER_CONVERTER(greater_than, ConvertComparisons, "huawei_ascend_npu");
 REGISTER_CONVERTER(greater_equal, ConvertComparisons, "huawei_ascend_npu");
@@ -124,6 +125,7 @@ REGISTER_CONVERTER(less_equal, ConvertComparisons, "huawei_ascend_npu");
 REGISTER_CONVERTER(less_than, ConvertComparisons, "huawei_ascend_npu");
 REGISTER_CONVERTER(top_k, ConvertTopK, "huawei_ascend_npu");
 REGISTER_CONVERTER(top_k_v2, ConvertTopK, "huawei_ascend_npu");
+REGISTER_CONVERTER(scale, ConvertScale, "huawei_ascend_npu");
 REGISTER_CONVERTER(shape, ConvertShape, "huawei_ascend_npu");
 REGISTER_CONVERTER(slice, ConvertSlice, "huawei_ascend_npu");
 REGISTER_CONVERTER(squeeze, ConvertSqueeze, "huawei_ascend_npu");

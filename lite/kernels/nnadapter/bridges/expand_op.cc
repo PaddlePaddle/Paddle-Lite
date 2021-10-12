@@ -72,9 +72,31 @@ int ExpandConverter(void* ctx, OpLite* op, KernelBase* kernel) {
              !op_info->Input("expand_shapes_tensor").empty()) {
     LOG(ERROR) << "Not support expand_shapes_tensor now.";
   } else {
-    std::vector<int> shape = op_info->GetAttr<std::vector<int>>("shape");
+    std::vector<int> expand_shape = op_info->GetAttr<std::vector<int>>("shape");
+    auto vec_in_dims = x_dims.Vectorize();
+    auto diff = expand_shape.size() - vec_in_dims.size();
+    vec_in_dims.insert(vec_in_dims.begin(), diff, 1);
+    std::vector<int> final_expand_shape(vec_in_dims.size());
+    for (size_t i = 0; i < vec_in_dims.size(); ++i) {
+      if (i < diff) {  // expand_shape = [3,4,-1,-1], X = [10,2] -->
+                       // final_expand_shape = [3,4,10,2]
+        final_expand_shape[i] = expand_shape[i];
+      } else if (expand_shape[i] > 0) {  // expand_shape = [3,4,10,4], X =
+                                         // [10,1] --> final_expand_shape =
+                                         // [3,4,10,4]
+        if (vec_in_dims[i] != 1) {
+          final_expand_shape[i] = expand_shape[i];
+        } else {
+          final_expand_shape[i] = expand_shape[i];
+        }
+      } else {  // expand_shape = [3,4,-1,-1], X = [10,2] --> final_expand_shape
+                // = [3,4,10,2]
+        final_expand_shape[i] = vec_in_dims[i];
+      }
+    }
     shape_operand = converter->AddInt32ConstantOperand(
-        shape.data(), DDim({static_cast<int64_t>(shape.size())}));
+        final_expand_shape.data(),
+        DDim({static_cast<int64_t>(final_expand_shape.size())}));
   }
   // Output operand
   NNAdapterOperand* output_operand = nullptr;

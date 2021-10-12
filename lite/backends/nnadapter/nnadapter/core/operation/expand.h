@@ -29,8 +29,12 @@ namespace operation {
   NNADAPTER_VLOG(5) << "input_operand: " << OperandToString(input_operand); \
   /* Shape */                                                               \
   auto shape_operand = input_operands[1];                                   \
-  NNADAPTER_VLOG(5) << "shape operand: "                                    \
-                    << OperandValueToString(shape_operand);                 \
+  NNADAPTER_VLOG(5) << "shape: " << OperandToString(shape_operand);         \
+  uint32_t shape_count = shape_operand->length / sizeof(int32_t);           \
+  auto shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);      \
+  for (uint32_t i = 0; i < shape_count; i++) {                              \
+    NNADAPTER_VLOG(5) << "shape[" << i << "] = " << shape_data[i];          \
+  }                                                                         \
   /* Output */                                                              \
   auto output_operand = output_operands[0];                                 \
   NNADAPTER_VLOG(5) << "output_operand: " << OperandToString(output_operand);

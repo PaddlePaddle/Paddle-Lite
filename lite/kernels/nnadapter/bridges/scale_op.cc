@@ -39,6 +39,8 @@ int ScaleConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       has_x_scale ? op_info->GetInputScale(x_scale_name, true)[0] : 0.f;
   auto x = scope->FindMutableTensor(x_name);
   auto x_dims = x->dims();
+  auto x_data = x->mutable_data<float>();
+
   auto out_name = op_info->Output("Out").front();
   auto out_scale_name = "Out0_scale";
   auto has_out_scale = op_info->HasOutputScale(out_scale_name, true);
@@ -64,7 +66,9 @@ int ScaleConverter(void* ctx, OpLite* op, KernelBase* kernel) {
       input_operand =
           converter->AddQuant8VariableOperand(x_dims, x_scale, x_name);
     } else {
-      input_operand = converter->AddFloat32VariableOperand(x_dims, x_name);
+      input_operand =
+          converter->AddFloat32ConstantOperand(x_data, x_dims, false);
+      // input_operand = converter->AddFloat32VariableOperand(x_dims, x_name);
     }
   }
 

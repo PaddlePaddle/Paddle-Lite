@@ -101,6 +101,7 @@ void Optimizer::InitControlFlowOpSharedInputsAndOutputsPlaceSyncPass() {
 void Optimizer::ApplyPasses(
     std::vector<std::unique_ptr<mir::SSAGraph>>* graphes) {
   for (auto& pass : passes_) {
+    LOG(INFO) << "[DEBUG20] == Running pass: ";
     LOG(INFO) << "== Running pass: " << pass->name();
     std::set<TargetType> targets;
     for (const auto& place : valid_places_) {
@@ -172,6 +173,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "lite_conv_elementwise_tree_fuse_pass",
        "lite_greater_than_cast_fuse_pass",
        "lite_fill_range_fuse_pass",
+       "range_calc_offline_pass",
        "identity_dropout_eliminate_pass",
        "sparse_conv_detect_pass",
        "__xpu__max_pooling_pad_zero_detect_fuse_pass",
@@ -328,6 +330,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
   }
 
   for (auto& pass_name : passes_local) {
+    LOG(INFO) << "[DEBUG20] == AddPass pass: " << pass_name;
     optim.AddPass(pass_name);
   }
 
