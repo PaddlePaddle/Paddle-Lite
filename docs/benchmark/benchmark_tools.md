@@ -26,6 +26,7 @@ Benchmark 工具可方便快捷地评测给定模型在如下硬件上运行时�
 ```
 ./lite/tools/build_android.sh --toolchain=clang --with_benchmark=ON full_publish
 ```
+
 可选参数：
 | 参数 | 说明 | 可选值 | 默认值 |
 | :-- | :-- | :-- | :-- |
@@ -113,6 +114,7 @@ avg   = 32.723
 ```
 ./lite/tools/build_linux.sh --arch=armv8 --with_benchmark=ON full_publish
 ```
+
 可选参数：
 | 参数 | 说明 | 可选值 | 默认值 |
 | :-- | :-- | :-- | :-- |
@@ -195,6 +197,7 @@ avg   = 32.723
 ```
 ./lite/tools/build_linux.sh --arch=x86 --with_benchmark=ON full_publish
 ```
+
 可选参数：
 | 参数 | 说明 | 可选值 | 默认值 |
 | :-- | :-- | :-- | :-- |
@@ -271,6 +274,7 @@ avg   = 33.918
 ```
 ./lite/tools/build_macos.sh --with_benchmark=ON x86
 ```
+
 可选参数：
 | 参数 | 说明 | 可选值 | 默认值 |
 | :-- | :-- | :-- | :-- |
@@ -380,7 +384,7 @@ adb shell "cd /data/local/tmp/benchmark;
 
 ### 在 NNAdapter 上运行模型
 NNAdapter已支持的新硬件列表如下：
-- Huawei Kirin NPU 
+- Huawei Kirin NPU
 - Huawei Ascend NPU
 - Rockchip NPU
 - Imagination NNA
