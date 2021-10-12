@@ -1,60 +1,82 @@
-# 源码编译 (Windows)
+# 使用 Windows 构建 / 目标终端为 Windows
 
-**注意：** 以下编译方法只适用于release/v2.6.0及之后版本(包括 v2.6.0)。release/v2.3及之前版本(包括 v2.3)请参考[release/v2.3源码编译方法](v2.3_compile.md)。
+## 一、简介
 
-如果您还没有配置好Windows编译环境，请先根据[编译环境准备](compile_env)中的内容，根据您的开发环境安装编译Windows预测库所需的编译环境。
+本文介绍在 Windows 操作系统环境下，如何将 Paddle Lite 源代码编译生成 Windows 平台的预测库
 
-### 编译
+**说明：** *本文适用于 release/v2.9 及以上版本，面向对源代码有修改需求的开发者。如果您需要的是 Paddle Lite 正式版本，请直接 [前往下载](https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html) 我们预先构建发布的预测库包。*
+
+## 二、环境配置
+
+### 2.1 环境要求
+
+- Windows 10 专业版
+- Python 版本 2.7/3.5.1+
+- pip 或 pip3 版本 9.0.1+
+- Microsoft Visual Studio（2015 及以上版本）
+
+### 2.2 环境准备步骤
+
+1. Cmake 需要 3.15 版本, 可在官网[下载](https://cmake.org/download/) Windows 版本，并添加到环境变量中。
+2. Python 需要 2.7 及以上版本, 可在官网[下载](https://www.python.org/downloads/windows/)。
+3. Git 可以在官网[下载](https://gitforwindows.org/)，并添加到环境变量中。
+4. Visual Studio 请在官网[下载](https://visualstudio.microsoft.com/zh-hans/downloads/)所需版本。
+
+## 三、编译
+
+### 3.1 编译步骤
 
 1、 下载代码
 
-```bash
+```dos
+# 下载源代码，并切换到指定 release 分支，如release/v2.10
 git clone https://github.com/PaddlePaddle/Paddle-Lite.git
-# 切换到release分支
-git checkout <release-tag>
+cd Paddle-Lite && git checkout release/v2.10
 ```
-2、 源码编译(需要按照提示输入对应的参数)
+
+2、 编译 Paddle Lite Windows 预测库
 
 ```dos
-cd Paddle-Lite
-lite\tools\build_windows.bat with_extra with_profile
-
-# 注意默认编译Windows x64平台，如果需要编译x86平台，需要加入build_x86选项
-lite\tools\build_windows.bat build_x86
-
-# 如果需要根据模型裁剪预测库，则需要在with_strip之后输入opt model dir的路径
-lite\tools\build_windows.bat with_strip D:\Paddle-Lite\opt_model_dir
+lite\tools\build_windows.bat
 ```
 
-编译脚本`build_windows.bat`，追加参数说明：
+### 3.2 编译参数说明
 
-| 参数                   | 介绍                                                         | 值          |
-| ---------------------- | ------------------------------------------------------------ | ----------- |
-| without_log            | 可选，是否编译带日志的预测库（默认为ON，即日志打开）         | `ON`、`OFF` |
-| without_python         | 可选，是否编译python预测库（默认为ON，即编译Python）         | `ON`、`OFF` |
-| with_extra             | 可选，是否编译全量预测库（当Python打开时默认打开，否则为OFF)，详情可参考[预测库说明](./library.html)。 | `ON`、`OFF` |
-| with_profile           | 可选，是否支持逐层耗时分析（默认为OFF）                      | `ON`、`OFF` |
-| with_precision_profile | 可选，是否支持逐层精度分析（默认为OFF）                      | `ON`、`OFF` |
-| with_strip             | 可选，是否根据模型裁剪预测库（默认为OFF），详情可参考[裁剪预测库](../source_compile/library_trailoring.html)。 | `ON`、`OFF` |
-| build_x86              | 可选，是否编译X86平台预测库（默认为OFF，即编译X64平台）      | `ON`、`OFF` |
-| with_static_mkl        | 可选，是否静态链接Intel(R) MKL加速库（默认为OFF，即动态链接) | `ON`、`OFF` |
-| with_dynamic_crt       | 可选，是否动态链接MSVC Rumtime即MD_DynamicRelease（默认为OFF，即静态链接) | `ON`、`OFF` |
-| with_opencl            | 可选，是否开启OpenCL（默认为OFF，即编译的预测库仅在CPU上运行，当设为`ON`时，编译出的预测库支持在GPU上运行) | `ON`、`OFF` |
-| use_ninja              | 可选，是否使用[Ninja](https://ninja-build.org/)构建系统（默认使用vs2015的MSBuild构建方案，添加上此编译选项使用Ninja编译构建) |             |
-| use_vs2017             | 可选，是否使用vs2017构建系统（默认使用vs2015的构建方案，添加上此编译选项使用vs2017编译构建) |             |
-| use_vs2019             | 可选，是否使用vs2019构建系统（默认使用vs2015的构建方案，添加上此编译选项使用vs2019编译构建) |             |
-| without_avx            | 可选，使用AVX/SSE指令对x86 Kernel进行加速（默认为ON)         | `ON`、`OFF` |
-| with_baidu_xpu         | 可选，使用xpu kernel进行加速（默认为不用，添加此编译选项便可开启） |             |
-| with_baidu_xpu_xtcl    | 可选，使用xtcl 对xpu kernel进行加速（默认为不用，添加此编译选项并同时开启with_baidu_xpu便可开启） |             |
-| baidu_xpu_sdk_root     | 可选，当启用with_baidu_xpu或者with_baidu_xpu_xtcl时候都需要添加xpu的windows产出包的相关路径 |             |
+`build_windows.bat` 编译参数详细说明如下。
 
-### 编译结果说明
+| 参数                    | 说明                                                         |
+| ---------------------- | ------------------------------------------------------------ |
+| without_log            | 编译不带日志的预测库（默认带日志）         |
+| without_python         | 不编译 Python 预测库         |
+| with_extra             | 编译完整算子的预测库（当编译 Python 预测库时，默认编译包含完整算子预测库)，详情可参考[预测库说明](./library.html)。 |
+| with_profile           | 支持逐层耗时分析                      |
+| with_precision_profile | 支持逐层精度分析                      |
+| build_x86              | 编译 Windows 32位预测库（默认为 Windows 64位）      |
+| with_static_mkl        | 静态链接 Intel(R) MKL 加速库 |
+| with_dynamic_crt       | 动态链接 MSVC Rumtime 即 MD_DynamicRelease |
+| with_opencl            | 开启 OpenCL，编译出的预测库支持在GPU上运行（默认编译的预测库仅在 CPU 上运行) |
+| use_ninja              | 使用 [Ninja](https://ninja-build.org/) 构建系统（默认使用 vs2015 的 MSBuild 构建方案，添加上此编译选项使用 Ninja 编译构建) |
+| use_vs2017             | 使用 vs2017 构建系统（默认使用 vs2015 的构建方案，添加上此编译选项使用 vs2017 编译构建) |
+| use_vs2019             | 使用 vs2019 构建系统（默认使用 vs2015 的构建方案，添加上此编译选项使用 vs2019 编译构建) |
+| without_avx            | 使用 AVX/SSE 指令对 x86 Kernel 进行加速 |
+| with_baidu_xpu         | 使用 XPU kernel 进行加速|
+| with_baidu_xpu_xtcl    | 使用 XTCL 对 XPU kernel进行加速（默认不使用，添加此编译选项需同时开启 with_baidu_xpu） |
+| baidu_xpu_sdk_root     | 启用 with_baidu_xpu 或者 with_baidu_xpu_xtcl 时，需要添加 XPU 的 Windows 产出包的相关路径 |
 
-x86编译结果位于 `build.lite.x86/inference_lite_lib`
+### 3.3 编译脚本使用示例
 
-**具体内容**说明：
+编译 Windows 平台不带日志 32 位的预测库
 
-1、 `cxx`文件夹：包含c++的库文件与相应的头文件
+```dos
+lite\tools\build_windows.bat without_log build_x86
+```
+## 四、编译产物
+
+编译产物位于 `build.lite.x86/inference_lite_lib`
+
+详细内容如下：
+
+1、 `cxx`文件夹：包含 c++ 的库文件与相应的头文件
 
 - `include`  : 头文件
 - `lib` : 库文件
@@ -62,21 +84,21 @@ x86编译结果位于 `build.lite.x86/inference_lite_lib`
     - `libpaddle_api_full_bundled.lib`  ：full_api 静态库
     - `libpaddle_api_light_bundled.lib` ：light_api 静态库
 
-2、 `third_party` 文件夹：依赖的第三方预测库mklml
+2、 `third_party` 文件夹：依赖的第三方预测库 mklml
 
-- mklml : Paddle-Lite预测库依赖的mklml数学库
+- mklml : Paddle Lite 预测库依赖的 mklml 数学库
 
-3、 `demo/cxx`文件夹：x86预测库的C++ 示例demo
+3、 `demo/cxx`文件夹：C++ 示例 demo
 
-- `mobilenetv1_full` ：使用full_api 执行mobilenet_v1预测的C++ demo
-- `mobilenetv1_light` ：使用light_api 执行mobilenet_v1预测的C++ demo
+- `mobilenetv1_full` ：使用 full_api 执行 mobilenet_v1 预测的 C++ demo
+- `mobilenetv1_light` ：使用 light_api 执行 mobilenet_v1 预测的 C++ demo
 
-4、 `demo/python`: x86预测库的Python示例demo
+4、 `demo/python`: Python 示例 demo
 
-- `mobilenetv1_full_api.py`:使用full_api 执行mobilenet_v1预测的Python demo
-- `mobilenetv1_light_api.py`:使用full_api 执行mobilenet_v1预测的Python demo
+- `mobilenetv1_full_api.py`:使用 full_api 执行 mobilenet_v1 预测的 Python demo
+- `mobilenetv1_light_api.py`:使用 full_api 执行 mobilenet_v1 预测的 Python demo
 
-5、 `python`文件夹：包含python的库文件和对应的.whl包
+5、 `python`文件夹：包含 Python 的库文件和对应的 .whl 包
 
-- `install`文件夹：编译成功的.whl包位于`install/dist/*.whl`
-- `lib`文件夹：.whl包依赖的库文件
+- `install`文件夹：编译成功的 .whl 包位于`install/dist/*.whl`
+- `lib`文件夹：.whl 包依赖的库文件
