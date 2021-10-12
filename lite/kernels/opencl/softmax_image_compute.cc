@@ -22,7 +22,7 @@ namespace opencl {
 
 class SoftmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
                                                 PRECISION(kFP16),
-                                                DATALAYOUT(kImageDefault)> {
+                                                DATALAYOUT(kImageFolder)> {
  public:
   using param_t = operators::SoftmaxParam;
 
@@ -141,9 +141,8 @@ class SoftmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
 #endif
 
   void SetGlobalLocal() {
-    lite::CLImageConverterDefault default_convertor;
-    const auto extend_dims = ExtendInputDims(last_x_dims_);
-    out_img_shape_ = default_convertor.InitImageDimInfoWith(extend_dims);
+    CLImageConverterFolder folder_convertor;
+    out_img_shape_ = folder_convertor.InitImageDimInfoWith(last_x_dims_);
 
     if (onexone_flag_) {
       local_work_size_ = cl::NDRange(32, 1, 1);
@@ -225,15 +224,15 @@ class SoftmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
 REGISTER_LITE_KERNEL(softmax,
                      kOpenCL,
                      kFP16,
-                     kImageDefault,
+                     kImageFolder,
                      paddle::lite::kernels::opencl::SoftmaxComputeImage2D,
                      def)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
-                                      DATALAYOUT(kImageDefault))})
+                                      DATALAYOUT(kImageFolder))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),
-                                       DATALAYOUT(kImageDefault))})
+                                       DATALAYOUT(kImageFolder))})
     .Finalize();

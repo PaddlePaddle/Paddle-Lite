@@ -36,13 +36,15 @@ void XPUFcCompute::PrepareForRun() {
   // max
   if (!quant_int8) {
     w_max = paddle::lite::xpu::math::FindMaxAbs(w_ptr, w_len);
-    std::vector<float> w_max_v(4, w_max);
-    weight_max_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
+    std::vector<float> w_max_v(lite::XPU_QUANT_SCALE_NUM, w_max);
+    weight_max_guard_ = TargetWrapperXPU::MallocScratchPad(
+        lite::XPU_QUANT_SCALE_NUM * sizeof(float));
     XPU_CALL(xpu_memcpy(reinterpret_cast<float*>(weight_max_guard_->addr_),
                         w_max_v.data(),
-                        4 * sizeof(float),
+                        lite::XPU_QUANT_SCALE_NUM * sizeof(float),
                         XPUMemcpyKind::XPU_HOST_TO_DEVICE));
-    input_max_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
+    input_max_guard_ = TargetWrapperXPU::MallocScratchPad(
+        lite::XPU_QUANT_SCALE_NUM * sizeof(float));
   }
   // transpose
   if (quant_int8) {
