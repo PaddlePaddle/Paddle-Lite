@@ -24,7 +24,9 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-void WriteBackCompute::RunImplement(const lite::Tensor* x, lite::Tensor* y) {
+void WriteBackCompute::RunImplement(const lite::Tensor* x,
+                                    lite::Tensor* y,
+                                    bool is_tensor_array_copy) {
   auto x_target = x->target();
   auto y_target = y->target();
   auto is_host = [](TargetType x) -> bool {
@@ -32,7 +34,10 @@ void WriteBackCompute::RunImplement(const lite::Tensor* x, lite::Tensor* y) {
   };
 
   if (is_host(x_target) && is_host(y_target)) {
-    y->CopyDataFrom(*x);
+    if (is_tensor_array_copy)
+      y->ShareDataWith(*x);
+    else
+      y->CopyDataFrom(*x);
   } else if (x_target == TARGET(kXPU) || y_target == TARGET(kXPU)) {
 #ifdef LITE_WITH_XPU
     y->set_precision(x->precision());
@@ -79,13 +84,21 @@ void WriteBackCompute::Run() {
   if (!param.tensor_array_copy) {
     auto* x = param.x;
     auto* y = param.y;
-    RunImplement(x, y);
+    RunImplement(x, y, false);
   } else {
     auto size = param.array_y->size();
     for (size_t i = size; i > 0; i--) {
       auto& y = param.array_y->at(size - 1);
       auto& x = param.array_x->at(size - 1);
-      RunImplement(&y, &x);
+      if (x.raw_data()) continue;
+      RunImplement(&y, &x, true);
+    }
+    param.array_y->resize(param.array_x->size());
+    for (size_t i = 0; i < param.array_x->size(); i++) {
+      auto& x = param.array_x->at(i);
+      auto& y = param.array_y->at(i);
+      if (y.raw_data()) continue;
+      RunImplement(&x, &y, true);
     }
   }
 }

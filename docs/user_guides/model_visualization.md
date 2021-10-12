@@ -43,7 +43,7 @@ Paddle用于推理的模型是通过[save_inference_model](https://www.paddlepad
 
 Paddle Lite在执行模型推理之前需要使用[模型优化工具opt](model_optimize_tool)来对模型进行优化，优化后的模型结构同样可以使用[Netron](https://lutzroeder.github.io/netron/)工具进行查看，但是必须保存为`protobuf`格式，而不是`naive_buffer`格式。
 
-**注意**: 为了减少第三方库的依赖、提高Lite预测框架的通用性，在移动端使用Lite API您需要准备Naive Buffer存储格式的模型(该模型格式是以`.nb`为后缀的单个文件)。但是Naive Buffer格式的模型为序列化模型，不支持可视化。
+**注意**: 为了减少第三方库的依赖、提高Lite预测框架的通用性，在移动端使用Lite API您需要准备Naive Buffer存储格式的模型(该模型格式是以`.nb`为后缀的单个文件)。但是Naive Buffer格式的模型为序列化模型，不支持通过[Netron](https://github.com/lutzroeder/netron)可视化，Naive Buffer格式模型的可视化参考文档[使用可执行文件opt工具](./opt/opt_bin)中的功能三。
 
 这里以[paddle_lite_opt](opt/opt_python)工具为例：
 
@@ -100,7 +100,7 @@ Paddle Lite在执行模型推理之前需要使用[模型优化工具opt](model_
 ```bash
 $ paddle_lite_opt \
       --model_dir=./recognize_digits_model_non-combined/ \
-      --valid_targets=npu,arm \         # 注意：这里的目标硬件平台为NPU,ARM
+      --valid_targets=huawei_kirin_npu,arm \         # 注意：这里的目标硬件平台为NPU,ARM
       --optimize_out_type=protobuf \
       --optimize_out=model_opt_dir_npu
 ```
@@ -115,20 +115,20 @@ $ paddle_lite_opt \
 $ export GLOG_v=5 # 注意：这里打开Lite中Level为5及以下的的Debug Log信息
 $ paddle_lite_opt \
       --model_dir=./recognize_digits_model_non-combined/ \
-      --valid_targets=npu,arm \
+      --valid_targets=huawei_kirin_npu,arm \
       --optimize_out_type=protobuf \
       --optimize_out=model_opt_dir_npu > debug_log.txt 2>&1 
 # 以上命令会将所有的debug log存储在debug_log.txt文件中
 ```
 
-打开debug_log.txt文件，将会看到多个由以下格式构成的拓扑图定义，由于recognize_digits模型在优化后仅存在一个subgraph，所以在文本搜索`subgraphs`的关键词，即可得到子图拓扑如下：
+打开debug_log.txt文件，将会看到多个由以下格式构成的拓扑图定义，由于recognize_digits模型在优化后仅存在一个subgraph，所以在文本搜索`subgraph clusters`的关键词，即可得到子图拓扑如下：
 
 ```shell
 I0924 10:50:12.715279 122828 optimizer.h:202] == Running pass: npu_subgraph_pass
 I0924 10:50:12.715335 122828 ssa_graph.cc:27] node count 33
 I0924 10:50:12.715412 122828 ssa_graph.cc:27] node count 33
 I0924 10:50:12.715438 122828 ssa_graph.cc:27] node count 33
-subgraphs: 1  # 注意：搜索subgraphs:这个关键词，
+subgraph clusters: 1  # 注意：搜索subgraph clusters:这个关键词，
 digraph G {
    node_30[label="fetch"]
    node_29[label="fetch0" shape="box" style="filled" color="black" fillcolor="white"]
@@ -168,7 +168,7 @@ $ export SUBGRAPH_CUSTOM_PARTITION_CONFIG_FILE=./subgraph_custom_partition_confi
 $ export GLOG_v=5 # 继续打开Lite的Debug Log信息
 $ paddle_lite_opt \
       --model_dir=./recognize_digits_model_non-combined/ \
-      --valid_targets=npu,arm \
+      --valid_targets=huawei_kirin_npu,arm \
       --optimize_out_type=protobuf \
       --optimize_out=model_opt_dir_npu > debug_log.txt 2>&1 #
 ```
@@ -179,7 +179,7 @@ $ paddle_lite_opt \
 
 <p align="center"><img src="https://paddlelite-data.bj.bcebos.com/doc_images/model_visualization/final_program.png"/></p>
 
-之后继续在debug_log.txt文件中，搜索`subgraphs`关键字，可以得到所有子图的.dot格式内容如下：
+之后继续在debug_log.txt文件中，搜索`subgraph clusters`关键字，可以得到所有子图的.dot格式内容如下：
 
 ```bash
 digraph G {

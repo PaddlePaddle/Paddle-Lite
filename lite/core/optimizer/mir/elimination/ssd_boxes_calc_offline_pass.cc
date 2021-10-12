@@ -38,8 +38,8 @@ void SSDBoxesCalcOfflinePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 void SSDBoxesCalcOfflinePass::RemovePriorboxPattern(
     const std::unique_ptr<SSAGraph>& graph) {
   for (auto& node : graph->StmtTopologicalOrder()) {
-    if (node->AsStmt().picked_kernel().op_type() != "prior_box" &&
-        node->AsStmt().picked_kernel().op_type() != "density_prior_box")
+    if (node->AsStmt().op_type() != "prior_box" &&
+        node->AsStmt().op_type() != "density_prior_box")
       continue;
 
     std::set<const Node*> nodes2rm_;
@@ -115,7 +115,7 @@ void SSDBoxesCalcOfflinePass::RemovePriorboxPattern(
 
     // Calc priorbox
     int prior_num;
-    if (node->AsStmt().picked_kernel().op_type() == "prior_box") {
+    if (node->AsStmt().op_type() == "prior_box") {
       prior_num =
           (aspect_ratios_vec.size() * min_sizes.size()) + max_sizes.size();
 
@@ -215,8 +215,8 @@ void SSDBoxesCalcOfflinePass::RemoveFlattenPattern(
   };
 
   for (auto& node : graph->StmtTopologicalOrder()) {
-    if (node->AsStmt().picked_kernel().op_type() != "flatten" &&
-        node->AsStmt().picked_kernel().op_type() != "flatten2")
+    if (node->AsStmt().op_type() != "flatten" &&
+        node->AsStmt().op_type() != "flatten2")
       continue;
     if (check_flatten_after_priorbox(node) != true) continue;
 
@@ -260,8 +260,8 @@ void SSDBoxesCalcOfflinePass::RemoveReshapePattern(
   };
 
   for (auto& node : graph->StmtTopologicalOrder()) {
-    if (node->AsStmt().picked_kernel().op_type() != "reshape" &&
-        node->AsStmt().picked_kernel().op_type() != "reshape2")
+    if (node->AsStmt().op_type() != "reshape" &&
+        node->AsStmt().op_type() != "reshape2")
       continue;
     if (check_reshape_after_priorbox(node) != true) continue;
 
@@ -315,7 +315,7 @@ void SSDBoxesCalcOfflinePass::RemoveConcatPattern(
   };
 
   for (auto& node : graph->StmtTopologicalOrder()) {
-    if (node->AsStmt().picked_kernel().op_type() != "concat") continue;
+    if (node->AsStmt().op_type() != "concat") continue;
     if (check_concat_after_reshape(node) != true) continue;
 
     std::set<const Node*> nodes2rm_;

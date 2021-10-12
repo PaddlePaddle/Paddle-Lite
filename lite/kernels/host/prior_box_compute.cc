@@ -14,6 +14,13 @@
 
 #include "lite/kernels/host/prior_box_compute.h"
 #include <vector>
+
+namespace paddle {
+namespace lite {
+namespace kernels {}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle
+
 using pb_fp32 = paddle::lite::kernels::host::PriorBoxCompute<float,
                                                              TARGET(kHost),
                                                              PRECISION(kFloat)>;
@@ -24,9 +31,6 @@ REGISTER_LITE_KERNEL(prior_box, kHost, kFloat, kNCHW, pb_fp32, def)
     .BindOutput("Variances", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
 #ifdef ENABLE_ARM_FP16
-using pb_fp16 = paddle::lite::kernels::host::PriorBoxCompute<float16_t,
-                                                             TARGET(kARM),
-                                                             PRECISION(kFP16)>;
 REGISTER_LITE_KERNEL(prior_box, kARM, kFP16, kNCHW, pb_fp16, def)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
     .BindInput("Image", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})

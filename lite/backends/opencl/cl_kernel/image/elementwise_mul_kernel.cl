@@ -37,31 +37,6 @@ __kernel void elementwise_mul(__read_only image2d_t input,
   WRITE_IMG_TYPE(CL_DTYPE_CHAR, outputImage, coords, output);
 }
 
-__kernel void elementwise_mul_n1c1h1(__read_only image2d_t input,
-                                     __read_only image2d_t bias,
-                                     __write_only image2d_t output,
-                                     int input_w) {
-  int x = get_global_id(0);
-  int y = get_global_id(1);
-
-  int2 coords;
-  coords.x = x;
-  coords.y = y;
-
-  CL_DTYPE4 cur_in =
-      READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(x % input_w, 0));
-  CL_DTYPE4 in = (CL_DTYPE4)(cur_in.x);
-  CL_DTYPE4 cur_bias = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, coords);
-
-#ifdef FUSE_SCALE
-  CL_DTYPE4 out =
-      fuse_scale(in * cur_bias, SCALE_SLOPE, SCALE_BIAS, SCALE_ALPHA);
-#else
-  CL_DTYPE4 out = in * cur_bias;
-#endif
-  WRITE_IMG_TYPE(CL_DTYPE_CHAR, output, coords, out);
-}
-
 __kernel void channel_mul(__read_only image2d_t input,
                           __read_only image2d_t bias,
                           __write_only image2d_t outputImage,

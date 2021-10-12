@@ -13,4 +13,29 @@
 // limitations under the License.
 
 #pragma once
-#include "lite/kernels/host/gather_compute.h"
+#include <stdint.h>
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
+
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace host {
+
+class CastCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
+ public:
+  using param_t = operators::CastParam;
+
+  void PrepareForRun() override;
+
+  void Run() override;
+
+  ~CastCompute() {}
+
+ private:
+};
+
+}  // namespace host
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle

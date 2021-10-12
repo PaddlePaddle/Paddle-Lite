@@ -30,7 +30,8 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
                                lite::Tensor* filter,
                                lite::Tensor* bias,
                                const bool has_act,
-                               const lite_api::ActivationType act_type) {
+                               const lite_api::ActivationType act_type,
+                               const operators::ActivationParam act_param) {
   // input [bs, ic/8, ih, iw, 8]
   CHECK_EQ(input->dims().size(), 5UL);
   const int batch_size = input->dims()[0];
@@ -107,7 +108,7 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
         _sum0 = _mm256_fmadd_ps(_k22, _r22, _sum0);
 
         if (has_act) {
-          _sum0 = activation8_m256(_sum0, act_type);
+          _sum0 = activation8_m256(_sum0, act_type, act_param);
         }
 
         _mm256_storeu_ps(output_data, _sum0);
@@ -128,7 +129,7 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
         _sum1 = _mm256_fmadd_ps(_k22, _r23, _sum1);
 
         if (has_act) {
-          _sum1 = activation8_m256(_sum1, act_type);
+          _sum1 = activation8_m256(_sum1, act_type, act_param);
         }
         _mm256_storeu_ps(output_data + 8, _sum1);
 
@@ -148,7 +149,7 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
         _sum2 = _mm256_fmadd_ps(_k22, _r24, _sum2);
 
         if (has_act) {
-          _sum2 = activation8_m256(_sum2, act_type);
+          _sum2 = activation8_m256(_sum2, act_type, act_param);
         }
         _mm256_storeu_ps(output_data + 16, _sum2);
 
@@ -168,7 +169,7 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
         _sum3 = _mm256_fmadd_ps(_k22, _r25, _sum3);
 
         if (has_act) {
-          _sum3 = activation8_m256(_sum3, act_type);
+          _sum3 = activation8_m256(_sum3, act_type, act_param);
         }
         _mm256_storeu_ps(output_data + 24, _sum3);
 
@@ -188,7 +189,7 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
         _sum4 = _mm256_fmadd_ps(_k22, _r26, _sum4);
 
         if (has_act) {
-          _sum4 = activation8_m256(_sum4, act_type);
+          _sum4 = activation8_m256(_sum4, act_type, act_param);
         }
         _mm256_storeu_ps(output_data + 32, _sum4);
 
@@ -208,7 +209,7 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
         _sum5 = _mm256_fmadd_ps(_k22, _r27, _sum5);
 
         if (has_act) {
-          _sum5 = activation8_m256(_sum5, act_type);
+          _sum5 = activation8_m256(_sum5, act_type, act_param);
         }
         _mm256_storeu_ps(output_data + 40, _sum5);
 
@@ -228,7 +229,7 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
         _sum6 = _mm256_fmadd_ps(_k22, _r28, _sum6);
 
         if (has_act) {
-          _sum6 = activation8_m256(_sum6, act_type);
+          _sum6 = activation8_m256(_sum6, act_type, act_param);
         }
         _mm256_storeu_ps(output_data + 48, _sum6);
 
@@ -248,7 +249,7 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
         _sum7 = _mm256_fmadd_ps(_k22, _r29, _sum7);
 
         if (has_act) {
-          _sum7 = activation8_m256(_sum7, act_type);
+          _sum7 = activation8_m256(_sum7, act_type, act_param);
         }
         _mm256_storeu_ps(output_data + 56, _sum7);
 
@@ -281,7 +282,7 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
         _sum0 = _mm256_fmadd_ps(_k22, _r22, _sum0);
 
         if (has_act) {
-          _sum0 = activation8_m256(_sum0, act_type);
+          _sum0 = activation8_m256(_sum0, act_type, act_param);
         }
         _mm256_storeu_ps(output_data, _sum0);
 
@@ -301,7 +302,7 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
         _sum1 = _mm256_fmadd_ps(_k22, _r23, _sum1);
 
         if (has_act) {
-          _sum1 = activation8_m256(_sum1, act_type);
+          _sum1 = activation8_m256(_sum1, act_type, act_param);
         }
         _mm256_storeu_ps(output_data + 8, _sum1);
 
@@ -321,7 +322,7 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
         _sum2 = _mm256_fmadd_ps(_k22, _r24, _sum2);
 
         if (has_act) {
-          _sum2 = activation8_m256(_sum2, act_type);
+          _sum2 = activation8_m256(_sum2, act_type, act_param);
         }
         _mm256_storeu_ps(output_data + 16, _sum2);
 
@@ -341,7 +342,7 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
         _sum3 = _mm256_fmadd_ps(_k22, _r25, _sum3);
 
         if (has_act) {
-          _sum3 = activation8_m256(_sum3, act_type);
+          _sum3 = activation8_m256(_sum3, act_type, act_param);
         }
         _mm256_storeu_ps(output_data + 24, _sum3);
 
@@ -374,7 +375,7 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
         _sum0 = _mm256_fmadd_ps(_k22, _r22, _sum0);
 
         if (has_act) {
-          _sum0 = activation8_m256(_sum0, act_type);
+          _sum0 = activation8_m256(_sum0, act_type, act_param);
         }
         _mm256_storeu_ps(output_data, _sum0);
 
@@ -394,7 +395,7 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
         _sum1 = _mm256_fmadd_ps(_k22, _r23, _sum1);
 
         if (has_act) {
-          _sum1 = activation8_m256(_sum1, act_type);
+          _sum1 = activation8_m256(_sum1, act_type, act_param);
         }
         _mm256_storeu_ps(output_data + 8, _sum1);
 
@@ -427,7 +428,7 @@ void conv_depthwise_3x3s1_m256(lite::Tensor* input,
         _sum0 = _mm256_fmadd_ps(_k22, _r22, _sum0);
 
         if (has_act) {
-          _sum0 = activation8_m256(_sum0, act_type);
+          _sum0 = activation8_m256(_sum0, act_type, act_param);
         }
         _mm256_storeu_ps(output_data, _sum0);
 
@@ -452,7 +453,8 @@ void conv_depthwise_3x3s2_m256(lite::Tensor* input,
                                lite::Tensor* filter,
                                lite::Tensor* bias,
                                const bool has_act,
-                               const lite_api::ActivationType act_type) {
+                               const lite_api::ActivationType act_type,
+                               const operators::ActivationParam act_param) {
   // input [bs, ic/8, ih, iw, 8]
   CHECK_EQ(input->dims().size(), 5UL);
   const int batch_size = input->dims()[0];
@@ -529,7 +531,7 @@ void conv_depthwise_3x3s2_m256(lite::Tensor* input,
           _sum0 = _mm256_fmadd_ps(_k22, _r22, _sum0);
 
           if (has_act) {
-            _sum0 = activation8_m256(_sum0, act_type);
+            _sum0 = activation8_m256(_sum0, act_type, act_param);
           }
           _mm256_storeu_ps(output_data, _sum0);
 
@@ -552,7 +554,7 @@ void conv_depthwise_3x3s2_m256(lite::Tensor* input,
           _sum1 = _mm256_fmadd_ps(_k22, _r24, _sum1);
 
           if (has_act) {
-            _sum1 = activation8_m256(_sum1, act_type);
+            _sum1 = activation8_m256(_sum1, act_type, act_param);
           }
           _mm256_storeu_ps(output_data + 8, _sum1);
 
@@ -575,7 +577,7 @@ void conv_depthwise_3x3s2_m256(lite::Tensor* input,
           _sum2 = _mm256_fmadd_ps(_k22, _r26, _sum2);
 
           if (has_act) {
-            _sum2 = activation8_m256(_sum2, act_type);
+            _sum2 = activation8_m256(_sum2, act_type, act_param);
           }
           _mm256_storeu_ps(output_data + 16, _sum2);
 
@@ -598,7 +600,7 @@ void conv_depthwise_3x3s2_m256(lite::Tensor* input,
           _sum3 = _mm256_fmadd_ps(_k22, _r28, _sum3);
 
           if (has_act) {
-            _sum3 = activation8_m256(_sum3, act_type);
+            _sum3 = activation8_m256(_sum3, act_type, act_param);
           }
           _mm256_storeu_ps(output_data + 24, _sum3);
 
@@ -631,7 +633,7 @@ void conv_depthwise_3x3s2_m256(lite::Tensor* input,
           _sum0 = _mm256_fmadd_ps(_k22, _r22, _sum0);
 
           if (has_act) {
-            _sum0 = activation8_m256(_sum0, act_type);
+            _sum0 = activation8_m256(_sum0, act_type, act_param);
           }
           _mm256_storeu_ps(output_data, _sum0);
 
@@ -654,7 +656,7 @@ void conv_depthwise_3x3s2_m256(lite::Tensor* input,
           _sum1 = _mm256_fmadd_ps(_k22, _r24, _sum1);
 
           if (has_act) {
-            _sum1 = activation8_m256(_sum1, act_type);
+            _sum1 = activation8_m256(_sum1, act_type, act_param);
           }
           _mm256_storeu_ps(output_data + 8, _sum1);
 
@@ -687,7 +689,7 @@ void conv_depthwise_3x3s2_m256(lite::Tensor* input,
           _sum0 = _mm256_fmadd_ps(_k22, _r22, _sum0);
 
           if (has_act) {
-            _sum0 = activation8_m256(_sum0, act_type);
+            _sum0 = activation8_m256(_sum0, act_type, act_param);
           }
           _mm256_storeu_ps(output_data, _sum0);
 
@@ -717,7 +719,8 @@ void conv_depthwise_m256(lite::Tensor* input,
                          const int dilation_h,
                          const int dilation_w,
                          const bool has_act,
-                         const lite_api::ActivationType act_type) {
+                         const lite_api::ActivationType act_type,
+                         const operators::ActivationParam act_param) {
   // input [bs, ic/8, ih, iw, 8]
   CHECK_EQ(input->dims().size(), 5UL);
   const int batch_size = input->dims()[0];
@@ -783,7 +786,7 @@ void conv_depthwise_m256(lite::Tensor* input,
           }
 
           if (has_act) {
-            _sum = activation8_m256(_sum, act_type);
+            _sum = activation8_m256(_sum, act_type, act_param);
           }
 
           _mm256_storeu_ps(output_data, _sum);
