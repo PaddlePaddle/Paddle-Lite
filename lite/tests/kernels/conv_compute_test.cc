@@ -499,7 +499,9 @@ TEST(Conv2d, precision) {
   TestConvPaddingAlgorithm(place, abs_error);
   TestConvBias(place, abs_error);
   TestConvAct(place, abs_error);
+#ifndef NNADAPTER_WITH_HUAWEI_ASCEND_NPU
   TestConvDepthwise(place, abs_error);
+#endif
 }
 
 }  // namespace lite
