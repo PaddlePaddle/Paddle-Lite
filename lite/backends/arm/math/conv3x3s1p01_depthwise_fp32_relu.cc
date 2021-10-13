@@ -1216,49 +1216,25 @@ void conv_depthwise_3x3s1p1_bias_no_relu(float *dout,
                                          const int w_out,
                                          ARMContext *ctx) {
   //! pad is done implicit
-  const float zero[8] = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
   //! for 4x6 convolution window
-  const unsigned int right_pad_idx[8] = {5, 4, 3, 2, 1, 0, 0, 0};
-
+  const unsigned int right_pad_idx[8] = {7, 6, 5, 4, 3, 2, 1, 0};
   float *zero_ptr = ctx->workspace_data<float>();
   memset(zero_ptr, 0, w_in * sizeof(float));
   float *write_ptr = zero_ptr + w_in;
-
   int size_in_channel = w_in * h_in;
   int size_out_channel = w_out * h_out;
   int w_stride = 9;
-
   int tile_w = w_out >> 2;
-  int remain = w_out % 4;
-  int cnt_col = tile_w - 1;
-
-  unsigned int size_pad_right = (unsigned int)(5 + (tile_w << 2) - w_in);
-  const unsigned int remian_idx[4] = {0, 1, 2, 3};
-
-  if (remain == 0 && size_pad_right == 5) {
-    size_pad_right = 1;
-    cnt_col -= 1;
-    remain = 4;
-  } else if (remain == 0 && size_pad_right == 6) {
-    size_pad_right = 2;
-    cnt_col -= 1;
-    remain = 4;
-  }
-
-  uint32x4_t vmask_rp1 =
-      vcgeq_u32(vld1q_u32(right_pad_idx), vdupq_n_u32(size_pad_right));
+  int remain = w_out % 4 == 0 ? 4 : w_out % 4;
+  int cnt_col = w_out < 9 ? 0 : w_out % 4 == 0 ? (tile_w - 2) : (tile_w - 1);
+  unsigned int size_pad_right = (unsigned int)(7 + ((cnt_col + 1) << 2) - w_in);
+  uint32x4_t vmask_rp1 = vcgeq_u32(vld1q_u32(right_pad_idx), vdupq_n_u32(3));
   uint32x4_t vmask_rp2 =
-      vcgeq_u32(vld1q_u32(right_pad_idx + 4), vdupq_n_u32(size_pad_right));
-  uint32x4_t vmask_result =
-      vcgtq_u32(vdupq_n_u32(remain), vld1q_u32(remian_idx));
-
+      vcgeq_u32(vld1q_u32(right_pad_idx + 4), vdupq_n_u32(3));
   unsigned int vmask[8];
   vst1q_u32(vmask, vmask_rp1);
   vst1q_u32(vmask + 4, vmask_rp2);
-
-  unsigned int rmask[4];
-  vst1q_u32(rmask, vmask_result);
-
+  int mask = w_out % 4 == 0 ? 0 : ((4 - w_out % 4) * 4);
   float32x4_t vzero = vdupq_n_f32(0.f);
 
   for (int n = 0; n < num; ++n) {
@@ -1297,7 +1273,6 @@ void conv_depthwise_3x3s1p1_bias_no_relu(float *dout,
       const float *din_ptr3 = dr3;
       const float *din_ptr4 = dr4;
       const float *din_ptr5 = dr5;
-      float *ptr_zero = const_cast<float *>(zero);
 #ifdef __aarch64__
       for (int i = 0; i < h_in; i += 4) {
         //! process top pad pad_h = 1
@@ -1363,54 +1338,319 @@ void conv_depthwise_3x3s1p1_bias_no_relu(float *dout,
         }
 
         int cnt = cnt_col;
-        asm volatile(INIT_S1 LEFT_COMPUTE_S1 LEFT_RESULT_S1 MID_COMPUTE_S1
-                         MID_RESULT_S1 RIGHT_COMPUTE_S1 RIGHT_RESULT_S1
-                     : [cnt] "+r"(cnt),
-                       [din_ptr0] "+r"(din_ptr0),
-                       [din_ptr1] "+r"(din_ptr1),
-                       [din_ptr2] "+r"(din_ptr2),
-                       [din_ptr3] "+r"(din_ptr3),
-                       [din_ptr4] "+r"(din_ptr4),
-                       [din_ptr5] "+r"(din_ptr5),
-                       [doutr0] "+r"(doutr0),
-                       [doutr1] "+r"(doutr1),
-                       [doutr2] "+r"(doutr2),
-                       [doutr3] "+r"(doutr3)
-                     : [w0] "w"(wr0),
-                       [w1] "w"(wr1),
-                       [w2] "w"(wr2),
-                       [bias_val] "r"(vbias),
-                       [vmask] "r"(vmask),
-                       [rmask] "r"(rmask),
-                       [vzero] "w"(vzero)
-                     : "cc",
-                       "memory",
-                       "v0",
-                       "v1",
-                       "v2",
-                       "v3",
-                       "v4",
-                       "v5",
-                       "v6",
-                       "v7",
-                       "v8",
-                       "v9",
-                       "v10",
-                       "v11",
-                       "v12",
-                       "v13",
-                       "v14",
-                       "v15",
-                       "v16",
-                       "v17",
-                       "v18",
-                       "v19",
-                       "v20",
-                       "v21",
-                       "v22",
-                       "v23",
-                       "v24",
-                       "v25");
+        asm volatile(
+            // INIT_S1
+            "PRFM PLDL1KEEP, [%[din_ptr0]] \n"
+            "PRFM PLDL1KEEP, [%[din_ptr1]] \n"
+            "PRFM PLDL1KEEP, [%[din_ptr2]] \n"
+            "PRFM PLDL1KEEP, [%[din_ptr3]] \n"
+            "PRFM PLDL1KEEP, [%[din_ptr4]] \n"
+            "PRFM PLDL1KEEP, [%[din_ptr5]] \n"
+            "movi   v21.4s,  #0x0          \n"
+            "ld1 {v0.4s}, [%[din_ptr0]], #16   \n"
+            "ld1 {v2.4s}, [%[din_ptr1]], #16   \n"
+            "ld1 {v4.4s}, [%[din_ptr2]], #16   \n"
+            "ld1 {v6.4s}, [%[din_ptr3]], #16   \n"
+            "ld1 {v8.4s}, [%[din_ptr4]], #16   \n"
+            "ld1 {v10.4s}, [%[din_ptr5]], #16  \n"
+            "ld1 {v1.4s}, [%[din_ptr0]]        \n"
+            "ld1 {v3.4s}, [%[din_ptr1]]        \n"
+            "ld1 {v5.4s}, [%[din_ptr2]]        \n"
+            "ld1 {v7.4s}, [%[din_ptr3]]        \n"
+            "ld1 {v9.4s}, [%[din_ptr4]]        \n"
+            "ld1 {v11.4s}, [%[din_ptr5]]       \n"
+            "ld1 {v12.4s}, [%[bias_val]]       \n"
+            "ld1 {v13.4s}, [%[bias_val]]       \n"
+            "ld1 {v14.4s}, [%[bias_val]]       \n"
+            "ld1 {v15.4s}, [%[bias_val]]       \n"
+            // LEFT_COMPUTE_S
+            // r0
+            "ext  v16.16b, %[vzero].16b, v0.16b, #12 \n"
+            "ext  v17.16b, v0.16b, v1.16b, #4        \n"
+            "fmla v12.4s,  v0.4s,  %[w0].s[1]        \n"
+            "sub %[din_ptr0], %[din_ptr0], #4        \n"
+            "sub %[din_ptr1], %[din_ptr1], #4        \n"
+            "fmla v12.4s ,  v16.4s,  %[w0].s[0]      \n"
+            "sub %[din_ptr2], %[din_ptr2], #4        \n"
+            "sub %[din_ptr3], %[din_ptr3], #4        \n"
+            "fmla v12.4s ,  v17.4s,  %[w0].s[2]      \n"
+            // r1
+            "ext  v16.16b, %[vzero].16b, v2.16b, #12 \n"
+            "ext  v17.16b, v2.16b, v3.16b, #4        \n"
+            "fmla v13.4s ,  v2.4s,  %[w0].s[1]       \n"
+            "fmla v12.4s ,  v2.4s,  %[w1].s[1]       \n"
+            "sub %[din_ptr4], %[din_ptr4], #4        \n"
+            "sub %[din_ptr5], %[din_ptr5], #4        \n"
+            "fmla v13.4s ,  v16.4s,  %[w0].s[0]      \n"
+            "fmla v12.4s ,  v16.4s,  %[w1].s[0]      \n"
+            "fmla v13.4s ,  v17.4s,  %[w0].s[2]      \n"
+            "fmla v12.4s ,  v17.4s,  %[w1].s[2]      \n"
+            "ext v17.16b, v4.16b, v5.16b, #4         \n"
+            "ext  v16.16b, %[vzero].16b, v4.16b, #12 \n"
+            // r2
+            "fmla v14.4s ,  v4.4s,  %[w0].s[1]      \n"
+            "fmla v13.4s ,  v4.4s,  %[w1].s[1]      \n"
+            "fmla v12.4s ,  v4.4s,  %[w2].s[1]      \n"
+            "fmla v14.4s ,  v16.4s,  %[w0].s[0]     \n"
+            "fmla v13.4s ,  v16.4s,  %[w1].s[0]     \n"
+            "fmla v12.4s ,  v16.4s,  %[w2].s[0]     \n"
+            "fmla v14.4s ,  v17.4s,  %[w0].s[2]     \n"
+            "fmla v13.4s ,  v17.4s,  %[w1].s[2]     \n"
+            "fmla v12.4s ,  v17.4s,  %[w2].s[2]     \n"
+            // r3
+            "ext  v16.16b, %[vzero].16b, v6.16b, #12 \n"
+            "ext  v17.16b, v6.16b, v7.16b, #4        \n"
+            "fmla v15.4s ,  v6.4s,  %[w0].s[1]       \n"
+            "fmla v14.4s ,  v6.4s,  %[w1].s[1]       \n"
+            "fmla v13.4s ,  v6.4s,  %[w2].s[1]       \n"
+            "fmla v15.4s ,  v16.4s,  %[w0].s[0]      \n"
+            "fmla v14.4s ,  v16.4s,  %[w1].s[0]      \n"
+            "fmla v13.4s ,  v16.4s,  %[w2].s[0]      \n"
+            "fmla v15.4s ,  v17.4s,  %[w0].s[2]      \n"
+            "fmla v14.4s ,  v17.4s,  %[w1].s[2]      \n"
+            "fmla v13.4s ,  v17.4s,  %[w2].s[2]      \n"
+            // LEFT_RESULT_S
+            // r4
+            "ext  v16.16b, %[vzero].16b, v8.16b, #12 \n"
+            "ext  v17.16b, v8.16b, v9.16b, #4        \n"
+            "fmla v15.4s ,  v8.4s,  %[w1].s[1]       \n"
+            "fmla v14.4s ,  v8.4s,  %[w2].s[1]       \n"
+            "st1 {v12.4s}, [%[doutr0]], #16          \n"
+            "st1 {v13.4s}, [%[doutr1]], #16          \n"
+            "fmla v15.4s ,  v16.4s,  %[w1].s[0]      \n"
+            "fmla v14.4s ,  v16.4s,  %[w2].s[0]      \n"
+            "ld1 {v12.4s}, [%[bias_val]]             \n"
+            "ld1 {v13.4s}, [%[bias_val]]             \n"
+            "fmla v15.4s ,  v17.4s,  %[w1].s[2]      \n"
+            "fmla v14.4s ,  v17.4s,  %[w2].s[2]      \n"
+            // r5
+            "ext  v16.16b, %[vzero].16b, v10.16b, #12 \n"
+            "ext  v17.16b, v10.16b, v11.16b, #4       \n"
+            "fmla v15.4s ,  v10.4s,  %[w2].s[1]       \n"
+            "st1 {v14.4s}, [%[doutr2]], #16           \n"
+            "fmla v15.4s ,  v16.4s,  %[w2].s[0]       \n"
+            "ld1 {v14.4s}, [%[bias_val]]              \n"
+            "fmla v15.4s ,  v17.4s,  %[w2].s[2]       \n"
+            "st1 {v15.4s}, [%[doutr3]], #16           \n"
+            "cmp  %w[cnt], #1                         \n"
+            "ld1 {v15.4s}, [%[bias_val]]              \n"
+            "blt 3f                                   \n"
+            // MID_COMPUTE_S
+            "1:                                       \n"
+            "ld1 {v0.4s}, [%[din_ptr0]], #16          \n"
+            "ld1 {v1.4s}, [%[din_ptr0]]               \n"
+            "ld1 {v2.4s}, [%[din_ptr1]], #16          \n"
+            "ld1 {v3.4s}, [%[din_ptr1]]               \n"
+            "ld1 {v4.4s}, [%[din_ptr2]], #16          \n"
+            "ld1 {v5.4s}, [%[din_ptr2]]               \n"
+            "ld1 {v6.4s}, [%[din_ptr3]], #16          \n"
+            "ld1 {v7.4s}, [%[din_ptr3]]               \n"
+            "ld1 {v8.4s}, [%[din_ptr4]], #16          \n"
+            "ld1 {v9.4s}, [%[din_ptr4]]               \n"
+            "ld1 {v10.4s}, [%[din_ptr5]], #16         \n"
+            "ld1 {v11.4s}, [%[din_ptr5]]              \n"
+            // r0
+            "ext  v16.16b, v0.16b, v1.16b, #4         \n"
+            "ext  v17.16b, v0.16b, v1.16b, #8         \n"
+            "fmla v12.4s ,  v0.4s,  %[w0].s[0]        \n"
+            "fmla v12.4s ,  v16.4s,  %[w0].s[1]       \n"
+            "fmla v12.4s ,  v17.4s,  %[w0].s[2]       \n"
+            "ext  v16.16b, v2.16b, v3.16b, #4         \n"
+            "ext  v17.16b, v2.16b, v3.16b, #8         \n"
+            // r1
+            "fmla v13.4s ,  v2.4s,  %[w0].s[0]        \n"
+            "fmla v12.4s ,  v2.4s,  %[w1].s[0]        \n"
+            "fmla v13.4s ,  v16.4s,  %[w0].s[1]       \n"
+            "fmla v12.4s ,  v16.4s,  %[w1].s[1]       \n"
+            "fmla v13.4s ,  v17.4s,  %[w0].s[2]       \n"
+            "fmla v12.4s ,  v17.4s,  %[w1].s[2]       \n"
+            "ext  v16.16b, v4.16b, v5.16b, #4         \n"
+            "ext  v17.16b, v4.16b, v5.16b, #8         \n"
+            // r2
+            "fmla v14.4s ,  v4.4s,  %[w0].s[0]        \n"
+            "fmla v13.4s ,  v4.4s,  %[w1].s[0]        \n"
+            "fmla v12.4s ,  v4.4s,  %[w2].s[0]        \n"
+            "fmla v14.4s ,  v16.4s,  %[w0].s[1]       \n"
+            "fmla v13.4s ,  v16.4s,  %[w1].s[1]       \n"
+            "fmla v12.4s ,  v16.4s,  %[w2].s[1]       \n"
+            "fmla v14.4s ,  v17.4s,  %[w0].s[2]       \n"
+            "fmla v13.4s ,  v17.4s,  %[w1].s[2]       \n"
+            "fmla v12.4s ,  v17.4s,  %[w2].s[2]       \n"
+            // r3
+            "ext  v16.16b, v6.16b, v7.16b, #4         \n"
+            "ext  v17.16b, v6.16b, v7.16b, #8         \n"
+            "fmla v15.4s ,  v6.4s,  %[w0].s[0]        \n"
+            "fmla v14.4s ,  v6.4s,  %[w1].s[0]        \n"
+            "fmla v13.4s ,  v6.4s,  %[w2].s[0]        \n"
+            "st1 {v12.4s}, [%[doutr0]], #16           \n"
+            "fmla v15.4s ,  v16.4s,  %[w0].s[1]       \n"
+            "fmla v14.4s ,  v16.4s,  %[w1].s[1]       \n"
+            "fmla v13.4s ,  v16.4s,  %[w2].s[1]       \n"
+            "ld1 {v12.4s}, [%[bias_val]]              \n"
+            "fmla v15.4s ,  v17.4s,  %[w0].s[2]       \n"
+            "fmla v14.4s ,  v17.4s,  %[w1].s[2]       \n"
+            "fmla v13.4s ,  v17.4s,  %[w2].s[2]       \n"
+            // r4
+            "ext  v16.16b, v8.16b, v9.16b, #4         \n"
+            "ext  v17.16b, v8.16b, v9.16b, #8         \n"
+            "fmla v15.4s ,  v8.4s,  %[w1].s[0]        \n"
+            "fmla v14.4s ,  v8.4s,  %[w2].s[0]        \n"
+            "st1 {v13.4s}, [%[doutr1]], #16           \n"
+            "fmla v15.4s ,  v16.4s,  %[w1].s[1]       \n"
+            "fmla v14.4s ,  v16.4s,  %[w2].s[1]       \n"
+            "ld1 {v13.4s}, [%[bias_val]]              \n"
+            "fmla v15.4s ,  v17.4s,  %[w1].s[2]       \n"
+            "fmla v14.4s ,  v17.4s,  %[w2].s[2]       \n"
+            // r5
+            "ext  v16.16b, v10.16b, v11.16b, #4       \n"
+            "ext  v17.16b, v10.16b, v11.16b, #8       \n"
+            "fmla v15.4s ,  v10.4s,  %[w2].s[0]       \n"
+            "st1 {v14.4s}, [%[doutr2]], #16           \n"
+            "fmla v15.4s ,  v16.4s,  %[w2].s[1]       \n"
+            "ld1 {v14.4s}, [%[bias_val]]              \n"
+            "fmla v15.4s ,  v17.4s,  %[w2].s[2]       \n"
+            "subs %w[cnt], %w[cnt], #1                \n"
+            "st1 {v15.4s}, [%[doutr3]], #16           \n"
+            "ld1 {v15.4s}, [%[bias_val]]              \n"
+            "bne 1b \n"
+            // RIGHT_COMPUTE_S
+            "3:                                       \n"
+            "sub %[din_ptr0], %[din_ptr0], %[mask] \n"
+            "sub %[din_ptr1], %[din_ptr1], %[mask] \n"
+            "sub %[din_ptr2], %[din_ptr2], %[mask] \n"
+            "sub %[din_ptr3], %[din_ptr3], %[mask] \n"
+            "sub %[din_ptr4], %[din_ptr4], %[mask] \n"
+            "sub %[din_ptr5], %[din_ptr5], %[mask] \n"
+            "ld1 {v0.4s}, [%[din_ptr0]], #16   \n"
+            "ld1 {v1.4s}, [%[din_ptr0]]        \n"
+            "ld1 {v2.4s}, [%[din_ptr1]], #16   \n"
+            "ld1 {v3.4s}, [%[din_ptr1]]        \n"
+            "ld1 {v4.4s}, [%[din_ptr2]], #16   \n"
+            "ld1 {v5.4s}, [%[din_ptr2]]        \n"
+            "ld1 {v6.4s}, [%[din_ptr3]], #16   \n"
+            "ld1 {v7.4s}, [%[din_ptr3]]        \n"
+            "ld1 {v8.4s}, [%[din_ptr4]], #16   \n"
+            "ld1 {v9.4s}, [%[din_ptr4]]        \n"
+            "ld1 {v10.4s}, [%[din_ptr5]], #16  \n"
+            "ld1 {v11.4s}, [%[din_ptr5]]       \n"
+            "ld1 {v18.4s, v19.4s}, [%[vmask]]  \n"  // vmask here always: F F F
+                                                    // F F 0 0 0
+            "sub %[doutr0], %[doutr0], %[mask] \n"
+            "sub %[doutr1], %[doutr1], %[mask] \n"
+            "sub %[doutr2], %[doutr2], %[mask] \n"
+            "sub %[doutr3], %[doutr3], %[mask] \n"
+            "bif v0.16b, %[vzero].16b, v18.16b \n"
+            "bif v1.16b, %[vzero].16b, v19.16b \n"
+            "bif v2.16b, %[vzero].16b, v18.16b \n"
+            "bif v3.16b, %[vzero].16b, v19.16b \n"
+            "bif v4.16b, %[vzero].16b, v18.16b \n"
+            "bif v5.16b, %[vzero].16b, v19.16b \n"
+            "bif v6.16b, %[vzero].16b, v18.16b \n"
+            "bif v7.16b, %[vzero].16b, v19.16b \n"
+            "ext  v16.16b, v0.16b, v1.16b, #4  \n"
+            "ext  v17.16b, v0.16b, v1.16b, #8  \n"
+            "fmla v12.4s,  v0.4s,  %[w0].s[0]  \n"
+            "bif v8.16b, %[vzero].16b, v18.16b \n"
+            "bif v9.16b, %[vzero].16b, v19.16b \n"
+            "bif v10.16b, %[vzero].16b, v18.16b \n"
+            "bif v11.16b, %[vzero].16b, v19.16b \n"
+            "fmla v12.4s,  v16.4s,  %[w0].s[1]  \n"
+            "fmla v12.4s ,  v17.4s,  %[w0].s[2] \n"
+            "ext  v16.16b, v2.16b, v3.16b, #4   \n"
+            "ext  v17.16b, v2.16b, v3.16b, #8   \n"
+            "fmla v13.4s ,  v2.4s,  %[w0].s[0]  \n"
+            "fmla v12.4s ,  v2.4s,  %[w1].s[0]  \n"
+            "fmla v13.4s ,  v16.4s,  %[w0].s[1] \n"
+            "fmla v12.4s ,  v16.4s,  %[w1].s[1] \n"
+            "fmla v13.4s ,  v17.4s,  %[w0].s[2] \n"
+            "fmla v12.4s ,  v17.4s,  %[w1].s[2] \n"
+            "ext  v16.16b, v4.16b, v5.16b, #4   \n"
+            "ext  v17.16b, v4.16b, v5.16b, #8   \n"
+            "fmla v14.4s ,  v4.4s,  %[w0].s[0]  \n"
+            "fmla v13.4s ,  v4.4s,  %[w1].s[0]  \n"
+            "fmla v12.4s ,  v4.4s,  %[w2].s[0]  \n"
+            "fmla v14.4s ,  v16.4s,  %[w0].s[1] \n"
+            "fmla v13.4s ,  v16.4s,  %[w1].s[1] \n"
+            "fmla v12.4s ,  v16.4s,  %[w2].s[1] \n"
+            "fmla v14.4s ,  v17.4s,  %[w0].s[2] \n"
+            "fmla v13.4s ,  v17.4s,  %[w1].s[2] \n"
+            "fmla v12.4s ,  v17.4s,  %[w2].s[2] \n"
+            "ext  v16.16b, v6.16b, v7.16b, #4   \n"
+            "ext  v17.16b, v6.16b, v7.16b, #8   \n"
+            // RIGHT_RESULT_S1
+            "fmla v15.4s ,  v6.4s,  %[w0].s[0]  \n"
+            "fmla v14.4s ,  v6.4s,  %[w1].s[0]  \n"
+            "fmla v13.4s ,  v6.4s,  %[w2].s[0]  \n"
+            "fmla v15.4s ,  v16.4s,  %[w0].s[1] \n"
+            "fmla v14.4s ,  v16.4s,  %[w1].s[1] \n"
+            "fmla v13.4s ,  v16.4s,  %[w2].s[1] \n"
+            "st1 {v12.4s}, [%[doutr0]], #16     \n"
+            "fmla v15.4s ,  v17.4s,  %[w0].s[2] \n"
+            "fmla v14.4s ,  v17.4s,  %[w1].s[2] \n"
+            "fmla v13.4s ,  v17.4s,  %[w2].s[2] \n"
+            "ext  v16.16b, v8.16b, v9.16b, #4   \n"
+            "ext  v17.16b, v8.16b, v9.16b, #8   \n"
+            "fmla v15.4s ,  v8.4s,  %[w1].s[0]  \n"
+            "fmla v14.4s ,  v8.4s,  %[w2].s[0]  \n"
+            "fmla v15.4s ,  v16.4s,  %[w1].s[1] \n"
+            "fmla v14.4s ,  v16.4s,  %[w2].s[1] \n"
+            "st1 {v13.4s}, [%[doutr1]], #16     \n"
+            "fmla v15.4s ,  v17.4s,  %[w1].s[2] \n"
+            "fmla v14.4s ,  v17.4s,  %[w2].s[2] \n"
+            "ext  v16.16b, v10.16b, v11.16b, #4 \n"
+            "ext  v17.16b, v10.16b, v11.16b, #8 \n"
+            "fmla v15.4s ,  v10.4s,  %[w2].s[0] \n"
+            "fmla v15.4s ,  v16.4s,  %[w2].s[1] \n"
+            "st1 {v14.4s}, [%[doutr2]], #16     \n"
+            "fmla v15.4s ,  v17.4s,  %[w2].s[2] \n"
+            "st1 {v15.4s}, [%[doutr3]], #16     \n"
+            : [cnt] "+r"(cnt),
+              [mask] "+r"(mask),
+              [din_ptr0] "+r"(din_ptr0),
+              [din_ptr1] "+r"(din_ptr1),
+              [din_ptr2] "+r"(din_ptr2),
+              [din_ptr3] "+r"(din_ptr3),
+              [din_ptr4] "+r"(din_ptr4),
+              [din_ptr5] "+r"(din_ptr5),
+              [doutr0] "+r"(doutr0),
+              [doutr1] "+r"(doutr1),
+              [doutr2] "+r"(doutr2),
+              [doutr3] "+r"(doutr3)
+            : [w0] "w"(wr0),
+              [w1] "w"(wr1),
+              [w2] "w"(wr2),
+              [bias_val] "r"(vbias),
+              [vmask] "r"(vmask),  // no need !
+              // [rmask] "r"(rmask),
+              [vzero] "w"(vzero)
+            : "cc",
+              "memory",
+              "v0",
+              "v1",
+              "v2",
+              "v3",
+              "v4",
+              "v5",
+              "v6",
+              "v7",
+              "v8",
+              "v9",
+              "v10",
+              "v11",
+              "v12",
+              "v13",
+              "v14",
+              "v15",
+              "v16",
+              "v17",
+              "v18",
+              "v19",
+              "v20",
+              "v21",
+              "v22",
+              "v23",
+              "v24",
+              "v25");
         dout_ptr = dout_ptr + 4 * w_out;
       }
 #else
