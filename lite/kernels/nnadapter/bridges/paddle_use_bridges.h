@@ -18,10 +18,6 @@ USE_SUBGRAPH_BRIDGE(fc,
                     kNNAdapter,
                     "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
                     "npu,amlogic_npu,imagination_nna");
-USE_SUBGRAPH_BRIDGE(pool2d,
-                    kNNAdapter,
-                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
-                    "npu,amlogic_npu,imagination_nna");
 USE_SUBGRAPH_BRIDGE(
     scale,
     kNNAdapter,
