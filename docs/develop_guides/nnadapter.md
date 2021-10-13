@@ -2,32 +2,198 @@
 飞桨推理AI硬件统一适配框架
 
 ## 背景
-- 在[新增硬件](./add_hardware)章节中曾提到Paddle Lite的硬件接入分为算子Kernel和子图两种方式
+- 在[新增硬件](./add_hardware)章节中曾提到Paddle Lite的硬件适配主要分为算子和子图两种方式，特别是AI硬件，近两年来我们基于子图方式完成了华为麒麟NPU、瑞芯微NPU、联发科APU、颖脉NNA、寒武纪MLU和比特大陆NPU在Paddle Lite上的适配。但在与硬件厂商合作过程中，逐渐发现了该方案的不足之处，主要涉及以下两大方面：
+  - 适配门槛高、周期长
+    - 要求硬件厂商对Paddle Lite有较深的了解，涵盖框架运行机制、硬件接入方案、编译系统等方面。
+    - 获取Paddle模型、算子定义、量化实现方式等信息所花费的沟通成本过高。
+  - 适配代码与框架过度耦合，且存在重复开发、代码维护成本过高
+    - 适配一个新的硬件并跑通一个分类模型，总文件修改数共48个，而框架文件的修改竟达到25个。
+    - Paddle算子转硬件算子存在重复开发，且一旦Paddle算子发生升级，就需要对已支持的所有硬件的相关代码进行适配，维护成本过高。
+    - 量化方式（Paddle仅支持对称量化，而大部分SoC类NPU支持非对称量化）、数据布局（例如联发科APU仅支持NHWC，而Paddle大部分模型为NCHW格式）的转换等模块存在重复实现，不利于各硬件间的共享达到缩减适配周期、降低维护成本的目的。
 
 ## 简介
-- 
+- NNAdapter是什么？
+  - 由一系列C接口组成的、支撑各种深度学习框架在各种硬件（特别是AI ASIC芯片）完成高效推理的通用接口，它是建立深度学习推理框架和硬件的桥梁，包含API、Runtime、HAL三层，以及模型中间表示层的标准算子定义。
 
-## 实现方案
-![](https://paddlelite-demo.bj.bcebos.com/devices/generic/paddle_lite_with_nnadapter.png)
+  ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_arch.png)
+
+- NNAdapter的目的是什么？
+  - 降低接入门槛，不要求硬件厂商深入了解Paddle Lite框架，只需了解NNAdapter的标准算子定义、HAL层标准接口定义、Runtime与HAL层的调用关系即可。
+  - 减少适配工作量，缩短适配周期，只需完成硬件的HAL层库的开发即可。
+  - 与推理框架解耦，降低维护成本。
+
+- NNAdapter做了哪些工作？
+  - 标准化向上（推理框架）的接口，包括设备管理、模型组网、生成和执行的一系列C接口。
+  - 标准化算子定义，提供稳定的、文档丰富的中间表示层的算子定义（主要参考ONNX、Paddle、PyTorch和TensorFlow的算子），方便硬件厂商快速完成算子映射/转换。
+  - 标准化向下（硬件）抽象层（HAL）的接口定义，实现对硬件设备的抽象和封装（屏蔽硬件细节），为NNAdapter在不同硬件设备提供统一的访问接口。
 
 ## 功能模块
-![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_arch.png)
+![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_arch_detail.png)
 
 用户视角下各功能模块的关系
 
 ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/paddle_lite_and_nnadapter_dynamic_shared_library.png)
 
 ### NNAdapter API
+- 设备管理
+  - NNAdapterDevice_acquire、NNAdapterDevice_release、NNAdapterDevice_getName、NNAdapterDevice_getVendor、NNAdapterDevice_getType、NNAdapterDevice_getVersion
+- 统一设备上下文
+  - NNAdapterContext_create、NNAdapterContext_destroy
+- 模型组网
+  - NNAdapterModel_create、NNAdapterModel_destroy、NNAdapterModel_finish、NNAdapterModel_addOperand、NNAdapterModel_setOperandValue、NNAdapterModel_getOperandType、NNAdapterModel_addOperation、NNAdapterModel_identifyInputsAndOutputs
+- 模型编译
+  - NNAdapterCompilation_create、NNAdapterCompilation_destroy、NNAdapterCompilation_finish、NNAdapterCompilation_queryInputsAndOutputs
+- 模型执行
+  - NNAdapterExecution_create、NNAdapterExecution_destroy、NNAdapterExecution_setInput、NNAdapterExecution_setOutput、NNAdapterExecution_compute
+
+注意：具体可以参考『附录』中的『NNAdapter API详细说明』。
+
 ### NNAdapter 标准算子
 ### NNAdapter Runtime
 ### NNAdapter HAL标准接口定义
 - 示例
 
-## 推理框架与NNAdapter的调用过程
-### 推理框架与NNAdapter的一般调用过程
+## NNAdapter在Paddle Lite的实现
+### 实现方案
+![](https://paddlelite-demo.bj.bcebos.com/devices/generic/paddle_lite_with_nnadapter.png)
+
+### Paddle Lite为NNAdapter新增的接口
+- 设备查询和设置
+  - check_nnadapter_device_name
+    ```c++
+    bool check_nnadapter_device_name(const std::string& device_name)
+    ```
+    通过设备名称查询设备是否可用，设备名称包括`huawei_ascend_npu`, `huawei_kirin_npu`, `amlogic_npu`, `rockchip_npu`, `mediatek_apu`, `imagination_nna`等，已支持设备的最新列表可在[NNAdapter HAL](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/backends/nnadapter/nnadapter/driver)中查询。
+    - 参数：
+      - device_name：设备HAL层库的名称，例如：[huawei_ascend_npu](https://github.com/PaddlePaddle/Paddle-Lite/blob/34639deaf036e2daf4429205c1bc77958e0b1e0f/lite/backends/nnadapter/nnadapter/driver/huawei_ascend_npu/CMakeLists.txt#L15)。
+    - 返回值：设备可用则返回true。
+
+  - set_nnadapter_device_names
+    ```c++
+    void set_nnadapter_device_names(const std::vector<std::string>& device_names)
+    ```
+    设置模型在哪些设备中运行（当前版本只支持第一个设备）。
+    - 参数：
+      - device_names：设备名称列表。
+    - 返回值：无。
+
+- 设备上下文的参数设置
+  - set_nnadapter_context_properties
+    ```c++
+    void set_nnadapter_context_properties(const std::string& context_properties)
+    ```
+    将设备参数传递给设备HAL库。
+    - 参数：
+      - context_properties：以Key-value字串的形式表示设备参数，例如：如果希望使用昇腾310卡的第0个核心，可以设置"HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0;"。
+    - 返回值：无。
+
+- 模型缓存
+  - set_nnadapter_model_cache_dir
+    ```c++
+    void set_nnadapter_model_cache_dir(const std::string& model_cache_dir)
+    ```
+    启用模型编译缓存功能，设置编译后的设备程序的缓存文件（以.nnc为扩展名）的存储目录，它能够跳过每次进程启动且模型首次推理时的编译步骤，减少首次推理耗时。
+    - 参数：
+      - model_cache_dir：模型缓存目录。
+    - 返回值：无。
+
+  - set_nnadapter_model_cache_buffers
+    ```c++
+    void set_nnadapter_model_cache_buffers(const std::string& model_cache_token, const std::vector<char>& model_cache_buffer)
+    ```
+    设置模型缓存的标识和数据，子图在编译生成设备程序时，如果成功匹配到`model_cache_token`，则跳过模型编译步骤，直接使用缓存数据恢复设备程序（需要设备HAL层库的支持），该接口通常用于从内存中设置解密后的模型缓存数据。
+    - 参数：
+      - model_cache_token：根据子图输入、输出、设备信息按照一定规则生成的唯一标识子图的32个字符，它实现方式可以参考[相关代码](https://github.com/PaddlePaddle/Paddle-Lite/blob/9e16e8ee9a079f673d992351cdd9ec0f4d731575/lite/kernels/nnadapter/engine.cc#L49)。
+      - model_cache_buffer：`model_cache_token`对应子图和设备的模型缓存数据。
+    - 返回值：无。
+
+- 自定义子图分割
+  - set_nnadapter_subgraph_partition_config_path
+    ```c++
+    void set_nnadapter_subgraph_partition_config_path(const std::string& subgraph_partition_config_path)
+    ```
+    设置自定义子图分割配置文件路径，用于将某些算子强制异构到CPU，防止因切分成过多子图而导致的性能下降，内存增加。该配置文件的规则如下：
+
+    1）每行记录用于唯一标识某一个或某一类需要被强制异构到CPU的算子。
+
+    2）每行记录由『算子类型:输入张量名列表:输出张量名列表』组成，即以冒号分隔算子类型、输入和输出张量名列表，以逗号分隔输入、输出张量名列表中的每个张量名。
+
+    3）可省略输入、输出张量名列表中的部分张量名，如果不设置任何输入、输出张量列表，则代表计算图中该类型的所有算子节点均被强制异构到CPU。
+
+    用法举例：
+    ```c++
+    op_type0:var_name0,var_name1:var_name2    表示将类型为op_type0、输入张量为var_name0和var_name1、输出张量为var_name2的算子强制异构到CPU上
+    op_type1::var_name3                       表示将类型为op_type1、任意输入张量、输出张量为var_name3的算子强制异构到CPU上
+    op_type2:var_name4                        表示将类型为op_type2、输入张量为var_name4、任意输出张量的算子强制异构到CPU上
+    op_type3                                  表示任意类型为op_type3的算子均被强制异构到CPU上
+    ```
+
+    为了方便唯一标识模型中的某一个算子，可以在使用cxxconfig加载Paddle模型进行nb模型转换或直接推理时，设置GLOG_v=5打印完整调试信息，然后以`subgraph operators`为关键字搜索，例如：[ssd_mobilenet_v1_relu_voc_fp32_300](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_relu_voc_fp32_300.tar.gz)模型运行在华为麒麟NPU时，将得到如下调试信息：
+
+    ```
+    subgraph clusters: 1
+    digraph G {
+    node_1150[label="batch_norm_0.tmp_3"]
+    node_1154[label="batch_norm_1.tmp_3"]
+    node_1190[label="batch_norm_10.tmp_3"]
+    node_1194[label="batch_norm_11.tmp_3"]
+    ...
+    node_1426->node_1427
+    node_1427->node_1428
+    node_1428->node_1429
+    } // end G
+    subgraph operators:
+    feed:feed:image
+    conv2d:image,conv1_weights,conv1_bn_offset:batch_norm_0.tmp_3
+    depthwise_conv2d:batch_norm_0.tmp_3,conv2_1_dw_weights,conv2_1_dw_bn_offset:batch_norm_1.tmp_3
+    conv2d:batch_norm_1.tmp_3,conv2_1_sep_weights,conv2_1_sep_bn_offset:batch_norm_2.tmp_3
+    ...
+    box_coder:concat_0.tmp_0,concat_1.tmp_0,reshape2_0.tmp_0:box_coder_0.tmp_0
+    multiclass_nms:box_coder_0.tmp_0,transpose_12.tmp_0:save_infer_model/scale_0.tmp_0
+    fetch:save_infer_model/scale_0.tmp_0:fetch
+    ```
+
+    其中：
+
+    1）`subgraph operators` 一行的后面是模型经过Paddle Lite各种优化Pass后的全部算子集合，可以非常方便的作为自定义子图分割配置文件的内容，这也将成为我们在硬件适配时快速调通目标模型的好帮手（即先将所有算子强制异构到CPU上，然后一行一行的删掉，让它们跑在目标设备上，这种方法可以快速定位问题算子，完成整个模型的调通）。
+
+    2）`subgraph clusters` 一行的后面是经过子图检测后的子图个数，以下则是用于可视化子图检测后的模型拓扑结构的DOT格式字符串，可将其复制到[webgraphviz](http://www.webgraphviz.com/)进行可视化，其中不同颜色的算子代表所属不同的子图。
+    
+    同样的，以ssd_mobilenet_v1_relu_voc_fp32_300为例，下面两幅图展示了使用自定义子图分割配置文件前后的对比：
+
+    1）未使用自定义子图分割配置：
+
+    ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/ssd_mobilenet_v1_relu_voc_fp32_300_auto_split_netron.jpg)
+
+    2）使用如下自定义子图配置：
+
+    ```
+    transpose2:conv2d_22.tmp_1:transpose_0.tmp_0,transpose_0.tmp_1
+    transpose2:conv2d_23.tmp_1:transpose_1.tmp_0,transpose_1.tmp_1
+    ```
+
+    ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/ssd_mobilenet_v1_relu_voc_fp32_300_manual_split_netron.jpg)
+
+    注意：该接口仅用于cxxconfig加载Paddle模型生成nb模型或直接推理时使用。
+
+    - 参数：
+      - model_cache_token：根据子图输入、输出、设备信息按照一定规则生成的唯一标识子图的32个字符，它实现方式可以参考[相关代码](https://github.com/PaddlePaddle/Paddle-Lite/blob/9e16e8ee9a079f673d992351cdd9ec0f4d731575/lite/kernels/nnadapter/engine.cc#L49)。
+      - model_cache_buffer：`model_cache_token`对应子图和设备的模型缓存数据。
+    - 返回值：无。
+
+  - set_nnadapter_subgraph_partition_config_buffer
+    ```c++
+    void set_nnadapter_subgraph_partition_config_buffer(const std::string& subgraph_partition_config_buffer)
+    ```
+    设置自定义子图分割配置内容，该接口通常用于加、解密场景。
+    - 参数：
+      - subgraph_partition_config_buffer：自定义子图分割配置的内容，与`set_nnadapter_subgraph_partition_config_path`中阐述的一致。
+    - 返回值：无。
+
+### Paddle Lite与NNAdapter的一般调用过程
 ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_call_flow.png)
 
-### 应用程序、推理框架、NNAdapter和硬件SDK之间的详细调用过程
+### 应用程序、Paddle Lite、NNAdapter和硬件SDK之间的详细调用过程
 ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_call_flow_detail_0.png)
 ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_call_flow_detail_1.png)
 ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_call_flow_detail_2.png)
@@ -224,7 +390,7 @@
 
   2）当设置`cache_token`和`cache_dir`时，将从<`cache_dir`>指定的目录中查找并尝试加载<`cache_token`>.nnc模型缓存文件，成功加载后将忽略`model`参数，否则在调用`NNAdapterCompilation_finish`完成模型实例`model`的在线编译后，在<`cache_dir`>目录中生成<`cache_token`>.nnc文件。
 
-  3）当`cache_token`，`cache_buffer`，`cache_length`和`cache_dir`均未被设置时，则在调用`NNAdapterCompilation_finish`后完成模型实例`model`的在线编译。需要注意的是，由于未设置`cache_token`和`cache_dir`，在编译完成后将不会生成模型缓存文件，将使得在模型首次推理时都会进行模型的在线编译，导致首次推理耗时过长。
+  3）当`cache_token`，`cache_buffer`，`cache_length`和`cache_dir`均未被设置时，则在调用`NNAdapterCompilation_finish`后完成模型实例`model`的在线编译。需要注意的是，由于未设置`cache_token`和`cache_dir`，在编译完成后将不会生成模型缓存文件，将使得在模型首次推理时都会进行模型的在线编译，导致首次推理耗时过长。
 
   - 参数：
     - model：模型实例。
