@@ -178,15 +178,9 @@ void FcCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   if (flag_trans_bias_) {
     b_data = bias_.data<float>();
   }
-  bool flag_act = false;
-  lite_api::ActivationType act;
-  if (param.activation_type == "relu") {
-    act = lite_api::ActivationType::kRelu;
-    flag_act = true;
-  }
+  operators::ActivationParam act_param;
+  act_param.has_active = false;
   if (flag_gemm_) {
-    operators::ActivationParam act_param;
-    act_param.has_active = false;
     lite::arm::math::sgemm(false,
                            false,
                            m_,
@@ -205,10 +199,18 @@ void FcCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                            act_param,
                            &ctx);
     if (param.bias) {
+      bool flag_act = false;
+      if (param.activation_type == "relu") {
+        flag_act = true;
+      }
       CHECK_EQ(param.bias->numel(), n_);
       lite::arm::math::fill_bias_fc(o_data, b_data, m_, n_, flag_act);
     }
   } else {
+    if (param.activation_type == "relu") {
+      act_param.active_type = lite_api::ActivationType::kRelu;
+      act_param.has_active = true;
+    }
     for (int i = 0; i < m_; ++i) {
       auto* i_data_batch = i_data + i * k_;
       auto* o_data_batch = o_data + i * n_;
@@ -221,8 +223,7 @@ void FcCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                              0.f,
                              param.bias != nullptr,
                              b_data,
-                             flag_act,
-                             act,
+                             act_param,
                              &ctx);
     }
   }
