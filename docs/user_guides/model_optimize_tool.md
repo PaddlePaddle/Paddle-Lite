@@ -14,7 +14,7 @@ Paddle-Lite 提供了多种策略来自动优化原始的训练模型，其中�
 ```bash
 # 当前最新版本是 2.9
 pip install paddlelite==2.9
-# 当前最新版本是 1.3.2
+# 版本号需高于或等于1.3.3
 pip install x2paddle
 ```
 - `opt`转化和分析模型： 可通过**终端命令**或**Python脚本**调用
