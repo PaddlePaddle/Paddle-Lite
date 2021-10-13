@@ -54,8 +54,8 @@ Paddle Lite提供了C++、Java、Python三种API，并且提供了相应API的�
 
 ## 主要特性
 
-- 支持多平台：涵盖Android、iOS、嵌入式Linux设备、Windows、macOS和Linux 主机
-- 支持多种语言：包括Java、Python、C++
+- 支持多平台：涵盖 Android、iOS、嵌入式 Linux 设备、Windows、macOS 和 Linux 主机
+- 支持多种语言：包括 Java、Python、C++
 - 轻量化和高性能：针对移动端设备的机器学习进行优化，压缩模型和二进制文件体积，高效推理，降低内存消耗
 
 ## 持续集成
