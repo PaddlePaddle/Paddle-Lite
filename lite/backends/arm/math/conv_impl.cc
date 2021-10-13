@@ -1147,22 +1147,40 @@ void conv_depthwise_5x5_fp32(const void* din,
                               act_param,
                               ctx);
   } else if (stride == 1) {
-    conv_depthwise_5x5s1_fp32(reinterpret_cast<float*>(dout),
-                              reinterpret_cast<const float*>(din),
-                              reinterpret_cast<const float*>(weights),
-                              bias,
-                              flag_bias,
-                              flag_relu,
-                              num,
-                              ch_in,
-                              h_in,
-                              w_in,
-                              h_out,
-                              w_out,
-                              pad_w,
-                              pad_h,
-                              param,
-                              ctx);
+    if (pad_h == pad_w && pad_h == 2 && act_param.active_type < 4 && w_in > 4) {
+      // only support conv + relu/relu6
+      conv_depthwise_5x5s1p2_fp32(reinterpret_cast<float*>(dout),
+                                  reinterpret_cast<const float*>(din),
+                                  reinterpret_cast<const float*>(weights),
+                                  bias,
+                                  flag_bias,
+                                  flag_relu,
+                                  num,
+                                  ch_in,
+                                  h_in,
+                                  w_in,
+                                  h_out,
+                                  w_out,
+                                  param,
+                                  ctx);
+    } else {
+      conv_depthwise_5x5s1_fp32(reinterpret_cast<float*>(dout),
+                                reinterpret_cast<const float*>(din),
+                                reinterpret_cast<const float*>(weights),
+                                bias,
+                                flag_bias,
+                                flag_relu,
+                                num,
+                                ch_in,
+                                h_in,
+                                w_in,
+                                h_out,
+                                w_out,
+                                pad_w,
+                                pad_h,
+                                param,
+                                ctx);
+    }
   } else {
     LOG(FATAL) << "unsupport this type 5x5 dw conv";
   }

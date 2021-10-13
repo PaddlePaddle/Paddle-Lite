@@ -62,8 +62,12 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
     KERNEL_FUNC_NAME("conv_depthwise_3x3_fp32")
   } else if (kw == 5) {
     auto strides = param.strides;
-    if ((strides[0] == 1 && strides[1] == 1) ||
-        (strides[0] == 2 && strides[1] == 2)) {
+    bool pads_equal = (paddings[0] == paddings[2]) && (paddings[0] == 2);
+    if (strides[0] == 1 && strides[1] == 1 && pads_equal &&
+        param.activation_param.active_type < 4 && win > 4) {
+      flag_trans_weights_ = false;
+    } else if ((strides[0] == 1 && strides[1] == 1) ||
+               (strides[0] == 2 && strides[1] == 2)) {
       // trans weights
       constexpr int cblock = 4;
       auto oc = w_dims[0];

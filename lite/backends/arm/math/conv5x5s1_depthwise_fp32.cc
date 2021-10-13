@@ -28,10 +28,10 @@ namespace math {
 
 #define ROUNDUP(a, b) ((((a) + (b)-1) / (b)) * (b))
 #ifdef __aarch64__
-void conv_depthwise_5x5s1_fp32(float* dout,
-                               const float* din,
-                               const float* weights,
-                               const float* bias,
+void conv_depthwise_5x5s1_fp32(float *dout,
+                               const float *din,
+                               const float *weights,
+                               const float *bias,
                                bool flag_bias,
                                bool flag_relu,
                                int num,
@@ -42,8 +42,8 @@ void conv_depthwise_5x5s1_fp32(float* dout,
                                int wout,
                                int padw,
                                int padh,
-                               const operators::ConvParam& param,
-                               ARMContext* ctx) {
+                               const operators::ConvParam &param,
+                               ARMContext *ctx) {
   const int threads = ctx->threads();
   int llc_size = ctx->llc_size() / 4;
   auto act_param = param.activation_param;
@@ -69,7 +69,7 @@ void conv_depthwise_5x5s1_fp32(float* dout,
 
   const int hin_r_block = hout_r_block + 4;
 
-  float* tmp_work_space = ctx->workspace_data<float>();
+  float *tmp_work_space = ctx->workspace_data<float>();
   float ptr_zero[win_round];  // NOLINT
   memset(ptr_zero, 0, sizeof(float) * win_round);
   float ptr_write[wout_round];  // NOLINT
@@ -79,7 +79,7 @@ void conv_depthwise_5x5s1_fp32(float* dout,
   pre_in_size = ROUNDUP(pre_in_size, 4);
   int pre_out_size = hout_c_block * hout_r_block * wout_round;
 
-  float* tmp_din = tmp_work_space;
+  float *tmp_din = tmp_work_space;
 
   int size_in_channel = win * hin;
   int size_out_channel = wout * hout;
@@ -92,8 +92,8 @@ void conv_depthwise_5x5s1_fp32(float* dout,
 
   int out_row_stride = hout_c_block * wout_round;
   for (int n = 0; n < num; ++n) {
-    const float* din_batch = din + n * chin * size_in_channel;
-    float* dout_batch = dout + n * chout * size_out_channel;
+    const float *din_batch = din + n * chin * size_in_channel;
+    float *dout_batch = dout + n * chout * size_out_channel;
     for (int h = 0; h < hout; h += hout_r_block) {
       int h_kernel = hout_r_block;
       if (h + hout_r_block > hout) {
@@ -105,23 +105,23 @@ void conv_depthwise_5x5s1_fp32(float* dout,
 #pragma omp parallel for num_threads(threads)
       for (int c = 0; c < chout; c += hout_c_block) {
 #ifdef ARM_WITH_OMP
-        float* pre_din =
+        float *pre_din =
             tmp_din + omp_get_thread_num() * (pre_in_size + pre_out_size);
-        float* pre_out = pre_din + pre_in_size;
+        float *pre_out = pre_din + pre_in_size;
 #else
-        float* pre_din = tmp_din;
-        float* pre_out = pre_din + pre_in_size;
+        float *pre_din = tmp_din;
+        float *pre_out = pre_din + pre_in_size;
 #endif
         prepack_input_nxwc4_dw(
             din_batch, pre_din, c, hs, he, ws, we, chin, win, hin, ptr_zero);
-        const float* block_inr0 = pre_din;
-        const float* block_inr1 = block_inr0 + in_len;
-        const float* block_inr2 = block_inr1 + in_len;
-        const float* block_inr3 = block_inr2 + in_len;
-        const float* block_inr4 = block_inr3 + in_len;
-        const float* block_inr5 = block_inr4 + in_len;
+        const float *block_inr0 = pre_din;
+        const float *block_inr1 = block_inr0 + in_len;
+        const float *block_inr2 = block_inr1 + in_len;
+        const float *block_inr3 = block_inr2 + in_len;
+        const float *block_inr4 = block_inr3 + in_len;
+        const float *block_inr5 = block_inr4 + in_len;
 
-        const float* weight_c = weights + c * w_stride;
+        const float *weight_c = weights + c * w_stride;
         float bias_local[4] = {0, 0, 0, 0};
         if (flag_bias) {
           bias_local[0] = bias[c];
@@ -131,15 +131,15 @@ void conv_depthwise_5x5s1_fp32(float* dout,
         }
         for (int hk = 0; hk < h_kernel; hk += hout_r_kernel) {
           int cnt = w_loop;
-          const float* inr0 = block_inr0;
-          const float* inr1 = block_inr1;
-          const float* inr2 = block_inr2;
-          const float* inr3 = block_inr3;
-          const float* inr4 = block_inr4;
-          const float* inr5 = block_inr5;
+          const float *inr0 = block_inr0;
+          const float *inr1 = block_inr1;
+          const float *inr2 = block_inr2;
+          const float *inr3 = block_inr3;
+          const float *inr4 = block_inr4;
+          const float *inr5 = block_inr5;
 
-          float* ptr_out0 = pre_out + hk * out_row_stride;
-          float* ptr_out1 = ptr_out0 + out_row_stride;
+          float *ptr_out0 = pre_out + hk * out_row_stride;
+          float *ptr_out1 = ptr_out0 + out_row_stride;
           // clang-format off
           auto wptr = weight_c;
           asm volatile(
@@ -447,10 +447,10 @@ void conv_depthwise_5x5s1_fp32(float* dout,
   }
 }
 #else  // __aarch64__
-void conv_depthwise_5x5s1_fp32(float* dout,
-                               const float* din,
-                               const float* weights,
-                               const float* bias,
+void conv_depthwise_5x5s1_fp32(float *dout,
+                               const float *din,
+                               const float *weights,
+                               const float *bias,
                                bool flag_bias,
                                bool flag_relu,
                                int num,
@@ -461,8 +461,8 @@ void conv_depthwise_5x5s1_fp32(float* dout,
                                int wout,
                                int padw,
                                int padh,
-                               const operators::ConvParam& param,
-                               ARMContext* ctx) {
+                               const operators::ConvParam &param,
+                               ARMContext *ctx) {
   const int threads = ctx->threads();
   int llc_size = ctx->llc_size() / 4;
   auto act_param = param.activation_param;
@@ -488,7 +488,7 @@ void conv_depthwise_5x5s1_fp32(float* dout,
 
   const int hin_r_block = hout_r_block + 4;
 
-  float* tmp_work_space = ctx->workspace_data<float>();
+  float *tmp_work_space = ctx->workspace_data<float>();
   float ptr_zero[win_round];  // NOLINT
   memset(ptr_zero, 0, sizeof(float) * win_round);
   float ptr_write[wout_round];  // NOLINT
@@ -498,7 +498,7 @@ void conv_depthwise_5x5s1_fp32(float* dout,
   pre_in_size = ROUNDUP(pre_in_size, 4);
   int pre_out_size = hout_c_block * hout_r_block * wout_round;
 
-  float* tmp_din = tmp_work_space;
+  float *tmp_din = tmp_work_space;
 
   int size_in_channel = win * hin;
   int size_out_channel = wout * hout;
@@ -511,8 +511,8 @@ void conv_depthwise_5x5s1_fp32(float* dout,
 
   int out_row_stride = hout_c_block * wout_round;
   for (int n = 0; n < num; ++n) {
-    const float* din_batch = din + n * chin * size_in_channel;
-    float* dout_batch = dout + n * chout * size_out_channel;
+    const float *din_batch = din + n * chin * size_in_channel;
+    float *dout_batch = dout + n * chout * size_out_channel;
     for (int h = 0; h < hout; h += hout_r_block) {
       int h_kernel = hout_r_block;
       if (h + hout_r_block > hout) {
@@ -524,22 +524,22 @@ void conv_depthwise_5x5s1_fp32(float* dout,
 #pragma omp parallel for num_threads(threads)
       for (int c = 0; c < chout; c += hout_c_block) {
 #ifdef ARM_WITH_OMP
-        float* pre_din =
+        float *pre_din =
             tmp_din + omp_get_thread_num() * (pre_in_size + pre_out_size);
-        float* pre_out = pre_din + pre_in_size;
+        float *pre_out = pre_din + pre_in_size;
 #else
-        float* pre_din = tmp_din;
-        float* pre_out = pre_din + pre_in_size;
+        float *pre_din = tmp_din;
+        float *pre_out = pre_din + pre_in_size;
 #endif
         prepack_input_nxwc4_dw(
             din_batch, pre_din, c, hs, he, ws, we, chin, win, hin, ptr_zero);
-        const float* block_inr0 = pre_din;
-        const float* block_inr1 = block_inr0 + in_len;
-        const float* block_inr2 = block_inr1 + in_len;
-        const float* block_inr3 = block_inr2 + in_len;
-        const float* block_inr4 = block_inr3 + in_len;
+        const float *block_inr0 = pre_din;
+        const float *block_inr1 = block_inr0 + in_len;
+        const float *block_inr2 = block_inr1 + in_len;
+        const float *block_inr3 = block_inr2 + in_len;
+        const float *block_inr4 = block_inr3 + in_len;
 
-        const float* weight_c = weights + c * w_stride;
+        const float *weight_c = weights + c * w_stride;
         float bias_local[4] = {0, 0, 0, 0};
         if (flag_bias) {
           bias_local[0] = bias[c];
@@ -549,13 +549,13 @@ void conv_depthwise_5x5s1_fp32(float* dout,
         }
         for (int hk = 0; hk < h_kernel; hk += hout_r_kernel) {
           int cnt = w_loop;
-          const float* inr0 = block_inr0;
-          const float* inr1 = block_inr1;
-          const float* inr2 = block_inr2;
-          const float* inr3 = block_inr3;
-          const float* inr4 = block_inr4;
+          const float *inr0 = block_inr0;
+          const float *inr1 = block_inr1;
+          const float *inr2 = block_inr2;
+          const float *inr3 = block_inr3;
+          const float *inr4 = block_inr4;
 
-          float* ptr_out0 = pre_out + hk * out_row_stride;
+          float *ptr_out0 = pre_out + hk * out_row_stride;
           // clang-format off
           auto wptr = weight_c;
           asm volatile(
@@ -757,6 +757,677 @@ void conv_depthwise_5x5s1_fp32(float* dout,
   }
 }
 #endif  // __aarch64__
+#define ACTUAL_PARAM \
+  dout, din, weights, bias, flag_bias, flag_relu, num, chin, win.wout, hout
+#define IN_PARAM                                                           \
+  float *dout, const float *din, const float *weights, const float *bias,  \
+      bool flag_bias, bool flag_relu, int num, int chin, int hin, int win, \
+      int hout, int wout
+#ifdef __aarch64__
+#define DIN_PTR_INIT               \
+  const float *din_ptr0 = dr0;     \
+  const float *din_ptr1 = dr1;     \
+  const float *din_ptr2 = dr2;     \
+  const float *din_ptr3 = dr3;     \
+  const float *din_ptr4 = dr4;     \
+  const float *din_ptr5 = dr5;     \
+  if (h + 5 > hin) {               \
+    switch (h + 5 - hin) {         \
+      case 5:                      \
+        din_ptr1 = zero_ptr;       \
+      case 4:                      \
+        din_ptr2 = zero_ptr;       \
+      case 3:                      \
+        din_ptr3 = zero_ptr;       \
+      case 2:                      \
+        din_ptr4 = zero_ptr;       \
+      case 1:                      \
+        din_ptr5 = zero_ptr;       \
+      default:                     \
+        break;                     \
+    }                              \
+  }                                \
+  float *doutr0 = dout_ptr;        \
+  float *doutr1 = dout_ptr + wout; \
+  if (h + 2 > hout) {              \
+    doutr1 = write_ptr;            \
+  }                                \
+  /* update in_address */          \
+  dr0 = dr2;                       \
+  dr1 = dr3;                       \
+  dr2 = dr4;                       \
+  dr3 = dr5;                       \
+  dr4 = dr3 + win;                 \
+  dr5 = dr4 + win;
+#define LEFT_COMPUTE_S1                             \
+  "PRFM PLDL1KEEP, [%[din_ptr0]]\n"                 \
+  "PRFM PLDL1KEEP, [%[din_ptr1]]\n"                 \
+  "PRFM PLDL1KEEP, [%[din_ptr2]]\n"                 \
+  "PRFM PLDL1KEEP, [%[din_ptr3]]\n"                 \
+  "PRFM PLDL1KEEP, [%[din_ptr4]]\n"                 \
+  "PRFM PLDL1KEEP, [%[din_ptr5]]\n"                 \
+  "ld1 {v0.4s}, [%[din_ptr0]], #16\n"               \
+  "ld1 {v2.4s}, [%[din_ptr1]], #16\n"               \
+  "ld1 {v4.4s}, [%[din_ptr2]], #16\n"               \
+  "ld1 {v6.4s}, [%[din_ptr3]], #16\n"               \
+  "ld1 {v1.4s}, [%[din_ptr0]]\n"                    \
+  "ld1 {v3.4s}, [%[din_ptr1]]\n"                    \
+  "ld1 {v5.4s}, [%[din_ptr2]]\n"                    \
+  "ld1 {v7.4s}, [%[din_ptr3]]\n"                    \
+  "ld1 {v30.4s} [%[bias_val]]\n"                    \
+  "ld1 {v31.4s} [%[bias_val]]\n" /* line 0 */       \
+  "ext v8.16b,  %[vzero].16b, v0.16b, #8\n"         \
+  "ext v12.16b, %[vzero].16b, v2.16b, #8\n"         \
+  "ext v9.16b,  %[vzero].16b, v0.16b, #12\n"        \
+  "ext v13.16b, %[vzero].16b, v2.16b, #12\n"        \
+  "ext v10.16b, v0.16b, v1.16b, #4\n"               \
+  "ext v14.16b, v2.16b, v3.16b, #4\n"               \
+  "fmla v30.4s, v8.4s,  %[w0].s[0]\n"               \
+  "fmla v31.4s, v12.4s, %[w0].s[0]\n"               \
+  "ext v11.16b, v0.16b, v1.16b, #8\n"               \
+  "ext v15.16b, v2.16b, v3.16b, #8\n"               \
+  "fmul v28.4s, v9.4s,  %[w0].s[1]\n"               \
+  "fmul v29.4s, v13.4s, %[w0].s[1]\n"               \
+  "ext v16.16b, %[vzero].16b, v4.16b, #8\n"         \
+  "ext v8.16b,  %[vzero].16b, v6.16b, #8\n"         \
+  "fmla v30.4s, v0.4s,  %[w0].s[2]\n"               \
+  "fmla v31.4s, v2.4s,  %[w0].s[2]\n"               \
+  "ext v17.16b, %[vzero].16b, v4.16b, #12\n"        \
+  "ext v9.16b,  %[vzero].16b, v6.16b, #12\n"        \
+  "fmla v28.4s, v10.4s, %[w0].s[3]\n"               \
+  "fmla v29.4s, v14.4s, %[w0].s[3]\n"               \
+  "ext v18.16b, v4.16b, v5.16b, #4\n"               \
+  "ext v10.16b, v6.16b, v7.16b, #4\n"               \
+  "fmla v30.4s, v11.4s,  %[w1].s[0]\n"              \
+  "fmla v31.4s, v15.4s,  %[w1].s[0]\n"              \
+  "ext v19.16b, v4.16b, v5.16b, #8\n"               \
+  "ext v11.16b, v6.16b, v7.16b, #8\n" /* line 1 */  \
+  "fmla v28.4s, v12.4s,  %[w1].s[1]\n"              \
+  "fmla v29.4s, v16.4s,  %[w1].s[1]\n"              \
+  "ld1 {v0.4s}, [%[din_ptr4]], #16\n"               \
+  "fmla v30.4s, v13.4s,  %[w1].s[2]\n"              \
+  "fmla v31.4s, v17.4s,  %[w1].s[2]\n"              \
+  "fmla v28.4s, v2.4s,   %[w1].s[3]\n"              \
+  "fmla v29.4s, v4.4s,   %[w1].s[3]\n"              \
+  "ld1 {v2.4s}, [%[din_ptr5]], #16\n"               \
+  "fmla v30.4s, v14.4s,  %[w2].s[0]\n"              \
+  "fmla v31.4s, v18.4s,  %[w2].s[0]\n"              \
+  "ld1 {v1.4s}, [%[din_ptr4]]\n"                    \
+  "fmla v28.4s, v15.4s,  %[w2].s[1]\n"              \
+  "fmla v29.4s, v19.4s,  %[w2].s[1]\n"              \
+  "ld1 {v3.4s}, [%[din_ptr5]]\n" /* line 2 */       \
+  "ext v12.16b, %[vzero].16b, v0.16b, #8\n"         \
+  "fmla v30.4s, v16.4s,  %[w2].s[2]\n"              \
+  "fmla v31.4s, v8.4s,   %[w2].s[2]\n"              \
+  "ext v13.16b, %[vzero].16b, v0.16b, #12\n"        \
+  "fmla v28.4s, v17.4s,  %[w2].s[3]\n"              \
+  "fmla v29.4s, v9.4s,   %[w2].s[3]\n"              \
+  "ext v14.16b, v0.16b, v1.16b, #4\n"               \
+  "fmla v30.4s, v4.4s,   %[w3].s[0]\n"              \
+  "fmla v31.4s, v6.4s,   %[w3].s[0]\n"              \
+  "ext v15.16b, v0.16b, v1.16b, #8\n"               \
+  "fmla v28.4s, v18.4s,  %[w3].s[1]\n"              \
+  "fmla v29.4s, v10.4s,  %[w3].s[1]\n"              \
+  "fmla v30.4s, v19.4s,  %[w3].s[2]\n"              \
+  "fmla v31.4s, v11.4s,  %[w3].s[2]\n" /* line 3 */ \
+  "fmla v28.4s, v8.4s,   %[w3].s[3]\n"              \
+  "fmla v29.4s, v12.4s,  %[w3].s[3]\n"              \
+  "fmla v30.4s, v9.4s,   %[w4].s[0]\n"              \
+  "fmla v31.4s, v13.4s,  %[w4].s[0]\n"              \
+  "ext v8.16b,  %[vzero].16b, v2.16b, #8\n"         \
+  "fmla v28.4s, v6.4s,   %[w4].s[1]\n"              \
+  "fmla v29.4s, v0.4s,   %[w4].s[1]\n"              \
+  "ext v9.16b,  %[vzero].16b, v2.16b, #12\n"        \
+  "fmla v30.4s, v10.4s,  %[w4].s[2]\n"              \
+  "fmla v31.4s, v14.4s,  %[w4].s[2]\n"              \
+  "ext v10.16b, v2.16b, v3.16b, #4\n"               \
+  "fmla v28.4s, v11.4s,  %[w4].s[3]\n"              \
+  "fmla v29.4s, v15.4s,  %[w4].s[3]\n"              \
+  "ext v11.16b, v2.16b, v3.16b, #8\n" /* line 4 */  \
+  "fmla v30.4s, v12.4s,  %[w5].s[0]\n"              \
+  "fmla v31.4s, v8.4s,   %[w5].s[0]\n"              \
+  "fmla v28.4s, v13.4s,  %[w5].s[1]\n"              \
+  "fmla v29.4s, v9.4s,   %[w5].s[1]\n"              \
+  "fmla v30.4s, v0.4s,   %[w5].s[2]\n"              \
+  "fmla v31.4s, v2.4s,   %[w5].s[2]\n"              \
+  "fmla v28.4s, v14.4s,  %[w5].s[3]\n"              \
+  "fmla v29.4s, v10.4s,  %[w5].s[3]\n"              \
+  "fmla v30.4s, v15.4s,  %[w6].s[0]\n"              \
+  "fmla v31.4s, v11.4s,  %[w6].s[0]\n"
+
+#define LEFT_RESULT_S1                \
+  "fadd  v18.4s, v28.4s, v30.4s\n"    \
+  "fadd  v19.4s, v29.4s, v31.4s\n"    \
+  "ld1 {v0.4s}, [%[din_ptr0]], #16\n" \
+  "ld1 {v2.4s}, [%[din_ptr1]], #16\n" \
+  "cmp %w[cnt], #1                \n" \
+  "ld1 {v4.4s}, [%[din_ptr2]], #16\n" \
+  "ld1 {v6.4s}, [%[din_ptr3]], #16\n" \
+  "st1 {v18.4s}, [%[doutr0]], #16\n"  \
+  "st1 {v19.4s}, [%[doutr1]], #16\n"  \
+  "blt 2f                         \n"
+
+#define LEFT_RESULT_S1_RELU            \
+  "fadd  v18.4s, v28.4s, v30.4s\n"     \
+  "fadd  v19.4s, v29.4s, v31.4s\n"     \
+  "ld1 {v0.4s}, [%[din_ptr0]], #16\n"  \
+  "ld1 {v2.4s}, [%[din_ptr1]], #16\n"  \
+  "cmp %w[cnt], #1                \n"  \
+  "fmax v18.4s, v18.4s, %[vzero].4s\n" \
+  "fmax v19.4s, v19.4s, %[vzero].4s\n" \
+  "ld1 {v4.4s}, [%[din_ptr2]], #16\n"  \
+  "ld1 {v6.4s}, [%[din_ptr3]], #16\n"  \
+  "st1 {v18.4s}, [%[doutr0]], #16\n"   \
+  "st1 {v19.4s}, [%[doutr1]], #16\n"   \
+  "blt 2f                         \n"
+
+#define LEFT_RESULT_S1_RELU6          \
+  "fadd  v18.4s, v28.4s, v30.4s\n"    \
+  "fadd  v19.4s, v29.4s, v31.4s\n"    \
+  "ld1 {v1.4s}, [%[six_ptr]]   \n"    \
+  "ld1 {v0.4s}, [%[din_ptr0]], #16\n" \
+  "ld1 {v2.4s}, [%[din_ptr1]], #16\n" \
+  "cmp %w[cnt], #1                \n" \
+  "fmax v18.4s, v18.4s, v1.4s\n"      \
+  "fmax v19.4s, v19.4s, v1.4s\n"      \
+  "ld1 {v4.4s}, [%[din_ptr2]], #16\n" \
+  "ld1 {v6.4s}, [%[din_ptr3]], #16\n" \
+  "st1 {v18.4s}, [%[doutr0]], #16\n"  \
+  "st1 {v19.4s}, [%[doutr1]], #16\n"  \
+  "blt 2f                         \n"
+
+#define COMPUTE_S1                                  \
+  "ld1 {v1.4s}, [%[din_ptr0]]\n"                    \
+  "ld1 {v3.4s}, [%[din_ptr1]]\n"                    \
+  "ld1 {v5.4s}, [%[din_ptr2]]\n"                    \
+  "ld1 {v7.4s}, [%[din_ptr3]]\n"                    \
+  "ld1 {v30.4s} [%[bias_val]]\n"                    \
+  "ld1 {v31.4s} [%[bias_val]]\n" /* line 0 */       \
+  "ext v8.16b,  v0.16b, v1.16b, #4\n"               \
+  "ext v12.16b, v2.16b, v3.16b, #4\n"               \
+  "fmul v28.4s, v0.4s,  %[w0].s[0]\n"               \
+  "fmul v29.4s, v2.4s,  %[w0].s[0]\n"               \
+  "ext v9.16b,  v0.16b, v1.16b, #8\n"               \
+  "ext v13.16b, v2.16b, v3.16b, #8\n"               \
+  "fmla v30.4s, v8.4s,  %[w0].s[1]\n"               \
+  "fmla v31.4s, v12.4s, %[w0].s[1]\n"               \
+  "ext v10.16b, v0.16b, v1.16b, #12\n"              \
+  "ext v14.16b, v2.16b, v3.16b, #12\n"              \
+  "fmla v28.4s, v9.4s,  %[w0].s[2]\n"               \
+  "fmla v29.4s, v13.4s, %[w0].s[2]\n"               \
+  "ext v11.16b, v4.16b, v5.16b, #4\n"               \
+  "ext v16.16b, v6.16b, v7.16b, #4\n"               \
+  "fmla v30.4s, v10.4s, %[w0].s[3]\n"               \
+  "fmla v31.4s, v14.4s, %[w0].s[3]\n"               \
+  "ext v15.16b, v4.16b, v5.16b, #8\n"               \
+  "ext v17.16b, v6.16b, v7.16b, #8\n"               \
+  "fmla v28.4s, v1.4s,  %[w1].s[0]\n"               \
+  "fmla v29.4s, v3.4s,  %[w1].s[0]\n"               \
+  "ext v19.16b, v4.16b, v5.16b, #12\n"              \
+  "ext v18.16b, v6.16b, v7.16b, #12\n" /* line 1 */ \
+  "fmla v30.4s, v2.4s,  %[w1].s[1]\n"               \
+  "fmla v31.4s, v4.4s,  %[w1].s[1]\n"               \
+  "ld1 {v0.4s}, [%[din_ptr4]], #16\n"               \
+  "ld1 {v2.4s}, [%[din_ptr5]], #16\n"               \
+  "fmla v28.4s, v12.4s, %[w1].s[2]\n"               \
+  "fmla v29.4s, v11.4s, %[w1].s[2]\n"               \
+  "fmla v30.4s, v13.4s, %[w1].s[3]\n"               \
+  "fmla v31.4s, v15.4s, %[w1].s[3]\n"               \
+  "ld1 {v1.4s}, [%[din_ptr4]]\n"                    \
+  "ld1 {v3.4s}, [%[din_ptr5]]\n"                    \
+  "fmla v28.4s, v14.4s, %[w2].s[0]\n"               \
+  "fmla v29.4s, v19.4s, %[w2].s[0]\n"               \
+  "fmla v30.4s, v3.4s,  %[w2].s[1]\n"               \
+  "fmla v31.4s, v5.4s,  %[w2].s[1]\n"               \
+  "ext v8.16b,  v0.16b, v1.16b, #4\n"               \
+  "ext v12.16b, v2.16b, v3.16b, #4\n" /* line 2 */  \
+  "fmla v28.4s, v4.4s,  %[w2].s[2]\n"               \
+  "fmla v29.4s, v6.4s,  %[w2].s[2]\n"               \
+  "ext v9.16b,  v0.16b, v1.16b, #8\n"               \
+  "ext v13.16b, v2.16b, v3.16b, #8\n"               \
+  "fmla v30.4s, v11.4s, %[w2].s[3]\n"               \
+  "fmla v31.4s, v16.4s, %[w2].s[3]\n"               \
+  "fmla v28.4s, v15.4s, %[w3].s[0]\n"               \
+  "fmla v29.4s, v17.4s, %[w3].s[0]\n"               \
+  "ext v10.16b, v0.16b, v1.16b, #12\n"              \
+  "ext v14.16b, v2.16b, v3.16b, #12\n"              \
+  "fmla v30.4s, v19.4s, %[w3].s[1]\n"               \
+  "fmla v31.4s, v18.4s, %[w3].s[1]\n"               \
+  "fmla v28.4s, v5.4s,  %[w3].s[2]\n"               \
+  "fmla v29.4s, v7.4s,  %[w3].s[2]\n" /* line 3 */  \
+  "fmla v30.4s, v6.4s,  %[w3].s[3]\n"               \
+  "fmla v31.4s, v0.4s,  %[w3].s[3]\n"               \
+  "fmla v28.4s, v16.4s, %[w4].s[0]\n"               \
+  "fmla v29.4s, v8.4s,  %[w4].s[0]\n"               \
+  "fmla v30.4s, v17.4s, %[w4].s[1]\n"               \
+  "fmla v31.4s, v9.4s,  %[w4].s[1]\n"               \
+  "fmla v28.4s, v18.4s, %[w4].s[2]\n"               \
+  "fmla v29.4s, v10.4s, %[w4].s[2]\n"               \
+  "fmla v30.4s, v7.4s,  %[w4].s[3]\n"               \
+  "fmla v31.4s, v1.4s,  %[w4].s[3]\n" /* line 4 */  \
+  "fmla v28.4s, v0.4s,  %[w5].s[0]\n"               \
+  "fmla v29.4s, v2.4s,  %[w5].s[0]\n"               \
+  "fmla v30.4s, v8.4s,  %[w5].s[1]\n"               \
+  "fmla v31.4s, v12.4s, %[w5].s[1]\n"               \
+  "fmla v28.4s, v9.4s,  %[w5].s[2]\n"               \
+  "fmla v29.4s, v13.4s, %[w5].s[2]\n"               \
+  "fmla v30.4s, v10.4s, %[w5].s[3]\n"               \
+  "fmla v31.4s, v14.4s, %[w5].s[3]\n"               \
+  "fmla v28.4s, v1.4s,  %[w6].s[0]\n"               \
+  "fmla v29.4s, v3.4s,  %[w6].s[0]\n"
+
+#define MID_COMPITE_S1 "1:                             \n" COMPUTE_S1
+#define MID_RESULT_S1                 \
+  "fadd  v18.4s, v28.4s, v30.4s\n"    \
+  "fadd  v19.4s, v29.4s, v31.4s\n"    \
+  "subs %w[cnt], %w[cnt], #1      \n" \
+  "ld1 {v0.4s}, [%[din_ptr0]], #16\n" \
+  "ld1 {v2.4s}, [%[din_ptr1]], #16\n" \
+  "ld1 {v4.4s}, [%[din_ptr2]], #16\n" \
+  "ld1 {v6.4s}, [%[din_ptr3]], #16\n" \
+  "st1 {v18.4s}, [%[doutr0]], #16\n"  \
+  "st1 {v19.4s}, [%[doutr1]], #16\n"  \
+  "bne 1b                         \n"
+
+#define MID_RESULT_S1_RELU             \
+  "fadd  v18.4s, v28.4s, v30.4s\n"     \
+  "fadd  v19.4s, v29.4s, v31.4s\n"     \
+  "subs %w[cnt], %w[cnt], #1      \n"  \
+  "ld1 {v0.4s}, [%[din_ptr0]], #16\n"  \
+  "ld1 {v2.4s}, [%[din_ptr1]], #16\n"  \
+  "fmax v18.4s, v18.4s, %[vzero].4s\n" \
+  "fmax v19.4s, v19.4s, %[vzero].4s\n" \
+  "ld1 {v4.4s}, [%[din_ptr2]], #16\n"  \
+  "ld1 {v6.4s}, [%[din_ptr3]], #16\n"  \
+  "st1 {v18.4s}, [%[doutr0]], #16\n"   \
+  "st1 {v19.4s}, [%[doutr1]], #16\n"   \
+  "bne 1b                         \n"
+
+#define MID_RESULT_S1_RELU6           \
+  "fadd  v18.4s, v28.4s, v30.4s\n"    \
+  "fadd  v19.4s, v29.4s, v31.4s\n"    \
+  "ld1 {v1.4s}, [%[six_ptr]]   \n"    \
+  "subs %w[cnt], %w[cnt], #1      \n" \
+  "ld1 {v0.4s}, [%[din_ptr0]], #16\n" \
+  "ld1 {v2.4s}, [%[din_ptr1]], #16\n" \
+  "fmax v18.4s, v18.4s, v1.4s\n"      \
+  "fmax v19.4s, v19.4s, v1.4s\n"      \
+  "ld1 {v4.4s}, [%[din_ptr2]], #16\n" \
+  "ld1 {v6.4s}, [%[din_ptr3]], #16\n" \
+  "st1 {v18.4s}, [%[doutr0]], #16\n"  \
+  "st1 {v19.4s}, [%[doutr1]], #16\n"  \
+  "bne 1b                         \n"
+
+#define RIGHT_COMPUTE_S1                             \
+  "2:                             \n"                \
+  "cmp %w[remain], #1             \n"                \
+  "sub %[din_ptr0], %[din_ptr0], %[right_pad_num]\n" \
+  "sub %[din_ptr1], %[din_ptr1], %[right_pad_num]\n" \
+  "sub %[din_ptr2], %[din_ptr2], %[right_pad_num]\n" \
+  "sub %[din_ptr3], %[din_ptr3], %[right_pad_num]\n" \
+  "sub %[din_ptr4], %[din_ptr4], %[right_pad_num]\n" \
+  "sub %[din_ptr5], %[din_ptr5], %[right_pad_num]\n" \
+  "blt 3f                         \n"                \
+  "ld1 {v0.4s}, [%[din_ptr0]], #16\n"                \
+  "ld1 {v2.4s}, [%[din_ptr1]], #16\n"                \
+  "ld1 {v4.4s}, [%[din_ptr2]], #16\n"                \
+  "ld1 {v6.4s}, [%[din_ptr3]], #16\n"                \
+  "sub %[doutr0], %[doutr0], %[right_pad_num]\n"     \
+  "sub %[doutr1], %[doutr1], %[right_pad_num]\n" COMPUTE_S1
+
+#define RIGHT_RESULT_S1              \
+  "fadd  v18.4s, v28.4s, v30.4s\n"   \
+  "fadd  v19.4s, v29.4s, v31.4s\n"   \
+  "st1 {v18.4s}, [%[doutr0]], #16\n" \
+  "st1 {v19.4s}, [%[doutr1]], #16\n" \
+  "3:                             \n"
+
+#define RIGHT_RESULT_S1_RELU           \
+  "fadd  v18.4s, v28.4s, v30.4s\n"     \
+  "fadd  v19.4s, v29.4s, v31.4s\n"     \
+  "fmax v18.4s, v18.4s, %[vzero].4s\n" \
+  "fmax v19.4s, v19.4s, %[vzero].4s\n" \
+  "st1 {v18.4s}, [%[doutr0]], #16\n"   \
+  "st1 {v19.4s}, [%[doutr1]], #16\n"   \
+  "3:                             \n"
+
+#define RIGHT_RESULT_S1              \
+  "ld1 {v1.4s}, [%[six_ptr]]   \n"   \
+  "fadd  v18.4s, v28.4s, v30.4s\n"   \
+  "fadd  v19.4s, v29.4s, v31.4s\n"   \
+  "st1 {v18.4s}, [%[doutr0]], #16\n" \
+  "st1 {v19.4s}, [%[doutr1]], #16\n" \
+  "fmax v18.4s, v18.4s, v1.4s\n"     \
+  "fmax v19.4s, v19.4s, v1.4s\n"     \
+  "3:                             \n"
+
+#else
+#define DIN_PTR_INIT           \
+  const float *din_ptr0 = dr0; \
+  const float *din_ptr1 = dr1; \
+  const float *din_ptr2 = dr2; \
+  const float *din_ptr3 = dr3; \
+  const float *din_ptr4 = dr4; \
+  float *doutr0 = dout_ptr;    \
+  if (h + 4 > hin) {           \
+    switch (h + 4 - hin) {     \
+      case 4:                  \
+        din_ptr1 = zero_ptr;   \
+      case 3:                  \
+        din_ptr2 = zero_ptr;   \
+      case 2:                  \
+        din_ptr3 = zero_ptr;   \
+      case 1:                  \
+        din_ptr4 = zero_ptr;   \
+      default:                 \
+        break;                 \
+    }                          \
+  }                            \
+  /* update in_address */      \
+  dr0 = dr2;                   \
+  dr1 = dr3;                   \
+  dr2 = dr4;                   \
+  dr3 = dr5;                   \
+  dr4 = dr3 + win;
+#define LEFT_COMPUTE_S1
+
+#define LEFT_RESULT_S1 #define LEFT_RESULT_S1_RELU #define LEFT_RESULT_S1_RELU6
+
+#define COMPUTE_S1
+
+#define MID_COMPITE_S1
+
+#define MID_RESULT_S1 #define MID_RESULT_S1_RELU #define MID_RESULT_S1_RELU6
+
+#define RIGHT_COMPUTE_S1
+
+#define RIGHT_RESULT_S1 \
+  #define RIGHT_RESULT_S1_RELU #define RIGHT_RESULT_S1_RELU6
+
+#endif
+void conv_depthwise_5x5s1p2_fp32_relu(IN_PARAM, ARMContext *ctx) {
+  float *zero_ptr = ctx->workspace_data<float>();
+  memset(zero_ptr, 0, win * sizeof(float));
+  float *write_ptr = zero_ptr + win;
+  int size_in_channel = win * hin;
+  int size_out_channel = wout * hout;
+  int tile_w = wout >> 2;
+  int remain = wout & 3;
+  int w_stride = 25;
+  int cnt_col = tile_w - 1;
+  int right_remain = win - 2 - (cnt_col << 2);
+  int right_pad_num = 0;
+  if (right_remain >= 8) {
+    cnt_col++;
+    remain = 0;
+  } else {
+    right_pad_num = (8 - right_remain) * 4;
+  }
+  for (int n = 0; n < num; ++n) {
+    const float *din_batch = din + n * chin * size_in_channel;
+    float *dout_batch = dout + n * chin * size_out_channel;
+    LITE_PARALLEL_BEGIN(c, tid, chin) {
+      float *dout_ptr = dout_batch + c * size_out_channel;
+      const float *din_ch_ptr = din_batch + c * size_in_channel;
+      float bias_val = flag_bias ? bias[c] : 0.f;
+      float vbias[4] = {bias_val, bias_val, bias_val, bias_val};
+      const float *wei_ptr = weights + c * w_stride;
+      const float *dr0 = zero_ptr;
+      const float *dr1 = zero_ptr;
+      const float *dr2 = din_ch_ptr;
+      const float *dr3 = dr2 + win;
+      const float *dr4 = dr3 + win;
+      const float *dr5 = dr4 + win;
+      float32x4_t w0 = vld1q_f32(wei_ptr);
+      float32x4_t w1 = vld1q_f32(wei_ptr + 4);
+      float32x4_t w2 = vld1q_f32(wei_ptr + 8);
+      float32x4_t w3 = vld1q_f32(wei_ptr + 12);
+      float32x4_t w4 = vld1q_f32(wei_ptr + 16);
+      float32x4_t w5 = vld1q_f32(wei_ptr + 20);
+      float32x4_t w6 = vdupq_f32(wei_ptr[24]);
+#ifdef __aarch64__
+      float32x4_t vzero = vdupq_n_f32(0.f);
+      for (int h = 0; h < hout; h += 2) {
+        DIN_PTR_INIT
+        int cnt = cnt_col;
+        asm volatile(
+          LEFT_COMPUTE_S1 LEFT_RESULT_S1_RELU
+          MID_COMPITE_S1 MID_RESULT_S1_RELU
+          RIGHT_COMPUTE_S1 RIGHT_RESULT_S1_RELU
+          : [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), [din_ptr2] "+r"(din_ptr2),
+            [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), [din_ptr5] "+r"(din_ptr5),
+            [doutr0] "+r"(doutr0), [doutr1] "+r"(doutr1), [cnt] "+r"(cnt)
+          : [w0] "w"(w0), [w1] "w"(w1), [w2] "w"(w2), [w3] "w"(w3), [w4] "w"(w4), [w5] "w"(w5),
+            [w6] "w"(w6), [vzero] "w"(vzero), [bias_val] "r"(vbias], [right_pad_num] "r"(right_pad_num), [remain] "r"(remain)
+          : "cc","memory", "v0","v1","v2","v3","v4","v5","v6","v7",
+            "v8","v9","v10","v11","v12","v13", "v14","v15","v16","v17","v18","v19",
+            "v28","v29","v30","v31"
+        );
+        dout_ptr += 2 * wout;
+      }
+#else
+      for (int h = 0; h < hout; h++) {
+        DIN_PTR_INIT
+        int cnt = (cnt_col << 2 + remain);
+        asm volatile(
+          LEFT_COMPUTE_S1 LEFT_RESULT_S1_RELU
+          MID_COMPITE_S1 MID_RESULT_S1_RELU
+          RIGHT_COMPUTE_S1 RIGHT_RESULT_S1_RELU
+          : [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), [din_ptr2] "+r"(din_ptr2),
+            [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4),
+            [doutr0] "+r"(doutr0), [cnt] "+r"(cnt)
+          : [w0] "w"(w0), [w1] "w"(w1), [w2] "w"(w2), [w3] "w"(w3), [w4] "w"(w4), [w5] "w"(w5),
+            [w6] "w"(w6), [bias_val] "r"(vbias], [right_pad_num] "r"(right_pad_num)
+          : "cc","memory", "q7", "q8","q9","q10","q11","q12","q13", "q14","q15"
+        );
+        dout_ptr += wout;
+      }
+#endif
+    }
+    LITE_PARALLEL_END();
+  }
+}
+void conv_depthwise_5x5s1p2_fp32_relu6(IN_PARAM, float six, ARMContext *ctx) {
+  float *zero_ptr = ctx->workspace_data<float>();
+  memset(zero_ptr, 0, win * sizeof(float));
+  float *write_ptr = zero_ptr + win;
+  int size_in_channel = win * hin;
+  int size_out_channel = wout * hout;
+  int tile_w = wout >> 2;
+  int remain = wout & 3;
+  int w_stride = 25;
+  int cnt_col = tile_w - 1;
+  int right_remain = win - 2 - (cnt_col << 2);
+  int right_pad_num = 0;
+  if (right_remain >= 8) {
+    cnt_col++;
+    remain = 0;
+  } else {
+    right_pad_num = (8 - right_remain) * 4;
+  }
+  float six_val[4] = {six, six, six, six};
+  for (int n = 0; n < num; ++n) {
+    const float *din_batch = din + n * chin * size_in_channel;
+    float *dout_batch = dout + n * chin * size_out_channel;
+    LITE_PARALLEL_BEGIN(c, tid, chin) {
+      float *dout_ptr = dout_batch + c * size_out_channel;
+      const float *din_ch_ptr = din_batch + c * size_in_channel;
+      float bias_val = flag_bias ? bias[c] : 0.f;
+      const float *wei_ptr = weights + c * w_stride;
+      const float *dr0 = zero_ptr;
+      const float *dr1 = zero_ptr;
+      const float *dr2 = din_ch_ptr;
+      const float *dr3 = dr2 + win;
+      const float *dr4 = dr3 + win;
+      const float *dr5 = dr4 + win;
+      float32x4_t w0 = vld1q_f32(wei_ptr);
+      float32x4_t w1 = vld1q_f32(wei_ptr + 4);
+      float32x4_t w2 = vld1q_f32(wei_ptr + 8);
+      float32x4_t w3 = vld1q_f32(wei_ptr + 12);
+      float32x4_t w4 = vld1q_f32(wei_ptr + 16);
+      float32x4_t w5 = vld1q_f32(wei_ptr + 20);
+      float32x4_t w6 = vdupq_f32(wei_ptr[24]);
+#ifdef __aarch64__
+      float32x4_t vzero = vdupq_n_f32(0.f);
+      float vbias[4] = {bias_val, bias_val, bias_val, bias_val};
+      for (int h = 0; h < hout; h += 2) {
+        DIN_PTR_INIT
+        int cnt = cnt_col;
+        asm volatile(
+          LEFT_COMPUTE_S1 LEFT_RESULT_S1_RELU6
+          MID_COMPITE_S1 MID_RESULT_S1_RELU6
+          RIGHT_COMPUTE_S1 RIGHT_RESULT_S1_RELU6
+          : [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), [din_ptr2] "+r"(din_ptr2),
+            [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), [din_ptr5] "+r"(din_ptr5),
+            [doutr0] "+r"(doutr0), [doutr1] "+r"(doutr1), [cnt] "+r"(cnt)
+          : [w0] "w"(w0), [w1] "w"(w1), [w2] "w"(w2), [w3] "w"(w3), [w4] "w"(w4), [w5] "w"(w5),
+            [w6] "w"(w6), [vzero] "w"(vzero), [bias_val] "r"(vbias],
+            [right_pad_num] "r"(right_pad_num), [remain] "r"(remain), [six_ptr] "r"(six_val)
+          : "cc","memory", "v0","v1","v2","v3","v4","v5","v6","v7",
+            "v8","v9","v10","v11","v12","v13", "v14","v15","v16","v17","v18","v19",
+            "v28","v29","v30","v31"
+        );
+        dout_ptr += 2 * wout;
+      }
+#else
+      float vbias[8] = {
+          bias_val, bias_val, bias_val, bias_val, six, six, six, six};
+      for (int h = 0; h < hout; h++) {
+        DIN_PTR_INIT
+        int cnt = (cnt_col << 2 + remain);
+        asm volatile(
+          LEFT_COMPUTE_S1 LEFT_RESULT_S1_RELU6
+          MID_COMPITE_S1 MID_RESULT_S1_RELU6
+          RIGHT_COMPUTE_S1 RIGHT_RESULT_S1_RELU6
+          : [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), [din_ptr2] "+r"(din_ptr2),
+            [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4),
+            [doutr0] "+r"(doutr0), [cnt] "+r"(cnt)
+          : [w0] "w"(w0), [w1] "w"(w1), [w2] "w"(w2), [w3] "w"(w3), [w4] "w"(w4), [w5] "w"(w5),
+            [w6] "w"(w6), [bias_val] "r"(vbias], [right_pad_num] "r"(right_pad_num)
+          : "cc","memory", "q7", "q8","q9","q10","q11","q12","q13", "q14","q15"
+        );
+        dout_ptr += wout;
+      }
+#endif
+    }
+    LITE_PARALLEL_END();
+  }
+}
+void conv_depthwise_5x5s1p2_fp32(float *dout,
+                                 const float *din,
+                                 const float *weights,
+                                 const float *bias,
+                                 bool flag_bias,
+                                 bool flag_relu,
+                                 int num,
+                                 int chin,
+                                 int hin,
+                                 int win,
+                                 int hout,
+                                 int wout,
+                                 int padw,
+                                 int padh,
+                                 const operators::ConvParam &param,
+                                 ARMContext *ctx) {
+  auto act_param = param.activation_param;
+  bool has_active = act_param.has_active;
+  auto act_type = act_param.active_type;
+  if (has_active) {
+    if (act_type == lite_api::ActivationType::kRelu) {
+      conv_depthwise_5x5s1p2_fp32_relu(ACTUAL_PARAM, ctx);
+    } else if (act_type == lite_api::ActivationType::kRelu6) {
+      conv_depthwise_5x5s1p2_fp32_relu6(
+          ACTUAL_PARAM, act_param.Relu_clipped_coef, ctx);
+    } else {
+      LOG(FATAL) << "this act_type: " << static_cast<int>(act_type)
+                 << " fuse not support";
+    }
+  } else {
+    float *zero_ptr = ctx->workspace_data<float>();
+    memset(zero_ptr, 0, win * sizeof(float));
+    float *write_ptr = zero_ptr + win;
+    int size_in_channel = win * hin;
+    int size_out_channel = wout * hout;
+    int tile_w = wout >> 2;
+    int remain = wout & 3;
+    int w_stride = 25;
+    int cnt_col = tile_w - 1;
+    int right_remain = win - 2 - (cnt_col << 2);
+    int right_pad_num = 0;
+    if (right_remain >= 8) {
+      cnt_col++;
+      remain = 0;
+    } else {
+      right_pad_num = (8 - right_remain) * 4;
+    }
+    for (int n = 0; n < num; ++n) {
+      const float *din_batch = din + n * chin * size_in_channel;
+      float *dout_batch = dout + n * chin * size_out_channel;
+      LITE_PARALLEL_BEGIN(c, tid, chin) {
+        float *dout_ptr = dout_batch + c * size_out_channel;
+        const float *din_ch_ptr = din_batch + c * size_in_channel;
+        float bias_val = flag_bias ? bias[c] : 0.f;
+        float vbias[4] = {bias_val, bias_val, bias_val, bias_val};
+        const float *wei_ptr = weights + c * w_stride;
+        const float *dr0 = zero_ptr;
+        const float *dr1 = zero_ptr;
+        const float *dr2 = din_ch_ptr;
+        const float *dr3 = dr2 + win;
+        const float *dr4 = dr3 + win;
+        const float *dr5 = dr4 + win;
+        float32x4_t w0 = vld1q_f32(wei_ptr);
+        float32x4_t w1 = vld1q_f32(wei_ptr + 4);
+        float32x4_t w2 = vld1q_f32(wei_ptr + 8);
+        float32x4_t w3 = vld1q_f32(wei_ptr + 12);
+        float32x4_t w4 = vld1q_f32(wei_ptr + 16);
+        float32x4_t w5 = vld1q_f32(wei_ptr + 20);
+        float32x4_t w6 = vdupq_f32(wei_ptr[24]);
+#ifdef __aarch64__
+        float32x4_t vzero = vdupq_n_f32(0.f);
+        for (int h = 0; h < hout; h += 2) {
+          DIN_PTR_INIT
+          int cnt = cnt_col;
+          asm volatile(
+            LEFT_COMPUTE_S1 LEFT_RESULT_S1
+            MID_COMPITE_S1 MID_RESULT_S1
+            RIGHT_COMPUTE_S1 RIGHT_RESULT_S1
+            : [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), [din_ptr2] "+r"(din_ptr2),
+              [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), [din_ptr5] "+r"(din_ptr5),
+              [doutr0] "+r"(doutr0), [doutr1] "+r"(doutr1), [cnt] "+r"(cnt)
+            : [w0] "w"(w0), [w1] "w"(w1), [w2] "w"(w2), [w3] "w"(w3), [w4] "w"(w4), [w5] "w"(w5),
+              [w6] "w"(w6), [vzero] "w"(vzero), [bias_val] "r"(vbias], [right_pad_num] "r"(right_pad_num), [remain] "r"(remain)
+            : "cc","memory", "v0","v1","v2","v3","v4","v5","v6","v7",
+              "v8","v9","v10","v11","v12","v13", "v14","v15","v16","v17","v18","v19",
+              "v28","v29","v30","v31"
+          );
+          dout_ptr += 2 * wout;
+        }
+#else
+        for (int h = 0; h < hout; h++) {
+          DIN_PTR_INIT
+          int cnt = (cnt_col << 2 + remain);
+          asm volatile(
+            LEFT_COMPUTE_S1 LEFT_RESULT_S1
+            MID_COMPITE_S1 MID_RESULT_S1
+            RIGHT_COMPUTE_S1 RIGHT_RESULT_S1
+            : [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), [din_ptr2] "+r"(din_ptr2),
+              [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4),
+              [doutr0] "+r"(doutr0), [cnt] "+r"(cnt)
+            : [w0] "w"(w0), [w1] "w"(w1), [w2] "w"(w2), [w3] "w"(w3), [w4] "w"(w4), [w5] "w"(w5),
+              [w6] "w"(w6), [bias_val] "r"(vbias], [right_pad_num] "r"(right_pad_num)
+            : "cc","memory", "q7", "q8","q9","q10","q11","q12","q13", "q14","q15"
+          );
+          dout_ptr += wout;
+        }
+#endif
+      }
+      LITE_PARALLEL_END();
+    }
+  }
+}
+#undef DIN_PTR_INIT
+#undef IN_PARAM
+#undef ACTUAL_PARAM
 }  // namespace math
 }  // namespace arm
 }  // namespace lite
