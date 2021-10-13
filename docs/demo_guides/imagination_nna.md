@@ -195,13 +195,13 @@ Paddle Lite已支持Imagination NNA的预测部署。
 - 参考[模型转化方法](../user_guides/model_optimize_tool)，利用opt工具转换生成Imagination NNA模型，仅需要将valid_targets设置为imagination_nna,arm即可。
 
   ```shell
-  $ ./opt --model_dir=mobilenet_v1_int8_224_for_imagination_nna_fluid \
+  $ ./opt --model_dir=mobilenet_v1_int8_224_per_layer \
       --optimize_out_type=naive_buffer \
       --optimize_out=opt_model \
       --valid_targets=imagination_nna,arm
   
   替换自带的Imagination NNA模型
-  $ cp opt_model.nb mobilenet_v1_int8_224_for_imagination_nna/model.nb
+  $ cp opt_model.nb mobilenet_v1_int8_224_per_layer/model.nb
   ```
 
 - 注意：opt生成的模型只是标记了Imagination NNA支持的Paddle算子，并没有真正生成Imagination NNA模型，只有在执行时才会将标记的Paddle算子转成Imagination DNN APIs，最终生成并执行模型。
