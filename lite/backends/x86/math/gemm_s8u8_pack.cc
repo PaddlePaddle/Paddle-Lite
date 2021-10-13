@@ -27,8 +27,7 @@ namespace math {
 
 typedef long long int __int64;  // NOLINT
 
-// *********************************** PrePack A
-// *******************************************
+// PrePack A
 #define TRANSPOSEA_4x16                                            \
   vec_12 = _mm_unpacklo_epi8(vec_line[0], vec_line[1]);            \
   vec_23 = _mm_unpacklo_epi8(vec_line[2], vec_line[3]);            \
@@ -326,8 +325,7 @@ void packA_i8_trans(int M, int K, const int8_t *AA, int8_t *pack_A) {
   }
 }
 
-// ********************************** runtime Pack B
-// **************************************
+// runtime Pack B
 /*
 Attention:
 1. B need to add 128 during packing, transfering from int8 to uint8.
@@ -598,62 +596,72 @@ void packB_i82u8_notrans(
 
   for (loop_n = 0; loop_n + 31 < N; loop_n += 32) {
     for (loop_k = 0; loop_k + 3 < K; loop_k += 4) {
-      LOAD_32
-      TRANSPOSE_4x32 STORE_4x32
+      LOAD_32;
+      TRANSPOSE_4x32;
+      STORE_4x32;
     }
     remain_k = K - loop_k;
     if (remain_k > 0) {
-      LOAD_REMAIN(remain_k)
-      TRANSPOSE_4x32 STORE_4x32
+      LOAD_REMAIN(remain_k);
+      TRANSPOSE_4x32;
+      STORE_4x32;
     }
   }
   for (; loop_n + 23 < N; loop_n += 24) {
     for (loop_k = 0; loop_k + 3 < K; loop_k += 4) {
-      LOAD_EPI64(24)
-      TRANSPOSE_4x32 STORE_4x24
+      LOAD_EPI64(24);
+      TRANSPOSE_4x32;
+      STORE_4x24;
     }
     remain_k = K - loop_k;
     if (remain_k > 0) {
-      LOAD_REMAIN_EPI64(remain_k, 24)
-      TRANSPOSE_4x32 STORE_4x24
+      LOAD_REMAIN_EPI64(remain_k, 24);
+      TRANSPOSE_4x32;
+      STORE_4x24;
     }
   }
   for (; loop_n + 15 < N; loop_n += 16) {
     for (loop_k = 0; loop_k + 3 < K; loop_k += 4) {
-      LOAD_EPI64(16)
-      TRANSPOSE_4x32 STORE_4x16
+      LOAD_EPI64(16);
+      TRANSPOSE_4x32;
+      STORE_4x16;
     }
     remain_k = K - loop_k;
     if (remain_k > 0) {
       LOAD_REMAIN_EPI64(remain_k, 16);
-      TRANSPOSE_4x32 STORE_4x16
+      TRANSPOSE_4x32;
+      STORE_4x16;
     }
   }
   for (; loop_n + 7 < N; loop_n += 8) {
     for (loop_k = 0; loop_k + 3 < K; loop_k += 4) {
-      LOAD_EPI64(8)
-      TRANSPOSE_4x32 STORE_4x8
+      LOAD_EPI64(8);
+      TRANSPOSE_4x32;
+      STORE_4x8;
     }
     remain_k = K - loop_k;
     if (remain_k > 0) {
       LOAD_REMAIN_EPI64(remain_k, 8);
-      TRANSPOSE_4x32 STORE_4x8
+      TRANSPOSE_4x32;
+      STORE_4x8;
     }
   }
   for (; loop_n + 3 < N; loop_n += 4) {
     for (loop_k = 0; loop_k + 3 < K; loop_k += 4) {
-      LOAD_EPI32(4)
-      TRANSPOSE_4x32 STORE_4x4
+      LOAD_EPI32(4);
+      TRANSPOSE_4x32;
+      STORE_4x4;
     }
     remain_k = K - loop_k;
     if (remain_k > 0) {
       LOAD_REMAIN_EPI32(remain_k, 4);
-      TRANSPOSE_4x32 STORE_4x4
+      TRANSPOSE_4x32;
+      STORE_4x4;
     }
   }
   for (; loop_n + 1 < N; loop_n += 2) {
     for (loop_k = 0; loop_k + 3 < K; loop_k += 4) {
-      LOAD_REMAIN(0)
+      LOAD_REMAIN(0);
       vec_ptr[0][0] = *(b_ptr + loop_k * stride + loop_n);
       vec_ptr[0][1] = *(b_ptr + loop_k * stride + loop_n + 1);
       vec_ptr[1][0] = *(b_ptr + (loop_k + 1) * stride + loop_n);
@@ -662,7 +670,8 @@ void packB_i82u8_notrans(
       vec_ptr[2][1] = *(b_ptr + (loop_k + 2) * stride + loop_n + 1);
       vec_ptr[3][0] = *(b_ptr + (loop_k + 3) * stride + loop_n);
       vec_ptr[3][1] = *(b_ptr + (loop_k + 3) * stride + loop_n + 1);
-      TRANSPOSE_4x32 STORE_4x2
+      TRANSPOSE_4x32;
+      STORE_4x2;
     }
     remain_k = K - loop_k;
     if (remain_k > 0) {
@@ -671,17 +680,19 @@ void packB_i82u8_notrans(
         vec_ptr[i][0] = *(b_ptr + (loop_k + i) * stride + loop_n);
         vec_ptr[i][1] = *(b_ptr + (loop_k + i) * stride + loop_n + 1);
       }
-      TRANSPOSE_4x32 STORE_4x2
+      TRANSPOSE_4x32;
+      STORE_4x2;
     }
   }
   for (; loop_n < N; loop_n++) {
     for (loop_k = 0; loop_k + 3 < K; loop_k += 4) {
-      LOAD_REMAIN(0)
+      LOAD_REMAIN(0);
       vec_ptr[0][0] = *(b_ptr + loop_k * stride + loop_n);
       vec_ptr[1][0] = *(b_ptr + (loop_k + 1) * stride + loop_n);
       vec_ptr[2][0] = *(b_ptr + (loop_k + 2) * stride + loop_n);
       vec_ptr[3][0] = *(b_ptr + (loop_k + 3) * stride + loop_n);
-      TRANSPOSE_4x32 STORE_4x1
+      TRANSPOSE_4x32;
+      STORE_4x1;
     }
     remain_k = K - loop_k;
     if (remain_k > 0) {
@@ -689,7 +700,8 @@ void packB_i82u8_notrans(
       for (int i = 0; i < remain_k; i++) {
         vec_ptr[i][0] = *(b_ptr + (loop_k + i) * stride + loop_n);
       }
-      TRANSPOSE_4x32 STORE_4x1
+      TRANSPOSE_4x32;
+      STORE_4x1;
     }
   }
 }
@@ -893,139 +905,180 @@ void packB_i82u8_trans(
 
   for (loop_n = 0; loop_n + 31 < N; loop_n += 32) {
     for (loop_k = 0; loop_k + 15 < K; loop_k += 16) {
-      TRANSPOSE_4x16(loop_n, 0, 128) TRANSPOSE_4x16((loop_n + 4), 1, 128)
-          TRANSPOSE_4x16((loop_n + 8), 2, 128) TRANSPOSE_4x16(
-              (loop_n + 12), 3, 128) TRANSPOSE_4x16((loop_n + 16), 4, 128)
-              TRANSPOSE_4x16((loop_n + 20), 5, 128)
-                  TRANSPOSE_4x16((loop_n + 24), 6, 128)
-                      TRANSPOSE_4x16((loop_n + 28), 7, 128) out_ptr += 32 * 16;
+      TRANSPOSE_4x16(loop_n, 0, 128);
+      TRANSPOSE_4x16((loop_n + 4), 1, 128);
+      TRANSPOSE_4x16((loop_n + 8), 2, 128);
+      TRANSPOSE_4x16((loop_n + 12), 3, 128);
+      TRANSPOSE_4x16((loop_n + 16), 4, 128);
+      TRANSPOSE_4x16((loop_n + 20), 5, 128);
+      TRANSPOSE_4x16((loop_n + 24), 6, 128);
+      TRANSPOSE_4x16((loop_n + 28), 7, 128);
+      out_ptr += 32 * 16;
     }
     for (; loop_k + 7 < K; loop_k += 8) {
-      TRANSPOSE_4x8(loop_n, 0, 128) TRANSPOSE_4x8((loop_n + 4), 1, 128)
-          TRANSPOSE_4x8((loop_n + 8), 2, 128) TRANSPOSE_4x8(
-              (loop_n + 12), 3, 128) TRANSPOSE_4x8((loop_n + 16), 4, 128)
-              TRANSPOSE_4x8((loop_n + 20), 5, 128)
-                  TRANSPOSE_4x8((loop_n + 24), 6, 128)
-                      TRANSPOSE_4x8((loop_n + 28), 7, 128) out_ptr += 32 * 8;
+      TRANSPOSE_4x8(loop_n, 0, 128);
+      TRANSPOSE_4x8((loop_n + 4), 1, 128);
+      TRANSPOSE_4x8((loop_n + 8), 2, 128);
+      TRANSPOSE_4x8((loop_n + 12), 3, 128);
+      TRANSPOSE_4x8((loop_n + 16), 4, 128);
+      TRANSPOSE_4x8((loop_n + 20), 5, 128);
+      TRANSPOSE_4x8((loop_n + 24), 6, 128);
+      TRANSPOSE_4x8((loop_n + 28), 7, 128);
+      out_ptr += 32 * 8;
     }
     for (; loop_k + 3 < K; loop_k += 4) {
-      TRANSPOSE_4x4(loop_n, 0) TRANSPOSE_4x4((loop_n + 4), 1)
-          TRANSPOSE_4x4((loop_n + 8), 2) TRANSPOSE_4x4((loop_n + 12), 3)
-              TRANSPOSE_4x4((loop_n + 16), 4) TRANSPOSE_4x4((loop_n + 20), 5)
-                  TRANSPOSE_4x4((loop_n + 24), 6)
-                      TRANSPOSE_4x4((loop_n + 28), 7) out_ptr += 32 * 4;
+      TRANSPOSE_4x4(loop_n, 0);
+      TRANSPOSE_4x4((loop_n + 4), 1);
+      TRANSPOSE_4x4((loop_n + 8), 2);
+      TRANSPOSE_4x4((loop_n + 12), 3);
+      TRANSPOSE_4x4((loop_n + 16), 4);
+      TRANSPOSE_4x4((loop_n + 20), 5);
+      TRANSPOSE_4x4((loop_n + 24), 6);
+      TRANSPOSE_4x4((loop_n + 28), 7);
+      out_ptr += 32 * 4;
     }
     remain_k = K - loop_k;
     if (remain_k > 0) {
-      TRANSPOSE_4xX(remain_k, loop_n, 0)
-          TRANSPOSE_4xX(remain_k, (loop_n + 4), 1)
-              TRANSPOSE_4xX(remain_k, (loop_n + 8), 2)
-                  TRANSPOSE_4xX(remain_k, (loop_n + 12), 3)
-                      TRANSPOSE_4xX(remain_k, (loop_n + 16), 4)
-                          TRANSPOSE_4xX(remain_k, (loop_n + 20), 5)
-                              TRANSPOSE_4xX(remain_k, (loop_n + 24), 6)
-                                  TRANSPOSE_4xX(remain_k, (loop_n + 28), 7)
-                                      out_ptr += 32 * 4;
+      TRANSPOSE_4xX(remain_k, loop_n, 0);
+      TRANSPOSE_4xX(remain_k, (loop_n + 4), 1);
+      TRANSPOSE_4xX(remain_k, (loop_n + 8), 2);
+      TRANSPOSE_4xX(remain_k, (loop_n + 12), 3);
+      TRANSPOSE_4xX(remain_k, (loop_n + 16), 4);
+      TRANSPOSE_4xX(remain_k, (loop_n + 20), 5);
+      TRANSPOSE_4xX(remain_k, (loop_n + 24), 6);
+      TRANSPOSE_4xX(remain_k, (loop_n + 28), 7);
+      out_ptr += 32 * 4;
     }
   }
   for (; loop_n + 23 < N; loop_n += 24) {
     for (loop_k = 0; loop_k + 15 < K; loop_k += 16) {
-      TRANSPOSE_4x16(loop_n, 0, 96) TRANSPOSE_4x16((loop_n + 4), 1, 96)
-          TRANSPOSE_4x16((loop_n + 8), 2, 96)
-              TRANSPOSE_4x16((loop_n + 12), 3, 96)
-                  TRANSPOSE_4x16((loop_n + 16), 4, 96)
-                      TRANSPOSE_4x16((loop_n + 20), 5, 96) out_ptr += 24 * 16;
+      TRANSPOSE_4x16(loop_n, 0, 96);
+      TRANSPOSE_4x16((loop_n + 4), 1, 96);
+      TRANSPOSE_4x16((loop_n + 8), 2, 96);
+      TRANSPOSE_4x16((loop_n + 12), 3, 96);
+      TRANSPOSE_4x16((loop_n + 16), 4, 96);
+      TRANSPOSE_4x16((loop_n + 20), 5, 96);
+      out_ptr += 24 * 16;
     }
     for (; loop_k + 7 < K; loop_k += 8) {
-      TRANSPOSE_4x8(loop_n, 0, 96) TRANSPOSE_4x8((loop_n + 4), 1, 96)
-          TRANSPOSE_4x8((loop_n + 8), 2, 96) TRANSPOSE_4x8((loop_n + 12), 3, 96)
-              TRANSPOSE_4x8((loop_n + 16), 4, 96)
-                  TRANSPOSE_4x8((loop_n + 20), 5, 96) out_ptr += 24 * 8;
+      TRANSPOSE_4x8(loop_n, 0, 96);
+      TRANSPOSE_4x8((loop_n + 4), 1, 96);
+      TRANSPOSE_4x8((loop_n + 8), 2, 96);
+      TRANSPOSE_4x8((loop_n + 12), 3, 96);
+      TRANSPOSE_4x8((loop_n + 16), 4, 96);
+      TRANSPOSE_4x8((loop_n + 20), 5, 96);
+      out_ptr += 24 * 8;
     }
     for (; loop_k + 3 < K; loop_k += 4) {
-      TRANSPOSE_4x4(loop_n, 0) TRANSPOSE_4x4((loop_n + 4), 1)
-          TRANSPOSE_4x4((loop_n + 8), 2) TRANSPOSE_4x4((loop_n + 12), 3)
-              TRANSPOSE_4x4((loop_n + 16), 4) TRANSPOSE_4x4((loop_n + 20), 5)
-                  out_ptr += 24 * 4;
+      TRANSPOSE_4x4(loop_n, 0);
+      TRANSPOSE_4x4((loop_n + 4), 1);
+      TRANSPOSE_4x4((loop_n + 8), 2);
+      TRANSPOSE_4x4((loop_n + 12), 3);
+      TRANSPOSE_4x4((loop_n + 16), 4);
+      TRANSPOSE_4x4((loop_n + 20), 5);
+      out_ptr += 24 * 4;
     }
     remain_k = K - loop_k;
     if (remain_k > 0) {
-      TRANSPOSE_4xX(remain_k, loop_n, 0) TRANSPOSE_4xX(
-          remain_k, (loop_n + 4), 1) TRANSPOSE_4xX(remain_k, (loop_n + 8), 2)
-          TRANSPOSE_4xX(remain_k, (loop_n + 12), 3)
-              TRANSPOSE_4xX(remain_k, (loop_n + 16), 4)
-                  TRANSPOSE_4xX(remain_k, (loop_n + 20), 5) out_ptr += 24 * 4;
+      TRANSPOSE_4xX(remain_k, loop_n, 0);
+      TRANSPOSE_4xX(remain_k, (loop_n + 4), 1);
+      TRANSPOSE_4xX(remain_k, (loop_n + 8), 2);
+      TRANSPOSE_4xX(remain_k, (loop_n + 12), 3);
+      TRANSPOSE_4xX(remain_k, (loop_n + 16), 4);
+      TRANSPOSE_4xX(remain_k, (loop_n + 20), 5);
+      out_ptr += 24 * 4;
     }
   }
   for (; loop_n + 15 < N; loop_n += 16) {
     for (loop_k = 0; loop_k + 15 < K; loop_k += 16) {
-      TRANSPOSE_4x16(loop_n, 0, 64) TRANSPOSE_4x16((loop_n + 4), 1, 64)
-          TRANSPOSE_4x16((loop_n + 8), 2, 64)
-              TRANSPOSE_4x16((loop_n + 12), 3, 64) out_ptr += 16 * 16;
+      TRANSPOSE_4x16(loop_n, 0, 64);
+      TRANSPOSE_4x16((loop_n + 4), 1, 64);
+      TRANSPOSE_4x16((loop_n + 8), 2, 64);
+      TRANSPOSE_4x16((loop_n + 12), 3, 64);
+      out_ptr += 16 * 16;
     }
     for (; loop_k + 7 < K; loop_k += 8) {
-      TRANSPOSE_4x8(loop_n, 0, 64) TRANSPOSE_4x8((loop_n + 4), 1, 64)
-          TRANSPOSE_4x8((loop_n + 8), 2, 64) TRANSPOSE_4x8((loop_n + 12), 3, 64)
-              out_ptr += 16 * 8;
+      TRANSPOSE_4x8(loop_n, 0, 64);
+      TRANSPOSE_4x8((loop_n + 4), 1, 64);
+      TRANSPOSE_4x8((loop_n + 8), 2, 64);
+      TRANSPOSE_4x8((loop_n + 12), 3, 64);
+      out_ptr += 16 * 8;
     }
     for (; loop_k + 3 < K; loop_k += 4) {
-      TRANSPOSE_4x4(loop_n, 0) TRANSPOSE_4x4((loop_n + 4), 1) TRANSPOSE_4x4(
-          (loop_n + 8), 2) TRANSPOSE_4x4((loop_n + 12), 3) out_ptr += 16 * 4;
+      TRANSPOSE_4x4(loop_n, 0);
+      TRANSPOSE_4x4((loop_n + 4), 1);
+      TRANSPOSE_4x4((loop_n + 8), 2);
+      TRANSPOSE_4x4((loop_n + 12), 3);
+      out_ptr += 16 * 4;
     }
     remain_k = K - loop_k;
     if (remain_k > 0) {
-      TRANSPOSE_4xX(remain_k, loop_n, 0)
-          TRANSPOSE_4xX(remain_k, (loop_n + 4), 1)
-              TRANSPOSE_4xX(remain_k, (loop_n + 8), 2)
-                  TRANSPOSE_4xX(remain_k, (loop_n + 12), 3) out_ptr += 16 * 4;
+      TRANSPOSE_4xX(remain_k, loop_n, 0);
+      TRANSPOSE_4xX(remain_k, (loop_n + 4), 1);
+      TRANSPOSE_4xX(remain_k, (loop_n + 8), 2);
+      TRANSPOSE_4xX(remain_k, (loop_n + 12), 3);
+      out_ptr += 16 * 4;
     }
   }
   for (; loop_n + 7 < N; loop_n += 8) {
     for (loop_k = 0; loop_k + 15 < K; loop_k += 16) {
-      TRANSPOSE_4x16(loop_n, 0, 32) TRANSPOSE_4x16((loop_n + 4), 1, 32)
-          out_ptr += 8 * 16;
+      TRANSPOSE_4x16(loop_n, 0, 32);
+      TRANSPOSE_4x16((loop_n + 4), 1, 32);
+      out_ptr += 8 * 16;
     }
     for (; loop_k + 7 < K; loop_k += 8) {
-      TRANSPOSE_4x8(loop_n, 0, 32) TRANSPOSE_4x8((loop_n + 4), 1, 32) out_ptr +=
-          8 * 8;
+      TRANSPOSE_4x8(loop_n, 0, 32);
+      TRANSPOSE_4x8((loop_n + 4), 1, 32);
+      out_ptr += 8 * 8;
     }
     for (; loop_k + 3 < K; loop_k += 4) {
-      TRANSPOSE_4x4(loop_n, 0) TRANSPOSE_4x4((loop_n + 4), 1) out_ptr += 8 * 4;
+      TRANSPOSE_4x4(loop_n, 0);
+      TRANSPOSE_4x4((loop_n + 4), 1);
+      out_ptr += 8 * 4;
     }
     remain_k = K - loop_k;
     if (remain_k > 0) {
-      TRANSPOSE_4xX(remain_k, loop_n, 0)
-          TRANSPOSE_4xX(remain_k, (loop_n + 4), 1) out_ptr += 8 * 4;
+      TRANSPOSE_4xX(remain_k, loop_n, 0);
+      TRANSPOSE_4xX(remain_k, (loop_n + 4), 1);
+      out_ptr += 8 * 4;
     }
   }
   for (; loop_n + 3 < N; loop_n += 4) {
     for (loop_k = 0; loop_k + 15 < K; loop_k += 16) {
-      TRANSPOSE_4x16(loop_n, 0, 16) out_ptr += 4 * 16;
+      TRANSPOSE_4x16(loop_n, 0, 16);
+      out_ptr += 4 * 16;
     }
     for (; loop_k + 7 < K; loop_k += 8) {
-      TRANSPOSE_4x8(loop_n, 0, 16) out_ptr += 4 * 8;
+      TRANSPOSE_4x8(loop_n, 0, 16);
+      out_ptr += 4 * 8;
     }
     for (; loop_k + 3 < K; loop_k += 4) {
-      TRANSPOSE_4x4(loop_n, 0) out_ptr += 4 * 4;
+      TRANSPOSE_4x4(loop_n, 0);
+      out_ptr += 4 * 4;
     }
     remain_k = K - loop_k;
     if (remain_k > 0) {
-      TRANSPOSE_4xX(remain_k, loop_n, 0) out_ptr += 4 * 4;
+      TRANSPOSE_4xX(remain_k, loop_n, 0);
+      out_ptr += 4 * 4;
     }
   }
   for (; loop_n + 1 < N; loop_n += 2) {
     for (loop_k = 0; loop_k + 15 < K; loop_k += 16) {
-      TRANSPOSE_2x16(loop_n, 0) out_ptr += 2 * 16;
+      TRANSPOSE_2x16(loop_n, 0);
+      out_ptr += 2 * 16;
     }
     for (; loop_k + 7 < K; loop_k += 8) {
-      TRANSPOSE_2x8(loop_n, 0) out_ptr += 2 * 8;
+      TRANSPOSE_2x8(loop_n, 0);
+      out_ptr += 2 * 8;
     }
     for (; loop_k + 3 < K; loop_k += 4) {
-      TRANSPOSE_2x4(loop_n, 0) out_ptr += 2 * 4;
+      TRANSPOSE_2x4(loop_n, 0);
+      out_ptr += 2 * 4;
     }
     remain_k = K - loop_k;
     if (remain_k > 0) {
-      TRANSPOSE_2xX(remain_k, loop_n, 0) out_ptr += 2 * 4;
+      TRANSPOSE_2xX(remain_k, loop_n, 0);
+      out_ptr += 2 * 4;
     }
   }
   for (; loop_n < N; loop_n++) {

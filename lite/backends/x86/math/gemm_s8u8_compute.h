@@ -39,7 +39,8 @@ namespace math {
   _Sc = Sc;                      \
   _relu_type = relu_type;        \
   _relu_alpha = relu_alpha;      \
-  _C_is_int8 = true;
+  _C_is_int8 = true;             \
+  _in_bias = nullptr;
 
 class generate_gemm_s8u8_x86_kern {
  public:
@@ -190,8 +191,17 @@ class generate_gemm_s8u8_x86_kern {
         TargetMalloc(TARGET(kX86), M * sizeof(float)));
     _scale = reinterpret_cast<float *>(
         TargetMalloc(TARGET(kX86), M * sizeof(float)));
-    repack_bias(
-        _is_trans_A, M, K, bias, _re_bias, _Sa, _Sb, _Sc, _A, _C_is_int8);
+    // if no bias, malloc a buffer and set all zero.
+    if (bias == nullptr) {
+      _in_bias = reinterpret_cast<float *>(
+          TargetMalloc(TARGET(kX86), M * sizeof(float)));
+      memset(_in_bias, 0, M * sizeof(float));
+      repack_bias(
+          _is_trans_A, M, K, _in_bias, _re_bias, _Sa, _Sb, _Sc, _A, _C_is_int8);
+    } else {
+      repack_bias(
+          _is_trans_A, M, K, bias, _re_bias, _Sa, _Sb, _Sc, _A, _C_is_int8);
+    }
     calc_scale(M, _Sa, _Sb, _Sc, _scale);
     prepackA_i8(M, K, _A, _pack_A, _is_trans_A);
   }
@@ -201,6 +211,9 @@ class generate_gemm_s8u8_x86_kern {
     TargetFree(TARGET(kX86), _pack_B);
     TargetFree(TARGET(kX86), _re_bias);
     TargetFree(TARGET(kX86), _scale);
+    if (_in_bias != nullptr) {
+      TargetFree(TARGET(kX86), _in_bias);
+    }
   }
 
  private:
@@ -222,6 +235,7 @@ class generate_gemm_s8u8_x86_kern {
   const float *scale;
   int _relu_type;
   float _relu_alpha;
+  float *_in_bias;
 };
 
 }  // namespace math
