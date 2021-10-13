@@ -134,7 +134,7 @@ REGISTER_CONVERTER(
     concat,
     ConvertConcat,
     "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
-REGISTER_CONVERTER(split, ConvertSplit, "huawei_ascend_npu");
+REGISTER_CONVERTER(split, ConvertSplit, "huawei_kirin_npu,huawei_ascend_npu");
 REGISTER_CONVERTER(nearest_interp, ConvertInterpolate, "huawei_ascend_npu");
 REGISTER_CONVERTER(nearest_interp_v2, ConvertInterpolate, "huawei_ascend_npu");
 REGISTER_CONVERTER(bilinear_interp, ConvertInterpolate, "huawei_ascend_npu");

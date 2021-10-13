@@ -22,6 +22,8 @@ namespace huawei_kirin_npu {
 
 int ConvertSplit(Converter* converter, hal::Operation* operation) {
   SPLIT_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  NNADAPTER_CHECK(IsConstantOperand(axis_operand));
+  NNADAPTER_CHECK(IsConstantOperand(split_operand));
 
   // Convert to GE operators
   auto input_operator = converter->GetMappedOperator(input_operand);
