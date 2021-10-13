@@ -187,6 +187,10 @@ struct ExpandMetalParam {
 
 struct ElementwiseMetalParam {
     int byChannel;
+    int by_normal;
+    int by_num;
+    int by_HW;
+    int by_W;
 };
 
 struct TransposeMetalParam {

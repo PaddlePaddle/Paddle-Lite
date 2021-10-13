@@ -83,6 +83,10 @@ struct ElementwiseAddParam {
 
 struct ElementwiseParam {
   int32_t byChannel;
+  int32_t by_normal; 
+  int32_t by_num;
+  int32_t by_HW;
+  int32_t by_W;
 };
 
 struct MetalConvParam {

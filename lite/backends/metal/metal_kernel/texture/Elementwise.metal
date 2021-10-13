@@ -135,14 +135,20 @@ kernel void elementwise_div(texture2d_array<ftype, access::read> inputX
                             constant ElementwiseParam &pm [[buffer(0)]],
                             uint3 gid [[thread_position_in_grid]]) {
   if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
-      gid.z >= outTexture.get_array_size())
-    return;
+        gid.z >= outTexture.get_array_size())
+        return;
   ftype4 rx, ry;
   rx = inputX.read(gid.xy, gid.z);
-  if (pm.byChannel == 1) {
-    ry = inputY.read(uint2(0, 0), gid.z);
-  } else {
-    ry = inputY.read(gid.xy, gid.z);
+  if (pm.by_normal == 1) {
+      ry = inputY.read(gid.xy, gid.z);
+  } else if (pm.by_num == 1){
+      ry = inputY.read(uint2(0, 0), 0);
+  } else if (pm.byChannel == 1){
+      ry = inputY.read(uint2(0, 0), gid.z);
+  } else if (pm.by_HW == 1){
+      ry = inputY.read(gid.xy, 0);
+  } else if (pm.by_W == 1){
+      ry = inputY.read(uint2(gid.x, 0), 0);
   }
   ftype4 r = rx / ry;
   outTexture.write(r, gid.xy, gid.z);

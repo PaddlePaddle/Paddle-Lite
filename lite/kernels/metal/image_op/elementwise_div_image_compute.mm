@@ -60,48 +60,35 @@ void ElementwiseDivImageCompute::Run() {
 
 void ElementwiseDivImageCompute::setup_without_mps() {
     const auto& param = this->Param<param_t>();
+    auto x_dims = input_buffer_x_->tensor_dim_;
+    auto y_dims = input_buffer_y_->tensor_dim_;
+    auto axis = param.axis;
 
     bool valid = false;
     int by_channel = 0;
-    if (input_buffer_x_->tensor_dim_.size() == 4) {
-        if (input_buffer_y_->tensor_dim_.size() == 4) {
-            if (input_buffer_y_->tensor_dim_[0] == 1 &&
-                input_buffer_y_->tensor_dim_[2] == 1 &&
-                input_buffer_y_->tensor_dim_[3] == 1 &&
-                input_buffer_x_->tensor_dim_[1] == input_buffer_y_->tensor_dim_[1]) {
-                by_channel = 1;
-            } else {
-                for (int i = 0; i < 4; i++) {
-                    if (input_buffer_x_->tensor_dim_[i] != input_buffer_y_->tensor_dim_[i]) {
-                        valid = false;
-                        break;
-                    }
-                }
-            }
-        } else if (input_buffer_y_->tensor_dim_.size() == 3) {
-            if (param.axis == 1 || param.axis == -1) {
-                if (input_buffer_y_->tensor_dim_[1] == 1 && input_buffer_y_->tensor_dim_[2] == 1 &&
-                    input_buffer_y_->tensor_dim_[0] == input_buffer_x_->tensor_dim_[1]) {
-                    by_channel = 1;
-                }
-            }
-        } else if (input_buffer_y_->tensor_dim_.size() == 2) {
-            if (param.axis == 0 || param.axis == -1) {
-                by_channel = 1;
-            }
-        } else if (input_buffer_y_->tensor_dim_.size() == 1) {
-            by_channel = 1;
-        } else {
-            valid = false;
-        }
+    int by_normal = 0;
+    int by_num = 0;
+    int by_HW = 0;
+    int by_W = 0;
+
+    if (x_dims == y_dims) {
+        by_normal = 1;
+    } else if (y_dims[0] == 1 && y_dims[1] == 1 && y_dims[2] == 1 && y_dims[3] == 1){
+        by_num = 1;
+    } else if (y_dims[0] == 1 && y_dims[1] == x_dims[1] && y_dims[2] == 1 && y_dims[3] == 1){
+        by_channel = 1;
+    } else if (y_dims[0] == 1 && y_dims[1] == 1 && y_dims[2] == x_dims[2] && y_dims[3] == x_dims[3]){
+        by_HW = 1;
+    } else if (y_dims[0] == 1 && y_dims[1] == 1 && y_dims[2] == 1 && y_dims[3] == x_dims[3]){
+        by_W = 1;
     } else {
-        valid = false;
-    }
-    if (!valid) {
-        LOG(FATAL) << "elementwise_div: only supports : 1.same shapes 2.by channel.";
+        LOG(FATAL) << "elementwise_div: not supports x_dims:["
+                <<x_dims[0]<<" "<<x_dims[1]<<" "<<x_dims[2]<<" "<<x_dims[3]<<"]"
+                <<" y_dims:["<<y_dims[0]<<" "<<y_dims[1]<<" "<<y_dims[2]<<" "<<y_dims[3]<<"]"
+                <<" axis=" << axis ;
     }
 
-    ElementwiseMetalParam element_params = {by_channel};
+    ElementwiseMetalParam element_params = {by_channel, by_normal, by_num, by_HW, by_W};
     params_buffer_ =
         std::make_shared<MetalBuffer>(metal_context_, sizeof(element_params), &element_params);
 
@@ -111,6 +98,7 @@ void ElementwiseDivImageCompute::setup_without_mps() {
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     pipline_ = [backend pipline:function_name_];
 }
+
 
 ElementwiseDivImageCompute::~ElementwiseDivImageCompute() {
     TargetWrapperMetal::FreeImage(output_buffer_);
