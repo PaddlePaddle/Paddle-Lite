@@ -42,12 +42,13 @@ Welcome to Paddle-Lite's documentation!
   quick_start/quick_run_demo
   quick_start/roadmap
 
+
 .. toctree::
   :maxdepth: 1
-  :caption: 使用工具
-  :name: sec-user-guides
+  :caption: 程序开发
+  :name: program-development
 
-  user_guides/x2paddle
+  user_guides/development_overview
   user_guides/model_optimize_tool
   user_guides/quant_aware
   user_guides/quant_post_dynamic
