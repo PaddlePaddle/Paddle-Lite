@@ -80,7 +80,7 @@ auto output_data=output_tensor->data<float>();
 编译和运行 Android C++ 示例程序，你需要准备：
 
 * 一台可以编译 Paddle Lite 的电脑，具体环境配置，请参考[文档](https://paddle-lite.readthedocs.io/zh/latest/source_compile/compile_env.html)，推荐使用 docker。
-* 一台安卓手机，并在电脑上安装 adb工具 ，以确保电脑和手机可以通过 adb 连接。
+* 一台安卓手机，并在电脑上安装 adb 工具 ，以确保电脑和手机可以通过 adb 连接。
 
 ### 2. 下载或者编译预测库
 （1） 下载预测库

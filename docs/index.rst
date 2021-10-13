@@ -26,6 +26,7 @@ Welcome to Paddle-Lite's documentation!
   
   benchmark/benchmark
   benchmark/benchmark_tools
+  benchmark/ best_practices
 
 .. toctree::
   :maxdepth: 1
@@ -38,6 +39,7 @@ Welcome to Paddle-Lite's documentation!
   quick_start/java_demo
   quick_start/python_demo
   quick_start/quant_post_dynamic_demo
+  quick_start/quick_run_demo
   quick_start/roadmap
 
 .. toctree::
