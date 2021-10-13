@@ -72,7 +72,7 @@
 了解基础编译参数
 ----------------
 
-Paddle Lite 仓库中\ ``/lite/tools/build_ios.sh``\ 脚本文件用于构建 ios 版本的编译包，通过修改\ ``build_ios.sh``\ 脚本文件中的参数，可满足不同场景编译包的构建需求，常用的基础编译参数如下表所示：
+Paddle Lite 仓库中\ ``./lite/tools/build_ios.sh``\ 脚本文件用于构建 ios 版本的编译包，通过修改\ ``build_ios.sh``\ 脚本文件中的参数，可满足不同场景编译包的构建需求，常用的基础编译参数如下表所示：
 有特殊硬件需求的编译参数见后文。
 
 .. list-table::
@@ -115,7 +115,7 @@ Paddle Lite 仓库中\ ``/lite/tools/build_ios.sh``\ 脚本文件用于构建 io
 ..
 
    **说明：**
-   执行`/lite/tools/build_ios.sh help`可输出各选项的使用说明信息。
+   执行`./lite/tools/build_ios.sh help`可输出各选项的使用说明信息。
 
 
 编译步骤
