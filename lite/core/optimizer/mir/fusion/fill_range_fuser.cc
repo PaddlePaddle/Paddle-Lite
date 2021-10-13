@@ -74,6 +74,30 @@ cpp::OpDesc FillRangeFuser::GenOpDesc(const key2nodes_t& matched) {
       *matched.at("fill_range_end")->stmt()->op_info();
   cpp::OpDesc fill_range_step_op_desc =
       *matched.at("fill_range_step")->stmt()->op_info();
+
+  // TODO(shentanyue) supported later
+  if ((fill_range_start_op_desc.HasInput("ValueTensor") &&
+       fill_range_start_op_desc.Input("ValueTensor").size() > 0) ||
+      (fill_range_start_op_desc.HasInput("str_value") &&
+       !fill_range_start_op_desc.GetAttr<std::string>("str_value").empty())) {
+    LOG(FATAL) << "Unsupported for ValueTensor input or str_value input for "
+                  "fill_contant op.";
+  }
+  if ((fill_range_end_op_desc.HasInput("ValueTensor") &&
+       fill_range_end_op_desc.Input("ValueTensor").size() > 0) ||
+      (fill_range_end_op_desc.HasInput("str_value") &&
+       !fill_range_end_op_desc.GetAttr<std::string>("str_value").empty())) {
+    LOG(FATAL) << "Unsupported for ValueTensor input or str_value input for "
+                  "fill_contant op.";
+  }
+  if ((fill_range_step_op_desc.HasInput("ValueTensor") &&
+       fill_range_step_op_desc.Input("ValueTensor").size() > 0) ||
+      (fill_range_step_op_desc.HasInput("str_value") &&
+       !fill_range_step_op_desc.GetAttr<std::string>("str_value").empty())) {
+    LOG(FATAL) << "Unsupported for ValueTensor input or str_value input for "
+                  "fill_contant op.";
+  }
+
   auto start = fill_range_start_op_desc.GetAttr<float>("value");
   auto end = fill_range_end_op_desc.GetAttr<float>("value");
   auto step = fill_range_step_op_desc.GetAttr<float>("value");
@@ -106,6 +130,13 @@ cpp::OpDesc FillRangeFuser::GenOpDesc(const key2nodes_t& matched) {
   range_start_data[0] = start;
   range_end_data[0] = end;
   range_step_data[0] = step;
+
+  range_start_tensor->set_persistable(true);
+  range_end_tensor->set_persistable(true);
+  range_step_tensor->set_persistable(true);
+  matched.at("start")->arg()->is_weight = true;
+  matched.at("end")->arg()->is_weight = true;
+  matched.at("step")->arg()->is_weight = true;
 
   range_op_desc->SetType("range");
   range_op_desc->SetInput("Start", {range_start_var_name});

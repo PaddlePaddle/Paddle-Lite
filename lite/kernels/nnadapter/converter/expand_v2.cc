@@ -28,17 +28,14 @@ int ConvertExpandV2(Converter* converter, OpInfo* op, Scope* scope) {
     x_scales = op->GetInputScale(x_scale_name, true);
   }
   auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
-  CHECK(input_operand);
-  auto input_type = converter->GetOperandType(input_operand);
 
   // Shape operand
   NNAdapterOperand* shape_operand = nullptr;
-  if (op->HasInput("Shape") && !op->Input("Shape").empty()) {
+  if (HasInput(op, scope, "Shape")) {
     auto shape_name = op->Input("Shape").front();
     shape_operand = converter->AddInputOperand(scope, shape_name);
-  } else if (op->HasInput("expand_shapes_tensor") &&
-             !op->Input("expand_shapes_tensor").empty()) {
-    LOG(ERROR) << "Not support expand_shapes_tensor now.";
+  } else if (HasInput(op, scope, "expand_shapes_tensor")) {
+    LOG(FATAL) << "Not support expand_shapes_tensor now.";
   } else {
     auto shape = op->GetAttr<std::vector<int>>("shape");
     shape_operand = converter->AddConstantOperand(shape);

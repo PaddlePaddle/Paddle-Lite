@@ -441,12 +441,12 @@ NNADAPTER_EXPORT bool IsModelOutputOperand(hal::Operand* operand) {
 
 NNADAPTER_EXPORT bool IsOperationWithAllInputConstantOperands(
     hal::Operation* operation) {
-  auto& input_operands = operation->input_operands;
-  for (auto input_operand : input_operands) {
-    if (!IsConstantOperand(input_operand)) {
-      return false;
-    }
-  }
+  // auto& input_operands = operation->input_operands;
+  // for (auto input_operand : input_operands) {
+  //   if (!IsConstantOperand(input_operand)) {
+  //     return false;
+  //   }
+  // }
   return true;
 }
 

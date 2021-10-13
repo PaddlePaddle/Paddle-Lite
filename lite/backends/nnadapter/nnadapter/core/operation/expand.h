@@ -30,8 +30,15 @@ namespace operation {
   /* Shape */                                                               \
   auto shape_operand = input_operands[1];                                   \
   NNADAPTER_VLOG(5) << "shape: " << OperandToString(shape_operand);         \
-  uint32_t shape_count = shape_operand->length / sizeof(int32_t);           \
-  auto shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);      \
+  uint32_t shape_count;                                                     \
+  int32_t* shape_data;                                                      \
+  if (IsConstantOperand(shape_operand)) {                                   \
+    shape_count = shape_operand->length / sizeof(int32_t);                  \
+    shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);         \
+  } else {                                                                  \
+    shape_count = shape_operand->type.dimensions.count;                     \
+    shape_data = shape_operand->type.dimensions.data;                       \
+  }                                                                         \
   for (uint32_t i = 0; i < shape_count; i++) {                              \
     NNADAPTER_VLOG(5) << "shape[" << i << "] = " << shape_data[i];          \
   }                                                                         \

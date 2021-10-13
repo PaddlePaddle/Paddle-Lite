@@ -28,15 +28,15 @@ int PrepareExpand(hal::Operation* operation) {
 
   // Infer the shape and type of output operands
   auto input_type = input_operand->type;
-  auto shape_type = shape_operand->type;
   auto& output_type = output_operand->type;
   CopyOperandTypeWithQuantParams(&output_type, input_type);
+
   output_type.dimensions.count = shape_count;
 
   auto infer_output_shape = [&](int32_t* input_dimensions_data,
                                 uint32_t input_dimensions_count,
                                 int32_t* output_dimensions_data) {
-    std::vector<int64_t> input_dims_vec;
+    std::vector<int> input_dims_vec;
     for (uint32_t i = 0; i < input_dimensions_count; i++) {
       input_dims_vec.push_back(input_dimensions_data[i]);
     }

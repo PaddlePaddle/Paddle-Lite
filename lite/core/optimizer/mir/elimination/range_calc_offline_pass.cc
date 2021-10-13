@@ -51,13 +51,19 @@ void RangeCalcOfflinePass::RemoveRangePattern(
 
     // Get range's input tensor
     auto start_var = scope->FindVar(op_desc->Input("Start").front());
-    auto start_t = start_var->GetMutable<lite::Tensor>();
-    auto start = start_t->mutable_data<float>()[0];
     auto end_var = scope->FindVar(op_desc->Input("End").front());
-    auto end_t = end_var->GetMutable<lite::Tensor>();
-    auto end = end_t->mutable_data<float>()[0];
     auto step_var = scope->FindVar(op_desc->Input("Step").front());
+    auto start_t = start_var->GetMutable<lite::Tensor>();
+    auto end_t = end_var->GetMutable<lite::Tensor>();
     auto step_t = step_var->GetMutable<lite::Tensor>();
+    if (!start_t->persistable() || !end_t->persistable() ||
+        !step_t->persistable()) {
+      LOG(WARNING) << "RangeCalcOfflinePass does not support input that is not "
+                      "persistent";
+      return;
+    }
+    auto start = start_t->mutable_data<float>()[0];
+    auto end = end_t->mutable_data<float>()[0];
     auto step = step_t->mutable_data<float>()[0];
     // Get range's output tensor
     auto out_var = scope->FindVar(op_desc->Output("Out").front());
@@ -92,4 +98,4 @@ void RangeCalcOfflinePass::RemoveRangePattern(
 
 REGISTER_MIR_PASS(range_calc_offline_pass,
                   paddle::lite::mir::RangeCalcOfflinePass)
-    .BindTargets({TARGET(kAny)});
+    .BindTargets({TARGET(kNNAdapter)});
