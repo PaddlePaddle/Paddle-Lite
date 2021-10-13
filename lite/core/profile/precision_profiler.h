@@ -277,9 +277,11 @@ class PrecisionProfiler {
         }
 #endif
         case PRECISION(kBool): {
-          *mean = -333333333333;
-          *std_dev = -33333333333;
-          *ave_grow_rate = -33333333333;
+          auto ptr = in->data<bool>();
+          *mean = compute_mean<bool>(ptr, in->numel());
+          *std_dev =
+              compute_standard_deviation<bool>(ptr, in->numel(), true, *mean);
+          *ave_grow_rate = compute_average_grow_rate<bool>(ptr, in->numel());
           if (write_result_to_file) {
             write_tensorfile<bool>(in, name, log_dir_);
           }
@@ -575,8 +577,8 @@ class PrecisionProfiler {
         std::string out_arg_name;
         op->op_info()->GetOutputArgname(out_name, &out_arg_name);
         auto type = kernel->GetOutputDeclType(out_arg_name);
-
-        if (type->IsTensor()) {
+        auto tmp = op_scope->FindVar(out_name);
+        if (tmp->IsType<Tensor>()) {
           const Tensor* tout =
               op_scope->FindVar(out_name)->GetMutable<Tensor>();
           double mean = -999999;
@@ -613,7 +615,7 @@ class PrecisionProfiler {
              << " " << setw(15) << left << mean_str << " " << setw(15) << left
              << std_dev_str << " " << setw(15) << left << ave_grow_rate_str
              << std::endl;
-        } else if (type->IsTensorList()) {
+        } else if (tmp->IsType<std::vector<Tensor>>()) {
           auto touts =
               op_scope->FindVar(out_name)->GetMutable<std::vector<Tensor>>();
           for (auto t : *touts) {

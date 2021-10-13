@@ -36,6 +36,7 @@ void add_bias_rowwise(Tensor* input,
     i_data += width;
   }
 }
+
 void vector_dot(
     float* out, const float* in, const float* v1, int size, const float* v2) {
   int loop = size >> 2;
