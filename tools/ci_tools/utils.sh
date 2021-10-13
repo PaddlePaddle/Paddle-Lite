@@ -44,7 +44,7 @@ function prepare_models {
 function adb_device_check() {
   local adb_device_name=$1
   if [[ -n "$adb_device_name" ]]; then
-    for line in $(adb devices | grep -v "List" | awk '{print $1}'); do
+    for line in $(adb devices | grep -v "List" | grep device | awk '{print $1}'); do
       online_device_name=$(echo $line | awk '{print $1}')
       if [[ "$adb_device_name" == "$online_device_name" ]]; then
         return 0

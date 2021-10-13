@@ -24,6 +24,10 @@ REGISTER_CONVERTER(depthwise_conv2d,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
                    "npu,amlogic_npu,imagination_nna");
 REGISTER_CONVERTER(deformable_conv, ConvertDeformableConv, "huawei_ascend_npu");
+REGISTER_CONVERTER(pool2d,
+                   ConvertPool,
+                   "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
+                   "npu,amlogic_npu,imagination_nna");
 REGISTER_CONVERTER(matmul, ConvertMatmul, "huawei_ascend_npu");
 REGISTER_CONVERTER(matmul_v2, ConvertMatmulV2, "huawei_ascend_npu");
 REGISTER_CONVERTER(softmax,
