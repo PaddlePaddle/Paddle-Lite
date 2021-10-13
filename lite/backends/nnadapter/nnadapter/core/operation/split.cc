@@ -25,8 +25,8 @@ namespace operation {
 
 int PrepareSplit(hal::Operation* operation) {
   SPLIT_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  NNADAPTER_CHECK(is_axis_constant);
-  NNADAPTER_CHECK(is_split_constant);
+  NNADAPTER_CHECK(IsConstantOperand(axis_operand));
+  NNADAPTER_CHECK(IsConstantOperand(split_operand));
 
   // Infer the shape and type of output operands
   for (size_t i = 0; i < output_count; i++) {

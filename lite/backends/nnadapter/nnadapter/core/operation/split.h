@@ -14,6 +14,7 @@
 
 #pragma once
 #include <vector>
+#include "utility/modeling.h"
 
 namespace nnadapter {
 namespace operation {
@@ -30,11 +31,8 @@ namespace operation {
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);           \
   /* Axis */                                                                  \
   auto axis_operand = input_operands[1];                                      \
-  bool is_axis_constant =                                                     \
-      axis_operand->type.lifetime == NNADAPTER_CONSTANT_COPY ||               \
-      axis_operand->type.lifetime == NNADAPTER_CONSTANT_REFERENCE;            \
   int axis = -1;                                                              \
-  if (is_axis_constant) {                                                     \
+  if (IsConstantOperand(axis_operand)) {                                      \
     axis = *reinterpret_cast<int32_t*>(axis_operand->buffer);                 \
     if (axis < 0) {                                                           \
       axis += input_operand->type.dimensions.count;                           \
@@ -45,11 +43,8 @@ namespace operation {
   }                                                                           \
   /* Split */                                                                 \
   auto split_operand = input_operands[2];                                     \
-  bool is_split_constant =                                                    \
-      split_operand->type.lifetime == NNADAPTER_CONSTANT_COPY ||              \
-      split_operand->type.lifetime == NNADAPTER_CONSTANT_REFERENCE;           \
   std::vector<int> split;                                                     \
-  if (is_split_constant) {                                                    \
+  if (IsConstantOperand(split_operand)) {                                     \
     auto split_count = split_operand->length / sizeof(int32_t);               \
     auto split_data = reinterpret_cast<int32_t*>(split_operand->buffer);      \
     split = std::vector<int>(split_data, split_data + split_count);           \
