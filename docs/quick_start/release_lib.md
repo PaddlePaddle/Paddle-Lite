@@ -123,26 +123,46 @@
 
 |Arch |dowload |os |
 |:-----:|:-----:|:-----:|
-|x86   |[v2.10](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10/inference_lite_lib.xpu.x86.centos.tar.gz) |CentOS 6.3 |
-|x86   |[v2.10](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10/inference_lite_lib.xpu.x86.ubuntu.tar.gz) |Ubuntu     |
-|armv8 |[v2.10](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10/inference_lite_lib.xpu.armv8.ky10.tar.gz) |银河麒麟v10 |
+|x86   |[v2.10](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10/inference_lite_lib.baidu_xpu.x86.centos.tar.gz) |CentOS 6.3 |
+|x86   |[v2.10](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10/inference_lite_lib.baidu_xpu.x86.ubuntu.tar.gz) |Ubuntu     |
+|armv8 |[v2.10](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10/inference_lite_lib.baidu_xpu.armv8.ky10.tar.gz) |银河麒麟v10 |
 
 
 ## 华为昇腾NPU
 
 |Arch |dowload |os |
 |:-----:|:-----:|:-----:|
-|x86   |[v2.10](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10/inference_lite_lib.ascend_npu.x86.ubuntu.tar.gz) |Ubuntu    |
-|armv8 |[v2.10](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10/inference_lite_lib.ascend_npu.armv8.ky10.tar.gz) |银河麒麟v10 |
+|x86   |[v2.10](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10/inference_lite_lib.huawei_ascend_npu.x86.ubuntu.tar.gz) |Ubuntu    |
+|armv8 |[v2.10](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10/inference_lite_lib.huawei_ascend_npu.armv8.ky10.tar.gz) |银河麒麟v10 |
 
 
 ## 华为麒麟NPU
 
+|Arch |dowload |
+|:-----:|:-----:|
+|armv7 |[v2.10](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10/inference_lite_lib.ios.armv7.huawei_kirin_npu.with_cv.with_extra.with_log.tiny_publish.tar.gz) |
+|armv8 |[v2.10](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10/inference_lite_lib.ios.armv8.huawei_kirin_npu.with_cv.with_extra.with_log.tiny_publish.tar.gz) |
+
+
 ## 瑞芯微NPU
+
+|Arch |dowload |
+|:-----:|:-----:|
+|armv7hf |[v2.10](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10/inference_lite_lib.ios.armv7hf.rockchip_npu.with_extra.with_log.tiny_publish.tar.gz) |
+|armv8   |[v2.10](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10/inference_lite_lib.ios.armv8.rockchip_npu.with_extra.with_log.tiny_publish.tar.gz)   |
 
 ## 联发科APU
 
+|Arch |dowload |
+|:-----:|:-----:|
+|armv7 |[v2.10](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10/inference_lite_lib.ios.armv7.mediatek_apu.with_extra.with_log.tiny_publish.tar.gz) |
+|armv8 |[v2.10](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10/inference_lite_lib.ios.armv8.mediatek_apu.with_extra.with_log.tiny_publish.tar.gz) |
+
 ## 颖脉NNA
+
+|Arch |dowload |
+|:-----:|:-----:|
+|armv8 |[v2.10](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10/inference_lite_lib.ios.armv8.imagination_nna.with_extra.with_log.tiny_publish.tar.gz) |
 
 
 ## opt 工具
@@ -151,6 +171,7 @@
 |:-----:|:-----:|
 |Linux | [v2.10](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10/opt_linux) |
 |macOS | [v2.10](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10/opt_mac)   |
+
 
 ## 安装Paddle-Lite python 库方法
 
