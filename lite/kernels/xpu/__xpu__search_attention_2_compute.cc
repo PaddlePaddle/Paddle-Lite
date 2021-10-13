@@ -119,36 +119,31 @@ void XPUMmdnnSearchAttention2Compute::Run() {
                      bias_data,
                      xdnn::Activation_t::LINEAR);
   CHECK_EQ(r, 0);
-  r = xdnn::search_noaligned_mat_mul(ctx.GetRawContext(),
-                                     0,
-                                     1,
-                                     batch,
-                                     lod_32_data,
-                                     seqlen_max,
-                                     dim_,
-                                     alpha0,
-                                     input_data,
-                                     fc_out,
-                                     batchgemm0_out);
+  r = xdnn::fc_batched_vsl<float, float, float, int, int16_t>(
+      ctx.GetRawContext(),
+      input_data,
+      fc_out,
+      softmax_out,
+      {m_lists.data(), static_cast<int>(m_lists.size()), m_lists_data},
+      {m_lists.data(), static_cast<int>(m_lists.size()), m_lists_data},
+      {k_lists.data(), static_cast<int>(k_lists.size()), k_lists_data},
+      false,
+      true,
+      alpha0,
+      true);
   CHECK_EQ(r, 0);
-  r = xdnn::search_seq_softmax(ctx.GetRawContext(),
-                               batchgemm0_out,
-                               softmax_out,
-                               lod_32_data,
-                               batch,
-                               seqlen_max);
-  CHECK_EQ(r, 0);
-  r = xdnn::search_noaligned_mat_mul(ctx.GetRawContext(),
-                                     0,
-                                     0,
-                                     batch,
-                                     lod_32_data,
-                                     seqlen_max,
-                                     dim_,
-                                     alpha1,
-                                     softmax_out,
-                                     input_data,
-                                     batchgemm1_out);
+  r = xdnn::fc_batched_vsl<float, float, float, int, int16_t>(
+      ctx.GetRawContext(),
+      softmax_out,
+      input_data,
+      batchgemm1_out,
+      {m_lists.data(), static_cast<int>(m_lists.size()), m_lists_data},
+      {k_lists.data(), static_cast<int>(k_lists.size()), k_lists_data},
+      {m_lists.data(), static_cast<int>(m_lists.size()), m_lists_data},
+      false,
+      false,
+      alpha1,
+      false);
   CHECK_EQ(r, 0);
 }
 
