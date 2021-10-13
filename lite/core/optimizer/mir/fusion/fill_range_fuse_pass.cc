@@ -31,6 +31,5 @@ void FillRangeFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(lite_fill_range_fuse_pass,
-                  paddle::lite::mir::FillRangeFusePass)
+REGISTER_MIR_PASS(fill_range_fuse_pass, paddle::lite::mir::FillRangeFusePass)
     .BindTargets({TARGET(kNNAdapter)});
