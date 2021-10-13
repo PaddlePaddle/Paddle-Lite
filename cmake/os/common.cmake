@@ -83,9 +83,6 @@ endif()
 if(ARM_TARGET_OS STREQUAL "armmacos")
   include(os/armmacos)
 endif()
-if(WIN32)
-  include(os/windows)
-endif()
 
 # Detect origin host toolchain
 set(HOST_C_COMPILER $ENV{CC})

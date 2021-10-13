@@ -37,6 +37,9 @@ message(STATUS "CXX compiler: ${CMAKE_CXX_COMPILER}, version: ${CMAKE_CXX_COMPIL
 message(STATUS "C compiler: ${CMAKE_C_COMPILER}, version: ${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION}")
 message(STATUS "AR tools: ${CMAKE_AR}")
 
+if(WIN32)
+  include(os/windows)
+endif()
 ################################ Exposed Configurations #######################################
 lite_option(WITH_DSO                           "Compile PaddlePaddle with dynamic linked CUDA"                        ON)
 lite_option(WITH_AVX                           "Compile PaddlePaddle with AVX intrinsics"                             ON IF ${AVX_FOUND})
