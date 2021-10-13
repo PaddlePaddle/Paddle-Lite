@@ -38,7 +38,7 @@ Paddle Lite 当前支持所有同 时支持 AVX 及 FMA 指令集的 X86 CPU，�
 - [Paddle Lite 使用 X86 预测部署](../demo_guides/x86)
 
 ## 移动端 GPU
-Paddle Lite 支持多种移动端 GPU，包括 ARM Mali、Qualcomm Adreno、Apple A Series、Nvidia Tegra 等系列 GPU 设备，支持列表如下：
+Paddle Lite 支持多种移动端 GPU，包括 ARM Mali、Qualcomm Adreno、Apple A Series 等系列 GPU 设备，支持列表如下：
 - ARM Mali G 系列
 - Qualcomm Adreno 系列
 - Apple A 系列
