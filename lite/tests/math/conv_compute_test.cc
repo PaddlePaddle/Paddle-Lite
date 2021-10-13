@@ -480,6 +480,11 @@ TEST(TestConvRand, test_conv_rand) {
                                   kw == 3 && kh == 3 && stride == 1) {
                                 break;
                               }
+                              // skip 5x5 depthwise and act_type=10
+                              if (g == cin && cin == cout && kw == 5 &&
+                                  kh == 5 && flag_act == 10) {
+                                break;
+                              }
                               const float leakey_relu_scale = 8.88;
                               test_conv_fp32(
                                   dims,

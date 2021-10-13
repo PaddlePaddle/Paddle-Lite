@@ -489,21 +489,33 @@ static void conv_basic(const Dtype1* din,
                         ? dst_data_ref[out_idx]
                         : (Dtype2)(dst_data_ref[out_idx] * scale);
               } else if (act_type == 10) {
-                dst_data_ref[out_idx] =
-                    std::min(static_cast<Dtype2>(threshold),
-                             std::max(static_cast<Dtype2>(0),
-                                      dst_data_ref[out_idx] + offset)) *
-                    static_cast<Dtype2>(dst_data_ref[out_idx] * 1.0 /
-                                        hard_scale);
-              } else {
-                printf("this act type: %d does not support \n", act_type);
+                auto tmp = dst_data_ref[out_idx] + offset;
+                auto tmp1 = dst_data_ref[out_idx] * 1.0 / hard_scale;
+                if (tmp > 0) {
+                  if (tmp < threshold) {
+                    dst_data_ref[out_idx] = static_cast<Dtype2>(tmp * tmp1);
+                  } else {
+                    dst_data_ref[out_idx] =
+                        static_cast<Dtype2>(threshold * tmp1);
+                  }
+                } else {
+                  if (threshold > 0) {
+                    dst_data_ref[out_idx] = static_cast<Dtype2>(0);
+                  } else {
+                    dst_data_ref[out_idx] =
+                        static_cast<Dtype2>(threshold * tmp1);
+                  }
+                }
               }
+            } else {
+              printf("this act type: %d does not support \n", act_type);
             }
           }
         }
       }
     }
   }
+}
 }
 
 template <typename Dtype>
