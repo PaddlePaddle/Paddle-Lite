@@ -22,7 +22,7 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-template <typename T>    
+template <typename T>
 void ExpandCompute<T>::Run() {
   auto& ctx = this->ctx_->As<XPUContext>();
   auto& param = this->Param<operators::ExpandParam>();
@@ -46,14 +46,17 @@ void ExpandCompute<T>::Run() {
 
   // std::cout << "expand_times: " << std::endl;
   // for(size_t i = 0; i < expand_times.size(); i++)
-  //     std::cout << expand_times[i] << "  ";
+  // std::cout << expand_times[i] << "  ";
   // std::cout << std::endl;
+
   std::vector<int> vec_in_dims;
-  //int dims = expand_times.size();
   DDim in_shape = x->dims();
   //std::cout << "xshape: " << std::endl;
   for (int i = 0; i < in_shape.size(); ++i) {
-      //vec_in_dims.push_back(static_cast<int64_t>(in_shape[i]));
+    if (in_shape[i] == 0) {
+        out->set_target(TARGET(kXPU));
+        return;
+    }
     vec_in_dims.push_back(static_cast<T>(in_shape[i]));
     //std::cout << vec_in_dims[i] << "  ";
   }
@@ -102,7 +105,7 @@ REGISTER_LITE_KERNEL(expand, kXPU, kFloat, kAny, expand_xpu_float, def)
 
 
 using expand_xpu_int32 = paddle::lite::kernels::xpu::ExpandCompute<int32_t>;
-REGISTER_LITE_KERNEL(expand, kXPU, kFloat, kAny, expand_xpu_int32, def_int32)
+REGISTER_LITE_KERNEL(expand, kXPU, kFloat, kAny, expand_xpu_int32, int32)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kXPU),
                                       PRECISION(kInt32),
@@ -122,7 +125,7 @@ REGISTER_LITE_KERNEL(expand, kXPU, kFloat, kAny, expand_xpu_int32, def_int32)
     .Finalize();
 
 using expand_xpu_int64 = paddle::lite::kernels::xpu::ExpandCompute<int64_t>;
-REGISTER_LITE_KERNEL(expand, kXPU, kFloat, kAny, expand_xpu_int64, def_int64)
+REGISTER_LITE_KERNEL(expand, kXPU, kFloat, kAny, expand_xpu_int64, int64)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kXPU),
                                       PRECISION(kInt64),

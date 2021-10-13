@@ -62,9 +62,17 @@ REGISTER_LITE_KERNEL(range, kXPU, kFloat, kAny, range_float_f, def)
     .Finalize();
 
 using range_int32_f = paddle::lite::kernels::xpu::RangeCompute<int32_t>;
-REGISTER_LITE_KERNEL(range, kXPU, kFloat, kAny, range_int32_f, def_int32)
+REGISTER_LITE_KERNEL(range, kXPU, kFloat, kAny, range_int32_f, int32)
     .BindInput("Start", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny)) })
     .BindInput("End", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny)) })
     .BindInput("Step", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32), DATALAYOUT(kAny)) })
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32), DATALAYOUT(kAny)) })
     .Finalize();
+
+// using range_int64_f = paddle::lite::kernels::xpu::RangeCompute<int64_t>;
+// REGISTER_LITE_KERNEL(range, kXPU, kFloat, kAny, range_int64_f, int64)
+//     .BindInput("Start", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64), DATALAYOUT(kAny)) })
+//     .BindInput("End", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64), DATALAYOUT(kAny)) })
+//     .BindInput("Step", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64), DATALAYOUT(kAny)) })
+//     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64), DATALAYOUT(kAny)) })
+//     .Finalize();

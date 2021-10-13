@@ -114,8 +114,8 @@ class ExpandComputeTester : public arena::TestCase {
 template <class T,
           bool has_expandtimes = false,
           bool has_expand_times_tensor = false>
-void test_expand_3dim(Place place, float abs_error) {
-  std::string alias{"def"};
+void test_expand_3dim(Place place, float abs_error, std::string alias="def") {
+    //std::string alias{"def"};
 
   for (std::vector<int> expand_times : {std::vector<int>({2, 3, 1}),
                                         std::vector<int>({2, 2, 2}),
@@ -139,8 +139,8 @@ void test_expand_3dim(Place place, float abs_error) {
 template <class T,
           bool has_expandtimes = false,
           bool has_expand_times_tensor = false>
-void test_expand_4dim(Place place, float abs_error) {
-  std::string alias{"def"};
+void test_expand_4dim(Place place, float abs_error, std::string alias="def") {
+    //std::string alias{"def"};
 
   for (std::vector<int> expand_times : {std::vector<int>({2, 3, 1, 4}),
                                         std::vector<int>({2, 2, 2, 2}),
@@ -170,21 +170,21 @@ TEST(Expand, precision) {
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
-  place = TARGET(kXPU);  
+  place = TARGET(kXPU);
 #elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = Place(TARGET(kHost), PRECISION(kAny));
 #else
   return;
 #endif
-
   test_expand_3dim<float>(place, abs_error);
   test_expand_4dim<float>(place, abs_error);
 #ifndef LITE_WITH_NPU
-  test_expand_3dim<int>(place, abs_error);
-   test_expand_4dim<int>(place, abs_error);
-//   test_expand_4dim<float, true>(place, abs_error);
-//   test_expand_4dim<float, false, true>(place, abs_error);
-//   test_expand_4dim<int, true, true>(place, abs_error);
+  test_expand_3dim<int64_t>(place, abs_error, "int64");
+  test_expand_3dim<int>(place, abs_error, "int32");
+  test_expand_4dim<int>(place, abs_error, "int32");
+  test_expand_4dim<float, true>(place, abs_error);
+  test_expand_4dim<float, false, true>(place, abs_error);
+  test_expand_4dim<int, true, true>(place, abs_error, "int32");
  #endif
 }
 
