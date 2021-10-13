@@ -163,7 +163,7 @@
 
     1）未使用自定义子图分割配置：
 
-    ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/ssd_mobilenet_v1_relu_voc_fp32_300_auto_split_netron.jpg)
+    ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/ssd_mobilenet_v1_relu_voc_fp32_300_auto_split_netron.png)
 
     2）使用如下自定义子图配置：
 
@@ -172,7 +172,7 @@
     transpose2:conv2d_23.tmp_1:transpose_1.tmp_0,transpose_1.tmp_1
     ```
 
-    ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/ssd_mobilenet_v1_relu_voc_fp32_300_manual_split_netron.jpg)
+    ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/ssd_mobilenet_v1_relu_voc_fp32_300_manual_split_netron.png)
 
     注意：该接口仅用于cxxconfig加载Paddle模型生成nb模型或直接推理时使用。
 
@@ -194,10 +194,19 @@
 ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_call_flow.png)
 
 ### 应用程序、Paddle Lite、NNAdapter和硬件SDK之间的详细调用过程
+- 查询设备是否可用，将设置的设备名称列表、设备上下文参数、模型缓存数据存储在Paddle Lite的Scope中（Scope与Predictor绑定。通常存储模型的张量数据）。
 ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_call_flow_detail_0.png)
+
+- 从Scope中获取设备名称列表、设备上下文参数，创建设备实例、设备统一上下文实例和与设备无关的模型实例。
 ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_call_flow_detail_1.png)
+
+- 将Paddle Lite子图中的张量和算子全部转换为NNAdapter的操作数和操作符后加入到模型实例中。
 ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_call_flow_detail_2.png)
+
+- 创建编译实例，从模型缓存中直接恢复设备程序，或通过目标设备的HAL层库调用硬件SDK，将模型实例编译生成设备程序。
 ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_call_flow_detail_3.png)
+
+- 创建执行计划实例，设置输入、输出内存和访问函数，在设备程序执行完毕后，将结果返回给应用程序。
 ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_call_flow_detail_4.png)
 
 ## 附录
