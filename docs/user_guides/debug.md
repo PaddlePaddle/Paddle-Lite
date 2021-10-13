@@ -187,4 +187,3 @@ softmax              arm/float/NCHW                 NotImpl                  0.0
 - Kernel 层信息：`class KernelBase::SetProfileRuntimeKernelInfo(profile::OpCharacter* ch)`方法为虚函数，实际执行会调用由`KernelBase`派生的最终子类，如`class ReluCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)>`，`class KernelLite`由`KernelBase`派生而来，实现多态机制下的 Kernel 信息获取，如具体的底层 Kernel名。
 
 通过在 Op 层将`OpLite*`成员以`void*`的形式放在`profile::OpCharacter`结构体中，并将此结构体传递给 Kernel 层，实现获取所有的 Op 层与 Kernel 层信息。
-
