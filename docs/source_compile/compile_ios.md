@@ -5,7 +5,7 @@
 
 本文介绍在 MacOS 操作系统环境下，如何将 Paddle Lite 进行源码编译生成 iOS 预测库。
 
-说明：本文适用于 Paddle Lite v2.10 及以上版本，面向对源代码有修改需求的开发者。如果您需要的是 Paddle Lite 正式版本，请直接 [前往下载](https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html) 我们预先构建发布的预测库包。
+说明：自 release/v2.10 版本起，Paddle Lite 支持了 Metal 后端。如果您需要 Paddle Lite 正式版本，请直接 [前往下载](https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html) 我们预先构建发布的预测库包。
 
 ## 二、环境配置
 
