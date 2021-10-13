@@ -2,7 +2,7 @@
 
 以下介绍了该工作流程的每一个步骤，并提供了进一步说明的链接：
 
-### 1. 创建Paddle Lite 模型
+### 1. 创建 Paddle Lite 模型
 
 您可以通过以下方式生成 Paddle Lite 模型：
 
@@ -14,7 +14,7 @@
 
 - 使用 Paddle Lite API，在多个平台和语言中均受支持（如 [Java](../quick_start/java_demo)、[C++](../quick_start/cpp_demo)、[Python](../quick_start/python_demo)）
   - 配置参数（MobileConfig），设置模型来源等
-  - 创建推理器（Predictor），调用CreatePaddlePredictor接口即可创建
-  - 设置模型输入，通过predictor->GetInput(i)获取输入变量，并为其指定大小和数值
-  - 执行预测，只需要调用predictor->Run()
-  - 获得输出，使用predictor->GetOutput(i)获取输出变量，并通过data<T>取得输出值
+  - 创建推理器（Predictor），调用 CreatePaddlePredictor 接口即可创建
+  - 设置模型输入，通过 predictor->GetInput(i) 获取输入变量，并为其指定大小和数值
+  - 执行预测，只需要调用 predictor->Run()
+  - 获得输出，使用 predictor->GetOutput(i) 获取输出变量，并通过 data<T> 取得输出值
