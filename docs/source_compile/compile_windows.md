@@ -1,10 +1,10 @@
-# 使用 Windows 构建 / 目标终端为 Windows
+# 使用 x86 Windows 环境编译 Paddle Lite / 目标硬件 OS 为 x86 Windows
 
 ## 一、简介
 
-本文介绍在 Windows 操作系统环境下，如何将 Paddle Lite 源代码编译生成 Windows 平台的预测库
+本文介绍在 Windows 操作系统环境下，如何将 Paddle Lite 源代码编译生成 Windows 平台的预测库。
 
-**说明：** *本文适用于 release/v2.9 及以上版本，面向对源代码有修改需求的开发者。如果您需要的是 Paddle Lite 正式版本，请直接 [前往下载](https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html) 我们预先构建发布的预测库包。*
+**说明：** *本文适用于 release/v2.9 及以上版本，面向对源代码有修改需求的开发者。目前只支持 x86 架构 CPU 的 Windows 操作系统平台。如果您需要的是 Paddle Lite 正式版本，请直接 [前往下载](https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html) 我们预先构建发布的预测库包。*
 
 ## 二、环境配置
 
