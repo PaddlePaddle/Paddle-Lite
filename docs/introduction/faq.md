@@ -28,8 +28,8 @@
 
 1、Paddle Lite 相关资料：
 
-答：Paddle Lite 文档 [https://paddle-lite.readthedocs.io/zh/latest/](https://paddle-lite.readthedocs.io/zh/latest/)
-   Paddle Lite 各平台应用示例 [https://github.com/PaddlePaddle/Paddle-Lite-Demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)
+答：Paddle Lite 文档 [https://paddle-lite.readthedocs.io/zh/latest/](https://paddle-lite.readthedocs.io/zh/latest/)。  
+   Paddle Lite 各平台应用示例 [https://github.com/PaddlePaddle/Paddle-Lite-Demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)。
 
 2、Paddle Lite 如何加载动态图模型？
 
@@ -45,9 +45,9 @@
 
 1、Paddle Lite 支持英伟达的Jetson硬件吗？
 
-答：不支持, 对于英伟达的 Jetson 硬件，推荐用户使用飞桨的原生推理库[paddle inference](https://paddle-inference.readthedocs.io/en/latest/#)。
+答：不支持, 对于英伟达的 Jetson 硬件，推荐用户使用飞桨的原生推理库 [paddle inference](https://paddle-inference.readthedocs.io/en/latest/#)。
 
 2、Paddle Lite 如何支持低版本的安卓？
 
-答：推荐用户下载预编译库，如不满足条件使用，可参考编译脚本[build_android.sh](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/tools/build_android.sh)
+答：推荐用户下载预编译库，如不满足条件使用，可参考编译脚本 [build_android.sh](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/tools/build_android.sh)
 进行编译。Android 版本低于6.0时，需要设置 --android_api_level，不支持低于 Android 5.0 的版本。
