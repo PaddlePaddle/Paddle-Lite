@@ -194,7 +194,7 @@ class ConvComputeTester : public arena::TestCase {
                   float min_value = std::min(max_value, hard_swish_threshold_);
                   out_value = min_value * out_value / hard_swish_scale_;
                 } else {
-                  LOG(FATAL) << " activation type " << static_cast(act_type)
+                  LOG(FATAL) << " activation type " << act_type_
                              << "not supported in conv test";
                 }
               }
