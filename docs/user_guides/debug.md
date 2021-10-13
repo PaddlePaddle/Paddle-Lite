@@ -5,40 +5,38 @@
 
 Profiler 在 Lite 里分为性能 Profiler 和 精度 Profiler：
 
-- 性能 Profiler ：用于逐层耗时统计，可以获取到模型逐层 ARM CPU / X86 CPU / OpenCL 上kernel 耗时信息。定位耗时潜在问题；
+- 性能 Profiler ：用于逐层耗时统计，可以获取到模型逐层 ARM CPU / X86 CPU / OpenCL 上 kernel 耗时信息。定位耗时潜在问题；
 - 精度 Profiler ：用于逐层精度统计，可以获取到模型逐层每个 Op 的输出 tensor 精度信息。
 
 ### 开启方法
 
-- 开启性能 Profiler: 编译时加上选项`--with_profile=ON`，
-  - 如编译x86时可用`./lite/tools/build.sh --with_profile=ON  x86`
-  - 编译安卓可用`./lite/tools/build.sh   --arm_os=android   --arm_abi=armv8   --arm_lang=clang   --android_stl=c++_static --with_profile=ON full_publish`
-- 开启精度 Profiler：编译时加上选项`--with_precision_profile=ON`，
-  - 如编译x86时可用`./lite/tools/build.sh --with_profile=ON  x86`
-  - 编译安卓可用`./lite/tools/build.sh   --arm_os=android   --arm_abi=armv8   --arm_lang=clang   --android_stl=c++_static --with_precision_profile=ON full_publish`
+- 开启性能 Profiler: 编译时加上`--with_profile=ON`，
+  - 如编译 x86 linux 时可用`./lite/tools/build_linux.sh --arch=x86 --with_profile=ON full_publish`
+- 开启精度 Profiler：编译时加上`--with_precision_profile=ON`，
+  - 如编译 x86 linux 时可用`./lite/tools/build_linux.sh --arch=x86 --with_precision_profile=ON full_publish`
 
-修改后，针对移动端Android平台，按照下面方式编译：
+修改后，针对移动端 Android 平台，按照下面方式编译：
 
 ```shell
-./lite/tools/build.sh \
-  --arm_os=android \
-  --arm_abi=armv8 \
-  --arm_lang=clang \
+./lite/tools/build_android.sh \
+  --arch=armv8 \
+  --toolchain=clang \
   --android_stl=c++_static \
   --with_precision_profile=ON \
   full_publish
 ```
+
 
 其它平台，参照文档对各平台的编译方式进行编译，同时加上`--with_precision_profile=ON`这个选项。
 
 
 ### 精度 Profiler
 
-对每个output tensor除了有维度/设备/数据排布/精度信息外，还3个数值来表示，用于快速核验：
+对每个 output tensor 除了有维度/设备/数据排布/精度信息外，还有 3 个数值来表示，用于快速核验：
 
-1. 均值(`mean`)：该tensor所有元素的和值除以元素个数。反应整体的平均值情况；
-2. 标准差(`std_deviation`)：该tensor距离均值的波动程度。一般来说，均值和标准差就能确定该 tensor 的正确性；
-3. 序列值(`ave_grow_rate`)：该tensor从起始元素到最后一个元素的变化情况，反应整体的序列变化情况。当两组tensor均值和标准差一样，但是序列即出现的位次不同时，该值也不同。
+1. 均值(`mean`)：该 tensor 所有元素的和值除以元素个数。反应整体的平均值情况；
+2. 标准差(`std_deviation`)：该 tensor 距离均值的波动程度。一般来说，均值和标准差就能确定该 tensor 的正确性；
+3. 序列值(`ave_grow_rate`)：该 tensor 从起始元素到最后一个元素的变化情况，反应整体的序列变化情况。当两组 tensor 均值和标准差一样，但是序列即出现的位次不同时，该值也不同。
 
 > 序列值的算法
 > 从第二个元素起始，通过对当前元素减去前一个数并对差值除以前一个数，并将所有值累加，并将累加值除以总的元素个数。
@@ -51,7 +49,7 @@ Profiler 在 Lite 里分为性能 Profiler 和 精度 Profiler：
 > ave_grow_rate /= output.length;
 > ```
 
-上面方式编译好了之后，进入`build.lite.android.armv8.clang/inference_lite_lib.android.armv8/demo/cxx/mobile_light/`，执行`make`之后产生可执行文件`mobilenetv1_light_api`，将此可执行文件和`build.lite.android.armv8.clang/inference_lite_lib.android.armv8/cxx/lib/libpaddle_light_api_shared.so`通过ADB shell发送到手机的同一目录，同时把模型如`mobilenet_v1.nb`也发送到手机上此目录，执行`./mobilenetv1_light_api ./mobilenet_v1.nb`，会自动打印类似如下日志:
+上面方式编译好了之后，进入`build.lite.android.armv8.clang/inference_lite_lib.android.armv8/demo/cxx/mobile_light/`，执行`make`之后产生可执行文件`mobilenetv1_light_api`，将此可执行文件和`build.lite.android.armv8.clang/inference_lite_lib.android.armv8/cxx/lib/libpaddle_light_api_shared.so`通过 ADB shell 发送到手机的同一目录，同时把模型如`mobilenet_v1.nb`也发送到手机上此目录，执行`./mobilenetv1_light_api ./mobilenet_v1.nb`，会自动打印类似如下日志:
 
 ```shell
 ========================================= Detailed Precision Profiler Summary =========================================
@@ -91,30 +89,29 @@ softmax:arm/float/NCHW                        save_infer_model/scale_0.tmp_1_1:a
 2. Enable write each output tensor to file: `export PADDLELITE_PRECISION_WRITE_TO_FILE=1` on ADB command line.
 ```
 
-此外，若要保存每个 OP 的每个数据输出到文件，可以在ADB Shell环境里执行前加入这句`export PADDLELITE_PRECISION_WRITE_TO_FILE=1`，就会将每层每个的输出写文件保存，若是多次执行则会将每次推理的结果按照`PaddleLite`为前缀加时间戳的命名方式，保存在不同的文件夹里，文件夹存储路径会在打印的信息中注明。
+此外，若要保存每个 OP 的每个数据输出到文件，可以在 ADB Shell 环境里执行前加入这句`export PADDLELITE_PRECISION_WRITE_TO_FILE=1`，就会将每层每个的输出写文件保存，若是多次执行则会将每次推理的结果按照`PaddleLite`为前缀加时间戳的命名方式，保存在不同的文件夹里，文件夹存储路径会在打印的信息中注明。
 
 
 ### 性能 Profiler
 
-安卓端 Arm CPU编译选项为
+安卓端 ARM CPU 编译选项为
 
 ```shell
-./lite/tools/build.sh \
-  --arm_os=android \
-  --arm_abi=armv8 \
-  --arm_lang=clang \
+./lite/tools/build_android.sh \
+  --arch=armv8 \
+  --toolchain=clang \
   --android_stl=c++_static \
-  --with_precision_profile=ON \
+  --with_profile=ON \
   full_publish
 ```
 
 上面方式编译好了之后，进入`build.lite.android.armv8.clang/inference_lite_lib.android.armv8/demo/cxx/mobile_light/`，执行`make`之后产生可执行文件`mobilenetv1_light_api`，将此可执行文件和`build.lite.android.armv8.clang/inference_lite_lib.android.armv8/cxx/lib/libpaddle_light_api_shared.so`通过ADB shell发送到手机的同一目录，同时把模型如`mobilenet_v1.nb`也发送到手机上此目录，执行`./mobilenetv1_light_api ./mobilenet_v1.nb`，会自动打印类似如下三部分日志：
 
-1. Detailed Dispatch Profiler Summary：单次推理的逐 OP 底层 Kernel 层运行耗时，即在`KernelBase::Run()`的前后统计耗时。会排除第一次的计时（因为第一次不准确相当于wamrup），若多次执行也会打印多次；
+1. Detailed Dispatch Profiler Summary：单次推理的逐 OP 底层 Kernel 层运行耗时，即在`KernelBase::Run()`的前后统计耗时。会排除第一次的计时（因为第一次不准确相当于 wamrup ），若多次执行也会打印多次；
 2. Concise Create Profiler Summary：汇总统计的创建 Op 的耗时，即从`Instruction::Run()`开始到`KernelBase::Run()`执行前。会排除掉前 10 次推理；
 3. Concise Dispatch Profiler Summary：汇总统计的运行 Op 的耗时，即在`KernelBase::Run()`的前后统计耗时，为 Lite 具体设备的底层 Kernel 层完整耗时，会排除掉前 10 次推理。
 
-上述命令默认会推理100次，最后一次的`Detailed Dispatch Profiler Summary`如下所示。
+上述命令默认会推理 100 次，最后一次的`Detailed Dispatch Profiler Summary`如下所示。
 
 ```shell
 ===== Detailed Dispatch Profiler Summary: N/A, Exclude 1 warm-ups =====
@@ -151,7 +148,7 @@ fc                   arm/float/NCHW                 NotImpl                  Bia
 softmax              arm/float/NCHW                 NotImpl                  axis-1                     1x1000          N/A             1x1000          0.006   0.005   0.008   0.006   0.02%    0.000   0.95 
 ```
 
-`Concise Create Profiler Summary`和`Concise Dispatch Profiler Summary`只会打印1次，如下所示。
+`Concise Create Profiler Summary`和`Concise Dispatch Profiler Summary`只会打印 1 次，如下所示。
 
 ```shell
 [I 10/13 11: 1:19. 51 .../addpass/Paddle-Lite/lite/core/program.h:216 ~RuntimeProgram] 
@@ -183,7 +180,7 @@ softmax              arm/float/NCHW                 NotImpl                  0.0
 
 ### Profiler 架构设计
 
-- Op 层信息：`struct Instruction::SetProfileRuntimeOpInfo`方法中会调用`OpLite->GetOpRuntimeInfo(profile::OpCharacter*)`，由各个从`OpLite`派生出的子类Op重写如`./lite/operator/conv_op.h`中的`class ConvOpLite : public OpLite`重写了`GetOpRuntimeInfo`方法实现了对 Conv Op 信息获取，从而实现了在`Instruction::SetProfileRuntimeOpInfo`中获取每个 Op 的信息。
-- Kernel 层信息：`class KernelBase::SetProfileRuntimeKernelInfo(profile::OpCharacter* ch)`方法为虚函数，实际执行会调用由`KernelBase`派生的最终子类，如`class ReluCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)>`，`class KernelLite`由`KernelBase`派生而来，实现多态机制下的 Kernel 信息获取，如具体的底层 Kernel名。
+- Op 层信息：`struct Instruction::SetProfileRuntimeOpInfo`方法中会调用`OpLite->GetOpRuntimeInfo(profile::OpCharacter*)`，由各个从`OpLite`派生出的子类 Op 重写如`./lite/operator/conv_op.h`中的`class ConvOpLite : public OpLite`重写了`GetOpRuntimeInfo`方法实现了对 Conv Op 信息获取，从而实现了在`Instruction::SetProfileRuntimeOpInfo`中获取每个 Op 的信息。
+- Kernel 层信息：`class KernelBase::SetProfileRuntimeKernelInfo(profile::OpCharacter* ch)`方法为虚函数，实际执行会调用由`KernelBase`派生的最终子类，如`class ReluCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)>`，`class KernelLite`由`KernelBase`派生而来，实现多态机制下的 Kernel 信息获取，如具体的底层 Kernel 名。
 
 通过在 Op 层将`OpLite*`成员以`void*`的形式放在`profile::OpCharacter`结构体中，并将此结构体传递给 Kernel 层，实现获取所有的 Op 层与 Kernel 层信息。
