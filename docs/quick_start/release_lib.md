@@ -3,7 +3,7 @@
 
 ## 编译版本介绍
 
-- arch=`armv7/armv7hf/armv8/x86`        CPU架构，可选择包括`armv7`、`armv7hf`、`armv8`和`x86`等
+- arch=`armv7/armv7hf/armv8/x86`        Host端的CPU架构，可选择包括`armv7`、`armv7hf`、`armv8`和`x86`等
 - os=`Android/iOS/Linux/macOS/Windows`  操作系统，可选择包括`Android`、`iOS`、`linux`、`macOS`和`Windows`等
 - toolchain=`gcc/clang`                 源码编译时的编译器，可选择包括`gcc`和`clang`等
 - android_stl=`c++_static/c++_shared`   PaddleLite预测库链接STL库的方式，可选择包括`c++_static`(静态链接)和`c++_shared`(动态链接)
@@ -114,13 +114,27 @@
 ## Opencl
 
 |Arch |dowload |
+|:-----:|:-----:|
 |armv7 |[v2.10](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10/inference_lite_lib.armv7.clang.with_exception.with_extra.with_cv.opencl.tar.gz) |
 |armv8 |[v2.10](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10/inference_lite_lib.armv8.clang.with_exception.with_extra.with_cv.opencl.tar.gz) |
 
 
 ## 百度XPU
 
+|Arch |dowload |os |
+|:-----:|:-----:|:-----:|
+|x86   |[v2.10](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10/inference_lite_lib.xpu.x86.centos.tar.gz) |CentOS 6.3 |
+|x86   |[v2.10](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10/inference_lite_lib.xpu.x86.ubuntu.tar.gz) |Ubuntu     |
+|armv8 |[v2.10](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10/inference_lite_lib.xpu.armv8.ky10.tar.gz) |银河麒麟v10 |
+
+
 ## 华为昇腾NPU
+
+|Arch |dowload |os |
+|:-----:|:-----:|:-----:|
+|x86   |[v2.10](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10/inference_lite_lib.ascend_npu.x86.ubuntu.tar.gz) |Ubuntu    |
+|armv8 |[v2.10](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10/inference_lite_lib.ascend_npu.armv8.ky10.tar.gz) |银河麒麟v10 |
+
 
 ## 华为麒麟NPU
 
@@ -136,7 +150,7 @@
 |os |dowload |
 |:-----:|:-----:|
 |Linux | [v2.10](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10/opt_linux) |
-|macOS | [v2.10](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10/opt_mac)    |
+|macOS | [v2.10](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10/opt_mac)   |
 
 ## 安装Paddle-Lite python 库方法
 
