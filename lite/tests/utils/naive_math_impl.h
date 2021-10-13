@@ -506,16 +506,15 @@ static void conv_basic(const Dtype1* din,
                         static_cast<Dtype2>(threshold * tmp1);
                   }
                 }
+              } else {
+                printf("this act type: %d does not support \n", act_type);
               }
-            } else {
-              printf("this act type: %d does not support \n", act_type);
             }
           }
         }
       }
     }
   }
-}
 }
 
 template <typename Dtype>
