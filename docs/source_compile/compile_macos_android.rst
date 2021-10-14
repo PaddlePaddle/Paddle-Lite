@@ -48,7 +48,7 @@
 
 * gcc、git、make、curl、unzip、java
 * CMake（请使用 3.10 或以上版本）
-* 编译Android: Android NDK (支持 ndk-r17c 及之后的所有 ndk 版本)
+* 编译 Android: Android NDK (支持 ndk-r17c 及之后的所有 ndk 版本)
 
 环境安装命令
 ^^^^^^^^^^^^
