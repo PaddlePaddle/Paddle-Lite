@@ -2,25 +2,14 @@
    :format: html
 
 
-使用 x86 MacOS 环境编译 Paddle Lite / 目标硬件 OS 为 x86 MacOS
+使用 MacOS 环境编译 Paddle Lite / 目标硬件 OS 为 MacOS
 ======================================================
 
 简介
 ----
 
-如果你的本机环境是 X86架构 + MacOS 操作系统，需要部署模型到 X86_MacOS 系统的目标硬件上，则可以参考本文的介绍，从源码构建 Paddle Lite 编译包，用于后续应用程序的开发。
-注意 Arm 架构的 Apple M1 芯片不能使用本文档，该部分内容会在 Arm_MacOS 相关的章节中阐述。
-..
-
-   **说明：**
-
-
-   * 
-     通常情况下，你不需要自行从源码构建编译包，优先推荐\ `下载 Paddle Lite 官方发布的预编译包 <https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html>`_\ ，可满足一部分场景的需求。如果官方发布的编译包未覆盖你的场景，或者需要修改Paddle Lite源代码，则可参考本文构建。
-
-   * 
-     本文介绍的编译方法适用于 Paddle Lite v2.10 及以上版本。v2.3及之前版本请参考\ `release/v2.3源码编译方法 <https://paddle-lite.readthedocs.io/zh/latest/source_compile/v2.3_compile.html>`_\ 。
-
+如果你的本机环境是 MacOS 操作系统，需要部署模型到 MacOS 系统的目标硬件上，则可以参考本文的介绍，从源码构建 Paddle Lite 编译包，用于后续应用程序的开发。
+注意 Arm 架构的 Apple M1 芯片暂不适用于本文档。
 
 在该场景下 Paddle Lite 已验证的软硬件配置如下表所示：
 
@@ -34,11 +23,22 @@
      - x86 MacOS\ :raw-html-m2r:`<br>`
      - x86 MacOS\ :raw-html-m2r:`<br>`
    * - **芯片层**
-     - x86架构
+     - x86 Intel CPU
      - x86 Intel CPU :raw-html-m2r:`<br>`
 
 
 [^1]：OpenCL 是面向异构硬件平台的编译库，Paddle Lite 支持在 x86 MacOS 系统上运行基于 OpenCL 的程序。
+
+   **说明：**
+
+
+   * 
+     通常情况下，你不需要自行从源码构建编译包，优先推荐\ `下载 Paddle Lite 官方发布的预编译包 <https://paddle-lite.readthedocs.io/zh/develop/quick_start/release_lib.html>`_\ ，可满足一部分场景的需求。如果官方发布的编译包未覆盖你的场景，或者需要修改Paddle Lite源代码，则可参考本文构建。
+
+   * 
+     本文介绍的编译方法适用于 Paddle Lite v2.10 及以上版本。v2.3 及之前版本请参考\ `release/v2.3源码编译方法 <https://paddle-lite.readthedocs.io/zh/develop/source_compile/v2.3_compile.html>`_\ 。
+
+
 
 准备编译环境
 ------------
@@ -122,14 +122,14 @@ Paddle Lite 仓库中\ ``/lite/tools/build_macos.sh``\ 脚本文件用于构建 
 
 .. code-block:: shell
 
-   # 1. 下载 Paddle Lite 源码并切换到发布分支，如 release/v2.10
+   # 1. 下载 Paddle Lite 源码并切换到发布分支，如 develop
    git clone https://github.com/PaddlePaddle/Paddle-Lite.git
    cd Paddle-Lite && git checkout release/v2.10
 
    # (可选) 删除 third-party 目录，编译脚本会自动从国内CDN下载第三方库文件
    # rm -rf third-party
 
-   # 2. 编译 Paddle Lite x86_MacOS 预测库
+   # 2. 编译 Paddle Lite x86 MacOS 预测库
    ./lite/tools/build_macos.sh x86
 
 ..
