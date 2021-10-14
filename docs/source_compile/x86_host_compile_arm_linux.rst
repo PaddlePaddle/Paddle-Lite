@@ -28,7 +28,7 @@
    * - Host 环境
      - 目标硬件环境
    * - x86 Linux
-     - CPU arm64/armhf :raw-html-m2r:`<br>` Huawei Ascend NPU :raw-html-m2r:`<br>` Baidu XPU :raw-html-m2r:`<br>` OpenCL :raw-html-m2r:`<br>` Rockchip NPU :raw-html-m2r:`<br>`  Amlogic NPU :raw-html-m2r:`<br>` Imagination NNA :raw-html-m2r:`<br>`  Intel-FPGA :raw-html-m2r:`<br>` 注：查询以上芯片支持的具体型号，可参考\ `支持硬件列表 <https://paddle-lite.readthedocs.io/zh/latest/introduction/support_hardware.html>`_\ 章节。
+     - CPU arm64/armhf :raw-html-m2r:`<br>` Huawei Ascend NPU :raw-html-m2r:`<br>` Baidu XPU :raw-html-m2r:`<br>` OpenCL :raw-html-m2r:`<br>` Rockchip NPU :raw-html-m2r:`<br>`  Amlogic NPU :raw-html-m2r:`<br>` Imagination NNA :raw-html-m2r:`<br>`  Intel FPGA :raw-html-m2r:`<br>` 注：查询以上芯片支持的具体型号，可参考\ `支持硬件列表 <https://paddle-lite.readthedocs.io/zh/latest/introduction/support_hardware.html>`_\ 章节。
 
 准备编译环境
 ------------------------------------------------------
@@ -37,7 +37,11 @@
 因为本教程使用 Host 环境为 x86 架构，因此下面仅介绍交叉编译 ARM Linux 方式。
 
 交叉编译 ARM Linux
-^^^^^^^^^^^^^^^^^^^^^^^^
+********************
+
+环境要求
+^^^^^^^^
+
 * gcc、g++、git、make、wget、python、scp
 * cmake（建议使用 3.10 或以上版本）
 
