@@ -2,13 +2,13 @@
    :format: html
 
 
-使用x86 MacOS环境编译Paddle Lite / 目标硬件OS为Android
-======================================================
+使用 MacOS 环境编译 Paddle Lite / 目标硬件 OS 为 Android
+==========================================================
 
 简介
 ----
 
-如果你的本机环境是X86架构 + MacOS操作系统，需要部署模型到Android系统的目标硬件上，则可以参考本文的介绍，通过Android NDK交叉编译工具从源码构建Paddle Lite编译包，用于后续应用程序的开发。
+如果你的本机环境 MacOS 操作系统(暂不支持 M1 机型)，需要部署模型到 Android 系统的目标硬件上，则可以参考本文的介绍，通过 Android NDK 交叉编译工具从源码构建 Paddle Lite 编译包，用于后续应用程序的开发。
 
 ..
 
@@ -16,13 +16,13 @@
 
 
    * 
-     通常情况下，你不需要自行从源码构建编译包，优先推荐\ `下载Paddle Lite官方发布的预编译包 <https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html>`_\ ，可满足一部分场景的需求。如果官方发布的编译包未覆盖你的场景，或者需要修改Paddle Lite源代码，则可参考本文构建。
+     通常情况下，你不需要自行从源码构建编译包，优先推荐\ `下载 Paddle Lite 官方发布的预编译包 <https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html>`_\ ，可满足一部分场景的需求。如果官方发布的编译包未覆盖你的场景，或者需要修改 Paddle Lite 源代码，则可参考本文构建。
 
    * 
-     本文介绍的编译方法只适用于Paddle Lite v2.6及以上版本。v2.3及之前版本请参考\ `release/v2.3源码编译方法 <https://paddle-lite.readthedocs.io/zh/latest/source_compile/v2.3_compile.html>`_\ 。
+     本文介绍的编译方法只适用于 Paddle Lite v2.6 及以上版本。v2.3 及之前版本请参考 \ `release/v2.3 源码编译方法 <https://paddle-lite.readthedocs.io/zh/latest/source_compile/v2.3_compile.html>`_\ 。
 
 
-在该场景下Paddle Lite已验证的软硬件配置如下表所示：
+在该场景下 Paddle Lite 已验证的软硬件配置如下表所示：
 
 .. list-table::
    :header-rows: 1
@@ -32,13 +32,13 @@
      - 目标硬件环境
    * - **操作系统**
      - MacOS\ :raw-html-m2r:`<br>`
-     - Android 4.1及以上（芯片版本为ARMv7时）\ :raw-html-m2r:`<br>` Android 5.0及以上（芯片版本为ARMv8时）
+     - Android 4.1 及以上（芯片版本为 ARMv7 时）\ :raw-html-m2r:`<br>` Android 5.0 及以上（芯片版本为 ARMv8 时）
    * - **芯片层**
-     - x86架构
+     - x86 架构
      - arm64-v8a/armeabi-v7a CPU :raw-html-m2r:`<br>` Huawei Kirin NPU :raw-html-m2r:`<br>`\ MediaTek APU :raw-html-m2r:`<br>` Amlogic NPU :raw-html-m2r:`<br>` OpenCL[^1] :raw-html-m2r:`<br>` 注：查询以上芯片支持的具体型号以及对应的手机型号，可参考\ `支持硬件列表 <https://paddle-lite.readthedocs.io/zh/latest/introduction/support_hardware.html>`_\ 章节。
 
 
-[^1]：OpenCL是面向异构硬件平台的编译库，Paddle Lite支持在Android系统上运行基于OpenCL的程序。
+[^1]：OpenCL 是面向异构硬件平台的编译库，Paddle Lite 支持在 Android 系统上运行基于 OpenCL 的程序。
 
 准备编译环境
 ------------
@@ -48,25 +48,27 @@
 
 * gcc、git、make、curl、unzip、java
 * CMake（请使用 3.10 或以上版本）
-* 编译Android: Android NDK (支持ndk-r17c及之后的所有ndk版本)
+* 编译Android: Android NDK (支持 ndk-r17c 及之后的所有 ndk 版本)
 
 环境安装命令
 ^^^^^^^^^^^^
-   # 1. 安装curl gcc git make unzip wget等基础软件
+.. code-block:: shell
+
+   # 1. 安装 curl gcc git make unzip wget 等基础软件 
    brew install  curl gcc git make unzip wget
 
-   # 2. 安装CMake，以下命令以3.10.2版本为例，其他版本步骤类似。
+   # 2. 安装 CMake，以下命令以 3.10.2 版本为例，其他版本步骤类似。
    mkdir /usr/local/Cellar/cmake/ && cd /usr/local/Cellar/cmake/
    wget https://cmake.org/files/v3.10/cmake-3.10.2-Darwin-x86_64.tar.gz
    tar zxf ./cmake-3.10.2-Darwin-x86_64.tar.gz
    mv cmake-3.10.2-Darwin-x86_64/CMake.app/Contents/ ./3.10.2
    ln -s /usr/local/Cellar/cmake/3.10.2/bin/cmake /usr/local/bin/cmake
 
-   # 3. 下载Mac版本的Android NDK，以下命令以r17c版本为例，其他版本步骤类似。
+   # 3. 下载 Mac 版本的 Android NDK，以下命令以 r17c 版本为例，其他版本步骤类似。
    cd ~/Documents && curl -O https://dl.google.com/android/repository/android-ndk-r17c-darwin-x86_64.zip
    cd ~/Library && unzip ~/Documents/android-ndk-r17c-darwin-x86_64.zip
 
-   # 4. 添加环境变量NDK_ROOT指向Android NDK的安装路径
+   # 4. 添加环境变量 NDK_ROOT 指向 Android NDK 的安装路径
    echo "export NDK_ROOT=~/Library/android-ndk-r17c" >> ~/.bash_profile
    source ~/.bash_profile
 
@@ -76,7 +78,7 @@
 了解基础编译参数
 ----------------
 
-Paddle Lite仓库中\ ``/lite/tools/build_android.sh``\ 脚本文件用于构建Android版本的编译包，通过修改\ ``build_android.sh``\ 脚本文件中的参数，可满足不同场景编译包的构建需求，常用的基础编译参数如下表所示：
+Paddle Lite 仓库中 \ ``/lite/tools/build_android.sh``\  脚本文件用于构建 Android 版本的编译包，通过修改 \ ``build_android.sh``\  脚本文件中的参数，可满足不同场景编译包的构建需求，常用的基础编译参数如下表所示：
 有特殊硬件需求的编译参数见后文。
 
 .. list-table::
@@ -91,7 +93,7 @@ Paddle Lite仓库中\ ``/lite/tools/build_android.sh``\ 脚本文件用于构建
      - armv8 / armv7
      - armv8
    * - toolchain
-     - C++语言的编译器工具链
+     - C++ 语言的编译器工具链
      - gcc / clang
      - gcc
    * - android_stl
@@ -99,7 +101,7 @@ Paddle Lite仓库中\ ``/lite/tools/build_android.sh``\ 脚本文件用于构建
      - c++_static / c++_shared
      - c++_static
    * - with_java
-     - 是否包含Java编译包，目标应用程序是Java语言时需配置为ON
+     - 是否包含 Java 编译包，目标应用程序是 Java 语言时需配置为 ON
      - OFF / ON
      - ON
    * - with_static_lib
@@ -140,7 +142,7 @@ Paddle Lite仓库中\ ``/lite/tools/build_android.sh``\ 脚本文件用于构建
      - armv7:16 / armv8:21
 
 
-[^2]Paddle Lite 支持的最低安卓版本是4.1（芯片版本为ARMv7时）或5.0（芯片版本为ARMv8时），可通过\ ``--android_api_level``\ 选项设定一个具体的数值，该数值应不低于下表中最低支持的 Android API Level。
+[^2]Paddle Lite 支持的最低安卓版本是 4.1（芯片版本为 ARMv7 时）或 5.0（芯片版本为 ARMv8 时），可通过 \ ``--android_api_level``\  选项设定一个具体的数值，该数值应不低于下表中最低支持的 Android API Level。
 
 .. list-table::
    :header-rows: 1
@@ -148,10 +150,10 @@ Paddle Lite仓库中\ ``/lite/tools/build_android.sh``\ 脚本文件用于构建
    * - ARM ABI
      - armv7
      - armv8
-   * - 支持的最低Android API等级
+   * - 支持的最低 Android API 等级
      - 16
      - 21
-   * - 支持的最低Android版本
+   * - 支持的最低 Android 版本
      - 4.1
      - 5.0
 
@@ -159,25 +161,25 @@ Paddle Lite仓库中\ ``/lite/tools/build_android.sh``\ 脚本文件用于构建
 ..
 
    **说明：**
-   以上参数可在下载Paddle Lite源码后直接在\ ``build_android.sh``\ 文件中修改，也可通过命令行指定，具体参见下面编译步骤。
+   以上参数可在下载 Paddle Lite 源码后直接在 \ ``build_android.sh``\  文件中修改，也可通过命令行指定，具体参见下面编译步骤。
 
 
 编译步骤
 --------
 
 运行编译脚本之前，请先检查系统环境变量 ``NDK_ROOT`` 指向正确的 Android NDK 安装路径。
-之后可以下载并构建 Paddle Lite编译包。
+之后可以下载并构建 Paddle Lite 编译包。
 
 .. code-block:: shell
 
    # 1. 检查环境变量 `NDK_ROOT` 指向正确的 Android NDK 安装路径
    echo $NDK_ROOT
 
-   # 1. 下载 Paddle Lite 源码并切换到发布分支，如 release/v2.9
+   # 1. 下载 Paddle Lite 源码并切换到 develop 分支
    git clone https://github.com/PaddlePaddle/Paddle-Lite.git
-   cd Paddle-Lite && git checkout release/v2.9
+   cd Paddle-Lite && git checkout develop
 
-   # (可选) 删除third-party目录，编译脚本会自动从国内CDN下载第三方库文件
+   # (可选) 删除 third-party 目录，编译脚本会自动从国内 CDN 下载第三方库文件
    # rm -rf third-party
 
    # 2. 编译 Paddle-Lite Android 预测库
@@ -186,13 +188,13 @@ Paddle Lite仓库中\ ``/lite/tools/build_android.sh``\ 脚本文件用于构建
 ..
 
    **说明：**
-   编译过程中，如出现源码编译耗时过长，通常是第三方库下载过慢或失败导致。请在完成Paddle Lite源码下载后，删除本地仓库根目录下的 third-party 目录，编译脚本会自动下载存储于国内 CDN 的第三方依赖文件压缩包，节省从 GitHub repo 同步第三方库的时间。
+   编译过程中，如出现源码编译耗时过长，通常是第三方库下载过慢或失败导致。请在完成 Paddle Lite 源码下载后，删除本地仓库根目录下的 third-party 目录，编译脚本会自动下载存储于国内 CDN 的第三方依赖文件压缩包，节省从 GitHub repo 同步第三方库的时间。
 
 
 验证编译结果
 ------------
 
-如果按\ ``/lite/tools/build_android.sh``\ 中的默认参数执行，成功后会在 ``Paddle-Lite/build.lite.android.armv8.gcc/inference_lite_lib.android.armv8`` 生成Paddle Lite编译包，文件目录如下。
+如果按 \ ``/lite/tools/build_android.sh``\  中的默认参数执行，成功后会在 ``Paddle-Lite/build.lite.android.armv8.gcc/inference_lite_lib.android.armv8`` 生成 Paddle Lite 编译包，文件目录如下。
 
 .. code-block:: shell
 
