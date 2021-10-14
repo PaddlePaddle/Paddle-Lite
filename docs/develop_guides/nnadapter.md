@@ -1,31 +1,31 @@
 # NNAdapter
-飞桨推理AI硬件统一适配框架
+- 飞桨推理 AI 硬件统一适配框架
 
 ## 背景
-- 在[新增硬件](./add_hardware)章节中曾提到Paddle Lite的硬件适配主要分为算子和子图两种方式，特别是AI硬件，近两年来我们基于子图方式完成了华为麒麟NPU、瑞芯微NPU、联发科APU、颖脉NNA、寒武纪MLU和比特大陆NPU在Paddle Lite上的适配。但在与硬件厂商合作过程中，逐渐发现了该方案的不足之处，主要涉及以下两大方面：
+- 在[新增硬件](./add_hardware)章节中曾提到 Paddle Lite 的硬件适配主要分为算子和子图两种方式，特别是 AI 硬件，近两年来我们基于子图方式完成了华为麒麟 NPU 、瑞芯微 NPU 、联发科 APU 、颖脉 NNA 、寒武纪 MLU 和比特大陆 NPU 在 Paddle Lite 上的适配。但在与硬件厂商合作过程中，逐渐发现了该方案的不足之处，主要涉及以下两大方面：
   - 适配门槛高、周期长
-    - 要求硬件厂商对Paddle Lite有较深的了解，涵盖框架运行机制、硬件接入方案、编译系统等方面。
-    - 获取Paddle模型、算子定义、量化实现方式等信息所花费的沟通成本过高。
+    - 要求硬件厂商对 Paddle Lite 有较深的了解，涵盖框架运行机制、硬件接入方案、编译系统等方面。
+    - 获取 Paddle 模型、算子定义、量化实现方式等信息所花费的沟通成本过高。
   - 适配代码与框架过度耦合，且存在重复开发、代码维护成本过高
-    - 适配一个新的硬件并跑通一个分类模型，总文件修改数共48个，而框架文件的修改竟达到25个。
-    - Paddle算子转硬件算子存在重复开发，且一旦Paddle算子发生升级，就需要对已支持的所有硬件的相关代码进行适配，维护成本过高。
-    - 量化方式（Paddle仅支持对称量化，而大部分SoC类NPU支持非对称量化）、数据布局（例如联发科APU仅支持NHWC，而Paddle大部分模型为NCHW格式）的转换等模块存在重复实现，不利于各硬件间的共享达到缩减适配周期、降低维护成本的目的。
+    - 适配一个新的硬件并跑通一个分类模型，总的新增/修改文件数共 48 ，其中推理框架的文件修改数高达 25 。
+    -  Paddle 算子转硬件算子存在重复开发，且一旦 Paddle 算子发生升级，就需要对已支持的所有硬件的相关代码进行适配，维护成本过高。
+    - 量化方式（ Paddle 仅支持对称量化，而大部分 SoC 类 NPU 支持非对称量化）、数据布局（例如联发科 APU 仅支持 NHWC ，而 Paddle 大部分模型为 NCHW 格式）的转换等模块存在重复实现，不利于各硬件间的共享达到缩减适配周期、降低维护成本的目的。
 
 ## 简介
-- NNAdapter是什么？
-  - 由一系列C接口组成的、支撑各种深度学习框架在各种硬件（特别是AI ASIC芯片）完成高效推理的通用接口，它是建立深度学习推理框架和硬件的桥梁，包含API、Runtime、HAL三层，以及模型中间表示层的标准算子定义。
+- NNAdapter 是什么？
+  - 由一系列 C 接口组成的、支撑各种深度学习框架在各种硬件（特别是 AI ASIC 芯片）完成高效推理的通用接口，它是建立深度学习推理框架和硬件的桥梁，包含 API 、Runtime 、HAL 三层，以及模型中间表示层的标准算子定义。
 
-  ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_arch.png)
+    ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_arch.png)
 
-- NNAdapter的目的是什么？
-  - 降低接入门槛，不要求硬件厂商深入了解Paddle Lite框架，只需了解NNAdapter的标准算子定义、HAL层标准接口定义、Runtime与HAL层的调用关系即可。
-  - 减少适配工作量，缩短适配周期，只需完成硬件的HAL层库的开发即可。
+- NNAdapter 的目的是什么？
+  - 降低接入门槛，不要求硬件厂商深入了解 Paddle Lite 框架，只需了解 NNAdapter 的标准算子定义、HAL层标准接口定义、 Runtime 与 HAL 层的调用关系即可。
+  - 减少适配工作量，缩短适配周期，只需完成硬件的 HAL 层库的开发即可。
   - 与推理框架解耦，降低维护成本。
 
-- NNAdapter做了哪些工作？
-  - 标准化向上（推理框架）的接口，包括设备管理、模型组网、生成和执行的一系列C接口。
-  - 标准化算子定义，提供稳定的、文档丰富的中间表示层的算子定义（主要参考ONNX、Paddle、PyTorch和TensorFlow的算子），方便硬件厂商快速完成算子映射/转换。
-  - 标准化向下（硬件）抽象层（HAL）的接口定义，实现对硬件设备的抽象和封装（屏蔽硬件细节），为NNAdapter在不同硬件设备提供统一的访问接口。
+- NNAdapter 做了哪些工作？
+  - 标准化向上（推理框架）的接口，包括设备管理、模型组网、生成和执行的一系列 C 接口。
+  - 标准化算子定义，提供稳定的、文档丰富的中间表示层的算子定义（主要参考 ONNX 、 Paddle 、 PyTorch 和 TensorFlow 的算子），方便硬件厂商快速完成算子映射/转换。
+  - 标准化向下（硬件）抽象层（ HAL ）的接口定义，实现对硬件设备的抽象和封装（屏蔽硬件细节），为 NNAdapter 在不同硬件设备提供统一的访问接口。
 
 ## 功能模块
 ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_arch_detail.png)
@@ -35,38 +35,169 @@
 ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/paddle_lite_and_nnadapter_dynamic_shared_library.png)
 
 ### NNAdapter API
-- 设备管理
-  - NNAdapterDevice_acquire、NNAdapterDevice_release、NNAdapterDevice_getName、NNAdapterDevice_getVendor、NNAdapterDevice_getType、NNAdapterDevice_getVersion
-- 统一设备上下文
-  - NNAdapterContext_create、NNAdapterContext_destroy
-- 模型组网
-  - NNAdapterModel_create、NNAdapterModel_destroy、NNAdapterModel_finish、NNAdapterModel_addOperand、NNAdapterModel_setOperandValue、NNAdapterModel_getOperandType、NNAdapterModel_addOperation、NNAdapterModel_identifyInputsAndOutputs
-- 模型编译
-  - NNAdapterCompilation_create、NNAdapterCompilation_destroy、NNAdapterCompilation_finish、NNAdapterCompilation_queryInputsAndOutputs
-- 模型执行
-  - NNAdapterExecution_create、NNAdapterExecution_destroy、NNAdapterExecution_setInput、NNAdapterExecution_setOutput、NNAdapterExecution_compute
+类似于 Google 的 Android NNAPI 、NVIDIA 的 TensorRT 、 Intel 的 OpenVINO ，为了实现与推理框架的完全解耦，方便适配不同的推理框架，需要提供包含设备管理、统一设备上下文、模型组网、编译和执行等在内的、完备的、稳定的 API （参考 NNAPI 命名规则），实现从设备初始化、模型组网、设备代码生成、执行、获取结果一系列完整的模型推理链条的打通。
 
-注意：具体可以参考『附录』中的『NNAdapter API详细说明』。
+- 设备管理
+  - 查询设备基本信息（名称、厂商、加速卡类型、 HAL 版本），完成设备的初始化等。
+  - NNAdapterDevice_acquire 、 NNAdapterDevice_release 、 NNAdapterDevice_getName 、 NNAdapterDevice_getVendor 、 NNAdapterDevice_getType 、 NNAdapterDevice_getVersion
+   
+- 统一设备上下文
+  - 建立多种设备统一的设备上下文，可配置设备、编译、运行等基本参数，用于后续的模型编译和执行。
+  - NNAdapterContext_create 、 NNAdapterContext_destroy
+
+- 模型组网
+  - 创建与设备无关的、统一的模型的中间表达，实现推理框架模型的表达向NNAdapter模型表达的转换，具体是向模型实例中添加操作符实例（神经网络模型的算子）、操作数实例（神经网络模型的张量）进行模型组网。
+  - NNAdapterModel_create 、 NNAdapterModel_destroy 、 NNAdapterModel_finish 、 NNAdapterModel_addOperand 、 NNAdapterModel_setOperandValue 、 NNAdapterModel_getOperandType 、 NNAdapterModel_addOperation 、 NNAdapterModel_identifyInputsAndOutputs
+
+- 模型编译
+  - 创建模型编译配置，将模型编译生成适用于目标设备的程序代码，编译过程是通过设备HAL层库调用厂商 SDK 完成的。
+  - NNAdapterCompilation_create 、 NNAdapterCompilation_destroy 、 NNAdapterCompilation_finish 、 NNAdapterCompilation_queryInputsAndOutputs
+
+- 模型执行
+  - 基于已编译好的设备程序代码，创建执行计划并设置输入、输出，运行后将结果返回给推理框架。
+  - NNAdapterExecution_create 、 NNAdapterExecution_destroy 、 NNAdapterExecution_setInput 、 NNAdapterExecution_setOutput 、 NNAdapterExecution_compute
+
+注意：每个 API 的详细说明可以参考『附录』中的『 NNAdapter API 详细说明』章节。
 
 ### NNAdapter 标准算子
-### NNAdapter Runtime
-### NNAdapter HAL标准接口定义
-- 示例
+为了建立独立与推理框架的、设备无关的、统一的模型的中间表达，要求对 NNAdapter 模型中算子进行标准化，涉及数学、图像、神经网络等类别。
 
-## NNAdapter在Paddle Lite的实现
+例如：
+
+```c++
+typedef enum {
+  ...
+  /**
+    * Performs element-wise binary addition(with Numpy-style broadcasting
+    * https://numpy.org/doc/stable/user/basics.broadcasting.html).
+    *
+    * Inputs:
+    * * 0: input0, a NNADAPTER_TENSOR_FLOAT32,
+    * NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
+    * * 1: input1, a tensor with the same type as input0.
+    * * 2: fuse_code, a NNADAPTER_INT32 scalar, Specifies the activation to the
+    * result, must be one of NNAdapterFuseCode values.
+    *
+    * Outputs:
+    * * 0: output, the result with the same type as two inputs.
+    *
+    * Available since version 1.
+    */
+  NNADAPTER_ADD,
+  ...
+} NNAdapterOperationCode;
+```
+
+- 上述代码摘选自 [nnadapter.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/backends/nnadapter/nnadapter/nnadapter.h) ，描述了`逐元素相加操作符 ADD `的基本功能、输入操作数、输出操作数和适用的 NNAdapter 版本，值得注意的是：操作符的输入、输出操作数列表中的每一个操作数需要严格按照定义的顺序排列。
+
+注意：每个标准算子的详细定义可以参考『附录』中的『 NNAdapter 标准算子详细说明』章节，最新算子定义可以在 nnadapter.h 中查询。
+
+### NNAdapter Runtime
+
+
+### NNAdapter HAL 标准接口定义
+为了屏蔽硬件细节，向 NNAdapter Runtime 提供统一的硬件访问接口，我们在 NNadapter Runtime 和 厂商 SDK 之间建立了 NNAdapter HAL （即硬件抽象层），它是由 C 结构体实现的统一设备接口描述、模型、操作数和操作符的中间表达等数据结构组成，均定义在代码文件 [types.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/backends/nnadapter/nnadapter/core/hal/types.h) 中。
+
+```c++
+typedef struct Operand {
+  NNAdapterOperandType type;
+  void* buffer;
+  uint32_t length;
+} Operand;
+
+typedef struct Argument {
+  int index;
+  void* memory;
+  void* (*access)(void* memory, NNAdapterOperandType* type);
+} Argument;
+
+typedef struct Operation {
+  NNAdapterOperationType type;
+  std::vector<Operand*> input_operands;
+  std::vector<Operand*> output_operands;
+} Operation;
+
+typedef struct Cache {
+  const char* token;
+  const char* dir;
+  std::vector<NNAdapterOperandType> input_types;
+  std::vector<NNAdapterOperandType> output_types;
+  std::vector<uint8_t> buffer;
+} Cache;
+
+typedef struct Model {
+  std::list<Operand> operands;
+  std::list<Operation> operations;
+  std::vector<Operand*> input_operands;
+  std::vector<Operand*> output_operands;
+} Model;
+
+typedef struct Device {
+  // Properties
+  const char* name;
+  const char* vendor;
+  NNAdapterDeviceType type;
+  int32_t version;
+  // Interfaces
+  int (*open_device)(void** device);
+  void (*close_device)(void* device);
+  int (*create_context)(void* device, const char* properties, void** context);
+  void (*destroy_context)(void* context);
+  int (*create_program)(void* context, Model* model, Cache* cache, void** program);
+  void (*destroy_program)(void* program);
+  int (*execute_program)(void* program, uint32_t input_count, Argument* input_arguments, uint32_t output_count, Argument* output_arguments);
+} Device;
+```
+
+- 模型、操作数和操作符的中间表达
+
+  为了实现 NNAdapter Runtime 和 NNAdapter HAL 对模型的统一表达，采用了较为简单的 C 结构体的表示方法定义了 `Model` (模型) 、`Operand` （操作数）和 `Operation` （操作符）：
+
+  - 一个模型由若干个操作数和操作符组成，其中模型的输入、输出操作数被特殊标记，并按照顺序依次存储，但操作符不一定是按照拓扑顺序存储的。
+
+    1）可以借助 [SortOperationsInTopologicalOrder](https://github.com/PaddlePaddle/Paddle-Lite/blob/0688f37ac8879e4670bb8fdf58a63bfa10904be4/lite/backends/nnadapter/nnadapter/utility/modeling.cc#L649) 实现操作符的拓扑排序。例如在华为昇腾 HAL 层的 [对多输出的算子插入 dummy 的 ADD 算子的优化器](https://github.com/PaddlePaddle/Paddle-Lite/blob/0688f37ac8879e4670bb8fdf58a63bfa10904be4/lite/backends/nnadapter/nnadapter/driver/huawei_ascend_npu/optimizer/fix_multiple_outputs_ops.cc#L27) ，需要首先调用 SortOperationsInTopologicalOrder 才能获得经过拓扑排序后的操作符列表。
+  
+    2）为了方便调试，可以通过 [Visualize](https://github.com/PaddlePaddle/Paddle-Lite/blob/0688f37ac8879e4670bb8fdf58a63bfa10904be4/lite/backends/nnadapter/nnadapter/utility/debug.cc#L158) 将模型数据结构输出为 DOT 格式字符串，将其复制到 [webgraphviz](http://www.webgraphviz.com/) 即可绘制模型拓扑结构。例如在华为昇腾 HAL 层的 [打印优化前后的模型拓扑结构](https://github.com/PaddlePaddle/Paddle-Lite/blob/0688f37ac8879e4670bb8fdf58a63bfa10904be4/lite/backends/nnadapter/nnadapter/driver/huawei_ascend_npu/engine.cc#L88) 代码。
+
+  - 一个操作符 `Operation` 由
+
+- 设备接口描述
+
+  以下是昇腾 310 HAL 层设备接口描述结构体（摘选自 [driver.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/backends/nnadapter/nnadapter/driver/huawei_ascend_npu/driver.cc) ）示例：
+  
+  ```c++
+  ...
+  export "C" nnadapter::hal::Device huawei_ascend_npu = {
+    .name = "huawei_ascend_npu",
+    .vendor = "Huawei",
+    .type = NNADAPTER_ACCELERATOR,
+    .version = 1,
+    .open_device = nnadapter::huawei_ascend_npu::OpenDevice,
+    .close_device = nnadapter::huawei_ascend_npu::CloseDevice,
+    .create_context = nnadapter::huawei_ascend_npu::CreateContext,
+    .destroy_context = nnadapter::huawei_ascend_npu::DestroyContext,
+    .create_program = nnadapter::huawei_ascend_npu::CreateProgram,
+    .destroy_program = nnadapter::huawei_ascend_npu::DestroyProgram,
+    .execute_program = nnadapter::huawei_ascend_npu::ExecuteProgram,
+  };
+  ```
+
+  ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_call_flow.png)
+
+## NNAdapter 在 Paddle Lite 的实现
 ### 实现方案
 ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/paddle_lite_with_nnadapter.png)
 
-### Paddle Lite为NNAdapter新增的接口
+### Paddle Lite 为 NNAdapter 新增的接口
 - 设备查询和设置
   - check_nnadapter_device_name
     ```c++
     bool check_nnadapter_device_name(const std::string& device_name)
     ```
-    通过设备名称查询设备是否可用，设备名称包括`huawei_ascend_npu`, `huawei_kirin_npu`, `amlogic_npu`, `rockchip_npu`, `mediatek_apu`, `imagination_nna`等，已支持设备的最新列表可在[NNAdapter HAL](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/backends/nnadapter/nnadapter/driver)中查询。
+    通过设备名称查询设备是否可用，设备名称包括 `huawei_ascend_npu` , `huawei_kirin_npu` , `amlogic_npu` , `rockchip_npu` , `mediatek_apu` , `imagination_nna` 等，已支持设备的最新列表可在 [NNAdapter HAL](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/backends/nnadapter/nnadapter/driver) 中查询。
     - 参数：
-      - device_name：设备HAL层库的名称，例如：[huawei_ascend_npu](https://github.com/PaddlePaddle/Paddle-Lite/blob/34639deaf036e2daf4429205c1bc77958e0b1e0f/lite/backends/nnadapter/nnadapter/driver/huawei_ascend_npu/CMakeLists.txt#L15)。
-    - 返回值：设备可用则返回true。
+      - device_name：设备 HAL 层库的名称，例如： [huawei_ascend_npu](https://github.com/PaddlePaddle/Paddle-Lite/blob/34639deaf036e2daf4429205c1bc77958e0b1e0f/lite/backends/nnadapter/nnadapter/driver/huawei_ascend_npu/CMakeLists.txt#L15) 。
+    - 返回值：设备可用则返回 TRUE 。
 
   - set_nnadapter_device_names
     ```c++
@@ -82,9 +213,9 @@
     ```c++
     void set_nnadapter_context_properties(const std::string& context_properties)
     ```
-    将设备参数传递给设备HAL库。
+    将设备参数传递给设备 HAL 层库。
     - 参数：
-      - context_properties：以Key-value字串的形式表示设备参数，例如：如果希望使用昇腾310卡的第0个核心，可以设置"HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0;"。
+      - context_properties：以 Key-value 字串的形式表示设备参数，例如：如果希望使用昇腾 310 卡的第 0 个核心，可以设置 "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0;" 。
     - 返回值：无。
 
 - 模型缓存
@@ -92,7 +223,7 @@
     ```c++
     void set_nnadapter_model_cache_dir(const std::string& model_cache_dir)
     ```
-    启用模型编译缓存功能，设置编译后的设备程序的缓存文件（以.nnc为扩展名）的存储目录，它能够跳过每次进程启动且模型首次推理时的编译步骤，减少首次推理耗时。
+    启用模型编译缓存功能，设置编译后的设备程序的缓存文件（以 .nnc 为扩展名）的存储目录，它能够跳过每次进程启动且模型首次推理时的编译步骤，减少首次推理耗时。
     - 参数：
       - model_cache_dir：模型缓存目录。
     - 返回值：无。
@@ -101,10 +232,10 @@
     ```c++
     void set_nnadapter_model_cache_buffers(const std::string& model_cache_token, const std::vector<char>& model_cache_buffer)
     ```
-    设置模型缓存的标识和数据，子图在编译生成设备程序时，如果成功匹配到`model_cache_token`，则跳过模型编译步骤，直接使用缓存数据恢复设备程序（需要设备HAL层库的支持），该接口通常用于从内存中设置解密后的模型缓存数据。
+    设置模型缓存的标识和数据，子图在编译生成设备程序时，如果成功匹配到 `model_cache_token` ，则跳过模型编译步骤，直接使用缓存数据恢复设备程序（需要设备 HAL 层库的支持），该接口通常用于从内存中设置解密后的模型缓存数据。
     - 参数：
       - model_cache_token：根据子图输入、输出、设备信息按照一定规则生成的唯一标识子图的32个字符，它实现方式可以参考[相关代码](https://github.com/PaddlePaddle/Paddle-Lite/blob/9e16e8ee9a079f673d992351cdd9ec0f4d731575/lite/kernels/nnadapter/engine.cc#L49)。
-      - model_cache_buffer：`model_cache_token`对应子图和设备的模型缓存数据。
+      - model_cache_buffer： `model_cache_token` 对应子图和设备的模型缓存数据。
     - 返回值：无。
 
 - 自定义子图分割
@@ -112,9 +243,9 @@
     ```c++
     void set_nnadapter_subgraph_partition_config_path(const std::string& subgraph_partition_config_path)
     ```
-    设置自定义子图分割配置文件路径，用于将某些算子强制异构到CPU，防止因切分成过多子图而导致的性能下降，内存增加。该配置文件的规则如下：
+    设置自定义子图分割配置文件路径，用于将某些算子强制异构到 CPU ，防止因切分成过多子图而导致的性能下降，内存增加。该配置文件的规则如下：
 
-    1）每行记录用于唯一标识某一个或某一类需要被强制异构到CPU的算子。
+    1）每行记录用于唯一标识某一个或某一类需要被强制异构到 CPU 的算子。
 
     2）每行记录由『算子类型:输入张量名列表:输出张量名列表』组成，即以冒号分隔算子类型、输入和输出张量名列表，以逗号分隔输入、输出张量名列表中的每个张量名。
 
@@ -122,13 +253,13 @@
 
     用法举例：
     ```c++
-    op_type0:var_name0,var_name1:var_name2    表示将类型为op_type0、输入张量为var_name0和var_name1、输出张量为var_name2的算子强制异构到CPU上
-    op_type1::var_name3                       表示将类型为op_type1、任意输入张量、输出张量为var_name3的算子强制异构到CPU上
-    op_type2:var_name4                        表示将类型为op_type2、输入张量为var_name4、任意输出张量的算子强制异构到CPU上
-    op_type3                                  表示任意类型为op_type3的算子均被强制异构到CPU上
+    op_type0:var_name0,var_name1:var_name2    表示将类型为 op_type0 、输入张量为 var_name0 和 var_name1 、输出张量为 var_name2 的算子强制异构到 CPU 上
+    op_type1::var_name3                       表示将类型为 op_type1 、任意输入张量、输出张量为 var_name3 的算子强制异构到 CPU 上
+    op_type2:var_name4                        表示将类型为 op_type2 、输入张量为 var_name4 、任意输出张量的算子强制异构到 CPU 上
+    op_type3                                  表示任意类型为 op_type3 的算子均被强制异构到CPU上
     ```
 
-    为了方便唯一标识模型中的某一个算子，可以在使用cxxconfig加载Paddle模型进行nb模型转换或直接推理时，设置GLOG_v=5打印完整调试信息，然后以`subgraph operators`为关键字搜索，例如：[ssd_mobilenet_v1_relu_voc_fp32_300](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_relu_voc_fp32_300.tar.gz)模型运行在华为麒麟NPU时，将得到如下调试信息：
+    为了方便唯一标识模型中的某一个算子，可以在使用 cxxconfig 加载Paddle模型进行 nb 模型转换或直接推理时，设置 GLOG_v=5 打印完整调试信息，然后以 `subgraph operators` 为关键字搜索，例如： [ssd_mobilenet_v1_relu_voc_fp32_300](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_relu_voc_fp32_300.tar.gz) 模型运行在华为麒麟NPU时，将得到如下调试信息：
 
     ```
     subgraph clusters: 1
@@ -155,11 +286,11 @@
 
     其中：
 
-    1）`subgraph operators` 一行的后面是模型经过Paddle Lite各种优化Pass后的全部算子集合，可以非常方便的作为自定义子图分割配置文件的内容，这也将成为我们在硬件适配时快速调通目标模型的好帮手（即先将所有算子强制异构到CPU上，然后一行一行的删掉，让它们跑在目标设备上，这种方法可以快速定位问题算子，完成整个模型的调通）。
+    1） `subgraph operators` 一行的后面是模型经过 Paddle Lite 各种优化 Pass 后的全部算子集合，可以非常方便的作为自定义子图分割配置文件的内容，这也将成为我们在硬件适配时快速调通目标模型的好帮手（即先将所有算子强制异构到 CPU 上，然后一行一行的删掉，让它们跑在目标设备上，这种方法可以快速定位问题算子，完成整个模型的调通）。
 
-    2）`subgraph clusters` 一行的后面是经过子图检测后的子图个数，以下则是用于可视化子图检测后的模型拓扑结构的DOT格式字符串，可将其复制到[webgraphviz](http://www.webgraphviz.com/)进行可视化，其中不同颜色的算子代表所属不同的子图。
+    2） `subgraph clusters` 一行的后面是经过子图检测后的子图个数，以下则是用于可视化子图检测后的模型拓扑结构的 DOT 格式字符串，可将其复制到 [webgraphviz](http://www.webgraphviz.com/) 进行可视化，其中不同颜色的算子代表所属不同的子图。
     
-    同样的，以ssd_mobilenet_v1_relu_voc_fp32_300为例，下面两幅图展示了使用自定义子图分割配置文件前后的对比：
+    同样的，以 ssd_mobilenet_v1_relu_voc_fp32_300 为例，下面两幅图展示了使用自定义子图分割配置文件前后的对比：
 
     1）未使用自定义子图分割配置：
 
@@ -174,11 +305,11 @@
 
     ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/ssd_mobilenet_v1_relu_voc_fp32_300_manual_split_netron.png)
 
-    注意：该接口仅用于cxxconfig加载Paddle模型生成nb模型或直接推理时使用。
+    注意：该接口仅用于 cxxconfig 加载 Paddle 模型生成 nb 模型或直接推理时使用。
 
     - 参数：
-      - model_cache_token：根据子图输入、输出、设备信息按照一定规则生成的唯一标识子图的32个字符，它实现方式可以参考[相关代码](https://github.com/PaddlePaddle/Paddle-Lite/blob/9e16e8ee9a079f673d992351cdd9ec0f4d731575/lite/kernels/nnadapter/engine.cc#L49)。
-      - model_cache_buffer：`model_cache_token`对应子图和设备的模型缓存数据。
+      - model_cache_token：根据子图输入、输出、设备信息按照一定规则生成的唯一标识子图的 32 个字符，它实现方式可以参考[相关代码](https://github.com/PaddlePaddle/Paddle-Lite/blob/9e16e8ee9a079f673d992351cdd9ec0f4d731575/lite/kernels/nnadapter/engine.cc#L49)。
+      - model_cache_buffer： `model_cache_token` 对应子图和设备的模型缓存数据。
     - 返回值：无。
 
   - set_nnadapter_subgraph_partition_config_buffer
@@ -187,23 +318,20 @@
     ```
     设置自定义子图分割配置内容，该接口通常用于加、解密场景。
     - 参数：
-      - subgraph_partition_config_buffer：自定义子图分割配置的内容，与`set_nnadapter_subgraph_partition_config_path`中阐述的一致。
+      - subgraph_partition_config_buffer：自定义子图分割配置的内容，与 `set_nnadapter_subgraph_partition_config_path` 中阐述的一致。
     - 返回值：无。
 
-### Paddle Lite与NNAdapter的一般调用过程
-![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_call_flow.png)
-
-### 应用程序、Paddle Lite、NNAdapter和硬件SDK之间的详细调用过程
-- 查询设备是否可用，将设置的设备名称列表、设备上下文参数、模型缓存数据存储在Paddle Lite的Scope中（Scope与Predictor绑定。通常存储模型的张量数据）。
+### 应用程序、 Paddle Lite 、NNAdapter 和硬件 SDK 之间的详细调用过程
+- 查询设备是否可用，将设置的设备名称列表、设备上下文参数、模型缓存数据存储在 Paddle Lite 的 Scope 中（ Scope 与 Predictor 绑定。通常存储模型的张量数据）。
 ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_call_flow_detail_0.png)
 
-- 从Scope中获取设备名称列表、设备上下文参数，创建设备实例、设备统一上下文实例和与设备无关的模型实例。
+- 从 Scope 中获取设备名称列表、设备上下文参数，创建设备实例、设备统一上下文实例和与设备无关的模型实例。
 ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_call_flow_detail_1.png)
 
-- 将Paddle Lite子图中的张量和算子全部转换为NNAdapter的操作数和操作符后加入到模型实例中。
+- 将 Paddle Lite 子图中的张量和算子全部转换为 NNAdapter 的操作数和操作符后加入到模型实例中。
 ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_call_flow_detail_2.png)
 
-- 创建编译实例，从模型缓存中直接恢复设备程序，或通过目标设备的HAL层库调用硬件SDK，将模型实例编译生成设备程序。
+- 创建编译实例，从模型缓存中直接恢复设备程序，或通过目标设备的 HAL 层库调用硬件 SDK ，将模型实例编译生成设备程序。
 ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_call_flow_detail_3.png)
 
 - 创建执行计划实例，设置输入、输出内存和访问函数，在设备程序执行完毕后，将结果返回给应用程序。
@@ -211,15 +339,15 @@
 
 ## 附录
 
-### NNAdapter API详细说明
+### NNAdapter API 详细说明
 - NNAdapter_getVersion
   ```c++
   int NNAdapter_getVersion(uint32_t* version)
   ```
-  获取NNAdapter版本值。
+  获取 NNAdapter 版本值。
   - 参数：
-    - version：存储返回NNAdapter的版本值。
-  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+    - version：存储返回 NNAdapter 的版本值。
+  - 返回值：调用成功则返回 NNADAPTER_NO_ERROR 。
 
 - NNAdapterDevice_acquire
   ```c++
@@ -229,7 +357,7 @@
   - 参数：
     - name：通过该名称加载并注册设备HAL库后（仅发生在进程首次调用时），创建一个设备实例。
     - device：存储创建后的设备实例。
-  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+  - 返回值：调用成功则返回 NNADAPTER_NO_ERROR 。
 
 - NNAdapterDevice_release
   ```c++
@@ -258,7 +386,7 @@
   - 参数：
     - device：设备实例。
     - vendor：存储返回的设备厂商名称。
-  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+  - 返回值：调用成功则返回 NNADAPTER_NO_ERROR 。
 
 - NNAdapterDevice_getType
   ```c++
@@ -267,8 +395,8 @@
   获得设备类型。
   - 参数：
     - device：设备实例。
-    - type：存储返回的设备类型值，由`NNAdapterDeviceCode`定义，`NNADAPTER_CPU`代表CPU，`NNADAPTER_GPU`代表GPU，`NNADAPTER_ACCELERATOR`代表神经网络加速器。
-  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+    - type：存储返回的设备类型值，由 `NNAdapterDeviceCode` 定义， `NNADAPTER_CPU` 代表 CPU ， `NNADAPTER_GPU` 代表 GPU ， `NNADAPTER_ACCELERATOR` 代表神经网络加速器。
+  - 返回值：调用成功则返回 NNADAPTER_NO_ERROR 。
 
 - NNAdapterDevice_getVersion
   ```c++
@@ -277,20 +405,20 @@
   获取设备HAL动态链接库的版本值。
   - 参数：
     - device：设备实例。
-    - version：存储返回的设备HAL层库的版本值。
-  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+    - version：存储返回的设备 HAL 层库的版本值。
+  - 返回值：调用成功则返回 NNADAPTER_NO_ERROR 。
 
 - NNAdapterContext_create
   ```c++
   int NNAdapterContext_create(NNAdapterDevice** devices, uint32_t num_devices, const char* properties, NNAdapterContext** context)
   ```
-  为多种设备创建一个统一设备上下文，并通过key-value字符串的形式将设备的参数信息传递给每一个设备HAL层库。
+  为多种设备创建一个统一设备上下文，并通过 Key-value 字符串的形式将设备的参数信息传递给每一个设备HAL层库。
   - 参数：
     - devices：设备实例列表。
     - num_devices：`devices`中设备实例的个数。
-    - properties：设备参数信息，按照key-value字符串的形式表示设备参数信息，例如："HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0"表示只使用昇腾310卡中第0个核心。
+    - properties：设备参数信息，按照 Key-value 字符串的形式表示设备参数信息，例如： "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0" 表示只使用昇腾 310 卡中第 0 个核心。
     - context：存储创建后的统一设备上下文实例。
-  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+  - 返回值：调用成功则返回 NNADAPTER_NO_ERROR 。
 
 - NNAdapterContext_destroy
   ```c++
@@ -308,7 +436,7 @@
   创建一个空的、与设备无关的模型实例。
   - 参数：
     - model：存储创建后的模型实例。
-  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+  - 返回值：调用成功则返回 NNADAPTER_NO_ERROR 。
 
 - NNAdapterModel_destroy
   ```c++
@@ -326,7 +454,7 @@
   结束模型组网。
   - 参数：
     - model：模型实例。
-  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+  - 返回值：调用成功则返回 NNADAPTER_NO_ERROR 。
 
 - NNAdapterModel_addOperand
   ```c++
@@ -335,9 +463,9 @@
   向模型中增加一个操作数，即神经网络模型中的张量。
   - 参数：
     - model：模型实例。
-    - type：操作数的类型，由`NNAdapterOperandType`定义，包含精度类型、数据布局、生命周期、维度信息和量化信息。
+    - type：操作数的类型，由 `NNAdapterOperandType` 定义，包含精度类型、数据布局、生命周期、维度信息和量化信息。
     - operand：存储新增的操作数实例。
-  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+  - 返回值：调用成功则返回 NNADAPTER_NO_ERROR 。
 
 - NNAdapterModel_setOperandValue
   ```c++
@@ -348,8 +476,8 @@
     - operand：操作数实例。
     - buffer：常量数据的内存地址。
     - lenght：常量数据的内存大小（字节）。
-    - copy：是否创建常量数据的内存副本，否则将直接引用`buffer`。后者要求在模型编译前都不允许修改`buffer`指向的内容。
-  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+    - copy：是否创建常量数据的内存副本，否则将直接引用 `buffer` 。后者要求在模型编译前都不允许修改 `buffer` 指向的内容。
+  - 返回值：调用成功则返回 NNADAPTER_NO_ERROR 。
 
 - NNAdapterModel_getOperandType
   ```c++
@@ -359,7 +487,7 @@
   - 参数：
     - operand：操作数实例。
     - type：存储返回的操作数类型。
-  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+  - 返回值：调用成功则返回 NNADAPTER_NO_ERROR 。
 
 - NNAdapterModel_addOperation
   ```c++
@@ -368,26 +496,26 @@
   向模型中增加一个操作符，并设置它的输入、输出操作数，即神经网络模型中的算子。
   - 参数：
     - model：模型实例。
-    - type：操作符类型，由`NNAdapterOperationCode`定义，包含二维卷积`NNADAPTER_CONV_2D`，最大值池化`NNADAPTER_AVERAGE_POOL_2D`，均值池化`NNADAPTER_MAX_POOL_2D`等操作符。
+    - type：操作符类型，由 `NNAdapterOperationCode` 定义，包含二维卷积 `NNADAPTER_CONV_2D` ，最大值池化 `NNADAPTER_AVERAGE_POOL_2D` ，均值池化 `NNADAPTER_MAX_POOL_2D` 等操作符。
     - input_count：输入操作数的数量。
     - input_operands：输入操作数列表，需严格按照每一个操作符的定义依次将对应的输入操作数加入到列表中。
     - output_count：输出操作数的数量。
     - output_operands：输出操作数列表，需严格按照每一个操作符的定义依次将对应的输出操作数加入到列表中。
     - operation：存储新增的操作符实例。
-  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+  - 返回值：调用成功则返回 NNADAPTER_NO_ERROR 。
 
 - NNAdapterModel_identifyInputsAndOutputs
   ```c++
   int NNAdapterModel_identifyInputsAndOutputs(NNAdapterModel* model, uint32_t input_count, NNAdapterOperand** input_operands, uint32_t output_count, NNAdapterOperand** output_operands)
   ```
-  标识模型的输入、输出操作数，其生命周期将被标记为`NNADAPTER_MODEL_INPUT`和`NNADAPTER_MODEL_OUTPUT`类型。
+  标识模型的输入、输出操作数，其生命周期将被标记为 `NNADAPTER_MODEL_INPUT` 和 `NNADAPTER_MODEL_OUTPUT` 类型。
   - 参数：
     - model：模型实例。
     - input_count：输入操作数的数量。
     - input_operands：输入操作数列表，不约束每一个操作符顺序。
     - output_count：输出操作数的数量。
     - output_operands：输出操作数列表，不约束每一个操作符顺序。
-  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+  - 返回值：调用成功则返回 NNADAPTER_NO_ERROR 。
 
 - NNAdapterCompilation_create
   ```c++
@@ -395,21 +523,21 @@
   ```
   创建一个编译实例，基于指定的统一设备上下文，为多种设备（当前版本仅支持一种设备）编译模型实例或直接加载模型缓存。如果同时设置模型实例和模型缓存参数，则优先加载模型缓存，因此存在以下三种情况：
 
-  1）当设置`cache_token`，`cache_buffer`和`cache_length`时，则直接从内存中加载模型缓存，此时将忽略`model`参数。
+  1）当设置 `cache_token` ， `cache_buffer` 和 `cache_length` 时，则直接从内存中加载模型缓存，此时将忽略 `model` 参数。
 
-  2）当设置`cache_token`和`cache_dir`时，将从<`cache_dir`>指定的目录中查找并尝试加载<`cache_token`>.nnc模型缓存文件，成功加载后将忽略`model`参数，否则在调用`NNAdapterCompilation_finish`完成模型实例`model`的在线编译后，在<`cache_dir`>目录中生成<`cache_token`>.nnc文件。
+  2）当设置 `cache_token` 和 `cache_dir` 时，将从 <`cache_dir`> 指定的目录中查找并尝试加载 <`cache_token`>.nnc 模型缓存文件，成功加载后将忽略 `model` 参数，否则在调用 `NNAdapterCompilation_finish` 完成模型实例 `model` 的在线编译后，在 <`cache_dir`> 目录中生成 <`cache_token`>.nnc 文件。
 
-  3）当`cache_token`，`cache_buffer`，`cache_length`和`cache_dir`均未被设置时，则在调用`NNAdapterCompilation_finish`后完成模型实例`model`的在线编译。需要注意的是，由于未设置`cache_token`和`cache_dir`，在编译完成后将不会生成模型缓存文件，将使得在模型首次推理时都会进行模型的在线编译，导致首次推理耗时过长。
+  3）当 `cache_token` ， `cache_buffer` ， `cache_length` 和 `cache_dir` 均未被设置时，则在调用 `NNAdapterCompilation_finish` 后完成模型实例 `model` 的在线编译。需要注意的是，由于未设置 `cache_token` 和 `cache_dir` ，在编译完成后将不会生成模型缓存文件，将使得在模型首次推理时都会进行模型的在线编译，导致首次推理耗时过长。
 
   - 参数：
     - model：模型实例。
     - cache_token：模型缓存唯一标识。
     - cache_buffer：模型缓存的内存地址。
-    - cache_length：模型缓存的内存大小（字节），必须与`cache_buffer`成对使用。
+    - cache_length：模型缓存的内存大小（字节），必须与 `cache_buffer` 成对使用。
     - cache_dir：模型缓存的目录。
     - context：统一设备上下文实例。
     - compilation：存储创建的编译实例。
-  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+  - 返回值：调用成功则返回 NNADAPTER_NO_ERROR 。
 
 - NNAdapterCompilation_destroy
   ```c++
@@ -424,26 +552,26 @@
   ```c++
   int NNAdapterCompilation_finish(NNAdapterCompilation* compilation)
   ```
-  结束编译配置的设置，调用设备HAL层库对`NNAdapterCompilation_create`中的模型实例`model`进行在线编译并生成设备程序。
+  结束编译配置的设置，调用设备 HAL 层库对 `NNAdapterCompilation_create` 中的模型实例 `model` 进行在线编译并生成设备程序。
   - 参数：
     - compilation：编译实例。
-  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+  - 返回值：调用成功则返回 NNADAPTER_NO_ERROR 。
 
 - NNAdapterCompilation_queryInputsAndOutputs
   ```c++
   int NNAdapterCompilation_queryInputsAndOutputs(NNAdapterCompilation* compilation, uint32_t* input_count, NNAdapterOperandType** input_types, uint32_t* output_count, NNAdapterOperandType** output_types)
   ```
-  查询编译后的模型的输入、输出操作数的数量和类型，必须在`NNAdapterCompilation_finish`执行后才能调用，可以通过以下两次调用获得输入、输出操作数数量和类型信息。
+  查询编译后的模型的输入、输出操作数的数量和类型，必须在 `NNAdapterCompilation_finish` 执行后才能调用，可以通过以下两次调用获得输入、输出操作数数量和类型信息。
 
-  1）当`input_types`和`output_types`为NULL时，则仅查询输入、输出操作数的数量并将值存储在`input_count`和`output_count`。
+  1）当 `input_types` 和 `output_types` 为NULL时，则仅查询输入、输出操作数的数量并将值存储在 `input_count` 和 `output_count` 。
 
-  2）当`input_types`和`output_types`不为NULL时，则将输入、输出操作数的类型依次存储在`input_types`和`output_types`（要求调用方根据`input_count`和`output_count`分配它们的内存）。
+  2）当 `input_types` 和 `output_types` 不为NULL时，则将输入、输出操作数的类型依次存储在 `input_types` 和 `output_types` （要求调用方根据 `input_count` 和 `output_count` 分配它们的内存）。
 
   - 参数：
     - compilation：编译实例。
-    - input_count：存储返回的输入操作数的数量，不允许为NULL。
+    - input_count：存储返回的输入操作数的数量，不允许为 NULL 。
     - input_types：存储返回的输入操作数列表。
-    - output_count：存储返回的输出操作数的数量，不允许为NULL。
+    - output_count：存储返回的输出操作数的数量，不允许为 NULL 。
     - output_types：存储返回的输出操作数列表。
   - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
 
@@ -453,12 +581,12 @@
   ```
   基于编译实例创建一个执行计划实例。
   
-  为了方便理解`NNAdapterCompilation`和`NNAdapterExecution`的区别，可以将`NNAdapterCompilation`简单理解为已经编译好的设备代码，而`NNAdapterExecution`代表如何执行它，可以是顺序依次执行，也可以并行执行，可以是同步执行，也可以是异步执行，但目前NNAdapter仅支持同步顺序执行。
+  为了方便理解 `NNAdapterCompilation` 和 `NNAdapterExecution` 的区别，可以将 `NNAdapterCompilation` 简单理解为已经编译好的设备代码，而 `NNAdapterExecution` 代表如何执行它，可以是顺序依次执行，也可以并行执行，可以是同步执行，也可以是异步执行，但目前 NNAdapter 仅支持同步顺序执行。
 
   - 参数：
     - compilation：编译实例。
     - execution：存储创建的执行计划实例。
-  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+  - 返回值：调用成功则返回 NNADAPTER_NO_ERROR 。
 
 - NNAdapterExecution_destroy
   ```c++
@@ -475,7 +603,7 @@
   ```
   设置执行计划输入操作数的内存实例和访问函数。
 
-  为了能够让HAL层库更加灵活的访问推理框架的张量对象，在设置执行计划的输入时，要求设置内存实例`memory`和内存实例访问函数`access`，例如：
+  为了能够让HAL层库更加灵活的访问推理框架的张量对象，在设置执行计划的输入时，要求设置内存实例 `memory` 和内存实例访问函数 `access` ，例如：
 
   ```c++
   typedef struct {
@@ -501,8 +629,8 @@
     - execution：执行计划实例。
     - index：模型输入操作数的索引。
     - memory：模型输入操作数的内存实例，不限定为具体的缓存首地址，用户可自行封装后通过std::reinterpret_cast<void*>()强制转为void*类型。
-    - access：内存实例访问函数，HAL层库将通过`access`函数访问`memory`获得host端缓存实际地址。
-  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+    - access：内存实例访问函数，HAL层库将通过 `access` 函数访问 `memory` 获得host端缓存实际地址。
+  - 返回值：调用成功则返回 NNADAPTER_NO_ERROR 。
 
 - NNAdapterExecution_setOutput
   ```c++
@@ -536,9 +664,9 @@
   - 参数：
     - execution：执行计划实例。
     - index：模型输出操作数的索引。
-    - memory：模型输出操作数的内存实例，不限定为具体的缓存首地址，用户可自行封装后通过std::reinterpret_cast<void*>()强制转为void*类型。
-    - access：内存实例访问函数，HAL层库将通过`access`函数访问`memory`获得host端缓存实际地址。
-  - 返回值：调用成功则返回NNADAPTER_NO_ERROR。
+    - memory：模型输出操作数的内存实例，不限定为具体的缓存首地址，用户可自行封装后通过 std::reinterpret_cast<void*>() 强制转为 void* 类型。
+    - access：内存实例访问函数，HAL层库将通过 `access` 函数访问 `memory` 获得 host 端缓存实际地址。
+  - 返回值：调用成功则返回 NNADAPTER_NO_ERROR 。
 
 - NNAdapterExecution_compute
   ```c++
