@@ -14,7 +14,9 @@
 
 #pragma once
 #include <arm_neon.h>
+#include <algorithm>
 #include <cmath>
+#include "lite/backends/arm/math/funcs.h"
 #include "lite/backends/arm/math/gemm_s8.h"
 #include "lite/backends/arm/math/saturate.h"
 #include "lite/backends/arm/math/sgemm.h"
@@ -790,7 +792,11 @@ inline void prepack_input_nxwc8_int8_dw(const int8_t* din,
   "ldr q2, [%[ptr_din]], #16      \n" /* load data, c0r0, c1r0, c0r1*/ \
   "ldr q3, [%[ptr_din]], #16      \n" /* load data, c0r0, c1r0, c0r1*/ \
   "movi v20.4s, #0                \n" /* for relu */                   \
-  "1:                             \n" /* main loop*/
+  "1:                             \n" /* main loop*/                   \
+  "fadd v0.4s, v0.4s, %[vbias].4s\n"                                \
+  "fadd v1.4s, v1.4s, %[vbias].4s\n"                                \
+  "fadd v2.4s, v2.4s, %[vbias].4s\n"                                \
+  "fadd v3.4s, v3.4s, %[vbias].4s\n"
 
 #define NCHWC1_TRANS_FP32_RELU                 \
   "fmax   v0.4s, v0.4s, v20.4s    \n" /*relu*/ \
@@ -818,6 +824,28 @@ inline void prepack_input_nxwc8_int8_dw(const int8_t* din,
   "bif  v2.16b, v10.16b, v6.16b \n"    /* choose*/     \
   "bif  v3.16b, v11.16b, v7.16b \n"    /* choose*/
 
+#define NCHWC1_TRANS_FP32_HARD_SWISH                    \
+  "fadd v4.4s,  v0.4s, %[offset].4s\n"                  \
+  "fadd v5.4s,  v1.4s, %[offset].4s\n"                  \
+  "fadd v6.4s,  v2.4s, %[offset].4s\n"                  \
+  "fadd v7.4s,  v3.4s, %[offset].4s\n"                  \
+  "fmul v8.4s,  v0.4s, %[scale].4s\n"                   \
+  "fmul v9.4s,  v1.4s, %[scale].4s\n"                   \
+  "fmul v10.4s, v2.4s, %[scale].4s\n"                   \
+  "fmul v11.4s, v3.4s, %[scale].4s\n"                   \
+  "fmax v4.4s,  v4.4s, v20.4s     \n"                   \
+  "fmax v5.4s,  v5.4s, v20.4s     \n"                   \
+  "fmax v6.4s,  v6.4s, v20.4s     \n"                   \
+  "fmax v7.4s,  v7.4s, v20.4s     \n"                   \
+  "fmin v4.4s,  v4.4s, %[threshold].4s\n"               \
+  "fmin v5.4s,  v5.4s, %[threshold].4s\n"               \
+  "fmin v6.4s,  v6.4s, %[threshold].4s\n"               \
+  "fmin v7.4s,  v7.4s, %[threshold].4s\n"               \
+  "fmul v0.4s,  v4.4s, v8.4s       \n"                  \
+  "fmul v1.4s,  v5.4s, v9.4s       \n"                  \
+  "fmul v2.4s,  v6.4s, v10.4s      \n"                  \
+  "fmul v3.4s,  v7.4s, v11.4s      \n"
+
 #define NCHWC1_TRANS_FP32_STORE                                        \
   "subs   %w[cnt], %w[cnt], #1    \n" /* loop count -1*/               \
                                                                        \
@@ -836,7 +864,11 @@ inline void prepack_input_nxwc8_int8_dw(const int8_t* din,
   "vld1.32 {d0-d3}, [%[ptr_din]]!                 @ load data, c0r0 \n" \
   "vld1.32 {d4-d7}, [%[ptr_din]]!                 @ load data, c0r0 \n" \
   "vmov.u32 q15, #0                       @ dump zero\n"                \
-  "1:                                     @ main loop\n"
+  "1:                                     @ main loop\n"                \
+  "vadd.f32  q0, q0,  %q[vbias]           \n"                           \
+  "vadd.f32  q1, q1,  %q[vbias]           \n"                           \
+  "vadd.f32  q2, q2,  %q[vbias]           \n"                           \
+  "vadd.f32  q3, q3,  %q[vbias]           \n"
 
 #define NCHWC1_TRANS_FP32_RELU                      \
   "vmax.f32   q0, q0, q15                 @ relu\n" \
@@ -864,6 +896,29 @@ inline void prepack_input_nxwc8_int8_dw(const int8_t* din,
   "vbif q2, q11, q7 @ choose \n"              \
   "vbif q3, q12, q8 @ choose \n"
 
+#define NCHWC1_TRANS_FP32_HARD_SWISH          \
+  "vadd.f32 q5, q0, %q[offset]\n"             \
+  "vadd.f32 q6, q1, %q[offset]\n"             \
+  "vadd.f32 q7, q2, %q[offset]\n"             \
+  "vadd.f32 q8, q3, %q[offset]\n"             \
+  "vmul.f32 q0, q0, %q[scale]\n"              \
+  "vmul.f32 q1, q1, %q[scale]\n"              \
+  "vmul.f32 q2, q2, %q[scale]\n"              \
+  "vmul.f32 q3, q3, %q[scale]\n"              \
+  "vmax.f32 q5, q5, q15      \n"              \
+  "vmax.f32 q6, q6, q15      \n"              \
+  "vmax.f32 q7, q7, q15      \n"              \
+  "vmax.f32 q8, q8, q15      \n"              \
+  "vmin.f32 q5, q5, %q[threshold]\n"          \
+  "vmin.f32 q6, q6, %q[threshold]\n"          \
+  "vmin.f32 q7, q7, %q[threshold]\n"          \
+  "vmin.f32 q8, q8, %q[threshold]\n"          \
+  "vmul.f32 q0, q0, q5       \n"              \
+  "vmul.f32 q1, q1, q6       \n"              \
+  "vmul.f32 q2, q2, q7       \n"              \
+  "vmul.f32 q3, q3, q8       \n"
+
+
 #define NCHWC1_TRANS_FP32_STORE                                 \
   "vst1.32  {d0-d1}, [%[doutc0r0]]!       @ store result  \n"   \
   "vst1.32  {d2-d3}, [%[doutc0r0]]!       @ store result, \n"   \
@@ -881,128 +936,178 @@ inline void prepack_input_nxwc8_int8_dw(const int8_t* din,
 inline void act_switch_c1_fp32(const float* din_ptr,
                                float* doutc0_ptr,
                                int cnt_loop,
+                               float bias,
                                const operators::ActivationParam* act_param) {
+  float32x4_t vbias = vdupq_n_f32(bias);
   if (act_param != nullptr && act_param->has_active) {
-    float32x4_t six = vdupq_n_f32(act_param->Relu_clipped_coef);
-    float32x4_t scale = vdupq_n_f32(act_param->Leaky_relu_alpha);
-    switch (act_param->active_type) {
-      case lite_api::ActivationType::kRelu:
+    if (act_param->active_type == lite_api::ActivationType::kRelu) {
 #ifdef __aarch64__
-        asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_RELU
-                         NCHWC1_TRANS_FP32_STORE
-                     : [doutc0r0] "+r"(doutc0_ptr),
-                       [cnt] "+r"(cnt_loop),
-                       [ptr_din] "+r"(din_ptr)
-                     :
-                     : "cc",
-                       "memory",
-                       "v0",
-                       "v1",
-                       "v2",
-                       "v3",
-                       "v4",
-                       "v5",
-                       "v6",
-                       "v7",
-                       "v8",
-                       "v9",
-                       "v10",
-                       "v20");
+      asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_RELU
+                       NCHWC1_TRANS_FP32_STORE
+                   : [doutc0r0] "+r"(doutc0_ptr),
+                     [cnt] "+r"(cnt_loop),
+                     [ptr_din] "+r"(din_ptr)
+                   : [vbias] "w"(vbias)
+                   : "cc",
+                     "memory",
+                     "v0",
+                     "v1",
+                     "v2",
+                     "v3",
+                     "v4",
+                     "v5",
+                     "v6",
+                     "v7",
+                     "v8",
+                     "v9",
+                     "v10",
+                     "v20");
 #else
-        asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_RELU
-                         NCHWC1_TRANS_FP32_STORE
-                     : [doutc0r0] "+r"(doutc0_ptr),
-                       [ptr_din] "+r"(din_ptr),
-                       [cnt] "+r"(cnt_loop)
-                     :
-                     : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
+      asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_RELU
+                       NCHWC1_TRANS_FP32_STORE
+                   : [doutc0r0] "+r"(doutc0_ptr),
+                     [ptr_din] "+r"(din_ptr),
+                     [cnt] "+r"(cnt_loop)
+                   : [vbias] "w"(vbias)
+                   : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
 #endif
-        break;
-      case lite_api::ActivationType::kRelu6:
-/* 0 <= din <= 6 */
+    } else if (act_param->active_type == lite_api::ActivationType::kRelu6) {
+      float32x4_t six = vdupq_n_f32(act_param->Relu_clipped_coef);
 #ifdef __aarch64__
-        asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_RELU
-                         NCHWC1_TRANS_FP32_RELU6 NCHWC1_TRANS_FP32_STORE
-                     : [doutc0r0] "+r"(doutc0_ptr),
-                       [cnt] "+r"(cnt_loop),
-                       [ptr_din] "+r"(din_ptr)
-                     : [six] "w"(six)
-                     : "cc",
-                       "memory",
-                       "v0",
-                       "v1",
-                       "v2",
-                       "v3",
-                       "v4",
-                       "v5",
-                       "v6",
-                       "v7",
-                       "v8",
-                       "v9",
-                       "v10",
-                       "v20");
+      asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_RELU
+                       NCHWC1_TRANS_FP32_RELU6 NCHWC1_TRANS_FP32_STORE
+                   : [doutc0r0] "+r"(doutc0_ptr),
+                     [cnt] "+r"(cnt_loop),
+                     [ptr_din] "+r"(din_ptr)
+                   : [six] "w"(six), [vbias] "w"(vbias)
+                   : "cc",
+                     "memory",
+                     "v0",
+                     "v1",
+                     "v2",
+                     "v3",
+                     "v4",
+                     "v5",
+                     "v6",
+                     "v7",
+                     "v8",
+                     "v9",
+                     "v10",
+                     "v20");
 #else
-        asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_RELU
-                         NCHWC1_TRANS_FP32_RELU6 NCHWC1_TRANS_FP32_STORE
-                     : [doutc0r0] "+r"(doutc0_ptr),
-                       [ptr_din] "+r"(din_ptr),
-                       [cnt] "+r"(cnt_loop)
-                     : [six] "w"(six)
-                     : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
+      asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_RELU
+                       NCHWC1_TRANS_FP32_RELU6 NCHWC1_TRANS_FP32_STORE
+                   : [doutc0r0] "+r"(doutc0_ptr),
+                     [ptr_din] "+r"(din_ptr),
+                     [cnt] "+r"(cnt_loop)
+                   : [six] "w"(six), [vbias] "w"(vbias)
+                   : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
 #endif
-        break;
-      case lite_api::ActivationType::kLeakyRelu:
-/*din = din >= 0 ? din : din * scale*/
+    } else if (act_param->active_type == lite_api::ActivationType::kLeakyRelu) {
+      float32x4_t scale = vdupq_n_f32(act_param->Leaky_relu_alpha);
 #ifdef __aarch64__
-        asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_LEAKY_RELU
-                         NCHWC1_TRANS_FP32_STORE
-                     : [doutc0r0] "+r"(doutc0_ptr),
-                       [cnt] "+r"(cnt_loop),
-                       [ptr_din] "+r"(din_ptr)
-                     : [scale] "w"(scale)
-                     : "cc",
-                       "memory",
-                       "v0",
-                       "v1",
-                       "v2",
-                       "v3",
-                       "v4",
-                       "v5",
-                       "v6",
-                       "v7",
-                       "v8",
-                       "v9",
-                       "v10",
-                       "v11",
-                       "v20");
+      asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_LEAKY_RELU
+                       NCHWC1_TRANS_FP32_STORE
+                   : [doutc0r0] "+r"(doutc0_ptr),
+                     [cnt] "+r"(cnt_loop),
+                     [ptr_din] "+r"(din_ptr)
+                   : [scale] "w"(scale), [vbias] "w"(vbias)
+                   : "cc",
+                     "memory",
+                     "v0",
+                     "v1",
+                     "v2",
+                     "v3",
+                     "v4",
+                     "v5",
+                     "v6",
+                     "v7",
+                     "v8",
+                     "v9",
+                     "v10",
+                     "v11",
+                     "v20");
 #else
-        asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_LEAKY_RELU
-                         NCHWC1_TRANS_FP32_STORE
-                     : [doutc0r0] "+r"(doutc0_ptr),
-                       [ptr_din] "+r"(din_ptr),
-                       [cnt] "+r"(cnt_loop)
-                     : [scale] "w"(scale)
-                     : "cc",
-                       "memory",
-                       "q0",
-                       "q1",
-                       "q2",
-                       "q3",
-                       "q5",
-                       "q6",
-                       "q7",
-                       "q8",
-                       "q9",
-                       "q10",
-                       "q11",
-                       "q12",
-                       "q15");
+      asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_LEAKY_RELU
+                       NCHWC1_TRANS_FP32_STORE
+                   : [doutc0r0] "+r"(doutc0_ptr),
+                     [ptr_din] "+r"(din_ptr),
+                     [cnt] "+r"(cnt_loop)
+                   : [scale] "w"(scale), [vbias] "w"(vbias)
+                   : "cc",
+                     "memory",
+                     "q0",
+                     "q1",
+                     "q2",
+                     "q3",
+                     "q5",
+                     "q6",
+                     "q7",
+                     "q8",
+                     "q9",
+                     "q10",
+                     "q11",
+                     "q12",
+                     "q15");
 #endif
-        break;
-      default:
-        LOG(FATAL) << "this act_type: "
-                   << static_cast<int>(act_param->active_type)
-                   << " fuse not support";
+    } else if (act_param->active_type == lite_api::ActivationType::kHardSwish) {
+      float32x4_t scale = vdupq_n_f32(1.0 / act_param->hard_swish_scale);
+      float32x4_t offset = vdupq_n_f32(act_param->hard_swish_offset);
+      float32x4_t threshold = vdupq_n_f32(act_param->hard_swish_threshold);
+#ifdef __aarch64__
+      asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_HARD_SWISH
+                       NCHWC1_TRANS_FP32_STORE
+                   : [doutc0r0] "+r"(doutc0_ptr),
+                     [cnt] "+r"(cnt_loop),
+                     [ptr_din] "+r"(din_ptr)
+                   : [scale] "w"(scale),
+                     [vbias] "w"(vbias),
+                     [offset] "w"(offset),
+                     [threshold] "w"(threshold)
+                   : "cc",
+                     "memory",
+                     "v0",
+                     "v1",
+                     "v2",
+                     "v3",
+                     "v4",
+                     "v5",
+                     "v6",
+                     "v7",
+                     "v8",
+                     "v9",
+                     "v10",
+                     "v11",
+                     "v20");
+#else
+      asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_HARD_SWISH
+                       NCHWC1_TRANS_FP32_STORE
+                   : [doutc0r0] "+r"(doutc0_ptr),
+                     [ptr_din] "+r"(din_ptr),
+                     [cnt] "+r"(cnt_loop)
+                   : [scale] "w"(scale),
+                     [vbias] "w"(vbias),
+                     [offset] "w"(offset),
+                     [threshold] "w"(threshold)
+                   : "cc",
+                     "memory",
+                     "q0",
+                     "q1",
+                     "q2",
+                     "q3",
+                     "q5",
+                     "q6",
+                     "q7",
+                     "q8",
+                     "q9",
+                     "q10",
+                     "q11",
+                     "q15");
+#endif
+    } else {
+      LOG(FATAL) << "this act_type: "
+                 << static_cast<int>(act_param->active_type)
+                 << " fuse not support";
     }
   } else {
 #ifdef __aarch64__
@@ -1010,14 +1115,14 @@ inline void act_switch_c1_fp32(const float* din_ptr,
                  : [doutc0r0] "+r"(doutc0_ptr),
                    [cnt] "+r"(cnt_loop),
                    [ptr_din] "+r"(din_ptr)
-                 :
+                 : [vbias] "w"(vbias)
                  : "cc", "memory", "v0", "v1", "v2", "v3", "v20");
 #else
     asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_STORE
                  : [doutc0r0] "+r"(doutc0_ptr),
                    [ptr_din] "+r"(din_ptr),
                    [cnt] "+r"(cnt_loop)
-                 :
+                 : [vbias] "w"(vbias)
                  : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
 #endif
   }
@@ -1038,7 +1143,8 @@ inline bool write_to_output_c1_fp32(const float* din,
                                     int width,
                                     bool flag_relu,
                                     float* trash_ptr,
-                                    operators::ActivationParam* act_param) {
+                                    operators::ActivationParam* act_param,
+                                    const float* bias_ptr = nullptr) {
   if (cs > channel) {
     return true;
   }
@@ -1057,13 +1163,14 @@ inline bool write_to_output_c1_fp32(const float* din,
   int w_round = we - ws;
   int cnt = (width - ws) / w4;
   int remain = (width - ws) % w4;
+  float bias = bias_ptr == nullptr ? 0.f : bias_ptr[0];
   for (int i = 0; i < size_h; i++) {
     int size_w = i * width;
     float* doutc0_ptr = doutc0r0 + size_w;  // doutc0r0 + width;
     const float* din_hei_ptr = ptr_din + i * w_round * c1;
     if (cnt > 0) {
       int cnt_loop = cnt;
-      act_switch_c1_fp32(din_hei_ptr, doutc0_ptr, cnt_loop, act_param);
+      act_switch_c1_fp32(din_hei_ptr, doutc0_ptr, cnt_loop, bias, act_param);
     }
     if (remain > 0) {
       int offset = i * w_round * c1 + c1 * w4 * cnt;
@@ -1071,42 +1178,49 @@ inline bool write_to_output_c1_fp32(const float* din,
       doutc0_ptr += w4 * cnt;
       int j = w4 * cnt;
       if (act_param != nullptr && act_param->has_active) {
-        float six = act_param->Relu_clipped_coef;
-        float scale = act_param->Leaky_relu_alpha;
-        switch (act_param->active_type) {
-          case lite_api::ActivationType::kRelu:
-            for (; j < width; ++j) {
-              *(doutc0_ptr++) = LITEMAX(din_hei_ptr[0], 0.f);
-              din_hei_ptr++;
+        if (act_param->active_type == lite_api::ActivationType::kRelu) {
+          for (; j < width; ++j) {
+            *(doutc0_ptr++) = LITEMAX((din_hei_ptr[0] + bias), 0.f);
+            din_hei_ptr++;
+          }
+        } else if (act_param->active_type == lite_api::ActivationType::kRelu6) {
+          float six = act_param->Relu_clipped_coef;
+          for (; j < width; ++j) {
+            float tmp = LITEMAX((din_hei_ptr[0] + bias), 0.f);
+            *(doutc0_ptr++) = LITEMIN(tmp, six);
+            din_hei_ptr++;
+          }
+        } else if (act_param->active_type ==
+                   lite_api::ActivationType::kLeakyRelu) {
+          float scale = act_param->Leaky_relu_alpha;
+          for (; j < width; ++j) {
+            auto tmp = din_hei_ptr[0] + bias;
+            if (tmp >= 0) {
+              *(doutc0_ptr++) = tmp;
+            } else {
+              *(doutc0_ptr++) = tmp * scale;
             }
-            break;
-          case lite_api::ActivationType::kRelu6:
-            /* 0 <= din <= 6 */
-            for (; j < width; ++j) {
-              float tmp = LITEMAX(din_hei_ptr[0], 0.f);
-              *(doutc0_ptr++) = LITEMIN(tmp, six);
-              din_hei_ptr++;
-            }
-            break;
-          case lite_api::ActivationType::kLeakyRelu:
-            /*din = din >= 0 ? din : din * scale*/
-            for (; j < width; ++j) {
-              if (din_hei_ptr[0] >= 0) {
-                *(doutc0_ptr++) = din_hei_ptr[0];
-              } else {
-                *(doutc0_ptr++) = din_hei_ptr[0] * scale;
-              }
-              din_hei_ptr++;
-            }
-            break;
-          default:
-            LOG(FATAL) << "this act_type: "
-                       << static_cast<int>(act_param->active_type)
-                       << " fuse not support";
+            din_hei_ptr++;
+          }
+        } else if (act_param->active_type ==
+                   lite_api::ActivationType::kHardSwish) {
+          float scale = 1.0 / act_param->hard_swish_scale;
+          float offset = act_param->hard_swish_offset;
+          float threshold = act_param->hard_swish_threshold;
+          for (; j < width; ++j) {
+            auto tmp = din_hei_ptr[0] + bias;
+            *doutc0_ptr++ = std::min(threshold, std::max(0.f, (tmp + offset))) *
+                            tmp * scale;
+            din_hei_ptr++;
+          }
+        } else {
+          LOG(FATAL) << "this act_type: "
+                     << static_cast<int>(act_param->active_type)
+                     << " fuse not support";
         }
       } else {
         for (; j < width; ++j) {
-          *(doutc0_ptr++) = *(din_hei_ptr++);
+          *(doutc0_ptr++) = *(din_hei_ptr++) + bias;
         }
       }
     }
@@ -1461,6 +1575,10 @@ inline bool write_to_output_c2_fp32(const float* din,
   "movi v20.4s, #0                \n" /* for relu */                \
   "blt 2f\n"                                                        \
   "1:                             \n" /* main loop*/                \
+  "fadd v0.4s, v0.4s, %[vbias].4s\n"                                \
+  "fadd v1.4s, v1.4s, %[vbias].4s\n"                                \
+  "fadd v2.4s, v2.4s, %[vbias].4s\n"                                \
+  "fadd v3.4s, v3.4s, %[vbias].4s\n"                                \
   "trn1   v8.4s, v0.4s, v1.4s     \n" /* trans q0, q1*/             \
   "trn2   v9.4s, v0.4s, v1.4s     \n" /* trans q0, q1*/             \
   "ldp q0, q1, [%[ptr_din]], #32  \n" /* load r00, r01 to q0, q1 */ \
@@ -1498,6 +1616,28 @@ inline bool write_to_output_c2_fp32(const float* din,
   "bif  v18.16b, v6.16b, v10.16b \n"    /* choose*/     \
   "bif  v19.16b, v7.16b, v11.16b \n"    /* choose*/
 
+#define NCHWC4_TRANS_FP32_HARD_SWISH                    \
+  "fadd v8.4s,  v16.4s, %[offset].4s \n"                \
+  "fadd v9.4s,  v17.4s, %[offset].4s \n"                \
+  "fadd v10.4s, v18.4s, %[offset].4s \n"                \
+  "fadd v11.4s, v19.4s, %[offset].4s \n"                \
+  "fmul v4.4s,  v16.4s, %[scale].4s  \n"                \
+  "fmul v5.4s,  v17.4s, %[scale].4s  \n"                \
+  "fmax v12.4s, v8.4s,  v20.4s       \n"                \
+  "fmax v13.4s, v9.4s,  v20.4s       \n"                \
+  "fmax v14.4s, v10.4s, v20.4s       \n"                \
+  "fmax v15.4s, v11.4s, v20.4s       \n"                \
+  "fmul v6.4s,  v18.4s, %[scale].4s  \n"                \
+  "fmul v7.4s,  v19.4s, %[scale].4s  \n"                \
+  "fmin v8.4s,  v12.4s, %[threshold].4s\n"              \
+  "fmin v9.4s,  v13.4s, %[threshold].4s\n"              \
+  "fmin v10.4s, v14.4s, %[threshold].4s\n"              \
+  "fmin v11.4s, v15.4s, %[threshold].4s\n"              \
+  "fmul v16.4s, v4.4s, v8.4s          \n"               \
+  "fmul v17.4s, v5.4s, v9.4s          \n"               \
+  "fmul v18.4s, v6.4s, v10.4s         \n"               \
+  "fmul v19.4s, v7.4s, v11.4s         \n"
+
 #define NCHWC4_TRANS_FP32_STORE                          \
   "subs   %w[cnt], %w[cnt], #1    \n" /* loop count -1*/ \
   "str    q16, [%[doutc0r0]], #16 \n" /* store c0r0*/    \
@@ -1509,6 +1649,10 @@ inline bool write_to_output_c2_fp32(const float* din,
   "2: \n"                                                \
   "cmp %w[remain], #1\n"                                 \
   "blt 3f\n"                                             \
+  "fadd v0.4s, v0.4s, %[vbias].4s\n"                                \
+  "fadd v1.4s, v1.4s, %[vbias].4s\n"                                \
+  "fadd v2.4s, v2.4s, %[vbias].4s\n"                                \
+  "fadd v3.4s, v3.4s, %[vbias].4s\n"                                \
   "trn1   v8.4s, v0.4s, v1.4s     \n" /* trans q0, q1*/             \
   "trn2   v9.4s, v0.4s, v1.4s     \n" /* trans q0, q1*/             \
   "trn1   v10.4s, v2.4s, v3.4s    \n" /* trans q2, q3*/             \
@@ -1526,17 +1670,18 @@ inline bool write_to_output_c2_fp32(const float* din,
   "3: \n"
 #else
 #define NCHWC4_TRANS_FP32_COMPUTE                                     \
-  "cmp %[cnt], #1 \n"                                                \
+  "cmp %[cnt], #1 \n"                                                 \
   "vld1.32 {d0-d3}, [%[ptr_din]]!                 @load data \n"      \
   "vld1.32 {d4-d7}, [%[ptr_din]]!         @load data \n"              \
   "vmov.u32 q15, #0                       @ dump zero\n"              \
   "blt 2f\n"                                                          \
   "1:                                     @ main loop\n"              \
-  "vtrn.32 q0, q1                         @ trans data:c00c01c20c21 " \
-  "\n"                                                                \
-  "vtrn.32 q2, q3                         @ trans data:c02c03c22c23 " \
-  "\n"                                                                \
-                                                                      \
+  "vadd.f32 q0, q0, %q[vbias]\n"                                      \
+  "vadd.f32 q1, q1, %q[vbias]\n"                                      \
+  "vadd.f32 q2, q2, %q[vbias]\n"                                      \
+  "vadd.f32 q3, q3, %q[vbias]\n"                                      \
+  "vtrn.32 q0, q1                       @ trans data:c00c01c20c21\n"  \
+  "vtrn.32 q2, q3                       @ trans data:c02c03c22c23\n"  \
   "vswp   d1, d4                          @ swap data\n"              \
   "vswp   d3, d6                          @ swap data\n"
 
@@ -1566,6 +1711,28 @@ inline bool write_to_output_c2_fp32(const float* din,
   "vbif q2, q11, q7 @ choose \n"              \
   "vbif q3, q12, q8 @ choose \n"
 
+#define NCHWC4_TRANS_FP32_HARD_SWISH            \
+  "vadd.f32   q5,  q0,  %q[offset] @ add \n"    \
+  "vadd.f32   q6,  q1,  %q[offset] @ add \n"    \
+  "vadd.f32   q7,  q2,  %q[offset] @ add \n"    \
+  "vadd.f32   q8,  q3,  %q[offset] @ add \n"    \
+  "vmul.f32   q9,  q0,  %q[scale] \n"            \
+  "vmul.f32   q10, q1,  %q[scale] \n"            \
+  "vmax.f32   q5,  q5,  q15 \n"                  \
+  "vmax.f32   q6,  q6,  q15 \n"                  \
+  "vmul.f32   q11, q2,  %q[scale] \n"            \
+  "vmax.f32   q7,  q7,  q15 \n"                  \
+  "vmax.f32   q8,  q8,  q15 \n"                  \
+  "vmul.f32   q3, q3,  %q[scale] \n"            \
+  "vmin.f32   q5, q5,  %q[threshold] \n"        \
+  "vmin.f32   q6, q6,  %q[threshold] \n"        \
+  "vmin.f32   q7, q7,  %q[threshold] \n"        \
+  "vmin.f32   q8, q8,  %q[threshold] \n"        \
+  "vmul.f32   q0, q9,  q5 \n"                  \
+  "vmul.f32   q1, q10, q6 \n"                  \
+  "vmul.f32   q2, q11, q7 \n"                  \
+  "vmul.f32   q3, q3,  q8 \n"
+
 #define NCHWC4_TRANS_FP32_STORE                                        \
   "subs   %[cnt], %[cnt], #1    @ loop count - 1\n"                    \
   "vst1.32  {d0-d1}, [%[doutc0r0]]!     @ store result, add pointer\n" \
@@ -1580,9 +1747,12 @@ inline bool write_to_output_c2_fp32(const float* din,
   "2: \n"                                                \
   "cmp %[remain], #1\n"                                 \
   "blt 3f\n"                                             \
+  "vadd.f32 q0, q0, %q[vbias]\n"                                      \
+  "vadd.f32 q1, q1, %q[vbias]\n"                                      \
+  "vadd.f32 q2, q2, %q[vbias]\n"                                      \
+  "vadd.f32 q3, q3, %q[vbias]\n"                                      \
   "vtrn.32 q0, q1                       @ trans data:c00c01c20c21 \n" \
   "vtrn.32 q2, q3                       @ trans data:c02c03c22c23 \n" \
-                                                                      \
   "vswp   d1, d4                          @ swap data\n"              \
   "vswp   d3, d6                          @ swap data\n"
 #define NCHWC4_TRANS_FP32_RSTORE                                   \
@@ -1609,7 +1779,8 @@ inline bool write_to_output_c4_fp32(const float* din,
                                     int width,
                                     bool flag_relu,
                                     float* trash_ptr,
-                                    operators::ActivationParam* act_param) {
+                                    operators::ActivationParam* act_param,
+                                    const float* bias_ptr = nullptr) {
   const int c4 = 4;
   const int w4 = 4;
   const int w_round = we - ws;
@@ -1639,12 +1810,16 @@ inline bool write_to_output_c4_fp32(const float* din,
   float tmp1[4] = {0.f};
   float tmp2[4] = {0.f};
   float tmp3[4] = {0.f};
+  float bias[4] = {0.f, 0.f, 0.f, 0.f};
+  if (bias_ptr) {
+    for (int i = cs, k = 0; i < ce && i < channel; i++) {
+      bias[k++] = *bias_ptr++;
+    }
+  }
+  float32x4_t vbias = vld1q_f32(bias);
   if (act_param != nullptr && act_param->has_active) {
-    float32x4_t six = vdupq_n_f32(act_param->Relu_clipped_coef);
-    float32x4_t scale = vdupq_n_f32(act_param->Leaky_relu_alpha);
-    switch (act_param->active_type) {
-          case lite_api::ActivationType::kRelu:
-            for (int i = 0; i < size_h; i++) {
+    if (act_param->active_type == lite_api::ActivationType::kRelu) {
+      for (int i = 0; i < size_h; i++) {
               int size_w = i * width;
               float* doutc0_ptr = doutc0r0;
               float* doutc1_ptr = doutc1r0;
@@ -1675,6 +1850,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                     [cnt] "+r"(cnt_col),
                     [ptr_din] "+r"(din_ptr)
                   : [remain] "r"(remain),
+                    [vbias] "w"(vbias),
                     [tmp0] "r"(tmp0),
                     [tmp1] "r"(tmp1),
                     [tmp2] "r"(tmp2),
@@ -1703,6 +1879,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                    [ptr_din] "+r"(din_ptr),
                    [cnt] "+r"(cnt_col)
                  : [remain] "r"(remain),
+                   [vbias] "w"(vbias),
                    [tmp0] "r"(tmp0),
                    [tmp1] "r"(tmp1),
                    [tmp2] "r"(tmp2),
@@ -1723,9 +1900,9 @@ inline bool write_to_output_c4_fp32(const float* din,
               doutc3r0 += width;
               ptr_din += w_stride;
             }
-            break;
-          case lite_api::ActivationType::kRelu6:
-            for (int i = 0; i < size_h; i++) {
+    } else if (act_param->active_type == lite_api::ActivationType::kRelu6) {
+      float32x4_t six = vdupq_n_f32(act_param->Relu_clipped_coef);
+      for (int i = 0; i < size_h; i++) {
               int size_w = i * width;
               float* doutc0_ptr = doutc0r0;
               float* doutc1_ptr = doutc1r0;
@@ -1756,6 +1933,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                     [cnt] "+r"(cnt_col),
                     [ptr_din] "+r"(din_ptr)
                   : [remain] "r"(remain),
+                    [vbias] "w"(vbias),
                     [six] "w"(six),
                     [tmp0] "r"(tmp0),
                     [tmp1] "r"(tmp1),
@@ -1786,6 +1964,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                    [cnt] "+r"(cnt_col)
                  : [remain] "r"(remain),
                    [six] "w"(six),
+                   [vbias] "w"(vbias),
                    [tmp0] "r"(tmp0),
                    [tmp1] "r"(tmp1),
                    [tmp2] "r"(tmp2),
@@ -1806,9 +1985,9 @@ inline bool write_to_output_c4_fp32(const float* din,
               doutc3r0 += width;
               ptr_din += w_stride;
             }
-            break;
-          case lite_api::ActivationType::kLeakyRelu:
-            for (int i = 0; i < size_h; i++) {
+    } else if (act_param->active_type == lite_api::ActivationType::kLeakyRelu) {
+      float32x4_t scale = vdupq_n_f32(act_param->Leaky_relu_alpha);
+      for (int i = 0; i < size_h; i++) {
               int size_w = i * width;
               float* doutc0_ptr = doutc0r0;
               float* doutc1_ptr = doutc1r0;
@@ -1839,6 +2018,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                     [cnt] "+r"(cnt_col),
                     [ptr_din] "+r"(din_ptr)
                   : [remain] "r"(remain),
+                    [vbias] "w"(vbias),
                     [scale] "w"(scale),
                     [tmp0] "r"(tmp0),
                     [tmp1] "r"(tmp1),
@@ -1874,6 +2054,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                    [cnt] "+r"(cnt_col)
                  : [remain] "r"(remain),
                    [scale] "w"(scale),
+                   [vbias] "w"(vbias),
                    [tmp0] "r"(tmp0),
                    [tmp1] "r"(tmp1),
                    [tmp2] "r"(tmp2),
@@ -1908,11 +2089,123 @@ inline bool write_to_output_c4_fp32(const float* din,
               doutc3r0 += width;
               ptr_din += w_stride;
             }
-            break;
-          default:
-            LOG(FATAL) << "this act_type: "
-                       << static_cast<int>(act_param->active_type)
-                       << " fuse not support";
+    } else if (act_param->active_type == lite_api::ActivationType::kHardSwish) {
+      float32x4_t scale = vdupq_n_f32(1.0 / act_param->hard_swish_scale);
+      float32x4_t offset = vdupq_n_f32(act_param->hard_swish_offset);
+      float32x4_t threshold = vdupq_n_f32(act_param->hard_swish_threshold);
+      for (int i = 0; i < size_h; i++) {
+              int size_w = i * width;
+              float* doutc0_ptr = doutc0r0;
+              float* doutc1_ptr = doutc1r0;
+              float* doutc2_ptr = doutc2r0;
+              float* doutc3_ptr = doutc3r0;
+              if (ce > channel) {
+                switch (ce - channel) {
+                  case 3:
+                    doutc1_ptr = trash_ptr;
+                  case 2:
+                    doutc2_ptr = trash_ptr;
+                  case 1:
+                    doutc3_ptr = trash_ptr;
+                  default:
+                    break;
+                }
+              }
+              const float* din_ptr = ptr_din;
+              int cnt_col = cnt;
+#ifdef __aarch64__
+      asm volatile(
+        NCHWC4_TRANS_FP32_COMPUTE NCHWC4_TRANS_FP32_HARD_SWISH NCHWC4_TRANS_FP32_STORE
+        NCHWC4_TRANS_FP32_REMAIN NCHWC4_TRANS_FP32_HARD_SWISH NCHWC4_TRANS_FP32_RSTORE
+                  : [doutc0r0] "+r"(doutc0_ptr),
+                    [doutc1r0] "+r"(doutc1_ptr),
+                    [doutc2r0] "+r"(doutc2_ptr),
+                    [doutc3r0] "+r"(doutc3_ptr),
+                    [cnt] "+r"(cnt_col),
+                    [ptr_din] "+r"(din_ptr)
+                  : [remain] "r"(remain),
+                    [scale] "w"(scale),
+                    [offset] "w"(offset),
+                    [threshold] "w"(threshold),
+                    [vbias] "w"(vbias),
+                    [tmp0] "r"(tmp0),
+                    [tmp1] "r"(tmp1),
+                    [tmp2] "r"(tmp2),
+                    [tmp3] "r"(tmp3)
+                  : "cc",
+                    "memory",
+                    "v0",
+                    "v1",
+                    "v2",
+                    "v3",
+                    "v4",
+                    "v5",
+                    "v6",
+                    "v7",
+                    "v8",
+                    "v9",
+                    "v10",
+                    "v11",
+                    "v12",
+                    "v13",
+                    "v14",
+                    "v15",
+                    "v16",
+                    "v17",
+                    "v18",
+                    "v19",
+                    "v20");
+#else
+      asm volatile(NCHWC4_TRANS_FP32_COMPUTE NCHWC4_TRANS_FP32_HARD_SWISH NCHWC4_TRANS_FP32_STORE
+                 NCHWC4_TRANS_FP32_REMAIN NCHWC4_TRANS_FP32_HARD_SWISH NCHWC4_TRANS_FP32_RSTORE
+                 : [doutc0r0] "+r"(doutc0_ptr),
+                   [doutc1r0] "+r"(doutc1_ptr),
+                   [doutc2r0] "+r"(doutc2_ptr),
+                   [doutc3r0] "+r"(doutc3_ptr),
+                   [ptr_din] "+r"(din_ptr),
+                   [cnt] "+r"(cnt_col)
+                 : [remain] "r"(remain),
+                   [scale] "w"(scale),
+                   [offset] "w"(offset),
+                   [threshold] "w"(threshold),
+                   [vbias] "w"(vbias),
+                   [tmp0] "r"(tmp0),
+                   [tmp1] "r"(tmp1),
+                   [tmp2] "r"(tmp2),
+                   [tmp3] "r"(tmp3)
+                  : "cc",
+                       "memory",
+                       "q0",
+                       "q1",
+                       "q2",
+                       "q3",
+                       "q5",
+                       "q6",
+                       "q7",
+                       "q8",
+                       "q9",
+                       "q10",
+                       "q11",
+                       "q15");
+#endif
+              if (remain > 0) {
+                for (int i = 0; i < remain; i++) {
+                  *(doutc0_ptr++) = tmp0[i];
+                  *(doutc1_ptr++) = tmp1[i];
+                  *(doutc2_ptr++) = tmp2[i];
+                  *(doutc3_ptr++) = tmp3[i];
+                }
+              }
+              doutc0r0 += width;
+              doutc1r0 += width;
+              doutc2r0 += width;
+              doutc3r0 += width;
+              ptr_din += w_stride;
+            }
+    } else {
+      LOG(FATAL) << "this act_type: "
+                 << static_cast<int>(act_param->active_type)
+                 << " fuse not support";
     }
   } else {
     // no act
@@ -1947,6 +2240,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                     [cnt] "+r"(cnt_col),
                     [ptr_din] "+r"(din_ptr)
                   : [remain] "r"(remain),
+                    [vbias] "w"(vbias),
                     [tmp0] "r"(tmp0),
                     [tmp1] "r"(tmp1),
                     [tmp2] "r"(tmp2),
@@ -1975,6 +2269,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                    [ptr_din] "+r"(din_ptr),
                    [cnt] "+r"(cnt_col)
                  : [remain] "r"(remain),
+                   [vbias] "w"(vbias),
                    [tmp0] "r"(tmp0),
                    [tmp1] "r"(tmp1),
                    [tmp2] "r"(tmp2),
@@ -2317,12 +2612,16 @@ inline void act_switch_c8_fp32(const float* din_ptr,
                        "v19",
                        "v20");
 #else
-        asm volatile(NCHWC4_TRANS_FP32_COMPUTE NCHWC4_TRANS_FP32_RELU
-                         NCHWC4_TRANS_FP32_RELU6 NCHWC4_TRANS_FP32_STORE
+        asm volatile(NCHWC8_TRANS_FP32_COMPUTE NCHWC8_TRANS_FP32_RELU6
+                         NCHWC8_TRANS_FP32_STORE
                      : [doutc0r0] "+r"(doutc0_ptr),
                        [doutc1r0] "+r"(doutc1_ptr),
                        [doutc2r0] "+r"(doutc2_ptr),
                        [doutc3r0] "+r"(doutc3_ptr),
+                       [doutc4r0] "+r"(doutc4_ptr),
+                       [doutc5r0] "+r"(doutc5_ptr),
+                       [doutc6r0] "+r"(doutc6_ptr),
+                       [doutc7r0] "+r"(doutc7_ptr),
                        [ptr_din] "+r"(din_ptr),
                        [cnt] "+r"(cnt_loop)
                      : [six] "w"(six)
@@ -2336,6 +2635,12 @@ inline void act_switch_c8_fp32(const float* din_ptr,
                        "q5",
                        "q6",
                        "q7",
+                       "q9",
+                       "q10",
+                       "q11",
+                       "q12",
+                       "q13",
+                       "q14",
                        "q15");
 #endif
         break;

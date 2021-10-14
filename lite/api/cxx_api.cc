@@ -517,5 +517,25 @@ void Predictor::CheckInputValid() {
   }
 }
 
+void Predictor::ClearTensorArray(
+    const std::shared_ptr<const cpp::ProgramDesc> &program_desc) {
+  for (size_t blk_idx = 0; blk_idx < program_desc->BlocksSize(); blk_idx++) {
+    const cpp::BlockDesc *block =
+        program_desc->GetBlock<cpp::BlockDesc>(blk_idx);
+    for (size_t var_idx = 0; var_idx < block->VarsSize(); var_idx++) {
+      const cpp::VarDesc *var = block->GetVar<cpp::VarDesc>(var_idx);
+      CHECK(var);
+
+      auto tmp = program_->exec_scope()->FindVar(var->Name());
+      if (tmp->IsType<std::vector<Tensor>>()) {
+        std::vector<Tensor> *tensor_array_var =
+            program_->exec_scope()->FindMutableTensorList(var->Name());
+        CHECK(tensor_array_var);
+        tensor_array_var->clear();
+      }
+    }
+  }
+}
+
 }  // namespace lite
 }  // namespace paddle

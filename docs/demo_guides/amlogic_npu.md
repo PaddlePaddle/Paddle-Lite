@@ -397,11 +397,11 @@ Paddle Lite已支持Amlogic NPU的预测部署。
   $ git clone https://github.com/PaddlePaddle/Paddle-Lite.git
   $ cd Paddle-Lite
   $ git checkout <release-version-tag>
-  ###C308X、A311D
-  $ wget https://paddlelite-demo.bj.bcebos.com/devices/amlogic/Linux-arm64/amlnpu_ddk.zip
-  ###S905D3 Android版本
-  $ wget https://paddlelite-demo.bj.bcebos.com/devices/amlogic/Android-armeabi-v7a/amlnpu_ddk.zip
-  $ unzip amlnpu_ddk.zip
+  # C308X、A311D Linux版本ddk
+  $ wget https://paddlelite-demo.bj.bcebos.com/devices/amlogic/linux/amlnpu_ddk.tar.gz
+  # S905D3 Android版本ddk
+  $ wget https://paddlelite-demo.bj.bcebos.com/devices/amlogic/android/amlnpu_ddk.tar.gz
+  $ tar -xvf amlnpu_ddk.tar.gz
   ```
 
 - 编译并生成PaddleLite+AmlogicNPU的部署库

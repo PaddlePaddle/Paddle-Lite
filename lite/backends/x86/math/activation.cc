@@ -163,7 +163,7 @@ void hard_swish(const float* din,
     __m256 vin0 = _mm256_loadu_ps(din);
     __m256 vin1 = _mm256_loadu_ps(din + 8);
     __m256 vin2 = _mm256_loadu_ps(din + 16);
-    __m256 vin3 = _mm256_loadu_ps(din + 32);
+    __m256 vin3 = _mm256_loadu_ps(din + 24);
     __m256 vadd0 = _mm256_add_ps(vin0, vec_offset);
     __m256 vadd1 = _mm256_add_ps(vin1, vec_offset);
     __m256 vadd2 = _mm256_add_ps(vin2, vec_offset);
@@ -184,9 +184,9 @@ void hard_swish(const float* din,
     dout += 32;
 #else
     __m128 vin0 = _mm_loadu_ps(din);
-    __m128 vin1 = _mm_loadu_ps(din + 8);
-    __m128 vin2 = _mm_loadu_ps(din + 16);
-    __m128 vin3 = _mm_loadu_ps(din + 32);
+    __m128 vin1 = _mm_loadu_ps(din + 4);
+    __m128 vin2 = _mm_loadu_ps(din + 8);
+    __m128 vin3 = _mm_loadu_ps(din + 12);
     __m128 vadd0 = _mm_add_ps(vin0, vec_offset_128);
     __m128 vadd1 = _mm_add_ps(vin1, vec_offset_128);
     __m128 vadd2 = _mm_add_ps(vin2, vec_offset_128);
