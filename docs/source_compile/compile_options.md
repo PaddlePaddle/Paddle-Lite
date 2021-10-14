@@ -25,7 +25,7 @@
 
 | 编译选项 |  说明  | 默认值 |
 | :-- |  :-- | --: |
-| LITE_WITH_PROFILE |  编译 [Profiler工具](../user_guides/debug.html)，用于 CPU 上 kernel 耗时统计 | OFF |
+| LITE_WITH_PROFILE |  编译 [Profiler 工具](../user_guides/debug.html)，用于 CPU 上 kernel 耗时统计 | OFF |
 | LITE_WITH_PRECISION_PROFILE |  开启 Profiler 工具的模型精度分析功能 | OFF |
 | WITH_TESTING |  编译 Lite 单测模块 | OFF |
 
