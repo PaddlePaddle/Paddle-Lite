@@ -50,6 +50,7 @@ add_kernel(greater_than_opencl_image OPENCL basic SRCS greater_than_image_comput
 add_kernel(fc_opencl_image OPENCL basic SRCS fc_image_compute.cc)
 add_kernel(argmax_opencl_image OPENCL basic SRCS argmax_image_compute.cc)
 add_kernel(max_opencl_image OPENCL basic SRCS max_image_compute.cc)
+add_kernel(matmul_opencl_image OPENCL basic SRCS matmul_image_compute.cc)
 # extra
 # wait to add ...
 
@@ -140,10 +141,17 @@ lite_cc_test(test_softmax_image_opencl SRCS softmax_image_compute_test.cc
 
 lite_cc_test(test_argmax_image_opencl SRCS argmax_image_compute_test.cc
              DEPS kernels core)
+<<<<<<< HEAD
  
  lite_cc_test(test_max_image_opencl SRCS max_image_compute_test.cc
+=======
+
+lite_cc_test(test_max_image_opencl SRCS max_image_compute_test.cc
+>>>>>>> 5f7a5af... add matmul image kernel test=develop
              DEPS kernels core)
 
+lite_cc_test(test_matmul_image_opencl SRCS matmul_image_compute_test.cc
+             DEPS kernels core)
 ######################
 # buffer kernel      #
 ######################
