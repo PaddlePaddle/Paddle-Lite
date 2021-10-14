@@ -391,7 +391,7 @@ NNAdapter 已支持的新硬件列表如下：
 - Mediatek APU
 - Amlogic NPU
 
-Paddle Lite 在持续地开发不同新硬件所支持的算子。可以通过访问[https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/bridges/paddle_use_bridges.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/bridges/paddle_use_bridges.h)获得最新的算子支持列表。
+Paddle Lite 在持续地开发不同新硬件所支持的算子。可以通过访问 [NNAdapter 算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/bridges/paddle_use_bridges.h)获得最新的算子支持列表。
 
 参考 NNAdapter 算子支持列表，当模型能够全部运行在某种新硬件上时，实际后端只有 NNAdapter 一种；当模型部分算子需要运行在 x86 cpu 或 arm cpu 上时，实际后端为包含 NNAdapter 和 cpu 在内的多种硬件（异构计算）。
 
@@ -400,10 +400,10 @@ Paddle Lite 在持续地开发不同新硬件所支持的算子。可以通过�
 - Huawei Kirin NPU / Mediatek NPU 请参考 『在 Android 上运行性能测试』编译预测库。
 — Huawei Ascend NPU（arm host） / Rockchip NPU / Imagination NNA / Amlogic NPU 请参考 『在 ARMLinux 上运行性能测试』编译预测库。
 - Huawei Ascend NPU（x86 host）请参考『在 Linux 上运行性能测试』编译预测库。
-- 新硬件所需的 DDK 可在 Paddle Lite 通用示例程序[PaddleLite-generic-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)中获取。
+- 新硬件所需的 DDK 可在 [Paddle Lite 通用示例程序](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)中获取。
 
 ##### driver hal库
-请参考[Paddle Lite官方文档](https://paddle-lite.readthedocs.io/zh/develop/index.html)编译新硬件driver hal库。
+请参考[Paddle Lite官方文档](https://paddle-lite.readthedocs.io/zh/develop/index.html)编译新硬件 driver hal 库。
 
 #### 在 Huawei Kirin NPU 上运行模型
 ```shell
