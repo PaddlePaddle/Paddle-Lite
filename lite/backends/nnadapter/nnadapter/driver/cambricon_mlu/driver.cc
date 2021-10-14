@@ -106,7 +106,7 @@ int ExecuteProgram(void* program,
 }  // namespace nnadapter
 
 NNADAPTER_EXPORT nnadapter::hal::Device NNADAPTER_AS_SYM2(
-    NNADAPTER_DRIVER_NAME) = {
+    NNADAPTER_DEVICE_SYMBOL) = {
     .name = NNADAPTER_AS_STR2(NNADAPTER_DEVICE_NAME),
     .vendor = "Cambricon",
     .type = NNADAPTER_ACCELERATOR,

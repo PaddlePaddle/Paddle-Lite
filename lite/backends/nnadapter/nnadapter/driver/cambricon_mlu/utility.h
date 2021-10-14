@@ -32,6 +32,8 @@ namespace cambricon_mlu {
 magicmind::DataType ConvertToMagicMindDtype(NNAdapterOperandPrecisionCode input_precision);
 // Convert NNAdapter operand layout to magicmind layout
 magicmind::Layout ConvertToMagicMindDataLayout(NNAdapterOperandLayoutCode input_layout);
+// Convert NNAdapter operand layout to magicmind axis, if NHWC, axis = 3.
+int64_t ConvertToMagicMindAxis(NNAdapterOperandLayoutCode input_layout);
 // Convert NNAdapter dims to magicmind dims
 magicmind::Dims ConvertToMagicMindDims(const int32_t* input_dimensions, uint32_t input_dimensions_count);
 

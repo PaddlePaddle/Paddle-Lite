@@ -91,6 +91,26 @@ magicmind::Layout ConvertToMagicMindDataLayout(
   return output_layout;
 }
 
+int64_t ConvertToMagicMindAxis(
+    NNAdapterOperandLayoutCode input_layout) {
+  int64_t axis;
+  switch (input_layout) {
+    case NNADAPTER_NCHW:
+      axis = 1;
+      break;
+    case NNADAPTER_NHWC:
+      axis = 3;
+      break;
+    default:
+      NNADAPTER_LOG(FATAL)
+          << "Failed to convert the NNAdapter operand layout code("
+          << OperandLayoutCodeToString(input_layout)
+          << ") to magicmind axis !";
+      break;
+  }
+  return axis;
+}
+
 magicmind::Dims ConvertToMagicMindDims(const int32_t* input_dimensions,
                                        uint32_t input_dimensions_count) {
   std::vector<int64_t> output_dimensions;

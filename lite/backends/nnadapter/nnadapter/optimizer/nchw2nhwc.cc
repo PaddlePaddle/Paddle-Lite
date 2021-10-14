@@ -46,6 +46,15 @@ class NCHW2NHWCDataLayoutConverter {
     return permutations_[operand];
   }
 
+  void SetOperationLayout(hal::Operation* operation, const int input_num = 1, const int output_num = 1) {
+    for (int in_index = 0; in_index < input_num; ++in_index) {
+      operation->input_operands[in_index]->type.layout = NNAdapterOperandLayoutCode::NNADAPTER_NHWC;
+    }
+    for (int out_index = 0; out_index < output_num; ++out_index) {
+      operation->output_operands[out_index]->type.layout = NNAdapterOperandLayoutCode::NNADAPTER_NHWC;
+    }
+  }
+
   // Operation converters
   void ConvertElementwise(hal::Operation* operation);
   void ConvertPool2D(hal::Operation* operation);
@@ -170,6 +179,7 @@ void NCHW2NHWCDataLayoutConverter::ConvertPool2D(hal::Operation* operation) {
   }
   TransposeOperand(output_operand, kNCHW2NHWC);
   SetPermutation(output_operand, kNCHW2NHWC);
+  SetOperationLayout(operation);
 }
 
 void NCHW2NHWCDataLayoutConverter::ConvertConcat(hal::Operation* operation) {
@@ -276,12 +286,17 @@ void NCHW2NHWCDataLayoutConverter::ConvertConv2D(hal::Operation* operation) {
     // [C_out, C_in, filter_height, filter_width]->[C_out, filter_height,
     // filter_width, C_in]
     filter_permutation = {0, 2, 3, 1};
+#if defined(NNADAPTER_WITH_CAMBRICON_MLU)
+    // MagicMind requires filter_layout is HWCN.
+    filter_permutation = {2, 3, 1, 0};
+#endif
   }
   TransposeOperand(filter_operand, filter_permutation);
   SetPermutation(filter_operand, filter_permutation);
   auto output_operand = output_operands[0];
   TransposeOperand(output_operand, kNCHW2NHWC);
   SetPermutation(output_operand, kNCHW2NHWC);
+  SetOperationLayout(operation, 3);
 }
 
 void NCHW2NHWCDataLayoutConverter::ConvertFullyConnected(
