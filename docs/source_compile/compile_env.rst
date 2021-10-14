@@ -4,11 +4,9 @@
 
 Paddle Lite 源码编译概述
 ======================================================
-Paddle Lite 提供了Android/iOS/X86/MacOS平台的官方Release预测库下载，如果您使用的是这四个平台，我们优先推荐您直接下载 `Paddle Lite 预编译库 <https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html>`_。
+Paddle Lite 提供了Android/iOS/X86/MacOS平台的官方Release预测库下载，如果您使用的是这四个平台，我们优先推荐您直接下载 `Paddle Lite 预编译库 <https://paddle-lite.readthedocs.io/zh/develop/quick_start/release_lib.html>`_。
 
-您也可以根据目标平台选择对应的源码编译方法，Paddle Lite 提供了源码编译脚本，位于*lite/tools/*文件夹下，只需要“编译准备环境”和“执行编译脚本”两个步骤即可一键编译得到目标平台的 Paddle Lite 预测库。
-
-Paddle Lite 已支持多种交叉编译。我们优先建议您使用 `Docker 开发环境 <../>`_ 进行编译，以避免复杂繁琐的环境搭建过程。您也可以遵循 Paddle Lite 官方提供的环境搭建指南，自行在宿主机器上搭建编译环境。
+Paddle Lite 已支持多种交叉编译。我们优先推荐您使用 `Docker 开发环境 <../>`_ 进行编译，以避免复杂繁琐的环境搭建过程。当然，您也可以根据宿主机和目标设备的 CPU 架构和操作系统，在下面列表中找到相应的环境搭建及编译指南，自行完成编译环境的搭建。
 
 .. list-table::
    :header-rows: 1
