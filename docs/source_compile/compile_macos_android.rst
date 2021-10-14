@@ -69,9 +69,9 @@
    # 4. 添加环境变量NDK_ROOT指向Android NDK的安装路径
    echo "export NDK_ROOT=~/Library/android-ndk-r17c" >> ~/.bash_profile
    source ~/.bash_profile
-   
+
    # 5. Install Java Environment 
-   brew cask install java
+   brew install java
 
 了解基础编译参数
 ----------------
