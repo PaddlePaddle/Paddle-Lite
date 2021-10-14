@@ -220,7 +220,7 @@ wget https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/MobileNetV1.tar.
 tar zxvf MobileNetV1.tar.gz
 
 # 设置环境变量
-export LD_LIBRARY_PATH=build.lite.x86/third_party/install/mklml/lib/:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=build.lite.x86.gcc/third_party/install/mklml/lib/:$LD_LIBRARY_PATH
 
 # 执行性能测试
 ./build.lite.linux.x86.gcc/lite/api/benchmark_bin \
