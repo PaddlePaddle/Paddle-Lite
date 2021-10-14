@@ -63,7 +63,7 @@ int ConvertScale(Converter* converter, OpInfo* op, Scope* scope) {
           DDim({static_cast<int64_t>(1)}),
           NNADAPTER_TENSOR_INT8,
           true,
-          {fabs(scale)});
+          {fabsf(scale)});
     } else {
       scale_operand = converter->AddConstantOperand(scale);
     }
@@ -88,7 +88,7 @@ int ConvertScale(Converter* converter, OpInfo* op, Scope* scope) {
             DDim({static_cast<int64_t>(1)}),
             NNADAPTER_TENSOR_INT8,
             true,
-            {fabs(bias)});
+            {fabsf(bias)});
       } else {
         bias_operand = converter->AddConstantOperand(bias);
       }
@@ -114,7 +114,7 @@ int ConvertScale(Converter* converter, OpInfo* op, Scope* scope) {
           DDim({static_cast<int64_t>(1)}),
           NNADAPTER_TENSOR_INT8,
           true,
-          {fabs(bias)});
+          {fabsf(bias)});
     } else {
       bias_operand = converter->AddConstantOperand(bias);
     }
