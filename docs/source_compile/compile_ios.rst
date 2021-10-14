@@ -55,8 +55,8 @@
 
 .. code-block:: shell
 
-   # 1. 安装 curl gcc git make unzip wget 等基础软件
-   brew install curl gcc git make unzip wget
+   # 1. 安装 curl gcc git make unzip wget python 等基础软件
+   brew install curl gcc git make unzip wget python
 
    # 2. 安装 CMake，以下命令以 3.15.2 版本为例，其他版本步骤类似。
    mkdir /usr/local/Cellar/cmake/ && cd /usr/local/Cellar/cmake/
