@@ -65,7 +65,7 @@ Paddle Lite 已支持 Imagination NNA 的预测部署。
 ### 准备交叉编译环境
 
 - 按照以下两种方式配置交叉编译环境：
-  - Docker 交叉编译环境：由于 Roc1运行环境为Ubuntu 18.04，且 Imagination NNA DDK 依赖高版本的 glibc，因此不能直接使用[编译环境准备](../source_compile/compile_env)中的docker image，而需要按照如下方式在Host机器上手动构建Ubuntu 18.04的docker image；
+  - Docker 交叉编译环境：由于 Roc1 运行环境为Ubuntu 18.04，且 Imagination NNA DDK 依赖高版本的 glibc，因此不能直接使用[编译环境准备](../source_compile/compile_env)中的docker image，而需要按照如下方式在Host机器上手动构建Ubuntu 18.04的docker image；
 
     ```
     $ wget https://paddlelite-demo.bj.bcebos.com/devices/imagination/Dockerfile
@@ -74,7 +74,7 @@ Paddle Lite 已支持 Imagination NNA 的预测部署。
     ```
 
   - Ubuntu 交叉编译环境：要求 Host 为 Ubuntu 18.04 系统，参考[编译环境准备](../source_compile/compile_env)中的"交叉编译 ARM Linux"步骤安装交叉编译工具链。
-- 由于需要通过scp和ssh命令将交叉编译生成的 Paddle Lite 库和示例程序传输到设备上执行，因此，在进入Docker容器后还需要安装如下软件：
+- 由于需要通过 scp 和 ssh 命令将交叉编译生成的 Paddle Lite 库和示例程序传输到设备上执行，因此，在进入Docker容器后还需要安装如下软件：
 
   ```
   # apt-get install openssh-client sshpass
@@ -178,7 +178,7 @@ Paddle Lite 已支持 Imagination NNA 的预测部署。
   Postprocess time: 0.157000 ms
   ```
 
-  - 如果需要更改测试图片，可将图片拷贝到 PaddleLite-generic-demo/image_classification_demo/assets/images 目录下，然后调用 convert_to_raw_image.py 生成相应的RGB Raw图像，最后修改 run_with_adb.sh 的 IMAGE_NAME 变量即可；
+  - 如果需要更改测试图片，可将图片拷贝到 'PaddleLite-generic-demo/image_classification_demo/assets/images' 目录下，然后调用 'convert_to_raw_image.py' 生成相应的 RGB Raw 图像，最后修改 'run_with_adb.sh' 的 IMAGE_NAME 变量即可；
   ```shell
   注意：
   1）请根据buid.sh配置正确的参数值。

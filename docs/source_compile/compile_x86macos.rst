@@ -8,8 +8,7 @@
 简介
 ----
 
-如果你的本机环境是 MacOS 操作系统，需要部署模型到 MacOS 系统的目标硬件上，则可以参考本文的介绍，从源码构建 Paddle Lite 编译包，用于后续应用程序的开发。
-注意 Arm 架构的 Apple M1 芯片暂不适用于本文档。
+如果你的本机环境是 MacOS 操作系统（暂不支持 M1 机型），需要部署模型到 MacOS 系统的目标硬件上，则可以参考本文的介绍，从源码构建 Paddle Lite 编译包，用于后续应用程序的开发。
 
 在该场景下 Paddle Lite 已验证的软硬件配置如下表所示：
 
@@ -96,7 +95,7 @@ Paddle Lite 仓库中\ ``/lite/tools/build_macos.sh``\ 脚本文件用于构建 
      - OFF / ON
      - OFF
    * - with_extra
-     - 是否编译完整算子（见\ `支持算子 <https://paddle-lite.readthedocs.io/zh/latest/introduction/support_operation_list.html>`_\ 一节）
+     - 是否编译完整算子（见\ `支持算子 <https://paddle-lite.readthedocs.io/zh/develop/introduction/support_operation_list.html>`_\ 一节）
      - OFF / ON
      - OFF
    * - with_profile
@@ -124,7 +123,7 @@ Paddle Lite 仓库中\ ``/lite/tools/build_macos.sh``\ 脚本文件用于构建 
 
    # 1. 下载 Paddle Lite 源码并切换到发布分支，如 develop
    git clone https://github.com/PaddlePaddle/Paddle-Lite.git
-   cd Paddle-Lite && git checkout release/v2.10
+   cd Paddle-Lite && git checkout develop
 
    # (可选) 删除 third-party 目录，编译脚本会自动从国内CDN下载第三方库文件
    # rm -rf third-party
