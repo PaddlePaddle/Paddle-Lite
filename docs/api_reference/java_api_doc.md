@@ -8,9 +8,9 @@ import [com.baidu.paddle.lite.MobileConfig](https://github.com/PaddlePaddle/Padd
 public class MobileConfig extends ConfigBase;
 ```
 
-`MobileConfig`用来配置构建轻量级PaddlePredictor的配置信息，如NaiveBuffer格式的模型地址、能耗模式、工作线程数等等。
+`MobileConfig` 用来配置构建轻量级 PaddlePredictor 的配置信息，如 NaiveBuffer 格式的模型地址、能耗模式、工作线程数等等。
 
-*注意：输入的模型需要使用Model Optimize Tool转化为NaiveBuffer格式的优化模型。*
+*注意：输入的模型需要使用 Model Optimize Tool 转化为 NaiveBuffer 格式的优化模型。*
 
 示例：
 
@@ -59,13 +59,13 @@ void setModelFromBuffer(String x);
 void void setPowerMode(PowerMode mode);
 ```
 
-设置CPU能耗模式。若不设置，则默认使用`LITE_POWER_HIGH`。
+设置 CPU 能耗模式。若不设置，则默认使用 `LITE_POWER_HIGH`。
 
-*注意：只在开启`OpenMP`时生效，否则系统自动调度。*
+*注意：只在开启 `OpenMP` 时生效，否则系统自动调度。*
 
 - 参数
 
-    - `PowerMode`： CPU能耗模式。
+    - `PowerMode`： CPU 能耗模式。
 
 
 
@@ -75,12 +75,12 @@ void void setPowerMode(PowerMode mode);
 PowerMode getPowerMode();
 ```
 
-获取设置的CPU能耗模式。
+获取设置的 CPU 能耗模式。
 
 
 - 返回值：
 
-  设置的CPU能耗
+  设置的 CPU 能耗
 
 
 
@@ -92,7 +92,7 @@ void setThreads(int i);
 
 设置工作线程数。若不设置，则默认使用单线程。
 
-*注意：只在开启`OpenMP`的模式下生效，否则只使用单线程。*
+*注意：只在开启 `OpenMP` 的模式下生效，否则只使用单线程。*
 
 - 参数
 
@@ -122,7 +122,7 @@ import [com.baidu.paddle.lite.PaddlePredictor](https://github.com/PaddlePaddle/P
 public class PaddlePredictor;
 ```
 
-`PaddlePredictor`是Paddle-Lite的预测器。用户可以根据PaddlePredictor提供的接口使用MobileConfig创建新的预测器、设置输入数据、执行模型预测、获取输出以及获得当前使用lib的版本信息等。
+`PaddlePredictor` 是 Paddle Lite 的预测器。用户可以根据 `PaddlePredictor` 提供的接口使用 `MobileConfig` 创建新的预测器、设置输入数据、执行模型预测、获取输出以及获得当前使用 lib 的版本信息等。
 
 示例：
 
@@ -163,11 +163,11 @@ for (int i = 0; i < 1000; ++i) {
 public static PaddlePredictor createPaddlePredictor(ConfigBase config);
 ```
 
-`CreatePaddlePredictor`用来根据`MobileConfig`动态创建预测器。框架会根据您在config中指定的模型路径、能耗模型、工作线程数等自动创建一个预测器。
+`CreatePaddlePredictor` 用来根据 `MobileConfig` 动态创建预测器。框架会根据您在 config 中指定的模型路径、能耗模型、工作线程数等自动创建一个预测器。
 
 - 参数
 
-    - `config(MobileConfig)` : 用于构建Predictor的配置信息。
+    - `config(MobileConfig)` : 用于构建 Predictor 的配置信息。
 
 - 返回值
 
@@ -181,15 +181,15 @@ public static PaddlePredictor createPaddlePredictor(ConfigBase config);
 Tensor getInput(int i);
 ```
 
-获取输入Tensor，用来设置模型的输入数据。
+获取输入 `Tensor`，用来设置模型的输入数据。
 
 - 参数
 
-    - `i`: 输入Tensor的索引
+    - `i`: 输入 `Tensor` 的索引
 
 - 返回值
 
-  第`index`个输入`Tensor`的指针
+  第 `i` 个输入 `Tensor` 的指针
 
 
 
@@ -199,17 +199,17 @@ Tensor getInput(int i);
 Tensor getOutput(int i);
 ```
 
-获取输出Tensor，用来获取模型的输出结果。
+获取输出 `Tensor`，用来获取模型的输出结果。
 
 参数
 
 - 参数
 
-    - `i`: 输出Tensor的索引
+    - `i`: 输出 `Tensor` 的索引
 
 - 返回值
 
-  第`i`个输出`Tensor`的指针
+  第 `i` 个输出 `Tensor` 的指针
 
 
 
@@ -230,7 +230,7 @@ boolean run();
 String getVersion();
 ```
 
-用于获取当前lib使用的代码版本。若代码有相应tag则返回tag信息，如`v2.0-beta`；否则返回代码的`branch(commitid)`，如`develop(7e44619)`。
+用于获取当前 lib 使用的代码版本。若代码有相应 tag 则返回 tag 信息，如 `v2.0-beta`；否则返回代码的 `branch(commitid)`，如 `develop(7e44619)`。
 
 - 返回值：
 
@@ -246,7 +246,7 @@ import [com.baidu.paddle.lite.PowerMode](https://github.com/PaddlePaddle/Paddle-
 public enum PowerMode;
 ```
 
-`PowerMode`为ARM CPU能耗模式，用户可以根据应用场景设置能耗模式获得最优的能效比。
+`PowerMode` 为 ARM CPU 能耗模式，用户可以根据应用场景设置能耗模式获得最优的能效比。
 
 示例：
 
@@ -265,12 +265,12 @@ PowerMode详细说明如下：
 
 |         选项         | 说明                                                         |
 | :------------------: | ------------------------------------------------------------ |
-|   LITE_POWER_HIGH    | 绑定大核运行模式。如果ARM CPU支持big.LITTLE，则优先使用并绑定Big cluster，如果设置的线程数大于大核数量，则会将线程数自动缩放到大核数量。如果系统不存在大核或者在一些手机的低电量情况下会出现绑核失败，如果失败则进入不绑核模式。 |
-|    LITE_POWER_LOW    | 绑定小核运行模式。如果ARM CPU支持big.LITTLE，则优先使用并绑定Little cluster，如果设置的线程数大于小核数量，则会将线程数自动缩放到小核数量。如果找不到小核，则自动进入不绑核模式。 |
+|   LITE_POWER_HIGH    | 绑定大核运行模式。如果 ARM CPU 支持 big.LITTLE，则优先使用并绑定 Big cluster，如果设置的线程数大于大核数量，则会将线程数自动缩放到大核数量。如果系统不存在大核或者在一些手机的低电量情况下会出现绑核失败，如果失败则进入不绑核模式。 |
+|    LITE_POWER_LOW    | 绑定小核运行模式。如果 ARM CPU 支持 big.LITTLE，则优先使用并绑定 Little cluster，如果设置的线程数大于小核数量，则会将线程数自动缩放到小核数量。如果找不到小核，则自动进入不绑核模式。 |
 |   LITE_POWER_FULL    | 大小核混用模式。线程数可以大于大核数量，当线程数大于核心数量时，则会自动将线程数缩放到核心数量。 |
-|  LITE_POWER_NO_BIND  | 不绑核运行模式（推荐）。系统根据负载自动调度任务到空闲的CPU核心上。 |
-| LITE_POWER_RAND_HIGH | 轮流绑定大核模式。如果Big cluster有多个核心，则每预测10次后切换绑定到下一个核心。 |
-| LITE_POWER_RAND_LOW  | 轮流绑定小核模式。如果Little cluster有多个核心，则每预测10次后切换绑定到下一个核心。 |
+|  LITE_POWER_NO_BIND  | 不绑核运行模式（推荐）。系统根据负载自动调度任务到空闲的 CPU 核心上。 |
+| LITE_POWER_RAND_HIGH | 轮流绑定大核模式。如果 Big cluster 有多个核心，则每预测10次后切换绑定到下一个核心。 |
+| LITE_POWER_RAND_LOW  | 轮流绑定小核模式。如果 Little cluster 有多个核心，则每预测10次后切换绑定到下一个核心。 |
 
 
 ## Tensor
@@ -281,9 +281,9 @@ import [com.baidu.paddle.lite.Tensor](https://github.com/PaddlePaddle/Paddle-Lit
 public class Tensor;
 ```
 
-Tensor是Paddle-Lite的数据组织形式，用于对底层数据进行封装并提供接口对数据进行操作，包括设置维度、数据等。
+Tensor 是 Paddle Lite 的数据组织形式，用于对底层数据进行封装并提供接口对数据进行操作，包括设置维度、数据等。
 
-*注意：用户应使用`PaddlePredictor`的`getInput`和`getOuput`接口获取输入/输出的`Tensor`。*
+*注意：用户应使用 `PaddlePredictor` 的 `getInput` 和 `getOuput` 接口获取输入/输出的 `Tensor`。*
 
 示例：
 
@@ -332,7 +332,7 @@ for (int i = 0; i < 1000; ++i) {
 boolean resize(long[] shape);
 ```
 
-设置Tensor的维度信息。
+设置 Tensor 的维度信息。
 
 - 参数
 
@@ -346,12 +346,12 @@ boolean resize(long[] shape);
 long[] shape();
 ```
 
-获取Tensor的维度信息。
+获取 Tensor 的维度信息。
 
 
 - 返回值
 
-  Tensor的维度信息
+  Tensor 的维度信息
 
 
 
@@ -362,7 +362,7 @@ long[] shape();
 boolean setData(float[] data);
 ```
 
-设置Tensor数据。
+设置 Tensor 数据。
 
 - 参数
 
@@ -377,9 +377,9 @@ boolean setData(float[] data);
 float[] getFloatData();
 ```
 
-获取Tensor的底层float型数据。
+获取 Tensor 的底层 float 型数据。
 
 
 - 返回值：
 
-  `Tensor`底层float型数据
+  `Tensor` 底层 float 型数据
