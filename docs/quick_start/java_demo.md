@@ -2,7 +2,7 @@
 
 ## 概述
 
-本教程提供了 Paddle Lite 执行推理的示例程序，通过输入、执行推理、打印推理结果的方式，演示了基于 Java API 接口的推理基本流程，用户能够快速了解 Paddle Lite 执行推理相关 API 的使用。本教程以 Android Studio 工程为案例，介绍 Java API 推理流程，工程文件夹为[lite/demo/java/android](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/java/android)。其中和Java API 相关的代码在[lite/demo/java/android/PaddlePredictor/app/src/main/java/com/baidu/paddle/lite/MainActivity.java](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/java/android/PaddlePredictor/app/src/main/java/com/baidu/paddle/lite/MainActivity.java)文件中。
+本教程提供了 Paddle Lite 执行推理的示例程序，通过输入、执行推理、打印推理结果的方式，演示了基于 Java API 接口的推理基本流程，用户能够快速了解 Paddle Lite 执行推理相关 API 的使用。本教程以 Android Studio 工程为案例，介绍 Java API 推理流程，工程文件夹为[lite/demo/java/android](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/java/android)。其中和 Java API 相关的代码在[lite/demo/java/android/PaddlePredictor/app/src/main/java/com/baidu/paddle/lite/MainActivity.java](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/java/android/PaddlePredictor/app/src/main/java/com/baidu/paddle/lite/MainActivity.java)文件中。
 
 
 使用 Paddle Lite 执行推理主要包括以下步骤：
@@ -25,8 +25,6 @@
 <p align=center> <img src = "http://bos.bj.bce-internal.sdns.baidu.com/agroup-bos-bj/bj-2e0a5c97eb8068c5d1254f475962a45462335d39"/></p>
 
 
-
-
 ## Java 应用开发说明
 
 Java 代码调用 Paddle-Lite 执行预测仅需五步：
@@ -46,12 +44,12 @@ config.setThreads(1);
 PaddlePredictor predictor = PaddlePredictor.createPaddlePredictor(config);
 ```
 
-(3) 设置模型输入 (下面以全一输入为例)
+(3) 设置模型输入 (下面以第 i 个输入为 i 为例)
 
 ```java
 float[] inputBuffer = new float[10000];
 for (int i = 0; i < 10000; ++i) {
-    inputBuffer[i] = 1.f;
+    inputBuffer[i] = i;
 }
 Tensor input = predictor.getInput(0);
 input.resize({100, 100});
@@ -71,7 +69,7 @@ predictor.run();
 ```java
 Tensor output = predictor.getOutput(0);
 ```
-详细的Java API说明文档位于[Java API](../api_reference/java_api_doc)。更多Java应用预测开发可以参考位于位于[Paddle-Lite-Demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)的工程示例代码。
+详细的 Java API 说明文档位于[Java API](../api_reference/java_api_doc)。更多 Java 应用预测开发可以参考位于位于[Paddle-Lite-Demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)的工程示例代码。
 
 
 ## Android Studio 工程 Java 示例程序
@@ -93,12 +91,12 @@ Tensor output = predictor.getOutput(0);
 
 | Arch  |with_extra|arm_stl|with_cv|下载|
 |:-------:|:-----:|:-----:|:-----:|:-------:|
-|armv8|OFF|c++_static|OFF|[v2.8](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.8/inference_lite_lib.android.armv8.gcc.c++_static.tar.gz)|
+|armv8|OFF|c++_static|OFF|[v2.9](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.9/inference_lite_lib.android.armv8.gcc.c++_static.tar.gz)|
 
 **解压后内容结构如下：**
 
 ```shell
-inference_lite_lib.android.armv8    Paddle-Lite 预测库
+inference_lite_lib.android.armv8.gcc.c++_static    Paddle-Lite 预测库
 ├── cxx                                 C++ 预测库
 │   ├── include                             C++ 预测库头文件
 │   └── lib                                 C++ 预测库文件
@@ -119,10 +117,10 @@ inference_lite_lib.android.armv8    Paddle-Lite 预测库
 
 #### 自动化脚本方法
 
-在下载下来的预测库的`demo/java/android`文件夹下，为了让您更快上手，我们准备了一个脚本`prepare_demo.bash`，输入手机架构参数例如`arm64-v8a`，即可自动打包所有预测部署所需文件。
+在下载下来的预测库的`demo/java/android`文件夹下，为了让您更快上手，我们准备了一个脚本`prepare_demo.bash`，输入手机架构参数例如`arm64-v8a`，即可自动准备好所有预测部署所需的文件。
 
 ```shell
-cd inference_lite_lib.android.armv8/demo/java/android
+cd inference_lite_lib.android.armv8.gcc.c++_static/demo/java/android
 bash prepare_demo.bash arm8
 ```
 
@@ -141,7 +139,7 @@ bash prepare_demo.bash arm8
 (1) 把 Java JNI 动态链接库和 Java JAR 包拷贝进安卓 demo 程序文件夹下：
 
 ```shell
-cd inference_lite_lib.android.armv8/demo/java/android
+cd inference_lite_lib.android.armv8.gcc.c++_static/demo/java/android
 # 请替换<架构文件夹>为手机架构名称，例如 arm64-v8a
 cp ../../../java/so/libpaddle_lite_jni.so PaddlePredictor/app/src/main/jniLibs/<架构文件夹>
 cp ../../../java/jar/PaddlePredictor.jar PaddlePredictor/app/libs/
@@ -163,9 +161,9 @@ cp ../../../java/jar/PaddlePredictor.jar PaddlePredictor/app/libs/
 
 ### 4. 运行预测示例程序
 
-1. 用 Android Studio 打开`inference_lite_lib.android.armv8/demo/java/android/PaddlePredictor`文件夹（需要联网），打开后工程会自动 build 完成。
+1. 用 Android Studio 打开`inference_lite_lib.android.armv8.gcc.c++_static/demo/java/android/PaddlePredictor`文件夹（需联网），打开后工程会自动 build 完成。
 2. 设置手机：手机 USB 连接电脑，打开`设置 -> 开发者模式 -> USB调试 -> 允许（授权）当前电脑调试手机`，并确认 Android Studio 可识别接入的手机设备。
-3. 按下 Android Studio 的 Run 按钮，Android Studio会自动编译 APP 并安装到手机。在手机上打开安装成功的 APP ，大概会等 10 秒，然后看到类似以下输出：
+3. 按下 Android Studio 的 Run 按钮，Android Studio 会自动编译 APP 并安装到手机。在手机上打开安装成功的 APP ，大概会等 10 秒，然后看到类似以下输出：
 
 ```shell
 lite_naive_model output: 50.213173, -28.872887
@@ -184,6 +182,6 @@ mobilenet_v2 test:true
 time: xxx ms
 ```
 
-该 demo 程序跑 5 个模型，第一个模型结果将真正的头两个数字输出，并在第二行附上期望的正确值。你应该要看到他们的误差小于0.001。后面四个模型如果你看到 `test:true` 字样，说明模型输出通过了我们在 demo 程序里对其输出的测试。time 代表该测试花费的时间。
+该 demo 程序跑 5 个模型，第一个模型结果将真正的头两个数字输出，并在第二行附上期望的正确值。你应该要看到他们的误差小于 0.001 。后面四个模型如果你看到 `test:true` 字样，说明模型输出通过了我们在 demo 程序里对其输出的测试。time 代表该测试花费的时间。
 
 **注意：** 在这一步中，如果遇到Andriod Studio 编译/安装失败等问题，请参考[Andriod示例](../demo_guides/android_app_demo.html#android-demo)中部署方法章节的详细步骤和注意事项。
