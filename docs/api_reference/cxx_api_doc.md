@@ -56,95 +56,96 @@ config.set_valid_places(places)
 predictor = create_paddle_predictor(config)
 ```
 
-### `set_model_dir(model_dir)`
+### `set_model_dir`
+
+```c++
+void set_model_dir(const std::string& x);
+```
 
 设置模型文件夹路径，当需要从磁盘加载非 combined 模型时使用。
 
-参数：
+- 参数：
 
-- `model_dir(str)` - 模型文件夹路径
-
-返回：`None`
-
-返回类型：`None`
+    - `x`：模型文件夹路径
 
 
+### `model_dir`
 
-### `model_dir()`
+```c++
+const std::string& model_dir();
+```
 
 返回设置的模型文件夹路径。
 
-参数：
+- 返回值
 
-- `None`
-
-返回：模型文件夹路径
-
-返回类型：`str`
+  模型文件夹路径
 
 
+### `set_model_file`
 
-### `set_model_file(model_file)`
+```c++
+void set_model_file(const std::string& path);
+```
 
 设置模型文件路径，加载 combined 形式模型时使用。
 
-参数：
+- 参数：
 
-- `model_file(str)` - 模型文件路径
-
-返回类型：`None`
+    - `path`：模型文件路径
 
 
+### `model_file`
 
-### `model_file()`
+```c++
+std::string model_file();
+```
 
 获取设置模型文件路径，加载 combined 形式模型时使用。
 
-参数：
+- 返回值
 
-- `None`
-
-返回：模型文件路径
-
-返回类型：`str`
+  模型文件路径
 
 
+### `set_param_file`
 
-### `set_param_file(param_file)`
+```c++
+void set_param_file(const std::string& path);
+```
 
 设置模型参数文件路径，加载 combined 形式模型时使用。
 
-参数：
+- 参数：
 
-- `param_file(str)` - 模型文件路径
-
-返回类型：`None`
+    - `path`：模型文件路径
 
 
+### `param_file`
 
-### `param_file()`
+```c++
+std::string param_file();
+```
 
 获取设置模型参数文件路径，加载 combined 形式模型时使用。
 
-参数：
+- 返回值
 
-- `None`
-
-返回：模型参数文件路径
-
-返回类型：`str`
+  模型参数文件路径
 
 
+### `set_valid_places`
 
-### `set_valid_places(valid_places)`
+```c++
+void set_valid_places(const std::vector<Place>& x);
+```
 
 设置可用的 places 列表。
 
-参数：
+- 参数：
 
-- `valid_places(list)` - 可用 place 列表。
+    - `x`：可用 place 列表。
 
-返回类型：`None`
 
 示例：
 
@@ -163,92 +164,90 @@ config.set_valid_places(places)
 predictor = create_paddle_predictor(config)
 ```
 
-### `set_power_mode(mode)`
+### `set_power_mode`
+
+```c++
+void set_power_mode(PowerMode mode);
+```
 
 设置 CPU 能耗模式。若不设置，则默认使用 `PowerMode.LITE_POWER_HIGH`。
 
 *注意：只在开启 `OpenMP` 时生效，否则系统自动调度。此函数只在使用 `LITE_WITH_ARM` 编译选项下生效。*
 
-参数：
+- 参数：
 
-- `mode(PowerMode)` - CPU 能耗模式
-
-返回：`None`
-
-返回类型：`None`
+    - `mode(PowerMode)`：CPU 能耗模式
 
 
-### `power_mode()`
+### `power_mode`
+
+```c++
+PowerMode power_mode() const;
+```
 
 获取设置的 CPU 能耗模式。
 
 *注意：此函数只在使用 `LITE_WITH_ARM` 编译选项下生效。*
 
-参数：
+- 返回值
 
-- `None`
-
-返回：设置的 CPU 能耗模式
-
-返回类型：`PowerMode`
+  设置的 CPU 能耗模式
 
 
+### `set_threads`
 
-### `set_threads(threads)`
+```c++
+void set_threads(int threads);
+```
 
 设置工作线程数。若不设置，则默认使用单线程。
 
 *注意：只在开启 `OpenMP` 的模式下生效，否则只使用单线程。此函数只在使用 `LITE_WITH_ARM` 编译选项下生效。*
 
-参数：
+- 参数：
 
-- `threads(int)` - 工作线程数
-
-返回：`None`
-
-返回类型：`None`
+    - `threads`：工作线程数
 
 
+### `threads`
 
-### `threads()`
+```c++
+int threads() const;
+```
 
 获取设置的工作线程数。
 
 *注意：此函数只在使用 `LITE_WITH_ARM` 编译选项下生效。*
 
-参数：
+- 返回值
 
-- `None`
-
-返回：工作线程数
-
-返回类型：`int`
+  工作线程数
 
 
-### `set_x86_math_num_threads(threads)`
+### `set_x86_math_num_threads`
+
+```c++
+void set_x86_math_num_threads(int threads);
+```
 
 设置 CPU Math 库线程数，CPU 核心数支持情况下可加速预测。默认为 1，并且仅在 x86 下有效。
 
-参数：
+- 参数：
 
-- `threads`：CPU Math 库线程数。
-
-返回：`None`
-
-返回类型：`None`
+    - `threads`：CPU Math 库线程数。
 
 
-### `x86_math_num_threads()`
+### `x86_math_num_threads`
+
+```c++
+int x86_math_num_threads() const;
+```
 
 返回 CPU Math 库线程数，CPU 核心数支持情况下可加速预测。仅在 x86 下有效。
 
-参数：
+- 返回值
 
-- `None`
-
-返回：CPU Math 库线程数。
-
-返回类型：`int`
+  CPU Math 库线程数。
 
 
 ## MobileConfig
