@@ -1,10 +1,10 @@
 # 新增 Pass
 
-本文从三个方面介绍了 Lite 中的 Pass 结构：**Pass是什么**、**Pass的实现与接口**、**Pass的一般注册流程**。最后以`Fc_fuse_pass`为例介绍了`fusion_pass`的作用与注册方法。
+本文从三个方面介绍了 Lite 中的 Pass 结构：**Pass 是什么**、**Pass 的实现与接口**、**Pass 的一般注册流程**。最后以`Fc_fuse_pass`为例介绍了`fusion_pass`的作用与注册方法。
 
 ## 前述：Pass 是什么？
 
-**CreatePaddlePredictor()加载模型时，在执行预测前会先优化模型。模型优化过程是通过Pass实现的。**
+**CreatePaddlePredictor() 加载模型时，在执行预测前会先优化模型。模型优化过程是通过 Pass 实现的。**
 
 具体调用关系如下：
 
@@ -14,11 +14,11 @@
       - 上层函数中继续调用`Predictor::Build()`的另一个重载函数。
         - `LoadModelPb()`加载模型文件到`program_desc_`中。
         - 调用`Predictor::Build()`的另一重载函数。
-          - 调`RunDefaultOptimizer()`  对`program_desc_`中的原始图形结构进行优化，对图结构的优化是通过调用。 `Pass->Apply(const std::unique_ptr<SSAGraph>& graph)`实现的。
+          - 调`RunDefaultOptimizer()`对`program_desc_`中的原始图形结构进行优化，对图结构的优化是通过调用。 `Pass->Apply(const std::unique_ptr<SSAGraph>& graph)`实现的。
 
 上面调用涉及到的几个函数都在`lite/api/cxx_api.cc`和`lite/api/cxx_api_impl.cc`中，其中`Predictor::Build()`存在3个同名函数，注意区分。
 
-**每一类Pass定义了一种优化过程**，包括：原模型中的 kernel 选取、OP 融合、冗余 OP 去除、子图创建、内存优化、类型推导、类型转换等。
+**每一类 Pass 定义了一种优化过程**，包括：原模型中的 kernel 选取、OP 融合、冗余 OP 去除、子图创建、内存优化、类型推导、类型转换等。
 
 
 ## Pass 的实现与接口 ：Pass 基类、PassManager 和 Pass 注册
@@ -234,7 +234,7 @@ void RunModel() {
 ```
 
 
-## Fusion Pass的定义与注册
+## Fusion Pass 的定义与注册
 
 `Fusion Pass`是一种常见图结构优化 Pass ，可将多个连续 OP 融合成单个等效 OP ，减少数据交换并简化图结构。Pass 运行时调用`Fuser`自动查找并替换指定图结构，所以注册`FuserPass`时还需要实现对应的 Fuser 类。
 
@@ -255,7 +255,7 @@ mul 和 elementwise_add 的原有参数映射到FC的参数上：
 ![图片](https://user-images.githubusercontent.com/45189361/69638836-74446680-1096-11ea-9cdc-a961fa995dfe.png)
 
 ### `fc_fuse_pass`的注册方法
-#### 1、创建FcFuser
+#### 1、创建 FcFuser
 
 （1）在`lite/core/optimizer/mir/fusion`路径下新建`fc_fuser.cc` 和 `fc_fuser.h` 文件。
 
