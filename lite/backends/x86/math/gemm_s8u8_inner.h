@@ -45,6 +45,18 @@ void gemm_kernel_loop_int8(int M,
                            int relu_type,
                            float relu_alpha);
 
+void gemm_kernel_loop_int8(int M,
+                           int N,
+                           int K,
+                           int8_t* A,
+                           uint8_t* B,
+                           float* C,
+                           int ldc,
+                           const float* scale,
+                           const float* bias,
+                           int relu_type,
+                           float relu_alpha);
+
 }  // namespace math
 }  // namespace x86
 }  // namespace lite

@@ -605,6 +605,289 @@ void gemm_kernel_loop_int8(int M,
   }
 }
 
+#define STORE_32_float(in0, in1, in2, in3, i)                         \
+  dst_vec_ps0 = _mm256_mul_ps(_mm256_cvtepi32_ps(in0), vec_scale[i]); \
+  dst_vec_ps1 = _mm256_mul_ps(_mm256_cvtepi32_ps(in1), vec_scale[i]); \
+  dst_vec_ps2 = _mm256_mul_ps(_mm256_cvtepi32_ps(in2), vec_scale[i]); \
+  dst_vec_ps3 = _mm256_mul_ps(_mm256_cvtepi32_ps(in3), vec_scale[i]); \
+  ACT_RELU_BIAS(dst_vec_ps0, vec_bias[i], relu_type)                  \
+  ACT_RELU_BIAS(dst_vec_ps1, vec_bias[i], relu_type)                  \
+  ACT_RELU_BIAS(dst_vec_ps2, vec_bias[i], relu_type)                  \
+  ACT_RELU_BIAS(dst_vec_ps3, vec_bias[i], relu_type)                  \
+  _mm256_storeu_ps(c_ptr + i * ldc, dst_vec_ps0);                     \
+  _mm256_storeu_ps(c_ptr + i * ldc + 8, dst_vec_ps1);                 \
+  _mm256_storeu_ps(c_ptr + i * ldc + 16, dst_vec_ps2);                \
+  _mm256_storeu_ps(c_ptr + i * ldc + 24, dst_vec_ps3);
+
+#define STORE_24_float(in0, in1, in2, in3, i)                         \
+  dst_vec_ps0 = _mm256_mul_ps(_mm256_cvtepi32_ps(in0), vec_scale[i]); \
+  dst_vec_ps1 = _mm256_mul_ps(_mm256_cvtepi32_ps(in1), vec_scale[i]); \
+  dst_vec_ps2 = _mm256_mul_ps(_mm256_cvtepi32_ps(in2), vec_scale[i]); \
+  ACT_RELU_BIAS(dst_vec_ps0, vec_bias[i], relu_type)                  \
+  ACT_RELU_BIAS(dst_vec_ps1, vec_bias[i], relu_type)                  \
+  ACT_RELU_BIAS(dst_vec_ps2, vec_bias[i], relu_type)                  \
+  _mm256_storeu_ps(c_ptr + i * ldc, dst_vec_ps0);                     \
+  _mm256_storeu_ps(c_ptr + i * ldc + 8, dst_vec_ps1);                 \
+  _mm256_storeu_ps(c_ptr + i * ldc + 16, dst_vec_ps2);
+
+#define STORE_16_float(in0, in1, in2, in3, i)                         \
+  dst_vec_ps0 = _mm256_mul_ps(_mm256_cvtepi32_ps(in0), vec_scale[i]); \
+  dst_vec_ps1 = _mm256_mul_ps(_mm256_cvtepi32_ps(in1), vec_scale[i]); \
+  ACT_RELU_BIAS(dst_vec_ps0, vec_bias[i], relu_type)                  \
+  ACT_RELU_BIAS(dst_vec_ps1, vec_bias[i], relu_type)                  \
+  _mm256_storeu_ps(c_ptr + i * ldc, dst_vec_ps0);                     \
+  _mm256_storeu_ps(c_ptr + i * ldc + 8, dst_vec_ps1);
+
+#define STORE_8_float(in0, in1, in2, in3, i)                          \
+  dst_vec_ps0 = _mm256_mul_ps(_mm256_cvtepi32_ps(in0), vec_scale[i]); \
+  ACT_RELU_BIAS(dst_vec_ps0, vec_bias[i], relu_type)                  \
+  _mm256_storeu_ps(c_ptr + i * ldc, dst_vec_ps0);
+
+// __m128
+#define STORE_4_float(in0, i)                                             \
+  {                                                                       \
+    dst_vec_ps0_128 = _mm_mul_ps(_mm_cvtepi32_ps(in0), vec_scale_128[i]); \
+    ACT_RELU_BIAS_128(dst_vec_ps0_128, vec_bias_128[i], relu_type)        \
+    _mm_storeu_ps(c_ptr + i * ldc, dst_vec_ps0_128);                      \
+  }
+
+#define STORE_2_float(in0, i)                                \
+  {                                                          \
+    int* in0_ptr = reinterpret_cast<int*>(&in0);             \
+    float bias_data = (*(bias_ptr + idx_m + i));             \
+    float in0_f32 = in0_ptr[0] * (*(scale_ptr + idx_m + i)); \
+    ACT_RELU_BIAS_FP32(in0_f32, bias_data, relu_type)        \
+    *(c_ptr + i * ldc) = in0_f32;                            \
+    in0_f32 = in0_ptr[1] * (*(scale_ptr + idx_m + i));       \
+    ACT_RELU_BIAS_FP32(in0_f32, bias_data, relu_type)        \
+    *(c_ptr + i * ldc + 1) = in0_f32;                        \
+  }
+
+void gemm_kernel_loop_int8(int M,
+                           int N,
+                           int K,
+                           int8_t* A,
+                           uint8_t* B,
+                           float* C,
+                           int ldc,
+                           const float* scale,
+                           const float* bias,
+                           int relu_type,
+                           float relu_alpha) {
+  int8_t* a_ptr = A;
+  float* c_ptr = C;
+  uint8_t* b_ptr = B;
+  const float* scale_ptr = scale;
+  const float* bias_ptr = bias;
+  int k_loop = (K + 3) >> 2;
+  int pack_k = k_loop << 2;
+  int idx_n = 0, idx_m = 0, idx_k = 0;
+
+  // total 16 regs
+  __m256i vec_C0, vec_C1, vec_C2, vec_C3;
+  __m256i vec_C4, vec_C5, vec_C6, vec_C7;
+  __m256i vec_B0, vec_B1, vec_B2, vec_B3;
+  __m256i vec_A0, vec_A1, vec_tmp;
+  __m256i vec_one_s16 = _mm256_set1_epi16(static_cast<int16_t>(1));
+  // save result
+  __m256 vec_bias[2];
+  __m256 vec_scale[2];
+  __m256 dst_vec_ps0, dst_vec_ps1, dst_vec_ps2, dst_vec_ps3;
+  // bias and relu
+  __m256 vec_alph = _mm256_set1_ps(relu_alpha);
+  __m256 vec_zero = _mm256_set1_ps(0.f);
+
+  // SSE
+  __m128i vec_C0_128, vec_C1_128;
+  __m128i vec_B0_128;
+  __m128i vec_A0_128, vec_A1_128, vec_tmp_128;
+  __m128i vec_one_128 = _mm_set1_epi16(static_cast<int16_t>(1));
+  // save result
+  __m128 vec_bias_128[2];
+  __m128 vec_scale_128[2];
+  __m128 dst_vec_ps0_128;
+  // bias and relu
+  __m128 vec_alph_128 = _mm_set1_ps(relu_alpha);
+  __m128 vec_zero_128 = _mm_set1_ps(0.f);
+
+  // block A
+  for (idx_m = 0; idx_m + 1 < M; idx_m += 2) {
+    c_ptr = C;
+    b_ptr = B;
+    a_ptr = A;
+    C += 2 * ldc;
+
+    // bias and scale
+    vec_bias[0] = _mm256_set1_ps(*(bias_ptr + idx_m));
+    vec_bias[1] = _mm256_set1_ps(*(bias_ptr + idx_m + 1));
+    vec_scale[0] = _mm256_set1_ps(*(scale_ptr + idx_m));
+    vec_scale[1] = _mm256_set1_ps(*(scale_ptr + idx_m + 1));
+    vec_bias_128[0] = _mm_set1_ps(*(bias_ptr + idx_m));
+    vec_bias_128[1] = _mm_set1_ps(*(bias_ptr + idx_m + 1));
+    vec_scale_128[0] = _mm_set1_ps(*(scale_ptr + idx_m));
+    vec_scale_128[1] = _mm_set1_ps(*(scale_ptr + idx_m + 1));
+
+    // block B
+    for (idx_n = 0; idx_n + 31 < N; idx_n += 32) {
+      a_ptr = A;
+      INIT_C
+      for (idx_k = 0; idx_k < k_loop; idx_k++) {
+        KERN_2x32
+      }
+      STORE_32_float(vec_C0, vec_C1, vec_C2, vec_C3, 0)
+          STORE_32_float(vec_C4, vec_C5, vec_C6, vec_C7, 1) c_ptr += 32;
+    }
+    for (; idx_n + 23 < N; idx_n += 24) {
+      a_ptr = A;
+      INIT_C
+      for (idx_k = 0; idx_k < k_loop; idx_k++) {
+        KERN_2x24
+      }
+      STORE_24_float(vec_C0, vec_C1, vec_C2, vec_C3, 0)
+          STORE_24_float(vec_C4, vec_C5, vec_C6, vec_C7, 1) c_ptr += 24;
+    }
+    for (; idx_n + 15 < N; idx_n += 16) {
+      a_ptr = A;
+      INIT_C
+      for (idx_k = 0; idx_k < k_loop; idx_k++) {
+        KERN_2x16
+      }
+      STORE_16_float(vec_C0, vec_C1, vec_C2, vec_C3, 0)
+          STORE_16_float(vec_C4, vec_C5, vec_C6, vec_C7, 1) c_ptr += 16;
+    }
+    for (; idx_n + 7 < N; idx_n += 8) {
+      a_ptr = A;
+      INIT_C
+      for (idx_k = 0; idx_k < k_loop; idx_k++) {
+        KERN_2x8
+      }
+      STORE_8_float(vec_C0, vec_C1, vec_C2, vec_C3, 0)
+          STORE_8_float(vec_C4, vec_C5, vec_C6, vec_C7, 1) c_ptr += 8;
+    }
+    for (; idx_n + 3 < N; idx_n += 4) {
+      a_ptr = A;
+      INIT_C_128
+      for (idx_k = 0; idx_k < k_loop; idx_k++) {
+        KERN_2x4
+      }
+      STORE_4_float(vec_C0_128, 0) STORE_4_float(vec_C1_128, 1) c_ptr += 4;
+    }
+    for (; idx_n + 1 < N; idx_n += 2) {
+      a_ptr = A;
+      INIT_C_128
+      for (idx_k = 0; idx_k < k_loop; idx_k++) {
+        KERN_2x2
+      }
+      STORE_2_float(vec_C0_128, 0) STORE_2_float(vec_C1_128, 1) c_ptr += 2;
+    }
+    for (; idx_n < N; idx_n++) {
+      a_ptr = A;
+      float acc0 = 0;
+      float acc1 = 0;
+      float bias0 = (*(bias_ptr + idx_m));
+      float bias1 = (*(bias_ptr + idx_m + 1));
+      float scale0 = (*(scale_ptr + idx_m));
+      float scale1 = (*(scale_ptr + idx_m + 1));
+      for (idx_k = 0; idx_k < k_loop; idx_k++) {
+        for (int k = 0; k < 4; k++) {
+          acc0 +=
+              static_cast<int>(a_ptr[k]) * static_cast<int>(b_ptr[k]) * scale0;
+          acc1 += static_cast<int>(a_ptr[k + 4]) * static_cast<int>(b_ptr[k]) *
+                  scale1;
+        }
+        a_ptr += 2 * 4;
+        b_ptr += 4;
+      }
+      ACT_RELU_BIAS_FP32(acc0, bias0, relu_type)
+      ACT_RELU_BIAS_FP32(acc1, bias1, relu_type)
+      c_ptr[0] = acc0;
+      c_ptr[ldc] = acc1;
+      c_ptr++;
+    }
+    A += 2 * pack_k;
+  }
+  for (; idx_m < M; idx_m += 1) {
+    c_ptr = C;
+    b_ptr = B;
+    a_ptr = A;
+    C += ldc;
+
+    // bias and scale
+    vec_bias[0] = _mm256_set1_ps(*(bias_ptr + idx_m));
+    vec_scale[0] = _mm256_set1_ps(*(scale_ptr + idx_m));
+    vec_bias_128[0] = _mm_set1_ps(*(bias_ptr + idx_m));
+    vec_scale_128[0] = _mm_set1_ps(*(scale_ptr + idx_m));
+
+    // block B
+    for (idx_n = 0; idx_n + 31 < N; idx_n += 32) {
+      a_ptr = A;
+      INIT_C
+      for (idx_k = 0; idx_k < k_loop; idx_k++) {
+        KERN_1x32
+      }
+      STORE_32_float(vec_C0, vec_C1, vec_C2, vec_C3, 0) c_ptr += 32;
+    }
+    for (; idx_n + 23 < N; idx_n += 24) {
+      a_ptr = A;
+      INIT_C
+      for (idx_k = 0; idx_k < k_loop; idx_k++) {
+        KERN_1x24
+      }
+      STORE_24_float(vec_C0, vec_C1, vec_C2, vec_C3, 0) c_ptr += 24;
+    }
+    for (; idx_n + 15 < N; idx_n += 16) {
+      a_ptr = A;
+      INIT_C
+      for (idx_k = 0; idx_k < k_loop; idx_k++) {
+        KERN_1x16
+      }
+      STORE_16_float(vec_C0, vec_C1, vec_C2, vec_C3, 0) c_ptr += 16;
+    }
+    for (; idx_n + 7 < N; idx_n += 8) {
+      a_ptr = A;
+      INIT_C
+      for (idx_k = 0; idx_k < k_loop; idx_k++) {
+        KERN_1x8
+      }
+      STORE_8_float(vec_C0, vec_C1, vec_C2, vec_C3, 0) c_ptr += 8;
+    }
+    for (; idx_n + 3 < N; idx_n += 4) {
+      a_ptr = A;
+      INIT_C_128
+      for (idx_k = 0; idx_k < k_loop; idx_k++) {
+        KERN_1x4
+      }
+      STORE_4_float(vec_C0_128, 0) c_ptr += 4;
+    }
+    for (; idx_n + 1 < N; idx_n += 2) {
+      a_ptr = A;
+      INIT_C_128
+      for (idx_k = 0; idx_k < k_loop; idx_k++) {
+        KERN_1x2
+      }
+      STORE_2_float(vec_C0_128, 0) c_ptr += 2;
+    }
+    for (; idx_n < N; idx_n++) {
+      a_ptr = A;
+      float acc0 = 0;
+      float bias0 = (*(bias_ptr + idx_m));
+      float scale0 = (*(scale_ptr + idx_m));
+      for (idx_k = 0; idx_k < k_loop; idx_k++) {
+        for (int k = 0; k < 4; k++) {
+          acc0 +=
+              static_cast<int>(a_ptr[k]) * static_cast<int>(b_ptr[k]) * scale0;
+        }
+        a_ptr += 4;
+        b_ptr += 4;
+      }
+      ACT_RELU_BIAS_FP32(acc0, bias0, relu_type)
+      c_ptr[0] = acc0;
+      c_ptr++;
+    }
+    A += pack_k;
+  }
+}
+
 }  // namespace math
 }  // namespace x86
 }  // namespace lite
