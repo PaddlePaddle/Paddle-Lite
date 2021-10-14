@@ -19,8 +19,8 @@
      - 本机环境
      - 目标硬件环境
    * - **操作系统**
-     - x86 MacOS\ :raw-html-m2r:`<br>`
-     - x86 MacOS\ :raw-html-m2r:`<br>`
+     - MacOS\ :raw-html-m2r:`<br>`
+     - MacOS\ :raw-html-m2r:`<br>`
    * - **芯片层**
      - x86 Intel CPU
      - x86 Intel CPU :raw-html-m2r:`<br>`
