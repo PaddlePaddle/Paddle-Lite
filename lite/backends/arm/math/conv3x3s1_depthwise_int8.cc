@@ -443,6 +443,620 @@ namespace math {
 #define RIGHT_STORE_INT8                      \
   "st1    {v6.8b}, [%[ptr_out0]], #8      \n" \
   "st1    {v8.8b}, [%[ptr_out1]], #8      \n"
+
+#else
+#define INIT_S1                          \
+  "pld [%[din_ptr0]]                \n"  \
+  "pld [%[din_ptr1]]                \n"  \
+  "pld [%[din_ptr2]]                \n"  \
+  "pld [%[din_ptr3]]                \n"  \
+  "vdup.s8     d2, d0[0]            \n"  \
+  "vdup.s8     d3, d0[1]            \n"  \
+  "vdup.s8     d4, d0[2]            \n"  \
+  "vld1.8 {d12-d13}, [%[din_ptr0]]  \n"  \
+  "vmov.u32 d11, #0                  \n" \
+  "vmov.u32 q8, #0                   \n" \
+  "vmov.u32 q9, #0                   \n" \
+  "vmov.u32 q10, #0                  \n" \
+  "vmov.u32 q11, #0                  \n"
+
+#define LEFT_COMPUTE                         \
+  "vmull.s8 q12, d12, d3                 \n" \
+  "vext.8     d30, d11, d12, #7          \n" \
+  "vext.8     d31, d12, d13, #1          \n" \
+  "vld1.8 {d12-d13}, [%[din_ptr1]]       \n" \
+  "vld1.8 {d14-d15}, [%[din_ptr2]]       \n" \
+  "vdup.s8     d5, d0[3]                 \n" \
+  "vdup.s8     d6, d0[4]                 \n" \
+  "vmlal.s8 q12, d30, d2                 \n" \
+  "vdup.s8     d7, d0[5]                 \n" \
+  "add %[din_ptr0], #7                   \n" \
+  "add %[din_ptr1], #7                   \n" \
+  "vaddw.s16 q8, q8, d24                 \n" \
+  "vaddw.s16 q9, q9, d25                 \n" \
+  "vmull.s8 q12, d31, d4                 \n" \
+  "vext.8     d30, d11, d12, #7          \n" \
+  "vext.8     d31, d12, d13, #1          \n" \
+  "vmull.s8 q13, d12, d3                 \n" \
+  "vmlal.s8 q12, d12, d6                 \n" \
+  "vld1.8 {d12-d13}, [%[din_ptr3]]       \n" \
+  "vdup.s8     d8, d0[6]                 \n" \
+  "vdup.s8     d9, d0[7]                 \n" \
+  "vdup.s8     d10, d1[0]                \n" \
+  "vaddw.s16 q8, q8, d24                 \n" \
+  "vaddw.s16 q9, q9, d25                 \n" \
+  "vmlal.s8 q13, d30, d2                 \n" \
+  "vmull.s8 q12, d30, d5                 \n" \
+  "add %[din_ptr2], #7                   \n" \
+  "add %[din_ptr3], #7                   \n" \
+  "vaddw.s16 q10, q10, d26               \n" \
+  "vaddw.s16 q11, q11, d27               \n" \
+  "vmull.s8 q13, d31, d4                 \n" \
+  "vmlal.s8 q12, d31, d7                 \n" \
+  "vext.8     d30, d11, d14, #7          \n" \
+  "vext.8     d31, d14, d15, #1          \n" \
+  "vaddw.s16 q8, q8, d24                 \n" \
+  "vaddw.s16 q9, q9, d25                 \n" \
+  "vmlal.s8 q13, d14, d6                 \n" \
+  "vmull.s8 q12, d14, d9                 \n" \
+  "vaddw.s16 q10, q10, d26               \n" \
+  "vaddw.s16 q11, q11, d27               \n" \
+  "vmull.s8 q13, d30, d5                 \n" \
+  "vmlal.s8 q12, d30, d8                 \n" \
+  "vaddw.s16 q8, q8, d24                 \n" \
+  "vaddw.s16 q9, q9, d25                 \n" \
+  "vmlal.s8 q13, d31, d7                 \n" \
+  "vmull.s8 q12, d31, d10                \n" \
+  "vext.8     d30, d11, d12, #7          \n" \
+  "vext.8     d31, d12, d13, #1          \n" \
+  "vaddw.s16 q10, q10, d26               \n" \
+  "vaddw.s16 q11, q11, d27               \n" \
+  "vaddw.s16 q8, q8, d24                 \n" \
+  "vaddw.s16 q9, q9, d25                 \n" \
+  "vmull.s8 q13, d12, d9                 \n" \
+  "pld [%[din_ptr0]]                     \n" \
+  "pld [%[din_ptr1]]                     \n" \
+  "vmlal.s8 q13, d30, d8                 \n" \
+  "pld [%[din_ptr2]]                     \n" \
+  "pld [%[din_ptr3]]                     \n" \
+  "vaddw.s16 q10, q10, d26               \n" \
+  "vaddw.s16 q11, q11, d27               \n" \
+  "vmull.s8 q13, d31, d10                \n" \
+  "vaddw.s16 q10, q10, d26               \n" \
+  "vaddw.s16 q11, q11, d27               \n"
+
+#define LEFT_BIAS_FLOAT                      \
+  "vdup.32 q7, %[scale]                  \n" \
+  "vdup.32 q14, %[bias]                  \n" \
+  "vdup.32 q15, %[bias]                  \n" \
+  "vcvt.f32.s32   q8, q8                 \n" \
+  "vcvt.f32.s32   q9, q9                 \n" \
+  "vmla.f32 q14, q8, q7                  \n" \
+  "vmla.f32 q15, q9, q7                  \n" \
+  "vdup.32 q12, %[bias]                  \n" \
+  "vdup.32 q13, %[bias]                  \n" \
+  "vcvt.f32.s32   q10, q10               \n" \
+  "vcvt.f32.s32   q11, q11               \n" \
+  "vmla.f32 q12, q10, q7                 \n" \
+  "vmla.f32 q13, q11, q7                 \n" \
+  "cmp %[cnt], #1                        \n"
+
+#define LEFT_STORE_FLOAT                     \
+  "vst1.32 {d28-d29}, [%[dout_ptr1]]!    \n" \
+  "vst1.32 {d30-d31}, [%[dout_ptr1]]!    \n" \
+  "vst1.32 {d24-d25}, [%[dout_ptr2]]!    \n" \
+  "vst1.32 {d26-d27}, [%[dout_ptr2]]!    \n" \
+  "blt 1f                                \n" \
+  "2:                                    \n"
+
+#define LEFT_BIAS_INT8 \
+  LEFT_BIAS_INT8_S1    \
+  LEFT_BIAS_INT8_S2    \
+  LEFT_BIAS_INT8_S3
+
+#define LEFT_BIAS_INT8_S1               \
+  "vdup.32 q7, %[scale]             \n" \
+  "vdup.32 q14, %[bias]             \n" \
+  "vdup.32 q15, %[bias]             \n" \
+  "vcvt.f32.s32   q8, q8            \n" \
+  "vcvt.f32.s32   q9, q9            \n" \
+  "vmla.f32 q14, q8, q7             \n" \
+  "vmla.f32 q15, q9, q7             \n"
+
+#define LEFT_BIAS_INT8_S2                \
+  "vmov.f32 q8, #-0.5               \n"  \
+  "vmov.f32 q9, #0.5                \n"  \
+  "vcgt.f32   q1, q14, q8           \n"  \
+  "vbif.f32   q9, q8, q1            \n"  \
+  "vadd.f32   q14, q14, q9          \n"  \
+  "vmov.f32   q9, #0.5              \n"  \
+  "vcgt.f32   q2, q15, q8           \n"  \
+  "vbif.f32   q9, q8, q2            \n"  \
+  "vadd.f32   q15, q15, q9          \n"  \
+  "vld1.32 {d2-d3}, [%[vmax]]       \n"  \
+  "vcge.f32 q3, q14, q1             \n"  \
+  "vbif q14, q1, q3                 \n"  \
+  "vcge.f32 q3, q15, q1             \n"  \
+  "vbif q15, q1, q3                 \n"  \
+  "vcvt.s32.f32  q1, q14            \n"  \
+  "vcvt.s32.f32  q2, q15            \n"  \
+  "vqmovn.s32 d28, q1               \n"  \
+  "vqmovn.s32 d29, q2               \n"  \
+  "vqmovn.s16 d10, q14              \n"  \
+  "vdup.32 q12, %[bias]              \n" \
+  "vdup.32 q13, %[bias]              \n" \
+  "vcvt.f32.s32   q10, q10           \n" \
+  "vcvt.f32.s32   q11, q11           \n" \
+  "vmla.f32 q12, q10, q7             \n" \
+  "vmla.f32 q13, q11, q7             \n"
+
+#define LEFT_BIAS_INT8_S3                \
+  "vmov.f32 q8, #-0.5                \n" \
+  "vmov.f32 q9, #0.5                 \n" \
+  "vcgt.f32   q1, q12, q8            \n" \
+  "vbif.f32   q9, q8, q1             \n" \
+  "vadd.f32   q12, q12, q9           \n" \
+  "vmov.f32   q9, #0.5               \n" \
+  "vcgt.f32   q2, q13, q8            \n" \
+  "vbif.f32   q9, q8, q2             \n" \
+  "vadd.f32   q13, q13, q9           \n" \
+  "vld1.32 {d2-d3}, [%[vmax]]        \n" \
+  "vcge.f32 q3, q12, q1              \n" \
+  "vbif q12, q1, q3                  \n" \
+  "vcge.f32 q3, q13, q1              \n" \
+  "vbif q13, q1, q3                  \n" \
+  "vcvt.s32.f32  q1, q12             \n" \
+  "vcvt.s32.f32  q2, q13             \n" \
+  "vqmovn.s32 d24, q1                \n" \
+  "vqmovn.s32 d25, q2                \n" \
+  "vqmovn.s16 d9, q12                \n" \
+  "cmp %[cnt], #1                    \n"
+
+#define LEFT_STORE_INT8                 \
+  "vst1.8    {d10}, [%[dout_ptr1]]! \n" \
+  "vst1.8    {d9}, [%[dout_ptr2]]!  \n" \
+  "blt 1f                           \n" \
+  "2:                                    \n"
+
+#define LEFT_RELU \
+  LEFT_RELU_S1    \
+  LEFT_RELU_S2
+
+#define LEFT_RELU_S1                      \
+  "vmov.f32 q1, #0.0                  \n" \
+  "vmax.f32 q14, q14, q1              \n" \
+  "vmax.f32 q15, q15, q1              \n"
+
+#define LEFT_RELU_S2                      \
+  "vmov.f32 q1, #0.0                  \n" \
+  "vmax.f32 q12, q12, q1              \n" \
+  "vmax.f32 q13, q13, q1              \n"
+
+#define LEFT_RELU6 \
+  LEFT_RELU6_S1    \
+  LEFT_RELU6_S2
+
+#define LEFT_RELU6_S1                     \
+  "vmov.f32 q1, #0.0                  \n" \
+  "vmax.f32 q14, q14, q1              \n" \
+  "vmax.f32 q15, q15, q1              \n" \
+  "vld1.32 {d2-d3}, [%[alpha]]        \n" \
+  "vmin.f32 q14, q14, q1              \n" \
+  "vmin.f32 q15, q15, q1              \n"
+
+#define LEFT_RELU6_S2                     \
+  "vmov.f32 q1, #0.0                  \n" \
+  "vmax.f32 q12, q12, q1              \n" \
+  "vmax.f32 q13, q13, q1              \n" \
+  "vld1.32 {d2-d3}, [%[alpha]]        \n" \
+  "vmin.f32 q12, q12, q1              \n" \
+  "vmin.f32 q13, q13, q1              \n" \
+  "vmov.f32 q1, #0.0                  \n"
+
+#define MID_COMPUTE                          \
+  "vld1.8 {d12-d13}, [%[din_ptr0]]       \n" \
+  "vmov.u32 q8, #0                       \n" \
+  "vmov.u32 q9, #0                       \n" \
+  "vmov.u32 q10, #0                      \n" \
+  "vmov.u32 q11, #0                      \n" \
+  "vmull.s8 q12, d12, d2                 \n" \
+  "vext.8     d30, d12, d13, #1          \n" \
+  "vext.8     d31, d12, d13, #2          \n" \
+  "vld1.8 {d12-d13}, [%[din_ptr1]]       \n" \
+  "vld1.8 {d14-d15}, [%[din_ptr2]]       \n" \
+  "vmlal.s8 q12, d30, d3                 \n" \
+  "add %[din_ptr0], #8                   \n" \
+  "add %[din_ptr1], #8                   \n" \
+  "vaddw.s16 q8, q8, d24                 \n" \
+  "vaddw.s16 q9, q9, d25                 \n" \
+  "vmull.s8 q12, d31, d4                 \n" \
+  "vext.8     d30, d12, d13, #1          \n" \
+  "vext.8     d31, d12, d13, #2          \n" \
+  "vmull.s8 q13, d12, d2                 \n" \
+  "vmlal.s8 q12, d12, d5                 \n" \
+  "vld1.8 {d12-d13}, [%[din_ptr3]]       \n" \
+  "vmlal.s8 q13, d30, d3                 \n" \
+  "vaddw.s16 q8, q8, d24                 \n" \
+  "vaddw.s16 q9, q9, d25                 \n" \
+  "vmull.s8 q12, d30, d6                 \n" \
+  "add %[din_ptr2], #8                   \n" \
+  "add %[din_ptr3], #8                   \n" \
+  "vaddw.s16 q10, q10, d26               \n" \
+  "vaddw.s16 q11, q11, d27               \n" \
+  "vmull.s8 q13, d31, d4                 \n" \
+  "vmlal.s8 q12, d31, d7                 \n" \
+  "vext.8     d30, d14, d15, #1          \n" \
+  "vext.8     d31, d14, d15, #2          \n" \
+  "vaddw.s16 q8, q8, d24                 \n" \
+  "vaddw.s16 q9, q9, d25                 \n" \
+  "vmlal.s8 q13, d14, d5                 \n" \
+  "vmull.s8 q12, d14, d8                 \n" \
+  "vaddw.s16 q10, q10, d26               \n" \
+  "vaddw.s16 q11, q11, d27               \n" \
+  "vmull.s8 q13, d30, d6                 \n" \
+  "vmlal.s8 q12, d30, d9                 \n" \
+  "vmlal.s8 q13, d31, d7                 \n" \
+  "vaddw.s16 q8, q8, d24                 \n" \
+  "vaddw.s16 q9, q9, d25                 \n" \
+  "vmull.s8 q12, d31, d10                \n" \
+  "vext.8     d30, d12, d13, #1     \n"      \
+  "vext.8     d31, d12, d13, #2     \n"      \
+  "vaddw.s16 q10, q10, d26          \n"      \
+  "vaddw.s16 q11, q11, d27          \n"      \
+  "vaddw.s16 q8, q8, d24            \n"      \
+  "vaddw.s16 q9, q9, d25            \n"      \
+  "vmull.s8 q13, d12, d8            \n"      \
+  "pld [%[din_ptr0]]                \n"      \
+  "pld [%[din_ptr1]]                \n"      \
+  "vmlal.s8 q13, d30, d9            \n"      \
+  "pld [%[din_ptr2]]                \n"      \
+  "pld [%[din_ptr3]]                \n"      \
+  "vaddw.s16 q10, q10, d26           \n"     \
+  "vaddw.s16 q11, q11, d27           \n"     \
+  "vmull.s8 q13, d31, d10            \n"
+
+#define MID_BIAS_FLOAT                   \
+  "vdup.32 q7, %[scale]              \n" \
+  "vdup.32 q14, %[bias]              \n" \
+  "vdup.32 q15, %[bias]              \n" \
+  "vcvt.f32.s32   q8, q8             \n" \
+  "vcvt.f32.s32   q9, q9             \n" \
+  "vmla.f32 q14, q8, q7              \n" \
+  "vmla.f32 q15, q9, q7              \n" \
+  "vaddw.s16 q10, q10, d26           \n" \
+  "vaddw.s16 q11, q11, d27           \n" \
+  "vdup.32 q12, %[bias]              \n" \
+  "vdup.32 q13, %[bias]              \n" \
+  "vcvt.f32.s32   q10, q10           \n" \
+  "vcvt.f32.s32   q11, q11           \n" \
+  "vmla.f32 q12, q10, q7             \n" \
+  "vmla.f32 q13, q11, q7             \n" \
+  "subs %[cnt], #1                   \n"
+
+#define MID_STORE_FLOAT                     \
+  "vst1.32 {d28-d29}, [%[dout_ptr1]]!   \n" \
+  "vst1.32 {d30-d31}, [%[dout_ptr1]]!   \n" \
+  "vst1.32 {d24-d25}, [%[dout_ptr2]]!   \n" \
+  "vst1.32 {d26-d27}, [%[dout_ptr2]]!   \n"
+
+#define RIGHT_COMPUTE_P1                       \
+  "vld1.8 {d12-d13}, [%[din_ptr0]]     \n"     \
+  "vld1.8 {d28-d29}, [%[mask]]         \n"     \
+  "vmov.u32 q8, #0                     \n"     \
+  "vmov.u32 q9, #0                     \n"     \
+  "vmov.u32 q10, #0                    \n"     \
+  "vmov.u32 q11, #0                    \n"     \
+  "vbif.8 d12, d11, d28                \n"     \
+  "vbif.8 d13, d11, d29                \n"     \
+  "vld1.8 {d14-d15}, [%[din_ptr1]]     \n"     \
+  "vmull.s8 q12, d12, d2              \n"      \
+  "vext.8 d30, d12, d13, #1           \n"      \
+  "vext.8 d31, d12, d13, #2           \n"      \
+  "vld1.8 {d12-d13}, [%[din_ptr2]]    \n"      \
+  "vbif.8 d14, d11, d28               \n"      \
+  "vbif.8 d15, d11, d29               \n"      \
+  "vmlal.s8 q12, d30, d3              \n"      \
+  "vaddw.s16 q8, q8, d24              \n"      \
+  "vaddw.s16 q9, q9, d25              \n"      \
+  "vmull.s8 q12, d31, d4              \n"      \
+  "vext.8 d30, d14, d15, #1           \n"      \
+  "vext.8 d31, d14, d15, #2           \n"      \
+  "vmull.s8 q13, d14, d2              \n"      \
+  "vmlal.s8 q12, d14, d5              \n"      \
+  "vld1.8 {d14-d15}, [%[din_ptr3]]    \n"      \
+  "vbif.8 d12, d11, d28               \n"      \
+  "vbif.8 d13, d11, d29               \n"      \
+  "vaddw.s16 q8, q8, d24              \n"      \
+  "vaddw.s16 q9, q9, d25              \n"      \
+  "vmlal.s8 q13, d30, d3              \n"      \
+  "vmull.s8 q12, d30, d6              \n"      \
+  "vaddw.s16 q10, q10, d26            \n"      \
+  "vaddw.s16 q11, q11, d27            \n"      \
+  "vmull.s8 q13, d31, d4              \n"      \
+  "vmlal.s8 q12, d31, d7              \n"      \
+  "vext.8 d30, d12, d13, #1           \n"      \
+  "vext.8 d31, d12, d13, #2           \n"      \
+  "vaddw.s16 q8, q8, d24              \n"      \
+  "vaddw.s16 q9, q9, d25              \n"      \
+  "vmlal.s8 q13, d12, d5              \n"      \
+  "vmull.s8 q12, d12, d8              \n"      \
+  "vbif.8 d14, d11, d28               \n"      \
+  "vbif.8 d15, d11, d29               \n"      \
+  "vaddw.s16 q10, q10, d26            \n"      \
+  "vaddw.s16 q11, q11, d27            \n"      \
+  "vmull.s8 q13, d30, d6              \n"      \
+  "vmlal.s8 q12, d30, d9              \n"      \
+  "vld1.8 d12, [%[rs_mask]]!          \n"      \
+  "vaddw.s16 q8, q8, d24              \n"      \
+  "vaddw.s16 q9, q9, d25              \n"      \
+  "vmlal.s8 q13, d31, d7              \n"      \
+  "vmull.s8 q12, d31, d10             \n"      \
+  "vext.8     d30, d14, d15, #1          \n"   \
+  "vext.8     d31, d14, d15, #2          \n"   \
+  "vaddw.s16 q10, q10, d26               \n"   \
+  "vaddw.s16 q11, q11, d27               \n"   \
+  "vaddw.s16 q8, q8, d24                 \n"   \
+  "vaddw.s16 q9, q9, d25                 \n"   \
+  "vmull.s8 q13, d14, d8                 \n"   \
+  "vmlal.s8 q13, d30, d9                 \n"   \
+  "vaddw.s16 q10, q10, d26               \n"   \
+  "vaddw.s16 q11, q11, d27               \n"   \
+  "vmull.s8 q13, d31, d10                \n"   \
+  "vdup.32 q3, %[scale]                  \n"   \
+  "vdup.32 q4, %[bias]                   \n"   \
+  "vdup.32 q5, %[bias]                   \n"   \
+  "vcvt.f32.s32   q8, q8                 \n"   \
+  "vcvt.f32.s32   q9, q9                   \n" \
+  "vmla.f32 q4, q8, q3                     \n" \
+  "vmla.f32 q5, q9, q3                     \n" \
+  "vaddw.s16 q10, q10, d26                 \n" \
+  "vaddw.s16 q11, q11, d27                 \n" \
+  "vdup.32 q13, %[bias]                    \n" \
+  "vdup.32 q14, %[bias]                    \n" \
+  "vcvt.f32.s32   q10, q10                 \n" \
+  "vcvt.f32.s32   q11, q11                 \n" \
+  "vmla.f32 q13, q10, q3                   \n" \
+  "vmla.f32 q14, q11, q3                   \n"
+
+#define RIGHT_COMPUTE                     \
+  "vld1.8 {d12-d13}, [%[din_ptr0]]    \n" \
+  "vld1.8 {d28-d29}, [%[mask]]        \n" \
+  "vmov.u32 q8, #0                    \n" \
+  "vmov.u32 q9, #0                    \n" \
+  "vmov.u32 q10, #0                   \n" \
+  "vmov.u32 q11, #0                   \n" \
+  "vbif.8 d12, d11, d28               \n" \
+  "vbif.8 d13, d11, d29               \n" \
+  "vld1.8 {d14-d15}, [%[din_ptr1]]    \n" \
+  "vmull.s8 q12, d12, d2              \n" \
+  "vext.8 d30, d12, d13, #1           \n" \
+  "vext.8 d31, d12, d13, #2           \n" \
+  "vld1.8 {d12-d13}, [%[din_ptr2]]    \n" \
+  "vbif.8 d14, d11, d28               \n" \
+  "vbif.8 d15, d11, d29               \n" \
+  "vmlal.s8 q12, d30, d3              \n" \
+  "vaddw.s16 q8, q8, d24              \n" \
+  "vaddw.s16 q9, q9, d25              \n" \
+  "vmull.s8 q12, d31, d4              \n" \
+  "vext.8 d30, d14, d15, #1           \n" \
+  "vext.8 d31, d14, d15, #2           \n" \
+  "vmull.s8 q13, d14, d2              \n" \
+  "vmlal.s8 q12, d14, d5              \n" \
+  "vld1.8 {d14-d15}, [%[din_ptr3]]    \n" \
+  "vbif.8 d12, d11, d28               \n" \
+  "vbif.8 d13, d11, d29               \n" \
+  "vaddw.s16 q8, q8, d24              \n" \
+  "vaddw.s16 q9, q9, d25              \n" \
+  "vmlal.s8 q13, d30, d3              \n" \
+  "vmull.s8 q12, d30, d6              \n" \
+  "vaddw.s16 q10, q10, d26            \n" \
+  "vaddw.s16 q11, q11, d27            \n" \
+  "vmull.s8 q13, d31, d4              \n" \
+  "vmlal.s8 q12, d31, d7              \n" \
+  "vext.8 d30, d12, d13, #1           \n" \
+  "vext.8 d31, d12, d13, #2           \n" \
+  "vaddw.s16 q8, q8, d24              \n" \
+  "vaddw.s16 q9, q9, d25              \n" \
+  "vmlal.s8 q13, d12, d5              \n" \
+  "vmull.s8 q12, d12, d8              \n" \
+  "vbif.8 d14, d11, d28               \n" \
+  "vbif.8 d15, d11, d29               \n" \
+  "vaddw.s16 q10, q10, d26            \n" \
+  "vaddw.s16 q11, q11, d27            \n" \
+  "vmull.s8 q13, d30, d6              \n" \
+  "vmlal.s8 q12, d30, d9              \n" \
+  "vld1.32 {d28-d29}, [%[dout_ptr1]]! \n" \
+  "vld1.32 {d12-d13}, [%[dout_ptr1]]  \n" \
+  "vld1.32 {d2-d3}, [%[rs_mask]]!     \n" \
+  "vld1.32 {d4-d5}, [%[rs_mask]]      \n" \
+  "vaddw.s16 q8, q8, d24              \n" \
+  "vaddw.s16 q9, q9, d25              \n" \
+  "vmlal.s8 q13, d31, d7              \n" \
+  "vmull.s8 q12, d31, d10             \n" \
+  "vext.8     d30, d14, d15, #1       \n" \
+  "vext.8     d31, d14, d15, #2       \n" \
+  "vaddw.s16 q10, q10, d26            \n" \
+  "vaddw.s16 q11, q11, d27            \n" \
+  "vaddw.s16 q8, q8, d24              \n" \
+  "vaddw.s16 q9, q9, d25              \n" \
+  "vmull.s8 q13, d14, d8              \n" \
+  "vld1.32 {d14-d15}, [%[dout_ptr2]]! \n" \
+  "vld1.32 {d24-d25}, [%[dout_ptr2]]  \n" \
+  "vmlal.s8 q13, d30, d9              \n" \
+  "sub %[dout_ptr1], #16              \n" \
+  "sub %[dout_ptr2], #16              \n" \
+  "vaddw.s16 q10, q10, d26            \n" \
+  "vaddw.s16 q11, q11, d27            \n" \
+  "vmull.s8 q13, d31, d10             \n"
+
+#define RIGHT_BIAS_FLOAT                  \
+  "vdup.32 q3, %[scale]               \n" \
+  "vdup.32 q4, %[bias]                \n" \
+  "vdup.32 q5, %[bias]                \n" \
+  "vcvt.f32.s32   q8, q8              \n" \
+  "vcvt.f32.s32   q9, q9              \n" \
+  "vmla.f32 q4, q8, q3                \n" \
+  "vmla.f32 q5, q9, q3                \n" \
+  "vbif q4, q14, q1                   \n" \
+  "vbif q5, q6, q2                    \n" \
+  "vaddw.s16 q10, q10, d26            \n" \
+  "vaddw.s16 q11, q11, d27            \n" \
+  "vdup.32 q13, %[bias]               \n" \
+  "vdup.32 q14, %[bias]               \n" \
+  "vcvt.f32.s32   q10, q10            \n" \
+  "vcvt.f32.s32   q11, q11            \n" \
+  "vmla.f32 q13, q10, q3              \n" \
+  "vmla.f32 q14, q11, q3              \n" \
+  "vbif q13, q7, q1        \n"            \
+  "vbif q14, q12, q2       \n"
+
+#define RIGHT_STORE_FLOAT                 \
+  "vst1.32 {d8-d9}, [%[dout_ptr1]]!   \n" \
+  "vst1.32 {d10-d11}, [%[dout_ptr1]]! \n" \
+  "vst1.32 {d26-d27}, [%[dout_ptr2]]! \n" \
+  "vst1.32 {d28-d29}, [%[dout_ptr2]]! \n"
+
+#define MID_STORE_INT8                       \
+  "vst1.8    {d10}, [%[dout_ptr1]]!      \n" \
+  "vst1.8    {d9}, [%[dout_ptr2]]!       \n"
+
+#define MID_BIAS_INT8                        \
+  "vdup.32 q7, %[scale]                  \n" \
+  "vdup.32 q14, %[bias]                  \n" \
+  "vdup.32 q15, %[bias]                  \n" \
+  "vcvt.f32.s32   q8, q8                 \n" \
+  "vcvt.f32.s32   q9, q9                 \n" \
+  "vmla.f32 q14, q8, q7                  \n" \
+  "vmla.f32 q15, q9, q7                  \n" \
+  "vmov.f32 q8, #-0.5                    \n" \
+  "vmov.f32 q9, #0.5                     \n" \
+  "vcgt.f32   q1, q14, q8                \n" \
+  "vbif.f32   q9, q8, q1                 \n" \
+  "vadd.f32   q14, q14, q9               \n" \
+  "vmov.f32   q9, #0.5                   \n" \
+  "vcgt.f32   q2, q15, q8                \n" \
+  "vbif.f32   q9, q8, q2                 \n" \
+  "vadd.f32   q15, q15, q9               \n" \
+  "vld1.32 {d2-d3}, [%[vmax]]            \n" \
+  "vcge.f32 q3, q14, q1                  \n" \
+  "vbif q14, q1, q3                      \n" \
+  "vcge.f32 q3, q15, q1                  \n" \
+  "vbif q15, q1, q3                      \n" \
+  "vcvt.s32.f32  q1, q14                 \n" \
+  "vcvt.s32.f32  q2, q15                 \n" \
+  "vqmovn.s32 d28, q1                    \n" \
+  "vqmovn.s32 d29, q2                    \n" \
+  "vqmovn.s16 d10, q14                   \n" \
+  "vaddw.s16 q10, q10, d26               \n" \
+  "vaddw.s16 q11, q11, d27               \n" \
+  "vdup.32 q12, %[bias]                  \n" \
+  "vdup.32 q13, %[bias]                  \n" \
+  "vcvt.f32.s32   q10, q10               \n" \
+  "vcvt.f32.s32   q11, q11               \n" \
+  "vmla.f32 q12, q10, q7                 \n" \
+  "vmla.f32 q13, q11, q7                 \n" \
+  "vmov.f32 q8, #-0.5                    \n" \
+  "vmov.f32 q9, #0.5                     \n" \
+  "vcgt.f32   q1, q12, q8                \n" \
+  "vbif.f32   q9, q8, q1                 \n" \
+  "vadd.f32   q12, q12, q9               \n" \
+  "vmov.f32   q9, #0.5                   \n" \
+  "vcgt.f32   q2, q13, q8                \n" \
+  "vbif.f32   q9, q8, q2                 \n" \
+  "vadd.f32   q13, q13, q9               \n" \
+  "vld1.32 {d2-d3}, [%[vmax]]            \n" \
+  "vcge.f32 q3, q12, q1                  \n" \
+  "vbif q12, q1, q3                      \n" \
+  "vcge.f32 q3, q13, q1                  \n" \
+  "vbif q13, q1, q3                      \n" \
+  "vcvt.s32.f32  q1, q12                 \n" \
+  "vcvt.s32.f32  q2, q13                 \n" \
+  "vqmovn.s32 d24, q1                    \n" \
+  "vqmovn.s32 d25, q2                    \n" \
+  "vqmovn.s16 d9, q12                    \n" \
+  "subs %[cnt], #1                       \n"
+
+#define MID_INIT_P1                        \
+  "vdup.s8     d2, d0[0]               \n" \
+  "vdup.s8     d3, d0[1]               \n" \
+  "vdup.s8     d4, d0[2]               \n" \
+  "vdup.s8     d5, d0[3]               \n" \
+  "vdup.s8     d6, d0[4]               \n" \
+  "vdup.s8     d7, d0[5]               \n" \
+  "vdup.s8     d8, d0[6]               \n" \
+  "vdup.s8     d9, d0[7]               \n" \
+  "vdup.s8     d10, d1[0]              \n"
+
+#define RIGHT_INIT_P1                      \
+  "vdup.s8     d2, d0[0]               \n" \
+  "vdup.s8     d3, d0[1]               \n" \
+  "vdup.s8     d4, d0[2]               \n" \
+  "vdup.s8     d5, d0[3]               \n" \
+  "vdup.s8     d6, d0[4]               \n" \
+  "vdup.s8     d7, d0[5]               \n" \
+  "vdup.s8     d8, d0[6]               \n" \
+  "vdup.s8     d9, d0[7]               \n" \
+  "vdup.s8     d10, d1[0]              \n"
+
+#define RIGHT_STORE_P1                          \
+  "vmov.f32 q8, #-0.5                      \n"  \
+  "vmov.f32 q9, #0.5                       \n"  \
+  "vcgt.f32   q1, q4, q8                   \n"  \
+  "vbif.f32   q9, q8, q1                    \n" \
+  "vadd.f32   q4, q4, q9                    \n" \
+  "vmov.f32   q9, #0.5                      \n" \
+  "vcgt.f32   q2, q5, q8                    \n" \
+  "vbif.f32   q9, q8, q2                    \n" \
+  "vadd.f32   q5, q5, q9                    \n" \
+  "vld1.32 {d2-d3}, [%[vmax]]               \n" \
+  "vcge.f32 q3, q4, q1                      \n" \
+  "vbif q4, q1, q3                          \n" \
+  "vcge.f32 q3, q5, q1                      \n" \
+  "vbif q5, q1, q3                          \n" \
+  "vcvt.s32.f32  q1, q4                     \n" \
+  "vcvt.s32.f32  q2, q5                     \n" \
+  "vqmovn.s32 d8, q1                        \n" \
+  "vqmovn.s32 d9, q2                        \n" \
+  "vqmovn.s16 d7, q4                        \n" \
+  "vld1.8 d10, [%[dout_ptr1]]               \n" \
+  "vbif.8 d7, d10, d12                      \n" \
+  "vst1.8    {d7}, [%[dout_ptr1]]!          \n" \
+  "vmov.f32 q8, #-0.5                       \n" \
+  "vmov.f32 q9, #0.5                        \n" \
+  "vcgt.f32   q1, q13, q8                   \n" \
+  "vbif.f32   q9, q8, q1                    \n" \
+  "vadd.f32   q13, q13, q9                  \n" \
+  "vmov.f32   q9, #0.5                      \n" \
+  "vcgt.f32   q2, q14, q8                   \n" \
+  "vbif.f32   q9, q8, q2                    \n" \
+  "vadd.f32   q14, q14, q9                  \n" \
+  "vld1.32 {d2-d3}, [%[vmax]]               \n" \
+  "vcge.f32 q3, q13, q1                     \n" \
+  "vbif q13, q1, q3                         \n" \
+  "vcge.f32 q3, q14, q1                     \n" \
+  "vbif q14, q1, q3                         \n" \
+  "vcvt.s32.f32  q1, q13                    \n" \
+  "vcvt.s32.f32  q2, q14                    \n" \
+  "vqmovn.s32 d26, q1                       \n" \
+  "vqmovn.s32 d27, q2                       \n" \
+  "vqmovn.s16 d10, q13                      \n" \
+  "vld1.8 d14, [%[dout_ptr2]]               \n" \
+  "vbif.8 d10, d14, d12                     \n" \
+  "vst1.8    {d10}, [%[dout_ptr2]]!         \n"
+
+#define MID_RELU                              \
+  "vmov.f32 q1, #0.0                      \n" \
+  "vmax.f32 q14, q14, q1                  \n" \
+  "vmax.f32 q15, q15, q1                  \n" \
+  "vmax.f32 q12, q12, q1                  \n" \
+  "vmax.f32 q13, q13, q1                  \n"
+#define RIGHT_RELU                             \
+  "vmov.f32 q15, #0.0                      \n" \
+  "vmax.f32 q4, q4, q15                    \n" \
+  "vmax.f32 q5, q5, q15                    \n" \
+  "vmax.f32 q13, q13, q15                  \n" \
+  "vmax.f32 q14, q14, q15                  \n"
+
 #endif
 
 template <typename Dtype>
@@ -1069,290 +1683,20 @@ void conv_depthwise_3x3s1p1_bias_int8_float(float* dout,
                 );
                 asm volatile(
                 //left
-                    "pld [%[din_ptr0]]                \n"
-                    "pld [%[din_ptr1]]                \n"
-                    "pld [%[din_ptr2]]                \n"
-                    "pld [%[din_ptr3]]                \n"
-                    "vdup.s8     d2, d0[0]            \n"
-                    "vdup.s8     d3, d0[1]            \n"
-                    "vdup.s8     d4, d0[2]            \n"
-                    "vld1.8 {d12-d13}, [%[din_ptr0]]  \n"
-                    "vmov.u32 d11, #0                  \n"
-                    "vmov.u32 q8, #0                   \n"
-                    "vmov.u32 q9, #0                   \n"
-                    "vmov.u32 q10, #0                  \n"
-                    "vmov.u32 q11, #0                  \n"
-                    //r0
-                    "vmull.s8 q12, d12, d3                 \n" // q12 = d12 * w01
-                    "vext.8     d30, d11, d12, #7          \n" //d10 = 00123456
-                    "vext.8     d31, d12, d13, #1          \n" //d11 = 12345678
-                    "vld1.8 {d12-d13}, [%[din_ptr1]]    \n"
-                    "vld1.8 {d14-d15}, [%[din_ptr2]]    \n"
-                    "vdup.s8     d5, d0[3]              \n"
-                    "vdup.s8     d6, d0[4]              \n"
-                    "vmlal.s8 q12, d30, d2              \n" // q12 += d10 * w00
-                    "vdup.s8     d7, d0[5]               \n"
-                    "add %[din_ptr0], #7                   \n"
-                    "add %[din_ptr1], #7                   \n"
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q12, d31, d4                 \n" // q12 += d11 * w02
-                    //r1
-                    "vext.8     d30, d11, d12, #7     \n" //d10 = 00123456
-                    "vext.8     d31, d12, d13, #1          \n" //d11 = 12345678
-                    "vmull.s8 q13, d12, d3                 \n" // q13 = d12 * w01
-                    "vmlal.s8 q12, d12, d6                 \n" // q12 = d12 * w11
-                    "vld1.8 {d12-d13}, [%[din_ptr3]]     \n"
-                    "vdup.s8     d8, d0[6]               \n"
-                    "vdup.s8     d9, d0[7]               \n"
-                    "vdup.s8     d10, d1[0]               \n"
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d30, d2                 \n" // q12 += d10 * w00
-                    "vmull.s8 q12, d30, d5                 \n" // q12 += d10 * w00
-                    "add %[din_ptr2], #7                   \n"
-                    "add %[din_ptr3], #7                   \n"
-                    "vaddw.s16 q10, q10, d26                 \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                 \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d4                 \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d31, d7                 \n" // q12 += d10 * w00
-                    //r2
-                    "vext.8     d30, d11, d14, #7     \n" //d10 = 00123456
-                    "vext.8     d31, d14, d15, #1          \n" //d11 = 12345678
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d14, d6                 \n" // q13 = d12 * w01
-                    "vmull.s8 q12, d14, d9                 \n" // q13 = d12 * w01
-                    "vaddw.s16 q10, q10, d26                 \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                 \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d30, d5                 \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d30, d8                 \n" // q12 += d10 * w00
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d31, d7                 \n" // q12 += d10 * w00
-                    "vmull.s8 q12, d31, d10                 \n" // q12 += d10 * w00
-                    //r3
-                    "vext.8     d30, d11, d12, #7           \n" //d10 = 00123456
-                    "vext.8     d31, d12, d13, #1           \n" //d11 = 12345678
-                    "vaddw.s16 q10, q10, d26                 \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                 \n" // out1_1 += vget_high_s16(out10)
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q13, d12, d9                 \n" // q13 = d12 * w01
-                    "pld [%[din_ptr0]]                     \n"
-                    "pld [%[din_ptr1]]                     \n"
-                    "vmlal.s8 q13, d30, d8                 \n" // q13 += d10 * w00
-                    "pld [%[din_ptr2]]                \n"
-                    "pld [%[din_ptr3]]                \n"
-                    "vaddw.s16 q10, q10, d26                 \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                 \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d10                 \n" // q12 += d10 * w00
-                    "vaddw.s16 q10, q10, d26                 \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                 \n" // out1_1 += vget_high_s16(out10)
-                    "vdup.32 q7, %[scale]                            \n"
-                    "vdup.32 q14, %[bias]                            \n"
-                    "vdup.32 q15, %[bias]                            \n"
-                    "vcvt.f32.s32   q8, q8                      \n"
-                    "vcvt.f32.s32   q9, q9                      \n"
-                    "vmla.f32 q14, q8, q7                     \n"
-                    "vmla.f32 q15, q9, q7                     \n"
-                    "vst1.32 {d28-d29}, [%[dout_ptr1]]!             \n"
-                    "vst1.32 {d30-d31}, [%[dout_ptr1]]!             \n"
-                    "vdup.32 q12, %[bias]                            \n"
-                    "vdup.32 q13, %[bias]                            \n"
-                    "vcvt.f32.s32   q10, q10                      \n"
-                    "vcvt.f32.s32   q11, q11                      \n"
-                    "vmla.f32 q12, q10, q7                     \n"
-                    "vmla.f32 q13, q11, q7                     \n"
-                    "vst1.32 {d24-d25}, [%[dout_ptr2]]!         \n"
-                    "cmp %[cnt], #1                                 \n"
-                    "vst1.32 {d26-d27}, [%[dout_ptr2]]!         \n"
-                    "blt 1f                                         \n"
+                    INIT_S1
+                    LEFT_COMPUTE
+                    LEFT_BIAS_FLOAT
+                    LEFT_STORE_FLOAT
                 //mid
-                    "2:                                          \n"
-                    "vld1.8 {d12-d13}, [%[din_ptr0]]    \n"
-                    "vmov.u32 q8, #0                            \n"
-                    "vmov.u32 q9, #0                            \n"
-                    "vmov.u32 q10, #0                            \n"
-                    "vmov.u32 q11, #0                            \n"
-                     //r0
-                    "vmull.s8 q12, d12, d2                 \n" // q12 = d12 * w01
-                    "vext.8     d30, d12, d13, #1          \n" //d10 = 12345678
-                    "vext.8     d31, d12, d13, #2          \n" //d11 = 23456789
-                    "vld1.8 {d12-d13}, [%[din_ptr1]]    \n"
-                    "vld1.8 {d14-d15}, [%[din_ptr2]]    \n"
-                    "vmlal.s8 q12, d30, d3                 \n" // q12 += d10 * w00
-                    "add %[din_ptr0], #8                   \n"
-                    "add %[din_ptr1], #8                   \n"
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q12, d31, d4                 \n" // q12 += d11 * w02
-                    //r1
-                    "vext.8     d30, d12, d13, #1     \n" //d10 = 00123456
-                    "vext.8     d31, d12, d13, #2          \n" //d11 = 12345678
-                    "vmull.s8 q13, d12, d2                 \n" // q13 = d12 * w01
-                    "vmlal.s8 q12, d12, d5                 \n" // q12 = d12 * w11
-                    "vld1.8 {d12-d13}, [%[din_ptr3]]    \n"
-                    "vmlal.s8 q13, d30, d3                 \n" // q12 += d10 * w00
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q12, d30, d6                 \n" // q12 += d10 * w00
-                    "add %[din_ptr2], #8                   \n"
-                    "add %[din_ptr3], #8                   \n"
-                    "vaddw.s16 q10, q10, d26                 \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                 \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d4                 \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d31, d7                 \n" // q12 += d10 * w00
-                    //r2
-                    "vext.8     d30, d14, d15, #1     \n" //d10 = 00123456
-                    "vext.8     d31, d14, d15, #2          \n" //d11 = 12345678
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d14, d5                 \n" // q13 = d12 * w01
-                    "vmull.s8 q12, d14, d8                 \n" // q13 = d12 * w01
-                    "vaddw.s16 q10, q10, d26                 \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                 \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d30, d6                 \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d30, d9                 \n" // q12 += d10 * w00
-                    "vmlal.s8 q13, d31, d7                 \n" // q12 += d10 * w00
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q12, d31, d10                 \n" // q12 += d10 * w00
-                    //r3
-                    "vext.8     d30, d12, d13, #1     \n" //d10 = 00123456
-                    "vext.8     d31, d12, d13, #2          \n" //d11 = 12345678
-                    "vaddw.s16 q10, q10, d26                 \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                 \n" // out1_1 += vget_high_s16(out10)
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q13, d12, d8                 \n" // q13 = d12 * w01
-                    "pld [%[din_ptr0]]                \n"
-                    "pld [%[din_ptr1]]                \n"
-                    "vmlal.s8 q13, d30, d9                 \n" // q13 += d10 * w00
-                    "pld [%[din_ptr2]]                \n"
-                    "pld [%[din_ptr3]]                \n"
-                    "vaddw.s16 q10, q10, d26                 \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                 \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d10                 \n" // q12 += d10 * w00
-                    "vdup.32 q7, %[scale]                            \n"
-                    "vdup.32 q14, %[bias]                            \n"
-                    "vdup.32 q15, %[bias]                            \n"
-                    "vcvt.f32.s32   q8, q8                      \n"
-                    "vcvt.f32.s32   q9, q9                      \n"
-                    "vmla.f32 q14, q8, q7                            \n"
-                    "vmla.f32 q15, q9, q7                            \n"
-                    "vst1.32 {d28-d29}, [%[dout_ptr1]]!              \n"
-                    "vst1.32 {d30-d31}, [%[dout_ptr1]]!              \n"
-                    "vaddw.s16 q10, q10, d26                 \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                 \n" // out1_1 += vget_high_s16(out10)
-                    "vdup.32 q12, %[bias]                            \n"
-                    "vdup.32 q13, %[bias]                            \n"
-                    "vcvt.f32.s32   q10, q10                      \n"
-                    "vcvt.f32.s32   q11, q11                      \n"
-                    "vmla.f32 q12, q10, q7                     \n"
-                    "vmla.f32 q13, q11, q7                     \n"
-                    "vst1.32 {d24-d25}, [%[dout_ptr2]]!         \n"
-                    "subs %[cnt], #1                                \n"
-                    "vst1.32 {d26-d27}, [%[dout_ptr2]]!         \n"
-                    "bne  2b                                        \n"
+                    MID_COMPUTE
+                    MID_BIAS_FLOAT
+                    MID_STORE_FLOAT
+                    "bne  2b                              \n"
+                    "1:                                    \n"
                 //right
-                    "1:                                          \n"
-                    "vld1.8 {d12-d13}, [%[din_ptr0]]    \n"
-                    "vld1.8 {d28-d29}, [%[mask]]        \n"
-                    "vmov.u32 q8, #0                            \n"
-                    "vmov.u32 q9, #0                            \n"
-                    "vmov.u32 q10, #0                           \n"
-                    "vmov.u32 q11, #0                           \n"
-                    "vbif.8 d12, d11, d28        \n"
-                    "vbif.8 d13, d11, d29        \n"
-                    "vld1.8 {d14-d15}, [%[din_ptr1]]    \n"
-                     //r0
-                    "vmull.s8 q12, d12, d2                 \n" // q12 = d12 * w01
-                    "vext.8 d30, d12, d13, #1               \n" //d10 = 12345678
-                    "vext.8 d31, d12, d13, #2               \n" //d11 = 23456789
-                    "vld1.8 {d12-d13}, [%[din_ptr2]]    \n"
-                    "vbif.8 d14, d11, d28        \n"
-                    "vbif.8 d15, d11, d29        \n"
-                    "vmlal.s8 q12, d30, d3                 \n" // q12 += d10 * w00
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q12, d31, d4                 \n" // q12 += d11 * w02
-                    //r1
-                    "vext.8 d30, d14, d15, #1           \n" //d10 = 00123456
-                    "vext.8 d31, d14, d15, #2          \n" //d11 = 12345678
-                    "vmull.s8 q13, d14, d2                 \n" // q13 = d12 * w01
-                    "vmlal.s8 q12, d14, d5                 \n" // q12 = d12 * w11
-                    "vld1.8 {d14-d15}, [%[din_ptr3]]    \n"
-                    "vbif.8 d12, d11, d28                 \n"
-                    "vbif.8 d13, d11, d29                 \n"
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d30, d3                 \n" // q12 += d10 * w00
-                    "vmull.s8 q12, d30, d6                 \n" // q12 += d10 * w00
-                    "vaddw.s16 q10, q10, d26                 \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                 \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d4                 \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d31, d7                 \n" // q12 += d10 * w00
-                    //r2
-                    "vext.8 d30, d12, d13, #1               \n" //d10 = 00123456
-                    "vext.8 d31, d12, d13, #2               \n" //d11 = 12345678
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d12, d5                 \n" // q13 = d12 * w01
-                    "vmull.s8 q12, d12, d8                 \n" // q13 = d12 * w01
-                    "vbif.8 d14, d11, d28                     \n"
-                    "vbif.8 d15, d11, d29                     \n"
-                    "vaddw.s16 q10, q10, d26                 \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                 \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d30, d6                 \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d30, d9                 \n" // q12 += d10 * w00
-                    "vld1.32 {d28-d29}, [%[dout_ptr1]]!    \n"
-                    "vld1.32 {d12-d13}, [%[dout_ptr1]]    \n"
-                    "vld1.32 {d2-d3}, [%[rs_mask]]!     \n"
-                    "vld1.32 {d4-d5}, [%[rs_mask]]    \n"
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d31, d7                 \n" // q12 += d10 * w00
-                    "vmull.s8 q12, d31, d10                 \n" // q12 += d10 * w00
-                    //r3
-                    "vext.8     d30, d14, d15, #1           \n" //d10 = 00123456
-                    "vext.8     d31, d14, d15, #2          \n" //d11 = 12345678
-                    "vaddw.s16 q10, q10, d26                 \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                 \n" // out1_1 += vget_high_s16(out10)
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q13, d14, d8                 \n" // q13 = d12 * w01
-                    "vld1.32 {d14-d15}, [%[dout_ptr2]]!    \n"
-                    "vld1.32 {d24-d25}, [%[dout_ptr2]]     \n"
-                    "vmlal.s8 q13, d30, d9                 \n" // q13 += d10 * w00
-                    "sub %[dout_ptr1], #16                  \n"
-                    "sub %[dout_ptr2], #16                  \n"
-                    "vaddw.s16 q10, q10, d26                 \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                 \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d10                 \n" // q12 += d10 * w00
-                    "vdup.32 q3, %[scale]                    \n"
-                    "vdup.32 q4, %[bias]                     \n"
-                    "vdup.32 q5, %[bias]                     \n"
-                    "vcvt.f32.s32   q8, q8                      \n"
-                    "vcvt.f32.s32   q9, q9                      \n"
-                    "vmla.f32 q4, q8, q3                     \n"
-                    "vmla.f32 q5, q9, q3                     \n"
-                    "vbif q4, q14, q1                   \n"
-                    "vbif q5, q6, q2                    \n"
-                    "vst1.32 {d8-d9}, [%[dout_ptr1]]!         \n"
-                    "vst1.32 {d10-d11}, [%[dout_ptr1]]!         \n"
-                    "vaddw.s16 q10, q10, d26                 \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                 \n" // out1_1 += vget_high_s16(out10)
-                    "vdup.32 q13, %[bias]                            \n"
-                    "vdup.32 q14, %[bias]                            \n"
-                    "vcvt.f32.s32   q10, q10                      \n"
-                    "vcvt.f32.s32   q11, q11                      \n"
-                    "vmla.f32 q13, q10, q3                     \n"
-                    "vmla.f32 q14, q11, q3                     \n"
-                    "vbif q13, q7, q1        \n"
-                    "vbif q14, q12, q2       \n"
-                    "vst1.32 {d26-d27}, [%[dout_ptr2]]!         \n"
-                    "vst1.32 {d28-d29}, [%[dout_ptr2]]!         \n"
+                    RIGHT_COMPUTE
+                    RIGHT_BIAS_FLOAT
+                    RIGHT_STORE_FLOAT
                     : [din_ptr0] "+r" (din_ptr0), [din_ptr1] "+r" (din_ptr1), [din_ptr2] "+r" (din_ptr2), \
                       [din_ptr3] "+r" (din_ptr3), \
                       [dout_ptr1] "+r"(doutr0), [dout_ptr2] "+r"(doutr1), [cnt] "+r" (cnt), \
@@ -1541,409 +1885,21 @@ void conv_depthwise_3x3s1p1_bias_int8_int8(int8_t* dout,
                 );
                 asm volatile(
                 //left
-                    "pld [%[din_ptr0]]                     \n"
-                    "pld [%[din_ptr1]]                     \n"
-                    "pld [%[din_ptr2]]                     \n"
-                    "pld [%[din_ptr3]]                     \n"
-                    "vdup.s8     d2, d0[0]                 \n"
-                    "vdup.s8     d3, d0[1]                 \n"
-                    "vdup.s8     d4, d0[2]                 \n"
-                    "vld1.8 {d12-d13}, [%[din_ptr0]]       \n"
-                    "vmov.u32 d11, #0                      \n"
-                    "vmov.u32 q8, #0                       \n"
-                    "vmov.u32 q9, #0                       \n"
-                    "vmov.u32 q10, #0                      \n"
-                    "vmov.u32 q11, #0                      \n"
-                    //r0
-                    "vmull.s8 q12, d12, d3                 \n" // q12 = d12 * w01
-                    "vext.8     d30, d11, d12, #7          \n" //d10 = 00123456
-                    "vext.8     d31, d12, d13, #1          \n" //d11 = 12345678
-                    "vld1.8 {d12-d13}, [%[din_ptr1]]       \n"
-                    "vld1.8 {d14-d15}, [%[din_ptr2]]       \n"
-                    "vdup.s8     d5, d0[3]                 \n"
-                    "vdup.s8     d6, d0[4]                 \n"
-                    "vmlal.s8 q12, d30, d2                 \n" // q12 += d10 * w00
-                    "vdup.s8     d7, d0[5]                 \n"
-                    "add %[din_ptr0], #7                   \n"
-                    "add %[din_ptr1], #7                   \n"
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q12, d31, d4                 \n" // q12 += d11 * w02
-                    //r1
-                    "vext.8     d30, d11, d12, #7          \n" //d10 = 00123456
-                    "vext.8     d31, d12, d13, #1          \n" //d11 = 12345678
-                    "vmull.s8 q13, d12, d3                 \n" // q13 = d12 * w01
-                    "vmlal.s8 q12, d12, d6                 \n" // q12 = d12 * w11
-                    "vld1.8 {d12-d13}, [%[din_ptr3]]       \n"
-                    "vdup.s8     d8, d0[6]                 \n"
-                    "vdup.s8     d9, d0[7]                 \n"
-                    "vdup.s8     d10, d1[0]                \n"
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d30, d2                 \n" // q12 += d10 * w00
-                    "vmull.s8 q12, d30, d5                 \n" // q12 += d10 * w00
-                    "add %[din_ptr2], #7                   \n"
-                    "add %[din_ptr3], #7                   \n"
-                    "vaddw.s16 q10, q10, d26               \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27               \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d4                 \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d31, d7                 \n" // q12 += d10 * w00
-                    //r2
-                    "vext.8     d30, d11, d14, #7          \n" //d10 = 00123456
-                    "vext.8     d31, d14, d15, #1          \n" //d11 = 12345678
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d14, d6                 \n" // q13 = d12 * w01
-                    "vmull.s8 q12, d14, d9                 \n" // q13 = d12 * w01
-                    "vaddw.s16 q10, q10, d26               \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27               \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d30, d5                 \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d30, d8                 \n" // q12 += d10 * w00
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d31, d7                 \n" // q12 += d10 * w00
-                    "vmull.s8 q12, d31, d10                \n" // q12 += d10 * w00
-                    //r3
-                    "vext.8     d30, d11, d12, #7          \n" //d10 = 00123456
-                    "vext.8     d31, d12, d13, #1          \n" //d11 = 12345678
-                    "vaddw.s16 q10, q10, d26               \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27               \n" // out1_1 += vget_high_s16(out10)
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q13, d12, d9                 \n" // q13 = d12 * w01
-                    "pld [%[din_ptr0]]                     \n"
-                    "pld [%[din_ptr1]]                     \n"
-                    "vmlal.s8 q13, d30, d8                 \n" // q13 += d10 * w00
-                    "pld [%[din_ptr2]]                     \n"
-                    "pld [%[din_ptr3]]                     \n"
-                    "vaddw.s16 q10, q10, d26               \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27               \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d10                \n" // q12 += d10 * w00
-                    "vaddw.s16 q10, q10, d26               \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27               \n" // out1_1 += vget_high_s16(out10)
-                    "vdup.32 q7, %[scale]                 \n"
-                    "vdup.32 q14, %[bias]                 \n"
-                    "vdup.32 q15, %[bias]                 \n"
-                    "vcvt.f32.s32   q8, q8                \n"
-                    "vcvt.f32.s32   q9, q9                \n"
-                    "vmla.f32 q14, q8, q7                 \n"
-                    "vmla.f32 q15, q9, q7                 \n"
-                    "vmov.f32 q8, #-0.5                   \n"
-                    "vmov.f32 q9, #0.5                    \n"
-                    "vcgt.f32   q1, q14, q8               \n"
-                    "vbif.f32   q9, q8, q1                \n"
-                    "vadd.f32   q14, q14, q9              \n"
-                    "vmov.f32   q9, #0.5                  \n"
-                    "vcgt.f32   q2, q15, q8               \n"
-                    "vbif.f32   q9, q8, q2                \n"
-                    "vadd.f32   q15, q15, q9              \n"
-                    "vld1.32 {d2-d3}, [%[vmax]]           \n"
-                    "vcge.f32 q3, q14, q1                 \n" /* data >= -127 */
-                    "vbif q14, q1, q3                     \n" /* choose data */
-                    "vcge.f32 q3, q15, q1                 \n" /* data >= -127 */
-                    "vbif q15, q1, q3                     \n" /* choose data */
-                    "vcvt.s32.f32  q1, q14                \n" /* fp32 to int32 */
-                    "vcvt.s32.f32  q2, q15                \n" /* fp32 to int32 */
-                    "vqmovn.s32 d28, q1                   \n" /* int32 to int16 */
-                    "vqmovn.s32 d29, q2                   \n" /* int32 to int16 */
-                    "vqmovn.s16 d10, q14                  \n" /* int16 to int8 */
-                    "vst1.8    {d10}, [%[dout_ptr1]]! \n"
-                    "vdup.32 q12, %[bias]             \n"
-                    "vdup.32 q13, %[bias]             \n"
-                    "vcvt.f32.s32   q10, q10          \n"
-                    "vcvt.f32.s32   q11, q11          \n"
-                    "vmla.f32 q12, q10, q7            \n"
-                    "vmla.f32 q13, q11, q7            \n"
-                    "vmov.f32 q8, #-0.5               \n"
-                    "vmov.f32 q9, #0.5                \n"
-                    "vcgt.f32   q1, q12, q8           \n"
-                    "vbif.f32   q9, q8, q1            \n"
-                    "vadd.f32   q12, q12, q9          \n"
-                    "vmov.f32   q9, #0.5              \n"
-                    "vcgt.f32   q2, q13, q8           \n"
-                    "vbif.f32   q9, q8, q2            \n"
-                    "vadd.f32   q13, q13, q9          \n"
-                    "vld1.32 {d2-d3}, [%[vmax]]       \n"
-                    "vcge.f32 q3, q12, q1             \n" /* data >= -127 */
-                    "vbif q12, q1, q3                 \n" /* choose data */
-                    "vcge.f32 q3, q13, q1             \n" /* data >= -127 */
-                    "vbif q13, q1, q3                 \n" /* choose data */
-                    "vcvt.s32.f32  q1, q12            \n" /* fp32 to int32 */
-                    "vcvt.s32.f32  q2, q13            \n" /* fp32 to int32 */
-                    "vqmovn.s32 d24, q1               \n" /* int32 to int16 */
-                    "vqmovn.s32 d25, q2               \n" /* int32 to int16 */
-                    "vqmovn.s16 d9, q12               \n" /* int16 to int8 */
-                    "vst1.8    {d9}, [%[dout_ptr2]]!  \n"
-                    "cmp %[cnt], #1                   \n"
-                    "blt 1f                           \n"
+                    INIT_S1 
+                    LEFT_COMPUTE
+                    LEFT_BIAS_INT8
+                    LEFT_STORE_INT8
+                    MID_INIT_P1
                 //mid
-                    "2:                                  \n"
-                    "vld1.8 {d12-d13}, [%[din_ptr0]]     \n"
-                    "vdup.s8     d2, d0[0]               \n"
-                    "vdup.s8     d3, d0[1]               \n"
-                    "vdup.s8     d4, d0[2]               \n"
-                    "vdup.s8     d5, d0[3]               \n"
-                    "vdup.s8     d6, d0[4]               \n"
-                    "vdup.s8     d7, d0[5]               \n"
-                    "vdup.s8     d8, d0[6]               \n"
-                    "vdup.s8     d9, d0[7]               \n"
-                    "vdup.s8     d10, d1[0]              \n"
-                    "vmov.u32 q8, #0                     \n"
-                    "vmov.u32 q9, #0                     \n"
-                    "vmov.u32 q10, #0                    \n"
-                    "vmov.u32 q11, #0                    \n"
-                     //r0
-                    "vmull.s8 q12, d12, d2                 \n" // q12 = d12 * w01
-                    "vext.8     d30, d12, d13, #1          \n" //d10 = 12345678
-                    "vext.8     d31, d12, d13, #2          \n" //d11 = 23456789
-                    "vld1.8 {d12-d13}, [%[din_ptr1]]       \n"
-                    "vld1.8 {d14-d15}, [%[din_ptr2]]       \n"
-                    "vmlal.s8 q12, d30, d3                 \n" // q12 += d10 * w00
-                    "add %[din_ptr0], #8                   \n"
-                    "add %[din_ptr1], #8                   \n"
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q12, d31, d4                 \n" // q12 += d11 * w02
-                    //r1
-                    "vext.8     d30, d12, d13, #1          \n" //d10 = 00123456
-                    "vext.8     d31, d12, d13, #2          \n" //d11 = 12345678
-                    "vmull.s8 q13, d12, d2                 \n" // q13 = d12 * w01
-                    "vmlal.s8 q12, d12, d5                 \n" // q12 = d12 * w11
-                    "vld1.8 {d12-d13}, [%[din_ptr3]]       \n"
-                    "vmlal.s8 q13, d30, d3                 \n" // q12 += d10 * w00
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q12, d30, d6                 \n" // q12 += d10 * w00
-                    "add %[din_ptr2], #8                   \n"
-                    "add %[din_ptr3], #8                   \n"
-                    "vaddw.s16 q10, q10, d26               \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27               \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d4                 \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d31, d7                 \n" // q12 += d10 * w00
-                    //r2
-                    "vext.8     d30, d14, d15, #1          \n" //d10 = 00123456
-                    "vext.8     d31, d14, d15, #2          \n" //d11 = 12345678
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d14, d5                 \n" // q13 = d12 * w01
-                    "vmull.s8 q12, d14, d8                 \n" // q13 = d12 * w01
-                    "vaddw.s16 q10, q10, d26               \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27               \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d30, d6                 \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d30, d9                 \n" // q12 += d10 * w00
-                    "vmlal.s8 q13, d31, d7                 \n" // q12 += d10 * w00
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q12, d31, d10                \n" // q12 += d10 * w00
-                    //r3
-                    "vext.8     d30, d12, d13, #1          \n" //d10 = 00123456
-                    "vext.8     d31, d12, d13, #2          \n" //d11 = 12345678
-                    "vaddw.s16 q10, q10, d26               \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27               \n" // out1_1 += vget_high_s16(out10)
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q13, d12, d8                 \n" // q13 = d12 * w01
-                    "pld [%[din_ptr0]]                     \n"
-                    "pld [%[din_ptr1]]                     \n"
-                    "vmlal.s8 q13, d30, d9                 \n" // q13 += d10 * w00
-                    "pld [%[din_ptr2]]                     \n"
-                    "pld [%[din_ptr3]]                     \n"
-                    "vaddw.s16 q10, q10, d26               \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27               \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d10                \n" // q12 += d10 * w00
-                    "vdup.32 q7, %[scale]                  \n"
-                    "vdup.32 q14, %[bias]                  \n"
-                    "vdup.32 q15, %[bias]                  \n"
-                    "vcvt.f32.s32   q8, q8                 \n"
-                    "vcvt.f32.s32   q9, q9                 \n"
-                    "vmla.f32 q14, q8, q7                  \n"
-                    "vmla.f32 q15, q9, q7                  \n"
-                    "vmov.f32 q8, #-0.5                    \n"
-                    "vmov.f32 q9, #0.5                     \n"
-                    "vcgt.f32   q1, q14, q8                \n"
-                    "vbif.f32   q9, q8, q1                 \n"
-                    "vadd.f32   q14, q14, q9               \n"
-                    "vmov.f32   q9, #0.5                   \n"
-                    "vcgt.f32   q2, q15, q8                \n"
-                    "vbif.f32   q9, q8, q2                 \n"
-                    "vadd.f32   q15, q15, q9               \n"
-                    "vld1.32 {d2-d3}, [%[vmax]]            \n"
-                    "vcge.f32 q3, q14, q1                  \n" /* data >= -127 */
-                    "vbif q14, q1, q3                      \n" /* choose data */
-                    "vcge.f32 q3, q15, q1                  \n" /* data >= -127 */
-                    "vbif q15, q1, q3                      \n" /* choose data */
-                    "vcvt.s32.f32  q1, q14                 \n"  /* fp32 to int32 */
-                    "vcvt.s32.f32  q2, q15                 \n"  /* fp32 to int32 */
-                    "vqmovn.s32 d28, q1                    \n"  /* int32 to int16 */
-                    "vqmovn.s32 d29, q2                    \n"  /* int32 to int16 */
-                    "vqmovn.s16 d10, q14                   \n"   /* int16 to int8 */
-                    "vst1.8    {d10}, [%[dout_ptr1]]!      \n"
-                    "vaddw.s16 q10, q10, d26               \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27               \n" // out1_1 += vget_high_s16(out10)
-                    "vdup.32 q12, %[bias]                  \n"
-                    "vdup.32 q13, %[bias]                  \n"
-                    "vcvt.f32.s32   q10, q10               \n"
-                    "vcvt.f32.s32   q11, q11               \n"
-                    "vmla.f32 q12, q10, q7                 \n"
-                    "vmla.f32 q13, q11, q7                 \n"
-                    "vmov.f32 q8, #-0.5                    \n"
-                    "vmov.f32 q9, #0.5                     \n"
-                    "vcgt.f32   q1, q12, q8                \n"
-                    "vbif.f32   q9, q8, q1                 \n"
-                    "vadd.f32   q12, q12, q9               \n"
-                    "vmov.f32   q9, #0.5                   \n"
-                    "vcgt.f32   q2, q13, q8                \n"
-                    "vbif.f32   q9, q8, q2                 \n"
-                    "vadd.f32   q13, q13, q9               \n"
-                    "vld1.32 {d2-d3}, [%[vmax]]            \n"
-                    "vcge.f32 q3, q12, q1                  \n" /* data >= -127 */
-                    "vbif q12, q1, q3                      \n" /* choose data */                    
-                    "vcge.f32 q3, q13, q1                  \n" /* data >= -127 */
-                    "vbif q13, q1, q3                      \n" /* choose data */
-                    "vcvt.s32.f32  q1, q12                 \n"  /* fp32 to int32 */
-                    "vcvt.s32.f32  q2, q13                 \n"  /* fp32 to int32 */
-                    "vqmovn.s32 d24, q1                    \n"  /* int32 to int16 */
-                    "vqmovn.s32 d25, q2                    \n"  /* int32 to int16 */
-                    "vqmovn.s16 d9, q12                    \n"   /* int16 to int8 */
-                    "vst1.8    {d9}, [%[dout_ptr2]]!       \n"
-                    "subs %[cnt], #1                       \n"
-                    "bne  2b                               \n"
+                    MID_COMPUTE
+                    MID_BIAS_INT8
+                    MID_STORE_INT8
+                    "bne  2b                               \n" 
+                    "1:                                    \n"
                 //right
-                    "1:                                  \n"
-                    "vdup.s8     d2, d0[0]               \n"
-                    "vdup.s8     d3, d0[1]               \n"
-                    "vdup.s8     d4, d0[2]               \n"
-                    "vdup.s8     d5, d0[3]               \n"
-                    "vdup.s8     d6, d0[4]               \n"
-                    "vdup.s8     d7, d0[5]               \n"
-                    "vdup.s8     d8, d0[6]               \n"
-                    "vdup.s8     d9, d0[7]               \n"
-                    "vdup.s8     d10, d1[0]              \n"
-                    "vld1.8 {d12-d13}, [%[din_ptr0]]     \n"
-                    "vld1.8 {d28-d29}, [%[mask]]         \n"
-                    "vmov.u32 q8, #0                     \n"
-                    "vmov.u32 q9, #0                     \n"
-                    "vmov.u32 q10, #0                    \n"
-                    "vmov.u32 q11, #0                    \n"
-                    "vbif.8 d12, d11, d28                \n"
-                    "vbif.8 d13, d11, d29                \n"
-                    "vld1.8 {d14-d15}, [%[din_ptr1]]     \n"
-                     //r0
-                    "vmull.s8 q12, d12, d2              \n" // q12 = d12 * w01
-                    "vext.8 d30, d12, d13, #1           \n" //d10 = 12345678
-                    "vext.8 d31, d12, d13, #2           \n" //d11 = 23456789
-                    "vld1.8 {d12-d13}, [%[din_ptr2]]    \n"
-                    "vbif.8 d14, d11, d28               \n"
-                    "vbif.8 d15, d11, d29               \n"
-                    "vmlal.s8 q12, d30, d3              \n" // q12 += d10 * w00
-                    "vaddw.s16 q8, q8, d24              \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25              \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q12, d31, d4              \n" // q12 += d11 * w02
-                    //r1
-                    "vext.8 d30, d14, d15, #1           \n" //d10 = 00123456
-                    "vext.8 d31, d14, d15, #2           \n" //d11 = 12345678
-                    "vmull.s8 q13, d14, d2              \n" // q13 = d12 * w01
-                    "vmlal.s8 q12, d14, d5              \n" // q12 = d12 * w11
-                    "vld1.8 {d14-d15}, [%[din_ptr3]]    \n"
-                    "vbif.8 d12, d11, d28               \n"
-                    "vbif.8 d13, d11, d29               \n"
-                    "vaddw.s16 q8, q8, d24              \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25              \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d30, d3              \n" // q12 += d10 * w00
-                    "vmull.s8 q12, d30, d6              \n" // q12 += d10 * w00
-                    "vaddw.s16 q10, q10, d26            \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27            \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d4              \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d31, d7              \n" // q12 += d10 * w00
-                    //r2
-                    "vext.8 d30, d12, d13, #1           \n" //d10 = 00123456
-                    "vext.8 d31, d12, d13, #2           \n" //d11 = 12345678
-                    "vaddw.s16 q8, q8, d24              \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25              \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d12, d5              \n" // q13 = d12 * w01
-                    "vmull.s8 q12, d12, d8              \n" // q13 = d12 * w01
-                    "vbif.8 d14, d11, d28               \n"
-                    "vbif.8 d15, d11, d29               \n"
-                    "vaddw.s16 q10, q10, d26            \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27            \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d30, d6              \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d30, d9              \n" // q12 += d10 * w00
-                    "vld1.8 d12, [%[rs_mask]]!          \n"
-                    "vaddw.s16 q8, q8, d24              \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25              \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d31, d7              \n" // q12 += d10 * w00
-                    "vmull.s8 q12, d31, d10             \n" // q12 += d10 * w00
-                    //r3
-                    "vext.8     d30, d14, d15, #1          \n" //d10 = 00123456
-                    "vext.8     d31, d14, d15, #2          \n" //d11 = 12345678
-                    "vaddw.s16 q10, q10, d26               \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27               \n" // out1_1 += vget_high_s16(out10)
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q13, d14, d8                 \n" // q13 = d12 * w01
-                    "vmlal.s8 q13, d30, d9                 \n" // q13 += d10 * w00
-                    "vaddw.s16 q10, q10, d26               \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27               \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d10                \n" // q12 += d10 * w00
-                    "vdup.32 q3, %[scale]                  \n"
-                    "vdup.32 q4, %[bias]                   \n"
-                    "vdup.32 q5, %[bias]                   \n"
-                    "vcvt.f32.s32   q8, q8                 \n"
-                    "vcvt.f32.s32   q9, q9                   \n"
-                    "vmla.f32 q4, q8, q3                     \n"
-                    "vmla.f32 q5, q9, q3                     \n"
-                    "vaddw.s16 q10, q10, d26                 \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                 \n" // out1_1 += vget_high_s16(out10)
-                    "vdup.32 q13, %[bias]                    \n"
-                    "vdup.32 q14, %[bias]                    \n"
-                    "vcvt.f32.s32   q10, q10                 \n"
-                    "vcvt.f32.s32   q11, q11                 \n"
-                    "vmla.f32 q13, q10, q3                   \n"
-                    "vmla.f32 q14, q11, q3                   \n"
-                    "vmov.f32 q8, #-0.5                      \n"
-                    "vmov.f32 q9, #0.5                       \n"
-                    "vcgt.f32   q1, q4, q8                   \n"
-                    "vbif.f32   q9, q8, q1                    \n"
-                    "vadd.f32   q4, q4, q9                    \n"
-                    "vmov.f32   q9, #0.5                      \n"
-                    "vcgt.f32   q2, q5, q8                    \n"
-                    "vbif.f32   q9, q8, q2                    \n"
-                    "vadd.f32   q5, q5, q9                    \n"
-                    "vld1.32 {d2-d3}, [%[vmax]]               \n"
-                    "vcge.f32 q3, q4, q1                      \n" /* data >= -127 */
-                    "vbif q4, q1, q3                          \n" /* choose data */
-                    "vcge.f32 q3, q5, q1                      \n" /* data >= -127 */
-                    "vbif q5, q1, q3                          \n" /* choose data */
-                    "vcvt.s32.f32  q1, q4                     \n"  /* fp32 to int32 */
-                    "vcvt.s32.f32  q2, q5                     \n"  /* fp32 to int32 */
-                    "vqmovn.s32 d8, q1                        \n"  /* int32 to int16 */
-                    "vqmovn.s32 d9, q2                        \n"  /* int32 to int16 */
-                    "vqmovn.s16 d7, q4                        \n"   /* int16 to int8 */
-                    "vld1.8 d10, [%[dout_ptr1]]               \n"
-                    "vbif.8 d7, d10, d12                      \n"
-                    "vst1.8    {d7}, [%[dout_ptr1]]!          \n"
-                    "vmov.f32 q8, #-0.5                       \n"
-                    "vmov.f32 q9, #0.5                        \n"
-                    "vcgt.f32   q1, q13, q8                   \n"
-                    "vbif.f32   q9, q8, q1                    \n"
-                    "vadd.f32   q13, q13, q9                  \n"
-                    "vmov.f32   q9, #0.5                      \n"
-                    "vcgt.f32   q2, q14, q8                   \n"
-                    "vbif.f32   q9, q8, q2                    \n"
-                    "vadd.f32   q14, q14, q9                  \n"
-                    "vld1.32 {d2-d3}, [%[vmax]]               \n"
-                    "vcge.f32 q3, q13, q1                     \n" /* data >= -127 */
-                    "vbif q13, q1, q3                         \n" /* choose data */
-                    "vcge.f32 q3, q14, q1                     \n" /* data >= -127 */
-                    "vbif q14, q1, q3                         \n" /* choose data */
-                    "vcvt.s32.f32  q1, q13                    \n" /* fp32 to int32 */
-                    "vcvt.s32.f32  q2, q14                    \n" /* fp32 to int32 */
-                    "vqmovn.s32 d26, q1                       \n" /* int32 to int16 */
-                    "vqmovn.s32 d27, q2                       \n" /* int32 to int16 */
-                    "vqmovn.s16 d10, q13                      \n" /* int16 to int8 */
-                    "vld1.8 d14, [%[dout_ptr2]]               \n"
-                    "vbif.8 d10, d14, d12                     \n"
-                    "vst1.8    {d10}, [%[dout_ptr2]]!         \n"
+                    RIGHT_INIT_P1
+                    RIGHT_COMPUTE_P1
+                    RIGHT_STORE_P1
                     : [din_ptr0] "+r" (din_ptr0), [din_ptr1] "+r" (din_ptr1), [din_ptr2] "+r" (din_ptr2), \
                       [din_ptr3] "+r" (din_ptr3), \
                       [dout_ptr1] "+r"(doutr0), [dout_ptr2] "+r"(doutr1), [cnt] "+r" (cnt), \
@@ -2113,205 +2069,26 @@ void conv_depthwise_3x3s1p0_bias_int8_float(float* dout,
                     : "memory"
                 );
                 asm volatile(
+
                     "pld [%[din_ptr0]]                \n"
                     "pld [%[din_ptr1]]                \n"
                     "pld [%[din_ptr2]]                \n"
                     "pld [%[din_ptr3]]                \n"
                     "vmov.u32 d11, #0                 \n"
-                //mid
-                    "1:                                          \n"
-                    "vdup.s8     d2, d0[0]            \n"
-                    "vdup.s8     d3, d0[1]            \n"
-                    "vdup.s8     d4, d0[2]            \n"
-                    "vdup.s8     d5, d0[3]               \n"
-                    "vdup.s8     d6, d0[4]               \n"
-                    "vdup.s8     d7, d0[5]               \n"
-                    "vdup.s8     d8, d0[6]               \n"
-                    "vdup.s8     d9, d0[7]               \n"
-                    "vdup.s8     d10, d1[0]              \n"
+                    "1:                               \n"
+                    MID_INIT_P1
                     "vmov.u32 q8, #0                  \n"
                     "vmov.u32 q9, #0                  \n"
                     "vmov.u32 q10, #0                 \n"
                     "vmov.u32 q11, #0                 \n"
-                    "vld1.8 {d12-d13}, [%[din_ptr0]]    \n"
-                     //r0
-                    "vmull.s8 q12, d12, d2                 \n" // q12 = d12 * w01
-                    "vext.8     d30, d12, d13, #1     \n" //d10 = 12345678
-                    "vext.8     d31, d12, d13, #2          \n" //d11 = 23456789
-                    "vld1.8 {d12-d13}, [%[din_ptr1]]    \n"
-                    "vld1.8 {d14-d15}, [%[din_ptr2]]    \n"
-                    "vmlal.s8 q12, d30, d3                 \n" // q12 += d10 * w00
-                    "add %[din_ptr0], #8                   \n"
-                    "add %[din_ptr1], #8                   \n"
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q12, d31, d4                 \n" // q12 += d11 * w02
-                    //r1
-                    "vext.8     d30, d12, d13, #1     \n" //d10 = 00123456
-                    "vext.8     d31, d12, d13, #2          \n" //d11 = 12345678
-                    "vmull.s8 q13, d12, d2                 \n" // q13 = d12 * w01
-                    "vmlal.s8 q12, d12, d5                 \n" // q12 = d12 * w11
-                    "vld1.8 {d12-d13}, [%[din_ptr3]]    \n"
-                    "vmlal.s8 q13, d30, d3                 \n" // q12 += d10 * w00
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q12, d30, d6                 \n" // q12 += d10 * w00
-                    "add %[din_ptr2], #8                   \n"
-                    "add %[din_ptr3], #8                   \n"
-                    "vaddw.s16 q10, q10, d26               \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27               \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d4                 \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d31, d7                 \n" // q12 += d10 * w00
-                    //r2
-                    "vext.8     d30, d14, d15, #1          \n" //d10 = 00123456
-                    "vext.8     d31, d14, d15, #2          \n" //d11 = 12345678
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d14, d5                 \n" // q13 = d12 * w01
-                    "vmull.s8 q12, d14, d8                 \n" // q13 = d12 * w01
-                    "vaddw.s16 q10, q10, d26               \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27               \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d30, d6                 \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d30, d9                 \n" // q12 += d10 * w00
-                    "vmlal.s8 q13, d31, d7                 \n" // q12 += d10 * w00
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q12, d31, d10                \n" // q12 += d10 * w00
-                    //r3
-                    "vext.8     d30, d12, d13, #1          \n" //d10 = 00123456
-                    "vext.8     d31, d12, d13, #2          \n" //d11 = 12345678
-                    "vaddw.s16 q10, q10, d26               \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27               \n" // out1_1 += vget_high_s16(out10)
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q13, d12, d8                 \n" // q13 = d12 * w01
-                    "pld [%[din_ptr0]]                     \n"
-                    "pld [%[din_ptr1]]                     \n"
-                    "vmlal.s8 q13, d30, d9                 \n" // q13 += d10 * w00
-                    "pld [%[din_ptr2]]                     \n"
-                    "pld [%[din_ptr3]]                     \n"
-                    "vaddw.s16 q10, q10, d26                \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d10                 \n" // q12 += d10 * w00
-                    "vdup.32 q7, %[scale]                            \n"
-                    "vdup.32 q14, %[bias]                            \n"
-                    "vdup.32 q15, %[bias]                            \n"
-                    "vcvt.f32.s32   q8, q8                           \n"
-                    "vcvt.f32.s32   q9, q9                           \n"
-                    "vmla.f32 q14, q8, q7                            \n"
-                    "vmla.f32 q15, q9, q7                            \n"
-                    "vst1.32 {d28-d29}, [%[dout_ptr1]]!              \n"
-                    "vst1.32 {d30-d31}, [%[dout_ptr1]]!              \n"
-                    "vaddw.s16 q10, q10, d26                 \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                 \n" // out1_1 += vget_high_s16(out10)
-                    "vdup.32 q12, %[bias]                            \n"
-                    "vdup.32 q13, %[bias]                            \n"
-                    "vcvt.f32.s32   q10, q10                         \n"
-                    "vcvt.f32.s32   q11, q11                         \n"
-                    "vmla.f32 q12, q10, q7                           \n"
-                    "vmla.f32 q13, q11, q7                           \n"
-                    "vst1.32 {d24-d25}, [%[dout_ptr2]]!              \n"
-                    "subs %[cnt], %[cnt], #1                         \n"
-                    "vst1.32 {d26-d27}, [%[dout_ptr2]]!              \n"
-                    "bne  1b                                         \n"
-                //right
-                    "2:                                              \n"
-                    "vld1.8 {d12-d13}, [%[din_ptr0]]    \n"
-                    "vld1.8 {d28-d29}, [%[mask]]        \n"
-                    "vmov.u32 q8, #0                            \n"
-                    "vmov.u32 q9, #0                            \n"
-                    "vmov.u32 q10, #0                           \n"
-                    "vmov.u32 q11, #0                           \n"
-                    "vbif.8 d12, d11, d28               \n"
-                    "vbif.8 d13, d11, d29               \n"
-                    "vld1.8 {d14-d15}, [%[din_ptr1]]    \n"
-                     //r0
-                    "vmull.s8 q12, d12, d2                 \n" // q12 = d12 * w01
-                    "vext.8 d30, d12, d13, #1               \n" //d10 = 12345678
-                    "vext.8 d31, d12, d13, #2               \n" //d11 = 23456789
-                    "vld1.8 {d12-d13}, [%[din_ptr2]]       \n"
-                    "vbif.8 d14, d11, d28                  \n"
-                    "vbif.8 d15, d11, d29                  \n"
-                    "vmlal.s8 q12, d30, d3                 \n" // q12 += d10 * w00
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q12, d31, d4                 \n" // q12 += d11 * w02
-                    //r1
-                    "vext.8 d30, d14, d15, #1              \n" //d10 = 00123456
-                    "vext.8 d31, d14, d15, #2              \n" //d11 = 12345678
-                    "vmull.s8 q13, d14, d2                 \n" // q13 = d12 * w01
-                    "vmlal.s8 q12, d14, d5                 \n" // q12 = d12 * w11
-                    "vld1.8 {d14-d15}, [%[din_ptr3]]       \n"
-                    "vbif.8 d12, d11, d28                  \n"
-                    "vbif.8 d13, d11, d29                  \n"
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d30, d3                 \n" // q12 += d10 * w00
-                    "vmull.s8 q12, d30, d6                 \n" // q12 += d10 * w00
-                    "vaddw.s16 q10, q10, d26               \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27               \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d4                 \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d31, d7                 \n" // q12 += d10 * w00
-                    //r2
-                    "vext.8 d30, d12, d13, #1               \n" //d10 = 00123456
-                    "vext.8 d31, d12, d13, #2               \n" //d11 = 12345678
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d12, d5                 \n" // q13 = d12 * w01
-                    "vmull.s8 q12, d12, d8                 \n" // q13 = d12 * w01
-                    "vbif.8 d14, d11, d28                    \n"
-                    "vbif.8 d15, d11, d29                    \n"
-                    "vaddw.s16 q10, q10, d26                 \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                 \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d30, d6                 \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d30, d9                 \n" // q12 += d10 * w00
-                    "vld1.32 {d28-d29}, [%[dout_ptr1]]!    \n"
-                    "vld1.32 {d12-d13}, [%[dout_ptr1]]     \n"
-                    "vld1.32 {d2-d3}, [%[rs_mask]]!        \n"
-                    "vld1.32 {d4-d5}, [%[rs_mask]]         \n"
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d31, d7                 \n" // q12 += d10 * w00
-                    "vmull.s8 q12, d31, d10                 \n" // q12 += d10 * w00
-                    //r3
-                    "vext.8     d30, d14, d15, #1           \n" //d10 = 00123456
-                    "vext.8     d31, d14, d15, #2           \n" //d11 = 12345678
-                    "vaddw.s16 q10, q10, d26                \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                \n" // out1_1 += vget_high_s16(out10)
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q13, d14, d8                 \n" // q13 = d12 * w01
-                    "vld1.32 {d14-d15}, [%[dout_ptr2]]!    \n"
-                    "vld1.32 {d24-d25}, [%[dout_ptr2]]     \n"
-                    "vmlal.s8 q13, d30, d9                 \n" // q13 += d10 * w00
-                    "sub %[dout_ptr1], #16                 \n"
-                    "sub %[dout_ptr2], #16                 \n"
-                    "vaddw.s16 q10, q10, d26               \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27               \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d10                \n" // q12 += d10 * w00
-                    "vdup.32 q3, %[scale]                  \n"
-                    "vdup.32 q4, %[bias]                   \n"
-                    "vdup.32 q5, %[bias]                   \n"
-                    "vcvt.f32.s32   q8, q8                 \n"
-                    "vcvt.f32.s32   q9, q9                 \n"
-                    "vmla.f32 q4, q8, q3                   \n"
-                    "vmla.f32 q5, q9, q3                   \n"
-                    "vbif q4, q14, q1                      \n"
-                    "vbif q5, q6, q2                       \n"
-                    "vst1.32 {d8-d9}, [%[dout_ptr1]]!      \n"
-                    "vst1.32 {d10-d11}, [%[dout_ptr1]]!    \n"
-                    "vaddw.s16 q10, q10, d26               \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27               \n" // out1_1 += vget_high_s16(out10)
-                    "vdup.32 q13, %[bias]                  \n"
-                    "vdup.32 q14, %[bias]                  \n"
-                    "vcvt.f32.s32   q10, q10               \n"
-                    "vcvt.f32.s32   q11, q11               \n"
-                    "vmla.f32 q13, q10, q3                 \n"
-                    "vmla.f32 q14, q11, q3                 \n"
-                    "vbif q13, q7, q1                      \n"
-                    "vbif q14, q12, q2                     \n"
-                    "vst1.32 {d26-d27}, [%[dout_ptr2]]!    \n"
-                    "vst1.32 {d28-d29}, [%[dout_ptr2]]!    \n"
+                    MID_COMPUTE
+                    MID_BIAS_FLOAT
+                    MID_STORE_FLOAT
+                    "bne  1b                           \n"
+                    "2:                                \n"
+                    RIGHT_COMPUTE
+                    RIGHT_BIAS_FLOAT
+                    RIGHT_STORE_FLOAT
                     : [din_ptr0] "+r" (din_ptr0), [din_ptr1] "+r" (din_ptr1), [din_ptr2] "+r" (din_ptr2), \
                       [din_ptr3] "+r" (din_ptr3), \
                       [dout_ptr1] "+r"(doutr0), [dout_ptr2] "+r"(doutr1), [cnt] "+r" (cnt), \
@@ -2489,273 +2266,21 @@ void conv_depthwise_3x3s1p0_bias_int8_int8(int8_t* dout,
                     "vmov.u32 d11, #0                 \n"
                 //mid
                     "1:                                          \n"
-                    "vdup.s8     d2, d0[0]               \n"
-                    "vdup.s8     d3, d0[1]               \n"
-                    "vdup.s8     d4, d0[2]               \n"
-                    "vdup.s8     d5, d0[3]               \n"
-                    "vdup.s8     d6, d0[4]               \n"
-                    "vdup.s8     d7, d0[5]               \n"
-                    "vdup.s8     d8, d0[6]               \n"
-                    "vdup.s8     d9, d0[7]               \n"
-                    "vdup.s8     d10, d1[0]              \n"
+                    MID_INIT_P1
                     "vmov.u32 q8, #0                  \n"
                     "vmov.u32 q9, #0                  \n"
                     "vmov.u32 q10, #0                 \n"
                     "vmov.u32 q11, #0                 \n"
-                    "vld1.8 {d12-d13}, [%[din_ptr0]]    \n"
-                     //r0
-                    "vmull.s8 q12, d12, d2                 \n" // q12 = d12 * w01
-                    "vext.8     d30, d12, d13, #1     \n" //d10 = 12345678
-                    "vext.8     d31, d12, d13, #2          \n" //d11 = 23456789
-                    "vld1.8 {d12-d13}, [%[din_ptr1]]    \n"
-                    "vld1.8 {d14-d15}, [%[din_ptr2]]    \n"
-                    "vmlal.s8 q12, d30, d3                 \n" // q12 += d10 * w00
-                    "add %[din_ptr0], #8                   \n"
-                    "add %[din_ptr1], #8                   \n"
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q12, d31, d4                 \n" // q12 += d11 * w02
-                    //r1
-                    "vext.8     d30, d12, d13, #1     \n" //d10 = 00123456
-                    "vext.8     d31, d12, d13, #2          \n" //d11 = 12345678
-                    "vmull.s8 q13, d12, d2                 \n" // q13 = d12 * w01
-                    "vmlal.s8 q12, d12, d5                 \n" // q12 = d12 * w11
-                    "vld1.8 {d12-d13}, [%[din_ptr3]]    \n"
-                    "vmlal.s8 q13, d30, d3                 \n" // q12 += d10 * w00
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q12, d30, d6                 \n" // q12 += d10 * w00
-                    "add %[din_ptr2], #8                   \n"
-                    "add %[din_ptr3], #8                   \n"
-                    "vaddw.s16 q10, q10, d26                 \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                 \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d4                 \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d31, d7                 \n" // q12 += d10 * w00
-                    //r2
-                    "vext.8     d30, d14, d15, #1          \n" //d10 = 00123456
-                    "vext.8     d31, d14, d15, #2          \n" //d11 = 12345678
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d14, d5                 \n" // q13 = d12 * w01
-                    "vmull.s8 q12, d14, d8                 \n" // q13 = d12 * w01
-                    "vaddw.s16 q10, q10, d26                 \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                 \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d30, d6                 \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d30, d9                 \n" // q12 += d10 * w00
-                    "vmlal.s8 q13, d31, d7                 \n" // q12 += d10 * w00
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q12, d31, d10                 \n" // q12 += d10 * w00
-                    //r3
-                    "vext.8     d30, d12, d13, #1     \n" //d10 = 00123456
-                    "vext.8     d31, d12, d13, #2          \n" //d11 = 12345678
-                    "vaddw.s16 q10, q10, d26                 \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                 \n" // out1_1 += vget_high_s16(out10)
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q13, d12, d8                 \n" // q13 = d12 * w01
-                    "pld [%[din_ptr0]]                \n"
-                    "pld [%[din_ptr1]]                \n"
-                    "vmlal.s8 q13, d30, d9                 \n" // q13 += d10 * w00
-                    "pld [%[din_ptr2]]                \n"
-                    "pld [%[din_ptr3]]                \n"
-                    "vaddw.s16 q10, q10, d26                 \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                 \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d10                  \n" // q12 += d10 * w00
-                    "vdup.32 q7, %[scale]                    \n"
-                    "vdup.32 q14, %[bias]                    \n"
-                    "vdup.32 q15, %[bias]                    \n"
-                    "vcvt.f32.s32   q8, q8                   \n"
-                    "vcvt.f32.s32   q9, q9                   \n"
-                    "vmla.f32 q14, q8, q7                    \n"
-                    "vmla.f32 q15, q9, q7                    \n"
-                    "vmov.f32 q8, #-0.5                      \n"
-                    "vmov.f32 q9, #0.5                       \n"
-                    "vcgt.f32   q1, q14, q8                  \n"
-                    "vbif.f32   q9, q8, q1                   \n"
-                    "vadd.f32   q14, q14, q9                 \n"
-                    "vmov.f32   q9, #0.5                     \n"
-                    "vcgt.f32   q2, q15, q8                  \n"
-                    "vbif.f32   q9, q8, q2                   \n"
-                    "vadd.f32   q15, q15, q9                 \n"
-                    "vld1.32 {d2-d3}, [%[vmax]]              \n"
-                    "vcge.f32 q3, q14, q1                    \n" /* data >= -127 */
-                    "vbif q14, q1, q3                        \n" /* choose data */
-                    "vcge.f32 q3, q15, q1                    \n" /* data >= -127 */
-                    "vbif q15, q1, q3                        \n" /* choose data */
-                    "vcvt.s32.f32  q1, q14    \n"  /* fp32 to int32 */
-                    "vcvt.s32.f32  q2, q15    \n"  /* fp32 to int32 */
-                    "vqmovn.s32 d28, q1       \n"  /* int32 to int16 */
-                    "vqmovn.s32 d29, q2       \n"  /* int32 to int16 */
-                    "vqmovn.s16 d10, q14      \n"   /* int16 to int8 */
-                    "vst1.8    {d10}, [%[dout_ptr1]]!        \n"
-                    "vaddw.s16 q10, q10, d26                 \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                 \n" // out1_1 += vget_high_s16(out10)
-                    "vdup.32 q12, %[bias]                    \n"
-                    "vdup.32 q13, %[bias]                    \n"
-                    "vcvt.f32.s32   q10, q10                 \n"
-                    "vcvt.f32.s32   q11, q11                 \n"
-                    "vmla.f32 q12, q10, q7                   \n"
-                    "vmla.f32 q13, q11, q7                   \n"
-                    "vmov.f32 q8, #-0.5                      \n"
-                    "vmov.f32 q9, #0.5                       \n"
-                    "vcgt.f32   q1, q12, q8                  \n"
-                    "vbif.f32   q9, q8, q1                   \n"
-                    "vadd.f32   q12, q12, q9                 \n"
-                    "vmov.f32   q9, #0.5                     \n"
-                    "vcgt.f32   q2, q13, q8                  \n"
-                    "vbif.f32   q9, q8, q2                   \n"
-                    "vadd.f32   q13, q13, q9                 \n"
-                    "vld1.32 {d2-d3}, [%[vmax]]              \n"
-                    "vcge.f32 q3, q12, q1                    \n" /* data >= -127 */
-                    "vbif q12, q1, q3                        \n" /* choose data */
-                    "vcge.f32 q3, q13, q1                    \n" /* data >= -127 */
-                    "vbif q13, q1, q3                        \n" /* choose data */
-                    "vcvt.s32.f32  q1, q12    \n"  /* fp32 to int32 */
-                    "vcvt.s32.f32  q2, q13    \n"  /* fp32 to int32 */
-                    "vqmovn.s32 d24, q1       \n"  /* int32 to int16 */
-                    "vqmovn.s32 d25, q2       \n"  /* int32 to int16 */
-                    "vqmovn.s16 d9, q12       \n"   /* int16 to int8 */
-                    "vst1.8    {d9}, [%[dout_ptr2]]!\n"
-                    "subs %[cnt], %[cnt], #1                        \n"
+                    MID_COMPUTE
+                    MID_BIAS_INT8
+                    MID_STORE_INT8
                     "bne  1b                                        \n"
-                //right
                     "2:                                             \n"
-                    "vdup.s8     d2, d0[0]               \n"
-                    "vdup.s8     d3, d0[1]               \n"
-                    "vdup.s8     d4, d0[2]               \n"
-                    "vdup.s8     d5, d0[3]               \n"
-                    "vdup.s8     d6, d0[4]               \n"
-                    "vdup.s8     d7, d0[5]               \n"
-                    "vdup.s8     d8, d0[6]               \n"
-                    "vdup.s8     d9, d0[7]               \n"
-                    "vdup.s8     d10, d1[0]              \n"
+                    RIGHT_INIT_P1
                     "vmov.u32 d11, #0                    \n"
-                    "vld1.8 {d12-d13}, [%[din_ptr0]]     \n"
-                    "vld1.8 {d28-d29}, [%[mask]]         \n"
-                    "vmov.u32 q8, #0                            \n"
-                    "vmov.u32 q9, #0                            \n"
-                    "vmov.u32 q10, #0                           \n"
-                    "vmov.u32 q11, #0                           \n"
-                    "vbif.8 d12, d11, d28               \n"
-                    "vbif.8 d13, d11, d29               \n"
-                    "vld1.8 {d14-d15}, [%[din_ptr1]]    \n"
-                     //r0
-                    "vmull.s8 q12, d12, d2                  \n" // q12 = d12 * w01
-                    "vext.8 d30, d12, d13, #1               \n" //d10 = 12345678
-                    "vext.8 d31, d12, d13, #2               \n" //d11 = 23456789
-                    "vld1.8 {d12-d13}, [%[din_ptr2]]        \n"
-                    "vbif.8 d14, d11, d28                   \n"
-                    "vbif.8 d15, d11, d29                   \n"
-                    "vmlal.s8 q12, d30, d3                 \n" // q12 += d10 * w00
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q12, d31, d4                 \n" // q12 += d11 * w02
-                    //r1
-                    "vext.8 d30, d14, d15, #1           \n" //d10 = 00123456
-                    "vext.8 d31, d14, d15, #2           \n" //d11 = 12345678
-                    "vmull.s8 q13, d14, d2                 \n" // q13 = d12 * w01
-                    "vmlal.s8 q12, d14, d5                 \n" // q12 = d12 * w11
-                    "vld1.8 {d14-d15}, [%[din_ptr3]]    \n"
-                    "vbif.8 d12, d11, d28                 \n"
-                    "vbif.8 d13, d11, d29                 \n"
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d30, d3                 \n" // q12 += d10 * w00
-                    "vmull.s8 q12, d30, d6                 \n" // q12 += d10 * w00
-                    "vaddw.s16 q10, q10, d26                 \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                 \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d4                 \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d31, d7                 \n" // q12 += d10 * w00
-                    //r2
-                    "vext.8 d30, d12, d13, #1               \n" //d10 = 00123456
-                    "vext.8 d31, d12, d13, #2               \n" //d11 = 12345678
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d12, d5                 \n" // q13 = d12 * w01
-                    "vmull.s8 q12, d12, d8                 \n" // q13 = d12 * w01
-                    "vbif.8 d14, d11, d28                     \n"
-                    "vbif.8 d15, d11, d29                     \n"
-                    "vaddw.s16 q10, q10, d26                 \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                 \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d30, d6                 \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d30, d9                 \n" // q12 += d10 * w00
-                    "vld1.8 d12, [%[rs_mask]]!            \n"
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d31, d7                 \n" // q12 += d10 * w00
-                    "vmull.s8 q12, d31, d10                 \n" // q12 += d10 * w00
-                    //r3
-                    "vext.8     d30, d14, d15, #1     \n" //d10 = 00123456
-                    "vext.8     d31, d14, d15, #2          \n" //d11 = 12345678
-                    "vaddw.s16 q10, q10, d26                 \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                 \n" // out1_1 += vget_high_s16(out10)
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q13, d14, d8                 \n" // q13 = d12 * w01
-                    "vmlal.s8 q13, d30, d9                 \n" // q13 += d10 * w00
-                    "vaddw.s16 q10, q10, d26                 \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                 \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d10                 \n" // q12 += d10 * w00
-                    "vdup.32 q3, %[scale]                    \n"
-                    "vdup.32 q4, %[bias]                     \n"
-                    "vdup.32 q5, %[bias]                     \n"
-                    "vcvt.f32.s32   q8, q8                      \n"
-                    "vcvt.f32.s32   q9, q9                      \n"
-                    "vmla.f32 q4, q8, q3                     \n"
-                    "vmla.f32 q5, q9, q3                     \n"
-                    "vaddw.s16 q10, q10, d26                 \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                 \n" // out1_1 += vget_high_s16(out10)
-                    "vdup.32 q13, %[bias]                    \n"
-                    "vdup.32 q14, %[bias]                    \n"
-                    "vcvt.f32.s32   q10, q10                 \n"
-                    "vcvt.f32.s32   q11, q11                 \n"
-                    "vmla.f32 q13, q10, q3                   \n"
-                    "vmla.f32 q14, q11, q3                   \n"
-                    "vmov.f32 q8, #-0.5\n"
-                    "vmov.f32 q9, #0.5\n"
-                    "vcgt.f32   q1, q4, q8   \n"
-                    "vbif.f32   q9, q8, q1   \n"
-                    "vadd.f32   q4, q4, q9   \n"
-                    "vmov.f32   q9, #0.5     \n"
-                    "vcgt.f32   q2, q5, q8   \n"
-                    "vbif.f32   q9, q8, q2   \n"
-                    "vadd.f32   q5, q5, q9\n"
-                    "vld1.32 {d2-d3}, [%[vmax]] \n"
-                    "vcge.f32 q3, q4, q1        \n" /* data >= -127 */
-                    "vbif q4, q1, q3            \n" /* choose data */
-                    "vcge.f32 q3, q5, q1        \n" /* data >= -127 */
-                    "vbif q5, q1, q3            \n" /* choose data */
-                    "vcvt.s32.f32  q1, q4    \n"  /* fp32 to int32 */
-                    "vcvt.s32.f32  q2, q5    \n"  /* fp32 to int32 */
-                    "vqmovn.s32 d8, q1       \n"  /* int32 to int16 */
-                    "vqmovn.s32 d9, q2       \n"  /* int32 to int16 */
-                    "vqmovn.s16 d7, q4      \n"   /* int16 to int8 */
-                    "vld1.8 d10, [%[dout_ptr1]]    \n"
-                    "vbif.8 d7, d10, d12                   \n"
-                    "vst1.8    {d7}, [%[dout_ptr1]]!\n"
-                    "vmov.f32 q8, #-0.5       \n"
-                    "vmov.f32 q9, #0.5        \n"
-                    "vcgt.f32   q1, q13, q8   \n"
-                    "vbif.f32   q9, q8, q1    \n"
-                    "vadd.f32   q13, q13, q9  \n"
-                    "vmov.f32   q9, #0.5      \n"
-                    "vcgt.f32   q2, q14, q8   \n"
-                    "vbif.f32   q9, q8, q2    \n"
-                    "vadd.f32   q14, q14, q9  \n"
-                    "vld1.32 {d2-d3}, [%[vmax]] \n"
-                    "vcge.f32 q3, q13, q1       \n" /* data >= -127 */
-                    "vbif q13, q1, q3    \n" /* choose data */
-                    "vcge.f32 q3, q14, q1         \n" /* data >= -127 */
-                    "vbif q14, q1, q3    \n" /* choose data */
-                    "vcvt.s32.f32  q1, q13    \n"  /* fp32 to int32 */
-                    "vcvt.s32.f32  q2, q14    \n"  /* fp32 to int32 */
-                    "vqmovn.s32 d26, q1       \n"  /* int32 to int16 */
-                    "vqmovn.s32 d27, q2       \n"  /* int32 to int16 */
-                    "vqmovn.s16 d10, q13      \n"   /* int16 to int8 */
-                    "vld1.8 d14, [%[dout_ptr2]]   \n"
-                    "vbif.8 d10, d14, d12            \n"
-                    "vst1.8    {d10}, [%[dout_ptr2]]!\n"
+                    RIGHT_COMPUTE_P1
+                    RIGHT_STORE_P1
+                   
                     : [din_ptr0] "+r" (din_ptr0), [din_ptr1] "+r" (din_ptr1), [din_ptr2] "+r" (din_ptr2), \
                       [din_ptr3] "+r" (din_ptr3), \
                       [dout_ptr1] "+r"(doutr0), [dout_ptr2] "+r"(doutr1), [cnt] "+r" (cnt), \
@@ -2939,311 +2464,28 @@ void conv_depthwise_3x3s1p1_bias_relu_int8_float(float* dout,
                 );
                 asm volatile(
                 //left
-                    "pld [%[din_ptr0]]                \n"
-                    "pld [%[din_ptr1]]                \n"
-                    "pld [%[din_ptr2]]                \n"
-                    "pld [%[din_ptr3]]                \n"
-                    "vdup.s8     d2, d0[0]            \n"
-                    "vdup.s8     d3, d0[1]            \n"
-                    "vdup.s8     d4, d0[2]            \n"
-                    "vld1.8 {d12-d13}, [%[din_ptr0]]  \n"
-                    "vmov.u32 d11, #0                 \n"
-                    "vmov.u32 q8, #0                  \n"
-                    "vmov.u32 q9, #0                  \n"
-                    "vmov.u32 q10, #0                 \n"
-                    "vmov.u32 q11, #0                 \n"
-                    //r0
-                    "vmull.s8 q12, d12, d3                 \n" // q12 = d12 * w01
-                    "vext.8     d30, d11, d12, #7          \n" //d10 = 00123456
-                    "vext.8     d31, d12, d13, #1          \n" //d11 = 12345678
-                    "vld1.8 {d12-d13}, [%[din_ptr1]]        \n"
-                    "vld1.8 {d14-d15}, [%[din_ptr2]]        \n"
-                    "vdup.s8     d5, d0[3]                  \n"
-                    "vdup.s8     d6, d0[4]                  \n"
-                    "vmlal.s8 q12, d30, d2                  \n" // q12 += d10 * w00
-                    "vdup.s8     d7, d0[5]                  \n"
-                    "add %[din_ptr0], #7                    \n"
-                    "add %[din_ptr1], #7                    \n"
-                    "vaddw.s16 q8, q8, d24                  \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                  \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q12, d31, d4                  \n" // q12 += d11 * w02
-                    //r1
-                    "vext.8     d30, d11, d12, #7           \n" //d10 = 00123456
-                    "vext.8     d31, d12, d13, #1           \n" //d11 = 12345678
-                    "vmull.s8 q13, d12, d3                  \n" // q13 = d12 * w01
-                    "vmlal.s8 q12, d12, d6                  \n" // q12 = d12 * w11
-                    "vld1.8 {d12-d13}, [%[din_ptr3]]        \n"
-                    "vdup.s8     d8, d0[6]                  \n"
-                    "vdup.s8     d9, d0[7]                  \n"
-                    "vdup.s8     d10, d1[0]                 \n"
-                    "vaddw.s16 q8, q8, d24                  \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                  \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d30, d2                  \n" // q12 += d10 * w00
-                    "vmull.s8 q12, d30, d5                  \n" // q12 += d10 * w00
-                    "add %[din_ptr2], #7                    \n"
-                    "add %[din_ptr3], #7                    \n"
-                    "vaddw.s16 q10, q10, d26                \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d4                  \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d31, d7                  \n" // q12 += d10 * w00
-                    //r2
-                    "vext.8     d30, d11, d14, #7           \n" //d10 = 00123456
-                    "vext.8     d31, d14, d15, #1           \n" //d11 = 12345678
-                    "vaddw.s16 q8, q8, d24                  \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                  \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d14, d6                  \n" // q13 = d12 * w01
-                    "vmull.s8 q12, d14, d9                  \n" // q13 = d12 * w01
-                    "vaddw.s16 q10, q10, d26                \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d30, d5                  \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d30, d8                  \n" // q12 += d10 * w00
-                    "vaddw.s16 q8, q8, d24                  \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                  \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d31, d7                  \n" // q12 += d10 * w00
-                    "vmull.s8 q12, d31, d10                 \n" // q12 += d10 * w00
-                    //r3
-                    "vext.8     d30, d11, d12, #7           \n" //d10 = 00123456
-                    "vext.8     d31, d12, d13, #1           \n" //d11 = 12345678
-                    "vaddw.s16 q10, q10, d26                \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                \n" // out1_1 += vget_high_s16(out10)
-                    "vaddw.s16 q8, q8, d24                  \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                  \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q13, d12, d9                  \n" // q13 = d12 * w01
-                    "pld [%[din_ptr0]]                      \n"
-                    "pld [%[din_ptr1]]                      \n"
-                    "vmlal.s8 q13, d30, d8                  \n" // q13 += d10 * w00
-                    "pld [%[din_ptr2]]                      \n"
-                    "pld [%[din_ptr3]]                      \n"
-                    "vaddw.s16 q10, q10, d26                \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d10                 \n" // q12 += d10 * w00
-                    "vaddw.s16 q10, q10, d26                \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                \n" // out1_1 += vget_high_s16(out10)
-                    "vdup.32 q7, %[scale]                   \n"
-                    "vdup.32 q14, %[bias]                   \n"
-                    "vdup.32 q15, %[bias]                   \n"
-                    "vmov.f32 q1, #0.0                      \n"
-                    "vcvt.f32.s32   q8, q8                  \n"
-                    "vcvt.f32.s32   q9, q9                  \n"
-                    "vmla.f32 q14, q8, q7                   \n"
-                    "vmla.f32 q15, q9, q7                   \n"
-                    "vmax.f32 q14, q14, q1                  \n"
-                    "vmax.f32 q15, q15, q1                  \n"
-                    "vst1.32 {d28-d29}, [%[dout_ptr1]]!     \n"
-                    "vst1.32 {d30-d31}, [%[dout_ptr1]]!     \n"
-                    "vdup.32 q12, %[bias]                   \n"
-                    "vdup.32 q13, %[bias]                   \n"
-                    "vcvt.f32.s32   q10, q10                \n"
-                    "vcvt.f32.s32   q11, q11                \n"
-                    "vmla.f32 q12, q10, q7                  \n"
-                    "vmla.f32 q13, q11, q7                  \n"
-                    "vmax.f32 q12, q12, q1                  \n"
-                    "vmax.f32 q13, q13, q1                  \n"
-                    "vst1.32 {d24-d25}, [%[dout_ptr2]]!     \n"
-                    "cmp %[cnt], #1                         \n"
-                    "vst1.32 {d26-d27}, [%[dout_ptr2]]!     \n"
-                    "blt 1f                                 \n"
+                    INIT_S1
+                    LEFT_COMPUTE
+                    LEFT_BIAS_FLOAT
+                    LEFT_RELU
+                    LEFT_STORE_FLOAT
                 // mid
-                    "2:                                     \n"
-                    "vld1.8 {d12-d13}, [%[din_ptr0]]        \n"                    
                     "vdup.s8     d2, d0[0]                  \n"
                     "vdup.s8     d3, d0[1]                  \n"
-                    "vmov.u32 q8, #0                        \n"
-                    "vmov.u32 q9, #0                        \n"
-                    "vmov.u32 q10, #0                       \n"
-                    "vmov.u32 q11, #0                       \n"
-                     // r0
-                    "vmull.s8 q12, d12, d2                  \n" // q12 = d12 * w01
-                    "vext.8     d30, d12, d13, #1           \n" //d10 = 12345678
-                    "vext.8     d31, d12, d13, #2           \n" //d11 = 23456789
-                    "vld1.8 {d12-d13}, [%[din_ptr1]]        \n"
-                    "vld1.8 {d14-d15}, [%[din_ptr2]]        \n"
-                    "vmlal.s8 q12, d30, d3                  \n" // q12 += d10 * w00
-                    "add %[din_ptr0], #8                    \n"
-                    "add %[din_ptr1], #8                    \n"
-                    "vaddw.s16 q8, q8, d24                  \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                  \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q12, d31, d4                  \n" // q12 += d11 * w02
-                    // r1
-                    "vext.8     d30, d12, d13, #1           \n" //d10 = 00123456
-                    "vext.8     d31, d12, d13, #2           \n" //d11 = 12345678
-                    "vmull.s8 q13, d12, d2                  \n" // q13 = d12 * w01
-                    "vmlal.s8 q12, d12, d5                  \n" // q12 = d12 * w11
-                    "vld1.8 {d12-d13}, [%[din_ptr3]]        \n"
-                    "vmlal.s8 q13, d30, d3                  \n" // q12 += d10 * w00
-                    "vaddw.s16 q8, q8, d24                  \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                  \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q12, d30, d6                  \n" // q12 += d10 * w00
-                    "add %[din_ptr2], #8                    \n"
-                    "add %[din_ptr3], #8                    \n"
-                    "vaddw.s16 q10, q10, d26                \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d4                  \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d31, d7                  \n" // q12 += d10 * w00
-                    //r2
-                    "vext.8     d30, d14, d15, #1           \n" //d10 = 00123456
-                    "vext.8     d31, d14, d15, #2           \n" //d11 = 12345678
-                    "vaddw.s16 q8, q8, d24                  \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                  \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d14, d5                  \n" // q13 = d12 * w01
-                    "vmull.s8 q12, d14, d8                  \n" // q13 = d12 * w01
-                    "vaddw.s16 q10, q10, d26                \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d30, d6                  \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d30, d9                  \n" // q12 += d10 * w00
-                    "vmlal.s8 q13, d31, d7                  \n" // q12 += d10 * w00
-                    "vaddw.s16 q8, q8, d24                  \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                  \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q12, d31, d10                 \n" // q12 += d10 * w00
-                    //r3
-                    "vext.8     d30, d12, d13, #1           \n" //d10 = 00123456
-                    "vext.8     d31, d12, d13, #2           \n" //d11 = 12345678
-                    "vaddw.s16 q10, q10, d26                \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                \n" // out1_1 += vget_high_s16(out10)
-                    "vaddw.s16 q8, q8, d24                  \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                  \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q13, d12, d8                  \n" // q13 = d12 * w01
-                    "pld [%[din_ptr0]]                      \n"
-                    "pld [%[din_ptr1]]                      \n"
-                    "vmlal.s8 q13, d30, d9                  \n" // q13 += d10 * w00
-                    "pld [%[din_ptr2]]                      \n"
-                    "pld [%[din_ptr3]]                      \n"
-                    "vaddw.s16 q10, q10, d26                \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d10                 \n" // q12 += d10 * w00
-                    "vdup.32 q7, %[scale]                   \n"
-                    "vdup.32 q14, %[bias]                   \n"
-                    "vdup.32 q15, %[bias]                   \n"
-                    "vmov.f32 q1, #0.0                      \n"
-                    "vcvt.f32.s32   q8, q8                  \n"
-                    "vcvt.f32.s32   q9, q9                  \n"
-                    "vmla.f32 q14, q8, q7                   \n"
-                    "vmla.f32 q15, q9, q7                   \n"
-                    "vmax.f32 q14, q14, q1                  \n"
-                    "vmax.f32 q15, q15, q1                  \n"
-                    "vst1.32 {d28-d29}, [%[dout_ptr1]]!     \n"
-                    "vst1.32 {d30-d31}, [%[dout_ptr1]]!     \n"
-                    "vaddw.s16 q10, q10, d26                \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                \n" // out1_1 += vget_high_s16(out10)
-                    "vdup.32 q12, %[bias]                   \n"
-                    "vdup.32 q13, %[bias]                   \n"
-                    "vcvt.f32.s32   q10, q10                \n"
-                    "vcvt.f32.s32   q11, q11                \n"
-                    "vmla.f32 q12, q10, q7                  \n"
-                    "vmla.f32 q13, q11, q7                  \n"
-                    "vmax.f32 q12, q12, q1                  \n"
-                    "vmax.f32 q13, q13, q1                  \n"
-                    "vdup.s8     d2, d0[0]                  \n"
-                    "vdup.s8     d3, d0[1]                  \n"
-                    "vst1.32 {d24-d25}, [%[dout_ptr2]]!     \n"
-                    "subs %[cnt], #1                        \n"
-                    "vst1.32 {d26-d27}, [%[dout_ptr2]]!     \n"
+                    MID_COMPUTE
+                    MID_BIAS_FLOAT
+                    MID_RELU
+                    MID_STORE_FLOAT
                     "bne  2b                                \n"
                 //right
                     "1:                                     \n"
                     "vdup.s8     d2, d0[0]                  \n"
                     "vdup.s8     d3, d0[1]                  \n"
-                    "vld1.8 {d12-d13}, [%[din_ptr0]]        \n"
-                    "vld1.8 {d28-d29}, [%[mask]]            \n"
-                    "vmov.u32 q8, #0                        \n"
-                    "vmov.u32 q9, #0                        \n"
-                    "vmov.u32 q10, #0                       \n"
-                    "vmov.u32 q11, #0                       \n"
-                    "vbif.8 d12, d11, d28                   \n"
-                    "vbif.8 d13, d11, d29                   \n"
-                    "vld1.8 {d14-d15}, [%[din_ptr1]]        \n"
-                     //r0
-                    "vmull.s8 q12, d12, d2                  \n" // q12 = d12 * w01
-                    "vext.8 d30, d12, d13, #1               \n" //d10 = 12345678
-                    "vext.8 d31, d12, d13, #2               \n" //d11 = 23456789
-                    "vld1.8 {d12-d13}, [%[din_ptr2]]        \n"
-                    "vbif.8 d14, d11, d28                   \n"
-                    "vbif.8 d15, d11, d29                   \n"
-                    "vmlal.s8 q12, d30, d3                  \n" // q12 += d10 * w00
-                    "vaddw.s16 q8, q8, d24                  \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                  \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q12, d31, d4                  \n" // q12 += d11 * w02
-                    //r1
-                    "vext.8 d30, d14, d15, #1               \n" //d10 = 00123456
-                    "vext.8 d31, d14, d15, #2               \n" //d11 = 12345678
-                    "vmull.s8 q13, d14, d2                  \n" // q13 = d12 * w01
-                    "vmlal.s8 q12, d14, d5                  \n" // q12 = d12 * w11
-                    "vld1.8 {d14-d15}, [%[din_ptr3]]        \n"
-                    "vbif.8 d12, d11, d28                   \n"
-                    "vbif.8 d13, d11, d29                   \n"
-                    "vaddw.s16 q8, q8, d24                  \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                  \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d30, d3                  \n" // q12 += d10 * w00
-                    "vmull.s8 q12, d30, d6                  \n" // q12 += d10 * w00
-                    "vaddw.s16 q10, q10, d26                \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d4                  \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d31, d7                  \n" // q12 += d10 * w00
-                    //r2
-                    "vext.8 d30, d12, d13, #1               \n" //d10 = 00123456
-                    "vext.8 d31, d12, d13, #2               \n" //d11 = 12345678
-                    "vaddw.s16 q8, q8, d24                  \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                  \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d12, d5                  \n" // q13 = d12 * w01
-                    "vmull.s8 q12, d12, d8                  \n" // q13 = d12 * w01
-                    "vbif.8 d14, d11, d28                   \n"
-                    "vbif.8 d15, d11, d29                   \n"
-                    "vaddw.s16 q10, q10, d26                \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d30, d6                  \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d30, d9                  \n" // q12 += d10 * w00
-                    "vld1.32 {d28-d29}, [%[dout_ptr1]]!     \n"
-                    "vld1.32 {d12-d13}, [%[dout_ptr1]]      \n"
-                    "vld1.32 {d2-d3}, [%[rs_mask]]!         \n"
-                    "vld1.32 {d4-d5}, [%[rs_mask]]          \n"
-                    "vaddw.s16 q8, q8, d24                  \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                  \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d31, d7                  \n" // q12 += d10 * w00
-                    "vmull.s8 q12, d31, d10                 \n" // q12 += d10 * w00
-                    //r3
-                    "vext.8     d30, d14, d15, #1           \n" //d10 = 00123456
-                    "vext.8     d31, d14, d15, #2           \n" //d11 = 12345678
-                    "vaddw.s16 q10, q10, d26                \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                \n" // out1_1 += vget_high_s16(out10)
-                    "vaddw.s16 q8, q8, d24                  \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                  \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q13, d14, d8                  \n" // q13 = d12 * w01
-                    "vld1.32 {d14-d15}, [%[dout_ptr2]]!     \n"
-                    "vld1.32 {d24-d25}, [%[dout_ptr2]]      \n"
-                    "vmlal.s8 q13, d30, d9                  \n" // q13 += d10 * w00
-                    "sub %[dout_ptr1], #16                  \n"
-                    "sub %[dout_ptr2], #16                  \n"
-                    "vaddw.s16 q10, q10, d26                \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d10                 \n" // q12 += d10 * w00
-                    "vdup.32 q3, %[scale]                   \n"
-                    "vdup.32 q4, %[bias]                    \n"
-                    "vdup.32 q5, %[bias]                     \n"
-                    "vmov.f32 q15, #0.0                      \n"
-                    "vcvt.f32.s32   q8, q8                   \n"
-                    "vcvt.f32.s32   q9, q9                   \n"
-                    "vmla.f32 q4, q8, q3                     \n"
-                    "vmla.f32 q5, q9, q3                     \n"
-                    "vmax.f32 q4, q4, q15                    \n"
-                    "vmax.f32 q5, q5, q15                    \n"
-                    "vbif q4, q14, q1                        \n"
-                    "vbif q5, q6, q2                         \n"
-                    "vst1.32 {d8-d9}, [%[dout_ptr1]]!        \n"
-                    "vst1.32 {d10-d11}, [%[dout_ptr1]]!      \n"
-                    "vaddw.s16 q10, q10, d26                 \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                 \n" // out1_1 += vget_high_s16(out10)
-                    "vdup.32 q13, %[bias]                    \n"
-                    "vdup.32 q14, %[bias]                    \n"
-                    "vcvt.f32.s32   q10, q10                 \n"
-                    "vcvt.f32.s32   q11, q11                 \n"
-                    "vmla.f32 q13, q10, q3                   \n"
-                    "vmla.f32 q14, q11, q3                   \n"
-                    "vmax.f32 q13, q13, q15                  \n"
-                    "vmax.f32 q14, q14, q15                  \n"
-                    "vbif q13, q7, q1                        \n"
-                    "vbif q14, q12, q2                       \n"
-                    "vst1.32 {d26-d27}, [%[dout_ptr2]]!      \n"
-                    "vst1.32 {d28-d29}, [%[dout_ptr2]]!      \n"
+                    RIGHT_COMPUTE
+                    RIGHT_BIAS_FLOAT
+                    RIGHT_RELU
+                    RIGHT_STORE_FLOAT
+
                     : [din_ptr0] "+r" (din_ptr0), [din_ptr1] "+r" (din_ptr1), [din_ptr2] "+r" (din_ptr2), \
                       [din_ptr3] "+r" (din_ptr3), \
                       [dout_ptr1] "+r"(doutr0), [dout_ptr2] "+r"(doutr1), [cnt] "+r" (cnt), \
@@ -3427,200 +2669,33 @@ void conv_depthwise_3x3s1p1_bias_relu6_int8_float(float* dout,
                 );
                 asm volatile(
                 //left
-                    "pld [%[din_ptr0]]                \n"
-                    "pld [%[din_ptr1]]                \n"
-                    "pld [%[din_ptr2]]                \n"
-                    "pld [%[din_ptr3]]                \n"
-                    "vdup.s8     d2, d0[0]            \n"
-                    "vdup.s8     d3, d0[1]            \n"
-                    "vdup.s8     d4, d0[2]            \n"
-                    "vld1.8 {d12-d13}, [%[din_ptr0]]  \n"
-                    "vmov.u32 d11, #0                 \n"
-                    "vmov.u32 q8, #0                  \n"
-                    "vmov.u32 q9, #0                  \n"
-                    "vmov.u32 q10, #0                 \n"
-                    "vmov.u32 q11, #0                 \n"
-                    //r0
-                    "vmull.s8 q12, d12, d3                 \n" // q12 = d12 * w01
-                    "vext.8     d30, d11, d12, #7          \n" //d10 = 00123456
-                    "vext.8     d31, d12, d13, #1          \n" //d11 = 12345678
-                    "vld1.8 {d12-d13}, [%[din_ptr1]]        \n"
-                    "vld1.8 {d14-d15}, [%[din_ptr2]]        \n"
-                    "vdup.s8     d5, d0[3]                  \n"
-                    "vdup.s8     d6, d0[4]                  \n"
-                    "vmlal.s8 q12, d30, d2                  \n" // q12 += d10 * w00
-                    "vdup.s8     d7, d0[5]                  \n"
-                    "add %[din_ptr0], #7                    \n"
-                    "add %[din_ptr1], #7                    \n"
-                    "vaddw.s16 q8, q8, d24                  \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                  \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q12, d31, d4                  \n" // q12 += d11 * w02
-                    //r1
-                    "vext.8     d30, d11, d12, #7           \n" //d10 = 00123456
-                    "vext.8     d31, d12, d13, #1           \n" //d11 = 12345678
-                    "vmull.s8 q13, d12, d3                  \n" // q13 = d12 * w01
-                    "vmlal.s8 q12, d12, d6                  \n" // q12 = d12 * w11
-                    "vld1.8 {d12-d13}, [%[din_ptr3]]        \n"
-                    "vdup.s8     d8, d0[6]                  \n"
-                    "vdup.s8     d9, d0[7]                  \n"
-                    "vdup.s8     d10, d1[0]                 \n"
-                    "vaddw.s16 q8, q8, d24                  \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                  \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d30, d2                  \n" // q12 += d10 * w00
-                    "vmull.s8 q12, d30, d5                  \n" // q12 += d10 * w00
-                    "add %[din_ptr2], #7                    \n"
-                    "add %[din_ptr3], #7                    \n"
-                    "vaddw.s16 q10, q10, d26                \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d4                  \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d31, d7                  \n" // q12 += d10 * w00
-                    //r2
-                    "vext.8     d30, d11, d14, #7           \n" //d10 = 00123456
-                    "vext.8     d31, d14, d15, #1           \n" //d11 = 12345678
-                    "vaddw.s16 q8, q8, d24                  \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                  \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d14, d6                  \n" // q13 = d12 * w01
-                    "vmull.s8 q12, d14, d9                  \n" // q13 = d12 * w01
-                    "vaddw.s16 q10, q10, d26                \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d30, d5                  \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d30, d8                  \n" // q12 += d10 * w00
-                    "vaddw.s16 q8, q8, d24                  \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                  \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d31, d7                  \n" // q12 += d10 * w00
-                    "vmull.s8 q12, d31, d10                 \n" // q12 += d10 * w00
-                    //r3
-                    "vext.8     d30, d11, d12, #7           \n" //d10 = 00123456
-                    "vext.8     d31, d12, d13, #1           \n" //d11 = 12345678
-                    "vaddw.s16 q10, q10, d26                \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                \n" // out1_1 += vget_high_s16(out10)
-                    "vaddw.s16 q8, q8, d24                  \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                  \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q13, d12, d9                  \n" // q13 = d12 * w01
-                    "pld [%[din_ptr0]]                      \n"
-                    "pld [%[din_ptr1]]                      \n"
-                    "vmlal.s8 q13, d30, d8                  \n" // q13 += d10 * w00
-                    "pld [%[din_ptr2]]                      \n"
-                    "pld [%[din_ptr3]]                      \n"
-                    "vaddw.s16 q10, q10, d26                \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d10                 \n" // q12 += d10 * w00
-                    "vaddw.s16 q10, q10, d26                \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                \n" // out1_1 += vget_high_s16(out10)
-                    "vdup.32 q7, %[scale]                   \n"
-                    "vdup.32 q14, %[bias]                   \n"
-                    "vdup.32 q15, %[bias]                   \n"
-                    "vmov.f32 q1, #0.0                      \n"
-                    "vcvt.f32.s32   q8, q8                  \n"
-                    "vcvt.f32.s32   q9, q9                  \n"
-                    "vmla.f32 q14, q8, q7                   \n"
-                    "vmla.f32 q15, q9, q7                   \n"
-                    "vmax.f32 q14, q14, q1                  \n"
-                    "vmax.f32 q15, q15, q1                  \n"
-                    "vld1.32 {d2-d3}, [%[alpha]]            \n"
-                    "vmin.f32 q14, q14, q1                  \n"
-                    "vmin.f32 q15, q15, q1                  \n"
-                    "vmov.f32 q1, #0.0                      \n"
-                    "vst1.32 {d28-d29}, [%[dout_ptr1]]!     \n"
-                    "vst1.32 {d30-d31}, [%[dout_ptr1]]!     \n"
-                    "vdup.32 q12, %[bias]                   \n"
-                    "vdup.32 q13, %[bias]                   \n"
-                    "vcvt.f32.s32   q10, q10                \n"
-                    "vcvt.f32.s32   q11, q11                \n"
-                    "vmla.f32 q12, q10, q7                  \n"
-                    "vmla.f32 q13, q11, q7                  \n"
-                    "vmax.f32 q12, q12, q1                  \n"
-                    "vmax.f32 q13, q13, q1                  \n"
-                    "vld1.32 {d2-d3}, [%[alpha]]            \n"
-                    "vmin.f32 q12, q12, q1                  \n"
-                    "vmin.f32 q13, q13, q1                  \n"
-                    "vmov.f32 q1, #0.0                      \n"
-                    "vst1.32 {d24-d25}, [%[dout_ptr2]]!     \n"
-                    "cmp %[cnt], #1                         \n"
-                    "vst1.32 {d26-d27}, [%[dout_ptr2]]!     \n"
-                    "blt 1f                                 \n"
+                    INIT_S1
+                    LEFT_COMPUTE
+                    LEFT_BIAS_FLOAT
+                    LEFT_RELU6
+                    LEFT_STORE_FLOAT
+
                 // mid
                     "2:                                     \n"
-                    "vld1.8 {d12-d13}, [%[din_ptr0]]        \n"                    
                     "vdup.s8     d2, d0[0]                  \n"
                     "vdup.s8     d3, d0[1]                  \n"
-                    "vmov.u32 q8, #0                        \n"
-                    "vmov.u32 q9, #0                        \n"
-                    "vmov.u32 q10, #0                       \n"
-                    "vmov.u32 q11, #0                       \n"
-                     // r0
-                    "vmull.s8 q12, d12, d2                  \n" // q12 = d12 * w01
-                    "vext.8     d30, d12, d13, #1           \n" //d10 = 12345678
-                    "vext.8     d31, d12, d13, #2           \n" //d11 = 23456789
-                    "vld1.8 {d12-d13}, [%[din_ptr1]]        \n"
-                    "vld1.8 {d14-d15}, [%[din_ptr2]]        \n"
-                    "vmlal.s8 q12, d30, d3                  \n" // q12 += d10 * w00
-                    "add %[din_ptr0], #8                    \n"
-                    "add %[din_ptr1], #8                    \n"
-                    "vaddw.s16 q8, q8, d24                  \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                  \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q12, d31, d4                  \n" // q12 += d11 * w02
-                    // r1
-                    "vext.8     d30, d12, d13, #1           \n" //d10 = 00123456
-                    "vext.8     d31, d12, d13, #2           \n" //d11 = 12345678
-                    "vmull.s8 q13, d12, d2                  \n" // q13 = d12 * w01
-                    "vmlal.s8 q12, d12, d5                  \n" // q12 = d12 * w11
-                    "vld1.8 {d12-d13}, [%[din_ptr3]]        \n"
-                    "vmlal.s8 q13, d30, d3                  \n" // q12 += d10 * w00
-                    "vaddw.s16 q8, q8, d24                  \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                  \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q12, d30, d6                  \n" // q12 += d10 * w00
-                    "add %[din_ptr2], #8                    \n"
-                    "add %[din_ptr3], #8                    \n"
-                    "vaddw.s16 q10, q10, d26                \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d4                  \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d31, d7                  \n" // q12 += d10 * w00
-                    //r2
-                    "vext.8     d30, d14, d15, #1           \n" //d10 = 00123456
-                    "vext.8     d31, d14, d15, #2           \n" //d11 = 12345678
-                    "vaddw.s16 q8, q8, d24                  \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                  \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d14, d5                  \n" // q13 = d12 * w01
-                    "vmull.s8 q12, d14, d8                  \n" // q13 = d12 * w01
-                    "vaddw.s16 q10, q10, d26                \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d30, d6                  \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d30, d9                  \n" // q12 += d10 * w00
-                    "vmlal.s8 q13, d31, d7                  \n" // q12 += d10 * w00
-                    "vaddw.s16 q8, q8, d24                  \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                  \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q12, d31, d10                 \n" // q12 += d10 * w00
-                    //r3
-                    "vext.8     d30, d12, d13, #1           \n" //d10 = 00123456
-                    "vext.8     d31, d12, d13, #2           \n" //d11 = 12345678
-                    "vaddw.s16 q10, q10, d26                \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                \n" // out1_1 += vget_high_s16(out10)
-                    "vaddw.s16 q8, q8, d24                  \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                  \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q13, d12, d8                  \n" // q13 = d12 * w01
-                    "pld [%[din_ptr0]]                      \n"
-                    "pld [%[din_ptr1]]                      \n"
-                    "vmlal.s8 q13, d30, d9                  \n" // q13 += d10 * w00
-                    "pld [%[din_ptr2]]                      \n"
-                    "pld [%[din_ptr3]]                      \n"
-                    "vaddw.s16 q10, q10, d26                \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27                \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d10                 \n" // q12 += d10 * w00
+                    MID_COMPUTE
+
                     "vdup.32 q7, %[scale]                   \n"
                     "vdup.32 q14, %[bias]                   \n"
                     "vdup.32 q15, %[bias]                   \n"
-                    "vmov.f32 q1, #0.0                      \n"
                     "vcvt.f32.s32   q8, q8                  \n"
                     "vcvt.f32.s32   q9, q9                  \n"
                     "vmla.f32 q14, q8, q7                   \n"
                     "vmla.f32 q15, q9, q7                   \n"
+
+                    "vmov.f32 q1, #0.0                      \n"
                     "vmax.f32 q14, q14, q1                  \n"
                     "vmax.f32 q15, q15, q1                  \n"
                     "vld1.32 {d2-d3}, [%[alpha]]            \n"
                     "vmin.f32 q14, q14, q1                  \n"
                     "vmin.f32 q15, q15, q1                  \n"
-                    "vmov.f32 q1, #0.0                      \n"
+
                     "vst1.32 {d28-d29}, [%[dout_ptr1]]!     \n"
                     "vst1.32 {d30-d31}, [%[dout_ptr1]]!     \n"
                     "vaddw.s16 q10, q10, d26                \n" // out1 += vget_low_s16(out10)
@@ -3631,11 +2706,14 @@ void conv_depthwise_3x3s1p1_bias_relu6_int8_float(float* dout,
                     "vcvt.f32.s32   q11, q11                \n"
                     "vmla.f32 q12, q10, q7                  \n"
                     "vmla.f32 q13, q11, q7                  \n"
+
+                    "vmov.f32 q1, #0.0                      \n"
                     "vmax.f32 q12, q12, q1                  \n"
                     "vmax.f32 q13, q13, q1                  \n"
                     "vld1.32 {d2-d3}, [%[alpha]]            \n"
                     "vmin.f32 q12, q12, q1                  \n"
                     "vmin.f32 q13, q13, q1                  \n"
+
                     "vmov.f32 q1, #0.0                      \n"
                     "vdup.s8     d2, d0[0]                  \n"
                     "vdup.s8     d3, d0[1]                  \n"
@@ -3728,11 +2806,13 @@ void conv_depthwise_3x3s1p1_bias_relu6_int8_float(float* dout,
                     "vcvt.f32.s32   q9, q9                   \n"
                     "vmla.f32 q4, q8, q3                     \n"
                     "vmla.f32 q5, q9, q3                     \n"
+
                     "vmax.f32 q4, q4, q15                    \n"
                     "vmax.f32 q5, q5, q15                    \n"
                     "vld1.32 {d30-d31}, [%[alpha]]            \n"
                     "vmin.f32 q4, q4, q15                  \n"
                     "vmin.f32 q5, q5, q15                  \n"
+
                     "vmov.f32 q15, #0.0                      \n"
                     "vbif q4, q14, q1                        \n"
                     "vbif q5, q6, q2                         \n"
@@ -3746,11 +2826,13 @@ void conv_depthwise_3x3s1p1_bias_relu6_int8_float(float* dout,
                     "vcvt.f32.s32   q11, q11                 \n"
                     "vmla.f32 q13, q10, q3                   \n"
                     "vmla.f32 q14, q11, q3                   \n"
+
                     "vmax.f32 q13, q13, q15                  \n"
                     "vmax.f32 q14, q14, q15                  \n"
                     "vld1.32 {d30-d31}, [%[alpha]]            \n"
                     "vmin.f32 q13, q13, q15                  \n"
                     "vmin.f32 q14, q14, q15                  \n"
+
                     "vmov.f32 q15, #0.0                      \n"
                     "vbif q13, q7, q1                        \n"
                     "vbif q14, q12, q2                       \n"
@@ -3938,147 +3020,14 @@ void conv_depthwise_3x3s1p1_bias_relu_int8_int8(int8_t* dout,
                 );
                 asm volatile(
                 //left
-                    "pld [%[din_ptr0]]                    \n"
-                    "pld [%[din_ptr1]]                    \n"
-                    "pld [%[din_ptr2]]                    \n"
-                    "pld [%[din_ptr3]]                    \n"
-                    "vdup.s8     d2, d0[0]                \n"
-                    "vdup.s8     d3, d0[1]                \n"
-                    "vdup.s8     d4, d0[2]                \n"
-                    "vld1.8 {d12-d13}, [%[din_ptr0]]      \n"
-                    "vmov.u32 d11, #0                     \n"
-                    "vmov.u32 q8, #0                      \n"
-                    "vmov.u32 q9, #0                      \n"
-                    "vmov.u32 q10, #0                     \n"
-                    "vmov.u32 q11, #0                     \n"
-                    //r0
-                    "vmull.s8 q12, d12, d3                \n" // q12 = d12 * w01
-                    "vext.8     d30, d11, d12, #7         \n" //d10 = 00123456
-                    "vext.8     d31, d12, d13, #1         \n" //d11 = 12345678
-                    "vld1.8 {d12-d13}, [%[din_ptr1]]      \n"
-                    "vld1.8 {d14-d15}, [%[din_ptr2]]      \n"
-                    "vdup.s8     d5, d0[3]                \n"
-                    "vdup.s8     d6, d0[4]                \n"
-                    "vmlal.s8 q12, d30, d2                \n" // q12 += d10 * w00
-                    "vdup.s8     d7, d0[5]                \n"
-                    "add %[din_ptr0], #7                  \n"
-                    "add %[din_ptr1], #7                  \n"
-                    "vaddw.s16 q8, q8, d24                \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q12, d31, d4                \n" // q12 += d11 * w02
-                    //r1
-                    "vext.8     d30, d11, d12, #7         \n" //d10 = 00123456
-                    "vext.8     d31, d12, d13, #1         \n" //d11 = 12345678
-                    "vmull.s8 q13, d12, d3                \n" // q13 = d12 * w01
-                    "vmlal.s8 q12, d12, d6                \n" // q12 = d12 * w11
-                    "vld1.8 {d12-d13}, [%[din_ptr3]]      \n"
-                    "vdup.s8     d8, d0[6]                \n"
-                    "vdup.s8     d9, d0[7]                \n"
-                    "vdup.s8     d10, d1[0]               \n"
-                    "vaddw.s16 q8, q8, d24                \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d30, d2                \n" // q12 += d10 * w00
-                    "vmull.s8 q12, d30, d5                \n" // q12 += d10 * w00
-                    "add %[din_ptr2], #7                  \n"
-                    "add %[din_ptr3], #7                  \n"
-                    "vaddw.s16 q10, q10, d26              \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27              \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d4                \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d31, d7                \n" // q12 += d10 * w00
-                    //r2
-                    "vext.8     d30, d11, d14, #7         \n" //d10 = 00123456
-                    "vext.8     d31, d14, d15, #1          \n" //d11 = 12345678
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d14, d6                 \n" // q13 = d12 * w01
-                    "vmull.s8 q12, d14, d9                 \n" // q13 = d12 * w01
-                    "vaddw.s16 q10, q10, d26               \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27               \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d30, d5                 \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d30, d8                 \n" // q12 += d10 * w00
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d31, d7                 \n" // q12 += d10 * w00
-                    "vmull.s8 q12, d31, d10                \n" // q12 += d10 * w00
-                    //r3
-                    "vext.8     d30, d11, d12, #7          \n" //d10 = 00123456
-                    "vext.8     d31, d12, d13, #1          \n" //d11 = 12345678
-                    "vaddw.s16 q10, q10, d26               \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27               \n" // out1_1 += vget_high_s16(out10)
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q13, d12, d9                 \n" // q13 = d12 * w01
-                    "pld [%[din_ptr0]]                     \n"
-                    "pld [%[din_ptr1]]                     \n"
-                    "vmlal.s8 q13, d30, d8                 \n" // q13 += d10 * w00
-                    "pld [%[din_ptr2]]                     \n"
-                    "pld [%[din_ptr3]]                     \n"
-                    "vaddw.s16 q10, q10, d26               \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27               \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d10                \n" // q12 += d10 * w00
-                    "vaddw.s16 q10, q10, d26               \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27               \n" // out1_1 += vget_high_s16(out10)
-                    "vdup.32 q7, %[scale]                  \n"
-                    "vdup.32 q14, %[bias]                  \n"
-                    "vdup.32 q15, %[bias]                  \n"
-                    "vmov.f32 q1, #0.0                     \n"
-                    "vcvt.f32.s32   q8, q8                 \n"
-                    "vcvt.f32.s32   q9, q9                 \n"
-                    "vmla.f32 q14, q8, q7                  \n"
-                    "vmla.f32 q15, q9, q7                  \n"
-                    "vmax.f32 q14, q14, q1                 \n"
-                    "vmax.f32 q15, q15, q1                 \n"
-                    "vmov.f32 q8, #-0.5                    \n"
-                    "vmov.f32 q9, #0.5                     \n"
-                    "vcgt.f32   q1, q14, q8                \n"
-                    "vbif.f32   q9, q8, q1                 \n"
-                    "vadd.f32   q14, q14, q9               \n"
-                    "vmov.f32   q9, #0.5                   \n"
-                    "vcgt.f32   q2, q15, q8                \n"
-                    "vbif.f32   q9, q8, q2                 \n"
-                    "vadd.f32   q15, q15, q9               \n"
-                    "vld1.32 {d2-d3}, [%[vmax]]            \n"
-                    "vcge.f32 q3, q14, q1                  \n" /* data >= -127 */
-                    "vbif q14, q1, q3                      \n" /* choose data */
-                    "vcge.f32 q3, q15, q1                  \n" /* data >= -127 */
-                    "vbif q15, q1, q3                      \n" /* choose data */
-                    "vcvt.s32.f32  q1, q14    \n"  /* fp32 to int32 */
-                    "vcvt.s32.f32  q2, q15    \n"  /* fp32 to int32 */
-                    "vqmovn.s32 d28, q1       \n"  /* int32 to int16 */
-                    "vqmovn.s32 d29, q2       \n"  /* int32 to int16 */
-                    "vqmovn.s16 d10, q14      \n"   /* int16 to int8 */
-                    "vst1.8    {d10}, [%[dout_ptr1]]!\n"
-                    "vdup.32 q12, %[bias]                   \n"
-                    "vdup.32 q13, %[bias]                   \n"
-                    "vmov.f32 q1, #0.0                      \n"
-                    "vcvt.f32.s32   q10, q10                \n"
-                    "vcvt.f32.s32   q11, q11                \n"
-                    "vmla.f32 q12, q10, q7                  \n"
-                    "vmla.f32 q13, q11, q7                  \n"
-                    "vmax.f32 q12, q12, q1                  \n"
-                    "vmax.f32 q13, q13, q1                  \n"
-                    "vmov.f32 q8, #-0.5                     \n"
-                    "vmov.f32 q9, #0.5                      \n"
-                    "vcgt.f32   q1, q12, q8                 \n"
-                    "vbif.f32   q9, q8, q1                  \n"
-                    "vadd.f32   q12, q12, q9                \n"
-                    "vmov.f32   q9, #0.5                    \n"
-                    "vcgt.f32   q2, q13, q8                 \n"
-                    "vbif.f32   q9, q8, q2                  \n"
-                    "vadd.f32   q13, q13, q9                \n"
-                    "vld1.32 {d2-d3}, [%[vmax]]             \n"
-                    "vcge.f32 q3, q12, q1                   \n" /* data >= -127 */
-                    "vbif q12, q1, q3                       \n" /* choose data */
-                    "vcge.f32 q3, q13, q1                   \n" /* data >= -127 */
-                    "vbif q13, q1, q3                       \n" /* choose data */
-                    "vcvt.s32.f32  q1, q12                  \n" /* fp32 to int32 */
-                    "vcvt.s32.f32  q2, q13                  \n" /* fp32 to int32 */
-                    "vqmovn.s32 d24, q1                     \n" /* int32 to int16 */
-                    "vqmovn.s32 d25, q2                     \n" /* int32 to int16 */
-                    "vqmovn.s16 d9, q12                     \n" /* int16 to int8 */
-                    "vst1.8    {d9}, [%[dout_ptr2]]!        \n"
-                    "cmp %[cnt], #1                         \n"
-                    "blt 1f                                 \n"
+                    INIT_S1 
+                    LEFT_COMPUTE
+                    LEFT_BIAS_INT8_S1
+                    LEFT_RELU_S1
+                    LEFT_BIAS_INT8_S2
+                    LEFT_RELU_S2
+                    LEFT_BIAS_INT8_S3
+                    LEFT_STORE_INT8
                 //mid
                     "2:                                     \n"
                     "vld1.8 {d12-d13}, [%[din_ptr0]]        \n"
@@ -4540,155 +3489,15 @@ void conv_depthwise_3x3s1p1_bias_relu6_int8_int8(int8_t* dout,
                 );
                 asm volatile(
                 //left
-                    "pld [%[din_ptr0]]                    \n"
-                    "pld [%[din_ptr1]]                    \n"
-                    "pld [%[din_ptr2]]                    \n"
-                    "pld [%[din_ptr3]]                    \n"
-                    "vdup.s8     d2, d0[0]                \n"
-                    "vdup.s8     d3, d0[1]                \n"
-                    "vdup.s8     d4, d0[2]                \n"
-                    "vld1.8 {d12-d13}, [%[din_ptr0]]      \n"
-                    "vmov.u32 d11, #0                     \n"
-                    "vmov.u32 q8, #0                      \n"
-                    "vmov.u32 q9, #0                      \n"
-                    "vmov.u32 q10, #0                     \n"
-                    "vmov.u32 q11, #0                     \n"
-                    //r0
-                    "vmull.s8 q12, d12, d3                \n" // q12 = d12 * w01
-                    "vext.8     d30, d11, d12, #7         \n" //d10 = 00123456
-                    "vext.8     d31, d12, d13, #1         \n" //d11 = 12345678
-                    "vld1.8 {d12-d13}, [%[din_ptr1]]      \n"
-                    "vld1.8 {d14-d15}, [%[din_ptr2]]      \n"
-                    "vdup.s8     d5, d0[3]                \n"
-                    "vdup.s8     d6, d0[4]                \n"
-                    "vmlal.s8 q12, d30, d2                \n" // q12 += d10 * w00
-                    "vdup.s8     d7, d0[5]                \n"
-                    "add %[din_ptr0], #7                  \n"
-                    "add %[din_ptr1], #7                  \n"
-                    "vaddw.s16 q8, q8, d24                \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q12, d31, d4                \n" // q12 += d11 * w02
-                    //r1
-                    "vext.8     d30, d11, d12, #7         \n" //d10 = 00123456
-                    "vext.8     d31, d12, d13, #1         \n" //d11 = 12345678
-                    "vmull.s8 q13, d12, d3                \n" // q13 = d12 * w01
-                    "vmlal.s8 q12, d12, d6                \n" // q12 = d12 * w11
-                    "vld1.8 {d12-d13}, [%[din_ptr3]]      \n"
-                    "vdup.s8     d8, d0[6]                \n"
-                    "vdup.s8     d9, d0[7]                \n"
-                    "vdup.s8     d10, d1[0]               \n"
-                    "vaddw.s16 q8, q8, d24                \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d30, d2                \n" // q12 += d10 * w00
-                    "vmull.s8 q12, d30, d5                \n" // q12 += d10 * w00
-                    "add %[din_ptr2], #7                  \n"
-                    "add %[din_ptr3], #7                  \n"
-                    "vaddw.s16 q10, q10, d26              \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27              \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d4                \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d31, d7                \n" // q12 += d10 * w00
-                    //r2
-                    "vext.8     d30, d11, d14, #7         \n" //d10 = 00123456
-                    "vext.8     d31, d14, d15, #1          \n" //d11 = 12345678
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d14, d6                 \n" // q13 = d12 * w01
-                    "vmull.s8 q12, d14, d9                 \n" // q13 = d12 * w01
-                    "vaddw.s16 q10, q10, d26               \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27               \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d30, d5                 \n" // q12 += d10 * w00
-                    "vmlal.s8 q12, d30, d8                 \n" // q12 += d10 * w00
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmlal.s8 q13, d31, d7                 \n" // q12 += d10 * w00
-                    "vmull.s8 q12, d31, d10                \n" // q12 += d10 * w00
-                    //r3
-                    "vext.8     d30, d11, d12, #7          \n" //d10 = 00123456
-                    "vext.8     d31, d12, d13, #1          \n" //d11 = 12345678
-                    "vaddw.s16 q10, q10, d26               \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27               \n" // out1_1 += vget_high_s16(out10)
-                    "vaddw.s16 q8, q8, d24                 \n" // out0 += vget_low_s16(out00)
-                    "vaddw.s16 q9, q9, d25                 \n" // out0_1 += vget_high_s16(out00)
-                    "vmull.s8 q13, d12, d9                 \n" // q13 = d12 * w01
-                    "pld [%[din_ptr0]]                     \n"
-                    "pld [%[din_ptr1]]                     \n"
-                    "vmlal.s8 q13, d30, d8                 \n" // q13 += d10 * w00
-                    "pld [%[din_ptr2]]                     \n"
-                    "pld [%[din_ptr3]]                     \n"
-                    "vaddw.s16 q10, q10, d26               \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27               \n" // out1_1 += vget_high_s16(out10)
-                    "vmull.s8 q13, d31, d10                \n" // q12 += d10 * w00
-                    "vaddw.s16 q10, q10, d26               \n" // out1 += vget_low_s16(out10)
-                    "vaddw.s16 q11, q11, d27               \n" // out1_1 += vget_high_s16(out10)
-                    "vdup.32 q7, %[scale]                  \n"
-                    "vdup.32 q14, %[bias]                  \n"
-                    "vdup.32 q15, %[bias]                  \n"
-                    "vmov.f32 q1, #0.0                     \n"
-                    "vcvt.f32.s32   q8, q8                 \n"
-                    "vcvt.f32.s32   q9, q9                 \n"
-                    "vmla.f32 q14, q8, q7                  \n"
-                    "vmla.f32 q15, q9, q7                  \n"
-                    "vmax.f32 q14, q14, q1                 \n"
-                    "vmax.f32 q15, q15, q1                 \n"
-                    "vld1.32 {d2-d3}, [%[alpha]]            \n"
-                    "vmin.f32 q12, q12, q1                  \n"
-                    "vmin.f32 q13, q13, q1                  \n"
-                    "vmov.f32 q1, #0.0                      \n"
-                    "vmov.f32 q8, #-0.5                    \n"
-                    "vmov.f32 q9, #0.5                     \n"
-                    "vcgt.f32   q1, q14, q8                \n"
-                    "vbif.f32   q9, q8, q1                 \n"
-                    "vadd.f32   q14, q14, q9               \n"
-                    "vmov.f32   q9, #0.5                   \n"
-                    "vcgt.f32   q2, q15, q8                \n"
-                    "vbif.f32   q9, q8, q2                 \n"
-                    "vadd.f32   q15, q15, q9               \n"
-                    "vld1.32 {d2-d3}, [%[vmax]]            \n"
-                    "vcge.f32 q3, q14, q1                  \n" /* data >= -127 */
-                    "vbif q14, q1, q3                      \n" /* choose data */
-                    "vcge.f32 q3, q15, q1                  \n" /* data >= -127 */
-                    "vbif q15, q1, q3                      \n" /* choose data */
-                    "vcvt.s32.f32  q1, q14    \n"  /* fp32 to int32 */
-                    "vcvt.s32.f32  q2, q15    \n"  /* fp32 to int32 */
-                    "vqmovn.s32 d28, q1       \n"  /* int32 to int16 */
-                    "vqmovn.s32 d29, q2       \n"  /* int32 to int16 */
-                    "vqmovn.s16 d10, q14      \n"   /* int16 to int8 */
-                    "vst1.8    {d10}, [%[dout_ptr1]]!\n"
-                    "vdup.32 q12, %[bias]                   \n"
-                    "vdup.32 q13, %[bias]                   \n"
-                    "vmov.f32 q1, #0.0                      \n"
-                    "vcvt.f32.s32   q10, q10                \n"
-                    "vcvt.f32.s32   q11, q11                \n"
-                    "vmla.f32 q12, q10, q7                  \n"
-                    "vmla.f32 q13, q11, q7                  \n"
-                    "vmax.f32 q12, q12, q1                  \n"
-                    "vmax.f32 q13, q13, q1                  \n"
-                    "vld1.32 {d2-d3}, [%[alpha]]            \n"
-                    "vmin.f32 q12, q12, q1                  \n"
-                    "vmin.f32 q13, q13, q1                  \n"
-                    "vmov.f32 q1, #0.0                      \n"
-                    "vmov.f32 q8, #-0.5                     \n"
-                    "vmov.f32 q9, #0.5                      \n"
-                    "vcgt.f32   q1, q12, q8                 \n"
-                    "vbif.f32   q9, q8, q1                  \n"
-                    "vadd.f32   q12, q12, q9                \n"
-                    "vmov.f32   q9, #0.5                    \n"
-                    "vcgt.f32   q2, q13, q8                 \n"
-                    "vbif.f32   q9, q8, q2                  \n"
-                    "vadd.f32   q13, q13, q9                \n"
-                    "vld1.32 {d2-d3}, [%[vmax]]             \n"
-                    "vcge.f32 q3, q12, q1                   \n" /* data >= -127 */
-                    "vbif q12, q1, q3                       \n" /* choose data */
-                    "vcge.f32 q3, q13, q1                   \n" /* data >= -127 */
-                    "vbif q13, q1, q3                       \n" /* choose data */
-                    "vcvt.s32.f32  q1, q12                  \n" /* fp32 to int32 */
-                    "vcvt.s32.f32  q2, q13                  \n" /* fp32 to int32 */
-                    "vqmovn.s32 d24, q1                     \n" /* int32 to int16 */
-                    "vqmovn.s32 d25, q2                     \n" /* int32 to int16 */
-                    "vqmovn.s16 d9, q12                     \n" /* int16 to int8 */
-                    "vst1.8    {d9}, [%[dout_ptr2]]!        \n"
-                    "cmp %[cnt], #1                         \n"
-                    "blt 1f                                 \n"
+                    INIT_S1 
+                    LEFT_COMPUTE
+                    LEFT_BIAS_INT8_S1
+                    LEFT_RELU6_S1
+                    LEFT_BIAS_INT8_S2
+                    LEFT_RELU6_S2
+                    LEFT_BIAS_INT8_S3
+                    LEFT_STORE_INT8
+                   
                 //mid
                     "2:                                     \n"
                     "vld1.8 {d12-d13}, [%[din_ptr0]]        \n"
