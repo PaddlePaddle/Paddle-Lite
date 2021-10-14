@@ -2,13 +2,13 @@
    :format: html
 
 
-使用 x86 MacOS 环境编译 Paddle Lite / 目标硬件 OS 为 iOS
+使用 MacOS 环境编译 Paddle Lite / 目标硬件 OS 为 iOS
 ======================================================
 
 简介
 ----
 
-如果你的本机环境是 x86 架构 + MacOS 操作系统，需要部署模型到 iOS 系统的目标硬件上，则可以参考本文的介绍，通过 Xcode 工具从源码构建 Paddle Lite 的编译包，用于后续应用程序的开发。
+如果你的本机环境是 MacOS 操作系统，需要部署模型到 iOS 系统的目标硬件上，则可以参考本文的介绍，通过 Xcode 工具从源码构建 Paddle Lite 的编译包，用于后续应用程序的开发。
 
 ..
 
@@ -34,7 +34,7 @@
      - MacOS\ :raw-html-m2r:`<br>`
      - iOS 9.0 及以上\ :raw-html-m2r:`<br>`
    * - **芯片层**
-     - x86 架构
+     - x86/arm 架构
      - arm64-v8a/armeabi-v7a
 
 
@@ -55,18 +55,10 @@
 
 .. code-block:: shell
 
-   # 1. 安装 curl gcc git make unzip wget python 等基础软件
-   brew install curl gcc git make unzip wget python
+   # 1. 安装 curl gcc git make unzip wget python cmake 等基础软件
+   brew install curl gcc git make unzip wget python cmake
 
-   # 2. 安装 CMake，以下命令以 3.15.2 版本为例，其他版本步骤类似。
-   mkdir /usr/local/Cellar/cmake/ && cd /usr/local/Cellar/cmake/
-   cd /usr/local/Cellar/cmake/
-   wget https://cmake.org/files/v3.15/cmake-3.15.2-Darwin-x86_64.tar.gz
-   tar zxf ./cmake-3.15.2-Darwin-x86_64.tar.gz
-   mv cmake-3.15.2-Darwin-x86_64/CMake.app/Contents/ ./3.15.2
-   ln -s /usr/local/Cellar/cmake/3.15.2/bin/cmake /usr/local/bin/cmake
-
-   # 3. 安装 Xcode，可通过 App Store 下载并安装，安装后需要启动一次并执行下面语句。
+   # 2. 安装 Xcode，可通过 App Store 下载并安装，安装后需要启动一次并执行下面语句。
    sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 
 了解基础编译参数
