@@ -24,7 +24,7 @@ std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>
 ```
 - 参数
 
-    - `config(MobileConfig)`: 用于构建 Predictor 的配置信息。
+    - `config`: 用于构建 Predictor 的配置信息。
 
 - 返回值
 
