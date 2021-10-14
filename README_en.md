@@ -11,31 +11,10 @@ For tutorials, please see [PaddleLite Document](https://paddle-lite.readthedocs.
 
 ## Key Features
 
-### Light Weight
+- Multiple platform support, covering Android and iOS devices, embedded Linux, windows, macOS and Linux computer.
+- Diverse language support, which includes Java, C++, and Python.
+- High performance and light weight: optimized for on-device machine learning, reduced model and binary size, efficient inference and reduced memory usage.
 
-On mobile devices, execution module can be deployed without third-party libraries, because our excecution module and analysis module are decoupled.
-
-On ARM V7, only 800KB are taken up, while on ARM V8, 1.3MB are taken up with the 80 operators and 85 kernels in the dynamic libraries provided by Paddle Lite.
-
-Paddle Lite enables immediate inference without extra optimization.
-
-### High Performance
-
-Paddle Lite enables device-optimized kernels, maximizing ARM CPU performance.
-
-It also supports INT8 quantizations with [PaddleSlim model compression tools](https://github.com/PaddlePaddle/models/tree/v1.5/PaddleSlim), reducing the size of models and increasing the performance of models.
-
-On Huawei NPU and FPGA, the performance is also boosted.
-
-The latest benchmark is located at [benchmark](https://paddlepaddle.github.io/Paddle-Lite/develop/benchmark/)
-
-### High Compatibility
-
-Hardware compatibility: Paddle Lite supports a diversity of hardwares — ARM CPU, Mali GPU, Adreno GPU, Nvidia GPU, Apple GPU, Huawei NPU and FPGA. In the near future, we will also support AI microchips from Cambricon and Bitmain.
-
-Model compatibility: The Op of Paddle Lite is fully compatible to that of PaddlePaddle. The accuracy and performance of 18 models (mostly CV models and OCR models) and 85 operators have been validated. In the future, we will also support other models.
-
-Framework compatibility: In addition to models trained on PaddlePaddle, those trained on Caffe and TensorFlow can also be converted to be used on Paddle Lite, via [X2Paddle](https://github.com/PaddlePaddle/X2Paddle). In the future to come, we will also support models of ONNX format.
 
 ## Architecture
 
