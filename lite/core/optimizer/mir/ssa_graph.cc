@@ -223,8 +223,9 @@ void SSAGraph::RemoveNode(const mir::Node *node) {
   auto pos = std::find_if(node_storage_.begin(),
                           node_storage_.end(),
                           [&node](mir::Node &n) { return &n == node; });
-  CHECK(pos != node_storage_.end());
-  node_storage_.erase(pos);
+  if(pos != node_storage_.end()){
+    node_storage_.erase(pos);
+  }
 }
 
 void SSAGraph::CloneFrom(const SSAGraph &from) {
