@@ -3,14 +3,14 @@
 
 ## 编译版本介绍
 
-- arch=`armv7/armv7hf/armv8/x86`        目标设备的CPU架构，可选择包括`armv7`、`armv7hf`、`armv8`和`x86`等
-- os=`Android/iOS/Linux/macOS/Windows`  目标设备的操作系统，可选择包括`Android`、`iOS`、`linux`、`macOS`和`Windows`等
-- toolchain=`gcc/clang`                 源码编译时的编译器，可选择包括`gcc`和`clang`等
-- android_stl=`c++_static/c++_shared`   预测库采用的Android STL库的种类，可选择包括`c++_static`(静态链接)和`c++_shared`(动态链接)
-- with_extra=`ON/OFF`                   是否编译全量OP，OFF时只编译CV相关基础OP，[参数详情](../source_compile/library)
-- with_cv=`ON/OFF`                      是否编译CV相关API
+- arch=`armv7/armv7hf/armv8/x86`        目标设备的 CPU 架构，可选择包括 `armv7`、`armv7hf`、`armv8` 和 `x86` 等
+- os=`Android/iOS/Linux/macOS/Windows`  目标设备的操作系统，可选择包括 `Android`、`iOS`、`linux`、`macOS` 和 `Windows` 等
+- toolchain=`gcc/clang`                 源码编译时的编译器，可选择包括 `gcc` 和 `clang` 等
+- android_stl=`c++_static/c++_shared`   预测库采用的 Android STL 库的种类，可选择包括 `c++_static` (静态链接)和 `c++_shared` (动态链接)
+- with_extra=`ON/OFF`                   是否编译全量 OP，OFF 时只编译 CV 相关基础 OP ，[参数详情](../source_compile/library)
+- with_cv=`ON/OFF`                      是否编译 CV 相关 API
 - with_log=`ON/OFF`                     预编译库是否带有日志打印
-- python_version=`2.7/3.5/3.6/3.7`      python版本，可选择包括`2.7`、`3.5`、`3.6`和`3.7`等
+- python_version=`2.7/3.5/3.6/3.7`      python 版本，可选择包括 `2.7`、`3.5`、`3.6` 和 `3.7` 等
 
 
 ## Android
@@ -178,7 +178,7 @@
 ## 安装Paddle-Lite python 库方法
 
 - 支持平台： windows10、Ubuntu、Mac
-- python version: 2.7、3.5、3.6、 3.7
+- python version: 2.7、3.5、3.6、3.7
 ```
 # 当前最新版本是 2.10
 python -m pip install paddlelite==2.10
