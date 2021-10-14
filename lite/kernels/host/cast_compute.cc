@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/cast_compute.h"
+#include "lite/kernels/host/cast_compute.h"
 #include <algorithm>
 #ifdef ENABLE_ARM_FP16
 #include "lite/backends/arm/math/fp16/funcs_fp16.h"
@@ -20,7 +20,7 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
 template <class in_type, class out_type>
 out_type TransOp(in_type in) {
@@ -30,7 +30,6 @@ out_type TransOp(in_type in) {
 void CastCompute::PrepareForRun() {}
 
 void CastCompute::Run() {
-  auto& ctx = this->ctx_->template As<ARMContext>();
   auto& param = this->Param<operators::CastParam>();
   auto input_dims = param.X->dims();
   if (param.X->precision() == PrecisionType::kFloat) {
@@ -128,7 +127,7 @@ void CastCompute::Run() {
     int32_t* out_data = param.Out->mutable_data<int32_t>();
     std::transform(
         x_data_begin, x_data_end, out_data, TransOp<int32_t, int32_t>);
-#ifdef ENABLE_ARM_FP16
+#if defined(ENABLE_ARM_FP16) && defined(LITE_WITH_ARM)
   } else if (param.in_dtype == 4 &&
              param.out_dtype == 5) {  // float16 -> float32
     const float16_t* in_data = param.X->data<float16_t>();
@@ -146,21 +145,13 @@ void CastCompute::Run() {
   }
 }
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(
-    cast, kARM, kAny, kNCHW, paddle::lite::kernels::arm::CastCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
+    cast, kHost, kAny, kNCHW, paddle::lite::kernels::host::CastCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny))})
     .Finalize();
-
-#ifdef LITE_BUILD_EXTRA
-REGISTER_LITE_KERNEL(
-    cast, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::CastCompute, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kAny))})
-    .Finalize();
-#endif  // LITE_BUILD_EXTRA
