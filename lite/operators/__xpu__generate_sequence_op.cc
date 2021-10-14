@@ -44,7 +44,6 @@ bool XPUGenerateSequenceOp::InferShapeImpl() const {
 
 bool XPUGenerateSequenceOp::AttachImpl(const cpp::OpDesc &opdesc,
                                        lite::Scope *scope) {
-  AttachParam(&param_);
   param_.input = scope->FindTensor(opdesc.Input("X").front());
   param_.output = scope->FindMutableTensor(opdesc.Output("Out").front());
   param_.axis = opdesc.GetAttr<int>("axis");
