@@ -48,11 +48,11 @@ config.set_model_dir(<your_model_dir_path>)
 config.set_threads(4);
 # 设置能耗模式
 config.set_power_mode(PowerMode.LITE_POWER_NO_BIND)
-# 设置valid places
+# 设置 valid places
 places = [Place(TargetType.ARM, PrecisionType.FP32)]
 config.set_valid_places(places)
 
-# 根据 CxxConfig创建 CxxPredictor
+# 根据 CxxConfig 创建 CxxPredictor
 predictor = create_paddle_predictor(config)
 ```
 
@@ -138,7 +138,7 @@ predictor = create_paddle_predictor(config)
 
 ### `set_valid_places(valid_places)`
 
-设置可用的places列表。
+设置可用的 places 列表。
 
 参数：
 
@@ -178,7 +178,6 @@ predictor = create_paddle_predictor(config)
 返回类型：`None`
 
 
-
 ### `power_mode()`
 
 获取设置的 CPU 能耗模式。
@@ -199,7 +198,7 @@ predictor = create_paddle_predictor(config)
 
 设置工作线程数。若不设置，则默认使用单线程。
 
-*注意：只在开启`OpenMP` 的模式下生效，否则只使用单线程。此函数只在使用 `LITE_WITH_ARM` 编译选项下生效。*
+*注意：只在开启 `OpenMP` 的模式下生效，否则只使用单线程。此函数只在使用 `LITE_WITH_ARM` 编译选项下生效。*
 
 参数：
 
@@ -232,7 +231,7 @@ predictor = create_paddle_predictor(config)
 
 参数：
 
-- `threads(int)` - CPU Math 库线程数。
+- `threads`：CPU Math 库线程数。
 
 返回：`None`
 
@@ -260,7 +259,7 @@ predictor = create_paddle_predictor(config)
 class MobileConfig;
 ```
 
-`MobileConfig` 用来配置构建轻量级 PaddlePredictor 的配置信息，如 NaiveBuffer 格式的模型地址、模型的内存地址(从内存加载模型时使用)、能耗模式、工作线程数等等。
+`MobileConfig` 用来配置构建轻量级 PaddlePredictor 的配置信息，如 NaiveBuffer 格式的模型地址、模型的内存地址（从内存加载模型时使用）、能耗模式、工作线程数等等。
 
 *注意：输入的模型需要使用 [Model Optimize Tool](../user_guides/model_optimize_tool) 转化为 NaiveBuffer 格式的优化模型。*
 
@@ -349,7 +348,7 @@ void set_model_buffer(const char* model_buffer,
 std::string model_buffer = ReadFile(FLAGS_model_path);
 std::string params_buffer = lite::ReadFile(FLAGS_params_path);
 
-// 设置MobileConfig
+// 设置 MobileConfig
 lite_api::MobileConfig config;
 config.set_model_buffer(model_buffer.c_str(), model_buffer.size(), 
                         params_buffer.c_str(), params_buffer.size());
@@ -479,7 +478,7 @@ int64_t ShapeProduction(const shape_t& shape) {
 MobileConfig config;
 config.set_model_dir(FLAGS_model_dir);
 
-// 根据MobileConfig 创建 PaddlePredictor
+// 根据 MobileConfig 创建 PaddlePredictor
 std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>(config);
 
 // 获得模型的输入和输出名称
@@ -507,9 +506,9 @@ for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
 predictor->Run();
 
 // 获取输出
-// (1)根据 index 获取输出 Tensor
+// (1) 根据 index 获取输出 Tensor
 std::unique_ptr<const Tensor> output_tensor(std::move(predictor->GetOutput(0)));
-// (2)根据名称获取输出 Tensor
+// (2) 根据名称获取输出 Tensor
 // std::unique_ptr<const Tensor> output_tensor(std::move(predictor->GetOutput(output_names[0])));
 printf("Output dim: %d\n", output_tensor->shape()[1]);
 for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
@@ -547,7 +546,7 @@ virtual std::unique_ptr<const Tensor> GetOutput(int i) const = 0;
 
 - 返回值
 
-  第 `index` 个输出 Tensor` 的指针
+  第 `index` 个输入 `Tensor` 的指针
 
 
 ### `GetInputNames`
@@ -651,7 +650,7 @@ class TargetType;
 ```c++
 class PrecisionType;
 ```
-`PrecisionType` 为模型中 Tensor 的数据精度，默认值为 FP32(float32)。
+`PrecisionType` 为模型中 Tensor 的数据精度，默认值为 FP32 （float32）。
 
 枚举型变量`PrecisionType`的所有可能取值包括: `{kFloat, kInt8, kInt32, kFP16, kBool, kInt64, kInt16, kUInt8, kFP64, kAny}`
 
@@ -712,7 +711,7 @@ PowerMode详细说明如下：
 |   LITE_POWER_HIGH    | 绑定大核运行模式。如果 ARM CPU支持 big.LITTLE，则优先使用并绑定 Big cluster，如果设置的线程数大于大核数量，则会将线程数自动缩放到大核数量。如果系统不存在大核或者在一些手机的低电量情况下会出现绑核失败，如果失败则进入不绑核模式。 |
 |    LITE_POWER_LOW    | 绑定小核运行模式。如果 ARM CPU 支持 big.LITTLE，则优先使用并绑定 Little cluster，如果设置的线程数大于小核数量，则会将线程数自动缩放到小核数量。如果找不到小核，则自动进入不绑核模式。 |
 |   LITE_POWER_FULL    | 大小核混用模式。线程数可以大于大核数量，当线程数大于核心数量时，则会自动将线程数缩放到核心数量。 |
-|  LITE_POWER_NO_BIND  | 不绑核运行模式（推荐）。系统根据负载自动调度任务到空闲的CPU核心上。 |
+|  LITE_POWER_NO_BIND  | 不绑核运行模式（推荐）。系统根据负载自动调度任务到空闲的 CPU 核心上。 |
 | LITE_POWER_RAND_HIGH | 轮流绑定大核模式。如果 Big cluster 有多个核心，则每预测 10 次后切换绑定到下一个核心。 |
 | LITE_POWER_RAND_LOW  | 轮流绑定小核模式。如果 Little cluster 有多个核心，则每预测 10 次后切换绑定到下一个核心。 |
 
