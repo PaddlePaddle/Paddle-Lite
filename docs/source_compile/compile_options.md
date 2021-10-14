@@ -32,7 +32,3 @@
 ## 平台相关编译选项
 
 - [使用 Linux x86 构建 / 目标终端为 Android](./compile_android.md)
-- [使用 Linux x86 构建 / 目标终端为 ARM Linux](./compile_linux.md)
-- [使用 MacOS 构建 / 目标终端为 iOS](./compile_ios.md)
-- [Windows 源码编译](./compile_windows.md)
-- [MacOS M1 芯片源码编译](./compile_armmacos.md)
