@@ -22,8 +22,8 @@
      - MacOS\ :raw-html-m2r:`<br>`
      - MacOS\ :raw-html-m2r:`<br>`
    * - **芯片层**
-     - x86 Intel CPU
-     - x86 Intel CPU :raw-html-m2r:`<br>`
+     - x86 架构
+     - x86 架构 :raw-html-m2r:`<br>`
 
 
 [^1]：OpenCL 是面向异构硬件平台的编译库，Paddle Lite 支持在 x86 MacOS 系统上运行基于 OpenCL 的程序。
