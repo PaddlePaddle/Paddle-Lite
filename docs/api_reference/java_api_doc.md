@@ -80,7 +80,7 @@ PowerMode getPowerMode();
 
 - 返回值：
 
-设置的CPU能耗 
+  设置的CPU能耗
 
 
 
@@ -96,7 +96,7 @@ void setThreads(int i);
 
 - 参数
 
-    - `i`： 工作线程数。默认为1。
+    - `i`： 工作线程数，默认为1。
 
 
 
@@ -111,7 +111,7 @@ int getThreads();
 
 - 返回值
 
-工作线程数
+  工作线程数
 
 
 ## PaddlePredictor
@@ -163,7 +163,7 @@ for (int i = 0; i < 1000; ++i) {
 public static PaddlePredictor createPaddlePredictor(ConfigBase config);
 ```
 
-`CreatePaddlePredictor`用来根据`ConfigBase`动态创建预测器，目前Java API支持使用MobileConfig`。框架会根据您在config中指定的模型路径、能耗模型、工作线程数等自动创建一个预测器。
+`CreatePaddlePredictor`用来根据`MobileConfig`动态创建预测器。框架会根据您在config中指定的模型路径、能耗模型、工作线程数等自动创建一个预测器。
 
 - 参数
 
@@ -171,7 +171,7 @@ public static PaddlePredictor createPaddlePredictor(ConfigBase config);
 
 - 返回值
 
-`PaddlePredictor` 指针
+  `PaddlePredictor` 指针
 
 
 
@@ -209,7 +209,7 @@ Tensor getOutput(int i);
 
 - 返回值
 
-第`i`个输出`Tensor`的指针
+  第`i`个输出`Tensor`的指针
 
 
 
@@ -233,7 +233,8 @@ String getVersion();
 用于获取当前lib使用的代码版本。若代码有相应tag则返回tag信息，如`v2.0-beta`；否则返回代码的`branch(commitid)`，如`develop(7e44619)`。
 
 - 返回值：
-当前库使用的代码版本信息
+
+  当前库使用的代码版本信息
 
 
 
@@ -350,7 +351,7 @@ long[] shape();
 
 - 返回值
 
-Tensor的维度信息
+  Tensor的维度信息
 
 
 
@@ -381,4 +382,4 @@ float[] getFloatData();
 
 - 返回值：
 
-`Tensor`底层float型数据
+  `Tensor`底层float型数据
