@@ -1,4 +1,4 @@
-# Paddle Lite介绍
+# Paddle Lite 介绍
 
 Paddle Lite 是一组工具，可帮助开发者在移动设备、嵌入式设备和 loT 设备上运行模型，以便实现设备端机器学习。
 
@@ -11,7 +11,7 @@ Paddle Lite 是一组工具，可帮助开发者在移动设备、嵌入式设�
 ## 开发工作流程
 以下介绍了该工作流程的每一个步骤，并提供了进一步说明的链接：
 
-### 1. 创建Paddle Lite 模型
+### 1. 创建 Paddle Lite 模型
 
 您可以通过以下方式生成 Paddle Lite 模型：
 
@@ -22,25 +22,25 @@ Paddle Lite 是一组工具，可帮助开发者在移动设备、嵌入式设�
 推断是指在设备上执行 Paddle Lite 模型，以便根据输入数据进行预测的过程。您可以通过以下方式运行推断：
 
 - 使用 Paddle Lite API，在多个平台和语言中均受支持（如 [Java](../quick_start/java_demo)、[C++](../quick_start/cpp_demo)、[Python](../quick_start/python_demo)）
-  - 配置参数（MobileConfig），设置模型来源等
-  - 创建推理器（Predictor），调用 CreatePaddlePredictor 接口即可创建
-  - 设置模型输入，通过 predictor->GetInput(i)获取输入变量，并为其指定大小和数值
-  - 执行预测，只需要调用 predictor->Run()
-  - 获得输出，使用 predictor->GetOutput(i) 获取输出变量，并通过 data<T> 取得输出值
+  - 配置参数（`MobileConfig`），设置模型来源等
+  - 创建推理器（Predictor），调用 `CreatePaddlePredictor` 接口即可创建
+  - 设置模型输入，通过 `predictor->GetInput(i)` 获取输入变量，并为其指定大小和数值
+  - 执行预测，只需要调用 `predictor->Run()`
+  - 获得输出，使用 `predictor->GetOutput(i)` 获取输出变量，并通过 data<T> 取得输出值
 
-在有 GPU 的设备上，您可以使用[Paddle Lite 的OpenCL后端](../demo_guides/opencl)加速来提升性能。
+在有 GPU 的设备上，您可以使用 [Paddle Lite 的OpenCL后端](../demo_guides/opencl)加速来提升性能。
 
 ## 开始使用
 
 根据目标设备，您可以参阅以下指南：
 
-- Android：请浏览[Android工程示例](../demo_guides/android_app_demo)
-- iOS：请浏览[iOS工程示例](../demo_guides/ios_app_demo)
-- 嵌入式Linux：请浏览[Linux(ARM)工程示例](../demo_guides/linux_arm_demo)
-- windows、macOS、Linux 等x86 架构的CPU主机： 请浏览[PaddleLite使用X86预测部署](../demo_guides/x86)
-- FPGA：对于百度自研的[EdgeBoard开发板](https://ai.baidu.com/tech/hardware/deepkit)请浏览 [使用EdgeBoard FPGA 预测部署](../demo_guides/fpga)，对于英特尔FPGA平台 请浏览[PaddleLite使用英特尔FPGA预测部署](../demo_guides/intel_fpga)
-- 百度XPU（昆仑AI加速芯片）：请浏览[PaddleLite使用百度XPU预测部署](../demo_guides/baidu_xpu)
-- AI 加速芯片： 对于 华为麒麟NPU 请浏览 [PaddleLite使用华为麒麟NPU预测部署](../demo_guides/huawei_kirin_npu)， 对于瑞芯微NPU请浏览 [PaddleLite使用瑞芯微NPU预测部署](../demo_guides/rockchip_npu)，对于联发科APU 请浏览 [PaddleLite使用联发科APU预测部署](../demo_guides/mediatek_apu)，对于颖脉NNA 请浏览 [PaddleLite使用颖脉NNA预测部署](../demo_guides/imagination_nna)，对于比特大陆的算丰（SOPHON）AI芯片 请浏览 [PaddleLite使用Bitmain Sophon BM1682/BM1684 预测部署](../demo_guides/bitmain)
+- Android：请浏览 [Android 工程示例](../demo_guides/android_app_demo)
+- iOS：请浏览 [iOS 工程示例](../demo_guides/ios_app_demo)
+- 嵌入式Linux：请浏览 [Linux(ARM) 工程示例](../demo_guides/linux_arm_demo)
+- windows、macOS、Linux 等 x86 架构的 CPU 主机： 请浏览 [Paddle Lite 使用 X86 预测部署](../demo_guides/x86)
+- FPGA：对于百度自研的 [EdgeBoard 开发板](https://ai.baidu.com/tech/hardware/deepkit)请浏览 [使用 EdgeBoard FPGA 预测部署](../demo_guides/fpga)，对于英特尔 FPGA 平台 请浏览[PaddleLite使用英特尔FPGA预测部署](../demo_guides/intel_fpga)
+- 百度 XPU（昆仑 AI 加速芯片）：请浏览 [Paddle Lite 使用百度 XPU 预测部署](../demo_guides/baidu_xpu)
+- AI 加速芯片： 对于 华为麒麟 NPU 请浏览 [Paddle Lite 使用华为麒麟NPU预测部署](../demo_guides/huawei_kirin_npu)， 对于瑞芯微 NPU 请浏览 [Paddle Lite 使用瑞芯微NPU预测部署](../demo_guides/rockchip_npu)，对于联发科APU 请浏览 [Paddle Lite 使用联发科APU预测部署](../demo_guides/mediatek_apu)，对于颖脉 NNA 请浏览 [Paddle Lite 使用颖脉NNA预测部署](../demo_guides/imagination_nna)，对于比特大陆的算丰（SOPHON）AI芯片 请浏览 [Paddle Lite 使用 Bitmain Sophon BM1682/BM1684 预测部署](../demo_guides/bitmain)
 
 ## 技术路线
 
