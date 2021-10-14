@@ -2,7 +2,7 @@
    :format: html
 
 
-Paddle Lite 交叉编译概述
+Paddle Lite 源码编译概述
 ======================================================
 Paddle Lite 提供了Android/iOS/X86/MacOS平台的官方Release预测库下载，如果您使用的是这四个平台，我们优先推荐您直接下载 `Paddle Lite 预编译库 <https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html>`_。
 
