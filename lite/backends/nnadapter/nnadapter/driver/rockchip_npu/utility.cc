@@ -27,29 +27,29 @@ rk::nn::PrecisionType ConvertToRknnPrecisionType(
       output_precision = rk::nn::PrecisionType::BOOL8;
       break;
     case NNADAPTER_INT8:
-    case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER:
-    case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL:
+    case NNADAPTER_QUANT_INT8_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL:
       output_precision = rk::nn::PrecisionType::INT8;
       break;
     case NNADAPTER_INT16:
       output_precision = rk::nn::PrecisionType::INT16;
       break;
     case NNADAPTER_INT32:
-    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER:
-    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL:
+    case NNADAPTER_QUANT_INT32_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL:
       output_precision = rk::nn::PrecisionType::INT32;
       break;
     case NNADAPTER_INT64:
       output_precision = rk::nn::PrecisionType::INT64;
       break;
     case NNADAPTER_UINT8:
-    case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER:
+    case NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER:
       output_precision = rk::nn::PrecisionType::UINT8;
       break;
     case NNADAPTER_UINT16:
       output_precision = rk::nn::PrecisionType::UINT16;
       break;
-    case NNADAPTER_TENSOR_QUANT_UINT32_ASYMM_PER_LAYER:
+    case NNADAPTER_QUANT_UINT32_ASYMM_PER_LAYER:
     case NNADAPTER_UINT32:
       output_precision = rk::nn::PrecisionType::UINT32;
       break;
@@ -166,11 +166,11 @@ std::shared_ptr<rk::nn::Tensor> CreateRknnTensor(
   const float* quant_scale = nullptr;
   const int32_t* zero_point = nullptr;
   switch (type->precision) {
-    case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER:
+    case NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER:
       quant_scale = &type->asymm_per_layer_params.scale;
       zero_point = &type->asymm_per_layer_params.zero_point;
       break;
-    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT32_SYMM_PER_LAYER:
       quant_scale = &type->symm_per_layer_params.scale;
       break;
     default:

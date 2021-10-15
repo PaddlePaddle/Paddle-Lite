@@ -102,7 +102,7 @@ NNAdapterOperand* Converter::AddQuant8ConstantOperand(int8_t* values,
                                                       float quant_scale,
                                                       bool copy) {
   return AddOperand(dimensions,
-                    NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER,
+                    NNADAPTER_QUANT_INT8_SYMM_PER_LAYER,
                     &quant_scale,
                     1,
                     0,
@@ -118,7 +118,7 @@ NNAdapterOperand* Converter::AddQuant8ConstantOperand(
     uint32_t quant_channel_dim,
     bool copy) {
   return AddOperand(dimensions,
-                    NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL,
+                    NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL,
                     quant_scales,
                     quant_scale_count,
                     quant_channel_dim,
@@ -131,7 +131,7 @@ NNAdapterOperand* Converter::AddQuant32ConstantOperand(int32_t* values,
                                                        float quant_scale,
                                                        bool copy) {
   return AddOperand(dimensions,
-                    NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER,
+                    NNADAPTER_QUANT_INT32_SYMM_PER_LAYER,
                     &quant_scale,
                     1,
                     0,
@@ -147,7 +147,7 @@ NNAdapterOperand* Converter::AddQuant32ConstantOperand(
     uint32_t quant_channel_dim,
     bool copy) {
   return AddOperand(dimensions,
-                    NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL,
+                    NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL,
                     quant_scales,
                     quant_scale_count,
                     quant_channel_dim,
@@ -159,7 +159,7 @@ NNAdapterOperand* Converter::AddQuant8VariableOperand(const DDim& dimensions,
                                                       float quant_scale,
                                                       const std::string& name) {
   return AddOperand(dimensions,
-                    NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER,
+                    NNADAPTER_QUANT_INT8_SYMM_PER_LAYER,
                     &quant_scale,
                     1,
                     0,
@@ -275,15 +275,15 @@ NNAdapterOperand* Converter::AddOperand(const DDim& dimensions,
     // Quant type
     if (quant_scale_count > 1) {
       // Symmetric per-channel quantization
-      CHECK(precision == NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL ||
-            precision == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL);
+      CHECK(precision == NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL ||
+            precision == NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL);
       type.symm_per_channel_params.scales = quant_scales;
       type.symm_per_channel_params.scale_count = quant_scale_count;
       type.symm_per_channel_params.channel_dim = quant_channel_dim;
     } else {
       // Symmetric per-layer quantization
-      CHECK(precision == NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER ||
-            precision == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER);
+      CHECK(precision == NNADAPTER_QUANT_INT8_SYMM_PER_LAYER ||
+            precision == NNADAPTER_QUANT_INT32_SYMM_PER_LAYER);
       type.symm_per_layer_params.scale = quant_scales[0];
     }
   } else {

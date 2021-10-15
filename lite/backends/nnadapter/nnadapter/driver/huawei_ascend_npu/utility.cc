@@ -395,7 +395,7 @@ ge::DataType ConvertToGEPrecision(
       return ge::DT_INT64;
     case NNADAPTER_UINT8:
       return ge::DT_UINT8;
-    case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER:
+    case NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER:
       return ge::DT_QUINT8;
     case NNADAPTER_UINT16:
       return ge::DT_UINT16;

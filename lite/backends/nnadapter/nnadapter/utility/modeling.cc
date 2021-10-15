@@ -161,7 +161,7 @@ NNADAPTER_EXPORT hal::Operand* AddQuant8ConstantOperand(
     bool copy) {
   return AddOperand(model,
                     dimensions,
-                    NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER,
+                    NNADAPTER_QUANT_INT8_SYMM_PER_LAYER,
                     &quant_scale,
                     nullptr,
                     1,
@@ -180,7 +180,7 @@ NNADAPTER_EXPORT hal::Operand* AddQuant8ConstantOperand(
     bool copy) {
   return AddOperand(model,
                     dimensions,
-                    NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL,
+                    NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL,
                     quant_scales,
                     nullptr,
                     quant_scale_count,
@@ -198,7 +198,7 @@ NNADAPTER_EXPORT hal::Operand* AddQuant8ConstantOperand(
     bool copy) {
   return AddOperand(model,
                     dimensions,
-                    NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER,
+                    NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER,
                     &quant_scale,
                     &zero_point,
                     1,
@@ -215,7 +215,7 @@ NNADAPTER_EXPORT hal::Operand* AddQuant32ConstantOperand(
     bool copy) {
   return AddOperand(model,
                     dimensions,
-                    NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER,
+                    NNADAPTER_QUANT_INT32_SYMM_PER_LAYER,
                     &quant_scale,
                     nullptr,
                     1,
@@ -234,7 +234,7 @@ NNADAPTER_EXPORT hal::Operand* AddQuant32ConstantOperand(
     bool copy) {
   return AddOperand(model,
                     dimensions,
-                    NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL,
+                    NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL,
                     quant_scales,
                     nullptr,
                     quant_scale_count,
@@ -252,7 +252,7 @@ NNADAPTER_EXPORT hal::Operand* AddQuant32ConstantOperand(
     bool copy) {
   return AddOperand(model,
                     dimensions,
-                    NNADAPTER_TENSOR_QUANT_UINT32_ASYMM_PER_LAYER,
+                    NNADAPTER_QUANT_UINT32_ASYMM_PER_LAYER,
                     &quant_scale,
                     &zero_point,
                     1,
@@ -267,7 +267,7 @@ NNADAPTER_EXPORT hal::Operand* AddQuant8VariableOperand(
     float quant_scale) {
   return AddOperand(model,
                     dimensions,
-                    NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER,
+                    NNADAPTER_QUANT_INT8_SYMM_PER_LAYER,
                     &quant_scale,
                     nullptr,
                     1,
@@ -283,7 +283,7 @@ NNADAPTER_EXPORT hal::Operand* AddQuant8VariableOperand(
     int32_t zero_point) {
   return AddOperand(model,
                     dimensions,
-                    NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER,
+                    NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER,
                     &quant_scale,
                     &zero_point,
                     1,
