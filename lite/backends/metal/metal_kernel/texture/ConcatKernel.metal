@@ -131,18 +131,8 @@ struct ConcatParam {
 #pragma mark z
 
 #define V VZ
-#define R 6
-#define N 4
-#define P ftype
-#include "ConcatKernel.inc.metal"
-#undef P
-#undef N
-#undef R
-#undef V
-
-#define V VZ
-#define R 5
-#define N 4
+#define R 4
+#define N 6
 #define P ftype
 #include "ConcatKernel.inc.metal"
 #undef P
@@ -183,6 +173,26 @@ struct ConcatParam {
 #define V VZ
 #define R 4
 #define N 2
+#define P ftype
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
+#undef V
+
+#define V VZ
+#define R 3
+#define N 5
+#define P ftype
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
+#undef V
+
+#define V VZ
+#define R 3
+#define N 4
 #define P ftype
 #include "ConcatKernel.inc.metal"
 #undef P
