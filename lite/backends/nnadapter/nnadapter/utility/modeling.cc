@@ -117,27 +117,15 @@ NNADAPTER_EXPORT hal::Operand* AddFloat32ConstantOperand(hal::Model* model,
 NNADAPTER_EXPORT hal::Operand* AddInt32ConstantOperand(
     hal::Model* model, std::vector<int32_t> values) {
   std::vector<int32_t> dimensions({static_cast<int32_t>(values.size())});
-  return AddOperand(model,
-                    dimensions,
-                    NNADAPTER_TENSOR_INT32,
-                    nullptr,
-                    nullptr,
-                    0,
-                    0,
-                    &values[0]);
+  return AddOperand(
+      model, dimensions, NNADAPTER_INT32, nullptr, nullptr, 0, 0, &values[0]);
 }
 
 NNADAPTER_EXPORT hal::Operand* AddFloat32ConstantOperand(
     hal::Model* model, std::vector<float> values) {
   std::vector<int32_t> dimensions({static_cast<int32_t>(values.size())});
-  return AddOperand(model,
-                    dimensions,
-                    NNADAPTER_TENSOR_FLOAT32,
-                    nullptr,
-                    nullptr,
-                    0,
-                    0,
-                    &values[0]);
+  return AddOperand(
+      model, dimensions, NNADAPTER_FLOAT32, nullptr, nullptr, 0, 0, &values[0]);
 }
 
 NNADAPTER_EXPORT hal::Operand* AddInt32ConstantOperand(
@@ -145,15 +133,8 @@ NNADAPTER_EXPORT hal::Operand* AddInt32ConstantOperand(
     int32_t* values,
     const std::vector<int32_t>& dimensions,
     bool copy) {
-  return AddOperand(model,
-                    dimensions,
-                    NNADAPTER_TENSOR_INT32,
-                    nullptr,
-                    nullptr,
-                    0,
-                    0,
-                    values,
-                    copy);
+  return AddOperand(
+      model, dimensions, NNADAPTER_INT32, nullptr, nullptr, 0, 0, values, copy);
 }
 
 NNADAPTER_EXPORT hal::Operand* AddFloat32ConstantOperand(
@@ -163,7 +144,7 @@ NNADAPTER_EXPORT hal::Operand* AddFloat32ConstantOperand(
     bool copy) {
   return AddOperand(model,
                     dimensions,
-                    NNADAPTER_TENSOR_FLOAT32,
+                    NNADAPTER_FLOAT32,
                     nullptr,
                     nullptr,
                     0,
@@ -315,7 +296,7 @@ NNADAPTER_EXPORT hal::Operand* AddFloat32VariableOperand(
     hal::Model* model, const std::vector<int32_t>& dimensions) {
   return AddOperand(model,
                     dimensions,
-                    NNADAPTER_TENSOR_FLOAT32,
+                    NNADAPTER_FLOAT32,
                     nullptr,
                     nullptr,
                     0,
