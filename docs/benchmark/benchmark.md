@@ -13,7 +13,6 @@
         * [ResNet50](https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/ResNet50.tar.gz)
         * [SSD_MobileNetV3_large](https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/ssdlite_mobilenet_v3_large.tar.gz)
         * [HRNet_w18](https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/HRNet_18_voc.tar.gz)
-)
 
     * int8 量化模型
         * [MobileNetV1_quant](https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/MobileNetV1_quant.tar.gz)
@@ -22,7 +21,7 @@
         * [MobileNetV3_small_x1_0_quant](https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/MobileNetV3_small_x1_0_quant.tar.gz)
         * [ResNet50_quant](https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/ResNet50_quant.tar.gz)
         * [SSD_MobileNetV3_large_quant](https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/SSD_MobileNetV3_large_quant.tar.gz)
-        * [HRNet_w18_quant])(https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/HRNet_18_voc_quant.tar.gz)
+        * [HRNet_w18_quant](https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/HRNet_18_voc_quant.tar.gz)
 
 * 测试机器
    *  骁龙 865
@@ -80,7 +79,7 @@
 
 |模型|骁龙 865|骁龙 855|骁龙 845|骁龙 835|骁龙 625|麒麟 990|麒麟 980|RK3399|
 |:----|----:|----:|----:|----:|----:|----:|----:|----:|
-|MobileNetV1|28.52 |35.30 |60.78 |82.54 |144.20 |38.16 |32.86 |111.76 |
+|MobileNetV1|28.52 |29.22 |60.78 |82.54 |144.20 |38.16 |32.86 |111.76 |
 |MobileNetV2|18.84 |23.17 |42.74 |56.23 |107.66 |24.91 |22.51 |79.95 |
 |MobileNetV3_large_x1_0|14.55 |18.39 |32.49 |41.95 |96.30 |19.46 |17.78 |71.17 |
 |MobileNetV3_small_x1_0|4.75 |6.41 |9.98 |13.98 |37.99 |6.50 |6.00 |23.34 |
@@ -127,11 +126,17 @@
 |SSD_MobileNetV3_large_quant|20.84 |22.82 |64.16 |74.12 |165.91 |27.11 |25.29 |119.92 |
 
 
+## 华为昇腾NPU的性能数据
+请参考 [Paddle Lite 使用华为昇腾 NPU 预测部署](../demo_guides/huawei_ascend_npu)的最新性能数据
+
 ## 华为麒麟NPU的性能数据
 请参考 [Paddle Lite 使用华为麒麟 NPU 预测部署](../demo_guides/huawei_kirin_npu)的最新性能数据
 
 ## 瑞芯微NPU的性能数据
 请参考 [Paddle Lite 使用瑞芯微 NPU 预测部署](../demo_guides/rockchip_npu)的最新性能数据
+
+## 晶晨NPU的性能数据
+请参考 [Paddle Lite 使用晶晨NPU 预测部署](../demo_guides/amlogic_npu)的最新性能数据
 
 ## 联发科APU的性能数据
 请参考 [Paddle Lite 使用联发科 APU 预测部署](../demo_guides/mediatek_apu)的最新性能数据
