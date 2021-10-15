@@ -18,13 +18,14 @@
 
 // debug macro
 // #define METAL_DEBUG_GPU_CAPTURE
-// #define METAL_DEBUG_ONE_COMMANDBUFFER
 
 extern NSString* cString2NSString(std::string cStr) {
     return [NSString stringWithCString:cStr.c_str() encoding:[NSString defaultCStringEncoding]];
 }
 
 @interface MetalContextImp () {
+    bool use_one_cmdbuf_;
+    bool use_memory_reuse_;
     std::vector<paddle::lite_metal::kernels::metal::FetchImageCompute *> _fetch_vector;
 }
 @property (strong, nonatomic) id<MTLDevice> device;
@@ -35,6 +36,7 @@ extern NSString* cString2NSString(std::string cStr) {
 @property (strong, nonatomic) NSMutableArray<id<MTLCommandBuffer>>* waitings;
 @property (strong, nonatomic) NSMutableDictionary<NSString*, id<MTLComputePipelineState>>* caches;
 @property (strong, nonatomic) NSMutableDictionary<NSString*, NSArray*>* resizeInputs;
+@property (strong, nonatomic) NSMutableDictionary* memoryReuseHeaps API_AVAILABLE(ios(10.0));
 
 @end
 
@@ -49,6 +51,7 @@ extern NSString* cString2NSString(std::string cStr) {
         _waitings = [NSMutableArray array];
         _caches = [NSMutableDictionary dictionary];
         _resizeInputs = [NSMutableDictionary dictionaryWithCapacity:3];
+        _memoryReuseHeaps = [NSMutableDictionary dictionaryWithCapacity:3];
         _device = MTLCreateSystemDefaultDevice();
         _commandQueue = [_device newCommandQueue];
 #if defined (METAL_DEBUG_GPU_CAPTURE)
@@ -95,48 +98,6 @@ extern NSString* cString2NSString(std::string cStr) {
     }
 }
 
-#pragma mark pre-process
-
-- (void)resizeInput:(int64_t)index texture:(void *)texture dims:(std::vector<int64_t>&)dims  {
-    id<MTLTexture> inTexture = (__bridge id<MTLTexture>)texture;
-    if (inTexture) {
-        NSMutableArray *dimsAry = [NSMutableArray arrayWithCapacity:3];
-        for (int i = 0; i < dims.size(); i++) {
-            [dimsAry addObject:@(dims[i])];
-        }
-        [self.resizeInputs setObject:@[inTexture, dimsAry] forKey:@(index).stringValue];
-    }
-}
-
-- (NSArray *)getResizeInput:(int64_t)index {
-    if (index < self.resizeInputs.allKeys.count) {
-        NSArray *resizeAry = [self.resizeInputs objectForKey:@(index).stringValue];
-        if (resizeAry) {
-            return resizeAry;
-        }
-    }
-    return nil;
-}
-
-- (MPSImageLanczosScale *)lanczosScalePtrCreate {
-    MPSImageLanczosScale *lanczos = [[MPSImageLanczosScale alloc] initWithDevice:self.device];
-    return lanczos;
-}
-
-- (id<MTLTexture>)lanczosTextureCreate:(NSArray *)dims {
-    MTLTextureDescriptor *textureDesc = [[MTLTextureDescriptor alloc] init];
-    textureDesc.textureType = MTLTextureType2D;
-    textureDesc.width = [dims[3] intValue];
-    textureDesc.height = [dims[2] intValue];
-    textureDesc.depth = ([dims[1] intValue] + 3) / 4;
-    textureDesc.pixelFormat = MTLPixelFormatRGBA16Float;
-    textureDesc.usage = MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;;
-    textureDesc.storageMode = MTLStorageModeShared;
-    
-    id<MTLTexture> texture = [self.device newTextureWithDescriptor:textureDesc];
-    return texture;
-}
-
 #pragma mark data
 
 - (id<MTLBuffer>)newDeviceBuffer:(NSUInteger)size access:(paddle::lite_metal::METAL_ACCESS_FLAG)access {
@@ -153,40 +114,6 @@ extern NSString* cString2NSString(std::string cStr) {
     id<MTLTexture> image = [_device newTextureWithDescriptor:desc];
     assert(nil != image);
     return image;
-}
-
-- (id<MTLHeap>)newHeapForTexDesc:(MTLTextureDescriptor*)desc API_AVAILABLE(ios(10.0)) {
-    if (@available(iOS 10.0, *)) {
-        NSInteger size = [_device heapTextureSizeAndAlignWithDescriptor:desc].size;
-        MTLHeapDescriptor* heapDesc = [[MTLHeapDescriptor alloc] init];
-        heapDesc.size = size;
-        heapDesc.storageMode = MTLStorageModeShared;
-        return [_device newHeapWithDescriptor:heapDesc];
-    }
-    return nil;
-}
-
-- (bool)isNeedNewHeap:(id<MTLHeap>)heap texDesc:(MTLTextureDescriptor*)desc API_AVAILABLE(ios(10.0)) {
-    if (@available(iOS 10.0, *)) {
-        NSInteger hSize = heap.size;
-        NSInteger tSize = [_device heapTextureSizeAndAlignWithDescriptor:desc].size;
-        if (hSize >= tSize) {
-            return false;
-        } else {
-            return true;
-        }
-    }
-    return false;
-}
-
-- (id<MTLTexture>)newTextureWithDescriptor:(MTLTextureDescriptor*)desc heap:(id<MTLHeap>)heap API_AVAILABLE(ios(10.0)) {
-    if (@available(iOS 10.0, *)) {
-        id<MTLTexture> image = [heap newTextureWithDescriptor:desc];
-        [image makeAliasable];
-        assert(nil != image);
-        return image;
-    }
-    return nil;
 }
 
 #pragma mark enqueue
@@ -216,62 +143,60 @@ extern NSString* cString2NSString(std::string cStr) {
 }
 
 - (void)commit {
-#if defined (METAL_DEBUG_ONE_COMMANDBUFFER)
-
-#else
-    [_commandBuffer commit];
-    [_waitings addObject:_commandBuffer];
-    _commandBuffer = [_commandQueue commandBuffer];
-#endif
+    if(use_one_cmdbuf_){
+        
+    } else {
+        [_commandBuffer commit];
+        [_waitings addObject:_commandBuffer];
+        _commandBuffer = [_commandQueue commandBuffer];
+    }
 }
 
 // mps
 - (id<MTLCommandBuffer>)commandBuffer {
-#if defined (METAL_DEBUG_ONE_COMMANDBUFFER)
-    return _commandBuffer;
-#else
-    id<MTLCommandBuffer> result = [_commandQueue commandBuffer];
-    assert(nil != result);
-    return result;
-#endif
+    if(use_one_cmdbuf_){
+        return _commandBuffer;
+    } else {
+        id<MTLCommandBuffer> result = [_commandQueue commandBuffer];
+        assert(nil != result);
+        return result;
+    }
 }
 
 // mps
 - (void)commit:(id<MTLCommandBuffer>)cmdBuf {
     assert(nil != cmdBuf);
-#if defined (METAL_DEBUG_ONE_COMMANDBUFFER)
+    if(use_one_cmdbuf_){
 
-#else
-    [cmdBuf commit];
-    [_waitings addObject:cmdBuf];
-#endif
+    } else {
+        [cmdBuf commit];
+        [_waitings addObject:cmdBuf];
+    }
 }
 
 - (void)waitAllCompleted {
-#if defined (METAL_DEBUG_ONE_COMMANDBUFFER)
-    [_commandBuffer commit];
+    if(use_one_cmdbuf_){
+        [_commandBuffer commit];
 #if defined (METAL_DEBUG_GPU_CAPTURE)
-    [self stopCapture];
+        [self stopCapture];
 #endif
-    [_commandBuffer waitUntilCompleted];
-    _commandBuffer = [_commandQueue commandBuffer];
-
-#else
-    
+        [_commandBuffer waitUntilCompleted];
+        _commandBuffer = [_commandQueue commandBuffer];
+    } else {
 #if defined (METAL_DEBUG_GPU_CAPTURE)
-    [self stopCapture];
+        [self stopCapture];
 #endif
-    for (id<MTLCommandBuffer> buffer in _waitings) {
-        if (buffer.status >= MTLCommandBufferStatusCompleted) {
-            continue;
+        for (id<MTLCommandBuffer> buffer in _waitings) {
+            if (buffer.status >= MTLCommandBufferStatusCompleted) {
+                continue;
+            }
+            [buffer waitUntilCompleted];
+            if (buffer.error) {
+                LOG(INFO) << "[METAL]: " << buffer.error.localizedDescription.UTF8String;
+            }
         }
-        [buffer waitUntilCompleted];
-        if (buffer.error) {
-            LOG(INFO) << "[METAL]: " << buffer.error.localizedDescription.UTF8String;
-        }
+        [_waitings removeAllObjects];
     }
-    [_waitings removeAllObjects];
-#endif
 }
 
 #pragma mark c++ external
@@ -333,6 +258,109 @@ extern NSString* cString2NSString(std::string cStr) {
     [encoder endEncoding];
 }
 
+#pragma mark pre-process
+
+- (void)resizeInput:(int64_t)index texture:(void *)texture dims:(std::vector<int64_t>&)dims  {
+    id<MTLTexture> inTexture = (__bridge id<MTLTexture>)texture;
+    if (inTexture) {
+        NSMutableArray *dimsAry = [NSMutableArray arrayWithCapacity:3];
+        for (int i = 0; i < dims.size(); i++) {
+            [dimsAry addObject:@(dims[i])];
+        }
+        [self.resizeInputs setObject:@[inTexture, dimsAry] forKey:@(index).stringValue];
+    }
+}
+
+- (NSArray *)getResizeInput:(int64_t)index {
+    if (index < self.resizeInputs.allKeys.count) {
+        NSArray *resizeAry = [self.resizeInputs objectForKey:@(index).stringValue];
+        if (resizeAry) {
+            return resizeAry;
+        }
+    }
+    return nil;
+}
+
+- (MPSImageLanczosScale *)lanczosScalePtrCreate {
+    MPSImageLanczosScale *lanczos = [[MPSImageLanczosScale alloc] initWithDevice:self.device];
+    return lanczos;
+}
+
+- (id<MTLTexture>)lanczosTextureCreate:(NSArray *)dims {
+    MTLTextureDescriptor *textureDesc = [[MTLTextureDescriptor alloc] init];
+    textureDesc.textureType = MTLTextureType2D;
+    textureDesc.width = [dims[3] intValue];
+    textureDesc.height = [dims[2] intValue];
+    textureDesc.depth = ([dims[1] intValue] + 3) / 4;
+    textureDesc.pixelFormat = MTLPixelFormatRGBA16Float;
+    textureDesc.usage = MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;;
+    textureDesc.storageMode = MTLStorageModeShared;
+    
+    id<MTLTexture> texture = [self.device newTextureWithDescriptor:textureDesc];
+    return texture;
+}
+
+#pragma mark memory reuse
+
+- (void)set_use_memory_reuse:(bool)flag {
+    use_memory_reuse_ = flag;
+    if (flag) {
+      use_one_cmdbuf_ = true;
+    }
+}
+
+- (void)setHeap:(id<MTLHeap>)heap key:(std::string)ptr API_AVAILABLE(ios(10.0)) {
+    NSString* ptrStr = cString2NSString(ptr);
+    if (!ptrStr) {
+        return nil;
+    }
+    [self.memoryReuseHeaps setObject:heap forKey:ptrStr];
+}
+
+- (id<MTLHeap>)getHeap:(std::string)ptr API_AVAILABLE(ios(10.0)) {
+    NSString* ptrStr = cString2NSString(ptr);
+    if (!ptrStr) {
+        return nil;
+    }
+    if ([self.memoryReuseHeaps objectForKey:ptrStr]) {
+      return [self.memoryReuseHeaps objectForKey:ptrStr];
+    }
+    return nil;
+}
+
+- (id<MTLHeap>)newHeapWithDescriptor:(MTLTextureDescriptor*)desc API_AVAILABLE(ios(10.0)) {
+    if (@available(iOS 10.0, *)) {
+        NSInteger size = [_device heapTextureSizeAndAlignWithDescriptor:desc].size;
+        MTLHeapDescriptor* heapDesc = [[MTLHeapDescriptor alloc] init];
+        heapDesc.size = size;
+        heapDesc.storageMode = MTLStorageModeShared;
+        return [_device newHeapWithDescriptor:heapDesc];
+    }
+    return nil;
+}
+
+- (bool)isNewHeapWithDescriptor:(MTLTextureDescriptor*)desc heap:(id<MTLHeap>)heap API_AVAILABLE(ios(10.0)) {
+    if (@available(iOS 10.0, *)) {
+        NSInteger hSize = heap.size;
+        NSInteger tSize = [_device heapTextureSizeAndAlignWithDescriptor:desc].size;
+        if (hSize >= tSize) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+    return false;
+}
+
+- (id<MTLTexture>)newTextureWithDescriptor:(MTLTextureDescriptor*)desc heap:(id<MTLHeap>)heap API_AVAILABLE(ios(10.0)) {
+    if (@available(iOS 10.0, *)) {
+        id<MTLTexture> image = [heap newTextureWithDescriptor:desc];
+        [image makeAliasable];
+        assert(nil != image);
+        return image;
+    }
+    return nil;
+}
 
 #pragma mark - internal
 

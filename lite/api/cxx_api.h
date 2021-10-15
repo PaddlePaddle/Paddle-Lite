@@ -303,6 +303,14 @@ class CxxPaddleApiImpl : public lite_metal_api::PaddlePredictor {
       lite_metal_api::LiteModelType model_type = lite_metal_api::LiteModelType::kProtobuf,
       bool record_info = false) override;
 
+  /// console every op output
+  void SetMetalDebug(bool debug) override;
+
+  /// pre-process resize input texture to dims
+  void ResizeInput(int64_t index,
+                   void* texture,
+                   std::vector<int64_t>& shape) override;
+
  private:
   std::shared_ptr<Predictor> raw_predictor_;
   lite_metal_api::CxxConfig config_;

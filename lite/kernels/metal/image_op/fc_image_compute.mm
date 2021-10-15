@@ -97,10 +97,10 @@ FCImageCompute::~FCImageCompute() {
     TargetWrapperMetal::FreeImage(output_buffer_);
 }
 
-}
-}
-}
-}
+}  // namespace metal
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle
 
 REGISTER_LITE_KERNEL(fc,
     kMetal,

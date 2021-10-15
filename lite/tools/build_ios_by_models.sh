@@ -24,7 +24,7 @@ models_names=$(ls models)
 rm -rf models_opt && mkdir models_opt
 for name in $models_names
 do
-  ./opt --model_dir=./models/$name --valid_targets=arm --optimize_out=./models_opt/$name --record_tailoring_info=true
+  ./opt --model_dir=./models/$name --valid_targets=arm_metal --optimize_out=./models_opt/$name --record_tailoring_info=true
 done
 
 
@@ -51,14 +51,14 @@ rm -rf $(ls ./models_opt | grep -v .nb)
 
 # step 4. compiling iOS lib
 cd $workspace
-./lite/tools/build_ios.sh --with_strip=ON --opt_model_dir=$workspace/build.opt/lite/api/model_info --with_log=$WITH_LOG --with_cv=$WITH_CV --with_exception=$WITH_EXCEPTION
-./lite/tools/build_ios.sh --with_strip=ON --opt_model_dir=$workspace/build.opt/lite/api/model_info --with_log=$WITH_LOG --arch=armv7 --with_cv=$WITH_CV  --with_exception=$WITH_EXCEPTION
+./lite/tools/build_ios_with_metal.sh --with_strip=ON --opt_model_dir=$workspace/build.opt/lite/api/model_info --with_log=$WITH_LOG --with_cv=$WITH_CV --with_exception=$WITH_EXCEPTION
+./lite/tools/build_ios_with_metal.sh --with_strip=ON --opt_model_dir=$workspace/build.opt/lite/api/model_info --with_log=$WITH_LOG --arch=armv7 --with_cv=$WITH_CV  --with_exception=$WITH_EXCEPTION
 
 # step 5. pack compiling results and optimized models
 result_name=iOS_lib
 rm -rf $result_name && mkdir $result_name
-cp -rf build.ios.ios.armv7/inference_lite_lib.ios.armv7/ $result_name/armv7
-cp -rf build.ios.ios64.armv8/inference_lite_lib.ios64.armv8 $result_name/armv8
+cp -rf build.ios_with_metal.ios.armv7/inference_lite_lib.ios.armv7.metal/ $result_name/armv7
+cp -rf build.ios_with_metal.ios64.armv8/inference_lite_lib.ios64.armv8.metal $result_name/armv8
 cp build.opt/lite/api/opt $result_name/
 mv build.opt/lite/api/optimized_model $result_name
 

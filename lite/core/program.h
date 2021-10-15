@@ -261,11 +261,11 @@ class LITE_API RuntimeProgram {
   void ConfigMetalContext(std::string lib_path,
                           bool use_mps = false,
                           bool use_aggressive = false,
+                          bool use_memory_reuse_ = false,
                           void* device = nullptr);
-    
-  void ResizeInput(int64_t index, void* texture,
-                   std::vector<int64_t>& shape);
-    
+
+  void ResizeInput(int64_t index, void* texture, std::vector<int64_t>& shape);
+
   void SetMetalDebug(bool debug);
 #endif
 

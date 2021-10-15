@@ -17,7 +17,7 @@
 #include "lite/backends/metal/metal_debug.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
-#include "metal_params.h"
+#include "lite/kernels/metal/image_op/metal_params.h"
 
 namespace paddle {
 namespace lite_metal {

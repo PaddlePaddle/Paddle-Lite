@@ -337,22 +337,24 @@ RuntimeProgram::RuntimeProgram(
 void RuntimeProgram::ConfigMetalContext(std::string lib_path,
                                         bool use_mps,
                                         bool use_aggressive,
+                                        bool use_memory_reuse_,
                                         void* device) {
   MetalContext* context = (*metal_ctx_).As<MTLContext>().context();
   context->set_metal_device(device);
   context->set_metal_path(lib_path);
   context->set_use_mps(use_mps);
   context->set_use_aggressive(use_aggressive);
+  context->set_use_memory_reuse(use_memory_reuse_);
 }
 
-void RuntimeProgram::ResizeInput(int64_t index, void* texture, std::vector<int64_t>& shape) {
+void RuntimeProgram::ResizeInput(int64_t index,
+                                 void* texture,
+                                 std::vector<int64_t>& shape) {
   MetalContext* context = (*metal_ctx_).As<MTLContext>().context();
   context->resize_input(index, texture, shape);
 }
 
-void RuntimeProgram::SetMetalDebug(bool debug) {
-    metal_debug_ = debug;
-}
+void RuntimeProgram::SetMetalDebug(bool debug) { metal_debug_ = debug; }
 
 void RuntimeProgram::SaveOutput() {
   auto& insts = instructions_[kRootBlockIdx];

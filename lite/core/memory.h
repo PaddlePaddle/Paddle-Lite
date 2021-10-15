@@ -180,7 +180,9 @@ class Buffer {
   template <typename T>
   void ResetLazyMetalImage(MetalContext* context,
                            const DDim& dim,
-                           std::vector<int> transpose = {0, 2, 3, 1}) {
+                           std::vector<int> transpose,
+                           bool reuse,
+                           std::string sptr) {
     CHECK_EQ(own_data_, true) << "Can not reset unowned buffer.";
     Free();
     dim_ = dim;
@@ -188,6 +190,13 @@ class Buffer {
     metal_use_image2d_ = true;
     space_ = sizeof(T) * dim.production();
     data_ = TargetWrapperMetal::MallocImage<T>(context, dim, transpose);
+    // memory reuse
+    MetalImage* image = static_cast<MetalImage*>(data_);
+    if (context->use_memory_reuse() && reuse) {
+      image->initImageReuse(context, sptr);
+    } else {
+      image->initImage(context);
+    }
   }
 
   template <typename T>

@@ -159,15 +159,19 @@ bool LightPredictorImpl::TryShrinkMemory() {
   return raw_predictor_->TryShrinkMemory();
 }
 
-#ifdef LITE_WITH_METAL
 void LightPredictorImpl::SetMetalDebug(bool debug) {
+#ifdef LITE_WITH_METAL
   return raw_predictor_->SetMetalDebug(debug);
+#endif
 }
 
-void LightPredictorImpl::ResizeInput(int64_t index, void* texture, std::vector<int64_t>& shape) {
+void LightPredictorImpl::ResizeInput(int64_t index,
+                                     void* texture,
+                                     std::vector<int64_t>& shape) {
+#ifdef LITE_WITH_METAL
   return raw_predictor_->ResizeInput(index, texture, shape);
-}
 #endif
+}
 
 }  // namespace lite
 

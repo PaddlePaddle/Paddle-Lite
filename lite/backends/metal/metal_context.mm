@@ -47,6 +47,15 @@ void MetalContext::set_metal_path(std::string path) {
     [(__bridge MetalContextImp*)mContext setMetalPath:path];
 }
 
+void MetalContext::set_use_memory_reuse(bool flag) {
+  if (@available(iOS 10.0, *)) {
+    use_memory_reuse_ = flag;
+  } else {
+    use_memory_reuse_ = false;
+  }
+  [(__bridge MetalContextImp*)mContext set_use_memory_reuse:use_memory_reuse_];
+}
+
 void MetalContext::resize_input(int64_t index, void* texture, std::vector<int64_t>& shape) {
     [(__bridge MetalContextImp*)mContext resizeInput:index
                                              texture:texture

@@ -277,6 +277,12 @@ bool CxxPaddleApiImpl::TryShrinkMemory() {
   return raw_predictor_->TryShrinkMemory();
 }
 
+void CxxPaddleApiImpl::SetMetalDebug(bool debug) {}
+
+void CxxPaddleApiImpl::ResizeInput(int64_t index,
+                                   void *texture,
+                                   std::vector<int64_t> &shape) {}
+
 }  // namespace lite
 
 namespace lite_metal_api {
