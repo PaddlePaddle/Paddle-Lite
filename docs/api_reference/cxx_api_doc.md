@@ -29,7 +29,7 @@ std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>
 
 - 返回值
 
-  `PaddlePredictor`指针
+  `PaddlePredictor` 指针
 
 ## CxxConfig
 
