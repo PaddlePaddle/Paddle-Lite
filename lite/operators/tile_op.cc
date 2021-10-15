@@ -111,7 +111,6 @@ bool TileOp::InferShapeImpl() const {
 }
 
 bool TileOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
-  AttachParam(&param_);
   param_.X = scope->FindMutableTensor(opdesc.Input("X").front());
   if (opdesc.HasInput("RepeatTimes") && !opdesc.Input("RepeatTimes").empty()) {
     param_.RepeatTimes =
