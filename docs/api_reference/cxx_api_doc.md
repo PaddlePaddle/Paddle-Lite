@@ -236,7 +236,7 @@ void set_x86_math_num_threads(int threads);
 
 - 参数
 
-    - `threads`：CPU Math 库线程数。
+    - `threads`：CPU Math 库线程数
 
 
 ### `x86_math_num_threads`
@@ -313,7 +313,7 @@ const std::string& model_dir() const;
 
 - 返回值
 
-  模型文件夹路径。
+  模型文件夹路径
 
 
 ### `set_model_from_buffer`
