@@ -1058,11 +1058,7 @@ void conv_depthwise_5x5s1_fp32(float *dout,
   "ld1 {v6.4s}, [%[din_ptr3]], #16\n" \
   "st1 {v18.4s}, [%[doutr0]], #16\n"  \
   "st1 {v19.4s}, [%[doutr1]], #16\n"  \
-  "bne 1b                        \n"  \
-  "sub     %[din_ptr0], #16\n"        \
-  "sub     %[din_ptr1], #16\n"        \
-  "sub     %[din_ptr2], #16\n"        \
-  "sub     %[din_ptr3], #16\n"
+  "bne 1b                        \n"
 
 #define MID_RESULT_S1_RELU             \
   "fadd  v18.4s, v28.4s, v30.4s\n"     \
@@ -1076,11 +1072,7 @@ void conv_depthwise_5x5s1_fp32(float *dout,
   "ld1 {v6.4s}, [%[din_ptr3]], #16\n"  \
   "st1 {v18.4s}, [%[doutr0]], #16\n"   \
   "st1 {v19.4s}, [%[doutr1]], #16\n"   \
-  "bne 1b                         \n"  \
-  "sub     %[din_ptr0], #16\n"         \
-  "sub     %[din_ptr1], #16\n"         \
-  "sub     %[din_ptr2], #16\n"         \
-  "sub     %[din_ptr3], #16\n"
+  "bne 1b                         \n"
 
 #define MID_RESULT_S1_RELU6           \
   "fadd  v18.4s, v28.4s, v30.4s\n"    \
@@ -1095,14 +1087,14 @@ void conv_depthwise_5x5s1_fp32(float *dout,
   "ld1 {v6.4s}, [%[din_ptr3]], #16\n" \
   "st1 {v18.4s}, [%[doutr0]], #16\n"  \
   "st1 {v19.4s}, [%[doutr1]], #16\n"  \
-  "bne 1b                         \n" \
+  "bne 1b                        \n"
+
+#define RIGHT_COMPUTE_S1              \
+  "2:                             \n" \
   "sub     %[din_ptr0], #16\n"        \
   "sub     %[din_ptr1], #16\n"        \
   "sub     %[din_ptr2], #16\n"        \
   "sub     %[din_ptr3], #16\n"
-
-#define RIGHT_COMPUTE_S1                             \
-  "2:                             \n"                \
   "cmp %w[cnt], #1                \n"                \
   "sub %[din_ptr0], %[din_ptr0], %[right_pad_num]\n" \
   "sub %[din_ptr1], %[din_ptr1], %[right_pad_num]\n" \
@@ -1385,8 +1377,7 @@ void conv_depthwise_5x5s1_fp32(float *dout,
   "vadd.f32 q13, q12, q15\n"          \
   "vld1.32 {d30-d31}, [%[bias_val]]\n"\
   "vst1.32 {d26-d27}, [%[doutr0]]!\n" \
-  "bne 1b\n"                          \
-  "sub     %[din_ptr0], #16\n"
+  "bne 1b\n"
 
 #define MID_RESULT_S1_RELU            \
   "sub      %[din_ptr0], #16\n"       \
@@ -1398,8 +1389,7 @@ void conv_depthwise_5x5s1_fp32(float *dout,
   "vld1.32 {d30-d31}, [%[bias_val]]\n"\
   "vmax.f32 q13, q13, q7\n"           \
   "vst1.32 {d26-d27}, [%[doutr0]]!\n" \
-  "bne 1b\n"                          \
-  "sub     %[din_ptr0], #16\n"
+  "bne 1b\n"
 
 #define MID_RESULT_S1_RELU6           \
   "sub      %[din_ptr0], #16\n"       \
@@ -1414,12 +1404,12 @@ void conv_depthwise_5x5s1_fp32(float *dout,
   "vld1.32 {d30-d31}, [%[bias_val]]\n"\
   "vmin.f32 q13, q13, q14\n"          \
   "vst1.32 {d26-d27}, [%[doutr0]]!\n" \
-  "bne 1b\n"                          \
-  "sub     %[din_ptr0], #16\n"
+  "bne 1b\n"
 
 #define RIGHT_COMPUTE_S1               \
   "2: \n"                              \
   "cmp     %[cnt], #1\n"               \
+  "sub     %[din_ptr0], #16\n"         \
   "vld1.32 {d24-d27}, [%[vmask]]\n"    \
   "sub     %[din_ptr0], %[right_pad_num]\n"\
   "sub     %[din_ptr1], %[right_pad_num]\n"\
