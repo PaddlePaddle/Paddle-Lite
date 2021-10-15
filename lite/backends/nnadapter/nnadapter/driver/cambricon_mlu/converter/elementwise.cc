@@ -24,11 +24,11 @@ namespace cambricon_mlu {
 const std::map<NNAdapterOperationType, magicmind::IElementwise>*
 ElementwiseOperationMap() {
   static auto* const m =
-      new std::map<NNAdapterOperationType, magicmind::IElementwise> {
-        {NNADAPTER_ADD, magicmind::IElementwise::ADD},
-        {NNADAPTER_MUL, magicmind::IElementwise::MUL},
-        {NNADAPTER_SUB, magicmind::IElementwise::SUB},
-  };
+      new std::map<NNAdapterOperationType, magicmind::IElementwise>{
+          {NNADAPTER_ADD, magicmind::IElementwise::ADD},
+          {NNADAPTER_MUL, magicmind::IElementwise::MUL},
+          {NNADAPTER_SUB, magicmind::IElementwise::SUB},
+      };
   return m;
 }
 
@@ -59,20 +59,17 @@ int ConvertElementwise(Converter* converter, hal::Operation* operation) {
   auto output_tensor = elementwise_node->GetOutput(0);
   // fuse activations ?
   switch (fuse_code) {
-    case NNADAPTER_FUSED_RELU:
-      {
-        auto activation_node = converter->network()->AddIActivationNode(output_tensor, magicmind::IActivation::RELU);
-        auto fuse_out_tensor = activation_node->GetOutput(0);
-        converter->UpdateTensorMap(output_operand, fuse_out_tensor);
-        break;
-      }
-    case NNADAPTER_FUSED_RELU6:
-      {
-        auto activation_node = converter->network()->AddIActivationNode(output_tensor, magicmind::IActivation::RELU6);
-        auto fuse_out_tensor = activation_node->GetOutput(0);
-        converter->UpdateTensorMap(output_operand, fuse_out_tensor);
-        break;
-      }
+#define CONVERT_ACTIVATION(type, mm_type)                                 \
+  case NNADAPTER_FUSED_##type: {                                          \
+    auto activation_node =                                                \
+        converter->network()->AddIActivationNode(output_tensor, mm_type); \
+    auto fuse_out_tensor = activation_node->GetOutput(0);                 \
+    converter->UpdateTensorMap(output_operand, fuse_out_tensor);          \
+    break;                                                                \
+  }
+    CONVERT_ACTIVATION(RELU, magicmind::IActivation::RELU);
+    CONVERT_ACTIVATION(RELU6, magicmind::IActivation::RELU6);
+#undef CONVERT_ACTIVATION
     case NNADAPTER_FUSED_NONE:
       converter->UpdateTensorMap(output_operand, output_tensor);
       break;

@@ -38,12 +38,15 @@ int ConvertFullyConnected(Converter* converter, hal::Operation* operation) {
   // Reshape the input operator to 2-D tensor {batch_size, input_size} if the
   // dimensions_count not equal 2
   if (input_operand->type.dimensions.count != 2) {
-    auto shape_tensor =
-        converter->AddInt32ConstantTensor(std::vector<int32_t>({static_cast<int32_t>(batch_size), input_size}).data(), {2});
+    auto shape_tensor = converter->AddInt32ConstantTensor(
+        std::vector<int32_t>({static_cast<int32_t>(batch_size), input_size})
+            .data(),
+        {2});
     auto reshape_node =
         converter->network()->AddIReshapeNode(input_tensor, shape_tensor);
     if (reshape_node == nullptr) {
-      NNADAPTER_VLOG(5) << "Failed to reshape input operator to 2-D tensor for fully_connected node.";
+      NNADAPTER_VLOG(5) << "Failed to reshape input operator to 2-D tensor for "
+                           "fully_connected node.";
       return NNADAPTER_DEVICE_INTERNAL_ERROR;
     }
     final_input_tensor = reshape_node->GetOutput(0);
@@ -63,20 +66,17 @@ int ConvertFullyConnected(Converter* converter, hal::Operation* operation) {
   auto output_tensor = matmul_node->GetOutput(0);
   // fuse activations ?
   switch (fuse_code) {
-    case NNADAPTER_FUSED_RELU:
-      {
-        auto activation_node = converter->network()->AddIActivationNode(output_tensor, magicmind::IActivation::RELU);
-        auto fuse_out_tensor = activation_node->GetOutput(0);
-        converter->UpdateTensorMap(output_operand, fuse_out_tensor);
-        break;
-      }
-    case NNADAPTER_FUSED_RELU6:
-      {
-        auto activation_node = converter->network()->AddIActivationNode(output_tensor, magicmind::IActivation::RELU6);
-        auto fuse_out_tensor = activation_node->GetOutput(0);
-        converter->UpdateTensorMap(output_operand, fuse_out_tensor);
-        break;
-      }
+#define CONVERT_ACTIVATION(type, mm_type)                                 \
+  case NNADAPTER_FUSED_##type: {                                          \
+    auto activation_node =                                                \
+        converter->network()->AddIActivationNode(output_tensor, mm_type); \
+    auto fuse_out_tensor = activation_node->GetOutput(0);                 \
+    converter->UpdateTensorMap(output_operand, fuse_out_tensor);          \
+    break;                                                                \
+  }
+    CONVERT_ACTIVATION(RELU, magicmind::IActivation::RELU);
+    CONVERT_ACTIVATION(RELU6, magicmind::IActivation::RELU6);
+#undef CONVERT_ACTIVATION
     case NNADAPTER_FUSED_NONE:
       converter->UpdateTensorMap(output_operand, output_tensor);
       break;

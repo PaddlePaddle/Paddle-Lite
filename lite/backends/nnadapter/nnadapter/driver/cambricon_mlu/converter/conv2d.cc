@@ -32,16 +32,14 @@ int ConvertConv2D(Converter* converter, hal::Operation* operation) {
   bool use_depthwise_conv = false;
   auto filter_tensor = converter->ConvertOperand(filter_operand);
   NNADAPTER_CHECK_EQ(bias_operand->type.dimensions.count, 1);
-  NNADAPTER_CHECK_EQ(bias_operand->type.dimensions.data[0],
-                     filter_width);
-                     // output_channel_size);
+  NNADAPTER_CHECK_EQ(bias_operand->type.dimensions.data[0], filter_width);
+  // NNADAPTER_CHECK_EQ(bias_operand->type.dimensions.data[0],
+  // output_channel_size);
   auto bias_tensor = converter->ConvertOperand(bias_operand);
   if (use_depthwise_conv && is_depthwise_mode) {
-    NNADAPTER_VLOG(5) << " DepthwiseConv is unimpleted.";
-    return NNADAPTER_DEVICE_INTERNAL_ERROR;
   } else {
-    auto conv_node =
-        converter->network()->AddIConvNode(input_tensor, filter_tensor, bias_tensor);
+    auto conv_node = converter->network()->AddIConvNode(
+        input_tensor, filter_tensor, bias_tensor);
     if (conv_node == nullptr) {
       NNADAPTER_VLOG(5) << "Failed to add convolution node.";
       return NNADAPTER_DEVICE_INTERNAL_ERROR;
@@ -50,30 +48,32 @@ int ConvertConv2D(Converter* converter, hal::Operation* operation) {
     auto post_h = pads_buffer[1];
     auto pre_w = pads_buffer[2];
     auto post_w = pads_buffer[3];
-    conv_node->SetPad(static_cast<int64_t>(pre_h), static_cast<int64_t>(post_h),
-                      static_cast<int64_t>(pre_w), static_cast<int64_t>(post_w));
-    conv_node->SetStride(static_cast<int64_t>(stride_height), static_cast<int64_t>(stride_width));
-    conv_node->SetDilation(static_cast<int64_t>(dilation_height), static_cast<int64_t>(dilation_width));
+    conv_node->SetPad(static_cast<int64_t>(pre_h),
+                      static_cast<int64_t>(post_h),
+                      static_cast<int64_t>(pre_w),
+                      static_cast<int64_t>(post_w));
+    conv_node->SetStride(static_cast<int64_t>(stride_height),
+                         static_cast<int64_t>(stride_width));
+    conv_node->SetDilation(static_cast<int64_t>(dilation_height),
+                           static_cast<int64_t>(dilation_width));
     conv_node->SetGroup(static_cast<int64_t>(group));
-    magicmind::Layout input_layout = ConvertToMagicMindDataLayout(input_operand->type.layout);
+    magicmind::Layout input_layout =
+        ConvertToMagicMindDataLayout(input_operand->type.layout);
     conv_node->SetLayout(input_layout, magicmind::Layout::HWCN, input_layout);
     auto output_tensor = conv_node->GetOutput(0);
-    // fuse activations
+    // fuse activations ?
     switch (fuse_code) {
-      case NNADAPTER_FUSED_RELU:
-        {
-          auto activation_node = converter->network()->AddIActivationNode(output_tensor, magicmind::IActivation::RELU);
-          auto fuse_out_tensor = activation_node->GetOutput(0);
-          converter->UpdateTensorMap(output_operand, fuse_out_tensor);
-          break;
-        }
-      case NNADAPTER_FUSED_RELU6:
-        {
-          auto activation_node = converter->network()->AddIActivationNode(output_tensor, magicmind::IActivation::RELU6);
-          auto fuse_out_tensor = activation_node->GetOutput(0);
-          converter->UpdateTensorMap(output_operand, fuse_out_tensor);
-          break;
-        }
+#define CONVERT_ACTIVATION(type, mm_type)                                 \
+  case NNADAPTER_FUSED_##type: {                                          \
+    auto activation_node =                                                \
+        converter->network()->AddIActivationNode(output_tensor, mm_type); \
+    auto fuse_out_tensor = activation_node->GetOutput(0);                 \
+    converter->UpdateTensorMap(output_operand, fuse_out_tensor);          \
+    break;                                                                \
+  }
+      CONVERT_ACTIVATION(RELU, magicmind::IActivation::RELU);
+      CONVERT_ACTIVATION(RELU6, magicmind::IActivation::RELU6);
+#undef CONVERT_ACTIVATION
       case NNADAPTER_FUSED_NONE:
         converter->UpdateTensorMap(output_operand, output_tensor);
         break;
