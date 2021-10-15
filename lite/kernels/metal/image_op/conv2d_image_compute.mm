@@ -495,6 +495,7 @@ void Conv2dImageCompute::setup_with_mps() {
             converter->Convert(const_cast<float*>(filter), to_filter, from_dim);
         } catch (std::exception& error) {
             TargetWrapperMetal::Free(to_filter);
+            TargetWrapperMetal::Free(converter);
             LOG(FATAL) << "metal_conv2d: still not finish mps";
         }
         filter_buffer_ = std::make_shared<MetalBuffer>(
@@ -502,6 +503,7 @@ void Conv2dImageCompute::setup_with_mps() {
         filter_buffer_->convert_to_nhwc_ = false;
         filter_buffer_->CopyFromNCHW<float>(to_filter);
         TargetWrapperMetal::Free(to_filter);
+        TargetWrapperMetal::Free(converter);
         scoure.weights = filter_buffer_->rawdata();
         // bias
         if (param.bias && canMPSAddByChannel()) {
