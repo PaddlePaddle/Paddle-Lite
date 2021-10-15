@@ -94,7 +94,11 @@ kernel void sigmoid(texture2d_array<ftype, access::sample> inTexture
     return;
   constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
   const ftype4 input = inTexture.read(gid.xy, gid.z);
-  const ftype4 output = 1.0 / (1.0 + exp(-input));
+  ftype4 output = 0.0;
+  output.r  = (input.r == 0.0) ? 0.0 : (1.0 / (1.0 + exp(-input.r)));
+  output.g  = (input.g == 0.0) ? 0.0 : (1.0 / (1.0 + exp(-input.g)));
+  output.b  = (input.b == 0.0) ? 0.0 : (1.0 / (1.0 + exp(-input.b)));
+  output.a  = (input.a == 0.0) ? 0.0 : (1.0 / (1.0 + exp(-input.a)));
   outTexture.write(output, gid.xy, gid.z);
 }
 
