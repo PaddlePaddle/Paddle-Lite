@@ -367,7 +367,7 @@ std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>
 ### `is_model_from_memory`
 
 ```c++
-bool is_model_from_memory() const
+bool is_model_from_memory() const;
 ```
 
 是否从内存中加载模型，当使用 `set_model_buffer` 接口时返回 `true`。
@@ -446,7 +446,7 @@ void set_threads(int threads);
 ### `threads`
 
 ```c++
-int threads() const
+int threads() const;
 ```
 
 获取设置的工作线程数。
@@ -497,7 +497,7 @@ bool metal_use_mps() const;
  \#include &lt;[paddle\_api.h](../../lite/api/paddle_api.h)&gt;
 
 ```c++
-class PaddlePredictor
+class PaddlePredictor;
 ```
 
 `PaddlePredictor` 是 Paddle-Lite 的预测器，由 `CreatePaddlePredictor` 根据 `MobileConfig` 进行创建。用户可以根据 PaddlePredictor 提供的接口设置输入数据、执行模型预测、获取输出以及获得当前使用 lib 的版本信息等。
