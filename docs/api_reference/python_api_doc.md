@@ -155,7 +155,7 @@ MobileConfig.threads()
 class paddle_lite.lite.PaddlePredictor
 ```
 
-`PaddlePredictor` 是 Paddle Lite 的预测器，由 `create\_paddle\_predictor` 根据 `MobileConfig` 进行创建。用户可以根据PaddlePredictor 提供的接口设置输入数据、执行模型预测、获取输出等。
+`PaddlePredictor` 是 Paddle Lite 的预测器，由 `create\_paddle\_predictor` 根据 `MobileConfig` 进行创建。用户可以根据 PaddlePredictor 提供的接口设置输入数据、执行模型预测、获取输出等。
 
 示例：
 
@@ -252,16 +252,16 @@ PaddlePredictor.get_version()
 ```python
 enum paddle_lite.lite.TargetType
 ```
-`TargetType`为目标设备硬件类型，用户可以根据应用场景选择硬件平台类型。
+`TargetType` 为目标设备硬件类型，用户可以根据应用场景选择硬件平台类型。
 
-枚举型变量`TargetType`的取值包括 `{X86, CUDA, ARM, OpenCL, FPGA, NPU}` 等。
+枚举型变量 `TargetType` 的取值包括 `{X86, CUDA, ARM, OpenCL, FPGA, NPU}` 等。
 
 ## PrecisionType
 
 ```python
 enum paddle_lite.lite.PrecisionType
 ```
-`PrecisionType`为模型中Tensor的数据精度，默认值为 FP32 (float32)。
+`PrecisionType` 为模型中Tensor的数据精度，默认值为 FP32 (float32)。
 
 枚举型变量 `PrecisionType` 的取值包括 `{FP32, INT8, INT32, INT64}` 等。
 
