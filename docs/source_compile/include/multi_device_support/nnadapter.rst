@@ -51,7 +51,7 @@ NNAdapter 是 Paddle Lite 提供的神经网络算子适配器，您可以通过
      - OFF
    * - nnadapter_huawei_ascend_npu_sdk_root
      - 设置华为昇腾 NPU DDK 目录
-     - 开发者根据自己安装的 NPU 环境进行设置
+     - 用户自定义
      - /usr/local/Ascend/ascend-toolkit/latest
 
 如需进行华为昇腾 NPU 相关的编译工作: 请参考 `Paddle Lite 使用华为昇腾 NPU 预测部署 <https://paddle-lite.readthedocs.io/zh/develop/demo_guides/huawei_ascend_npu.html>`_
@@ -108,7 +108,7 @@ NNAdapter 是 Paddle Lite 提供的神经网络算子适配器，您可以通过
      - OFF
    * - nnadapter_amlogic_npu_sdk_root
      - 设置 Amlogic NPU SDK 目录
-     - 空值
+     - 用户自定义
      - 空值
 
 如需进行 Amlogic NPU 相关的编译工作: 请参考 `Paddle Lite 使用 Amlogic NPU 预测部署 <https://paddle-lite.readthedocs.io/zh/develop/demo_guides/amlogic_npu.html>`_
@@ -127,7 +127,7 @@ NNAdapter 是 Paddle Lite 提供的神经网络算子适配器，您可以通过
      - OFF
    * - nnadapter_imagination_nna_sdk_root
      - 设置 Imagination NNA SDK 目录
-     - 空值
+     - 用户自定义
      - 空值
 
 如需进行 Imagination NNA 相关的编译工作: 请参考 `Paddle Lite 使用颖脉 NNA 预测部署 <https://paddle-lite.readthedocs.io/zh/develop/demo_guides/imagination_nna.html>`_
