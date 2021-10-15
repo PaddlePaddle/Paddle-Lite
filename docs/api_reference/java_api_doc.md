@@ -2,13 +2,15 @@
 
 ## MobileConfig
 
+import [com.baidu.paddle.lite.MobileConfig](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.10/lite/api/android/jni/src/com/baidu/paddle/lite/MobileConfig.java);
+
 ```java
 public class MobileConfig extends ConfigBase;
 ```
 
-`MobileConfig`用来配置构建轻量级PaddlePredictor的配置信息，如NaiveBuffer格式的模型地址、能耗模式、工作线程数等等。
+`MobileConfig` 用来配置构建轻量级 PaddlePredictor 的配置信息，如 NaiveBuffer 格式的模型地址、能耗模式、工作线程数等等。
 
-*注意：输入的模型需要使用Model Optimize Tool转化为NaiveBuffer格式的优化模型。*
+*注意：输入的模型需要使用 Model Optimize Tool 转化为 NaiveBuffer 格式的优化模型。*
 
 示例：
 
@@ -25,129 +27,102 @@ config.setThreads(1);
 PaddlePredictor predictor = PaddlePredictor.createPaddlePredictor(config);
 ```
 
-### ``setModelFromFile(model_file)``
+### `setModelFromFile`
 
-设置模型文件夹路径。
+```java
+void setModelFromFile(String x);
+```
 
-参数：
+设置模型文件，当需要从磁盘加载模型时使用。
 
-- `model_file(String)` - 模型文件路径
-
-返回：`None`
-
-返回类型：`void`
-
+- 参数
+    - `x`: 模型文件路径
 
 
-### ``setModelDir(model_dir)``
+### `setModelFromBuffer`
 
-**注意**：Lite模型格式在release/v2.3.0之后修改，本接口为加载老格式模型的接口，将在release/v3.0.0废弃。建议替换为`setModelFromFile`接口。
-
-设置模型文件夹路径。
-
-参数：
-
-- `model_dir(String)` - 模型文件夹路径
-
-返回：`None`
-
-返回类型：`void`
-
-
-
-### ``setModelFromBuffer(model_buffer)``
+```java
+void setModelFromBuffer(String x);
+```
 
 设置模型的内存数据，当需要从内存加载模型时使用。
 
-参数：
+- 参数
 
-- `model_buffer(str)` - 内存中的模型数据
-
-返回：`None`
-
-返回类型：`void`
+    - `x`： 内存中的模型数据
 
 
 
-### `getModelDir()`
+### `setPowerMode`
 
-返回设置的模型文件夹路径。
+```java
+void void setPowerMode(PowerMode mode);
+```
 
-参数：
+设置 CPU 能耗模式。若不设置，则默认使用 `LITE_POWER_HIGH`。
 
-- `None`
+*注意：只在开启 `OpenMP` 时生效，否则系统自动调度。*
 
-返回：模型文件夹路径
+- 参数
 
-返回类型：`String`
-
-
-
-### `setPowerMode(mode)`
-
-设置CPU能耗模式。若不设置，则默认使用`LITE_POWER_HIGH`。
-
-*注意：只在开启`OpenMP`时生效，否则系统自动调度。*
-
-参数：
-
-- `mode(PowerMode)` - CPU能耗模式。
-
-返回：`None`
-
-返回类型：`void`
+    - `PowerMode`： CPU 能耗模式。
 
 
 
-### `getPowerMode()`
+### `getPowerMode`
 
-获取设置的CPU能耗模式。
+```java
+PowerMode getPowerMode();
+```
 
-参数：
-
-- `None`
-
-返回：设置的CPU能耗模式
-
-返回类型：`PowerMode`
+获取设置的 CPU 能耗模式。
 
 
+- 返回值：
 
-### `setThreads(threads)`
+  设置的 CPU 能耗
+
+
+
+### `setThreads`
+
+```java
+void setThreads(int i);
+```
 
 设置工作线程数。若不设置，则默认使用单线程。
 
-*注意：只在开启`OpenMP`的模式下生效，否则只使用单线程。*
+*注意：只在开启 `OpenMP` 的模式下生效，否则只使用单线程。*
 
-参数：
+- 参数
 
-- `threads(int)` - 工作线程数。默认为1。
-
-返回：`None`
-
-返回类型：`void`
+    - `i`： 工作线程数，默认为1。
 
 
 
-### `getThreads()`
+### `getThreads`
+
+```java
+int getThreads();
+```
 
 获取设置的工作线程数。
 
-参数：
 
-- `None`
+- 返回值
 
-返回：工作线程数
+  工作线程数
 
-返回类型：`int`
 
 ## PaddlePredictor
+
+import [com.baidu.paddle.lite.PaddlePredictor](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.10/lite/api/android/jni/src/com/baidu/paddle/lite/PaddlePredictor.java);
 
 ```java
 public class PaddlePredictor;
 ```
 
-`PaddlePredictor`是Paddle-Lite的预测器。用户可以根据PaddlePredictor提供的接口使用MobileConfig创建新的预测器、设置输入数据、执行模型预测、获取输出以及获得当前使用lib的版本信息等。
+`PaddlePredictor` 是 Paddle Lite 的预测器。用户可以根据 `PaddlePredictor` 提供的接口使用 `MobileConfig` 创建新的预测器、设置输入数据、执行模型预测、获取输出以及获得当前使用 lib 的版本信息等。
 
 示例：
 
@@ -182,85 +157,96 @@ for (int i = 0; i < 1000; ++i) {
 
 
 
-### `CreatePaddlePredictor(config)`
+### `CreatePaddlePredictor`
 
 ```java
 public static PaddlePredictor createPaddlePredictor(ConfigBase config);
 ```
 
-`CreatePaddlePredictor`用来根据`ConfigBase`动态创建预测器，目前Java API支持使用MobileConfig`。框架会根据您在config中指定的模型路径、能耗模型、工作线程数等自动创建一个预测器。
+`CreatePaddlePredictor` 用来根据 `MobileConfig` 动态创建预测器。框架会根据您在 config 中指定的模型路径、能耗模型、工作线程数等自动创建一个预测器。
 
-参数：
+- 参数
 
-- `config(ConfigBase，目前应使用MobileConfig)` - 创建预测器的配置信息
+    - `config(MobileConfig)` : 用于构建 Predictor 的配置信息。
 
-返回：根据config创建完成的预测器
+- 返回值
 
-返回类型：`PaddlePredictor`
-
-
-
-### `getInput(index)`
-
-获取输入Tensor，用来设置模型的输入数据。
-
-参数：
-
-- `index(int)` - 输入Tensor的索引
-
-返回：第`index`个输入`Tensor`
-
-返回类型：`Tensor`
+  `PaddlePredictor` 指针
 
 
 
-### `getOutput(index)`
+### `getInput`
 
-获取输出Tensor，用来获取模型的输出结果。
+```java
+Tensor getInput(int i);
+```
 
-参数：
+获取输入 `Tensor`，用来设置模型的输入数据。
 
-- `index(int)` - 输出Tensor的索引
+- 参数
 
-返回：第`index`个输出Tensor
+    - `i`: 输入 `Tensor` 的索引
 
-返回类型：`Tensor`
+- 返回值
+
+  第 `i` 个输入 `Tensor` 的指针
 
 
 
-### `run()`
+### `getOutput`
+
+```java
+Tensor getOutput(int i);
+```
+
+获取输出 `Tensor`，用来获取模型的输出结果。
+
+参数
+
+- 参数
+
+    - `i`: 输出 `Tensor` 的索引
+
+- 返回值
+
+  第 `i` 个输出 `Tensor` 的指针
+
+
+
+### `run`
+
+```java
+boolean run();
+```
 
 执行模型预测，需要在***设置输入数据后***调用。
 
-参数：
-
-- `None`
-
-返回：预测执行状态，成功返回`true`，否则返回`false`
-
-返回类型：`boolean`
 
 
 
-### `getVersion()`
+### `getVersion`
 
-用于获取当前lib使用的代码版本。若代码有相应tag则返回tag信息，如`v2.0-beta`；否则返回代码的`branch(commitid)`，如`develop(7e44619)`。
+```java
+String getVersion();
+```
 
-参数：
+用于获取当前 lib 使用的代码版本。若代码有相应 tag 则返回 tag 信息，如 `v2.0-beta`；否则返回代码的 `branch(commitid)`，如 `develop(7e44619)`。
 
-- `None`
+- 返回值：
 
-返回：当前lib使用的代码版本信息
+  当前库使用的代码版本信息
 
-返回类型：`String`
+
 
 ## PowerMode
+
+import [com.baidu.paddle.lite.PowerMode](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.10/lite/api/android/jni/src/com/baidu/paddle/lite/PowerMode.java);
 
 ```java
 public enum PowerMode;
 ```
 
-`PowerMode`为ARM CPU能耗模式，用户可以根据应用场景设置能耗模式获得最优的能效比。
+`PowerMode` 为 ARM CPU 能耗模式，用户可以根据应用场景设置能耗模式获得最优的能效比。
 
 示例：
 
@@ -279,24 +265,25 @@ PowerMode详细说明如下：
 
 |         选项         | 说明                                                         |
 | :------------------: | ------------------------------------------------------------ |
-|   LITE_POWER_HIGH    | 绑定大核运行模式。如果ARM CPU支持big.LITTLE，则优先使用并绑定Big cluster。如果设置的线程数大于大核数量，则会将线程数自动缩放到大核数量。如果系统不存在大核或者在一些手机的低电量情况下会出现绑核失败，如果失败则进入不绑核模式。 |
-|    LITE_POWER_LOW    | 绑定小核运行模式。如果ARM CPU支持big.LITTLE，则优先使用并绑定Little cluster。如果设置的线程数大于小核数量，则会将线程数自动缩放到小核数量。如果找不到小核，则自动进入不绑核模式。 |
-|   LITE_POWER_FULL    | 大小核混用模式。线程数可以大于大核数量。当线程数大于核心数量时，则会自动将线程数缩放到核心数量。 |
-|  LITE_POWER_NO_BIND  | 不绑核运行模式（推荐）。系统根据负载自动调度任务到空闲的CPU核心上。 |
-| LITE_POWER_RAND_HIGH | 轮流绑定大核模式。如果Big cluster有多个核心，则每预测10次后切换绑定到下一个核心。 |
-| LITE_POWER_RAND_LOW  | 轮流绑定小核模式。如果Little cluster有多个核心，则每预测10次后切换绑定到下一个核心。 |
-
+|   LITE_POWER_HIGH    | 绑定大核运行模式。如果 ARM CPU 支持 big.LITTLE，则优先使用并绑定 Big cluster，如果设置的线程数大于大核数量，则会将线程数自动缩放到大核数量。如果系统不存在大核或者在一些手机的低电量情况下会出现绑核失败，如果失败则进入不绑核模式。 |
+|    LITE_POWER_LOW    | 绑定小核运行模式。如果 ARM CPU 支持 big.LITTLE，则优先使用并绑定 Little cluster，如果设置的线程数大于小核数量，则会将线程数自动缩放到小核数量。如果找不到小核，则自动进入不绑核模式。 |
+|   LITE_POWER_FULL    | 大小核混用模式。线程数可以大于大核数量，当线程数大于核心数量时，则会自动将线程数缩放到核心数量。 |
+|  LITE_POWER_NO_BIND  | 不绑核运行模式（推荐）。系统根据负载自动调度任务到空闲的 CPU 核心上。 |
+| LITE_POWER_RAND_HIGH | 轮流绑定大核模式。如果 Big cluster 有多个核心，则每预测10次后切换绑定到下一个核心。 |
+| LITE_POWER_RAND_LOW  | 轮流绑定小核模式。如果 Little cluster 有多个核心，则每预测10次后切换绑定到下一个核心。 |
 
 
 ## Tensor
+
+import [com.baidu.paddle.lite.Tensor](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.10/lite/api/android/jni/src/com/baidu/paddle/lite/Tensor.java);
 
 ```c++
 public class Tensor;
 ```
 
-Tensor是Paddle-Lite的数据组织形式，用于对底层数据进行封装并提供接口对数据进行操作，包括设置维度、数据等。
+Tensor 是 Paddle Lite 的数据组织形式，用于对底层数据进行封装并提供接口对数据进行操作，包括设置维度、数据等。
 
-*注意：用户应使用`PaddlePredictor`的`getInput`和`getOuput`接口获取输入/输出的`Tensor`。*
+*注意：用户应使用 `PaddlePredictor` 的 `getInput` 和 `getOuput` 接口获取输入/输出的 `Tensor`。*
 
 示例：
 
@@ -339,56 +326,60 @@ for (int i = 0; i < 1000; ++i) {
 }
 ```
 
-### `resize(dims)`
+### `resize`
 
-设置Tensor的维度信息。
+```java
+boolean resize(long[] shape);
+```
 
-参数：
+设置 Tensor 的维度信息。
 
-- `dims(long[])` - 维度信息
+- 参数
 
-返回：设置成功返回`true`，否则返回`false`
-
-返回类型：`boolean`
-
-
-
-### `shape()`
-
-获取Tensor的维度信息。
-
-参数：
-
-- `None`
-
-返回：Tensor的维度信息
-
-返回类型：`long[]`
+    - `shape`： 维度信息
 
 
 
-### `setData(data)`
+### `shape`
 
-设置Tensor数据。
+```java
+long[] shape();
+```
 
-参数：
-
-- `data(float[])` - 需要设置的数据
-
-返回：成功则返回`true`，否则返回`false`
-
-返回类型：`boolean`
+获取 Tensor 的维度信息。
 
 
+- 返回值
 
-### `getFloatData()`
+  Tensor 的维度信息
 
-获取Tensor的底层float型数据。
 
-参数：
 
-- `None`
 
-返回：`Tensor`底层数据
+### `setData`
 
-返回类型：`float[]`
+```java
+boolean setData(float[] data);
+```
+
+设置 Tensor 数据。
+
+- 参数
+
+    - `data`： 需要设置的数据
+
+
+
+
+### `getFloatData`
+
+```java
+float[] getFloatData();
+```
+
+获取 Tensor 的底层 float 型数据。
+
+
+- 返回值：
+
+  `Tensor` 底层 float 型数据
