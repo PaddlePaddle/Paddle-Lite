@@ -159,7 +159,7 @@ typedef struct Device {
   
     2）为了方便调试，可以通过 [Visualize](https://github.com/PaddlePaddle/Paddle-Lite/blob/0688f37ac8879e4670bb8fdf58a63bfa10904be4/lite/backends/nnadapter/nnadapter/utility/debug.cc#L158) 将模型数据结构输出为 DOT 格式字符串，将其复制到 [webgraphviz](http://www.webgraphviz.com/) 即可绘制模型拓扑结构。例如在华为昇腾 HAL 层的 [打印优化前后的模型拓扑结构](https://github.com/PaddlePaddle/Paddle-Lite/blob/0688f37ac8879e4670bb8fdf58a63bfa10904be4/lite/backends/nnadapter/nnadapter/driver/huawei_ascend_npu/engine.cc#L88) 代码。
 
-  - 一个操作符 `Operation` 由
+  - 一个操作符由操作符类型、输入、输出操作数列表组成，需要特别注意的是，操作数列表中的元素顺序需要严格按照操作符的定义的顺序依次存放。
 
 - 设备接口描述
 
@@ -259,7 +259,7 @@ typedef struct Device {
     op_type3                                  表示任意类型为 op_type3 的算子均被强制异构到CPU上
     ```
 
-    为了方便唯一标识模型中的某一个算子，可以在使用 cxxconfig 加载Paddle模型进行 nb 模型转换或直接推理时，设置 GLOG_v=5 打印完整调试信息，然后以 `subgraph operators` 为关键字搜索，例如： [ssd_mobilenet_v1_relu_voc_fp32_300](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_relu_voc_fp32_300.tar.gz) 模型运行在华为麒麟NPU时，将得到如下调试信息：
+    为了方便唯一标识模型中的某一个算子，可以在使用 cxxconfig 加载Paddle模型进行 nb 模型转换或直接推理时，设置 GLOG_v=5 打印完整调试信息，然后以 `subgraph operators` 为关键字搜索，例如： [ssd_mobilenet_v1_relu_voc_fp32_300](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_relu_voc_fp32_300.tar.gz) 模型运行在华为麒麟 NPU 时，将得到如下调试信息：
 
     ```
     subgraph clusters: 1
