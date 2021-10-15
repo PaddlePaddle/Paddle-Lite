@@ -249,7 +249,7 @@ int x86_math_num_threads() const;
 
 - 返回值
 
-  CPU Math 库线程数。
+  CPU Math 库线程数
 
 ## MobileConfig
 
