@@ -102,10 +102,11 @@ void conv_depthwise_5x5s1_fp32(float *dout,
       }
       int hs = h - padh;
       int he = hs + h_kernel + 4;
-
-#pragma omp parallel for num_threads(threads)
-      for (int c = 0; c < chout; c += hout_c_block) {
-#ifdef ARM_WITH_OMP
+      LITE_PARALLEL_COMMON_BEGIN(c, tid, chout, 0, hout_c_block) {
+#ifdef LITE_USE_THREAD_POOL
+        float *pre_din = tmp_din + tid * (pre_in_size + pre_out_size);
+        float *pre_out = pre_din + pre_in_size;
+#elif defined(ARM_WITH_OMP)
         float *pre_din =
             tmp_din + omp_get_thread_num() * (pre_in_size + pre_out_size);
         float *pre_out = pre_din + pre_in_size;
@@ -444,6 +445,7 @@ void conv_depthwise_5x5s1_fp32(float *dout,
                                 ptr_write,
                                 &act_param);
       }
+      LITE_PARALLEL_END();
     }
   }
 }
@@ -522,9 +524,11 @@ void conv_depthwise_5x5s1_fp32(float *dout,
       int hs = h - padh;
       int he = hs + h_kernel + 4;
 
-#pragma omp parallel for num_threads(threads)
-      for (int c = 0; c < chout; c += hout_c_block) {
-#ifdef ARM_WITH_OMP
+      LITE_PARALLEL_COMMON_BEGIN(c, tid, chout, 0, hout_c_block) {
+#ifdef LITE_USE_THREAD_POOL
+        float *pre_din = tmp_din + tid * (pre_in_size + pre_out_size);
+        float *pre_out = pre_din + pre_in_size;
+#elif defined(ARM_WITH_OMP)
         float *pre_din =
             tmp_din + omp_get_thread_num() * (pre_in_size + pre_out_size);
         float *pre_out = pre_din + pre_in_size;
@@ -754,6 +758,7 @@ void conv_depthwise_5x5s1_fp32(float *dout,
                                 ptr_write,
                                 &act_param);
       }
+      LITE_PARALLEL_END();
     }
   }
 }
@@ -875,19 +880,25 @@ void conv_depthwise_5x5s1_fp32(float *dout,
   "ext v15.16b, v0.16b, v1.16b, #8\n"               \
   "fmla v28.4s, v18.4s,  %[w3].s[1]\n"              \
   "fmla v29.4s, v10.4s,  %[w3].s[1]\n"              \
+  "sub %[din_ptr0], %[din_ptr0], #8\n"              \
   "fmla v30.4s, v19.4s,  %[w3].s[2]\n"              \
   "fmla v31.4s, v11.4s,  %[w3].s[2]\n"              \
+  "sub %[din_ptr1], %[din_ptr1], #8\n"              \
   /* line 3 */                                      \
   "fmla v28.4s, v8.4s,   %[w3].s[3]\n"              \
   "fmla v29.4s, v12.4s,  %[w3].s[3]\n"              \
+  "sub %[din_ptr2], %[din_ptr2], #8\n"              \
   "fmla v30.4s, v9.4s,   %[w4].s[0]\n"              \
   "fmla v31.4s, v13.4s,  %[w4].s[0]\n"              \
+  "sub %[din_ptr3], %[din_ptr3], #8\n"              \
   "ext v8.16b,  %[vzero].16b, v2.16b, #8\n"         \
   "fmla v28.4s, v6.4s,   %[w4].s[1]\n"              \
   "fmla v29.4s, v0.4s,   %[w4].s[1]\n"              \
+  "sub %[din_ptr4], %[din_ptr4], #8\n"              \
   "ext v9.16b,  %[vzero].16b, v2.16b, #12\n"        \
   "fmla v30.4s, v10.4s,  %[w4].s[2]\n"              \
   "fmla v31.4s, v14.4s,  %[w4].s[2]\n"              \
+  "sub %[din_ptr5], %[din_ptr5], #8\n"              \
   "ext v10.16b, v2.16b, v3.16b, #4\n"               \
   "fmla v28.4s, v11.4s,  %[w4].s[3]\n"              \
   "fmla v29.4s, v15.4s,  %[w4].s[3]\n"              \
@@ -1189,21 +1200,300 @@ void conv_depthwise_5x5s1_fp32(float *dout,
   dr3 = dr5;                   \
   dr4 = dr3 + win;
 
-#define LEFT_COMPUTE_S1
+#define LEFT_COMPUTE_S1               \
+  "pld  [%[wei_ptr]]  \n"             \
+  "pld  [%[din_ptr0]] \n"             \
+  "pld  [%[din_ptr1]] \n"             \
+  "pld  [%[din_ptr2]] \n"             \
+  "pld  [%[din_ptr3]] \n"             \
+  "vld1.32 {d0-d3}, [%[wei_ptr]]!\n"  \
+  "pld  [%[din_ptr4]] \n"             \
+  "vmov.u32  q7, #0   \n"             \
+  "vld1.32 {d16-d19}, [%[din_ptr0]]!\n"\
+  "vld1.32 {d30-d31}, [%[bias_val]] \n"\
+  "vld1.32 {d4-d7}, [%[wei_ptr]]!\n"   \
+  /* line 0 */                         \
+  "sub     %[din_ptr0], #24\n"         \
+  "vext.32 q10, q7, q8, #2\n"          \
+  "vext.32 q11, q7, q8, #3\n"          \
+  "vld1.32 {d8-d11}, [%[wei_ptr]]!\n"  \
+  "vext.32  q12, q8,  q9, #1\n"        \
+  "vext.32  q13, q8,  q9, #2\n"        \
+  "vmla.f32 q15, q10, d0[0]\n"         \
+  "vmul.f32 q14, q11, d0[1]\n"         \
+  "vld1.32 {d20-d22}, [%[din_ptr1]]!\n"\
+  "vld1.32 {d12},     [%[wei_ptr]]!\n" \
+  "vmla.f32 q15, q8,  d1[0]\n"         \
+  "vmla.f32 q14, q12, d1[1]\n"         \
+  "sub      %[din_ptr1], #24\n"        \
+  "vmla.f32 q15, q13, d2[0]\n"         \
+  /* line 1 */                         \
+  "vext.32  q8,  q7,  q10, #2\n"       \
+  "vext.32  q9,  q7,  q10, #3\n"       \
+  "vmla.f32 q14, q8,  d2[1]\n"         \
+  "vmla.f32 q15, q9,  d3[0]\n"         \
+  "vld1.32 {d16-d19}, [%[din_ptr2]]!\n"\
+  "vext.32  q12, q10, q11, #1\n"       \
+  "vext.32  q13, q10, q11, #2\n"       \
+  "vmla.f32 q14, q10, d3[1]\n"         \
+  "vmla.f32 q15, q12, d4[0]\n"         \
+  "vext.32  q10,  q7,  q8, #2\n"       \
+  "vext.32  q11,  q7,  q8, #3\n"       \
+  "vmla.f32 q14, q13, d4[1]\n"         \
+  /* line 2 */                         \
+  "sub      %[din_ptr2], #24\n"        \
+  "vmla.f32 q15, q10, d5[0]\n"         \
+  "vmla.f32 q14, q11, d5[1]\n"         \
+  "vld1.32 {d20-d23}, [%[din_ptr3]]!\n"\
+  "vext.32  q12, q8,  q9, #1\n"        \
+  "vext.32  q13, q8,  q9, #2\n"        \
+  "vmla.f32 q15, q8,  d6[0]\n"         \
+  "vmla.f32 q14, q12, d6[1]\n"         \
+  "vext.32  q8,  q7,  q10, #2\n"       \
+  "vext.32  q9,  q7,  q10, #3\n"       \
+  "vmla.f32 q15, q13, d7[0]\n"         \
+  /* line 3 */                         \
+  "sub      %[din_ptr3], #24\n"        \
+  "vmla.f32 q14, q8,  d7[1]\n"         \
+  "vmla.f32 q15, q9,  d8[0]\n"         \
+  "vld1.32 {d16-d19}, [%[din_ptr4]]!\n"\
+  "vext.32  q12, q10, q11, #1\n"       \
+  "vext.32  q13, q10, q11, #2\n"       \
+  "vmla.f32 q14, q10, d8[1]\n"         \
+  "vmla.f32 q15, q12, d9[0]\n"         \
+  "vext.32  q10,  q7,  q8, #2\n"       \
+  "vext.32  q11,  q7,  q8, #3\n"       \
+  "vmla.f32 q14, q13, d9[1]\n"         \
+  /* line 4 */                         \
+  "sub      %[din_ptr4], #24\n"        \
+  "vmla.f32 q15, q10, d10[0]\n"        \
+  "vmla.f32 q14, q11, d10[1]\n"        \
+  "vext.32  q12, q8,  q9, #1\n"        \
+  "vext.32  q13, q8,  q9, #2\n"        \
+  "vmla.f32 q15, q8,  d11[0]\n"        \
+  "vmla.f32 q14, q12, d11[1]\n"        \
+  "vld1.32 {d16-d19}, [%[din_ptr0]]!\n"\
+  "vmla.f32 q15, q13, d12[0]\n"
 
-#define LEFT_RESULT_S1
-#define LEFT_RESULT_S1_RELU
-#define LEFT_RESULT_S1_RELU6
-#define COMPUTE_S1_A
-#define COMPUTE_S1_B
-#define MID_COMPITE_S1
-#define MID_RESULT_S1
-#define MID_RESULT_S1_RELU
-#define MID_RESULT_S1_RELU6
-#define RIGHT_COMPUTE_S1
-#define RIGHT_RESULT_S1
-#define RIGHT_RESULT_S1_RELU
-#define RIGHT_RESULT_S1_RELU6
+#define LEFT_RESULT_S1                 \
+  "cmp %[cnt], #8\n"                   \
+  "vadd.f32 q13, q14, q15\n"           \
+  "sub      %[din_ptr0], #16\n"        \
+  "vld1.32 {d30-d31}, [%[bias_val]]\n" \
+  "vext.32  q10,  q8,  q9, #1\n"       \
+  "vext.32  q11,  q8,  q9, #2\n"       \
+  "vst1.32 {d26-d27}, [%[doutr0]]!\n"  \
+  "blt 2f\n"
+#define LEFT_RESULT_S1_RELU            \
+  "cmp %[cnt], #8\n"                   \
+  "vadd.f32 q13, q14, q15\n"           \
+  "sub      %[din_ptr0], #16\n"        \
+  "vmax.f32 q13, q13, q7\n"            \
+  "vld1.32 {d30-d31}, [%[bias_val]]\n" \
+  "vext.32  q10,  q8,  q9, #1\n"       \
+  "vext.32  q11,  q8,  q9, #2\n"       \
+  "vst1.32 {d26-d27}, [%[doutr0]]!\n"  \
+  "blt 2f\n"
+
+#define LEFT_RESULT_S1_RELU6           \
+  "cmp %[cnt], #8\n"                   \
+  "vldr d20, [%[bias_val], #16]\n"     \
+  "vldr d21, [%[bias_val], #24]\n"     \
+  "vadd.f32 q13, q14, q15\n"           \
+  "sub      %[din_ptr0], #16\n"        \
+  "vmax.f32 q13, q13, q7\n"            \
+  "vld1.32 {d30-d31}, [%[bias_val]]\n" \
+  "vmin.f32 q13, q13, q10\n"           \
+  "vext.32  q10,  q8,  q9, #1\n"       \
+  "vext.32  q11,  q8,  q9, #2\n"       \
+  "vst1.32 {d26-d27}, [%[doutr0]]!\n"  \
+  "blt 2f\n"
+
+#define MID_COMPITE_S1                 \
+  "1: \n"                              \
+  /* line 0 */                         \
+  "vmla.f32 q15,  q8,  d0[0]\n"        \
+  "vmul.f32 q14,  q9,  d2[0]\n"        \
+  "vext.32  q12,  q8,  q9, #3\n"       \
+  "vld1.32 {d16-d19}, [%[din_ptr1]]!\n"\
+  "vmul.f32 q13, q10,  d0[1]\n"        \
+  "vmla.f32 q15, q11,  d1[0]\n"        \
+  "vmla.f32 q14, q12,  d1[1]\n"        \
+  /* line 1 */                         \
+  "sub      %[din_ptr1], #16\n"        \
+  "vext.32  q10,  q8,  q9, #1\n"       \
+  "vext.32  q11,  q8,  q9, #2\n"       \
+  "vmla.f32 q13,  q8,  d2[1]\n"        \
+  "vmla.f32 q15,  q9,  d4[1]\n"        \
+  "vext.32  q12,  q8,  q9, #3\n"       \
+  "vld1.32 {d16-d19}, [%[din_ptr2]]!\n"\
+  "vmla.f32 q14, q10,  d3[0]\n"        \
+  "vmla.f32 q13, q11,  d3[1]\n"        \
+  "vmla.f32 q15, q12,  d4[0]\n"        \
+  /* line 2 */                         \
+  "sub      %[din_ptr2], #16\n"        \
+  "vext.32  q10,  q8,  q9, #1\n"       \
+  "vext.32  q11,  q8,  q9, #2\n"       \
+  "vmla.f32 q14,  q8,  d5[0]\n"        \
+  "vmla.f32 q13,  q9,  d7[0]\n"        \
+  "vext.32  q12,  q8,  q9, #3\n"       \
+  "vld1.32 {d16-d19}, [%[din_ptr3]]!\n"\
+  "vmla.f32 q15, q10,  d5[1]\n"        \
+  "vmla.f32 q14, q11,  d6[0]\n"        \
+  "vmla.f32 q13, q12,  d6[1]\n"        \
+  /* line 3 */                         \
+  "sub      %[din_ptr3], #16\n"        \
+  "vext.32  q10,  q8,  q9, #1\n"       \
+  "vext.32  q11,  q8,  q9, #2\n"       \
+  "vmla.f32 q15,  q8,  d7[1]\n"        \
+  "vmla.f32 q14,  q9,  d9[1]\n"        \
+  "vext.32  q12,  q8,  q9, #3\n"       \
+  "vld1.32 {d16-d19}, [%[din_ptr4]]!\n"\
+  "vmla.f32 q13, q10,  d8[0]\n"        \
+  "vmla.f32 q15, q11,  d8[1]\n"        \
+  "vmla.f32 q14, q12,  d9[0]\n"        \
+  /* line 4 */                         \
+  "sub      %[din_ptr4], #16\n"        \
+  "vext.32  q10,  q8,  q9, #1\n"       \
+  "vext.32  q11,  q8,  q9, #2\n"       \
+  "vmla.f32 q13,  q8,  d10[0]\n"       \
+  "vmla.f32 q15,  q9,  d12[0]\n"       \
+  "vext.32  q12,  q8,  q9, #3\n"       \
+  "vld1.32 {d16-d19}, [%[din_ptr0]]!\n"\
+  "vmla.f32 q14, q10,  d10[1]\n"       \
+  "vmla.f32 q13, q11,  d11[0]\n"       \
+  "vmla.f32 q15, q12,  d11[1]\n"
+
+#define MID_RESULT_S1                \
+  "sub      %[din_ptr0], #16\n"       \
+  "vadd.f32 q12, q14, q13\n"          \
+  "sub      %[cnt],   #8\n"           \
+  "vext.32  q10,  q8,  q9, #1\n"      \
+  "vext.32  q11,  q8,  q9, #2\n"      \
+  "vadd.f32 q13, q12, q15\n"          \
+  "vld1.32 {d30-d31}, [%[bias_val]]\n"\
+  "vst1.32 {d26-d27}, [%[doutr0]]!\n" \
+  "bne 1b\n"
+
+#define MID_RESULT_S1_RELU            \
+  "sub      %[din_ptr0], #16\n"       \
+  "vadd.f32 q12, q14, q13\n"          \
+  "sub      %[cnt],   #8\n"           \
+  "vext.32  q10,  q8,  q9, #1\n"      \
+  "vext.32  q11,  q8,  q9, #2\n"      \
+  "vadd.f32 q13, q12, q15\n"          \
+  "vld1.32 {d30-d31}, [%[bias_val]]\n"\
+  "vmax.f32 q13, q13, q7\n"           \
+  "vst1.32 {d26-d27}, [%[doutr0]]!\n" \
+  "bne 1b\n"
+#define MID_RESULT_S1_RELU6           \
+  "sub      %[din_ptr0], #16\n"       \
+  "vadd.f32 q12, q14, q13\n"          \
+  "sub      %[cnt],   #8\n"           \
+  "vldr     d28, [%[bias_val], #16]\n"\
+  "vldr     d29, [%[bias_val], #24]\n"\
+  "vadd.f32 q13, q12, q15\n"          \
+  "vext.32  q10,  q8,  q9, #1\n"      \
+  "vext.32  q11,  q8,  q9, #2\n"      \
+  "vmax.f32 q13, q13, q7\n"           \
+  "vld1.32 {d30-d31}, [%[bias_val]]\n"\
+  "vmin.f32 q13, q13, q14\n"          \
+  "vst1.32 {d26-d27}, [%[doutr0]]!\n" \
+  "bne 1b\n"
+
+#define RIGHT_COMPUTE_S1               \
+  "2: \n"                              \
+  "cmp     %[cnt], #1\n"               \
+  "vld1.32 {d24-d27}, [%[vmask]]\n"    \
+  "sub     %[din_ptr0], %[right_pad_num]\n"\
+  "sub     %[din_ptr1], %[right_pad_num]\n"\
+  "sub     %[din_ptr2], %[right_pad_num]\n"\
+  "sub     %[din_ptr3], %[right_pad_num]\n"\
+  "sub     %[din_ptr4], %[right_pad_num]\n"\
+  "blt 3f\n"                           \
+  "vld1.32 {d16-d19}, [%[din_ptr0]]\n" \
+  "sub     %[doutr0], %[right_pad_num]\n"\
+  "vbif q8, q7, q12\n"                 \
+  "vbif q9, q7, q13\n"                 \
+  /* line 0 */                         \
+  "vext.32  q10,  q8,  q9, #1\n"       \
+  "vext.32  q11,  q8,  q9, #2\n"       \
+  "vmla.f32 q15,  q8,  d0[0]\n"        \
+  "vmul.f32 q14,  q9,  d2[0]\n"        \
+  "vext.32  q12, q8,   q9, #3\n"       \
+  "vld1.32 {d16-d19}, [%[din_ptr1]]\n" \
+  "vmla.f32 q15, q10,  d0[1]\n"        \
+  "vld1.32 {d20-d21}, [%[vmask]]\n"    \
+  "vmla.f32 q14, q11,  d1[0]\n"        \
+  "vbif q9, q7, q13\n"                 \
+  "vmla.f32 q15, q12,  d1[1]\n"        \
+  "vbif q8, q7, q10\n"                 \
+  /* line 1 */                         \
+  "vext.32  q10,  q8,  q9, #1\n"       \
+  "vext.32  q11,  q8,  q9, #2\n"       \
+  "vmla.f32 q14,  q8,  d2[1]\n"        \
+  "vmla.f32 q15,  q9,  d4[1]\n"        \
+  "vext.32  q12,  q8,  q9, #3\n"       \
+  "vld1.32 {d16-d19}, [%[din_ptr2]]\n" \
+  "vmla.f32 q14, q10,  d3[0]\n"        \
+  "vld1.32 {d20-d21}, [%[vmask]]\n"    \
+  "vmla.f32 q15, q11,  d3[1]\n"        \
+  "vbif q9, q7, q13\n"                 \
+  "vmla.f32 q14, q12,  d4[0]\n"        \
+  "vbif q8, q7, q10\n"                 \
+  /* line 2 */                         \
+  "vext.32  q10,  q8,  q9, #1\n"       \
+  "vext.32  q11,  q8,  q9, #2\n"       \
+  "vmla.f32 q15,  q8,  d5[0]\n"        \
+  "vmla.f32 q14,  q9,  d7[0]\n"        \
+  "vext.32  q12,  q8,  q9, #3\n"       \
+  "vld1.32 {d16-d19}, [%[din_ptr3]] \n"\
+  "vmla.f32 q15, q10,  d5[1]\n"        \
+  "vld1.32 {d20-d21}, [%[vmask]]\n"    \
+  "vmla.f32 q14, q11,  d6[0]\n"        \
+  "vbif q9, q7, q13\n"                 \
+  "vmla.f32 q15, q12,  d6[1]\n"        \
+  "vbif q8, q7, q10\n"                 \
+  /* line 3 */                         \
+  "vext.32  q10,  q8,  q9, #1\n"       \
+  "vext.32  q11,  q8,  q9, #2\n"       \
+  "vmla.f32 q14,  q8,  d7[1]\n"        \
+  "vmla.f32 q15,  q9,  d9[1]\n"        \
+  "vext.32  q12,  q8,  q9, #3\n"       \
+  "vld1.32 {d16-d19}, [%[din_ptr4]] \n"\
+  "vmla.f32 q14, q10,  d8[0]\n"        \
+  "vld1.32 {d20-d21}, [%[vmask]]\n"    \
+  "vmla.f32 q15, q11,  d8[1]\n"        \
+  "vbif q9, q7, q13\n"                 \
+  "vmla.f32 q14, q12,  d9[0]\n"        \
+  "vbif q8, q7, q10\n"                 \
+  /* line 4 */                         \
+  "vext.32  q10,  q8,  q9, #1\n"       \
+  "vext.32  q11,  q8,  q9, #2\n"       \
+  "vmla.f32 q15,  q8,  d10[0]\n"       \
+  "vmla.f32 q14,  q9,  d12[0]\n"       \
+  "vext.32  q12,  q8,  q9, #3\n"       \
+  "vmla.f32 q15, q10,  d10[1]\n"       \
+  "vmla.f32 q14, q11,  d11[0]\n"       \
+  "vmla.f32 q15, q12,  d11[1]\n"
+
+#define RIGHT_RESULT_S1                \
+  "vadd.f32  q13, q15, q14\n"          \
+  "vst1.32 {d26-d27}, [%[doutr0]]!\n"  \
+  "3:                             \n"
+#define RIGHT_RESULT_S1_RELU           \
+  "vadd.f32  q13, q15, q14\n"          \
+  "vmax.f32  q13, q13, q7\n"           \
+  "vst1.32 {d26-d27}, [%[doutr0]]!\n"  \
+  "3:                             \n"
+#define RIGHT_RESULT_S1_RELU6          \
+  "vldr d20, [%[bias_val], #16]\n"     \
+  "vldr d21, [%[bias_val], #24]\n"     \
+  "vadd.f32  q13, q15, q14\n"          \
+  "vmax.f32  q13, q13, q7\n"           \
+  "vmin.f32  q13, q13, q10\n"          \
+  "vst1.32 {d26-d27}, [%[doutr0]]!\n"  \
+  "3:                             \n"
 #endif
 
 inline std::pair<uint32_t, uint32_t> right_mask_5x5s1p2_fp32(int win,
@@ -1241,7 +1531,7 @@ void conv_depthwise_5x5s1p2_fp32_relu(IN_PARAM, ARMContext *ctx) {
   uint32_t cnt_remain = res.second;
   uint32_t right_pad_num = (cnt_remain == 4) ? 0 : ((4- cnt_remain) * 4);
   float *zero_ptr = ctx->workspace_data<float>();
-  memset(zero_ptr, 0, (win + 4) * sizeof(float));
+  memset(zero_ptr, 0, (win + 8) * sizeof(float));
   float *write_ptr = zero_ptr + win + 4;
   cnt_col = (cnt_col << 3) + cnt_remain;
   for (int n = 0; n < num; ++n) {
@@ -1259,6 +1549,7 @@ void conv_depthwise_5x5s1p2_fp32_relu(IN_PARAM, ARMContext *ctx) {
       const float *dr3 = dr2 + win;
       const float *dr4 = dr3 + win;
       const float *dr5 = dr4 + win;
+#ifdef __aarch64__
       float32x4_t w0 = vld1q_f32(wei_ptr);
       float32x4_t w1 = vld1q_f32(wei_ptr + 4);
       float32x4_t w2 = vld1q_f32(wei_ptr + 8);
@@ -1266,7 +1557,6 @@ void conv_depthwise_5x5s1p2_fp32_relu(IN_PARAM, ARMContext *ctx) {
       float32x4_t w4 = vld1q_f32(wei_ptr + 16);
       float32x4_t w5 = vld1q_f32(wei_ptr + 20);
       float32x4_t w6 = vdupq_n_f32(wei_ptr[24]);
-#ifdef __aarch64__
       float32x4_t vzero = vdupq_n_f32(0.f);
       for (int h = 0; h < hout; h += 2) {
         DIN_PTR_INIT
@@ -1291,16 +1581,17 @@ void conv_depthwise_5x5s1p2_fp32_relu(IN_PARAM, ARMContext *ctx) {
       for (int h = 0; h < hout; h++) {
         DIN_PTR_INIT
         int cnt = cnt_col;
+        auto weight_ptr = wei_ptr;
         asm volatile(
           LEFT_COMPUTE_S1 LEFT_RESULT_S1_RELU
           MID_COMPITE_S1 MID_RESULT_S1_RELU
           RIGHT_COMPUTE_S1 RIGHT_RESULT_S1_RELU
           : [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), [din_ptr2] "+r"(din_ptr2),
             [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4),
-            [doutr0] "+r"(doutr0), [cnt] "+r"(cnt)
-          : [w0] "w"(w0), [w1] "w"(w1), [w2] "w"(w2), [w3] "w"(w3), [w4] "w"(w4), [w5] "w"(w5),
-            [w6] "w"(w6), [bias_val] "r"(vbias), [right_pad_num] "r"(right_pad_num), [vmask] "r"(vmask)
-          : "cc","memory", "q7", "q8","q9","q10","q11","q12","q13", "q14","q15"
+            [doutr0] "+r"(doutr0), [cnt] "+r"(cnt), [wei_ptr] "+r"(weight_ptr)
+          : [bias_val] "r"(vbias), [right_pad_num] "r"(right_pad_num), [vmask] "r"(vmask)
+          : "cc","memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6",
+            "q7", "q8","q9","q10","q11","q12","q13", "q14","q15"
         );
         dout_ptr += wout;
       }
@@ -1320,7 +1611,7 @@ void conv_depthwise_5x5s1p2_fp32_relu6(IN_PARAM, float six, ARMContext *ctx) {
   uint32_t cnt_remain = res.second;
   uint32_t right_pad_num = (cnt_remain == 4) ? 0 : ((4- cnt_remain) * 4);
   float *zero_ptr = ctx->workspace_data<float>();
-  memset(zero_ptr, 0, (win + 4) * sizeof(float));
+  memset(zero_ptr, 0, (win + 8) * sizeof(float));
   float *write_ptr = zero_ptr + win + 4;
   cnt_col = (cnt_col << 3) + cnt_remain;
   float six_val[4] = {six, six, six, six};
@@ -1338,6 +1629,7 @@ void conv_depthwise_5x5s1p2_fp32_relu6(IN_PARAM, float six, ARMContext *ctx) {
       const float *dr3 = dr2 + win;
       const float *dr4 = dr3 + win;
       const float *dr5 = dr4 + win;
+#ifdef __aarch64__
       float32x4_t w0 = vld1q_f32(wei_ptr);
       float32x4_t w1 = vld1q_f32(wei_ptr + 4);
       float32x4_t w2 = vld1q_f32(wei_ptr + 8);
@@ -1345,7 +1637,6 @@ void conv_depthwise_5x5s1p2_fp32_relu6(IN_PARAM, float six, ARMContext *ctx) {
       float32x4_t w4 = vld1q_f32(wei_ptr + 16);
       float32x4_t w5 = vld1q_f32(wei_ptr + 20);
       float32x4_t w6 = vdupq_n_f32(wei_ptr[24]);
-#ifdef __aarch64__
       float32x4_t vzero = vdupq_n_f32(0.f);
       float vbias[4] = {bias_val, bias_val, bias_val, bias_val};
       for (int h = 0; h < hout; h += 2) {
@@ -1372,17 +1663,18 @@ void conv_depthwise_5x5s1p2_fp32_relu6(IN_PARAM, float six, ARMContext *ctx) {
           bias_val, bias_val, bias_val, bias_val, six, six, six, six};
       for (int h = 0; h < hout; h++) {
         DIN_PTR_INIT
-        int cnt = (cnt_col << 2 + remain);
+        int cnt = cnt_col;
+        auto weight_ptr = wei_ptr;
         asm volatile(
           LEFT_COMPUTE_S1 LEFT_RESULT_S1_RELU6
           MID_COMPITE_S1 MID_RESULT_S1_RELU6
           RIGHT_COMPUTE_S1 RIGHT_RESULT_S1_RELU6
           : [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), [din_ptr2] "+r"(din_ptr2),
             [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4),
-            [doutr0] "+r"(doutr0), [cnt] "+r"(cnt)
-          : [w0] "w"(w0), [w1] "w"(w1), [w2] "w"(w2), [w3] "w"(w3), [w4] "w"(w4), [w5] "w"(w5),
-            [w6] "w"(w6), [bias_val] "r"(vbias), [right_pad_num] "r"(right_pad_num), [vmask] "r"(vmask)
-          : "cc","memory", "q7", "q8","q9","q10","q11","q12","q13", "q14","q15"
+            [doutr0] "+r"(doutr0), [cnt] "+r"(cnt), [wei_ptr] "+r"(weight_ptr)
+          : [bias_val] "r"(vbias), [right_pad_num] "r"(right_pad_num), [vmask] "r"(vmask)
+          : "cc","memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6",
+            "q7", "q8","q9","q10","q11","q12","q13", "q14","q15"
         );
         dout_ptr += wout;
       }
@@ -1429,7 +1721,7 @@ void conv_depthwise_5x5s1p2_fp32(float *dout,
     uint32_t cnt_remain = res.second;
     uint32_t right_pad_num = (cnt_remain == 4) ? 0 : ((4- cnt_remain) * 4);
     float *zero_ptr = ctx->workspace_data<float>();
-    memset(zero_ptr, 0, (win + 4) * sizeof(float));
+    memset(zero_ptr, 0, (win + 8) * sizeof(float));
     float *write_ptr = zero_ptr + win + 4;
     cnt_col = (cnt_col << 3) + cnt_remain;
     for (int n = 0; n < num; ++n) {
@@ -1447,6 +1739,7 @@ void conv_depthwise_5x5s1p2_fp32(float *dout,
         const float *dr3 = dr2 + win;
         const float *dr4 = dr3 + win;
         const float *dr5 = dr4 + win;
+#ifdef __aarch64__
         float32x4_t w0 = vld1q_f32(wei_ptr);
         float32x4_t w1 = vld1q_f32(wei_ptr + 4);
         float32x4_t w2 = vld1q_f32(wei_ptr + 8);
@@ -1454,7 +1747,6 @@ void conv_depthwise_5x5s1p2_fp32(float *dout,
         float32x4_t w4 = vld1q_f32(wei_ptr + 16);
         float32x4_t w5 = vld1q_f32(wei_ptr + 20);
         float32x4_t w6 = vdupq_n_f32(wei_ptr[24]);
-#ifdef __aarch64__
         float32x4_t vzero = vdupq_n_f32(0.f);
         for (int h = 0; h < hout; h += 2) {
           DIN_PTR_INIT
@@ -1478,17 +1770,18 @@ void conv_depthwise_5x5s1p2_fp32(float *dout,
 #else
         for (int h = 0; h < hout; h++) {
           DIN_PTR_INIT
-          int cnt = (cnt_col << 2 + remain);
+          int cnt = cnt_cl;
+          auto weight_ptr = wei_ptr;
           asm volatile(
             LEFT_COMPUTE_S1 LEFT_RESULT_S1
             MID_COMPITE_S1 MID_RESULT_S1
             RIGHT_COMPUTE_S1 RIGHT_RESULT_S1
             : [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), [din_ptr2] "+r"(din_ptr2),
               [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4),
-              [doutr0] "+r"(doutr0), [cnt] "+r"(cnt)
-            : [w0] "w"(w0), [w1] "w"(w1), [w2] "w"(w2), [w3] "w"(w3), [w4] "w"(w4), [w5] "w"(w5),
-              [w6] "w"(w6), [bias_val] "r"(vbias), [right_pad_num] "r"(right_pad_num), [vmask] "r"(vmask)
-            : "cc","memory", "q7", "q8","q9","q10","q11","q12","q13", "q14","q15"
+              [doutr0] "+r"(doutr0), [cnt] "+r"(cnt), [wei_ptr] "+r"(weight_ptr)
+            : [bias_val] "r"(vbias), [right_pad_num] "r"(right_pad_num), [vmask] "r"(vmask)
+            : "cc","memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6",
+              "q7", "q8","q9","q10","q11","q12","q13", "q14","q15"
           );
           dout_ptr += wout;
         }
