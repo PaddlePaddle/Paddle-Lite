@@ -30,8 +30,8 @@ Paddle Lite 已支持百度 XPU 在 x86 和 arm 服务器（例如飞腾 FT-2000
      - OFF
    * - baidu_xpu_sdk_url
      - baidu xpu sdk 下载链接
-     - `baidu_xpu_sdk <https://baidu-kunlun-product.cdn.bcebos.com/KL-SDK/klsdk-dev_paddle>`_
-     - 空值
+     - 用户自定义
+     - https://baidu-kunlun-product.cdn.bcebos.com/KL-SDK/klsdk-dev/20210921 
    * - baidu_xpu_sdk_env
      - baidu xpu sdk 环境
      - bdcentos_x86_64 / centos7_x86_64 / ubuntu_x86_64 / kylin_aarch64

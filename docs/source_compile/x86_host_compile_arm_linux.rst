@@ -7,7 +7,7 @@
 简介
 ------------------------------------------------------
 
-本文档旨在介绍如何在 x86 Linux 操作系统环境下编译 Paddle Lite 源码,生成目标硬件为 ARM Linux 的预测库。
+本文档旨在介绍如何在 x86 Linux 操作系统环境下编译 Paddle Lite 源码，生成目标硬件为 ARM Linux 的预测库。
 
 ..
 
@@ -28,7 +28,7 @@
    * - Host 环境
      - 目标硬件环境
    * - x86 Linux
-     - CPU arm64/armhf :raw-html-m2r:`<br>` Huawei Ascend NPU :raw-html-m2r:`<br>` Baidu XPU :raw-html-m2r:`<br>` OpenCL :raw-html-m2r:`<br>` Rockchip NPU :raw-html-m2r:`<br>`  Amlogic NPU :raw-html-m2r:`<br>` Imagination NNA :raw-html-m2r:`<br>`  Intel FPGA :raw-html-m2r:`<br>` 注：查询以上芯片支持的具体型号，可参考\ `支持硬件列表 <https://paddle-lite.readthedocs.io/zh/release-v2.10/introduction/support_hardware.html>`_\ 章节。
+     - CPU arm64/armhf :raw-html-m2r:`<br>` Huawei Ascend NPU :raw-html-m2r:`<br>` Baidu XPU :raw-html-m2r:`<br>` OpenCL :raw-html-m2r:`<br>` Rockchip NPU :raw-html-m2r:`<br>`  Amlogic NPU :raw-html-m2r:`<br>` Imagination NNA :raw-html-m2r:`<br>`  Intel FPGA :raw-html-m2r:`<br>` 注：查询以上芯片支持的具体型号，可参考\ `支持硬件列表 <https://paddle-lite.readthedocs.io/zh/release-v2.10/quick_start/support_hardware.html>`_\ 章节。
 
 准备编译环境
 ------------------------------------------------------
