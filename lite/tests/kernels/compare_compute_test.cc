@@ -149,8 +149,12 @@ class CompareComputeTester : public arena::TestCase {
   void PrepareData() override {
     std::vector<T> dx(x_dims_.production());
     std::vector<T> dy(y_dims_.production());
-    fill_data_rand<T>(dx.data(), -5, 5, x_dims_.production());
-    fill_data_rand<T>(dy.data(), -5, 5, y_dims_.production());
+    for (int i = 0; i < static_cast<int>(dx.size()); i++) {
+      dx[i] = static_cast<T>(1 - i % 3);
+    }
+    for (int i = 0; i < static_cast<int>(dy.size()); i++) {
+      dy[i] = static_cast<T>(2 - i % 4);
+    }
     SetCommonTensor(x_, x_dims_, dx.data());
     SetCommonTensor(y_, y_dims_, dy.data());
   }

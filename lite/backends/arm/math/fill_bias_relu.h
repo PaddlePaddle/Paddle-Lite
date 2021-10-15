@@ -23,21 +23,6 @@ namespace arm {
 namespace math {
 
 /**
- *  * \brief neon implementation to add bias and relu
- *  * @param tensor
- *  * @param bias
- *  * @param channel
- *  * @param channel_size
- *
- */
-template <typename Dtype>
-void fill_bias_relu(Dtype* tensor,
-                    const Dtype* bias,
-                    int channel,
-                    int channel_size,
-                    bool flag_bias,
-                    bool flag_relu);
-/**
  *  * \brief neon implementation to add bias and activation(relu, relu6,
  * leakyrelu)
  *  * @param tensor

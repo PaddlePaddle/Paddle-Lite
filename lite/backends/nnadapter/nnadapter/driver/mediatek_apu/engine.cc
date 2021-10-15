@@ -16,9 +16,8 @@
 #include <algorithm>
 #include <utility>
 #include "driver/mediatek_apu/converter/converter.h"
-#include "driver/mediatek_apu/optimizer/propagate_quant_params.h"
 #include "driver/mediatek_apu/optimizer/resolve_op_liminations.h"
-#include "driver/mediatek_apu/optimizer/update_bias_quant_params_and_values.h"
+#include "driver/mediatek_apu/optimizer/restrict_same_input_output_quant_params.h"
 #include "optimizer/nchw2nhwc.h"
 #include "optimizer/symm2asymm.h"
 #include "utility/debug.h"
@@ -73,8 +72,7 @@ int Program::BuildFromModel(hal::Model* model) {
   // NNAdapter model
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
   ConvertQuantizationSymmToAsymm(model);
-  PropagateQuantParams(model);
-  UpdateBiasQuantParamsAndValues(model);
+  RestrictSameInputOutputQuantParams(model);
   ConvertDataLayoutNCHWToNHWC(model);
   ResolveOpLiminations(model);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);

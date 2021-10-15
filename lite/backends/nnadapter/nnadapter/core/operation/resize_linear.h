@@ -29,10 +29,20 @@ namespace operation {
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);           \
   /* Shape */                                                                 \
   auto shape_operand = input_operands[1];                                     \
-  NNADAPTER_VLOG(5) << "shape: " << OperandToString(shape_operand);           \
+  if (shape_operand == nullptr) {                                             \
+    NNADAPTER_VLOG(5) << "Shape is null, please use scales.";                 \
+  } else {                                                                    \
+    NNADAPTER_VLOG(5) << "shape: " << OperandToString(shape_operand);         \
+  }                                                                           \
   /* Scales */                                                                \
   auto scales_operand = input_operands[2];                                    \
-  NNADAPTER_VLOG(5) << "scales: " << OperandToString(scales_operand);         \
+  if (scales_operand == nullptr) {                                            \
+    NNADAPTER_VLOG(5) << "Scales is null, please use shape.";                 \
+  } else {                                                                    \
+    NNADAPTER_VLOG(5) << "scales: " << OperandToString(scales_operand);       \
+  }                                                                           \
+  NNADAPTER_CHECK(shape_operand != nullptr || scales_operand != nullptr)      \
+      << "shape_operand and scales_operand should not both be null.";         \
   /* Align_corners */                                                         \
   bool align_corners = reinterpret_cast<bool*>(input_operands[3]->buffer)[0]; \
   NNADAPTER_VLOG(5) << "align_corners: " << align_corners;                    \

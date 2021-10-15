@@ -194,7 +194,6 @@ struct GeluFunctor : public BaseActivationFunctor<T> {
     auto x_data = x.data();
     auto out_data = out.data();
     int n = std::min(x.size(), out.size());
-
     std::memset(out_data, 0, n * sizeof(T));
     paddle::lite::x86::math::CBlas<T>::AXPY(
         n, static_cast<T>(M_SQRT1_2), x_data, 1, out_data, 1);
@@ -369,6 +368,29 @@ class MishCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
   }
 
   virtual ~MishCompute() = default;
+};
+
+template <typename T>
+class HardSwishComputeCompute
+    : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  void Run() override {
+    auto& param = *param_.get_mutable<operators::ActivationParam>();
+    param.Out->template mutable_data<T>();
+    auto x_dims = param.X->dims();
+    auto x_data = param.X->template data<T>();
+    auto output_data = param.Out->template mutable_data<T>();
+    lite::x86::math::hard_swish<T>(x_data,
+                                   output_data,
+                                   x_dims.production(),
+                                   param.hard_swish_scale,
+                                   param.hard_swish_offset,
+                                   param.hard_swish_threshold);
+  }
+
+  virtual ~HardSwishComputeCompute() = default;
 };
 
 }  // namespace x86

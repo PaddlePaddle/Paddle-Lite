@@ -24,6 +24,10 @@ REGISTER_CONVERTER(depthwise_conv2d,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
                    "npu,amlogic_npu,imagination_nna");
 REGISTER_CONVERTER(deformable_conv, ConvertDeformableConv, "huawei_ascend_npu");
+REGISTER_CONVERTER(pool2d,
+                   ConvertPool,
+                   "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
+                   "npu,amlogic_npu,imagination_nna");
 REGISTER_CONVERTER(matmul, ConvertMatmul, "huawei_ascend_npu");
 REGISTER_CONVERTER(matmul_v2, ConvertMatmulV2, "huawei_ascend_npu");
 REGISTER_CONVERTER(softmax,
@@ -31,8 +35,17 @@ REGISTER_CONVERTER(softmax,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
                    "npu,amlogic_npu,imagination_nna");
 REGISTER_CONVERTER(cumsum, ConvertCumsum, "huawei_ascend_npu");
-REGISTER_CONVERTER(reshape, ConvertReshape, "huawei_ascend_npu");
-REGISTER_CONVERTER(reshape2, ConvertReshape, "huawei_ascend_npu");
+REGISTER_CONVERTER(conv2d_transpose,
+                   ConvertConv2dTranspose,
+                   "huawei_ascend_npu,amlogic_npu");
+REGISTER_CONVERTER(
+    reshape,
+    ConvertReshape,
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
+REGISTER_CONVERTER(
+    reshape2,
+    ConvertReshape,
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
 REGISTER_CONVERTER(unsqueeze, ConvertUnsqueeze, "huawei_ascend_npu");
 REGISTER_CONVERTER(unsqueeze2, ConvertUnsqueeze, "huawei_ascend_npu");
 REGISTER_CONVERTER(lookup_table_v2, ConvertLookupTableV2, "huawei_ascend_npu");
@@ -100,6 +113,7 @@ REGISTER_CONVERTER(
 REGISTER_CONVERTER(abs, ConvertUnaryActivations, "huawei_ascend_npu");
 REGISTER_CONVERTER(exp, ConvertUnaryActivations, "huawei_ascend_npu");
 REGISTER_CONVERTER(instance_norm, ConvertInstanceNorm, "huawei_ascend_npu");
+REGISTER_CONVERTER(layer_norm, ConvertLayerNorm, "huawei_ascend_npu");
 REGISTER_CONVERTER(log, ConvertUnaryActivations, "huawei_ascend_npu");
 REGISTER_CONVERTER(swish, ConvertUnaryActivations, "huawei_ascend_npu");
 REGISTER_CONVERTER(prelu, ConvertPRelu, "huawei_ascend_npu");
@@ -118,8 +132,20 @@ REGISTER_CONVERTER(less_than, ConvertComparisons, "huawei_ascend_npu");
 REGISTER_CONVERTER(top_k, ConvertTopK, "huawei_ascend_npu");
 REGISTER_CONVERTER(top_k_v2, ConvertTopK, "huawei_ascend_npu");
 REGISTER_CONVERTER(shape, ConvertShape, "huawei_ascend_npu");
+REGISTER_CONVERTER(slice, ConvertSlice, "huawei_ascend_npu");
+REGISTER_CONVERTER(squeeze, ConvertSqueeze, "huawei_ascend_npu");
+REGISTER_CONVERTER(squeeze2, ConvertSqueeze, "huawei_ascend_npu");
 REGISTER_CONVERTER(fill_constant, ConvertFillConstant, "huawei_ascend_npu");
 REGISTER_CONVERTER(fill_any_like, ConvertFillAnyLike, "huawei_ascend_npu");
+REGISTER_CONVERTER(
+    concat,
+    ConvertConcat,
+    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
+REGISTER_CONVERTER(split, ConvertSplit, "huawei_kirin_npu,huawei_ascend_npu");
+REGISTER_CONVERTER(nearest_interp, ConvertInterpolate, "huawei_ascend_npu");
+REGISTER_CONVERTER(nearest_interp_v2, ConvertInterpolate, "huawei_ascend_npu");
+REGISTER_CONVERTER(bilinear_interp, ConvertInterpolate, "huawei_ascend_npu");
+REGISTER_CONVERTER(bilinear_interp_v2, ConvertInterpolate, "huawei_ascend_npu");
 REGISTER_CONVERTER(
     flatten,
     ConvertFlatten,

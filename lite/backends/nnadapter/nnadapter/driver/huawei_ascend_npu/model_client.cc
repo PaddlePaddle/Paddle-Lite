@@ -49,7 +49,7 @@ void AclModelClient::InitAclClientEnv(int device_id) {
 
 void AclModelClient::FinalizeAclClientEnv() {
   NNADAPTER_VLOG(5) << "Destroy ACL context";
-  if (context_ != nullptr) {
+  if (context_) {
     ACL_CALL(aclrtDestroyContext(context_));
     context_ = nullptr;
   }

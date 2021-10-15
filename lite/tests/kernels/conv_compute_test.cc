@@ -44,6 +44,10 @@ class ConvComputeTester : public arena::TestCase {
   float leaky_relu_alpha_ = 0.1;
   bool with_depthwise_ = false;
   bool with_fuse_relu_ = false;
+  float with_fuse_relu6_ = 6.f;
+  float hard_swish_threshold_ = 6.0;
+  float hard_swish_scale_ = 6.0;
+  float hard_swish_offset_ = 3.0;
 
  public:
   ConvComputeTester(const Place& place,
@@ -158,7 +162,6 @@ class ConvComputeTester : public arena::TestCase {
                       ? (is_channel_bias ? bias_data[g * out_c_group + oc]
                                          : bias_data[out_idx])
                       : 0;
-              // + out_value *= beta;
               for (int ic = 0; ic < in_c_group; ++ic) {
                 for (int kh = 0; kh < kernel_h; ++kh) {
                   for (int kw = 0; kw < kernel_w; ++kw) {
@@ -180,11 +183,19 @@ class ConvComputeTester : public arena::TestCase {
               if (with_act_) {
                 if (act_type_ == "relu") {
                   out_value = out_value > 0 ? out_value : 0;
+                } else if (act_type_ == "relu6") {
+                  out_value = std::min(std::max(0.f, out_value), 6.f);
                 } else if (act_type_ == "leaky_relu") {
                   out_value =
                       std::max(out_value, out_value * leaky_relu_alpha_);
+                } else if (act_type_ == "hard_swish") {
+                  float max_value =
+                      std::max(0.f, out_value + hard_swish_offset_);
+                  float min_value = std::min(max_value, hard_swish_threshold_);
+                  out_value = min_value * out_value / hard_swish_scale_;
                 } else {
-                  LOG(FATAL) << "unsupported";
+                  LOG(FATAL) << " activation type " << act_type_
+                             << "not supported in conv test";
                 }
               }
               output_data[out_idx] = out_value;
@@ -214,8 +225,16 @@ class ConvComputeTester : public arena::TestCase {
     if (with_act_) {
       op_desc->SetAttr("with_act", with_act_);
       op_desc->SetAttr("act_type", act_type_);
+      if (act_type_ == "relu6") {
+        op_desc->SetAttr("fuse_brelu_threshold", with_fuse_relu6_);
+      }
       if (act_type_ == "leaky_relu") {
         op_desc->SetAttr("leaky_relu_alpha", leaky_relu_alpha_);
+      }
+      if (act_type_ == "hard_swish") {
+        op_desc->SetAttr("hard_swish_threshold", hard_swish_threshold_);
+        op_desc->SetAttr("hard_swish_scale", hard_swish_scale_);
+        op_desc->SetAttr("hard_swish_offset", hard_swish_offset_);
       }
     }
   }
@@ -417,28 +436,33 @@ void TestConvDepthwise(Place place, float abs_error = 2e-5) {
   // Using a limited set can prevent unit test timeout and reduce CI
   // time-consuming
   for (int64_t n : {1, 3, 4}) {
-    for (auto win : {3, 4, 7, 16, 30}) {
-      std::vector<int64_t> dims{n, 32, win, win};
-      for (auto stride : {1, 2}) {
-        for (auto pad : {1}) {
-          for (auto bias : {false, true}) {
-            for (auto act : {"relu", "leaky_relu"}) {
-              std::unique_ptr<arena::TestCase> tester(
-                  new ConvComputeTester(place,
-                                        "def",
-                                        DDim(dims),
-                                        32,
-                                        3,
-                                        {stride, stride},
-                                        {pad, pad},
-                                        32,
-                                        {1, 1},
-                                        "",
-                                        bias,
-                                        true,
-                                        act));
-              arena::Arena arena(std::move(tester), place, abs_error);
-              arena.TestPrecision();
+    for (auto win : {3, 5, 7, 12, 16}) {
+      for (auto kw : {3, 5}) {
+        win = std::max(win, kw);
+        for (auto ch : {2, 4, 7, 16}) {
+          std::vector<int64_t> dims{n, ch, win, win};
+          for (auto stride : {1, 2}) {
+            for (auto pad : {0, 1}) {
+              for (auto bias : {false, true}) {
+                for (auto act : {"hard_swish", "relu", "relu6", "leaky_relu"}) {
+                  std::unique_ptr<arena::TestCase> tester(
+                      new ConvComputeTester(place,
+                                            "def",
+                                            DDim(dims),
+                                            ch,
+                                            kw,
+                                            {stride, stride},
+                                            {pad, pad},
+                                            ch,
+                                            {1, 1},
+                                            "",
+                                            bias,
+                                            true,
+                                            act));
+                  arena::Arena arena(std::move(tester), place, abs_error);
+                  arena.TestPrecision();
+                }
+              }
             }
           }
         }
@@ -475,6 +499,7 @@ TEST(Conv2d, precision) {
 #elif defined(LITE_WITH_X86)
   place = TARGET(kX86);
   TestConvKsize(place, abs_error);
+  TestConvDepthwise(place, abs_error);
   return;
 #else
   return;
@@ -488,7 +513,9 @@ TEST(Conv2d, precision) {
   TestConvPaddingAlgorithm(place, abs_error);
   TestConvBias(place, abs_error);
   TestConvAct(place, abs_error);
+#ifndef NNADAPTER_WITH_HUAWEI_ASCEND_NPU
   TestConvDepthwise(place, abs_error);
+#endif
 }
 
 }  // namespace lite
