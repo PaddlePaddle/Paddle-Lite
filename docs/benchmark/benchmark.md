@@ -126,20 +126,20 @@
 |SSD_MobileNetV3_large_quant|20.84 |22.82 |64.16 |74.12 |165.91 |27.11 |25.29 |119.92 |
 
 
-## 华为昇腾NPU的性能数据
+## 华为昇腾 NPU 的性能数据
 请参考 [Paddle Lite 使用华为昇腾 NPU 预测部署](../demo_guides/huawei_ascend_npu)的最新性能数据
 
-## 华为麒麟NPU的性能数据
+## 华为麒麟 NPU 的性能数据
 请参考 [Paddle Lite 使用华为麒麟 NPU 预测部署](../demo_guides/huawei_kirin_npu)的最新性能数据
 
-## 瑞芯微NPU的性能数据
+## 瑞芯微 NPU 的性能数据
 请参考 [Paddle Lite 使用瑞芯微 NPU 预测部署](../demo_guides/rockchip_npu)的最新性能数据
 
-## 晶晨NPU的性能数据
+## 晶晨 NPU 的性能数据
 请参考 [Paddle Lite 使用晶晨NPU 预测部署](../demo_guides/amlogic_npu)的最新性能数据
 
-## 联发科APU的性能数据
+## 联发科 APU 的性能数据
 请参考 [Paddle Lite 使用联发科 APU 预测部署](../demo_guides/mediatek_apu)的最新性能数据
 
-## 颖脉NNA的性能数据
+## 颖脉 NNA 的性能数据
 请参考 [Paddle Lite 使用颖脉 NNA 预测部署](../demo_guides/imagination_nna)的最新性能数据
