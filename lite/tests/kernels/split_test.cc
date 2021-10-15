@@ -263,8 +263,6 @@ TEST(Split_test, precision) {
   TestSplitSections(place, abs_error);
   TestSplitAxisTensor(place, abs_error);
   TestSplitSectionsTensorList(place, abs_error);
-#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
-  abs_error = 1e-5;
 #else
   return;
 #endif

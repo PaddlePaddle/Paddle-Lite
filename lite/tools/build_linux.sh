@@ -34,7 +34,7 @@ WITH_ROCKCHIP_NPU=OFF
 ROCKCHIP_NPU_SDK_ROOT="$(pwd)/rknpu_ddk"  # Download RKNPU SDK from https://github.com/airockchip/rknpu_ddk.git
 # options of compiling imagination NNA lib
 WITH_IMAGINATION_NNA=OFF
-IMAGINATION_NNA_SDK_ROOT="$(pwd)/imagination_nna_sdk" 
+IMAGINATION_NNA_SDK_ROOT="$(pwd)/imagination_nna_sdk"
 # options of compiling NNAdapter lib
 WITH_NNADAPTER=OFF
 NNADAPTER_WITH_ROCKCHIP_NPU=OFF
