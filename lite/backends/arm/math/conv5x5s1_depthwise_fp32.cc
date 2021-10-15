@@ -1532,7 +1532,7 @@ void conv_depthwise_5x5s1p2_fp32_relu(IN_PARAM, ARMContext *ctx) {
   uint32_t right_pad_num = (cnt_remain == 4) ? 0 : ((4- cnt_remain) * 4);
   float *zero_ptr = ctx->workspace_data<float>();
   memset(zero_ptr, 0, (win + 8) * sizeof(float));
-  float *write_ptr = zero_ptr + win + 4;
+  float *write_ptr = zero_ptr + win + 8;
   cnt_col = (cnt_col << 3) + cnt_remain;
   for (int n = 0; n < num; ++n) {
     const float *din_batch = din + n * chin * size_in_channel;
@@ -1612,7 +1612,7 @@ void conv_depthwise_5x5s1p2_fp32_relu6(IN_PARAM, float six, ARMContext *ctx) {
   uint32_t right_pad_num = (cnt_remain == 4) ? 0 : ((4- cnt_remain) * 4);
   float *zero_ptr = ctx->workspace_data<float>();
   memset(zero_ptr, 0, (win + 8) * sizeof(float));
-  float *write_ptr = zero_ptr + win + 4;
+  float *write_ptr = zero_ptr + win + 8;
   cnt_col = (cnt_col << 3) + cnt_remain;
   float six_val[4] = {six, six, six, six};
   for (int n = 0; n < num; ++n) {
@@ -1722,7 +1722,7 @@ void conv_depthwise_5x5s1p2_fp32(float *dout,
     uint32_t right_pad_num = (cnt_remain == 4) ? 0 : ((4- cnt_remain) * 4);
     float *zero_ptr = ctx->workspace_data<float>();
     memset(zero_ptr, 0, (win + 8) * sizeof(float));
-    float *write_ptr = zero_ptr + win + 4;
+    float *write_ptr = zero_ptr + win + 8;
     cnt_col = (cnt_col << 3) + cnt_remain;
     for (int n = 0; n < num; ++n) {
       const float *din_batch = din + n * chin * size_in_channel;
@@ -1770,7 +1770,7 @@ void conv_depthwise_5x5s1p2_fp32(float *dout,
 #else
         for (int h = 0; h < hout; h++) {
           DIN_PTR_INIT
-          int cnt = cnt_cl;
+          int cnt = cnt_col;
           auto weight_ptr = wei_ptr;
           asm volatile(
             LEFT_COMPUTE_S1 LEFT_RESULT_S1
