@@ -10,6 +10,14 @@ Welcome to Paddle-Lite's documentation!
 
 .. toctree::
   :maxdepth: 1
+  :caption: Paddle Lite介绍
+  :name: introduction
+
+  guide/introduction
+  guide/roadmap
+
+.. toctree::
+  :maxdepth: 1
   :caption: 简介
   :name: sec-introduction
 
@@ -42,12 +50,13 @@ Welcome to Paddle-Lite's documentation!
   quick_start/quick_run_demo
   quick_start/roadmap
 
+
 .. toctree::
   :maxdepth: 1
-  :caption: 使用工具
-  :name: sec-user-guides
+  :caption: 程序开发
+  :name: program-development
 
-  user_guides/x2paddle
+  user_guides/development_overview
   user_guides/model_optimize_tool
   user_guides/quant_aware
   user_guides/quant_post_dynamic
@@ -115,13 +124,6 @@ Welcome to Paddle-Lite's documentation!
   develop_guides/add_layout
   develop_guides/add_new_pass
   develop_guides/add_hardware
-
-.. toctree::
-  :maxdepth: 1
-  :caption: Roadmap
-  :name: sec-roadmap
-
-  quick_start/roadmap
 
 .. toctree::
   :maxdepth: 1
