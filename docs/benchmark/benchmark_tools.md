@@ -22,11 +22,12 @@ Benchmark 工具可方便快捷地评测给定模型在如下硬件上运行时�
 # 在 Android 上运行性能测试
 ## 编译
 根据[源码编译](../source_compile/compile_env)准备编译环境，建议使用 Docker 配置交叉编译环境。
-拉取 [Paddle-Lite](https://github.com/PaddlePaddle/Paddle-Lite) 代码，切换到特定分支，然后在 Paddle-Lite 根目录下执行编译命令：
+拉取 [Paddle Lite](https://github.com/PaddlePaddle/Paddle-Lite) 代码，切换到特定分支，然后在 Paddle Lite 根目录下执行编译命令：
 ```
 ./lite/tools/build_android.sh --toolchain=clang --with_benchmark=ON full_publish
 ```
 可选参数：
+
 | 参数 | 说明 | 可选值 | 默认值 |
 | :-- | :-- | :-- | :-- |
 | arch                  | 目标 ARM 架构    |  armv7 / armv8   |  armv8   |
@@ -109,11 +110,12 @@ avg   = 32.723
 
 # 在 ARMLinux 上运行性能测试
 根据[源码编译](../source_compile/compile_env)准备编译环境，建议使用 Docker 配置交叉编译环境。
-拉取 [Paddle-Lite](https://github.com/PaddlePaddle/Paddle-Lite) 代码，切换到特定分支，然后在 Paddle-Lite 根目录下执行编译命令：
+拉取 [Paddle Lite](https://github.com/PaddlePaddle/Paddle-Lite) 代码，切换到特定分支，然后在 Paddle Lite 根目录下执行编译命令：
 ```
 ./lite/tools/build_linux.sh --arch=armv8 --with_benchmark=ON full_publish
 ```
 可选参数：
+
 | 参数 | 说明 | 可选值 | 默认值 |
 | :-- | :-- | :-- | :-- |
 | arch                  | 目标 ARM 架构    |  armv7 / armv8   |  armv8   |
@@ -191,11 +193,12 @@ avg   = 32.723
 # 在 Linux 上运行性能测试
 ## 编译
 根据[源码编译](../source_compile/compile_env)准备编译环境，建议使用 Docker 配置环境。
-拉取 [Paddle-Lite](https://github.com/PaddlePaddle/Paddle-Lite) 代码，切换到特定分支，然后在 Paddle-Lite 根目录下执行编译命令：
+拉取 [Paddle Lite](https://github.com/PaddlePaddle/Paddle-Lite) 代码，切换到特定分支，然后在 Paddle Lite 根目录下执行编译命令：
 ```
 ./lite/tools/build_linux.sh --arch=x86 --with_benchmark=ON full_publish
 ```
 可选参数：
+
 | 参数 | 说明 | 可选值 | 默认值 |
 | :-- | :-- | :-- | :-- |
 | toolchain             | 工具链           |  gcc / clang     |  gcc     |
@@ -215,6 +218,9 @@ avg   = 32.723
 # 获取模型文件
 wget https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/MobileNetV1.tar.gz
 tar zxvf MobileNetV1.tar.gz
+
+# 设置环境变量
+export LD_LIBRARY_PATH=build.lite.x86.gcc/third_party/install/mklml/lib/:$LD_LIBRARY_PATH
 
 # 执行性能测试
 ./build.lite.linux.x86.gcc/lite/api/benchmark_bin \
@@ -267,11 +273,12 @@ avg   = 33.918
 # 在 OSX 上运行性能测试
 ## 编译
 根据[源码编译](../source_compile/compile_env)准备编译环境，可以使用 Docker 配置环境，也可以使用系统原生开发环境。
-拉取 [Paddle-Lite](https://github.com/PaddlePaddle/Paddle-Lite) 代码，切换到特定分支，然后在 Paddle-Lite 根目录下执行编译命令：
+拉取 [Paddle Lite](https://github.com/PaddlePaddle/Paddle-Lite) 代码，切换到特定分支，然后在 Paddle Lite 根目录下执行编译命令：
 ```
 ./lite/tools/build_macos.sh --with_benchmark=ON x86
 ```
 可选参数：
+
 | 参数 | 说明 | 可选值 | 默认值 |
 | :-- | :-- | :-- | :-- |
 | toolchain             | 工具链          |  gcc / clang     |  gcc     |
@@ -379,31 +386,31 @@ adb shell "cd /data/local/tmp/benchmark;
 ```
 
 ### 在 NNAdapter 上运行模型
-NNAdapter已支持的新硬件列表如下：
-- Huawei Kirin NPU 
+NNAdapter 已支持的新硬件列表如下：
+- Huawei Kirin NPU
 - Huawei Ascend NPU
 - Rockchip NPU
 - Imagination NNA
 - Mediatek APU
 - Amlogic NPU
 
-PaddleLite在持续地开发不同新硬件所支持的算子。可以通过访问[https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/bridges/paddle_use_bridges.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/bridges/paddle_use_bridges.h)获得最新的算子支持列表。
+Paddle Lite 在持续地开发不同新硬件所支持的算子。可以通过访问 [NNAdapter 算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/bridges/paddle_use_bridges.h)获得最新的算子支持列表。
 
-参考NNAdapter算子支持列表，当模型能够全部运行在某种新硬件上时，实际后端只有NNAdapter一种；当模型部分算子需要运行在x86 cpu或arm cpu上时，实际后端为包含NNAdapter和cpu在内的多种硬件（异构计算）。
+参考 NNAdapter 算子支持列表，当模型能够全部运行在某种新硬件上时，实际后端只有 NNAdapter 一种；当模型部分算子需要运行在 x86 cpu 或 arm cpu 上时，实际后端为包含 NNAdapter 和 cpu 在内的多种硬件（异构计算）。
 
-#### NNAdapter运行时库及新硬件Driver Hal库编译
+#### NNAdapter 运行时库及新硬件 Driver Hal 库编译
 ##### nnadapter.so
 - Huawei Kirin NPU / Mediatek NPU 请参考 『在 Android 上运行性能测试』编译预测库。
 — Huawei Ascend NPU（arm host） / Rockchip NPU / Imagination NNA / Amlogic NPU 请参考 『在 ARMLinux 上运行性能测试』编译预测库。
 - Huawei Ascend NPU（x86 host）请参考『在 Linux 上运行性能测试』编译预测库。
-- 新硬件所需的DDK可在PaddleLite通用示例程序[PaddleLite-generic-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)中获取。
+- 新硬件所需的 DDK 可在 [Paddle Lite 通用示例程序](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)中获取。
 
 ##### driver hal库
-请参考[Paddle-Lite官方文档](https://paddle-lite.readthedocs.io/zh/develop/index.html)编译新硬件driver hal库。
+请参考[Paddle Lite官方文档](https://paddle-lite.readthedocs.io/zh/develop/index.html)编译新硬件 driver hal 库。
 
 #### 在 Huawei Kirin NPU 上运行模型
 ```shell
-拷贝HiAi DDK、benchmark_bin、nnadapter.so、模型文件到设备目录/data/local/tmp/benchmark
+拷贝 HiAi DDK、benchmark_bin、nnadapter.so、模型文件到设备目录`/data/local/tmp/benchmark`
 adb shell "cd /data/local/tmp/benchmark;
   export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH;
   ./benchmark_bin \
@@ -418,8 +425,8 @@ adb shell "cd /data/local/tmp/benchmark;
 
 #### 在 Huawei Ascend NPU 上运行模型
 ```shell
-# Host侧为x86 cpu时
-拷贝Ascend DDK、benchmark_bin、nnadapter.so、模型文件到设备目录 WORKSPACE
+# Host 侧为 x86 cpu 时
+拷贝 Ascend DDK、benchmark_bin、nnadapter.so、模型文件到设备目录`WORKSPACE`
 export LD_LIBRARY_PATH=$WORKSPACE:$LD_LIBRARY_PATH
   ./benchmark_bin \
     --model_file=MobileNetV1/inference.pdmodel \
@@ -431,8 +438,8 @@ export LD_LIBRARY_PATH=$WORKSPACE:$LD_LIBRARY_PATH
     --nnadapter_device_names=huawei_ascend_npu \
     --nnadapter_context_properties="HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0"
 
-# Host侧为arm cpu时
-拷贝Ascend DDK、benchmark_bin、nnadapter.so、模型文件到设备目录 WORKSPACE
+# Host 侧为 arm cpu 时
+拷贝 Ascend DDK、benchmark_bin、nnadapter.so、模型文件到设备目录`WORKSPACE`
 export LD_LIBRARY_PATH=$WORKSPACE:$LD_LIBRARY_PATH
   ./benchmark_bin \
     --model_file=MobileNetV1/inference.pdmodel \
@@ -445,9 +452,9 @@ export LD_LIBRARY_PATH=$WORKSPACE:$LD_LIBRARY_PATH
     --nnadapter_context_properties="HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0"
 ```
 
-#### 在 Huawei Rockchip NPU 上运行模型
+#### 在 Rockchip NPU 上运行模型
 ```shell
-拷贝rockchip npu DDK、benchmark_bin、nnadapter.so、模型文件到设备目录 WORKSPACE
+拷贝 Rockchip npu DDK、benchmark_bin、nnadapter.so、模型文件到设备目录`WORKSPACE`
 export LD_LIBRARY_PATH=$WORKSPACE:$LD_LIBRARY_PATH
   ./benchmark_bin \
     --model_file=MobileNetV1/inference.pdmodel \
@@ -461,7 +468,7 @@ export LD_LIBRARY_PATH=$WORKSPACE:$LD_LIBRARY_PATH
 
 #### 在 Imagination NNA 上运行模型
 ```shell
-拷贝imagination DDK、benchmark_bin、nnadapter.so、模型文件到设备目录 WORKSPACE
+拷贝 Imagination DDK、benchmark_bin、nnadapter.so、模型文件到设备目录`WORKSPACE`
 export LD_LIBRARY_PATH=$WORKSPACE:$LD_LIBRARY_PATH
   ./benchmark_bin \
     --model_file=MobileNetV1/inference.pdmodel \
@@ -475,7 +482,7 @@ export LD_LIBRARY_PATH=$WORKSPACE:$LD_LIBRARY_PATH
 
 #### 在 Mediatek APU 上运行模型
 ```shell
-拷贝Mediatek APU DDK、benchmark_bin、nnadapter.so、模型文件到设备目录/data/local/tmp/benchmark
+拷贝 Mediatek APU DDK、benchmark_bin、nnadapter.so、模型文件到设备目录`/data/local/tmp/benchmark`
 adb shell "cd /data/local/tmp/benchmark;
   export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH;
   ./benchmark_bin \
