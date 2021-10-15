@@ -227,7 +227,7 @@ extern NSString* cString2NSString(std::string cStr) {
              outTexture:(id<MTLTexture>)outTexture
               quadruple:(bool)quadruple {
     if (!pipline) {
-        VLOG(4) << "[METAL]: Error pipeline !!!!!";
+        LOG(FATAL) << "[meta] invalid param, MTL Compute Pipeline is nil!";
         return;
     }
     NSUInteger slices = (outTexture.arrayLength * 4 + 3) / 4;
