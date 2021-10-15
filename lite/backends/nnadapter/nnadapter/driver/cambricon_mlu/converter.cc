@@ -81,6 +81,18 @@ void Converter::UpdateTensorMap(hal::Operand* operand,
   return;
 }
 
+magicmind::ITensor* Converter::AddInt32ConstantTensor(void* buffer,
+                                                      std::vector<int64_t> dimensions) {
+  NNADAPTER_CHECK(buffer);
+  auto const_node = network_->AddIConstNode(magicmind::DataType::INT32,
+                                            magicmind::Dims(dimensions),
+                                            buffer);
+  if (const_node == nullptr) {
+    NNADAPTER_LOG(FATAL) << "Failed to add const node.";
+  }
+  return const_node->GetOutput(0);
+}
+
 magicmind::ITensor* Converter::AddTensor(const NNAdapterOperandType* type,
                                          void* buffer,
                                          std::vector<int64_t> dimensions) {

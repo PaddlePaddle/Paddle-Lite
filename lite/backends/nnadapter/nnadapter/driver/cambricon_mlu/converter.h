@@ -40,6 +40,9 @@ class Converter {
 
   void UpdateTensorMap(hal::Operand* operand, magicmind::ITensor* tensor);
 
+  magicmind::ITensor* AddInt32ConstantTensor(void* buffer,
+                                             std::vector<int64_t> dimensions);
+
   magicmind::ITensor* AddTensor(const NNAdapterOperandType* type,
                                 void* buffer,
                                 std::vector<int64_t> dimensions);
