@@ -64,7 +64,7 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
     auto strides = param.strides;
     bool pads_equal = (paddings[0] == paddings[2]) && (paddings[0] == 2);
     if (strides[0] == 1 && strides[1] == 1 && pads_equal &&
-        param.activation_param.active_type < 4 && win > 4) {
+        static_cast<int>(param.activation_param.active_type) < 4 && win > 4) {
       flag_trans_weights_ = false;
     } else if ((strides[0] == 1 && strides[1] == 1) ||
                (strides[0] == 2 && strides[1] == 2)) {

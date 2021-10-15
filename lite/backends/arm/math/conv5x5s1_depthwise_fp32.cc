@@ -16,6 +16,7 @@
 #include "lite/backends/arm/math/conv_block_utils.h"
 #include "lite/backends/arm/math/conv_depthwise.h"
 #include "lite/core/context.h"
+#include "lite/core/parallel_defines.h"
 #include "lite/operators/op_params.h"
 #ifdef ARM_WITH_OMP
 #include <omp.h>
@@ -757,8 +758,10 @@ void conv_depthwise_5x5s1_fp32(float *dout,
   }
 }
 #endif  // __aarch64__
-#define ACTUAL_PARAM \
-  dout, din, weights, bias, flag_bias, flag_relu, num, chin, win.wout, hout
+#define ACTUAL_PARAM                                                         \
+  dout, din, weights, bias, flag_bias, flag_relu, num, chin, hin, win, wout, \
+      hout
+
 #define IN_PARAM                                                           \
   float *dout, const float *din, const float *weights, const float *bias,  \
       bool flag_bias, bool flag_relu, int num, int chin, int hin, int win, \
@@ -815,8 +818,8 @@ void conv_depthwise_5x5s1_fp32(float *dout,
   "ld1 {v3.4s}, [%[din_ptr1]]\n"                    \
   "ld1 {v5.4s}, [%[din_ptr2]]\n"                    \
   "ld1 {v7.4s}, [%[din_ptr3]]\n"                    \
-  "ld1 {v30.4s} [%[bias_val]]\n"                    \
-  "ld1 {v31.4s} [%[bias_val]]\n"                    \
+  "ld1 {v30.4s}, [%[bias_val]]\n"                   \
+  "ld1 {v31.4s}, [%[bias_val]]\n"                   \
   /* line 0 */                                      \
   "ext v8.16b,  %[vzero].16b, v0.16b, #8\n"         \
   "ext v12.16b, %[vzero].16b, v2.16b, #8\n"         \
@@ -1012,8 +1015,8 @@ void conv_depthwise_5x5s1_fp32(float *dout,
   "ld1 {v3.4s}, [%[din_ptr1]]\n"                    \
   "ld1 {v5.4s}, [%[din_ptr2]]\n"                    \
   "ld1 {v7.4s}, [%[din_ptr3]]\n"                    \
-  "ld1 {v30.4s} [%[bias_val]]\n"                    \
-  "ld1 {v31.4s} [%[bias_val]]\n"                    \
+  "ld1 {v30.4s}, [%[bias_val]]\n"                   \
+  "ld1 {v31.4s}, [%[bias_val]]\n"                   \
   COMPUTE_S1_A                                      \
   /* line 1 */                                      \
   "fmla v30.4s, v2.4s,  %[w1].s[1]\n"               \
@@ -1096,16 +1099,16 @@ void conv_depthwise_5x5s1_fp32(float *dout,
   "ld1 {v3.4s}, [%[din_ptr1]]\n"                     \
   "ld1 {v5.4s}, [%[din_ptr2]]\n"                     \
   "ld1 {v7.4s}, [%[din_ptr3]]\n"                     \
-  "ld1 {v30.4s} [%[bias_val]]\n"                     \
-  "ld1 {v31.4s} [%[bias_val]]\n"                     \
-  "bif v0.16, %[vzero].16b, v8.16b\n"                \
-  "bif v2.16, %[vzero].16b, v8.16b\n"                \
-  "bif v4.16, %[vzero].16b, v8.16b\n"                \
-  "bif v6.16, %[vzero].16b, v8.16b\n"                \
-  "bif v1.16, %[vzero].16b, v9.16b\n"                \
-  "bif v3.16, %[vzero].16b, v9.16b\n"                \
-  "bif v5.16, %[vzero].16b, v9.16b\n"                \
-  "bif v7.16, %[vzero].16b, v9.16b\n"                \
+  "ld1 {v30.4s}, [%[bias_val]]\n"                    \
+  "ld1 {v31.4s}, [%[bias_val]]\n"                    \
+  "bif v0.16b, %[vzero].16b, v8.16b\n"               \
+  "bif v2.16b, %[vzero].16b, v8.16b\n"               \
+  "bif v4.16b, %[vzero].16b, v8.16b\n"               \
+  "bif v6.16b, %[vzero].16b, v8.16b\n"               \
+  "bif v1.16b, %[vzero].16b, v9.16b\n"               \
+  "bif v3.16b, %[vzero].16b, v9.16b\n"               \
+  "bif v5.16b, %[vzero].16b, v9.16b\n"               \
+  "bif v7.16b, %[vzero].16b, v9.16b\n"               \
   COMPUTE_S1_A                                       \
   "ld1 {v8.4s, v9.4s}, [%[vmask]]\n"                 \
   /* line 1 */                                       \
@@ -1117,16 +1120,16 @@ void conv_depthwise_5x5s1_fp32(float *dout,
   "fmla v29.4s, v11.4s, %[w1].s[2]\n"                \
   "fmla v30.4s, v13.4s, %[w1].s[3]\n"                \
   "fmla v31.4s, v15.4s, %[w1].s[3]\n"                \
-  "bif v0.16, %[vzero].16b, v8.16b\n"                \
+  "bif v0.16b, %[vzero].16b, v8.16b\n"               \
   "ld1 {v1.4s}, [%[din_ptr4]]\n"                     \
-  "bif v2.16, %[vzero].16b, v8.16b\n"                \
+  "bif v2.16b, %[vzero].16b, v8.16b\n"               \
   "ld1 {v3.4s}, [%[din_ptr5]]\n"                     \
   "fmla v28.4s, v14.4s, %[w2].s[0]\n"                \
   "fmla v29.4s, v19.4s, %[w2].s[0]\n"                \
   "fmla v30.4s, v3.4s,  %[w2].s[1]\n"                \
   "fmla v31.4s, v5.4s,  %[w2].s[1]\n"                \
-  "bif v1.16, %[vzero].16b, v9.16b\n"                \
-  "bif v3.16, %[vzero].16b, v9.16b\n"                \
+  "bif v1.16b, %[vzero].16b, v9.16b\n"               \
+  "bif v3.16b, %[vzero].16b, v9.16b\n"               \
   "ext v8.16b,  v0.16b, v1.16b, #4\n"                \
   "ext v12.16b, v2.16b, v3.16b, #4\n"                \
   COMPUTE_S1_B
@@ -1147,7 +1150,7 @@ void conv_depthwise_5x5s1_fp32(float *dout,
   "st1 {v19.4s}, [%[doutr1]], #16\n"   \
   "3:                             \n"
 
-#define RIGHT_RESULT_S1              \
+#define RIGHT_RESULT_S1_RELU6        \
   "ld1 {v1.4s}, [%[six_ptr]]   \n"   \
   "fadd  v18.4s, v28.4s, v30.4s\n"   \
   "fadd  v19.4s, v29.4s, v31.4s\n"   \
@@ -1185,47 +1188,49 @@ void conv_depthwise_5x5s1_fp32(float *dout,
   dr2 = dr4;                   \
   dr3 = dr5;                   \
   dr4 = dr3 + win;
+
 #define LEFT_COMPUTE_S1
 
-#define LEFT_RESULT_S1 #define LEFT_RESULT_S1_RELU #define LEFT_RESULT_S1_RELU6
-
-#define COMPUTE_S1
-
+#define LEFT_RESULT_S1
+#define LEFT_RESULT_S1_RELU
+#define LEFT_RESULT_S1_RELU6
+#define COMPUTE_S1_A
+#define COMPUTE_S1_B
 #define MID_COMPITE_S1
-
-#define MID_RESULT_S1 #define MID_RESULT_S1_RELU #define MID_RESULT_S1_RELU6
-
+#define MID_RESULT_S1
+#define MID_RESULT_S1_RELU
+#define MID_RESULT_S1_RELU6
 #define RIGHT_COMPUTE_S1
-
-#define RIGHT_RESULT_S1 \
-  #define RIGHT_RESULT_S1_RELU #define RIGHT_RESULT_S1_RELU6
-
+#define RIGHT_RESULT_S1
+#define RIGHT_RESULT_S1_RELU
+#define RIGHT_RESULT_S1_RELU6
 #endif
-inline std::pair<uint32_t, uint32_t> right_mask_5x5s1p2_fp32(int w_in,
-                                                             int w_out,
+
+inline std::pair<uint32_t, uint32_t> right_mask_5x5s1p2_fp32(int win,
+                                                             int wout,
                                                              uint32_t* vmask) {
   uint32_t right_pad_idx[8] = {0, 1, 2, 3, 4, 5, 6, 7};
   uint32_t cnt_col = ((wout >> 2) - 2);
-  uint32_t cnt_remain = wout % 4;
   uint32_t size_right_remain = static_cast<uint32_t>(win - (2 + cnt_col * 4));
   uint32_t right_pad_num = 0;
   if (size_right_remain >= 8) {
     cnt_col++;
     size_right_remain -= 4;
   }
-  uint32_t cnt_remain = (size_right_remain == 6 && w_out % 4 == 0)
+  uint32_t cnt_remain = (size_right_remain == 6 && wout % 4 == 0)
                             ? 4
-                            : static_cast<uint32_t>(w_out % 4);
+                            : static_cast<uint32_t>(wout % 4);
   size_right_remain = (cnt_remain == 4) ? size_right_remain :
-                      (size_right_remain + 4 - cnt_reamin);
+                      (size_right_remain + 4 - cnt_remain);
   uint32x4_t vmask_rp1 =
-      vcgt_u32(vdup_n_u32(size_right_remain), vld1_u32(right_pad_idx));
+      vcgtq_u32(vdupq_n_u32(size_right_remain), vld1q_u32(right_pad_idx));
   uint32x4_t vmask_rp2 =
-      vcgt_u32(vdup_n_u32(size_right_remain), vld1_u32(right_pad_idx + 8));
-  vst1_u32(vmask, vmask_rp1);
-  vst1_u32(vmask + 4, vmask_rp2);
+      vcgtq_u32(vdupq_n_u32(size_right_remain), vld1q_u32(right_pad_idx + 8));
+  vst1q_u32(vmask, vmask_rp1);
+  vst1q_u32(vmask + 4, vmask_rp2);
   return std::make_pair(cnt_col, cnt_remain);
 }
+
 void conv_depthwise_5x5s1p2_fp32_relu(IN_PARAM, ARMContext *ctx) {
   int size_in_channel = win * hin;
   int size_out_channel = wout * hout;
@@ -1260,7 +1265,7 @@ void conv_depthwise_5x5s1p2_fp32_relu(IN_PARAM, ARMContext *ctx) {
       float32x4_t w3 = vld1q_f32(wei_ptr + 12);
       float32x4_t w4 = vld1q_f32(wei_ptr + 16);
       float32x4_t w5 = vld1q_f32(wei_ptr + 20);
-      float32x4_t w6 = vdupq_f32(wei_ptr[24]);
+      float32x4_t w6 = vdupq_n_f32(wei_ptr[24]);
 #ifdef __aarch64__
       float32x4_t vzero = vdupq_n_f32(0.f);
       for (int h = 0; h < hout; h += 2) {
@@ -1274,7 +1279,7 @@ void conv_depthwise_5x5s1p2_fp32_relu(IN_PARAM, ARMContext *ctx) {
             [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), [din_ptr5] "+r"(din_ptr5),
             [doutr0] "+r"(doutr0), [doutr1] "+r"(doutr1), [cnt] "+r"(cnt)
           : [w0] "w"(w0), [w1] "w"(w1), [w2] "w"(w2), [w3] "w"(w3), [w4] "w"(w4), [w5] "w"(w5),
-            [w6] "w"(w6), [vzero] "w"(vzero), [bias_val] "r"(vbias],
+            [w6] "w"(w6), [vzero] "w"(vzero), [bias_val] "r"(vbias),
             [right_pad_num] "r"(right_pad_num), [vmask] "r"(vmask)
           : "cc","memory", "v0","v1","v2","v3","v4","v5","v6","v7",
             "v8","v9","v10","v11","v12","v13", "v14","v15","v16","v17","v18","v19",
@@ -1294,7 +1299,7 @@ void conv_depthwise_5x5s1p2_fp32_relu(IN_PARAM, ARMContext *ctx) {
             [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4),
             [doutr0] "+r"(doutr0), [cnt] "+r"(cnt)
           : [w0] "w"(w0), [w1] "w"(w1), [w2] "w"(w2), [w3] "w"(w3), [w4] "w"(w4), [w5] "w"(w5),
-            [w6] "w"(w6), [bias_val] "r"(vbias], [right_pad_num] "r"(right_pad_num), [vmask] "r"(vmask)
+            [w6] "w"(w6), [bias_val] "r"(vbias), [right_pad_num] "r"(right_pad_num), [vmask] "r"(vmask)
           : "cc","memory", "q7", "q8","q9","q10","q11","q12","q13", "q14","q15"
         );
         dout_ptr += wout;
@@ -1304,6 +1309,7 @@ void conv_depthwise_5x5s1p2_fp32_relu(IN_PARAM, ARMContext *ctx) {
     LITE_PARALLEL_END();
   }
 }
+
 void conv_depthwise_5x5s1p2_fp32_relu6(IN_PARAM, float six, ARMContext *ctx) {
   int size_in_channel = win * hin;
   int size_out_channel = wout * hout;
@@ -1338,7 +1344,7 @@ void conv_depthwise_5x5s1p2_fp32_relu6(IN_PARAM, float six, ARMContext *ctx) {
       float32x4_t w3 = vld1q_f32(wei_ptr + 12);
       float32x4_t w4 = vld1q_f32(wei_ptr + 16);
       float32x4_t w5 = vld1q_f32(wei_ptr + 20);
-      float32x4_t w6 = vdupq_f32(wei_ptr[24]);
+      float32x4_t w6 = vdupq_n_f32(wei_ptr[24]);
 #ifdef __aarch64__
       float32x4_t vzero = vdupq_n_f32(0.f);
       float vbias[4] = {bias_val, bias_val, bias_val, bias_val};
@@ -1353,7 +1359,7 @@ void conv_depthwise_5x5s1p2_fp32_relu6(IN_PARAM, float six, ARMContext *ctx) {
             [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), [din_ptr5] "+r"(din_ptr5),
             [doutr0] "+r"(doutr0), [doutr1] "+r"(doutr1), [cnt] "+r"(cnt)
           : [w0] "w"(w0), [w1] "w"(w1), [w2] "w"(w2), [w3] "w"(w3), [w4] "w"(w4), [w5] "w"(w5),
-            [w6] "w"(w6), [vzero] "w"(vzero), [bias_val] "r"(vbias],
+            [w6] "w"(w6), [vzero] "w"(vzero), [bias_val] "r"(vbias),
             [right_pad_num] "r"(right_pad_num), [vmask] "r"(vmask), [six_ptr] "r"(six_val)
           : "cc","memory", "v0","v1","v2","v3","v4","v5","v6","v7",
             "v8","v9","v10","v11","v12","v13", "v14","v15","v16","v17","v18","v19",
@@ -1375,7 +1381,7 @@ void conv_depthwise_5x5s1p2_fp32_relu6(IN_PARAM, float six, ARMContext *ctx) {
             [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4),
             [doutr0] "+r"(doutr0), [cnt] "+r"(cnt)
           : [w0] "w"(w0), [w1] "w"(w1), [w2] "w"(w2), [w3] "w"(w3), [w4] "w"(w4), [w5] "w"(w5),
-            [w6] "w"(w6), [bias_val] "r"(vbias], [right_pad_num] "r"(right_pad_num), [vmask] "r"(vmask)
+            [w6] "w"(w6), [bias_val] "r"(vbias), [right_pad_num] "r"(right_pad_num), [vmask] "r"(vmask)
           : "cc","memory", "q7", "q8","q9","q10","q11","q12","q13", "q14","q15"
         );
         dout_ptr += wout;
@@ -1385,6 +1391,7 @@ void conv_depthwise_5x5s1p2_fp32_relu6(IN_PARAM, float six, ARMContext *ctx) {
     LITE_PARALLEL_END();
   }
 }
+
 void conv_depthwise_5x5s1p2_fp32(float *dout,
                                  const float *din,
                                  const float *weights,
@@ -1397,8 +1404,6 @@ void conv_depthwise_5x5s1p2_fp32(float *dout,
                                  int win,
                                  int hout,
                                  int wout,
-                                 int padw,
-                                 int padh,
                                  const operators::ConvParam &param,
                                  ARMContext *ctx) {
   auto act_param = param.activation_param;
@@ -1448,7 +1453,7 @@ void conv_depthwise_5x5s1p2_fp32(float *dout,
         float32x4_t w3 = vld1q_f32(wei_ptr + 12);
         float32x4_t w4 = vld1q_f32(wei_ptr + 16);
         float32x4_t w5 = vld1q_f32(wei_ptr + 20);
-        float32x4_t w6 = vdupq_f32(wei_ptr[24]);
+        float32x4_t w6 = vdupq_n_f32(wei_ptr[24]);
 #ifdef __aarch64__
         float32x4_t vzero = vdupq_n_f32(0.f);
         for (int h = 0; h < hout; h += 2) {
@@ -1462,7 +1467,7 @@ void conv_depthwise_5x5s1p2_fp32(float *dout,
               [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), [din_ptr5] "+r"(din_ptr5),
               [doutr0] "+r"(doutr0), [doutr1] "+r"(doutr1), [cnt] "+r"(cnt)
             : [w0] "w"(w0), [w1] "w"(w1), [w2] "w"(w2), [w3] "w"(w3), [w4] "w"(w4), [w5] "w"(w5),
-              [w6] "w"(w6), [vzero] "w"(vzero), [bias_val] "r"(vbias],
+              [w6] "w"(w6), [vzero] "w"(vzero), [bias_val] "r"(vbias),
               [right_pad_num] "r"(right_pad_num), [vmask] "r"(vmask)
             : "cc","memory", "v0","v1","v2","v3","v4","v5","v6","v7",
               "v8","v9","v10","v11","v12","v13", "v14","v15","v16","v17","v18","v19",
@@ -1482,7 +1487,7 @@ void conv_depthwise_5x5s1p2_fp32(float *dout,
               [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4),
               [doutr0] "+r"(doutr0), [cnt] "+r"(cnt)
             : [w0] "w"(w0), [w1] "w"(w1), [w2] "w"(w2), [w3] "w"(w3), [w4] "w"(w4), [w5] "w"(w5),
-              [w6] "w"(w6), [bias_val] "r"(vbias], [right_pad_num] "r"(right_pad_num), [vmask] "r"(vmask)
+              [w6] "w"(w6), [bias_val] "r"(vbias), [right_pad_num] "r"(right_pad_num), [vmask] "r"(vmask)
             : "cc","memory", "q7", "q8","q9","q10","q11","q12","q13", "q14","q15"
           );
           dout_ptr += wout;
@@ -1493,6 +1498,20 @@ void conv_depthwise_5x5s1p2_fp32(float *dout,
     }
   }
 }
+
+#undef LEFT_COMPUTE_S1
+#undef LEFT_RESULT_S1
+#undef LEFT_RESULT_S1_RELU
+#undef LEFT_RESULT_S1_RELU6
+#undef COMPUTE_S1_A
+#undef COMPUTE_S1_B
+#undef MID_COMPITE_S1
+#undef MID_RESULT_S1
+#undef MID_RESULT_S1_RELU
+#undef MID_RESULT_S1_RELU6
+#undef RIGHT_RESULT_S1
+#undef RIGHT_RESULT_S1_RELU
+#undef RIGHT_RESULT_S1_RELU6
 #undef DIN_PTR_INIT
 #undef IN_PARAM
 #undef ACTUAL_PARAM
