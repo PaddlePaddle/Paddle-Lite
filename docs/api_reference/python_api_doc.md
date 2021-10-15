@@ -164,11 +164,11 @@ from paddlelite.lite import *
 import numpy as np
 from PIL import Image
 
-# (1) 设置config信息
+# (1) 设置配置信息
 config = MobileConfig()
 config.set_model_from_file("./mobilenet_v1_opt.nb")
 
-# (2) 创建predictor
+# (2) 创建预测器
 predictor = create_paddle_predictor(config)
 
 # (3) 从图片读入数据
