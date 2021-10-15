@@ -89,8 +89,9 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
 
   //! select conv impl
   if (dw_kernel && kps_equal && no_dilation && flag_dw &&
-      (flag_dw_5x5 || paddings[0] == 1)) {
+      (flag_dw_5x5 || flag_p01)) {
     impl_ = new DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>;
+    VLOG(3) << "invoking conv_depthwise_3x3p0p1 or conv_depthwise_5x5";
   }
 
   if (ih >= 112 && ih <= 400 && iw >= 112 && iw <= 400 && input_channel >= 3 &&

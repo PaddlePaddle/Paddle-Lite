@@ -60,9 +60,9 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
 
   if (kh == 3) {
     if (stride == 1) {
-      lite::x86::math::conv_depthwise_3x3s1_p1_direct(CONV_DW_PARAM);
+      lite::x86::math::conv_depthwise_3x3s1_p01_direct(CONV_DW_PARAM);
     } else if (stride == 2) {
-      lite::x86::math::conv_depthwise_3x3s2_p1_direct(CONV_DW_PARAM);
+      lite::x86::math::conv_depthwise_3x3s2_p01_direct(CONV_DW_PARAM);
     }
   } else if (kh == 5) {
     if (stride == 1) {
