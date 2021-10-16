@@ -19,11 +19,11 @@
 using namespace metal;
 
 struct ConcatParam {
-  int32_t odim[4];
-  int32_t axis;
-  int32_t offset;
-  int32_t trans[4];
-  int32_t vdim[6];
+    int32_t odim[4];
+    int32_t axis;
+    int32_t offset;
+    int32_t trans[4];
+    int32_t vdim[6];
 };
 
 #define VNORMAL 1

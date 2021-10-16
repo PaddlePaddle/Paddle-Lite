@@ -21,7 +21,6 @@ namespace lite {
 MetalContext::MetalContext() {
     mContext = (__bridge_retained void*)[[MetalContextImp alloc] init];
     if (mContext) {
-
     }
 }
 
@@ -51,6 +50,5 @@ void MetalContext::set_use_memory_reuse(bool flag) {
     }
     [(__bridge MetalContextImp*)mContext set_use_memory_reuse:use_memory_reuse_];
 }
-
 }
 }

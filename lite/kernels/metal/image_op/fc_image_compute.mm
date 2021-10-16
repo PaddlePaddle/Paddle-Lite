@@ -96,7 +96,6 @@ void FCImageCompute::setup_without_mps() {
 FCImageCompute::~FCImageCompute() {
     TargetWrapperMetal::FreeImage(output_buffer_);
 }
-
 }
 }
 }

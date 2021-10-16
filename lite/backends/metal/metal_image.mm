@@ -435,7 +435,7 @@ void MetalImage::CopyToNCHW(P* dst) const {
     } else if (precision_type_ == METAL_PRECISION_TYPE::HALF && std::is_same<P, float>::value) {
         auto pointer = (MetalHalf*)TargetWrapperMetal::Malloc(sizeof(MetalHalf) * dstCounts);
         TargetWrapperMetal::MemsetSync(pointer, 0, sizeof(MetalHalf) * dstCounts);
-        
+
         auto bytes_per_row = image_.width * image_.depth * channels_per_pixel_ * sizeof(MetalHalf);
         auto bytes_per_image = image_.height * bytes_per_row;
 
@@ -510,9 +510,9 @@ MetalImage::~MetalImage() {
         image_ = nil;
     }
     if (@available(iOS 10.0, *)) {
-      if (heap_) {
-        heap_ = nil;
-      }
+        if (heap_) {
+            heap_ = nil;
+        }
     }
 }
 

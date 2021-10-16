@@ -54,8 +54,9 @@ void SigmoidImageCompute::setup_without_mps() {
         if (param.active_type == lite_api::ActivationType::kSigmoid) {
             function_name_ = "sigmoid";
         } else {
-             function_name_ = "hard_sigmoid";
-        } else {
+            function_name_ = "hard_sigmoid";
+        }
+        else {
             LOG(FATAL) << "[metal] unsupported Activation type";
         }
     }

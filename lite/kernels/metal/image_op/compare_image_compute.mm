@@ -78,8 +78,8 @@ void CompareImageCompute::setup_without_mps() {
     if (!valid) {
         LOG(FATAL) << "compare: only supports : same shapes";
     }
-    
-    //Equal = 0, NotEqual = 1, LessThan = 2, LessEqual = 3, GreaterThan = 4, GreaterEqual = 5,
+
+    // Equal = 0, NotEqual = 1, LessThan = 2, LessEqual = 3, GreaterThan = 4, GreaterEqual = 5,
     int compareType = 0;
     CompareMetalParam metal_params = {compareType};
     params_buffer_ =
@@ -115,9 +115,7 @@ REGISTER_LITE_KERNEL(equal,
             PRECISION(kFloat),
             DATALAYOUT(kMetalTexture2DArray))})
     .BindOutput("Out",
-        {LiteType::GetTensorTy(TARGET(kMetal),
-            PRECISION(kBool),
-            DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kBool), DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(equal,
@@ -127,15 +125,9 @@ REGISTER_LITE_KERNEL(equal,
     paddle::lite::kernels::metal::CompareImageCompute,
     def)
     .BindInput("X",
-        {LiteType::GetTensorTy(TARGET(kMetal),
-            PRECISION(kFP16),
-            DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .BindInput("Y",
-        {LiteType::GetTensorTy(TARGET(kMetal),
-            PRECISION(kFP16),
-            DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .BindOutput("Out",
-        {LiteType::GetTensorTy(TARGET(kMetal),
-                PRECISION(kBool),
-                DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kBool), DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
