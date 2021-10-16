@@ -47,19 +47,15 @@ kernel void cast(texture2d_array<ftype, access::read> input [[texture(0)]],
   
   switch (pm.inType) {
     case BOOL:
+    case INT16:
+    case INT32:
+    case FP16:
+    case FP32:
       out = in;
       break;
-    case INT16:
-      break;
-    case INT32:
+    case FP64:
       break;
     case INT64:
-      break;
-    case FP16:
-      break;
-    case FP32:
-      break;
-    case FP64:
       break;
   }
   
