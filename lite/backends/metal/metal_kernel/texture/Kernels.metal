@@ -86,3 +86,17 @@ kernel void tex2d_ary_to_buf(texture2d_array<ftype, access::read> input [[textur
     output[output_to + 2 * delta] = value.z;
     output[output_to + 3 * delta] = value.w;
 }
+
+kernel void tex2d_c1_to_c4(texture2d_array<ftype, access::read> inTexture [[texture(0)]],
+                           texture2d_array<ftype, access::write> outTexture [[texture(1)]],
+                           uint3 gid [[thread_position_in_grid]]) {
+    if (gid.x >= inTexture.get_width() ||
+        gid.y >= inTexture.get_height() ||
+        gid.z >= inTexture.get_array_size()) {
+        return;
+    }
+    
+    const ftype4 in = inTexture.read(gid.xy, gid.z);
+    ftype4 out = ftype4(in.r, 0.0, 0.0, 0.0);
+    outTexture.write(out, gid.xy, 0);
+}
