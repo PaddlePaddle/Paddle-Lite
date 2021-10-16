@@ -36,13 +36,27 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
  public:
   using param_t = operators::MatMulParam;
 
-  void OI2OIO4I4(const float* src, void* dst, size_t O, size_t I) {
+  void transpose_cpu(const float* in_data,
+                     float* out_data,
+                     const int in_rows,
+                     const int in_cols) {
+    CHECK(in_data && out_data && in_rows > 0 && in_cols > 0);
+    for (int r = 0; r < in_rows; ++r) {
+      for (int c = 0; c < in_cols; ++c) {
+        out_data[c * in_rows + r] = in_data[r * in_cols + c];
+      }
+    }
+  }
+  //  |  0  1  2  3 16 17 18 19 |
+  //  |  4  5  6  7 20 21 22 23 |
+  //  |  8  9 10 11 24 25 25 27 |
+  //  | 12 13 14 15 28 29 30 31 |
+  void RearrangeByBlk4x4(const float* src, void* dst, size_t O, size_t I) {
     bool fp16_support =
         CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
-
+    LOG(INFO) << "fp16_support = " << fp16_support;
     float* dst_fp32 = static_cast<float*>(dst);
     half_t* dst_fp16 = static_cast<half_t*>(dst);
-    // float* src_fp32 = static_cast<float*>(src);
 
     size_t i_blocks = UP_DIV(I, 4);
     size_t o_blocks = UP_DIV(O, 4);
@@ -71,17 +85,50 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
     transpose_x_ = matmul_v2_param_->transpose_X;
     transpose_y_ = matmul_v2_param_->transpose_Y;
     alpha_ = matmul_v2_param_->alpha;
-
     auto y_t = matmul_v2_param_->Y;
     auto y_dims = y_t->dims();
-    auto y_ext_dims = y_dims;
-    y_ext_dims[0] = ROUND_UP(y_dims[0], 4);
-    y_ext_dims[1] = ROUND_UP(y_dims[1], 4);
+
+    const int thres_k = 1024;
+    bool precision_forced_to_fp32 = false;
+    const bool enable_fp16 =
+        CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
+    if (enable_fp16) {
+      k_ = transpose_y_ ? y_dims[1] : y_dims[0];
+      if (k_ > thres_k) {
+        CLRuntime::Global()->set_precision(lite_api::CL_PRECISION_FP32);
+        build_options_ += " -DCL_DTYPE_half -DCL_DTYPE_FLOAT_FORCE ";
+        precision_forced_to_fp32 = true;
+      }
+    }
+    int k_y = y_dims[0];
+    n_ = y_dims[1];
+    Tensor y_trans_cpu_t;
+    LOG(INFO) << "persistableY: " << y_t->persistable()
+              << ", tranposeY: " << transpose_y_;
+    if (transpose_y_ && y_dims.size() >= 2) {
+      y_trans_cpu_t.Resize(y_t->dims());
+      transpose_cpu(y_t->data<float>(),
+                    y_trans_cpu_t.mutable_data<float>(),
+                    y_t->dims()[0],
+                    y_t->dims()[1]);
+      y_t = &y_trans_cpu_t;
+      k_y = y_dims[1];
+      n_ = y_dims[0];
+    }
     auto y_cpu_t = std::unique_ptr<Tensor>(new Tensor);
+    auto y_ext_dims = DDim(std::vector<DDim::value_type>{1, 1});
+    if (y_dims.size() == 2) {
+      y_ext_dims[0] = ROUND_UP(y_dims[0], 4);
+      y_ext_dims[1] = ROUND_UP(y_dims[1], 4);
+    } else if (y_dims.size() == 1 && (!transpose_y_)) {
+      y_ext_dims[0] = ROUND_UP(y_dims[0], 4);
+      y_ext_dims[1] = ROUND_UP(1, 4);
+      n_ = 1;
+    }
     y_cpu_t->Resize(y_ext_dims);
     auto* y_buffer_data = MUTABLE_DATA_CPU(y_cpu_t.get());
     auto* y_cpu = y_t->data<float>();
-    OI2OIO4I4(y_cpu, y_buffer_data, y_dims[0], y_dims[1]);
+    RearrangeByBlk4x4(y_cpu, y_buffer_data, k_y, n_);
 
     y_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
     auto y_gpu_data =
@@ -90,6 +137,12 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
                                 y_cpu_t->raw_data(),
                                 y_cpu_t->memory_size(),
                                 IoDirection::HtoD);
+    y_buf_ = GET_BUFFER_GPU(y_gpu_t_);
+
+    // reset to original fp16 precision
+    if (precision_forced_to_fp32) {
+      CLRuntime::Global()->set_precision(lite_api::CL_PRECISION_FP16);
+    }
   }
 
   void ReInitWhenNeeded() override {
@@ -98,40 +151,59 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
         first_epoch_for_reinit_) {
       last_x_dims_ = x_dims;
       first_epoch_for_reinit_ = false;
-
       // compute m,n,k
       const auto y_dims = matmul_v2_param_->Y->dims();
-      CHECK_EQ(x_dims.size(), 2UL) << "Unsupported x_dims with " << x_dims;
-      CHECK_EQ(y_dims.size(), 2UL) << "Unsupported y_dims with " << y_dims;
-      CHECK_EQ(matmul_v2_param_->Out->dims().size(), 2UL);
-
-      if (transpose_x_) {
-        m_ = x_dims[1];
-        k_ = x_dims[0];
-      } else {
-        m_ = x_dims[0];
-        k_ = x_dims[1];
-      }
-
-      if (transpose_y_) {
-        n_ = y_dims[0];
-      } else {
-        n_ = y_dims[1];
-      }
-
       const auto out_dims = matmul_v2_param_->Out->dims();
+#ifdef LITE_WITH_LOG
+      LOG(INFO) << "x_dims:" << x_dims;
+      LOG(INFO) << "y_dims:" << y_dims;
+      LOG(INFO) << "out_dims:" << out_dims;
+      LOG(INFO) << "transpose_X:" << transpose_x_;
+      LOG(INFO) << "transpose_Y:" << transpose_y_;
+#endif
+      if (x_dims.size() == 2 && y_dims.size() == 2) {
+        if (transpose_x_) {
+          m_ = x_dims[1];
+          k_ = x_dims[0];
+        } else {
+          m_ = x_dims[0];
+          k_ = x_dims[1];
+        }
+
+        if (transpose_y_) {
+          n_ = y_dims[0];
+        } else {
+          n_ = y_dims[1];
+        }
+      } else if (x_dims.size() == 1 && y_dims.size() == 1 &&
+                 x_dims[0] == y_dims[0]) {
+        CHECK_EQ(transpose_x_, false) << "unsupported when x_transpose is true";
+        CHECK_EQ(transpose_y_, false) << "unsupported when y_transpose is true";
+        m_ = 1, n_ = 1;
+        k_ = y_dims[0];
+      } else if (x_dims.size() == 1 && y_dims.size() == 1 &&
+                 x_dims[0] != y_dims[0]) {
+        CHECK_EQ(transpose_x_, true) << "unsupported when x_transpose is false";
+        CHECK_EQ(transpose_y_, true) << "unsupported when y_transpose is false";
+        m_ = x_dims[0], n_ = y_dims[0];
+        k_ = 1;
+      } else if (x_dims.size() == 4 && y_dims.size() == 1 &&
+                 x_dims[x_dims.size() - 1] == y_dims[0]) {
+        m_ = x_dims[0], n_ = x_dims.count(0, x_dims.size() - 1) / x_dims[0];
+        k_ = y_dims[0];
+      } else if (x_dims.size() > 2 && y_dims.size() >= 2) {
+        // TODO(zhenlin-work)
+      }
+
       CHECK_EQ(m_, out_dims[0]);
       CHECK_EQ(n_, out_dims[1]);
-
-      const int x_k = k_;
-      const int y_k = matmul_v2_param_->transpose_Y ? y_dims[1] : y_dims[0];
-      CHECK(x_k == y_k);
 
       k_blks_ = UP_DIV(k_, 4);
       n_blks_ = UP_DIV(n_, 4);
 #ifdef LITE_WITH_LOG
       LOG(INFO) << "x_dims:" << x_dims;
       LOG(INFO) << "y_dims:" << y_dims;
+      LOG(INFO) << "out_dims:" << out_dims;
       LOG(INFO) << "transpose_X:" << transpose_x_;
       LOG(INFO) << "transpose_Y:" << transpose_y_;
       LOG(INFO) << "m_:" << m_ << ", k_:" << k_ << ", n_=" << n_;
@@ -147,21 +219,21 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
 
     SetGlobalLocalWorkSize();
   }
-
   void SetGlobalLocalWorkSize() {
     local_work_size_ = cl::NDRange(32, 4, 1);
     global_work_size_ = cl::NDRange(
         ROUND_UP(UP_DIV(n_, 4), local_work_size_[0]), local_work_size_[1], m_);
+    LOG(INFO) << "global_work_size[3D]: " << global_work_size_[0] << " "
+              << global_work_size_[1] << " " << global_work_size_[2];
   }
-
   void Run() override {
-    auto* y_buf_ = GET_BUFFER_GPU(y_gpu_t_);
     auto* x_img_ = GET_DATA_GPU(matmul_v2_param_->X);
     auto* out_img_ =
         MUTABLE_DATA_GPU(matmul_v2_param_->Out, UP_DIV(n_, 4), m_, nullptr);
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
+
     cl_int status;
     int arg_idx = 0;
     auto kernel = kernel_;
@@ -187,6 +259,11 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
                                   event_);
     CL_CHECK_FATAL(status);
   }
+  double GetStartToEndTime(const cl::Event& event) {
+    auto start_nanos = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+    auto stop_nanos = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
+    return (stop_nanos - start_nanos) / 1000000.0;
+  }
 
 #ifdef LITE_WITH_PROFILE
   void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
@@ -205,6 +282,8 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
   int k_blks_, n_blks_;
   bool transpose_x_{false};
   bool transpose_y_{false};
+  bool uselocalmem_{false};
+  bool usetranspose_y_{false};
   float alpha_{1.0f};
   param_t* matmul_v2_param_{nullptr};
   std::string kernel_func_name_{};
@@ -213,9 +292,10 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
   bool first_epoch_for_reinit_{true};
   DDim last_x_dims_;
   std::unique_ptr<Tensor> y_gpu_t_{nullptr};
+  const cl::Buffer* y_buf_{nullptr};
 
   cl::NDRange global_work_size_;
-  cl::NDRange local_work_size_{cl::NullRange};
+  cl::NDRange local_work_size_;
   cl::Kernel kernel_;
 };
 
