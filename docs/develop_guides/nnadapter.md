@@ -159,7 +159,7 @@ typedef struct Device {
   
     2）为了方便调试，可以通过 [Visualize](https://github.com/PaddlePaddle/Paddle-Lite/blob/0688f37ac8879e4670bb8fdf58a63bfa10904be4/lite/backends/nnadapter/nnadapter/utility/debug.cc#L158) 将模型数据结构输出为 DOT 格式字符串，将其复制到 [webgraphviz](http://www.webgraphviz.com/) 即可绘制模型拓扑结构。例如在华为昇腾 HAL 层的 [打印优化前后的模型拓扑结构](https://github.com/PaddlePaddle/Paddle-Lite/blob/0688f37ac8879e4670bb8fdf58a63bfa10904be4/lite/backends/nnadapter/nnadapter/driver/huawei_ascend_npu/engine.cc#L88) 代码。
 
-  - 一个操作符 `Operation` 由
+  - 一个操作符由操作符类型、输入、输出操作数列表组成，需要特别注意的是，操作数列表中的元素顺序需要严格按照操作符的定义的顺序依次存放。
 
 - 设备接口描述
 
@@ -259,7 +259,7 @@ typedef struct Device {
     op_type3                                  表示任意类型为 op_type3 的算子均被强制异构到CPU上
     ```
 
-    为了方便唯一标识模型中的某一个算子，可以在使用 cxxconfig 加载Paddle模型进行 nb 模型转换或直接推理时，设置 GLOG_v=5 打印完整调试信息，然后以 `subgraph operators` 为关键字搜索，例如： [ssd_mobilenet_v1_relu_voc_fp32_300](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_relu_voc_fp32_300.tar.gz) 模型运行在华为麒麟NPU时，将得到如下调试信息：
+    为了方便唯一标识模型中的某一个算子，可以在使用 cxxconfig 加载Paddle模型进行 nb 模型转换或直接推理时，设置 GLOG_v=5 打印完整调试信息，然后以 `subgraph operators` 为关键字搜索，例如： [ssd_mobilenet_v1_relu_voc_fp32_300](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_relu_voc_fp32_300.tar.gz) 模型运行在华为麒麟 NPU 时，将得到如下调试信息：
 
     ```
     subgraph clusters: 1
@@ -336,6 +336,19 @@ typedef struct Device {
 
 - 创建执行计划实例，设置输入、输出内存和访问函数，在设备程序执行完毕后，将结果返回给应用程序。
 ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_call_flow_detail_4.png)
+
+## 基于 NNAdapter 的硬件适配实践
+### 一般流程
+- 从 [driver](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/backends/nnadapter/nnadapter/driver) 目录中的复制一份 HAL 作为参考（服务端硬件可以参考华为昇腾 NPU `huawei_ascend_npu` ， SoC 类硬件可以参考晶晨 NPU `amlogic_npu` 或 华为麒麟 NPU `huawei_kirin_npu` ）。
+- 基于参考硬件的 HAL 代码开发目标硬件的 HAL ，主要涉及 cmake 脚本的修改、 设备接口的实现（设备初始化、模型转换、编译和执行）。
+  - 模型转换：将 NNAdapter HAL 中的 `Model` 转成厂商 SDK 中的模型的表示，其工作主要在于实现 `Operation` 到厂商 SDK 中的算子的表示的转换器，例如：华为昇腾 NPU HAL 中的 `NNADAPTER_ADD` 操作符到 CANN SDK 的 `ge::op::Add` 的转换，代码涉及以下三个部分：
+    - [NNADAPTER_ADD 到 ge::op::Add 的转换器的实现](https://github.com/PaddlePaddle/Paddle-Lite/blob/543af6a4257ebfbada6b75df0e35a0c92a3b421a/lite/backends/nnadapter/nnadapter/driver/huawei_ascend_npu/converter/elementwise.cc#L23) 和 [NNADAPTER_ADD 到 ge::op::Add 的转换器的注册](https://github.com/PaddlePaddle/Paddle-Lite/blob/543af6a4257ebfbada6b75df0e35a0c92a3b421a/lite/backends/nnadapter/nnadapter/driver/huawei_ascend_npu/converter/all.h#L21) ：在 HAL 层的 `Model` 到厂商 SDK 模型转换步骤的 `Operation` 转换过程中，用于保证正确调用指定的转换器生成并添加厂商 SDK 的算子表示，进而基于厂商 SDK 完成模型组网。
+    - [Paddle 算子 elementwise_add 到 NNADAPTER_ADD 转换器的注册](https://github.com/PaddlePaddle/Paddle-Lite/blob/543af6a4257ebfbada6b75df0e35a0c92a3b421a/lite/kernels/nnadapter/converter/all.h#L55)  ：（仅需要在设备字串中添加 HAL 中的设备名称）在 Paddle 模型的优化阶段中的子图分割步骤中，用于告诉子图分割算法Paddle 模型中的哪些算子可以放在哪些硬件上执行，即哪些算子可以融合成一个 NNAdapter 子图，且在NNAdapter 算子 Kernel 执行时，能够该子图转换为 NNAdapter 模型，进而传递到硬件的 HAL 层做进一步的转换。
+
+- 基于 [PaddleLite-generic-demo](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz) 跑通第一个分类模型：当目标硬件的 HAL 层代码开发完成后（前期仅需支持一个 `NNADAPTER_SOFTMAX` 的转换器即可），为了验证 HAL 层到厂商 SDK 的链路是否打通，就需要基于一个简单的分类模型进行验证。为了便于厂商和用户测试，我们提供了包含图像分类和目标检测 Demo 的压缩包，它支持 NNAdapter 已支持的所有硬件（如华为昇腾 NPU 、华为麒麟 NPU 、晶晨 NPU 、瑞芯微 NPU 、联发科 APU 和颖脉 NNA 等），覆盖 x86 Linux、ARM Linux 和 Android 系统，支持本地执行或基于 ssh 或 adb 方式推送到远端设备上执行。
+
+### 示例
+- 基于 MagicMind 的寒武纪 MLU 的[适配代码](https://github.com/PaddlePaddle/Paddle-Lite/pull/6947)
 
 ## 附录
 
