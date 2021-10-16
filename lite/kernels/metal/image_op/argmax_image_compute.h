@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#ifndef LITE_KERNELS_METAL_IMAGE_OP_POOL_IMAGE_COMPUTE_H_
+#define LITE_KERNELS_METAL_IMAGE_OP_POOL_IMAGE_COMPUTE_H_
 
 #include <memory>
+#include <string>
 
 #include "lite/core/kernel.h"
 #include "lite/core/tensor.h"
@@ -32,42 +34,35 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-class YoloBoxImageCompute
+class ArgmaxImageCompute
     : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {
-    using param_t = operators::YoloBoxParam;
+    using param_t = operators::ArgmaxParam;
 
    public:
     void PrepareForRun() override;
     void Run() override;
     void SaveOutput() override {
-        MetalDebug::SaveOutput(function_name_, output_boxes_);
-        MetalDebug::SaveOutput(function_name_, output_scores_);
+        MetalDebug::SaveOutput((use_mps_ ? ("MPS_argmax") : function_name_), output_buffer_);
     };
-    virtual ~YoloBoxImageCompute();
+    virtual ~ArgmaxImageCompute();
 
    private:
-    void reset_data();
-    void setup_without_mps();
-    void run_tex_to_buf();
-    void run_yolo_box();
-    void run_buf_to_tex_boxes();
-    void run_buf_to_tex_scores();
+    bool use_mps_{false};
+    void* mps_op_{nullptr};
+    void* mps_input_image_{nullptr};
+    void* mps_output_image_{nullptr};
 
-    MetalImage* output_boxes_{nullptr};
-    MetalImage* output_scores_{nullptr};
-    const MetalImage* input_buffer_x_;
-    const int32_t* input_imgSize_;
+    void setup_with_mps();
+    void setup_without_mps();
+
+    void run_with_mps();
+    void run_without_mps();
+
+    const MetalImage* input_buffer_;
+    MetalImage* output_buffer_{nullptr};
     std::shared_ptr<MetalBuffer> params_buffer_;
 
-    id<MTLBuffer> anchors_buffer_;
-    id<MTLBuffer> intermediate_input_x_;
-    id<MTLBuffer> intermediate_boxes_;
-    id<MTLBuffer> intermediate_scores_;
-
     id<MTLComputePipelineState> pipline_;
-    id<MTLComputePipelineState> pipline_tex_to_buf;
-    id<MTLComputePipelineState> pipline_buf_to_tex;
-
     std::string function_name_;
     MetalContext* metal_context_;
 };
@@ -76,3 +71,5 @@ class YoloBoxImageCompute
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
+#endif  // LITE_KERNELS_METAL_IMAGE_OP_POOL_IMAGE_COMPUTE_H_

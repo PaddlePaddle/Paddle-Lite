@@ -25,8 +25,9 @@ MetalImage::MetalImage(MetalContext* context,
     const DDim& in_dim,
     std::vector<int> in_transpose,
     const METAL_PRECISION_TYPE precision_type,
-    const METAL_ACCESS_FLAG flag)
-    : precision_type_(precision_type), flag_(flag) {
+    const METAL_ACCESS_FLAG flag,
+    bool use_mps)
+    : precision_type_(precision_type), flag_(flag), use_mps_(use_mps) {
     auto four_dim = FourDimFrom(in_dim);
 
     tensor_dim_ = in_dim;
