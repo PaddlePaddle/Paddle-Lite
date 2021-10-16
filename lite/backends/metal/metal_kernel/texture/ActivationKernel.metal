@@ -78,22 +78,20 @@ kernel void leaky_relu(texture2d_array<ftype, access::read> inTexture[[texture(0
     outTexture.write(output, gid.xy, gid.z);
 }
 
-kernel void sigmoid(texture2d_array<ftype, access::sample> inTexture
-                    [[texture(0)]],
-                    texture2d_array<ftype, access::write> outTexture
-                    [[texture(1)]],
-                    uint3 gid [[thread_position_in_grid]]) {
-  if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
-      gid.z >= outTexture.get_array_size())
-    return;
-  constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
-  const ftype4 input = inTexture.read(gid.xy, gid.z);
-  ftype4 output = 0.0;
-  output.r  = (input.r == 0.0) ? 0.0 : (1.0 / (1.0 + exp(-input.r)));
-  output.g  = (input.g == 0.0) ? 0.0 : (1.0 / (1.0 + exp(-input.g)));
-  output.b  = (input.b == 0.0) ? 0.0 : (1.0 / (1.0 + exp(-input.b)));
-  output.a  = (input.a == 0.0) ? 0.0 : (1.0 / (1.0 + exp(-input.a)));
-  outTexture.write(output, gid.xy, gid.z);
+kernel void sigmoid(texture2d_array<ftype, access::sample> inTexture[[texture(0)]],
+    texture2d_array<ftype, access::write> outTexture[[texture(1)]],
+    uint3 gid[[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
+        gid.z >= outTexture.get_array_size())
+        return;
+    constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
+    const ftype4 input = inTexture.read(gid.xy, gid.z);
+    ftype4 output = 0.0;
+    output.r = (input.r == 0.0) ? 0.0 : (1.0 / (1.0 + exp(-input.r)));
+    output.g = (input.g == 0.0) ? 0.0 : (1.0 / (1.0 + exp(-input.g)));
+    output.b = (input.b == 0.0) ? 0.0 : (1.0 / (1.0 + exp(-input.b)));
+    output.a = (input.a == 0.0) ? 0.0 : (1.0 / (1.0 + exp(-input.a)));
+    outTexture.write(output, gid.xy, gid.z);
 }
 
 kernel void hard_sigmoid(texture2d_array<ftype, access::sample> inTexture[[texture(0)]],

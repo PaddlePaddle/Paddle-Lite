@@ -53,14 +53,14 @@ void FetchImageCompute::init_memory() {
 #else
     input_buffer_ = param.input->data<MetalHalf, MetalImage>();
 #endif
-    
-    //output GPU data
+
+    // output GPU data
     auto input_tensor = param.input;
     auto dims = input_tensor->dims();
     auto count = (size_t)dims.production();
     output_buffer_ = make_shared<MetalBuffer>(metal_context_, dims, count * sizeof(float));
-    
-    //output CPU data: float, int64
+
+    // output CPU data: float, int64
     auto* fetch_list = param.fetch_list;
     if (param.col >= fetch_list->size()) {
         fetch_list->resize(param.col + 1);
@@ -72,13 +72,12 @@ void FetchImageCompute::init_memory() {
         auto size = count * sizeof(float);
         auto data = output_tensor->template mutable_data<float>(TARGET(kHost), size);
         TargetWrapperMetal::MemsetSync(data, 0, size);
-    }
-    else if (input_tensor->precision() == paddle::lite_api::PrecisionType::kInt64) {
+    } else if (input_tensor->precision() == paddle::lite_api::PrecisionType::kInt64) {
         auto size = count * sizeof(int64_t);
         auto data = output_tensor->template mutable_data<int64_t>(TARGET(kHost), size);
         TargetWrapperMetal::MemsetSync(data, 0, size);
     }
-    
+
     last_input_dims_ = dims;
 }
 
@@ -110,13 +109,12 @@ void FetchImageCompute::fetch_data_from_gpu() {
     auto count = (size_t)input_tensor->dims().production();
     Tensor* output_tensor = &(param.fetch_list->at(param.col));
     float* buffer = (float*)[output_buffer_->buffer() contents];
-    
-    //output CPU data: float, int64
+
+    // output CPU data: float, int64
     if (input_tensor->precision() == paddle::lite_api::PrecisionType::kFloat) {
         auto data = output_tensor->data<float>();
         TargetWrapperMetal::MemcpySync((void*)data, (void*)buffer, (size_t)(count * sizeof(float)));
-    }
-    else if (input_tensor->precision() == paddle::lite_api::PrecisionType::kInt64) {
+    } else if (input_tensor->precision() == paddle::lite_api::PrecisionType::kInt64) {
         auto data = const_cast<int64_t*>(output_tensor->data<int64_t>());
         for (int i = 0; i < count; i++) {
             data[i] = (int64_t)buffer[i];
@@ -153,6 +151,5 @@ REGISTER_LITE_KERNEL(fetch,
     def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kAny), DATALAYOUT(kMetalTexture2DArray))})
-    .BindOutput("Out",
-        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny), DATALAYOUT(kNCHW))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny), DATALAYOUT(kNCHW))})
     .Finalize();

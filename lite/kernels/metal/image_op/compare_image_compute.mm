@@ -117,10 +117,11 @@ void CompareImageCompute::run_with_mps() {
     auto cmdbuf = [backend commandBuffer];
     if (mps_op_) {
         if (@available(iOS 12.1, *)) {
-            [((__bridge MPSNNCompare*)mps_op_) encodeToCommandBuffer:cmdbuf
-                                                        primaryImage:(__bridge MPSImage*)mps_input_x_image_
-                                                      secondaryImage:(__bridge MPSImage*)mps_input_y_image_
-                                                    destinationImage:(__bridge MPSImage*)mps_output_image_];
+            [((__bridge MPSNNCompare*)mps_op_)
+                encodeToCommandBuffer:cmdbuf
+                         primaryImage:(__bridge MPSImage*)mps_input_x_image_
+                       secondaryImage:(__bridge MPSImage*)mps_input_y_image_
+                     destinationImage:(__bridge MPSImage*)mps_output_image_];
         }
     }
     [backend commit:cmdbuf];
@@ -129,12 +130,12 @@ void CompareImageCompute::run_with_mps() {
 void CompareImageCompute::setup_with_mps() {
     auto xrank = input_buffer_x_->tensor_dim_.size();
     auto yrank = input_buffer_y_->tensor_dim_.size();
-    //axis
+    // axis
     if (xrank == 4 && yrank == 4) {
     } else {
         LOG(FATAL) << "mps_compare: max only support by channel";
     }
-    
+
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     if (@available(iOS 12.1, *)) {
         mps_op_ = (__bridge_retained void*)[[MPSNNCompare alloc] initWithDevice:backend.device];
