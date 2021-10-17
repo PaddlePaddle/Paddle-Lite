@@ -120,10 +120,16 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
     if (y_dims.size() == 2) {
       y_ext_dims[0] = ROUND_UP(y_dims[0], 4);
       y_ext_dims[1] = ROUND_UP(y_dims[1], 4);
-    } else if (y_dims.size() == 1 && (!transpose_y_)) {
-      y_ext_dims[0] = ROUND_UP(y_dims[0], 4);
-      y_ext_dims[1] = ROUND_UP(1, 4);
-      n_ = 1;
+    } else if (y_dims.size() == 1) {
+      if (transpose_y_) {
+        y_ext_dims[0] = ROUND_UP(1, 4);
+        y_ext_dims[1] = ROUND_UP(y_dims[0], 4);
+        n_ = y_dims[0];
+      } else {
+        y_ext_dims[0] = ROUND_UP(y_dims[0], 4);
+        y_ext_dims[1] = ROUND_UP(1, 4);
+        n_ = 1;
+      }
     }
     y_cpu_t->Resize(y_ext_dims);
     auto* y_buffer_data = MUTABLE_DATA_CPU(y_cpu_t.get());
@@ -175,22 +181,33 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
         } else {
           n_ = y_dims[1];
         }
+        kernel_func_name_ = "fc";
+        kernel_file_name_ = "image/fc_kernel.cl";
+        if (transpose_x_) {
+          kernel_func_name_ = "matmul_transpose_x";
+          kernel_file_name_ = "image/matmul_kernel.cl";
+        }
       } else if (x_dims.size() == 1 && y_dims.size() == 1 &&
                  x_dims[0] == y_dims[0]) {
         CHECK_EQ(transpose_x_, false) << "unsupported when x_transpose is true";
         CHECK_EQ(transpose_y_, false) << "unsupported when y_transpose is true";
         m_ = 1, n_ = 1;
         k_ = y_dims[0];
+        kernel_func_name_ = "fc";
+        kernel_file_name_ = "image/fc_kernel.cl";
       } else if (x_dims.size() == 1 && y_dims.size() == 1 &&
                  x_dims[0] != y_dims[0]) {
         CHECK_EQ(transpose_x_, true) << "unsupported when x_transpose is false";
         CHECK_EQ(transpose_y_, true) << "unsupported when y_transpose is false";
         m_ = x_dims[0], n_ = y_dims[0];
         k_ = 1;
+        kernel_func_name_ = "matmul_transpose_x";
+        kernel_file_name_ = "image/matmul_kernel.cl";
       } else if (x_dims.size() == 4 && y_dims.size() == 1 &&
                  x_dims[x_dims.size() - 1] == y_dims[0]) {
         m_ = x_dims[0], n_ = x_dims.count(0, x_dims.size() - 1) / x_dims[0];
         k_ = y_dims[0];
+        // TODO(zhenlin-work)
       } else if (x_dims.size() > 2 && y_dims.size() >= 2) {
         // TODO(zhenlin-work)
       }
@@ -209,10 +226,9 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
       LOG(INFO) << "m_:" << m_ << ", k_:" << k_ << ", n_=" << n_;
 #endif
     }
-    kernel_func_name_ = "fc";
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(
-        kernel_func_name_, "image/fc_kernel.cl", build_options_, time_stamp_);
+        kernel_func_name_, kernel_file_name_, build_options_, time_stamp_);
     STL::stringstream kernel_key;
     kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     kernel_ = context.cl_context()->GetKernel(kernel_key.str());
@@ -221,8 +237,17 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
   }
   void SetGlobalLocalWorkSize() {
     local_work_size_ = cl::NDRange(32, 4, 1);
-    global_work_size_ = cl::NDRange(
-        ROUND_UP(UP_DIV(n_, 4), local_work_size_[0]), local_work_size_[1], m_);
+    if (transpose_x_) {
+      global_work_size_ =
+          cl::NDRange(ROUND_UP(UP_DIV(n_, 4), local_work_size_[0]),
+                      local_work_size_[1],
+                      UP_DIV(m_, 4));
+    } else {
+      global_work_size_ =
+          cl::NDRange(ROUND_UP(UP_DIV(n_, 4), local_work_size_[0]),
+                      local_work_size_[1],
+                      m_);
+    }
     LOG(INFO) << "global_work_size[3D]: " << global_work_size_[0] << " "
               << global_work_size_[1] << " " << global_work_size_[2];
   }
@@ -287,6 +312,7 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
   float alpha_{1.0f};
   param_t* matmul_v2_param_{nullptr};
   std::string kernel_func_name_{};
+  std::string kernel_file_name_{};
   std::string build_options_{""};
   std::string time_stamp_{GetTimeStamp()};
   bool first_epoch_for_reinit_{true};
