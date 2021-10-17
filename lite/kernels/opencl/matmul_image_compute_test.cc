@@ -53,7 +53,12 @@ void basic_gemm(const T* a,
       transb[j * K_ + i] = y_trans ? b[i * N + j] : b[j * K_ + i];
     }
   }
-
+  std::vector<T> transa(M * K);
+  for (int i = 0; i < M; ++i) {
+    for (int j = 0; j < K; ++j) {
+      transa[j * M + i] = x_trans ? a[i * K + j] : a[j * M + i];
+    }
+  }
   if ((!x_trans) && (!y_trans)) {
     LOG(INFO) << "!x_trans && !y_trans";
     EXPECT_TRUE(K == K_);
@@ -74,6 +79,28 @@ void basic_gemm(const T* a,
         c[m * K_ + n] = 0.f;
         for (int k = 0; k < K; ++k) {
           c[m * K_ + n] += a[m * K + k] * transb[k * K_ + n];
+        }
+      }
+    }
+  } else if ((x_trans) && (!y_trans)) {
+    LOG(INFO) << "x_trans && !y_trans";
+    LOG(INFO) << K_ << " " << M;
+    EXPECT_TRUE(K_ == M);
+    for (int m = 0; m < K; ++m) {
+      for (int n = 0; n < N; ++n) {
+        c[m * N + n] = 0.f;
+        for (int k = 0; k < K_; ++k) {
+          c[m * N + n] += transa[m * M + k] * b[k * N + n];
+        }
+      }
+    }
+  } else if ((x_trans) && (y_trans)) {
+    LOG(INFO) << "x_trans && y_trans";
+    for (int m = 0; m < K; ++m) {
+      for (int n = 0; n < K_; ++n) {
+        c[m * K_ + n] = 0.f;
+        for (int k = 0; k < M; ++k) {
+          c[m * K_ + n] += transa[m * M + k] * transb[k * K_ + n];
         }
       }
     }
@@ -126,8 +153,8 @@ void test(const lite_api::CLPrecisionType p,
              in_x_dim[0] != in_y_dim[0]) {
     CHECK_EQ(x_transpose, true) << "unsupported when x_transpose is false";
     CHECK_EQ(y_transpose, true) << "unsupported when x_transpose is false";
-    m = in_x_dim[0], n = in_y_dim[0];
-    k_x = 1, k_y = 1;
+    m = 1, n = 1;
+    k_x = in_x_dim[0], k_y = in_y_dim[0];
   } else if (in_x_dim.size() > 2 && in_y_dim.size() == 1) {
     CHECK_EQ(in_x_dim[in_x_dim.size() - 1], in_y_dim[0])
         << "not supported x_dims(" << in_x_dim << ") and y_dims(" << in_y_dim
@@ -304,6 +331,37 @@ TEST(matmul, compute_full) {
          false,
          false);
 
+    // dim 1x1 xytranspose
+    test(precision_type,
+         DDim(std::vector<DDim::value_type>{3}),
+         DDim(std::vector<DDim::value_type>{5}),
+         true,
+         true);
+
+    // dim 2x2 xtranspose
+    test(precision_type,
+         DDim(std::vector<DDim::value_type>{3, 4}),
+         DDim(std::vector<DDim::value_type>{3, 2}),
+         true,
+         false);
+    test(precision_type,
+         DDim(std::vector<DDim::value_type>{2, 5}),
+         DDim(std::vector<DDim::value_type>{2, 1}),
+         true,
+         false);
+
+    // dim 2x2 xytranspose
+    test(precision_type,
+         DDim(std::vector<DDim::value_type>{6, 2}),
+         DDim(std::vector<DDim::value_type>{3, 6}),
+         true,
+         true);
+    test(precision_type,
+         DDim(std::vector<DDim::value_type>{5, 3}),
+         DDim(std::vector<DDim::value_type>{1, 5}),
+         true,
+         true);
+#if 0
     // dim nx1
     // test(precision_type, DDim(std::vector<DDim::value_type>{3, 4, 2, 5}),
     //         DDim(std::vector<DDim::value_type>{5}), false, false);
@@ -332,22 +390,6 @@ TEST(matmul, compute_full) {
     // test(precision_type, DDim(std::vector<DDim::value_type>{5, 3, 4}),
     //         DDim(std::vector<DDim::value_type>{5, 6, 4}), false, true);
 
-    // dim 2x2 xtranspose
-    // test(precision_type, DDim(std::vector<DDim::value_type>{3, 4}),
-    //         DDim(std::vector<DDim::value_type>{3, 2}), true, false);
-    // test(precision_type, DDim(std::vector<DDim::value_type>{2, 5}),
-    //         DDim(std::vector<DDim::value_type>{2, 1}), true, false);
-
-    // dim 2x2 xytranspose
-    // test(precision_type, DDim(std::vector<DDim::value_type>{6, 2}),
-    //         DDim(std::vector<DDim::value_type>{3, 6}), true, true);
-    // test(precision_type, DDim(std::vector<DDim::value_type>{5, 3}),
-    //         DDim(std::vector<DDim::value_type>{1, 5}), true, true);
-
-    // dim 1x1 xytranspose
-    // test(precision_type, DDim(std::vector<DDim::value_type>{3}),
-    //         DDim(std::vector<DDim::value_type>{5}), true, true);
-
     // dim nx2 xtranspose
     // test(precision_type, DDim(std::vector<DDim::value_type>{3, 4, 6, 2}),
     //         DDim(std::vector<DDim::value_type>{6, 2}), true, false);
@@ -371,6 +413,7 @@ TEST(matmul, compute_full) {
     //         DDim(std::vector<DDim::value_type>{3, 4, 5, 2}), true, true);
     // test(precision_type, DDim(std::vector<DDim::value_type>{5, 4, 3}),
     //         DDim(std::vector<DDim::value_type>{5, 6, 4}), true, true);
+#endif
   }
 }
 
