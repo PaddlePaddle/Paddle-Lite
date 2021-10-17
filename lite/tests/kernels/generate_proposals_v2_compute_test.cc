@@ -674,7 +674,7 @@ TEST(GenerateProposalsV2, precision) {
   LOG(INFO) << "test generate proposals v2 op";
 #ifdef LITE_WITH_ARM
   {
-    Place place(TARGET(kARM));
+    Place place(TARGET(kHost));
     std::unique_ptr<arena::TestCase> tester(
         new GenerateProposalsV2ComputeTester(place, "def"));
     arena::Arena arena(std::move(tester), place, 2e-5);
