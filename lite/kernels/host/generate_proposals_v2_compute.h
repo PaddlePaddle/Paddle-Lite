@@ -20,10 +20,10 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
 class GenerateProposalsV2Compute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+    : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
   using param_t = operators::GenerateProposalsV2Param;
 
@@ -32,7 +32,7 @@ class GenerateProposalsV2Compute
   virtual ~GenerateProposalsV2Compute() = default;
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
