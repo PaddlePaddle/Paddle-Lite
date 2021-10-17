@@ -14,10 +14,10 @@
 
 #include "lite/kernels/host/generate_proposals_v2_compute.h"
 
+#include <cmath>
 #include <string>
 #include <utility>
 #include <vector>
-#include <cmath>
 
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
