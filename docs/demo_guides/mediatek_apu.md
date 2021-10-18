@@ -1,4 +1,4 @@
-# PaddleLite使用联发科APU预测部署
+# 联发科 APU 预测部署示例
 
 Paddle Lite已支持MediaTek APU的预测部署。
 其接入原理是与之前华为Kirin NPU类似，即加载并分析Paddle模型，将Paddle算子转成MTK的Neuron adapter API（类似Android NN API）进行网络构建，在线生成并执行模型。

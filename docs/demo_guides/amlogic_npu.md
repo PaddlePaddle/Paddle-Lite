@@ -1,6 +1,6 @@
-# PaddleLite使用Amlogic NPU预测部署
+# 晶晨 NPU 预测部署示例
 
-Paddle Lite已支持Amlogic NPU的预测部署。
+Paddle Lite 已支持晶晨 NPU 的预测部署。
 其接入原理是与之前华为Kirin NPU、瑞芯微Rockchip NPU等类似，即加载并分析Paddle模型，首先将Paddle算子转成NNAdapter标准算子，其次再转换为Amlogic NPU组网API进行网络构建，在线生成并执行模型。
 
 ## 支持现状

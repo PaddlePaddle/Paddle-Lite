@@ -1,4 +1,4 @@
-# PaddleLite使用华为昇腾NPU预测部署
+# 华为昇腾 NPU 预测部署示例
 
 Paddle Lite已支持华为昇腾NPU（Ascend310）在x86和Arm服务器上进行预测部署。 目前支持子图接入方式，其接入原理是在线分析Paddle模型，将Paddle算子先转为统一的NNAdapter标准算子，再通过Ascend NPU组网API进行网络构建，在线生成并执行模型。
 
