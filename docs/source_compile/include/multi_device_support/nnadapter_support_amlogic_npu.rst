@@ -1,4 +1,4 @@
-NNAdapter 支持 Amlogic NPU
+NNAdapter 支持晶晨 NPU
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. list-table::
@@ -16,4 +16,4 @@ NNAdapter 支持 Amlogic NPU
      - 用户自定义
      - 空值
 
-如需进行 Amlogic NPU 相关的编译工作: 请参考 `Paddle Lite 使用 Amlogic NPU 预测部署 <https://paddle-lite.readthedocs.io/zh/develop/demo_guides/amlogic_npu.html>`_
+如需进行 Amlogic NPU 相关的编译工作: 请参考 `Paddle Lite 使用 Amlogic NPU 预测部署 <https://paddle-lite.readthedocs.io/zh/release-v2.10/demo_guides/amlogic_npu.html>`_
