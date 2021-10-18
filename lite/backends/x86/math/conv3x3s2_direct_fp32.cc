@@ -11,7 +11,6 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
-#include "lite/backends/x86/math/conv3x3s2_direct_fp32.h"
 #include <algorithm>
 #include <cstring>
 #include <iostream>
@@ -23,15 +22,16 @@ limitations under the License. */
 #else
 #include <emmintrin.h>
 #endif
+#include "lite/backends/x86/math/conv3x3s2_direct_fp32.h"
 
 namespace paddle {
 namespace lite {
 namespace x86 {
 namespace math {
 
-#define GET_OFF(field) offsetof(jit_param, field)
+#define GET_OFF(field) offsetof(jit_3x3s2param, field)
 
-struct jit_param {
+struct jit_3x3s2param {
   const float* in_row_addr;
   const float* kernel_addr;
   float* out_row_addr;
@@ -62,7 +62,7 @@ void conv_direct_3x3s2::generate_code(int ic,
   constexpr int stridew = 2;
   constexpr int oc_block = 4 * BLOCK;
   const int oc_loop_n =
-      oc_expand / oc_block;  // we deal with every 32 output channels
+      oc_expand / oc_block;  // deal with every 32 output channels
   const int oc_remain = oc_expand % oc_block;
   int temp;
   constexpr int ow_bulk = 3;
@@ -71,7 +71,7 @@ void conv_direct_3x3s2::generate_code(int ic,
   const int ic_loop_n = ic / ic_block;  // we deal with every 8 input channels
   const int ic_remain = ic % ic_block;
 
-  int new_ow;
+  int new_ow = 0;  // 0 or 3 or 6....
   bool right = false;
   if (ph == 0 && pw == 0) {
     new_ow = ow / ow_bulk * ow_bulk;
@@ -96,9 +96,9 @@ void conv_direct_3x3s2::generate_code(int ic,
   int whwB = wh * ww * BLOCK;
   int ohw = oh * ow;
 
-  preCode();
+  preCode();  // save regs that must be saved
   using reg64_t = const Xbyak::Reg64;
-  reg64_t ow_i = rax;
+  reg64_t ow_bulk_i_xb = rax;
   reg64_t in_row_addr_xb = r8;
   mov(in_row_addr_xb, ptr[param1 + GET_OFF(in_row_addr)]);
   reg64_t kernel_addr_xb = r9;
@@ -113,8 +113,11 @@ void conv_direct_3x3s2::generate_code(int ic,
   mov(ic_xb, ptr[param1 + GET_OFF(ic)]);
   reg64_t wh_i_xb = r14;
 
+  reg64_t aux_in_row_addr_xb = r15;
+  reg64_t aux_kernel_addr_xb = rdx;
+
   // Take out oc_group/BLOCK * bulk results at a time
-  // bulk are usually ow_bulk
+  // bulk are usually ow_bulk=3
   auto load = [=, &temp](int oc_group, int bulk) {
     for (int oc_gi = 0; oc_gi < oc_group; oc_gi += BLOCK) {
       for (int j = 0; j < bulk; j++) {
@@ -152,14 +155,14 @@ void conv_direct_3x3s2::generate_code(int ic,
 
           Vmm input = Vmm(oc_group / BLOCK * bulk + j);
           temp = (ww_i - l_pad + stridew * j + ic_i * ihw) * sizeof(float);
-          vbroadcastss(input, ptr[in_row_addr_xb + temp]);
+          vbroadcastss(input, ptr[aux_in_row_addr_xb + temp]);
         }
 
         for (int oc_gi = 0; oc_gi < oc_group; oc_gi += BLOCK) {
           //  fetch one float number in kernel
           Vmm kernel = Vmm(15);
           temp = (oc_gi * wchw + ic_i * whwB + ww_i * BLOCK) * sizeof(float);
-          vmovups(kernel, ptr[kernel_addr_xb + temp]);
+          vmovups(kernel, ptr[aux_kernel_addr_xb + temp]);
 
           for (int j = 0; j < bulk; j++) {
             // no need to fetch this input
@@ -176,11 +179,14 @@ void conv_direct_3x3s2::generate_code(int ic,
   };
 
   auto cal_out_whole_line = [=, &temp](int oc_group, int ic_group) {
+    int ow_bulk_i = ow / ow_bulk;
+
     auto cal_bulk = [=, &temp](
         int oc_group, int ic_group, int l_pad, int r_pad, int bulk) {
       load(oc_group, bulk);
-      push(in_row_addr_xb);
-      push(kernel_addr_xb);
+
+      mov(aux_in_row_addr_xb, in_row_addr_xb);
+      mov(aux_kernel_addr_xb, kernel_addr_xb);
 
       Xbyak::Label wh_loop;
       mov(wh_i_xb, wh_xb);
@@ -188,43 +194,49 @@ void conv_direct_3x3s2::generate_code(int ic,
       L(wh_loop);
       {
         fmadd_one_line(oc_group, ic_group, l_pad, r_pad, bulk);
-        add(in_row_addr_xb, iw * sizeof(float));
-        add(kernel_addr_xb, ww * BLOCK * sizeof(float));
+        add(aux_in_row_addr_xb, iw * sizeof(float));
+        add(aux_kernel_addr_xb, ww * BLOCK * sizeof(float));
         dec(wh_i_xb);
         cmp(wh_i_xb, 0);
-        jg(wh_loop, T_NEAR);
+        jg(wh_loop, T_NEAR);  // T_NEAR is required if the size between jmp and
+                              // label is > 127 byte
       }
-
-      pop(kernel_addr_xb);
-      pop(in_row_addr_xb);
 
       store(oc_group, bulk);
     };
 
     // entry !
     // left
-    mov(ow_i, 0);
-    if (pw == 1) {
-      cal_bulk(oc_group, ic_group, pw, 0, ow_bulk);
-      add(ow_i, ow_bulk);
+    mov(ow_bulk_i_xb, 0);
+    if (pw == 1 || new_ow < 0) {
+      int temp_rpad = 0;
+      if (pw == 1 && right && new_ow < 0) temp_rpad = pw;
+      cal_bulk(oc_group, ic_group, pw, temp_rpad, new_ow < 0 ? ow : ow_bulk);
+      inc(ow_bulk_i_xb);
       add(in_row_addr_xb, 5 * sizeof(float));
       add(out_row_addr_xb, ow_bulk * BLOCK * sizeof(float));
-    }
-    // middle !
-    Xbyak::Label ow_loop;
-    L(ow_loop);
-    {
-      cal_bulk(oc_group, ic_group, 0, 0, ow_bulk);
 
-      add(in_row_addr_xb, stridew * ow_bulk * sizeof(float));
-      add(out_row_addr_xb, ow_bulk * BLOCK * sizeof(float));
-      add(ow_i, ow_bulk);
-      cmp(ow_i, new_ow);
-      jle(ow_loop, T_NEAR);
+      ow_bulk_i--;
     }
-    // right
+    // judge whether there is an middle part
+    if (ow_bulk_i > 0 && !(right && ow == 2 * ow_bulk)) {
+      // middle !
+      Xbyak::Label ow_loop;
+      L(ow_loop);
+      {
+        cal_bulk(oc_group, ic_group, 0, 0, ow_bulk);
+
+        add(in_row_addr_xb, stridew * ow_bulk * sizeof(float));
+        add(out_row_addr_xb, ow_bulk * BLOCK * sizeof(float));
+        inc(ow_bulk_i_xb);
+        cmp(ow_bulk_i_xb, new_ow / ow_bulk);
+        jle(ow_loop, T_NEAR);
+      }
+    }
+
+    // ow_remain = rightest index - ??
     int ow_remain = (ow - 1) - (new_ow + 2);
-    if (ow_remain) {
+    if (ow_remain > 0 && new_ow >= 0) {  // right exists
       int r_pad = right ? pw : 0;
       cal_bulk(oc_group, ic_group, 0, r_pad, ow_remain);
     }
@@ -273,6 +285,7 @@ void conv_direct_3x3s2::generate_code(int ic,
   }
 
   L(done);
+  // restore the values of some registers and ret
   postCode();
 }
 
@@ -314,9 +327,9 @@ void conv_direct_3x3s2::run(const float* i_data,
                             const float* trans_weight,
                             float* out_row_addr,
                             int wh) {
-      for (int ic_i = 0; ic_i < ic; ic_i += 8) {
+      for (int ic_i = 0; ic_i < ic; ic_i += ic_block) {
         for (int oc_gi = 0; oc_gi < oc; oc_gi += oc_block) {
-          jit_param param;
+          jit_3x3s2param param;
           param.in_row_addr = in_row_addr + ic_i * ihw;
           param.kernel_addr =
               trans_weight + oc_gi / BLOCK * whwB * wc + ic_i * whwB;
@@ -325,8 +338,8 @@ void conv_direct_3x3s2::run(const float* i_data,
           param.ic = ic_i + ic_block - 1 < ic ? ic_block : ic - ic_i;
           param.wh = wh;
 
-          void (*f)(jit_param*) =
-              reinterpret_cast<void (*)(jit_param*)>(getCodeInternal());
+          void (*f)(jit_3x3s2param*) =
+              CodeGenerator::getCode<void (*)(jit_3x3s2param*)>();
           f(&param);
         }
       }
@@ -337,7 +350,9 @@ void conv_direct_3x3s2::run(const float* i_data,
 
     int oh_i = 0;
     if (ph == 1) {  // upper boundry
-      cal_out_line(in_row_addr, trans_weight + ww * BLOCK, out_row_addr, 2);
+      int temp_wh = ih >= 2 ? 2 : 1;
+      cal_out_line(
+          in_row_addr, trans_weight + ww * BLOCK, out_row_addr, temp_wh);
       oh_i++;
       in_row_addr += iw;
       out_row_addr += ow * BLOCK;

@@ -47,12 +47,12 @@ constexpr Xbyak::Operand::Code g_abi_regs[] = {
 #ifdef _WIN32
 static const Xbyak::Reg64 abi_param1(Xbyak::Operand::RCX),
     abi_param2(Xbyak::Operand::RDX), abi_param3(Xbyak::Operand::R8),
-    abi_param4(Xbyak::Operand::R9), abi_not_param1(Xbyak::Operand::RDI);
+    abi_param4(Xbyak::Operand::R9);
 #else
 static const Xbyak::Reg64 abi_param1(Xbyak::Operand::RDI),
     abi_param2(Xbyak::Operand::RSI), abi_param3(Xbyak::Operand::RDX),
     abi_param4(Xbyak::Operand::RCX), abi_param5(Xbyak::Operand::R8),
-    abi_param6(Xbyak::Operand::R9), abi_not_param1(Xbyak::Operand::RCX);
+    abi_param6(Xbyak::Operand::R9);
 #endif
 #endif
 
@@ -117,7 +117,7 @@ class JitCode : public GenBase, public Xbyak::CodeGenerator {
     ret();
   }
   void L(const char* label) { Xbyak::CodeGenerator::L(label); }
-  void L(const Xbyak::Label& label) { Xbyak::CodeGenerator::L(label); }
+  void L(Xbyak::Label& label) { Xbyak::CodeGenerator::L(label); }
   // Enhanced vector extension
   Xbyak::Address EVEX_compress_addr(Xbyak::Reg64 base,
                                     int offt,

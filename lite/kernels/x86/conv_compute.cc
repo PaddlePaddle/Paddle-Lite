@@ -84,18 +84,14 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
                        (paddings[2] == paddings[3]);
   bool flag_p01 = (paddings[0] == 0 || paddings[0] == 1);
 
-  const int ih = param.x->dims()[2];
-  const int iw = param.x->dims()[3];
-
   //! select conv impl
   if (dw_kernel && kps_equal && no_dilation && flag_dw &&
       (flag_dw_5x5 || paddings[0] == 1)) {
     impl_ = new DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>;
   }
 
-  if (ih >= 2 && iw >= 12 && output_channel % 8 == 0 && groups == 1 &&
-      kernel_h == 3 && stride_h == 2 && nodilations && kps_equal &&
-      pad_all_equal && flag_p01) {
+  if (output_channel % 8 == 0 && groups == 1 && kernel_h == 3 &&
+      stride_h == 2 && nodilations && kps_equal && pad_all_equal && flag_p01) {
     impl_ = new DirectConv<PRECISION(kFloat), PRECISION(kFloat)>();
     VLOG(3) << "invoking directConv  3x3s2";
   }

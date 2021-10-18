@@ -14,8 +14,6 @@
 
 #pragma once
 #include "lite/backends/x86/jit/gen/jitcode.h"
-#include "lite/core/context.h"
-#include "lite/operators/op_params.h"
 
 namespace paddle {
 namespace lite {
