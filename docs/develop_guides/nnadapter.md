@@ -333,6 +333,9 @@ NNAdapter 作为一个 backend 并以子图方式接入 Paddle Lite，具体可�
     - 返回值：无。
 
 ### 应用程序、 Paddle Lite 、NNAdapter 和硬件 SDK 之间的详细调用过程
+
+提示：如果图片太小看不清，可以在图片上方点击右键并选择『在新标签页中打开该图片』。
+
 - 查询设备是否可用，将设置的设备名称列表、设备上下文参数、模型缓存数据存储在 Paddle Lite 的 Scope 中（ Scope 与 Predictor 绑定。通常存储模型的张量数据）。
 ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_call_flow_detail_0.png)
 
