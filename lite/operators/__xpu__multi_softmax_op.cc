@@ -51,7 +51,6 @@ bool XPUMultiSoftmaxOp::InferShapeImpl() const {
 
 bool XPUMultiSoftmaxOp::AttachImpl(const cpp::OpDesc &opdesc,
                                    lite::Scope *scope) {
-  AttachParam(&param_);
   param_.input = scope->FindTensor(opdesc.Input("Input").front());
   param_.output.clear();
   auto Outputs = opdesc.Output("Output");

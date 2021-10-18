@@ -77,8 +77,8 @@ int ConvertPool(Converter* converter, OpInfo* op, Scope* scope) {
   auto return_indices_operand = converter->AddConstantOperand(false);
 
   // Return_indices_type(optional), only for max_pool
-  auto return_indices_type_operand = converter->AddConstantOperand(
-      static_cast<int32_t>(NNADAPTER_TENSOR_INT32));
+  auto return_indices_type_operand =
+      converter->AddConstantOperand(static_cast<int32_t>(NNADAPTER_INT32));
 
   // Fuse code operand
   auto fuse_code_operand =
