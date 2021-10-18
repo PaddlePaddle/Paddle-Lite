@@ -10,17 +10,12 @@ set(nnadapter_subgraph_bridge_deps core subgraph_bridge_utility_nnadapter subgra
 lite_cc_library(subgraph_bridge_pool_op_nnadapter SRCS pool_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_fc_op_nnadapter SRCS fc_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_scale_op_nnadapter SRCS scale_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
-lite_cc_library(subgraph_bridge_transpose_op_nnadapter SRCS transpose_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_split_op_nnadapter SRCS split_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_cast_op_nnadapter SRCS cast_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_norm_op_nnadapter SRCS norm_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_assign_value_op_nnadapter SRCS assign_value_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_assign_op_nnadapter SRCS assign_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_conv_transpose_op_nnadapter SRCS conv_transpose_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
-lite_cc_library(subgraph_bridge_pow_op_nnadapter SRCS pow_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
-lite_cc_library(subgraph_bridge_batch_normalization_op_nnadapter SRCS batch_normalization_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
-lite_cc_library(subgraph_bridge_clip_op_nnadapter SRCS clip_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
-lite_cc_library(subgraph_bridge_reduce_mean_op_nnadapter SRCS reduce_mean_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_dropout_op_nnadapter SRCS dropout_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_expand_op_nnadapter SRCS expand_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_range_op_nnadapter SRCS range_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
@@ -34,17 +29,12 @@ set(nnadapter_subgraph_bridges
         subgraph_bridge_pool_op_nnadapter
         subgraph_bridge_fc_op_nnadapter
         subgraph_bridge_scale_op_nnadapter
-        subgraph_bridge_transpose_op_nnadapter
         subgraph_bridge_split_op_nnadapter
         subgraph_bridge_cast_op_nnadapter
         subgraph_bridge_norm_op_nnadapter
         subgraph_bridge_assign_op_nnadapter
         subgraph_bridge_assign_value_op_nnadapter
         subgraph_bridge_conv_transpose_op_nnadapter
-        subgraph_bridge_pow_op_nnadapter
-        subgraph_bridge_batch_normalization_op_nnadapter
-        subgraph_bridge_clip_op_nnadapter
-        subgraph_bridge_reduce_mean_op_nnadapter
         subgraph_bridge_dropout_op_nnadapter
         subgraph_bridge_expand_op_nnadapter
         subgraph_bridge_range_op_nnadapter
