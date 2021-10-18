@@ -1,4 +1,4 @@
-NNAdapter 支持 Amlogic NPU
+NNAdapter 支持晶晨 NPU
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. list-table::
