@@ -144,7 +144,7 @@ iOS CPU 预测库 (armv8)
 .. code-block:: shell
 
    inference_lite_lib.ios64.armv8
-   ├── include                                                C++头文件
+   ├── include                                                C++ 头文件
    │   ├── paddle_api.h
    │   ├── paddle_image_preprocess.h
    │   ├── paddle_lite_factory_helper.h
@@ -152,7 +152,7 @@ iOS CPU 预测库 (armv8)
    │   ├── paddle_use_kernels.h
    │   ├── paddle_use_ops.h
    │   └── paddle_use_passes.h
-   └── lib                                                    C++预测库（静态库）
+   └── lib                                                    C++ 预测库（静态库）
        └── libpaddle_api_light_bundled.a
 
 
@@ -165,7 +165,7 @@ iOS GPU 预测库 (armv8)
 .. code-block:: shell
 
    inference_lite_lib.ios64.armv8
-   ├── include                                                C++头文件
+   ├── include                                                C++ 头文件
    │   ├── paddle_api.h
    │   ├── paddle_image_preprocess.h
    │   ├── paddle_lite_factory_helper.h
@@ -173,8 +173,8 @@ iOS GPU 预测库 (armv8)
    │   ├── paddle_use_kernels.h
    │   ├── paddle_use_ops.h
    │   └── paddle_use_passes.h
-   ├── metal                                                  metallib文件
+   ├── metal                                                  metallib 文件
    │   └── lite.metallib
-   └── lib                                                    C++预测库（静态库）
+   └── lib                                                    C++ 预测库（静态库）
        └── libpaddle_api_light_bundled.a
 
