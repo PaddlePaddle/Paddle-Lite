@@ -122,4 +122,10 @@ Welcome to Paddle-Lite's documentation!
 
   quick_start/faq
 
+.. toctree::
+  :maxdepth: 1
+  :caption: 训练推理示例说明
+
+  introduction/training_to_deployment
+
 
