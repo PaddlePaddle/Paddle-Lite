@@ -241,8 +241,8 @@ void NCHW2NHWCDataLayoutConverter::ConvertConv2D(hal::Operation* operation) {
   auto input_dimensions_count = input_operand->type.dimensions.count;
   NNADAPTER_CHECK_EQ(input_dimensions_count, 4);
   auto filter_operand = input_operands[1];
-  bool is_per_channel = filter_operand->type.precision ==
-                        NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL;
+  bool is_per_channel =
+      filter_operand->type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL;
   NNADAPTER_VLOG(5) << "is_per_channel:" << is_per_channel;
   auto group = *reinterpret_cast<int32_t*>(input_operands[6]->buffer);
   // Force to apply the dimorder vector of NCHW2NHWC conversion
