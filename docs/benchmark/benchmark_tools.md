@@ -394,7 +394,7 @@ NNAdapter 已支持的新硬件列表如下：
 - Mediatek APU
 - Amlogic NPU
 
-Paddle Lite 在持续地开发不同新硬件所支持的算子。可以通过访问 [NNAdapter 算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/bridges/paddle_use_bridges.h)获得最新的算子支持列表。
+您可以查阅[ NNAdapter 算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.10/lite/kernels/nnadapter/converter/all.h)获得各算子在不同新硬件上的最新支持信息。
 
 参考 NNAdapter 算子支持列表，当模型能够全部运行在某种新硬件上时，实际后端只有 NNAdapter 一种；当模型部分算子需要运行在 x86 cpu 或 arm cpu 上时，实际后端为包含 NNAdapter 和 cpu 在内的多种硬件（异构计算）。
 

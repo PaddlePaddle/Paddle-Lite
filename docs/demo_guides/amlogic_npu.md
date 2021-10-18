@@ -46,7 +46,7 @@ Paddle Lite已支持Amlogic NPU的预测部署。
   |mobilenet_v1_int8_224_per_layer| 167.6996 |  6.982800| 81.632133 | 5.607733 | 280.465997 | 13.411600 |
 
 ### 已支持（或部分支持）NNAdapter的Paddle算子
-可以通过访问[https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/bridges/paddle_use_bridges.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/bridges/paddle_use_bridges.h)获得最新的算子支持列表。
+您可以查阅[ NNAdapter 算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.10/lite/kernels/nnadapter/converter/all.h)获得各算子在不同新硬件上的最新支持信息。
 
 ## 参考示例演示
 
