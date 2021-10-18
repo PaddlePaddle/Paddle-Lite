@@ -100,7 +100,7 @@ MobileConfig.model_dir()
 MobileConfig.set_power_mode(mode: PowerMode)
 ```
 
-设置CPU能耗模式。若不设置，则默认使用 `LITE_POWER_HIGH`。
+设置 CPU 能耗模式。若不设置，则默认使用 `LITE_POWER_HIGH`。
 
 *注意：只在开启 `OpenMP` 时生效，否则系统自动调度。*
 
