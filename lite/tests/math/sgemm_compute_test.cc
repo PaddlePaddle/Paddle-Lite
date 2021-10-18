@@ -64,7 +64,7 @@ DEFINE_int32(offset_c, 0, "C offset");
 DEFINE_double(alpha, 1.0, "alpha");
 DEFINE_double(beta, 0.0, "beta");
 
-DEFINE_bool(flag_relu, false, "do relu");
+DEFINE_int32(flag_act, 0, "do act");
 DEFINE_bool(flag_bias, false, "with bias");
 
 bool test_sgemm(bool tra,
@@ -78,9 +78,11 @@ bool test_sgemm(bool tra,
                 float alpha,
                 float beta,
                 bool has_bias,
-                bool has_relu,
+                int flag_act,
                 int cls,
-                int ths) {
+                int ths,
+                float six = 6.f,
+                float scale = 1.f) {
   int size_a = tra ? k * lda : m * lda;
   int size_b = trb ? n * ldb : k * ldb;
 
@@ -119,13 +121,32 @@ bool test_sgemm(bool tra,
 
   memcpy(dc_basic, dc, sizeof(float) * m * ldc);
   memcpy(dc_backup, dc, sizeof(float) * m * ldc);
+  ActivationParam act_param;
+  paddle::lite_api::ActivationType act =
+      paddle::lite_api::ActivationType::kIndentity;
+  if (flag_act == 1) {
+    act = paddle::lite_api::ActivationType::kRelu;
+  } else if (flag_act == 2) {
+    act = paddle::lite_api::ActivationType::kRelu6;
+    act_param.Relu_clipped_coef = six;
+  } else if (flag_act == 4) {
+    act = paddle::lite_api::ActivationType::kLeakyRelu;
+    act_param.Leaky_relu_alpha = scale;
+  } else if (flag_act == 10) {
+    act = paddle::lite_api::ActivationType::kHardSwish;
+    act_param.hard_swish_scale = scale;
+    act_param.hard_swish_offset = 1.f;
+    act_param.hard_swish_threshold = 6.f;
+  }
+  act_param.active_type = act;
+  act_param.has_active = (flag_act > 0);
 
   VLOG(4) << "sgemm M: " << m << ", N: " << n << ", K: " << k
           << ", strides, lda: " << lda << ", ldb: " << ldb << ", ldc: " << ldc
           << ", alpha: " << alpha << ", beta: " << beta
           << ", transA: " << (tra ? "true" : "false")
           << ", transB: " << (trb ? "true" : "false")
-          << ", relu: " << (has_relu ? "true" : "false")
+          << ", flag_act: " << flag_act
           << ", bias: " << (has_bias ? "true" : "false");
   if (FLAGS_check_result) {
     basic_gemm(tra,
@@ -143,15 +164,14 @@ bool test_sgemm(bool tra,
                ldc,
                dbias,
                has_bias,
-               has_relu);
+               flag_act,
+               six,
+               act_param.Leaky_relu_alpha,
+               act_param.hard_swish_scale,
+               act_param.hard_swish_offset,
+               act_param.hard_swish_threshold);
   }
   Timer t0;
-  ActivationParam act_param;
-  if (has_relu) {
-    act_param.has_active = true;
-    act_param.active_type =
-        (paddle::lite_api::ActivationType)1;  // 2-relu6 4-leakyrelu
-  }
 #ifdef LITE_WITH_ARM
   //! compute
   double ops = 2.0 * m * n * k;
@@ -258,7 +278,7 @@ TEST(TestSgemm, test_func_sgemm_prepacked) {
                 for (auto& beta : {0.f, 0.5f}) {
                   for (auto& offset : {0, 10}) {
                     for (auto& has_bias : {false, true}) {
-                      for (auto& has_relu : {false, true}) {
+                      for (auto& flag_act : {0, 1, 2, 4, 10}) {
                         for (auto& th : {1, 2, 4}) {
                           int lda = k + offset;
                           if (tra) {
@@ -269,6 +289,8 @@ TEST(TestSgemm, test_func_sgemm_prepacked) {
                             ldb = k + offset;
                           }
                           int ldc = n + offset;
+                          float six = 6.f;
+                          float scale = 8.88f;
                           auto flag = test_sgemm(tra,
                                                  trb,
                                                  m,
@@ -280,15 +302,17 @@ TEST(TestSgemm, test_func_sgemm_prepacked) {
                                                  alpha,
                                                  beta,
                                                  has_bias,
-                                                 has_relu,
+                                                 flag_act,
                                                  FLAGS_power_mode,
-                                                 th);
+                                                 th,
+                                                 six,
+                                                 scale);
                           if (flag) {
                             VLOG(4)
                                 << "test m = " << m << ", n=" << n
                                 << ", k=" << k
                                 << ", bias: " << (has_bias ? "true" : "false")
-                                << ", relu: " << (has_relu ? "true" : "false")
+                                << ", flag_act: " << flag_act
                                 << ", trans A: " << (tra ? "true" : "false")
                                 << ", trans B: " << (trb ? "true" : "false")
                                 << " passed\n";
@@ -297,7 +321,7 @@ TEST(TestSgemm, test_func_sgemm_prepacked) {
                                 << "test m = " << m << ", n=" << n
                                 << ", k=" << k
                                 << ", bias: " << (has_bias ? "true" : "false")
-                                << ", relu: " << (has_relu ? "true" : "false")
+                                << ", flag_act: " << flag_act
                                 << ", trans A: " << (tra ? "true" : "false")
                                 << ", trans B: " << (trb ? "true" : "false")
                                 << " failed\n";
@@ -340,17 +364,17 @@ TEST(TestSgemmCustom, test_func_sgemm_prepacked_custom) {
                          FLAGS_alpha,
                          FLAGS_beta,
                          FLAGS_flag_bias,
-                         FLAGS_flag_relu,
+                         FLAGS_flag_act,
                          FLAGS_power_mode,
                          FLAGS_threads);
   if (!flag) {
     LOG(FATAL) << "test m = " << FLAGS_M << ", n=" << FLAGS_N
                << ", k=" << FLAGS_K << ", trans A: " << FLAGS_traA
                << ", trans B: " << FLAGS_traB << ", bias: " << FLAGS_flag_bias
-               << ", relu: " << FLAGS_flag_relu << " failed!!";
+               << ", flag_act: " << FLAGS_flag_act << " failed!!";
   }
   LOG(INFO) << "test m = " << FLAGS_M << ", n=" << FLAGS_N << ", k=" << FLAGS_K
             << ", trans A: " << FLAGS_traA << ", trans B: " << FLAGS_traB
-            << ", bias: " << FLAGS_flag_bias << ", relu: " << FLAGS_flag_relu
+            << ", bias: " << FLAGS_flag_bias << ", flag_act: " << FLAGS_flag_act
             << " passed!!";
 }

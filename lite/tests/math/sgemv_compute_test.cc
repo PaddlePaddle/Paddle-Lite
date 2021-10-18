@@ -22,9 +22,11 @@
 #include "lite/core/context.h"
 #include "lite/core/profile/timer.h"
 #include "lite/core/tensor.h"
+#include "lite/operators/op_params.h"
 #include "lite/tests/utils/tensor_utils.h"
 
 typedef paddle::lite::Tensor Tensor;
+typedef paddle::lite::operators::ActivationParam ActivationParam;
 
 DEFINE_int32(cluster, 3, "cluster id");
 DEFINE_int32(threads, 1, "threads num");
@@ -88,15 +90,25 @@ bool test_sgemv(bool tra,
   auto dc_basic = tc_basic.mutable_data<float>();
   memset(reinterpret_cast<char*>(dc_basic), 0, tc_basic.numel());
   auto dbias = tbias.mutable_data<float>();
+  ActivationParam act_param;
   paddle::lite_api::ActivationType act =
       paddle::lite_api::ActivationType::kIndentity;
   if (flag_act == 1) {
     act = paddle::lite_api::ActivationType::kRelu;
   } else if (flag_act == 2) {
     act = paddle::lite_api::ActivationType::kRelu6;
+    act_param.Relu_clipped_coef = six;
   } else if (flag_act == 4) {
     act = paddle::lite_api::ActivationType::kLeakyRelu;
+    act_param.Leaky_relu_alpha = alpha;
+  } else if (flag_act == 10) {
+    act = paddle::lite_api::ActivationType::kHardSwish;
+    act_param.hard_swish_scale = alpha;
+    act_param.hard_swish_offset = 1.f;
+    act_param.hard_swish_threshold = 6.f;
   }
+  act_param.active_type = act;
+  act_param.has_active = (flag_act > 0);
   if (FLAGS_check_result) {
     basic_gemv(m,
                k,
@@ -110,7 +122,10 @@ bool test_sgemv(bool tra,
                has_bias,
                flag_act,
                six,
-               alpha);
+               alpha,
+               act_param.hard_swish_scale,
+               act_param.hard_swish_offset,
+               act_param.hard_swish_threshold);
   }
   paddle::lite::profile::Timer t0;
   //! compute
@@ -121,39 +136,15 @@ bool test_sgemv(bool tra,
   ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), ths);
   /// warmup
   for (int j = 0; j < FLAGS_warmup; ++j) {
-    paddle::lite::arm::math::sgemv(da,
-                                   db,
-                                   dc,
-                                   tra,
-                                   m,
-                                   k,
-                                   beta,
-                                   has_bias,
-                                   dbias,
-                                   flag_act > 0,
-                                   act,
-                                   &ctx,
-                                   six,
-                                   alpha);
+    paddle::lite::arm::math::sgemv(
+        da, db, dc, tra, m, k, beta, has_bias, dbias, act_param, &ctx);
   }
 
   t0.Reset();
   for (int i = 0; i < FLAGS_repeats; ++i) {
     t0.Start();
-    paddle::lite::arm::math::sgemv(da,
-                                   db,
-                                   dc,
-                                   tra,
-                                   m,
-                                   k,
-                                   beta,
-                                   has_bias,
-                                   dbias,
-                                   flag_act > 0,
-                                   act,
-                                   &ctx,
-                                   six,
-                                   alpha);
+    paddle::lite::arm::math::sgemv(
+        da, db, dc, tra, m, k, beta, has_bias, dbias, act_param, &ctx);
     t0.Stop();
   }
   LOG(INFO) << "gemv output: M: " << m << ", K: " << k << ", cluster: " << cls
@@ -199,7 +190,7 @@ TEST(TestLiteSgemv, Sgemv) {
       for (auto& k : {1, 3, 8, 17, 59, 234}) {
         for (auto& tra : {false, true}) {
           for (auto& has_bias : {false, true}) {
-            for (auto& flag_act : {0, 1, 2, 4}) {
+            for (auto& flag_act : {0, 1, 2, 4, 10}) {
               for (auto& th : {1, 2, 4}) {
                 float six = 6.f;
                 float alpha = 8.88f;

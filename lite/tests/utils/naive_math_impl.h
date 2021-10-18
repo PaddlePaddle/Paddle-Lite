@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <algorithm>
 #include <cmath>
 
 template <typename type>
@@ -258,7 +259,12 @@ static void basic_gemm(bool trans_a,
                        int ldc,
                        const type2* bias,
                        bool flag_bias = false,
-                       bool flag_relu = false) {
+                       int flag_act = false,
+                       float six = 6.f,
+                       float leakey_relu_alpha = 1.f,
+                       float scale = 6.f,
+                       float offset = 3.f,
+                       float threshold = 6.f) {
 #ifdef PADDLE_WITH_MKLML
 #pragma omp parallel for
 #endif
@@ -285,8 +291,38 @@ static void basic_gemm(bool trans_a,
         sum += av * bv;
       }
       type2 tmp = alpha * sum + beta * c[i * ldc + j] + bias_data;
-      if (flag_relu) {
-        c[i * ldc + j] = tmp > (type2)0 ? tmp : (type2)0;
+      if (flag_act > 0) {
+        if (flag_act == 1) {  // relu
+          c[i * ldc + j] =
+              tmp > static_cast<type2>(0) ? tmp : static_cast<type2>(0);
+        } else if (flag_act == 2) {  // relu 6
+          c[i * ldc + j] =
+              tmp > static_cast<type2>(0) ? tmp : static_cast<type2>(0);
+          c[i * ldc + j] = c[i * ldc + j] < static_cast<type2>(six)
+                               ? c[i * ldc + j]
+                               : static_cast<type2>(six);
+        } else if (flag_act == 4) {  // leaky relu
+          c[i * ldc + j] = tmp < static_cast<type2>(0)
+                               ? static_cast<type2>(tmp * leakey_relu_alpha)
+                               : tmp;
+        } else if (flag_act == 10) {  // hard swish
+          auto tmp1 = tmp + offset;
+          if (tmp1 > 0) {
+            if (tmp1 < threshold) {
+              c[i * ldc + j] = static_cast<type2>(tmp1 * tmp * 1.0 / scale);
+            } else {
+              c[i * ldc + j] =
+                  static_cast<type2>(threshold * tmp * 1.0 / scale);
+            }
+          } else {
+            if (threshold > 0) {
+              c[i * ldc + j] = static_cast<type2>(0);
+            } else {
+              c[i * ldc + j] =
+                  static_cast<type2>(threshold * tmp * 1.0 / scale);
+            }
+          }
+        }
       } else {
         c[i * ldc + j] = tmp;
       }
@@ -307,7 +343,10 @@ static void basic_gemv(int m,
                        bool flag_bias = false,
                        int flag_act = false,
                        float six = 6.f,
-                       float leakey_relu_alpha = 1.f) {
+                       float leakey_relu_alpha = 1.f,
+                       float scale = 6.f,
+                       float offset = 3.f,
+                       float threshold = 6.f) {
 #ifdef PADDLE_WITH_MKLML
 #pragma omp parallel for
 #endif
@@ -335,6 +374,11 @@ static void basic_gemv(int m,
         c[i] = c[i] < six ? c[i] : six;  // ut compute
       } else if (flag_act == 4) {        // leakey relu
         c[i] = tmp < (type2)0 ? (type2)(tmp * leakey_relu_alpha) : tmp;
+      } else if (flag_act == 10) {  // hard_swish
+        c[i] = std::min(static_cast<type2>(threshold),
+                        std::max(static_cast<type2>(0),
+                                 static_cast<type2>(tmp + offset))) *
+               static_cast<type2>(tmp * 1.0 / scale);
       }
     } else {
       c[i] = tmp;
@@ -371,7 +415,10 @@ static void conv_basic(const Dtype1* din,
                        bool flag_bias,
                        int act_type,
                        float six = 6.f,
-                       float scale = 1.f) {
+                       float scale = 1.f,
+                       const float hard_scale = 6.f,
+                       const float offset = 3.f,
+                       const float threshold = 6.f) {
   Dtype2 beta = 0;
   auto src_data = din;
   auto dst_data_ref = dout;
@@ -441,6 +488,24 @@ static void conv_basic(const Dtype1* din,
                     dst_data_ref[out_idx] > (Dtype2)0
                         ? dst_data_ref[out_idx]
                         : (Dtype2)(dst_data_ref[out_idx] * scale);
+              } else if (act_type == 10) {
+                auto tmp = dst_data_ref[out_idx] + offset;
+                auto tmp1 = dst_data_ref[out_idx] * 1.0 / hard_scale;
+                if (tmp > 0) {
+                  if (tmp < threshold) {
+                    dst_data_ref[out_idx] = static_cast<Dtype2>(tmp * tmp1);
+                  } else {
+                    dst_data_ref[out_idx] =
+                        static_cast<Dtype2>(threshold * tmp1);
+                  }
+                } else {
+                  if (threshold > 0) {
+                    dst_data_ref[out_idx] = static_cast<Dtype2>(0);
+                  } else {
+                    dst_data_ref[out_idx] =
+                        static_cast<Dtype2>(threshold * tmp1);
+                  }
+                }
               } else {
                 printf("this act type: %d does not support \n", act_type);
               }

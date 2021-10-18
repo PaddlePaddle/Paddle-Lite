@@ -33,11 +33,8 @@ bool sgemv(const float *A,
            float beta,
            bool is_bias,
            const float *bias,
-           bool flag_act,
-           lite_api::ActivationType act,
-           const ARMContext *ctx,
-           float six = 6.f,
-           float alpha = 1.f);
+           const operators::ActivationParam act_param,
+           const ARMContext *ctx);
 
 }  // namespace math
 }  // namespace arm

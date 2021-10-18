@@ -149,14 +149,17 @@ class SplitTester : public arena::TestCase {
 
     if (!axis_tensor_.empty()) {
       std::vector<int> axis_data{axis_};
-      SetCommonTensor(axis_tensor_, DDim{{1}}, axis_data.data());
+      SetCommonTensor(axis_tensor_, DDim{{1}}, axis_data.data(), {}, true);
     }
 
     if (!sections_tensor_list_.empty()) {
       for (size_t i = 0; i < sections_.size(); i++) {
         std::vector<int> sections_data{sections_[i]};
-        SetCommonTensor(
-            sections_tensor_list_[i], DDim{{1}}, sections_data.data());
+        SetCommonTensor(sections_tensor_list_[i],
+                        DDim{{1}},
+                        sections_data.data(),
+                        {},
+                        true);
       }
     }
   }
@@ -248,7 +251,6 @@ void TestSplitSectionsTensorList(Place place,
 }
 
 TEST(Split_test, precision) {
-  LOG(INFO) << "test split op";
   float abs_error = 2e-5;
   Place place;
 #if defined(LITE_WITH_NNADAPTER)
@@ -259,12 +261,11 @@ TEST(Split_test, precision) {
   TestSplitAxis(place, abs_error);
   TestSplitNum(place, abs_error);
   TestSplitSections(place, abs_error);
+  TestSplitAxisTensor(place, abs_error);
+  TestSplitSectionsTensorList(place, abs_error);
 #else
   return;
 #endif
-#elif defined(LITE_WITH_NPU)
-  place = TARGET(kNPU);
-  abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kHuaweiAscendNPU);
   abs_error = 1e-2;  // precision_mode default is force_fp16
