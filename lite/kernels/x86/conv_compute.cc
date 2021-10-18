@@ -118,11 +118,11 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto& ctx = ctx_->As<X86Context>();
   INIT_PARAM
   bool flag_bias = (param.bias != nullptr);
-  uint group_size_out = m * n;
-  uint group_size_weights = m * k;
-  uint group_size_coldata = n * k;
-  uint channel_in_size = chin * hin * win;
-  uint channel_out_size = chout * hout * wout;
+  unsigned int group_size_out = m * n;
+  unsigned int group_size_weights = m * k;
+  unsigned int group_size_coldata = n * k;
+  unsigned int channel_in_size = chin * hin * win;
+  unsigned int channel_out_size = chout * hout * wout;
   auto paddings = *param.paddings;
   auto dilations = *param.dilations;
 
