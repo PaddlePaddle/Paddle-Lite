@@ -54,12 +54,12 @@
 
 ## 具体平台编译选项
 
-- [Apple M1 芯片](./compile_armmacos.md)
-- [使用 MacOS 构建 / 目标终端为 iOS](./compile_ios.md)
-- [使用 MacOS 环境编译 / 目标硬件 OS 为 Android](./compile_macos_android.rst)
-- [使用 x86 Windows 环境编译 / 目标硬件 OS 为 x86 Windows](./compile_windows.rst)
-- [使用 x86 Linux 环境编译 / 目标终端为 OS 为 Android](./compile_android.rst)
-- [使用 ARM Linux 环境编译 / 目标终端为 OS 为 ARM Linux](./arm_host_compile_arm_linux.rst)
-- [使用 MacOS 环境编译 / 目标硬件 OS 为 MacOS](./compile_x86macos.rst)
-- [使用 x86 Linux 环境编译 / 目标硬件 OS 为 ARM Linux](./x86_host_compile_arm_linux.rst)
-- [使用 x86 Linux 环境编译 / 目标硬件 OS 为 x86 Linux](./x86_host_compile_x86_linux.rst)
+- [使用 MacOS 环境构建 / 目标硬件 OS 为 iOS](./compile_ios.md)
+- [使用 MacOS 环境构建 / 目标硬件 OS 为 Android](./compile_macos_android.rst)
+- [使用 x86 Windows 环境构建 / 目标硬件 OS 为 x86 Windows](./compile_windows.rst)
+- [使用 x86 Linux 环境构建 / 目标终端为 OS 为 Android](./compile_android.rst)
+- [使用 ARM Linux 环境构建 / 目标终端为 OS 为 ARM Linux](./arm_host_compile_arm_linux.rst)
+- [使用 x86 Linux 环境构建 / 目标硬件 OS 为 ARM Linux](./x86_host_compile_arm_linux.rst)
+- [使用 x86 Linux 环境构建 / 目标硬件 OS 为 x86 Linux](./x86_host_compile_x86_linux.rst)
+- [使用 MacOS x86 芯片环境构建 / 目标硬件 OS 为 MacOS](./compile_x86macos.rst)
+- [使用 MacOS M1 芯片环境构建 / 目标硬件 OS 为 MacOS](./compile_armmacos.md)
