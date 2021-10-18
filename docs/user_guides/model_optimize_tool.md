@@ -1,7 +1,7 @@
 
 # 模型优化工具 opt
 
-Paddle-Lite 提供了多种策略来自动优化原始的训练模型，其中包括量化、子图融合、混合调度、Kernel优选等等方法。为了使优化过程更加方便易用，我们提供了**opt** 工具来自动完成优化步骤，输出一个轻量的、最优的可执行模型。
+Paddle Lite 提供了多种策略来自动优化原始的训练模型，其中包括量化、子图融合、混合调度、Kernel 优选等等方法。为了使优化过程更加方便易用，我们提供了**opt** 工具来自动完成优化步骤，输出一个轻量的、最优的可执行模型。
 
 具体使用方法介绍如下：
 
@@ -22,21 +22,21 @@ pip install x2paddle
     - [python脚本方法](../api_reference/python_api/opt)（支持`Window/Mac/Ubuntu`）
 
 
-#### 源码编译opt工具
-您也可以选择从源代码编译opt工具，使用编译指令
+#### 源码编译 opt 工具
+您也可以选择从源代码编译 opt 工具，使用编译指令
 ```shell
 ./lite/tools/build.sh build_optimize_tool
 ```
 
-如果在arm64架构的MacOS下编译opt工具失败，试着删除third-party目录并重新`git checkout third-party`，然后将上一条指令改为
+如果在 arm64 架构的 MacOS 下编译 opt 工具失败，试着删除 third-party 目录并重新`git checkout third-party`，然后将上一条指令改为
 ```shell
 arch -x86_64 ./lite/tools/build.sh build_optimize_tool
 ```
-该命令会编译x86格式的opt工具，但是不会影响工具的正常使用，编译成功后，在./build.opt/lite/api目录下，生成了可执行文件opt
+该命令会编译 x86 格式的 opt 工具，但是不会影响工具的正常使用，编译成功后，在./build.opt/lite/api 目录下，生成了可执行文件 opt
 
-## 使用X2paddle导出Padde Lite支持格式
+## 使用 X2paddle 导出 Padde Lite 支持格式
 
-**背景**：如果想用 Paddle Lite 运行第三方来源（TensorFlow、Caffe、ONNX、PyTorch）模型，一般需要经过两次转化。即使用 X2paddle 工具将第三方模型转化为 PaddlePaddle 格式，再使用 opt 将 PaddlePaddle 模型转化为Padde-Lite 可支持格式。
+**背景**：如果想用 Paddle Lite 运行第三方来源（TensorFlow、Caffe、ONNX、PyTorch）模型，一般需要经过两次转化。即使用 X2paddle 工具将第三方模型转化为 PaddlePaddle 格式，再使用 opt 将 PaddlePaddle 模型转化为Padde Lite 可支持格式。
 
 **使用方法**：为了简化这一过程，X2Paddle 集成了 opt 工具，提供一键转换 API，以 ONNX 为例：
 
@@ -48,11 +48,11 @@ onnx2paddle(model_path, save_dir,
             convert_to_lite=True,
             lite_valid_places="arm",
             lite_model_type="naive_buffer")
-# model_path(str)为ONNX模型路径
+# model_path(str)为 ONNX 模型路径
 # save_dir(str)为转换后模型保存路径
-# convert_to_lite(bool)表示是否使用opt工具，默认为False
-# lite_valid_places(str)指定转换类型，默认为arm
-# lite_model_type(str)指定模型转化类型，目前支持两种类型：protobuf和naive_buffer，默认为naive_buffer
+# convert_to_lite(bool)表示是否使用 opt 工具，默认为 False
+# lite_valid_places(str)指定转换类型，默认为 arm
+# lite_model_type(str)指定模型转化类型，目前支持两种类型：protobuf 和 naive_buffer，默认为 naive_buffer
 ```
 
 Notes:
