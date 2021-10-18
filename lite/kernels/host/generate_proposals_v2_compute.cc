@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/generate_proposals_v2_compute.h"
+#include "lite/kernels/host/generate_proposals_v2_compute.h"
 
+#include <cmath>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/core/type_system.h"
@@ -26,7 +26,7 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
 static const double kBBoxClipDefault = std::log(1000.0 / 16.0);
 
@@ -487,16 +487,16 @@ void GenerateProposalsV2Compute::Run() {
   rpn_roi_probs->Resize({num_proposals, 1});
 }
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(generate_proposals_v2,
-                     kARM,
+                     kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::GenerateProposalsV2Compute,
+                     paddle::lite::kernels::host::GenerateProposalsV2Compute,
                      def)
     .BindInput("Scores", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("BboxDeltas", {LiteType::GetTensorTy(TARGET(kHost))})
