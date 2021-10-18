@@ -169,7 +169,7 @@ class Converter {
   NNAdapterOperand* AddShapeOperation(
       NNAdapterOperand* input_operand,
       const std::string& output_name = "",
-      NNAdapterOperandPrecisionCode output_precision = NNADAPTER_TENSOR_INT32);
+      NNAdapterOperandPrecisionCode output_precision = NNADAPTER_INT32);
   // Add unsqueeze operation with input operand, axes, out_name, quant_scales
   NNAdapterOperand* AddUnsqueezeOperation(NNAdapterOperand* input_operand,
                                           const std::vector<int32_t>& axes,

@@ -415,7 +415,10 @@ static void conv_basic(const Dtype1* din,
                        bool flag_bias,
                        int act_type,
                        float six = 6.f,
-                       float scale = 1.f) {
+                       float scale = 1.f,
+                       const float hard_scale = 6.f,
+                       const float offset = 3.f,
+                       const float threshold = 6.f) {
   Dtype2 beta = 0;
   auto src_data = din;
   auto dst_data_ref = dout;
@@ -485,6 +488,24 @@ static void conv_basic(const Dtype1* din,
                     dst_data_ref[out_idx] > (Dtype2)0
                         ? dst_data_ref[out_idx]
                         : (Dtype2)(dst_data_ref[out_idx] * scale);
+              } else if (act_type == 10) {
+                auto tmp = dst_data_ref[out_idx] + offset;
+                auto tmp1 = dst_data_ref[out_idx] * 1.0 / hard_scale;
+                if (tmp > 0) {
+                  if (tmp < threshold) {
+                    dst_data_ref[out_idx] = static_cast<Dtype2>(tmp * tmp1);
+                  } else {
+                    dst_data_ref[out_idx] =
+                        static_cast<Dtype2>(threshold * tmp1);
+                  }
+                } else {
+                  if (threshold > 0) {
+                    dst_data_ref[out_idx] = static_cast<Dtype2>(0);
+                  } else {
+                    dst_data_ref[out_idx] =
+                        static_cast<Dtype2>(threshold * tmp1);
+                  }
+                }
               } else {
                 printf("this act type: %d does not support \n", act_type);
               }

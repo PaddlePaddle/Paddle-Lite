@@ -45,11 +45,18 @@ void YoloBoxImageCompute::PrepareForRun() {
 
 void YoloBoxImageCompute::Run() {
     @autoreleasepool {
+        reset_data();
         run_tex_to_buf();
         run_yolo_box();
         run_buf_to_tex_boxes();
         run_buf_to_tex_scores();
     }
+}
+
+void YoloBoxImageCompute::reset_data() {
+    TargetWrapperMetal::MemsetSync(intermediate_input_x_.contents, 0, intermediate_input_x_.length);
+    TargetWrapperMetal::MemsetSync(intermediate_boxes_.contents, 0, intermediate_boxes_.length);
+    TargetWrapperMetal::MemsetSync(intermediate_scores_.contents, 0, intermediate_scores_.length);
 }
 
 void YoloBoxImageCompute::run_tex_to_buf() {
@@ -66,9 +73,6 @@ void YoloBoxImageCompute::run_tex_to_buf() {
 }
 
 void YoloBoxImageCompute::run_yolo_box() {
-    TargetWrapperMetal::MemsetSync(intermediate_input_x_.contents, 0, intermediate_input_x_.length);
-    TargetWrapperMetal::MemsetSync(intermediate_boxes_.contents, 0, intermediate_boxes_.length);
-    TargetWrapperMetal::MemsetSync(intermediate_scores_.contents, 0, intermediate_scores_.length);
     
     const auto& param = this->Param<param_t>();
     auto pipline = pipline_;

@@ -146,18 +146,18 @@ imgdnn_tensor Converter::AddTensor(const NNAdapterOperandType* type,
   uint32_t quant_scale_count = 0;
   uint32_t quant_channel_dim = 0;
   switch (type->precision) {
-    case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER:
+    case NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER:
       quant_scales = &type->asymm_per_layer_params.scale;
       zero_point = &type->asymm_per_layer_params.zero_point;
       quant_scale_count = 1;
       break;
-    case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL:
+    case NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL:
       quant_scales = type->symm_per_channel_params.scales;
       quant_scale_count = type->symm_per_channel_params.scale_count;
       quant_channel_dim = type->symm_per_channel_params.channel_dim;
       break;
-    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER:
-    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL:
+    case NNADAPTER_QUANT_INT32_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL:
       // Only for bias
       NNADAPTER_CHECK(type->lifetime == NNADAPTER_CONSTANT_COPY ||
                       type->lifetime == NNADAPTER_CONSTANT_REFERENCE);

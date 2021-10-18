@@ -88,7 +88,6 @@ bool SliceOp::InferShapeImpl() const {
 }
 
 bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
-  AttachParam(&param_);
   auto input_var = scope->FindVar(opdesc.Input("Input").front());
   auto output_var = scope->FindVar(opdesc.Output("Out").front());
   bool input_is_array = input_var->IsType<std::vector<lite::Tensor>>();
