@@ -18,19 +18,19 @@
 using namespace metal;
 
 struct TransposeParam {
-    int idim[4];       // input dim [NCHW-CPU]-> [NHWC-GPU]
-    int itrans[4];     // input transpose dim
-    int odim[4];       // output dim [NCHW-CPU]-> [NHWC-GPU]
-    int otrans[4];     // output transpose dim
+    int idim[4];    // input dim [NCHW-CPU]-> [NHWC-GPU]
+    int itrans[4];  // input transpose dim
+    int odim[4];    // output dim [NCHW-CPU]-> [NHWC-GPU]
+    int otrans[4];  // output transpose dim
     int axis[4];
 };
 
 using namespace metal;
 
-kernel void transpose(texture2d_array<ftype, access::read> inTexture [[texture(0)]],
-                    texture2d_array<ftype, access::write> outTexture [[texture(1)]],
-                    constant TransposeParam &pm [[buffer(0)]],
-                    uint3 gid [[thread_position_in_grid]]) {
+kernel void transpose(texture2d_array<ftype, access::read> inTexture[[texture(0)]],
+    texture2d_array<ftype, access::write> outTexture[[texture(1)]],
+    constant TransposeParam& pm[[buffer(0)]],
+    uint3 gid[[thread_position_in_grid]]) {
     ftype4 r;
     // output coordinate GPU {tex_w, tex_h, tex_arraylength, i}
     int x_xyzn[4] = {int32_t(gid.x), int32_t(gid.y), int32_t(gid.z), 0};
@@ -40,7 +40,7 @@ kernel void transpose(texture2d_array<ftype, access::read> inTexture [[texture(0
     int tx_abcd[4];
     // output transpose dims
     int xtrans[4] = {pm.otrans[0], pm.otrans[1], pm.otrans[2], pm.otrans[3]};
-    
+
     // output transpose dims
     int ytrans[4] = {pm.itrans[0], pm.itrans[1], pm.itrans[2], pm.itrans[3]};
     // output coordinate after conversion CPU (eg:NHWC->NCHW)
