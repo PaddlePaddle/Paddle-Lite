@@ -17,6 +17,7 @@ limitations under the License. */
 #include <emmintrin.h>
 #include <immintrin.h>
 #include <smmintrin.h>
+#include <stdint.h>
 #include <tmmintrin.h>
 #include <algorithm>
 

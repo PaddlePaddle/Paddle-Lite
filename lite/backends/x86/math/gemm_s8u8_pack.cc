@@ -25,7 +25,9 @@ namespace lite {
 namespace x86 {
 namespace math {
 
+#ifndef _MSC_VER
 typedef long long int __int64;  // NOLINT
+#endif
 
 // PrePack A
 #define TRANSPOSEA_4x16                                            \
@@ -1090,8 +1092,8 @@ void packB_i82u8_trans(
       out_ptr += 1 * 16;
     }
     for (; loop_k + 7 < K; loop_k += 8) {
-      veci_line[0] = _mm_set1_epi64(
-          *(reinterpret_cast<__m64 *>(b_ptr + step * loop_n + loop_k)));
+      veci_line[0] = _mm_set1_epi64x(
+          *(reinterpret_cast<__int64 *>(b_ptr + step * loop_n + loop_k)));
       INT8_ADD_128_HALF(veci_line[0], vec_128_s16)
       _mm_storel_epi64(reinterpret_cast<__m128i *>(out_ptr), veci_line[0]);
       out_ptr += 1 * 8;
