@@ -16,10 +16,10 @@
 
 
    * 
-     通常情况下，你不需要自行从源码构建编译包，优先推荐\ `下载 Paddle Lite 官方发布的预编译包 <https://paddle-lite.readthedocs.io/zh/release-v2.9/quick_start/release_lib.html>`_\ ，可满足一部分场景的需求。如果官方发布的编译包未覆盖你的场景，或者需要修改 Paddle Lite 源代码，则可参考本文构建。
+     通常情况下，你不需要自行从源码构建编译包，优先推荐\ `下载 Paddle Lite 官方发布的预编译包 <https://paddle-lite.readthedocs.io/zh/release-v2.10/quick_start/release_lib.html>`_\ ，可满足一部分场景的需求。如果官方发布的编译包未覆盖你的场景，或者需要修改 Paddle Lite 源代码，则可参考本文构建。
 
    * 
-     本文介绍的编译方法只适用于 Paddle Lite v2.6 及以上版本。v2.3 及之前版本请参考\ `release/v2.3 源码编译方法 <https://paddle-lite.readthedocs.io/zh/release-v2.9/source_compile/v2.3_compile.html>`_\ 。
+     本文介绍的编译方法只适用于 Paddle Lite v2.6 及以上版本。v2.3 及之前版本请参考\ `release/v2.3 源码编译方法 <https://paddle-lite.readthedocs.io/zh/release-v2.10/source_compile/v2.3_compile.html>`_\ 。
 
 
 在该场景下 Paddle Lite 已验证的软硬件配置如下表所示：
@@ -35,7 +35,7 @@
      - Android 4.1 及以上（芯片版本为 ARM v7 时）\ :raw-html-m2r:`<br>` Android 5.0 及以上（芯片版本为 ARM v8 时）
    * - **芯片层**
      - x86 架构
-     - arm64-v8a / armeabi-v7a CPU :raw-html-m2r:`<br>` Huawei Kirin NPU :raw-html-m2r:`<br>`\ MediaTek APU :raw-html-m2r:`<br>` Amlogic NPU :raw-html-m2r:`<br>` OpenCL[^1] :raw-html-m2r:`<br>` 注：查询以上芯片支持的具体型号以及对应的手机型号，可参考\ `支持硬件列表 <https://paddle-lite.readthedocs.io/zh/release-v2.9/introduction/support_hardware.html>`_\ 章节。
+     - arm64-v8a / armeabi-v7a CPU :raw-html-m2r:`<br>` Huawei Kirin NPU :raw-html-m2r:`<br>`\ MediaTek APU :raw-html-m2r:`<br>` Amlogic NPU :raw-html-m2r:`<br>` OpenCL[^1] :raw-html-m2r:`<br>` 注：查询以上芯片支持的具体型号以及对应的手机型号，可参考\ `支持硬件列表 <https://paddle-lite.readthedocs.io/zh/release-v2.10/quick_start/support_hardware.html>`_\ 章节。
 
 
 [^1]：OpenCL 是面向异构硬件平台的编译库，Paddle Lite 支持在 Android 系统上运行基于 OpenCL 的程序。
@@ -129,7 +129,7 @@ Paddle Lite 仓库中\ ``/lite/tools/build_android.sh``\ 脚本文件用于构�
      - OFF / ON
      - OFF
    * - with_extra
-     - 是否编译完整算子（见\ `支持算子 <https://paddle-lite.readthedocs.io/zh/release-v2.9/introduction/support_operation_list.html>`_\ 一节）
+     - 是否编译完整算子（见\ `支持算子 <https://paddle-lite.readthedocs.io/zh/release-v2.10/introduction/support_operation_list.html>`_\ 一节）
      - OFF / ON
      - OFF
    * - with_profile
@@ -183,9 +183,9 @@ Paddle Lite 仓库中\ ``/lite/tools/build_android.sh``\ 脚本文件用于构�
    # 1. 检查环境变量 `NDK_ROOT` 指向正确的 Android NDK 安装路径
    echo $NDK_ROOT
 
-   # 1. 下载 Paddle Lite 源码并切换到发布分支，如 release/v2.9
+   # 1. 下载 Paddle Lite 源码并切换到发布分支，如 release/v2.10
    git clone https://github.com/PaddlePaddle/Paddle-Lite.git
-   cd Paddle-Lite && git checkout release/v2.9
+   cd Paddle-Lite && git checkout release/v2.10
 
    # (可选) 删除 third-party 目录，编译脚本会自动从国内 CDN 下载第三方库文件
    # rm -rf third-party
@@ -236,4 +236,10 @@ Paddle Lite 仓库中\ ``/lite/tools/build_android.sh``\ 脚本文件用于构�
 
 .. include:: include/multi_device_support/opencl.rst
 
-.. include:: include/multi_device_support/nnadapter.rst
+.. include:: include/multi_device_support/nnadapter_support_introduction.rst
+
+.. include:: include/multi_device_support/nnadapter_support_huawei_kirin_npu.rst
+
+.. include:: include/multi_device_support/nnadapter_support_mediatek_apu.rst
+
+.. include:: include/multi_device_support/nnadapter_support_amlogic_npu.rst
