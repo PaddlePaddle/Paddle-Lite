@@ -99,7 +99,7 @@ class Converter {
   NNAdapterOperand* AddVariableOperand(
       const DDim& dimensions,
       const std::string& name = "",
-      NNAdapterOperandPrecisionCode precision = NNADAPTER_TENSOR_FLOAT32);
+      NNAdapterOperandPrecisionCode precision = NNADAPTER_FLOAT32);
   NNAdapterOperand* AddConstantOperand(const Tensor* tensor);
   NNAdapterOperand* AddOperand(const Tensor* tensor, const std::string& name);
   // NNAdapter operation

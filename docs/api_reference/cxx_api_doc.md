@@ -3,6 +3,8 @@
 
 ## CreatePaddlePredictor
 
+ \#include &lt;[paddle\_api.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/v2.9.1/lite/api/paddle_api.h)&gt;
+
 ```c++
 template <typename ConfigT>
 std::shared_ptr<PaddlePredictor> CreatePaddlePredictor(const ConfigT&);
@@ -20,16 +22,17 @@ config.set_model_dir(FLAGS_model_dir);
 // 根据MobileConfig创建PaddlePredictor
 std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>(config);
 ```
+- 参数
 
-参数：
+    - `config(MobileConfig)`: 用于构建Predictor的配置信息。
 
-- `config(MobileConfig)` - 用于构建Predictor的配置信息。
+- 返回值
 
-返回：`PaddlePredictor`指针
-
-返回类型：`std::shared_ptr<PaddlePredictor>`
+  `PaddlePredictor`指针
 
 ## CxxConfig
+
+ \#include &lt;[paddle\_api.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/v2.9.1/lite/api/paddle_api.h)&gt;
 
 ```c++
 class CxxConfig;
@@ -55,95 +58,77 @@ config.set_valid_places(places)
 predictor = create_paddle_predictor(config)
 ```
 
-### `set_model_dir(model_dir)`
+### 公有成员函数
+
+
+### `set_model_dir`
+
+```c++
+void set_model_dir(const std::string& x);
+```
 
 设置模型文件夹路径，当需要从磁盘加载非combined模型时使用。
 
-参数：
+- 参数
 
-- `model_dir(str)` - 模型文件夹路径
+    - `x`: 模型文件夹路径
 
-返回：`None`
+### `model_dir`
 
-返回类型：`None`
-
-
-
-### `model_dir()`
+```c++
+const std::string& model_dir() const;
+```
 
 返回设置的模型文件夹路径。
 
-参数：
+- 返回值
 
-- `None`
-
-返回：模型文件夹路径
-
-返回类型：`str`
+  模型文件夹路径
 
 
+### `set_model_file`
 
-### `set_model_file(model_file)`
+```c++
+void set_model_file(const std::string& path);
+```
 
 设置模型文件路径，加载combined形式模型时使用。
 
-参数：
+- 参数
 
-- `model_file(str)` - 模型文件路径
+    - `path`: 模型文件路径
 
-返回类型：`None`
+### `model_file`
 
-
-
-### `model_file()`
+```c++
+std::string model_file() const
+```
 
 获取设置模型文件路径，加载combined形式模型时使用。
 
-参数：
+- 返回值
 
-- `None`
+  模型文件路径
 
-返回：模型文件路径
+### `set_param_file`
 
-返回类型：`str`
-
-
-
-### `set_param_file(param_file)`
+```c++
+void set_param_file(const std::string& path);
+```
 
 设置模型参数文件路径，加载combined形式模型时使用。
 
-参数：
+- 参数
 
-- `param_file(str)` - 模型文件路径
+    - `path`: 模型参数文件路径
 
-返回类型：`None`
+### `param_file`
 
-
-
-### `param_file()`
+```c++
+std::string param_file() const;
+```
 
 获取设置模型参数文件路径，加载combined形式模型时使用。
-
-参数：
-
-- `None`
-
-返回：模型参数文件路径
-
-返回类型：`str`
-
-
-
-### `set_valid_places(valid_places)`
-
-设置可用的places列表。
-
-参数：
-
-- `valid_places(list)` - 可用place列表。
-
-返回类型：`None`
 
 示例：
 
@@ -162,97 +147,104 @@ config.set_valid_places(places)
 predictor = create_paddle_predictor(config)
 ```
 
+- 返回值 
 
+  模型参数文件路径
 
-### `set_power_mode(mode)`
+### `set_valid_places`
+```c++
+void set_valid_places(const std::vector<Place>& x);
+```
+
+设置可用的places列表。
+
+- 参数
+
+    - `x`: 可用place列表。
+
+### `set_power_mode`
+
+```c++
+void set_power_mode(PowerMode mode);
+```
 
 设置CPU能耗模式。若不设置，则默认使用`PowerMode.LITE_POWER_HIGH`。
 
 *注意：只在开启`OpenMP`时生效，否则系统自动调度。此函数只在使用`LITE_WITH_ARM`编译选项下生效。*
 
-参数：
+- 参数
 
-- `mode(PowerMode)` - CPU能耗模式
+    - `mode`: CPU能耗模式
 
-返回：`None`
+### `power_mode`
 
-返回类型：`None`
-
-
-
-### `power_mode()`
+```c++
+PowerMode power_mode() const;
+```
 
 获取设置的CPU能耗模式。
 
 *注意：此函数只在使用`LITE_WITH_ARM`编译选项下生效。*
 
-参数：
+- 返回值
 
-- `None`
+  设置的CPU能耗模式
 
-返回：设置的CPU能耗模式
+### `set_threads`
 
-返回类型：`PowerMode`
-
-
-
-### `set_threads(threads)`
+```c++
+void set_threads(int threads);
+```
 
 设置工作线程数。若不设置，则默认使用单线程。
 
 *注意：只在开启`OpenMP`的模式下生效，否则只使用单线程。此函数只在使用`LITE_WITH_ARM`编译选项下生效。*
 
-参数：
+- 参数
 
-- `threads(int)` - 工作线程数
+    - `threads`: 工作线程数
 
-返回：`None`
+### `threads`
 
-返回类型：`None`
-
-
-
-### `threads()`
+```c++
+int threads() const;
+```
 
 获取设置的工作线程数。
 
 *注意：此函数只在使用`LITE_WITH_ARM`编译选项下生效。*
 
-参数：
+- 返回值 
 
-- `None`
+  工作线程数
 
-返回：工作线程数
+### `set_x86_math_num_threads`
 
-返回类型：`int`
+```c++
+void set_x86_math_num_threads(int threads);
+```
 
+设置CPU数学库计算时使用的线程数，CPU核心数支持情况下可加速预测。默认为1，并且仅在x86下有效。
 
-### `set_x86_math_num_threads(threads)`
+- 参数
 
-设置CPU Math库线程数，CPU核心数支持情况下可加速预测。默认为1，并且仅在x86下有效。
+    - `threads`: CPU数学库的线程数。
 
-参数：
+### `x86_math_num_threads`
 
-- `threads(int)` - CPU Math库线程数。
+```c++
+int x86_math_num_threads() const;
+```
 
-返回：`None`
+返回CPU数学库计算时设置的线程数，CPU核心数支持情况下可加速预测。仅在x86下有效。
 
-返回类型：`None`
+- 返回值
 
-
-### `x86_math_num_threads()`
-
-返回CPU Math库线程数，CPU核心数支持情况下可加速预测。仅在x86下有效。
-
-参数：
-
-- `None`
-
-返回：CPU Math库线程数。
-
-返回类型：`int`
+  CPU数学库设置的线程数。
 
 ## MobileConfig
+
+ \#include &lt;[paddle\_api.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/v2.9.1/lite/api/paddle_api.h)&gt;
 
 ```c++
 class MobileConfig;
@@ -277,59 +269,64 @@ config.set_power_mode(LITE_POWER_HIGH);
 std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>(config);
 ```
 
-### `set_model_from_file(model_file)`
+### `set_model_from_file`
+
+```c++
+void set_model_from_file(const std::string& x);
+```
 
 设置模型文件，当需要从磁盘加载模型时使用。
 
-参数：
+- 参数
 
-- `model_file(std::string)` - 模型文件路径
+    - `x`: 模型文件路径
 
-返回：`None`
+### `set_model_dir`
 
-返回类型：`void`
-
-### `set_model_dir(model_dir)`
+```c++
+void set_model_dir(const std::string& x);
+```
 
 **注意**：Lite模型格式在release/v2.3.0之后修改，本接口为加载老格式模型的接口，将在release/v3.0.0废弃。建议替换为`set_model_from_file`接口。
 
 设置模型文件夹路径，当需要从磁盘加载模型时使用。
 
-参数：
+- 参数
 
-- `model_dir(std::string)` - 模型文件夹路径
+    - `x`: 模型文件夹路径
 
-返回：`None`
+### `model_dir`
 
-返回类型：`void`
+```c++
+const std::string& model_dir() const;
+```
+获取设置的模型文件夹路径。
+
+- 返回值
+
+  模型文件夹路径。
 
 
+### `set_model_from_buffer`
 
-### `model_dir()`
-
-返回设置的模型文件夹路径。
-
-参数：
-
-- `None`
-
-返回：模型文件夹路径
-
-返回类型：`std::string`
-
-### `set_model_from_buffer(model_buffer)`
+```c++
+void set_model_from_buffer(const std::string& x);
+```
 
 设置模型的内存数据，当需要从内存加载模型时使用。
 
-参数：
+- 参数
 
-- `model_buffer(std::string)` - 内存中的模型数据
+    - `x`: 内存中的模型数据
 
-返回：`None`
+### `set_model_buffer`
 
-返回类型：`void`
-
-### `set_model_buffer(model_buffer, model_buffer_size, param_buffer, param_buffer_size)`
+```c++
+void set_model_buffer(const char* model_buffer,
+                      size_t model_buffer_size,
+                      const char* param_buffer,
+                      size_t param_buffer_size);
+```
 
 **注意**：Lite模型格式在release/v2.3.0之后修改，本接口为加载老格式模型的接口，将在release/v3.0.0废弃。建议替换为`set_model_from_buffer`接口。
 
@@ -351,118 +348,103 @@ config.set_model_buffer(model_buffer.c_str(), model_buffer.size(),
 std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>(config);
 ```
 
-参数：
+- 参数
 
-- `model_buffer(const char*)` - 内存中模型结构数据。
-- `model_buffer_size(size_t)` - 内存中模型结构数据的大小。
-- `param_buffer(const char*)` - 内存中模型参数数据。
-- `param_buffer_size(size_t)` - 内存中模型参数数据的大小。
+    - `model_buffer`: 内存中模型结构数据。
+    - `model_buffer`: 内存中模型结构数据的大小。
+    - `param_buffer`: 内存中模型参数数据。
+    - `param_buffer`: 内存中模型参数数据的大小。
 
-返回：`None`
+### `is_model_from_memory`
 
-返回类型：`Void`
-
-
-
-### `is_model_from_memory()`
+```c++
+bool is_model_from_memory() const
+```
 
 是否从内存中加载模型，当使用`set_model_buffer`接口时返回`true`
 
-参数：
+- 返回值
 
-- `None`
+  是否从内存加载模型
 
-返回：是否从内存加载模型
+### `model_buffer`
 
-返回类型：`bool`
-
-
-
-### `model_buffer()`
+```c++
+const std::string& model_buffer() const;
+```
 
 获取内存中模型结构数据。
 
-参数：
+- 返回值
 
-- `None`
+  内存中模型结构数据
 
-返回：内存中模型结构数据
+### `param_buffer`
 
-返回类型：`const std::string&`
-
-
-
-### `param_buffer()`
+```c++
+const std::string& param_buffer() const;
+```
 
 获取内存中模型参数数据。
 
-参数：
 
-- `None`
+- 返回值
 
-返回：内存中模型参数数据
-
-返回类型：`const std::string&`
+  内存中模型参数数据
 
 
+### `set_power_mode`
 
-### `set_power_mode(mode)`
+```c++
+void set_power_mode(PowerMode mode);
+```
 
 设置CPU能耗模式。若不设置，则默认使用`LITE_POWER_HIGH`。
 
 *注意：只在开启`OpenMP`时生效，否则系统自动调度。*
 
-参数：
+- 参数
 
-- `mode(PowerMode)` - CPU能耗模式
+    - `PowerMode`: CPU能耗模式
 
-返回：`None`
+### `power_mode`
 
-返回类型：`void`
-
-
-
-### `power_mode()`
+```c++
+PowerMode power_mode() const;
+```
 
 获取设置的CPU能耗模式。
 
-参数：
+- 返回值
 
-- `None`
-
-返回：设置的CPU能耗模式
-
-返回类型：`PowerMode`
+  设置的CPU能耗模式
 
 
+### `set_threads`
 
-### `set_threads(threads)`
+```c++
+void set_threads(int threads);
+```
 
 设置工作线程数。若不设置，则默认使用单线程。
 
 *注意：只在开启`OpenMP`的模式下生效，否则只使用单线程。*
 
-参数：
+- 参数
 
-- `threads(int)` - 工作线程数
+    - `threads`: 工作线程数
 
-返回：`None`
+### `threads`
 
-返回类型：`void`
-
-
-
-### `threads()`
+```c++
+int threads() const
+```
 
 获取设置的工作线程数。
 
-参数：
+- 返回值
 
-- `None`
-
-返回：工作线程数
-
-返回类型：`int`
+  工作线程数
 
 
 
@@ -491,6 +473,8 @@ std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>
 返回类型：`bool`
 
 ## PaddlePredictor
+
+ \#include &lt;[paddle\_api.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/v2.9.1/lite/api/paddle_api.h)&gt;
 
 ```c++
 class PaddlePredictor
@@ -549,203 +533,158 @@ for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
 }
 ```
 
-### `GetInput(index)`
+### `GetInput`
+
+```c++
+virtual std::unique_ptr<Tensor> GetInput(int i) = 0;
+```
 
 获取输入Tensor指针，用来设置模型的输入数据。
 
-参数：
+- 参数
 
-- `index(int)` - 输入Tensor的索引
+    - `i`: 输入Tensor的索引
 
-返回：第`index`个输入`Tensor`的指针
+- 返回值
 
-返回类型：`std::unique_ptr<Tensor>`
+  第`index`个输入`Tensor`的指针
 
+### `GetOutput`
 
-
-### `GetOutput(index)`
+```c++
+virtual std::unique_ptr<const Tensor> GetOutput(int i) const = 0;
+```
 
 获取输出Tensor的指针，用来获取模型的输出结果。
 
-参数：
+- 参数
 
-- `index(int)` - 输出Tensor的索引
+    - `i`: 输出Tensor的索引
 
-返回：第`index`个输出Tensor`的指针
+- 返回值
 
-返回类型：`std::unique_ptr<Tensor>`
+  第`index`个输出Tensor`的指针
 
-### `GetInputNames()`
+
+### `GetInputNames`
+
+```c++
+virtual std::vector<std::string> GetInputNames() = 0;
+```
 
 获取所有输入Tensor的名称。
 
-参数：
+- 返回值
 
-- `None` 
+  所有输入Tensor的名称
 
-返回：所有输入Tensor的名称
 
-返回类型：`std::vector<std::string>`
+### `GetOutputNames`
 
-### `GetOutputNames()`
+```c++
+virtual std::vector<std::string> GetOutputNames() = 0;
+```
 
 获取所有输出Tensor的名称。
 
-参数：
+- 返回值
 
-- `None`
+  所有输出Tensor的名称
 
-返回：所有输出Tensor的名称
 
-返回类型：`std::vector<std::string>`
+### `GetInputByName`
 
-### `GetInputByName(name)`
+```c++
+virtual std::unique_ptr<Tensor> GetInputByName(const std::string& name) = 0;
+```
 
 根据名称获取输出Tensor的指针，用来获取模型的输出结果。
 
-参数：
+- 参数
 
-- `name(const std::string)` - 输入Tensor的名称
+    - `name`: 输入Tensor的名称
 
-返回：输入Tensor`的指针
+- 返回值
 
-返回类型：`std::unique_ptr<Tensor>`
+  输入Tensor`的指针
 
-### `GetTensor(name)`
+
+### `GetTensor`
+
+```c++
+virtual std::unique_ptr<const Tensor> GetTensor(const std::string& name) const = 0;
+```
 
 根据名称获取输出Tensor的指针。
 
 **注意**：`GetTensor`接口是为开发者设计的调试接口，可以输出[转化](../user_guides/model_optimize_tool)后模型中的任一节点。如果出现`GetTensor(InputName)`返回值为空`Tensor`，可能原因是以该`InputName`命名的Tensor在模型转化的**子图融合**过程被融合替换了。
 
-参数：
+- 参数
 
-- `name(const std::string)` - Tensor的名称
+    - `name`: Tensor的名称
 
-返回：指向`const Tensor`的指针
+- 返回值
 
-返回类型：`std::unique_ptr<const Tensor>`
+  指向`const Tensor`的指针
 
-### `Run()`
+### `Run`
+
+```c++
+virtual void Run() = 0;
+```
 
 执行模型预测，需要在***设置输入数据后***调用。
 
-参数：
 
-- `None`
-
-返回：`None`
-
-返回类型：`void`
-
-### `GetVersion()`
-
-用于获取当前lib使用的代码版本。若代码有相应tag则返回tag信息，如`v2.0-beta`；否则返回代码的`branch(commitid)`，如`develop(7e44619)`。
-
-参数：
-
-- `None`
-
-返回：当前lib使用的代码版本信息
-
-返回类型：`std::string`
-
-### `TryShrinkMemory()`
-
-将模型运行过程创建的临时 `Tensor`全部释放，程序占用内存将明显降低
-注意：调用该接口后`Predictor`的输入输出数据也会被删除，如果想再次执行推理需要重新设置输入（调用`GetInput`接口获取输入`Tensor`，然后设置输入数据）
-
-参数：
-
-- `None`
-
-返回：调用成功返回`True`，调用失败返回`False`
-
-返回类型：`bool`
-
-代码示例：
+### `GetVersion`
 
 ```c++
-//MobileNetV1
-
-// Status1. Predictor is created, memory usage is 22M
-MobileConfig config;
-config.set_model_dir("./mobilenet_v1");
-auto predictor = lite_api::CreatePaddlePredictor(config);
-
-/* Feed model's inputs */
-Tensor input_tensor = predictor->GetInput(0);
-input_tensor->Resize({1, 3, 224, 224});
-auto* data = input_tensor->mutable_data<float>();
-for (int i = 0; i < 1*3*224*224; ++i) {
-  data[i] = 1;
-}
-
-
-// Status2. Predictor has inference successfully, memory usage is 44M
-predictor->Run();
-
-// Status3. Release memory that used by intermediate tensors and ArmL3Cache, memory usage is reduced to 37M
-//       warning: inputs and outputs tensors data will be null after this API is applied
-predictor->TryShrinkMemory();
-
-
-// Warning: if you want to rerun this model, you need to feed model inputs again
-input_tensor = predictor->GetInput(0);
-input_tensor->Resize({1, 3, 224, 224});
-auto* data = input_tensor->mutable_data<float>();
-for (int i = 0; i < 1*3*224*224; ++i) {
-  data[i] = 1;
-}
-predictor->Run();
-
+virtual std::string GetVersion() const = 0;
 ```
 
+用于获取当前库使用的代码版本。若代码有相应tag则返回tag信息，如`v2.0-beta`；否则返回代码的`branch(commitid)`，如`develop(7e44619)`。
+
+- 返回值
+
+  当前库使用的代码版本信息
+
 ## TargetType
+
+ \#include &lt;[paddle\_place.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/v2.9.1/lite/api/paddle_place.h)&gt;
 
 ```c++
 class TargetType;
 ```
 `TargetType`为目标设备硬件类型，用户可以根据应用场景选择硬件平台类型。
 
-枚举型变量`TargetType`的所有可能取值包括：
-
-`{X86, CUDA, ARM, OpenCL, FPGA, NPU}`
-
+枚举型变量`TargetType`的所有可能取值包括：`{kX86, kCUDA, kARM, kOpenCL, kFPGA, kNPU}`
 
 ## PrecisionType
+
+\#include &lt;[paddle\_place.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/v2.9.1/lite/api/paddle_place.h)&gt;
+
 ```c++
-class PrecisionType {FP32};
+class PrecisionType;
 ```
 `PrecisionType`为模型中Tensor的数据精度，默认值为FP32(float32)。
 
-枚举型变量`PrecisionType`的所有可能取值包括：
-
-`{FP32, INT8, INT32, INT64}`
-
-
-
+枚举型变量`PrecisionType`的所有可能取值包括：`{kFloat, kInt8, kInt32, kInt64}`
 
 ## DataLayoutType
 
+\#include &lt;[paddle\_place.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/v2.9.1/lite/api/paddle_place.h)&gt;
+
 ```c++
-class DataLayoutType {NCHW};
+class DataLayoutType;
 ```
 `DataLayoutType`为Tensor的数据格式，默认值为NCHW（number, channel, height, weigth）。
 
-枚举型变量`DataLayoutType`的所有可能取值包括：
-
-` {NCHW, NHWC}`
-
-
+枚举型变量`DataLayoutType`的所有可能取值包括：` {kNCHW, kNHWC}`
 
 ## Place
-```c++
-class Place{
-  TargetType target;
-  PrecisionType precision{FP32};
-  DataLayoutType layout{NCHW}
-}
-```
+
+ \#include &lt;[paddle\_place.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/v2.9.1/lite/api/paddle_place.h)&gt;
+
 `Place`是`TargetType`、`PrecisionType`和`DataLayoutType`的集合，说明运行时的设备类型、数据精度和数据格式。
 
 示例：
@@ -754,6 +693,8 @@ Place{TargetType(ARM), PrecisionType(FP32), DataLayoutType(NCHW)}
 ```
 
 ## PowerMode
+
+\#include &lt;[paddle\_place.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/v2.9.1/lite/api/paddle_place.h)&gt;
 
 ```c++
 enum PowerMode;
@@ -778,19 +719,19 @@ PowerMode详细说明如下：
 
 |         选项         | 说明                                                         |
 | :------------------: | ------------------------------------------------------------ |
-|   LITE_POWER_HIGH    | 绑定大核运行模式。如果ARM CPU支持big.LITTLE，则优先使用并绑定Big cluster。如果设置的线程数大于大核数量，则会将线程数自动缩放到大核数量。如果系统不存在大核或者在一些手机的低电量情况下会出现绑核失败，如果失败则进入不绑核模式。 |
-|    LITE_POWER_LOW    | 绑定小核运行模式。如果ARM CPU支持big.LITTLE，则优先使用并绑定Little cluster。如果设置的线程数大于小核数量，则会将线程数自动缩放到小核数量。如果找不到小核，则自动进入不绑核模式。 |
-|   LITE_POWER_FULL    | 大小核混用模式。线程数可以大于大核数量。当线程数大于核心数量时，则会自动将线程数缩放到核心数量。 |
+|   LITE_POWER_HIGH    | 绑定大核运行模式。如果ARM CPU支持big.LITTLE，则优先使用并绑定Big cluster，如果设置的线程数大于大核数量，则会将线程数自动缩放到大核数量。如果系统不存在大核或者在一些手机的低电量情况下会出现绑核失败，如果失败则进入不绑核模式。 |
+|    LITE_POWER_LOW    | 绑定小核运行模式。如果ARM CPU支持big.LITTLE，则优先使用并绑定Little cluster，如果设置的线程数大于小核数量，则会将线程数自动缩放到小核数量。如果找不到小核，则自动进入不绑核模式。 |
+|   LITE_POWER_FULL    | 大小核混用模式。线程数可以大于大核数量，当线程数大于核心数量时，则会自动将线程数缩放到核心数量。 |
 |  LITE_POWER_NO_BIND  | 不绑核运行模式（推荐）。系统根据负载自动调度任务到空闲的CPU核心上。 |
 | LITE_POWER_RAND_HIGH | 轮流绑定大核模式。如果Big cluster有多个核心，则每预测10次后切换绑定到下一个核心。 |
 | LITE_POWER_RAND_LOW  | 轮流绑定小核模式。如果Little cluster有多个核心，则每预测10次后切换绑定到下一个核心。 |
 
 
-
 ## Tensor
+ \#include &lt;[paddle\_api.h](https://github.com/PaddlePaddle/Paddle-Lite/tree/v2.9.1/lite/api/paddle_api.h)&gt;
 
 ```c++
-class Tensor
+struct Tensor
 ```
 
 Tensor是Paddle-Lite的数据组织形式，用于对底层数据进行封装并提供接口对数据进行操作，包括设置Shape、数据、LoD信息等。
@@ -836,39 +777,33 @@ for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
 }
 ```
 
-### `Resize(shape)`
+### `Resize`
+
+```c++
+void Resize(const shape_t& shape);
+```
 
 设置Tensor的维度信息。
 
-参数：
+- 参数
+    - `shape`: 维度信息
 
-- `shape(std::vector<int64_t>)` - 维度信息
+### `shape`
 
-返回：`None`
-
-返回类型：`void`
-
-
-
-### `shape()`
+```c++
+shape_t shape() const;
+```
 
 获取Tensor的维度信息。
 
-参数：
+- 返回值
 
-- `None`
+  Tensor的维度信息
 
-返回：Tensor的维度信息
-
-返回类型：`std::vector<int64_t>`
-
-
-
-### `data<T>()`
+### `data`
 
 ```c++
-template <typename T>
-const T* data() const;
+template <typename T> const T* data() const;
 ```
 
 获取Tensor的底层数据的常量指针，根据传入的不同模型类型获取相应数据。用于读取Tensor数据。
@@ -881,21 +816,14 @@ std::unique_ptr<const Tensor> output_tensor(std::move(predictor->GetOutput(0)));
 output_tensor->data<float>()
 ```
 
-参数：
+- 返回值
 
-- `None`
+  `Tensor`底层数据常量指针
 
-返回：`Tensor`底层数据常量指针
-
-返回类型：`const T*`
-
-
-
-### `mutable_data<T>()`
+### `mutable_data`
 
 ```c++
-template <typename T>
-T* mutable_data() const;
+template <typename T> T* mutable_data() const;
 ```
 
 获取Tensor的底层数据的指针，根据传入的不同模型类型获取相应数据。用于设置Tensor数据。
@@ -912,16 +840,16 @@ for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
 }
 ```
 
-参数：
+- 返回值
 
-- `None`
-
-返回：`Tensor`底层数据指针
-
-返回类型：`T*`
+  `Tensor`底层数据指针
 
 
-### `ShareExternalMemory(data, memory_size, target)`
+### `ShareExternalMemory`
+
+```c++
+void ShareExternalMemory(void* data, size_t memory_size, TargetType target);
+```
 
 设置Tensor共享用户数据指针。注意：请保证数据指针在预测过程中处于有效状态。
 
@@ -949,77 +877,70 @@ input_tensor->ShareExternalMemory(static_cast<void*>(external_data.data()),
 predictor->Run();
 ```
 
-参数：
+- 参数
 
-- `data(void*)` - 外部数据指针，请确保在预测过程中数据处于有效状态
-- `memory_size(size_t)` - 外部数据所占字节大小
-- `target(TargetType)` - 目标设备硬件类型，即数据所处设备类型
+    - `data`: 外部数据指针，请确保在预测过程中数据处于有效状态
+    - `memory_size`: 外部数据所占字节大小
+    - `target`: 目标设备硬件类型，即数据所处设备类型
 
-返回：`None`
+### `SetLoD`
 
-返回类型：`void`
-
-### `SetLoD(lod)`
+```c++
+void SetLoD(const lod_t& lod);
+```
 
 设置Tensor的LoD信息。
 
-参数：
+- 参数
 
-- `lod(std::vector<std::vector<uint64_t>>)` - Tensor的LoD信息
+    - `lod`: Tensor的LoD信息, 类型为`std::vector<std::vector<uint64_t>>`
 
-返回：`None`
+### `lod`
 
-返回类型：`void`
-
-
-
-### `lod()`
+```c++
+lod_t lod() const;
+```
 
 获取Tensor的LoD信息
 
-参数：
-
-- `None`
-
-返回：`Tensor`的LoD信息
-
-返回类型：`std::vector<std::vector<uint64_t>>`
+- 返回值
+  `Tensor`的LoD信息, 类型为`std::vector<std::vector<uint64_t>>`
 
 
-### `precision()`
+### `precision`
+
+```c++
+PrecisionType precision() const;
+```
 
 获取Tensor的精度信息
 
-参数：
 
-- `None`
+- 返回值
+  `Tensor`的precision信息, 类型为`PrecisionType`
 
-返回：`Tensor`的precision信息
+### `SetPrecision`
 
-返回类型：`PrecisionType`
-
-
-### `SetPrecision(precision)`
+```c++
+void SetPrecision(PrecisionType precision);
+```
 
 设置Tensor的精度信息
 
-参数：
+- 参数
 
-- `precision(PrecisionType)` - Tensor的precision信息
-
-返回：`None`
-
-返回类型：`void`
+    - `precision`: Tensor的precision信息
 
 
-### `target()`
+### `target`
+
+```c++
+TargetType target() const;
+```
 
 获取Tensor的数据所处设备信息
 
-参数：
 
-- `None`
+- 返回值
 
-返回：`Tensor`的target信息
-
-返回类型：`TargetType`
+  `Tensor`的target信息

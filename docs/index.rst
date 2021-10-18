@@ -10,22 +10,20 @@ Welcome to Paddle-Lite's documentation!
 
 .. toctree::
   :maxdepth: 1
-  :caption: 简介
-  :name: sec-introduction
+  :caption: Paddle Lite 介绍
+  :name: introduction
 
-  introduction/tech_highlights
-  introduction/architecture
-  introduction/support_hardware
-  introduction/support_operation_list
-  introduction/support_model_list
+  guide/introduction
+  guide/roadmap
 
 .. toctree::
   :maxdepth: 1
-  :caption: Benchmark
+  :caption: 性能
   :name: sec-benchmark
   
   benchmark/benchmark
   benchmark/benchmark_tools
+  benchmark/best_practices
 
 .. toctree::
   :maxdepth: 1
@@ -34,18 +32,22 @@ Welcome to Paddle-Lite's documentation!
 
   quick_start/tutorial
   quick_start/release_lib
-  quick_start/cpp_demo
-  quick_start/java_demo
-  quick_start/python_demo
-  quick_start/quant_post_dynamic_demo
-  quick_start/roadmap
+  quick_start/quick_run_demo
+  quick_start/support_hardware
+  quick_start/support_model_list
+  quick_start/support_operation_list
+  quick_start/faq
 
 .. toctree::
   :maxdepth: 1
-  :caption: 使用工具
-  :name: sec-user-guides
+  :caption: 程序开发
+  :name: program-development
 
-  user_guides/x2paddle
+  user_guides/cpp_demo
+  user_guides/java_demo
+  user_guides/python_demo
+  user_guides/quant_post_dynamic_demo
+  user_guides/development_overview
   user_guides/model_optimize_tool
   user_guides/quant_aware
   user_guides/quant_post_dynamic
@@ -79,7 +81,7 @@ Welcome to Paddle-Lite's documentation!
   :caption: 源码编译
   :name: sec-source-compile
 
-  source_compile/compile_env
+  source_compile/docker_enviroment
   source_compile/compile_android
   source_compile/compile_ios
   source_compile/compile_linux
@@ -116,15 +118,8 @@ Welcome to Paddle-Lite's documentation!
 
 .. toctree::
   :maxdepth: 1
-  :caption: Roadmap
-  :name: sec-roadmap
-
-  quick_start/roadmap
-
-.. toctree::
-  :maxdepth: 1
   :caption: FAQ
 
-  introduction/faq
+  quick_start/faq
 
 
