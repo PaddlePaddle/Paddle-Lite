@@ -118,11 +118,11 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto& ctx = ctx_->As<X86Context>();
   INIT_PARAM
   bool flag_bias = (param.bias != nullptr);
-  int group_size_out = m * n;
-  int group_size_weights = m * k;
-  int group_size_coldata = n * k;
-  int channel_in_size = chin * hin * win;
-  int channel_out_size = chout * hout * wout;
+  uint group_size_out = m * n;
+  uint group_size_weights = m * k;
+  uint group_size_coldata = n * k;
+  uint channel_in_size = chin * hin * win;
+  uint channel_out_size = chout * hout * wout;
   auto paddings = *param.paddings;
   auto dilations = *param.dilations;
 
@@ -135,9 +135,9 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   float* col_data = nullptr;
 
   if (!flag_1x1gemm_) {
-    int col_size = group * group_size_coldata;
-    col_data = static_cast<float*>(
-        TargetMalloc(TARGET(kX86), col_size * sizeof(float)));
+    size_t col_size = group_size_coldata * group;
+    size_t col_data_size = static_cast<size_t>(col_size * sizeof(float));
+    col_data = static_cast<float*>(TargetMalloc(TARGET(kX86), col_data_size));
   }
   auto act_param = param.activation_param;
   paddle::lite::x86::math::Blas<lite::TargetType::kX86> matmul(ctx);

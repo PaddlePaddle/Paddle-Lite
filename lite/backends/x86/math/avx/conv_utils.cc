@@ -1141,31 +1141,33 @@ void im2col_s1<float>(const float* data_im,
       (width + pad_left + pad_right - (dilation_w * (kernel_w - 1) + 1)) + 1;
   const int in_channel_size = height * width;
   const int out_channel_size = output_h * output_w;
-  const int output_plane_size = output_h * output_w * kernel_h * kernel_w;
-  memset(data_col, 0, output_plane_size * channels * sizeof(float));
+  const uint output_plane_size = output_h * output_w * kernel_h * kernel_w;
+  size_t tmp_size = static_cast<size_t>(output_plane_size);
+  size_t mem_size = tmp_size * channels * sizeof(float);
+  memset(data_col, 0, mem_size);
 #pragma omp parallel for
   for (int c = 0; c < channels; c++) {
-    int data_im_z = c * in_channel_size;
-    int data_col_z1 = c * output_plane_size;
+    uint data_im_z = c * in_channel_size;
+    uint data_col_z1 = c * output_plane_size;
     for (int ky = 0, h_offset = 0; ky < kernel_h;
          ky++, h_offset += dilation_h) {
-      int data_col_z2 = ky * out_channel_size * kernel_w;
+      uint data_col_z2 = ky * out_channel_size * kernel_w;
       for (int kx = 0, w_offset = 0; kx < kernel_w;
            kx++, w_offset += dilation_w) {
-        int data_col_z3 = kx * out_channel_size;
-        int data_col_z = data_col_z1 + data_col_z2 + data_col_z3;
-        int oh_begin = std::max(((pad_top - h_offset)), 0);
-        int oh_end = std::min(((height + pad_bottom - h_offset)), output_h);
+        uint data_col_z3 = kx * out_channel_size;
+        uint data_col_z = data_col_z1 + data_col_z2 + data_col_z3;
+        uint oh_begin = std::max(((pad_top - h_offset)), 0);
+        uint oh_end = std::min(((height + pad_bottom - h_offset)), output_h);
         oh_end = std::max(oh_begin, oh_end);
-        int ow_begin = std::max(((pad_left - w_offset)), 0);
-        int ow_end = std::min(((width + pad_right - w_offset)), output_w);
+        uint ow_begin = std::max(((pad_left - w_offset)), 0);
+        uint ow_end = std::min(((width + pad_right - w_offset)), output_w);
         ow_end = std::max(ow_begin, ow_end);
-        int ih = oh_begin - pad_top + h_offset;
+        uint ih = oh_begin - pad_top + h_offset;
         for (int oh = oh_begin; oh < oh_end; ++oh, ++ih) {
-          int iw = ow_begin - pad_left + w_offset;
-          int ow = ow_begin;
-          int data_im_offset = data_im_z + ih * width;
-          int data_col_offset = data_col_z + oh * output_w;
+          uint iw = ow_begin - pad_left + w_offset;
+          uint ow = ow_begin;
+          uint data_im_offset = data_im_z + ih * width;
+          uint data_col_offset = data_col_z + oh * output_w;
           const float* data_im_ptr = data_im + data_im_offset;
           float* data_col_ptr = data_col + data_col_offset;
 #ifdef __AVX__
