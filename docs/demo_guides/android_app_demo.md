@@ -197,3 +197,9 @@ Tensor outputTensor = getOutput(0);
 }
 
 ```
+## Q&A:
+问题：
+- 提示某个op not found:
+  - 如果编译选项没有打开with_extra的选项，可以打开with_extra的选项再尝试；如果仍存在缺少Op的错误提示，则是目前Paddle-Lite尚未支持该Op，可以在github repo里提issue等待版本迭代，或者参考[添加Op](../develop_guides/add_operation.md)来自行添Op并重新编译。
+- 提示in_dims().size() == 4 || in_dims.size() == 5 test error
+  - 如果你是基于我们的demo工程替换模型以后出现这个问题，有可能是替换模型以后模型的输入和Paddle-Lite接收的输入不匹配导致，可以参考[这个issue](https://github.com/PaddlePaddle/Paddle-Lite/issues/6406)来解决该问题。
