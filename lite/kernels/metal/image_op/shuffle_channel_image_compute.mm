@@ -113,4 +113,3 @@ REGISTER_LITE_KERNEL(shuffle_channel,
     .BindOutput("Out",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
-
