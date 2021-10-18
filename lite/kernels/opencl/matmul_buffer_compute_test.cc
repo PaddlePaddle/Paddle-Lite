@@ -124,10 +124,9 @@ void test(const lite_api::CLPrecisionType p,
   kernel->SetContext(std::move(matmul_context));
 
   // run opencl kernel
-  for (int i = 0; i < 100; ++i) {
-    kernel->Launch();
-    CLRuntime::Global()->command_queue().finish();
-  }
+  kernel->Launch();
+  CLRuntime::Global()->command_queue().finish();
+
   std::vector<float> out_gpu(out_dim.production());
   TargetWrapperCL::MemcpySync(out_gpu.data(),
                               out_data,
