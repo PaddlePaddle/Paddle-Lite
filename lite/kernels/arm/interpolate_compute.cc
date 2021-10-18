@@ -46,6 +46,10 @@ namespace arm {
   X, OutSize, SizeTensor, Scale, Out, out_h, out_w, scale, align_corners, \
       align_mode, interp_method, scale_v
 
+#define INTERP_PARAM_FP16                                                 \
+  X, OutSize, SizeTensor, Scale, Out, out_h, out_w, scale, align_corners, \
+      align_mode, interp_method
+
 template <>
 void BilinearInterpCompute<PRECISION(kFloat)>::Run() {
   INIT_PARAM("Bilinear")
@@ -62,13 +66,13 @@ void NearestInterpCompute<PRECISION(kFloat)>::Run() {
 template <>
 void BilinearInterpCompute<PRECISION(kFP16)>::Run() {
   INIT_PARAM("Bilinear")
-  lite::arm::math::fp16::interpolate(INTERP_PARAM);
+  lite::arm::math::fp16::interpolate(INTERP_PARAM_FP16);
 }
 
 template <>
 void NearestInterpCompute<PRECISION(kFP16)>::Run() {
   INIT_PARAM("Nearest")
-  lite::arm::math::fp16::interpolate(INTERP_PARAM);
+  lite::arm::math::fp16::interpolate(INTERP_PARAM_FP16);
 }
 #endif
 
