@@ -1,7 +1,9 @@
 # C++ 完整示例
 
 ## 概述
-本教程提供了 Paddle Lite 执行推理的示例程序，通过输入、执行推理、打印推理结果的方式，演示了基于 C++ API 接口的推理基本流程，用户能够快速了解 Paddle Lite 执行推理相关 API 的使用。本教程以 mobile_light demo 为案例，介绍 C++ API 推理流程，相关代码放置在[demo/c++/mobile_light](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/demo/cxx/mobile_light)目录。
+本教程提供了 Paddle Lite 执行推理的示例程序，通过输入、执行推理、打印推理结果的方式，演示了基于 C++ API 接口的推理基本流程，用户能够快速了解 Paddle Lite 执行推理相关 API 的使用。
+
+本教程以 mobile_light demo 为案例，介绍 C++ API 推理流程，相关代码放置在[demo/c++/mobile_light](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/demo/cxx/mobile_light)目录。
 
 使用 Paddle Lite 执行推理主要包括以下步骤：
 
@@ -71,7 +73,9 @@ std::unique_ptr<const Tensor> output_tensor(
 auto output_data=output_tensor->data<float>();
 ```
 
->> 备注：详细的 C++ API 说明文档位于[ C++ API ](../api_reference/cxx_api_doc)。更多 C++ 应用预测开发可以参考位于位于[ Paddle Lite Demo ](https://github.com/PaddlePaddle/Paddle-Lite-Demo)的工程示例代码。
+>> **备注：**
+>>>> 详细的 C++ API 说明文档位于[C++ API](../api_reference/cxx_api_doc)。
+>>>> 更多 C++ 应用预测开发可以参考位于位于[Paddle Lite Demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)的工程示例代码。
 
 ## C++ 轻量级 mobilenet_light Demo介绍
 以轻量级 mobilenet_light demo 为例，详细介绍如何在手机 android 端 shell 环境下，跑通模型分类案例。
@@ -79,14 +83,14 @@ auto output_data=output_tensor->data<float>();
 ### 1. 环境准备
 编译和运行 Android C++ 示例程序，你需要准备：
 
-* 一台可以编译 Paddle Lite 的电脑，具体环境配置，请参考[文档](https://paddle-lite.readthedocs.io/zh/latest/source_compile/compile_env.html)，推荐使用 docker。
+* 一台可以编译 Paddle Lite 的电脑，具体环境配置，请参考[文档](source_compile/compile_env)，推荐使用 docker。
 * 一台安卓手机，并在电脑上安装 adb 工具 ，以确保电脑和手机可以通过 adb 连接。
 
 ### 2. 下载或者编译预测库
 （1） 下载预测库
-在预测库[ Lite 预编译库下载](release_lib)下载界面，可根据您的手机型号和运行需求选择合适版本。
+在预测库[ Lite 预编译库下载](../quick_start/release_lib)下载界面，可根据您的手机型号和运行需求选择合适版本。
 
-以**Android-ARMv8架构**为例，可以下载以下版本：
+以**Android-ARMv8 架构**为例，可以下载以下版本：
 
 | Arch  | with_extra | arm_stl | with_cv | 下载 |
 |:-------:|:-----:|:-----:|:-----:|:-------:|
@@ -105,7 +109,7 @@ inference_lite_lib.android.armv8          Paddle Lite 预测库
 │   ├── cxx                                       C++ 示例 Demo
 │       ├── mobilenet_light                           mobilenet_light Demo 文件夹
 │           ├── MakeFile                              MakeFile 文件，用于编译可执行文件
-│           └── mobilenetv1_light_api.cc              C++接口的推理源文件
+│           └── mobilenetv1_light_api.cc              C++ 接口的推理源文件
 │   └── java                                      Java 示例 Demo
 └── java                                      Java 预测库
 ```
@@ -115,27 +119,27 @@ inference_lite_lib.android.armv8          Paddle Lite 预测库
 
 ### 3. 准备预测部署模型
 
-（1) 模型下载：下载[ mobilenet_v1 ](http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz)模型后解压，得到 Paddle 非 combined 形式的模型，位于文件夹 `mobilenet_v1` 下。可通过模型可视化工具[ Netron ](https://lutzroeder.github.io/netron/)打开文件夹下的`__model__`文件，查看模型结构。
+（1) 模型下载：下载[mobilenet_v1](http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz)模型后解压，得到 Paddle 非 combined 形式的模型，位于文件夹 `mobilenet_v1` 下。可通过模型可视化工具[Netron](https://lutzroeder.github.io/netron/)打开文件夹下的`__model__`文件，查看模型结构。
 
 ```shell
 wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz
 tar zxf mobilenet_v1.tar.gz
 ```
 
-（2) 模型转换：Paddle的原生模型需要经过[ opt ](../user_guides/model_optimize_tool)工具转化为Paddle Lite可以支持的naive_buffer格式。
+（2) 模型转换：Paddle的原生模型需要经过[opt](../user_guides/model_optimize_tool)工具转化为Paddle Lite可以支持的naive_buffer格式。
 
-方式一: 下载[ opt 工具](../user_guides/model_optimize_tool)，放入与 `mobilenet_v1` 文件夹同级目录，终端输入以下命令转化模型
+方式一: 下载[opt 工具](../user_guides/model_optimize_tool)，放入与 `mobilenet_v1` 文件夹同级目录，终端输入以下命令转化模型
 
 ```shell
 # Linux
-wget https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.6.1/opt
+wget https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.9.1/opt
 chmod +x opt
 ./opt --model_dir=./mobilenet_v1 \
       --optimize_out_type=naive_buffer \
       --optimize_out=./mobilenet_v1_opt
 
 # Mac
-wget https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.6.1/opt_mac
+wget https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.9.1/opt_mac
 chmod +x opt_mac
 ./opt_mac --model_dir=./mobilenet_v1 \
           --optimize_out_type=naive_buffer \
@@ -152,7 +156,7 @@ paddle_lite_opt --model_dir=./mobilenet_v1 \
 ```
 
 以上命令执行成功之后将在同级目录生成名为 `mobilenet_v1_opt.nb` 的优化后模型文件。
->> 更多的OPT工具使用信息，请见[ OPT 工具使用文档]()
+>> 更多的 OPT 工具使用信息，请见[OPT 工具使用文档](./modle_optimize_tool)
 
 ### 4. 编译预测示例程序
 
@@ -230,7 +234,7 @@ output tensor 0 mean value:0.001
 
 ## 更多C++示例
 
-更多 C++ 示例，请参考 [ demo/c++ ](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/demo/cxx) 的详细说明。
+更多 C++ 示例，请参考 [demo/c++](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/demo/cxx) 的详细说明。
 
 ### 图像分类示例
 
@@ -297,27 +301,4 @@ detection, image size: 935, 1241, detect object: person, score: 0.929626, locati
 
 # 获得目标检测结果图片，并查看
 adb pull /data/local/tmp/test_ssd_detection_result.jpg ./
-```
-
-#### 口罩检测示例
-
-```shell
-cd inference_lite_lib.android.armv8/demo/cxx/mask_detection
-
-# 准备预测部署文件
-bash prepare.sh
-
-# 执行预测
-cd mask_demo && bash run.sh
-
-# 运行成功后，将在控制台输出如下内容，可以打开test_img_result.jpg图片查看预测结果
-../mask_demo/: 9 files pushed, 0 skipped. 141.6 MB/s (28652282 bytes in 0.193s)
-Load detecion model succeed.
-Detecting face succeed.
-Load classification model succeed.
-detect face, location: x=237, y=107, width=194, height=255, wear mask: 1, prob: 0.987625
-detect face, location: x=61, y=238, width=166, height=213, wear mask: 1, prob: 0.925679
-detect face, location: x=566, y=176, width=245, height=294, wear mask: 1, prob: 0.550348
-write result to file: test_img_result.jpg, success.
-/data/local/tmp/mask_demo/test_img_result.jpg: 1 file pulled, 0 skipped. 13.7 MB/s (87742 bytes in 0.006s)
 ```

@@ -3,6 +3,7 @@
 ## 概述
 
 本教程提供了 Paddle Lite 执行推理的示例程序，通过输入、执行推理、打印推理结果的方式，演示了基于 Java API 接口的推理基本流程，用户能够快速了解 Paddle Lite 执行推理相关 API 的使用。
+
 本教程以 Android Studio 工程为案例，介绍 Java API 推理流程，工程文件夹为[lite/demo/java/android](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/java/android)。其中和 Java API 相关的代码在[lite/demo/java/android/PaddlePredictor/app/src/main/java/com/baidu/paddle/lite/MainActivity.java](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/demo/java/android/PaddlePredictor/app/src/main/java/com/baidu/paddle/lite/MainActivity.java)文件中。
 
 
@@ -86,13 +87,13 @@ Tensor output = predictor.getOutput(0);
 
 ### 2. 下载预编译的预测库
 
-预测库下载界面位于[Lite预编译库下载](release_lib)，可根据您的手机型号选择合适版本。
+预测库下载界面位于[Lite预编译库下载](../quick_start/release_lib)，可根据您的手机型号选择合适版本。
 
-以**Android-ARMv8架构**为例，可以下载以下版本：
+以**Android-ARMv8 架构**为例，可以下载以下版本：
 
 | Arch  |with_extra|arm_stl|with_cv|下载|
 |:-------:|:-----:|:-----:|:-----:|:-------:|
-|armv8|OFF|c++_static|OFF|[v2.9](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.9/inference_lite_lib.android.armv8.gcc.c++_static.tar.gz)|
+|armv8|OFF|c++_static|OFF|[2.9-rc](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.9/inference_lite_lib.android.armv8.gcc.c++_static.tar.gz)|
 
 **解压后内容结构如下：**
 
@@ -131,7 +132,7 @@ bash prepare_demo.bash arm8
 2. 拷贝 JAR 包`PaddlePredictor.jar` 到 `PaddlePredictor/app/libs/`
 3. 自动下载并解压所有模型文件，拷贝到`PaddlePredictor/app/src/main/assets/`
 
-**注意：** 目前脚本输入手机架构参数仅支持 `arm7 | arm8 | armeabi-v7a | arm64-v8a`。
+>> **注意：** 目前脚本输入手机架构参数仅支持 `arm7 | arm8 | armeabi-v7a | arm64-v8a`。
 
 #### 手动拷贝方法
 
@@ -158,7 +159,7 @@ cp ../../../java/jar/PaddlePredictor.jar PaddlePredictor/app/libs/
 | mobilenet_v2_relu_opt.nb|  http://paddle-inference-dist.bj.bcebos.com/mobilenet_v2_relu_opt.nb.tar.gz |
 | resnet50_opt.nb| http://paddle-inference-dist.bj.bcebos.com/resnet50_opt.nb.tar.gz |
 
-注意：模型要求为 naive buffer 格式，您可以通过 [opt工具](../user_guides/model_optimize_tool) 将 Paddle 模型转为naive buffer存储格式。
+>> **注意：** 模型要求为 naive buffer 格式，您可以通过 [opt工具](./model_optimize_tool) 将 Paddle 模型转为naive buffer存储格式。
 
 ### 4. 运行预测示例程序
 
@@ -185,4 +186,4 @@ time: xxx ms
 
 该 demo 程序跑 5 个模型，第一个模型结果将真正的头两个数字输出，并在第二行附上期望的正确值。你应该要看到他们的误差小于 0.001 。后面四个模型如果你看到 `test:true` 字样，说明模型输出通过了我们在 demo 程序里对其输出的测试。time 代表该测试花费的时间。
 
-**注意：** 在这一步中，如果遇到 Andriod Studio 编译/安装失败等问题，请参考[Andriod示例](../demo_guides/android_app_demo.html#android-demo)中部署方法章节的详细步骤和注意事项。
+>> **注意：** 在这一步中，如果遇到 Andriod Studio 编译/安装失败等问题，请参考[Andriod示例](../demo_guides/android_app_demo.html#android-demo)中部署方法章节的详细步骤和注意事项。
