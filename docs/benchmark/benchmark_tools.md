@@ -394,11 +394,11 @@ NNAdapter 已支持的新硬件列表如下：
 - Mediatek APU
 - Amlogic NPU
 
-您可以查阅[ NNAdapter 算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/develop/lite/kernels/nnadapter/converter/all.h)获得各算子在不同新硬件上的最新支持信息。
+您可以查阅[ NNAdapter 算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/converter/all.h)获得各算子在不同新硬件上的最新支持信息。
 
 参考 NNAdapter 算子支持列表，当模型能够全部运行在某种新硬件上时，实际后端只有 NNAdapter 一种；当模型部分算子需要运行在 x86 cpu 或 arm cpu 上时，实际后端为包含 NNAdapter 和 cpu 在内的多种硬件（异构计算）。
 
-#### NNAdapter 运行时库及新硬件 Driver Hal 库编译
+#### NNAdapter 运行时库及新硬件 Hal 库编译
 ##### nnadapter.so
 - Huawei Kirin NPU / Mediatek NPU 请参考 『在 Android 上运行性能测试』编译预测库。
 — Huawei Ascend NPU（arm host） / Rockchip NPU / Imagination NNA / Amlogic NPU 请参考 『在 ARMLinux 上运行性能测试』编译预测库。
@@ -406,7 +406,7 @@ NNAdapter 已支持的新硬件列表如下：
 - 新硬件所需的 DDK 可在 [Paddle Lite 通用示例程序](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)中获取。
 
 ##### driver hal库
-请参考[Paddle Lite官方文档](https://paddle-lite.readthedocs.io/zh/develop/index.html)编译新硬件 driver hal 库。
+请参考[Paddle Lite官方文档](https://paddle-lite.readthedocs.io/zh/develop/index.html)编译新硬件 hal 库。
 
 #### 在 Huawei Kirin NPU 上运行模型
 ```shell
