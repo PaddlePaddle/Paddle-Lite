@@ -162,11 +162,11 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
       const auto y_dims = matmul_v2_param_->Y->dims();
       const auto out_dims = matmul_v2_param_->Out->dims();
 #ifdef LITE_WITH_LOG
-      LOG(INFO) << "x_dims:" << x_dims;
-      LOG(INFO) << "y_dims:" << y_dims;
-      LOG(INFO) << "out_dims:" << out_dims;
-      LOG(INFO) << "transpose_X:" << transpose_x_;
-      LOG(INFO) << "transpose_Y:" << transpose_y_;
+      VLOG(4) << "x_dims:" << x_dims;
+      VLOG(4) << "y_dims:" << y_dims;
+      VLOG(4) << "out_dims:" << out_dims;
+      VLOG(4) << "transpose_X:" << transpose_x_;
+      VLOG(4) << "transpose_Y:" << transpose_y_;
 #endif
       if (x_dims.size() == 2 && y_dims.size() == 2) {
         if (transpose_x_) {
