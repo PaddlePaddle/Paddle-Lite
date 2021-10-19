@@ -1,12 +1,9 @@
-Baidu XPU
-~~~~~~~~~~~~
+百度昆仑 XPU
+-----------
 
 * 介绍
 
-Paddle Lite 已支持百度 XPU 在 x86 和 arm 服务器（例如飞腾 FT-2000+/64）上进行预测部署。
-
-
-如需进行百度 XPU 相关的编译工作: 请参考 `Paddle Lite 使用百度 XPU 预测部署 <https://paddle-lite.readthedocs.io/zh/release-v2.10/demo_guides/baidu_xpu.html>`_
+Paddle Lite 已通过算子方式支持百度昆仑 XPU 在 x86 和 ARM 服务器（例如飞腾 FT-2000+/64）上进行预测部署。
 
 * 基本参数
 
@@ -36,3 +33,5 @@ Paddle Lite 已支持百度 XPU 在 x86 和 arm 服务器（例如飞腾 FT-2000
      - baidu xpu sdk 环境
      - bdcentos_x86_64 / centos7_x86_64 / ubuntu_x86_64 / kylin_aarch64
      - bdcentos_x86_64(x86) / kylin_aarch64(arm)
+
+详细请参考 `百度昆仑 XPU 部署示例 <https://paddle-lite.readthedocs.io/zh/release-v2.10/demo_guides/baidu_xpu.html>`_
