@@ -169,7 +169,7 @@ void ElementwiseAddImageCompute::setup_without_mps() {
     }
     if (add_by_channel == 1 || params_fast == 1) {
     } else {
-        LOG(FATAL) << "elementwise_add: add only support by channel";
+        LOG(INFO) << "elementwise_add: add only support by channel";
     }
 
     ElementwiseAddMetalParam element_params = {params_fast,

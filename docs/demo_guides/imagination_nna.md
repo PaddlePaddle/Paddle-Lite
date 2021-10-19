@@ -1,18 +1,18 @@
-# PaddleLite使用颖脉NNA预测部署
+# 颖脉 NNA 预测部署示例
 
-Paddle Lite已支持Imagination NNA的预测部署。
-其接入原理是与之前华为Kirin NPU类似，即加载并分析Paddle模型，将Paddle算子转成Imagination DNN APIs进行网络构建，在线生成并执行模型。
+Paddle Lite 已支持 Imagination NNA 的预测部署。
+其接入原理是与之前华为 Kirin NPU 类似，即加载并分析 Paddle 模型，将 Paddle 算子转成 Imagination DNN APIs 进行网络构建，在线生成并执行模型。
 
 ## 支持现状
 
 ### 已支持的芯片
 
-- 紫光展锐虎贲T7510
+- 紫光展锐虎贲 T7510
 
 ### 已支持的设备
 
-- 海信F50，Roc1开发板（基于T7510的微型电脑主板）
-- 酷派X10（暂未提供demo）
+- 海信 F50，Roc1 开发板（基于 T7510 的微型电脑主板）
+- 酷派 X10（暂未提供 demo）
 
 ### 已支持的Paddle模型
 
@@ -37,7 +37,7 @@ Paddle Lite已支持Imagination NNA的预测部署。
 
 - 测试结果
 
-  |模型 |紫光展锐虎贲T7510||
+  |模型 |紫光展锐虎贲 T7510||
   |---|---|---|
   |  |CPU(ms) | NPU(ms) |
   |mobilenet_v1_int8_224_per_layer|  61.093601|  3.217800|
@@ -58,14 +58,14 @@ Paddle Lite已支持Imagination NNA的预测部署。
 
 ### 准备设备环境
 
-- 需要依赖特定版本的firmware，请联系Imagination相关研发同学 jason.wang@imgtec.com；
-- 确定能够通过SSH方式远程登录Roc 1开发板；
-- 由于Roc 1的ARM CPU能力较弱，示例程序和PaddleLite库的编译均采用交叉编译方式。
+- 需要依赖特定版本的 firmware，请联系 Imagination 相关研发同学 jason.wang@imgtec.com；
+- 确定能够通过 SSH 方式远程登录 Roc 1 开发板；
+- 由于 Roc 1 的 ARM CPU 能力较弱，示例程序和 Paddle Lite 库的编译均采用交叉编译方式。
 
 ### 准备交叉编译环境
 
 - 按照以下两种方式配置交叉编译环境：
-  - Docker交叉编译环境：由于Roc1运行环境为Ubuntu 18.04，且Imagination NNA DDK依赖高版本的glibc，因此不能直接使用[编译环境准备](../source_compile/compile_env)中的docker image，而需要按照如下方式在Host机器上手动构建Ubuntu 18.04的docker image；
+  - Docker 交叉编译环境：由于 Roc1 运行环境为Ubuntu 18.04，且 Imagination NNA DDK 依赖高版本的 glibc，因此不能直接使用[编译环境准备](../source_compile/compile_env)中的docker image，而需要按照如下方式在Host机器上手动构建Ubuntu 18.04的docker image；
 
     ```
     $ wget https://paddlelite-demo.bj.bcebos.com/devices/imagination/Dockerfile
@@ -73,8 +73,8 @@ Paddle Lite已支持Imagination NNA的预测部署。
     $ docker run --name paddle-lite-ubuntu18_04 --net=host -it --privileged -v $PWD:/Work -w /Work paddlepaddle/paddle-lite-ubuntu18_04:1.0 /bin/bash
     ```
 
-  - Ubuntu交叉编译环境：要求Host为Ubuntu 18.04系统，参考[编译环境准备](../source_compile/compile_env)中的"交叉编译ARM Linux"步骤安装交叉编译工具链。
-- 由于需要通过scp和ssh命令将交叉编译生成的PaddleLite库和示例程序传输到设备上执行，因此，在进入Docker容器后还需要安装如下软件：
+  - Ubuntu 交叉编译环境：要求 Host 为 Ubuntu 18.04 系统，参考[编译环境准备](../source_compile/compile_env)中的"交叉编译 ARM Linux"步骤安装交叉编译工具链。
+- 由于需要通过 scp 和 ssh 命令将交叉编译生成的 Paddle Lite 库和示例程序传输到设备上执行，因此，在进入Docker容器后还需要安装如下软件：
 
   ```
   # apt-get install openssh-client sshpass
@@ -82,7 +82,7 @@ Paddle Lite已支持Imagination NNA的预测部署。
 
 ### 运行图像分类示例程序
 
-- 下载PaddleLite通用示例程序[PaddleLite-generic-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo_v2_10_0.tar.gz)，解压后目录主体结构如下：
+- 下载 Paddle Lite 通用示例程序[PaddleLite-generic-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)，解压后目录主体结构如下：
 
   ```shell
     - PaddleLite-generic-demo
@@ -178,7 +178,7 @@ Paddle Lite已支持Imagination NNA的预测部署。
   Postprocess time: 0.157000 ms
   ```
 
-  - 如果需要更改测试图片，可将图片拷贝到PaddleLite-generic-demo/image_classification_demo/assets/images目录下，然后调用convert_to_raw_image.py生成相应的RGB Raw图像，最后修改run_with_adb.sh的IMAGE_NAME变量即可；
+  - 如果需要更改测试图片，可将图片拷贝到 'PaddleLite-generic-demo/image_classification_demo/assets/images' 目录下，然后调用 'convert_to_raw_image.py' 生成相应的 RGB Raw 图像，最后修改 'run_with_adb.sh' 的 IMAGE_NAME 变量即可；
   ```shell
   注意：
   1）请根据buid.sh配置正确的参数值。
@@ -190,25 +190,25 @@ Paddle Lite已支持Imagination NNA的预测部署。
 
 ### 更新模型
 
-- 通过Paddle Fluid训练，或X2Paddle转换得到MobileNetv1 foat32模型[mobilenet_v1_fp32_224_fluid](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224_fluid.tar.gz)；
-- 参考[模型量化-静态离线量化](../user_guides/quant_post_static)使用PaddleSlim对float32模型进行量化（注意：由于Imagination NNA只支持tensor-wise的全量化模型，在启动量化脚本时请注意相关参数的设置），最终得到全量化MobileNetV1模型[mobilenet_v1_int8_224_fluid](https://paddlelite-demo.bj.bcebos.com/devices/imagination/mobilenet_v1_int8_224_fluid.tar.gz)；
-- 参考[模型转化方法](../user_guides/model_optimize_tool)，利用opt工具转换生成Imagination NNA模型，仅需要将valid_targets设置为imagination_nna,arm即可。
+- 通过 Paddle Fluid 训练，或 X2Paddle 转换得到 MobileNetv1 foat32 模型[mobilenet_v1_fp32_224_fluid](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224_fluid.tar.gz)；
+- 参考[模型量化-静态离线量化](../user_guides/quant_post_static)使用 PaddleSlim 对 float32 模型进行量化（注意：由于 Imagination NNA 只支持 tensor-wise 的全量化模型，在启动量化脚本时请注意相关参数的设置），最终得到全量化 MobileNetV1 模型[mobilenet_v1_int8_224_fluid](https://paddlelite-demo.bj.bcebos.com/devices/imagination/mobilenet_v1_int8_224_fluid.tar.gz)；
+- 参考[模型转化方法](../user_guides/model_optimize_tool)，利用 opt 工具转换生成 Imagination NNA 模型，仅需要将 valid_targets 设置为 imagination_nna,arm 即可。
 
   ```shell
-  $ ./opt --model_dir=mobilenet_v1_int8_224_for_imagination_nna_fluid \
+  $ ./opt --model_dir=mobilenet_v1_int8_224_per_layer \
       --optimize_out_type=naive_buffer \
       --optimize_out=opt_model \
       --valid_targets=imagination_nna,arm
   
   替换自带的Imagination NNA模型
-  $ cp opt_model.nb mobilenet_v1_int8_224_for_imagination_nna/model.nb
+  $ cp opt_model.nb mobilenet_v1_int8_224_per_layer/model.nb
   ```
 
-- 注意：opt生成的模型只是标记了Imagination NNA支持的Paddle算子，并没有真正生成Imagination NNA模型，只有在执行时才会将标记的Paddle算子转成Imagination DNN APIs，最终生成并执行模型。
+- 注意：opt 生成的模型只是标记了 Imagination NNA 支持的 Paddle 算子，并没有真正生成 Imagination NNA 模型，只有在执行时才会将标记的 Paddle 算子转成 Imagination DNN APIs，最终生成并执行模型。
 
 ### 更新支持Imagination NNA的Paddle Lite库
 
-- 下载PaddleLite源码和Imagination NNA DDK
+- 下载 Paddle Lite 源码和 Imagination NNA DDK
 
   ```shell
   $ git clone https://github.com/PaddlePaddle/Paddle-Lite.git
@@ -217,7 +217,7 @@ Paddle Lite已支持Imagination NNA的预测部署。
   $ curl -L https://paddlelite-demo.bj.bcebos.com/devices/imagination/imagination_nna_sdk.tar.gz -o - | tar -zx
   ```
 
-- 编译并生成PaddleLite+ImaginationNNA for armv8的部署库
+- 编译并生成 Paddle Lite + ImaginationNNA for armv8的部署库
 
   - For Roc1
     - tiny_publish编译方式
@@ -248,4 +248,4 @@ Paddle Lite已支持Imagination NNA的预测部署。
 
 ## 其它说明
 
-- Imagination研发同学正在持续增加用于适配Paddle算子bridge/converter，以便适配更多Paddle模型。
+- Imagination 研发同学正在持续增加用于适配 Paddle 算子 bridge/converter，以便适配更多 Paddle 模型。
