@@ -1,4 +1,4 @@
-# PaddleLite使用FPGA预测部署
+# 百度 EdgeBoard 部署示例
 
 Paddle Lite支持基于arm的FPGA zu3/zu5/zu9的模型预测，提供armv8的交叉编译
 
