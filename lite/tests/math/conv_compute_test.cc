@@ -201,7 +201,7 @@ void test_conv_fp32(const DDim& input_dims,
                     const float leakey_relu_scale) {}
 #endif  // LITE_WITH_ARM
 
-#if 0   // 3x3dw if only run one case. its ok
+#if 1
 TEST(TestConv3x3DW, test_conv3x3_depthwise) {
   if (FLAGS_basic_test) {
     for (auto& stride : {1, 2}) {
@@ -217,18 +217,18 @@ TEST(TestConv3x3DW, test_conv3x3_depthwise) {
                       for (auto& h : {1, 3, 15, 19, 28, 32, 75}) {
                         DDim dim_in({batch, c, h, h});
                         const float leakey_relu_scale = 8.88;
-                        test_conv_fp32(dim_in,
-                                      weights_dim,
-                                      c,
-                                      {stride, stride},
-                                      {pad_top, pad_bottom,
-                                       pad_left, pad_right},
-                                      {1, 1},
-                                      flag_bias,
-                                      flag_act,
-                                      {1},
-                                      {FLAGS_power_mode},
-                                      leakey_relu_scale);
+                        test_conv_fp32(
+                            dim_in,
+                            weights_dim,
+                            c,
+                            {stride, stride},
+                            {pad_top, pad_bottom, pad_left, pad_right},
+                            {1, 1},
+                            flag_bias,
+                            flag_act,
+                            {1},
+                            {FLAGS_power_mode},
+                            leakey_relu_scale);
                       }
                     }
                   }
@@ -325,8 +325,7 @@ TEST(TestConv1x1s1, test_conv1x1s1) {
 }
 #endif  /// conv1x1s1
 
-// TODO(MyPandaShaoxiang): fix me, diff: 3x3s1 winograd
-#if 0   /// conv3x3s1
+#if 1  /// conv3x3s1
 TEST(TestConv3x3s1, test_conv_3x3s1) {
   if (FLAGS_basic_test) {
     for (auto& cin : {1, 3, 8, 8}) {
@@ -346,18 +345,18 @@ TEST(TestConv3x3s1, test_conv_3x3s1) {
                           continue;
                         }
                         const float leakey_relu_scale = 8.88;
-                        test_conv_fp32(dim_in,
-                                      weights_dim,
-                                      1,
-                                      {1, 1},
-                                      {pad_top, pad_bottom,
-                                       pad_left, pad_right},
-                                      {1, 1},
-                                      flag_bias,
-                                      flag_act,
-                                      {4},
-                                      {FLAGS_power_mode},
-                                      leakey_relu_scale);
+                        test_conv_fp32(
+                            dim_in,
+                            weights_dim,
+                            1,
+                            {1, 1},
+                            {pad_top, pad_bottom, pad_left, pad_right},
+                            {1, 1},
+                            flag_bias,
+                            flag_act,
+                            {4},
+                            {FLAGS_power_mode},
+                            leakey_relu_scale);
                       }
                     }
                   }
