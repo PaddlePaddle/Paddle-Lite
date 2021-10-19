@@ -46,8 +46,5 @@
 | LITE_ON_MODEL_OPTIMIZE_TOOL |  编译[模型优化工具 opt](../user_guides/model_optimize_tool.html) | X86 |OFF|
 | LITE_WITH_PYTHON |  编译支持 [Python API](../api_reference/python_api_doc.html)的预测库 | X86 / CUDA |OFF |
 | LITE_WITH_OPENCL |  编译 [OpenCL 平台](../demo_guides/opencl.html)预测库 | OpenCL | OFF |
-| LITE_WITH_NPU |  编译 [华为 NPU 平台](../demo_guides/huawei_kirin_npu.html)预测库 | NPU | OFF |
-| LITE_WITH_RKNPU |  编译[瑞芯微 NPU 平台](../demo_guides/rockchip_npu.html)预测库 | RKNPU | OFF |
 | LITE_WITH_XPU |  编译[百度 XPU 平台](../demo_guides/baidu_xpu.html)预测库 | XPU |OFF |
 | LITE_WITH_XTCL | 通过 XTCL 方式支持百度 XPU，默认 Kernel 方式 | XPU |OFF IF LITE_WITH_XPU |
-| LITE_WITH_APU | 编译[联发科 APU 平台](../demo_guides/mediatek_apu.html)预测库 | APU |OFF |
