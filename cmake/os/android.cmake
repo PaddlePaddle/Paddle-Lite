@@ -12,14 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if(NOT ARM_TARGET_OS STREQUAL "android")
-    return()
-endif()
-
 set(ANDROID TRUE)
-add_definitions(-DLITE_WITH_LINUX)
-add_definitions(-DLITE_WITH_ANDROID)
+set(ANDROID_ARCH_ABI_LIST "arm64-v8a" "armeabi-v7a" "armeabi-v6" "armeabi" "mips" "mips64" "x86" "x86_64")
+set(ANDROID_STL_TYPE_LIST "c++_static" "gnustl_static" "c++_shared")
 
+# Android ndk
 if(NOT DEFINED ANDROID_NDK)
     set(ANDROID_NDK $ENV{NDK_ROOT})
     if(NOT ANDROID_NDK)
@@ -27,6 +24,7 @@ if(NOT DEFINED ANDROID_NDK)
     endif()
 endif()
 
+# ANDROID_NATIVE_API_LEVEL
 if(NOT DEFINED ANDROID_NATIVE_API_LEVEL)
     set(ANDROID_NATIVE_API_LEVEL "21")
     if(ARM_TARGET_ARCH_ABI STREQUAL "armv7")
@@ -38,28 +36,33 @@ if(NOT DEFINED ANDROID_NATIVE_API_LEVEL)
     endif()
 endif()
 
-# then check input arm abi
+# ANDROID_ARCH_ABI
 if(ARM_TARGET_ARCH_ABI STREQUAL "armv7hf")
     message(FATAL_ERROR "ANDROID does not support hardfp on v7 use armv7 instead.")
 endif()
-
 set(ANDROID_ARCH_ABI ${ARM_TARGET_ARCH_ABI} CACHE STRING "Choose Android Arch ABI")
 if(ARM_TARGET_ARCH_ABI STREQUAL "armv8")
     set(ANDROID_ARCH_ABI "arm64-v8a")
 endif()
-
 if(ARM_TARGET_ARCH_ABI STREQUAL "armv7")
     set(ANDROID_ARCH_ABI "armeabi-v7a")
 endif()
-
-check_input_var(ANDROID_ARCH_ABI DEFAULT ${ANDROID_ARCH_ABI} LIST "arm64-v8a" "armeabi-v7a"
-    "armeabi-v6" "armeabi" "mips" "mips64" "x86" "x86_64")
-check_input_var(ANDROID_STL_TYPE DEFAULT "c++_static" LIST "c++_static" "gnustl_static" "c++_shared")
-
+if(NOT ANDROID_ARCH_ABI IN_LIST ANDROID_ARCH_ABI_LIST)
+    message(FATAL_ERROR "ANDROID_ARCH_ABI must be one of ${ANDROID_ARCH_ABI_LIST}")
+endif()
 if(ANDROID_ARCH_ABI STREQUAL "armeabi-v7a")
     message(STATUS "armeabi-v7a use softfp by default.")
     set(CMAKE_ANDROID_ARM_NEON ON)
     message(STATUS "NEON is enabled on arm-v7a with softfp.")
+endif()
+
+# ANDROID_STL_TYPE
+if(NOT DEFINED ANDROID_STL_TYPE)
+    set(ANDROID_STL_TYPE "c++_static")
+else()
+    if(NOT ANDROID_STL_TYPE IN_LIST ANDROID_STL_TYPE_LIST)
+        message(FATAL_ERROR "ANDROID_STL_TYPE must be one of ${ANDROID_STL_TYPE_LIST}")
+    endif()
 endif()
 
 set(CMAKE_SYSTEM_NAME Android)
@@ -67,6 +70,8 @@ set(CMAKE_SYSTEM_VERSION ${ANDROID_NATIVE_API_LEVEL})
 set(CMAKE_ANDROID_ARCH_ABI ${ANDROID_ARCH_ABI})
 set(CMAKE_ANDROID_NDK ${ANDROID_NDK})
 set(CMAKE_ANDROID_STL_TYPE ${ANDROID_STL_TYPE})
+
+# Toolchain
 if(ARM_TARGET_LANG STREQUAL "gcc")
     if(ARM_TARGET_ARCH_ABI STREQUAL "armv8")
         set(CMAKE_SYSTEM_PROCESSOR aarch64)
@@ -80,7 +85,6 @@ if(ARM_TARGET_LANG STREQUAL "gcc")
         message(FATAL_ERROR "INVALID ARM TARGET ARCH ABI: ${ARM_TARGET_ARCH_ABI}")
     endif()
 endif()
-
 if(ARM_TARGET_LANG STREQUAL "clang")
     set(CMAKE_ANDROID_NDK_TOOLCHAIN_VERSION ${ARM_TARGET_LANG})
     set(ANDROID_TOOLCHAIN clang)
@@ -132,3 +136,7 @@ if(ARM_TARGET_LANG STREQUAL "clang")
     set(CMAKE_CXX_COMPILER_TARGET ${triple})
     message(STATUS "CMAKE_CXX_COMPILER_TARGET: ${CMAKE_CXX_COMPILER_TARGET}")
 endif()
+
+# Definitions
+add_definitions(-DLITE_WITH_LINUX)
+add_definitions(-DLITE_WITH_ANDROID)

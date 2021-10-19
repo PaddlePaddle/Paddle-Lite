@@ -13,8 +13,8 @@
 // limitations under the License.
 
 #include "lite/backends/metal/metal_context_imp.h"
-#include "lite/utils/log/cp_logging.h"
 #include "lite/kernels/metal/image_op/fetch_image_compute.h"
+#include "lite/utils/log/cp_logging.h"
 
 // debug macro
 //#define METAL_DEBUG_GPU_CAPTURE
@@ -27,7 +27,7 @@ extern NSString* cString2NSString(std::string cStr) {
 @interface MetalContextImp () {
     bool use_one_cmdbuf_;
     bool use_memory_reuse_;
-    std::vector<paddle::lite::kernels::metal::FetchImageCompute *> _fetch_vector;
+    std::vector<paddle::lite::kernels::metal::FetchImageCompute*> _fetch_vector;
 }
 @property (strong, nonatomic) NSString* libPath;
 @property (strong, nonatomic) id<MTLDevice> device;
@@ -52,12 +52,12 @@ extern NSString* cString2NSString(std::string cStr) {
         _memoryReuseHeaps = [NSMutableDictionary dictionaryWithCapacity:3];
         _device = MTLCreateSystemDefaultDevice();
         _commandQueue = [_device newCommandQueue];
-#if defined (METAL_DEBUG_GPU_CAPTURE)
+#if defined(METAL_DEBUG_GPU_CAPTURE)
         // At least one command buffer must be created and
-        //committed within the boundaries of a GPU Capture.
+        // committed within the boundaries of a GPU Capture.
         [self startCapture];
 #endif
-#if defined (METAL_DEBUG_ONE_COMMANDBUFFER)
+#if defined(METAL_DEBUG_ONE_COMMANDBUFFER)
         use_one_cmdbuf_ = true;
 #endif
         _commandBuffer = [_commandQueue commandBuffer];
@@ -70,18 +70,17 @@ extern NSString* cString2NSString(std::string cStr) {
 }
 
 - (void)setMetalPath:(std::string)path {
-    NSString *pathStr = cString2NSString(path);
+    NSString* pathStr = cString2NSString(path);
     if (pathStr) {
         self.libPath = pathStr;
         self.library = [self.device newLibraryWithFile:pathStr error:NULL];
     }
     if (nil == _library) {
-        LOG(INFO) << "Can't load metallib: "
-                  << [pathStr cStringUsingEncoding:NSUTF8StringEncoding];
+        LOG(INFO) << "Can't load metallib: " << [pathStr cStringUsingEncoding:NSUTF8StringEncoding];
     }
 }
 
-- (void)setMetalDevice:(void *)device {
+- (void)setMetalDevice:(void*)device {
     if (!device) {
         return;
     }
@@ -89,7 +88,7 @@ extern NSString* cString2NSString(std::string cStr) {
     if (mtl) {
         self.device = mtl;
         self.commandQueue = [_device newCommandQueue];
-#if defined (METAL_DEBUG_GPU_CAPTURE)
+#if defined(METAL_DEBUG_GPU_CAPTURE)
         [self startCapture];
 #endif
         self.commandBuffer = [self.commandQueue commandBuffer];
@@ -144,8 +143,7 @@ extern NSString* cString2NSString(std::string cStr) {
 }
 
 - (void)commit {
-    if(use_one_cmdbuf_){
-        
+    if (use_one_cmdbuf_) {
     } else {
         [_commandBuffer commit];
         [_waitings addObject:_commandBuffer];
@@ -155,7 +153,7 @@ extern NSString* cString2NSString(std::string cStr) {
 
 // mps
 - (id<MTLCommandBuffer>)commandBuffer {
-    if(use_one_cmdbuf_){
+    if (use_one_cmdbuf_) {
         return _commandBuffer;
     } else {
         id<MTLCommandBuffer> result = [_commandQueue commandBuffer];
@@ -167,8 +165,7 @@ extern NSString* cString2NSString(std::string cStr) {
 // mps
 - (void)commit:(id<MTLCommandBuffer>)cmdBuf {
     assert(nil != cmdBuf);
-    if(use_one_cmdbuf_){
-
+    if (use_one_cmdbuf_) {
     } else {
         [cmdBuf commit];
         [_waitings addObject:cmdBuf];
@@ -176,15 +173,15 @@ extern NSString* cString2NSString(std::string cStr) {
 }
 
 - (void)waitAllCompleted {
-    if(use_one_cmdbuf_){
+    if (use_one_cmdbuf_) {
         [_commandBuffer commit];
-#if defined (METAL_DEBUG_GPU_CAPTURE)
+#if defined(METAL_DEBUG_GPU_CAPTURE)
         [self stopCapture];
 #endif
         [_commandBuffer waitUntilCompleted];
         _commandBuffer = [_commandQueue commandBuffer];
     } else {
-#if defined (METAL_DEBUG_GPU_CAPTURE)
+#if defined(METAL_DEBUG_GPU_CAPTURE)
         [self stopCapture];
 #endif
         for (id<MTLCommandBuffer> buffer in _waitings) {
@@ -202,9 +199,9 @@ extern NSString* cString2NSString(std::string cStr) {
 
 #pragma mark c++ external
 
-- (void)add_fetch_kernel_ptr:(void *)ptr {
-    paddle::lite::kernels::metal::FetchImageCompute *fetch =
-        static_cast<paddle::lite::kernels::metal::FetchImageCompute *>(ptr);
+- (void)add_fetch_kernel_ptr:(void*)ptr {
+    paddle::lite::kernels::metal::FetchImageCompute* fetch =
+        static_cast<paddle::lite::kernels::metal::FetchImageCompute*>(ptr);
     _fetch_vector.push_back(fetch);
 }
 
@@ -226,6 +223,10 @@ extern NSString* cString2NSString(std::string cStr) {
                 pipline:(id<MTLComputePipelineState>)pipline
              outTexture:(id<MTLTexture>)outTexture
               quadruple:(bool)quadruple {
+    if (!pipline) {
+        LOG(FATAL) << "[meta] invalid param, MTL Compute Pipeline is nil!";
+        return;
+    }
     NSUInteger slices = (outTexture.arrayLength * 4 + 3) / 4;
     NSUInteger width = 0, height = 0, groupWidth = 0, groupHeight = 0;
     if (quadruple) {
@@ -245,10 +246,11 @@ extern NSString* cString2NSString(std::string cStr) {
     }
     MTLSize threadsPerGroup = MTLSize{.width = width, .height = height, .depth = 1};
     MTLSize groups = MTLSize{.width = groupWidth, .height = groupHeight, .depth = slices};
-    if (groups.width <= 0 ||  groups.height <= 0 ||  groups.depth <= 0) {
-        VLOG(4) << "[METAL]: " << "dispatch thread groups 1.{" << groups.width
-        << "," << groups.height << "," << groups.depth << "}";
-      return;
+    if (groups.width <= 0 || groups.height <= 0 || groups.depth <= 0) {
+        VLOG(4) << "[METAL]: "
+                << "dispatch thread groups 1.{" << groups.width << "," << groups.height << ","
+                << groups.depth << "}";
+        return;
     }
     [encoder setComputePipelineState:pipline];
     [encoder dispatchThreadgroups:groups threadsPerThreadgroup:threadsPerGroup];
@@ -259,10 +261,11 @@ extern NSString* cString2NSString(std::string cStr) {
                 pipline:(id<MTLComputePipelineState>)pipline
         threadsPerGroup:(MTLSize)threadsPerGroup
                  groups:(MTLSize)groups {
-    if (groups.width <= 0 ||  groups.height <= 0 ||  groups.depth <= 0) {
-        VLOG(4) << "[METAL]: " << "dispatch thread groups 2.{" << groups.width
-        << "," << groups.height << "," << groups.depth << "}";
-      return;
+    if (groups.width <= 0 || groups.height <= 0 || groups.depth <= 0) {
+        VLOG(4) << "[METAL]: "
+                << "dispatch thread groups 2.{" << groups.width << "," << groups.height << ","
+                << groups.depth << "}";
+        return;
     }
     [encoder setComputePipelineState:pipline];
     [encoder dispatchThreadgroups:groups threadsPerThreadgroup:threadsPerGroup];
@@ -271,21 +274,22 @@ extern NSString* cString2NSString(std::string cStr) {
 
 #pragma mark pre-process
 
-- (MPSImageLanczosScale *)lanczosScalePtrCreate {
-    MPSImageLanczosScale *lanczos = [[MPSImageLanczosScale alloc] initWithDevice:self.device];
+- (MPSImageLanczosScale*)lanczosScalePtrCreate {
+    MPSImageLanczosScale* lanczos = [[MPSImageLanczosScale alloc] initWithDevice:self.device];
     return lanczos;
 }
 
-- (id<MTLTexture>)lanczosTextureCreate:(NSArray *)dims {
-    MTLTextureDescriptor *textureDesc = [[MTLTextureDescriptor alloc] init];
+- (id<MTLTexture>)lanczosTextureCreate:(NSArray*)dims {
+    MTLTextureDescriptor* textureDesc = [[MTLTextureDescriptor alloc] init];
     textureDesc.textureType = MTLTextureType2D;
     textureDesc.width = [dims[3] intValue];
     textureDesc.height = [dims[2] intValue];
     textureDesc.depth = ([dims[1] intValue] + 3) / 4;
     textureDesc.pixelFormat = MTLPixelFormatRGBA16Float;
-    textureDesc.usage = MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;;
+    textureDesc.usage = MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
+    ;
     textureDesc.storageMode = MTLStorageModeShared;
-    
+
     id<MTLTexture> texture = [self.device newTextureWithDescriptor:textureDesc];
     return texture;
 }
@@ -295,7 +299,7 @@ extern NSString* cString2NSString(std::string cStr) {
 - (void)set_use_memory_reuse:(bool)flag {
     use_memory_reuse_ = flag;
     if (flag) {
-      use_one_cmdbuf_ = true;
+        use_one_cmdbuf_ = true;
     }
 }
 
@@ -313,7 +317,7 @@ extern NSString* cString2NSString(std::string cStr) {
         return nil;
     }
     if ([self.memoryReuseHeaps objectForKey:ptrStr]) {
-      return [self.memoryReuseHeaps objectForKey:ptrStr];
+        return [self.memoryReuseHeaps objectForKey:ptrStr];
     }
     return nil;
 }
@@ -329,7 +333,8 @@ extern NSString* cString2NSString(std::string cStr) {
     return nil;
 }
 
-- (bool)isNewHeapWithDescriptor:(MTLTextureDescriptor*)desc heap:(id<MTLHeap>)heap API_AVAILABLE(ios(10.0)) {
+- (bool)isNewHeapWithDescriptor:(MTLTextureDescriptor*)desc
+                           heap:(id<MTLHeap>)heap API_AVAILABLE(ios(10.0)) {
     if (@available(iOS 10.0, *)) {
         NSInteger hSize = heap.size;
         NSInteger tSize = [_device heapTextureSizeAndAlignWithDescriptor:desc].size;
@@ -342,7 +347,8 @@ extern NSString* cString2NSString(std::string cStr) {
     return false;
 }
 
-- (id<MTLTexture>)newTextureWithDescriptor:(MTLTextureDescriptor*)desc heap:(id<MTLHeap>)heap API_AVAILABLE(ios(10.0)) {
+- (id<MTLTexture>)newTextureWithDescriptor:(MTLTextureDescriptor*)desc
+                                      heap:(id<MTLHeap>)heap API_AVAILABLE(ios(10.0)) {
     if (@available(iOS 10.0, *)) {
         id<MTLTexture> image = [heap newTextureWithDescriptor:desc];
         [image makeAliasable];
@@ -405,8 +411,8 @@ extern NSString* cString2NSString(std::string cStr) {
         MTLCaptureDescriptor* captureDescriptor = [[MTLCaptureDescriptor alloc] init];
         captureDescriptor.captureObject = self.device;
 
-        NSError *error;
-        if (![captureManager startCaptureWithDescriptor: captureDescriptor error:&error]) {
+        NSError* error;
+        if (![captureManager startCaptureWithDescriptor:captureDescriptor error:&error]) {
             NSLog(@"Failed to start capture, error %@", error);
         }
     }

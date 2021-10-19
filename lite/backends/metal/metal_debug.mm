@@ -27,18 +27,18 @@ void MetalDebug::print_log(const std::string& name, const MetalImage* metalImg, 
     float* data = (float*)TargetWrapperMetal::Malloc(sizeof(float) * size);
     metalImg->template CopyToNCHW<float>(data);
     std::string log_string = name + " ";
-    for (int i=0; i<metalImg->tensor_dim_.size(); i++) {
-        if (i==0) {
-          log_string = log_string + "[" + std::to_string(metalImg->tensor_dim_[i]);
-          if (metalImg->tensor_dim_.size()!=1) {
-            log_string += ", ";
-          } else {
-            log_string += "]";
-          }
-        } else if (i==metalImg->tensor_dim_.size()-1) {
-          log_string = log_string +  std::to_string(metalImg->tensor_dim_[i]) + "]";
+    for (int i = 0; i < metalImg->tensor_dim_.size(); i++) {
+        if (i == 0) {
+            log_string = log_string + "[" + std::to_string(metalImg->tensor_dim_[i]);
+            if (metalImg->tensor_dim_.size() != 1) {
+                log_string += ", ";
+            } else {
+                log_string += "]";
+            }
+        } else if (i == metalImg->tensor_dim_.size() - 1) {
+            log_string = log_string + std::to_string(metalImg->tensor_dim_[i]) + "]";
         } else {
-          log_string = log_string +  std::to_string(metalImg->tensor_dim_[i]) + ", ";
+            log_string = log_string + std::to_string(metalImg->tensor_dim_[i]) + ", ";
         }
     }
     print_float(log_string, data, (int)size, inCount);

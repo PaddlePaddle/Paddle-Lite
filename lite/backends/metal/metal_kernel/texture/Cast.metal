@@ -19,49 +19,44 @@
 using namespace metal;
 
 enum CastType : int32_t {
-  BOOL = 0,
-  INT16 = 1,
-  INT32 = 2,
-  INT64 = 3,
-  FP16 = 4,
-  FP32 = 5,
-  FP64 = 6,
-};
-  
-struct CastParam {
-  CastType inType;
-  CastType outType;
+    BOOL = 0,
+    INT16 = 1,
+    INT32 = 2,
+    INT64 = 3,
+    FP16 = 4,
+    FP32 = 5,
+    FP64 = 6,
 };
 
-kernel void cast(texture2d_array<ftype, access::read> input [[texture(0)]],
-                 texture2d_array<ftype, access::write> outTexture [[texture(1)]],
-                 constant CastParam &pm [[buffer(0)]],
-                 uint3 gid [[thread_position_in_grid]]) {
-    
-  if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
-      gid.z >= outTexture.get_array_size())
-      return;
-  
-  ftype4 in = input.read(gid.xy, gid.z);
-  ftype4 out = ftype4(0.0);
-  
-  switch (pm.inType) {
-    case BOOL:
-      out = in;
-      break;
-    case INT16:
-      break;
-    case INT32:
-      break;
-    case INT64:
-      break;
-    case FP16:
-      break;
-    case FP32:
-      break;
-    case FP64:
-      break;
-  }
-  
-  outTexture.write(out, gid.xy, gid.z);
+struct CastParam {
+    CastType inType;
+    CastType outType;
+};
+
+kernel void cast(texture2d_array<ftype, access::read> input[[texture(0)]],
+    texture2d_array<ftype, access::write> outTexture[[texture(1)]],
+    constant CastParam& pm[[buffer(0)]],
+    uint3 gid[[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
+        gid.z >= outTexture.get_array_size())
+        return;
+
+    ftype4 in = input.read(gid.xy, gid.z);
+    ftype4 out = ftype4(0.0);
+
+    switch (pm.inType) {
+        case BOOL:
+        case INT16:
+        case INT32:
+        case FP16:
+        case FP32:
+            out = in;
+            break;
+        case FP64:
+            break;
+        case INT64:
+            break;
+    }
+
+    outTexture.write(out, gid.xy, gid.z);
 }
