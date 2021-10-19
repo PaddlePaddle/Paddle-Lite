@@ -1,7 +1,7 @@
 .. role:: raw-html-m2r(raw)
    :format: html
 
-使用 x86 Linux 环境编译 Paddle Lite / 目标硬件 OS 为 ARM Linux
+Linux x86 环境下编译适用于 ARM Linux 的库
 ===============================================================
 
 简介
