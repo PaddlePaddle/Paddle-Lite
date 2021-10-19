@@ -135,6 +135,7 @@ REGISTER_CONVERTER(shape, ConvertShape, "huawei_ascend_npu");
 REGISTER_CONVERTER(slice, ConvertSlice, "huawei_ascend_npu");
 REGISTER_CONVERTER(squeeze, ConvertSqueeze, "huawei_ascend_npu");
 REGISTER_CONVERTER(squeeze2, ConvertSqueeze, "huawei_ascend_npu");
+REGISTER_CONVERTER(stack, ConvertStack, "huawei_ascend_npu");
 REGISTER_CONVERTER(fill_constant, ConvertFillConstant, "huawei_ascend_npu");
 REGISTER_CONVERTER(fill_any_like, ConvertFillAnyLike, "huawei_ascend_npu");
 REGISTER_CONVERTER(
