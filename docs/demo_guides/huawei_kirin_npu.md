@@ -1,4 +1,4 @@
-# PaddleLite使用华为麒麟NPU预测部署
+# 华为麒麟 NPU 部署示例
 
 Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭载的NPU）的预测框架。
 原理是在线分析Paddle模型，首先将Paddle算子转成NNAdapter标准算子，其次再转换为HiAI IR，最后调用HiAI IR/Builder/Runtime APIs生成并执行HiAI模型。
@@ -64,7 +64,7 @@ Paddle Lite是首款支持华为自研达芬奇架构NPU（Kirin 810/990 SoC搭�
 
 ### 已支持（或部分支持）NNAdapter的Paddle算子
 
-可以通过访问[https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/bridges/paddle_use_bridges.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/bridges/paddle_use_bridges.h)获得最新的算子支持列表。
+您可以查阅[ NNAdapter 算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/converter/all.h)获得各算子在不同新硬件上的最新支持信息。
 
 **不经过NNAdapter标准算子转换，而是直接将Paddle算子转换成HiAI IR的方案可点击[链接](https://paddle-lite.readthedocs.io/zh/release-v2.9/demo_guides/huawei_kirin_npu.html)**。
 

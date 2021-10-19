@@ -1,4 +1,4 @@
-# PaddleLite使用华为昇腾NPU预测部署
+# 华为昇腾 NPU 部署示例
 
 Paddle Lite已支持华为昇腾NPU（Ascend310）在x86和Arm服务器上进行预测部署。 目前支持子图接入方式，其接入原理是在线分析Paddle模型，将Paddle算子先转为统一的NNAdapter标准算子，再通过Ascend NPU组网API进行网络构建，在线生成并执行模型。
 
@@ -17,24 +17,89 @@ Paddle Lite已支持华为昇腾NPU（Ascend310）在x86和Arm服务器上进行
 ### 已支持的Paddle模型
 
 #### 模型
+- 图像分类
+  - [AlexNet](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/AlexNet.tgz)
+  - [DenseNet121](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/DenseNet121.tgz)
+  - [EfficientNetB0](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/EfficientNetB0.tgz)
+  - [GoogLeNet](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/GoogLeNet.tgz)
+  - [Inception-v3](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/InceptionV3.tgz)
+  - [Inception-v4](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/InceptionV4.tgz)
+  - [MobileNet-v1](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/MobileNetV1.tgz)
+  - [MobileNet-v2](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/MobileNetV2.tgz)
+  - [MobileNetV3_large](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/MobileNetV3_large_x1_0.tgz)
+  - [MobileNetV3_small](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/MobileNetV3_small_x1_0.tgz)
+  - [ResNet-101](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/ResNet101.tgz)
+  - [ResNet-18](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/ResNet18.tgz)
+  - [ResNet-50](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/ResNet50.tgz)
+  - [ResNeXt50](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/ResNeXt50_32x4d.tgz)
+  - [ShuffleNetV2](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/ShuffleNetV2_x1_0.tgz)
+  - [SqueezeNet-v1](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/SqueezeNet1_0.tgz)
+  - [VGG16](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/VGG16.tgz)
+  - [VGG19](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/VGG19.tgz)
+- 目标检测
+  - [SSD-MobileNetV1(1.8)](http://paddle-inference-dist.bj.bcebos.com/PaddleLite/models_and_data_for_unittests/ssd_mobilenet_v1_relu_voc_fp32_300.tar.gz)
+  - [SSD-MobileNetV1(2.0+)](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/ssd_mobilenet_v1_300_120e_voc.tgz)
+  - [SSD-VGG16](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/ssd_vgg16_300_240e_voc.tgz)
+  - [YOLOv3-DarkNet53](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/yolov3_darknet53_270e_coco.tgz)
+  - [YOLOv3-MobileNetV1](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/yolov3_mobilenet_v1_270e_coco.tgz)
+  - [YOLOv3-MobileNetV3](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/yolov3_mobilenet_v3_large_270e_coco.tgz)
+  - [YOLOv3-ResNet50_vd](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/yolov3_r50vd_dcn_270e_coco.tgz)
+  - [YOLOv4](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/yolov4_cspdarknet.tgz)
+- 关键点检测
+  - [HigherHRNet](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/higherhrnet_hrnet_w32_640.tgz)
+  - [HRNet](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/hrnet_w32_384x288.tgz)
+- 文本检测 & 文本识别
+  - [OCR-DB](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleOCR/ch_ppocr_mobile_v2.0_det_infer.tgz)
+  - [OCR-REC](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleOCR/ch_ppocr_mobile_v2.0_rec_infer.tgz)
+- 语义理解
+  - [ERNIE-TINY](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleNLP/ernie_tiny.tgz)
+- 生成网络
+  - [ESRGAN](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleGAN/esrgan_psnr_x4_div2k.tgz)
 
-- [MobileNetV1](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224_fluid.tar.gz)
-- [ResNet50](https://paddlelite-demo.bj.bcebos.com/models/resnet50_fp32_224_fluid.tar.gz)
-- [SSD-MobileNetV1](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_pascalvoc_fp32_300_fluid.tar.gz)
 
-- [开源模型支持列表](https://paddle-lite.readthedocs.io/zh/latest/introduction/support_model_list.html)
+- [开源模型支持列表](../introduction/support_model_list)
 
 #### 性能
 
-| 模型                               | Intel CPU性能(ms) | x86+Ascend310性能(ms） | 鲲鹏920 CPU性能(ms) | 鲲鹏920+Ascend310(ms) |
-| ---------------------------------- | ----------------- | ---------------------- | ------------------- | --------------------- |
-| mobilenet_v1_fp32_224              | 44.949            | 2.079                  | 34.161              | 1.555                 |
-| resnet50_fp32_224                  | 266.570           | 1.828                  | 200.603             | 1.668                 |
-| ssd_mobilenet_v1_relu_voc_fp32_300 | 87.061            | 7.016                  | 69.263              | 5.644                 |
+
+|模型    |Intel CPU性能 (ms)    |x86 + Ascend310 性能 (ms）    |鲲鹏920 CPU性能 (ms)    |鲲鹏920 + Ascend310性能 (ms)    |
+|---|---|---|---|---|
+|AlexNet    |81.16     |4.32     |67.39     |3.64     |
+|DenseNet121    |529.45     |7.81     |157.62     |6.23     |
+|EfficientNet_b0    |167.59     |21.08     |85.98     |7.14     |
+|ERNIE-TINY    |-    |12.31     |347.47     |10.72     |
+|ESRGAN    |41774.81     |103.75     |9755.14     |103.06     |
+|GoogLeNet    |104.55     |2.65     |71.24     |2.40     |
+|HigherHRNet    |6760.83     |386.02     |6482.55     |396.17     |
+|HRNet    |1245.54     |12.58     |752.93     |12.08     |
+|Inception-v3    |415.00     |5.91     |159.40     |3.46     |
+|Inception-v4    |1082.00     |9.00     |706.72     |6.72     |
+|MobileNet-v1    |33.88     |3.06     |35.08     |1.43     |
+|MobileNet-v2    |25.67     |3.82     |25.27     |1.74     |
+|MobileNetV3_large_x1_0    |43.53     |8.96    |20.46     |2.83     |
+|MobileNetV3_small_x1_0    |29.38     |6.38     |8.66     |2.24     |
+|OCR-DB    |359.16     |10.75     |129.01     |10.78     |
+|OCR-REC    |32.39     |8.75     |15.05     |5.87     |
+|ResNet-101    |528.43     |7.33     |401.14     |4.27     |
+|ResNet-18    |136.10     |2.84     |89.41     |1.59     |
+|ResNet-50    |258.21     |5.66     |229.04     |2.87     |
+|ResNeXt50    |353.43     |5.32     |261.28     |3.10     |
+|ShuffleNetv2    |37.93     |5.41     |14.12     |4.06     |
+|SqueezeNet-v1    |51.12     |3.06     |40.50     |1.49     |
+|SSD-MobileNetV1(1.8)    |64.82     |6.56     |70.40     |6.19     |
+|SSD-MobileNetV1(2.0+)    |70.72     |8.79     |73.16     |8.17     |
+|SSD-VGG16    |1999.32     |27.35     |1001.06     |25.93     |
+|VGG16    |1204.23     |10.53     |443.20     |9.43     |
+|VGG19    |1512.82     |11.50     |667.20     |10.23     |
+|YOLOv3-DarkNet53    |4241.35     |38.46     |2806.42     |34.47     |
+|YOLOv3-MobileNetV1    |1181.56     |27.20     |941.62     |23.13     |
+|YOLOv3-MobileNetV3    |1396.57     |27.97     |789.02     |27.06     |
+|YOLOv3-ResNet50_vd    |15521.84     |55.41     |2444.08     |48.96     |
+|YOLOv4    |7389.54     |77.80     |5503.77     |71.78     |
 
 ### 已支持（或部分支持）的Paddle算子
 
-可以通过访问[https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/bridges/paddle_use_bridges.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/bridges/paddle_use_bridges.h)获得最新的算子支持列表。
+您可以查阅[ NNAdapter 算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/converter/all.h)获得各算子在不同新硬件上的最新支持信息。
 
 ## 参考示例演示
 

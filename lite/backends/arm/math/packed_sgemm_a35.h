@@ -327,8 +327,10 @@ void sgemm_prepacked_8x6_a35(bool is_transB,
 
   auto act_type = act_param.active_type;
   float alpha[4] = {0.f, 0.f, 0.f, 0.f};
+  float offset[4] = {0.f, 0.f, 0.f, 0.f};
+  float threshold[4] = {0.f, 0.f, 0.f, 0.f};
   float local_alpha = 0.f;
-  int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
+  int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3, hardswish: 4
   if (act_param.has_active) {
     if (act_type == lite_api::ActivationType::kRelu) {
       flag_act = 0x01;
@@ -338,6 +340,13 @@ void sgemm_prepacked_8x6_a35(bool is_transB,
     } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
       flag_act = 0x03;
       local_alpha = act_param.Leaky_relu_alpha;
+    } else if (act_type == lite_api::ActivationType::kHardSwish) {
+      flag_act = 0x04;
+      local_alpha = 1.0 / act_param.hard_swish_scale;
+      for (int i = 0; i < 4; i++) {
+        offset[i] = act_param.hard_swish_offset;
+        threshold[i] = act_param.hard_swish_threshold;
+      }
     }
   }
   alpha[0] = local_alpha;
@@ -387,14 +396,10 @@ void sgemm_prepacked_8x6_a35(bool is_transB,
 
       float bias_local[8] = {0};
       if (has_bias) {
-        bias_local[0] = bias[y];
-        bias_local[1] = bias[y + 1];
-        bias_local[2] = bias[y + 2];
-        bias_local[3] = bias[y + 3];
-        bias_local[4] = bias[y + 4];
-        bias_local[5] = bias[y + 5];
-        bias_local[6] = bias[y + 6];
-        bias_local[7] = bias[y + 7];
+        int i = 0;
+        for (; i < 8 && y + i < ymax; i++) {
+          bias_local[i] = bias[y + i];
+        }
       }
 
       float cout0[n_block];  // NOLINT
@@ -618,7 +623,133 @@ void sgemm_prepacked_8x6_a35(bool is_transB,
             "cmp %w[flag_act], #2\n" // relu6
             "ld1    {v1.2s}, [%[alpha]]\n"
             "beq 7f\n"
-            // leakyrelu
+            "cmp %w[flag_act], #3\n" // relu6
+            "ld1    {v2.2s}, [%[offset]]\n"
+            "ld1    {v3.2s}, [%[threshold]]\n"
+            "beq 8f\n"
+            // hard_swish
+            "fadd  v4.2s,  v8.2s,  v2.2s\n"
+            "fadd  v5.2s,  v9.2s,  v2.2s\n"
+            "fmul  v6.2s,  v8.2s,  v1.2s\n"
+            "fmul  v7.2s,  v9.2s,  v1.2s\n"
+            "fmax  v4.2s,  v4.2s,  v0.2s\n"
+            "fmax  v5.2s,  v5.2s,  v0.2s\n"
+            "fmin  v4.2s,  v4.2s,  v3.2s\n"
+            "fmin  v5.2s,  v5.2s,  v3.2s\n"
+            "fmul  v8.2s,  v4.2s,  v6.2s\n"
+            "fmul  v9.2s,  v5.2s,  v7.2s\n"
+            "fadd  v4.2s,  v10.2s, v2.2s\n"
+            "fadd  v5.2s,  v11.2s, v2.2s\n"
+            "fmul  v6.2s,  v10.2s, v1.2s\n"
+            "fmul  v7.2s,  v11.2s, v1.2s\n"
+            "fmax  v4.2s,  v4.2s,  v0.2s\n"
+            "fmax  v5.2s,  v5.2s,  v0.2s\n"
+            "fmin  v4.2s,  v4.2s,  v3.2s\n"
+            "fmin  v5.2s,  v5.2s,  v3.2s\n"
+            "fmul  v10.2s, v4.2s,  v6.2s\n"
+            "fmul  v11.2s, v5.2s,  v7.2s\n"
+            "fadd  v4.2s,  v12.2s,  v2.2s\n"
+            "fadd  v5.2s,  v13.2s,  v2.2s\n"
+            "fmul  v6.2s,  v12.2s,  v1.2s\n"
+            "fmul  v7.2s,  v13.2s,  v1.2s\n"
+            "fmax  v4.2s,  v4.2s,  v0.2s\n"
+            "fmax  v5.2s,  v5.2s,  v0.2s\n"
+            "fmin  v4.2s,  v4.2s,  v3.2s\n"
+            "fmin  v5.2s,  v5.2s,  v3.2s\n"
+            "fmul  v12.2s, v4.2s,  v6.2s\n"
+            "fmul  v13.2s, v5.2s,  v7.2s\n"
+            "fadd  v4.2s,  v14.2s,  v2.2s\n"
+            "fadd  v5.2s,  v15.2s,  v2.2s\n"
+            "fmul  v6.2s,  v14.2s,  v1.2s\n"
+            "fmul  v7.2s,  v15.2s,  v1.2s\n"
+            "fmax  v4.2s,  v4.2s,  v0.2s\n"
+            "fmax  v5.2s,  v5.2s,  v0.2s\n"
+            "fmin  v4.2s,  v4.2s,  v3.2s\n"
+            "fmin  v5.2s,  v5.2s,  v3.2s\n"
+            "fmul  v14.2s, v4.2s,  v6.2s\n"
+            "fmul  v15.2s, v5.2s,  v7.2s\n"
+            "fadd  v4.2s,  v16.2s,  v2.2s\n"
+            "fadd  v5.2s,  v17.2s,  v2.2s\n"
+            "fmul  v6.2s,  v16.2s,  v1.2s\n"
+            "fmul  v7.2s,  v17.2s,  v1.2s\n"
+            "fmax  v4.2s,  v4.2s,  v0.2s\n"
+            "fmax  v5.2s,  v5.2s,  v0.2s\n"
+            "fmin  v4.2s,  v4.2s,  v3.2s\n"
+            "fmin  v5.2s,  v5.2s,  v3.2s\n"
+            "fmul  v16.2s, v4.2s,  v6.2s\n"
+            "fmul  v17.2s, v5.2s,  v7.2s\n"
+            "fadd  v4.2s,  v18.2s,  v2.2s\n"
+            "fadd  v5.2s,  v19.2s,  v2.2s\n"
+            "fmul  v6.2s,  v18.2s,  v1.2s\n"
+            "fmul  v7.2s,  v19.2s,  v1.2s\n"
+            "fmax  v4.2s,  v4.2s,  v0.2s\n"
+            "fmax  v5.2s,  v5.2s,  v0.2s\n"
+            "fmin  v4.2s,  v4.2s,  v3.2s\n"
+            "fmin  v5.2s,  v5.2s,  v3.2s\n"
+            "fmul  v18.2s, v4.2s,  v6.2s\n"
+            "fmul  v19.2s, v5.2s,  v7.2s\n"
+            "fadd  v4.2s,  v20.2s,  v2.2s\n"
+            "fadd  v5.2s,  v21.2s,  v2.2s\n"
+            "fmul  v6.2s,  v20.2s,  v1.2s\n"
+            "fmul  v7.2s,  v21.2s,  v1.2s\n"
+            "fmax  v4.2s,  v4.2s,  v0.2s\n"
+            "fmax  v5.2s,  v5.2s,  v0.2s\n"
+            "fmin  v4.2s,  v4.2s,  v3.2s\n"
+            "fmin  v5.2s,  v5.2s,  v3.2s\n"
+            "fmul  v20.2s, v4.2s,  v6.2s\n"
+            "fmul  v21.2s, v5.2s,  v7.2s\n"
+            "fadd  v4.2s,  v22.2s,  v2.2s\n"
+            "fadd  v5.2s,  v23.2s,  v2.2s\n"
+            "fmul  v6.2s,  v22.2s,  v1.2s\n"
+            "fmul  v7.2s,  v23.2s,  v1.2s\n"
+            "fmax  v4.2s,  v4.2s,  v0.2s\n"
+            "fmax  v5.2s,  v5.2s,  v0.2s\n"
+            "fmin  v4.2s,  v4.2s,  v3.2s\n"
+            "fmin  v5.2s,  v5.2s,  v3.2s\n"
+            "fmul  v22.2s, v4.2s,  v6.2s\n"
+            "fmul  v23.2s, v5.2s,  v7.2s\n"
+            "fadd  v4.2s,  v24.2s,  v2.2s\n"
+            "fadd  v5.2s,  v25.2s,  v2.2s\n"
+            "fmul  v6.2s,  v24.2s,  v1.2s\n"
+            "fmul  v7.2s,  v25.2s,  v1.2s\n"
+            "fmax  v4.2s,  v4.2s,  v0.2s\n"
+            "fmax  v5.2s,  v5.2s,  v0.2s\n"
+            "fmin  v4.2s,  v4.2s,  v3.2s\n"
+            "fmin  v5.2s,  v5.2s,  v3.2s\n"
+            "fmul  v24.2s, v4.2s,  v6.2s\n"
+            "fmul  v25.2s, v5.2s,  v7.2s\n"
+            "fadd  v4.2s,  v26.2s,  v2.2s\n"
+            "fadd  v5.2s,  v27.2s,  v2.2s\n"
+            "fmul  v6.2s,  v26.2s,  v1.2s\n"
+            "fmul  v7.2s,  v27.2s,  v1.2s\n"
+            "fmax  v4.2s,  v4.2s,  v0.2s\n"
+            "fmax  v5.2s,  v5.2s,  v0.2s\n"
+            "fmin  v4.2s,  v4.2s,  v3.2s\n"
+            "fmin  v5.2s,  v5.2s,  v3.2s\n"
+            "fmul  v26.2s, v4.2s,  v6.2s\n"
+            "fmul  v27.2s, v5.2s,  v7.2s\n"
+            "fadd  v4.2s,  v28.2s,  v2.2s\n"
+            "fadd  v5.2s,  v29.2s,  v2.2s\n"
+            "fmul  v6.2s,  v28.2s,  v1.2s\n"
+            "fmul  v7.2s,  v29.2s,  v1.2s\n"
+            "fmax  v4.2s,  v4.2s,  v0.2s\n"
+            "fmax  v5.2s,  v5.2s,  v0.2s\n"
+            "fmin  v4.2s,  v4.2s,  v3.2s\n"
+            "fmin  v5.2s,  v5.2s,  v3.2s\n"
+            "fmul  v28.2s, v4.2s,  v6.2s\n"
+            "fmul  v29.2s, v5.2s,  v7.2s\n"
+            "fadd  v4.2s,  v30.2s,  v2.2s\n"
+            "fadd  v5.2s,  v31.2s,  v2.2s\n"
+            "fmul  v6.2s,  v30.2s,  v1.2s\n"
+            "fmul  v7.2s,  v31.2s,  v1.2s\n"
+            "fmax  v4.2s,  v4.2s,  v0.2s\n"
+            "fmax  v5.2s,  v5.2s,  v0.2s\n"
+            "fmin  v4.2s,  v4.2s,  v3.2s\n"
+            "fmin  v5.2s,  v5.2s,  v3.2s\n"
+            "fmul  v30.2s, v4.2s,  v6.2s\n"
+            "fmul  v31.2s, v5.2s,  v7.2s\n"
+            "b 5f\n"
+            "8: \n"// leakyrelu
             "fcmge v2.2s, v8.2s, v0.2s\n"
             "fmul v3.2s, v8.2s, v1.2s\n"
             "fcmge v4.2s, v9.2s, v0.2s\n"
@@ -809,6 +940,8 @@ void sgemm_prepacked_8x6_a35(bool is_transB,
               [has_beta] "r"(has_beta),
               [beta] "r"(beta),
               [alpha] "r"(alpha),
+              [offset] "r"(offset),
+              [threshold] "r"(threshold),
               [tail] "r"(tail),
               [flag_act] "r"(flag_act)
             : "cc","memory",
@@ -854,8 +987,8 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
   auto* workspace = ctx->workspace_data<float>();
   int threads = ctx->threads();
   auto act_type = act_param.active_type;
-  float alpha[4] = {0.f, 0.f, 0.f, 0.f};
-  int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
+  float alpha[12] = {0.f};
+  int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3, hardswish: 4
   if (act_param.has_active) {
     if (act_type == lite_api::ActivationType::kRelu) {
       flag_act = 0x01;
@@ -873,6 +1006,13 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
       alpha[1] = local_alpha;
       alpha[2] = local_alpha;
       alpha[3] = local_alpha;
+    } else if (act_type == lite_api::ActivationType::kHardSwish) {
+      flag_act = 0x04;
+      for (int i = 0; i < 4; i++) {
+        alpha[i] = act_param.hard_swish_offset;
+        alpha[i + 4] = 1.0 / act_param.hard_swish_scale;
+        alpha[i + 8] = act_param.hard_swish_threshold;
+      }
     }
   }
   X_BLOCK_COMPUTE(l2_cache, MBLOCK_A73, NBLOCK, M, N, K)
@@ -887,7 +1027,7 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
   bool flag_p_remain = false;
   int remain = 0;
   //! merge tail_pre and flag_act
-  tail_pre = (tail_pre << 2 | flag_act);
+  tail_pre = (tail_pre * 5 + flag_act);
 
   int has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
 
@@ -923,10 +1063,10 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
 
       float bias_local[4] = {0};
       if (has_bias) {
-        bias_local[0] = bias[y];
-        bias_local[1] = bias[y + 1];
-        bias_local[2] = bias[y + 2];
-        bias_local[3] = bias[y + 3];
+        int i = 0;
+        for (; i < 4 && y + i < ymax; i++) {
+          bias_local[i] = bias[y + i];
+        }
       }
 
       float* c_ptr0 = C + y * ldc + x0;
@@ -1072,8 +1212,8 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
             "add  %[a_ptr], %[a_ptr], #0x20       \n"
             "bne		1b                            @ jump to main loop\n"
             "0:                                   @ process tail\n"
-            "sub		%[tails], %[tails], #4        @ tail--\n"
-            "cmp    %[tails], #4                  @ cmp with act bits\n"
+            "sub		%[tails], %[tails], #5        @ tail--\n"
+            "cmp    %[tails], #5                  @ cmp with act bits\n"
             "blt		3f                            @ jump to tail = 1\n"
             /* Unroll 0*/
             "vldr d6, [%[b_ptr], #0x10]           \n"
@@ -1106,7 +1246,7 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
             "vmla.f32 q12, q4, d3[0]\n"
             "vmov d11, r0, r1                     \n"
             "vmla.f32 q14, q4, d3[1]\n"
-            "sub		%[tails], %[tails], #4        @ tail--\n"
+            "sub		%[tails], %[tails], #5        @ tail--\n"
 
             "vmla.f32 q9, q5, d2[0]\n"
             "add  %[b_ptr], %[b_ptr], #0x40       \n"
@@ -1172,34 +1312,83 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
             "vmin.f32   q14, q14, q1              @ for relu6\n"
             "vmin.f32   q15, q15, q1              @ for relu6\n"
             "b          10f                       @ relu6 end \n"
-            //! leakey relu
-            "7:                                   @ otherwise is leakey relu\n"
+            "7:                                   @ otherwise is leaky relu\n"
+            "cmp        %[tails], #3              @ check if has leaky relu\n"
+            "bne        8f                        @ jump if no leaky relu \n"
+            //! leaky relu
             "vmov.u32   q0,   #0                  @ for leakey relu \n"
             "vld1.f32   {d2-d3}, [%[alpha]]       @ load leakey relu alpha\n"
             "vcge.f32   q2, q8, q0                @ vcgeq_u32 \n"
             "vmul.f32   q3, q8, q1                @ vmulq_f32 \n"
+            "vcge.f32   q4, q9, q0                @ vcgeq_u32 \n"
+            "vmul.f32   q5, q9, q1                @ vmulq_f32 \n"
+            "vcge.f32   q6, q10, q0               @ vcgeq_u32 \n"
+            "vmul.f32   q7, q10, q1               @ vmulq_f32 \n"
             "vbif       q8, q3, q2                @ choose    \n"
-            "vcge.f32   q2, q9, q0                @ vcgeq_u32 \n"
-            "vmul.f32   q3, q9, q1                @ vmulq_f32 \n"
-            "vbif       q9, q3, q2                @ choose    \n"
-            "vcge.f32   q2, q10, q0               @ vcgeq_u32 \n"
-            "vmul.f32   q3, q10, q1               @ vmulq_f32 \n"
-            "vbif       q10, q3, q2               @ choose    \n"
+            "vbif       q9, q5, q4                @ choose    \n"
+            "vbif       q10, q7, q6               @ choose    \n"
             "vcge.f32   q2, q11, q0               @ vcgeq_u32 \n"
             "vmul.f32   q3, q11, q1               @ vmulq_f32 \n"
+            "vcge.f32   q4, q12, q0               @ vcgeq_u32 \n"
+            "vmul.f32   q5, q12, q1               @ vmulq_f32 \n"
+            "vcge.f32   q6, q13, q0               @ vcgeq_u32 \n"
+            "vmul.f32   q7, q13, q1               @ vmulq_f32 \n"
             "vbif       q11, q3, q2               @ choose    \n"
-            "vcge.f32   q2, q12, q0               @ vcgeq_u32 \n"
-            "vmul.f32   q3, q12, q1               @ vmulq_f32 \n"
-            "vbif       q12, q3, q2               @ choose    \n"
-            "vcge.f32   q2, q13, q0               @ vcgeq_u32 \n"
-            "vmul.f32   q3, q13, q1               @ vmulq_f32 \n"
-            "vbif       q13, q3, q2               @ choose    \n"
+            "vbif       q12, q5, q4               @ choose    \n"
+            "vbif       q13, q7, q6               @ choose    \n"
             "vcge.f32   q2, q14, q0               @ vcgeq_u32 \n"
             "vmul.f32   q3, q14, q1               @ vmulq_f32 \n"
+            "vcge.f32   q4, q15, q0               @ vcgeq_u32 \n"
+            "vmul.f32   q5, q15, q1               @ vmulq_f32 \n"
             "vbif       q14, q3, q2               @ choose    \n"
-            "vcge.f32   q2, q15, q0               @ vcgeq_u32 \n"
-            "vmul.f32   q3, q15, q1               @ vmulq_f32 \n"
-            "vbif       q15, q3, q2               @ choose    \n"
+            "vbif       q15, q5, q4               @ choose    \n"
+            "b          10f                       @ leaky relu end \n"
+            //! hard swish
+            "8:                                   \n"
+            "vmov.u32   q0,   #0                  @ for leakey relu \n"
+            "vld1.f32   {d2-d5}, [%[alpha]]!      @ load scale and offset\n"
+            "vadd.f32   q4,  q8, q1               \n"
+            "vadd.f32   q6,  q9, q1               \n"
+            "vmul.f32   q5,  q8, q2               \n"
+            "vmul.f32   q7,  q9, q2               \n"
+            "vld1.f32   {d6-d7}, [%[alpha]]       @ load threshold\n"
+            "vmax.f32   q4,  q4, q0               \n"
+            "vmax.f32   q6,  q6, q0               \n"
+            "sub        %[alpha], #32             \n"
+            "vmin.f32   q4,  q4, q3               \n"
+            "vmin.f32   q6,  q6, q3               \n"
+            "vmul.f32   q8,  q4, q5               \n"
+            "vmul.f32   q9,  q6, q7               \n"
+            "vadd.f32   q4,  q10, q1              \n"
+            "vadd.f32   q6,  q11, q1              \n"
+            "vmul.f32   q5,  q10, q2              \n"
+            "vmul.f32   q7,  q11, q2              \n"
+            "vmax.f32   q4,  q4, q0               \n"
+            "vmax.f32   q6,  q6, q0               \n"
+            "vmin.f32   q4,  q4, q3               \n"
+            "vmin.f32   q6,  q6, q3               \n"
+            "vmul.f32   q10, q4, q5               \n"
+            "vmul.f32   q11, q6, q7               \n"
+            "vadd.f32   q4,  q12, q1              \n"
+            "vadd.f32   q6,  q13, q1              \n"
+            "vmul.f32   q5,  q12, q2              \n"
+            "vmul.f32   q7,  q13, q2              \n"
+            "vmax.f32   q4,  q4, q0               \n"
+            "vmax.f32   q6,  q6, q0               \n"
+            "vmin.f32   q4,  q4, q3               \n"
+            "vmin.f32   q6,  q6, q3               \n"
+            "vmul.f32   q12, q4, q5               \n"
+            "vmul.f32   q13, q6, q7               \n"
+            "vadd.f32   q4,  q14, q1              \n"
+            "vadd.f32   q6,  q15, q1              \n"
+            "vmul.f32   q5,  q14, q2              \n"
+            "vmul.f32   q7,  q15, q2              \n"
+            "vmax.f32   q4,  q4, q0               \n"
+            "vmax.f32   q6,  q6, q0               \n"
+            "vmin.f32   q4,  q4, q3               \n"
+            "vmin.f32   q6,  q6, q3               \n"
+            "vmul.f32   q14, q4, q5               \n"
+            "vmul.f32   q15, q6, q7               \n"
             "10:                                  @ act end  \n"
             "vst1.32    {d16-d19},  [%[c_ptr0]]!    @ store r0\n"
             "vst1.32    {d20-d23},  [%[c_ptr1]]!    @ store r1\n"

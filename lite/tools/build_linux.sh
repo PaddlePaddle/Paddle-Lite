@@ -92,6 +92,7 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
 function set_benchmark_options {
   WITH_EXTRA=ON
   WITH_EXCEPTION=ON
+  WITH_NNADAPTER=ON
   if [ "${ARCH}" == "x86" ]; then
     # Turn off opencl. Additional third party library need to be installed on
     # Linux. Otherwise opencl is not supported on Linux. See link for more info:

@@ -14,6 +14,7 @@
 
 #include "driver/huawei_ascend_npu/utility.h"
 #include <map>
+#include <mutex>  // NOLINT
 #include <utility>
 #include "utility/debug.h"
 #include "utility/string.h"
@@ -21,25 +22,52 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-static void FinalizeAscendDevice() {
+static void FinalizeAscendCL() {
   NNADAPTER_VLOG(5) << "Finalize AscendCL.";
+  // The following APIs can only be called once in one process
+  aclFinalize();
+}
+
+void InitializeAscendCL() {
+  static std::mutex mtx;
+  static bool initialized = false;
+  mtx.lock();
+  if (!initialized) {
+    NNADAPTER_VLOG(5) << "Initialize AscendCL.";
+    // The following APIs can only be called once in one process
+    aclInit(NULL);
+    // Register 'FinalizeAscendCL' to be called at normal process termination
+    atexit(FinalizeAscendCL);
+    initialized = true;
+  }
+  mtx.unlock();
+}
+
+static void FinalizeGraphBuilder() {
+  NNADAPTER_VLOG(5) << "Finalize Graph Builder.";
   // The following APIs can only be called once in one process
   // TODO(hong19860320) fix the problem destruction order that the resource of
   // GE is released before the function is called.
   // ge::aclgrphBuildFinalize();
-  aclFinalize();
 }
 
-void InitializeAscendDevice() {
-  NNADAPTER_VLOG(5) << "Initialize AscendCL.";
-  // The following APIs can only be called once in one process
-  aclInit(NULL);
-  std::map<ge::AscendString, ge::AscendString> global_options;
-  global_options.insert(
-      std::make_pair(ge::ir_option::SOC_VERSION, "Ascend310"));
-  ge::aclgrphBuildInitialize(global_options);
-  // Register 'FinalizeAscendDevice' to be called at normal process termination
-  atexit(FinalizeAscendDevice);
+void InitializeGraphBuilder() {
+  static std::mutex mtx;
+  static bool initialized = false;
+  mtx.lock();
+  if (!initialized) {
+    NNADAPTER_VLOG(5) << "Initialize Graph Builder.";
+    // The following APIs can only be called once in one process
+    std::map<ge::AscendString, ge::AscendString> global_options;
+    global_options.insert(
+        std::make_pair(ge::ir_option::SOC_VERSION, "Ascend310"));
+    ge::aclgrphBuildInitialize(global_options);
+    // Register 'FinalizeGraphBuilder' to be called at normal process
+    // termination
+    atexit(FinalizeGraphBuilder);
+    initialized = true;
+  }
+  mtx.unlock();
 }
 
 const std::string ACLErrorToString(int error) {
@@ -142,6 +170,8 @@ bool BuildOMModelToBuffer(
     std::vector<ge::Operator>& input_operators,   // NOLINT
     std::vector<ge::Operator>& output_operators,  // NOLINT
     std::vector<uint8_t>* model_buffer) {
+  // Should initialize the GE graph builder before model building
+  InitializeGraphBuilder();
   // Convert the CANN IR graph to the CANN om model
   ge::Graph ir_graph("graph");
   // Set input operator attr index if node size > 1
@@ -353,42 +383,30 @@ void ConvertACLDimsToGEDims(const aclmdlIODims& input_dimensions,
 ge::DataType ConvertToGEPrecision(
     NNAdapterOperandPrecisionCode precision_code) {
   switch (precision_code) {
-    case NNADAPTER_TENSOR_BOOL8:
     case NNADAPTER_BOOL8:
       return ge::DT_BOOL;
-    case NNADAPTER_TENSOR_INT8:
     case NNADAPTER_INT8:
       return ge::DT_INT8;
-    case NNADAPTER_TENSOR_INT16:
     case NNADAPTER_INT16:
       return ge::DT_INT16;
-    case NNADAPTER_TENSOR_INT32:
     case NNADAPTER_INT32:
       return ge::DT_INT32;
-    case NNADAPTER_TENSOR_INT64:
     case NNADAPTER_INT64:
       return ge::DT_INT64;
-    case NNADAPTER_TENSOR_UINT8:
     case NNADAPTER_UINT8:
       return ge::DT_UINT8;
-    case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER:
+    case NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER:
       return ge::DT_QUINT8;
-    case NNADAPTER_TENSOR_UINT16:
     case NNADAPTER_UINT16:
       return ge::DT_UINT16;
-    case NNADAPTER_TENSOR_UINT32:
     case NNADAPTER_UINT32:
       return ge::DT_UINT32;
-    case NNADAPTER_TENSOR_UINT64:
     case NNADAPTER_UINT64:
       return ge::DT_UINT64;
-    case NNADAPTER_TENSOR_FLOAT16:
     case NNADAPTER_FLOAT16:
       return ge::DT_FLOAT16;
-    case NNADAPTER_TENSOR_FLOAT32:
     case NNADAPTER_FLOAT32:
       return ge::DT_FLOAT;
-    case NNADAPTER_TENSOR_FLOAT64:
     case NNADAPTER_FLOAT64:
       return ge::DT_DOUBLE;
     default:

@@ -24,10 +24,30 @@ namespace lite {
 namespace arm {
 namespace math {
 namespace fp16 {
-
+#ifdef __aarch64__
 const int OUT_C_BLOCK = 8;
 const int OUT_H_BLOCK = 2;
 const int OUT_W_BLOCK = 8;
+#else
+const int OUT_C_BLOCK = 8;
+const int OUT_H_BLOCK = 1;
+const int OUT_W_BLOCK = 8;
+#endif
+
+size_t conv3x3s1_direct_workspace_size(const operators::ConvParam& param,
+                                       ARMContext* ctx) {
+  auto dim_in = param.x->dims();
+  auto dim_out = param.output->dims();
+  auto paddings = *param.paddings;
+  int ow = dim_out[3];
+  int oh = dim_out[2];
+  int ic = dim_in[1];
+  DIRECT_WORKSPACE_COMPUTE(ctx, 3, 1, ow, oh, ic, OUT_C_BLOCK, OUT_H_BLOCK)
+  return sizeof(float16_t) * (pre_in_size + ctx->threads() * pre_out_size);
+}
+
+// clang-format off
+#ifdef __aarch64__
 #define COMPUT_INIT                     \
   float16_t* ptr_out0 = pre_out0;       \
   float16_t* ptr_out1 = pre_out1;       \
@@ -45,20 +65,6 @@ const int OUT_W_BLOCK = 8;
   const float16_t* r2 = inr2;           \
   const float16_t* r3 = inr3;
 
-size_t conv3x3s1_direct_workspace_size(const operators::ConvParam& param,
-                                       ARMContext* ctx) {
-  auto dim_in = param.x->dims();
-  auto dim_out = param.output->dims();
-  auto paddings = *param.paddings;
-  int ow = dim_out[3];
-  int oh = dim_out[2];
-  int ic = dim_in[1];
-  DIRECT_WORKSPACE_COMPUTE(ctx, 3, 1, ow, oh, ic, OUT_C_BLOCK, OUT_H_BLOCK)
-  return sizeof(float16_t) * (pre_in_size + ctx->threads() * pre_out_size);
-}
-
-// clang-format off
-#ifdef __aarch64__
 #define INIT_FIRST                   \
   "ldr q0, [%[r0]], #16\n"           \
   "ldr q4, [%[r1]], #16\n"           \
@@ -286,6 +292,158 @@ size_t conv3x3s1_direct_workspace_size(const operators::ConvParam& param,
     "v23", "v24", "v25", "v26", "v27", "v28", "v29", \
     "v30", "v31"
 #else
+#define COMPUT_INIT                     \
+  float16_t* ptr_out0 = pre_out0;       \
+  float16x8_t w0 = vld1q_f16(wc0);      \
+  float16x8_t w1 = vld1q_f16(wc0 + 8);  \
+  float16x8_t w2 = vld1q_f16(wc0 + 16); \
+  const float16_t* r0 = inr0;           \
+  const float16_t* r1 = inr1;           \
+  const float16_t* r2 = inr2;
+
+#define INIT_FIRST                   \
+  "2:\n"                             \
+  "vld1.32  {d6},  [%[r0]]!\n"       \
+  "vldr d10, [%[wc], #0x30]\n"       \
+  "vldr d11, [%[wc], #0x38]\n"       \
+  "vldr d12, [%[wc], #0x40]\n"       \
+  "vldr d13, [%[wc], #0x48]\n"       \
+  "vld1.32  {d7},  [%[r0]]!\n"       \
+  "vmul.f16 q8,  %q[w0],  d6[0]\n"   \
+  "vmul.f16 q9,  %q[w0],  d6[1]\n"   \
+  "vmul.f16 q10, %q[w0],  d6[2]\n"   \
+  "vmul.f16 q11, %q[w0],  d6[3]\n"   \
+  "vld1.32 {d4}, [%[r0]]\n"          \
+  "vmul.f16 q12, %q[w0],  d7[0]\n"   \
+  "vmul.f16 q13, %q[w0],  d7[1]\n"   \
+  "vmul.f16 q14, %q[w0],  d7[2]\n"   \
+  "vmul.f16 q15, %q[w0],  d7[3]\n"
+
+#define INIT                           \
+  "2:\n"                               \
+  "vld1.32 {d16-d19}, [%[ptr_out0]]!\n"\
+  "vld1.32  {d6},  [%[r0]]!\n"         \
+  "vldr d10, [%[wc], #0x30]\n"         \
+  "vldr d11, [%[wc], #0x38]\n"         \
+  "vld1.32 {d20-d23}, [%[ptr_out0]]!\n"\
+  "vldr d12, [%[wc], #0x40]\n"         \
+  "vldr d13, [%[wc], #0x48]\n"         \
+  "vld1.32  {d7},  [%[r0]]!\n"         \
+  "vld1.32 {d24-d27}, [%[ptr_out0]]!\n"\
+  "vmla.f16 q8,  %q[w0], d6[0]\n"      \
+  "vmla.f16 q9,  %q[w0], d6[1]\n"      \
+  "vld1.32 {d28-d31}, [%[ptr_out0]]\n" \
+  "vmla.f16 q10, %q[w0], d6[2]\n"      \
+  "vmla.f16 q11, %q[w0], d6[3]\n"      \
+  "vld1.32 {d4}, [%[r0]]\n"            \
+  "sub      %[ptr_out0], #96\n"        \
+  "vmla.f16 q12, %q[w0], d7[0]\n"      \
+  "vmla.f16 q13, %q[w0], d7[1]\n"      \
+  "vmla.f16 q14, %q[w0], d7[2]\n"      \
+  "vmla.f16 q15, %q[w0], d7[3]\n"
+
+#define COMPUTE                        \
+  /* r0-1 */                           \
+  "vmla.f16 q8,  %q[w1], d6[1]\n"      \
+  "vmla.f16 q9,  %q[w1], d6[2]\n"      \
+  "vmla.f16 q10, %q[w1], d6[3]\n"      \
+  "vmla.f16 q11, %q[w1], d7[0]\n"      \
+  "vmla.f16 q12, %q[w1], d7[1]\n"      \
+  "vmla.f16 q13, %q[w1], d7[2]\n"      \
+  "vmla.f16 q14, %q[w1], d7[3]\n"      \
+  "vmla.f16 q15, %q[w1], d4[0]\n"      \
+  /* r0-2 */                           \
+  "vmla.f16 q8,  %q[w2], d6[2]\n"      \
+  "vmla.f16 q9,  %q[w2], d6[3]\n"      \
+  "vld1.32  {d6},  [%[r1]]!\n"         \
+  "vmla.f16 q10, %q[w2], d7[0]\n"      \
+  "vmla.f16 q11, %q[w2], d7[1]\n"      \
+  "vldr d14, [%[wc], #0x50]\n"         \
+  "vmla.f16 q12, %q[w2], d7[2]\n"      \
+  "vmla.f16 q13, %q[w2], d7[3]\n"      \
+  "vld1.32  {d7},  [%[r1]]!\n"         \
+  "vmla.f16 q14, %q[w2], d4[0]\n"      \
+  "vmla.f16 q15, %q[w2], d4[1]\n"      \
+  "vldr d15, [%[wc], #0x58]\n"         \
+  "vldr    d4,  [%[r1]]\n"             \
+  /* r1-0 */                           \
+  "vmla.f16 q8,  q5, d6[0]\n"          \
+  "vmla.f16 q9,  q5, d6[1]\n"          \
+  "vmla.f16 q10, q5, d6[2]\n"          \
+  "vmla.f16 q11, q5, d6[3]\n"          \
+  "vmla.f16 q12, q5, d7[0]\n"          \
+  "vmla.f16 q13, q5, d7[1]\n"          \
+  "vmla.f16 q14, q5, d7[2]\n"          \
+  "vmla.f16 q15, q5, d7[3]\n"          \
+  "vldr d10, [%[wc], #0x60]\n"         \
+  /* r1-1 */                           \
+  "vmla.f16 q8,  q6, d6[1]\n"          \
+  "vmla.f16 q9,  q6, d6[2]\n"          \
+  "vmla.f16 q10, q6, d6[3]\n"          \
+  "vmla.f16 q11, q6, d7[0]\n"          \
+  "vldr d11, [%[wc], #0x68]\n"         \
+  "vmla.f16 q12, q6, d7[1]\n"          \
+  "vmla.f16 q13, q6, d7[2]\n"          \
+  "vmla.f16 q14, q6, d7[3]\n"          \
+  "vmla.f16 q15, q6, d4[0]\n"          \
+  "vldr d12, [%[wc], #0x70]\n"         \
+  /* r1-2 */                           \
+  "vmla.f16 q8,  q7, d6[2]\n"          \
+  "vmla.f16 q9,  q7, d6[3]\n"          \
+  "vld1.32  {d6},  [%[r2]]!\n"         \
+  "vmla.f16 q10, q7, d7[0]\n"          \
+  "vmla.f16 q11, q7, d7[1]\n"          \
+  "vldr d13, [%[wc], #0x78]\n"         \
+  "vmla.f16 q12, q7, d7[2]\n"          \
+  "vmla.f16 q13, q7, d7[3]\n"          \
+  "vld1.32  {d7},  [%[r2]]!\n"         \
+  "vmla.f16 q14, q7, d4[0]\n"          \
+  "vmla.f16 q15, q7, d4[1]\n"          \
+  "vldr d14, [%[wc], #0x80]\n"         \
+  "vldr    d4,  [%[r2]]\n"             \
+  "vldr d15, [%[wc], #0x88]\n"         \
+  /* r2-0 */                           \
+  "vmla.f16 q8,  q5, d6[0]\n"          \
+  "vmla.f16 q9,  q5, d6[1]\n"          \
+  "vmla.f16 q10, q5, d6[2]\n"          \
+  "vmla.f16 q11, q5, d6[3]\n"          \
+  "vmla.f16 q12, q5, d7[0]\n"          \
+  "vmla.f16 q13, q5, d7[1]\n"          \
+  "vmla.f16 q14, q5, d7[2]\n"          \
+  "vmla.f16 q15, q5, d7[3]\n"          \
+  /* r2-1 */                           \
+  "vmla.f16 q8,  q6, d6[1]\n"          \
+  "vmla.f16 q9,  q6, d6[2]\n"          \
+  "vmla.f16 q10, q6, d6[3]\n"          \
+  "vmla.f16 q11, q6, d7[0]\n"          \
+  "vmla.f16 q12, q6, d7[1]\n"          \
+  "vmla.f16 q13, q6, d7[2]\n"          \
+  "vmla.f16 q14, q6, d7[3]\n"          \
+  "vmla.f16 q15, q6, d4[0]\n"          \
+  /* r2-2 */                           \
+  "vmla.f16 q8,  q7, d6[2]\n"          \
+  "vmla.f16 q9,  q7, d6[3]\n"          \
+  "vmla.f16 q10, q7, d7[0]\n"          \
+  "vmla.f16 q11, q7, d7[1]\n"          \
+  "vmla.f16 q12, q7, d7[2]\n"          \
+  "vmla.f16 q13, q7, d7[3]\n"          \
+  "vst1.32  {d16-d19}, [%[ptr_out0]]!\n"\
+  "subs %[cnt], #1\n"                  \
+  "vmla.f16 q14, q7, d4[0]\n"          \
+  "vmla.f16 q15, q7, d4[1]\n"          \
+  "vst1.32  {d20-d23}, [%[ptr_out0]]!\n"\
+  "vst1.32  {d24-d27}, [%[ptr_out0]]!\n"\
+  "vst1.32  {d28-d31}, [%[ptr_out0]]!\n"\
+  "bne    2b\n"
+#define ASM_PARAM                                  \
+  : [cnt] "+r"(cnt), [r0] "+r"(r0), [r1] "+r"(r1), \
+    [r2] "+r"(r2), [ptr_out0] "+r"(ptr_out0)       \
+  : [w0] "w"(w0), [w1] "w"(w1), [w2] "w"(w2),      \
+    [wc] "r"(wc0)                                  \
+  : "cc", "memory", "q2", "q3", "q5", "q6", "q7",  \
+    "q8", "q9", "q10", "q11", "q12", "q13", "q14", \
+    "q15"
+
 #endif
 // clang-format on
 
@@ -386,11 +544,11 @@ void conv_3x3s1_direct_fp16(const float16_t* i_data,
           const float16_t* inr0 = block_inr0;
           const float16_t* inr1 = block_inr1;
           const float16_t* inr2 = block_inr2;
-          const float16_t* inr3 = block_inr3;
 
           float16_t* pre_out0 = pre_out + hk * out_row_stride;
-          float16_t* pre_out1 = pre_out0 + out_row_stride;
 #ifdef __aarch64__
+          const float16_t* inr3 = block_inr3;
+          float16_t* pre_out1 = pre_out0 + out_row_stride;
           // first
           if (1) {
             COMPUT_INIT
@@ -414,12 +572,36 @@ void conv_3x3s1_direct_fp16(const float16_t* i_data,
             inr2 += win_round;
             inr3 += win_round;
           }
-#else   // not __aarch64__
-#endif  // __aarch64__
           block_inr0 = block_inr2;
           block_inr1 = block_inr3;
           block_inr2 = block_inr1 + in_len;
           block_inr3 = block_inr2 + in_len;
+#else   // not __aarch64__
+          // first
+          if (1) {
+            COMPUT_INIT
+
+            int cnt = w_loop;
+            asm volatile(INIT_FIRST COMPUTE ASM_PARAM);
+            wc0 += 9 * OUT_C_BLOCK;
+            inr0 += win_round;
+            inr1 += win_round;
+            inr2 += win_round;
+          }
+          for (int i = 0; i < ic - 1; ++i) {
+            COMPUT_INIT
+
+            int cnt = w_loop;
+            asm volatile(INIT COMPUTE ASM_PARAM);
+            wc0 += 9 * OUT_C_BLOCK;
+            inr0 += win_round;
+            inr1 += win_round;
+            inr2 += win_round;
+          }
+          block_inr0 = block_inr1;
+          block_inr1 = block_inr2;
+          block_inr2 = block_inr1 + in_len;
+#endif  // __aarch64__
         }
         write_to_oc8_fp16(pre_out,
                           dout_batch,

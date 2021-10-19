@@ -520,6 +520,22 @@ REGISTER_LITE_KERNEL(greater_than, kHost, kFloat, kAny, greater_than_float, def)
     .BindPaddleOpVersion("greater_than", 1)
     .Finalize();
 
+using greater_than_bool = paddle::lite::kernels::host::CompareCompute<
+    PRECISION(kFloat),
+    paddle::lite::kernels::host::_GreaterThanFunctor<bool>>;
+REGISTER_LITE_KERNEL(greater_than, kHost, kFloat, kAny, greater_than_bool, bool)
+    .BindInput("X",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kBool), DATALAYOUT(kAny), -1)})
+    .BindInput("Y",
+               {LiteType::GetTensorTy(
+                   TARGET(kHost), PRECISION(kBool), DATALAYOUT(kAny), -1)})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(
+                    TARGET(kHost), PRECISION(kBool), DATALAYOUT(kAny), -1)})
+    .BindPaddleOpVersion("greater_than", 1)
+    .Finalize();
+
 using greater_than_int32 = paddle::lite::kernels::host::CompareCompute<
     PRECISION(kInt32),
     paddle::lite::kernels::host::_GreaterThanFunctor<int32_t>>;
@@ -591,10 +607,10 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 
 using greater_equal_int64 = paddle::lite::kernels::host::CompareCompute<
-    PRECISION(kInt64),
+    PRECISION(kFloat),
     paddle::lite::kernels::host::_GreaterEqualFunctor<int64_t>>;
 REGISTER_LITE_KERNEL(
-    greater_equal, kHost, kInt64, kAny, greater_equal_float, def)
+    greater_equal, kHost, kFloat, kAny, greater_equal_int64, def_int64)
     .BindInput("X",
                {LiteType::GetTensorTy(
                    TARGET(kHost), PRECISION(kInt64), DATALAYOUT(kAny), -1)})

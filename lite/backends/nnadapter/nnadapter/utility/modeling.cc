@@ -117,27 +117,15 @@ NNADAPTER_EXPORT hal::Operand* AddFloat32ConstantOperand(hal::Model* model,
 NNADAPTER_EXPORT hal::Operand* AddInt32ConstantOperand(
     hal::Model* model, std::vector<int32_t> values) {
   std::vector<int32_t> dimensions({static_cast<int32_t>(values.size())});
-  return AddOperand(model,
-                    dimensions,
-                    NNADAPTER_TENSOR_INT32,
-                    nullptr,
-                    nullptr,
-                    0,
-                    0,
-                    &values[0]);
+  return AddOperand(
+      model, dimensions, NNADAPTER_INT32, nullptr, nullptr, 0, 0, &values[0]);
 }
 
 NNADAPTER_EXPORT hal::Operand* AddFloat32ConstantOperand(
     hal::Model* model, std::vector<float> values) {
   std::vector<int32_t> dimensions({static_cast<int32_t>(values.size())});
-  return AddOperand(model,
-                    dimensions,
-                    NNADAPTER_TENSOR_FLOAT32,
-                    nullptr,
-                    nullptr,
-                    0,
-                    0,
-                    &values[0]);
+  return AddOperand(
+      model, dimensions, NNADAPTER_FLOAT32, nullptr, nullptr, 0, 0, &values[0]);
 }
 
 NNADAPTER_EXPORT hal::Operand* AddInt32ConstantOperand(
@@ -145,15 +133,8 @@ NNADAPTER_EXPORT hal::Operand* AddInt32ConstantOperand(
     int32_t* values,
     const std::vector<int32_t>& dimensions,
     bool copy) {
-  return AddOperand(model,
-                    dimensions,
-                    NNADAPTER_TENSOR_INT32,
-                    nullptr,
-                    nullptr,
-                    0,
-                    0,
-                    values,
-                    copy);
+  return AddOperand(
+      model, dimensions, NNADAPTER_INT32, nullptr, nullptr, 0, 0, values, copy);
 }
 
 NNADAPTER_EXPORT hal::Operand* AddFloat32ConstantOperand(
@@ -163,7 +144,7 @@ NNADAPTER_EXPORT hal::Operand* AddFloat32ConstantOperand(
     bool copy) {
   return AddOperand(model,
                     dimensions,
-                    NNADAPTER_TENSOR_FLOAT32,
+                    NNADAPTER_FLOAT32,
                     nullptr,
                     nullptr,
                     0,
@@ -180,7 +161,7 @@ NNADAPTER_EXPORT hal::Operand* AddQuant8ConstantOperand(
     bool copy) {
   return AddOperand(model,
                     dimensions,
-                    NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER,
+                    NNADAPTER_QUANT_INT8_SYMM_PER_LAYER,
                     &quant_scale,
                     nullptr,
                     1,
@@ -199,7 +180,7 @@ NNADAPTER_EXPORT hal::Operand* AddQuant8ConstantOperand(
     bool copy) {
   return AddOperand(model,
                     dimensions,
-                    NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL,
+                    NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL,
                     quant_scales,
                     nullptr,
                     quant_scale_count,
@@ -217,7 +198,7 @@ NNADAPTER_EXPORT hal::Operand* AddQuant8ConstantOperand(
     bool copy) {
   return AddOperand(model,
                     dimensions,
-                    NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER,
+                    NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER,
                     &quant_scale,
                     &zero_point,
                     1,
@@ -234,7 +215,7 @@ NNADAPTER_EXPORT hal::Operand* AddQuant32ConstantOperand(
     bool copy) {
   return AddOperand(model,
                     dimensions,
-                    NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER,
+                    NNADAPTER_QUANT_INT32_SYMM_PER_LAYER,
                     &quant_scale,
                     nullptr,
                     1,
@@ -253,7 +234,7 @@ NNADAPTER_EXPORT hal::Operand* AddQuant32ConstantOperand(
     bool copy) {
   return AddOperand(model,
                     dimensions,
-                    NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL,
+                    NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL,
                     quant_scales,
                     nullptr,
                     quant_scale_count,
@@ -271,7 +252,7 @@ NNADAPTER_EXPORT hal::Operand* AddQuant32ConstantOperand(
     bool copy) {
   return AddOperand(model,
                     dimensions,
-                    NNADAPTER_TENSOR_QUANT_UINT32_ASYMM_PER_LAYER,
+                    NNADAPTER_QUANT_UINT32_ASYMM_PER_LAYER,
                     &quant_scale,
                     &zero_point,
                     1,
@@ -286,7 +267,7 @@ NNADAPTER_EXPORT hal::Operand* AddQuant8VariableOperand(
     float quant_scale) {
   return AddOperand(model,
                     dimensions,
-                    NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER,
+                    NNADAPTER_QUANT_INT8_SYMM_PER_LAYER,
                     &quant_scale,
                     nullptr,
                     1,
@@ -302,7 +283,7 @@ NNADAPTER_EXPORT hal::Operand* AddQuant8VariableOperand(
     int32_t zero_point) {
   return AddOperand(model,
                     dimensions,
-                    NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER,
+                    NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER,
                     &quant_scale,
                     &zero_point,
                     1,
@@ -315,7 +296,7 @@ NNADAPTER_EXPORT hal::Operand* AddFloat32VariableOperand(
     hal::Model* model, const std::vector<int32_t>& dimensions) {
   return AddOperand(model,
                     dimensions,
-                    NNADAPTER_TENSOR_FLOAT32,
+                    NNADAPTER_FLOAT32,
                     nullptr,
                     nullptr,
                     0,
@@ -588,6 +569,62 @@ NNADAPTER_EXPORT hal::Operand* AddUnaryOperation(
   unary_operation->input_operands = {input_operand};
   unary_operation->output_operands = {output_operand};
   return output_operand;
+}
+
+NNADAPTER_EXPORT hal::Operand* AddRequantOperation(
+    hal::Model* model,
+    hal::Operation* operation,
+    hal::Operand* target_operand,
+    hal::Operand* reference_operand) {
+  // Insert a new operand before output_operand
+  auto immediate_operand = AddOperand(model);
+  // Make the quantization parameters and precision of the immediate operand the
+  // same as output's
+  memcpy(&immediate_operand->type,
+         &reference_operand->type,
+         sizeof(NNAdapterOperandType));
+  // Update to the dimensions of input operand, and update the input operand of
+  // the operation with immediate_operand
+  immediate_operand->type.dimensions = target_operand->type.dimensions;
+  // Add a zero addend operand
+  auto zero_operand = AddOperand(model);
+  memset(&zero_operand->type, 0, sizeof(NNAdapterOperandType));
+  zero_operand->type.precision = reference_operand->type.precision;
+  zero_operand->type.dimensions.count = 1;
+  zero_operand->type.dimensions.data[0] = 1;
+  zero_operand->length =
+      GetOperandPrecisionDataLength(zero_operand->type.precision);
+  zero_operand->buffer = malloc(zero_operand->length);
+  NNADAPTER_CHECK(zero_operand->buffer != nullptr)
+      << "Failed to allocate " << zero_operand->length
+      << " bytes for the buffer of an operand, out of memory!";
+  memset(zero_operand->buffer, 0, zero_operand->length);
+  zero_operand->type.lifetime = NNADAPTER_CONSTANT_COPY;
+  auto fuse_code_operand = AddInt32ConstantOperand(model, 0);
+  // Insert a dummy ADD operation before or after target_operand
+  auto dummy_add_operation = AddOperation(model);
+  dummy_add_operation->type = NNADAPTER_ADD;
+  // After target_operand
+  for (auto& operand : operation->input_operands) {
+    if (operand == target_operand) {
+      dummy_add_operation->input_operands = {
+          target_operand, zero_operand, fuse_code_operand};
+      dummy_add_operation->output_operands = {immediate_operand};
+      operand = immediate_operand;
+      break;
+    }
+  }
+  // Before target_operand
+  for (auto& operand : operation->output_operands) {
+    if (operand == target_operand) {
+      dummy_add_operation->input_operands = {
+          immediate_operand, zero_operand, fuse_code_operand};
+      dummy_add_operation->output_operands = {target_operand};
+      operand = immediate_operand;
+      break;
+    }
+  }
+  return immediate_operand;
 }
 
 NNADAPTER_EXPORT std::vector<hal::Operation*> SortOperationsInTopologicalOrder(

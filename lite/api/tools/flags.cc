@@ -46,6 +46,10 @@ DEFINE_string(opencl_tuned_file,
               "paddle_lite_opencl_tuned.params",
               opencl_tuned_file_msg);
 DEFINE_string(opencl_tune_mode, "normal", opencl_tune_mode_msg);
+DEFINE_string(nnadapter_device_names, "", nnadapter_device_names_msg);
+DEFINE_string(nnadapter_context_properties,
+              "",
+              nnadapter_context_properties_msg);
 
 // Profiling options
 DEFINE_bool(enable_op_time_profile, false, enable_op_time_profile_msg);

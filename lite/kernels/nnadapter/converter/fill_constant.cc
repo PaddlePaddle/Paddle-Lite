@@ -30,7 +30,7 @@ int ConvertFillConstant(Converter* converter, OpInfo* op, Scope* scope) {
           shape_precision == PRECISION(kInt32))
         << "Shape's data type should be int32 or int64, but received "
         << lite_api::PrecisionToStr(shape_precision);
-    shape_operand = converter->GetMappedOperand(shape_name);
+    shape_operand = converter->AddInputOperand(scope, shape_name);
   } else if (op->HasInput("ShapeTensorList") &&
              !op->Input("ShapeTensorList").empty()) {
     // TODO(zhupengyang): Use concat to generate shape_operand later
@@ -49,7 +49,7 @@ int ConvertFillConstant(Converter* converter, OpInfo* op, Scope* scope) {
   NNAdapterOperand* value_operand = nullptr;
   if (HasInput(op, scope, "ValueTensor")) {
     auto value_name = op->Input("ValueTensor").front();
-    value_operand = converter->GetMappedOperand(value_name);
+    value_operand = converter->AddInputOperand(scope, value_name);
   } else if (op->HasInput("str_value") &&
              !op->GetAttr<std::string>("str_value").empty()) {
     // TODO(zhupengyang): support str_value later

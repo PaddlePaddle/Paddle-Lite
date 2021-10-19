@@ -51,7 +51,7 @@ set(cuda_kernels CACHE INTERNAL "cuda kernels")
 function(add_kernel TARGET device level)
     set(options "")
     set(oneValueArgs "")
-    set(multiValueArgs SRCS )
+    set(multiValueArgs SRCS)
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
 
@@ -101,7 +101,7 @@ function(add_kernel TARGET device level)
         foreach(src ${args_SRCS})
           file(APPEND ${kernels_src_list} "${CMAKE_CURRENT_SOURCE_DIR}/${src}\n")
         endforeach()
-        nv_library(${TARGET} SRCS ${args_SRCS} DEPS ${args_DEPS})
+        nv_library(${TARGET} SRCS ${args_SRCS})
         return()
     endif()
 
@@ -113,10 +113,6 @@ function(add_kernel TARGET device level)
     endforeach()
 
 endfunction()
-
-
-
-
 
 function(cc_binary TARGET_NAME)
   set(options "")
@@ -198,6 +194,9 @@ function(lite_cc_test TARGET)
   endif()
 
   # link to dynamic runtime lib
+  if(LITE_WITH_XPU)
+      target_link_libraries(${TARGET} ${xpu_builder_libs} ${xpu_runtime_libs})
+  endif()
   if(LITE_WITH_RKNPU)
       target_link_libraries(${TARGET} ${rknpu_runtime_libs})
   endif()
@@ -223,3 +222,46 @@ function(lite_cc_test TARGET)
   set_tests_properties(${TARGET} PROPERTIES TIMEOUT 600)
 
 endfunction()
+
+# ----------------------------------------------------------------------------
+# section: Provides an paddle lite config option macro
+# usage：  lite_option(var "help string to describe the var" [if or IF (condition)])
+# ----------------------------------------------------------------------------
+macro(lite_option variable description value)
+    set(__value ${value})
+    set(__condition "")
+    set(__varname "__value")
+    foreach(arg ${ARGN})
+        if(arg STREQUAL "IF" OR arg STREQUAL "if")
+            set(__varname "__condition")
+        else()
+            list(APPEND ${__varname} ${arg})
+        endif()
+    endforeach()
+    unset(__varname)
+    if(__condition STREQUAL "")
+        set(__condition 2 GREATER 1)
+    endif()
+
+    if(${__condition})
+        if(__value MATCHES ";")
+            if(${__value})
+                option(${variable} "${description}" ON)
+            else()
+                option(${variable} "${description}" OFF)
+            endif()
+        elseif(DEFINED ${__value})
+            if(${__value})
+                option(${variable} "${description}" ON)
+            else()
+                option(${variable} "${description}" OFF)
+            endif()
+        else()
+             option(${variable} "${description}" ${__value})
+        endif()
+    else()
+        unset(${variable} CACHE)
+    endif()
+    unset(__condition)
+    unset(__value)
+endmacro()

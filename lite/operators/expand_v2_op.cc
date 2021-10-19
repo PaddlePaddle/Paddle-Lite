@@ -19,19 +19,17 @@ namespace lite {
 namespace operators {
 
 bool ExpandV2OpLite::CheckShape() const {
-  CHECK_OR_FALSE(param_.X);
-  CHECK_OR_FALSE(param_.Out);
+  CHECK(param_.X);
+  CHECK(param_.Out);
+  return true;
+}
 
-  int x_dims_size = param_.X->dims().size();
-  CHECK_GE(x_dims_size, 1u)
-      << "The rank of Input(X) must be greater than or equal to 1.";
-  CHECK_LE(x_dims_size, 6u)
-      << "The rank of Input(X) must not be greater than 6.";
+bool ExpandV2OpLite::InferShapeImpl() const {
   std::vector<int> expand_shape;
   if (param_.Shape != nullptr) {
-    auto Shape_data = param_.Shape->template data<int>();
+    auto shape_data = param_.Shape->template data<int>();
     for (int64_t i = 0; i < param_.Shape->numel(); i++) {
-      expand_shape.push_back(Shape_data[i]);
+      expand_shape.push_back(shape_data[i]);
     }
   } else if (!param_.expand_shapes_tensor.empty()) {
     for (size_t i = 0; i < param_.expand_shapes_tensor.size(); i++) {
@@ -41,50 +39,19 @@ bool ExpandV2OpLite::CheckShape() const {
   } else {
     expand_shape = param_.shape;
   }
-  auto shape_size = expand_shape.size();
-  CHECK_GE(shape_size, x_dims_size) << "The size of shape for expand_v2 op "
-                                       "must be greater than or equal to the "
-                                       "size of the input.";
-  const auto* x = param_.X;
-  DDim in_shape = x->dims();
-  std::vector<int64_t> vec_in_dims;
-  for (int i = 0; i < in_shape.size(); ++i) vec_in_dims.push_back(in_shape[i]);
-  auto diff = expand_shape.size() - vec_in_dims.size();
-  vec_in_dims.insert(vec_in_dims.begin(), diff, 1);
-  repeat_times_.resize(vec_in_dims.size());
-  new_in_dims_.ConstructFrom(vec_in_dims);
-  for (size_t i = 0; i < vec_in_dims.size(); ++i) {
-    CHECK_NE(expand_shape[i], 0) << "The expanded size cannot be zero.";
-    if (i < diff) {
-      CHECK_GT(expand_shape[i], 0) << "The expanded size for non-existing "
-                                      "dimensions must be positive for "
-                                      "expand_v2 op.";
-      repeat_times_[i] = expand_shape[i];
-    } else if (expand_shape[i] > 0) {
-      if (vec_in_dims[i] != 1) {
-        CHECK_EQ(vec_in_dims[i], expand_shape[i])
-            << "The value of the non-singleton dimension must match the "
-               "corresponding value in shape for expand_v2 op.";
-        repeat_times_[i] = 1;
-      } else {
-        repeat_times_[i] = expand_shape[i];
-      }
-    } else {
-      CHECK_EQ(expand_shape[i], -1) << "When the value in shape is negative "
-                                       "for expand_v2 op, only -1 is supported";
-      repeat_times_[i] = 1;
+
+  std::vector<int64_t> x_shape = param_.X->dims().Vectorize();
+  CHECK_GE(expand_shape.size(), x_shape.size());
+  x_shape.insert(x_shape.begin(), expand_shape.size() - x_shape.size(), 1);
+  for (size_t i = 0; i < expand_shape.size(); i++) {
+    if (expand_shape[i] == -1) {
+      expand_shape[i] = x_shape[i];
     }
+    CHECK_GE(expand_shape[i], x_shape[i]);
   }
-  return true;
-}
 
-bool ExpandV2OpLite::InferShapeImpl() const {
-  DDim out_dims(new_in_dims_);
-  for (size_t i = 0; i < repeat_times_.size(); ++i) {
-    out_dims[i] *= repeat_times_[i];
-  }
-  param_.Out->Resize(out_dims);
-
+  std::vector<int64_t> out_shape(expand_shape.begin(), expand_shape.end());
+  param_.Out->Resize(out_shape);
   return true;
 }
 

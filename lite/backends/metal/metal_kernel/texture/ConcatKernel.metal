@@ -19,11 +19,11 @@
 using namespace metal;
 
 struct ConcatParam {
-  int32_t odim[4];
-  int32_t axis;
-  int32_t offset;
-  int32_t trans[4];
-  int32_t vdim[6];
+    int32_t odim[4];
+    int32_t axis;
+    int32_t offset;
+    int32_t trans[4];
+    int32_t vdim[6];
 };
 
 #define VNORMAL 1
@@ -31,7 +31,7 @@ struct ConcatParam {
 #define VY 3
 #define VZ 4
 
-// R:input dim size N:input number V：direction
+// R:input dim size N:input number V: direction
 
 // >> normal mode (loop mode)
 
@@ -131,8 +131,8 @@ struct ConcatParam {
 #pragma mark z
 
 #define V VZ
-#define R 6
-#define N 4
+#define R 4
+#define N 6
 #define P ftype
 #include "ConcatKernel.inc.metal"
 #undef P
@@ -141,8 +141,8 @@ struct ConcatParam {
 #undef V
 
 #define V VZ
-#define R 5
-#define N 4
+#define R 4
+#define N 5
 #define P ftype
 #include "ConcatKernel.inc.metal"
 #undef P
@@ -173,6 +173,16 @@ struct ConcatParam {
 #define V VZ
 #define R 4
 #define N 2
+#define P ftype
+#include "ConcatKernel.inc.metal"
+#undef P
+#undef N
+#undef R
+#undef V
+
+#define V VZ
+#define R 3
+#define N 5
 #define P ftype
 #include "ConcatKernel.inc.metal"
 #undef P

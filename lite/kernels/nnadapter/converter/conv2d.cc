@@ -96,7 +96,8 @@ int ConvertConv2D(Converter* converter, OpInfo* op, Scope* scope) {
 
   // Convert to NNAdapter operands and operation
   // Input operand
-  auto input_operand = converter->GetMappedOperand(input_name);
+  auto input_operand =
+      converter->AddInputOperand(scope, input_name, {}, input_scales);
   CHECK(input_operand);
   auto input_type = converter->GetOperandType(input_operand);
   // Check depthwise mode according to the dimensions
@@ -208,7 +209,7 @@ int ConvertConv2D(Converter* converter, OpInfo* op, Scope* scope) {
     bias_operand = converter->AddConstantOperand(
         reinterpret_cast<void*>(zeros.data()),
         DDim({output_channel_size}),
-        is_quant_mode ? NNADAPTER_TENSOR_INT32 : input_type->precision,
+        is_quant_mode ? NNADAPTER_INT32 : input_type->precision,
         true,
         bias_scales);
   }

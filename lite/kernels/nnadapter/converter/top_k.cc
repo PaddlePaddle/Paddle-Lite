@@ -22,18 +22,13 @@ namespace nnadapter {
 int ConvertTopK(Converter* converter, OpInfo* op, Scope* scope) {
   // Input operand
   auto x_name = op->Input("X").front();
-  auto input_operand = converter->GetMappedOperand(x_name);
+  auto input_operand = converter->AddInputOperand(scope, x_name);
 
   // K operand
   NNAdapterOperand* k_operand = nullptr;
   if (HasInput(op, scope, "K")) {
     auto k_name = op->Input("K").front();
-    k_operand = converter->GetMappedOperand(k_name);
-    if (!k_operand) {
-      auto k_tensor = scope->FindTensor(k_name);
-      CHECK(k_tensor->persistable());
-      k_operand = converter->AddConstantOperand(*k_tensor);
-    }
+    k_operand = converter->AddInputOperand(scope, k_name);
   } else {
     int k = op->GetAttr<int>("k");
     k_operand = converter->AddConstantOperand(k);
@@ -54,7 +49,7 @@ int ConvertTopK(Converter* converter, OpInfo* op, Scope* scope) {
       converter->AddConstantOperand(static_cast<int8_t>(sorted));
 
   // return_indices_dtype operand
-  int return_indices_dtype = NNADAPTER_TENSOR_INT64;
+  int return_indices_dtype = NNADAPTER_INT64;
   auto return_indices_dtype_operand =
       converter->AddConstantOperand(return_indices_dtype);
 

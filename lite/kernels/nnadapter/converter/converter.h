@@ -122,6 +122,11 @@ class Converter {
       const std::vector<float>& quant_scales = {},
       uint32_t quant_channel_dim = 0);
   // Add a named input operand, should specify its dimensions and precision
+  NNAdapterOperand* AddInputOperand(Scope* scope,
+                                    const std::string& input_name,
+                                    DDim dimensions = {},
+                                    const std::vector<float>& quant_scales = {},
+                                    uint32_t quant_channel_dim = 0);
   NNAdapterOperand* AddInputOperand(
       const std::string& name,
       const DDim& dimensions,
@@ -164,11 +169,21 @@ class Converter {
   NNAdapterOperand* AddShapeOperation(
       NNAdapterOperand* input_operand,
       const std::string& output_name = "",
-      NNAdapterOperandPrecisionCode output_precision = NNADAPTER_TENSOR_INT32);
+      NNAdapterOperandPrecisionCode output_precision = NNADAPTER_INT32);
   // Add unsqueeze operation with input operand, axes, out_name, quant_scales
   NNAdapterOperand* AddUnsqueezeOperation(NNAdapterOperand* input_operand,
                                           const std::vector<int32_t>& axes,
                                           const std::string& out_name = "");
+  // Add squeeze operation with input operand, axes, out_name, quant_scales
+  NNAdapterOperand* AddSqueezeOperation(NNAdapterOperand* input_operand,
+                                        const std::vector<int32_t>& axes,
+                                        const std::string& out_name = "");
+  NNAdapterOperand* AddSliceOperation(NNAdapterOperand* input_operand,
+                                      const std::vector<int32_t>& axes,
+                                      const std::vector<int32_t>& starts,
+                                      const std::vector<int32_t>& ends,
+                                      const std::vector<int32_t>& steps,
+                                      const std::string& out_name = "");
   // Add flatten operation with input operand, start, end, out_name
   NNAdapterOperand* AddFlattenOperation(NNAdapterOperand* input_operand,
                                         const int32_t start_axis,

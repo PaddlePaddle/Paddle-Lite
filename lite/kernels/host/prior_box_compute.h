@@ -20,9 +20,6 @@
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/kernels/host/prior_box_compute.h"
-#ifdef ENABLE_ARM_FP16
-using float16_t = __fp16;
-#endif
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -195,3 +192,10 @@ class PriorBoxCompute<float16_t, TARGET(kARM), PRECISION(kFP16)>
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
+#ifdef ENABLE_ARM_FP16
+using float16_t = __fp16;
+using pb_fp16 = paddle::lite::kernels::host::PriorBoxCompute<float16_t,
+                                                             TARGET(kARM),
+                                                             PRECISION(kFP16)>;
+#endif
