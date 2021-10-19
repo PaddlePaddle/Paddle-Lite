@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef LITE_KERNELS_METAL_IMAGE_OP_SIGMOID_IMAGE_COMPUTE_H_
-#define LITE_KERNELS_METAL_IMAGE_OP_SIGMOID_IMAGE_COMPUTE_H_
+#ifndef LITE_KERNELS_METAL_IMAGE_OP_POOL_IMAGE_COMPUTE_H_
+#define LITE_KERNELS_METAL_IMAGE_OP_POOL_IMAGE_COMPUTE_H_
 
 #include <memory>
+#include <string>
 
 #include "lite/core/kernel.h"
 #include "lite/core/tensor.h"
@@ -33,25 +34,33 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-class SigmoidImageCompute
+class ReduceImageCompute
     : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {
-    using param_t = operators::ActivationParam;
+    using param_t = operators::ReduceParam;
 
    public:
     void PrepareForRun() override;
     void Run() override;
     void SaveOutput() override {
-        MetalDebug::SaveOutput(function_name_, output_buffer_);
+        MetalDebug::SaveOutput((use_mps_ ? ("MPS_reduce") : function_name_), output_buffer_);
     };
-    virtual ~SigmoidImageCompute();
+    virtual ~ReduceImageCompute();
 
    private:
-    void run_without_mps();
+    bool use_mps_{false};
+    void* mps_op_{nullptr};
+    void* mps_input_image_{nullptr};
+    void* mps_output_image_{nullptr};
+
+    void setup_with_mps();
     void setup_without_mps();
+
+    void run_with_mps();
+    void run_without_mps();
 
     const MetalImage* input_buffer_;
     MetalImage* output_buffer_{nullptr};
-    std::shared_ptr<MetalBuffer> param_buffer_;
+    std::shared_ptr<MetalBuffer> params_buffer_;
 
     id<MTLComputePipelineState> pipline_;
     std::string function_name_;
@@ -63,4 +72,4 @@ class SigmoidImageCompute
 }  // namespace lite
 }  // namespace paddle
 
-#endif  // LITE_KERNELS_METAL_IMAGE_OP_SIGMOID_IMAGE_COMPUTE_H_
+#endif  // LITE_KERNELS_METAL_IMAGE_OP_POOL_IMAGE_COMPUTE_H_
