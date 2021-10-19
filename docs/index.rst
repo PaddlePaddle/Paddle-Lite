@@ -84,7 +84,9 @@ Welcome to Paddle-Lite's documentation!
   source_compile/docker_enviroment
   source_compile/compile_android
   source_compile/compile_ios
-  source_compile/compile_linux
+  source_compile/x86_host_compile_x86_linux
+  source_compile/x86_host_compile_arm_linux
+  source_compile/arm_host_compile_arm_linux
   source_compile/compile_windows
   source_compile/compile_options
   source_compile/library_tailoring
@@ -115,6 +117,7 @@ Welcome to Paddle-Lite's documentation!
   develop_guides/add_layout
   develop_guides/add_new_pass
   develop_guides/add_hardware
+  develop_guides/nnadapter
 
 .. toctree::
   :maxdepth: 1

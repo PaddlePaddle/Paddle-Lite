@@ -1,4 +1,4 @@
-# PaddleLite使用英特尔FPGA预测部署
+# 英特尔 FPGA 预测部署示例
 
 PaddleLite已支持英特尔FPGA平台的预测部署，PaddleLite通过调用底层驱动实现对FPGA硬件的调度。
 
@@ -159,10 +159,10 @@ PaddleLite支持英特尔FPGA作为后端硬件进行模型推理，其主要特
 
   For C5MB
   - tiny_publish编译方式
-    ```shell
-    $ ./lite/tools/build_linux.sh --arch=armv7hf --with_extra=ON --with_log=ON --with_intel_fpga=ON --intel_fpga_sdk_root=./intel_fpga_sdk
-    
-    将tiny_publish模式下编译生成的build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.intel_fpga/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/armhf/lib/libpaddle_light_api_shared.so文件；
+  ```shell
+  $ ./lite/tools/build_linux.sh --arch=armv7hf --with_extra=ON --with_log=ON --with_intel_fpga=ON --intel_fpga_sdk_root=./intel_fpga_sdk
+  
+  将tiny_publish模式下编译生成的build.lite.linux.armv7hf.gcc/inference_lite_lib.armlinux.armv7hf.intel_fpga/cxx/lib/libpaddle_light_api_shared.so替换PaddleLite-linux-demo/libs/PaddleLite/armhf/lib/libpaddle_light_api_shared.so文件；
 	```
   - full_publish编译方式
   ```shell
