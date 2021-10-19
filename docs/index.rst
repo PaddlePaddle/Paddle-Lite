@@ -84,6 +84,7 @@ Welcome to Paddle-Lite's documentation!
   source_compile/compile_env
   source_compile/compile_android
   source_compile/compile_ios
+  source_compile/compile_macos
   source_compile/x86_host_compile_x86_linux
   source_compile/x86_host_compile_arm_linux
   source_compile/arm_host_compile_arm_linux
