@@ -61,7 +61,7 @@ int ConvertScale(Converter* converter, OpInfo* op, Scope* scope) {
       scale_operand = converter->AddConstantOperand(
           reinterpret_cast<void*>(quant_scale_data_vec.data()),
           DDim({static_cast<int64_t>(1)}),
-          NNADAPTER_TENSOR_INT8,
+          NNADAPTER_INT8,
           true,
           {fabsf(scale)});
     } else {
@@ -86,7 +86,7 @@ int ConvertScale(Converter* converter, OpInfo* op, Scope* scope) {
         bias_operand = converter->AddConstantOperand(
             reinterpret_cast<void*>(quant_bias_data_vec.data()),
             DDim({static_cast<int64_t>(1)}),
-            NNADAPTER_TENSOR_INT8,
+            NNADAPTER_INT8,
             true,
             {fabsf(bias)});
       } else {
@@ -112,7 +112,7 @@ int ConvertScale(Converter* converter, OpInfo* op, Scope* scope) {
       bias_operand = converter->AddConstantOperand(
           reinterpret_cast<void*>(quant_bias_data_vec.data()),
           DDim({static_cast<int64_t>(1)}),
-          NNADAPTER_TENSOR_INT8,
+          NNADAPTER_INT8,
           true,
           {fabsf(bias)});
     } else {
