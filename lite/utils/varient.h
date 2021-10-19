@@ -19,7 +19,6 @@
 #include <type_traits>
 #include <typeinfo>
 #include <utility>
-#include "lite/utils/fast_type_id.h"
 #include "lite/utils/log/cp_logging.h"
 #include "lite/utils/string.h"
 
@@ -45,22 +44,20 @@ template <typename... Ts>
 struct variant_helper;
 template <typename F, typename... Ts>
 struct variant_helper<F, Ts...> {
-  inline static void destroy(FastTypeIdType id, void* data) {
-    if (id == FastTypeId<F>())
+  inline static void destroy(size_t id, void* data) {
+    if (id == typeid(F).hash_code())
       reinterpret_cast<F*>(data)->~F();
     else
       variant_helper<Ts...>::destroy(id, data);
   }
-  inline static void move(FastTypeIdType old_t, void* old_v, void* new_v) {
-    if (old_t == FastTypeId<F>())
+  inline static void move(size_t old_t, void* old_v, void* new_v) {
+    if (old_t == typeid(F).hash_code())
       new (new_v) F(std::move(*reinterpret_cast<F*>(old_v)));
     else
       variant_helper<Ts...>::move(old_t, old_v, new_v);
   }
-  inline static void copy(FastTypeIdType old_t,
-                          const void* old_v,
-                          void* new_v) {
-    if (old_t == FastTypeId<F>())
+  inline static void copy(size_t old_t, const void* old_v, void* new_v) {
+    if (old_t == typeid(F).hash_code())
       new (new_v) F(*reinterpret_cast<const F*>(old_v));
     else
       variant_helper<Ts...>::copy(old_t, old_v, new_v);
@@ -68,11 +65,9 @@ struct variant_helper<F, Ts...> {
 };
 template <>
 struct variant_helper<> {
-  inline static void destroy(FastTypeIdType id, void* data) {}
-  inline static void move(FastTypeIdType old_t, void* old_v, void* new_v) {}
-  inline static void copy(FastTypeIdType old_t,
-                          const void* old_v,
-                          void* new_v) {}
+  inline static void destroy(size_t id, void* data) {}
+  inline static void move(size_t old_t, void* old_v, void* new_v) {}
+  inline static void copy(size_t old_t, const void* old_v, void* new_v) {}
 };
 
 template <typename... Ts>
@@ -82,8 +77,8 @@ struct variant {
   static const size_t data_align = static_max<alignof(Ts)...>::value;
   using data_t = typename std::aligned_storage<data_size, data_align>::type;
   using helper_t = variant_helper<Ts...>;
-  static inline FastTypeIdType invalid_type() { return FastTypeId<void>(); }
-  FastTypeIdType type_id;
+  static inline size_t invalid_type() { return typeid(void).hash_code(); }
+  size_t type_id;
   data_t data;
 
  public:
@@ -102,10 +97,10 @@ struct variant {
   }
   template <typename T>
   bool is() {
-    return (type_id == FastTypeId<T>());
+    return (type_id == typeid(T).hash_code());
   }
 
-  FastTypeIdType type() { return type_id; }
+  size_t type() { return type_id; }
 
   bool valid() { return (type_id != invalid_type()); }
 
@@ -114,22 +109,22 @@ struct variant {
     // First we destroy the current contents
     helper_t::destroy(type_id, &data);
     new (&data) T(std::forward<Args>(args)...);
-    type_id = FastTypeId<T>();
+    type_id = typeid(T).hash_code();
   }
   template <typename T>
   const T& get() const {
     // It is a dynamic_cast-like behaviour
-    if (type_id == FastTypeId<T>()) {
+    if (type_id == typeid(T).hash_code()) {
       return *reinterpret_cast<const T*>(&data);
     } else {
 #ifdef LITE_ON_TINY_PUBLISH
-      LOG(FATAL) << "Error: unmatched data type, the data type stored in this "
-                    "varient is different from the data type you  want to "
-                    "obtain!";
+      LOG(FATAL) << "unmatched type, store as " << type_id
+                 << " , but want to get " << typeid(T).name();
 #else
       throw std::invalid_argument(
-          "Error: unmatched data type, the data type stored in this varient is "
-          "different from the data type you  want to obtain!");
+          string_format("unmatched type, store as %d, but want to get %s",
+                        type_id,
+                        typeid(T).name()));
 #endif
     }
     return *reinterpret_cast<const T*>(&data);
@@ -139,7 +134,7 @@ struct variant {
   const T get_if() const {
     static_assert(std::is_pointer<T>::value,
                   "Use get_if, make sure T is pointer");
-    if (type_id == FastTypeId<T>()) {
+    if (type_id == typeid(T).hash_code()) {
       return *reinterpret_cast<const T*>(&data);
     } else {
       return nullptr;
@@ -149,17 +144,14 @@ struct variant {
   template <typename T>
   T* get_mutable() {
     // It is a dynamic_cast-like behaviour
-    if (type_id == FastTypeId<T>()) {
+    if (type_id == typeid(T).hash_code()) {
       return reinterpret_cast<T*>(&data);
     } else {
 #ifdef LITE_ON_TINY_PUBLISH
-      LOG(FATAL) << "Error: unmatched data type, the data type stored in this "
-                    "varient is different from the data type you  want to "
-                    "obtain!";
+      LOG(ERROR) << "unmatched type get, should be " << type_id << " but get "
+                 << typeid(T).name();
 #else
-      throw std::invalid_argument(
-          "Error: unmatched data type, the data type stored in this varient is "
-          "different from the data type you  want to obtain!");
+      throw std::invalid_argument("unmatched type");
 #endif
     }
   }

@@ -485,8 +485,9 @@ void RuntimeProgram::Run() {
 #ifdef LITE_WITH_FPGA
     monitor.preRun(inst);
 #endif
-
+    LOG(INFO) << "Inst name :" << inst.kernel()->op_type();
     inst.Run();
+    LOG(INFO) << "Inst done";
 
 #ifdef LITE_WITH_FPGA
     monitor.postRun(inst);
