@@ -43,15 +43,11 @@ void AssignValueCalcOfflinePass::RemoveAssignValuePattern(
     auto op_desc = assign_value_instruct.mutable_op_info();
 
     // Get assign_value's attr
-    std::vector<int> shape;
-    if (op_desc->HasAttr("shape")) {
-      shape = op_desc->GetAttr<std::vector<int>>("shape");
-    }
+    CHECK(op_desc->HasAttr("shape"));
+    auto shape = op_desc->GetAttr<std::vector<int>>("shape");
+    CHECK(op_desc->HasAttr("dtype"));
+    auto dtype = op_desc->GetAttr<int>("dtype");
 
-    int dtype;
-    if (op_desc->HasAttr("dtype")) {
-      dtype = op_desc->GetAttr<int>("dtype");
-    }
     // Get assign_value's output tensor
     auto out_var = scope->FindVar(op_desc->Output("Out").front());
     auto out_t = out_var->GetMutable<lite::Tensor>();
@@ -64,25 +60,18 @@ void AssignValueCalcOfflinePass::RemoveAssignValuePattern(
 
     if (dtype == static_cast<int>(lite::core::FluidType::INT32)) {
       auto int32_values = op_desc->GetAttr<std::vector<int>>("int32_values");
-      memcpy(out_data,
-             static_cast<const void*>(int32_values.data()),
-             sizeof(int) * shape.size());
+      memcpy(out_data, int32_values.data(), sizeof(int) * int32_values.size());
     } else if (dtype == static_cast<int>(lite::core::FluidType::FP32)) {
       auto fp32_values = op_desc->GetAttr<std::vector<float>>("fp32_values");
-      memcpy(out_data,
-             static_cast<const void*>(fp32_values.data()),
-             sizeof(float) * shape.size());
+      memcpy(out_data, fp32_values.data(), sizeof(float) * fp32_values.size());
     } else if (dtype == static_cast<int>(lite::core::FluidType::INT64)) {
       auto int64_values =
           op_desc->GetAttr<std::vector<int64_t>>("int64_values");
-      memcpy(out_data,
-             static_cast<const void*>(int64_values.data()),
-             sizeof(int64_t) * shape.size());
+      memcpy(
+          out_data, int64_values.data(), sizeof(int64_t) * int64_values.size());
     } else if (dtype == static_cast<int>(lite::core::FluidType::BOOL)) {
       auto bool_values = op_desc->GetAttr<std::vector<int>>("bool_values");
-      memcpy(out_data,
-             static_cast<const void*>(bool_values.data()),
-             sizeof(bool) * shape.size());
+      memcpy(out_data, bool_values.data(), sizeof(bool) * bool_values.size());
     } else {
       LOG(FATAL) << "Unsupported dtype for assign_value op: " << dtype;
     }
