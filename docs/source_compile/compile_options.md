@@ -51,7 +51,3 @@
 | LITE_WITH_XPU |  编译[百度 XPU 平台](../demo_guides/baidu_xpu.html)预测库 | XPU |OFF |
 | LITE_WITH_XTCL | 通过 XTCL 方式支持百度 XPU，默认 Kernel 方式 | XPU |OFF IF LITE_WITH_XPU |
 | LITE_WITH_APU | 编译[联发科 APU 平台](../demo_guides/mediatek_apu.html)预测库 | APU |OFF |
-
-## 具体平台编译选项
-
-- [使用 Linux x86 构建 / 目标终端为 Android](./compile_android.md)
