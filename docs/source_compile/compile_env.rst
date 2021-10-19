@@ -18,32 +18,32 @@ Paddle Lite 已支持多种环境下的源码编译，为了避免复杂、繁�
    * - 1.
      - Linux x86
      - Linux x86
-     - `点击进入 <https://paddle-lite.readthedocs.io/zh/develop/source_compile/x86_host_compile_x86_linux.html>`_
+     - `点击进入 <https://paddle-lite.readthedocs.io/zh/develop/source_compile/linux_x86_compile_linux_x86.html>`_
    * - 2.
      - Linux x86
      - ARM Linux
-     - `点击进入 <https://paddle-lite.readthedocs.io/zh/develop/source_compile/x86_host_compile_arm_linux.html>`_
+     - `点击进入 <https://paddle-lite.readthedocs.io/zh/develop/source_compile/linux_x86_compile_arm_linux.html>`_
    * - 3.
      - Linux x86
      - Android
-     - `点击进入 <https://paddle-lite.readthedocs.io/zh/develop/source_compile/compile_android.html>`_
+     - `点击进入 <https://paddle-lite.readthedocs.io/zh/develop/source_compile/linux_x86_compile_android.html>`_
    * - 4.
      - ARM Linux
      - ARM Linux
-     - `点击进入 <https://paddle-lite.readthedocs.io/zh/develop/source_compile/arm_host_compile_arm_linux.html>`_
+     - `点击进入 <https://paddle-lite.readthedocs.io/zh/develop/source_compile/arm_linux_compile_arm_linux.html>`_
    * - 5.
      - macOS
      - macOS
-     - `点击进入 <https://paddle-lite.readthedocs.io/zh/develop/source_compile/compile_x86macos.html>`_
+     - `点击进入 <https://paddle-lite.readthedocs.io/zh/develop/source_compile/macos_compile_macos.html>`_
    * - 6.
      - macOS
      - iOS
-     - `点击进入 <https://paddle-lite.readthedocs.io/zh/develop/source_compile/compile_ios.html>`_
+     - `点击进入 <https://paddle-lite.readthedocs.io/zh/develop/source_compile/macos_compile_android.html>`_
    * - 7.
      - macOS
      - Android
-     - `点击进入 <https://paddle-lite.readthedocs.io/zh/develop/source_compile/compile_macos_android.html>`_
+     - `点击进入 <https://paddle-lite.readthedocs.io/zh/develop/source_compile/macos_compile_ios.html>`_
    * - 8.
      - Windows
      - Windows
-     - `点击进入 <https://paddle-lite.readthedocs.io/zh/develop/source_compile/compile_windows.html>`_
+     - `点击进入 <https://paddle-lite.readthedocs.io/zh/develop/source_compile/windows_compile_windows.html>`_
