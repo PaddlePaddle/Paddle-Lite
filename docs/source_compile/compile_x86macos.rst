@@ -2,13 +2,13 @@
    :format: html
 
 
-使用 MacOS 环境编译 Paddle Lite / 目标硬件 OS 为 MacOS
+macOS 环境下编译适用于 macOS 的库
 ======================================================
 
 简介
 ----
 
-如果你的本机环境是 MacOS 操作系统（暂不支持 M1 机型），需要部署模型到 MacOS 系统的目标硬件上，则可以参考本文的介绍，从源码构建 Paddle Lite 编译包，用于后续应用程序的开发。
+如果你的本机环境是 macOS 操作系统（暂不支持 M1 机型），需要部署模型到 macOS 系统的目标硬件上，则可以参考本文的介绍，从源码构建 Paddle Lite 编译包，用于后续应用程序的开发。
 
 在该场景下 Paddle Lite 已验证的软硬件配置如下表所示：
 
@@ -19,14 +19,14 @@
      - 本机环境
      - 目标硬件环境
    * - **操作系统**
-     - MacOS\ :raw-html-m2r:`<br>`
-     - MacOS\ :raw-html-m2r:`<br>`
+     - macOS\ :raw-html-m2r:`<br>`
+     - macOS\ :raw-html-m2r:`<br>`
    * - **芯片层**
      - x86 架构
      - x86 架构 :raw-html-m2r:`<br>`
 
 
-[^1]：OpenCL 是面向异构硬件平台的编译库，Paddle Lite 支持在 x86 MacOS 系统上运行基于 OpenCL 的程序。
+[^1]：OpenCL 是面向异构硬件平台的编译库，Paddle Lite 支持在 x86 macOS 系统上运行基于 OpenCL 的程序。
 
    **说明：**
 
@@ -72,7 +72,7 @@
 了解基础编译参数
 ----------------
 
-Paddle Lite 仓库中\ ``/lite/tools/build_macos.sh``\ 脚本文件用于构建 MacOS 版本的编译包，通过修改\ ``build_macos.sh``\ 脚本文件中的参数，可满足不同场景编译包的构建需求，常用的基础编译参数如下表所示：
+Paddle Lite 仓库中\ ``/lite/tools/build_macos.sh``\ 脚本文件用于构建 macOS 版本的编译包，通过修改\ ``build_macos.sh``\ 脚本文件中的参数，可满足不同场景编译包的构建需求，常用的基础编译参数如下表所示：
 有特殊硬件需求的编译参数见后文。
 
 .. list-table::
@@ -128,7 +128,7 @@ Paddle Lite 仓库中\ ``/lite/tools/build_macos.sh``\ 脚本文件用于构建 
    # (可选) 删除 third-party 目录，编译脚本会自动从国内CDN下载第三方库文件
    # rm -rf third-party
 
-   # 2. 编译 Paddle Lite x86 MacOS 预测库
+   # 2. 编译 Paddle Lite x86 macOS 预测库
    ./lite/tools/build_macos.sh x86
 
 ..
