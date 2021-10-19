@@ -87,8 +87,8 @@ Welcome to Paddle-Lite's documentation!
   source_compile/linux_x86_compile_android
   source_compile/arm_linux_compile_arm_linux
   source_compile/macos_compile_macos
-  source_compile/macos_compile_android
   source_compile/macos_compile_ios
+  source_compile/macos_compile_android
   source_compile/windows_compile_windows
   source_compile/compile_options
   source_compile/library_tailoring

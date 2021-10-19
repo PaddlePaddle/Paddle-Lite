@@ -38,11 +38,11 @@ Paddle Lite 已支持多种环境下的源码编译，为了避免复杂、繁�
    * - 6.
      - macOS
      - iOS
-     - `点击进入 <https://paddle-lite.readthedocs.io/zh/develop/source_compile/macos_compile_android.html>`_
+     - `点击进入 <https://paddle-lite.readthedocs.io/zh/develop/source_compile/macos_compile_ios.html>`_
    * - 7.
      - macOS
      - Android
-     - `点击进入 <https://paddle-lite.readthedocs.io/zh/develop/source_compile/macos_compile_ios.html>`_
+     - `点击进入 <https://paddle-lite.readthedocs.io/zh/develop/source_compile/macos_compile_android.html>`_
    * - 8.
      - Windows
      - Windows
