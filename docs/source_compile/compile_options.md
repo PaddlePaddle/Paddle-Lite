@@ -51,15 +51,3 @@
 | LITE_WITH_XPU |  编译[百度 XPU 平台](../demo_guides/baidu_xpu.html)预测库 | XPU |OFF |
 | LITE_WITH_XTCL | 通过 XTCL 方式支持百度 XPU，默认 Kernel 方式 | XPU |OFF IF LITE_WITH_XPU |
 | LITE_WITH_APU | 编译[联发科 APU 平台](../demo_guides/mediatek_apu.html)预测库 | APU |OFF |
-
-## 具体平台编译选项
-
-- [使用 MacOS 环境构建 / 目标硬件 OS 为 iOS](./compile_ios.md)
-- [使用 MacOS 环境构建 / 目标硬件 OS 为 Android](./compile_macos_android.rst)
-- [使用 x86 Windows 环境构建 / 目标硬件 OS 为 x86 Windows](./compile_windows.rst)
-- [使用 x86 Linux 环境构建 / 目标终端为 OS 为 Android](./compile_android.rst)
-- [使用 ARM Linux 环境构建 / 目标终端为 OS 为 ARM Linux](./arm_host_compile_arm_linux.rst)
-- [使用 x86 Linux 环境构建 / 目标硬件 OS 为 ARM Linux](./x86_host_compile_arm_linux.rst)
-- [使用 x86 Linux 环境构建 / 目标硬件 OS 为 x86 Linux](./x86_host_compile_x86_linux.rst)
-- [使用 MacOS x86 芯片环境构建 / 目标硬件 OS 为 MacOS](./compile_x86macos.rst)
-- [使用 MacOS M1 芯片环境构建 / 目标硬件 OS 为 MacOS](./compile_armmacos.md)
