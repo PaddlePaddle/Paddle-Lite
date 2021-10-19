@@ -37,6 +37,8 @@ class FcOpLite : public OpLite {
 
   bool InferShapeImpl() const override;
 
+  bool InferShapeWithCache() const override { return true; }
+
   bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }

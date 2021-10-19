@@ -45,8 +45,20 @@ void test_conv_fp32(const DDim& dim_in,
   param.dilations = std::make_shared<std::vector<int>>(dilas);
   param.groups = group;
   const float six = 6.f;
-  act_init(
-      param, strides, pads, dilas, group, flag_act, six, leakey_relu_scale);
+  const float scale = 6.f;
+  const float offset = 3.f;
+  const float threshold = 6.f;
+  act_init(param,
+           strides,
+           pads,
+           dilas,
+           group,
+           flag_act,
+           six,
+           leakey_relu_scale,
+           scale,
+           offset,
+           threshold);
 
   param.output = new Tensor;
   param.output->set_precision(PRECISION(kFloat));
@@ -432,7 +444,7 @@ TEST(TestConvRand, test_conv_rand) {
                       for (auto& pad_bottom : {0, 2}) {
                         for (auto& dila : {1, 2}) {
                           for (auto& flag_bias : {false, true}) {
-                            for (auto& flag_act : {0, 1, 2, 4}) {
+                            for (auto& flag_act : {0, 1, 2, 4, 10}) {
                               if (cin % g != 0 || cout % g != 0) {
                                 continue;
                               }

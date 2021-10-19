@@ -71,7 +71,6 @@ bool XPUFcOp::InferShapeImpl() const {
 }
 
 bool XPUFcOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
-  AttachParam(&param_);
   CHECK(scope->FindVar(op_desc.Input("Input").front()));
   CHECK(scope->FindVar(op_desc.Input("Filter").front()));
   CHECK(scope->FindVar(op_desc.Output("Output").front()));

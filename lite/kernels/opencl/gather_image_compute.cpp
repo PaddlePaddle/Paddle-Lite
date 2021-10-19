@@ -172,7 +172,6 @@ void GatherImageCompute::Run() {
   cl_int status;
   auto kernel = kernel_;
   if (kernel_func_name_ == "gather_axis0") {  // axis=0
-
     status = kernel.setArg(0, *x_img);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(1, *index_img);
@@ -186,7 +185,6 @@ void GatherImageCompute::Run() {
     CL_CHECK_FATAL(status);
     status = kernel.setArg(2, *out_img);
     CL_CHECK_FATAL(status);
-
   } else {
     std::cout << "Unsupported kernel: " << kernel_func_name_ << std::endl;
     CHECK(false);

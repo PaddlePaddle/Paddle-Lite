@@ -89,8 +89,9 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
 
   //! select conv impl
   if (dw_kernel && kps_equal && no_dilation && flag_dw &&
-      (flag_dw_5x5 || paddings[0] == 1)) {
+      (flag_dw_5x5 || flag_p01)) {
     impl_ = new DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>;
+    VLOG(3) << "invoking conv_depthwise_3x3p0p1 or conv_depthwise_5x5";
   }
 
   if (ih >= 112 && ih <= 400 && iw >= 112 && iw <= 400 && input_channel >= 3 &&
@@ -117,11 +118,11 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto& ctx = ctx_->As<X86Context>();
   INIT_PARAM
   bool flag_bias = (param.bias != nullptr);
-  int group_size_out = m * n;
-  int group_size_weights = m * k;
-  int group_size_coldata = n * k;
-  int channel_in_size = chin * hin * win;
-  int channel_out_size = chout * hout * wout;
+  unsigned int group_size_out = m * n;
+  unsigned int group_size_weights = m * k;
+  unsigned int group_size_coldata = n * k;
+  unsigned int channel_in_size = chin * hin * win;
+  unsigned int channel_out_size = chout * hout * wout;
   auto paddings = *param.paddings;
   auto dilations = *param.dilations;
 
@@ -134,9 +135,9 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   float* col_data = nullptr;
 
   if (!flag_1x1gemm_) {
-    int col_size = group * group_size_coldata;
-    col_data = static_cast<float*>(
-        TargetMalloc(TARGET(kX86), col_size * sizeof(float)));
+    size_t col_size = group_size_coldata * group;
+    size_t col_data_size = static_cast<size_t>(col_size * sizeof(float));
+    col_data = static_cast<float*>(TargetMalloc(TARGET(kX86), col_data_size));
   }
   auto act_param = param.activation_param;
   paddle::lite::x86::math::Blas<lite::TargetType::kX86> matmul(ctx);
