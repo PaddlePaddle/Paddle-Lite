@@ -105,4 +105,4 @@ void AssignValueCalcOfflinePass::RemoveAssignValuePattern(
 
 REGISTER_MIR_PASS(assign_value_calc_offline_pass,
                   paddle::lite::mir::AssignValueCalcOfflinePass)
-    .BindTargets({TARGET(kAny)});
+    .BindTargets({TARGET(kNNAdapter)});
