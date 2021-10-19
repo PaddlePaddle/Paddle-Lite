@@ -39,7 +39,6 @@ class SparseConvOp : public OpLite {
   bool InferShapeImpl() const override;
 
   bool AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) override {
-    AttachParam(&param_);
     auto X = op_desc.Input("Input").front();
     auto NonZeroWeights = op_desc.Input("NonZeroWeights").front();
     auto OcNonZeros = op_desc.Input("OcNonZeros").front();

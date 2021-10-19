@@ -89,7 +89,8 @@ void TypeLayoutTransformPass::ComplementInputs(
   };
   auto* in_arg_type = const_cast<Type*>(in->AsArg().type);
   if (is_host(in_arg_type->target()) &&
-      in_arg_type->layout() == DATALAYOUT(kImageDefault)) {
+      (in_arg_type->layout() == DATALAYOUT(kImageDefault) ||
+       in_arg_type->layout() == DATALAYOUT(kImageFolder))) {
     return;
   }
 
@@ -97,6 +98,24 @@ void TypeLayoutTransformPass::ComplementInputs(
     VLOG(4) << "found Layout unmatched tensor: " << in->AsArg().name
             << " for kernel " << inst.op()->DebugString() << " "
             << *in->AsArg().type << " -> " << *decl_arg_type;
+
+    // Special case for opencl:
+    // Data layout of kImageDefault is the same as kImageFolder when the size of
+    // tensor's dims is greater than 2.
+    auto a = (*in->AsArg().type).layout();
+    auto b = (*decl_arg_type).layout();
+    const auto& tensor =
+        inst.op()->scope()->FindVar(in->AsArg().name)->Get<Tensor>();
+    const bool skip_flag = (((a == DATALAYOUT(kImageDefault)) &&
+                             (b == DATALAYOUT(kImageFolder))) ||
+                            ((a == DATALAYOUT(kImageFolder)) &&
+                             (b == DATALAYOUT(kImageDefault)))) &&
+                           (tensor.dims().size() > 2);
+    if (skip_flag) {
+      VLOG(3) << "skip this case";
+      return;
+    }
+
     AddLayoutInst(*in->AsArg().type,
                   *decl_arg_type,
                   in,
@@ -185,7 +204,8 @@ void TypeLayoutTransformPass::AddLayoutInst(
           (TargetCompatibleTo(*in_arg_ty, from) &&
            /* skip precision check: PrecisionCompatibleTo(*in_arg_ty, from) &&*/
            DeviceCompatibleTo(*in_arg_ty, from) &&
-           out_arg_ty->layout() == to.layout())) {
+           DataLayoutCompatible(*in_arg_ty, from) &&
+           (out_arg_ty->layout() == to.layout()))) {
         is_found = true;
       } else if (TypeCompatible(*in_arg_ty, from) &&
                  out_arg_ty->layout() == to.layout()) {

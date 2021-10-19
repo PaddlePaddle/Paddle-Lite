@@ -45,8 +45,20 @@ void test_conv_fp32(const std::vector<DDim>& input_dims,
   param.dilations = std::make_shared<std::vector<int>>(dilas);
   param.groups = group;
   const float six = 6.f;
-  act_init(
-      param, strides, pads, dilas, group, flag_act, six, leakey_relu_scale);
+  const float scale = 6.f;
+  const float offset = 3.f;
+  const float threshold = 6.f;
+  act_init(param,
+           strides,
+           pads,
+           dilas,
+           group,
+           flag_act,
+           six,
+           leakey_relu_scale,
+           scale,
+           offset,
+           threshold);
 
   param.output = new Tensor;
   param.output->set_precision(PRECISION(kFloat));
@@ -136,7 +148,10 @@ void test_conv_fp32(const std::vector<DDim>& input_dims,
                                    flag_bias,
                                    flag_act,
                                    six,
-                                   leakey_relu_scale);
+                                   leakey_relu_scale,
+                                   param.activation_param.hard_swish_scale,
+                                   offset,
+                                   threshold);
         }
         /// warm up
         for (int i = 0; i < FLAGS_warmup; ++i) {
@@ -444,7 +459,7 @@ TEST(TestConvRand, test_conv_rand) {
                       for (auto& pad_bottom : {0, 2}) {
                         for (auto& dila : {1, 2}) {
                           for (auto& flag_bias : {false, true}) {
-                            for (auto& flag_act : {0, 1, 2, 4}) {
+                            for (auto& flag_act : {0, 1, 2, 4, 10}) {
                               if (cin % g != 0 || cout % g != 0) {
                                 continue;
                               }
@@ -463,6 +478,11 @@ TEST(TestConvRand, test_conv_rand) {
                               // skip 3x3s1 direct conv
                               if (g == 1 && (cin != 1 || cout != 1) &&
                                   kw == 3 && kh == 3 && stride == 1) {
+                                break;
+                              }
+                              // skip 5x5 depthwise and act_type=10
+                              if (g == cin && cin == cout && kw == 5 &&
+                                  kh == 5 && flag_act == 10) {
                                 break;
                               }
                               const float leakey_relu_scale = 8.88;

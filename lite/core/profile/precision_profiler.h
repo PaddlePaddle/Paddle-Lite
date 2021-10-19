@@ -277,9 +277,11 @@ class PrecisionProfiler {
         }
 #endif
         case PRECISION(kBool): {
-          *mean = -333333333333;
-          *std_dev = -33333333333;
-          *ave_grow_rate = -33333333333;
+          auto ptr = in->data<bool>();
+          *mean = compute_mean<bool>(ptr, in->numel());
+          *std_dev =
+              compute_standard_deviation<bool>(ptr, in->numel(), true, *mean);
+          *ave_grow_rate = compute_average_grow_rate<bool>(ptr, in->numel());
           if (write_result_to_file) {
             write_tensorfile<bool>(in, name, log_dir_);
           }
@@ -334,12 +336,6 @@ class PrecisionProfiler {
       switch (layout_type) {
         case DATALAYOUT(kImageDefault): {
           auto in_dims = in->dims();
-          // special case
-          if ((in_dims.size() == 2) &&
-              (op_name == "fc" || op_name == "softmax")) {
-            in_dims = DDim(std::vector<DDim::value_type>(
-                {in->dims()[0], in->dims()[1], 1, 1}));
-          }
           paddle::lite::CLImageConverterDefault default_convertor;
           auto image_shape = default_convertor.InitImageDimInfoWith(in_dims);
           size_t im_w = image_shape[0];
@@ -364,10 +360,52 @@ class PrecisionProfiler {
                                       cl_image2d_row_pitch,
                                       cl_image2d_slice_pitch,
                                       IoDirection::DtoH);
-          // TODO(zhaoyang-star): Tensor shape padding mode will change from
-          // high-dim padding to low-dim padding to fit image2d.
-          // ImageConverter will be changed.
           default_convertor.ImageToNCHW(
+              in_data_v, real_out_v.data(), image_shape, in_dims);
+          CHECK(real_out_v.size() == in->numel());
+          *mean = compute_mean<float>(real_out_v.data(), real_out_v.size());
+          *std_dev = compute_standard_deviation<float>(
+              real_out_v.data(), in->numel(), true, *mean);
+          *ave_grow_rate = compute_average_grow_rate<float>(real_out_v.data(),
+                                                            real_out_v.size());
+          std::shared_ptr<lite::Tensor> real_out_t(new lite::Tensor);
+          real_out_t->Resize(in_dims);
+          float* real_out_data = real_out_t->mutable_data<float>();
+          memcpy(real_out_data,
+                 real_out_v.data(),
+                 real_out_v.size() * sizeof(float));
+          if (write_result_to_file) {
+            write_tensorfile<float>(real_out_t.get(), name, log_dir_);
+          }
+          return;
+        }
+        case DATALAYOUT(kImageFolder): {
+          auto in_dims = in->dims();
+          paddle::lite::CLImageConverterFolder folder_convertor;
+          auto image_shape = folder_convertor.InitImageDimInfoWith(in_dims);
+          size_t im_w = image_shape[0];
+          size_t im_h = image_shape[1];
+          VLOG(1) << "image shape(W,H) of " << name << ": " << im_w << " "
+                  << im_h;
+          auto* in_data_v =
+              use_fp16
+                  ? static_cast<void*>(
+                        calloc(im_w * im_h * 4, sizeof(uint16_t)))
+                  : static_cast<void*>(calloc(im_w * im_h * 4, sizeof(float)));
+
+          std::vector<float> real_out_v(in->numel());
+          const size_t cl_image2d_row_pitch{0};
+          const size_t cl_image2d_slice_pitch{0};
+          TargetWrapperCL::ImgcpySync(in_data_v,
+                                      use_fp16
+                                          ? in->data<uint16_t, cl::Image2D>()
+                                          : in->data<float, cl::Image2D>(),
+                                      im_w,
+                                      im_h,
+                                      cl_image2d_row_pitch,
+                                      cl_image2d_slice_pitch,
+                                      IoDirection::DtoH);
+          folder_convertor.ImageToNCHW(
               in_data_v, real_out_v.data(), image_shape, in_dims);
           CHECK(real_out_v.size() == in->numel());
           *mean = compute_mean<float>(real_out_v.data(), real_out_v.size());
