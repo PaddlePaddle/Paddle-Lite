@@ -1,4 +1,4 @@
-# OpenCL 预测部署示例
+# OpenCL 部署示例
 
 Lite支持在Android系统上运行基于OpenCL的程序，目前支持Ubuntu环境下armv8、armv7的交叉编译。
 

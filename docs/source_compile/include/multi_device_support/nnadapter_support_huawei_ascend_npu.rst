@@ -16,4 +16,4 @@ NNAdapter 支持华为昇腾 NPU
      - 用户自定义
      - /usr/local/Ascend/ascend-toolkit/latest
 
-详细请参考 `华为昇腾 NPU 预测部署示例 <https://paddle-lite.readthedocs.io/zh/release-v2.10/demo_guides/huawei_ascend_npu.html>`_
+详细请参考 `华为昇腾 NPU 部署示例 <https://paddle-lite.readthedocs.io/zh/release-v2.10/demo_guides/huawei_ascend_npu.html>`_
