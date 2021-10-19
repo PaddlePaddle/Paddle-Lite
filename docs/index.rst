@@ -81,6 +81,7 @@ Welcome to Paddle-Lite's documentation!
   :caption: 源码编译
   :name: sec-source-compile
 
+  source_compile/compile_env
   source_compile/docker_enviroment
   source_compile/compile_android
   source_compile/compile_ios
