@@ -29,10 +29,10 @@ namespace lite {
 namespace mir {
 
 template <typename T>
-void GetSize(T start, T end, T step, int64_t* size) {
-  *size = std::is_integral<T>::value
-              ? ((std::abs(end - start) + std::abs(step) - 1) / std::abs(step))
-              : std::ceil(std::abs((end - start) / step));
+int64_t GetSpanCount(T start, T end, T step) {
+  return std::is_integral<T>::value
+             ? ((std::abs(end - start) + std::abs(step) - 1) / std::abs(step))
+             : std::ceil(std::abs((end - start) / step));
 }
 
 void RangeCalcOfflinePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
@@ -70,8 +70,7 @@ void RangeCalcOfflinePass::RemoveRangePattern(
     auto out_t = out_var->GetMutable<lite::Tensor>();
 
     // Calc range
-    int64_t size = 0;
-    GetSize(start, end, step, &size);
+    int64_t size = GetSpanCount(start, end, step);
 
     out_t->Resize(DDim({size}));
     auto out_data = out_t->mutable_data<float>();

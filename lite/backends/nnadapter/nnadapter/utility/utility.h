@@ -220,10 +220,10 @@ inline int64_t GetCurrentUS() {
 }
 
 template <typename T>
-void GetSize(T start, T end, T step, int64_t* size) {
-  *size = std::is_integral<T>::value
-              ? ((std::abs(end - start) + std::abs(step) - 1) / std::abs(step))
-              : std::ceil(std::abs((end - start) / step));
+int64_t GetSpanCount(T start, T end, T step) {
+  return std::is_integral<T>::value
+             ? ((std::abs(end - start) + std::abs(step) - 1) / std::abs(step))
+             : std::ceil(std::abs((end - start) / step));
 }
 
 }  // namespace nnadapter

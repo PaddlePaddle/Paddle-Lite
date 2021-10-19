@@ -36,9 +36,8 @@ int PrepareRange(hal::Operation* operation) {
     auto start_data = reinterpret_cast<float*>(start_operand->buffer)[0];
     auto limit_data = reinterpret_cast<float*>(limit_operand->buffer)[0];
     auto delta_data = reinterpret_cast<float*>(delta_operand->buffer)[0];
-    int64_t size = 0;
-    GetSize(start_data, limit_data, delta_data, &size);
-    output_type.dimensions.data[0] = size;
+    output_type.dimensions.data[0] =
+        GetSpanCount(start_data, limit_data, delta_data);
   } else {
     output_type.dimensions.data[0] = NNADAPTER_UNKNOWN;
   }

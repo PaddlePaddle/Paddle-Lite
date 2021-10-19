@@ -473,22 +473,6 @@ PMNode *PMNode::assert_is_op_nth_input(const std::string &op_type,
   return this;
 }
 
-PMNode *PMNode::assert_is_not_op_input(const std::string &op_type) {
-  assert_is_var();
-  asserts_.emplace_back([=](const Node *x) {
-    for (auto *op : x->outlinks) {
-      if (op && op->IsStmt()) {
-        auto *op_info = op->stmt()->op_info();
-        if (op_info->Type() == op_type) {
-          return false;
-        }
-      }
-    }
-    return true;
-  });
-  return this;
-}
-
 PMNode *PMNode::assert_is_op_output(const std::string &op_type,
                                     const std::string &argument) {
   assert_is_var();

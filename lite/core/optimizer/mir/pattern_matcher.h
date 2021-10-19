@@ -141,7 +141,6 @@ struct PMNode {
   PMNode* assert_is_op_nth_output(const std::string& op_type,
                                   const std::string& argument,
                                   int nth);
-  PMNode* assert_is_not_op_input(const std::string& op_type);
 
   template <typename T>
   PMNode* assert_op_attr_satisfied(
