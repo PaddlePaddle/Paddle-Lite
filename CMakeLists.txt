@@ -40,6 +40,7 @@ message(STATUS "AR tools: ${CMAKE_AR}")
 if(WIN32)
   include(os/windows)
 endif()
+
 ################################ Exposed Configurations #######################################
 lite_option(WITH_DSO                           "Compile PaddlePaddle with dynamic linked CUDA"                        ON)
 lite_option(WITH_AVX                           "Compile PaddlePaddle with AVX intrinsics"                             ON IF ${AVX_FOUND})
