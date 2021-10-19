@@ -35,6 +35,12 @@ namespace operation {
   if (IsConstantOperand(shape_operand)) {                                   \
     shape_count = shape_operand->length / sizeof(int32_t);                  \
     shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);         \
+  } else if (shape_type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {            \
+    shape_operand->type.dimensions =                                        \
+        *reinterpret_cast<NNAdapterOperandDimensionType*>(                  \
+            shape_operand->buffer);                                         \
+    shape_count = shape_operand->type.dimensions.count;                     \
+    shape_data = shape_operand->type.dimensions.data;                       \
   } else {                                                                  \
     shape_count = shape_operand->type.dimensions.count;                     \
     shape_data = shape_operand->type.dimensions.data;                       \
