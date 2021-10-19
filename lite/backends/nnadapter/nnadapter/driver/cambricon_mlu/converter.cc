@@ -72,8 +72,8 @@ void Converter::UpdateTensorMap(hal::Operand* operand,
                                 magicmind::ITensor* tensor) {
   auto it = tensors_->find(operand);
   if (it == tensors_->end()) {
-    auto result =
-        tensors_->insert(std::make_pair(operand, std::vector<magicmind::ITensor*>()));
+    auto result = tensors_->insert(
+        std::make_pair(operand, std::vector<magicmind::ITensor*>()));
     NNADAPTER_CHECK(result.second);
     it = result.first;
   }
@@ -81,12 +81,11 @@ void Converter::UpdateTensorMap(hal::Operand* operand,
   return;
 }
 
-magicmind::ITensor* Converter::AddInt32ConstantTensor(void* buffer,
-                                                      std::vector<int64_t> dimensions) {
+magicmind::ITensor* Converter::AddInt32ConstantTensor(
+    void* buffer, std::vector<int64_t> dimensions) {
   NNADAPTER_CHECK(buffer);
-  auto const_node = network_->AddIConstNode(magicmind::DataType::INT32,
-                                            magicmind::Dims(dimensions),
-                                            buffer);
+  auto const_node = network_->AddIConstNode(
+      magicmind::DataType::INT32, magicmind::Dims(dimensions), buffer);
   if (const_node == nullptr) {
     NNADAPTER_LOG(FATAL) << "Failed to add const node.";
   }
@@ -103,7 +102,8 @@ magicmind::ITensor* Converter::AddTensor(const NNAdapterOperandType* type,
     }
   }
   auto mm_dtype = ConvertToMagicMindDtype(type->precision);
-  auto const_node = network_->AddIConstNode(mm_dtype, magicmind::Dims(dimensions), buffer);
+  auto const_node =
+      network_->AddIConstNode(mm_dtype, magicmind::Dims(dimensions), buffer);
   if (const_node == nullptr) {
     NNADAPTER_LOG(FATAL) << "Failed to add const node.";
   }

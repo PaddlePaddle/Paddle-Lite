@@ -19,7 +19,8 @@
 namespace nnadapter {
 namespace cambricon_mlu {
 
-magicmind::DataType ConvertToMagicMindDtype(NNAdapterOperandPrecisionCode input_precision) {
+magicmind::DataType ConvertToMagicMindDtype(
+    NNAdapterOperandPrecisionCode input_precision) {
   magicmind::DataType output_precision;
   switch (input_precision) {
     case NNADAPTER_BOOL8:
@@ -91,8 +92,7 @@ magicmind::Layout ConvertToMagicMindDataLayout(
   return output_layout;
 }
 
-int64_t ConvertToMagicMindAxis(
-    NNAdapterOperandLayoutCode input_layout) {
+int64_t ConvertToMagicMindAxis(NNAdapterOperandLayoutCode input_layout) {
   int64_t axis;
   switch (input_layout) {
     case NNADAPTER_NCHW:
@@ -104,8 +104,7 @@ int64_t ConvertToMagicMindAxis(
     default:
       NNADAPTER_LOG(FATAL)
           << "Failed to convert the NNAdapter operand layout code("
-          << OperandLayoutCodeToString(input_layout)
-          << ") to magicmind axis !";
+          << OperandLayoutCodeToString(input_layout) << ") to magicmind axis !";
       break;
   }
   return axis;

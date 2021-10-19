@@ -13,12 +13,12 @@
 // limitations under the License.
 
 #include "driver/cambricon_mlu/engine.h"
-#include "driver/cambricon_mlu/converter.h"
 #include <unistd.h>
 #include <algorithm>
 #include <limits>
 #include <utility>
 #include <vector>
+#include "driver/cambricon_mlu/converter.h"
 #include "optimizer/nchw2nhwc.h"
 #include "optimizer/symm2asymm.h"
 #include "utility/debug.h"
@@ -117,8 +117,8 @@ int Program::BuildFromModel(hal::Model* model) {
   int num_outputs = mm_network_->GetOutputCount();
   NNADAPTER_CHECK_EQ(output_count, num_outputs);
 
-  mm_model_.reset(mm_builder_->BuildModel("camb_model", mm_network_.get(),
-                                          mm_builder_config_.get()));
+  mm_model_.reset(mm_builder_->BuildModel(
+      "camb_model", mm_network_.get(), mm_builder_config_.get()));
   NNADAPTER_VLOG(3) << "Build success.";
   return NNADAPTER_NO_ERROR;
 }
@@ -143,9 +143,11 @@ int Program::Execute(uint32_t input_count,
     NNADAPTER_CHECK(buffer);
     auto length = GetOperandTypeBufferLength(*type);
     MLU_CNRT_CHECK(cnrtMalloc(&ptr, length));
-    MLU_CNRT_CHECK(cnrtMemcpy(ptr, buffer, length, CNRT_MEM_TRANS_DIR_HOST2DEV));
+    MLU_CNRT_CHECK(
+        cnrtMemcpy(ptr, buffer, length, CNRT_MEM_TRANS_DIR_HOST2DEV));
     inputs[i]->SetData(ptr);
-    inputs[i]->SetDimensions(ConvertToMagicMindDims(type->dimensions.data, type->dimensions.count));
+    inputs[i]->SetDimensions(
+        ConvertToMagicMindDims(type->dimensions.data, type->dimensions.count));
   }
   mm_context_->Enqueue(inputs, &outputs, queue_);
   MLU_CNRT_CHECK(cnrtSyncQueue(queue_));
@@ -160,7 +162,9 @@ int Program::Execute(uint32_t input_count,
     auto buffer = arg.access(arg.memory, type);
     NNADAPTER_CHECK(buffer);
     void* output_mlu_ptr = outputs[i]->GetMutableData();
-    MLU_CNRT_CHECK(cnrtMemcpy(buffer, output_mlu_ptr, outputs[i]->GetSize(),
+    MLU_CNRT_CHECK(cnrtMemcpy(buffer,
+                              output_mlu_ptr,
+                              outputs[i]->GetSize(),
                               CNRT_MEM_TRANS_DIR_DEV2HOST));
   }
 

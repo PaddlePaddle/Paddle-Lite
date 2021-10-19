@@ -29,7 +29,8 @@ int ConvertReshape(Converter* converter, hal::Operation* operation) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
   auto shape_tensor = converter->ConvertOperand(shape_operand);
-  auto reshape_node = converter->network()->AddIReshapeNode(input_tensor, shape_tensor);
+  auto reshape_node =
+      converter->network()->AddIReshapeNode(input_tensor, shape_tensor);
   if (reshape_node == nullptr) {
     NNADAPTER_VLOG(5) << "Failed to add reshape node.";
     return NNADAPTER_DEVICE_INTERNAL_ERROR;

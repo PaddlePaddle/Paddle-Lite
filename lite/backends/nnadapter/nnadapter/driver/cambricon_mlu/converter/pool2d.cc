@@ -29,34 +29,46 @@ int ConvertPool2D(Converter* converter, hal::Operation* operation) {
   }
   magicmind::INode* pool2d_node = nullptr;
   if (operation->type == NNADAPTER_AVERAGE_POOL_2D) {
-    auto avg_pool2d_node = converter->network()->AddIAvgPool2DNode(input_tensor);
+    auto avg_pool2d_node =
+        converter->network()->AddIAvgPool2DNode(input_tensor);
     if (avg_pool2d_node == nullptr) {
       NNADAPTER_VLOG(5) << "Failed to add avg_pool2d node.";
       return NNADAPTER_DEVICE_INTERNAL_ERROR;
     }
 
-    avg_pool2d_node->SetKernel(static_cast<int64_t>(kernel_height), static_cast<int64_t>(kernel_width));
-    avg_pool2d_node->SetPad(static_cast<int64_t>(pad_height_top), static_cast<int64_t>(pad_height_bottom),
-                            static_cast<int64_t>(pad_width_left), static_cast<int64_t>(pad_width_right));
-    avg_pool2d_node->SetStride(static_cast<int64_t>(stride_height), static_cast<int64_t>(stride_width));
+    avg_pool2d_node->SetKernel(static_cast<int64_t>(kernel_height),
+                               static_cast<int64_t>(kernel_width));
+    avg_pool2d_node->SetPad(static_cast<int64_t>(pad_height_top),
+                            static_cast<int64_t>(pad_height_bottom),
+                            static_cast<int64_t>(pad_width_left),
+                            static_cast<int64_t>(pad_width_right));
+    avg_pool2d_node->SetStride(static_cast<int64_t>(stride_height),
+                               static_cast<int64_t>(stride_width));
     avg_pool2d_node->SetCeilMode(ceil_mode);
     avg_pool2d_node->SetCountIncludePad(flag);
-    magicmind::Layout input_layout = ConvertToMagicMindDataLayout(input_operand->type.layout);
+    magicmind::Layout input_layout =
+        ConvertToMagicMindDataLayout(input_operand->type.layout);
     avg_pool2d_node->SetLayout(input_layout, input_layout);
     pool2d_node = avg_pool2d_node;
   } else if (operation->type == NNADAPTER_MAX_POOL_2D) {
-    auto max_pool2d_node = converter->network()->AddIMaxPool2DNode(input_tensor, flag);
+    auto max_pool2d_node =
+        converter->network()->AddIMaxPool2DNode(input_tensor, flag);
     if (max_pool2d_node == nullptr) {
       NNADAPTER_VLOG(5) << "Failed to add max_pool2d node.";
       return NNADAPTER_DEVICE_INTERNAL_ERROR;
     }
 
-    max_pool2d_node->SetKernel(static_cast<int64_t>(kernel_height), static_cast<int64_t>(kernel_width));
-    max_pool2d_node->SetPad(static_cast<int64_t>(pad_height_top), static_cast<int64_t>(pad_height_bottom),
-                            static_cast<int64_t>(pad_width_left), static_cast<int64_t>(pad_width_right));
-    max_pool2d_node->SetStride(static_cast<int64_t>(stride_height), static_cast<int64_t>(stride_width));
+    max_pool2d_node->SetKernel(static_cast<int64_t>(kernel_height),
+                               static_cast<int64_t>(kernel_width));
+    max_pool2d_node->SetPad(static_cast<int64_t>(pad_height_top),
+                            static_cast<int64_t>(pad_height_bottom),
+                            static_cast<int64_t>(pad_width_left),
+                            static_cast<int64_t>(pad_width_right));
+    max_pool2d_node->SetStride(static_cast<int64_t>(stride_height),
+                               static_cast<int64_t>(stride_width));
     max_pool2d_node->SetCeilMode(ceil_mode);
-    magicmind::Layout input_layout = ConvertToMagicMindDataLayout(input_operand->type.layout);
+    magicmind::Layout input_layout =
+        ConvertToMagicMindDataLayout(input_operand->type.layout);
     max_pool2d_node->SetLayout(input_layout, input_layout);
     pool2d_node = max_pool2d_node;
   } else {

@@ -46,12 +46,16 @@ class NCHW2NHWCDataLayoutConverter {
     return permutations_[operand];
   }
 
-  void SetOperationLayout(hal::Operation* operation, const int input_num = 1, const int output_num = 1) {
+  void SetOperationLayout(hal::Operation* operation,
+                          const int input_num = 1,
+                          const int output_num = 1) {
     for (int in_index = 0; in_index < input_num; ++in_index) {
-      operation->input_operands[in_index]->type.layout = NNAdapterOperandLayoutCode::NNADAPTER_NHWC;
+      operation->input_operands[in_index]->type.layout =
+          NNAdapterOperandLayoutCode::NNADAPTER_NHWC;
     }
     for (int out_index = 0; out_index < output_num; ++out_index) {
-      operation->output_operands[out_index]->type.layout = NNAdapterOperandLayoutCode::NNADAPTER_NHWC;
+      operation->output_operands[out_index]->type.layout =
+          NNAdapterOperandLayoutCode::NNADAPTER_NHWC;
     }
   }
 

@@ -29,8 +29,8 @@ int ConvertSqueeze(Converter* converter, hal::Operation* operation) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
   auto axis_tensor = converter->ConvertOperand(axes_operand);
-  auto squeeze_node = converter->network()->AddISqueezeNode(
-      input_tensor, axis_tensor);
+  auto squeeze_node =
+      converter->network()->AddISqueezeNode(input_tensor, axis_tensor);
   if (squeeze_node == nullptr) {
     NNADAPTER_VLOG(5) << "Failed to add squeeze node.";
     return NNADAPTER_DEVICE_INTERNAL_ERROR;

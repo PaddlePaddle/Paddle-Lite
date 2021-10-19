@@ -33,8 +33,8 @@ int ConvertTranspose(Converter* converter, hal::Operation* operation) {
     perm_tensor = converter->ConvertOperand(perm_operand);
   }
 
-  auto transpose_node = converter->network()->AddIPermuteNode(
-      input_tensor, perm_tensor);
+  auto transpose_node =
+      converter->network()->AddIPermuteNode(input_tensor, perm_tensor);
   if (transpose_node == nullptr) {
     NNADAPTER_VLOG(5) << "Failed to add transpose node.";
     return NNADAPTER_DEVICE_INTERNAL_ERROR;

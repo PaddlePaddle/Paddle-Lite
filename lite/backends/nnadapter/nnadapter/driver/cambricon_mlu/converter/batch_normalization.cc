@@ -32,21 +32,21 @@ int ConvertBatchNormalization(Converter* converter, hal::Operation* operation) {
   auto offset_tensor = converter->ConvertOperand(bias_operand);
   auto mean_tensor = converter->ConvertOperand(mean_operand);
   auto variance_tensor = converter->ConvertOperand(variance_operand);
-  auto batch_norm_node =
-      converter->network()->AddIFusedBatchNormNode(input_tensor, mean_tensor, variance_tensor,
-                                                   scale_tensor, offset_tensor);
+  auto batch_norm_node = converter->network()->AddIFusedBatchNormNode(
+      input_tensor, mean_tensor, variance_tensor, scale_tensor, offset_tensor);
   if (batch_norm_node == nullptr) {
     NNADAPTER_VLOG(5) << "Failed to add batch_norm node.";
     return NNADAPTER_DEVICE_INTERNAL_ERROR;
   }
   batch_norm_node->SetEpsilon(epsilon);
-  magicmind::Layout layout = ConvertToMagicMindDataLayout(input_operand->type.layout);
+  magicmind::Layout layout =
+      ConvertToMagicMindDataLayout(input_operand->type.layout);
   batch_norm_node->SetLayout(layout, layout);
   int64_t axis = ConvertToMagicMindAxis(input_operand->type.layout);
   batch_norm_node->SetAxis(axis);
   auto output_tensor = batch_norm_node->GetOutput(0);
   converter->UpdateTensorMap(output_operand, output_tensor);
- return NNADAPTER_NO_ERROR;
+  return NNADAPTER_NO_ERROR;
 }
 
 }  // namespace cambricon_mlu

@@ -31,8 +31,8 @@ int ConvertSoftmax(Converter* converter, hal::Operation* operation) {
   }
   auto axis_operand = input_operands[1];
   auto axis_tensor = converter->ConvertOperand(axis_operand);
-  auto softmax_node = converter->network()->AddISoftmaxNode(
-      input_tensor, axis_tensor);
+  auto softmax_node =
+      converter->network()->AddISoftmaxNode(input_tensor, axis_tensor);
   if (softmax_node == nullptr) {
     NNADAPTER_VLOG(5) << "Failed to add softmax node.";
     return NNADAPTER_DEVICE_INTERNAL_ERROR;

@@ -14,28 +14,31 @@
 
 #pragma once
 
-#include <interface_network.h>
-#include <interface_builder.h>
-#include <interface_runtime.h>
 #include <cnrt.h>
+#include <interface_builder.h>
+#include <interface_network.h>
+#include <interface_runtime.h>
+#include <memory>
 #include <vector>
 #include "core/hal/types.h"
 
 namespace nnadapter {
 namespace cambricon_mlu {
 
-#define MLU_CNRT_CHECK(msg)                         \
-  NNADAPTER_CHECK_EQ(msg, cnrtSuccess)              \
-      << (msg) << " " << cnrtGetErrorStr(msg)
+#define MLU_CNRT_CHECK(msg) \
+  NNADAPTER_CHECK_EQ(msg, cnrtSuccess) << (msg) << " " << cnrtGetErrorStr(msg)
 
 // Convert NNAdapter types to magicmind dtype
-magicmind::DataType ConvertToMagicMindDtype(NNAdapterOperandPrecisionCode input_precision);
+magicmind::DataType ConvertToMagicMindDtype(
+    NNAdapterOperandPrecisionCode input_precision);
 // Convert NNAdapter operand layout to magicmind layout
-magicmind::Layout ConvertToMagicMindDataLayout(NNAdapterOperandLayoutCode input_layout);
+magicmind::Layout ConvertToMagicMindDataLayout(
+    NNAdapterOperandLayoutCode input_layout);
 // Convert NNAdapter operand layout to magicmind axis, if NHWC, axis = 3.
 int64_t ConvertToMagicMindAxis(NNAdapterOperandLayoutCode input_layout);
 // Convert NNAdapter dims to magicmind dims
-magicmind::Dims ConvertToMagicMindDims(const int32_t* input_dimensions, uint32_t input_dimensions_count);
+magicmind::Dims ConvertToMagicMindDims(const int32_t* input_dimensions,
+                                       uint32_t input_dimensions_count);
 
 template <typename T>
 struct MMDestroyer {

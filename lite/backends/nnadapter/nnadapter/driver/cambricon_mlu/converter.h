@@ -26,8 +26,9 @@ namespace cambricon_mlu {
 
 class Converter {
  public:
-  explicit Converter(std::map<hal::Operand*, std::vector<magicmind::ITensor*>>* tensors,
-                     magicmind::INetwork* network)
+  explicit Converter(
+      std::map<hal::Operand*, std::vector<magicmind::ITensor*>>* tensors,
+      magicmind::INetwork* network)
       : tensors_(tensors), network_(network) {}
   ~Converter() {}
 

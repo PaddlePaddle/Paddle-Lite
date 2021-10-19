@@ -41,4 +41,3 @@ endif()
 if(NNADAPTER_WITH_CAMBRICON_MLU)
   add_subdirectory(cambricon_mlu)
 endif()
-

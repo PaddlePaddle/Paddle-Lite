@@ -23,12 +23,12 @@ namespace cambricon_mlu {
 const std::map<NNAdapterOperationType, magicmind::IActivation>*
 ActivationOperationMap() {
   static auto* const m =
-      new std::map<NNAdapterOperationType, magicmind::IActivation> {
-        {NNADAPTER_RELU, magicmind::IActivation::RELU},
-        {NNADAPTER_RELU6, magicmind::IActivation::RELU6},
-        {NNADAPTER_SIGMOID, magicmind::IActivation::SIGMOID},
-        {NNADAPTER_TANH, magicmind::IActivation::TANH},
-  };
+      new std::map<NNAdapterOperationType, magicmind::IActivation>{
+          {NNADAPTER_RELU, magicmind::IActivation::RELU},
+          {NNADAPTER_RELU6, magicmind::IActivation::RELU6},
+          {NNADAPTER_SIGMOID, magicmind::IActivation::SIGMOID},
+          {NNADAPTER_TANH, magicmind::IActivation::TANH},
+      };
   return m;
 }
 
@@ -45,8 +45,8 @@ int ConvertActivations(Converter* converter, hal::Operation* operation) {
     NNADAPTER_VLOG(5) << "Unsupported activation op.";
     return NNADAPTER_DEVICE_INTERNAL_ERROR;
   }
-  auto activation_node = converter->network()->AddIActivationNode(
-      input_tensor, op_pair->second);
+  auto activation_node =
+      converter->network()->AddIActivationNode(input_tensor, op_pair->second);
   if (activation_node == nullptr) {
     NNADAPTER_VLOG(5) << "Failed to add activation node.";
     return NNADAPTER_DEVICE_INTERNAL_ERROR;
