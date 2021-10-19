@@ -1,4 +1,4 @@
-# 英特尔 FPGA 预测部署示例
+# 英特尔 FPGA 部署示例
 
 PaddleLite已支持英特尔FPGA平台的预测部署，PaddleLite通过调用底层驱动实现对FPGA硬件的调度。
 
