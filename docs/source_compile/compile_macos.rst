@@ -8,7 +8,7 @@
 简介
 ----
 
-如果你的本机环境是 MacOS 操作系统（暂不支持 M1 机型），需要部署模型到 MacOS 系统的目标硬件上，则可以参考本文的介绍，从源码构建 Paddle Lite 编译包，用于后续应用程序的开发。
+如果你的本机环境是 MacOS 操作系统（注意区分 x86 和 ARM 架构），需要部署模型到 MacOS 系统的目标硬件上，则可以参考本文的介绍，从源码构建 Paddle Lite 编译包，用于后续应用程序的开发。
 
 在该场景下 Paddle Lite 已验证的软硬件配置如下表所示：
 
@@ -22,11 +22,11 @@
      - MacOS\ :raw-html-m2r:`<br>`
      - MacOS\ :raw-html-m2r:`<br>`
    * - **芯片层**
-     - x86 架构
-     - x86 架构 :raw-html-m2r:`<br>`
+     - x86/ARM 架构
+     - x86/ARM 架构 :raw-html-m2r:`<br>`
 
 
-[^1]：OpenCL 是面向异构硬件平台的编译库，Paddle Lite 支持在 x86 MacOS 系统上运行基于 OpenCL 的程序。
+[^1]：OpenCL 是面向异构硬件平台的编译库，Paddle Lite 支持在 MacOS 系统上运行基于 OpenCL 的程序。
 
    **说明：**
 
@@ -61,13 +61,16 @@
    # 1. Install basic software
    brew install curl gcc git make unzip wget 
 
-   # 2. 安装 CMake，以下命令以3.15版本为例，其他版本步骤类似。
+   # 2-1. 如果是 x86 MacOS 则安装 CMake，以下命令以3.15版本为例，其他版本步骤类似。
    mkdir /usr/local/Cellar/cmake/ && cd /usr/local/Cellar/cmake/ \
        cd /usr/local/Cellar/cmake/ \
        wget https://cmake.org/files/v3.15/cmake-3.15.2-Darwin-x86_64.tar.gz \
        tar zxf ./cmake-3.15.2-Darwin-x86_64.tar.gz \
        mv cmake-3.15.2-Darwin-x86_64/CMake.app/Contents/ ./3.15.2 \
        ln -s /usr/local/Cellar/cmake/3.15.2/bin/cmake /usr/local/bin/cmake
+
+   # 2-2. 如果是 ARM MacOS 则 brew 安装 cmake
+   brew install cmake
 
 了解基础编译参数
 ----------------
@@ -121,15 +124,17 @@ Paddle Lite 仓库中\ ``/lite/tools/build_macos.sh``\ 脚本文件用于构建 
 
 .. code-block:: shell
 
-   # 1. 下载 Paddle Lite 源码并切换到发布分支，如 develop
+   # 1. 下载 Paddle Lite 源码并切换到发布分支，如 release/v2.10
    git clone https://github.com/PaddlePaddle/Paddle-Lite.git
-   cd Paddle-Lite && git checkout develop
+   cd Paddle-Lite && git checkout release/v2.10
 
    # (可选) 删除 third-party 目录，编译脚本会自动从国内CDN下载第三方库文件
    # rm -rf third-party
 
-   # 2. 编译 Paddle Lite x86 MacOS 预测库
+   # 2-1. 编译 Paddle Lite x86 MacOS 预测库
    ./lite/tools/build_macos.sh x86
+   # 2-2. 编译 Paddle Lite ARM MacOS 预测库
+   ./lite/tools/build_macos.sh arm64
 
 ..
 
@@ -140,7 +145,7 @@ Paddle Lite 仓库中\ ``/lite/tools/build_macos.sh``\ 脚本文件用于构建 
 验证编译结果
 ------------
 
-如果执行\ ``/lite/tools/build_macos.sh x86``\ 中的默认参数执行，成功后会在 ``Paddle-Lite/build.lite.x86/inference_lite_lib`` 生成 Paddle Lite 编译包，文件目录如下。
+如果执行\ ``/lite/tools/build_macos.sh x86``\ ，成功后会在 ``Paddle-Lite/build.lite.x86/inference_lite_lib`` 生成 Paddle Lite 编译包，文件目录如下：
 
 .. code-block:: shell
 
@@ -165,11 +170,27 @@ Paddle Lite 仓库中\ ``/lite/tools/build_macos.sh``\ 脚本文件用于构建 
    │   ├── glog
    │   ├── mklml
    │   ├── protobuf
-   │   └──  xxhash
+   │   └── xxhash
    │
    └── demo                                              C++ 示例代码
        └── cxx                                           C++ 预测库demo
 
+如果执行\ ``/lite/tools/build_macos.sh arm64``\ ，成功后会在 ``Paddle-Lite/build.macos.armmacos.armv8/inference_lite_lib.armmacos.armv8/`` 生成 Paddle Lite 编译包，文件目录如下：
+
+.. code-block:: shell
+
+   inference_lite_lib.armmacos.armv8/
+   ├── include
+   │   ├── paddle_api.h
+   │   ├── paddle_image_preprocess.h
+   │   ├── paddle_lite_factory_helper.h
+   │   ├── paddle_place.h
+   │   ├── paddle_use_kernels.h
+   │   ├── paddle_use_ops.h
+   │   └── paddle_use_passes.h
+   └── lib
+       ├── libpaddle_api_light_bundled.a
+       └── libpaddle_light_api_shared.dylib
 
 多设备支持
 ------------
