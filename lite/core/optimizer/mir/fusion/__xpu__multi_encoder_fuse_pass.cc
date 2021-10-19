@@ -839,7 +839,7 @@ class XPUMultiEncoderFuser {
       int bias_q_len = bias_q->numel();
       int bias_k_len = bias_k->numel();
       int bias_v_len = bias_v->numel();
-      if (bias_q_len == (3 * bias_q_len)) {
+      if (bias_q_len == (3 * bias_k_len) && (bias_k_len == bias_v_len)) {
         VLOG(3) << "qkv-fused bias " << i
                 << " already be updated, dims:" << bias_q_dims;
         continue;
