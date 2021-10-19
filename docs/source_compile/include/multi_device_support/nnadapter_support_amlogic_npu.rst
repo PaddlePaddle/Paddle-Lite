@@ -16,4 +16,4 @@ NNAdapter 支持晶晨 NPU
      - 用户自定义
      - 空值
 
-详细请参考 `晶晨 NPU 预测部署示例 <https://paddle-lite.readthedocs.io/zh/release-v2.10/demo_guides/amlogic_npu.html>`_
+详细请参考 `晶晨 NPU 部署示例 <https://paddle-lite.readthedocs.io/zh/release-v2.10/demo_guides/amlogic_npu.html>`_
