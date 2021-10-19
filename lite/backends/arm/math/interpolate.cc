@@ -532,6 +532,8 @@ void interpolate(lite::Tensor* X,
       if (scale_data[0] > 0 && scale_data[1] > 0) {
         out_height = static_cast<int>(in_h * scale_data[0]);
         out_width = static_cast<int>(in_w * scale_data[1]);
+      } else {
+        LOG(FATAL) << "scale data <= 0";
       }
     }
     auto out_size = OutSize;
