@@ -130,3 +130,12 @@ for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
             << std::endl;
 }
 ```
+
+## Q&A:
+问题：
+- 提示feed kernel not found:
+  - 在包含Paddle-Lite头文件的时候加上以下两行即可
+  ```
+   #include "include/paddle_use_ops.h"
+   #include "include/paddle_use_kernels.h"
+  ```

@@ -400,7 +400,10 @@ void LightPredictor::ClearTensorArray(
     for (size_t var_idx = 0; var_idx < block->VarsSize(); var_idx++) {
       const cpp::VarDesc* var = block->GetVar<cpp::VarDesc>(var_idx);
       CHECK(var);
-      if (var->GetType() == lite::VarDataType::LOD_TENSOR_ARRAY) {
+
+      auto* var_ptr = program_->exec_scope()->FindVar(var->Name());
+      if (var_ptr->IsType<std::vector<Tensor>>() &&
+          (var->Name() != "feed" && var->Name() != "fetch")) {
         std::vector<Tensor>* tensor_array_var =
             program_->exec_scope()->FindMutableTensorList(var->Name());
         CHECK(tensor_array_var);

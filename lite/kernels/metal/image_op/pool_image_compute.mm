@@ -36,8 +36,7 @@ void PoolImageCompute::PrepareForRun() {
 #ifdef LITE_WITH_METAL_FULL
 #else
     input_buffer_ = param.x->data<MetalHalf, MetalImage>();
-    output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(
-        metal_context_, output_dims);
+    output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
 #endif
 
     // use mps or not
@@ -184,7 +183,7 @@ void PoolImageCompute::setup_with_mps() {
     }
     int offsetX = static_cast<int>(((int)(kw - 1) + 1) / 2 - pw);
     int offsetY = static_cast<int>(((int)(kh - 1) + 1) / 2 - ph);
-    
+
     if (@available(iOS 10.0, *)) {
         if (param.pooling_type == "max") {
             mps_pool_op_ =

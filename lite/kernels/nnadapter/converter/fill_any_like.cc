@@ -38,18 +38,18 @@ int ConvertFillAnyLike(Converter* converter, OpInfo* op, Scope* scope) {
   auto input_precision = converter->GetOperandType(input_operand)->precision;
   if (dtype == -1) {
     switch (input_precision) {
-      case NNADAPTER_TENSOR_FLOAT32:
+      case NNADAPTER_FLOAT32:
         dtype = static_cast<int32_t>(lite::core::FluidType::FP32);
         break;
-      case NNADAPTER_TENSOR_INT32:
+      case NNADAPTER_INT32:
         dtype = static_cast<int32_t>(lite::core::FluidType::INT32);
         break;
-      case NNADAPTER_TENSOR_INT64:
+      case NNADAPTER_INT64:
         dtype = static_cast<int32_t>(lite::core::FluidType::INT64);
         break;
       default:
         LOG(FATAL) << "Not supported x dtype: "
-                   << static_cast<int>(NNADAPTER_TENSOR_FLOAT32);
+                   << static_cast<int>(NNADAPTER_FLOAT32);
         break;
     }
   }

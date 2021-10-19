@@ -41,12 +41,21 @@ class CompareImageCompute
     void PrepareForRun() override;
     void Run() override;
     void SaveOutput() override {
-        MetalDebug::SaveOutput(function_name_, output_buffer_);
+        MetalDebug::SaveOutput((use_mps_ ? ("MPS_compare") : function_name_), output_buffer_);
     };
     virtual ~CompareImageCompute();
 
    private:
+    bool use_mps_{false};
+    void* mps_op_{nullptr};
+    void* mps_input_x_image_{nullptr};
+    void* mps_input_y_image_{nullptr};
+    void* mps_output_image_{nullptr};
+
+    void setup_with_mps();
     void setup_without_mps();
+
+    void run_with_mps();
     void run_without_mps();
 
     MetalImage* output_buffer_{nullptr};

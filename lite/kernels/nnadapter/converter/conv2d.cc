@@ -209,7 +209,7 @@ int ConvertConv2D(Converter* converter, OpInfo* op, Scope* scope) {
     bias_operand = converter->AddConstantOperand(
         reinterpret_cast<void*>(zeros.data()),
         DDim({output_channel_size}),
-        is_quant_mode ? NNADAPTER_TENSOR_INT32 : input_type->precision,
+        is_quant_mode ? NNADAPTER_INT32 : input_type->precision,
         true,
         bias_scales);
   }
