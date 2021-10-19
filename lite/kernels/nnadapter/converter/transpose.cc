@@ -20,7 +20,7 @@ namespace kernels {
 namespace nnadapter {
 
 int ConvertTranspose(Converter* converter, OpInfo* op, Scope* scope) {
-  // 1. Extract op attributes
+  // Extract op attributes
   // Input
   auto x_name = op->Input("X").front();
   auto x_scale_name = "X0_scale";
@@ -38,12 +38,11 @@ int ConvertTranspose(Converter* converter, OpInfo* op, Scope* scope) {
     output_scales = op->GetOutputScale(output_scale_name, true);
   }
 
-  // 2. Convert to NNAdapter operands and operation
+  // Convert to NNAdapter operands and operation
   // Input operand
   auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
   // Perm operand
-  auto perm_operand = converter->AddConstantOperand(
-      &axis[0], DDim({static_cast<int64_t>(axis.size())}));
+  auto perm_operand = converter->AddConstantOperand(axis);
   // Output operand
   auto output_operand = converter->AddOutputOperand(output_name, output_scales);
   // Transpose operation

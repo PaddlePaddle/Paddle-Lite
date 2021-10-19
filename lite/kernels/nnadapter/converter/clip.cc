@@ -20,7 +20,7 @@ namespace kernels {
 namespace nnadapter {
 
 int ConvertClip(Converter* converter, OpInfo* op, Scope* scope) {
-  // 1. Extract op attributes
+  // Extract op attributes
   // Input
   auto x_name = op->Input("X").front();
   auto x_scale_name = "X0_scale";
@@ -40,12 +40,12 @@ int ConvertClip(Converter* converter, OpInfo* op, Scope* scope) {
     output_scales = op->GetOutputScale(output_scale_name, true);
   }
 
-  // 2. Convert to NNAdapter operands and operation
+  // Convert to NNAdapter operands and operation
   // Input operand
   auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
   // Min operand
   NNAdapterOperand* min_operand = nullptr;
-  if (op->HasInput("Min") && op->Input("Min").size() > 0) {
+  if (HasInput(op, scope, "Min")) {
     auto min_name = op->Input("Min").front();
     min_operand = converter->AddInputOperand(scope, min_name);
   } else {
@@ -53,7 +53,7 @@ int ConvertClip(Converter* converter, OpInfo* op, Scope* scope) {
   }
   // Max operand
   NNAdapterOperand* max_operand = nullptr;
-  if (op->HasInput("Max") && op->Input("Max").size() > 0) {
+  if (HasInput(op, scope, "Max")) {
     auto max_name = op->Input("Max").front();
     max_operand = converter->AddInputOperand(scope, max_name);
   } else {

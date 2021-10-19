@@ -132,7 +132,7 @@ REGISTER_CONVERTER(greater_equal, ConvertComparisons, "huawei_ascend_npu");
 REGISTER_CONVERTER(less_than, ConvertComparisons, "huawei_ascend_npu");
 REGISTER_CONVERTER(less_equal, ConvertComparisons, "huawei_ascend_npu");
 REGISTER_CONVERTER(less_than, ConvertComparisons, "huawei_ascend_npu");
-REGISTER_CONVERTER(reduce_mean, ConvertReduceMean, "huawei_ascend_npu");
+REGISTER_CONVERTER(reduce_mean, ConvertReduce, "huawei_ascend_npu");
 REGISTER_CONVERTER(top_k, ConvertTopK, "huawei_ascend_npu");
 REGISTER_CONVERTER(top_k_v2, ConvertTopK, "huawei_ascend_npu");
 REGISTER_CONVERTER(

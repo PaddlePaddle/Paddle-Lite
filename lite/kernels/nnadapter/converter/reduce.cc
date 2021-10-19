@@ -19,8 +19,8 @@ namespace lite {
 namespace kernels {
 namespace nnadapter {
 
-int ConvertReduceMean(Converter* converter, OpInfo* op, Scope* scope) {
-  // 1. Extract op attributes
+int ConvertReduce(Converter* converter, OpInfo* op, Scope* scope) {
+  // Extract op attributes
   // Input
   auto x_name = op->Input("X").front();
   auto x_scale_name = "X0_scale";
@@ -45,7 +45,7 @@ int ConvertReduceMean(Converter* converter, OpInfo* op, Scope* scope) {
     output_scales = op->GetOutputScale(output_scale_name, true);
   }
 
-  // 2. Convert to NNAdapter operands and operation
+  // Convert to NNAdapter operands and operation
   // Input operand
   auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
   // Axes operand
@@ -56,14 +56,21 @@ int ConvertReduceMean(Converter* converter, OpInfo* op, Scope* scope) {
       dim.push_back(i);
     }
   }
-  auto axes_operand = converter->AddConstantOperand(
-      &dim[0], DDim({static_cast<int64_t>(dim.size())}));
+  auto axes_operand = converter->AddConstantOperand(dim);
   // Keep_dim operand: keep_dim: default 1
   auto keep_dim_operand = converter->AddConstantOperand(keep_dim);
   // Output operand
   auto output_operand = converter->AddOutputOperand(output_name, output_scales);
-  // ReduceMean operation
-  converter->AddOperation(NNADAPTER_REDUCE_MEAN,
+  // Reduce operation
+  NNAdapterOperationType reduce_operation_type;
+  auto op_type = op->Type();
+  if (op_type == "reduce_mean") {
+    reduce_operation_type = NNADAPTER_REDUCE_MEAN;
+  } else {
+    LOG(WARNING) << "Unsupported reduce operation type: " << op_type;
+    return UNSUPPORTED_FEATURE;
+  }
+  converter->AddOperation(reduce_operation_type,
                           {input_operand, axes_operand, keep_dim_operand},
                           {output_operand});
   return NO_ERROR;

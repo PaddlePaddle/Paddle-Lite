@@ -20,7 +20,7 @@ namespace kernels {
 namespace nnadapter {
 
 int ConvertBatchNormalization(Converter* converter, OpInfo* op, Scope* scope) {
-  // 1. Extract op attributes
+  // Extract op attributes
   // Input
   auto x_name = op->Input("X").front();
   auto x_scale_name = "X0_scale";
@@ -46,7 +46,7 @@ int ConvertBatchNormalization(Converter* converter, OpInfo* op, Scope* scope) {
     output_scales = op->GetOutputScale(output_scale_name, true);
   }
 
-  // 2. Convert to NNAdapter operands and operation
+  // Convert to NNAdapter operands and operation
   // Input operand
   auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
   // Scale operand

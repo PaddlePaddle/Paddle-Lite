@@ -33,21 +33,18 @@ int PrepareReduce(hal::Operation* operation) {
     output_type.dimensions.count = input_type.dimensions.count;
   } else {
     output_type.dimensions.count =
-        (input_type.dimensions.count - axes_size == 0)
+        (input_type.dimensions.count == axes_size)
             ? 1
             : input_type.dimensions.count - axes_size;
   }
   auto infer_output_shape = [&](const int32_t* input_dimensions,
                                 const int32_t input_dimension_count,
-                                const int32_t* axes_data,
-                                const int32_t axes_count,
-                                bool keep_dim,
                                 int32_t* output_dimensions) {
     for (int i = 0; i < input_dimension_count; i++) {
       output_dimensions[i] = input_dimensions[i];
     }
     const int kDelFlag = -2;
-    for (int i = 0; i < axes_count; i++) {
+    for (int i = 0; i < axes_size; i++) {
       auto axis = axes_data[i] >= 0 ? axes_data[i]
                                     : axes_data[i] + input_dimension_count;
       if (keep_dim) {
@@ -71,16 +68,10 @@ int PrepareReduce(hal::Operation* operation) {
   };
   infer_output_shape(input_type.dimensions.data,
                      input_type.dimensions.count,
-                     axes_data,
-                     axes_size,
-                     keep_dim,
                      output_type.dimensions.data);
   for (uint32_t i = 0; i < input_type.dimensions.dynamic_count; i++) {
     infer_output_shape(input_type.dimensions.dynamic_data[i],
                        input_type.dimensions.count,
-                       axes_data,
-                       axes_size,
-                       keep_dim,
                        output_type.dimensions.dynamic_data[i]);
   }
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);

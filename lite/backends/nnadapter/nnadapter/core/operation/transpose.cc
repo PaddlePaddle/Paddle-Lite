@@ -30,21 +30,14 @@ int PrepareTranspose(hal::Operation* operation) {
   auto& output_type = output_operand->type;
   CopyOperandTypeExceptQuantParams(&output_type, input_type);
   auto infer_output_shape = [&](int32_t* input_dimensions_data,
-                                int32_t* perm_data,
-                                uint32_t perm_count,
                                 int32_t* output_dimensions_data) {
     for (uint32_t i = 0; i < perm_count; i++) {
       output_dimensions_data[i] = input_dimensions_data[perm_data[i]];
     }
   };
-  infer_output_shape(input_type.dimensions.data,
-                     perm_data,
-                     perm_count,
-                     output_type.dimensions.data);
+  infer_output_shape(input_type.dimensions.data, output_type.dimensions.data);
   for (uint32_t i = 0; i < input_type.dimensions.dynamic_count; i++) {
     infer_output_shape(input_type.dimensions.dynamic_data[i],
-                       perm_data,
-                       perm_count,
                        output_type.dimensions.dynamic_data[i]);
   }
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
