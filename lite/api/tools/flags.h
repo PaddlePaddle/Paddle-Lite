@@ -21,8 +21,8 @@ namespace paddle {
 namespace lite_api {
 
 // Model options
-static const char optimized_model_path_msg[] =
-    "The path of the model that is optimized by opt.";
+static const char optimized_model_file_msg[] =
+    "The filename of the model that is optimized by opt.";
 static const char uncombined_model_dir_msg[] =
     "The dir of the uncombined model, the model and param files "
     "are under model_dir.";
@@ -106,7 +106,7 @@ static const char memory_check_interval_ms_msg[] =
 // Others
 
 // Model options
-DECLARE_string(optimized_model_path);
+DECLARE_string(optimized_model_file);
 DECLARE_string(uncombined_model_dir);
 DECLARE_string(model_file);
 DECLARE_string(param_file);

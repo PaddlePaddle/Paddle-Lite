@@ -83,7 +83,7 @@ bool CheckFlagsValid() {
   bool ret = true;
   bool is_opt_model =
       (FLAGS_uncombined_model_dir.empty() && FLAGS_model_file.empty() &&
-       FLAGS_param_file.empty() && !FLAGS_optimized_model_path.empty());
+       FLAGS_param_file.empty() && !FLAGS_optimized_model_file.empty());
   bool is_origin_model =
       (!FLAGS_uncombined_model_dir.empty() ||
        (!FLAGS_model_file.empty() && !FLAGS_param_file.empty()));
@@ -126,13 +126,13 @@ bool CheckFlagsValid() {
 const std::string PrintUsage() {
   std::stringstream ss;
   ss << "\nNote: \n"
-        "  If load the optimized model, set --optimized_model_path. "
+        "  If load the optimized model, set --optimized_model_file. "
         "\n"
         "  Otherwise, set --uncombined_model_dir for uncomnbined paddle model "
         "or set --model_file and param_file for combined paddle model. \n"
         "For example (Android): \n"
         "  For optimized model : ./benchmark_bin "
-        "--optimized_model_path=/data/local/tmp/mobilenetv1_opt.nb "
+        "--optimized_model_file=/data/local/tmp/mobilenetv1_opt.nb "
         "--input_shape=1,3,224,224 --backend=arm \n\n"
         "  For uncombined model: ./benchmark_bin "
         "--uncombined_model_dir=/data/local/tmp/mobilenetv1 "
@@ -149,7 +149,7 @@ const std::string PrintUsage() {
         "LD_LIBRARY_PATH=./build.lite.linux*/third_party/install/mklml/lib/"
         ":$LD_LIBRARY_PATH \n"
         "  For optimized model : ./benchmark_bin "
-        "--optimized_model_path=/path/to/mbilenetv1_opt.nb "
+        "--optimized_model_file=/path/to/mbilenetv1_opt.nb "
         "--input_shape=1,3,224,224 --backend=x86 \n\n"
         "  For uncombined model: ./benchmark_bin "
         "--uncombined_model_dir=/path/to/mobilenetv1 "
@@ -257,15 +257,8 @@ void SetBackendConfig(lite_api::MobileConfig& config) {  // NOLINT
   }
 }
 
-void OutputOptModel(const std::string& save_optimized_model_path) {
+const std::string OutputOptModel(const std::string& opt_model_file) {
   auto opt = paddle::lite_api::OptBase();
-  if (!FLAGS_uncombined_model_dir.empty()) {
-    opt.SetModelDir(FLAGS_uncombined_model_dir);
-  } else {
-    opt.SetModelFile(FLAGS_model_file);
-    opt.SetParamFile(FLAGS_param_file);
-  }
-  opt.SetOptimizeOut(save_optimized_model_path);
 
   if (FLAGS_backend != "") {
     auto backends_list = lite::Split(FLAGS_backend, ",");
@@ -292,12 +285,37 @@ void OutputOptModel(const std::string& save_optimized_model_path) {
     }
   }
 
-  auto previous_opt_model = save_optimized_model_path + ".nb";
-  int ret = system(
-      lite::string_format("rm -rf %s", previous_opt_model.c_str()).c_str());
-  if (ret == 0) {
-    std::cout << "Delete previous optimized model: " << previous_opt_model
-              << std::endl;
+  auto npos = opt_model_file.find(".nb");
+  std::string out_name = opt_model_file.substr(0, npos);
+  opt.SetOptimizeOut(out_name);
+  bool is_opt_model =
+      (FLAGS_uncombined_model_dir.empty() && FLAGS_model_file.empty() &&
+       FLAGS_param_file.empty() && !FLAGS_optimized_model_file.empty());
+  bool ret = paddle::lite::IsFileExists(opt_model_file);
+  if (is_opt_model) {
+    if (!ret) {
+      std::cerr << lite::string_format("Mode file[%s] not exist!",
+                                       opt_model_file.c_str())
+                << std::endl;
+      std::abort();
+    }
+    return FLAGS_optimized_model_file;
+  }
+
+  if (!FLAGS_uncombined_model_dir.empty()) {
+    opt.SetModelDir(FLAGS_uncombined_model_dir);
+  } else {
+    opt.SetModelFile(FLAGS_model_file);
+    opt.SetParamFile(FLAGS_param_file);
+  }
+
+  if (ret) {
+    int err = system(
+        lite::string_format("rm -rf %s", opt_model_file.c_str()).c_str());
+    if (err == 0) {
+      std::cout << "Delete previous optimized model: " << opt_model_file
+                << std::endl;
+    }
   }
 
   opt.Run();
@@ -309,11 +327,13 @@ void OutputOptModel(const std::string& save_optimized_model_path) {
              ? FLAGS_model_file + " and " + FLAGS_param_file
              : FLAGS_uncombined_model_dir)
      << std::endl;
-  ss << "Save optimized model to " << save_optimized_model_path + ".nb"
-     << std::endl;
+  std::string saved_opt_model_file =
+      opt_model_file.empty() ? ".nb" : opt_model_file;
+  ss << "Save optimized model to " << saved_opt_model_file << std::endl;
   std::cout << ss.str() << std::endl;
 
   StoreBenchmarkResult(ss.str());
+  return saved_opt_model_file;
 }
 
 }  // namespace lite_api
