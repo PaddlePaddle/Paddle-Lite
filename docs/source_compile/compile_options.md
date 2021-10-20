@@ -34,7 +34,7 @@
 | 编译选项 |  说明  | 适用平台 | 默认值 |
 | :-- |  :-- | --: | --: |
 | LITE_WITH_ARM |  编译支持 Andriod 或 ARMLinux 平台预测库 | Andriod / ARMLinux | OFF |
-| LITE_WITH_JAVA |  编译支持 [Java API](../api_reference/java_api_doc.html)的预测库 | Andriod / ARMLinux | OFF |
+| LITE_WITH_JAVA |  编译支持 [Java API](../api_reference/java_api_doc.html) 的预测库 | Andriod / ARMLinux | OFF |
 | LITE_WITH_ARM_CLANG | 使用 clang 编译 ARM 平台预测库 | Andriod / ARMLinux |OFF |
 | WITH_ARM_DOTPROD |  编译 ARM 点积指令优化的预测库 | Andriod / ARMLinux |ON |
 | LITE_WITH_CV |  编译 [CV 图像加速库](../api_reference/cv.html) | Andirod / ARMLinux |OFF |
@@ -44,7 +44,7 @@
 | WITH_AVX |  编译有 AVX 指令优化的预测库 | X86 |ON IF ${AVX_FOUND} |
 | WITH_MKL | 编译有 Intel MKL 支持的预测库 | X86 |ON IF ${AVX_FOUND} |
 | LITE_ON_MODEL_OPTIMIZE_TOOL |  编译[模型优化工具 opt](../user_guides/model_optimize_tool.html) | X86 |OFF|
-| LITE_WITH_PYTHON |  编译支持 [Python API](../api_reference/python_api_doc.html)的预测库 | X86 / CUDA |OFF |
+| LITE_WITH_PYTHON |  编译支持 [Python API](../api_reference/python_api_doc.html) 的预测库 | X86 / CUDA |OFF |
 | LITE_WITH_OPENCL |  编译 [OpenCL 平台](../demo_guides/opencl.html)预测库 | OpenCL | OFF |
 | LITE_WITH_XPU |  编译[百度 XPU 平台](../demo_guides/baidu_xpu.html)预测库 | XPU |OFF |
 | LITE_WITH_XTCL | 通过 XTCL 方式支持百度 XPU，默认 Kernel 方式 | XPU |OFF IF LITE_WITH_XPU |
