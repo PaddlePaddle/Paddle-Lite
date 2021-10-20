@@ -291,9 +291,8 @@ const std::string OutputOptModel(const std::string& opt_model_file) {
   bool is_opt_model =
       (FLAGS_uncombined_model_dir.empty() && FLAGS_model_file.empty() &&
        FLAGS_param_file.empty() && !FLAGS_optimized_model_file.empty());
-  bool ret = paddle::lite::IsFileExists(opt_model_file);
   if (is_opt_model) {
-    if (!ret) {
+    if (!paddle::lite::IsFileExists(opt_model_file)) {
       std::cerr << lite::string_format("Mode file[%s] not exist!",
                                        opt_model_file.c_str())
                 << std::endl;
@@ -309,11 +308,13 @@ const std::string OutputOptModel(const std::string& opt_model_file) {
     opt.SetParamFile(FLAGS_param_file);
   }
 
-  if (ret) {
+  std::string saved_opt_model_file =
+      opt_model_file.empty() ? ".nb" : opt_model_file;
+  if (paddle::lite::IsFileExists(saved_opt_model_file)) {
     int err = system(
-        lite::string_format("rm -rf %s", opt_model_file.c_str()).c_str());
+        lite::string_format("rm -rf %s", saved_opt_model_file.c_str()).c_str());
     if (err == 0) {
-      std::cout << "Delete previous optimized model: " << opt_model_file
+      std::cout << "Delete previous optimized model: " << saved_opt_model_file
                 << std::endl;
     }
   }
@@ -327,8 +328,6 @@ const std::string OutputOptModel(const std::string& opt_model_file) {
              ? FLAGS_model_file + " and " + FLAGS_param_file
              : FLAGS_uncombined_model_dir)
      << std::endl;
-  std::string saved_opt_model_file =
-      opt_model_file.empty() ? ".nb" : opt_model_file;
   ss << "Save optimized model to " << saved_opt_model_file << std::endl;
   std::cout << ss.str() << std::endl;
 
