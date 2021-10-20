@@ -1,6 +1,6 @@
 # 性能数据
 
-请参考 [Benchmark 方法文档](benchmark_tools)对模型进行测试。
+请参考[性能测试文档](benchmark_tools)对模型进行测试。
 
 ## 测试环境
 
