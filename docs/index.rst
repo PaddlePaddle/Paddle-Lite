@@ -82,6 +82,7 @@ Welcome to Paddle-Lite's documentation!
   :name: sec-source-compile
 
   source_compile/compile_env
+  source_compile/docker_env
   source_compile/linux_x86_compile_linux_x86
   source_compile/linux_x86_compile_arm_linux
   source_compile/linux_x86_compile_android

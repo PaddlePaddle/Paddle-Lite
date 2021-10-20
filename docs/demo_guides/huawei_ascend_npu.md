@@ -57,7 +57,7 @@ Paddle Lite已支持华为昇腾NPU（Ascend310）在x86和Arm服务器上进行
   - [ESRGAN](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleGAN/esrgan_psnr_x4_div2k.tgz)
 
 
-- [开源模型支持列表](../introduction/support_model_list)
+- [开源模型支持列表](../quick_start/support_model_list)
 
 #### 性能
 
