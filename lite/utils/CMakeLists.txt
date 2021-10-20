@@ -55,6 +55,7 @@ lite_cc_library(utils SRCS ${UTILS_SRC} DEPS ${UTILS_DEPS})
 ###########################################################
 lite_cc_test(test_varient SRCS varient_test.cc)
 lite_cc_test(test_utils_string SRCS string_test.cc)
+lite_cc_test(test_fast_type_id SRCS fast_type_id_test.cc)
 # fp16 unit test
 if (WITH_TESTING)
     if (LITE_WITH_CUDA)
