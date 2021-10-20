@@ -14,8 +14,6 @@
 
 #ifdef LITE_WITH_X86
 
-#define GEMM_PROFILE
-
 #ifdef GEMM_PROFILE
 #define __USE_GNU
 #include <pthread.h>
@@ -376,7 +374,7 @@ bool test_gemm_s8u8f32(
             << t1.LapTimes().Min();
 #endif
 
-  if (max_err > 0.1) return false;
+  if (max_err > 0.001) return false;
   return true;
 }
 
@@ -391,9 +389,9 @@ TEST(TestX86LiteGemmInt8, gemm_s8u8_compute) {
     LOG(FATAL) << "set affinity failed";
   }
 #endif
-  for (int mm = 301; mm < 600; mm += 33) {
-    for (int nn = 301; nn < 600; nn += 43) {
-      for (int kk = 301; kk < 600; kk += 53) {
+  for (int mm = 301; mm < 400; mm += 33) {
+    for (int nn = 301; nn < 400; nn += 43) {
+      for (int kk = 301; kk < 400; kk += 53) {
         for (auto &ta : {true, false}) {
           for (auto &tb : {true, false}) {
             for (auto &bias : {true, false}) {
@@ -420,9 +418,9 @@ TEST(TestX86LiteGemmInt8f32, gemm_s8u8f32_compute) {
     LOG(FATAL) << "set affinity failed";
   }
 #endif
-  for (int mm = 301; mm < 600; mm += 33) {
-    for (int nn = 301; nn < 600; nn += 43) {
-      for (int kk = 301; kk < 600; kk += 53) {
+  for (int mm = 301; mm < 400; mm += 33) {
+    for (int nn = 301; nn < 400; nn += 43) {
+      for (int kk = 301; kk < 400; kk += 53) {
         for (auto &ta : {true, false}) {
           for (auto &tb : {true, false}) {
             for (auto &bias : {true, false}) {

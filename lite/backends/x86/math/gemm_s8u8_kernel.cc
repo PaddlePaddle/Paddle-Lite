@@ -14,6 +14,7 @@ limitations under the License. */
 
 #ifdef __AVX2__
 
+#include "lite/backends/x86/math/gemm_s8u8_kernel.h"
 #include <emmintrin.h>
 #include <immintrin.h>
 #include <smmintrin.h>
@@ -888,6 +889,49 @@ void gemm_kernel_loop_int8(int M,
     A += pack_k;
   }
 }
+
+#undef ACT_RELU_BIAS
+#undef ACT_RELU_BIAS_128
+#undef ACT_RELU_BIAS_FP32
+#undef CLIP_BORDER_LEFT
+#undef CLIP_BORDER_RIGHT
+#undef CLIP_S8
+#undef FLOAT2INT
+#undef _MM256_DOT_U8S8
+#undef _MM_DOT_U8S8
+#undef INT32x32_2_INT8x32
+#undef SET_A
+#undef SET_A_128
+#undef LOAD_B
+#undef LOAD_B_128
+#undef SUDOT
+#undef SUDOT_128
+#undef INIT_C
+#undef INIT_C_128
+#undef KERN_2x32
+#undef KERN_1x32
+#undef KERN_2x24
+#undef KERN_1x24
+#undef KERN_2x16
+#undef KERN_1x16
+#undef KERN_2x8
+#undef KERN_1x8
+#undef KERN_2x4
+#undef KERN_1x4
+#undef KERN_2x2
+#undef KERN_1x2
+#undef STORE_32
+#undef STORE_24
+#undef STORE_16
+#undef STORE_8
+#undef STORE_4
+#undef STORE_2
+#undef STORE_32_float
+#undef STORE_24_float
+#undef STORE_16_float
+#undef STORE_8_float
+#undef STORE_4_float
+#undef STORE_2_float
 
 }  // namespace math
 }  // namespace x86

@@ -16,18 +16,16 @@ limitations under the License. */
 
 #ifdef __AVX2__
 
+#include <string.h>
 #include <algorithm>
-#include "lite/backends/x86/math/gemm_s8u8_inner.h"
+#include "lite/backends/x86/math/gemm_s8u8_kernel.h"
+#include "lite/backends/x86/math/gemm_s8u8_pack.h"
+#include "lite/core/memory.h"
 
 namespace paddle {
 namespace lite {
 namespace x86 {
 namespace math {
-
-#define X86FREE(ptr)               \
-  if (ptr != nullptr) {            \
-    TargetFree(TARGET(kX86), ptr); \
-  }
 
 #define PARAM_INIT               \
   _is_trans_A = is_trans_A;      \
@@ -190,141 +188,27 @@ class generate_gemm_s8u8_x86_kern {
   }
 
   void gemm_int8_deinit() {
-    X86FREE(_pack_A);
-    X86FREE(_pack_B);
-    X86FREE(_re_bias);
-    X86FREE(_scale);
-    X86FREE(_in_bias);
+    if (_pack_A != nullptr) {
+      TargetFree(TARGET(kX86), _pack_A);
+    }
+    if (_pack_B != nullptr) {
+      TargetFree(TARGET(kX86), _pack_B);
+    }
+    if (_re_bias != nullptr) {
+      TargetFree(TARGET(kX86), _re_bias);
+    }
+    if (_scale != nullptr) {
+      TargetFree(TARGET(kX86), _scale);
+    }
+    if (_in_bias != nullptr) {
+      TargetFree(TARGET(kX86), _in_bias);
+    }
   }
 
   void calc_block(int M, int N, int K, int *blk_m, int *blk_n);
 };
 
-template <>
-void generate_gemm_s8u8_x86_kern<int8_t>::repack_bias(bool is_trans,
-                                                      int M,
-                                                      int K,
-                                                      const float *bias,
-                                                      float *out,
-                                                      float *Sa,
-                                                      float Sb,
-                                                      float Sc,
-                                                      const int8_t *A) {
-  const int8_t *a_ptr = A;
-  for (int i = 0; i < M; i++) {
-    float bias_val = bias ? bias[i] : 0.f;
-    float sum = 0.f;
-    float scale = TRANS_INT8_UINT8_OFFT / (Sa[i] * Sb);
-    a_ptr = A + i * K;
-    if (is_trans) {
-      for (int j = 0; j < K; j++) {
-        sum += A[i + j * M] * scale;
-      }
-    } else {
-      for (int j = 0; j < K; j++) {
-        sum += a_ptr[j] * scale;
-      }
-    }
-    out[i] = bias_val - sum;
-    out[i] = out[i] * Sc;
-  }
-}
-
-template <>
-void generate_gemm_s8u8_x86_kern<float>::repack_bias(bool is_trans,
-                                                     int M,
-                                                     int K,
-                                                     const float *bias,
-                                                     float *out,
-                                                     float *Sa,
-                                                     float Sb,
-                                                     float Sc,
-                                                     const int8_t *A) {
-  const int8_t *a_ptr = A;
-  for (int i = 0; i < M; i++) {
-    float bias_val = bias ? bias[i] : 0.f;
-    float sum = 0.f;
-    float scale = TRANS_INT8_UINT8_OFFT / (Sa[i] * Sb);
-    a_ptr = A + i * K;
-    if (is_trans) {
-      for (int j = 0; j < K; j++) {
-        sum += A[i + j * M] * scale;
-      }
-    } else {
-      for (int j = 0; j < K; j++) {
-        sum += a_ptr[j] * scale;
-      }
-    }
-    out[i] = bias_val - sum;
-  }
-}
-
-template <>
-void generate_gemm_s8u8_x86_kern<int8_t>::calc_scale(
-    int M, float *Sa, float Sb, float Sc, float *out) {
-  for (int i = 0; i < M; i++) {
-    if (0 == (Sa[i] * Sb))
-      out[i] = 0.f;
-    else
-      out[i] = Sc / (Sa[i] * Sb);
-  }
-}
-
-template <>
-void generate_gemm_s8u8_x86_kern<float>::calc_scale(
-    int M, float *Sa, float Sb, float Sc, float *out) {
-  for (int i = 0; i < M; i++) {
-    if (0 == (Sa[i] * Sb))
-      out[i] = 0.f;
-    else
-      out[i] = 1.f / (Sa[i] * Sb);
-  }
-}
-
-template <>
-void generate_gemm_s8u8_x86_kern<int8_t>::calc_block(
-    int M, int N, int K, int *blk_m, int *blk_n) {
-  int block_size, scale_tmp;
-  int block_m, block_n;
-
-  block_m = M;
-  block_n = 32 * _unroll_n;
-  // C(int8) + A(int8) + B(int8) + runtime packB(uint8)
-  block_size = block_m * block_n + _k_align4 * (block_m + 2 * block_n);
-  scale_tmp = static_cast<int>(ceil(block_size * 1.f / _l2_size));
-  scale_tmp = (scale_tmp + 1) / 2;
-  scale_tmp = scale_tmp * 2;
-  block_n = block_n / scale_tmp;
-  block_n = block_n / _unroll_n;
-  block_n = block_n * _unroll_n;
-  block_n = std::max(block_n, _unroll_n);
-
-  *blk_m = block_m;
-  *blk_n = block_n;
-}
-
-template <>
-void generate_gemm_s8u8_x86_kern<float>::calc_block(
-    int M, int N, int K, int *blk_m, int *blk_n) {
-  int block_size, scale_tmp;
-  int block_m, block_n;
-
-  block_m = M;
-  block_n = 32 * _unroll_n;
-  // C(int8) + A(int8) + B(int8) + runtime packB(uint8)
-  block_size =
-      block_m * block_n * sizeof(float) + _k_align4 * (block_m + 2 * block_n);
-  scale_tmp = static_cast<int>(ceil(block_size * 1.f / _l2_size));
-  scale_tmp = (scale_tmp + 1) / 2;
-  scale_tmp = scale_tmp * 2;
-  block_n = block_n / scale_tmp;
-  block_n = block_n / _unroll_n;
-  block_n = block_n * _unroll_n;
-  block_n = std::max(block_n, _unroll_n);
-
-  *blk_m = block_m;
-  *blk_n = block_n;
-}
+#undef PARAM_INIT
 
 }  // namespace math
 }  // namespace x86

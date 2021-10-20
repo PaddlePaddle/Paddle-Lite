@@ -14,11 +14,11 @@ limitations under the License. */
 
 #ifdef __AVX2__
 
+#include "lite/backends/x86/math/gemm_s8u8_pack.h"
 #include <emmintrin.h>
 #include <immintrin.h>
 #include <smmintrin.h>
 #include <tmmintrin.h>
-#include "lite/backends/x86/math/gemm_s8u8_inner.h"
 
 namespace paddle {
 namespace lite {
@@ -1140,6 +1140,40 @@ void gemm_s8u8s8_runpackB(
     packB_i82u8_notrans(N, K, stride, B, pack_B);
   }
 }
+
+#undef TRANSPOSE_4x32
+#undef TRANSPOSEA_4x16
+#undef TRANSPOSEA_4x8
+#undef TRANSPOSEA_4x4
+#undef TRANSPOSEA_4x2
+#undef ZERO_ALL
+#undef INT8_ADD_128
+#undef STORE_4x32
+#undef STORE_4x24
+#undef STORE_4x16
+#undef STORE_4x8
+#undef STORE_4x4
+#undef STORE_4x2
+#undef STORE_4x1
+#undef LOAD_32
+#undef LOAD_EPI32
+#undef LOAD_EPI64
+#undef LOAD_REMAIN
+#undef LOAD_REMAIN_EPI64
+#undef LOAD_REMAIN_EPI32
+#undef INT8_ADD_128_HALF
+#undef TRANSPOSE_STORE_4x16
+#undef TRANSPOSE_STORE_4x8
+#undef TRANSPOSE_STORE_2x16
+#undef TRANSPOSE_STORE_2x8
+#undef TRANSPOSE_4x16
+#undef TRANSPOSE_4x8
+#undef TRANSPOSE_4x4
+#undef TRANSPOSE_4xX
+#undef TRANSPOSE_2x16
+#undef TRANSPOSE_2x8
+#undef TRANSPOSE_2x4
+#undef TRANSPOSE_2xX
 
 }  // namespace math
 }  // namespace x86
