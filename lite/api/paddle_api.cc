@@ -47,28 +47,27 @@ namespace lite_api {
 
 bool IsOpenCLBackendValid(bool check_fp16_valid) {
 #ifdef LITE_WITH_LOG
-  LOG(INFO) << std::boolalpha
-            << "need to check fp16 valid:" << check_fp16_valid;
+  LOG(INFO) << "need to check fp16 valid:" << check_fp16_valid;
 #endif
   bool opencl_valid = false;
 
 #ifdef LITE_WITH_OPENCL
   bool opencl_lib_found = paddle::lite::CLWrapper::Global()->OpenclLibFound();
 #ifdef LITE_WITH_LOG
-  LOG(INFO) << std::boolalpha << "Found opencl library:" << opencl_lib_found;
+  LOG(INFO) << "Found opencl library:" << opencl_lib_found;
 #endif
   if (opencl_lib_found == false) return false;
 
   bool dlsym_success = paddle::lite::CLWrapper::Global()->DlsymSuccess();
 #ifdef LITE_WITH_LOG
-  LOG(INFO) << std::boolalpha << "dlsym_success:" << dlsym_success;
+  LOG(INFO) << "dlsym_success:" << dlsym_success;
 #endif
   if (dlsym_success == false) return false;
   opencl_valid = paddle::lite::CLRuntime::Global()->OpenCLAvaliableForDevice(
       check_fp16_valid);
 
 #ifdef LITE_WITH_LOG
-  LOG(INFO) << std::boolalpha << "opencl_valid:" << opencl_valid;
+  LOG(INFO) << "opencl_valid:" << opencl_valid;
 #endif
 #endif
   return opencl_valid;
