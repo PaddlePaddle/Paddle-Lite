@@ -18,8 +18,8 @@
 #include "lite/backends/metal/metal_debug.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
-#include "lite/kernels/metal/image_op/metal_params.h"
 #include "lite/kernels/metal/image_op/argmax_image_compute.h"
+#include "lite/kernels/metal/image_op/metal_params.h"
 
 namespace paddle {
 namespace lite {
@@ -76,7 +76,7 @@ void ArgmaxImageCompute::run_without_mps() {
     [encoder setTexture:(input_buffer_->image()) atIndex:(0)];
     [encoder setTexture:(output_buffer_->image()) atIndex:(1)];
     [encoder setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(0)];
-    
+
     [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
     [backend commit];
 }
@@ -85,7 +85,7 @@ void ArgmaxImageCompute::setup_without_mps() {
     const auto& param = this->Param<param_t>();
     auto irank = input_buffer_->tensor_dim_.size();
     auto orank = output_buffer_->tensor_dim_.size();
-    //axis
+    // axis
     if (param.Axis == 1 && irank == 4) {
     } else {
         LOG(FATAL) << "arg_max: max only support by channel";
@@ -115,7 +115,7 @@ void ArgmaxImageCompute::run_with_mps() {
         }
     }
     [backend commit:cmdbuf];
-    //attention: mps output c=1
+    // attention: mps output c=1
     {
         std::string function = "tex2d_c1_to_c4";
         id<MTLComputePipelineState> pipline = [backend pipline:function];
@@ -126,7 +126,7 @@ void ArgmaxImageCompute::run_with_mps() {
         auto encoder = [backend commandEncoder];
         [encoder setTexture:([(__bridge MPSImage*)mps_output_image_ texture]) atIndex:(0)];
         [encoder setTexture:(output_buffer_->image()) atIndex:(1)];
-        
+
         [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
         [backend commit];
     }
@@ -136,30 +136,34 @@ void ArgmaxImageCompute::setup_with_mps() {
     const auto& param = this->Param<param_t>();
     auto irank = input_buffer_->tensor_dim_.size();
     auto orank = output_buffer_->tensor_dim_.size();
-    //axis
+    // axis
     if (param.Axis == 1 && irank == 4 && orank == 4) {
     } else {
         LOG(FATAL) << "mps_arg_max: max only support by channel";
     }
-    
+
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     if (@available(iOS 12.0, *)) {
         mps_op_ = (__bridge_retained void*)[[MPSNNReduceFeatureChannelsArgumentMax alloc]
-                                            initWithDevice:backend.device];
+            initWithDevice:backend.device];
         // MPS input and output
         auto input_c = static_cast<int>(input_buffer_->tensor_dim_[1]);
         mps_input_image_ =
             (__bridge_retained void*)[[MPSImage alloc] initWithTexture:input_buffer_->image()
                                                        featureChannels:input_c];
-        //mps texture featureChannels must be 1
+        // mps texture featureChannels must be 1
         auto output_dims = param.Out->dims();
         auto dim = MetalImage::FourDimFrom(output_dims);
-        auto metal_image = new MetalImage(metal_context_, dim, {0, 2, 3, 1}, METAL_PRECISION_TYPE::HALF,
-                                    METAL_ACCESS_FLAG::CPUReadWrite, true);
+        auto metal_image = new MetalImage(metal_context_,
+            dim,
+            {0, 2, 3, 1},
+            METAL_PRECISION_TYPE::HALF,
+            METAL_ACCESS_FLAG::CPUReadWrite,
+            true);
         metal_image->initImage(metal_context_);
-        mps_output_image_ =
-            (__bridge_retained void*)[[MPSImage alloc] initWithTexture:metal_image->image()
-                                                       featureChannels:metal_image->channels_per_pixel_];
+        mps_output_image_ = (__bridge_retained void*)[[MPSImage alloc]
+            initWithTexture:metal_image->image()
+            featureChannels:metal_image->channels_per_pixel_];
         free(metal_image);
     }
 }
@@ -194,9 +198,13 @@ REGISTER_LITE_KERNEL(arg_max,
     paddle::lite::kernels::metal::ArgmaxImageCompute,
     Int32)
     .BindInput("X",
-        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
     .BindOutput("Out",
-        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kInt32), DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kInt32),
+            DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(arg_max,
@@ -206,7 +214,11 @@ REGISTER_LITE_KERNEL(arg_max,
     paddle::lite::kernels::metal::ArgmaxImageCompute,
     Int64)
     .BindInput("X",
-        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
     .BindOutput("Out",
-        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kInt64), DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kInt64),
+            DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
