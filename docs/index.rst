@@ -63,6 +63,7 @@ Welcome to Paddle-Lite's documentation!
   demo_guides/android_app_demo
   demo_guides/ios_app_demo
   demo_guides/linux_arm_demo
+  demo_guides/arm_cpu
   demo_guides/x86
   demo_guides/opencl
   demo_guides/fpga
