@@ -275,25 +275,22 @@ void test(const lite_api::CLPrecisionType p,
   LOG(INFO) << "\n\t[  PASSED  ] "
             << " Test Precision=" << lite_api::CLPrecisionTypeToStr(p)
             << " m=" << m << " k_x=" << k_x << " k_y=" << k_y << " n=" << n;
-  getchar();
 }
 
-#if 0
-TEST(matmul, compute_basic) {
-  for (const auto precision_type :
-       {lite_api::CLPrecisionType::CL_PRECISION_FP32,
-        lite_api::CLPrecisionType::CL_PRECISION_FP16
-        }) {
-    int m = 1, k = 1024;
-    std::vector<int> vec_n = {1, 2, 4, 8, 16, 32, 64,
-                              128, 256, 512, 1024, 1000};
-    for (auto n = 0; n < vec_n.size(); n++) {
-        test(precision_type, DDim(std::vector<DDim::value_type>{m, k}),
-                DDim(std::vector<DDim::value_type>{k, n}), false, false);
-    }
-  }
-}
-#endif
+// TEST(matmul, compute_basic) {
+//   for (const auto precision_type :
+//        {lite_api::CLPrecisionType::CL_PRECISION_FP32,
+//         lite_api::CLPrecisionType::CL_PRECISION_FP16
+//         }) {
+//     int m = 1, k = 1024;
+//     std::vector<int> vec_n = {1, 2, 4, 8, 16, 32, 64,
+//                               128, 256, 512, 1024, 1000};
+//     for (auto n = 0; n < vec_n.size(); n++) {
+//         test(precision_type, DDim(std::vector<DDim::value_type>{m, k}),
+//                 DDim(std::vector<DDim::value_type>{k, n}), false, false);
+//     }
+//   }
+// }
 
 TEST(matmul, compute_full) {
   for (const auto precision_type :
@@ -362,6 +359,7 @@ TEST(matmul, compute_full) {
          true,
          true);
 #if 0
+    // TODO(zhenlin-work)
     // dim nx1
     // test(precision_type, DDim(std::vector<DDim::value_type>{3, 4, 2, 5}),
     //         DDim(std::vector<DDim::value_type>{5}), false, false);

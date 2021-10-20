@@ -85,6 +85,7 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
     transpose_x_ = matmul_v2_param_->transpose_X;
     transpose_y_ = matmul_v2_param_->transpose_Y;
     alpha_ = matmul_v2_param_->alpha;
+    CHECK_EQ(alpha_, 1.f) << "Only support alpha == 1.0";
     auto y_t = matmul_v2_param_->Y;
     auto y_dims = y_t->dims();
 
@@ -161,11 +162,11 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
       const auto y_dims = matmul_v2_param_->Y->dims();
       const auto out_dims = matmul_v2_param_->Out->dims();
 #ifdef LITE_WITH_LOG
-      LOG(INFO) << "x_dims:" << x_dims;
-      LOG(INFO) << "y_dims:" << y_dims;
-      LOG(INFO) << "out_dims:" << out_dims;
-      LOG(INFO) << "transpose_X:" << transpose_x_;
-      LOG(INFO) << "transpose_Y:" << transpose_y_;
+      VLOG(4) << "x_dims:" << x_dims;
+      VLOG(4) << "y_dims:" << y_dims;
+      VLOG(4) << "out_dims:" << out_dims;
+      VLOG(4) << "transpose_X:" << transpose_x_;
+      VLOG(4) << "transpose_Y:" << transpose_y_;
 #endif
       if (x_dims.size() == 2 && y_dims.size() == 2) {
         if (transpose_x_) {
@@ -218,11 +219,6 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
       k_blks_ = UP_DIV(k_, 4);
       n_blks_ = UP_DIV(n_, 4);
 #ifdef LITE_WITH_LOG
-      LOG(INFO) << "x_dims:" << x_dims;
-      LOG(INFO) << "y_dims:" << y_dims;
-      LOG(INFO) << "out_dims:" << out_dims;
-      LOG(INFO) << "transpose_X:" << transpose_x_;
-      LOG(INFO) << "transpose_Y:" << transpose_y_;
       LOG(INFO) << "m_:" << m_ << ", k_:" << k_ << ", n_=" << n_;
 #endif
     }
@@ -235,6 +231,7 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
 
     SetGlobalLocalWorkSize();
   }
+
   void SetGlobalLocalWorkSize() {
     local_work_size_ = cl::NDRange(32, 4, 1);
     if (transpose_x_) {
@@ -251,6 +248,7 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
     LOG(INFO) << "global_work_size[3D]: " << global_work_size_[0] << " "
               << global_work_size_[1] << " " << global_work_size_[2];
   }
+
   void Run() override {
     auto* x_img_ = GET_DATA_GPU(matmul_v2_param_->X);
     auto* out_img_ =
@@ -284,11 +282,6 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
                                   event_);
     CL_CHECK_FATAL(status);
   }
-  double GetStartToEndTime(const cl::Event& event) {
-    auto start_nanos = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
-    auto stop_nanos = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
-    return (stop_nanos - start_nanos) / 1000000.0;
-  }
 
 #ifdef LITE_WITH_PROFILE
   void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
@@ -307,8 +300,6 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
   int k_blks_, n_blks_;
   bool transpose_x_{false};
   bool transpose_y_{false};
-  bool uselocalmem_{false};
-  bool usetranspose_y_{false};
   float alpha_{1.0f};
   param_t* matmul_v2_param_{nullptr};
   std::string kernel_func_name_{};
