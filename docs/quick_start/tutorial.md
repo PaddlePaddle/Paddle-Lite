@@ -66,4 +66,4 @@ Paddle Lite 提供了 `C++` 、`Java` 、`Python` 三种 `API` 的完整使用�
 
 ## 更多测试工具
 
-为了使您更好的了解并使用 Paddle Lite 框架，我们向有进一步使用需求的用户开放了 [ Debug 工具](../user_guides/debug) 和 [ Profile 工具](../user_guides/debug)。Profile Monitor Tool 可以帮助您了解每个 `op` 的执行时间消耗，其会自动统计 `op` 执行的次数，最长、最短、平均执行时间等等信息，为性能调优做一个基础参考。您可以通过 [相关专题](../user_guides/debug) 了解更多内容。
+为了使您更好的了解并使用 Paddle Lite 框架，我们向有进一步使用需求的用户开放了 [ Profiler 工具](../user_guides/Profiler)。Profile Monitor Tool 可以帮助您了解每个 `op` 的执行时间消耗，其会自动统计 `op` 执行的次数，最长、最短、平均执行时间等等信息，为性能调优做一个基础参考。您可以通过 [相关专题](../user_guides/Profiler) 了解更多内容。
