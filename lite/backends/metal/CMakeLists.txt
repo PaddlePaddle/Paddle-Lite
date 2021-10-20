@@ -40,6 +40,6 @@ lite_cc_library(metal_target_wrapper SRCS
         target_wrapper.mm
         )
 
-target_link_libraries(metal_target_wrapper ${METAL_LIBRARY} ${MPS_LIBRARY} ${FOUNDATION_LIBRARY})
+target_link_libraries(metal_target_wrapper ${METAL_LIBRARY} ${GRAPHIC} ${MPS_LIBRARY} ${FOUNDATION_LIBRARY})
 
 add_dependencies(metal_target_wrapper LiteMetalLIB)
