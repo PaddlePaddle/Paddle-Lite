@@ -425,7 +425,7 @@ void Conv2dImageCompute::run_with_mps() {
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     auto cmdbuf = [backend commandBuffer];
     if (mps_conv_op_) {
-        if (@available(iOS 10.0, macOS 10.13, macOSmacCatalyst 13.0, *)) {
+        if (@available(iOS 10.0, macOS 10.13, macCatalyst 13.0, *)) {
             [((__bridge MPSCNNConvolution*)mps_conv_op_)
                 encodeToCommandBuffer:cmdbuf
                           sourceImage:(__bridge MPSImage*)mps_input_image_
