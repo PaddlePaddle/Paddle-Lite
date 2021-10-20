@@ -122,6 +122,7 @@ REGISTER_CONVERTER(hard_sigmoid, ConvertHardSigmoid, "huawei_ascend_npu");
 REGISTER_CONVERTER(hard_swish, ConvertHardSwish, "huawei_ascend_npu");
 REGISTER_CONVERTER(arg_max, ConvertArgMinMax, "huawei_ascend_npu");
 REGISTER_CONVERTER(arg_min, ConvertArgMinMax, "huawei_ascend_npu");
+REGISTER_CONVERTER(assign, ConvertAssign, "huawei_ascend_npu");
 REGISTER_CONVERTER(equal, ConvertComparisons, "huawei_ascend_npu");
 REGISTER_CONVERTER(not_equal, ConvertComparisons, "huawei_ascend_npu");
 REGISTER_CONVERTER(greater_than, ConvertComparisons, "huawei_ascend_npu");

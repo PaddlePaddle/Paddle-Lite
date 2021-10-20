@@ -72,7 +72,7 @@ void conv_depthwise_3x3s2_p01_direct(
     right = true;
   }
   int ri = (w_in - (1 - pad)) % 6;
-  //[pad == 0 && w_out == 3 && win == 8] ===>>> [ri == 1 && ro == 0]
+  // [pad == 0 && w_out == 3 && win == 8] ===>>> [ri == 1 && ro == 0]
   // add condition ro > 0 for avoiding wrong rmaskr when pad == 0
   if (ri > 0 && (ro > 0 || pad == 1)) {
     for (int i = 0; i < 8; i++) {
