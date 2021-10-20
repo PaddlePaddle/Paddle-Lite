@@ -1,4 +1,4 @@
-# PaddleLite使用瑞芯微NPU预测部署
+# 瑞芯微 NPU 部署示例
 
 Paddle Lite已支持Rockchip NPU的预测部署。
 其接入原理是与之前华为Kirin NPU类似，即加载并分析Paddle模型，首先将Paddle算子转成NNAdapter标准算子，其次再转换为Rockchip NPU组网API进行网络构建，在线生成并执行模型。
@@ -53,7 +53,7 @@ Paddle Lite已支持Rockchip NPU的预测部署。
   |ssd_mobilenet_v1_relu_voc_int8_300_per_layer|  545.154004|  15.315800|  731.145203|  19.800800|  696.48919|  14.957600|
 
 ### 已支持（或部分支持）NNAdapter的Paddle算子
-可以通过访问[https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/bridges/paddle_use_bridges.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/bridges/paddle_use_bridges.h)获得最新的算子支持列表。
+您可以查阅[ NNAdapter 算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/converter/all.h)获得各算子在不同新硬件上的最新支持信息。
 
 **不经过NNAdapter标准算子转换，而是直接将Paddle算子转换成Rockchip NPU IR的方案可点击[链接](https://paddle-lite.readthedocs.io/zh/release-v2.9/demo_guides/rockchip_npu.html)**。
 

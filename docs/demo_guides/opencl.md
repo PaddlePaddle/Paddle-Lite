@@ -1,4 +1,4 @@
-# PaddleLite使用OpenCL预测部署
+# OpenCL 部署示例
 
 Lite支持在Android系统上运行基于OpenCL的程序，目前支持Ubuntu环境下armv8、armv7的交叉编译。
 
@@ -267,7 +267,7 @@ Windows x86 平台下分析：
 # 开启精度分析，会打印出每个 op 输出数据的均值和标准差信息
 .\lite\tools\build_windows.bat with_opencl with_extra with_precision_profile
 ```
-详细输出信息的说明可查阅[调试工具](../user_guides/debug)。
+详细输出信息的说明可查阅 [Profiler 工具](../user_guides/profiler)。
 
 ## 5. 常见问题
 

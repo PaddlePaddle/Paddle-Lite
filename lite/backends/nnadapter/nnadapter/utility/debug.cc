@@ -443,7 +443,7 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         output_args = {"output"};
         break;
       default:
-        NNADAPTER_LOG(ERROR) << "unsupported op: "
+        NNADAPTER_LOG(FATAL) << "unsupported op: "
                              << static_cast<int>(operation->type);
     }
     for (size_t i = 0; i < input_count; i++) {
@@ -702,7 +702,7 @@ NNADAPTER_EXPORT std::string OperandPrecisionCodeToSymbol(
     NNADAPTER_TYPE_TO_STRING(QUANT_INT32_SYMM_PER_CHANNEL, qi32sc);
     NNADAPTER_TYPE_TO_STRING(QUANT_UINT32_ASYMM_PER_LAYER, qu32al);
     default:
-      NNADAPTER_LOG(ERROR) << "Unhandle case: type="
+      NNADAPTER_LOG(FATAL) << "Unhandle case: type="
                            << OperandPrecisionCodeToString(type) << ".";
       break;
   }
@@ -749,7 +749,7 @@ NNADAPTER_EXPORT std::string OperandValueToString(hal::Operand* operand) {
       OPERAND_SCALAR_VALUE_TO_STRING(FLOAT32, float, f);
       OPERAND_SCALAR_VALUE_TO_STRING(FLOAT64, double, f);
       default:
-        NNADAPTER_LOG(ERROR) << "Can't peek the scalar value for "
+        NNADAPTER_LOG(FATAL) << "Can't peek the scalar value for "
                              << OperandPrecisionCodeToString(type.precision)
                              << ".";
         break;
@@ -770,25 +770,37 @@ NNADAPTER_EXPORT std::string OperandValueToString(hal::Operand* operand) {
     break;
         label = "{";
         switch (type.precision) {
+          OPERAND_VECTOR_VALUE_TO_STRING(BOOL8, bool, d);
+          OPERAND_VECTOR_VALUE_TO_STRING(INT8, int8_t, d);
           OPERAND_VECTOR_VALUE_TO_STRING(QUANT_INT8_SYMM_PER_LAYER, int8_t, d);
           OPERAND_VECTOR_VALUE_TO_STRING(
               QUANT_INT8_SYMM_PER_CHANNEL, int8_t, d);
+          OPERAND_VECTOR_VALUE_TO_STRING(UINT8, uint8_t, u);
           OPERAND_VECTOR_VALUE_TO_STRING(
               QUANT_UINT8_ASYMM_PER_LAYER, uint8_t, u);
+          OPERAND_VECTOR_VALUE_TO_STRING(INT16, int16_t, d);
           OPERAND_VECTOR_VALUE_TO_STRING(
               QUANT_INT16_SYMM_PER_LAYER, int16_t, d);
           OPERAND_VECTOR_VALUE_TO_STRING(
               QUANT_INT16_SYMM_PER_CHANNEL, int16_t, d);
+          OPERAND_VECTOR_VALUE_TO_STRING(UINT16, uint16_t, u);
           OPERAND_VECTOR_VALUE_TO_STRING(
               QUANT_UINT16_ASYMM_PER_LAYER, uint16_t, u);
+          OPERAND_VECTOR_VALUE_TO_STRING(INT32, int32_t, d);
           OPERAND_VECTOR_VALUE_TO_STRING(
               QUANT_INT32_SYMM_PER_LAYER, int32_t, d);
           OPERAND_VECTOR_VALUE_TO_STRING(
               QUANT_INT32_SYMM_PER_CHANNEL, int32_t, d);
+          OPERAND_VECTOR_VALUE_TO_STRING(UINT32, uint32_t, u);
           OPERAND_VECTOR_VALUE_TO_STRING(
               QUANT_UINT32_ASYMM_PER_LAYER, uint32_t, u);
+          OPERAND_VECTOR_VALUE_TO_STRING(INT64, int64_t, lld);
+          OPERAND_VECTOR_VALUE_TO_STRING(UINT64, uint64_t, lld);
+          OPERAND_VECTOR_VALUE_TO_STRING(FLOAT16, int16_t, d);
+          OPERAND_VECTOR_VALUE_TO_STRING(FLOAT32, float, f);
+          OPERAND_VECTOR_VALUE_TO_STRING(FLOAT64, double, f);
           default:
-            NNADAPTER_LOG(ERROR) << "Can't peek the vector value for "
+            NNADAPTER_LOG(FATAL) << "Can't peek the vector value for "
                                  << OperandPrecisionCodeToString(type.precision)
                                  << ".";
             break;
