@@ -158,10 +158,6 @@ function init_cmake_mutable_options {
         set_benchmark_options
     fi
 
-    if [ "${BUILD_ARM82_FP16}" == "ON" ]; then
-        TOOLCHAIN=clang
-    fi
-
     cmake_mutable_options="-DLITE_WITH_ARM=$with_arm \
                         -DLITE_WITH_X86=$with_x86 \
                         -DARM_TARGET_ARCH_ABI=$arm_arch \
