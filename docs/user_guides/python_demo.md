@@ -22,7 +22,7 @@
 
 其流程图如下：
 
-<p align=center> <img src = "http://bos.bj.bce-internal.sdns.baidu.com/agroup-bos-bj/bj-2e0a5c97eb8068c5d1254f475962a45462335d39"/></p>
+<p align=center> <img src = "https://raw.githubusercontent.com/PaddlePaddle/Paddle-Lite/release/v2.10/docs/images/predict_workflow.png"/></p>
 
 ## Python 应用开发说明
 
