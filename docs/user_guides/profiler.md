@@ -15,6 +15,9 @@ Profiler 在 Lite 里分为性能 Profiler 和 精度 Profiler：
 
 ```shell
 ./lite/tools/build_android.sh \
+  --arch=armv8 \
+  --toolchain=clang \
+  --android_stl=c++_static \
   --with_profile=ON \
   full_publish
 ```
