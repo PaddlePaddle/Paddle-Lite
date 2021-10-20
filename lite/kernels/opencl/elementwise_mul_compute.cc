@@ -171,23 +171,23 @@ void ElementwiseMulFloatImageCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-namespace ocl = paddle::lite::kernels::opencl;
-REGISTER_LITE_KERNEL(elementwise_mul,
-                     kOpenCL,
-                     kFloat,
-                     kImageDefault,
-                     ocl::ElementwiseMulFloatImageCompute,
-                     def)
-    .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kImageDefault))})
-    .BindInput("Y",
-               {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFloat),
-                                      DATALAYOUT(kImageDefault))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                       PRECISION(kFloat),
-                                       DATALAYOUT(kImageDefault))})
-    .Finalize();
+// namespace ocl = paddle::lite::kernels::opencl;
+// REGISTER_LITE_KERNEL(elementwise_mul,
+//                      kOpenCL,
+//                      kFloat,
+//                      kImageDefault,
+//                      ocl::ElementwiseMulFloatImageCompute,
+//                      def)
+//     .BindInput("X",
+//                {LiteType::GetTensorTy(TARGET(kOpenCL),
+//                                       PRECISION(kFloat),
+//                                       DATALAYOUT(kImageDefault))})
+//     .BindInput("Y",
+//                {LiteType::GetTensorTy(TARGET(kOpenCL),
+//                                       PRECISION(kFloat),
+//                                       DATALAYOUT(kImageDefault))})
+//     .BindOutput("Out",
+//                 {LiteType::GetTensorTy(TARGET(kOpenCL),
+//                                        PRECISION(kFloat),
+//                                        DATALAYOUT(kImageDefault))})
+//     .Finalize();
