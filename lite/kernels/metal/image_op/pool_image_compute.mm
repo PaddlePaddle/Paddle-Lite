@@ -42,7 +42,7 @@ void PoolImageCompute::PrepareForRun() {
 
     // use mps or not
     bool should_use_mps = false;
-    if (@available(iOS 10.0, *)) {
+    if (@available(iOS 10.0, macOS 10.13, macCatalyst 13.0, *)) {
         if (metal_context_->use_mps()) {
             int input_c = static_cast<int>(input_buffer_->tensor_dim_[1]);
             int output_c = static_cast<int>(output_buffer_->tensor_dim_[1]);
@@ -154,7 +154,7 @@ void PoolImageCompute::run_with_mps() {
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     auto cmdbuf = [backend commandBuffer];
     if (mps_pool_op_) {
-        if (@available(iOS 10.0, *)) {
+        if (@available(iOS 10.0, macOS 10.13, macCatalyst 13.0, *)) {
             [((__bridge MPSCNNPoolingMax*)mps_pool_op_)
                 encodeToCommandBuffer:cmdbuf
                           sourceImage:(__bridge MPSImage*)mps_input_image_
@@ -185,7 +185,7 @@ void PoolImageCompute::setup_with_mps() {
     int offsetX = static_cast<int>(((int)(kw - 1) + 1) / 2 - pw);
     int offsetY = static_cast<int>(((int)(kh - 1) + 1) / 2 - ph);
     
-    if (@available(iOS 10.0, *)) {
+    if (@available(iOS 10.0, macOS 10.13, macCatalyst 13.0, *)) {
         if (param.pooling_type == "max") {
             mps_pool_op_ =
                 (__bridge_retained void*)[[MPSCNNPoolingMax alloc] initWithDevice:backend.device

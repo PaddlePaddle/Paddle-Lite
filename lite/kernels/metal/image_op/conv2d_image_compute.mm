@@ -44,7 +44,7 @@ void Conv2dImageCompute::ReInitWhenNeeded() {
         init_memory();
         
         if (use_mps_) {
-            if (@available(iOS 11.3, *)) {
+            if (@available(iOS 10.0, macOS 10.13, macCatalyst 13.0,  *)) {
                 if (mps_input_image_) {
                     CFRelease(mps_input_image_);
                     mps_input_image_ = nullptr;
@@ -107,7 +107,7 @@ void Conv2dImageCompute::init_for_run() {
         KernelFunctionName(param, metal_context_->use_winograde(), metal_context_->use_quadruple());
     // use mps or not
     bool should_use_mps = false;
-    if (@available(iOS 11.3, *)) {
+    if (@available(iOS 10.0, macOS 10.13, macCatalyst 13.0, *)) {
         if (metal_context_->use_mps()) {
             int input_c = static_cast<int>(input_buffer_->tensor_dim_[1]);
             int output_c = static_cast<int>(output_buffer_->tensor_dim_[1]);
@@ -425,7 +425,7 @@ void Conv2dImageCompute::run_with_mps() {
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     auto cmdbuf = [backend commandBuffer];
     if (mps_conv_op_) {
-        if (@available(iOS 11.3, *)) {
+        if (@available(iOS 10.0, macOS 10.13, macOSmacCatalyst 13.0, *)) {
             [((__bridge MPSCNNConvolution*)mps_conv_op_)
                 encodeToCommandBuffer:cmdbuf
                           sourceImage:(__bridge MPSImage*)mps_input_image_
@@ -447,7 +447,7 @@ void Conv2dImageCompute::setup_with_mps() {
         ((int)((*param.dilations)[0]) * (param.filter->dims()[2] - 1) + 1) / 2 - padding_top);
 
     // mps-Convolution
-    if (@available(iOS 11.3, *)) {
+    if (@available(iOS 10.0, macOS 10.13, macCatalyst 13.0, *)) {
         output_buffer_->use_mps_ = true;
         const_cast<MetalImage*>(input_buffer_)->use_mps_ = true;
         auto filter_h = static_cast<int>(param.filter->dims()[2]);

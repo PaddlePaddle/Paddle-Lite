@@ -69,7 +69,7 @@ void ElementwiseAddImageCompute::init_memory() {
 void ElementwiseAddImageCompute::init_for_run() {
     // use MPS or not
     bool should_use_mps = false;
-    if (@available(iOS 11.3, *)) {
+    if (@available(iOS 11.3, macOS 10.13.4, macCatalyst 13.0, *)) {
         if (metal_context_->use_mps()) {
             should_use_mps = true;
         }
@@ -203,7 +203,7 @@ void ElementwiseAddImageCompute::run_with_mps() {
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     auto cmdbuf = [backend commandBuffer];
     if (mps_add_op_) {
-        if (@available(iOS 11.3, *)) {
+        if (@available(iOS 11.3, macOS 10.13.4, macCatalyst 13.0, *)) {
             [((__bridge MPSCNNAdd*)mps_add_op_)
                 encodeToCommandBuffer:cmdbuf
                          primaryImage:(__bridge MPSImage*)mps_input_image_
@@ -215,7 +215,7 @@ void ElementwiseAddImageCompute::run_with_mps() {
 }
 
 void ElementwiseAddImageCompute::setup_with_mps() {
-    if (@available(iOS 11.3, *)) {
+    if (@available(iOS 11.3, macOS 10.13.4, macCatalyst 13.0, *)) {
         auto backend = (__bridge MetalContextImp*)metal_context_->backend();
         mps_add_op_ = (__bridge_retained void*)[[MPSCNNAdd alloc] initWithDevice:backend.device];
         // MPS input and output
