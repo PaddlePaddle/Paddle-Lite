@@ -501,4 +501,4 @@ adb shell "cd /data/local/tmp/benchmark;
 
 ### 逐层耗时和精度分析
 当在编译时设置`--with_profile=ON`时，运行`benchmark_bin`时会输出模型每层的耗时信息；
-当在编译时设置`--with_precision_profile=ON`时，运行`benchmark_bin`时会输出模型每层的精度信息。具体可以参见[调试工具](../user_guides/profile)。
+当在编译时设置`--with_precision_profile=ON`时，运行`benchmark_bin`时会输出模型每层的精度信息。具体可以参见 [Profiler 工具](../user_guides/profiler)。
