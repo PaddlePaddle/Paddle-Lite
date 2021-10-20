@@ -100,7 +100,7 @@ Paddle Lite 仓库中\ ``./lite/tools/build_linux.sh``\ 脚本文件用于构建
      - OFF / ON
      - OFF
    * - with_extra
-     - 是否编译完整算子（见\ `支持算子 <https://paddle-lite.readthedocs.io/zh/release-v2.10/introduction/support_operation_list.html>`_\ 一节）
+     - 是否编译完整算子（见\ `支持算子 <https://paddle-lite.readthedocs.io/zh/release-v2.10/quick_start/support_operation_list.html>`_\ 一节）
      - OFF / ON
      - OFF
    * - with_profile
