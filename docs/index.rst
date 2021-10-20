@@ -81,11 +81,15 @@ Welcome to Paddle-Lite's documentation!
   :caption: 源码编译
   :name: sec-source-compile
 
-  source_compile/docker_enviroment
-  source_compile/compile_android
-  source_compile/compile_ios
-  source_compile/compile_linux
-  source_compile/compile_windows
+  source_compile/compile_env
+  source_compile/linux_x86_compile_linux_x86
+  source_compile/linux_x86_compile_arm_linux
+  source_compile/linux_x86_compile_android
+  source_compile/arm_linux_compile_arm_linux
+  source_compile/macos_compile_macos
+  source_compile/macos_compile_ios
+  source_compile/macos_compile_android
+  source_compile/windows_compile_windows
   source_compile/compile_options
   source_compile/library_tailoring
 
@@ -115,11 +119,18 @@ Welcome to Paddle-Lite's documentation!
   develop_guides/add_layout
   develop_guides/add_new_pass
   develop_guides/add_hardware
+  develop_guides/nnadapter
 
 .. toctree::
   :maxdepth: 1
   :caption: FAQ
 
   quick_start/faq
+
+.. toctree::
+  :maxdepth: 1
+  :caption: 训练推理示例说明
+
+  introduction/training_to_deployment
 
 

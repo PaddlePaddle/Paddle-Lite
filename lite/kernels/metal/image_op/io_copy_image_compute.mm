@@ -75,7 +75,7 @@ class IoCopyHostToMetalTexture
             MetalDebug::SaveOutput(function_name_, output_buffer_);
         }
     };
-        
+
     virtual ~IoCopyHostToMetalTexture() {
         TargetWrapperMetal::FreeImage(output_buffer_);
     }

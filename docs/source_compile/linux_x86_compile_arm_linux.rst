@@ -1,7 +1,7 @@
 .. role:: raw-html-m2r(raw)
    :format: html
 
-使用 x86 Linux 环境编译 Paddle Lite / 目标硬件 OS 为 ARM Linux
+Linux x86 环境下编译适用于 ARM Linux 的库
 ===============================================================
 
 简介
@@ -15,10 +15,10 @@
 
 
    * 
-     通常情况下，你不需要自行从源码构建编译包，优先推荐\ `下载 Paddle Lite 官方发布的预编译包 <https://paddle-lite.readthedocs.io/zh/develop/quick_start/release_lib.html>`_\ ，可满足一部分场景的需求。如果官方发布的编译包未覆盖你的场景，或者需要修改 Paddle Lite 源代码，则可参考本文构建。
+     通常情况下，你不需要自行从源码构建编译包，优先推荐\ `下载 Paddle Lite 官方发布的预编译包 <https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html>`_\ ，可满足一部分场景的需求。如果官方发布的编译包未覆盖你的场景，或者需要修改 Paddle Lite 源代码，则可参考本文构建。
 
    * 
-     本文介绍的编译方法只适用于 Paddle Lite v2.6 及以上版本。v2.3 及之前版本请参考\ `release/v2.3 源码编译方法 <https://paddle-lite.readthedocs.io/zh/develop/source_compile/v2.3_compile.html>`_\ 。
+     本文介绍的编译方法只适用于 Paddle Lite v2.6 及以上版本。v2.3 及之前版本请参考\ `release/v2.3 源码编译方法 <https://paddle-lite.readthedocs.io/zh/release-v2.10/source_compile/v2.3_compile.html>`_\ 。
 
 在该场景下 Paddle Lite 已验证的软硬件配置如下表所示:
 
@@ -35,9 +35,6 @@
 
 适用于基于 ARMv8 和 ARMv7 架构 CPU 的各种开发板，例如 RK3399，树莓派等，目前支持交叉编译和本地编译两种方式，对于交叉编译方式，在完成目标程序编译后，可通过 scp 方式将程序拷贝到开发板运行。
 因为本教程使用 Host 环境为 x86 架构，因此下面仅介绍交叉编译 ARM Linux 方式。
-
-交叉编译 ARM Linux
-********************
 
 环境要求
 ^^^^^^^^
@@ -176,13 +173,16 @@ Paddle Lite 仓库中 \ ``./lite/tools/build_linux.sh``\ 脚本文件用于构�
 
 .. include:: include/multi_device_support/opencl.rst
 
-.. include:: include/multi_device_support/nnadapter.rst
-
 .. include:: include/multi_device_support/intel_fpga.rst
 
 .. include:: include/multi_device_support/baidu_xpu.rst
 
+.. include:: include/multi_device_support/nnadapter_support_introduction.rst
 
+.. include:: include/multi_device_support/nnadapter_support_huawei_ascend_npu.rst
 
+.. include:: include/multi_device_support/nnadapter_support_imagination_nna.rst
 
+.. include:: include/multi_device_support/nnadapter_support_rockchip_npu.rst
 
+.. include:: include/multi_device_support/nnadapter_support_amlogic_npu.rst
