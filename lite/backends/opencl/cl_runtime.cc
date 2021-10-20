@@ -58,7 +58,8 @@ CLRuntime::~CLRuntime() {
 
 bool CLRuntime::Init() {
 #ifdef LITE_WITH_LOG
-  VLOG(6) << "is_cl_runtime_initialized_:" << is_cl_runtime_initialized_;
+  VLOG(6) << std::boolalpha
+          << "is_cl_runtime_initialized_:" << is_cl_runtime_initialized_;
 #endif
   if (is_cl_runtime_initialized_) {
     return true;
@@ -66,7 +67,7 @@ bool CLRuntime::Init() {
 
   bool opencl_lib_found = paddle::lite::CLWrapper::Global()->OpenclLibFound();
 #ifdef LITE_WITH_LOG
-  LOG(INFO) << "opencl_lib_found:" << opencl_lib_found;
+  LOG(INFO) << std::boolalpha << "opencl_lib_found:" << opencl_lib_found;
 #endif
   if (opencl_lib_found == false) {
     return false;
@@ -74,7 +75,7 @@ bool CLRuntime::Init() {
 
   bool dlsym_success = paddle::lite::CLWrapper::Global()->DlsymSuccess();
 #ifdef LITE_WITH_LOG
-  LOG(INFO) << "dlsym_success:" << dlsym_success;
+  LOG(INFO) << std::boolalpha << "dlsym_success:" << dlsym_success;
 #endif
   if (dlsym_success == false) {
     return false;
@@ -82,7 +83,7 @@ bool CLRuntime::Init() {
 
   bool is_platform_init = InitializePlatform();
 #ifdef LITE_WITH_LOG
-  LOG(INFO) << "is_platform_init:" << is_platform_init;
+  LOG(INFO) << std::boolalpha << "is_platform_init:" << is_platform_init;
 #endif
   if (is_platform_init == false) {
     return false;
@@ -90,7 +91,7 @@ bool CLRuntime::Init() {
 
   bool is_device_init = InitializeDevice();
 #ifdef LITE_WITH_LOG
-  LOG(INFO) << "is_device_init:" << is_device_init;
+  LOG(INFO) << std::boolalpha << "is_device_init:" << is_device_init;
 #endif
   if (is_device_init == false) {
     return false;
