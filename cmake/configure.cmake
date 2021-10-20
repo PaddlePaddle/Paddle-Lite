@@ -191,6 +191,8 @@ endif()
 
 if (LITE_WITH_METAL)
     find_library(METAL_LIBRARY Metal REQUIRED)
+    find_library(MPS_LIBRARY MetalPerformanceShaders REQUIRED)
+    # find_library(GRAPHIC CoreGraphics REQUIRED)
     find_library(FOUNDATION_LIBRARY Foundation)
     add_definitions("-DLITE_WITH_METAL")
 endif()

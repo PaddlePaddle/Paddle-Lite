@@ -143,14 +143,18 @@ else()
         # 1. enable -flto compiling flag if toochain==gcc
         # TODO (hong19860320): Disable lto temporarily since it causes fail to catch the exceptions in android when toolchain is gcc.
         if (NOT (ARM_TARGET_LANG STREQUAL "clang"))
-            if (ARM_TARGET_OS STREQUAL "android" AND LITE_WITH_EXCEPTION)
+            message(STATUS "hehe")
+            if ((ARM_TARGET_OS STREQUAL "android" OR ARM_TARGET_OS STREQUAL "armmacos") AND LITE_WITH_EXCEPTION)
                 set(TARGET_COMIPILE_FLAGS "")
             else()
                 set(TARGET_COMIPILE_FLAGS "-fdata-sections -flto")
             endif()
         else()
-            set(TARGET_COMIPILE_FLAGS "-fdata-sections")
+            if (NOT LITE_WITH_METAL)
+                set(TARGET_COMIPILE_FLAGS "-fdata-sections")
+            endif()
         endif()
+        MESSAGE(STATUS " STATUS: ${ARM_TARGET_LANG}, ${ARM_TARGET_OS}, ${TARGET_COMIPILE_FLAGS}")
         #   1.1 enable -flto on PADDLELITE_OBJS
         set_target_properties(PADDLELITE_OBJS PROPERTIES COMPILE_FLAGS "${TARGET_COMIPILE_FLAGS}")
 
@@ -158,6 +162,9 @@ else()
         add_library(paddle_light_api_shared SHARED $<TARGET_OBJECTS:PADDLELITE_OBJS>)
         set_target_properties(paddle_light_api_shared PROPERTIES COMPILE_FLAGS "${TARGET_COMIPILE_FLAGS}")
         #   2.1 link `paddle_light_api_shared` to third-party libs
+        if (LITE_WITH_METAL)
+            target_link_libraries(paddle_light_api_shared ${METAL_LIBRARY} ${MPS_LIBRARY} ${FOUNDATION_LIBRARY})
+        endif()
         if (LITE_WITH_NPU)
             # Need to add HIAI runtime libs (libhiai.so) dependency
             target_link_libraries(paddle_light_api_shared ${npu_builder_libs} ${npu_runtime_libs})
