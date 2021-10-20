@@ -32,25 +32,24 @@ namespace operation {
   NNADAPTER_VLOG(5) << "shape operand: " << OperandToString(shape_operand); \
   uint32_t shape_count;                                                     \
   int32_t* shape_data;                                                      \
-  if (IsConstantOperand(shape_operand)) {                                   \
-    shape_count = shape_operand->length / sizeof(int32_t);                  \
-    shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);         \
-  } else if (shape_type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {            \
-    shape_operand->type.dimensions =                                        \
-        *reinterpret_cast<NNAdapterOperandDimensionType*>(                  \
-            shape_operand->buffer);                                         \
-    shape_count = shape_operand->type.dimensions.count;                     \
-    shape_data = shape_operand->type.dimensions.data;                       \
-  } else {                                                                  \
-    shape_count = shape_operand->type.dimensions.count;                     \
-    shape_data = shape_operand->type.dimensions.data;                       \
-  }                                                                         \
-  for (uint32_t i = 0; i < shape_count; i++) {                              \
-    NNADAPTER_VLOG(5) << "shape[" << i << "] = " << shape_data[i];          \
-  }                                                                         \
-  /* Output */                                                              \
-  auto output_operand = output_operands[0];                                 \
-  NNADAPTER_VLOG(5) << "output_operand: " << OperandToString(output_operand);
+  auto& shape_type = shape_operand->type;
+if (IsConstantOperand(shape_operand)) {
+  shape_count = shape_operand->length / sizeof(int32_t);
+  shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);
+} else if (shape_type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {
+  shape_operand->type.dimensions =
+      *reinterpret_cast<NNAdapterOperandDimensionType*>(shape_operand->buffer);
+  shape_count = shape_operand->type.dimensions.count;
+  shape_data = shape_operand->type.dimensions.data;
+} else {
+  shape_count = shape_operand->type.dimensions.count;
+  shape_data = shape_operand->type.dimensions.data;
+}
+for (uint32_t i = 0; i < shape_count; i++) {
+  NNADAPTER_VLOG(5) << "shape[" << i << "] = " << shape_data[i];
+} /* Output */
+auto output_operand = output_operands[0];
+NNADAPTER_VLOG(5) << "output_operand: " << OperandToString(output_operand);
 
 }  // namespace operation
 }  // namespace nnadapter
