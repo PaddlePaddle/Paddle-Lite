@@ -16,12 +16,12 @@ Paddle Lite已支持百度XPU在x86和arm服务器（例如飞腾 FT-2000+/64）
 
 ### 已支持的Paddle模型
 
-- [开源模型支持列表](../introduction/support_model_list)
+- [开源模型支持列表](../quick_start/support_model_list)
 - 百度内部业务模型（由于涉密，不方便透露具体细节）
 
 ### 已支持（或部分支持）的Paddle算子（Kernel接入方式）
 
-- [算子支持列表](../introduction/support_operation_list)
+- [算子支持列表](../quick_start/support_operation_list)
 
 
 ## 参考示例演示
