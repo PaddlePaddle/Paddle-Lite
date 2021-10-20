@@ -30,28 +30,20 @@ int PrepareStack(hal::Operation* operation) {
   auto& output_type = output_operand->type;
   CopyOperandTypeWithQuantParams(&output_type, input_type);
 
-  auto input_dimensions_count = input_type.dimensions.count;
-  if (axis < 0) axis += (input_dimensions_count + 1);
-  NNADAPTER_CHECK_GE(axis, 0);
-  NNADAPTER_CHECK_LE(axis, input_dimensions_count);
   output_type.dimensions.count = input_dimensions_count + 1;
 
   auto infer_output_shape = [&](int32_t* input_dimensions,
-                                int32_t* output_dimensions,
-                                const uint32_t input_dimensions_count) {
+                                int32_t* output_dimensions) {
     for (uint32_t j = input_dimensions_count; j > axis; j--) {
       output_dimensions[j] = output_dimensions[j - 1];
     }
     output_dimensions[axis] = input_count - 1;
   };
 
-  infer_output_shape(input_type.dimensions.data,
-                     output_type.dimensions.data,
-                     input_dimensions_count);
+  infer_output_shape(input_type.dimensions.data, output_type.dimensions.data);
   for (uint32_t i = 0; i < output_type.dimensions.dynamic_count; i++) {
     infer_output_shape(input_type.dimensions.dynamic_data[i],
-                       output_type.dimensions.dynamic_data[i],
-                       input_dimensions_count);
+                       output_type.dimensions.dynamic_data[i]);
   }
 
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
