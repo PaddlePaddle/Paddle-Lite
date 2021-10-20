@@ -25,8 +25,8 @@
 
 | 编译选项 |  说明  | 默认值 |
 | :-- |  :-- | --: |
-| LITE_WITH_PROFILE |  编译[性能 Profiler 工具]，用于 kernel 耗时统计 | OFF |
-| LITE_WITH_PRECISION_PROFILE |  编译[精度 Profiler 工具]，用于 kernel 精度分析 | OFF |
+| LITE_WITH_PROFILE |  编译[性能 Profiler 工具](https://paddle-lite.readthedocs.io/zh/release-v2.10_a/user_guides/profiler.html)，用于 kernel 耗时统计 | OFF |
+| LITE_WITH_PRECISION_PROFILE |  编译[精度 Profiler 工具](https://paddle-lite.readthedocs.io/zh/release-v2.10_a/user_guides/profiler.html)，用于 kernel 精度分析 | OFF |
 | WITH_TESTING |  编译 Lite 单测模块 | OFF |
 
 ## 部分平台相关编译选项
