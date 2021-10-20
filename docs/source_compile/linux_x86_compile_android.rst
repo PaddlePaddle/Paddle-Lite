@@ -1,8 +1,7 @@
 .. role:: raw-html-m2r(raw)
    :format: html
 
-
-使用 x86 Linux 构建 / 目标终端为 Android
+Linux x86 环境下编译适用于 Android 的库
 ======================================================
 
 简介

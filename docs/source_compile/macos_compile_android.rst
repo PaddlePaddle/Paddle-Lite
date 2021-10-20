@@ -1,14 +1,13 @@
 .. role:: raw-html-m2r(raw)
    :format: html
 
-
-使用 MacOS 环境编译 Paddle Lite / 目标硬件 OS 为 Android
+macOS 环境下编译适用于 Android 的库
 ==========================================================
 
 简介
 ----
 
-如果你的本机环境 MacOS 操作系统(暂不支持 M1 机型)，需要部署模型到 Android 系统的目标硬件上，则可以参考本文的介绍，通过 Android NDK 交叉编译工具从源码构建 Paddle Lite 编译包，用于后续的应用程序开发。
+如果你的本机环境 macOS 操作系统(暂不支持 M1 机型)，需要部署模型到 Android 系统的目标硬件上，则可以参考本文的介绍，通过 Android NDK 交叉编译工具从源码构建 Paddle Lite 编译包，用于后续的应用程序开发。
 
 ..
 
@@ -31,7 +30,7 @@
      - 本机环境
      - 目标硬件环境
    * - **操作系统**
-     - MacOS\ :raw-html-m2r:`<br>`
+     - macOS\ :raw-html-m2r:`<br>`
      - Android 4.1 及以上（芯片版本为 ARMv7 时）\ :raw-html-m2r:`<br>` Android 5.0 及以上（芯片版本为 ARMv8 时）
    * - **芯片层**
      - x86 架构
@@ -228,4 +227,10 @@ Paddle Lite 仓库中 \ ``/lite/tools/build_android.sh``\  脚本文件用于构
 
 .. include:: include/multi_device_support/opencl.rst
 
-.. include:: include/multi_device_support/nnadapter.rst
+.. include:: include/multi_device_support/nnadapter_support_introduction.rst
+
+.. include:: include/multi_device_support/nnadapter_support_huawei_kirin_npu.rst
+
+.. include:: include/multi_device_support/nnadapter_support_mediatek_apu.rst
+
+.. include:: include/multi_device_support/nnadapter_support_amlogic_npu.rst

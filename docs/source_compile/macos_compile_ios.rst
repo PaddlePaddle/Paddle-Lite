@@ -1,14 +1,13 @@
 .. role:: raw-html-m2r(raw)
    :format: html
 
-
-使用 MacOS 环境编译 Paddle Lite / 目标硬件 OS 为 iOS
+macOS 环境下编译适用于 iOS 的库
 ======================================================
 
 简介
 ----
 
-如果你的本机环境是 MacOS 操作系统，需要部署模型到 iOS 系统的目标硬件上，则可以参考本文的介绍，通过 Xcode 工具从源码构建 Paddle Lite 的编译包，用于后续应用程序的开发。
+如果你的本机环境是 macOS 操作系统，需要部署模型到 iOS 系统的目标硬件上，则可以参考本文的介绍，通过 Xcode 工具从源码构建 Paddle Lite 的编译包，用于后续应用程序的开发。
 
 ..
 
@@ -16,7 +15,7 @@
 
 
    *
-     通常情况下，你不需要自行从源码构建编译包，优先推荐\ `下载 Paddle Lite 官方发布的预编译包 <https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html>`_\ ，可满足一部分场景的需求。如果官方发布的编译包未覆盖你的场景，或者需要修改 Paddle Lite 源代码，则可参考本文构建。
+     通常情况下，你不需要自行从源码构建编译包，优先推荐\ `下载 Paddle Lite 官方发布的预编译包 <https://paddle-lite.readthedocs.io/zh/release-v2.10/quick_start/release_lib.html>`_\ ，可满足一部分场景的需求。如果官方发布的编译包未覆盖你的场景，或者需要修改 Paddle Lite 源代码，则可参考本文构建。
 
    *
      自 release/v2.10 版本起，Paddle Lite 支持了 Metal 后端。
@@ -31,7 +30,7 @@
      - 本机环境
      - 目标硬件环境
    * - **操作系统**
-     - MacOS\ :raw-html-m2r:`<br>`
+     - macOS\ :raw-html-m2r:`<br>`
      - iOS 9.0 及以上\ :raw-html-m2r:`<br>`
    * - **芯片层**
      - x86/arm 架构

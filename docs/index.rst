@@ -82,12 +82,14 @@ Welcome to Paddle-Lite's documentation!
   :name: sec-source-compile
 
   source_compile/compile_env
-  source_compile/compile_android
-  source_compile/compile_ios
-  source_compile/x86_host_compile_x86_linux
-  source_compile/x86_host_compile_arm_linux
-  source_compile/arm_host_compile_arm_linux
-  source_compile/compile_windows
+  source_compile/linux_x86_compile_linux_x86
+  source_compile/linux_x86_compile_arm_linux
+  source_compile/linux_x86_compile_android
+  source_compile/arm_linux_compile_arm_linux
+  source_compile/macos_compile_macos
+  source_compile/macos_compile_ios
+  source_compile/macos_compile_android
+  source_compile/windows_compile_windows
   source_compile/compile_options
   source_compile/library_tailoring
 
