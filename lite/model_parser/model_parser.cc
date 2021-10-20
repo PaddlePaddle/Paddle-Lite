@@ -757,7 +757,7 @@ void LoadModelNaiveFromMemory(const std::string &model_buffer,
  * |   5   |  param_data     |   char[]    |                |
  * ----------------------------------------------------------
  *  Meaning of each part:
- *      meta_version: meata_version, 0 default.
+ *      meta_version: meta_version, 0 default.
  *      opt_version:  lite_version of opt tool that transformed this model.
  *      topo_size:    length of `topo_data`.
  *      topo_data:    contains model's topology data.
