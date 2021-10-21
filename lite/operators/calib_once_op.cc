@@ -21,8 +21,6 @@ namespace operators {
 
 bool CalibOnceOp::run_once() const { return true; }
 
-std::string CalibOnceOp::DebugString() const { return "calib_once_op"; }
-
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
