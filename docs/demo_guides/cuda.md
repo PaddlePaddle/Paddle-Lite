@@ -1,12 +1,12 @@
-# PaddleLite使用CUDA预测部署
+# Paddle Lite 使用 CUDA 预测部署
 
-**注意**: Lite CUDA仅作为Nvidia GPU加速库，支持模型有限，如有需要请使用[PaddleInference](https://paddle-inference.readthedocs.io/en/latest)。
+>> **注意**: Paddle Lite CUDA 仅作为 Nvidia GPU 加速库，支持模型有限，如有需要请使用[ PaddleInference ](https://paddle-inference.readthedocs.io/en/latest)。
 
-Lite支持在x86_64，arm64架构上（如：TX2）进行CUDA的编译运行。
+Paddle Lite 支持在 x86_64，arm64 架构上（如：TX2）进行 CUDA 的编译运行。
 
 ## 编译
 
-**NOTE：** 如果是在TX2等NVIDIA嵌入式硬件上编译，请使用最新的[Jetpack](https://developer.nvidia.com/embedded/jetpack) 安装依赖库。
+>> **注意**: 如果是在 TX2 等 NVIDIA 嵌入式硬件上编译，请使用最新的[ Jetpack ](https://developer.nvidia.com/embedded/jetpack) 安装依赖库。
 
 
 一： 下载代码
@@ -23,23 +23,23 @@ cd Paddle-Lite
 
 # 运行编译脚本
 # 编译结束会在本目录下生成 build_cuda 目录
-# 编译过程中如果提示找不到CUDA，CUDNN，请在环境变量设置CUDA_TOOLKIT_ROOT_DIR, CUDNN_ROOT
-# CUDA_TOOLKIT_ROOT_DIR，CUDNN_ROOT分别表示CUDA，CUDNN的根目录
+# 编译过程中如果提示找不到 CUDA，CUDNN，请在环境变量设置 CUDA_TOOLKIT_ROOT_DIR, CUDNN_ROOT
+# CUDA_TOOLKIT_ROOT_DIR，CUDNN_ROOT 分别表示 CUDA，CUDNN 的根目录
 ./lite/tools/build.sh cuda
-# 如果使用python接口，需要打开build_python选项
+# 如果使用 python 接口，需要打开 build_python 选项
 ./lite/tools/build.sh --build_python=ON cuda
 ```
 
 ## 编译结果说明
 
-cuda的编译结果位于 `build_cuda/inference_lite_lib`
+CUDA 的编译结果位于 `build_cuda/inference_lite_lib`
 **具体内容**说明：
 
-1、 `bin`文件夹：可执行工具文件，目前为空
+1、 `bin` 文件夹：可执行工具文件，目前为空
 
-2、 `cxx`文件夹：包含c++的库文件与相应的头文件
+2、 `cxx` 文件夹：包含 c++ 的库文件与相应的头文件
 
-- `include`  : 头文件
+- `include` : 头文件
 - `lib` : 库文件
   - 打包的静态库文件：
     - `libpaddle_api_full_bundled.a`  ：包含 full_api 和 light_api 功能的静态库
@@ -48,15 +48,15 @@ cuda的编译结果位于 `build_cuda/inference_lite_lib`
 
 3、 `third_party` 文件夹：第三方库文件
 
-4、 `demo` 文件夹：c++ demo.
+4、 `demo` 文件夹：c++ demo
 
-如果编译打开了python选项，则会在 `build_cuda/inference_lite_lib/python/lib/` 目录下生成 `lite.so`。
+如果编译打开了 python 选项，则会在 `build_cuda/inference_lite_lib/python/lib/` 目录下生成 `lite.so`。
 
 ## 运行
 
-以下以Yolov3模型为例，介绍如何在Nvidia GPU硬件上运行模型。
+以下以 Yolov3 模型为例，介绍如何在 Nvidia GPU 硬件上运行模型。
 
-一： 下载darknet_yolov3模型，模型信息请参考[PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)
+一： 下载 darknet_yolov3 模型，模型信息请参考[ PaddleDetection ](https://github.com/PaddlePaddle/PaddleDetection)
 
 ```
 # 下载模型
@@ -68,7 +68,7 @@ wget https://paddle-inference-dist.cdn.bcebos.com/PaddleLite/kite.jpg
 
 二： 运行   
 
-**NOTE：** 此处示例使用的是python接口。
+>> **注意**: 此处示例使用的是 python 接口。
 
 ``` python
 #-*- coding: utf-8 -*-
@@ -92,14 +92,14 @@ def read_img(im_path, resize_h, resize_w):
   out_img = out_img.transpose((2, 0, 1))
   return out_img
 
-# 配置config
+# 配置 config
 a = CxxConfig()
 a.set_model_file('./yolov3_infer/__model__') # 指定模型文件路径 
 a.set_param_file('./yolov3_infer/__params__') # 指定参数文件路径
 place_cuda = Place(TargetType.CUDA)
 a.set_valid_places([place_cuda])
 
-# 创建predictor
+# 创建 predictor
 predictor = create_paddle_predictor(a)
 
 # 设置输入
@@ -128,7 +128,7 @@ print (output_tensor.float_data()[:6])
 
 ```
 
-**NOTE：** 此处示例使用的是C++接口。
+>> **注意**: 此处示例使用的是 `C++` 接口。
 
 ```
 cd build_cuda/inference_lite_lib/demo/cxx/
