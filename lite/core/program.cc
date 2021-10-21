@@ -710,10 +710,5 @@ void Instruction::Run() {
 #endif
 }
 
-STL::ostream& operator<<(STL::ostream& os, const Instruction& other) {
-  os << other.kernel_->summary() << "\t(" << other.kernel_->doc() << ")";
-  return os;
-}
-
 }  // namespace lite
 }  // namespace paddle
