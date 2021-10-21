@@ -23,7 +23,7 @@ add_custom_target(LiteMetalLIB
         COMMENT "Generating lite.metallib")
 
 add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/lite.metallib
-        COMMAND xcrun -sdk ${SDK_NAME} metal ${TARGET_OPTION} ${LITE_METAL_KERNELS_SRC} -o ${CMAKE_BINARY_DIR}/lite.metallib
+        COMMAND xcrun -sdk ${SDK_NAME} metal ${METAL_STD_OPTION} ${TARGET_OPTION} ${LITE_METAL_KERNELS_SRC} -o ${CMAKE_BINARY_DIR}/lite.metallib
         DEPENDS ${LITE_METAL_KERNELS_SRC}
         COMMENT "Built target lite.metallib")
 
