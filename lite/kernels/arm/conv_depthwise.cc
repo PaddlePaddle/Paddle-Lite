@@ -88,6 +88,7 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
   last_shape_ = x_dims;
 }
 
+
 template <>
 void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   auto& param = this->Param<param_t>();
