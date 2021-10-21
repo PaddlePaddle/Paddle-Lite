@@ -20,7 +20,6 @@ lite_cc_library(subgraph_bridge_dropout_op_nnadapter SRCS dropout_op.cc DEPS ${n
 lite_cc_library(subgraph_bridge_expand_op_nnadapter SRCS expand_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_range_op_nnadapter SRCS range_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_pad_op_nnadapter SRCS pad_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
-lite_cc_library(subgraph_bridge_stack_op_nnadapter SRCS stack_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 
 set(nnadapter_subgraph_bridges
         core
@@ -38,7 +37,6 @@ set(nnadapter_subgraph_bridges
         subgraph_bridge_dropout_op_nnadapter
         subgraph_bridge_expand_op_nnadapter
         subgraph_bridge_range_op_nnadapter
-        subgraph_bridge_stack_op_nnadapter
         subgraph_bridge_pad_op_nnadapter
         CACHE INTERNAL "nnadapter_subgraph_bridges")
 
