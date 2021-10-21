@@ -21,8 +21,6 @@ namespace operators {
 
 bool IoCopyOnceOp::run_once() const { return true; }
 
-//std::string IoCopyOnceOp::DebugString() const { return "io_copy_once_op"; }
-
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

@@ -37,9 +37,6 @@ class SequenceTopkAvgPoolingOpLite : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
  
-//    return "sequence_topk_avg_pooling";
-//  }
-
  private:
   mutable SequenceTopkAvgPoolingParam param_;
 };

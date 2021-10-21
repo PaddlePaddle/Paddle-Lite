@@ -36,9 +36,6 @@ class FusionElementwiseActivationOp : public OpLite {
   void AttachKernel(KernelBase* kernel) override { kernel->SetParam(param_); }
 
  
-//    return "fusion_elementwise_activation_op";
-//  }
-
  private:
   mutable operators::FusionElementwiseActivationParam param_;
 };

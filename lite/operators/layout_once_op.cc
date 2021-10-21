@@ -21,8 +21,6 @@ namespace operators {
 
 bool LayoutOnceOp::run_once() const { return true; }
 
-//std::string LayoutOnceOp::DebugString() const { return "layout_once_op"; }
-
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

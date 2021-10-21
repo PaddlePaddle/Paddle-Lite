@@ -73,8 +73,6 @@ bool IoCopyOp::AttachImpl(const cpp::OpDesc &opdesc,
   return true;
 }
 
-//std::string IoCopyOp::DebugString() const { return "io_copy_op"; }
-
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

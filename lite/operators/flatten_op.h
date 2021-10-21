@@ -89,9 +89,6 @@ class FlattenContiguousRangeOp : public OpLite {
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
  
-//    return "flatten contiguous range";
-//  }
-
  protected:
   mutable FlattenContiguousRangeParam param_;
 };
