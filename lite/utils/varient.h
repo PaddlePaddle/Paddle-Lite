@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <exception>
 #include <memory>
+#include <type_traits>
 #include <typeinfo>
 #include <utility>
 #include "lite/utils/fast_type_id.h"
