@@ -75,4 +75,4 @@
 1. 模型列表中 * 代表该模型链接来自[ PaddlePaddle/models ](https://github.com/PaddlePaddle/models)，否则为推理模型的下载链接
 2. 支持平台列表中 HuaweiKirinNPU* 代表 ARM + HuaweiKirinNPU 异构计算，否则为 HuaweiKirinNPU 计算
 3. 支持平台列表中 HuaweiAscendNPU* 代表 X86 或 ARM+HuaweiAscendNPU 异构计算，否则为 HuaweiAscendNPU 计算
-4. 寻找更多的可支持的模型还可以转至[paddle-models](https://github.com/PaddlePaddle/models), [PaddleHub](https://github.com/PaddlePaddle/PaddleHub), [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR), [PaddleDetection](https://github.com/PaddlePaddle/PaddleDetection)
+4. 寻找更多的可支持的模型还可以转至[ PaddlePaddle/models ](https://github.com/PaddlePaddle/models), [ PaddleHub ](https://github.com/PaddlePaddle/PaddleHub), [ PaddleOCR ](https://github.com/PaddlePaddle/PaddleOCR), [ PaddleDetection ](https://github.com/PaddlePaddle/PaddleDetection)
