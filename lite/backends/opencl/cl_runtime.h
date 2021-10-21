@@ -89,7 +89,7 @@ class CLRuntime {
 //  1. opencl_lib_found must be true
 //  2. dlsym_success must be true
 #ifdef LITE_WITH_LOG
-    LOG(INFO) << "check_fp16_valid:" << check_fp16_valid;
+    LOG(INFO) << "need to check fp16 valid:" << check_fp16_valid;
 #endif
     if (!paddle::lite::CLWrapper::Global()->OpenclLibFound() ||
         !paddle::lite::CLWrapper::Global()->DlsymSuccess()) {
