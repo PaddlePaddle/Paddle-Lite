@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "lite/api/paddle_place.h"
-#include <string>
 #include "lite/utils/hash.h"
 #include "lite/utils/log/logging.h"
 #include "lite/utils/replace_stl/stream.h"

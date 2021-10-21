@@ -13,12 +13,8 @@
 // limitations under the License.
 
 #include "lite/core/op_lite.h"
-#include <list>
 #include <set>
-#include <utility>
-#include <vector>
 #include "lite/core/op_registry.h"
-#include "lite/utils/string.h"
 
 namespace paddle {
 namespace lite {
