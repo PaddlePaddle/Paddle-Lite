@@ -32,6 +32,7 @@ void sincos256_ps(v8sf x, v8sf *s, v8sf *c);
 // FMA support
 #ifndef __AVX2__
 #define _mm256_fmadd_ps(a, b, c) _mm256_add_ps(c, _mm256_mul_ps(a, b))
+
 #define _mm256_permutevar8x32_ps(a, b)                                       \
   _mm256_setr_ps(                                                            \
       *(reinterpret_cast<float *>(&a)) + *(reinterpret_cast<int *>(&b)),     \

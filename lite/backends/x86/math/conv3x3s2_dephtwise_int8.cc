@@ -19,6 +19,7 @@ namespace paddle {
 namespace lite {
 namespace x86 {
 namespace math {
+
 template <typename Dtype>
 void conv_3x3s2p0_dw_int8(Dtype* dout,
                           const int8_t* din,

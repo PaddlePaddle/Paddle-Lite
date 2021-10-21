@@ -73,7 +73,6 @@ void conv_3x3s2p1_dw_int8(Dtype* dout,
                           float alpha,
                           const float* scale,
                           X86Context* ctx);
-
 }  // namespace math
 }  // namespace x86
 }  // namespace lite

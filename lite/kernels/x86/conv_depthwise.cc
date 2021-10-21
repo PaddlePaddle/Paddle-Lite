@@ -16,8 +16,8 @@
 #include "lite/backends/x86/math/avx/conv_depthwise_pack4.h"
 #include "lite/backends/x86/math/avx/conv_depthwise_pack8.h"
 #include "lite/backends/x86/math/avx/conv_utils.h"
-#include "lite/backends/x86/math/conv_depthwise_int8.h"
 #include "lite/backends/x86/math/conv_depthwise_impl.h"
+#include "lite/backends/x86/math/conv_depthwise_int8.h"
 
 namespace paddle {
 namespace lite {
@@ -26,6 +26,7 @@ namespace x86 {
 #define CONV_DW_PARAM                                                         \
   i_data, o_data, bs, oc, oh, ow, ic, ih, iw, w_data, b_data, pad, flag_bias, \
       act_param
+
 template <>
 void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {}
 
