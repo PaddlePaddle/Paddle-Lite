@@ -14,10 +14,6 @@
 
 #include "lite/api/paddle_api.h"
 
-#include <stdint.h>
-#include "lite/api/paddle_place.h"
-#include "lite/utils/log/logging.h"
-
 #include "lite/core/device_info.h"
 #include "lite/core/tensor.h"
 
