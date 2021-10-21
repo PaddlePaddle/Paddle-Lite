@@ -91,7 +91,7 @@ class OpLite : public Registry {
   OpInfo *mutable_op_info() { return op_info_.get(); }
 
   // Human-readable information.
-  virtual std::string DebugString() const = 0;
+//  virtual std::string DebugString() const = 0;
 
   virtual std::string SerializedOpInfo() const { return "N/A"; }
 
