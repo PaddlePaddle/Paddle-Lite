@@ -137,7 +137,7 @@
   ```
   $ git checkout -b UserName/FeatureName
   ```
-  - 启用 pre-commit 钩子：[ pre-commit ](http://pre-commit.com/) 作为 git 预提交钩子，帮助我们在 git commit 时进行自动代码（ C++，Python ）格式化和其它检查（如每个文件只有一个 EOL ，Git 中不要添加大文件等），可通过以下命令进行安装（注意：pre-commit 测试是 Travis-CI 中单元测试的一部分，不满足钩子的PR不能被提交到Paddle Lite ）：
+  - 启用 pre-commit 钩子：[ pre-commit ](http://pre-commit.com/) 作为 git 预提交钩子，帮助我们在 git commit 时进行自动代码（ C++，Python ）格式化和其它检查（如每个文件只有一个 EOL ，Git 中不要添加大文件等），可通过以下命令进行安装（注意：pre-commit 测试是 Travis-CI 中单元测试的一部分，不满足钩子的 PR 不能被提交到 Paddle Lite ）：
   ```
   $ pip install pre-commit
   $ pre-commit install
