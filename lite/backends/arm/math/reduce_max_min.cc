@@ -13,10 +13,6 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "lite/backends/arm/math/reduce_max_min.h"
-#include <utility>
-#include <vector>
-#include "lite/backends/arm/math/funcs.h"
-#include "lite/core/tensor.h"
 
 namespace paddle {
 namespace lite {
@@ -47,6 +43,42 @@ void reduce_first_of_two<float>(const float* src,
                                 int first_in,
                                 int second_in,
                                 MaxMinType max_min_selector) {
+  // max_min_selector == true, do reduce max; else do reduce min
+  for (int j = 0; j < first_in; j++) {
+    dst[j] = src[j];
+    for (int k = 1; k < second_in; k++) {
+      dst[j] = (src[j + k * first_in] <= dst[j]) ^
+                       static_cast<bool>(max_min_selector)
+                   ? src[j + k * first_in]
+                   : dst[j];
+    }
+  }
+}
+
+template <>
+void reduce_second_of_two<int64_t>(const int64_t* src,
+                                   int64_t* dst,
+                                   int first_in,
+                                   int second_in,
+                                   MaxMinType max_min_selector) {
+  // max_min_selector == true, do reduce max; else do reduce min
+  for (int j = 0; j < second_in; j++) {
+    dst[j * first_in] = src[j * first_in];
+    for (int k = 1; k < first_in; k++) {
+      dst[j * first_in] = (src[j * first_in + k] <= dst[j * first_in]) ^
+                                  static_cast<bool>(max_min_selector)
+                              ? src[j * first_in + k]
+                              : dst[j * first_in];
+    }
+  }
+}
+
+template <>
+void reduce_first_of_two<int64_t>(const int64_t* src,
+                                  int64_t* dst,
+                                  int first_in,
+                                  int second_in,
+                                  MaxMinType max_min_selector) {
   // max_min_selector == true, do reduce max; else do reduce min
   for (int j = 0; j < first_in; j++) {
     dst[j] = src[j];

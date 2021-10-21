@@ -14,22 +14,46 @@ limitations under the License. */
 
 #pragma once
 
+#include <utility>
+#include <vector>
+#include "lite/backends/arm/math/funcs.h"
+#include "lite/core/tensor.h"
+
 namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
 
 enum class MaxMinType : bool { kMin = false, kMax = true };
+
 template <typename DataType>
-void reduce_first_of_two(const float* src,
-                         float* dst,
+inline void reduce_one_line_max(const DataType* src, DataType* dst, int size) {
+  DataType tmp = src[0];
+  for (int i = 0; i < size; i++) {
+    if (tmp <= src[i]) tmp = src[i];
+  }
+  *dst = tmp;
+}
+
+template <typename DataType>
+inline void reduce_one_line_min(const DataType* src, DataType* dst, int size) {
+  DataType tmp = src[0];
+  for (int i = 0; i < size; i++) {
+    if (tmp > src[i]) tmp = src[i];
+  }
+  *dst = tmp;
+}
+
+template <typename DataType>
+void reduce_first_of_two(const DataType* src,
+                         DataType* dst,
                          int first_in,
                          int second_in,
                          MaxMinType compare_functor);
 
 template <typename DataType>
-void reduce_second_of_two(const float* src,
-                          float* dst,
+void reduce_second_of_two(const DataType* src,
+                          DataType* dst,
                           int first_in,
                           int second_in,
                           MaxMinType max_min_selector);

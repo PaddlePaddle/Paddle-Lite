@@ -25,8 +25,9 @@ MetalImage::MetalImage(MetalContext* context,
     const DDim& in_dim,
     std::vector<int> in_transpose,
     const METAL_PRECISION_TYPE precision_type,
-    const METAL_ACCESS_FLAG flag)
-    : precision_type_(precision_type), flag_(flag) {
+    const METAL_ACCESS_FLAG flag,
+    bool use_mps)
+    : precision_type_(precision_type), flag_(flag), use_mps_(use_mps) {
     auto four_dim = FourDimFrom(in_dim);
 
     tensor_dim_ = in_dim;
@@ -435,7 +436,7 @@ void MetalImage::CopyToNCHW(P* dst) const {
     } else if (precision_type_ == METAL_PRECISION_TYPE::HALF && std::is_same<P, float>::value) {
         auto pointer = (MetalHalf*)TargetWrapperMetal::Malloc(sizeof(MetalHalf) * dstCounts);
         TargetWrapperMetal::MemsetSync(pointer, 0, sizeof(MetalHalf) * dstCounts);
-        
+
         auto bytes_per_row = image_.width * image_.depth * channels_per_pixel_ * sizeof(MetalHalf);
         auto bytes_per_image = image_.height * bytes_per_row;
 
@@ -510,9 +511,9 @@ MetalImage::~MetalImage() {
         image_ = nil;
     }
     if (@available(iOS 10.0, *)) {
-      if (heap_) {
-        heap_ = nil;
-      }
+        if (heap_) {
+            heap_ = nil;
+        }
     }
 }
 

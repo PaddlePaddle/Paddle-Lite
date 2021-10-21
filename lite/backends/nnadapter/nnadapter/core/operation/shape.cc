@@ -31,11 +31,7 @@ int PrepareShape(hal::Operation* operation) {
   output_type.dimensions.count = 1;
   int32_t shape_size = input_type.dimensions.count;
   output_type.dimensions.data[0] = shape_size;
-  if (dtype == static_cast<int32_t>(NNADAPTER_TENSOR_INT32)) {
-    output_type.precision = NNADAPTER_TENSOR_INT32;
-  } else if (dtype == static_cast<int32_t>(NNADAPTER_TENSOR_INT64)) {
-    output_type.precision = NNADAPTER_TENSOR_INT64;
-  }
+  output_type.precision = static_cast<NNAdapterOperandPrecisionCode>(dtype);
   output_type.lifetime = NNADAPTER_TEMPORARY_SHAPE;
   output_operand->length = sizeof(NNAdapterOperandDimensionType);
   output_operand->buffer = malloc(output_operand->length);
