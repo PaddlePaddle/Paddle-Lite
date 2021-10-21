@@ -29,7 +29,7 @@ class WhereOp : public OpLite {
   bool InferShapeImpl() const override;
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
- 
+
   bool InferType() override {
     param_.out->set_precision(param_.x->precision());
     return true;

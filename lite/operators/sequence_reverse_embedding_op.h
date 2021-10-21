@@ -31,12 +31,11 @@ class SequenceReverseEmbeddingOp : public OpLite {
   bool InferShapeImpl() const override;
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
- 
-    return "sequence_reverse_embedding";
-  }
 
- private:
-  mutable LookupTableParam param_;
+  return "sequence_reverse_embedding";
+}
+
+private : mutable LookupTableParam param_;
 };
 
 }  // namespace operators

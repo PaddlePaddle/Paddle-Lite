@@ -35,8 +35,6 @@ class XPUFcOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- 
-
  private:
   mutable XPUFcParam param_;
 };

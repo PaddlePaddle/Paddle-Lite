@@ -39,7 +39,7 @@ class FillConstantBatchSizeLikeOp : public OpLite {
   bool InferType() override { return true; }
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
- 
+
  private:
   mutable FillConstantBatchSizeLikeParam param_;
 };

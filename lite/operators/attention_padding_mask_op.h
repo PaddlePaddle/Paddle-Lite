@@ -35,8 +35,6 @@ class AttentionPaddingMaskOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- 
-
  private:
   mutable AttentionPaddingMaskParam param_;
 };

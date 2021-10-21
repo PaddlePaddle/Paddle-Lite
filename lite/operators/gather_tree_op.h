@@ -35,8 +35,6 @@ class GatherTreeOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- 
-
  private:
   mutable GatherTreeParam param_;
 };

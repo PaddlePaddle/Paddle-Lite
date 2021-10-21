@@ -35,7 +35,6 @@ class Pad2dOpLite : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
- 
 
  private:
   mutable Pad2dParam param_;

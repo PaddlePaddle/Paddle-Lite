@@ -35,8 +35,6 @@ class XPUMmdnnBidEmbGrnnAttOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- 
-
  private:
   mutable XPUMmdnnBidEmbGrnnAttParam param_;
 };
@@ -56,12 +54,10 @@ class XPUMmdnnBidEmbGrnnAttOp2 : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- 
-    return "XPUMmdnnBidEmbGrnnAttOp2";
-  }
+  return "XPUMmdnnBidEmbGrnnAttOp2";
+}
 
- private:
-  mutable XPUMmdnnBidEmbGrnnAttParam2 param_;
+private : mutable XPUMmdnnBidEmbGrnnAttParam2 param_;
 };
 
 class XPUMmdnnBidEmbAttOp : public OpLite {
@@ -77,8 +73,6 @@ class XPUMmdnnBidEmbAttOp : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-
- 
 
  private:
   mutable XPUMmdnnBidEmbAttParam param_;
@@ -99,8 +93,6 @@ class XPUMmdnnMatchConvTopkOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- 
-
  private:
   mutable XPUMmdnnMatchConvTopkParam param_;
 };
@@ -118,8 +110,6 @@ class XPUMmdnnMergeAllOp : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-
- 
 
  private:
   mutable XPUMmdnnMergeAllParam param_;

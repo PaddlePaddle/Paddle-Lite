@@ -25,7 +25,6 @@ class CalibOnceOp : public CalibOpLite {
  public:
   explicit CalibOnceOp(const std::string &type) : CalibOpLite(type) {}
   bool run_once() const override;
- 
 };
 
 }  // namespace operators

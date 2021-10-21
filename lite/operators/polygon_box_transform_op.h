@@ -36,8 +36,6 @@ class PolygonBoxTransformOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- 
-
  private:
   mutable PolygonBoxTransformParam param_;
 };

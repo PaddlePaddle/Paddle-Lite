@@ -37,8 +37,6 @@ class GroupNormOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- 
-
 #ifdef LITE_WITH_PROFILE
   void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
     ch->input_shape = ch->DimToStr(param_.x->dims());

@@ -80,8 +80,6 @@ class FpgaConvOpLite : public ConvOpLite {
 #endif
     return true;
   }
-
- 
 };
 
 }  // namespace operators

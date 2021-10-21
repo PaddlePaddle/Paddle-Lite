@@ -36,8 +36,6 @@ class GatherOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- 
-
   bool InferType() override {
     param_.Out->set_precision(param_.X->precision());
     return true;

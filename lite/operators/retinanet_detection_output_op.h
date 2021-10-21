@@ -38,16 +38,15 @@ class RetinanetDetectionOutputOpLite : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- 
-    return "retinanet_detection_output";
-  }
-
+  return "retinanet_detection_output";
+}
 #ifdef LITE_WITH_PROFILE
-  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {}
+  void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
+}
 #endif
 
- private:
-  mutable RetinanetDetectionOutputParam param_;
+private:
+mutable RetinanetDetectionOutputParam param_;
 };
 
 }  // namespace operators

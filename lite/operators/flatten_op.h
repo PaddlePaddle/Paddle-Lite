@@ -40,7 +40,6 @@ class FlattenOp : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
- 
 
  protected:
   mutable ReshapeParam param_;
@@ -65,7 +64,6 @@ class Flatten2Op : public FlattenOp {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
- 
 };
 
 class FlattenContiguousRangeOp : public OpLite {
@@ -88,7 +86,6 @@ class FlattenContiguousRangeOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- 
  protected:
   mutable FlattenContiguousRangeParam param_;
 };

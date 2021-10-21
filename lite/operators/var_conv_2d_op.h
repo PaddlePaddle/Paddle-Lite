@@ -30,7 +30,6 @@ class VarConv2dOp : public OpLite {
   bool InferShapeImpl() const override;
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
- 
 
  private:
   mutable VarConv2DParam param_;

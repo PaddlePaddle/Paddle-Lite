@@ -38,8 +38,6 @@ class GenerateProposalsV2OpLite : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- 
-
  private:
   mutable GenerateProposalsV2Param param_;
 };

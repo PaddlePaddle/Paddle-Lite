@@ -37,8 +37,6 @@ class RoiAlignOpLite : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- 
-
  private:
   mutable RoiAlignParam param_;
 };

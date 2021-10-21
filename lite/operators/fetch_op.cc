@@ -48,8 +48,6 @@ class FetchOp : public OpLite {
     return true;
   }
 
- 
-
  private:
   mutable FetchParam param_;
 };

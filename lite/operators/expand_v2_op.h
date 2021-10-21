@@ -33,7 +33,6 @@ class ExpandV2OpLite : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
- 
 
  private:
   mutable ExpandV2Param param_;

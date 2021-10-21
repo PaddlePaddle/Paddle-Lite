@@ -36,8 +36,6 @@ class IsEmptyOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- 
-
  private:
   mutable IsEmptyParam param_;
 };

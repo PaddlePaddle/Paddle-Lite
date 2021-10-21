@@ -233,8 +233,6 @@ class ConvOpLite : public OpLite {
 
   void AttachKernel(KernelBase* kernel) override { kernel->SetParam(param_); }
 
- 
-
  protected:
   mutable ConvParam param_;
   std::string padding_algorithm_{""};

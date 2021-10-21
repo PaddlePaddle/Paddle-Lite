@@ -37,12 +37,10 @@ class RoiPerspectiveTransformOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- 
-    return "roi_perspective_transform";
-  }
+  return "roi_perspective_transform";
+}
 
- private:
-  mutable RoiPerspectiveTransformParam param_;
+private : mutable RoiPerspectiveTransformParam param_;
 };
 
 }  // namespace operators

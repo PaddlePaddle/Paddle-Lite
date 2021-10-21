@@ -55,12 +55,10 @@ class FakeChannelWiseQuantizeDequantizeAbsMaxOpLite : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- 
-    return "fake_channel_wise_quantize_dequantize_abs_max";
-  }
+  return "fake_channel_wise_quantize_dequantize_abs_max";
+}
 
- private:
-  mutable FakeChannelWiseQuantDequantAbsMaxParam param_;
+private : mutable FakeChannelWiseQuantDequantAbsMaxParam param_;
 };
 
 }  // namespace operators

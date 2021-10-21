@@ -36,8 +36,6 @@ class SequenceSoftmaxOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- 
-
  private:
   mutable SequenceSoftmaxParam param_;
 };

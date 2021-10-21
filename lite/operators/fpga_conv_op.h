@@ -87,8 +87,6 @@ class FpgaConvOpLite : public ConvOpLite {
         stride_info_);
   }
 
- 
-
  private:
   zynqmp::StrideInfo stride_info_ = zynqmp::StrideInfo();
 };

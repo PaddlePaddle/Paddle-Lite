@@ -37,8 +37,6 @@ class CorrelationOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- 
-
  private:
   mutable CorrelationParam param_;
 };

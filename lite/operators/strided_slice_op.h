@@ -36,7 +36,6 @@ class StridedSliceOp : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
- 
 
  private:
   mutable StridedSliceParam param_;

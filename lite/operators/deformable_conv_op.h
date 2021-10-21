@@ -142,8 +142,6 @@ class DeformableConvOpLite : public OpLite {
 
   void AttachKernel(KernelBase* kernel) override { kernel->SetParam(param_); }
 
- 
-
  private:
   mutable DeformableConvParam param_;
   std::string padding_algorithm_{""};

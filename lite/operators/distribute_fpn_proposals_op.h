@@ -38,12 +38,10 @@ class DistributeFpnProposalsOpLite : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- 
-    return "distribute_fpn_proposals";
-  }
+  return "distribute_fpn_proposals";
+}
 
- private:
-  mutable DistributeFpnProposalsParam param_;
+private : mutable DistributeFpnProposalsParam param_;
 };
 
 }  // namespace operators

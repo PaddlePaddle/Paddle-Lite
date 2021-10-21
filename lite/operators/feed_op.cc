@@ -67,8 +67,6 @@ class FeedOp : public OpLite {
     return true;
   }
 
- 
-
  private:
   mutable FeedParam param_;
 };

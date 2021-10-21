@@ -96,8 +96,8 @@ void TypeLayoutTransformPass::ComplementInputs(
 
   if (!DataLayoutCompatible(*in->AsArg().type, *decl_arg_type)) {
     VLOG(4) << "found Layout unmatched tensor: " << in->AsArg().name
-            << " for kernel " << inst.op()->Type() << " "
-            << *in->AsArg().type << " -> " << *decl_arg_type;
+            << " for kernel " << inst.op()->Type() << " " << *in->AsArg().type
+            << " -> " << *decl_arg_type;
 
     // Special case for opencl:
     // Data layout of kImageDefault is the same as kImageFolder when the size of

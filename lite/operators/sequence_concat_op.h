@@ -30,7 +30,6 @@ class SequenceConcatOp : public OpLite {
   bool InferShapeImpl() const override;
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
- 
 
  private:
   mutable SequenceConcatParam param_;

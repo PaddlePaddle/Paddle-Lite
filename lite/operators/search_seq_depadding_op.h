@@ -38,8 +38,6 @@ class SearchSeqDepaddingOpLite : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- 
-
  private:
   mutable SearchSeqDepaddingParam param_;
 };

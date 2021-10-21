@@ -38,7 +38,6 @@ class TransposeOp : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
- 
 
   bool InferType() override {
     param_.output->set_precision(param_.x->precision());
@@ -62,7 +61,6 @@ class Transpose2Op : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
- 
 
   bool InferType() override {
     param_.output->set_precision(param_.x->precision());

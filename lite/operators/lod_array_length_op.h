@@ -27,8 +27,6 @@ class LoDArrayLengthOp : public OpLite {
 
   bool InferShapeImpl() const override;
 
- 
-
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
 #ifdef LITE_WITH_PROFILE

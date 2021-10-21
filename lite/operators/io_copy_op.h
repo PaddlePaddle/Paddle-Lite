@@ -26,7 +26,6 @@ class IoCopyOp : public OpLite {
   bool CheckShape() const override;
   bool InferShapeImpl() const override;
   bool Run() override;
- 
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 

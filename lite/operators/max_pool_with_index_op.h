@@ -76,8 +76,6 @@ class MaxPoolWithIndexOpLite : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- 
-
  private:
   mutable PoolParam param_;
 };

@@ -36,8 +36,6 @@ class Im2SequenceOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- 
-
  private:
   mutable Im2SequenceParam param_;
 };

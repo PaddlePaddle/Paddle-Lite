@@ -36,12 +36,10 @@ class XPUMmdnnSearchAttentionOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- 
-    return "XPUMmdnnSearchAttentionOp";
-  }
+  return "XPUMmdnnSearchAttentionOp";
+}
 
- private:
-  mutable XPUMmdnnSearchAttentionParam param_;
+private : mutable XPUMmdnnSearchAttentionParam param_;
 };
 
 class XPUMmdnnSearchAttention2Op : public OpLite {
@@ -59,12 +57,10 @@ class XPUMmdnnSearchAttention2Op : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- 
-    return "XPUMmdnnSearchAttention2Op";
-  }
+  return "XPUMmdnnSearchAttention2Op";
+}
 
- private:
-  mutable XPUMmdnnSearchAttentionParam param_;
+private : mutable XPUMmdnnSearchAttentionParam param_;
 };
 
 }  // namespace operators

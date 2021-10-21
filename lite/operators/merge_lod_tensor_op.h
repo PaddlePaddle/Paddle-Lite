@@ -37,8 +37,6 @@ class MergeLodTensorOpLite : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- 
-
  private:
   mutable MergeLodTensorParam param_;
 };

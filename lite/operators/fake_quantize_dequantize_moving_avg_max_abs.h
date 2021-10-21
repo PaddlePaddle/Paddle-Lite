@@ -56,12 +56,10 @@ class FakeQuantizeDequantizeMovingAvgMaxAbsOpLite : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- 
-    return "fake_quantize_dequantize_moving_avg_max_abs";
-  }
+  return "fake_quantize_dequantize_moving_avg_max_abs";
+}
 
- private:
-  mutable FakeQuantizeMovingAvgMaxAbsParam param_;
+private : mutable FakeQuantizeMovingAvgMaxAbsParam param_;
 };
 
 }  // namespace operators

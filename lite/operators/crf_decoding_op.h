@@ -37,8 +37,6 @@ class CrfDecodingOpLite : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- 
-
  private:
   mutable CrfDecodingParam param_;
 };

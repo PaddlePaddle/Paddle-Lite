@@ -61,8 +61,6 @@ class MulOpLite : public OpLite {
     return true;
   }
 
- 
-
 #ifdef LITE_WITH_PROFILE
   void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {
     ch->input_shape = ch->DimToStr(param_.x->dims());

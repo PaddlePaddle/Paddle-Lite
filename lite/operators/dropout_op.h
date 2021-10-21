@@ -34,8 +34,6 @@ class DropoutOp : public OpLite {
   // TODO(Superjomn) replace framework::OpDesc with a lite one.
   bool AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) override;
 
- 
-
  private:
   mutable DropoutParam param_;
 };

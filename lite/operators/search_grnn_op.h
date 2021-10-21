@@ -37,8 +37,6 @@ class SearchGrnnOpLite : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- 
-
  private:
   mutable SearchGrnnParam param_;
 };
