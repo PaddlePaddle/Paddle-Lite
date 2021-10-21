@@ -37,7 +37,7 @@ class ConditionalBlockOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- // std::string DebugString() const override { return "conditional_block"; }
+ 
 
   void SetProgramDesc(std::shared_ptr<const cpp::ProgramDesc> program_desc) {
     param_.program_desc = program_desc;

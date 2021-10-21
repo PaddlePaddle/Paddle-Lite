@@ -35,7 +35,7 @@ class XPUMmdnnBidEmbGrnnAttOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- // std::string DebugString() const override { return "XPUMmdnnBidEmbGrnnAttOp"; }
+ 
 
  private:
   mutable XPUMmdnnBidEmbGrnnAttParam param_;
@@ -56,7 +56,7 @@ class XPUMmdnnBidEmbGrnnAttOp2 : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- // std::string DebugString() const override {
+ 
     return "XPUMmdnnBidEmbGrnnAttOp2";
   }
 
@@ -78,7 +78,7 @@ class XPUMmdnnBidEmbAttOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- // std::string DebugString() const override { return "XPUMmdnnBidEmbAttOp"; }
+ 
 
  private:
   mutable XPUMmdnnBidEmbAttParam param_;
@@ -99,7 +99,7 @@ class XPUMmdnnMatchConvTopkOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- // std::string DebugString() const override { return "XPUMmdnnMatchConvTopkOp"; }
+ 
 
  private:
   mutable XPUMmdnnMatchConvTopkParam param_;
@@ -119,7 +119,7 @@ class XPUMmdnnMergeAllOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- // std::string DebugString() const override { return "XPUMmdnnMergeAllOp"; }
+ 
 
  private:
   mutable XPUMmdnnMergeAllParam param_;

@@ -33,7 +33,7 @@ class ElementwiseGradOp : public OpLite {
 
   void AttachKernel(KernelBase* kernel) override { kernel->SetParam(param_); }
 
- // std::string DebugString() const override { return "elementwise_grad_op"; }
+ 
 
  private:
   mutable operators::ElementwiseGradParam param_;

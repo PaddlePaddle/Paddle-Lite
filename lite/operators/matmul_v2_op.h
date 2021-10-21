@@ -41,7 +41,7 @@ class MatMulV2OpLite : public OpLite {
 
   bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override;
 
- // std::string DebugString() const override { return "matmul_v2"; }
+ 
 
 #ifdef LITE_WITH_PROFILE
   void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {

@@ -56,7 +56,7 @@ class FakeQuantizeDequantizeMovingAvgMaxAbsOpLite : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- // std::string DebugString() const override {
+ 
     return "fake_quantize_dequantize_moving_avg_max_abs";
   }
 

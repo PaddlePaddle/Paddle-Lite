@@ -35,7 +35,7 @@ class FusionElementwiseActivationOp : public OpLite {
 
   void AttachKernel(KernelBase* kernel) override { kernel->SetParam(param_); }
 
- // std::string DebugString() const override {
+ 
 //    return "fusion_elementwise_activation_op";
 //  }
 
@@ -58,7 +58,7 @@ class FusionElementwiseActivationOp : public OpLite {
 //   void AttachKernel(KernelBase* kernel) override { kernel->SetParam(param_);
 //   }
 
-//  // std::string DebugString() const override {
+//  
 //     return "fusion_elementwise_activation_grad_explicit_op";
 //   }
 

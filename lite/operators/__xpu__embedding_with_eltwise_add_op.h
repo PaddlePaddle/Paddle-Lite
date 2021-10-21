@@ -35,7 +35,7 @@ class XPUEmbeddingWithEltwiseAddOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- // std::string DebugString() const override { return "EmbeddingWithEltwiseAdd"; }
+ 
 
  private:
   mutable XPUEmbeddingWithEltwiseAddParam param_;

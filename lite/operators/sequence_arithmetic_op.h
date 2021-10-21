@@ -35,7 +35,7 @@ class SequenceArithmeticOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- // std::string DebugString() const override { return "sequence_arithmetic"; }
+ 
 
  private:
   mutable SequenceArithmeticParam param_;

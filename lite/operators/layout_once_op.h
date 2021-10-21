@@ -25,7 +25,7 @@ class LayoutOnceOp : public LayoutOp {
  public:
   explicit LayoutOnceOp(const std::string &type) : LayoutOp(type) {}
   bool run_once() const override;
- // std::string DebugString() const override;
+ 
 };
 
 }  // namespace operators

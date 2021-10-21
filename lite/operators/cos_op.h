@@ -36,7 +36,7 @@ class CosOpLite : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- // std::string DebugString() const override { return "cos"; }
+ 
 
  private:
   mutable CosParam param_;

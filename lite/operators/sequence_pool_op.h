@@ -32,7 +32,7 @@ class SequencePoolOp : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
- // std::string DebugString() const override { return "sequence_pool"; }
+ 
 
  private:
   mutable SequencePoolParam param_;

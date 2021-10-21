@@ -39,7 +39,7 @@ class MulGradOpLite : public OpLite {
 
   bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override;
 
- // std::string DebugString() const override { return "mul_grad"; }
+ 
 
  private:
   mutable MulGradParam param_;

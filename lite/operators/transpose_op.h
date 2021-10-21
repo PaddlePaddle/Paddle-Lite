@@ -38,7 +38,7 @@ class TransposeOp : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
- // std::string DebugString() const override { return "transpose"; }
+ 
 
   bool InferType() override {
     param_.output->set_precision(param_.x->precision());
@@ -62,7 +62,7 @@ class Transpose2Op : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
- // std::string DebugString() const override { return "transpose2"; }
+ 
 
   bool InferType() override {
     param_.output->set_precision(param_.x->precision());

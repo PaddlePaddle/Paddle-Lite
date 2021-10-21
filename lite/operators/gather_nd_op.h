@@ -35,7 +35,7 @@ class GatherNdOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- // std::string DebugString() const override { return "gather_nd"; }
+ 
 
   bool InferType() override {
     param_.out->set_precision(param_.x->precision());

@@ -35,7 +35,7 @@ class AttentionPaddingMaskOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- // std::string DebugString() const override { return "attention_padding_mask"; }
+ 
 
  private:
   mutable AttentionPaddingMaskParam param_;

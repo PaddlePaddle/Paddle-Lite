@@ -39,7 +39,7 @@ class SGDOpLite : public OpLite {
 
   bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override;
 
- // std::string DebugString() const override { return "sgd"; }
+ 
 
  private:
   mutable SGDParam param_;

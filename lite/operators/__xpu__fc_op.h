@@ -35,7 +35,7 @@ class XPUFcOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- // std::string DebugString() const override { return "XPUFc"; }
+ 
 
  private:
   mutable XPUFcParam param_;

@@ -39,7 +39,7 @@ class FillConstantBatchSizeLikeOp : public OpLite {
   bool InferType() override { return true; }
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
- // std::string DebugString() const override {
+ 
 //    return "fill_constant_batch_size_like";
 //  }
 

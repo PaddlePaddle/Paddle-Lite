@@ -39,7 +39,7 @@ class ShuffleChannelOpLite : public OpLite {
 
   bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override;
 
- // std::string DebugString() const override { return "shuffle_channel"; }
+ 
 
  private:
 #ifdef LITE_WITH_PROFILE

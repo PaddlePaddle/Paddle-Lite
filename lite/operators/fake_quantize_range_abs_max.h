@@ -58,7 +58,7 @@ class FakeQuantizeRangeMaxAbsOpLite : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- // std::string DebugString() const override {
+ 
     return "fake_quantize_range_max_abs";
   }
 

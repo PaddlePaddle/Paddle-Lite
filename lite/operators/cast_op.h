@@ -36,7 +36,7 @@ class CastOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- // std::string DebugString() const override { return "cast"; }
+ 
 
  private:
   mutable CastParam param_;

@@ -36,7 +36,7 @@ class XPUMmdnnSearchAttentionOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- // std::string DebugString() const override {
+ 
     return "XPUMmdnnSearchAttentionOp";
   }
 
@@ -59,7 +59,7 @@ class XPUMmdnnSearchAttention2Op : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
- // std::string DebugString() const override {
+ 
     return "XPUMmdnnSearchAttention2Op";
   }
 
