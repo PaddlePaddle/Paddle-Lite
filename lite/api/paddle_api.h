@@ -172,6 +172,8 @@ class LITE_API ConfigBase {
   // op_type
   std::string nnadapter_subgraph_partition_config_path_{};
   std::string nnadapter_subgraph_partition_config_buffer_{};
+  std::string mixed_precision_quantization_config_path_{};
+  std::string mixed_precision_quantization_config_buffer_{};
   int device_id_{0};
   int x86_math_num_threads_ = 1;
 
@@ -276,6 +278,26 @@ class LITE_API ConfigBase {
   }
   const std::string& nnadapter_subgraph_partition_config_buffer() const {
     return nnadapter_subgraph_partition_config_buffer_;
+  }
+  // Clear some ops' quant information to support mixed precision compute by
+  // configuration file or buffer
+  void set_nnadapter_mixed_precision_quantization_config_path(
+      const std::string& mixed_precision_quantization_config_path) {
+    mixed_precision_quantization_config_path_ =
+        mixed_precision_quantization_config_path;
+  }
+  const std::string& nnadapter_mixed_precision_quantization_config_path()
+      const {
+    return mixed_precision_quantization_config_path_;
+  }
+  void set_nnadapter_mixed_precision_quantization_config_buffer(
+      const std::string& mixed_precision_quantization_config_buffer) {
+    mixed_precision_quantization_config_buffer_ =
+        mixed_precision_quantization_config_buffer;
+  }
+  const std::string& nnadapter_mixed_precision_quantization_config_buffer()
+      const {
+    return mixed_precision_quantization_config_buffer_;
   }
   // set Device ID
   void set_device_id(int device_id) { device_id_ = device_id; }
