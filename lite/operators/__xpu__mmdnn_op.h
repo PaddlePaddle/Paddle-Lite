@@ -54,10 +54,8 @@ class XPUMmdnnBidEmbGrnnAttOp2 : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  return "XPUMmdnnBidEmbGrnnAttOp2";
-}
-
-private : mutable XPUMmdnnBidEmbGrnnAttParam2 param_;
+ private:
+  mutable XPUMmdnnBidEmbGrnnAttParam2 param_;
 };
 
 class XPUMmdnnBidEmbAttOp : public OpLite {
