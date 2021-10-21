@@ -42,7 +42,8 @@ int ConvertFC(Converter* converter, OpInfo* op, Scope* scope) {
   auto w_precison = w_tensor->precision();
   auto w_dims = w_tensor->dims();
   CHECK_EQ(w_dims.size(), 2UL);
-  int64_t K = w_dims[0] int64_t N = w_dims[1];
+  int64_t K = w_dims[0];
+  int64_t N = w_dims[1];
 
   auto output_name = op->Output("Output").front();
   auto output_scale_name = "Output0_scale";
@@ -79,7 +80,6 @@ int ConvertFC(Converter* converter, OpInfo* op, Scope* scope) {
   CHECK(input_operand);
   auto input_type = converter->GetOperandType(input_operand);
   // Weight operand
-  // Transpose to [k, n] to [n, k]
   NNAdapterOperand* weight_operand = nullptr;
   std::vector<float> bias_scales;
   if (is_quant_mode) {
@@ -99,13 +99,16 @@ int ConvertFC(Converter* converter, OpInfo* op, Scope* scope) {
     if (!IsValidSymmPerChannelQuantParams(w_scales)) {
       w_scales = {w_scales[0]};
     }
-    auto w_data = w_tensor->mutable_data<int8_t>();
-    std::vector<int8_t> transpose_weight_data(w_dims.production(), 0);
-    DDim transpose_w_dims;
-    Transpose(
-        w_data, &transpose_weight_data[0], {1, 0}, w_dims, &transpose_w_dims);
-    weight_operand = converter->AddConstantOperand(
-        transpose_weight_data, transpose_w_dims, w_scales);
+    // auto w_data = w_tensor->mutable_data<int8_t>();
+    // std::vector<int8_t> transpose_weight_data(w_dims.production(), 0);
+    // DDim transpose_w_dims;
+    // Transpose(
+    //     w_data, &transpose_weight_data[0], {1, 0}, w_dims,
+    //     &transpose_w_dims);
+    // weight_operand = converter->AddConstantOperand(
+    //     transpose_weight_data, transpose_w_dims, w_scales);
+    weight_operand =
+        converter->AddConstantOperand(*w_tensor, {}, false, w_scales);
     bias_scales.resize(w_scales.size());
     for (size_t i = 0; i < w_scales.size(); i++) {
       bias_scales[i] = input_scales[0] * w_scales[i];
@@ -119,14 +122,28 @@ int ConvertFC(Converter* converter, OpInfo* op, Scope* scope) {
     }
     CHECK(input_type->precision ==
           ConvertPrecisionTypeToNNPrecisionCode(w_precison));
-    auto w_data = w_tensor->mutable_data<float>();
-    std::vector<float> transpose_weight_data(w_dims.production(), 0);
-    DDim transpose_w_dims;
-    Transpose(
-        w_data, &transpose_weight_data[0], {1, 0}, w_dims, &transpose_w_dims);
-    weight_operand =
-        converter->AddConstantOperand(transpose_weight_data, transpose_w_dims)
+    weight_operand = converter->AddConstantOperand(*w_tensor);
+    // auto w_data = w_tensor->mutable_data<float>();
+    // std::vector<float> transpose_weight_data(w_dims.production(), 0);
+    // DDim transpose_w_dims;
+    // Transpose(
+    //     w_data, &transpose_weight_data[0], {1, 0}, w_dims,
+    //     &transpose_w_dims);
+    // weight_operand =
+    //     converter->AddConstantOperand(transpose_weight_data,
+    //     transpose_w_dims)
   }
+  // Transpose_x_operand
+  auto transpose_x_operand = converter->AddConstantOperand(false);
+  // Transpose_y_operand
+  auto transpose_y_operand = converter->AddConstantOperand(false);
+  // Output operand
+  auto output_operand = converter->AddOutputOperand(output_name, output_scales);
+  // Matmul operation
+  converter->AddOperation(
+      NNADAPTER_MAT_MUL,
+      {input_operand, weight_operand, transpose_x_operand, transpose_y_operand},
+      {output_operand});
 
   // Bias operand
   NNAdapterOperand* bias_operand = nullptr;
@@ -191,7 +208,6 @@ int ConvertFC(Converter* converter, OpInfo* op, Scope* scope) {
         true,
         bias_scales);
   }
-
   // Fuse code operand
   NNAdapterFuseCode fuse_code_value = NNADAPTER_FUSED_NONE;
   std::vector<std::string> activation_support_split_ops{
@@ -218,13 +234,12 @@ int ConvertFC(Converter* converter, OpInfo* op, Scope* scope) {
             << " fusion operator into two operators!";
   }
   auto fuse_code_operand = converter->AddConstantOperand(fuse_code_value);
-  // Output operand
-  auto output_operand = converter->AddOutputOperand(output_name, output_scales);
-  // Fully connected operation
-  converter->AddOperation(
-      NNADAPTER_FULLY_CONNECTED,
-      {input_operand, weight_operand, bias_operand, fuse_code_operand},
-      {output_operand});
+  // Eltwise_add out operand
+  auto eltwise_add_out_operand = converter->AddOutputOperand(output_name);
+  // Eltwise_add operation for adding bias to matmul operation
+  converter->AddOperation(NNADAPTER_ADD,
+                          {output_operand, bias_operand, fuse_code_operand},
+                          {eltwise_add_out_operand});
   // Activation
   if (!activation_type.empty()) {
     auto activation_operand = converter->AddOutputOperand(output_name);
@@ -241,7 +256,8 @@ int ConvertFC(Converter* converter, OpInfo* op, Scope* scope) {
       LOG(FATAL) << "Unsupported unary activation type: " << activation_type;
       return UNSUPPORTED_FEATURE;
     }
-    converter->AddOperation(act_type, {output_operand}, {activation_operand});
+    converter->AddOperation(
+        act_type, {eltwise_add_out_operand}, {activation_operand});
     output_operand = activation_operand;
   }
   return NO_ERROR;
