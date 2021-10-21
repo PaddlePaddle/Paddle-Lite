@@ -1,14 +1,14 @@
 # 支持算子
 
-当前 Paddle Lite 共计支持算子268个，其中基础算子91个，附加算子177个。
+当前 Paddle Lite 共计支持算子 268 个，其中基础算子 91 个，附加算子 177 个。
 
 ### 基础算子
 
-默认编译的算子，共计91个。
+默认编译的算子，共计 91 个。
 
 Host 端 Kernel 是算子在任意 CPU 上纯 C/C++ 的具体实现，具有可移植性强的特点，因此，它一般作为各特定平台算子实现的补充。
 
-以 ARM CPU 为例，如果模型中某个算子没有 ARM 端 Kernel，但是有 Host 端 Kernel，那么模型优化阶段该算子会选择 Host 端 Kernel，该模型还是可以顺利部署。
+>> 以 ARM CPU 为例，如果模型中某个算子没有 ARM 端 Kernel，但是有 Host 端 Kernel，那么模型优化阶段该算子会选择 Host 端 Kernel，该模型还是可以顺利部署。
 
 | OP_name| ARM | OpenCL | Metal | 百度XPU | Host | X86 | 比特大陆 | 英特尔FPGA | 寒武纪mlu | 华为昇腾NPU | 联发科APU | 瑞芯微NPU | 华为麒麟NPU | 颖脉NNA | 晶晨NPU |
 |-:|-| -| -| -| -| -| -| -| -| -| -| -| -| -| -| 
@@ -107,7 +107,7 @@ Host 端 Kernel 是算子在任意 CPU 上纯 C/C++ 的具体实现，具有可�
 
 ### 附加算子
 
-加上附加算子共计269个，需要在编译时打开 `--with_extra=ON` 开关才会编译，具体请参考[参数详情](../source_compile/library)。
+加上附加算子共计 269 个，需要在编译时打开 `--with_extra=ON` 开关才会编译，具体请参考[参数详情](../source_compile/compile_options)。
 
 
 | OP_name| ARM | OpenCL | Metal | 百度XPU | Host | X86 | 比特大陆 | 英特尔FPGA | 寒武纪mlu | 华为昇腾NPU | 联发科APU | 瑞芯微NPU | 华为麒麟NPU | 颖脉NNA | 晶晨NPU |
