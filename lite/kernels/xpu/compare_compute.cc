@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/xpu/compare_compute.h"
+#include <vector>
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
 
@@ -23,9 +24,13 @@ namespace xpu {
 
 template <typename T>
 struct LessThanFunctor {
-  inline int operator()(
-      xdnn::Context* ctx, const T* x, const T* y, bool* z, int len) const {
-    return xdnn::less_than<T>(ctx, x, y, z, len);
+  inline int operator()(xdnn::Context* ctx,
+                        const T* x,
+                        const T* y,
+                        bool* z,
+                        const std::vector<int>& xshape,
+                        const std::vector<int>& yshape) const {
+    return xdnn::broadcast_less_than<T>(ctx, x, y, z, xshape, yshape);
   }
 };
 
@@ -34,15 +39,52 @@ void CompareCompute<PType, T, Functor>::Run() {
   auto& param = this->template Param<operators::CompareParam>();
   const size_t x_size = param.X->numel();
   const size_t y_size = param.Y->numel();
-  CHECK_EQ(x_size, y_size) << "CompareCompute only supports x_size == y_size "
-                              "for xpu at this moment.";
+  auto x_dims = param.X->dims();
+  auto y_dims = param.Y->dims();
   bool* z = param.Out->template mutable_data<bool>(TARGET(kXPU));
   const auto* x = param.X->template data<T>();
   const auto* y = param.Y->template data<T>();
 
   auto& ctx = this->ctx_->template As<XPUContext>();
   Functor comp_func;
-  int r = comp_func(ctx.GetRawContext(), x, y, z, x_size);
+  std::vector<int> xshape;
+  std::vector<int> yshape;
+  int axis = (param.axis == -1 ? abs(static_cast<int>(x_dims.size()) -
+                                     static_cast<int>(y_dims.size()))
+                               : param.axis);
+
+  // constrains:
+  // 1. X size should be larger than Y
+  CHECK_GE(x_size, y_size) << "Input X cannot be smaller than Y";
+  CHECK_GE(x_dims.size(), y_dims.size())
+      << "Axis number of X cannot be less than Y";
+
+  // 2. y_dims.size() + axis <= x_dims.size()
+  CHECK_LE(y_dims.size() + axis, x_dims.size()) << "Invalid param.axis";
+
+  for (int i = 0; i < x_dims.size(); ++i) {
+    CHECK_LE(x_dims[i], INT_MAX) << "Dimension of X exceed INT_MAX";
+    xshape.push_back(static_cast<int>(x_dims[i]));
+  }
+
+  // yshape should be:
+  // [0, axis)                       = 1
+  // [axis, axis + y_dims.size)      = y_dims
+  // [axis+y_dims.size, x_dims.size) = 1
+  for (int i = 0; i < axis; ++i) {
+    yshape.push_back(1);
+  }
+
+  for (int i = 0; i < y_dims.size(); ++i) {
+    CHECK_LE(y_dims[i], INT_MAX) << "Dimension of Y exceed INT_MAX";
+    yshape.push_back(static_cast<int>(y_dims[i]));
+  }
+
+  for (int i = 0; i < x_dims.size() - y_dims.size() - axis; ++i) {
+    yshape.push_back(1);
+  }
+
+  int r = comp_func(ctx.GetRawContext(), x, y, z, xshape, yshape);
   CHECK_EQ(r, 0);
 }
 
