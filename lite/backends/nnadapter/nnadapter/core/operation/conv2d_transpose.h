@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include "nnadapter.h"  // NOLINT
 
 namespace nnadapter {
 namespace operation {
@@ -42,7 +43,10 @@ namespace operation {
   /* Bias */                                                                   \
   auto bias_operand = input_operands[2];                                       \
   NNADAPTER_VLOG(5) << "bias: " << OperandToString(bias_operand);              \
-  /* Auto pad: not support auto_pad. */                                        \
+  /* Auto pad */                                                               \
+  auto auto_pad = static_cast<NNAdapterAutoPadCode>(                           \
+      *reinterpret_cast<int32_t*>(input_operands[3]->buffer));                 \
+  NNADAPTER_VLOG(5) << "auto_pad: " << AutoPadCodeToString(auto_pad);          \
   /* Pads: Pads are transed according to auto_pad, so pads are used. */        \
   uint32_t pads_size =                                                         \
       input_operands[4]->length / static_cast<uint32_t>(sizeof(int32_t));      \
@@ -78,17 +82,13 @@ namespace operation {
   NNADAPTER_VLOG(5) << "dilations = [" << dilation_height << ", "              \
                     << dilation_width << "]";                                  \
   /* Output_padding */                                                         \
-  int output_padding_height = 0;                                               \
-  int output_padding_width = 0;                                                \
-  if (input_operands[8] != nullptr) {                                          \
-    uint32_t output_padding_size =                                             \
-        input_operands[8]->length / static_cast<uint32_t>(sizeof(int32_t));    \
-    NNADAPTER_CHECK_EQ(output_padding_size, 2U);                               \
-    auto output_padding_buffer =                                               \
-        reinterpret_cast<int32_t*>(input_operands[8]->buffer);                 \
-    output_padding_height = output_padding_buffer[0];                          \
-    output_padding_width = output_padding_buffer[1];                           \
-  }                                                                            \
+  uint32_t output_padding_size =                                               \
+      input_operands[8]->length / static_cast<uint32_t>(sizeof(int32_t));      \
+  NNADAPTER_CHECK_EQ(output_padding_size, 2U);                                 \
+  auto output_padding_buffer =                                                 \
+      reinterpret_cast<int32_t*>(input_operands[8]->buffer);                   \
+  int output_padding_height = output_padding_buffer[0];                        \
+  int output_padding_width = output_padding_buffer[1];                         \
   NNADAPTER_VLOG(5) << "output_padding = [" << output_padding_height << ", "   \
                     << output_padding_width << "]";                            \
   /* Output_shape */                                                           \
@@ -114,6 +114,16 @@ namespace operation {
   /* Check depthwise mode */                                                   \
   bool is_depthwise_mode = (group != 1 && input_channel_size == group);        \
   NNADAPTER_VLOG(5) << "depthwise mode(" << is_depthwise_mode << ").";
+
+// Calculate the height or width of the output operand of Conv2DTranspose
+// according to the pads, dilation, stride and etc.
+int32_t CalcConv2DTransposeOutputSize(int32_t input_size,
+                                      int32_t filter_height_or_width,
+                                      NNAdapterAutoPadCode auto_pad,
+                                      int32_t pad_top_or_left,
+                                      int32_t pad_bottom_or_right,
+                                      int32_t stride_height_or_width,
+                                      int32_t dilation_height_or_width);
 
 }  // namespace operation
 }  // namespace nnadapter

@@ -42,7 +42,7 @@ int ConvertArgMinMax(Converter* converter, hal::Operation* operation) {
     arg_op->set_attr_dtype(ConvertToGEPrecision(dtype));
     SET_INPUT(arg_op, x, input_operator);
     arg_operator = MAP_OUTPUT(arg_op, y, output_operand);
-    if (dtype == NNADAPTER_TENSOR_INT64) {
+    if (dtype == NNADAPTER_INT64) {
       auto cast_op = converter->AddOperator<ge::op::Cast>(output_operand);
       cast_op->set_attr_dst_type(ConvertToGEPrecision(dtype));
       SET_INPUT(cast_op, x, arg_operator);
