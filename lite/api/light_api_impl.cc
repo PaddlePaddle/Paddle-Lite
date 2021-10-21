@@ -13,16 +13,13 @@
 // limitations under the License.
 
 #include "lite/api/light_api.h"
-#include <string>
-#include "lite/api/paddle_api.h"
-#include "lite/core/version.h"
-#include "lite/model_parser/model_parser.h"
+#include <iosfwd>
+#include <memory>
+#include "lite/utils/log/logging.h"
 #ifndef LITE_ON_TINY_PUBLISH
 #include "lite/api/paddle_use_kernels.h"
 #include "lite/api/paddle_use_ops.h"
 #endif
-#include "lite/core/parallel_defines.h"
-#include "lite/core/thread_pool.h"
 
 #if (defined LITE_WITH_X86) && (defined PADDLE_WITH_MKLML) && \
     !(defined LITE_ON_MODEL_OPTIMIZE_TOOL)

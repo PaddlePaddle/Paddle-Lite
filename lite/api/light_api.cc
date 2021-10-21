@@ -13,8 +13,6 @@
 // limitations under the License.
 
 #include "lite/api/light_api.h"
-#include <algorithm>
-#include <map>
 #ifdef ENABLE_ARM_FP16
 #include "lite/backends/arm/math/fp16/funcs_fp16.h"
 #endif
