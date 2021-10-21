@@ -1,7 +1,7 @@
-# 晶晨 NPU 预测部署示例
+# 晶晨 NPU 部署示例
 
 Paddle Lite 已支持晶晨 NPU 的预测部署。
-其接入原理是与之前华为Kirin NPU、瑞芯微Rockchip NPU等类似，即加载并分析Paddle模型，首先将Paddle算子转成NNAdapter标准算子，其次再转换为Amlogic NPU组网API进行网络构建，在线生成并执行模型。
+其接入原理是与之前华为 Kirin NPU、瑞芯微 Rockchip NPU 等类似，即加载并分析 Paddle 模型，首先将 Paddle 算子转成 NNAdapter 标准算子，其次再转换为 Amlogic NPU 组网 API 进行网络构建，在线生成并执行模型。
 
 ## 支持现状
 
@@ -9,14 +9,16 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
 
 - C308X
 - A311D
-- S905D3(Android版本)
+- S905D3(Android 版本)
 
-### 已支持的Paddle模型
+### 已支持的 Paddle 模型
 
 #### 模型
+
 - [mobilenet_v1_int8_224_per_layer](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_int8_224_per_layer.tar.gz)
 
 #### 性能
+
 - 测试环境
   - 编译环境
     - Ubuntu 16.04，GCC 5.4 for ARMLinux armhf and aarch64
@@ -29,23 +31,24 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
     - A311D
       - CPU：4 x ARM Cortex-A73 \+  2 x ARM Cortex-A53
       - NPU：5 TOPs for INT8
-    - S905D3(Android版本)
+    - S905D3(Android 版本)
       - CPU：2 x ARM Cortex-55
       - NPU：1.2 TOPs for INT8
   
 - 测试方法
-  - warmup=1, repeats=5，统计平均时间，单位是ms
-  - 线程数为1，```paddle::lite_api::PowerMode CPU_POWER_MODE```设置为``` paddle::lite_api::PowerMode::LITE_POWER_HIGH ```
-  - 分类模型的输入图像维度是{1，3，224，224}
+  - warmup=1, repeats=5，统计平均时间，单位是 ms
+  - 线程数为1，`paddle::lite_api::PowerMode CPU_POWER_MODE`设置为` paddle::lite_api::PowerMode::LITE_POWER_HIGH `
+  - 分类模型的输入图像维度是{1, 3, 224, 224}
   
 - 测试结果
 
-  |模型 |C308X||A311D||S905D3(Android版本)||
+  |模型 |C308X||A311D||S905D3(Android 版本)||
   |---|---|---|---|---|---|---|
   |  |CPU(ms) | NPU(ms) |CPU(ms) | NPU(ms) |CPU(ms) | NPU(ms) |
   |mobilenet_v1_int8_224_per_layer| 167.6996 |  6.982800| 81.632133 | 5.607733 | 280.465997 | 13.411600 |
 
-### 已支持（或部分支持）NNAdapter的Paddle算子
+### 已支持（或部分支持）NNAdapter 的 Paddle 算子
+
 您可以查阅[ NNAdapter 算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/converter/all.h)获得各算子在不同新硬件上的最新支持信息。
 
 ## 参考示例演示
@@ -66,11 +69,11 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
 
 - C308X
 
-  - 需要驱动版本为6.4.4.3（下载驱动请联系开发版厂商）。
-  - 注意是64位系统。
-  - 将MicroUSB线插入到设备的MicroUSB OTG口，就可以使用Android的adb命令进行设备的交互，当然也提供了网络连接SSH登录的方式。
+  - 需要驱动版本为 6.4.4.3（下载驱动请联系开发版厂商）。
+  - 注意是 64 位系统。
+  - 将 MicroUSB 线插入到设备的 MicroUSB OTG 口，就可以使用 Android 的 `adb` 命令进行设备的交互，当然也提供了网络连接 SSH 登录的方式。
 
-    - 可通过dmesg | grep -r Galcore查询系统版本：
+    - 可通过 `dmesg | grep -r Galcore` 查询系统版本：
 
   ```shell
     $ dmesg | grep -rsn Galcore
@@ -79,23 +82,23 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
 
 - A311D
 
-  - 需要驱动版本为6.4.4.3（下载驱动请联系开发版厂商）。
+  - 需要驱动版本为 6.4.4.3（下载驱动请联系开发版厂商）。
 
-  - 注意是64位系统。
+  - 注意是 64 位系统。
 
-  - 将MicroUSB线插入到设备的MicroUSB OTG口，就可以使用Android的adb命令进行设备的交互，当然也提供了网络连接SSH登录的方式。
+  - 将 MicroUSB 线插入到设备的 MicroUSB OTG 口，就可以使用 Android 的 `adb` 命令进行设备的交互，当然也提供了网络连接 SSH 登录的方式。
 
-    - 可通过dmesg | grep -r Galcore查询系统版本：
+    - 可通过 `dmesg | grep -r Galcore` 查询系统版本：
 
     ```shell
     $ dmesg | grep -rsn Galcore
     [   24.140820] Galcore version 6.4.4.3.310723AAA
     ```
 
-- S905D3(Android版本)
+- S905D3(Android 版本)
 
-   - 需要驱动版本为6.4.4.3（下载驱动请联系开发版厂商）：
-   - adb root + adb remount以获得修改系统库的权限。
+   - 需要驱动版本为 6.4.4.3（下载驱动请联系开发版厂商）：
+   - `adb root + adb remount` 以获得修改系统库的权限。
    
     ```shell
     # dmesg | grep version
@@ -103,13 +106,13 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
     [    9.020168] <6>[    9.020168@0] Galcore version 6.4.4.3.310723a
     ```
    
-   - 示例程序和PaddleLite库的编译需要采用交叉编译方式，通过adb进行设备的交互和示例程序的运行。
+   - 示例程序和 Paddle Lite 库的编译需要采用交叉编译方式，通过 `adb` 进行设备的交互和示例程序的运行。
    
 
 ### 准备交叉编译环境
 
-- 为了保证编译环境一致，建议参考[编译环境准备](../source_compile/compile_env)中的Docker开发环境进行配置；
-- 由于有些设备只提供网络访问方式（根据开发版的实际情况），需要通过scp和ssh命令将交叉编译生成的PaddleLite库和示例程序传输到设备上执行，因此，在进入Docker容器后还需要安装如下软件：
+- 为了保证编译环境一致，建议参考[ Docker 环境准备](../source_compile/docker_environment)中的 Docker 开发环境进行配置；
+- 由于有些设备只提供网络访问方式（根据开发版的实际情况），需要通过 `scp` 和 `ssh` 命令将交叉编译生成的Paddle Lite 库和示例程序传输到设备上执行，因此，在进入 Docker 容器后还需要安装如下软件：
 
   ```
   # apt-get install openssh-client sshpass
@@ -117,7 +120,7 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
 
 ### 运行图像分类示例程序
 
-- 下载PaddleLite通用示例程序[PaddleLite-generic-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)，解压后目录主体结构如下：
+- 下载 Paddle Lite 通用示例程序[PaddleLite-generic-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)，解压后目录主体结构如下：
 
   ```shell
     - PaddleLite-generic-demo
@@ -125,22 +128,22 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
         - assets
           - images
             - tabby_cat.jpg # 测试图片
-            - tabby_cat.raw # 经过convert_to_raw_image.py处理后的RGB Raw图像
+            - tabby_cat.raw # 经过 convert_to_raw_image.py 处理后的 RGB Raw 图像
           - labels
-            - synset_words.txt # 1000分类label文件
+            - synset_words.txt # 1000 分类 label 文件
           - models
             - mobilenet_v1_int8_224_per_layer
-              - __model__ # Paddle fluid模型组网文件，可使用netron查看网络结构
-              — conv1_weights # Paddle fluid模型参数文件
-              - batch_norm_0.tmp_2.quant_dequant.scale # Paddle fluid模型量化参数文件
+              - __model__ # Paddle fluid 模型组网文件，可使用 netron 查看网络结构
+              — conv1_weights # Paddle fluid 模型参数文件
+              - batch_norm_0.tmp_2.quant_dequant.scale # Paddle fluid 模型量化参数文件
               — subgraph_partition_config_file.txt # 自定义子图分割配置文件
               ...
         - shell
-          - CMakeLists.txt # 示例程序CMake脚本
-          - build.linux.arm64 # arm64编译工作目录
-            - image_classification_demo # 已编译好的，适用于arm64的示例程序
+          - CMakeLists.txt # 示例程序 CMake 脚本
+          - build.linux.arm64 # arm64 编译工作目录
+            - image_classification_demo # 已编译好的，适用于 arm64 的示例程序
           - build.linux.armhf # armhf编译工作目录
-            - image_classification_demo # 已编译好的，适用于armhf的示例程序
+            - image_classification_demo # 已编译好的，适用于 armhf 的示例程序
           ...
           - image_classification_demo.cc # 示例程序源码
           - build.sh # 示例程序编译脚本
@@ -150,69 +153,69 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
       - libs
         - PaddleLite
           - linux
-            - arm64 # Linux 64位系统
-              - include # PaddleLite头文件
-              - lib # PaddleLite库文件
-                - amlogic_npu # Amlogic NPU DDK、NNAdapter运行时库、device HAL库
-                  - libnnadapter.so # NNAdapter运行时库
-                  - libamlogic_npu.so # NNAdapter device HAL库
-                  - libamlnpu_ddk.so # 晶晨NPU DDK
-                  - libGAL.so # 芯原DDK
-                  - libVSC.so # 芯原DDK
-                  - libOpenVX.so # 芯原DDK
-                  - libarchmodelSw.so # 芯原DDK
-                  - libNNArchPerf.so # 芯原DDK
-                  - libOvx12VXCBinary.so # 芯原DDK
-                  - libNNVXCBinary.so # 芯原DDK
-                  - libOpenVXU.so # 芯原DDK
-                  - libNNGPUBinary.so # 芯原DDK
-                  - libovxlib.so # 芯原DDK
+            - arm64 # Linux 64 位系统
+              - include # Paddle Lite 头文件
+              - lib # Paddle Lite 库文件
+                - amlogic_npu # Amlogic NPU DDK、NNAdapter 运行时库、device HAL 库
+                  - libnnadapter.so # NNAdapter 运行时库
+                  - libamlogic_npu.so # NNAdapter device HAL 库
+                  - libamlnpu_ddk.so # 晶晨 NPU DDK
+                  - libGAL.so # 芯原 DDK
+                  - libVSC.so # 芯原 DDK
+                  - libOpenVX.so # 芯原 DDK
+                  - libarchmodelSw.so # 芯原 DDK
+                  - libNNArchPerf.so # 芯原 DDK
+                  - libOvx12VXCBinary.so # 芯原 DDK
+                  - libNNVXCBinary.so # 芯原 DDK
+                  - libOpenVXU.so # 芯原 DDK
+                  - libNNGPUBinary.so # 芯原 DDK
+                  - libovxlib.so # 芯原 DDK
                   - libOpenCL.so # OpenCL
-                  - libnnrt.so # amlogic DDK依赖库
-                  - libnnsdk_lite.so # amlogic DDK依赖库
-                  - libgomp.so.1 # gnuomp库
-                - libpaddle_full_api_shared.so # 预编译PaddleLite full api库
-                - libpaddle_light_api_shared.so # 预编译PaddleLite light api库
+                  - libnnrt.so # amlogic DDK 依赖库
+                  - libnnsdk_lite.so # amlogic DDK 依赖库
+                  - libgomp.so.1 # gnuomp 库
+                - libpaddle_full_api_shared.so # 预编译 PaddleLite full api 库
+                - libpaddle_light_api_shared.so # 预编译 PaddleLite light api 库
             ...
           - android
-           - armeabi-v7a # Android 32位系统
-              - include # PaddleLite头文件
-              - lib # PaddleLite库文件
-                - amlogic_npu # Amlogic NPU DDK、NNAdapter运行时库、device HAL库
-                  - libnnadapter.so # NNAdapter运行时库
-                  - libamlogic_npu.so # NNAdapter device HAL库
-                  - libamlnpu_ddk.so # 晶晨NPU DDK
-                  - libGAL.so # 芯原DDK
-                  - libVSC.so # 芯原DDK
-                  - libOpenVX.so # 芯原DDK
-                  - libarchmodelSw.so # 芯原DDK
-                  - libNNArchPerf.so # 芯原DDK
-                  - libOvx12VXCBinary.so # 芯原DDK
-                  - libNNVXCBinary.so # 芯原DDK
-                  - libOpenVXU.so # 芯原DDK
-                  - libNNGPUBinary.so # 芯原DDK
-                  - libovxlib.so # 芯原DDK
+           - armeabi-v7a # Android 32 位系统
+              - include # Paddle Lite 头文件
+              - lib # Paddle Lite 库文件
+                - amlogic_npu # Amlogic NPU DDK、NNAdapter 运行时库、device HAL 库
+                  - libnnadapter.so # NNAdapter 运行时库
+                  - libamlogic_npu.so # NNAdapter device HAL 库
+                  - libamlnpu_ddk.so # 晶晨 NPU DDK
+                  - libGAL.so # 芯原 DDK
+                  - libVSC.so # 芯原 DDK
+                  - libOpenVX.so # 芯原 DDK
+                  - libarchmodelSw.so # 芯原 DDK
+                  - libNNArchPerf.so # 芯原 DDK
+                  - libOvx12VXCBinary.so # 芯原 DDK
+                  - libNNVXCBinary.so # 芯原 DDK
+                  - libOpenVXU.so # 芯原 DDK
+                  - libNNGPUBinary.so # 芯原 DDK
+                  - libovxlib.so # 芯原 DDK
                   - libOpenCL.so # OpenCL
-                  - libnnrt.so # amlogic DDK依赖库
-                  - libnnsdk_lite.so # amlogic DDK依赖库
+                  - libnnrt.so # amlogic DDK 依赖库
+                  - libnnsdk_lite.so # amlogic DDK 依赖库
                   - libc++_shared.so
-                - libpaddle_full_api_shared.so # 预编译PaddleLite full api库
-                - libpaddle_light_api_shared.so # 预编译PaddleLite light api库
-        - OpenCV # OpenCV预编译库
-      - ssd_detection_demo # 基于ssd的目标检测示例程序
+                - libpaddle_full_api_shared.so # 预编译 Paddle Lite full api 库
+                - libpaddle_light_api_shared.so # 预编译 Paddle Lite light api 库
+        - OpenCV # OpenCV 预编译库
+      - ssd_detection_demo # 基于 ssd 的目标检测示例程序
   ```
 
 - 按照以下命令分别运行转换后的ARM CPU模型和Amlogic NPU模型，比较它们的性能和结果；
 
   ```shell
   注意：
-  1）run_with_adb.sh不能在docker环境执行，否则可能无法找到设备，也不能在设备上运行。
-  2）run_with_ssh.sh不能在设备上运行，且执行前需要配置目标设备的IP地址、SSH账号和密码。
-  3）build.sh根据入参生成针对不同操作系统、体系结构的二进制程序，需查阅注释信息配置正确的参数值。
-  4）run_with_adb.sh入参包括模型名称、操作系统、体系结构、目标设备、设备序列号等，需查阅注释信息配置正确的参数值。
-  5）run_with_ssh.sh入参包括模型名称、操作系统、体系结构、目标设备、ip地址、用户名、用户密码等，需查阅注释信息配置正确的参数值。
+  1）`run_with_adb.sh` 不能在 Docker 环境执行，否则可能无法找到设备，也不能在设备上运行。
+  2）`run_with_ssh.sh` 不能在设备上运行，且执行前需要配置目标设备的 IP 地址、SSH 账号和密码。
+  3）`build.sh` 根据入参生成针对不同操作系统、体系结构的二进制程序，需查阅注释信息配置正确的参数值。
+  4）`run_with_adb.sh` 入参包括模型名称、操作系统、体系结构、目标设备、设备序列号等，需查阅注释信息配置正确的参数值。
+  5）`run_with_ssh.sh` 入参包括模型名称、操作系统、体系结构、目标设备、ip地址、用户名、用户密码等，需查阅注释信息配置正确的参数值。
   
-  在ARM CPU上运行mobilenet_v1_int8_224_per_layer全量化模型
+  在 ARM CPU 上运行 mobilenet_v1_int8_224_per_layer 全量化模型
   $ cd PaddleLite-generic-demo/image_classification_demo/shell
   
   For C308X
@@ -253,7 +256,7 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
   
   ------------------------------
   
-  在Amlogic NPU上运行mobilenet_v1_int8_224_per_layer全量化模型
+  在 Amlogic NPU 上运行 mobilenet_v1_int8_224_per_layer 全量化模型
   $ cd PaddleLite-generic-demo/image_classification_demo/shell
   
   For C308X
@@ -293,12 +296,12 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
     Postprocess time: 0.634000 ms
   ```
   
-- 如果需要更改测试图片，可将图片拷贝到PaddleLite-generic-demo/image_classification_demo/assets/images目录下，然后调用convert_to_raw_image.py生成相应的RGB Raw图像，最后修改run_with_adb.sh、run_with_ssh.sh的IMAGE_NAME变量即可；
+- 如果需要更改测试图片，可将图片拷贝到 `PaddleLite-generic-demo/image_classification_demo/assets/images` 目录下，然后调用 `convert_to_raw_image.py` 生成相应的 RGB Raw 图像，最后修改 `run_with_adb.sh`、`run_with_ssh.sh` 的 IMAGE_NAME 变量即可；
 - 重新编译示例程序：  
   ```shell
   注意：
-  1）请根据buid.sh配置正确的参数值。
-  2）需在docker环境中编译。
+  1）请根据 `buid.sh` 配置正确的参数值。
+  2）需在 Docker 环境中编译。
   
   # 对于C308X，A311D
   ./build.sh linux arm64
@@ -308,25 +311,25 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
   ```
 
 ### 更新模型
-- 通过Paddle训练或X2Paddle转换得到MobileNetv1 foat32模型[mobilenet_v1_fp32_224](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224_fluid.tar.gz)
-- 通过Paddle+PaddleSlim后量化方式，生成[mobilenet_v1_int8_224_per_layer量化模型](https://paddlelite-demo.bj.bcebos.com/devices/rockchip/mobilenet_v1_int8_224_fluid.tar.gz)
-- 下载[PaddleSlim-quant-demo.tar.gz](https://paddlelite-demo.bj.bcebos.com/tools/PaddleSlim-quant-demo.tar.gz)，解压后清单如下：
+- 通过 Paddle 训练或 X2Paddle 转换得到 MobileNetv1 foat32 模型[ mobilenet_v1_fp32_224 ](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224_fluid.tar.gz)
+- 通过 Paddle+PaddleSlim 后量化方式，生成[ mobilenet_v1_int8_224_per_layer 量化模型](https://paddlelite-demo.bj.bcebos.com/devices/rockchip/mobilenet_v1_int8_224_fluid.tar.gz)
+- 下载[ PaddleSlim-quant-demo.tar.gz ](https://paddlelite-demo.bj.bcebos.com/tools/PaddleSlim-quant-demo.tar.gz)，解压后清单如下：
     ```shell
     - PaddleSlim-quant-demo
       - image_classification_demo
         - quant_post # 后量化
-          - quant_post_rockchip_npu.sh # Rockchip NPU 一键量化脚本，Amlogic和瑞芯微底层都使用芯原的NPU，所以通用
-          - README.md # 环境配置说明，涉及PaddlePaddle、PaddleSlim的版本选择、编译和安装步骤
+          - quant_post_rockchip_npu.sh # Rockchip NPU 一键量化脚本，Amlogic 和瑞芯微底层都使用芯原的 NPU，所以通用
+          - README.md # 环境配置说明，涉及 PaddlePaddle、PaddleSlim 的版本选择、编译和安装步骤
           - datasets # 量化所需要的校准数据集合
-            - ILSVRC2012_val_100 # 从ImageNet2012验证集挑选的100张图片
-          - inputs # 待量化的fp32模型
+            - ILSVRC2012_val_100 # 从 ImageNet2012 验证集挑选的 100 张图片
+          - inputs # 待量化的 fp32 模型
             - mobilenet_v1
             - resnet50
           - outputs # 产出的全量化模型
           - scripts # 后量化内置脚本
     ```
-- 查看README.md完成PaddlePaddle和PaddleSlim的安装
-- 直接执行./quant_post_rockchip_npu.sh即可在outputs目录下生成mobilenet_v1_int8_224_per_layer量化模型
+- 查看 `README.md` 完成 PaddlePaddle 和 PaddleSlim 的安装
+- 直接执行 `./quant_post_rockchip_npu.sh` 即可在 `outputs` 目录下生成mobilenet_v1_int8_224_per_layer 量化模型
   ```shell
   -----------  Configuration Arguments -----------
   activation_bits: 8
@@ -382,76 +385,76 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
   End test: test_acc1 0.76, test_acc5 0.92
   --------finish eval int8 model: mobilenet_v1-------------
   ```
-  - 参考[模型转化方法](../user_guides/model_optimize_tool)，利用opt工具转换生成Amlogic NPU模型，仅需要将valid_targets设置为amlogic_npu,arm即可。
+  - 参考[模型转化方法](../user_guides/model_optimize_tool)，利用 opt 工具转换生成 Amlogic NPU 模型，仅需要将 `valid_targets` 设置为 `amlogic_npu`, `arm` 即可。
   ```shell
   $ ./opt --model_dir=mobilenet_v1_int8_224_per_layer \
       --optimize_out_type=naive_buffer \
       --optimize_out=opt_model \
       --valid_targets=amlogic_npu,arm
   ```
-### 更新支持Amlogic NPU的Paddle Lite库
+### 更新支持 Amlogic NPU 的 Paddle Lite 库
 
-- 下载PaddleLite源码和Amlogic NPU DDK
+- 下载 Paddle Lite 源码和 Amlogic NPU DDK
 
   ```shell
   $ git clone https://github.com/PaddlePaddle/Paddle-Lite.git
   $ cd Paddle-Lite
   $ git checkout <release-version-tag>
-  # C308X、A311D Linux版本ddk
+  # C308X、A311D Linux 版本 ddk
   $ wget https://paddlelite-demo.bj.bcebos.com/devices/amlogic/linux/amlnpu_ddk.tar.gz
-  # S905D3 Android版本ddk
+  # S905D3 Android 版本 ddk
   $ wget https://paddlelite-demo.bj.bcebos.com/devices/amlogic/android/amlnpu_ddk.tar.gz
   $ tar -xvf amlnpu_ddk.tar.gz
   ```
 
-- 编译并生成PaddleLite+AmlogicNPU的部署库
+- 编译并生成 `Paddle Lite+Amlogic NPU` 的部署库
 
   - For C308X and A311D
-    - tiny_publish编译方式
+    - tiny_publish 编译方式
       ```shell
       $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_nnadapter=ON --nnadapter_with_amlogic_npu=ON --nnadapter_amlogic_npu_sdk_root=$(pwd)/amlnpu_ddk
       
       ```
-    - full_publish编译方式
+    - full_publish 编译方式
       ```shell
       $ ./lite/tools/build_linux.sh --with_extra=ON --with_log=ON --with_nnadapter=ON --nnadapter_with_amlogic_npu=ON --nnadapter_amlogic_npu_sdk_root=$(pwd)/amlnpu_ddk full_publish
       
       ```
     - 替换头文件和库
       ```shell
-      # 替换include目录
+      # 替换 include 目录
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/include/
-      # 替换NNAdapter运行时库
+      # 替换 NNAdapter 运行时库
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/amlogic_npu/
-      # 替换NNAdapter device HAL库
+      # 替换 NNAdapter device HAL 库
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libamlogic_npu.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/amlogic_npu/
-      # 替换libpaddle_light_api_shared.so
+      # 替换 libpaddle_light_api_shared.so
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
-      # 替换libpaddle_full_api_shared.so(仅在full_publish编译方式下)
+      # 替换 libpaddle_full_api_shared.so (仅在 full_publish 编译方式下)
       $ cp -rf build.lite.linux.armv8.gcc/inference_lite_lib.armlinux.armv8.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/
       ```
 
-  - S905D3(Android版)
-    - tiny_publish编译方式
+  - S905D3(Android 版)
+    - tiny_publish 编译方式
       ```shell
       $ ./lite/tools/build_android.sh --arch=armv7 --toolchain=clang --android_stl=c++_shared --with_extra=ON --with_log=ON --with_nnadapter=ON --nnadapter_with_amlogic_npu=ON --nnadapter_amlogic_npu_sdk_root=$(pwd)/amlnpu_ddk
       ```
 
-    - full_publish编译方式
+    - full_publish 编译方式
       ```shell
       $ ./lite/tools/build_android.sh --arch=armv7 --toolchain=clang --android_stl=c++_shared --with_extra=ON --with_log=ON --with_nnadapter=ON --nnadapter_with_amlogic_npu=ON --nnadapter_amlogic_npu_sdk_root=$(pwd)/amlnpu_ddk full_publish
       ```
     - 替换头文件和库
       ```shell
-      # 替换include目录
+      # 替换 include 目录
       $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/include/ PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/include/
-      # 替换NNAdapter运行时库
+      # 替换 NNAdapter 运行时库
       $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libnnadapter.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/amlogic_npu/
-      # 替换NNAdapter device HAL库
+      # 替换 NNAdapter device HAL 库
       $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libamlogic_npu.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/amlogic_npu/
-      # 替换libpaddle_light_api_shared.so
+      # 替换 libpaddle_light_api_shared.so
       $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libpaddle_light_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/
-      # 替换libpaddle_full_api_shared.so(仅在full_publish编译方式下)
+      # 替换 libpaddle_full_api_shared.so(仅在 full_publish 编译方式下)
       $ cp -rf build.lite.android.armv7.clang/inference_lite_lib.android.armv7.nnadapter/cxx/lib/libpaddle_full_api_shared.so PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/
       ```
   
@@ -459,4 +462,4 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
 
 ## 其它说明
 
-- Amlogic和PaddleLite研发团队正在持续增加用于适配Paddle算子的bridge/converter，以便适配更多Paddle模型。
+- Amlogic 和 Paddle Lite 研发团队正在持续增加用于适配 Paddle 算子的 `bridge/converter`，以便适配更多 Paddle 模型。
