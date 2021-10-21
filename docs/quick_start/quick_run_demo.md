@@ -69,7 +69,7 @@ cd mask_demo && bash run.sh
 Load detecion model succeed.
 
 ======= benchmark summary =======
-model_dir: pyramidbox_lite_v2_9_1_opt2.nb
+model_dir: pyramidbox_lite_v2_10_opt2.nb
 repeats: 100
 *** time info(ms) ***
 1st_duration: 124.481

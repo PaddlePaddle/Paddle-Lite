@@ -3,7 +3,7 @@
 
 ## ARM CPU
 
-Paddle Lite 支持[ ARM Cortex-A 系列处理器](https://en.wikipedia.org/wiki/ARM_Cortex-A)，支持列表如下:
+Paddle Lite 支持 [ARM Cortex-A 系列处理器](https://en.wikipedia.org/wiki/ARM_Cortex-A)，支持列表如下:
 
 ### 32bit(ARMv7a)
 
@@ -13,27 +13,27 @@ Paddle Lite 支持[ ARM Cortex-A 系列处理器](https://en.wikipedia.org/wiki/
 - Cortex-A9
 - Cortex-A12
 - Cortex-A15
-- Cortex-A17(RK3288)
+- Cortex-A17 (RK3288)
 - Cortex-A32
 
 ### 64bit(ARMv7a, ARMv8a)
 
 - Cortex-A35
-- Cortex-A53(树莓派3)
+- Cortex-A53 (树莓派3)
 - Cortex-A55
-- Cortex-A57(Nvidia tx1，Nvidia tx2， 高通810等)
-- Cortex-A72(麒麟95X，高通820, RK3399，树莓派4等)
-- Cortex-A73(麒麟960，麒麟970，高通835, 联发科 X30等)
-- Cortex-A75(高通845等)
-- Cortex-A76(麒麟980，麒麟990，高通855，高通730，联发科 G90等）
+- Cortex-A57 (Nvidia tx1，Nvidia tx2， 高通 810 等)
+- Cortex-A72 (麒麟 95X，高通820, RK3399，树莓派 4 等)
+- Cortex-A73 (麒麟 960，麒麟970，高通835, 联发科 X30 等)
+- Cortex-A75 (高通 845等)
+- Cortex-A76 (麒麟 980，麒麟 990，高通 855，高通 730，联发科 G90 等）
 - Cortex-A77
-- ARMv8-A compatible(Apple A 系列处理器, Nvidia tegra, Qualcomm Kryo, Falkor, Samsung Mongoose)
+- ARMv8-A compatible (Apple A 系列处理器, Nvidia tegra, Qualcomm Kryo, Falkor, Samsung Mongoose)
 
 ### ARM CPU 环境准备及示例程序
 
-- Android: [ Android 工程示例](../demo_guides/android_app_demo)
-- iOS: [ iOS 工程示例](../demo_guides/ios_app_demo)
-- Linux(ARM): [ Linux(ARM) 工程示例](../demo_guides/linux_arm_demo)
+- Android: [Android 工程示例](../demo_guides/android_app_demo)
+- iOS: [iOS 工程示例](../demo_guides/ios_app_demo)
+- Linux(ARM): [Linux(ARM) 工程示例](../demo_guides/linux_arm_demo)
 
 ## X86 CPU
 
@@ -44,7 +44,7 @@ Paddle Lite 当前支持 `AVX` 及 `FMA` 指令集的 X86 CPU，正在完善 `SS
 
 ### X86 CPU 环境准备及示例程序
 
-- [ Paddle Lite 使用 X86 预测部署](../demo_guides/x86)
+- [Paddle Lite 使用 X86 预测部署](../demo_guides/x86)
 
 ## 移动端 GPU
 
@@ -55,7 +55,7 @@ Paddle Lite 支持多种移动端 GPU，包括 ARM Mali、Qualcomm Adreno、Appl
 
 ### 移动端 GPU 环境准备及示例程序
 
-- [ Paddle Lite 使用 OpenCL 预测部署](../demo_guides/opencl)
+- [Paddle Lite 使用 OpenCL 预测部署](../demo_guides/opencl)
 
 ## FPGA
 
@@ -71,15 +71,15 @@ Paddle Lite 支持 **英特尔 (Intel) FPGA**，支持列表如下：
 
 ### FPGA 环境准备及示例程序
 
-- 百度 FPGA：[Paddle Lite 使用 FPGA 预测部署](../demo_guides/fpga)
-- 英特尔 (Intel) FPGA：[Paddle Lite 使用英特尔 FPGA 预测部署](../demo_guides/intel_fpga)
+- 百度 FPGA: [Paddle Lite 使用 FPGA 预测部署](../demo_guides/fpga)
+- 英特尔 (Intel) FPGA: [Paddle Lite 使用英特尔 FPGA 预测部署](../demo_guides/intel_fpga)
 
 
 ## 百度 (Baidu) XPU
 
 Paddle Lite 支持百度 XPU，支持列表如下：
-- 百度昆仑818-100芯片
-- 百度昆仑818-300芯片
+- 百度昆仑 818-100 芯片
+- 百度昆仑 818-300 芯片
 
 ### 百度 (Baidu) XPU 环境准备及示例程序
 
@@ -90,13 +90,13 @@ Paddle Lite 支持百度 XPU，支持列表如下：
 Paddle Lite 支持华为达芬奇架构麒麟 NPU，支持列表如下：
 - 支持芯片：Kirin 810/990/985/9000
 - 支持设备：
-  * Kirin 9000：HUAWEI Mate 40pro 系列
-  * Kirin 9000E：HUAWEI Mate 40系列
-  * Kirin 990 5G：HUAWEI Mate 30pro 系列，P40pro 系列
-  * Kirin 990：HUAWEI Mate 30系列, 荣耀 V20系列, nova 6系列，P40系列，Mate Xs
-  * Kirin 985：HUAWEI nova 7 5G，nova 7 Pro 5G，荣耀 30
-  * Kirin 820：HUAWEI nova 7 SE 5G，荣耀 30S
-  * Kirin 810：HUAWEI nova 5系列，nova 6 SE，荣耀 9X 系列，荣耀 Play4T Pro
+  * Kirin 9000：HUAWEI Mate40 pro 系列
+  * Kirin 9000E：HUAWEI Mate40 系列
+  * Kirin 990 5G：HUAWEI Mate30 pro 系列，P40 pro 系列
+  * Kirin 990：HUAWEI Mate30 系列, 荣耀 V20 系列, nova6 系列，P40 系列，Mate Xs
+  * Kirin 985：HUAWEI nova7 5G，nova7 Pro 5G，荣耀 30
+  * Kirin 820：HUAWEI nova7 SE 5G，荣耀 30S
+  * Kirin 810：HUAWEI nova5 系列，nova6 SE，荣耀 9X 系列，荣耀 Play4T Pro
 
 ### 华为 (Huawei) 麒麟 NPU 环境准备及示例程序
 
@@ -155,7 +155,7 @@ Paddle Lite 支持 颖脉 (Imagination) NNA，支持列表如下：
 
 ## 比特大陆（Bitmain）TPU
 
-Paddle Lite 支持 比特大陆（Bitmain）TPU，支持列表如下：
+Paddle Lite 支持比特大陆（Bitmain）TPU，支持列表如下：
 - 支持芯片：Sophon BM1682，Sophon BM1684
 - 支持设备：
   * Sophon SC3 加速卡 (BM1682 X86 PCI-E)
