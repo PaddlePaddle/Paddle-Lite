@@ -11,6 +11,7 @@ FILE(GLOB LITE_METAL_KERNELS_SRC ${CMAKE_SOURCE_DIR}/lite/backends/metal/metal_k
 IF (DEFINED SDK_VERSION)
     #Defined by iOS toolchain
     SET(SDK_NAME "iphoneos")
+    SET(METAL_STD_OPTION "-std=ios-metal1.1")
     SET(TARGET_OPTION "-mios-version-min=${DEPLOYMENT_TARGET}")
 ELSE ()
     SET(SDK_NAME "macosx")
