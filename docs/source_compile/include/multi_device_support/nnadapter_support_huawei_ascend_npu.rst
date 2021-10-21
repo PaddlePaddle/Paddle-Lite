@@ -1,5 +1,5 @@
 NNAdapter 支持华为昇腾 NPU
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. list-table::
 
@@ -12,8 +12,8 @@ NNAdapter 支持华为昇腾 NPU
      - OFF / ON
      - OFF
    * - nnadapter_huawei_ascend_npu_sdk_root
-     - 设置华为昇腾 NPU DDK 目录
+     - 设置华为昇腾 CANN 目录
      - 用户自定义
      - /usr/local/Ascend/ascend-toolkit/latest
 
-如需进行华为昇腾 NPU 相关的编译工作: 请参考 `Paddle Lite 使用华为昇腾 NPU 预测部署 <https://paddle-lite.readthedocs.io/zh/release-v2.10/demo_guides/huawei_ascend_npu.html>`_
+详细请参考 `华为昇腾 NPU 部署示例 <https://paddle-lite.readthedocs.io/zh/release-v2.10_a/demo_guides/huawei_ascend_npu.html>`_

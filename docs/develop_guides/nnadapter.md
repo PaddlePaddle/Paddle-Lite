@@ -1,5 +1,4 @@
-# NNAdapter
-- 飞桨推理 AI 硬件统一适配框架
+# NNAdapter：飞桨推理 AI 硬件统一适配框架
 
 ## 背景
 - 在[新增硬件](./add_hardware)章节中曾提到 Paddle Lite 的硬件适配主要分为算子和子图两种方式，特别是 AI 硬件，近两年来我们基于子图方式完成了华为麒麟 NPU 、瑞芯微 NPU 、联发科 APU 、颖脉 NNA 、寒武纪 MLU 和比特大陆 NPU 在 Paddle Lite 上的适配。但在与硬件厂商合作过程中，逐渐发现了该方案的不足之处，主要涉及以下两大方面：
@@ -334,6 +333,9 @@ NNAdapter 作为一个 backend 并以子图方式接入 Paddle Lite，具体可�
     - 返回值：无。
 
 ### 应用程序、 Paddle Lite 、NNAdapter 和硬件 SDK 之间的详细调用过程
+
+提示：如果图片太小看不清，可以在图片上方点击右键并选择『在新标签页中打开该图片』。
+
 - 查询设备是否可用，将设置的设备名称列表、设备上下文参数、模型缓存数据存储在 Paddle Lite 的 Scope 中（ Scope 与 Predictor 绑定。通常存储模型的张量数据）。
 ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/nnadapter_call_flow_detail_0.png)
 

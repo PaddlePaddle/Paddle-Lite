@@ -1,4 +1,4 @@
-# PaddleLite使用Bitmain：Sophon BM1682/BM1684 预测部署
+# 比特大陆 NPU 部署示例
 
 Paddle Lite已支持在比特大陆的Sophon BM1682/BM1684处理器上进行预测部署. 目前支持子图接入
 

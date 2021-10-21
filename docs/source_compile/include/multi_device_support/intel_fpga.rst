@@ -1,11 +1,9 @@
-Intel FPGA
-~~~~~~~~~~~~
+英特尔 FPGA
+^^^^^^^^^^^^
 
 * 介绍
 
-Paddle Lite 已支持英特尔 FPGA 平台的预测部署，Paddle Lite 通过调用底层驱动实现对 FPGA 硬件的调度。
-
-如需进行 Intel FPGA 相关的编译工作: 请参考 `Paddle Lite 使用英特尔 FPGA 预测部署 <https://paddle-lite.readthedocs.io/zh/release-v2.10/demo_guides/fpga.html>`_
+Paddle Lite 已通过算子方式支持英特尔 FPGA 平台的预测部署。
 
 * 基本参数
 
@@ -16,10 +14,12 @@ Paddle Lite 已支持英特尔 FPGA 平台的预测部署，Paddle Lite 通过�
      - 可选范围
      - 默认值
    * - with_intel_fpga
-     - 是否包含 Intel FPGA 编译
+     - 是否包含英特尔 FPGA 编译
      - OFF / ON
      - OFF
    * - intel_fpga_sdk_root
-     - 设置 Intel FPGA sdk 目录
+     - 设置英特尔 FPGA sdk 目录
      - `intel_sdk <https://paddlelite-demo.bj.bcebos.com/devices/intel/intel_fpga_sdk_1.0.0.tar.gz>`_
      - 空值
+
+详细请参考 `英特尔 FPGA 部署示例 <https://paddle-lite.readthedocs.io/zh/release-v2.10_a/demo_guides/fpga.html>`_

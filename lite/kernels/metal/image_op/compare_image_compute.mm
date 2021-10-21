@@ -97,8 +97,8 @@ void CompareImageCompute::setup_without_mps() {
     if (!valid) {
         LOG(FATAL) << "compare: only supports : same shapes";
     }
-    
-    //Equal = 0, NotEqual = 1, LessThan = 2, LessEqual = 3, GreaterThan = 4, GreaterEqual = 5,
+
+    // Equal = 0, NotEqual = 1, LessThan = 2, LessEqual = 3, GreaterThan = 4, GreaterEqual = 5,
     int compareType = 0;
     CompareMetalParam metal_params = {compareType};
     params_buffer_ =
@@ -117,10 +117,11 @@ void CompareImageCompute::run_with_mps() {
     auto cmdbuf = [backend commandBuffer];
     if (mps_op_) {
         if (@available(iOS 12.1, *)) {
-            [((__bridge MPSNNCompare*)mps_op_) encodeToCommandBuffer:cmdbuf
-                                                        primaryImage:(__bridge MPSImage*)mps_input_x_image_
-                                                      secondaryImage:(__bridge MPSImage*)mps_input_y_image_
-                                                    destinationImage:(__bridge MPSImage*)mps_output_image_];
+            [((__bridge MPSNNCompare*)mps_op_)
+                encodeToCommandBuffer:cmdbuf
+                         primaryImage:(__bridge MPSImage*)mps_input_x_image_
+                       secondaryImage:(__bridge MPSImage*)mps_input_y_image_
+                     destinationImage:(__bridge MPSImage*)mps_output_image_];
         }
     }
     [backend commit:cmdbuf];
@@ -129,12 +130,12 @@ void CompareImageCompute::run_with_mps() {
 void CompareImageCompute::setup_with_mps() {
     auto xrank = input_buffer_x_->tensor_dim_.size();
     auto yrank = input_buffer_y_->tensor_dim_.size();
-    //axis
+    // axis
     if (xrank == 4 && yrank == 4) {
     } else {
         LOG(FATAL) << "mps_compare: max only support by channel";
     }
-    
+
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     if (@available(iOS 12.1, *)) {
         mps_op_ = (__bridge_retained void*)[[MPSNNCompare alloc] initWithDevice:backend.device];
@@ -195,9 +196,7 @@ REGISTER_LITE_KERNEL(equal,
             PRECISION(kFloat),
             DATALAYOUT(kMetalTexture2DArray))})
     .BindOutput("Out",
-        {LiteType::GetTensorTy(TARGET(kMetal),
-            PRECISION(kBool),
-            DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kBool), DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(equal,
@@ -207,15 +206,9 @@ REGISTER_LITE_KERNEL(equal,
     paddle::lite::kernels::metal::CompareImageCompute,
     def)
     .BindInput("X",
-        {LiteType::GetTensorTy(TARGET(kMetal),
-            PRECISION(kFP16),
-            DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .BindInput("Y",
-        {LiteType::GetTensorTy(TARGET(kMetal),
-            PRECISION(kFP16),
-            DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .BindOutput("Out",
-        {LiteType::GetTensorTy(TARGET(kMetal),
-                PRECISION(kBool),
-                DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kBool), DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
