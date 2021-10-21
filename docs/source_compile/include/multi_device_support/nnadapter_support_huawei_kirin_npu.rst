@@ -1,5 +1,5 @@
 NNAdapter 支持华为麒麟 NPU
-------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. list-table::
 
@@ -16,4 +16,4 @@ NNAdapter 支持华为麒麟 NPU
      - `hiai_ddk_lib_510 <https://paddlelite-demo.bj.bcebos.com/devices/huawei/kirin/hiai_ddk_lib_510.tar.gz>`_
      - 空值
 
-详细请参考 `华为麒麟 NPU 预测部署示例 <https://paddle-lite.readthedocs.io/zh/release-v2.10/demo_guides/huawei_kirin_npu.html>`_
+详细请参考 `华为麒麟 NPU 部署示例 <https://paddle-lite.readthedocs.io/zh/release-v2.10_a/demo_guides/huawei_kirin_npu.html>`_

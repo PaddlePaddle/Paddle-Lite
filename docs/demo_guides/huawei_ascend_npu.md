@@ -1,4 +1,4 @@
-# 华为昇腾 NPU 预测部署示例
+# 华为昇腾 NPU 部署示例
 
 Paddle Lite已支持华为昇腾NPU（Ascend310）在x86和Arm服务器上进行预测部署。 目前支持子图接入方式，其接入原理是在线分析Paddle模型，将Paddle算子先转为统一的NNAdapter标准算子，再通过Ascend NPU组网API进行网络构建，在线生成并执行模型。
 
@@ -57,7 +57,7 @@ Paddle Lite已支持华为昇腾NPU（Ascend310）在x86和Arm服务器上进行
   - [ESRGAN](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleGAN/esrgan_psnr_x4_div2k.tgz)
 
 
-- [开源模型支持列表](../introduction/support_model_list)
+- [开源模型支持列表](../quick_start/support_model_list)
 
 #### 性能
 
@@ -99,7 +99,7 @@ Paddle Lite已支持华为昇腾NPU（Ascend310）在x86和Arm服务器上进行
 
 ### 已支持（或部分支持）的Paddle算子
 
-可以通过访问[https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/bridges/paddle_use_bridges.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/bridges/paddle_use_bridges.h)获得最新的算子支持列表。
+您可以查阅[ NNAdapter 算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.10/lite/kernels/nnadapter/converter/all.h)获得各算子在不同新硬件上的最新支持信息。
 
 ## 参考示例演示
 

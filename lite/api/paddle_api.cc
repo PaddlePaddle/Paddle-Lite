@@ -47,14 +47,14 @@ namespace lite_api {
 
 bool IsOpenCLBackendValid(bool check_fp16_valid) {
 #ifdef LITE_WITH_LOG
-  LOG(INFO) << "check_fp16_valid:" << check_fp16_valid;
+  LOG(INFO) << "need to check fp16 valid:" << check_fp16_valid;
 #endif
   bool opencl_valid = false;
 
 #ifdef LITE_WITH_OPENCL
   bool opencl_lib_found = paddle::lite::CLWrapper::Global()->OpenclLibFound();
 #ifdef LITE_WITH_LOG
-  LOG(INFO) << "opencl_lib_found:" << opencl_lib_found;
+  LOG(INFO) << "Found opencl library:" << opencl_lib_found;
 #endif
   if (opencl_lib_found == false) return false;
 

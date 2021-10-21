@@ -1,4 +1,4 @@
-# 晶晨 NPU 预测部署示例
+# 晶晨 NPU 部署示例
 
 Paddle Lite 已支持晶晨 NPU 的预测部署。
 其接入原理是与之前华为Kirin NPU、瑞芯微Rockchip NPU等类似，即加载并分析Paddle模型，首先将Paddle算子转成NNAdapter标准算子，其次再转换为Amlogic NPU组网API进行网络构建，在线生成并执行模型。
@@ -46,7 +46,7 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
   |mobilenet_v1_int8_224_per_layer| 167.6996 |  6.982800| 81.632133 | 5.607733 | 280.465997 | 13.411600 |
 
 ### 已支持（或部分支持）NNAdapter的Paddle算子
-可以通过访问[https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/bridges/paddle_use_bridges.h](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/bridges/paddle_use_bridges.h)获得最新的算子支持列表。
+您可以查阅[ NNAdapter 算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.10/lite/kernels/nnadapter/converter/all.h)获得各算子在不同新硬件上的最新支持信息。
 
 ## 参考示例演示
 
