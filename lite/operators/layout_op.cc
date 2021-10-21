@@ -41,7 +41,7 @@ bool LayoutOp::AttachImpl(const cpp::OpDesc &opdesc,
   }
   return true;
 }
-std::string LayoutOp::DebugString() const { return "layout_op"; }
+//std::string LayoutOp::DebugString() const { return "layout_op"; }
 
 }  // namespace operators
 }  // namespace lite

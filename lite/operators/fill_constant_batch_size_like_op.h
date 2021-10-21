@@ -40,8 +40,8 @@ class FillConstantBatchSizeLikeOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
  // std::string DebugString() const override {
-    return "fill_constant_batch_size_like";
-  }
+//    return "fill_constant_batch_size_like";
+//  }
 
  private:
   mutable FillConstantBatchSizeLikeParam param_;
