@@ -83,7 +83,7 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
     impl_ = lite::arm::math::conv_depthwise_5x5_fp32;
     KERNEL_FUNC_NAME("conv_depthwise_5x5_fp32")
   } else {
-    LOG(FATAL) << "this type dw conv not impl";
+    LOG(FATAL) << "this type dw conv not impl: " << kw;
   }
   last_shape_ = x_dims;
 }
@@ -93,13 +93,11 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   auto& param = this->Param<param_t>();
   CHECK(this->ctx_);
   auto& ctx = this->ctx_->template As<ARMContext>();
-  auto w_dims = param.filter->dims();
-  auto kw = w_dims[3];
-  auto paddings = *param.paddings;
   // select dw conv kernel
   ReInitWhenNeeded();
   last_shape_ = param.x->dims();
 }
+
 template <>
 void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::ReInitWhenNeeded() {
   auto& param = this->template Param<param_t>();
@@ -349,7 +347,6 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   int oh = o_dims[2];
   int ow = o_dims[3];
   int oc = o_dims[1];
-
   impl_(CONV_DW_PARAM, w_scale_.data());
 }
 
