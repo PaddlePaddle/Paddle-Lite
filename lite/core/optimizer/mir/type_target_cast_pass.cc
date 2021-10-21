@@ -75,7 +75,7 @@ void TypeTargetTransformPass::ComplementInputs(
   CHECK(in->AsArg().type);
   if (!TargetCompatibleTo(*in->AsArg().type, *decl_arg_type)) {
     VLOG(3) << "found Target unmatched tensor: " << in->AsArg().name
-            << " for kernel " << inst.op()->DebugString() << " "
+            << " for kernel " << inst.op()->Type() << " "
             << *in->AsArg().type << " -> " << *decl_arg_type;
     // Add an IoCopy instruction to make the input compatible with other dist.
     AddIoCopyInst(*in->AsArg().type,

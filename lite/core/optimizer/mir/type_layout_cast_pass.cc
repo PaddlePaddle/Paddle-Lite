@@ -77,7 +77,7 @@ void TypeLayoutTransformPass::ComplementInputs(
           << "\n in->AsArg().name:" << in->AsArg().name
           << "\n *in->AsArg().type:" << *in->AsArg().type
           << "\n *decl_arg_type:" << *decl_arg_type
-          << "\n inst.op()->DebugString():" << inst.op()->DebugString();
+          << "\n inst.op()->Type():" << inst.op()->Type();
 
   // TODO(ysh329): conflict if tensor with kARM target but kImageDefault(OpenCL
   // layout).
@@ -96,7 +96,7 @@ void TypeLayoutTransformPass::ComplementInputs(
 
   if (!DataLayoutCompatible(*in->AsArg().type, *decl_arg_type)) {
     VLOG(4) << "found Layout unmatched tensor: " << in->AsArg().name
-            << " for kernel " << inst.op()->DebugString() << " "
+            << " for kernel " << inst.op()->Type() << " "
             << *in->AsArg().type << " -> " << *decl_arg_type;
 
     // Special case for opencl:

@@ -233,7 +233,7 @@ void PrecisionCastPass::ComplementInputs(
   if ((!has_fp16) &&
       !PrecisionCompatibleTo(*in->AsArg().type, *input_decl_type)) {
     VLOG(4) << "found Target unmatched tensor: " << in->AsArg().name
-            << " for kernel " << inst.op()->DebugString() << " "
+            << " for kernel " << inst.op()->Type() << " "
             << *in->AsArg().type << " -> " << *input_decl_type;
     // Add an Cast instruction to make the input compatible with other dist.
     AddCastInst(*in->AsArg().type,
