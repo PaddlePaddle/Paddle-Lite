@@ -398,17 +398,20 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
             endif()
     else()
         if (IOS)
-            add_custom_target(tiny_publish_lib ${TARGET}
+            if(${CMAKE_GENERATOR} STREQUAL "Xcode")
+                set(IOS_BUILD_DIR "$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)")
+            endif()
+            add_custom_target(tiny_publish_cxx_lib ${TARGET}
                     COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/lib"
                     COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/include"
                     COMMAND cp "${CMAKE_SOURCE_DIR}/lite/api/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/include"
                     COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/paddle_use_kernels.h" "${INFER_LITE_PUBLISH_ROOT}/include"
                     COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/paddle_use_ops.h" "${INFER_LITE_PUBLISH_ROOT}/include"
-                    COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/libpaddle_api_light_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/lib"
+                    COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/${IOS_BUILD_DIR}/libpaddle_api_light_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/lib"
                     COMMAND cp "${CMAKE_SOURCE_DIR}/lite/utils/cv/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/include"
                     )
-            add_dependencies(tiny_publish_lib paddle_api_light_bundled)
-            add_dependencies(publish_inference tiny_publish_lib)
+            add_dependencies(tiny_publish_cxx_lib paddle_api_light_bundled)
+            add_dependencies(publish_inference tiny_publish_cxx_lib)
         else()
             if ((ARM_TARGET_OS STREQUAL "android") OR (ARM_TARGET_OS STREQUAL "armlinux") )
                 # compile cplus shared library, pack the cplus demo and lib into the publish directory.
@@ -577,7 +580,7 @@ if (LITE_WITH_METAL)
     if (NOT LITE_ON_TINY_PUBLISH)
         add_dependencies(publish_inference_cxx_lib metal_lib_publish)
     else ()
-        add_dependencies(tiny_publish_lib metal_lib_publish)
+        add_dependencies(tiny_publish_cxx_lib metal_lib_publish)
     endif ()
 endif ()
 
