@@ -308,6 +308,7 @@ inline void transpose3x4_4x4_epi(__m128i& row0,  // NOLINT
   // d0d1d2d2
   row3 = _mm_shuffle_epi32(row3, 0xf4);  // [11, 11, 01, 00]
 }
+
 void prepack_input_im2col_s1_int8(const int8_t* din,
                                   int8_t* dout,
                                   int pad_w,
