@@ -178,7 +178,7 @@ void test(const lite_api::CLPrecisionType p,
         << ")";
     x_dim = in_x_dim,
     y_dim = DDim(std::vector<DDim::value_type>{in_y_dim[0], 1});
-    m = 1;  // in_x_dim.count(0, in_x_dim.size()-1);
+    m = 1;
     n = 1;
     k_x = in_x_dim[in_x_dim.size() - 1], k_y = in_y_dim[0];
     if (in_x_dim.size() == 4) {

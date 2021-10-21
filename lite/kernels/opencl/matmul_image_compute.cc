@@ -184,7 +184,6 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
                                 y_cpu_t->raw_data(),
                                 y_cpu_t->memory_size(),
                                 IoDirection::HtoD);
-    y_buf_ = GET_BUFFER_GPU(y_gpu_t_);
 
     // reset to original fp16 precision
     if (precision_forced_to_fp32) {
@@ -518,7 +517,6 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
   bool first_epoch_for_reinit_{true};
   DDim last_x_dims_;
   std::unique_ptr<Tensor> y_gpu_t_{nullptr};
-  const cl::Buffer* y_buf_{nullptr};
 
   cl::NDRange global_work_size_;
   cl::NDRange local_work_size_;
