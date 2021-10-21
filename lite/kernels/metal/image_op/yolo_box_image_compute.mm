@@ -38,18 +38,26 @@ void YoloBoxImageCompute::PrepareForRun() {
     input_buffer_x_ = param.X->data<MetalHalf, MetalImage>();
     input_imgSize_ = param.ImgSize->data<int32_t>();
     output_boxes_ = param.Boxes->mutable_data<MetalHalf, MetalImage>(metal_context_, output_boxes);
-    output_scores_ = param.Scores->mutable_data<MetalHalf, MetalImage>(metal_context_, output_scores);
+    output_scores_ =
+        param.Scores->mutable_data<MetalHalf, MetalImage>(metal_context_, output_scores);
 #endif
     setup_without_mps();
 }
 
 void YoloBoxImageCompute::Run() {
     @autoreleasepool {
+        reset_data();
         run_tex_to_buf();
         run_yolo_box();
         run_buf_to_tex_boxes();
         run_buf_to_tex_scores();
     }
+}
+
+void YoloBoxImageCompute::reset_data() {
+    TargetWrapperMetal::MemsetSync(intermediate_input_x_.contents, 0, intermediate_input_x_.length);
+    TargetWrapperMetal::MemsetSync(intermediate_boxes_.contents, 0, intermediate_boxes_.length);
+    TargetWrapperMetal::MemsetSync(intermediate_scores_.contents, 0, intermediate_scores_.length);
 }
 
 void YoloBoxImageCompute::run_tex_to_buf() {
@@ -66,10 +74,6 @@ void YoloBoxImageCompute::run_tex_to_buf() {
 }
 
 void YoloBoxImageCompute::run_yolo_box() {
-    TargetWrapperMetal::MemsetSync(intermediate_input_x_.contents, 0, intermediate_input_x_.length);
-    TargetWrapperMetal::MemsetSync(intermediate_boxes_.contents, 0, intermediate_boxes_.length);
-    TargetWrapperMetal::MemsetSync(intermediate_scores_.contents, 0, intermediate_scores_.length);
-    
     const auto& param = this->Param<param_t>();
     auto pipline = pipline_;
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
@@ -80,22 +84,22 @@ void YoloBoxImageCompute::run_yolo_box() {
     [encoder setBuffer:intermediate_boxes_ offset:(0) atIndex:(2)];
     [encoder setBuffer:intermediate_scores_ offset:(0) atIndex:(3)];
     [encoder setBuffer:params_buffer_->buffer() offset:(0) atIndex:(4)];
-    
-    
+
+
     auto N = param.anchors.size() / 2;
     auto H = input_buffer_x_->pad_to_four_dim_[2];
     auto W = input_buffer_x_->pad_to_four_dim_[3];
-    
+
     auto slices = (N + 3) / 4;
-    
+
     auto width = MIN(W, pipline.threadExecutionWidth);
-    auto height = MIN(H, pipline.maxTotalThreadsPerThreadgroup/width);
+    auto height = MIN(H, pipline.maxTotalThreadsPerThreadgroup / width);
     auto threadsPerGroup = MTLSizeMake(width, height, 1);
-        
+
     auto groupWidth = (W + width - 1) / width;
     auto groupHeight = (H + height - 1) / height;
     auto groups = MTLSizeMake(groupWidth, groupHeight, N ? N : slices);
-    
+
     [backend dispatchEncoder:encoder pipline:pipline threadsPerGroup:threadsPerGroup groups:groups];
     [backend commit];
 }
@@ -104,7 +108,7 @@ void YoloBoxImageCompute::run_buf_to_tex_boxes() {
     auto pipline = pipline_tex_to_buf;
     auto outTexture = output_boxes_->image();
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
-    
+
     auto encoder = [backend commandEncoder];
     [encoder setBuffer:intermediate_boxes_ offset:(0) atIndex:(0)];
     [encoder setTexture:output_boxes_->image() atIndex:(0)];
@@ -116,7 +120,7 @@ void YoloBoxImageCompute::run_buf_to_tex_scores() {
     auto pipline = pipline_tex_to_buf;
     auto outTexture = output_scores_->image();
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
-    
+
     auto encoder = [backend commandEncoder];
     [encoder setBuffer:intermediate_scores_ offset:(0) atIndex:(0)];
     [encoder setTexture:output_scores_->image() atIndex:(0)];
@@ -130,24 +134,24 @@ void YoloBoxImageCompute::setup_without_mps() {
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
 
     const auto& param = this->Param<param_t>();
-    
+
     auto xN = input_buffer_x_->pad_to_four_dim_[0];
     auto xC = input_buffer_x_->pad_to_four_dim_[1];
     auto xH = input_buffer_x_->pad_to_four_dim_[2];
     auto xW = input_buffer_x_->pad_to_four_dim_[3];
     auto xSize = param.downsample_ratio * xH;
-    
+
     auto imgH = xSize;
     auto imgW = xSize;
     if (input_imgSize_) {
         imgH = input_imgSize_[0];
         imgW = input_imgSize_[1];
     }
-    
+
     auto anchorsNumber = param.anchors.size() / 2;
     auto xStride = xH * xW;
     auto anchorsStride = (param.class_num + 5) * xStride;
-    
+
     YoloBoxMetalParam metal_params = {(int)imgH,
         (int)imgW,
         (int)xN,
@@ -168,21 +172,26 @@ void YoloBoxImageCompute::setup_without_mps() {
         std::make_shared<MetalBuffer>(metal_context_, sizeof(metal_params), &metal_params);
 
     auto anchorLength = sizeof(int) * param.anchors.size();
-    void *anchorData = (void *)param.anchors.data();
-    anchors_buffer_ = [backend newDeviceBuffer:anchorLength bytes:anchorData access:METAL_ACCESS_FLAG::CPUWriteOnly];
+    void* anchorData = (void*)param.anchors.data();
+    anchors_buffer_ = [backend newDeviceBuffer:anchorLength
+                                         bytes:anchorData
+                                        access:METAL_ACCESS_FLAG::CPUWriteOnly];
     auto inputXLength = input_buffer_x_->dim_.production() * sizeof(MetalHalf);
-    intermediate_input_x_ = [backend newDeviceBuffer:inputXLength access:METAL_ACCESS_FLAG::CPUWriteOnly];
-    
+    intermediate_input_x_ =
+        [backend newDeviceBuffer:inputXLength access:METAL_ACCESS_FLAG::CPUWriteOnly];
+
     auto outputBoxesLength = output_boxes_->dim_.production() * sizeof(MetalHalf);
-    intermediate_boxes_ = [backend newDeviceBuffer:outputBoxesLength access:METAL_ACCESS_FLAG::CPUWriteOnly];
-    
+    intermediate_boxes_ =
+        [backend newDeviceBuffer:outputBoxesLength access:METAL_ACCESS_FLAG::CPUWriteOnly];
+
     auto outputScoresLength = output_scores_->dim_.production() * sizeof(MetalHalf);
-    intermediate_scores_ = [backend newDeviceBuffer:outputScoresLength access:METAL_ACCESS_FLAG::CPUWriteOnly];
-    
+    intermediate_scores_ =
+        [backend newDeviceBuffer:outputScoresLength access:METAL_ACCESS_FLAG::CPUWriteOnly];
+
     // pipline
     function_name_ = "yolo_box";
     pipline_ = [backend pipline:function_name_];
-    
+
     pipline_tex_to_buf = [backend pipline:"tex2d_ary_to_buf"];
     pipline_buf_to_tex = [backend pipline:"buf_h_to_tex_h"];
 }
@@ -204,13 +213,19 @@ REGISTER_LITE_KERNEL(yolo_box,
     paddle::lite::kernels::metal::YoloBoxImageCompute,
     def)
     .BindInput("X",
-        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
     .BindInput("ImgSize",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kInt32), DATALAYOUT(kNCHW))})
     .BindOutput("Boxes",
-        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
     .BindOutput("Scores",
-        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(yolo_box,

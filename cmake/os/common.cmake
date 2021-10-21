@@ -18,31 +18,48 @@ endif()
 
 cmake_minimum_required(VERSION 3.10)
 
-# define check function
-function(check_input_var VAR_NAME)
-  set(options "")
-  set(oneValueArgs "")
-  set(multiValueArgs DEFAULT LIST)
-  cmake_parse_arguments(check_input_var "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+set(ARM_TARGET_OS_LIST "android" "armlinux" "ios" "ios64" "armmacos")
+set(ARM_TARGET_ARCH_ABI_LIST "armv8" "armv7" "armv7hf" "arm64-v8a" "armeabi-v7a")
+set(ARM_TARGET_LANG_LIST "gcc" "clang")
+set(ARM_TARGET_LIB_TYPE_LIST "static" "shared")
 
-  set(var_out "")
-  if(NOT DEFINED ${VAR_NAME})
-    set(var_out ${check_input_var_DEFAULT})
-  else()
-    set(var_out ${${VAR_NAME}})
+# OS check
+if(NOT DEFINED ARM_TARGET_OS)
+  set(ARM_TARGET_OS "android")
+else()
+  if(NOT ARM_TARGET_OS IN_LIST ARM_TARGET_OS_LIST)
+    message(FATAL_ERROR "ARM_TARGET_OS should be one of ${ARM_TARGET_OS_LIST}")
   endif()
-  
-  if(NOT var_out IN_LIST check_input_var_LIST)
-    message(FATAL_ERROR "${VAR_NAME}:${var_out} must be in one of ${check_input_var_LIST}")
+endif()
+
+# Abi check
+if(NOT DEFINED ARM_TARGET_ARCH_ABI)
+  set(ARM_TARGET_ARCH_ABI "armv8")
+else()
+  if(NOT ARM_TARGET_ARCH_ABI IN_LIST ARM_TARGET_ARCH_ABI_LIST)
+    message(FATAL_ERROR "ARM_TARGET_ARCH_ABI should be one of ${ARM_TARGET_ARCH_ABI_LIST}")
   endif()
-  set(${VAR_NAME} ${var_out} PARENT_SCOPE)
-endfunction(check_input_var)
+endif()
 
-check_input_var(ARM_TARGET_OS DEFAULT "android" LIST "android" "armlinux" "ios" "ios64" "armmacos")
-check_input_var(ARM_TARGET_ARCH_ABI DEFAULT "armv8" LIST "armv8" "armv7" "armv7hf" "arm64-v8a" "armeabi-v7a")
-check_input_var(ARM_TARGET_LANG DEFAULT "gcc" LIST "gcc" "clang")
-check_input_var(ARM_TARGET_LIB_TYPE DEFAULT "static" LIST "static" "shared")
+# Toolchain check
+if(NOT DEFINED ARM_TARGET_LANG)
+  set(ARM_TARGET_LANG "gcc")
+else()
+  if(NOT ARM_TARGET_LANG IN_LIST ARM_TARGET_LANG_LIST)
+    message(FATAL_ERROR "ARM_TARGET_LANG should be one of ${ARM_TARGET_LANG_LIST}")
+  endif()
+endif()
 
+# Target lib check
+if(NOT DEFINED ARM_TARGET_LIB_TYPE)
+  set(ARM_TARGET_LIB_TYPE "static")
+else()
+  if(NOT ARM_TARGET_LIB_TYPE IN_LIST ARM_TARGET_LIB_TYPE_LIST)
+    message(FATAL_ERROR "ARM_TARGET_LIB_TYPE should be one of ${ARM_TARGET_LIB_TYPE_LIST}")
+  endif()
+endif()
+
+# Toolchain config
 if (LITE_ON_TINY_PUBLISH OR LITE_WITH_LTO)
   if(ARM_TARGET_LANG STREQUAL "gcc")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto")
@@ -50,10 +67,10 @@ if (LITE_ON_TINY_PUBLISH OR LITE_WITH_LTO)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -flto=thin")
   endif()
 endif()
-
 message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 message(STATUS "CMAKE_CXX_FLAGS_RELEASE: ${CMAKE_CXX_FLAGS_RELEASE}")
 
+# OS settings
 if(ARM_TARGET_OS STREQUAL "android")
   include(os/android)
 endif()
@@ -66,14 +83,68 @@ endif()
 if(ARM_TARGET_OS STREQUAL "armmacos")
   include(os/armmacos)
 endif()
-include(os/host)
 
+# Detect origin host toolchain
+set(HOST_C_COMPILER $ENV{CC})
+set(HOST_CXX_COMPILER $ENV{CXX})
+if(IOS OR ARMMACOS)
+    set(default_cc clang)
+    set(default_cxx clang++)
+else()
+    set(default_cc gcc)
+    set(default_cxx g++)
+endif()
+if(NOT HOST_C_COMPILER)
+    find_program(HOST_C_COMPILER NAMES ${default_cc} PATH
+        /usr/bin
+        /usr/local/bin)
+endif()
+if(NOT HOST_CXX_COMPILER)
+    find_program(HOST_CXX_COMPILER NAMES ${default_cxx} PATH
+        /usr/bin
+        /usr/local/bin)
+endif()
+if(NOT HOST_C_COMPILER OR NOT EXISTS ${HOST_C_COMPILER})
+    MESSAGE(FATAL_ERROR "Cannot find host C compiler. export CC=/path/to/cc")
+ENDIF()
+if(NOT HOST_CXX_COMPILER OR NOT EXISTS ${HOST_CXX_COMPILER})
+    MESSAGE(FATAL_ERROR "Cannot find host C compiler. export CC=/path/to/cc")
+ENDIF()
+MESSAGE(STATUS "Found host C compiler: " ${HOST_C_COMPILER})
+MESSAGE(STATUS "Found host CXX compiler: " ${HOST_CXX_COMPILER})
+
+# Build type
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Default use Release in android" FORCE)
 endif()
 
+# Third party build type
 if(NOT THIRD_PARTY_BUILD_TYPE)
     set(THIRD_PARTY_BUILD_TYPE "MinSizeRel" CACHE STRING "Default use MinSizeRel in android" FORCE)
 endif()
 
 message(STATUS "Lite ARM Compile ${ARM_TARGET_OS} with ${ARM_TARGET_ARCH_ABI} ${ARM_TARGET_LANG}")
+
+if(NOT APPLE)
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed")
+endif()
+
+# TODO(Superjomn) Remove WITH_ANAKIN option if not needed latter.
+if(ANDROID OR IOS OR ARMLINUX OR ARMMACOS)
+    set(WITH_GPU OFF CACHE STRING
+            "Disable GPU when cross-compiling for Android and iOS" FORCE)
+    set(WITH_DSO OFF CACHE STRING
+            "Disable DSO when cross-compiling for Android and iOS" FORCE)
+    set(WITH_AVX OFF CACHE STRING
+            "Disable AVX when cross-compiling for Android and iOS" FORCE)
+    set(WITH_RDMA OFF CACHE STRING
+            "Disable RDMA when cross-compiling for Android and iOS" FORCE)
+    set(WITH_MKL OFF CACHE STRING
+            "Disable MKL when cross-compiling for Android and iOS" FORCE)
+endif()
+
+# Python
+if(ANDROID OR IOS)
+    set(LITE_WITH_PYTHON OFF CACHE STRING
+            "Disable PYTHON when cross-compiling for Android and iOS" FORCE)
+endif()

@@ -23,6 +23,7 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
+template <typename T>
 class ReduceMaxCompute : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
  public:
   void Run() override;
