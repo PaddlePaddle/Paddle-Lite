@@ -36,7 +36,7 @@ class FillConstantOp : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override { return "fill_constant"; }
+ // std::string DebugString() const override { return "fill_constant"; }
 
   bool InferType() override {
     if (param_.value_tensor) {

@@ -35,7 +35,7 @@ class XPUConv2dOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "XPUConv2d"; }
+ // std::string DebugString() const override { return "XPUConv2d"; }
 
  private:
   mutable XPUBlockFuseParam param_;

@@ -38,7 +38,7 @@ class CollectFpnProposalsOpLite : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "collect_fpn_proposals"; }
+ // std::string DebugString() const override { return "collect_fpn_proposals"; }
 
  private:
   mutable CollectFpnProposalsParam param_;

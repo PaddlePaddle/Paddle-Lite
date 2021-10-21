@@ -36,7 +36,7 @@ class SinOpLite : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "sin"; }
+ // std::string DebugString() const override { return "sin"; }
 
  private:
   mutable SinParam param_;

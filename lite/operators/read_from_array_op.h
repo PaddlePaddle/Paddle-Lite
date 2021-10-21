@@ -36,7 +36,7 @@ class ReadFromArrayOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "read_from_array"; }
+ // std::string DebugString() const override { return "read_from_array"; }
 
  private:
   mutable ReadFromArrayParam param_;

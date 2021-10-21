@@ -37,7 +37,7 @@ class BoxClipOpLite : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "box clip"; }
+ // std::string DebugString() const override { return "box clip"; }
 
 #ifdef LITE_WITH_PROFILE
   void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {

@@ -27,7 +27,7 @@ class LoDArrayLengthOp : public OpLite {
 
   bool InferShapeImpl() const override;
 
-  std::string DebugString() const override { return "lod_array_length_op"; }
+ // std::string DebugString() const override { return "lod_array_length_op"; }
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 

@@ -81,7 +81,7 @@ class FpgaConvOpLite : public ConvOpLite {
     return true;
   }
 
-  std::string DebugString() const override { return "fpga_conv2d"; }
+ // std::string DebugString() const override { return "fpga_conv2d"; }
 };
 
 }  // namespace operators

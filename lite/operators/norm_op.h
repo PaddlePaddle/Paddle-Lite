@@ -36,7 +36,7 @@ class NormOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "norm"; }
+ // std::string DebugString() const override { return "norm"; }
 
  private:
   mutable NormParam param_;
@@ -54,7 +54,7 @@ class PNormOpLite : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override { return "p_norm"; }
+ // std::string DebugString() const override { return "p_norm"; }
 
  private:
   mutable PNormParam param_;

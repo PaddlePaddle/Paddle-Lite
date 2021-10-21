@@ -37,7 +37,7 @@ class SqueezeOp : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override { return "squeeze"; }
+ // std::string DebugString() const override { return "squeeze"; }
 
   bool InferType() override {
     param_.Out->set_precision(param_.X->precision());
@@ -69,7 +69,7 @@ class Squeeze2Op : public SqueezeOp {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override { return "squeeze2"; }
+ // std::string DebugString() const override { return "squeeze2"; }
 
   bool InferType() override {
     param_.Out->set_precision(param_.X->precision());

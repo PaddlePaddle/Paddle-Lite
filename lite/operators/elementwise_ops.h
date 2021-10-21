@@ -35,7 +35,7 @@ class ElementwiseOp : public OpLite {
 
   void AttachKernel(KernelBase* kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "elementwise_op"; }
+ // std::string DebugString() const override { return "elementwise_op"; }
 
 #ifdef LITE_WITH_PROFILE
   void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter* ch) {
@@ -67,7 +67,7 @@ class ElementwiseOp : public OpLite {
 //   void AttachKernel(KernelBase* kernel) override { kernel->SetParam(param_);
 //   }
 
-//   std::string DebugString() const override {
+//  // std::string DebugString() const override {
 //     return "elementwise_grad_explicit_op";
 //   }
 

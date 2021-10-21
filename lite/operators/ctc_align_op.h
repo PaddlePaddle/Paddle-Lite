@@ -37,7 +37,7 @@ class CtcAlignOpLite : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "ctc_align"; }
+ // std::string DebugString() const override { return "ctc_align"; }
 
  private:
   mutable CtcAlignParam param_;

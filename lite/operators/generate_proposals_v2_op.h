@@ -38,7 +38,7 @@ class GenerateProposalsV2OpLite : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "generate_proposals_v2"; }
+ // std::string DebugString() const override { return "generate_proposals_v2"; }
 
  private:
   mutable GenerateProposalsV2Param param_;

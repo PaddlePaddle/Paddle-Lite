@@ -61,7 +61,7 @@ class MulOpLite : public OpLite {
     return true;
   }
 
-  std::string DebugString() const override { return "mul"; }
+ // std::string DebugString() const override { return "mul"; }
 
 #ifdef LITE_WITH_PROFILE
   void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {

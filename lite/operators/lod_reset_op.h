@@ -36,7 +36,7 @@ class LodResetOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "lod_reset"; }
+ // std::string DebugString() const override { return "lod_reset"; }
 
   bool InferType() override {
     param_.Out->set_precision(param_.X->precision());

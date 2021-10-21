@@ -76,7 +76,7 @@ class MaxPoolWithIndexOpLite : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "max_pool2d_with_index"; }
+ // std::string DebugString() const override { return "max_pool2d_with_index"; }
 
  private:
   mutable PoolParam param_;

@@ -48,7 +48,7 @@ class FetchOp : public OpLite {
     return true;
   }
 
-  std::string DebugString() const override { return "fetch"; }
+ // std::string DebugString() const override { return "fetch"; }
 
  private:
   mutable FetchParam param_;

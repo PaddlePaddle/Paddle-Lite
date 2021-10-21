@@ -36,7 +36,7 @@ class FillAnyLikeOp : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override { return "fill_any_like"; }
+ // std::string DebugString() const override { return "fill_any_like"; }
 
   bool InferType() override {
     param_.Out->set_precision(param_.X->precision());

@@ -60,7 +60,7 @@ class FakeChannelWiseDequantizeMaxAbsOpLite : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override {
+ // std::string DebugString() const override {
     return "fake_channel_wise_dequantize_max_abs";
   }
 

@@ -37,7 +37,7 @@ class UnsqueezeOp : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override { return "unsqueeze"; }
+ // std::string DebugString() const override { return "unsqueeze"; }
 
   bool InferType() override {
     param_.Out->set_precision(param_.X->precision());
@@ -60,7 +60,7 @@ class Unsqueeze2Op : public UnsqueezeOp {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override { return "unsqueeze2"; }
+ // std::string DebugString() const override { return "unsqueeze2"; }
 
   bool InferType() override {
     param_.Out->set_precision(param_.X->precision());

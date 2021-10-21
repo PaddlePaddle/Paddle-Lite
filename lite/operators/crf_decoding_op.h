@@ -37,7 +37,7 @@ class CrfDecodingOpLite : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "crf_decoding"; }
+ // std::string DebugString() const override { return "crf_decoding"; }
 
  private:
   mutable CrfDecodingParam param_;

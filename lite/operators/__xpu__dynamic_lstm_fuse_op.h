@@ -35,7 +35,7 @@ class XPUDynamicLstmOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "XPUDynamicLstm Op"; }
+ // std::string DebugString() const override { return "XPUDynamicLstm Op"; }
 
  private:
   mutable XPUDynamicLstmFuseParam param_;

@@ -33,7 +33,7 @@ class MeanOp : public OpLite {
 
   bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override;
 
-  std::string DebugString() const override { return "mean"; }
+ // std::string DebugString() const override { return "mean"; }
 
 #ifdef LITE_WITH_PROFILE
   void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter *ch) {

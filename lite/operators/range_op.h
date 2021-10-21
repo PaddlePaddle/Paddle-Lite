@@ -34,7 +34,7 @@ class RangeOpLite : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override { return "range"; }
+ // std::string DebugString() const override { return "range"; }
 
  private:
   mutable RangeParam param_;

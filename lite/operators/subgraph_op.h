@@ -38,7 +38,7 @@ class SubgraphOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "subgraph"; }
+ // std::string DebugString() const override { return "subgraph"; }
 
   void SetProgramDesc(std::shared_ptr<const cpp::ProgramDesc> program_desc) {
     param_.program_desc = program_desc;

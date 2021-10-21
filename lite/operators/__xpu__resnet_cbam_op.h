@@ -33,7 +33,7 @@ class XPUResNetCbamOp : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override { return "ResNetCbam"; }
+ // std::string DebugString() const override { return "ResNetCbam"; }
 
  private:
   mutable XPUResNetCbamParam param_;

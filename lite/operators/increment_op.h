@@ -36,7 +36,7 @@ class IncrementOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "increment"; }
+ // std::string DebugString() const override { return "increment"; }
 
   bool InferType() override {
     param_.Out->set_precision(param_.X->precision());

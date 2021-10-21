@@ -33,7 +33,7 @@ class MeanGradOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "mean_grad"; }
+ // std::string DebugString() const override { return "mean_grad"; }
 
  private:
   mutable operators::MeanGradParam param_;

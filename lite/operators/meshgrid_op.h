@@ -33,7 +33,7 @@ class MeshgridOpLite : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override { return "meshgrid"; }
+ // std::string DebugString() const override { return "meshgrid"; }
 
  private:
   mutable MeshgridParam param_;

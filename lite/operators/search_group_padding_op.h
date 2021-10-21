@@ -30,7 +30,7 @@ class SearchGroupPaddingOp : public OpLite {
   bool InferShapeImpl() const override;
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override { return "search_group_padding"; }
+ // std::string DebugString() const override { return "search_group_padding"; }
 
  private:
   mutable SearchGroupPaddingParam param_;

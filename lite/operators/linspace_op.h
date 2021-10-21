@@ -33,7 +33,7 @@ class LinspaceOpLite : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override { return "linspace"; }
+ // std::string DebugString() const override { return "linspace"; }
 
  private:
   mutable LinspaceParam param_;

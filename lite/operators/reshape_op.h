@@ -37,7 +37,7 @@ class ReshapeOp : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override { return "reshape"; }
+ // std::string DebugString() const override { return "reshape"; }
 
   bool InferType() override {
     param_.output->set_precision(param_.x->precision());
@@ -71,7 +71,7 @@ class Reshape2Op : public ReshapeOp {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override { return "reshape2"; }
+ // std::string DebugString() const override { return "reshape2"; }
 
   bool InferType() override {
     param_.output->set_precision(param_.x->precision());

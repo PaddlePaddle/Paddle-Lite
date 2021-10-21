@@ -37,7 +37,7 @@ class RoiPerspectiveTransformOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override {
+ // std::string DebugString() const override {
     return "roi_perspective_transform";
   }
 

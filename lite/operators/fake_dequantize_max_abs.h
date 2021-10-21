@@ -53,7 +53,7 @@ class FakeDequantizeMaxAbsOpLite : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "fake_dequantize_max_abs"; }
+ // std::string DebugString() const override { return "fake_dequantize_max_abs"; }
 
  private:
   mutable FakeDequantizeMaxAbsParam param_;

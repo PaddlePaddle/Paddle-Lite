@@ -34,7 +34,7 @@ class DecodeBboxesOpLite : public OpLite {
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override { return "decode_bboxes"; }
+ // std::string DebugString() const override { return "decode_bboxes"; }
 
  private:
   mutable DecodeBboxesParam param_;

@@ -87,7 +87,7 @@ class FpgaConvOpLite : public ConvOpLite {
         stride_info_);
   }
 
-  std::string DebugString() const override { return "fpga_conv2d"; }
+ // std::string DebugString() const override { return "fpga_conv2d"; }
 
  private:
   zynqmp::StrideInfo stride_info_ = zynqmp::StrideInfo();

@@ -36,7 +36,7 @@ class PolygonBoxTransformOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "polygon_box_transform"; }
+ // std::string DebugString() const override { return "polygon_box_transform"; }
 
  private:
   mutable PolygonBoxTransformParam param_;

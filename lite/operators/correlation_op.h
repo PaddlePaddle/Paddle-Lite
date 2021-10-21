@@ -37,7 +37,7 @@ class CorrelationOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "correlation"; }
+ // std::string DebugString() const override { return "correlation"; }
 
  private:
   mutable CorrelationParam param_;

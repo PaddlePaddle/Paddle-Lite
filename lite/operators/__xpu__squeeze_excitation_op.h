@@ -34,7 +34,7 @@ class XPUSqueezeExcitationOp : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "SqueezeExcitation Op"; }
+ // std::string DebugString() const override { return "SqueezeExcitation Op"; }
 
  private:
   mutable XPUBlockFuseParam param_;

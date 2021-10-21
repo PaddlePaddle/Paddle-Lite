@@ -38,7 +38,7 @@ class RetinanetDetectionOutputOpLite : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override {
+ // std::string DebugString() const override {
     return "retinanet_detection_output";
   }
 

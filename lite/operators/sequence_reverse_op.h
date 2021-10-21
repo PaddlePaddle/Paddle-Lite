@@ -30,7 +30,7 @@ class SequenceReverseOp : public OpLite {
   bool InferShapeImpl() const override;
   bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
-  std::string DebugString() const override { return "sequence_reverse"; }
+ // std::string DebugString() const override { return "sequence_reverse"; }
 
  private:
   mutable SequenceReverseParam param_;
