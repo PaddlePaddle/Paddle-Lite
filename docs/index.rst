@@ -21,9 +21,9 @@ Welcome to Paddle-Lite's documentation!
   :caption: 性能
   :name: sec-benchmark
   
-  benchmark/benchmark
-  benchmark/benchmark_tools
   benchmark/best_practices
+  benchmark/benchmark_tools
+  benchmark/benchmark
 
 .. toctree::
   :maxdepth: 1
@@ -53,7 +53,7 @@ Welcome to Paddle-Lite's documentation!
   user_guides/quant_post_dynamic
   user_guides/quant_post_static
   user_guides/model_visualization
-  user_guides/debug
+  user_guides/profiler
 
 .. toctree::
   :maxdepth: 1
@@ -82,6 +82,7 @@ Welcome to Paddle-Lite's documentation!
   :name: sec-source-compile
 
   source_compile/compile_env
+  source_compile/docker_env
   source_compile/linux_x86_compile_linux_x86
   source_compile/linux_x86_compile_arm_linux
   source_compile/linux_x86_compile_android

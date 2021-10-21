@@ -267,7 +267,7 @@ Windows x86 平台下分析：
 # 开启精度分析，会打印出每个 op 输出数据的均值和标准差信息
 .\lite\tools\build_windows.bat with_opencl with_extra with_precision_profile
 ```
-详细输出信息的说明可查阅[调试工具](../user_guides/debug)。
+详细输出信息的说明可查阅 [Profiler 工具](../user_guides/profiler)。
 
 ## 5. 常见问题
 

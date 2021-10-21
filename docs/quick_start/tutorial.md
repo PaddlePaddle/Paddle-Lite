@@ -58,12 +58,13 @@ Paddle Lite 提供了 `C++` 、`Java` 、`Python` 三种 `API` 的完整使用�
 
 您也可以下载以下基于 Paddle Lite 开发的预测 APK 程序，安装到 Andriod 平台上，先睹为快：
 
-- [图像分类](https://paddlelite-demo.bj.bcebos.com/apps/android/mobilenet_classification_demo.apk)  
-- [目标检测](https://paddlelite-demo.bj.bcebos.com/apps/android/yolo_detection_demo.apk) 
-- [口罩检测](https://paddlelite-demo.bj.bcebos.com/apps/android/mask_detection_demo.apk)  
-- [人脸关键点](https://paddlelite-demo.bj.bcebos.com/apps/android/face_keypoints_detection_demo.apk) 
+- [图像分类](https://paddlelite-demo.bj.bcebos.com/apps/android/mobilenet_classification_demo.apk)
+- [目标检测](https://paddlelite-demo.bj.bcebos.com/apps/android/yolo_detection_demo.apk)
+- [口罩检测](https://paddlelite-demo.bj.bcebos.com/apps/android/mask_detection_demo.apk)
+- [人脸关键点](https://paddlelite-demo.bj.bcebos.com/apps/android/face_keypoints_detection_demo.apk)
 - [人像分割](https://paddlelite-demo.bj.bcebos.com/apps/android/human_segmentation_demo.apk)
 
 ## 更多测试工具
 
-为了使您更好的了解并使用 Paddle Lite 框架，我们向有进一步使用需求的用户开放了 [ Profiler 工具](../user_guides/Profiler)。Profile Monitor Tool 可以帮助您了解每个 `op` 的执行时间消耗，其会自动统计 `op` 执行的次数，最长、最短、平均执行时间等等信息，为性能调优做一个基础参考。您可以通过 [相关专题](../user_guides/Profiler) 了解更多内容。
+为了使您更好的了解并使用 Paddle Lite 框架，我们向有进一步使用需求的用户开放了 [ Profiler 工具](../user_guides/Profiler)。
+Profile Monitor Tool 可以帮助您了解每个 `op` 的执行时间消耗，其会自动统计 `op` 执行的次数，最长、最短、平均执行时间等等信息，为性能调优做一个基础参考。
