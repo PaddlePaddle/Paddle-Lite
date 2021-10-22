@@ -360,22 +360,6 @@ RuntimeProgram::RuntimeProgram(
           });
       CHECK(it != kernels.end());
       kernel = std::move(*it);
-    } else {
-      // TODO(hong19860320) add kernel picking according to the type of input
-      // and output tensors
-      VLOG(3) << "The attr '" << kKernelTypeAttr
-              << "' not found, pick the first kernel for " << op_type;
-      std::vector<std::unique_ptr<KernelBase>> kernels;
-#if defined(LITE_WITH_ARM)
-      kernels = op->CreateKernels({Place{TARGET(kARM)}, Place{TARGET(kHost)}});
-#elif defined(LITE_WITH_X86)
-      kernels = op->CreateKernels({Place{TARGET(kX86)}, Place{TARGET(kHost)}});
-#endif
-      if (kernels.size() > 0) {
-        kernel = std::move(kernels.front());
-      } else {
-        LOG(WARNING) << "No kernels found for " << op_type;
-      }
     }
 #ifdef LITE_WITH_OPENCL
     if (kernel->target() == TARGET(kOpenCL)) {
