@@ -19,6 +19,7 @@
 #include <typeinfo>
 #include <utility>
 
+#include "lite/utils/fast_type_id.h"
 #include "lite/utils/log/cp_logging.h"
 
 namespace paddle {
@@ -58,7 +59,7 @@ class Any {
   inline bool valid() const;
   inline void clear();
   inline void swap(Any& other);
-  inline const std::type_info& type() const;
+  inline FastTypeIdType type();
 
   template <typename T, typename... Args>
   inline void construct(Args&&... args);
@@ -87,7 +88,7 @@ class Any {
   struct Type {
     void (*destroy)(Data* data);
     void (*create_from_data)(Data* dst, const Data& src);
-    const std::type_info* ptype_info;
+    FastTypeIdType ptype_info;
   };
 
   template <typename T>
@@ -100,9 +101,6 @@ class Any {
 
   template <typename T>
   inline void check_type() const;
-
-  template <typename T>
-  inline void check_type_by_name() const;
 
   const Type* type_{nullptr};
   Data data_;
@@ -210,17 +208,17 @@ inline bool Any::empty() const { return type_ == nullptr; }
 
 inline bool Any::valid() const { return empty() == false; }
 
-inline const std::type_info& Any::type() const {
+inline FastTypeIdType Any::type() {
   if (type_ != nullptr) {
-    return *(type_->ptype_info);
+    return type_->ptype_info;
   } else {
-    return typeid(void);
+    return FastTypeId<void>();
   }
 }
 
 template <typename T>
 inline bool Any::is_type() const {
-  if ((type_ == nullptr) || (*(type_->ptype_info) != typeid(T))) {
+  if ((type_ == nullptr) || (type_->ptype_info != FastTypeId<T>())) {
     return false;
   }
   return true;
@@ -229,15 +227,9 @@ inline bool Any::is_type() const {
 template <typename T>
 inline void Any::check_type() const {
   CHECK_EQ((type_ == nullptr), false);
-  CHECK_EQ((*(type_->ptype_info) == typeid(T)), true)
-      << "Any struct is stored in the type " << type_->ptype_info->name()
-      << ", but trying to obtain the type " << typeid(T).name() << ".";
-}
-
-template <typename T>
-inline void Any::check_type_by_name() const {
-  CHECK_EQ((type_ == nullptr), false);
-  CHECK_EQ(strcmp(type_->ptype_info->name(), typeid(T).name()), 0);
+  CHECK_EQ((type_->ptype_info == FastTypeId<T>()), true)
+      << "Error: the data type stored in 'Any' struct is different from the "
+         "data type you  want to obtain!";
 }
 
 template <typename T>
@@ -306,7 +298,7 @@ class Any::TypeInfo : public std::conditional<Any::data_on_stack<T>::value,
       type_.destroy = TypeInfo<T>::destroy;
     }
     type_.create_from_data = TypeInfo<T>::create_from_data;
-    type_.ptype_info = &typeid(T);
+    type_.ptype_info = FastTypeId<T>();
   }
 };
 
