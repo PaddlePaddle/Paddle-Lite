@@ -21,9 +21,9 @@ Welcome to Paddle-Lite's documentation!
   :caption: 性能
   :name: sec-benchmark
   
-  benchmark/benchmark
-  benchmark/benchmark_tools
   benchmark/best_practices
+  benchmark/benchmark_tools
+  benchmark/benchmark
 
 .. toctree::
   :maxdepth: 1
@@ -53,7 +53,7 @@ Welcome to Paddle-Lite's documentation!
   user_guides/quant_post_dynamic
   user_guides/quant_post_static
   user_guides/model_visualization
-  user_guides/debug
+  user_guides/profiler
 
 .. toctree::
   :maxdepth: 1
@@ -63,6 +63,7 @@ Welcome to Paddle-Lite's documentation!
   demo_guides/android_app_demo
   demo_guides/ios_app_demo
   demo_guides/linux_arm_demo
+  demo_guides/arm_cpu
   demo_guides/x86
   demo_guides/opencl
   demo_guides/fpga
@@ -81,13 +82,16 @@ Welcome to Paddle-Lite's documentation!
   :caption: 源码编译
   :name: sec-source-compile
 
-  source_compile/docker_enviroment
-  source_compile/compile_android
-  source_compile/compile_ios
-  source_compile/x86_host_compile_x86_linux
-  source_compile/x86_host_compile_arm_linux
-  source_compile/arm_host_compile_arm_linux
-  source_compile/compile_windows
+  source_compile/compile_env
+  source_compile/docker_env
+  source_compile/linux_x86_compile_linux_x86
+  source_compile/linux_x86_compile_arm_linux
+  source_compile/linux_x86_compile_android
+  source_compile/arm_linux_compile_arm_linux
+  source_compile/macos_compile_macos
+  source_compile/macos_compile_ios
+  source_compile/macos_compile_android
+  source_compile/windows_compile_windows
   source_compile/compile_options
   source_compile/library_tailoring
 

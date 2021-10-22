@@ -138,7 +138,8 @@ else()
     add_dependencies(PADDLELITE_OBJS fbs_headers)
     if (IOS)
         # only sttaic lib is produced for IOS platform.
-        add_library(paddle_api_light_bundled STATIC $<TARGET_OBJECTS:PADDLELITE_OBJS>)
+        add_library(paddle_api_light_bundled STATIC ${__lite_cc_files})
+        add_dependencies(paddle_api_light_bundled fbs_headers)
     else()
         # 1. enable -flto compiling flag if toochain==gcc
         # TODO (hong19860320): Disable lto temporarily since it causes fail to catch the exceptions in android when toolchain is gcc.
