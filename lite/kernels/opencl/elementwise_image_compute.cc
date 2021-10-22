@@ -261,7 +261,7 @@ class ElementwiseImageCompute : public KernelLite<TARGET(kOpenCL),
 
     int inputx_broadcast_c_flag = (x_nchw_[1] == 1) ? 1 : 0;
     int inputy_broadcast_c_flag = (y_nchw_[1] == 1) ? 1 : 0;
-    int bias_width = y_nchw_[1];
+    int bias_width = out_nchw_[1];
 
     if (y_dims_ == x_dims_) {
       cl_int status = kernel_.setArg(0, *x_img);
