@@ -780,24 +780,21 @@ void LoadModelNaiveFromFile(const std::string &filename,
   VLOG(4) << "Meta_version:" << meta_version;
 
   switch (meta_version) {
-    case 0:
 #ifndef LITE_ON_TINY_PUBLISH
+    case 0:
       LoadModelNaiveV0FromFile(filename, scope, cpp_prog);
-#else
-      LOG(FATAL) << "Paddle-Lite v2.7 has upgraded the naive-buffer model "
-                    "format. Please use the OPT to generate a new model. "
-                    "Thanks!";
-#endif
       break;
     case 1:
       LoadModelFbsFromFile(&reader, scope, cpp_prog, 1);
       break;
+#endif
     case 2:
       LoadModelFbsFromFile(&reader, scope, cpp_prog, 2);
       break;
     default:
-      LOG(FATAL) << "The model format cannot be recognized. Please make sure "
-                    "you use the correct interface and model file.";
+      LOG(FATAL) << "Error: version of this model is not compatible,"
+                    " please use current opt tool to generate a new model. "
+                    "Thanks!";
       break;
   }
   VLOG(4) << "paddle_version:" << cpp_prog->Version();
