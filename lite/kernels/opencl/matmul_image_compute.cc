@@ -54,7 +54,7 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
   void RearrangeByBlk4x4(const float* src, void* dst, size_t O, size_t I) {
     bool fp16_support =
         CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
-    LOG(INFO) << "fp16_support = " << fp16_support;
+    VLOG(4) << "fp16_support = " << fp16_support;
     float* dst_fp32 = static_cast<float*>(dst);
     half_t* dst_fp16 = static_cast<half_t*>(dst);
 
@@ -106,8 +106,8 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
     int k_y = y_dims.size() >= 2 ? y_dims[y_dims.size() - 2] : y_dims[0];
     n_ = y_dims.size() >= 2 ? y_dims[y_dims.size() - 1] : y_dims[0];
     Tensor y_trans_cpu_t;
-    LOG(INFO) << "persistableY: " << y_t->persistable()
-              << ", transposeY: " << transpose_y_;
+    VLOG(4) << "persistableY: " << y_t->persistable()
+            << ", transposeY: " << transpose_y_;
     if (transpose_y_ && y_dims.size() >= 2) {
       y_trans_cpu_t.Resize(y_t->dims());
       if (y_dims.size() == 2) {
@@ -350,8 +350,8 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
       local_work_size_ = cl::NDRange(32, c_blks_, 1);
       global_work_size_ = cl::NDRange(H, local_work_size_[1], UP_DIV(N, 4));
     }
-    LOG(INFO) << "global_work_size[3D]: " << global_work_size_[0] << " "
-              << global_work_size_[1] << " " << global_work_size_[2];
+    VLOG(4) << "global_work_size[3D]: " << global_work_size_[0] << " "
+            << global_work_size_[1] << " " << global_work_size_[2];
   }
 
   void Run() override {
