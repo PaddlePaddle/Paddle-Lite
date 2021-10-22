@@ -259,9 +259,9 @@ TEST(TestConv3x3DW, test_conv3x3_depthwise) {
 TEST(TestConv5x5DW, test_conv5x5_depthwise) {
   if (FLAGS_basic_test) {
     for (auto& stride : {1, 2}) {
-      for (auto& pad_left : {2}) {
+      for (auto& pad_left : {0, 1, 2}) {
         for (auto& pad_right : {0, 1, 2}) {
-          for (auto& pad_top : {2}) {
+          for (auto& pad_top : {0, 1, 2}) {
             for (auto& pad_bottom : {0, 1, 2}) {
               for (auto& flag_bias : {false, true}) {
                 for (auto& flag_act : {0, 1, 2, 4}) {
