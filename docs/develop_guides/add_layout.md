@@ -5,7 +5,7 @@
 > **首先在 paddle_place 文件中注册 Layout 信息，Paddle-Lite 中 Place 包含了 Target、Layout、Precision 信息，用来注册和选择模型中的具体 Kernel。**
 
 
-## 1.lite/api/paddle_place.h
+## 1. lite/api/paddle_place.h
 
 在 `enum class DataLayoutType` 中加入新的 Layout，注意已有的 Layout 不能改变值，增加新 Layout 递增取值即可：
 
@@ -23,7 +23,7 @@ enum class DataLayoutType : int {
 };
 ```
 
-## 2.lite/api/paddle_place.cc
+## 2. lite/api/paddle_place.cc
 
 本文件有 3 处修改，注意在 `DataLayoutToStr` 函数中加入对应 Layout 的字符串名，顺序为 `lite/api/paddle_place.h` 中枚举值的顺序：
 
@@ -80,7 +80,7 @@ std::set<DataLayoutType> ExpandValidLayouts(DataLayoutType layout) {
 
 > **接着，在 opt_base 中给对应的 target_repr 添加新增加的 Layout**
 
-## 3.lite/api/tools/opt_base.cc
+## 3. lite/api/tools/opt_base.cc
 
 ```cpp
 //metal
@@ -94,7 +94,7 @@ if (target_repr == "metal") {
 
 > **最后，以 relu 算子为例，使用新增加的 Layout**
 
-## 4.lite/kernels/metal/image_op/activation_image_compute.mm
+## 4. lite/kernels/metal/image_op/activation_image_compute.mm
 
 ```cpp
 //relu
