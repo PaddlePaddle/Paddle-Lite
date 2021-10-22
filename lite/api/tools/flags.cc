@@ -18,7 +18,7 @@ namespace paddle {
 namespace lite_api {
 
 // Model options
-DEFINE_string(optimized_model_path, "", optimized_model_path_msg);
+DEFINE_string(optimized_model_file, "", optimized_model_file_msg);
 DEFINE_string(uncombined_model_dir, "", uncombined_model_dir_msg);
 DEFINE_string(model_file, "", model_file_msg);
 DEFINE_string(param_file, "", param_file_msg);
