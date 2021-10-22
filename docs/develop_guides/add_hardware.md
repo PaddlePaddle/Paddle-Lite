@@ -32,7 +32,7 @@
 
   该步骤的具体实现：[https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/core/mir](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/core/mir)
   
-  -  Pass 的注册方法、管理机制可以参考文档[新增 Pass ](./add_new_pass)；[ Pass 列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/2e1c3ec48b46721093e9e999fd7209d6b71a61c0/lite/core/optimizer/optimizer.h#L87)是指按照规定的顺序处理的 Pass 的集合，它使用std::vector<<std::string>>存储，每个元素代表已注册到框架的 Pass 的名称，如果需要在 Pass 列表中新增一个 Pass ，只需在合适的位置增加一个字符串即可，例如，为了可视化 conv_bn_fuse_pass 优化后的计算图，可以在它后面增加一个名为[ graph_visualize_pass ](https://github.com/PaddlePaddle/Paddle-Lite/blob/2e1c3ec48b46721093e9e999fd7209d6b71a61c0/lite/core/optimizer/mir/graph_visualize_pass.cc)的特殊 Pass ，用于在 log 中生成以 DOT 文本的表示计算图结构。
+  -  Pass 的注册方法、管理机制可以参考文档[新增 Pass ](./add_new_pass)；[ Pass 列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/2e1c3ec48b46721093e9e999fd7209d6b71a61c0/lite/core/optimizer/optimizer.h#L87)是指按照规定的顺序处理的 Pass 的集合，它使用 std::vector<<std::string>> 存储，每个元素代表已注册到框架的 Pass 的名称，如果需要在 Pass 列表中新增一个 Pass ，只需在合适的位置增加一个字符串即可，例如，为了可视化 conv_bn_fuse_pass 优化后的计算图，可以在它后面增加一个名为[ graph_visualize_pass ](https://github.com/PaddlePaddle/Paddle-Lite/blob/2e1c3ec48b46721093e9e999fd7209d6b71a61c0/lite/core/optimizer/mir/graph_visualize_pass.cc)的特殊 Pass ，用于在 log 中生成以 DOT 文本的表示计算图结构。
 
     ```cpp
     diff --git a/lite/core/optimizer/optimizer.h b/lite/core/optimizer/optimizer.h
@@ -94,7 +94,7 @@
 
   ![](https://user-images.githubusercontent.com/9973393/102796707-9fa89a80-43e9-11eb-913b-d954238994cf.png)
 
-  - **算子标记** 按照拓扑顺序依次遍历计算图中每个算子，依据[已注册的 Paddle 算子->硬件IR的转换表](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/npu/bridges/paddle_use_bridges.h)，标记能够转为硬件 IR 的算子。例如，在上图第一幅图的计算图中，包含10个算子 Op1~Op10 ，假设 Op1 、 Op3 和 Op10 不能够转为硬件 IR ，如第二幅图所示，这三个算子会被标记为默认颜色（黄色），代表使用 CPU Kernel 进行计算，而 Op2 、 Op4 、 Op5 、 Op6 、 Op7 、 Op8 和 Op9 则标记为红色，代表这些算子可以被转换成硬件的 IR 。
+  - **算子标记** 按照拓扑顺序依次遍历计算图中每个算子，依据[已注册的 Paddle 算子->硬件IR的转换表](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/npu/bridges/paddle_use_bridges.h)，标记能够转为硬件 IR 的算子。例如，在上图第一幅图的计算图中，包含 10 个算子 Op1~Op10 ，假设 Op1 、 Op3 和 Op10 不能够转为硬件 IR ，如第二幅图所示，这三个算子会被标记为默认颜色（黄色），代表使用 CPU Kernel 进行计算，而 Op2 、 Op4 、 Op5 、 Op6 、 Op7 、 Op8 和 Op9 则标记为红色，代表这些算子可以被转换成硬件的 IR 。
 
   - **子图检测** 对标记的算子作进一步分析，采用反向 DFS 算法将相邻的算子标记为同一个子图。例如上图第三幅图所示， Op2 被单独分到子图 1 ，而 Op4 、 Op5 、 Op6 、 Op7 、 Op8 和 Op9 则划到子图 2 。
 
@@ -110,7 +110,7 @@
 
     上述两个步骤的具体实现：[https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/subgraph_engine_base.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/subgraph_engine_base.cc) 和 [https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/program.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/program.cc)
 
-  - **原始算子转为硬件 IR 、组网生成 Graph** 遍历子图中的所有原始算子（已按照拓扑顺序排序），依次将每个原始算子转为硬件IR，具体地，通过算子类型查询是否注册对应的桥接器（ Op bridge/converter ），如果[已注册](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/npu/bridges/paddle_use_bridges.h)，则执行桥接器实现算子到硬件IR的转换，并调用硬件组网API生成Graph。桥接器是子图接入方式最重要的模块，也是工作量最大的部分，为了尽可能将算子放到硬件上执行，应当为每个算子增加相应的桥接器，桥接器的实现可参考[ Huawei Kirin NPU activation op bridge ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/npu/bridges/act_op.cc)和[ Baidu XPU activation op bridge ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/xpu/bridges/act_op.cc)的实现。
+  - **原始算子转为硬件 IR 、组网生成 Graph** 遍历子图中的所有原始算子（已按照拓扑顺序排序），依次将每个原始算子转为硬件 IR ，具体地，通过算子类型查询是否注册对应的桥接器（ Op bridge/converter ），如果[已注册](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/npu/bridges/paddle_use_bridges.h)，则执行桥接器实现算子到硬件IR的转换，并调用硬件组网API生成Graph。桥接器是子图接入方式最重要的模块，也是工作量最大的部分，为了尽可能将算子放到硬件上执行，应当为每个算子增加相应的桥接器，桥接器的实现可参考[ Huawei Kirin NPU activation op bridge ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/npu/bridges/act_op.cc)和[ Baidu XPU activation op bridge ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/xpu/bridges/act_op.cc)的实现。
  
   - **Graph 生成 Model ，设置输入、输出张量**：当子图中所有原始算子都转换完成后，调用硬件提供的接口将 Graph 生成 Model 并设置输入、输出张量。
 
