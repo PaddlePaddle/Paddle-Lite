@@ -1,13 +1,13 @@
-# 新增Layout
+# 新增 Layout
 
-下面以增加`kMetalTexture2DArray`、`kMetalTexture2D`为例，介绍如何在Paddle-Lite中增加新的Layout。
+下面以增加 `kMetalTexture2DArray`、`kMetalTexture2D` 为例，介绍如何在 Paddle-Lite 中增加新的 Layout。
 
-> **首先在paddle_place文件中注册Layout信息，Paddle-Lite中Place包含了Target、Layout、Precision信息，用来注册和选择模型中的具体Kernel。**
+> **首先在 paddle_place 文件中注册 Layout 信息，Paddle-Lite 中 Place 包含了 Target、Layout、Precision 信息，用来注册和选择模型中的具体 Kernel。**
 
 
-## 1. lite/api/paddle_place.h
+## 1.lite/api/paddle_place.h
 
-在`enum class DataLayoutType`中加入新的Layout，注意已有的Layout不能改变值，增加新Layout递增取值即可：
+在 `enum class DataLayoutType` 中加入新的 Layout，注意已有的 Layout 不能改变值，增加新 Layout 递增取值即可：
 
 ```cpp
 enum class DataLayoutType : int {
@@ -23,9 +23,9 @@ enum class DataLayoutType : int {
 };
 ```
 
-## 2. lite/api/paddle_place.cc
+## 2.lite/api/paddle_place.cc
 
-本文件有3处修改，注意在` DataLayoutToStr`函数中加入对应Layout的字符串名，顺序为`lite/api/paddle_place.h`中枚举值的顺序：
+本文件有 3 处修改，注意在 `DataLayoutToStr` 函数中加入对应 Layout 的字符串名，顺序为 `lite/api/paddle_place.h` 中枚举值的顺序：
 
 ```cpp
 // 该文件第1处
@@ -77,8 +77,10 @@ std::set<DataLayoutType> ExpandValidLayouts(DataLayoutType layout) {
   return std::set<DataLayoutType>({layout});
 }
 ```
-> **接着，在opt_base中给对应的target_repr添加新增加的Layout**
-## 3. lite/api/tools/opt_base.cc
+
+> **接着，在 opt_base 中给对应的 target_repr 添加新增加的 Layout**
+
+## 3.lite/api/tools/opt_base.cc
 
 ```cpp
 //metal
@@ -89,8 +91,11 @@ if (target_repr == "metal") {
       TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray)});
 }
 ```
-> **最后，以relu算子为例，使用新增加的Layout**
-## 4. lite/kernels/metal/image_op/activation_image_compute.mm
+
+> **最后，以 relu 算子为例，使用新增加的 Layout**
+
+## 4.lite/kernels/metal/image_op/activation_image_compute.mm
+
 ```cpp
 //relu
 REGISTER_LITE_KERNEL(relu,
