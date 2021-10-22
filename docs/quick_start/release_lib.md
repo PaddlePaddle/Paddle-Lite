@@ -158,7 +158,7 @@
 ## 晶晨 NPU
 
 |Arch |下载链接 |适用的操作系统 |
-|:-----:|:-----:|
+|:-----:|:-----:|:-----:|
 |armv7 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.android.armv7.amlogic_npu.with_extra.with_log.tiny_publish.tar.gz)  |Android |
 |armv8 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.armlinux.armv8.amlogic_npu.with_extra.with_log.tiny_publish.tar.gz) |Linux   |
 
