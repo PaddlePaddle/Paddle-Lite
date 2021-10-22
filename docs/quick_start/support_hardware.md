@@ -19,11 +19,11 @@ Paddle Lite 支持 [ARM Cortex-A 系列处理器](https://en.wikipedia.org/wiki/
 ### 64bit(ARMv7a, ARMv8a)
 
 - Cortex-A35
-- Cortex-A53 (树莓派3)
+- Cortex-A53 (树莓派 3)
 - Cortex-A55
 - Cortex-A57 (Nvidia tx1，Nvidia tx2， 高通 810 等)
-- Cortex-A72 (麒麟 95X，高通820, RK3399，树莓派 4 等)
-- Cortex-A73 (麒麟 960，麒麟970，高通835, 联发科 X30 等)
+- Cortex-A72 (麒麟 95X，高通 820, RK3399，树莓派 4 等)
+- Cortex-A73 (麒麟 960，麒麟 970，高通 835, 联发科 X30 等)
 - Cortex-A75 (高通 845等)
 - Cortex-A76 (麒麟 980，麒麟 990，高通 855，高通 730，联发科 G90 等）
 - Cortex-A77
