@@ -208,7 +208,7 @@ Tensor0(kARM, kFloat, kNCHW) --pass--> Tensor1(kOpenCL, kFloat, kNCHW)
 MIR 会识别出，Tensor0 和 Tensor1 的硬件位置不同，因此触发相依的 Pass 插入对应的 Cast Op 来进行 Type Cast，比如
 
 ```
-Tensor0(kARM, kFloat, kNCHW) --pass-> IoCopyOp(kARM, kOpenCL) --pass--> Tensor1(kOpenCL, kFloat, kNCHW)
+Tensor0(kARM, kFloat, kNCHW) --pass-> IoCopyOp(kARM, kOpenCL) --pass-> Tensor1(kOpenCL, kFloat, kNCHW)
 ```
 
 ### KernelContext
@@ -230,7 +230,7 @@ KernelContext 的行为可以被 MIR 在分析期确定和调度。
 
 ### 扩展现有的硬件后端
 
-主要是扩充 Op 和 Kernel 的工作，如果需要 Fuse，则参考 MIR 章节，增加相应的 Fuse Pass便可，具体地，可以参考
+主要是扩充 Op 和 Kernel 的工作，如果需要 Fuse，则参考 MIR 章节，增加相应的 Fuse Pass 便可，具体地，可以参考
 
 - [fc_op](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.10/lite/operators/fc_op.h) 实现类似的 Op
 - [fc_compute](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.10/lite/kernels/arm/fc_compute.h) 实现类似的 Kernel
