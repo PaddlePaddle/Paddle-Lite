@@ -196,7 +196,7 @@ struct Instruction {
 /*
  * A program contains kernels for runtime.
  */
-class LITE_API RuntimeProgram {
+class RuntimeProgram {
  public:
   explicit RuntimeProgram(std::vector<std::vector<Instruction>>&& insts)
       : instructions_(std::move(insts)) {
