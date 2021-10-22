@@ -968,6 +968,50 @@ void loadb_trans(float16_t *out,
   "fmla v20.4h, v3.4h, v1.h[6]        \n" \
   "fmla v22.4h, v3.4h, v1.h[7]        \n"
 
+#define HARD_SWISH_0_4                      \
+  "fadd v0.4h,  v8.4h,  %[voffset].4h   \n" \
+  "fadd v1.4h,  v10.4h, %[voffset].4h   \n" \
+  "fadd v2.4h,  v12.4h, %[voffset].4h   \n" \
+  "fadd v3.4h,  v14.4h, %[voffset].4h   \n" \
+  "fmul v4.4h,  v8.4h,  %[valpha].4h    \n" \
+  "fmul v5.4h,  v10.4h, %[valpha].4h    \n" \
+  "fmul v6.4h,  v12.4h, %[valpha].4h    \n" \
+  "fmul v7.4h,  v14.4h, %[valpha].4h    \n" \
+  "fmax v0.4h,  v0.4h,  %[vzero].4h     \n" \
+  "fmax v1.4h,  v1.4h,  %[vzero].4h     \n" \
+  "fmax v2.4h,  v2.4h,  %[vzero].4h     \n" \
+  "fmax v3.4h,  v3.4h,  %[vzero].4h     \n" \
+  "fmin v0.4h,  v0.4h,  %[vthreshold].4h\n" \
+  "fmin v1.4h,  v1.4h,  %[vthreshold].4h\n" \
+  "fmin v2.4h,  v2.4h,  %[vthreshold].4h\n" \
+  "fmin v3.4h,  v3.4h,  %[vthreshold].4h\n" \
+  "fmul v8.4h,  v4.4h,  v0.4h           \n" \
+  "fmul v10.4h, v5.4h,  v1.4h           \n" \
+  "fmul v12.4h, v6.4h,  v2.4h           \n" \
+  "fmul v14.4h, v7.4h,  v3.4h           \n"
+
+#define HARD_SWISH_1_4                      \
+  "fadd v0.4h,  v16.4h, %[voffset].4h   \n" \
+  "fadd v1.4h,  v18.4h, %[voffset].4h   \n" \
+  "fadd v2.4h,  v20.4h, %[voffset].4h   \n" \
+  "fadd v3.4h,  v22.4h, %[voffset].4h   \n" \
+  "fmul v4.4h,  v16.4h, %[valpha].4h    \n" \
+  "fmul v5.4h,  v18.4h, %[valpha].4h    \n" \
+  "fmul v6.4h,  v20.4h, %[valpha].4h    \n" \
+  "fmul v7.4h,  v22.4h, %[valpha].4h    \n" \
+  "fmax v0.4h,  v0.4h,  %[vzero].4h     \n" \
+  "fmax v1.4h,  v1.4h,  %[vzero].4h     \n" \
+  "fmax v2.4h,  v2.4h,  %[vzero].4h     \n" \
+  "fmax v3.4h,  v3.4h,  %[vzero].4h     \n" \
+  "fmin v0.4h,  v0.4h,  %[vthreshold].4h\n" \
+  "fmin v1.4h,  v1.4h,  %[vthreshold].4h\n" \
+  "fmin v2.4h,  v2.4h,  %[vthreshold].4h\n" \
+  "fmin v3.4h,  v3.4h,  %[vthreshold].4h\n" \
+  "fmul v16.4h, v4.4h,  v0.4h           \n" \
+  "fmul v18.4h, v5.4h,  v1.4h           \n" \
+  "fmul v20.4h, v6.4h,  v2.4h           \n" \
+  "fmul v22.4h, v7.4h,  v3.4h           \n"
+
 #define LEAKY_0_4                           \
   "fcmge v0.4h,  v8.4h,  %[vzero].4h    \n" \
   "fmul  v1.4h,  v8.4h,  %[valpha].4h   \n" \
@@ -1113,13 +1157,11 @@ void gemm_prepack_8x16(bool is_transB,
 
   auto act_type = act_param.active_type;
   float local_alpha = 0.f;
+  float offset = 0.f;
+  float threshold = 6.f;
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
   if (act_param.has_active) {
-    act_acquire(act_type,
-                flag_act,
-                local_alpha,
-                act_param.Relu_clipped_coef,
-                act_param.Leaky_relu_alpha);
+    act_acquire(act_type, flag_act, local_alpha, offset, threshold, act_param);
   }
 
   float16x8_t valpha = vdupq_n_f16(static_cast<float16_t>(local_alpha));
@@ -1127,6 +1169,8 @@ void gemm_prepack_8x16(bool is_transB,
   X_BLOCK_COMPUTE(llc_size, MBLOCK_FP16, NBLOCK_FP16, KBLOCK_FP16, beta)
   float16x8_t vbeta = vdupq_n_f16(beta);
   float16x8_t vzero = vdupq_n_f16(0.f);
+  float16x8_t voffset = vdupq_n_f16(offset);
+  float16x8_t vthreshold = vdupq_n_f16(threshold);
 
   //! apanel is pre_compute outside gemm
   for (unsigned int x0 = 0; x0 < N; x0 += x_block) {
@@ -1277,7 +1321,14 @@ void gemm_prepack_8x16(bool is_transB,
               "beq 7f                             \n"
               "cmp    %w[flag_act],   #2          \n"
               "beq 5f                             \n"
+              "cmp    %w[flag_act],   #3          \n"
+              "beq 8f                             \n"
+              // hardswish
+              HARD_SWISH_0_4
+              HARD_SWISH_1_4
+              "b 7f                               \n"
               // leakyRelu
+              "8:                                 \n"
               LEAKY_0_4
               LEAKY_1_4
               "b 7f                               \n"
@@ -1316,6 +1367,8 @@ void gemm_prepack_8x16(bool is_transB,
                 [vbias] "w"(vbias),
                 [vbeta] "w"(vbeta),
                 [valpha] "w"(valpha),
+                [voffset] "w"(voffset),
+                [vthreshold] "w"(vthreshold),
                 [vzero] "w"(vzero),
                 [flag_act] "r"(flag_act)
               : "cc","memory",
@@ -1421,11 +1474,18 @@ void gemm_prepack_8x16(bool is_transB,
               "fadd v12.4h, v12.4h, v2.4h         \n"
               "fadd v14.4h, v14.4h, v3.4h         \n"
               "beq 5f                             \n"
+              "cmp    %w[flag_act],   #3          \n"
               "fadd v16.4h, v16.4h, v4.4h         \n"
               "fadd v18.4h, v18.4h, v5.4h         \n"
               "fadd v20.4h, v20.4h, v6.4h         \n"
               "fadd v22.4h, v22.4h, v7.4h         \n"
+              "beq 9f                             \n"
+              // hardswish
+              HARD_SWISH_0_4
+              HARD_SWISH_1_4
+              "b 8f                               \n"
               // leakyRelu
+              "9:                                 \n"
               LEAKY_0_4
               LEAKY_1_4
               "b 8f                               \n"
@@ -1489,6 +1549,8 @@ void gemm_prepack_8x16(bool is_transB,
                 [vbias] "w"(vbias),
                 [vbeta] "w"(vbeta),
                 [valpha] "w"(valpha),
+                [voffset] "w"(voffset),
+                [vthreshold] "w"(vthreshold),
                 [vzero] "w"(vzero),
                 [flag_act] "r"(flag_act)
               : "cc","memory",
@@ -1629,7 +1691,92 @@ void gemm_prepack_8x16(bool is_transB,
             "beq 7f                             \n"
             "cmp    %w[flag_act],   #2          \n"
             "beq 5f                             \n"
+            "cmp    %w[flag_act],   #2          \n"
+            "beq 8f                             \n"
+            // hardwsish
+            "fadd  v0.8h, v8.8h,  %[voffset].8h\n"
+            "fadd  v1.8h, v9.8h,  %[voffset].8h\n"
+            "fadd  v2.8h, v10.8h, %[voffset].8h\n"
+            "fadd  v3.8h, v11.8h, %[voffset].8h\n"
+            "fmul  v4.8h, v8.8h,  %[valpha].8h\n"
+            "fmul  v5.8h, v9.8h,  %[valpha].8h\n"
+            "fmul  v6.8h, v10.8h, %[valpha].8h\n"
+            "fmul  v7.8h, v11.8h, %[valpha].8h\n"
+            "fmax  v0.8h, v0.8h,  %[vzero].8h\n"
+            "fmax  v1.8h, v1.8h,  %[vzero].8h\n"
+            "fmax  v2.8h, v2.8h,  %[vzero].8h\n"
+            "fmax  v3.8h, v3.8h,  %[vzero].8h\n"
+            "fmin  v0.8h, v0.8h,  %[vthreshold].8h\n"
+            "fmin  v1.8h, v1.8h,  %[vthreshold].8h\n"
+            "fmin  v2.8h, v2.8h,  %[vthreshold].8h\n"
+            "fmin  v3.8h, v3.8h,  %[vthreshold].8h\n"
+            "fmul  v8.8h, v0.8h,  v4.8h\n"
+            "fmul  v9.8h, v1.8h,  v5.8h\n"
+            "fmul  v10.8h, v2.8h,  v6.8h\n"
+            "fmul  v11.8h, v3.8h,  v7.8h\n"
+            "fadd  v0.8h, v12.8h, %[voffset].8h\n"
+            "fadd  v1.8h, v13.8h, %[voffset].8h\n"
+            "fadd  v2.8h, v14.8h, %[voffset].8h\n"
+            "fadd  v3.8h, v15.8h, %[voffset].8h\n"
+            "fmul  v4.8h, v12.8h, %[valpha].8h\n"
+            "fmul  v5.8h, v13.8h,  %[valpha].8h\n"
+            "fmul  v6.8h, v14.8h, %[valpha].8h\n"
+            "fmul  v7.8h, v15.8h, %[valpha].8h\n"
+            "fmax  v0.8h, v0.8h,  %[vzero].8h\n"
+            "fmax  v1.8h, v1.8h,  %[vzero].8h\n"
+            "fmax  v2.8h, v2.8h,  %[vzero].8h\n"
+            "fmax  v3.8h, v3.8h,  %[vzero].8h\n"
+            "fmin  v0.8h, v0.8h,  %[vthreshold].8h\n"
+            "fmin  v1.8h, v1.8h,  %[vthreshold].8h\n"
+            "fmin  v2.8h, v2.8h,  %[vthreshold].8h\n"
+            "fmin  v3.8h, v3.8h,  %[vthreshold].8h\n"
+            "fmul  v12.8h, v0.8h,  v4.8h\n"
+            "fmul  v13.8h, v1.8h,  v5.8h\n"
+            "fmul  v14.8h, v2.8h,  v6.8h\n"
+            "fmul  v15.8h, v3.8h,  v7.8h\n"
+            "fadd  v0.8h, v16.8h, %[voffset].8h\n"
+            "fadd  v1.8h, v17.8h, %[voffset].8h\n"
+            "fadd  v2.8h, v18.8h, %[voffset].8h\n"
+            "fadd  v3.8h, v19.8h, %[voffset].8h\n"
+            "fmul  v4.8h, v16.8h, %[valpha].8h\n"
+            "fmul  v5.8h, v17.8h,  %[valpha].8h\n"
+            "fmul  v6.8h, v18.8h, %[valpha].8h\n"
+            "fmul  v7.8h, v19.8h, %[valpha].8h\n"
+            "fmax  v0.8h, v0.8h,  %[vzero].8h\n"
+            "fmax  v1.8h, v1.8h,  %[vzero].8h\n"
+            "fmax  v2.8h, v2.8h,  %[vzero].8h\n"
+            "fmax  v3.8h, v3.8h,  %[vzero].8h\n"
+            "fmin  v0.8h, v0.8h,  %[vthreshold].8h\n"
+            "fmin  v1.8h, v1.8h,  %[vthreshold].8h\n"
+            "fmin  v2.8h, v2.8h,  %[vthreshold].8h\n"
+            "fmin  v3.8h, v3.8h,  %[vthreshold].8h\n"
+            "fmul  v16.8h, v0.8h,  v4.8h\n"
+            "fmul  v17.8h, v1.8h,  v5.8h\n"
+            "fmul  v18.8h, v2.8h,  v6.8h\n"
+            "fmul  v19.8h, v3.8h,  v7.8h\n"
+            "fadd  v0.8h, v20.8h, %[voffset].8h\n"
+            "fadd  v1.8h, v21.8h, %[voffset].8h\n"
+            "fadd  v2.8h, v22.8h, %[voffset].8h\n"
+            "fadd  v3.8h, v23.8h, %[voffset].8h\n"
+            "fmul  v4.8h, v20.8h, %[valpha].8h\n"
+            "fmul  v5.8h, v21.8h,  %[valpha].8h\n"
+            "fmul  v6.8h, v22.8h, %[valpha].8h\n"
+            "fmul  v7.8h, v23.8h, %[valpha].8h\n"
+            "fmax  v0.8h, v0.8h,  %[vzero].8h\n"
+            "fmax  v1.8h, v1.8h,  %[vzero].8h\n"
+            "fmax  v2.8h, v2.8h,  %[vzero].8h\n"
+            "fmax  v3.8h, v3.8h,  %[vzero].8h\n"
+            "fmin  v0.8h, v0.8h,  %[vthreshold].8h\n"
+            "fmin  v1.8h, v1.8h,  %[vthreshold].8h\n"
+            "fmin  v2.8h, v2.8h,  %[vthreshold].8h\n"
+            "fmin  v3.8h, v3.8h,  %[vthreshold].8h\n"
+            "fmul  v20.8h, v0.8h,  v4.8h\n"
+            "fmul  v21.8h, v1.8h,  v5.8h\n"
+            "fmul  v22.8h, v2.8h,  v6.8h\n"
+            "fmul  v23.8h, v3.8h,  v7.8h\n"
+            "b 7f                               \n"
             // leakyRelu
+            "8:                                 \n"
             "fcmge v0.8h, v8.8h, %[vzero].8h    \n"
             "fmul v1.8h, v8.8h, %[valpha].8h     \n"
             "fcmge v2.8h, v9.8h, %[vzero].8h    \n"
@@ -1714,6 +1861,8 @@ void gemm_prepack_8x16(bool is_transB,
               [vbias] "w"(vbias),
               [vbeta] "w"(vbeta),
               [valpha] "w"(valpha),
+              [voffset] "w"(voffset),
+              [vthreshold] "w"(vthreshold),
               [vzero] "w"(vzero),
               [flag_act] "r"(flag_act)
             : "cc","memory",
