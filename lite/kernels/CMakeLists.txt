@@ -2,7 +2,7 @@ message(STATUS "add lite kernels")
 
 set(lite_kernel_deps "" CACHE INTERNAL "" FORCE)
 if(LITE_THREAD_POOL)
-  set(lite_kernel_deps ${lite_kernel_deps} thread_pool)
+  set(lite_kernel_deps ${lite_kernel_deps})
 endif()
 
 if (LITE_BUILD_TAILOR)
