@@ -61,7 +61,7 @@ Windows 环境下编译适用于 Windows 的库
 
 1、 下载代码
 
-.. include:: include/clone_code.rst
+.. include:: include/download_code.rst
 
 2、 编译 Paddle Lite Windows 预测库
 
