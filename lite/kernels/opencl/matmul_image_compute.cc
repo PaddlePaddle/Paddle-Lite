@@ -516,6 +516,7 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
   std::string time_stamp_{GetTimeStamp()};
   bool first_epoch_for_reinit_{true};
   DDim last_x_dims_;
+  DDim out_img_shape;
   std::unique_ptr<Tensor> y_gpu_t_{nullptr};
 
   cl::NDRange global_work_size_;
