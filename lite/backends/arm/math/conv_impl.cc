@@ -1166,7 +1166,7 @@ void conv_depthwise_5x5_fp32(const void* din,
                                 ctx);
     }
   } else if (stride == 1) {
-    if (pad_h == pad_w && pad_h == 2 &&
+    if (0 && pad_h == pad_w && pad_h == 2 &&
         static_cast<int>(act_param.active_type) < 4 && w_in > 8) {
       // only support conv + relu/relu6
       conv_depthwise_5x5s1p2_fp32(reinterpret_cast<float*>(dout),

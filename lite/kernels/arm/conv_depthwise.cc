@@ -59,7 +59,9 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
   } else if (kw == 5) {
     auto strides = param.strides;
     bool pads_equal = (paddings[0] == paddings[2]) && (paddings[0] == 2);
+    // todo s1 profile is not great than c4
     bool s1_equal =
+        0 &&
         (strides[0] == 1 && strides[1] == 1 && pads_equal &&
          static_cast<int>(param.activation_param.active_type) < 4 && win > 8);
     bool s2_equal =
@@ -87,7 +89,6 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
   }
   last_shape_ = x_dims;
 }
-
 
 template <>
 void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
