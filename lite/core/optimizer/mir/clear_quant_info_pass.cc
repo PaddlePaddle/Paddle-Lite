@@ -62,6 +62,14 @@ void ClearQuantInfoPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     VLOG(3) << "not receive mixed precision quantization config.";
     return;
   }
+
+  std::set<Node*> target_nodes =
+      GetTargetNodesFromMixedPrecisionQuantizationConfig(
+          graph, mixed_precision_quantization_config);
+  for (auto node : target_nodes) {
+    CHECK(node->IsStmt());
+    auto op_desc = node->AsStmt().mutable_op_info();
+  }
 }
 
 std::set<Node*>
@@ -69,7 +77,7 @@ ClearQuantInfoPass::GetTargetNodesFromMixedPrecisionQuantizationConfig(
     const std::unique_ptr<SSAGraph>& graph,
     const std::string& mixed_precision_quantization_config) {
   // Get target nodes from the mixed precision quantization config
-  std::set<Node*> excluded_nodes;
+  std::set<Node*> target_nodes;
   std::vector<std::string> lines =
       Split(mixed_precision_quantization_config, "\n");
   for (const auto& line : lines) {
@@ -127,12 +135,12 @@ ClearQuantInfoPass::GetTargetNodesFromMixedPrecisionQuantizationConfig(
       }
 
       if (matched) {
-        excluded_nodes.insert(&node);
+        target_nodes.insert(&node);
       }
     }
   }
 
-  return excluded_nodes;
+  return target_nodes;
 }
 
 }  // namespace mir
