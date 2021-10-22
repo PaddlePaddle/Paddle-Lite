@@ -61,11 +61,7 @@ Windows 环境下编译适用于 Windows 的库
 
 1、 下载代码
 
-.. code-block:: dos
-
-   # 下载源代码，并切换到指定 release 分支，如release/v2.10
-   git clone https://github.com/PaddlePaddle/Paddle-Lite.git
-   cd Paddle-Lite && git checkout release/v2.10
+.. include:: include/clone_code.rst
 
 2、 编译 Paddle Lite Windows 预测库
 
@@ -105,7 +101,7 @@ Windows 环境下编译适用于 Windows 的库
    * - with_dynamic_crt
      - 动态链接 MSVC Rumtime 即 MD_DynamicRelease
    * - with_opencl
-     - 开启 OpenCL，编译出的预测库支持在GPU上运行（默认编译的预测库仅在 CPU 上运行)
+     - 开启 OpenCL，编译出的预测库支持在 GPU 上运行（默认编译的预测库仅在 CPU 上运行)
    * - use_ninja
      - 使用 `Ninja <https://ninja-build.org/>`_ 构建系统（默认使用 vs2015 的 MSBuild 构建方案，添加上此编译选项使用 Ninja 编译构建)
    * - use_vs2017
@@ -141,8 +137,8 @@ Windows 环境下编译适用于 Windows 的库
 1、 ``cxx``\ 文件夹：包含 c++ 的库文件与相应的头文件
 
 
-* ``include``  : 头文件
-* ``lib`` : 库文件
+* ``include``  ： 头文件
+* ``lib`` ： 库文件
 
   * 静态库文件：
 
@@ -152,7 +148,7 @@ Windows 环境下编译适用于 Windows 的库
 2、 ``third_party`` 文件夹：依赖的第三方预测库 mklml
 
 
-* mklml : Paddle Lite 预测库依赖的 mklml 数学库
+* mklml ： Paddle Lite 预测库依赖的 mklml 数学库
 
 3、 ``demo\cxx``\ 文件夹：C++ 示例 demo
 
@@ -160,11 +156,11 @@ Windows 环境下编译适用于 Windows 的库
 * ``mobilenetv1_full`` ：使用 full_api 执行 mobilenet_v1 预测的 C++ demo
 * ``mobilenetv1_light`` ：使用 light_api 执行 mobilenet_v1 预测的 C++ demo
 
-4、 ``demo\python``\ : Python 示例 demo
+4、 ``demo\python``\ ： Python 示例 demo
 
 
-* ``mobilenetv1_full_api.py``\ :使用 full_api 执行 mobilenet_v1 预测的 Python demo
-* ``mobilenetv1_light_api.py``\ :使用 full_api 执行 mobilenet_v1 预测的 Python demo
+* ``mobilenetv1_full_api.py``\ ：使用 full_api 执行 mobilenet_v1 预测的 Python demo
+* ``mobilenetv1_light_api.py``\ ：使用 full_api 执行 mobilenet_v1 预测的 Python demo
 
 5、 ``python``\ 文件夹：包含 Python 的库文件和对应的 .whl 包
 
