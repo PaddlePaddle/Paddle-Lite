@@ -195,24 +195,26 @@ void XPUBiGRUCompute::MulRun(bool forward) {
       (bias_guard == nullptr)
           ? nullptr
           : reinterpret_cast<const float*>(bias_guard->addr_);
-
-  int r = xdnn::fc_int16(
-      ctx.GetRawContext(), /* context */
-      false,               /* TransA */
-      true,                /* TransB */
-      m,
-      n,
-      k,
-      1.0f,                   /* alpha */
-      x_matrix.data<float>(), /* A */
-      reinterpret_cast<const float*>(input_max_guard_->addr_),
-      reinterpret_cast<const int16_t*>(quant_weight_guard->addr_), /* B */
-      reinterpret_cast<const float*>(weight_max_guard->addr_),
-      0.0f,                                     /* beta */
-      output.mutable_data<float>(TARGET(kXPU)), /* C */
-      reinterpret_cast<float*>(mul_output_max_guard_->addr_),
-      bias_ptr,
-      xdnn::Activation_t::LINEAR);
+  int r = xdnn::fc_fusion<float, int16_t, float, int16_t>(
+      ctx.GetRawContext(),                                          // ctx
+      x_matrix.data<float>(),                                       // x
+      reinterpret_cast<const int16_t*>(quant_weight_guard->addr_),  // w
+      output.mutable_data<float>(TARGET(kXPU)),                     // y
+      m,                                                            // m
+      n,                                                            // n
+      k,                                                            // k
+      false,                                                        // x_trans
+      true,                                                         // w_trans
+      reinterpret_cast<const float*>(input_max_guard_->addr_),      // x_maxptr
+      reinterpret_cast<const float*>(weight_max_guard->addr_),      // w_maxptr
+      reinterpret_cast<float*>(mul_output_max_guard_->addr_),       // y_maxptr,
+      k,                                                            // ldx
+      k,                                                            // ldw
+      n,                                                            // ldy
+      1.0f,                                                         // alpha
+      0.0f,                                                         // beta
+      bias_ptr,                                                     // bias
+      xdnn::Activation_t::LINEAR);                                  // act
   CHECK_EQ(r, 0);
   *(output.mutable_lod()) = origin_x.lod();
 }
