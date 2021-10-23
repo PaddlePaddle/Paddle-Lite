@@ -32,7 +32,7 @@
 
   该步骤的具体实现：[https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/core/mir](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/core/mir)
   
-  -  Pass 的注册方法、管理机制可以参考文档[新增 Pass ](./add_new_pass)；[ Pass 列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/2e1c3ec48b46721093e9e999fd7209d6b71a61c0/lite/core/optimizer/optimizer.h#L87)是指按照规定的顺序处理的 Pass 的集合，它使用std::vector<<std::string>>存储，每个元素代表已注册到框架的 Pass 的名称，如果需要在 Pass 列表中新增一个 Pass ，只需在合适的位置增加一个字符串即可，例如，为了可视化 conv_bn_fuse_pass 优化后的计算图，可以在它后面增加一个名为[ graph_visualize_pass ](https://github.com/PaddlePaddle/Paddle-Lite/blob/2e1c3ec48b46721093e9e999fd7209d6b71a61c0/lite/core/optimizer/mir/graph_visualize_pass.cc)的特殊 Pass ，用于在 log 中生成以 DOT 文本的表示计算图结构。
+  -  Pass 的注册方法、管理机制可以参考文档[新增 Pass ](./add_new_pass)；[ Pass 列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/2e1c3ec48b46721093e9e999fd7209d6b71a61c0/lite/core/optimizer/optimizer.h#L87)是指按照规定的顺序处理的 Pass 的集合，它使用 std::vector<<std::string>> 存储，每个元素代表已注册到框架的 Pass 的名称，如果需要在 Pass 列表中新增一个 Pass ，只需在合适的位置增加一个字符串即可，例如，为了可视化 conv_bn_fuse_pass 优化后的计算图，可以在它后面增加一个名为[ graph_visualize_pass ](https://github.com/PaddlePaddle/Paddle-Lite/blob/2e1c3ec48b46721093e9e999fd7209d6b71a61c0/lite/core/optimizer/mir/graph_visualize_pass.cc)的特殊 Pass ，用于在 log 中生成以 DOT 文本的表示计算图结构。
 
     ```cpp
     diff --git a/lite/core/optimizer/optimizer.h b/lite/core/optimizer/optimizer.h
@@ -51,7 +51,7 @@
 
 - **运行时程序的生成和执行** 按照拓扑顺序遍历优化后的计算图，生成算子和 Kernel 列表的过程，它基于[ generate_program_pass ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/optimizer/mir/generate_program_pass.cc)实现。具体地，只遍历计算图中的算子节点，提取所携带的算子和 Kernel （经过static_kernel_pick_pass选取的、适合目标硬件的、最优的Kernel）对象，以[ Instruction ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/program.h)封装后按顺序依次存放到[ RuntimeProgram ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/program.h)对象。运行时程序的执行也非常简单，即依次遍历 RuntimeProgram 对象存储的每个 Instruction ，调用其算子对象的 CheckShape 和 InfereShape 方法，最后执行 Kernel 对象的 Launch 方法。
 
-  该步骤的具体实现：https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/optimizer/mir/generate_program_pass.cc 和 https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/program.cc
+  该步骤的具体实现：[https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/optimizer/mir/generate_program_pass.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/optimizer/mir/generate_program_pass.cc) 和 [https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/program.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/program.cc)
 
 ## 硬件接入方式
 - 按照层次硬件提供给开发者的接口一般可以分为两类：
@@ -71,11 +71,11 @@
 ### 算子 Kernel 接入方式
 - 主要涉及 Paddle Lite 架构图中算子、Kernel层的硬件适配工作，具体是在[ lite/kernels ](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/kernels)下增加待新增硬件的目录，为每个算子实现待新增硬件的 Kernel ，具体可参考[新增 OP ](./add_operation)中"添加 Argmax Kernel 并绑定"步骤；
 
-  ARM Kernel 的参考实现：[https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/kernels/arm](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/kernels/arm)
+  [ ARM Kernel 的参考实现](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/kernels/arm)
 
 - 为了将硬件细节与 Kernel 的实现剥离，减少冗余代码，建议在 lite/backends 目录下增加待新增硬件的目录，利用硬件提供的编程接口实现诸如 gemm 等通用数学运算，向 Kernel 提供统一的数学运算接口；
 
-  ARM Backend 的参考实现：[https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/backends/arm](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/backends/arm)
+  [ ARM Backend 的参考实现](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/backends/arm)
 
 - 其它诸如添加新增硬件的 Target 、 Place 、 Context 等方面的内容可参考即将详细介绍的"子图接入方式"中的相关章节。
 
@@ -94,7 +94,7 @@
 
   ![](https://user-images.githubusercontent.com/9973393/102796707-9fa89a80-43e9-11eb-913b-d954238994cf.png)
 
-  - **算子标记** 按照拓扑顺序依次遍历计算图中每个算子，依据[已注册的 Paddle 算子->硬件IR的转换表](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/npu/bridges/paddle_use_bridges.h)，标记能够转为硬件 IR 的算子。例如，在上图第一幅图的计算图中，包含10个算子 Op1~Op10 ，假设 Op1 、 Op3 和 Op10 不能够转为硬件 IR ，如第二幅图所示，这三个算子会被标记为默认颜色（黄色），代表使用 CPU Kernel 进行计算，而 Op2 、 Op4 、 Op5 、 Op6 、 Op7 、 Op8 和 Op9 则标记为红色，代表这些算子可以被转换成硬件的 IR 。
+  - **算子标记** 按照拓扑顺序依次遍历计算图中每个算子，依据[已注册的 Paddle 算子->硬件IR的转换表](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/npu/bridges/paddle_use_bridges.h)，标记能够转为硬件 IR 的算子。例如，在上图第一幅图的计算图中，包含 10 个算子 Op1~Op10 ，假设 Op1 、 Op3 和 Op10 不能够转为硬件 IR ，如第二幅图所示，这三个算子会被标记为默认颜色（黄色），代表使用 CPU Kernel 进行计算，而 Op2 、 Op4 、 Op5 、 Op6 、 Op7 、 Op8 和 Op9 则标记为红色，代表这些算子可以被转换成硬件的 IR 。
 
   - **子图检测** 对标记的算子作进一步分析，采用反向 DFS 算法将相邻的算子标记为同一个子图。例如上图第三幅图所示， Op2 被单独分到子图 1 ，而 Op4 、 Op5 、 Op6 、 Op7 、 Op8 和 Op9 则划到子图 2 。
 
@@ -110,13 +110,13 @@
 
     上述两个步骤的具体实现：[https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/subgraph_engine_base.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/subgraph_engine_base.cc) 和 [https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/program.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/core/program.cc)
 
-  - **原始算子转为硬件 IR 、组网生成 Graph** 遍历子图中的所有原始算子（已按照拓扑顺序排序），依次将每个原始算子转为硬件IR，具体地，通过算子类型查询是否注册对应的桥接器（ Op bridge/converter ），如果[已注册](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/npu/bridges/paddle_use_bridges.h)，则执行桥接器实现算子到硬件IR的转换，并调用硬件组网API生成Graph。桥接器是子图接入方式最重要的模块，也是工作量最大的部分，为了尽可能将算子放到硬件上执行，应当为每个算子增加相应的桥接器，桥接器的实现可参考[ Huawei Kirin NPU activation op bridge ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/npu/bridges/act_op.cc)和[ Baidu XPU activation op bridge ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/xpu/bridges/act_op.cc)的实现。
+  - **原始算子转为硬件 IR 、组网生成 Graph** 遍历子图中的所有原始算子（已按照拓扑顺序排序），依次将每个原始算子转为硬件 IR ，具体地，通过算子类型查询是否注册对应的桥接器（ Op bridge/converter ），如果[已注册](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/npu/bridges/paddle_use_bridges.h)，则执行桥接器实现算子到硬件IR的转换，并调用硬件组网API生成Graph。桥接器是子图接入方式最重要的模块，也是工作量最大的部分，为了尽可能将算子放到硬件上执行，应当为每个算子增加相应的桥接器，桥接器的实现可参考[ Huawei Kirin NPU activation op bridge ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/npu/bridges/act_op.cc)和[ Baidu XPU activation op bridge ](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/xpu/bridges/act_op.cc)的实现。
  
   - **Graph 生成 Model ，设置输入、输出张量**：当子图中所有原始算子都转换完成后，调用硬件提供的接口将 Graph 生成 Model 并设置输入、输出张量。
 
   - **执行 Model ，读取输出张量的数据**：将原始输入张量的数据拷贝至（或将指针传递至，以防止重复拷贝实现 ZeroCopy ）硬件 Model 的输入张量，然后调用硬件提供 Model 执行接口，待执行结束后将硬件输出张量的数据拷贝至原始输出张量。
 
-    上述三个步骤的具体实现：https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/npu/subgraph_compute.cc
+    上述三个步骤的具体实现：[https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/npu/subgraph_compute.cc](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/npu/subgraph_compute.cc)
   
   - 前四个步骤一般在子图算子 Kernel 第一次运行的时候执行，只有在输入尺寸发生变更且需要重新生成 Model 时，才会回到步骤三重新执行。
 
