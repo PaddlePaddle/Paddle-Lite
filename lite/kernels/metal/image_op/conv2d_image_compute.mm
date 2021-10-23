@@ -44,7 +44,7 @@ void Conv2dImageCompute::ReInitWhenNeeded() {
         init_memory();
 
         if (use_mps_) {
-            if (@available(iOS 10.0, macOS 10.13, macCatalyst 13.0,  *)) {
+            if (@available(iOS 10.0, macOS 10.13, macCatalyst 13.0, *)) {
                 if (mps_input_image_) {
                     CFRelease(mps_input_image_);
                     mps_input_image_ = nullptr;
