@@ -66,6 +66,6 @@ Paddle Lite 提供了 `C++` 、`Java` 、`Python` 三种 `API` 的完整使用�
 
 ## 更多测试工具
 
-为了使您更好的了解并使用 Paddle Lite 框架，我们向有进一步使用需求的用户开放了 [Profiler 工具](../user_guides/profiler)。该工具具体分为性能 Profiler 和精度 Profiler：
+为了使您更好的了解并使用 Paddle Lite 框架，我们向有进一步使用需求的用户开放了 [Profiler 工具](../user_guides/debug)。该工具具体分为性能 Profiler 和精度 Profiler：
 - 性能 Profiler 工具可以帮助您了解每个 `Op` 的执行时间消耗，其会自动统计 `Op` 执行的次数，最长、最短、平均执行时间等等信息，为性能调优做一个基础参考；
 - 精度 Profiler 工具用于模型逐层精度统计，可以获取到模型中每个 `Op` 的输出 tensor 精度信息，能够快速定位计算精度出现问题的 `Op`。
