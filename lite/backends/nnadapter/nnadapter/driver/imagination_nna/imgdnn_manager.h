@@ -68,6 +68,14 @@ class ImgdnnManager {
                                           imgdnn_tensor weights_tensor,
                                           imgdnn_tensor bias_tensor,
                                           imgdnn_quant_param quant_param);
+  imgdnn_tensor CreateMatMulLayer(imgdnn_tensor input0_tensor,
+                                  imgdnn_tensor input1_tensor,
+                                  imgdnn_quant_param quant_param);
+  imgdnn_tensor CreateElementwiseOpsLayer(
+      imgdnn_tensor input0_tensor,
+      imgdnn_tensor input1_tensor,
+      imgdnn_operation_binary imgdnn_operation,
+      imgdnn_quant_param quant_param);
   imgdnn_tensor CreateSoftmaxLayer(imgdnn_tensor input_tensor,
                                    float beta,
                                    unsigned int axis,

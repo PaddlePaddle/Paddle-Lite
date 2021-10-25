@@ -298,6 +298,49 @@ imgdnn_tensor ImgdnnManager::CreateFullyConnectedLayer(
   return ConvertQuantTensorType(output_tensor, &quant_param);
 }
 
+imgdnn_tensor ImgdnnManager::CreateMatMulLayer(imgdnn_tensor input0_tensor,
+                                               imgdnn_tensor input1_tensor,
+                                               imgdnn_quant_param quant_param) {
+  imgdnn_err_code error_code;
+  imgdnn_tensor_descriptor input0_desc;
+  IMGDNN_CHECK_SUCCESS(imgdnnGetTensorDescriptor(input0_tensor, &input0_desc));
+  // Flatten the input tensor from dimension 2 (Only supports flatten_dim=1)
+  for (unsigned i = 2; i < input0_desc.dimensions; i++) {
+    input0_desc.size[1] *= input0_desc.size[i];
+  }
+  input0_desc.dimensions = 2;
+  input0_tensor = imgdnnNetworkReshapeOp(
+      network_, input0_tensor, &input0_desc, &error_code);
+  IMGDNN_CHECK_SUCCESS(error_code) << "Failed to call imgdnnNetworkReshapeOp!";
+  auto output_tensor = imgdnnNetworkBinaryOp(network_,
+                                             input0_tensor,
+                                             input1_tensor,
+                                             IMGDNN_OPERATION_MATMUL,
+                                             &error_code);
+  IMGDNN_CHECK_SUCCESS(error_code) << "Failed to call imgdnnNetworkBinaryOp!";
+  return ConvertQuantTensorType(output_tensor, &quant_param);
+}
+
+imgdnn_tensor ImgdnnManager::CreateElementwiseOpsLayer(
+    imgdnn_tensor input0_tensor,
+    imgdnn_tensor input1_tensor,
+    imgdnn_operation_binary imgdnn_operation,
+    imgdnn_quant_param quant_param) {
+  imgdnn_err_code error_code;
+  input0_tensor = imgdnnNetworkCastOp(
+      network_, input0_tensor, IMGDNN_TYPE_I32, nullptr, &error_code);
+  IMGDNN_CHECK_SUCCESS(error_code)
+      << "Failed to call imgdnnNetworkCastOp for input0_tensor!" input1_tensor =
+      imgdnnNetworkCastOp(
+          network_, input1_tensor, IMGDNN_TYPE_I32, nullptr, &error_code);
+  IMGDNN_CHECK_SUCCESS(error_code)
+      << "Failed to call imgdnnNetworkCastOp for input1_tensor!";
+  output_tensor = imgdnnNetworkBinaryOp(
+      network_, input0_tensor, input1_tensor, imgdnn_operation, &error_code);
+  IMGDNN_CHECK_SUCCESS(error_code) << "Failed to call imgdnnNetworkBinaryOp!";
+  return ConvertQuantTensorType(output_tensor, &quant_param);
+}
+
 imgdnn_tensor ImgdnnManager::CreateSoftmaxLayer(
     imgdnn_tensor input_tensor,
     float beta,
