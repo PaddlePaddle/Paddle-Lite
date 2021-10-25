@@ -14,7 +14,7 @@ limitations under the License. */
 
 #pragma once
 
-#ifdef __AVX2__
+//#ifdef __AVX2__
 
 #include <string.h>
 #include <algorithm>
@@ -34,8 +34,6 @@ namespace math {
   _N = N;                        \
   _K = K;                        \
   _A = A;                        \
-  _B = B;                        \
-  _C = C;                        \
   _ldc = ldc;                    \
   _Sa = const_cast<float *>(Sa); \
   _Sb = Sb;                      \
@@ -52,8 +50,6 @@ class generate_gemm_s8u8_x86_kern {
                                        int N,
                                        int K,
                                        const int8_t *A,
-                                       const int8_t *B,
-                                       TYPE_C *C,
                                        int ldc,
                                        const float *Sa,
                                        const float Sb,
@@ -67,7 +63,11 @@ class generate_gemm_s8u8_x86_kern {
 
   ~generate_gemm_s8u8_x86_kern() { gemm_int8_deinit(); }
 
-  void compute() {
+  void compute(const int8_t *A,
+               const int8_t *B,
+               TYPE_C *C) {
+    _B = B;
+    _C = C;
     int loop_m, loop_n;
     int block_m, block_n;
     int min_m, min_n;
@@ -215,4 +215,4 @@ class generate_gemm_s8u8_x86_kern {
 }  // namespace lite
 }  // namespace paddle
 
-#endif  // __AVX2__
+//#endif  // __AVX2__
