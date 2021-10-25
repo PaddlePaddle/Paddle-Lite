@@ -109,7 +109,9 @@ class TargetWrapper<TARGET(kXPU)> {
           VLOG(3) << "No Enough GM Workspace For Current Predictor.";
         } else {
           void* old_ptr = ctx._gm_mgr.get_ptr();
-          TargetWrapperXPU::Free(old_ptr);
+          if (old_ptr != nullptr) {
+            TargetWrapperXPU::Free(old_ptr);
+          }
           ret = tls_raw_ctx_->_gm_mgr.set(local_gm_ptr, local_gm_size);
           if (ret != 0) {
             LOG(WARNING) << "XPU GM Mgr Init Fail, Please Check Configuration.";
