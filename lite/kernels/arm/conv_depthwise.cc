@@ -33,8 +33,6 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
   }
   auto w_dims = param.filter->dims();
   auto kw = w_dims[3];
-  auto channel = w_dims[0];
-  auto hin = param.x->dims()[2];
   auto win = param.x->dims()[3];
   auto paddings = *param.paddings;
   // select dw conv kernel
@@ -56,11 +54,20 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
           w_data_in, w_data, oc, 1, cblock, kh * kw);
       flag_trans_weights_ = true;
     }
+    impl_ = lite::arm::math::conv_depthwise_3x3_fp32;
+    KERNEL_FUNC_NAME("conv_depthwise_3x3_fp32")
   } else if (kw == 5) {
     auto strides = param.strides;
     bool pads_equal = (paddings[0] == paddings[2]) && (paddings[0] == 2);
-    if (strides[0] == 1 && strides[1] == 1 && pads_equal &&
-        static_cast<int>(param.activation_param.active_type) < 4 && win > 8) {
+    // todo s1 profile is not great than c4
+    bool s1_equal =
+        0 &&
+        (strides[0] == 1 && strides[1] == 1 && pads_equal &&
+         static_cast<int>(param.activation_param.active_type) < 4 && win > 8);
+    bool s2_equal =
+        (strides[0] == 2 && strides[1] == 2 && pads_equal &&
+         static_cast<int>(param.activation_param.active_type) < 4 && win > 16);
+    if (s1_equal || s2_equal) {
       flag_trans_weights_ = false;
     } else {
       // trans weights
@@ -75,6 +82,10 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::ReInitWhenNeeded() {
           w_data_in, w_data, oc, 1, cblock, kh * kw);
       flag_trans_weights_ = true;
     }
+    impl_ = lite::arm::math::conv_depthwise_5x5_fp32;
+    KERNEL_FUNC_NAME("conv_depthwise_5x5_fp32")
+  } else {
+    LOG(FATAL) << "this type dw conv not impl: " << kw;
   }
   last_shape_ = x_dims;
 }
@@ -84,23 +95,8 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   auto& param = this->Param<param_t>();
   CHECK(this->ctx_);
   auto& ctx = this->ctx_->template As<ARMContext>();
-  auto w_dims = param.filter->dims();
-  auto kw = w_dims[3];
-  auto channel = w_dims[0];
-  auto hin = param.x->dims()[2];
-  auto win = param.x->dims()[3];
-  auto paddings = *param.paddings;
   // select dw conv kernel
   ReInitWhenNeeded();
-  if (kw == 3) {
-    impl_ = lite::arm::math::conv_depthwise_3x3_fp32;
-    KERNEL_FUNC_NAME("conv_depthwise_3x3_fp32")
-  } else if (kw == 5) {
-    impl_ = lite::arm::math::conv_depthwise_5x5_fp32;
-    KERNEL_FUNC_NAME("conv_depthwise_5x5_fp32")
-  } else {
-    LOG(FATAL) << "this type dw conv not impl";
-  }
   last_shape_ = param.x->dims();
 }
 
