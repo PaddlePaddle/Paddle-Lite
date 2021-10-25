@@ -277,8 +277,8 @@ void gemv_fp16_trans(const float16_t *A,
   if (remain > 0) out_cnt++;
   float16x8_t vzero = vdupq_n_f16(0.f);
   float16x8_t valpha = vdupq_n_f16(local_alpha);
-  float16x8_t voffset = vdupq_n_fp16(offset);
-  float16x8_t vthreshold = vdupq_n_fp16(threshold);
+  float16x8_t voffset = vdupq_n_f16(offset);
+  float16x8_t vthreshold = vdupq_n_f16(threshold);
   int stride = 16 * (M - 1);  // (8 * M - 8) * 2
   int rem_n = N & 7;
 #pragma omp parallel for
@@ -388,6 +388,8 @@ void gemv_fp16(const float16_t *A,
   if (remain > 0) out_cnt++;
   float16x8_t vzero = vdupq_n_f16(0.f);
   float16x8_t valpha = vdupq_n_f16(local_alpha);
+  float16x8_t voffset = vdupq_n_f16(offset);
+  float16x8_t vthreshold = vdupq_n_f16(threshold);
   int stride = 1;
 #pragma omp parallel for
   for (int j = 0; j < out_cnt; j++) {

@@ -320,37 +320,39 @@ void fill_bias_act_fp16<float16_t>(
         break;
       case lite_api::ActivationType::kHardSwish:
         vscale = vdupq_n_f16(1.0 / act_param->hard_swish_scale);
+        {
 #ifdef __aarch64__
-        float32x4_t voffset = vdupq_n_fp16(act_param->hard_swish_offset);
-        float32x4_t vthreshold = vdupq_n_fp16(act_param->hard_swish_threshold);
+          float32x4_t voffset = vdupq_n_f16(act_param->hard_swish_offset);
+          float32x4_t vthreshold = vdupq_n_f16(act_param->hard_swish_threshold);
 #else
-        float voffset[4] = {act_param->hard_swish_offset,
-                            act_param->hard_swish_offset,
-                            act_param->hard_swish_offset,
-                            act_param->hard_swish_offset};
-        float vthreshold[4] = {act_param->hard_swish_threshold,
-                               act_param->hard_swish_threshold,
-                               act_param->hard_swish_threshold,
-                               act_param->hard_swish_threshold};
+          float voffset[4] = {act_param->hard_swish_offset,
+                              act_param->hard_swish_offset,
+                              act_param->hard_swish_offset,
+                              act_param->hard_swish_offset};
+          float vthreshold[4] = {act_param->hard_swish_threshold,
+                                 act_param->hard_swish_threshold,
+                                 act_param->hard_swish_threshold,
+                                 act_param->hard_swish_threshold};
 #endif
-        for (int j = 0; j < channel; j++) {
-          float16_t bias_data = flag_bias ? bias[j] : 0.f;
-          float16_t* src = data + j * channel_size;
-          float16_t* dst = data + j * channel_size;
-          float16x8_t vbias = vdupq_n_f16(bias_data);
-          int cnt_num0 = cnt_32;
-          int cnt_num1 = cnt_8;
-          asm volatile(FILL_BIAS_CNT0 FILL_HARD_SWISH_CNT0 FILL_STORE_CNT0
-                           FILL_HARD_SWISH_CNT1 FILL_STORE_CNT1 ASM_PARAM_1);
-          for (int i = 0; i < rem_8; i++) {
-            float16_t tmp = (*src + bias_data);
-            if (tmp >= 0.f) {
-              *dst = tmp;
-            } else {
-              *dst = tmp * act_param->Leaky_relu_alpha;
+          for (int j = 0; j < channel; j++) {
+            float16_t bias_data = flag_bias ? bias[j] : 0.f;
+            float16_t* src = data + j * channel_size;
+            float16_t* dst = data + j * channel_size;
+            float16x8_t vbias = vdupq_n_f16(bias_data);
+            int cnt_num0 = cnt_32;
+            int cnt_num1 = cnt_8;
+            asm volatile(FILL_BIAS_CNT0 FILL_HARD_SWISH_CNT0 FILL_STORE_CNT0
+                             FILL_HARD_SWISH_CNT1 FILL_STORE_CNT1 ASM_PARAM_1);
+            for (int i = 0; i < rem_8; i++) {
+              float16_t tmp = (*src + bias_data);
+              if (tmp >= 0.f) {
+                *dst = tmp;
+              } else {
+                *dst = tmp * act_param->Leaky_relu_alpha;
+              }
+              src++;
+              dst++;
             }
-            src++;
-            dst++;
           }
         }
         break;

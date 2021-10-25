@@ -505,7 +505,9 @@ inline void prepack_input_nxwc4(const float16_t* din,
   : "cc", "memory", "v0", "v1", "v2", \
     "v3", "v4", "v5", "v6", "v7",     \
     "v8", "v9", "v10", "v11", "v12",  \
-    "v13", "v14", "v15", "v16"
+    "v13", "v14", "v15", "v16", "v16", \
+    "v17", "v18", "v19", "v20", "v21", \
+    "v22", "v23"
 #define C8_OUT_REMAIN                \
   for (int j = 0; j < remain; j++) { \
     *doutc0_ptr++ = tmp0[j];         \
@@ -829,7 +831,8 @@ static void write_to_oc8_fp16(const float16_t* din,
   float16_t voffset[8] = {offset,
                           offset,
                           offset,
-                          offset threshold,
+                          offset,
+                          threshold,
                           threshold,
                           threshold,
                           threshold};
