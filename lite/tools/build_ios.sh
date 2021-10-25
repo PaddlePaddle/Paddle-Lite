@@ -17,6 +17,10 @@ WITH_LOG=ON
 WITH_EXCEPTION=OFF
 # controls whether to use metal, default is OFF
 WITH_METAL=OFF
+# controls whether to build with profiler, default is OFF
+WITH_PROFILE=OFF
+# controls whether to build with Xcode, default is OFF
+WITH_XCODE=OFF
 # absolute path of Paddle-Lite.
 workspace=$PWD/$(dirname $0)/../../
 # options of striping lib according to input model.
@@ -60,6 +64,10 @@ function make_ios {
         WITH_EXTRA=ON
     fi
 
+    if [ "${WITH_XCODE}" == "ON" ]; then
+        cmake_common_options="-G Xcode"
+    fi
+
     if [ "${WITH_METAL}" == "ON" ]; then
         build_dir=$workspace/build.ios.metal.${os}.${arch}
     else
@@ -76,10 +84,12 @@ function make_ios {
     GEN_CODE_PATH_PREFIX=lite/gen_code
     mkdir -p ./${GEN_CODE_PATH_PREFIX}
     touch ./${GEN_CODE_PATH_PREFIX}/__generated_code__.cc
-    cmake $workspace \
+    cmake $workspace $cmake_common_options \
             -DWITH_LITE=ON \
             -DLITE_WITH_METAL=$WITH_METAL \
             -DLITE_WITH_ARM=ON \
+            -DLITE_WITH_XCODE=$WITH_XCODE \
+            -DLITE_WITH_PROFILE=${WITH_PROFILE} \
             -DLITE_ON_TINY_PUBLISH=ON \
             -DLITE_WITH_OPENMP=OFF \
             -DWITH_ARM_DOTPROD=OFF \
@@ -94,6 +104,10 @@ function make_ios {
             -DLITE_WITH_CV=$WITH_CV \
             -DDEPLOYMENT_TARGET=${IOS_DEPLOYMENT_TARGET} \
             -DARM_TARGET_OS=$os
+
+    if [ "${WITH_XCODE}" == "ON" ]; then
+        return
+    fi
 
     make publish_inference -j$NUM_PROC
     cd -
@@ -172,6 +186,14 @@ function main {
                 ;;
             --ios_deployment_target=*)
                 IOS_DEPLOYMENT_TARGET="${i#*=}"
+                shift
+                ;;
+            --with_profile=*)
+                WITH_PROFILE="${i#*=}"
+                shift
+                ;;
+            --with_xcode=*)
+                WITH_XCODE="${i#*=}"
                 shift
                 ;;
             help)

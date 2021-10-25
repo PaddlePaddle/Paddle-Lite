@@ -32,6 +32,10 @@ namespace operation {
   /* Axis */                                                                \
   auto axis =                                                               \
       *reinterpret_cast<int32_t*>(input_operands[input_count - 1]->buffer); \
+  auto input_dimensions_count = input_operands[0]->type.dimensions.count;   \
+  if (axis < 0) axis += (input_dimensions_count + 1);                       \
+  NNADAPTER_CHECK_GE(axis, 0);                                              \
+  NNADAPTER_CHECK_LE(axis, input_dimensions_count);                         \
   NNADAPTER_VLOG(5) << "axis=" << axis;                                     \
   /* Output */                                                              \
   auto output_operand = output_operands[0];                                 \

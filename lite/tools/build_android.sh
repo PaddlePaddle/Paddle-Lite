@@ -213,7 +213,6 @@ function make_tiny_publish_so {
   fi
   if [ "${BUILD_ARM82_FP16}" == "ON" ]; then
       TOOLCHAIN=clang
-      ARCH=armv8
   fi
 
   if [ "$NDK_ROOT" ]; then
@@ -295,7 +294,6 @@ function make_full_publish_so {
   fi
   if [ "${BUILD_ARM82_FP16}" == "ON" ]; then
       TOOLCHAIN=clang
-      ARCH=armv8
   fi
 
   if [ "$NDK_ROOT" ]; then

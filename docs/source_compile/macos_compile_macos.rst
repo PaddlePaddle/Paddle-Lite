@@ -34,7 +34,7 @@ macOS 环境下编译适用于 macOS 的库
      通常情况下，你不需要自行从源码构建编译包，优先推荐\ `下载 Paddle Lite 官方发布的预编译包 <https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html>`_\ ，可满足一部分场景的需求。如果官方发布的编译包未覆盖你的场景，或者需要修改Paddle Lite源代码，则可参考本文构建。
 
    * 
-     本文介绍的编译方法适用于 Paddle Lite v2.10 及以上版本。v2.3 及之前版本请参考\ `release/v2.3源码编译方法 <https://paddle-lite.readthedocs.io/zh/release-v2.10/source_compile/v2.3_compile.html>`_\ 。
+     本文介绍的编译方法适用于 Paddle Lite v2.10 及以上版本。v2.3 及之前版本请参考\ `release/v2.3源码编译方法 <https://paddle-lite.readthedocs.io/zh/release-v2.10_a/source_compile/v2.3_compile.html>`_\ 。
 
 
 
@@ -97,7 +97,7 @@ Paddle Lite 仓库中\ ``/lite/tools/build_macos.sh``\ 脚本文件用于构建 
      - OFF / ON
      - OFF
    * - with_extra
-     - 是否编译完整算子（见\ `支持算子 <https://paddle-lite.readthedocs.io/zh/develop/introduction/support_operation_list.html>`_\ 一节）
+     - 是否编译完整算子（见\ `支持算子 <https://paddle-lite.readthedocs.io/zh/develop/quick_start/support_operation_list.html>`_\ 一节）
      - OFF / ON
      - OFF
    * - with_profile
@@ -144,7 +144,7 @@ Paddle Lite 仓库中\ ``/lite/tools/build_macos.sh``\ 脚本文件用于构建 
 验证编译结果
 ------------
 
-如果执行\ ``/lite/tools/build_macos.sh x86``\ ，成功后会在 ``Paddle-Lite/build.lite.x86/inference_lite_lib`` 生成 Paddle Lite 编译包，文件目录如下：
+如果执行\ ``./lite/tools/build_macos.sh x86``\ ，成功后会在 ``Paddle-Lite/build.lite.x86/inference_lite_lib`` 生成 Paddle Lite 编译包，文件目录如下：
 
 .. code-block:: shell
 
@@ -174,22 +174,23 @@ Paddle Lite 仓库中\ ``/lite/tools/build_macos.sh``\ 脚本文件用于构建 
    └── demo                                              C++ 示例代码
        └── cxx                                           C++ 预测库demo
 
-如果执行\ ``/lite/tools/build_macos.sh arm64``\ ，成功后会在 ``Paddle-Lite/build.macos.armmacos.armv8/inference_lite_lib.armmacos.armv8/`` 生成 Paddle Lite 编译包，文件目录如下：
+如果执行\ ``./lite/tools/build_macos.sh arm64``\ ，成功后会在 ``Paddle-Lite/build.macos.armmacos.armv8/inference_lite_lib.armmacos.armv8/`` 生成 Paddle Lite 编译包，文件目录如下：
 
 .. code-block:: shell
 
    inference_lite_lib.armmacos.armv8/
-   ├── include
-   │   ├── paddle_api.h
-   │   ├── paddle_image_preprocess.h
-   │   ├── paddle_lite_factory_helper.h
-   │   ├── paddle_place.h
-   │   ├── paddle_use_kernels.h
-   │   ├── paddle_use_ops.h
-   │   └── paddle_use_passes.h
-   └── lib
-       ├── libpaddle_api_light_bundled.a
-       └── libpaddle_light_api_shared.dylib
+   └── cxx
+        ├── include
+        │   ├── paddle_api.h
+        │   ├── paddle_image_preprocess.h
+        │   ├── paddle_lite_factory_helper.h
+        │   ├── paddle_place.h
+        │   ├── paddle_use_kernels.h
+        │   ├── paddle_use_ops.h
+        │   └── paddle_use_passes.h
+        └── lib
+            ├── libpaddle_api_light_bundled.a
+            └── libpaddle_light_api_shared.dylib
 
 多设备支持
 ------------

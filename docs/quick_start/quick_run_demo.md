@@ -1,13 +1,19 @@
 # 试用 Paddle Lite
+
 ## 概述
+
 本教程在模型已完成转换和预测库已完成编译情况下，告诉大家如何快速使用 Paddle Lite 推理，以获取最终的推理性能和精度数据。
+
 本文将以安卓端 CPU 为例，介绍口罩检测 Mask Detection 示例。
 
 ## 环境准备
+
 此处环境准备包含两个方面：预测库下载和安卓手机环境准备。
 
 ### 安卓手机环境
+
 准备一台安卓手机，并在电脑上安装 adb 工具 ，以确保电脑和手机可以通过 adb 连接。
+
 >> 备注：手机通过 USB 连接电脑，打开`设置 -> 开发者模式 -> USB调试 -> 允许（授权）当前电脑调试手机`。保证当前电脑已经安装[ adb 工具](https://developer.android.com/studio/command-line/adb)，运行以下命令，确认当前手机设备已被识别
 
 ``` shell
@@ -18,13 +24,13 @@ List of devices attached
 ```
 
 ### 预测库下载
-在预测库[ Lite 预编译库下载](release_lib)下载界面，可根据您的手机型号和运行需求选择合适版本。
+在预测库[ Lite 预编译库](release_lib)下载界面，可根据您的手机型号和运行需求选择合适版本。
 
 以**Android-ARMv8架构**为例，可以下载以下版本：
 
 | Arch  | with_extra | arm_stl | with_cv | 下载 |
 |:-------:|:-----:|:-----:|:-----:|:-------:|
-| armv8 | OFF | c++_static | OFF |[ 2.9-rc ](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.9/inference_lite_lib.android.armv8.gcc.c++_static.tar.gz)|
+| armv8 | OFF | c++_static | OFF |[ 2.10-rc ](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10-rc/inference_lite_lib.android.armv8.gcc.c++_static.tar.gz)|
 
 **解压后内容结构如下：**
 
@@ -58,12 +64,12 @@ bash prepare.sh
 # 执行预测
 cd mask_demo && bash run.sh
 
-# 运行成功后，将在控制台输出如下内容，可以打开test_img_result.jpg图片查看预测结果
+# 运行成功后，将在控制台输出如下内容，可以打开 test_img_result.jpg 图片查看预测结果
 ../mask_demo/: 9 files pushed, 0 skipped. 141.6 MB/s (28652282 bytes in 0.193s)
 Load detecion model succeed.
 
 ======= benchmark summary =======
-model_dir: pyramidbox_lite_v2_9_1_opt2.nb
+model_dir: pyramidbox_lite_v2_10_opt2.nb
 repeats: 100
 *** time info(ms) ***
 1st_duration: 124.481
