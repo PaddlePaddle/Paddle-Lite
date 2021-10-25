@@ -23,50 +23,51 @@ namespace nnadapter {
 namespace imagination_nna {
 
 int ConvertFullyConnected(Converter* converter, hal::Operation* operation) {
-  FULLY_CONNECTED_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  NNADAPTER_CHECK_EQ(fuse_code, NNADAPTER_FUSED_NONE)
-      << "imgdnn doesn't support fuse_code=" << fuse_code
-      << " in fully connected layer";
+  // FULLY_CONNECTED_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  // NNADAPTER_CHECK_EQ(fuse_code, NNADAPTER_FUSED_NONE)
+  //     << "imgdnn doesn't support fuse_code=" << fuse_code
+  //     << " in fully connected layer";
 
-  // Convert to imgdnn tensors and operators
-  auto input_tensor = converter->GetMappedTensor(input_operand);
-  if (!input_tensor) {
-    input_tensor = converter->ConvertOperand(input_operand);
-  }
-  auto weight_tensor = converter->ConvertOperand(weight_operand);
-  //   // Transpose weight tensor from (m,k) to (k,m)
-  //   std::vector<uint8_t> transpose_weight_data(num_units * input_size);
-  //   std::vector<int32_t> transpose_weight_dimensions(
-  //       weight_operand->type.dimensions.count);
-  //   TransposeData(reinterpret_cast<uint8_t*>(weight_operand->buffer),
-  //                 transpose_weight_data.data(),
-  //                 {1, 0},
-  //                 weight_operand->type.dimensions.data,
-  //                 transpose_weight_dimensions.data());
-  //   NNADAPTER_CHECK(
-  //       IsUInt8AsymmPerLayerQuantType(weight_operand->type.precision));
-  //   auto weight_tensor = converter->AddQuant8ConstantTensor(
-  //       transpose_weight_data.data(),
-  //       transpose_weight_dimensions.data(),
-  //       transpose_weight_dimensions.size(),
-  //       weight_operand->type.asymm_per_layer_params.scale,
-  //       weight_operand->type.asymm_per_layer_params.zero_point);
+  // // Convert to imgdnn tensors and operators
+  // auto input_tensor = converter->GetMappedTensor(input_operand);
+  // if (!input_tensor) {
+  //   input_tensor = converter->ConvertOperand(input_operand);
+  // }
+  // auto weight_tensor = converter->ConvertOperand(weight_operand);
+  // //   // Transpose weight tensor from (m,k) to (k,m)
+  // //   std::vector<uint8_t> transpose_weight_data(num_units * input_size);
+  // //   std::vector<int32_t> transpose_weight_dimensions(
+  // //       weight_operand->type.dimensions.count);
+  // //   TransposeData(reinterpret_cast<uint8_t*>(weight_operand->buffer),
+  // //                 transpose_weight_data.data(),
+  // //                 {1, 0},
+  // //                 weight_operand->type.dimensions.data,
+  // //                 transpose_weight_dimensions.data());
+  // //   NNADAPTER_CHECK(
+  // //       IsUInt8AsymmPerLayerQuantType(weight_operand->type.precision));
+  // //   auto weight_tensor = converter->AddQuant8ConstantTensor(
+  // //       transpose_weight_data.data(),
+  // //       transpose_weight_dimensions.data(),
+  // //       transpose_weight_dimensions.size(),
+  // //       weight_operand->type.asymm_per_layer_params.scale,
+  // //       weight_operand->type.asymm_per_layer_params.zero_point);
 
-  //   // Expand bias tensor from (c) to (1, c)
-  //   auto bias_tensor = converter->ConvertOperand(
-  //       bias_operand, {1, bias_operand->type.dimensions.data[0]});
-  NNADAPTER_CHECK(
-      IsUInt8AsymmPerLayerQuantType(output_operand->type.precision));
-  imgdnn_quant_param output_quant_param;
-  output_quant_param.scale = output_operand->type.asymm_per_layer_params.scale;
-  output_quant_param.zero_point =
-      output_operand->type.asymm_per_layer_params.zero_point;
-  auto output_tensor = ADD_OPERATOR(CreateMatMulLayer,
-                                    input_tensor,
-                                    transpose_weight_tensor,
-                                    output_quant_param);
-  converter->UpdateTensorMap(output_operand, output_tensor);
-  return NNADAPTER_NO_ERROR;
+  // //   // Expand bias tensor from (c) to (1, c)
+  // //   auto bias_tensor = converter->ConvertOperand(
+  // //       bias_operand, {1, bias_operand->type.dimensions.data[0]});
+  // NNADAPTER_CHECK(
+  //     IsUInt8AsymmPerLayerQuantType(output_operand->type.precision));
+  // imgdnn_quant_param output_quant_param;
+  // output_quant_param.scale =
+  // output_operand->type.asymm_per_layer_params.scale;
+  // output_quant_param.zero_point =
+  //     output_operand->type.asymm_per_layer_params.zero_point;
+  // auto output_tensor = ADD_OPERATOR(CreateMatMulLayer,
+  //                                   input_tensor,
+  //                                   transpose_weight_tensor,
+  //                                   output_quant_param);
+  // converter->UpdateTensorMap(output_operand, output_tensor);
+  // return NNADAPTER_NO_ERROR;
 }
 
 }  // namespace imagination_nna

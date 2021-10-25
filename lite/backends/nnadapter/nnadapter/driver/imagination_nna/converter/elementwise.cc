@@ -29,7 +29,7 @@ int ConvertElementwise(Converter* converter, hal::Operation* operation) {
   if (!input0_tensor) {
     input0_tensor = converter->ConvertOperand(input0_operand);
   }
-  auto input1_tensor = converter->GetMappedOperator(input1_operand);
+  auto input1_tensor = converter->GetMappedTensor(input1_operand);
   if (!input1_tensor) {
     input1_tensor = converter->ConvertOperand(input1_operand);
   }
@@ -37,7 +37,8 @@ int ConvertElementwise(Converter* converter, hal::Operation* operation) {
   output_quant_param.scale = output_operand->type.asymm_per_layer_params.scale;
   output_quant_param.zero_point =
       output_operand->type.asymm_per_layer_params.zero_point;
-  imgdnn_tensor output_tensor switch (operation->type) {
+  imgdnn_tensor output_tensor;
+  switch (operation->type) {
 #define CONVERT_ELEMENTWISE(type, class_name)                   \
   case NNADAPTER_##type: {                                      \
     output_tensor = ADD_OPERATOR(CreateElementwiseOpsLayer,     \

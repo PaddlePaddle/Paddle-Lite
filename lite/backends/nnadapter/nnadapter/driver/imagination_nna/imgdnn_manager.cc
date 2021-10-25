@@ -330,12 +330,12 @@ imgdnn_tensor ImgdnnManager::CreateElementwiseOpsLayer(
   input0_tensor = imgdnnNetworkCastOp(
       network_, input0_tensor, IMGDNN_TYPE_I32, nullptr, &error_code);
   IMGDNN_CHECK_SUCCESS(error_code)
-      << "Failed to call imgdnnNetworkCastOp for input0_tensor!" input1_tensor =
-      imgdnnNetworkCastOp(
-          network_, input1_tensor, IMGDNN_TYPE_I32, nullptr, &error_code);
+      << "Failed to call imgdnnNetworkCastOp for input0_tensor!";
+  input1_tensor = imgdnnNetworkCastOp(
+      network_, input1_tensor, IMGDNN_TYPE_I32, nullptr, &error_code);
   IMGDNN_CHECK_SUCCESS(error_code)
       << "Failed to call imgdnnNetworkCastOp for input1_tensor!";
-  output_tensor = imgdnnNetworkBinaryOp(
+  auto output_tensor = imgdnnNetworkBinaryOp(
       network_, input0_tensor, input1_tensor, imgdnn_operation, &error_code);
   IMGDNN_CHECK_SUCCESS(error_code) << "Failed to call imgdnnNetworkBinaryOp!";
   return ConvertQuantTensorType(output_tensor, &quant_param);
