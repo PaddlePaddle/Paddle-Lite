@@ -27,7 +27,12 @@ OPTMODEL_DIR=""
 # options of compiling x86 lib
 WITH_STATIC_MKL=OFF
 WITH_AVX=ON
-# options of compiling OPENCL lib.
+# options of compiling OpenCL lib, default is OFF.
+# 1. Additional third party library need to be installed on Linux.
+#    Otherwise OpenCL is not supported on Linux. See link for more info:
+#    https://software.intel.com/content/www/us/en/develop/articles/opencl-drivers.html
+# 2. For ARM Linux OS, OpenCL is also disabled by default because some devices
+#    do not fully support OpenCL.
 WITH_OPENCL=OFF
 # options of compiling rockchip NPU lib.
 WITH_ROCKCHIP_NPU=OFF
@@ -95,12 +100,7 @@ function set_benchmark_options {
   WITH_EXTRA=ON
   WITH_EXCEPTION=ON
   WITH_NNADAPTER=ON
-  # Turn off opencl. Additional third party library need to be installed on
-  # Linux. Otherwise opencl is not supported on Linux. See link for more info:
-  # https://software.intel.com/content/www/us/en/develop/articles/opencl-drivers.html
-  # For arm linux os, opencl is also disabled by default because some devices have not
-  # fully support opencl.
-  WITH_OPENCL=OFF
+
   if [ "${ARCH}" == "x86" ]; then
     WITH_LIGHT_WEIGHT_FRAMEWORK=OFF
   else
