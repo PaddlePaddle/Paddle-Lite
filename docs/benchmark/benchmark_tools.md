@@ -130,7 +130,7 @@ avg   = 32.723
 编译完成后，会生成`build.lite.*./lite/api/benchmark_bin`二进制文件。
 
 ### 运行
-需要将如下文件通过`scp`或其他方式上传至 arm linux 设备：
+需要将如下文件通过`scp`或其他方式上传至 ARM Linux 设备：
 - Paddle 文件（combined 或 uncombined 格式均可）或已经`opt`工具离线优化后的`.nb`文件
 - 二进制文件`benchmark_bin`
 
@@ -140,11 +140,11 @@ avg   = 32.723
 wget https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/MobileNetV1.tar.gz
 tar zxvf MobileNetV1.tar.gz
 
-# 上传文件到 armlinux 设备
+# 上传文件到 ARM Linux 设备
 
 ```
 
-然后通过`ssh`登录到 armlinux 设备，执行：
+然后通过`ssh`登录到 ARM Linux 设备，执行：
 ```shell
 # 性能测试
 cd /path/to/benchmark_bin; \
@@ -405,7 +405,7 @@ NNAdapter 已支持的新硬件列表如下：
 ##### NNAdapter 运行时库及新硬件 Hal 库编译
 ###### nnadapter.so
 - Huawei Kirin NPU / Mediatek NPU 请参考 『在 Android 上运行性能测试』编译预测库。
-— Huawei Ascend NPU（arm host） / Rockchip NPU / Imagination NNA / Amlogic NPU 请参考 『在 ARMLinux 上运行性能测试』编译预测库。
+— Huawei Ascend NPU（arm host） / Rockchip NPU / Imagination NNA / Amlogic NPU 请参考 『在 ARM Linux 上运行性能测试』编译预测库。
 - Huawei Ascend NPU（x86 host）请参考『在 Linux 上运行性能测试』编译预测库。
 - 新硬件所需的 DDK 可在 [Paddle Lite 通用示例程序](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)中获取。
 
