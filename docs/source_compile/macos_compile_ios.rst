@@ -106,7 +106,7 @@ Paddle Lite 仓库中\ ``./lite/tools/build_ios.sh``\ 脚本文件用于构建 i
 ..
 
    **说明：**
-   执行`./lite/tools/build_ios.sh help`可输出各选项的使用说明信息。
+   执行\ ``./lite/tools/build_ios.sh help``\ 可输出各选项的使用说明信息。
 
 
 编译步骤
@@ -122,7 +122,7 @@ Paddle Lite 仓库中\ ``./lite/tools/build_ios.sh``\ 脚本文件用于构建 i
    # (可选) 删除 third-party 目录，编译脚本会自动从国内 CDN 下载第三方库文件
    # rm -rf third-party
 
-   # 2. 编译 Paddle-Lite iOS 预测库
+   # 2. 编译 Paddle Lite iOS 预测库
    ./lite/tools/build_ios.sh
 
 ..
