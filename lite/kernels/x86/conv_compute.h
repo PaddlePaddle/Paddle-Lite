@@ -21,6 +21,7 @@
 #include "lite/backends/x86/math/conv_bias.h"
 #include "lite/backends/x86/math/im2col.h"
 #include "lite/backends/x86/math/vol2col.h"
+#include "lite/backends/x86/math/gemm_s8u8_compute.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/types.h"
@@ -81,6 +82,7 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), Ptype> {
   std::vector<float> w_scale_;
   Tensor weights_;
   Tensor bias_;
+  std::vector<void*> gemm_s8_ptr_;
 };
 
 }  // namespace x86
