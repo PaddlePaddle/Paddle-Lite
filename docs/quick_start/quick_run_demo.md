@@ -59,7 +59,7 @@ inference_lite_lib.android.armv8          Paddle Lite 预测库
 cd inference_lite_lib.android.armv8/demo/cxx/mask_detection
 
 # 设置 NDK_ROOT 路径
-export NDK_ROOT=~/Documents/android-ndk-r20b
+export NDK_ROOT=/opt/android-ndk-r20b
 
 # 准备预测部署文件
 bash prepare.sh
