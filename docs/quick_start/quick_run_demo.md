@@ -30,7 +30,7 @@ List of devices attached
 
 | Arch  | with_extra | arm_stl | with_cv | 下载 |
 |:-------:|:-----:|:-----:|:-----:|:-------:|
-| armv8 | OFF | c++_static | OFF |[ 2.10-rc ](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10-rc/inference_lite_lib.android.armv8.gcc.c++_static.tar.gz)|
+| armv8 | ON | c++_static | OFF |[ 2.10-rc ](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10-rc/inference_lite_lib.android.armv8.clang.c++_static.with_extra.tar.gz)|
 
 **解压后内容结构如下：**
 
@@ -57,6 +57,9 @@ inference_lite_lib.android.armv8          Paddle Lite 预测库
 
 ```shell
 cd inference_lite_lib.android.armv8/demo/cxx/mask_detection
+
+# 设置 NDK_ROOT 路径
+export NDK_ROOT=/opt/android-ndk-r20b
 
 # 准备预测部署文件
 bash prepare.sh

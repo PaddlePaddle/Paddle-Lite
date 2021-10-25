@@ -1,3 +1,6 @@
+# setting NDK_ROOT root
+export NDK_ROOT=/opt/android-ndk-r20b
+
 # make
 make -j
 
