@@ -14,7 +14,7 @@ limitations under the License. */
 
 #pragma once
 
-#ifdef __AVX2__
+//#ifdef __AVX2__
 
 #include <stdint.h>
 
@@ -38,4 +38,4 @@ void gemm_s8u8s8_runpackB(
 }  // namespace lite
 }  // namespace paddle
 
-#endif  // __AVX2__
+//#endif  // __AVX2__
