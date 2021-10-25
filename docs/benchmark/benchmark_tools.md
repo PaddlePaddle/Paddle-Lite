@@ -396,15 +396,15 @@ adb shell "cd /data/local/tmp/benchmark;
 - `--nnadapter_context_properties`：设置新硬件硬件资源（目前仅在 Huawei Ascend NPU 上使用）
 
 #### 运行前的数据准备
-##### 步骤1：编译 benchmark_bin 与 NNAdapter 运行时库
+##### 步骤1：编译 benchmark_bin
 - Huawei Kirin NPU / Mediatek NPU / Amlogic NPU(S905D3 Android 版本) 请参考 『在 Android 上运行性能测试』进行编译。
 - Huawei Ascend NPU（arm host） / Rockchip NPU / Imagination NNA / Amlogic NPU(C308X 或 A311D) 请参考 『在 ARMLinux 上运行性能测试』进行编译。
 - Huawei Ascend NPU（x86 host）请参考『在 Linux 上运行性能测试』进行编译。
 
-编译完成后，会生成`build.lite*/inference_lite_lib*/cxx/lib/libnnadapter.so`与`build.lite.*./lite/api/benchmark_bin`二进制文件。
+编译完成后，会生成`build.lite.*./lite/api/benchmark_bin`二进制文件。
 
-##### 步骤2：编译 NNAdapter Device HAL 库
-请参考下表编译指南，编译 NNAdapter Device HAL 库
+##### 步骤2：编译 NNAdapter 运行时库与 NNAdapter Device HAL 库
+请参考下表编译指南，编译 NNAdapter 运行时库及 NNAdapter Device HAL 库
 
 |No.| 新硬件名称 | Device HAL 库名称|编译指南 |
 |---|---|---|---|
@@ -415,7 +415,7 @@ adb shell "cd /data/local/tmp/benchmark;
 |5.|Mediatek APU|libmediatek_apu.so| [点击进入](https://paddle-lite.readthedocs.io/zh/develop/demo_guides/mediatek_apu.html) |
 |6.|Amlogic NPU|libamlogic_npu.so| [点击进入](https://paddle-lite.readthedocs.io/zh/develop/demo_guides/amlogic_npu.html)|
 
-编译完成后，Device HAL 库将会生成在`build.lite*/inference_lite_lib*/cxx/lib/`目录下。
+编译完成后，NNAdapter 运行时库和 Device HAL 库将会生成在`build.lite*/inference_lite_lib*/cxx/lib/`目录下。
 
 ##### 步骤3：获取新硬件 DDK
 请下载 [Paddle Lite 通用示例程序](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)，并参照下表路径，获取新硬件所需的 DDK。
@@ -440,7 +440,8 @@ adb shell "cd /data/local/tmp/benchmark;
 ```shell
 # 拷贝 benchmark 文件夹到新硬件
 adb shell "rm -rf /data/local/tmp/benchmark"
-adb push ~/benchmark /data/local/tmp/
+adb shell "mkdir /data/local/tmp/benchmark"
+adb push ~/benchmark/* /data/local/tmp/benchmark
 # 设置环境变量并运行模型
 adb shell "cd /data/local/tmp/benchmark;
 export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH;
@@ -458,8 +459,8 @@ export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH;
 ```shell
 # Host 侧为 x86 cpu 时
 # 拷贝 benchmark 文件夹到新硬件
-ssh name@ip -p22 "rm -r ~/benchmark"
-scp ~/benchmark name@ip:~
+ssh name@ip -p22 "rm -rf ~/benchmark"
+scp -r ~/benchmark name@ip:~
 ssh name@ip
 cd ~/benchmark
 # 设置环境变量
@@ -477,8 +478,8 @@ export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH
 
 # Host 侧为 arm cpu 时
 # 拷贝 benchmark 文件夹到新硬件
-ssh name@ip -p22 "rm -r ~/benchmark"
-scp ~/benchmark name@ip:~
+ssh name@ip -p22 "rm -rf ~/benchmark"
+scp -r ~/benchmark name@ip:~
 ssh name@ip
 cd ~/benchmark
 # 设置环境变量
@@ -498,8 +499,8 @@ export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH
 ##### 在 Rockchip NPU 上运行模型
 ```shell
 # 拷贝 benchmark 文件夹到新硬件
-ssh name@ip -p22 "rm -r ~/benchmark"
-scp ~/benchmark name@ip:~
+ssh name@ip -p22 "rm -rf ~/benchmark"
+scp -r ~/benchmark name@ip:~
 ssh name@ip
 cd ~/benchmark
 # 设置环境变量
@@ -517,8 +518,8 @@ export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH
 ##### 在 Imagination NNA 上运行模型
 ```shell
 # 拷贝 benchmark 文件夹到新硬件
-ssh name@ip -p22 "rm -r ~/benchmark"
-scp ~/benchmark name@ip:~
+ssh name@ip -p22 "rm -rf ~/benchmark"
+scp -r ~/benchmark name@ip:~
 ssh name@ip
 cd ~/benchmark
 # 设置环境变量
@@ -537,7 +538,8 @@ export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH
 ```shell
 # 拷贝 benchmark 文件夹到新硬件
 adb shell "rm -rf /data/local/tmp/benchmark"
-adb push ~/benchmark /data/local/tmp/
+adb shell "mkdir /data/local/tmp/benchmark"
+adb push ~/benchmark/* /data/local/tmp/benchmark
 # 设置环境变量并运行模型
 adb shell "cd /data/local/tmp/benchmark;
 export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH;
@@ -554,8 +556,8 @@ export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH;
 ```shell
 # 在 C308X 或 A311D 上运行模型
 # 拷贝 benchmark 文件夹到新硬件
-ssh name@ip -p22 "rm -r ~/benchmark"
-scp ~/benchmark name@ip:~
+ssh name@ip -p22 "rm -rf ~/benchmark"
+scp -r ~/benchmark name@ip:~
 ssh name@ip
 cd ~/benchmark
 # 设置环境变量
@@ -572,7 +574,8 @@ export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH
 # 在 S905D3 上运行模型
 # 拷贝 benchmark 文件夹到新硬件
 adb shell "rm -rf /data/local/tmp/benchmark"
-adb push ~/benchmark /data/local/tmp/
+adb shell "mkdir /data/local/tmp/benchmark"
+adb push ~/benchmark/* /data/local/tmp/benchmark
 # 设置环境变量并运行模型
 adb shell "cd /data/local/tmp/benchmark;
 export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH;
