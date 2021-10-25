@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "core/operation/shape.h"
+#include "core/operation/split.h"
+#include <vector>
 #include "core/hal/types.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -22,24 +23,25 @@
 namespace nnadapter {
 namespace operation {
 
-int PrepareShape(hal::Operation* operation) {
-  SHAPE_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int PrepareSplit(hal::Operation* operation) {
+  SPLIT_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  NNADAPTER_CHECK(IsConstantOperand(axis_operand));
+  NNADAPTER_CHECK(IsConstantOperand(split_operand));
 
   // Infer the shape and type of output operands
-  auto& input_type = input_operand->type;
-  auto& output_type = output_operand->type;
-  output_type.dimensions.count = 1;
-  int32_t shape_size = input_type.dimensions.count;
-  output_type.dimensions.data[0] = shape_size;
-  output_type.precision = static_cast<NNAdapterOperandPrecisionCode>(dtype);
-  output_type.lifetime = NNADAPTER_TEMPORARY_SHAPE;
-  output_operand->length = sizeof(NNAdapterOperandDimensionType);
-  output_operand->buffer = malloc(output_operand->length);
-  NNADAPTER_CHECK(output_operand->buffer) << "Out of memory!";
-  memset(output_operand->buffer, 0, output_operand->length);
-  *reinterpret_cast<NNAdapterOperandDimensionType*>(output_operand->buffer) =
-      input_type.dimensions;
-  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
+  for (size_t i = 0; i < output_count; i++) {
+    CopyOperandTypeExceptQuantParams(&output_operands[i]->type,
+                                     input_operand->type);
+
+    auto& out_dimensions = output_operands[i]->type.dimensions;
+    out_dimensions.data[axis] = split[i];
+    for (uint32_t j = 0; j < out_dimensions.dynamic_count; i++) {
+      out_dimensions.dynamic_data[j][axis] = split[i];
+    }
+
+    NNADAPTER_VLOG(5) << "output" << i << ": "
+                      << OperandToString(output_operands[i]);
+  }
   return NNADAPTER_NO_ERROR;
 }
 

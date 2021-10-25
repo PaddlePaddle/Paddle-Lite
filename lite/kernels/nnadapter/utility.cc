@@ -128,12 +128,12 @@ bool IsNNInt8SymmQuantType(NNAdapterOperandPrecisionCode precision_code) {
 
 bool IsNNInt8SymmPerLayerQuantType(
     NNAdapterOperandPrecisionCode precision_code) {
-  return precision_code == NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER;
+  return precision_code == NNADAPTER_QUANT_INT8_SYMM_PER_LAYER;
 }
 
 bool IsNNInt8SymmPerChannelQuantType(
     NNAdapterOperandPrecisionCode precision_code) {
-  return precision_code == NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL;
+  return precision_code == NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL;
 }
 
 bool IsNNInt16SymmQuantType(NNAdapterOperandPrecisionCode precision_code) {
@@ -143,12 +143,12 @@ bool IsNNInt16SymmQuantType(NNAdapterOperandPrecisionCode precision_code) {
 
 bool IsNNInt16SymmPerLayerQuantType(
     NNAdapterOperandPrecisionCode precision_code) {
-  return precision_code == NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_LAYER;
+  return precision_code == NNADAPTER_QUANT_INT16_SYMM_PER_LAYER;
 }
 
 bool IsNNInt16SymmPerChannelQuantType(
     NNAdapterOperandPrecisionCode precision_code) {
-  return precision_code == NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_CHANNEL;
+  return precision_code == NNADAPTER_QUANT_INT16_SYMM_PER_CHANNEL;
 }
 
 bool IsNNInt32SymmQuantType(NNAdapterOperandPrecisionCode precision_code) {
@@ -158,12 +158,12 @@ bool IsNNInt32SymmQuantType(NNAdapterOperandPrecisionCode precision_code) {
 
 bool IsNNInt32SymmPerLayerQuantType(
     NNAdapterOperandPrecisionCode precision_code) {
-  return precision_code == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER;
+  return precision_code == NNADAPTER_QUANT_INT32_SYMM_PER_LAYER;
 }
 
 bool IsNNInt32SymmPerChannelQuantType(
     NNAdapterOperandPrecisionCode precision_code) {
-  return precision_code == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL;
+  return precision_code == NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL;
 }
 
 bool IsNNSymmQuantType(const NNAdapterOperandType& operand_type) {
@@ -261,39 +261,27 @@ int64_t GetNNOperandPrecisionDataLength(
     case NNADAPTER_BOOL8:
     case NNADAPTER_INT8:
     case NNADAPTER_UINT8:
-    case NNADAPTER_TENSOR_BOOL8:
-    case NNADAPTER_TENSOR_INT8:
-    case NNADAPTER_TENSOR_UINT8:
-    case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER:
-    case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL:
-    case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT8_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL:
+    case NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER:
       return 1;
     case NNADAPTER_INT16:
     case NNADAPTER_UINT16:
     case NNADAPTER_FLOAT16:
-    case NNADAPTER_TENSOR_INT16:
-    case NNADAPTER_TENSOR_UINT16:
-    case NNADAPTER_TENSOR_FLOAT16:
-    case NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_LAYER:
-    case NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_CHANNEL:
-    case NNADAPTER_TENSOR_QUANT_UINT16_ASYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT16_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT16_SYMM_PER_CHANNEL:
+    case NNADAPTER_QUANT_UINT16_ASYMM_PER_LAYER:
       return 2;
     case NNADAPTER_INT32:
     case NNADAPTER_UINT32:
     case NNADAPTER_FLOAT32:
-    case NNADAPTER_TENSOR_INT32:
-    case NNADAPTER_TENSOR_UINT32:
-    case NNADAPTER_TENSOR_FLOAT32:
-    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER:
-    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL:
-    case NNADAPTER_TENSOR_QUANT_UINT32_ASYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT32_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL:
+    case NNADAPTER_QUANT_UINT32_ASYMM_PER_LAYER:
       return 4;
     case NNADAPTER_INT64:
     case NNADAPTER_UINT64:
     case NNADAPTER_FLOAT64:
-    case NNADAPTER_TENSOR_INT64:
-    case NNADAPTER_TENSOR_UINT64:
-    case NNADAPTER_TENSOR_FLOAT64:
       return 8;
     default:
       LOG(FATAL) << "Unable to get the length of precision code("
@@ -320,7 +308,7 @@ NNAdapterOperandPrecisionCode ConvertPODTypeToNNPrecisionCode<bool>(
     uint32_t quant_scale_count,
     uint32_t quant_channel_dim) {
   CHECK_EQ(quant_scale_count, 0);
-  return NNADAPTER_TENSOR_BOOL8;
+  return NNADAPTER_BOOL8;
 }
 
 template <>
@@ -331,10 +319,10 @@ NNAdapterOperandPrecisionCode ConvertPODTypeToNNPrecisionCode<int8_t>(
   if (quant_scale_count > 0) {
     CHECK(quant_scales);
     // INT8 only supports symmetric per-layer or per-channel quantization
-    return quant_scale_count > 1 ? NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL
-                                 : NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER;
+    return quant_scale_count > 1 ? NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL
+                                 : NNADAPTER_QUANT_INT8_SYMM_PER_LAYER;
   }
-  return NNADAPTER_TENSOR_INT8;
+  return NNADAPTER_INT8;
 }
 
 template <>
@@ -343,7 +331,7 @@ NNAdapterOperandPrecisionCode ConvertPODTypeToNNPrecisionCode<uint8_t>(
     uint32_t quant_scale_count,
     uint32_t quant_channel_dim) {
   CHECK_EQ(quant_scale_count, 0);
-  return NNADAPTER_TENSOR_UINT8;
+  return NNADAPTER_UINT8;
 }
 
 template <>
@@ -354,10 +342,10 @@ NNAdapterOperandPrecisionCode ConvertPODTypeToNNPrecisionCode<int16_t>(
   if (quant_scale_count > 0) {
     CHECK(quant_scales);
     // INT8 only supports symmetric per-layer or per-channel quantization
-    return quant_scale_count > 1 ? NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_CHANNEL
-                                 : NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_LAYER;
+    return quant_scale_count > 1 ? NNADAPTER_QUANT_INT16_SYMM_PER_CHANNEL
+                                 : NNADAPTER_QUANT_INT16_SYMM_PER_LAYER;
   }
-  return NNADAPTER_TENSOR_INT16;
+  return NNADAPTER_INT16;
 }
 
 template <>
@@ -366,7 +354,7 @@ NNAdapterOperandPrecisionCode ConvertPODTypeToNNPrecisionCode<uint16_t>(
     uint32_t quant_scale_count,
     uint32_t quant_channel_dim) {
   CHECK_EQ(quant_scale_count, 0);
-  return NNADAPTER_TENSOR_UINT16;
+  return NNADAPTER_UINT16;
 }
 
 template <>
@@ -377,10 +365,10 @@ NNAdapterOperandPrecisionCode ConvertPODTypeToNNPrecisionCode<int32_t>(
   if (quant_scale_count > 0) {
     CHECK(quant_scales);
     // INT32 only supports symmetric per-layer or per-channel quantization
-    return quant_scale_count > 1 ? NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL
-                                 : NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER;
+    return quant_scale_count > 1 ? NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL
+                                 : NNADAPTER_QUANT_INT32_SYMM_PER_LAYER;
   }
-  return NNADAPTER_TENSOR_INT32;
+  return NNADAPTER_INT32;
 }
 
 template <>
@@ -389,7 +377,7 @@ NNAdapterOperandPrecisionCode ConvertPODTypeToNNPrecisionCode<uint32_t>(
     uint32_t quant_scale_count,
     uint32_t quant_channel_dim) {
   CHECK_EQ(quant_scale_count, 0);
-  return NNADAPTER_TENSOR_UINT32;
+  return NNADAPTER_UINT32;
 }
 
 template <>
@@ -398,7 +386,7 @@ NNAdapterOperandPrecisionCode ConvertPODTypeToNNPrecisionCode<int64_t>(
     uint32_t quant_scale_count,
     uint32_t quant_channel_dim) {
   CHECK_EQ(quant_scale_count, 0);
-  return NNADAPTER_TENSOR_INT64;
+  return NNADAPTER_INT64;
 }
 
 template <>
@@ -407,7 +395,7 @@ NNAdapterOperandPrecisionCode ConvertPODTypeToNNPrecisionCode<uint64_t>(
     uint32_t quant_scale_count,
     uint32_t quant_channel_dim) {
   CHECK_EQ(quant_scale_count, 0);
-  return NNADAPTER_TENSOR_UINT64;
+  return NNADAPTER_UINT64;
 }
 
 template <>
@@ -416,7 +404,7 @@ NNAdapterOperandPrecisionCode ConvertPODTypeToNNPrecisionCode<float>(
     uint32_t quant_scale_count,
     uint32_t quant_channel_dim) {
   CHECK_EQ(quant_scale_count, 0);
-  return NNADAPTER_TENSOR_FLOAT32;
+  return NNADAPTER_FLOAT32;
 }
 
 template <>
@@ -425,7 +413,7 @@ NNAdapterOperandPrecisionCode ConvertPODTypeToNNPrecisionCode<double>(
     uint32_t quant_scale_count,
     uint32_t quant_channel_dim) {
   CHECK_EQ(quant_scale_count, 0);
-  return NNADAPTER_TENSOR_FLOAT64;
+  return NNADAPTER_FLOAT64;
 }
 
 NNAdapterOperandPrecisionCode ConvertFluidDataTypeToNNPrecisionCode(
@@ -437,52 +425,49 @@ NNAdapterOperandPrecisionCode ConvertFluidDataTypeToNNPrecisionCode(
     if (quant_scale_count > 0) {
       CHECK(quant_scales);
       // INT8 only supports symmetric per-layer or per-channel quantization
-      return quant_scale_count > 1
-                 ? NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL
-                 : NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER;
+      return quant_scale_count > 1 ? NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL
+                                   : NNADAPTER_QUANT_INT8_SYMM_PER_LAYER;
     }
-    return NNADAPTER_TENSOR_INT8;
+    return NNADAPTER_INT8;
   } else if (fluid_dtype == 1) {  // INT16 = 1
     if (quant_scale_count > 0) {
       CHECK(quant_scales);
       // INT16 only supports symmetric per-layer or per-channel quantization
-      return quant_scale_count > 1
-                 ? NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_CHANNEL
-                 : NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_LAYER;
+      return quant_scale_count > 1 ? NNADAPTER_QUANT_INT16_SYMM_PER_CHANNEL
+                                   : NNADAPTER_QUANT_INT16_SYMM_PER_LAYER;
     }
-    return NNADAPTER_TENSOR_INT16;
+    return NNADAPTER_INT16;
   } else if (fluid_dtype == 2) {  // INT32 = 2
     if (quant_scale_count > 0) {
       CHECK(quant_scales);
       // INT32 only supports symmetric per-layer or per-channel quantization
-      return quant_scale_count > 1
-                 ? NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL
-                 : NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER;
+      return quant_scale_count > 1 ? NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL
+                                   : NNADAPTER_QUANT_INT32_SYMM_PER_LAYER;
     }
-    return NNADAPTER_TENSOR_INT32;
+    return NNADAPTER_INT32;
   }
   CHECK_EQ(quant_scale_count, 0);
   switch (fluid_dtype) {
     case 0:  // BOOL = 0;
-      return NNADAPTER_TENSOR_BOOL8;
+      return NNADAPTER_BOOL8;
     case 2:  // INT32 = 2
-      return NNADAPTER_TENSOR_INT32;
+      return NNADAPTER_INT32;
     case 3:  // INT64 = 3
-      return NNADAPTER_TENSOR_INT64;
+      return NNADAPTER_INT64;
     case 4:  // FP16 = 4
-      return NNADAPTER_TENSOR_FLOAT16;
+      return NNADAPTER_FLOAT16;
     case 5:  // FP32 = 5
-      return NNADAPTER_TENSOR_FLOAT32;
+      return NNADAPTER_FLOAT32;
     case 6:  // FP64 = 6
-      return NNADAPTER_TENSOR_FLOAT64;
+      return NNADAPTER_FLOAT64;
     case 20:  // UINT8 = 20
-      return NNADAPTER_TENSOR_UINT8;
+      return NNADAPTER_UINT8;
     default:
       LOG(FATAL) << "Unable to convert a fluid data type(" << fluid_dtype
                  << ") to a NNAdapter precision code";
       break;
   }
-  return NNADAPTER_TENSOR_FLOAT32;
+  return NNADAPTER_FLOAT32;
 }
 
 NNAdapterOperandPrecisionCode ConvertPrecisionTypeToNNPrecisionCode(
@@ -494,51 +479,48 @@ NNAdapterOperandPrecisionCode ConvertPrecisionTypeToNNPrecisionCode(
     if (quant_scale_count > 0) {
       CHECK(quant_scales);
       // INT8 only supports symmetric per-layer or per-channel quantization
-      return quant_scale_count > 1
-                 ? NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL
-                 : NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER;
+      return quant_scale_count > 1 ? NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL
+                                   : NNADAPTER_QUANT_INT8_SYMM_PER_LAYER;
     }
-    return NNADAPTER_TENSOR_INT8;
+    return NNADAPTER_INT8;
   } else if (precision_type == PRECISION(kInt16)) {
     if (quant_scale_count > 0) {
       CHECK(quant_scales);
       // INT16 only supports symmetric per-layer or per-channel quantization
-      return quant_scale_count > 1
-                 ? NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_CHANNEL
-                 : NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_LAYER;
+      return quant_scale_count > 1 ? NNADAPTER_QUANT_INT16_SYMM_PER_CHANNEL
+                                   : NNADAPTER_QUANT_INT16_SYMM_PER_LAYER;
     }
-    return NNADAPTER_TENSOR_INT32;
+    return NNADAPTER_INT32;
   } else if (precision_type == PRECISION(kInt32)) {
     if (quant_scale_count > 0) {
       CHECK(quant_scales);
       // INT32 only supports symmetric per-layer or per-channel quantization
-      return quant_scale_count > 1
-                 ? NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL
-                 : NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER;
+      return quant_scale_count > 1 ? NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL
+                                   : NNADAPTER_QUANT_INT32_SYMM_PER_LAYER;
     }
-    return NNADAPTER_TENSOR_INT32;
+    return NNADAPTER_INT32;
   }
   CHECK_EQ(quant_scale_count, 0);
   switch (precision_type) {
     case PRECISION(kFloat):
-      return NNADAPTER_TENSOR_FLOAT32;
+      return NNADAPTER_FLOAT32;
     case PRECISION(kFP16):
-      return NNADAPTER_TENSOR_FLOAT16;
+      return NNADAPTER_FLOAT16;
     case PRECISION(kBool):
-      return NNADAPTER_TENSOR_BOOL8;
+      return NNADAPTER_BOOL8;
     case PRECISION(kInt64):
-      return NNADAPTER_TENSOR_INT64;
+      return NNADAPTER_INT64;
     case PRECISION(kUInt8):
-      return NNADAPTER_TENSOR_UINT8;
+      return NNADAPTER_UINT8;
     case PRECISION(kFP64):
-      return NNADAPTER_TENSOR_FLOAT64;
+      return NNADAPTER_FLOAT64;
     default:
       LOG(FATAL) << "Unable to convert a precision type("
                  << lite_api::PrecisionToStr(precision_type)
                  << ") to a NNAdapter precision code!";
       break;
   }
-  return NNADAPTER_TENSOR_FLOAT32;
+  return NNADAPTER_FLOAT32;
 }
 
 NNAdapterOperationType ConvertUnaryActTypeToNNOperationType(
@@ -624,37 +606,37 @@ PrecisionType ConvertNNPrecisionCodeToPrecisionType(
     NNAdapterOperandPrecisionCode precision_code) {
   PrecisionType precision_type = PRECISION(kUnk);
   switch (precision_code) {
-    case NNADAPTER_TENSOR_BOOL8:
+    case NNADAPTER_BOOL8:
       precision_type = PRECISION(kBool);
       break;
-    case NNADAPTER_TENSOR_INT8:
-    case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER:
-    case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL:
-    case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER:
+    case NNADAPTER_INT8:
+    case NNADAPTER_QUANT_INT8_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL:
+    case NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER:
       precision_type = PRECISION(kInt8);
       break;
-    case NNADAPTER_TENSOR_INT16:
-    case NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_LAYER:
-    case NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_CHANNEL:
-    case NNADAPTER_TENSOR_QUANT_UINT16_ASYMM_PER_LAYER:
+    case NNADAPTER_INT16:
+    case NNADAPTER_QUANT_INT16_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT16_SYMM_PER_CHANNEL:
+    case NNADAPTER_QUANT_UINT16_ASYMM_PER_LAYER:
       precision_type = PRECISION(kInt16);
       break;
-    case NNADAPTER_TENSOR_INT32:
-    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER:
-    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL:
-    case NNADAPTER_TENSOR_QUANT_UINT32_ASYMM_PER_LAYER:
+    case NNADAPTER_INT32:
+    case NNADAPTER_QUANT_INT32_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL:
+    case NNADAPTER_QUANT_UINT32_ASYMM_PER_LAYER:
       precision_type = PRECISION(kInt32);
       break;
-    case NNADAPTER_TENSOR_INT64:
+    case NNADAPTER_INT64:
       precision_type = PRECISION(kInt64);
       break;
-    case NNADAPTER_TENSOR_FLOAT16:
+    case NNADAPTER_FLOAT16:
       precision_type = PRECISION(kFP16);
       break;
-    case NNADAPTER_TENSOR_FLOAT32:
+    case NNADAPTER_FLOAT32:
       precision_type = PRECISION(kFloat);
       break;
-    case NNADAPTER_TENSOR_FLOAT64:
+    case NNADAPTER_FLOAT64:
       precision_type = PRECISION(kFP64);
       break;
     default:

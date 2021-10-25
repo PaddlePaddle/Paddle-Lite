@@ -34,9 +34,9 @@ namespace operation {
   if (IsConstantOperand(k_operand)) {                                    \
     auto k_precision = k_operand->type.precision;                        \
     auto k_buffer = k_operand->buffer;                                   \
-    if (k_precision == NNADAPTER_TENSOR_INT32) {                         \
+    if (k_precision == NNADAPTER_INT32) {                                \
       k = *reinterpret_cast<int32_t*>(k_buffer);                         \
-    } else if (k_precision == NNADAPTER_TENSOR_INT64) {                  \
+    } else if (k_precision == NNADAPTER_INT64) {                         \
       k = *reinterpret_cast<int64_t*>(k_buffer);                         \
     } else {                                                             \
       NNADAPTER_LOG(FATAL) << "Unsupported the precision type:"          \
