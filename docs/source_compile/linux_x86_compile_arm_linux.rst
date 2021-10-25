@@ -165,7 +165,7 @@ Paddle Lite 仓库中 \ ``./lite/tools/build_linux.sh``\ 脚本文件用于构�
    │       └── libpaddle_light_api_shared.so             C++ light_api 动态库
    │
    └── demo                                              C++
-   │   └── cxx                                           C++ 预测库demo
+   │   └── cxx                                           C++ 预测库 demo
 
 
 多设备支持
