@@ -77,11 +77,11 @@ readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 
 
 
-#####################################################################################################
-# 2. local variables, these variables should not be changed.
-#####################################################################################################
-# url that stores third-party zip file to accelerate third-paty lib installation
-readonly THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
+    #####################################################################################################
+    # 2. local variables, these variables should not be changed.
+    #####################################################################################################
+    # url that stores third-party zip file to accelerate third-paty lib installation
+    readonly THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
 # absolute path of Paddle-Lite.
 readonly workspace=$PWD/$(dirname $0)/../../
 # basic options for linux compiling.
@@ -95,15 +95,16 @@ function set_benchmark_options {
   WITH_EXTRA=ON
   WITH_EXCEPTION=ON
   WITH_NNADAPTER=ON
+  # Turn off opencl. Additional third party library need to be installed on
+  # Linux. Otherwise opencl is not supported on Linux. See link for more info:
+  # https://software.intel.com/content/www/us/en/develop/articles/opencl-drivers.html
+  # For arm linux os, opencl is also disabled by default because some devices have not
+  # fully support opencl.
+  WITH_OPENCL=OFF
   if [ "${ARCH}" == "x86" ]; then
-    # Turn off opencl. Additional third party library need to be installed on
-    # Linux. Otherwise opencl is not supported on Linux. See link for more info:
-    # https://software.intel.com/content/www/us/en/develop/articles/opencl-drivers.html
-    WITH_OPENCL=OFF
     WITH_LIGHT_WEIGHT_FRAMEWORK=OFF
   else
     WITH_LIGHT_WEIGHT_FRAMEWORK=ON
-    WITH_OPENCL=ON
   fi
   if [ ${WITH_PROFILE} == "ON" ] || [ ${WITH_PRECISION_PROFILE} == "ON" ]; then
     WITH_LOG=ON

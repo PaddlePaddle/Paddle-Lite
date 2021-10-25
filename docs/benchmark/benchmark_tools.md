@@ -124,6 +124,7 @@ avg   = 32.723
 | :-- | :-- | :-- | :-- |
 | arch                  | 目标 ARM 架构    |  armv7 / armv8   |  armv8   |
 | toolchain             | 工具链           |  gcc / clang     |  gcc     |
+| with_opencl           | 编译 OpenCL     |  OFF / ON        |  OFF     |
 | with_profile          | 逐层时间 profile |  ON / OFF        |  OFF     |
 | with_precision_profile| 逐层精度 profile |  ON / OFF        |  OFF     |
 
@@ -140,11 +141,11 @@ avg   = 32.723
 wget https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/MobileNetV1.tar.gz
 tar zxvf MobileNetV1.tar.gz
 
-# 上传文件到 armlinux 设备
+# 上传文件到 arm linux 设备
 
 ```
 
-然后通过`ssh`登录到 armlinux 设备，执行：
+然后通过`ssh`登录到 arm linux 设备，执行：
 ```shell
 # 性能测试
 cd /path/to/benchmark_bin; \
@@ -367,6 +368,7 @@ Benchnark 工具提供了丰富的运行时选项，来满足不同的运行时�
 - 设备 OS 为 macOS(x86 芯片) 时，通过使用`--backend=opencl,x86`来实现
 
 说明：
+- 当考虑在 ARM Linux 系统的设备上，使用 GPU 运行模型时，需要在编译时手动添加编译选项`--with_opencl=ON`
 - 由于 Linux 上运行 OpenCL 必须提前预装 OpenCL 相关驱动库，因此暂不支持使用 Linux 系统上的 GPU 执行模型推理预测
 - 当指定在 GPU 上运行模型时，有如下 4 个重要运行时参数，不同设置会对性能有较大影响：
   - `--opencl_cache_dir`：设置 opencl cache 文件的存放路径，当显式设置该选项后，会开启 opencl kernel 预编译 和 auto-tune 功能
@@ -405,7 +407,7 @@ NNAdapter 已支持的新硬件列表如下：
 ##### NNAdapter 运行时库及新硬件 Hal 库编译
 ###### nnadapter.so
 - Huawei Kirin NPU / Mediatek NPU 请参考 『在 Android 上运行性能测试』编译预测库。
-— Huawei Ascend NPU（arm host） / Rockchip NPU / Imagination NNA / Amlogic NPU 请参考 『在 ARMLinux 上运行性能测试』编译预测库。
+— Huawei Ascend NPU（arm host） / Rockchip NPU / Imagination NNA / Amlogic NPU 请参考 『在 ARM Linux 上运行性能测试』编译预测库。
 - Huawei Ascend NPU（x86 host）请参考『在 Linux 上运行性能测试』编译预测库。
 - 新硬件所需的 DDK 可在 [Paddle Lite 通用示例程序](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)中获取。
 
