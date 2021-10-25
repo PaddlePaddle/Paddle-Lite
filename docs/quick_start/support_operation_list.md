@@ -8,7 +8,7 @@
 
 Host 端 Kernel 是算子在任意 CPU 上纯 C/C++ 的具体实现，具有可移植性强的特点，因此，它一般作为各特定平台算子实现的补充。
 
->> 以 ARM CPU 为例，如果模型中某个算子没有 ARM 端 Kernel，但是有 Host 端 Kernel，那么模型优化阶段该算子会选择 Host 端 Kernel，该模型还是可以顺利部署。
+以 ARM CPU 为例，如果模型中某个算子没有 ARM 端 Kernel，但是有 Host 端 Kernel，那么模型优化阶段该算子会选择 Host 端 Kernel，该模型还是可以顺利部署。
 
 | OP_name| ARM | OpenCL | Metal | 百度XPU | Host | X86 | 比特大陆 | 英特尔FPGA | 寒武纪mlu | 华为昇腾NPU | 联发科APU | 瑞芯微NPU | 华为麒麟NPU | 颖脉NNA | 晶晨NPU |
 |-:|-| -| -| -| -| -| -| -| -| -| -| -| -| -| -| 

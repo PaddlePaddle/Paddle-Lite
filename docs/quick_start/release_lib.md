@@ -111,6 +111,7 @@
 |x86 |3.5 |[v2.10-rc](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10-rc/inference_lite_lib.win.x86.MSVC.C++_static.py35.full_publish.zip) |
 |x86 |3.6 |[v2.10-rc](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10-rc/inference_lite_lib.win.x86.MSVC.C++_static.py36.full_publish.zip) |
 |x86 |3.7 |[v2.10-rc](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10-rc/inference_lite_lib.win.x86.MSVC.C++_static.py37.full_publish.zip) |
+|x86 |3.9 |[v2.10-rc](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10-rc/inference_lite_lib.win.x86.MSVC.C++_static.py39.full_publish.zip) |
 
 
 ## Opencl
@@ -153,12 +154,22 @@
 |armv7hf |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.armlinux.armv7hf.rockchip_npu.with_extra.with_log.tiny_publish.tar.gz) |
 |armv8   |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.armlinux.armv8.rockchip_npu.with_extra.with_log.tiny_publish.tar.gz)   |
 
+
+## 晶晨 NPU
+
+|Arch |下载链接 |适用的操作系统 |
+|:-----:|:-----:|:-----:|
+|armv7 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.android.armv7.amlogic_npu.with_extra.with_log.tiny_publish.tar.gz)  |Android |
+|armv8 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.armlinux.armv8.amlogic_npu.with_extra.with_log.tiny_publish.tar.gz) |Linux   |
+
+
 ## 联发科 APU
 
 |Arch |下载链接 |
 |:-----:|:-----:|
 |armv7 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.android.armv7.mediatek_apu.with_extra.with_log.tiny_publish.tar.gz) |
 |armv8 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.android.armv8.mediatek_apu.with_extra.with_log.tiny_publish.tar.gz) |
+
 
 ## 颖脉 NNA
 
