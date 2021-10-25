@@ -204,8 +204,10 @@ function run_on_remote_device() {
   local model_name=$(basename $model_dir)
   local input_shape=`jq -r --arg v $model_name '.model[] | select(.name == $v).input_shape' $config_path`
   local backends=""
-  if [[ "$os" == "android" || "$os" == "armlinux" ]]; then
+  if [[ "$os" == "android" ]]; then
     backends=("arm" "opencl,arm")
+  elif [ "$os" == "armlinux" ]; then
+    backends=("arm")
   elif [ "$os" == "linux" ]; then
     backends=("x86")
   elif [ "$os" == "macos" ]; then
