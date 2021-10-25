@@ -261,8 +261,7 @@ void Conv2dCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
                                                                bias_ptr + g * m,
                                                                relu_type,
                                                                relu_alpha);
-      void *class_ptr = reinterpret_cast<void*>(&gemm);
-      gemm_s8_ptr_.push_back(class_ptr);
+      gemm_s8_ptr_float_.push_back(gemm);
     }
   }
 
@@ -318,9 +317,7 @@ void Conv2dCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                       dilations[0],
                                       dilations[1],
                                       col_data);
-      lite::x86::math::generate_gemm_s8u8_x86_kern<float> *gemm_ptr = 
-        reinterpret_cast<lite::x86::math::generate_gemm_s8u8_x86_kern<float> *>(gemm_s8_ptr_[g]);
-      gemm_ptr->compute(weights_group, din_group, dout_group);
+      gemm_s8_ptr_float_[g].compute(weights_group, din_group, dout_group);
     }
   }
   if (!flag_1x1gemm_) TargetFree(TARGET(kX86), col_data);
@@ -395,8 +392,7 @@ void Conv2dCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
                                                                 bias_ptr + g * m,
                                                                 relu_type,
                                                                 relu_alpha);
-      void *class_ptr = reinterpret_cast<void*>(&gemm);
-      gemm_s8_ptr_.push_back(class_ptr);
+      gemm_s8_ptr_int8_.push_back(gemm);
     }
   }
   if (impl_) {
@@ -451,9 +447,7 @@ void Conv2dCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
                                       dilations[0],
                                       dilations[1],
                                       col_data);
-      lite::x86::math::generate_gemm_s8u8_x86_kern<int8_t> *gemm_ptr = 
-        reinterpret_cast<lite::x86::math::generate_gemm_s8u8_x86_kern<int8_t> *>(gemm_s8_ptr_[g]);
-      gemm_ptr->compute(weights_group, din_group, dout_group);
+      gemm_s8_ptr_int8_[g].compute(weights_group, din_group, dout_group);
     }
   }
   if (!flag_1x1gemm_) TargetFree(TARGET(kX86), col_data);

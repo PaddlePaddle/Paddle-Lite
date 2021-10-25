@@ -82,7 +82,8 @@ class Conv2dCompute : public KernelLite<TARGET(kX86), Ptype> {
   std::vector<float> w_scale_;
   Tensor weights_;
   Tensor bias_;
-  std::vector<void*> gemm_s8_ptr_;
+  std::vector<lite::x86::math::generate_gemm_s8u8_x86_kern<float>> gemm_s8_ptr_float_;
+  std::vector<lite::x86::math::generate_gemm_s8u8_x86_kern<int8_t>> gemm_s8_ptr_int8_;
 };
 
 }  // namespace x86
