@@ -106,7 +106,7 @@ Paddle Lite 仓库中\ ``./lite/tools/build_ios.sh``\ 脚本文件用于构建 i
 ..
 
    **说明：**
-   执行`./lite/tools/build_ios.sh help`可输出各选项的使用说明信息。
+   执行\ ``./lite/tools/build_ios.sh help``\ 可输出各选项的使用说明信息。
 
 
 编译步骤
@@ -122,7 +122,7 @@ Paddle Lite 仓库中\ ``./lite/tools/build_ios.sh``\ 脚本文件用于构建 i
    # (可选) 删除 third-party 目录，编译脚本会自动从国内 CDN 下载第三方库文件
    # rm -rf third-party
 
-   # 2. 编译 Paddle-Lite iOS 预测库
+   # 2. 编译 Paddle Lite iOS 预测库
    ./lite/tools/build_ios.sh
 
 ..
@@ -143,7 +143,7 @@ iOS CPU 预测库 (armv8)
 .. code-block:: shell
 
    inference_lite_lib.ios64.armv8
-   ├── include                                                C++头文件
+   ├── include                                                C++ 头文件
    │   ├── paddle_api.h
    │   ├── paddle_image_preprocess.h
    │   ├── paddle_lite_factory_helper.h
@@ -151,7 +151,7 @@ iOS CPU 预测库 (armv8)
    │   ├── paddle_use_kernels.h
    │   ├── paddle_use_ops.h
    │   └── paddle_use_passes.h
-   └── lib                                                    C++预测库（静态库）
+   └── lib                                                    C++ 预测库（静态库）
        └── libpaddle_api_light_bundled.a
 
 
@@ -164,7 +164,7 @@ iOS GPU 预测库 (armv8)
 .. code-block:: shell
 
    inference_lite_lib.ios64.armv8
-   ├── include                                                C++头文件
+   ├── include                                                C++ 头文件
    │   ├── paddle_api.h
    │   ├── paddle_image_preprocess.h
    │   ├── paddle_lite_factory_helper.h
@@ -172,8 +172,8 @@ iOS GPU 预测库 (armv8)
    │   ├── paddle_use_kernels.h
    │   ├── paddle_use_ops.h
    │   └── paddle_use_passes.h
-   ├── metal                                                  metallib文件
+   ├── metal                                                  metallib 文件
    │   └── lite.metallib
-   └── lib                                                    C++预测库（静态库）
+   └── lib                                                    C++ 预测库（静态库）
        └── libpaddle_api_light_bundled.a
 
