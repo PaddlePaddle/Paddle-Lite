@@ -16,7 +16,7 @@ Benchmark 工具的详细功能包括但不限于：
 ## 适用场景
 Benchmark 工具可方便快捷地评测给定模型在如下硬件上运行时的性能：
 - 安卓系统下的 ARM CPU / GPU / NNAdapter
-- Linux 系统下的 X86 CPU / ARM CPU / ARM GPU / NNAdapter
+- Linux 系统下的 x86 CPU / ARM CPU / ARM GPU / NNAdapter
 - macOS 系统下的 CPU / GPU
 
 备注：本工具正在支持对运行在 M1 芯片上的模型进行性能测试
@@ -391,19 +391,19 @@ adb shell "cd /data/local/tmp/benchmark;
 
 ### 在 NNAdapter 上运行模型
 在 NNAdapter 上运行模型，需配置三个重要参数：
-- `--backend`：设置模型运行时的后端，支持 nnadapter 与 x86、arm 组合进行异构计算
-- `--nnadapter_device_names`：设置 nnadapter 的实际新硬件后端
+- `--backend`：设置模型运行时的后端，支持 NNAdapter 与 x86、ARM 组合进行异构计算
+- `--nnadapter_device_names`：设置 NNAdapter 的实际新硬件后端
 - `--nnadapter_context_properties`：设置新硬件硬件资源（目前仅在 Huawei Ascend NPU 上使用）
 
 #### 运行前的数据准备
-##### 步骤1：编译 benchmark_bin
+##### 步骤 1：编译 benchmark_bin
 - Huawei Kirin NPU / Mediatek NPU / Amlogic NPU(S905D3 Android 版本) 请参考 『在 Android 上运行性能测试』进行编译。
 - Huawei Ascend NPU（arm host） / Rockchip NPU / Imagination NNA / Amlogic NPU(C308X 或 A311D) 请参考 『在 ARM Linux 上运行性能测试』进行编译。
 - Huawei Ascend NPU（x86 host）请参考『在 Linux 上运行性能测试』进行编译。
 
 编译完成后，会生成`build.lite.*./lite/api/benchmark_bin`二进制文件。
 
-##### 步骤2：编译 NNAdapter 运行时库与 NNAdapter Device HAL 库
+##### 步骤 2：编译 NNAdapter 运行时库与 NNAdapter Device HAL 库
 请参考下表编译指南，编译 NNAdapter 运行时库及 NNAdapter Device HAL 库
 
 |No.| 新硬件名称 | Device HAL 库名称|编译指南 |
@@ -417,8 +417,9 @@ adb shell "cd /data/local/tmp/benchmark;
 
 编译完成后，NNAdapter 运行时库和 Device HAL 库将会生成在`build.lite*/inference_lite_lib*/cxx/lib/`目录下。
 
-##### 步骤3：获取新硬件 DDK
+##### 步骤 3：获取新硬件 DDK
 请下载 [Paddle Lite 通用示例程序](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)，并参照下表路径，获取新硬件所需的 DDK。
+
 |No.| 新硬件名称 | DDK 路径 |
 |---|---|---|
 |1|Huawei Kirin NPU| PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/huawei_kirin_npu<br>PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/huawei_kirin_npu |
@@ -428,8 +429,8 @@ adb shell "cd /data/local/tmp/benchmark;
 |5|Mediatek APU| PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/mediatek_apu |
 |6|Amlogic NPU| PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/amlogic_npu<br>PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/amlogic_npu|
 
-##### 步骤4：拷贝数据到新硬件设备
-将 benchmark_bin 及所需动态库全部拷入新硬件设备后，即可开始运行模型并获得性能数据。
+##### 步骤 4：拷贝数据到新硬件设备
+将 `benchmark_bin` 及所需动态库全部拷入新硬件设备后，即可开始运行模型并获得性能数据。
 - 对于 Android 设备，我们建议您将全部数据放在`/data/local/tmp/benchmark`目录下
 - 对于 Linux 设备，我们建议您将全部数据放在`~/benchmark`目录下
 
@@ -457,7 +458,7 @@ export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH;
 
 ##### 在 Huawei Ascend NPU 上运行模型
 ```shell
-# Host 侧为 x86 cpu 时
+# Host 侧为 x86 CPU 时
 # 拷贝 benchmark 文件夹到新硬件
 ssh name@ip -p22 "rm -rf ~/benchmark"
 scp -r ~/benchmark name@ip:~
@@ -476,7 +477,7 @@ export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH
   --nnadapter_device_names=huawei_ascend_npu \
   --nnadapter_context_properties="HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0"
 
-# Host 侧为 arm cpu 时
+# Host 侧为 ARM CPU 时
 # 拷贝 benchmark 文件夹到新硬件
 ssh name@ip -p22 "rm -rf ~/benchmark"
 scp -r ~/benchmark name@ip:~
