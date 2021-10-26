@@ -218,8 +218,8 @@ Paddle Lite 仓库中 \ ``/lite/tools/build_android.sh``\  脚本文件用于构
    │   └── src
    │
    └── demo                                              C++ 和 Java 示例代码
-       ├── cxx                                           C++ 预测库demo
-       └── java                                          Java 预测库demo
+       ├── cxx                                           C++ 预测库 demo
+       └── java                                          Java 预测库 demo
 
 多设备支持
 ------------

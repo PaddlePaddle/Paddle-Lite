@@ -164,7 +164,14 @@ void TestScaleRelu6(Place place, float abs_error) {
 TEST(Scale, precision) {
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-1;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-1;  // Using fp16 in NPU
 #elif defined(LITE_WITH_OPENCL)
