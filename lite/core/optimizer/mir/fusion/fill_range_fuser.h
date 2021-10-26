@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,9 +14,25 @@
 
 #pragma once
 
-USE_SUBGRAPH_BRIDGE(cast, kNNAdapter, "huawei_ascend_npu");
-USE_SUBGRAPH_BRIDGE(norm, kNNAdapter, "huawei_ascend_npu");
-USE_SUBGRAPH_BRIDGE(dropout, kNNAdapter, "huawei_ascend_npu");
-USE_SUBGRAPH_BRIDGE(p_norm, kNNAdapter, "huawei_ascend_npu");
-USE_SUBGRAPH_BRIDGE(pad2d, kNNAdapter, "huawei_ascend_npu");
-USE_SUBGRAPH_BRIDGE(pad3d, kNNAdapter, "huawei_ascend_npu");
+#include <memory>
+#include <string>
+#include "lite/core/optimizer/mir/pattern_matcher_high_api.h"
+
+namespace paddle {
+namespace lite {
+namespace mir {
+namespace fusion {
+
+class FillRangeFuser : public FuseBase {
+ public:
+  void BuildPattern() override;
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
+
+ private:
+  cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
+};
+
+}  // namespace fusion
+}  // namespace mir
+}  // namespace lite
+}  // namespace paddle

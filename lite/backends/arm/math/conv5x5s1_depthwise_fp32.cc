@@ -783,7 +783,7 @@ inline std::pair<uint32_t, uint32_t> right_mask_5x5s1p2_fp32(int win,
     cnt_col++;
     size_right_remain -= 8;
   }
-  uint32_t cnt_remain = (size_right_remain == 10 && wout % 8 == 0)
+  uint32_t cnt_remain = (size_right_remain >= 9 && wout % 8 == 0)
                             ? 8
                             : static_cast<uint32_t>(wout % 8);
   size_right_remain = (cnt_remain == 8) ? size_right_remain :
@@ -1461,7 +1461,7 @@ inline std::pair<uint32_t, uint32_t> right_mask_5x5s1p2_fp32(int win,
     cnt_col++;
     size_right_remain -= 4;
   }
-  uint32_t cnt_remain = (size_right_remain == 6 && wout % 4 == 0)
+  uint32_t cnt_remain = (size_right_remain >= 5 && wout % 4 == 0)
                             ? 4
                             : static_cast<uint32_t>(wout % 4);
   size_right_remain = (cnt_remain == 4) ? size_right_remain :
@@ -2090,8 +2090,6 @@ void conv_depthwise_5x5s1p2_fp32(float *dout,
 #undef LEFT_RESULT_S1
 #undef LEFT_RESULT_S1_RELU
 #undef LEFT_RESULT_S1_RELU6
-#undef COMPUTE_S1_A
-#undef COMPUTE_S1_B
 #undef MID_COMPITE_S1
 #undef MID_RESULT_S1
 #undef MID_RESULT_S1_RELU
