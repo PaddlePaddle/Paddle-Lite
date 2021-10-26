@@ -33,7 +33,7 @@ Paddle Lite提供了 `C++` 、`Java` 、`Python` 三种 `API` ，只需简单五
 1. 声明 `MobileConfig` ，设置第二步优化后的模型文件路径，或选择从内存中加载模型
 2. 创建 `Predictor` ，调用 `CreatePaddlePredictor` 接口，一行代码即可完成引擎初始化
 3. 准备输入，通过 `predictor->GetInput(i)` 获取输入变量，并为其指定输入大小和输入值
-4. 执行预测，只需要运行 `predictor->Run()` 一行代码，即可使用Lite框架完成预测执行
+4. 执行预测，只需要运行 `predictor->Run()` 一行代码，即可使用 Paddle Lite 框架完成预测执行
 5. 获得输出，使用 `predictor->GetOutput(i)` 获取输出变量，并通过 `data<T>` 取得输出值
 
 Paddle Lite 提供了 `C++` 、`Java` 、`Python` 三种 `API` 的完整使用示例和开发说明文档，您可以参考示例中的说明文档进行快速学习，并集成到您自己的项目中去。
