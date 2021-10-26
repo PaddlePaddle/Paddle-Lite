@@ -36,13 +36,15 @@ void XPUFcCompute::PrepareForRun() {
   // max
   if (!quant_int8) {
     w_max = paddle::lite::xpu::math::FindMaxAbs(w_ptr, w_len);
-    std::vector<float> w_max_v(4, w_max);
-    weight_max_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
+    std::vector<float> w_max_v(lite::XPU_QUANT_SCALE_NUM, w_max);
+    weight_max_guard_ = TargetWrapperXPU::MallocScratchPad(
+        lite::XPU_QUANT_SCALE_NUM * sizeof(float));
     XPU_CALL(xpu_memcpy(reinterpret_cast<float*>(weight_max_guard_->addr_),
                         w_max_v.data(),
-                        4 * sizeof(float),
+                        lite::XPU_QUANT_SCALE_NUM * sizeof(float),
                         XPUMemcpyKind::XPU_HOST_TO_DEVICE));
-    input_max_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
+    input_max_guard_ = TargetWrapperXPU::MallocScratchPad(
+        lite::XPU_QUANT_SCALE_NUM * sizeof(float));
   }
   // transpose
   if (quant_int8) {
@@ -152,25 +154,29 @@ void XPUFcCompute::Run() {
           reinterpret_cast<float*>(input_max_guard_->addr_));
       CHECK_EQ(r, 0);
     }
-    r = xdnn::fc_int16(
-        ctx.GetRawContext(),        /* context */
-        false,                      /* TransA */
-        true,                       /* TransB */
-        m,                          /* m */
-        n,                          /* n */
-        k,                          /* k */
-        1.0f,                       /* alpha */
-        param.input->data<float>(), /* A */
+    r = xdnn::fc_fusion<float, int16_t, float, int16_t>(
+        ctx.GetRawContext(),                                           // ctx
+        param.input->data<float>(),                                    // x
+        reinterpret_cast<const int16_t*>(quant_weight_guard_->addr_),  // w
+        param.output->mutable_data<float>(TARGET(kXPU)),               // y
+        m,                                                             // m
+        n,                                                             // n
+        k,                                                             // k
+        false,  // x_trans
+        true,   // w_trans
         (input_max == nullptr)
             ? reinterpret_cast<const float*>(input_max_guard_->addr_)
-            : input_max,
-        reinterpret_cast<const int16_t*>(quant_weight_guard_->addr_), /* B */
-        reinterpret_cast<const float*>(weight_max_guard_->addr_),
-        0.0f,                                            /* beta */
-        param.output->mutable_data<float>(TARGET(kXPU)), /* C */
-        output_max,
-        bias, /* bias */
-        act /* act_type */);
+            : input_max,                                           // x_maxptr
+        reinterpret_cast<const float*>(weight_max_guard_->addr_),  // w_maxptr
+        output_max,                                                // y_maxptr
+        k,                                                         // ldx
+        k,                                                         // ldw
+        n,                                                         // ldy
+        1.0f,                                                      // alpha
+        0.0f,                                                      // beta
+        bias,                                                      // bias
+        act);                                                      // act
+
     CHECK_EQ(r, 0);
   } else if (param.precision == "int8") {
     bool x_trans = false;

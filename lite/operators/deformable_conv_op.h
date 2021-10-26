@@ -38,6 +38,7 @@ class DeformableConvOpLite : public OpLite {
 
   bool CheckShape() const override;
   bool InferShapeImpl() const override;
+  bool InferShapeWithCache() const override { return true; }
 
 #ifdef LITE_WITH_PROFILE
   void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter* ch) {
@@ -66,7 +67,6 @@ class DeformableConvOpLite : public OpLite {
 
   // TODO(Superjomn) replace framework::OpDesc with a lite one.
   bool AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) override {
-    AttachParam(&param_);
     auto X = op_desc.Input("Input").front();
     auto Filter = op_desc.Input("Filter").front();
     auto Mask = op_desc.Input("Mask").front();

@@ -37,6 +37,7 @@ if(MSVC)
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj")
 endif()
 
+
 if(LITE_WITH_FPGA)
     set(external_libs_DEPS ${external_libs_DEPS} ${fpga_deps})
 endif()
@@ -69,7 +70,6 @@ lite_cc_library(paddle_api_light SRCS ${LIGHT_API_SRC} DEPS ${light_lib_DEPS} ${
 if(NOT LITE_ON_TINY_PUBLISH)
   lite_cc_library(paddle_api_full SRCS ${FULL_API_SRC} DEPS ${full_lib_DEPS} ${external_libs_DEPS})
 endif()
-
 
 if (NOT LITE_ON_TINY_PUBLISH)
     #dynamic library
@@ -138,7 +138,8 @@ else()
     add_dependencies(PADDLELITE_OBJS fbs_headers)
     if (IOS)
         # only sttaic lib is produced for IOS platform.
-        add_library(paddle_api_light_bundled STATIC $<TARGET_OBJECTS:PADDLELITE_OBJS>)
+        add_library(paddle_api_light_bundled STATIC ${__lite_cc_files})
+        add_dependencies(paddle_api_light_bundled fbs_headers)
     else()
         # 1. enable -flto compiling flag if toochain==gcc
         # TODO (hong19860320): Disable lto temporarily since it causes fail to catch the exceptions in android when toolchain is gcc.
@@ -205,9 +206,11 @@ endif()
 # python API
 if (LITE_WITH_PYTHON)
     # add library for opt_base
-    lite_cc_library(opt_base SRCS tools/opt_base.cc DEPS framework_proto)
     add_subdirectory(python)
+    lite_cc_library(lite_pybind SHARED SRCS python/pybind/pybind.cc tools/opt_base.cc DEPS ${full_lib_DEPS} paddle_api_full ${external_libs_DEPS}  pybind python)
 endif()
+
+
 
 # test_model_bin
 if(NOT IOS AND NOT LITE_ON_TINY_PUBLISH)

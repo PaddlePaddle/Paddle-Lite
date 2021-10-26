@@ -5,10 +5,10 @@
 | :-- |  :-- |--: |
 | LITE_WITH_LOG |  是否输出日志信息 | ON |
 | LITE_WITH_EXCEPTION | 是否在错误发生时抛出异常 | OFF |
-| LITE_WITH_TRAIN |  打开[模型训练功能](../demo_guides/cpp_train_demo.html)，支持移动端模型训练 | OFF |
-| LITE_BUILD_EXTRA |  编译[全量预测库](library.html)，包含更多算子和模型支持 | OFF |
-| LITE_BUILD_TAILOR | 编译时[根据模型裁剪预测库](library_tailoring.html)，缩小预测库大小 | OFF |
-| WITH_SYSTEM_BLAS |  编译时强制使用reference BLAS |  OFF |
+| LITE_WITH_TRAIN |  打开[模型训练功能](https://paddle-lite.readthedocs.io/zh/develop/demo_guides/cpp_train_demo.html)，支持移动端模型训练 | OFF |
+| LITE_BUILD_EXTRA |  编译[全量预测库](https://paddle-lite.readthedocs.io/zh/develop/source_compile/library.html)，包含更多算子和模型支持 | OFF |
+| LITE_BUILD_TAILOR | 编译时[根据模型裁剪预测库](https://paddle-lite.readthedocs.io/zh/develop/source_compile/library_tailoring.html)，缩小预测库大小 | OFF |
+| WITH_SYSTEM_BLAS |  编译时强制使用 reference BLAS |  OFF |
 
 ### 轻量级编译选项
 
@@ -25,35 +25,26 @@
 
 | 编译选项 |  说明  | 默认值 |
 | :-- |  :-- | --: |
-| LITE_WITH_PROFILE |  编译[Profiler工具](../user_guides/debug.html)，用于CPU上kernel耗时统计 | OFF |
-| LITE_WITH_PRECISION_PROFILE |  开启Profiler工具的模型精度分析功能 | OFF |
-| WITH_TESTING |  编译Lite单测模块 | OFF |
+| LITE_WITH_PROFILE |  编译[性能 Profiler 工具](https://paddle-lite.readthedocs.io/zh/develop/user_guides/profiler.html)，用于 kernel 耗时统计 | OFF |
+| LITE_WITH_PRECISION_PROFILE |  编译[精度 Profiler 工具](https://paddle-lite.readthedocs.io/zh/develop/user_guides/profiler.html)，用于 kernel 精度分析 | OFF |
+| WITH_TESTING |  编译 Lite 单测模块 | OFF |
 
-## 平台相关编译选项
+## 部分平台相关编译选项
 
 | 编译选项 |  说明  | 适用平台 | 默认值 |
 | :-- |  :-- | --: | --: |
-| LITE_WITH_ARM |  编译支持Andriod或ARMLinux平台预测库 | Andriod / ARMLinux | OFF |
-| LITE_WITH_JAVA |  编译支持[Java API](../api_reference/java_api_doc.html)的预测库 | Andriod / ARMLinux | OFF |
-| LITE_WITH_ARM_CLANG | 使用clang编译ARM平台预测库 | Andriod / ARMLinux |OFF |
-| WITH_ARM_DOTPROD |  编译ARM点积指令优化的预测库 | Andriod / ARMLinux |ON |
-| LITE_WITH_CV |  编译[CV图像加速库](../api_reference/cv.html) | Andirod / ARMLinux |OFF |
-| ANDROID_API_LEVEL | 设置安卓API LEVEL | Android | Default，即ARMv7下为16，ARMv8下为21 |
-| LITE_WITH_OPENMP |  编译时打开OpenMP | ARMLinux / X86 | ON |
-| LITE_WITH_X86 |  编译[X86平台](../demo_guides/x86.html)预测库 | X86 | ON |
-| WITH_AVX |  编译有AVX指令优化的预测库 | X86 |ON IF ${AVX_FOUND} |
-| WITH_MKL | 编译有Intel MKL支持的预测库 | X86 |ON IF ${AVX_FOUND} |
-| LITE_ON_MODEL_OPTIMIZE_TOOL |  编译[模型优化工具opt](../user_guides/model_optimize_tool.html) | X86 |OFF|
-| LITE_WITH_CUDA |  编译[CUDA平台](../demo_guides/cuda.html)预测库 | CUDA | OFF |
-| WITH_DSO |  编译动态CUDA库 | CUDA | ON |
-| LITE_WITH_STATIC_CUDA |   编译静态CUDA库 | CUDA |OFF |
-| LITE_WITH_NVTX | 是否打开NVIDIA Tools Extension (NVTX) | CUDA |OFF |
-| CUDA_WITH_FP16 |  编译CUDA FP16支持| CUDA |OFF |
-| LITE_WITH_PYTHON |  编译支持[Python API](../api_reference/python_api_doc.html)的预测库 | X86 / CUDA |OFF |
-| LITE_WITH_OPENCL |  编译[OpenCL平台](../demo_guides/opencl.html)预测库 | OpenCL | OFF |
-| LITE_WITH_FPGA |  编译[FPGA平台](../demo_guides/fpga.html)预测库 | FPGA | OFF |
-| LITE_WITH_NPU |  编译[华为NPU平台](../demo_guides/huawei_kirin_npu.html)预测库 | NPU | OFF |
-| LITE_WITH_RKNPU |  编译[瑞芯微NPU平台](../demo_guides/rockchip_npu.html)预测库 | RKNPU | OFF |
-| LITE_WITH_XPU |  编译[百度XPU平台](../demo_guides/baidu_xpu.html)预测库 | XPU |OFF |
-| LITE_WITH_XTCL | 通过XTCL方式支持百度XPU，默认Kernel方式 | XPU |OFF IF LITE_WITH_XPU |
-| LITE_WITH_APU | 编译[联发科APU平台](../demo_guides/mediatek_apu.html)预测库 | APU |OFF |
+| LITE_WITH_ARM |  编译支持 Andriod 或 ARMLinux 平台预测库 | Andriod / ARMLinux | OFF |
+| LITE_WITH_JAVA |  编译支持 [Java API](https://paddle-lite.readthedocs.io/zh/develop/api_reference/java_api_doc.html) 的预测库 | Andriod / ARMLinux | OFF |
+| LITE_WITH_ARM_CLANG | 使用 clang 编译 ARM 平台预测库 | Andriod / ARMLinux |OFF |
+| WITH_ARM_DOTPROD |  编译 ARM 点积指令优化的预测库 | Andriod / ARMLinux |ON |
+| LITE_WITH_CV |  编译 [CV 图像加速库](https://paddle-lite.readthedocs.io/zh/develop/api_reference/cv.html) | Andirod / ARMLinux |OFF |
+| ANDROID_API_LEVEL | 设置安卓 API LEVEL | Android | Default，即 ARMv7 下为16，ARMv8 下为21 |
+| LITE_WITH_OPENMP |  编译时打开 OpenMP | ARMLinux / X86 | ON |
+| LITE_WITH_X86 |  编译[ X86 平台](https://paddle-lite.readthedocs.io/zh/develop/demo_guides/x86.html)预测库 | X86 | ON |
+| WITH_AVX |  编译有 AVX 指令优化的预测库 | X86 |ON IF ${AVX_FOUND} |
+| WITH_MKL | 编译有 Intel MKL 支持的预测库 | X86 |ON IF ${AVX_FOUND} |
+| LITE_ON_MODEL_OPTIMIZE_TOOL |  编译[模型优化工具 opt](https://paddle-lite.readthedocs.io/zh/develop/user_guides/model_optimize_tool.html) | X86 |OFF|
+| LITE_WITH_PYTHON |  编译支持 [Python API](https://paddle-lite.readthedocs.io/zh/develop/api_reference/python_api_doc.html) 的预测库 | X86 / CUDA |OFF |
+| LITE_WITH_OPENCL |  编译 [OpenCL 平台](https://paddle-lite.readthedocs.io/zh/develop/demo_guides/opencl.html)预测库 | OpenCL | OFF |
+| LITE_WITH_XPU |  编译[百度 XPU 平台](https://paddle-lite.readthedocs.io/zh/develop/demo_guides/baidu_xpu.html)预测库 | XPU |OFF |
+| LITE_WITH_XTCL | 通过 XTCL 方式支持百度 XPU，默认 Kernel 方式 | XPU |OFF IF LITE_WITH_XPU |

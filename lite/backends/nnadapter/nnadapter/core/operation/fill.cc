@@ -32,14 +32,14 @@ int PrepareFill(hal::Operation* operation) {
     uint32_t length = shape_operand->length;
     auto shape_precision = shape_type.precision;
     switch (shape_precision) {
-      case NNADAPTER_TENSOR_INT32: {
+      case NNADAPTER_INT32: {
         int32_t* shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);
         uint32_t size = length / sizeof(int32_t);
         output_type.dimensions.count = size;
         memcpy(output_type.dimensions.data, shape_data, size * sizeof(int32_t));
         break;
       }
-      case NNADAPTER_TENSOR_INT64: {
+      case NNADAPTER_INT64: {
         int64_t* shape_data = reinterpret_cast<int64_t*>(shape_operand->buffer);
         uint32_t size = length / sizeof(int64_t);
         output_type.dimensions.count = size;
@@ -62,6 +62,7 @@ int PrepareFill(hal::Operation* operation) {
     return NNADAPTER_INVALID_PARAMETER;
   }
   output_type.precision = value_operand->type.precision;
+  output_type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
 }

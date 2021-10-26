@@ -61,6 +61,8 @@ INTEL_FPGA_SDK_ROOT="$(pwd)/intel_fpga_sdk"
 WITH_TRAIN=OFF
 # options of building tiny publish so
 WITH_TINY_PUBLISH=ON
+# controls whether to include FP16 kernels, default is OFF
+BUILD_ARM82_FP16=OFF
 # options of profiling
 WITH_PROFILE=OFF
 WITH_PRECISION_PROFILE=OFF
@@ -92,6 +94,7 @@ readonly CMAKE_COMMON_OPTIONS="-DWITH_LITE=ON \
 function set_benchmark_options {
   WITH_EXTRA=ON
   WITH_EXCEPTION=ON
+  WITH_NNADAPTER=ON
   if [ "${ARCH}" == "x86" ]; then
     # Turn off opencl. Additional third party library need to be installed on
     # Linux. Otherwise opencl is not supported on Linux. See link for more info:
@@ -197,6 +200,7 @@ function init_cmake_mutable_options {
                         -DLITE_WITH_INTEL_FPGA=$WITH_INTEL_FPGA \
                         -DINTEL_FPGA_SDK_ROOT=${INTEL_FPGA_SDK_ROOT} \
                         -DLITE_WITH_PROFILE=${WITH_PROFILE} \
+                        -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
                         -DLITE_WITH_PRECISION_PROFILE=${WITH_PRECISION_PROFILE} \
                         -DLITE_ON_TINY_PUBLISH=$WITH_TINY_PUBLISH"
 
@@ -552,6 +556,11 @@ function main {
                 ;;
             --intel_fpga_sdk_root=*)
                 INTEL_FPGA_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            # controls whether to include FP16 kernels, default is OFF
+            --with_arm82_fp16=*)
+                BUILD_ARM82_FP16="${i#*=}"
                 shift
                 ;;
             --with_profile=*)

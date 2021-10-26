@@ -183,10 +183,8 @@ static bool TargetCompatibleTo(const Type& a, const Type& b) {
     return x == TARGET(kHost) || x == TARGET(kX86) || x == TARGET(kARM) ||
            x == TARGET(kAny);
   };
-  if (a.IsVoid() || b.IsVoid()) return true;
   if (a.IsTensor() || b.IsTensor() || a.IsTensorList() || b.IsTensorList()) {
     return is_host(a.target()) ? is_host(b.target()) : a.target() == b.target();
-    return false;
   }
   return true;
 }
@@ -195,15 +193,18 @@ static bool DataLayoutCompatibleTo(const Type& a, const Type& b) {
   return a.IsVoid() ||                 //
          (a.layout() == b.layout() ||  //
           ((b.layout() == DATALAYOUT(kAny)) &&
-           (a.layout() != DATALAYOUT(kImageDefault))));
+           (a.layout() != DATALAYOUT(kImageDefault) &&
+            a.layout() != DATALAYOUT(kImageFolder))));
 }
 static bool DataLayoutCompatible(const Type& a, const Type& b) {
   return a.IsVoid() || b.IsVoid() ||   //
          (a.layout() == b.layout() ||  //
           ((b.layout() == DATALAYOUT(kAny)) &&
-           (a.layout() != DATALAYOUT(kImageDefault))) ||
+           (a.layout() != DATALAYOUT(kImageDefault) &&
+            a.layout() != DATALAYOUT(kImageFolder))) ||
           ((a.layout() == DATALAYOUT(kAny)) &&
-           (b.layout() != DATALAYOUT(kImageDefault))));
+           (b.layout() != DATALAYOUT(kImageDefault) &&
+            b.layout() != DATALAYOUT(kImageFolder))));
 }
 
 static bool PrecisionCompatibleTo(const Type& a, const Type& b) {

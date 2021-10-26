@@ -319,9 +319,9 @@ function build_and_test_on_remote_device() {
     local archs=(${arch_list//,/ })
     local toolchains=(${toolchain_list//,/ })
     local unit_test_check_items=(${unit_test_check_list//,/ })
-    for os in $oss; do
-        for arch in $archs; do
-            for toolchain in $toolchains; do
+    for os in ${oss[@]}; do
+        for arch in ${archs[@]}; do
+            for toolchain in ${toolchains[@]}; do
                 # Build all tests and prepare device environment for running tests
                 echo "Build tests with $arch+$toolchain"
                 $build_target_func $os $arch $toolchain $extra_arguments
@@ -401,7 +401,7 @@ function android_cpu_build_target() {
     mkdir -p $BUILD_DIR
     cd $BUILD_DIR
     prepare_workspace $ROOT_DIR $BUILD_DIR
-    
+
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
@@ -583,7 +583,7 @@ function huawei_ascend_npu_build_and_test() {
     cd $BUILD_DIR
     prepare_workspace $ROOT_DIR $BUILD_DIR
     local archs=(${ARCH_LIST//,/ })
-    for arch in $archs; do 
+    for arch in ${archs[@]}; do
         sdk_root_dir="/usr/local/Ascend/ascend-toolkit/latest"
         if [ "${arch}" == "x86" ]; then
             with_x86=ON

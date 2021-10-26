@@ -38,6 +38,7 @@ class ConvOpLite : public OpLite {
 
   bool CheckShape() const override;
   bool InferShapeImpl() const override;
+  bool InferShapeWithCache() const override { return true; }
 
 #ifdef LITE_WITH_PROFILE
   void GetOpRuntimeInfo(paddle::lite::profile::OpCharacter* ch) {
@@ -69,7 +70,6 @@ class ConvOpLite : public OpLite {
 
   // TODO(Superjomn) replace framework::OpDesc with a lite one.
   bool AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) override {
-    AttachParam(&param_);
     auto X = op_desc.Input("Input").front();
     auto Filter = op_desc.Input("Filter").front();
     auto Out = op_desc.Output("Output").front();
@@ -175,7 +175,7 @@ class ConvOpLite : public OpLite {
       padding_algorithm_ = op_desc.GetAttr<std::string>("padding_algorithm");
     }
     // For Int8
-    const OpInfo* op_info = dynamic_cast<const OpInfo*>(&op_desc);
+    const OpInfo* op_info = static_cast<const OpInfo*>(&op_desc);
     if (op_info != nullptr && op_info->HasAttr("enable_int8")) {
       param_.enable_int8 = op_info->GetAttr<bool>("enable_int8");
       auto input_scale_name = "Input0_scale";

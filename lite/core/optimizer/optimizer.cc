@@ -171,6 +171,8 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "lite_conv_scale_fuse_pass",
        "lite_conv_elementwise_tree_fuse_pass",
        "lite_greater_than_cast_fuse_pass",
+       "fill_range_fuse_pass",
+       "range_calc_offline_pass",
        "identity_dropout_eliminate_pass",
        "sparse_conv_detect_pass",
        "__xpu__max_pooling_pad_zero_detect_fuse_pass",
@@ -197,6 +199,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "__xpu__dynamic_lstm_fuse_pass",
        "__xpu__multi_softmax_fuse_pass",
        "ssd_boxes_calc_offline_pass",
+       "assign_value_calc_offline_pass",
        // Only for fully quantized model, infer the output scale and fix the
        // attribute 'enable_int8' for all of the quantized ops.
        "quantized_op_attributes_inference_pass",
