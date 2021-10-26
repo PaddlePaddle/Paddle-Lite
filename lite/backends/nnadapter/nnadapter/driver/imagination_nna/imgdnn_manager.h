@@ -76,6 +76,10 @@ class ImgdnnManager {
       imgdnn_tensor input1_tensor,
       imgdnn_operation_binary imgdnn_operation,
       imgdnn_quant_param quant_param);
+  imgdnn_tensor CreateReshapeLayer(imgdnn_tensor input_tensor,
+                                   unsigned int *shape,
+                                   uint32_t shape_count,
+                                   imgdnn_quant_param quant_param);
   imgdnn_tensor CreateSoftmaxLayer(imgdnn_tensor input_tensor,
                                    float beta,
                                    unsigned int axis,

@@ -62,7 +62,7 @@ int ConvertElementwise(Converter* converter, hal::Operation* operation) {
       break;
   }
 
-  // fuse RELU ?
+  // Fuse RELU
   if (fuse_code == NNADAPTER_FUSED_NONE) {
   } else if (fuse_code == NNADAPTER_FUSED_RELU) {
     output_tensor = ADD_OPERATOR(

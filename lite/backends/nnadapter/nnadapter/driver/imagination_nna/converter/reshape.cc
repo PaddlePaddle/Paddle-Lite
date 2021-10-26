@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "core/operation/mat_mul.h"
+#include "core/operation/reshape.h"
 #include "driver/imagination_nna/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -22,17 +22,17 @@
 namespace nnadapter {
 namespace imagination_nna {
 
-int ConvertMatMul(Converter* converter, hal::Operation* operation) {
-  MAT_MUL_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int ConvertReshape(Converter* converter, hal::Operation* operation) {
+  RESHAPE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to imgdnn tensors and operators
-  auto x_tensor = converter->GetMappedTensor(x_operand);
-  if (!x_tensor) {
-    x_tensor = converter->ConvertOperand(x_operand);
+  auto input_tensor = converter->GetMappedTensor(input_operand);
+  if (!input_tensor) {
+    input_tensor = converter->ConvertOperand(input_operand);
   }
-  auto y_tensor = converter->GetMappedTensor(y_operand);
-  if (!y_tensor) {
-    y_tensor = converter->ConvertOperand(y_operand);
+  unsigned int shape[shape_count];
+  for (size_t i = 0; i < shape_count; i++) {
+    shape[i] = static_cast<unsigned int>(shape_data[i]);
   }
   NNADAPTER_CHECK(
       IsUInt8AsymmPerLayerQuantType(output_operand->type.precision));
@@ -40,8 +40,8 @@ int ConvertMatMul(Converter* converter, hal::Operation* operation) {
   output_quant_param.scale = output_operand->type.asymm_per_layer_params.scale;
   output_quant_param.zero_point =
       output_operand->type.asymm_per_layer_params.zero_point;
-  auto output_tensor =
-      ADD_OPERATOR(CreateMatMulLayer, x_tensor, y_tensor, output_quant_param);
+  auto output_tensor = ADD_OPERATOR(
+      CreateReshapeLayer, input_tensor, shape, shape_count, output_quant_param);
   converter->UpdateTensorMap(output_operand, output_tensor);
   return NNADAPTER_NO_ERROR;
 }

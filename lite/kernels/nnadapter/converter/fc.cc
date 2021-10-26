@@ -45,11 +45,11 @@ int ConvertFC(Converter* converter, OpInfo* op, Scope* scope) {
   int64_t K = w_dims[0];
   int64_t N = w_dims[1];
 
-  auto output_name = op->Output("Output").front();
-  auto output_scale_name = "Output0_scale";
-  std::vector<float> output_scales;
-  if (op->HasOutputScale(output_scale_name, true)) {
-    output_scales = op->GetOutputScale(output_scale_name, true);
+  auto out_name = op->Output("Out").front();
+  auto out_scale_name = "Out0_scale";
+  std::vector<float> out_scales;
+  if (op->HasOutputScale(out_scale_name, true)) {
+    out_scales = op->GetOutputScale(out_scale_name, true);
   }
 
   int in_num_col_dims = op->GetAttr<int>("in_num_col_dims");
@@ -67,9 +67,9 @@ int ConvertFC(Converter* converter, OpInfo* op, Scope* scope) {
     CHECK(IsValidSymmPerLayerQuantParams(input_scales))
         << "Missing the quant params '" << input_scale_name
         << "' for the input '" << input_name << "'";
-    CHECK(IsValidSymmPerLayerQuantParams(output_scales))
-        << "Missing the quant params '" << output_scale_name
-        << "' for the output '" << output_name << "'";
+    CHECK(IsValidSymmPerLayerQuantParams(out_scales))
+        << "Missing the quant params '" << out_scale_name << "' for the out '"
+        << out_name << "'";
     is_quant_mode = true;
   }
 
@@ -79,6 +79,34 @@ int ConvertFC(Converter* converter, OpInfo* op, Scope* scope) {
       converter->AddInputOperand(scope, input_name, {}, input_scales);
   CHECK(input_operand);
   auto input_type = converter->GetOperandType(input_operand);
+  // // Shape operation
+  // auto shape_operand = converter->AddShapeOperation(input_operand, out_name,
+  // NNADAPTER_INT32);
+  // // slice and unsqueeze shape
+  // std::vector<int> axes = {0};
+  // std::vector<int> starts = {0};
+  // std::vector<int> ends = {in_num_col_dims};
+  // std::vector<int> steps = {1};
+  // auto slice_out_operand = converter->AddSliceOperation(shape_operand, axes,
+  // starts, ends, steps, out_name);
+  // // Concat operation
+  // auto k_operand = converter->AddConstantOperand(K);
+  // auto axis_operand = converter->AddConstantOperand(0);
+  // auto concat_output_operand = converter->AddOutputOperand(out_name);
+  // converter->AddOperation(NNADAPTER_CONCAT, {slice_out_operand, k_operand,
+  // axis_operand}, {concat_output_operand});
+  // Reshape input operand
+  std::vector<int32_t> shape;
+  for (uint32_t i = 0; i < in_num_col_dims; i++) {
+    shape.push_back(0);
+  }
+  shape.push_back(K);
+  auto shape_operand = converter->AddConstantOperand(shape);
+  auto input_reshape_operand =
+      converter->AddOutputOperand(out_name, out_scales);
+  converter->AddOperation(NNADAPTER_RESHAPE,
+                          {input_operand, shape_operand},
+                          {input_reshape_operand});
   // Weight operand
   NNAdapterOperand* weight_operand = nullptr;
   std::vector<float> bias_scales;
@@ -138,14 +166,17 @@ int ConvertFC(Converter* converter, OpInfo* op, Scope* scope) {
   // Transpose_y_operand
   auto transpose_y_operand = converter->AddConstantOperand(false);
   // Output operand
-  auto output_operand = converter->AddOutputOperand(output_name, output_scales);
+  auto output_operand = converter->AddOutputOperand(out_name, out_scales);
   // Matmul operation
-  converter->AddOperation(
-      NNADAPTER_MAT_MUL,
-      {input_operand, weight_operand, transpose_x_operand, transpose_y_operand},
-      {output_operand});
+  converter->AddOperation(NNADAPTER_MAT_MUL,
+                          {input_reshape_operand,
+                           weight_operand,
+                           transpose_x_operand,
+                           transpose_y_operand},
+                          {output_operand});
 
   // Bias operand
+  LOG(INFO) << "aaaaaaaaaaaaaaaaaaaaaaaaaaaa";
   NNAdapterOperand* bias_operand = nullptr;
   if (HasInput(op, scope, "Bias")) {
     auto bias_name = op->Input("Bias").front();
@@ -155,22 +186,22 @@ int ConvertFC(Converter* converter, OpInfo* op, Scope* scope) {
       CHECK(bias_tensor->persistable());
       auto bias_precison = bias_tensor->precision();
       auto bias_dims = bias_tensor->dims();
-      if (bias_dims.production() != K) {
+      if (bias_dims.production() != N) {
         LOG(FATAL)
-            << "Only supports bias_dims.production() == weight_dims[0] !";
+            << "Only supports bias_dims.production() == weight_dims[1] !";
         return UNSUPPORTED_FEATURE;
       }
       if (is_quant_mode) {
         CHECK(bias_tensor->precision() == PRECISION(kFloat));
         auto bias_data = bias_tensor->mutable_data<float>();
-        std::vector<int32_t> quantized_bias_data(K, 0);
-        SymmQuantizeData(bias_data, K, bias_scales, &quantized_bias_data[0]);
+        std::vector<int32_t> quantized_bias_data(N, 0);
+        SymmQuantizeData(bias_data, N, bias_scales, &quantized_bias_data[0]);
         bias_operand = converter->AddConstantOperand(
-            quantized_bias_data, DDim({K}), bias_scales);
+            quantized_bias_data, DDim({N}), bias_scales);
       } else {
         CHECK(input_type->precision ==
               ConvertPrecisionTypeToNNPrecisionCode(bias_precison));
-        bias_operand = converter->AddConstantOperand(*bias_tensor, DDim({K}));
+        bias_operand = converter->AddConstantOperand(*bias_tensor, DDim({N}));
       }
     } else {
       auto bias_type = converter->GetOperandType(bias_operand);
@@ -198,21 +229,21 @@ int ConvertFC(Converter* converter, OpInfo* op, Scope* scope) {
     // Add dummy zero bias operand
     // Use int32 as the data type of bias if it is a quantized type
     std::vector<int8_t> zeros(
-        K * (is_quant_mode ? sizeof(int32_t)
+        N * (is_quant_mode ? sizeof(int32_t)
                            : GetNNOperandPrecisionDataLength(*input_type)),
         0);
     bias_operand = converter->AddConstantOperand(
         reinterpret_cast<void*>(zeros.data()),
-        DDim({K}),
+        DDim({N}),
         is_quant_mode ? NNADAPTER_INT32 : input_type->precision,
         true,
         bias_scales);
   }
+  LOG(INFO) << "bbbbbbbbbbbbbbbbb";
   // Fuse code operand
-  NNAdapterFuseCode fuse_code_value = NNADAPTER_FUSED_NONE;
   std::vector<std::string> activation_support_split_ops{
       "sigmoid", "tan", "log", "abs"};
-  NNAdapterFuseCode fuse_code = NNADAPTER_FUSED_NONE;
+  int32_t fuse_code = NNADAPTER_FUSED_NONE;
   if (activation_type == "relu") {
     fuse_code = NNADAPTER_FUSED_RELU;
     activation_type = "";
@@ -233,16 +264,19 @@ int ConvertFC(Converter* converter, OpInfo* op, Scope* scope) {
     VLOG(5) << "Split fc + " << activation_type
             << " fusion operator into two operators!";
   }
-  auto fuse_code_operand = converter->AddConstantOperand(fuse_code_value);
+  LOG(INFO) << "cccccccccccccccc";
+  auto fuse_code_operand = converter->AddConstantOperand(fuse_code);
+  LOG(INFO) << "ddddddddddddddddddd";
   // Eltwise_add out operand
-  auto eltwise_add_out_operand = converter->AddOutputOperand(output_name);
+  auto eltwise_add_out_operand =
+      converter->AddOutputOperand(out_name, out_scales);
   // Eltwise_add operation for adding bias to matmul operation
   converter->AddOperation(NNADAPTER_ADD,
                           {output_operand, bias_operand, fuse_code_operand},
                           {eltwise_add_out_operand});
   // Activation
   if (!activation_type.empty()) {
-    auto activation_operand = converter->AddOutputOperand(output_name);
+    auto activation_operand = converter->AddOutputOperand(out_name, out_scales);
     NNAdapterOperationType act_type;
     if (activation_type == "sigmoid") {
       act_type = NNADAPTER_SIGMOID;
