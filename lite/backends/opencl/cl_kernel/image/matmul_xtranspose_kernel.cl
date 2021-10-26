@@ -136,6 +136,8 @@ __kernel void matmul_highdim_transpose_x(
   int out_c = get_global_id(0);  // n
   int out_cblks = get_global_id(1);
 
+  if (out_c >= out_w) return;
+
   CL_COMPUTE_DTYPE4 s0 = (CL_COMPUTE_DTYPE4)(0.0f);
 
   int out_n_id = out_n / M;
@@ -175,6 +177,8 @@ __kernel void matmul_highdimxtranspose_ydim2(
   int out_n = get_global_id(2);  // w * N
   int out_c = get_global_id(0);  // n
   int cblk_id = get_global_id(1);
+
+  if (out_c >= out_w) return;
 
   CL_COMPUTE_DTYPE4 s0 = (CL_COMPUTE_DTYPE4)(0.0f);
 

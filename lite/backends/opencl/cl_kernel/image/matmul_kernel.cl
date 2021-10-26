@@ -25,6 +25,8 @@ __kernel void matmul_highdim(__read_only image2d_t input,
   int out_c = get_global_id(0);  // n
   int out_cblks = get_global_id(1);
 
+  if (out_c >= out_w) return;
+
   CL_COMPUTE_DTYPE4 s0 = (CL_COMPUTE_DTYPE4)(0.0f);
 
   int out_N = out_n / M;
@@ -60,6 +62,8 @@ __kernel void matmul_highdimx_ydim1(__read_only image2d_t input,
   int nblk_id = get_global_id(2);  // n
   int h_id = get_global_id(0);     // h --> c
   int cblk_id = get_global_id(1);  // cblk_id
+
+  if (h_id >= H) return;
 
   CL_COMPUTE_DTYPE4 s0 = (CL_COMPUTE_DTYPE4)(0.0f);
   CL_COMPUTE_DTYPE4 s1 = (CL_COMPUTE_DTYPE4)(0.0f);
@@ -142,6 +146,8 @@ __kernel void matmul_highdimx_ydim2(__read_only image2d_t input,
   int out_n = get_global_id(2);  // h * N
   int out_c = get_global_id(0);  // n
   int cblk_id = get_global_id(1);
+
+  if (out_c >= out_w) return;
 
   CL_COMPUTE_DTYPE4 s0 = (CL_COMPUTE_DTYPE4)(0.0f);
 

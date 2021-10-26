@@ -344,11 +344,13 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
       const auto out_dims = matmul_v2_param_->Out->dims();
       out_img_shape = folder_converter->InitImageDimInfoWith(out_dims);
       local_work_size_ = cl::NDRange(32, c_blks_, 1);
-      global_work_size_ =
-          cl::NDRange(n_, local_work_size_[1], out_img_shape[1]);
+      global_work_size_ = cl::NDRange(ROUND_UP(n_, local_work_size_[0]),
+                                      local_work_size_[1],
+                                      out_img_shape[1]);
     } else if (x_dims.size() > 2 && y_dims.size() == 1) {
       local_work_size_ = cl::NDRange(32, c_blks_, 1);
-      global_work_size_ = cl::NDRange(H, local_work_size_[1], UP_DIV(N, 4));
+      global_work_size_ = cl::NDRange(
+          ROUND_UP(H, local_work_size_[0]), local_work_size_[1], UP_DIV(N, 4));
     }
     VLOG(4) << "global_work_size[3D]: " << global_work_size_[0] << " "
             << global_work_size_[1] << " " << global_work_size_[2];
