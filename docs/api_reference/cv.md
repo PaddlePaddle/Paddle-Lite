@@ -198,9 +198,9 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat, ImageFormat dstFormat, T
 
 ### Image2Tensor
 
-`Image2Tensor` 功能支持颜色空间：RGB(BGR) 和 RGBA(BGRA)
-`Image2Tensor` 功能目前支持的 Layout：`NCHW` 和 `NHWC`
-`Image2Tensor` 不仅完成图像转换为 `Tensor` 数据处理，而且还完成了图像数据的归一化处理
+- `Image2Tensor` 功能支持颜色空间：RGB(BGR) 和 RGBA(BGRA)
+- `Image2Tensor` 功能目前支持的 Layout：`NCHW` 和 `NHWC`
+- `Image2Tensor` 不仅完成图像转换为 `Tensor` 数据处理，而且还完成了图像数据的归一化处理
 
 + `Image2Tensor` 功能的 API 接口
     ```c++
