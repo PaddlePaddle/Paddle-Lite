@@ -167,9 +167,9 @@ Paddle Lite 仓库中\ ``./lite/tools/build_linux.sh``\ 脚本文件用于构建
    │       └── libpaddle_full_api_shared.so              C++ full_api 动态库
    │
    └── demo                                              C++
-   │   └── cxx                                           C++ 预测库demo
+   │   └── cxx                                           C++ 预测库 demo
    └── third_party
-   │   └── mklml                                         依赖的第三方加速库Intel(R) MKL
+   │   └── mklml                                         依赖的第三方加速库 Intel(R) MKL
    │       ├── include                                   
    │       └── lib                                       
    │           ├── libiomp5.so
