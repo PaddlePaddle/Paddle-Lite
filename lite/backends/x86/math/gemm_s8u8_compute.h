@@ -18,6 +18,7 @@ limitations under the License. */
 
 #include <string.h>
 #include <algorithm>
+#include <cmath>
 #include "lite/backends/x86/math/gemm_s8u8_kernel.h"
 #include "lite/backends/x86/math/gemm_s8u8_pack.h"
 #include "lite/core/memory.h"
