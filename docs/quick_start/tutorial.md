@@ -24,7 +24,7 @@ Paddle Lite 框架拥有优秀的加速、优化策略及实现，包含量化�
 
 **三. 下载或编译**
 
-Paddle Lite 提供了 `Android/iOS/ArmLinux/Windows/macOS/Ubuntu` 平台的官方 Release 预测库下载，我们优先推荐您直接下载 [Paddle Lite 预编译库](../quick_start/release_lib)。您也可以根据目标平台选择对应的[源码编译方法](../quick_start/release_lib)。Paddle Lite 提供了源码编译脚本，位于 `lite/tools/` 文件夹下，只需要 [准备环境](../source_compile/compile_env) 和 [调用编译脚本](../source_compile) 两个步骤即可一键编译得到目标平台的 Paddle Lite 预测库。
+Paddle Lite 提供了 `Android/iOS/ArmLinux/Windows/macOS/Ubuntu` 平台的官方 Release 预测库下载，我们优先推荐您直接下载 [Paddle Lite 预编译库](../quick_start/release_lib)。您也可以根据目标平台选择对应的 [源码编译方法](../source_compile/compile_options)。Paddle Lite 提供了源码编译脚本，位于 `lite/tools/` 文件夹下，只需要 [准备环境](../source_compile/compile_env.rst) 和 `lite/tools/` 文件夹 [脚本](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/tools) 两个步骤即可一键编译得到目标平台的 Paddle Lite 预测库。
 
 **四. 开发应用程序**
 
@@ -66,6 +66,6 @@ Paddle Lite 提供了 `C++` 、`Java` 、`Python` 三种 `API` 的完整使用�
 
 ## 更多测试工具
 
-为了使您更好的了解并使用 Paddle Lite 框架，我们向有进一步使用需求的用户开放了 [Profiler 工具](../user_guides/debug)。该工具具体分为性能 Profiler 和精度 Profiler：
+为了使您更好的了解并使用 Paddle Lite 框架，我们向有进一步使用需求的用户开放了 [Profiler 工具](../user_guides/profiler)。该工具具体分为性能 Profiler 和精度 Profiler：
 - 性能 Profiler 工具可以帮助您了解每个 `Op` 的执行时间消耗，其会自动统计 `Op` 执行的次数，最长、最短、平均执行时间等等信息，为性能调优做一个基础参考；
 - 精度 Profiler 工具用于模型逐层精度统计，可以获取到模型中每个 `Op` 的输出 tensor 精度信息，能够快速定位计算精度出现问题的 `Op`。
