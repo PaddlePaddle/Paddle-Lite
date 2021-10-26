@@ -14,14 +14,25 @@
 
 #pragma once
 
-USE_SUBGRAPH_BRIDGE(fc,
-                    kNNAdapter,
-                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
-                    "npu,amlogic_npu,imagination_nna");
-USE_SUBGRAPH_BRIDGE(
-    scale,
-    kNNAdapter,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
-USE_SUBGRAPH_BRIDGE(expand_v2, kNNAdapter, "huawei_ascend_npu");
-USE_SUBGRAPH_BRIDGE(range, kNNAdapter, "huawei_ascend_npu");
-USE_SUBGRAPH_BRIDGE(stack, kNNAdapter, "huawei_ascend_npu");
+#include <memory>
+#include <string>
+#include "lite/core/optimizer/mir/pattern_matcher_high_api.h"
+
+namespace paddle {
+namespace lite {
+namespace mir {
+namespace fusion {
+
+class PNormFillConstantMaxDivFuser : public FuseBase {
+ public:
+  void BuildPattern() override;
+  void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
+
+ private:
+  cpp::OpDesc GenOpDesc(const key2nodes_t& matched) override;
+};
+
+}  // namespace fusion
+}  // namespace mir
+}  // namespace lite
+}  // namespace paddle

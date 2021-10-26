@@ -9,12 +9,8 @@ set(nnadapter_subgraph_bridge_deps core subgraph_bridge_utility_nnadapter subgra
 
 lite_cc_library(subgraph_bridge_fc_op_nnadapter SRCS fc_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_scale_op_nnadapter SRCS scale_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
-lite_cc_library(subgraph_bridge_cast_op_nnadapter SRCS cast_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
-lite_cc_library(subgraph_bridge_norm_op_nnadapter SRCS norm_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
-lite_cc_library(subgraph_bridge_dropout_op_nnadapter SRCS dropout_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_expand_op_nnadapter SRCS expand_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_range_op_nnadapter SRCS range_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
-lite_cc_library(subgraph_bridge_pad_op_nnadapter SRCS pad_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_stack_op_nnadapter SRCS stack_op.cc DEPS ${nnadapter_subgraph_bridge_deps})
 
 set(nnadapter_subgraph_bridges
@@ -23,13 +19,9 @@ set(nnadapter_subgraph_bridges
         subgraph_bridge_converter_nnadapter
         subgraph_bridge_fc_op_nnadapter
         subgraph_bridge_scale_op_nnadapter
-        subgraph_bridge_cast_op_nnadapter
-        subgraph_bridge_norm_op_nnadapter
-        subgraph_bridge_dropout_op_nnadapter
         subgraph_bridge_expand_op_nnadapter
         subgraph_bridge_range_op_nnadapter
         subgraph_bridge_stack_op_nnadapter
-        subgraph_bridge_pad_op_nnadapter
         CACHE INTERNAL "nnadapter_subgraph_bridges")
 
 message(STATUS "+++++ nnadapter_subgraph_bridges: ${nnadapter_subgraph_bridges}")
