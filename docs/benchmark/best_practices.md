@@ -19,7 +19,7 @@
 
 ### 基于模型和算法思想的性能优化
 
-首先，根据需求选择最小的模型进行推理，因为这些模型通常更快、更节能。Paddle Lite 现支持量化等多种优化技术，具体细节信息请查看[量化文档](../user_guides/quant_post_static.md)。
+首先，根据需求选择最小的模型进行推理，因为这些模型通常更快、更节能。Paddle Lite 现支持量化等多种优化技术，具体细节信息请查看[量化文档](../user_guides/quant_aware.md)。
 
 其次，分析模型结构，查看是否有可融合的算子（如 `convolution` 和 `batchnorm` 可融合成 `convolution` 实现）/可并行计算的分支，以减少模型的计算量或 I/O 操作。这种情况应该不多见，因为 Paddle Lite 已完成大部分融合算子添加。但是，如果您发现更好的融合算子支持，可参考 [Pass 文档](../develop_guides/add_new_pass.md)添加新的融合算子支持。
 
