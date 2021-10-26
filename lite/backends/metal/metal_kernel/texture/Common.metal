@@ -79,6 +79,10 @@ struct ElementwiseAddParam {
     int32_t xtrans[4];     // input_x transpose dim
     int32_t ydim[4];       // input_y dim on gpu
     int32_t ytrans[4];     // input_x transpose dim
+    int32_t ByNum;         // only one number
+    int32_t ByHW;          // only HW
+    int32_t ByW;           // only W
+    int32_t OpNum;
 };
 
 struct ElementwiseParam {

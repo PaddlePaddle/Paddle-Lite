@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#ifndef LITE_KERNELS_METAL_IMAGE_OP_ELEMENTWISE_IMAGE_COMPUTE_H_
+#define LITE_KERNELS_METAL_IMAGE_OP_ELEMENTWISE_IMAGE_COMPUTE_H_
 
 #include <memory>
 
@@ -32,33 +33,58 @@ namespace lite {
 namespace kernels {
 namespace metal {
 
-class ElementwiseSubImageCompute
+class ElementwiseImageCompute
     : public KernelLite<TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)> {
     using param_t = operators::ElementwiseParam;
 
    public:
     void PrepareForRun() override;
+    void ReInitWhenNeeded() override;
     void Run() override;
     void SaveOutput() override {
         MetalDebug::SaveOutput(function_name_, output_buffer_);
     };
-    virtual ~ElementwiseSubImageCompute();
+    virtual ~ElementwiseImageCompute();
 
    private:
-    void run_without_mps();
+    bool use_mps_{false};
+    void* mps_op_{nullptr};
+    void* mps_input_image_{nullptr};
+    void* mps_input_image_y_{nullptr};
+    void* mps_output_image_{nullptr};
+
+    void init_for_run();
+    void init_memory();
+    void release_memory();
+    void release_mps_memory();
+
+    template <typename T>
+    void setup_with_mps();
     void setup_without_mps();
 
+    template <typename T>
+    void run_with_mps();
+    void run_without_mps();
+
+   private:
     MetalImage* output_buffer_{nullptr};
     const MetalImage* input_buffer_x_;
     const MetalImage* input_buffer_y_;
-    std::shared_ptr<MetalBuffer> params_buffer_;
 
+    std::shared_ptr<MetalBuffer> params_buffer_;
+    DDim last_input_dims_{};
+    std::string op_;
     id<MTLComputePipelineState> pipline_;
     std::string function_name_;
     MetalContext* metal_context_;
+    int op_num;
+    bool fuse_flag_{false};
+    const param_t* elementwise_param_{nullptr};
 };
 
 }  // namespace metal
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+
+#endif  // LITE_KERNELS_METAL_IMAGE_OP_ELEMENTWISE_IMAGE_COMPUTE_H_
