@@ -25,11 +25,11 @@ class RuntimeContextAssignPass : public StmtPass {
 
   void Apply(const std::unique_ptr<SSAGraph>& graph) override {
 #ifdef LITE_WITH_OPENCL
+    using OpenCLContext = Context<TargetType::kOpenCL>;
+    std::unique_ptr<KernelContext> local_ctx(new KernelContext());
     const auto& valid_places = graph->valid_places();
     for (const auto& place : valid_places) {
       if (place.target == TARGET(kOpenCL)) {
-        using OpenCLContext = Context<TargetType::kOpenCL>;
-        std::unique_ptr<KernelContext> local_ctx(new KernelContext());
         local_ctx->As<OpenCLContext>().InitOnce();
         break;
       }
