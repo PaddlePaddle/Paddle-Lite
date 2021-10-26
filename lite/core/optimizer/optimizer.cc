@@ -206,6 +206,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        // inputs and outputs must have the same scale.
        "restrict_quantized_op_with_same_input_output_scale_pass",
        "clear_quant_info_pass",
+       "nnadapter_insert_calib_pass",
        "nnadapter_subgraph_pass",
        "npu_subgraph_pass",
        "huawei_ascend_npu_subgraph_pass",

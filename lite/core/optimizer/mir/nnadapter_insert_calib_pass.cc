@@ -12,31 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-#include <memory>
-#include <set>
-#include <string>
-#include "lite/core/optimizer/mir/pass.h"
+#include "lite/core/optimizer/mir/nnadapter_insert_calib_pass.h"
+#include <map>
+#include "lite/core/optimizer/mir/pass_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace mir {
 
-/*
- * Clear ops' quant information by config file
- */
-class ClearQuantInfoPass : public ProgramPass {
- public:
-  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
+void NNAdapterInsertCalibPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+  auto nodes = graph->StmtTopologicalOrder();
+  // record the copied node.
+  std::map<std::string, Node*> cast_nodes;
+  std::vector<std::string> skip_ops = {"while", "conditional_block"};
 
- private:
-  std::string GetMixedPrecisionQuantizationConfig(Scope* scope);
-  std::set<Node*> GetTargetNodesFromMixedPrecisionQuantizationConfig(
-      const std::unique_ptr<SSAGraph>& graph,
-      const std::string& mixed_precision_quantization_config);
-  void ClearQuantInfo(paddle::lite::mir::Node* node);
-};
+  for (auto& node : nodes) {
+  }
+}
 
 }  // namespace mir
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_MIR_PASS(nnadapter_insert_calib_pass,
+                  paddle::lite::mir::NNAdapterInsertCalibPass)
+    .BindTargets({TARGET(kNNAdapter)});

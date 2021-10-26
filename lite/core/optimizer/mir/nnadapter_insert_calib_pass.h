@@ -14,8 +14,8 @@
 
 #pragma once
 #include <memory>
-#include <set>
 #include <string>
+#include <vector>
 #include "lite/core/optimizer/mir/pass.h"
 
 namespace paddle {
@@ -23,18 +23,13 @@ namespace lite {
 namespace mir {
 
 /*
- * Clear ops' quant information by config file
+ * Only for nnadapter: insert calib op to support mixed precision model.
+ *
+ * PS: for cpu, calib op will be insert by type_precision_cast_pass.
  */
-class ClearQuantInfoPass : public ProgramPass {
+class NNAdapterInsertCalibPass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
-
- private:
-  std::string GetMixedPrecisionQuantizationConfig(Scope* scope);
-  std::set<Node*> GetTargetNodesFromMixedPrecisionQuantizationConfig(
-      const std::unique_ptr<SSAGraph>& graph,
-      const std::string& mixed_precision_quantization_config);
-  void ClearQuantInfo(paddle::lite::mir::Node* node);
 };
 
 }  // namespace mir

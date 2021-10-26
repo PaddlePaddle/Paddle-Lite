@@ -30,6 +30,23 @@ void ClearQuantInfoPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   }
   CHECK(scope != nullptr);
 
+  std::string mixed_precision_quantization_config =
+      GetMixedPrecisionQuantizationConfig(scope);
+  if (mixed_precision_quantization_config.empty()) {
+    VLOG(3) << "not receive mixed precision quantization config.";
+    return;
+  }
+  std::set<Node*> target_nodes =
+      GetTargetNodesFromMixedPrecisionQuantizationConfig(
+          graph, mixed_precision_quantization_config);
+  for (auto node : target_nodes) {
+    CHECK(node->IsStmt());
+    ClearQuantInfo(node);
+  }
+}
+
+std::string ClearQuantInfoPass::GetMixedPrecisionQuantizationConfig(
+    Scope* scope) {
   std::string mixed_precision_quantization_config;
 #if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
     defined(LITE_WITH_NNADAPTER)
@@ -49,7 +66,7 @@ void ClearQuantInfoPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
               buffer.begin(),
               buffer.end());
           VLOG(3) << "Load mixed precision quantization config from file: "
-                  << mixed_precision_quantization_config_path;
+                  << mixed_precision_quantization_config;
         }
       } else {
         LOG(WARNING) << "Missing the mixed precision quantization config file "
@@ -58,18 +75,7 @@ void ClearQuantInfoPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     }
   }
 #endif
-  if (mixed_precision_quantization_config.empty()) {
-    VLOG(3) << "not receive mixed precision quantization config.";
-    return;
-  }
-
-  std::set<Node*> target_nodes =
-      GetTargetNodesFromMixedPrecisionQuantizationConfig(
-          graph, mixed_precision_quantization_config);
-  for (auto node : target_nodes) {
-    CHECK(node->IsStmt());
-    auto op_desc = node->AsStmt().mutable_op_info();
-  }
+  return mixed_precision_quantization_config;
 }
 
 std::set<Node*>
@@ -141,6 +147,39 @@ ClearQuantInfoPass::GetTargetNodesFromMixedPrecisionQuantizationConfig(
   }
 
   return target_nodes;
+}
+
+void ClearQuantInfo(paddle::lite::mir::Node* node) {
+  if (node->IsArg()) return;
+  auto op_desc = node->AsStmt().mutable_op_info();
+  op_desc->DeleteAttr("bit_length");
+  op_desc->DeleteAttr("enable_int8");
+
+  std::vector<std::string> input_names;
+  for (auto in_node : node->inlinks) {
+    input_names.push_back(in_node->AsArg().name);
+  }
+  for (auto input_name : input_names) {
+    std::string arg_name;
+    int idx = -1;
+    CHECK(op_desc->GetInputArgname(input_name, &arg_name));
+    CHECK(op_desc->GetInputIndex(input_name, &idx));
+    std::string scale_name = arg_name + std::to_string(idx) + "_scale";
+    op_desc->DeleteAttr(scale_name);
+  }
+
+  std::vector<std::string> output_names;
+  for (auto out_node : node->outlinks) {
+    output_names.push_back(out_node->AsArg().name);
+  }
+  for (auto output_name : output_names) {
+    std::string arg_name;
+    int idx = -1;
+    CHECK(op_desc->GetOutputArgname(output_name, &arg_name));
+    CHECK(op_desc->GetOutputIndex(output_name, &idx));
+    std::string scale_name = arg_name + std::to_string(idx) + "_scale";
+    op_desc->DeleteAttr(scale_name);
+  }
 }
 
 }  // namespace mir
