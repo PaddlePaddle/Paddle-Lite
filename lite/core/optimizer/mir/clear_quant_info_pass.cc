@@ -28,7 +28,7 @@ void ClearQuantInfoPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       break;
     }
   }
-  CHECK(scope != nullptr);
+  CHECK(scope);
 
   std::string mixed_precision_quantization_config =
       GetMixedPrecisionQuantizationConfig(scope);

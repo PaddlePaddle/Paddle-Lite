@@ -42,6 +42,25 @@ static void UpdateInputs(const std::shared_ptr<paddle::lite::OpLite>& op,
 }
 
 void NNAdapterInsertCalibPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+#if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
+    defined(LITE_WITH_NNADAPTER)
+  Scope* scope = nullptr;
+  for (auto& node : graph->mutable_nodes()) {
+    if (node.IsStmt()) {
+      scope = node.AsStmt().op()->scope();
+      break;
+    }
+  }
+  CHECK(scope);
+  auto device_names =
+      Context<TargetType::kNNAdapter>::NNAdapterDeviceNames(scope);
+  if (std::find(device_names.begin(),
+                device_names.end(),
+                "huawei_ascend_npu") == device_names.end()) {
+    return;
+  }
+#endif
+
   auto nodes = graph->StmtTopologicalOrder();
   // Record casted var node to avoid inserting same calib node
   std::map<std::string, Node*> cast_nodes;
