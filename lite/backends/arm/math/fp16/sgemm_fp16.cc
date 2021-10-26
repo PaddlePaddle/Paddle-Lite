@@ -50,7 +50,7 @@ void sgemm_fp16(bool is_transA,
               is_bias,
               bias,
               act_param.has_active,
-              act_param.active_type,
+              act_param,
               ctx);
     return;
   }
@@ -71,7 +71,7 @@ void sgemm_fp16(bool is_transA,
               is_bias,
               bias_ptr,
               act_param.has_active,
-              act_param.active_type,
+              act_param,
               ctx);
     return;
   }

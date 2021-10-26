@@ -120,7 +120,17 @@ namespace fp16 {
   "beq 3f                       \n"      \
   "cmp %w[flag_act], #2         \n"      \
   "beq 4f                       \n"      \
+  "cmp %w[flag_act], #3         \n"      \
+  "beq 6f                       \n"      \
+  /* hardswish */                        \
+  "fadd v7.8h, v6.8h, %[voffset].8h\n"   \
+  "fmul v8.8h, v6.8h, %[valpha].8h\n"    \
+  "fmax v7.8h, v7.8h, %[vzero].8h\n"     \
+  "fmin v7.8h, v7.8h, %[vthreshold].8h\n"\
+  "fmul v6.8h, v7.8h, v8.8h\n"           \
+  "b 5f                         \n"      \
   /* leakyrelu */                        \
+  "6:                             \n"    \
   "fmul v7.8h, v6.8h, %[valpha].8h\n"    \
   "fcmge v8.8h, v6.8h, %[vzero].8h\n"    \
   "bif  v6.16b, v7.16b, v8.16b  \n"      \
@@ -160,7 +170,17 @@ namespace fp16 {
   "beq 3f                       \n"      \
   "cmp %w[flag_act], #2         \n"      \
   "beq 4f                       \n"      \
+  "cmp %w[flag_act], #3         \n"      \
+  "beq 6f                       \n"      \
+  /* hardswish */                        \
+  "fadd v7.8h, v6.8h, %[voffset].8h\n"   \
+  "fmul v8.8h, v6.8h, %[valpha].8h\n"    \
+  "fmax v7.8h, v7.8h, %[vzero].8h\n"     \
+  "fmin v7.8h, v7.8h, %[vthreshold].8h\n"\
+  "fmul v6.8h, v7.8h, v8.8h\n"           \
+  "b 5f                         \n"      \
   /* leakyrelu */                        \
+  "6:                             \n"    \
   "fmul v7.8h, v6.8h, %[valpha].8h\n"    \
   "fcmge v8.8h, v6.8h, %[vzero].8h\n"    \
   "bif  v6.16b, v7.16b, v8.16b  \n"      \
@@ -198,6 +218,8 @@ namespace fp16 {
     : [vbias] "w"(vbias),                \
       [vzero] "w"(vzero),                \
       [valpha] "w"(valpha),              \
+      [voffset] "w"(voffset),            \
+      [vthreshold] "w"(vthreshold),      \
       [flag_act] "r"(flag_act),          \
       [outptr] "r"(out_p),              \
       [stride] "r"(stride)               \
@@ -217,10 +239,8 @@ void gemv_fp16_trans(const float16_t *A,
                      bool is_bias,
                      const float16_t *bias,
                      bool is_act,
-                     lite_api::ActivationType act,
-                     ARMContext *ctx,
-                     float16_t six,
-                     float16_t alpha) {
+                     const operators::ActivationParam act_param,
+                     ARMContext *ctx) {
   int Nup = (N + 7) / 8 * 8;
   int Mup = (M + 7) / 8 * 8;
   auto ptr_zero = ctx->workspace_data<float16_t>();
@@ -239,9 +259,16 @@ void gemv_fp16_trans(const float16_t *A,
       data_in, x + (M - 1) * N, N * sizeof(float16_t));
   int cnt = Nup >> 3;
   float local_alpha = 0.f;
+  float offset = 0.f;
+  float threshold = 6.f;
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
   if (is_act) {
-    act_acquire(act, flag_act, local_alpha, six, alpha);
+    act_acquire(act_param.active_type,
+                flag_act,
+                local_alpha,
+                offset,
+                threshold,
+                act_param);
   }
 
 #ifdef __aarch64__
@@ -250,6 +277,8 @@ void gemv_fp16_trans(const float16_t *A,
   if (remain > 0) out_cnt++;
   float16x8_t vzero = vdupq_n_f16(0.f);
   float16x8_t valpha = vdupq_n_f16(local_alpha);
+  float16x8_t voffset = vdupq_n_f16(offset);
+  float16x8_t vthreshold = vdupq_n_f16(threshold);
   int stride = 16 * (M - 1);  // (8 * M - 8) * 2
   int rem_n = N & 7;
 #pragma omp parallel for
@@ -314,14 +343,11 @@ void gemv_fp16(const float16_t *A,
                bool is_bias,
                const float16_t *bias,
                bool is_act,
-               lite_api::ActivationType act,
-               ARMContext *ctx,
-               float16_t six,
-               float16_t alpha) {
+               const operators::ActivationParam act_param,
+               ARMContext *ctx) {
   if (transA) {
     // 8x16
-    gemv_fp16_trans(
-        A, x, y, M, N, beta, is_bias, bias, is_act, act, ctx, six, alpha);
+    gemv_fp16_trans(A, x, y, M, N, beta, is_bias, bias, is_act, act_param, ctx);
     return;
   }
   int Nup = (N + 15) / 16 * 16;
@@ -344,9 +370,16 @@ void gemv_fp16(const float16_t *A,
       ptr_w, A + (M - 1) * N, N * sizeof(float16_t));
   int cnt = Nup >> 4;
   float local_alpha = 0.f;
+  float offset = 0.f;
+  float threshold = 6.f;
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
   if (is_act) {
-    act_acquire(act, flag_act, local_alpha, six, alpha);
+    act_acquire(act_param.active_type,
+                flag_act,
+                local_alpha,
+                offset,
+                threshold,
+                act_param);
   }
 
 #ifdef __aarch64__
@@ -355,6 +388,8 @@ void gemv_fp16(const float16_t *A,
   if (remain > 0) out_cnt++;
   float16x8_t vzero = vdupq_n_f16(0.f);
   float16x8_t valpha = vdupq_n_f16(local_alpha);
+  float16x8_t voffset = vdupq_n_f16(offset);
+  float16x8_t vthreshold = vdupq_n_f16(threshold);
   int stride = 1;
 #pragma omp parallel for
   for (int j = 0; j < out_cnt; j++) {

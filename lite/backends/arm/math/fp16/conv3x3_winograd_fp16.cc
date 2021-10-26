@@ -114,13 +114,11 @@ void conv_compute_2x2_3x3_fp16(const float16_t* input,
   auto act_type = act_param.active_type;
   float local_alpha = 0.f;
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
+  float offset = 0.f;
+  float threshold = 6.f;
 
   if (act_param.has_active) {
-    act_acquire(act_type,
-                flag_act,
-                local_alpha,
-                act_param.Relu_clipped_coef,
-                act_param.Leaky_relu_alpha);
+    act_acquire(act_type, flag_act, local_alpha, offset, threshold, act_param);
   }
 
   // begin compute
@@ -265,7 +263,9 @@ void conv_compute_2x2_3x3_fp16(const float16_t* input,
                               flag_act,
                               local_alpha,
                               bias + ci * 8,
-                              flag_bias);
+                              flag_bias,
+                              offset,
+                              threshold);
           }
         } else {
           for (int ci = 0; ci < oc_8; ++ci) {
@@ -299,7 +299,9 @@ void conv_compute_2x2_3x3_fp16(const float16_t* input,
                               flag_act,
                               local_alpha,
                               bias + ci * 8,
-                              flag_bias);
+                              flag_bias,
+                              offset,
+                              threshold);
           }
         }
       }
@@ -373,13 +375,11 @@ void conv_compute_4x4_3x3_fp16(const float16_t* input,
   float local_alpha = 0.f;
   bool flag_bias = (bias != nullptr);
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
+  float offset = 0.f;
+  float threshold = 6.f;
 
   if (act_param.has_active) {
-    act_acquire(act_type,
-                flag_act,
-                local_alpha,
-                act_param.Relu_clipped_coef,
-                act_param.Leaky_relu_alpha);
+    act_acquire(act_type, flag_act, local_alpha, offset, threshold, act_param);
   }
 
   // begin compute
@@ -543,7 +543,9 @@ void conv_compute_4x4_3x3_fp16(const float16_t* input,
                               flag_act,
                               local_alpha,
                               bias + ci * 8,
-                              flag_bias);
+                              flag_bias,
+                              offset,
+                              threshold);
           }
         } else {
           for (int ci = 0; ci < oc_8; ++ci) {
@@ -583,7 +585,9 @@ void conv_compute_4x4_3x3_fp16(const float16_t* input,
                               flag_act,
                               local_alpha,
                               bias + ci * 8,
-                              flag_bias);
+                              flag_bias,
+                              offset,
+                              threshold);
           }
         }
       }
