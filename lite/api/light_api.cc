@@ -333,6 +333,9 @@ void LightPredictor::WeightFP32ToFP16() {
             Tensor tmp_tensor;
             auto input_tensor =
                 scope_->FindVar(input_name)->GetMutable<lite::Tensor>();
+            
+            if(input_tensor->precision() != PRECISION(kFloat) ) continue;
+
             tmp_tensor.CopyDataFrom(*input_tensor);
             input_tensor->clear();
             input_tensor->set_precision(PRECISION(kFP16));
