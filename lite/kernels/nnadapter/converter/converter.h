@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <cmath>
 #include <map>
 #include <memory>
 #include <string>
