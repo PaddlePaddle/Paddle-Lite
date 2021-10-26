@@ -1,6 +1,6 @@
 # CV 图像预处理 API
 
-请把编译脚本 `Paddle-Lite/lite/tool/build_linux.sh` 中 `BUILD_CV` 变量设置为 `ON`， 其他编译参数设置请参考[Linux源码编译](../source_compile/compile_linux)， 以确保 Paddle Lite 可以正确编译。这样`CV` 图像的加速库就会编译进去，且会生成 `paddle_image_preprocess.h` 的API文件
+请把编译脚本 `Paddle-Lite/lite/tool/build_linux.sh` 中 `BUILD_CV` 变量设置为 `ON`， 其他编译参数设置请参考 [源码编译](../source_compile/compile_env)， 以确保 Paddle Lite 可以正确编译。这样`CV` 图像的加速库就会编译进去，且会生成 `paddle_image_preprocess.h` 的API文件
 
 - 硬件平台： `ARM`
 - 操作系统：`MAC` 和 `LINUX`
@@ -22,7 +22,7 @@ enum ImageFormat {
   BGR,
   GRAY,
   NV21 = 11,
-  NV12,
+  NV12
 };
 ```
 - 翻转参数
@@ -113,7 +113,7 @@ ImagePreprocess::ImagePreprocess(ImageFormat srcFormat, ImageFormat dstFormat, T
     
 ### 缩放 Resize
 
-`Resize` 功能支持颜色空间：GRAY、NV12(NV21)、RGB(BGR)和 RGBA(BGRA)
+`Resize` 功能支持颜色空间：GRAY、NV12(NV21)、RGB(BGR) 和 RGBA(BGRA)
 `Resize` 功能目前支持的方法：`bilinear`
 
 + `Resize` 功能的 API 接口
@@ -238,9 +238,9 @@ dsth = 960;
 dstw = 540;
 flip_param = FlipParam::X;
 degree = 90;
-layout = LayoutType::NHWC
-left_x = 1
-left_y = 1
+layout = LayoutType::NHWC;
+left_x = 1;
+left_y = 1;
 // 方法一: 
 TransParam tparam;
 tparam.ih = srch;
