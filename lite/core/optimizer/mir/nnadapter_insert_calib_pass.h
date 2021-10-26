@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -30,6 +31,12 @@ namespace mir {
 class NNAdapterInsertCalibPass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
+
+ private:
+  void ComplementInputs(const std::unique_ptr<SSAGraph>& graph,
+                        Node* in,
+                        Node* inst_node,
+                        std::map<std::string, Node*>* cast_nodes);
 };
 
 }  // namespace mir
