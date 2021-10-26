@@ -386,6 +386,47 @@ inline void prepack_input_nxwc4(const float16_t* din,
   "bif v14.16b, v5.16b, v4.16b\n"      \
   "bif v15.16b, v7.16b, v6.16b\n"
 
+#define HARD_SWISH_C8                  \
+  "fadd v0.8h, v8.8h, %[voffset].8h\n" \
+  "fadd v1.8h, v9.8h, %[voffset].8h\n" \
+  "fadd v2.8h, v10.8h, %[voffset].8h\n"\
+  "fadd v3.8h, v11.8h, %[voffset].8h\n"\
+  "fadd v4.8h, v12.8h, %[voffset].8h\n"\
+  "fadd v5.8h, v13.8h, %[voffset].8h\n"\
+  "fadd v6.8h, v14.8h, %[voffset].8h\n"\
+  "fadd v7.8h, v15.8h, %[voffset].8h\n"\
+  "fmul v16.8h, v8.8h, %[valpha].8h\n" \
+  "fmul v17.8h, v9.8h, %[valpha].8h\n" \
+  "fmul v18.8h, v10.8h, %[valpha].8h\n"\
+  "fmul v19.8h, v11.8h, %[valpha].8h\n"\
+  "fmul v20.8h, v12.8h, %[valpha].8h\n"\
+  "fmul v21.8h, v13.8h, %[valpha].8h\n"\
+  "fmul v22.8h, v14.8h, %[valpha].8h\n"\
+  "fmul v23.8h, v15.8h, %[valpha].8h\n"\
+  "fmax v0.8h,  v0.8h, %[vzero].8h\n"  \
+  "fmax v1.8h,  v1.8h, %[vzero].8h\n"  \
+  "fmax v2.8h,  v2.8h, %[vzero].8h\n"  \
+  "fmax v3.8h,  v3.8h, %[vzero].8h\n"  \
+  "fmax v4.8h,  v4.8h, %[vzero].8h\n"  \
+  "fmax v5.8h,  v5.8h, %[vzero].8h\n"  \
+  "fmax v6.8h,  v6.8h, %[vzero].8h\n"  \
+  "fmax v7.8h,  v7.8h, %[vzero].8h\n"  \
+  "fmin v0.8h,  v0.8h, %[vthreshold].8h\n"\
+  "fmin v1.8h,  v1.8h, %[vthreshold].8h\n"\
+  "fmin v2.8h,  v2.8h, %[vthreshold].8h\n"\
+  "fmin v3.8h,  v3.8h, %[vthreshold].8h\n"\
+  "fmin v4.8h,  v4.8h, %[vthreshold].8h\n"\
+  "fmin v5.8h,  v5.8h, %[vthreshold].8h\n"\
+  "fmin v6.8h,  v6.8h, %[vthreshold].8h\n"\
+  "fmin v7.8h,  v7.8h, %[vthreshold].8h\n"\
+  "fmul v8.8h,  v0.8h,  v16.8h\n"      \
+  "fmul v9.8h,  v1.8h,  v17.8h\n"      \
+  "fmul v10.8h, v2.8h,  v18.8h\n"      \
+  "fmul v11.8h, v3.8h,  v19.8h\n"      \
+  "fmul v12.8h, v4.8h,  v20.8h\n"      \
+  "fmul v13.8h, v5.8h,  v21.8h\n"      \
+  "fmul v14.8h, v6.8h,  v22.8h\n"      \
+  "fmul v15.8h, v7.8h,  v23.8h\n"
 #define STORE_C8                       \
   "str q8, [%[doutc0r0]], #16\n"       \
   "ldp  q0, q1, [%[din_ptr]], #32\n"   \
@@ -437,6 +478,36 @@ inline void prepack_input_nxwc4(const float16_t* din,
     "v3", "v4", "v5", "v6", "v7",     \
     "v8", "v9", "v10", "v11", "v12",  \
     "v13", "v14", "v15", "v16"
+#define ASM_PARAM_1                  \
+  :  [doutc0r0] "+r"(doutc0_ptr),    \
+    [doutc1r0] "+r"(doutc1_ptr),     \
+    [doutc2r0] "+r"(doutc2_ptr),     \
+    [doutc3r0] "+r"(doutc3_ptr),     \
+    [doutc4r0] "+r"(doutc4_ptr),     \
+    [doutc5r0] "+r"(doutc5_ptr),     \
+    [doutc6r0] "+r"(doutc6_ptr),     \
+    [doutc7r0] "+r"(doutc7_ptr),     \
+    [cnt] "+r"(cnt),                 \
+    [din_ptr] "+r"(din_hei_ptr)      \
+  : [vbias] "w"(vbias),              \
+    [tmp0] "r"(tmp0),                \
+    [tmp1] "r"(tmp1),                \
+    [tmp2] "r"(tmp2),                \
+    [tmp3] "r"(tmp3),                \
+    [tmp4] "r"(tmp4),                \
+    [tmp5] "r"(tmp5),                \
+    [tmp6] "r"(tmp6),                \
+    [tmp7] "r"(tmp7),                \
+    [vzero] "w"(vzero),              \
+    [voffset] "w"(voffset),          \
+    [vthreshold] "w"(vthreshold),    \
+    [valpha] "w"(valpha)             \
+  : "cc", "memory", "v0", "v1", "v2", \
+    "v3", "v4", "v5", "v6", "v7",     \
+    "v8", "v9", "v10", "v11", "v12",  \
+    "v13", "v14", "v15", "v16", "v16", \
+    "v17", "v18", "v19", "v20", "v21", \
+    "v22", "v23"
 #define C8_OUT_REMAIN                \
   for (int j = 0; j < remain; j++) { \
     *doutc0_ptr++ = tmp0[j];         \
@@ -547,6 +618,51 @@ inline void prepack_input_nxwc4(const float16_t* din,
   "vbif      q6,  q9, q8        \n"    \
   "vbif      q7,  q11,q10       \n"
 
+#define HARD_SWISH_C8                   \
+  "vld1.16 {d16-d17}, [%[voffset]]\n"   \
+  "vld1r    d18, [%[voffset], #16]\n"   \
+  "vld1r    d19, [%[voffset], #24]\n"   \
+  "vmul.f16 q14, q0, %q[valpha]\n"      \
+  "vmul.f16 q15, q1, %q[valpha]\n"      \
+  "vadd.f16 q10, q0,  q8\n"             \
+  "vadd.f16 q11, q1,  q8\n"             \
+  "vadd.f16 q12, q2,  q8\n"             \
+  "vadd.f16 q13, q3,  q8\n"             \
+  "vmax.f16 q10, q10, %q[vzero]\n"      \
+  "vmax.f16 q11, q11, %q[vzero]\n"      \
+  "vmax.f16 q12, q12, %q[vzero]\n"      \
+  "vmax.f16 q13, q13, %q[vzero]\n"      \
+  "vmin.f16 q10, q10, q9\n"             \
+  "vmin.f16 q11, q11, q9\n"             \
+  "vmin.f16 q12, q12, q9\n"             \
+  "vmin.f16 q13, q13, q9\n"             \
+  "vmul.f16 q0,  q10, q14\n"            \
+  "vmul.f16 q14, q2, %q[valpha]\n"      \
+  "vmul.f16 q1,  q11, q15\n"            \
+  "vmul.f16 q15, q3, %q[valpha]\n"      \
+  "vadd.f16 q10, q4,  q8\n"             \
+  "vadd.f16 q11, q5,  q8\n"             \
+  "vmul.f16 q2,  q12, q14\n"            \
+  "vmul.f16 q3,  q13, q15\n"            \
+  "vadd.f16 q12, q6,  q8\n"             \
+  "vadd.f16 q13, q7,  q8\n"             \
+  "vmax.f16 q10, q10, %q[vzero]\n"      \
+  "vmax.f16 q11, q11, %q[vzero]\n"      \
+  "vmax.f16 q12, q12, %q[vzero]\n"      \
+  "vmax.f16 q13, q13, %q[vzero]\n"      \
+  "vmul.f16 q14, q4, %q[valpha]\n"      \
+  "vmul.f16 q15, q5, %q[valpha]\n"      \
+  "vmin.f16 q10, q10, q9\n"             \
+  "vmin.f16 q11, q11, q9\n"             \
+  "vmin.f16 q12, q12, q9\n"             \
+  "vmin.f16 q13, q13, q9\n"             \
+  "vmul.f16 q8,  q6, %q[valpha]\n"      \
+  "vmul.f16 q9,  q7, %q[valpha]\n"      \
+  "vmul.f16 q4,  q10, q14\n"            \
+  "vmul.f16 q5,  q11, q15\n"            \
+  "vmul.f16 q6,  q12, q8\n"             \
+  "vmul.f16 q7,  q13, q9\n"
+
 #define STORE_C8                       \
   "vst1.16 {d0-d1},   [%[doutc0r0]]!\n"  \
   "vst1.16 {d2-d3},   [%[doutc1r0]]!\n"  \
@@ -598,7 +714,25 @@ inline void prepack_input_nxwc4(const float16_t* din,
   : "cc", "memory", "q0", "q1", "q2", \
     "q3", "q4", "q5", "q6", "q7",     \
     "q8", "q9", "q10", "q11", "q12"
-
+#define ASM_PARAM_1                  \
+  : [doutc0r0] "+r"(doutc0_ptr),     \
+    [doutc1r0] "+r"(doutc1_ptr),     \
+    [doutc2r0] "+r"(doutc2_ptr),     \
+    [doutc3r0] "+r"(doutc3_ptr),     \
+    [doutc4r0] "+r"(doutc4_ptr),     \
+    [doutc5r0] "+r"(doutc5_ptr),     \
+    [doutc6r0] "+r"(doutc6_ptr),     \
+    [doutc7r0] "+r"(doutc7_ptr),     \
+    [cnt] "+r"(cnt),                 \
+    [din_ptr] "+r"(din_hei_ptr)      \
+  : [vbias] "w"(vbias),              \
+    [tmp0] "r"(tmp0),                \
+    [voffset] "r"(voffset),          \
+    [vzero] "w"(vzero),              \
+    [valpha] "w"(valpha)             \
+  : "cc", "memory", "q0", "q1", "q2", \
+    "q3", "q4", "q5", "q6", "q7",     \
+    "q8", "q9", "q10", "q11", "q12"
 #define C8_OUT_REMAIN                \
   for (int j = 0; j < remain; j++) { \
     *doutc0_ptr++ = tmp0[j];         \
@@ -652,7 +786,9 @@ static void write_to_oc8_fp16(const float16_t* din,
                               int flag_act,
                               float16_t alpha,
                               const float16_t* bias,
-                              bool flag_bias) {
+                              bool flag_bias,
+                              float16_t offset = 0.f,
+                              float16_t threshold = 6.f) {
   int size_c_out = width * height;
 
   float16_t* doutc0r0 = dout + cs * size_c_out + hs * width + ws;
@@ -688,8 +824,18 @@ static void write_to_oc8_fp16(const float16_t* din,
   float16_t tmp5[8] = {0.f};
   float16_t tmp6[8] = {0.f};
   float16_t tmp7[8] = {0.f};
+  float16x8_t voffset = vdupq_n_f16(offset);
+  float16x8_t vthreshold = vdupq_n_f16(threshold);
 #else
   float16_t tmp0[64] = {0.f};
+  float16_t voffset[8] = {offset,
+                          offset,
+                          offset,
+                          offset,
+                          threshold,
+                          threshold,
+                          threshold,
+                          threshold};
 #endif
   if (ce > channel) {
     switch (7 - (channel - cs)) {
@@ -756,6 +902,19 @@ static void write_to_oc8_fp16(const float16_t* din,
         asm volatile(
             INIT_C8 PROCESS_C8 TRANS_C8 LEAKYRELU_C8 STORE_C8 PROCESS_C8_REMAIN
                 TRANS_C8 LEAKYRELU_C8 STORE_C8_REMAIN ASM_PARAM);
+        PTR_ADD
+        if (remain) {
+          C8_OUT_REMAIN
+        }
+        din += w_in_stride;
+      }
+      break;
+    case 4:  // hardswish
+      for (int i = 0; i < size_h; i++) {
+        C8_OUT_PARAM
+        asm volatile(
+            INIT_C8 PROCESS_C8 TRANS_C8 HARD_SWISH_C8 STORE_C8 PROCESS_C8_REMAIN
+                TRANS_C8 HARD_SWISH_C8 STORE_C8_REMAIN ASM_PARAM_1);
         PTR_ADD
         if (remain) {
           C8_OUT_REMAIN
