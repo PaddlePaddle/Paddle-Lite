@@ -56,13 +56,14 @@ void ConcatImageCompute::run_without_mps() {
 
     int idx = 0;
     auto encoder = [backend commandEncoder];
+    [encoder setTexture:output_buffer_->image() atIndex:(idx++)];
+    if (v_ == "normal") {
+        [encoder setTexture:output_buffer_->image() atIndex:(idx++)];
+    }
     for (auto item : input_buffers_) {
         [encoder setTexture:item->image() atIndex:(idx++)];
     }
-    [encoder setTexture:output_buffer_->image() atIndex:(idx++)];
-    if (v_ == "normal") {
-        [encoder setTexture:output_buffer_->image() atIndex:(idx)];
-    }
+
     [encoder setBuffer:params_buffer_->buffer() offset:(0) atIndex:(0)];
 
     [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
@@ -72,7 +73,7 @@ void ConcatImageCompute::run_without_mps() {
 void ConcatImageCompute::setup_without_mps() {
     const auto& param = this->Param<param_t>();
     int num = (int)param.x.size();
-
+    int vaxis = 0;
     int axis = int(4 - output_buffer_->tensor_dim_.size() + param.axis);
     auto* axis_tensor = param.axis_tensor;
     if (axis_tensor != nullptr) {
@@ -132,9 +133,21 @@ void ConcatImageCompute::setup_without_mps() {
             odm[4 - orank + i] = (int)(output_buffer_->tensor_dim_[i]);
         }
     }
+
+    if (v_ == "normal")
+        vaxis = 1;
+    else if (v_ == "x")
+        vaxis = 2;
+    else if (v_ == "y")
+        vaxis = 3;
+    else if (v_ == "z")
+        vaxis = 4;
+
     ConcatMetalParam concat_params{{odm[0], odm[1], odm[2], odm[3]},
         static_cast<int>(axis),
         0,
+        num,
+        vaxis,
         {transpose[0], transpose[1], transpose[2], transpose[3]},
         {(int)vdim[0], (int)vdim[1], (int)vdim[2], (int)vdim[3], (int)vdim[4], (int)vdim[5]}};
 
@@ -142,7 +155,10 @@ void ConcatImageCompute::setup_without_mps() {
         std::make_shared<MetalBuffer>(metal_context_, sizeof(concat_params), &concat_params);
 #ifdef LITE_WITH_METAL_FULL
 #else
-    function_name_ = "concat_" + std::to_string(orank) + "_" + std::to_string(num) + "_" + v_;
+    if (v_ == "normal")
+        function_name_ = "concat_normal";
+    else
+        function_name_ = "concat";
 #endif
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     pipline_ = [backend pipline:function_name_];

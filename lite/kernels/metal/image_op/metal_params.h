@@ -130,6 +130,8 @@ struct ConcatMetalParam {
     int odim[4];
     int axis;
     int offset;
+    int num;
+    int v_;
     int trans[4];
     int vdim[6];
 };
