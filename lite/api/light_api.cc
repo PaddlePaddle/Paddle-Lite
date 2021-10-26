@@ -317,6 +317,8 @@ void LightPredictor::WeightFP32ToFP16() {
                                     "gru",
                                     "sequence_conv",
                                     "elementwise_add",
+                                    "elementwise_sub",
+                                    "elementwise_div",
                                     "elementwise_mul",
                                     "prelu"};
   for (size_t i = 0; i < program_desc->BlocksSize(); i++) {
