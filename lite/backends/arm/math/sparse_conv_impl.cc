@@ -1017,22 +1017,24 @@ void sparse_conv_fp32_pipelined(const float* A,
   size_t output_decrement = output_stride * nc - 48 * sizeof(float);
   while
     SPARSE_LIKELY(mc >= 48 * sizeof(float)) {
-
       LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-        float* cur_output = reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+        float* cur_output =
+            reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
         const float* cur_w = A;
         uint32_t nnz = nidx_nnzmap[i];
         const float* cur_b = B;
         const int32_t* dmap = widx_dmap;
         if (i != 0) {
-            int cur_rem = nidx_nnzmap[i - 1] & 3;
-            if (cur_rem != 0) {
-                cur_rem = 4 - cur_rem;
-            }
-            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
-            cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
-            cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
-            dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
+          int cur_rem = nidx_nnzmap[i - 1] & 3;
+          if (cur_rem != 0) {
+            cur_rem = 4 - cur_rem;
+          }
+          nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
+          cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
+          cur_b += ((nidx_nnzmap[i - 1] == 0)
+                        ? 0
+                        : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
+          dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
         }
         uint32_t pair_num = nnz / 4;
         uint32_t lave_num = nnz % 4;
@@ -1065,9 +1067,9 @@ void sparse_conv_fp32_pipelined(const float* A,
     SPARSE_UNLIKELY(mc != 0) {
       output_decrement += 16 * sizeof(float);
       if (mc & (32 * sizeof(float))) {
-        
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-          float* cur_output = reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
           const float* cur_w = A;
           uint32_t nnz = nidx_nnzmap[i];
           const float* cur_b = B;
@@ -1075,11 +1077,13 @@ void sparse_conv_fp32_pipelined(const float* A,
           if (i != 0) {
             int cur_rem = nidx_nnzmap[i - 1] & 3;
             if (cur_rem != 0) {
-                cur_rem = 4 - cur_rem;
+              cur_rem = 4 - cur_rem;
             }
             nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
             cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
-            cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
+            cur_b += ((nidx_nnzmap[i - 1] == 0)
+                          ? 0
+                          : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
             dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
           }
           uint32_t pair_num = nnz / 4;
@@ -1104,14 +1108,16 @@ void sparse_conv_fp32_pipelined(const float* A,
           // clang-format on
         }
         LITE_PARALLEL_COMMON_END();
-        output = reinterpret_cast<float*>((uintptr_t)output + 32 * sizeof(float));
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 32 * sizeof(float));
         B += 32;
         mc -= 32 * sizeof(float);
       }
       output_decrement += 16 * sizeof(float);
       if (mc & (16 * sizeof(float))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-          float* cur_output = reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
           const float* cur_w = A;
           uint32_t nnz = nidx_nnzmap[i];
           const float* cur_b = B;
@@ -1119,11 +1125,13 @@ void sparse_conv_fp32_pipelined(const float* A,
           if (i != 0) {
             int cur_rem = nidx_nnzmap[i - 1] & 3;
             if (cur_rem != 0) {
-                cur_rem = 4 - cur_rem;
+              cur_rem = 4 - cur_rem;
             }
             nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
             cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
-            cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
+            cur_b += ((nidx_nnzmap[i - 1] == 0)
+                          ? 0
+                          : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
             dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
           }
           uint32_t pair_num = nnz / 4;
@@ -1147,15 +1155,16 @@ void sparse_conv_fp32_pipelined(const float* A,
           // clang-format on
         }
         LITE_PARALLEL_COMMON_END();
-        output = reinterpret_cast<float*>((uintptr_t)output + 16 * sizeof(float));
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 16 * sizeof(float));
         B += 16;
         mc -= 16 * sizeof(float);
       }
       output_decrement += 8 * sizeof(float);
       if (mc & (8 * sizeof(float))) {
-
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-          float* cur_output = reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
           const float* cur_w = A;
           uint32_t nnz = nidx_nnzmap[i];
           const float* cur_b = B;
@@ -1163,11 +1172,13 @@ void sparse_conv_fp32_pipelined(const float* A,
           if (i != 0) {
             int cur_rem = nidx_nnzmap[i - 1] & 3;
             if (cur_rem != 0) {
-                cur_rem = 4 - cur_rem;
+              cur_rem = 4 - cur_rem;
             }
             nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
             cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
-            cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
+            cur_b += ((nidx_nnzmap[i - 1] == 0)
+                          ? 0
+                          : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
             dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
           }
           uint32_t pair_num = nnz / 4;
@@ -1190,15 +1201,16 @@ void sparse_conv_fp32_pipelined(const float* A,
           // clang-format on
         }
         LITE_PARALLEL_COMMON_END();
-        output = reinterpret_cast<float*>((uintptr_t)output + 8 * sizeof(float));
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 8 * sizeof(float));
         B += 8;
         mc -= 8 * sizeof(float);
       }
       output_decrement += 4 * sizeof(float);
       if (mc & (4 * sizeof(float))) {
-
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-          float* cur_output = reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
           const float* cur_w = A;
           uint32_t nnz = nidx_nnzmap[i];
           const float* cur_b = B;
@@ -1206,11 +1218,13 @@ void sparse_conv_fp32_pipelined(const float* A,
           if (i != 0) {
             int cur_rem = nidx_nnzmap[i - 1] & 3;
             if (cur_rem != 0) {
-                cur_rem = 4 - cur_rem;
+              cur_rem = 4 - cur_rem;
             }
             nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
             cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
-            cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
+            cur_b += ((nidx_nnzmap[i - 1] == 0)
+                          ? 0
+                          : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
             dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
           }
           uint32_t pair_num = nnz / 4;
@@ -1233,7 +1247,8 @@ void sparse_conv_fp32_pipelined(const float* A,
           // clang-format on
         }
         LITE_PARALLEL_COMMON_END();
-        output = reinterpret_cast<float*>((uintptr_t)output + 4 * sizeof(float));
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 4 * sizeof(float));
         B += 4;
         mc -= 4 * sizeof(float);
       }
@@ -1243,20 +1258,24 @@ void sparse_conv_fp32_pipelined(const float* A,
           int mindex = mc / sizeof(float);
 
           LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-            float* cur_output = reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+            float* cur_output =
+                reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
             const float* cur_w = A;
             uint32_t nnz = nidx_nnzmap[i];
             const float* cur_b = B;
             const int32_t* dmap = widx_dmap;
             if (i != 0) {
-                int cur_rem = nidx_nnzmap[i - 1] & 3;
-                if (cur_rem != 0) {
-                    cur_rem = 4 - cur_rem;
-                }
-                nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
-                cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
-                cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
-                dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
+              int cur_rem = nidx_nnzmap[i - 1] & 3;
+              if (cur_rem != 0) {
+                cur_rem = 4 - cur_rem;
+              }
+              nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
+              cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
+              cur_b +=
+                  ((nidx_nnzmap[i - 1] == 0)
+                       ? 0
+                       : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
+              dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
             }
             float vbias = (bias != nullptr) ? bias[i] : 0;
             for (size_t k = 0; k < mindex; k++) {
@@ -1282,19 +1301,23 @@ void sparse_conv_fp32_pipelined(const float* A,
                 break;
               case 1:
                 for (size_t k = 0; k < mindex; k++) {
-                  *(cur_output + k) = *(cur_output + k) > 0 ? *(cur_output + k) : 0;
+                  *(cur_output + k) =
+                      *(cur_output + k) > 0 ? *(cur_output + k) : 0;
                 }
                 break;
               case 2:
                 for (size_t k = 0; k < mindex; k++) {
-                  *(cur_output + k) = *(cur_output + k) > 0 ? *(cur_output + k) : 0;
-                  *(cur_output + k) = *(cur_output + k) < alpha ? *(cur_output + k) : alpha;
+                  *(cur_output + k) =
+                      *(cur_output + k) > 0 ? *(cur_output + k) : 0;
+                  *(cur_output + k) =
+                      *(cur_output + k) < alpha ? *(cur_output + k) : alpha;
                 }
                 break;
               default:
                 for (size_t k = 0; k < mindex; k++) {
-                  *(cur_output + k) = *(cur_output + k) >= 0 ? *(cur_output + k)
-                                                     : *(cur_output + k) * alpha;
+                  *(cur_output + k) = *(cur_output + k) >= 0
+                                          ? *(cur_output + k)
+                                          : *(cur_output + k) * alpha;
                 }
                 break;
             }
@@ -1959,16 +1982,19 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   while
     SPARSE_LIKELY(mc >= 48 * sizeof(int8_t)) {
       LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-        float* cur_output = reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+        float* cur_output =
+            reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
         const int8_t* cur_w = A;
         uint32_t nnz = nidx_nnzmap[i];
         const int8_t* cur_b = B;
         const int32_t* dmap = widx_dmap;
         if (i != 0) {
-            cur_w = A + nidx_nnzmap[i - 1];
-            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
-            cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1]);
-            dmap = widx_dmap + nidx_nnzmap[i - 1];
+          cur_w = A + nidx_nnzmap[i - 1];
+          nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
+          cur_b +=
+              ((nidx_nnzmap[i - 1] == 0) ? 0
+                                         : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+          dmap = widx_dmap + nidx_nnzmap[i - 1];
         }
         float vsclae = scale[i];
         float vbias = (bias != nullptr) ? bias[i] : 0.0;
@@ -1998,9 +2024,9 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
     SPARSE_UNLIKELY(mc != 0) {
       output_decrement += 16 * sizeof(float);
       if (mc & (32 * sizeof(int8_t))) {
-        
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-          float* cur_output = reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
           const int8_t* cur_w = A;
           uint32_t nnz = nidx_nnzmap[i];
           const int8_t* cur_b = B;
@@ -2008,7 +2034,9 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
           if (i != 0) {
             cur_w = A + nidx_nnzmap[i - 1];
             nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
-            cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+            cur_b +=
+                ((nidx_nnzmap[i - 1] == 0) ? 0
+                                           : widx_dmap[nidx_nnzmap[i - 1] - 1]);
             dmap = widx_dmap + nidx_nnzmap[i - 1];
           }
           float vsclae = scale[i];
@@ -2031,15 +2059,16 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
           // clang-format on
         }
         LITE_PARALLEL_COMMON_END();
-        output = reinterpret_cast<float*>((uintptr_t)output + 32 * sizeof(float));
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 32 * sizeof(float));
         B += 32;
         mc -= 32 * sizeof(int8_t);
       }
       output_decrement += 16 * sizeof(float);
       if (mc & (16 * sizeof(int8_t))) {
-
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-          float* cur_output = reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
           const int8_t* cur_w = A;
           uint32_t nnz = nidx_nnzmap[i];
           const int8_t* cur_b = B;
@@ -2047,7 +2076,9 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
           if (i != 0) {
             cur_w = A + nidx_nnzmap[i - 1];
             nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
-            cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+            cur_b +=
+                ((nidx_nnzmap[i - 1] == 0) ? 0
+                                           : widx_dmap[nidx_nnzmap[i - 1] - 1]);
             dmap = widx_dmap + nidx_nnzmap[i - 1];
           }
           float vsclae = scale[i];
@@ -2069,15 +2100,16 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
           // clang-format on
         }
         LITE_PARALLEL_COMMON_END();
-        output = reinterpret_cast<float*>((uintptr_t)output + 16 * sizeof(float));
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 16 * sizeof(float));
         B += 16;
         mc -= 16 * sizeof(int8_t);
       }
       output_decrement += 8 * sizeof(float);
       if (mc & (8 * sizeof(int8_t))) {
-
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-          float* cur_output = reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
           const int8_t* cur_w = A;
           uint32_t nnz = nidx_nnzmap[i];
           const int8_t* cur_b = B;
@@ -2085,7 +2117,9 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
           if (i != 0) {
             cur_w = A + nidx_nnzmap[i - 1];
             nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
-            cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+            cur_b +=
+                ((nidx_nnzmap[i - 1] == 0) ? 0
+                                           : widx_dmap[nidx_nnzmap[i - 1] - 1]);
             dmap = widx_dmap + nidx_nnzmap[i - 1];
           }
           float vsclae = scale[i];
@@ -2106,15 +2140,16 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
           // clang-format on
         }
         LITE_PARALLEL_COMMON_END();
-        output = reinterpret_cast<float*>((uintptr_t)output + 8 * sizeof(float));
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 8 * sizeof(float));
         B += 8;
         mc -= 8 * sizeof(int8_t);
       }
       output_decrement += 4 * sizeof(float);
       if (mc & (4 * sizeof(int8_t))) {
-
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-          float* cur_output = reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
           const int8_t* cur_w = A;
           uint32_t nnz = nidx_nnzmap[i];
           const int8_t* cur_b = B;
@@ -2122,7 +2157,9 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
           if (i != 0) {
             cur_w = A + nidx_nnzmap[i - 1];
             nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
-            cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+            cur_b +=
+                ((nidx_nnzmap[i - 1] == 0) ? 0
+                                           : widx_dmap[nidx_nnzmap[i - 1] - 1]);
             dmap = widx_dmap + nidx_nnzmap[i - 1];
           }
           float vsclae = scale[i];
@@ -2143,7 +2180,8 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
           // clang-format on
         }
         LITE_PARALLEL_COMMON_END();
-        output = reinterpret_cast<float*>((uintptr_t)output + 4 * sizeof(float));
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 4 * sizeof(float));
         B += 4;
         mc -= 4 * sizeof(int8_t);
       }
@@ -2153,16 +2191,19 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
           int mindex = mc / sizeof(int8_t);
 
           LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-            float* cur_output = reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+            float* cur_output =
+                reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
             const int8_t* cur_w = A;
             uint32_t nnz = nidx_nnzmap[i];
             const int8_t* cur_b = B;
             const int32_t* dmap = widx_dmap;
             if (i != 0) {
-                cur_w = A + nidx_nnzmap[i - 1];
-                nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
-                cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1]);
-                dmap = widx_dmap + nidx_nnzmap[i - 1];
+              cur_w = A + nidx_nnzmap[i - 1];
+              nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
+              cur_b += ((nidx_nnzmap[i - 1] == 0)
+                            ? 0
+                            : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+              dmap = widx_dmap + nidx_nnzmap[i - 1];
             }
             float vbias = (bias != nullptr) ? bias[i] : 0;
             float vscale = scale[i];
@@ -2186,21 +2227,25 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
               case 1:
                 for (size_t k = 0; k < mindex; k++) {
                   *(cur_output + k) = *(cur_output + k) * vscale + vbias;
-                  *(cur_output + k) = *(cur_output + k) > 0 ? *(cur_output + k) : 0;
+                  *(cur_output + k) =
+                      *(cur_output + k) > 0 ? *(cur_output + k) : 0;
                 }
                 break;
               case 2:
                 for (size_t k = 0; k < mindex; k++) {
                   *(cur_output + k) = *(cur_output + k) * vscale + vbias;
-                  *(cur_output + k) = *(cur_output + k) > 0 ? *(cur_output + k) : 0;
-                  *(cur_output + k) = *(cur_output + k) < alpha ? *(cur_output + k) : alpha;
+                  *(cur_output + k) =
+                      *(cur_output + k) > 0 ? *(cur_output + k) : 0;
+                  *(cur_output + k) =
+                      *(cur_output + k) < alpha ? *(cur_output + k) : alpha;
                 }
                 break;
               default:
                 for (size_t k = 0; k < mindex; k++) {
                   *(cur_output + k) = *(cur_output + k) * vscale + vbias;
-                  *(cur_output + k) = *(cur_output + k) >= 0 ? *(cur_output + k)
-                                                     : *(cur_output + k) * alpha;
+                  *(cur_output + k) = *(cur_output + k) >= 0
+                                          ? *(cur_output + k)
+                                          : *(cur_output + k) * alpha;
                 }
                 break;
             }
@@ -2982,16 +3027,19 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
   while
     SPARSE_LIKELY(mc >= 48 * sizeof(int8_t)) {
       LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-        int8_t* cur_output = reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
+        int8_t* cur_output =
+            reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
         const int8_t* cur_w = A;
         uint32_t nnz = nidx_nnzmap[i];
         const int8_t* cur_b = B;
         const int32_t* dmap = widx_dmap;
         if (i != 0) {
-            cur_w = A + nidx_nnzmap[i - 1];
-            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
-            cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1]);
-            dmap = widx_dmap + nidx_nnzmap[i - 1];
+          cur_w = A + nidx_nnzmap[i - 1];
+          nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
+          cur_b +=
+              ((nidx_nnzmap[i - 1] == 0) ? 0
+                                         : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+          dmap = widx_dmap + nidx_nnzmap[i - 1];
         }
         float vsclae = scale[i];
         float vbias = (bias != nullptr) ? bias[i] : 0.0;
@@ -3014,7 +3062,8 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
         // clang-format on
       }
       LITE_PARALLEL_COMMON_END();
-      output = reinterpret_cast<int8_t*>((uintptr_t)output + 48 * sizeof(int8_t));
+      output =
+          reinterpret_cast<int8_t*>((uintptr_t)output + 48 * sizeof(int8_t));
       B += 48;
       mc -= 48 * sizeof(int8_t);
     }
@@ -3023,7 +3072,8 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
       output_decrement += 16 * sizeof(int8_t);
       if (mc & (32 * sizeof(int8_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-          int8_t* cur_output = reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
+          int8_t* cur_output =
+              reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
           const int8_t* cur_w = A;
           uint32_t nnz = nidx_nnzmap[i];
           const int8_t* cur_b = B;
@@ -3031,7 +3081,9 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
           if (i != 0) {
             cur_w = A + nidx_nnzmap[i - 1];
             nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
-            cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+            cur_b +=
+                ((nidx_nnzmap[i - 1] == 0) ? 0
+                                           : widx_dmap[nidx_nnzmap[i - 1] - 1]);
             dmap = widx_dmap + nidx_nnzmap[i - 1];
           }
           float vsclae = scale[i];
@@ -3055,14 +3107,16 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
           // clang-format on
         }
         LITE_PARALLEL_COMMON_END();
-        output = reinterpret_cast<int8_t*>((uintptr_t)output + 32 * sizeof(int8_t));
+        output =
+            reinterpret_cast<int8_t*>((uintptr_t)output + 32 * sizeof(int8_t));
         B += 32;
         mc -= 32 * sizeof(int8_t);
       }
       output_decrement += 16 * sizeof(int8_t);
       if (mc & (16 * sizeof(int8_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-          int8_t* cur_output = reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
+          int8_t* cur_output =
+              reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
           const int8_t* cur_w = A;
           uint32_t nnz = nidx_nnzmap[i];
           const int8_t* cur_b = B;
@@ -3070,7 +3124,9 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
           if (i != 0) {
             cur_w = A + nidx_nnzmap[i - 1];
             nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
-            cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+            cur_b +=
+                ((nidx_nnzmap[i - 1] == 0) ? 0
+                                           : widx_dmap[nidx_nnzmap[i - 1] - 1]);
             dmap = widx_dmap + nidx_nnzmap[i - 1];
           }
           float vsclae = scale[i];
@@ -3093,14 +3149,16 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
           // clang-format on
         }
         LITE_PARALLEL_COMMON_END();
-        output = reinterpret_cast<int8_t*>((uintptr_t)output + 16 * sizeof(int8_t));
+        output =
+            reinterpret_cast<int8_t*>((uintptr_t)output + 16 * sizeof(int8_t));
         B += 16;
         mc -= 16 * sizeof(int8_t);
       }
       output_decrement += 8 * sizeof(int8_t);
       if (mc & (8 * sizeof(int8_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-          int8_t* cur_output = reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
+          int8_t* cur_output =
+              reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
           const int8_t* cur_w = A;
           uint32_t nnz = nidx_nnzmap[i];
           const int8_t* cur_b = B;
@@ -3108,7 +3166,9 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
           if (i != 0) {
             cur_w = A + nidx_nnzmap[i - 1];
             nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
-            cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+            cur_b +=
+                ((nidx_nnzmap[i - 1] == 0) ? 0
+                                           : widx_dmap[nidx_nnzmap[i - 1] - 1]);
             dmap = widx_dmap + nidx_nnzmap[i - 1];
           }
           float vsclae = scale[i];
@@ -3130,14 +3190,16 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
           // clang-format on
         }
         LITE_PARALLEL_COMMON_END();
-        output = reinterpret_cast<int8_t*>((uintptr_t)output + 8 * sizeof(int8_t));
+        output =
+            reinterpret_cast<int8_t*>((uintptr_t)output + 8 * sizeof(int8_t));
         B += 8;
         mc -= 8 * sizeof(int8_t);
       }
       output_decrement += 4 * sizeof(int8_t);
       if (mc & (4 * sizeof(int8_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-          int8_t* cur_output = reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
+          int8_t* cur_output =
+              reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
           const int8_t* cur_w = A;
           uint32_t nnz = nidx_nnzmap[i];
           const int8_t* cur_b = B;
@@ -3145,7 +3207,9 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
           if (i != 0) {
             cur_w = A + nidx_nnzmap[i - 1];
             nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
-            cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+            cur_b +=
+                ((nidx_nnzmap[i - 1] == 0) ? 0
+                                           : widx_dmap[nidx_nnzmap[i - 1] - 1]);
             dmap = widx_dmap + nidx_nnzmap[i - 1];
           }
           float vsclae = scale[i];
@@ -3167,25 +3231,28 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
           // clang-format on
         }
         LITE_PARALLEL_COMMON_END();
-        output = reinterpret_cast<int8_t*>((uintptr_t)output + 4 * sizeof(int8_t));
+        output =
+            reinterpret_cast<int8_t*>((uintptr_t)output + 4 * sizeof(int8_t));
         B += 4;
         mc -= 4 * sizeof(int8_t);
       }
 
       if
         SPARSE_UNLIKELY(mc != 0 && mc < 4 * sizeof(int8_t)) {
-
           LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-            int8_t* cur_output = reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
+            int8_t* cur_output = reinterpret_cast<int8_t*>((uintptr_t)output +
+                                                           output_stride * i);
             const int8_t* cur_w = A;
             uint32_t nnz = nidx_nnzmap[i];
             const int8_t* cur_b = B;
             const int32_t* dmap = widx_dmap;
             if (i != 0) {
-                cur_w = A + nidx_nnzmap[i - 1];
-                nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
-                cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1]);
-                dmap = widx_dmap + nidx_nnzmap[i - 1];
+              cur_w = A + nidx_nnzmap[i - 1];
+              nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
+              cur_b += ((nidx_nnzmap[i - 1] == 0)
+                            ? 0
+                            : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+              dmap = widx_dmap + nidx_nnzmap[i - 1];
             }
             float vbias = (bias != nullptr) ? bias[i] : 0;
             float vscale = scale[i];
@@ -3805,22 +3872,24 @@ void sparse_conv_fp32_pipelined(const float* A,
   size_t output_decrement = output_stride * nc - 48 * sizeof(float);
   while
     SPARSE_LIKELY(mc >= 48 * sizeof(float)) {
-
       LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-        float* cur_output = reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+        float* cur_output =
+            reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
         const float* cur_w = A;
         uint32_t nnz = nidx_nnzmap[i];
         const float* cur_b = B;
         const int32_t* dmap = widx_dmap;
         if (i != 0) {
-            int cur_rem = nidx_nnzmap[i - 1] & 3;
-            if (cur_rem != 0) {
-                cur_rem = 4 - cur_rem;
-            }
-            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
-            cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
-            cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
-            dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
+          int cur_rem = nidx_nnzmap[i - 1] & 3;
+          if (cur_rem != 0) {
+            cur_rem = 4 - cur_rem;
+          }
+          nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
+          cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
+          cur_b += ((nidx_nnzmap[i - 1] == 0)
+                        ? 0
+                        : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
+          dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
         }
         uint32_t pair_num = nnz % 4;
         uint32_t lave_num = (pair_num == 0) ? 0 : (4 - pair_num);
@@ -3871,7 +3940,8 @@ void sparse_conv_fp32_pipelined(const float* A,
       output_decrement += 16 * sizeof(float);
       if (mc & (32 * sizeof(float))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-          float* cur_output = reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
           const float* cur_w = A;
           uint32_t nnz = nidx_nnzmap[i];
           const float* cur_b = B;
@@ -3879,11 +3949,13 @@ void sparse_conv_fp32_pipelined(const float* A,
           if (i != 0) {
             int cur_rem = nidx_nnzmap[i - 1] & 3;
             if (cur_rem != 0) {
-                cur_rem = 4 - cur_rem;
+              cur_rem = 4 - cur_rem;
             }
             nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
             cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
-            cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
+            cur_b += ((nidx_nnzmap[i - 1] == 0)
+                          ? 0
+                          : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
             dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
           }
           uint32_t pair_num = nnz % 4;
@@ -3921,14 +3993,16 @@ void sparse_conv_fp32_pipelined(const float* A,
           // clang-format on
         }
         LITE_PARALLEL_COMMON_END();
-        output = reinterpret_cast<float*>((uintptr_t)output + 32 * sizeof(float));
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 32 * sizeof(float));
         B += 32;
         mc -= 32 * sizeof(float);
       }
       output_decrement += 16 * sizeof(float);
       if (mc & (16 * sizeof(float))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-          float* cur_output = reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
           const float* cur_w = A;
           uint32_t nnz = nidx_nnzmap[i];
           const float* cur_b = B;
@@ -3936,11 +4010,13 @@ void sparse_conv_fp32_pipelined(const float* A,
           if (i != 0) {
             int cur_rem = nidx_nnzmap[i - 1] & 3;
             if (cur_rem != 0) {
-                cur_rem = 4 - cur_rem;
+              cur_rem = 4 - cur_rem;
             }
             nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
             cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
-            cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
+            cur_b += ((nidx_nnzmap[i - 1] == 0)
+                          ? 0
+                          : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
             dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
           }
           uint32_t pair_num = nnz % 4;
@@ -3978,14 +4054,16 @@ void sparse_conv_fp32_pipelined(const float* A,
           // clang-format on
         }
         LITE_PARALLEL_COMMON_END();
-        output = reinterpret_cast<float*>((uintptr_t)output + 16 * sizeof(float));
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 16 * sizeof(float));
         B += 16;
         mc -= 16 * sizeof(float);
       }
       output_decrement += 8 * sizeof(float);
       if (mc & (8 * sizeof(float))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-          float* cur_output = reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
           const float* cur_w = A;
           uint32_t nnz = nidx_nnzmap[i];
           const float* cur_b = B;
@@ -3993,11 +4071,13 @@ void sparse_conv_fp32_pipelined(const float* A,
           if (i != 0) {
             int cur_rem = nidx_nnzmap[i - 1] & 3;
             if (cur_rem != 0) {
-                cur_rem = 4 - cur_rem;
+              cur_rem = 4 - cur_rem;
             }
             nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
             cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
-            cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
+            cur_b += ((nidx_nnzmap[i - 1] == 0)
+                          ? 0
+                          : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
             dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
           }
           uint32_t pair_num = nnz % 4;
@@ -4031,14 +4111,16 @@ void sparse_conv_fp32_pipelined(const float* A,
           // clang-format on
         }
         LITE_PARALLEL_COMMON_END();
-        output = reinterpret_cast<float*>((uintptr_t)output + 8 * sizeof(float));
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 8 * sizeof(float));
         B += 8;
         mc -= 8 * sizeof(float);
       }
       output_decrement += 4 * sizeof(float);
       if (mc & (4 * sizeof(float))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-          float* cur_output = reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
           const float* cur_w = A;
           uint32_t nnz = nidx_nnzmap[i];
           const float* cur_b = B;
@@ -4046,11 +4128,13 @@ void sparse_conv_fp32_pipelined(const float* A,
           if (i != 0) {
             int cur_rem = nidx_nnzmap[i - 1] & 3;
             if (cur_rem != 0) {
-                cur_rem = 4 - cur_rem;
+              cur_rem = 4 - cur_rem;
             }
             nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
             cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
-            cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
+            cur_b += ((nidx_nnzmap[i - 1] == 0)
+                          ? 0
+                          : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
             dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
           }
           uint32_t pair_num = nnz % 4;
@@ -4080,7 +4164,8 @@ void sparse_conv_fp32_pipelined(const float* A,
           // clang-format on
         }
         LITE_PARALLEL_COMMON_END();
-        output = reinterpret_cast<float*>((uintptr_t)output + 4 * sizeof(float));
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 4 * sizeof(float));
         B += 4;
         mc -= 4 * sizeof(float);
       }
@@ -4090,20 +4175,24 @@ void sparse_conv_fp32_pipelined(const float* A,
           int mindex = mc / sizeof(float);
 
           LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-            float* cur_output = reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+            float* cur_output =
+                reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
             const float* cur_w = A;
             uint32_t nnz = nidx_nnzmap[i];
             const float* cur_b = B;
             const int32_t* dmap = widx_dmap;
             if (i != 0) {
-                int cur_rem = nidx_nnzmap[i - 1] & 3;
-                if (cur_rem != 0) {
-                    cur_rem = 4 - cur_rem;
-                }
-                nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
-                cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
-                cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
-                dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
+              int cur_rem = nidx_nnzmap[i - 1] & 3;
+              if (cur_rem != 0) {
+                cur_rem = 4 - cur_rem;
+              }
+              nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
+              cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
+              cur_b +=
+                  ((nidx_nnzmap[i - 1] == 0)
+                       ? 0
+                       : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
+              dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
             }
             float vbias = (bias != nullptr) ? bias[i] : 0;
             for (size_t k = 0; k < mindex; k++) {
@@ -4129,19 +4218,23 @@ void sparse_conv_fp32_pipelined(const float* A,
                 break;
               case 1:
                 for (size_t k = 0; k < mindex; k++) {
-                  *(cur_output + k) = *(cur_output + k) > 0 ? *(cur_output + k) : 0;
+                  *(cur_output + k) =
+                      *(cur_output + k) > 0 ? *(cur_output + k) : 0;
                 }
                 break;
               case 2:
                 for (size_t k = 0; k < mindex; k++) {
-                  *(cur_output + k) = *(cur_output + k) > 0 ? *(cur_output + k) : 0;
-                  *(cur_output + k) = *(cur_output + k) < alpha ? *(cur_output + k) : alpha;
+                  *(cur_output + k) =
+                      *(cur_output + k) > 0 ? *(cur_output + k) : 0;
+                  *(cur_output + k) =
+                      *(cur_output + k) < alpha ? *(cur_output + k) : alpha;
                 }
                 break;
               default:
                 for (size_t k = 0; k < mindex; k++) {
-                  *(cur_output + k) =
-                      *(cur_output + k) >= 0 ? *(cur_output + k) : *(cur_output + k) * alpha;
+                  *(cur_output + k) = *(cur_output + k) >= 0
+                                          ? *(cur_output + k)
+                                          : *(cur_output + k) * alpha;
                 }
                 break;
             }
@@ -4840,16 +4933,19 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   while
     SPARSE_LIKELY(mc >= 48 * sizeof(int8_t)) {
       LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-        float* cur_output = reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+        float* cur_output =
+            reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
         const int8_t* cur_w = A;
         uint32_t nnz = nidx_nnzmap[i];
         const int8_t* cur_b = B;
         const int32_t* dmap = widx_dmap;
         if (i != 0) {
-            cur_w = A + nidx_nnzmap[i - 1];
-            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
-            cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1]);
-            dmap = widx_dmap + nidx_nnzmap[i - 1];
+          cur_w = A + nidx_nnzmap[i - 1];
+          nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
+          cur_b +=
+              ((nidx_nnzmap[i - 1] == 0) ? 0
+                                         : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+          dmap = widx_dmap + nidx_nnzmap[i - 1];
         }
         float vsclae = scale[i];
         float vbias = (bias != nullptr) ? bias[i] : 0.0;
@@ -4897,7 +4993,8 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
       output_decrement += 16 * sizeof(float);
       if (mc & (32 * sizeof(int8_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-          float* cur_output = reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
           const int8_t* cur_w = A;
           uint32_t nnz = nidx_nnzmap[i];
           const int8_t* cur_b = B;
@@ -4905,7 +5002,9 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
           if (i != 0) {
             cur_w = A + nidx_nnzmap[i - 1];
             nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
-            cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+            cur_b +=
+                ((nidx_nnzmap[i - 1] == 0) ? 0
+                                           : widx_dmap[nidx_nnzmap[i - 1] - 1]);
             dmap = widx_dmap + nidx_nnzmap[i - 1];
           }
           float vsclae = scale[i];
@@ -4941,14 +5040,16 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
           // clang-format on
         }
         LITE_PARALLEL_COMMON_END();
-        output = reinterpret_cast<float*>((uintptr_t)output + 32 * sizeof(float));
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 32 * sizeof(float));
         B += 32;
         mc -= 32 * sizeof(int8_t);
       }
       output_decrement += 16 * sizeof(float);
       if (mc & (16 * sizeof(int8_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-          float* cur_output = reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
           const int8_t* cur_w = A;
           uint32_t nnz = nidx_nnzmap[i];
           const int8_t* cur_b = B;
@@ -4956,7 +5057,9 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
           if (i != 0) {
             cur_w = A + nidx_nnzmap[i - 1];
             nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
-            cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+            cur_b +=
+                ((nidx_nnzmap[i - 1] == 0) ? 0
+                                           : widx_dmap[nidx_nnzmap[i - 1] - 1]);
             dmap = widx_dmap + nidx_nnzmap[i - 1];
           }
           float vsclae = scale[i];
@@ -4992,14 +5095,16 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
           // clang-format on
         }
         LITE_PARALLEL_COMMON_END();
-        output = reinterpret_cast<float*>((uintptr_t)output + 16 * sizeof(float));
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 16 * sizeof(float));
         B += 16;
         mc -= 16 * sizeof(int8_t);
       }
       output_decrement += 8 * sizeof(float);
       if (mc & (8 * sizeof(int8_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-          float* cur_output = reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
           const int8_t* cur_w = A;
           uint32_t nnz = nidx_nnzmap[i];
           const int8_t* cur_b = B;
@@ -5007,7 +5112,9 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
           if (i != 0) {
             cur_w = A + nidx_nnzmap[i - 1];
             nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
-            cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+            cur_b +=
+                ((nidx_nnzmap[i - 1] == 0) ? 0
+                                           : widx_dmap[nidx_nnzmap[i - 1] - 1]);
             dmap = widx_dmap + nidx_nnzmap[i - 1];
           }
           float vsclae = scale[i];
@@ -5039,14 +5146,16 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
           // clang-format on
         }
         LITE_PARALLEL_COMMON_END();
-        output = reinterpret_cast<float*>((uintptr_t)output + 8 * sizeof(float));
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 8 * sizeof(float));
         B += 8;
         mc -= 8 * sizeof(int8_t);
       }
       output_decrement += 4 * sizeof(float);
       if (mc & (4 * sizeof(int8_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-          float* cur_output = reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
           const int8_t* cur_w = A;
           uint32_t nnz = nidx_nnzmap[i];
           const int8_t* cur_b = B;
@@ -5054,7 +5163,9 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
           if (i != 0) {
             cur_w = A + nidx_nnzmap[i - 1];
             nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
-            cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+            cur_b +=
+                ((nidx_nnzmap[i - 1] == 0) ? 0
+                                           : widx_dmap[nidx_nnzmap[i - 1] - 1]);
             dmap = widx_dmap + nidx_nnzmap[i - 1];
           }
           float vsclae = scale[i];
@@ -5083,7 +5194,8 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
           // clang-format on
         }
         LITE_PARALLEL_COMMON_END();
-        output = reinterpret_cast<float*>((uintptr_t)output + 4 * sizeof(float));
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 4 * sizeof(float));
         B += 4;
         mc -= 4 * sizeof(int8_t);
       }
@@ -5093,16 +5205,19 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
           int mindex = mc / sizeof(int8_t);
 
           LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-            float* cur_output = reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+            float* cur_output =
+                reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
             const int8_t* cur_w = A;
             uint32_t nnz = nidx_nnzmap[i];
             const int8_t* cur_b = B;
             const int32_t* dmap = widx_dmap;
             if (i != 0) {
-                cur_w = A + nidx_nnzmap[i - 1];
-                nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
-                cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1]);
-                dmap = widx_dmap + nidx_nnzmap[i - 1];
+              cur_w = A + nidx_nnzmap[i - 1];
+              nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
+              cur_b += ((nidx_nnzmap[i - 1] == 0)
+                            ? 0
+                            : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+              dmap = widx_dmap + nidx_nnzmap[i - 1];
             }
             float vbias = (bias != nullptr) ? bias[i] : 0;
             float vscale = scale[i];
@@ -5126,21 +5241,25 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
               case 1:
                 for (size_t k = 0; k < mindex; k++) {
                   *(cur_output + k) = *(cur_output + k) * vscale + vbias;
-                  *(cur_output + k) = *(cur_output + k) > 0 ? *(cur_output + k) : 0;
+                  *(cur_output + k) =
+                      *(cur_output + k) > 0 ? *(cur_output + k) : 0;
                 }
                 break;
               case 2:
                 for (size_t k = 0; k < mindex; k++) {
                   *(cur_output + k) = *(cur_output + k) * vscale + vbias;
-                  *(cur_output + k) = *(cur_output + k) > 0 ? *(cur_output + k) : 0;
-                  *(cur_output + k) = *(cur_output + k) < alpha ? *(cur_output + k) : alpha;
+                  *(cur_output + k) =
+                      *(cur_output + k) > 0 ? *(cur_output + k) : 0;
+                  *(cur_output + k) =
+                      *(cur_output + k) < alpha ? *(cur_output + k) : alpha;
                 }
                 break;
               default:
                 for (size_t k = 0; k < mindex; k++) {
                   *(cur_output + k) = *(cur_output + k) * vscale + vbias;
-                  *(cur_output + k) = *(cur_output + k) >= 0 ? *(cur_output + k)
-                                                     : *(cur_output + k) * alpha;
+                  *(cur_output + k) = *(cur_output + k) >= 0
+                                          ? *(cur_output + k)
+                                          : *(cur_output + k) * alpha;
                 }
                 break;
             }
@@ -6069,16 +6188,19 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
   while
     SPARSE_LIKELY(mc >= 48 * sizeof(int8_t)) {
       LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-        int8_t* cur_output = reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
+        int8_t* cur_output =
+            reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
         const int8_t* cur_w = A;
         uint32_t nnz = nidx_nnzmap[i];
         const int8_t* cur_b = B;
         const int32_t* dmap = widx_dmap;
         if (i != 0) {
-            cur_w = A + nidx_nnzmap[i - 1];
-            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
-            cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1]);
-            dmap = widx_dmap + nidx_nnzmap[i - 1];
+          cur_w = A + nidx_nnzmap[i - 1];
+          nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
+          cur_b +=
+              ((nidx_nnzmap[i - 1] == 0) ? 0
+                                         : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+          dmap = widx_dmap + nidx_nnzmap[i - 1];
         }
         float vsclae = scale[i];
         float vbias = (bias != nullptr) ? bias[i] : 0.0;
@@ -6118,7 +6240,8 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
         // clang-format on
       }
       LITE_PARALLEL_COMMON_END();
-      output = reinterpret_cast<int8_t*>((uintptr_t)output + 48 * sizeof(int8_t));
+      output =
+          reinterpret_cast<int8_t*>((uintptr_t)output + 48 * sizeof(int8_t));
       B += 48;
       mc -= 48 * sizeof(int8_t);
     }
@@ -6127,7 +6250,8 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
       output_decrement += 16 * sizeof(int8_t);
       if (mc & (32 * sizeof(int8_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-          int8_t* cur_output = reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
+          int8_t* cur_output =
+              reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
           const int8_t* cur_w = A;
           uint32_t nnz = nidx_nnzmap[i];
           const int8_t* cur_b = B;
@@ -6135,7 +6259,9 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
           if (i != 0) {
             cur_w = A + nidx_nnzmap[i - 1];
             nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
-            cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+            cur_b +=
+                ((nidx_nnzmap[i - 1] == 0) ? 0
+                                           : widx_dmap[nidx_nnzmap[i - 1] - 1]);
             dmap = widx_dmap + nidx_nnzmap[i - 1];
           }
           float vsclae = scale[i];
@@ -6173,14 +6299,16 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
           // clang-format on
         }
         LITE_PARALLEL_COMMON_END();
-        output = reinterpret_cast<int8_t*>((uintptr_t)output + 32 * sizeof(int8_t));
+        output =
+            reinterpret_cast<int8_t*>((uintptr_t)output + 32 * sizeof(int8_t));
         B += 32;
         mc -= 32 * sizeof(int8_t);
       }
       output_decrement += 16 * sizeof(int8_t);
       if (mc & (16 * sizeof(int8_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-          int8_t* cur_output = reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
+          int8_t* cur_output =
+              reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
           const int8_t* cur_w = A;
           uint32_t nnz = nidx_nnzmap[i];
           const int8_t* cur_b = B;
@@ -6188,7 +6316,9 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
           if (i != 0) {
             cur_w = A + nidx_nnzmap[i - 1];
             nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
-            cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+            cur_b +=
+                ((nidx_nnzmap[i - 1] == 0) ? 0
+                                           : widx_dmap[nidx_nnzmap[i - 1] - 1]);
             dmap = widx_dmap + nidx_nnzmap[i - 1];
           }
           float vsclae = scale[i];
@@ -6226,14 +6356,16 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
           // clang-format on
         }
         LITE_PARALLEL_COMMON_END();
-        output = reinterpret_cast<int8_t*>((uintptr_t)output + 16 * sizeof(int8_t));
+        output =
+            reinterpret_cast<int8_t*>((uintptr_t)output + 16 * sizeof(int8_t));
         B += 16;
         mc -= 16 * sizeof(int8_t);
       }
       output_decrement += 8 * sizeof(int8_t);
       if (mc & (8 * sizeof(int8_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-          int8_t* cur_output = reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
+          int8_t* cur_output =
+              reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
           const int8_t* cur_w = A;
           uint32_t nnz = nidx_nnzmap[i];
           const int8_t* cur_b = B;
@@ -6241,7 +6373,9 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
           if (i != 0) {
             cur_w = A + nidx_nnzmap[i - 1];
             nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
-            cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+            cur_b +=
+                ((nidx_nnzmap[i - 1] == 0) ? 0
+                                           : widx_dmap[nidx_nnzmap[i - 1] - 1]);
             dmap = widx_dmap + nidx_nnzmap[i - 1];
           }
           float vsclae = scale[i];
@@ -6274,14 +6408,16 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
           // clang-format on
         }
         LITE_PARALLEL_COMMON_END();
-        output = reinterpret_cast<int8_t*>((uintptr_t)output + 8 * sizeof(int8_t));
+        output =
+            reinterpret_cast<int8_t*>((uintptr_t)output + 8 * sizeof(int8_t));
         B += 8;
         mc -= 8 * sizeof(int8_t);
       }
       output_decrement += 4 * sizeof(int8_t);
       if (mc & (4 * sizeof(int8_t))) {
         LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-          int8_t* cur_output = reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
+          int8_t* cur_output =
+              reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
           const int8_t* cur_w = A;
           uint32_t nnz = nidx_nnzmap[i];
           const int8_t* cur_b = B;
@@ -6289,7 +6425,9 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
           if (i != 0) {
             cur_w = A + nidx_nnzmap[i - 1];
             nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
-            cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+            cur_b +=
+                ((nidx_nnzmap[i - 1] == 0) ? 0
+                                           : widx_dmap[nidx_nnzmap[i - 1] - 1]);
             dmap = widx_dmap + nidx_nnzmap[i - 1];
           }
           float vsclae = scale[i];
@@ -6319,7 +6457,8 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
           // clang-format on
         }
         LITE_PARALLEL_COMMON_END();
-        output = reinterpret_cast<int8_t*>((uintptr_t)output + 4 * sizeof(int8_t));
+        output =
+            reinterpret_cast<int8_t*>((uintptr_t)output + 4 * sizeof(int8_t));
         B += 4;
         mc -= 4 * sizeof(int8_t);
       }
@@ -6327,16 +6466,19 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
       if
         SPARSE_UNLIKELY(mc != 0 && mc < 4 * sizeof(int8_t)) {
           LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
-            int8_t* cur_output = reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
+            int8_t* cur_output = reinterpret_cast<int8_t*>((uintptr_t)output +
+                                                           output_stride * i);
             const int8_t* cur_w = A;
             uint32_t nnz = nidx_nnzmap[i];
             const int8_t* cur_b = B;
             const int32_t* dmap = widx_dmap;
             if (i != 0) {
-                cur_w = A + nidx_nnzmap[i - 1];
-                nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
-                cur_b += ((nidx_nnzmap[i - 1] == 0) ? 0 : widx_dmap[nidx_nnzmap[i - 1] - 1]);
-                dmap = widx_dmap + nidx_nnzmap[i - 1];
+              cur_w = A + nidx_nnzmap[i - 1];
+              nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
+              cur_b += ((nidx_nnzmap[i - 1] == 0)
+                            ? 0
+                            : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+              dmap = widx_dmap + nidx_nnzmap[i - 1];
             }
             float vbias = (bias != nullptr) ? bias[i] : 0;
             float vscale = scale[i];

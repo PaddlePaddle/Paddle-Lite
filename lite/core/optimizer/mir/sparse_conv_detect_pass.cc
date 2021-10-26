@@ -69,16 +69,16 @@ int SparseConvDetectPass::ComputeSparseWeight(
   int tmp_diff = 0;
   int tmp_ik = 0;
   for (size_t ocb = 0; ocb < M; ocb++) {
-      if (ocb == 0) {
-          for (int ik = 0; ik < oc_nonzeros[ocb]; ik++) {
-                  tmp_diff += diffs[tmp_ik++];
-          }
-      } else {
-          for (int ik = 0; ik < (oc_nonzeros[ocb] - oc_nonzeros[ocb - 1]); ik++) {
-                  tmp_diff += diffs[tmp_ik++];
-          }
+    if (ocb == 0) {
+      for (int ik = 0; ik < oc_nonzeros[ocb]; ik++) {
+        tmp_diff += diffs[tmp_ik++];
       }
-      diffs[tmp_ik - 1] = tmp_diff;
+    } else {
+      for (int ik = 0; ik < (oc_nonzeros[ocb] - oc_nonzeros[ocb - 1]); ik++) {
+        tmp_diff += diffs[tmp_ik++];
+      }
+    }
+    diffs[tmp_ik - 1] = tmp_diff;
   }
   if (!first_nonzero) {
     const int diff = (first_ic - last_ic) * sizeof(T);
@@ -131,7 +131,10 @@ int SparseConvDetectPass::ComputeSparseWeight(
     }
     if (ocb != 0) {
       int cur_rem = oc_nonzeros[ocb - 1] & 3;
-      oc_nonzeros[ocb] = (cur_rem == 0) ? (oc_nonzeros[ocb] +  oc_nonzeros[ocb - 1]) : (oc_nonzeros[ocb] + oc_nonzeros[ocb - 1] + 4 - cur_rem);
+      oc_nonzeros[ocb] =
+          (cur_rem == 0)
+              ? (oc_nonzeros[ocb] + oc_nonzeros[ocb - 1])
+              : (oc_nonzeros[ocb] + oc_nonzeros[ocb - 1] + 4 - cur_rem);
     }
   }
   if (!first_nonzero) {
@@ -143,24 +146,27 @@ int SparseConvDetectPass::ComputeSparseWeight(
   for (size_t ocb = 0; ocb < M; ocb++) {
     if (ocb == 0) {
       for (int i = 0; i < oc_nonzeros[ocb]; i++) {
-          diffs[right_index++] = act_diffs[left_index++];
+        diffs[right_index++] = act_diffs[left_index++];
       }
       if (oc_nonzeros[ocb] % 4 != 0) {
         size_t extra_zeros = 4 - (oc_nonzeros[ocb] % 4);
         for (int j = 0; j < extra_zeros; j++) {
-            diffs[right_index++] = 0;
+          diffs[right_index++] = 0;
         }
       }
     } else {
       int cur_rem = oc_nonzeros[ocb - 1] & 3;
-      int cur_num = (cur_rem == 0) ? (oc_nonzeros[ocb] - oc_nonzeros[ocb - 1]) : (oc_nonzeros[ocb] - (oc_nonzeros[ocb - 1] + 4 - cur_rem));
+      int cur_num =
+          (cur_rem == 0)
+              ? (oc_nonzeros[ocb] - oc_nonzeros[ocb - 1])
+              : (oc_nonzeros[ocb] - (oc_nonzeros[ocb - 1] + 4 - cur_rem));
       for (int i = 0; i < cur_num; i++) {
         diffs[right_index++] = act_diffs[left_index++];
       }
       if (cur_num % 4 != 0) {
         size_t extra_zeros = 4 - (cur_num % 4);
         for (int j = 0; j < extra_zeros; j++) {
-            diffs[right_index++] = 0;
+          diffs[right_index++] = 0;
         }
       }
     }
@@ -168,16 +174,16 @@ int SparseConvDetectPass::ComputeSparseWeight(
   int tmp_diff = 0;
   int tmp_ik = 0;
   for (size_t ocb = 0; ocb < M; ocb++) {
-      if (ocb == 0) {
-          for (int ik = 0; ik < oc_nonzeros[ocb]; ik++) {
-                  tmp_diff += diffs[tmp_ik++];
-          }
-      } else {
-          for (int ik = 0; ik < (oc_nonzeros[ocb] - oc_nonzeros[ocb - 1]); ik++) {
-                  tmp_diff += diffs[tmp_ik++];
-          }
+    if (ocb == 0) {
+      for (int ik = 0; ik < oc_nonzeros[ocb]; ik++) {
+        tmp_diff += diffs[tmp_ik++];
       }
-      diffs[tmp_ik - 1] = tmp_diff;
+    } else {
+      for (int ik = 0; ik < (oc_nonzeros[ocb] - oc_nonzeros[ocb - 1]); ik++) {
+        tmp_diff += diffs[tmp_ik++];
+      }
+    }
+    diffs[tmp_ik - 1] = tmp_diff;
   }
   return first_ic;
 }
