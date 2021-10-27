@@ -37,6 +37,10 @@ message(STATUS "CXX compiler: ${CMAKE_CXX_COMPILER}, version: ${CMAKE_CXX_COMPIL
 message(STATUS "C compiler: ${CMAKE_C_COMPILER}, version: ${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION}")
 message(STATUS "AR tools: ${CMAKE_AR}")
 
+if(WIN32)
+  include(os/windows)
+endif()
+
 ################################ Exposed Configurations #######################################
 lite_option(WITH_DSO                           "Compile PaddlePaddle with dynamic linked CUDA"                        ON)
 lite_option(WITH_AVX                           "Compile PaddlePaddle with AVX intrinsics"                             ON IF ${AVX_FOUND})
@@ -135,18 +139,6 @@ include_directories("${LITE_GENERATED_INCLUDE_DIR}")
 if (LITE_WITH_PYTHON)
     include(external/python)    # download, build, install python
     include(external/pybind11)    # download, build, install pybind11
-endif()
-
-if(LITE_WITH_RKNPU)
-   include(backends/nnadapter/rknpu)
-endif()
-
-if(LITE_WITH_IMAGINATION_NNA)
-	include(backends/nnadapter/imagination_nna)
-endif()
-
-if(LITE_WITH_INTEL_FPGA)
-	include(backends/intel_fpga)
 endif()
 
 # flatbuffer module for loading model

@@ -12,19 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# OpenCL
-if(LITE_WITH_OPENCL)
-  include(backends/opencl)
+# Rockchip NPU
+if(LITE_WITH_RKNPU)
+   include(backends/rknpu)
+endif()
+
+# Intel FPGA
+if(LITE_WITH_INTEL_FPGA)
+	include(backends/intel_fpga)
 endif()
 
 # for mobile
 if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     message(STATUS "Building the mobile framework")
     include(postproject)
-    include(backends/nnadapter/npu) # check and prepare NPU DDK
+    include(backends/npu) # check and prepare NPU DDK
     include(backends/xpu) # check and prepare XPU SDK
-    include(backends/nnadapter/apu) # check and prepare APU SDK 
-    include(backends/nnadapter/huawei_ascend_npu)  # check and prepare Ascend NPU SDK 
+    include(backends/apu) # check and prepare APU SDK 
+    include(backends/huawei_ascend_npu)  # check and prepare Ascend NPU SDK 
 
     # We compile the mobile deployment library when LITE_ON_TINY_PUBLISH=ON
     # So the following third party dependencies are not needed.
@@ -46,17 +51,7 @@ if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
 endif()
 #################################  End of mobile compile ##############################
 
-set(WITH_MKLML ${WITH_MKL})
-if (NOT DEFINED WITH_MKLDNN)
-    if (WITH_MKL AND AVX2_FOUND)
-        set(WITH_MKLDNN ON)
-    else()
-        message(STATUS "Do not have AVX2 intrinsics and disabled MKL-DNN")
-        set(WITH_MKLDNN OFF)
-    endif()
-endif()
-
-########################################################################################
+#################################  Server compile #################################
 
 if(LITE_WITH_XPU)
     include(backends/xpu)
@@ -67,30 +62,18 @@ if(LITE_WITH_MLU)
 endif()
 
 if(LITE_WITH_HUAWEI_ASCEND_NPU)
-    include(backends/nnadapter/huawei_ascend_npu)
+    include(backends/huawei_ascend_npu)
 endif()
 
+include(backends/gpu)
+include(backends/cpu)
+
 include(coveralls)
-
-include(external/mklml)     # download mklml package
-include(external/xbyak)     # download xbyak package
-
-include(external/libxsmm)   # download, build, install libxsmm
 include(external/gflags)    # download, build, install gflags
 include(external/glog)      # download, build, install glog
 include(external/gtest)     # download, build, install gtest
 include(external/protobuf)  # download, build, install protobuf
-include(external/openblas)  # download, build, install openblas
-include(external/mkldnn)    # download, build, install mkldnn
-include(external/eigen)     # download eigen3
-include(external/xxhash)    # download install xxhash needed for x86 jit
-
-include(cudnn)
 include(configure)          # add paddle env configuration
-
-if(LITE_WITH_CUDA)
-  include(cuda)
-endif()
 
 if(LITE_WITH_BM)
   include(bm)
@@ -106,25 +89,4 @@ endif()
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
 
-
-if(APPLE)
-    if(NOT DEFINED ENABLE_ARC)
-        # Unless specified, enable ARC support by default
-        set(ENABLE_ARC TRUE)
-        message(STATUS "Enabling ARC support by default. ENABLE_ARC not provided!")
-    endif()
-
-    set(ENABLE_ARC_INT ${ENABLE_ARC} CACHE BOOL "Whether or not to enable ARC" ${FORCE_CACHE})
-    if(ENABLE_ARC_INT)
-        set(FOBJC_ARC "-fobjc-arc")
-        set(CMAKE_XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES CACHE INTERNAL "")
-        message(STATUS "Enabling ARC support.")
-    else()
-        set(FOBJC_ARC "-fno-objc-arc")
-        set(CMAKE_XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC NO CACHE INTERNAL "")
-        message(STATUS "Disabling ARC support.")
-    endif()
-    set(CMAKE_C_FLAGS "${FOBJC_ARC} ${CMAKE_C_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${FOBJC_ARC} ${CMAKE_CXX_FLAGS}")
-endif ()
 add_subdirectory(lite)

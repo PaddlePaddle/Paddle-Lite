@@ -12,4 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-include_directories("${PADDLE_SOURCE_DIR}/third-party/opencl/include")
+if(LITE_WITH_OPENCL)
+  include_directories("${PADDLE_SOURCE_DIR}/third-party/opencl/include")
+endif()
+
+if(LITE_WITH_CUDA)
+  include(cuda)
+  include(cudnn)
+endif()
