@@ -126,6 +126,12 @@ class OpDesc : public OpDescAPI {
     return pair.first->second.get<T>();
   }
 
+  void DeleteAttr(const std::string& name) {
+    if (attrs_.count(name) > 0) {
+      attrs_.erase(name);
+    }
+  }
+
   const std::map<std::string, Any>& attrs() const { return attrs_; }
   const std::map<std::string, AttrType>& attr_types() const {
     return attr_types_;

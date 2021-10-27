@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,34 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "core/operation/expand.h"
+#include "core/operation/dequantize.h"
 #include "driver/huawei_ascend_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
-#include "utility/modeling.h"
-#include "utility/utility.h"
 
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int ConvertExpand(Converter* converter, hal::Operation* operation) {
-  EXPAND_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  NNADAPTER_CHECK(IsConstantOperand(shape_operand))
-      << "Shape input only support const tensor.";
+int ConvertDequantize(Converter* converter, hal::Operation* operation) {
+  DEQUANTIZE_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  NNADAPTER_CHECK(input_operand->type.precision ==
+                  NNADAPTER_QUANT_INT8_SYMM_PER_LAYER)
+      << "Only support NNADAPTER_QUANT_INT8_SYMM_PER_LAYER, but received "
+      << OperandPrecisionCodeToString(input_operand->type.precision);
 
   // Convert to GE operators
   auto input_operator = converter->GetMappedOperator(input_operand);
-  if (!input_operator) {
+  if (input_operator == nullptr) {
     input_operator = converter->ConvertOperand(input_operand);
   }
-  auto expand_op = converter->AddOperator<ge::op::ExpandD>(output_operand);
-  std::vector<int64_t> expand_shape(shape_count);
-  for (uint32_t i = 0; i < shape_count; i++) {
-    expand_shape[i] = shape_data[i];
-  }
-  expand_op->set_attr_shape(ge::Operator::OpListInt(expand_shape));
-  SET_INPUT(expand_op, x, input_operator);
-  MAP_OUTPUT(expand_op, y, output_operand);
+  float scale = input_operand->type.symm_per_layer_params.scale;
+  auto scale_operator = converter->AddFloat32ConstantOperator(&scale, {1});
+  auto dequantize_op =
+      converter->AddOperator<ge::op::AscendDequant>(output_operand);
+  SET_INPUT(dequantize_op, x, input_operator);
+  SET_INPUT(dequantize_op, deq_scale, scale_operator);
+  MAP_OUTPUT(dequantize_op, y, output_operand);
   return NNADAPTER_NO_ERROR;
 }
 

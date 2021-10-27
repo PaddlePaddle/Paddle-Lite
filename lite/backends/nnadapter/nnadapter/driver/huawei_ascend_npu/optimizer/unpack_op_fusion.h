@@ -19,7 +19,7 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int FixOpConstraints(hal::Model* model);
+void UnpackOpFusion(hal::Model* model);
 
 }  // namespace huawei_ascend_npu
 }  // namespace nnadapter
