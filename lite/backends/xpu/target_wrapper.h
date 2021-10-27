@@ -108,7 +108,7 @@ class TargetWrapper<TARGET(kXPU)> {
         if (ret != 0 || local_gm_ptr == nullptr) {
           VLOG(3) << "No Enough GM Workspace For Current Predictor.";
         } else {
-          void* old_ptr = ctx._gm_mgr.get_ptr();
+          void* old_ptr = tls_raw_ctx_._gm_mgr.get_ptr();
           if (old_ptr != nullptr) {
             TargetWrapperXPU::Free(old_ptr);
           }
