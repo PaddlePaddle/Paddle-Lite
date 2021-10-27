@@ -78,7 +78,9 @@ int SparseConvDetectPass::ComputeSparseWeight(
         tmp_diff += diffs[tmp_ik++];
       }
     }
-    diffs[tmp_ik - 1] = tmp_diff;
+    if (tmp_ik != 0) {
+      diffs[tmp_ik - 1] = tmp_diff;
+    }
   }
   if (!first_nonzero) {
     const int diff = (first_ic - last_ic) * sizeof(T);
@@ -183,7 +185,9 @@ int SparseConvDetectPass::ComputeSparseWeight(
         tmp_diff += diffs[tmp_ik++];
       }
     }
-    diffs[tmp_ik - 1] = tmp_diff;
+    if (tmp_ik != 0) {
+      diffs[tmp_ik - 1] = tmp_diff;
+    }
   }
   return first_ic;
 }

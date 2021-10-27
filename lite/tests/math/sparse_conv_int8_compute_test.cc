@@ -69,14 +69,15 @@ int ComputeSparseZeros(const Tensor* weights, const int num) {
 }
 
 template <typename T>
-int ComputeSparseWeight(const Tensor* w_tensor,
-                        const int M,
-                        const int K,
-                        const int N,
-                        const int num_nonzeroes,
-                        Tensor* nonzero_output_tensor,
-                        Tensor* oc_nonzeros_tensor,
-                        Tensor* diffs_tensor) {
+int SparseConvDetectPass::ComputeSparseWeight(
+    const lite::Tensor* w_tensor,
+    const int M,
+    const int K,
+    const int N,
+    const int num_nonzeroes,
+    lite::Tensor* nonzero_output_tensor,
+    lite::Tensor* oc_nonzeros_tensor,
+    lite::Tensor* diffs_tensor) {
   const T* weights = w_tensor->data<T>();
   T* nonzero_output = nonzero_output_tensor->mutable_data<T>();
   auto* oc_nonzeros = oc_nonzeros_tensor->mutable_data<uint32_t>();
@@ -99,6 +100,23 @@ int ComputeSparseWeight(const Tensor* w_tensor,
         last_ic = ic;
         oc_nonzeros[ocb] += 1;
       }
+    }
+    oc_nonzeros[ocb] = nonzero_index;
+  }
+  int tmp_diff = 0;
+  int tmp_ik = 0;
+  for (size_t ocb = 0; ocb < M; ocb++) {
+    if (ocb == 0) {
+      for (int ik = 0; ik < oc_nonzeros[ocb]; ik++) {
+        tmp_diff += diffs[tmp_ik++];
+      }
+    } else {
+      for (int ik = 0; ik < (oc_nonzeros[ocb] - oc_nonzeros[ocb - 1]); ik++) {
+        tmp_diff += diffs[tmp_ik++];
+      }
+    }
+    if (tmp_ik != 0) {
+      diffs[tmp_ik - 1] = tmp_diff;
     }
   }
   if (!first_nonzero) {

@@ -96,15 +96,16 @@ int ComputeSparseZeros(const Tensor* weights,
 }
 
 template <typename T>
-int ComputeSparseWeight(const Tensor* w_tensor,
-                        const int M,
-                        const int K,
-                        const int N,
-                        const int num_nonzeroes,
-                        const int num_build_nonzeroes,
-                        Tensor* nonzero_output_tensor,
-                        Tensor* oc_nonzeros_tensor,
-                        Tensor* diffs_tensor) {
+int SparseConvDetectPass::ComputeSparseWeight(
+    const lite::Tensor* w_tensor,
+    const int M,
+    const int K,
+    const int N,
+    const int num_nonzeroes,
+    const int num_build_nonzeroes,
+    lite::Tensor* nonzero_output_tensor,
+    lite::Tensor* oc_nonzeros_tensor,
+    lite::Tensor* diffs_tensor) {
   const T* weights = w_tensor->data<T>();
   T* nonzero_output = nonzero_output_tensor->mutable_data<T>();
   auto* oc_nonzeros = oc_nonzeros_tensor->mutable_data<uint32_t>();
@@ -136,21 +137,62 @@ int ComputeSparseWeight(const Tensor* w_tensor,
         nonzero_output[nonzero_index++] = 0;
       }
     }
+    if (ocb != 0) {
+      int cur_rem = oc_nonzeros[ocb - 1] & 3;
+      oc_nonzeros[ocb] =
+          (cur_rem == 0)
+              ? (oc_nonzeros[ocb] + oc_nonzeros[ocb - 1])
+              : (oc_nonzeros[ocb] + oc_nonzeros[ocb - 1] + 4 - cur_rem);
+    }
   }
   if (!first_nonzero) {
     const int diff = (first_ic - last_ic) * sizeof(T);
     act_diffs[diff_index++] = diff * N;
   }
+
   int left_index = 0, right_index = 0;
-  for (int ocb = 0; ocb < M; ocb++) {
-    for (int i = 0; i < oc_nonzeros[ocb]; i++) {
-      diffs[right_index++] = act_diffs[left_index++];
-    }
-    if (oc_nonzeros[ocb] % 4 != 0) {
-      int extra_zeros = 4 - (oc_nonzeros[ocb] % 4);
-      for (int j = 0; j < extra_zeros; j++) {
-        diffs[right_index++] = 0;
+  for (size_t ocb = 0; ocb < M; ocb++) {
+    if (ocb == 0) {
+      for (int i = 0; i < oc_nonzeros[ocb]; i++) {
+        diffs[right_index++] = act_diffs[left_index++];
       }
+      if (oc_nonzeros[ocb] % 4 != 0) {
+        size_t extra_zeros = 4 - (oc_nonzeros[ocb] % 4);
+        for (int j = 0; j < extra_zeros; j++) {
+          diffs[right_index++] = 0;
+        }
+      }
+    } else {
+      int cur_rem = oc_nonzeros[ocb - 1] & 3;
+      int cur_num =
+          (cur_rem == 0)
+              ? (oc_nonzeros[ocb] - oc_nonzeros[ocb - 1])
+              : (oc_nonzeros[ocb] - (oc_nonzeros[ocb - 1] + 4 - cur_rem));
+      for (int i = 0; i < cur_num; i++) {
+        diffs[right_index++] = act_diffs[left_index++];
+      }
+      if (cur_num % 4 != 0) {
+        size_t extra_zeros = 4 - (cur_num % 4);
+        for (int j = 0; j < extra_zeros; j++) {
+          diffs[right_index++] = 0;
+        }
+      }
+    }
+  }
+  int tmp_diff = 0;
+  int tmp_ik = 0;
+  for (size_t ocb = 0; ocb < M; ocb++) {
+    if (ocb == 0) {
+      for (int ik = 0; ik < oc_nonzeros[ocb]; ik++) {
+        tmp_diff += diffs[tmp_ik++];
+      }
+    } else {
+      for (int ik = 0; ik < (oc_nonzeros[ocb] - oc_nonzeros[ocb - 1]); ik++) {
+        tmp_diff += diffs[tmp_ik++];
+      }
+    }
+    if (tmp_ik != 0) {
+      diffs[tmp_ik - 1] = tmp_diff;
     }
   }
   return first_ic;
