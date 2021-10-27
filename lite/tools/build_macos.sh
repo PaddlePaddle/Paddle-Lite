@@ -123,7 +123,7 @@ function set_benchmark_options {
 function make_armosx {
     local arch=armv8
     local os=armmacos
-       if [ "${WITH_STRIP}" == "ON" ]; then
+    if [ "${WITH_STRIP}" == "ON" ]; then
         BUILD_EXTRA=ON
     fi
 
@@ -146,6 +146,7 @@ function make_armosx {
     cmake $workspace \
             -DWITH_LITE=ON \
             -DLITE_WITH_ARM=ON \
+            -DLITE_WITH_OPENCL=${WITH_OPENCL} \
             -DLITE_ON_TINY_PUBLISH=ON \
             -DLITE_WITH_OPENMP=OFF \
             -DWITH_ARM_DOTPROD=OFF \
@@ -253,14 +254,17 @@ function print_usage {
     echo -e "|                                                                                                                                      |"
     echo -e "|  for arm macos:                                                                                                                      |"
     echo -e "|  optional argument:                                                                                                                  |"
-    echo -e "|     --build_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                           |"
+    echo -e "|     --build_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                          |"
     echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                   |"
     echo -e "|     --with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF                            |"
-    echo -e "|     --build_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)  |"
+    echo -e "|     --build_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP) |"
     echo -e "|     --with_benchmark: (OFF|ON); controls whether to compile benchmark binary, default is OFF, only support macos x86                 |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of benchmark binary compiling for macos x86:                                                                              |"
     echo -e "|     ./lite/tools/build_macos.sh --with_benchmark=ON x86                                                                              |"
+    echo -e "|                                                                                                                                      |"
+    echo -e "|  arguments of benchmark binary compiling for macos opencl:                                                                           |"
+    echo -e "|     ./lite/tools/build_macos.sh --build_opencl=ON arm64                                                                              |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of striping lib according to input model:(armv8, gcc, c++_static)                                                         |"
     echo -e "|     ./lite/tools/build_macos.sh --with_strip=ON --opt_model_dir=YourOptimizedModelDir                                                |"
