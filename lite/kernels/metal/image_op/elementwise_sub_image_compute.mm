@@ -43,6 +43,12 @@ void ElementwiseSubImageCompute::PrepareForRun() {
 }
 
 void ElementwiseSubImageCompute::Run() {
+    @autoreleasepool {
+        run_without_mps();
+    }
+}
+
+void ElementwiseSubImageCompute::run_without_mps() {
     auto pipline = pipline_;
     auto outTexture = output_buffer_->image();
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();

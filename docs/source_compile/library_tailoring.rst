@@ -87,7 +87,7 @@ Step 2. 根据模型编译预测库
 
 .. code-block:: shell
 
-   # 编译产出位于： Paddle-Lite/android-lib
+   # 编译产出位于： Paddle-Lite/android_lib
    android_lib  (Android 编译产出)
       |---- armv7.clang      （armv7 clang 预测库 & demo)
       |---- armv8.clang      （armv8 clang 预测库 & demo)
@@ -142,7 +142,7 @@ Step 2. 根据模型编译预测库
 
 .. code-block:: shell
 
-   # 编译产出位于： Paddle-Lite/iOS-lib
+   # 编译产出位于： Paddle-Lite/iOS_lib
    iOS_lib  (iOS 编译产出)
       |---- armv7            （armv7 iOS 预测库 & demo)
       |---- armv8            （armv8 iOS 预测库 & demo)

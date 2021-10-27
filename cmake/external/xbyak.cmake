@@ -13,10 +13,6 @@
 # limitations under the License.
 
 set(WITH_XBYAK ON)
-if(WIN32 OR APPLE)
-    SET(WITH_XBYAK OFF CACHE STRING "Disable XBYAK in Windows and MacOS" FORCE)
-    return()
-endif()
 
 include(ExternalProject)
 
@@ -39,10 +35,10 @@ ExternalProject_Add(
     ${XBYAK_PROJECT}
     ${EXTERNAL_PROJECT_LOG_ARGS}
     DEPENDS             ""
-    GIT_TAG             "v5.661"  # Jul 26th
-    URL                 http://paddle-inference-dist.bj.bcebos.com/PaddleLite_ThirdParty%2Fxbyak-5.66.zip
+    GIT_TAG             "v5.99"  # 2020 Oct 20th
+    URL                 http://paddle-inference-dist.bj.bcebos.com/PaddleLite_ThirdParty%2Fxbyak-5.99.zip
     DOWNLOAD_DIR        ${XBYAK_SOURCECODE_DIR}
-    DOWNLOAD_NAME   "xbyak-5.66.zip"
+    DOWNLOAD_NAME   "xbyak-5.99.zip"
     DOWNLOAD_NO_PROGRESS 1
     PREFIX              ${XBYAK_PREFIX_DIR}
     UPDATE_COMMAND      ""
