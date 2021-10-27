@@ -69,15 +69,14 @@ int ComputeSparseZeros(const Tensor* weights, const int num) {
 }
 
 template <typename T>
-int SparseConvDetectPass::ComputeSparseWeight(
-    const lite::Tensor* w_tensor,
-    const int M,
-    const int K,
-    const int N,
-    const int num_nonzeroes,
-    lite::Tensor* nonzero_output_tensor,
-    lite::Tensor* oc_nonzeros_tensor,
-    lite::Tensor* diffs_tensor) {
+int ComputeSparseWeight(const Tensor* w_tensor,
+                        const int M,
+                        const int K,
+                        const int N,
+                        const int num_nonzeroes,
+                        Tensor* nonzero_output_tensor,
+                        Tensor* oc_nonzeros_tensor,
+                        Tensor* diffs_tensor) {
   const T* weights = w_tensor->data<T>();
   T* nonzero_output = nonzero_output_tensor->mutable_data<T>();
   auto* oc_nonzeros = oc_nonzeros_tensor->mutable_data<uint32_t>();
