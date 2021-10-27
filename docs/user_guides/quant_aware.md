@@ -119,7 +119,7 @@ Paddle 模型量化包含三种量化方法，分别是动态离线量化方法�
 
 ### 2 产出量化模型
 
-Paddle Lite opt工具和 PaddleSlim 都提供了动态离线量化功能，两者原理相似，都可以产出动态离线量化的模型。
+Paddle Lite OPT 工具和 PaddleSlim 都提供了动态离线量化功能，两者原理相似，都可以产出动态离线量化的模型。
 
 #### 2.1 使用 Paddle Lite OPT 产出量化模型
 
