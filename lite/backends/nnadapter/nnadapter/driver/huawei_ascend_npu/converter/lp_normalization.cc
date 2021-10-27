@@ -32,18 +32,12 @@ int ConvertLpNormalization(Converter* converter, hal::Operation* operation) {
   if (!input_operator) {
     input_operator = converter->ConvertOperand(input_operand);
   }
-  if (p == 1) {
-    NNADAPTER_LOG(WARNING) << "HUAWEI_ASCEND_NPU only support p = 2";
-    return NNADAPTER_INVALID_PARAMETER;
-  }
-  if (p == 2) {
-    auto l2_norm_op =
-        converter->AddOperator<ge::op::L2Normalize>(output_operand);
-    l2_norm_op->set_attr_axis(axis);
-    l2_norm_op->set_attr_eps(epsilon);
-    SET_INPUT(l2_norm_op, x, input_operator);
-    MAP_OUTPUT(l2_norm_op, y, output_operand);
-  }
+  NNADAPTER_CHECK_EQ(p, 2) << "HUAWEI_ASCEND_NPU only support p = 2";
+  auto l2_norm_op = converter->AddOperator<ge::op::L2Normalize>(output_operand);
+  l2_norm_op->set_attr_axis(axis);
+  l2_norm_op->set_attr_eps(epsilon);
+  SET_INPUT(l2_norm_op, x, input_operator);
+  MAP_OUTPUT(l2_norm_op, y, output_operand);
   return NNADAPTER_NO_ERROR;
 }
 

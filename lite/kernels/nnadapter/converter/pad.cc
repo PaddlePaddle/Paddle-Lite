@@ -34,17 +34,17 @@ int ConvertPad(Converter* converter, OpInfo* op, Scope* scope) {
   float value;
   std::vector<int> pads;
   if (op->Type() == "pad2d") {
-    if (op->HasAttr("variable_padding") &&
-        op->GetAttr<bool>("variable_paddings")) {
+    if (HasInput(op, scope, "Paddings")) {
       LOG(FATAL) << "Op type:" << op->Type()
-                 << "doesn't support attr variable_paddings";
+                 << "doesn't support 'Paddings' input";
       return UNSUPPORTED_FEATURE;
     }
     value = op->GetAttr<float>("pad_value");
     pads = op->GetAttr<std::vector<int>>("paddings");
   } else if (op->Type() == "pad3d") {
-    if (op->HasAttr("Paddings") && op->GetAttr<bool>("Paddings")) {
-      LOG(FATAL) << "Op type:" << op->Type() << "doesn't support attr Paddings";
+    if (HasInput(op, scope, "Paddings")) {
+      LOG(FATAL) << "Op type:" << op->Type()
+                 << "doesn't support 'Paddings' input";
       return UNSUPPORTED_FEATURE;
     }
     value = op->GetAttr<float>("value");
@@ -70,12 +70,6 @@ int ConvertPad(Converter* converter, OpInfo* op, Scope* scope) {
   } else if (data_format == "NHWC") {
     CHECK_EQ(pads.size(), 4);
     paddings = {0, 0, pads[0], pads[1], pads[2], pads[3], 0, 0};
-  } else if (data_format == "NCL") {
-    CHECK_EQ(pads.size(), 2);
-    paddings = {0, 0, 0, 0, pads[0], pads[1]};
-  } else if (data_format == "NLC") {
-    CHECK_EQ(pads.size(), 2);
-    paddings = {0, 0, pads[0], pads[1], 0, 0};
   } else {
     LOG(FATAL) << "Unsupported data format: " << data_format;
     return UNSUPPORTED_FEATURE;

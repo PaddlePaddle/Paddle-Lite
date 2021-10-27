@@ -24,6 +24,7 @@ namespace operation {
 
 int PrepareCast(hal::Operation* operation) {
   CAST_OPERATION_EXTRACT_INPUTS_OUTPUTS
+
   // Infer the shape and type of output operands
   CopyOperandTypeExceptQuantParams(&output_operand->type, input_operand->type);
   output_operand->type.precision = dtype;

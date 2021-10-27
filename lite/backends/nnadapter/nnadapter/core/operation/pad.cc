@@ -24,12 +24,16 @@ namespace operation {
 
 int PreparePad(hal::Operation* operation) {
   PAD_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  NNADAPTER_CHECK(IsConstantOperand(pads_operand))
+      << "Only support constant pads now.";
+  uint32_t pads_count = pads_operand->length / sizeof(int32_t);
+  NNADAPTER_CHECK_EQ(pads_count, 2 * input_operand->type.dimensions.count);
+  auto pads_data = reinterpret_cast<int32_t*>(pads_operand->buffer);
 
   // Infer the shape and type of output operands
   auto input_type = input_operand->type;
   auto& output_type = output_operand->type;
   CopyOperandTypeExceptQuantParams(&output_type, input_type);
-  auto pads_data = reinterpret_cast<int32_t*>(pads_operand->buffer);
   auto infer_output_shape = [&](const int32_t* input_dimensions,
                                 const int32_t input_dimension_count,
                                 int32_t* output_dimensions) {

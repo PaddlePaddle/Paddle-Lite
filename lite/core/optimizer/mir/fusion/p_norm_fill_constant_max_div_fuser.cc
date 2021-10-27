@@ -81,9 +81,7 @@ void PNormFillConstantMaxDivFuser::InsertNewNode(SSAGraph* graph,
 
 cpp::OpDesc PNormFillConstantMaxDivFuser::GenOpDesc(
     const key2nodes_t& matched) {
-  cpp::OpDesc op_desc = *matched.at("p_norm")->stmt()->op_info();
-  op_desc.mutable_inputs()->clear();
-  op_desc.mutable_outputs()->clear();
+  cpp::OpDesc op_desc;
   op_desc.SetType("norm");
   op_desc.SetInput("X", {matched.at("x")->arg()->name});
   op_desc.SetOutput("Out", {matched.at("elementwise_div_out")->arg()->name});
