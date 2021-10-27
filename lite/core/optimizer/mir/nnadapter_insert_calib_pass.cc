@@ -57,6 +57,7 @@ void NNAdapterInsertCalibPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   if (std::find(device_names.begin(),
                 device_names.end(),
                 "huawei_ascend_npu") == device_names.end()) {
+    VLOG(3) << "not insert calib nodes.";
     return;
   }
 #endif

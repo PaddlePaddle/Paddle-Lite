@@ -36,9 +36,11 @@ void ClearQuantInfoPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     VLOG(3) << "not receive mixed precision quantization config.";
     return;
   }
+
   std::set<Node*> target_nodes =
       GetTargetNodesFromMixedPrecisionQuantizationConfig(
           graph, mixed_precision_quantization_config);
+  VLOG(3) << "find " << target_nodes.size() << " matched node.";
   for (auto node : target_nodes) {
     CHECK(node->IsStmt());
     ClearQuantInfo(node);
@@ -149,7 +151,7 @@ ClearQuantInfoPass::GetTargetNodesFromMixedPrecisionQuantizationConfig(
   return target_nodes;
 }
 
-void ClearQuantInfo(paddle::lite::mir::Node* node) {
+void ClearQuantInfoPass::ClearQuantInfo(paddle::lite::mir::Node* node) {
   if (node->IsArg()) return;
   auto op_desc = node->AsStmt().mutable_op_info();
   op_desc->DeleteAttr("bit_length");
