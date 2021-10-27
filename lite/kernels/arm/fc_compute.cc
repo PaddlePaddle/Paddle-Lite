@@ -377,13 +377,13 @@ void FcCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
     b_data = bias_.data<float16_t>();
   }
   bool flag_act = false;
-  lite_api::ActivationType act;
+  operators::ActivationParam act_param;
   if (param.activation_type == "relu") {
-    act = lite_api::ActivationType::kRelu;
+    act_param.active_type = lite_api::ActivationType::kRelu;
+    act_param.has_active = true;
     flag_act = true;
   }
   if (flag_gemm_) {
-    operators::ActivationParam act_param;
     act_param.has_active = false;
     lite::arm::math::fp16::sgemm_fp16(false,
                                       false,
@@ -420,7 +420,7 @@ void FcCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
                                        param.bias != nullptr,
                                        b_data,
                                        flag_act,
-                                       act,
+                                       act_param,
                                        &ctx);
     }
   }
