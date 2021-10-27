@@ -49,19 +49,19 @@ onnx2paddle(model_path, save_dir,
             convert_to_lite=True,
             lite_valid_places="arm",
             lite_model_type="naive_buffer")
-# model_path(str)为 ONNX 模型路径
-# save_dir(str)为转换后模型保存路径
-# convert_to_lite(bool)表示是否使用 opt 工具，默认为 False
-# lite_valid_places(str)指定转换类型，默认为 arm
-# lite_model_type(str)指定模型转化类型，目前支持两种类型：protobuf 和 naive_buffer，默认为 naive_buffer
+# model_path(str) 为 ONNX 模型路径
+# save_dir(str) 为转换后模型保存路径
+# convert_to_lite(bool) 表示是否使用 opt 工具，默认为 False
+# lite_valid_places(str) 指定转换类型，默认为 arm
+# lite_model_type(str) 指定模型转化类型，目前支持两种类型：protobuf 和 naive_buffer，默认为 naive_buffer
 ```
 
 Notes:
-- ```lite_valid_places```参数目前可支持 arm、 opencl、 x86、 metal、 xpu、 bm、 mlu、 intel_fpga、 huawei_ascend_npu、imagination_nna、 rockchip_npu、 mediatek_apu、 huawei_kirin_npu、 amlogic_npu，可以同时指定多个硬件平台(以逗号分隔，优先级高的在前)，opt 将会自动选择最佳方式。如果需要支持华为麒麟 NPU，应当设置为"huawei_kirin_npu,arm"。
+- ```lite_valid_places```参数目前可支持 arm、 opencl、 x86、 metal、 xpu、 bm、 mlu、 intel_fpga、 huawei_ascend_npu、imagination_nna、 rockchip_npu、 mediatek_apu、 huawei_kirin_npu、 amlogic_npu，可以同时指定多个硬件平台(以逗号分隔，优先级高的在前)，opt 将会自动选择最佳方式。如果需要支持华为麒麟 NPU，应当设置为 "huawei_kirin_npu,arm"。
 
 ***命令行方式***
 ```shell
 x2paddle --framework=onnx --model=onnx_model.onnx --save_dir=pd_model --to_lite=True --lite_valid_places=arm --lite_model_type=naive_buffer
 ```
 
-TensorFlow、Caffe 以及 PyTorch 模型转换参考[X2Paddle API](https://github.com/PaddlePaddle/X2Paddle/tree/develop/docs/inference_model_convertor/convert2lite_api.md)
+TensorFlow、Caffe 以及 PyTorch 模型转换参考 [X2Paddle API](https://github.com/PaddlePaddle/X2Paddle/tree/develop/docs/inference_model_convertor/convert2lite_api.md)
