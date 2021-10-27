@@ -562,7 +562,7 @@ NNAdapterAutoPadCode ConvertPaddingAlgorithmToNNAutoPadCode(
   return auto_pad_code;
 }
 
-NNAdapterPadModeCode ConvertPadModeToNNAdapterPadModeCode(std::string mode) {
+NNAdapterPadModeCode ConvertPadModeToNNPadModeCode(std::string mode) {
   if (mode == "constant") {
     return NNADAPTER_PAD_MODE_CONSTANT;
   }

@@ -88,7 +88,7 @@ int ConvertPad(Converter* converter, OpInfo* op, Scope* scope) {
   // Pads operand
   auto pads_operand = converter->AddConstantOperand(paddings);
   // Mode operand
-  int mode_code = ConvertPadModeToNNAdapterPadModeCode(mode);
+  int mode_code = ConvertPadModeToNNPadModeCode(mode);
   auto mode_operand = converter->AddConstantOperand(mode_code);
   // Value operand
   auto value_operand = converter->AddConstantOperand(value);
