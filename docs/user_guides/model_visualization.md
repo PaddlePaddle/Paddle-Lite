@@ -86,6 +86,7 @@ Paddle Lite 在执行模型推理之前需要使用[模型优化工具 opt](mode
   ```
 
 
+
 将通过以上步骤输出的优化后的模型文件`model`重命名为`__model__`，然后用 [Netron](https://lutzroeder.github.io/netron/) 工具打开即可查看优化后的模型结构。将优化前后的模型进行对比，即可发现优化后的模型比优化前的模型更轻量级，在推理任务中耗费资源更少且执行速度也更快。
 
 <p align="center"><img width="600" src="https://paddlelite-data.bj.bcebos.com/doc_images/model_visualization/model_visualization.png"/></p>
