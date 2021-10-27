@@ -24,7 +24,7 @@ cp Dockerfile.mobile mobile_image/Dockerfile
 cd mobile_image
 docker build -t paddlepaddle/paddle-lite .
 
-# 镜像编译成功后，可用`docker images`命令，看到`paddlepaddle/paddle-lite`镜像。
+# 镜像编译成功后，可用 docker images 命令，看到 paddlepaddle/paddle-lite 镜像。
 ```
 
 ### 启动 Docker 容器
