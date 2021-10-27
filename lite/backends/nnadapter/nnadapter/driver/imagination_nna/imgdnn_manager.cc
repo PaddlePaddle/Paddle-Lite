@@ -298,25 +298,26 @@ imgdnn_tensor ImgdnnManager::CreateFullyConnectedLayer(
   return ConvertQuantTensorType(output_tensor, &quant_param);
 }
 
-imgdnn_tensor ImgdnnManager::CreateMatMulLayer(imgdnn_tensor input0_tensor,
-                                               imgdnn_tensor input1_tensor,
+imgdnn_tensor ImgdnnManager::CreateMatMulLayer(imgdnn_tensor x_tensor,
+                                               imgdnn_tensor y_tensor,
                                                imgdnn_quant_param quant_param) {
   imgdnn_err_code error_code;
-  imgdnn_tensor_descriptor input0_desc;
-  IMGDNN_CHECK_SUCCESS(imgdnnGetTensorDescriptor(input0_tensor, &input0_desc));
-  // Flatten the input tensor from dimension 2 (Only supports flatten_dim=1)
-  for (unsigned i = 2; i < input0_desc.dimensions; i++) {
-    input0_desc.size[1] *= input0_desc.size[i];
+  imgdnn_tensor_descriptor x_desc;
+  IMGDNN_CHECK_SUCCESS(imgdnnGetTensorDescriptor(x_tensor, &x_desc));
+  imgdnn_tensor_descriptor y_desc;
+  IMGDNN_CHECK_SUCCESS(imgdnnGetTensorDescriptor(y_tensor, &y_desc));
+  if (x_desc.dimensions > 2) {
+    NNADAPTER_LOG(FATAL)
+        << "Imgination NNA does not support the dimension of x > 2";
   }
-  input0_desc.dimensions = 2;
-  input0_tensor = imgdnnNetworkReshapeOp(
-      network_, input0_tensor, &input0_desc, &error_code);
+  if (y_desc.dimensions > 2) {
+    NNADAPTER_LOG(FATAL)
+        << "Imgination NNA does not support the dimension of y > 2";
+  }
+  x_tensor = imgdnnNetworkReshapeOp(network_, x_tensor, &x_desc, &error_code);
   IMGDNN_CHECK_SUCCESS(error_code) << "Failed to call imgdnnNetworkReshapeOp!";
-  auto output_tensor = imgdnnNetworkBinaryOp(network_,
-                                             input0_tensor,
-                                             input1_tensor,
-                                             IMGDNN_OPERATION_MATMUL,
-                                             &error_code);
+  auto output_tensor = imgdnnNetworkBinaryOp(
+      network_, x_tensor, y_tensor, IMGDNN_OPERATION_MATMUL, &error_code);
   IMGDNN_CHECK_SUCCESS(error_code) << "Failed to call imgdnnNetworkBinaryOp!";
   return ConvertQuantTensorType(output_tensor, &quant_param);
 }
@@ -362,9 +363,7 @@ imgdnn_tensor ImgdnnManager::CreateReshapeLayer(
   imgdnn_tensor_descriptor shape_desc;
   IMGDNN_CHECK_SUCCESS(imgdnnGetTensorDescriptor(input_tensor, &shape_desc));
   shape_desc.dimensions = shape_count;
-  NNADAPTER_LOG(INFO) << "shape_count: " << shape_count;
   for (unsigned i = 0; i < shape_count; i++) {
-    NNADAPTER_LOG(INFO) << "shape_desc: " << shape[i];
     shape_desc.size[i] = shape[i];
   }
   auto output_tensor =
