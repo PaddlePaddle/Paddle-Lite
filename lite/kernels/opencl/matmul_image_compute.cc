@@ -177,14 +177,27 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
       RearrangeByBlk4x4(y_cpu, y_buffer_data, k_y, n_);
     }
 
+    auto& context = ctx_->As<OpenCLContext>();
+    CHECK(context.cl_context() != nullptr);
+    bool is_mali_ = context.cl_context()->IsArmMali();
     y_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
-    auto y_gpu_data =
-        y_gpu_t_->mutable_data(TARGET(kOpenCL), y_cpu_t->memory_size());
-    TargetWrapperCL::MemcpySync(y_gpu_data,
-                                y_cpu_t->raw_data(),
-                                y_cpu_t->memory_size(),
-                                IoDirection::HtoD);
-
+    if (!is_mali_ && x_dims.size() == 2 && y_dims.size() == 2 &&
+        !transpose_x_) {
+      use_image_y_ = true;
+      DDimLite trans_dims{{y_ext_dims[0] / 4, y_ext_dims[1] * 4}};
+      CLImageConverterFolder converter;
+      const DDim& image_dims = converter.InitImageDimInfoWith(trans_dims);
+      int image_w_ = image_dims[0];
+      int image_h_ = image_dims[1];
+      MUTABLE_DATA_GPU(y_gpu_t_, image_w_, image_h_, y_buffer_data);
+    } else {
+      auto y_gpu_data =
+          y_gpu_t_->mutable_data(TARGET(kOpenCL), y_cpu_t->memory_size());
+      TargetWrapperCL::MemcpySync(y_gpu_data,
+                                  y_cpu_t->raw_data(),
+                                  y_cpu_t->memory_size(),
+                                  IoDirection::HtoD);
+    }
     // reset to original fp16 precision
     if (precision_forced_to_fp32) {
       CLRuntime::Global()->set_precision(lite_api::CL_PRECISION_FP16);
@@ -213,7 +226,10 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
         n_ = transpose_y_ ? y_dims[0] : y_dims[1];
         kernel_func_name_ = "fc";
         kernel_file_name_ = "image/fc_kernel.cl";
-        if (transpose_x_) {
+        if (use_image_y_) {
+          kernel_func_name_ = "matmul_imagey";
+          kernel_file_name_ = "image/matmul_kernel.cl";
+        } else if (transpose_x_) {
           kernel_func_name_ = "matmul_transpose_x";
           kernel_file_name_ = "image/matmul_xtranspose_kernel.cl";
         }
@@ -334,6 +350,9 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
                         local_work_size_[1],
                         UP_DIV(m_, 4));
       } else {
+        if (use_image_y_) {
+          local_work_size_ = cl::NDRange(8, 4, 1);
+        }
         global_work_size_ =
             cl::NDRange(ROUND_UP(UP_DIV(n_, 4), local_work_size_[0]),
                         local_work_size_[1],
@@ -357,7 +376,6 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
   }
 
   void Run() override {
-    auto* y_buf_ = GET_BUFFER_GPU(y_gpu_t_);
     auto* x_img_ = GET_DATA_GPU(matmul_v2_param_->X);
     auto* out_img_ =
         MUTABLE_DATA_GPU(matmul_v2_param_->Out, UP_DIV(n_, 4), m_, nullptr);
@@ -374,8 +392,15 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
     CL_CHECK_FATAL(status);
     status = kernel.setArg(arg_idx++, *out_img_);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(arg_idx++, *y_buf_);
-    CL_CHECK_FATAL(status);
+    if (!use_image_y_) {
+      auto* y_buf_ = GET_BUFFER_GPU(y_gpu_t_);
+      status = kernel.setArg(arg_idx++, *y_buf_);
+      CL_CHECK_FATAL(status);
+    } else {
+      auto* y_img_ = GET_DATA_GPU(y_gpu_t_);
+      status = kernel.setArg(arg_idx++, *y_img_);
+      CL_CHECK_FATAL(status);
+    }
     status = kernel.setArg(arg_idx++, m_);
     CL_CHECK_FATAL(status);
     if (x_dims.size() <= 2 && y_dims.size() <= 2) {
@@ -453,39 +478,6 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
     }
   }
 
-  void convertfolder(const float* tensor, void* image, const DDim& tensor_dim) {
-    size_t tdim[2] = {1, 1};
-    if (tensor_dim.size() == 1) {
-      tdim[1] = tensor_dim[0];
-    } else {
-      tdim[0] = tensor_dim[0];
-      tdim[1] = tensor_dim[1];
-    }
-    size_t width = UP_DIV(tdim[1], 4);
-    float* image_fp32 = static_cast<float*>(image);
-    half_t* image_fp16 = static_cast<half_t*>(image);
-
-    for (size_t h = 0; h < tdim[0]; h++) {
-      for (size_t w = 0; w < width * 4; w++) {
-        if (w < tdim[1]) {
-          if (fp16_support_) {
-            image_fp16[(h * width + w / 4) * 4 + (w % 4)] =
-                Float2Half(tensor[h * tdim[1] + w]);
-          } else {
-            image_fp32[(h * width + w / 4) * 4 + (w % 4)] =
-                tensor[h * tdim[1] + w];
-          }
-        } else {
-          if (fp16_support_) {
-            image_fp16[(h * width + w / 4) * 4 + (w % 4)] = Float2Half(0.f);
-          } else {
-            image_fp32[(h * width + w / 4) * 4 + (w % 4)] = 0.f;
-          }
-        }
-      }
-    }
-  }
-
 #ifdef LITE_WITH_PROFILE
   void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
     ch->kernel_func_name = kernel_func_name_;
@@ -508,6 +500,7 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
   int c_blks_;
   int k_blks_;
   int n_blks_;
+  bool use_image_y_{false};
   bool transpose_x_{false};
   bool transpose_y_{false};
   float alpha_{1.0f};
