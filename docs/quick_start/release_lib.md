@@ -126,56 +126,56 @@
 
 |Arch |下载链接 |适用的操作系统 |
 |:-----:|:-----:|:-----:|
-|x86   |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.centos.x86.baidu_xpu.tar.gz) |CentOS 6.3 |
-|x86   |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.ubuntu.x86.baidu_xpu.tar.gz) |Ubuntu     |
-|armv8 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.ky10.armv8.baidu_xpu.tar.gz) |银河麒麟v10 |
+|x86   |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/v2.10-rc/inference_lite_lib.centos.x86.baidu_xpu.tar.gz) |CentOS 6.3 |
+|x86   |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/v2.10-rc/inference_lite_lib.ubuntu.x86.baidu_xpu.tar.gz) |Ubuntu     |
+|armv8 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/v2.10-rc/inference_lite_lib.ky10.armv8.baidu_xpu.tar.gz) |银河麒麟v10 |
 
 
 ## 华为昇腾 NPU
 
 |Arch |下载链接 |适用的操作系统 |
 |:-----:|:-----:|:-----:|
-|x86   |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.ubuntu.x86.huawei_ascend_npu.tar.gz) |Ubuntu    |
-|armv8 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.ky10.armv8.huawei_ascend_npu.tar.gz) |银河麒麟v10 |
+|x86   |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/v2.10-rc/inference_lite_lib.ubuntu.x86.huawei_ascend_npu.tar.gz) |Ubuntu    |
+|armv8 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/v2.10-rc/inference_lite_lib.ky10.armv8.huawei_ascend_npu.tar.gz) |银河麒麟v10 |
 
 
 ## 华为麒麟 NPU
 
 |Arch |下载链接 |
 |:-----:|:-----:|
-|armv7 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.android.armv7.huawei_kirin_npu.with_cv.with_extra.with_log.tiny_publish.tar.gz) |
-|armv8 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.android.armv8.huawei_kirin_npu.with_cv.with_extra.with_log.tiny_publish.tar.gz) |
+|armv7 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/v2.10-rc/inference_lite_lib.android.armv7.huawei_kirin_npu.with_cv.with_extra.with_log.tiny_publish.tar.gz) |
+|armv8 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/v2.10-rc/inference_lite_lib.android.armv8.huawei_kirin_npu.with_cv.with_extra.with_log.tiny_publish.tar.gz) |
 
 
 ## 瑞芯微 NPU
 
 |Arch |下载链接 |
 |:-----:|:-----:|
-|armv7hf |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.armlinux.armv7hf.rockchip_npu.with_extra.with_log.tiny_publish.tar.gz) |
-|armv8   |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.armlinux.armv8.rockchip_npu.with_extra.with_log.tiny_publish.tar.gz)   |
+|armv7hf |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/v2.10-rc/inference_lite_lib.armlinux.armv7hf.rockchip_npu.with_extra.with_log.tiny_publish.tar.gz) |
+|armv8   |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/v2.10-rc/inference_lite_lib.armlinux.armv8.rockchip_npu.with_extra.with_log.tiny_publish.tar.gz)   |
 
 
 ## 晶晨 NPU
 
 |Arch |下载链接 |适用的操作系统 |
 |:-----:|:-----:|:-----:|
-|armv7 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.android.armv7.amlogic_npu.with_extra.with_log.tiny_publish.tar.gz)  |Android |
-|armv8 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.armlinux.armv8.amlogic_npu.with_extra.with_log.tiny_publish.tar.gz) |Linux   |
+|armv7 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/v2.10-rc/inference_lite_lib.android.armv7.amlogic_npu.with_extra.with_log.tiny_publish.tar.gz)  |Android |
+|armv8 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/v2.10-rc/inference_lite_lib.armlinux.armv8.amlogic_npu.with_extra.with_log.tiny_publish.tar.gz) |Linux   |
 
 
 ## 联发科 APU
 
 |Arch |下载链接 |
 |:-----:|:-----:|
-|armv7 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.android.armv7.mediatek_apu.with_extra.with_log.tiny_publish.tar.gz) |
-|armv8 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.android.armv8.mediatek_apu.with_extra.with_log.tiny_publish.tar.gz) |
+|armv7 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/v2.10-rc/inference_lite_lib.android.armv7.mediatek_apu.with_extra.with_log.tiny_publish.tar.gz) |
+|armv8 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/v2.10-rc/inference_lite_lib.android.armv8.mediatek_apu.with_extra.with_log.tiny_publish.tar.gz) |
 
 
 ## 颖脉 NNA
 
 |Arch |下载链接 |
 |:-----:|:-----:|
-|armv8 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.armlinux.armv8.imagination_nna.with_extra.with_log.tiny_publish.tar.gz) |
+|armv8 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/v2.10-rc/inference_lite_lib.armlinux.armv8.imagination_nna.with_extra.with_log.tiny_publish.tar.gz) |
 
 
 ## opt 工具
