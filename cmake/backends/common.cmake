@@ -12,81 +12,68 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Backends
 # Rockchip NPU
 if(LITE_WITH_RKNPU)
-   include(backends/rknpu)
+  include(backends/rknpu)
 endif()
-
 # Intel FPGA
 if(LITE_WITH_INTEL_FPGA)
-	include(backends/intel_fpga)
+  include(backends/intel_fpga)
 endif()
-
-# for mobile
-if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
-    message(STATUS "Building the mobile framework")
-    include(postproject)
-    include(backends/npu) # check and prepare NPU DDK
-    include(backends/xpu) # check and prepare XPU SDK
-    include(backends/apu) # check and prepare APU SDK 
-    include(backends/huawei_ascend_npu)  # check and prepare Ascend NPU SDK 
-
-    # We compile the mobile deployment library when LITE_ON_TINY_PUBLISH=ON
-    # So the following third party dependencies are not needed.
-    if (NOT LITE_ON_TINY_PUBLISH)
-        # include the necessary thirdparty dependencies
-        include(external/gflags)    # download, build, install gflags
-        # LITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON will disable glog
-        # TODO(sangoly): refine WITH_LITE and LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
-        include(external/gtest)     # download, build, install gtest
-        include(ccache)             # set ccache for compilation
-        include(external/protobuf)  # download, build, install protobuf
-    endif()
-
-    include(generic)            # simplify cmake module
-    include(configure)          # add paddle env configuration
-
-    add_subdirectory(lite)
-    return()
-endif()
-#################################  End of mobile compile ##############################
-
-#################################  Server compile #################################
-
+# Baidu XPU
 if(LITE_WITH_XPU)
-    include(backends/xpu)
+  include(backends/xpu)
 endif()
-
+# MLU
 if(LITE_WITH_MLU)
-    include(mlu)
+  include(mlu)
 endif()
-
-if(LITE_WITH_HUAWEI_ASCEND_NPU)
-    include(backends/huawei_ascend_npu)
+# BM
+if(LITE_WITH_BM)
+  include(bm)
+endif()
+# Huawei Kirin NPU
+if(LITE_WITH_NPU)
+  include(backends/npu)
 endif()
 
 include(backends/gpu)
 include(backends/cpu)
 
-include(coveralls)
-include(external/gflags)    # download, build, install gflags
-include(external/glog)      # download, build, install glog
-include(external/gtest)     # download, build, install gtest
-include(external/protobuf)  # download, build, install protobuf
-include(configure)          # add paddle env configuration
+# Backends dependences
+if(WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+  include(postproject)
+  if (NOT LITE_ON_TINY_PUBLISH)
+    # include the necessary thirdparty dependencies
+    include(external/gflags)    # download, build, install gflags
+    # LITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON will disable glog
+    # TODO(sangoly): refine WITH_LITE and LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
+    include(external/gtest)     # download, build, install gtest
+    include(ccache)             # set ccache for compilation
+    include(external/protobuf)  # download, build, install protobuf
+  endif()
 
-if(LITE_WITH_BM)
-  include(bm)
+  include(generic)            # simplify cmake module
+  include(configure)          # add paddle env configuration
+
+else()
+
+  include(coveralls)
+  include(external/gflags)    # download, build, install gflags
+  include(external/glog)      # download, build, install glog
+  include(external/gtest)     # download, build, install gtest
+  include(external/protobuf)  # download, build, install protobuf
+  include(configure)          # add paddle env configuration
+
+  include(generic)            # simplify cmake module
+  include(ccache)             # set ccache for compilation
+  include(util)               # set unittest and link libs
+  include(version)            # set PADDLE_VERSION
+  if(NOT APPLE)
+    include(flags)
+  endif()
+
+  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
+  set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
 endif()
-include(generic)            # simplify cmake module
-include(ccache)             # set ccache for compilation
-include(util)               # set unittest and link libs
-include(version)            # set PADDLE_VERSION
-if(NOT APPLE)
-  include(flags)
-endif()
-
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
-set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
-
-add_subdirectory(lite)

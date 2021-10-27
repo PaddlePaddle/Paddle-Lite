@@ -14,6 +14,7 @@
 
 if(LITE_WITH_OPENCL)
   include_directories("${PADDLE_SOURCE_DIR}/third-party/opencl/include")
+  message(FATAL_ERROR "CHECK THERE")
 endif()
 
 if(LITE_WITH_CUDA)
