@@ -39,8 +39,7 @@ std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>
 class CxxConfig;
 ```
 
-`CxxConfig` 用来配置构建 CxxPredictor 的配置信息，如 protobuf 格式的模型地址、能耗模式、工作线
-程数、place 信息等等。
+`CxxConfig` 用来配置构建 CxxPredictor 的配置信息，如 protobuf 格式的模型地址、能耗模式、工作线程数、place 信息等等。
 
 示例：
 
@@ -466,7 +465,7 @@ void set_metal_lib_path(const std::string& path);
 
 - 参数
 
-    - `str`：metallib库文件路径
+    - `str`：metallib 库文件路径
 
 
 ### `set_metal_use_mps`
@@ -479,7 +478,7 @@ void set_metal_use_mps(bool flag);
 
 - 参数
 
-    - `flag`：是否使用MPS
+    - `flag`：是否使用 MPS
 
 ### `metal_use_mps`
 
@@ -579,7 +578,7 @@ virtual std::unique_ptr<const Tensor> GetOutput(int i) const = 0;
 
 - 参数
 
-    - `i`: 输出Tensor的索引
+    - `i`: 输出 Tensor 的索引
 
 - 返回值
 
@@ -653,7 +652,7 @@ virtual std::unique_ptr<const Tensor> GetTensor(const std::string& name) const =
 virtual void Run() = 0;
 ```
 
-执行模型预测，需要在***设置输入数据后***调用。
+执行模型预测，需要在设置输入数据后调用。
 
 
 ### `GetVersion`
@@ -662,7 +661,7 @@ virtual void Run() = 0;
 virtual std::string GetVersion() const = 0;
 ```
 
-用于获取当前库使用的代码版本。若代码有相应tag则返回 tag 信息，如 `v2.0-beta`；否则返回代码的 `branch(commitid)`，如 `develop(7e44619)`。
+用于获取当前库使用的代码版本。若代码有相应 tag 则返回 tag 信息，如 `v2.0-beta`；否则返回代码的 `branch(commitid)`，如 `develop(7e44619)`。
 
 - 返回值
 
