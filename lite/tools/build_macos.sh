@@ -21,6 +21,7 @@ BUILD_CV=OFF
 WITH_LOG=ON
 WITH_MKL=ON
 WITH_OPENCL=OFF
+WITH_METAL=OFF
 WITH_STATIC_MKL=OFF
 WITH_AVX=ON
 WITH_EXCEPTION=OFF
@@ -128,6 +129,12 @@ function make_armosx {
     fi
 
     build_dir=$workspace/build.macos.${os}.${arch}
+
+    if [ ${WITH_METAL} == "ON" ]; then
+      BUILD_EXTRA=ON
+      build_dir=$workspace/build.macos.metal.${os}.${arch}
+    fi
+
     if [ -d $build_dir ]
     then
         rm -rf $build_dir
@@ -146,6 +153,7 @@ function make_armosx {
     cmake $workspace \
             -DWITH_LITE=ON \
             -DLITE_WITH_ARM=ON \
+            -DLITE_WITH_METAL=${WITH_METAL} \
             -DLITE_ON_TINY_PUBLISH=ON \
             -DLITE_WITH_OPENMP=OFF \
             -DWITH_ARM_DOTPROD=OFF \
@@ -186,6 +194,10 @@ function make_x86 {
     prepare_opencl_source_code $root_dir $build_directory
   fi
 
+  if [ ${WITH_METAL} == "ON" ]; then
+    BUILD_EXTRA=ON
+    build_directory=$BUILD_DIR/build.lite.x86.metal
+  fi
   if [ ${BUILD_PYTHON} == "ON" ]; then
     BUILD_EXTRA=ON
   fi
@@ -213,6 +225,7 @@ function make_x86 {
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
             -DLITE_WITH_ARM=OFF \
             -DLITE_WITH_OPENCL=${WITH_OPENCL} \
+            -DLITE_WITH_METAL=${WITH_METAL} \
             -DWITH_GPU=OFF \
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
             -DLITE_BUILD_EXTRA=${BUILD_EXTRA} \
@@ -350,6 +363,10 @@ function main {
                 ;;
             --build_opencl=*)
                 WITH_OPENCL="${i#*=}"
+                shift
+                ;;
+            --build_metal=*)
+                WITH_METAL="${i#*=}"
                 shift
                 ;;
             --build_npu=*)
