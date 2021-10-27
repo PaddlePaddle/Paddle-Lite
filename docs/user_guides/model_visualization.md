@@ -1,6 +1,6 @@
 # 模型可视化方法
 
-Paddle Lite 框架中主要使用到的模型结构有2种：(1) 为 [PaddlePaddle](https://github.com/PaddlePaddle/Paddle)深度学习框架产出的模型格式; (2) 使用 [Lite 模型优化工具 opt](model_optimize_tool)优化后的模型格式。因此本章节包含内容如下：
+Paddle Lite 框架中主要使用到的模型结构有2种：(1) 为 [PaddlePaddle](https://github.com/PaddlePaddle/Paddle) 深度学习框架产出的模型格式; (2) 使用 [Lite 模型优化工具 opt](model_optimize_tool) 优化后的模型格式。因此本章节包含内容如下：
 
 1. [Paddle 推理模型可视化](model_visualization.html#paddle)
 2. [Lite 优化模型可视化](model_visualization.html#lite)
@@ -8,7 +8,7 @@ Paddle Lite 框架中主要使用到的模型结构有2种：(1) 为 [PaddlePadd
 
 ## Paddle 推理模式可视化
 
-Paddle 用于推理的模型是通过 [save_inference_model](https://www.paddlepaddle.org.cn/documentation/docs/zh/api/paddle/static/save_inference_model_cn.html#save-inference-model)这个 API 保存下来的，存储格式有两种，由 save_inference_model 接口中的 `model_filename` 和 `params_filename` 变量控制：
+Paddle 用于推理的模型是通过 [save_inference_model](https://www.paddlepaddle.org.cn/documentation/docs/zh/api/paddle/static/save_inference_model_cn.html#save-inference-model) 这个 API 保存下来的，存储格式有两种，由 save_inference_model 接口中的 `model_filename` 和 `params_filename` 变量控制：
 
 - **non-combined 形式** ：参数保存到独立的文件，如设置 `model_filename` 为 `None` , `params_filename` 为 `None`
 
@@ -33,7 +33,7 @@ Paddle 用于推理的模型是通过 [save_inference_model](https://www.paddlep
   -rw-r--r-- 1 root root 132K Sep 24 09:42 params        # 权重文件
   ```
 
-通过以上方式保存下来的模型文件都可以通过 [Netron](https://lutzroeder.github.io/netron/)工具来打开查看模型的网络结构。
+通过以上方式保存下来的模型文件都可以通过 [Netron](https://lutzroeder.github.io/netron/) 工具来打开查看模型的网络结构。
 
 **注意：** [Netron](https://github.com/lutzroeder/netron) 当前要求 PaddlePaddle 的保存模型文件名必须为`__model__`，否则无法识别。如果是通过第二种方式保存下来的 combined 形式的模型文件，需要将文件重命名为`__model__`。
 
