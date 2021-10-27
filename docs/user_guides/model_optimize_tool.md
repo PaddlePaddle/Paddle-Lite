@@ -17,7 +17,7 @@ pip install paddlelite==2.9
 ```
 - `opt`转化和分析模型： 可通过**终端命令**或**Python脚本**调用
     - [终端命令方法](./opt/opt_python) （支持`Mac/Ubuntu`)
-    - [ python 脚本方法](../api_reference/python_api/opt)（支持`Window/Mac/Ubuntu`）
+    - [python 脚本方法](../api_reference/python_api/opt)（支持`Window/Mac/Ubuntu`）
 
 
 #### 源码编译 opt 工具
