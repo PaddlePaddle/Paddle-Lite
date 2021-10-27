@@ -75,7 +75,6 @@ class DirectConv : public KernelLite<TARGET(kX86), Ptype> {
     code_ = new lite::x86::math::conv_direct_3x3s2();
     code_->generate_code(ic, ih, iw, oc, oc_expand_, oh, ow, ph, pw);
     code_->ready();
-    std::cout << code_->getSize() << std::endl;
   }
 
 #ifdef LITE_WITH_PROFILE
