@@ -10,6 +10,7 @@ Paddle Lite 框架中主要使用到的模型结构有2种：(1) 为 [PaddlePadd
 
 Paddle 用于推理的模型是通过 [save_inference_model](https://www.paddlepaddle.org.cn/documentation/docs/zh/api/paddle/static/save_inference_model_cn.html#save-inference-model) 这个 API 保存下来的，存储格式有两种，由 save_inference_model 接口中的 `model_filename` 和 `params_filename` 变量控制：
 
+
 - **non-combined 形式** ：参数保存到独立的文件，如设置 `model_filename` 为 `None` , `params_filename` 为 `None`
 
   ```bash
@@ -33,6 +34,7 @@ Paddle 用于推理的模型是通过 [save_inference_model](https://www.paddlep
   -rw-r--r-- 1 root root 132K Sep 24 09:42 params        # 权重文件
   ```
 
+
 通过以上方式保存下来的模型文件都可以通过 [Netron](https://lutzroeder.github.io/netron/) 工具来打开查看模型的网络结构。
 
 **注意：**[Netron](https://github.com/lutzroeder/netron) 当前要求 PaddlePaddle 的保存模型文件名必须为`__model__`，否则无法识别。如果是通过第二种方式保存下来的 combined 形式的模型文件，需要将文件重命名为`__model__`。
@@ -40,6 +42,7 @@ Paddle 用于推理的模型是通过 [save_inference_model](https://www.paddlep
 
 
 ## Lite 优化模型可视化
+
 
 Paddle Lite 在执行模型推理之前需要使用[模型优化工具 opt](model_optimize_tool) 来对模型进行优化，优化后的模型结构同样可以使用 [Netron](https://lutzroeder.github.io/netron/) 工具进行查看，但是必须保存为`protobuf`格式，而不是`naive_buffer`格式。
 
@@ -88,6 +91,7 @@ Paddle Lite 在执行模型推理之前需要使用[模型优化工具 opt](mode
 
 将通过以上步骤输出的优化后的模型文件`model`重命名为`__model__`，然后用 [Netron](https://lutzroeder.github.io/netron/) 工具打开即可查看优化后的模型结构。将优化前后的模型进行对比，即可发现优化后的模型比优化前的模型更轻量级，在推理任务中耗费资源更少且执行速度也更快。
 
+
 <p align="center"><img width="600" src="https://paddlelite-data.bj.bcebos.com/doc_images/model_visualization/model_visualization.png"/></p>
 
 
@@ -95,7 +99,9 @@ Paddle Lite 在执行模型推理之前需要使用[模型优化工具 opt](mode
 
 当模型优化的目标硬件平台为 [华为 NPU](../demo_guides/huawei_kirin_npu), [百度 XPU](../demo_guides/baidu_xpu), [瑞芯微 NPU](../demo_guides/rockchip_npu), [联发科 APU](../demo_guides/mediatek_apu) 等通过子图方式接入的硬件平台时，得到的优化后的`protobuf`格式模型中运行在这些硬件平台上的算子都由`subgraph`算子包含，无法查看具体的网络结构。
 
+
 以[华为 NPU](../demo_guides/huawei_kirin_npu) 为例，运行以下命令进行模型优化，得到输出文件夹下的`model, params`两个文件。
+
 
 ```bash
 $ paddle_lite_opt \
@@ -104,6 +110,7 @@ $ paddle_lite_opt \
       --optimize_out_type=protobuf \
       --optimize_out=model_opt_dir_npu
 ```
+
 
 将优化后的模型文件`model`重命名为`__model__`，然后用 [Netron](https://lutzroeder.github.io/netron/) 工具打开，只看到单个的 subgraph 算子，如下图所示：
 
@@ -160,7 +167,9 @@ I0924 10:50:12.715770 122828 op_lite.cc:89] pick kernel for subgraph host/float/
 
 若模型中存在多个子图，以上方法同样可以得到所有子图的具体模型结构。
 
+
 同样以[华为 NPU](../demo_guides/huawei_kirin_npu) 和 ARM 平台混合调度为例，子图的产生往往是由于模型中存在部分算子无法运行在 NPU 平台上(比如 NPU 不支持的算子)，这会导致整个模型被切分为多个子图，子图中包含的算子会运行在 NPU 平台上，而子图与子图之间的一个或多个算子则只能运行在 ARM 平台上。这里可以通过[华为 NPU](../demo_guides/huawei_kirin_npu) 的[自定义子图分割](../demo_guides/huawei_kirin_npu.html#kirin-npuarm-cpu)功能，将 recognize_digits 模型中的`batch_norm`设置为禁用 NPU 的算子，从而将模型分割为具有两个子图的模型：
+
 
 ```bash
 # 此txt配置文件文件中的内容为 batch_norm
@@ -173,9 +182,11 @@ $ paddle_lite_opt \
       --optimize_out=model_opt_dir_npu > debug_log.txt 2>&1 #
 ```
 
+
 将执行以上命令之后，得到的优化后模型文件`model`重命名为`__model__`，然后用 [Netron](https://lutzroeder.github.io/netron/) 工具打开，就可以看到优化后的模型中存在2个 subgraph 算子，如左图所示，两个子图中间即为通过环境变量和配置文件指定的禁用NPU的`batch_norm`算子。
 
 打开新保存的 debug_log.txt 文件，搜索`final program`关键字，拷贝在这之后的以`digraph G {`开头和以`} // end G`结尾的文本用 [webgraphviz](http://www.webgraphviz.com/) 查看，也是同样的模型拓扑结构，存在`subgraph1`和`subgraph3`两个子图，两个子图中间同样是被禁用NPU的`batch_norm`算子，如下图所示:
+
 
 <p align="center"><img src="https://paddlelite-data.bj.bcebos.com/doc_images/model_visualization/final_program.png"/></p>
 
