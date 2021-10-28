@@ -115,20 +115,20 @@ inference_lite_lib.android.armv8          Paddle Lite 预测库
 ```
 
 （2）预测库编译
-预测库编译方法请参考[编译文档](../source_compile/compile_env) 完成 Paddle Lite 预测库编译，获取可执行的 C++ Demo。
+预测库编译方法请参考[编译文档](../source_compile/compile_env)完成 Paddle Lite 预测库编译，获取可执行的 C++ Demo。
 
 ### 3. 准备预测部署模型
 
-（1) 模型下载：下载 [mobilenet_v1](http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz)模型后解压，得到 Paddle 非 combined 形式的模型，位于文件夹 `mobilenet_v1` 下。可通过模型可视化工具 [Netron](https://lutzroeder.github.io/netron/)打开文件夹下的`__model__`文件，查看模型结构。
+（1) 模型下载：下载 [mobilenet_v1](http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz) 模型后解压，得到 Paddle 非 combined 形式的模型，位于文件夹 `mobilenet_v1` 下。可通过模型可视化工具 [Netron](https://lutzroeder.github.io/netron/) 打开文件夹下的`__model__`文件，查看模型结构。
 
 ```shell
 wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz
 tar zxf mobilenet_v1.tar.gz
 ```
 
-（2) 模型转换：Paddle的原生模型需要经过[opt](../user_guides/model_optimize_tool)工具转化为Paddle Lite可以支持的naive_buffer格式。
+（2) 模型转换：Paddle 的原生模型需要经过 [opt](../user_guides/model_optimize_tool) 工具转化为 Paddle Lite 可以支持的 naive_buffer 格式。
 
-方式一: 下载[opt 工具](../user_guides/model_optimize_tool)，放入与 `mobilenet_v1` 文件夹同级目录，终端输入以下命令转化模型
+方式一: 下载 [opt 工具](../user_guides/model_optimize_tool)，放入与 `mobilenet_v1` 文件夹同级目录，终端输入以下命令转化模型
 
 ```shell
 # Linux
@@ -161,7 +161,7 @@ paddle_lite_opt --model_dir=./mobilenet_v1 \
 
 ### 4. 编译预测示例程序
 
-准备好预测库和模型，就可以直接编译随着预测库一起发布的 C++ Demo ，位于在第二步中下载的预测库文件目录下 `inference_lite_lib.android.armv8/demo/cxx` 。以 mobilenet_v1 为例，目录下的 `mobile_light` 为mobilenet_v1 预测示例，完成可执行文件的编译。
+准备好预测库和模型，就可以直接编译随着预测库一起发布的 C++ Demo ，位于在第二步中下载的预测库文件目录下 `inference_lite_lib.android.armv8/demo/cxx` 。以 mobilenet_v1 为例，目录下的 `mobile_light` 为 mobilenet_v1 预测示例，完成可执行文件的编译。
 
 ```shell
 cd inference_lite_lib.android.armv8/demo/cxx/mobile_light
@@ -172,7 +172,7 @@ make
 
 ### 5. 预测部署和执行
 
-(1) 设置手机：手机 USB 连接电脑，打开`设置 -> 开发者模式 -> USB调试 -> 允许（授权）当前电脑调试手机`。保证当前电脑已经安装[ adb 工具](https://developer.android.com/studio/command-line/adb)，运行以下命令，确认当前手机设备已被识别：
+(1) 设置手机：手机 USB 连接电脑，打开`设置 -> 开发者模式 -> USB调试 -> 允许（授权）当前电脑调试手机`。保证当前电脑已经安装 [adb 工具](https://developer.android.com/studio/command-line/adb)，运行以下命令，确认当前手机设备已被识别：
 
 ``` shell
 adb devices
@@ -181,7 +181,7 @@ List of devices attached
 017QXM19C1000664	device
 ```
 
-(2) 预测部署：将第二步中的 C++ 动态预测库文件 `libpaddle_light_api_shared.so` 、第三步中生成的优化后模型文件 `mobilenet_v1_opt.nb` 和第四步中编译得到的预测示例程序 `mobilenetv1_light_api` 放入同一文件夹，并将这三个文件推送到手机：
+(2) 预测部署：将第二步中的 C++ 动态预测库文件 `libpaddle_light_api_shared.so`、第三步中生成的优化后模型文件 `mobilenet_v1_opt.nb` 和第四步中编译得到的预测示例程序 `mobilenetv1_light_api` 放入同一文件夹，并将这三个文件推送到手机：
 
 ``` shell
 chmod +x mobile_classify
