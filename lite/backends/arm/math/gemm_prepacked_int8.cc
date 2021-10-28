@@ -1355,8 +1355,8 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "cmp    %w[relu],   #0\n"       /* skip relu */  \
   "beq    12f\n"                                   \
   "cmp    %w[relu],    #1\n"    /* skip relu */    \
-  "bne    13f\n"                /* other act */    \
   "movi   v2.4s, #0\n"             /* for relu*/   \
+  "bne    13f\n"                /* other act */    \
   "fmax   v8.4s, v8.4s, v2.4s\n"   /* relu*/       \
   "fmax   v11.4s, v11.4s, v2.4s\n" /* relu*/       \
   "fmax   v14.4s, v14.4s, v2.4s\n" /* relu*/       \
@@ -1371,8 +1371,8 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "cmp    %w[relu],   #0\n"       /* skip relu */  \
   "beq    12f\n"                                   \
   "cmp    %w[relu],    #1\n"    /* skip relu */    \
-  "bne    13f\n"                /* other act */    \
   "movi   v2.4s, #0\n"             /* for relu*/   \
+  "bne    13f\n"                /* other act */    \
   "fmax   v8.4s, v8.4s, v2.4s\n"   /* relu*/       \
   "fmax   v9.4s, v9.4s, v2.4s\n"   /* relu*/       \
   "fmax   v11.4s, v11.4s, v2.4s\n" /* relu*/       \
@@ -1395,8 +1395,8 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "cmp    %w[relu],   #0\n"       /* skip relu */  \
   "beq    12f\n"                                   \
   "cmp    %w[relu],    #1\n"    /* skip relu */    \
-  "bne    13f\n"                /* other act */    \
   "movi   v2.4s, #0\n"             /* for relu*/   \
+  "bne    13f\n"                /* other act */    \
   "fmax   v8.4s, v8.4s, v2.4s\n"   /* relu*/       \
   "fmax   v9.4s, v9.4s, v2.4s\n"   /* relu*/       \
   "fmax   v10.4s, v10.4s, v2.4s\n" /* relu*/       \
@@ -1427,7 +1427,6 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "13:    \n"                                             \
   "cmp    %w[relu],   #2\n"       /* skip relu6 */        \
   "bne   14f\n"                                           \
-  "movi   v2.4s, #0\n"             /* for relu*/          \
   "fmax   v8.4s, v8.4s, v2.4s\n"   /* relu*/              \
   "fmax   v11.4s, v11.4s, v2.4s\n" /* relu*/              \
   "ld1    {v3.4s}, [%[alpha]]    \n"    /* relu6 alpha */ \
@@ -1451,7 +1450,6 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "13:    \n"                                             \
   "cmp    %w[relu],   #2\n"       /* skip relu6 */        \
   "bne   14f\n"                                           \
-  "movi   v2.4s, #0\n"             /* for relu*/          \
   "fmax   v8.4s, v8.4s, v2.4s\n"   /* relu*/              \
   "fmax   v9.4s, v9.4s, v2.4s\n"   /* relu*/              \
   "fmax   v11.4s, v11.4s, v2.4s\n" /* relu*/              \
@@ -1489,8 +1487,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
 
 #define GEMM_SDOT_RELU6                             \
   "13:    \n"                                      \
-  "cmp    %w[relu],   #2\n"       /* skip relu6 */ \
-  "bne   14f\n"                                     \
+  "bne   14f\n"                                    \
   "movi   v2.4s, #0\n"             /* for relu*/   \
   "fmax   v8.4s, v8.4s, v2.4s\n"   /* relu*/       \
   "fmax   v9.4s, v9.4s, v2.4s\n"   /* relu*/       \
@@ -1545,7 +1542,8 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
 
 #define GEMM_SDOT_LEAKY_RELU_8x4                            \
   "14: \n"                                                  \
-  "movi   v2.4s, #0\n"             /* for leakyrelu*/       \
+  "cmp    %w[relu],   #3\n"       /* skip relu6 */          \
+  "bne   15f\n"                                             \
   "ld1    {v3.4s}, [%[alpha]]\n"   /* leakyrelu alpha */    \
   "fcmge  v4.4s,    v8.4s,    v2.4s   \n" /* vcgeq_f32 */   \
   "fmul   v5.4s,    v8.4s,    v3.4s   \n" /* vmulq_f32 */   \
@@ -1571,11 +1569,12 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "fcmge  v6.4s,    v29.4s,    v2.4s   \n" /* vcgeq_f32 */  \
   "fmul   v7.4s,    v29.4s,    v3.4s   \n" /* vmulq_f32 */  \
   "bif    v29.16b,   v7.16b,   v6.16b  \n" /* choose*/      \
-  "12: \n"
+  "b 12f \n"
 
 #define GEMM_SDOT_LEAKY_RELU_8x8                            \
   "14: \n"                                                  \
-  "movi   v2.4s, #0\n"             /* for leakyrelu*/       \
+  "cmp    %w[relu],   #3\n"       /* skip relu6 */          \
+  "bne   15f\n"                                             \
   "ld1    {v3.4s}, [%[alpha]]\n"   /* leakyrelu alpha */    \
   "fcmge  v4.4s,    v8.4s,    v2.4s   \n" /* vcgeq_f32 */   \
   "fmul   v5.4s,    v8.4s,    v3.4s   \n" /* vmulq_f32 */   \
@@ -1625,11 +1624,12 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "fcmge  v4.4s,    v30.4s,    v2.4s   \n" /* vcgeq_f32 */  \
   "fmul   v5.4s,    v30.4s,    v3.4s   \n" /* vmulq_f32 */  \
   "bif    v30.16b,   v5.16b,   v4.16b  \n" /* choose*/      \
-  "12: \n"
+  "b 12f \n"
 
 #define GEMM_SDOT_LEAKY_RELU                        \
   "14: \n"                                           \
-  "movi   v2.4s, #0\n"             /* for leakyrelu*/       \
+  "cmp    %w[relu],   #3\n"       /* skip relu6 */          \
+  "bne   15f\n"                                             \
   "ld1    {v3.4s}, [%[alpha]]\n"   /* leakyrelu alpha */    \
   "fcmge  v4.4s,    v8.4s,    v2.4s   \n" /* vcgeq_f32 */  \
   "fmul   v5.4s,    v8.4s,    v3.4s   \n" /* vmulq_f32 */  \
@@ -1703,7 +1703,268 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "fmul   v7.4s,    v31.4s,    v3.4s   \n" /* vmulq_f32 */  \
   "bif    v30.16b,   v5.16b,   v4.16b  \n" /* choose*/      \
   "bif    v31.16b,   v7.16b,   v6.16b  \n" /* choose*/      \
-  "12: \n"
+  "b 12f \n"
+
+#define GEMM_SDOT_HARD_SWISH_8x4                            \
+  "15: \n"                                                  \
+  "ldr    q4,      [%[alpha], #32]    \n" /* offset */      \
+  "ld1    {v3.4s}, [%[alpha]]\n"   /* leakyrelu alpha */    \
+  "ldr    q5,      [%[alpha], #48]    \n" /* theshold */    \
+  "fadd   v6.4s,    v8.4s,    v4.4s   \n"                   \
+  "fadd   v7.4s,    v11.4s,   v4.4s   \n"                   \
+  "fmul   v8.4s,    v8.4s,    v3.4s   \n"                   \
+  "fmul   v11.4s,   v11.4s,   v3.4s   \n"                   \
+  "fmax   v6.4s,    v6.4s,    v2.4s   \n"                   \
+  "fmax   v7.4s,    v7.4s,    v2.4s   \n"                   \
+  "fmin   v6.4s,    v6.4s,    v5.4s   \n"                   \
+  "fmin   v7.4s,    v7.4s,   v5.4s    \n"                   \
+  "fmul   v8.4s,    v8.4s,    v6.4s   \n"                   \
+  "fmul   v11.4s,   v11.4s,   v7.4s   \n"                   \
+  "fadd   v6.4s,    v14.4s,   v4.4s   \n"                   \
+  "fadd   v7.4s,    v17.4s,   v4.4s   \n"                   \
+  "fmul   v14.4s,   v14.4s,   v3.4s  \n"                    \
+  "fmul   v17.4s,   v17.4s,   v3.4s   \n"                   \
+  "fmax   v6.4s,    v6.4s,    v2.4s   \n"                   \
+  "fmax   v7.4s,    v7.4s,    v2.4s   \n"                   \
+  "fmin   v6.4s,    v6.4s,    v5.4s   \n"                   \
+  "fmin   v7.4s,    v7.4s,    v5.4s   \n"                   \
+  "fmul   v14.4s,   v14.4s,   v6.4s   \n"                   \
+  "fmul   v17.4s,   v17.4s,   v7.4s   \n"                   \
+  "fadd   v6.4s,    v20.4s,   v4.4s   \n"                   \
+  "fadd   v7.4s,    v23.4s,   v4.4s   \n"                   \
+  "fmul   v20.4s,   v20.4s,   v3.4s  \n"                    \
+  "fmul   v23.4s,   v23.4s,   v3.4s   \n"                   \
+  "fmax   v6.4s,    v6.4s,    v2.4s   \n"                   \
+  "fmax   v7.4s,    v7.4s,    v2.4s   \n"                   \
+  "fmin   v6.4s,    v6.4s,    v5.4s   \n"                   \
+  "fmin   v7.4s,    v7.4s,    v5.4s   \n"                   \
+  "fmul   v20.4s,   v20.4s,   v6.4s   \n"                   \
+  "fmul   v23.4s,   v23.4s,   v7.4s   \n"                   \
+  "fadd   v6.4s,    v26.4s,   v4.4s   \n"                   \
+  "fadd   v7.4s,    v29.4s,   v4.4s   \n"                   \
+  "fmul   v26.4s,   v26.4s,   v3.4s  \n"                    \
+  "fmul   v29.4s,   v29.4s,   v3.4s   \n"                   \
+  "fmax   v6.4s,    v6.4s,    v2.4s   \n"                   \
+  "fmax   v7.4s,    v7.4s,    v2.4s   \n"                   \
+  "fmin   v6.4s,    v6.4s,    v5.4s   \n"                   \
+  "fmin   v7.4s,    v7.4s,    v5.4s   \n"                   \
+  "fmul   v26.4s,   v26.4s,   v6.4s   \n"                   \
+  "fmul   v29.4s,   v29.4s,   v7.4s   \n"                   \
+  "12:  \n"
+
+#define GEMM_SDOT_HARD_SWISH_8x8                            \
+  "15: \n"                                                  \
+  "ldr    q4,      [%[alpha], #32]    \n" /* offset */      \
+  "ld1    {v3.4s}, [%[alpha]]\n"   /* leakyrelu alpha */    \
+  "ldr    q5,      [%[alpha], #48]    \n" /* theshold */    \
+  "fadd   v6.4s,    v8.4s,    v4.4s   \n"                   \
+  "fadd   v7.4s,    v11.4s,   v4.4s   \n"                   \
+  "fmul   v8.4s,    v8.4s,    v3.4s   \n"                   \
+  "fmul   v11.4s,   v11.4s,   v3.4s   \n"                   \
+  "fmax   v6.4s,    v6.4s,    v2.4s   \n"                   \
+  "fmax   v7.4s,    v7.4s,    v2.4s   \n"                   \
+  "fmin   v6.4s,    v6.4s,    v5.4s   \n"                   \
+  "fmin   v7.4s,    v7.4s,   v5.4s    \n"                   \
+  "fmul   v8.4s,    v8.4s,    v6.4s   \n"                   \
+  "fmul   v11.4s,   v11.4s,   v7.4s   \n"                   \
+  "fadd   v6.4s,    v14.4s,   v4.4s   \n"                   \
+  "fadd   v7.4s,    v17.4s,   v4.4s   \n"                   \
+  "fmul   v14.4s,   v14.4s,   v3.4s  \n"                    \
+  "fmul   v17.4s,   v17.4s,   v3.4s   \n"                   \
+  "fmax   v6.4s,    v6.4s,    v2.4s   \n"                   \
+  "fmax   v7.4s,    v7.4s,    v2.4s   \n"                   \
+  "fmin   v6.4s,    v6.4s,    v5.4s   \n"                   \
+  "fmin   v7.4s,    v7.4s,    v5.4s   \n"                   \
+  "fmul   v14.4s,   v14.4s,   v6.4s   \n"                   \
+  "fmul   v17.4s,   v17.4s,   v7.4s   \n"                   \
+  "fadd   v6.4s,    v20.4s,   v4.4s   \n"                   \
+  "fadd   v7.4s,    v23.4s,   v4.4s   \n"                   \
+  "fmul   v20.4s,   v20.4s,   v3.4s  \n"                    \
+  "fmul   v23.4s,   v23.4s,   v3.4s   \n"                   \
+  "fmax   v6.4s,    v6.4s,    v2.4s   \n"                   \
+  "fmax   v7.4s,    v7.4s,    v2.4s   \n"                   \
+  "fmin   v6.4s,    v6.4s,    v5.4s   \n"                   \
+  "fmin   v7.4s,    v7.4s,    v5.4s   \n"                   \
+  "fmul   v20.4s,   v20.4s,   v6.4s   \n"                   \
+  "fmul   v23.4s,   v23.4s,   v7.4s   \n"                   \
+  "fadd   v6.4s,    v26.4s,   v4.4s   \n"                   \
+  "fadd   v7.4s,    v29.4s,   v4.4s   \n"                   \
+  "fmul   v26.4s,   v26.4s,   v3.4s  \n"                    \
+  "fmul   v29.4s,   v29.4s,   v3.4s   \n"                   \
+  "fmax   v6.4s,    v6.4s,    v2.4s   \n"                   \
+  "fmax   v7.4s,    v7.4s,    v2.4s   \n"                   \
+  "fmin   v6.4s,    v6.4s,    v5.4s   \n"                   \
+  "fmin   v7.4s,    v7.4s,    v5.4s   \n"                   \
+  "fmul   v26.4s,   v26.4s,   v6.4s   \n"                   \
+  "fmul   v29.4s,   v29.4s,   v7.4s   \n"                   \
+  "fadd   v6.4s,    v9.4s,    v4.4s   \n"                   \
+  "fadd   v7.4s,    v12.4s,   v4.4s   \n"                   \
+  "fmul   v9.4s,    v9.4s,    v3.4s   \n"                   \
+  "fmul   v12.4s,   v12.4s,   v3.4s   \n"                   \
+  "fmax   v6.4s,    v6.4s,    v2.4s   \n"                   \
+  "fmax   v7.4s,    v7.4s,    v2.4s   \n"                   \
+  "fmin   v6.4s,    v6.4s,    v5.4s   \n"                   \
+  "fmin   v7.4s,    v7.4s,   v5.4s    \n"                   \
+  "fmul   v9.4s,    v9.4s,    v6.4s   \n"                   \
+  "fmul   v12.4s,   v12.4s,   v7.4s   \n"                   \
+  "fadd   v6.4s,    v15.4s,   v4.4s   \n"                   \
+  "fadd   v7.4s,    v18.4s,   v4.4s   \n"                   \
+  "fmul   v15.4s,   v15.4s,   v3.4s  \n"                    \
+  "fmul   v18.4s,   v18.4s,   v3.4s   \n"                   \
+  "fmax   v6.4s,    v6.4s,    v2.4s   \n"                   \
+  "fmax   v7.4s,    v7.4s,    v2.4s   \n"                   \
+  "fmin   v6.4s,    v6.4s,    v5.4s   \n"                   \
+  "fmin   v7.4s,    v7.4s,    v5.4s   \n"                   \
+  "fmul   v15.4s,   v15.4s,   v6.4s   \n"                   \
+  "fmul   v18.4s,   v18.4s,   v7.4s   \n"                   \
+  "fadd   v6.4s,    v21.4s,   v4.4s   \n"                   \
+  "fadd   v7.4s,    v24.4s,   v4.4s   \n"                   \
+  "fmul   v21.4s,   v21.4s,   v3.4s  \n"                    \
+  "fmul   v24.4s,   v24.4s,   v3.4s   \n"                   \
+  "fmax   v6.4s,    v6.4s,    v2.4s   \n"                   \
+  "fmax   v7.4s,    v7.4s,    v2.4s   \n"                   \
+  "fmin   v6.4s,    v6.4s,    v5.4s   \n"                   \
+  "fmin   v7.4s,    v7.4s,    v5.4s   \n"                   \
+  "fmul   v21.4s,   v21.4s,   v6.4s   \n"                   \
+  "fmul   v24.4s,   v24.4s,   v7.4s   \n"                   \
+  "fadd   v6.4s,    v27.4s,   v4.4s   \n"                   \
+  "fadd   v7.4s,    v30.4s,   v4.4s   \n"                   \
+  "fmul   v27.4s,   v27.4s,   v3.4s  \n"                    \
+  "fmul   v30.4s,   v30.4s,   v3.4s   \n"                   \
+  "fmax   v6.4s,    v6.4s,    v2.4s   \n"                   \
+  "fmax   v7.4s,    v7.4s,    v2.4s   \n"                   \
+  "fmin   v6.4s,    v6.4s,    v5.4s   \n"                   \
+  "fmin   v7.4s,    v7.4s,    v5.4s   \n"                   \
+  "fmul   v27.4s,   v27.4s,   v6.4s   \n"                   \
+  "fmul   v30.4s,   v30.4s,   v7.4s   \n"                   \
+  "12:  \n"
+
+#define GEMM_SDOT_HARD_SWISH                        \
+  "15: \n"                                                  \
+  "ldr    q4,      [%[alpha], #32]    \n" /* offset */      \
+  "ld1    {v3.4s}, [%[alpha]]\n"   /* leakyrelu alpha */    \
+  "ldr    q5,      [%[alpha], #48]    \n" /* theshold */    \
+  "fadd   v6.4s,    v8.4s,    v4.4s   \n"                   \
+  "fadd   v7.4s,    v11.4s,   v4.4s   \n"                   \
+  "fmul   v8.4s,    v8.4s,    v3.4s   \n"                   \
+  "fmul   v11.4s,   v11.4s,   v3.4s   \n"                   \
+  "fmax   v6.4s,    v6.4s,    v2.4s   \n"                   \
+  "fmax   v7.4s,    v7.4s,    v2.4s   \n"                   \
+  "fmin   v6.4s,    v6.4s,    v5.4s   \n"                   \
+  "fmin   v7.4s,    v7.4s,   v5.4s    \n"                   \
+  "fmul   v8.4s,    v8.4s,    v6.4s   \n"                   \
+  "fmul   v11.4s,   v11.4s,   v7.4s   \n"                   \
+  "fadd   v6.4s,    v14.4s,   v4.4s   \n"                   \
+  "fadd   v7.4s,    v17.4s,   v4.4s   \n"                   \
+  "fmul   v14.4s,   v14.4s,   v3.4s  \n"                    \
+  "fmul   v17.4s,   v17.4s,   v3.4s   \n"                   \
+  "fmax   v6.4s,    v6.4s,    v2.4s   \n"                   \
+  "fmax   v7.4s,    v7.4s,    v2.4s   \n"                   \
+  "fmin   v6.4s,    v6.4s,    v5.4s   \n"                   \
+  "fmin   v7.4s,    v7.4s,    v5.4s   \n"                   \
+  "fmul   v14.4s,   v14.4s,   v6.4s   \n"                   \
+  "fmul   v17.4s,   v17.4s,   v7.4s   \n"                   \
+  "fadd   v6.4s,    v20.4s,   v4.4s   \n"                   \
+  "fadd   v7.4s,    v23.4s,   v4.4s   \n"                   \
+  "fmul   v20.4s,   v20.4s,   v3.4s  \n"                    \
+  "fmul   v23.4s,   v23.4s,   v3.4s   \n"                   \
+  "fmax   v6.4s,    v6.4s,    v2.4s   \n"                   \
+  "fmax   v7.4s,    v7.4s,    v2.4s   \n"                   \
+  "fmin   v6.4s,    v6.4s,    v5.4s   \n"                   \
+  "fmin   v7.4s,    v7.4s,    v5.4s   \n"                   \
+  "fmul   v20.4s,   v20.4s,   v6.4s   \n"                   \
+  "fmul   v23.4s,   v23.4s,   v7.4s   \n"                   \
+  "fadd   v6.4s,    v26.4s,   v4.4s   \n"                   \
+  "fadd   v7.4s,    v29.4s,   v4.4s   \n"                   \
+  "fmul   v26.4s,   v26.4s,   v3.4s  \n"                    \
+  "fmul   v29.4s,   v29.4s,   v3.4s   \n"                   \
+  "fmax   v6.4s,    v6.4s,    v2.4s   \n"                   \
+  "fmax   v7.4s,    v7.4s,    v2.4s   \n"                   \
+  "fmin   v6.4s,    v6.4s,    v5.4s   \n"                   \
+  "fmin   v7.4s,    v7.4s,    v5.4s   \n"                   \
+  "fmul   v26.4s,   v26.4s,   v6.4s   \n"                   \
+  "fmul   v29.4s,   v29.4s,   v7.4s   \n"                   \
+  "fadd   v6.4s,    v9.4s,    v4.4s   \n"                   \
+  "fadd   v7.4s,    v12.4s,   v4.4s   \n"                   \
+  "fmul   v9.4s,    v9.4s,    v3.4s   \n"                   \
+  "fmul   v12.4s,   v12.4s,   v3.4s   \n"                   \
+  "fmax   v6.4s,    v6.4s,    v2.4s   \n"                   \
+  "fmax   v7.4s,    v7.4s,    v2.4s   \n"                   \
+  "fmin   v6.4s,    v6.4s,    v5.4s   \n"                   \
+  "fmin   v7.4s,    v7.4s,   v5.4s    \n"                   \
+  "fmul   v9.4s,    v9.4s,    v6.4s   \n"                   \
+  "fmul   v12.4s,   v12.4s,   v7.4s   \n"                   \
+  "fadd   v6.4s,    v15.4s,   v4.4s   \n"                   \
+  "fadd   v7.4s,    v18.4s,   v4.4s   \n"                   \
+  "fmul   v15.4s,   v15.4s,   v3.4s  \n"                    \
+  "fmul   v18.4s,   v18.4s,   v3.4s   \n"                   \
+  "fmax   v6.4s,    v6.4s,    v2.4s   \n"                   \
+  "fmax   v7.4s,    v7.4s,    v2.4s   \n"                   \
+  "fmin   v6.4s,    v6.4s,    v5.4s   \n"                   \
+  "fmin   v7.4s,    v7.4s,    v5.4s   \n"                   \
+  "fmul   v15.4s,   v15.4s,   v6.4s   \n"                   \
+  "fmul   v18.4s,   v18.4s,   v7.4s   \n"                   \
+  "fadd   v6.4s,    v21.4s,   v4.4s   \n"                   \
+  "fadd   v7.4s,    v24.4s,   v4.4s   \n"                   \
+  "fmul   v21.4s,   v21.4s,   v3.4s  \n"                    \
+  "fmul   v24.4s,   v24.4s,   v3.4s   \n"                   \
+  "fmax   v6.4s,    v6.4s,    v2.4s   \n"                   \
+  "fmax   v7.4s,    v7.4s,    v2.4s   \n"                   \
+  "fmin   v6.4s,    v6.4s,    v5.4s   \n"                   \
+  "fmin   v7.4s,    v7.4s,    v5.4s   \n"                   \
+  "fmul   v21.4s,   v21.4s,   v6.4s   \n"                   \
+  "fmul   v24.4s,   v24.4s,   v7.4s   \n"                   \
+  "fadd   v6.4s,    v27.4s,   v4.4s   \n"                   \
+  "fadd   v7.4s,    v30.4s,   v4.4s   \n"                   \
+  "fmul   v27.4s,   v27.4s,   v3.4s  \n"                    \
+  "fmul   v30.4s,   v30.4s,   v3.4s   \n"                   \
+  "fmax   v6.4s,    v6.4s,    v2.4s   \n"                   \
+  "fmax   v7.4s,    v7.4s,    v2.4s   \n"                   \
+  "fmin   v6.4s,    v6.4s,    v5.4s   \n"                   \
+  "fmin   v7.4s,    v7.4s,    v5.4s   \n"                   \
+  "fmul   v27.4s,   v27.4s,   v6.4s   \n"                   \
+  "fmul   v30.4s,   v30.4s,   v7.4s   \n"                   \
+  "fadd   v6.4s,    v10.4s,   v4.4s   \n"                   \
+  "fadd   v7.4s,    v13.4s,   v4.4s   \n"                   \
+  "fmul   v10.4s,   v10.4s,   v3.4s   \n"                   \
+  "fmul   v13.4s,   v13.4s,   v3.4s   \n"                   \
+  "fmax   v6.4s,    v6.4s,    v2.4s   \n"                   \
+  "fmax   v7.4s,    v7.4s,    v2.4s   \n"                   \
+  "fmin   v6.4s,    v6.4s,    v5.4s   \n"                   \
+  "fmin   v7.4s,    v7.4s,    v5.4s    \n"                  \
+  "fmul   v10.4s,   v10.4s,   v6.4s   \n"                   \
+  "fmul   v13.4s,   v13.4s,   v7.4s   \n"                   \
+  "fadd   v6.4s,    v16.4s,   v4.4s   \n"                   \
+  "fadd   v7.4s,    v19.4s,   v4.4s   \n"                   \
+  "fmul   v16.4s,   v16.4s,   v3.4s  \n"                    \
+  "fmul   v19.4s,   v19.4s,   v3.4s   \n"                   \
+  "fmax   v6.4s,    v6.4s,    v2.4s   \n"                   \
+  "fmax   v7.4s,    v7.4s,    v2.4s   \n"                   \
+  "fmin   v6.4s,    v6.4s,    v5.4s   \n"                   \
+  "fmin   v7.4s,    v7.4s,    v5.4s   \n"                   \
+  "fmul   v16.4s,   v16.4s,   v6.4s   \n"                   \
+  "fmul   v19.4s,   v19.4s,   v7.4s   \n"                   \
+  "fadd   v6.4s,    v22.4s,   v4.4s   \n"                   \
+  "fadd   v7.4s,    v25.4s,   v4.4s   \n"                   \
+  "fmul   v22.4s,   v22.4s,   v3.4s  \n"                    \
+  "fmul   v25.4s,   v25.4s,   v3.4s   \n"                   \
+  "fmax   v6.4s,    v6.4s,    v2.4s   \n"                   \
+  "fmax   v7.4s,    v7.4s,    v2.4s   \n"                   \
+  "fmin   v6.4s,    v6.4s,    v5.4s   \n"                   \
+  "fmin   v7.4s,    v7.4s,    v5.4s   \n"                   \
+  "fmul   v22.4s,   v22.4s,   v6.4s   \n"                   \
+  "fmul   v25.4s,   v25.4s,   v7.4s   \n"                   \
+  "fadd   v6.4s,    v28.4s,   v4.4s   \n"                   \
+  "fadd   v7.4s,    v31.4s,   v4.4s   \n"                   \
+  "fmul   v28.4s,   v28.4s,   v3.4s  \n"                    \
+  "fmul   v31.4s,   v31.4s,   v3.4s   \n"                   \
+  "fmax   v6.4s,    v6.4s,    v2.4s   \n"                   \
+  "fmax   v7.4s,    v7.4s,    v2.4s   \n"                   \
+  "fmin   v6.4s,    v6.4s,    v5.4s   \n"                   \
+  "fmin   v7.4s,    v7.4s,    v5.4s   \n"                   \
+  "fmul   v28.4s,   v28.4s,   v6.4s   \n"                   \
+  "fmul   v31.4s,   v31.4s,   v7.4s   \n"                   \
+  "12:  \n"
 
 #define GEMM_SDOT_CVT_INT32_TO_FP32_8x4                                    \
   "ldp  q0, q1, [%[scale]]\n"     /* load scale */                         \
@@ -1866,6 +2127,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   GEMM_SDOT_RELU_8x4                                          \
   GEMM_SDOT_RELU6_8x4                                         \
   GEMM_SDOT_LEAKY_RELU_8x4                                    \
+  GEMM_SDOT_HARD_SWISH_8x4                                    \
   "st1 {v8.4s},[%[c_ptr0]],  #16\n" /* store r0 */            \
   "st1 {v11.4s},[%[c_ptr1]], #16\n" /* store r1 */            \
   "st1 {v14.4s},[%[c_ptr2]], #16\n" /* store r2 */            \
@@ -1880,6 +2142,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   GEMM_SDOT_RELU_8x8                                          \
   GEMM_SDOT_RELU6_8x8                                         \
   GEMM_SDOT_LEAKY_RELU_8x8                                    \
+  GEMM_SDOT_HARD_SWISH_8x8                                    \
   "st1 {v8.4s, v9.4s},[%[c_ptr0]],   #32\n"   /* store r0 */  \
   "st1 {v11.4s, v12.4s},[%[c_ptr1]], #32\n" /* store r1 */    \
   "st1 {v14.4s, v15.4s},[%[c_ptr2]], #32\n" /* store r2 */    \
@@ -1894,6 +2157,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   GEMM_SDOT_RELU                                                   \
   GEMM_SDOT_RELU6                                                  \
   GEMM_SDOT_LEAKY_RELU                                             \
+  GEMM_SDOT_HARD_SWISH                                             \
   "st1 {v8.4s, v9.4s, v10.4s},[%[c_ptr0]], #48\n"   /* store r0 */ \
   "st1 {v11.4s, v12.4s, v13.4s},[%[c_ptr1]], #48\n" /* store r1 */ \
   "st1 {v14.4s, v15.4s, v16.4s},[%[c_ptr2]], #48\n" /* store r2 */ \
@@ -1908,6 +2172,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   GEMM_SDOT_RELU_8x4                                               \
   GEMM_SDOT_RELU6_8x4                                              \
   GEMM_SDOT_LEAKY_RELU_8x4                                         \
+  GEMM_SDOT_HARD_SWISH_8x4                                         \
   "ld1  {v6.4s}, [%[vmax]]\n"     /* v8 = -127.f     */            \
   /* data >= -127 */                                               \
   "fcmge v0.4s, v8.4s, v6.4s\n"                                    \
@@ -1971,6 +2236,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   GEMM_SDOT_RELU_8x8                                            \
   GEMM_SDOT_RELU6_8x8                                           \
   GEMM_SDOT_LEAKY_RELU_8x8                                      \
+  GEMM_SDOT_HARD_SWISH_8x8                                      \
   "ld1  {v6.4s}, [%[vmax]]\n"     /* v8 = -127.f     */         \
   /* data >= -127 */                                            \
   "fcmge v0.4s, v8.4s, v6.4s\n"                                 \
@@ -2061,11 +2327,12 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "st1 {v6.8b},[%[c_ptr6]], #8\n" /* store r6 */                \
   "st1 {v7.8b},[%[c_ptr7]], #8\n" /* store r7 */
 
-#define GEMM_SDOT_INT8_OUT                                      \
-  GEMM_SDOT_CVT_INT32_TO_FP32                                   \
-  GEMM_SDOT_RELU                                                \
+#define GEMM_SDOT_INT8_OUT                                         \
+  GEMM_SDOT_CVT_INT32_TO_FP32                                      \
+  GEMM_SDOT_RELU                                                   \
   GEMM_SDOT_RELU6                                                  \
   GEMM_SDOT_LEAKY_RELU                                             \
+  GEMM_SDOT_HARD_SWISH                                             \
   "ld1  {v6.4s}, [%[vmax]]\n"     /* v8 = -127.f     */            \
   /* data >= -127 */                                               \
   "fcmge v0.4s, v8.4s, v6.4s\n"                                   \
@@ -2674,8 +2941,8 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "cmp    %[relu],   #0      \n" /* skip relu */ \
   "beq    12f                \n"                 \
   "cmp    %[relu],    #1     \n" /* skip relu */ \
-  "bne    13f                \n" /* other act */ \
   "vmov.f32   q0, #0.0       \n" /* for relu*/   \
+  "bne    13f                \n" /* other act */ \
   "vmax.f32   q4,   q4,   q0 \n" /* relu*/       \
   "vmax.f32   q5,   q5,   q0 \n" /* relu*/       \
   "vmax.f32   q6,   q6,   q0 \n" /* relu*/       \
@@ -2690,41 +2957,41 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "vmax.f32   q15,  q15,  q0 \n" /* relu*/       \
   "b      12f                \n" /* relu end */
 
-#define GEMM_DOT_RELU6                         \
-  "13:                       \n"               \
-  "cmp    %[relu],   #2\n" /* skip relu6 */    \
-  "bne   14f\n"                                \
-  "vmov.f32   q0, #0.0\n"        /* for relu*/ \
-  "vmax.f32   q4,   q4,   q0 \n" /* relu*/     \
-  "vmax.f32   q5,   q5,   q0 \n" /* relu*/     \
-  "vmax.f32   q6,   q6,   q0 \n" /* relu*/     \
-  "vmax.f32   q7,   q7,   q0 \n" /* relu*/     \
-  "vld1.32    {d2-d3}, [%[alpha]] \n"          \
-  "vmax.f32   q8,   q8,   q0 \n" /* relu*/     \
-  "vmax.f32   q9,   q9,   q0 \n" /* relu*/     \
-  "vmax.f32   q10,  q10,  q0 \n" /* relu*/     \
-  "vmax.f32   q11,  q11,  q0 \n" /* relu*/     \
-  "vmax.f32   q12,  q12,  q0 \n" /* relu*/     \
-  "vmax.f32   q13,  q13,  q0 \n" /* relu*/     \
-  "vmax.f32   q14,  q14,  q0 \n" /* relu*/     \
-  "vmax.f32   q15,  q15,  q0 \n" /* relu*/     \
-  "vmin.f32   q4,   q4,   q1 \n" /* relu6*/    \
-  "vmin.f32   q5,   q5,   q1 \n" /* relu6*/    \
-  "vmin.f32   q6,   q6,   q1 \n" /* relu6*/    \
-  "vmin.f32   q7,   q7,   q1 \n" /* relu6*/    \
-  "vmin.f32   q8,   q8,   q1 \n" /* relu6*/    \
-  "vmin.f32   q9,   q9,   q1 \n" /* relu6*/    \
-  "vmin.f32   q10,  q10,  q1 \n" /* relu6*/    \
-  "vmin.f32   q11,  q11,  q1 \n" /* relu6*/    \
-  "vmin.f32   q12,  q12,  q1 \n" /* relu6*/    \
-  "vmin.f32   q13,  q13,  q1 \n" /* relu6*/    \
-  "vmin.f32   q14,  q14,  q1 \n" /* relu6*/    \
-  "vmin.f32   q15,  q15,  q1 \n" /* relu6*/    \
+#define GEMM_DOT_RELU6                      \
+  "13:                       \n"            \
+  "cmp    %[relu],   #2\n" /* skip relu6 */ \
+  "bne   14f\n"                             \
+  "vmax.f32   q4,   q4,   q0 \n" /* relu*/  \
+  "vmax.f32   q5,   q5,   q0 \n" /* relu*/  \
+  "vmax.f32   q6,   q6,   q0 \n" /* relu*/  \
+  "vmax.f32   q7,   q7,   q0 \n" /* relu*/  \
+  "vld1.32    {d2-d3}, [%[alpha]] \n"       \
+  "vmax.f32   q8,   q8,   q0 \n" /* relu*/  \
+  "vmax.f32   q9,   q9,   q0 \n" /* relu*/  \
+  "vmax.f32   q10,  q10,  q0 \n" /* relu*/  \
+  "vmax.f32   q11,  q11,  q0 \n" /* relu*/  \
+  "vmax.f32   q12,  q12,  q0 \n" /* relu*/  \
+  "vmax.f32   q13,  q13,  q0 \n" /* relu*/  \
+  "vmax.f32   q14,  q14,  q0 \n" /* relu*/  \
+  "vmax.f32   q15,  q15,  q0 \n" /* relu*/  \
+  "vmin.f32   q4,   q4,   q1 \n" /* relu6*/ \
+  "vmin.f32   q5,   q5,   q1 \n" /* relu6*/ \
+  "vmin.f32   q6,   q6,   q1 \n" /* relu6*/ \
+  "vmin.f32   q7,   q7,   q1 \n" /* relu6*/ \
+  "vmin.f32   q8,   q8,   q1 \n" /* relu6*/ \
+  "vmin.f32   q9,   q9,   q1 \n" /* relu6*/ \
+  "vmin.f32   q10,  q10,  q1 \n" /* relu6*/ \
+  "vmin.f32   q11,  q11,  q1 \n" /* relu6*/ \
+  "vmin.f32   q12,  q12,  q1 \n" /* relu6*/ \
+  "vmin.f32   q13,  q13,  q1 \n" /* relu6*/ \
+  "vmin.f32   q14,  q14,  q1 \n" /* relu6*/ \
+  "vmin.f32   q15,  q15,  q1 \n" /* relu6*/ \
   "b      12f                \n" /* relu6 end */
 
 #define GEMM_DOT_LEAKY_RELU                               \
   "14:                      \n"                           \
-  "vmov.f32   q0, #0.0      \n"     /* for leakyrelu*/    \
+  "cmp    %[relu],   #3\n" /* skip leakyrelu */           \
+  "bne   15f\n"                                           \
   "vld1.32  {d2-d3}, [%[alpha]] \n" /* leakyrelu alpha */ \
   "vcge.f32 q2,   q4,   q0  \n"     /* vcgeq_f32 */       \
   "vmul.f32 q3,   q4,   q1  \n"     /* vmulq_f32 */       \
@@ -2762,6 +3029,121 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "vcge.f32 q2,   q15,  q0  \n"     /* vcgeq_f32 */       \
   "vmul.f32 q3,   q15,  q1  \n"     /* vmulq_f32 */       \
   "vbif     q15,  q3,   q2  \n"     /* choose*/           \
+  "b      12f               \n"
+
+#define GEMM_DOT_HARD_SWISH                                 \
+  "15:                      \n"                             \
+  "vldr       d4,  [%[alpha], #32]      @ load offset\n"    \
+  "vldr       d5,  [%[alpha], #40]      @ load offset\n"    \
+  "vld1.32  {d2-d3}, [%[alpha]] \n" /* leakyrelu alpha */   \
+  "vadd.f32 q3,   q4,   q2  \n"                             \
+  "vmul.f32 q4,   q4,   q1  \n"                             \
+  "vldr       d4,  [%[alpha], #48]      @ load threshold\n" \
+  "vldr       d5,  [%[alpha], #56]      @ load threshold\n" \
+  "vmax.f32 q3,   q3,   q0  \n"                             \
+  "vmin.f32 q3,   q3,   q2  \n"                             \
+  "vldr       d4,  [%[alpha], #32]      @ load offset\n"    \
+  "vldr       d5,  [%[alpha], #40]      @ load offset\n"    \
+  "vmul.f32 q4,   q4,   q3  \n"                             \
+  "vadd.f32 q3,   q5,   q2  \n"                             \
+  "vmul.f32 q5,   q5,   q1  \n"                             \
+  "vldr       d4,  [%[alpha], #48]      @ load threshold\n" \
+  "vldr       d5,  [%[alpha], #56]      @ load threshold\n" \
+  "vmax.f32 q3,   q3,   q0  \n"                             \
+  "vmin.f32 q3,   q3,   q2  \n"                             \
+  "vldr       d4,  [%[alpha], #32]      @ load offset\n"    \
+  "vldr       d5,  [%[alpha], #40]      @ load offset\n"    \
+  "vmul.f32 q5,   q5,   q3  \n"                             \
+  "vadd.f32 q3,   q6,   q2  \n"                             \
+  "vmul.f32 q6,   q6,   q1  \n"                             \
+  "vldr       d4,  [%[alpha], #48]      @ load threshold\n" \
+  "vldr       d5,  [%[alpha], #56]      @ load threshold\n" \
+  "vmax.f32 q3,   q3,   q0  \n"                             \
+  "vmin.f32 q3,   q3,   q2  \n"                             \
+  "vldr       d4,  [%[alpha], #32]      @ load offset\n"    \
+  "vldr       d5,  [%[alpha], #40]      @ load offset\n"    \
+  "vmul.f32 q6,   q6,   q3  \n"                             \
+  "vadd.f32 q3,   q7,   q2  \n"                             \
+  "vmul.f32 q7,   q7,   q1  \n"                             \
+  "vldr       d4,  [%[alpha], #48]      @ load threshold\n" \
+  "vldr       d5,  [%[alpha], #56]      @ load threshold\n" \
+  "vmax.f32 q3,   q3,   q0  \n"                             \
+  "vmin.f32 q3,   q3,   q2  \n"                             \
+  "vldr       d4,  [%[alpha], #32]      @ load offset\n"    \
+  "vldr       d5,  [%[alpha], #40]      @ load offset\n"    \
+  "vmul.f32 q7,   q7,   q3  \n"                             \
+  "vadd.f32 q3,   q8,   q2  \n"                             \
+  "vmul.f32 q8,   q8,   q1  \n"                             \
+  "vldr       d4,  [%[alpha], #48]      @ load threshold\n" \
+  "vldr       d5,  [%[alpha], #56]      @ load threshold\n" \
+  "vmax.f32 q3,   q3,   q0  \n"                             \
+  "vmin.f32 q3,   q3,   q2  \n"                             \
+  "vldr       d4,  [%[alpha], #32]      @ load offset\n"    \
+  "vldr       d5,  [%[alpha], #40]      @ load offset\n"    \
+  "vmul.f32 q8,   q8,   q3  \n"                             \
+  "vadd.f32 q3,   q9,   q2  \n"                             \
+  "vmul.f32 q9,   q9,   q1  \n"                             \
+  "vldr       d4,  [%[alpha], #48]      @ load threshold\n" \
+  "vldr       d5,  [%[alpha], #56]      @ load threshold\n" \
+  "vmax.f32 q3,   q3,   q0  \n"                             \
+  "vmin.f32 q3,   q3,   q2  \n"                             \
+  "vldr       d4,  [%[alpha], #32]      @ load offset\n"    \
+  "vldr       d5,  [%[alpha], #40]      @ load offset\n"    \
+  "vmul.f32 q9,   q9,   q3  \n"                             \
+  "vadd.f32 q3,   q10,  q2  \n"                             \
+  "vmul.f32 q10,  q10,  q1  \n"                             \
+  "vldr       d4,  [%[alpha], #48]      @ load threshold\n" \
+  "vldr       d5,  [%[alpha], #56]      @ load threshold\n" \
+  "vmax.f32 q3,   q3,   q0  \n"                             \
+  "vmin.f32 q3,   q3,   q2  \n"                             \
+  "vldr       d4,  [%[alpha], #32]      @ load offset\n"    \
+  "vldr       d5,  [%[alpha], #40]      @ load offset\n"    \
+  "vmul.f32 q10,  q10,  q3  \n"                             \
+  "vadd.f32 q3,   q11,  q2  \n"                             \
+  "vmul.f32 q11,  q11,  q1  \n"                             \
+  "vldr       d4,  [%[alpha], #48]      @ load threshold\n" \
+  "vldr       d5,  [%[alpha], #56]      @ load threshold\n" \
+  "vmax.f32 q3,   q3,   q0  \n"                             \
+  "vmin.f32 q3,   q3,   q2  \n"                             \
+  "vldr       d4,  [%[alpha], #32]      @ load offset\n"    \
+  "vldr       d5,  [%[alpha], #40]      @ load offset\n"    \
+  "vmul.f32 q11,  q11,  q3  \n"                             \
+  "vadd.f32 q3,   q12,  q2  \n"                             \
+  "vmul.f32 q12,  q12,  q1  \n"                             \
+  "vldr       d4,  [%[alpha], #48]      @ load threshold\n" \
+  "vldr       d5,  [%[alpha], #56]      @ load threshold\n" \
+  "vmax.f32 q3,   q3,   q0  \n"                             \
+  "vmin.f32 q3,   q3,   q2  \n"                             \
+  "vldr       d4,  [%[alpha], #32]      @ load offset\n"    \
+  "vldr       d5,  [%[alpha], #40]      @ load offset\n"    \
+  "vmul.f32 q12,  q12,  q3  \n"                             \
+  "vadd.f32 q3,   q13,  q2  \n"                             \
+  "vmul.f32 q13,  q13,  q1  \n"                             \
+  "vldr       d4,  [%[alpha], #48]      @ load threshold\n" \
+  "vldr       d5,  [%[alpha], #56]      @ load threshold\n" \
+  "vmax.f32 q3,   q3,   q0  \n"                             \
+  "vmin.f32 q3,   q3,   q2  \n"                             \
+  "vldr       d4,  [%[alpha], #32]      @ load offset\n"    \
+  "vldr       d5,  [%[alpha], #40]      @ load offset\n"    \
+  "vmul.f32 q13,  q13,  q3  \n"                             \
+  "vadd.f32 q3,   q14,  q2  \n"                             \
+  "vmul.f32 q14,  q14,  q1  \n"                             \
+  "vldr       d4,  [%[alpha], #48]      @ load threshold\n" \
+  "vldr       d5,  [%[alpha], #56]      @ load threshold\n" \
+  "vmax.f32 q3,   q3,   q0  \n"                             \
+  "vmin.f32 q3,   q3,   q2  \n"                             \
+  "vldr       d4,  [%[alpha], #32]      @ load offset\n"    \
+  "vldr       d5,  [%[alpha], #40]      @ load offset\n"    \
+  "vmul.f32 q14,  q14,  q3  \n"                             \
+  "vadd.f32 q3,   q15,  q2  \n"                             \
+  "vmul.f32 q15,  q15,  q1  \n"                             \
+  "vldr       d4,  [%[alpha], #48]      @ load threshold\n" \
+  "vldr       d5,  [%[alpha], #56]      @ load threshold\n" \
+  "vmax.f32 q3,   q3,   q0  \n"                             \
+  "vmin.f32 q3,   q3,   q2  \n"                             \
+  "vldr       d4,  [%[alpha], #32]      @ load offset\n"    \
+  "vldr       d5,  [%[alpha], #40]      @ load offset\n"    \
+  "vmul.f32 q15,  q15,  q3  \n"                             \
   "12:                      \n"
 
 #define GEMM_DOT_ST_INT8                                     \
@@ -2889,6 +3271,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   GEMM_DOT_RELU              \
   GEMM_DOT_RELU6             \
   GEMM_DOT_LEAKY_RELU        \
+  GEMM_DOT_HARD_SWISH        \
   GEMM_DOT_ST_FP32
 
 #define GEMM_DOT_INT8_OUT    \
@@ -2896,6 +3279,7 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   GEMM_DOT_RELU              \
   GEMM_DOT_RELU6             \
   GEMM_DOT_LEAKY_RELU        \
+  GEMM_DOT_HARD_SWISH        \
   GEMM_DOT_ST_INT8
 #define GEMM_DOT_INT32_OUT        \
   "vst1.32 {q4}, [%[c_ptr0]]! \n" \
@@ -3250,8 +3634,8 @@ inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
   "cmp    %[is_relu], #0\n"   /* skip relu */ \
   "beq    9f\n"               /* skip relu */ \
   "cmp        %[is_relu], #1\n"  /* check if has relu6 */  \
-  "bne    10f\n"               /* skip relu */ \
   "vmov.i32   q15, #0\n"      /* for relu */  \
+  "bne    10f\n"               /* skip relu */ \
   "vmax.f32   q8, q8, q15\n"  /* relu */      \
   "vmax.f32   q9, q9, q15\n"  /* relu */      \
   "vmax.f32  q0,q0, q15\n"    /* relu */      \
@@ -3267,12 +3651,11 @@ inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
   "10: \n"             \
   "cmp    %[is_relu], #2\n"   /*heck if has relu6*/  \
   "bne    11f\n"               /* skip relu */ \
-  "vmov.i32   q15, #0\n"      /* for relu */  \
   "vmax.f32   q8, q8, q15\n"  /* relu */      \
   "vmax.f32   q9, q9, q15\n"  /* relu */      \
   "vmax.f32  q0,q0, q15\n"    /* relu */      \
   "vmax.f32  q1,q1, q15\n"    /* relu */      \
-  "vld1.f32   {d28-d29}, [%[alpha]]       @ load relu6 alpha\n" \
+  "vld1.f32   {d28-d29}, [%[alpha]] @ load relu6 alpha\n" \
   "vmax.f32  q2,q2, q15\n"    /* relu */      \
   "vmax.f32  q3,q3, q15\n"    /* relu */      \
   "vmax.f32  q4,q4, q15\n"    /* relu */      \
@@ -3288,9 +3671,10 @@ inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
   "b  9f\n"
 
 #define GEMM_INT8_LEAKY_RELU  \
-  /* do relu6 */       \
+  /* do leakyrelu */       \
   "11: \n"             \
-  "vmov.i32   q15, #0\n"      /* for relu */  \
+  "cmp    %[is_relu], #3\n"   /*heck if has leakyrelu*/  \
+  "bne    12f\n"               /* skip leakyrelu */ \
   "vld1.f32   {d28-d29}, [%[alpha]]       @ load relu6 alpha\n" \
   "vcge.f32   q6, q8, q15                @ vcgeq_u32 \n"    \
   "vmul.f32   q7, q8, q14                @ vmulq_f32 \n"    \
@@ -3316,6 +3700,55 @@ inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
   "vmul.f32   q11, q5, q14                @ vmulq_f32 \n"   \
   "vbif       q4, q7, q6                @ choose    \n"     \
   "vbif       q5, q11, q10                @ choose    \n"   \
+  "b  9f\n"
+#define GEMM_INT8_HARD_SWISH  \
+  /* do hard_swish */       \
+  "12: \n"             \
+  "vldr       d24,  [%[alpha], #32]      @ load offset\n"   \
+  "vldr       d25,  [%[alpha], #40]      @ load offset\n"   \
+  "vld1.f32   {d28-d29}, [%[alpha]]       @ load relu6 alpha\n" \
+  "vldr       d26,  [%[alpha], #48]      @ load threshold\n"\
+  "vldr       d27,  [%[alpha], #56]      @ load threshold\n"\
+  "vadd.f32   q6,  q8, q12                           \n"    \
+  "vmul.f32   q8,  q8, q14                           \n"    \
+  "vadd.f32   q7,  q9, q12                           \n"    \
+  "vmul.f32   q9,  q9, q14                           \n"    \
+  "vadd.f32   q10, q0, q12                           \n"    \
+  "vmul.f32   q0,  q0, q14                           \n"    \
+  "vadd.f32   q11, q1, q12                           \n"    \
+  "vmul.f32   q1,  q1, q14                           \n"    \
+  "vmax.f32   q6,  q6, q15                           \n"    \
+  "vmax.f32   q7,  q7, q15                           \n"    \
+  "vmax.f32   q10, q10, q15                          \n"    \
+  "vmax.f32   q11, q11, q15                          \n"    \
+  "vmin.f32   q6,  q6, q13                           \n"    \
+  "vmin.f32   q7,  q7, q13                           \n"    \
+  "vmin.f32   q10, q10, q13                          \n"    \
+  "vmin.f32   q11, q11, q13                          \n"    \
+  "vmul.f32   q8,  q8, q6                            \n"    \
+  "vmul.f32   q9,  q9, q7                            \n"    \
+  "vmul.f32   q0,  q0, q10                           \n"    \
+  "vmul.f32   q1,  q1, q11                           \n"    \
+  "vadd.f32   q6,  q2, q12                           \n"    \
+  "vmul.f32   q2,  q2, q14                           \n"    \
+  "vadd.f32   q7,  q3, q12                           \n"    \
+  "vmul.f32   q3,  q3, q14                           \n"    \
+  "vadd.f32   q10, q4, q12                           \n"    \
+  "vmul.f32   q4,  q4, q14                           \n"    \
+  "vadd.f32   q11, q5, q12                           \n"    \
+  "vmul.f32   q5,  q5, q14                           \n"    \
+  "vmax.f32   q6,  q6, q15                           \n"    \
+  "vmax.f32   q7,  q7, q15                           \n"    \
+  "vmax.f32   q10, q10, q15                          \n"    \
+  "vmax.f32   q11, q11, q15                          \n"    \
+  "vmin.f32   q6,  q6, q13                           \n"    \
+  "vmin.f32   q7,  q7, q13                           \n"    \
+  "vmin.f32   q10, q10, q13                          \n"    \
+  "vmin.f32   q11, q11, q13                          \n"    \
+  "vmul.f32   q2,  q2, q6                            \n"    \
+  "vmul.f32   q3,  q3, q7                            \n"    \
+  "vmul.f32   q4,  q4, q10                           \n"    \
+  "vmul.f32   q5,  q5, q11                           \n"    \
   "9:  \n"
 
 #define GEMM_INT8_FP32_OUT          \
@@ -3323,6 +3756,7 @@ inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
   GEMM_INT8_RELU                  \
   GEMM_INT8_RELU6                 \
   GEMM_INT8_LEAKY_RELU            \
+  GEMM_INT8_HARD_SWISH            \
   "vst1.32    {d16-d19},  [%[c_ptr0]]!\n" /* write r0, float32x4 x2 */ \
   "vst1.32    {d0-d3},    [%[c_ptr1]]!\n" /* write r1, float32x4 x2 */ \
   "vst1.32    {d4-d7},    [%[c_ptr2]]!\n" /* write r2, float32x4 x2 */ \
@@ -3334,6 +3768,7 @@ inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
   GEMM_INT8_RELU                  \
   GEMM_INT8_RELU6                 \
   GEMM_INT8_LEAKY_RELU            \
+  GEMM_INT8_HARD_SWISH            \
   "vmov.f32  q7, #-0.5\n"    /* neg offset */          \
   "vmov.f32  q10, #0.5\n"    /* pos offset */          \
   "vmov.f32  q11, #0.5\n"    /* pos offset */          \
@@ -3479,8 +3914,22 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                              int is_relu,
                              int k,
                              int rem) {
-  float new_ptr[8] = {
-      alpha[0], alpha[1], alpha[2], alpha[3], -127.0, -127.0, -127.0, -127.0};
+  float new_ptr[8] = {alpha[0],
+                      alpha[1],
+                      alpha[2],
+                      alpha[3],
+                      -127.0,
+                      -127.0,
+                      -127.0,
+                      -127.0,
+                      alpha[4],
+                      alpha[5],
+                      alpha[6],
+                      alpha[7],
+                      alpha[8],
+                      alpha[9],
+                      alpha[10],
+                      alpha[11]};
   // clang-format off
   asm volatile(GEMM_INT8_KERNEL GEMM_INT8_INT8_OUT
                : [a_ptr] "+r"(a_ptr),
@@ -3529,8 +3978,22 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                              int is_relu,
                              int k,
                              int rem) {
-  float new_ptr[8] = {
-      alpha[0], alpha[1], alpha[2], alpha[3], -127.0, -127.0, -127.0, -127.0};
+  float new_ptr[8] = {alpha[0],
+                      alpha[1],
+                      alpha[2],
+                      alpha[3],
+                      -127.0,
+                      -127.0,
+                      -127.0,
+                      -127.0,
+                      alpha[4],
+                      alpha[5],
+                      alpha[6],
+                      alpha[7],
+                      alpha[8],
+                      alpha[9],
+                      alpha[10],
+                      alpha[11]};
   // clang-format off
   asm volatile(GEMM_INT8_KERNEL GEMM_INT8_INT32_OUT
                : [a_ptr] "+r"(a_ptr),
@@ -6801,7 +7264,8 @@ void gemm_prepack_int8(const int8_t* A_packed,
                        const operators::ActivationParam act_param,
                        ARMContext* ctx) {
   auto act_type = act_param.active_type;
-  float alpha[4] = {0.f, 0.f, 0.f, 0.f};
+  float alpha[12] = {
+      0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
   if (act_param.has_active) {
     if (act_type == lite_api::ActivationType::kRelu) {
@@ -6820,6 +7284,13 @@ void gemm_prepack_int8(const int8_t* A_packed,
       alpha[1] = local_alpha;
       alpha[2] = local_alpha;
       alpha[3] = local_alpha;
+    } else if (act_type == lite_api::ActivationType::kHardSwish) {
+      flag_act = 0x04;
+      for (int i = 0; i < 4; i++) {
+        alpha[i] = act_param.hard_swish_scale;
+        alpha[i + 4] = act_param.hard_swish_offset;
+        alpha[i + 8] = act_param.hard_swish_threshold;
+      }
     }
   }
 
