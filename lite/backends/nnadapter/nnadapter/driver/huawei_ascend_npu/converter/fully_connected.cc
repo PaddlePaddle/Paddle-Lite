@@ -48,7 +48,7 @@ int ConvertFullyConnected(Converter* converter, hal::Operation* operation) {
   auto weight_operator = converter->ConvertOperand(weight_operand);
   auto bias_operator = converter->ConvertOperand(bias_operand);
   // Use MatMul instead of FullyConnection to avoid outputing the 4-D tensor
-  auto matmul_op = converter->AddOperator<ge::op::MatMul>(output_operand);
+  auto matmul_op = converter->AddOperator<ge::op::MatMulV2>(output_operand);
   matmul_op->set_attr_transpose_x1(false);
   matmul_op->set_attr_transpose_x2(
       true);  // {num_units, input_size} -> {input_size, num_units}

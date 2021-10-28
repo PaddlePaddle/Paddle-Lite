@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/huawei_ascend_npu/optimizer/fix_quant_conv.h"
+#include "driver/huawei_ascend_npu/optimizer/fix_quant_ops.h"
 #include <vector>
 #include "utility/debug.h"
 #include "utility/logging.h"

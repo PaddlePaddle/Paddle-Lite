@@ -25,18 +25,36 @@ namespace mir {
 
 /*
  * Only for nnadapter: insert calib op to support mixed precision model.
- *
  * PS: for cpu, calib op will be insert by type_precision_cast_pass.
+ *
+ * case 1:
+ * before:
+ *   op(int8) -> var
+ * after:
+ *   op(int8) -> var(int8)
+ *
+ * case 2:
+ * before:
+ *   op1 -> var1 -> op2(int8)
+ * after:
+ *   op1 -> var1 -> calib -> var2(int8) -> op2(int8)
+ * PS: If op1 is feed, pass should not work.
+ *
+ * case 3:
+ * before:
+ *   op1(int8) -> var1(int8) -> op2
+ * after:
+ *   op1(int8) -> var1(int8) -> calib -> var2 -> op2
+ * PS: If op2 is fetch, pass should not work.
  */
 class NNAdapterInsertCalibPass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
 
  private:
-  void ComplementInputs(const std::unique_ptr<SSAGraph>& graph,
-                        Node* in,
-                        Node* inst_node,
-                        std::map<std::string, Node*>* cast_nodes);
+  void UpdateQuantOpOut(const std::unique_ptr<SSAGraph>& graph);
+  void InsetQuantCalib(const std::unique_ptr<SSAGraph>& graph);
+  void InsetDequantCalib(const std::unique_ptr<SSAGraph>& graph);
 };
 
 }  // namespace mir

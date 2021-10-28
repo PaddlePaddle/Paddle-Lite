@@ -40,10 +40,19 @@ void ClearQuantInfoPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   std::set<Node*> target_nodes =
       GetTargetNodesFromMixedPrecisionQuantizationConfig(
           graph, mixed_precision_quantization_config);
-  VLOG(3) << "find " << target_nodes.size() << " matched node.";
+  VLOG(3) << "find " << target_nodes.size() << " node matched.";
   for (auto node : target_nodes) {
     CHECK(node->IsStmt());
     ClearQuantInfo(node);
+    for (auto out_node : node->outlinks) {
+      auto& out_type = out_node->AsArg().type;
+      if (out_type->precision() == PRECISION(kInt8)) {
+        // TODO(zhupengyang): Only support trans to kFloat now. Other precision
+        // should be considered.
+        out_type = LiteType::GetTensorTy(
+            out_type->target(), PRECISION(kFloat), out_type->layout());
+      }
+    }
   }
 }
 

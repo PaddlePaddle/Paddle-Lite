@@ -24,6 +24,12 @@ namespace mir {
 
 /*
  * Clear ops' quant information by config file
+ *
+ * for ops to clear quant info
+ * before:
+ *   in_var(int8) -> op(int8) -> out_var(int8)
+ * after:
+ *   in_var(int8) -> op -> out_var
  */
 class ClearQuantInfoPass : public ProgramPass {
  public:

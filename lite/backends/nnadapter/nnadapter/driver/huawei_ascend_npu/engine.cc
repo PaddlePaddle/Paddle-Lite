@@ -16,7 +16,7 @@
 #include <utility>
 #include "driver/huawei_ascend_npu/optimizer/fix_multiple_outputs_ops.h"
 #include "driver/huawei_ascend_npu/optimizer/fix_no_inputs_ops.h"
-#include "driver/huawei_ascend_npu/optimizer/fix_quant_conv.h"
+#include "driver/huawei_ascend_npu/optimizer/fix_quant_ops.h"
 #include "driver/huawei_ascend_npu/optimizer/fix_reduce_ops_scalar_output.h"
 #include "driver/huawei_ascend_npu/optimizer/unpack_op_fusion.h"
 #include "utility/debug.h"
@@ -87,7 +87,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     FixMultipleOutputsOps(model);
     FixNoInputsOps(model);
     FixReduceOpsScalarOutput(model);
-    UnpackOpFusion(model);
+    // UnpackOpFusion(model);
     FixQuantConv(model);
     NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
     // Convert a NNAdapter model to a GE graph
