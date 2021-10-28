@@ -194,7 +194,7 @@ int ConvertFC(Converter* converter, OpInfo* op, Scope* scope) {
       if (is_quant_mode) {
         CHECK(bias_tensor->precision() == PRECISION(kFloat));
         auto bias_data = bias_tensor->mutable_data<float>();
-        std::vector<int32_t> quantized_bias_data(N, 0);
+        std::vector<int8_t> quantized_bias_data(N, 0);
         SymmQuantizeData(bias_data, N, bias_scales, &quantized_bias_data[0]);
         bias_operand = converter->AddConstantOperand(
             quantized_bias_data, DDim({N}), bias_scales);
@@ -229,13 +229,13 @@ int ConvertFC(Converter* converter, OpInfo* op, Scope* scope) {
     // Add dummy zero bias operand
     // Use int32 as the data type of bias if it is a quantized type
     std::vector<int8_t> zeros(
-        N * (is_quant_mode ? sizeof(int32_t)
+        N * (is_quant_mode ? sizeof(int8_t)
                            : GetNNOperandPrecisionDataLength(*input_type)),
         0);
     bias_operand = converter->AddConstantOperand(
         reinterpret_cast<void*>(zeros.data()),
         DDim({N}),
-        is_quant_mode ? NNADAPTER_INT32 : input_type->precision,
+        is_quant_mode ? NNADAPTER_INT8 : input_type->precision,
         true,
         bias_scales);
   }

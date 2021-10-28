@@ -13,17 +13,17 @@
 // limitations under the License.
 
 #include "core/operation/mat_mul.h"
-#include "driver/amlogic_npu/converter/converter.h"
+#include "driver/mediatek_apu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
+#include "utility/utility.h"
 
 namespace nnadapter {
-namespace amlogic_npu {
+namespace mediatek_apu {
 
 int ConvertMatMul(Converter* converter, hal::Operation* operation) {
   MAT_MUL_OPERATION_EXTRACT_INPUTS_OUTPUTS
-
   NNADAPTER_CHECK(IsConstantOperand(y_operand))
       << "Only support constant y now.";
   auto input_size = y_operand->type.dimensions.data[0];
@@ -31,30 +31,32 @@ int ConvertMatMul(Converter* converter, hal::Operation* operation) {
   auto num_units = y_operand->type.dimensions.data[1];
   NNADAPTER_VLOG(5) << "num_units: " << num_units;
 
-  // Convert to amlnpu tensors and operators
-  auto input_tensor = converter->GetMappedTensor(x_operand);
-  if (!input_tensor) {
-    input_tensor = converter->ConvertOperand(x_operand);
+  // Convert to Neuron operands and operations
+  auto input_index = converter->GetMappedIndex(x_operand);
+  if (input_index == INVALID_INDEX) {
+    input_index = converter->ConvertOperand(x_operand);
   }
-  auto weight_tensor = converter->ConvertOperand(y_operand);
-  auto output_tensor = converter->ConvertOperand(output_operand);
-  aml::nn::FCAttr attr;
-  attr.weights = num_units;
-  attr.has_relu = false;
+  auto weight_index = converter->ConvertOperand(y_operand);
 
   auto bias_dimensions = std::vector<int32_t>({num_units});
   auto bias_dimensions_data = std::vector<int32_t>(num_units, 0);
-  auto bias_tensor = converter->AddQuant32ConstantTensor(
-      &bias_dimensions_data[0], &bias_dimensions[0], 1, 0.f);
-
-  std::vector<std::shared_ptr<aml::nn::Tensor>> input_tensors = {
-      input_tensor, weight_tensor, bias_tensor};
-  std::vector<std::shared_ptr<aml::nn::Tensor>> output_tensors = {
-      output_tensor};
-  converter->AddOperator(
-      aml::nn::OperatorType::FULLCONNECT, input_tensors, output_tensors, &attr);
+  auto bias_index = converter->AddQuant32ConstantOperand(
+      &bias_dimensions_data[0],
+      &bias_dimensions[0],
+      1,
+      x_operand->type.symm_per_layer_params.scale);
+  // auto bias_index = converter->ConvertOperand(bias_operand);
+  auto fuse_code_index =
+      converter->AddInt32ConstantOperand(NNADAPTER_FUSED_NONE);
+  auto output_index = converter->ConvertOperand(output_operand);
+  NNADAPTER_CHECK_EQ(
+      converter->AddOperation(
+          NEURON_FULLY_CONNECTED,
+          {input_index, weight_index, bias_index, fuse_code_index},
+          {output_index}),
+      NEURON_NO_ERROR);
   return NNADAPTER_NO_ERROR;
 }
 
-}  // namespace amlogic_npu
+}  // namespace mediatek_apu
 }  // namespace nnadapter

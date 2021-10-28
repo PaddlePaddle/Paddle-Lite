@@ -13,13 +13,13 @@
 // limitations under the License.
 
 #include "core/operation/mat_mul.h"
-#include "driver/amlogic_npu/converter/converter.h"
+#include "driver/rockchip_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
 
 namespace nnadapter {
-namespace amlogic_npu {
+namespace rockchip_npu {
 
 int ConvertMatMul(Converter* converter, hal::Operation* operation) {
   MAT_MUL_OPERATION_EXTRACT_INPUTS_OUTPUTS
@@ -38,23 +38,26 @@ int ConvertMatMul(Converter* converter, hal::Operation* operation) {
   }
   auto weight_tensor = converter->ConvertOperand(y_operand);
   auto output_tensor = converter->ConvertOperand(output_operand);
-  aml::nn::FCAttr attr;
+  rk::nn::FCAttr attr;
   attr.weights = num_units;
   attr.has_relu = false;
 
   auto bias_dimensions = std::vector<int32_t>({num_units});
   auto bias_dimensions_data = std::vector<int32_t>(num_units, 0);
   auto bias_tensor = converter->AddQuant32ConstantTensor(
-      &bias_dimensions_data[0], &bias_dimensions[0], 1, 0.f);
+      &bias_dimensions_data[0],
+      &bias_dimensions[0],
+      1,
+      x_operand->type.symm_per_layer_params.scale *
+          y_operand->type.symm_per_layer_params.scale);
 
-  std::vector<std::shared_ptr<aml::nn::Tensor>> input_tensors = {
+  std::vector<std::shared_ptr<rk::nn::Tensor>> input_tensors = {
       input_tensor, weight_tensor, bias_tensor};
-  std::vector<std::shared_ptr<aml::nn::Tensor>> output_tensors = {
-      output_tensor};
+  std::vector<std::shared_ptr<rk::nn::Tensor>> output_tensors = {output_tensor};
   converter->AddOperator(
-      aml::nn::OperatorType::FULLCONNECT, input_tensors, output_tensors, &attr);
+      rk::nn::OperatorType::FULLCONNECT, input_tensors, output_tensors, &attr);
   return NNADAPTER_NO_ERROR;
 }
 
-}  // namespace amlogic_npu
+}  // namespace rockchip_npu
 }  // namespace nnadapter

@@ -476,6 +476,9 @@ void NCHW2NHWCDataLayoutConverter::Apply(hal::Model* model) {
       case NNADAPTER_FULLY_CONNECTED:
         ConvertFullyConnected(operation);
         break;
+      case NNADAPTER_MAT_MUL:
+        ConvertMatMul(operation);
+        break;
       case NNADAPTER_RELU:
       case NNADAPTER_RELU6:
       case NNADAPTER_TANH:
