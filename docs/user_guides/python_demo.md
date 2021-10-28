@@ -22,7 +22,7 @@
 
 其流程图如下：
 
-<p align=center> <img src = "https://raw.githubusercontent.com/PaddlePaddle/Paddle-Lite/release/v2.10/docs/images/predict_workflow.png"/></p>
+<p align=center> <img src = "https://raw.githubusercontent.com/PaddlePaddle/Paddle-Lite/develop/docs/images/predict_workflow.png"/></p>
 
 ## Python 应用开发说明
 
@@ -81,7 +81,7 @@ Paddle Lite Python 版本支持的平台包括：Windows X86_CPU / macOS X86_CPU
 
 如果是Windows X86_CPU / macOS X86_CPU / Linux X86_CPU 平台，不需要进行特定环境准备。
 
-如果是 ARM Linux平台，需要编译 PaddleLite ，环境配置参考 [文档](../source_compile/compile_env)，推荐使用 docker。
+如果是 ARM Linux平台，需要编译 Paddle Lite ，环境配置参考 [文档](../source_compile/compile_env)，推荐使用 docker。
 
 ### 2. 安装python预测库
 
@@ -92,7 +92,7 @@ PyPI 源目前仅提供 Windows X86_CPU / macOS X86_CPU / Linux X86_CPU 平台�
 python -m pip install paddlelite==2.9
 ```
 
-如果您需要使用 AMRLinux 平台的 Python 预测功能，请参考[源码编译( ARMLinux )](../source_compile/compile_linux)编译、安装 Paddle Lite 的 python 包。
+如果您需要使用 AMRLinux 平台的 Python 预测功能，请参考[源码编译 (ARMLinux)](../source_compile/compile_linux)编译、安装 Paddle Lite 的 python 包。
 
 ### 3. 准备预测部署模型
 
