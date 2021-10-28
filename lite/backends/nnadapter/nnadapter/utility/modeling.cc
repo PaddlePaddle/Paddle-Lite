@@ -571,6 +571,50 @@ NNADAPTER_EXPORT hal::Operand* AddUnaryOperation(
   return output_operand;
 }
 
+NNADAPTER_EXPORT hal::Operand* AddQuantOperation(hal::Model* model,
+                                                 hal::Operand* input_operand) {
+  NNADAPTER_CHECK_EQ(input_operand->type.precision,
+                     NNADAPTER_QUANT_INT8_SYMM_PER_LAYER);
+  // Insert a new operand after input_operand
+  auto output_operand = AddOperand(model);
+  memcpy(&output_operand->type,
+         &input_operand->type,
+         sizeof(NNAdapterOperandType));
+  InsertOperand(model, input_operand, output_operand, true);
+  input_operand->type.precision = NNADAPTER_FLOAT32;
+  // Insert a new quant operation between input_operand and output_operand
+  auto quant_operation = AddOperation(model);
+  quant_operation->type = NNADAPTER_QUANTIZE;
+  hal::Operand* axis_operand = AddInt32ConstantOperand(model, 1);
+  float scale = input_operand->type.symm_per_layer_params.scale;
+  hal::Operand* scale_operand = AddFloat32ConstantOperand(model, scale);
+  hal::Operand* zero_point_operand = AddInt32ConstantOperand(model, 0);
+  quant_operation->input_operands = {
+      input_operand, axis_operand, scale_operand, zero_point_operand};
+  quant_operation->output_operands = {output_operand};
+  return output_operand;
+}
+
+NNADAPTER_EXPORT hal::Operand* AddDequantOperation(
+    hal::Model* model, hal::Operand* output_operand) {
+  NNADAPTER_CHECK_EQ(output_operand->type.precision,
+                     NNADAPTER_QUANT_INT8_SYMM_PER_LAYER);
+  // Insert a new operand before output_operand
+  auto input_operand = AddOperand(model);
+  memcpy(&input_operand->type,
+         &output_operand->type,
+         sizeof(NNAdapterOperandType));
+  InsertOperand(model, output_operand, input_operand, false);
+  input_operand->type.precision = NNADAPTER_QUANT_INT32_SYMM_PER_LAYER;
+  output_operand->type.precision = NNADAPTER_FLOAT32;
+  // Insert a new dequant operation between input_operand and output_operand
+  auto dequant_operation = AddOperation(model);
+  dequant_operation->type = NNADAPTER_DEQUANTIZE;
+  dequant_operation->input_operands = {input_operand};
+  dequant_operation->output_operands = {output_operand};
+  return input_operand;
+}
+
 NNADAPTER_EXPORT hal::Operand* AddRequantOperation(
     hal::Model* model,
     hal::Operation* operation,

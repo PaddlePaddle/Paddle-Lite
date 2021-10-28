@@ -26,7 +26,15 @@ void FixQuantConv(hal::Model* model) {
   std::vector<hal::Operation*> operations =
       SortOperationsInTopologicalOrder(model);
   for (auto operation : operations) {
-    if (operation->type != NNADAPTER_CONV_2D) continue;
+    if (operation->type != NNADAPTER_CONV_2D) {
+      continue;
+    }
+    auto input_operand = operation->input_operands[0];
+    if (input_operand->type.precision != NNADAPTER_QUANT_INT8_SYMM_PER_LAYER) {
+      continue;
+    }
+    AddQuantOperation(model, input_operand);
+    AddDequantOperation(model, operation->output_operands[0]);
   }
 }
 

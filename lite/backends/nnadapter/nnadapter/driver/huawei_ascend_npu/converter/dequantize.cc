@@ -23,8 +23,8 @@ namespace huawei_ascend_npu {
 int ConvertDequantize(Converter* converter, hal::Operation* operation) {
   DEQUANTIZE_OPERATION_EXTRACT_INPUTS_OUTPUTS
   NNADAPTER_CHECK(input_operand->type.precision ==
-                  NNADAPTER_QUANT_INT8_SYMM_PER_LAYER)
-      << "Only support NNADAPTER_QUANT_INT8_SYMM_PER_LAYER, but received "
+                  NNADAPTER_QUANT_INT32_SYMM_PER_LAYER)
+      << "Only support NNADAPTER_QUANT_INT32_SYMM_PER_LAYER, but received "
       << OperandPrecisionCodeToString(input_operand->type.precision);
 
   // Convert to GE operators

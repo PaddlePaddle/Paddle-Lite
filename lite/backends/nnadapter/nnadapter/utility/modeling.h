@@ -149,6 +149,11 @@ hal::Operand* AddDummyOperation(hal::Model* model, hal::Operand* input_operand);
 hal::Operand* AddUnaryOperation(hal::Model* model,
                                 hal::Operand* input_operand,
                                 NNAdapterOperationType operation_type);
+// Add a quant operation after input_operand
+hal::Operand* AddQuantOperation(hal::Model* model, hal::Operand* input_operand);
+// Add a dequant operation before output_operand
+hal::Operand* AddDequantOperation(hal::Model* model,
+                                  hal::Operand* output_operand);
 // Add a dummy ADD to simuate the REQUANT operation
 // i.e.
 // target_operand(target_quant_params)->CONCAT->reference_operand(reference_quant_params),

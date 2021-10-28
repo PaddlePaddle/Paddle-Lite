@@ -31,9 +31,19 @@ static void UnpackConv2D(hal::Model* model, hal::Operation* operation) {
   NNADAPTER_CHECK_EQ(input_count, 9);
   NNADAPTER_CHECK_EQ(output_count, 1);
   auto fuse_code = reinterpret_cast<int32_t*>(input_operands[8]->buffer);
-  if (*fuse_code == NNADAPTER_FUSED_NONE) return;
   // Unpack activations
-  AddUnaryOperation(model, output_operands[0], *fuse_code);
+  switch (*fuse_code) {
+    case NNADAPTER_FUSED_RELU:
+      AddUnaryOperation(model, output_operands[0], NNADAPTER_RELU);
+      break;
+    case NNADAPTER_FUSED_RELU6:
+      AddUnaryOperation(model, output_operands[0], NNADAPTER_RELU6);
+      break;
+    default:
+      NNADAPTER_CHECK_EQ(*fuse_code, NNADAPTER_FUSED_NONE)
+          << "Unsupported fuse code: "
+          << FuseCodeToString(static_cast<NNAdapterFuseCode>(*fuse_code));
+  }
   *fuse_code = NNADAPTER_FUSED_NONE;
 }
 

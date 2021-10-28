@@ -500,7 +500,13 @@ NNAdapterOperandPrecisionCode ConvertPrecisionTypeToNNPrecisionCode(
     }
     return NNADAPTER_INT32;
   }
-  CHECK_EQ(quant_scale_count, 0);
+  // CHECK_EQ(quant_scale_count, 0);
+  if (quant_scale_count > 0) {
+    CHECK(quant_scales);
+    // INT8 only supports symmetric per-layer or per-channel quantization
+    return quant_scale_count > 1 ? NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL
+                                 : NNADAPTER_QUANT_INT8_SYMM_PER_LAYER;
+  }
   switch (precision_type) {
     case PRECISION(kFloat):
       return NNADAPTER_FLOAT32;
