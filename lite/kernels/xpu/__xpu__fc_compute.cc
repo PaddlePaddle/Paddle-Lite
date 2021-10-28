@@ -25,6 +25,7 @@ namespace kernels {
 namespace xpu {
 
 void XPUFcCompute::PrepareForRun() {
+  auto& ctx = this->ctx_->As<XPUContext>();
   auto& param = this->Param<param_t>();
   auto w_ptr = param.w->data<float>();
   auto w_len = param.w->numel();
@@ -36,15 +37,16 @@ void XPUFcCompute::PrepareForRun() {
   // max
   if (!quant_int8) {
     w_max = paddle::lite::xpu::math::FindMaxAbs(w_ptr, w_len);
-    std::vector<float> w_max_v(lite::XPU_QUANT_SCALE_NUM, w_max);
-    weight_max_guard_ = TargetWrapperXPU::MallocScratchPad(
-        lite::XPU_QUANT_SCALE_NUM * sizeof(float));
+    int max_ptr_size = get_max_ptr_size(ctx.GetRawContext());
+    std::vector<float> w_max_v(max_ptr_size, w_max);
+    weight_max_guard_ =
+        TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
     XPU_CALL(xpu_memcpy(reinterpret_cast<float*>(weight_max_guard_->addr_),
                         w_max_v.data(),
-                        lite::XPU_QUANT_SCALE_NUM * sizeof(float),
+                        max_ptr_size * sizeof(float),
                         XPUMemcpyKind::XPU_HOST_TO_DEVICE));
-    input_max_guard_ = TargetWrapperXPU::MallocScratchPad(
-        lite::XPU_QUANT_SCALE_NUM * sizeof(float));
+    input_max_guard_ =
+        TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
   }
   // transpose
   if (quant_int8) {
