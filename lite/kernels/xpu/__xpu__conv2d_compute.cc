@@ -52,17 +52,20 @@ bool QuantFilter<int8_t>(const float* filter_on_host,
 
 template <typename T, PrecisionType PType>
 void XPUConv2dCompute<T, PType>::PrepareForRun() {
+  auto& ctx = this->ctx_->template As<XPUContext>();
   auto& param = this->template Param<param_t>();
   auto filter_ptr = param.filter->template data<float>();
   auto filter_len = param.filter->numel();
   // max
   float max_f = paddle::lite::xpu::math::FindMaxAbs(filter_ptr, filter_len);
-  std::vector<float> max_f_v(4, max_f);
-  filter_max_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
+  int max_ptr_size = get_max_ptr_size(ctx.GetRawContext());
+  std::vector<float> max_f_v(max_ptr_size, max_f);
+  filter_max_guard_ =
+      TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
   filter_max_ = reinterpret_cast<float*>(filter_max_guard_->addr_);
   XPU_CALL(xpu_memcpy(filter_max_,
                       max_f_v.data(),
-                      4 * sizeof(float),
+                      max_ptr_size * sizeof(float),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
   // quant
   quant_filter_guard_ =
