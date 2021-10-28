@@ -20,9 +20,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # c++ standard
 if(LITE_WITH_XTCL OR LITE_WITH_METAL)
-    set(CMAKE_CXX_STANDARD 14)
+  set(CMAKE_CXX_STANDARD 14)
 else()
-    set(CMAKE_CXX_STANDARD 11)
+  set(CMAKE_CXX_STANDARD 11)
 endif()
 
 # Host system configurations
@@ -97,10 +97,10 @@ lite_option(LITE_WITH_CODE_META_INFO           "include git version in the heade
 
 # Thirdparty
 set(THIRD_PARTY_PATH "${CMAKE_BINARY_DIR}/third_party" CACHE STRING
-        "A path setting third party libraries download & build directories.")
+  "A path setting third party libraries download & build directories.")
 
 if(NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
-    find_package(CUDA QUIET)
+  find_package(CUDA QUIET)
 endif()
 find_package(Git REQUIRED)
 find_package(Threads REQUIRED)
@@ -110,25 +110,22 @@ include(simd)
 
 # CMAKE_BUILD_TYPE
 if(NOT CMAKE_BUILD_TYPE)
-    if(WIN32)
-        set(CMAKE_BUILD_TYPE "Release" CACHE STRING
-        "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel"
-        FORCE)
-    else()
-    
+  if(WIN32)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING
+      "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel" FORCE)
+  else()
     set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING
-            "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel"
-            FORCE)
+      "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel" FORCE)
     endif()
 endif()
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
 # check options
-if (LITE_ON_TINY_PUBLISH)
-    if (NOT (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND NOT WITH_TESTING))#LITE_WITH_JAVA AND
-        message(FATAL_ERROR "LITE_ON_TINY_PUBLISH=ON must be used with WITH_LITE=ON LITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON LITE_WITH_JAVA=ON WITH_TESTING=OFF")
-        return()
-    endif()
+if(LITE_ON_TINY_PUBLISH)
+  if(NOT (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND NOT WITH_TESTING))#LITE_WITH_JAVA AND
+    message(FATAL_ERROR "LITE_ON_TINY_PUBLISH=ON must be used with WITH_LITE=ON LITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON LITE_WITH_JAVA=ON WITH_TESTING=OFF")
+    return()
+  endif()
 endif()
 
 include_directories("${PADDLE_SOURCE_DIR}")
@@ -136,47 +133,49 @@ include_directories("${PADDLE_SOURCE_DIR}")
 set(LITE_GENERATED_INCLUDE_DIR "${CMAKE_BINARY_DIR}")
 include_directories("${LITE_GENERATED_INCLUDE_DIR}")
 
-if (LITE_WITH_PYTHON)
-    include(external/python)    # download, build, install python
-    include(external/pybind11)    # download, build, install pybind11
+if(LITE_WITH_PYTHON)
+  include(external/python)    # download, build, install python
+  include(external/pybind11)    # download, build, install pybind11
 endif()
 
 if(LITE_WITH_RKNPU)
-   include(backends/rknpu)
-endif()
-
-if(LITE_WITH_IMAGINATION_NNA)
-	include(backends/imagination_nna)
+  include(backends/rknpu)
 endif()
 
 if(LITE_WITH_INTEL_FPGA)
-	include(backends/intel_fpga)
+  include(backends/intel_fpga)
 endif()
 
 # flatbuffer module for loading model
 if(LITE_UPDATE_FBS_HEAD)
-    include(external/flatbuffers)
+  include(external/flatbuffers)
 else()
-    include_directories("${PADDLE_SOURCE_DIR}/third-party/flatbuffers/pre-build")
-    add_custom_target(fbs_headers ${TARGET}
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/third-party/flatbuffers/pre-build/framework_generated.h" "${CMAKE_SOURCE_DIR}/lite/model_parser/flatbuffers/"
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/third-party/flatbuffers/pre-build/param_generated.h" "${CMAKE_SOURCE_DIR}/lite/model_parser/flatbuffers/"
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/third-party/flatbuffers/pre-build/cache_generated.h" "${CMAKE_SOURCE_DIR}/lite/backends/opencl/utils/"
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/third-party/flatbuffers/pre-build/tune_cache_generated.h" "${CMAKE_SOURCE_DIR}/lite/backends/opencl/utils/"
-            )
+  include_directories("${PADDLE_SOURCE_DIR}/third-party/flatbuffers/pre-build")
+  add_custom_target(fbs_headers ${TARGET}
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/third-party/flatbuffers/pre-build/framework_generated.h" "${CMAKE_SOURCE_DIR}/lite/model_parser/flatbuffers/"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/third-party/flatbuffers/pre-build/param_generated.h" "${CMAKE_SOURCE_DIR}/lite/model_parser/flatbuffers/"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/third-party/flatbuffers/pre-build/cache_generated.h" "${CMAKE_SOURCE_DIR}/lite/backends/opencl/utils/"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/third-party/flatbuffers/pre-build/tune_cache_generated.h" "${CMAKE_SOURCE_DIR}/lite/backends/opencl/utils/"
+    )
 endif()
 
-if (LITE_THREAD_POOL)
+if(LITE_THREAD_POOL)
   add_definitions(-DLITE_USE_THREAD_POOL)
 endif()
 
 if (LITE_THREAD_POOL OR ((ARM_TARGET_LANG STREQUAL "clang") AND (ARM_TARGET_ARCH_ABI STREQUAL "armv7")))
-    set(LITE_WITH_OPENMP OFF CACHE STRING "Disable OpenMP when Thread Pool is enabled" FORCE)
+  set(LITE_WITH_OPENMP OFF CACHE STRING "Disable OpenMP when Thread Pool is enabled" FORCE)
 endif()
 
-# for opencl
-if (LITE_WITH_OPENCL)
-    include_directories("${PADDLE_SOURCE_DIR}/third-party/opencl/include")
+set(WITH_MKLML ${WITH_MKL})
+if(NOT DEFINED WITH_MKLDNN)
+  if(WITH_MKL AND AVX2_FOUND)
+    set(WITH_MKLDNN ON)
+  else()
+    message(STATUS "Do not have AVX2 intrinsics and disabled MKL-DNN")
+    set(WITH_MKLDNN OFF)
+  endif()
 endif()
 
 include(backends/common)
+add_subdirectory(lite)
