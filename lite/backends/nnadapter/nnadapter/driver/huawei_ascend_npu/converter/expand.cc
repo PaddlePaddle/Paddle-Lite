@@ -24,20 +24,15 @@ namespace huawei_ascend_npu {
 
 int ConvertExpand(Converter* converter, hal::Operation* operation) {
   EXPAND_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  uint32_t shape_count;
-  int32_t* shape_data;
   auto& shape_type = shape_operand->type;
-  if (IsConstantOperand(shape_operand)) {
-    shape_count = shape_operand->length / sizeof(int32_t);
-    shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);
-  } else if (shape_type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {
+  if (shape_type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {
     auto shape_operand_dimension =
         *reinterpret_cast<NNAdapterOperandDimensionType*>(
             shape_operand->buffer);
     shape_count = shape_operand_dimension.count;
     shape_data = shape_operand_dimension.data;
-  } else {
-    NNADAPTER_LOG(ERROR) << "Unsupported shape lifetime: "
+  } else if (!IsConstantOperand(shape_operand)) {
+    NNADAPTER_LOG(FATAL) << "Unsupported shape lifetime: "
                          << static_cast<int32_t>(shape_type.lifetime);
     return NNADAPTER_INVALID_PARAMETER;
   }
