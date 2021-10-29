@@ -2436,11 +2436,11 @@ inline void gemv_int8_dot_asm(GEMV_ASM_FUN_PARAMS(float)) {
   "beq    13f                     \n"   \
   "cmp    %[relu],   #2           \n"   \
   "beq    14f                     \n"   \
-  "vdup.32    q1,   %[offset]     \n"   \
-  "vdup.32    q2,   %[alpha]      \n"   \
-  "vdup.32    q3,   %[threshold]  \n"   \
-  "vadd.f32   q4,   q11,  q1      \n"   \
-  "vmul.f32   q5,   q11,  q2      \n"   \
+  "vld1.32    {d2-d5}, [%[alpha]] \n"   \
+  "vldr       d6,   [%[alpha], #32]\n"  \
+  "vldr       d7,   [%[alpha], #40]\n"  \
+  "vadd.f32   q4,   q11,  q2      \n"   \
+  "vmul.f32   q5,   q11,  q1      \n"   \
   "vmax.f32   q4,   q4,   q0      \n"   \
   "vmin.f32   q4,   q4,   q3      \n"   \
   "vmul.f32   q11,  q4,   q5      \n"   \
@@ -2449,13 +2449,13 @@ inline void gemv_int8_dot_asm(GEMV_ASM_FUN_PARAMS(float)) {
   "vmax.f32   q11,  q11,  q0      \n"   \
   "b      12f                     \n"   \
   "13:                            \n"   \
-  "vdup.32    q1,   %[alpha]      \n"   \
+  "vld1.32    {d2-d3}, [%[alpha]] \n"   \
   "vmax.f32   q11,  q11,  q0      \n"   \
   "vmin.f32   q11,  q11,  q1      \n"   \
   "b      12f                     \n"   \
   "14:                            \n"   \
   "vmov.f32   q0,   #0.0          \n"   \
-  "vdup.32    q1,   %[alpha]      \n"   \
+  "vld1.32    {d2-d3}, [%[alpha]] \n"   \
   "vcge.f32   q2,   q11,  q0      \n"   \
   "vmul.f32   q3,   q11,  q1      \n"   \
   "vbif       q11,  q3,   q2      \n"
@@ -2485,11 +2485,10 @@ inline void gemv_int8_dot_asm(GEMV_ASM_FUN_PARAMS(float)) {
   [w1] "+r"(ptr_w1), [w2] "+r"(ptr_w2),                                 \
   [w3] "+r"(ptr_w3), [cnt] "+r"(cnt),                                   \
   [scale] "+r"(scale_ptr), [bias] "+r"(bias_ptr)                        \
-  : [out] "r"(out_ptr), [relu] "r"(act), [alpha] "r"(alpha),            \
-    [offset] "r"(offset), [threshold] "r"(threshold)                    \
+  : [out] "r"(out_ptr), [relu] "r"(act), [alpha] "r"(tmp_ptr)           \
   : "cc", "memory",                                                     \
     "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",                     \
-    "q8", "q9", "q12", "q13", "q14", "q15"
+    "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
 
 #define GEMV_ASM_FUN_PARAMS(dtype)                                      \
   const int8_t *ptr_in, const int8_t *ptr_w0,                           \
@@ -2505,12 +2504,36 @@ inline void gemv_int8_asm(GEMV_ASM_FUN_PARAMS(dtype));
 
 template <>
 inline void gemv_int8_asm(GEMV_ASM_FUN_PARAMS(float)) {
+  float tmp_ptr[12] = {alpha,
+                       alpha,
+                       alpha,
+                       alpha,
+                       offset,
+                       offset,
+                       offset,
+                       offset,
+                       threshold,
+                       threshold,
+                       threshold,
+                       threshold};
   asm volatile(GEMV_COMPUTE GEMV_ST_FP32 : GEMV_ASM_PARAMS);
 }
 
 template <>
 inline void gemv_int8_asm(GEMV_ASM_FUN_PARAMS(int8_t)) {
   float vmax = -127.f;
+  float tmp_ptr[12] = {alpha,
+                       alpha,
+                       alpha,
+                       alpha,
+                       offset,
+                       offset,
+                       offset,
+                       offset,
+                       threshold,
+                       threshold,
+                       threshold,
+                       threshold};
   asm volatile(GEMV_COMPUTE GEMV_ST_INT8 : [vmax] "+r"(vmax), GEMV_ASM_PARAMS);
 }
 #undef GEMV_COMPUTE_INIT
@@ -2853,7 +2876,7 @@ void gemv_int8(const int8_t* A,
     } else if (act_param.active_type == lite_api::ActivationType::kLeakyRelu) {
       alpha = act_param.Leaky_relu_alpha;
     } else if (act_param.active_type == lite_api::ActivationType::kHardSwish) {
-      alpha = 1.f / act_param.hard_swish_scale;
+      alpha = act_param.hard_swish_scale;
       offset = act_param.hard_swish_offset;
       threshold = act_param.hard_swish_threshold;
     }
@@ -2892,7 +2915,7 @@ void gemv_int8(const int8_t* A,
 
 GEMV_INT8_FUN(int8_t);
 GEMV_INT8_FUN(float);
-
+#undef GEMV_INT8_FUN
 }  // namespace math
 }  // namespace arm
 }  // namespace lite
