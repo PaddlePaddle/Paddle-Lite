@@ -118,3 +118,4 @@ USE_MIR_PASS(__xpu__max_pooling_pad_zero_detect_fuse_pass);
 USE_MIR_PASS(x86_int8_attribute_pass);
 USE_MIR_PASS(fill_range_fuse_pass);
 USE_MIR_PASS(range_calc_offline_pass);
+USE_MIR_PASS(p_norm_fill_constant_max_div_fuse_pass);

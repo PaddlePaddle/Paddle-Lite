@@ -568,6 +568,23 @@ NNAdapterAutoPadCode ConvertPaddingAlgorithmToNNAutoPadCode(
   return auto_pad_code;
 }
 
+NNAdapterPadModeCode ConvertPadModeToNNPadModeCode(std::string mode) {
+  if (mode == "constant") {
+    return NNADAPTER_PAD_MODE_CONSTANT;
+  }
+  if (mode == "reflect") {
+    return NNADAPTER_PAD_MODE_REFLECT;
+  }
+  if (mode == "replicate") {
+    return NNADAPTER_PAD_MODE_REPLICATE;
+  }
+  if (mode == "edge") {
+    return NNADAPTER_PAD_MODE_EDGE;
+  }
+  LOG(FATAL) << "Unsupported mode type: " << mode;
+  return NNADAPTER_PAD_MODE_NONE;
+}
+
 template <>
 PrecisionType ConvertPODTypeToPrecisionType<bool>() {
   return PRECISION(kBool);
