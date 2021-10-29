@@ -105,13 +105,17 @@ class TargetWrapper<TARGET(kXPU)> {
         void* local_gm_ptr = nullptr;
         int ret =
             xpu_malloc(reinterpret_cast<void**>(&local_gm_ptr), local_gm_size);
-        if (ret != 0) {
+        if (ret != 0 || local_gm_ptr == nullptr) {
           VLOG(3) << "No Enough GM Workspace For Current Predictor.";
         } else {
+          void* old_ptr = tls_raw_ctx_->_gm_mgr.get_ptr();
+          if (old_ptr != nullptr) {
+            TargetWrapperXPU::Free(old_ptr);
+          }
           ret = tls_raw_ctx_->_gm_mgr.set(local_gm_ptr, local_gm_size);
           if (ret != 0) {
             LOG(WARNING) << "XPU GM Mgr Init Fail, Please Check Configuration.";
-            XPU_CALL(xpu_free(local_gm_ptr));
+            TargetWrapperXPU::Free(local_gm_ptr);
             local_gm_ptr = nullptr;
           }
         }

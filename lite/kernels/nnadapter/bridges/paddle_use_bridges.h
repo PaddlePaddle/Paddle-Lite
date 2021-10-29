@@ -13,10 +13,3 @@
 // limitations under the License.
 
 #pragma once
-
-USE_SUBGRAPH_BRIDGE(cast, kNNAdapter, "huawei_ascend_npu");
-USE_SUBGRAPH_BRIDGE(norm, kNNAdapter, "huawei_ascend_npu");
-USE_SUBGRAPH_BRIDGE(dropout, kNNAdapter, "huawei_ascend_npu");
-USE_SUBGRAPH_BRIDGE(p_norm, kNNAdapter, "huawei_ascend_npu");
-USE_SUBGRAPH_BRIDGE(pad2d, kNNAdapter, "huawei_ascend_npu");
-USE_SUBGRAPH_BRIDGE(pad3d, kNNAdapter, "huawei_ascend_npu");

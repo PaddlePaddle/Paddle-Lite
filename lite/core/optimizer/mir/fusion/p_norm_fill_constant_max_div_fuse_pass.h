@@ -14,32 +14,19 @@
 
 #pragma once
 
-#include <cmath>
-#include "lite/backends/arm/math/fp16/common_preprocess.h"
-#include "lite/core/context.h"
-#include "lite/core/device_info.h"
-#include "lite/operators/op_params.h"
+#include <memory>
+#include <string>
+#include "lite/core/optimizer/mir/pass.h"
 
 namespace paddle {
 namespace lite {
-namespace arm {
-namespace math {
-namespace fp16 {
-typedef __fp16 float16_t;
-void gemv_fp16(const float16_t *A,
-               const float16_t *x,
-               float16_t *y,
-               bool transA,
-               int M,
-               int N,
-               float16_t beta,
-               bool is_bias,
-               const float16_t *bias,
-               bool flag_act,
-               const operators::ActivationParam act_param,
-               ARMContext *ctx);
-}  // namespace fp16
-}  // namespace math
-}  // namespace arm
+namespace mir {
+
+class PNormFillConstantMaxDivFusePass : public ProgramPass {
+ public:
+  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
+};
+
+}  // namespace mir
 }  // namespace lite
 }  // namespace paddle

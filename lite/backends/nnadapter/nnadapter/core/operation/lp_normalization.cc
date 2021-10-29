@@ -13,33 +13,23 @@
 // limitations under the License.
 
 #include "core/operation/lp_normalization.h"
-#include "driver/huawei_ascend_npu/converter/converter.h"
+#include "core/hal/types.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/modeling.h"
+#include "utility/utility.h"
 
 namespace nnadapter {
-namespace huawei_ascend_npu {
+namespace operation {
 
-int ConvertLpNormalization(Converter* converter, hal::Operation* operation) {
+int PrepareLpNormalization(hal::Operation* operation) {
   LP_NORMALIZATION_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
-  // Convert to GE operators
-  ge::Operator::OpListInt axis;
-  for (uint32_t i = 0; i < axis_count; i++) {
-    axis.push_back(axis_data[i]);
-  }
-  auto input_operator = converter->GetMappedOperator(input_operand);
-  if (!input_operator) {
-    input_operator = converter->ConvertOperand(input_operand);
-  }
-  NNADAPTER_CHECK_EQ(p, 2) << "HUAWEI_ASCEND_NPU only support p = 2";
-  auto l2_norm_op = converter->AddOperator<ge::op::L2Normalize>(output_operand);
-  l2_norm_op->set_attr_axis(axis);
-  l2_norm_op->set_attr_eps(epsilon);
-  SET_INPUT(l2_norm_op, x, input_operator);
-  MAP_OUTPUT(l2_norm_op, y, output_operand);
+  // Infer the shape and type of output operands
+  CopyOperandTypeExceptQuantParams(&output_operand->type, input_operand->type);
+  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
 }
 
-}  // namespace huawei_ascend_npu
+}  // namespace operation
 }  // namespace nnadapter

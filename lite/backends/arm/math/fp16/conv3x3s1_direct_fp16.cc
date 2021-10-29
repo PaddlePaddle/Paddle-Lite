@@ -494,12 +494,11 @@ void conv_3x3s1_direct_fp16(const float16_t* i_data,
   float alpha = 0.f;
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
 
+  float offset = 0.f;
+  float threshold = 6.f;
+
   if (act_param.has_active) {
-    act_acquire(act_type,
-                flag_act,
-                alpha,
-                act_param.Relu_clipped_coef,
-                act_param.Leaky_relu_alpha);
+    act_acquire(act_type, flag_act, alpha, offset, threshold, act_param);
   }
 
   for (int n = 0; n < bs; ++n) {
@@ -617,7 +616,9 @@ void conv_3x3s1_direct_fp16(const float16_t* i_data,
                           flag_act,
                           alpha,
                           bias_ptr,
-                          flag_bias);
+                          flag_bias,
+                          offset,
+                          threshold);
       }
     }
   }
