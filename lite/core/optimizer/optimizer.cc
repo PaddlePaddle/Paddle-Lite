@@ -174,6 +174,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "fill_range_fuse_pass",
        "range_calc_offline_pass",
        "identity_dropout_eliminate_pass",
+       "p_norm_fill_constant_max_div_fuse_pass",
        "sparse_conv_detect_pass",
        "__xpu__max_pooling_pad_zero_detect_fuse_pass",
        "__xpu__graph_dedup_pass",
