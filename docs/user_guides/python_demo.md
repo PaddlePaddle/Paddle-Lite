@@ -22,11 +22,11 @@
 
 其流程图如下：
 
-<p align=center> <img src = "http://bos.bj.bce-internal.sdns.baidu.com/agroup-bos-bj/bj-2e0a5c97eb8068c5d1254f475962a45462335d39"/></p>
+<p align=center> <img src = "https://raw.githubusercontent.com/PaddlePaddle/Paddle-Lite/develop/docs/images/predict_workflow.png"/></p>
 
 ## Python 应用开发说明
 
-Python代码调用 Paddle-Lite 执行预测库仅需以下五步：
+Python 代码调用 Paddle-Lite 执行预测库仅需以下五步：
 
 (1) 引入必要的库
 
@@ -61,7 +61,7 @@ input_tensor.from_numpy(np.ones((1, 3, 224, 224)).astype("float32"))
 predictor.run()
 ```
 
-(5) 获得预测结果并将预测结果转化为numpy数组
+(5) 获得预测结果并将预测结果转化为 numpy 数组
 
 ```py
 output_tensor = predictor.get_output(0)
@@ -81,7 +81,7 @@ Paddle Lite Python 版本支持的平台包括：Windows X86_CPU / macOS X86_CPU
 
 如果是Windows X86_CPU / macOS X86_CPU / Linux X86_CPU 平台，不需要进行特定环境准备。
 
-如果是ARM Linux平台，需要编译PaddleLite，环境配置参考[文档](../source_compile/compile_env)，推荐使用docker。
+如果是 ARM Linux平台，需要编译 Paddle Lite ，环境配置参考 [文档](../source_compile/compile_env)，推荐使用 docker。
 
 ### 2. 安装python预测库
 
@@ -92,11 +92,11 @@ PyPI 源目前仅提供 Windows X86_CPU / macOS X86_CPU / Linux X86_CPU 平台�
 python -m pip install paddlelite==2.9
 ```
 
-如果您需要使用 AMRLinux 平台的 Python 预测功能，请参考[源码编译(ARMLinux)](../source_compile/compile_linux)编译、安装 Paddle Lite 的 python 包。
+如果您需要使用 AMRLinux 平台的 Python 预测功能，请参考[源码编译 (ARMLinux)](../source_compile/compile_linux)编译、安装 Paddle Lite 的 python 包。
 
 ### 3. 准备预测部署模型
 
-(1) 模型下载：下载[mobilenet_v1](http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz)模型后解压，得到 Paddle 非 combined 形式的模型，位于文件夹 `mobilenet_v1` 下。可通过模型可视化工具[Netron](https://lutzroeder.github.io/netron/)打开文件夹下的`__model__`文件，查看模型结构。
+(1) 模型下载：下载 [mobilenet_v1](http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz) 模型后解压，得到 Paddle 非 combined 形式的模型，位于文件夹 `mobilenet_v1` 下。可通过模型可视化工具 [Netron](https://lutzroeder.github.io/netron/) 打开文件夹下的`__model__`文件，查看模型结构。
 
 
 ```shell

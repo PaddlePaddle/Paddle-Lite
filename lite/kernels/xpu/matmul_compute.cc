@@ -66,17 +66,27 @@ void MatMulCompute::Run() {
 
   int r = 0;
   if (mat_dim_a.batch_size_ == 0 || mat_dim_a.batch_size_ == 1) {
-    r = xdnn::fc_int16(ctx.GetRawContext(), /* context */
-                       mat_dim_a.trans_,    /* TransA */
-                       mat_dim_b.trans_,    /* TransB */
-                       mat_dim_a.height_,   /* m */
-                       mat_dim_b.width_,    /* n */
-                       mat_dim_a.width_,    /* k */
-                       param.alpha,         /* alpha */
-                       x->data<float>(),    /* A */
-                       y->data<float>(),    /* B */
-                       0.0f,                /* beta */
-                       out->mutable_data<float>(TARGET(kXPU)) /* C */);
+    r = xdnn::fc_fusion<float, float, float, int16_t>(
+        ctx.GetRawContext(),                     // ctx
+        x->data<float>(),                        // x
+        y->data<float>(),                        // w
+        out->mutable_data<float>(TARGET(kXPU)),  // y
+        mat_dim_a.height_,                       // m
+        mat_dim_b.width_,                        // n
+        mat_dim_a.width_,                        // k
+        mat_dim_a.trans_,                        // x_trans
+        mat_dim_b.trans_,                        // w_trans
+        nullptr,                                 // x_maxptr
+        nullptr,                                 // w_maxptr
+        nullptr,                                 // y_maxptr
+        lda,                                     // ldx
+        ldb,                                     // ldw
+        ldc,                                     // ldy
+        param.alpha,                             // alpha
+        0.0f,                                    // beta
+        nullptr,                                 // bias
+        xdnn::Activation_t::LINEAR);             // act
+
   } else {
     // batch matmul
     r = xdnn::gemm_strided_batched_int16<float, float, float>(

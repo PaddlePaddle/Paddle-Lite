@@ -17,6 +17,7 @@
 #include "lite/backends/x86/math/avx/conv_depthwise_pack8.h"
 #include "lite/backends/x86/math/avx/conv_utils.h"
 #include "lite/backends/x86/math/conv_depthwise_impl.h"
+#include "lite/backends/x86/math/conv_depthwise_int8.h"
 
 namespace paddle {
 namespace lite {
@@ -25,6 +26,7 @@ namespace x86 {
 #define CONV_DW_PARAM                                                         \
   i_data, o_data, bs, oc, oh, ow, ic, ih, iw, w_data, b_data, pad, flag_bias, \
       act_param
+
 template <>
 void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {}
 
@@ -99,12 +101,68 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
   }
 }
 
-#define CONV_DW_INT8_PARAM                                                 \
-  o_data, i_data, w_data, b_data, bs, ic, iw, ih, oh, ow, flag_act, alpha, \
-      w_scale_, ctx
+#define CONV_DW_INT8_PARAM                                              \
+  o_data, i_data, w_data, b_data, bs, ic, ih, iw, oh, ow, pad_h, pad_w, \
+      flag_act, alpha, w_scale_.data(), &ctx
 template <>
 void DepthwiseConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
-  //! todo add implementation
+  auto& param = this->Param<param_t>();
+  CHECK(this->ctx_);
+  auto& ctx = this->ctx_->template As<X86Context>();
+  const auto* i_data = param.x->data<int8_t>();
+  const auto* w_data = param.filter->data<int8_t>();
+  const auto* b_data = param.bias ? param.bias->data<float>() : nullptr;
+  if (flag_trans_bias_) {
+    b_data = bias_.data<float>();
+  }
+  auto* o_data = param.output->mutable_data<float>();
+
+  auto x_dims = param.x->dims();
+  auto w_dims = param.filter->dims();
+  auto o_dims = param.output->dims();
+
+  int iw = x_dims[3];
+  int ih = x_dims[2];
+  int ic = x_dims[1];
+  int bs = x_dims[0];
+  int oh = o_dims[2];
+  int ow = o_dims[3];
+  auto padding = *param.paddings;
+  int pad_h = padding[0];
+  int pad_w = padding[2];
+
+  auto act_param = param.activation_param;
+  auto act_type = act_param.active_type;
+  float alpha = 0.f;
+  int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
+  if (act_param.has_active) {
+    if (act_type == lite_api::ActivationType::kRelu) {
+      flag_act = 0x01;
+    } else if (act_type == lite_api::ActivationType::kRelu6) {
+      flag_act = 0x02;
+      alpha = act_param.Relu_clipped_coef;
+    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+      flag_act = 0x03;
+      alpha = act_param.Leaky_relu_alpha;
+    }
+  }
+
+  if (w_dims[2] == 3 && param.strides[0] == 1) {
+    lite::x86::math::conv_3x3s1_dw_int8(CONV_DW_INT8_PARAM);
+  } else if (w_dims[2] == 3 && param.strides[0] == 2) {
+    if (padding[0] == 0) {
+      lite::x86::math::conv_3x3s2p0_dw_int8(CONV_DW_INT8_PARAM);
+    } else if (padding[0] == 1) {
+      lite::x86::math::conv_3x3s2p1_dw_int8(CONV_DW_INT8_PARAM);
+    } else {
+      LOG(FATAL) << "X86 doesn't support paddings >= 2, now padding: "
+                 << padding[0];
+    }
+  } else {
+    LOG(FATAL) << "X86 doesn't support other depthwise, now kernel: "
+               << w_dims[2] << ", and "
+               << "strides: " << param.strides[0];
+  }
 }
 
 PROFILE_INFO(kInt8, kFloat)
@@ -153,7 +211,63 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
 
 template <>
 void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
-  //! todo add implementation
+  auto& param = this->Param<param_t>();
+  CHECK(this->ctx_);
+  auto& ctx = this->ctx_->template As<X86Context>();
+  const auto* i_data = param.x->data<int8_t>();
+  const auto* w_data = param.filter->data<int8_t>();
+  const auto* b_data = param.bias ? param.bias->data<float>() : nullptr;
+  if (flag_trans_bias_) {
+    b_data = bias_.data<float>();
+  }
+  auto* o_data = param.output->mutable_data<int8_t>();
+
+  auto x_dims = param.x->dims();
+  auto w_dims = param.filter->dims();
+  auto o_dims = param.output->dims();
+
+  int iw = x_dims[3];
+  int ih = x_dims[2];
+  int ic = x_dims[1];
+  int bs = x_dims[0];
+  int oh = o_dims[2];
+  int ow = o_dims[3];
+  auto padding = *param.paddings;
+  int pad_h = padding[0];
+  int pad_w = padding[2];
+
+  auto act_param = param.activation_param;
+  auto act_type = act_param.active_type;
+  float alpha = 0.f;
+  int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
+  if (act_param.has_active) {
+    if (act_type == lite_api::ActivationType::kRelu) {
+      flag_act = 0x01;
+    } else if (act_type == lite_api::ActivationType::kRelu6) {
+      flag_act = 0x02;
+      alpha = act_param.Relu_clipped_coef;
+    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+      flag_act = 0x03;
+      alpha = act_param.Leaky_relu_alpha;
+    }
+  }
+
+  if (w_dims[2] == 3 && param.strides[0] == 1) {
+    lite::x86::math::conv_3x3s1_dw_int8(CONV_DW_INT8_PARAM);
+  } else if (w_dims[2] == 3 && param.strides[0] == 2) {
+    if (padding[0] == 0) {
+      lite::x86::math::conv_3x3s2p0_dw_int8(CONV_DW_INT8_PARAM);
+    } else if (padding[0] == 1) {
+      lite::x86::math::conv_3x3s2p1_dw_int8(CONV_DW_INT8_PARAM);
+    } else {
+      LOG(FATAL) << "X86 doesn't support paddings >= 2, now padding: "
+                 << padding[0];
+    }
+  } else {
+    LOG(FATAL) << "X86 doesn't support other depthwise, now kernel: "
+               << w_dims[2] << ", and "
+               << "strides: " << param.strides[0];
+  }
 }
 
 PROFILE_INFO(kInt8, kInt8)
