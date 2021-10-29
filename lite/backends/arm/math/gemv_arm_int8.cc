@@ -2244,9 +2244,9 @@ bool gemv_int8_trans_oth(const int8_t* A,
     "beq    13f                   \n"                                     \
     "cmp    %w[relu],    #3       \n"                                     \
     "beq    14f                   \n"                                     \
-    "dup    v2.4s, %w[offset]     \n"                                     \
-    "dup    v1.4s, %w[alpha]      \n"                                     \
-    "dup    v3.4s, %w[threshold]  \n"                                     \
+    "ldr    q2,    [%[alpha], #16]\n"                                     \
+    "ldr    q1,    [%[alpha]]     \n"                                     \
+    "ldr    q3,    [%[alpha], #32]\n"                                     \
     "fadd   v21.4s, v19.4s, v2.4s \n"                                     \
     "fmul   v22.4s, v19.4s, v1.4s \n"                                     \
     "fmax   v21.4s, v21.4s, v0.4s \n"                                     \
@@ -2263,14 +2263,14 @@ bool gemv_int8_trans_oth(const int8_t* A,
     "fmax   v20.4s, v20.4s, v0.4s \n"                                     \
     "b      12f                   \n"                                     \
     "13:                          \n"                                     \
-    "dup    v1.4s, %w[alpha]      \n"                                     \
+    "ldr    q1,    [%[alpha]]     \n"                                     \
     "fmax   v19.4s, v19.4s, v0.4s \n"                                     \
     "fmax   v20.4s, v20.4s, v0.4s \n"                                     \
     "fmin   v19.4s, v19.4s, v1.4s \n"                                     \
     "fmin   v20.4s, v20.4s, v1.4s \n"                                     \
     "b      12f                   \n"                                     \
     "14:                          \n"                                     \
-    "dup    v1.4s, %w[alpha]      \n"                                     \
+    "ldr    q1,    [%[alpha]]     \n"                                     \
     "fcmge  v21.4s, v19.4s, v0.4s \n"                                     \
     "fmul   v22.4s, v19.4s, v1.4s \n"                                     \
     "bif    v19.16b,v22.16b,v21.16b\n"                                    \
@@ -2310,8 +2310,7 @@ bool gemv_int8_trans_oth(const int8_t* A,
     [scale] "+r"(scale_ptr),                                              \
     [bias] "+r"(bias_ptr),                                                \
     [relu] "+r"(act)                                                      \
-  : [out] "r"(out_ptr), [alpha] "r"(alpha),                               \
-    [offset] "r"(offset), [threshold] "r"(threshold)                      \
+  : [out] "r"(out_ptr), [alpha] "r"(tmp_ptr)                              \
   : "cc", "memory",                                                       \
     "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9",           \
     "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17",               \
@@ -2345,12 +2344,36 @@ inline void gemv_int8_asm(GEMV_ASM_FUN_PARAMS(dtype));
 
 template <>
 inline void gemv_int8_asm(GEMV_ASM_FUN_PARAMS(float)) {
+  float tmp_ptr[12] = {alpha,
+                       alpha,
+                       alpha,
+                       alpha,
+                       offset,
+                       offset,
+                       offset,
+                       offset,
+                       threshold,
+                       threshold,
+                       threshold,
+                       threshold};
   asm volatile(GEMV_COMPUTE_INIT GEMV_COMPUTE GEMV_COMPUTE_ACT GEMV_ST_FP32
                : GEMV_ASM_PARAMS);
 }
 template <>
 inline void gemv_int8_asm(GEMV_ASM_FUN_PARAMS(int8_t)) {
   float vmax = -127.f;
+  float tmp_ptr[12] = {alpha,
+                       alpha,
+                       alpha,
+                       alpha,
+                       offset,
+                       offset,
+                       offset,
+                       offset,
+                       threshold,
+                       threshold,
+                       threshold,
+                       threshold};
   asm volatile(GEMV_COMPUTE_INIT GEMV_COMPUTE GEMV_COMPUTE_ACT GEMV_ST_INT8
                : [vmax] "+r"(vmax), GEMV_ASM_PARAMS);
 }
@@ -2360,12 +2383,36 @@ inline void gemv_int8_dot_asm(GEMV_ASM_FUN_PARAMS(dtype));
 template <>
 inline void gemv_int8_dot_asm(GEMV_ASM_FUN_PARAMS(int8_t)) {
   float vmax = -127.f;
+  float tmp_ptr[12] = {alpha,
+                       alpha,
+                       alpha,
+                       alpha,
+                       offset,
+                       offset,
+                       offset,
+                       offset,
+                       threshold,
+                       threshold,
+                       threshold,
+                       threshold};
   asm volatile(GEMV_COMPUTE_INIT GEMV_DOT_COMPUTE GEMV_COMPUTE_ACT GEMV_ST_INT8
                : [vmax] "+r"(vmax), GEMV_ASM_PARAMS);
 }
 
 template <>
 inline void gemv_int8_dot_asm(GEMV_ASM_FUN_PARAMS(float)) {
+  float tmp_ptr[12] = {alpha,
+                       alpha,
+                       alpha,
+                       alpha,
+                       offset,
+                       offset,
+                       offset,
+                       offset,
+                       threshold,
+                       threshold,
+                       threshold,
+                       threshold};
   asm volatile(GEMV_COMPUTE_INIT GEMV_DOT_COMPUTE GEMV_COMPUTE_ACT GEMV_ST_FP32
                : GEMV_ASM_PARAMS);
 }
