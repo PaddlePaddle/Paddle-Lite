@@ -547,8 +547,8 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
   "cmp    %w[is_relu],    #0\n"    /* skip relu */ \
   "beq   9f                     \n"   /* no act end */ \
   "cmp    %w[is_relu],    #1\n"    /* skip relu */ \
-  "bne   10f                     \n"   /* other act */ \
   "movi   v0.4s, #0\n"             /* for relu */  \
+  "bne   10f                     \n"   /* other act */ \
   "fmax   v16.4s, v16.4s, v0.4s\n" /* relu */      \
   "fmax   v17.4s, v17.4s, v0.4s\n" /* relu */      \
   "fmax   v18.4s, v18.4s, v0.4s\n" /* relu */      \
@@ -568,11 +568,10 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
   "b      9f                    \n"   /* relu end */
 
 #define GEMM_INT8_RELU6                             \
-  /* do relu6 */                                    \
+  /* do relu6 */                                     \
   "10: \n"                                           \
   "cmp   %w[is_relu],  #2       \n"   /* check relu6 */ \
   "bne   11f                     \n"   /* no act end */ \
-  "movi   v0.4s, #0\n"             /* for relu6 */  \
   "fmax   v16.4s, v16.4s, v0.4s\n" /* relu */      \
   "fmax   v17.4s, v17.4s, v0.4s\n" /* relu */      \
   "fmax   v18.4s, v18.4s, v0.4s\n" /* relu */      \
@@ -609,9 +608,10 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
   "b      9f                    \n"   /* relu end */
 
 #define GEMM_INT8_LEAKY_RELU                       \
-  /* do relu */                                    \
+  /* do leakyrelu */                               \
   "11: \n"                                         \
-  "movi   v0.4s, #0\n"             /* for relu6 */  \
+  "cmp   %w[is_relu],  #3       \n"   /* check relu6 */ \
+  "bne   12f                     \n"   /* no act end */ \
   "ld1    {v1.4s},  [%[alpha]]        \n" /* leakey relu alpha */ \
   "fcmge  v2.4s,    v16.4s,    v0.4s   \n" /* vcgeq_f32 */  \
   "fmul   v3.4s,    v16.4s,    v1.4s   \n" /* vmulq_f32 */  \
@@ -661,6 +661,94 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
   "bif    v29.16b,   v5.16b,   v4.16b  \n" /* choose*/      \
   "bif    v30.16b,  v7.16b,   v6.16b  \n" /* choose*/       \
   "bif    v31.16b,  v9.16b,   v8.16b  \n" /* choose*/       \
+  "b 9f\n"
+
+#define GEMM_INT8_HARD_SWISH                       \
+  /* do hardswsih */                               \
+  "12: \n"                                         \
+  "ldr    q2,       [%[alpha], #16]    \n" /* hard_swish offset*/ \
+  "ld1    {v1.4s},  [%[alpha]]         \n" /* hard_swish alpha */ \
+  "ldr    q3,       [%[alpha], #32]    \n" /* hard_swish threshold */\
+  "fadd   v4.4s,    v16.4s,   v2.4s    \n"         \
+  "fmul   v16.4s,   v16.4s,   v1.4s    \n"         \
+  "fadd   v5.4s,    v17.4s,   v2.4s    \n"         \
+  "fmul   v17.4s,   v17.4s,   v1.4s    \n"         \
+  "fadd   v6.4s,    v18.4s,   v2.4s    \n"         \
+  "fmul   v18.4s,   v18.4s,   v1.4s    \n"         \
+  "fadd   v7.4s,    v19.4s,   v2.4s    \n"         \
+  "fmul   v19.4s,   v19.4s,   v1.4s    \n"         \
+  "fmax   v4.4s,    v4.4s,    v0.4s    \n"         \
+  "fmax   v5.4s,    v5.4s,    v0.4s    \n"         \
+  "fmax   v6.4s,    v6.4s,    v0.4s    \n"         \
+  "fmax   v7.4s,    v7.4s,    v0.4s    \n"         \
+  "fmin   v4.4s,    v4.4s,    v3.4s    \n"         \
+  "fmin   v5.4s,    v5.4s,    v3.4s    \n"         \
+  "fmin   v6.4s,    v6.4s,    v3.4s    \n"         \
+  "fmin   v7.4s,    v7.4s,    v3.4s    \n"         \
+  "fmul   v16.4s,   v16.4s,   v4.4s    \n"         \
+  "fmul   v17.4s,   v17.4s,   v5.4s    \n"         \
+  "fmul   v18.4s,   v18.4s,   v6.4s    \n"         \
+  "fmul   v19.4s,   v19.4s,   v7.4s    \n"         \
+  "fadd   v4.4s,    v20.4s,   v2.4s    \n"         \
+  "fmul   v20.4s,   v20.4s,   v1.4s    \n"         \
+  "fadd   v5.4s,    v21.4s,   v2.4s    \n"         \
+  "fmul   v21.4s,   v21.4s,   v1.4s    \n"         \
+  "fadd   v6.4s,    v22.4s,   v2.4s    \n"         \
+  "fmul   v22.4s,   v22.4s,   v1.4s    \n"         \
+  "fadd   v7.4s,    v23.4s,   v2.4s    \n"         \
+  "fmul   v23.4s,   v23.4s,   v1.4s    \n"         \
+  "fmax   v4.4s,    v4.4s,    v0.4s    \n"         \
+  "fmax   v5.4s,    v5.4s,    v0.4s    \n"         \
+  "fmax   v6.4s,    v6.4s,    v0.4s    \n"         \
+  "fmax   v7.4s,    v7.4s,    v0.4s    \n"         \
+  "fmin   v4.4s,    v4.4s,    v3.4s    \n"         \
+  "fmin   v5.4s,    v5.4s,    v3.4s    \n"         \
+  "fmin   v6.4s,    v6.4s,    v3.4s    \n"         \
+  "fmin   v7.4s,    v7.4s,    v3.4s    \n"         \
+  "fmul   v20.4s,   v20.4s,   v4.4s    \n"         \
+  "fmul   v21.4s,   v21.4s,   v5.4s    \n"         \
+  "fmul   v22.4s,   v22.4s,   v6.4s    \n"         \
+  "fmul   v23.4s,   v23.4s,   v7.4s    \n"         \
+  "fadd   v4.4s,    v24.4s,   v2.4s    \n"         \
+  "fmul   v24.4s,   v24.4s,   v1.4s    \n"         \
+  "fadd   v5.4s,    v25.4s,   v2.4s    \n"         \
+  "fmul   v25.4s,   v25.4s,   v1.4s    \n"         \
+  "fadd   v6.4s,    v26.4s,   v2.4s    \n"         \
+  "fmul   v26.4s,   v26.4s,   v1.4s    \n"         \
+  "fadd   v7.4s,    v27.4s,   v2.4s    \n"         \
+  "fmul   v27.4s,   v27.4s,   v1.4s    \n"         \
+  "fmax   v4.4s,    v4.4s,    v0.4s    \n"         \
+  "fmax   v5.4s,    v5.4s,    v0.4s    \n"         \
+  "fmax   v6.4s,    v6.4s,    v0.4s    \n"         \
+  "fmax   v7.4s,    v7.4s,    v0.4s    \n"         \
+  "fmin   v4.4s,    v4.4s,    v3.4s    \n"         \
+  "fmin   v5.4s,    v5.4s,    v3.4s    \n"         \
+  "fmin   v6.4s,    v6.4s,    v3.4s    \n"         \
+  "fmin   v7.4s,    v7.4s,    v3.4s    \n"         \
+  "fmul   v24.4s,   v24.4s,   v4.4s    \n"         \
+  "fmul   v25.4s,   v25.4s,   v5.4s    \n"         \
+  "fmul   v26.4s,   v26.4s,   v6.4s    \n"         \
+  "fmul   v27.4s,   v27.4s,   v7.4s    \n"         \
+  "fadd   v4.4s,    v28.4s,   v2.4s    \n"         \
+  "fmul   v28.4s,   v28.4s,   v1.4s    \n"         \
+  "fadd   v5.4s,    v29.4s,   v2.4s    \n"         \
+  "fmul   v29.4s,   v29.4s,   v1.4s    \n"         \
+  "fadd   v6.4s,    v30.4s,   v2.4s    \n"         \
+  "fmul   v30.4s,   v30.4s,   v1.4s    \n"         \
+  "fadd   v7.4s,    v31.4s,   v2.4s    \n"         \
+  "fmul   v31.4s,   v31.4s,   v1.4s    \n"         \
+  "fmax   v4.4s,    v4.4s,    v0.4s    \n"         \
+  "fmax   v5.4s,    v5.4s,    v0.4s    \n"         \
+  "fmax   v6.4s,    v6.4s,    v0.4s    \n"         \
+  "fmax   v7.4s,    v7.4s,    v0.4s    \n"         \
+  "fmin   v4.4s,    v4.4s,    v3.4s    \n"         \
+  "fmin   v5.4s,    v5.4s,    v3.4s    \n"         \
+  "fmin   v6.4s,    v6.4s,    v3.4s    \n"         \
+  "fmin   v7.4s,    v7.4s,    v3.4s    \n"         \
+  "fmul   v28.4s,   v28.4s,   v4.4s    \n"         \
+  "fmul   v29.4s,   v29.4s,   v5.4s    \n"         \
+  "fmul   v30.4s,   v30.4s,   v6.4s    \n"         \
+  "fmul   v31.4s,   v31.4s,   v7.4s    \n"         \
   "9:\n"
 
 #define GEMM_TRANS_INT32_TO_FP32                                      \
@@ -721,6 +809,7 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
   GEMM_INT8_RELU                          \
   GEMM_INT8_RELU6                         \
   GEMM_INT8_LEAKY_RELU                    \
+  GEMM_INT8_HARD_SWISH                    \
   /* store result */                      \
   "stp    q16, q17,   [%[c_ptr0]], #32\n" \
   "stp    q18, q19,   [%[c_ptr0]], #32\n" \
@@ -736,6 +825,7 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
   GEMM_INT8_RELU                                                   \
   GEMM_INT8_RELU6                                                  \
   GEMM_INT8_LEAKY_RELU                                             \
+  GEMM_INT8_HARD_SWISH                                             \
   "ld1    {v8.4s},   [%[vmax]] \n"          /* v8 = -127 */        \
   /* data >= -127 */                                               \
   "fcmge v0.4s, v16.4s, v8.4s\n"                                   \
@@ -1485,8 +1575,9 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
   "fmin   v30.4s, v30.4s, v3.4s\n" /* relu6*/             \
   "b      12f                    \n"   /* relu end */
 
-#define GEMM_SDOT_RELU6                             \
+#define GEMM_SDOT_RELU6                            \
   "13:    \n"                                      \
+  "cmp    %w[relu],   #2\n"       /* skip relu6 */ \
   "bne   14f\n"                                    \
   "movi   v2.4s, #0\n"             /* for relu*/   \
   "fmax   v8.4s, v8.4s, v2.4s\n"   /* relu*/       \
@@ -1707,9 +1798,9 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
 
 #define GEMM_SDOT_HARD_SWISH_8x4                            \
   "15: \n"                                                  \
-  "ldr    q4,      [%[alpha], #32]    \n" /* offset */      \
+  "ldr    q4,      [%[alpha], #16]    \n" /* offset */      \
   "ld1    {v3.4s}, [%[alpha]]\n"   /* leakyrelu alpha */    \
-  "ldr    q5,      [%[alpha], #48]    \n" /* theshold */    \
+  "ldr    q5,      [%[alpha], #32]    \n" /* theshold */    \
   "fadd   v6.4s,    v8.4s,    v4.4s   \n"                   \
   "fadd   v7.4s,    v11.4s,   v4.4s   \n"                   \
   "fmul   v8.4s,    v8.4s,    v3.4s   \n"                   \
@@ -1754,9 +1845,9 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
 
 #define GEMM_SDOT_HARD_SWISH_8x8                            \
   "15: \n"                                                  \
-  "ldr    q4,      [%[alpha], #32]    \n" /* offset */      \
+  "ldr    q4,      [%[alpha], #16]    \n" /* offset */      \
   "ld1    {v3.4s}, [%[alpha]]\n"   /* leakyrelu alpha */    \
-  "ldr    q5,      [%[alpha], #48]    \n" /* theshold */    \
+  "ldr    q5,      [%[alpha], #32]    \n" /* theshold */    \
   "fadd   v6.4s,    v8.4s,    v4.4s   \n"                   \
   "fadd   v7.4s,    v11.4s,   v4.4s   \n"                   \
   "fmul   v8.4s,    v8.4s,    v3.4s   \n"                   \
@@ -1841,9 +1932,9 @@ inline void gemm_sdot_int8_kernel(const int8_t* a_ptr,
 
 #define GEMM_SDOT_HARD_SWISH                        \
   "15: \n"                                                  \
-  "ldr    q4,      [%[alpha], #32]    \n" /* offset */      \
+  "ldr    q4,      [%[alpha], #16]    \n" /* offset */      \
   "ld1    {v3.4s}, [%[alpha]]\n"   /* leakyrelu alpha */    \
-  "ldr    q5,      [%[alpha], #48]    \n" /* theshold */    \
+  "ldr    q5,      [%[alpha], #32]    \n" /* theshold */    \
   "fadd   v6.4s,    v8.4s,    v4.4s   \n"                   \
   "fadd   v7.4s,    v11.4s,   v4.4s   \n"                   \
   "fmul   v8.4s,    v8.4s,    v3.4s   \n"                   \
@@ -3325,9 +3416,23 @@ inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
                                  int is_relu,
                                  int k,
                                  int tail) {
-  // clang-format off
-              asm volatile (
-               GEMM_DOT_INT8_KERNEL GEMM_DOT_FP32_OUT
+  float new_ptr[16] = {alpha[0],
+                       alpha[1],
+                       alpha[2],
+                       alpha[3],
+                       -127.0,
+                       -127.0,
+                       -127.0,
+                       -127.0,
+                       alpha[4],
+                       alpha[5],
+                       alpha[6],
+                       alpha[7],
+                       alpha[8],
+                       alpha[9],
+                       alpha[10],
+                       alpha[11]};
+  asm volatile(GEMM_DOT_INT8_KERNEL GEMM_DOT_FP32_OUT
                : [a_ptr] "+r"(a_ptr),
                  [b_ptr] "+&r"(b_ptr),
                  [k] "+r"(k),
@@ -3337,10 +3442,28 @@ inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
                  [c_ptr3] "+&r"(c_ptr3),
                  [c_ptr4] "+&r"(c_ptr4),
                  [c_ptr5] "+&r"(c_ptr5)
-               : [bias_ptr] "r"(bias), [scale] "r"(scale), [relu] "r"(is_relu) ,[alpha] "r"(alpha)
-               : "q0","q1","q2",
-                 "q3","q4","q5","q6","q7","q8","q9","q10",
-                 "q11","q12","q13","q14","q15","cc","memory");
+               : [bias_ptr] "r"(bias),
+                 [scale] "r"(scale),
+                 [relu] "r"(is_relu),
+                 [alpha] "r"(new_ptr)
+               : "q0",
+                 "q1",
+                 "q2",
+                 "q3",
+                 "q4",
+                 "q5",
+                 "q6",
+                 "q7",
+                 "q8",
+                 "q9",
+                 "q10",
+                 "q11",
+                 "q12",
+                 "q13",
+                 "q14",
+                 "q15",
+                 "cc",
+                 "memory");
   // clang-format on
 }
 template <>
@@ -3358,8 +3481,22 @@ inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
                                  int is_relu,
                                  int k,
                                  int tail) {
-  float new_ptr[8] = {
-      alpha[0], alpha[1], alpha[2], alpha[3], -127.0, -127.0, -127.0, -127.0};
+  float new_ptr[16] = {alpha[0],
+                       alpha[1],
+                       alpha[2],
+                       alpha[3],
+                       -127.0,
+                       -127.0,
+                       -127.0,
+                       -127.0,
+                       alpha[4],
+                       alpha[5],
+                       alpha[6],
+                       alpha[7],
+                       alpha[8],
+                       alpha[9],
+                       alpha[10],
+                       alpha[11]};
 
   // clang-format off
   asm volatile(GEMM_DOT_INT8_KERNEL   GEMM_DOT_INT8_OUT
@@ -3395,8 +3532,22 @@ inline void gemm_dot_int8_kernel(const int8_t* a_ptr,
                                  int is_relu,
                                  int k,
                                  int tail) {
-  float new_ptr[8] = {
-      alpha[0], alpha[1], alpha[2], alpha[3], -127.0, -127.0, -127.0, -127.0};
+  float new_ptr[16] = {alpha[0],
+                       alpha[1],
+                       alpha[2],
+                       alpha[3],
+                       -127.0,
+                       -127.0,
+                       -127.0,
+                       -127.0,
+                       alpha[4],
+                       alpha[5],
+                       alpha[6],
+                       alpha[7],
+                       alpha[8],
+                       alpha[9],
+                       alpha[10],
+                       alpha[11]};
 
   // clang-format off
   asm volatile(GEMM_DOT_INT8_KERNEL   GEMM_DOT_INT32_OUT
@@ -3868,6 +4019,23 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                              int is_relu,
                              int k,
                              int rem) {
+  float new_ptr[16] = {alpha[0],
+                       alpha[1],
+                       alpha[2],
+                       alpha[3],
+                       -127.0,
+                       -127.0,
+                       -127.0,
+                       -127.0,
+                       alpha[4],
+                       alpha[5],
+                       alpha[6],
+                       alpha[7],
+                       alpha[8],
+                       alpha[9],
+                       alpha[10],
+                       alpha[11]};
+
   asm volatile(GEMM_INT8_KERNEL GEMM_INT8_FP32_OUT
                : [a_ptr] "+r"(a_ptr),
                  [b_ptr] "+r"(b_ptr),
@@ -3878,7 +4046,7 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                  [k] "+r"(k)
                : [is_relu] "r"(is_relu),
                  [bias] "r"(bias),
-                 [alpha] "r"(alpha),
+                 [alpha] "r"(new_ptr),
                  [rem] "r"(rem),
                  [scale] "r"(scale)
                : "q0",
@@ -3914,22 +4082,22 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                              int is_relu,
                              int k,
                              int rem) {
-  float new_ptr[8] = {alpha[0],
-                      alpha[1],
-                      alpha[2],
-                      alpha[3],
-                      -127.0,
-                      -127.0,
-                      -127.0,
-                      -127.0,
-                      alpha[4],
-                      alpha[5],
-                      alpha[6],
-                      alpha[7],
-                      alpha[8],
-                      alpha[9],
-                      alpha[10],
-                      alpha[11]};
+  float new_ptr[16] = {alpha[0],
+                       alpha[1],
+                       alpha[2],
+                       alpha[3],
+                       -127.0,
+                       -127.0,
+                       -127.0,
+                       -127.0,
+                       alpha[4],
+                       alpha[5],
+                       alpha[6],
+                       alpha[7],
+                       alpha[8],
+                       alpha[9],
+                       alpha[10],
+                       alpha[11]};
   // clang-format off
   asm volatile(GEMM_INT8_KERNEL GEMM_INT8_INT8_OUT
                : [a_ptr] "+r"(a_ptr),
@@ -3978,22 +4146,22 @@ inline void gemm_int8_kernel(const int8_t* a_ptr,
                              int is_relu,
                              int k,
                              int rem) {
-  float new_ptr[8] = {alpha[0],
-                      alpha[1],
-                      alpha[2],
-                      alpha[3],
-                      -127.0,
-                      -127.0,
-                      -127.0,
-                      -127.0,
-                      alpha[4],
-                      alpha[5],
-                      alpha[6],
-                      alpha[7],
-                      alpha[8],
-                      alpha[9],
-                      alpha[10],
-                      alpha[11]};
+  float new_ptr[16] = {alpha[0],
+                       alpha[1],
+                       alpha[2],
+                       alpha[3],
+                       -127.0,
+                       -127.0,
+                       -127.0,
+                       -127.0,
+                       alpha[4],
+                       alpha[5],
+                       alpha[6],
+                       alpha[7],
+                       alpha[8],
+                       alpha[9],
+                       alpha[10],
+                       alpha[11]};
   // clang-format off
   asm volatile(GEMM_INT8_KERNEL GEMM_INT8_INT32_OUT
                : [a_ptr] "+r"(a_ptr),
@@ -7287,7 +7455,7 @@ void gemm_prepack_int8(const int8_t* A_packed,
     } else if (act_type == lite_api::ActivationType::kHardSwish) {
       flag_act = 0x04;
       for (int i = 0; i < 4; i++) {
-        alpha[i] = act_param.hard_swish_scale;
+        alpha[i] = 1.f / act_param.hard_swish_scale;
         alpha[i + 4] = act_param.hard_swish_offset;
         alpha[i + 8] = act_param.hard_swish_threshold;
       }
@@ -7332,6 +7500,7 @@ void gemm_prepack_int8(const int8_t* A_packed,
 GEMM_PREPACK_INT8(int8_t);
 GEMM_PREPACK_INT8(float_t);
 GEMM_PREPACK_INT8(int32_t);
+#undef IN_PARAMS
 #undef GEMM_PREPACK_INT8
 
 }  // namespace math

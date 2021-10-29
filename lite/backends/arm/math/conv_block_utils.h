@@ -3697,7 +3697,7 @@ inline float cvt_kernel(int din,
   } else {
     float result = din * scale + bias;
     float val0 = result * alpha;
-    float val1 = LITEMIIN(LITEMAX(result + offset, 0), threshold);
+    float val1 = LITEMIN(LITEMAX(result + offset, 0), threshold);
     return (val0 * val1);
   }
 }
@@ -3729,7 +3729,7 @@ inline int8_t cvt_kernel(int din,
   } else {
     float result = din * scale + bias;
     float val0 = result * alpha;
-    float val1 = LITEMIIN(LITEMAX(result + offset, 0), threshold);
+    float val1 = LITEMIN(LITEMAX(result + offset, 0), threshold);
     auto tmp = saturate_cast<int8_t>(round(val0 * val1));
     return tmp < -127 ? -127 : tmp;
   }
@@ -3940,9 +3940,9 @@ inline void int32_nchwc8_kernel(Dtype*& dout0,        // NOLINT
   "12:                            \n" /* no relu */                \
   "cmp    %w[flag_act],  #0       \n" /* check no act */           \
   "beq    2f                      \n" /* no act end */             \
-  "cmp    %w[flag_act],  #1       \n" /* check relu6 */            \
+  "cmp    %w[flag_act],  #2       \n" /* check relu6 */            \
   "beq    14f                     \n" /* jump  relu6*/             \
-  "cmp    %w[flag_act],  #2       \n" /* check leakyrelu */        \
+  "cmp    %w[flag_act],  #3       \n" /* check leakyrelu */        \
   "beq    13f                     \n" /* leakyrelu */              \
   "ldp    q20, q21, [%[alpha]]    \n" /* hardsiwsh */              \
   "ldr    q22, [%[alpha], #32]    \n"                              \

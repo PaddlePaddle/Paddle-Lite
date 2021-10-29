@@ -145,7 +145,7 @@ void conv_compute_2x2_3x3_int8(const int8_t* input,
     } else if (act_type == lite_api::ActivationType::kHardSwish) {
       flag_act = 4;
       for (int i = 0; i < 4; i++) {
-        alpha[i] = act_param.hard_swish_scale;
+        alpha[i] = 1.f / act_param.hard_swish_scale;
         alpha[i + 4] = act_param.hard_swish_offset;
         alpha[i + 8] = act_param.hard_swish_threshold;
       }
@@ -466,7 +466,7 @@ void conv_compute_4x4_3x3_int8(const int8_t* input,
     } else if (act_type == lite_api::ActivationType::kHardSwish) {
       flag_act = 4;
       for (int i = 0; i < 4; i++) {
-        alpha[i] = act_param.hard_swish_scale;
+        alpha[i] = 1.f / act_param.hard_swish_scale;
         alpha[i + 4] = act_param.hard_swish_offset;
         alpha[i + 8] = act_param.hard_swish_threshold;
       }

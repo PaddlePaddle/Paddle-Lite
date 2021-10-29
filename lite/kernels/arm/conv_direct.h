@@ -43,7 +43,7 @@ inline bool direct_conv_trans_weights(
     float in_scale,
     float out_scale,
     std::vector<float>& merge_scale,  // NOLINT
-    float* relu_clipped_coef) {
+    operators::ActivationParam act_param) {
   constexpr int cblock = 4;
   int oc = win->dims()[0];
   int ic = win->dims()[1];
@@ -76,7 +76,7 @@ inline bool direct_conv_trans_weights<PRECISION(kInt8), PRECISION(kFloat)>(
     float in_scale,
     float out_scale,
     std::vector<float>& merge_scale,  // NOLINT
-    float* relu_clipped_coef) {
+    operators::ActivationParam act_param) {
   CHECK_EQ(stride, 2);
 #ifdef __aarch64__
   int cblock = 8;
@@ -118,7 +118,7 @@ inline bool direct_conv_trans_weights<PRECISION(kInt8), PRECISION(kInt8)>(
     float in_scale,
     float out_scale,
     std::vector<float>& merge_scale,  // NOLINT
-    float* relu_clipped_coef) {
+    operators::ActivationParam act_param) {
   CHECK_EQ(stride, 2);
 #ifdef __aarch64__
   int cblock = 8;
@@ -147,8 +147,20 @@ inline bool direct_conv_trans_weights<PRECISION(kInt8), PRECISION(kInt8)>(
       merge_scale[i] = w_scale[i] * scale;
     }
   }
-  /// update relu_clipped_coef
-  *relu_clipped_coef /= out_scale;
+  //! update relu6 parameter
+  if (act_param.active_type == lite_api::ActivationType::kRelu6) {
+    act_param.Relu_clipped_coef = act_param.Relu_clipped_coef / out_scale;
+  }
+  //! update leakyRelu parameter
+  if (act_param.active_type == lite_api::ActivationType::kLeakyRelu) {
+    act_param.Leaky_relu_alpha = act_param.Leaky_relu_alpha / out_scale;
+  }
+  //! update hardswish parameter
+  if (act_param.active_type == lite_api::ActivationType::kHardSwish) {
+    act_param.hard_swish_scale = act_param.hard_swish_scale / out_scale;
+    act_param.hard_swish_offset = act_param.hard_swish_offset / out_scale;
+    act_param.hard_swish_threshold = act_param.hard_swish_threshold / out_scale;
+  }
   /// update bias
   if (bin) {
     bout->Resize(bin->dims());
@@ -174,7 +186,7 @@ inline bool direct_conv_trans_weights<PRECISION(kFP16), PRECISION(kFP16)>(
     float in_scale,
     float out_scale,
     std::vector<float>& merge_scale,  // NOLINT
-    float* relu_clipped_coef) {
+    operators::ActivationParam act_param) {
   constexpr int cblock = 8;
   int oc = win->dims()[0];
   int ic = win->dims()[1];
@@ -222,17 +234,17 @@ class DirectConv : public KernelLite<TARGET(kARM), Ptype> {
     CHECK(kw == 3 && kh == 3)
         << "direct conv only support conv3x3s1 and conv3x3s2";
 
-    flag_trans_bias_ = direct_conv_trans_weights<Ptype, OutType>(
-        param.filter,
-        &weights_,
-        param.bias,
-        &bias_,
-        sw,
-        param.weight_scale,
-        param.input_scale,
-        param.output_scale,
-        w_scale_,
-        &param.activation_param.Relu_clipped_coef);
+    flag_trans_bias_ =
+        direct_conv_trans_weights<Ptype, OutType>(param.filter,
+                                                  &weights_,
+                                                  param.bias,
+                                                  &bias_,
+                                                  sw,
+                                                  param.weight_scale,
+                                                  param.input_scale,
+                                                  param.output_scale,
+                                                  w_scale_,
+                                                  param.activation_param);
   }
 
   virtual void Run();

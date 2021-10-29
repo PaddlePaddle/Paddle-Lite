@@ -32,8 +32,9 @@ inline void write_gemv_out(const int* in,
                            lite_api::ActivationType act,
                            float six,
                            float alpha,
-                           float offset = 3.f,
-                           float threshold = 6.f);
+                           float offset,
+                           float threshold);
+
 template <>
 inline void write_gemv_out(const int* in,
                            float* out,
@@ -44,8 +45,8 @@ inline void write_gemv_out(const int* in,
                            lite_api::ActivationType act,
                            float six,
                            float alpha,
-                           float offset = 3.f,
-                           float threshold = 6.f) {
+                           float offset,
+                           float threshold) {
   int cnt = size >> 3;
   int remain = size & 7;
   float32x4_t vzero = vdupq_n_f32(0.f);
@@ -684,8 +685,8 @@ inline void write_gemv_out(const int* in,
                            lite_api::ActivationType act,
                            float six,
                            float alpha,
-                           float offset = 3.f,
-                           float threshold = 6.f) {
+                           float offset,
+                           float threshold) {
   int cnt = size >> 3;
   int remain = size & 7;
   float32x4_t vzero = vdupq_n_f32(0.f);
@@ -1610,7 +1611,7 @@ bool gemv_int8_trans_oth(const int8_t* A,
                          lite_api::ActivationType act,
                          float alpha,
                          float offset,
-                         float theshold,
+                         float threshold,
                          ARMContext* ctx) {
   dtype* data_out = y;
   const int8_t* data_in = A;
@@ -2851,8 +2852,8 @@ void gemv_int8(const int8_t* A,
       alpha = act_param.threshold;
     } else if (act_param.active_type == lite_api::ActivationType::kLeakyRelu) {
       alpha = act_param.Leaky_relu_alpha;
-    } else if (act_param.active_type == lite_api::ActivationType::kHardSwsih) {
-      alpha = act_param.hard_swish_scale;
+    } else if (act_param.active_type == lite_api::ActivationType::kHardSwish) {
+      alpha = 1.f / act_param.hard_swish_scale;
       offset = act_param.hard_swish_offset;
       threshold = act_param.hard_swish_threshold;
     }
