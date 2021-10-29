@@ -64,8 +64,8 @@ void NNAdapterInsertCalibPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 #endif
 
   UpdateQuantOpOut(graph);
-  InsetQuantCalib(graph);
-  InsetDequantCalib(graph);
+  InsertQuantCalib(graph);
+  InsertDequantCalib(graph);
 }
 
 void NNAdapterInsertCalibPass::UpdateQuantOpOut(
@@ -81,9 +81,10 @@ void NNAdapterInsertCalibPass::UpdateQuantOpOut(
           out_type->target(), PRECISION(kInt8), out_type->layout());
     }
   }
+  graph->CheckValid();
 }
 
-void NNAdapterInsertCalibPass::InsetQuantCalib(
+void NNAdapterInsertCalibPass::InsertQuantCalib(
     const std::unique_ptr<SSAGraph>& graph) {
   auto nodes = graph->StmtTopologicalOrder();
   // Record arg nodes to reuse if other inst nodes need the same arg node
@@ -103,6 +104,8 @@ void NNAdapterInsertCalibPass::InsetQuantCalib(
         continue;
       }
 
+      VLOG(3) << "insert calib before " << node->AsStmt().op_type()
+              << " to quant.";
       std::string calib_in_name = pre_arg_node->AsArg().name;
       std::string calib_out_name = calib_in_name + "/quant";
       if (transed_arg_nodes.count(calib_in_name) > 0) {
@@ -115,6 +118,11 @@ void NNAdapterInsertCalibPass::InsetQuantCalib(
         auto calib_out_arg = graph->NewArgumentNode(calib_out_name);
         calib_out_arg->AsArg().type = LiteType::GetTensorTy(
             TARGET(kHost), PRECISION(kInt8), DATALAYOUT(kNCHW));
+        auto scope = node->AsStmt().op()->scope();
+        scope->Var(calib_out_name)
+            ->GetMutable<Tensor>()
+            ->set_precision(PRECISION(kInt8));
+        transed_arg_nodes[calib_in_name] = calib_out_arg;
         // Create calib node
         auto calib_inst = graph->NewInstructNode();
         std::string calib_type{"calib"};
@@ -129,7 +137,7 @@ void NNAdapterInsertCalibPass::InsetQuantCalib(
         auto scales = op_info->GetInputScale(calib_in_name);
         CHECK_EQ(scales.size(), 1UL);
         op_desc.SetAttr("scale", scales[0]);
-        calib_op->Attach(op_desc, node->AsStmt().op()->scope());
+        calib_op->Attach(op_desc, scope);
         calib_inst->AsStmt(calib_type, {}, calib_op);
         // Create topology
         RemoveDirectedLink(pre_arg_node, node);
@@ -137,13 +145,15 @@ void NNAdapterInsertCalibPass::InsetQuantCalib(
         DirectedLink(calib_inst, calib_out_arg);
         DirectedLink(calib_out_arg, node);
         UpdateInputs(node->AsStmt().op(), calib_in_name, calib_out_name);
-        transed_arg_nodes[calib_in_name] = calib_out_arg;
+        auto updated_op_info = *node->AsStmt().mutable_op_info();
+        node->AsStmt().ResetOp(updated_op_info, graph->valid_places());
       }
     }
   }
+  graph->CheckValid();
 }
 
-void NNAdapterInsertCalibPass::InsetDequantCalib(
+void NNAdapterInsertCalibPass::InsertDequantCalib(
     const std::unique_ptr<SSAGraph>& graph) {
   auto nodes = graph->StmtTopologicalOrder();
   // Record arg nodes to reuse if other inst nodes need the same arg node
@@ -157,11 +167,15 @@ void NNAdapterInsertCalibPass::InsetDequantCalib(
         skip_ops.end()) {
       continue;
     }
-    for (auto pre_arg_node : node->inlinks) {
+
+    auto in_nodes = node->inlinks;
+    for (auto pre_arg_node : in_nodes) {
       if (pre_arg_node->inlinks.empty()) continue;
       auto pre_inst_node = pre_arg_node->inlinks.front();
       if (!IsQuantInstNode(pre_inst_node)) continue;
 
+      VLOG(3) << "insert calib before " << node->AsStmt().op_type()
+              << " to dequant.";
       std::string calib_in_name = pre_arg_node->AsArg().name;
       std::string calib_out_name = calib_in_name + "/dequant";
       if (transed_arg_nodes.count(calib_in_name) > 0) {
@@ -174,6 +188,11 @@ void NNAdapterInsertCalibPass::InsetDequantCalib(
         auto calib_out_arg = graph->NewArgumentNode(calib_out_name);
         calib_out_arg->AsArg().type = LiteType::GetTensorTy(
             TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
+        auto scope = node->AsStmt().op()->scope();
+        scope->Var(calib_out_name)
+            ->GetMutable<Tensor>()
+            ->set_precision(PRECISION(kFloat));
+        transed_arg_nodes[calib_in_name] = calib_out_arg;
         // Create calib node
         auto calib_inst = graph->NewInstructNode();
         std::string calib_type{"calib"};
@@ -188,7 +207,7 @@ void NNAdapterInsertCalibPass::InsetDequantCalib(
         auto scales = pre_op_info->GetOutputScale(calib_in_name);
         CHECK_EQ(scales.size(), 1UL);
         op_desc.SetAttr("scale", scales[0]);
-        calib_op->Attach(op_desc, node->AsStmt().op()->scope());
+        calib_op->Attach(op_desc, scope);
         calib_inst->AsStmt(calib_type, {}, calib_op);
         // Create topology
         RemoveDirectedLink(pre_arg_node, node);
@@ -196,10 +215,12 @@ void NNAdapterInsertCalibPass::InsetDequantCalib(
         DirectedLink(calib_inst, calib_out_arg);
         DirectedLink(calib_out_arg, node);
         UpdateInputs(node->AsStmt().op(), calib_in_name, calib_out_name);
-        transed_arg_nodes[calib_in_name] = calib_out_arg;
+        auto updated_op_info = *node->AsStmt().mutable_op_info();
+        node->AsStmt().ResetOp(updated_op_info, graph->valid_places());
       }
     }
   }
+  graph->CheckValid();
 }
 
 }  // namespace mir

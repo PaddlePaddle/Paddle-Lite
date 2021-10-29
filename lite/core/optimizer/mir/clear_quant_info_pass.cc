@@ -76,11 +76,11 @@ std::string ClearQuantInfoPass::GetMixedPrecisionQuantizationConfig(
               mixed_precision_quantization_config.begin(),
               buffer.begin(),
               buffer.end());
-          VLOG(3) << "Load mixed precision quantization config from file: "
+          VLOG(3) << "Load mixed precision quantization config from file:\n"
                   << mixed_precision_quantization_config;
         }
       } else {
-        LOG(WARNING) << "Missing the mixed precision quantization config file "
+        LOG(WARNING) << "Missing the mixed precision quantization config file: "
                      << path;
       }
     }

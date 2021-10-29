@@ -53,8 +53,8 @@ class NNAdapterInsertCalibPass : public ProgramPass {
 
  private:
   void UpdateQuantOpOut(const std::unique_ptr<SSAGraph>& graph);
-  void InsetQuantCalib(const std::unique_ptr<SSAGraph>& graph);
-  void InsetDequantCalib(const std::unique_ptr<SSAGraph>& graph);
+  void InsertQuantCalib(const std::unique_ptr<SSAGraph>& graph);
+  void InsertDequantCalib(const std::unique_ptr<SSAGraph>& graph);
 };
 
 }  // namespace mir

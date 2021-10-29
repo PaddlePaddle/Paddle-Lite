@@ -185,9 +185,22 @@ static void FixQuantMatmul(hal::Model* model) {
   }
 }
 
+// dequant's input's precision should be NNADAPTER_QUANT_INT32_SYMM_PER_LAYER
+static void FixDequant(hal::Model* model) {
+  std::vector<hal::Operation*> operations =
+      SortOperationsInTopologicalOrder(model);
+  for (auto operation : operations) {
+    if (operation->type == NNADAPTER_DEQUANTIZE) {
+      operation->input_operands[0]->type.precision =
+          NNADAPTER_QUANT_INT32_SYMM_PER_LAYER;
+    }
+  }
+}
+
 void FixQuantOps(hal::Model* model) {
   FixQuantConv(model);
   FixQuantMatmul(model);
+  FixDequant(model);
 }
 
 }  // namespace huawei_ascend_npu

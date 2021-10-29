@@ -58,8 +58,8 @@ int ConvertCalib(Converter* converter, OpInfo* op, Scope* scope) {
           {output_operand});
       break;
     }
-    case NNADAPTER_INT8:
-    case NNADAPTER_UINT8: {
+    case NNADAPTER_QUANT_INT8_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL: {
       converter->AddOperation(
           NNADAPTER_DEQUANTIZE, {input_operand}, {output_operand});
       break;
