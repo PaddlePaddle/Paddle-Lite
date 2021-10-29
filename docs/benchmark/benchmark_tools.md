@@ -32,7 +32,7 @@ Benchmark 工具可方便快捷地评测给定模型在如下硬件上运行时�
 
 | 参数 | 说明 | 可选值 | 默认值 |
 | :-- | :-- | :-- | :-- |
-| arch                  | 目标 ARM 架构    |  armv7 / armv8   |  armv8   |
+| arch                  | 目标 ARM 架构    |  armv7hf / armv7 / armv8   |  armv8   |
 | toolchain             | 工具链           |  gcc / clang     |  gcc     |
 | with_profile          | 逐层时间 profile |  ON / OFF        |  OFF     |
 | with_precision_profile| 逐层精度 profile |  ON / OFF        |  OFF     |
@@ -460,7 +460,7 @@ export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH;
 ```shell
 # Host 侧为 x86 CPU 时
 # 拷贝 benchmark 文件夹到新硬件
-ssh name@ip -p22 "rm -rf ~/benchmark"
+ssh name@ip "rm -rf ~/benchmark"
 scp -r ~/benchmark name@ip:~
 ssh name@ip
 cd ~/benchmark
@@ -479,7 +479,7 @@ export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH
 
 # Host 侧为 ARM CPU 时
 # 拷贝 benchmark 文件夹到新硬件
-ssh name@ip -p22 "rm -rf ~/benchmark"
+ssh name@ip "rm -rf ~/benchmark"
 scp -r ~/benchmark name@ip:~
 ssh name@ip
 cd ~/benchmark
@@ -500,7 +500,7 @@ export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH
 #### 在 Rockchip NPU 上运行模型
 ```shell
 # 拷贝 benchmark 文件夹到新硬件
-ssh name@ip -p22 "rm -rf ~/benchmark"
+ssh name@ip "rm -rf ~/benchmark"
 scp -r ~/benchmark name@ip:~
 ssh name@ip
 cd ~/benchmark
@@ -519,7 +519,7 @@ export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH
 #### 在 Imagination NNA 上运行模型
 ```shell
 # 拷贝 benchmark 文件夹到新硬件
-ssh name@ip -p22 "rm -rf ~/benchmark"
+ssh name@ip "rm -rf ~/benchmark"
 scp -r ~/benchmark name@ip:~
 ssh name@ip
 cd ~/benchmark
@@ -557,7 +557,7 @@ export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH;
 ```shell
 # 在 C308X 或 A311D 上运行模型
 # 拷贝 benchmark 文件夹到新硬件
-ssh name@ip -p22 "rm -rf ~/benchmark"
+ssh name@ip "rm -rf ~/benchmark"
 scp -r ~/benchmark name@ip:~
 ssh name@ip
 cd ~/benchmark
