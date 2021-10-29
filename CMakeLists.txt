@@ -138,14 +138,6 @@ if(LITE_WITH_PYTHON)
   include(external/pybind11)    # download, build, install pybind11
 endif()
 
-if(LITE_WITH_RKNPU)
-  include(backends/rknpu)
-endif()
-
-if(LITE_WITH_INTEL_FPGA)
-  include(backends/intel_fpga)
-endif()
-
 # flatbuffer module for loading model
 if(LITE_UPDATE_FBS_HEAD)
   include(external/flatbuffers)

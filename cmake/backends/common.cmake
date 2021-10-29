@@ -17,12 +17,26 @@ if (LITE_WITH_OPENCL)
   include_directories("${PADDLE_SOURCE_DIR}/third-party/opencl/include")
 endif()
 
+if(LITE_WITH_RKNPU)
+  include(backends/rknpu)
+endif()
+
+if(LITE_WITH_INTEL_FPGA)
+  include(backends/intel_fpga)
+endif()
+
+if(LITE_WITH_IMAGINATION_NNA)
+	include(backends/imagination_nna)
+endif()
+
 # for mobile
 if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
   message(STATUS "Building the mobile framework")
   include(postproject)
   include(backends/npu) # check and prepare NPU DDK
-  include(backends/xpu) # check and prepare XPU SDK
+  include(backends/xpu) # check and prepare XPU
+  include(backends/apu) # check and prepare APU SDK
+  include(backends/huawei_ascend_npu)  # check and prepare Ascend NPU SDK
 
   # We compile the mobile deployment library when LITE_ON_TINY_PUBLISH=ON
   # So the following third party dependencies are not needed.
@@ -51,6 +65,10 @@ endif()
 
 if(LITE_WITH_MLU)
   include(mlu)
+endif()
+
+if(LITE_WITH_HUAWEI_ASCEND_NPU)
+  include(backends/huawei_ascend_npu)
 endif()
 
 include(coveralls)
