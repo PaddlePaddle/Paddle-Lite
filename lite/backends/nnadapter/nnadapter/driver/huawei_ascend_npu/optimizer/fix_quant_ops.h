@@ -19,19 +19,7 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-/**
- * before:
- *      conv(quant)
- * after:
- *      quant -> conv(quant) -> dequant
- *
- * case 2
- * before:
- *      act -> conv(quant)
- * after:
- *      act -> quant -> conv(quant)
- */
-void FixQuantConv(hal::Model* model);
+void FixQuantOps(hal::Model* model);
 
 }  // namespace huawei_ascend_npu
 }  // namespace nnadapter
