@@ -60,8 +60,8 @@ int Program::BuildFromModel(hal::Model* model) {
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
   UnpackOpFusion(model);
   FixOps(model);
+  MatMulElementwiseAddFusePass(model);
   ConvertQuantizationSymmToAsymm(model);
-  MatmulElementwiseAddFusePass(model);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
   // Convert a NNAdapter model to a rknpu graph
   graph_ = std::make_shared<rk::nn::Graph>();

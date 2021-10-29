@@ -18,6 +18,6 @@
 
 namespace nnadapter {
 
-void MatmulElementwiseAddFusePass(hal::Model *model);
+void MatMulElementwiseAddFusePass(hal::Model *model);
 
 }  // namespace nnadapter

@@ -23,7 +23,7 @@
 
 namespace nnadapter {
 
-NNADAPTER_EXPORT void MatmulElementwiseAddFusePass(hal::Model* model) {
+NNADAPTER_EXPORT void MatMulElementwiseAddFusePass(hal::Model* model) {
   std::vector<hal::Operation*> operations =
       SortOperationsInTopologicalOrder(model);
   for (auto operation : operations) {
@@ -36,26 +36,27 @@ NNADAPTER_EXPORT void MatmulElementwiseAddFusePass(hal::Model* model) {
       NNADAPTER_CHECK_EQ(output_operands.size(), 1);
       auto x_operand = input_operands[0];
       auto y_operand = input_operands[1];
-      auto transpose_x_operand = input_operands[2];
-      auto transpose_y_operand = input_operands[3];
-      auto mat_mul_out_operand = output_operands[0];
       if (IsConstantOperand(x_operand) || !IsConstantOperand(y_operand)) {
         NNADAPTER_VLOG(5) << "Only support x is tensor and y is persistable";
         continue;
       }
-      auto output_operand = output_operands[0];
-      auto mat_mul_consumers = GetOperandConsumers(model, output_operand);
+      auto transpose_x_operand = input_operands[2];
+      auto transpose_y_operand = input_operands[3];
+      auto mat_mul_out_operand = output_operands[0];
+      auto mat_mul_consumers = GetOperandConsumers(model, mat_mul_out_operand);
       if (mat_mul_consumers.size() != 1 ||
           mat_mul_consumers[0]->type != NNADAPTER_ADD) {
         continue;
       }
       auto eltwise_add_operation = mat_mul_consumers[0];
-      auto& eltwise_add_input_operands = operation->input_operands;
-      auto& eltwise_add_output_operands = operation->output_operands;
+      auto& eltwise_add_input_operands = eltwise_add_operation->input_operands;
+      auto& eltwise_add_output_operands =
+          eltwise_add_operation->output_operands;
       auto bias_operand = eltwise_add_input_operands[1];
       auto fuse_code_operand = eltwise_add_input_operands[2];
       auto output_operand = eltwise_add_output_operands[0];
       // Add FC operation
+      TransposeOperand(y_operand, std::vector<int32_t>({1, 0}));
       auto dummy_add_operation = AddOperation(model);
       dummy_add_operation->type = NNADAPTER_FULLY_CONNECTED;
       dummy_add_operation->input_operands = {
