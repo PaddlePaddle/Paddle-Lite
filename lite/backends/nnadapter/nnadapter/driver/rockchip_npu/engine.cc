@@ -19,6 +19,7 @@
 #include "driver/rockchip_npu/converter/converter.h"
 #include "driver/rockchip_npu/optimizer/fix_ops.h"
 #include "driver/rockchip_npu/optimizer/unpack_op_fusion.h"
+#include "optimizer/matmul_elementwise_add_fuse_pass.h"
 #include "optimizer/symm2asymm.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -60,6 +61,7 @@ int Program::BuildFromModel(hal::Model* model) {
   UnpackOpFusion(model);
   FixOps(model);
   ConvertQuantizationSymmToAsymm(model);
+  MatmulElementwiseAddFusePass(model);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
   // Convert a NNAdapter model to a rknpu graph
   graph_ = std::make_shared<rk::nn::Graph>();

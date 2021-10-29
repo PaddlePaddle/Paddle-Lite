@@ -33,6 +33,27 @@ NNADAPTER_EXPORT hal::Operation* AddOperation(hal::Model* model) {
   return &model->operations.back();
 }
 
+NNADAPTER_EXPORT void RemoveOperand(hal::Model* model, hal::Operand* operand) {
+  for (auto it = model->operands.begin(); it != model->operands.end();) {
+    if (&(*it) == operand) {
+      it = model->operands.erase(it);
+    } else {
+      ++it;
+    }
+  }
+}
+
+NNADAPTER_EXPORT void RemoveOperation(hal::Model* model,
+                                      hal::Operation* operation) {
+  for (auto it = model->operations.begin(); it != model->operations.end();) {
+    if (&(*it) == operation) {
+      it = model->operations.erase(it);
+    } else {
+      ++it;
+    }
+  }
+}
+
 static hal::Operand* AddOperand(hal::Model* model,
                                 const std::vector<int32_t>& dimensions,
                                 NNAdapterOperandPrecisionCode precision,

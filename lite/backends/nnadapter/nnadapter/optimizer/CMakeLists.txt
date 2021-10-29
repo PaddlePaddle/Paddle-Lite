@@ -14,5 +14,6 @@
 
 add_library(nnadapter_optimizer_symm2asymm STATIC symm2asymm.cc)
 add_library(nnadapter_optimizer_nchw2nhwc STATIC nchw2nhwc.cc)
+add_library(nnadapter_optimizer_matmul_elementwise_add_fuse_pass STATIC matmul_elementwise_add_fuse_pass.cc)
 
-set(NNADAPTER_OPTIMIZERS nnadapter_optimizer_symm2asymm nnadapter_optimizer_nchw2nhwc CACHE INTERNAL "")
+set(NNADAPTER_OPTIMIZERS nnadapter_optimizer_symm2asymm nnadapter_optimizer_nchw2nhwc nnadapter_optimizer_matmul_elementwise_add_fuse_pass CACHE INTERNAL "")
