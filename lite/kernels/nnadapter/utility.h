@@ -276,12 +276,6 @@ void ConvertVectorToNNDimensions(const std::vector<int64_t>& input_dimensions,
 DDim ConvertNNDimensionsToDDim(int32_t* input_dimensions,
                                uint32_t input_dimension_count);
 
-// template <typename T>
-// void Transpose(const T* input,
-//                T* output,
-//                const std::vector<int>& perm,
-//                const DDim& input_dimensions,
-//                DDim* output_dimensions_ptr = nullptr);
 }  // namespace nnadapter
 }  // namespace kernels
 }  // namespace lite

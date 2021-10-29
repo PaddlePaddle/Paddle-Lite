@@ -682,53 +682,6 @@ DDim ConvertNNDimensionsToDDim(int32_t* input_dimensions,
   return DDim(output_dimensions);
 }
 
-// A naive implementation of transpose operation
-template <typename T>
-void Transpose(const T* input,
-               T* output,
-               const std::vector<int>& perm,
-               const DDim& input_dimensions,
-               DDim* output_dimensions_ptr = nullptr) {
-  auto dimension_count = input_dimensions.size();
-  CHECK_GE(dimension_count, 2);
-  auto perm_count = perm.size();
-  CHECK_EQ(dimension_count, perm_count);
-  DDim output_dimensions(input_dimensions);
-  for (size_t i = 0; i < perm_count; i++) {
-    output_dimensions[i] = input_dimensions[perm[i]];
-  }
-  if (output_dimensions_ptr) {
-    *output_dimensions_ptr = output_dimensions;
-  }
-  std::vector<int64_t> input_strides(dimension_count, 1);
-  std::vector<int64_t> output_strides(dimension_count, 1);
-  for (int i = dimension_count - 2; i >= 0; i--) {
-    input_strides[i] = input_strides[i + 1] * input_dimensions[i + 1];
-    output_strides[i] = output_strides[i + 1] * output_dimensions[i + 1];
-  }
-  auto element_count = input_strides[0] * input_dimensions[0];
-  for (size_t i = 0; i < element_count; i++) {
-    // Calculate the indexes for input
-    int64_t input_offset = i;
-    std::vector<int64_t> input_index(dimension_count, 0);
-    for (size_t j = 0; j < dimension_count; j++) {
-      input_index[j] = input_offset / input_strides[j];
-      input_offset %= input_strides[j];
-    }
-    // Calculate the transposed indexes for output
-    std::vector<int64_t> output_index(dimension_count, 0);
-    for (size_t j = 0; j < perm_count; j++) {
-      output_index[j] = input_index[perm[j]];
-    }
-    // Calculate the element offset for output
-    int64_t output_offset = 0;
-    for (size_t j = 0; j < dimension_count; j++) {
-      output_offset += output_strides[j] * output_index[j];
-    }
-    output[output_offset] = input[i];
-  }
-}
-
 }  // namespace nnadapter
 }  // namespace kernels
 }  // namespace lite
