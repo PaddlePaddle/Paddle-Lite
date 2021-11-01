@@ -198,7 +198,7 @@ Paddle Lite 已支持百度 XPU 在 X86 和 ARM 服务器（例如飞腾 FT-2000
   $ lite\\tools\\build_windows.bat with_extra without_python use_vs2017 with_dynamic_crt  with_baidu_xpu with_baidu_xpu_xtcl baidu_xpu_sdk_root D:\\xpu_toolchain_windows\\output
   ```
 
-  编译脚本 `build_windows.bat` 使用可参考[源码编译( Windows )](../source_compile/windows_compile_windows.rst)进行环境配置和查找相应编译参数
+  编译脚本 `build_windows.bat` 使用可参考[源码编译( Windows )](../source_compile/compile_windows.rst)进行环境配置和查找相应编译参数
 
 ## 其它说明
 
