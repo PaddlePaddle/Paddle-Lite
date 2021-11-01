@@ -58,8 +58,7 @@ void NNAdapterInsertCalibPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   if (std::find(device_names.begin(),
                 device_names.end(),
                 "huawei_ascend_npu") == device_names.end()) {
-    // Only huawei_ascend_npu to test pass
-    VLOG(3) << "not insert calib nodes.";
+    // fully quantized model should not insert calib.
     return;
   }
 #endif
@@ -69,6 +68,7 @@ void NNAdapterInsertCalibPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   InsertDequantCalib(graph);
 }
 
+// Quant ops' out precision should be int8
 void NNAdapterInsertCalibPass::UpdateQuantOpOut(
     const std::unique_ptr<SSAGraph>& graph) {
   auto nodes = graph->StmtTopologicalOrder();
@@ -90,8 +90,7 @@ void NNAdapterInsertCalibPass::InsertQuantCalib(
   auto nodes = graph->StmtTopologicalOrder();
   // Record arg nodes to reuse if other inst nodes need the same arg node
   std::map<std::string, Node*> transed_arg_nodes;
-  // Skip if pre op is feed, calib, ...
-  // std::vector<std::string> skip_pre_ops{"feed", "calib"};
+  // Skip if pre op is calib, ...
   std::vector<std::string> skip_pre_ops{"calib"};
 
   for (auto node : nodes) {
@@ -164,7 +163,7 @@ void NNAdapterInsertCalibPass::InsertDequantCalib(
   auto nodes = graph->StmtTopologicalOrder();
   // Record arg nodes to reuse if other inst nodes need the same arg node
   std::map<std::string, Node*> transed_arg_nodes;
-  // Skip if op is fetch, calib, ...
+  // Skip if op is calib, ...
   std::vector<std::string> skip_ops{"fetch", "calib"};
 
   for (auto node : nodes) {

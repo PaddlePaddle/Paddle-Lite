@@ -22,38 +22,14 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-static hal::Operation* PreOperation(hal::Model* model, hal::Operand* operand) {
-  auto& operations = model->operations;
-  for (auto& operation : operations) {
-    if (std::find(operation.output_operands.begin(),
-                  operation.output_operands.end(),
-                  operand) != operation.output_operands.end()) {
-      return &operation;
-    }
-  }
-  return nullptr;
-}
-
 static bool NeedPreQuant(hal::Model* model, hal::Operand* operand) {
-  auto pre_operation = PreOperation(model, operand);
+  auto pre_operation = GetOperandProducer(model, operand);
   return !IsModelInputOperand(operand) && pre_operation != nullptr &&
          pre_operation->type != NNADAPTER_QUANTIZE;
 }
 
-static hal::Operation* NextOperation(hal::Model* model, hal::Operand* operand) {
-  auto& operations = model->operations;
-  for (auto& operation : operations) {
-    if (std::find(operation.input_operands.begin(),
-                  operation.input_operands.end(),
-                  operand) != operation.input_operands.end()) {
-      return &operation;
-    }
-  }
-  return nullptr;
-}
-
 static bool NeedNextDequant(hal::Model* model, hal::Operand* operand) {
-  auto next_operation = NextOperation(model, operand);
+  auto next_operation = GetOperandConsumers(model, operand)[0];
   return !IsModelOutputOperand(operand) && next_operation != nullptr &&
          next_operation->type != NNADAPTER_DEQUANTIZE;
 }
@@ -137,11 +113,11 @@ static void FixQuantConv(hal::Model* model) {
     }
 
     // Unpack activations after dequant
-    auto next_operation = NextOperation(model, output_operand);
+    auto next_operation = GetOperandConsumers(model, output_operand)[0];
     if (next_operation->type == NNADAPTER_DEQUANTIZE) {
       output_operand = next_operation->output_operands[0];
     }
-    NNADAPTER_CHECK_EQ(PreOperation(model, output_operand)->type,
+    NNADAPTER_CHECK_EQ(GetOperandProducer(model, output_operand)->type,
                        NNADAPTER_DEQUANTIZE);
     auto fuse_code = reinterpret_cast<int32_t*>(input_operands[8]->buffer);
     switch (*fuse_code) {

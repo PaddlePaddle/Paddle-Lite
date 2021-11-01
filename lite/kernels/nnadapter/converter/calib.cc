@@ -58,7 +58,8 @@ int ConvertCalib(Converter* converter, OpInfo* op, Scope* scope) {
       break;
     }
     default:
-      LOG(FATAL) << "Unsupported input precision: " << input_type->precision;
+      LOG(FATAL) << "Unsupported input precision: "
+                 << static_cast<int32_t>(input_type->precision);
       break;
   }
   return NO_ERROR;

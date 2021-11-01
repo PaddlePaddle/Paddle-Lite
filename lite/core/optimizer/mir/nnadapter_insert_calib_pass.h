@@ -38,14 +38,12 @@ namespace mir {
  *   op1 -> var1 -> op2(int8)
  * after:
  *   op1 -> var1 -> calib -> var2(int8) -> op2(int8)
- * PS: If op1 is feed, pass should not work.
  *
  * case 3:
  * before:
  *   op1(int8) -> var1(int8) -> op2
  * after:
  *   op1(int8) -> var1(int8) -> calib -> var2 -> op2
- * PS: If op2 is fetch, pass should not work.
  */
 class NNAdapterInsertCalibPass : public ProgramPass {
  public:
