@@ -82,7 +82,7 @@ struct ElementwiseAddParam {
     int32_t ByNum;         // only one number
     int32_t ByHW;          // only HW
     int32_t ByW;           // only W
-    int32_t OpNum;
+    int32_t arithmetic_type;
 };
 
 struct ElementwiseParam {

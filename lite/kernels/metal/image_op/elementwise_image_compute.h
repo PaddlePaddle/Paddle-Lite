@@ -73,11 +73,10 @@ class ElementwiseImageCompute
 
     std::shared_ptr<MetalBuffer> params_buffer_;
     DDim last_input_dims_{};
-    std::string op_;
     id<MTLComputePipelineState> pipline_;
     std::string function_name_;
     MetalContext* metal_context_;
-    int op_num;
+    int arithmetic_type;
     bool fuse_flag_{false};
     const param_t* elementwise_param_{nullptr};
 };

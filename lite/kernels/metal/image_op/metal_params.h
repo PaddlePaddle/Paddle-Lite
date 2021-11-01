@@ -29,7 +29,7 @@ struct ElementwiseAddMetalParam {
     int ByNum;
     int ByHW;
     int ByW;
-    int OpNum;
+    int arithmetic_type;
 };
 
 struct ActivationMetalParam {

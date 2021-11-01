@@ -18,7 +18,7 @@
 
 using namespace metal;
 
-kernel void elementwise_(texture2d_array<ftype, access::read> inputX[[texture(0)]],
+kernel void elementwise(texture2d_array<ftype, access::read> inputX[[texture(0)]],
     texture2d_array<ftype, access::read> inputY[[texture(1)]],
     texture2d_array<ftype, access::write> outTexture[[texture(2)]],
     constant ElementwiseAddParam& pm[[buffer(0)]],
@@ -86,13 +86,13 @@ kernel void elementwise_(texture2d_array<ftype, access::read> inputX[[texture(0)
         }
     }
     ftype4 r;
-    if (pm.OpNum == 0)
+    if (pm.arithmetic_type == 0)
         r = rx + ry;
-    else if (pm.OpNum == 1)
+    else if (pm.arithmetic_type == 1)
         r = rx - ry;
-    else if (pm.OpNum == 2)
+    else if (pm.arithmetic_type == 2)
         r = rx * ry;
-    else if (pm.OpNum == 3)
+    else if (pm.arithmetic_type == 3)
         r = rx / ry;
     outTexture.write(r, gid.xy, gid.z);
 }

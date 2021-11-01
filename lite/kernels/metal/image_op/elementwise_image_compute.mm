@@ -37,11 +37,11 @@ bool InputsValid(const MetalImage* input_x_, const MetalImage* input_y_) {
     if (x_dims == y_dims) return true;
 
     if (x_dims[0] == y_dims[0] && x_dims[3] == y_dims[3]) {
-        //[1 32 1 3]
+        // Input [N H 1 C]
         if (x_dims[1] == y_dims[1] && (x_dims[2] == 1 || y_dims[2] == 1)) return true;
-        //[1 1 32 3]
+        // Input [N 1 W C]
         if (x_dims[2] == y_dims[2] && (x_dims[1] == 1 || y_dims[1] == 1)) return true;
-        //[1 1 1 3]
+        // Input [N 1 1 C]
         if ((x_dims[1] == 1 && x_dims[2] == 1) || (y_dims[1] == 1 && y_dims[2] == 1)) return true;
     }
     return false;
@@ -89,8 +89,7 @@ void ElementwiseImageCompute::init_memory() {
 void ElementwiseImageCompute::init_for_run() {
     // use MPS or not
     bool should_use_mps = false;
-    auto op_type = KernelBase::op_type();
-    op_ = op_type;
+    auto ele_type_ = KernelBase::op_type();
 
     if (@available(iOS 11.3, *)) {
         if (metal_context_->use_mps()) {
@@ -123,18 +122,18 @@ void ElementwiseImageCompute::init_for_run() {
 
     use_mps_ = should_use_mps;
     if (use_mps_) {
-        if (op_ == ("elementwise_add")) {
+        if (ele_type_ == ("elementwise_add")) {
             setup_with_mps<MPSCNNAdd>();
-            op_num = 0;
-        } else if (op_ == ("elementwise_div")) {
+            arithmetic_type = 0;
+        } else if (ele_type_ == ("elementwise_div")) {
             setup_with_mps<MPSCNNDivide>();
-            op_num = 3;
-        } else if (op_ == ("elementwise_mul")) {
+            arithmetic_type = 3;
+        } else if (ele_type_ == ("elementwise_mul")) {
             setup_with_mps<MPSCNNMultiply>();
-            op_num = 2;
-        } else if (op_ == ("elementwise_sub")) {
+            arithmetic_type = 2;
+        } else if (ele_type_ == ("elementwise_sub")) {
             setup_with_mps<MPSCNNSubtract>();
-            op_num = 1;
+            arithmetic_type = 1;
         }
     } else {
         setup_without_mps();
@@ -143,14 +142,15 @@ void ElementwiseImageCompute::init_for_run() {
 
 void ElementwiseImageCompute::Run() {
     @autoreleasepool {
+        auto ele_type_ = KernelBase::op_type();
         if (use_mps_) {
-            if (op_ == ("elementwise_add"))
+            if (ele_type_ == ("elementwise_add"))
                 run_with_mps<MPSCNNAdd>();
-            else if (op_ == ("elementwise_div"))
+            else if (ele_type_ == ("elementwise_div"))
                 run_with_mps<MPSCNNDivide>();
-            else if (op_ == ("elementwise_mul"))
+            else if (ele_type_ == ("elementwise_mul"))
                 run_with_mps<MPSCNNMultiply>();
-            else if (op_ == ("elementwise_sub"))
+            else if (ele_type_ == ("elementwise_sub"))
                 run_with_mps<MPSCNNSubtract>();
         } else {
             run_without_mps();
@@ -178,6 +178,7 @@ void ElementwiseImageCompute::setup_without_mps() {
     auto x_dims = input_buffer_x_->tensor_dim_;
     auto y_dims = input_buffer_y_->tensor_dim_;
     auto axis = elementwise_param_->axis;
+    auto ele_type_ = KernelBase::op_type();
 
     std::vector<int> xdim, ydim;
     for (int i = 0; i < 4; i++) {
@@ -209,7 +210,7 @@ void ElementwiseImageCompute::setup_without_mps() {
     } else if (ydim[0] == 1 && ydim[1] == 1 && ydim[2] == 1 && ydim[3] == xdim[2]) {
         by_W = 1;
     } else {
-        LOG(FATAL) << op_ << ": not supports x_dims:[" << x_dims[0] << " " << x_dims[1] << " "
+        LOG(FATAL) << ele_type_ << ": not supports x_dims:[" << x_dims[0] << " " << x_dims[1] << " "
                    << x_dims[2] << " " << x_dims[3] << "]"
                    << " y_dims:[" << y_dims[0] << " " << y_dims[1] << " " << y_dims[2] << " "
                    << y_dims[3] << "]"
@@ -233,12 +234,12 @@ void ElementwiseImageCompute::setup_without_mps() {
         by_num,
         by_HW,
         by_W,
-        op_num};
+        arithmetic_type};
 
     params_buffer_ =
         std::make_shared<MetalBuffer>(metal_context_, sizeof(element_params), &element_params);
 
-    function_name_ = fuse_flag_ ? "elementwise_relu" : "elementwise_";
+    function_name_ = fuse_flag_ ? "elementwise_relu" : "elementwise";
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     pipline_ = [backend pipline:function_name_];
