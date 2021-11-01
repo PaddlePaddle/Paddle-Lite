@@ -58,8 +58,10 @@ class Conv2DTransposeCompute : public KernelLite<TARGET(kARM), Ptype> {
   int workspace_size_{0};
   bool depthwise_{false};
   bool flag_trans_bias_{false};
+  bool flag_trans_weight_{false};
   std::vector<float> w_scale_;
   Tensor bias_;
+  Tensor weights_;
 };
 
 }  // namespace arm

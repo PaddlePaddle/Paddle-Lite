@@ -356,7 +356,7 @@ TEST(TestConv3x3s1, test_conv_3x3s1) {
                         if (cin == 1 && cout == 1) {
                           continue;
                         }
-                        const float leakey_relu_scale = 8.88;
+                        const float leakey_relu_scale = 0.88;
                         test_conv_fp32(
                             dim_in,
                             weights_dim,
