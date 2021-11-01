@@ -15,7 +15,7 @@
 #include "driver/huawei_kirin_npu/engine.h"
 #include <utility>
 #include "driver/huawei_kirin_npu/optimizer/fix_multiple_outputs_ops.h"
-#include "optimizer/matmul_elementwise_add_fuse_pass.h"
+#include "optimizer/matmul_elementwise_add_fusion.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -60,7 +60,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     // Build from model
     NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
     FixMultipleOutputsOps(model);
-    MatMulElementwiseAddFusePass(model);
+    MatMulElementwiseAddFusion(model);
     NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
     // Convert a NNAdapter model to a GE graph
     Converter converter(&operators_);

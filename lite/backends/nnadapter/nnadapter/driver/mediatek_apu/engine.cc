@@ -18,7 +18,7 @@
 #include "driver/mediatek_apu/converter/converter.h"
 #include "driver/mediatek_apu/optimizer/resolve_op_liminations.h"
 #include "driver/mediatek_apu/optimizer/restrict_same_input_output_quant_params.h"
-#include "optimizer/matmul_elementwise_add_fuse_pass.h"
+#include "optimizer/matmul_elementwise_add_fusion.h"
 #include "optimizer/nchw2nhwc.h"
 #include "optimizer/symm2asymm.h"
 #include "utility/debug.h"
@@ -72,7 +72,7 @@ int Program::BuildFromModel(hal::Model* model) {
   // Convert the data layout and quantization parameters of the operands in the
   // NNAdapter model
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
-  MatMulElementwiseAddFusePass(model);
+  MatMulElementwiseAddFusion(model);
   ConvertQuantizationSymmToAsymm(model);
   RestrictSameInputOutputQuantParams(model);
   ConvertDataLayoutNCHWToNHWC(model);

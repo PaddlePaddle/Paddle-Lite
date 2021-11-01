@@ -306,14 +306,10 @@ imgdnn_tensor ImgdnnManager::CreateMatMulLayer(imgdnn_tensor x_tensor,
   IMGDNN_CHECK_SUCCESS(imgdnnGetTensorDescriptor(x_tensor, &x_desc));
   imgdnn_tensor_descriptor y_desc;
   IMGDNN_CHECK_SUCCESS(imgdnnGetTensorDescriptor(y_tensor, &y_desc));
-  if (x_desc.dimensions > 2) {
-    NNADAPTER_LOG(FATAL)
-        << "Imgination NNA does not support the dimension of x > 2";
-  }
-  if (y_desc.dimensions > 2) {
-    NNADAPTER_LOG(FATAL)
-        << "Imgination NNA does not support the dimension of y > 2";
-  }
+  NNADAPTER_CHECK_GT(x_desc.dimensions, 2)
+      << "Imgination NNA does not support the dimension of x > 2";
+  NNADAPTER_CHECK_GT(y_desc.dimensions, 2)
+      << "Imgination NNA does not support the dimension of y > 2";
   x_tensor = imgdnnNetworkReshapeOp(network_, x_tensor, &x_desc, &error_code);
   IMGDNN_CHECK_SUCCESS(error_code) << "Failed to call imgdnnNetworkReshapeOp!";
   auto output_tensor = imgdnnNetworkBinaryOp(

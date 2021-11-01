@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "optimizer/matmul_elementwise_add_fuse_pass.h"
+#include "optimizer/matmul_elementwise_add_fusion.h"
 #include <algorithm>
 #include <vector>
 #include "utility/debug.h"
@@ -23,7 +23,7 @@
 
 namespace nnadapter {
 
-NNADAPTER_EXPORT void MatMulElementwiseAddFusePass(hal::Model* model) {
+NNADAPTER_EXPORT void MatMulElementwiseAddFusion(hal::Model* model) {
   std::vector<hal::Operation*> operations =
       SortOperationsInTopologicalOrder(model);
   for (auto operation : operations) {
@@ -57,11 +57,11 @@ NNADAPTER_EXPORT void MatMulElementwiseAddFusePass(hal::Model* model) {
       auto output_operand = eltwise_add_output_operands[0];
       // Add FC operation
       TransposeOperand(y_operand, std::vector<int32_t>({1, 0}));
-      auto dummy_add_operation = AddOperation(model);
-      dummy_add_operation->type = NNADAPTER_FULLY_CONNECTED;
-      dummy_add_operation->input_operands = {
+      auto fc_operation = AddOperation(model);
+      fc_operation->type = NNADAPTER_FULLY_CONNECTED;
+      fc_operation->input_operands = {
           x_operand, y_operand, bias_operand, fuse_code_operand};
-      dummy_add_operation->output_operands = {output_operand};
+      fc_operation->output_operands = {output_operand};
       // Clean
       RemoveOperand(model, transpose_x_operand);
       RemoveOperand(model, transpose_y_operand);
