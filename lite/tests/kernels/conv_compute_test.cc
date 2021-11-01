@@ -469,6 +469,21 @@ void TestConvDepthwise(Place place, float abs_error = 2e-5) {
       }
     }
   }
+  for (auto pad : {0, 1, 2}) {
+    for (auto stride : {1, 2}) {
+      std::unique_ptr<arena::TestCase> tester(
+          new ConvComputeTester(place,
+                                "def",
+                                DDim({1, 16, 16, 25}),
+                                16,
+                                3,
+                                {stride, stride},
+                                {pad, pad},
+                                16));
+      arena::Arena arena(std::move(tester), place, abs_error);
+      arena.TestPrecision();
+    }
+  }
   std::unique_ptr<arena::TestCase> tester(new ConvComputeTester(
       place, "def", DDim({1, 40, 16, 50}), 40, 3, {2, 1}, {1, 1}, 40));
   arena::Arena arena(std::move(tester), place, abs_error);
