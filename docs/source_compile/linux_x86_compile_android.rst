@@ -182,9 +182,9 @@ Paddle Lite 仓库中\ ``/lite/tools/build_android.sh``\ 脚本文件用于构�
    # 1. 检查环境变量 `NDK_ROOT` 指向正确的 Android NDK 安装路径
    echo $NDK_ROOT
 
-   # 2. 下载 Paddle Lite 源码并切换到发布分支，如 release/v2.9
+   # 2. 下载 Paddle Lite 源码并切换到发布分支，如 release/v2.10
    git clone https://github.com/PaddlePaddle/Paddle-Lite.git
-   cd Paddle-Lite && git checkout release/v2.9
+   cd Paddle-Lite && git checkout release/v2.10
 
    # (可选) 删除 third-party 目录，编译脚本会自动从国内 CDN 下载第三方库文件
    # rm -rf third-party
