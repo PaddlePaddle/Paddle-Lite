@@ -19,8 +19,7 @@
 #include <utility>
 #include <vector>
 #include "driver/cambricon_mlu/converter.h"
-#include "optimizer/nchw2nhwc.h"
-#include "optimizer/symm2asymm.h"
+#include "driver/cambricon_mlu/optimizer/nchw2nhwc.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -76,7 +75,7 @@ int Program::BuildFromCache(hal::Cache* cache) {
 int Program::BuildFromModel(hal::Model* model) {
   Clear();
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
-  ConvertDataLayoutNCHWToNHWC(model);
+  ConvertMLUDataLayoutNCHWToNHWC(model);
   Converter converter(&tensors_, mm_network_.get());
   NNADAPTER_CHECK_EQ(converter.Apply(model), NNADAPTER_NO_ERROR);
 
