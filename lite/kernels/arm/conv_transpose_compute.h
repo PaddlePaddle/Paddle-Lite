@@ -33,7 +33,7 @@ class Conv2DTransposeCompute : public KernelLite<TARGET(kARM), Ptype> {
   void Run() override;
 
   virtual void ReInitWhenNeeded() {
-    auto& param = this->Param<param_t>();
+    auto& param = this->template Param<param_t>();
     auto x_dims = param.x->dims();
     if (last_shape_ == x_dims) {
       return;

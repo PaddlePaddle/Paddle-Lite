@@ -269,6 +269,7 @@ class DirectConv : public KernelLite<TARGET(kARM), Ptype> {
 
   virtual void ReInitWhenNeeded() {
     auto& param = this->template Param<param_t>();
+    auto& ctx = this->ctx_->template As<ARMContext>();
     auto dim_in = param.x->dims();
     if (last_shape_ == dim_in) {
       return;
@@ -277,8 +278,8 @@ class DirectConv : public KernelLite<TARGET(kARM), Ptype> {
     auto w_dims = param.filter->dims();
     auto dim_out = param.output->dims();
     auto paddings = *param.paddings;
-    const int threads = ctx->threads();
-    int llc_size = ctx->llc_size() / sizeof(float);
+    const int threads = ctx.threads();
+    int llc_size = ctx.llc_size() / sizeof(float);
     const int pad_w = paddings[2];
     const int pad_h = paddings[0];
     const int kernel_w = w_dims[3];
@@ -290,11 +291,11 @@ class DirectConv : public KernelLite<TARGET(kARM), Ptype> {
       ic = 4;
     }
     auto&& res = direct_conv_ptype<Ptype, OutType>();
-    const int wout_round = ROUNDUP(ow, OUT_W_BLOCK);
-    const int win_round = (wout_round - 1) * stride_w + kernel_w;
     const int OUT_C_BLOCK = res.first;
     const int OUT_W_BLOCK = res.second;
     const int OUT_H_BLOCK = 2;
+    const int wout_round = ROUNDUP(ow, OUT_W_BLOCK);
+    const int win_round = (wout_round - 1) * stride_w + kernel_w;
     /* get h block */
     /* win_round * ic * hin_r_block + wout_round * OUT_C_BLOCK * hout_r_block */
     /* * threads = llc_size */
