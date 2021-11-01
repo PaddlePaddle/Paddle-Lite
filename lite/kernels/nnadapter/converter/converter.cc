@@ -351,10 +351,10 @@ NNAdapterOperand* Converter::AddShapeOperation(
     const std::string& output_name,
     NNAdapterOperandPrecisionCode output_precision) {
   // Dtype operand
-  CHECK(output_precision == NNADAPTER_TENSOR_INT32 ||
-        output_precision == NNADAPTER_TENSOR_INT64)
-      << "Shape's output's precision only support NNADAPTER_TENSOR_INT32 or "
-         "NNADAPTER_TENSOR_INT64, but received "
+  CHECK(output_precision == NNADAPTER_INT32 ||
+        output_precision == NNADAPTER_INT64)
+      << "Shape's output's precision only support NNADAPTER_INT32 or "
+         "NNADAPTER_INT64, but received "
       << static_cast<int32_t>(output_precision);
   auto dtype_operand =
       AddConstantOperand(static_cast<int32_t>(output_precision));

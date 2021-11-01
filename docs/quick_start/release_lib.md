@@ -4,10 +4,10 @@
 ## 编译版本介绍
 
 - arch=`armv7/armv7hf/armv8/x86`        目标设备的 CPU 架构，可选择包括 `armv7`、`armv7hf`、`armv8` 和 `x86` 等
-- os=`Android/iOS/Linux/macOS/Windows`  目标设备的操作系统，可选择包括 `Android`、`iOS`、`linux`、`macOS` 和 `Windows` 等
+- os=`Android/IOS/Linux/MacOS/Windows`  目标设备的操作系统，可选择包括 `Android`、`IOS`、`linux`、`MacOS` 和 `Windows` 等
 - toolchain=`gcc/clang`                 源码编译时的编译器，可选择包括 `gcc` 和 `clang` 等
 - android_stl=`c++_static/c++_shared`   预测库采用的 Android STL 库的种类，可选择包括 `c++_static` (静态链接)和 `c++_shared` (动态链接)
-- with_extra=`ON/OFF`                   是否编译全量 OP，OFF 时只编译 CV 相关基础 OP，[参数详情](../source_compile/library)
+- with_extra=`ON/OFF`                   是否编译全量 OP，OFF 时只编译 CV 相关基础 OP，[参数详情](../source_compile/compile_options)
 - with_cv=`ON/OFF`                      是否编译 CV 相关 API
 - with_log=`ON/OFF`                     预编译库是否带有日志打印
 - python_version=`2.7/3.5/3.6/3.7`      python 版本，可选择包括 `2.7`、`3.5`、`3.6` 和 `3.7` 等
@@ -51,7 +51,7 @@
 |armv8 |gcc   |c++_static |ON  |ON  |[v2.10-rc](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10-rc/inference_lite_lib.android.armv8.gcc.c++_static.with_extra.with_cv.tar.gz)     |
 
 
-## iOS
+## IOS
 
 |Arch |with_cv |with_extra |with_log |下载链接 |
 |:-----:|:-----:|:-----:|:-----:|:-----:|
@@ -95,7 +95,7 @@
 |ON  |[v2.10-rc](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10-rc/inference_lite_lib.x86.linux.with_log.tar.gz)    |Ubuntu (Linux) |
 
 
-## macOS
+## MacOS
 
 |Arch |with_log |下载链接 |
 |:-----:|:-----:|:-----:|
@@ -103,7 +103,7 @@
 |x86 |ON  |[v2.10-rc](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10-rc/inference_lite_lib.x86.macOS.with_log.tar.gz) |
 
 
-## windows
+## Windows
 
 |Arch |python_version |下载链接 |
 |:-----:|:-----:|:-----:|
@@ -111,6 +111,7 @@
 |x86 |3.5 |[v2.10-rc](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10-rc/inference_lite_lib.win.x86.MSVC.C++_static.py35.full_publish.zip) |
 |x86 |3.6 |[v2.10-rc](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10-rc/inference_lite_lib.win.x86.MSVC.C++_static.py36.full_publish.zip) |
 |x86 |3.7 |[v2.10-rc](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10-rc/inference_lite_lib.win.x86.MSVC.C++_static.py37.full_publish.zip) |
+|x86 |3.9 |[v2.10-rc](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10-rc/inference_lite_lib.win.x86.MSVC.C++_static.py39.full_publish.zip) |
 
 
 ## Opencl
@@ -125,46 +126,56 @@
 
 |Arch |下载链接 |适用的操作系统 |
 |:-----:|:-----:|:-----:|
-|x86   |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.centos.x86.baidu_xpu.tar.gz) |CentOS 6.3 |
-|x86   |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.ubuntu.x86.baidu_xpu.tar.gz) |Ubuntu     |
-|armv8 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.ky10.armv8.baidu_xpu.tar.gz) |银河麒麟v10 |
+|x86   |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/v2.10-rc/inference_lite_lib.centos.x86.baidu_xpu.tar.gz) |CentOS 6.3 |
+|x86   |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/v2.10-rc/inference_lite_lib.ubuntu.x86.baidu_xpu.tar.gz) |Ubuntu     |
+|armv8 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/v2.10-rc/inference_lite_lib.ky10.armv8.baidu_xpu.tar.gz) |银河麒麟v10 |
 
 
 ## 华为昇腾 NPU
 
 |Arch |下载链接 |适用的操作系统 |
 |:-----:|:-----:|:-----:|
-|x86   |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.ubuntu.x86.huawei_ascend_npu.tar.gz) |Ubuntu    |
-|armv8 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.ky10.armv8.huawei_ascend_npu.tar.gz) |银河麒麟v10 |
+|x86   |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/v2.10-rc/inference_lite_lib.ubuntu.x86.huawei_ascend_npu.tar.gz) |Ubuntu    |
+|armv8 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/v2.10-rc/inference_lite_lib.ky10.armv8.huawei_ascend_npu.tar.gz) |银河麒麟v10 |
 
 
 ## 华为麒麟 NPU
 
 |Arch |下载链接 |
 |:-----:|:-----:|
-|armv7 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.android.armv7.huawei_kirin_npu.with_cv.with_extra.with_log.tiny_publish.tar.gz) |
-|armv8 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.android.armv8.huawei_kirin_npu.with_cv.with_extra.with_log.tiny_publish.tar.gz) |
+|armv7 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/v2.10-rc/inference_lite_lib.android.armv7.huawei_kirin_npu.with_cv.with_extra.with_log.tiny_publish.tar.gz) |
+|armv8 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/v2.10-rc/inference_lite_lib.android.armv8.huawei_kirin_npu.with_cv.with_extra.with_log.tiny_publish.tar.gz) |
 
 
 ## 瑞芯微 NPU
 
 |Arch |下载链接 |
 |:-----:|:-----:|
-|armv7hf |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.armlinux.armv7hf.rockchip_npu.with_extra.with_log.tiny_publish.tar.gz) |
-|armv8   |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.armlinux.armv8.rockchip_npu.with_extra.with_log.tiny_publish.tar.gz)   |
+|armv7hf |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/v2.10-rc/inference_lite_lib.armlinux.armv7hf.rockchip_npu.with_extra.with_log.tiny_publish.tar.gz) |
+|armv8   |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/v2.10-rc/inference_lite_lib.armlinux.armv8.rockchip_npu.with_extra.with_log.tiny_publish.tar.gz)   |
+
+
+## 晶晨 NPU
+
+|Arch |下载链接 |适用的操作系统 |
+|:-----:|:-----:|:-----:|
+|armv7 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/v2.10-rc/inference_lite_lib.android.armv7.amlogic_npu.with_extra.with_log.tiny_publish.tar.gz)  |Android |
+|armv8 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/v2.10-rc/inference_lite_lib.armlinux.armv8.amlogic_npu.with_extra.with_log.tiny_publish.tar.gz) |Linux   |
+
 
 ## 联发科 APU
 
 |Arch |下载链接 |
 |:-----:|:-----:|
-|armv7 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.android.armv7.mediatek_apu.with_extra.with_log.tiny_publish.tar.gz) |
-|armv8 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.android.armv8.mediatek_apu.with_extra.with_log.tiny_publish.tar.gz) |
+|armv7 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/v2.10-rc/inference_lite_lib.android.armv7.mediatek_apu.with_extra.with_log.tiny_publish.tar.gz) |
+|armv8 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/v2.10-rc/inference_lite_lib.android.armv8.mediatek_apu.with_extra.with_log.tiny_publish.tar.gz) |
+
 
 ## 颖脉 NNA
 
 |Arch |下载链接 |
 |:-----:|:-----:|
-|armv8 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/2.10-rc/inference_lite_lib.armlinux.armv8.imagination_nna.with_extra.with_log.tiny_publish.tar.gz) |
+|armv8 |[v2.10-rc](https://paddlelite-data.bj.bcebos.com/release/v2.10-rc/inference_lite_lib.armlinux.armv8.imagination_nna.with_extra.with_log.tiny_publish.tar.gz) |
 
 
 ## opt 工具
@@ -172,12 +183,12 @@
 |适用的操作系统 |下载链接 |
 |:-----:|:-----:|
 |Linux | [v2.10-rc](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10-rc/opt_linux) |
-|macOS | [v2.10-rc](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10-rc/opt_mac)   |
+|MacOS | [v2.10-rc](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10-rc/opt_mac)   |
 
 
 ## 安装 Paddle Lite python 库方法
 
-- 支持平台：windows10、Ubuntu、Mac
+- 支持平台：Windows10、Ubuntu、Mac
 - python version: 2.7、3.5、3.6、3.7
 ```
 # 当前最新版本是 2.10-rc

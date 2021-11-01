@@ -23,46 +23,46 @@ aml::nn::PrecisionType ConvertToAmlPrecisionType(
     NNAdapterOperandPrecisionCode input_precision) {
   aml::nn::PrecisionType output_precision = aml::nn::PrecisionType::UNKNOWN;
   switch (input_precision) {
-    case NNADAPTER_TENSOR_BOOL8:
+    case NNADAPTER_BOOL8:
       output_precision = aml::nn::PrecisionType::BOOL8;
       break;
-    case NNADAPTER_TENSOR_INT8:
-    case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER:
-    case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL:
+    case NNADAPTER_INT8:
+    case NNADAPTER_QUANT_INT8_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL:
       output_precision = aml::nn::PrecisionType::INT8;
       break;
-    case NNADAPTER_TENSOR_INT16:
+    case NNADAPTER_INT16:
       output_precision = aml::nn::PrecisionType::INT16;
       break;
-    case NNADAPTER_TENSOR_INT32:
-    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER:
-    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL:
+    case NNADAPTER_INT32:
+    case NNADAPTER_QUANT_INT32_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL:
       output_precision = aml::nn::PrecisionType::INT32;
       break;
-    case NNADAPTER_TENSOR_INT64:
+    case NNADAPTER_INT64:
       output_precision = aml::nn::PrecisionType::INT64;
       break;
-    case NNADAPTER_TENSOR_UINT8:
-    case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER:
+    case NNADAPTER_UINT8:
+    case NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER:
       output_precision = aml::nn::PrecisionType::UINT8;
       break;
-    case NNADAPTER_TENSOR_UINT16:
+    case NNADAPTER_UINT16:
       output_precision = aml::nn::PrecisionType::UINT16;
       break;
-    case NNADAPTER_TENSOR_QUANT_UINT32_ASYMM_PER_LAYER:
-    case NNADAPTER_TENSOR_UINT32:
+    case NNADAPTER_QUANT_UINT32_ASYMM_PER_LAYER:
+    case NNADAPTER_UINT32:
       output_precision = aml::nn::PrecisionType::UINT32;
       break;
-    case NNADAPTER_TENSOR_UINT64:
+    case NNADAPTER_UINT64:
       output_precision = aml::nn::PrecisionType::UINT64;
       break;
-    case NNADAPTER_TENSOR_FLOAT16:
+    case NNADAPTER_FLOAT16:
       output_precision = aml::nn::PrecisionType::FLOAT16;
       break;
-    case NNADAPTER_TENSOR_FLOAT32:
+    case NNADAPTER_FLOAT32:
       output_precision = aml::nn::PrecisionType::FLOAT32;
       break;
-    case NNADAPTER_TENSOR_FLOAT64:
+    case NNADAPTER_FLOAT64:
       output_precision = aml::nn::PrecisionType::FLOAT64;
       break;
     default:
@@ -167,11 +167,11 @@ std::shared_ptr<aml::nn::Tensor> CreateAmlTensor(
   const float* quant_scale = nullptr;
   const int32_t* zero_point = nullptr;
   switch (type->precision) {
-    case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER:
+    case NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER:
       quant_scale = &type->asymm_per_layer_params.scale;
       zero_point = &type->asymm_per_layer_params.zero_point;
       break;
-    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT32_SYMM_PER_LAYER:
       quant_scale = &type->symm_per_layer_params.scale;
       break;
     default:

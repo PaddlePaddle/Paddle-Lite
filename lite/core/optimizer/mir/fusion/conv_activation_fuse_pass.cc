@@ -30,6 +30,7 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   bool has_cuda = false;
   bool has_x86 = false;
   bool has_metal = false;
+  bool has_nnadapter = false;
   for (auto& place : graph->valid_places()) {
     if (place.precision == PRECISION(kInt8)) {
       has_int8 = true;
@@ -48,6 +49,9 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     }
     if (place.target == TARGET(kMetal)) {
       has_metal = true;
+    }
+    if (place.target == TARGET(kNNAdapter)) {
+      has_nnadapter = true;
     }
   }
 
@@ -73,6 +77,10 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   if (has_metal) {
     act_types.push_back("relu");
     act_types.push_back("relu6");
+  }
+
+  if (has_nnadapter) {
+    act_types = std::vector<std::string>{"relu", "relu1", "relu6"};
   }
 
   bool has_alpha = false;

@@ -1,12 +1,12 @@
-## 合并x2paddle和opt的一键脚本
+## 合并 x2paddle 和 opt 的一键脚本
 
-**背景**：如果想用Paddle-Lite运行第三方来源（tensorflow、caffe、onnx）模型，一般需要经过两次转化。即使用x2paddle工具将第三方模型转化为PaddlePaddle格式，再使用opt将PaddlePaddle模型转化为Padde-Lite可支持格式。
-为了简化这一过程，我们提供一键脚本，将x2paddle转化和opt转化合并：
+**背景**：如果想用 Paddle Lite 运行第三方来源（tensorflow、caffe、onnx）模型，一般需要经过两次转化。即使用 x2paddle 工具将第三方模型转化为 PaddlePaddle 格式，再使用 opt 将 PaddlePaddle 模型转化为 Padde Lite 可支持格式。
+为了简化这一过程，我们提供一键脚本，将 x2paddle 转化和 opt 转化合并：
 
 **一键转化脚本**：[auto_transform.sh](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.3/lite/tools/auto_transform.sh)
 
 
-**环境要求**：使用`auto_transform.sh`脚本转化第三方模型时，需要先安装x2paddle环境，请参考[x2paddle环境安装方法](https://github.com/PaddlePaddle/X2Paddle#环境依赖) 安装x2paddle和x2paddle依赖项(tensorflow、caffe等)。
+**环境要求**：使用`auto_transform.sh`脚本转化第三方模型时，需要先安装 x2paddle 环境，请参考[ x2paddle 环境安装方法](https://github.com/PaddlePaddle/X2Paddle#环境依赖) 安装 x2paddle 和 x2paddle 依赖项( tensorflow、caffe 等)。
 
 **使用方法**：
 

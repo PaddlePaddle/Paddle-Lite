@@ -37,9 +37,9 @@ int ConvertTopK(Converter* converter, hal::Operation* operation) {
   if (!k_operator) {
     k_operator = converter->ConvertOperand(k_operand);
   }
-  if (k_operand->type.precision == NNADAPTER_TENSOR_INT64) {
+  if (k_operand->type.precision == NNADAPTER_INT64) {
     auto cast_op = converter->AddOperator<ge::op::Cast>(output_operand);
-    cast_op->set_attr_dst_type(ConvertToGEPrecision(NNADAPTER_TENSOR_INT32));
+    cast_op->set_attr_dst_type(ConvertToGEPrecision(NNADAPTER_INT32));
     SET_INPUT(cast_op, x, k_operator);
     k_operator = MAP_OUTPUT(cast_op, y, output_operand);
   }
@@ -54,9 +54,9 @@ int ConvertTopK(Converter* converter, hal::Operation* operation) {
   bool need_indices_cast = false;
   // ge::op::TopKV2 only support indices_type = DT_INT32, so cast to int64 if
   // necessary
-  if (indices_operand->type.precision == NNADAPTER_TENSOR_INT64) {
+  if (indices_operand->type.precision == NNADAPTER_INT64) {
     need_indices_cast = true;
-    indices_operand->type.precision = NNADAPTER_TENSOR_INT32;
+    indices_operand->type.precision = NNADAPTER_INT32;
   }
   auto indices_operator = MAP_OUTPUT(top_k_op, indices, indices_operand);
 
@@ -67,14 +67,12 @@ int ConvertTopK(Converter* converter, hal::Operation* operation) {
   SET_INPUT(cast_output_op, x, output_operator);
   MAP_OUTPUT(cast_output_op, y, output_operand);
 
-  indices_operand->type.precision = NNADAPTER_TENSOR_INT64;
+  indices_operand->type.precision = NNADAPTER_INT64;
   auto cast_indices_op = converter->AddOperator<ge::op::Cast>(indices_operand);
   if (need_indices_cast) {
-    cast_indices_op->set_attr_dst_type(
-        ConvertToGEPrecision(NNADAPTER_TENSOR_INT64));
+    cast_indices_op->set_attr_dst_type(ConvertToGEPrecision(NNADAPTER_INT64));
   } else {
-    cast_indices_op->set_attr_dst_type(
-        ConvertToGEPrecision(NNADAPTER_TENSOR_INT32));
+    cast_indices_op->set_attr_dst_type(ConvertToGEPrecision(NNADAPTER_INT32));
   }
   SET_INPUT(cast_indices_op, x, indices_operator);
   MAP_OUTPUT(cast_indices_op, y, indices_operand);
