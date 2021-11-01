@@ -210,7 +210,25 @@ if (LITE_WITH_PYTHON)
     lite_cc_library(lite_pybind SHARED SRCS python/pybind/pybind.cc tools/opt_base.cc DEPS ${full_lib_DEPS} paddle_api_full ${external_libs_DEPS}  pybind python)
 endif()
 
+if(ARM_TARGET_OS STREQUAL "android")
+    set(OPENCV_VERSION "opencv4.1.0")
+    set(OPENCV_PATH "${INFER_LITE_PUBLISH_ROOT}/third_party/${OPENCV_VERSION}/${ARM_TARGET_ARCH_ABI}")
+    set(OPENCV_LIBS "${OPENCV_PATH}/libs/libopencv_imgcodecs.a \
+                     ${OPENCV_PATH}/libs/libopencv_imgproc.a \
+                     ${OPENCV_PATH}/libs/libopencv_core.a \
+                     ${OPENCV_PATH}/3rdparty/libs/libtegra_hal.a \
+                     ${OPENCV_PATH}/3rdparty/libs/liblibjpeg-turbo.a \
+                     ${OPENCV_PATH}/3rdparty/libs/liblibwebp.a \
+                     ${OPENCV_PATH}/3rdparty/libs/liblibpng.a \
+                     ${OPENCV_PATH}/3rdparty/libs/liblibjasper.a \
+                     ${OPENCV_PATH}/3rdparty/libs/liblibtiff.a \
+                     ${OPENCV_PATH}/3rdparty/libs/libIlmImf.a \
+                     ${OPENCV_PATH}/3rdparty/libs/libtbb.a \
+                     ${OPENCV_PATH}/3rdparty/libs/libcpufeatures.a")
 
+    set(OPENCV_URL "https://paddle-inference-dist.bj.bcebos.com/${OPENCV_VERSION}")
+    lite_download_and_uncompress("${INFER_LITE_PUBLISH_ROOT}/third_party/" ${OPENCV_URL} "${OPENCV_VERSION}.tar.gz")
+endif()
 
 # test_model_bin
 if(NOT IOS AND NOT LITE_ON_TINY_PUBLISH)
@@ -218,7 +236,7 @@ if(NOT IOS AND NOT LITE_ON_TINY_PUBLISH)
         DEPS gflags
         CV_DEPS paddle_cv_arm)
     lite_cc_binary(benchmark_bin SRCS tools/benchmark.cc tools/flags.cc tools/opt_base.cc
-        DEPS gflags
+        DEPS gflags extern_lite_download_${OPENCV_VERSION}_tar_gz
         CV_DEPS paddle_cv_arm)
 endif()
 
