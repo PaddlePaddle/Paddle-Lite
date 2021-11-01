@@ -235,11 +235,13 @@ if(NOT IOS AND NOT LITE_ON_TINY_PUBLISH)
     lite_cc_binary(test_model_bin SRCS tools/model_test.cc
         DEPS gflags
         CV_DEPS paddle_cv_arm)
+    include(ExternalProject)
     lite_cc_binary(benchmark_bin SRCS tools/benchmark.cc tools/flags.cc tools/opt_base.cc
         DEPS gflags
         CV_DEPS paddle_cv_arm)
     if(ARM_TARGET_OS STREQUAL "android" AND USE_PRECOMPILED_OPENCV)
-        add_dependencies(benchmark_bin extern_lite_download_${OPENCV_VERSION}_tar_gz)
+        string(REGEX REPLACE "[-%.]" "_" OPENCV_VERSION_EX ${OPENCV_VERSION})
+        add_dependencies(benchmark_bin extern_lite_download_${OPENCV_VERSION_EX}_tar_gz)
     endif()
 endif()
 
