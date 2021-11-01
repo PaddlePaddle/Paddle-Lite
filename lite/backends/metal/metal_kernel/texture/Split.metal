@@ -1,4 +1,4 @@
-/* Copyright (c) 2021 ftypeaddleftypeaddle Authors. All Rights Reserved.
+/* Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -132,11 +132,7 @@ kernel void split_zz(texture2d_array<ftype, access::read> input[[texture(0)]],
         if (z - (sp.vdim[1] + 3) / 4 < 0) {
             int z_origin = z * 4 + sp.vdim[0];
             int z_end = min(z_origin + 3, sp.vdim[0] + sp.vdim[1] - 1);
-            ftype4 r;
-            r[0] = 0;
-            r[1] = 0;
-            r[2] = 0;
-            r[3] = 0;
+            ftype4 r = 0;
             ftype4 r1 = input.read(gid.xy, z_origin / 4);
             int start = z_origin % 4;
             for (int i = start; i < 4 && i - start <= z_end - z_origin; i++) {
@@ -155,11 +151,7 @@ kernel void split_zz(texture2d_array<ftype, access::read> input[[texture(0)]],
             if (z - (sp.vdim[2] + 3) / 4 < 0) {
                 int z_origin = z * 4 + sp.vdim[0] + sp.vdim[1];
                 int z_end = min(z_origin + 3, sp.vdim[0] + sp.vdim[1] + sp.vdim[2] - 1);
-                ftype4 r;
-                r[0] = 0;
-                r[1] = 0;
-                r[2] = 0;
-                r[3] = 0;
+                ftype4 r = 0;
                 ftype4 r1 = input.read(gid.xy, z_origin / 4);
                 int start = z_origin % 4;
                 for (int i = start; i < 4 && i - start <= z_end - z_origin; i++) {
@@ -180,11 +172,7 @@ kernel void split_zz(texture2d_array<ftype, access::read> input[[texture(0)]],
                 int z_origin = z * 4 + sp.vdim[0] + sp.vdim[1] + sp.vdim[2];
                 int z_end =
                     min(z_origin + 3, sp.vdim[0] + sp.vdim[1] + sp.vdim[2] + sp.vdim[3] - 1);
-                ftype4 r;
-                r[0] = 0;
-                r[1] = 0;
-                r[2] = 0;
-                r[3] = 0;
+                ftype4 r = 0;
                 ftype4 r1 = input.read(gid.xy, z_origin / 4);
                 int start = z_origin % 4;
                 for (int i = start; i < 4 && i - start <= z_end - z_origin; i++) {
