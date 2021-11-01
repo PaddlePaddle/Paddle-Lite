@@ -1324,11 +1324,11 @@ void conv_depthwise_3x3s1_p01_direct(
 #endif
 }
 
-void conv_depthwise_3x3_pack(operators::ConvParam &param,
-                             lite::Tensor &input_padding_,
-                             lite::Tensor &input_pack_,
-                             lite::Tensor &filter_pack_,
-                             lite::Tensor &output_pack_) {
+void conv_depthwise_3x3_pack(const operators::ConvParam &param,
+                             lite::Tensor *input_padding_,
+                             lite::Tensor *input_pack_,
+                             lite::Tensor *filter_pack_,
+                             lite::Tensor *output_pack_) {
   auto input_dims = param.x->dims();
   CHECK_EQ(input_dims.size(), 4UL);
   int batch_size = param.x->dims()[0];
@@ -1339,12 +1339,12 @@ void conv_depthwise_3x3_pack(operators::ConvParam &param,
   const int pack_num = input_channel / pack_size;
 
   if (pack_size == 8) {
-    pack_padding8_m256(param.x, &input_padding_, pack_num, *(param.paddings));
+    pack_padding8_m256(param.x, input_padding_, pack_num, *(param.paddings));
   } else if (pack_size == 4) {
-    pack4_m128(param.x, &input_pack_, pack_num, false);
-    padding4_m128(&input_pack_, &input_padding_, *(param.paddings));
+    pack4_m128(param.x, input_pack_, pack_num, false);
+    padding4_m128(input_pack_, input_padding_, *(param.paddings));
   } else {
-    padding1_float(param.x, &input_padding_, *(param.paddings));
+    padding1_float(param.x, input_padding_, *(param.paddings));
   }
 
   // filter [oc, ic/groups=1, kh, kw]
@@ -1356,9 +1356,9 @@ void conv_depthwise_3x3_pack(operators::ConvParam &param,
   // filter [oc, 1, ih, iw] & pack_size=8 => [oc/8, ih, iw, 8]
   // filter [oc, 1, ih, iw] & pack_size=4 => [ic/4, ih, iw, 4]
   if (pack_size == 8) {
-    pack8_m256(param.filter, &filter_pack_, pack_num, true);
+    pack8_m256(param.filter, filter_pack_, pack_num, true);
   } else if (pack_size == 4) {
-    pack4_m128(param.filter, &filter_pack_, pack_num, true);
+    pack4_m128(param.filter, filter_pack_, pack_num, true);
   }
 
   // attributes
@@ -1374,40 +1374,39 @@ void conv_depthwise_3x3_pack(operators::ConvParam &param,
 
   // output [bs, oc, oh, ow]
   CHECK_EQ(param.output->dims().size(), 4UL);
-  const int in_h = input_padding_.dims()[2], in_w = input_padding_.dims()[3];
+  const int in_h = input_padding_->dims()[2], in_w = input_padding_->dims()[3];
   const int kernel_extend_h = dilation_h * (kernel_h - 1) + 1;
   const int kernel_extend_w = dilation_w * (kernel_w - 1) + 1;
-  std::cout << in_h << " " << in_w << std::endl;
   int output_height = (in_h - kernel_extend_h) / stride_h + 1;
   int output_width = (in_w - kernel_extend_w) / stride_w + 1;
   // output_trans [bs, oc/8, oh, ow, 8]
   // output_trans [bs, oc/4, oh, ow, 4]
-  output_pack_.Resize(
+  output_pack_->Resize(
       {batch_size, pack_num, output_height, output_width, pack_size});
 
   if (pack_size == 8) {
     if (kernel_h == 3 && kernel_w == 3 && stride_h == 1 && stride_w == 1 &&
         dilation_h == 1 && dilation_w == 1) {
-      conv_depthwise_3x3s1_m256(&input_padding_,
-                                &output_pack_,
-                                &filter_pack_,
+      conv_depthwise_3x3s1_m256(input_padding_,
+                                output_pack_,
+                                filter_pack_,
                                 param.bias,
                                 has_act,
                                 act_type,
                                 act_param);
     } else if (kernel_h == 3 && kernel_w == 3 && stride_h == 2 &&
                stride_w == 2 && dilation_h == 1 && dilation_w == 1) {
-      conv_depthwise_3x3s2_m256(&input_padding_,
-                                &output_pack_,
-                                &filter_pack_,
+      conv_depthwise_3x3s2_m256(input_padding_,
+                                output_pack_,
+                                filter_pack_,
                                 param.bias,
                                 has_act,
                                 act_type,
                                 act_param);
     } else {
-      conv_depthwise_m256(&input_padding_,
-                          &output_pack_,
-                          &filter_pack_,
+      conv_depthwise_m256(input_padding_,
+                          output_pack_,
+                          filter_pack_,
                           param.bias,
                           stride_h,
                           stride_w,
@@ -1418,9 +1417,9 @@ void conv_depthwise_3x3_pack(operators::ConvParam &param,
                           act_param);
     }
   } else if (pack_size == 4) {
-    conv_depthwise_m128(&input_padding_,
-                        &output_pack_,
-                        &filter_pack_,
+    conv_depthwise_m128(input_padding_,
+                        output_pack_,
+                        filter_pack_,
                         param.bias,
                         stride_h,
                         stride_w,
@@ -1433,9 +1432,9 @@ void conv_depthwise_3x3_pack(operators::ConvParam &param,
 
   // [bs, oh, ow, oc] => [bs, oc, oh, ow]
   if (pack_size == 8) {
-    unpack8_m256(&output_pack_, param.output);
+    unpack8_m256(output_pack_, param.output);
   } else if (pack_size == 4) {
-    unpack4_m128(&output_pack_, param.output);
+    unpack4_m128(output_pack_, param.output);
   }
 }
 

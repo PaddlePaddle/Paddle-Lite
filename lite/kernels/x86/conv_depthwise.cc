@@ -47,6 +47,7 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   bool flag_bias = param.bias != nullptr;
   auto* o_data = param.output->mutable_data<float>();
   auto dilations = *param.dilations;
+  bool pad_less = pad < 2;
 
   auto x_dims = param.x->dims();
   auto w_dims = param.filter->dims();
@@ -62,7 +63,7 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   int kh = w_dims[2];
 
   if (kh == 3) {
-    if ((dilations[0] == 1) && (dilations[1] == 1)) {
+    if ((dilations[0] == 1) && (dilations[1] == 1) && pad_less) {
       if (stride == 1) {
         lite::x86::math::conv_depthwise_3x3s1_p01_direct(CONV_DW_PARAM);
       } else if (stride == 2) {
@@ -70,7 +71,7 @@ void DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
       }
     } else {
       lite::x86::math::conv_depthwise_3x3_pack(
-          param, input_padding_, input_pack_, filter_pack_, output_pack_);
+          param, &input_padding_, &input_pack_, &filter_pack_, &output_pack_);
     }
   } else if (kh == 5) {
     if (stride == 1) {
