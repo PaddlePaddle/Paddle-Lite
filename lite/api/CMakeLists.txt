@@ -210,7 +210,7 @@ if (LITE_WITH_PYTHON)
     lite_cc_library(lite_pybind SHARED SRCS python/pybind/pybind.cc tools/opt_base.cc DEPS ${full_lib_DEPS} paddle_api_full ${external_libs_DEPS}  pybind python)
 endif()
 
-if(ARM_TARGET_OS STREQUAL "android")
+if(ARM_TARGET_OS STREQUAL "android" AND USE_PRECOMPILED_OPENCV)
     set(OPENCV_VERSION "opencv4.1.0")
     set(OPENCV_PATH "${INFER_LITE_PUBLISH_ROOT}/third_party/${OPENCV_VERSION}/${ARM_TARGET_ARCH_ABI}")
     set(OPENCV_LIBS "${OPENCV_PATH}/libs/libopencv_imgcodecs.a \
@@ -236,8 +236,11 @@ if(NOT IOS AND NOT LITE_ON_TINY_PUBLISH)
         DEPS gflags
         CV_DEPS paddle_cv_arm)
     lite_cc_binary(benchmark_bin SRCS tools/benchmark.cc tools/flags.cc tools/opt_base.cc
-        DEPS gflags extern_lite_download_${OPENCV_VERSION}_tar_gz
+        DEPS gflags
         CV_DEPS paddle_cv_arm)
+    if(ARM_TARGET_OS STREQUAL "android" AND USE_PRECOMPILED_OPENCV)
+        add_dependencies(benchmark_bin extern_lite_download_${OPENCV_VERSION}_tar_gz)
+    endif()
 endif()
 
 # opt tool

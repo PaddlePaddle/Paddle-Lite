@@ -57,6 +57,8 @@ WITH_PROFILE=OFF
 WITH_PRECISION_PROFILE=OFF
 # option of benchmark, default is OFF
 WITH_BENCHMARK=OFF
+# option of opencv
+USE_PRECOMPILED_OPENCV=OFF
 # num of threads used during compiling..
 readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
@@ -334,6 +336,7 @@ function make_full_publish_so {
       -DLITE_WITH_PROFILE=$WITH_PROFILE \
       -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
       -DLITE_WITH_PRECISION_PROFILE=$WITH_PRECISION_PROFILE \
+      -DUSE_PRECOMPILED_OPENCV=$USE_PRECOMPILED_OPENCV \
       -DANDROID_STL_TYPE=$ANDROID_STL"
 
   cmake $workspace \
@@ -579,6 +582,11 @@ function main {
             # controls whether to compile cplus static library, default is OFF
             --with_static_lib=*)
                 WITH_STATIC_LIB="${i#*=}"
+                shift
+                ;;
+            # controls whether to use precompiled opencv, default is OFF
+            --use_precompiled_opencv=*)
+                USE_PRECOMPILED_OPENCV="${i#*=}"
                 shift
                 ;;
             help)
