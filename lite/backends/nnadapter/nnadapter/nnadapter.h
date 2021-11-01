@@ -968,12 +968,14 @@ typedef enum {
   /**
    * Applies the Lp Normalization to the input tensor element-wise.
    * The output is calculated using this formula:
+   * output = input / (sum(abs(input)) + epsilon), if p = 1
+   * output = input / (sqrt(sum(input^2)) + epsilon), if p = 2
    *
    * Inputs:
    * * 0: input, a NNADAPTER_FLOAT32,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
    * * 1: axis, an 1-D NNADAPTER_INT32. Defaults to [1].
-   * It represents the dimension along which softmax will be performed.
+   * It represents the dimension along which norm will be performed.
    * It should be in range [-R, R), where R is the rank of input,
    * negative value works the same way as axis+R.
    * * 2: p, a NNADAPTER_INT32 scalar. The exponent value in the norm
@@ -981,8 +983,6 @@ typedef enum {
    * only 1 or 2 are supported. Defaults to 2.
    * * 3: epsilon, a NNADAPTER_FLOAT32 scalar,
    * specifying the lower limit of normalization
-   * * 4: keepdim, a NNADAPTER_BOOL8 scalar.
-   * Keep the reduced dimension or not, default 1 mean keep reduced dimension.
    *
    * Outputs:
    * * 0: output, a tensor with the same shape and type as input.

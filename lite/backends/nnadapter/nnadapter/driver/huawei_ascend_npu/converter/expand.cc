@@ -34,10 +34,13 @@ int ConvertExpand(Converter* converter, hal::Operation* operation) {
   if (!input_operator) {
     input_operator = converter->ConvertOperand(input_operand);
   }
-  auto shape_operator = converter->ConvertOperand(shape_operand);
-  auto expand_op = converter->AddOperator<ge::op::Expand>(output_operand);
+  auto expand_op = converter->AddOperator<ge::op::ExpandD>(output_operand);
+  std::vector<int64_t> expand_shape(shape_count);
+  for (uint32_t i = 0; i < shape_count; i++) {
+    expand_shape[i] = shape_data[i];
+  }
+  expand_op->set_attr_shape(ge::Operator::OpListInt(expand_shape));
   SET_INPUT(expand_op, x, input_operator);
-  SET_INPUT(expand_op, shape, shape_operator);
   MAP_OUTPUT(expand_op, y, output_operand);
   return NNADAPTER_NO_ERROR;
 }

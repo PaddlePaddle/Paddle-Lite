@@ -14,7 +14,19 @@
 
 #pragma once
 
-USE_SUBGRAPH_BRIDGE(fc,
-                    kNNAdapter,
-                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
-                    "npu,amlogic_npu,imagination_nna");
+#include <memory>
+#include <string>
+#include "lite/core/optimizer/mir/pass.h"
+
+namespace paddle {
+namespace lite {
+namespace mir {
+
+class FillRangeFusePass : public ProgramPass {
+ public:
+  void Apply(const std::unique_ptr<SSAGraph>& graph) override;
+};
+
+}  // namespace mir
+}  // namespace lite
+}  // namespace paddle

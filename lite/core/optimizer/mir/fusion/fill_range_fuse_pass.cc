@@ -12,9 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#include "lite/core/optimizer/mir/fusion/fill_range_fuse_pass.h"
+#include <memory>
+#include <vector>
+#include "lite/core/optimizer/mir/fusion/fill_range_fuser.h"
+#include "lite/core/optimizer/mir/pass_registry.h"
 
-USE_SUBGRAPH_BRIDGE(fc,
-                    kNNAdapter,
-                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
-                    "npu,amlogic_npu,imagination_nna");
+namespace paddle {
+namespace lite {
+namespace mir {
+
+void FillRangeFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+  fusion::FillRangeFuser fuser;
+  fuser(graph.get());
+}
+
+}  // namespace mir
+}  // namespace lite
+}  // namespace paddle
+
+REGISTER_MIR_PASS(fill_range_fuse_pass, paddle::lite::mir::FillRangeFusePass)
+    .BindTargets({TARGET(kNNAdapter)});
