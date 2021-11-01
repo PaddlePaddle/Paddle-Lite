@@ -109,6 +109,7 @@ void XPUFcCompute::Run() {
   int n = param.w->dims()[1];
   bool quant_int8 = param.quant_w_max > 0.f;
 
+  param.output_max->Resize({lite::XPU_QUANT_SCALE_NUM});
   float* output_max = quant_int8
                           ? nullptr
                           : param.output_max->mutable_data<float>(TARGET(kXPU));
