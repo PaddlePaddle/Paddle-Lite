@@ -636,7 +636,8 @@ virtual std::unique_ptr<const Tensor> GetTensor(const std::string& name) const =
 
 根据名称获取输出Tensor的指针。
 
-**注意**：`GetTensor` 接口是为开发者设计的调试接口，可以输出[转化]（https://paddle-lite.readthedocs.io/zh/develop/user_guides/model_optimize_tool.html）后模型中的任一节点。如果出现 `GetTensor(InputName)` 返回值为空 `Tensor`，可能原因是以该 `InputName` 命名的 Tensor 在模型转化的**子图融合**过程被融合替换了。
+**注意**：`GetTensor` 接口是为开发者设计的调试接口，可以输出[转化](https://paddle-lite.readthedocs.io/zh/develop/user_guides/model_optimize_tool.html) 后模型中的任一节点。如果出现 `GetTensor(InputName)` 返回值为空 `Tensor`，可能原因是以该 `InputName` 命名的 Tensor 在模型转化的**子图融合**过程被融合替换了。
+
 
 - 参数
 
