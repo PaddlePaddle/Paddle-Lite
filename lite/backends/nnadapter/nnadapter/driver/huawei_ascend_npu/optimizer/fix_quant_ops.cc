@@ -22,34 +22,40 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-static bool NeedPreQuant(const std::vector<hal::Operation*>& operations,
-                         hal::Operand* operand) {
-  if (IsModelInputOperand(operand)) {
-    return false;
-  }
-  for (auto operation : operations) {
-    if (std::find(operation->output_operands.begin(),
-                  operation->output_operands.end(),
-                  operand) != operation->output_operands.end()) {
-      return operation->type != NNADAPTER_QUANTIZE;
+static hal::Operation* PreOperation(hal::Model* model, hal::Operand* operand) {
+  auto& operations = model->operations;
+  for (auto& operation : operations) {
+    if (std::find(operation.output_operands.begin(),
+                  operation.output_operands.end(),
+                  operand) != operation.output_operands.end()) {
+      return &operation;
     }
   }
-  return false;
+  return nullptr;
 }
 
-static bool NeedNextDequant(const std::vector<hal::Operation*>& operations,
-                            hal::Operand* operand) {
-  if (IsModelOutputOperand(operand)) {
-    return false;
-  }
-  for (auto operation : operations) {
-    if (std::find(operation->input_operands.begin(),
-                  operation->input_operands.end(),
-                  operand) != operation->input_operands.end()) {
-      return operation->type != NNADAPTER_DEQUANTIZE;
+static bool NeedPreQuant(hal::Model* model, hal::Operand* operand) {
+  auto pre_operation = PreOperation(model, operand);
+  return !IsModelInputOperand(operand) && pre_operation != nullptr &&
+         pre_operation->type != NNADAPTER_QUANTIZE;
+}
+
+static hal::Operation* NextOperation(hal::Model* model, hal::Operand* operand) {
+  auto& operations = model->operations;
+  for (auto& operation : operations) {
+    if (std::find(operation.input_operands.begin(),
+                  operation.input_operands.end(),
+                  operand) != operation.input_operands.end()) {
+      return &operation;
     }
   }
-  return false;
+  return nullptr;
+}
+
+static bool NeedNextDequant(hal::Model* model, hal::Operand* operand) {
+  auto next_operation = NextOperation(model, operand);
+  return !IsModelOutputOperand(operand) && next_operation != nullptr &&
+         next_operation->type != NNADAPTER_DEQUANTIZE;
 }
 
 // Add a quant operation after input_operand
@@ -122,15 +128,21 @@ static void FixQuantConv(hal::Model* model) {
     }
 
     auto input_operands = operation->input_operands;
-    if (NeedPreQuant(operations, input_operands[0])) {
+    if (NeedPreQuant(model, input_operands[0])) {
       AddQuantOperation(model, input_operands[0]);
     }
 
-    if (NeedNextDequant(operations, output_operand)) {
+    if (NeedNextDequant(model, output_operand)) {
       AddDequantOperation(model, output_operand);
     }
 
-    // Unpack activations
+    // Unpack activations after dequant
+    auto next_operation = NextOperation(model, output_operand);
+    if (next_operation->type == NNADAPTER_DEQUANTIZE) {
+      output_operand = next_operation->output_operands[0];
+    }
+    NNADAPTER_CHECK_EQ(PreOperation(model, output_operand)->type,
+                       NNADAPTER_DEQUANTIZE);
     auto fuse_code = reinterpret_cast<int32_t*>(input_operands[8]->buffer);
     switch (*fuse_code) {
       case NNADAPTER_FUSED_RELU:
@@ -172,14 +184,14 @@ static void FixQuantMatmul(hal::Model* model) {
     }
 
     auto input_operands = operation->input_operands;
-    if (NeedPreQuant(operations, input_operands[0])) {
+    if (NeedPreQuant(model, input_operands[0])) {
       AddQuantOperation(model, input_operands[0]);
     }
-    if (NeedPreQuant(operations, input_operands[1])) {
+    if (NeedPreQuant(model, input_operands[1])) {
       AddQuantOperation(model, input_operands[1]);
     }
 
-    if (NeedNextDequant(operations, output_operand)) {
+    if (NeedNextDequant(model, output_operand)) {
       AddDequantOperation(model, output_operand);
     }
   }
@@ -199,7 +211,7 @@ static void FixDequant(hal::Model* model) {
 
 void FixQuantOps(hal::Model* model) {
   FixQuantConv(model);
-  FixQuantMatmul(model);
+  // FixQuantMatmul(model);
   FixDequant(model);
 }
 

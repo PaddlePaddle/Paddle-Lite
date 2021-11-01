@@ -22,11 +22,7 @@ namespace nnadapter {
 int ConvertCalib(Converter* converter, OpInfo* op, Scope* scope) {
   // Input operand
   auto x_name = op->Input("Input").front();
-  auto x_scale_name = "Input0_scale";
-  std::vector<float> x_scales = op->HasInputScale(x_scale_name, true)
-                                    ? op->GetInputScale(x_scale_name, true)
-                                    : std::vector<float>();
-  auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
+  auto input_operand = converter->AddInputOperand(scope, x_name);
 
   // Axis operand
   auto axis_operand = converter->AddConstantOperand<int>(1);
@@ -41,10 +37,7 @@ int ConvertCalib(Converter* converter, OpInfo* op, Scope* scope) {
 
   // Output operand
   auto out_name = op->Output("Out").front();
-  auto out_scale_name = "Out0_scale";
-  std::vector<float> out_scales = op->HasOutputScale(out_scale_name, true)
-                                      ? op->GetOutputScale(out_scale_name, true)
-                                      : std::vector<float>();
+  std::vector<float> out_scales{scale};
   auto output_operand = converter->AddOutputOperand(out_name, out_scales);
 
   // Quant or dequant operation

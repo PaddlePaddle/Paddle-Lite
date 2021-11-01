@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/core/optimizer/mir/nnadapter_insert_calib_pass.h"
+#include <utility>
 #include "lite/core/optimizer/mir/pass_registry.h"
 
 namespace paddle {
@@ -90,11 +91,13 @@ void NNAdapterInsertCalibPass::InsertQuantCalib(
   // Record arg nodes to reuse if other inst nodes need the same arg node
   std::map<std::string, Node*> transed_arg_nodes;
   // Skip if pre op is feed, calib, ...
-  std::vector<std::string> skip_pre_ops{"feed", "calib"};
+  // std::vector<std::string> skip_pre_ops{"feed", "calib"};
+  std::vector<std::string> skip_pre_ops{"calib"};
 
   for (auto node : nodes) {
     if (!IsQuantInstNode(node)) continue;
-    for (auto pre_arg_node : node->inlinks) {
+    auto in_nodes = node->inlinks;
+    for (auto pre_arg_node : in_nodes) {
       if (pre_arg_node->inlinks.empty()) continue;
       auto pre_inst_node = pre_arg_node->inlinks.front();
       if (IsQuantInstNode(pre_inst_node)) continue;
@@ -103,7 +106,6 @@ void NNAdapterInsertCalibPass::InsertQuantCalib(
                     pre_inst_node->AsStmt().op_type()) != skip_pre_ops.end()) {
         continue;
       }
-
       VLOG(3) << "insert calib before " << node->AsStmt().op_type()
               << " to quant.";
       std::string calib_in_name = pre_arg_node->AsArg().name;
@@ -116,8 +118,9 @@ void NNAdapterInsertCalibPass::InsertQuantCalib(
       } else {
         // Creat calib out node
         auto calib_out_arg = graph->NewArgumentNode(calib_out_name);
+        auto pre_arg_type = pre_arg_node->AsArg().type;
         calib_out_arg->AsArg().type = LiteType::GetTensorTy(
-            TARGET(kHost), PRECISION(kInt8), DATALAYOUT(kNCHW));
+            pre_arg_type->target(), PRECISION(kInt8), pre_arg_type->layout());
         auto scope = node->AsStmt().op()->scope();
         scope->Var(calib_out_name)
             ->GetMutable<Tensor>()
@@ -138,7 +141,10 @@ void NNAdapterInsertCalibPass::InsertQuantCalib(
         CHECK_EQ(scales.size(), 1UL);
         op_desc.SetAttr("scale", scales[0]);
         calib_op->Attach(op_desc, scope);
-        calib_inst->AsStmt(calib_type, {}, calib_op);
+        calib_op->SetValidPlaces(graph->valid_places());
+        auto kernels = calib_op->CreateKernels(graph->valid_places());
+        // TODO(zhupengyang): should pick matched kernel.
+        calib_inst->AsStmt(calib_type, std::move(kernels), calib_op);
         // Create topology
         RemoveDirectedLink(pre_arg_node, node);
         DirectedLink(pre_arg_node, calib_inst);
