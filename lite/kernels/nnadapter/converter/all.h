@@ -106,10 +106,10 @@ REGISTER_CONVERTER(fusion_elementwise_pow_activation,
                    ConvertElementwise,
                    "huawei_ascend_npu");
 REGISTER_CONVERTER(pow, ConvertPow, "huawei_ascend_npu");
-REGISTER_CONVERTER(
-    sigmoid,
-    ConvertUnaryActivations,
-    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu,cambricon_mlu");
+REGISTER_CONVERTER(sigmoid,
+                   ConvertUnaryActivations,
+                   "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
+                   "npu,amlogic_npu,cambricon_mlu");
 REGISTER_CONVERTER(relu,
                    ConvertUnaryActivations,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"

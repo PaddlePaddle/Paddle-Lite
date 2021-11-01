@@ -992,6 +992,46 @@ function amlogic_npu_build_and_test() {
 }
 
 # Cambricon MLU
+function cambricon_mlu_prepare_device() {
+    local os=$1
+    local arch=$2
+    local toolchain=$3
+    local remote_device_name=$4
+    local remote_device_work_dir=$5
+    local remote_device_check=$6
+    local remote_device_run=$7
+    local sdk_root_dir=$8
+
+    # Check device is available
+    $remote_device_check $remote_device_name
+    if [[ $? -ne 0 ]]; then
+        echo "$remote_device_name not found!"
+        exit 1
+    fi
+
+    # Create work dir on the remote device
+    if [[ -z "$remote_device_work_dir" ]]; then
+        echo "$remote_device_work_dir can't be empty!"
+        exit 1
+    fi
+    if [[ "$remote_device_work_dir" == "/" ]]; then
+        echo "$remote_device_work_dir can't be root dir!"
+        exit 1
+    fi
+    $remote_device_run $remote_device_name shell "rm -rf $remote_device_work_dir"
+    $remote_device_run $remote_device_name shell "mkdir -p $remote_device_work_dir"
+
+    # Copy sdk dynamic libraries to work dir
+    $remote_device_run $remote_device_name push "$sdk_root_dir/lib/*" "$remote_device_work_dir"
+    $remote_device_run $remote_device_name push "$sdk_root_dir/lib64/*" "$remote_device_work_dir"
+
+    # Copy NNAdapter runtime and device HAL libraries
+    local nnadapter_runtime_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
+    local nnadapter_device_lib_path=$(find $BUILD_DIR/lite -name libcambricon_mlu.so)
+    $remote_device_run $remote_device_name push "$nnadapter_runtime_lib_path" "$remote_device_work_dir"
+    $remote_device_run $remote_device_name push "$nnadapter_device_lib_path" "$remote_device_work_dir"
+}
+
 function cambricon_mlu_build_target() {
     local os=$1
     local arch=$2

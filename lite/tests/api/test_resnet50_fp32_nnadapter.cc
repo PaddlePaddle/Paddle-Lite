@@ -50,6 +50,9 @@ TEST(MobileNetV1, test_resnet50_fp32_nndapter) {
   nnadapter_device_names.emplace_back("huawei_ascend_npu");
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
   out_accuracy_threshold = 0.71f;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  nnadapter_device_names.emplace_back("cambricon_mlu");
+  out_accuracy_threshold = 0.77f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;
