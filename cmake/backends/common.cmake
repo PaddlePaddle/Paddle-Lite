@@ -48,6 +48,14 @@ if(LITE_WITH_BM)
   include(bm)
 endif()
 
+if(LITE_WITH_NPU)
+  include(backends/npu)
+endif()
+
+if(LITE_WITH_APU)
+  include(backends/apu)
+endif()
+
 include(backends/x86)
 
 # Add dependencies
