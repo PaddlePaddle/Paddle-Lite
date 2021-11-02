@@ -24,18 +24,8 @@ namespace huawei_ascend_npu {
 
 int ConvertExpand(Converter* converter, hal::Operation* operation) {
   EXPAND_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  auto& shape_type = shape_operand->type;
-  if (shape_type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {
-    auto shape_operand_dimension =
-        *reinterpret_cast<NNAdapterOperandDimensionType*>(
-            shape_operand->buffer);
-    shape_count = shape_operand_dimension.count;
-    shape_data = shape_operand_dimension.data;
-  } else if (!IsConstantOperand(shape_operand)) {
-    NNADAPTER_LOG(FATAL) << "Unsupported shape lifetime: "
-                         << static_cast<int32_t>(shape_type.lifetime);
-    return NNADAPTER_INVALID_PARAMETER;
-  }
+  NNADAPTER_CHECK(IsConstantOperand(shape_operand))
+      << "Shape input only support const tensor.";
 
   // Convert to GE operators
   auto input_operator = converter->GetMappedOperator(input_operand);
