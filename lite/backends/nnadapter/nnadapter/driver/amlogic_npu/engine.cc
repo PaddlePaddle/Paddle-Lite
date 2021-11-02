@@ -18,7 +18,7 @@
 #include <vector>
 #include "driver/amlogic_npu/converter/converter.h"
 #include "driver/amlogic_npu/optimizer/unpack_op_fusion.h"
-#include "optimizer/matmul_elementwise_add_fusion.h"
+#include "optimizer/fuse_matmul_add_into_fully_connected.h"
 #include "optimizer/symm2asymm.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -58,7 +58,7 @@ int Program::BuildFromModel(hal::Model* model) {
   // Convert the quantization parameters of the operands in the NNAdapter model
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
   UnpackOpFusion(model);
-  MatMulElementwiseAddFusion(model);
+  FuseMatMulAddIntoFullyConnected(model);
   ConvertQuantizationSymmToAsymm(model);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
   // Convert a NNAdapter model to a amlnpu graph

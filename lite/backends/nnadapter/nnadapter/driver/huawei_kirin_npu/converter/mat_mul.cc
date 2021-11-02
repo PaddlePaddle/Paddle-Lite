@@ -22,6 +22,7 @@ namespace huawei_kirin_npu {
 
 int ConvertMatMul(Converter* converter, hal::Operation* operation) {
   MAT_MUL_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  // TODO(shentanyue) Support BatchMatMul later.
   NNADAPTER_CHECK_EQ(x_operand->type.dimensions.count, 2)
       << "Only support the dimension of x is 2 now.";
   NNADAPTER_CHECK_EQ(y_operand->type.dimensions.count, 2)

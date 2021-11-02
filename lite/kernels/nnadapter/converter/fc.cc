@@ -29,7 +29,6 @@ int ConvertFC(Converter* converter, OpInfo* op, Scope* scope) {
   if (op->HasInputScale(input_scale_name, true)) {
     input_scales = op->GetInputScale(input_scale_name, true);
   }
-
   auto w_name = op->Input("W").front();
   auto w_scale_name = "W0_scale";
   auto w_tensor = scope->FindMutableTensor(w_name);
@@ -53,9 +52,9 @@ int ConvertFC(Converter* converter, OpInfo* op, Scope* scope) {
   }
 
   int in_num_col_dims = op->GetAttr<int>("in_num_col_dims");
-  std::string activation_type;
+  std::string act_type;
   if (op->HasAttr("activation_type")) {
-    activation_type = op->GetAttr<std::string>("activation_type");
+    act_type = op->GetAttr<std::string>("activation_type");
   }
 
   // Check quantization mode
@@ -206,30 +205,18 @@ int ConvertFC(Converter* converter, OpInfo* op, Scope* scope) {
         bias_scales);
   }
   // Fuse code operand
-  std::vector<std::string> activation_support_split_ops{
-      "sigmoid", "tan", "log", "abs"};
-  int32_t fuse_code = NNADAPTER_FUSED_NONE;
-  if (activation_type == "relu") {
-    fuse_code = NNADAPTER_FUSED_RELU;
-    activation_type = "";
-  } else if (activation_type == "relu1") {
-    fuse_code = NNADAPTER_FUSED_RELU1;
-    activation_type = "";
-  } else if (activation_type == "relu6") {
-    fuse_code = NNADAPTER_FUSED_RELU6;
-    activation_type = "";
-  } else if (!activation_type.empty()) {
-    if (std::find(activation_support_split_ops.begin(),
-                  activation_support_split_ops.end(),
-                  activation_type) == activation_support_split_ops.end()) {
-      LOG(FATAL) << "NNadapter doesn't supported activation type : "
-                 << activation_type << " fusion!";
-      return UNSUPPORTED_FEATURE;
-    }
-    VLOG(5) << "Split fc + " << activation_type
-            << " fusion operator into two operators!";
+  int32_t fuse_code_value = NNADAPTER_FUSED_NONE;
+  if (act_type == "relu") {
+    fuse_code_value = NNADAPTER_FUSED_RELU;
+    act_type = "";
+  } else if (act_type == "relu1") {
+    fuse_code_value = NNADAPTER_FUSED_RELU1;
+    act_type = "";
+  } else if (act_type == "relu6") {
+    fuse_code_value = NNADAPTER_FUSED_RELU6;
+    act_type = "";
   }
-  auto fuse_code_operand = converter->AddConstantOperand(fuse_code);
+  auto fuse_code_operand = converter->AddConstantOperand(fuse_code_value);
   // Eltwise_add out operand
   auto eltwise_add_out_operand =
       converter->AddOutputOperand(out_name, out_scales);
@@ -237,25 +224,33 @@ int ConvertFC(Converter* converter, OpInfo* op, Scope* scope) {
   converter->AddOperation(NNADAPTER_ADD,
                           {output_operand, bias_operand, fuse_code_operand},
                           {eltwise_add_out_operand});
-  // Activation
-  if (!activation_type.empty()) {
-    auto activation_operand = converter->AddOutputOperand(out_name, out_scales);
-    NNAdapterOperationType act_type;
-    if (activation_type == "sigmoid") {
-      act_type = NNADAPTER_SIGMOID;
-    } else if (activation_type == "tanh") {
-      act_type = NNADAPTER_TANH;
-    } else if (activation_type == "log") {
-      act_type = NNADAPTER_LOG;
-    } else if (activation_type == "abs") {
-      act_type = NNADAPTER_ABS;
+  // Unpack the fused activations
+  if (!act_type.empty()) {
+    auto fused_act_output_operand =
+        converter->AddOutputOperand(out_name, out_scales);
+    if (act_type == "leaky_relu") {
+      auto alpha = op->GetAttr<float>("leaky_relu_alpha");
+      auto alpha_operand = converter->AddConstantOperand(alpha);
+      converter->AddOperation(NNADAPTER_LEAKY_RELU,
+                              {eltwise_add_out_operand, alpha_operand},
+                              {fused_act_output_operand});
+    } else if (act_type == "sigmoid") {
+      converter->AddOperation(NNADAPTER_SIGMOID,
+                              {eltwise_add_out_operand},
+                              {fused_act_output_operand});
+    } else if (act_type == "tanh") {
+      converter->AddOperation(NNADAPTER_TANH,
+                              {eltwise_add_out_operand},
+                              {fused_act_output_operand});
+    } else if (act_type == "log") {
+      converter->AddOperation(
+          NNADAPTER_LOG, {eltwise_add_out_operand}, {fused_act_output_operand});
+    } else if (act_type == "abs") {
+      converter->AddOperation(
+          NNADAPTER_ABS, {eltwise_add_out_operand}, {fused_act_output_operand});
     } else {
-      LOG(FATAL) << "Unsupported unary activation type: " << activation_type;
-      return UNSUPPORTED_FEATURE;
+      LOG(FATAL) << "Failed to unpack the fused activation type: " << act_type;
     }
-    converter->AddOperation(
-        act_type, {eltwise_add_out_operand}, {activation_operand});
-    output_operand = activation_operand;
   }
   return NO_ERROR;
 }

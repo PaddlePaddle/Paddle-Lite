@@ -36,6 +36,16 @@ NNADAPTER_EXPORT hal::Operation* AddOperation(hal::Model* model) {
 NNADAPTER_EXPORT void RemoveOperand(hal::Model* model, hal::Operand* operand) {
   for (auto it = model->operands.begin(); it != model->operands.end();) {
     if (&(*it) == operand) {
+      if ((operand->type.lifetime == NNADAPTER_CONSTANT_COPY ||
+           operand->type.lifetime == NNADAPTER_TEMPORARY_SHAPE) &&
+          operand->buffer) {
+        free(operand->buffer);
+      }
+      if ((operand->type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL ||
+           operand->type.precision == NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL) &&
+          operand->type.symm_per_channel_params.scales) {
+        free(operand->type.symm_per_channel_params.scales);
+      }
       it = model->operands.erase(it);
     } else {
       ++it;

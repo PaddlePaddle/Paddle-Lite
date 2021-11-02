@@ -31,8 +31,8 @@ int ConvertReshape(Converter* converter, hal::Operation* operation) {
   }
   auto output_tensor = converter->ConvertOperand(output_operand);
   aml::nn::ReshapeAttr attr;
-  for (uint32_t i = 0; i < shape_count; i++) {
-    attr.shapes.push_back(shape_data[i]);
+  for (uint32_t i = 0; i < output_operand->type.dimensions.count; i++) {
+    attr.shapes.push_back(output_operand->type.dimensions.data[i]);
   }
   std::vector<std::shared_ptr<aml::nn::Tensor>> input_tensors = {input_tensor};
   std::vector<std::shared_ptr<aml::nn::Tensor>> output_tensors = {
