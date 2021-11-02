@@ -64,7 +64,6 @@ NNADAPTER_EXPORT void FuseMatMulAddIntoFullyConnected(hal::Model* model) {
           break;
         }
         auto fuse_code_operand = add_input_operands[2];
-        auto output_operand = add_output_operands[0];
         if (reinterpret_cast<bool*>(transpose_x_operand->buffer)) {
           auto x_shape_count = x_operand->type.dimensions.count;
           if (x_shape_count < 2) {
