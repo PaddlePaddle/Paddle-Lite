@@ -28,7 +28,7 @@ DEFINE_int32(channel, 3, "image channel");
 namespace paddle {
 namespace lite {
 
-TEST(DenseNet121, test_densenet_121_fp32_nnadapter) {
+TEST(DenseNet121, test_densenet121_v2_0_fp32_nnadapter) {
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;
@@ -46,7 +46,7 @@ TEST(DenseNet121, test_densenet_121_fp32_nnadapter) {
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   nnadapter_device_names.emplace_back("huawei_ascend_npu");
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
-  out_accuracy_threshold = 0.79f;
+  out_accuracy_threshold = 0.76f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;

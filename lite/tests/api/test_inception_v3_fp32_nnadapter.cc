@@ -24,11 +24,13 @@ DEFINE_string(data_dir, "", "data dir");
 DEFINE_int32(iteration, 100, "iteration times to run");
 DEFINE_int32(batch, 1, "batch of image");
 DEFINE_int32(channel, 3, "image channel");
+static const int32_t inceptionv3_model_input_width = 299;
+static const int32_t inceptionv3_model_input_height = 299;
 
 namespace paddle {
 namespace lite {
 
-TEST(InceptionV3, test_inception_v3_fp32_nnadapter) {
+TEST(InceptionV3, test_inceptionv3_v2_0_fp32_nnadapter) {
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;
@@ -46,7 +48,7 @@ TEST(InceptionV3, test_inception_v3_fp32_nnadapter) {
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   nnadapter_device_names.emplace_back("huawei_ascend_npu");
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
-  out_accuracy_threshold = 0.79f;
+  out_accuracy_threshold = 0.76f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;
@@ -71,9 +73,9 @@ TEST(InceptionV3, test_inception_v3_fp32_nnadapter) {
   mobile_config.set_nnadapter_context_properties(nnadapter_context_properties);
   predictor = paddle::lite_api::CreatePaddlePredictor(mobile_config);
 
-  std::string raw_data_dir = FLAGS_data_dir + std::string("/raw_data");
+  std::string raw_data_dir = FLAGS_data_dir + std::string("/raw_data_299_299");
   std::vector<int> input_shape{
-      FLAGS_batch, FLAGS_channel, FLAGS_im_width, FLAGS_im_height};
+      FLAGS_batch, FLAGS_channel, inceptionv3_model_input_width, inceptionv3_model_input_height};
   auto raw_data = ReadRawData(raw_data_dir, input_shape, FLAGS_iteration);
 
   int input_size = 1;

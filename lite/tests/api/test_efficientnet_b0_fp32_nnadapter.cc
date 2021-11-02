@@ -28,7 +28,7 @@ DEFINE_int32(channel, 3, "image channel");
 namespace paddle {
 namespace lite {
 
-TEST(EfficientNet_b0, test_efficientnet_b0_fp32_nnadapter) {
+TEST(EfficientNet_b0, test_efficientnet_b0_v2_0_fp32_nnadapter) {
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;

@@ -28,7 +28,7 @@ DEFINE_int32(channel, 3, "image channel");
 namespace paddle {
 namespace lite {
 
-TEST(AlexNet, test_alexnet_fp32_nnadapter) {
+TEST(AlexNet, test_alexnet_v2_0_fp32_nnadapter) {
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;
@@ -46,7 +46,7 @@ TEST(AlexNet, test_alexnet_fp32_nnadapter) {
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   nnadapter_device_names.emplace_back("huawei_ascend_npu");
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
-  out_accuracy_threshold = 0.79f;
+  out_accuracy_threshold = 0.58f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;
@@ -54,6 +54,7 @@ TEST(AlexNet, test_alexnet_fp32_nnadapter) {
   std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor = nullptr;
   // Use the full api with CxxConfig to generate the optimized model
   lite_api::CxxConfig cxx_config;
+  LOG(INFO) << "FLAGS_model_dir:" << FLAGS_model_dir;
   cxx_config.set_model_dir(FLAGS_model_dir);
   cxx_config.set_valid_places(valid_places);
   cxx_config.set_nnadapter_device_names(nnadapter_device_names);
