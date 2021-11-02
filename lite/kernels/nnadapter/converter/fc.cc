@@ -127,9 +127,9 @@ int ConvertFC(Converter* converter, OpInfo* op, Scope* scope) {
           ConvertPrecisionTypeToNNPrecisionCode(w_precison));
     weight_operand = converter->AddConstantOperand(*w_tensor);
   }
-  // Transpose_x_operand
+  // Transpose_x operand
   auto transpose_x_operand = converter->AddConstantOperand(false);
-  // Transpose_y_operand
+  // Transpose_y operand
   auto transpose_y_operand = converter->AddConstantOperand(false);
   // Output operand
   auto output_operand = converter->AddOutputOperand(out_name, out_scales);

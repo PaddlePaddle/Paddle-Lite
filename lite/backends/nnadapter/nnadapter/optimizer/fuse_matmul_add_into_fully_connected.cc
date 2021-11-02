@@ -64,7 +64,7 @@ NNADAPTER_EXPORT void FuseMatMulAddIntoFullyConnected(hal::Model* model) {
           break;
         }
         auto fuse_code_operand = add_input_operands[2];
-        if (reinterpret_cast<bool*>(transpose_x_operand->buffer)) {
+        if (*reinterpret_cast<bool*>(transpose_x_operand->buffer)) {
           auto x_shape_count = x_operand->type.dimensions.count;
           if (x_shape_count < 2) {
             can_fuse = false;
@@ -79,7 +79,7 @@ NNADAPTER_EXPORT void FuseMatMulAddIntoFullyConnected(hal::Model* model) {
           TransposeOperand(x_operand, permutation);
         }
         // if transpose_y_operand is false, need transpose to adapt fc
-        if (!*reinterpret_cast<bool*>(transpose_y_operand->buffer)) {
+        if (!(*reinterpret_cast<bool*>(transpose_y_operand->buffer))) {
           if (y_operand->type.dimensions.count != 2) {
             can_fuse = false;
             break;
