@@ -38,7 +38,7 @@ Paddle Lite 已支持百度 XPU 在 X86 和 ARM 服务器（例如飞腾 FT-2000
 
 ### 准备编译环境
 
-- 为了保证编译环境一致，建议根据机器的实际情况参考[ linux(x86) 编译环境准备](../source_compile/linux_x86_compile_linux_x86.rst#准备编译环境)或[ linux(ARM) 编译环境准备](../source_compile/arm_linux_compile_arm_linux.rst#准备编译环境)进行环境配置
+- 为了保证编译环境一致，建议根据机器的实际情况参考[ linux(x86) 编译](../source_compile/linux_x86_compile_linux_x86)或[ linux(ARM) 编译](../source_compile/arm_linux_compile_arm_linux)中的``准备编译环境``进行环境配置
 
 ### 运行图像分类示例程序
 
@@ -186,7 +186,7 @@ Paddle Lite 已支持百度 XPU 在 X86 和 ARM 服务器（例如飞腾 FT-2000
   $ lite\\tools\\build_windows.bat with_extra without_python use_vs2017 with_dynamic_crt  with_baidu_xpu with_baidu_xpu_xtcl baidu_xpu_sdk_root D:\\xpu_toolchain_windows\\output
   ```
 
-  编译脚本 `build_windows.bat` 使用可参考[源码编译( Windows )](../source_compile/windows_compile_windows.rst)进行环境配置和查找相应编译参数
+  编译脚本 `build_windows.bat` 使用可参考[源码编译( Windows )](../source_compile/windows_compile_windows)进行环境配置和查找相应编译参数
 
 ## 其它说明
 
