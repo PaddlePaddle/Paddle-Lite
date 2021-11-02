@@ -36,6 +36,7 @@ namespace operation {
   /* Scale */                                                            \
   auto scale_operand = input_operands[2];                                \
   uint32_t scale_count = scale_operand->length / sizeof(float);          \
+  NNADAPTER_CHECK_GT(scale_count, 0U);                                   \
   float* scale_data = reinterpret_cast<float*>(scale_operand->buffer);   \
   bool is_per_layer_quant = scale_count == 1;                            \
   NNADAPTER_VLOG(5) << "scale_count: " << scale_count                    \

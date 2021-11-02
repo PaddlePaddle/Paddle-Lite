@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/optimizer/mir/clear_quant_info_pass.h"
+#include "lite/core/optimizer/mir/quantization_parameters_removal_pass.h"
 #include <vector>
 #include "lite/core/optimizer/mir/pass_registry.h"
 
@@ -20,7 +20,8 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-void ClearQuantInfoPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+void QuantizationParametersRemovalPass::Apply(
+    const std::unique_ptr<SSAGraph>& graph) {
   Scope* scope = nullptr;
   for (auto& node : graph->nodes()) {
     if (node.IsStmt()) {
@@ -56,7 +57,8 @@ void ClearQuantInfoPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   }
 }
 
-std::string ClearQuantInfoPass::GetMixedPrecisionQuantizationConfig(
+std::string
+QuantizationParametersRemovalPass::GetMixedPrecisionQuantizationConfig(
     Scope* scope) {
   std::string mixed_precision_quantization_config;
 #if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
@@ -89,10 +91,10 @@ std::string ClearQuantInfoPass::GetMixedPrecisionQuantizationConfig(
   return mixed_precision_quantization_config;
 }
 
-std::set<Node*>
-ClearQuantInfoPass::GetTargetNodesFromMixedPrecisionQuantizationConfig(
-    const std::unique_ptr<SSAGraph>& graph,
-    const std::string& mixed_precision_quantization_config) {
+std::set<Node*> QuantizationParametersRemovalPass::
+    GetTargetNodesFromMixedPrecisionQuantizationConfig(
+        const std::unique_ptr<SSAGraph>& graph,
+        const std::string& mixed_precision_quantization_config) {
   // Get target nodes from the mixed precision quantization config
   std::set<Node*> target_nodes;
   std::vector<std::string> lines =
@@ -160,17 +162,15 @@ ClearQuantInfoPass::GetTargetNodesFromMixedPrecisionQuantizationConfig(
   return target_nodes;
 }
 
-void ClearQuantInfoPass::ClearQuantInfo(paddle::lite::mir::Node* node) {
+void QuantizationParametersRemovalPass::ClearQuantInfo(
+    paddle::lite::mir::Node* node) {
   if (node->IsArg()) return;
   auto op_desc = node->AsStmt().mutable_op_info();
   op_desc->DeleteAttr("bit_length");
   op_desc->DeleteAttr("enable_int8");
 
-  std::vector<std::string> input_names;
   for (auto in_node : node->inlinks) {
-    input_names.push_back(in_node->AsArg().name);
-  }
-  for (auto input_name : input_names) {
+    auto input_name = in_node->AsArg().name;
     std::string arg_name;
     int idx = -1;
     CHECK(op_desc->GetInputArgname(input_name, &arg_name));
@@ -179,11 +179,8 @@ void ClearQuantInfoPass::ClearQuantInfo(paddle::lite::mir::Node* node) {
     op_desc->DeleteAttr(scale_name);
   }
 
-  std::vector<std::string> output_names;
   for (auto out_node : node->outlinks) {
-    output_names.push_back(out_node->AsArg().name);
-  }
-  for (auto output_name : output_names) {
+    auto output_name = out_node->AsArg().name;
     std::string arg_name;
     int idx = -1;
     CHECK(op_desc->GetOutputArgname(output_name, &arg_name));
@@ -197,5 +194,6 @@ void ClearQuantInfoPass::ClearQuantInfo(paddle::lite::mir::Node* node) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(clear_quant_info_pass, paddle::lite::mir::ClearQuantInfoPass)
+REGISTER_MIR_PASS(quantization_parameters_removal_pass,
+                  paddle::lite::mir::QuantizationParametersRemovalPass)
     .BindTargets({TARGET(kNNAdapter)});

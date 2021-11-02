@@ -208,8 +208,8 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        // Apply the constraints for the quantized ops(such as concat) that the
        // inputs and outputs must have the same scale.
        "restrict_quantized_op_with_same_input_output_scale_pass",
-       "clear_quant_info_pass",
-       "nnadapter_insert_calib_pass",
+       "quantization_parameters_removal_pass",
+       "mixed_precision_auto_insert_calib_op_pass",
        "nnadapter_subgraph_pass",
        "npu_subgraph_pass",
        "huawei_ascend_npu_subgraph_pass",

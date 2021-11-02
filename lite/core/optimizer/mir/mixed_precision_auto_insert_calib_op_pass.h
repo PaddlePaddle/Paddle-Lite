@@ -45,7 +45,7 @@ namespace mir {
  * after:
  *   op1(int8) -> var1(int8) -> calib -> var2 -> op2
  */
-class NNAdapterInsertCalibPass : public ProgramPass {
+class MixedPrecisionAutoInsertCalibOpPass : public ProgramPass {
  public:
   void Apply(const std::unique_ptr<SSAGraph>& graph) override;
 

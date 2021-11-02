@@ -36,7 +36,6 @@ int PrepareQuantize(hal::Operation* operation) {
   } else {
     NNADAPTER_LOG(FATAL) << "Unsupported quant mode.";
   }
-  input_operand->type.precision = NNADAPTER_FLOAT32;
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
 }
