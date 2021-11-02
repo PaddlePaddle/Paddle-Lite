@@ -180,17 +180,52 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
     bool is_mali_ = context.cl_context()->IsArmMali();
+    auto device_version =
+        CLRuntime::Global()->device().getInfo<CL_DEVICE_VERSION>();
     y_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
     if (!is_mali_ && x_dims.size() == 2 && y_dims.size() == 2 &&
         !transpose_x_) {
-      use_image_y_ = true;
-      DDimLite trans_dims{{y_ext_dims[0] / 4, y_ext_dims[1] * 4}};
-      CLImageConverterFolder converter;
-      const DDim& image_dims = converter.InitImageDimInfoWith(trans_dims);
-      int image_w_ = image_dims[0];
-      int image_h_ = image_dims[1];
-      MUTABLE_DATA_GPU(y_gpu_t_, image_w_, image_h_, y_buffer_data);
+      bool high_gpu =
+          device_version.find("Adreno(TM) 6") != std::string::npos &&
+          x_dims[0] < 64;
+      bool low_gpu = device_version.find("Adreno(TM) 5") != std::string::npos;
+      if (high_gpu || low_gpu) {
+        build_options_ += " -DUSE_IMAGE_Y ";
+        if (high_gpu) {
+          build_options_ += " -DADRENO_IMG ";
+          lws = 16;
+        } else if (low_gpu) {
+          if (device_version.find("Adreno(TM) 506") != std::string::npos) {
+            build_options_ += " -DADRENO_IMG ";
+            lws = 16;
+          } else if (device_version.find("Adreno(TM) 540") !=
+                     std::string::npos) {
+            build_options_ += " -DADRENO_540_IMG ";
+            lws = 128;
+          }
+        }
+        use_image_y_ = true;
+        DDimLite trans_dims{{y_ext_dims[0] / 4, y_ext_dims[1] * 4}};
+        CLImageConverterFolder converter;
+        const DDim& image_dims = converter.InitImageDimInfoWith(trans_dims);
+        int image_w_ = image_dims[0];
+        int image_h_ = image_dims[1];
+        MUTABLE_DATA_GPU(y_gpu_t_, image_w_, image_h_, y_buffer_data);
+      } else {
+        build_options_ += " -DADRENO_BUF ";
+        lws_ = 256;
+        auto y_gpu_data =
+            y_gpu_t_->mutable_data(TARGET(kOpenCL), y_cpu_t->memory_size());
+        TargetWrapperCL::MemcpySync(y_gpu_data,
+                                    y_cpu_t->raw_data(),
+                                    y_cpu_t->memory_size(),
+                                    IoDirection::HtoD);
+      }
     } else {
+      if (x_dims.size() == 2 && y_dims.size() == 2 && !transpose_x_) {
+        build_options_ += " -DOTHER_BUF ";
+        lws_ = 64;
+      }
       auto y_gpu_data =
           y_gpu_t_->mutable_data(TARGET(kOpenCL), y_cpu_t->memory_size());
       TargetWrapperCL::MemcpySync(y_gpu_data,
@@ -224,12 +259,9 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
         m_ = transpose_x_ ? x_dims[1] : x_dims[0];
         k_ = transpose_x_ ? x_dims[0] : x_dims[1];
         n_ = transpose_y_ ? y_dims[0] : y_dims[1];
-        kernel_func_name_ = "fc";
-        kernel_file_name_ = "image/fc_kernel.cl";
-        if (use_image_y_) {
-          kernel_func_name_ = "matmul_imagey";
-          kernel_file_name_ = "image/matmul_kernel.cl";
-        } else if (transpose_x_) {
+        kernel_func_name_ = "matmul";
+        kernel_file_name_ = "image/matmul_opt_kernel.cl";
+        if (transpose_x_) {
           kernel_func_name_ = "matmul_transpose_x";
           kernel_file_name_ = "image/matmul_xtranspose_kernel.cl";
         }
@@ -342,17 +374,15 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
   void SetGlobalLocalWorkSize() {
     const auto x_dims = matmul_v2_param_->X->dims();
     const auto y_dims = matmul_v2_param_->Y->dims();
-    local_work_size_ = cl::NDRange(32, 4, 1);
     if (x_dims.size() <= 2 && y_dims.size() <= 2) {
       if (transpose_x_) {
+        local_work_size_ = cl::NDRange(32, 4, 1);
         global_work_size_ =
             cl::NDRange(ROUND_UP(UP_DIV(n_, 4), local_work_size_[0]),
                         local_work_size_[1],
                         UP_DIV(m_, 4));
       } else {
-        if (use_image_y_) {
-          local_work_size_ = cl::NDRange(8, 4, 1);
-        }
+        local_work_size_ = cl::NDRange(lws_, 4, 1);
         global_work_size_ =
             cl::NDRange(ROUND_UP(UP_DIV(n_, 4), local_work_size_[0]),
                         local_work_size_[1],
@@ -493,6 +523,7 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
   int n_{0};
   int k_{0};
   int batch_{1};
+  int lws_{1};
   int N{1};
   int C{1};
   int H{1};

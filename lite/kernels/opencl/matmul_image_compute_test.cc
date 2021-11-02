@@ -338,12 +338,14 @@ void test(const lite_api::CLPrecisionType p,
     LOG(FATAL) << "Err num " << diff_cnt << "/" << out_dim.production();
   }
 
+  auto gpu_version = CLRuntime::Global()->device().getInfo<CL_DEVICE_VERSION>();
+  LOG(INFO) << "GPU_DEVICE_VERSION: " << gpu_version;
   LOG(INFO) << "\n\t[  PASSED  ] "
             << " Test Precision=" << lite_api::CLPrecisionTypeToStr(p)
             << " m=" << m << " k_x=" << k_x << " k_y=" << k_y << " n=" << n;
 }
 
-// TEST(matmul, compute_basic) {
+// TEST(matmul, performace_test) {
 //   for (const auto precision_type :
 //        {lite_api::CLPrecisionType::CL_PRECISION_FP32,
 //         lite_api::CLPrecisionType::CL_PRECISION_FP16
@@ -352,8 +354,13 @@ void test(const lite_api::CLPrecisionType p,
 //     std::vector<int> vec_n = {1, 2, 4, 8, 16, 32, 64,
 //                               128, 256, 512, 1024, 1000};
 //     for (auto n = 0; n < vec_n.size(); n++) {
-//         test(precision_type, DDim(std::vector<DDim::value_type>{m, k}),
-//                 DDim(std::vector<DDim::value_type>{k, n}), false, false);
+//         test(precision_type, DDim(std::vector<DDim::value_type>{1, 1024}),
+//                 DDim(std::vector<DDim::value_type>{1024, vec_n[n]}), false,
+//                 false);
+//         test(precision_type, DDim(std::vector<DDim::value_type>{vec_n[n],
+//         1024}),
+//                 DDim(std::vector<DDim::value_type>{1024, 1024}), false,
+//                 false);
 //     }
 //   }
 // }
