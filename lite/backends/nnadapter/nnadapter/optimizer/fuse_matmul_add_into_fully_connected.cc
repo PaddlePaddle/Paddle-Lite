@@ -58,6 +58,8 @@ NNADAPTER_EXPORT void FuseMatMulAddIntoFullyConnected(hal::Model* model) {
         }
         auto& add_input_operands = add_operation->input_operands;
         auto& add_output_operands = add_operation->output_operands;
+        NNADAPTER_CHECK_EQ(add_input_operands.size(), 3);
+        NNADAPTER_CHECK_EQ(add_output_operands.size(), 1);
         auto bias_operand = add_input_operands[1];
         if (!IsConstantOperand(bias_operand)) {
           can_fuse = false;
