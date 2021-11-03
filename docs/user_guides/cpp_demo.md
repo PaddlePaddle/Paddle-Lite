@@ -119,7 +119,7 @@ inference_lite_lib.android.armv8          Paddle Lite 预测库
 
 ### 3. 准备预测部署模型
 
-（1) 模型下载：下载 [mobilenet_v1](http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz) 模型后解压，得到 Paddle 非 combined 形式的模型，位于文件夹 `mobilenet_v1` 下。可通过模型可视化工具 [Netron](https://lutzroeder.github.io/netron/) 打开文件夹下的`__model__`文件，查看模型结构。
+（1) 模型下载：下载 [mobilenet_v1](https://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz) 模型后解压，得到 Paddle 非 combined 形式的模型，位于文件夹 `mobilenet_v1` 下。可通过模型可视化工具 [Netron](https://lutzroeder.github.io/netron/) 打开文件夹下的`__model__`文件，查看模型结构。
 
 ```shell
 wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz
