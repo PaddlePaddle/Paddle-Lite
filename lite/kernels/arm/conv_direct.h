@@ -42,8 +42,8 @@ inline bool direct_conv_trans_weights(
     const std::vector<float>& w_scale,
     float in_scale,
     float out_scale,
-    std::vector<float>& merge_scale,  // NOLINT
-    operators::ActivationParam act_param) {
+    std::vector<float>& merge_scale,          // NOLINT
+    operators::ActivationParam& act_param) {  // NOLINT
   constexpr int cblock = 4;
   int oc = win->dims()[0];
   int ic = win->dims()[1];
@@ -75,8 +75,8 @@ inline bool direct_conv_trans_weights<PRECISION(kInt8), PRECISION(kFloat)>(
     const std::vector<float>& w_scale,
     float in_scale,
     float out_scale,
-    std::vector<float>& merge_scale,  // NOLINT
-    operators::ActivationParam act_param) {
+    std::vector<float>& merge_scale,          // NOLINT
+    operators::ActivationParam& act_param) {  // NOLINT
   CHECK_EQ(stride, 2);
 #ifdef __aarch64__
   int cblock = 8;
@@ -117,8 +117,8 @@ inline bool direct_conv_trans_weights<PRECISION(kInt8), PRECISION(kInt8)>(
     const std::vector<float>& w_scale,
     float in_scale,
     float out_scale,
-    std::vector<float>& merge_scale,  // NOLINT
-    operators::ActivationParam act_param) {
+    std::vector<float>& merge_scale,          // NOLINT
+    operators::ActivationParam& act_param) {  // NOLINT
   CHECK_EQ(stride, 2);
 #ifdef __aarch64__
   int cblock = 8;
@@ -185,8 +185,8 @@ inline bool direct_conv_trans_weights<PRECISION(kFP16), PRECISION(kFP16)>(
     const std::vector<float>& w_scale,
     float in_scale,
     float out_scale,
-    std::vector<float>& merge_scale,  // NOLINT
-    operators::ActivationParam act_param) {
+    std::vector<float>& merge_scale,          // NOLINT
+    operators::ActivationParam& act_param) {  // NOLINT
   constexpr int cblock = 8;
   int oc = win->dims()[0];
   int ic = win->dims()[1];
