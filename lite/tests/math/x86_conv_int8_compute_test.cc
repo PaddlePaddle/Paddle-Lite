@@ -236,16 +236,6 @@ TEST(TestX86LiteConvInt8, conv_s8_compute) {
                           int extend_kh = dil * (kh - 1) + 1;
                           int ow = (iw - extend_kw + 2 * pw) / stride + 1;
                           int oh = (ih - extend_kh + 2 * ph) / stride + 1;
-
-                          LOG(INFO) << "ic=" << ic << ", oc=" << oc
-                                    << ", iw=" << iw << ", ih=" << ih
-                                    << ", ow=" << ow << ", oh=" << oh
-                                    << ", kw=" << kw << ", kh=" << kh
-                                    << ", group=" << group << ", dil=" << dil
-                                    << ", relu_type=" << relu_type
-                                    << ", stride=" << stride << ", pad=" << pp
-                                    << ", bias=" << bias;
-
                           auto flag = test_conv_int8({ic,
                                                       oc,
                                                       kw,
