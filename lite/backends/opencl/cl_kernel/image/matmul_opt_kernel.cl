@@ -13,18 +13,6 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include <cl_common.h>
-#ifdef ADRENO_540_IMG
-#define LOC_MEM_SIZE 128
-#endif
-#ifdef ADRENO_BUF
-#define LOC_MEM_SIZE 256
-#endif
-#ifdef ADRENO_IMG
-#define LOC_MEM_SIZE 16
-#endif
-#ifdef OTHER_BUF
-#define LOC_MEM_SIZE 64
-#endif
 
 __kernel void matmul(__read_only image2d_t input,
                      __write_only image2d_t output,
@@ -36,9 +24,9 @@ __kernel void matmul(__read_only image2d_t input,
                      int M,
                      int k_blks,
                      int n_blks) {
-  int out_n = get_global_id(2);  // m
-  int out_c = get_global_id(0);  // n
-  int2 tid = (int2)(get_local_id(0), get_local_id(1));
+  int out_n = get_global_id(0);  // m
+  int out_c = get_global_id(2);  // n
+  int2 tid = (int2)(get_local_id(2), get_local_id(1));
 
   CL_COMPUTE_DTYPE4 s = (CL_COMPUTE_DTYPE4)(0.0f);
   if (out_n >= M) return;
@@ -71,16 +59,16 @@ __kernel void matmul(__read_only image2d_t input,
 #endif
     }
   }
-  __local CL_COMPUTE_DTYPE4 temp[LOC_MEM_SIZE][4];
-  temp[tid.x][tid.y] = s;
+  __local CL_COMPUTE_DTYPE4 temp[4][16];
+  temp[tid.y][tid.x] = s;
   barrier(CLK_LOCAL_MEM_FENCE);
 
   if (out_c >= n_blks) return;
 
   if (tid.y == 0) {
-    s += temp[tid.x][1];
-    s += temp[tid.x][2];
-    s += temp[tid.x][3];
+    s += temp[1][tid.x];
+    s += temp[2][tid.x];
+    s += temp[3][tid.x];
 
     int2 output_pos0 = (int2)(out_c, out_n);
     CL_COMPUTE_DTYPE4 output0 = s;

@@ -185,49 +185,16 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
     y_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
     if (!is_mali_ && x_dims.size() == 2 && y_dims.size() == 2 &&
         !transpose_x_) {
-      bool high_gpu =
-          device_version.find("Adreno(TM) 6") != std::string::npos &&
-          x_dims[0] < 64;
-      bool low_gpu = device_version.find("Adreno(TM) 5") != std::string::npos;
-      if (high_gpu || low_gpu) {
-        build_options_ += " -DUSE_IMAGE_Y ";
-        if (high_gpu) {
-          build_options_ += " -DADRENO_IMG ";
-          lws_ = 16;
-        } else if (low_gpu) {
-          if (device_version.find("Adreno(TM) 506") != std::string::npos) {
-            build_options_ += " -DADRENO_IMG ";
-            lws_ = 16;
-          } else if (device_version.find("Adreno(TM) 540") !=
-                     std::string::npos) {
-            build_options_ += " -DADRENO_540_IMG ";
-            lws_ = 128;
-          }
-        }
-        use_image_y_ = true;
-        DDimLite trans_dims{{y_ext_dims[0] / 4, y_ext_dims[1] * 4}};
-        CLImageConverterFolder converter;
-        const DDim& image_dims = converter.InitImageDimInfoWith(trans_dims);
-        int image_w_ = image_dims[0];
-        int image_h_ = image_dims[1];
-        MUTABLE_DATA_GPU(y_gpu_t_, image_w_, image_h_, y_buffer_data);
-      } else {
-        build_options_ += " -DADRENO_BUF ";
-        lws_ = 256;
-        auto y_gpu_data =
-            y_gpu_t_->mutable_data(TARGET(kOpenCL), y_cpu_t->memory_size());
-        TargetWrapperCL::MemcpySync(y_gpu_data,
-                                    y_cpu_t->raw_data(),
-                                    y_cpu_t->memory_size(),
-                                    IoDirection::HtoD);
-      }
+      build_options_ += " -DUSE_IMAGE_Y ";
+      use_image_y_ = true;
+      DDimLite trans_dims{{y_ext_dims[0] / 4, y_ext_dims[1] * 4}};
+      CLImageConverterFolder converter;
+      const DDim& image_dims = converter.InitImageDimInfoWith(trans_dims);
+      int image_w_ = image_dims[0];
+      int image_h_ = image_dims[1];
+      MUTABLE_DATA_GPU(y_gpu_t_, image_w_, image_h_, y_buffer_data);
     } else {
-      if (x_dims.size() == 2 && y_dims.size() == 2 && !transpose_x_) {
-        build_options_ += " -DOTHER_BUF ";
-        lws_ = 64;
-      }
-      auto y_gpu_data =
-          y_gpu_t_->mutable_data(TARGET(kOpenCL), y_cpu_t->memory_size());
+      y_gpu_t_->mutable_data(TARGET(kOpenCL), y_cpu_t->memory_size());
       TargetWrapperCL::MemcpySync(y_gpu_data,
                                   y_cpu_t->raw_data(),
                                   y_cpu_t->memory_size(),
@@ -271,8 +238,8 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
         CHECK_EQ(transpose_y_, false) << "unsupported when y_transpose is true";
         m_ = 1, n_ = 1;
         k_ = y_dims[0];
-        kernel_func_name_ = "fc";
-        kernel_file_name_ = "image/fc_kernel.cl";
+        kernel_func_name_ = "matmul";
+        kernel_file_name_ = "image/matmul_opt_kernel.cl";
       } else if (x_dims.size() == 1 && y_dims.size() == 1 &&
                  x_dims[0] != y_dims[0]) {
         CHECK_EQ(transpose_x_, true) << "unsupported when x_transpose is false";
@@ -382,11 +349,18 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
                         local_work_size_[1],
                         UP_DIV(m_, 4));
       } else {
-        local_work_size_ = cl::NDRange(lws_, 4, 1);
-        global_work_size_ =
-            cl::NDRange(ROUND_UP(UP_DIV(n_, 4), local_work_size_[0]),
-                        local_work_size_[1],
-                        m_);
+        local_work_size_ = cl::NDRange(8, 4, 16);
+        if (device_name.find("Adreno(TM) 506") != std::string::npos) {
+          local_work_size_ = cl::NDRange(4, 4, 16);
+        }
+        global_work_size_ = cl::NDRange(m_, local_work_size_[1], UP_DIV(n_, 4));
+        if (is_mali_) {
+          local_work_size_ = cl::NDRange(4, 4, 16);
+          global_work_size_ =
+              cl::NDRange(ROUND_UP(m_, local_work_size_[0]),
+                          local_work_size_[1],
+                          ROUND_UP(UP_DIV(n_, 4), local_work_size_[2]));
+        }
       }
     } else if (x_dims.size() > 2 && y_dims.size() >= 2) {
       CLImageConverterFolder* folder_converter = new CLImageConverterFolder();
@@ -531,6 +505,8 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
   int c_blks_;
   int k_blks_;
   int n_blks_;
+  bool is_mali_;
+  std::string device_version;
   bool use_image_y_{false};
   bool transpose_x_{false};
   bool transpose_y_{false};
