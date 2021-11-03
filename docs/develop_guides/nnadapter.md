@@ -370,7 +370,7 @@ NNAdapter 作为一个 backend 并以子图方式接入 Paddle Lite ，具体可
   - 添加模型单元测试：为了验证新合入的代码对已支持的模型是否有影响（正常跑通且精度对齐），需要在指定模型的单元测试中增加对目标硬件的支持，例如：在 MobileNetV1 模型增加华为昇腾 NPU 的支持，仅需添加[ 3~4 行代码](https://github.com/PaddlePaddle/Paddle-Lite/blob/361dccf78867a9d63415c20a683371dce56d6e5d/lite/tests/api/test_mobilenet_v1_fp32_nnadapter.cc#L50)（注意：全量化模型的单测为 `test_mobilenet_v1_int8_per_channel_nnadapter` 和 `test_mobilenet_v1_int8_per_layer_nnadapter` ）。
   - 为了实现持续交付，需要向飞桨团队提供至少3套测试硬件，用于目标硬件的测试环境并加入到 Paddle Lite CI 系统。
 
-- 增加硬件说明文档，例如：华为昇腾 NPU 的[文档源码](https://raw.githubusercontent.com/PaddlePaddle/Paddle-Lite/develop/docs/demo_guides/huawei_kirin_npu.md)。
+- 增加硬件说明文档，例如：华为昇腾 NPU 的[文档源码](https://github.com/PaddlePaddle/Paddle-Lite/blob/000148b34f7cbcdf19802501dc1ddef9f9c83490/docs/demo_guides/huawei_ascend_npu.md?plain=1#L3)。
 
 - 提交代码：具体是向 Paddle Lite 的 [github 代码仓库](https://github.com/PaddlePaddle/Paddle-Lite)发起 Pull request，具体可以参考[新增硬件](./add_hardware)的『代码提交、Review 、合入机制、CI 机制』章节配置编译和代码提交环境，并按照规范提交代码，由飞桨团队同学 reivew 后方可合入主线代码。
 
