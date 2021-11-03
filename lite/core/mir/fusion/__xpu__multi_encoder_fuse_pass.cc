@@ -665,21 +665,24 @@ class XPUMultiEncoderFuser {
 
   void operator()(SSAGraph* graph) {
     std::vector<Node*> all_encoders;
-    for (auto* node : graph->StmtTopologicalOrder()) {
-      CHECK(node->IsStmt());
-      if (node->stmt()->op_info()->Type() == "single_encoder") {
-        if (all_encoders.empty() ||
-            IsDirectPredecessorOf(all_encoders.back(), node)) {
-          all_encoders.push_back(node);
-        } else {
-          break;
+    // if no node linked from all_encoders.back(), search is over
+    int encoder_num = 0;
+    do {
+      encoder_num = all_encoders.size();
+      for (auto* node : graph->StmtTopologicalOrder()) {
+        CHECK(node->IsStmt());
+        if (node->stmt()->op_info()->Type() == "single_encoder") {
+          if (all_encoders.empty() ||
+              IsDirectPredecessorOf(all_encoders.back(), node)) {
+            all_encoders.push_back(node);
+          }
         }
       }
-    }
-    VLOG(3) << "Found continuous " << all_encoders.size() << " single_encoder";
+    } while (encoder_num != all_encoders.size());
     if (all_encoders.size() == 0) {
       return;
     }
+    VLOG(3) << "Found continuous " << all_encoders.size() << " single_encoder";
 
     const bool enable_int8 =
         all_encoders[0]->stmt()->op_info()->HasAttr("enable_int8") &&
@@ -773,6 +776,14 @@ class XPUMultiEncoderFuser {
       CHECK_EQ(fc_precision_, "int8");
       CHECK_EQ(fc_input_max.size(), all_encoders.size() * 6);
       CHECK_EQ(fc_weight_max.size(), all_encoders.size() * 6);
+      for (int i = 0; i < fc_weight_max.size(); i += 6) {
+        CHECK_LT(std::abs(fc_weight_max[i] - fc_weight_max[i + 1]), 1e-5)
+            << " quanted ernie's q/k weight scale should be equal: "
+            << fc_weight_max[i] << ", " << fc_weight_max[i + 1];
+        CHECK_LT(std::abs(fc_weight_max[i] - fc_weight_max[i + 2]), 1e-5)
+            << " quanted ernie's q/v weight scale should be equal: "
+            << fc_weight_max[i] << ", " << fc_weight_max[i + 2];
+      }
       op_desc.SetAttr<std::vector<float>>("FCInputMax", fc_input_max);
       // "FCWeightMax" is also stored as "Input" now
       op_desc.SetAttr<std::vector<float>>("FCWeightMax", fc_weight_max);
@@ -977,6 +988,7 @@ class XPUMultiEncoderFuser {
       weight_dim1_acc += weight_dims_vec[i][1];
       if (i > 0) {
         CHECK_EQ(weight_dims_vec[i][0], weight_dims_vec[i - 1][0]);
+        CHECK_EQ(start % 6, 0) << " qkv fuse position invalid: " << start;
       }
     }
 
@@ -1046,7 +1058,7 @@ class XPUMultiEncoderFuser {
                                                    weight_qkv_trans_int8.get(),
                                                    max_f,
                                                    qkv_len);
-        memcpy(weight_tensor_vec[0]->mutable_data<float>(),
+        memcpy(weight_tensor_vec[0]->mutable_data<int8_t>(),
                weight_qkv_trans_int8.get(),
                qkv_len * sizeof(int8_t));
       } else {
@@ -1056,7 +1068,7 @@ class XPUMultiEncoderFuser {
             weight_qkv_trans_int16.get(),
             max_f,
             qkv_len);
-        memcpy(weight_tensor_vec[0]->mutable_data<float>(),
+        memcpy(weight_tensor_vec[0]->mutable_data<int16_t>(),
                weight_qkv_trans_int16.get(),
                qkv_len * sizeof(int16_t));
       }
