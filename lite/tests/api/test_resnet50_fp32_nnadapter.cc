@@ -49,7 +49,7 @@ TEST(ResNet50, test_resnet50_fp32_nndapter) {
 #elif defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   nnadapter_device_names.emplace_back("huawei_ascend_npu");
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
-  out_accuracy_threshold = 0.71f;
+  out_accuracy_threshold = 0.69f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;
