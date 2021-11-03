@@ -13,3 +13,11 @@
 // limitations under the License.
 
 #pragma once
+
+#include "core/hal/types.h"
+
+namespace nnadapter {
+
+void FuseMatMulAddIntoFullyConnected(hal::Model *model);
+
+}  // namespace nnadapter
