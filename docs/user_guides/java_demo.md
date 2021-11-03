@@ -29,7 +29,7 @@
 
 ## Java 应用开发说明
 
-Java 代码调用 Paddle-Lite 执行预测仅需五步：
+Java 代码调用 Paddle Lite 执行预测仅需五步：
 
 (1) 设置 MobileConfig 信息
 
@@ -71,7 +71,7 @@ predictor.run();
 ```java
 Tensor output = predictor.getOutput(0);
 ```
-详细的 Java API 说明文档位于[Java API](../api_reference/java_api_doc)。更多 Java 应用预测开发可以参考位于位于[Paddle-Lite-Demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)的工程示例代码。
+详细的 Java API 说明文档位于[Java API](../api_reference/java_api_doc)。更多 Java 应用预测开发可以参考位于位于[Paddle Lite Demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)的工程示例代码。
 
 
 ## Android Studio 工程 Java 示例程序
@@ -98,7 +98,7 @@ Tensor output = predictor.getOutput(0);
 **解压后内容结构如下：**
 
 ```shell
-inference_lite_lib.android.armv8.gcc.c++_static    Paddle-Lite 预测库
+inference_lite_lib.android.armv8.gcc.c++_static    Paddle Lite 预测库
 ├── cxx                                 C++ 预测库
 │   ├── include                             C++ 预测库头文件
 │   └── lib                                 C++ 预测库文件

@@ -26,7 +26,7 @@
 
 ## Python 应用开发说明
 
-Python 代码调用 Paddle-Lite 执行预测库仅需以下五步：
+Python 代码调用 Paddle Lite 执行预测库仅需以下五步：
 
 (1) 引入必要的库
 
