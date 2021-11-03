@@ -25,12 +25,6 @@ int ConvertFullyConnected(Converter* converter, hal::Operation* operation) {
   FULLY_CONNECTED_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to amlnpu tensors and operators
-  std::vector<int32_t> permutation;
-  auto input_shape_count = input_operand->type.dimensions.count;
-  for (int32_t i = input_shape_count - 1; i >= 0; --i) {
-    permutation.push_back(i);
-  }
-  TransposeDimensions(input_operand->type.dimensions.data, permutation);
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
