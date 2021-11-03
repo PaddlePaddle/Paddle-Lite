@@ -25,7 +25,7 @@ Paddle Lite 框架拥有优秀的加速、优化策略及实现，包含量化�
 **三. 下载或编译**
 
 Paddle Lite 提供了 Android/iOS/X86 平台的官方 Release 预测库下载，我们优先推荐您直接下载 [Paddle Lite 预编译库](https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html)。
-您也可以根据目标平台选择对应的[源码编译方法](https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html#id2)。Paddle Lite 提供了源码编译脚本，位于 `lite/tools/` 文件夹下，只需要[准备环境](https://paddle-lite.readthedocs.io/zh/latest/source_compile/compile_env.html)和[调用编译脚本](https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html#id2)两个步骤即可一键编译得到目标平台的 Paddle Lite 预测库。
+您也可以根据目标平台选择对应的[源码编译方法](https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html#id2)。Paddle Lite 提供了源码编译脚本，位于 `./lite/tools/` 文件夹下，只需要[准备环境](https://paddle-lite.readthedocs.io/zh/latest/source_compile/compile_env.html)和[调用编译脚本](https://paddle-lite.readthedocs.io/zh/latest/quick_start/release_lib.html#id2)两个步骤即可一键编译得到目标平台的 Paddle Lite 预测库。
 
 **四. 预测示例**
 
@@ -87,18 +87,18 @@ Paddle Lite 的架构设计着重考虑了对多硬件和平台的支持，并�
 ### 文档和示例
 - 完整文档： [Paddle Lite 文档](https://paddle-lite.readthedocs.io/zh/latest/)
 -  API文档：
-	- [C++ API文档](https://paddle-lite.readthedocs.io/zh/latest/api_reference/cxx_api_doc.html)
-	- [Java API文档](https://paddle-lite.readthedocs.io/zh/latest/api_reference/java_api_doc.html)
-	- [Python API文档](https://paddle-lite.readthedocs.io/zh/latest/api_reference/python_api_doc.html)
+	- [C++ API 文档](https://paddle-lite.readthedocs.io/zh/latest/api_reference/cxx_api_doc.html)
+	- [Java API 文档](https://paddle-lite.readthedocs.io/zh/latest/api_reference/java_api_doc.html)
+	- [Python API 文档](https://paddle-lite.readthedocs.io/zh/latest/api_reference/python_api_doc.html)
 	- [CV 图像处理 API 文档](https://paddle-lite.readthedocs.io/zh/latest/api_reference/cv.html)
-- Paddle Lite工程示例： [Paddle-Lite-Demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)
+- Paddle Lite 工程示例： [Paddle-Lite-Demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)
 ### 关键技术
 - 模型量化：
 	- [静态离线量化](https://paddle-lite.readthedocs.io/zh/latest/user_guides/quant_aware.html#id18)
 	- [动态离线量化](https://paddle-lite.readthedocs.io/zh/latest/user_guides/quant_aware.html#id7)
 - 调试分析：[调试和性能分析工具](https://paddle-lite.readthedocs.io/zh/latest/user_guides/profiler.html)
 - 移动端模型训练：点击[了解一下](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/cpp_train_demo.html)
-- 飞桨预训练模型库：试试在 [PaddleHub](https://www.paddlepaddle.org.cn/hublist?filter=hot&value=1)浏览和下载 Paddle 的预训练模型
+- 飞桨预训练模型库：试试在 [PaddleHub](https://www.paddlepaddle.org.cn/hublist?filter=hot&value=1) 浏览和下载 Paddle 的预训练模型
 ### FAQ
 - FAQ：常见问题，可以访问 [FAQ](https://paddle-lite.readthedocs.io/zh/latest/introduction/faq.html)、搜索 Issues、或者通过页面底部的联系方式联系我们
 ###贡献代码
