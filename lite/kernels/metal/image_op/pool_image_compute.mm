@@ -154,7 +154,7 @@ void PoolImageCompute::run_with_mps() {
     auto cmdbuf = [backend commandBuffer];
     if (mps_pool_op_) {
         if (@available(iOS 10.0, *)) {
-            [((__bridge MPSCNNPoolingMax*)mps_pool_op_)
+            [((__bridge MPSCNNPooling*)mps_pool_op_)
                 encodeToCommandBuffer:cmdbuf
                           sourceImage:(__bridge MPSImage*)mps_input_image_
                      destinationImage:(__bridge MPSImage*)mps_output_image_];
@@ -202,10 +202,10 @@ void PoolImageCompute::setup_with_mps() {
                    kernelHeight:input_buffer_->image().height
                 strideInPixelsX:input_buffer_->image().width
                 strideInPixelsY:input_buffer_->image().height];
-            ((__bridge MPSCNNPoolingMax*)mps_pool_op_).offset =
+            ((__bridge MPSCNNPoolingAverage*)mps_pool_op_).offset =
                 MPSOffset{.x = static_cast<NSInteger>(input_buffer_->image().width / 2),
                     .y = static_cast<NSInteger>(input_buffer_->image().height / 2)};
-            ((__bridge MPSCNNPoolingMax*)mps_pool_op_).edgeMode = MPSImageEdgeModeZero;
+            ((__bridge MPSCNNPoolingAverage*)mps_pool_op_).edgeMode = MPSImageEdgeModeZero;
         }
         // MPS input and output
         auto input_c = static_cast<int>(input_buffer_->tensor_dim_[1]);
