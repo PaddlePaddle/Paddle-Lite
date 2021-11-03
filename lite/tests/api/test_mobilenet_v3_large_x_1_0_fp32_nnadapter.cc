@@ -46,7 +46,7 @@ TEST(MobileNetV3_large_x1_0, test_mobilenetv3_large_x_1_0_v2_0_fp32_nnadapter) {
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   nnadapter_device_names.emplace_back("huawei_ascend_npu");
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
-  out_accuracy_threshold = 0.8f;
+  out_accuracy_threshold = 0.78f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;
