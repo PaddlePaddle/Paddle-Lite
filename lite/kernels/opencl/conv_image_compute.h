@@ -98,6 +98,7 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   // block, second 4 elements is the second row of the block, etc. Subsequent
   // blocks contain elements of the same 4 columns.
   void OI2IOO4I4(void* src, void* dst, size_t O, size_t I);
+  void NCHW2IMG4(void* src, void* dst, size_t oc, size_t ic, size_t index);
   void AssignDataFromCPUToGPU(const Tensor* tensor_cpu_p, Tensor* tensor_gpu_p);
   bool UseFcReplaceConv();
 
@@ -110,6 +111,9 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   std::string time_stamp_{GetTimeStamp()};
 
   std::unique_ptr<Tensor> filter_gpu_image_{nullptr};
+  std::unique_ptr<Tensor> filter_gpu_image1_{nullptr};
+  std::unique_ptr<Tensor> filter_gpu_image2_{nullptr};
+  std::unique_ptr<Tensor> filter_gpu_image3_{nullptr};
   std::unique_ptr<Tensor> bias_gpu_image_{nullptr};
   std::unique_ptr<Tensor> alpha_gpu_image_{nullptr};
   std::unique_ptr<Tensor> tensor_hold_filter_image_{nullptr};
@@ -132,6 +136,9 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   const cl::Image2D* input_image_p_{nullptr};
   const cl::Image2D* second_input_image_p_{nullptr};
   const cl::Image2D* filter_image_p_{nullptr};
+  const cl::Image2D* filter_image_p1_{nullptr};
+  const cl::Image2D* filter_image_p2_{nullptr};
+  const cl::Image2D* filter_image_p3_{nullptr};
   const cl::Image2D* bias_image_p_{nullptr};
   const cl::Image2D* alpha_image_p_{nullptr};
   const cl::Image2D* output_image_p_{nullptr};
