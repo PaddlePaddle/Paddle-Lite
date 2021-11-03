@@ -144,7 +144,6 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
     } else if (target_repr == "x86") {
       valid_places_.emplace_back(Place{TARGET(kX86), PRECISION(kFloat)});
       valid_places_.emplace_back(Place{TARGET(kX86), PRECISION(kInt64)});
-      valid_places_.emplace_back(Place{TARGET(kX86), PRECISION(kInt8)});
       valid_places_.emplace_back(Place{TARGET(kX86), PRECISION(kAny)});
     } else if (target_repr == "x86_opencl") {
       valid_places_.emplace_back(
