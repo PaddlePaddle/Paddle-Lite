@@ -16,6 +16,7 @@
 
 #include <cmath>
 #include <string>
+#include <utility>
 #include <vector>
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/core/context.h"
@@ -162,6 +163,28 @@ inline bool direct_conv_trans_weights<PRECISION(kInt8), PRECISION(kInt8)>(
   return false;
 }
 
+template <PrecisionType Ptype, PrecisionType OutType>
+inline std::pair<uint32_t, uint32_t> direct_conv_ptype() {
+  return std::make_pair(4, 4);
+}
+template <>
+inline std::pair<uint32_t, uint32_t>
+direct_conv_ptype<PRECISION(kInt8), PRECISION(kFloat)>() {
+#ifdef __aarch64__
+  return std::make_pair(8, 4);
+#else
+  return std::make_pair(4, 4);
+#endif
+}
+template <>
+inline std::pair<uint32_t, uint32_t>
+direct_conv_ptype<PRECISION(kInt8), PRECISION(kInt8)>() {
+#ifdef __aarch64__
+  return std::make_pair(8, 4);
+#else
+  return std::make_pair(4, 4);
+#endif
+}
 #ifdef ENABLE_ARM_FP16
 template <>
 inline bool direct_conv_trans_weights<PRECISION(kFP16), PRECISION(kFP16)>(
@@ -194,6 +217,15 @@ inline bool direct_conv_trans_weights<PRECISION(kFP16), PRECISION(kFP16)>(
         w_in_data, transed_w_data, oc, ic, cblock, kh * kw);
   }
   return false;
+}
+template <>
+inline std::pair<uint32_t, uint32_t>
+direct_conv_ptype<PRECISION(kFP16), PRECISION(kFP16)>() {
+#ifdef __aarch64__
+  return std::make_pair(8, 8);
+#else
+  retur std::make_pair(8, 4);
+#endif
 }
 #endif
 
@@ -235,6 +267,59 @@ class DirectConv : public KernelLite<TARGET(kARM), Ptype> {
         &param.activation_param.Relu_clipped_coef);
   }
 
+  virtual void ReInitWhenNeeded() {
+    auto& param = this->template Param<param_t>();
+    auto& ctx = this->ctx_->template As<ARMContext>();
+    auto dim_in = param.x->dims();
+    if (last_shape_ == dim_in) {
+      return;
+    }
+
+    auto w_dims = param.filter->dims();
+    auto dim_out = param.output->dims();
+    auto paddings = *param.paddings;
+    const int threads = ctx.threads();
+    int llc_size = ctx.llc_size() / sizeof(float);
+    const int pad_w = paddings[2];
+    const int pad_h = paddings[0];
+    const int kernel_w = w_dims[3];
+    const int stride_w = param.strides[1];
+    int ow = dim_out[3];
+    int oh = dim_out[2];
+    int ic = dim_in[1];
+    if (ic == 3) {
+      ic = 4;
+    }
+    auto&& res = direct_conv_ptype<Ptype, OutType>();
+    const int OUT_C_BLOCK = res.first;
+    const int OUT_W_BLOCK = res.second;
+    const int OUT_H_BLOCK = 2;
+    const int wout_round = ROUNDUP(ow, OUT_W_BLOCK);
+    const int win_round = (wout_round - 1) * stride_w + kernel_w;
+    /* get h block */
+    /* win_round * ic * hin_r_block + wout_round * OUT_C_BLOCK * hout_r_block */
+    /* * threads = llc_size */
+    /* win_round = (wout_round - 1) * stride_w + kernel_w */
+    /* hin_r_block = (hout_r_block - 1) * stride_w + kernel_w*/
+    int a = kernel_w * stride_w;
+    int b = kernel_w * kernel_w;
+    int c = stride_w * stride_w;
+    int hout_r_block =
+        (llc_size - ic * (a * (wout_round - 2) + b - c * (wout_round - 1))) /
+        ((ic * ((wout_round - 1) * c + a)) +
+         wout_round * OUT_C_BLOCK * threads);
+    hout_r_block = hout_r_block > oh ? oh : hout_r_block;
+    hout_r_block = (hout_r_block / OUT_H_BLOCK) * OUT_H_BLOCK;
+    hout_r_block = hout_r_block < OUT_H_BLOCK ? OUT_H_BLOCK : hout_r_block;
+    const int hin_r_block = (hout_r_block - 1) * stride_w + kernel_w;
+    int in_len = win_round * ic;
+    int pre_in_size = hin_r_block * in_len;
+    int pre_out_size = OUT_C_BLOCK * hout_r_block * wout_round;
+
+    workspace_size_ = sizeof(float) * (pre_in_size + threads * pre_out_size);
+    last_shape_ = dim_in;
+  }
+
   virtual void Run();
 
 #ifdef LITE_WITH_PROFILE
@@ -264,6 +349,8 @@ class DirectConv : public KernelLite<TARGET(kARM), Ptype> {
   bool flag_trans_weights_{false};
   bool flag_trans_bias_{false};
   std::vector<float> w_scale_;
+  DDim last_shape_;
+  int workspace_size_{0};
 
  private:
   using param_t = operators::ConvParam;
