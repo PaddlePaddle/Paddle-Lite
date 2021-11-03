@@ -82,7 +82,7 @@ Paddle Lite 已支持在比特大陆的 Sophon BM1682/BM1684 处理器上进行�
 
 ### 准备本地编译环境
 
-- 目前仅在 Ubuntu 16.04 环境进行过测试，为了避免环境不一致带来的麻烦，建议使用 Docker 编译环境，请先根据[编译环境准备](../source_compile/compile_env.rst)下载好 `paddlepaddle/paddle-lite` Docker 镜像。
+- 目前仅在 Ubuntu 16.04 环境进行过测试，为了避免环境不一致带来的麻烦，建议使用 Docker 编译环境，请先根据[编译环境准备](../source_compile/compile_env)下载好 `paddlepaddle/paddle-lite` Docker 镜像。
 - 在执行 `docker run` 启动容器时，请确保宿主机内 `/dev/bm*` 设备均被正确映射到容器中。可以参考下面的指令启动容器。
   
 ```bash

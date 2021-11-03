@@ -4,7 +4,7 @@
 
 我们提供 Paddle Lite 示例工程[Paddle-Lite-Demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)，其中包含[Android](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/master/PaddleLite-android-demo)、[iOS](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/master/PaddleLite-ios-demo)和[Armlinux](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/master/PaddleLite-armlinux-demo)平台的示例工程。
 
-Linux(ARM) demo 涵盖[图像分类](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/master/PaddleLite-android-demo/image_classification_demo)、[目标检测](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/master/PaddleLite-android-demo/object_detection_demo) 2 个应用场景。
+Linux(ARM) demo 涵盖[图像分类](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/master/PaddleLite-armlinux-demo/image_classification_demo)、[目标检测](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/master/PaddleLite-armlinux-demo/object_detection_demo) 2 个应用场景。
 
 ### 1. 图像分类
 
@@ -88,6 +88,6 @@ for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
 
 ## 使用 Python 接口预测
 
-1. Python 预测库编译参考[编译 Linux](../source_compile/x86_host_compile_arm_linux.rst)，建议在开发版上编译。
+1. Python 预测库编译参考[编译 Linux](../source_compile/linux_x86_compile_arm_linux)，建议在开发版上编译。
 2. [Paddle Lite Python API](../api_reference/python_api_doc)。
 3. 代码参考，[Python 完整示例](../user_guides/python_demo)
