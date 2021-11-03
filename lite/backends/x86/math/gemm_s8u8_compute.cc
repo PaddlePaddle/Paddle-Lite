@@ -92,7 +92,7 @@ template <>
 void generate_gemm_s8u8_x86_kern<float>::calc_scale(
     int M, float *Sa, float Sb, float Sc, float *out) {
   for (int i = 0; i < M; i++) {
-      out[i] = (Sa[i] * Sb);
+    out[i] = (Sa[i] * Sb);
   }
 }
 

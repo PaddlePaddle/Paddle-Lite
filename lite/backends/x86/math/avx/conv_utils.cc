@@ -1359,7 +1359,7 @@ void im2col<int8_t>(const int8_t* data_im,
                     int dilation_h,
                     int dilation_w,
                     int8_t* data_col) {
- const int output_h =
+  const int output_h =
       (height + pad_top + pad_bottom - (dilation_h * (kernel_h - 1) + 1)) /
           stride_h +
       1;
