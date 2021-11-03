@@ -203,6 +203,8 @@ struct SplitParam {
     int32_t idim[4];
     int32_t axis;
     int32_t offset;
+    int32_t num;
+    int32_t v_;
     int32_t trans[4];
     int32_t vdim[4];
 };
