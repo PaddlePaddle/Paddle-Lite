@@ -193,15 +193,15 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
         build_options_ += " -DUSE_IMAGE_Y ";
         if (high_gpu) {
           build_options_ += " -DADRENO_IMG ";
-          lws = 16;
+          lws_ = 16;
         } else if (low_gpu) {
           if (device_version.find("Adreno(TM) 506") != std::string::npos) {
             build_options_ += " -DADRENO_IMG ";
-            lws = 16;
+            lws_ = 16;
           } else if (device_version.find("Adreno(TM) 540") !=
                      std::string::npos) {
             build_options_ += " -DADRENO_540_IMG ";
-            lws = 128;
+            lws_ = 128;
           }
         }
         use_image_y_ = true;
