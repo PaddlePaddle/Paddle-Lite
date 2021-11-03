@@ -19,6 +19,7 @@
 #include "lite/api/test/lite_api_test_helper.h"
 #include "lite/api/test/test_helper.h"
 #include "lite/tests/api/PASCALVOC2012_utility.h"
+#include "lite/tests/api/detection_model_utility.h"
 
 DEFINE_string(data_dir, "", "data dir");
 DEFINE_int32(iteration, 1, "iteration times to run");
@@ -84,13 +85,7 @@ TEST(SSDMobileNetV1ReluVOC,
   }
 
   for (int i = 0; i < FLAGS_warmup; ++i) {
-    auto input_tensor = predictor->GetInput(0);
-    input_tensor->Resize(
-        std::vector<int64_t>(input_shape.begin(), input_shape.end()));
-    auto* data = input_tensor->mutable_data<float>();
-    for (int j = 0; j < input_size; j++) {
-      data[j] = 0.f;
-    }
+    SetDetectionInputV1(predictor, input_shape, {}, input_size);
     predictor->Run();
   }
 
@@ -98,11 +93,7 @@ TEST(SSDMobileNetV1ReluVOC,
   out_rets.resize(FLAGS_iteration);
   double cost_time = 0;
   for (size_t i = 0; i < raw_data.size(); ++i) {
-    auto input_tensor = predictor->GetInput(0);
-    input_tensor->Resize(
-        std::vector<int64_t>(input_shape.begin(), input_shape.end()));
-    auto* data = input_tensor->mutable_data<float>();
-    memcpy(data, raw_data[i].data(), sizeof(float) * input_size);
+    SetDetectionInputV1(predictor, input_shape, raw_data[i], input_size);
 
     double start = GetCurrentUS();
     predictor->Run();
