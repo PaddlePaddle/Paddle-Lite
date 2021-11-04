@@ -121,6 +121,9 @@ function set_benchmark_options {
 }
 
 function make_armosx {
+    if [ "${BUILD_PYTHON}" == "ON" ]; then
+      prepare_thirdparty
+    fi
     local arch=armv8
     local os=armmacos
        if [ "${WITH_STRIP}" == "ON" ]; then
@@ -146,11 +149,12 @@ function make_armosx {
     cmake $workspace \
             -DWITH_LITE=ON \
             -DLITE_WITH_ARM=ON \
-            -DLITE_ON_TINY_PUBLISH=ON \
             -DLITE_WITH_OPENMP=OFF \
             -DWITH_ARM_DOTPROD=OFF \
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
             -DLITE_WITH_X86=OFF \
+            -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
+            -DPY_VERSION=$PY_VERSION \
             -DLITE_WITH_LOG=$WITH_LOG \
             -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
             -DLITE_BUILD_TAILOR=$BUILD_TAILOR \
@@ -159,7 +163,10 @@ function make_armosx {
             -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
             -DLITE_WITH_CV=$BUILD_CV \
             -DDEPLOYMENT_TARGET=${IOS_DEPLOYMENT_TARGET} \
+            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
             -DARM_TARGET_OS=armmacos
+
+
 
     make publish_inference -j$NUM_PROC
     cd -
