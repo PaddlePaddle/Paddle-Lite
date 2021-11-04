@@ -194,7 +194,8 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
       int image_h_ = image_dims[1];
       MUTABLE_DATA_GPU(y_gpu_t_, image_w_, image_h_, y_buffer_data);
     } else {
-      y_gpu_t_->mutable_data(TARGET(kOpenCL), y_cpu_t->memory_size());
+      auto y_gpu_data =
+          y_gpu_t_->mutable_data(TARGET(kOpenCL), y_cpu_t->memory_size());
       TargetWrapperCL::MemcpySync(y_gpu_data,
                                   y_cpu_t->raw_data(),
                                   y_cpu_t->memory_size(),
@@ -350,7 +351,7 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
                         UP_DIV(m_, 4));
       } else {
         local_work_size_ = cl::NDRange(8, 4, 16);
-        if (device_name.find("Adreno(TM) 506") != std::string::npos) {
+        if (device_version.find("Adreno(TM) 506") != std::string::npos) {
           local_work_size_ = cl::NDRange(4, 4, 16);
         }
         global_work_size_ = cl::NDRange(m_, local_work_size_[1], UP_DIV(n_, 4));
