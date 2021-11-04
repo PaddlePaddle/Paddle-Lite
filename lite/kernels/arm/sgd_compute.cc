@@ -38,6 +38,7 @@ void SGDCompute::Run() {
   LITE_PARALLEL_BEGIN(i, tid, element_num) {
     parameter_out_data[i] = parameter_data[i] - lr * grad_data[i];
   }
+  LITE_PARALLEL_END()
 }
 
 }  // namespace arm
