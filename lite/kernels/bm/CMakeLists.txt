@@ -8,11 +8,6 @@ else()
   return()
 endif()
 
-# TODO: bm kernels info are not collected by opt
-if(NOT LITE_WITH_BM)
-  return ()
-endif()
-
 if(BM_DYNAMIC_COMPILE)
   add_definitions(-DBM_DYNAMIC_COMPILE)
 endif()

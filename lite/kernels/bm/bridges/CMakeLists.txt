@@ -38,6 +38,7 @@ lite_cc_library(subgraph_bridge_matmul_op_bm SRCS matmul_op.cc DEPS ${bm_subgrap
 lite_cc_library(subgraph_bridge_density_prior_box_op_bm SRCS density_prior_box_op.cc DEPS ${bm_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_act_enhance_op_bm SRCS act_enhance_op.cc DEPS ${bm_subgraph_bridge_deps})
 lite_cc_library(subgraph_bridge_im2sequence_op_bm SRCS im2sequence_op.cc DEPS ${bm_subgraph_bridge_deps})
+lite_cc_library(subgraph_bridge_abs_op_bm SRCS abs_op.cc DEPS ${bm_subgraph_bridge_deps})
 
 set(bm_subgraph_bridges
         core
@@ -73,4 +74,5 @@ set(bm_subgraph_bridges
         subgraph_bridge_matmul_op_bm
         subgraph_bridge_density_prior_box_op_bm
         subgraph_bridge_act_enhance_op_bm
+        subgraph_bridge_abs_op_bm
         CACHE INTERNAL "bm_subgraph_bridges")
