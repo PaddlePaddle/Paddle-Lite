@@ -606,6 +606,25 @@ typedef enum {
   NNADAPTER_DEFORMABLE_CONV_2D,
 
   /**
+   * Applies the quantization to the input tensor. The output is calculated
+   * using this formula:
+   * output = (input - zero_point) * scale,
+   * `zero_point` and `scale` is obtained from `input` .
+   *
+   * Inputs:
+   * * 0: input, a NNADAPTER_QUANT_INT8_SYMM_PER_LAYER,
+   * NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL,
+   * NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER and
+   * NNADAPTER_QUANT_UINT8_ASYMM_PER_CHANNEL tensor.
+   *
+   * Outputs:
+   * * 0: output, a NNADAPTER_FLOAT32 tensor with the same shape as `input`.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_DEQUANTIZE,
+
+  /**
    * Performs element-wise binary division(with Numpy-style broadcasting
    * https://numpy.org/doc/stable/user/basics.broadcasting.html).
    *
@@ -1195,6 +1214,35 @@ typedef enum {
    * Available since version 1.
    */
   NNADAPTER_PRELU,
+
+  /**
+   * Applies the quantization to the input tensor. The output is calculated
+   * using this formula:
+   * output = input / scale + zero_point
+   *
+   * Inputs:
+   * * 0: input, a NNADAPTER_FLOAT32 or NNADAPTER_INT32 tensor.
+   * * 1: axis, a NNADAPTER_INT32 scalar, the axis of the quantization dimension
+   * of the input tensor. Ignored for per-tensor quantization. It should be in
+   * range [-R, R), where R is the rank of input, negative value works the same
+   * way as axis+R, default to 1.
+   * * 2: scale, a NNADAPTER_FLOAT32 tensor, Scale for input. It can be a
+   * scalar, which means a per-tensor/layer dequantization, or a 1-D tensor for
+   * per-axis dequantization.
+   * * 3: zero_point, a NNADAPTER_INT32  tensor, Zero point for `input`. Shape
+   * must match `scale`, default to 0.
+   *
+   * Outputs:
+   * * 0: output, a quantized tensor with the same shape as `input` , its type
+   * can be NNADAPTER_QUANT_INT8_SYMM_PER_LAYER,
+   * NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL,
+   * NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER and
+   * NNADAPTER_QUANT_UINT8_ASYMM_PER_CHANNEL according to `axis` and
+   * `zero_point`.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_QUANTIZE,
 
   /**
   * Outputs a 1-D Tensor with spaced values within a given interval.
