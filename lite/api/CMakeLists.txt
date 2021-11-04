@@ -212,7 +212,9 @@ endif()
 
 if(ARM_TARGET_OS STREQUAL "android" AND USE_PRECOMPILED_OPENCV)
     set(OPENCV_VERSION "opencv4.1.0")
-    set(OPENCV_PATH "${INFER_LITE_PUBLISH_ROOT}/third_party/${OPENCV_VERSION}/${ARM_TARGET_ARCH_ABI}")
+    set(OPENCV_PATH "${CMAKE_BINARY_DIR}/third_party/${OPENCV_VERSION}/${ARM_TARGET_ARCH_ABI}")
+    message(STATUS "OPENCV_PATH: ${OPENCV_PATH}")
+    set(OPENCV_INCLUDE_DIRS "${OPENCV_PATH}/include/")
     set(OPENCV_LIBS "${OPENCV_PATH}/libs/libopencv_imgcodecs.a \
                      ${OPENCV_PATH}/libs/libopencv_imgproc.a \
                      ${OPENCV_PATH}/libs/libopencv_core.a \
@@ -226,8 +228,8 @@ if(ARM_TARGET_OS STREQUAL "android" AND USE_PRECOMPILED_OPENCV)
                      ${OPENCV_PATH}/3rdparty/libs/libtbb.a \
                      ${OPENCV_PATH}/3rdparty/libs/libcpufeatures.a")
 
-    set(OPENCV_URL "https://paddle-inference-dist.bj.bcebos.com/${OPENCV_VERSION}")
-    lite_download_and_uncompress("${INFER_LITE_PUBLISH_ROOT}/third_party/" ${OPENCV_URL} "${OPENCV_VERSION}.tar.gz")
+    set(OPENCV_URL "https://paddle-inference-dist.bj.bcebos.com/")
+    lite_download_and_uncompress("${CMAKE_BINARY_DIR}/third_party/" ${OPENCV_URL} "${OPENCV_VERSION}.tar.gz")
 endif()
 
 # test_model_bin
@@ -235,13 +237,15 @@ if(NOT IOS AND NOT LITE_ON_TINY_PUBLISH)
     lite_cc_binary(test_model_bin SRCS tools/model_test.cc
         DEPS gflags
         CV_DEPS paddle_cv_arm)
-    include(ExternalProject)
+
     lite_cc_binary(benchmark_bin SRCS tools/benchmark.cc tools/flags.cc tools/opt_base.cc
         DEPS gflags
         CV_DEPS paddle_cv_arm)
     if(ARM_TARGET_OS STREQUAL "android" AND USE_PRECOMPILED_OPENCV)
         string(REGEX REPLACE "[-%.]" "_" OPENCV_VERSION_EX ${OPENCV_VERSION})
         add_dependencies(benchmark_bin extern_lite_download_${OPENCV_VERSION_EX}_tar_gz)
+        include_directories(${OPENCV_INCLUDE_DIRS})
+        target_link_libraries(benchmark_bin ${OPENCV_LIBS})
     endif()
 endif()
 
