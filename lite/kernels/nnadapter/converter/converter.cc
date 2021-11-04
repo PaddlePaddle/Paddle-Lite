@@ -101,38 +101,43 @@ int Converter::Apply(
             << i << "th input '" << name << "'.";
     (*input_operands)[i] = operand;
   }
+  for (size_t op_idx = 0; op_idx < op_size; op_idx++) {
+    auto op_desc = block_desc->GetOp<cpp::OpDesc>(op_idx);
+    CHECK(op_desc);
+    std::string op_type = op_desc->Type();
+    auto op_info = std::make_shared<OpInfo>(*op_desc);
 
-  std::unique_ptr<RuntimeProgram> runtime_program(
-      new RuntimeProgram(program_desc, exec_scope, block_idx));
-  const auto& bridges = subgraph::SubgraphBridgeRegistry::Instance();
-  CHECK(runtime_program) << "The runtime program is not initialized!";
-  CHECK_GT(runtime_program->instructions(kRootBlockIdx).size(), 0)
-      << "No instructions found in the runtime program!";
-  const auto& insts = runtime_program->instructions(kRootBlockIdx);
-  for (auto& inst : insts) {
-    auto op = const_cast<OpLite*>(inst.op());
-    CHECK(op);
-    op->CheckShape();
-    op->InferShape();
-    auto op_info = const_cast<OpInfo*>(op->op_info());
-    auto op_type = op_info->Type();
+    // std::unique_ptr<RuntimeProgram> runtime_program(
+    //     new RuntimeProgram(program_desc, exec_scope, block_idx));
+    // // const auto& bridges = subgraph::SubgraphBridgeRegistry::Instance();
+    // CHECK(runtime_program) << "The runtime program is not initialized!";
+    // CHECK_GT(runtime_program->instructions(kRootBlockIdx).size(), 0)
+    //     << "No instructions found in the runtime program!";
+    // const auto& insts = runtime_program->instructions(kRootBlockIdx);
+    // for (auto& inst : insts) {
+    //   auto op = const_cast<OpLite*>(inst.op());
+    //   CHECK(op);
+    //   op->CheckShape();
+    //   // op->InferShape();
+    //   auto op_info = const_cast<OpInfo*>(op->op_info());
+    //   auto op_type = op_info->Type();
     VLOG(5) << "Converting " << op_type << " ...";
 #define REGISTER_CONVERTER(__op_type__, __func_name__, ...) \
   if (op_type == #__op_type__) {                            \
-    __func_name__(this, op_info, exec_scope);               \
+    __func_name__(this, op_info.get(), exec_scope);         \
     continue;                                               \
   }
 #include "lite/kernels/nnadapter/converter/all.h"  // NOLINT
 #undef __NNADAPTER_CONVERTER_ALL_H__
 #undef REGISTER_CONVERTER
-    if (bridges.Exists(op_type, TARGET(kNNAdapter))) {
-      auto kernel = inst.kernel();
-      CHECK(bridges.Select(op_type, TARGET(kNNAdapter))(
-          reinterpret_cast<void*>(sub_converter.get()),
-          op,
-          const_cast<KernelBase*>(kernel)));
-      continue;
-    }
+    // if (bridges.Exists(op_type, TARGET(kNNAdapter))) {
+    //   auto kernel = inst.kernel();
+    //   CHECK(bridges.Select(op_type, TARGET(kNNAdapter))(
+    //       reinterpret_cast<void*>(sub_converter.get()),
+    //       op,
+    //       const_cast<KernelBase*>(kernel)));
+    //   continue;
+    // }
     LOG(FATAL) << "Unsupported type '" << op_type << "' in block " << block_idx;
   }
   // Query the output operands, and update if exists the useless output
