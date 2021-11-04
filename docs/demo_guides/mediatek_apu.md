@@ -51,7 +51,7 @@ Paddle Lite 已支持 MediaTek APU 的预测部署。
 
 您可以查阅[ NNAdapter 算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.10/lite/kernels/nnadapter/converter/all.h)获得各算子在不同新硬件上的最新支持信息。
 
->> **不经过 NNAdapter 标准算子转换，而是直接将 Paddle 算子转换成 Mediatek APU IR 的方案可点击[链接](https://paddle-lite.readthedocs.io/zh/release-v2.9/demo_guides/mediatek_apu.html)**。
+**不经过 NNAdapter 标准算子转换，而是直接将 Paddle 算子转换成 `Mediatek APU IR` 的方案可点击[链接](https://paddle-lite.readthedocs.io/zh/release-v2.9/demo_guides/mediatek_apu.html)**。
 
 ## 参考示例演示
 
@@ -67,7 +67,7 @@ Paddle Lite 已支持 MediaTek APU 的预测部署。
 
 ### 准备交叉编译环境
 
-- 为了保证编译环境一致，建议参考[编译环境准备](../source_compile/docker_enviroment)中的 Docker 开发环境进行配置。
+- 为了保证编译环境一致，建议参考[编译环境准备](../source_compile/docker_env)中的 Docker 开发环境进行配置。
 
 ### 运行图像分类示例程序
 
@@ -183,7 +183,7 @@ Paddle Lite 已支持 MediaTek APU 的预测部署。
 ### 更新模型
 
 - 通过 Paddle 训练，或 X2Paddle 转换得到 MobileNetv1 foat32 模型[ mobilenet_v1_fp32_224_fluid ](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_fp32_224_fluid.tar.gz)；
-- 参考[模型量化-静态离线量化](../user_guides/quant_post_static)使用 PaddleSlim 对 `float32` 模型进行量化（注意：由于 MTK APU 只支持量化 OP，在启动量化脚本时请注意相关参数的设置），最终得到全量化MobileNetV1 模型[ mobilenet_v1_int8_224_per_layer ](https://paddlelite-demo.bj.bcebos.com/devices/mediatek/mobilenet_v1_int8_224_fluid.tar.gz)；
+- 参考[模型量化-静态离线量化](../user_guides/quant_aware)使用 PaddleSlim 对 `float32` 模型进行量化（注意：由于 MTK APU 只支持量化 OP，在启动量化脚本时请注意相关参数的设置），最终得到全量化MobileNetV1 模型[ mobilenet_v1_int8_224_per_layer ](https://paddlelite-demo.bj.bcebos.com/devices/mediatek/mobilenet_v1_int8_224_fluid.tar.gz)；
 - 参考[模型转化方法](../user_guides/model_optimize_tool)，利用 opt 工具转换生成 MTK APU 模型，仅需要将 `valid_targets` 设置为 mediatek_apu, arm 即可。
 
   ```shell
