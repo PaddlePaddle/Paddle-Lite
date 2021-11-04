@@ -28,13 +28,13 @@ namespace cambricon_mlu {
 static const std::vector<int32_t> kNCHW2NHWC = {0, 2, 3, 1};
 static const std::vector<int32_t> kNHWC2NCHW = {0, 3, 1, 2};
 
-class MluNCHW2NHWCDataLayoutConverter
+class NCHW2NHWCDataLayoutConverter
     : public nnadapter::NCHW2NHWCDataLayoutConverter {
  public:
   void ConvertConv2D(hal::Operation* operation);
 };
 
-void MluNCHW2NHWCDataLayoutConverter::ConvertConv2D(hal::Operation* operation) {
+void NCHW2NHWCDataLayoutConverter::ConvertConv2D(hal::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
@@ -87,8 +87,8 @@ void MluNCHW2NHWCDataLayoutConverter::ConvertConv2D(hal::Operation* operation) {
   SetOperationLayout(operation, 3);
 }
 
-NNADAPTER_EXPORT void ConvertMLUDataLayoutNCHWToNHWC(hal::Model* model) {
-  MluNCHW2NHWCDataLayoutConverter converter;
+NNADAPTER_EXPORT void ConvertDataLayoutNCHWToNHWC(hal::Model* model) {
+  NCHW2NHWCDataLayoutConverter converter;
   converter.Apply(model);
 }
 

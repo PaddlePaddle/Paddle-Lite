@@ -19,7 +19,7 @@
 namespace nnadapter {
 namespace cambricon_mlu {
 
-void ConvertMLUDataLayoutNCHWToNHWC(hal::Model *model);
+void ConvertDataLayoutNCHWToNHWC(hal::Model *model);
 
 }  // namespace cambricon_mlu
 }  // namespace nnadapter

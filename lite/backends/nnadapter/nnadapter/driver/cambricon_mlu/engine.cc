@@ -20,6 +20,7 @@
 #include <vector>
 #include "driver/cambricon_mlu/converter.h"
 #include "driver/cambricon_mlu/optimizer/nchw2nhwc.h"
+#include "optimizer/fuse_matmul_add_into_fully_connected.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -75,7 +76,8 @@ int Program::BuildFromCache(hal::Cache* cache) {
 int Program::BuildFromModel(hal::Model* model) {
   Clear();
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
-  ConvertMLUDataLayoutNCHWToNHWC(model);
+  FuseMatMulAddIntoFullyConnected(model);
+  ConvertDataLayoutNCHWToNHWC(model);
   Converter converter(&tensors_, mm_network_.get());
   NNADAPTER_CHECK_EQ(converter.Apply(model), NNADAPTER_NO_ERROR);
 
