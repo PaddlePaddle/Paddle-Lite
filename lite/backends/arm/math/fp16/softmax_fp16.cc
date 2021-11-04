@@ -29,7 +29,7 @@ void softmax_basic_fp16(const float16_t* din,
                         const int outer_num) {
   int compute_size = inner_num * outer_num;
 
-LITE_PARALLEL_BEGIN(i, tid, compute_size) {
+  LITE_PARALLEL_BEGIN(i, tid, compute_size) {
     int idx_inner = i % inner_num;
     int idx_outer = (i / inner_num) * axis_size;
     int real_index = idx_outer * inner_num + idx_inner;
@@ -59,7 +59,7 @@ LITE_PARALLEL_BEGIN(i, tid, compute_size) {
       real_index += inner_num;
     }
   }
-LITE_PARALLEL_END()
+  LITE_PARALLEL_END()
 }
 
 void softmax_inner8_axis4_fp16(const float16_t* din,
@@ -72,8 +72,7 @@ void softmax_inner8_axis4_fp16(const float16_t* din,
   int remain = compute_size % 8;
   float16x8_t vone = vdupq_n_f16(1.0f);
 
-
-LITE_PARALLEL_BEGIN(c, tid, cmp_cnt) {
+  LITE_PARALLEL_BEGIN(c, tid, cmp_cnt) {
     int i = c * 8;
     int idx_inner = i % inner_num;
     int idx_outer = (i / inner_num) * axis_size;
@@ -120,7 +119,7 @@ LITE_PARALLEL_BEGIN(c, tid, cmp_cnt) {
     vst1q_f16(dout_ptr2, vsum2);
     vst1q_f16(dout_ptr3, vsum3);
   }
-LITE_PARALLEL_END()
+  LITE_PARALLEL_END()
 
   int i = cmp_cnt * 8;
 
@@ -215,7 +214,7 @@ void softmax_inner8_axis1_fp16(const float16_t* din,
 
   float16x8_t vone = vdupq_n_f16(1.0f);
 
-LITE_PARALLEL_BEGIN(c, tid, cmp_cnt) {
+  LITE_PARALLEL_BEGIN(c, tid, cmp_cnt) {
     int i = c * 8;
     int idx_inner = i % inner_num;
     int idx_outer = (i / inner_num) * axis_size;
@@ -257,7 +256,7 @@ LITE_PARALLEL_BEGIN(c, tid, cmp_cnt) {
       dout_ptr += inner_num;
     }
   }
-LITE_PARALLEL_END()
+  LITE_PARALLEL_END()
   int index = cmp_cnt << 3;
   if (remain >= 4) {
     int idx_inner = index % inner_num;
@@ -340,7 +339,7 @@ void softmax_inner1_large_axis_fp16(const float16_t* din,
   int remain = axis_size & 7;
   int out_cnt = (outer_size >> 2) << 2;
 
-LITE_PARALLEL_COMMON_BEGIN(i, tid, outer_size - 3, 0, 4) {
+  LITE_PARALLEL_COMMON_BEGIN(i, tid, outer_size - 3, 0, 4) {
     const float16_t* din_ptr0 = din + i * axis_size;
     float16_t* dout_ptr0 = dout + i * axis_size;
     const float16_t* din_ptr1 = din_ptr0 + axis_size;
@@ -570,7 +569,7 @@ LITE_PARALLEL_COMMON_BEGIN(i, tid, outer_size - 3, 0, 4) {
       dout_res_ptr3++;
     }
   }
-LITE_PARALLEL_END()
+  LITE_PARALLEL_END()
 
   for (int i = out_cnt; i < outer_size; i++) {
     const float16_t* din_ptr0 = din + i * axis_size;
@@ -661,8 +660,7 @@ void softmax_inner1_small_axis_fp16(const float16_t* din,
                                     float16_t* dout,
                                     const int outer_size,
                                     const int axis_size) {
-
-LITE_PARALLEL_BEGIN(c, tid, outer_size) {
+  LITE_PARALLEL_BEGIN(c, tid, outer_size) {
     const float16_t* din_ptr = din + i * axis_size;
     float16_t* dout_ptr = dout + i * axis_size;
     // get max
@@ -683,7 +681,7 @@ LITE_PARALLEL_BEGIN(c, tid, outer_size) {
       dout_ptr[j] /= sum_data;
     }
   }
-LITE_PARALLEL_END()
+  LITE_PARALLEL_END()
 }
 }  // namespace fp16
 }  // namespace math

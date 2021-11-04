@@ -21,8 +21,8 @@
 
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
-#include "lite/kernels/arm/pool_compute.h"
 #include "lite/core/parallel_defines.h"
+#include "lite/kernels/arm/pool_compute.h"
 
 namespace paddle {
 namespace lite {
@@ -154,7 +154,7 @@ void pool_compute_ref(const operators::PoolParam& param) {
     }
   } else {
     for (int ind_n = 0; ind_n < num; ++ind_n) {
-LITE_PARALLEL_BEGIN(ind_c, tid, chin) {
+      LITE_PARALLEL_BEGIN(ind_c, tid, chin) {
         for (int ind_h = 0; ind_h < hout; ++ind_h) {
           int sh = ind_h * stride_h;
           int eh = sh + kernel_h;
@@ -218,7 +218,7 @@ LITE_PARALLEL_BEGIN(ind_c, tid, chin) {
           }
         }
       }
-LITE_PARALLEL_END()
+      LITE_PARALLEL_END()
     }
   }
 }

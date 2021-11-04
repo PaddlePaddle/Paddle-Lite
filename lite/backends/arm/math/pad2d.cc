@@ -40,7 +40,7 @@ void pad_constant(const float* din,
   int spatial_size_out = w * h;
   int spatial_size_in = h_in * w_in;
 
-LITE_PARALLEL_BEGIN(s, tid, n * c) {
+  LITE_PARALLEL_BEGIN(s, tid, n * c) {
     const float* din_s = din + s * spatial_size_in;
     float* dout_s = dout + s * spatial_size_out;
     int top_loop = (w * pad_top) >> 3;
@@ -130,7 +130,7 @@ LITE_PARALLEL_BEGIN(s, tid, n * c) {
       *dout_s++ = pad_value;
     }
   }
-LITE_PARALLEL_END()
+  LITE_PARALLEL_END()
 }
 
 void pad_edge(const float* din,
@@ -148,7 +148,7 @@ void pad_edge(const float* din,
   int w_in = w - pad_left - pad_right;
   int spatial_size_out = w * h;
   int spatial_size_in = h_in * w_in;
-LITE_PARALLEL_BEGIN(s, tid, n * c) {
+  LITE_PARALLEL_BEGIN(s, tid, n * c) {
     const float* din_s = din + s * spatial_size_in;
     float* dout_s = dout + s * spatial_size_out;
 
@@ -206,7 +206,7 @@ LITE_PARALLEL_BEGIN(s, tid, n * c) {
       dout_top += w;
     }
   }
-LITE_PARALLEL_END()
+  LITE_PARALLEL_END()
 }
 
 void pad_reflect(const float* din,
@@ -224,7 +224,7 @@ void pad_reflect(const float* din,
   int w_in = w - pad_left - pad_right;
   int spatial_size_out = w * h;
   int spatial_size_in = h_in * w_in;
-LITE_PARALLEL_BEGIN(s, tid , n * c) {
+  LITE_PARALLEL_BEGIN(s, tid, n * c) {
     const float* din_s = din + s * spatial_size_in;
     float* dout_s = dout + s * spatial_size_out;
 
@@ -341,7 +341,7 @@ LITE_PARALLEL_BEGIN(s, tid , n * c) {
       dout_top_reflect -= w;
     }
   }
-LITE_PARALLEL_END()
+  LITE_PARALLEL_END()
 }
 
 // void pad2d_func(const lite::Tensor *input,lite::Tensor *output)

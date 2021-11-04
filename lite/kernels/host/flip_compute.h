@@ -58,7 +58,7 @@ class FlipCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
     auto numel = x->numel();
     const T* x_data = x->template data<T>();
     T* out_data = out->template mutable_data<T>();
-LITE_PARALLEL_BEGIN(i, tid, numel)
+    LITE_PARALLEL_BEGIN(i, tid, numel)
     for (int64_t i = 0; i < numel; ++i) {
       int64_t cur_indices = i;
       int64_t rem = 0;
@@ -75,7 +75,7 @@ LITE_PARALLEL_BEGIN(i, tid, numel)
       }
       out_data[i] = x_data[dst_offset];
     }
-LITE_PARALLEL_END()
+    LITE_PARALLEL_END()
   }
 
   ~FlipCompute() = default;

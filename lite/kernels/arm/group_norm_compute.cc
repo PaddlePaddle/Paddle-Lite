@@ -15,8 +15,8 @@
 #include "lite/kernels/arm/group_norm_compute.h"
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
-#include "lite/core/type_system.h"
 #include "lite/core/parallel_defines.h"
+#include "lite/core/type_system.h"
 
 namespace paddle {
 namespace lite {
@@ -55,7 +55,7 @@ void GroupNormCompute::Run() {
   int cnt = spatial_size >> 4;
   int remain = spatial_size % 16;
   float* std_vec = new float[param.saved_variance->numel()];
-// compute saved_mean and saved_variance
+  // compute saved_mean and saved_variance
 
   LITE_PARALLEL_BEGIN(n, tid, ngroup) {
     const float* in_p = in + n * spatial_size;
@@ -117,11 +117,11 @@ void GroupNormCompute::Run() {
     saved_variance[n] = variance;
     std_vec[n] = std;
   }
-LITE_PARALLEL_END()
+  LITE_PARALLEL_END()
   int in_size = height * width;
   cnt = in_size >> 4;
   remain = in_size % 16;
-// compute Group_norm result: out = scale * (in - mean) / std + bias
+  // compute Group_norm result: out = scale * (in - mean) / std + bias
 
   LITE_PARALLEL_BEGIN(i, tid, ngroup) {
     const float* in_p = in + i * spatial_size;
@@ -172,7 +172,7 @@ LITE_PARALLEL_END()
       }
     }
   }
-LITE_PARALLEL_END()
+  LITE_PARALLEL_END()
   delete[] std_vec;
 }
 

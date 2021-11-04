@@ -40,7 +40,7 @@ void decode_bbox_center_variance_kernel(const int batch_num,
     const float16_t* ptr_loc_batch = loc_data + n * len_batch;
     float16_t* ptr_bbox_batch = bbox_data + n * len_batch;
 
-LITE_PARALLEL_BEGIN(i, tid, cnt) {
+    LITE_PARALLEL_BEGIN(i, tid, cnt) {
       int idx = i * 32;
       const float16_t* ptr_loc = ptr_loc_batch + idx;
       const float16_t* ptr_prior = prior_data + idx;
@@ -72,8 +72,8 @@ LITE_PARALLEL_BEGIN(i, tid, cnt) {
       vloc.val[3] = vaddq_f16(vdec_bbx_cy, vdec_bbx_h);
       vst4q_f16(ptr_bbox, vloc);
     }
-LITE_PARALLEL_END()
-LITE_PARALLEL_COMMON_BEGIN(i, tid, num_priors, cnt * 8, 1) {
+    LITE_PARALLEL_END()
+    LITE_PARALLEL_COMMON_BEGIN(i, tid, num_priors, cnt * 8, 1) {
       int idx = i * 4;
       float16_t p_xmin = prior_data[idx];
       float16_t p_ymin = prior_data[idx + 1];
@@ -103,7 +103,7 @@ LITE_PARALLEL_COMMON_BEGIN(i, tid, num_priors, cnt * 8, 1) {
       ptr_bbox_batch[idx + 2] = decode_bbox_center_x + decode_bbox_width / 2.f;
       ptr_bbox_batch[idx + 3] = decode_bbox_center_y + decode_bbox_height / 2.f;
     }
-LITE_PARALLEL_END()
+    LITE_PARALLEL_END()
   }
 }
 
@@ -129,7 +129,7 @@ void decode_bbox_center_kernel(const int batch_num,
     const float16_t* ptr_loc_batch = loc_data + n * len_batch;
     float16_t* ptr_bbox_batch = bbox_data + n * len_batch;
 
-LITE_PARALLEL_BEGIN(i, tid, cnt) {
+    LITE_PARALLEL_BEGIN(i, tid, cnt) {
       int idx = i * 32;
       int var_idx = idx, prior_idx = idx;
       if (axis == 1) {
@@ -201,8 +201,8 @@ LITE_PARALLEL_BEGIN(i, tid, cnt) {
 
       vst4q_f16(ptr_bbox, vloc);
     }
-LITE_PARALLEL_END()
-LITE_PARALLEL_COMMON_BEGIN(i, tid, num_priors, cnt * 8, 1) {
+    LITE_PARALLEL_END()
+    LITE_PARALLEL_COMMON_BEGIN(i, tid, num_priors, cnt * 8, 1) {
       int idx = i * 4;
       int var_idx = idx, prior_idx = idx;
       if (axis == 1) {
@@ -244,7 +244,7 @@ LITE_PARALLEL_COMMON_BEGIN(i, tid, num_priors, cnt * 8, 1) {
       ptr_bbox_batch[idx + 3] =
           decode_bbox_center_y + decode_bbox_height / 2.f - norm_value;
     }
-LITE_PARALLEL_END()
+    LITE_PARALLEL_END()
   }
 }
 

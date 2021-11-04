@@ -46,7 +46,7 @@ void dropout_down<float>(const float* din, float* dout, int num, float prob) {
     vst1q_f32(dout_ptr + 8, vmul2);
     vst1q_f32(dout_ptr + 12, vmul3);
   }
-LITE_PARALLEL_END()
+  LITE_PARALLEL_END()
   if (remain > 0) {
     const float* din_ptr = din + (cnt << 4);
     float* dout_ptr = dout + (cnt << 4);
@@ -62,7 +62,7 @@ template <>
 void dropout_up<float>(const float* din, float* dout, int num) {
   int cnt = num >> 4;
   int remain = num % 16;
-LITE_PARALLEL_BEGIN(i, tid, cnt) {
+  LITE_PARALLEL_BEGIN(i, tid, cnt) {
     const float* din_ptr = din + (i << 4);
     float* dout_ptr = dout + (i << 4);
 
@@ -76,7 +76,7 @@ LITE_PARALLEL_BEGIN(i, tid, cnt) {
     vst1q_f32(dout_ptr + 8, din2);
     vst1q_f32(dout_ptr + 12, din3);
   }
-LITE_PARALLEL_END()
+  LITE_PARALLEL_END()
   if (remain > 0) {
     const float* din_ptr = din + (cnt << 4);
     float* dout_ptr = dout + (cnt << 4);

@@ -486,8 +486,7 @@ void interpolate(lite::Tensor* X,
   int spatial_out = out_h * out_w;
 
   if (interpolate_type == "Bilinear") {
-
-LITE_PARALLEL_BEGIN(i, tid, count) {
+    LITE_PARALLEL_BEGIN(i, tid, count) {
       bilinear_interp(din + spatial_in * i,
                       in_w,
                       in_h,
@@ -499,10 +498,9 @@ LITE_PARALLEL_BEGIN(i, tid, count) {
                       with_align,
                       align_mode);
     }
-LITE_PARALLEL_END()
+    LITE_PARALLEL_END()
   } else if (interpolate_type == "Nearest") {
-
-LITE_PARALLEL_BEGIN(i, tid, count) {
+    LITE_PARALLEL_BEGIN(i, tid, count) {
       nearest_interp(din + spatial_in * i,
                      in_w,
                      in_h,
@@ -513,7 +511,7 @@ LITE_PARALLEL_BEGIN(i, tid, count) {
                      1.f / height_scale,
                      with_align);
     }
-LITE_PARALLEL_END()
+    LITE_PARALLEL_END()
   }
 }
 

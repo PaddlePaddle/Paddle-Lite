@@ -104,7 +104,7 @@ void axpy_kernel_fp32(const float* scale,
         bias_ch_ptr++;
       }
     }
-LITE_PARALLEL_END()
+    LITE_PARALLEL_END()
   }
 }
 
@@ -124,7 +124,7 @@ void axpy_kernel_int8(const int8_t* scale,
     const int8_t* bias_ptr = bias + n * in_channel;
     int8_t* dout_ptr = dout + n * in_channel;
 
-    LITE_PARALLEL_BEGIN(c, tid, channel)  {
+    LITE_PARALLEL_BEGIN(c, tid, channel) {
       const int8_t* din_ch_ptr = din_ptr + c * size;
       const int8_t* bias_ch_ptr = bias_ptr + c * size;
       int8_t* dout_ch_ptr = dout_ptr + c * size;
@@ -195,7 +195,7 @@ void axpy_kernel_int8(const int8_t* scale,
         bias_ch_ptr++;
       }
     }
-LITE_PARALLEL_END()
+    LITE_PARALLEL_END()
   }
 }
 

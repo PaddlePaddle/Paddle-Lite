@@ -60,7 +60,7 @@ void pooling_basic_fp16(POOLING_PARAM,
         float16_t *dout_batch = dout + n * chout * size_channel_out;
         const float16_t *din_batch = din + n * chin * size_channel_in;
 
-LITE_PARALLEL_BEGIN(c, tid, chout) {
+        LITE_PARALLEL_BEGIN(c, tid, chout) {
           const float16_t *din_ch =
               din_batch + c * size_channel_in;  // in address
           float16_t tmp1 = din_ch[0];
@@ -70,7 +70,7 @@ LITE_PARALLEL_BEGIN(c, tid, chout) {
           }
           dout_batch[c] = tmp1;
         }
-LITE_PARALLEL_END()
+        LITE_PARALLEL_END()
       }
     } else if (pooling_type == "avg") {
       // Pooling_average_include_padding
@@ -78,7 +78,7 @@ LITE_PARALLEL_END()
         float16_t *dout_batch = dout + n * chout * size_channel_out;
         const float16_t *din_batch = din + n * chin * size_channel_in;
 
-LITE_PARALLEL_BEGIN(c, tid, chout) {
+        LITE_PARALLEL_BEGIN(c, tid, chout) {
           const float16_t *din_ch =
               din_batch + c * size_channel_in;  // in address
           float16_t sum = 0.f;
@@ -87,15 +87,14 @@ LITE_PARALLEL_BEGIN(c, tid, chout) {
           }
           dout_batch[c] = sum / size_channel_in;
         }
-LITE_PARALLEL_END()
+        LITE_PARALLEL_END()
       }
     } else {
       LOG(FATAL) << "unsupported pooling type: " << pooling_type;
     }
   } else {
     for (int ind_n = 0; ind_n < num; ++ind_n) {
-
-LITE_PARALLEL_BEGIN(ind_c, tid, chin) {
+      LITE_PARALLEL_BEGIN(ind_c, tid, chin) {
         for (int ind_h = 0; ind_h < hout; ++ind_h) {
           int sh, eh;
           if (adaptive) {
@@ -171,7 +170,7 @@ LITE_PARALLEL_BEGIN(ind_c, tid, chin) {
           }
         }
       }
-LITE_PARALLEL_END()
+      LITE_PARALLEL_END()
     }
   }
 }
@@ -926,7 +925,7 @@ void pooling_global_max_fp16(POOLING_PARAM) {
     float16_t *data_out_batch = dout + n * chout;
     const float16_t *data_in_batch = din + n * chin * size_channel_in;
 
-LITE_PARALLEL_BEGIN(c, tid, chout) {
+    LITE_PARALLEL_BEGIN(c, tid, chout) {
       const float16_t *data_in_channel = data_in_batch + c * size_channel_in;
       float16x8_t vmax = vdupq_n_f16(data_in_channel[0]);
       int size_cnt = cnt;
@@ -952,7 +951,7 @@ LITE_PARALLEL_BEGIN(c, tid, chout) {
       }
       data_out_batch[c] = vtmp2[0];
     }
-LITE_PARALLEL_END()
+    LITE_PARALLEL_END()
   }
 }
 
@@ -968,7 +967,7 @@ void pooling_global_avg_fp16(POOLING_PARAM) {
     float16_t *data_out_batch = dout + n * chout;
     const float16_t *data_in_batch = din + n * chin * size_channel_in;
 
-LITE_PARALLEL_BEGIN(c, tid, chout) {
+    LITE_PARALLEL_BEGIN(c, tid, chout) {
       const float16_t *data_in_channel =
           data_in_batch + c * size_channel_in;  // in address
       float16x8_t vsum = vdupq_n_f16(0.0f);
@@ -994,7 +993,7 @@ LITE_PARALLEL_BEGIN(c, tid, chout) {
       }
       data_out_batch[c] = vtmp2[0] / size_channel_in;
     }
-LITE_PARALLEL_END()
+    LITE_PARALLEL_END()
   }
 }
 
@@ -1019,7 +1018,7 @@ void pooling3x3s2p0_max_fp16(POOLING_PARAM, int pad_bottom, int pad_right) {
     float16_t *data_out_batch = dout + n * chout * size_channel_out;
     const float16_t *data_in_batch = din + n * chin * size_channel_in;
 
-LITE_PARALLEL_BEGIN(c, tid, chout) {
+    LITE_PARALLEL_BEGIN(c, tid, chout) {
       float16_t *data_out_channel = data_out_batch + c * size_channel_out;
       const float16_t *data_in_channel = data_in_batch + c * size_channel_in;
       const float16_t *r0 = data_in_channel;
@@ -1065,7 +1064,7 @@ LITE_PARALLEL_BEGIN(c, tid, chout) {
         data_out_channel += wout;
       }
     }
-LITE_PARALLEL_END()
+    LITE_PARALLEL_END()
   }
 }
 
@@ -1094,7 +1093,7 @@ void pooling3x3s2p0_avg_fp16(POOLING_PARAM,
     float16_t *data_out_batch = dout + n * chout * size_channel_out;
     const float16_t *data_in_batch = din + n * chin * size_channel_in;
 
-LITE_PARALLEL_BEGIN(c, tid, chout) {
+    LITE_PARALLEL_BEGIN(c, tid, chout) {
       float16_t *data_out_channel = data_out_batch + c * size_channel_out;
       const float16_t *data_in_channel = data_in_batch + c * size_channel_in;
       const float16_t *r0 = data_in_channel;
@@ -1144,7 +1143,7 @@ LITE_PARALLEL_BEGIN(c, tid, chout) {
         data_out_channel += wout;
       }
     }
-LITE_PARALLEL_END()
+    LITE_PARALLEL_END()
   }
   TargetFree(TARGET(kARM), zero_ptr);
 }
@@ -1172,7 +1171,7 @@ void pooling3x3s2p1_max_fp16(POOLING_PARAM, int pad_bottom, int pad_right) {
     float16_t *data_out_batch = dout + n * chout * size_channel_out;
     const float16_t *data_in_batch = din + n * chin * size_channel_in;
 
-LITE_PARALLEL_BEGIN(c, tid, chout) {
+    LITE_PARALLEL_BEGIN(c, tid, chout) {
       float16_t *data_out_channel = data_out_batch + c * size_channel_out;
       const float16_t *data_in_channel = data_in_batch + c * size_channel_in;
       const float16_t *r0 = data_in_channel;
@@ -1244,7 +1243,7 @@ LITE_PARALLEL_BEGIN(c, tid, chout) {
         data_out_channel += wout;
       }
     }
-LITE_PARALLEL_END()
+    LITE_PARALLEL_END()
   }
 }
 
@@ -1267,7 +1266,7 @@ void pooling3x3s1p0_max_fp16(POOLING_PARAM, int pad_bottom, int pad_right) {
     float16_t *data_out_batch = dout + n * chout * size_channel_out;
     const float16_t *data_in_batch = din + n * chin * size_channel_in;
 
-LITE_PARALLEL_BEGIN(c, tid, chout) {
+    LITE_PARALLEL_BEGIN(c, tid, chout) {
       float16_t *data_out_channel = data_out_batch + c * size_channel_out;
       const float16_t *data_in_channel = data_in_batch + c * size_channel_in;
       const float16_t *r0 = data_in_channel;
@@ -1293,7 +1292,7 @@ LITE_PARALLEL_BEGIN(c, tid, chout) {
         data_out_channel += wout;
       }
     }
-LITE_PARALLEL_END()
+    LITE_PARALLEL_END()
   }
 }
 
@@ -1319,7 +1318,7 @@ void pooling3x3s1p1_max_fp16(POOLING_PARAM, int pad_bottom, int pad_right) {
     float16_t *data_out_batch = dout + n * chout * size_channel_out;
     const float16_t *data_in_batch = din + n * chin * size_channel_in;
 
-LITE_PARALLEL_BEGIN(c, tid, chout) {
+    LITE_PARALLEL_BEGIN(c, tid, chout) {
       float16_t *data_out_channel = data_out_batch + c * size_channel_out;
       const float16_t *data_in_channel = data_in_batch + c * size_channel_in;
       const float16_t *r0 = data_in_channel;
@@ -1367,7 +1366,7 @@ LITE_PARALLEL_BEGIN(c, tid, chout) {
         data_out_channel += wout;
       }
     }
-LITE_PARALLEL_END()
+    LITE_PARALLEL_END()
   }
 }
 
@@ -1398,7 +1397,7 @@ void pooling3x3s2p1_avg_fp16(POOLING_PARAM,
     float16_t *data_out_batch = dout + n * chout * size_channel_out;
     const float16_t *data_in_batch = din + n * chin * size_channel_in;
 
-LITE_PARALLEL_BEGIN(c, tid, chout) {
+    LITE_PARALLEL_BEGIN(c, tid, chout) {
       float16_t *data_out_channel = data_out_batch + c * size_channel_out;
       const float16_t *data_in_channel = data_in_batch + c * size_channel_in;
       const float16_t *r0 = data_in_channel;
@@ -1488,7 +1487,7 @@ LITE_PARALLEL_BEGIN(c, tid, chout) {
         data_out_channel += wout;
       }
     }
-LITE_PARALLEL_END()
+    LITE_PARALLEL_END()
   }
   TargetFree(TARGET(kARM), zero_ptr);
 }
@@ -1518,7 +1517,7 @@ void pooling3x3s1p0_avg_fp16(POOLING_PARAM,
     float16_t *data_out_batch = dout + n * chout * size_channel_out;
     const float16_t *data_in_batch = din + n * chin * size_channel_in;
 
-LITE_PARALLEL_BEGIN(c, tid, chout) {
+    LITE_PARALLEL_BEGIN(c, tid, chout) {
       float16_t *data_out_channel = data_out_batch + c * size_channel_out;
       const float16_t *data_in_channel = data_in_batch + c * size_channel_in;
       const float16_t *r0 = data_in_channel;
@@ -1549,7 +1548,7 @@ LITE_PARALLEL_BEGIN(c, tid, chout) {
         data_out_channel += wout;
       }
     }
-LITE_PARALLEL_END()
+    LITE_PARALLEL_END()
   }
   TargetFree(TARGET(kARM), zero_ptr);
 }
@@ -1581,7 +1580,7 @@ void pooling3x3s1p1_avg_fp16(POOLING_PARAM,
     float16_t *data_out_batch = dout + n * chout * size_channel_out;
     const float16_t *data_in_batch = din + n * chin * size_channel_in;
 
-LITE_PARALLEL_BEGIN(c, tid, chout) {
+    LITE_PARALLEL_BEGIN(c, tid, chout) {
       float16_t *data_out_channel = data_out_batch + c * size_channel_out;
       const float16_t *data_in_channel = data_in_batch + c * size_channel_in;
       const float16_t *r0 = data_in_channel;
@@ -1649,7 +1648,7 @@ LITE_PARALLEL_BEGIN(c, tid, chout) {
         data_out_channel += wout;
       }
     }
-LITE_PARALLEL_END()
+    LITE_PARALLEL_END()
   }
   TargetFree(TARGET(kARM), zero_ptr);
 }

@@ -54,7 +54,7 @@ inline void gru_add_with_bias(const float16_t* din,
   int cnt_8 = rem_32 >> 3;
   int rem_8 = rem_32 & 7;
 
-LITE_PARALLEL_BEGIN(i, tid, batch) {
+  LITE_PARALLEL_BEGIN(i, tid, batch) {
     auto din_batch = din + i * size;
     auto bias_batch = bias;
     auto dout_batch = dout + i * size;
@@ -95,7 +95,7 @@ LITE_PARALLEL_BEGIN(i, tid, batch) {
       dout_batch++;
     }
   }
-LITE_PARALLEL_END()
+  LITE_PARALLEL_END()
 }
 
 template <lite_api::ActivationType Act>
@@ -114,7 +114,7 @@ static void gru_unit_reset_act_impl(float16_t* updata_gate,
   int cnt_8 = rem_32 >> 3;
   int rem_8 = rem_32 & 7;
 
-LITE_PARALLEL_BEGIN(b, tid, batch_size) {
+  LITE_PARALLEL_BEGIN(b, tid, batch_size) {
     float16x8_t vpre0 = vdupq_n_f16(0.f);
     float16x8_t vpre1 = vdupq_n_f16(0.f);
     float16x8_t vpre2 = vdupq_n_f16(0.f);
@@ -213,7 +213,7 @@ LITE_PARALLEL_BEGIN(b, tid, batch_size) {
     }
     reset_hidden_prev += stride_reset_hidden_prev;
   }
-LITE_PARALLEL_END()
+  LITE_PARALLEL_END()
 }
 
 template <lite_api::ActivationType Act>
@@ -233,8 +233,7 @@ static void gru_unit_out_act_impl(bool origin_mode,
   int cnt_8 = rem_32 >> 3;
   int rem_8 = rem_32 & 7;
   if (origin_mode) {
-
-LITE_PARALLEL_BEGIN(b, tid, batch_size) {
+    LITE_PARALLEL_BEGIN(b, tid, batch_size) {
       float16x8_t vpre0 = vdupq_n_f16(0.f);
       float16x8_t vpre1 = vdupq_n_f16(0.f);
       float16x8_t vpre2 = vdupq_n_f16(0.f);
@@ -324,10 +323,9 @@ LITE_PARALLEL_BEGIN(b, tid, batch_size) {
       }
       hidden += stride_hidden;
     }
-LITE_PARALLEL_END()
+    LITE_PARALLEL_END()
   } else {
-
-LITE_PARALLEL_BEGIN(b, tid, batch_size) {
+    LITE_PARALLEL_BEGIN(b, tid, batch_size) {
       float16x8_t vpre0 = vdupq_n_f16(0.f);
       float16x8_t vpre1 = vdupq_n_f16(0.f);
       float16x8_t vpre2 = vdupq_n_f16(0.f);
@@ -417,7 +415,7 @@ LITE_PARALLEL_BEGIN(b, tid, batch_size) {
       }
       hidden += stride_hidden;
     }
-LITE_PARALLEL_END()
+    LITE_PARALLEL_END()
   }
 }
 

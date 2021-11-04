@@ -52,7 +52,7 @@ void pad_constant_fp16(const float16_t* din,
   int bottom_loop = (w * pad_bottom) >> 3;
   int bottom_loop_remain = (w * pad_bottom) & 7;
 
-LITE_PARALLEL_BEGIN(s, tid, num) {
+  LITE_PARALLEL_BEGIN(s, tid, num) {
     const float16_t* din_s = din + s * spatial_size_in;
     float16_t* dout_s = dout + s * spatial_size_out;
     // process top
@@ -93,7 +93,7 @@ LITE_PARALLEL_BEGIN(s, tid, num) {
       *dout_s++ = pad_value;
     }
   }
-LITE_PARALLEL_END()
+  LITE_PARALLEL_END()
 }
 
 void pad_edge_fp16(const float16_t* din,
@@ -121,7 +121,7 @@ void pad_edge_fp16(const float16_t* din,
   int med_rem_cnt = med_loop_remain >> 2;
   int med_rem_rem = med_loop_remain & 3;
 
-LITE_PARALLEL_BEGIN(s, tid, num) {
+  LITE_PARALLEL_BEGIN(s, tid, num) {
     const float16_t* din_s = din + s * spatial_size_in;
     float16_t* dout_s = dout + s * spatial_size_out;
     float16_t* dout_med = dout_s + w * pad_top;
@@ -183,7 +183,7 @@ LITE_PARALLEL_BEGIN(s, tid, num) {
       dout_top += w;
     }
   }
-LITE_PARALLEL_END()
+  LITE_PARALLEL_END()
 }
 
 void pad_reflect_fp16(const float16_t* din,
@@ -210,7 +210,7 @@ void pad_reflect_fp16(const float16_t* din,
   int right_loop_remain = pad_right & 3;
   int med_rem_cnt = med_loop_remain >> 2;
   int med_rem_rem = med_loop_remain & 3;
-LITE_PARALLEL_BEGIN(s, tid, num) {
+  LITE_PARALLEL_BEGIN(s, tid, num) {
     const float16_t* din_s = din + s * spatial_size_in;
     float16_t* dout_s = dout + s * spatial_size_out;
 
@@ -287,7 +287,7 @@ LITE_PARALLEL_BEGIN(s, tid, num) {
       dout_top_reflect -= w;
     }
   }
-LITE_PARALLEL_END()
+  LITE_PARALLEL_END()
 }
 
 void pad2d_func_fp16(const lite::Tensor* input,

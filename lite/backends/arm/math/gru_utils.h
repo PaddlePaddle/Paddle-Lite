@@ -47,7 +47,6 @@ inline void gru_add_with_bias(
 template <>
 inline void gru_add_with_bias(
     const float* din, const float* bias, float* dout, int batch, int size) {
-
   LITE_PARALLEL_BEGIN(i, tid, batch) {
     int j = 0;
     auto din_batch = din + i * size;
@@ -86,8 +85,7 @@ static void gru_unit_reset_act_impl(float* updata_gate,
                                     int stride_reset_hidden_prev,
                                     int frame_size,
                                     int batch_size) {
-
-LITE_PARALLEL_BEGIN(b, tid, batch_size) {
+  LITE_PARALLEL_BEGIN(b, tid, batch_size) {
     float32x4_t vpre0 = vdupq_n_f32(0.f);
     float32x4_t vpre1 = vdupq_n_f32(0.f);
     float prev = 0.f;
@@ -137,7 +135,7 @@ LITE_PARALLEL_BEGIN(b, tid, batch_size) {
     }
     reset_hidden_prev += stride_reset_hidden_prev;
   }
-LITE_PARALLEL_END()
+  LITE_PARALLEL_END()
 }
 
 template <lite_api::ActivationType Act>
@@ -152,7 +150,7 @@ static void gru_unit_out_act_impl(bool origin_mode,
                                   int stride_hidden,
                                   int frame_size,
                                   int batch_size) {
-LITE_PARALLEL_BEGIN(b, tid, batch_size)
+  LITE_PARALLEL_BEGIN(b, tid, batch_size)
   for (int b = 0; b < batch_size; ++b) {
     float32x4_t vpre0 = vdupq_n_f32(0.f);
     float32x4_t vpre1 = vdupq_n_f32(0.f);
@@ -237,7 +235,7 @@ LITE_PARALLEL_BEGIN(b, tid, batch_size)
     }
     hidden += stride_hidden;
   }
-LITE_PARALLEL_END()
+  LITE_PARALLEL_END()
 }
 
 inline void gru_unit_reset_act(lite_api::ActivationType act_type,

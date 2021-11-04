@@ -163,7 +163,7 @@ void transpose_mat(const lite_api::float16_t* din,
   for (int i = 0; i < num; ++i) {
     lite_api::float16_t* ptr_out = dout + i * size_in;
     const lite_api::float16_t* ptr_in = din + i * size_in;
-LITE_PARALLEL_BEGIN(h, tid, nh)
+    LITE_PARALLEL_BEGIN(h, tid, nh)
     for (int h = 0; h < nh; h++) {
       const lite_api::float16_t* ptr_din_row = ptr_in + h * size_w;
 #ifdef __aarch64__
@@ -428,7 +428,7 @@ LITE_PARALLEL_BEGIN(h, tid, nh)
         *data_out_ptr++ = *din7;
       }
     }
-LITE_PARALLEL_END()
+    LITE_PARALLEL_END()
 #ifdef __aarch64__
     // remain
     for (int h = nh * 8; h < height; h++) {

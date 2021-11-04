@@ -72,9 +72,9 @@ void decode_bbox_center_variance_kernel(const int batch_num,
 
       vst4q_f32(ptr_bbox, vloc);
     }
-LITE_PARALLEL_END()
+    LITE_PARALLEL_END()
 
-    LITE_PARALLEL_COMMON_BEGIN(i, tid, cnt * 4, num_priors, 1) {
+    LITE_PARALLEL_COMMON_BEGIN(i, tid, num_priors, cnt * 4, 1) {
       int idx = i * 4;
       float p_xmin = prior_data[idx];
       float p_ymin = prior_data[idx + 1];
@@ -102,7 +102,7 @@ LITE_PARALLEL_END()
       ptr_bbox_batch[idx + 2] = decode_bbox_center_x + decode_bbox_width / 2.f;
       ptr_bbox_batch[idx + 3] = decode_bbox_center_y + decode_bbox_height / 2.f;
     }
-LITE_PARALLEL_END()
+    LITE_PARALLEL_END()
   }
 }
 
@@ -199,9 +199,9 @@ void decode_bbox_center_kernel(const int batch_num,
 
       vst4q_f32(ptr_bbox, vloc);
     }
-LITE_PARALLEL_END()
+    LITE_PARALLEL_END()
 
-LITE_PARALLEL_COMMON_BEGIN(i, tid, cnt * 4, num_priors, 1) {
+    LITE_PARALLEL_COMMON_BEGIN(i, tid, cnt * 4, num_priors, 1) {
       int idx = i * 4;
       int var_idx = idx, prior_idx = idx;
       if (axis == 1) {
@@ -243,7 +243,7 @@ LITE_PARALLEL_COMMON_BEGIN(i, tid, cnt * 4, num_priors, 1) {
       ptr_bbox_batch[idx + 3] =
           decode_bbox_center_y + decode_bbox_height / 2.f - norm_value;
     }
-LITE_PARALLEL_END()
+    LITE_PARALLEL_END()
   }
 }
 

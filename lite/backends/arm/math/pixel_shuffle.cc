@@ -72,7 +72,7 @@ void pixel_shuffle_scale2_fp32(const float* input,
       }
     }
   }
-LITE_PARALLEL_END()
+  LITE_PARALLEL_END()
 }
 
 void pixel_shuffle_scale3_fp32(const float* input,
@@ -131,7 +131,7 @@ void pixel_shuffle_scale3_fp32(const float* input,
       }
     }
   }
-LITE_PARALLEL_END()
+  LITE_PARALLEL_END()
 }
 
 void pixel_shuffle_scale4_fp32(const float* input,
@@ -195,7 +195,7 @@ void pixel_shuffle_scale4_fp32(const float* input,
       }
     }
   }
-LITE_PARALLEL_END()
+  LITE_PARALLEL_END()
 }
 
 void pixel_shuffle_native_fp32(const float* input,
@@ -207,7 +207,7 @@ void pixel_shuffle_native_fp32(const float* input,
                                const int hout,
                                const int wout,
                                const int upscale_factor) {
-   LITE_PARALLEL_BEGIN(nc, tid, num * chout) {
+  LITE_PARALLEL_BEGIN(nc, tid, num * chout) {
     const float* inptr = input + nc * hout * wout;
     float* outptr_nc = output + nc * hout * wout;
 
@@ -225,7 +225,7 @@ void pixel_shuffle_native_fp32(const float* input,
       }
     }
   }
- LITE_PARALLEL_END()
+  LITE_PARALLEL_END()
 }
 
 }  // namespace math

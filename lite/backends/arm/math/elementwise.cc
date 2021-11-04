@@ -2295,7 +2295,7 @@ void elementwise_mod<int32_t>(const int32_t* dinx,
     dout_ptr[2] = dinx2 % diny2;
     dout_ptr[3] = dinx3 % diny3;
   }
-LITE_PARALLEL_END()
+  LITE_PARALLEL_END()
   if (remain > 0) {
     const int32_t* dinx_ptr = dinx + (cnt << 2);
     const int32_t* diny_ptr = diny + (cnt << 2);

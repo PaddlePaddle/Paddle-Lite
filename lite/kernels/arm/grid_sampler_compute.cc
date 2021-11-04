@@ -16,8 +16,8 @@
 #include <string>
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
-#include "lite/core/type_system.h"
 #include "lite/core/parallel_defines.h"
+#include "lite/core/type_system.h"
 
 namespace paddle {
 namespace lite {
@@ -310,7 +310,7 @@ void GridSamplerCompute::Run() {
               ds * (in_wn * de + in_en * dw) + dn * (in_ws * de + in_es * dw);
         }
       }
-LITE_PARALLEL_END()
+      LITE_PARALLEL_END()
     }
   } else if (mode == "nearest") {
     auto out_h = param.grid->dims()[1];
