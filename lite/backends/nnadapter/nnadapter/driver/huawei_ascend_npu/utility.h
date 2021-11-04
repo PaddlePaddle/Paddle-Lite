@@ -50,7 +50,7 @@ const std::string ATCErrorToString(uint32_t error);
 
 // Build and load OM model to/from memory
 std::shared_ptr<AclModelClient> LoadOMModelFromBuffer(
-    const std::vector<uint8_t>& model_buffer, int device_id = 0);
+    const std::vector<uint8_t>& model_buffer, Context* context);
 bool BuildOMModelToBuffer(
     std::vector<ge::Operator>& input_operators,   // NOLINT
     std::vector<ge::Operator>& output_operators,  // NOLINT

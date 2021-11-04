@@ -17,6 +17,7 @@
 #include <thread>  // NOLINT
 #include <vector>
 #include "acl/acl.h"
+#include "acl/acl_prof.h"
 #include "core/hal/types.h"
 #include "graph/tensor.h"
 #include "graph/types.h"
@@ -24,9 +25,11 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
+class Context;
+
 class AclModelClient {
  public:
-  explicit AclModelClient(int device_id);
+  explicit AclModelClient(Context* context);
   ~AclModelClient();
 
   bool LoadModel(const void* data, uint32_t size);
@@ -43,12 +46,17 @@ class AclModelClient {
  private:
   void InitAclClientEnv(int device_id);
   void FinalizeAclClientEnv();
+  void InitAclProfilingEnv();
+  void FinalizeAclProfilingEnv();
   bool CreateModelIODataset();
   void DestroyDataset(aclmdlDataset** dataset);
+  void ProfilingStart();
+  void ProfilingEnd();
 
  private:
   int device_id_{0};
-  aclrtContext context_{nullptr};
+  Context* context_;
+  aclrtContext acl_rt_context_{nullptr};
   uint32_t model_id_{0};
   size_t model_memory_size_;
   size_t model_weight_size_;
@@ -57,6 +65,7 @@ class AclModelClient {
   aclmdlDesc* model_desc_{nullptr};
   aclmdlDataset* input_dataset_{nullptr};
   aclmdlDataset* output_dataset_{nullptr};
+  aclprofConfig* config_{nullptr};
 };
 
 }  // namespace huawei_ascend_npu
