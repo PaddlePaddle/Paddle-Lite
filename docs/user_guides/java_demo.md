@@ -29,7 +29,7 @@
 
 ## Java 应用开发说明
 
-Java 代码调用 Paddle-Lite 执行预测仅需五步：
+Java 代码调用 Paddle Lite 执行预测仅需五步：
 
 (1) 设置 MobileConfig 信息
 
@@ -71,7 +71,7 @@ predictor.run();
 ```java
 Tensor output = predictor.getOutput(0);
 ```
-详细的 Java API 说明文档位于[Java API](../api_reference/java_api_doc)。更多 Java 应用预测开发可以参考位于位于[Paddle-Lite-Demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)的工程示例代码。
+详细的 Java API 说明文档位于[Java API](../api_reference/java_api_doc)。更多 Java 应用预测开发可以参考位于位于[Paddle Lite Demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)的工程示例代码。
 
 
 ## Android Studio 工程 Java 示例程序
@@ -98,7 +98,7 @@ Tensor output = predictor.getOutput(0);
 **解压后内容结构如下：**
 
 ```shell
-inference_lite_lib.android.armv8.gcc.c++_static    Paddle-Lite 预测库
+inference_lite_lib.android.armv8.gcc.c++_static    Paddle Lite 预测库
 ├── cxx                                 C++ 预测库
 │   ├── include                             C++ 预测库头文件
 │   └── lib                                 C++ 预测库文件
@@ -119,7 +119,7 @@ inference_lite_lib.android.armv8.gcc.c++_static    Paddle-Lite 预测库
 
 #### 自动化脚本方法
 
-在下载下来的预测库的`demo/java/android`文件夹下，为了让您更快上手，我们准备了一个脚本`prepare_demo.bash`，输入手机架构参数例如`arm64-v8a`，即可自动准备好所有预测部署所需的文件。
+在下载下来的预测库的 `demo/java/android` 文件夹下，为了让您更快上手，我们准备了一个脚本 `prepare_demo.bash`，输入手机架构参数例如 `arm64-v8a`，即可自动准备好所有预测部署所需的文件。
 
 ```shell
 cd inference_lite_lib.android.armv8.gcc.c++_static/demo/java/android
@@ -128,8 +128,8 @@ bash prepare_demo.bash arm8
 
 以上命令自动进行以下三步操作：
 
-1. 拷贝 JNI 动态链接库`libpaddle_lite_jni.so`到`PaddlePredictor/app/src/main/jniLibs/arm64-v8a/`
-2. 拷贝 JAR 包`PaddlePredictor.jar` 到 `PaddlePredictor/app/libs/`
+1. 拷贝 JNI 动态链接库 `libpaddle_lite_jni.so` 到 `PaddlePredictor/app/src/main/jniLibs/arm64-v8a/`
+2. 拷贝 JAR 包 `PaddlePredictor.jar` 到 `PaddlePredictor/app/libs/`
 3. 自动下载并解压所有模型文件，拷贝到`PaddlePredictor/app/src/main/assets/`
 
 >> **注意：** 目前脚本输入手机架构参数仅支持 `arm7 | arm8 | armeabi-v7a | arm64-v8a`。
@@ -186,4 +186,4 @@ time: xxx ms
 
 该 demo 程序跑 5 个模型，第一个模型结果将真正的头两个数字输出，并在第二行附上期望的正确值。你应该要看到他们的误差小于 0.001 。后面四个模型如果你看到 `test:true` 字样，说明模型输出通过了我们在 demo 程序里对其输出的测试。time 代表该测试花费的时间。
 
->> **注意：** 在这一步中，如果遇到 Andriod Studio 编译/安装失败等问题，请参考[Andriod示例](../demo_guides/android_app_demo.html#android-demo)中部署方法章节的详细步骤和注意事项。
+>> **注意：** 在这一步中，如果遇到 Andriod Studio 编译/安装失败等问题，请参考 [Andriod 示例](../demo_guides/android_app_demo.html#android-demo)中部署方法章节的详细步骤和注意事项。
