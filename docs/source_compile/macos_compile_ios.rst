@@ -138,7 +138,7 @@ iOS CPU 预测库 (armv8)
 ^^^^^^^^^^^^^^^^^^^^^^
 
 
-如果执行\ ``./lite/tools/build_ios.sh``\ ，成功后会在 ``Paddle-Lite/build.ios.ios64.armv8/inference_lite_lib.android.armv8`` 生成 Paddle Lite 编译包，文件目录如下：
+如果执行\ ``./lite/tools/build_ios.sh``\ ，成功后会在 ``Paddle-Lite/build.ios.ios64.armv8/inference_lite_lib.ios64.armv8`` 生成 Paddle Lite 编译包，文件目录如下：
 
 .. code-block:: shell
 
