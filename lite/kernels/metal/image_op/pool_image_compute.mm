@@ -154,7 +154,7 @@ void PoolImageCompute::run_with_mps() {
     auto cmdbuf = [backend commandBuffer];
     if (mps_pool_op_) {
         if (@available(iOS 10.0, macOS 10.13, macCatalyst 13.0, *)) {
-            [((__bridge MPSCNNPoolingMax*)mps_pool_op_)
+            [((__bridge MPSCNNPooling*)mps_pool_op_)
                 encodeToCommandBuffer:cmdbuf
                           sourceImage:(__bridge MPSImage*)mps_input_image_
                      destinationImage:(__bridge MPSImage*)mps_output_image_];
@@ -192,16 +192,21 @@ void PoolImageCompute::setup_with_mps() {
                                                                      kernelHeight:kh
                                                                   strideInPixelsX:sw
                                                                   strideInPixelsY:sh];
+            ((__bridge MPSCNNPoolingMax*)mps_pool_op_).offset =
+                MPSOffset{.x = offsetX, .y = offsetY};
+            ((__bridge MPSCNNPoolingMax*)mps_pool_op_).edgeMode = MPSImageEdgeModeZero;
         } else if (param.pooling_type == "avg") {
-            mps_pool_op_ =
-                (__bridge_retained void*)[[MPSCNNPoolingAverage alloc] initWithDevice:backend.device
-                                                                          kernelWidth:kw
-                                                                         kernelHeight:kh
-                                                                      strideInPixelsX:sw
-                                                                      strideInPixelsY:sh];
+            mps_pool_op_ = (__bridge_retained void*)[[MPSCNNPoolingAverage alloc]
+                 initWithDevice:backend.device
+                    kernelWidth:input_buffer_->image().width
+                   kernelHeight:input_buffer_->image().height
+                strideInPixelsX:input_buffer_->image().width
+                strideInPixelsY:input_buffer_->image().height];
+            ((__bridge MPSCNNPoolingAverage*)mps_pool_op_).offset =
+                MPSOffset{.x = static_cast<NSInteger>(input_buffer_->image().width / 2),
+                    .y = static_cast<NSInteger>(input_buffer_->image().height / 2)};
+            ((__bridge MPSCNNPoolingAverage*)mps_pool_op_).edgeMode = MPSImageEdgeModeZero;
         }
-        ((__bridge MPSCNNPoolingMax*)mps_pool_op_).offset = MPSOffset{.x = offsetX, .y = offsetY};
-        ((__bridge MPSCNNPoolingMax*)mps_pool_op_).edgeMode = MPSImageEdgeModeZero;
         // MPS input and output
         auto input_c = static_cast<int>(input_buffer_->tensor_dim_[1]);
         auto output_c = static_cast<int>(output_buffer_->tensor_dim_[1]);
