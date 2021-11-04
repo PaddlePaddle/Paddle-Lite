@@ -220,18 +220,18 @@ if(ARM_TARGET_OS STREQUAL "android" AND USE_PRECOMPILED_OPENCV)
     set(OPENCV_PATH "${CMAKE_BINARY_DIR}/third_party/${OPENCV_VERSION}/${ARM_ABI}")
     message(STATUS "OPENCV_PATH: ${OPENCV_PATH}")
     set(OPENCV_INCLUDE_DIRS "${OPENCV_PATH}/include/")
-    set(OPENCV_LIBS "${OPENCV_PATH}/libs/libopencv_imgcodecs.a \
-                     ${OPENCV_PATH}/libs/libopencv_imgproc.a \
-                     ${OPENCV_PATH}/libs/libopencv_core.a \
-                     ${OPENCV_PATH}/3rdparty/libs/libtegra_hal.a \
-                     ${OPENCV_PATH}/3rdparty/libs/liblibjpeg-turbo.a \
-                     ${OPENCV_PATH}/3rdparty/libs/liblibwebp.a \
-                     ${OPENCV_PATH}/3rdparty/libs/liblibpng.a \
-                     ${OPENCV_PATH}/3rdparty/libs/liblibjasper.a \
-                     ${OPENCV_PATH}/3rdparty/libs/liblibtiff.a \
-                     ${OPENCV_PATH}/3rdparty/libs/libIlmImf.a \
-                     ${OPENCV_PATH}/3rdparty/libs/libtbb.a \
-                     ${OPENCV_PATH}/3rdparty/libs/libcpufeatures.a")
+    set(OPENCV_LIBS ${OPENCV_PATH}/libs/libopencv_imgcodecs.a
+                    ${OPENCV_PATH}/libs/libopencv_imgproc.a
+                    ${OPENCV_PATH}/libs/libopencv_core.a
+                    ${OPENCV_PATH}/3rdparty/libs/libtegra_hal.a
+                    ${OPENCV_PATH}/3rdparty/libs/liblibjpeg-turbo.a
+                    ${OPENCV_PATH}/3rdparty/libs/liblibwebp.a
+                    ${OPENCV_PATH}/3rdparty/libs/liblibpng.a
+                    ${OPENCV_PATH}/3rdparty/libs/liblibjasper.a
+                    ${OPENCV_PATH}/3rdparty/libs/liblibtiff.a
+                    ${OPENCV_PATH}/3rdparty/libs/libIlmImf.a
+                    ${OPENCV_PATH}/3rdparty/libs/libtbb.a
+                    ${OPENCV_PATH}/3rdparty/libs/libcpufeatures.a)
 
     set(OPENCV_URL "https://paddle-inference-dist.bj.bcebos.com/")
     lite_download_and_uncompress("${CMAKE_BINARY_DIR}/third_party/" ${OPENCV_URL} "${OPENCV_VERSION}.tar.gz")
