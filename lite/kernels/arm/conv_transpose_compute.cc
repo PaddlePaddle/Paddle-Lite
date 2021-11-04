@@ -164,7 +164,7 @@ PROFILE_INFO(kFloat, kFloat)
 template <>
 void Conv2DTransposeCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
-  ctx.ExtendWorkspace(workspace_size_);
+  ctx.ExtendWorkspace((workspace_size_ * sizeof(float)));
   INIT_PARAM
   bool flag_bias = (param.bias != nullptr);
   auto paddings = *param.paddings;
@@ -278,7 +278,7 @@ PROFILE_INFO(kInt8, kFloat)
 template <>
 void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
-  ctx.ExtendWorkspace(workspace_size_);
+  ctx.ExtendWorkspace((workspace_size_ * 2 * sizeof(int32_t)));
   INIT_PARAM
   bool flag_bias = (param.bias != nullptr);
   auto paddings = *param.paddings;
@@ -377,7 +377,7 @@ PROFILE_INFO(kInt8, kInt8)
 template <>
 void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
-  ctx.ExtendWorkspace(workspace_size_);
+  ctx.ExtendWorkspace((workspace_size_ * 2 * sizeof(int32_t)));
   INIT_PARAM
   bool flag_bias = (param.bias != nullptr);
   auto paddings = *param.paddings;
@@ -477,7 +477,6 @@ void Conv2DTransposeCompute<PRECISION(kFP16),
                             PRECISION(kFP16)>::PrepareForRun() {
   INIT_PARAM
 
-  workspace_size_ = group * m * n * sizeof(float16_t);
   auto& ctx = this->ctx_->template As<ARMContext>();
   DEPTHWISE_PARAM
   if (!depth_wise_s1 && !depth_wise_s2) {
@@ -495,7 +494,7 @@ PROFILE_INFO(kFP16, kFP16)
 template <>
 void Conv2DTransposeCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
-  ctx.ExtendWorkspace(workspace_size_);
+  ctx.ExtendWorkspace((workspace_size_ * sizeof(float16_t)));
   INIT_PARAM
   bool flag_bias = (param.bias != nullptr);
   auto paddings = *param.paddings;

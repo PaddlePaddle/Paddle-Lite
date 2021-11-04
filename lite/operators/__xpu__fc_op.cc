@@ -62,7 +62,6 @@ bool XPUFcOp::InferShapeImpl() const {
   }
   output_dims[in_num_col_dims] = w_dims_1;
   param_.output->Resize(output_dims);
-  param_.output_max->Resize({4});
 
   // share LoD
   param_.output->set_lod(param_.input->lod());
