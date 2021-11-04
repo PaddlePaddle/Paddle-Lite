@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if(NOT WITH_LITE OR NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+if(NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
   include(external/xbyak)     # download xbyak package
   include(external/xxhash)    # download install xxhash
   include(external/libxsmm)   # download, build, install libxsmm
