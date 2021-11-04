@@ -163,7 +163,7 @@ iOS GPU 预测库 (armv8)
 
 .. code-block:: shell
 
-   inference_lite_lib.ios64.armv8
+   inference_lite_lib.ios64.armv8.metal
    ├── include                                                C++ 头文件
    │   ├── paddle_api.h
    │   ├── paddle_image_preprocess.h
