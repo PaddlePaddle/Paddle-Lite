@@ -15,6 +15,7 @@
 #include "lite/backends/arm/math/fp16/activation_fp16.h"
 #include <algorithm>
 #include "lite/backends/arm/math/fp16/funcs_fp16.h"
+#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
@@ -35,8 +36,8 @@ void act_relu<float16_t>(const float16_t* din,
   int neon_loop_rem_rem = neon_loop_rem & 7;
   int stride = neon_loop_rem_cnt << 3;
   float16x8_t vzero = vdupq_n_f16(0.f);
-#pragma omp parallel for
-  for (int i = 0; i < threads; ++i) {
+
+LITE_PARALLEL_BEGIN(i, tid, threads) {
     const float16_t* ptr_in_thread = din + i * nums_per_thread;
     float16_t* ptr_out_thread = dout + i * nums_per_thread;
     for (int j = 0; j < neon_loop_cnt; j++) {
@@ -63,6 +64,7 @@ void act_relu<float16_t>(const float16_t* din,
       ptr_out_thread++;
     }
   }
+LITE_PARALLEL_END()
   float16_t* out_ptr_remain = dout + threads * nums_per_thread;
   const float16_t* in_ptr_remain = din + threads * nums_per_thread;
   for (int j = 0; j < remain; ++j) {
@@ -217,8 +219,8 @@ void act_prelu<float16_t>(const float16_t* din,
     for (int n = 0; n < outer_size; n++) {
       const float16_t* data_in_batch = din + n * stride_size;
       float16_t* data_out_batch = dout + n * stride_size;
-#pragma omp parallel for
-      for (int c = 0; c < channel_size; c++) {
+
+LITE_PARALLEL_BEGIN(c, tid, channel_size) {
         const float16_t* data_in_c = data_in_batch + c * inner_size;
         float16_t* data_out_c = data_out_batch + c * inner_size;
 
@@ -258,14 +260,15 @@ void act_prelu<float16_t>(const float16_t* din,
           data_in_c++;
         }
       }
+LITE_PARALLEL_END()
     }
   } else {  // mode = element
     for (int n = 0; n < outer_size; n++) {
       const float16_t* data_in_batch = din + n * stride_size;
       const float16_t* data_alpha_batch = alpha_data + n * stride_size;
       float16_t* data_out_batch = dout + n * stride_size;
-#pragma omp parallel for
-      for (int c = 0; c < channel_size; c++) {
+
+LITE_PARALLEL_BEGIN(c, tid, channel_size) {
         const float16_t* data_in_c = data_in_batch + c * inner_size;
         const float16_t* data_alpha_c = data_alpha_batch + c * inner_size;
         float16_t* data_out_c = data_out_batch + c * inner_size;
@@ -312,6 +315,7 @@ void act_prelu<float16_t>(const float16_t* din,
           data_out_c++;
         }
       }
+LITE_PARALLEL_END()
     }
   }
 }

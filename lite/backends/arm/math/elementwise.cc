@@ -2275,8 +2275,7 @@ void elementwise_mod<int32_t>(const int32_t* dinx,
                               int num) {
   int cnt = num >> 2;
   int remain = num % 4;
-#pragma omp parallel for
-  for (int i = 0; i < cnt; i++) {
+  LITE_PARALLEL_BEGIN(i, tid, cnt) {
     const int32_t* dinx_ptr = dinx + (i << 2);
     const int32_t* diny_ptr = diny + (i << 2);
     int32_t* dout_ptr = dout + (i << 2);
@@ -2296,6 +2295,7 @@ void elementwise_mod<int32_t>(const int32_t* dinx,
     dout_ptr[2] = dinx2 % diny2;
     dout_ptr[3] = dinx3 % diny3;
   }
+LITE_PARALLEL_END()
   if (remain > 0) {
     const int32_t* dinx_ptr = dinx + (cnt << 2);
     const int32_t* diny_ptr = diny + (cnt << 2);

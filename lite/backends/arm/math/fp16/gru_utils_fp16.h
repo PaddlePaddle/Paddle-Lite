@@ -17,6 +17,7 @@
 #include <memory>
 #include <vector>
 #include "lite/backends/arm/math/fp16/funcs_fp16.h"
+#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
@@ -52,8 +53,8 @@ inline void gru_add_with_bias(const float16_t* din,
   int rem_32 = size & 31;
   int cnt_8 = rem_32 >> 3;
   int rem_8 = rem_32 & 7;
-#pragma omp parallel for
-  for (int i = 0; i < batch; ++i) {
+
+LITE_PARALLEL_BEGIN(i, tid, batch) {
     auto din_batch = din + i * size;
     auto bias_batch = bias;
     auto dout_batch = dout + i * size;
@@ -94,6 +95,7 @@ inline void gru_add_with_bias(const float16_t* din,
       dout_batch++;
     }
   }
+LITE_PARALLEL_END()
 }
 
 template <lite_api::ActivationType Act>
@@ -111,8 +113,8 @@ static void gru_unit_reset_act_impl(float16_t* updata_gate,
   int rem_32 = frame_size & 31;
   int cnt_8 = rem_32 >> 3;
   int rem_8 = rem_32 & 7;
-#pragma omp parallel for
-  for (int b = 0; b < batch_size; ++b) {
+
+LITE_PARALLEL_BEGIN(b, tid, batch_size) {
     float16x8_t vpre0 = vdupq_n_f16(0.f);
     float16x8_t vpre1 = vdupq_n_f16(0.f);
     float16x8_t vpre2 = vdupq_n_f16(0.f);
@@ -211,6 +213,7 @@ static void gru_unit_reset_act_impl(float16_t* updata_gate,
     }
     reset_hidden_prev += stride_reset_hidden_prev;
   }
+LITE_PARALLEL_END()
 }
 
 template <lite_api::ActivationType Act>
@@ -230,8 +233,8 @@ static void gru_unit_out_act_impl(bool origin_mode,
   int cnt_8 = rem_32 >> 3;
   int rem_8 = rem_32 & 7;
   if (origin_mode) {
-#pragma omp parallel for
-    for (int b = 0; b < batch_size; ++b) {
+
+LITE_PARALLEL_BEGIN(b, tid, batch_size) {
       float16x8_t vpre0 = vdupq_n_f16(0.f);
       float16x8_t vpre1 = vdupq_n_f16(0.f);
       float16x8_t vpre2 = vdupq_n_f16(0.f);
@@ -321,9 +324,10 @@ static void gru_unit_out_act_impl(bool origin_mode,
       }
       hidden += stride_hidden;
     }
+LITE_PARALLEL_END()
   } else {
-#pragma omp parallel for
-    for (int b = 0; b < batch_size; ++b) {
+
+LITE_PARALLEL_BEGIN(b, tid, batch_size) {
       float16x8_t vpre0 = vdupq_n_f16(0.f);
       float16x8_t vpre1 = vdupq_n_f16(0.f);
       float16x8_t vpre2 = vdupq_n_f16(0.f);
@@ -413,6 +417,7 @@ static void gru_unit_out_act_impl(bool origin_mode,
       }
       hidden += stride_hidden;
     }
+LITE_PARALLEL_END()
   }
 }
 

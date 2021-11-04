@@ -50,7 +50,7 @@ void pad2d_ref(const float *x_data,
   int in_h = h - pad_h0 - pad_h1;
   int spatial_size_out = w * h;
   int spatial_size_in = in_w * in_h;
-#pragma omp parallel for
+LITE_PARALLEL_BEGIN(i, tid, n * c)
   for (int i = 0; i < n * c; ++i) {
     const float *din_batch = x_data + i * spatial_size_in;
     float *dout_batch = out_data + i * spatial_size_out;
@@ -87,6 +87,7 @@ void pad2d_ref(const float *x_data,
       }
     }
   }
+LITE_PARALLEL_END()
 }
 
 // #define LOOP_TEST

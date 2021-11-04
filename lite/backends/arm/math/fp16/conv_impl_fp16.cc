@@ -21,6 +21,7 @@
 #include "lite/core/context.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/operators/op_params.h"
+#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
@@ -97,8 +98,8 @@ void im2col_s1_fp16(IM2COL_PARAM(float16_t)) {
   const int out_channel_size = output_h * output_w;
   const int output_plane_size = output_h * output_w * kernel_h * kernel_w;
   memset(data_col, 0, output_plane_size * channels * sizeof(float16_t));
-#pragma omp parallel for
-  for (int c = 0; c < channels; c++) {
+
+LITE_PARALLEL_BEGIN(c, tid, channels) {
     int data_im_z = c * in_channel_size;
     int data_col_z1 = c * output_plane_size;
     for (int ky = 0, h_offset = 0; ky < kernel_h;
@@ -139,6 +140,7 @@ void im2col_s1_fp16(IM2COL_PARAM(float16_t)) {
       }
     }
   }
+LITE_PARALLEL_END()
 }
 
 void im2col_s2_fp16(IM2COL_PARAM(float16_t)) {
@@ -152,8 +154,8 @@ void im2col_s2_fp16(IM2COL_PARAM(float16_t)) {
   const int out_channel_size = output_h * output_w;
   const int output_plane_size = output_h * output_w * kernel_h * kernel_w;
   memset(data_col, 0, output_plane_size * channels * sizeof(float16_t));
-#pragma omp parallel for
-  for (int c = 0; c < channels; c++) {
+
+LITE_PARALLEL_BEGIN(c, tid, channels) {
     int data_im_z = c * in_channel_size;
     int data_col_z1 = c * output_plane_size;
     for (int ky = 0, h_offset = 0; ky < kernel_h;
@@ -196,6 +198,7 @@ void im2col_s2_fp16(IM2COL_PARAM(float16_t)) {
       }
     }
   }
+LITE_PARALLEL_END()
 }
 /**
  * \brief normal im2col function for gemm conv

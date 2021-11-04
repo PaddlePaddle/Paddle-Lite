@@ -16,6 +16,7 @@
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
+#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
@@ -43,8 +44,8 @@ void InstanceNormCompute::Run() {
   int width = param.x->dims()[3];
   int spatial_size = height * width;
 // compute saved_mean and saved_variance
-#pragma omp parallel for
-  for (int i = 0; i < nc; ++i) {
+
+  LITE_PARALLEL_BEGIN(i, tid, nc) {
     const float* in_p = in + i * spatial_size;
     float sum_spatial = 0.f;
     float summ_spatial = 0.f;
@@ -120,9 +121,10 @@ void InstanceNormCompute::Run() {
     saved_mean[i] = mean;
     saved_variance[i] = std;
   }
+LITE_PARALLEL_END()
 // compute instance_norm result: out = scale * (in - mean) / std + bias
-#pragma omp parallel for
-  for (int i = 0; i < nc; ++i) {
+
+  LITE_PARALLEL_BEGIN(i, tid, nc) {
     const float* in_p = in + i * spatial_size;
     float* out_p = out + i * spatial_size;
     int j = spatial_size;
@@ -160,6 +162,7 @@ void InstanceNormCompute::Run() {
       out_p++;
     }
   }
+LITE_PARALLEL_END()
 }
 
 }  // namespace arm

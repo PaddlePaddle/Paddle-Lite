@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 #include "lite/backends/arm/math/fp16/funcs_fp16.h"
+#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
@@ -485,8 +486,8 @@ void interpolate(lite::Tensor* X,
   int spatial_out = out_h * out_w;
 
   if (interpolate_type == "Bilinear") {
-#pragma omp parallel for
-    for (int i = 0; i < count; ++i) {
+
+LITE_PARALLEL_BEGIN(i, tid, count) {
       bilinear_interp(din + spatial_in * i,
                       in_w,
                       in_h,
@@ -498,9 +499,10 @@ void interpolate(lite::Tensor* X,
                       with_align,
                       align_mode);
     }
+LITE_PARALLEL_END()
   } else if (interpolate_type == "Nearest") {
-#pragma omp parallel for
-    for (int i = 0; i < count; ++i) {
+
+LITE_PARALLEL_BEGIN(i, tid, count) {
       nearest_interp(din + spatial_in * i,
                      in_w,
                      in_h,
@@ -511,6 +513,7 @@ void interpolate(lite::Tensor* X,
                      1.f / height_scale,
                      with_align);
     }
+LITE_PARALLEL_END()
   }
 }
 

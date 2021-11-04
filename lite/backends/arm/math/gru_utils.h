@@ -19,6 +19,7 @@
 
 #include "lite/backends/arm/math/quantize.h"
 #include "lite/backends/arm/math/sgemm.h"
+#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
@@ -46,8 +47,8 @@ inline void gru_add_with_bias(
 template <>
 inline void gru_add_with_bias(
     const float* din, const float* bias, float* dout, int batch, int size) {
-#pragma omp parallel for
-  for (int i = 0; i < batch; ++i) {
+
+  LITE_PARALLEL_BEGIN(i, tid, batch) {
     int j = 0;
     auto din_batch = din + i * size;
     auto dout_batch = dout + i * size;
@@ -71,6 +72,7 @@ inline void gru_add_with_bias(
       dout_batch[j] = din_batch[j] + bias[j];
     }
   }
+  LITE_PARALLEL_END()
 }
 
 template <lite_api::ActivationType Act>
@@ -84,8 +86,8 @@ static void gru_unit_reset_act_impl(float* updata_gate,
                                     int stride_reset_hidden_prev,
                                     int frame_size,
                                     int batch_size) {
-#pragma omp parallel for
-  for (int b = 0; b < batch_size; ++b) {
+
+LITE_PARALLEL_BEGIN(b, tid, batch_size) {
     float32x4_t vpre0 = vdupq_n_f32(0.f);
     float32x4_t vpre1 = vdupq_n_f32(0.f);
     float prev = 0.f;
@@ -135,6 +137,7 @@ static void gru_unit_reset_act_impl(float* updata_gate,
     }
     reset_hidden_prev += stride_reset_hidden_prev;
   }
+LITE_PARALLEL_END()
 }
 
 template <lite_api::ActivationType Act>
@@ -149,7 +152,7 @@ static void gru_unit_out_act_impl(bool origin_mode,
                                   int stride_hidden,
                                   int frame_size,
                                   int batch_size) {
-#pragma omp parallel for
+LITE_PARALLEL_BEGIN(b, tid, batch_size)
   for (int b = 0; b < batch_size; ++b) {
     float32x4_t vpre0 = vdupq_n_f32(0.f);
     float32x4_t vpre1 = vdupq_n_f32(0.f);
@@ -234,6 +237,7 @@ static void gru_unit_out_act_impl(bool origin_mode,
     }
     hidden += stride_hidden;
   }
+LITE_PARALLEL_END()
 }
 
 inline void gru_unit_reset_act(lite_api::ActivationType act_type,
