@@ -250,7 +250,7 @@ if(NOT IOS AND NOT LITE_ON_TINY_PUBLISH)
         string(REGEX REPLACE "[-%.]" "_" OPENCV_VERSION_EX ${OPENCV_VERSION})
         add_dependencies(benchmark_bin extern_lite_download_${OPENCV_VERSION_EX}_tar_gz)
         include_directories(${OPENCV_INCLUDE_DIRS})
-        target_link_libraries(benchmark_bin ${OPENCV_LIBS})
+        target_link_libraries(benchmark_bin ${OPENCV_LIBS} -lz)
     endif()
 endif()
 
