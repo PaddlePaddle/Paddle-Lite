@@ -136,8 +136,7 @@ Paddle Lite 仓库中\ ``./lite/tools/build_linux.sh``\ 脚本文件用于构建
    # (可选) 删除 third-party 目录，编译脚本会自动从国内 CDN 下载第三方库文件
    # rm -rf third-party
 
-   # 默认配置是4线程编译，如果您的设备配置较低（树莓派3B等），可能遇到未知编译错误，
-   # 建议通过 ```export LITE_BUILD_THREADS=1``` 设置为单线程编译
+   # 执行编译脚本
    ./lite/tools/build_linux.sh
 
 ..

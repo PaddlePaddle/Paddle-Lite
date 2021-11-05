@@ -4,7 +4,7 @@
 
 本教程提供了用 Paddle Lite 执行推理的 Python 示例程序，通过输入、执行推理、打印推理结果的方式，演示了基于 Python API 接口的推理基本流程，用户能够快速了解 Paddle Lite 执行推理相关 API 的使用。
 
-本教程以`mobilenetv1_light_api.py`和 `mobilenetv1_full_api.py`为案例，介绍 Python API 推理流程，相关代码放置在[lite/demo/python](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/demo/python)文件夹中。
+本教程以 `mobilenetv1_light_api.py` 和 `mobilenetv1_full_api.py` 为案例，介绍 Python API 推理流程，相关代码放置在 [lite/demo/python](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/demo/python) 文件夹中。
 
 使用 Paddle Lite 执行推理主要包括以下步骤：
 
@@ -14,7 +14,7 @@
 
 - 创建 predictor 对象：通过 `create_paddle_predictor` 接口创建 `<class 'paddlelite.lite.LightPredictor'>` 对象，完成模型解析和环境初始化。
 
-- 输入数据：推理之前需要向输入 tensor 中填充数据。即通过 `predictor.get_input(num)` 接口获取第 `num` 个输入 tensor ， 其类型为·`<class 'paddlelite.lite.Tensor'>`，调用 tensor 的`from_numpy`方法给其输入数据。
+- 输入数据：推理之前需要向输入 tensor 中填充数据。即通过 `predictor.get_input(num)` 接口获取第 `num` 个输入 tensor ， 其类型为·`<class 'paddlelite.lite.Tensor'>`，调用 tensor 的 `from_numpy` 方法给其输入数据。
 
 - 执行推理：使用 predictor 对象的成员函数 `run` 进行模型推理
 
@@ -26,7 +26,7 @@
 
 ## Python 应用开发说明
 
-Python 代码调用 Paddle-Lite 执行预测库仅需以下五步：
+Python 代码调用 Paddle Lite 执行预测库仅需以下五步：
 
 (1) 引入必要的库
 
@@ -69,7 +69,7 @@ output_data = output_tensor.numpy()
 print(output_data)
 ```
 
-详细的 Python API 说明文档位于[ Python API ](../api_reference/python_api_doc) 文件夹内。
+详细的 Python API 说明文档位于 [Python API](../api_reference/python_api_doc) 文件夹内。
 
 
 ## mobilenetv1_light_api.py 和 mobilenetv1_full_api.py 示例程序
@@ -79,9 +79,9 @@ Paddle Lite Python 版本支持的平台包括：Windows X86_CPU / macOS X86_CPU
 
 ### 1. 环境准备
 
-如果是Windows X86_CPU / macOS X86_CPU / Linux X86_CPU 平台，不需要进行特定环境准备。
+如果是 Windows X86_CPU / macOS X86_CPU / Linux X86_CPU 平台，不需要进行特定环境准备。
 
-如果是 ARM Linux平台，需要编译 PaddleLite ，环境配置参考 [文档](../source_compile/compile_env)，推荐使用 docker。
+如果是 ARM Linux 平台，需要编译 Paddle Lite ，环境配置参考 [文档](../source_compile/compile_env)，推荐使用 docker。
 
 ### 2. 安装python预测库
 
@@ -92,21 +92,20 @@ PyPI 源目前仅提供 Windows X86_CPU / macOS X86_CPU / Linux X86_CPU 平台�
 python -m pip install paddlelite==2.9
 ```
 
-如果您需要使用 AMRLinux 平台的 Python 预测功能，请参考[源码编译( ARMLinux )](../source_compile/compile_linux)编译、安装 Paddle Lite 的 python 包。
+如果您需要使用 AMRLinux 平台的 Python 预测功能，请参考[源码编译 (ARMLinux)](../source_compile/compile_linux)编译、安装 Paddle Lite 的 python 包。
 
 ### 3. 准备预测部署模型
 
-(1) 模型下载：下载 [mobilenet_v1](http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz) 模型后解压，得到 Paddle 非 combined 形式的模型，位于文件夹 `mobilenet_v1` 下。可通过模型可视化工具 [Netron](https://lutzroeder.github.io/netron/) 打开文件夹下的`__model__`文件，查看模型结构。
-
+(1) 模型下载：下载 [mobilenet_v1](https://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz) 模型后解压，得到 Paddle 非 combined 形式的模型，位于文件夹 `mobilenet_v1` 下。可通过模型可视化工具 [Netron](https://lutzroeder.github.io/netron/) 打开文件夹下的 `__model__` 文件，查看模型结构。
 
 ```shell
 wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz
 tar zxf mobilenet_v1.tar.gz
 ```
 
-(2) 模型转换：Paddle 原生模型需经[opt](./model_optimize_tool)工具转化为 Paddle Lite 可以支持的naive_buffer 格式。
+(2) 模型转换：Paddle 原生模型需经 [opt](./model_optimize_tool) 工具转化为 Paddle Lite 可以支持的 naive_buffer 格式。
 
-- Linux X86_CPU 平台：通过 pip 安装 Paddle Lite 的同时就已获得`paddle_lite_opt`可执行文件。
+- Linux X86_CPU 平台：通过 pip 安装 Paddle Lite 的同时就已获得 `paddle_lite_opt` 可执行文件。
 
 ```shell
 paddle_lite_opt --model_dir=./mobilenet_v1  \
@@ -114,7 +113,7 @@ paddle_lite_opt --model_dir=./mobilenet_v1  \
                 --optimize_out_type=naive_buffer \
                 --valid_targets=x86
 ```
-- MAC X86_CPU 平台: `paddle_lite_opt`工具使用方式同 Linux。
+- MAC X86_CPU 平台: `paddle_lite_opt` 工具使用方式同 Linux。
 
 - Windows X86_CPU 平台：暂不支持命令行方式直接运行模型转换器，需编写 python 脚本
 
@@ -135,7 +134,7 @@ a.set_valid_places("x86")
 a.run()
 ```
 
-- ARMLinux 平台：编写python脚本转换模型
+- ARMLinux 平台：编写 python 脚本转换模型
 
 ```python
 import paddlelite.lite as lite
@@ -154,11 +153,11 @@ a.set_valid_places("x86")   # 设置为 x86
 a.run()
 ```
 
-以上命令执行成功之后将在同级目录生成名为`mobilenet_v1_opt.nb`的优化后模型文件。
+以上命令执行成功之后将在同级目录生成名为 `mobilenet_v1_opt.nb` 的优化后模型文件。
 
 ### 4. 下载和运行预测示例程序
 
-从[demo/python](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/demo/python)下载预测示例文件`mobilenetv1_light_api.py`和`mobilenetv1_full_api.py`，并运行此程序。
+从 [demo/python](https://github.com/PaddlePaddle/Paddle-Lite/tree/develop/lite/demo/python) 下载预测示例文件 `mobilenetv1_light_api.py` 和 `mobilenetv1_full_api.py`，并运行此程序。
 
 ```py
 # light api 的输入为优化后模型文件 mobilenet_v1_opt.nb

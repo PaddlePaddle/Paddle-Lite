@@ -606,6 +606,25 @@ typedef enum {
   NNADAPTER_DEFORMABLE_CONV_2D,
 
   /**
+   * Applies the quantization to the input tensor. The output is calculated
+   * using this formula:
+   * output = (input - zero_point) * scale,
+   * `zero_point` and `scale` is obtained from `input` .
+   *
+   * Inputs:
+   * * 0: input, a NNADAPTER_QUANT_INT8_SYMM_PER_LAYER,
+   * NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL,
+   * NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER and
+   * NNADAPTER_QUANT_UINT8_ASYMM_PER_CHANNEL tensor.
+   *
+   * Outputs:
+   * * 0: output, a NNADAPTER_FLOAT32 tensor with the same shape as `input`.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_DEQUANTIZE,
+
+  /**
    * Performs element-wise binary division(with Numpy-style broadcasting
    * https://numpy.org/doc/stable/user/basics.broadcasting.html).
    *
@@ -968,12 +987,14 @@ typedef enum {
   /**
    * Applies the Lp Normalization to the input tensor element-wise.
    * The output is calculated using this formula:
+   * output = input / (sum(abs(input)) + epsilon), if p = 1
+   * output = input / (sqrt(sum(input^2)) + epsilon), if p = 2
    *
    * Inputs:
    * * 0: input, a NNADAPTER_FLOAT32,
    * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
    * * 1: axis, an 1-D NNADAPTER_INT32. Defaults to [1].
-   * It represents the dimension along which softmax will be performed.
+   * It represents the dimension along which norm will be performed.
    * It should be in range [-R, R), where R is the rank of input,
    * negative value works the same way as axis+R.
    * * 2: p, a NNADAPTER_INT32 scalar. The exponent value in the norm
@@ -981,8 +1002,6 @@ typedef enum {
    * only 1 or 2 are supported. Defaults to 2.
    * * 3: epsilon, a NNADAPTER_FLOAT32 scalar,
    * specifying the lower limit of normalization
-   * * 4: keepdim, a NNADAPTER_BOOL8 scalar.
-   * Keep the reduced dimension or not, default 1 mean keep reduced dimension.
    *
    * Outputs:
    * * 0: output, a tensor with the same shape and type as input.
@@ -1195,6 +1214,35 @@ typedef enum {
    * Available since version 1.
    */
   NNADAPTER_PRELU,
+
+  /**
+   * Applies the quantization to the input tensor. The output is calculated
+   * using this formula:
+   * output = input / scale + zero_point
+   *
+   * Inputs:
+   * * 0: input, a NNADAPTER_FLOAT32 or NNADAPTER_INT32 tensor.
+   * * 1: axis, a NNADAPTER_INT32 scalar, the axis of the quantization dimension
+   * of the input tensor. Ignored for per-tensor quantization. It should be in
+   * range [-R, R), where R is the rank of input, negative value works the same
+   * way as axis+R, default to 1.
+   * * 2: scale, a NNADAPTER_FLOAT32 tensor, Scale for input. It can be a
+   * scalar, which means a per-tensor/layer dequantization, or a 1-D tensor for
+   * per-axis dequantization.
+   * * 3: zero_point, a NNADAPTER_INT32  tensor, Zero point for `input`. Shape
+   * must match `scale`, default to 0.
+   *
+   * Outputs:
+   * * 0: output, a quantized tensor with the same shape as `input` , its type
+   * can be NNADAPTER_QUANT_INT8_SYMM_PER_LAYER,
+   * NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL,
+   * NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER and
+   * NNADAPTER_QUANT_UINT8_ASYMM_PER_CHANNEL according to `axis` and
+   * `zero_point`.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_QUANTIZE,
 
   /**
   * Outputs a 1-D Tensor with spaced values within a given interval.

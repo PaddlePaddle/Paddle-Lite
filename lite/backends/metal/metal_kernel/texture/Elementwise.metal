@@ -18,7 +18,7 @@
 
 using namespace metal;
 
-kernel void elementwise_add(texture2d_array<ftype, access::read> inputX[[texture(0)]],
+kernel void elementwise(texture2d_array<ftype, access::read> inputX[[texture(0)]],
     texture2d_array<ftype, access::read> inputY[[texture(1)]],
     texture2d_array<ftype, access::write> outTexture[[texture(2)]],
     constant ElementwiseAddParam& pm[[buffer(0)]],
@@ -28,13 +28,25 @@ kernel void elementwise_add(texture2d_array<ftype, access::read> inputX[[texture
         return;
     ftype4 rx, ry;
     rx = inputX.read(gid.xy, gid.z);
-    // elementwise add
+    // elementwise
     if (pm.fast == 1) {
         ry = inputY.read(gid.xy, gid.z);
+    }
+    // add at one number
+    else if (pm.ByNum == 1) {
+        ry = inputY.read(uint2(0, 0), gid.z);
     }
     // add at C channel
     else if (pm.addByChannel == 1) {
         ry = inputY.read(uint2(0, 0), gid.z);
+    }
+    // add at HW
+    else if (pm.ByHW == 1) {
+        ry = inputY.read(gid.xy, 0);
+    }
+    // add at W
+    else if (pm.ByW == 1) {
+        ry = inputY.read(uint2(gid.x, 0), 0);
     } else {
         // X coordinate GPU NHNC
         int32_t x_xyzn[4] = {int32_t(gid.x), int32_t(gid.y), int32_t(gid.z), 0};
@@ -73,68 +85,19 @@ kernel void elementwise_add(texture2d_array<ftype, access::read> inputX[[texture
             ry[n] = inputY.read(uint2(y_xyzn[0], y_xyzn[1]), y_xyzn[2])[y_xyzn[3]];
         }
     }
-    ftype4 r = rx + ry;
+    ftype4 r;
+    if (pm.arithmetic_type == 0)
+        r = rx + ry;
+    else if (pm.arithmetic_type == 1)
+        r = rx - ry;
+    else if (pm.arithmetic_type == 2)
+        r = rx * ry;
+    else if (pm.arithmetic_type == 3)
+        r = rx / ry;
     outTexture.write(r, gid.xy, gid.z);
 }
 
-kernel void elementwise_sub(texture2d_array<ftype, access::read> inputX[[texture(0)]],
-    texture2d_array<ftype, access::read> inputY[[texture(1)]],
-    texture2d_array<ftype, access::write> outTexture[[texture(2)]],
-    constant ElementwiseParam& pm[[buffer(0)]],
-    uint3 gid[[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
-        gid.z >= outTexture.get_array_size())
-        return;
-    ftype4 rx, ry;
-    rx = inputX.read(gid.xy, gid.z);
-    if (pm.byChannel == 1) {
-        ry = inputY.read(uint2(0, 0), gid.z);
-    } else {
-        ry = inputY.read(gid.xy, gid.z);
-    }
-    ftype4 r = rx - ry;
-    outTexture.write(r, gid.xy, gid.z);
-}
-
-kernel void elementwise_mul(texture2d_array<ftype, access::read> inputX[[texture(0)]],
-    texture2d_array<ftype, access::read> inputY[[texture(1)]],
-    texture2d_array<ftype, access::write> outTexture[[texture(2)]],
-    constant ElementwiseParam& pm[[buffer(0)]],
-    uint3 gid[[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
-        gid.z >= outTexture.get_array_size())
-        return;
-    ftype4 rx, ry;
-    rx = inputX.read(gid.xy, gid.z);
-    if (pm.byChannel == 1) {
-        ry = inputY.read(uint2(0, 0), gid.z);
-    } else {
-        ry = inputY.read(gid.xy, gid.z);
-    }
-    ftype4 r = rx * ry;
-    outTexture.write(r, gid.xy, gid.z);
-}
-
-kernel void elementwise_div(texture2d_array<ftype, access::read> inputX[[texture(0)]],
-    texture2d_array<ftype, access::read> inputY[[texture(1)]],
-    texture2d_array<ftype, access::write> outTexture[[texture(2)]],
-    constant ElementwiseParam& pm[[buffer(0)]],
-    uint3 gid[[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
-        gid.z >= outTexture.get_array_size())
-        return;
-    ftype4 rx, ry;
-    rx = inputX.read(gid.xy, gid.z);
-    if (pm.byChannel == 1) {
-        ry = inputY.read(uint2(0, 0), gid.z);
-    } else {
-        ry = inputY.read(gid.xy, gid.z);
-    }
-    ftype4 r = rx / ry;
-    outTexture.write(r, gid.xy, gid.z);
-}
-
-kernel void elementwise_add_relu(texture2d_array<ftype, access::read> inputX[[texture(0)]],
+kernel void elementwise_relu(texture2d_array<ftype, access::read> inputX[[texture(0)]],
     texture2d_array<ftype, access::read> inputY[[texture(1)]],
     texture2d_array<ftype, access::write> outTexture[[texture(2)]],
     constant ElementwiseAddParam& pm[[buffer(0)]],

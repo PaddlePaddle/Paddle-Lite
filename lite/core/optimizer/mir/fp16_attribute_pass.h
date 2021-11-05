@@ -43,6 +43,8 @@ class FP16AttributePass : public ProgramPass {
                                      "sequence_conv",
                                      "elementwise_add",
                                      "elementwise_mul",
+                                     "elementwise_div",
+                                     "elementwise_sub",
                                      "prelu"};
 };
 

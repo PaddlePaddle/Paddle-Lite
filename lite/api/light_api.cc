@@ -317,6 +317,8 @@ void LightPredictor::WeightFP32ToFP16() {
                                     "gru",
                                     "sequence_conv",
                                     "elementwise_add",
+                                    "elementwise_sub",
+                                    "elementwise_div",
                                     "elementwise_mul",
                                     "prelu"};
   for (size_t i = 0; i < program_desc->BlocksSize(); i++) {
@@ -333,6 +335,9 @@ void LightPredictor::WeightFP32ToFP16() {
             Tensor tmp_tensor;
             auto input_tensor =
                 scope_->FindVar(input_name)->GetMutable<lite::Tensor>();
+
+            if (input_tensor->precision() != PRECISION(kFloat)) continue;
+
             tmp_tensor.CopyDataFrom(*input_tensor);
             input_tensor->clear();
             input_tensor->set_precision(PRECISION(kFP16));
