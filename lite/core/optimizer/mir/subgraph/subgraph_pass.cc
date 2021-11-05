@@ -294,9 +294,6 @@ REGISTER_MIR_PASS(rknpu_subgraph_pass, paddle::lite::mir::RKNPUSubgraphPass)
     .BindTargets({TARGET(kRKNPU)});
 REGISTER_MIR_PASS(mlu_subgraph_pass, paddle::lite::mir::MLUSubgraphPass)
     .BindTargets({TARGET(kMLU)});
-REGISTER_MIR_PASS(imagination_nna_subgraph_pass,
-                  paddle::lite::mir::ImaginationNNASubgraphPass)
-    .BindTargets({TARGET(kImaginationNNA)});
 REGISTER_MIR_PASS(nnadapter_subgraph_pass,
                   paddle::lite::mir::NNAdapterSubgraphPass)
     .BindTargets({TARGET(kNNAdapter)});

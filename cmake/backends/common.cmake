@@ -25,10 +25,6 @@ if(LITE_WITH_INTEL_FPGA)
   include(backends/intel_fpga)
 endif()
 
-if(LITE_WITH_IMAGINATION_NNA)
-	include(backends/imagination_nna)
-endif()
-
 # for mobile
 if (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
   message(STATUS "Building the mobile framework")

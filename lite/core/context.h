@@ -250,19 +250,6 @@ class Context<TargetType::kRKNPU> {
 };
 #endif
 
-#ifdef LITE_WITH_IMAGINATION_NNA
-template <>
-class Context<TargetType::kImaginationNNA> {
- public:
-  Context() {}
-  // NOTE: InitOnce should only be used by ContextScheduler
-  void InitOnce() {}
-  void CopySharedTo(ImaginationNNAContext* ctx) {}
-
-  std::string name() const { return "ImaginationNNAContext"; }
-};
-#endif
-
 #if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
     defined(LITE_WITH_NNADAPTER)
 template <>
@@ -780,13 +767,6 @@ class ContextScheduler {
             &ctx->As<BMContext>());
         break;
 #endif
-#ifdef LITE_WITH_IMAGINATION_NNA
-      case TARGET(kImaginationNNA):
-        kernel_contexts_[TargetType::kImaginationNNA]
-            .As<ImaginationNNAContext>()
-            .CopySharedTo(&ctx->As<ImaginationNNAContext>());
-        break;
-#endif
 #ifdef LITE_WITH_MLU
       case TARGET(kMLU): {
         int dev_id = TargetWrapper<TargetType::kMLU>::GetCurDevice();
@@ -863,9 +843,6 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_MLU
     InitContext<TargetType::kMLU, MLUContext>();
-#endif
-#ifdef LITE_WITH_IMAGINATION_NNA
-    InitContext<TargetType::kImaginationNNA, ImaginationNNAContext>();
 #endif
 #if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
     defined(LITE_WITH_NNADAPTER)
