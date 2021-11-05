@@ -66,7 +66,6 @@ class TestAssignOp(AutoScanTest):
     def add_skip_case(self):
         pass
 
-    @settings(max_examples=10)
     @given(
         in_shape=st.lists(
             st.integers(

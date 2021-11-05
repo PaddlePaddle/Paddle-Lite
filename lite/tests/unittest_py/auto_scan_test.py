@@ -247,8 +247,8 @@ class AutoScanTest(unittest.TestCase):
                 for skip_info in self.skip_cases:
                     if skip_info[0](prog_config, pred_config):
                         skip_flag = True
-                        if skip_info[1] == SkipReasons.MKLDNN_ACCURACY_ERROR:
-                            self.skip_log("[MKLDNN_ACCURACY_ERROR] " +
+                        if skip_info[1] == SkipReasons.ACCURACY_ERROR:
+                            self.skip_log("[ACCURACY_ERROR] " +
                                           skip_info[2] + ' ' + ' vs ' + self.
                                           paddlelite_config_str(pred_config))
                         else:
