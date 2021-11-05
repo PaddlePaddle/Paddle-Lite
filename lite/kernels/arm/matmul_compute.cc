@@ -98,7 +98,12 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::ReInitWhenNeeded() {
   scale_.resize(n_);
   scale_one.resize(n_);
   for (int i = 0; i < n_; i++) {
-    param.output_scale = param.input_scale * param.weight_scale[i];
+    if (param.weight_scale.size() == 1) {
+      param.output_scale =
+          param.input_scale * param.weight_scale[0] * param.alpha;
+    } else {
+      param.output_scale = param.input_scale * param.weight_scale[i];
+    }
     scale_[i] = param.output_scale;
     scale_one[i] = 1;
   }
@@ -362,6 +367,15 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   operators::ActivationParam act_param;
   act_param.has_active = false;
+  for (int i = 0; i < 10; i++) {
+    // std::cout << "matmul x_data:" <<(float)x_data[i] *
+    // param.input_scale<<std::endl;
+  }
+  std::cout << param.weight_scale.size();
+  for (int i = 0; i < 10; i++) {
+    // std::cout << "matmul y_data:" <<(float)y_data[i] *
+    // param.weight_scale[0]<<std::endl;
+  }
   if ((x_dims.size() >= 2 && y_dims.size() >= 2) &&
       (x_dims.size() != 2 || y_dims.size() != 2)) {
     // x: [B, ..., M, K], y: [B, ..., K, N], out: [B, ..., M, N]
@@ -417,7 +431,7 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                  o_data + i * out_inner,
                                  nullptr,
                                  false,
-                                 scale_.data(),
+                                 scale_one.data(),
                                  act_param,
                                  &ctx);
       }
@@ -435,7 +449,7 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                              o_data,
                              nullptr,
                              false,
-                             scale_.data(),
+                             scale_one.data(),
                              act_param,
                              &ctx);
   } else if (x_dims.size() > 2 && y_dims.size() == 1) {
@@ -467,7 +481,7 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                    false,
                                    m_,
                                    k_,
-                                   scale_.data(),
+                                   scale_one.data(),
                                    false,
                                    nullptr,
                                    act_param,
@@ -488,7 +502,7 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                  o_data,
                                  nullptr,
                                  false,
-                                 scale_.data(),
+                                 scale_one.data(),
                                  act_param,
                                  &ctx);
       }
@@ -497,7 +511,12 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
     LOG(FATAL) << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
                << ")";
   }
-  matmul_add_n_scale_bias(o_data, scale_.data(), m_, n_);
+  // matmul_add_n_scale_bias(o_data, scale_.data(), m_, n_);
+
+  for (int i = 0; i < m_ * n_; i++) {
+    // std::cout << "matmul o_scale:" <<param.output_scale<<std::endl;
+    // std::cout << "matmul o_data:" <<o_data[i]<<std::endl;
+  }
 }
 
 }  // namespace arm
