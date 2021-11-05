@@ -27,7 +27,6 @@ from paddlelite.lite import *
 
 class TestAssignOp(AutoScanTest):
     def is_program_valid(self, program_config: ProgramConfig) -> bool:
-        # if mode is channel, and in_shape is 1 rank
         return True
 
     def sample_program_configs(self, *args, **kwargs):
@@ -64,7 +63,7 @@ class TestAssignOp(AutoScanTest):
         config = self.create_config(valid_places=[Place(TargetType.Host, PrecisionType.FP32)])
         yield config, (1e-5, 1e-5)
 
-    def add_skip_pass_case(self):
+    def add_skip_case(self):
         pass
 
     @settings(max_examples=10)
