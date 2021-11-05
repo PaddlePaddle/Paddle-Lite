@@ -54,18 +54,18 @@ Context::Context(void* device, const char* properties) : device_(device) {
   }
   // Profiling config
   if (key_values.count("HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH")) {
-    auto profiling_path = string_split<std::string>(
+    auto profiling_file_path = string_split<std::string>(
         key_values["HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH"], ",");
-    NNADAPTER_CHECK_GE(profiling_path.size(), 1);
+    NNADAPTER_CHECK_GE(profiling_file_path.size(), 1);
     // Only supports specifying one path
-    if (profiling_path.size() > 1) {
+    if (profiling_file_path.size() > 1) {
       NNADAPTER_LOG(WARNING)
           << "Only supports specifying one profiling path, so the "
              "first one is selected and others will be "
              "ignored.";
     }
-    profiling_path_ = profiling_path[0];
-    NNADAPTER_LOG(INFO) << "Profiling path: " << profiling_path_;
+    profiling_file_path_ = profiling_file_path[0];
+    NNADAPTER_LOG(INFO) << "Profiling path: " << profiling_file_path_;
   }
 }
 
@@ -148,7 +148,9 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
   NNADAPTER_CHECK(model_buffer);
   // Load a CANN OM model from a buffer, and create a CANN model manager
   // client(from CANN service) for inference
-  model_client_ = LoadOMModelFromBuffer(*model_buffer, context_);
+  model_client_ = LoadOMModelFromBuffer(*model_buffer,
+                                        context_->GetFirstDeviceID(),
+                                        context_->GetProfilingFilePath());
   if (!model_client_) {
     NNADAPTER_LOG(FATAL) << "Failed to load a CANN OM model from a buffer!";
     return NNADAPTER_DEVICE_INTERNAL_ERROR;

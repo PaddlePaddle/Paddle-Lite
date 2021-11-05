@@ -24,8 +24,8 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-AclModelClient::AclModelClient(Context* context) : context_(context) {
-  int device_id = context->GetFirstDeviceID();
+AclModelClient::AclModelClient(int device_id,
+                               const std::string& profiling_file_path) {
   NNADAPTER_VLOG(5) << "Create a ACL model client(device_id=" << device_id
                     << ")";
   uint32_t device_count = 0;
@@ -34,7 +34,7 @@ AclModelClient::AclModelClient(Context* context) : context_(context) {
   NNADAPTER_CHECK_GE(device_id, 0);
   NNADAPTER_CHECK_LT(device_id, device_count);
   InitAclClientEnv(device_id);
-  InitAclProfilingEnv();
+  InitAclProfilingEnv(profiling_file_path);
 }
 
 AclModelClient::~AclModelClient() {
@@ -48,22 +48,23 @@ void AclModelClient::InitAclClientEnv(int device_id) {
   NNADAPTER_VLOG(5) << "ACL set device(device_id_=" << device_id_ << ")";
   ACL_CALL(aclrtSetDevice(device_id_));
   NNADAPTER_VLOG(5) << "ACL create context";
-  ACL_CALL(aclrtCreateContext(&acl_rt_context_, device_id_));
+  ACL_CALL(aclrtCreateContext(&context_, device_id_));
 }
 
 void AclModelClient::FinalizeAclClientEnv() {
   NNADAPTER_VLOG(5) << "Destroy ACL context";
-  if (acl_rt_context_) {
-    ACL_CALL(aclrtDestroyContext(acl_rt_context_));
-    acl_rt_context_ = nullptr;
+  if (context_) {
+    ACL_CALL(aclrtDestroyContext(context_));
+    context_ = nullptr;
   }
   NNADAPTER_VLOG(5) << "Reset ACL device(device_id_=" << device_id_ << ")";
   ACL_CALL(aclrtResetDevice(device_id_));
 }
 
-void AclModelClient::InitAclProfilingEnv() {
-  if (!context_->GetProfilingPath().empty()) {
-    const char* aclProfPath = context_->GetProfilingPath().c_str();
+void AclModelClient::InitAclProfilingEnv(
+    const std::string& profiling_file_path) {
+  if (profiling_file_path.empty()) {
+    const char* aclProfPath = profiling_file_path.c_str();
     ACL_CALL(aclprofInit(aclProfPath, strlen(aclProfPath)));
     config_ = aclprofCreateConfig(reinterpret_cast<uint32_t*>(&device_id_),
                                   1,
@@ -273,7 +274,7 @@ bool AclModelClient::Process(uint32_t input_count,
     NNADAPTER_LOG(FATAL) << "No ACL model is loaded.";
     return false;
   }
-  ACL_CALL(aclrtSetCurrentContext(acl_rt_context_));
+  ACL_CALL(aclrtSetCurrentContext(context_));
   auto FindArgumentByIndex = [&](
       hal::Argument* arguments, int index, uint32_t count) {
     for (uint32_t i = 0; i < count; i++) {

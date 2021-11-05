@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <string>
 #include <thread>  // NOLINT
 #include <vector>
 #include "acl/acl.h"
@@ -25,11 +26,10 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-class Context;
-
 class AclModelClient {
  public:
-  explicit AclModelClient(Context* context);
+  explicit AclModelClient(int device_id,
+                          const std::string& profiling_file_path);
   ~AclModelClient();
 
   bool LoadModel(const void* data, uint32_t size);
@@ -46,7 +46,7 @@ class AclModelClient {
  private:
   void InitAclClientEnv(int device_id);
   void FinalizeAclClientEnv();
-  void InitAclProfilingEnv();
+  void InitAclProfilingEnv(const std::string& profiling_file_path);
   void FinalizeAclProfilingEnv();
   bool CreateModelIODataset();
   void DestroyDataset(aclmdlDataset** dataset);
@@ -55,8 +55,7 @@ class AclModelClient {
 
  private:
   int device_id_{0};
-  Context* context_;
-  aclrtContext acl_rt_context_{nullptr};
+  aclrtContext context_{nullptr};
   uint32_t model_id_{0};
   size_t model_memory_size_;
   size_t model_weight_size_;
