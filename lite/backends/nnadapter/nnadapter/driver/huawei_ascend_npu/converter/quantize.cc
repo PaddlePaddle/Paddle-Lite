@@ -32,7 +32,7 @@ int ConvertQuantize(Converter* converter, hal::Operation* operation) {
   }
   auto quantize_op =
       converter->AddOperator<ge::op::AscendQuant>(output_operand);
-  quantize_op->set_attr_scale(1.f / scale_data[0]);
+  quantize_op->set_attr_scale(scale_data[0]);
   quantize_op->set_attr_offset(0.);
   SET_INPUT(quantize_op, x, input_operator);
   MAP_OUTPUT(quantize_op, y, output_operand);
