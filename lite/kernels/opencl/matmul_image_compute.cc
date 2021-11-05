@@ -179,9 +179,8 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
 
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
-    bool is_mali_ = context.cl_context()->IsArmMali();
-    auto device_version =
-        CLRuntime::Global()->device().getInfo<CL_DEVICE_VERSION>();
+    is_mali_ = context.cl_context()->IsArmMali();
+    device_version = CLRuntime::Global()->device().getInfo<CL_DEVICE_VERSION>();
     y_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
     if (!is_mali_ && x_dims.size() == 2 && y_dims.size() == 2 &&
         !transpose_x_) {
