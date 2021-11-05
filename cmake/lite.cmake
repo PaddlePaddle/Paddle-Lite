@@ -276,6 +276,9 @@ function(lite_cc_binary TARGET)
 
 
     # link to dynamic runtime lib
+    if(LITE_WITH_METAL)
+        target_link_libraries(${TARGET} ${METAL_LIBRARY} ${GRAPHIC} ${MPS_LIBRARY} ${FOUNDATION_LIBRARY})
+    endif()
     if(LITE_WITH_XPU)
         target_link_libraries(${TARGET} ${xpu_builder_libs} ${xpu_runtime_libs})
     endif()
