@@ -13,3 +13,13 @@
 // limitations under the License.
 
 #pragma once
+
+#include "core/hal/types.h"
+
+namespace nnadapter {
+namespace amlogic_npu {
+
+void TransposeOpDimensions(hal::Model* model);
+
+}  // namespace amlogic_npu
+}  // namespace nnadapter
