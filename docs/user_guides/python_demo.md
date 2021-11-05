@@ -88,8 +88,8 @@ Paddle Lite Python 版本支持的平台包括：Windows X86_CPU / macOS X86_CPU
 PyPI 源目前仅提供 Windows X86_CPU / macOS X86_CPU / Linux X86_CPU 平台的 pip 安装包，执行如下命令。
 
 ```shell
-# 当前最新版本是 2.9
-python -m pip install paddlelite==2.9
+# 当前最新版本是 2.10rc
+python -m pip install paddlelite==2.10rc0
 ```
 
 如果您需要使用 AMRLinux 平台的 Python 预测功能，请参考[源码编译 (ARMLinux)](../source_compile/compile_linux)编译、安装 Paddle Lite 的 python 包。
