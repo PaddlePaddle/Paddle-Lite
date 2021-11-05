@@ -86,6 +86,7 @@ lite_option(LITE_THREAD_POOL                   "Enable thread pool in lite"     
 lite_option(LITE_BUILD_EXTRA                   "Enable extra algorithm support in Lite, both kernels and operators"   OFF)
 lite_option(LITE_BUILD_TAILOR                  "Enable tailoring library according to model"                          OFF)
 # cv build options
+lite_option(LITE_USE_PRECOMPILED_OPENCV        "Use precompiled opencv, mainly for pre/post processing"               OFF IF LITE_WITH_ARM)
 lite_option(LITE_WITH_CV                       "Enable build cv image in lite"                                        OFF)
 lite_option(LITE_WITH_STATIC_CUDA              "Statically link cuda libraries."                                      OFF)
 lite_option(CUDA_WITH_FP16                     "Compile with cuda half support"                                       OFF)
@@ -98,6 +99,7 @@ lite_option(LITE_WITH_CODE_META_INFO           "include git version in the heade
 # Thirdparty
 set(THIRD_PARTY_PATH "${CMAKE_BINARY_DIR}/third_party" CACHE STRING
   "A path setting third party libraries download & build directories.")
+message(STATUS "THIRD_PARTY_PATH: ${THIRD_PARTY_PATH}")
 
 if(NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
   find_package(CUDA QUIET)

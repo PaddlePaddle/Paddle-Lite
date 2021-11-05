@@ -25,7 +25,7 @@
 #include <numeric>
 #include <string>
 #include <vector>
-#ifdef USE_PRECOMPILED_OPENCV
+#ifdef LITE_USE_PRECOMPILED_OPENCV
 #include <opencv2/opencv.hpp>
 #endif
 #include "lite/api/paddle_api.h"

@@ -1,0 +1,7 @@
+label_path:/data/local/tmp/zy/imagenet1k_label_list.txt
+ground_truth_images_path:/data/local/tmp/zy/ILSVRC2012_1000_cls/val_list_1k.txt
+resize_short_size:256
+crop_size:224
+topk:4
+visualize:0
+store_result_as_image:1

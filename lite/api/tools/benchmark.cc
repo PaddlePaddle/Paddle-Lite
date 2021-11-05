@@ -85,11 +85,12 @@ std::map<std::string, std::string> LoadConfigTxt(std::string config_path) {
 }
 
 void PrintConfig(const std::map<std::string, std::string> &config) {
-  std::cout << "=======PaddleClas lite demo config======" << std::endl;
+  std::cout << "======= Configuration for Precision Benchmark ======"
+            << std::endl;
   for (auto iter = config.begin(); iter != config.end(); iter++) {
     std::cout << iter->first << " : " << iter->second << std::endl;
   }
-  std::cout << "=======End of PaddleClas lite demo config======" << std::endl;
+  std::cout << std::endl;
 }
 
 cv::Mat ResizeImage(const cv::Mat &img, const int resize_short_size) {
@@ -121,7 +122,7 @@ cv::Mat CenterCropImg(const cv::Mat &img, const int crop_size) {
   return crop_img;
 }
 
-// fill tensor with mean and scale and trans layout: nhwc -> nchw, neon speed up
+// Fill tensor with mean and scale and trans layout: nhwc -> nchw, neon speed up
 void NeonMeanScale(const float *din,
                    float *dout,
                    int size,
@@ -191,13 +192,9 @@ std::vector<RESULT> PostProcess(
   auto out_data = output_tensor->data<float>();
   auto ele_num = lite::ShapeProduction(out_shape);
 
-  const int TOPK = 5;
-  int max_indices[TOPK];
-  double max_scores[TOPK];
-  for (int i = 0; i < TOPK; i++) {
-    max_indices[i] = 0;
-    max_scores[i] = 0.;
-  }
+  const int TOPK = stoi(config.at("topk"));
+  std::vector<int> max_indices(TOPK, 0);
+  std::vector<double> max_scores(TOPK, 0.);
   for (int i = 0; i < ele_num; i++) {
     float score = output_data[i];
     int index = i;
@@ -237,7 +234,7 @@ std::vector<RESULT> PostProcess(
     }
     std::string output_image_path = "./" + std::to_string(cnt) + ".png";
     cv::imwrite(output_image_path, output_image);
-    std::cout << "save output image into " << output_image_path << std::endl;
+    std::cout << "Save output image into " << output_image_path << std::endl;
   }
 
   return results;
@@ -312,7 +309,7 @@ void Run(const std::string &model_file,
   float init_time = timer.Stop();
 
   // Set inputs
-  if (false) {
+  if (FLAGS_validation_set.empty()) {
     for (size_t i = 0; i < input_shapes.size(); i++) {
       auto input_tensor = predictor->GetInput(i);
       input_tensor->Resize(input_shapes[i]);

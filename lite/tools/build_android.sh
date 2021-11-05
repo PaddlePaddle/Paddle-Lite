@@ -336,10 +336,11 @@ function make_full_publish_so {
       -DLITE_WITH_PROFILE=$WITH_PROFILE \
       -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
       -DLITE_WITH_PRECISION_PROFILE=$WITH_PRECISION_PROFILE \
-      -DUSE_PRECOMPILED_OPENCV=$USE_PRECOMPILED_OPENCV \
+      -DLITE_USE_PRECOMPILED_OPENCV=$USE_PRECOMPILED_OPENCV \
       -DCMAKE_VERBOSE_MAKEFILE=ON \
       -DANDROID_STL_TYPE=$ANDROID_STL"
 
+  echo $cmake_mutable_options
   cmake $workspace \
       ${CMAKE_COMMON_OPTIONS} \
       ${cmake_api_level_options} \

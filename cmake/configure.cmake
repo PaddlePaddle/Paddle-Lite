@@ -38,7 +38,7 @@ if(WIN32)
   # windows header option for all targets.
   add_definitions(-D_XKEYCHECK_H)
   add_definitions(/openmp)
-  
+
   if (NOT MSVC)
     message(FATAL "Windows build only support msvc. Which was binded by the nvcc compiler of NVIDIA.")
   endif(NOT MSVC)
@@ -61,7 +61,7 @@ if(WIN32)
           endif()
       endif()
   endif()
-  
+
 endif(WIN32)
 
 if(LITE_WITH_CUDA)
@@ -156,6 +156,13 @@ if (LITE_WITH_CV)
         message(FATAL_ERROR "CV functions uses the ARM instructions, so LITE_WITH_ARM must be turned on")
     endif()
     add_definitions("-DLITE_WITH_CV")
+endif()
+
+if (LITE_USE_PRECOMPILED_OPENCV)
+    if(NOT LITE_WITH_ARM)
+        message(FATAL_ERROR "Precompiled opencv is only used for Android, so LITE_WITH_ARM must be turned on")
+    endif()
+    add_definitions("-DLITE_USE_PRECOMPILED_OPENCV")
 endif()
 
 if (LITE_WITH_TRAIN)
