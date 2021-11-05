@@ -43,6 +43,20 @@ static const char input_data_path_msg[] =
     "such as /path/to/in.txt for only one input, "
     "/path/to/in0.txt:/path/to/in1.txt for two inputs."
     "The input of model will be 1.0 if this option in not set.";
+static const char validation_set_msg[] =
+    "Use validation images and lables as inputs. Only supports a minival "
+    "dataset of ILSVRC 2012 as inputs."
+    "Supported set: ILSVRC 2012";
+static const char ground_truth_images_path_msg[] =
+    "The path to the directory containing ground truth images.";
+static const char ground_truth_labels_msg[] =
+    "The path to ground truth labels file. This file should contain the same "
+    "number of labels as the number images in the ground truth directory.";
+static const char model_output_labels_msg[] =
+    "The path to the file containing labels, that is used to interpret the "
+    "output of the model. E.g. in case of mobilenets, this is the path to "
+    "`mobilenet_labels.txt` where each label is in the same order as the "
+    "output 1000 dimension tensor.";
 static const char show_output_elem_msg[] =
     "Show each output tensor's all elements.";
 
@@ -103,6 +117,9 @@ static const char memory_check_interval_ms_msg[] =
     "footprint checks. This is only used when "
     "--enable_memory_profile is set to true. Not supported yet.";
 
+// Configuration options
+static const char config_path_msg[] = "Configuration options.";
+
 // Others
 
 // Model options
@@ -112,6 +129,10 @@ DECLARE_string(model_file);
 DECLARE_string(param_file);
 DECLARE_string(input_shape);
 DECLARE_string(input_data_path);
+DECLARE_string(validation_set);
+DECLARE_string(ground_truth_images_path);
+DECLARE_string(ground_truth_labels);
+DECLARE_string(model_output_labels);
 DECLARE_bool(show_output_elem);
 
 // Common runtime options
@@ -137,6 +158,9 @@ DECLARE_string(nnadapter_context_properties);
 DECLARE_bool(enable_op_time_profile);
 DECLARE_bool(enable_memory_profile);
 DECLARE_int32(memory_check_interval_ms);
+
+// Configuration options
+DECLARE_string(config_path);
 
 // Others
 

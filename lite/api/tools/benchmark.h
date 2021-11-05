@@ -14,6 +14,9 @@
 
 #ifndef LITE_API_TOOLS_BENCHMARK_H_
 #define LITE_API_TOOLS_BENCHMARK_H_
+#if defined(__aarch64__) || defined(__arm__)
+#include <arm_neon.h>
+#endif
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -22,6 +25,9 @@
 #include <numeric>
 #include <string>
 #include <vector>
+#ifdef USE_PRECOMPILED_OPENCV
+#include <opencv2/opencv.hpp>
+#endif
 #include "lite/api/paddle_api.h"
 #include "lite/api/tools/flags.h"
 #include "lite/api/tools/opt_base.h"

@@ -24,6 +24,10 @@ DEFINE_string(model_file, "", model_file_msg);
 DEFINE_string(param_file, "", param_file_msg);
 DEFINE_string(input_shape, "", input_shape_msg);
 DEFINE_string(input_data_path, "", input_data_path_msg);
+DEFINE_string(validation_set, "", validation_set_msg);
+DEFINE_string(ground_truth_images_path, "", ground_truth_images_path_msg);
+DEFINE_string(ground_truth_labels, "", ground_truth_labels_msg);
+DEFINE_string(model_output_labels, "", model_output_labels_msg);
 DEFINE_bool(show_output_elem, false, show_output_elem_msg);
 
 // Common runtime options
@@ -55,6 +59,9 @@ DEFINE_string(nnadapter_context_properties,
 DEFINE_bool(enable_op_time_profile, false, enable_op_time_profile_msg);
 DEFINE_bool(enable_memory_profile, false, enable_memory_profile_msg);
 DEFINE_int32(memory_check_interval_ms, 5, memory_check_interval_ms_msg);
+
+// Configuration options
+DEFINE_string(config_path, "", config_path_msg);
 
 // Others
 

@@ -17,21 +17,23 @@
 #include <cstdio>
 #include <fstream>
 #include <iomanip>
+#include <map>
 #include <memory>
 #include <numeric>
 #include <string>
+#include <utility>
 #include <vector>
 #include "lite/core/version.h"
 #include "lite/utils/timer.h"
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   return paddle::lite_api::Benchmark(argc, argv);
 }
 
 namespace paddle {
 namespace lite_api {
 
-int Benchmark(int argc, char** argv) {
+int Benchmark(int argc, char **argv) {
   gflags::SetVersionString(lite::version());
   gflags::SetUsageMessage(PrintUsage());
   gflags::ParseCommandLineFlags(&argc, &argv, true);
@@ -54,13 +56,226 @@ int Benchmark(int argc, char** argv) {
   return 0;
 }
 
-void Run(const std::string& model_file,
-         const std::vector<std::vector<int64_t>>& input_shapes) {
-  lite::Timer timer;
-  std::vector<float> perf_vct;
+std::vector<std::string> ReadDict(std::string path) {
+  std::ifstream in(path);
+  std::string filename;
+  std::string line;
+  std::vector<std::string> m_vec;
+  if (in) {
+    while (getline(in, line)) {
+      m_vec.push_back(line);
+    }
+  } else {
+    std::cerr << "Failed to open file " << path << std::endl;
+    std::abort();
+  }
+  return m_vec;
+}
 
-  // Set config and create predictor
-  timer.Start();
+std::map<std::string, std::string> LoadConfigTxt(std::string config_path) {
+  auto config = ReadDict(config_path);
+
+  std::map<std::string, std::string> dict;
+  for (int i = 0; i < config.size(); i++) {
+    std::vector<std::string> res = lite::SplitString(config[i]);
+    std::cout << "key: " << res[0] << "\t value: " << res[1] << std::endl;
+    dict[res[0]] = res[1];
+  }
+  return dict;
+}
+
+void PrintConfig(const std::map<std::string, std::string> &config) {
+  std::cout << "=======PaddleClas lite demo config======" << std::endl;
+  for (auto iter = config.begin(); iter != config.end(); iter++) {
+    std::cout << iter->first << " : " << iter->second << std::endl;
+  }
+  std::cout << "=======End of PaddleClas lite demo config======" << std::endl;
+}
+
+cv::Mat ResizeImage(const cv::Mat &img, const int resize_short_size) {
+  int w = img.cols;
+  int h = img.rows;
+
+  cv::Mat resize_img;
+
+  float ratio = 1.f;
+  if (h < w) {
+    ratio = resize_short_size / static_cast<float>(h);
+  } else {
+    ratio = resize_short_size / static_cast<float>(w);
+  }
+  int resize_h = round(h * ratio);
+  int resize_w = round(w * ratio);
+
+  cv::resize(img, resize_img, cv::Size(resize_w, resize_h));
+  return resize_img;
+}
+
+cv::Mat CenterCropImg(const cv::Mat &img, const int crop_size) {
+  int resize_w = img.cols;
+  int resize_h = img.rows;
+  int w_start = static_cast<int>((resize_w - crop_size) / 2);
+  int h_start = static_cast<int>((resize_h - crop_size) / 2);
+  cv::Rect rect(w_start, h_start, crop_size, crop_size);
+  cv::Mat crop_img = img(rect);
+  return crop_img;
+}
+
+// fill tensor with mean and scale and trans layout: nhwc -> nchw, neon speed up
+void NeonMeanScale(const float *din,
+                   float *dout,
+                   int size,
+                   const std::vector<float> mean,
+                   const std::vector<float> scale) {
+  if (mean.size() != 3 || scale.size() != 3) {
+    std::cerr << "[ERROR] mean or scale size must equal to 3!" << std::endl;
+    std::abort();
+  }
+  float32x4_t vmean0 = vdupq_n_f32(mean[0]);
+  float32x4_t vmean1 = vdupq_n_f32(mean[1]);
+  float32x4_t vmean2 = vdupq_n_f32(mean[2]);
+  float32x4_t vscale0 = vdupq_n_f32(scale[0]);
+  float32x4_t vscale1 = vdupq_n_f32(scale[1]);
+  float32x4_t vscale2 = vdupq_n_f32(scale[2]);
+
+  float *dout_c0 = dout;
+  float *dout_c1 = dout + size;
+  float *dout_c2 = dout + size * 2;
+
+  int i = 0;
+  for (; i < size - 3; i += 4) {
+    float32x4x3_t vin3 = vld3q_f32(din);
+    float32x4_t vsub0 = vsubq_f32(vin3.val[0], vmean0);
+    float32x4_t vsub1 = vsubq_f32(vin3.val[1], vmean1);
+    float32x4_t vsub2 = vsubq_f32(vin3.val[2], vmean2);
+    float32x4_t vs0 = vmulq_f32(vsub0, vscale0);
+    float32x4_t vs1 = vmulq_f32(vsub1, vscale1);
+    float32x4_t vs2 = vmulq_f32(vsub2, vscale2);
+    vst1q_f32(dout_c0, vs0);
+    vst1q_f32(dout_c1, vs1);
+    vst1q_f32(dout_c2, vs2);
+
+    din += 12;
+    dout_c0 += 4;
+    dout_c1 += 4;
+    dout_c2 += 4;
+  }
+  for (; i < size; i++) {
+    *(dout_c0++) = (*(din++) - mean[0]) * scale[0];
+    *(dout_c1++) = (*(din++) - mean[1]) * scale[1];
+    *(dout_c2++) = (*(din++) - mean[2]) * scale[2];
+  }
+}
+
+struct RESULT {
+  std::string class_name;
+  int class_id;
+  float score;
+};
+
+std::vector<RESULT> PostProcess(
+    std::shared_ptr<PaddlePredictor> predictor,
+    const std::map<std::string, std::string> &config,
+    const std::vector<std::string> &image_files,
+    const std::vector<std::string> &word_labels,
+    const int cnt) {
+  std::vector<RESULT> results;
+  if (image_files.empty()) return results;
+
+  size_t output_tensor_num = predictor->GetOutputNames().size();
+  CHECK_EQ(output_tensor_num, 1);
+  std::unique_ptr<const Tensor> output_tensor(
+      std::move(predictor->GetOutput(0)));
+  auto *output_data = output_tensor->data<float>();
+  auto out_shape = output_tensor->shape();
+  auto out_data = output_tensor->data<float>();
+  auto ele_num = lite::ShapeProduction(out_shape);
+
+  const int TOPK = 5;
+  int max_indices[TOPK];
+  double max_scores[TOPK];
+  for (int i = 0; i < TOPK; i++) {
+    max_indices[i] = 0;
+    max_scores[i] = 0.;
+  }
+  for (int i = 0; i < ele_num; i++) {
+    float score = output_data[i];
+    int index = i;
+    for (int j = 0; j < TOPK; j++) {
+      if (score > max_scores[j]) {
+        index += max_indices[j];
+        max_indices[j] = index - max_indices[j];
+        index -= max_indices[j];
+        score += max_scores[j];
+        max_scores[j] = score - max_scores[j];
+        score -= max_scores[j];
+      }
+    }
+  }
+
+  results.resize(TOPK);
+  for (int i = 0; i < results.size(); i++) {
+    results[i].class_name = "Unknown";
+    if (max_indices[i] >= 0 && max_indices[i] < word_labels.size()) {
+      results[i].class_name = word_labels[max_indices[i]];
+    }
+    results[i].score = max_scores[i];
+    results[i].class_id = max_indices[i];
+  }
+
+  if (stoi(config.at("store_result_as_image")) == 1) {
+    cv::Mat img = cv::imread(image_files.at(cnt), cv::IMREAD_COLOR);
+    cv::Mat output_image(img);
+    for (int i = 0; i < results.size(); i++) {
+      cv::putText(output_image,
+                  "Top" + std::to_string(i + 1) + "." + results[i].class_name +
+                      ":" + std::to_string(results[i].score),
+                  cv::Point2d(5, i * 18 + 20),
+                  cv::FONT_HERSHEY_PLAIN,
+                  1,
+                  cv::Scalar(51, 255, 255));
+    }
+    std::string output_image_path = "./" + std::to_string(cnt) + ".png";
+    cv::imwrite(output_image_path, output_image);
+    std::cout << "save output image into " << output_image_path << std::endl;
+  }
+
+  return results;
+}
+
+void PreProcess(std::shared_ptr<PaddlePredictor> predictor,
+                const std::map<std::string, std::string> &config,
+                const std::vector<std::string> &image_files,
+                const int cnt) {
+  if (image_files.empty()) return;
+
+  // Read image
+  std::cout << "image: " << image_files.at(cnt) << std::endl;
+  cv::Mat img = cv::imread(image_files.at(cnt), cv::IMREAD_COLOR);
+  cv::cvtColor(img, img, cv::COLOR_BGR2RGB);
+
+  // Reshape image
+  int resize_short_size = stoi(config.at("resize_short_size"));
+  int crop_size = stoi(config.at("crop_size"));
+  cv::Mat resize_image = ResizeImage(img, resize_short_size);
+  cv::Mat crop_image = CenterCropImg(resize_image, crop_size);
+
+  // Prepare input data from image
+  cv::Mat img_fp;
+  const double alpha = 1.0 / 255.0;
+  crop_image.convertTo(img_fp, CV_32FC3, alpha);
+  std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(0)));
+  input_tensor->Resize({1, img_fp.channels(), img_fp.rows, img_fp.cols});
+  std::vector<float> mean = {0.485f, 0.456f, 0.406f};
+  std::vector<float> scale = {1 / 0.229f, 1 / 0.224f, 1 / 0.225f};
+  const float *dimg = reinterpret_cast<const float *>(img_fp.data);
+
+  auto *input0 = input_tensor->mutable_data<float>();
+  NeonMeanScale(dimg, input0, img_fp.rows * img_fp.cols, mean, scale);
+}
+
+std::shared_ptr<PaddlePredictor> CreatePredictor(
+    const std::string &model_file) {
   MobileConfig config;
   config.set_model_from_file(model_file);
   config.set_threads(FLAGS_threads);
@@ -68,31 +283,73 @@ void Run(const std::string& model_file,
 
   // Set backend config info
   SetBackendConfig(config);
-
   auto predictor = CreatePaddlePredictor(config);
+
+  return predictor;
+}
+
+const std::string GetAbsPath(const std::string file_name) {
+  char abs_path_buff[PATH_MAX];
+  if (realpath(file_name.c_str(), abs_path_buff)) {
+    return std::string(abs_path_buff);
+  } else {
+    std::cerr << "Get abs path error!" << std::endl;
+    std::abort();
+  }
+}
+
+void Run(const std::string &model_file,
+         const std::vector<std::vector<int64_t>> &input_shapes) {
+  lite::Timer timer;
+  std::vector<float> perf_vct;
+  std::map<std::string, std::string> config;
+  std::vector<std::string> image_files;
+  std::vector<std::string> word_labels;
+
+  // Create predictor
+  timer.Start();
+  auto predictor = CreatePredictor(model_file);
   float init_time = timer.Stop();
 
   // Set inputs
-  for (size_t i = 0; i < input_shapes.size(); i++) {
-    auto input_tensor = predictor->GetInput(i);
-    input_tensor->Resize(input_shapes[i]);
-    // NOTE: Change input data type to other type as you need.
-    auto input_data = input_tensor->mutable_data<float>();
-    auto input_num = lite::ShapeProduction(input_shapes[i]);
-    if (FLAGS_input_data_path.empty()) {
-      for (auto j = 0; j < input_num; j++) {
-        input_data[j] = 1.f;
+  if (false) {
+    for (size_t i = 0; i < input_shapes.size(); i++) {
+      auto input_tensor = predictor->GetInput(i);
+      input_tensor->Resize(input_shapes[i]);
+      // NOTE: Change input data type to other type as you need.
+      auto input_data = input_tensor->mutable_data<float>();
+      auto input_num = lite::ShapeProduction(input_shapes[i]);
+      if (FLAGS_input_data_path.empty()) {
+        for (auto j = 0; j < input_num; j++) {
+          input_data[j] = 1.f;
+        }
+      } else {
+        auto paths = lite::SplitString(FLAGS_input_data_path);
+        std::ifstream fs(paths[i]);
+        if (!fs.is_open()) {
+          std::cerr << "Open input image " << paths[i] << " error."
+                    << std::endl;
+        }
+        for (int k = 0; k < input_num; k++) {
+          fs >> input_data[k];
+        }
+        fs.close();
       }
-    } else {
-      auto paths = lite::SplitString(FLAGS_input_data_path);
-      std::ifstream fs(paths[i]);
-      if (!fs.is_open()) {
-        std::cerr << "Open input image " << paths[i] << " error." << std::endl;
-      }
-      for (int k = 0; k < input_num; k++) {
-        fs >> input_data[k];
-      }
-      fs.close();
+    }
+  } else {
+    std::cout << "FLAGS_config_path: " << FLAGS_config_path << std::endl;
+    config = LoadConfigTxt(FLAGS_config_path);
+    PrintConfig(config);
+    word_labels = lite::ReadLines(config.at("label_path"));
+
+    std::vector<std::string> image_labels =
+        lite::ReadLines(config.at("ground_truth_images_path"));
+    image_files.reserve(image_labels.size());
+    for (auto line : image_labels) {
+      line = "/data/local/tmp/zy/ILSVRC2012_1000_cls/" + line;
+      std::string image_file = line.substr(0, line.find(" "));
+      std::string label_id = line.substr(line.find(" ") + 1, line.length());
+      image_files.push_back(image_file);
     }
   }
 
@@ -100,8 +357,19 @@ void Run(const std::string& model_file,
   for (int i = 0; i < FLAGS_warmup; ++i) {
     if (i == 0) {
       timer.Start();
+      PreProcess(predictor, config, image_files, i);
       predictor->Run();
+      auto results =
+          PostProcess(predictor, config, image_files, word_labels, i);
       perf_vct.push_back(timer.Stop());
+      std::cout << "===clas result for image: " << image_files.at(i)
+                << "===" << std::endl;
+      for (int i = 0; i < results.size(); i++) {
+        std::cout << "\t"
+                  << "Top-" << i + 1 << ", class_id: " << results[i].class_id
+                  << ", class_name: " << results[i].class_name
+                  << ", score: " << results[i].score << std::endl;
+      }
     } else {
       predictor->Run();
     }
