@@ -306,7 +306,7 @@ extern NSString* cString2NSString(std::string cStr) {
 - (void)setHeap:(id<MTLHeap>)heap key:(std::string)ptr API_AVAILABLE(ios(10.0)) {
     NSString* ptrStr = cString2NSString(ptr);
     if (!ptrStr) {
-        LOG(WARN) << "heap key is nil";
+        LOG(INFO) << "heap key is nil";
         return;
     }
     [self.memoryReuseHeaps setObject:heap forKey:ptrStr];

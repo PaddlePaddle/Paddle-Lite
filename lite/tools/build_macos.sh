@@ -20,10 +20,13 @@ BUILD_TAILOR=OFF
 BUILD_CV=OFF
 WITH_LOG=ON
 WITH_MKL=ON
+WITH_METAL=OFF
 WITH_OPENCL=OFF
 WITH_STATIC_MKL=OFF
 WITH_AVX=ON
 WITH_EXCEPTION=OFF
+WITH_LIGHT_WEIGHT_FRAMEWORK=OFF
+WITH_TINY_PUBLISH=ON
 WITH_PROFILE=OFF
 WITH_PRECISION_PROFILE=OFF
 WITH_BENCHMARK=OFF
@@ -128,6 +131,11 @@ function make_armosx {
     fi
 
     build_dir=$workspace/build.macos.${os}.${arch}
+    if [ "${WITH_METAL}" = "ON" ]
+    then
+        build_dir=${build_dir}.metal
+    fi
+
     if [ -d $build_dir ]
     then
         rm -rf $build_dir
@@ -146,6 +154,7 @@ function make_armosx {
     cmake $workspace \
             -DWITH_LITE=ON \
             -DLITE_WITH_ARM=ON \
+            -DLITE_WITH_METAL=$WITH_METAL \
             -DLITE_ON_TINY_PUBLISH=ON \
             -DLITE_WITH_OPENMP=OFF \
             -DWITH_ARM_DOTPROD=OFF \
@@ -186,6 +195,13 @@ function make_x86 {
     prepare_opencl_source_code $root_dir $build_directory
   fi
 
+  if [ ${WITH_METAL} == "ON" ]; then
+    BUILD_EXTRA=ON
+    WITH_LIGHT_WEIGHT_FRAMEWORK=OFF
+    WITH_TINY_PUBLISH=OFF
+    build_directory=${build_directory}.metal
+  fi
+
   if [ ${BUILD_PYTHON} == "ON" ]; then
     BUILD_EXTRA=ON
   fi
@@ -211,7 +227,10 @@ function make_x86 {
             -DLITE_WITH_X86=ON  \
             -DWITH_LITE=ON \
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
+            -DDLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=${WITH_LIGHT_WEIGHT_FRAMEWORK} \
+            -DLITE_ON_TINY_PUBLISH=$WITH_TINY_PUBLISH \
             -DLITE_WITH_ARM=OFF \
+            -DLITE_WITH_METAL=${WITH_METAL} \
             -DLITE_WITH_OPENCL=${WITH_OPENCL} \
             -DWITH_GPU=OFF \
             -DLITE_WITH_PYTHON=${BUILD_PYTHON} \
@@ -253,6 +272,7 @@ function print_usage {
     echo -e "|                                                                                                                                      |"
     echo -e "|  for arm macos:                                                                                                                      |"
     echo -e "|  optional argument:                                                                                                                  |"
+    echo -e "|     --build_metal: (OFF|ON); controls whether to build with Metal, default is OFF                                                    |"
     echo -e "|     --build_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                           |"
     echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                   |"
     echo -e "|     --with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF                            |"
@@ -346,6 +366,10 @@ function main {
                 ;;
             --with_lto=*)
                 WITH_LTO="${i#*=}"
+                shift
+                ;;
+            --build_metal=*)
+                WITH_METAL="${i#*=}"
                 shift
                 ;;
             --build_opencl=*)
