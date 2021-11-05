@@ -129,11 +129,10 @@ void fill_tensor(
   memcpy(tensor_data, data, sizeof(T) * size);
 }
 
-int FillModelInput(
+void FillModelInput(
     std::vector<std::vector<uint8_t>> input_data,
     const std::vector<std::vector<int64_t>> input_shape,
-    const std::shared_ptr<paddle::lite_api::PaddlePredictor>& predictor,
-    bool is_save_txt = false) {
+    const std::shared_ptr<paddle::lite_api::PaddlePredictor>& predictor) {
   auto input_names = predictor->GetInputNames();
   for (int idx = 0; idx < input_names.size(); idx++) {
     auto tensor = predictor->GetInput(idx);
@@ -155,61 +154,7 @@ int FillModelInput(
     } else {
       LOG(FATAL)
           << "FillModelInput func not supoort this precision, please add!";
-      return -1;
     }
-  }
-  return 0;
-}
-
-// Adapt v2.0 detection models
-template <class T = float>
-void SetDetectionInputV2(
-    std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor,
-    std::vector<int> input_shape,
-    std::vector<T> raw_data,
-    int input_size) {
-  auto im_shape_tensor = predictor->GetInput(0);
-  im_shape_tensor->Resize(std::vector<int64_t>({1, 2}));
-  auto* im_shape_data = im_shape_tensor->mutable_data<T>();
-  im_shape_data[0] = input_shape[2];
-  im_shape_data[1] = input_shape[3];
-
-  auto input_tensor = predictor->GetInput(1);
-  input_tensor->Resize(
-      std::vector<int64_t>(input_shape.begin(), input_shape.end()));
-  auto* data = input_tensor->mutable_data<T>();
-  if (raw_data.empty()) {
-    for (int i = 0; i < input_size; i++) {
-      data[i] = 0.f;
-    }
-  } else {
-    memcpy(data, raw_data.data(), sizeof(T) * input_size);
-  }
-
-  auto scale_factor_tensor = predictor->GetInput(2);
-  scale_factor_tensor->Resize(std::vector<int64_t>({1, 2}));
-  auto* scale_factor_data = scale_factor_tensor->mutable_data<T>();
-  scale_factor_data[0] = 1;
-  scale_factor_data[1] = 1;
-}
-
-// Adapt v1.0 detection models
-template <class T = float>
-void SetDetectionInputV1(
-    std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor,
-    std::vector<int> input_shape,
-    std::vector<T> raw_data,
-    int input_size) {
-  auto input_tensor = predictor->GetInput(0);
-  input_tensor->Resize(
-      std::vector<int64_t>(input_shape.begin(), input_shape.end()));
-  auto* data = input_tensor->mutable_data<T>();
-  if (raw_data.empty()) {
-    for (int i = 0; i < input_size; i++) {
-      data[i] = 0.f;
-    }
-  } else {
-    memcpy(data, raw_data.data(), sizeof(T) * input_size);
   }
 }
 
@@ -273,30 +218,6 @@ void TestDetectionModel(std::string model_dir,
     predictor->Run();
   }
 
-  // std::string raw_data_dir = data_dir + std::string("/raw_data");
-  // std::vector<int> input_shape{batch, channel, height, width};
-  // auto raw_data = ReadRawData(raw_data_dir, input_shape, iteration);
-
-  // int input_size = 1;
-  // for (auto i : input_shape) {
-  //   input_size *= i;
-  // }
-
-  // for (int i = 0; i < FLAGS_warmup; ++i) {
-  //   if (version == 1) {
-  //     SetDetectionInputV1(predictor, input_shape, {}, input_size);
-  //   } else if (version == 2) {
-  //     SetDetectionInputV2(predictor, input_shape, {}, input_size);
-  //   } else {
-  //     LOG(INFO) << "Unsupported the input version!";
-  //     return;
-  //   }
-
-  //   predictor->Run();
-  // }
-
-  // std::vector<std::vector<float>> out_rets;
-  // out_rets.resize(iteration);
   double cost_time = 0;
   for (size_t i = 0; i < iteration; ++i) {
     FillModelInput(input_data_set[i], input_data_set_shapes[i], predictor);
