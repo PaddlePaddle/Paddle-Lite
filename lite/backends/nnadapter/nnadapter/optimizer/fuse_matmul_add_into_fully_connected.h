@@ -17,9 +17,7 @@
 #include "core/hal/types.h"
 
 namespace nnadapter {
-namespace huawei_ascend_npu {
 
-int FixOpConstraints(hal::Model* model);
+void FuseMatMulAddIntoFullyConnected(hal::Model *model);
 
-}  // namespace huawei_ascend_npu
 }  // namespace nnadapter
