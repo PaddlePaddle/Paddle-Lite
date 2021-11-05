@@ -40,7 +40,7 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 settings.register_profile(
     "ci",
-    max_examples=100,
+    max_examples=10,
     suppress_health_check=hypothesis.HealthCheck.all(),
     deadline=None,
     print_blob=True,
@@ -48,7 +48,7 @@ settings.register_profile(
     report_multiple_bugs=False)
 settings.register_profile(
     "dev",
-    max_examples=1000,
+    max_examples=100,
     suppress_health_check=hypothesis.HealthCheck.all(),
     deadline=None,
     print_blob=True,
