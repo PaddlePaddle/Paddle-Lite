@@ -189,19 +189,19 @@ void TestDetectionModel(std::string model_dir,
   std::vector<std::vector<std::vector<uint8_t>>> input_data_set;
   std::vector<std::vector<std::vector<int64_t>>> input_data_set_shapes;
   std::string input_path;
-  if (data_type == "voc") {
+  if (data_type == "ssd_voc") {
     if (model_version == 1) {
-      input_path = data_dir + "/voc_data_v1.txt";
+      input_path = data_dir + "/ssd_data_v1.txt";
     } else if (model_version == 2) {
-      input_path = data_dir + "/voc_data_v2.txt";
+      input_path = data_dir + "/ssd_data_v2.txt";
     } else {
       LOG(FATAL) << "Unsupported model version: " << model_version;
     }
-  } else if (data_type == "coco") {
+  } else if (data_type == "yolo_coco") {
     if (model_version == 1) {
-      input_path = data_dir + "/coco_data_v1.txt";
+      input_path = data_dir + "/yolo_data_v1.txt";
     } else if (model_version == 2) {
-      input_path = data_dir + "/coco_data_v2.txt";
+      input_path = data_dir + "/yolo_data_v2.txt";
     } else {
       LOG(FATAL) << "Unsupported model version: " << model_version;
     }

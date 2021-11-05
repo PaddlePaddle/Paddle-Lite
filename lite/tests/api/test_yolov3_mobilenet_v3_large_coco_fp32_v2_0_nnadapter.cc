@@ -21,7 +21,7 @@
 #include "lite/tests/api/detection_model_utility.h"
 
 DEFINE_string(data_dir, "", "data dir");
-DEFINE_string(data_type, "coco", "dataset type");
+DEFINE_string(data_type, "yolo_coco", "dataset type");
 DEFINE_int32(model_version, 2, "model version");
 
 namespace paddle {
