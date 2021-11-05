@@ -612,10 +612,9 @@ void prepackA_8x16(float16_t *out,
         // a0b0a2b2a4b4a6b6
         "vtrn.16 q0, q1                             \n"
         "vld1.16 {d10-d11}, [%[inptr5]]!            \n"
-        "trn2 v9.8h, v0.8h, v1.8h                   \n"
         "vld1.16 {d12-d13}, [%[inptr6]]!            \n"
         // c0d0c2d2c4d4c6d6
-        "cmp %w[has_alpha], #1                      \n"
+        "cmp %[has_alpha], #1                       \n"
         "vtrn.16 q2, q3                             \n"
         "vld1.16 {d14-d15}, [%[inptr7]]!            \n"
         // e0f0e2f2e4f4e6f6
@@ -635,7 +634,7 @@ void prepackA_8x16(float16_t *out,
         "vswp d5, d12                               \n"
         // 3 7
         "vswp d7, d14                               \n"
-        "bne 10f                                    \n"
+        "bne  10f                                   \n"
         "vmul.f16  q0, q0, %q[valpha]               \n"
         "vmul.f16  q1, q1, %q[valpha]               \n"
         "vmul.f16  q2, q2, %q[valpha]               \n"
@@ -653,7 +652,7 @@ void prepackA_8x16(float16_t *out,
         "vst1.16 {d12-d15}, [%[outptr]]!            \n"
         "bne 0b                                     \n"
         "1:                                         \n"
-        "cmp %w[cnt_4], #1                          \n"
+        "cmp %[cnt_4], #1                           \n"
         "blt 2f                                     \n"
         "vld1.16 {d0}, [%[inptr0]]!                 \n"
         "vld1.16 {d1}, [%[inptr1]]!                 \n"
@@ -673,19 +672,26 @@ void prepackA_8x16(float16_t *out,
         "vtrn.32 d0, d2                             \n"
         // a1b1..a5b5..  a3b3..a7b7..
         "vtrn.32 d1, d3                             \n"
-        "cmp %[has_alpha], #1                       \n"
         // g0h0g2h2g4h4g6h6
         "vtrn.16 d6,  d7                            \n"
-        "vtrn.16 d4,  d6                            \n"
-        "vtrn.16 d5,  d7                            \n"
+        "cmp %[has_alpha], #1                       \n"
+        "vtrn.32 d4,  d6                            \n"
+        "vtrn.32 d5,  d7                            \n"
         "bne 11f                                    \n"
         "vmul.f16  q0, q0, %q[valpha]               \n"
         "vmul.f16  q1, q1, %q[valpha]               \n"
         "vmul.f16  q2, q2, %q[valpha]               \n"
         "vmul.f16  q3, q3, %q[valpha]               \n"
         "11:                                        \n"
-        "vst1.16 {d0-d3}, [%[outptr]]!              \n"
-        "vst1.16 {d4-d7}, [%[outptr]]!              \n"
+        "vstr   d0,  [%[outptr]]                    \n"
+        "vstr   d4,  [%[outptr], #8]                \n"
+        "vstr   d1,  [%[outptr], #16]               \n"
+        "vstr   d5,  [%[outptr], #24]               \n"
+        "vstr   d2,  [%[outptr], #32]               \n"
+        "vstr   d6,  [%[outptr], #40]               \n"
+        "vstr   d3,  [%[outptr], #48]               \n"
+        "vstr   d7,  [%[outptr], #56]               \n"
+        "add    %[outptr], #64                      \n"
         "2:                                         \n"
         : [inptr0] "+r"(inptr0),
           [inptr1] "+r"(inptr1),
@@ -1300,7 +1306,7 @@ void loadb(float16_t *out,
   int x_len = nmax - n0;
   int y_len = kmax - k0;
   int cnt = x_len / 12;
-  int right_remain = x_len & 11;
+  int right_remain = x_len % 12;
 
   uint16_t *outptr_row = outptr;
   int rem_cnt = right_remain >> 2;
@@ -1337,16 +1343,16 @@ void loadb(float16_t *out,
         uint16x8_t v3 = vld1q_u16(ptr3);
         vst1_u16(outptr_row_col + 8, v01);
         uint16x4_t v31 = vld1_u16(ptr3 + 8);
-        vst1q_u16(outptr_row_col + 16, v1);
+        vst1q_u16(outptr_row_col + 12, v1);
         ptr0 += 12;
-        vst1_u16(outptr_row_col + 24, v11);
+        vst1_u16(outptr_row_col + 20, v11);
         ptr1 += 12;
-        vst1q_u16(outptr_row_col + 32, v2);
+        vst1q_u16(outptr_row_col + 24, v2);
         ptr2 += 12;
-        vst1_u16(outptr_row_col + 40, v21);
+        vst1_u16(outptr_row_col + 32, v21);
         ptr3 += 12;
-        vst1q_u16(outptr_row_col + 48, v3);
-        vst1_u16(outptr_row_col + 56, v31);
+        vst1q_u16(outptr_row_col + 36, v3);
+        vst1_u16(outptr_row_col + 44, v31);
         outptr_row_col += stride_12;
       }
     }
@@ -1428,6 +1434,7 @@ void loadb_trans(float16_t *out,
   int remain = x_len & 7;
   int y = n0;
   int y_remain = (nmax - n0) & 3;
+  int stride_w = ldin * 2;
 
   //! data B is not transposed, transpose B to k * 12
   for (; y < nmax - 11; y += 12) {
@@ -1469,24 +1476,26 @@ void loadb_trans(float16_t *out,
         "vld1.16 {d10-d11}, [%[inptr5]]!\n"
         // a0b0a2b2a4b4a6b6
         "vtrn.16 q0, q1        \n"
-        "pld [%[inptr10]]      \n"
         "vld1.16 {d12-d13}, [%[inptr6]]!\n"
-        "pld [%[inptr11]]      \n"
         "vld1.16 {d14-d15}, [%[inptr7]]!\n"
         // c0d0c2d2c4d4c6d6
         "vtrn.16 q2, q3        \n"
         "vld1.16 {d16-d17}, [%[inptr8]]!\n"
         // e0f0e2f2...
         "vtrn.16 q4, q5        \n"
-        "vld1.16 {d18-d19}, [%[inptr9]]!\n"
-        "vtrn.16 q6, q7        \n"
-        "vld1.16 {d20-d21}, [%[inptr10]]!\n"
+        "vld1.16 {d18-d19}, [%[inptr9]]\n"
+        "add %[inptr9], %[stride_w]\n"
+        "vtrn.16 q6, q7       \n"
         "vtrn.32 q0, q2       \n"
+        "vld1.16 {d20-d21}, [%[inptr9]]\n"
+        "add %[inptr9], %[stride_w]\n"
         "vtrn.32 q1, q3       \n"
-        "vld1.16 {d22-d23}, [%[inptr11]]!\n"
         "vtrn.16 q8, q9       \n"
+        "vld1.16 {d22-d23}, [%[inptr9]]\n"
+        "sub %[inptr9], %[stride_w]\n"
         "vtrn.32 q4, q6       \n"
         "vtrn.32 q5, q7       \n"
+        "sub %[inptr9], %[stride_w]\n"
         "vtrn.16 q10, q11     \n"
 
         // 0 4
@@ -1502,6 +1511,7 @@ void loadb_trans(float16_t *out,
         // 15 37
         "vtrn.32 q9, q11      \n"
         "vst1.16 {d0-d1}, [%[outptr]]!\n"
+        "add %[inptr9], #16\n"
         "vst1.16 {d16}, [%[outptr]]!\n"
         "vst1.16 {d2-d3}, [%[outptr]]!\n"
         "vst1.16 {d18}, [%[outptr]]!\n"
@@ -1533,11 +1543,9 @@ void loadb_trans(float16_t *out,
           [inptr7] "+r"(inptr7),
           [inptr8] "+r"(inptr8),
           [inptr9] "+r"(inptr9),
-          [inptr10] "+r"(inptr10),
-          [inptr11] "+r"(inptr11),
           [outptr] "+r"(outptr),
           [cnt] "+r"(cnt_col)
-        :
+        : [stride_w] "r"(stride_w)
         : "cc",
           "memory",
           "q0",
@@ -1603,10 +1611,10 @@ void loadb_trans(float16_t *out,
         "vswp    d3, d6        \n"
         // 23 67
         "vswp    d5, d6        \n"
-        "vst1.16 {d0-d1}  [%[outptr]]!\n"
-        "vst1.16 {d4-d5}  [%[outptr]]!\n"
-        "vst1.16 {d2-d3}  [%[outptr]]!\n"
-        "vst1.16 {d6-d7}  [%[outptr]]!\n"
+        "vst1.16 {d0-d1}, [%[outptr]]!\n"
+        "vst1.16 {d4-d5}, [%[outptr]]!\n"
+        "vst1.16 {d2-d3}, [%[outptr]]!\n"
+        "vst1.16 {d6-d7}, [%[outptr]]!\n"
         "bne 0b                \n"
         "1:                    \n"
         : [inptr0] "+r"(inptr0),
@@ -2398,7 +2406,7 @@ void gemm_prepack_8x16(bool is_transB,
             "beq 7f                             \n"
             "cmp    %w[flag_act],   #2          \n"
             "beq 5f                             \n"
-            "cmp    %w[flag_act],   #2          \n"
+            "cmp    %w[flag_act],   #3          \n"
             "beq 8f                             \n"
             // hardwsish
             "fadd  v0.8h, v8.8h,  %[voffset].8h\n"
@@ -2629,16 +2637,14 @@ void gemm_prepack_8x12(bool is_transB,
   if (act_param.has_active) {
     act_acquire(act_type, flag_act, local_alpha, offset, threshold, act_param);
   }
-
-  float16_t alpha_ptr[24] = {0.f};
+  float16_t alpha_ptr[32] = {0.f};
   //! MBLOCK * x (result) + MBLOCK * k (A) + x * k (B) = l2
   X_BLOCK_COMPUTE(llc_size, MBLOCK_FP16, NBLOCK_FP16, KBLOCK_FP16, beta)
-  float16_t bias_ptr[16] = {0.f};
+  tail_pre = tail_pre * 8 + flag_act;
   for (int i = 0; i < 8; i++) {
     alpha_ptr[i] = local_alpha;
     alpha_ptr[i + 8] = offset;
     alpha_ptr[i + 16] = threshold;
-    bias_ptr[i + 8] = beta;
   }
   //! apanel is pre_compute outside gemm
   for (unsigned int x0 = 0; x0 < N; x0 += x_block) {
@@ -2667,10 +2673,10 @@ void gemm_prepack_8x12(bool is_transB,
 
       if (has_bias) {
         if (y + 7 >= ymax) {
-          ptr_acquire_b8<float16_t>(bias_ptr, bias, y, (y + 7), ymax);
+          ptr_acquire_b8<float16_t>(&alpha_ptr[24], bias, y, (y + 7), ymax);
         } else {
           for (int i = 0; i < 8; i++) {
-            bias_ptr[i] = bias[y + i];
+            alpha_ptr[24 + i] = bias[y + i];
           }
         }
       }
@@ -2709,45 +2715,26 @@ void gemm_prepack_8x12(bool is_transB,
             int k = k_pre;
             // clang-format off
             asm volatile(
-              "vld1.16 {d0-d1}, [%[vbias]]\n"
+              "vldr   d0, [%[valpha], #48]\n"
+              "vldr   d1, [%[valpha], #56]\n"
               "pld    [%[a_ptr]]         \n"
               "pld    [%[b_ptr]]         \n"
               "pld    [%[a_ptr], #64]    \n"
-              "vdup.f16 d8,  d0[0]       \n"
-              "vdup.f16 d9,  d0[1]       \n"
+              "vdup.16  d8,  d0[0]       \n"
+              "vdup.16  d9,  d0[1]       \n"
               "pld    [%[b_ptr], #64]    \n"
-              "vdup.f16 d10, d0[2]       \n"
-              "vdup.f16 d11, d0[3]       \n"
+              "vdup.16  d10, d0[2]       \n"
+              "vdup.16  d11, d0[3]       \n"
               "pld    [%[a_ptr], #128]   \n"
-              "vdup.f16 d12, d1[0]       \n"
-              "vdup.f16 d13, d1[1]       \n"
+              "vdup.16  d12, d1[0]       \n"
+              "vdup.16  d13, d1[1]       \n"
               "pld    [%[b_ptr], #128]   \n"
               "pld    [%[a_ptr], #192]   \n"
-              "cmp    %[has_beta], #1    \n"
-              "vdup.f16 d14, d1[2]       \n"
-              "vdup.f16 d15, d1[3]       \n"
+              "vdup.16  d14, d1[2]       \n"
+              "vdup.16  d15, d1[3]       \n"
               "pld    [%[b_ptr], #192]   \n"
               "pld    [%[b_ptr], #256]   \n"
               
-              "blt 1f                    \n"
-              // process beta
-              "vldr    d0,   [%[vbias], #16]\n"
-              "vld1.16 {d2},   [%[c_ptr0]]\n"
-              "vld1.16 {d3},   [%[c_ptr1]]\n"
-              "vld1.16 {d4},   [%[c_ptr2]]\n"
-              "vld1.16 {d5},   [%[c_ptr3]]\n"
-              "vld1.16 {d6},   [%[c_ptr4]]\n"
-              "vld1.16 {d7},   [%[c_ptr5]]\n"
-              "vmla.f16 d8,  d2, d0       \n"
-              "vmla.f16 d9,  d3, d0       \n"
-              "vld1.16 {d2},   [%[c_ptr6]]\n"
-              "vmla.f16 d10, d4, d0       \n"
-              "vld1.16 {d3},   [%[c_ptr7]]\n"
-              "vmla.f16 d11, d5, d0       \n"
-              "vmla.f16 d12, d6, d0       \n"
-              "vmla.f16 d13, d7, d0       \n"
-              "vmla.f16 d14, d2, d0       \n"
-              "vmla.f16 d15, d3, d0       \n"
               "1:                                 \n"
               "cmp %[cnt], #1                     \n"
               "vld1.16 {d0-d1}, [%[a_ptr]]!       \n"
@@ -2782,8 +2769,8 @@ void gemm_prepack_8x12(bool is_transB,
               "vmla.f16 d15, d4,  d7[3]           \n"
               "bne 0b                             \n"
               "2:                                 \n"
-              "cmp %[tail], #1                    \n"
-              "beq 3f                             \n"
+              "cmp %[tail], #16                   \n"
+              "blt 3f                             \n"
               // tail=2
               "vmla.f16 d8,  d2,  d0[0]           \n"
               "vmla.f16 d9,  d2,  d0[1]           \n"
@@ -2797,6 +2784,7 @@ void gemm_prepack_8x12(bool is_transB,
               "vmla.f16 d13, d2,  d1[1]           \n"
               "vmla.f16 d14, d2,  d1[2]           \n"
               "vmla.f16 d15, d2,  d1[3]           \n"
+              "sub %[tail], #16                   \n"
 
               // unrool 1
               "vmla.f16 d8,  d4,  d6[0]           \n"
@@ -2810,6 +2798,7 @@ void gemm_prepack_8x12(bool is_transB,
               "b 6f                               \n"
               "3:                                 \n"
               // tail = 1
+              "sub %[tail], #8                    \n"
               "vmla.f16 d8,  d2,  d0[0]           \n"
               "vmla.f16 d9,  d2,  d0[1]           \n"
               "vmla.f16 d10, d2,  d0[2]           \n"
@@ -2819,14 +2808,14 @@ void gemm_prepack_8x12(bool is_transB,
               "vmla.f16 d14, d2,  d1[2]           \n"
               "vmla.f16 d15, d2,  d1[3]           \n"
               "6:                                 \n"
-              "cmp    %[flag_act],   #1           \n"
+              "cmp    %[tail],   #1           \n"
               "vmov.u32 q0, #0                    \n"
               "beq 4f                             \n"
-              "cmp    %[flag_act],   #0           \n"
+              "cmp    %[tail],   #0           \n"
               "beq 7f                             \n"
-              "cmp    %[flag_act],   #2           \n"
+              "cmp    %[tail],   #2           \n"
               "beq 5f                             \n"
-              "cmp    %[flag_act],   #2           \n"
+              "cmp    %[tail],   #3           \n"
               "beq 8f                             \n"
               // hardwsish
               "vldr  d2,  [%[valpha], #16]        \n"
@@ -2877,7 +2866,7 @@ void gemm_prepack_8x12(bool is_transB,
               "b 7f                               \n"
               // leakyRelu
               "8:                                 \n"
-              "vld1.f16  {d2},  [%[valpha]]       \n"
+              "vld1.16   {d2},  [%[valpha]]       \n"
               "vcge.f16  d4,  d8,  d0             \n"
               "vmul.f16  d6,  d8,  d2             \n"
               "vcge.f16  d5,  d9,  d0             \n"
@@ -2908,7 +2897,7 @@ void gemm_prepack_8x12(bool is_transB,
               // relu
               "4:                                 \n"
               "vmax.f16  d8,  d8,  d0             \n"
-              "vmax.f16  d9,  q9,  d0             \n"
+              "vmax.f16  d9,  d9,  d0             \n"
               "vmax.f16  d10, d10, d0             \n"
               "vmax.f16  d11, d11, d0             \n"
               "vmax.f16  d12, d12, d0             \n"
@@ -2920,7 +2909,7 @@ void gemm_prepack_8x12(bool is_transB,
               "5:                                 \n"
               "vld1.16   {d2}, [%[valpha]]        \n"
               "vmax.f16  d8,  d8,  d0             \n"
-              "vmax.f16  d9,  q9,  d0             \n"
+              "vmax.f16  d9,  d9,  d0             \n"
               "vmax.f16  d10, d10, d0             \n"
               "vmax.f16  d11, d11, d0             \n"
               "vmax.f16  d12, d12, d0             \n"
@@ -2928,7 +2917,7 @@ void gemm_prepack_8x12(bool is_transB,
               "vmax.f16  d14, d14, d0             \n"
               "vmax.f16  d15, d15, d0             \n"
               "vmin.f16  d8,  d8,  d2             \n"
-              "vmin.f16  d9,  q9,  d2             \n"
+              "vmin.f16  d9,  d9,  d2             \n"
               "vmin.f16  d10, d10, d2             \n"
               "vmin.f16  d11, d11, d2             \n"
               "vmin.f16  d12, d12, d2             \n"
@@ -2958,10 +2947,7 @@ void gemm_prepack_8x12(bool is_transB,
                 [c_ptr5] "+r"(c_ptr5),
                 [c_ptr6] "+r"(c_ptr6),
                 [c_ptr7] "+r"(c_ptr7)
-              : [has_beta] "r"(has_beta),
-                [vbias] "r"(bias_ptr),
-                [valpha] "r"(alpha_ptr),
-                [flag_act] "r"(flag_act)
+              : [valpha] "r"(alpha_ptr)
               : "cc","memory",
                 "q0","q1","q2","q3","q4","q5","q6","q7",
                 "q8","q9","q10","q11","q12","q13",
@@ -2977,49 +2963,30 @@ void gemm_prepack_8x12(bool is_transB,
             int k = k_pre;
             // clang-format off
             asm volatile(
-              "vld1.16 {d0-d1}, [%[vbias]]\n"
+              "vldr   d0, [%[valpha], #48]\n"
+              "vldr   d1, [%[valpha], #56]\n"
               "pld    [%[a_ptr]]         \n"
               "pld    [%[b_ptr]]         \n"
               "pld    [%[a_ptr], #64]    \n"
-              "vdup.f16 d8,  d0[0]       \n"
-              "vdup.f16 d9,  d0[1]       \n"
+              "vdup.16  d8,  d0[0]       \n"
+              "vdup.16  d9,  d0[1]       \n"
               "pld    [%[b_ptr], #64]    \n"
-              "vdup.f16 d10, d0[2]       \n"
-              "vdup.f16 d11, d0[3]       \n"
+              "vdup.16  d10, d0[2]       \n"
+              "vdup.16  d11, d0[3]       \n"
               "pld    [%[a_ptr], #128]   \n"
-              "vdup.f16 d12, d1[0]       \n"
-              "vdup.f16 d13, d1[1]       \n"
+              "vdup.16  d12, d1[0]       \n"
+              "vdup.16  d13, d1[1]       \n"
               "pld    [%[b_ptr], #128]   \n"
               "pld    [%[a_ptr], #192]   \n"
-              "cmp    %[has_beta], #1    \n"
-              "vdup.f16 d14, d1[2]       \n"
-              "vdup.f16 d15, d1[3]       \n"
+              "vdup.16  d14, d1[2]       \n"
+              "vdup.16  d15, d1[3]       \n"
               "pld    [%[b_ptr], #192]   \n"
               "pld    [%[b_ptr], #256]   \n"
-              "blt 1f                    \n"
-              // process beta
-              "vldr    d0,   [%[vbias], #16]\n"
-              "vld1.16 {d2},   [%[c_ptr0]]\n"
-              "vld1.16 {d3},   [%[c_ptr1]]\n"
-              "vld1.16 {d4},   [%[c_ptr2]]\n"
-              "vld1.16 {d5},   [%[c_ptr3]]\n"
-              "vld1.16 {d6},   [%[c_ptr4]]\n"
-              "vld1.16 {d7},   [%[c_ptr5]]\n"
-              "vmla.f16 d8,  d2, d0       \n"
-              "vmla.f16 d9,  d3, d0       \n"
-              "vld1.16 {d2},   [%[c_ptr6]]\n"
-              "vmla.f16 d10, d4, d0       \n"
-              "vld1.16 {d3},   [%[c_ptr7]]\n"
-              "vmla.f16 d11, d5, d0       \n"
-              "vmla.f16 d12, d6, d0       \n"
-              "vmla.f16 d13, d7, d0       \n"
-              "vmla.f16 d14, d2, d0       \n"
-              "vmla.f16 d15, d3, d0       \n"
               "1:                                 \n"
               "cmp %[cnt], #1                     \n"
               "vld1.16 {d0-d1}, [%[a_ptr]]!       \n"
               "vld1.16 {d2},    [%[b_ptr]]        \n"
-              "vmov.32 q3, #0                     \n"
+              "vmov.u32 q3, #0                    \n"
               "blt 2f                             \n"
               "0:                                 \n"
               // unrool 0
@@ -3031,33 +2998,35 @@ void gemm_prepack_8x12(bool is_transB,
               "vld1.16 {d2},    [%[b_ptr]]        \n"
               "bne 0b                             \n"
               "2:                                 \n"
-              "cmp %[tail], #1                    \n"
-              "beq 3f                             \n"
+              "cmp %[tail], #16                   \n"
+              "blt 3f                             \n"
               // tail=2
               "add %[b_ptr], #4                   \n"
+              "sub %[tail], #16                   \n"
               "vmla.f16 d6,  d0,  d2[0]           \n"
               "vmla.f16 d7,  d1,  d2[1]           \n"
               "b 6f                               \n"
               "3:                                 \n"
               // tail = 1
+              "sub %[tail], #8                    \n"
               "vmla.f16 d6,  d0,  d2[0]           \n"
               "6:                                 \n"
-              "cmp    %[flag_act],   #1           \n"
+              "cmp    %[tail],   #1           \n"
               "vmov.u32 q0,  #0                   \n"
               "vadd.f16 d8,  d8,  d6              \n"
               "vadd.f16 d9,  d9,  d6              \n"
               "vadd.f16 d10, d10, d6              \n"
               "vadd.f16 d11, d11, d6              \n"
               "beq 4f                             \n"
-              "cmp    %[flag_act],   #0           \n"
+              "cmp    %[tail],   #0           \n"
               "vadd.f16 d12, d12, d7              \n"
               "vadd.f16 d13, d13, d7              \n"
               "vadd.f16 d14, d14, d7              \n"
               "vadd.f16 d15, d15, d7              \n"
               "beq 7f                             \n"
-              "cmp    %[flag_act],   #2           \n"
+              "cmp    %[tail],   #2           \n"
               "beq 5f                             \n"
-              "cmp    %[flag_act],   #2           \n"
+              "cmp    %[tail],   #3           \n"
               "beq 8f                             \n"
               // hardwsish
               "vldr  d2,  [%[valpha], #16]        \n"
@@ -3107,7 +3076,7 @@ void gemm_prepack_8x12(bool is_transB,
               "b 7f                               \n"
               // leakyRelu
               "8:                                 \n"
-              "vld1.f16  {d2},  [%[valpha]]       \n"
+              "vld1.16   {d2},  [%[valpha]]       \n"
               "vcge.f16  d4,  d8,  d0             \n"
               "vmul.f16  d6,  d8,  d2             \n"
               "vcge.f16  d5,  d9,  d0             \n"
@@ -3142,7 +3111,7 @@ void gemm_prepack_8x12(bool is_transB,
               "vadd.f16 d14, d14, d7              \n"
               "vadd.f16 d15, d15, d7              \n"
               "vmax.f16  d8,  d8,  d0             \n"
-              "vmax.f16  d9,  q9,  d0             \n"
+              "vmax.f16  d9,  d9,  d0             \n"
               "vmax.f16  d10, d10, d0             \n"
               "vmax.f16  d11, d11, d0             \n"
               "vmax.f16  d12, d12, d0             \n"
@@ -3154,7 +3123,7 @@ void gemm_prepack_8x12(bool is_transB,
               "5:                                 \n"
               "vld1.16   {d2}, [%[valpha]]        \n"
               "vmax.f16  d8,  d8,  d0             \n"
-              "vmax.f16  d9,  q9,  d0             \n"
+              "vmax.f16  d9,  d9,  d0             \n"
               "vmax.f16  d10, d10, d0             \n"
               "vmax.f16  d11, d11, d0             \n"
               "vmax.f16  d12, d12, d0             \n"
@@ -3162,7 +3131,7 @@ void gemm_prepack_8x12(bool is_transB,
               "vmax.f16  d14, d14, d0             \n"
               "vmax.f16  d15, d15, d0             \n"
               "vmin.f16  d8,  d8,  d2             \n"
-              "vmin.f16  d9,  q9,  d2             \n"
+              "vmin.f16  d9,  d9,  d2             \n"
               "vmin.f16  d10, d10, d2             \n"
               "vmin.f16  d11, d11, d2             \n"
               "vmin.f16  d12, d12, d2             \n"
@@ -3192,10 +3161,7 @@ void gemm_prepack_8x12(bool is_transB,
                 [c_ptr5] "+r"(c_ptr5),
                 [c_ptr6] "+r"(c_ptr6),
                 [c_ptr7] "+r"(c_ptr7)
-              : [has_beta] "r"(has_beta),
-                [vbias] "r"(bias_ptr),
-                [valpha] "r"(alpha_ptr),
-                [flag_act] "r"(flag_act)
+              : [valpha] "r"(alpha_ptr)
               : "cc","memory",
                 "q0","q1","q2","q3","q4","q5","q6","q7",
                 "q8","q9","q10","q11","q12","q13",
@@ -3209,72 +3175,34 @@ void gemm_prepack_8x12(bool is_transB,
           int k = k_pre;
           // clang-format off
           asm volatile(
-            "vld1.16 {d0-d1}, [%[vbias]]\n"
+            "vldr   d0, [%[valpha], #48]\n"
+            "vldr   d1, [%[valpha], #56]\n"
             "pld    [%[a_ptr]]         \n"
             "pld    [%[b_ptr]]         \n"
-            "vdup.f16 q8,  d0[0]       \n"
-            "vdup.f16 q9,  d0[1]       \n"
+            "vdup.16  q8,  d0[0]       \n"
+            "vdup.16  q9,  d0[1]       \n"
             "pld    [%[a_ptr], #64]    \n"
-            "vdup.f16 q10, d0[2]       \n"
-            "vdup.f16 q11, d0[3]       \n"
+            "vdup.16  q10, d0[2]       \n"
+            "vdup.16  q11, d0[3]       \n"
             "pld    [%[b_ptr], #64]    \n"
-            "vdup.f16 q12, d1[0]       \n"
-            "vdup.f16 q13, d1[1]       \n"
+            "vdup.16  q12, d1[0]       \n"
+            "vdup.16  q13, d1[1]       \n"
             "pld    [%[a_ptr], #128]   \n"
-            "vdup.f16 q14, d1[2]       \n"
-            "vdup.f16 q15, d1[3]       \n"
+            "vdup.16  q14, d1[2]       \n"
+            "vdup.16  q15, d1[3]       \n"
             "pld    [%[b_ptr], #128]   \n"
-            "vdup.f16 d8,  d0[0]       \n"
-            "vdup.f16 d9,  d0[1]       \n"
+            "vdup.16  d8,  d0[0]       \n"
+            "vdup.16  d9,  d0[1]       \n"
             "pld    [%[b_ptr], #192]   \n"
-            "vdup.f16 d10, d0[2]       \n"
-            "vdup.f16 d11, d0[3]       \n"
+            "vdup.16  d10, d0[2]       \n"
+            "vdup.16  d11, d0[3]       \n"
             "pld    [%[a_ptr], #192]   \n"
-            "cmp    %[has_beta], #1    \n"
-            "vdup.f16 d12, d1[0]       \n"
-            "vdup.f16 d13, d1[1]       \n"
+            "vdup.16  d12, d1[0]       \n"
+            "vdup.16  d13, d1[1]       \n"
             "pld    [%[b_ptr], #256]   \n"
-            "vdup.f16 d14, d1[2]       \n"
-            "vdup.f16 d15, d1[3]       \n"
-            "blt 1f                    \n"
-            // process beta
-            "vldr    d0,   [%[vbias], #16]\n"
-            "vldr    d1,   [%[vbias], #24]\n"
-            "vld1.16 {d2-d3},   [%[c_ptr0]]\n"
-            "vld1.16 {d4-d5},   [%[c_ptr1]]\n"
-            "vld1.16 {d6},      [%[c_ptr0], #16]\n"
-            "vld1.16 {d7},      [%[c_ptr1], #16]\n"
-            "vmla.f16 q8, q1, q0           \n"
-            "vld1.16 {d2-d3},   [%[c_ptr2]]\n"
-            "vmla.f16 q9, q2, q0           \n"
-            "vld1.16 {d4-d5},   [%[c_ptr3]]\n"
-            "vmla.f16 d8, d6, d0           \n"
-            "vld1.16 {d6},      [%[c_ptr2], #16]\n"
-            "vmla.f16 d9, d7, d0           \n"
-            "vld1.16 {d7},      [%[c_ptr3], #16]\n"
-            "vmla.f16 q10, q1, q0           \n"
-            "vld1.16 {d2-d3},   [%[c_ptr4]]\n"
-            "vmla.f16 q11, q2, q0           \n"
-            "vld1.16 {d4-d5},   [%[c_ptr5]]\n"
-            "vmla.f16 d10, d6, d0           \n"
-            "vld1.16 {d6},      [%[c_ptr4], #16]\n"
-            "vmla.f16 d11, d7, d0           \n"
-            "vld1.16 {d7},      [%[c_ptr5], #16]\n"
-            "vmla.f16 q12, q1, q0           \n"
-            "vld1.16 {d2-d3},   [%[c_ptr6]]\n"
-            "vmla.f16 q13, q2, q0           \n"
-            "vld1.16 {d4-d5},   [%[c_ptr7]]\n"
-            "vmla.f16 d12, d6, d0           \n"
-            "vld1.16 {d6},      [%[c_ptr6], #16]\n"
-            "vmla.f16 d13, d7, d0           \n"
-            "vld1.16 {d7},      [%[c_ptr7], #16]\n"
-            "vmla.f16 q14, q1, q0           \n"
-            "vmla.f16 q15, q2, q0           \n"
-            "vmla.f16 d14, d6, d0           \n"
-            "vmla.f16 d15, d7, d0           \n"
-
-            "1:                                 \n"
-            "cmp %[cnt], #1                     \n"
+            "cmp %[cnt], #1            \n"
+            "vdup.16  d14, d1[2]       \n"
+            "vdup.16  d15, d1[3]       \n"
             "vld1.16 {d0-d1}, [%[a_ptr]]!       \n"
             "vld1.16 {d2-d4}, [%[b_ptr]]!       \n"
             "blt 2f                             \n"
@@ -3324,8 +3252,8 @@ void gemm_prepack_8x12(bool is_transB,
             "vld1.16 {d4},    [%[b_ptr]]!       \n"
             "bne 0b                             \n"
             "2:                                 \n"
-            "cmp %[tail], #1                    \n"
-            "beq 3f                             \n"
+            "cmp %[tail], #16                   \n"
+            "blt 3f                             \n"
             // tail=2
             "vmla.f16 q8,  q1,  d0[0]           \n"
             "vmla.f16 q9,  q1,  d0[1]           \n"
@@ -3346,6 +3274,7 @@ void gemm_prepack_8x12(bool is_transB,
             "vmla.f16 d14, d4,  d1[2]           \n"
             "vmla.f16 d15, d4,  d1[3]           \n"
             "vld1.16 {d4},    [%[b_ptr]]!       \n"
+            "sub %[tail], #16                   \n"
             // unrool 1
             "vmla.f16 q8,  q1,  d6[0]           \n"
             "vmla.f16 q9,  q1,  d6[1]           \n"
@@ -3366,6 +3295,7 @@ void gemm_prepack_8x12(bool is_transB,
             "b 6f                               \n"
             "3:                                 \n"
             // tail = 1
+            "sub %[tail], #8                    \n"
             "vmla.f16 q8,  q1,  d0[0]           \n"
             "vmla.f16 q9,  q1,  d0[1]           \n"
             "vmla.f16 q10, q1,  d0[2]           \n"
@@ -3383,14 +3313,14 @@ void gemm_prepack_8x12(bool is_transB,
             "vmla.f16 d14, d4,  d1[2]           \n"
             "vmla.f16 d15, d4,  d1[3]           \n"
             "6:                                 \n"
-            "cmp    %[flag_act],   #1           \n"
+            "cmp    %[tail],   #1           \n"
             "vmov.u32 q0, #0                    \n"
             "beq 4f                             \n"
-            "cmp    %[flag_act],   #0           \n"
+            "cmp    %[tail],   #0           \n"
             "beq 7f                             \n"
-            "cmp    %[flag_act],   #2           \n"
+            "cmp    %[tail],   #2           \n"
             "beq 5f                             \n"
-            "cmp    %[flag_act],   #2           \n"
+            "cmp    %[tail],   #3           \n"
             "beq 8f                             \n"
             // hardwsish
             "vldr  d2,  [%[valpha], #16]        \n"
@@ -3512,7 +3442,7 @@ void gemm_prepack_8x12(bool is_transB,
             "b 7f                               \n"
             // leakyRelu
             "8:                                 \n"
-            "vld1.f16  {d2-d3},  [%[valpha]]    \n"
+            "vld1.16   {d2-d3},  [%[valpha]]    \n"
             "vcge.f16  q2, q8,  q0              \n"
             "vmul.f16  q3, q8,  q1              \n"
             "vbif      q8, q3,  q2              \n"
@@ -3574,7 +3504,7 @@ void gemm_prepack_8x12(bool is_transB,
             "vmax.f16  q14, q14, q0             \n"
             "vmax.f16  q15, q15, q0             \n"
             "vmax.f16  d8,  d8,  d0             \n"
-            "vmax.f16  d9,  q9,  d0             \n"
+            "vmax.f16  d9,  d9,  d0             \n"
             "vmax.f16  d10, d10, d0             \n"
             "vmax.f16  d11, d11, d0             \n"
             "vmax.f16  d12, d12, d0             \n"
@@ -3594,7 +3524,7 @@ void gemm_prepack_8x12(bool is_transB,
             "vmax.f16  q14, q14, q0             \n"
             "vmax.f16  q15, q15, q0             \n"
             "vmax.f16  d8,  d8,  d0             \n"
-            "vmax.f16  d9,  q9,  d0             \n"
+            "vmax.f16  d9,  d9,  d0             \n"
             "vmax.f16  d10, d10, d0             \n"
             "vmax.f16  d11, d11, d0             \n"
             "vmax.f16  d12, d12, d0             \n"
@@ -3610,7 +3540,7 @@ void gemm_prepack_8x12(bool is_transB,
             "vmin.f16  q14, q14, q1             \n"
             "vmin.f16  q15, q15, q1             \n"
             "vmin.f16  d8,  d8,  d2             \n"
-            "vmin.f16  d9,  q9,  d2             \n"
+            "vmin.f16  d9,  d9,  d2             \n"
             "vmin.f16  d10, d10, d2             \n"
             "vmin.f16  d11, d11, d2             \n"
             "vmin.f16  d12, d12, d2             \n"
@@ -3648,10 +3578,7 @@ void gemm_prepack_8x12(bool is_transB,
               [c_ptr5] "+r"(c_ptr5),
               [c_ptr6] "+r"(c_ptr6),
               [c_ptr7] "+r"(c_ptr7)
-            : [has_beta] "r"(has_beta),
-              [vbias] "r"(bias_ptr),
-              [valpha] "r"(alpha_ptr),
-              [flag_act] "r"(flag_act)
+            : [valpha] "r"(alpha_ptr)
             :  "cc","memory",
                 "q0","q1","q2","q3","q4","q5","q6","q7",
                 "q8","q9","q10","q11","q12","q13",
