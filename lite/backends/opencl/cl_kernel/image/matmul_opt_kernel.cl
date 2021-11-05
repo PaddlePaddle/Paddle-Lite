@@ -13,6 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include <cl_common.h>
+#ifdef ADRENO_HIGH
+#define LOC_MEM_SIZE 8
+#else
+#define LOC_MEM_SIZE 4
+#endif
 
 __kernel void matmul(__read_only image2d_t input,
                      __write_only image2d_t output,
@@ -26,7 +31,7 @@ __kernel void matmul(__read_only image2d_t input,
                      int n_blks) {
   int out_n = get_global_id(0);  // m
   int out_c = get_global_id(2);  // n
-  int2 tid = (int2)(get_local_id(2), get_local_id(1));
+  int3 tid = (int3)(get_local_id(2), get_local_id(1), get_local_id(0));
 
   CL_COMPUTE_DTYPE4 s = (CL_COMPUTE_DTYPE4)(0.0f);
   if (out_n >= M) return;
@@ -59,16 +64,16 @@ __kernel void matmul(__read_only image2d_t input,
 #endif
     }
   }
-  __local CL_COMPUTE_DTYPE4 temp[4][16];
-  temp[tid.y][tid.x] = s;
+  __local CL_COMPUTE_DTYPE4 temp[LOC_MEM_SIZE][4][16];
+  temp[tid.z][tid.y][tid.x] = s;
   barrier(CLK_LOCAL_MEM_FENCE);
 
   if (out_c >= n_blks) return;
 
   if (tid.y == 0) {
-    s += temp[1][tid.x];
-    s += temp[2][tid.x];
-    s += temp[3][tid.x];
+    s += temp[tid.z][1][tid.x];
+    s += temp[tid.z][2][tid.x];
+    s += temp[tid.z][3][tid.x];
 
     int2 output_pos0 = (int2)(out_c, out_n);
     CL_COMPUTE_DTYPE4 output0 = s;

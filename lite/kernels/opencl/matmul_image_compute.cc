@@ -185,6 +185,9 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
     if (!is_mali_ && x_dims.size() == 2 && y_dims.size() == 2 &&
         !transpose_x_) {
       build_options_ += " -DUSE_IMAGE_Y ";
+      if (device_version.find("Adreno(TM) 506") == std::string::npos) {
+        build_options_ += " -DADRENO_HIGH ";
+      }
       use_image_y_ = true;
       DDimLite trans_dims{{y_ext_dims[0] / 4, y_ext_dims[1] * 4}};
       CLImageConverterFolder converter;
