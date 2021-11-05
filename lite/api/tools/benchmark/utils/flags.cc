@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/api/tools/flags.h"
+#include "lite/api/tools/benchmark/utils/flags.h"
 
 namespace paddle {
 namespace lite_api {

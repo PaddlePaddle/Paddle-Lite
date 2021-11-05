@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/api/tools/benchmark.h"
+#include "lite/api/tools/benchmark/benchmark.h"
 #include <algorithm>
 #include <cstdio>
 #include <fstream>
@@ -224,9 +224,14 @@ std::vector<RESULT> PostProcess(
     cv::Mat img = cv::imread(image_files.at(cnt), cv::IMREAD_COLOR);
     cv::Mat output_image(img);
     for (int i = 0; i < results.size(); i++) {
+      auto text = lite::string_format(
+          "Top-%d, class_id: %d, class_name: %s, score: %.3f\n",
+          i + 1,
+          results[i].class_id,
+          results[i].class_name.c_str(),
+          results[i].score);
       cv::putText(output_image,
-                  "Top" + std::to_string(i + 1) + "." + results[i].class_name +
-                      ":" + std::to_string(results[i].score),
+                  text,
                   cv::Point2d(5, i * 18 + 20),
                   cv::FONT_HERSHEY_PLAIN,
                   1,
@@ -343,7 +348,9 @@ void Run(const std::string &model_file,
         lite::ReadLines(config.at("ground_truth_images_path"));
     image_files.reserve(image_labels.size());
     for (auto line : image_labels) {
-      line = "/data/local/tmp/zy/ILSVRC2012_1000_cls/" + line;
+      auto path = GetAbsPath(config.at("ground_truth_images_path"));
+      auto dir = path.substr(0, path.find_last_of("/") + 1);
+      line = dir + line;
       std::string image_file = line.substr(0, line.find(" "));
       std::string label_id = line.substr(line.find(" ") + 1, line.length());
       image_files.push_back(image_file);

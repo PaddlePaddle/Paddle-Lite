@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef LITE_API_TOOLS_FLAGS_H_
-#define LITE_API_TOOLS_FLAGS_H_
+#ifndef LITE_API_TOOLS_BENCHMARK_UTILS_FLAGS_H_
+#define LITE_API_TOOLS_BENCHMARK_UTILS_FLAGS_H_
 #include <gflags/gflags.h>
 #define GLOG_NO_ABBREVIATED_SEVERITIES  // msvc conflict logging with windows.h
 
@@ -45,8 +45,8 @@ static const char input_data_path_msg[] =
     "The input of model will be 1.0 if this option in not set.";
 static const char validation_set_msg[] =
     "Use validation images and lables as inputs. Only supports a minival "
-    "dataset of ILSVRC 2012 as inputs."
-    "Supported set: ILSVRC 2012";
+    "dataset of ILSVRC_2012 as inputs."
+    "Supported set: ILSVRC_2012";
 static const char ground_truth_images_path_msg[] =
     "The path to the directory containing ground truth images.";
 static const char ground_truth_labels_msg[] =
@@ -167,4 +167,4 @@ DECLARE_string(config_path);
 }  // namespace lite_api
 }  // namespace paddle
 
-#endif  // LITE_API_TOOLS_FLAGS_H_
+#endif  // LITE_API_TOOLS_BENCHMARK_UTILS_FLAGS_H_

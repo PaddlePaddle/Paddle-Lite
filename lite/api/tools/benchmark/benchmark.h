@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef LITE_API_TOOLS_BENCHMARK_H_
-#define LITE_API_TOOLS_BENCHMARK_H_
+#ifndef LITE_API_TOOLS_BENCHMARK_BENCHMARK_H_
+#define LITE_API_TOOLS_BENCHMARK_BENCHMARK_H_
 #if defined(__aarch64__) || defined(__arm__)
 #include <arm_neon.h>
 #endif
@@ -29,7 +29,7 @@
 #include <opencv2/opencv.hpp>
 #endif
 #include "lite/api/paddle_api.h"
-#include "lite/api/tools/flags.h"
+#include "lite/api/tools/benchmark/utils/flags.h"
 #include "lite/api/tools/opt_base.h"
 #include "lite/core/device_info.h"
 #include "lite/utils/log/cp_logging.h"
@@ -344,4 +344,4 @@ const std::string OutputOptModel(const std::string& opt_model_file) {
 }  // namespace lite_api
 }  // namespace paddle
 
-#endif  // LITE_API_TOOLS_BENCHMARK_H_
+#endif  // LITE_API_TOOLS_BENCHMARK_BENCHMARK_H_

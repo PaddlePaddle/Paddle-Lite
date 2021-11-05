@@ -242,7 +242,7 @@ if(NOT IOS AND NOT LITE_ON_TINY_PUBLISH)
         DEPS gflags
         CV_DEPS paddle_cv_arm)
 
-    lite_cc_binary(benchmark_bin SRCS tools/benchmark.cc tools/flags.cc tools/opt_base.cc
+    lite_cc_binary(benchmark_bin SRCS tools/benchmark/benchmark.cc tools/benchmark/utils/flags.cc tools/opt_base.cc
         DEPS gflags
         CV_DEPS paddle_cv_arm)
     if(ARM_TARGET_OS STREQUAL "android" AND LITE_USE_PRECOMPILED_OPENCV)
