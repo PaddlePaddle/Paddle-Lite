@@ -40,25 +40,13 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 settings.register_profile(
     "ci",
-    max_examples=10,
-    suppress_health_check=hypothesis.HealthCheck.all(),
-    deadline=None,
-    print_blob=True,
-    derandomize=True,
-    report_multiple_bugs=False)
-settings.register_profile(
-    "dev",
     max_examples=100,
     suppress_health_check=hypothesis.HealthCheck.all(),
     deadline=None,
     print_blob=True,
     derandomize=True,
     report_multiple_bugs=False)
-if float(os.getenv('TEST_NUM_PERCENT_CASES', default='1.0')) < 1:
-    settings.load_profile("ci")
-else:
-    settings.load_profile("dev")
-
+settings.load_profile("ci")
 
 class SkipReasons(enum.Enum):
     # Paddle not support, but paddlelite support, we need to add the feature.

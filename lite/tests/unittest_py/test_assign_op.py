@@ -69,7 +69,7 @@ class TestAssignOp(AutoScanTest):
     @given(
         in_shape=st.lists(
             st.integers(
-                min_value=1, max_value=8)))
+                min_value=1, max_value=8), max_size=2))
     def test(self, *args, **kwargs):
         self.add_skip_pass_case()
         self.run_test(quant=False, *args, **kwargs)
