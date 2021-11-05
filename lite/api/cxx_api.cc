@@ -421,6 +421,22 @@ lite::Tensor *Predictor::GetInputByName(const std::string &name) {
   }
 }
 
+// get output by name
+const lite::Tensor *Predictor::GetOutputByName(const std::string &name) {
+  auto element = std::find(output_names_.begin(), output_names_.end(), name);
+  if (element == output_names_.end()) {
+    LOG(ERROR) << "Model do not have output named with: [" << name
+               << "], model's outputs include:";
+    for (size_t i = 0; i < output_names_.size(); i++) {
+      LOG(ERROR) << "[" << output_names_[i] << "]";
+    }
+    return nullptr;
+  } else {
+    int position = std::distance(output_names_.begin(), element);
+    return GetOutput(position);
+  }
+}
+
 /////////////////////////////////////////////////////////////////////////
 // Name: CheckPaddleOpVersions
 // Author: DannyIsFunny (github)
