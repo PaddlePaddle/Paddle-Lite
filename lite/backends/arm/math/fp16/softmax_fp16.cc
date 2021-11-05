@@ -660,7 +660,7 @@ void softmax_inner1_small_axis_fp16(const float16_t* din,
                                     float16_t* dout,
                                     const int outer_size,
                                     const int axis_size) {
-  LITE_PARALLEL_BEGIN(c, tid, outer_size) {
+  LITE_PARALLEL_BEGIN(i, tid, outer_size) {
     const float16_t* din_ptr = din + i * axis_size;
     float16_t* dout_ptr = dout + i * axis_size;
     // get max

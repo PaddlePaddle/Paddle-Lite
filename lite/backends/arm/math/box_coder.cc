@@ -201,7 +201,7 @@ void decode_bbox_center_kernel(const int batch_num,
     }
     LITE_PARALLEL_END()
 
-    LITE_PARALLEL_COMMON_BEGIN(i, tid, cnt * 4, num_priors, 1) {
+    LITE_PARALLEL_COMMON_BEGIN(i, tid, num_priors, cnt * 4, 1) {
       int idx = i * 4;
       int var_idx = idx, prior_idx = idx;
       if (axis == 1) {
