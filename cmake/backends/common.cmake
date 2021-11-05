@@ -59,8 +59,8 @@ endif()
 include(backends/x86)
 
 # Add dependencies
-include(generic)            # simplify cmake module
-include(configure)          # add paddle env configuration
+include(generic)                # simplify cmake module
+include(configure)              # add paddle env configuration
 if(WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
   message(STATUS "Building the mobile framework")
   include(postproject)
@@ -71,22 +71,20 @@ if(WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     include(external/protobuf)  # download, build, install protobuf
   endif()
 else()
-  include(cudnn)
   include(coveralls)
-  include(generic)              # simplify cmake module
   include(ccache)               # set ccache for compilation
   include(util)                 # set unittest and link libs
   include(version)              # set PADDLE_VERSION
+  include(external/gflags)      # download, build, install gflags
+  include(external/glog)        # download, build, install glog
+  include(external/gtest)       # download, build, install gtest
+  include(external/protobuf)    # download, build, install protobuf
+  include(external/openblas)    # download, build, install openblas
+  include(external/eigen)       # download eigen3
+  include(cudnn)
   if(NOT APPLE)
     include(flags)
   endif()
-  include(external/gflags)    # download, build, install gflags
-  include(external/glog)      # download, build, install glog
-  include(external/gtest)     # download, build, install gtest
-  include(external/protobuf)  # download, build, install protobuf
-  include(external/openblas)  # download, build, install openblas
-  include(external/eigen)     # download eigen3
-  include(cudnn)
   set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
   set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
 endif()
