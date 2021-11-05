@@ -25,19 +25,27 @@ if(LITE_WITH_INTEL_FPGA)
 endif()
 
 if(LITE_WITH_IMAGINATION_NNA)
-	include(backends/imagination_nna)
+  include(backends/imagination_nna)
+endif()
+
+if(LITE_WITH_NPU)
+  include(backends/npu)
 endif()
 
 if(LITE_WITH_XPU)
   include(backends/xpu)
 endif()
 
-if(LITE_WITH_MLU)
-  include(mlu)
+if(LITE_WITH_APU)
+  include(backends/apu)
 endif()
 
 if(LITE_WITH_HUAWEI_ASCEND_NPU)
   include(backends/huawei_ascend_npu)
+endif()
+
+if(LITE_WITH_MLU)
+  include(mlu)
 endif()
 
 if(LITE_WITH_CUDA)
@@ -46,14 +54,6 @@ endif()
 
 if(LITE_WITH_BM)
   include(bm)
-endif()
-
-if(LITE_WITH_NPU)
-  include(backends/npu)
-endif()
-
-if(LITE_WITH_APU)
-  include(backends/apu)
 endif()
 
 include(backends/x86)
@@ -72,9 +72,6 @@ if(WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
   endif()
 else()
   include(coveralls)
-  include(ccache)               # set ccache for compilation
-  include(util)                 # set unittest and link libs
-  include(version)              # set PADDLE_VERSION
   include(external/gflags)      # download, build, install gflags
   include(external/glog)        # download, build, install glog
   include(external/gtest)       # download, build, install gtest
@@ -82,6 +79,9 @@ else()
   include(external/openblas)    # download, build, install openblas
   include(external/eigen)       # download eigen3
   include(cudnn)
+  include(ccache)               # set ccache for compilation
+  include(util)                 # set unittest and link libs
+  include(version)              # set PADDLE_VERSION
   if(NOT APPLE)
     include(flags)
   endif()
