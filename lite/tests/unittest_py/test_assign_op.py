@@ -63,7 +63,7 @@ class TestAssignOp(AutoScanTest):
         config = self.create_config(valid_places=[Place(TargetType.Host, PrecisionType.FP32)])
         yield config, (1e-5, 1e-5)
 
-    def add_skip_case(self):
+    def add_skip_pass_case(self):
         pass
 
     @given(
