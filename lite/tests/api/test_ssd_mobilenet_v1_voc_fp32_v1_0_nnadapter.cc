@@ -18,21 +18,17 @@
 #include "lite/api/paddle_api.h"
 #include "lite/api/test/lite_api_test_helper.h"
 #include "lite/api/test/test_helper.h"
-#include "lite/tests/api/PASCALVOC2012_utility.h"
 #include "lite/tests/api/detection_model_utility.h"
 
 DEFINE_string(data_dir, "", "data dir");
-DEFINE_int32(iteration, 1, "iteration times to run");
-DEFINE_int32(batch, 1, "batch of image");
-DEFINE_int32(channel, 3, "image channel");
-DEFINE_int32(height, 300, "image height");
-DEFINE_int32(width, 300, "image width");
+DEFINE_string(data_type, "voc", "dataset type");
 DEFINE_int32(model_version, 1, "model version");
 
 namespace paddle {
 namespace lite {
 
-TEST(SSDMobileNetV1VOC_V1, test_ssd_mobilenet_v1_voc_fp32_v1_0_nnadapter) {
+TEST(ssd_mobilenet_v1_voc_fp32_v1_0,
+     test_ssd_mobilenet_v1_voc_fp32_v1_0_nnadapter) {
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;
@@ -56,17 +52,13 @@ TEST(SSDMobileNetV1VOC_V1, test_ssd_mobilenet_v1_voc_fp32_v1_0_nnadapter) {
   return;
 #endif
 
-  TestSSDDetectionModel(FLAGS_model_dir,
-                        FLAGS_data_dir,
-                        FLAGS_batch,
-                        FLAGS_channel,
-                        FLAGS_height,
-                        FLAGS_width,
-                        FLAGS_iteration,
-                        FLAGS_model_version,
-                        nnadapter_device_names,
-                        nnadapter_context_properties,
-                        valid_places);
+  TestDetectionModel(FLAGS_model_dir,
+                     FLAGS_data_dir,
+                     FLAGS_data_type,
+                     FLAGS_model_version,
+                     nnadapter_device_names,
+                     nnadapter_context_properties,
+                     valid_places);
 }
 
 }  // namespace lite

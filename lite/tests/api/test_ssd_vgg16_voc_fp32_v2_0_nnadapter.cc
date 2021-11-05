@@ -22,17 +22,13 @@
 #include "lite/tests/api/detection_model_utility.h"
 
 DEFINE_string(data_dir, "", "data dir");
-DEFINE_int32(iteration, 1, "iteration times to run");
-DEFINE_int32(batch, 1, "batch of image");
-DEFINE_int32(channel, 3, "image channel");
-DEFINE_int32(height, 300, "image height");
-DEFINE_int32(width, 300, "image width");
+DEFINE_string(data_type, "voc", "dataset type");
 DEFINE_int32(model_version, 2, "model version");
 
 namespace paddle {
 namespace lite {
 
-TEST(SSD_VGG16_VOC_V2, test_ssd_vgg16_voc_fp32_v2_0_nnadapter) {
+TEST(ssd_vgg16_voc_fp32_v2_0, test_ssd_vgg16_voc_fp32_v2_0_nnadapter) {
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;
@@ -54,17 +50,13 @@ TEST(SSD_VGG16_VOC_V2, test_ssd_vgg16_voc_fp32_v2_0_nnadapter) {
   return;
 #endif
 
-  TestSSDDetectionModel(FLAGS_model_dir,
-                        FLAGS_data_dir,
-                        FLAGS_batch,
-                        FLAGS_channel,
-                        FLAGS_height,
-                        FLAGS_width,
-                        FLAGS_iteration,
-                        FLAGS_model_version,
-                        nnadapter_device_names,
-                        nnadapter_context_properties,
-                        valid_places);
+  TestDetectionModel(FLAGS_model_dir,
+                     FLAGS_data_dir,
+                     FLAGS_data_type,
+                     FLAGS_model_version,
+                     nnadapter_device_names,
+                     nnadapter_context_properties,
+                     valid_places);
 }
 
 }  // namespace lite

@@ -21,14 +21,13 @@
 #include "lite/tests/api/detection_model_utility.h"
 
 DEFINE_string(data_dir, "", "data dir");
-DEFINE_string(data_type, "voc", "dataset type");
-DEFINE_int32(model_version, 2, "model version");
+DEFINE_string(data_type, "coco", "dataset type");
+DEFINE_int32(model_version, 1, "model version");
 
 namespace paddle {
 namespace lite {
 
-TEST(ssd_mobilenet_v1_voc_fp32_v2_0,
-     test_ssd_mobilenet_v1_voc_fp32_v2_0_nnadapter) {
+TEST(yolov4_cspdarknet_fp32_v2_0, test_yolov4_cspdarknet_fp32_v2_0_nnadapter) {
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;
