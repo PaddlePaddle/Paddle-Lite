@@ -104,6 +104,11 @@ struct PoolMetalParam {
 
 struct MulMetalParam {};
 
+struct MatmulMetalParam {
+    bool transposeX;
+    bool transposeY;
+};
+
 struct FCMetalParam {
     int N;
     int K;
