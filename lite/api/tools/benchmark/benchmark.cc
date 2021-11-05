@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/api/tools/benchmark.h"
+#include "lite/api/tools/benchmark/benchmark.h"
 #include <algorithm>
 #include <cstdio>
 #include <fstream>
