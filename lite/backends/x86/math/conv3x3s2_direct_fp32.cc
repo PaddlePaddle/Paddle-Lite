@@ -594,18 +594,22 @@ void conv_direct_3x3s2_tranpose_out(int bs,
             __m128 voffset = _mm_set1_ps(act_param.hard_swish_offset);
             __m128 vscale = _mm_set1_ps(1.0 / act_param.hard_swish_scale);
             __m128 vthreshold = _mm_set1_ps(act_param.hard_swish_threshold);
-             row0 = _mm_mul_ps(_mm_min_ps(vthreshold, _mm_max_ps(
-                    _mm_add_ps(row0, voffset), vzero)),
-                    _mm_mul_ps(row0, vscale));
-             row1 = _mm_mul_ps(_mm_min_ps(vthreshold, _mm_max_ps(
-                    _mm_add_ps(row1, voffset), vzero)),
-                    _mm_mul_ps(row1, vscale));
-             row2 = _mm_mul_ps(_mm_min_ps(vthreshold, _mm_max_ps(
-                    _mm_add_ps(row2, voffset), vzero)),
-                    _mm_mul_ps(row2, vscale));
-             row3 = _mm_mul_ps(_mm_min_ps(vthreshold, _mm_max_ps(
-                    _mm_add_ps(row3, voffset), vzero)),
-                    _mm_mul_ps(row3, vscale));
+            row0 = _mm_mul_ps(
+                _mm_min_ps(vthreshold,
+                           _mm_max_ps(_mm_add_ps(row0, voffset), vzero)),
+                _mm_mul_ps(row0, vscale));
+            row1 = _mm_mul_ps(
+                _mm_min_ps(vthreshold,
+                           _mm_max_ps(_mm_add_ps(row1, voffset), vzero)),
+                _mm_mul_ps(row1, vscale));
+            row2 = _mm_mul_ps(
+                _mm_min_ps(vthreshold,
+                           _mm_max_ps(_mm_add_ps(row2, voffset), vzero)),
+                _mm_mul_ps(row2, vscale));
+            row3 = _mm_mul_ps(
+                _mm_min_ps(vthreshold,
+                           _mm_max_ps(_mm_add_ps(row3, voffset), vzero)),
+                _mm_mul_ps(row3, vscale));
 #endif
           } else if (active_type == lite_api::ActivationType::kIndentity) {
           } else {
@@ -689,7 +693,7 @@ void conv_direct_3x3s2_tranpose_out(int bs,
                 _mm_mul_ps(row, _mm_set1_ps(1.0 / act_param.hard_swish_scale));
             __m128 val = _mm_min_ps(_mm_set1_ps(act_param.hard_swish_threshold),
                                     _mm_max_ps(val_offset, _mm_setzero_ps()));
-                row = _mm_mul_ps(val, val_scale);
+            row = _mm_mul_ps(val, val_scale);
 
 #endif
           } else if (active_type == lite_api::ActivationType::kIndentity) {
