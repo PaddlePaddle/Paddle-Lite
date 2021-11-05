@@ -16,9 +16,9 @@
 #include <random>
 #include "lite/backends/opencl/target_wrapper.h"
 #include "lite/core/op_registry.h"
+#include "lite/core/parallel_defines.h"
 #include "lite/core/tensor.h"
 #include "lite/kernels/opencl/image_helper.h"
-#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
