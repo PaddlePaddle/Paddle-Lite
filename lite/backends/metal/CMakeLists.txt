@@ -11,6 +11,7 @@ FILE(GLOB LITE_METAL_KERNELS_SRC ${CMAKE_SOURCE_DIR}/lite/backends/metal/metal_k
 IF (SDK_NAME STREQUAL "iphoneos")
     #Defined by iOS toolchain
     SET(SDK_NAME "iphoneos")
+    SET(METAL_STD_OPTION "-std=ios-metal1.1")
     SET(TARGET_OPTION "-mios-version-min=${DEPLOYMENT_TARGET}")
 ELSE ()
     SET(SDK_NAME "macosx")
@@ -40,6 +41,7 @@ lite_cc_library(metal_target_wrapper SRCS
         mps_conv_datasource.m
         target_wrapper.mm
         )
+
 
 target_link_libraries(metal_target_wrapper ${METAL_LIBRARY} ${MPS_LIBRARY} ${FOUNDATION_LIBRARY})
 

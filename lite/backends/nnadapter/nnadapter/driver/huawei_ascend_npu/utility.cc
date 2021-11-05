@@ -386,10 +386,16 @@ ge::DataType ConvertToGEPrecision(
     case NNADAPTER_BOOL8:
       return ge::DT_BOOL;
     case NNADAPTER_INT8:
+    case NNADAPTER_QUANT_INT8_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL:
       return ge::DT_INT8;
     case NNADAPTER_INT16:
+    case NNADAPTER_QUANT_INT16_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT16_SYMM_PER_CHANNEL:
       return ge::DT_INT16;
     case NNADAPTER_INT32:
+    case NNADAPTER_QUANT_INT32_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL:
       return ge::DT_INT32;
     case NNADAPTER_INT64:
       return ge::DT_INT64;

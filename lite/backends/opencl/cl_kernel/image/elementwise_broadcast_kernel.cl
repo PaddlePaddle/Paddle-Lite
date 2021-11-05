@@ -63,19 +63,19 @@ __kernel void broadcast_elementwise_common(
     in0 = READ_IMG_TYPE(
         CL_DTYPE_CHAR, input_x, SAMPLER, (int2)(cur_index.x * 4, cur_index.y));
 
-    if (cur_index.x * 4 + 1 < input_nhwc4.w * 4) {
+    if (cur_index.x * 4 + 1 < bias_width) {
       in1 = READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_x,
                           SAMPLER,
                           (int2)(cur_index.x * 4 + 1, cur_index.y));
     }
-    if (cur_index.x * 4 + 2 < input_nhwc4.w * 4) {
+    if (cur_index.x * 4 + 2 < bias_width) {
       in2 = READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_x,
                           SAMPLER,
                           (int2)(cur_index.x * 4 + 2, cur_index.y));
     }
-    if (cur_index.x * 4 + 3 < input_nhwc4.w * 4) {
+    if (cur_index.x * 4 + 3 < bias_width) {
       in3 = READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_x,
                           SAMPLER,
@@ -100,19 +100,19 @@ __kernel void broadcast_elementwise_common(
     in0 = READ_IMG_TYPE(
         CL_DTYPE_CHAR, input_x, SAMPLER, (int2)(cur_index.y, cur_index.x * 4));
 
-    if (cur_index.x * 4 + 1 < input_nhwc4.z * input_nhwc4.w * 4) {
+    if (cur_index.x * 4 + 1 < bias_width) {
       in1 = READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_x,
                           SAMPLER,
                           (int2)(cur_index.y, cur_index.x * 4 + 1));
     }
-    if (cur_index.x * 4 + 2 < input_nhwc4.z * input_nhwc4.w * 4) {
+    if (cur_index.x * 4 + 2 < bias_width) {
       in2 = READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_x,
                           SAMPLER,
                           (int2)(cur_index.y, cur_index.x * 4 + 2));
     }
-    if (cur_index.x * 4 + 3 < input_nhwc4.z * input_nhwc4.w * 4) {
+    if (cur_index.x * 4 + 3 < bias_width) {
       in3 = READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_x,
                           SAMPLER,
@@ -140,19 +140,19 @@ __kernel void broadcast_elementwise_common(
                         SAMPLER,
                         (int2)(tmp_c4 * input_nhwc4.y + tmp_w, tmp_h));
 
-    if (cur_index.x + 1 < input_nhwc4.x * input_nhwc4.y) {
+    if (tmp_h + 1 < bias_width) {
       in1 = READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_x,
                           SAMPLER,
                           (int2)(tmp_c4 * input_nhwc4.y + tmp_w, tmp_h + 1));
     }
-    if (cur_index.x + 2 < input_nhwc4.x * input_nhwc4.y) {
+    if (tmp_h + 2 < bias_width) {
       in2 = READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_x,
                           SAMPLER,
                           (int2)(tmp_c4 * input_nhwc4.y + tmp_w, tmp_h + 2));
     }
-    if (cur_index.x + 3 < input_nhwc4.x * input_nhwc4.y) {
+    if (tmp_h + 3 < bias_width) {
       in3 = READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_x,
                           SAMPLER,
@@ -235,19 +235,19 @@ __kernel void broadcast_elementwise_common(
     in0 = READ_IMG_TYPE(
         CL_DTYPE_CHAR, input_y, SAMPLER, (int2)(cur_index.y, cur_index.x * 4));
 
-    if (cur_index.x * 4 + 1 < bias_nhwc4.z * bias_nhwc4.w * 4) {
+    if (cur_index.x * 4 + 1 < bias_width) {
       in1 = READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_y,
                           SAMPLER,
                           (int2)(cur_index.y, cur_index.x * 4 + 1));
     }
-    if (cur_index.x * 4 + 2 < bias_nhwc4.z * bias_nhwc4.w * 4) {
+    if (cur_index.x * 4 + 2 < bias_width) {
       in2 = READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_y,
                           SAMPLER,
                           (int2)(cur_index.y, cur_index.x * 4 + 2));
     }
-    if (cur_index.x * 4 + 3 < bias_nhwc4.z * bias_nhwc4.w * 4) {
+    if (cur_index.x * 4 + 3 < bias_width) {
       in3 = READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_y,
                           SAMPLER,
@@ -275,19 +275,19 @@ __kernel void broadcast_elementwise_common(
                         SAMPLER,
                         (int2)(tmp_c4 * bias_nhwc4.y + tmp_w, tmp_h));
 
-    if (cur_index.x + 1 < bias_nhwc4.x * bias_nhwc4.y) {
+    if (tmp_h + 1 < bias_width) {
       in1 = READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_y,
                           SAMPLER,
                           (int2)(tmp_c4 * bias_nhwc4.y + tmp_w, tmp_h + 1));
     }
-    if (cur_index.x + 2 < bias_nhwc4.x * bias_nhwc4.y) {
+    if (tmp_h + 2 < bias_width) {
       in2 = READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_y,
                           SAMPLER,
                           (int2)(tmp_c4 * bias_nhwc4.y + tmp_w, tmp_h + 2));
     }
-    if (cur_index.x + 3 < bias_nhwc4.x * bias_nhwc4.y) {
+    if (tmp_h + 3 < bias_width) {
       in3 = READ_IMG_TYPE(CL_DTYPE_CHAR,
                           input_y,
                           SAMPLER,

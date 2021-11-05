@@ -426,6 +426,7 @@ void transpose_mat(const lite_api::float16_t* din,
         *data_out_ptr++ = *din5;
         *data_out_ptr++ = *din6;
         *data_out_ptr++ = *din7;
+        ptr_din_row++;
       }
     }
 #ifdef __aarch64__

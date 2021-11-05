@@ -16,7 +16,7 @@ Benchmark 工具的详细功能包括但不限于：
 ## 适用场景
 Benchmark 工具可方便快捷地评测给定模型在如下硬件上运行时的性能：
 - 安卓系统下的 ARM CPU / GPU / NNAdapter
-- Linux 系统下的 X86 CPU / ARM CPU / ARM GPU / NNAdapter
+- Linux 系统下的 x86 CPU / ARM CPU / ARM GPU / NNAdapter
 - macOS 系统下的 CPU / GPU
 
 备注：本工具正在支持对运行在 M1 芯片上的模型进行性能测试
@@ -32,7 +32,7 @@ Benchmark 工具可方便快捷地评测给定模型在如下硬件上运行时�
 
 | 参数 | 说明 | 可选值 | 默认值 |
 | :-- | :-- | :-- | :-- |
-| arch                  | 目标 ARM 架构    |  armv7 / armv8   |  armv8   |
+| arch                  | 目标 ARM 架构    |  armv7hf / armv7 / armv8   |  armv8   |
 | toolchain             | 工具链           |  gcc / clang     |  gcc     |
 | with_profile          | 逐层时间 profile |  ON / OFF        |  OFF     |
 | with_precision_profile| 逐层精度 profile |  ON / OFF        |  OFF     |
@@ -130,7 +130,7 @@ avg   = 32.723
 编译完成后，会生成`build.lite.*./lite/api/benchmark_bin`二进制文件。
 
 ### 运行
-需要将如下文件通过`scp`或其他方式上传至 arm linux 设备：
+需要将如下文件通过`scp`或其他方式上传至 ARM Linux 设备：
 - Paddle 文件（combined 或 uncombined 格式均可）或已经`opt`工具离线优化后的`.nb`文件
 - 二进制文件`benchmark_bin`
 
@@ -140,11 +140,11 @@ avg   = 32.723
 wget https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/MobileNetV1.tar.gz
 tar zxvf MobileNetV1.tar.gz
 
-# 上传文件到 armlinux 设备
+# 上传文件到 ARM Linux 设备
 
 ```
 
-然后通过`ssh`登录到 armlinux 设备，执行：
+然后通过`ssh`登录到 ARM Linux 设备，执行：
 ```shell
 # 性能测试
 cd /path/to/benchmark_bin; \
@@ -389,114 +389,204 @@ adb shell "cd /data/local/tmp/benchmark;
     --opencl_tuned_file=MobileNetV1_tuned.bin"
 ```
 
-#### 在 NNAdapter 上运行模型
-NNAdapter 已支持的新硬件列表如下：
-- Huawei Kirin NPU
-- Huawei Ascend NPU
-- Rockchip NPU
-- Imagination NNA
-- Mediatek APU
-- Amlogic NPU
+### 在 NNAdapter 上运行模型
+在 NNAdapter 上运行模型，需配置三个重要参数：
+- `--backend`：设置模型运行时的后端，支持 NNAdapter 与 x86、ARM 组合进行异构计算
+- `--nnadapter_device_names`：设置 NNAdapter 的实际新硬件后端
+- `--nnadapter_context_properties`：设置新硬件硬件资源（目前仅在 Huawei Ascend NPU 上使用）
 
-您可以查阅 [NNAdapter 算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/lite/kernels/nnadapter/converter/all.h)获得各算子在不同新硬件上的最新支持信息。
+#### 运行前的数据准备
+##### 步骤 1：编译 benchmark_bin
+- Huawei Kirin NPU / Mediatek NPU / Amlogic NPU(S905D3 Android 版本) 请参考 『在 Android 上运行性能测试』进行编译。
+- Huawei Ascend NPU（arm host） / Rockchip NPU / Imagination NNA / Amlogic NPU(C308X 或 A311D) 请参考 『在 ARM Linux 上运行性能测试』进行编译。
+- Huawei Ascend NPU（x86 host）请参考『在 Linux 上运行性能测试』进行编译。
 
-参考 NNAdapter 算子支持列表，当模型能够全部运行在某种新硬件上时，实际后端只有 NNAdapter 一种；当模型部分算子需要运行在 x86 cpu 或 arm cpu 上时，实际后端为包含 NNAdapter 和 cpu 在内的多种硬件（异构计算）。
+编译完成后，会生成`build.lite.*./lite/api/benchmark_bin`二进制文件。
 
-##### NNAdapter 运行时库及新硬件 Hal 库编译
-###### nnadapter.so
-- Huawei Kirin NPU / Mediatek NPU 请参考 『在 Android 上运行性能测试』编译预测库。
-— Huawei Ascend NPU（arm host） / Rockchip NPU / Imagination NNA / Amlogic NPU 请参考 『在 ARMLinux 上运行性能测试』编译预测库。
-- Huawei Ascend NPU（x86 host）请参考『在 Linux 上运行性能测试』编译预测库。
-- 新硬件所需的 DDK 可在 [Paddle Lite 通用示例程序](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)中获取。
+##### 步骤 2：编译 NNAdapter 运行时库与 NNAdapter Device HAL 库
+请参考下表编译指南，编译 NNAdapter 运行时库及 NNAdapter Device HAL 库
 
-###### driver hal 库
-请参考 [Paddle Lite官方文档](https://paddle-lite.readthedocs.io/zh/develop/index.html)编译新硬件 hal 库。
+|No.| 新硬件名称 | Device HAL 库名称|编译指南 |
+|---|---|---|---|
+|1|Huawei Kirin NPU|libhuawei_kirin_npu.so| [点击进入](https://paddle-lite.readthedocs.io/zh/develop/demo_guides/huawei_kirin_npu.html) |
+|2|Huawei Ascend NPU|libhuawei_ascend_npu.so| [点击进入](https://paddle-lite.readthedocs.io/zh/develop/demo_guides/huawei_ascend_npu.html) |
+|3|Rockchip NPU|librockchip_npu.so| [点击进入](https://paddle-lite.readthedocs.io/zh/develop/demo_guides/rockchip_npu.html) |
+|4|Imagination NNA|libimagination_nna.so| [点击进入](https://paddle-lite.readthedocs.io/zh/develop/demo_guides/imagination_nna.html) |
+|5|Mediatek APU|libmediatek_apu.so| [点击进入](https://paddle-lite.readthedocs.io/zh/develop/demo_guides/mediatek_apu.html) |
+|6|Amlogic NPU|libamlogic_npu.so| [点击进入](https://paddle-lite.readthedocs.io/zh/develop/demo_guides/amlogic_npu.html)|
 
-##### 在 Huawei Kirin NPU 上运行模型
+编译完成后，NNAdapter 运行时库和 Device HAL 库将会生成在`build.lite*/inference_lite_lib*/cxx/lib/`目录下。
+
+##### 步骤 3：获取新硬件 DDK
+请下载 [Paddle Lite 通用示例程序](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz)，并参照下表路径，获取新硬件所需的 DDK。
+
+|No.| 新硬件名称 | DDK 路径 |
+|---|---|---|
+|1|Huawei Kirin NPU| PaddleLite-generic-demo/libs/PaddleLite/android/arm64-v8a/lib/huawei_kirin_npu<br>PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/huawei_kirin_npu |
+|2|Huawei Ascend NPU| PaddleLite-generic-demo/libs/PaddleLite/linux/amd64/lib/huawei_ascend_npu<br>PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/huawei_ascend_npu |
+|3|Rockchip NPU| PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/rockchip_npu<br>PaddleLite-generic-demo/libs/PaddleLite/linux/armhf/lib/rockchip_npu |
+|4|Imagination NNA| PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/imagination_nna |
+|5|Mediatek APU| PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/mediatek_apu |
+|6|Amlogic NPU| PaddleLite-generic-demo/libs/PaddleLite/linux/arm64/lib/amlogic_npu<br>PaddleLite-generic-demo/libs/PaddleLite/android/armeabi-v7a/lib/amlogic_npu|
+
+##### 步骤 4：拷贝数据到新硬件设备
+将 `benchmark_bin` 及所需动态库全部拷入新硬件设备后，即可开始运行模型并获得性能数据。
+- 对于 Android 设备，我们建议您将全部数据放在`/data/local/tmp/benchmark`目录下
+- 对于 Linux 设备，我们建议您将全部数据放在`~/benchmark`目录下
+
+为方便后续命令的表示，我们做以下约定：
+- 用户已在构建机器的`~/benchmark`路径下归档好包含 `benchmark_bin`、`NNAdapter 运行时库`、`NNAdapter Device HAL 库`、`新硬件 DDK`、`Paddle 模型文件`在内的全部数据。
+
+#### 在 Huawei Kirin NPU 上运行模型
 ```shell
-拷贝 HiAi DDK、benchmark_bin、nnadapter.so、模型文件到设备目录`/data/local/tmp/benchmark`
+# 拷贝 benchmark 文件夹到新硬件
+adb shell "rm -rf /data/local/tmp/benchmark"
+adb shell "mkdir /data/local/tmp/benchmark"
+adb push ~/benchmark/* /data/local/tmp/benchmark
+# 设置环境变量并运行模型
 adb shell "cd /data/local/tmp/benchmark;
-  export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH;
-  ./benchmark_bin \
-    --model_file=MobileNetV1/inference.pdmodel \
-    --param_file=MobileNetV1/inference.pdiparams \
-    --input_shape=1,3,224,224 \
-    --warmup=10 \
-    --repeats=20 \
-    --backend=nnadapter,arm \
-    --nnadapter_device_names=huawei_kirin_npu"
+export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH;
+./benchmark_bin \
+  --model_file=MobileNetV1/inference.pdmodel \
+  --param_file=MobileNetV1/inference.pdiparams \
+  --input_shape=1,3,224,224 \
+  --warmup=10 \
+  --repeats=20 \
+  --backend=nnadapter,arm \
+  --nnadapter_device_names=huawei_kirin_npu"
 ```
 
-##### 在 Huawei Ascend NPU 上运行模型
+#### 在 Huawei Ascend NPU 上运行模型
 ```shell
-# Host 侧为 x86 cpu 时
-拷贝 Ascend DDK、benchmark_bin、nnadapter.so、模型文件到设备目录`WORKSPACE`
-export LD_LIBRARY_PATH=$WORKSPACE:$LD_LIBRARY_PATH
-  ./benchmark_bin \
-    --model_file=MobileNetV1/inference.pdmodel \
-    --param_file=MobileNetV1/inference.pdiparams \
-    --input_shape=1,3,224,224 \
-    --warmup=10 \
-    --repeats=20 \
-    --backend=nnadapter,x86 \
-    --nnadapter_device_names=huawei_ascend_npu \
-    --nnadapter_context_properties="HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0"
+# Host 侧为 x86 CPU 时
+# 拷贝 benchmark 文件夹到新硬件
+ssh name@ip "rm -rf ~/benchmark"
+scp -r ~/benchmark name@ip:~
+ssh name@ip
+cd ~/benchmark
+# 设置环境变量
+export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH
+# 运行模型
+./benchmark_bin \
+  --model_file=MobileNetV1/inference.pdmodel \
+  --param_file=MobileNetV1/inference.pdiparams \
+  --input_shape=1,3,224,224 \
+  --warmup=10 \
+  --repeats=20 \
+  --backend=nnadapter,x86 \
+  --nnadapter_device_names=huawei_ascend_npu \
+  --nnadapter_context_properties="HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0"
 
-# Host 侧为 arm cpu 时
-拷贝 Ascend DDK、benchmark_bin、nnadapter.so、模型文件到设备目录`WORKSPACE`
-export LD_LIBRARY_PATH=$WORKSPACE:$LD_LIBRARY_PATH
-  ./benchmark_bin \
-    --model_file=MobileNetV1/inference.pdmodel \
-    --param_file=MobileNetV1/inference.pdiparams \
-    --input_shape=1,3,224,224 \
-    --warmup=10 \
-    --repeats=20 \
-    --backend=nnadapter,arm \
-    --nnadapter_device_names=huawei_ascend_npu \
-    --nnadapter_context_properties="HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0"
+# Host 侧为 ARM CPU 时
+# 拷贝 benchmark 文件夹到新硬件
+ssh name@ip "rm -rf ~/benchmark"
+scp -r ~/benchmark name@ip:~
+ssh name@ip
+cd ~/benchmark
+# 设置环境变量
+export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH
+# 运行模型
+./benchmark_bin \
+  --model_file=MobileNetV1/inference.pdmodel \
+  --param_file=MobileNetV1/inference.pdiparams \
+  --input_shape=1,3,224,224 \
+  --warmup=10 \
+  --repeats=20 \
+  --backend=nnadapter,arm \
+  --nnadapter_device_names=huawei_ascend_npu \
+  --nnadapter_context_properties="HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0"
 ```
 
-##### 在 Rockchip NPU 上运行模型
+#### 在 Rockchip NPU 上运行模型
 ```shell
-拷贝 Rockchip npu DDK、benchmark_bin、nnadapter.so、模型文件到设备目录`WORKSPACE`
-export LD_LIBRARY_PATH=$WORKSPACE:$LD_LIBRARY_PATH
-  ./benchmark_bin \
-    --model_file=MobileNetV1/inference.pdmodel \
-    --param_file=MobileNetV1/inference.pdiparams \
-    --input_shape=1,3,224,224 \
-    --warmup=10 \
-    --repeats=20 \
-    --backend=nnadapter,arm \
-    --nnadapter_device_names=rockchip_npu
+# 拷贝 benchmark 文件夹到新硬件
+ssh name@ip "rm -rf ~/benchmark"
+scp -r ~/benchmark name@ip:~
+ssh name@ip
+cd ~/benchmark
+# 设置环境变量
+export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH
+# 运行模型
+./benchmark_bin \
+  --uncombined_model_dir=./mobilenet_v1_int8_224_per_layer \
+  --input_shape=1,3,224,224 \
+  --warmup=10 \
+  --repeats=20 \
+  --backend=nnadapter,arm \
+  --nnadapter_device_names=rockchip_npu
 ```
 
-##### 在 Imagination NNA 上运行模型
+#### 在 Imagination NNA 上运行模型
 ```shell
-拷贝 Imagination DDK、benchmark_bin、nnadapter.so、模型文件到设备目录`WORKSPACE`
-export LD_LIBRARY_PATH=$WORKSPACE:$LD_LIBRARY_PATH
-  ./benchmark_bin \
-    --model_file=MobileNetV1/inference.pdmodel \
-    --param_file=MobileNetV1/inference.pdiparams \
-    --input_shape=1,3,224,224 \
-    --warmup=10 \
-    --repeats=20 \
-    --backend=nnadapter,arm \
-    --nnadapter_device_names=imagination_nna
+# 拷贝 benchmark 文件夹到新硬件
+ssh name@ip "rm -rf ~/benchmark"
+scp -r ~/benchmark name@ip:~
+ssh name@ip
+cd ~/benchmark
+# 设置环境变量
+export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH
+# 运行模型
+./benchmark_bin \
+  --uncombined_model_dir=./mobilenet_v1_int8_224_per_layer \
+  --input_shape=1,3,224,224 \
+  --warmup=10 \
+  --repeats=20 \
+  --backend=nnadapter,arm \
+  --nnadapter_device_names=imagination_nna
 ```
 
-##### 在 Mediatek APU 上运行模型
+#### 在 Mediatek APU 上运行模型
 ```shell
-拷贝 Mediatek APU DDK、benchmark_bin、nnadapter.so、模型文件到设备目录`/data/local/tmp/benchmark`
+# 拷贝 benchmark 文件夹到新硬件
+adb shell "rm -rf /data/local/tmp/benchmark"
+adb shell "mkdir /data/local/tmp/benchmark"
+adb push ~/benchmark/* /data/local/tmp/benchmark
+# 设置环境变量并运行模型
 adb shell "cd /data/local/tmp/benchmark;
-  export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH;
-  ./benchmark_bin \
-    --model_file=MobileNetV1/inference.pdmodel \
-    --param_file=MobileNetV1/inference.pdiparams \
-    --input_shape=1,3,224,224 \
-    --warmup=10 \
-    --repeats=20 \
-    --backend=nnadapter,arm \
-    --nnadapter_device_names=mediatek_apu"
+export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH;
+./benchmark_bin \
+  --uncombined_model_dir=./mobilenet_v1_int8_224_per_layer \
+  --input_shape=1,3,224,224 \
+  --warmup=10 \
+  --repeats=20 \
+  --backend=nnadapter,arm \
+  --nnadapter_device_names=mediatek_apu"
+```
+
+#### 在 Amlogic NPU 上运行模型
+```shell
+# 在 C308X 或 A311D 上运行模型
+# 拷贝 benchmark 文件夹到新硬件
+ssh name@ip "rm -rf ~/benchmark"
+scp -r ~/benchmark name@ip:~
+ssh name@ip
+cd ~/benchmark
+# 设置环境变量
+export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH
+# 运行模型
+./benchmark_bin \
+  --uncombined_model_dir=./mobilenet_v1_int8_224_per_layer \
+  --input_shape=1,3,224,224 \
+  --warmup=10 \
+  --repeats=20 \
+  --backend=nnadapter,arm \
+  --nnadapter_device_names=amlogic_npu
+
+# 在 S905D3 上运行模型
+# 拷贝 benchmark 文件夹到新硬件
+adb shell "rm -rf /data/local/tmp/benchmark"
+adb shell "mkdir /data/local/tmp/benchmark"
+adb push ~/benchmark/* /data/local/tmp/benchmark
+# 设置环境变量并运行模型
+adb shell "cd /data/local/tmp/benchmark;
+export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH;
+./benchmark_bin \
+  --uncombined_model_dir=./mobilenet_v1_int8_224_per_layer \
+  --input_shape=1,3,224,224 \
+  --warmup=10 \
+  --repeats=20 \
+  --backend=nnadapter,arm \
+  --nnadapter_device_names=amlogic_npu"
 ```
 
 ### 逐层耗时和精度分析

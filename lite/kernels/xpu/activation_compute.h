@@ -38,6 +38,15 @@ class Relu6Compute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   virtual ~Relu6Compute() = default;
 };
 
+class GeluCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+ public:
+  using param_t = operators::ActivationParam;
+
+  virtual void Run();
+
+  virtual ~GeluCompute() = default;
+};
+
 class TanhCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
  public:
   using param_t = operators::ActivationParam;

@@ -43,6 +43,17 @@ void Relu6Compute::Run() {
   CHECK_EQ(r, 0);
 }
 
+void GeluCompute::Run() {
+  auto& param = this->Param<param_t>();
+  auto& ctx = this->ctx_->As<XPUContext>();
+
+  int r = xdnn::gelu(ctx.GetRawContext(),
+                     param.X->data<float>(),
+                     param.Out->mutable_data<float>(TARGET(kXPU)),
+                     param.X->numel());
+  CHECK_EQ(r, 0);
+}
+
 void TanhCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
@@ -262,6 +273,12 @@ REGISTER_LITE_KERNEL(
 
 REGISTER_LITE_KERNEL(
     relu6, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::Relu6Compute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    gelu, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::GeluCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .Finalize();

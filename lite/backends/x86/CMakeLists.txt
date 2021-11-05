@@ -16,7 +16,9 @@ FILE(GLOB X86_BASE_SRC  ${CMAKE_CURRENT_SOURCE_DIR}/*.cc)
 # source code about jit
 FILE(GLOB X86_JIT_SRC ${CMAKE_CURRENT_SOURCE_DIR}/jit/*.cc)
 FILE(GLOB X86_JIT_REFER_SRC ${CMAKE_CURRENT_SOURCE_DIR}/jit/refer/*.cc)
+if (NOT WIN32 AND NOT APPLE)
 FILE(GLOB X86_JIT_GEN_SRC ${CMAKE_CURRENT_SOURCE_DIR}/jit/gen/*.cc)
+endif()
 set(X86_JIT_MORE_SRC "" CACHE INTERNAL "")
 add_subdirectory(jit)
 # Fluid source file

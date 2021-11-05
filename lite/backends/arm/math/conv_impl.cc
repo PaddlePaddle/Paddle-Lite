@@ -1132,22 +1132,41 @@ void conv_depthwise_5x5_fp32(const void* din,
   bool flag_bias = param.bias != nullptr;
   ctx->ExtendWorkspace((w_in + w_out + 16) * sizeof(float));
   if (stride == 2) {
-    conv_depthwise_5x5s2_fp32(reinterpret_cast<const float*>(din),
-                              reinterpret_cast<float*>(dout),
-                              num,
-                              ch_out,
-                              h_out,
-                              w_out,
-                              ch_in,
-                              h_in,
-                              w_in,
-                              reinterpret_cast<const float*>(weights),
-                              bias,
-                              param,
-                              act_param,
-                              ctx);
-  } else if (stride == 1) {
     if (pad_h == pad_w && pad_h == 2 &&
+        static_cast<int>(act_param.active_type) < 4 && w_in > 16) {
+      // only support conv + relu/relu6
+      conv_depthwise_5x5s2p2_fp32(reinterpret_cast<float*>(dout),
+                                  reinterpret_cast<const float*>(din),
+                                  reinterpret_cast<const float*>(weights),
+                                  bias,
+                                  flag_bias,
+                                  num,
+                                  ch_out,
+                                  h_out,
+                                  w_out,
+                                  ch_in,
+                                  h_in,
+                                  w_in,
+                                  param,
+                                  ctx);
+    } else {
+      conv_depthwise_5x5s2_fp32(reinterpret_cast<const float*>(din),
+                                reinterpret_cast<float*>(dout),
+                                num,
+                                ch_out,
+                                h_out,
+                                w_out,
+                                ch_in,
+                                h_in,
+                                w_in,
+                                reinterpret_cast<const float*>(weights),
+                                bias,
+                                param,
+                                act_param,
+                                ctx);
+    }
+  } else if (stride == 1) {
+    if (0 && pad_h == pad_w && pad_h == 2 &&
         static_cast<int>(act_param.active_type) < 4 && w_in > 8) {
       // only support conv + relu/relu6
       conv_depthwise_5x5s1p2_fp32(reinterpret_cast<float*>(dout),
@@ -1209,7 +1228,8 @@ void conv_depthwise_3x3_int8_fp32(const void* din,
   auto act_param = param.activation_param;
   auto act_type = act_param.active_type;
   int flag_act = 0;  // relu: 1, relu6: 2, leakey: 3
-  float alpha[4] = {0.f, 0.f, 0.f, 0.f};
+  float alpha[12] = {
+      0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
   if (act_param.has_active) {
     if (act_type == lite_api::ActivationType::kRelu) {
       flag_act = 1;
@@ -1227,6 +1247,13 @@ void conv_depthwise_3x3_int8_fp32(const void* din,
       alpha[1] = local_alpha;
       alpha[2] = local_alpha;
       alpha[3] = local_alpha;
+    } else if (act_type == lite_api::ActivationType::kHardSwish) {
+      flag_act = 4;
+      for (int i = 0; i < 4; i++) {
+        alpha[i] = act_param.hard_swish_scale;
+        alpha[i + 4] = act_param.hard_swish_offset;
+        alpha[i + 8] = act_param.hard_swish_threshold;
+      }
     }
   }
   bool support_act_type = flag_act <= 2;
@@ -1320,7 +1347,8 @@ void conv_depthwise_3x3_int8_int8(const void* din,
   auto act_param = param.activation_param;
   auto act_type = act_param.active_type;
   int flag_act = 0;  // relu: 1, relu6: 2, leakey: 3
-  float alpha[4] = {0.f, 0.f, 0.f, 0.f};
+  float alpha[12] = {
+      0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
   if (act_param.has_active) {
     if (act_type == lite_api::ActivationType::kRelu) {
       flag_act = 1;
@@ -1338,6 +1366,13 @@ void conv_depthwise_3x3_int8_int8(const void* din,
       alpha[1] = local_alpha;
       alpha[2] = local_alpha;
       alpha[3] = local_alpha;
+    } else if (act_type == lite_api::ActivationType::kHardSwish) {
+      flag_act = 4;
+      for (int i = 0; i < 4; i++) {
+        alpha[i] = act_param.hard_swish_scale;
+        alpha[i + 4] = act_param.hard_swish_offset;
+        alpha[i + 8] = act_param.hard_swish_threshold;
+      }
     }
   }
   bool support_act_type = flag_act <= 2;
@@ -1431,7 +1466,8 @@ void conv_depthwise_5x5_int8_fp32(const void* din,
   auto act_param = param.activation_param;
   auto act_type = act_param.active_type;
   int flag_act = 0;  // relu: 1, relu6: 2, leakey: 3
-  float alpha[4] = {0.f, 0.f, 0.f, 0.f};
+  float alpha[12] = {
+      0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
   if (act_param.has_active) {
     if (act_type == lite_api::ActivationType::kRelu) {
       flag_act = 1;
@@ -1449,6 +1485,13 @@ void conv_depthwise_5x5_int8_fp32(const void* din,
       alpha[1] = local_alpha;
       alpha[2] = local_alpha;
       alpha[3] = local_alpha;
+    } else if (act_type == lite_api::ActivationType::kHardSwish) {
+      flag_act = 4;
+      for (int i = 0; i < 4; i++) {
+        alpha[i] = act_param.hard_swish_scale;
+        alpha[i + 4] = act_param.hard_swish_offset;
+        alpha[i + 8] = act_param.hard_swish_threshold;
+      }
     }
   }
   if (stride == 1) {
@@ -1514,7 +1557,8 @@ void conv_depthwise_5x5_int8_int8(const void* din,
   auto act_param = param.activation_param;
   auto act_type = act_param.active_type;
   int flag_act = 0;  // relu: 1, relu6: 2, leakey: 3
-  float alpha[4] = {0.f, 0.f, 0.f, 0.f};
+  float alpha[12] = {
+      0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
   if (act_param.has_active) {
     if (act_type == lite_api::ActivationType::kRelu) {
       flag_act = 1;
@@ -1532,6 +1576,13 @@ void conv_depthwise_5x5_int8_int8(const void* din,
       alpha[1] = local_alpha;
       alpha[2] = local_alpha;
       alpha[3] = local_alpha;
+    } else if (act_type == lite_api::ActivationType::kHardSwish) {
+      flag_act = 4;
+      for (int i = 0; i < 4; i++) {
+        alpha[i] = act_param.hard_swish_scale;
+        alpha[i + 4] = act_param.hard_swish_offset;
+        alpha[i + 8] = act_param.hard_swish_threshold;
+      }
     }
   }
   if (stride == 1) {

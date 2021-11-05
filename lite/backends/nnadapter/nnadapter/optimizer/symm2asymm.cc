@@ -91,6 +91,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(hal::Model* model) {
       case NNADAPTER_ADD:
       case NNADAPTER_DIV:
       case NNADAPTER_FULLY_CONNECTED:
+      case NNADAPTER_MAT_MUL:
       case NNADAPTER_MUL:
       case NNADAPTER_SUB: {
         ConvertOperandSymmToAsymm(input_operands[0], 128);

@@ -18,7 +18,7 @@
 #include <string>
 #include <vector>
 #include "lite/backends/x86/math/avx/conv_utils.h"
-#include "lite/backends/x86/math/conv_direct.h"
+#include "lite/backends/x86/math/conv3x3s2_direct_fp32.h"
 #include "lite/core/context.h"
 #include "lite/core/kernel.h"
 #include "lite/core/target_wrapper.h"
@@ -35,7 +35,7 @@ template <PrecisionType Ptype, PrecisionType OutType>
 class DirectConv : public KernelLite<TARGET(kX86), Ptype> {
  public:
   DirectConv() = default;
-  ~DirectConv() {}
+  ~DirectConv() { delete code_; }
 
   virtual void Run();
 
@@ -59,6 +59,22 @@ class DirectConv : public KernelLite<TARGET(kX86), Ptype> {
     auto weights_w_data = weights_.mutable_data<float>();
     lite::x86::math::conv_trans_weights_numc(
         filter_data, weights_w_data, oc, ic, wh, ww, block);
+
+    auto x_dims = param.x->dims();
+    auto w_dims = param.filter->dims();
+    auto o_dims = param.output->dims();
+
+    const int ph = (*(param.paddings))[0];
+    const int pw = (*(param.paddings))[2];
+
+    int iw = x_dims[3];
+    int ih = x_dims[2];
+    int oh = o_dims[2];
+    int ow = o_dims[3];
+
+    code_ = new lite::x86::math::conv_direct_3x3s2();
+    code_->generate_code(ic, ih, iw, oc, oc_expand_, oh, ow, ph, pw);
+    code_->ready();
   }
 
 #ifdef LITE_WITH_PROFILE
@@ -79,6 +95,7 @@ class DirectConv : public KernelLite<TARGET(kX86), Ptype> {
   bool flag_trans_bias_{false};
   std::vector<float> w_scale_;
   int oc_expand_;
+  lite::x86::math::conv_direct_3x3s2* code_;
 };
 
 }  // namespace x86

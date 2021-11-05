@@ -23,6 +23,10 @@ namespace nnadapter {
 hal::Operand* AddOperand(hal::Model* model);
 // Append a operation into a model
 hal::Operation* AddOperation(hal::Model* model);
+// Remove a operand into a model
+void RemoveOperand(hal::Model* model, hal::Operand* operand);
+// Remove a operation into a model
+void RemoveOperation(hal::Model* model, hal::Operation* operation);
 // Add a bool8 scalar constant operand
 hal::Operand* AddBool8ConstantOperand(hal::Model* model, bool value);
 // Add a int32 scalar constant operand

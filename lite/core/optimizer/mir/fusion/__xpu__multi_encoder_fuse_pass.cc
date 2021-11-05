@@ -665,21 +665,24 @@ class XPUMultiEncoderFuser {
 
   void operator()(SSAGraph* graph) {
     std::vector<Node*> all_encoders;
-    for (auto* node : graph->StmtTopologicalOrder()) {
-      CHECK(node->IsStmt());
-      if (node->stmt()->op_info()->Type() == "single_encoder") {
-        if (all_encoders.empty() ||
-            IsDirectPredecessorOf(all_encoders.back(), node)) {
-          all_encoders.push_back(node);
-        } else {
-          break;
+    // if no node linked from all_encoders.back(), search is over
+    int encoder_num = 0;
+    do {
+      encoder_num = all_encoders.size();
+      for (auto* node : graph->StmtTopologicalOrder()) {
+        CHECK(node->IsStmt());
+        if (node->stmt()->op_info()->Type() == "single_encoder") {
+          if (all_encoders.empty() ||
+              IsDirectPredecessorOf(all_encoders.back(), node)) {
+            all_encoders.push_back(node);
+          }
         }
       }
-    }
-    VLOG(3) << "Found continuous " << all_encoders.size() << " single_encoder";
+    } while (encoder_num != all_encoders.size());
     if (all_encoders.size() == 0) {
       return;
     }
+    VLOG(3) << "Found continuous " << all_encoders.size() << " single_encoder";
 
     const bool enable_int8 =
         all_encoders[0]->stmt()->op_info()->HasAttr("enable_int8") &&
@@ -1046,7 +1049,7 @@ class XPUMultiEncoderFuser {
                                                    weight_qkv_trans_int8.get(),
                                                    max_f,
                                                    qkv_len);
-        memcpy(weight_tensor_vec[0]->mutable_data<float>(),
+        memcpy(weight_tensor_vec[0]->mutable_data<int8_t>(),
                weight_qkv_trans_int8.get(),
                qkv_len * sizeof(int8_t));
       } else {
@@ -1056,7 +1059,7 @@ class XPUMultiEncoderFuser {
             weight_qkv_trans_int16.get(),
             max_f,
             qkv_len);
-        memcpy(weight_tensor_vec[0]->mutable_data<float>(),
+        memcpy(weight_tensor_vec[0]->mutable_data<int16_t>(),
                weight_qkv_trans_int16.get(),
                qkv_len * sizeof(int16_t));
       }

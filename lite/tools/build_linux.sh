@@ -29,6 +29,8 @@ WITH_STATIC_MKL=OFF
 WITH_AVX=ON
 # options of compiling OPENCL lib.
 WITH_OPENCL=OFF
+# options of compiling Metal lib for Mac OS.
+WITH_METAL=OFF
 # options of compiling rockchip NPU lib.
 WITH_ROCKCHIP_NPU=OFF
 ROCKCHIP_NPU_SDK_ROOT="$(pwd)/rknpu_ddk"  # Download RKNPU SDK from https://github.com/airockchip/rknpu_ddk.git
@@ -61,6 +63,8 @@ INTEL_FPGA_SDK_ROOT="$(pwd)/intel_fpga_sdk"
 WITH_TRAIN=OFF
 # options of building tiny publish so
 WITH_TINY_PUBLISH=ON
+# controls whether to include FP16 kernels, default is OFF
+BUILD_ARM82_FP16=OFF
 # options of profiling
 WITH_PROFILE=OFF
 WITH_PRECISION_PROFILE=OFF
@@ -174,6 +178,7 @@ function init_cmake_mutable_options {
                         -DWITH_STATIC_MKL=$WITH_STATIC_MKL \
                         -DWITH_AVX=$WITH_AVX \
                         -DLITE_WITH_OPENCL=$WITH_OPENCL \
+                        -DLITE_WITH_METAL=$WITH_METAL \
                         -DLITE_WITH_RKNPU=$WITH_ROCKCHIP_NPU \
                         -DRKNPU_DDK_ROOT=$ROCKCHIP_NPU_SDK_ROOT \
                         -DLITE_WITH_XPU=$WITH_BAIDU_XPU \
@@ -198,6 +203,7 @@ function init_cmake_mutable_options {
                         -DLITE_WITH_INTEL_FPGA=$WITH_INTEL_FPGA \
                         -DINTEL_FPGA_SDK_ROOT=${INTEL_FPGA_SDK_ROOT} \
                         -DLITE_WITH_PROFILE=${WITH_PROFILE} \
+                        -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
                         -DLITE_WITH_PRECISION_PROFILE=${WITH_PRECISION_PROFILE} \
                         -DLITE_ON_TINY_PUBLISH=$WITH_TINY_PUBLISH"
 
@@ -283,6 +289,9 @@ function make_publish_so {
     build_dir=$workspace/build.lite.linux.$ARCH.$TOOLCHAIN
     if [ "${WITH_OPENCL}" = "ON" ]; then
         build_dir=${build_dir}.opencl
+    fi
+    if [ "${WITH_METAL}" = "ON" ]; then
+        build_dir=${build_dir}.metal
     fi
     if [ "${WITH_BAIDU_XPU}" = "ON" ]; then
         build_dir=${build_dir}.baidu_xpu
@@ -458,6 +467,11 @@ function main {
                 WITH_OPENCL="${i#*=}"
                 shift
                 ;;
+            # compiling lib for Mac OS with GPU support.
+            --with_metal=*)
+                WITH_METAL="${i#*=}"
+                shift
+                ;;
             # compiling lib which can operate on rockchip npu.
             --with_rockchip_npu=*)
                 WITH_ROCKCHIP_NPU="${i#*=}"
@@ -553,6 +567,11 @@ function main {
                 ;;
             --intel_fpga_sdk_root=*)
                 INTEL_FPGA_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            # controls whether to include FP16 kernels, default is OFF
+            --with_arm82_fp16=*)
+                BUILD_ARM82_FP16="${i#*=}"
                 shift
                 ;;
             --with_profile=*)

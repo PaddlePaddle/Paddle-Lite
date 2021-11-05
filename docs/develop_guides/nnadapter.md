@@ -187,7 +187,7 @@
 ## NNAdapter 在 Paddle Lite 的实现
 ### 整体实现方案
 
-NNAdapter 作为一个 backend 并以子图方式接入 Paddle Lite，具体可以参考[新增硬件](./add_hardware)章节的『子图接入方式』。
+NNAdapter 作为一个 backend 并以子图方式接入 Paddle Lite ，具体可以参考[新增硬件](./add_hardware)章节的『子图接入方式』。
 
 ![](https://paddlelite-demo.bj.bcebos.com/devices/generic/paddle_lite_with_nnadapter.png)
 
@@ -245,7 +245,7 @@ NNAdapter 作为一个 backend 并以子图方式接入 Paddle Lite，具体可�
     ```
     设置模型缓存的标识和数据，子图在编译生成设备程序时，如果成功匹配到 `model_cache_token` ，则跳过模型编译步骤，直接使用缓存数据恢复设备程序（需要设备 HAL 层库的支持），该接口通常用于从内存中设置解密后的模型缓存数据。
     - 参数：
-      - model_cache_token：根据子图输入、输出、设备信息按照一定规则生成的唯一标识子图的32个字符，它实现方式可以参考[相关代码](https://github.com/PaddlePaddle/Paddle-Lite/blob/9e16e8ee9a079f673d992351cdd9ec0f4d731575/lite/kernels/nnadapter/engine.cc#L49)。
+      - model_cache_token：根据子图输入、输出、设备信息按照一定规则生成的唯一标识子图的 32 个字符，它实现方式可以参考[相关代码](https://github.com/PaddlePaddle/Paddle-Lite/blob/9e16e8ee9a079f673d992351cdd9ec0f4d731575/lite/kernels/nnadapter/engine.cc#L49)。
       - model_cache_buffer： `model_cache_token` 对应子图和设备的模型缓存数据。
     - 返回值：无。
 
@@ -360,7 +360,7 @@ NNAdapter 作为一个 backend 并以子图方式接入 Paddle Lite，具体可�
     - [NNADAPTER_ADD 到 ge::op::Add 的转换器的实现](https://github.com/PaddlePaddle/Paddle-Lite/blob/543af6a4257ebfbada6b75df0e35a0c92a3b421a/lite/backends/nnadapter/nnadapter/driver/huawei_ascend_npu/converter/elementwise.cc#L23) 和 [NNADAPTER_ADD 到 ge::op::Add 的转换器的注册](https://github.com/PaddlePaddle/Paddle-Lite/blob/543af6a4257ebfbada6b75df0e35a0c92a3b421a/lite/backends/nnadapter/nnadapter/driver/huawei_ascend_npu/converter/all.h#L21) ：在 HAL 层的 `Model` 到厂商 SDK 模型转换步骤的 `Operation` 转换过程中，用于保证正确调用指定的转换器生成并添加厂商 SDK 的算子表示，进而基于厂商 SDK 完成模型转换。
     - [Paddle 算子 elementwise_add 到 NNADAPTER_ADD 转换器的注册](https://github.com/PaddlePaddle/Paddle-Lite/blob/543af6a4257ebfbada6b75df0e35a0c92a3b421a/lite/kernels/nnadapter/converter/all.h#L55)  ：具体是在转换器注册的设备名称字串中添加目标硬件的名称，其主要用于在 Paddle 模型的子图分割阶段中告诉子图分割算法哪些 Paddle 算子可以放在哪些硬件上执行，即哪些算子可以融合成一个 NNAdapter 子图，且在 NNAdapter 算子 Kernel 执行时，能够该子图转换为 NNAdapter 模型，进而传递到硬件的 HAL 层做进一步的转换。
 
-- 基于 [PaddleLite-generic-demo](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz) 跑通第一个分类模型：当目标硬件的 HAL 层代码开发完成后（前期仅需开发一个 `NNADAPTER_SOFTMAX` 的转换器即可），需要验证 HAL 层到厂商 SDK 的链路是否打通，为方便厂商和用户测试，我们提供了包含图像分类和目标检测模型的 Demo 的压缩包，它支持 NNAdapter 目前已支持的所有硬件，覆盖 x86 Linux、ARM Linux 和 Android 系统，可以本地执行或基于 ssh 或 adb 方式推送到远端设备上执行，各硬件的文档均涉及 Demo 的使用方法，具体可以访问：[华为昇腾 NPU](../demo_guides/huawei_ascend_npu) 、[华为麒麟 NPU](../demo_guides/huawei_kirin_npu) 、[晶晨 NPU](../demo_guides/amlogic_npu) 、[瑞芯微 NPU](../demo_guides/rockchip_npu) 、[联发科 APU](../demo_guides/mediatek_apu) 和[颖脉 NNA](../demo_guides/imagnation_nna) 等。
+- 基于 [PaddleLite-generic-demo](https://paddlelite-demo.bj.bcebos.com/devices/generic/PaddleLite-generic-demo.tar.gz) 跑通第一个分类模型：当目标硬件的 HAL 层代码开发完成后（前期仅需开发一个 `NNADAPTER_SOFTMAX` 的转换器即可），需要验证 HAL 层到厂商 SDK 的链路是否打通，为方便厂商和用户测试，我们提供了包含图像分类和目标检测模型的 Demo 的压缩包，它支持 NNAdapter 目前已支持的所有硬件，覆盖 x86 Linux 、ARM Linux 和 Android 系统，可以本地执行或基于 ssh 或 adb 方式推送到远端设备上执行，各硬件的文档均涉及 Demo 的使用方法，具体可以访问：[华为昇腾 NPU](../demo_guides/huawei_ascend_npu) 、[华为麒麟 NPU](../demo_guides/huawei_kirin_npu) 、[晶晨 NPU](../demo_guides/amlogic_npu) 、[瑞芯微 NPU](../demo_guides/rockchip_npu) 、[联发科 APU](../demo_guides/mediatek_apu) 和[颖脉 NNA](../demo_guides/imagination_nna) 等。
   - 模型、算子转换器调试方法：调试 Demo 中的模型有时候并不是一帆风顺，可能在模型转换过程中出现 `core dump` ，也可能在模型跑通后发现结果无法与 CPU 结果对齐，这些问题尝尝源于部分 NNAdapter 操作符到厂商 SDK 算子的转换器的 BUG 导致的，有效的解决办法是：先将模型中所有 Paddle 算子强制跑在 CPU 上，然后根据模型拓扑顺序，逐步将 Paddle 算子放在目标硬件上执行，通过二分法、排除法最终定位到有问题的算子转换器上，具体可以参考上一章节中『自定义子图分割』。
 
 - 添加算子、模型的单元测试
@@ -370,9 +370,9 @@ NNAdapter 作为一个 backend 并以子图方式接入 Paddle Lite，具体可�
   - 添加模型单元测试：为了验证新合入的代码对已支持的模型是否有影响（正常跑通且精度对齐），需要在指定模型的单元测试中增加对目标硬件的支持，例如：在 MobileNetV1 模型增加华为昇腾 NPU 的支持，仅需添加[ 3~4 行代码](https://github.com/PaddlePaddle/Paddle-Lite/blob/361dccf78867a9d63415c20a683371dce56d6e5d/lite/tests/api/test_mobilenet_v1_fp32_nnadapter.cc#L50)（注意：全量化模型的单测为 `test_mobilenet_v1_int8_per_channel_nnadapter` 和 `test_mobilenet_v1_int8_per_layer_nnadapter` ）。
   - 为了实现持续交付，需要向飞桨团队提供至少3套测试硬件，用于目标硬件的测试环境并加入到 Paddle Lite CI 系统。
 
-- 增加硬件说明文档，例如：华为昇腾 NPU 的[文档源码](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/docs/demo_guides/huawei_ascend_npu.md)。
+- 增加硬件说明文档，例如：华为昇腾 NPU 的[文档源码](https://github.com/PaddlePaddle/Paddle-Lite/blob/000148b34f7cbcdf19802501dc1ddef9f9c83490/docs/demo_guides/huawei_ascend_npu.md?plain=1#L3)。
 
-- 提交代码：具体是向 Paddle Lite 的 [github 代码仓库](https://github.com/PaddlePaddle/Paddle-Lite)发起 Pull request，具体可以参考[新增硬件](./add_hardware)的『代码提交、Review、合入机制、CI机制』章节配置编译和代码提交环境，并按照规范提交代码，由飞桨团队同学 reivew 后方可合入主线代码。
+- 提交代码：具体是向 Paddle Lite 的 [github 代码仓库](https://github.com/PaddlePaddle/Paddle-Lite)发起 Pull request，具体可以参考[新增硬件](./add_hardware)的『代码提交、Review 、合入机制、CI 机制』章节配置编译和代码提交环境，并按照规范提交代码，由飞桨团队同学 reivew 后方可合入主线代码。
 
 ### 示例
 - 基于 MagicMind 的寒武纪 MLU 的[适配代码](https://github.com/PaddlePaddle/Paddle-Lite/pull/6947)
@@ -395,7 +395,7 @@ NNAdapter 作为一个 backend 并以子图方式接入 Paddle Lite，具体可�
   ```
   通过名称获取设备实例。
   - 参数：
-    - name：通过该名称加载并注册设备HAL库后（仅发生在进程首次调用时），创建一个设备实例。
+    - name：通过该名称加载并注册设备 HAL 库后（仅发生在进程首次调用时），创建一个设备实例。
     - device：存储创建后的设备实例。
   - 返回值：调用成功则返回 NNADAPTER_NO_ERROR 。
 
@@ -403,7 +403,7 @@ NNAdapter 作为一个 backend 并以子图方式接入 Paddle Lite，具体可�
   ```c++
   NNAdapterDevice_release(NNAdapterDevice* device)
   ```
-  释放设备实例（注意：只有进程退出时，才会释放设备HAL层库）。
+  释放设备实例（注意：只有进程退出时，才会释放设备 HAL 层库）。
   - 参数：
     - device：需要销毁的设备实例。
   - 返回值：无。
@@ -452,7 +452,7 @@ NNAdapter 作为一个 backend 并以子图方式接入 Paddle Lite，具体可�
   ```c++
   int NNAdapterContext_create(NNAdapterDevice** devices, uint32_t num_devices, const char* properties, NNAdapterContext** context)
   ```
-  为多种设备创建一个统一设备上下文，并通过 Key-value 字符串的形式将设备的参数信息传递给每一个设备HAL层库。
+  为多种设备创建一个统一设备上下文，并通过 Key-value 字符串的形式将设备的参数信息传递给每一个设备 HAL 层库。
   - 参数：
     - devices：设备实例列表。
     - num_devices：`devices`中设备实例的个数。
@@ -603,9 +603,9 @@ NNAdapter 作为一个 backend 并以子图方式接入 Paddle Lite，具体可�
   ```
   查询编译后的模型的输入、输出操作数的数量和类型，必须在 `NNAdapterCompilation_finish` 执行后才能调用，可以通过以下两次调用获得输入、输出操作数数量和类型信息。
 
-  1）当 `input_types` 和 `output_types` 为NULL时，则仅查询输入、输出操作数的数量并将值存储在 `input_count` 和 `output_count` 。
+  1）当 `input_types` 和 `output_types` 为 NULL 时，则仅查询输入、输出操作数的数量并将值存储在 `input_count` 和 `output_count` 。
 
-  2）当 `input_types` 和 `output_types` 不为NULL时，则将输入、输出操作数的类型依次存储在 `input_types` 和 `output_types` （要求调用方根据 `input_count` 和 `output_count` 分配它们的内存）。
+  2）当 `input_types` 和 `output_types` 不为 NULL 时，则将输入、输出操作数的类型依次存储在 `input_types` 和 `output_types` （要求调用方根据 `input_count` 和 `output_count` 分配它们的内存）。
 
   - 参数：
     - compilation：编译实例。
@@ -668,8 +668,8 @@ NNAdapter 作为一个 backend 并以子图方式接入 Paddle Lite，具体可�
   - 参数：
     - execution：执行计划实例。
     - index：模型输入操作数的索引。
-    - memory：模型输入操作数的内存实例，不限定为具体的缓存首地址，用户可自行封装后通过std::reinterpret_cast<void*>()强制转为void*类型。
-    - access：内存实例访问函数，HAL层库将通过 `access` 函数访问 `memory` 获得host端缓存实际地址。
+    - memory：模型输入操作数的内存实例，不限定为具体的缓存首地址，用户可自行封装后通过 std::reinterpret_cast<void*>() 强制转为 void* 类型。
+    - access：内存实例访问函数，HAL层库将通过 `access` 函数访问 `memory` 获得 host 端缓存实际地址。
   - 返回值：调用成功则返回 NNADAPTER_NO_ERROR 。
 
 - NNAdapterExecution_setOutput
@@ -678,7 +678,7 @@ NNAdapter 作为一个 backend 并以子图方式接入 Paddle Lite，具体可�
   ```
   设置执行计划输出操作数的内存实例和访问函数。
 
-  基于`NNAdapterExecution_setInput`示例中的`memory`的定义实现输出内存实例的访问函数`access`：
+  基于 `NNAdapterExecution_setInput` 示例中的 `memory` 的定义实现输出内存实例的访问函数 `access` ：
 
   ```c++
   void* access_output_memory(void* memory, NNAdapterOperandType* type) {
@@ -1140,13 +1140,12 @@ NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
 
 - NNADAPTER_LP_NORMALIZATION
 
-  Applies the Lp Normalization to the input tensor element-wise. The output is calculated using this formula: output = sum(abs(input)), if p = 1; output = sqrt(sum(input^2)), if p = 2.
+  Applies the Lp Normalization to the input tensor element-wise. The output is calculated using this formula: output = input / (sum(abs(input)) + epsilon), if p = 1; output = input / (sqrt(sum(input^2)) + epsilon), if p = 2.
   - Inputs:
     - 0: input, a NNADAPTER_TENSOR_FLOAT32, NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER tensor.
-    - 1: axis, an 1-D NNADAPTER_TENSOR_INT32, default to [1]. It represents the dimension along which softmax will be performed. It should be in range [-R, R), where R is the rank of input, negative value works the same way as axis+R.
+    - 1: axis, an 1-D NNADAPTER_TENSOR_INT32, default to [1]. It represents the dimension along which norm will be performed. It should be in range [-R, R), where R is the rank of input, negative value works the same way as axis + R.
     - 2: p, a NNADAPTER_INT32 scalar. The exponent value in the norm formulation, only 1 or 2 are supported, default to 2.
     - 3: epsilon, a NNADAPTER_FLOAT32 scalar, specifying the lower limit of normalization.
-    - 4: keepdim, a NNADAPTER_BOOL8 scalar, keep the reduced dimension or not, default to true.
   - Outputs:
     - 0: output, a tensor with the same shape and type as input.
 

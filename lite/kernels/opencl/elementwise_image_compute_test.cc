@@ -528,6 +528,10 @@ void test_elementwise_all_dim_data_gpu() {
   c = randint(1, 40);
   h = randint(1, 40);
   w = randint(1, 40);
+  n = 2;
+  c = 3;
+  h = 4;
+  w = 5;
   std::vector<bool> xy_swap_flags{false, true};
   for (auto xy_swap_flag : xy_swap_flags) {
     RunElementwiseCommonSize<float>({n, c, h, w},
