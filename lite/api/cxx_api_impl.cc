@@ -101,6 +101,14 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
     Context<TargetType::kNNAdapter>::SetNNAdapterSubgraphPartitionConfigBuffer(
         raw_predictor_->scope(),
         config.nnadapter_subgraph_partition_config_buffer());
+    Context<TargetType::kNNAdapter>::
+        SetNNAdapterMixedPrecisionQuantizationConfigPath(
+            raw_predictor_->scope(),
+            config.nnadapter_mixed_precision_quantization_config_path());
+    Context<TargetType::kNNAdapter>::
+        SetNNAdapterMixedPrecisionQuantizationConfigBuffer(
+            raw_predictor_->scope(),
+            config.nnadapter_mixed_precision_quantization_config_buffer());
 #endif
 
     auto use_layout_preprocess_pass =
