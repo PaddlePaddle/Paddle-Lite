@@ -150,8 +150,7 @@ static void gru_unit_out_act_impl(bool origin_mode,
                                   int stride_hidden,
                                   int frame_size,
                                   int batch_size) {
-  LITE_PARALLEL_BEGIN(b, tid, batch_size)
-  for (int b = 0; b < batch_size; ++b) {
+  LITE_PARALLEL_BEGIN(b, tid, batch_size) {
     float32x4_t vpre0 = vdupq_n_f32(0.f);
     float32x4_t vpre1 = vdupq_n_f32(0.f);
     float prev = 0.f;
