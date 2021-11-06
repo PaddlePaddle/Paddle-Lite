@@ -143,7 +143,7 @@ void RunModel(std::string model_dir,
   std::string metal_lib_path = "../../../metal/lite.metallib";
   config.set_metal_lib_path(metal_lib_path);
   config.set_metal_use_mps(true);
-#else  
+#else
   // NOTE: Use gpu with opencl, you should ensure:
   //  first, [compile **cpu+opencl** paddlelite
   //    lib](https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/docs/demo_guides/opencl.md);
