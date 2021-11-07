@@ -4,16 +4,14 @@ set(TARGET mobilenet_light_api)
 
 # 1. link Paddle-Lite directory
 link_directories("${PROJECT_SOURCE_DIR}/../../../cxx/lib")
-
 include_directories("${PROJECT_SOURCE_DIR}/../../../cxx/include")
 
 # 2. compile options 
-
 add_definitions(-std=c++11 -O3 -pthread)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR})
 
-# 3.add executable output
-add_executable(${TARGET} ${TARGET}.cc)
+# 3. add executable output
+add_executable(${TARGET} ../mobile_light/mobilenetv1_light_api.cc)
 target_link_libraries(${TARGET} paddle_light_api_shared)
 target_link_libraries(${TARGET} -ldl)
 
