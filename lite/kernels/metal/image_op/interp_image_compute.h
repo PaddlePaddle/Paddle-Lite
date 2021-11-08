@@ -70,6 +70,7 @@ class NearestInterpImageCompute
     virtual ~NearestInterpImageCompute();
 
    private:
+    void run_without_mps();
     void setup_without_mps();
 
     const MetalImage* input_buffer_;

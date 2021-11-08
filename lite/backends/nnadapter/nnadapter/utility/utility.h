@@ -16,6 +16,7 @@
 
 #include <sys/time.h>
 #include <algorithm>
+#include <cmath>
 #include <map>
 #include <string>
 #include <vector>
@@ -216,6 +217,13 @@ inline int64_t GetCurrentUS() {
   struct timeval time;
   gettimeofday(&time, NULL);
   return 1000000LL * (int64_t)time.tv_sec + (int64_t)time.tv_usec;
+}
+
+template <typename T>
+int64_t GetSpanCount(T start, T end, T step) {
+  return std::is_integral<T>::value
+             ? ((std::abs(end - start) + std::abs(step) - 1) / std::abs(step))
+             : std::ceil(std::abs((end - start) / step));
 }
 
 }  // namespace nnadapter

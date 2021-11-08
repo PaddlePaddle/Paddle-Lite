@@ -70,8 +70,8 @@ void SymmQuantizeData(const float* input_data,
       << "Only input_scale.size() == 1 and input_scale.size() == input_size is "
          "supported.";
   int quant_bits = sizeof(T) * 8;
-  auto dtype_max = static_cast<int>((1 << (quant_bits - 1)) - 1);
-  auto dtype_min = static_cast<int>(0 - dtype_max);
+  auto dtype_max = static_cast<T>((1 << (quant_bits - 1)) - 1);
+  auto dtype_min = static_cast<T>(0 - dtype_max);
   for (size_t i = 0; i < input_size; i++) {
     int scale_index = per_layer ? 0 : i;
     output_data[i] = std::min(
@@ -232,6 +232,8 @@ NNAdapterOperationType ConvertUnaryActTypeToNNOperationType(
 // NNAdapterAutoPadCode
 NNAdapterAutoPadCode ConvertPaddingAlgorithmToNNAutoPadCode(
     const std::string& padding_algorithm);
+// Convert the attribute 'mode' in Pad2d/Pad3d to NNAdapterPadModeCode
+NNAdapterPadModeCode ConvertPadModeToNNPadModeCode(std::string mode);
 
 // Convert a C/C++ POD types to a PaddleLite precision type
 template <typename T>

@@ -13,4 +13,11 @@
 // limitations under the License.
 
 #pragma once
-#include "lite/kernels/host/gather_compute.h"
+
+#include "core/hal/types.h"
+
+namespace nnadapter {
+
+void FuseMatMulAddIntoFullyConnected(hal::Model *model);
+
+}  // namespace nnadapter

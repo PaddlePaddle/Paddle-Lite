@@ -10,11 +10,11 @@
 
 - `CreatePaddlePredictor()`：暴露给用户的API。
   - `CxxPaddleApiImpl::Init()`。
-    - 上层函数中通过`raw_predictor_->Build(config, places, passes);`调用`Predictor::Build()`。
+    - 上层函数中通过`raw_predictor_->Build(config, places, passes)`调用`Predictor::Build()`。
       - 上层函数中继续调用`Predictor::Build()`的另一个重载函数。
         - `LoadModelPb()`加载模型文件到`program_desc_`中。
         - 调用`Predictor::Build()`的另一重载函数。
-          - 调`RunDefaultOptimizer()`对`program_desc_`中的原始图形结构进行优化，对图结构的优化是通过调用。 `Pass->Apply(const std::unique_ptr<SSAGraph>& graph)`实现的。
+          - 调`RunDefaultOptimizer()`对`program_desc_`中的原始图形结构进行优化，对图结构的优化是通过调用 `Pass->Apply(const std::unique_ptr<SSAGraph>& graph)`实现的。
 
 上面调用涉及到的几个函数都在`lite/api/cxx_api.cc`和`lite/api/cxx_api_impl.cc`中，其中`Predictor::Build()`存在3个同名函数，注意区分。
 
@@ -77,9 +77,9 @@ class DebugPass : public Pass {
 
 **主要类成员**：
 
-- `const Kind kind_` : Pass 类型。pass 有三种基本基本类型 ：修改图结构的`ProgramPass`、修改状态量的`StmtPass`和Debug过程采集信息与控制可视化的`DebugPass`。
+- `const Kind kind_` : Pass 类型。pass 有三种基本基本类型 ：修改图结构的`ProgramPass`、修改状态量的`StmtPass`和 Debug 过程采集信息与控制可视化的`DebugPass`。
 - `std::string name_` ：Pass 的名称。
-- `std::set<TargetType> bound_targets_` : Pass运行的硬件平台，优化过程会根据硬件平台选择匹配的 Pass 。
+- `std::set<TargetType> bound_targets_` : Pass 运行的硬件平台，优化过程会根据硬件平台选择匹配的 Pass 。
 - `std::unordered_map<std::string, std::set<lite_api::Place>> bound_kernels_` : Pass 绑定的 kernel 。
 
 **主要接口**：
@@ -251,7 +251,7 @@ FC(X) = X * W +Bias
 
 Pass 运行效果如下：
 ![图片](https://user-images.githubusercontent.com/45189361/69639193-12383100-1097-11ea-9063-21f030414080.png)
-mul 和 elementwise_add 的原有参数映射到FC的参数上：
+mul 和 elementwise_add 的原有参数映射到 FC 的参数上：
 ![图片](https://user-images.githubusercontent.com/45189361/69638836-74446680-1096-11ea-9cdc-a961fa995dfe.png)
 
 ### `fc_fuse_pass`的注册方法

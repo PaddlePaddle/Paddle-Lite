@@ -5,7 +5,7 @@
 
 Paddle Lite 支持 [ARM Cortex-A 系列处理器](https://en.wikipedia.org/wiki/ARM_Cortex-A)，支持列表如下:
 
-### 32bit(ARMv7a)
+### 32bit (ARMv7a)
 
 - Cortex-A5
 - Cortex-A7
@@ -16,7 +16,7 @@ Paddle Lite 支持 [ARM Cortex-A 系列处理器](https://en.wikipedia.org/wiki/
 - Cortex-A17 (RK3288)
 - Cortex-A32
 
-### 64bit(ARMv7a, ARMv8a)
+### 64bit (ARMv7a, ARMv8a)
 
 - Cortex-A35
 - Cortex-A53 (树莓派 3)
@@ -32,7 +32,7 @@ Paddle Lite 支持 [ARM Cortex-A 系列处理器](https://en.wikipedia.org/wiki/
 ### ARM CPU 环境准备及示例程序
 
 - Android: [Android 工程示例](../demo_guides/android_app_demo)
-- iOS: [iOS 工程示例](../demo_guides/ios_app_demo)
+- IOS: [IOS 工程示例](../demo_guides/ios_app_demo)
 - Linux(ARM): [Linux(ARM) 工程示例](../demo_guides/linux_arm_demo)
 
 ## X86 CPU

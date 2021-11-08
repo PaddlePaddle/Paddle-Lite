@@ -6,11 +6,11 @@ Paddle 模型量化包含三种量化方法，分别是动态离线量化方法�
 
 下图展示了如何选择模型量化方法。
 
-![img](https://user-images.githubusercontent.com/52520497/95644539-e7f23500-0ae9-11eb-80a8-596cfb285e17.png)
+![](https://user-images.githubusercontent.com/52520497/95644539-e7f23500-0ae9-11eb-80a8-596cfb285e17.png)
 
 下图综合对比了模型量化方法的使用条件、易用性、精度损失和预期收益。
 
-![image](https://user-images.githubusercontent.com/52520497/118938675-7b91bb00-b981-11eb-9666-706d3828f216.png)
+![](https://user-images.githubusercontent.com/52520497/118938675-7b91bb00-b981-11eb-9666-706d3828f216.png)
 
 
 大家可以根据不同情况选用不同的量化方法，有几点着重注意：
@@ -18,7 +18,7 @@ Paddle 模型量化包含三种量化方法，分别是动态离线量化方法�
 * 静态离线量化方法和量化训练方法既可以减小模型体积，也可以加快性能，性能加速基本相同
 * 静态离线量化方法比量化训练方法更加简单，一般建议首先使用静态离线量化方法，如果量化模型精度损失较大，再尝试使用量化训练方法。
 
-本章节主要介绍使用 PaddleSlim 量化训练方法产出的量化模型，使用 Paddle Lite加载量化模型进行推理部署，
+本章节主要介绍使用 PaddleSlim 量化训练方法产出的量化模型，使用 Paddle Lite 加载量化模型进行推理部署，
 
 ## 量化训练
 
@@ -119,15 +119,15 @@ Paddle 模型量化包含三种量化方法，分别是动态离线量化方法�
 
 ### 2 产出量化模型
 
-Paddle Lite opt工具和 PaddleSlim 都提供了动态离线量化功能，两者原理相似，都可以产出动态离线量化的模型。
+Paddle Lite OPT 工具和 PaddleSlim 都提供了动态离线量化功能，两者原理相似，都可以产出动态离线量化的模型。
 
-#### 2.1 使用 Paddle Lite OPT产出量化模型
+#### 2.1 使用 Paddle Lite OPT 产出量化模型
 
-Paddle Lite OPT工具将动态离线量化功能集成到模型转换中，使用简便，只需要设置对应参数，就可以产出优化后的量化模型。
+Paddle Lite OPT 工具将动态离线量化功能集成到模型转换中，使用简便，只需要设置对应参数，就可以产出优化后的量化模型。
 
-##### 2.1.1 准备工具OPT
+##### 2.1.1 准备工具 OPT
 
-参考[ OPT 文档](./model_optimize_tool)，准备 OPT 工具，其中可执行文件opt和python版本opt都提供了动态图离线量化功能。
+参考[ OPT 文档](./model_optimize_tool)，准备 OPT 工具，其中可执行文件 opt 和 python 版本 opt 都提供了动态图离线量化功能。
 
 ##### 2.1.2 准备模型
 

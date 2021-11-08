@@ -46,7 +46,7 @@ Paddle Lite 已支持 Imagination NNA 的预测部署。
 
 您可以查阅[ NNAdapter 算子支持列表](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.10/lite/kernels/nnadapter/converter/all.h)获得各算子在不同新硬件上的最新支持信息。
 
->> **不经过 NNAdapter 标准算子转换，而是直接将 Paddle 算子转换成 Imagination NNA IR 的方案可点击[链接](https://paddle-lite.readthedocs.io/zh/release-v2.9/demo_guides/imagination_nna.html)**。
+**不经过 NNAdapter 标准算子转换，而是直接将 Paddle 算子转换成 `Imagination NNA IR` 的方案可点击[链接](https://paddle-lite.readthedocs.io/zh/release-v2.9/demo_guides/imagination_nna.html)**。
 
 ## 参考示例演示
 
@@ -65,7 +65,7 @@ Paddle Lite 已支持 Imagination NNA 的预测部署。
 ### 准备交叉编译环境
 
 - 按照以下两种方式配置交叉编译环境：
-  - Docker 交叉编译环境：由于 Roc1 运行环境为Ubuntu 18.04，且 Imagination NNA DDK 依赖高版本的 glibc，因此不能直接使用[编译环境准备](../source_compile/docker_enviroment)中的 Docker image，而需要按照如下方式在Host机器上手动构建 Ubuntu 18.04 的 Docker image；
+  - Docker 交叉编译环境：由于 Roc1 运行环境为Ubuntu 18.04，且 Imagination NNA DDK 依赖高版本的 glibc，因此不能直接使用[编译环境准备](../source_compile/docker_env)中的 Docker image，而需要按照如下方式在Host机器上手动构建 Ubuntu 18.04 的 Docker image；
 
     ```
     $ wget https://paddlelite-demo.bj.bcebos.com/devices/imagination/Dockerfile
@@ -73,7 +73,7 @@ Paddle Lite 已支持 Imagination NNA 的预测部署。
     $ docker run --name paddle-lite-ubuntu18_04 --net=host -it --privileged -v $PWD:/Work -w /Work paddlepaddle/paddle-lite-ubuntu18_04:1.0 /bin/bash
     ```
 
-  - Ubuntu 交叉编译环境：要求 Host 为 Ubuntu 18.04 系统，参考[编译环境准备](../source_compile/compile_env.rst)中的"交叉编译 ARM Linux "步骤安装交叉编译工具链。
+  - Ubuntu 交叉编译环境：要求 Host 为 Ubuntu 18.04 系统，参考[编译环境准备](../source_compile/compile_env)中的"交叉编译 ARM Linux "步骤安装交叉编译工具链。
 - 由于需要通过 `scp` 和 `ssh` 命令将交叉编译生成的 Paddle Lite 库和示例程序传输到设备上执行，因此，在进入 Docker 容器后还需要安装如下软件：
 
   ```

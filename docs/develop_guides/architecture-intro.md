@@ -132,7 +132,7 @@ class KernelLite : public KernelBase {
 };
 ```
 
-[Kernel](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.10/lite/core/kernel.h)是执行期的重要概念，因此设计地非常简单高效。 
+[Kernel](https://github.com/PaddlePaddle/Paddle-Lite/blob/release/v2.10/lite/core/kernel.h) 是执行期的重要概念，因此设计地非常简单高效。 
 
 其中，执行期的 `Run` 是其唯一重要的接口，其中包含具体的计算逻辑。
 
