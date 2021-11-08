@@ -99,7 +99,6 @@ lite_option(LITE_WITH_CODE_META_INFO           "include git version in the heade
 # Thirdparty
 set(THIRD_PARTY_PATH "${CMAKE_BINARY_DIR}/third_party" CACHE STRING
   "A path setting third party libraries download & build directories.")
-message(STATUS "THIRD_PARTY_PATH: ${THIRD_PARTY_PATH}")
 
 if(NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
   find_package(CUDA QUIET)

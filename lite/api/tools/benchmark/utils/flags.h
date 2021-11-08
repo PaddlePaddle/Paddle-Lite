@@ -130,9 +130,6 @@ DECLARE_string(param_file);
 DECLARE_string(input_shape);
 DECLARE_string(input_data_path);
 DECLARE_string(validation_set);
-DECLARE_string(ground_truth_images_path);
-DECLARE_string(ground_truth_labels);
-DECLARE_string(model_output_labels);
 DECLARE_bool(show_output_elem);
 
 // Common runtime options

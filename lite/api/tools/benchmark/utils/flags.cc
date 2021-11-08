@@ -25,9 +25,6 @@ DEFINE_string(param_file, "", param_file_msg);
 DEFINE_string(input_shape, "", input_shape_msg);
 DEFINE_string(input_data_path, "", input_data_path_msg);
 DEFINE_string(validation_set, "", validation_set_msg);
-DEFINE_string(ground_truth_images_path, "", ground_truth_images_path_msg);
-DEFINE_string(ground_truth_labels, "", ground_truth_labels_msg);
-DEFINE_string(model_output_labels, "", model_output_labels_msg);
 DEFINE_bool(show_output_elem, false, show_output_elem_msg);
 
 // Common runtime options
