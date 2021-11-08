@@ -13,4 +13,13 @@
 // limitations under the License.
 
 #pragma once
-#include "lite/kernels/host/gather_compute.h"
+
+#include "core/hal/types.h"
+
+namespace nnadapter {
+namespace amlogic_npu {
+
+void TransposeOpDimensions(hal::Model* model);
+
+}  // namespace amlogic_npu
+}  // namespace nnadapter
