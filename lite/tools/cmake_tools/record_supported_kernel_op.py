@@ -60,7 +60,7 @@ ops_lines = []
 
 # valid targets and valid_ops
 valid_targets = ["kUnk", "kHost", "kX86", "kCUDA", "kARM", "kOpenCL", "kAny", "kFPGA", "kNPU", "kXPU", "kBM", "kMLU", "kRKNPU", "kAPU", "kHuaweiAscendNPU", "kIntelFPGA", "kMetal", "kNNAdapter"]
-valid_ops = [[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]]
+valid_ops = [[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]]
 class TargetType:
     kUnk = 0
     kHost = 1
