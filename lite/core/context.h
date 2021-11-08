@@ -71,7 +71,6 @@ using BMContext = Context<TargetType::kBM>;
 using MLUContext = Context<TargetType::kMLU>;
 using RKNPUContext = Context<TargetType::kRKNPU>;
 using HuaweiAscendNPUContext = Context<TargetType::kHuaweiAscendNPU>;
-using ImaginationNNAContext = Context<TargetType::kImaginationNNA>;
 using IntelFPGAContext = Context<TargetType::kIntelFPGA>;
 using NNAdapterContext = Context<TargetType::kNNAdapter>;
 using MTLContext = Context<TargetType::kMetal>;

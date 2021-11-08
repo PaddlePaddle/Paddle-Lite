@@ -583,20 +583,20 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
         add_dependencies(tiny_publish_cxx_lib publish_inference_opencl)
        endif()
     endif()
-
-    if (LITE_WITH_METAL)
-        add_custom_target(metal_lib_publish DEPENDS LiteMetalLIB
-                COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/metal/"
-                COMMAND cp -r "${CMAKE_BINARY_DIR}/lite.metallib" "${INFER_LITE_PUBLISH_ROOT}/metal/"
-                COMMENT "COPY lite.metallib")
-
-        if (NOT LITE_ON_TINY_PUBLISH)
-            add_dependencies(publish_inference_cxx_lib metal_lib_publish)
-        else ()
-            add_dependencies(tiny_publish_cxx_lib metal_lib_publish)
-        endif ()
-    endif ()
 endif()
+
+if (LITE_WITH_METAL)
+    add_custom_target(metal_lib_publish DEPENDS LiteMetalLIB
+            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/metal/"
+            COMMAND cp -r "${CMAKE_BINARY_DIR}/lite.metallib" "${INFER_LITE_PUBLISH_ROOT}/metal/"
+            COMMENT "COPY lite.metallib")
+
+    if (NOT LITE_ON_TINY_PUBLISH)
+        add_dependencies(publish_inference_cxx_lib metal_lib_publish)
+    else ()
+        add_dependencies(tiny_publish_cxx_lib metal_lib_publish)
+    endif ()
+endif ()
 
 if(LITE_WITH_SW)
     add_custom_target(publish_inference_cxx_lib ${TARGET}
