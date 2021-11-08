@@ -75,7 +75,7 @@ auto output_data=output_tensor->data<float>();
 
 **备注：**
 >> 详细的 C++ API 说明文档位于 [C++ API](../api_reference/cxx_api_doc)。
->> 更多 C++ 应用预测开发可以参考位于位于 [Paddle Lite Demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)的工程示例代码。
+>> 更多 C++ 应用预测开发可以参考位于位于 [Paddle-Lite-Demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)的工程示例代码。
 
 ## C++ 轻量级 mobilenet_light Demo介绍
 以轻量级 mobilenet_light demo 为例，详细介绍如何在手机 android 端 shell 环境下，跑通模型分类案例。
@@ -94,7 +94,7 @@ auto output_data=output_tensor->data<float>();
 
 | Arch  | with_extra | arm_stl | with_cv | 下载 |
 |:-------:|:-----:|:-----:|:-----:|:-------:|
-| armv8 | OFF | c++_static | OFF |[ 2.9-rc ](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.9/inference_lite_lib.android.armv8.gcc.c++_static.tar.gz)|
+| armv8 | OFF | c++_static | OFF |[ 2.10-rc ](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10-rc/inference_lite_lib.android.armv8.gcc.c++_static.tar.gz)|
 
 **解压后内容结构如下：**
 
@@ -119,7 +119,7 @@ inference_lite_lib.android.armv8          Paddle Lite 预测库
 
 ### 3. 准备预测部署模型
 
-（1) 模型下载：下载 [mobilenet_v1](http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz) 模型后解压，得到 Paddle 非 combined 形式的模型，位于文件夹 `mobilenet_v1` 下。可通过模型可视化工具 [Netron](https://lutzroeder.github.io/netron/) 打开文件夹下的`__model__`文件，查看模型结构。
+（1) 模型下载：下载 [mobilenet_v1](https://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz) 模型后解压，得到 Paddle 非 combined 形式的模型，位于文件夹 `mobilenet_v1` 下。可通过模型可视化工具 [Netron](https://lutzroeder.github.io/netron/) 打开文件夹下的`__model__`文件，查看模型结构。
 
 ```shell
 wget http://paddle-inference-dist.bj.bcebos.com/mobilenet_v1.tar.gz

@@ -24,10 +24,8 @@ namespace huawei_ascend_npu {
 
 int ConvertExpand(Converter* converter, hal::Operation* operation) {
   EXPAND_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  if (!IsConstantOperand(shape_operand)) {
-    NNADAPTER_LOG(ERROR) << "Shape input only support const tensor.";
-    return NNADAPTER_INVALID_PARAMETER;
-  }
+  NNADAPTER_CHECK(IsConstantOperand(shape_operand))
+      << "Shape input only support const tensor.";
 
   // Convert to GE operators
   auto input_operator = converter->GetMappedOperator(input_operand);

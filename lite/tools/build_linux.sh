@@ -29,6 +29,8 @@ WITH_STATIC_MKL=OFF
 WITH_AVX=ON
 # options of compiling OPENCL lib.
 WITH_OPENCL=OFF
+# options of compiling Metal lib for Mac OS.
+WITH_METAL=OFF
 # options of compiling rockchip NPU lib.
 WITH_ROCKCHIP_NPU=OFF
 ROCKCHIP_NPU_SDK_ROOT="$(pwd)/rknpu_ddk"  # Download RKNPU SDK from https://github.com/airockchip/rknpu_ddk.git
@@ -176,6 +178,7 @@ function init_cmake_mutable_options {
                         -DWITH_STATIC_MKL=$WITH_STATIC_MKL \
                         -DWITH_AVX=$WITH_AVX \
                         -DLITE_WITH_OPENCL=$WITH_OPENCL \
+                        -DLITE_WITH_METAL=$WITH_METAL \
                         -DLITE_WITH_RKNPU=$WITH_ROCKCHIP_NPU \
                         -DRKNPU_DDK_ROOT=$ROCKCHIP_NPU_SDK_ROOT \
                         -DLITE_WITH_XPU=$WITH_BAIDU_XPU \
@@ -286,6 +289,9 @@ function make_publish_so {
     build_dir=$workspace/build.lite.linux.$ARCH.$TOOLCHAIN
     if [ "${WITH_OPENCL}" = "ON" ]; then
         build_dir=${build_dir}.opencl
+    fi
+    if [ "${WITH_METAL}" = "ON" ]; then
+        build_dir=${build_dir}.metal
     fi
     if [ "${WITH_BAIDU_XPU}" = "ON" ]; then
         build_dir=${build_dir}.baidu_xpu
@@ -459,6 +465,11 @@ function main {
             # compiling lib which can operate on opencl and cpu.
             --with_opencl=*)
                 WITH_OPENCL="${i#*=}"
+                shift
+                ;;
+            # compiling lib for Mac OS with GPU support.
+            --with_metal=*)
+                WITH_METAL="${i#*=}"
                 shift
                 ;;
             # compiling lib which can operate on rockchip npu.
