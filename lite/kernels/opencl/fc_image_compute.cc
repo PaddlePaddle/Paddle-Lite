@@ -254,7 +254,7 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
   // block of the matrix, where the first 4 elements is the first row of the
   // block, second 4 elements is the second row of the block, etc. Subsequent
   // blocks contain elements of the same 4 columns.
-  // This comment refers to TFLite.
+  // This comment and impl refer to TFLite.
   void OI2OIO4I4(void* src, void* dst, size_t O, size_t I) {
     bool fp16_support =
         CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
