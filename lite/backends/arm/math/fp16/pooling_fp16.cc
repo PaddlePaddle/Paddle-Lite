@@ -523,7 +523,7 @@ void pooling_basic_fp16(POOLING_PARAM,
   "vmax.f16 q9, q6, q7\n"               \
   "vld2.16 {q2, q3}, [%[dr1]]!\n"       \
   "vld2.16 {q4, q5}, [%[dr2]]!\n"       \
-  "vld1.16 {v6.4h}, [%[dr0]]!\n"        \
+  "vld1.16 {q6}, [%[dr0]]!\n"           \
   "vmax.f16 q10, q8, q9\n"              \
   "vld1.16 {q7}, [%[dr1]]!\n"           \
   "subs %[cnt_num], %[cnt_num], #1\n"   \
@@ -547,7 +547,7 @@ void pooling_basic_fp16(POOLING_PARAM,
   "vmax.f16 q9, q6, q7\n"            \
   "sub %[dr2], %[dr2], #16\n"        \
   "vmax.f16 q10, q8, q9\n"           \
-  "vstr {d10}, [%[dr_out]]!\n"       \
+  "vst1.16 {d10}, [%[dr_out]]!\n"    \
   "b 3f\n"                           \
   "1: \n"                            \
   "sub %[dr0], %[dr0], #32\n"        \
@@ -560,6 +560,30 @@ void pooling_basic_fp16(POOLING_PARAM,
   "cmp %[remain], #1\n"  \
   "blt 1f\n"
 
+#define P3x3S2P0_AVG                    \
+  "2: \n"                               \
+  "vadd.f16 q9, q0, q1\n"               \
+  "vadd.f16 q10, q2, q3\n"              \
+  "vadd.f16 q11, q4, q5\n"              \
+  "vext.8 q1, q0, q6, #2\n"             \
+  "vext.8 q3, q2, q7, #2\n"             \
+  "vext.8 q5, q4, q8, #2\n"             \
+  "vadd.f16 q6, q9, q1\n"               \
+  "vadd.f16 q7, q10, q3\n"              \
+  "vadd.f16 q8, q11, q5\n"              \
+  "vld2.16 {q0, q1}, [%[dr0]]!\n"       \
+  "vadd.f16 q9, q6, q7\n"               \
+  "vld2.16 {q2, q3}, [%[dr1]]!\n"       \
+  "vld2.16 {q4, q5}, [%[dr2]]!\n"       \
+  "vld1.16 {q6}, [%[dr0]]!\n"           \
+  "vadd.f16 q10, q8, q9\n"              \
+  "vld1.16 {q7}, [%[dr1]]!\n"           \
+  "vld1.16 {q8}, [%[dr2]]!\n"           \
+  "vmul.f16 q10, q10, %q[vcoef]\n"      \
+  "subs %[cnt_num], %[cnt_num], #1\n"   \
+  "vst1.16  {q10}, [%[dr_out]]!\n"      \
+  "bne 2b\n"
+
 #define P3x3S2P0_AVG_REMAIN            \
   "4: \n"                              \
   "vadd.f16 q9, q0, q1\n"              \
@@ -570,14 +594,14 @@ void pooling_basic_fp16(POOLING_PARAM,
   "vext.8 q5, q4, q8, #2\n"            \
   "sub %[dr0], %[dr0], #16\n"          \
   "vadd.f16 q6, q9, q1\n"              \
-  "fadd v7.4h, v10.4h, v3.4h\n"        \
-  "fadd v8.4h, v11.4h, v5.4h\n"        \
+  "vadd.f16 q7, q10, q3\n"             \
+  "vadd.f16 q8, q11, q5\n"             \
   "sub %[dr1], %[dr1], #16\n"          \
   "vadd.f16 q9, q6, q7\n"              \
   "sub %[dr2], %[dr2], #16\n"          \
   "vadd.f16 q10, q8, q9\n"             \
-  "vmul.f16 v10.4h, v10.4h, %[vcoef].4h\n" \
-  "st1  {v10.4h}, [%[dr_out]], #8\n"   \
+  "vmul.f16 q10, q10, %q[vcoef]\n"     \
+  "vst1.16  {d10}, [%[dr_out]]!\n"   \
   "b 3f\n"                             \
   "1: \n"                              \
   "sub %[dr0], %[dr0], #32\n"          \
@@ -585,6 +609,37 @@ void pooling_basic_fp16(POOLING_PARAM,
   "sub %[dr2], %[dr2], #32\n"          \
   "3: \n"
 
+#define P3x3S2P1_INIT                  \
+  "cmp %[cnt_num], #1\n"               \
+  "vld2.16 {q0, q1}, [%[dr0]]!\n"      \
+  "vld2.16 {q2, q3}, [%[dr1]]!\n"      \
+  "vld2.16 {q4, q5}, [%[dr2]]!\n"      \
+  "blt 0f\n"
+
+#define P3x3S2P1_MAX                       \
+  "vmax.f16 q9 , q0, q1\n"                 \
+  "vmax.f16 q10, q2, q3\n"                 \
+  "vmax.f16 q11, q4, q5\n"                 \
+  "vext.8 q0, %q[vmin], q1, #14\n"         \
+  "vext.8 q2, %q[vmin], q3, #14\n"         \
+  "vext.8 q4, %q[vmin], q5, #14\n"         \
+  "vmax.f16 q6, q9,  q0\n"                 \
+  "vmax.f16 q7, q10, q2\n"                 \
+  "vmax.f16 q8, q11, q4\n"                 \
+  "sub %[dr0], %[dr0], #2\n"               \
+  "sub %[dr1], %[dr1], #2\n"               \
+  "sub %[dr2], %[dr2], #2\n"               \
+  "vmax.f16 q9, q6, q7\n"                  \
+  "vld2.16 {q0, q1}, [%[dr0]]!\n"          \
+  "vld2.16 {q2, q3}, [%[dr1]]!\n"          \
+  "vmax.f16 q10, q8, q9\n"                 \
+  "vld2.16 {q4, q5}, [%[dr2]]!\n"          \
+  "subs %[cnt_num], %[cnt_num], #1\n"      \
+  "vld1.16 {q6}, [%[dr0]]!\n"              \
+  "vld1.16 {q7}, [%[dr1]]!\n"              \
+  "vld1.16 {q8}, [%[dr2]]!\n"              \
+  "vst1.16  {q10}, [%[dr_out]]!\n"         \
+  "ble 0f\n"
 
 #endif
 
@@ -1356,18 +1411,18 @@ void pooling3x3s2p1_max_fp16(POOLING_PARAM, int pad_bottom, int pad_right) {
                        [vmin] "w"(vmin)
                      : "cc",
                        "memory",
-                       "v0",
-                       "v1",
-                       "v2",
-                       "v3",
-                       "v4",
-                       "v5",
-                       "v6",
-                       "v7",
-                       "v8",
-                       "v9",
-                       "v10",
-                       "v11");
+                       "q0",
+                       "q1",
+                       "q2",
+                       "q3",
+                       "q4",
+                       "q5",
+                       "q6",
+                       "q7",
+                       "q8",
+                       "q9",
+                       "q10",
+                       "q11");
 #else
 #endif
         int win_remain = cnt_remain;
@@ -1681,11 +1736,9 @@ void pooling3x3s1p0_avg_fp16(POOLING_PARAM,
         float16x4_t vcoef_4 = vget_low_f16(vcoef);
         int cnt_num = w_unroll_size;
         int cnt_remain_4 = cnt;
-#ifdef __aarch64__
-        P3x3S1P0_INIT_INTRIN P3x3S1P0_AVG_8TIMES_INTRIN
-            P3x3S1P0_AVG_4TIMES_INTRIN;
-#else
-#endif
+        P3x3S1P0_INIT_INTRIN; 
+        P3x3S1P0_AVG_8TIMES_INTRIN;
+        P3x3S1P0_AVG_4TIMES_INTRIN;
         AVG_ONE_COMPUTE(
             dr0, dr1, dr2, dr_out, cnt_remain, minval, right_remain, wend, S)
         r0 = r1;
@@ -1751,8 +1804,8 @@ void pooling3x3s1p1_avg_fp16(POOLING_PARAM,
           r2 = r1 + win;
         }
         P3x3s2_AVG_PTR_CHOOSE(
-            dr1, dr2, zero_ptr, S, K, P, h, hin, coef_h, pad_bottom, exclusive)
-            float16x8_t vcoef = vdupq_n_f16(coef_h / 3);
+            dr1, dr2, zero_ptr, S, K, P, h, hin, coef_h, pad_bottom, exclusive);
+        float16x8_t vcoef = vdupq_n_f16(coef_h / 3);
         float16x4_t vcoef_4 = vget_low_f16(vcoef);
         float16_t coef_left_most = exclusive ? coef_h / 2 : coef_h / 3;
         float16_t coef_left_norm = coef_h / 3;
@@ -1770,15 +1823,12 @@ void pooling3x3s1p1_avg_fp16(POOLING_PARAM,
         float16x4_t vcoef_left4 = vget_low_f16(vcoef_left);
         int cnt_num = w_unroll_size;
         int cnt_remain_4 = cnt;
-#ifdef __aarch64__
         if (!win_less) {
           P3x3S1P1_AVG_INIT_INTRIN P3x3S1P0_AVG_8TIMES_INTRIN
               P3x3S1P0_AVG_4TIMES_INTRIN
         } else if (cnt_remain_4 > 0) {
           P3x3S1P1_AVG_WINLESS_INTRIN
         }
-#else
-#endif
         int win_remain = cnt_remain;
         if (win_less && (cnt <= 0) && win_remain > 0) {
           float16_t sum = 0.f;
