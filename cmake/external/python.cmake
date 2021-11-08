@@ -16,7 +16,7 @@ IF(NOT LITE_WITH_PYTHON)
     return()
 ENDIF()
 
-INCLUDE(python_module)
+INCLUDE(util/python_module)
 
 FIND_PACKAGE(PythonInterp ${PY_VERSION} REQUIRED)
 FIND_PACKAGE(PythonLibs ${PY_VERSION} REQUIRED)

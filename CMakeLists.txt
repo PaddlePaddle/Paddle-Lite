@@ -26,9 +26,9 @@ else()
 endif()
 
 # Host system configurations
-include(system)
+include(os/system)
 # Paddlelite functions and macros
-include(functions)
+include(util/functions)
 # Target os configurations
 include(os/common)
 # Paddlelite project
@@ -106,7 +106,7 @@ find_package(Git REQUIRED)
 find_package(Threads REQUIRED)
 
 # Simd configurations
-include(simd)
+include(util/simd)
 
 # CMAKE_BUILD_TYPE
 if(NOT CMAKE_BUILD_TYPE)

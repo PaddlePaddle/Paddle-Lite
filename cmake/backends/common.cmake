@@ -45,45 +45,44 @@ if(LITE_WITH_HUAWEI_ASCEND_NPU)
 endif()
 
 if(LITE_WITH_MLU)
-  include(mlu)
+  include(backends/mlu)
 endif()
 
 if(LITE_WITH_CUDA)
-  include(cuda)
+  include(backends/cuda)
 endif()
 
 if(LITE_WITH_BM)
-  include(bm)
+  include(backends/bm)
 endif()
 
 include(backends/x86)
 
 # Add dependencies
-include(generic)                # simplify cmake module
-include(configure)              # add paddle env configuration
+include(util/generic)                # simplify cmake module
+include(util/configure)              # add paddle env configuration
 if(WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
   message(STATUS "Building the mobile framework")
-  include(postproject)
+  include(util/postproject)
   if(NOT LITE_ON_TINY_PUBLISH)
     include(external/gflags)    # download, build, install gflags
     include(external/gtest)     # download, build, install gtest
-    include(ccache)
+    include(external/ccache)
     include(external/protobuf)  # download, build, install protobuf
   endif()
 else()
-  include(coveralls)
+  include(util/coveralls)
   include(external/gflags)      # download, build, install gflags
   include(external/glog)        # download, build, install glog
   include(external/gtest)       # download, build, install gtest
   include(external/protobuf)    # download, build, install protobuf
   include(external/openblas)    # download, build, install openblas
   include(external/eigen)       # download eigen3
-  include(cudnn)
-  include(ccache)               # set ccache for compilation
-  include(util)                 # set unittest and link libs
-  include(version)              # set PADDLE_VERSION
+  include(external/cudnn)
+  include(external/ccache)               # set ccache for compilation
+  include(util/version)         # set PADDLE_VERSION
   if(NOT APPLE)
-    include(flags)
+    include(util/flags)
   endif()
   set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
   set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")

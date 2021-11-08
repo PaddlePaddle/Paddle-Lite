@@ -41,7 +41,7 @@ function(code_coverage _COVERAGE_SRCS _COVERALLS_UPLOAD _CMAKE_SCRIPT_PATH)
                 -DCOVERALLS_OUTPUT_FILE="${COVERALLS_FILE}"
                 -DCOV_PATH="${PROJECT_BINARY_DIR}"
                 -DPROJECT_ROOT="${PROJECT_SOURCE_DIR}"
-                -P "${_CMAKE_SCRIPT_PATH}/coverallsGcovJsons.cmake"
+                -P "${_CMAKE_SCRIPT_PATH}/util/coverallsGcovJsons.cmake"
         WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
         COMMENT "Coveralls: generating coveralls output..."
     )

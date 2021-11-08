@@ -12,7 +12,7 @@ IF (LITE_WITH_BENCHMARK_TEST)
         SET(GOOGLEBENCHMARK_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/googlebenchmark-source" CACHE STRING "Google Benchmark source directory")
         MESSAGE(STATUS "Auto downloading Google Benchmark , define GOOGLEBENCHMARK_SOURCE_DIR to the src repo to avoid auto downloading")
 
-        CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/cmake/DownloadGoogleBenchmark.cmake.in "${CMAKE_CURRENT_BINARY_DIR}/googlebenchmark-download/CMakeLists.txt")
+        CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/cmake/external/DownloadGoogleBenchmark.cmake.in "${CMAKE_CURRENT_BINARY_DIR}/googlebenchmark-download/CMakeLists.txt")
         EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" .
                 WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/googlebenchmark-download")
         EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" --build .
