@@ -30,8 +30,8 @@ std::string Vector2Str(const std::vector<T>& input) {
   return ss.str();
 }
 
-std::vector<std::string> SplitString(const std::string& str_in,
-                                     const std::string& mark = ":") {
+static std::vector<std::string> SplitString(const std::string& str_in,
+                                            const std::string& mark = ":") {
   std::vector<std::string> str_out;
   std::string tmp_str = str_in;
   while (!tmp_str.empty()) {
@@ -55,7 +55,7 @@ T ShapeProduction(const std::vector<T>& shape) {
   return num;
 }
 
-std::string ShapePrint(const std::vector<std::vector<int64_t>>& shapes) {
+static std::string ShapePrint(const std::vector<std::vector<int64_t>>& shapes) {
   std::string shapes_str{""};
   for (size_t shape_idx = 0; shape_idx < shapes.size(); ++shape_idx) {
     auto shape = shapes[shape_idx];
@@ -70,7 +70,7 @@ std::string ShapePrint(const std::vector<std::vector<int64_t>>& shapes) {
   return shapes_str;
 }
 
-std::string ShapePrint(const std::vector<int64_t>& shape) {
+static std::string ShapePrint(const std::vector<int64_t>& shape) {
   std::string shape_str{""};
   for (auto i : shape) {
     shape_str += std::to_string(i) + " ";
@@ -78,7 +78,8 @@ std::string ShapePrint(const std::vector<int64_t>& shape) {
   return shape_str;
 }
 
-std::vector<std::vector<int64_t>> GetShapes(const std::string& raw_shapes) {
+static std::vector<std::vector<int64_t>> GetShapes(
+    const std::string& raw_shapes) {
   std::vector<std::vector<int64_t>> shapes;
   auto str_shapes = SplitString(raw_shapes);
   for (auto str_shape : str_shapes) {

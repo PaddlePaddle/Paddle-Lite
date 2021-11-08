@@ -113,8 +113,8 @@ bool CheckFlagsValid() {
     ret = false;
   }
   if (!FLAGS_input_data_path.empty()) {
-    auto paths = lite::SplitString(FLAGS_input_data_path);
-    auto shapes = lite::SplitString(FLAGS_input_shape);
+    auto paths = lite::Split(FLAGS_input_data_path, ":");
+    auto shapes = lite::Split(FLAGS_input_shape, ":");
     if (paths.size() != shapes.size()) {
       std::cerr << lite::string_format(
                        "Option invalid: --input_data_path=%s  --input_shape=%s "
