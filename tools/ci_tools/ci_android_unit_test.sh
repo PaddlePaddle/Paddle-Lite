@@ -121,6 +121,7 @@ function build_test_android {
   toolchain=$2
   adb_device=$3
   adb_workdir=$4
+  is_fp16=$5
 
   build_android android $arch $toolchain
 
@@ -133,19 +134,30 @@ function build_test_android {
   test_arm_api ${adb_devices[0]} $adb_work_dir
 
   adb -s ${adb_devices[0]} shell "cd /data/local/tmp && rm -rf $adb_workdir && mkdir $adb_workdir"
-  for _test in $(cat $TESTS_FILE); do
-      local to_skip=0
-      for skip_name in ${skip_list[@]}; do
-          if [ $skip_name = $_test ]; then
-              echo "to skip " $skip_name
-              to_skip=1
-          fi
-      done
+  if [ $arch == "armv7" ] && [ $toolchain == "clang" ]; then
+     # do skip
+  else
+    for _test in $(cat $TESTS_FILE); do
+        local to_skip=0
+        for skip_name in ${skip_list[@]}; do
+            if [ $skip_name == $_test ]; then
+                echo "to skip " $skip_name
+                to_skip=1
+            fi
+        done
+        if [ $is_fp16 == "enable_fp16" ] && [ $arch == "armv7" ]; then
+            # v7 fp16 this case supporting
+            for $_test in {"conv_fp16_compute_test", "gemm_fp16_compute_test", "fc_fp16_compute_test", "pool_fp16_compute_test"}; do
+                echo "to skip " $_test
+                to_skip=1
+            done
+        fi
 
-      if [[ $to_skip -eq 0 ]]; then
-          test_arm_unit_test $_test ${adb_devices[0]} $adb_workdir
-      fi
-  done
+        if [[ $to_skip -eq 0 ]]; then
+            test_arm_unit_test $_test ${adb_devices[0]} $adb_workdir
+        fi
+    done
+  fi
   adb -s ${adb_devices[0]} shell "cd /data/local/tmp && rm -rf $adb_workdir"
 }
 
@@ -161,10 +173,13 @@ fi
 
 if [ $# -eq 3 ] && [ $3 == "enable_fp16" ] ; then
     BUILD_ARM82_FP16=ON
-    build_test_android armv8 clang $1 $2
+    build_test_android armv8 clang $1 $2 $3
+    build_test_android armv7 clang $1 $2 $3
 else
     # $1 adb_device index. eg. 1
     # $2 workspace name on adb.  eg. work_tmp1
-    build_test_android armv7 gcc $1 $2
-    build_test_android armv8 gcc $1 $2
+    build_test_android armv7 gcc $1 $2 ""
+    # only test build
+    build_test_android armv7 clang $1 $2 ""
+    build_test_android armv8 clang $1 $2 ""
 fi
