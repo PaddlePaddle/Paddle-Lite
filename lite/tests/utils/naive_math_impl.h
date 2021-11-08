@@ -391,6 +391,7 @@ static void basic_gemv(int m,
  */
 //! for float, dtype1 and type2 is float
 //! for int8, dytpe1 is char, dtype2 is int
+//! attention! you need to clean output memory especially using float type
 template <typename Dtype1, typename Dtype2>
 static void conv_basic(const Dtype1* din,
                        Dtype2* dout,
@@ -419,6 +420,7 @@ static void conv_basic(const Dtype1* din,
                        const float hard_scale = 6.f,
                        const float offset = 3.f,
                        const float threshold = 6.f) {
+  Dtype2 beta = 0;
   auto src_data = din;
   auto dst_data_ref = dout;
   auto weights_data = weights;
@@ -448,7 +450,7 @@ static void conv_basic(const Dtype1* din,
                           g * out_c_group * out_h * out_w + oc * out_h * out_w +
                           oh * out_w + ow;
             Dtype2 bias_d = with_bias ? (bias_data[g * out_c_group + oc]) : 0;
-            dst_data_ref[out_idx] = bias_d;
+            dst_data_ref[out_idx] = bias_d + dst_data_ref[out_idx] * beta;
             for (int ic = 0; ic < in_c_group; ++ic) {
               for (int kh = 0; kh < kernel_h; ++kh) {
                 for (int kw = 0; kw < kernel_w; ++kw) {
