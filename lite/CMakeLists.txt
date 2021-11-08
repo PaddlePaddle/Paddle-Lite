@@ -55,6 +55,24 @@ if (WITH_TESTING)
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "resnet50_int8_per_layer.tar.gz")
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "ssd_mobilenet_v1_relu_voc_fp32_300.tar.gz")
     lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "ssd_mobilenet_v1_relu_voc_int8_300_per_layer.tar.gz")
+    lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "AlexNet_v2_0.tar.gz")
+    lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "DenseNet121_v2_0.tar.gz")
+    lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "GoogLeNet_v2_0.tar.gz")
+    lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "EfficientNetB0_v2_0.tar.gz")
+    lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "InceptionV3_v2_0.tar.gz")
+    lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "InceptionV4_v2_0.tar.gz")
+    lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "MobileNetV1_v2_0.tar.gz")
+    lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "MobileNetV2_v2_0.tar.gz")
+    lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "MobileNetV3_large_x1_0_v2_0.tar.gz")
+    lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "MobileNetV3_small_x1_0_v2_0.tar.gz")
+    lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "ResNet18_v2_0.tar.gz")
+    lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "ResNet50_v2_0.tar.gz")
+    lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "ResNet101_v2_0.tar.gz")
+    lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "ResNeXt50_32x4d_v2_0.tar.gz")
+    lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "ShuffleNetV2_x1_0_v2_0.tar.gz")
+    lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "SqueezeNet1_0_v2_0.tar.gz")
+    lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "VGG16_v2_0.tar.gz")
+    lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL_FOR_UNITTESTS} "VGG19_v2_0.tar.gz")
     if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
 	    lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "mobilenet_v1_int16.tar.gz")
         lite_download_and_uncompress(${LITE_MODEL_DIR} ${LITE_URL} "resnet50.tar.gz")
@@ -569,20 +587,20 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
         add_dependencies(tiny_publish_cxx_lib publish_inference_opencl)
        endif()
     endif()
-
-    if (LITE_WITH_METAL)
-        add_custom_target(metal_lib_publish DEPENDS LiteMetalLIB
-                COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/metal/"
-                COMMAND cp -r "${CMAKE_BINARY_DIR}/lite.metallib" "${INFER_LITE_PUBLISH_ROOT}/metal/"
-                COMMENT "COPY lite.metallib")
-
-        if (NOT LITE_ON_TINY_PUBLISH)
-            add_dependencies(publish_inference_cxx_lib metal_lib_publish)
-        else ()
-            add_dependencies(tiny_publish_cxx_lib metal_lib_publish)
-        endif ()
-    endif ()
 endif()
+
+if (LITE_WITH_METAL)
+    add_custom_target(metal_lib_publish DEPENDS LiteMetalLIB
+            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/metal/"
+            COMMAND cp -r "${CMAKE_BINARY_DIR}/lite.metallib" "${INFER_LITE_PUBLISH_ROOT}/metal/"
+            COMMENT "COPY lite.metallib")
+
+    if (NOT LITE_ON_TINY_PUBLISH)
+        add_dependencies(publish_inference_cxx_lib metal_lib_publish)
+    else ()
+        add_dependencies(tiny_publish_cxx_lib metal_lib_publish)
+    endif ()
+endif ()
 
 if(LITE_WITH_SW)
     add_custom_target(publish_inference_cxx_lib ${TARGET}
