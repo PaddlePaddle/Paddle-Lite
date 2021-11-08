@@ -125,6 +125,14 @@ bool CheckFlagsValid() {
       ret = false;
     }
   }
+  if (!FLAGS_validation_set.empty()) {
+    if (FLAGS_config_path.empty()) {
+      std::cerr
+          << "Both --validation_set and --config_path options should be set!"
+          << std::endl;
+      ret = false;
+    }
+  }
 
   return ret;
 }

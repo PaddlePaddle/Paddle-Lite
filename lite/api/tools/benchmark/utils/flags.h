@@ -47,16 +47,6 @@ static const char validation_set_msg[] =
     "Use validation images and lables as inputs. Only supports a minival "
     "dataset of ILSVRC_2012 as inputs."
     "Supported set: ILSVRC_2012";
-static const char ground_truth_images_path_msg[] =
-    "The path to the directory containing ground truth images.";
-static const char ground_truth_labels_msg[] =
-    "The path to ground truth labels file. This file should contain the same "
-    "number of labels as the number images in the ground truth directory.";
-static const char model_output_labels_msg[] =
-    "The path to the file containing labels, that is used to interpret the "
-    "output of the model. E.g. in case of mobilenets, this is the path to "
-    "`mobilenet_labels.txt` where each label is in the same order as the "
-    "output 1000 dimension tensor.";
 static const char show_output_elem_msg[] =
     "Show each output tensor's all elements.";
 
