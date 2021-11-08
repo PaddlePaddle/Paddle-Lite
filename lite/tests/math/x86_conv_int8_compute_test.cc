@@ -120,6 +120,7 @@ bool test_conv_int8(TestConvParam_t param) {
   auto output_ptr_basic_f = o_basic_f32.mutable_data<float>();
 
   // 1-relu 2-relu6 4-leakyrelu
+  memset(output_ptr_basic_f, 0, num * oc * oh * ow * sizeof(float));
   conv_basic<float, float>(i_f32.data<float>(),
                            output_ptr_basic_f,
                            num,
