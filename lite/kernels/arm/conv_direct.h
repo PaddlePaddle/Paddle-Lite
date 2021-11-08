@@ -236,7 +236,7 @@ direct_conv_ptype<PRECISION(kFP16), PRECISION(kFP16)>() {
 #ifdef __aarch64__
   return std::make_pair(8, 8);
 #else
-  retur std::make_pair(8, 4);
+  return std::make_pair(8, 4);
 #endif
 }
 #endif
