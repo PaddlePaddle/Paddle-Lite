@@ -137,25 +137,25 @@ function build_test_android {
   if [ $arch == "armv7" ] && [ $toolchain == "clang" ]; then
      # do skip
   else
-    for _test in $(cat $TESTS_FILE); do
-        local to_skip=0
-        for skip_name in ${skip_list[@]}; do
-            if [ $skip_name == $_test ]; then
-                echo "to skip " $skip_name
-                to_skip=1
-            fi
-        done
-        if [ $is_fp16 == "enable_fp16" ] && [ $arch == "armv7" ]; then
-            # v7 fp16 this case supporting
-            for $_test in {"conv_fp16_compute_test", "gemm_fp16_compute_test", "fc_fp16_compute_test", "pool_fp16_compute_test"}; do
-                echo "to skip " $_test
-                to_skip=1
-            done
-        fi
+      for _test in $(cat $TESTS_FILE); do
+          local to_skip=0
+          for skip_name in ${skip_list[@]}; do
+              if [ $skip_name == $_test ]; then
+                 echo "to skip " $skip_name
+                 to_skip=1
+              fi
+          done
+          if [ $is_fp16 == "enable_fp16" ] && [ $arch == "armv7" ]; then
+             # v7 fp16 this case supporting
+             for $_test in {"conv_fp16_compute_test", "gemm_fp16_compute_test", "fc_fp16_compute_test", "pool_fp16_compute_test"}; do
+                 echo "to skip " $_test
+                 to_skip=1
+             done
+          fi
 
-        if [[ $to_skip -eq 0 ]]; then
-            test_arm_unit_test $_test ${adb_devices[0]} $adb_workdir
-        fi
+          if [[ $to_skip -eq 0 ]]; then
+             test_arm_unit_test $_test ${adb_devices[0]} $adb_workdir
+          fi
     done
   fi
   adb -s ${adb_devices[0]} shell "cd /data/local/tmp && rm -rf $adb_workdir"
