@@ -136,18 +136,17 @@ void MulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   operators::ActivationParam act_param;
   act_param.has_active = false;
 
-  /*
-    std::cout << "x_data:" << ",";
-  for (int i = 0; i < 10; i++) {
-    std::cout << (float)x_data[i]<<",";
-  }
-    std::cout << std::endl;
-    std::cout << "y_data" <<",";
-  for (int i = 0; i < 10; i++) {
-    std::cout <<  (float)y_data[i]<<",";
-  }
-    std::cout << std::endl;
-*/
+  //   std::cout << "x_data:" << ",";
+  // for (int i = 0; i < 10; i++) {
+  //   std::cout << (float)x_data[i]<<",";
+  // }
+  //   std::cout << std::endl;
+  //   std::cout << "y_data" <<",";
+  // for (int i = 0; i < 10; i++) {
+  //   std::cout <<  (float)y_data[i]<<",";
+  // }
+  //   std::cout << std::endl;
+
   if (n_ == 1) {
     lite::arm::math::gemv_int8(x_data,
                                y_data,
@@ -188,26 +187,25 @@ void MulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                              act_param,
                              &ctx);
   }
-  /*
-    std::cout << "mul o_data:" <<",";
-  for (int i = 0; i < 10; i++) {
-    std::cout << o_data[i]<<",";
-  }
-    std::cout << "o_data:" <<",";
-  for (int i = 0; i < 10; i++) {
-    std::cout << param.input_scale<<","<<param.weight_scale[i]<<std::endl;
-    std::cout << param.output_scale<<std::endl;
-  }
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << std::endl;
-    */
+  //    std::cout << "mull o_data:" <<",";
+  //  for (int i = 0; i < m_ * n_; i++) {
+  //    std::cout << o_data[i]<<",";
+  //  }
+  //
+  //    std::cout << std::endl;
+  //  for (int i = 0; i < 10; i++) {
+  //    std::cout << param.input_scale<<","<<param.weight_scale[i]<<std::endl;
+  //    std::cout << param.output_scale<<std::endl;
+  //  }
+  //    std::cout << std::endl;
+  //    std::cout << std::endl;
+  //    std::cout << std::endl;
+  //    std::cout << std::endl;
+  //    std::cout << std::endl;
+  //    std::cout << std::endl;
+  //    std::cout << std::endl;
+  //    std::cout << std::endl;
+  //    std::cout << std::endl;
 }
 
 }  // namespace arm

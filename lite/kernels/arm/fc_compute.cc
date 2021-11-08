@@ -296,7 +296,18 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   auto* o_data = param.output->mutable_data<int8_t>();
   auto* w_data =
       flag_trans_weights_ ? weights_.data<int8_t>() : param.w->data<int8_t>();
-
+  // std::cout<<"fc idata:"<<std::endl;
+  //  for (int i = 0; i < m_ * k_; i++) {
+  //    std::cout << (float)i_data[i]<<",";
+  //  }
+  //
+  //    std::cout << std::endl;
+  // std::cout<<"fc wdata:"<<std::endl;
+  //  for (int i = 0; i < 10; i++) {
+  //    std::cout << (float)w_data[i]<<",";
+  //  }
+  //
+  //    std::cout << std::endl;
   const float* b_data = param.bias ? param.bias->data<float>() : nullptr;
   if (flag_trans_bias_) {
     b_data = bias_.data<float>();
@@ -345,6 +356,12 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
                                  &ctx);
     }
   }
+  // std::cout<<"fc odata:"<<std::endl;
+  // for (int i = 0; i < m_ * n_; i++) {
+  //  std::cout << (float)o_data[i]<<",";
+  //}
+
+  //  std::cout << std::endl;
 }
 
 #ifdef ENABLE_ARM_FP16
