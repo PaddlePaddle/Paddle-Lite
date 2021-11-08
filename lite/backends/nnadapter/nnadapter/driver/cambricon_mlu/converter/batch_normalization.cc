@@ -39,9 +39,6 @@ int ConvertBatchNormalization(Converter* converter, hal::Operation* operation) {
     return NNADAPTER_DEVICE_INTERNAL_ERROR;
   }
   batch_norm_node->SetEpsilon(epsilon);
-  magicmind::Layout layout =
-      ConvertToMagicMindDataLayout(input_operand->type.layout);
-  batch_norm_node->SetLayout(layout, layout);
   int64_t axis = ConvertToMagicMindAxis(input_operand->type.layout);
   batch_norm_node->SetAxis(axis);
   auto output_tensor = batch_norm_node->GetOutput(0);

@@ -52,7 +52,7 @@ TEST(ResNet50, test_resnet50_fp32_nndapter) {
   out_accuracy_threshold = 0.69f;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   nnadapter_device_names.emplace_back("cambricon_mlu");
-  out_accuracy_threshold = 0.77f;
+  out_accuracy_threshold = 0.76f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;

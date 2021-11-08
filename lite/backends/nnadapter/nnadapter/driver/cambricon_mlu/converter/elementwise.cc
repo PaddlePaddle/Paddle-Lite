@@ -46,8 +46,8 @@ int ConvertElementwise(Converter* converter, hal::Operation* operation) {
   }
 
   auto op_pair = ElementwiseOperationMap()->find(operation->type);
-  if (op_pair == BinaryOperationMap()->end()) {
-    NNADAPTER_VLOG(5) << "Unsupported binary op.";
+  if (op_pair == ElementwiseOperationMap()->end()) {
+    NNADAPTER_VLOG(5) << "Unsupported elementwise op.";
     return NNADAPTER_DEVICE_INTERNAL_ERROR;
   }
   auto elementwise_node = converter->network()->AddIElementwiseNode(

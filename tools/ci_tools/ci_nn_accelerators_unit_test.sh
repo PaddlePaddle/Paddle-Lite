@@ -1033,10 +1033,7 @@ function cambricon_mlu_prepare_device() {
 }
 
 function cambricon_mlu_build_target() {
-    local os=$1
-    local arch=$2
-    local toolchain=$3
-    local sdk_root_dir=$4
+    local sdk_root_dir="/usr/local/neuware"
 
     # Build all of tests
     rm -rf $BUILD_DIR
@@ -1045,7 +1042,9 @@ function cambricon_mlu_build_target() {
     prepare_workspace $ROOT_DIR $BUILD_DIR
     cmake .. \
         -DWITH_GPU=OFF \
+        -DWITH_MKLDNN=OFF \
         -DWITH_MKL=ON \
+        -DWITH_PYTHON=OFF \
         -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=ON \
@@ -1053,15 +1052,22 @@ function cambricon_mlu_build_target() {
         -DWITH_ARM_DOTPROD=OFF \
         -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
         -DWITH_TESTING=ON \
-        -DLITE_BUILD_EXTRA=OFF \
+        -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_TRAIN=OFF \
         -DLITE_WITH_NNADAPTER=ON \
         -DNNADAPTER_WITH_CAMBRICON_MLU=ON \
-        -DNNADAPTER_CAMBRICON_MLU_SDK_ROOT="$sdk_root_dir"
+        -DNNADAPTER_CAMBRICON_MLU_SDK_ROOT="$sdk_root_dir" \
+        -DCMAKE_BUILD_TYPE=Release
 
     make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/neuware/lib64"
+    local nnadapter_runtime_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
+    local nnadapter_device_lib_path=$(find $BUILD_DIR/lite -name libcambricon_mlu.so)
+    local nnadapter_runtime_lib_dir=${nnadapter_runtime_lib_path%/*}
+    local nnadapter_device_lib_dir=${nnadapter_device_lib_path%/*}
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$nnadapter_runtime_lib_dir:$nnadapter_device_lib_dir"
     export GLOG_v=$UNIT_TEST_LOG_LEVEL
     local unit_test_check_items=(${UNIT_TEST_CHECK_LIST//,/ })
     for test_name in $(cat $TESTS_FILE); do

@@ -24,42 +24,41 @@ magicmind::DataType ConvertToMagicMindDtype(
   magicmind::DataType output_precision;
   switch (input_precision) {
     case NNADAPTER_BOOL8:
-    case NNADAPTER_TENSOR_BOOL8:
       output_precision = magicmind::DataType::BOOL;
       break;
-    case NNADAPTER_TENSOR_INT8:
+    case NNADAPTER_INT8:
       output_precision = magicmind::DataType::INT8;
       break;
-    case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER:
-    case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL:
+    case NNADAPTER_QUANT_INT8_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL:
       output_precision = magicmind::DataType::QINT8;
       break;
-    case NNADAPTER_TENSOR_INT16:
+    case NNADAPTER_INT16:
       output_precision = magicmind::DataType::INT16;
       break;
-    case NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_LAYER:
-    case NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_CHANNEL:
+    case NNADAPTER_QUANT_INT16_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT16_SYMM_PER_CHANNEL:
       output_precision = magicmind::DataType::QINT16;
       break;
-    case NNADAPTER_TENSOR_INT32:
-    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER:
-    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL:
+    case NNADAPTER_INT32:
+    case NNADAPTER_QUANT_INT32_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL:
       output_precision = magicmind::DataType::INT32;
       break;
-    case NNADAPTER_TENSOR_UINT8:
+    case NNADAPTER_UINT8:
       output_precision = magicmind::DataType::UINT8;
       break;
-    case NNADAPTER_TENSOR_UINT16:
+    case NNADAPTER_UINT16:
       output_precision = magicmind::DataType::UINT16;
       break;
-    case NNADAPTER_TENSOR_UINT32:
-    case NNADAPTER_TENSOR_QUANT_UINT32_ASYMM_PER_LAYER:
+    case NNADAPTER_UINT32:
+    case NNADAPTER_QUANT_UINT32_ASYMM_PER_LAYER:
       output_precision = magicmind::DataType::UINT32;
       break;
-    case NNADAPTER_TENSOR_FLOAT16:
+    case NNADAPTER_FLOAT16:
       output_precision = magicmind::DataType::FLOAT16;
       break;
-    case NNADAPTER_TENSOR_FLOAT32:
+    case NNADAPTER_FLOAT32:
       output_precision = magicmind::DataType::FLOAT32;
       break;
     default:
