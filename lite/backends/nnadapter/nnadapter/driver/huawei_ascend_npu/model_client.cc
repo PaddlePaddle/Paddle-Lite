@@ -63,7 +63,7 @@ void AclModelClient::FinalizeAclClientEnv() {
 
 void AclModelClient::InitAclProfilingEnv(
     const std::string& profiling_file_path) {
-  if (profiling_file_path.empty()) {
+  if (!profiling_file_path.empty()) {
     const char* aclProfPath = profiling_file_path.c_str();
     ACL_CALL(aclprofInit(aclProfPath, strlen(aclProfPath)));
     config_ = aclprofCreateConfig(reinterpret_cast<uint32_t*>(&device_id_),
