@@ -251,10 +251,11 @@ void TestSplitSectionsTensorList(Place place,
 }
 
 TEST(Split_test, precision) {
-  float abs_error = 2e-5;
+  float abs_error;
   Place place;
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
+  abs_error = 2e-5;
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
   TestSplitBase<float>(place, abs_error);

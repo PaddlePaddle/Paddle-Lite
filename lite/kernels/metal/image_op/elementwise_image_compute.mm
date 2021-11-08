@@ -91,7 +91,7 @@ void ElementwiseImageCompute::init_for_run() {
     bool should_use_mps = false;
     auto ele_type_ = KernelBase::op_type();
 
-    if (@available(iOS 11.3, *)) {
+    if (@available(iOS 11.3, macOS 10.13.4, macCatalyst 13.0, *)) {
         if (metal_context_->use_mps()) {
             should_use_mps = true;
         }
@@ -251,8 +251,9 @@ template <typename T>
 void ElementwiseImageCompute::run_with_mps() {
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     auto cmdbuf = [backend commandBuffer];
+
     if (mps_op_) {
-        if (@available(iOS 11.3, *)) {
+        if (@available(iOS 11.3, macOS 10.13.4, macCatalyst 13.0, *)) {
             ((__bridge T*)mps_op_).primaryStrideInPixelsY = input_buffer_x_->dim_[1] == 1 ? 0 : 1;
             ((__bridge T*)mps_op_).primaryStrideInPixelsX = input_buffer_x_->dim_[2] == 1 ? 0 : 1;
             ((__bridge T*)mps_op_).secondaryStrideInPixelsY = input_buffer_y_->dim_[1] == 1 ? 0 : 1;
@@ -268,7 +269,7 @@ void ElementwiseImageCompute::run_with_mps() {
 
 template <typename T>
 void ElementwiseImageCompute::setup_with_mps() {
-    if (@available(iOS 11.3, *)) {
+    if (@available(iOS 11.3, macOS 10.13.4, macCatalyst 13.0, *)) {
         auto backend = (__bridge MetalContextImp*)metal_context_->backend();
         mps_op_ = (__bridge_retained void*)[[T alloc] initWithDevice:backend.device];
         // MPS input and output
