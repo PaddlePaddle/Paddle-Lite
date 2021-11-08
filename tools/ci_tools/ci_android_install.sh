@@ -99,7 +99,6 @@ function test_model {
 function test_fp16_model {
   cd ${WORKSPACE}
   workspace=$PWD/$(dirname $0)
-  readonly workspace=${workspace%%lite/tools*}
   WITH_LOG=OFF
   WITH_CV=ON
   WITH_EXCEPTION=ON
@@ -107,7 +106,6 @@ function test_fp16_model {
   TOOL_CHAIN=clang
   # AndroidStl options: c++_static c++_shared
   ANDROID_STL=c++_static
-  cd $workspace
   # step 1 build opt tool
   if [ ! -f build.opt/lite/api/opt ]; then
   ./lite/tools/build.sh build_optimize_tool
