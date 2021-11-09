@@ -84,54 +84,65 @@ void conv_transpose_depthwise_s1<float>(const float* dst,
             uint32x4_t boundray_x1 = vandq_u32(
                 vcgeq_s32(vld1q_s32(iw_data + 4), vdupq_n_s32(0)),
                 vcltq_s32(vld1q_s32(iw_data + 4), vdupq_n_s32(width)));
-            float32x4_t src_v0 = vmlaq_f32(
-                vld1q_f32(src_addr_h0 + iw),
-                vld1q_f32(dst_addr),
-                vbslq_f32(
-                    boundray_x0, vld1q_dup_f32(weight_addr), vdupq_n_f32(0)));
-            float32x4_t src_v1 = vmlaq_f32(
-                vld1q_f32(src_addr_h0 + iw + 4),
-                vld1q_f32(dst_addr + 4),
-                vbslq_f32(
-                    boundray_x1, vld1q_dup_f32(weight_addr), vdupq_n_f32(0)));
-            float32x4_t src_v2 = vmlaq_f32(
-                vld1q_f32(src_addr_h1 + iw),
-                vld1q_f32(dst_addr + output_w),
-                vbslq_f32(
-                    boundray_x0, vld1q_dup_f32(weight_addr), vdupq_n_f32(0)));
-            float32x4_t src_v3 = vmlaq_f32(
-                vld1q_f32(src_addr_h1 + iw + 4),
-                vld1q_f32(dst_addr + output_w + 4),
-                vbslq_f32(
-                    boundray_x1, vld1q_dup_f32(weight_addr), vdupq_n_f32(0)));
-            float32x4_t src_v4 = vmlaq_f32(
-                vld1q_f32(src_addr_h2 + iw),
-                vld1q_f32(dst_addr + output_w * 2),
-                vbslq_f32(
-                    boundray_x0, vld1q_dup_f32(weight_addr), vdupq_n_f32(0)));
-            float32x4_t src_v5 = vmlaq_f32(
-                vld1q_f32(src_addr_h2 + iw + 4),
-                vld1q_f32(dst_addr + output_w * 2 + 4),
-                vbslq_f32(
-                    boundray_x1, vld1q_dup_f32(weight_addr), vdupq_n_f32(0)));
-            float32x4_t src_v6 = vmlaq_f32(
-                vld1q_f32(src_addr_h3 + iw),
-                vld1q_f32(dst_addr + output_w * 3),
-                vbslq_f32(
-                    boundray_x0, vld1q_dup_f32(weight_addr), vdupq_n_f32(0)));
-            float32x4_t src_v7 = vmlaq_f32(
-                vld1q_f32(src_addr_h3 + iw + 4),
-                vld1q_f32(dst_addr + output_w * 3 + 4),
-                vbslq_f32(
-                    boundray_x1, vld1q_dup_f32(weight_addr), vdupq_n_f32(0)));
-            vst1q_f32(src_addr_h0 + iw, src_v0);
-            vst1q_f32(src_addr_h0 + iw + 4, src_v1);
-            vst1q_f32(src_addr_h1 + iw, src_v2);
-            vst1q_f32(src_addr_h1 + iw + 4, src_v3);
-            vst1q_f32(src_addr_h2 + iw, src_v4);
-            vst1q_f32(src_addr_h2 + iw + 4, src_v5);
-            vst1q_f32(src_addr_h3 + iw, src_v6);
-            vst1q_f32(src_addr_h3 + iw + 4, src_v7);
+            if (boundary_y0) {
+              float32x4_t src_v0 = vmlaq_f32(
+                  vld1q_f32(src_addr_h0 + iw),
+                  vld1q_f32(dst_addr),
+                  vbslq_f32(
+                      boundray_x0, vld1q_dup_f32(weight_addr), vdupq_n_f32(0)));
+              float32x4_t src_v1 = vmlaq_f32(
+                  vld1q_f32(src_addr_h0 + iw + 4),
+                  vld1q_f32(dst_addr + 4),
+                  vbslq_f32(
+                      boundray_x1, vld1q_dup_f32(weight_addr), vdupq_n_f32(0)));
+              vst1q_f32(src_addr_h0 + iw, src_v0);
+              vst1q_f32(src_addr_h0 + iw + 4, src_v1);
+            }
+
+            if (boundary_y1) {
+              float32x4_t src_v2 = vmlaq_f32(
+                  vld1q_f32(src_addr_h1 + iw),
+                  vld1q_f32(dst_addr + output_w),
+                  vbslq_f32(
+                      boundray_x0, vld1q_dup_f32(weight_addr), vdupq_n_f32(0)));
+              float32x4_t src_v3 = vmlaq_f32(
+                  vld1q_f32(src_addr_h1 + iw + 4),
+                  vld1q_f32(dst_addr + output_w + 4),
+                  vbslq_f32(
+                      boundray_x1, vld1q_dup_f32(weight_addr), vdupq_n_f32(0)));
+              vst1q_f32(src_addr_h1 + iw, src_v2);
+              vst1q_f32(src_addr_h1 + iw + 4, src_v3);
+            }
+
+            if (boundary_y2) {
+              float32x4_t src_v4 = vmlaq_f32(
+                  vld1q_f32(src_addr_h2 + iw),
+                  vld1q_f32(dst_addr + output_w * 2),
+                  vbslq_f32(
+                      boundray_x0, vld1q_dup_f32(weight_addr), vdupq_n_f32(0)));
+              float32x4_t src_v5 = vmlaq_f32(
+                  vld1q_f32(src_addr_h2 + iw + 4),
+                  vld1q_f32(dst_addr + output_w * 2 + 4),
+                  vbslq_f32(
+                      boundray_x1, vld1q_dup_f32(weight_addr), vdupq_n_f32(0)));
+              vst1q_f32(src_addr_h2 + iw, src_v4);
+              vst1q_f32(src_addr_h2 + iw + 4, src_v5);
+            }
+
+            if (boundary_y3) {
+              float32x4_t src_v6 = vmlaq_f32(
+                  vld1q_f32(src_addr_h3 + iw),
+                  vld1q_f32(dst_addr + output_w * 3),
+                  vbslq_f32(
+                      boundray_x0, vld1q_dup_f32(weight_addr), vdupq_n_f32(0)));
+              float32x4_t src_v7 = vmlaq_f32(
+                  vld1q_f32(src_addr_h3 + iw + 4),
+                  vld1q_f32(dst_addr + output_w * 3 + 4),
+                  vbslq_f32(
+                      boundray_x1, vld1q_dup_f32(weight_addr), vdupq_n_f32(0)));
+              vst1q_f32(src_addr_h3 + iw, src_v6);
+              vst1q_f32(src_addr_h3 + iw + 4, src_v7);
+            }
           }
           for (; i + 3 < output_w; i += 4, iw += 4) {
             int dst_offset = dst_z + dst_y + i;
@@ -140,30 +151,40 @@ void conv_transpose_depthwise_s1<float>(const float* dst,
             uint32x4_t boundray_x0 =
                 vandq_u32(vcgeq_s32(vld1q_s32(iw_data), vdupq_n_s32(0)),
                           vcltq_s32(vld1q_s32(iw_data), vdupq_n_s32(width)));
-            float32x4_t src_v0 = vmlaq_f32(
-                vld1q_f32(src_addr_h0 + iw),
-                vld1q_f32(dst_addr),
-                vbslq_f32(
-                    boundray_x0, vld1q_dup_f32(weight_addr), vdupq_n_f32(0)));
-            float32x4_t src_v1 = vmlaq_f32(
-                vld1q_f32(src_addr_h1 + iw),
-                vld1q_f32(dst_addr + output_w),
-                vbslq_f32(
-                    boundray_x0, vld1q_dup_f32(weight_addr), vdupq_n_f32(0)));
-            float32x4_t src_v2 = vmlaq_f32(
-                vld1q_f32(src_addr_h2 + iw),
-                vld1q_f32(dst_addr + output_w * 2),
-                vbslq_f32(
-                    boundray_x0, vld1q_dup_f32(weight_addr), vdupq_n_f32(0)));
-            float32x4_t src_v3 = vmlaq_f32(
-                vld1q_f32(src_addr_h3 + iw),
-                vld1q_f32(dst_addr + output_w * 3),
-                vbslq_f32(
-                    boundray_x0, vld1q_dup_f32(weight_addr), vdupq_n_f32(0)));
-            vst1q_f32(src_addr_h0 + iw, src_v0);
-            vst1q_f32(src_addr_h1 + iw, src_v1);
-            vst1q_f32(src_addr_h2 + iw, src_v2);
-            vst1q_f32(src_addr_h3 + iw, src_v3);
+
+            if (boundary_y0) {
+              float32x4_t src_v0 = vmlaq_f32(
+                  vld1q_f32(src_addr_h0 + iw),
+                  vld1q_f32(dst_addr),
+                  vbslq_f32(
+                      boundray_x0, vld1q_dup_f32(weight_addr), vdupq_n_f32(0)));
+              vst1q_f32(src_addr_h0 + iw, src_v0);
+            }
+            if (boundary_y1) {
+              float32x4_t src_v1 = vmlaq_f32(
+                  vld1q_f32(src_addr_h1 + iw),
+                  vld1q_f32(dst_addr + output_w),
+                  vbslq_f32(
+                      boundray_x0, vld1q_dup_f32(weight_addr), vdupq_n_f32(0)));
+              vst1q_f32(src_addr_h1 + iw, src_v1);
+            }
+
+            if (boundary_y2) {
+              float32x4_t src_v2 = vmlaq_f32(
+                  vld1q_f32(src_addr_h2 + iw),
+                  vld1q_f32(dst_addr + output_w * 2),
+                  vbslq_f32(
+                      boundray_x0, vld1q_dup_f32(weight_addr), vdupq_n_f32(0)));
+              vst1q_f32(src_addr_h2 + iw, src_v2);
+            }
+            if (boundary_y3) {
+              float32x4_t src_v3 = vmlaq_f32(
+                  vld1q_f32(src_addr_h3 + iw),
+                  vld1q_f32(dst_addr + output_w * 3),
+                  vbslq_f32(
+                      boundray_x0, vld1q_dup_f32(weight_addr), vdupq_n_f32(0)));
+              vst1q_f32(src_addr_h3 + iw, src_v3);
+            }
           }
           for (; i < output_w; i++, iw++) {
             bool boundary_x = ((iw >= 0) && (iw < width));
