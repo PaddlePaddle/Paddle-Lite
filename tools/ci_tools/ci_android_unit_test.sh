@@ -135,7 +135,7 @@ function build_test_android {
 
   adb -s ${adb_devices[0]} shell "cd /data/local/tmp && rm -rf $adb_workdir && mkdir $adb_workdir"
   if [ $arch == "armv7" ] && [ $toolchain == "clang" ] ; then
-     # do skip
+     return
   else
       for _test in $(cat $TESTS_FILE); do
           local to_skip=0
