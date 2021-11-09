@@ -776,6 +776,14 @@ class XPUMultiEncoderFuser {
       CHECK_EQ(fc_precision_, "int8");
       CHECK_EQ(fc_input_max.size(), all_encoders.size() * 6);
       CHECK_EQ(fc_weight_max.size(), all_encoders.size() * 6);
+      for (int i = 0; i < fc_weight_max.size(); i += 6) {
+        CHECK_LT(std::abs(fc_weight_max[i] - fc_weight_max[i + 1]), 1e-5)
+            << " quanted ernie's q/k weight scale should be euqal: "
+            << fc_weight_max[i] << ", " << fc_weight_max[i + 1];
+        CHECK_LT(std::abs(fc_weight_max[i] - fc_weight_max[i + 2]), 1e-5)
+            << " quanted ernie's q/v weight scale should be euqal: "
+            << fc_weight_max[i] << ", " << fc_weight_max[i + 2];
+      }
       op_desc.SetAttr<std::vector<float>>("FCInputMax", fc_input_max);
       // "FCWeightMax" is also stored as "Input" now
       op_desc.SetAttr<std::vector<float>>("FCWeightMax", fc_weight_max);
@@ -980,6 +988,7 @@ class XPUMultiEncoderFuser {
       weight_dim1_acc += weight_dims_vec[i][1];
       if (i > 0) {
         CHECK_EQ(weight_dims_vec[i][0], weight_dims_vec[i - 1][0]);
+        CHECK_EQ(start % 6, 0) << " qkv fuse position invalid: " << start;
       }
     }
 
