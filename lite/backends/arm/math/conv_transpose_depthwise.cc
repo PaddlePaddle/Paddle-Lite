@@ -169,17 +169,21 @@ void conv_transpose_depthwise_s1<float>(const float* dst,
             bool boundary_x = ((iw >= 0) && (iw < width));
             int src_offset = src_z + src_y + iw;
             int dst_offset = dst_z + dst_y + i;
-            src[src_offset] += (boundary_x) * (boundary_y0)*dst[dst_offset] *
-                               weights[weight_offset];
+            src[src_offset] += (boundary_x) * (boundary_y0)
+                                   ? *dst[dst_offset] * weights[weight_offset]
+                                   : 0;
             src[src_offset + width] +=
-                (boundary_x) * (boundary_y1)*dst[dst_offset + output_w] *
-                weights[weight_offset];
+                (boundary_x) * (boundary_y1)
+                    ? dst[dst_offset + output_w] * weights[weight_offset]
+                    : 0;
             src[src_offset + width * 2] +=
-                (boundary_x) * (boundary_y2)*dst[dst_offset + output_w * 2] *
-                weights[weight_offset];
+                (boundary_x) * (boundary_y2)
+                    ? dst[dst_offset + output_w * 2] * weights[weight_offset]
+                    : 0;
             src[src_offset + width * 3] +=
-                (boundary_x) * (boundary_y3)*dst[dst_offset + output_w * 3] *
-                weights[weight_offset];
+                (boundary_x) * (boundary_y3)
+                    ? dst[dst_offset + output_w * 3] * weights[weight_offset]
+                    : 0;
           }
         }
       }
@@ -350,17 +354,21 @@ void conv_transpose_depthwise_s2<float>(const float* dst,
             bool boundary_x = ((iw >= 0) && (iw < width));
             int src_offset = src_z + src_y + iw;
             int dst_offset = dst_z + dst_y + i;
-            src[src_offset] += (boundary_x) * (boundary_y0)*dst[dst_offset] *
-                               weights[weight_offset];
+            src[src_offset] += (boundary_x) * (boundary_y0)
+                                   ? dst[dst_offset] * weights[weight_offset]
+                                   : 0;
             src[src_offset + width * 2] +=
-                (boundary_x) * (boundary_y1)*dst[dst_offset + output_w] *
-                weights[weight_offset];
+                (boundary_x) * (boundary_y1)
+                    ? dst[dst_offset + output_w] * weights[weight_offset]
+                    : 0;
             src[src_offset + width * 4] +=
-                (boundary_x) * (boundary_y2)*dst[dst_offset + output_w * 2] *
-                weights[weight_offset];
+                (boundary_x) * (boundary_y2)
+                    ? dst[dst_offset + output_w * 2] * weights[weight_offset]
+                    : 0;
             src[src_offset + width * 6] +=
-                (boundary_x) * (boundary_y3)*dst[dst_offset + output_w * 3] *
-                weights[weight_offset];
+                (boundary_x) * (boundary_y3)
+                    ? dst[dst_offset + output_w * 3] * weights[weight_offset]
+                    : 0;
           }
         }
       }
