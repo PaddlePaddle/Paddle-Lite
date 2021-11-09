@@ -170,7 +170,7 @@ void conv_transpose_depthwise_s1<float>(const float* dst,
             int src_offset = src_z + src_y + iw;
             int dst_offset = dst_z + dst_y + i;
             src[src_offset] += (boundary_x) * (boundary_y0)
-                                   ? *dst[dst_offset] * weights[weight_offset]
+                                   ? dst[dst_offset] * weights[weight_offset]
                                    : 0;
             src[src_offset + width] +=
                 (boundary_x) * (boundary_y1)
