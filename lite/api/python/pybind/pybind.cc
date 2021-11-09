@@ -311,6 +311,10 @@ void BindLiteCxxPredictor(py::module *m) {
       .def(py::init<>())
       .def("get_input", &CxxPaddleApiImpl::GetInput)
       .def("get_output", &CxxPaddleApiImpl::GetOutput)
+      .def("get_output_names", &CxxPaddleApiImpl::GetOutputNames)
+      .def("get_input_names", &CxxPaddleApiImpl::GetInputNames)
+      .def("get_input_by_name", &CxxPaddleApiImpl::GetInputByName)
+      .def("get_output_by_name", &CxxPaddleApiImpl::GetOutputByName)
       .def("run", &CxxPaddleApiImpl::Run)
       .def("get_version", &CxxPaddleApiImpl::GetVersion)
       .def("save_optimized_model",
@@ -326,6 +330,10 @@ void BindLiteLightPredictor(py::module *m) {
       .def(py::init<>())
       .def("get_input", &LightPredictorImpl::GetInput)
       .def("get_output", &LightPredictorImpl::GetOutput)
+      .def("get_input_names", &LightPredictorImpl::GetInputNames)
+      .def("get_output_names", &LightPredictorImpl::GetOutputNames)
+      .def("get_input_by_name", &LightPredictorImpl::GetInputByName)
+      .def("get_output_by_name", &LightPredictorImpl::GetOutputByName)
       .def("run", &LightPredictorImpl::Run)
       .def("get_version", &LightPredictorImpl::GetVersion);
 }

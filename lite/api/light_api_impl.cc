@@ -121,6 +121,18 @@ LightPredictorImpl::~LightPredictorImpl() {
 #endif
 }
 
+std::unique_ptr<lite_api::Tensor> LightPredictorImpl::GetInputByName(
+    const std::string& name) {
+  return std::unique_ptr<lite_api::Tensor>(
+      new lite_api::Tensor(raw_predictor_->GetInputByName(name)));
+}
+
+std::unique_ptr<const lite_api::Tensor> LightPredictorImpl::GetOutputByName(
+    const std::string& name) const {
+  return std::unique_ptr<lite_api::Tensor>(
+      new lite_api::Tensor(raw_predictor_->GetOutputByName(name)));
+}
+
 std::unique_ptr<lite_api::Tensor> LightPredictorImpl::GetInput(int i) {
   return std::unique_ptr<lite_api::Tensor>(
       new lite_api::Tensor(raw_predictor_->GetInput(i)));
@@ -156,11 +168,6 @@ std::unique_ptr<const lite_api::Tensor> LightPredictorImpl::GetTensor(
     const std::string& name) const {
   return std::unique_ptr<const lite_api::Tensor>(
       new lite_api::Tensor(raw_predictor_->GetTensor(name)));
-}
-std::unique_ptr<lite_api::Tensor> LightPredictorImpl::GetInputByName(
-    const std::string& name) {
-  return std::unique_ptr<lite_api::Tensor>(
-      new lite_api::Tensor(raw_predictor_->GetInputByName(name)));
 }
 
 std::vector<std::string> LightPredictorImpl::GetInputNames() {

@@ -114,6 +114,22 @@ Tensor* LightPredictor::GetInputByName(const std::string& name) {
   }
 }
 
+// get output by name
+const lite::Tensor* LightPredictor::GetOutputByName(const std::string& name) {
+  auto element = std::find(output_names_.begin(), output_names_.end(), name);
+  if (element == output_names_.end()) {
+    LOG(ERROR) << "Model do not have output named with: [" << name
+               << "], model's outputs include:";
+    for (size_t i = 0; i < output_names_.size(); i++) {
+      LOG(ERROR) << "[" << output_names_[i] << "]";
+    }
+    return nullptr;
+  } else {
+    int position = std::distance(output_names_.begin(), element);
+    return GetOutput(position);
+  }
+}
+
 #if !defined(LITE_WITH_METAL)
 const Tensor* LightPredictor::GetOutput(size_t offset) {
   CHECK(output_names_.size() > offset)

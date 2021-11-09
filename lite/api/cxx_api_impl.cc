@@ -246,6 +246,18 @@ CxxPaddleApiImpl::~CxxPaddleApiImpl() {
 #endif
 }
 
+std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetInputByName(
+    const std::string &name) {
+  auto *x = raw_predictor_->GetInputByName(name);
+  return std::unique_ptr<lite_api::Tensor>(new lite_api::Tensor(x));
+}
+
+std::unique_ptr<const lite_api::Tensor> CxxPaddleApiImpl::GetOutputByName(
+    const std::string &name) const {
+  const auto *x = raw_predictor_->GetOutputByName(name);
+  return std::unique_ptr<lite_api::Tensor>(new lite_api::Tensor(x));
+}
+
 std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetInput(int i) {
   auto *x = raw_predictor_->GetInput(i);
   return std::unique_ptr<lite_api::Tensor>(new lite_api::Tensor(x));
@@ -305,12 +317,6 @@ std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetMutableTensor(
     const std::string &name) {
   return std::unique_ptr<lite_api::Tensor>(
       new lite_api::Tensor(raw_predictor_->GetMutableTensor(name)));
-}
-
-std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetInputByName(
-    const std::string &name) {
-  return std::unique_ptr<lite_api::Tensor>(
-      new lite_api::Tensor(raw_predictor_->GetInputByName(name)));
 }
 
 void CxxPaddleApiImpl::SaveOptimizedModel(const std::string &model_dir,
