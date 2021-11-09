@@ -73,7 +73,12 @@ void conv_transpose_depthwise_s1<float>(const float* dst,
               boundary_y3 ? (src + src_z + width * 3 + src_y) : zero_ptr;
           int iw = -pad_w0 + kx * dilation_w;
           int i = 0;
-          for (; i + 7 < output_w; i += 8, iw += 8) {
+          if (iw < 0) {
+            i = -iw;
+            iw = 0;
+          }
+
+          for (; i + 7 < output_w && iw + 7 < width; i += 8, iw += 8) {
             int dst_offset = dst_z + dst_y + i;
             const float* dst_addr = dst + dst_offset;
             const int iw_data[8] = {
@@ -144,7 +149,7 @@ void conv_transpose_depthwise_s1<float>(const float* dst,
               vst1q_f32(src_addr_h3 + iw + 4, src_v7);
             }
           }
-          for (; i + 3 < output_w; i += 4, iw += 4) {
+          for (; i + 3 < output_w && iw + 3 < width; i += 4, iw += 4) {
             int dst_offset = dst_z + dst_y + i;
             const float* dst_addr = dst + dst_offset;
             const int iw_data[4] = {iw, iw + 1, iw + 2, iw + 3};
