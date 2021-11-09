@@ -214,10 +214,6 @@ if (LITE_WITH_MLU)
 add_definitions("-DLITE_WITH_MLU")
 endif()
 
-if (LITE_WITH_HUAWEI_ASCEND_NPU)
-add_definitions("-DLITE_WITH_HUAWEI_ASCEND_NPU")
-endif()
-
 if (LITE_WITH_NNADAPTER)
   add_definitions(-DLITE_WITH_NNADAPTER)
   # The following macros are only for unit test

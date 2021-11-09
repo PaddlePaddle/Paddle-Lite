@@ -57,7 +57,6 @@ enum class TargetType : int {
   kMLU = 11,
   kRKNPU = 12,
   kAPU = 13,
-  kHuaweiAscendNPU = 14,
   kIntelFPGA = 16,
   kMetal = 17,
   kNNAdapter = 18,

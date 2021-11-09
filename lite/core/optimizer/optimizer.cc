@@ -212,7 +212,6 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "mixed_precision_auto_insert_calib_op_pass",
        "nnadapter_subgraph_pass",
        "npu_subgraph_pass",
-       "huawei_ascend_npu_subgraph_pass",
        "xpu_subgraph_pass",
        "bm_subgraph_pass",
        "apu_subgraph_pass",

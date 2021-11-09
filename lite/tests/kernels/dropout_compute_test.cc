@@ -105,9 +105,6 @@ TEST(Dropout, precision) {
 #elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
-#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
-  place = TARGET(kHuaweiAscendNPU);
-  abs_error = 2e-1;  // precision_mode default is force_fp16
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
 #else
@@ -122,9 +119,7 @@ TEST(Dropout, precision) {
 #if defined(LITE_WITH_NPU)
         if (dims.size() < 2) continue;
 #endif
-#if (defined(LITE_WITH_NNADAPTER) &&               \
-     defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)) || \
-    defined(LITE_WITH_HUAWEI_ASCEND_NPU)
+#if (defined(LITE_WITH_NNADAPTER) && defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU))
         const double eps = 1e-6;
         if (fabs(dropout_prob - 0.0) < eps || fabs(dropout_prob - 1.0) < eps ||
             strcmp(dropout_implementation, "upscale_in_train") == 0) {

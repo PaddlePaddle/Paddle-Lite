@@ -25,7 +25,6 @@ std::shared_ptr<lite::OpLite> TestCase::CreateSubgraphOp() {
   static const std::set<TargetType> subgraph_op_supported_targets(
       {TARGET(kNPU),
        TARGET(kXPU),
-       TARGET(kHuaweiAscendNPU),
        TARGET(kNNAdapter)});
   bool create_subgraph_op = subgraph_op_supported_targets.find(place_.target) !=
                             subgraph_op_supported_targets.end();

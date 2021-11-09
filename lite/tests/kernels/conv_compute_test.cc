@@ -278,8 +278,7 @@ void TestConvGroups(Place place, float abs_error = 2e-5) {
        std::vector<std::vector<int64_t>>{{1, 6, 3, 4}, {5, 12, 7, 8}}) {
     for (auto out_channels : {2, 3, 6}) {
       for (auto groups : {2, 3, 6}) {
-#if (defined LITE_WITH_NPU) || (defined LITE_WITH_HUAWEI_ASCEND_NPU) || \
-    (defined NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+#if (defined LITE_WITH_NPU) || (defined NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
         if (out_channels % groups != 0) continue;
 #endif
         std::unique_ptr<arena::TestCase> tester(new ConvComputeTester(
@@ -488,9 +487,6 @@ TEST(Conv2d, precision) {
 #elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 5e-2;  // Using fp16 in NPU
-#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
-  place = TARGET(kHuaweiAscendNPU);
-  abs_error = 5e-2;  // precision_mode default is force_fp16
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
   abs_error = 1e-2;
