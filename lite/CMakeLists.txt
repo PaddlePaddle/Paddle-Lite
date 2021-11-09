@@ -399,27 +399,16 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                 add_dependencies(publish_inference_cxx_lib bundle_light_api)
                 add_dependencies(publish_inference_cxx_lib test_model_bin)
                 add_dependencies(publish_inference_cxx_lib benchmark_bin)
-                if (ARM_TARGET_OS STREQUAL "android" OR ARM_TARGET_OS STREQUAL "armlinux")
+                if (ARM_TARGET_OS STREQUAL "android" OR ARM_TARGET_OS STREQUAL "armlinux" OR ARM_TARGET_OS STREQUAL "armmacos")
                     add_dependencies(publish_inference_cxx_lib paddle_full_api_shared)
                     add_dependencies(publish_inference paddle_light_api_shared)
                     add_custom_command(TARGET publish_inference_cxx_lib
-                          COMMAND cp ${CMAKE_BINARY_DIR}/lite/api/*.so ${INFER_LITE_PUBLISH_ROOT}/cxx/lib
+                          COMMAND cp ${CMAKE_BINARY_DIR}/lite/api/libpaddle_light_api_shared* ${INFER_LITE_PUBLISH_ROOT}/cxx/lib
+                          COMMAND cp ${CMAKE_BINARY_DIR}/lite/api/libpaddle_full_api_shared* ${INFER_LITE_PUBLISH_ROOT}/cxx/lib
                           COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/benchmark_bin" "${INFER_LITE_PUBLISH_ROOT}/bin"
                           )
-                elseif(ARM_TARGET_OS STREQUAL "armmacos")
-                    add_dependencies(publish_inference_cxx_lib paddle_full_api_shared)
-                    add_dependencies(publish_inference paddle_light_api_shared)
-                    add_custom_command(TARGET publish_inference_cxx_lib
-                        COMMAND cp ${CMAKE_BINARY_DIR}/lite/api/*.dylib ${INFER_LITE_PUBLISH_ROOT}/cxx/lib
-                        COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/benchmark_bin" "${INFER_LITE_PUBLISH_ROOT}/bin"
-                        )
                 endif()
                 add_dependencies(publish_inference publish_inference_cxx_lib)
-                if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-                    add_custom_command(TARGET publish_inference_cxx_lib POST_BUILD
-                            COMMAND ${CMAKE_STRIP} "--strip-debug" ${INFER_LITE_PUBLISH_ROOT}/cxx/lib/*.a
-                            COMMAND ${CMAKE_STRIP} "--strip-debug" ${INFER_LITE_PUBLISH_ROOT}/cxx/lib/*.so)
-                endif()
             endif()
     else()
         if (IOS)
