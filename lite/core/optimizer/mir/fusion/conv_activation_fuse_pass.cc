@@ -98,11 +98,9 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
         has_alpha = false;
       }
       if (act_type == "hard_swish") {
-        if (has_arm) {
-          // it doesn't support conv_dw/int8_conv+hardswish
-          if (has_int8 || conv_type == "depthwise_conv2d") {
-            continue;
-          }
+        if (has_arm && conv_type == "depthwise_conv2d") {
+          // it doesn't support conv_dw_conv+hardswish
+          continue;
         }
       }
       for (auto has_bias : {true, false}) {

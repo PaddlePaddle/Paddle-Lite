@@ -574,5 +574,4 @@ REGISTER_MIR_PASS(sparse_conv_detect_pass,
     .ExcludeTargets({TARGET(kNPU)})
     .ExcludeTargets({TARGET(kAPU)})
     .ExcludeTargets({TARGET(kHuaweiAscendNPU)})
-    .ExcludeTargets({TARGET(kX86)})
-    .ExcludeTargets({TARGET(kImaginationNNA)});
+    .ExcludeTargets({TARGET(kX86)});

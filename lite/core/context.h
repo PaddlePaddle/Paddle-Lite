@@ -71,7 +71,6 @@ using BMContext = Context<TargetType::kBM>;
 using MLUContext = Context<TargetType::kMLU>;
 using RKNPUContext = Context<TargetType::kRKNPU>;
 using HuaweiAscendNPUContext = Context<TargetType::kHuaweiAscendNPU>;
-using ImaginationNNAContext = Context<TargetType::kImaginationNNA>;
 using IntelFPGAContext = Context<TargetType::kIntelFPGA>;
 using NNAdapterContext = Context<TargetType::kNNAdapter>;
 using MTLContext = Context<TargetType::kMetal>;
@@ -250,19 +249,6 @@ class Context<TargetType::kRKNPU> {
 };
 #endif
 
-#ifdef LITE_WITH_IMAGINATION_NNA
-template <>
-class Context<TargetType::kImaginationNNA> {
- public:
-  Context() {}
-  // NOTE: InitOnce should only be used by ContextScheduler
-  void InitOnce() {}
-  void CopySharedTo(ImaginationNNAContext* ctx) {}
-
-  std::string name() const { return "ImaginationNNAContext"; }
-};
-#endif
-
 #if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
     defined(LITE_WITH_NNADAPTER)
 template <>
@@ -386,6 +372,43 @@ class Context<TargetType::kNNAdapter> {
 
   static std::string NNAdapterSubgraphPartitionConfigBuffer(Scope* scope) {
     auto var = scope->FindVar("NNADAPTER_SUBGRAPH_PARTITION_CONFIG_BUFFER");
+    if (!var) return "";
+    return var->Get<std::string>();
+  }
+
+  static void SetNNAdapterMixedPrecisionQuantizationConfigPath(
+      Scope* scope,
+      const std::string& mixed_precision_quantization_config_path) {
+    auto var = scope->Var("NNADAPTER_MIXED_PRECISION_QUANTIZATION_CONFIG_PATH");
+    CHECK(var);
+    auto data = var->GetMutable<std::string>();
+    CHECK(data);
+    *data = mixed_precision_quantization_config_path;
+  }
+
+  static std::string NNAdapterMixedPrecisionQuantizationConfigPath(
+      Scope* scope) {
+    auto var =
+        scope->FindVar("NNADAPTER_MIXED_PRECISION_QUANTIZATION_CONFIG_PATH");
+    if (!var) return "";
+    return var->Get<std::string>();
+  }
+
+  static void SetNNAdapterMixedPrecisionQuantizationConfigBuffer(
+      Scope* scope,
+      const std::string& mixed_precision_quantization_config_buffer) {
+    auto var =
+        scope->Var("NNADAPTER_MIXED_PRECISION_QUANTIZATION_CONFIG_BUFFER");
+    CHECK(var);
+    auto data = var->GetMutable<std::string>();
+    CHECK(data);
+    *data = mixed_precision_quantization_config_buffer;
+  }
+
+  static std::string NNAdapterMixedPrecisionQuantizationConfigBuffer(
+      Scope* scope) {
+    auto var =
+        scope->FindVar("NNADAPTER_MIXED_PRECISION_QUANTIZATION_CONFIG_BUFFER");
     if (!var) return "";
     return var->Get<std::string>();
   }
@@ -743,13 +766,6 @@ class ContextScheduler {
             &ctx->As<BMContext>());
         break;
 #endif
-#ifdef LITE_WITH_IMAGINATION_NNA
-      case TARGET(kImaginationNNA):
-        kernel_contexts_[TargetType::kImaginationNNA]
-            .As<ImaginationNNAContext>()
-            .CopySharedTo(&ctx->As<ImaginationNNAContext>());
-        break;
-#endif
 #ifdef LITE_WITH_MLU
       case TARGET(kMLU): {
         int dev_id = TargetWrapper<TargetType::kMLU>::GetCurDevice();
@@ -826,9 +842,6 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_MLU
     InitContext<TargetType::kMLU, MLUContext>();
-#endif
-#ifdef LITE_WITH_IMAGINATION_NNA
-    InitContext<TargetType::kImaginationNNA, ImaginationNNAContext>();
 #endif
 #if defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON) || \
     defined(LITE_WITH_NNADAPTER)

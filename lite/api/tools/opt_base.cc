@@ -773,7 +773,6 @@ void OptBase::InitSupportedOpInfo() {
                                               "kRKNPU",
                                               "kAPU",
                                               "kHuaweiAscendNPU",
-                                              "kImaginationNNA",
                                               "kIntelFPGA",
                                               "kMetal",
                                               "kNNAdapter"};
@@ -810,25 +809,8 @@ void OptBase::InitSupportedOpInfo() {
   }
 
   // collect operators supported by nnadapter
-  // operators in head file paddle_use_bridges.h
+  // operators in head file converter/all.h
   std::string device_names{};
-#define USE_SUBGRAPH_BRIDGE(op_type_, target_, device_names_)     \
-  device_names = #device_names_;                                  \
-  device_names.erase(                                             \
-      std::remove(device_names.begin(), device_names.end(), '"'), \
-      device_names.end());                                        \
-  device_names.erase(                                             \
-      std::remove(device_names.begin(), device_names.end(), ' '), \
-      device_names.end());                                        \
-  for (auto& device_name : lite::Split(device_names, ",")) {      \
-    target_supported_ops_[device_name].emplace(#op_type_);        \
-    all_supported_ops_[#op_type_].emplace(device_name);           \
-  }
-#include "lite/kernels/nnadapter/bridges/paddle_use_bridges.h"
-#undef USE_SUBGRAPH_BRIDGE
-
-// collect operators supported by nnadapter
-// operators in head file converter/all.h
 #define REGISTER_CONVERTER(op_type_, func_name_, device_names_)   \
   device_names = #device_names_;                                  \
   device_names.erase(                                             \

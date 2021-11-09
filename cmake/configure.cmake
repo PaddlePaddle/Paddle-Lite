@@ -191,6 +191,8 @@ endif()
 
 if (LITE_WITH_METAL)
     find_library(METAL_LIBRARY Metal REQUIRED)
+    find_library(GRAPHIC CoreGraphics REQUIRED)
+    find_library(MPS_LIBRARY MetalPerformanceShaders REQUIRED)
     find_library(FOUNDATION_LIBRARY Foundation)
     add_definitions("-DLITE_WITH_METAL")
 endif()
@@ -210,10 +212,6 @@ endif()
 
 if (LITE_WITH_MLU)
 add_definitions("-DLITE_WITH_MLU")
-endif()
-
-if (LITE_WITH_IMAGINATION_NNA)
-  add_definitions("-DLITE_WITH_IMAGINATION_NNA")
 endif()
 
 if (LITE_WITH_HUAWEI_ASCEND_NPU)

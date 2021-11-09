@@ -21,6 +21,7 @@ BUILD_CV=OFF
 WITH_LOG=ON
 WITH_MKL=ON
 WITH_OPENCL=OFF
+LITE_ON_TINY_PUBLISH=OFF
 WITH_STATIC_MKL=OFF
 WITH_AVX=ON
 WITH_EXCEPTION=OFF
@@ -123,11 +124,18 @@ function set_benchmark_options {
 function make_armosx {
     local arch=armv8
     local os=armmacos
-       if [ "${WITH_STRIP}" == "ON" ]; then
+    if [ "${WITH_STRIP}" == "ON" ]; then
         BUILD_EXTRA=ON
     fi
 
     build_dir=$workspace/build.macos.${os}.${arch}
+    if [ ${WITH_OPENCL} == "ON" ]; then
+        build_dir=${build_dir}.opencl
+        prepare_opencl_source_code $workspace
+    fi
+    if [ "${WITH_BENCHMARK}" == "ON" ]; then
+        set_benchmark_options
+    fi
     if [ -d $build_dir ]
     then
         rm -rf $build_dir
@@ -146,7 +154,8 @@ function make_armosx {
     cmake $workspace \
             -DWITH_LITE=ON \
             -DLITE_WITH_ARM=ON \
-            -DLITE_ON_TINY_PUBLISH=ON \
+            -DLITE_WITH_OPENCL=${WITH_OPENCL} \
+            -DLITE_ON_TINY_PUBLISH=${LITE_ON_TINY_PUBLISH} \
             -DLITE_WITH_OPENMP=OFF \
             -DWITH_ARM_DOTPROD=OFF \
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
@@ -161,7 +170,11 @@ function make_armosx {
             -DDEPLOYMENT_TARGET=${IOS_DEPLOYMENT_TARGET} \
             -DARM_TARGET_OS=armmacos
 
-    make publish_inference -j$NUM_PROC
+    if [ "${WITH_BENCHMARK}" == "ON" ]; then
+        make benchmark_bin -j$NUM_PROC
+    else
+        make publish_inference -j$NUM_PROC
+    fi
     cd -
 }
 
@@ -253,14 +266,17 @@ function print_usage {
     echo -e "|                                                                                                                                      |"
     echo -e "|  for arm macos:                                                                                                                      |"
     echo -e "|  optional argument:                                                                                                                  |"
-    echo -e "|     --build_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                           |"
+    echo -e "|     --build_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                          |"
     echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                   |"
     echo -e "|     --with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF                            |"
-    echo -e "|     --build_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)  |"
-    echo -e "|     --with_benchmark: (OFF|ON); controls whether to compile benchmark binary, default is OFF, only support macos x86                 |"
+    echo -e "|     --build_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP) |"
+    echo -e "|     --with_benchmark: (OFF|ON); controls whether to compile benchmark binary, default is OFF                                         |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of benchmark binary compiling for macos x86:                                                                              |"
     echo -e "|     ./lite/tools/build_macos.sh --with_benchmark=ON x86                                                                              |"
+    echo -e "|                                                                                                                                      |"
+    echo -e "|  arguments of benchmark binary compiling for macos opencl(only support --gpu_precision=fp32):                                        |"
+    echo -e "|     ./lite/tools/build_macos.sh --build_opencl=ON --with_benchmark=ON arm64                                                          |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of striping lib according to input model:(armv8, gcc, c++_static)                                                         |"
     echo -e "|     ./lite/tools/build_macos.sh --with_strip=ON --opt_model_dir=YourOptimizedModelDir                                                |"
@@ -350,6 +366,10 @@ function main {
                 ;;
             --build_opencl=*)
                 WITH_OPENCL="${i#*=}"
+                shift
+                ;;
+            --tiny_publish=*)
+                LITE_ON_TINY_PUBLISH="${i#*=}"
                 shift
                 ;;
             --build_npu=*)

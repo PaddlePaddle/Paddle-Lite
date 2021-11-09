@@ -39,12 +39,14 @@ class Context {
   int GetFirstDeviceID() {
     return selected_device_ids_.empty() ? 0 : selected_device_ids_[0];
   }
+  std::string GetProfilingFilePath() { return profiling_file_path_; }
   ~Context();
 
  private:
   void* device_{nullptr};
   void* context_{nullptr};
   std::vector<int> selected_device_ids_;
+  std::string profiling_file_path_ = "";
 };
 
 class Program {
