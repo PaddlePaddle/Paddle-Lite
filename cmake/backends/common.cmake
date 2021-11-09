@@ -24,10 +24,6 @@ if(LITE_WITH_INTEL_FPGA)
   include(backends/intel_fpga)
 endif()
 
-if(LITE_WITH_IMAGINATION_NNA)
-  include(backends/imagination_nna)
-endif()
-
 if(LITE_WITH_NPU)
   include(backends/npu)
 endif()

@@ -47,9 +47,6 @@ endif()
 if(LITE_WITH_RKNPU)
     set(external_libs_DEPS ${external_libs_DEPS} ${rknpu_deps})
 endif()
-if(LITE_WITH_IMAGINATION_NNA)
-    set(external_libs_DEPS ${external_libs_DEPS} ${imagination_nna_deps})
-endif()
 if(LITE_WITH_INTEL_FPGA)
     set(external_libs_DEPS ${external_libs_DEPS} ${intel_fpga_deps})
 endif()
@@ -166,10 +163,6 @@ else()
         if (LITE_WITH_RKNPU)
             # Need to add RKNPU runtime libs dependency
             target_link_libraries(paddle_light_api_shared ${rknpu_builder_libs} ${rknpu_runtime_libs})
-        endif()
-        if (LITE_WITH_IMAGINATION_NNA)
-            # Need to add IMG IMAGINATION_NNA runtime libs (libimgdnn.so, libnnasession.so) dependency
-            #target_link_libraries(paddle_light_api_shared ${nna_builder_libs} ${nna_runtime_libs})
         endif()
 
         # 3. produce java lib from `PADDLELITE_OBJS` if LITE_WITH_JAVA=ON

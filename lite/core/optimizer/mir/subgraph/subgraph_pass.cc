@@ -174,24 +174,6 @@ void MLUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   fuser();
 }
 
-void ImaginationNNASubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  std::set<std::string> supported_lists;
-#define USE_SUBGRAPH_BRIDGE(op_type, target) supported_lists.insert(#op_type);
-#include "lite/kernels/imagination_nna/bridges/paddle_use_bridges.h"
-#undef USE_SUBGRAPH_BRIDGE
-  auto teller = [&](Node* node) {
-    if (!node->IsStmt()) return false;
-    auto& stmt = node->AsStmt();
-    return supported_lists.count(stmt.op_type()) != 0;
-  };
-  auto subgraph_partition_configs = ReadSubgraphPartitionConfigsFromEnv();
-  SubgraphFuser fuser(graph.get(),
-                      teller,
-                      1 /* min_subgraph_size */,
-                      subgraph_partition_configs);
-  fuser();
-}
-
 void NNAdapterSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   auto has_intersection = [](const std::vector<std::string>& a,
                              const std::vector<std::string>& b) -> bool {
@@ -294,9 +276,6 @@ REGISTER_MIR_PASS(rknpu_subgraph_pass, paddle::lite::mir::RKNPUSubgraphPass)
     .BindTargets({TARGET(kRKNPU)});
 REGISTER_MIR_PASS(mlu_subgraph_pass, paddle::lite::mir::MLUSubgraphPass)
     .BindTargets({TARGET(kMLU)});
-REGISTER_MIR_PASS(imagination_nna_subgraph_pass,
-                  paddle::lite::mir::ImaginationNNASubgraphPass)
-    .BindTargets({TARGET(kImaginationNNA)});
 REGISTER_MIR_PASS(nnadapter_subgraph_pass,
                   paddle::lite::mir::NNAdapterSubgraphPass)
     .BindTargets({TARGET(kNNAdapter)});
