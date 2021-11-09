@@ -16,6 +16,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include "driver/huawei_ascend_npu/engine.h"
 #include "driver/huawei_ascend_npu/utility.h"
 #include "utility/logging.h"
 #include "utility/utility.h"
@@ -23,7 +24,8 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-AclModelClient::AclModelClient(int device_id) {
+AclModelClient::AclModelClient(int device_id,
+                               const std::string& profiling_file_path) {
   NNADAPTER_VLOG(5) << "Create a ACL model client(device_id=" << device_id
                     << ")";
   uint32_t device_count = 0;
@@ -32,11 +34,13 @@ AclModelClient::AclModelClient(int device_id) {
   NNADAPTER_CHECK_GE(device_id, 0);
   NNADAPTER_CHECK_LT(device_id, device_count);
   InitAclClientEnv(device_id);
+  InitAclProfilingEnv(profiling_file_path);
 }
 
 AclModelClient::~AclModelClient() {
   UnloadModel();
   FinalizeAclClientEnv();
+  FinalizeAclProfilingEnv();
 }
 
 void AclModelClient::InitAclClientEnv(int device_id) {
@@ -55,6 +59,29 @@ void AclModelClient::FinalizeAclClientEnv() {
   }
   NNADAPTER_VLOG(5) << "Reset ACL device(device_id_=" << device_id_ << ")";
   ACL_CALL(aclrtResetDevice(device_id_));
+}
+
+void AclModelClient::InitAclProfilingEnv(
+    const std::string& profiling_file_path) {
+  if (!profiling_file_path.empty()) {
+    const char* aclProfPath = profiling_file_path.c_str();
+    ACL_CALL(aclprofInit(aclProfPath, strlen(aclProfPath)));
+    config_ = aclprofCreateConfig(reinterpret_cast<uint32_t*>(&device_id_),
+                                  1,
+                                  ACL_AICORE_ARITHMETIC_UTILIZATION,
+                                  nullptr,
+                                  ACL_PROF_ACL_API | ACL_PROF_TASK_TIME |
+                                      ACL_PROF_AICORE_METRICS | ACL_PROF_AICPU);
+  }
+}
+
+void AclModelClient::FinalizeAclProfilingEnv() {
+  NNADAPTER_VLOG(5) << "Destroy ACL profiling config";
+  if (config_) {
+    ACL_CALL(aclprofDestroyConfig(config_));
+    config_ = nullptr;
+    ACL_CALL(aclprofFinalize());
+  }
 }
 
 bool AclModelClient::LoadModel(const void* data, uint32_t size) {
@@ -225,6 +252,18 @@ void AclModelClient::DestroyDataset(aclmdlDataset** dataset) {
   NNADAPTER_VLOG(5) << "Destroy a ACL dataset success.";
 }
 
+void AclModelClient::ProfilingStart() {
+  if (config_) {
+    aclprofStart(config_);
+  }
+}
+
+void AclModelClient::ProfilingEnd() {
+  if (config_) {
+    aclprofStop(config_);
+  }
+}
+
 bool AclModelClient::Process(uint32_t input_count,
                              std::vector<NNAdapterOperandType>* input_types,
                              hal::Argument* input_arguments,
@@ -298,7 +337,9 @@ bool AclModelClient::Process(uint32_t input_count,
   }
   // Model execution
   auto start_time = GetCurrentUS();
+  ProfilingStart();
   ACL_CALL(aclmdlExecute(model_id_, input_dataset_, output_dataset_));
+  ProfilingEnd();
   NNADAPTER_VLOG(3) << "Process cost " << GetCurrentUS() - start_time << " us";
   // Copy the output data from device to host
   for (uint32_t i = 0; i < output_count; i++) {

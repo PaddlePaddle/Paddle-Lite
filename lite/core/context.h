@@ -389,6 +389,43 @@ class Context<TargetType::kNNAdapter> {
     if (!var) return "";
     return var->Get<std::string>();
   }
+
+  static void SetNNAdapterMixedPrecisionQuantizationConfigPath(
+      Scope* scope,
+      const std::string& mixed_precision_quantization_config_path) {
+    auto var = scope->Var("NNADAPTER_MIXED_PRECISION_QUANTIZATION_CONFIG_PATH");
+    CHECK(var);
+    auto data = var->GetMutable<std::string>();
+    CHECK(data);
+    *data = mixed_precision_quantization_config_path;
+  }
+
+  static std::string NNAdapterMixedPrecisionQuantizationConfigPath(
+      Scope* scope) {
+    auto var =
+        scope->FindVar("NNADAPTER_MIXED_PRECISION_QUANTIZATION_CONFIG_PATH");
+    if (!var) return "";
+    return var->Get<std::string>();
+  }
+
+  static void SetNNAdapterMixedPrecisionQuantizationConfigBuffer(
+      Scope* scope,
+      const std::string& mixed_precision_quantization_config_buffer) {
+    auto var =
+        scope->Var("NNADAPTER_MIXED_PRECISION_QUANTIZATION_CONFIG_BUFFER");
+    CHECK(var);
+    auto data = var->GetMutable<std::string>();
+    CHECK(data);
+    *data = mixed_precision_quantization_config_buffer;
+  }
+
+  static std::string NNAdapterMixedPrecisionQuantizationConfigBuffer(
+      Scope* scope) {
+    auto var =
+        scope->FindVar("NNADAPTER_MIXED_PRECISION_QUANTIZATION_CONFIG_BUFFER");
+    if (!var) return "";
+    return var->Get<std::string>();
+  }
 };
 #endif
 
