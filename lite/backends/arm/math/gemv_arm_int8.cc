@@ -2923,7 +2923,7 @@ void gemv_int8(const int8_t* A,
     } else if (act_param.active_type == lite_api::ActivationType::kLeakyRelu) {
       alpha = act_param.Leaky_relu_alpha;
     } else if (act_param.active_type == lite_api::ActivationType::kHardSwish) {
-      alpha = act_param.hard_swish_scale;
+      alpha = 1.0 / act_param.hard_swish_scale;
       offset = act_param.hard_swish_offset;
       threshold = act_param.hard_swish_threshold;
     }
