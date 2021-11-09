@@ -22,6 +22,57 @@ namespace lite {
 namespace arm {
 namespace math {
 namespace fp16 {
+/**
+ * These macros will convert clang marco into function call
+ */
+#ifdef __clang__
+#define __ai static inline __attribute__((__always_inline__, __nodebug__))
+
+__ai int32x4_t vld1q_s32_wrap(const int32_t* p0) { return vld1q_s32(p0); }
+#undef vld1q_s32
+#define vld1q_s32 vld1q_s32_wrap
+
+__ai void vst1q_s32_wrap(int32_t* a, int32x4_t b) { return vst1q_s32(a, b); }
+#undef vst1q_s32
+#define vst1q_s32 vst1q_s32_wrap
+
+__ai int64x2_t vld1q_s64_wrap(const int64_t* p0) { return vld1q_s64(p0); }
+#undef vld1q_s64
+#define vld1q_s64 vld1q_s64_wrap
+
+__ai void vst1q_s64_wrap(int64_t* a, int64x2_t b) { return vst1q_s64(a, b); }
+#undef vst1q_s64
+#define vst1q_s64 vst1q_s64_wrap
+
+__ai float32x4_t vld1q_f32_wrap(const float* p0) { return vld1q_f32(p0); }
+#undef vld1q_f32
+#define vld1q_f32 vld1q_f32_wrap
+
+__ai void vst1q_f32_wrap(float* a, float32x4_t b) { return vst1q_f32(a, b); }
+#undef vst1q_f32
+#define vst1q_f32 vst1q_f32_wrap
+
+#ifdef ENABLE_ARM_FP16
+typedef __fp16 flaot16_t;
+__ai float16x8_t vld1q_f16_wrap(const float16_t* p0) { return vld1q_f16(p0); }
+#undef vld1q_f16
+#define vld1q_f16 vld1q_f16_wrap
+
+__ai void vst1q_f16_wrap(float16_t* a, float16x8_t b) {
+  return vst1q_f16(a, b);
+}
+#undef vst1q_f16
+#define vst1q_f16 vst1q_f16_wrap
+
+__ai float16x8_t vdupq_n_f16_wrap(const float16_t p0) {
+  return vdupq_n_f16(p0);
+}
+#undef vdupq_n_f16
+#define vdupq_n_f16 vdupq_n_f16_wrap
+#endif
+
+#undef __ai
+#endif
 
 int AdaptStartIndex(int ph, int input_size, int output_size) {
   return static_cast<int>(
@@ -637,6 +688,73 @@ void pooling_basic_fp16(POOLING_PARAM,
   "vld1.16 {q8}, [%[dr2]]!\n"              \
   "vst1.16  {q10}, [%[dr_out]]!\n"         \
   "ble 0f\n"
+
+#define P3x3S2P1_AVG                        \
+  "vadd.f16 q9 , q0, q1\n"                  \
+  "vadd.f16 q10, q2, q3\n"                  \
+  "vadd.f16 q11, q4, q5\n"                  \
+  "vext.8 q0, %q[vmin], q1, #14\n"          \
+  "vext.8 q2, %q[vmin], q3, #14\n"          \
+  "vext.8 q4, %q[vmin], q5, #14\n"          \
+  "vadd.f16 q6, q9 , q0\n"                  \
+  "vadd.f16 q7, q10, q2\n"                  \
+  "vadd.f16 q8, q11, q4\n"                  \
+  "sub %[dr0], %[dr0], #2\n"                \
+  "sub %[dr1], %[dr1], #2\n"                \
+  "sub %[dr2], %[dr2], #2\n"                \
+  "vadd.f16 q9, q6, q7\n"                   \
+  "vld2.16 {q0-q1}, [%[dr0]]!\n"            \
+  "vld2.16 {q2-q3}, [%[dr1]]!\n"            \
+  "vld2.16 {q4-q5}, [%[dr2]]!\n"            \
+  "vadd.f16 q10, q8, q9\n"                  \
+  "subs %[cnt_num], %[cnt_num], #1\n"       \
+  "vld1.16 {q6}, [%[dr0]]!\n"               \
+  "vld1.16 {q7}, [%[dr1]]!\n"               \
+  "vmul.f16 q10, q10, %q[vcoef_left]\n"     \
+  "vld1.16 {q8}, [%[dr2]]!\n"               \
+  "vst1.16  {q10}, [%[dr_out]]!\n"          \
+  "ble 0f\n"
+
+#define P3x3S2P1_AVG_REMAIN                 \
+  "cmp %[win_less], #0\n"                   \
+  "beq 4f\n"                                \
+  "vadd.f16 q9 , q0, q1\n"                  \
+  "vadd.f16 q10, q2, q3\n"                  \
+  "vadd.f16 q11, q4, q5\n"                  \
+  "vext.8 q0, %q[vmin], q1, #14\n"          \
+  "vext.8 q2, %q[vmin], q3, #14\n"          \
+  "vext.8 q4, %q[vmin], q5, #14\n"          \
+  "vadd.f16 q6, q9 , q0\n"                  \
+  "vadd.f16 q7, q10, q2\n"                  \
+  "vadd.f16 q8, q11, q4\n"                  \
+  "sub %[dr0], %[dr0], #18\n"               \
+  "vadd.f16 q9, q6, q7\n"                   \
+  "sub %[dr1], %[dr1], #18\n"               \
+  "sub %[dr2], %[dr2], #18\n"               \
+  "vadd.f16 q10, q8, q9\n"                  \
+  "vmul.f16 q10, q10, %q[vcoef_left]\n"     \
+  "vst1.16  {d10}, [%[dr_out]]!\n"          \
+  "b 3f\n"
+
+#define P3x3S2P1_MAX_REMAIN                \
+  "cmp %[win_less], #0\n"                  \
+  "beq 4f\n"                               \
+  "vmax.f16 q9 , q0, q1\n"                 \
+  "vmax.f16 q10, q2, q3\n"                 \
+  "vmax.f16 q11, q4, q5\n"                 \
+  "vext.8 q0, %q[vmin], q1, #14\n"         \
+  "vext.8 q2, %q[vmin], q3, #14\n"         \
+  "vext.8 q4, %q[vmin], q5, #14\n"         \
+  "vmax.f16 q6, q9 , q0\n"                 \
+  "vmax.f16 q7, q10, q2\n"                 \
+  "vmax.f16 q8, q11, q4\n"                 \
+  "sub %[dr0], %[dr0], #18\n"              \
+  "vmax.f16 q9, q6, q7\n"                  \
+  "sub %[dr1], %[dr1], #18\n"              \
+  "sub %[dr2], %[dr2], #18\n"              \
+  "vmax.f16 q10, q8, q9\n"                 \
+  "vst1.16  {d10}, [%[dr_out]]!\n"         \
+  "b 3f\n"
 
 #endif
 
@@ -1391,7 +1509,6 @@ void pooling3x3s2p1_max_fp16(POOLING_PARAM, int pad_bottom, int pad_right) {
         P3x3S2_MAX_PTR_CHOOSE(dr0, dr1, dr2, S, K, P, h, hin) int cnt_num =
             w_unroll_size;
         int cnt_remain_4 = cnt;
-#ifdef __aarch64__
         asm volatile(P3x3S2P1_INIT P3x3S2P1_MAX P3x3S2P0_MAX P3x3S2_REMIN
                          P3x3S2P1_MAX_REMAIN P3x3S2P0_MAX_REMAIN
                      : [dr0] "+r"(dr0),
@@ -1416,8 +1533,6 @@ void pooling3x3s2p1_max_fp16(POOLING_PARAM, int pad_bottom, int pad_right) {
                        "q9",
                        "q10",
                        "q11");
-#else
-#endif
         int win_remain = cnt_remain;
         if (win_less && (cnt == 0) && win_remain > 0) {
           float16_t tmp = dr0[0];
@@ -1470,13 +1585,11 @@ void pooling3x3s1p0_max_fp16(POOLING_PARAM, int pad_bottom, int pad_right) {
         auto dr0 = r0;
         auto dr1 = r1;
         auto dr2 = r2;
-#ifdef __aarch64__
         P3x3S2_MAX_PTR_CHOOSE(dr0, dr1, dr2, S, K, P, h, hin) int cnt_num =
             w_unroll_size;
         int cnt_remain_4 = cnt;
         P3x3S1P0_INIT_INTRIN P3x3S1P0_MAX_8TIMES_INTRIN
             P3x3S1P0_MAX_4TIMES_INTRIN;
-#endif
         MAX_ONE_COMPUTE(
             dr0, dr1, dr2, dr_out, cnt_remain, minval, right_remain, wend, S)
         r0 = r1;
@@ -1533,14 +1646,12 @@ void pooling3x3s1p1_max_fp16(POOLING_PARAM, int pad_bottom, int pad_right) {
         P3x3S1_MAX_PTR_CHOOSE(dr0, dr1, dr2, S, K, P, h, hin) int cnt_num =
             w_unroll_size;
         int cnt_remain_4 = cnt;
-#ifdef __aarch64__
         if (!win_less) {
           P3x3S1P1_INIT_INTRIN P3x3S1P0_MAX_8TIMES_INTRIN
               P3x3S1P0_MAX_4TIMES_INTRIN
         } else if (cnt_remain_4 > 0) {
           P3x3S1P1_WINLESS_INTRIN
         }
-#endif
         int win_remain = cnt_remain;
         if (win_less && (cnt <= 0) && win_remain > 0) {
           float16_t tmp = dr0[0];
@@ -1631,7 +1742,6 @@ void pooling3x3s2p1_avg_fp16(POOLING_PARAM,
         float16x8_t vcoef_left = vld1q_f16(coef_left);
         int cnt_num = w_unroll_size;
         int cnt_remain_4 = cnt;
-#ifdef __aarch64__
         asm volatile(P3x3S2P1_INIT P3x3S2P1_AVG P3x3S2P0_AVG P3x3S2_REMIN
                          P3x3S2P1_AVG_REMAIN P3x3S2P0_AVG_REMAIN
                      : [dr0] "+r"(dr0),
@@ -1646,20 +1756,18 @@ void pooling3x3s2p1_avg_fp16(POOLING_PARAM,
                        [vcoef] "w"(vcoef)
                      : "cc",
                        "memory",
-                       "v0",
-                       "v1",
-                       "v2",
-                       "v3",
-                       "v4",
-                       "v5",
-                       "v6",
-                       "v7",
-                       "v8",
-                       "v9",
-                       "v10",
-                       "v11");
-#else
-#endif
+                       "q0",
+                       "q1",
+                       "q2",
+                       "q3",
+                       "q4",
+                       "q5",
+                       "q6",
+                       "q7",
+                       "q8",
+                       "q9",
+                       "q10",
+                       "q11");
         int win_remain = cnt_remain;
         if (win_less && (cnt == 0) && win_remain > 0) {
           float16_t sum = 0.f;
@@ -1721,7 +1829,7 @@ void pooling3x3s1p0_avg_fp16(POOLING_PARAM,
         auto dr2 = r2;
         P3x3s2_AVG_PTR_CHOOSE(
             dr1, dr2, zero_ptr, S, K, P, h, hin, coef_h, pad_bottom, exclusive)
-            float16x8_t vcoef = vdupq_n_f16(coef_h / 3);
+        float16x8_t vcoef = vdupq_n_f16(coef_h / 3);
         float16x4_t vcoef_4 = vget_low_f16(vcoef);
         int cnt_num = w_unroll_size;
         int cnt_remain_4 = cnt;
