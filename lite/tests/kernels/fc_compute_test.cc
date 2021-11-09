@@ -281,8 +281,6 @@ TEST(FcOP, precision) {
   abs_error = 5e-2;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 5e-2;
-  TestFC2D(place, abs_error, true);
-  TestFCnD(place, abs_error);
   return;
 #else
   return;
