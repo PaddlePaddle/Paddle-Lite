@@ -150,13 +150,16 @@ const std::string ATCErrorToString(uint32_t error) {
 }
 
 std::shared_ptr<AclModelClient> LoadOMModelFromBuffer(
-    const std::vector<uint8_t>& model_buffer, int device_id) {
+    const std::vector<uint8_t>& model_buffer,
+    int device_id,
+    const std::string& profiling_file_path) {
   if (model_buffer.size() == 0) {
     NNADAPTER_LOG(ERROR) << "model_buffer size should not be 0!";
     return nullptr;
   }
   // Create a ACL model client to load the om model
-  auto model_client = std::make_shared<AclModelClient>(device_id);
+  auto model_client =
+      std::make_shared<AclModelClient>(device_id, profiling_file_path);
   // Load model from memory
   if (model_client->LoadModel(
           reinterpret_cast<const void*>(model_buffer.data()),
