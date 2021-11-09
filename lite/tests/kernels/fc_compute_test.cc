@@ -279,6 +279,11 @@ TEST(FcOP, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 5e-2;
+  TestFC2D(place, abs_error, true);
+  TestFCnD(place, abs_error);
+  return;
 #else
   return;
 #endif
