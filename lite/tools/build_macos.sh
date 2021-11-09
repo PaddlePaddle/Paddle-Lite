@@ -382,7 +382,7 @@ function main {
                 WITH_OPENCL="${i#*=}"
                 shift
                 ;;
-            --build_metal=*)
+            --with_metal=*)
                 WITH_METAL="${i#*=}"
             --tiny_publish=*)
                 LITE_ON_TINY_PUBLISH="${i#*=}"
