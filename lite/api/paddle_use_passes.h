@@ -68,7 +68,6 @@ USE_MIR_PASS(multi_stream_analysis_pass);
 USE_MIR_PASS(elementwise_mul_constant_eliminate_pass)
 USE_MIR_PASS(npu_subgraph_pass);
 USE_MIR_PASS(huawei_ascend_npu_subgraph_pass);
-USE_MIR_PASS(imagination_nna_subgraph_pass);
 USE_MIR_PASS(nnadapter_subgraph_pass);
 USE_MIR_PASS(xpu_subgraph_pass);
 USE_MIR_PASS(mlu_subgraph_pass);

@@ -226,8 +226,8 @@ void transpose_mat(const lite_api::float16_t* din,
             "trn2 v15.2d, v3.2d, v7.2d\n"  // 7
             "str q11, [%[dout6]], #16\n"
             "str q12, [%[dout1]], #16\n"
-            "str q13, [%[dout3]], #16\n"
-            "str q14, [%[dout5]], #16\n"
+            "str q14, [%[dout3]], #16\n"
+            "str q13, [%[dout5]], #16\n"
             "str q15, [%[dout7]], #16\n"
             : [din0] "+r"(din0),
               [din1] "+r"(din1),
