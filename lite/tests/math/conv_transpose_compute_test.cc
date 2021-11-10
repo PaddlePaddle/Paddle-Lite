@@ -215,19 +215,20 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
 
         float gops =
             2.f * tmp_weights.numel() * dim_in[0] * dim_in[2] * dim_in[3];
-        LOG(INFO) << "conv fp32: input shape: " << dim_in << ", output shape"
-                  << dim_out << ",running time, avg: " << t0.LapTimes().Avg()
-                  << ", min time: " << t0.LapTimes().Min()
-                  << ", total GOPS: " << 1e-9 * gops
-                  << " GOPS, avg GOPs: " << 1e-6 * gops / t0.LapTimes().Avg()
-                  << " GOPs, max GOPs: " << 1e-6 * gops / t0.LapTimes().Min();
+        // LOG(INFO) << "conv fp32: input shape: " << dim_in << ", output shape"
+        //           << dim_out << ",running time, avg: " << t0.LapTimes().Avg()
+        //           << ", min time: " << t0.LapTimes().Min()
+        //           << ", total GOPS: " << 1e-9 * gops
+        //           << " GOPS, avg GOPs: " << 1e-6 * gops / t0.LapTimes().Avg()
+        //           << " GOPs, max GOPs: " << 1e-6 * gops /
+        //           t0.LapTimes().Min();
 
         if (FLAGS_check_result) {
           double max_ratio = 0;
           double max_diff = 0;
           tensor_cmp_host(tout_basic, *param.output, max_ratio, max_diff);
-          LOG(INFO) << "compare result, max diff: " << max_diff
-                    << ", max ratio: " << max_ratio;
+          // LOG(INFO) << "compare result, max diff: " << max_diff
+          //           << ", max ratio: " << max_ratio;
           if (std::abs(max_ratio) > 1e-3f) {
             if (max_diff > 5e-4f) {
               LOG(WARNING) << "basic result";
@@ -253,15 +254,18 @@ void test_conv_transpose_fp32(const std::vector<DDim>& input_dims,
             }
           }
         }
-        LOG(INFO) << "test fp32 conv: input: " << dim_in
-                  << ", output: " << dim_out << ", weight dim: " << weight_dim
-                  << ", pad: " << pads[0] << ", " << pads[1] << ", " << pads[2]
-                  << ", " << pads[3] << ", stride: " << strides[0] << ", "
-                  << strides[1] << ", dila_: " << dilas[0] << ", " << dilas[1]
-                  << ", bias: " << (flag_bias ? "true" : "false")
-                  << ", relu: " << (flag_relu ? "true" : "false")
-                  << ", threads: " << th << ", power_mode: " << cls
-                  << " successed!!\n";
+        // LOG(INFO) << "test fp32 conv: input: " << dim_in
+        //           << ", output: " << dim_out << ", weight dim: " <<
+        //           weight_dim
+        //           << ", pad: " << pads[0] << ", " << pads[1] << ", " <<
+        //           pads[2]
+        //           << ", " << pads[3] << ", stride: " << strides[0] << ", "
+        //           << strides[1] << ", dila_: " << dilas[0] << ", " <<
+        //           dilas[1]
+        //           << ", bias: " << (flag_bias ? "true" : "false")
+        //           << ", relu: " << (flag_relu ? "true" : "false")
+        //           << ", threads: " << th << ", power_mode: " << cls
+        //           << " successed!!\n";
       }
     }
   }
