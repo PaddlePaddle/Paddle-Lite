@@ -520,7 +520,7 @@ TEST(TestConvRand, test_conv_transpose_rand) {
                                   {dila, dila},
                                   flag_bias,
                                   flag_relu,
-                                  {1, 4},
+                                  {4},
                                   {FLAGS_power_mode});
                             }
                           }
@@ -573,7 +573,7 @@ TEST(TestConvRand, test_conv_transpose_fp16_rand) {
                                   {dila, dila},
                                   flag_bias,
                                   flag_relu,
-                                  {4},
+                                  {1, 4},
                                   {FLAGS_power_mode});
                             }
                           }
