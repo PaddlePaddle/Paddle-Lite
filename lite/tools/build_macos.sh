@@ -20,12 +20,14 @@ BUILD_TAILOR=OFF
 BUILD_CV=OFF
 WITH_LOG=ON
 WITH_MKL=ON
+WITH_METAL=OFF
 WITH_OPENCL=OFF
 WITH_METAL=OFF
 LITE_ON_TINY_PUBLISH=OFF
 WITH_STATIC_MKL=OFF
 WITH_AVX=ON
 WITH_EXCEPTION=OFF
+WITH_LIGHT_WEIGHT_FRAMEWORK=OFF
 WITH_PROFILE=OFF
 WITH_PRECISION_PROFILE=OFF
 WITH_BENCHMARK=OFF
@@ -130,7 +132,6 @@ function make_armosx {
     fi
 
     build_dir=$workspace/build.macos.${os}.${arch}
-
     if [ ${WITH_METAL} == "ON" ]; then
       BUILD_EXTRA=ON
       build_dir=${build_dir}.metal
@@ -210,8 +211,11 @@ function make_x86 {
 
   if [ ${WITH_METAL} == "ON" ]; then
     BUILD_EXTRA=ON
-    build_directory=$BUILD_DIR/build.lite.x86.metal
+    WITH_LIGHT_WEIGHT_FRAMEWORK=OFF
+    LITE_ON_TINY_PUBLISH=OFF
+    build_directory=${build_directory}.metal
   fi
+
   if [ ${BUILD_PYTHON} == "ON" ]; then
     BUILD_EXTRA=ON
   fi
@@ -237,7 +241,10 @@ function make_x86 {
             -DLITE_WITH_X86=ON  \
             -DWITH_LITE=ON \
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
+            -DDLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=${WITH_LIGHT_WEIGHT_FRAMEWORK} \
+            -DLITE_ON_TINY_PUBLISH=${LITE_ON_TINY_PUBLISH} \
             -DLITE_WITH_ARM=OFF \
+            -DLITE_WITH_METAL=${WITH_METAL} \
             -DLITE_WITH_OPENCL=${WITH_OPENCL} \
             -DLITE_WITH_METAL=${WITH_METAL} \
             -DWITH_GPU=OFF \
@@ -280,17 +287,18 @@ function print_usage {
     echo -e "|                                                                                                                                      |"
     echo -e "|  for arm macos:                                                                                                                      |"
     echo -e "|  optional argument:                                                                                                                  |"
-    echo -e "|     --build_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                          |"
+    echo -e "|     --with_metal: (OFF|ON); controls whether to build with Metal, default is OFF                                                    |"
+    echo -e "|     --with_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                           |"
     echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                   |"
     echo -e "|     --with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF                            |"
-    echo -e "|     --build_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP) |"
+    echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP) |"
     echo -e "|     --with_benchmark: (OFF|ON); controls whether to compile benchmark binary, default is OFF                                         |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of benchmark binary compiling for macos x86:                                                                              |"
     echo -e "|     ./lite/tools/build_macos.sh --with_benchmark=ON x86                                                                              |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of benchmark binary compiling for macos opencl(only support --gpu_precision=fp32):                                        |"
-    echo -e "|     ./lite/tools/build_macos.sh --build_opencl=ON --with_benchmark=ON arm64                                                          |"
+    echo -e "|     ./lite/tools/build_macos.sh --with_opencl=ON --with_benchmark=ON arm64                                                          |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of striping lib according to input model:(armv8, gcc, c++_static)                                                         |"
     echo -e "|     ./lite/tools/build_macos.sh --with_strip=ON --opt_model_dir=YourOptimizedModelDir                                                |"
@@ -310,15 +318,15 @@ function main {
     # Parse command line.
     for i in "$@"; do
         case $i in
-            --build_extra=*)
+            --with_extra=*)
                 BUILD_EXTRA="${i#*=}"
                 shift
                 ;;
-            --build_cv=*)
+            --with_cv=*)
                 BUILD_CV="${i#*=}"
                 shift
                 ;;
-            --build_python=*)
+            --with_python=*)
                 BUILD_PYTHON="${i#*=}"
                 shift
                 ;;
@@ -378,7 +386,11 @@ function main {
                 WITH_LTO="${i#*=}"
                 shift
                 ;;
-            --build_opencl=*)
+            --with_metal=*)
+                WITH_METAL="${i#*=}"
+                shift
+                ;;
+            --with_opencl=*)
                 WITH_OPENCL="${i#*=}"
                 shift
                 ;;

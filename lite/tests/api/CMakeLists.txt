@@ -102,10 +102,6 @@ if(LITE_WITH_APU)
     lite_cc_test_with_model_and_data(test_mobilenet_v1_int8_mediatek_apu MODEL mobilenet_v1_int8_for_mediatek_apu DATA ILSVRC2012_500)
 endif()
 
-if(LITE_WITH_IMAGINATION_NNA)
-    lite_cc_test_with_model_and_data(test_mobilenet_v1_int8_imagination_nna MODEL mobilenet_v1_int8_for_imagination_nna DATA ILSVRC2012_500)
-endif()
-
 if(LITE_WITH_METAL)
     lite_cc_test_with_model_and_data(test_mobilenet_v1_fp32_metal MODEL mobilenet_v1 DATA ILSVRC2012_500)
 endif()
