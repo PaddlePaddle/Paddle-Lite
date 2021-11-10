@@ -93,6 +93,7 @@ function set_benchmark_options {
   BUILD_JAVA=OFF
   WITH_OPENCL=ON
   WITH_NNADAPTER=ON
+  USE_PRECOMPILED_OPENCV=ON
   if [ ${WITH_PROFILE} == "ON" ] || [ ${WITH_PRECISION_PROFILE} == "ON" ]; then
     WITH_LOG=ON
   else
