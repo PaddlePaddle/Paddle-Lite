@@ -31,7 +31,7 @@ DEFINE_int32(width, 300, "image width");
 namespace paddle {
 namespace lite {
 
-TEST(ssd_mobilentert_v1, test_ssd_mobilenet_v1_voc_fp32_v1_0_nnadapter) {
+TEST(ssd_mobilentert_v1, test_ssd_mobilenet_v1_voc_fp32_v1_8_nnadapter) {
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;
