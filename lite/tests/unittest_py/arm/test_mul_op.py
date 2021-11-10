@@ -16,7 +16,7 @@ import sys
 sys.path.append('..')
 
 from auto_scan_test_rpc import AutoScanTest, SkipReasons
-from program_config import TensorConfig, ProgramConfig
+from program_config import TensorConfig, ProgramConfig, OpConfig
 import numpy as np
 import paddle.inference as paddle_infer
 from functools import partial
@@ -36,25 +36,16 @@ class TestMulOp(AutoScanTest):
             return np.random.random(kwargs['in_shape']).astype(np.float32)
         def generate_input_y(*args, **kwargs):
             return np.random.random(kwargs['in_shape']).astype(np.float32)
-        ops_config = [{
-            "op_type": "mul",
-            "op_inputs": {
-                "X": ["input_data_x"],
-                "Y": ["input_data_y"],
-            },
-            "op_outputs": {
-                "Out": ["output_data"]
-            },
-            "op_attrs": {
-                "x_num_col_dims": 1,
-                "y_num_col_dims": 1
-            }
-        }]
-
-        ops = self.generate_op_config(ops_config)
+        mul_op = OpConfig(
+            type = "mul",
+            inputs = {"X": ["input_data_x"],
+                      "Y": ["input_data_y"]},
+            outputs = {"Out": ["output_data"]},
+            attrs = {"x_num_col_dims": 1,
+                     "y_num_col_dims": 1})
 
         program_config = ProgramConfig(
-            ops=ops,
+            ops=[mul_op],
             weights={
                 "input_data_y":
                 TensorConfig(data_gen=partial(generate_input_y, *args, **kwargs)),
