@@ -14,6 +14,14 @@
 
 #include "lite/kernels/host/norm_compute.h"
 
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace arm {}  // namespace arm
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle
+
 REGISTER_LITE_KERNEL(
     norm, kARM, kFloat, kNCHW, paddle::lite::kernels::host::NormCompute, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})

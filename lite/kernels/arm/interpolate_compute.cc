@@ -72,10 +72,10 @@ void NearestInterpCompute<PRECISION(kFP16)>::Run() {
 }
 #endif
 
-} /* namespace arm */
-} /* namespace kernels */
-} /* namespace lite */
-} /* namespace paddle */
+}  // namespace arm
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle
 
 #ifdef ENABLE_ARM_FP16
 typedef paddle::lite::kernels::arm::BilinearInterpCompute<PRECISION(kFP16)>

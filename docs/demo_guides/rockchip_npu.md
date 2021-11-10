@@ -86,10 +86,10 @@ Paddle Lite 已支持 Rockchip NPU 的预测部署。
 
 - TB-RK1808S0 AI 计算棒
 
-  - 参考[ TB-RK1808S0 wiki 教程的](http://t.rock-chips.com/wiki.php?mod=view&pid=28)将计算棒配置为主动模式，完成网络设置和 firmware 的升级，具体步骤如下：
-    - 将计算棒插入 Window7/10 主机，参考[主动模式开发](http://t.rock-chips.com/wiki.php?mod=view&id=66)配主机的虚拟网卡 IP 地址，通过 `ssh toybrick@192.168.180.8` 验证是否能登录计算棒；
-    - 参考[ Window7/10 系统配置计算棒网络共享](http://t.rock-chips.com/wiki.php?mod=view&id=77)，`SSH` 登录计算棒后通过 `wget www.baidu.com` 验证是否能够访问外网；
-    - 参考[固件在线升级](http://t.rock-chips.com/wiki.php?mod=view&id=148)，建议通过 `ssh` 登录计算棒，在 `shell` 下执行 `sudo dnf update -y` 命令快速升级到最新版本系统（要求系统版本 >= 1.4.1-2），可通过 `rpm -qa | grep toybrick-server` 查询系统版本：
+  - 参考[ TB-RK1808S0 wiki 教程的](https://t.rock-chips.com/wiki.php?filename=%E6%9D%BF%E7%BA%A7%E6%8C%87%E5%8D%97/TB-RK1808S0)将计算棒配置为主动模式，完成网络设置和 firmware 的升级，具体步骤如下：
+    - 将计算棒插入 Window7/10 主机，参考[主动模式开发](https://t.rock-chips.com/wiki.php?filename=%E6%9D%BF%E7%BA%A7%E6%8C%87%E5%8D%97/TB-RK1808S0#hash_6)配主机的虚拟网卡 IP 地址，通过 `ssh toybrick@192.168.180.8` 验证是否能登录计算棒；
+    - 参考[ Window7/10 系统配置计算棒网络共享](https://t.rock-chips.com/wiki.php?filename=%E6%9D%BF%E7%BA%A7%E6%8C%87%E5%8D%97/TB-RK1808S0#hash_7)，`SSH` 登录计算棒后通过 `wget www.baidu.com` 验证是否能够访问外网；
+    - 参考[固件在线升级](https://t.rock-chips.com/wiki.php?filename=%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8/%E7%83%A7%E5%86%99%E5%9B%BA%E4%BB%B6)，建议通过 `ssh` 登录计算棒，在 `shell` 下执行 `sudo dnf update -y` 命令快速升级到最新版本系统（要求系统版本 >= 1.4.1-2），可通过 `rpm -qa | grep toybrick-server` 查询系统版本：
 
     ```shell
     $ rpm -qa | grep toybrick-server
@@ -112,7 +112,7 @@ Paddle Lite 已支持 Rockchip NPU 的预测部署。
 
 ### 准备交叉编译环境
 
-- 为了保证编译环境一致，建议参考[编译环境准备](../source_compile/docker_enviroment)中的 Docker 开发环境进行配置；
+- 为了保证编译环境一致，建议参考[编译环境准备](../source_compile/compile_env)中的 Docker 开发环境进行配置；
 - 由于有些设备只提供网络访问方式（例如：TB-RK1808S0 AI 计算棒），需要通过 `scp` 和 `ssh` 命令将交叉编译生成的 Paddle Lite 库和示例程序传输到设备上执行，因此，在进入 Docker 容器后还需要安装如下软件：
 
   ```

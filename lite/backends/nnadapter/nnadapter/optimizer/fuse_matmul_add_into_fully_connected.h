@@ -14,7 +14,10 @@
 
 #pragma once
 
-USE_SUBGRAPH_BRIDGE(fc,
-                    kNNAdapter,
-                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
-                    "npu,amlogic_npu,imagination_nna");
+#include "core/hal/types.h"
+
+namespace nnadapter {
+
+void FuseMatMulAddIntoFullyConnected(hal::Model *model);
+
+}  // namespace nnadapter

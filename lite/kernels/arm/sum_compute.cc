@@ -19,6 +19,14 @@
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace arm {}  // namespace arm
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle
+
 using sum_int32 = paddle::lite::kernels::arm::SumCompute<int32_t>;
 REGISTER_LITE_KERNEL(sum, kARM, kFloat, kNCHW, sum_int32, sum_i32)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})

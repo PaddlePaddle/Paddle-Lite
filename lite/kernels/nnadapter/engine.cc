@@ -18,9 +18,6 @@
 #include <utility>
 #include "lite/core/op_registry.h"
 #include "lite/core/subgraph/subgraph_bridge_registry.h"
-#include "lite/kernels/nnadapter/bridges/converter.h"
-#include "lite/kernels/nnadapter/bridges/paddle_use_bridges.h"
-#include "lite/kernels/nnadapter/bridges/utility.h"
 #include "lite/kernels/nnadapter/converter/converter.h"
 #include "lite/utils/env.h"
 #include "lite/utils/md5.h"
