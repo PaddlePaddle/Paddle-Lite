@@ -15,18 +15,26 @@
 #if defined(__aarch64__) || defined(__arm__)
 #include <arm_neon.h>
 #endif
-#ifdef LITE_USE_PRECOMPILED_OPENCV
-#include <opencv2/opencv.hpp>
-#endif
 #include <fstream>
 #include <iostream>
+#include <opencv2/opencv.hpp>
 #include "lite/api/tools/benchmark/precision_evaluation/utils.h"
 #include "lite/utils/string.h"
 
 namespace paddle {
 namespace lite_api {
 
-std::vector<std::string> ReadDict(std::string path) {
+const std::string GetAbsPath(const std::string file_name) {
+  char abs_path_buff[PATH_MAX];
+  if (realpath(file_name.c_str(), abs_path_buff)) {
+    return std::string(abs_path_buff);
+  } else {
+    std::cerr << "Get abs path error!" << std::endl;
+    std::abort();
+  }
+}
+
+const std::vector<std::string> ReadDict(std::string path) {
   std::ifstream in(path);
   std::string filename;
   std::string line;
@@ -42,7 +50,8 @@ std::vector<std::string> ReadDict(std::string path) {
   return m_vec;
 }
 
-std::map<std::string, std::string> LoadConfigTxt(std::string config_path) {
+const std::map<std::string, std::string> LoadConfigTxt(
+    std::string config_path) {
   auto config = ReadDict(config_path);
 
   std::map<std::string, std::string> dict;

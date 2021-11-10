@@ -16,17 +16,16 @@
 #define LITE_API_TOOLS_BENCHMARK_PRECISION_EVALUATION_UTILS_H_
 
 #include <map>
-#include <string>
-#include <vector>
-#ifdef LITE_USE_PRECOMPILED_OPENCV
 #include <opencv2/opencv.hpp>
-#endif
+#include <string>  // NOLINT
+#include <vector>  // NOLINT
 
 namespace paddle {
 namespace lite_api {
 
-std::vector<std::string> ReadDict(std::string path);
-std::map<std::string, std::string> LoadConfigTxt(std::string config_path);
+const std::string GetAbsPath(const std::string file_name);
+const std::vector<std::string> ReadDict(std::string path);
+const std::map<std::string, std::string> LoadConfigTxt(std::string config_path);
 void PrintConfig(const std::map<std::string, std::string> &config);
 cv::Mat ResizeImage(const cv::Mat &img, const int resize_short_size);
 cv::Mat CenterCropImg(const cv::Mat &img, const int crop_size);

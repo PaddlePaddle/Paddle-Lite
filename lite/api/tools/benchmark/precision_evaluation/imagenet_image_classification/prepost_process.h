@@ -25,23 +25,35 @@
 namespace paddle {
 namespace lite_api {
 
-struct RESULT {
-  std::string class_name;
-  int class_id;
-  float score;
+class ImagenetClassification {
+ public:
+  struct RESULT {
+    std::string class_name;
+    int class_id;
+    float score;
+  };
+
+  ImagenetClassification();
+  ~ImagenetClassification();
+
+  void PreProcess(std::shared_ptr<PaddlePredictor> predictor,
+                  const std::map<std::string, std::string> &config,
+                  const std::vector<std::string> &image_files,
+                  const int cnt);
+
+  std::vector<RESULT> PostProcess(
+      std::shared_ptr<PaddlePredictor> predictor,
+      const std::map<std::string, std::string> &config,
+      const std::vector<std::string> &image_files,
+      const std::vector<std::string> &word_labels,
+      const int cnt,
+      const bool repeat_flag = true);
+
+  std::vector<float> topk_accuracies(const int k, const int repeats);
+
+ private:
+  std::vector<float> topk_accuracies_;
 };
-
-void PreProcess(std::shared_ptr<PaddlePredictor> predictor,
-                const std::map<std::string, std::string> &config,
-                const std::vector<std::string> &image_files,
-                const int cnt);
-
-std::vector<RESULT> PostProcess(
-    std::shared_ptr<PaddlePredictor> predictor,
-    const std::map<std::string, std::string> &config,
-    const std::vector<std::string> &image_files,
-    const std::vector<std::string> &word_labels,
-    const int cnt);
 
 }  // namespace lite_api
 }  // namespace paddle

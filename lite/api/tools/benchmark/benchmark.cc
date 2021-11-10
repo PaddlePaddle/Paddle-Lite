@@ -23,18 +23,20 @@
 #include <string>
 #include <utility>
 #include <vector>
+#ifdef LITE_USE_PRECOMPILED_OPENCV
 #include "lite/api/tools/benchmark/precision_evaluation/imagenet_image_classification/prepost_process.h"
+#endif
 #include "lite/core/version.h"
 #include "lite/utils/timer.h"
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   return paddle::lite_api::Benchmark(argc, argv);
 }
 
 namespace paddle {
 namespace lite_api {
 
-int Benchmark(int argc, char **argv) {
+int Benchmark(int argc, char** argv) {
   gflags::SetVersionString(lite::version());
   gflags::SetUsageMessage(PrintUsage());
   gflags::ParseCommandLineFlags(&argc, &argv, true);
@@ -58,7 +60,7 @@ int Benchmark(int argc, char **argv) {
 }
 
 std::shared_ptr<PaddlePredictor> CreatePredictor(
-    const std::string &model_file) {
+    const std::string& model_file) {
   MobileConfig config;
   config.set_model_from_file(model_file);
   config.set_threads(FLAGS_threads);
@@ -71,20 +73,46 @@ std::shared_ptr<PaddlePredictor> CreatePredictor(
   return predictor;
 }
 
-const std::string GetAbsPath(const std::string file_name) {
-  char abs_path_buff[PATH_MAX];
-  if (realpath(file_name.c_str(), abs_path_buff)) {
-    return std::string(abs_path_buff);
-  } else {
-    std::cerr << "Get abs path error!" << std::endl;
-    std::abort();
-  }
+void RunImpl(std::shared_ptr<PaddlePredictor> predictor, PerfData* perf_data) {
+  lite::Timer timer;
+  timer.Start();
+  predictor->Run();
+  perf_data->set_run_time(timer.Stop());
 }
 
-void Run(const std::string &model_file,
-         const std::vector<std::vector<int64_t>> &input_shapes) {
+#ifdef LITE_USE_PRECOMPILED_OPENCV
+void RunImpl(std::shared_ptr<PaddlePredictor> predictor,
+             PerfData* perf_data,
+             ImagenetClassification* task,
+             const std::map<std::string, std::string>& config,
+             const std::vector<std::string>& image_files,
+             const std::vector<std::string>& word_labels,
+             const int cnt,
+             const bool repeat_flag) {
   lite::Timer timer;
-  std::vector<float> perf_vct;
+  timer.Start();
+  task->PreProcess(predictor, config, image_files, cnt);
+  perf_data->set_pre_process_time(timer.Stop());
+
+  timer.Start();
+  predictor->Run();
+  perf_data->set_run_time(timer.Stop());
+
+  timer.Start();
+  task->PostProcess(
+      predictor, config, image_files, word_labels, cnt, repeat_flag);
+  perf_data->set_post_process_time(timer.Stop());
+}
+#endif
+
+void Run(const std::string& model_file,
+         const std::vector<std::vector<int64_t>>& input_shapes) {
+  lite::Timer timer;
+  PerfData perf_data;
+  perf_data.init(FLAGS_repeats);
+#ifdef LITE_USE_PRECOMPILED_OPENCV
+  std::unique_ptr<ImagenetClassification> task(new ImagenetClassification());
+#endif
   std::map<std::string, std::string> config;
   std::vector<std::string> image_files;
   std::vector<std::string> word_labels;
@@ -92,7 +120,7 @@ void Run(const std::string &model_file,
   // Create predictor
   timer.Start();
   auto predictor = CreatePredictor(model_file);
-  float init_time = timer.Stop();
+  perf_data.set_init_time(timer.Stop());
 
   // Set inputs
   if (FLAGS_validation_set.empty()) {
@@ -120,11 +148,10 @@ void Run(const std::string &model_file,
       }
     }
   } else {
-    std::cout << "FLAGS_config_path: " << FLAGS_config_path << std::endl;
+#ifdef LITE_USE_PRECOMPILED_OPENCV
     config = LoadConfigTxt(FLAGS_config_path);
     PrintConfig(config);
     word_labels = lite::ReadLines(config.at("label_path"));
-
     std::vector<std::string> image_labels =
         lite::ReadLines(config.at("ground_truth_images_path"));
     image_files.reserve(image_labels.size());
@@ -136,36 +163,40 @@ void Run(const std::string &model_file,
       std::string label_id = line.substr(line.find(" ") + 1, line.length());
       image_files.push_back(image_file);
     }
+#endif
   }
 
   // Warmup
   for (int i = 0; i < FLAGS_warmup; ++i) {
-    if (i == 0) {
-      timer.Start();
-      PreProcess(predictor, config, image_files, i);
-      predictor->Run();
-      auto results =
-          PostProcess(predictor, config, image_files, word_labels, i);
-      perf_vct.push_back(timer.Stop());
-      std::cout << "===clas result for image: " << image_files.at(i)
-                << "===" << std::endl;
-      for (int i = 0; i < results.size(); i++) {
-        std::cout << "\t"
-                  << "Top-" << i + 1 << ", class_id: " << results[i].class_id
-                  << ", class_name: " << results[i].class_name
-                  << ", score: " << results[i].score << std::endl;
-      }
-    } else {
-      predictor->Run();
-    }
+#ifdef LITE_USE_PRECOMPILED_OPENCV
+    RunImpl(predictor,
+            &perf_data,
+            task.get(),
+            config,
+            image_files,
+            word_labels,
+            i,
+            false);
+#else
+    RunImpl(predictor, &perf_data);
+#endif
     timer.SleepInMs(FLAGS_run_delay);
   }
 
   // Run
   for (int i = 0; i < FLAGS_repeats; ++i) {
-    timer.Start();
-    predictor->Run();
-    perf_vct.push_back(timer.Stop());
+#ifdef LITE_USE_PRECOMPILED_OPENCV
+    RunImpl(predictor,
+            &perf_data,
+            task.get(),
+            config,
+            image_files,
+            word_labels,
+            i,
+            true);
+#else
+    RunImpl(predictor, &perf_data);
+#endif
     timer.SleepInMs(FLAGS_run_delay);
   }
 
@@ -201,14 +232,6 @@ void Run(const std::string &model_file,
   }
 
   // Save benchmark info
-  float first_time = perf_vct[0];
-  if (FLAGS_warmup > 0) {
-    perf_vct.erase(perf_vct.cbegin());
-  }
-  std::stable_sort(perf_vct.begin(), perf_vct.end());
-  float perf_avg =
-      std::accumulate(perf_vct.begin(), perf_vct.end(), 0.0) / FLAGS_repeats;
-
   std::stringstream ss;
   ss.precision(3);
 #ifdef __ANDROID__
@@ -217,9 +240,17 @@ void Run(const std::string &model_file,
 #endif
   ss << "\n======= Model Info =======\n";
   ss << "optimized_model_file: " << model_file << std::endl;
-  ss << "input_data_path: "
-     << (FLAGS_input_data_path.empty() ? "All 1.f" : FLAGS_input_data_path)
-     << std::endl;
+  std::string input_data_path;
+  if (FLAGS_validation_set.empty()) {
+    if (FLAGS_input_data_path.empty()) {
+      input_data_path = "All 1.f";
+    } else {
+      input_data_path = FLAGS_input_data_path;
+    }
+  } else {
+    input_data_path = config.at("ground_truth_images_path");
+  }
+  ss << "input_data_path: " << input_data_path << std::endl;
   ss << "input_shape: " << FLAGS_input_shape << std::endl;
   ss << out_ss.str();
   ss << "\n======= Runtime Info =======\n";
@@ -243,14 +274,32 @@ void Run(const std::string &model_file,
        << std::endl;
     ss << "opencl_tuned_file: " << FLAGS_opencl_tuned_file << std::endl;
   }
+
+#ifdef LITE_USE_PRECOMPILED_OPENCV
+  if (!FLAGS_config_path.empty()) {
+    ss << "\n======= Accurancy Info =======\n";
+    ss << "config: " << FLAGS_config_path << std::endl;
+    ss << lite::ReadFile(FLAGS_config_path) << std::endl;
+    ss << std::fixed << std::left;
+    auto topk_accuracies =
+        task->topk_accuracies(stoi(config.at("topk")), FLAGS_repeats);
+    for (int i = 0; i < topk_accuracies.size(); i++) {
+      auto str = lite::string_format(
+          "Top-%d Accurancy: %.3f", i + 1, topk_accuracies[i]);
+      std::cout << str << std::endl;
+      ss << str << std::endl;
+    }
+  }
+#endif
+
   ss << "\n======= Perf Info =======\n";
   ss << std::fixed << std::left;
   ss << "Time(unit: ms):\n";
-  ss << "init  = " << std::setw(12) << init_time << std::endl;
-  ss << "first = " << std::setw(12) << first_time << std::endl;
-  ss << "min   = " << std::setw(12) << perf_vct.front() << std::endl;
-  ss << "max   = " << std::setw(12) << perf_vct.back() << std::endl;
-  ss << "avg   = " << std::setw(12) << perf_avg << std::endl;
+  ss << "init  = " << std::setw(12) << perf_data.init_time() << std::endl;
+  ss << "first = " << std::setw(12) << perf_data.first_time() << std::endl;
+  ss << "min   = " << std::setw(12) << perf_data.min_run_time() << std::endl;
+  ss << "max   = " << std::setw(12) << perf_data.max_run_time() << std::endl;
+  ss << "avg   = " << std::setw(12) << perf_data.avg_run_time() << std::endl;
   if (FLAGS_enable_memory_profile) {
     ss << "\nMemory Usage(unit: kB):\n";
     ss << "init  = " << std::setw(12) << "Not supported yet" << std::endl;

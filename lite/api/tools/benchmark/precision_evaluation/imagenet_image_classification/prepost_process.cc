@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/api/tools/benchmark/precision_evaluation/imagenet_image_classification/prepost_process.h"
+#include <algorithm>
 #include <utility>
 #include "lite/api/paddle_api.h"
 #include "lite/utils/model_util.h"
@@ -21,14 +22,22 @@
 namespace paddle {
 namespace lite_api {
 
-void PreProcess(std::shared_ptr<PaddlePredictor> predictor,
-                const std::map<std::string, std::string> &config,
-                const std::vector<std::string> &image_files,
-                const int cnt) {
+constexpr int TOPK_MAX = 10;
+ImagenetClassification::ImagenetClassification() {
+  topk_accuracies_.resize(TOPK_MAX, 0.f);
+}
+
+ImagenetClassification::~ImagenetClassification() {}
+
+void ImagenetClassification::PreProcess(
+    std::shared_ptr<PaddlePredictor> predictor,
+    const std::map<std::string, std::string> &config,
+    const std::vector<std::string> &image_files,
+    const int cnt) {
   if (image_files.empty()) return;
 
   // Read image
-  std::cout << "image: " << image_files.at(cnt) << std::endl;
+  // std::cout << "image: " << image_files.at(cnt) << std::endl;
   cv::Mat img = cv::imread(image_files.at(cnt), cv::IMREAD_COLOR);
   cv::cvtColor(img, img, cv::COLOR_BGR2RGB);
 
@@ -44,20 +53,21 @@ void PreProcess(std::shared_ptr<PaddlePredictor> predictor,
   crop_image.convertTo(img_fp, CV_32FC3, alpha);
   std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(0)));
   input_tensor->Resize({1, img_fp.channels(), img_fp.rows, img_fp.cols});
-  std::vector<float> mean = {0.485f, 0.456f, 0.406f};
-  std::vector<float> scale = {1 / 0.229f, 1 / 0.224f, 1 / 0.225f};
+  const auto mean = lite::Split<float>(config.at("mean"), ",");
+  const auto scale = lite::Split<float>(config.at("scale"), ",");
   const float *dimg = reinterpret_cast<const float *>(img_fp.data);
 
   auto *input0 = input_tensor->mutable_data<float>();
   NeonMeanScale(dimg, input0, img_fp.rows * img_fp.cols, mean, scale);
 }
 
-std::vector<RESULT> PostProcess(
+std::vector<ImagenetClassification::RESULT> ImagenetClassification::PostProcess(
     std::shared_ptr<PaddlePredictor> predictor,
     const std::map<std::string, std::string> &config,
     const std::vector<std::string> &image_files,
     const std::vector<std::string> &word_labels,
-    const int cnt) {
+    const int cnt,
+    const bool repeat_flag) {
   std::vector<RESULT> results;
   if (image_files.empty()) return results;
 
@@ -100,14 +110,19 @@ std::vector<RESULT> PostProcess(
     }
     results[i].score = max_scores[i];
     results[i].class_id = max_indices[i];
+    if (repeat_flag) {
+      topk_accuracies_[i] += max_scores[i];
+    }
   }
 
   if (stoi(config.at("store_result_as_image")) == 1) {
+    std::cout << "=== clas result for image: " << image_files.at(cnt)
+              << "===" << std::endl;
     cv::Mat img = cv::imread(image_files.at(cnt), cv::IMREAD_COLOR);
     cv::Mat output_image(img);
     for (int i = 0; i < results.size(); i++) {
       auto text = lite::string_format(
-          "Top-%d, class_id: %d, class_name: %s, score: %.3f\n",
+          "Top-%d, class_id: %d, class_name: %s, score: %.3f",
           i + 1,
           results[i].class_id,
           results[i].class_name.c_str(),
@@ -118,6 +133,8 @@ std::vector<RESULT> PostProcess(
                   cv::FONT_HERSHEY_PLAIN,
                   1,
                   cv::Scalar(51, 255, 255));
+
+      std::cout << text << std::endl;
     }
     std::string output_image_path = "./" + std::to_string(cnt) + ".png";
     cv::imwrite(output_image_path, output_image);
@@ -125,6 +142,19 @@ std::vector<RESULT> PostProcess(
   }
 
   return results;
+}
+
+std::vector<float> ImagenetClassification::topk_accuracies(const int k,
+                                                           const int repeats) {
+  topk_accuracies_.resize(k);
+  std::transform(topk_accuracies_.begin(),
+                 topk_accuracies_.begin() + k,
+                 topk_accuracies_.begin(),
+                 [&repeats](float &c) {
+                   std::cout << c << std::endl;
+                   return c / static_cast<float>(repeats);
+                 });
+  return topk_accuracies_;
 }
 
 }  // namespace lite_api

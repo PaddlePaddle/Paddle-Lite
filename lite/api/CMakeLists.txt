@@ -243,6 +243,10 @@ if(NOT IOS AND NOT LITE_ON_TINY_PUBLISH)
         CV_DEPS paddle_cv_arm)
 
     FILE(GLOB_RECURSE BENCHMARK_SRC tools/benchmark/*.cc tools/opt_base.cc)
+    FILE(GLOB_RECURSE BENCHMARK_PRECISION_SRC tools/benchmark/precision_evaluation/*.cc)
+    if(NOT(ARM_TARGET_OS STREQUAL "android" AND LITE_USE_PRECOMPILED_OPENCV))
+        LIST(REMOVE_ITEM BENCHMARK_SRC ${BENCHMARK_PRECISION_SRC})
+    endif()
     lite_cc_binary(benchmark_bin SRCS ${BENCHMARK_SRC}
         DEPS gflags
         CV_DEPS paddle_cv_arm)

@@ -14,9 +14,6 @@
 
 #ifndef LITE_API_TOOLS_BENCHMARK_BENCHMARK_H_
 #define LITE_API_TOOLS_BENCHMARK_BENCHMARK_H_
-#if defined(__aarch64__) || defined(__arm__)
-#include <arm_neon.h>
-#endif
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -25,9 +22,6 @@
 #include <numeric>
 #include <string>
 #include <vector>
-#ifdef LITE_USE_PRECOMPILED_OPENCV
-#include <opencv2/opencv.hpp>
-#endif
 #include "lite/api/paddle_api.h"
 #include "lite/api/tools/benchmark/utils/flags.h"
 #include "lite/api/tools/opt_base.h"
@@ -38,6 +32,65 @@
 
 namespace paddle {
 namespace lite_api {
+
+class PerfData {
+ public:
+  void init(const int repeats) { repeats_ = repeats; }
+  const float init_time() const { return init_time_; }
+  const float first_time() const { return run_time_.at(0); }
+  const float avg_pre_process_time() const {
+    return std::accumulate(pre_process_time_.end() - repeats_,
+                           pre_process_time_.end(),
+                           0.f) /
+           repeats_;
+  }
+  const float min_pre_process_time() const {
+    return *std::min_element(pre_process_time_.end() - repeats_,
+                             pre_process_time_.end());
+  }
+  const float max_pre_process_time() const {
+    return *std::max_element(pre_process_time_.end() - repeats_,
+                             pre_process_time_.end());
+  }
+  const float avg_post_process_time() const {
+    return std::accumulate(post_process_time_.end() - repeats_,
+                           post_process_time_.end(),
+                           0.f) /
+           repeats_;
+  }
+  const float min_post_process_time() const {
+    return *std::min_element(post_process_time_.end() - repeats_,
+                             post_process_time_.end());
+  }
+  const float max_post_process_time() const {
+    return *std::max_element(post_process_time_.end() - repeats_,
+                             post_process_time_.end());
+  }
+  const float avg_run_time() const {
+    return std::accumulate(run_time_.end() - repeats_, run_time_.end(), 0.f) /
+           repeats_;
+  }
+  const float min_run_time() const {
+    return *std::min_element(run_time_.end() - repeats_, run_time_.end());
+  }
+  const float max_run_time() const {
+    return *std::max_element(run_time_.end() - repeats_, run_time_.end());
+  }
+
+  void set_init_time(const float ms) { init_time_ = ms; }
+  void set_pre_process_time(const float ms) { pre_process_time_.push_back(ms); }
+  void set_post_process_time(const float ms) {
+    post_process_time_.push_back(ms);
+  }
+  void set_run_time(const float ms) { run_time_.push_back(ms); }
+
+ private:
+  int repeats_{0};
+  float init_time_{0.f};
+  std::vector<float> pre_process_time_;
+  std::vector<float> post_process_time_;
+  std::vector<float> run_time_;
+};
 
 int Benchmark(int argc, char** argv);
 void Run(const std::string& model_file,
@@ -343,7 +396,7 @@ const std::string OutputOptModel(const std::string& opt_model_file) {
              : FLAGS_uncombined_model_dir)
      << std::endl;
   ss << "Save optimized model to " << saved_opt_model_file << std::endl;
-  std::cout << ss.str() << std::endl;
+  std::cout << ss.str();
 
   StoreBenchmarkResult(ss.str());
   return saved_opt_model_file;
