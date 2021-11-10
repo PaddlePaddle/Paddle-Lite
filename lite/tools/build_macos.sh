@@ -130,7 +130,14 @@ function make_armosx {
     if [ "${WITH_STRIP}" == "ON" ]; then
         BUILD_EXTRA=ON
     fi
-
+    if [ "$WITH_TINY_PUBLISH" = "OFF" ]; then
+        prepare_thirdparty
+    else
+        if [ ! -d third-party ] ; then
+            git checkout third-party
+        fi
+    fi
+    
     build_dir=$workspace/build.macos.${os}.${arch}
     if [ "${WITH_METAL}" = "ON" ]
     then
@@ -177,6 +184,8 @@ function make_armosx {
             -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
             -DLITE_WITH_CV=$BUILD_CV \
             -DDEPLOYMENT_TARGET=${IOS_DEPLOYMENT_TARGET} \
+            -DLITE_WITH_PROFILE=${WITH_PROFILE} \
+            -DLITE_WITH_PRECISION_PROFILE=${WITH_PRECISION_PROFILE} \
             -DARM_TARGET_OS=armmacos
 
     if [ "${WITH_BENCHMARK}" == "ON" ]; then
@@ -285,18 +294,23 @@ function print_usage {
     echo -e "|                                                                                                                                      |"
     echo -e "|  for arm macos:                                                                                                                      |"
     echo -e "|  optional argument:                                                                                                                  |"
-    echo -e "|     --with_metal: (OFF|ON); controls whether to build with Metal, default is OFF                                                    |"
+    echo -e "|     --with_metal: (OFF|ON); controls whether to build with Metal, default is OFF                                                     |"
     echo -e "|     --with_cv: (OFF|ON); controls whether to compile cv functions into lib, default is OFF                                           |"
     echo -e "|     --with_log: (OFF|ON); controls whether to print log information, default is ON                                                   |"
     echo -e "|     --with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF                            |"
-    echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP) |"
+    echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP)  |"
+    echo -e "|     --with_profile: (OFF|ON); controls whether to profile speed, default is OFF                                                      |"
+    echo -e "|     --with_precision_profile: (OFF|ON); controls whether to profile precision, default is OFF                                        |"
     echo -e "|     --with_benchmark: (OFF|ON); controls whether to compile benchmark binary, default is OFF                                         |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of benchmark binary compiling for macos x86:                                                                              |"
     echo -e "|     ./lite/tools/build_macos.sh --with_benchmark=ON x86                                                                              |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of benchmark binary compiling for macos opencl(only support --gpu_precision=fp32):                                        |"
-    echo -e "|     ./lite/tools/build_macos.sh --with_opencl=ON --with_benchmark=ON arm64                                                          |"
+    echo -e "|     ./lite/tools/build_macos.sh --with_opencl=ON --with_benchmark=ON arm64                                                           |"
+    echo -e "|                                                                                                                                      |"
+    echo -e "|  arguments of precision_profile compiling for macos M1:                                                                              |"
+    echo -e "|     ./lite/tools/build_macos.sh --build_extra=ON --with_precision_profile=ON arm64 full_publish                                      |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of striping lib according to input model:(armv8, gcc, c++_static)                                                         |"
     echo -e "|     ./lite/tools/build_macos.sh --with_strip=ON --opt_model_dir=YourOptimizedModelDir                                                |"
@@ -471,6 +485,11 @@ function main {
                make_x86
                shift
                ;;
+            full_publish)
+                WITH_TINY_PUBLISH=OFF
+                make_armosx
+                exit 0
+                ;;
             help)
                 print_usage
                 exit 0
