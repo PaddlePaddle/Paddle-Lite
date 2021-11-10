@@ -59,7 +59,8 @@ class TestMulOp(AutoScanTest):
         yield program_config
 
     def sample_predictor_configs(self, program_config):
-        config = {"valid_targets":"arm",}
+        config = {"valid_targets" : ["arm,float,NCHW"],
+                  "thread": 1}
         yield config, (1e-5, 1e-5)
 
     def add_skip_pass_case(self):
