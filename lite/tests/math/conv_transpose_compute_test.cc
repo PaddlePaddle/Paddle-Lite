@@ -501,12 +501,13 @@ TEST(TestConvRand, test_conv_transpose_rand) {
                         for (auto& dila : {1, 2}) {
                           for (auto& flag_bias : {false, true}) {
                             for (auto& flag_relu : {false, true}) {
-                              if (cin % g != 0 || cout % g != 0) {
+                              if (cin % g != 0 || cout % g != 0 ||
+                                  pad_h1 != pad_h0 || pad_w0 != pad_w1) {
                                 continue;
                               }
                               std::vector<DDim> dims;
                               DDim weights_dim({cin, cout / g, kh, kw});
-                              for (auto& batch : {1, 2}) {
+                              for (auto& batch : {2}) {
                                 for (auto& h : {1, 3, 19, 32, 28}) {
                                   dims.push_back(DDim({batch, cin, h, h}));
                                 }
