@@ -23,7 +23,7 @@ from paddlelite.lite import *
 SkipReasons = SkipReasonsBase
 
 class AutoScanTest(AutoScanBaseTest):
-    def run_lite_config(self, model, params, feed_data, pred_config) -> Dict[str, np.ndarray]:
+    def run_lite_config(self, model, params, inputs, pred_config) -> Dict[str, np.ndarray]:
         valid_places=[Place(TargetType.Host, PrecisionType.FP32)]
         config = CxxConfig()
         config.set_valid_places(valid_places)
