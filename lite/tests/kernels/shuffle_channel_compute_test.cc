@@ -86,11 +86,11 @@ void test_shuffle_channel(Place place, float abs_error = 2e-5) {
 #ifdef LITE_WITH_METAL
     auto* ctx = tester->context()->AS<MTLContext>().context();
     std::string metallib_path = "";
-    ctx -> set_metal_path(metallib_path);
-    ctx -> set_use_mps(true);
-    ctx -> set_metal_device(nullptr);
-    ctx -> set_use_aggressive(false);
-    ctx -> set_use_memory_reuse(false);
+    ctx->set_metal_path(metallib_path);
+    ctx->set_use_mps(true);
+    ctx->set_metal_device(nullptr);
+    ctx->set_use_aggressive(false);
+    ctx->set_use_memory_reuse(false);
 #endif
     arena::Arena arena(std::move(tester), place, abs_error);
     arena.TestPrecision();
@@ -107,7 +107,8 @@ TEST(ShuffleChannel, precision) {
   place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
   abs_error = 1e-2;  // Using fp16 in OPENCL
 #elif defined(LITE_WITH_METAL)
-  place = Place(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray));
+  place =
+      Place(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray));
   abs_error = 1e-2;  // Use Metal
 #else
   return;
