@@ -822,85 +822,6 @@ function rockchip_npu_build_and_test_ssh {
     run_all_tests_on_remote_device $1 "~/ci" ssh_device_pick ssh_device_check ssh_device_run $2 "$(readlink -f ./rknpu_ddk)" "armv8" "gcc" rockchip_npu_build_target rockchip_npu_prepare_device
 }
 
-# MediaTek APU
-function mediatek_apu_prepare_device {
-    local remote_device_name=$1
-    local remote_device_work_dir=$2
-    local remote_device_check=$3
-    local remote_device_run=$4
-    local arch=$5
-    local toolchain=$6
-    local sdk_root_dir=$7
-
-    # Check device is available
-    $remote_device_check $remote_device_name
-    if [[ $? -ne 0 ]]; then
-        echo "$remote_device_name not found!"
-        exit 1
-    fi
-
-    # Create work dir on the remote device
-    if [[ -z "$remote_device_work_dir" ]]; then
-        echo "$remote_device_work_dir can't be empty!"
-        exit 1
-    fi
-    if [[ "$remote_device_work_dir" == "/" ]]; then
-        echo "$remote_device_work_dir can't be root dir!"
-        exit 1
-    fi
-    $remote_device_run $remote_device_name shell "rm -rf $remote_device_work_dir"
-    $remote_device_run $remote_device_name shell "mkdir -p $remote_device_work_dir"
-
-    # Use high performance mode
-    $remote_device_run $remote_device_name root
-    if [[ $? -ne 0 ]]; then
-        echo "$remote_device_name hasn't the root permission!"
-        exit 1
-    fi
-    $remote_device_run $remote_device_name shell "echo performance > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
-    $remote_device_run $remote_device_name shell "echo performance > /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor"
-    $remote_device_run $remote_device_name shell "echo performance > /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor"
-    $remote_device_run $remote_device_name shell "echo performance > /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor"
-    $remote_device_run $remote_device_name shell "cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq"
-    $remote_device_run $remote_device_name shell "echo 800000 > /proc/gpufreq/gpufreq_opp_freq"
-    $remote_device_run $remote_device_name shell "echo dvfs_debug 0 > /sys/kernel/debug/vpu/power"
-    $remote_device_run $remote_device_name shell "echo 0 > /sys/devices/platform/soc/10012000.dvfsrc/helio-dvfsrc/dvfsrc_force_vcore_dvfs_opp"
-    $remote_device_run $remote_device_name shell "echo 0 > /sys/module/mmdvfs_pmqos/parameters/force_step"
-    $remote_device_run $remote_device_name shell "echo 0 > /proc/sys/kernel/printk"
-}
-
-function mediatek_apu_build_target {
-    local arch=$1
-    local toolchain=$2
-    local sdk_root_dir=$3
-
-    # Build all of tests
-    rm -rf ./build
-    mkdir -p ./build
-    cd ./build
-    prepare_workspace
-    cmake .. \
-        -DWITH_GPU=OFF \
-        -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
-        -DLITE_WITH_CUDA=OFF \
-        -DLITE_WITH_X86=OFF \
-        -DLITE_WITH_ARM=ON \
-        -DWITH_ARM_DOTPROD=ON   \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
-        -DWITH_TESTING=ON \
-        -DLITE_BUILD_EXTRA=ON \
-        -DLITE_WITH_TRAIN=ON \
-        -DLITE_WITH_APU=ON \
-        -DAPU_DDK_ROOT="$sdk_root_dir" \
-        -DARM_TARGET_OS="android" -DARM_TARGET_ARCH_ABI=$arch -DARM_TARGET_LANG=$toolchain
-    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
-}
-
-function mediatek_apu_build_and_test {
-    run_all_tests_on_remote_device $1 "/data/local/tmp/ci" adb_device_pick adb_device_check adb_device_run $2 "$(readlink -f ./apu_ddk)" "armv7" "gcc" mediatek_apu_build_target mediatek_apu_prepare_device
-}
-
 # ARMLinux (RK3399/pro, Raspberry pi etc.)
 function armlinux_prepare_device {
     local remote_device_name=$1
@@ -1655,10 +1576,6 @@ function main {
                 ;;
             rockchip_npu_build_and_test_ssh)
                 rockchip_npu_build_and_test_ssh $SSH_DEVICE_LIST $TEST_SKIP_LIST
-                shift
-                ;;
-            mediatek_apu_build_and_test)
-                mediatek_apu_build_and_test $ADB_DEVICE_LIST $TEST_SKIP_LIST
                 shift
                 ;;
             armlinux_arm64_build_and_test)

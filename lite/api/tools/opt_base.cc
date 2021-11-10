@@ -771,7 +771,6 @@ void OptBase::InitSupportedOpInfo() {
                                               "kBM",
                                               "kMLU",
                                               "kRKNPU",
-                                              "kAPU",
                                               "kIntelFPGA",
                                               "kMetal",
                                               "kNNAdapter"};

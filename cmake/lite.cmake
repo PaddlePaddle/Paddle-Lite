@@ -100,12 +100,6 @@ function (lite_deps TARGET)
     endforeach(var)
   endif()
 
-  if (LITE_WITH_APU)
-    foreach(var ${lite_deps_APU_DEPS})
-      set(deps ${deps} ${var})
-    endforeach(var)
-  endif()
-
   if (LITE_WITH_RKNPU)
     foreach(var ${lite_deps_RKNPU_DEPS})
       set(deps ${deps} ${var})
