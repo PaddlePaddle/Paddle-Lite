@@ -191,6 +191,7 @@ class LITE_API Predictor {
   lite::Tensor* GetInput(size_t offset);
   // get input by name.
   lite::Tensor* GetInputByName(const std::string& name);
+  const lite::Tensor* GetOutputByName(const std::string& name);
   // get inputnames and get outputnames.
   std::vector<std::string> GetInputNames();
   std::vector<std::string> GetOutputNames();
@@ -271,8 +272,12 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
   void Init(const lite_api::CxxConfig& config);
 
   std::unique_ptr<lite_api::Tensor> GetInput(int i) override;
-
   std::unique_ptr<const lite_api::Tensor> GetOutput(int i) const override;
+
+  std::unique_ptr<lite_api::Tensor> GetInputByName(
+      const std::string& name) override;
+  std::unique_ptr<const lite_api::Tensor> GetOutputByName(
+      const std::string& name) const;
 
   void Run() override;
 
@@ -301,10 +306,6 @@ class CxxPaddleApiImpl : public lite_api::PaddlePredictor {
       const std::string& name) const override;
   // get a mutable tensor according to tensor's name
   std::unique_ptr<lite_api::Tensor> GetMutableTensor(
-      const std::string& name) override;
-
-  // Get InputTebsor by name
-  std::unique_ptr<lite_api::Tensor> GetInputByName(
       const std::string& name) override;
 
   void SaveOptimizedModel(

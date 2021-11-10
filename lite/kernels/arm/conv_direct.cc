@@ -28,8 +28,7 @@ void DirectConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   CHECK_EQ(param.strides[1], 2);
   auto& ctx = this->ctx_->template As<ARMContext>();
   // extend workspace
-  ctx.ExtendWorkspace(
-      lite::arm::math::conv3x3s2_direct_workspace_size(param, &ctx));
+  ctx.ExtendWorkspace(workspace_size_);
 
   const auto* i_data = param.x->data<float>();
   const auto* w_data = weights_.data<float>();
@@ -64,6 +63,8 @@ void DirectConv<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   const auto* i_data = param.x->data<int8_t>();
   const auto* w_data = weights_.data<int8_t>();
   const auto* b_data = param.bias ? param.bias->data<float>() : nullptr;
+  // extend workspace
+  ctx.ExtendWorkspace(workspace_size_);
   if (flag_trans_bias_) {
     b_data = bias_.data<float>();
   }
@@ -109,6 +110,8 @@ void DirectConv<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   const auto* i_data = param.x->data<int8_t>();
   const auto* w_data = weights_.data<int8_t>();
   const auto* b_data = param.bias ? param.bias->data<float>() : nullptr;
+  // extend workspace
+  ctx.ExtendWorkspace(workspace_size_);
   if (flag_trans_bias_) {
     b_data = bias_.data<float>();
   }
@@ -149,13 +152,7 @@ void DirectConv<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->template As<ARMContext>();
   // extend workspace
-  if (param.strides[0] == 2) {
-    ctx.ExtendWorkspace(
-        lite::arm::math::fp16::conv3x3s2_direct_workspace_size(param, &ctx));
-  } else {
-    ctx.ExtendWorkspace(
-        lite::arm::math::fp16::conv3x3s1_direct_workspace_size(param, &ctx));
-  }
+  ctx.ExtendWorkspace(workspace_size_);
   const auto* i_data = param.x->data<float16_t>();
   const auto* w_data = weights_.data<float16_t>();
   const auto* b_data = param.bias ? param.bias->data<float16_t>() : nullptr;

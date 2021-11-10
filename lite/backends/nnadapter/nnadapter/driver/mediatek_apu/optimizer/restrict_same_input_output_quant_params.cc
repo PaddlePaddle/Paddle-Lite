@@ -92,6 +92,7 @@ void RestrictSameInputOutputQuantParams(hal::Model* model) {
       case NNADAPTER_CONV_2D_TRANSPOSE:
       case NNADAPTER_DIV:
       case NNADAPTER_FULLY_CONNECTED:
+      case NNADAPTER_MAT_MUL:
       case NNADAPTER_HARD_SIGMOID:
       case NNADAPTER_HARD_SWISH:
       case NNADAPTER_MAX_POOL_2D:

@@ -14,6 +14,7 @@
 
 #include "lite/backends/arm/math/gemv_arm_int8.h"
 #include <arm_neon.h>
+#include <algorithm>
 #include "lite/backends/arm/math/saturate.h"
 #include "lite/core/parallel_defines.h"
 
@@ -30,7 +31,10 @@ inline void write_gemv_out(const int* in,
                            bool flag_act,
                            lite_api::ActivationType act,
                            float six,
-                           float alpha);
+                           float alpha,
+                           float offset,
+                           float threshold);
+
 template <>
 inline void write_gemv_out(const int* in,
                            float* out,
@@ -40,390 +44,537 @@ inline void write_gemv_out(const int* in,
                            bool flag_act,
                            lite_api::ActivationType act,
                            float six,
-                           float alpha) {
+                           float alpha,
+                           float offset,
+                           float threshold) {
   int cnt = size >> 3;
   int remain = size & 7;
   float32x4_t vzero = vdupq_n_f32(0.f);
   int cnt_4 = remain >> 2;
   int cnt_remain = remain & 3;
   if (flag_act) {
-    float32x4_t valpha = vdupq_n_f32(alpha);
-    float32x4_t vsix = vdupq_n_f32(six);
-    switch (act) {
-      case lite_api::ActivationType::kRelu:
+    if (act == lite_api::ActivationType::kRelu) {
 #ifdef __aarch64__
-        asm volatile(
-            "cmp %w[cnt], #1\n"
-            "ldr q2, [%[in_ptr]], #0x10\n"
-            "ldr q0, [%[bias_ptr]], #0x10\n"
-            "ldr q1, [%[scale_ptr]], #0x10\n"
-            "blt 2f\n"
-            "1: \n"
-            "ldr q5, [%[in_ptr]], #0x10\n"
-            "ldr q3, [%[bias_ptr]], #0x10\n"
-            "ldr q4, [%[scale_ptr]], #0x10\n"
-            // int32 -> fp32
-            "scvtf v6.4s, v2.4s\n"
-            "ldr q2, [%[in_ptr]], #0x10\n"
-            "scvtf v7.4s, v5.4s\n"
-            // din * scale + bias
-            "fmla v0.4s, v6.4s, v1.4s\n"
-            "ldr q1, [%[scale_ptr]], #0x10\n"
-            "fmla v3.4s, v7.4s, v4.4s\n"
-            "fmax v0.4s, v0.4s, %[vzero].4s\n"
-            "subs %w[cnt], %w[cnt], #1\n"
-            "fmax v3.4s, v3.4s, %[vzero].4s\n"
-            "str q0, [%[out_ptr]], #0x10\n"
-            "ldr q0, [%[bias_ptr]], #0x10\n"
-            "str q3, [%[out_ptr]], #0x10\n"
-            "bne 1b\n"
-            "2: \n"
-            "cmp %w[cnt_4], #1\n"
-            "blt 3f\n"
-            // int32 -> fp32
-            "scvtf v6.4s, v2.4s\n"
-            "ldr q2, [%[in_ptr]], #0x10\n"
-            // din * scale + bias
-            "fmla v0.4s, v6.4s, v1.4s\n"
-            "ldr q1, [%[scale_ptr]], #0x10\n"
-            "fmax v0.4s, v0.4s, %[vzero].4s\n"
-            "str q0, [%[out_ptr]], #0x10\n"
-            "ldr q0, [%[bias_ptr]], #0x10\n"
-            "3: \n"
-            : [in_ptr] "+r"(in),
-              [out_ptr] "+r"(out),
-              [scale_ptr] "+r"(scale),
-              [bias_ptr] "+r"(bias_ptr),
-              [cnt] "+r"(cnt)
-            :
-            [cnt_4] "r"(cnt_4), [cnt_remain] "r"(cnt_remain), [vzero] "w"(vzero)
-            : "cc",
-              "memory",
-              "v0",
-              "v1",
-              "v2",
-              "v3",
-              "v4",
-              "v5",
-              "v6",
-              "v7",
-              "v8");
+      asm volatile(
+          "cmp %w[cnt], #1\n"
+          "ldr q2, [%[in_ptr]], #0x10\n"
+          "ldr q0, [%[bias_ptr]], #0x10\n"
+          "ldr q1, [%[scale_ptr]], #0x10\n"
+          "blt 2f\n"
+          "1: \n"
+          "ldr q5, [%[in_ptr]], #0x10\n"
+          "ldr q3, [%[bias_ptr]], #0x10\n"
+          "ldr q4, [%[scale_ptr]], #0x10\n"
+          // int32 -> fp32
+          "scvtf v6.4s, v2.4s\n"
+          "ldr q2, [%[in_ptr]], #0x10\n"
+          "scvtf v7.4s, v5.4s\n"
+          // din * scale + bias
+          "fmla v0.4s, v6.4s, v1.4s\n"
+          "ldr q1, [%[scale_ptr]], #0x10\n"
+          "fmla v3.4s, v7.4s, v4.4s\n"
+          "fmax v0.4s, v0.4s, %[vzero].4s\n"
+          "subs %w[cnt], %w[cnt], #1\n"
+          "fmax v3.4s, v3.4s, %[vzero].4s\n"
+          "str q0, [%[out_ptr]], #0x10\n"
+          "ldr q0, [%[bias_ptr]], #0x10\n"
+          "str q3, [%[out_ptr]], #0x10\n"
+          "bne 1b\n"
+          "2: \n"
+          "cmp %w[cnt_4], #1\n"
+          "blt 3f\n"
+          // int32 -> fp32
+          "scvtf v6.4s, v2.4s\n"
+          "ldr q2, [%[in_ptr]], #0x10\n"
+          // din * scale + bias
+          "fmla v0.4s, v6.4s, v1.4s\n"
+          "ldr q1, [%[scale_ptr]], #0x10\n"
+          "fmax v0.4s, v0.4s, %[vzero].4s\n"
+          "str q0, [%[out_ptr]], #0x10\n"
+          "ldr q0, [%[bias_ptr]], #0x10\n"
+          "3: \n"
+          : [in_ptr] "+r"(in),
+            [out_ptr] "+r"(out),
+            [scale_ptr] "+r"(scale),
+            [bias_ptr] "+r"(bias_ptr),
+            [cnt] "+r"(cnt)
+          : [cnt_4] "r"(cnt_4), [cnt_remain] "r"(cnt_remain), [vzero] "w"(vzero)
+          : "cc",
+            "memory",
+            "v0",
+            "v1",
+            "v2",
+            "v3",
+            "v4",
+            "v5",
+            "v6",
+            "v7",
+            "v8");
 #else
-        asm volatile(
-            "cmp %[cnt], #1\n"
-            "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
-            "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
-            "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
-            "blt 2f\n"
-            "1: \n"
-            "vld1.32 {d14-d15}, [%[in_ptr]]!\n"
-            "vld1.32 {d16-d17}, [%[bias_ptr]]!\n"
-            "vld1.32 {d18-d19}, [%[scale_ptr]]!\n"
-            // int32 -> fp32
-            "vcvt.f32.s32 q10, q4\n"
-            "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
-            "vcvt.f32.s32 q11, q7\n"
-            // din * scale + bias
-            "vmla.f32 q5, q10, q6\n"
-            "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
-            "vmla.f32 q8, q11, q9\n"
-            "vmax.f32 q5, q5, %q[vzero]\n"
-            "subs %[cnt], #1\n"
-            "vmax.f32 q8, q8, %q[vzero]\n"
-            "vst1.32 {d10-d11}, [%[out_ptr]]!\n"
-            "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
-            "vst1.32 {d16-d17}, [%[out_ptr]]!\n"
-            "bne 1b\n"
-            "2: \n"
-            "cmp %[cnt_4], #1\n"
-            "blt 3f\n"
-            // int32 -> fp32
-            "vcvt.f32.s32 q10, q4\n"
-            "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
-            // din * scale + bias
-            "vmla.f32 q5, q10, q6\n"
-            "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
-            "vmax.f32 q5, q5, %q[vzero]\n"
-            "vst1.32 {d10-d11}, [%[out_ptr]]!\n"
-            "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
-            "3: \n"
-            : [in_ptr] "+r"(in),
-              [out_ptr] "+r"(out),
-              [scale_ptr] "+r"(scale),
-              [bias_ptr] "+r"(bias_ptr),
-              [cnt] "+r"(cnt)
-            :
-            [cnt_4] "r"(cnt_4), [cnt_remain] "r"(cnt_remain), [vzero] "w"(vzero)
-            : "cc", "memory", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11");
+      asm volatile(
+          "cmp %[cnt], #1\n"
+          "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
+          "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
+          "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
+          "blt 2f\n"
+          "1: \n"
+          "vld1.32 {d14-d15}, [%[in_ptr]]!\n"
+          "vld1.32 {d16-d17}, [%[bias_ptr]]!\n"
+          "vld1.32 {d18-d19}, [%[scale_ptr]]!\n"
+          // int32 -> fp32
+          "vcvt.f32.s32 q10, q4\n"
+          "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
+          "vcvt.f32.s32 q11, q7\n"
+          // din * scale + bias
+          "vmla.f32 q5, q10, q6\n"
+          "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
+          "vmla.f32 q8, q11, q9\n"
+          "vmax.f32 q5, q5, %q[vzero]\n"
+          "subs %[cnt], #1\n"
+          "vmax.f32 q8, q8, %q[vzero]\n"
+          "vst1.32 {d10-d11}, [%[out_ptr]]!\n"
+          "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
+          "vst1.32 {d16-d17}, [%[out_ptr]]!\n"
+          "bne 1b\n"
+          "2: \n"
+          "cmp %[cnt_4], #1\n"
+          "blt 3f\n"
+          // int32 -> fp32
+          "vcvt.f32.s32 q10, q4\n"
+          "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
+          // din * scale + bias
+          "vmla.f32 q5, q10, q6\n"
+          "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
+          "vmax.f32 q5, q5, %q[vzero]\n"
+          "vst1.32 {d10-d11}, [%[out_ptr]]!\n"
+          "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
+          "3: \n"
+          : [in_ptr] "+r"(in),
+            [out_ptr] "+r"(out),
+            [scale_ptr] "+r"(scale),
+            [bias_ptr] "+r"(bias_ptr),
+            [cnt] "+r"(cnt)
+          : [cnt_4] "r"(cnt_4), [cnt_remain] "r"(cnt_remain), [vzero] "w"(vzero)
+          : "cc", "memory", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11");
 #endif
-        in -= 4;
-        scale -= 4;
-        bias_ptr -= 4;
-        for (int i = 0; i < cnt_remain; i++) {
-          out[0] = *(bias_ptr++) + *(in++) * *(scale)++;
-          out[0] = out[0] > 0.f ? out[0] : 0.f;
-          out++;
-        }
-        break;
-      case lite_api::ActivationType::kRelu6:
+      in -= 4;
+      scale -= 4;
+      bias_ptr -= 4;
+      for (int i = 0; i < cnt_remain; i++) {
+        out[0] = *(bias_ptr++) + *(in++) * *(scale)++;
+        out[0] = out[0] > 0.f ? out[0] : 0.f;
+        out++;
+      }
+    } else if (act == lite_api::ActivationType::kRelu6) {
+      float32x4_t vsix = vdupq_n_f32(six);
 #ifdef __aarch64__
-        asm volatile(
-            "cmp %w[cnt], #1\n"
-            "ldr q2, [%[in_ptr]], #0x10\n"
-            "ldr q0, [%[bias_ptr]], #0x10\n"
-            "ldr q1, [%[scale_ptr]], #0x10\n"
-            "blt 2f\n"
-            "1: \n"
-            "ldr q5, [%[in_ptr]], #0x10\n"
-            "ldr q3, [%[bias_ptr]], #0x10\n"
-            "ldr q4, [%[scale_ptr]], #0x10\n"
-            // int32 -> fp32
-            "scvtf v6.4s, v2.4s\n"
-            "ldr q2, [%[in_ptr]], #0x10\n"
-            "scvtf v7.4s, v5.4s\n"
-            // din * scale + bias
-            "fmla v0.4s, v6.4s, v1.4s\n"
-            "ldr q1, [%[scale_ptr]], #0x10\n"
-            "fmla v3.4s, v7.4s, v4.4s\n"
-            "fmax v0.4s, v0.4s, %[vzero].4s\n"
-            "fmax v3.4s, v3.4s, %[vzero].4s\n"
-            "subs %w[cnt], %w[cnt], #1\n"
-            "fmin v0.4s, v0.4s, %[vsix].4s\n"
-            "fmin v3.4s, v3.4s, %[vsix].4s\n"
-            "str q0, [%[out_ptr]], #0x10\n"
-            "ldr q0, [%[bias_ptr]], #0x10\n"
-            "str q3, [%[out_ptr]], #0x10\n"
-            "bne 1b\n"
-            "2: \n"
-            "cmp %w[cnt_4], #1\n"
-            "blt 3f\n"
-            // int32 -> fp32
-            "scvtf v6.4s, v2.4s\n"
-            "ldr q2, [%[in_ptr]], #0x10\n"
-            // din * scale + bias
-            "fmla v0.4s, v6.4s, v1.4s\n"
-            "ldr q1, [%[scale_ptr]], #0x10\n"
-            "fmax v0.4s, v0.4s, %[vzero].4s\n"
-            "fmin v0.4s, v0.4s, %[vsix].4s\n"
-            "str q0, [%[out_ptr]], #0x10\n"
-            "ldr q0, [%[bias_ptr]], #0x10\n"
-            "3: \n"
-            : [in_ptr] "+r"(in),
-              [out_ptr] "+r"(out),
-              [scale_ptr] "+r"(scale),
-              [bias_ptr] "+r"(bias_ptr),
-              [cnt] "+r"(cnt)
-            : [cnt_4] "r"(cnt_4),
-              [cnt_remain] "r"(cnt_remain),
-              [vzero] "w"(vzero),
-              [vsix] "w"(vsix)
-            : "cc",
-              "memory",
-              "v0",
-              "v1",
-              "v2",
-              "v3",
-              "v4",
-              "v5",
-              "v6",
-              "v7",
-              "v8");
+      asm volatile(
+          "cmp %w[cnt], #1\n"
+          "ldr q2, [%[in_ptr]], #0x10\n"
+          "ldr q0, [%[bias_ptr]], #0x10\n"
+          "ldr q1, [%[scale_ptr]], #0x10\n"
+          "blt 2f\n"
+          "1: \n"
+          "ldr q5, [%[in_ptr]], #0x10\n"
+          "ldr q3, [%[bias_ptr]], #0x10\n"
+          "ldr q4, [%[scale_ptr]], #0x10\n"
+          // int32 -> fp32
+          "scvtf v6.4s, v2.4s\n"
+          "ldr q2, [%[in_ptr]], #0x10\n"
+          "scvtf v7.4s, v5.4s\n"
+          // din * scale + bias
+          "fmla v0.4s, v6.4s, v1.4s\n"
+          "ldr q1, [%[scale_ptr]], #0x10\n"
+          "fmla v3.4s, v7.4s, v4.4s\n"
+          "fmax v0.4s, v0.4s, %[vzero].4s\n"
+          "fmax v3.4s, v3.4s, %[vzero].4s\n"
+          "subs %w[cnt], %w[cnt], #1\n"
+          "fmin v0.4s, v0.4s, %[vsix].4s\n"
+          "fmin v3.4s, v3.4s, %[vsix].4s\n"
+          "str q0, [%[out_ptr]], #0x10\n"
+          "ldr q0, [%[bias_ptr]], #0x10\n"
+          "str q3, [%[out_ptr]], #0x10\n"
+          "bne 1b\n"
+          "2: \n"
+          "cmp %w[cnt_4], #1\n"
+          "blt 3f\n"
+          // int32 -> fp32
+          "scvtf v6.4s, v2.4s\n"
+          "ldr q2, [%[in_ptr]], #0x10\n"
+          // din * scale + bias
+          "fmla v0.4s, v6.4s, v1.4s\n"
+          "ldr q1, [%[scale_ptr]], #0x10\n"
+          "fmax v0.4s, v0.4s, %[vzero].4s\n"
+          "fmin v0.4s, v0.4s, %[vsix].4s\n"
+          "str q0, [%[out_ptr]], #0x10\n"
+          "ldr q0, [%[bias_ptr]], #0x10\n"
+          "3: \n"
+          : [in_ptr] "+r"(in),
+            [out_ptr] "+r"(out),
+            [scale_ptr] "+r"(scale),
+            [bias_ptr] "+r"(bias_ptr),
+            [cnt] "+r"(cnt)
+          : [cnt_4] "r"(cnt_4),
+            [cnt_remain] "r"(cnt_remain),
+            [vzero] "w"(vzero),
+            [vsix] "w"(vsix)
+          : "cc",
+            "memory",
+            "v0",
+            "v1",
+            "v2",
+            "v3",
+            "v4",
+            "v5",
+            "v6",
+            "v7",
+            "v8");
 #else
-        asm volatile(
-            "cmp %[cnt], #1\n"
-            "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
-            "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
-            "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
-            "blt 2f\n"
-            "1: \n"
-            "vld1.32 {d14-d15}, [%[in_ptr]]!\n"
-            "vld1.32 {d16-d17}, [%[bias_ptr]]!\n"
-            "vld1.32 {d18-d19}, [%[scale_ptr]]!\n"
-            // int32 -> fp32
-            "vcvt.f32.s32 q10, q4\n"
-            "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
-            "vcvt.f32.s32 q11, q7\n"
-            // din * scale + bias
-            "vmla.f32 q5, q10, q6\n"
-            "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
-            "vmla.f32 q8, q11, q9\n"
-            "vmax.f32 q5, q5, %q[vzero]\n"
-            "vmax.f32 q8, q8, %q[vzero]\n"
-            "subs %[cnt], #1\n"
-            "vmin.f32 q5, q5, %q[vsix]\n"
-            "vmin.f32 q8, q8, %q[vsix]\n"
-            "vst1.32 {d10-d11}, [%[out_ptr]]!\n"
-            "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
-            "vst1.32 {d16-d17}, [%[out_ptr]]!\n"
-            "bne 1b\n"
-            "2: \n"
-            "cmp %[cnt_4], #1\n"
-            "blt 3f\n"
-            // int32 -> fp32
-            "vcvt.f32.s32 q10, q4\n"
-            "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
-            // din * scale + bias
-            "vmla.f32 q5, q10, q6\n"
-            "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
-            "vmax.f32 q5, q5, %q[vzero]\n"
-            "vmin.f32 q5, q5, %q[vsix]\n"
-            "vst1.32 {d10-d11}, [%[out_ptr]]!\n"
-            "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
-            "3: \n"
-            : [in_ptr] "+r"(in),
-              [out_ptr] "+r"(out),
-              [scale_ptr] "+r"(scale),
-              [bias_ptr] "+r"(bias_ptr),
-              [cnt] "+r"(cnt)
-            : [cnt_4] "r"(cnt_4),
-              [cnt_remain] "r"(cnt_remain),
-              [vzero] "w"(vzero),
-              [vsix] "w"(vsix)
-            : "cc", "memory", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11");
+      asm volatile(
+          "cmp %[cnt], #1\n"
+          "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
+          "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
+          "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
+          "blt 2f\n"
+          "1: \n"
+          "vld1.32 {d14-d15}, [%[in_ptr]]!\n"
+          "vld1.32 {d16-d17}, [%[bias_ptr]]!\n"
+          "vld1.32 {d18-d19}, [%[scale_ptr]]!\n"
+          // int32 -> fp32
+          "vcvt.f32.s32 q10, q4\n"
+          "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
+          "vcvt.f32.s32 q11, q7\n"
+          // din * scale + bias
+          "vmla.f32 q5, q10, q6\n"
+          "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
+          "vmla.f32 q8, q11, q9\n"
+          "vmax.f32 q5, q5, %q[vzero]\n"
+          "vmax.f32 q8, q8, %q[vzero]\n"
+          "subs %[cnt], #1\n"
+          "vmin.f32 q5, q5, %q[vsix]\n"
+          "vmin.f32 q8, q8, %q[vsix]\n"
+          "vst1.32 {d10-d11}, [%[out_ptr]]!\n"
+          "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
+          "vst1.32 {d16-d17}, [%[out_ptr]]!\n"
+          "bne 1b\n"
+          "2: \n"
+          "cmp %[cnt_4], #1\n"
+          "blt 3f\n"
+          // int32 -> fp32
+          "vcvt.f32.s32 q10, q4\n"
+          "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
+          // din * scale + bias
+          "vmla.f32 q5, q10, q6\n"
+          "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
+          "vmax.f32 q5, q5, %q[vzero]\n"
+          "vmin.f32 q5, q5, %q[vsix]\n"
+          "vst1.32 {d10-d11}, [%[out_ptr]]!\n"
+          "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
+          "3: \n"
+          : [in_ptr] "+r"(in),
+            [out_ptr] "+r"(out),
+            [scale_ptr] "+r"(scale),
+            [bias_ptr] "+r"(bias_ptr),
+            [cnt] "+r"(cnt)
+          : [cnt_4] "r"(cnt_4),
+            [cnt_remain] "r"(cnt_remain),
+            [vzero] "w"(vzero),
+            [vsix] "w"(vsix)
+          : "cc", "memory", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11");
 #endif
-        in -= 4;
-        scale -= 4;
-        bias_ptr -= 4;
-        for (int i = 0; i < cnt_remain; i++) {
-          out[0] = *(bias_ptr++) + *(in++) * *(scale)++;
-          out[0] = out[0] > 0.f ? (out[0] < six ? out[0] : six) : 0.f;
-          out++;
-        }
-        break;
-      case lite_api::ActivationType::kLeakyRelu:
+      in -= 4;
+      scale -= 4;
+      bias_ptr -= 4;
+      for (int i = 0; i < cnt_remain; i++) {
+        out[0] = *(bias_ptr++) + *(in++) * *(scale)++;
+        out[0] = out[0] > 0.f ? (out[0] < six ? out[0] : six) : 0.f;
+        out++;
+      }
+    } else if (act == lite_api::ActivationType::kLeakyRelu) {
+      float32x4_t valpha = vdupq_n_f32(alpha);
 #ifdef __aarch64__
-        asm volatile(
-            "cmp %w[cnt], #1\n"
-            "ldr q2, [%[in_ptr]], #0x10\n"
-            "ldr q0, [%[bias_ptr]], #0x10\n"
-            "ldr q1, [%[scale_ptr]], #0x10\n"
-            "blt 2f\n"
-            "1: \n"
-            "ldr q5, [%[in_ptr]], #0x10\n"
-            "ldr q3, [%[bias_ptr]], #0x10\n"
-            "ldr q4, [%[scale_ptr]], #0x10\n"
-            // int32 -> fp32
-            "scvtf v6.4s, v2.4s\n"
-            "ldr q2, [%[in_ptr]], #0x10\n"
-            "scvtf v7.4s, v5.4s\n"
-            // din * scale + bias
-            "fmla v0.4s, v6.4s, v1.4s\n"
-            "ldr q1, [%[scale_ptr]], #0x10\n"
-            "fmla v3.4s, v7.4s, v4.4s\n"
-            "fcmge v4.4s, v0.4s,  %[vzero].4s\n"
-            "fmul v5.4s, v0.4s,  %[valpha].4s\n"
-            "subs %w[cnt], %w[cnt], #1\n"
-            "fcmge v6.4s, v3.4s,  %[vzero].4s\n"
-            "fmul v7.4s, v3.4s,  %[valpha].4s\n"
-            "bif v0.16b, v5.16b, v4.16b\n"
-            "bif v3.16b, v7.16b, v6.16b\n"
-            "str q0, [%[out_ptr]], #0x10\n"
-            "ldr q0, [%[bias_ptr]], #0x10\n"
-            "str q3, [%[out_ptr]], #0x10\n"
-            "bne 1b\n"
-            "2: \n"
-            "cmp %w[cnt_4], #1\n"
-            "blt 3f\n"
-            // int32 -> fp32
-            "scvtf v6.4s, v2.4s\n"
-            "ldr q2, [%[in_ptr]], #0x10\n"
-            // din * scale + bias
-            "fmla v0.4s, v6.4s, v1.4s\n"
-            "ldr q1, [%[scale_ptr]], #0x10\n"
-            "fcmge v4.4s, v0.4s,  %[vzero].4s\n"
-            "fmul v5.4s, v0.4s,  %[valpha].4s\n"
-            "bif v0.16b, v5.16b, v4.16b\n"
-            "str q0, [%[out_ptr]], #0x10\n"
-            "ldr q0, [%[bias_ptr]], #0x10\n"
-            "3: \n"
-            : [in_ptr] "+r"(in),
-              [out_ptr] "+r"(out),
-              [scale_ptr] "+r"(scale),
-              [bias_ptr] "+r"(bias_ptr),
-              [cnt] "+r"(cnt)
-            : [cnt_4] "r"(cnt_4),
-              [cnt_remain] "r"(cnt_remain),
-              [vzero] "w"(vzero),
-              [valpha] "w"(valpha)
-            : "cc",
-              "memory",
-              "v0",
-              "v1",
-              "v2",
-              "v3",
-              "v4",
-              "v5",
-              "v6",
-              "v7",
-              "v8");
+      asm volatile(
+          "cmp %w[cnt], #1\n"
+          "ldr q2, [%[in_ptr]], #0x10\n"
+          "ldr q0, [%[bias_ptr]], #0x10\n"
+          "ldr q1, [%[scale_ptr]], #0x10\n"
+          "blt 2f\n"
+          "1: \n"
+          "ldr q5, [%[in_ptr]], #0x10\n"
+          "ldr q3, [%[bias_ptr]], #0x10\n"
+          "ldr q4, [%[scale_ptr]], #0x10\n"
+          // int32 -> fp32
+          "scvtf v6.4s, v2.4s\n"
+          "ldr q2, [%[in_ptr]], #0x10\n"
+          "scvtf v7.4s, v5.4s\n"
+          // din * scale + bias
+          "fmla v0.4s, v6.4s, v1.4s\n"
+          "ldr q1, [%[scale_ptr]], #0x10\n"
+          "fmla v3.4s, v7.4s, v4.4s\n"
+          "fcmge v4.4s, v0.4s,  %[vzero].4s\n"
+          "fmul v5.4s, v0.4s,  %[valpha].4s\n"
+          "subs %w[cnt], %w[cnt], #1\n"
+          "fcmge v6.4s, v3.4s,  %[vzero].4s\n"
+          "fmul v7.4s, v3.4s,  %[valpha].4s\n"
+          "bif v0.16b, v5.16b, v4.16b\n"
+          "bif v3.16b, v7.16b, v6.16b\n"
+          "str q0, [%[out_ptr]], #0x10\n"
+          "ldr q0, [%[bias_ptr]], #0x10\n"
+          "str q3, [%[out_ptr]], #0x10\n"
+          "bne 1b\n"
+          "2: \n"
+          "cmp %w[cnt_4], #1\n"
+          "blt 3f\n"
+          // int32 -> fp32
+          "scvtf v6.4s, v2.4s\n"
+          "ldr q2, [%[in_ptr]], #0x10\n"
+          // din * scale + bias
+          "fmla v0.4s, v6.4s, v1.4s\n"
+          "ldr q1, [%[scale_ptr]], #0x10\n"
+          "fcmge v4.4s, v0.4s,  %[vzero].4s\n"
+          "fmul v5.4s, v0.4s,  %[valpha].4s\n"
+          "bif v0.16b, v5.16b, v4.16b\n"
+          "str q0, [%[out_ptr]], #0x10\n"
+          "ldr q0, [%[bias_ptr]], #0x10\n"
+          "3: \n"
+          : [in_ptr] "+r"(in),
+            [out_ptr] "+r"(out),
+            [scale_ptr] "+r"(scale),
+            [bias_ptr] "+r"(bias_ptr),
+            [cnt] "+r"(cnt)
+          : [cnt_4] "r"(cnt_4),
+            [cnt_remain] "r"(cnt_remain),
+            [vzero] "w"(vzero),
+            [valpha] "w"(valpha)
+          : "cc",
+            "memory",
+            "v0",
+            "v1",
+            "v2",
+            "v3",
+            "v4",
+            "v5",
+            "v6",
+            "v7",
+            "v8");
 #else
-        asm volatile(
-            "cmp %[cnt], #1\n"
-            "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
-            "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
-            "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
-            "blt 2f\n"
-            "1: \n"
-            "vld1.32 {d14-d15}, [%[in_ptr]]!\n"
-            "vld1.32 {d16-d17}, [%[bias_ptr]]!\n"
-            "vld1.32 {d18-d19}, [%[scale_ptr]]!\n"
-            // int32 -> fp32
-            "vcvt.f32.s32 q10, q4\n"
-            "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
-            "vcvt.f32.s32 q11, q7\n"
-            // din * scale + bias
-            "vmla.f32 q5, q10, q6\n"
-            "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
-            "vmla.f32 q8, q11, q9\n"
-            "vcge.f32 q7, q5, %q[vzero]\n"
-            "vmul.f32 q9, q5, %q[valpha]\n"
-            "subs %[cnt], #1\n"
-            "vcge.f32 q10, q8, %q[vzero]\n"
-            "vmul.f32 q11, q8, %q[valpha]\n"
-            "vbif q5, q9, q7\n"
-            "vbif q8, q11, q10\n"
-            "vst1.32 {d10-d11}, [%[out_ptr]]!\n"
-            "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
-            "vst1.32 {d16-d17}, [%[out_ptr]]!\n"
-            "bne 1b\n"
-            "2: \n"
-            "cmp %[cnt_4], #1\n"
-            "blt 3f\n"
-            // int32 -> fp32
-            "vcvt.f32.s32 q10, q4\n"
-            "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
-            // din * scale + bias
-            "vmla.f32 q5, q10, q6\n"
-            "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
-            "vcge.f32 q7, q5, %q[vzero]\n"
-            "vmul.f32 q9, q5, %q[valpha]\n"
-            "vbif q5, q9, q7\n"
-            "vst1.32 {d10-d11}, [%[out_ptr]]!\n"
-            "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
-            "3: \n"
-            : [in_ptr] "+r"(in),
-              [out_ptr] "+r"(out),
-              [scale_ptr] "+r"(scale),
-              [bias_ptr] "+r"(bias_ptr),
-              [cnt] "+r"(cnt)
-            : [cnt_4] "r"(cnt_4),
-              [cnt_remain] "r"(cnt_remain),
-              [vzero] "w"(vzero),
-              [valpha] "w"(valpha)
-            : "cc", "memory", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11");
+      asm volatile(
+          "cmp %[cnt], #1\n"
+          "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
+          "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
+          "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
+          "blt 2f\n"
+          "1: \n"
+          "vld1.32 {d14-d15}, [%[in_ptr]]!\n"
+          "vld1.32 {d16-d17}, [%[bias_ptr]]!\n"
+          "vld1.32 {d18-d19}, [%[scale_ptr]]!\n"
+          // int32 -> fp32
+          "vcvt.f32.s32 q10, q4\n"
+          "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
+          "vcvt.f32.s32 q11, q7\n"
+          // din * scale + bias
+          "vmla.f32 q5, q10, q6\n"
+          "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
+          "vmla.f32 q8, q11, q9\n"
+          "vcge.f32 q7, q5, %q[vzero]\n"
+          "vmul.f32 q9, q5, %q[valpha]\n"
+          "subs %[cnt], #1\n"
+          "vcge.f32 q10, q8, %q[vzero]\n"
+          "vmul.f32 q11, q8, %q[valpha]\n"
+          "vbif q5, q9, q7\n"
+          "vbif q8, q11, q10\n"
+          "vst1.32 {d10-d11}, [%[out_ptr]]!\n"
+          "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
+          "vst1.32 {d16-d17}, [%[out_ptr]]!\n"
+          "bne 1b\n"
+          "2: \n"
+          "cmp %[cnt_4], #1\n"
+          "blt 3f\n"
+          // int32 -> fp32
+          "vcvt.f32.s32 q10, q4\n"
+          "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
+          // din * scale + bias
+          "vmla.f32 q5, q10, q6\n"
+          "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
+          "vcge.f32 q7, q5, %q[vzero]\n"
+          "vmul.f32 q9, q5, %q[valpha]\n"
+          "vbif q5, q9, q7\n"
+          "vst1.32 {d10-d11}, [%[out_ptr]]!\n"
+          "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
+          "3: \n"
+          : [in_ptr] "+r"(in),
+            [out_ptr] "+r"(out),
+            [scale_ptr] "+r"(scale),
+            [bias_ptr] "+r"(bias_ptr),
+            [cnt] "+r"(cnt)
+          : [cnt_4] "r"(cnt_4),
+            [cnt_remain] "r"(cnt_remain),
+            [vzero] "w"(vzero),
+            [valpha] "w"(valpha)
+          : "cc", "memory", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11");
 #endif
-        in -= 4;
-        scale -= 4;
-        bias_ptr -= 4;
-        for (int i = 0; i < cnt_remain; i++) {
-          out[0] = *(bias_ptr++) + *(in++) * *(scale)++;
-          out[0] = out[0] > 0.f ? out[0] : out[0] * alpha;
-          out++;
-        }
-        break;
-      default:
-        LOG(FATAL) << "it doesn't support act_type: " << flag_act;
-        return;
+      in -= 4;
+      scale -= 4;
+      bias_ptr -= 4;
+      for (int i = 0; i < cnt_remain; i++) {
+        out[0] = *(bias_ptr++) + *(in++) * *(scale)++;
+        out[0] = out[0] > 0.f ? out[0] : out[0] * alpha;
+        out++;
+      }
+    } else if (act == lite_api::ActivationType::kHardSwish) {
+      float32x4_t valpha = vdupq_n_f32(alpha);
+      float32x4_t voffset = vdupq_n_f32(offset);
+      float32x4_t vthreshold = vdupq_n_f32(threshold);
+#ifdef __aarch64__
+      asm volatile(
+          "cmp %w[cnt], #1\n"
+          "ldr q2, [%[in_ptr]], #0x10\n"
+          "ldr q0, [%[bias_ptr]], #0x10\n"
+          "ldr q1, [%[scale_ptr]], #0x10\n"
+          "blt 2f\n"
+          "1: \n"
+          "ldr q5, [%[in_ptr]], #0x10\n"
+          "ldr q3, [%[bias_ptr]], #0x10\n"
+          "ldr q4, [%[scale_ptr]], #0x10\n"
+          // int32 -> fp32
+          "scvtf v6.4s, v2.4s\n"
+          "ldr q2, [%[in_ptr]], #0x10\n"
+          "scvtf v7.4s, v5.4s\n"
+          // din * scale + bias
+          "fmla v0.4s, v6.4s, v1.4s\n"
+          "ldr q1, [%[scale_ptr]], #0x10\n"
+          "fmla v3.4s, v7.4s, v4.4s\n"
+          "fadd  v4.4s, v0.4s,  %[voffset].4s\n"
+          "fmul  v5.4s, v0.4s,  %[valpha].4s\n"
+          "fmax  v4.4s, v4.4s,  %[vzero].4s\n"
+          "subs %w[cnt], %w[cnt], #1\n"
+          "fadd  v6.4s, v3.4s,  %[voffset].4s\n"
+          "fmin  v4.4s, v4.4s,  %[vthreshold].4s\n"
+          "fmul  v7.4s, v3.4s,  %[valpha].4s\n"
+          "fmax  v6.4s, v6.4s,  %[vzero].4s\n"
+          "fmul  v0.4s, v5.4s,  v4.4s\n"
+          "fmin  v6.4s, v6.4s,  %[vthreshold].4s\n"
+          "str q0, [%[out_ptr]], #0x10\n"
+          "fmul  v3.4s, v7.4s,  v6.4s\n"
+          "ldr q0, [%[bias_ptr]], #0x10\n"
+          "str q3, [%[out_ptr]], #0x10\n"
+          "bne 1b\n"
+          "2: \n"
+          "cmp %w[cnt_4], #1\n"
+          "blt 3f\n"
+          // int32 -> fp32
+          "scvtf v6.4s, v2.4s\n"
+          "ldr q2, [%[in_ptr]], #0x10\n"
+          // din * scale + bias
+          "fmla v0.4s, v6.4s, v1.4s\n"
+          "ldr q1, [%[scale_ptr]], #0x10\n"
+          "fadd  v4.4s, v0.4s,  %[voffset].4s\n"
+          "fmul  v5.4s, v0.4s,  %[valpha].4s\n"
+          "fmax  v4.4s, v4.4s,  %[vzero].4s\n"
+          "fmin  v4.4s, v4.4s,  %[vthreshold].4s\n"
+          "fmul  v0.4s, v5.4s,  v4.4s\n"
+          "str q0, [%[out_ptr]], #0x10\n"
+          "ldr q0, [%[bias_ptr]], #0x10\n"
+          "3: \n"
+          : [in_ptr] "+r"(in),
+            [out_ptr] "+r"(out),
+            [scale_ptr] "+r"(scale),
+            [bias_ptr] "+r"(bias_ptr),
+            [cnt] "+r"(cnt)
+          : [cnt_4] "r"(cnt_4),
+            [cnt_remain] "r"(cnt_remain),
+            [vzero] "w"(vzero),
+            [voffset] "w"(voffset),
+            [vthreshold] "w"(vthreshold),
+            [valpha] "w"(valpha)
+          : "cc",
+            "memory",
+            "v0",
+            "v1",
+            "v2",
+            "v3",
+            "v4",
+            "v5",
+            "v6",
+            "v7",
+            "v8");
+#else
+      asm volatile(
+          "cmp %[cnt], #1\n"
+          "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
+          "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
+          "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
+          "blt 2f\n"
+          "1: \n"
+          "vld1.32 {d14-d15}, [%[in_ptr]]!\n"
+          "vld1.32 {d16-d17}, [%[bias_ptr]]!\n"
+          "vld1.32 {d18-d19}, [%[scale_ptr]]!\n"
+          // int32 -> fp32
+          "vcvt.f32.s32 q10, q4\n"
+          "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
+          "vcvt.f32.s32 q11, q7\n"
+          // din * scale + bias
+          "vmla.f32 q5, q10, q6\n"
+          "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
+          "vmla.f32 q8, q11, q9\n"
+          "vadd.f32 q7, q5, %q[voffset]\n"
+          "vmul.f32 q9, q5, %q[valpha]\n"
+          "vmax.f32 q7, q7, %q[vzero]\n"
+          "subs %[cnt], #1\n"
+          "vadd.f32 q10, q8, %q[voffset]\n"
+          "vmul.f32 q11, q8, %q[valpha]\n"
+          "vmin.f32 q7, q7, %q[vthreshold]\n"
+          "vmax.f32 q10, q10, %q[vzero]\n"
+          "vmul.f32 q5,  q7, q9\n"
+          "vmin.f32 q10, q10, %q[vthreshold]\n"
+          "vst1.32 {d10-d11}, [%[out_ptr]]!\n"
+          "vmul.f32 q8,  q10, q11\n"
+          "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
+          "vst1.32 {d16-d17}, [%[out_ptr]]!\n"
+          "bne 1b\n"
+          "2: \n"
+          "cmp %[cnt_4], #1\n"
+          "blt 3f\n"
+          // int32 -> fp32
+          "vcvt.f32.s32 q10, q4\n"
+          "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
+          // din * scale + bias
+          "vmla.f32 q5, q10, q6\n"
+          "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
+          "vadd.f32 q7, q5, %q[voffset]\n"
+          "vmul.f32 q9, q5, %q[valpha]\n"
+          "vmax.f32 q7, q7, %q[vzero]\n"
+          "vmin.f32 q7, q7, %q[vthreshold]\n"
+          "vmul.f32 q5,  q7, q9\n"
+          "vst1.32 {d10-d11}, [%[out_ptr]]!\n"
+          "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
+          "3: \n"
+          : [in_ptr] "+r"(in),
+            [out_ptr] "+r"(out),
+            [scale_ptr] "+r"(scale),
+            [bias_ptr] "+r"(bias_ptr),
+            [cnt] "+r"(cnt)
+          : [cnt_4] "r"(cnt_4),
+            [cnt_remain] "r"(cnt_remain),
+            [vzero] "w"(vzero),
+            [voffset] "w"(voffset),
+            [vthreshold] "w"(vthreshold),
+            [valpha] "w"(valpha)
+          : "cc", "memory", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11");
+#endif
+      in -= 4;
+      scale -= 4;
+      bias_ptr -= 4;
+      for (int i = 0; i < cnt_remain; i++) {
+        out[0] = *(bias_ptr++) + *(in++) * *(scale)++;
+        auto tmp0 = std::min(std::max(out[0] + offset, 0.f), threshold);
+        auto tmp1 = out[0] * alpha;
+        out[0] = tmp0 * tmp1;
+        out++;
+      }
+    } else {
+      LOG(FATAL) << "it doesn't support act_type: " << flag_act;
+      return;
     }
   } else {
 #ifdef __aarch64__
@@ -533,554 +684,754 @@ inline void write_gemv_out(const int* in,
                            bool flag_act,
                            lite_api::ActivationType act,
                            float six,
-                           float alpha) {
+                           float alpha,
+                           float offset,
+                           float threshold) {
   int cnt = size >> 3;
   int remain = size & 7;
   float32x4_t vzero = vdupq_n_f32(0.f);
   int cnt_4 = remain >> 2;
   int cnt_remain = remain & 3;
-  float32x4_t vmax = vdupq_n_f32(-127.f);
 #ifdef __aarch64__
 #else
   float32x4_t vfive = vdupq_n_f32(-0.5f);
 #endif
   if (flag_act) {
-    float32x4_t valpha = vdupq_n_f32(alpha);
-    float32x4_t vsix = vdupq_n_f32(six);
-    switch (act) {
-      case lite_api::ActivationType::kRelu:
+    if (act == lite_api::ActivationType::kRelu) {
 #ifdef __aarch64__
-        asm volatile(
-            "cmp %w[cnt], #1\n"
-            "ldr q2, [%[in_ptr]], #0x10\n"
-            "ldr q0, [%[bias_ptr]], #0x10\n"
-            "ldr q1, [%[scale_ptr]], #0x10\n"
-            "blt 2f\n"
-            "1: \n"
-            "ldr q5, [%[in_ptr]], #0x10\n"
-            "ldr q3, [%[bias_ptr]], #0x10\n"
-            "ldr q4, [%[scale_ptr]], #0x10\n"
-            // int32 -> fp32
-            "scvtf v6.4s, v2.4s\n"
-            "ldr q2, [%[in_ptr]], #0x10\n"
-            "scvtf v7.4s, v5.4s\n"
-            // din * scale + bias
-            "fmla v0.4s, v6.4s, v1.4s\n"
-            "ldr q1, [%[scale_ptr]], #0x10\n"
-            "fmla v3.4s, v7.4s, v4.4s\n"
-            "fmax v0.4s, v0.4s, %[vzero].4s\n"
-            "subs %w[cnt], %w[cnt], #1\n"
-            "fmax v3.4s, v3.4s, %[vzero].4s\n"
-            // fp32 - int32
-            "fcvtas  v4.4s, v0.4s\n"
-            "fcvtas  v5.4s, v3.4s\n"
-            // int32 - int16
-            "sqxtn   v0.4h, v4.4s\n"
-            "sqxtn   v3.4h, v5.4s\n"
-            // int16-int8
-            "sqxtn  v4.8b, v0.8h\n"
-            "sqxtn  v5.8b, v3.8h\n"
-            "str s4, [%[out_ptr]], #0x04\n"
-            "ldr q0, [%[bias_ptr]], #0x10\n"
-            "str s5, [%[out_ptr]], #0x04\n"
-            "bne 1b\n"
-            "2: \n"
-            "cmp %w[cnt_4], #1\n"
-            "blt 3f\n"
-            // int32 -> fp32
-            "scvtf v6.4s, v2.4s\n"
-            "ldr q2, [%[in_ptr]], #0x10\n"
-            // din * scale + bias
-            "fmla v0.4s, v6.4s, v1.4s\n"
-            "ldr q1, [%[scale_ptr]], #0x10\n"
-            "fmax v0.4s, v0.4s, %[vzero].4s\n"
-            // out >= -127
-            // "fcmge v4.4s, v0.4s, %[vmax].4s\n"
-            // "bif v0.16b, %[vmax].16b, v4.16b\n"
-            // fp32 - int32
-            "fcvtas  v4.4s, v0.4s\n"
-            // int32 - int16
-            "sqxtn   v0.4h, v4.4s\n"
-            // int16-int8
-            "sqxtn  v4.8b, v0.8h\n"
-            "str s4, [%[out_ptr]], #0x04\n"
-            "ldr q0, [%[bias_ptr]], #0x10\n"
-            "3: \n"
-            : [in_ptr] "+r"(in),
-              [out_ptr] "+r"(out),
-              [scale_ptr] "+r"(scale),
-              [bias_ptr] "+r"(bias_ptr),
-              [cnt] "+r"(cnt)
-            : [cnt_4] "r"(cnt_4),
-              [cnt_remain] "r"(cnt_remain),
-              [vzero] "w"(vzero),
-              [vmax] "w"(vmax)
-            : "cc",
-              "memory",
-              "v0",
-              "v1",
-              "v2",
-              "v3",
-              "v4",
-              "v5",
-              "v6",
-              "v7",
-              "v8");
+      asm volatile(
+          "cmp %w[cnt], #1\n"
+          "ldr q2, [%[in_ptr]], #0x10\n"
+          "ldr q0, [%[bias_ptr]], #0x10\n"
+          "ldr q1, [%[scale_ptr]], #0x10\n"
+          "blt 2f\n"
+          "1: \n"
+          "ldr q5, [%[in_ptr]], #0x10\n"
+          "ldr q3, [%[bias_ptr]], #0x10\n"
+          "ldr q4, [%[scale_ptr]], #0x10\n"
+          // int32 -> fp32
+          "scvtf v6.4s, v2.4s\n"
+          "ldr q2, [%[in_ptr]], #0x10\n"
+          "scvtf v7.4s, v5.4s\n"
+          // din * scale + bias
+          "fmla v0.4s, v6.4s, v1.4s\n"
+          "ldr q1, [%[scale_ptr]], #0x10\n"
+          "fmla v3.4s, v7.4s, v4.4s\n"
+          "fmax v0.4s, v0.4s, %[vzero].4s\n"
+          "subs %w[cnt], %w[cnt], #1\n"
+          "fmax v3.4s, v3.4s, %[vzero].4s\n"
+          // fp32 - int32
+          "fcvtas  v4.4s, v0.4s\n"
+          "fcvtas  v5.4s, v3.4s\n"
+          // int32 - int16
+          "sqxtn   v0.4h, v4.4s\n"
+          "sqxtn   v3.4h, v5.4s\n"
+          // int16-int8
+          "sqxtn  v4.8b, v0.8h\n"
+          "sqxtn  v5.8b, v3.8h\n"
+          "str s4, [%[out_ptr]], #0x04\n"
+          "ldr q0, [%[bias_ptr]], #0x10\n"
+          "str s5, [%[out_ptr]], #0x04\n"
+          "bne 1b\n"
+          "2: \n"
+          "cmp %w[cnt_4], #1\n"
+          "blt 3f\n"
+          // int32 -> fp32
+          "scvtf v6.4s, v2.4s\n"
+          "ldr q2, [%[in_ptr]], #0x10\n"
+          // din * scale + bias
+          "fmla v0.4s, v6.4s, v1.4s\n"
+          "ldr q1, [%[scale_ptr]], #0x10\n"
+          "fmax v0.4s, v0.4s, %[vzero].4s\n"
+          // fp32 - int32
+          "fcvtas  v4.4s, v0.4s\n"
+          // int32 - int16
+          "sqxtn   v0.4h, v4.4s\n"
+          // int16-int8
+          "sqxtn  v4.8b, v0.8h\n"
+          "str s4, [%[out_ptr]], #0x04\n"
+          "ldr q0, [%[bias_ptr]], #0x10\n"
+          "3: \n"
+          : [in_ptr] "+r"(in),
+            [out_ptr] "+r"(out),
+            [scale_ptr] "+r"(scale),
+            [bias_ptr] "+r"(bias_ptr),
+            [cnt] "+r"(cnt)
+          : [cnt_4] "r"(cnt_4), [cnt_remain] "r"(cnt_remain), [vzero] "w"(vzero)
+          : "cc",
+            "memory",
+            "v0",
+            "v1",
+            "v2",
+            "v3",
+            "v4",
+            "v5",
+            "v6",
+            "v7",
+            "v8");
 #else
-        asm volatile(
-            "cmp %[cnt], #1\n"
-            "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
-            "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
-            "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
-            "blt 2f\n"
-            "1: \n"
-            "vld1.32 {d14-d15}, [%[in_ptr]]!\n"
-            "vld1.32 {d16-d17}, [%[bias_ptr]]!\n"
-            "vld1.32 {d18-d19}, [%[scale_ptr]]!\n"
-            // int32 -> fp32
-            "vcvt.f32.s32 q10, q4\n"
-            "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
-            "vcvt.f32.s32 q11, q7\n"
-            // din * scale + bias
-            "vmla.f32 q5, q10, q6\n"
-            "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
-            "vmla.f32 q8, q11, q9\n"
-            "vmov.f32 q10, #0.5\n"
-            "vmov.f32 q11, #0.5\n"
-            "vmax.f32 q5, q5, %q[vzero]\n"
-            "vmax.f32 q8, q8, %q[vzero]\n"
-            // data >= -127
-            "vadd.f32 q5, q5, q10\n"
-            "vadd.f32 q8, q8, q11\n"
-            // fp32 -> int32
-            "vcvt.s32.f32  q7, q5\n"
-            "vcvt.s32.f32  q9, q8\n"
-            // int32 -> int16
-            "vqmovn.s32 d10, q7\n"
-            "vqmovn.s32 d16, q9\n"
-            // int16 -> int8
-            "vqmovn.s16 d14, q5\n"
-            "vqmovn.s16 d18, q8\n"
-            "subs %[cnt], #1\n"
-            "vst1.32 {d14[0]}, [%[out_ptr]]!\n"
-            "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
-            "vst1.32 {d18[0]}, [%[out_ptr]]!\n"
-            "bne 1b\n"
-            "2: \n"
-            "cmp %[cnt_4], #1\n"
-            "blt 3f\n"
-            // int32 -> fp32
-            "vcvt.f32.s32 q10, q4\n"
-            "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
-            // din * scale + bias
-            "vmla.f32 q5, q10, q6\n"
-            "vmov.f32 q10, #0.5\n"
-            "vmax.f32 q5, q5, %q[vzero]\n"
-            "vadd.f32 q5, q5, q10\n"
-            // fp32 -> int32
-            "vcvt.s32.f32  q7, q5\n"
-            // int32 -> int16
-            "vqmovn.s32 d10, q7\n"
-            // int16 -> int8
-            "vqmovn.s16 d14, q5\n"
-            "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
-            "vst1.32 {d14[0]}, [%[out_ptr]]!\n"
-            "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
-            "3: \n"
-            : [in_ptr] "+r"(in),
-              [out_ptr] "+r"(out),
-              [scale_ptr] "+r"(scale),
-              [bias_ptr] "+r"(bias_ptr),
-              [cnt] "+r"(cnt)
-            :
-            [cnt_4] "r"(cnt_4), [cnt_remain] "r"(cnt_remain), [vzero] "w"(vzero)
-            : "cc", "memory", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11");
+      asm volatile(
+          "cmp %[cnt], #1\n"
+          "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
+          "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
+          "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
+          "blt 2f\n"
+          "1: \n"
+          "vld1.32 {d14-d15}, [%[in_ptr]]!\n"
+          "vld1.32 {d16-d17}, [%[bias_ptr]]!\n"
+          "vld1.32 {d18-d19}, [%[scale_ptr]]!\n"
+          // int32 -> fp32
+          "vcvt.f32.s32 q10, q4\n"
+          "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
+          "vcvt.f32.s32 q11, q7\n"
+          // din * scale + bias
+          "vmla.f32 q5, q10, q6\n"
+          "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
+          "vmla.f32 q8, q11, q9\n"
+          "vmov.f32 q10, #0.5\n"
+          "vmov.f32 q11, #0.5\n"
+          "vmax.f32 q5, q5, %q[vzero]\n"
+          "vmax.f32 q8, q8, %q[vzero]\n"
+          // data >= -127
+          "vadd.f32 q5, q5, q10\n"
+          "vadd.f32 q8, q8, q11\n"
+          // fp32 -> int32
+          "vcvt.s32.f32  q7, q5\n"
+          "vcvt.s32.f32  q9, q8\n"
+          // int32 -> int16
+          "vqmovn.s32 d10, q7\n"
+          "vqmovn.s32 d16, q9\n"
+          // int16 -> int8
+          "vqmovn.s16 d14, q5\n"
+          "vqmovn.s16 d18, q8\n"
+          "subs %[cnt], #1\n"
+          "vst1.32 {d14[0]}, [%[out_ptr]]!\n"
+          "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
+          "vst1.32 {d18[0]}, [%[out_ptr]]!\n"
+          "bne 1b\n"
+          "2: \n"
+          "cmp %[cnt_4], #1\n"
+          "blt 3f\n"
+          // int32 -> fp32
+          "vcvt.f32.s32 q10, q4\n"
+          "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
+          // din * scale + bias
+          "vmla.f32 q5, q10, q6\n"
+          "vmov.f32 q10, #0.5\n"
+          "vmax.f32 q5, q5, %q[vzero]\n"
+          "vadd.f32 q5, q5, q10\n"
+          // fp32 -> int32
+          "vcvt.s32.f32  q7, q5\n"
+          // int32 -> int16
+          "vqmovn.s32 d10, q7\n"
+          // int16 -> int8
+          "vqmovn.s16 d14, q5\n"
+          "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
+          "vst1.32 {d14[0]}, [%[out_ptr]]!\n"
+          "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
+          "3: \n"
+          : [in_ptr] "+r"(in),
+            [out_ptr] "+r"(out),
+            [scale_ptr] "+r"(scale),
+            [bias_ptr] "+r"(bias_ptr),
+            [cnt] "+r"(cnt)
+          : [cnt_4] "r"(cnt_4), [cnt_remain] "r"(cnt_remain), [vzero] "w"(vzero)
+          : "cc", "memory", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11");
 #endif
-        in -= 4;
-        scale -= 4;
-        bias_ptr -= 4;
-        for (int i = 0; i < cnt_remain; i++) {
-          float tmp = *(bias_ptr++) + *(in++) * *(scale)++;
-          tmp = tmp > 0.f ? tmp : 0.f;
-          out[0] = saturate_cast<signed char>(roundf(tmp));
-          // out[0] = out[0] < -127 ? -127 : out[0];  // -127 - 127
-          out++;
-        }
-        break;
-      case lite_api::ActivationType::kRelu6:
+      in -= 4;
+      scale -= 4;
+      bias_ptr -= 4;
+      for (int i = 0; i < cnt_remain; i++) {
+        float tmp = *(bias_ptr++) + *(in++) * *(scale)++;
+        tmp = tmp > 0.f ? tmp : 0.f;
+        out[0] = saturate_cast<signed char>(roundf(tmp));
+        // out[0] = out[0] < -127 ? -127 : out[0];  // -127 - 127
+        out++;
+      }
+    } else if (act == lite_api::ActivationType::kRelu6) {
+      float32x4_t vsix = vdupq_n_f32(six);
 #ifdef __aarch64__
-        asm volatile(
-            "cmp %w[cnt], #1\n"
-            "ldr q2, [%[in_ptr]], #0x10\n"
-            "ldr q0, [%[bias_ptr]], #0x10\n"
-            "ldr q1, [%[scale_ptr]], #0x10\n"
-            "blt 2f\n"
-            "1: \n"
-            "ldr q5, [%[in_ptr]], #0x10\n"
-            "ldr q3, [%[bias_ptr]], #0x10\n"
-            "ldr q4, [%[scale_ptr]], #0x10\n"
-            // int32 -> fp32
-            "scvtf v6.4s, v2.4s\n"
-            "ldr q2, [%[in_ptr]], #0x10\n"
-            "scvtf v7.4s, v5.4s\n"
-            // din * scale + bias
-            "fmla v0.4s, v6.4s, v1.4s\n"
-            "ldr q1, [%[scale_ptr]], #0x10\n"
-            "fmla v3.4s, v7.4s, v4.4s\n"
-            "fmax v0.4s, v0.4s, %[vzero].4s\n"
-            "fmax v3.4s, v3.4s, %[vzero].4s\n"
-            "subs %w[cnt], %w[cnt], #1\n"
-            "fmin v0.4s, v0.4s, %[vsix].4s\n"
-            "fmin v3.4s, v3.4s, %[vsix].4s\n"
-            // fp32 - int32
-            "fcvtas  v4.4s, v0.4s\n"
-            "fcvtas  v5.4s, v3.4s\n"
-            // int32 - int16
-            "sqxtn   v0.4h, v4.4s\n"
-            "sqxtn   v3.4h, v5.4s\n"
-            // int16-int8
-            "sqxtn  v4.8b, v0.8h\n"
-            "sqxtn  v5.8b, v3.8h\n"
-            "str s4, [%[out_ptr]], #0x04\n"
-            "ldr q0, [%[bias_ptr]], #0x10\n"
-            "str s5, [%[out_ptr]], #0x04\n"
-            "bne 1b\n"
-            "2: \n"
-            "cmp %w[cnt_4], #1\n"
-            "blt 3f\n"
-            // int32 -> fp32
-            "scvtf v6.4s, v2.4s\n"
-            "ldr q2, [%[in_ptr]], #0x10\n"
-            // din * scale + bias
-            "fmla v0.4s, v6.4s, v1.4s\n"
-            "ldr q1, [%[scale_ptr]], #0x10\n"
-            "fmax v0.4s, v0.4s, %[vzero].4s\n"
-            "fmin v0.4s, v0.4s, %[vsix].4s\n"
-            // fp32 - int32
-            "fcvtas  v4.4s, v0.4s\n"
-            // int32 - int16
-            "sqxtn   v0.4h, v4.4s\n"
-            // int16-int8
-            "sqxtn  v4.8b, v0.8h\n"
-            "str s4, [%[out_ptr]], #0x04\n"
-            "ldr q0, [%[bias_ptr]], #0x10\n"
-            "3: \n"
-            : [in_ptr] "+r"(in),
-              [out_ptr] "+r"(out),
-              [scale_ptr] "+r"(scale),
-              [bias_ptr] "+r"(bias_ptr),
-              [cnt] "+r"(cnt)
-            : [cnt_4] "r"(cnt_4),
-              [cnt_remain] "r"(cnt_remain),
-              [vzero] "w"(vzero),
-              [vsix] "w"(vsix),
-              [vmax] "w"(vmax)
-            : "cc",
-              "memory",
-              "v0",
-              "v1",
-              "v2",
-              "v3",
-              "v4",
-              "v5",
-              "v6",
-              "v7",
-              "v8");
+      asm volatile(
+          "cmp %w[cnt], #1\n"
+          "ldr q2, [%[in_ptr]], #0x10\n"
+          "ldr q0, [%[bias_ptr]], #0x10\n"
+          "ldr q1, [%[scale_ptr]], #0x10\n"
+          "blt 2f\n"
+          "1: \n"
+          "ldr q5, [%[in_ptr]], #0x10\n"
+          "ldr q3, [%[bias_ptr]], #0x10\n"
+          "ldr q4, [%[scale_ptr]], #0x10\n"
+          // int32 -> fp32
+          "scvtf v6.4s, v2.4s\n"
+          "ldr q2, [%[in_ptr]], #0x10\n"
+          "scvtf v7.4s, v5.4s\n"
+          // din * scale + bias
+          "fmla v0.4s, v6.4s, v1.4s\n"
+          "ldr q1, [%[scale_ptr]], #0x10\n"
+          "fmla v3.4s, v7.4s, v4.4s\n"
+          "fmax v0.4s, v0.4s, %[vzero].4s\n"
+          "fmax v3.4s, v3.4s, %[vzero].4s\n"
+          "subs %w[cnt], %w[cnt], #1\n"
+          "fmin v0.4s, v0.4s, %[vsix].4s\n"
+          "fmin v3.4s, v3.4s, %[vsix].4s\n"
+          // fp32 - int32
+          "fcvtas  v4.4s, v0.4s\n"
+          "fcvtas  v5.4s, v3.4s\n"
+          // int32 - int16
+          "sqxtn   v0.4h, v4.4s\n"
+          "sqxtn   v3.4h, v5.4s\n"
+          // int16-int8
+          "sqxtn  v4.8b, v0.8h\n"
+          "sqxtn  v5.8b, v3.8h\n"
+          "str s4, [%[out_ptr]], #0x04\n"
+          "ldr q0, [%[bias_ptr]], #0x10\n"
+          "str s5, [%[out_ptr]], #0x04\n"
+          "bne 1b\n"
+          "2: \n"
+          "cmp %w[cnt_4], #1\n"
+          "blt 3f\n"
+          // int32 -> fp32
+          "scvtf v6.4s, v2.4s\n"
+          "ldr q2, [%[in_ptr]], #0x10\n"
+          // din * scale + bias
+          "fmla v0.4s, v6.4s, v1.4s\n"
+          "ldr q1, [%[scale_ptr]], #0x10\n"
+          "fmax v0.4s, v0.4s, %[vzero].4s\n"
+          "fmin v0.4s, v0.4s, %[vsix].4s\n"
+          // fp32 - int32
+          "fcvtas  v4.4s, v0.4s\n"
+          // int32 - int16
+          "sqxtn   v0.4h, v4.4s\n"
+          // int16-int8
+          "sqxtn  v4.8b, v0.8h\n"
+          "str s4, [%[out_ptr]], #0x04\n"
+          "ldr q0, [%[bias_ptr]], #0x10\n"
+          "3: \n"
+          : [in_ptr] "+r"(in),
+            [out_ptr] "+r"(out),
+            [scale_ptr] "+r"(scale),
+            [bias_ptr] "+r"(bias_ptr),
+            [cnt] "+r"(cnt)
+          : [cnt_4] "r"(cnt_4),
+            [cnt_remain] "r"(cnt_remain),
+            [vzero] "w"(vzero),
+            [vsix] "w"(vsix)
+          : "cc",
+            "memory",
+            "v0",
+            "v1",
+            "v2",
+            "v3",
+            "v4",
+            "v5",
+            "v6",
+            "v7",
+            "v8");
 #else
-        asm volatile(
-            "cmp %[cnt], #1\n"
-            "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
-            "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
-            "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
-            "blt 2f\n"
-            "1: \n"
-            "vld1.32 {d14-d15}, [%[in_ptr]]!\n"
-            "vld1.32 {d16-d17}, [%[bias_ptr]]!\n"
-            "vld1.32 {d18-d19}, [%[scale_ptr]]!\n"
-            // int32 -> fp32
-            "vcvt.f32.s32 q10, q4\n"
-            "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
-            "vcvt.f32.s32 q11, q7\n"
-            // din * scale + bias
-            "vmla.f32 q5, q10, q6\n"
-            "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
-            "vmla.f32 q8, q11, q9\n"
-            "vmov.f32 q10, #0.5\n"
-            "vmov.f32 q11, #0.5\n"
-            "vmax.f32 q5, q5, %q[vzero]\n"
-            "vmax.f32 q8, q8, %q[vzero]\n"
-            "subs %[cnt], #1\n"
-            "vmin.f32 q5, q5, %q[vsix]\n"
-            "vmin.f32 q8, q8, %q[vsix]\n"
-            // data >= -127
-            "vadd.f32 q5, q5, q10\n"
-            "vadd.f32 q8, q8, q11\n"
-            // fp32 -> int32
-            "vcvt.s32.f32  q7, q5\n"
-            "vcvt.s32.f32  q9, q8\n"
-            // int32 -> int16
-            "vqmovn.s32 d10, q7\n"
-            "vqmovn.s32 d16, q9\n"
-            // int16 -> int8
-            "vqmovn.s16 d14, q5\n"
-            "vqmovn.s16 d18, q8\n"
-            "vst1.32 {d14[0]}, [%[out_ptr]]!\n"
-            "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
-            "vst1.32 {d18[0]}, [%[out_ptr]]!\n"
-            "bne 1b\n"
-            "2: \n"
-            "cmp %[cnt_4], #1\n"
-            "blt 3f\n"
-            // int32 -> fp32
-            "vcvt.f32.s32 q10, q4\n"
-            "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
-            // din * scale + bias
-            "vmla.f32 q5, q10, q6\n"
-            "vmov.f32 q10, #0.5\n"
-            "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
-            "vmax.f32 q5, q5, %q[vzero]\n"
-            "vmin.f32 q5, q5, %q[vsix]\n"
-            // data >= -127
-            "vadd.f32 q5, q5, q10\n"
-            // fp32 -> int32
-            "vcvt.s32.f32  q7, q5\n"
-            // int32 -> int16
-            "vqmovn.s32 d10, q7\n"
-            // int16 -> int8
-            "vqmovn.s16 d14, q5\n"
-            "vst1.32 {d14[0]}, [%[out_ptr]]!\n"
-            "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
-            "3: \n"
-            : [in_ptr] "+r"(in),
-              [out_ptr] "+r"(out),
-              [scale_ptr] "+r"(scale),
-              [bias_ptr] "+r"(bias_ptr),
-              [cnt] "+r"(cnt)
-            : [cnt_4] "r"(cnt_4),
-              [cnt_remain] "r"(cnt_remain),
-              [vzero] "w"(vzero),
-              [vsix] "w"(vsix)
-            : "cc", "memory", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11");
+      asm volatile(
+          "cmp %[cnt], #1\n"
+          "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
+          "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
+          "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
+          "blt 2f\n"
+          "1: \n"
+          "vld1.32 {d14-d15}, [%[in_ptr]]!\n"
+          "vld1.32 {d16-d17}, [%[bias_ptr]]!\n"
+          "vld1.32 {d18-d19}, [%[scale_ptr]]!\n"
+          // int32 -> fp32
+          "vcvt.f32.s32 q10, q4\n"
+          "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
+          "vcvt.f32.s32 q11, q7\n"
+          // din * scale + bias
+          "vmla.f32 q5, q10, q6\n"
+          "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
+          "vmla.f32 q8, q11, q9\n"
+          "vmov.f32 q10, #0.5\n"
+          "vmov.f32 q11, #0.5\n"
+          "vmax.f32 q5, q5, %q[vzero]\n"
+          "vmax.f32 q8, q8, %q[vzero]\n"
+          "subs %[cnt], #1\n"
+          "vmin.f32 q5, q5, %q[vsix]\n"
+          "vmin.f32 q8, q8, %q[vsix]\n"
+          // data >= -127
+          "vadd.f32 q5, q5, q10\n"
+          "vadd.f32 q8, q8, q11\n"
+          // fp32 -> int32
+          "vcvt.s32.f32  q7, q5\n"
+          "vcvt.s32.f32  q9, q8\n"
+          // int32 -> int16
+          "vqmovn.s32 d10, q7\n"
+          "vqmovn.s32 d16, q9\n"
+          // int16 -> int8
+          "vqmovn.s16 d14, q5\n"
+          "vqmovn.s16 d18, q8\n"
+          "vst1.32 {d14[0]}, [%[out_ptr]]!\n"
+          "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
+          "vst1.32 {d18[0]}, [%[out_ptr]]!\n"
+          "bne 1b\n"
+          "2: \n"
+          "cmp %[cnt_4], #1\n"
+          "blt 3f\n"
+          // int32 -> fp32
+          "vcvt.f32.s32 q10, q4\n"
+          "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
+          // din * scale + bias
+          "vmla.f32 q5, q10, q6\n"
+          "vmov.f32 q10, #0.5\n"
+          "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
+          "vmax.f32 q5, q5, %q[vzero]\n"
+          "vmin.f32 q5, q5, %q[vsix]\n"
+          // data >= -127
+          "vadd.f32 q5, q5, q10\n"
+          // fp32 -> int32
+          "vcvt.s32.f32  q7, q5\n"
+          // int32 -> int16
+          "vqmovn.s32 d10, q7\n"
+          // int16 -> int8
+          "vqmovn.s16 d14, q5\n"
+          "vst1.32 {d14[0]}, [%[out_ptr]]!\n"
+          "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
+          "3: \n"
+          : [in_ptr] "+r"(in),
+            [out_ptr] "+r"(out),
+            [scale_ptr] "+r"(scale),
+            [bias_ptr] "+r"(bias_ptr),
+            [cnt] "+r"(cnt)
+          : [cnt_4] "r"(cnt_4),
+            [cnt_remain] "r"(cnt_remain),
+            [vzero] "w"(vzero),
+            [vsix] "w"(vsix)
+          : "cc", "memory", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11");
 #endif
-        in -= 4;
-        scale -= 4;
-        bias_ptr -= 4;
-        for (int i = 0; i < cnt_remain; i++) {
-          float tmp = *(bias_ptr++) + *(in++) * *(scale)++;
-          tmp = tmp > 0.f ? (tmp < six ? tmp : six) : 0.f;
-          out[0] = saturate_cast<signed char>(roundf(tmp));
-          // out[0] = out[0] < -127 ? -127 : out[0];  // -127 - 127
-          out++;
-        }
-        break;
-      case lite_api::ActivationType::kLeakyRelu:
+      in -= 4;
+      scale -= 4;
+      bias_ptr -= 4;
+      for (int i = 0; i < cnt_remain; i++) {
+        float tmp = *(bias_ptr++) + *(in++) * *(scale)++;
+        tmp = tmp > 0.f ? (tmp < six ? tmp : six) : 0.f;
+        out[0] = saturate_cast<signed char>(roundf(tmp));
+        out++;
+      }
+    } else if (act == lite_api::ActivationType::kLeakyRelu) {
+      float32x4_t vmax = vdupq_n_f32(-127.f);
+      float32x4_t valpha = vdupq_n_f32(alpha);
 #ifdef __aarch64__
-        asm volatile(
-            "cmp %w[cnt], #1\n"
-            "ldr q2, [%[in_ptr]], #0x10\n"
-            "ldr q0, [%[bias_ptr]], #0x10\n"
-            "ldr q1, [%[scale_ptr]], #0x10\n"
-            "blt 2f\n"
-            "1: \n"
-            "ldr q5, [%[in_ptr]], #0x10\n"
-            "ldr q3, [%[bias_ptr]], #0x10\n"
-            "ldr q4, [%[scale_ptr]], #0x10\n"
-            // int32 -> fp32
-            "scvtf v6.4s, v2.4s\n"
-            "ldr q2, [%[in_ptr]], #0x10\n"
-            "scvtf v7.4s, v5.4s\n"
-            // din * scale + bias
-            "fmla v0.4s, v6.4s, v1.4s\n"
-            "ldr q1, [%[scale_ptr]], #0x10\n"
-            "fmla v3.4s, v7.4s, v4.4s\n"
-            "fcmge v4.4s, v0.4s,  %[vzero].4s\n"
-            "fmul v5.4s, v0.4s,  %[valpha].4s\n"
-            "subs %w[cnt], %w[cnt], #1\n"
-            "fcmge v6.4s, v3.4s,  %[vzero].4s\n"
-            "fmul v7.4s, v3.4s,  %[valpha].4s\n"
-            "bif v0.16b, v5.16b, v4.16b\n"
-            "bif v3.16b, v7.16b, v6.16b\n"
-            // out >= -127
-            "fcmge v4.4s, v0.4s, %[vmax].4s\n"
-            "fcmge v5.4s, v3.4s, %[vmax].4s\n"
-            "bif v0.16b, %[vmax].16b, v4.16b\n"
-            "bif v3.16b, %[vmax].16b, v5.16b\n"
-            // fp32 - int32
-            "fcvtas  v4.4s, v0.4s\n"
-            "fcvtas  v5.4s, v3.4s\n"
-            // int32 - int16
-            "sqxtn   v0.4h, v4.4s\n"
-            "sqxtn   v3.4h, v5.4s\n"
-            // int16-int8
-            "sqxtn  v4.8b, v0.8h\n"
-            "sqxtn  v5.8b, v3.8h\n"
-            "str s4, [%[out_ptr]], #0x04\n"
-            "ldr q0, [%[bias_ptr]], #0x10\n"
-            "str s5, [%[out_ptr]], #0x04\n"
-            "bne 1b\n"
-            "2: \n"
-            "cmp %w[cnt_4], #1\n"
-            "blt 3f\n"
-            // int32 -> fp32
-            "scvtf v6.4s, v2.4s\n"
-            "ldr q2, [%[in_ptr]], #0x10\n"
-            // din * scale + bias
-            "fmla v0.4s, v6.4s, v1.4s\n"
-            "ldr q1, [%[scale_ptr]], #0x10\n"
-            "fcmge v4.4s, v0.4s,  %[vzero].4s\n"
-            "fmul v5.4s, v0.4s,  %[valpha].4s\n"
-            "bif v0.16b, v5.16b, v4.16b\n"
-            // out >= -127
-            "fcmge v4.4s, v0.4s, %[vmax].4s\n"
-            "bif v0.16b, %[vmax].16b, v4.16b\n"
-            // fp32 - int32
-            "fcvtas  v4.4s, v0.4s\n"
-            // int32 - int16
-            "sqxtn   v0.4h, v4.4s\n"
-            // int16-int8
-            "sqxtn  v4.8b, v0.8h\n"
-            "str s4, [%[out_ptr]], #0x04\n"
-            "ldr q0, [%[bias_ptr]], #0x10\n"
-            "3: \n"
-            : [in_ptr] "+r"(in),
-              [out_ptr] "+r"(out),
-              [scale_ptr] "+r"(scale),
-              [bias_ptr] "+r"(bias_ptr),
-              [cnt] "+r"(cnt)
-            : [cnt_4] "r"(cnt_4),
-              [cnt_remain] "r"(cnt_remain),
-              [vzero] "w"(vzero),
-              [valpha] "w"(valpha),
-              [vmax] "w"(vmax)
-            : "cc",
-              "memory",
-              "v0",
-              "v1",
-              "v2",
-              "v3",
-              "v4",
-              "v5",
-              "v6",
-              "v7",
-              "v8");
+      asm volatile(
+          "cmp %w[cnt], #1\n"
+          "ldr q2, [%[in_ptr]], #0x10\n"
+          "ldr q0, [%[bias_ptr]], #0x10\n"
+          "ldr q1, [%[scale_ptr]], #0x10\n"
+          "blt 2f\n"
+          "1: \n"
+          "ldr q5, [%[in_ptr]], #0x10\n"
+          "ldr q3, [%[bias_ptr]], #0x10\n"
+          "ldr q4, [%[scale_ptr]], #0x10\n"
+          // int32 -> fp32
+          "scvtf v6.4s, v2.4s\n"
+          "ldr q2, [%[in_ptr]], #0x10\n"
+          "scvtf v7.4s, v5.4s\n"
+          // din * scale + bias
+          "fmla v0.4s, v6.4s, v1.4s\n"
+          "ldr q1, [%[scale_ptr]], #0x10\n"
+          "fmla v3.4s, v7.4s, v4.4s\n"
+          "fcmge v4.4s, v0.4s,  %[vzero].4s\n"
+          "fmul v5.4s, v0.4s,  %[valpha].4s\n"
+          "subs %w[cnt], %w[cnt], #1\n"
+          "fcmge v6.4s, v3.4s,  %[vzero].4s\n"
+          "fmul v7.4s, v3.4s,  %[valpha].4s\n"
+          "bif v0.16b, v5.16b, v4.16b\n"
+          "bif v3.16b, v7.16b, v6.16b\n"
+          // out >= -127
+          "fcmge v4.4s, v0.4s, %[vmax].4s\n"
+          "fcmge v5.4s, v3.4s, %[vmax].4s\n"
+          "bif v0.16b, %[vmax].16b, v4.16b\n"
+          "bif v3.16b, %[vmax].16b, v5.16b\n"
+          // fp32 - int32
+          "fcvtas  v4.4s, v0.4s\n"
+          "fcvtas  v5.4s, v3.4s\n"
+          // int32 - int16
+          "sqxtn   v0.4h, v4.4s\n"
+          "sqxtn   v3.4h, v5.4s\n"
+          // int16-int8
+          "sqxtn  v4.8b, v0.8h\n"
+          "sqxtn  v5.8b, v3.8h\n"
+          "str s4, [%[out_ptr]], #0x04\n"
+          "ldr q0, [%[bias_ptr]], #0x10\n"
+          "str s5, [%[out_ptr]], #0x04\n"
+          "bne 1b\n"
+          "2: \n"
+          "cmp %w[cnt_4], #1\n"
+          "blt 3f\n"
+          // int32 -> fp32
+          "scvtf v6.4s, v2.4s\n"
+          "ldr q2, [%[in_ptr]], #0x10\n"
+          // din * scale + bias
+          "fmla v0.4s, v6.4s, v1.4s\n"
+          "ldr q1, [%[scale_ptr]], #0x10\n"
+          "fcmge v4.4s, v0.4s,  %[vzero].4s\n"
+          "fmul v5.4s, v0.4s,  %[valpha].4s\n"
+          "bif v0.16b, v5.16b, v4.16b\n"
+          // out >= -127
+          "fcmge v4.4s, v0.4s, %[vmax].4s\n"
+          "bif v0.16b, %[vmax].16b, v4.16b\n"
+          // fp32 - int32
+          "fcvtas  v4.4s, v0.4s\n"
+          // int32 - int16
+          "sqxtn   v0.4h, v4.4s\n"
+          // int16-int8
+          "sqxtn  v4.8b, v0.8h\n"
+          "str s4, [%[out_ptr]], #0x04\n"
+          "ldr q0, [%[bias_ptr]], #0x10\n"
+          "3: \n"
+          : [in_ptr] "+r"(in),
+            [out_ptr] "+r"(out),
+            [scale_ptr] "+r"(scale),
+            [bias_ptr] "+r"(bias_ptr),
+            [cnt] "+r"(cnt)
+          : [cnt_4] "r"(cnt_4),
+            [cnt_remain] "r"(cnt_remain),
+            [vzero] "w"(vzero),
+            [valpha] "w"(valpha),
+            [vmax] "w"(vmax)
+          : "cc",
+            "memory",
+            "v0",
+            "v1",
+            "v2",
+            "v3",
+            "v4",
+            "v5",
+            "v6",
+            "v7",
+            "v8");
 #else
-        asm volatile(
-            "cmp %[cnt], #1\n"
-            "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
-            "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
-            "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
-            "blt 2f\n"
-            "1: \n"
-            "vld1.32 {d14-d15}, [%[in_ptr]]!\n"
-            "vld1.32 {d16-d17}, [%[bias_ptr]]!\n"
-            "vld1.32 {d18-d19}, [%[scale_ptr]]!\n"
-            // int32 -> fp32
-            "vcvt.f32.s32 q10, q4\n"
-            "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
-            "vcvt.f32.s32 q11, q7\n"
-            // din * scale + bias
-            "vmla.f32 q5, q10, q6\n"
-            "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
-            "vmov.f32 q12, #0.5\n"
-            "vmov.f32 q13, #0.5\n"
-            "vmla.f32 q8, q11, q9\n"
-            "vcge.f32 q7, q5, %q[vzero]\n"
-            "vmul.f32 q9, q5, %q[valpha]\n"
-            "subs %[cnt], #1\n"
-            "vcge.f32 q10, q8, %q[vzero]\n"
-            "vmul.f32 q11, q8, %q[valpha]\n"
-            "vbif q5, q9, q7\n"
-            "vbif q8, q11, q10\n"
-            // +/-0.5
-            "vbif q12, %q[vfive], q7\n"
-            "vbif q13, %q[vfive], q10\n"
-            "vadd.f32 q5, q5, q12\n"
-            "vadd.f32 q8, q8, q13\n"
-            // data >= -127
-            "vcge.f32 q7, q5, %q[vmax]\n"
-            "vcge.f32 q9, q8, %q[vmax]\n"
-            "vbif q5, %q[vmax], q7\n"
-            "vbif q8, %q[vmax], q9\n"
-            // fp32 -> int32
-            "vcvt.s32.f32  q7, q5\n"
-            "vcvt.s32.f32  q9, q8\n"
-            // int32 -> int16
-            "vqmovn.s32 d10, q7\n"
-            "vqmovn.s32 d16, q9\n"
-            // int16 -> int8
-            "vqmovn.s16 d14, q5\n"
-            "vqmovn.s16 d18, q8\n"
-            "vst1.32 {d14[0]}, [%[out_ptr]]!\n"
-            "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
-            "vst1.32 {d18[0]}, [%[out_ptr]]!\n"
-            "bne 1b\n"
-            "2: \n"
-            "cmp %[cnt_4], #1\n"
-            "blt 3f\n"
-            // int32 -> fp32
-            "vcvt.f32.s32 q10, q4\n"
-            "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
-            // din * scale + bias
-            "vmla.f32 q5, q10, q6\n"
-            "vmov.f32 q12, #0.5\n"
-            "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
-            "vcge.f32 q7, q5, %q[vzero]\n"
-            "vmul.f32 q9, q5, %q[valpha]\n"
-            "vbif q5, q9, q7\n"
-            "vbif q12, %q[vfive], q7\n"
-            "vadd.f32 q5, q5, q12\n"
-            // data >= -127
-            "vcge.f32 q7, q5, %q[vmax]\n"
-            "vbif q5, %q[vmax], q7\n"
-            // fp32 -> int32
-            "vcvt.s32.f32  q7, q5\n"
-            // int32 -> int16
-            "vqmovn.s32 d10, q7\n"
-            // int16 -> int8
-            "vqmovn.s16 d14, q5\n"
-            "vst1.32 {d14[0]}, [%[out_ptr]]!\n"
-            "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
-            "3: \n"
-            : [in_ptr] "+r"(in),
-              [out_ptr] "+r"(out),
-              [scale_ptr] "+r"(scale),
-              [bias_ptr] "+r"(bias_ptr),
-              [cnt] "+r"(cnt)
-            : [cnt_4] "r"(cnt_4),
-              [cnt_remain] "r"(cnt_remain),
-              [vzero] "w"(vzero),
-              [valpha] "w"(valpha),
-              [vmax] "w"(vmax),
-              [vfive] "w"(vfive)
-            : "cc",
-              "memory",
-              "q4",
-              "q5",
-              "q6",
-              "q7",
-              "q8",
-              "q9",
-              "q10",
-              "q11",
-              "q12",
-              "q13");
+      asm volatile(
+          "cmp %[cnt], #1\n"
+          "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
+          "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
+          "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
+          "blt 2f\n"
+          "1: \n"
+          "vld1.32 {d14-d15}, [%[in_ptr]]!\n"
+          "vld1.32 {d16-d17}, [%[bias_ptr]]!\n"
+          "vld1.32 {d18-d19}, [%[scale_ptr]]!\n"
+          // int32 -> fp32
+          "vcvt.f32.s32 q10, q4\n"
+          "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
+          "vcvt.f32.s32 q11, q7\n"
+          // din * scale + bias
+          "vmla.f32 q5, q10, q6\n"
+          "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
+          "vmov.f32 q12, #0.5\n"
+          "vmov.f32 q13, #0.5\n"
+          "vmla.f32 q8, q11, q9\n"
+          "vcge.f32 q7, q5, %q[vzero]\n"
+          "vmul.f32 q9, q5, %q[valpha]\n"
+          "subs %[cnt], #1\n"
+          "vcge.f32 q10, q8, %q[vzero]\n"
+          "vmul.f32 q11, q8, %q[valpha]\n"
+          "vbif q5, q9, q7\n"
+          "vbif q8, q11, q10\n"
+          "vcge.f32 q7, q5, %q[vzero]\n"
+          "vcge.f32 q10, q8, %q[vzero]\n"
+          // +/-0.5
+          "vbif q12, %q[vfive], q7\n"
+          "vbif q13, %q[vfive], q10\n"
+          "vadd.f32 q5, q5, q12\n"
+          "vadd.f32 q8, q8, q13\n"
+          // data >= -127
+          "vcge.f32 q7, q5, %q[vmax]\n"
+          "vcge.f32 q9, q8, %q[vmax]\n"
+          "vbif q5, %q[vmax], q7\n"
+          "vbif q8, %q[vmax], q9\n"
+          // fp32 -> int32
+          "vcvt.s32.f32  q7, q5\n"
+          "vcvt.s32.f32  q9, q8\n"
+          // int32 -> int16
+          "vqmovn.s32 d10, q7\n"
+          "vqmovn.s32 d16, q9\n"
+          // int16 -> int8
+          "vqmovn.s16 d14, q5\n"
+          "vqmovn.s16 d18, q8\n"
+          "vst1.32 {d14[0]}, [%[out_ptr]]!\n"
+          "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
+          "vst1.32 {d18[0]}, [%[out_ptr]]!\n"
+          "bne 1b\n"
+          "2: \n"
+          "cmp %[cnt_4], #1\n"
+          "blt 3f\n"
+          // int32 -> fp32
+          "vcvt.f32.s32 q10, q4\n"
+          "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
+          // din * scale + bias
+          "vmla.f32 q5, q10, q6\n"
+          "vmov.f32 q12, #0.5\n"
+          "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
+          "vcge.f32 q7, q5, %q[vzero]\n"
+          "vmul.f32 q9, q5, %q[valpha]\n"
+          "vbif q5, q9, q7\n"
+          "vbif q12, %q[vfive], q7\n"
+          "vadd.f32 q5, q5, q12\n"
+          // data >= -127
+          "vcge.f32 q7, q5, %q[vmax]\n"
+          "vbif q5, %q[vmax], q7\n"
+          // fp32 -> int32
+          "vcvt.s32.f32  q7, q5\n"
+          // int32 -> int16
+          "vqmovn.s32 d10, q7\n"
+          // int16 -> int8
+          "vqmovn.s16 d14, q5\n"
+          "vst1.32 {d14[0]}, [%[out_ptr]]!\n"
+          "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
+          "3: \n"
+          : [in_ptr] "+r"(in),
+            [out_ptr] "+r"(out),
+            [scale_ptr] "+r"(scale),
+            [bias_ptr] "+r"(bias_ptr),
+            [cnt] "+r"(cnt)
+          : [cnt_4] "r"(cnt_4),
+            [cnt_remain] "r"(cnt_remain),
+            [vzero] "w"(vzero),
+            [valpha] "w"(valpha),
+            [vmax] "w"(vmax),
+            [vfive] "w"(vfive)
+          : "cc",
+            "memory",
+            "q4",
+            "q5",
+            "q6",
+            "q7",
+            "q8",
+            "q9",
+            "q10",
+            "q11",
+            "q12",
+            "q13");
 #endif
-        in -= 4;
-        scale -= 4;
-        bias_ptr -= 4;
-        for (int i = 0; i < cnt_remain; i++) {
-          float tmp = *(bias_ptr++) + *(in++) * *(scale)++;
-          tmp = tmp > 0.f ? tmp : tmp * alpha;
-          out[0] = saturate_cast<signed char>(roundf(tmp));
-          out[0] = out[0] < -127 ? -127 : out[0];  // -127 - 127
-          out++;
-        }
-        break;
-      default:
-        LOG(FATAL) << "it doesn't support act_type: " << flag_act;
-        return;
+      in -= 4;
+      scale -= 4;
+      bias_ptr -= 4;
+      for (int i = 0; i < cnt_remain; i++) {
+        float tmp = *(bias_ptr++) + *(in++) * *(scale)++;
+        tmp = tmp > 0.f ? tmp : tmp * alpha;
+        out[0] = saturate_cast<signed char>(roundf(tmp));
+        out[0] = out[0] < -127 ? -127 : out[0];  // -127 - 127
+        out++;
+      }
+    } else if (act == lite_api::ActivationType::kHardSwish) {
+      float32x4_t valpha = vdupq_n_f32(alpha);
+      float32x4_t voffset = vdupq_n_f32(offset);
+      float32x4_t vthreshold = vdupq_n_f32(threshold);
+#ifdef __aarch64__
+      asm volatile(
+          "cmp %w[cnt], #1\n"
+          "ldr q2, [%[in_ptr]], #0x10\n"
+          "ldr q0, [%[bias_ptr]], #0x10\n"
+          "ldr q1, [%[scale_ptr]], #0x10\n"
+          "blt 2f\n"
+          "1: \n"
+          "ldr q5, [%[in_ptr]], #0x10\n"
+          "ldr q3, [%[bias_ptr]], #0x10\n"
+          "ldr q4, [%[scale_ptr]], #0x10\n"
+          // int32 -> fp32
+          "scvtf v6.4s, v2.4s\n"
+          "ldr q2, [%[in_ptr]], #0x10\n"
+          "scvtf v7.4s, v5.4s\n"
+          // din * scale + bias
+          "fmla v0.4s, v6.4s, v1.4s\n"
+          "ldr   q1, [%[scale_ptr]], #0x10\n"
+          "fmla  v3.4s, v7.4s, v4.4s\n"
+          "fadd  v4.4s, v0.4s,  %[voffset].4s\n"
+          "fmul  v5.4s, v0.4s,  %[valpha].4s\n"
+          "fmax  v4.4s, v4.4s,  %[vzero].4s\n"
+          "subs %w[cnt], %w[cnt], #1\n"
+          "fadd  v6.4s, v3.4s,  %[voffset].4s\n"
+          "fmul  v7.4s, v3.4s,  %[valpha].4s\n"
+          "fmax  v6.4s, v6.4s,  %[vzero].4s\n"
+          "fmin  v4.4s, v4.4s,  %[vthreshold].4s\n"
+          "fmul  v0.4s, v4.4s,  v5.4s\n"
+          "fmin  v6.4s, v6.4s,  %[vthreshold].4s\n"
+          "fmul  v3.4s, v6.4s,  v7.4s\n"
+          // fp32 - int32
+          "fcvtas  v4.4s, v0.4s\n"
+          "fcvtas  v5.4s, v3.4s\n"
+          // int32 - int16
+          "sqxtn   v0.4h, v4.4s\n"
+          "sqxtn   v3.4h, v5.4s\n"
+          // int16-int8
+          "sqxtn  v4.8b, v0.8h\n"
+          "sqxtn  v5.8b, v3.8h\n"
+          "str s4, [%[out_ptr]], #0x04\n"
+          "ldr q0, [%[bias_ptr]], #0x10\n"
+          "str s5, [%[out_ptr]], #0x04\n"
+          "bne 1b\n"
+          "2: \n"
+          "cmp %w[cnt_4], #1\n"
+          "blt 3f\n"
+          // int32 -> fp32
+          "scvtf v6.4s, v2.4s\n"
+          "ldr q2, [%[in_ptr]], #0x10\n"
+          // din * scale + bias
+          "fmla v0.4s, v6.4s, v1.4s\n"
+          "ldr q1, [%[scale_ptr]], #0x10\n"
+          "fadd  v4.4s, v0.4s,  %[voffset].4s\n"
+          "fmul  v5.4s, v0.4s,  %[valpha].4s\n"
+          "fmax  v4.4s, v4.4s,  %[vzero].4s\n"
+          "fmin  v4.4s, v4.4s,  %[vthreshold].4s\n"
+          "fmul  v0.4s, v4.4s,  v5.4s\n"
+          // fp32 - int32
+          "fcvtas  v4.4s, v0.4s\n"
+          // int32 - int16
+          "sqxtn   v0.4h, v4.4s\n"
+          // int16-int8
+          "sqxtn  v4.8b, v0.8h\n"
+          "str s4, [%[out_ptr]], #0x04\n"
+          "ldr q0, [%[bias_ptr]], #0x10\n"
+          "3: \n"
+          : [in_ptr] "+r"(in),
+            [out_ptr] "+r"(out),
+            [scale_ptr] "+r"(scale),
+            [bias_ptr] "+r"(bias_ptr),
+            [cnt] "+r"(cnt)
+          : [cnt_4] "r"(cnt_4),
+            [cnt_remain] "r"(cnt_remain),
+            [vzero] "w"(vzero),
+            [valpha] "w"(valpha),
+            [voffset] "w"(voffset),
+            [vthreshold] "w"(vthreshold)
+          : "cc",
+            "memory",
+            "v0",
+            "v1",
+            "v2",
+            "v3",
+            "v4",
+            "v5",
+            "v6",
+            "v7",
+            "v8");
+#else
+      asm volatile(
+          "cmp %[cnt], #1\n"
+          "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
+          "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
+          "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
+          "blt 2f\n"
+          "1: \n"
+          "vld1.32 {d14-d15}, [%[in_ptr]]!\n"
+          "vld1.32 {d16-d17}, [%[bias_ptr]]!\n"
+          "vld1.32 {d18-d19}, [%[scale_ptr]]!\n"
+          // int32 -> fp32
+          "vcvt.f32.s32 q10, q4\n"
+          "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
+          "vcvt.f32.s32 q11, q7\n"
+          // din * scale + bias
+          "vmla.f32 q5, q10, q6\n"
+          "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
+          "vmov.f32 q12, #0.5\n"
+          "vmov.f32 q13, #0.5\n"
+          "vmla.f32 q8, q11, q9\n"
+          "vadd.f32 q7, q5, %q[voffset]\n"
+          "vmul.f32 q9, q5, %q[valpha]\n"
+          "vmax.f32 q7, q7, %q[vzero]\n"
+          "subs %[cnt], #1\n"
+          "vadd.f32 q10, q8, %q[voffset]\n"
+          "vmul.f32 q11, q8, %q[valpha]\n"
+          "vmax.f32 q10, q10, %q[vzero]\n"
+          "vmin.f32 q7, q7, %q[vthreshold]\n"
+          "vmul.f32 q5, q7, q9\n"
+          "vcge.f32 q7, q5, %q[vzero]\n"
+          "vmin.f32 q10, q10, %q[vthreshold]\n"
+          "vmul.f32 q8, q10, q11\n"
+          "vcge.f32 q10, q8, %q[vzero]\n"
+          // +/-0.5
+          "vbif q12, %q[vfive], q7\n"
+          "vbif q13, %q[vfive], q10\n"
+          "vadd.f32 q5, q5, q12\n"
+          "vadd.f32 q8, q8, q13\n"
+          // fp32 -> int32
+          "vcvt.s32.f32  q7, q5\n"
+          "vcvt.s32.f32  q9, q8\n"
+          // int32 -> int16
+          "vqmovn.s32 d10, q7\n"
+          "vqmovn.s32 d16, q9\n"
+          // int16 -> int8
+          "vqmovn.s16 d14, q5\n"
+          "vqmovn.s16 d18, q8\n"
+          "vst1.32 {d14[0]}, [%[out_ptr]]!\n"
+          "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
+          "vst1.32 {d18[0]}, [%[out_ptr]]!\n"
+          "bne 1b\n"
+          "2: \n"
+          "cmp %[cnt_4], #1\n"
+          "blt 3f\n"
+          // int32 -> fp32
+          "vcvt.f32.s32 q10, q4\n"
+          "vld1.32 {d8-d9}, [%[in_ptr]]!\n"
+          // din * scale + bias
+          "vmla.f32 q5, q10, q6\n"
+          "vmov.f32 q12, #0.5\n"
+          "vld1.32 {d12-d13}, [%[scale_ptr]]!\n"
+          "vadd.f32 q7, q5, %q[voffset]\n"
+          "vmul.f32 q9, q5, %q[valpha]\n"
+          "vmax.f32 q7, q7, %q[vzero]\n"
+          "vmin.f32 q7, q7, %q[vthreshold]\n"
+          "vmul.f32 q5, q7, q9\n"
+          "vcge.f32 q7, q5, %q[vzero]\n"
+          "vbif q12, %q[vfive], q7\n"
+          "vadd.f32 q5, q5, q12\n"
+          // fp32 -> int32
+          "vcvt.s32.f32  q7, q5\n"
+          // int32 -> int16
+          "vqmovn.s32 d10, q7\n"
+          // int16 -> int8
+          "vqmovn.s16 d14, q5\n"
+          "vst1.32 {d14[0]}, [%[out_ptr]]!\n"
+          "vld1.32 {d10-d11}, [%[bias_ptr]]!\n"
+          "3: \n"
+          : [in_ptr] "+r"(in),
+            [out_ptr] "+r"(out),
+            [scale_ptr] "+r"(scale),
+            [bias_ptr] "+r"(bias_ptr),
+            [cnt] "+r"(cnt)
+          : [cnt_4] "r"(cnt_4),
+            [cnt_remain] "r"(cnt_remain),
+            [vzero] "w"(vzero),
+            [valpha] "w"(valpha),
+            [voffset] "w"(voffset),
+            [vthreshold] "w"(vthreshold),
+            [vfive] "w"(vfive)
+          : "cc",
+            "memory",
+            "q4",
+            "q5",
+            "q6",
+            "q7",
+            "q8",
+            "q9",
+            "q10",
+            "q11",
+            "q12",
+            "q13");
+#endif
+      in -= 4;
+      scale -= 4;
+      bias_ptr -= 4;
+      for (int i = 0; i < cnt_remain; i++) {
+        float tmp = *(bias_ptr++) + *(in++) * *(scale)++;
+        auto tmp0 = std::min(std::max(tmp + offset, 0.f), threshold);
+        auto tmp1 = tmp * alpha;
+        auto result = tmp0 * tmp1;
+        out[0] = saturate_cast<signed char>(roundf(result));
+        out[0] = out[0] < -127 ? -127 : out[0];  // -127 - 127
+        out++;
+      }
+    } else {
+      LOG(FATAL) << "it doesn't support act_type: " << flag_act;
+      return;
     }
   } else {
+    float32x4_t vmax = vdupq_n_f32(-127.f);
 #ifdef __aarch64__
     asm volatile(
         "cmp %w[cnt], #1\n"
@@ -1259,6 +1610,8 @@ bool gemv_int8_trans_oth(const int8_t* A,
                          bool flag_act,
                          lite_api::ActivationType act,
                          float alpha,
+                         float offset,
+                         float threshold,
                          ARMContext* ctx) {
   dtype* data_out = y;
   const int8_t* data_in = A;
@@ -1782,7 +2135,17 @@ bool gemv_int8_trans_oth(const int8_t* A,
   }
 #endif
   // write output
-  write_gemv_out(zero_ptr, y, scale, bias_ptr, M, flag_act, act, six, alpha);
+  write_gemv_out(zero_ptr,
+                 y,
+                 scale,
+                 bias_ptr,
+                 M,
+                 flag_act,
+                 act,
+                 six,
+                 alpha,
+                 offset,
+                 threshold);
   return true;
 }
 
@@ -1873,26 +2236,41 @@ bool gemv_int8_trans_oth(const int8_t* A,
     "fmla v19.4s, v21.4s, v17.4s  \n"   /* mul scale to get result */     \
     "fmla v20.4s, v22.4s, v18.4s  \n"   /* mul scale to get  result */    \
     "cmp    %w[relu],   #0        \n"                                     \
+    "movi   v0.4s, #0             \n"                                     \
     "beq    12f                   \n"                                     \
     "cmp    %w[relu],    #1       \n"                                     \
-    "bne    13f                   \n"                                     \
-    "movi   v0.4s, #0             \n"                                     \
+    "beq    15f                   \n"                                     \
+    "cmp    %w[relu],    #2       \n"                                     \
+    "beq    13f                   \n"                                     \
+    "cmp    %w[relu],    #3       \n"                                     \
+    "beq    14f                   \n"                                     \
+    "ldr    q2,    [%[alpha], #16]\n"                                     \
+    "ldr    q1,    [%[alpha]]     \n"                                     \
+    "ldr    q3,    [%[alpha], #32]\n"                                     \
+    "fadd   v21.4s, v19.4s, v2.4s \n"                                     \
+    "fmul   v22.4s, v19.4s, v1.4s \n"                                     \
+    "fmax   v21.4s, v21.4s, v0.4s \n"                                     \
+    "fmin   v21.4s, v21.4s, v3.4s \n"                                     \
+    "fmul   v19.4s, v21.4s, v22.4s\n"                                     \
+    "fadd   v21.4s, v20.4s, v2.4s \n"                                     \
+    "fmul   v22.4s, v20.4s, v1.4s \n"                                     \
+    "fmax   v21.4s, v21.4s, v0.4s \n"                                     \
+    "fmin   v21.4s, v21.4s, v3.4s \n"                                     \
+    "fmul   v20.4s, v21.4s, v22.4s\n"                                     \
+    "b      12f                   \n"                                     \
+    "15:                          \n"                                     \
     "fmax   v19.4s, v19.4s, v0.4s \n"                                     \
     "fmax   v20.4s, v20.4s, v0.4s \n"                                     \
     "b      12f                   \n"                                     \
     "13:                          \n"                                     \
-    "cmp    %w[relu],   #2        \n"                                     \
-    "bne   14f                    \n"                                     \
-    "movi   v0.4s, #0             \n"                                     \
-    "dup    v1.4s, %w[alpha]      \n"                                     \
+    "ldr    q1,    [%[alpha]]     \n"                                     \
     "fmax   v19.4s, v19.4s, v0.4s \n"                                     \
     "fmax   v20.4s, v20.4s, v0.4s \n"                                     \
     "fmin   v19.4s, v19.4s, v1.4s \n"                                     \
     "fmin   v20.4s, v20.4s, v1.4s \n"                                     \
     "b      12f                   \n"                                     \
     "14:                          \n"                                     \
-    "movi   v0.4s, #0             \n"                                     \
-    "dup    v1.4s, %w[alpha]      \n"                                     \
+    "ldr    q1,    [%[alpha]]     \n"                                     \
     "fcmge  v21.4s, v19.4s, v0.4s \n"                                     \
     "fmul   v22.4s, v19.4s, v1.4s \n"                                     \
     "bif    v19.16b,v22.16b,v21.16b\n"                                    \
@@ -1932,7 +2310,7 @@ bool gemv_int8_trans_oth(const int8_t* A,
     [scale] "+r"(scale_ptr),                                              \
     [bias] "+r"(bias_ptr),                                                \
     [relu] "+r"(act)                                                      \
-  : [out] "r"(out_ptr), [alpha] "r"(alpha)                                \
+  : [out] "r"(out_ptr), [alpha] "r"(tmp_ptr)                              \
   : "cc", "memory",                                                       \
     "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9",           \
     "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17",               \
@@ -1945,7 +2323,7 @@ bool gemv_int8_trans_oth(const int8_t* A,
   const int8_t *ptr_w5, const int8_t *ptr_w6,                             \
   const int8_t *ptr_w7, int cnt,                                          \
   const float *scale_ptr, const float *bias_ptr,                          \
-  int act, float alpha,                                                   \
+  int act, float alpha,  float offset, float threshold,                   \
   dtype *out_ptr
 
 #define GEMV_DOT_COMPUTE                                                  \
@@ -1966,12 +2344,36 @@ inline void gemv_int8_asm(GEMV_ASM_FUN_PARAMS(dtype));
 
 template <>
 inline void gemv_int8_asm(GEMV_ASM_FUN_PARAMS(float)) {
+  float tmp_ptr[12] = {alpha,
+                       alpha,
+                       alpha,
+                       alpha,
+                       offset,
+                       offset,
+                       offset,
+                       offset,
+                       threshold,
+                       threshold,
+                       threshold,
+                       threshold};
   asm volatile(GEMV_COMPUTE_INIT GEMV_COMPUTE GEMV_COMPUTE_ACT GEMV_ST_FP32
                : GEMV_ASM_PARAMS);
 }
 template <>
 inline void gemv_int8_asm(GEMV_ASM_FUN_PARAMS(int8_t)) {
   float vmax = -127.f;
+  float tmp_ptr[12] = {alpha,
+                       alpha,
+                       alpha,
+                       alpha,
+                       offset,
+                       offset,
+                       offset,
+                       offset,
+                       threshold,
+                       threshold,
+                       threshold,
+                       threshold};
   asm volatile(GEMV_COMPUTE_INIT GEMV_COMPUTE GEMV_COMPUTE_ACT GEMV_ST_INT8
                : [vmax] "+r"(vmax), GEMV_ASM_PARAMS);
 }
@@ -1981,12 +2383,36 @@ inline void gemv_int8_dot_asm(GEMV_ASM_FUN_PARAMS(dtype));
 template <>
 inline void gemv_int8_dot_asm(GEMV_ASM_FUN_PARAMS(int8_t)) {
   float vmax = -127.f;
+  float tmp_ptr[12] = {alpha,
+                       alpha,
+                       alpha,
+                       alpha,
+                       offset,
+                       offset,
+                       offset,
+                       offset,
+                       threshold,
+                       threshold,
+                       threshold,
+                       threshold};
   asm volatile(GEMV_COMPUTE_INIT GEMV_DOT_COMPUTE GEMV_COMPUTE_ACT GEMV_ST_INT8
                : [vmax] "+r"(vmax), GEMV_ASM_PARAMS);
 }
 
 template <>
 inline void gemv_int8_dot_asm(GEMV_ASM_FUN_PARAMS(float)) {
+  float tmp_ptr[12] = {alpha,
+                       alpha,
+                       alpha,
+                       alpha,
+                       offset,
+                       offset,
+                       offset,
+                       offset,
+                       threshold,
+                       threshold,
+                       threshold,
+                       threshold};
   asm volatile(GEMV_COMPUTE_INIT GEMV_DOT_COMPUTE GEMV_COMPUTE_ACT GEMV_ST_FP32
                : GEMV_ASM_PARAMS);
 }
@@ -2051,21 +2477,32 @@ inline void gemv_int8_dot_asm(GEMV_ASM_FUN_PARAMS(float)) {
   "cmp    %[relu],  #0            \n"   \
   "beq    12f                     \n"   \
   "cmp    %[relu],  #1            \n"   \
-  "bne    13f                     \n"   \
   "vmov.f32    q0,  #0.0          \n"   \
+  "beq    15f                     \n"   \
+  "cmp    %[relu],   #1           \n"   \
+  "beq    13f                     \n"   \
+  "cmp    %[relu],   #2           \n"   \
+  "beq    14f                     \n"   \
+  "vld1.32    {d2-d5}, [%[alpha]] \n"   \
+  "vldr       d6,   [%[alpha], #32]\n"  \
+  "vldr       d7,   [%[alpha], #40]\n"  \
+  "vadd.f32   q4,   q11,  q2      \n"   \
+  "vmul.f32   q5,   q11,  q1      \n"   \
+  "vmax.f32   q4,   q4,   q0      \n"   \
+  "vmin.f32   q4,   q4,   q3      \n"   \
+  "vmul.f32   q11,  q4,   q5      \n"   \
+  "b      12f                     \n"   \
+  "15:                            \n"   \
   "vmax.f32   q11,  q11,  q0      \n"   \
   "b      12f                     \n"   \
   "13:                            \n"   \
-  "cmp    %[relu],   #2           \n"   \
-  "bne    14f                     \n"   \
-  "vmov.f32   q0,   #0.0          \n"   \
-  "vdup.32    q1,   %[alpha]      \n"   \
+  "vld1.32    {d2-d3}, [%[alpha]] \n"   \
   "vmax.f32   q11,  q11,  q0      \n"   \
   "vmin.f32   q11,  q11,  q1      \n"   \
   "b      12f                     \n"   \
   "14:                            \n"   \
   "vmov.f32   q0,   #0.0          \n"   \
-  "vdup.32    q1,   %[alpha]      \n"   \
+  "vld1.32    {d2-d3}, [%[alpha]] \n"   \
   "vcge.f32   q2,   q11,  q0      \n"   \
   "vmul.f32   q3,   q11,  q1      \n"   \
   "vbif       q11,  q3,   q2      \n"
@@ -2094,19 +2531,18 @@ inline void gemv_int8_dot_asm(GEMV_ASM_FUN_PARAMS(float)) {
   [in] "+r"(ptr_in), [w0] "+r"(ptr_w0),                                 \
   [w1] "+r"(ptr_w1), [w2] "+r"(ptr_w2),                                 \
   [w3] "+r"(ptr_w3), [cnt] "+r"(cnt),                                   \
-  [scale] "+r"(scale_ptr), [bias] "+r"(bias_ptr),                       \
-  [relu] "+r"(act), [alpha] "+r"(alpha)                                 \
-  : [out] "r"(out_ptr)                                                  \
+  [scale] "+r"(scale_ptr), [bias] "+r"(bias_ptr)                        \
+  : [out] "r"(out_ptr), [relu] "r"(act), [alpha] "r"(tmp_ptr)           \
   : "cc", "memory",                                                     \
     "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",                     \
-    "q8", "q9", "q12", "q13", "q14", "q15"
+    "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
 
 #define GEMV_ASM_FUN_PARAMS(dtype)                                      \
   const int8_t *ptr_in, const int8_t *ptr_w0,                           \
   const int8_t *ptr_w1, const int8_t *ptr_w2,                           \
   const int8_t *ptr_w3, int cnt,                                        \
   const float *scale_ptr, const float *bias_ptr,                        \
-  int act, float alpha,                                                 \
+  int act, float alpha,  float offset, float threshold,                 \
   dtype *out_ptr
 // clang-format on
 
@@ -2115,12 +2551,36 @@ inline void gemv_int8_asm(GEMV_ASM_FUN_PARAMS(dtype));
 
 template <>
 inline void gemv_int8_asm(GEMV_ASM_FUN_PARAMS(float)) {
+  float tmp_ptr[12] = {alpha,
+                       alpha,
+                       alpha,
+                       alpha,
+                       offset,
+                       offset,
+                       offset,
+                       offset,
+                       threshold,
+                       threshold,
+                       threshold,
+                       threshold};
   asm volatile(GEMV_COMPUTE GEMV_ST_FP32 : GEMV_ASM_PARAMS);
 }
 
 template <>
 inline void gemv_int8_asm(GEMV_ASM_FUN_PARAMS(int8_t)) {
   float vmax = -127.f;
+  float tmp_ptr[12] = {alpha,
+                       alpha,
+                       alpha,
+                       alpha,
+                       offset,
+                       offset,
+                       offset,
+                       offset,
+                       threshold,
+                       threshold,
+                       threshold,
+                       threshold};
   asm volatile(GEMV_COMPUTE GEMV_ST_INT8 : [vmax] "+r"(vmax), GEMV_ASM_PARAMS);
 }
 #undef GEMV_COMPUTE_INIT
@@ -2143,6 +2603,8 @@ void gemv_int8_oth(const int8_t* A,
                    bool fact,
                    lite_api::ActivationType act,
                    float alpha,
+                   float offset,
+                   float threshold,
                    ARMContext* ctx) {
   int cnt = N >> 4;
   int tail = N & 15;
@@ -2236,6 +2698,8 @@ void gemv_int8_oth(const int8_t* A,
                          bias_ptr,
                          static_cast<int>(act),
                          alpha,
+                         offset,
+                         threshold,
                          out_p);
     if (remain > 0) {
       for (int i = 0; i < remain; i++) {
@@ -2298,6 +2762,8 @@ void gemv_int8_oth(const int8_t* A,
                          bias_ptr,
                          static_cast<int>(act),
                          alpha,
+                         offset,
+                         threshold,
                          out_p);
     if (remain > 0) {
       for (int i = 0; i < remain; i++) {
@@ -2323,6 +2789,8 @@ void gemv_int8_sdot(const int8_t* A,
                     bool fact,
                     lite_api::ActivationType act,
                     float alpha,
+                    float offset,
+                    float threshold,
                     ARMContext* ctx) {
   int Nup = (N + 15) / 16 * 16;
   int cnt = Nup >> 4;
@@ -2416,6 +2884,8 @@ void gemv_int8_sdot(const int8_t* A,
                                bias_ptr,
                                static_cast<int>(act),
                                alpha,
+                               offset,
+                               threshold,
                                out_p);
       if (remain > 0) {
         for (int i = 0; i < remain; i++) {
@@ -2442,14 +2912,20 @@ void gemv_int8(const int8_t* A,
                ARMContext* ctx) {
 #define IN_PARAMS                                            \
   A, x, y, M, N, scale, is_bias, bias, act_param.has_active, \
-      act_param.active_type, alpha, ctx
+      act_param.active_type, alpha, offset, threshold, ctx
 
   float alpha = 1.f;
+  float offset = 3.f;
+  float threshold = 6.f;
   if (act_param.has_active) {
     if (act_param.active_type == lite_api::ActivationType::kRelu6) {
       alpha = act_param.threshold;
     } else if (act_param.active_type == lite_api::ActivationType::kLeakyRelu) {
       alpha = act_param.Leaky_relu_alpha;
+    } else if (act_param.active_type == lite_api::ActivationType::kHardSwish) {
+      alpha = act_param.hard_swish_scale;
+      offset = act_param.hard_swish_offset;
+      threshold = act_param.hard_swish_threshold;
     }
   }
   if (transA) {
@@ -2486,7 +2962,7 @@ void gemv_int8(const int8_t* A,
 
 GEMV_INT8_FUN(int8_t);
 GEMV_INT8_FUN(float);
-
+#undef GEMV_INT8_FUN
 }  // namespace math
 }  // namespace arm
 }  // namespace lite

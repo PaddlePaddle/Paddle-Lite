@@ -75,7 +75,7 @@ auto output_data=output_tensor->data<float>();
 
 **备注：**
 >> 详细的 C++ API 说明文档位于 [C++ API](../api_reference/cxx_api_doc)。
->> 更多 C++ 应用预测开发可以参考位于位于 [Paddle Lite Demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)的工程示例代码。
+>> 更多 C++ 应用预测开发可以参考位于位于 [Paddle-Lite-Demo](https://github.com/PaddlePaddle/Paddle-Lite-Demo)的工程示例代码。
 
 ## C++ 轻量级 mobilenet_light Demo介绍
 以轻量级 mobilenet_light demo 为例，详细介绍如何在手机 android 端 shell 环境下，跑通模型分类案例。
@@ -94,7 +94,7 @@ auto output_data=output_tensor->data<float>();
 
 | Arch  | with_extra | arm_stl | with_cv | 下载 |
 |:-------:|:-----:|:-----:|:-----:|:-------:|
-| armv8 | OFF | c++_static | OFF |[ 2.9-rc ](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.9/inference_lite_lib.android.armv8.gcc.c++_static.tar.gz)|
+| armv8 | OFF | c++_static | OFF |[ 2.10-rc ](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10-rc/inference_lite_lib.android.armv8.gcc.c++_static.tar.gz)|
 
 **解压后内容结构如下：**
 

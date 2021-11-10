@@ -174,24 +174,6 @@ void MLUSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   fuser();
 }
 
-void ImaginationNNASubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  std::set<std::string> supported_lists;
-#define USE_SUBGRAPH_BRIDGE(op_type, target) supported_lists.insert(#op_type);
-#include "lite/kernels/imagination_nna/bridges/paddle_use_bridges.h"
-#undef USE_SUBGRAPH_BRIDGE
-  auto teller = [&](Node* node) {
-    if (!node->IsStmt()) return false;
-    auto& stmt = node->AsStmt();
-    return supported_lists.count(stmt.op_type()) != 0;
-  };
-  auto subgraph_partition_configs = ReadSubgraphPartitionConfigsFromEnv();
-  SubgraphFuser fuser(graph.get(),
-                      teller,
-                      1 /* min_subgraph_size */,
-                      subgraph_partition_configs);
-  fuser();
-}
-
 void NNAdapterSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   auto has_intersection = [](const std::vector<std::string>& a,
                              const std::vector<std::string>& b) -> bool {
@@ -263,20 +245,6 @@ void NNAdapterSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 #undef __NNADAPTER_CONVERTER_ALL_H__
 #undef REGISTER_CONVERTER
 
-// TODO(hong19860320) Remove the following code after all op bridges are
-// migrated to the new converters
-#define USE_SUBGRAPH_BRIDGE(op_type_, target_, device_names_)            \
-  device_names = device_names_;                                          \
-  device_names.erase(                                                    \
-      std::remove(device_names.begin(), device_names.end(), ' '),        \
-      device_names.end());                                               \
-  supported_device_names = Split(device_names, ",");                     \
-  if (has_intersection(selected_device_names, supported_device_names)) { \
-    supported_ops.insert(#op_type_);                                     \
-  }
-#include "lite/kernels/nnadapter/bridges/paddle_use_bridges.h"
-#undef USE_SUBGRAPH_BRIDGE
-
   auto teller = [&](Node* node) {
     if (!node->IsStmt()) return false;
     auto& stmt = node->AsStmt();
@@ -308,9 +276,6 @@ REGISTER_MIR_PASS(rknpu_subgraph_pass, paddle::lite::mir::RKNPUSubgraphPass)
     .BindTargets({TARGET(kRKNPU)});
 REGISTER_MIR_PASS(mlu_subgraph_pass, paddle::lite::mir::MLUSubgraphPass)
     .BindTargets({TARGET(kMLU)});
-REGISTER_MIR_PASS(imagination_nna_subgraph_pass,
-                  paddle::lite::mir::ImaginationNNASubgraphPass)
-    .BindTargets({TARGET(kImaginationNNA)});
 REGISTER_MIR_PASS(nnadapter_subgraph_pass,
                   paddle::lite::mir::NNAdapterSubgraphPass)
     .BindTargets({TARGET(kNNAdapter)});

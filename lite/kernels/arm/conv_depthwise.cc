@@ -287,8 +287,7 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
     flag_trans_bias_ = true;
   }
   //! update relu6 parameter
-  if (param.activation_param.has_active &&
-      param.activation_param.active_type == lite_api::ActivationType::kRelu6) {
+  if (param.activation_param.active_type == lite_api::ActivationType::kRelu6) {
     param.activation_param.Relu_clipped_coef =
         param.activation_param.Relu_clipped_coef / param.output_scale;
   }
@@ -297,6 +296,16 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
       lite_api::ActivationType::kLeakyRelu) {
     param.activation_param.Leaky_relu_alpha =
         param.activation_param.Leaky_relu_alpha / param.output_scale;
+  }
+  //! update hardswish parameter
+  if (param.activation_param.active_type ==
+      lite_api::ActivationType::kHardSwish) {
+    param.activation_param.hard_swish_scale =
+        param.activation_param.hard_swish_scale / param.output_scale;
+    param.activation_param.hard_swish_offset =
+        param.activation_param.hard_swish_offset / param.output_scale;
+    param.activation_param.hard_swish_threshold =
+        param.activation_param.hard_swish_threshold / param.output_scale;
   }
 
   if (kw == 3) {

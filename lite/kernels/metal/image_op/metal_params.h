@@ -26,6 +26,10 @@ struct ElementwiseAddMetalParam {
     int xtrans[4];
     int ydim[4];
     int ytrans[4];
+    int ByNum;
+    int ByHW;
+    int ByW;
+    int arithmetic_type;
 };
 
 struct ActivationMetalParam {
@@ -218,6 +222,8 @@ struct SplitMetalParam {
     int idim[4];
     int axis;
     int offset;
+    int num;
+    int v_;
     int trans[4];
     int vdim[4];
 };

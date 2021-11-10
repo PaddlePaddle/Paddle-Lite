@@ -280,6 +280,7 @@ avg   = 33.918
 拉取 [Paddle Lite](https://github.com/PaddlePaddle/Paddle-Lite) 代码，切换到特定分支，然后在 Paddle Lite 根目录下执行编译命令：
 ```shell
 ./lite/tools/build_macos.sh --with_benchmark=ON x86
+./lite/tools/build_macos.sh --build_opencl=ON --with_benchmark=ON --tiny_publish=OFF arm64
 ```
 可选参数：
 
@@ -364,6 +365,7 @@ Benchnark 工具提供了丰富的运行时选项，来满足不同的运行时�
 
 #### 在 GPU 上运行模型
 - 设备 OS 为 Android 或 ARM Linux 时，通过使用`--backend=opencl,arm`来实现
+- 设备 OS 为 macOS(arm 芯片，如 m1) 时，通过使用`--backend=opencl,arm`来实现, 只支持精度为fp32，需设置`--gpu_precision=fp32`
 - 设备 OS 为 macOS(x86 芯片) 时，通过使用`--backend=opencl,x86`来实现
 
 说明：

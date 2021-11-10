@@ -21,7 +21,7 @@ include(dependencies.cmake)
 aux_source_directory(converter CONVERTERS)
 aux_source_directory(optimizer OPTIMIZERS)
 set(SRCS neuron_adapter_wrapper.cc utility.cc ${OPTIMIZERS} ${CONVERTERS} engine.cc driver.cc)
-set(DEPS ${NNADAPTER_CORE} ${NNADAPTER_UTILITIES} nnadapter_optimizer_symm2asymm nnadapter_optimizer_nchw2nhwc ${${DEVICE_NAME}_deps})
+set(DEPS ${NNADAPTER_CORE} ${NNADAPTER_UTILITIES} nnadapter_optimizer_symm2asymm nnadapter_optimizer_nchw2nhwc nnadapter_optimizer_fuse_matmul_add_into_fully_connected ${${DEVICE_NAME}_deps})
 
 add_library(${DEVICE_NAME} SHARED ${SRCS})
 target_link_libraries(${DEVICE_NAME} "-Wl,--start-group" ${DEPS} "-Wl,--end-group")

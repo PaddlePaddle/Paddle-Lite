@@ -16,6 +16,7 @@
 #include "driver/amlogic_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/utility.h"
 
 namespace nnadapter {
 namespace amlogic_npu {

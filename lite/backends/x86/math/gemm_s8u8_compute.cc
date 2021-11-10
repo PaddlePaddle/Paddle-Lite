@@ -15,6 +15,7 @@ limitations under the License. */
 #ifdef __AVX2__
 
 #include "lite/backends/x86/math/gemm_s8u8_compute.h"
+#include <cmath>
 
 namespace paddle {
 namespace lite {
