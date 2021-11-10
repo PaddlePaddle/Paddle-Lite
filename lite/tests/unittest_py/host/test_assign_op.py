@@ -16,7 +16,7 @@ import sys
 sys.path.append('..')
 
 from auto_scan_test import AutoScanTest, SkipReasons
-from program_config import TensorConfig, ProgramConfig
+from program_config import TensorConfig, ProgramConfig, OpConfig
 import numpy as np
 from functools import partial
 from typing import Optional, List, Callable, Dict, Any, Set
@@ -34,24 +34,14 @@ class TestAssignOp(AutoScanTest):
         def generate_input(*args, **kwargs):
             return np.random.random(kwargs['in_shape']).astype(np.float32)
 
-        ops_config = [{
-            "op_type": "assign",
-            "op_inputs": {
-                "X": ["input_data"],
-            },
-            "op_outputs": {
-                "Out": ["output_data"]
-            },
-            "op_attrs": {
-            }
-        }]
-
-        ops = self.generate_op_config(ops_config)
-
+        assign_op = OpConfig(
+            type = "assign",
+            inputs = {"X" : ["input_data"]},
+            outputs = {"Out": ["output_data"]},
+            attrs = {})
         program_config = ProgramConfig(
-            ops=ops,
-            weights={
-            },
+            ops=[assign_op],
+            weights={},
             inputs={
                 "input_data":
                 TensorConfig(data_gen=partial(generate_input, *args, **kwargs)),
