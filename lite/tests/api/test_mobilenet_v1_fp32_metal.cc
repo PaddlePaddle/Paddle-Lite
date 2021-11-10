@@ -36,12 +36,23 @@ TEST(MobileNetV1, test_mobilenet_v1_metal) {
   // Use the full api with CxxConfig to generate the optimized model
   lite_api::CxxConfig cxx_config;
   cxx_config.set_model_dir(FLAGS_model_dir);
-  cxx_config.set_metal_dir(FLAGS_metal_dir);
+#if defined(LITE_WITH_X86)
   cxx_config.set_valid_places(
       {lite_api::Place{
            TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)},
+       lite_api::Place{
+           TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray)},
        lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
        lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
+#elif defined(LITE_WITH_ARM)
+  cxx_config.set_valid_places(
+      {lite_api::Place{
+           TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)},
+       lite_api::Place{
+           TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray)},
+       lite_api::Place{TARGET(kARM), PRECISION(kFloat)},
+       lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
+#endif
   predictor = lite_api::CreatePaddlePredictor(cxx_config);
   predictor->SaveOptimizedModel(FLAGS_model_dir,
                                 paddle::lite_api::LiteModelType::kNaiveBuffer);
@@ -51,7 +62,10 @@ TEST(MobileNetV1, test_mobilenet_v1_metal) {
   mobile_config.set_threads(FLAGS_threads);
   mobile_config.set_power_mode(
       static_cast<lite_api::PowerMode>(FLAGS_power_mode));
-  //  mobile_config.set_metal_dir(FLAGS_metal_dir);
+  // Set Metal config;
+  std::string metal_lib_path = "../../../metal/lite.metallib";
+  config.set_metal_lib_path(metal_lib_path);
+  config.set_metal_use_mps(true);
   predictor = paddle::lite_api::CreatePaddlePredictor(mobile_config);
 
   std::string raw_data_dir = FLAGS_data_dir + std::string("/raw_data");

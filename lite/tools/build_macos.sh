@@ -32,6 +32,7 @@ WITH_PROFILE=OFF
 WITH_PRECISION_PROFILE=OFF
 WITH_BENCHMARK=OFF
 WITH_LTO=OFF
+WITH_TESTING=OFF
 BUILD_ARM82_FP16=OFF
 BUILD_ARM82_INT8_SDOT=OFF
 BUILD_NPU=OFF
@@ -162,7 +163,7 @@ function make_armosx {
     cmake $workspace \
             -DWITH_LITE=ON \
             -DLITE_WITH_ARM=ON \
-            -DLITE_WITH_METAL=$WITH_METAL \
+            -DWITH_TESTING=${WITH_TESTING} \
             -DLITE_WITH_OPENCL=${WITH_OPENCL} \
             -DLITE_ON_TINY_PUBLISH=${LITE_ON_TINY_PUBLISH} \
             -DLITE_WITH_OPENMP=OFF \
@@ -181,6 +182,8 @@ function make_armosx {
 
     if [ "${WITH_BENCHMARK}" == "ON" ]; then
         make benchmark_bin -j$NUM_PROC
+    elif [ "${WITH_TESTING}" == "ON" ]; then
+        make lite_compile_deps -j$NUM_PROC
     else
         make publish_inference -j$NUM_PROC
     fi
@@ -234,7 +237,7 @@ function make_x86 {
 
   cmake $root_dir  -DWITH_MKL=${WITH_MKL}  \
             -DWITH_STATIC_MKL=${WITH_STATIC_MKL}  \
-            -DWITH_TESTING=OFF \
+            -DWITH_TESTING=${WITH_TESTING} \
             -DWITH_AVX=${WITH_AVX} \
             -DWITH_MKLDNN=OFF    \
             -DLITE_WITH_X86=ON  \
@@ -268,6 +271,8 @@ function make_x86 {
 
   if [ "${WITH_BENCHMARK}" == "ON" ]; then
     make benchmark_bin -j$NUM_PROC
+  elif [ "${WITH_TESTING}" == "ON" ]; then
+    make lite_compile_deps -j$NUM_PROC
   else
     make publish_inference -j$NUM_PROC
   fi
@@ -378,6 +383,10 @@ function main {
                 ;;
             --with_benchmark=*)
                 WITH_BENCHMARK="${i#*=}"
+                shift
+                ;;
+            --with_testing=*)
+                WITH_TESTING="${i#*=}"
                 shift
                 ;;
             --with_lto=*)
