@@ -75,6 +75,7 @@ size_t conv3x3s2_direct_workspace_size(const operators::ConvParam& param,
   "fmul v22.8h, %[w0].8h, v1.h[4]\n" \
   "fmul v23.8h, %[w0].8h, v1.h[6]\n" \
   "fmul v24.8h, %[w0].8h, v4.h[0]\n" \
+  "str    q24, [%[t]], #16\n"   \  
   "fmul v25.8h, %[w0].8h, v4.h[2]\n" \
   "fmul v26.8h, %[w0].8h, v4.h[4]\n" \
   "fmul v27.8h, %[w0].8h, v4.h[6]\n" \
@@ -106,6 +107,7 @@ size_t conv3x3s2_direct_workspace_size(const operators::ConvParam& param,
   "fmla v22.8h, %[w0].8h, v1.h[4]\n"  \
   "fmla v23.8h, %[w0].8h, v1.h[6]\n"  \
   "fmla v24.8h, %[w0].8h, v4.h[0]\n"  \
+  "str    q24, [%[t]], #16\n"\
   "fmla v25.8h, %[w0].8h, v4.h[2]\n"  \
   "fmla v26.8h, %[w0].8h, v4.h[4]\n"  \
   "fmla v27.8h, %[w0].8h, v4.h[6]\n"  \
@@ -135,6 +137,7 @@ size_t conv3x3s2_direct_workspace_size(const operators::ConvParam& param,
   "fmla v23.8h, %[w1].8h, v1.h[7]\n"   \
   /* r2-1 */                           \
   "fmla v24.8h, %[w1].8h, v4.h[1]\n"   \
+  "str    q24, [%[t]], #16\n"\
   "fmla v25.8h, %[w1].8h, v4.h[3]\n"   \
   "fmla v26.8h, %[w1].8h, v4.h[5]\n"   \
   "fmla v27.8h, %[w1].8h, v4.h[7]\n"   \
@@ -163,6 +166,7 @@ size_t conv3x3s2_direct_workspace_size(const operators::ConvParam& param,
   "ldp q0, q1, [%[r1]], #32\n"         \
   /* r2-2 */                           \
   "fmla v24.8h, %[w2].8h, v4.h[2]\n"   \
+  "str    q24, [%[t]], #16\n"\  
   "fmla v25.8h, %[w2].8h, v4.h[4]\n"   \
   "fmla v26.8h, %[w2].8h, v4.h[6]\n"   \
   "fmla v27.8h, %[w2].8h, v5.h[0]\n"   \
@@ -192,6 +196,7 @@ size_t conv3x3s2_direct_workspace_size(const operators::ConvParam& param,
   "fmla v23.8h, %[w3].8h, v1.h[6]\n"   \
   /* r3-0 */                           \
   "fmla v24.8h, %[w3].8h, v4.h[0]\n"   \
+  "str    q24, [%[t]], #16\n"\
   "fmla v25.8h, %[w3].8h, v4.h[2]\n"   \
   "fmla v26.8h, %[w3].8h, v4.h[4]\n"   \
   "fmla v27.8h, %[w3].8h, v4.h[6]\n"   \
@@ -210,6 +215,7 @@ size_t conv3x3s2_direct_workspace_size(const operators::ConvParam& param,
   "fmla v23.8h, %[w4].8h, v1.h[7]\n"   \
   /* r3-1 */                           \
   "fmla v24.8h, %[w4].8h, v4.h[1]\n"   \
+  "str    q24, [%[t]], #16\n"\
   "fmla v25.8h, %[w4].8h, v4.h[3]\n"   \
   "fmla v26.8h, %[w4].8h, v4.h[5]\n"   \
   "fmla v27.8h, %[w4].8h, v4.h[7]\n"   \
@@ -229,6 +235,7 @@ size_t conv3x3s2_direct_workspace_size(const operators::ConvParam& param,
   /* r3-2 */                           \
   "ldp q0, q1, [%[r4]], #32\n"         \
   "fmla v24.8h, %[w5].8h, v4.h[2]\n"   \
+  "str    q24, [%[t]], #16\n"\
   "fmla v25.8h, %[w5].8h, v4.h[4]\n"   \
   "fmla v26.8h, %[w5].8h, v4.h[6]\n"   \
   "fmla v27.8h, %[w5].8h, v5.h[0]\n"   \
@@ -239,6 +246,7 @@ size_t conv3x3s2_direct_workspace_size(const operators::ConvParam& param,
   "fmla v31.8h, %[w5].8h, v12.h[0]\n"  \
   /* r4-0 */                           \
   "fmla v24.8h, %[w6].8h, v0.h[0]\n"   \
+  "str    q24, [%[t]], #16\n"\
   "fmla v25.8h, %[w6].8h, v0.h[2]\n"   \
   "fmla v26.8h, %[w6].8h, v0.h[4]\n"   \
   "fmla v27.8h, %[w6].8h, v0.h[6]\n"   \
@@ -252,6 +260,7 @@ size_t conv3x3s2_direct_workspace_size(const operators::ConvParam& param,
   "fmla v31.8h, %[w6].8h, v1.h[6]\n"   \
   /* r4-1 */                           \
   "fmla v24.8h, %[w7].8h, v0.h[1]\n"   \
+  "str    q24, [%[t]], #16\n"\
   "fmla v25.8h, %[w7].8h, v0.h[3]\n"   \
   "fmla v26.8h, %[w7].8h, v0.h[5]\n"   \
   "fmla v27.8h, %[w7].8h, v0.h[7]\n"   \
@@ -261,6 +270,7 @@ size_t conv3x3s2_direct_workspace_size(const operators::ConvParam& param,
   "fmla v31.8h, %[w7].8h, v1.h[7]\n"   \
   /* r4-2 */                           \
   "fmla v24.8h, %[w8].8h, v0.h[2]\n"   \
+  "str    q24, [%[t]], #16\n"\
   "fmla v25.8h, %[w8].8h, v0.h[4]\n"   \
   "fmla v26.8h, %[w8].8h, v0.h[6]\n"   \
   "subs   %w[cnt], %w[cnt], #1\n"      \
@@ -278,7 +288,7 @@ size_t conv3x3s2_direct_workspace_size(const operators::ConvParam& param,
   : [cnt] "+r"(cnt), [r0] "+r"(r0), [r1] "+r"(r1), \
     [r2] "+r"(r2), [r3] "+r"(r3), [r4] "+r"(r4),   \
     [ptr_out0] "+r"(ptr_out0),                     \
-    [ptr_out1] "+r"(ptr_out1)                      \
+    [ptr_out1] "+r"(ptr_out1),[t] "+r"(t)                    \
   : [w0] "w"(w0), [w1] "w"(w1), [w2] "w"(w2),      \
     [w3] "w"(w3), [w4] "w"(w4), [w5] "w"(w5),      \
     [w6] "w"(w6), [w7] "w"(w7), [w8] "w"(w8)       \
@@ -589,6 +599,11 @@ void conv_3x3s2_direct_fp16(const float16_t* i_data,
                             const float16_t* bias,
                             const operators::ConvParam& param,
                             ARMContext* ctx) {
+  /*std :: cout << " real input " << std :: endl;
+  for (int t = 0; t < 18; t++) {
+    std :: cout << (float)i_data[t] << std :: endl;
+  }   */  
+
   if (ic == 3 && (oc % 4 == 0)) {
     conv_3x3s2_direct_fp16_c3(
         i_data, o_data, bs, oc, oh, ow, ic, ih, win, weights, bias, param, ctx);
@@ -629,6 +644,7 @@ void conv_3x3s2_direct_fp16(const float16_t* i_data,
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3 hardswish:4
   float offset = 0.f;
   float threshold = 6.f;
+  int first = 0;
 
   if (act_param.has_active) {
     act_acquire(act_type, flag_act, alpha, offset, threshold, act_param);
@@ -651,7 +667,7 @@ void conv_3x3s2_direct_fp16(const float16_t* i_data,
       const float16_t* cblock_inr2 = cblock_inr1 + in_len;
       const float16_t* cblock_inr3 = cblock_inr2 + in_len;
       const float16_t* cblock_inr4 = cblock_inr3 + in_len;
-
+      std :: cout << " hahahahaha " << std :: endl;
 #pragma omp parallel for num_threads(threads)
       for (int c = 0; c < c_round_down; c += OUT_C_BLOCK) {
 #ifdef ARM_WITH_OMP
@@ -673,6 +689,7 @@ void conv_3x3s2_direct_fp16(const float16_t* i_data,
         }
 
         for (int hk = 0; hk < h_kernel; hk += OUT_H_BLOCK) {
+          //std :: cout << " !!! " << std :: endl;          
           const float16_t* wc0 = weight_c;
 
           const float16_t* inr0 = block_inr0;
@@ -683,6 +700,9 @@ void conv_3x3s2_direct_fp16(const float16_t* i_data,
 
           float16_t* pre_out0 = pre_out + hk * out_row_stride;
           float16_t* pre_out1 = pre_out0 + out_row_stride;
+          float16_t tmp[10000];
+          float16_t* t = tmp;
+
 #ifdef __aarch64__
           // first
           if (1) {
@@ -699,6 +719,7 @@ void conv_3x3s2_direct_fp16(const float16_t* i_data,
           }
           for (int i = 0; i < ic - 1; ++i) {
             COMPUT_INIT
+            t = tmp + (i + 1) * 72;
 
             int cnt = w_loop;
             asm volatile(INIT COMPUTE ASM_PARAM);
@@ -711,6 +732,14 @@ void conv_3x3s2_direct_fp16(const float16_t* i_data,
           }
 #else   // not __aarch64__
 #endif  // __aarch64__
+          if (first)
+          for (int a = 0; a < 576; a++) {
+            if (a%8==0)
+              std :: cout <<  a / 8 << " aaaaaaa " << (float)tmp[a] << std :: endl;
+          }
+          first = 0;
+          //std :: cout << " ??? " << std :: endl;
+          //return;
           block_inr0 = block_inr4;
           block_inr1 = block_inr0 + in_len;
           block_inr2 = block_inr1 + in_len;
