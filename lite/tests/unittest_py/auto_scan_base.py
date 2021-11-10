@@ -61,8 +61,6 @@ class AutoScanBaseTest(unittest.TestCase):
         super(AutoScanBaseTest, self).__init__(*args, **kwargs)
         self.skip_cases = []
         abs_dir = os.path.abspath(os.path.dirname(__file__))
-        self.cache_dir = os.path.join(abs_dir,
-                                      str(self.__module__) + '_cache_dir')
 
     @abc.abstractmethod
     def sample_program_configs(self):
@@ -159,7 +157,6 @@ class AutoScanBaseTest(unittest.TestCase):
                                 ir_optim: Optional[bool]=None):
         config = paddle_infer.Config()
         config.switch_ir_debug(True)
-        config.set_optim_cache_dir(self.cache_dir)
         config.disable_glog_info()
         if ir_optim is not None:
             config.switch_ir_optim(ir_optim)
@@ -214,12 +211,6 @@ class AutoScanBaseTest(unittest.TestCase):
                         else:
                             raise NotImplementedError
                         break
-
-                if os.path.exists(self.cache_dir):
-                    shutil.rmtree(self.cache_dir)
-                if not os.path.exists(self.cache_dir):
-                    os.mkdir(self.cache_dir)
-
                 try:
                     results.append(self.run_lite_config(model, params, feed_data, pred_config))
 
