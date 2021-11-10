@@ -113,11 +113,12 @@ function test_fp16_model {
   ###  models names
   rm -rf fp16_models &&  cp -rf ./inference_model ./fp16_models
   models_names=$(ls fp16_models)
+  echo "models_names: ${models_names}"
   ## step 2. convert models
   rm -rf optimized_model_fp16 && mkdir optimized_model_fp16
   for name in $models_names
   do
-    ./build.opt/lite/api/opt --model_dir=./models/$name --valid_targets=arm --optimize_out=./optimized_model_fp16/$name --enable_fp16=1
+    ./build.opt/lite/api/opt --model_dir=./fp16_models/$name --valid_targets=arm --optimize_out=./optimized_model_fp16/$name --enable_fp16=1
   done
 
   # step 3. compiling Android ARM lib
