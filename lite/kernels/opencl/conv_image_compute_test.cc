@@ -702,6 +702,11 @@ const int stride = 2;
 
               default_convertor.NCHWToImage(
                   input_v.data(), x_image_v.data(), input_dim);
+              MUTABLE_DATA_GPU(&input,
+                               input_image_width,
+                               input_image_height,
+                               x_image_v.data());
+
               SHADOW_LOG << "输入: ----  ";
               for (int i = 0; i < input_v.size(); i++) {
                 SHADOW_LOG << "(" << i << ")" << input_v[i];
