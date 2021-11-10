@@ -1691,7 +1691,7 @@ void gemm_prepack_8x16(bool is_transB,
             "beq 7f                             \n"
             "cmp    %w[flag_act],   #2          \n"
             "beq 5f                             \n"
-            "cmp    %w[flag_act],   #2          \n"
+            "cmp    %w[flag_act],   #3          \n"
             "beq 8f                             \n"
             // hardwsish
             "fadd  v0.8h, v8.8h,  %[voffset].8h\n"
