@@ -79,6 +79,33 @@ static hal::Operand* AddDequantOperation(hal::Model* model,
   return input_operand;
 }
 
+float GetDequantScale(hal::Model* model, hal::Operation* dequant) {
+  NNADAPTER_CHECK(dequant);
+  NNADAPTER_CHECK_EQ(dequant->type, NNADAPTER_DEQUANTIZE);
+  auto pre_operation = GetOperandProducer(model, dequant->input_operands[0]);
+  NNADAPTER_CHECK(pre_operation);
+
+  auto pre_op_type = pre_operation->type;
+  switch (pre_op_type) {
+    case NNADAPTER_CONV_2D:
+    case NNADAPTER_FULLY_CONNECTED: {
+      auto input_operand = pre_operation->input_operands[0];
+      auto weight_operand = pre_operation->input_operands[1];
+      NNADAPTER_CHECK_EQ(input_operand->type.precision,
+                         NNADAPTER_QUANT_INT8_SYMM_PER_LAYER);
+      NNADAPTER_CHECK_EQ(weight_operand->type.precision,
+                         NNADAPTER_QUANT_INT8_SYMM_PER_LAYER);
+      return input_operand->type.symm_per_layer_params.scale *
+             weight_operand->type.symm_per_layer_params.scale;
+    } break;
+    default:
+      NNADAPTER_LOG(FATAL) << "Unsupported quanted operation: "
+                           << OperationTypeToString(pre_op_type);
+      break;
+  }
+  return 0.f;
+}
+
 /**
  * before:
  *   op(not_quant) -> in -> conv(quant)
@@ -223,7 +250,8 @@ static void FixQuantFullyConnected(hal::Model* model) {
   }
 }
 
-// dequant's input's precision should be NNADAPTER_QUANT_INT32_SYMM_PER_LAYER
+// dequant's input's precision should be NNADAPTER_QUANT_INT32_SYMM_PER_LAYER.
+// dequant's input's scale should be calculated.
 static void FixDequant(hal::Model* model) {
   std::vector<hal::Operation*> operations =
       SortOperationsInTopologicalOrder(model);
@@ -231,6 +259,8 @@ static void FixDequant(hal::Model* model) {
     if (operation->type == NNADAPTER_DEQUANTIZE) {
       operation->input_operands[0]->type.precision =
           NNADAPTER_QUANT_INT32_SYMM_PER_LAYER;
+      operation->input_operands[0]->type.symm_per_layer_params.scale =
+          GetDequantScale(model, operation);
     }
   }
 }
