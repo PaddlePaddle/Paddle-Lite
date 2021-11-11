@@ -59,7 +59,7 @@ adb shell "cd /data/local/tmp/benchmark;
     --input_shape=1,3,224,224 \
     --warmup=10 \
     --repeats=20 \
-    --backend=arm"
+    --backend=opencl"
 ```
 
 部分输出日志如下：
