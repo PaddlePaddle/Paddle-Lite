@@ -34,7 +34,11 @@ DEFINE_int32(power_mode,
 DEFINE_int32(threads, 1, "threads num");
 DEFINE_int32(warmup, 0, "warmup times");
 DEFINE_int32(repeats, 1, "repeats times");
+#ifdef LITE_WITH_ARM
+DEFINE_bool(basic_test, true, "do all tests");
+#else
 DEFINE_bool(basic_test, false, "do all tests");
+#endif
 DEFINE_bool(check_result, true, "check the result");
 
 DEFINE_int32(batch, 1, "batch size");
@@ -498,7 +502,7 @@ TEST(TestConv3x3DWInt8, test_conv3x3_depthwise) {
                                  {1, 1},
                                  flag_bias,
                                  flag_act,
-                                 {FLAGS_threads},
+                                 {4},
                                  {FLAGS_power_mode},
                                  FLAGS_clipped_coef,
                                  FLAGS_leakey_relu_alpha);
@@ -533,7 +537,7 @@ TEST(TestConv5x5DWInt8, test_conv5x5_depthwise) {
                                  {1, 1},
                                  flag_bias,
                                  flag_act,
-                                 {1, 4},
+                                 {4},
                                  {FLAGS_power_mode},
                                  FLAGS_clipped_coef,
                                  FLAGS_leakey_relu_alpha);
