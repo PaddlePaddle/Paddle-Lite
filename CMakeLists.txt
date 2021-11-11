@@ -86,7 +86,6 @@ lite_option(LITE_THREAD_POOL                   "Enable thread pool in lite"     
 lite_option(LITE_BUILD_EXTRA                   "Enable extra algorithm support in Lite, both kernels and operators"   OFF)
 lite_option(LITE_BUILD_TAILOR                  "Enable tailoring library according to model"                          OFF)
 # cv build options
-lite_option(LITE_USE_PRECOMPILED_OPENCV        "Use precompiled opencv, mainly for pre/post processing in benchmark"  OFF)
 lite_option(LITE_WITH_CV                       "Enable build cv image in lite"                                        OFF)
 lite_option(LITE_WITH_STATIC_CUDA              "Statically link cuda libraries."                                      OFF)
 lite_option(CUDA_WITH_FP16                     "Compile with cuda half support"                                       OFF)

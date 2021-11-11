@@ -210,7 +210,7 @@ if (LITE_WITH_PYTHON)
     lite_cc_library(lite_pybind SHARED SRCS python/pybind/pybind.cc tools/opt_base.cc DEPS ${full_lib_DEPS} paddle_api_full ${external_libs_DEPS}  pybind python)
 endif()
 
-if(ARM_TARGET_OS STREQUAL "android" AND LITE_USE_PRECOMPILED_OPENCV)
+if(ARM_TARGET_OS STREQUAL "android")
     if (${ARM_TARGET_ARCH_ABI} STREQUAL "armv8")
         set(ARM_ABI "arm64-v8a")
     elseif(${ARM_TARGET_ARCH_ABI} STREQUAL "armv7")
@@ -236,7 +236,6 @@ if(ARM_TARGET_OS STREQUAL "android" AND LITE_USE_PRECOMPILED_OPENCV)
                     ${OPENCV_PATH}/3rdparty/libs/libcpufeatures.a)
     set(OPENCV_URL "https://paddle-inference-dist.bj.bcebos.com")
     lite_download_and_uncompress(${THIRD_PARTY_PATH} ${OPENCV_URL} "${OPENCV_VERSION}.tar.gz")
-    execute_process(COMMAND rm -f "${THIRD_PARTY_PATH}/*.tar.gz")
 
     # Validation Dataset
     set(VALIDATION_DATASET_DIR "${THIRD_PARTY_PATH}/validation_dataset")
@@ -247,7 +246,6 @@ if(ARM_TARGET_OS STREQUAL "android" AND LITE_USE_PRECOMPILED_OPENCV)
     set(ILSVRC2012_1K_CLS_LABELS "ILSVRC2012_1000_cls_label_list")
     lite_download_and_uncompress(${VALIDATION_DATASET_DIR} ${VALIDATION_DATASET_URL} "${ILSVRC2012_1K_CLS_IMGS}.tar.gz")
     lite_download_and_uncompress(${VALIDATION_DATASET_DIR} ${VALIDATION_DATASET_URL} "${ILSVRC2012_1K_CLS_LABELS}.tar.gz")
-    execute_process(COMMAND rm -f "${VALIDATION_DATASET_DIR}/*.tar.gz")
 endif()
 
 if(NOT IOS AND NOT LITE_ON_TINY_PUBLISH)
@@ -257,13 +255,13 @@ if(NOT IOS AND NOT LITE_ON_TINY_PUBLISH)
 
     FILE(GLOB_RECURSE BENCHMARK_SRC tools/benchmark/*.cc tools/opt_base.cc)
     FILE(GLOB_RECURSE BENCHMARK_PRECISION_SRC tools/benchmark/precision_evaluation/*.cc)
-    if(NOT(ARM_TARGET_OS STREQUAL "android" AND LITE_USE_PRECOMPILED_OPENCV))
+    if(NOT(ARM_TARGET_OS STREQUAL "android"))
         LIST(REMOVE_ITEM BENCHMARK_SRC ${BENCHMARK_PRECISION_SRC})
     endif()
     lite_cc_binary(benchmark_bin SRCS ${BENCHMARK_SRC}
         DEPS gflags
         CV_DEPS paddle_cv_arm)
-    if(ARM_TARGET_OS STREQUAL "android" AND LITE_USE_PRECOMPILED_OPENCV)
+    if(ARM_TARGET_OS STREQUAL "android")
         # Validation Dataset
         add_dependencies(benchmark_bin extern_lite_download_${ILSVRC2012_1K_CLS_IMGS}_tar_gz
                                        extern_lite_download_${ILSVRC2012_1K_CLS_LABELS}_tar_gz)

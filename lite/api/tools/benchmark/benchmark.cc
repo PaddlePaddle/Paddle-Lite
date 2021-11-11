@@ -23,7 +23,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#ifdef LITE_USE_PRECOMPILED_OPENCV
+#ifdef __ANDROID__
 #include "lite/api/tools/benchmark/precision_evaluation/imagenet_image_classification/prepost_process.h"
 #endif
 #include "lite/core/version.h"
@@ -80,7 +80,7 @@ void RunImpl(std::shared_ptr<PaddlePredictor> predictor, PerfData* perf_data) {
   perf_data->set_run_time(timer.Stop());
 }
 
-#ifdef LITE_USE_PRECOMPILED_OPENCV
+#ifdef __ANDROID__
 void RunImpl(std::shared_ptr<PaddlePredictor> predictor,
              PerfData* perf_data,
              ImagenetClassification* task,
@@ -110,7 +110,7 @@ void Run(const std::string& model_file,
   lite::Timer timer;
   PerfData perf_data;
   perf_data.init(FLAGS_repeats);
-#ifdef LITE_USE_PRECOMPILED_OPENCV
+#ifdef __ANDROID__
   std::unique_ptr<ImagenetClassification> task(new ImagenetClassification());
 #endif
   std::map<std::string, std::string> config;
@@ -148,7 +148,7 @@ void Run(const std::string& model_file,
       }
     }
   } else {
-#ifdef LITE_USE_PRECOMPILED_OPENCV
+#ifdef __ANDROID__
     config = LoadConfigTxt(FLAGS_config_path);
     PrintConfig(config);
     word_labels = lite::ReadLines(config.at("label_path"));
@@ -168,7 +168,7 @@ void Run(const std::string& model_file,
 
   // Warmup
   for (int i = 0; i < FLAGS_warmup; ++i) {
-#ifdef LITE_USE_PRECOMPILED_OPENCV
+#ifdef __ANDROID__
     RunImpl(predictor,
             &perf_data,
             task.get(),
@@ -185,7 +185,7 @@ void Run(const std::string& model_file,
 
   // Run
   for (int i = 0; i < FLAGS_repeats; ++i) {
-#ifdef LITE_USE_PRECOMPILED_OPENCV
+#ifdef __ANDROID__
     RunImpl(predictor,
             &perf_data,
             task.get(),
@@ -275,7 +275,7 @@ void Run(const std::string& model_file,
     ss << "opencl_tuned_file: " << FLAGS_opencl_tuned_file << std::endl;
   }
 
-#ifdef LITE_USE_PRECOMPILED_OPENCV
+#ifdef __ANDROID__
   if (!FLAGS_config_path.empty()) {
     ss << "\n======= Accurancy Info =======\n";
     ss << "config: " << FLAGS_config_path << std::endl;
