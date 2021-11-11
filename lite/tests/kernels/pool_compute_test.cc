@@ -393,6 +393,13 @@ TEST(Pool, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 1e-2;
+  TestPoolGlobal(place, abs_error);
+  TestPoolAlgorithm(place, abs_error);
+  TestPoolStrides(place, abs_error);
+  TestPoolCeilMode(place, abs_error);
+  return;
 #else
   return;
 #endif
