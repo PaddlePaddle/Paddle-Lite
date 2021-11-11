@@ -466,7 +466,7 @@ function (lite_deps TARGET)
 
   if (LITE_WITH_NNADAPTER)
     foreach(var ${lite_deps_NNADAPTER_DEPS})
-	    set(deps ${deps} ${var})
+      set(deps ${deps} ${var})
     endforeach(var)
   endif()
 

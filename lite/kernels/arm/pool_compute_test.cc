@@ -21,6 +21,7 @@
 
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
+#include "lite/core/parallel_defines.h"
 #include "lite/kernels/arm/pool_compute.h"
 
 namespace paddle {
@@ -120,8 +121,8 @@ void pool_compute_ref(const operators::PoolParam& param) {
       for (int n = 0; n < num; ++n) {
         float* dout_batch = dout + n * chout * size_channel_out;
         const float* din_batch = din + n * chin * size_channel_in;
-#pragma omp parallel for
-        for (int c = 0; c < chout; ++c) {
+
+        LITE_PARALLEL_BEGIN(c, tid, chout) {
           const float* din_ch = din_batch + c * size_channel_in;  // in address
           float tmp1 = din_ch[0];
           for (int i = 0; i < size_channel_in; ++i) {
@@ -130,6 +131,7 @@ void pool_compute_ref(const operators::PoolParam& param) {
           }
           dout_batch[c] = tmp1;
         }
+        LITE_PARALLEL_END()
       }
     } else if (pooling_type == "avg") {
       // Pooling_average_include_padding
@@ -137,8 +139,7 @@ void pool_compute_ref(const operators::PoolParam& param) {
       for (int n = 0; n < num; ++n) {
         float* dout_batch = dout + n * chout * size_channel_out;
         const float* din_batch = din + n * chin * size_channel_in;
-#pragma omp parallel for
-        for (int c = 0; c < chout; ++c) {
+        LITE_PARALLEL_BEGIN(c, tid, chout) {
           const float* din_ch = din_batch + c * size_channel_in;  // in address
           float sum = 0.f;
           for (int i = 0; i < size_channel_in; ++i) {
@@ -146,14 +147,14 @@ void pool_compute_ref(const operators::PoolParam& param) {
           }
           dout_batch[c] = sum / size_channel_in;
         }
+        LITE_PARALLEL_END()
       }
     } else {
       LOG(FATAL) << "unsupported pooling type: " << pooling_type;
     }
   } else {
     for (int ind_n = 0; ind_n < num; ++ind_n) {
-#pragma omp parallel for
-      for (int ind_c = 0; ind_c < chin; ++ind_c) {
+      LITE_PARALLEL_BEGIN(ind_c, tid, chin) {
         for (int ind_h = 0; ind_h < hout; ++ind_h) {
           int sh = ind_h * stride_h;
           int eh = sh + kernel_h;
@@ -217,6 +218,7 @@ void pool_compute_ref(const operators::PoolParam& param) {
           }
         }
       }
+      LITE_PARALLEL_END()
     }
   }
 }
