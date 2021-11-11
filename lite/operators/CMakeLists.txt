@@ -154,6 +154,10 @@ add_operator(argsort_op extra SRCS argsort_op.cc)
 add_operator(flip_op extra SRCS flip_op.cc)
 add_operator(index_select_op extra SRCS index_select_op.cc)
 
+if(LITE_WITH_X86)
+    add_operator(gaussian_random_op extra SRCS gaussian_random_op.cc)
+endif()
+
 # for OCR specific
 add_operator(while_op extra SRCS while_op.cc)
 add_operator(lookup_table_op extra SRCS lookup_table_op.cc)
