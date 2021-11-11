@@ -54,7 +54,7 @@ TEST(MobileNetV1, test_mobilenet_v1_int8_per_layer_nnadapter) {
   out_accuracy_threshold = 0.79f;
 #elif defined(NNADAPTER_WITH_IMAGINATION_NNA)
   nnadapter_device_names.emplace_back("imagination_nna");
-  out_accuracy_threshold = 0.79f;
+  out_accuracy_threshold = 0.78f;
 #elif defined(NNADAPTER_WITH_AMLOGIC_NPU)
   nnadapter_device_names.emplace_back("amlogic_npu");
   out_accuracy_threshold = 0.78f;

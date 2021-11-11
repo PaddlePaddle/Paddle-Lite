@@ -30,7 +30,7 @@ void CalibComputeFp32ToInt8<DLType>::Run() {
   std::vector<float> scale = {param.scale};
   const auto* din = param.input->template data<float>();
   auto* dout = param.output->template mutable_data<signed char>();
-  lite::x86::x86::fp32_to_int8(
+  lite::x86::math::fp32_to_int8(
       din, dout, scale.data(), 1, 1, param.input->numel());
 }
 
@@ -60,7 +60,7 @@ void CalibComputeInt8ToFp32<DLType>::Run() {
   const auto* din = param.input->template data<signed char>();
   std::vector<float> scale = {param.scale};
   auto* dout = param.output->template mutable_data<float>();
-  lite::x86::x86::int8_to_fp32(
+  lite::x86::math::int8_to_fp32(
       din, dout, scale.data(), 1, 1, param.input->numel());
 }
 

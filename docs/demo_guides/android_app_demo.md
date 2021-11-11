@@ -4,7 +4,7 @@
 
 我们提供的 Paddle Lite 示例工程[ Paddle Lite-Demo ](https://github.com/PaddlePaddle/Paddle-Lite-Demo)，其中包含[ Android ](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/master/PaddleLite-android-demo)、[ iOS ](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/master/PaddleLite-ios-demo)和[ Armlinux ](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/master/PaddleLite-armlinux-demo)平台的示例工程。
 
-Android demo涵盖涵盖[人脸识别](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/master/PaddleLite-android-demo/face_detection_demo)、[人像分割](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/master/PaddleLite-android-demo/human_segmentation_demo)、[图像分类](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/master/PaddleLite-android-demo/image_classification_demo)、[目标检测](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/master/PaddleLite-android-demo/object_detection_demo)4个应用场景。
+Android demo涵盖涵盖[人脸识别](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/master/PaddleLite-android-demo/face_detection_demo)、[人像分割](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/master/PaddleLite-android-demo/human_segmentation_demo)、[图像分类](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/master/PaddleLite-android-demo/image_classification_demo)、[目标检测](https://github.com/PaddlePaddle/Paddle-Lite-Demo/tree/master/PaddleLite-android-demo/object_detection_demo) 4 个应用场景。
 
 ### 1. 人脸识别
 
@@ -53,7 +53,7 @@ Android demo涵盖涵盖[人脸识别](https://github.com/PaddlePaddle/Paddle-Li
 
 **需要的环境**： Android Studio、Android 手机（开启 USB 调试模式）、下载到本地的[ Paddle Lite Demo ](https://github.com/PaddlePaddle/Paddle-Lite-Demo)工程
 
-**预先要求**：如果您的 Android Studio 尚未配置 NDK ，请根据 Android Studio 用户指南中的[安装及配置 NDK 和 CMake ](https://developer.android.com/studio/projects/install-ndk)内容，预先配置好 NDK 。您可以选择最新的 NDK 版本，或者与[ Android 编译环境配置](../source_compile/compile_android.md)中的NDK版本保持一致。
+**预先要求**：如果您的 Android Studio 尚未配置 NDK ，请根据 Android Studio 用户指南中的[安装及配置 NDK 和 CMake ](https://developer.android.com/studio/projects/install-ndk)内容，预先配置好 NDK 。您可以选择最新的 NDK 版本，或者与[ Linux x86 环境下编译适用于 Android 的库](../source_compile/linux_x86_compile_android)、[macOS 环境下编译适用于 Android 的库](../source_compile/macos_compile_android) 两个章节中的 NDK 版本保持一致。
 
 **部署步骤**：
 

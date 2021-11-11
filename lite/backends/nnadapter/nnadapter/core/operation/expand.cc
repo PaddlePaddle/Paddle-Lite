@@ -31,6 +31,21 @@ int PrepareExpand(hal::Operation* operation) {
   auto& output_type = output_operand->type;
   CopyOperandTypeWithQuantParams(&output_type, input_type);
 
+  auto& shape_type = shape_operand->type;
+  if (shape_type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {
+    auto shape_operand_dimension =
+        *reinterpret_cast<NNAdapterOperandDimensionType*>(
+            shape_operand->buffer);
+    shape_count = shape_operand_dimension.count;
+    shape_data = shape_operand_dimension.data;
+  } else if (!IsConstantOperand(shape_operand)) {
+    NNADAPTER_LOG(FATAL) << "Unsupported shape lifetime: "
+                         << static_cast<int32_t>(shape_type.lifetime);
+    return NNADAPTER_INVALID_PARAMETER;
+  }
+  for (uint32_t i = 0; i < shape_count; i++) {
+    NNADAPTER_VLOG(5) << "shape[" << i << "] = " << shape_data[i];
+  }
   output_type.dimensions.count = shape_count;
 
   auto infer_output_shape = [&](int32_t* input_dimensions_data,

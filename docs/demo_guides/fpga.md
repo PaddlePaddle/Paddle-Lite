@@ -76,7 +76,7 @@ CMAKE 编译选项：
 
 - 设置 `LITE_WITH_FPGA=ON` 和 `LITE_WITH_ARM=ON`
 
-其他编译选项与 ARM 编译相同，可以参考[Paddle Lite 在 Docker 下的 ARM 编译](../source_compile/docker_enviroment)。
+其他编译选项与 ARM 编译相同，可以参考[Paddle Lite 在 Docker 下的 ARM 编译](../source_compile/docker_env)。
 Paddle Lite 提供 FPGA 编译脚本，位于 `lite/tools/build_FPGA.sh`，在 Paddle Lite 根目录执行该脚本即可编译
 
 示例如下：

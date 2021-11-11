@@ -75,7 +75,7 @@ MobileConfig.set_model_from_file(x: str)
 MobileConfig.set_model_dir(x: str)
 ```
 
-**注意**：Lite模型格式在 release/v2.3.0 之后修改，本接口为加载老格式模型的接口，将在 release/v3.0.0 废弃。建议替换为 `set_model_from_file` 接口。
+**注意**：Lite 模型格式在 release/v2.3.0 之后修改，本接口为加载老格式模型的接口，将在 release/v3.0.0 废弃。建议替换为 `set_model_from_file` 接口。
 
 设置模型文件夹路径，当需要从磁盘加载模型时使用。
 
@@ -155,7 +155,7 @@ MobileConfig.threads()
 class paddle_lite.lite.PaddlePredictor
 ```
 
-`PaddlePredictor` 是 Paddle Lite 的预测器，由 `create\_paddle\_predictor` 根据 `MobileConfig` 进行创建。用户可以根据 PaddlePredictor 提供的接口设置输入数据、执行模型预测、获取输出等。
+`PaddlePredictor` 是 Paddle Lite 的预测器，由 `create_paddle_predictor` 根据 `MobileConfig` 进行创建。用户可以根据 PaddlePredictor 提供的接口设置输入数据、执行模型预测、获取输出等。
 
 示例：
 
@@ -261,7 +261,7 @@ enum paddle_lite.lite.TargetType
 ```python
 enum paddle_lite.lite.PrecisionType
 ```
-`PrecisionType` 为模型中Tensor的数据精度，默认值为 FP32 (float32)。
+`PrecisionType` 为模型中 Tensor 的数据精度，默认值为 FP32 (float32)。
 
 枚举型变量 `PrecisionType` 的取值包括 `{FP32, INT8, INT32, INT64}` 等。
 

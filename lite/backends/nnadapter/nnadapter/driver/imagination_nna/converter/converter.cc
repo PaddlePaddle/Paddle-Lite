@@ -236,7 +236,8 @@ imgdnn_tensor Converter::ConvertOperand(hal::Operand* operand,
     return input_tensor;
   } else {
     NNADAPTER_LOG(FATAL) << "Only constant and model input operands can be "
-                            "converted to imgdnn_tensor!";
+                            "converted to imgdnn_tensor!"
+                         << OperandToString(operand);
   }
   return nullptr;
 }

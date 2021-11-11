@@ -104,7 +104,6 @@ add_subdirectory(bm)
 add_subdirectory(rknpu)
 add_subdirectory(metal)
 add_subdirectory(huawei_ascend_npu)
-add_subdirectory(imagination_nna)
 add_subdirectory(intel_fpga)
 add_subdirectory(nnadapter)
 

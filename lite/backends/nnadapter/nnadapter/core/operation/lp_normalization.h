@@ -22,7 +22,7 @@ namespace operation {
   auto& output_operands = operation->output_operands;                  \
   auto input_count = input_operands.size();                            \
   auto output_count = output_operands.size();                          \
-  NNADAPTER_CHECK_EQ(input_count, 5);                                  \
+  NNADAPTER_CHECK_EQ(input_count, 4);                                  \
   NNADAPTER_CHECK_EQ(output_count, 1);                                 \
   /* Input */                                                          \
   auto input_operand = input_operands[0];                              \
@@ -40,12 +40,11 @@ namespace operation {
   /* P */                                                              \
   auto p = *reinterpret_cast<int32_t*>(input_operands[2]->buffer);     \
   NNADAPTER_VLOG(5) << "p: " << p;                                     \
+  NNADAPTER_CHECK(p == 1 || p == 2)                                    \
+      << "lp normalization only support p = 1 or p = 2.";              \
   /* Epsilon */                                                        \
   auto epsilon = *reinterpret_cast<float*>(input_operands[3]->buffer); \
-  NNADAPTER_VLOG(5) << "epsilon: " << epsilon;                         \
-  /* Keepdim */                                                        \
-  auto keepdim = *reinterpret_cast<bool*>(input_operands[4]->buffer);  \
-  NNADAPTER_VLOG(5) << "keepdim: " << keepdim;
+  NNADAPTER_VLOG(5) << "epsilon: " << epsilon;
 
 }  // namespace operation
 }  // namespace nnadapter

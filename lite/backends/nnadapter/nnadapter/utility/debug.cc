@@ -340,6 +340,14 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         input_args = {"input", "axis"};
         output_args = {"output"};
         break;
+      case NNADAPTER_QUANTIZE:
+        input_args = {"input", "axis", "scale", "zero_point"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_DEQUANTIZE:
+        input_args = {"input"};
+        output_args = {"output"};
+        break;
       case NNADAPTER_CUM_SUM:
         input_args = {"input", "axis", "exclusive", "reverse"};
         output_args = {"output"};
@@ -564,6 +572,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(CONV_2D_TRANSPOSE);
     NNADAPTER_TYPE_TO_STRING(CUM_SUM);
     NNADAPTER_TYPE_TO_STRING(DEFORMABLE_CONV_2D);
+    NNADAPTER_TYPE_TO_STRING(DEQUANTIZE);
     NNADAPTER_TYPE_TO_STRING(DIV);
     NNADAPTER_TYPE_TO_STRING(EQUAL);
     NNADAPTER_TYPE_TO_STRING(EXP);
@@ -593,6 +602,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(PAD);
     NNADAPTER_TYPE_TO_STRING(POW);
     NNADAPTER_TYPE_TO_STRING(PRELU);
+    NNADAPTER_TYPE_TO_STRING(QUANTIZE);
     NNADAPTER_TYPE_TO_STRING(RELU);
     NNADAPTER_TYPE_TO_STRING(RELU6);
     NNADAPTER_TYPE_TO_STRING(RANGE);
