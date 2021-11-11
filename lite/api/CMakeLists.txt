@@ -210,44 +210,6 @@ if (LITE_WITH_PYTHON)
     lite_cc_library(lite_pybind SHARED SRCS python/pybind/pybind.cc tools/opt_base.cc DEPS ${full_lib_DEPS} paddle_api_full ${external_libs_DEPS}  pybind python)
 endif()
 
-if(ARM_TARGET_OS STREQUAL "android")
-    if (${ARM_TARGET_ARCH_ABI} STREQUAL "armv8")
-        set(ARM_ABI "arm64-v8a")
-    elseif(${ARM_TARGET_ARCH_ABI} STREQUAL "armv7")
-        set(ARM_ABI "armeabi-v7a")
-    endif()
-
-    # OpenCV
-    set(OPENCV_VERSION "opencv4.1.0")
-    set(OPENCV_PATH "${THIRD_PARTY_PATH}/${OPENCV_VERSION}/${ARM_ABI}")
-    message(STATUS "OPENCV_PATH: ${OPENCV_PATH}")
-    set(OPENCV_INCLUDE_DIRS "${OPENCV_PATH}/include/")
-    set(OPENCV_LIBS ${OPENCV_PATH}/libs/libopencv_imgcodecs.a
-                    ${OPENCV_PATH}/libs/libopencv_imgproc.a
-                    ${OPENCV_PATH}/libs/libopencv_core.a
-                    ${OPENCV_PATH}/3rdparty/libs/libtegra_hal.a
-                    ${OPENCV_PATH}/3rdparty/libs/liblibjpeg-turbo.a
-                    ${OPENCV_PATH}/3rdparty/libs/liblibwebp.a
-                    ${OPENCV_PATH}/3rdparty/libs/liblibpng.a
-                    ${OPENCV_PATH}/3rdparty/libs/liblibjasper.a
-                    ${OPENCV_PATH}/3rdparty/libs/liblibtiff.a
-                    ${OPENCV_PATH}/3rdparty/libs/libIlmImf.a
-                    ${OPENCV_PATH}/3rdparty/libs/libtbb.a
-                    ${OPENCV_PATH}/3rdparty/libs/libcpufeatures.a)
-    set(OPENCV_URL "https://paddle-inference-dist.bj.bcebos.com")
-    lite_download_and_uncompress(${THIRD_PARTY_PATH} ${OPENCV_URL} "${OPENCV_VERSION}.tar.gz")
-
-    # Validation Dataset
-    set(VALIDATION_DATASET_DIR "${THIRD_PARTY_PATH}/validation_dataset")
-    set(VALIDATION_DATASET_URL "https://paddle-inference-dist.bj.bcebos.com/AI-Rank/validation_dataset")
-
-    # ILSVRC 2012. We have extracted a minival subset which only contains 1000 clases.
-    set(ILSVRC2012_1K_CLS_IMGS "ILSVRC2012_1000_cls")
-    set(ILSVRC2012_1K_CLS_LABELS "ILSVRC2012_1000_cls_label_list")
-    lite_download_and_uncompress(${VALIDATION_DATASET_DIR} ${VALIDATION_DATASET_URL} "${ILSVRC2012_1K_CLS_IMGS}.tar.gz")
-    lite_download_and_uncompress(${VALIDATION_DATASET_DIR} ${VALIDATION_DATASET_URL} "${ILSVRC2012_1K_CLS_LABELS}.tar.gz")
-endif()
-
 if(NOT IOS AND NOT LITE_ON_TINY_PUBLISH)
     lite_cc_binary(test_model_bin SRCS tools/model_test.cc
         DEPS gflags
