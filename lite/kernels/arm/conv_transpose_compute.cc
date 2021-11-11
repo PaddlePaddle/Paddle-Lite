@@ -154,10 +154,26 @@ void Conv2DTransposeCompute<PRECISION(kInt8),
     flag_trans_bias_ = true;
   }
   //! update relu6 parameter
-  param.activation_param.Relu_clipped_coef =
-      param.activation_param.Relu_clipped_coef / param.output_scale;
-  param.activation_param.Leaky_relu_alpha =
-      param.activation_param.Leaky_relu_alpha / param.output_scale;
+  if (param.activation_param.active_type == lite_api::ActivationType::kRelu6) {
+    param.activation_param.Relu_clipped_coef =
+        param.activation_param.Relu_clipped_coef / param.output_scale;
+  }
+  //! update leakyRelu parameter
+  if (param.activation_param.active_type ==
+      lite_api::ActivationType::kLeakyRelu) {
+    param.activation_param.Leaky_relu_alpha =
+        param.activation_param.Leaky_relu_alpha / param.output_scale;
+  }
+  //! update hardswish parameter
+  if (param.activation_param.active_type ==
+      lite_api::ActivationType::kHardSwish) {
+    param.activation_param.hard_swish_scale =
+        param.activation_param.hard_swish_scale / param.output_scale;
+    param.activation_param.hard_swish_offset =
+        param.activation_param.hard_swish_offset / param.output_scale;
+    param.activation_param.hard_swish_threshold =
+        param.activation_param.hard_swish_threshold / param.output_scale;
+  }
 }
 
 PROFILE_INFO(kFloat, kFloat)

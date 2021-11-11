@@ -991,6 +991,106 @@ function amlogic_npu_build_and_test() {
     build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE amlogic_npu_build_target amlogic_npu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR "$(readlink -f ./amlnpu_ddk)"
 }
 
+# Cambricon MLU
+function cambricon_mlu_prepare_device() {
+    local os=$1
+    local arch=$2
+    local toolchain=$3
+    local remote_device_name=$4
+    local remote_device_work_dir=$5
+    local remote_device_check=$6
+    local remote_device_run=$7
+    local sdk_root_dir=$8
+
+    # Check device is available
+    $remote_device_check $remote_device_name
+    if [[ $? -ne 0 ]]; then
+        echo "$remote_device_name not found!"
+        exit 1
+    fi
+
+    # Create work dir on the remote device
+    if [[ -z "$remote_device_work_dir" ]]; then
+        echo "$remote_device_work_dir can't be empty!"
+        exit 1
+    fi
+    if [[ "$remote_device_work_dir" == "/" ]]; then
+        echo "$remote_device_work_dir can't be root dir!"
+        exit 1
+    fi
+    $remote_device_run $remote_device_name shell "rm -rf $remote_device_work_dir"
+    $remote_device_run $remote_device_name shell "mkdir -p $remote_device_work_dir"
+
+    # Copy sdk dynamic libraries to work dir
+    $remote_device_run $remote_device_name push "$sdk_root_dir/lib/*" "$remote_device_work_dir"
+    $remote_device_run $remote_device_name push "$sdk_root_dir/lib64/*" "$remote_device_work_dir"
+
+    # Copy NNAdapter runtime and device HAL libraries
+    local nnadapter_runtime_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
+    local nnadapter_device_lib_path=$(find $BUILD_DIR/lite -name libcambricon_mlu.so)
+    $remote_device_run $remote_device_name push "$nnadapter_runtime_lib_path" "$remote_device_work_dir"
+    $remote_device_run $remote_device_name push "$nnadapter_device_lib_path" "$remote_device_work_dir"
+}
+
+function cambricon_mlu_build_target() {
+    local sdk_root_dir="/usr/local/neuware"
+
+    # Build all of tests
+    rm -rf $BUILD_DIR
+    mkdir -p $BUILD_DIR
+    cd $BUILD_DIR
+    prepare_workspace $ROOT_DIR $BUILD_DIR
+    cmake .. \
+        -DWITH_GPU=OFF \
+        -DWITH_MKLDNN=OFF \
+        -DWITH_MKL=ON \
+        -DWITH_PYTHON=OFF \
+        -DWITH_LITE=ON \
+        -DLITE_WITH_CUDA=OFF \
+        -DLITE_WITH_X86=ON \
+        -DLITE_WITH_ARM=OFF \
+        -DWITH_ARM_DOTPROD=OFF \
+        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
+        -DWITH_TESTING=ON \
+        -DLITE_BUILD_EXTRA=ON \
+        -DLITE_WITH_TRAIN=OFF \
+        -DLITE_WITH_NNADAPTER=ON \
+        -DNNADAPTER_WITH_CAMBRICON_MLU=ON \
+        -DNNADAPTER_CAMBRICON_MLU_SDK_ROOT="$sdk_root_dir" \
+        -DCMAKE_BUILD_TYPE=Release
+
+    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/neuware/lib64"
+    local nnadapter_runtime_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
+    local nnadapter_device_lib_path=$(find $BUILD_DIR/lite -name libcambricon_mlu.so)
+    local nnadapter_runtime_lib_dir=${nnadapter_runtime_lib_path%/*}
+    local nnadapter_device_lib_dir=${nnadapter_device_lib_path%/*}
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$nnadapter_runtime_lib_dir:$nnadapter_device_lib_dir"
+    export GLOG_v=$UNIT_TEST_LOG_LEVEL
+    local unit_test_check_items=(${UNIT_TEST_CHECK_LIST//,/ })
+    for test_name in $(cat $TESTS_FILE); do
+        local is_matched=0
+        for unit_test_check_item in ${unit_test_check_items[@]}; do
+            if [[ "$unit_test_check_item" == "$test_name" ]]; then
+                echo "$test_name on the checklist."
+                is_matched=1
+                break
+            fi
+        done
+        # black list
+        if [[ $is_matched -eq 1 && $UNIT_TEST_FILTER_TYPE -eq 0 ]]; then
+            continue
+        fi
+        # white list
+        if [[ $is_matched -eq 0 && $UNIT_TEST_FILTER_TYPE -eq 1 ]]; then
+            continue
+        fi
+        ctest -V -R ^$test_name$
+    done
+}
+
 # Baidu XPU
 function baidu_xpu_build_and_test() {
     local with_xtcl=$1
@@ -1131,6 +1231,10 @@ function main() {
             ;;
         amlogic_npu_build_and_test)
             amlogic_npu_build_and_test
+            shift
+            ;;
+        cambricon_mlu_build_and_test)
+            cambricon_mlu_build_target
             shift
             ;;
         baidu_xpu_disable_xtcl_build_and_test)

@@ -482,6 +482,14 @@ TEST(Conv2d, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 5e-2;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 5e-2;
+  TestConvKsize(place, abs_error);
+  TestConvDilations(place, abs_error);
+  TestConvStrides(place, abs_error);
+  TestConvPaddings(place, abs_error);
+  TestConvBias(place, abs_error);
+  return;
 #else
   return;
 #endif

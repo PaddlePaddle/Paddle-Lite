@@ -29,6 +29,8 @@ WITH_STATIC_MKL=OFF
 WITH_AVX=ON
 # options of compiling OPENCL lib.
 WITH_OPENCL=OFF
+# options of compiling Metal lib for Mac OS.
+WITH_METAL=OFF
 # options of compiling rockchip NPU lib.
 WITH_ROCKCHIP_NPU=OFF
 ROCKCHIP_NPU_SDK_ROOT="$(pwd)/rknpu_ddk"  # Download RKNPU SDK from https://github.com/airockchip/rknpu_ddk.git
@@ -45,6 +47,8 @@ NNADAPTER_WITH_HUAWEI_ASCEND_NPU=OFF
 NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest"
 NNADAPTER_WITH_AMLOGIC_NPU=OFF
 NNADAPTER_AMLOGIC_NPU_SDK_ROOT="$(pwd)/amlnpu_ddk"
+NNADAPTER_WITH_CAMBRICON_MLU=OFF
+NNADAPTER_CAMBRICON_MLU_SDK_ROOT="$(pwd)/cambricon_mlu_sdk"
 # options of compiling baidu XPU lib.
 WITH_BAIDU_XPU=OFF
 WITH_BAIDU_XPU_XTCL=OFF
@@ -176,6 +180,7 @@ function init_cmake_mutable_options {
                         -DWITH_STATIC_MKL=$WITH_STATIC_MKL \
                         -DWITH_AVX=$WITH_AVX \
                         -DLITE_WITH_OPENCL=$WITH_OPENCL \
+                        -DLITE_WITH_METAL=$WITH_METAL \
                         -DLITE_WITH_RKNPU=$WITH_ROCKCHIP_NPU \
                         -DRKNPU_DDK_ROOT=$ROCKCHIP_NPU_SDK_ROOT \
                         -DLITE_WITH_XPU=$WITH_BAIDU_XPU \
@@ -197,6 +202,8 @@ function init_cmake_mutable_options {
                         -DNNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT=$NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT \
                         -DNNADAPTER_WITH_AMLOGIC_NPU=$NNADAPTER_WITH_AMLOGIC_NPU \
                         -DNNADAPTER_AMLOGIC_NPU_SDK_ROOT=$NNADAPTER_AMLOGIC_NPU_SDK_ROOT \
+                        -DNNADAPTER_WITH_CAMBRICON_MLU=$NNADAPTER_WITH_CAMBRICON_MLU \
+                        -DNNADAPTER_CAMBRICON_MLU_SDK_ROOT=$NNADAPTER_CAMBRICON_MLU_SDK_ROOT \
                         -DLITE_WITH_INTEL_FPGA=$WITH_INTEL_FPGA \
                         -DINTEL_FPGA_SDK_ROOT=${INTEL_FPGA_SDK_ROOT} \
                         -DLITE_WITH_PROFILE=${WITH_PROFILE} \
@@ -287,6 +294,9 @@ function make_publish_so {
     if [ "${WITH_OPENCL}" = "ON" ]; then
         build_dir=${build_dir}.opencl
     fi
+    if [ "${WITH_METAL}" = "ON" ]; then
+        build_dir=${build_dir}.metal
+    fi
     if [ "${WITH_BAIDU_XPU}" = "ON" ]; then
         build_dir=${build_dir}.baidu_xpu
     fi
@@ -368,6 +378,13 @@ function print_usage {
     echo -e "|     --rockchip_npu_sdk_root: (path to rockchip_npu DDK file) required when compiling rockchip_npu library                                            |"
     echo -e "|             you can download rockchip NPU SDK from:  https://github.com/airockchip/rknpu_ddk.git                                                     |"
     echo -e "|  detailed information about Paddle-Lite RKNPU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/rockchip_npu.html                           |"
+    echo -e "|                                                                                                                                                      |"
+    echo -e "|  arguments of cambricon mlu library compiling:                                                                                                       |"
+    echo -e "|     ./lite/tools/build_linux.sh --with_cambricon_mlu=ON --cambricon_mlu_sdk_root=YourCambriconMluSdkPath                                             |"
+    echo -e "|     --with_cambricon_mlu: (OFF|ON); controls whether to compile lib for cambricon_mlu, default is OFF                                                |"
+    echo -e "|     --cambricon_mlu_sdk_root: (path to cambricon_mlu SDK file) required when compiling cambricon_mlu library                                         |"
+    echo -e "|             you can download cambricon MLU SDK from:                                                                                                 |"
+    echo -e "|  detailed information about Paddle-Lite CAMBRICON MLU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/cambricon_mlu.html                  |"
     echo -e "|                                                                                                                                                      |"
     echo -e "|  arguments of baidu xpu library compiling:                                                                                                           |"
     echo -e "|     ./lite/tools/build_linux.sh --arch=x86 --with_baidu_xpu=ON                                                                                       |"
@@ -461,6 +478,11 @@ function main {
                 WITH_OPENCL="${i#*=}"
                 shift
                 ;;
+            # compiling lib for Mac OS with GPU support.
+            --with_metal=*)
+                WITH_METAL="${i#*=}"
+                shift
+                ;;
             # compiling lib which can operate on rockchip npu.
             --with_rockchip_npu=*)
                 WITH_ROCKCHIP_NPU="${i#*=}"
@@ -523,6 +545,14 @@ function main {
                 ;;
             --nnadapter_amlogic_npu_sdk_root=*)
                 NNADAPTER_AMLOGIC_NPU_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_with_cambricon_mlu=*)
+                NNADAPTER_WITH_CAMBRICON_MLU="${i#*=}"
+                shift
+                ;;
+            --nnadapter_cambricon_mlu_sdk_root=*)
+                NNADAPTER_CAMBRICON_MLU_SDK_ROOT="${i#*=}"
                 shift
                 ;;
             # compiling lib which can operate on baidu xpu.
