@@ -20,8 +20,7 @@ WITH_LOG=ON
 WITH_MKL=ON
 WITH_METAL=OFF
 WITH_OPENCL=OFF
-WITH_METAL=OFF
-LITE_ON_TINY_PUBLISH=OFF
+LITE_ON_TINY_PUBLISH=ON
 WITH_STATIC_MKL=OFF
 WITH_AVX=ON
 WITH_EXCEPTION=OFF
@@ -100,6 +99,7 @@ function set_benchmark_options {
   BUILD_EXTRA=ON
   WITH_EXCEPTION=ON
   WITH_OPENCL=ON
+  LITE_ON_TINY_PUBLISH=OFF
 
   if [ ${WITH_PROFILE} == "ON" ] || [ ${WITH_PRECISION_PROFILE} == "ON" ]; then
     WITH_LOG=ON
@@ -115,6 +115,10 @@ function make_armosx {
         BUILD_EXTRA=ON
     fi
 
+    if [ "${WITH_BENCHMARK}" == "ON" ]; then
+        set_benchmark_options
+    fi
+
     build_dir=$workspace/build.macos.${os}.${arch}
     if [ ${WITH_METAL} == "ON" ]; then
       BUILD_EXTRA=ON
@@ -125,8 +129,10 @@ function make_armosx {
         build_dir=${build_dir}.opencl
         prepare_opencl_source_code $workspace
     fi
-    if [ "${WITH_BENCHMARK}" == "ON" ]; then
-        set_benchmark_options
+    
+    if [ ${WITH_TESTING} == "ON" ]; then
+      BUILD_EXTRA=ON
+      LITE_ON_TINY_PUBLISH=OFF
     fi
 
     if [ -d $build_dir ]
@@ -152,10 +158,10 @@ function make_armosx {
             -DLITE_WITH_OPENCL=${WITH_OPENCL} \
             -DLITE_ON_TINY_PUBLISH=${LITE_ON_TINY_PUBLISH} \
             -DLITE_WITH_PROFILE=${WITH_PROFILE} \
-            -DLITE_WITH_OPENMP=OFF \
-            -DWITH_ARM_DOTPROD=OFF \
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
             -DLITE_WITH_PRECISION_PROFILE=${WITH_PRECISION_PROFILE} \
+            -DLITE_WITH_OPENMP=OFF \
+            -DWITH_ARM_DOTPROD=OFF \
             -DLITE_WITH_X86=OFF \
             -DLITE_WITH_LOG=$WITH_LOG \
             -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
@@ -195,9 +201,12 @@ function make_x86 {
 
   if [ ${WITH_METAL} == "ON" ]; then
     BUILD_EXTRA=ON
-    WITH_LIGHT_WEIGHT_FRAMEWORK=OFF
-    LITE_ON_TINY_PUBLISH=OFF
     build_directory=${build_directory}.metal
+  fi
+  
+  if [ ${WITH_TESTING} == "ON" ]; then
+    BUILD_EXTRA=ON
+    LITE_ON_TINY_PUBLISH=OFF
   fi
 
   if [ ${BUILD_PYTHON} == "ON" ]; then
@@ -276,7 +285,7 @@ function print_usage {
     echo -e "|     ./lite/tools/build_macos.sh --with_benchmark=ON x86                                                                              |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of benchmark binary compiling for macos opencl(only support --gpu_precision=fp32):                                        |"
-    echo -e "|     ./lite/tools/build_macos.sh --with_opencl=ON --with_benchmark=ON arm64                                                          |"
+    echo -e "|     ./lite/tools/build_macos.sh --with_benchmark=ON arm64                                                                            |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of striping lib according to input model:(armv8, gcc, c++_static)                                                         |"
     echo -e "|     ./lite/tools/build_macos.sh --with_strip=ON --opt_model_dir=YourOptimizedModelDir                                                |"

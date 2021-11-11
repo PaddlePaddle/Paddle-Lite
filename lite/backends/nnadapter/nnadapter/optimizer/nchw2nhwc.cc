@@ -26,44 +26,37 @@ namespace nnadapter {
 static const std::vector<int32_t> kNCHW2NHWC = {0, 2, 3, 1};
 static const std::vector<int32_t> kNHWC2NCHW = {0, 3, 1, 2};
 
-class NCHW2NHWCDataLayoutConverter {
- public:
-  void Apply(hal::Model* model);
-
- private:
-  void SetPermutation(hal::Operand* operand,
-                      const std::vector<int32_t>& permutation) {
-    NNADAPTER_CHECK(!permutation.empty());
-    if (permutations_.find(operand) != permutations_.end()) {
-      NNADAPTER_LOG(FATAL) << "Operand" << OperandIdToString(operand)
-                           << " had been already set.";
-    } else {
-      permutations_[operand] = permutation;
-    }
+void NCHW2NHWCDataLayoutConverter::SetPermutation(
+    hal::Operand* operand, const std::vector<int32_t>& permutation) {
+  NNADAPTER_CHECK(!permutation.empty());
+  if (permutations_.find(operand) != permutations_.end()) {
+    NNADAPTER_LOG(FATAL) << "Operand" << OperandIdToString(operand)
+                         << " had been already set.";
+  } else {
+    permutations_[operand] = permutation;
   }
-  std::vector<int32_t> GetPermutation(hal::Operand* operand) {
-    NNADAPTER_CHECK(permutations_.find(operand) != permutations_.end());
-    return permutations_[operand];
+}
+
+std::vector<int32_t> NCHW2NHWCDataLayoutConverter::GetPermutation(
+    hal::Operand* operand) {
+  NNADAPTER_CHECK(permutations_.find(operand) != permutations_.end());
+  return permutations_[operand];
+}
+
+void NCHW2NHWCDataLayoutConverter::SetOperationLayout(hal::Operation* operation,
+                                                      const int input_num,
+                                                      const int output_num) {
+  for (int in_index = 0; in_index < input_num; ++in_index) {
+    operation->input_operands[in_index]->type.layout =
+        NNAdapterOperandLayoutCode::NNADAPTER_NHWC;
   }
+  for (int out_index = 0; out_index < output_num; ++out_index) {
+    operation->output_operands[out_index]->type.layout =
+        NNAdapterOperandLayoutCode::NNADAPTER_NHWC;
+  }
+}
 
-  // Operation converters
-  void ConvertElementwise(hal::Operation* operation);
-  void ConvertPool2D(hal::Operation* operation);
-  void ConvertConcat(hal::Operation* operation);
-  void ConvertConv2D(hal::Operation* operation);
-  void ConvertFlatten(hal::Operation* operation);
-  void ConvertFullyConnected(hal::Operation* operation);
-  void ConvertActivation(hal::Operation* operation);
-  void ConvertReshape(hal::Operation* operation);
-  void ConvertSoftmax(hal::Operation* operation);
-  void ConvertSplit(hal::Operation* operation);
-  void ConvertTranspose(hal::Operation* operation);
-  void ConvertMatMul(hal::Operation* operation);
-
- private:
-  hal::Model* model_{nullptr};
-  std::map<hal::Operand*, std::vector<int32_t>> permutations_;
-};
+hal::Model* NCHW2NHWCDataLayoutConverter::GetModel() { return model_; }
 
 void NCHW2NHWCDataLayoutConverter::ConvertElementwise(
     hal::Operation* operation) {
@@ -170,6 +163,7 @@ void NCHW2NHWCDataLayoutConverter::ConvertPool2D(hal::Operation* operation) {
   }
   TransposeOperand(output_operand, kNCHW2NHWC);
   SetPermutation(output_operand, kNCHW2NHWC);
+  SetOperationLayout(operation);
 }
 
 void NCHW2NHWCDataLayoutConverter::ConvertConcat(hal::Operation* operation) {
@@ -282,6 +276,7 @@ void NCHW2NHWCDataLayoutConverter::ConvertConv2D(hal::Operation* operation) {
   auto output_operand = output_operands[0];
   TransposeOperand(output_operand, kNCHW2NHWC);
   SetPermutation(output_operand, kNCHW2NHWC);
+  SetOperationLayout(operation, 3);
 }
 
 void NCHW2NHWCDataLayoutConverter::ConvertFullyConnected(

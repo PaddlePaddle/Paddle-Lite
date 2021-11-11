@@ -276,6 +276,10 @@ TEST(unsqueeze, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 1e-2;
+  // TODO(shentanyue): support later
+  return;
 #else
   return;
 #endif
@@ -301,6 +305,10 @@ TEST(unsqueeze2, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 1e-2;
+  // TODO(shentanyue): support later
+  return;
 #else
   return;
 #endif
