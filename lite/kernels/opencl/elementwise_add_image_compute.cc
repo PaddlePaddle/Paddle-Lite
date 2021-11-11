@@ -49,11 +49,33 @@ void ElementwiseAddImageCompute::PrepareForRun() {
 
   if (y->dims().size() == 4) {
     kernel_func_name_ = "elementwise_add";  // y: ImageDefault
-    if (y->dims()[0] == 1 && y->dims()[2] == 1 && y->dims()[3] == 1) {
+    if (y->persistable()) {                 // cyh
+      y_weights_image_ = std::unique_ptr<Tensor>(new Tensor);
+      std::unique_ptr<Tensor> tensor_hold_y_image_ =
+          std::unique_ptr<Tensor>(new Tensor);
+      CLImageConverterDefault default_converter;
+      const DDim& y_image_dims =
+          default_converter.InitImageDimInfoWith(y->dims());
+      tensor_hold_y_image_->Resize({1, y_image_dims[0], y_image_dims[1], 4});
+
+      auto* y_cpu_image = MUTABLE_DATA_CPU(tensor_hold_y_image_);
+      auto* y_cpu_nchw = static_cast<float*>(const_cast<void*>(y->raw_data()));
+      default_converter.NCHWToImage(y_cpu_nchw, y_cpu_image, y->dims());
+      MUTABLE_DATA_GPU(
+          y_weights_image_, y_image_dims[0], y_image_dims[1], y_cpu_image);
+    }
+    if (y->dims()[0] == 1 && y->dims()[1] == 1 && y->dims()[2] == 1 &&
+        y->dims()[3] == 1) {  // cyh
+      kernel_func_name_ = "channel_add";
+    } else if (y->dims()[0] == 1 && y->dims()[2] == 1 && y->dims()[3] == 1) {
       kernel_func_name_ = "elementwise_add_n1h1w1";
     }
     if ((axis == -1) && (y->dims()[3] > x->dims()[3])) {
       build_options_ += " -DBROADCAST";
+    }
+    if (x->dims()[0] == 1 && x->dims()[1] == 1 && x->dims()[2] == 1) {  // cyh
+
+      kernel_func_name_ = "channel_add";
     }
   } else if (y->dims().size() == 1) {
     if (axis == x->dims().size() - 1) {
@@ -193,6 +215,10 @@ void ElementwiseAddImageCompute::Run() {
   cl_int status;
   auto kernel = kernel_;
   if (kernel_func_name_ == "elementwise_add") {
+    if (y->persistable()) {
+      y_img = GET_DATA_GPU(y_weights_image_);
+      //      VLOG(1)<<"acm end";
+    }
     int output_w = y_dims[3];
     int output_h = y_dims[2];
     status = kernel.setArg(0, *x_img);
@@ -206,6 +232,9 @@ void ElementwiseAddImageCompute::Run() {
     status = kernel.setArg(4, output_w);
     CL_CHECK_FATAL(status);
   } else if (kernel_func_name_ == "elementwise_add_n1h1w1") {
+    if (y->persistable()) {
+      y_img = GET_DATA_GPU(y_weights_image_);
+    }
     int output_w = out->dims()[3];
     int output_h = out->dims()[2];
     status = kernel.setArg(0, *x_img);
@@ -223,16 +252,32 @@ void ElementwiseAddImageCompute::Run() {
       y_img = GET_DATA_GPU(y_weights_image_);
     }
     const int opt = y_dims[0] == 1;
-    status = kernel.setArg(0, *x_img);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(1, *y_img);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(2, *out_img);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(3, tensor_w);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(4, opt);
-    CL_CHECK_FATAL(status);
+    VLOG(1) << "opt :" << opt;
+    if (x->dims().size() == 4 && x->dims()[0] == 1 && x->dims()[1] == 1 &&
+        x->dims()[2] == 1) {  // cyh elementwise_add x: 1 1 1 128
+      status = kernel.setArg(0, *y_img);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(1, *x_img);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(2, *out_img);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(3, tensor_w);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(4, 0);
+      CL_CHECK_FATAL(status);
+    } else {
+      status = kernel.setArg(0, *x_img);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(1, *y_img);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(2, *out_img);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(3, tensor_w);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(4, opt);
+      //      status = kernel.setArg(4, 1);//cyh
+      CL_CHECK_FATAL(status);
+    }
   } else if (kernel_func_name_ == "width_add") {
     if (y->persistable()) {
       y_img = GET_DATA_GPU(y_weights_image_);

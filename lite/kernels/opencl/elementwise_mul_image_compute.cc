@@ -48,6 +48,14 @@ class ElementwiseMulImageCompute
     ele_param_ = param_.get_mutable<param_t>();
     auto* y = ele_param_->Y;
     auto* x = ele_param_->X;
+    if (ele_param_->X->dims().size() == 1 &&
+        ele_param_->X->dims().data()[0] == 1) {
+      y = ele_param_->X;
+      x = ele_param_->Y;
+    }
+    //    VLOG(1)<<"PrepareForRun : x"<<x->dims();
+    //    VLOG(1)<<"PrepareForRun : y"<<y->dims();
+    //    VLOG(1)<<"PrepareForRun : out"<<ele_param_->Out->dims();
     auto bias_dims = y->dims();
     auto x_dims = x->dims();
 
@@ -116,6 +124,11 @@ class ElementwiseMulImageCompute
     auto* x = ele_param_->X;
     auto* y = ele_param_->Y;
     auto* out = ele_param_->Out;
+    if (ele_param_->X->dims().size() == 1 &&
+        ele_param_->X->dims().data()[0] == 1) {
+      y = ele_param_->X;
+      x = ele_param_->Y;
+    }
 
 #ifdef LITE_WITH_LOG
     VLOG(4) << "x->target():" << TargetToStr(x->target());
