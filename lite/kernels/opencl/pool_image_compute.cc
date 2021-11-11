@@ -37,6 +37,8 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
     const auto& in_dims = param.x->dims();
     const auto& out_dims = param.output->dims();
     const bool global_pooling = param.global_pooling;
+    VLOG(1) << "global_pooling : " << param.global_pooling;
+    //    const bool global_pooling = true;
     const bool exclusive = param.exclusive;
     std::vector<int> ksize = param.ksize;
     std::vector<int> paddings = *param.paddings;
@@ -97,6 +99,7 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
       const auto& in_dims = param.x->dims();
       const std::string pooling_type = param.pooling_type;
       const bool global_pooling = param.global_pooling;
+      //      const bool global_pooling = true;
       std::vector<int> paddings = *param.paddings;
       std::vector<int> strides = param.strides;
       std::vector<int> ksize = param.ksize;
@@ -196,6 +199,11 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
       CL_CHECK_FATAL(status);
       status = kernel_.setArg(arg_idx++, paddings[0]);
       CL_CHECK_FATAL(status);
+      if (kernel_func_name_ == "pool") {
+        int ad = param.adaptive;
+        status = kernel_.setArg(arg_idx++, ad);
+        CL_CHECK_FATAL(status);
+      }
 
 #ifdef LITE_WITH_LOG
       VLOG(4) << "in_dims: " << in_dims;
