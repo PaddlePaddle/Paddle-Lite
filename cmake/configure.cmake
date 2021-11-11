@@ -158,13 +158,6 @@ if (LITE_WITH_CV)
     add_definitions("-DLITE_WITH_CV")
 endif()
 
-if (LITE_USE_PRECOMPILED_OPENCV)
-    if(NOT LITE_WITH_ARM)
-        message(FATAL_ERROR "Precompiled opencv is only used for Android, so LITE_WITH_ARM must be turned on")
-    endif()
-    add_definitions("-DLITE_USE_PRECOMPILED_OPENCV")
-endif()
-
 if (LITE_WITH_TRAIN)
     add_definitions("-DLITE_WITH_TRAIN")
 endif()
