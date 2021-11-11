@@ -105,7 +105,7 @@ find_package(Git REQUIRED)
 find_package(Threads REQUIRED)
 
 # Simd configurations
-include(util/simd)
+include(external/simd)
 
 # CMAKE_BUILD_TYPE
 if(NOT CMAKE_BUILD_TYPE)
@@ -168,5 +168,9 @@ if(NOT DEFINED WITH_MKLDNN)
   endif()
 endif()
 
+# Backends configurations
 include(backends/common)
+# Compile
 add_subdirectory(lite)
+# Release
+include(release/common)
