@@ -2292,14 +2292,14 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
             }
 
             if (mc == 1) {
-              vst1q_lane_s32(out_ptr, vaccf0123, 0);
+              vst1q_lane_f32(out_ptr, vaccf0123, 0);
             } else if (mc == 2) {
-              vst1q_lane_s32(out_ptr, vaccf0123, 0);
-              vst1q_lane_s32(out_ptr + 1, vaccf0123, 1);
+              vst1q_lane_f32(out_ptr, vaccf0123, 0);
+              vst1q_lane_f32(out_ptr + 1, vaccf0123, 1);
             } else {
-              vst1q_lane_s32(out_ptr, vaccf0123, 0);
-              vst1q_lane_s32(out_ptr + 1, vaccf0123, 1);
-              vst1q_lane_s32(out_ptr + 2, vaccf0123, 2);
+              vst1q_lane_f32(out_ptr, vaccf0123, 0);
+              vst1q_lane_f32(out_ptr + 1, vaccf0123, 1);
+              vst1q_lane_f32(out_ptr + 2, vaccf0123, 2);
             }
           }
           LITE_PARALLEL_COMMON_END();
@@ -5386,14 +5386,14 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
             }
 
             if (mc == 1) {
-              vst1q_lane_s32(out_ptr, vaccf0123, 0);
+              vst1q_lane_f32(out_ptr, vaccf0123, 0);
             } else if (mc == 2) {
-              vst1q_lane_s32(out_ptr, vaccf0123, 0);
-              vst1q_lane_s32(out_ptr + 1, vaccf0123, 1);
+              vst1q_lane_f32(out_ptr, vaccf0123, 0);
+              vst1q_lane_f32(out_ptr + 1, vaccf0123, 1);
             } else {
-              vst1q_lane_s32(out_ptr, vaccf0123, 0);
-              vst1q_lane_s32(out_ptr + 1, vaccf0123, 1);
-              vst1q_lane_s32(out_ptr + 2, vaccf0123, 2);
+              vst1q_lane_f32(out_ptr, vaccf0123, 0);
+              vst1q_lane_f32(out_ptr + 1, vaccf0123, 1);
+              vst1q_lane_f32(out_ptr + 2, vaccf0123, 2);
             }
           }
           LITE_PARALLEL_COMMON_END();
