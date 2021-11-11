@@ -280,7 +280,7 @@ avg   = 33.918
 拉取 [Paddle Lite](https://github.com/PaddlePaddle/Paddle-Lite) 代码，切换到特定分支，然后在 Paddle Lite 根目录下执行编译命令：
 ```shell
 ./lite/tools/build_macos.sh --with_benchmark=ON x86
-./lite/tools/build_macos.sh --build_opencl=ON --with_benchmark=ON --tiny_publish=OFF arm64
+./lite/tools/build_macos.sh --with_benchmark=ON arm64
 ```
 可选参数：
 

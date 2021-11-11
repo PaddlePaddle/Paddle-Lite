@@ -22,7 +22,7 @@ WITH_LOG=ON
 WITH_MKL=ON
 WITH_METAL=OFF
 WITH_OPENCL=OFF
-LITE_ON_TINY_PUBLISH=OFF
+LITE_ON_TINY_PUBLISH=ON
 WITH_STATIC_MKL=OFF
 WITH_AVX=ON
 WITH_EXCEPTION=OFF
@@ -116,6 +116,7 @@ function set_benchmark_options {
   BUILD_EXTRA=ON
   WITH_EXCEPTION=ON
   WITH_OPENCL=ON
+  LITE_ON_TINY_PUBLISH=OFF
 
   if [ ${WITH_PROFILE} == "ON" ] || [ ${WITH_PRECISION_PROFILE} == "ON" ]; then
     WITH_LOG=ON
@@ -131,6 +132,10 @@ function make_armosx {
         BUILD_EXTRA=ON
     fi
 
+    if [ "${WITH_BENCHMARK}" == "ON" ]; then
+        set_benchmark_options
+    fi
+
     build_dir=$workspace/build.macos.${os}.${arch}
     if [ "${WITH_METAL}" = "ON" ]
     then
@@ -141,9 +146,7 @@ function make_armosx {
         build_dir=${build_dir}.opencl
         prepare_opencl_source_code $workspace
     fi
-    if [ "${WITH_BENCHMARK}" == "ON" ]; then
-        set_benchmark_options
-    fi
+
     if [ -d $build_dir ]
     then
         rm -rf $build_dir
@@ -296,7 +299,7 @@ function print_usage {
     echo -e "|     ./lite/tools/build_macos.sh --with_benchmark=ON x86                                                                              |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of benchmark binary compiling for macos opencl(only support --gpu_precision=fp32):                                        |"
-    echo -e "|     ./lite/tools/build_macos.sh --with_opencl=ON --with_benchmark=ON arm64                                                          |"
+    echo -e "|     ./lite/tools/build_macos.sh --with_benchmark=ON arm64                                                                            |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of striping lib according to input model:(armv8, gcc, c++_static)                                                         |"
     echo -e "|     ./lite/tools/build_macos.sh --with_strip=ON --opt_model_dir=YourOptimizedModelDir                                                |"
