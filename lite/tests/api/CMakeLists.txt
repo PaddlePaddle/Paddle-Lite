@@ -37,6 +37,11 @@ function(lite_cc_test_with_model_and_data TARGET)
     if(DEFINED args_CONFIG)
         add_dependencies(${TARGET} extern_lite_download_${args_CONFIG}_tar_gz)
     endif()
+    
+    if(LITE_WITH_NNADAPTER)
+        set(LINK_FLAGS "-Wl,--version-script ${PADDLE_SOURCE_DIR}/lite/core/lite.map")
+        set_target_properties(${TARGET} PROPERTIES LINK_FLAGS "${LINK_FLAGS}")
+    endif()
 endfunction()
 
 if(LITE_WITH_ARM)
@@ -100,10 +105,6 @@ endif()
 
 if(LITE_WITH_APU)
     lite_cc_test_with_model_and_data(test_mobilenet_v1_int8_mediatek_apu MODEL mobilenet_v1_int8_for_mediatek_apu DATA ILSVRC2012_500)
-endif()
-
-if(LITE_WITH_IMAGINATION_NNA)
-    lite_cc_test_with_model_and_data(test_mobilenet_v1_int8_imagination_nna MODEL mobilenet_v1_int8_for_imagination_nna DATA ILSVRC2012_500)
 endif()
 
 if(LITE_WITH_METAL)

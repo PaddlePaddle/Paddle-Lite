@@ -14,8 +14,12 @@
 
 #pragma once
 
-USE_SUBGRAPH_BRIDGE(relu, kImaginationNNA);
-USE_SUBGRAPH_BRIDGE(conv2d, kImaginationNNA);
-USE_SUBGRAPH_BRIDGE(depthwise_conv2d, kImaginationNNA);
-USE_SUBGRAPH_BRIDGE(fc, kImaginationNNA);
-USE_SUBGRAPH_BRIDGE(pool2d, kImaginationNNA);
+#include "core/hal/types.h"
+
+namespace nnadapter {
+namespace cambricon_mlu {
+
+void ConvertDataLayoutNCHWToNHWC(hal::Model *model);
+
+}  // namespace cambricon_mlu
+}  // namespace nnadapter

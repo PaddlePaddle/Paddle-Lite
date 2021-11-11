@@ -140,7 +140,6 @@ const std::string& TargetRepr(TargetType target) {
                                               "kRKNPU",
                                               "kAPU",
                                               "kHuaweiAscendNPU",
-                                              "kImaginationNNA",
                                               "kIntelFPGA",
                                               "kMetal",
                                               "kNNAdapter"};
@@ -206,7 +205,6 @@ std::set<TargetType> ExpandValidTargets(TargetType target) {
                                                TARGET(kRKNPU),
                                                TARGET(kFPGA),
                                                TARGET(kHuaweiAscendNPU),
-                                               TARGET(kImaginationNNA),
                                                TARGET(kIntelFPGA),
                                                TARGET(kMetal),
                                                TARGET(kNNAdapter)});

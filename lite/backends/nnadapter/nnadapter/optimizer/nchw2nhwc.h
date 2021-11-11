@@ -14,10 +14,44 @@
 
 #pragma once
 
+#include <map>
+#include <vector>
 #include "core/hal/types.h"
 
 namespace nnadapter {
 
-void ConvertDataLayoutNCHWToNHWC(hal::Model *model);
+class NCHW2NHWCDataLayoutConverter {
+ public:
+  void Apply(hal::Model* model);
+  void SetPermutation(hal::Operand* operand,
+                      const std::vector<int32_t>& permutation);
+  std::vector<int32_t> GetPermutation(hal::Operand* operand);
+  void SetOperationLayout(hal::Operation* operation,
+                          const int input_num = 1,
+                          const int output_num = 1);
+  hal::Model* GetModel();
+  virtual void ConvertConv2D(hal::Operation* operation);
+  virtual ~NCHW2NHWCDataLayoutConverter() = default;
+
+ private:
+  // Operation converters
+  void ConvertElementwise(hal::Operation* operation);
+  void ConvertPool2D(hal::Operation* operation);
+  void ConvertConcat(hal::Operation* operation);
+  void ConvertFlatten(hal::Operation* operation);
+  void ConvertFullyConnected(hal::Operation* operation);
+  void ConvertActivation(hal::Operation* operation);
+  void ConvertReshape(hal::Operation* operation);
+  void ConvertSoftmax(hal::Operation* operation);
+  void ConvertSplit(hal::Operation* operation);
+  void ConvertTranspose(hal::Operation* operation);
+  void ConvertMatMul(hal::Operation* operation);
+
+ private:
+  hal::Model* model_{nullptr};
+  std::map<hal::Operand*, std::vector<int32_t>> permutations_;
+};
+
+void ConvertDataLayoutNCHWToNHWC(hal::Model* model);
 
 }  // namespace nnadapter
