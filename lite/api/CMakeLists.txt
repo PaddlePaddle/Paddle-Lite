@@ -216,6 +216,8 @@ if(ARM_TARGET_OS STREQUAL "android" AND LITE_USE_PRECOMPILED_OPENCV)
     elseif(${ARM_TARGET_ARCH_ABI} STREQUAL "armv7")
         set(ARM_ABI "armeabi-v7a")
     endif()
+
+    # OpenCV
     set(OPENCV_VERSION "opencv4.1.0")
     set(OPENCV_PATH "${THIRD_PARTY_PATH}/${OPENCV_VERSION}/${ARM_ABI}")
     message(STATUS "OPENCV_PATH: ${OPENCV_PATH}")
@@ -232,9 +234,20 @@ if(ARM_TARGET_OS STREQUAL "android" AND LITE_USE_PRECOMPILED_OPENCV)
                     ${OPENCV_PATH}/3rdparty/libs/libIlmImf.a
                     ${OPENCV_PATH}/3rdparty/libs/libtbb.a
                     ${OPENCV_PATH}/3rdparty/libs/libcpufeatures.a)
+    set(OPENCV_URL "https://paddle-inference-dist.bj.bcebos.com")
+    lite_download_and_uncompress(${THIRD_PARTY_PATH} ${OPENCV_URL} "${OPENCV_VERSION}.tar.gz")
+    execute_process(COMMAND rm -f "${THIRD_PARTY_PATH}/*.tar.gz")
 
-    set(OPENCV_URL "https://paddle-inference-dist.bj.bcebos.com/")
-    lite_download_and_uncompress("${THIRD_PARTY_PATH}/" ${OPENCV_URL} "${OPENCV_VERSION}.tar.gz")
+    # Validation Dataset
+    set(VALIDATION_DATASET_DIR "${THIRD_PARTY_PATH}/validation_dataset")
+    set(VALIDATION_DATASET_URL "https://paddle-inference-dist.bj.bcebos.com/AI-Rank/validation_dataset")
+
+    # ILSVRC 2012. We have extracted a minival subset which only contains 1000 clases.
+    set(ILSVRC2012_1K_CLS_IMGS "ILSVRC2012_1000_cls")
+    set(ILSVRC2012_1K_CLS_LABELS "ILSVRC2012_1000_cls_label_list")
+    lite_download_and_uncompress(${VALIDATION_DATASET_DIR} ${VALIDATION_DATASET_URL} "${ILSVRC2012_1K_CLS_IMGS}.tar.gz")
+    lite_download_and_uncompress(${VALIDATION_DATASET_DIR} ${VALIDATION_DATASET_URL} "${ILSVRC2012_1K_CLS_LABELS}.tar.gz")
+    execute_process(COMMAND rm -f "${VALIDATION_DATASET_DIR}/*.tar.gz")
 endif()
 
 if(NOT IOS AND NOT LITE_ON_TINY_PUBLISH)
@@ -251,6 +264,11 @@ if(NOT IOS AND NOT LITE_ON_TINY_PUBLISH)
         DEPS gflags
         CV_DEPS paddle_cv_arm)
     if(ARM_TARGET_OS STREQUAL "android" AND LITE_USE_PRECOMPILED_OPENCV)
+        # Validation Dataset
+        add_dependencies(benchmark_bin extern_lite_download_${ILSVRC2012_1K_CLS_IMGS}_tar_gz
+                                       extern_lite_download_${ILSVRC2012_1K_CLS_LABELS}_tar_gz)
+
+        # OpenCV
         string(REGEX REPLACE "[-%.]" "_" OPENCV_VERSION_EX ${OPENCV_VERSION})
         add_dependencies(benchmark_bin extern_lite_download_${OPENCV_VERSION_EX}_tar_gz)
         include_directories(${OPENCV_INCLUDE_DIRS})
