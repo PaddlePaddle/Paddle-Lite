@@ -17,7 +17,6 @@ message(STATUS "LITE_WITH_INTEL_FPGA:\t${LITE_WITH_INTEL_FPGA}")
 message(STATUS "LITE_WITH_MLU:\t${LITE_WITH_MLU}")
 message(STATUS "LITE_WITH_HUAWEI_ASCEND_NPU:\t${LITE_WITH_HUAWEI_ASCEND_NPU}")
 message(STATUS "LITE_WITH_BM:\t${LITE_WITH_BM}")
-message(STATUS "LITE_WITH_IMAGINATION_NNA:\t${LITE_WITH_IMAGINATION_NNA}")
 message(STATUS "LITE_WITH_NNADAPTER:\t${LITE_WITH_NNADAPTER}")
 message(STATUS "LITE_WITH_PROFILE:\t${LITE_WITH_PROFILE}")
 message(STATUS "LITE_WITH_CV:\t${LITE_WITH_CV}")
@@ -155,9 +154,6 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
     if (LITE_WITH_RKNPU)
         set(INFER_LITE_PUBLISH_ROOT "${INFER_LITE_PUBLISH_ROOT}.rknpu")
     endif(LITE_WITH_RKNPU)
-    if (LITE_WITH_IMAGINATION_NNA)
-        set(INFER_LITE_PUBLISH_ROOT "${INFER_LITE_PUBLISH_ROOT}.nna")
-    endif(LITE_WITH_IMAGINATION_NNA)
     if (LITE_WITH_INTEL_FPGA)
         set(INFER_LITE_PUBLISH_ROOT "${INFER_LITE_PUBLISH_ROOT}.intel_fpga")
     endif(LITE_WITH_INTEL_FPGA)
@@ -413,16 +409,12 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                     add_dependencies(publish_inference_cxx_lib paddle_full_api_shared)
                     add_dependencies(publish_inference paddle_light_api_shared)
                     add_custom_command(TARGET publish_inference_cxx_lib
-                          COMMAND cp ${CMAKE_BINARY_DIR}/lite/api/*.so ${INFER_LITE_PUBLISH_ROOT}/cxx/lib
-                          COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/benchmark_bin" "${INFER_LITE_PUBLISH_ROOT}/bin"
-                          )
+                    COMMAND cp ${CMAKE_BINARY_DIR}/lite/api/libpaddle_light_api_shared* ${INFER_LITE_PUBLISH_ROOT}/cxx/lib
+                    COMMAND cp ${CMAKE_BINARY_DIR}/lite/api/libpaddle_full_api_shared* ${INFER_LITE_PUBLISH_ROOT}/cxx/lib
+                    COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/benchmark_bin" "${INFER_LITE_PUBLISH_ROOT}/bin"
+                    )
                 endif()
                 add_dependencies(publish_inference publish_inference_cxx_lib)
-                if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-                    add_custom_command(TARGET publish_inference_cxx_lib POST_BUILD
-                            COMMAND ${CMAKE_STRIP} "--strip-debug" ${INFER_LITE_PUBLISH_ROOT}/cxx/lib/*.a
-                            COMMAND ${CMAKE_STRIP} "--strip-debug" ${INFER_LITE_PUBLISH_ROOT}/cxx/lib/*.so)
-                endif()
             endif()
     else()
         if (IOS)
@@ -475,12 +467,15 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                     COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx"
                     COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
                     COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
+                    COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
                     COMMAND cp "${CMAKE_SOURCE_DIR}/lite/api/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
                     COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/paddle_use_kernels.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
                     COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/paddle_use_ops.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
                     COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/*.dylib" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
                     COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/libpaddle_api_light_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
                     COMMAND cp "${CMAKE_SOURCE_DIR}/lite/utils/cv/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
+                    COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/mobile_light" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
+                    COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/macos_m1_mobile_light_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
                 )
                 add_dependencies(tiny_publish_cxx_lib paddle_api_light_bundled)
                 add_dependencies(tiny_publish_cxx_lib paddle_light_api_shared)
@@ -597,20 +592,20 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
         add_dependencies(tiny_publish_cxx_lib publish_inference_opencl)
        endif()
     endif()
-
-    if (LITE_WITH_METAL)
-        add_custom_target(metal_lib_publish DEPENDS LiteMetalLIB
-                COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/metal/"
-                COMMAND cp -r "${CMAKE_BINARY_DIR}/lite.metallib" "${INFER_LITE_PUBLISH_ROOT}/metal/"
-                COMMENT "COPY lite.metallib")
-
-        if (NOT LITE_ON_TINY_PUBLISH)
-            add_dependencies(publish_inference_cxx_lib metal_lib_publish)
-        else ()
-            add_dependencies(tiny_publish_cxx_lib metal_lib_publish)
-        endif ()
-    endif ()
 endif()
+
+if (LITE_WITH_METAL)
+    add_custom_target(metal_lib_publish DEPENDS LiteMetalLIB
+            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/metal/"
+            COMMAND cp -r "${CMAKE_BINARY_DIR}/lite.metallib" "${INFER_LITE_PUBLISH_ROOT}/metal/"
+            COMMENT "COPY lite.metallib")
+
+    if (NOT LITE_ON_TINY_PUBLISH)
+        add_dependencies(publish_inference_cxx_lib metal_lib_publish)
+    else ()
+        add_dependencies(tiny_publish_cxx_lib metal_lib_publish)
+    endif ()
+endif ()
 
 if(LITE_WITH_SW)
     add_custom_target(publish_inference_cxx_lib ${TARGET}
