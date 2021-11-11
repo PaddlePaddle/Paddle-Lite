@@ -378,3 +378,19 @@ def create_quant_model(model,
     serialized_params = paddle.static.serialize_persistables(
         feed_vars, fetch_targets, executor=exe, program=main_program)
     return serialized_program, serialized_params
+
+
+
+class PaddleLiteConfig:
+    '''  A config builder for Paddle Lite.  '''
+
+    def __init__(self,
+                 valid_targets: List[str],
+                 thread: Optional[int]=None):
+        self.config = {}
+        self.config["valid_targets"] = valid_targets
+        if thread != None:
+            self.config["thread"] = thread
+
+    def value(self):
+        return self.config

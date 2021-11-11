@@ -14,6 +14,7 @@
 
 from auto_scan_base import AutoScanBaseTest, SkipReasonsBase
 import numpy as np
+import logging
 import abc
 import enum
 import unittest
@@ -65,10 +66,24 @@ data_layout_map = {
 
 
 
-
 def ParsePlaceInfo(place_str):
    # todo: this func should be completed later
-   return Place(TargetType.Host, PrecisionType.FP32)
+   infos = ''.join(place_str.split()).split(",")
+   if len(infos) == 1 :
+       if infos[0] in target_type_map:
+           return Place(target_type_map[infos[0]])
+       else:
+           logging.error("Error place info: " + place_str)
+   elif len(infos) == 2 :
+       if (infos[0] in target_type_map) and (infos[1] in precision_type_map):
+           return Place(target_type_map[infos[0]], precision_type_map[infos[1]])
+       else:
+           logging.error("Error place info: " + place_str)
+   elif len(infos) == 3 :
+       if (infos[0] in target_type_map) and (infos[1] in precision_type_map) and (infos[2] in data_layout_map):
+           return Place(target_type_map[infos[0]], precision_type_map[infos[1]], data_layout_map[infos[2]])
+       else:
+           logging.error("Error place info: " + place_str)
 
 def ParsePaddleLiteConfig(self, config):
     lite_config = CxxConfig()
