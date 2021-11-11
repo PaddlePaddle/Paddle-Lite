@@ -28,7 +28,7 @@ import paddle.fluid.core as core
 from paddle import compat as cpt
 import paddle.inference as paddle_infer
 from typing import Optional, List, Callable, Dict, Any, Set
-from program_config import TensorConfig, OpConfig, ProgramConfig, create_fake_model, create_quant_model
+from program_config import TensorConfig, OpConfig, ProgramConfig, create_fake_model, create_quant_model, PaddleLiteConfig
 
 import hypothesis
 from hypothesis import given, settings, seed, example, assume
@@ -52,6 +52,7 @@ class SkipReasonsBase(enum.Enum):
     PADDLELITE_NOT_SUPPORT = 1
     # Accuracy is abnormal after enabling pass.
     ACCURACY_ERROR = 2
+
 
 
 class AutoScanBaseTest(unittest.TestCase):
@@ -197,10 +198,11 @@ class AutoScanBaseTest(unittest.TestCase):
                                      feed_data))
             self.success_log('RUN_CPU_BASELINE done')
 
-            for pred_config, (
+            for paddlelite_config, (
                     atol, rtol) in self.sample_predictor_configs(prog_config):
                 # skip info
                 skip_flag = False
+                pred_config = paddlelite_config.value()
                 for skip_info in self.skip_cases:
                     if skip_info[0](prog_config, pred_config):
                         skip_flag = True
