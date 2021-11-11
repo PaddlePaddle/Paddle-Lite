@@ -182,18 +182,12 @@ void sgemv_trans(const int M,
   valid_ths = (N + valid_block - 1) / valid_block;
   int block_cnt = valid_block / 4;
 
-#ifdef TARGET_IOS
-  float *y_buf = new float[valid_ths * M];
-  float *zero_buf = new float[M];
-  float *x_buf = new float[valid_block * valid_ths];
-  std::shared_ptr<float> y_buf_shared(y_buf);
-  std::shared_ptr<float> zero_buf_shared(zero_buf);
-  std::shared_ptr<float> x_buf_shared(x_buf);
-#else
-  float y_buf[valid_ths * M];            // NOLINT
-  float zero_buf[M];                     // NOLINT
-  float x_buf[valid_block * valid_ths];  // NOLINT
-#endif
+  float *y_buf = static_cast<float *>(
+      TargetMalloc(TARGET(kARM), valid_ths * M * sizeof(float)));
+  float *zero_buf =
+      static_cast<float *>(TargetMalloc(TARGET(kARM), M * sizeof(float)));
+  float *x_buf = static_cast<float *>(
+      TargetMalloc(TARGET(kARM), valid_block * valid_ths * sizeof(float)));
 
   memset(x_buf, 0, valid_block * valid_ths * sizeof(float));
   memcpy(x_buf, x, N * sizeof(float));
@@ -597,6 +591,9 @@ void sgemv_trans(const int M,
       memcpy(y, y_buf, M * sizeof(float));
     }
   }
+  TargetFree(TARGET(kARM), y_buf);
+  TargetFree(TARGET(kARM), zero_buf);
+  TargetFree(TARGET(kARM), x_buf);
 }
 #else
 void sgemv_trans(const int M,
@@ -621,8 +618,10 @@ void sgemv_trans(const int M,
   int valid_block = std::max(4, (N / valid_ths + 3) / 4 * 4);
   valid_ths = (N + valid_block - 1) / valid_block;
   int block_cnt = valid_block / 4;
-  float zero_buf[M];           // NOLINT
-  float y_buf[valid_ths * M];  // NOLINT
+  float *y_buf = static_cast<float *>(
+      TargetMalloc(TARGET(kARM), valid_ths * M * sizeof(float)));
+  float *zero_buf =
+      static_cast<float *>(TargetMalloc(TARGET(kARM), M * sizeof(float)));
   memset(zero_buf, 0, M * sizeof(float));
   bool has_beta = fabsf(beta) > 1e-8f ? 1 : 0;
   if (flag_bias) {
@@ -1013,6 +1012,8 @@ void sgemv_trans(const int M,
       memcpy(y, y_buf, M * sizeof(float));
     }
   }
+  TargetFree(TARGET(kARM), y_buf);
+  TargetFree(TARGET(kARM), zero_buf);
 }
 #endif  // __aarch64__
 
