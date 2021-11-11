@@ -32,7 +32,7 @@ namespace paddle {
 namespace lite {
 
 TEST(ssd_mobilentert_v1,
-     test_ssd_mobilenet_v1_voc_int8_per_layer_v1_8_nnadapter) {
+     test_ssd_mobilenet_v1_relu_voc_int8_per_layer_v1_8_nnadapter) {
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;
@@ -46,7 +46,7 @@ TEST(ssd_mobilentert_v1,
   valid_places.push_back(lite_api::Place{TARGET(kX86), PRECISION(kInt8)});
   valid_places.push_back(lite_api::Place{TARGET(kX86), PRECISION(kFloat)});
 #else
-  LOG(FATAL) << "Unsupported host arch!";
+  LOG(INFO) << "Unsupported host arch!";
   return;
 #endif
 #if defined(NNADAPTER_WITH_ROCKCHIP_NPU)
@@ -54,7 +54,7 @@ TEST(ssd_mobilentert_v1,
 #elif defined(NNADAPTER_WITH_MEDIATEK_APU)
   nnadapter_device_names.emplace_back("mediatek_apu");
 #else
-  LOG(FATAL) << "Unsupported NNAdapter device!";
+  LOG(INFO) << "Unsupported NNAdapter device!";
   return;
 #endif
   std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor = nullptr;

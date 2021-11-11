@@ -43,14 +43,14 @@ TEST(yolov3_mobilenet_v3_large,
 #elif defined(LITE_WITH_X86)
   valid_places.push_back(lite_api::Place{TARGET(kX86), PRECISION(kFloat)});
 #else
-  LOG(FATAL) << "Unsupported host arch!";
+  LOG(INFO) << "Unsupported host arch!";
   return;
 #endif
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   nnadapter_device_names.emplace_back("huawei_ascend_npu");
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
 #else
-  LOG(FATAL) << "Unsupported NNAdapter device!";
+  LOG(INFO) << "Unsupported NNAdapter device!";
   return;
 #endif
   std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor = nullptr;
