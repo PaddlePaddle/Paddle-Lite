@@ -18,6 +18,7 @@ import logging
 import abc
 import enum
 import unittest
+import paddle
 from typing import Optional, List, Callable, Dict, Any, Set
 from paddlelite.lite import *
 
@@ -37,7 +38,6 @@ target_type_map = {
       "RKNPU": TargetType.RKNPU,
       "APU": TargetType.APU,
       "HUAWEI_ASCEND_NPU": TargetType.HUAWEI_ASCEND_NPU,
-      "IMAGINATION_NNA": TargetType.IMAGINATION_NNA,
       "INTEL_FPGA": TargetType.INTEL_FPGA,
       "Any": TargetType.Any}
 
@@ -106,8 +106,46 @@ class AutoScanTest(AutoScanBaseTest):
             input_tensor.from_numpy(inputs[name]['data'])
             if inputs[name]['lod'] is not None:
                 input_tensor.set_lod(inputs[name]['lod'])
+        predictor.save_optimized_pb_model(self.cache_dir)
+        with open(self.cache_dir + "/model", "rb") as f:
+            model = f.read()
         predictor.run()
         result = {}
         for out_name in predictor.get_output_names():
             result[out_name] = predictor.get_output_by_name(out_name).numpy()
-        return result
+        return result, model
+
+
+class FusePassAutoScanTest(AutoScanBaseTest):
+    def assert_op_size(self, fusion_before_num, fusion_after_num, origin_model, optimized_model):
+        pg = paddle.static.deserialize_program(optimized_model)
+        main_block = pg.desc.block(0)
+        after_op_size = main_block.op_size()
+        pg = paddle.static.deserialize_program(origin_model)
+        main_block = pg.desc.block(0)
+        before_op_size = main_block.op_size()
+        self.assertTrue(before_op_size == fusion_before_num,
+                        'before fusion op size is {}, but got {}!'.format(
+                            before_op_size, fusion_before_num))
+        self.assertTrue(after_op_size == fusion_after_num,
+                        'after fusion op size is {}, but got {}!'.format(
+                            after_op_size, fusion_after_num))
+
+    def run_lite_config(self, model, params, inputs, pred_config) -> Dict[str, np.ndarray]:
+        config = ParsePaddleLiteConfig(self, pred_config)
+        config.set_model_buffer(model, len(model), params, len(params))
+        self.origin_model = model
+        predictor = create_paddle_predictor(config)
+        for name in inputs:
+            input_tensor = predictor.get_input_by_name(name)
+            input_tensor.from_numpy(inputs[name]['data'])
+            if inputs[name]['lod'] is not None:
+                input_tensor.set_lod(inputs[name]['lod'])
+        predictor.save_optimized_pb_model(self.cache_dir)
+        with open(self.cache_dir + "/model", "rb") as f:
+            model = f.read()
+        predictor.run()
+        result = {}
+        for out_name in predictor.get_output_names():
+            result[out_name] = predictor.get_output_by_name(out_name).numpy()
+        return result, model

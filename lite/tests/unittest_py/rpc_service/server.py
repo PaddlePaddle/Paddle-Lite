@@ -107,11 +107,24 @@ class RPCService(rpyc.Service):
             input_tensor.from_numpy(inputs[name]['data'])
             if inputs[name]['lod'] is not None:
                 input_tensor.set_lod(inputs[name]['lod'])
+
+        abs_dir = os.path.abspath(os.path.dirname(__file__))
+        self.cache_dir = os.path.join(abs_dir,
+                                      str(self.__module__) + '_cache_dir')
+        if os.path.exists(self.cache_dir):
+                    shutil.rmtree(self.cache_dir)
+                if not os.path.exists(self.cache_dir):
+                    os.mkdir(self.cache_dir)
+
+        predictor.save_optimized_pb_model(self.cache_dir)
+        with open(self.cache_dir + "/model", "rb") as f:
+            model = f.read()
+
         predictor.run()
         result = {}
         for out_name in predictor.get_output_names():
             result[out_name] = predictor.get_output_by_name(out_name).numpy()
-        return result
+        return result, model
 
 
 if __name__ == "__main__":
