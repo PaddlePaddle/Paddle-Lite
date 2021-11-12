@@ -3347,7 +3347,10 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
               float32x4_t v0123 = vmulq_f32(vaccf0123, aph);
               vaccf0123 = vbslq_f32(vflag0123, vaccf0123, v0123);
             }
-            vaccf0123 = vbslq_f32(vcgeq_f32(vaccf0123, vdupq_n_f32(-127.0)), vaccf0123, vdupq_n_f32(-127.0));
+
+            vaccf0123 = vbslq_f32(vcgeq_f32(vaccf0123, vdupq_n_f32(-127.0)),
+                                  vaccf0123,
+                                  vdupq_n_f32(-127.0));
             float32x4_t vpos = vdupq_n_f32(0.5);
             float32x4_t vneg = vdupq_n_f32(-0.5);
             vaccf0123 = vbslq_f32(vcgeq_f32(vaccf0123, vzero),
@@ -6656,7 +6659,10 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
               float32x4_t v0123 = vmulq_f32(vaccf0123, aph);
               vaccf0123 = vbslq_f32(vflag0123, vaccf0123, v0123);
             }
-            vaccf0123 = vbslq_f32(vcgeq_f32(vaccf0123, vdupq_n_f32(-127.0)), vaccf0123, vdupq_n_f32(-127.0));
+
+            vaccf0123 = vbslq_f32(vcgeq_f32(vaccf0123, vdupq_n_f32(-127.0)),
+                                  vaccf0123,
+                                  vdupq_n_f32(-127.0));
             float32x4_t vpos = vdupq_n_f32(0.5);
             float32x4_t vneg = vdupq_n_f32(-0.5);
             vaccf0123 = vbslq_f32(vcgeq_f32(vaccf0123, vzero),
