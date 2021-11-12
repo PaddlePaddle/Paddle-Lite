@@ -11,8 +11,6 @@ ARCH=armv8
 
 CMAKE_EXTRA_OPTIONS=""
 BUILD_EXTRA=OFF
-BUILD_TRAIN=OFF
-BUILD_JAVA=ON
 BUILD_PYTHON=OFF
 BUILD_DIR=$(pwd)
 OPTMODEL_DIR=""
@@ -22,12 +20,11 @@ WITH_LOG=ON
 WITH_MKL=ON
 WITH_METAL=OFF
 WITH_OPENCL=OFF
-LITE_ON_TINY_PUBLISH=OFF
+LITE_ON_TINY_PUBLISH=ON
 WITH_STATIC_MKL=OFF
 WITH_AVX=ON
 WITH_EXCEPTION=OFF
 WITH_LIGHT_WEIGHT_FRAMEWORK=OFF
-WITH_TINY_PUBLISH=ON
 WITH_PROFILE=OFF
 WITH_PRECISION_PROFILE=OFF
 WITH_BENCHMARK=OFF
@@ -35,20 +32,6 @@ WITH_LTO=OFF
 WITH_TESTING=OFF
 BUILD_ARM82_FP16=OFF
 BUILD_ARM82_INT8_SDOT=OFF
-BUILD_NPU=OFF
-NPU_DDK_ROOT="$(pwd)/ai_ddk_lib/" # Download HiAI DDK from https://developer.huawei.com/consumer/cn/hiai/
-BUILD_XPU=OFF
-BUILD_XTCL=OFF
-XPU_SDK_ROOT=""
-XPU_SDK_URL=""
-XPU_SDK_ENV=""
-BUILD_APU=OFF
-APU_DDK_ROOT="$(pwd)/apu_sdk_lib/"
-BUILD_RKNPU=OFF
-RKNPU_DDK_ROOT="$(pwd)/rknpu/"
-WITH_HUAWEI_ASCEND_NPU=OFF # Huawei Ascend Builder/Runtime Libs on X86 host
-# default installation path, ensure acllib/atc/opp directories are all in this root dir
-HUAWEI_ASCEND_NPU_DDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux_gcc4.8.5"
 PYTHON_EXECUTABLE_OPTION=""
 workspace=$PWD/$(dirname $0)/../../
 OPTMODEL_DIR=""
@@ -117,6 +100,7 @@ function set_benchmark_options {
   BUILD_EXTRA=ON
   WITH_EXCEPTION=ON
   WITH_OPENCL=ON
+  LITE_ON_TINY_PUBLISH=OFF
 
   if [ ${WITH_PROFILE} == "ON" ] || [ ${WITH_PRECISION_PROFILE} == "ON" ]; then
     WITH_LOG=ON
@@ -132,19 +116,26 @@ function make_armosx {
         BUILD_EXTRA=ON
     fi
 
+    if [ "${WITH_BENCHMARK}" == "ON" ]; then
+        set_benchmark_options
+    fi
+
     build_dir=$workspace/build.macos.${os}.${arch}
-    if [ "${WITH_METAL}" = "ON" ]
-    then
-        build_dir=${build_dir}.metal
+    if [ ${WITH_METAL} == "ON" ]; then
+      BUILD_EXTRA=ON
+      build_dir=${build_dir}.metal
     fi
 
     if [ ${WITH_OPENCL} == "ON" ]; then
         build_dir=${build_dir}.opencl
         prepare_opencl_source_code $workspace
     fi
-    if [ "${WITH_BENCHMARK}" == "ON" ]; then
-        set_benchmark_options
+    
+    if [ ${WITH_TESTING} == "ON" ]; then
+      BUILD_EXTRA=ON
+      LITE_ON_TINY_PUBLISH=OFF
     fi
+
     if [ -d $build_dir ]
     then
         rm -rf $build_dir
@@ -162,13 +153,17 @@ function make_armosx {
     touch ./${GEN_CODE_PATH_PREFIX}/__generated_code__.cc
     cmake $workspace \
             -DWITH_LITE=ON \
+            -DWITH_TESTING=${WITH_TESTING} \
             -DLITE_WITH_ARM=ON \
             -DWITH_TESTING=${WITH_TESTING} \
+            -DLITE_WITH_METAL=${WITH_METAL} \
             -DLITE_WITH_OPENCL=${WITH_OPENCL} \
             -DLITE_ON_TINY_PUBLISH=${LITE_ON_TINY_PUBLISH} \
+            -DLITE_WITH_PROFILE=${WITH_PROFILE} \
+            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
+            -DLITE_WITH_PRECISION_PROFILE=${WITH_PRECISION_PROFILE} \
             -DLITE_WITH_OPENMP=OFF \
             -DWITH_ARM_DOTPROD=OFF \
-            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
             -DLITE_WITH_X86=OFF \
             -DLITE_WITH_LOG=$WITH_LOG \
             -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
@@ -200,11 +195,6 @@ function make_x86 {
     set_benchmark_options
   fi
 
-  if [ ${WITH_HUAWEI_ASCEND_NPU} == "ON" ]; then
-    export CXX=g++ # Huawei Ascend NPU need g++
-    build_directory=$BUILD_DIR/build.lite.huawei_ascend_npu
-  fi
-
   if [ ${WITH_OPENCL} == "ON" ]; then
     BUILD_EXTRA=ON
     build_directory=$BUILD_DIR/build.lite.x86.opencl
@@ -213,9 +203,12 @@ function make_x86 {
 
   if [ ${WITH_METAL} == "ON" ]; then
     BUILD_EXTRA=ON
-    WITH_LIGHT_WEIGHT_FRAMEWORK=OFF
-    WITH_TINY_PUBLISH=OFF
     build_directory=${build_directory}.metal
+  fi
+  
+  if [ ${WITH_TESTING} == "ON" ]; then
+    BUILD_EXTRA=ON
+    LITE_ON_TINY_PUBLISH=OFF
   fi
 
   if [ ${BUILD_PYTHON} == "ON" ]; then
@@ -242,9 +235,10 @@ function make_x86 {
             -DWITH_MKLDNN=OFF    \
             -DLITE_WITH_X86=ON  \
             -DWITH_LITE=ON \
-            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
-            -DDLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=${WITH_LIGHT_WEIGHT_FRAMEWORK} \
-            -DLITE_ON_TINY_PUBLISH=$WITH_TINY_PUBLISH \
+            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=${WITH_LIGHT_WEIGHT_FRAMEWORK} \
+            -DLITE_ON_TINY_PUBLISH=${LITE_ON_TINY_PUBLISH} \
+            -DLITE_WITH_PROFILE=${WITH_PROFILE} \
+            -DLITE_WITH_PRECISION_PROFILE=${WITH_PRECISION_PROFILE} \
             -DLITE_WITH_ARM=OFF \
             -DLITE_WITH_METAL=${WITH_METAL} \
             -DLITE_WITH_OPENCL=${WITH_OPENCL} \
@@ -255,16 +249,7 @@ function make_x86 {
             -DLITE_OPTMODEL_DIR=${OPTMODEL_DIR} \
             -DLITE_WITH_LOG=${WITH_LOG} \
             -DLITE_WITH_EXCEPTION=$WITH_EXCEPTION \
-            -DLITE_WITH_PROFILE=${WITH_PROFILE} \
-            -DLITE_WITH_PRECISION_PROFILE=${WITH_PRECISION_PROFILE} \
             -DLITE_WITH_LTO=${WITH_LTO} \
-            -DLITE_WITH_XPU=$BUILD_XPU \
-            -DLITE_WITH_XTCL=$BUILD_XTCL \
-            -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
-            -DXPU_SDK_URL=$XPU_SDK_URL \
-            -DXPU_SDK_ENV=$XPU_SDK_ENV \
-            -DLITE_WITH_HUAWEI_ASCEND_NPU=$WITH_HUAWEI_ASCEND_NPU \
-            -DHUAWEI_ASCEND_NPU_DDK_ROOT=$HUAWEI_ASCEND_NPU_DDK_ROOT \
             -DCMAKE_BUILD_TYPE=Release \
             -DPY_VERSION=$PY_VERSION \
             $PYTHON_EXECUTABLE_OPTION
@@ -296,12 +281,13 @@ function print_usage {
     echo -e "|     --with_exception: (OFF|ON); controls whether to throw the exception when error occurs, default is OFF                            |"
     echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP) |"
     echo -e "|     --with_benchmark: (OFF|ON); controls whether to compile benchmark binary, default is OFF                                         |"
+    echo -e "|     --with_testing: (OFF|ON); controls whether to compile unit test, default is OFF                                                  |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of benchmark binary compiling for macos x86:                                                                              |"
     echo -e "|     ./lite/tools/build_macos.sh --with_benchmark=ON x86                                                                              |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of benchmark binary compiling for macos opencl(only support --gpu_precision=fp32):                                        |"
-    echo -e "|     ./lite/tools/build_macos.sh --with_opencl=ON --with_benchmark=ON arm64                                                          |"
+    echo -e "|     ./lite/tools/build_macos.sh --with_benchmark=ON arm64                                                                            |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of striping lib according to input model:(armv8, gcc, c++_static)                                                         |"
     echo -e "|     ./lite/tools/build_macos.sh --with_strip=ON --opt_model_dir=YourOptimizedModelDir                                                |"
@@ -321,6 +307,14 @@ function main {
     # Parse command line.
     for i in "$@"; do
         case $i in
+            --with_metal=*)
+                WITH_METAL="${i#*=}"
+                shift
+                ;;
+            --with_opencl=*)
+                WITH_OPENCL="${i#*=}"
+                shift
+                ;;
             --with_extra=*)
                 BUILD_EXTRA="${i#*=}"
                 shift
@@ -393,47 +387,8 @@ function main {
                 WITH_LTO="${i#*=}"
                 shift
                 ;;
-            --with_metal=*)
-                WITH_METAL="${i#*=}"
-                shift
-                ;;
-            --with_opencl=*)
-                WITH_OPENCL="${i#*=}"
-                shift
-                ;;
             --tiny_publish=*)
                 LITE_ON_TINY_PUBLISH="${i#*=}"
-                shift
-                ;;
-            --build_npu=*)
-                BUILD_NPU="${i#*=}"
-                shift
-                ;;
-            --npu_ddk_root=*)
-                NPU_DDK_ROOT="${i#*=}"
-                shift
-                ;;
-            --build_xpu=*)
-                BUILD_XPU="${i#*=}"
-                shift
-                ;;
-            --build_xtcl=*)
-                BUILD_XTCL="${i#*=}"
-                shift
-                ;;
-            --xpu_sdk_root=*)
-                XPU_SDK_ROOT=${i#*=}
-                if [ -n "${XPU_SDK_ROOT}" ]; then
-                    XPU_SDK_ROOT=$(readlink -f ${XPU_SDK_ROOT})
-                fi
-                shift
-                ;;
-            --xpu_sdk_url=*)
-                XPU_SDK_URL="${i#*=}"
-                shift
-                ;;
-            --xpu_sdk_env=*)
-                XPU_SDK_ENV="${i#*=}"
                 shift
                 ;;
             --python_executable=*)
@@ -442,30 +397,6 @@ function main {
                 ;;
             --python_version=*)
                 PY_VERSION="${i#*=}"
-                shift
-                ;;
-            --build_apu=*)
-                BUILD_APU="${i#*=}"
-                shift
-                ;;
-           --apu_ddk_root=*)
-                APU_DDK_ROOT="${i#*=}"
-                shift
-                ;;
-            --build_rknpu=*)
-                BUILD_RKNPU="${i#*=}"
-                shift
-                ;;
-            --rknpu_ddk_root=*)
-                RKNPU_DDK_ROOT="${i#*=}"
-                shift
-                ;;
-            --with_huawei_ascend_npu=*)
-                WITH_HUAWEI_ASCEND_NPU="${i#*=}"
-                shift
-                ;;
-            --huawei_ascend_npu_ddk_root=*)
-                HUAWEI_ASCEND_NPU_DDK_ROOT="${i#*=}"
                 shift
                 ;;
             --ios_deployment_target=*)
