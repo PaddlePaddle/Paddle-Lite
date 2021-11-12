@@ -71,7 +71,6 @@ void GaussRandomCompute::Run() {
   auto data = param.Out->mutable_data<float>();
   int size = param.Out->numel();
   std::normal_distribution<float> dist(mean, gstd);
-  LOG(INFO) << mean << " " << gstd;
   unsigned int useed = static_cast<unsigned int>(param.seed);
   auto engine = GetCPURandomEngine(useed);
   for (int64_t i = 0; i < size; ++i) {
