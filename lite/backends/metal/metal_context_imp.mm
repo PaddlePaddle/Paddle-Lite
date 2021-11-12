@@ -71,9 +71,10 @@ extern NSString* cString2NSString(std::string cStr) {
 
 - (void)setMetalPath:(std::string)path {
     NSString* pathStr = cString2NSString(path);
+    NSError* libraryErr = nil;
     if (pathStr) {
         self.libPath = pathStr;
-        self.library = [self.device newLibraryWithFile:pathStr error:NULL];
+        self.library = [self.device newLibraryWithFile:pathStr error:&libraryErr];
     }
     if (nil == _library) {
         LOG(INFO) << "Can't load metallib: " << [pathStr cStringUsingEncoding:NSUTF8StringEncoding];
