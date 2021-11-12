@@ -62,8 +62,6 @@ function (lite_deps TARGET)
     endforeach(var)
   endif()
 
-
-
   if (NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     foreach(var ${lite_deps_HVY_DEPS})
       set(deps ${deps} ${var})
@@ -255,8 +253,6 @@ function(lite_cc_binary TARGET)
     # link to paddle-lite static lib automatically
     add_dependencies(${TARGET} bundle_full_api)
 
-
-
     if(NOT WIN32)
       target_link_libraries(${TARGET} ${CMAKE_BINARY_DIR}/libpaddle_api_full_bundled.a)
       target_compile_options(${TARGET} BEFORE PRIVATE -Wno-ignored-qualifiers)
@@ -267,7 +263,6 @@ function(lite_cc_binary TARGET)
     else()
       target_link_libraries(${TARGET} ${CMAKE_BINARY_DIR}/lite/api/${CMAKE_BUILD_TYPE}/libpaddle_api_full_bundled.lib)
     endif()
-
 
     # link to dynamic runtime lib
     if(LITE_WITH_METAL)
