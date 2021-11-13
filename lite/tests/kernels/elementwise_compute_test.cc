@@ -289,11 +289,6 @@ void TestElt(Place place,
     return;
   }
 #endif
-#if defined(LITE_WITH_HUAWEI_ASCEND_NPU)
-  if (elt_type == std::string("div")) {
-    return;
-  }
-#endif
 #if defined(NNADAPTER_WITH_CAMBRICON_MLU)
   if (elt_type == std::string("max") || elt_type == std::string("min") ||
       elt_type == std::string("pow") || elt_type == std::string("div") ||
@@ -472,9 +467,6 @@ TEST(Elementwise, precision) {
 #elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // use fp16 in npu
-#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
-  place = TARGET(kHuaweiAscendNPU);
-  abs_error = 5e-2;  // precision_mode default is force_fp16
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_ARM)

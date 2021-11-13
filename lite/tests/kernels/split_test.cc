@@ -267,15 +267,6 @@ TEST(Split_test, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
-  place = TARGET(kHuaweiAscendNPU);
-  abs_error = 1e-2;  // precision_mode default is force_fp16
-  TestSplitBase<float>(place, abs_error);
-  TestSplitBase<int>(place, abs_error);
-  TestSplitBase<int64_t>(place, abs_error);
-  TestSplitAxis(place, abs_error);
-  TestSplitNum(place, abs_error);
-  TestSplitSections(place, abs_error);
 #elif defined(LITE_WITH_X86) || defined(LITE_WITH_ARM)
   place = TARGET(kHost);
   abs_error = 1e-5;
