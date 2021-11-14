@@ -769,7 +769,6 @@ const int stride = 2;
                     &output, out_image_shape[0], out_image_shape[1], nullptr);
                 TargetWrapperCL::ImgcpySync(out_image_v.data(),
                                             output_image,
-                                            ,
                                             out_image_width,
                                             out_image_height,
                                             cl_image2d_row_pitch,
