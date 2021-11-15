@@ -766,14 +766,17 @@ void OptBase::InitSupportedOpInfo() {
                                               "kOpenCL",
                                               "kAny",
                                               "kFPGA",
+                                              "kNPU",
                                               "kXPU",
                                               "kBM",
                                               "kMLU",
+                                              "kRKNPU",
+                                              "kAPU",
+                                              "kHuaweiAscendNPU",
+                                              "kImaginationNNA",
                                               "kIntelFPGA",
                                               "kMetal",
-                                              "kNNAdapter",
-                                              "kNPU",
-                                              "kRKNPU"};
+                                              "kNNAdapter"};
 
   // ignore some old targets
   std::set<std::string> valid_target{"kARM",
