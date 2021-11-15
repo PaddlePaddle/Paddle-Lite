@@ -2242,7 +2242,7 @@ bool gemv_int8_trans_oth(const int8_t* A,
     "beq    15f                   \n"                                     \
     "cmp    %w[relu],    #2       \n"                                     \
     "beq    13f                   \n"                                     \
-    "cmp    %w[relu],    #3       \n"                                     \
+    "cmp    %w[relu],    #4       \n"                                     \
     "beq    14f                   \n"                                     \
     "ldr    q2,    [%[alpha], #16]\n"                                     \
     "ldr    q1,    [%[alpha]]     \n"                                     \
@@ -2479,9 +2479,9 @@ inline void gemv_int8_dot_asm(GEMV_ASM_FUN_PARAMS(float)) {
   "cmp    %[relu],  #1            \n"   \
   "vmov.f32    q0,  #0.0          \n"   \
   "beq    15f                     \n"   \
-  "cmp    %[relu],   #1           \n"   \
-  "beq    13f                     \n"   \
   "cmp    %[relu],   #2           \n"   \
+  "beq    13f                     \n"   \
+  "cmp    %[relu],   #4           \n"   \
   "beq    14f                     \n"   \
   "vld1.32    {d2-d5}, [%[alpha]] \n"   \
   "vldr       d6,   [%[alpha], #32]\n"  \
@@ -2919,11 +2919,11 @@ void gemv_int8(const int8_t* A,
   float threshold = 6.f;
   if (act_param.has_active) {
     if (act_param.active_type == lite_api::ActivationType::kRelu6) {
-      alpha = act_param.threshold;
+      alpha = act_param.Relu_clipped_coef;
     } else if (act_param.active_type == lite_api::ActivationType::kLeakyRelu) {
       alpha = act_param.Leaky_relu_alpha;
     } else if (act_param.active_type == lite_api::ActivationType::kHardSwish) {
-      alpha = act_param.hard_swish_scale;
+      alpha = 1.0 / act_param.hard_swish_scale;
       offset = act_param.hard_swish_offset;
       threshold = act_param.hard_swish_threshold;
     }
