@@ -57,10 +57,10 @@ enum class TargetType : int {
   kMLU = 11,
   kRKNPU = 12,
   kAPU = 13,
-  kIntelFPGA = 16,
-  kMetal = 17,
-  kNNAdapter = 18,
-  NUM = 19,  // number of fields.
+  kIntelFPGA = 14,
+  kMetal = 15,
+  kNNAdapter = 16,
+  NUM = 17,  // number of fields.
 };
 enum class PrecisionType : int {
   kUnk = 0,
