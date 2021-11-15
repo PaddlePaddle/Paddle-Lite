@@ -23,7 +23,8 @@ set CMAKE_GENERATOR=Visual Studio 14 2015
 set ARCH=""
 set WITH_STRIP=OFF
 set OPTMODEL_DIR=""
-set THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
+set THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
+set THIRDPARTY_TAR=third-party-801f670.tar.gz
 set BAIDU_XPU_SDK_ROOT=""
 
 set workspace=%source_path%
@@ -213,7 +214,7 @@ goto:eof
         call "%vcvarsall_dir%" x86
         set ARCH="i386"
     )
- 
+
     cmake %root_dir%  -G Ninja -DARCH=%ARCH% ^
             -DMSVC_STATIC_CRT=%MSVC_STATIC_CRT% ^
             -DWITH_MKL=ON      ^
@@ -247,36 +248,36 @@ goto:eof
 
 :prepare_thirdparty
     if  EXIST "%workspace%\third-party" (
-        if NOT EXIST "%workspace%\third-party-ea5576.tar.gz" (
-            echo "The directory of third_party exists, the third-party-ea5576.tar.gz not exists."
+        if NOT EXIST "%workspace%\%THIRDPARTY_TAR%" (
+            echo "The directory of third_party exists, %THIRDPARTY_TAR% not exists."
             git submodule update --init --recursive
             call:rm_rebuild_dir "%workspace%\third-party\glog\src\extern_glog-build"
             call:rm_rebuild_dir "%workspace%\third-party\protobuf-host\src\extern_protobuf-build"
 
         ) else (
-               echo "The directory of third_party exists, the third-party-ea5576.tar.gz exists."
+               echo "The directory of third_party exists, the %THIRDPARTY_TAR% exists."
                call:rm_rebuild_dir "%workspace%\third-party"
-               !python_path! %workspace%\lite\tools\untar.py %source_path%\third-party-ea5576.tar.gz %workspace%
+               !python_path! %workspace%\lite\tools\untar.py %source_path%\%THIRDPARTY_TAR% %workspace%
         )
     ) else (
-        if NOT EXIST "%workspace%\third-party-ea5576.tar.gz" (
-            echo "The directory of third_party not exists, the third-party-ea5576.tar.gz not exists."
+        if NOT EXIST "%workspace%\%THIRDPARTY_TAR%" (
+            echo "The directory of third_party not exists, the %THIRDPARTY_TAR% not exists."
             call:download_third_party
-            if EXIST "%workspace%\third-party-ea5576.tar.gz" (
-                !python_path! %workspace%\lite\tools\untar.py %source_path%\third-party-ea5576.tar.gz %workspace%
+            if EXIST "%workspace%\%THIRDPARTY_TAR%" (
+                !python_path! %workspace%\lite\tools\untar.py %source_path%\%THIRDPARTY_TAR% %workspace%
             ) else (
-                echo "------------Can't download the third-party-ea5576.tar.gz!------"
+                echo "------------Can't download the %THIRDPARTY_TAR%!------"
             )
         ) else (
-            echo "The directory of third_party not exists, the third-party-ea5576.tar.gz exists."
-            !python_path! %workspace%\lite\tools\untar.py %source_path%\third-party-ea5576.tar.gz %workspace%
+            echo "The directory of third_party not exists, the %THIRDPARTY_TAR% exists."
+            !python_path! %workspace%\lite\tools\untar.py %source_path%\%THIRDPARTY_TAR% %workspace%
         )
     )
 goto:eof
 
 :download_third_party
 powershell.exe (new-object System.Net.WebClient).DownloadFile('%THIRDPARTY_TAR%', ^
-'%workspace%\third-party-ea5576.tar.gz')
+'%workspace%\%THIRDPARTY_TAR%')
 goto:eof
 
 :prepare_opencl_source_code
