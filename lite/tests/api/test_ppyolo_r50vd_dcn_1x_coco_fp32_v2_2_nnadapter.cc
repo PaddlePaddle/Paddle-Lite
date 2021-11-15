@@ -18,21 +18,23 @@
 #include "lite/api/paddle_api.h"
 #include "lite/api/test/lite_api_test_helper.h"
 #include "lite/api/test/test_helper.h"
-#include "lite/tests/api/ILSVRC2012_utility.h"
+#include "lite/tests/api/COCO2017_utility.h"
+#include "lite/tests/api/detection_utility.h"
 
 DEFINE_string(data_dir, "", "data dir");
-DEFINE_int32(iteration, 100, "iteration times to run");
+DEFINE_int32(iteration, 10, "iteration times to run");
 DEFINE_int32(batch, 1, "batch of image");
 DEFINE_int32(channel, 3, "image channel");
+DEFINE_int32(height, 608, "image height");
+DEFINE_int32(width, 608, "image width");
 
 namespace paddle {
 namespace lite {
 
-TEST(GoogLeNet, test_googlenet_v2_0_fp32_nnadapter) {
+TEST(ppyolo_r50vd_dcn, test_ppyolo_r50vd_dcn_1x_coco_fp32_v2_2_nnadapter) {
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;
-  float out_accuracy_threshold = 1.0f;
   valid_places.push_back(
       lite_api::Place{TARGET(kNNAdapter), PRECISION(kFloat)});
 #if defined(LITE_WITH_ARM)
@@ -46,7 +48,6 @@ TEST(GoogLeNet, test_googlenet_v2_0_fp32_nnadapter) {
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   nnadapter_device_names.emplace_back("huawei_ascend_npu");
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
-  out_accuracy_threshold = 0.73f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;
@@ -73,7 +74,7 @@ TEST(GoogLeNet, test_googlenet_v2_0_fp32_nnadapter) {
 
   std::string raw_data_dir = FLAGS_data_dir + std::string("/raw_data");
   std::vector<int> input_shape{
-      FLAGS_batch, FLAGS_channel, FLAGS_im_width, FLAGS_im_height};
+      FLAGS_batch, FLAGS_channel, FLAGS_height, FLAGS_width};
   auto raw_data = ReadRawData(raw_data_dir, input_shape, FLAGS_iteration);
 
   int input_size = 1;
@@ -81,14 +82,9 @@ TEST(GoogLeNet, test_googlenet_v2_0_fp32_nnadapter) {
     input_size *= i;
   }
 
+  FLAGS_warmup = 1;
   for (int i = 0; i < FLAGS_warmup; ++i) {
-    auto input_tensor = predictor->GetInput(0);
-    input_tensor->Resize(
-        std::vector<int64_t>(input_shape.begin(), input_shape.end()));
-    auto* data = input_tensor->mutable_data<float>();
-    for (int j = 0; j < input_size; j++) {
-      data[j] = 0.f;
-    }
+    SetDetectionInput(predictor, input_shape, std::vector<float>(), input_size);
     predictor->Run();
   }
 
@@ -96,22 +92,18 @@ TEST(GoogLeNet, test_googlenet_v2_0_fp32_nnadapter) {
   out_rets.resize(FLAGS_iteration);
   double cost_time = 0;
   for (size_t i = 0; i < raw_data.size(); ++i) {
-    auto input_tensor = predictor->GetInput(0);
-    input_tensor->Resize(
-        std::vector<int64_t>(input_shape.begin(), input_shape.end()));
-    auto* data = input_tensor->mutable_data<float>();
-    memcpy(data, raw_data[i].data(), sizeof(float) * input_size);
+    SetDetectionInput(predictor, input_shape, raw_data[i], input_size);
 
     double start = GetCurrentUS();
     predictor->Run();
-    cost_time += GetCurrentUS() - start;
+    cost_time += (GetCurrentUS() - start);
 
     auto output_tensor = predictor->GetOutput(0);
     auto output_shape = output_tensor->shape();
     auto output_data = output_tensor->data<float>();
     ASSERT_EQ(output_shape.size(), 2UL);
-    ASSERT_EQ(output_shape[0], 1);
-    ASSERT_EQ(output_shape[1], 1000);
+    ASSERT_GT(output_shape[0], 0);
+    ASSERT_EQ(output_shape[1], 6);
 
     int output_size = output_shape[0] * output_shape[1];
     out_rets[i].resize(output_size);
@@ -123,10 +115,6 @@ TEST(GoogLeNet, test_googlenet_v2_0_fp32_nnadapter) {
             << ", warmup: " << FLAGS_warmup << ", batch: " << FLAGS_batch
             << ", iteration: " << FLAGS_iteration << ", spend "
             << cost_time / FLAGS_iteration / 1000.0 << " ms in average.";
-
-  std::string labels_dir = FLAGS_data_dir + std::string("/labels.txt");
-  float out_accuracy = CalOutAccuracy(out_rets, labels_dir);
-  ASSERT_GE(out_accuracy, out_accuracy_threshold);
 }
 
 }  // namespace lite

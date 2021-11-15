@@ -28,25 +28,36 @@ DEFINE_int32(channel, 3, "image channel");
 namespace paddle {
 namespace lite {
 
-TEST(ResNet101, test_resnet101_v2_0_fp32_nnadapter) {
+TEST(MobileNetV1, test_mobilenet_v1_int8_per_layer_v1_8_nnadapter) {
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;
   float out_accuracy_threshold = 1.0f;
+  valid_places.push_back(lite_api::Place{TARGET(kNNAdapter), PRECISION(kInt8)});
   valid_places.push_back(
       lite_api::Place{TARGET(kNNAdapter), PRECISION(kFloat)});
 #if defined(LITE_WITH_ARM)
+  valid_places.push_back(lite_api::Place{TARGET(kARM), PRECISION(kInt8)});
   valid_places.push_back(lite_api::Place{TARGET(kARM), PRECISION(kFloat)});
 #elif defined(LITE_WITH_X86)
+  valid_places.push_back(lite_api::Place{TARGET(kX86), PRECISION(kInt8)});
   valid_places.push_back(lite_api::Place{TARGET(kX86), PRECISION(kFloat)});
 #else
   LOG(INFO) << "Unsupported host arch!";
   return;
 #endif
-#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
-  nnadapter_device_names.emplace_back("huawei_ascend_npu");
-  nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
-  out_accuracy_threshold = 0.75f;
+#if defined(NNADAPTER_WITH_ROCKCHIP_NPU)
+  nnadapter_device_names.emplace_back("rockchip_npu");
+  out_accuracy_threshold = 0.79f;
+#elif defined(NNADAPTER_WITH_MEDIATEK_APU)
+  nnadapter_device_names.emplace_back("mediatek_apu");
+  out_accuracy_threshold = 0.79f;
+#elif defined(NNADAPTER_WITH_IMAGINATION_NNA)
+  nnadapter_device_names.emplace_back("imagination_nna");
+  out_accuracy_threshold = 0.78f;
+#elif defined(NNADAPTER_WITH_AMLOGIC_NPU)
+  nnadapter_device_names.emplace_back("amlogic_npu");
+  out_accuracy_threshold = 0.78f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;
@@ -126,6 +137,7 @@ TEST(ResNet101, test_resnet101_v2_0_fp32_nnadapter) {
 
   std::string labels_dir = FLAGS_data_dir + std::string("/labels.txt");
   float out_accuracy = CalOutAccuracy(out_rets, labels_dir);
+  LOG(INFO) << "out_accuracy: " << out_accuracy;
   ASSERT_GE(out_accuracy, out_accuracy_threshold);
 }
 
