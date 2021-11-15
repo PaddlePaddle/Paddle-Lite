@@ -304,8 +304,7 @@ void TestPoolStrides(Place place, float abs_error = 2e-5) {
         place, abs_error, {2, 3, 6, 7}, pooling_type, {1, 1}, {0, 0}, {2, 2});
     TestPoolHelper(
         place, abs_error, {2, 3, 6, 7}, pooling_type, {2, 2}, {0, 0}, {2, 2});
-#if !defined(LITE_WITH_HUAWEI_ASCEND_NPU) && \
-    !defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+#if !defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
     TestPoolHelper(
         place, abs_error, {2, 3, 6, 7}, pooling_type, {1, 2}, {0, 0}, {2, 2});
 #endif
@@ -317,7 +316,6 @@ void TestPoolPaddings(Place place, float abs_error = 2e-5) {
     TestPoolHelper(
         place, abs_error, {2, 3, 6, 7}, pooling_type, {1, 1}, {0, 0}, {2, 2});
 #if !defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL) && \
-    !defined(LITE_WITH_HUAWEI_ASCEND_NPU) &&               \
     !defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
     TestPoolHelper(
         place, abs_error, {2, 3, 6, 7}, pooling_type, {1, 1}, {1, 1}, {2, 2});
@@ -357,7 +355,6 @@ void TestPoolKsize(Place place, float abs_error = 2e-5) {
                      {0, 0},
                      {ksize, ksize});
 #if !defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL) && \
-    !defined(LITE_WITH_HUAWEI_ASCEND_NPU) &&               \
     !defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
       TestPoolHelper(place,
                      abs_error,
@@ -409,9 +406,6 @@ TEST(Pool, precision) {
 #elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
-#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
-  place = TARGET(kHuaweiAscendNPU);
-  abs_error = 1e-2;  // precision_mode default is force_fp16
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
 #else

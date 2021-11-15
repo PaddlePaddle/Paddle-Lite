@@ -734,9 +734,7 @@ TEST(PriorBox, precision) {
 
 TEST(DensityPriorBox, precision) {
   Place place;
-#if defined(LITE_WITH_HUAWEI_ASCEND_NPU)
-  place = TARGET(kHuaweiAscendNPU);
-#elif defined(LITE_WITH_X86)
+#if defined(LITE_WITH_X86)
   place = TARGET(kX86);
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kHost);

@@ -278,8 +278,7 @@ void TestConvGroups(Place place, float abs_error = 2e-5) {
        std::vector<std::vector<int64_t>>{{1, 6, 3, 4}, {5, 12, 7, 8}}) {
     for (auto out_channels : {2, 3, 6}) {
       for (auto groups : {2, 3, 6}) {
-#if (defined LITE_WITH_NPU) || (defined LITE_WITH_HUAWEI_ASCEND_NPU) || \
-    (defined NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+#if (defined LITE_WITH_NPU) || (defined NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
         if (out_channels % groups != 0) continue;
 #endif
         std::unique_ptr<arena::TestCase> tester(new ConvComputeTester(
@@ -469,6 +468,21 @@ void TestConvDepthwise(Place place, float abs_error = 2e-5) {
       }
     }
   }
+  for (auto pad : {0, 1, 2}) {
+    for (auto stride : {1, 2}) {
+      std::unique_ptr<arena::TestCase> tester(
+          new ConvComputeTester(place,
+                                "def",
+                                DDim({1, 16, 16, 25}),
+                                16,
+                                3,
+                                {stride, stride},
+                                {pad, pad},
+                                16));
+      arena::Arena arena(std::move(tester), place, abs_error);
+      arena.TestPrecision();
+    }
+  }
   std::unique_ptr<arena::TestCase> tester(new ConvComputeTester(
       place, "def", DDim({1, 40, 16, 50}), 40, 3, {2, 1}, {1, 1}, 40));
   arena::Arena arena(std::move(tester), place, abs_error);
@@ -496,9 +510,6 @@ TEST(Conv2d, precision) {
 #elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 5e-2;  // Using fp16 in NPU
-#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
-  place = TARGET(kHuaweiAscendNPU);
-  abs_error = 5e-2;  // precision_mode default is force_fp16
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
   abs_error = 1e-2;

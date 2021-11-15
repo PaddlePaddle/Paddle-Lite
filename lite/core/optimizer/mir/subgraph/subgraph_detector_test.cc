@@ -198,9 +198,6 @@ TEST(Subgraph, detect_custom_model) {
 #ifdef LITE_WITH_NPU
       Place{TARGET(kNPU), PRECISION(kFloat)},
 #endif
-#ifdef LITE_WITH_HUAWEI_ASCEND_NPU
-      Place{TARGET(kHuaweiAscendNPU), PRECISION(kFloat)},
-#endif
 #ifdef LITE_WITH_XTCL
       Place{TARGET(kXPU), PRECISION(kFloat)},
 #endif

@@ -965,25 +965,6 @@ function armlinux_armhf_build_and_test {
     run_all_tests_on_remote_device $1 "~/ci" ssh_device_pick ssh_device_check ssh_device_run $2 "." "armv7hf" "gcc" armlinux_build_target armlinux_prepare_device
 }
 
-function cmake_huawei_ascend_npu {
-    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
-    prepare_workspace
-    cmake .. \
-        ${common_flags} \
-        -DWITH_GPU=OFF \
-        -DWITH_MKLDNN=OFF \
-        -DLITE_WITH_X86=ON \
-        -DWITH_MKL=ON \
-        -DLITE_BUILD_EXTRA=ON \
-        -DLITE_WITH_HUAWEI_ASCEND_NPU=ON \
-        -DHUAWEI_ASCEND_NPU_DDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux" \
-        -DCMAKE_BUILD_TYPE=Release
-}
-
-function build_huawei_ascend_npu {
-    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
-}
-
 # It will eagerly test all lite related unittests.
 function test_huawei_ascend_npu {
     # Due to the missing of ascend kernels, we skip the following tests temporarily.
@@ -1007,20 +988,6 @@ function test_huawei_ascend_npu {
             ctest -R $_test -V
         fi
     done
-}
-
-# Build the code and run lite server tests. This is executed in the CI system.
-function build_test_huawei_ascend_npu {
-    cur_dir=$(pwd)
-
-    build_dir=$cur_dir/build.lite.huawei_ascend_npu
-    mkdir -p $build_dir
-    cd $build_dir
-
-    cmake_huawei_ascend_npu
-    build_huawei_ascend_npu
-
-    # test_huawei_ascend_npu
 }
 
 # test_arm_android <some_test_name> <adb_port_number>
@@ -1700,10 +1667,6 @@ function main {
                 ;;
             armlinux_armhf_build_and_test)
                 armlinux_armhf_build_and_test $SSH_DEVICE_LIST $TEST_SKIP_LIST
-                shift
-                ;;
-            build_test_huawei_ascend_npu)
-                build_test_huawei_ascend_npu
                 shift
                 ;;
             build_test_train)
