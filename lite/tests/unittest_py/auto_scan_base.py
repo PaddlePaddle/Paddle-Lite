@@ -28,7 +28,7 @@ import paddle.fluid.core as core
 from paddle import compat as cpt
 import paddle.inference as paddle_infer
 from typing import Optional, List, Callable, Dict, Any, Set
-from program_config import TensorConfig, OpConfig, ProgramConfig, create_fake_model, create_quant_model, PaddleLiteConfig
+from program_config import TensorConfig, OpConfig, ProgramConfig, create_fake_model, create_quant_model
 
 import hypothesis
 from hypothesis import given, settings, seed, example, assume
