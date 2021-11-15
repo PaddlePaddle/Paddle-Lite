@@ -26,7 +26,7 @@ __kernel void pool(__read_only image2d_t input,
                    __private const int stride_w,
                    __private const int pad_top,
                    __private const int pad_left,
-                   __private const int adaptive) {
+                   __private const int adaptive) { //cyh
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);

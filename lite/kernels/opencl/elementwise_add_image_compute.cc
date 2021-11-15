@@ -217,7 +217,6 @@ void ElementwiseAddImageCompute::Run() {
   if (kernel_func_name_ == "elementwise_add") {
     if (y->persistable()) {
       y_img = GET_DATA_GPU(y_weights_image_);
-      //      VLOG(1)<<"acm end";
     }
     int output_w = y_dims[3];
     int output_h = y_dims[2];
