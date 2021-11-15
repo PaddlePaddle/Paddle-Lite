@@ -554,6 +554,9 @@ const int stride = 2;
 #ifdef TEST_WINOGRAD
                 p = lite_api::CLPrecisionType::CL_PRECISION_FP32;
 #endif
+                const bool fp16_flag =
+                    (CLRuntime::Global()->get_precision() ==
+                     lite_api::CLPrecisionType::CL_PRECISION_FP16);
                 CLRuntime::Global()->set_precision(p);
                 SHADOW_LOG << "to get kernel ...";
                 auto kernels =
@@ -701,14 +704,20 @@ const int stride = 2;
 
                 paddle::lite::CLImageConverterDefault default_convertor;
                 SHADOW_LOG << "set mapped input  ...";
-                std::vector<half_t> x_image_v(
-                    input_image_width * input_image_height * 4);  // 4 :RGBA
-                std::vector<half_t> filter_image_v(
-                    filter_image_width * filter_image_height * 4);  // 4 : RGBA
-                std::vector<half_t> bias_image_v(
-                    bias_image_width * bias_image_height * 4);  // 4 : RGBA
-                std::vector<half_t> out_image_v(
-                    out_image_width * out_image_height * 4);  // 4 :RGBA
+                const size_t dtype_size =
+                    fp16_flag ? sizeof(half_t) : sizeof(float);
+                std::vector<char> x_image_v(input_image_width *
+                                            input_image_height * 4 *
+                                            dtype_size);  // 4 :RGBA
+                std::vector<char> filter_image_v(filter_image_width *
+                                                 filter_image_height * 4 *
+                                                 dtype_size);  // 4 : RGBA
+                std::vector<char> bias_image_v(bias_image_width *
+                                               bias_image_height * 4 *
+                                               dtype_size);  // 4 : RGBA
+                std::vector<char> out_image_v(out_image_width *
+                                              out_image_height * 4 *
+                                              dtype_size);  // 4 :RGBA
 
                 default_convertor.NCHWToImage(
                     input_v.data(), x_image_v.data(), input_dim);
