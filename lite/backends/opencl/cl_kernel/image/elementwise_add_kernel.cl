@@ -67,7 +67,6 @@ __kernel void channel_add(__read_only image2d_t input,
                           int w, int opt) {
      int x = get_global_id(0);
      int y = get_global_id(1);
-
      int2 coords;
      coords.x = x;
      coords.y = y;
@@ -79,7 +78,7 @@ __kernel void channel_add(__read_only image2d_t input,
      CL_DTYPE4 in = READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, coords);
      CL_DTYPE4 biase = READ_IMG_TYPE(CL_DTYPE_CHAR, bias, SAMPLER, coords_bias);
   //   CL_DTYPE4 output = in + (CL_DTYPE4)(biase.x);
-     CL_DTYPE4 alpha;//cyh
+     CL_DTYPE4 alpha;
      CL_DTYPE4 output = activation_type4(in + (CL_DTYPE4)(biase.x), alpha);//cyh
 
      WRITE_IMG_TYPE(CL_DTYPE_CHAR, outputImage, coords, output);

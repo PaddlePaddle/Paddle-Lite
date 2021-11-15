@@ -38,7 +38,7 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
     const auto& out_dims = param.output->dims();
     const bool global_pooling = param.global_pooling;
     VLOG(1) << "global_pooling : " << param.global_pooling;
-    //    const bool global_pooling = true;
+
     const bool exclusive = param.exclusive;
     std::vector<int> ksize = param.ksize;
     std::vector<int> paddings = *param.paddings;

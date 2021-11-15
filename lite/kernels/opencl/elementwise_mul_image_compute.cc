@@ -53,9 +53,6 @@ class ElementwiseMulImageCompute
       y = ele_param_->X;
       x = ele_param_->Y;
     }
-    //    VLOG(1)<<"PrepareForRun : x"<<x->dims();
-    //    VLOG(1)<<"PrepareForRun : y"<<y->dims();
-    //    VLOG(1)<<"PrepareForRun : out"<<ele_param_->Out->dims();
     auto bias_dims = y->dims();
     auto x_dims = x->dims();
 
