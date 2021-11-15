@@ -409,6 +409,44 @@ struct ConvParam : ParamBase {
   std::string scale_activation_type{""};
 };
 
+struct Conv3DParam : ParamBase {
+  lite::Tensor* x{};
+  lite::Tensor* filter{};
+  lite::Tensor* bias{nullptr};
+  lite::Tensor* residualData{nullptr};
+  lite::Tensor* second_x{nullptr};
+  lite::Tensor* output{};
+  std::vector<int> strides{1, 1, 1};
+  /* paddings type change
+   * from std::vector<int> to std::shared_ptr<std::vector<int>>
+   * to support dynamically modify padding
+   * let kernel param and operator param Synchronous update
+   */
+  std::shared_ptr<std::vector<int>> paddings;
+  int groups{1};
+  /* dilations type change
+   * from std::vector<int> to std::shared_ptr<std::vector<int>>
+   * to support dynamically modify padding
+   * let kernel param and operator param Synchronous update
+   */
+  std::shared_ptr<std::vector<int>> dilations;
+  bool fuse_relu_before_depthwise_conv{false};
+  bool use_mkldnn{false};
+  bool fuse_relu{false};  // only used in mkldnn kernel
+  bool use_quantizer{
+      false};  // set true for op that should be quantized, only used for cpu
+  bool fuse_residual_connection{false};
+  std::string data_format{"Anylayout"};
+  std::string padding_algorithm{""};
+  // for activation
+  ActivationParam activation_param;
+  // for elementwise tree fuse
+  std::string fuse_elementwise_op_type{""};
+  // support var_length or not
+  bool var_length{false};
+  std::string scale_activation_type{""};
+};
+
 // For BatchNorm op
 struct BatchNormParam : ParamBase {
   lite::Tensor* x{};
