@@ -520,25 +520,21 @@ void pooling_basic_fp16(POOLING_PARAM,
   "sub %[dr2], %[dr2], #32\n"          \
   "3: \n"
 #else
-#define GLOBAL_INIT                           \
-  "cmp %[cnt], #1\n"                          \
-  "vld1.16 {d0, d1}, [%[data_in_channel]]!\n" \
-  "vld1.16 {d2, d3}, [%[data_in_channel]]!\n" \
-  "vld1.16 {d4, d5}, [%[data_in_channel]]!\n" \
-  "vld1.16 {d6, d7}, [%[data_in_channel]]!\n" \
+#define GLOBAL_INIT                          \
+  "cmp %[cnt], #1\n"                         \
+  "vld1.16 {d0-d3}, [%[data_in_channel]]!\n" \
+  "vld1.16 {d4-d7}, [%[data_in_channel]]!\n" \
   "blt 4f\n"
 
-#define GLOBAL_MAX                            \
-  "1:\n"                                      \
-  "vmax.f16 q4, q0, q2\n"                     \
-  "vmax.f16 q5, q1, q3\n"                     \
-  "vld1.16 {d0, d1}, [%[data_in_channel]]!\n" \
-  "vld1.16 {d2, d3}, [%[data_in_channel]]!\n" \
-  "subs %[cnt], %[cnt], #1\n"                 \
-  "vmax.f16 %q[vmax], %q[vmax], q4\n"         \
-  "vld1.16 {d4, d5}, [%[data_in_channel]]!\n" \
-  "vld1.16 {d6, d7}, [%[data_in_channel]]!\n" \
-  "vmax.f16 %q[vmax], %q[vmax], q5\n"         \
+#define GLOBAL_MAX                           \
+  "1:\n"                                     \
+  "vmax.f16 q4, q0, q2\n"                    \
+  "vmax.f16 q5, q1, q3\n"                    \
+  "vld1.16 {d0-d3}, [%[data_in_channel]]!\n" \
+  "subs %[cnt], %[cnt], #1\n"                \
+  "vmax.f16 %q[vmax], %q[vmax], q4\n"        \
+  "vld1.16 {d4-d7}, [%[data_in_channel]]!\n" \
+  "vmax.f16 %q[vmax], %q[vmax], q5\n"        \
   "bne 1b\n"
 
 #define GLOBAL_MAX_REMAIN                             \
@@ -553,17 +549,15 @@ void pooling_basic_fp16(POOLING_PARAM,
   "bne 2b \n"                                         \
   "3: \n"
 
-#define GLOBAL_AVG                            \
-  "1: \n"                                     \
-  "vadd.f16 q4, q0, q2\n"                     \
-  "vadd.f16 q5, q1, q3\n"                     \
-  "vld1.16 {d0, d1}, [%[data_in_channel]]!\n" \
-  "vld1.16 {d2, d3}, [%[data_in_channel]]!\n" \
-  "vadd.f16 %q[vsum], %q[vsum], q4\n"         \
-  "vld1.16 {d4, d5}, [%[data_in_channel]]!\n" \
-  "vld1.16 {d6, d7}, [%[data_in_channel]]!\n" \
-  "vadd.f16 %q[vsum], %q[vsum], q5\n"         \
-  "subs %[cnt], %[cnt], #1\n"                 \
+#define GLOBAL_AVG                           \
+  "1: \n"                                    \
+  "vadd.f16 q4, q0, q2\n"                    \
+  "vadd.f16 q5, q1, q3\n"                    \
+  "vld1.16 {d0-d3}, [%[data_in_channel]]!\n" \
+  "vadd.f16 %q[vsum], %q[vsum], q4\n"        \
+  "vld1.16 {d4-d7}, [%[data_in_channel]]!\n" \
+  "vadd.f16 %q[vsum], %q[vsum], q5\n"        \
+  "subs %[cnt], %[cnt], #1\n"                \
   "bne 1b\n"
 
 #define GLOBAL_AVG_REMAIN                             \
@@ -583,8 +577,7 @@ void pooling_basic_fp16(POOLING_PARAM,
   "vld2.16 {d0-d3}, [%[dr0]]!\n"   \
   "vld2.16 {d4-d7}, [%[dr1]]!\n"   \
   "vld2.16 {d8-d11}, [%[dr2]]!\n"  \
-  "vld1.16 {d12, d13}, [%[dr0]]\n" \
-  "vld1.16 {d14, d15}, [%[dr1]]\n" \
+  "vld1.16 {d12-d15}, [%[dr0]]\n"  \
   "vld1.16 {d16, d17}, [%[dr2]]\n" \
   "blt 0f\n"
 
@@ -657,8 +650,7 @@ void pooling_basic_fp16(POOLING_PARAM,
   "vld2.16 {d8-d11}, [%[dr2]]!\n"       \
   "vld1.16 {d12, d13}, [%[dr0]]\n"      \
   "vadd.f16 q10, q8, q9\n"              \
-  "vld1.16 {d14, d15}, [%[dr1]]\n"      \
-  "vld1.16 {d16, d17}, [%[dr2]]\n"      \
+  "vld1.16 {d14-d17}, [%[dr1]]\n"       \
   "vmul.f16 q10, q10, %q[vcoef]\n"      \
   "subs %[cnt_num], %[cnt_num], #1\n"   \
   "vst1.16  {d20, d21}, [%[dr_out]]!\n" \
@@ -715,8 +707,7 @@ void pooling_basic_fp16(POOLING_PARAM,
   "vmax.f16 q10, q8, q9\n"              \
   "vld2.16 {d8-d11}, [%[dr2]]!\n"       \
   "subs %[cnt_num], %[cnt_num], #1\n"   \
-  "vld1.16 {d12, d13}, [%[dr0]]\n"      \
-  "vld1.16 {d14, d15}, [%[dr1]]\n"      \
+  "vld1.16 {d12-d15}, [%[dr0]]\n"       \
   "vld1.16 {d16, d17}, [%[dr2]]\n"      \
   "vst1.16  {d20, d21}, [%[dr_out]]!\n" \
   "ble 0f\n"
@@ -740,8 +731,7 @@ void pooling_basic_fp16(POOLING_PARAM,
   "vld2.16 {d8-d11}, [%[dr2]]!\n"       \
   "vadd.f16 q10, q8, q9\n"              \
   "subs %[cnt_num], %[cnt_num], #1\n"   \
-  "vld1.16 {d12, d13}, [%[dr0]]\n"      \
-  "vld1.16 {d14, d15}, [%[dr1]]\n"      \
+  "vld1.16 {d12-d15}, [%[dr0]]\n"       \
   "vmul.f16 q10, q10, %q[vcoef_left]\n" \
   "vld1.16 {d16, d17}, [%[dr2]]\n"      \
   "vst1.16  {d20, d21}, [%[dr_out]]!\n" \
