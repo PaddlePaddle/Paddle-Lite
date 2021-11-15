@@ -214,7 +214,6 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "npu_subgraph_pass",
        "xpu_subgraph_pass",
        "bm_subgraph_pass",
-       "apu_subgraph_pass",
        "rknpu_subgraph_pass",
        "mlu_subgraph_pass",
        "fpga_concat_fuse_pass",
