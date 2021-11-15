@@ -30,7 +30,7 @@ static const int32_t inceptionv4_model_input_height = 299;
 namespace paddle {
 namespace lite {
 
-TEST(InceptionV4, test_inceptionv4_v2_0_fp32_nnadapter) {
+TEST(InceptionV4, test_inception_v4_fp32_v2_0_nnadapter) {
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;

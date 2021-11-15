@@ -28,7 +28,7 @@ DEFINE_int32(channel, 3, "image channel");
 namespace paddle {
 namespace lite {
 
-TEST(ResNet18, test_resnet18_v2_0_fp32_nnadapter) {
+TEST(MobileNetV3_large_x1_0, test_mobilenetv3_large_x_1_0_fp32_v2_0_nnadapter) {
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;
@@ -46,7 +46,7 @@ TEST(ResNet18, test_resnet18_v2_0_fp32_nnadapter) {
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   nnadapter_device_names.emplace_back("huawei_ascend_npu");
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
-  out_accuracy_threshold = 0.74f;
+  out_accuracy_threshold = 0.78f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;

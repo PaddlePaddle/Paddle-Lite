@@ -28,7 +28,7 @@ DEFINE_int32(channel, 3, "image channel");
 namespace paddle {
 namespace lite {
 
-TEST(DenseNet121, test_densenet121_v2_0_fp32_nnadapter) {
+TEST(ResNet50, test_resnet50_fp32_v1_8_nndapter) {
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;
@@ -43,10 +43,16 @@ TEST(DenseNet121, test_densenet121_v2_0_fp32_nnadapter) {
   LOG(INFO) << "Unsupported host arch!";
   return;
 #endif
-#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+#if defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
+  nnadapter_device_names.emplace_back("huawei_kirin_npu");
+  out_accuracy_threshold = 0.77f;
+#elif defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   nnadapter_device_names.emplace_back("huawei_ascend_npu");
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
-  out_accuracy_threshold = 0.74f;
+  out_accuracy_threshold = 0.69f;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  nnadapter_device_names.emplace_back("cambricon_mlu");
+  out_accuracy_threshold = 0.76f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;
