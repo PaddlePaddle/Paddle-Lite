@@ -100,13 +100,8 @@ TEST(yolov4_cspdarknet, test_yolov4_cspdarknet_coco_fp32_v1_8_nnadapter) {
 
     auto output_tensor = predictor->GetOutput(0);
     auto output_shape = output_tensor->shape();
-    auto output_data = output_tensor->data<float>();
     ASSERT_EQ(output_shape.size(), 2UL);
     ASSERT_EQ(output_shape[1], 6);
-
-    int output_size = output_shape[0] * output_shape[1];
-    out_rets[i].resize(output_size);
-    memcpy(&(out_rets[i].at(0)), output_data, sizeof(float) * output_size);
   }
 
   LOG(INFO) << "================== Speed Report ===================";
