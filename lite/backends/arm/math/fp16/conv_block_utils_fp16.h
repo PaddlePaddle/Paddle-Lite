@@ -620,8 +620,8 @@ inline void prepack_input_nxwc4(const float16_t* din,
 
 #define HARD_SWISH_C8                   \
   "vld1.16 {d16-d17}, [%[voffset]]\n"   \
-  "vld1r    d18, [%[voffset], #16]\n"   \
-  "vld1r    d19, [%[voffset], #24]\n"   \
+  "vldr     d18, [%[voffset], #16]\n"   \
+  "vldr     d19, [%[voffset], #24]\n"   \
   "vmul.f16 q14, q0, %q[valpha]\n"      \
   "vmul.f16 q15, q1, %q[valpha]\n"      \
   "vadd.f16 q10, q0,  q8\n"             \

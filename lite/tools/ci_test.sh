@@ -643,87 +643,6 @@ function rockchip_npu_build_and_test() {
     build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE rockchip_npu_build_target rockchip_npu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR "$(readlink -f ./rknpu_ddk)"
 }
 
-# MediaTek APU
-function mediatek_apu_prepare_device() {
-    local os=$1
-    local arch=$2
-    local toolchain=$3
-    local remote_device_name=$4
-    local remote_device_work_dir=$5
-    local remote_device_check=$6
-    local remote_device_run=$7
-    local sdk_root_dir=$8
-
-    # Check device is available
-    $remote_device_check $remote_device_name
-    if [[ $? -ne 0 ]]; then
-        echo "$remote_device_name not found!"
-        exit 1
-    fi
-
-    # Create work dir on the remote device
-    if [[ -z "$remote_device_work_dir" ]]; then
-        echo "$remote_device_work_dir can't be empty!"
-        exit 1
-    fi
-    if [[ "$remote_device_work_dir" == "/" ]]; then
-        echo "$remote_device_work_dir can't be root dir!"
-        exit 1
-    fi
-    $remote_device_run $remote_device_name shell "rm -rf $remote_device_work_dir"
-    $remote_device_run $remote_device_name shell "mkdir -p $remote_device_work_dir"
-
-    # Use high performance mode
-    $remote_device_run $remote_device_name root
-    if [[ $? -ne 0 ]]; then
-        echo "$remote_device_name hasn't the root permission!"
-        exit 1
-    fi
-    $remote_device_run $remote_device_name shell "echo performance > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
-    $remote_device_run $remote_device_name shell "echo performance > /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor"
-    $remote_device_run $remote_device_name shell "echo performance > /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor"
-    $remote_device_run $remote_device_name shell "echo performance > /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor"
-    $remote_device_run $remote_device_name shell "cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq"
-    $remote_device_run $remote_device_name shell "echo 800000 > /proc/gpufreq/gpufreq_opp_freq"
-    $remote_device_run $remote_device_name shell "echo dvfs_debug 0 > /sys/kernel/debug/vpu/power"
-    $remote_device_run $remote_device_name shell "echo 0 > /sys/devices/platform/soc/10012000.dvfsrc/helio-dvfsrc/dvfsrc_force_vcore_dvfs_opp"
-    $remote_device_run $remote_device_name shell "echo 0 > /sys/module/mmdvfs_pmqos/parameters/force_step"
-    $remote_device_run $remote_device_name shell "echo 0 > /proc/sys/kernel/printk"
-}
-
-function mediatek_apu_build_target() {
-    local os=$1
-    local arch=$2
-    local toolchain=$3
-    local sdk_root_dir=$4
-
-    # Build all of tests
-    rm -rf $BUILD_DIRECTORY
-    mkdir -p $BUILD_DIRECTORY
-    cd $BUILD_DIRECTORY
-    prepare_workspace $ROOT_DIR $BUILD_DIRECTORY
-    cmake .. \
-        -DWITH_GPU=OFF \
-        -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
-        -DLITE_WITH_CUDA=OFF \
-        -DLITE_WITH_X86=OFF \
-        -DLITE_WITH_ARM=ON \
-        -DWITH_ARM_DOTPROD=ON \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
-        -DWITH_TESTING=ON \
-        -DLITE_BUILD_EXTRA=ON \
-        -DLITE_WITH_TRAIN=ON \
-        -DLITE_WITH_APU=ON \
-        -DAPU_DDK_ROOT="$sdk_root_dir" \
-        -DARM_TARGET_OS=$os -DARM_TARGET_ARCH_ABI=$arch -DARM_TARGET_LANG=$toolchain
-    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
-}
-
-function mediatek_apu_build_and_test() {
-    build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE mediatek_apu_build_target mediatek_apu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR "$(readlink -f ./apu_ddk)"
-}
-
 function baidu_xpu_build_and_test() {
     local with_xtcl=$1
     if [[ -z "$with_xtcl" ]]; then
@@ -858,10 +777,6 @@ function main() {
             ;;
         rockchip_npu_build_and_test)
             rockchip_npu_build_and_test
-            shift
-            ;;
-        mediatek_apu_build_and_test)
-            mediatek_apu_build_and_test
             shift
             ;;
         baidu_xpu_disable_xtcl_build_and_test)
