@@ -1,0 +1,19 @@
+#!/bin/bash
+BUILD_DIR=.
+sdk_root_dir="/usr/local/Ascend/ascend-toolkit/latest"
+nnadapter_lib_path="$PWD/build/lite/backends/nnadapter/nnadapter/libnnadapter.so"
+nnadapter_driver_lib_path="$PWD/build/lite/backends/nnadapter/nnadapter/driver/huawei_ascend_npu/libnnadapter_driver_huawei_ascend_npu.so"
+nnadapter_lib_dir=${nnadapter_lib_path%/*}
+nnadapter_driver_lib_dir=${nnadapter_driver_lib_path%/*}
+export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/build/third_party/install/mklml/lib"
+export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$nnadapter_lib_dir:$nnadapter_driver_lib_dir"
+export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/stub"
+export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$sdk_root_dir/fwkacllib/lib64:$sdk_root_dir/acllib/lib64:$sdk_root_dir/atc/lib64:$sdk_root_dir/opp/op_proto/built-in"
+export PYTHONPATH="$PYTHONPATH:$sdk_root_dir/fwkacllib/python/site-packages:$sdk_root_dir/acllib/python/site-packages:$sdk_root_dir/toolkit/python/site-packages:$sdk_root_dir/atc/python/site-packages:$sdk_root_dir/pyACL/python/site-packages/acl"
+export PATH="$PATH:$sdk_root_dir/atc/ccec_compiler/bin:$sdk_root_dir/acllib/bin:$sdk_root_dir/atc/bin"
+export ASCEND_AICPU_PATH="$sdk_root_dir"
+export ASCEND_OPP_PATH="$sdk_root_dir/opp"
+export TOOLCHAIN_HOME="$sdk_root_dir/toolkit"
+export ASCEND_SLOG_PRINT_TO_STDOUT=1
+export ASCEND_GLOBAL_LOG_LEVEL=1
+export GLOG_v=5
