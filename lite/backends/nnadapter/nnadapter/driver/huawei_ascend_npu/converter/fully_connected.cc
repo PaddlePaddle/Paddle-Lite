@@ -47,23 +47,41 @@ int ConvertFullyConnected(Converter* converter, hal::Operation* operation) {
   }
   auto weight_operator = converter->ConvertOperand(weight_operand);
   auto bias_operator = converter->ConvertOperand(bias_operand);
-  // Use MatMul instead of FullyConnection to avoid outputing the 4-D tensor
-  auto matmul_op = converter->AddOperator<ge::op::MatMul>(output_operand);
-  matmul_op->set_attr_transpose_x1(false);
-  matmul_op->set_attr_transpose_x2(
-      true);  // {num_units, input_size} -> {input_size, num_units}
-  SET_INPUT(matmul_op, x1, input_operator);
-  SET_INPUT(matmul_op, x2, weight_operator);
-  SET_INPUT(matmul_op, bias, bias_operator);
-  std::shared_ptr<Operator> matmul_operator =
-      MAP_OUTPUT(matmul_op, y, output_operand);
+
+  std::shared_ptr<Operator> output_operator;
+  auto input_precision = input_operand->type.precision;
+  if (input_precision == NNADAPTER_FLOAT32) {
+    // Use MatMul instead of FullyConnection to avoid outputing the 4-D tensor
+    auto matmul_op = converter->AddOperator<ge::op::MatMul>(output_operand);
+    matmul_op->set_attr_transpose_x1(false);
+    // {num_units, input_size} -> {input_size, num_units}
+    matmul_op->set_attr_transpose_x2(true);
+    SET_INPUT(matmul_op, x1, input_operator);
+    SET_INPUT(matmul_op, x2, weight_operator);
+    SET_INPUT(matmul_op, bias, bias_operator);
+    output_operator = MAP_OUTPUT(matmul_op, y, output_operand);
+  } else if (input_precision == NNADAPTER_QUANT_INT8_SYMM_PER_LAYER) {
+    // Only FullyConnection support int8
+    auto fc_op =
+        converter->AddOperator<ge::op::FullyConnection>(output_operand);
+    fc_op->set_attr_transpose(false);
+    fc_op->set_attr_num_output(1000);
+    fc_op->set_attr_axis(1);
+    SET_INPUT(fc_op, x, input_operator);
+    SET_INPUT(fc_op, w, weight_operator);
+    SET_INPUT(fc_op, b, bias_operator);
+    std::shared_ptr<Operator> output_operator =
+        MAP_OUTPUT(fc_op, y, output_operand);
+  } else {
+    NNADAPTER_LOG(FATAL) << "Unsupported precision.";
+  }
 
   // fuse activations
   switch (fuse_code) {
 #define CONVERT_UNARY_ACTIVATION(type, class_name)                            \
   case NNADAPTER_FUSED_##type: {                                              \
     auto act_op = converter->AddOperator<ge::op::class_name>(output_operand); \
-    SET_INPUT(act_op, x, matmul_operator);                                    \
+    SET_INPUT(act_op, x, output_operator);                                    \
     MAP_OUTPUT(act_op, y, output_operand);                                    \
   } break;
     CONVERT_UNARY_ACTIVATION(RELU, Relu);

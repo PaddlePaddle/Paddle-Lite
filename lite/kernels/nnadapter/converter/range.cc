@@ -58,7 +58,7 @@ int ConvertRange(Converter* converter, OpInfo* op, Scope* scope) {
   std::vector<NNAdapterOperand*> input_operands = {
       start_operand, end_operand, step_operand};
   std::vector<NNAdapterOperand*> output_operands = {output_operand};
-  converter->AddOperation(NNADAPTER_EXPAND,
+  converter->AddOperation(NNADAPTER_RANGE,
                           {start_operand, end_operand, step_operand},
                           {output_operand});
   return NO_ERROR;

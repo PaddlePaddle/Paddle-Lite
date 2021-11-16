@@ -19,7 +19,9 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "lite/kernels/nnadapter/bridges/converter.h"
+#include "lite/backends/nnadapter/nnadapter_wrapper.h"
+#include "lite/core/op_lite.h"
+#include "lite/core/tensor.h"
 #include "lite/kernels/nnadapter/engine.h"
 #include "lite/kernels/nnadapter/utility.h"
 
@@ -34,9 +36,7 @@ const int UNSUPPORTED_FEATURE = 2;
 
 class Converter {
  public:
-  explicit Converter(NNAdapterModel* model) : model_(model) {
-    sub_converter.reset(new subgraph::nnadapter::Converter(model_, &operands_));
-  }
+  explicit Converter(NNAdapterModel* model) : model_(model) {}
   ~Converter() {}
 
   // Convert a block_desc with tensors to a NNAdapter model
@@ -213,7 +213,6 @@ class Converter {
                        bool copy = true);
   NNAdapterModel* model_{nullptr};
   std::map<std::string, std::vector<NNAdapterOperand*>> operands_;
-  std::shared_ptr<subgraph::nnadapter::Converter> sub_converter{nullptr};
 };
 
 }  // namespace nnadapter

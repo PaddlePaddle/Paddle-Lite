@@ -37,14 +37,14 @@ std::vector<std::vector<T>> ReadRawData(
   }
   int input_size = image_size * input_shape[0];
 
+  auto file_names = ListFile(raw_data_dir);
   for (int i = 0; i < iteration; i++) {
     std::vector<T> one_iter_raw_data;
     one_iter_raw_data.resize(input_size);
     T* data = &(one_iter_raw_data.at(0));
     for (int j = 0; j < input_shape[0]; j++) {
       std::string raw_data_file_dir =
-          raw_data_dir + std::string("/") +
-          std::to_string(i * input_shape[0] + j + 1);
+          raw_data_dir + std::string("/") + file_names[i * input_shape[0] + j];
       std::ifstream fin(raw_data_file_dir, std::ios::in | std::ios::binary);
       CHECK(fin.is_open()) << "failed to open file " << raw_data_file_dir;
       fin.seekg(0, std::ios::end);

@@ -670,7 +670,7 @@ void deconv_basic(const Dtype1* din,
                                  n,
                                  nullptr,
                                  false,
-                                 (!flag_bias && flag_relu));
+                                 false);
     }
 
     if (!flag_1x1s1p1) {
@@ -691,7 +691,7 @@ void deconv_basic(const Dtype1* din,
              dout_batch);
     }
     //! add bias
-    if (flag_bias) {
+    if (flag_bias || flag_relu) {
       fill_bias_relu(
           dout_batch, bias, chout, wout * hout, flag_bias, flag_relu);
     }
