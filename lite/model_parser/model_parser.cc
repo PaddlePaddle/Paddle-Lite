@@ -879,7 +879,7 @@ void LoadModelFbsFromFile(model_parser::BinaryFileReader *reader,
     LOG(WARNING) << "\nwarning: the version of opt that transformed this model "
                     "is not consistent with current Paddle-Lite version."
                     "\n      version of opt:"
-                 << static_cast<const char *>(opt_version)
+                 << opt_version_str
                  << "\n      version of current Paddle-Lite:" << paddle_version;
   }
   // (3)get topo_size
