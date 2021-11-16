@@ -114,22 +114,6 @@ function(add_kernel TARGET device level)
 
 endfunction()
 
-function(cc_binary TARGET_NAME)
-  set(options "")
-  set(oneValueArgs "")
-  set(multiValueArgs SRCS DEPS)
-  cmake_parse_arguments(cc_binary "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-  add_executable(${TARGET_NAME} ${cc_binary_SRCS})
-  if(cc_binary_DEPS)
-    target_link_libraries(${TARGET_NAME} ${cc_binary_DEPS})
-    add_dependencies(${TARGET_NAME} ${cc_binary_DEPS})
-    common_link(${TARGET_NAME})
-  endif()
-  get_property(os_dependency_modules GLOBAL PROPERTY OS_DEPENDENCY_MODULES)
-  target_link_libraries(${TARGET_NAME} ${os_dependency_modules})
-  find_fluid_modules(${TARGET_NAME})
-endfunction(cc_binary)
-
 # Add a unit-test name to file for latter offline manual test.
 set(offline_test_registry_file "${CMAKE_BINARY_DIR}/lite_tests.txt")
 file(WRITE ${offline_test_registry_file} "") # clean
