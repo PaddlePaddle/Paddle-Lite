@@ -95,11 +95,15 @@ int ConvertConv2dTranspose(Converter* converter, OpInfo* op, Scope* scope) {
       op->HasAttr("output_padding")
           ? op->GetAttr<std::vector<int>>("output_padding")
           : std::vector<int>(2, 0);
+  if (output_padding.size() == 0) {
+    output_padding = std::vector<int>(2, 0);
+  }
   auto output_padding_operand = converter->AddConstantOperand(output_padding);
 
   // Output_shape operand
   NNAdapterOperand* output_shape_operand = nullptr;
-  if (op->HasAttr("output_size")) {
+  if (op->HasAttr("output_size") &&
+      !op->GetAttr<std::vector<int>>("output_size").empty()) {
     std::vector<int> output_size = op->GetAttr<std::vector<int>>("output_size");
     output_shape_operand = converter->AddConstantOperand(output_size);
   }
