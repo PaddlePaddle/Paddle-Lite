@@ -193,17 +193,9 @@ void WinogradConv<PRECISION(kInt8), OutType>::ReInitWhenNeeded() {
       param.activation_param.Relu_clipped_coef =
           param.activation_param.Relu_clipped_coef / output_scale;
     }
-    //! update leakyRelu parameter
-    if (param.activation_param.active_type ==
-        lite_api::ActivationType::kLeakyRelu) {
-      param.activation_param.Leaky_relu_alpha =
-          param.activation_param.Leaky_relu_alpha / output_scale;
-    }
     //! update hardswish parameter
     if (param.activation_param.active_type ==
         lite_api::ActivationType::kHardSwish) {
-      param.activation_param.hard_swish_scale =
-          param.activation_param.hard_swish_scale / output_scale;
       param.activation_param.hard_swish_offset =
           param.activation_param.hard_swish_offset / output_scale;
       param.activation_param.hard_swish_threshold =

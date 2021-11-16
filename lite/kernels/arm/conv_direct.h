@@ -152,13 +152,8 @@ inline bool direct_conv_trans_weights<PRECISION(kInt8), PRECISION(kInt8)>(
   if (act_param.active_type == lite_api::ActivationType::kRelu6) {
     act_param.Relu_clipped_coef = act_param.Relu_clipped_coef / out_scale;
   }
-  //! update leakyRelu parameter
-  if (act_param.active_type == lite_api::ActivationType::kLeakyRelu) {
-    act_param.Leaky_relu_alpha = act_param.Leaky_relu_alpha / out_scale;
-  }
   //! update hardswish parameter
   if (act_param.active_type == lite_api::ActivationType::kHardSwish) {
-    act_param.hard_swish_scale = act_param.hard_swish_scale / out_scale;
     act_param.hard_swish_offset = act_param.hard_swish_offset / out_scale;
     act_param.hard_swish_threshold = act_param.hard_swish_threshold / out_scale;
   }
@@ -236,7 +231,7 @@ direct_conv_ptype<PRECISION(kFP16), PRECISION(kFP16)>() {
 #ifdef __aarch64__
   return std::make_pair(8, 8);
 #else
-  retur std::make_pair(8, 4);
+  return std::make_pair(8, 4);
 #endif
 }
 #endif

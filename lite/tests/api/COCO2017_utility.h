@@ -27,7 +27,7 @@ namespace lite {
 template <class T = float>
 std::vector<std::vector<T>> ReadRawData(
     const std::string& raw_data_dir,
-    const std::vector<int>& input_shape = {1, 3, 300, 300},
+    const std::vector<int>& input_shape = {1, 3, 608, 608},
     int iteration = 1) {
   std::vector<std::vector<T>> raw_data;
 

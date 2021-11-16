@@ -111,6 +111,8 @@ function set_benchmark_options {
 function make_armosx {
     if [ "${BUILD_PYTHON}" == "ON" ]; then
       prepare_thirdparty
+      BUILD_EXTRA=ON
+      LITE_ON_TINY_PUBLISH=OFF
     fi
     local arch=armv8
     local os=armmacos
