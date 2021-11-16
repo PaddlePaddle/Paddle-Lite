@@ -155,8 +155,10 @@ void RunModel(std::string model_dir,
   } else {
     config.set_valid_places(
         {Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)},
+         Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageFolder)},
          Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)},
          Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageDefault)},
+         Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageFolder)},
          Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)},
          Place{TARGET(kOpenCL), PRECISION(kInt32), DATALAYOUT(kNCHW)},
          Place{TARGET(kX86), PRECISION(kFloat)},
