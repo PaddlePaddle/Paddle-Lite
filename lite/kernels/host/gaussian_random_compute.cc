@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/x86/gaussian_random_compute.h"
+#include "lite/kernels/host/gaussian_random_compute.h"
 #include <memory>
 #include <random>
 #include <string>
@@ -21,7 +21,7 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace x86 {
+namespace host {
 
 uint64_t GetRandomSeed() {
   std::random_device rd;
@@ -78,20 +78,20 @@ void GaussRandomCompute::Run() {
   }
 }
 
-}  // namespace x86
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(gaussian_random,
-                     kX86,
+                     kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::x86::GaussRandomCompute,
+                     paddle::lite::kernels::host::GaussRandomCompute,
                      def)
     .BindInput("ShapeTensor",
-               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindInput("ShapeTensorList",
-               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86))})
+               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();

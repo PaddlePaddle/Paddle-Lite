@@ -19,16 +19,16 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace x86 {
+namespace host {
 
-class GaussRandomCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+class GaussRandomCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
   void Run() override;
 
   virtual ~GaussRandomCompute() = default;
 };
 
-}  // namespace x86
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
