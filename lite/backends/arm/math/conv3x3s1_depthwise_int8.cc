@@ -800,10 +800,11 @@ void conv_depthwise_3x3s1_int8(Dtype* dout,
       int hs = h - padh;
       int he = hs + h_kernel + 2;
 
-      // #pragma omp parallel for num_threads(threads)
       LITE_PARALLEL_COMMON_BEGIN(c, tid, chout, 0, hout_c_block) {
-// for (int c = 0; c < chout; c += hout_c_block) {
-#ifdef ARM_WITH_OMP
+#ifdef LITE_USE_THREAD_POOL
+        int8_t* pre_din = tmp_din + tid * (pre_in_size + pre_out_size * 4);
+        int32_t* pre_out = reinterpret_cast<int*>(pre_din + pre_in_size);
+#elif defined(ARM_WITH_OMP)
         int8_t* pre_din =
             tmp_din + omp_get_thread_num() * (pre_in_size + pre_out_size * 4);
         int32_t* pre_out = reinterpret_cast<int*>(pre_din + pre_in_size);
@@ -1155,8 +1156,7 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s1p1_int8(int w_in,
   uint32_t cnt_remain = (size_right_remain == 8 && w_out % 8 == 0)
                             ? 8
                             : static_cast<uint32_t>(w_out % 8);
-  size_right_remain = (cnt_remain == 8) ? size_right_remain
-                                        : (size_right_remain + 8 - cnt_remain);
+  size_right_remain = size_right_remain + 8 - cnt_remain;
   uint8x8_t vmask_rp1 =
       vcgt_u8(vdup_n_u8(size_right_remain), vld1_u8(right_pad_idx));
   uint8x8_t vmask_rp2 =
@@ -1180,8 +1180,7 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s1p0_int8(int w_in,
   uint32_t cnt_remain = (size_right_remain == 8 && w_out % 8 == 0)
                             ? 8
                             : static_cast<uint32_t>(w_out % 8);
-  size_right_remain = (cnt_remain == 8) ? size_right_remain
-                                        : (size_right_remain + 8 - cnt_remain);
+  size_right_remain = size_right_remain + 8 - cnt_remain;
   uint8x8_t vmask_rp1 =
       vcgt_u8(vdup_n_u8(size_right_remain), vld1_u8(right_pad_idx));
   uint8x8_t vmask_rp2 =
@@ -1190,6 +1189,7 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s1p0_int8(int w_in,
   vst1_u8(vmask + 8, vmask_rp2);
   return std::make_pair(cnt_col, cnt_remain);
 }
+
 #define INIT_PTR_3x3_S1_INT8(Dtype, din, w_in) \
   Dtype* doutr0 = nullptr;                     \
   Dtype* doutr1 = nullptr;                     \
@@ -1380,10 +1380,6 @@ void conv_depthwise_3x3s1p1_bias_int8_float(float* dout,
 
   uint32_t right_pad_num_out = (cnt_remain == 8) ? 0 : ((8 - cnt_remain) * 4);
   uint32_t right_pad_num_in = (cnt_remain == 8) ? 0 : (8 - cnt_remain);
-  LOG(INFO) << "conv_depthwise_3x3s1p1_bias_int8_float";
-  LOG(INFO) << "right_pad_num_out: " << right_pad_num_out
-            << ", right_pad_num_in: " << right_pad_num_in;
-  LOG(INFO) << "cnt: " << cnt_col << ", cnt_remain: " << cnt_remain;
 
   float* write_ptr =
       reinterpret_cast<float*>(ctx->workspace_data<int8_t>() + w_in + 16);
@@ -1391,35 +1387,6 @@ void conv_depthwise_3x3s1p1_bias_int8_float(float* dout,
   int size_in_channel = w_in * h_in;
   int size_out_channel = w_out * h_out;
   int w_stride = 9;
-  int8_t a[16] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
-  int8_t b[16] = {0};
-  int8_t* tmp = &a[0];
-  /*printf("ptr: %x, data: %d\n", tmp, tmp[0]);
-  LOG(INFO) << "mask: ";
-  for (int i = 0; i < 16; i++) {
-    printf("%d ", vmask[i]);
-  }
-  printf("\n");
-  asm volatile(
-    "vld1.8 {d0-d1}, [%[a]]\n"
-    "vld1.8 {d2-d3}, [%[vmask]]\n"
-    "vmov.u32 d11, #0\n"
-    "add %[a], #8\n"
-    "vbif d0, d11, d2\n"
-    "vbif d1, d11, d3\n"
-    "sub %[a], %[right_pad_num_in]\n"
-    "vst1.8 {d0-d1}, [%[b]]\n"
-    : [a] "+r"(tmp)
-    : [b] "r"(b), [vmask] "r"(vmask), [right_pad_num_in] "r"(right_pad_num_in)
-    : "cc", "memory", "q0", "q1", "q5"
-  );
-  printf("--ptr: %x, data: %d\n", tmp, tmp[0]);
-  LOG(INFO) << "b: ";
-  for (int i = 0; i < 16; i++) {
-    printf("%d ", b[i]);
-  }
-  printf("\n");
-  */
 
   for (int n = 0; n < num; ++n) {
     const int8_t* din_batch = din + n * ch_in * size_in_channel;
