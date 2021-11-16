@@ -35,9 +35,6 @@ target_type_map = {
       "NPU": TargetType.NPU,
       "MLU": TargetType.MLU,
       "RKNPU": TargetType.RKNPU,
-      "APU": TargetType.APU,
-      "HUAWEI_ASCEND_NPU": TargetType.HUAWEI_ASCEND_NPU,
-      "IMAGINATION_NNA": TargetType.IMAGINATION_NNA,
       "INTEL_FPGA": TargetType.INTEL_FPGA,
       "Any": TargetType.Any}
 
