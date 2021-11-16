@@ -1,4 +1,4 @@
-# NOTE we leave the add_kernel not protected by LITE_WITH_LIGHT_WEIGHT_FRAMEWORK so that all the kernels will be registered
+# NOTE we leave the add_kernel not protected by LITE_WITH_ARM so that all the kernels will be registered
 # to the model_optimize_tool.
 
 if(LITE_WITH_ARM AND NOT LITE_ON_MODEL_OPTIMIZE_TOOL)

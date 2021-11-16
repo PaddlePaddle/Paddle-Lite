@@ -410,7 +410,6 @@ function android_cpu_build_target() {
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_TRAIN=ON \
@@ -471,7 +470,6 @@ function armlinux_cpu_build_target() {
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_TRAIN=ON \
@@ -559,7 +557,6 @@ function huawei_kirin_npu_build_target() {
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_TRAIN=ON \
@@ -588,14 +585,12 @@ function huawei_ascend_npu_build_and_test() {
         if [ "${arch}" == "x86" ]; then
             with_x86=ON
             with_arm=OFF
-            with_light_weight_framework=OFF
         elif [ "${arch}" == "armv8" ]; then
             with_arm=ON
             with_x86=OFF
             arm_arch=armv8
             arm_target_os=armlinux
             toolchain=gcc
-            with_light_weight_framework=ON
         else
             echo "$arch isn't supported by Ascend NPU DDK!"
             exit 1
@@ -607,7 +602,6 @@ function huawei_ascend_npu_build_and_test() {
             -DARM_TARGET_ARCH_ABI=$arm_arch \
             -DARM_TARGET_OS=$arm_target_os \
             -DARM_TARGET_LANG=$toolchain \
-            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=$with_light_weight_framework \
             -DWITH_LITE=ON \
             -DWITH_PYTHON=OFF \
             -DWITH_TESTING=ON \
@@ -729,7 +723,6 @@ function rockchip_npu_build_target() {
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_TRAIN=ON \
@@ -817,7 +810,6 @@ function mediatek_apu_build_target() {
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_TRAIN=ON \
@@ -893,7 +885,6 @@ function imagination_nna_build_target() {
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_TRAIN=ON \
@@ -976,7 +967,6 @@ function amlogic_npu_build_target() {
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_TRAIN=ON \
@@ -1050,7 +1040,6 @@ function cambricon_mlu_build_target() {
         -DLITE_WITH_X86=ON \
         -DLITE_WITH_ARM=OFF \
         -DWITH_ARM_DOTPROD=OFF \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_TRAIN=OFF \
@@ -1106,7 +1095,6 @@ function baidu_xpu_build_and_test() {
 
     cmake .. \
         -DWITH_LITE=ON \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
         -DWITH_PYTHON=OFF \
         -DWITH_TESTING=ON \
         -DLITE_WITH_ARM=OFF \

@@ -96,7 +96,6 @@ function build_android {
       -DLITE_WITH_X86=OFF \
       -DLITE_WITH_ARM=ON \
       -DWITH_ARM_DOTPROD=ON   \
-      -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
       -DWITH_TESTING=ON \
       -DLITE_BUILD_EXTRA=ON \
       -DLITE_WITH_TRAIN=ON \

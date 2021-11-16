@@ -19,7 +19,7 @@
 // 2. if LITE_WITH_LOG is turned off, internal logging is used.
 // 3. use glog in other cases.
 
-#if defined(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK) || \
+#if defined(LITE_WITH_ARM) || \
     defined(LITE_ON_MODEL_OPTIMIZE_TOOL) || defined(LITE_WITH_PYTHON)
 #include "lite/utils/log/logging.h"
 #else

@@ -111,7 +111,7 @@ TEST(CxxApi, share_external_data) {
 }
 
 // Demo1 for Mobile Devices :Load model from file and run
-#ifdef LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
+#ifdef LITE_WITH_ARM
 TEST(LightApi, run) {
   lite_api::MobileConfig config;
   config.set_model_from_file(FLAGS_model_dir + ".opt2.naive.nb");
