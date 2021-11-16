@@ -143,14 +143,14 @@ message(STATUS "publish inference lib to ${INFER_LITE_PUBLISH_ROOT}")
 
 # add python lib
 if (LITE_WITH_PYTHON)
-    if(WIN32)   
+    if(WIN32)
         set(LITE_CORE "${CMAKE_BINARY_DIR}/lite/api/${CMAKE_BUILD_TYPE}/lite.pyd")
         set(LITE_CORE_DEPS ${LITE_CORE})
         add_custom_command(OUTPUT   ${LITE_CORE}
             COMMAND cmake -E copy $<TARGET_FILE:lite_pybind> ${LITE_CORE}
             DEPENDS lite_pybind)
         add_custom_target(copy_lite_pybind ALL DEPENDS ${LITE_CORE_DEPS})
-        
+
         add_custom_target(publish_inference_python_lib ${TARGET}
             COMMAND ${CMAKE_COMMAND} -E make_directory "${INFER_LITE_PUBLISH_ROOT}/python/lib"
             COMMAND ${CMAKE_COMMAND} -E make_directory "${INFER_LITE_PUBLISH_ROOT}/python/install/libs"
@@ -161,7 +161,7 @@ if (LITE_WITH_PYTHON)
             COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/lite/api/${CMAKE_BUILD_TYPE}/lite.pyd" "${INFER_LITE_PUBLISH_ROOT}/python/lib/lite.pyd"
             DEPENDS copy_lite_pybind
             )
-            
+
         add_custom_target(publish_inference_python_installer ${TARGET}
             COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel
             WORKING_DIRECTORY ${INFER_LITE_PUBLISH_ROOT}/python/install/
@@ -330,7 +330,7 @@ if (LITE_WITH_X86)
     add_dependencies(publish_inference_x86_cxx_lib test_model_bin)
 
     configure_file(${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_light_demo/CMakeLists.txt.in ${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_light_demo/CMakeLists.txt @ONLY)
-    configure_file(${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_full_demo/CMakeLists.txt.in ${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_full_demo/CMakeLists.txt @ONLY)   
+    configure_file(${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_full_demo/CMakeLists.txt.in ${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_full_demo/CMakeLists.txt @ONLY)
     add_custom_target(publish_inference_x86_cxx_demos ${TARGET}
            COMMAND mkdir -p "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
            COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/x86_mobilenetv1_light_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/mobilenetv1_light"
@@ -386,7 +386,7 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                     add_dependencies(publish_inference paddle_light_api_shared)
                     add_custom_command(TARGET publish_inference_cxx_lib
                           COMMAND cp ${CMAKE_BINARY_DIR}/lite/api/*.so ${INFER_LITE_PUBLISH_ROOT}/cxx/lib
-                          COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/benchmark_bin" "${INFER_LITE_PUBLISH_ROOT}/bin"
+                          COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/tools/benchmark/benchmark_bin" "${INFER_LITE_PUBLISH_ROOT}/bin"
                           )
                 endif()
                 add_dependencies(publish_inference publish_inference_cxx_lib)
