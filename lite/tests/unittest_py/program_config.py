@@ -381,16 +381,62 @@ def create_quant_model(model,
 
 
 
-class PaddleLiteConfig:
-    '''  A config builder for Paddle Lite.  '''
 
-    def __init__(self,
-                 valid_targets: List[str],
-                 thread: Optional[int]=None):
+
+
+from typing import Optional
+from enum import Enum
+class TargetType(Enum):
+    Host = 0
+    X86 = 1
+    CUDA = 2
+    ARM = 3
+    OpenCL = 4
+    FPGA = 5
+    NPU = 6
+    MLU = 7
+    RKNPU = 8
+    APU = 9
+    HUAWEI_ASCEND_NPU = 10
+    INTEL_FPGA = 11
+    Any = 12
+
+class PrecisionType(Enum):
+    FP16 = 0
+    FP32 = 1
+    FP64 = 2
+    UINT8 = 3
+    INT8 = 4
+    INT16 = 5
+    INT32 = 6
+    INT64 = 7
+    BOOL = 8
+    Any = 9
+class DataLayoutType(Enum):
+    NCHW = 0
+    NHWC = 1
+    ImageDefault = 2
+    ImageFolder = 3
+    ImageNW = 4
+    Any = 5
+
+def Place(target_type:TargetType, precision_type: Optional[PrecisionType]=None, data_layout:Optional[DataLayoutType] = None):
+    place = target_type.name
+    print("target_type.name:" + target_type.name)
+    if precision_type != None:
+        place = place+ "," + precision_type.name
+        if data_layout != None:
+            place = place + "," + data_layout.name
+    return place
+
+class CxxConfig:
+    def __init__(self):
         self.config = {}
-        self.config["valid_targets"] = valid_targets
-        if thread != None:
-            self.config["thread"] = thread
-
+    def set_valid_places(self, places):
+        self.config["valid_targets"] = places
+    def set_threads(self, thread):
+        self.config["thread"] = thread
+    def set_power_mode(self, mode):
+        self.config["power_mode"] = mode
     def value(self):
         return self.config
