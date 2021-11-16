@@ -636,9 +636,7 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s2p1_int8(int w_in,
   uint32_t cnt_remain = (size_right_remain == 16 && w_out % 8 == 0)
                             ? 8
                             : static_cast<uint32_t>(w_out % 8);
-  printf("--size_right_remain: %d\n", size_right_remain);
   size_right_remain = size_right_remain + (8 - cnt_remain) * 2;
-  printf("size_right_remain: %d\n", size_right_remain);
   uint8x8_t vmask_rp1 =
       vcgt_u8(vdup_n_u8(size_right_remain), vld1_u8(right_pad_idx));
   uint8x8_t vmask_rp2 =
