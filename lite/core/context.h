@@ -214,6 +214,25 @@ class Context<TargetType::kNNAdapter> {
     return var->Get<std::string>();
   }
 
+  static void SetNNAdapterDynamicShapeInfo(
+      Scope* scope,
+      const std::map<std::string, std::vector<std::vector<int64_t>>>&
+          nnadapter_dynamic_shape_info) {
+    auto var = scope->Var("NNADAPTER_DYNAMIC_SHAPE_INFO");
+    CHECK(var);
+    auto data = var->GetMutable<
+        std::map<std::string, std::vector<std::vector<int64_t>>>>();
+    CHECK(data);
+    *data = nnadapter_dynamic_shape_info;
+  }
+
+  static std::map<std::string, std::vector<std::vector<int64_t>>>
+  NNAdapterDynamicShapeInfo(Scope* scope) {
+    auto var = scope->FindVar("NNADAPTER_DYNAMIC_SHAPE_INFO");
+    if (!var) return std::map<std::string, std::vector<std::vector<int64_t>>>();
+    return var->Get<std::map<std::string, std::vector<std::vector<int64_t>>>>();
+  }
+
   static void SetNNAdapterModelCacheBuffers(
       Scope* scope,
       const std::map<std::string, std::vector<char>>& model_cache_buffers) {

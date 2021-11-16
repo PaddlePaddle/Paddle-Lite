@@ -15,6 +15,7 @@
 #include "lite/kernels/nnadapter/engine.h"
 #include <sys/time.h>
 #include <time.h>
+#include <map>
 #include <utility>
 #include "lite/core/op_registry.h"
 #include "lite/core/subgraph/subgraph_bridge_registry.h"
@@ -39,8 +40,16 @@ std::string GenerateModelCacheToken(
   }
   for (size_t i = 0; i < input_vars.size(); i++) {
     os << input_vars[i].name;
-    for (auto input_shape : input_vars[i].value->dims().Vectorize()) {
-      os << input_shape;
+    if (input_vars[i].dynamic_dimensions.empty()) {
+      for (auto shape_value : input_vars[i].value->dims().Vectorize()) {
+        os << shape_value;
+      }
+    } else {
+      for (auto dynamic_shape : input_vars[i].dynamic_dimensions) {
+        for (auto shape_value : dynamic_shape) {
+          os << shape_value;
+        }
+      }
     }
   }
   return MD5(os.str());
@@ -255,12 +264,14 @@ Engine::Engine(KernelContext* ctx,
   CHECK_EQ(output_count, output_scales.size());
   input_vars_.resize(input_count);
   output_vars_.resize(output_count);
+  auto dynamic_shape_info =
+      ctx->As<NNAdapterContext>().NNAdapterDynamicShapeInfo(exec_scope);
   for (size_t i = 0; i < input_count; i++) {
     const auto& name = input_names[i];
     input_vars_[i].name = name;
-    // input_vars_[i].dynamic_dimensions =
-    // ctx->As<NNAdapterContext>().NNAdapterDynamicDimensions(exec_scope_,
-    // name);
+    if (dynamic_shape_info.count(name) > 0) {
+      input_vars_[i].dynamic_dimensions = dynamic_shape_info[name];
+    }
     input_vars_[i].value = exec_scope_->FindMutableTensor(input_names[i]);
     input_vars_[i].quant_scale = input_scales[i];
   }
@@ -366,6 +377,23 @@ bool Engine::Run() {
     CHECK(program->IsValid());
     CHECK(program->SetInputsAndOutputs(&input_vars_, &output_vars_));
     programs_[input_dims] = program;
+    // Dynamic shapes share the same program
+    size_t groups = 0;
+    for (auto input_var : input_vars_) {
+      groups = (std::max)(groups, input_var.dynamic_dimensions.size());
+    }
+    for (size_t i = 0; i < groups; i++) {
+      std::vector<std::vector<int64_t>> dynamic_dims(input_count);
+      for (size_t j = 0; j < input_count; j++) {
+        if (!input_vars_[j].dynamic_dimensions.empty()) {
+          CHECK_EQ(input_vars_[j].dynamic_dimensions.size(), groups);
+          dynamic_dims[j] = input_vars_[j].dynamic_dimensions[i];
+        } else {
+          dynamic_dims[j] = input_vars_[j].value->dims().Vectorize();
+        }
+      }
+      programs_[dynamic_dims] = program;
+    }
   } else {
     program = programs_[input_dims];
     CHECK(program);

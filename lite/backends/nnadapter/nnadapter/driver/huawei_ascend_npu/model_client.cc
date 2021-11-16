@@ -269,7 +269,8 @@ bool AclModelClient::Process(uint32_t input_count,
                              hal::Argument* input_arguments,
                              uint32_t output_count,
                              std::vector<NNAdapterOperandType>* output_types,
-                             hal::Argument* output_arguments) {
+                             hal::Argument* output_arguments,
+                             AscendNPUDynamicShapeMode dynamic_shape_mode) {
   if (!model_desc_) {
     NNADAPTER_LOG(FATAL) << "No ACL model is loaded.";
     return false;
@@ -292,7 +293,11 @@ bool AclModelClient::Process(uint32_t input_count,
   NNADAPTER_CHECK_EQ(output_types->size(), output_count);
   NNADAPTER_CHECK(input_dataset_);
   NNADAPTER_CHECK(output_dataset_);
-  NNADAPTER_CHECK_EQ(input_count, aclmdlGetDatasetNumBuffers(input_dataset_));
+  if (dynamic_shape_mode == ASCEND_NPU_CONST_SHAPE) {
+    NNADAPTER_CHECK_EQ(input_count, aclmdlGetDatasetNumBuffers(input_dataset_));
+  } else {
+    NNADAPTER_CHECK_LT(input_count, aclmdlGetDatasetNumBuffers(input_dataset_));
+  }
   NNADAPTER_CHECK_EQ(output_count, aclmdlGetDatasetNumBuffers(output_dataset_));
   // Copy the input data from host to device
   for (uint32_t i = 0; i < input_count; i++) {
@@ -320,9 +325,31 @@ bool AclModelClient::Process(uint32_t input_count,
             << "th input does not match, expect " << dimension
             << " but recevied " << type->dimensions.data[j];
       }
+      NNADAPTER_VLOG(3) << "The " << j << "th dimension of the " << i
+                        << "th input is " << dimension;
     }
+    // Set true dynamic shapes
     if (dynamic_shape) {
-      aclmdlSetInputDynamicDims(model_id_, input_dataset_, i, &dimensions);
+      switch (dynamic_shape_mode) {
+        case ASCEND_NPU_DYNAMIC_BATCH:
+          aclmdlSetDynamicBatchSize(
+              model_id_, input_dataset_, i, type->dimensions.data[0]);
+          break;
+        case ASCEND_NPU_DYNAMIC_HEIGHT_WEIGHT:
+          aclmdlSetDynamicHWSize(model_id_,
+                                 input_dataset_,
+                                 i,
+                                 type->dimensions.data[2],
+                                 type->dimensions.data[3]);
+          break;
+        case ASCEND_NPU_DYNAMIC_N_DIM:
+          aclmdlSetInputDynamicDims(model_id_, input_dataset_, i, &dimensions);
+          break;
+        default:
+          NNADAPTER_LOG(FATAL) << "Unsupported dynamic shape mode: "
+                               << dynamic_shape_mode;
+          break;
+      }
     }
     auto data_buffer = aclmdlGetDatasetBuffer(input_dataset_, i);
     auto data_size = aclGetDataBufferSizeV2(data_buffer);

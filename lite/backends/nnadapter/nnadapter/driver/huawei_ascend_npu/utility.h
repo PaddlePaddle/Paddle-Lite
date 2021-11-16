@@ -56,7 +56,10 @@ std::shared_ptr<AclModelClient> LoadOMModelFromBuffer(
 bool BuildOMModelToBuffer(
     std::vector<ge::Operator>& input_operators,   // NOLINT
     std::vector<ge::Operator>& output_operators,  // NOLINT
-    std::vector<uint8_t>* model_buffer);
+    std::vector<uint8_t>* model_buffer,
+    const std::vector<std::string>& dynamic_shapes,
+    const std::string& optional_shapes_str,
+    const AscendNPUDynamicShapeMode dynamic_shape_mode);
 
 // Convert GE types to strings
 const std::string GEDataTypeToString(ge::DataType data_type);

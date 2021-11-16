@@ -70,6 +70,7 @@ class Program {
   std::shared_ptr<AclModelClient> model_client_{nullptr};
   std::vector<NNAdapterOperandType> input_types_;
   std::vector<NNAdapterOperandType> output_types_;
+  AscendNPUDynamicShapeMode dynamic_shape_mode_{ASCEND_NPU_CONST_SHAPE};
 };
 
 }  // namespace huawei_ascend_npu

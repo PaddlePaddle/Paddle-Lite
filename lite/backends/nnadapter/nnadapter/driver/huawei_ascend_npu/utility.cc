@@ -172,7 +172,10 @@ std::shared_ptr<AclModelClient> LoadOMModelFromBuffer(
 bool BuildOMModelToBuffer(
     std::vector<ge::Operator>& input_operators,   // NOLINT
     std::vector<ge::Operator>& output_operators,  // NOLINT
-    std::vector<uint8_t>* model_buffer) {
+    std::vector<uint8_t>* model_buffer,
+    const std::vector<std::string>& dynamic_shapes,
+    const std::string& optional_shapes_str,
+    const AscendNPUDynamicShapeMode dynamic_shape_mode) {
   // Should initialize the GE graph builder before model building
   InitializeGraphBuilder();
   // Convert the CANN IR graph to the CANN om model
@@ -194,6 +197,35 @@ bool BuildOMModelToBuffer(
   std::map<ge::AscendString, ge::AscendString> options;
   options.insert(std::make_pair(ge::ir_option::LOG_LEVEL, "error"));
   options.insert(std::make_pair(ge::ir_option::OP_DEBUG_LEVEL, "0"));
+  options.insert(std::make_pair(ge::ir_option::INPUT_FORMAT, "NCHW"));
+
+  std::string input_shape_info;
+  for (size_t i = 0; i < dynamic_shapes.size(); i++) {
+    if (!dynamic_shapes[i].empty()) {
+      ge::AscendString name;
+      input_operators[i].GetName(name);
+      input_shape_info +=
+          std::string(name.GetString()) + ":" + dynamic_shapes[i] + ";";
+    }
+  }
+  NNADAPTER_CHECK(!input_shape_info.empty());
+  input_shape_info.pop_back();
+  options.insert(
+      std::make_pair(ge::ir_option::INPUT_SHAPE, input_shape_info.data()));
+
+  if (!optional_shapes_str.empty()) {
+    if (dynamic_shape_mode == ASCEND_NPU_DYNAMIC_BATCH) {
+      options.insert(std::make_pair(ge::ir_option::DYNAMIC_BATCH_SIZE,
+                                    optional_shapes_str.data()));
+    } else if (dynamic_shape_mode == ASCEND_NPU_DYNAMIC_HEIGHT_WEIGHT) {
+      options.insert(std::make_pair(ge::ir_option::DYNAMIC_IMAGE_SIZE,
+                                    optional_shapes_str.data()));
+    } else if (dynamic_shape_mode == ASCEND_NPU_DYNAMIC_N_DIM) {
+      options.insert(std::make_pair(ge::ir_option::DYNAMIC_DIMS,
+                                    optional_shapes_str.data()));
+    }
+  }
+
   ATC_CALL(aclgrphBuildModel(ir_graph, options, om_buffer));
   // Copy from om model buffer
   model_buffer->resize(om_buffer.length);
