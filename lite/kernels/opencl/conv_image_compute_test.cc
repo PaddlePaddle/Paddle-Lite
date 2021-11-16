@@ -554,10 +554,10 @@ const int stride = 2;
 #ifdef TEST_WINOGRAD
                 p = lite_api::CLPrecisionType::CL_PRECISION_FP32;
 #endif
+                CLRuntime::Global()->set_precision(p);
                 const bool fp16_flag =
                     (CLRuntime::Global()->get_precision() ==
                      lite_api::CLPrecisionType::CL_PRECISION_FP16);
-                CLRuntime::Global()->set_precision(p);
                 SHADOW_LOG << "to get kernel ...";
                 auto kernels =
                     KernelRegistry::Global().Create("conv2d",
@@ -859,6 +859,8 @@ const int stride = 2;
                                << i << "]:" << out_ref_data[i];
                   }
                 }
+                LOG(INFO) << "\n\t[  PASSED  ] "
+                          << lite_api::CLPrecisionTypeToStr(p);
               }
 #ifdef LOOP_TEST
             }
