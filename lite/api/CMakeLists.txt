@@ -239,12 +239,12 @@ if(NOT IOS AND NOT LITE_ON_TINY_PUBLISH)
                         ${OPENCV_PATH}/3rdparty/libs/libIlmImf.a
                         ${OPENCV_PATH}/3rdparty/libs/libtbb.a
                         ${OPENCV_PATH}/3rdparty/libs/libcpufeatures.a)
-        set(OPENCV_URL "https://paddle-inference-dist.bj.bcebos.com")
+        set(OPENCV_URL "http://paddle-inference-dist.bj.bcebos.com")
         lite_download_and_uncompress(${THIRD_PARTY_PATH} ${OPENCV_URL} "${OPENCV_VERSION}.tar.gz")
 
         # Validation Dataset
         set(VALIDATION_DATASET_DIR "${THIRD_PARTY_PATH}/validation_dataset")
-        set(VALIDATION_DATASET_URL "https://paddle-inference-dist.bj.bcebos.com/AI-Rank/validation_dataset")
+        set(VALIDATION_DATASET_URL "http://paddle-inference-dist.bj.bcebos.com/AI-Rank/validation_dataset")
 
         # ILSVRC 2012. We have extracted a minival subset which only contains 1000 clases.
         set(ILSVRC2012_1K_CLS_IMGS "ILSVRC2012_1000_cls")
