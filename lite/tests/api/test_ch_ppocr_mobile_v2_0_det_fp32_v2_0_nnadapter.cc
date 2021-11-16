@@ -18,7 +18,8 @@
 #include "lite/api/paddle_api.h"
 #include "lite/api/test/lite_api_test_helper.h"
 #include "lite/api/test/test_helper.h"
-#include "lite/tests/api/ocr_data_utility.h"
+#include "lite/tests/api/ocr_utility.h"
+#include "lite/tests/api/utility.h"
 #include "lite/utils/string.h"
 
 DEFINE_string(data_dir, "", "data dir");

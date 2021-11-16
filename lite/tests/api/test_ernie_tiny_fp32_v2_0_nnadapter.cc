@@ -18,9 +18,7 @@
 #include "lite/api/paddle_api.h"
 #include "lite/api/test/lite_api_test_helper.h"
 #include "lite/api/test/test_helper.h"
-#include "lite/tests/api/ocr_utility.h"
 #include "lite/tests/api/utility.h"
-#include "lite/utils/string.h"
 
 DEFINE_string(data_dir, "", "data dir");
 DEFINE_int32(iteration, 5, "iteration times to run");
@@ -28,8 +26,7 @@ DEFINE_int32(iteration, 5, "iteration times to run");
 namespace paddle {
 namespace lite {
 
-TEST(ch_ppocr_mobile_v2_0_rec,
-     test_ch_ppocr_mobile_v2_0_rec_fp32_v2_0_nnadapter) {
+TEST(ernie_tiny, test_ernie_tiny_fp32_v2_0_nnadapter) {
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;
@@ -43,6 +40,7 @@ TEST(ch_ppocr_mobile_v2_0_rec,
   LOG(INFO) << "Unsupported host arch!";
   return;
 #endif
+  valid_places.push_back(lite_api::Place{TARGET(kHost), PRECISION(kFloat)});
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   nnadapter_device_names.emplace_back("huawei_ascend_npu");
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
@@ -57,6 +55,9 @@ TEST(ch_ppocr_mobile_v2_0_rec,
   cxx_config.set_valid_places(valid_places);
   cxx_config.set_nnadapter_device_names(nnadapter_device_names);
   cxx_config.set_nnadapter_context_properties(nnadapter_context_properties);
+  cxx_config.set_nnadapter_subgraph_partition_config_path(
+      FLAGS_model_dir +
+      "/huawei_ascend_npu_subgraph_custom_partition_config_file.txt");
   predictor = lite_api::CreatePaddlePredictor(cxx_config);
   predictor->SaveOptimizedModel(FLAGS_model_dir,
                                 paddle::lite_api::LiteModelType::kNaiveBuffer);
@@ -70,51 +71,48 @@ TEST(ch_ppocr_mobile_v2_0_rec,
   mobile_config.set_nnadapter_context_properties(nnadapter_context_properties);
   predictor = paddle::lite_api::CreatePaddlePredictor(mobile_config);
 
-  std::string raw_data_dir = FLAGS_data_dir + std::string("raw_data");
-  std::string out_data_dir = FLAGS_data_dir + std::string("out_data");
-  std::string images_shape_path =
-      FLAGS_data_dir + std::string("images_shape.txt");
-
-  auto input_lines = ReadLines(images_shape_path);
-  std::vector<std::string> input_names;
-  std::vector<std::vector<int64_t>> input_shapes;
+  // Load input_data
+  auto input_lines = ReadLines(FLAGS_data_dir + "/input.txt");
+  std::vector<std::vector<int64_t>> input0_data;
+  std::vector<std::vector<int64_t>> input1_data;
+  std::vector<std::vector<int64_t>> input0_shapes;
+  std::vector<std::vector<int64_t>> input1_shapes;
   for (auto line : input_lines) {
-    input_names.push_back(Split(line, ":")[0]);
-    input_shapes.push_back(Split<int64_t>(Split(line, ":")[1], " "));
+    input0_data.push_back(
+        Split<int64_t>(Split(Split(line, ";")[0], ":")[1], " "));
+    input0_shapes.push_back(
+        Split<int64_t>(Split(Split(line, ";")[0], ":")[0], " "));
+    input1_data.push_back(
+        Split<int64_t>(Split(Split(line, ";")[1], ":")[1], " "));
+    input1_shapes.push_back(
+        Split<int64_t>(Split(Split(line, ";")[1], ":")[0], " "));
   }
 
-  std::vector<std::vector<float>> raw_data;
-  std::vector<std::vector<float>> gt_data;
-  for (size_t i = 0; i < FLAGS_iteration; i++) {
-    raw_data.push_back(
-        ReadRawData(raw_data_dir, input_names[i], input_shapes[i]));
+  // Load output_data
+  auto output_lines = ReadLines(FLAGS_data_dir + "/output.txt");
+  std::vector<std::vector<float>> output0_data;
+  for (auto line : output_lines) {
+    output0_data.push_back(Split<float>(Split(line, ":")[1], " "));
   }
 
   FLAGS_warmup = 1;
-  for (int i = 0; i < FLAGS_warmup; ++i) {
-    auto input_tensor = predictor->GetInput(0);
-    input_tensor->Resize(input_shapes[i]);
-    auto *data = input_tensor->mutable_data<float>();
-    int input_size = 1;
-    for (auto size : input_shapes[i]) {
-      input_size *= size;
-    }
-    memcpy(data, raw_data[i].data(), sizeof(float) * input_size);
+  for (int i = 0; i < FLAGS_warmup; i++) {
+    int data_idx = i % static_cast<int>(input0_data.size());
+    fill_tensor(
+        predictor, 0, input0_data[data_idx].data(), input0_shapes[data_idx]);
+    fill_tensor(
+        predictor, 1, input1_data[data_idx].data(), input1_shapes[data_idx]);
     predictor->Run();
   }
 
-  double cost_time = 0;
   std::vector<std::vector<float>> results;
-  for (size_t i = 0; i < raw_data.size(); ++i) {
-    auto input_tensor = predictor->GetInput(0);
-    input_tensor->Resize(input_shapes[i]);
-    auto *data = input_tensor->mutable_data<float>();
-    int input_size = 1;
-    for (auto size : input_shapes[i]) {
-      input_size *= size;
-    }
-    memcpy(data, raw_data[i].data(), sizeof(float) * input_size);
-    predictor->Run();
+  double cost_time = 0;
+  for (size_t i = 0; i < FLAGS_iteration; ++i) {
+    int data_idx = i % static_cast<int>(input0_data.size());
+    fill_tensor(
+        predictor, 0, input0_data[data_idx].data(), input0_shapes[data_idx]);
+    fill_tensor(
+        predictor, 1, input1_data[data_idx].data(), input1_shapes[data_idx]);
 
     double start = GetCurrentUS();
     predictor->Run();
@@ -123,22 +121,20 @@ TEST(ch_ppocr_mobile_v2_0_rec,
     auto output_tensor = predictor->GetOutput(0);
     auto output_shape = output_tensor->shape();
     auto output_data = output_tensor->data<float>();
-    ASSERT_EQ(output_shape.size(), 3UL);
-
-    int64_t output_size = 1;
+    ASSERT_EQ(output_shape.size(), 2UL);
+    int64_t out_size = 1;
     for (auto dim : output_shape) {
-      output_size *= dim;
+      out_size *= dim;
     }
-    std::vector<float> ret(output_size);
-    memcpy(ret.data(), output_data, sizeof(float) * output_size);
+    std::vector<float> ret(out_size);
+    memcpy(ret.data(), output_data, sizeof(float) * out_size);
     results.push_back(ret);
-    gt_data.push_back(ReadRawData(out_data_dir, input_names[i], output_shape));
   }
 
-  for (float abs_error : {1e-1, 1e-2, 1e-3, 1e-4}) {
-    float acc = CalOutAccuracy(results, gt_data, abs_error);
+  for (float abs_error : {1e-1, 1e-2}) {
+    float acc = CalOutAccuracy(results, output0_data, abs_error);
     LOG(INFO) << "acc: " << acc << ", if abs_error < " << abs_error;
-    ASSERT_GE(CalOutAccuracy(results, gt_data, abs_error), 0.99);
+    ASSERT_GE(CalOutAccuracy(results, output0_data, abs_error), 0.99);
   }
 
   LOG(INFO) << "================== Speed Report ===================";
