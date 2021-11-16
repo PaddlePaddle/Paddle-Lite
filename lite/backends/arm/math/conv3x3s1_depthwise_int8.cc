@@ -17,6 +17,7 @@
 #include "lite/backends/arm/math/conv_depthwise.h"
 #include "lite/backends/arm/math/conv_impl.h"
 #include "lite/core/context.h"
+#include "lite/core/parallel_defines.h"
 #include "lite/operators/op_params.h"
 #ifdef ARM_WITH_OMP
 #include <omp.h>
@@ -89,14 +90,16 @@ namespace math {
   "smull  v18.8h, v6.8b,  %[v6].8b    \n"   \
   "smlal  v17.8h, v5.8b,  %[v8].8b    \n"   \
   "smlal  v19.8h, v7.8b,  %[v8].8b    \n"   \
-  "dup    v8.4s,  %[bias]             \n"   \
-  "dup    v9.4s,  %[bias]             \n"   \
-  "dup    v10.4s,  %[bias]            \n"   \
-  "dup    v11.4s,  %[bias]            \n"   \
+  "dup    v8.4s,  %w[bias]            \n"   \
+  "dup    v9.4s,  %w[bias]            \n"   \
+  "dup    v10.4s, %w[bias]            \n"   \
+  "dup    v11.4s, %w[bias]            \n"   \
   "saddw  v12.4s, v12.4s, v16.4h      \n"   \
   "saddw2 v13.4s, v13.4s, v16.8h      \n"   \
   "saddw  v14.4s, v14.4s, v18.4h      \n"   \
   "saddw2 v15.4s, v15.4s, v18.8h      \n"   \
+  "add   %[din_ptr2], %[din_ptr2], #7 \n"   \
+  "add   %[din_ptr3], %[din_ptr3], #7 \n"   \
   "saddw  v12.4s, v12.4s, v17.4h      \n"   \
   "saddw2 v13.4s, v13.4s, v17.8h      \n"   \
   "saddw  v14.4s, v14.4s, v19.4h      \n"   \
@@ -113,26 +116,31 @@ namespace math {
 
 #define RELU                                \
   "fmax  v8.4s,  v8.4s,  v21.4s        \n"  \
-  "fmax  v9.4s,  v8.4s,  v21.4s        \n"  \
-  "fmax  v10.4s, v9.4s,  v21.4s        \n"  \
-  "fmax  v11.4s, v10.4s, v21.4s        \n"
+  "fmax  v9.4s,  v9.4s,  v21.4s        \n"  \
+  "fmax  v10.4s, v10.4s, v21.4s        \n"  \
+  "fmax  v11.4s, v11.4s, v21.4s        \n"
 
-#define RELU6                               \
-  "fmin  v8.4s,  v8.4s,  %[valpha].4s  \n"  \
-  "fmin  v9.4s,  v8.4s,  %[valpha].4s  \n"  \
-  "fmin  v10.4s, v9.4s,  %[valpha].4s  \n"  \
-  "fmin  v11.4s, v10.4s, %[valpha].4s  \n"
+#define RELU6                        \
+  "ldr   q4, [%[vmax], #16]     \n"  \
+  "fmax  v8.4s,  v8.4s,  v21.4s \n"  \
+  "fmax  v9.4s,  v9.4s,  v21.4s \n"  \
+  "fmax  v10.4s, v10.4s, v21.4s \n"  \
+  "fmax  v11.4s, v11.4s, v21.4s \n"  \
+  "fmin  v8.4s,  v8.4s,  v4.4s  \n"  \
+  "fmin  v9.4s,  v9.4s,  v4.4s  \n"  \
+  "fmin  v10.4s, v10.4s, v4.4s  \n"  \
+  "fmin  v11.4s, v11.4s, v4.4s  \n"
 
 #define RESULT_INT8_MAX                    \
-  "dup  v12.4s, %[vmax]                \n" \
-  "fcmge v0.4s, v8.4s,  v12.4s         \n" \
-  "fcmge v1.4s, v9.4s,  v12.4s         \n" \
-  "fcmge v2.4s, v10.4s, v12.4s         \n" \
-  "fcmge v3.4s, v11.4s, v12.4s         \n" \
-  "bif   v8.16b,  v12.16b, v0.16b      \n" \
-  "bif   v9.16b,  v12.16b, v1.16b      \n" \
-  "bif   v10.16b, v12.16b, v2.16b      \n" \
-  "bif   v11.16b, v12.16b, v3.16b      \n"
+  "ld1   {v12.4s}, [%[vmax]]           \n" \
+  "fcmge v4.4s,   v8.4s,  v12.4s       \n" \
+  "fcmge v5.4s,   v9.4s,  v12.4s       \n" \
+  "fcmge v6.4s,   v10.4s, v12.4s       \n" \
+  "fcmge v7.4s,   v11.4s, v12.4s       \n" \
+  "bif   v8.16b,  v12.16b, v4.16b      \n" \
+  "bif   v9.16b,  v12.16b, v5.16b      \n" \
+  "bif   v10.16b, v12.16b, v6.16b      \n" \
+  "bif   v11.16b, v12.16b, v7.16b      \n"
 
 #define RESULT_INT8                        \
   /* fp32 -> int32 */                      \
@@ -197,8 +205,8 @@ namespace math {
   "saddw2 v13.4s, v13.4s, v17.8h      \n"     \
   "saddw  v14.4s, v14.4s, v19.4h      \n"     \
   "saddw2 v15.4s, v15.4s, v19.8h      \n"     \
-  "add    %[din_ptr2], %[din_ptr3], #8\n"     \
-  "add    %[din_ptr2], %[din_ptr3], #8\n"     \
+  "add    %[din_ptr2], %[din_ptr2], #8\n"     \
+  "add    %[din_ptr3], %[din_ptr3], #8\n"     \
   "smull  v17.8h, v7.8b,  %[v5].8b    \n"     \
   "smull  v19.8h, v5.8b,  %[v5].8b    \n"     \
   /* r2 */                                    \
@@ -220,10 +228,10 @@ namespace math {
   "saddw2 v13.4s, v13.4s, v17.8h      \n"     \
   "saddw  v14.4s, v14.4s, v19.4h      \n"     \
   "saddw2 v15.4s, v15.4s, v19.8h      \n"     \
-  "dup    v8.4s,  %[bias]             \n"     \
-  "dup    v9.4s,  %[bias]             \n"     \
-  "dup    v10.4s,  %[bias]            \n"     \
-  "dup    v11.4s,  %[bias]            \n"     \
+  "dup    v8.4s,  %w[bias]            \n"     \
+  "dup    v9.4s,  %w[bias]            \n"     \
+  "dup    v10.4s, %w[bias]            \n"     \
+  "dup    v11.4s, %w[bias]            \n"     \
   "saddw  v12.4s, v12.4s, v16.4h      \n"     \
   "saddw2 v13.4s, v13.4s, v16.8h      \n"     \
   "saddw  v14.4s, v14.4s, v18.4h      \n"     \
@@ -233,41 +241,41 @@ namespace math {
   "scvtf  v13.4s, v13.4s              \n"     \
   "scvtf  v14.4s, v14.4s              \n"     \
   "scvtf  v15.4s, v15.4s              \n"     \
-  "subs   %w[cnt], #1                 \n"     \
+  "subs   %w[cnt], %w[cnt], #1        \n"     \
   "fmla   v8.4s,  v12.4s, %[vscale].4s\n"     \
   "fmla   v9.4s,  v13.4s, %[vscale].4s\n"     \
   "fmla   v10.4s, v14.4s, %[vscale].4s\n"     \
   "fmla   v11.4s, v15.4s, %[vscale].4s\n"
 
-#define MID_STORE_FLOAT                     \
-  "vmov.u32 q12, #0                 \n"     \
-  "vmov.u32 q13, #0                 \n"     \
-  "vmov.u32 q14, #0                 \n"     \
-  "vmov.u32 q15, #0                 \n"     \
+#define MID_STORE_FLOAT                      \
+  "movi   v12.4s, #0x0\n"                    \
+  "movi   v13.4s, #0x0\n"                    \
+  "movi   v14.4s, #0x0\n"                    \
+  "movi   v15.4s, #0x0\n"                    \
   "stp    q8,  q9,  [%[dout_ptr0]], #32 \n"  \
   "stp    q10, q11, [%[dout_ptr1]], #32 \n"  \
   "bne  2b\n"
 
-#define MID_STORE_INT8                      \
-  "vmov.u32 q12, #0                 \n"     \
-  "vmov.u32 q13, #0                 \n"     \
-  "vmov.u32 q14, #0                 \n"     \
-  "vmov.u32 q15, #0                 \n"     \
+#define MID_STORE_INT8                       \
+  "movi   v12.4s, #0x0\n"                    \
+  "movi   v13.4s, #0x0\n"                    \
+  "movi   v14.4s, #0x0\n"                    \
+  "movi   v15.4s, #0x0\n"                    \
   "st1    {v8.8b}, [%[dout_ptr0]], #8     \n"\
   "st1    {v9.8b}, [%[dout_ptr1]], #8     \n"\
   "bne  2b\n"
 
 #define RIGHT_COMPUTE_S1                    \
   "1:                                \n"    \
-  "sub %[din_ptr0], %[din_ptr0], %[right_pad_num]\n"\
-  "sub %[din_ptr1], %[din_ptr1], %[right_pad_num]\n"\
-  "sub %[din_ptr2], %[din_ptr2], %[right_pad_num]\n"\
-  "sub %[din_ptr3], %[din_ptr3], %[right_pad_num]\n"\
+  "sub %[din_ptr0], %[din_ptr0], %[right_pad_num_in]\n"\
+  "sub %[din_ptr1], %[din_ptr1], %[right_pad_num_in]\n"\
+  "sub %[din_ptr2], %[din_ptr2], %[right_pad_num_in]\n"\
+  "sub %[din_ptr3], %[din_ptr3], %[right_pad_num_in]\n"\
   "ld1    {v0.8b, v1.8b}, [%[din_ptr0]]\n"    \
   "ld1    {v2.8b, v3.8b}, [%[din_ptr1]]\n"    \
-  "ld1    {v8.8b, v9.8b}, [%[vmask]\n"        \
-  "sub %[dout_ptr0], %[dout_ptr0], %[right_pad_num]\n"\
-  "sub %[dout_ptr1], %[dout_ptr1], %[right_pad_num]\n"\
+  "ld1    {v8.8b, v9.8b}, [%[vmask]]\n"       \
+  "sub %[dout_ptr0], %[dout_ptr0], %[right_pad_num_out]\n"\
+  "sub %[dout_ptr1], %[dout_ptr1], %[right_pad_num_out]\n"\
   "bif    v0.8b,  v21.8b, v8.8b       \n"     \
   "bif    v1.8b,  v21.8b, v9.8b       \n"     \
   "bif    v2.8b,  v21.8b, v8.8b       \n"     \
@@ -289,12 +297,12 @@ namespace math {
   /* r1 */                                    \
   "ext    v4.8b,  v0.8b,  v1.8b, #1   \n"     \
   "ext    v5.8b,  v0.8b,  v1.8b, #2   \n"     \
+  "smlal  v17.8h, v2.8b,  %[v3].8b    \n"     \
+  "smlal  v19.8h, v0.8b,  %[v3].8b    \n"     \
   "saddw  v12.4s, v12.4s, v16.4h      \n"     \
   "saddw2 v13.4s, v13.4s, v16.8h      \n"     \
   "saddw  v14.4s, v14.4s, v18.4h      \n"     \
   "saddw2 v15.4s, v15.4s, v18.8h      \n"     \
-  "smlal  v17.8h, v2.8b,  %[v3].8b    \n"     \
-  "smlal  v19.8h, v0.8b,  %[v3].8b    \n"     \
   "ld1    {v2.8b, v3.8b}, [%[din_ptr3]]\n"    \
   "smull  v16.8h, v6.8b,  %[v4].8b    \n"     \
   "smull  v18.8h, v4.8b,  %[v4].8b    \n"     \
@@ -323,10 +331,10 @@ namespace math {
   "saddw2 v13.4s, v13.4s, v17.8h      \n"     \
   "saddw  v14.4s, v14.4s, v19.4h      \n"     \
   "saddw2 v15.4s, v15.4s, v19.8h      \n"     \
-  "dup    v8.4s,  %[bias]             \n"     \
-  "dup    v9.4s,  %[bias]             \n"     \
-  "dup    v10.4s,  %[bias]            \n"     \
-  "dup    v11.4s,  %[bias]            \n"     \
+  "dup    v8.4s,  %w[bias]            \n"     \
+  "dup    v9.4s,  %w[bias]            \n"     \
+  "dup    v10.4s, %w[bias]            \n"     \
+  "dup    v11.4s, %w[bias]            \n"     \
   "saddw  v12.4s, v12.4s, v16.4h      \n"     \
   "saddw2 v13.4s, v13.4s, v16.8h      \n"     \
   "saddw  v14.4s, v14.4s, v18.4h      \n"     \
@@ -336,7 +344,6 @@ namespace math {
   "scvtf  v13.4s, v13.4s              \n"     \
   "scvtf  v14.4s, v14.4s              \n"     \
   "scvtf  v15.4s, v15.4s              \n"     \
-  "subs   %w[cnt], #1                 \n"     \
   "fmla   v8.4s,  v12.4s, %[vscale].4s\n"     \
   "fmla   v9.4s,  v13.4s, %[vscale].4s\n"     \
   "fmla   v10.4s, v14.4s, %[vscale].4s\n"     \
@@ -355,81 +362,80 @@ namespace math {
   "vld1.8 {d12-d13}, [%[din_ptr0]]  \n"   \
   "vmov.u32 d11, #0                 \n"   \
   "vmov.u32 q12, #0                 \n"   \
+  "vld1.8 {d16-d17}, [%[din_ptr1]]  \n"   \
   "vmov.u32 q13, #0                 \n"   \
   "vmov.u32 q14, #0                 \n"   \
   "vmov.u32 q15, #0                 \n"
 
 #define LEFT_COMPUTE_S1                   \
   /* r0 */                                \
-  "vld1.8 {d16-d17}, [%[din_ptr1]]  \n"   \
   "vmull.s8 q10, d12, d3            \n"   \
+  "vmull.s8 q11, d16, d3            \n"   \
   "vext.8   d14, d11, d12, #7       \n"   \
+  "vext.8   d18, d11, d16, #7       \n"   \
   "vext.8   d15, d12, d13, #1       \n"   \
+  "vext.8   d19, d16, d17, #1       \n"   \
+  "vmlal.s8 q10, d14, d2            \n"   \
+  "vmlal.s8 q11, d18, d2            \n"   \
   "vdup.s8     d5, d0[3]            \n"   \
   "vdup.s8     d6, d0[4]            \n"   \
-  "vmlal.s8 q10, d14, d2            \n"   \
   "vdup.s8     d7, d0[5]            \n"   \
-  "add      %[din_ptr0], #7         \n"   \
-  "vext.8   d14, d11, d16, #7       \n"   \
-  /* r1 */                                \
-  "vmull.s8  q11, d16, d3           \n"   \
+  "vld1.8 {d12-d13}, [%[din_ptr2]]  \n"   \
   "vaddw.s16 q12, q12, d20          \n"   \
   "vaddw.s16 q13, q13, d21          \n"   \
-  "vmull.s8  q10, d15, d4           \n"   \
-  "vext.8    d15, d16, d17, #1      \n"   \
-  "vmlal.s8  q11, d14, d2           \n"   \
+  "vaddw.s16 q14, q14, d22          \n"   \
+  "vaddw.s16 q15, q15, d23          \n"   \
+  "vmull.s8 q10, d15, d4            \n"   \
+  "vmull.s8 q11, d19, d4            \n"   \
+  "add      %[din_ptr0], #7         \n"   \
+  /* r1 */                                \
+  "vext.8   d14, d11, d12, #7       \n"   \
+  "vext.8   d15, d12, d13, #1       \n"   \
+  "vmlal.s8 q10, d16,  d6           \n"   \
+  "vmlal.s8 q11, d12,  d6           \n"   \
   "add      %[din_ptr1], #7         \n"   \
-  "vld1.8 {d12-d13}, [%[din_ptr2]]  \n"   \
-  "vmlal.s8  q10,  d16, d6          \n"   \
   "vld1.8 {d16-d17}, [%[din_ptr3]]  \n"   \
-  "vaddw.s16 q14,  q14, d22         \n"   \
-  "vaddw.s16 q15,  q15, d23         \n"   \
-  "vaddw.s16 q12,  q12, d20         \n"   \
-  "vaddw.s16 q13,  q13, d21         \n"   \
-  "vmull.s8  q10, d14, d5           \n"   \
-  "vmull.s8  q11, d15, d4           \n"   \
+  "vaddw.s16 q12, q12, d20          \n"   \
+  "vaddw.s16 q13, q13, d21          \n"   \
+  "vaddw.s16 q14, q14, d22          \n"   \
+  "vaddw.s16 q15, q15, d23          \n"   \
+  "vmull.s8  q10, d18, d5           \n"   \
+  "vmull.s8  q11, d14, d5           \n"   \
   "vdup.s8     d8, d0[6]            \n"   \
   "vdup.s8     d9, d0[7]            \n"   \
-  "vext.8    d14, d11, d12, #7      \n"   \
-  "vmlal.s8  q10, d15, d7           \n"   \
+  "vdup.s8     d10, d1[0]           \n"   \
+  "vmlal.s8  q10, d19, d7           \n"   \
+  "vmlal.s8  q11, d15, d7           \n"   \
+  /* r2 */                                \
+  "vext.8   d18, d11, d16, #7       \n"   \
+  "vext.8   d19, d16, d17, #1       \n"   \
+  "vaddw.s16 q12, q12, d20          \n"   \
+  "vaddw.s16 q13, q13, d21          \n"   \
+  "vaddw.s16 q14, q14, d22          \n"   \
+  "vaddw.s16 q15, q15, d23          \n"   \
+  "vmull.s8  q10, d12, d9           \n"   \
+  "vmull.s8  q11, d16, d9           \n"   \
+  "vmull.s8  q6,  d14, d8           \n"   \
+  "vmull.s8  q8,  d18, d8           \n"   \
   "add      %[din_ptr2], #7         \n"   \
   "add      %[din_ptr3], #7         \n"   \
-  /* r2 */                                \
-  "vmlal.s8  q11, d12, d6           \n"   \
-  "vext.8    d15, d12, d13, #1      \n"   \
-  "vdup.s8     d10, d1[0]           \n"   \
-  "vaddw.s16 q12,  q12, d20         \n"   \
-  "vaddw.s16 q13,  q13, d21         \n"   \
-  "vmull.s8  q10, d12, d9           \n"   \
-  "vaddw.s16 q14,  q14, d22         \n"   \
-  "vaddw.s16 q15,  q15, d23         \n"   \
-  "vmull.s8  q11, d14,  d5          \n"   \
-  "vmlal.s8  q10, d14,  d8          \n"   \
-  "vext.8   d14, d11, d16, #7       \n"   \
-  "vmull.s8  q9,  d15,  d10         \n"   \
-  "vaddw.s16 q12,  q12, d20         \n"   \
-  "vaddw.s16 q13,  q13, d21         \n"   \
-  "vmlal.s8  q11, d15,  d7          \n"   \
-  "vext.8    d15, d16, d17, #1      \n"   \
-  /* r3 */                                \
-  "vmull.s8  q10,  d16,  d9         \n"   \
-  "vaddw.s16 q12,  q12, d18         \n"   \
-  "vaddw.s16 q13,  q13, d19         \n"   \
-  "vaddw.s16 q14,  q14, d22         \n"   \
-  "vaddw.s16 q15,  q15, d23         \n"   \
-  "vmlal.s8  q10,  d15, d10         \n"   \
-  "vmull.s8  q11,  d14, d8          \n"   \
-  "vdup.32   q7, %[scale]           \n"   \
+  "vmlal.s8  q10, d15, d10          \n"   \
+  "vmlal.s8  q11, d19, d10         \n"    \
+  "vaddw.s16 q12, q12, d12          \n"   \
+  "vaddw.s16 q13, q13, d13          \n"   \
+  "vaddw.s16 q14, q14, d16          \n"   \
+  "vaddw.s16 q15, q15, d17          \n"   \
+  "vld1.32   {d14-d15}, [%[vmax]]   \n"   \
   "vdup.32   q8, %[bias]            \n"   \
   "vdup.32   q9, %[bias]            \n"   \
-  "vaddw.s16 q14,  q14, d20         \n"   \
-  "vaddw.s16 q15,  q15, d21         \n"   \
-  "vcvt.f32.s32   q12, q12          \n"   \
-  "vcvt.f32.s32   q13, q13          \n"   \
-  "vaddw.s16 q14,  q14, d22         \n"   \
-  "vaddw.s16 q15,  q15, d23         \n"   \
+  "vaddw.s16 q12, q12, d20          \n"   \
+  "vaddw.s16 q13, q13, d21          \n"   \
+  "vaddw.s16 q14, q14, d22          \n"   \
+  "vaddw.s16 q15, q15, d23          \n"   \
   "vdup.32   q10, %[bias]           \n"   \
   "vdup.32   q11, %[bias]           \n"   \
+  "vcvt.f32.s32   q12, q12          \n"   \
+  "vcvt.f32.s32   q13, q13          \n"   \
   "vcvt.f32.s32   q14, q14          \n"   \
   "vcvt.f32.s32   q15, q15          \n"   \
   "vmov.u32 q6, #0                  \n"   \
@@ -439,7 +445,8 @@ namespace math {
   "vmla.f32 q11,  q15,  q7          \n"
 
 #define RELU6                             \
-  "vdup.32  q7, %[alpha]           \n"    \
+  "vldr     d14, [%[vmax], #32]    \n"    \
+  "vldr     d15, [%[vmax], #40]    \n"    \
   "vmax.f32 q8,  q8,  q6           \n"    \
   "vmax.f32 q9,  q9,  q6           \n"    \
   "vmax.f32 q10, q10, q6           \n"    \
@@ -460,7 +467,8 @@ namespace math {
   "vmov.f32 q13, #0.5                 \n"  \
   "vcgt.f32 q14, q8,  q6              \n"  \
   "vcgt.f32 q15, q9,  q6              \n"  \
-  "vld1.32 {d14-d15}, [%[vmax]]       \n"  \
+  "vldr     d14,  [%[vmax], #16]      \n"  \
+  "vldr     d15,  [%[vmax], #24]      \n"  \
   "vbif.f32 q13, q12, q14             \n"  \
   "vcgt.f32 q14, q10, q6              \n"  \
   "vadd.f32 q8,  q8,  q13             \n"  \
@@ -505,6 +513,23 @@ namespace math {
   "vst1.32 {d20}, [%[dout_ptr0]]!\n"      \
   "vst1.32 {d21}, [%[dout_ptr1]]!\n"
 
+#define INIT_P0                           \
+  "vld1.8    {d0-d1}, [%[wei_ptr]]  \n"   \
+  "pld [%[din_ptr0]]                \n"   \
+  "pld [%[din_ptr1]]                \n"   \
+  "pld [%[din_ptr2]]                \n"   \
+  "pld [%[din_ptr3]]                \n"   \
+  "vdup.s8     d2,  d0[0]           \n"   \
+  "vdup.s8     d3,  d0[1]           \n"   \
+  "vdup.s8     d4,  d0[2]           \n"   \
+  "vdup.s8     d5,  d0[3]           \n"   \
+  "vdup.s8     d6,  d0[4]           \n"   \
+  "vdup.s8     d7,  d0[5]           \n"   \
+  "vdup.s8     d8,  d0[6]           \n"   \
+  "vdup.s8     d9,  d0[7]           \n"   \
+  "vdup.s8     d10, d1[0]           \n"   \
+  "vmov.u32    d11, #0              \n"
+
 #define MID_COMPUTE_S1                    \
   "cmp %[cnt], #1                   \n"   \
   "vld1.8 {d12-d13}, [%[din_ptr0]]  \n"   \
@@ -516,68 +541,63 @@ namespace math {
   "blt 1f                           \n"   \
   "2:                               \n"   \
   /* r0 */                                \
-  "vmull.s8  q10, d12, d2           \n"   \
-  "vmull.s8  q11, d16, d2           \n"   \
-  "vext.8    d14, d12, d13, #1      \n"   \
-  "vext.8    d18, d16, d17, #1      \n"   \
-  "vext.8    d15, d12, d13, #2      \n"   \
-  "vext.8    d19, d16, d17, #2      \n"   \
-  "vmlal.s8  q10, d14, d3           \n"   \
-  "vmlal.s8  q11, d18, d3           \n"   \
-  "add       %[din_ptr0], #8        \n"   \
-  "add       %[din_ptr1], #8        \n"   \
+  "vmull.s8 q10, d12, d2            \n"   \
+  "vmull.s8 q11, d16, d2            \n"   \
+  "vext.8   d14, d12, d13, #1       \n"   \
+  "vext.8   d18, d16, d17, #1       \n"   \
+  "vext.8   d15, d12, d13, #2       \n"   \
+  "vext.8   d19, d16, d17, #2       \n"   \
+  "vmlal.s8 q10, d14, d3            \n"   \
+  "vmlal.s8 q11, d18, d3            \n"   \
   "vld1.8 {d12-d13}, [%[din_ptr2]]  \n"   \
-  "vaddw.s32 q12, q12, d20          \n"   \
-  "vaddw.s32 q13, q13, d21          \n"   \
-  "vaddw.s32 q14, q14, d22          \n"   \
-  "vaddw.s32 q15, q15, d23          \n"   \
-  "vmull.s8  q10, d15, d4           \n"   \
-  "vmull.s8  q11, d19, d4           \n"   \
+  "add      %[din_ptr0], #8         \n"   \
+  "vaddw.s16 q12, q12, d20          \n"   \
+  "vaddw.s16 q13, q13, d21          \n"   \
+  "vaddw.s16 q14, q14, d22          \n"   \
+  "vaddw.s16 q15, q15, d23          \n"   \
+  "vmull.s8 q10, d15, d4            \n"   \
+  "vmull.s8 q11, d19, d4            \n"   \
   /* r1 */                                \
-  "vext.8    d14, d12, d13, #1      \n"   \
-  "vext.8    d15, d12, d13, #2      \n"   \
-  "vmlal.s8  q10, d16, d5           \n"   \
-  "vmlal.s8  q11, d12, d5           \n"   \
+  "vext.8   d14, d12, d13, #1       \n"   \
+  "vext.8   d15, d12, d13, #2       \n"   \
+  "vmlal.s8 q10, d16,  d5           \n"   \
+  "vmlal.s8 q11, d12,  d5           \n"   \
+  "add      %[din_ptr1], #8         \n"   \
   "vld1.8 {d16-d17}, [%[din_ptr3]]  \n"   \
-  "add       %[din_ptr2], #8        \n"   \
-  "add       %[din_ptr3], #8        \n"   \
-  "vaddw.s32 q12, q12, d20          \n"   \
-  "vaddw.s32 q13, q13, d21          \n"   \
-  "vaddw.s32 q14, q14, d22          \n"   \
-  "vaddw.s32 q15, q15, d23          \n"   \
+  "vaddw.s16 q12, q12, d20          \n"   \
+  "vaddw.s16 q13, q13, d21          \n"   \
+  "vaddw.s16 q14, q14, d22          \n"   \
+  "vaddw.s16 q15, q15, d23          \n"   \
   "vmull.s8  q10, d18, d6           \n"   \
   "vmull.s8  q11, d14, d6           \n"   \
-  "pld [%[din_ptr0]]                \n"   \
-  "pld [%[din_ptr1]]                \n"   \
-  "pld [%[din_ptr2]]                \n"   \
-  "pld [%[din_ptr3]]                \n"   \
+  "add      %[din_ptr2], #8         \n"   \
+  "add      %[din_ptr3], #8         \n"   \
   "vmlal.s8  q10, d19, d7           \n"   \
   "vmlal.s8  q11, d15, d7           \n"   \
   /* r2 */                                \
-  "vext.8    d18, d16, d17, #1      \n"   \
-  "vext.8    d19, d16, d17, #2      \n"   \
-  "vaddw.s32 q12, q12, d20          \n"   \
-  "vaddw.s32 q13, q13, d21          \n"   \
-  "vaddw.s32 q14, q14, d22          \n"   \
-  "vaddw.s32 q15, q15, d23          \n"   \
+  "vext.8   d18, d16, d17, #1       \n"   \
+  "vext.8   d19, d16, d17, #2       \n"   \
+  "vaddw.s16 q12, q12, d20          \n"   \
+  "vaddw.s16 q13, q13, d21          \n"   \
+  "vaddw.s16 q14, q14, d22          \n"   \
+  "vaddw.s16 q15, q15, d23          \n"   \
   "vmull.s8  q10, d12, d8           \n"   \
   "vmull.s8  q11, d16, d8           \n"   \
-  "vmull.s8  q7,  d15, d10          \n"   \
-  "vmull.s8  q9,  d19, d10          \n"   \
-  "subs  %[cnt], #1                 \n"   \
-  "vmlal.s8  q10, d14, d9           \n"   \
-  "vmlal.s8  q11, d18, d9           \n"   \
-  "vaddw.s32 q12, q12, d20          \n"   \
-  "vaddw.s32 q13, q13, d21          \n"   \
-  "vaddw.s32 q14, q14, d22          \n"   \
-  "vaddw.s32 q15, q15, d23          \n"   \
-  "vdup.32   q7, %[scale]           \n"   \
+  "vmull.s8  q6,  d14, d9           \n"   \
+  "vmull.s8  q8,  d18, d9           \n"   \
+  "vmlal.s8  q10, d15, d10          \n"   \
+  "vmlal.s8  q11, d19, d10         \n"    \
+  "vaddw.s16 q12, q12, d12          \n"   \
+  "vaddw.s16 q13, q13, d13          \n"   \
+  "vaddw.s16 q14, q14, d16          \n"   \
+  "vaddw.s16 q15, q15, d17          \n"   \
+  "vld1.32   {d14-d15}, [%[vmax]]   \n"   \
   "vdup.32   q8, %[bias]            \n"   \
   "vdup.32   q9, %[bias]            \n"   \
-  "vaddw.s32 q12, q12, d14          \n"   \
-  "vaddw.s32 q13, q13, d15          \n"   \
-  "vaddw.s32 q14, q14, d18          \n"   \
-  "vaddw.s32 q15, q15, d19          \n"   \
+  "vaddw.s16 q12, q12, d20          \n"   \
+  "vaddw.s16 q13, q13, d21          \n"   \
+  "vaddw.s16 q14, q14, d22          \n"   \
+  "vaddw.s16 q15, q15, d23          \n"   \
   "vdup.32   q10, %[bias]           \n"   \
   "vdup.32   q11, %[bias]           \n"   \
   "vcvt.f32.s32   q12, q12          \n"   \
@@ -585,6 +605,7 @@ namespace math {
   "vcvt.f32.s32   q14, q14          \n"   \
   "vcvt.f32.s32   q15, q15          \n"   \
   "vmov.u32 q6, #0                  \n"   \
+  "subs %[cnt], #1                  \n"   \
   "vmla.f32 q8,   q12,  q7          \n"   \
   "vmla.f32 q9,   q13,  q7          \n"   \
   "vmla.f32 q10,  q14,  q7          \n"   \
@@ -592,12 +613,12 @@ namespace math {
 
 #define MID_STORE_FLOAT                   \
   "vld1.8 {d12-d13}, [%[din_ptr0]]  \n"   \
-  "vld1.8 {d16-d17}, [%[din_ptr1]]  \n"   \
   "vmov.u32 q12, #0                 \n"   \
   "vmov.u32 q13, #0                 \n"   \
+  "vst1.32 {d16-d19}, [%[dout_ptr0]]!\n"  \
+  "vld1.8 {d16-d17}, [%[din_ptr1]]  \n"   \
   "vmov.u32 q14, #0                 \n"   \
   "vmov.u32 q15, #0                 \n"   \
-  "vst1.32 {d16-d19}, [%[dout_ptr0]]!\n"  \
   "vst1.32 {d20-d23}, [%[dout_ptr1]]!\n"  \
   "bne  2b\n"
 
@@ -615,78 +636,78 @@ namespace math {
 #define RIGHT_COMPUTE_S1                  \
   "1:                               \n"   \
   "vld1.8 {d14-d15}, [%[vmask]]     \n"   \
-  "sub %[din_ptr0], %[right_pad_num]\n"   \
-  "sub %[din_ptr1], %[right_pad_num]\n"   \
-  "sub %[din_ptr2], %[right_pad_num]\n"   \
-  "sub %[din_ptr3], %[right_pad_num]\n"   \
+  "sub %[din_ptr0], %[right_pad_num_in]\n"\
+  "sub %[din_ptr1], %[right_pad_num_in]\n"\
+  "sub %[din_ptr2], %[right_pad_num_in]\n"\
+  "sub %[din_ptr3], %[right_pad_num_in]\n"\
   "vld1.8 {d12-d13}, [%[din_ptr0]]  \n"   \
   "vld1.8 {d16-d17}, [%[din_ptr1]]  \n"   \
-  "sub %[dout_ptr0], %[right_pad_num]\n"  \
-  "sub %[dout_ptr1], %[right_pad_num]\n"  \
+  "sub %[dout_ptr0], %[right_pad_num_out]\n"\
+  "sub %[dout_ptr1], %[right_pad_num_out]\n"\
   /* r0 */                                \
-  "vbif.s8   d12, d11, d14          \n"   \
-  "vbif.s8   d16, d11, d14          \n"   \
-  "vbif.s8   d13, d11, d15          \n"   \
-  "vbif.s8   d17, d11, d15          \n"   \
-  "vmull.s8  q10, d12, d2           \n"   \
-  "vmull.s8  q11, d16, d2           \n"   \
-  "vext.8    d14, d12, d13, #1      \n"   \
-  "vext.8    d18, d16, d17, #1      \n"   \
-  "vext.8    d15, d12, d13, #2      \n"   \
-  "vext.8    d19, d16, d17, #2      \n"   \
-  "vmlal.s8  q10, d14, d3           \n"   \
-  "vmlal.s8  q11, d18, d3           \n"   \
+  "vbif.s8  d12, d11, d14           \n"   \
+  "vbif.s8  d16, d11, d14           \n"   \
+  "vbif.s8  d13, d11, d15           \n"   \
+  "vbif.s8  d17, d11, d15           \n"   \
+  "vmull.s8 q10, d12, d2            \n"   \
+  "vmull.s8 q11, d16, d2            \n"   \
+  "vext.8   d14, d12, d13, #1       \n"   \
+  "vext.8   d18, d16, d17, #1       \n"   \
+  "vext.8   d15, d12, d13, #2       \n"   \
+  "vext.8   d19, d16, d17, #2       \n"   \
+  "vmlal.s8 q10, d14, d3            \n"   \
+  "vmlal.s8 q11, d18, d3            \n"   \
   "vld1.8 {d12-d13}, [%[din_ptr2]]  \n"   \
-  "vaddw.s32 q12, q12, d20          \n"   \
-  "vaddw.s32 q13, q13, d21          \n"   \
-  "vmull.s8  q10, d15, d4           \n"   \
+  "vaddw.s16 q12, q12, d20          \n"   \
+  "vaddw.s16 q13, q13, d21          \n"   \
+  "vmull.s8 q10, d15, d4            \n"   \
   "vld1.8 {d14-d15}, [%[vmask]]     \n"   \
-  "vaddw.s32 q14, q14, d22          \n"   \
-  "vaddw.s32 q15, q15, d23          \n"   \
-  "vmull.s8  q11, d19, d4           \n"   \
-  "vbif.s8   d12, d11, d14          \n"   \
-  "vbif.s8   d13, d11, d15          \n"   \
+  "vaddw.s16 q14, q14, d22          \n"   \
+  "vaddw.s16 q15, q15, d23          \n"   \
+  "vmull.s8 q11, d19, d4            \n"   \
+  "vbif.s8  d12, d11, d14           \n"   \
+  "vbif.s8  d13, d11, d15           \n"   \
   /* r1 */                                \
-  "vext.8    d14, d12, d13, #1      \n"   \
-  "vext.8    d15, d12, d13, #2      \n"   \
-  "vmlal.s8  q10, d16, d5           \n"   \
-  "vmlal.s8  q11, d12, d5           \n"   \
+  "vext.8   d14, d12, d13, #1       \n"   \
+  "vext.8   d15, d12, d13, #2       \n"   \
+  "vmlal.s8 q10, d16,  d5           \n"   \
+  "vmlal.s8 q11, d12,  d5           \n"   \
   "vld1.8 {d16-d17}, [%[din_ptr3]]  \n"   \
-  "vaddw.s32 q12, q12, d20          \n"   \
-  "vaddw.s32 q13, q13, d21          \n"   \
-  "vld1.8 {d12-d13}, [%[vmask]]     \n"   \
-  "vaddw.s32 q14, q14, d22          \n"   \
-  "vaddw.s32 q15, q15, d23          \n"   \
+  "vaddw.s16 q12, q12, d20          \n"   \
+  "vaddw.s16 q13, q13, d21          \n"   \
   "vmull.s8  q10, d18, d6           \n"   \
+  "vaddw.s16 q14, q14, d22          \n"   \
+  "vaddw.s16 q15, q15, d23          \n"   \
   "vmull.s8  q11, d14, d6           \n"   \
-  "vbif.s8   d16, d11, d12          \n"   \
-  "vbif.s8   d17, d11, d13          \n"   \
   "vmlal.s8  q10, d19, d7           \n"   \
+  "vld1.8 {d18-d19}, [%[vmask]]     \n"   \
   "vmlal.s8  q11, d15, d7           \n"   \
+  "vbif.s8  d16, d11, d18           \n"   \
+  "vbif.s8  d17, d11, d19           \n"   \
   /* r2 */                                \
-  "vext.8    d18, d16, d17, #1      \n"   \
-  "vext.8    d19, d16, d17, #2      \n"   \
-  "vaddw.s32 q12, q12, d20          \n"   \
-  "vaddw.s32 q13, q13, d21          \n"   \
-  "vaddw.s32 q14, q14, d22          \n"   \
-  "vaddw.s32 q15, q15, d23          \n"   \
+  "vaddw.s16 q12, q12, d20          \n"   \
+  "vaddw.s16 q13, q13, d21          \n"   \
+  "vext.8   d18, d16, d17, #1       \n"   \
+  "vext.8   d19, d16, d17, #2       \n"   \
+  "vaddw.s16 q14, q14, d22          \n"   \
+  "vaddw.s16 q15, q15, d23          \n"   \
   "vmull.s8  q10, d12, d8           \n"   \
   "vmull.s8  q11, d16, d8           \n"   \
-  "vmull.s8  q7,  d15, d10          \n"   \
-  "vmull.s8  q9,  d19, d10          \n"   \
-  "vmlal.s8  q10, d14, d9           \n"   \
-  "vmlal.s8  q11, d18, d9           \n"   \
-  "vaddw.s32 q12, q12, d20          \n"   \
-  "vaddw.s32 q13, q13, d21          \n"   \
-  "vaddw.s32 q14, q14, d22          \n"   \
-  "vaddw.s32 q15, q15, d23          \n"   \
-  "vdup.32   q7, %[scale]           \n"   \
+  "vmull.s8  q6,  d14, d9           \n"   \
+  "vmull.s8  q8,  d18, d9           \n"   \
+  "vmlal.s8  q10, d15, d10          \n"   \
+  "vmlal.s8  q11, d19, d10         \n"    \
+  "vaddw.s16 q12, q12, d12          \n"   \
+  "vaddw.s16 q13, q13, d13          \n"   \
+  "vaddw.s16 q14, q14, d16          \n"   \
+  "vaddw.s16 q15, q15, d17          \n"   \
+  "vld1.32   {d14-d15}, [%[vmax]]   \n"   \
   "vdup.32   q8, %[bias]            \n"   \
   "vdup.32   q9, %[bias]            \n"   \
-  "vaddw.s32 q12, q12, d14          \n"   \
-  "vaddw.s32 q13, q13, d15          \n"   \
-  "vaddw.s32 q14, q14, d18          \n"   \
-  "vaddw.s32 q15, q15, d19          \n"   \
+  "vaddw.s16 q12, q12, d20          \n"   \
+  "vaddw.s16 q13, q13, d21          \n"   \
+  "vaddw.s16 q14, q14, d22          \n"   \
+  "vaddw.s16 q15, q15, d23          \n"   \
   "vdup.32   q10, %[bias]           \n"   \
   "vdup.32   q11, %[bias]           \n"   \
   "vcvt.f32.s32   q12, q12          \n"   \
@@ -698,7 +719,6 @@ namespace math {
   "vmla.f32 q9,   q13,  q7          \n"   \
   "vmla.f32 q10,  q14,  q7          \n"   \
   "vmla.f32 q11,  q15,  q7          \n"
-
 #endif
 // clang-format on
 
@@ -720,7 +740,7 @@ void conv_depthwise_3x3s1_int8(Dtype* dout,
                                int padw,
                                int padh,
                                ARMContext* ctx) {
-  const int threads = ctx->threads();
+  int threads = ctx->threads();
   int llc_size = ctx->llc_size() / 4;
 
   const int hout_c_block = 8;
@@ -780,8 +800,9 @@ void conv_depthwise_3x3s1_int8(Dtype* dout,
       int hs = h - padh;
       int he = hs + h_kernel + 2;
 
-#pragma omp parallel for num_threads(threads)
-      for (int c = 0; c < chout; c += hout_c_block) {
+      // #pragma omp parallel for num_threads(threads)
+      LITE_PARALLEL_COMMON_BEGIN(c, tid, chout, 0, hout_c_block) {
+// for (int c = 0; c < chout; c += hout_c_block) {
 #ifdef ARM_WITH_OMP
         int8_t* pre_din =
             tmp_din + omp_get_thread_num() * (pre_in_size + pre_out_size * 4);
@@ -1115,6 +1136,7 @@ void conv_depthwise_3x3s1_int8(Dtype* dout,
                                           ptr_write,
                                           scale + c);
       }
+      LITE_PARALLEL_END();
     }
   }
 }
@@ -1133,6 +1155,8 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s1p1_int8(int w_in,
   uint32_t cnt_remain = (size_right_remain == 8 && w_out % 8 == 0)
                             ? 8
                             : static_cast<uint32_t>(w_out % 8);
+  size_right_remain = (cnt_remain == 8) ? size_right_remain
+                                        : (size_right_remain + 8 - cnt_remain);
   uint8x8_t vmask_rp1 =
       vcgt_u8(vdup_n_u8(size_right_remain), vld1_u8(right_pad_idx));
   uint8x8_t vmask_rp2 =
@@ -1156,6 +1180,8 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s1p0_int8(int w_in,
   uint32_t cnt_remain = (size_right_remain == 8 && w_out % 8 == 0)
                             ? 8
                             : static_cast<uint32_t>(w_out % 8);
+  size_right_remain = (cnt_remain == 8) ? size_right_remain
+                                        : (size_right_remain + 8 - cnt_remain);
   uint8x8_t vmask_rp1 =
       vcgt_u8(vdup_n_u8(size_right_remain), vld1_u8(right_pad_idx));
   uint8x8_t vmask_rp2 =
@@ -1184,75 +1210,114 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s1p0_int8(int w_in,
   doutr0 = dout_ptr;                  \
   doutr1 = doutr0 + w_out;
 
-#define TOP_BOTTOM_BORDER_3x3_S1P1_INT8 \
-  if (i == 0) {                         \
-    din_ptr0 = zero_ptr;                \
-    din_ptr1 = dr0;                     \
-    din_ptr2 = dr1;                     \
-    din_ptr3 = dr2;                     \
-    dr0 = dr1;                          \
-    dr1 = dr2;                          \
-    dr2 = dr3;                          \
-    dr3 = dr2 + w_in;                   \
-  } else {                              \
-    dr0 = dr2;                          \
-    dr1 = dr3;                          \
-    dr2 = dr1 + w_in;                   \
-    dr3 = dr2 + w_in;                   \
-  }                                     \
-  if (i + 3 > h_in) {                   \
-    switch (i + 3 - h_in) {             \
-      case 3:                           \
-        din_ptr1 = zero_ptr;            \
-      case 2:                           \
-        din_ptr2 = zero_ptr;            \
-      case 1:                           \
-        din_ptr3 = zero_ptr;            \
-      default:                          \
-        break;                          \
-    }                                   \
-  }                                     \
-  if (i + 2 > h_out) {                  \
-    doutr1 = write_ptr;                 \
+#define TOP_BOTTOM_BORDER_3x3_S1P1_INT8(w_in, h_in, h_out) \
+  if (i == 0) {                                            \
+    din_ptr0 = zero_ptr;                                   \
+    din_ptr1 = dr0;                                        \
+    din_ptr2 = dr1;                                        \
+    din_ptr3 = dr2;                                        \
+    dr0 = dr1;                                             \
+    dr1 = dr2;                                             \
+    dr2 = dr3;                                             \
+    dr3 = dr2 + w_in;                                      \
+  } else {                                                 \
+    dr0 = dr2;                                             \
+    dr1 = dr3;                                             \
+    dr2 = dr1 + w_in;                                      \
+    dr3 = dr2 + w_in;                                      \
+  }                                                        \
+  if (i + 3 > h_in) {                                      \
+    switch (i + 3 - h_in) {                                \
+      case 3:                                              \
+        din_ptr1 = zero_ptr;                               \
+      case 2:                                              \
+        din_ptr2 = zero_ptr;                               \
+      case 1:                                              \
+        din_ptr3 = zero_ptr;                               \
+      default:                                             \
+        break;                                             \
+    }                                                      \
+  }                                                        \
+  if (i + 2 > h_out) {                                     \
+    doutr1 = write_ptr;                                    \
   }
-#define TOP_BOTTOM_BORDER_3x3_S1P0_INT8 \
-  dr0 = dr2;                            \
-  dr1 = dr3;                            \
-  dr2 = dr1 + w_in;                     \
-  dr3 = dr2 + w_in;                     \
-  if (i + 3 > h_in) {                   \
-    switch (i + 3 - h_in) {             \
-      case 3:                           \
-        din_ptr1 = zero_ptr;            \
-      case 2:                           \
-        din_ptr2 = zero_ptr;            \
-      case 1:                           \
-        din_ptr3 = zero_ptr;            \
-      default:                          \
-        break;                          \
-    }                                   \
-  }                                     \
-  if (i + 2 > h_out) {                  \
-    doutr1 = write_ptr;                 \
+
+#define TOP_BOTTOM_BORDER_3x3_S1P0_INT8(w_in, h_in, h_out) \
+  dr0 = dr2;                                               \
+  dr1 = dr3;                                               \
+  dr2 = dr1 + w_in;                                        \
+  dr3 = dr2 + w_in;                                        \
+  if (i + 3 > h_in) {                                      \
+    switch (i + 3 - h_in) {                                \
+      case 3:                                              \
+        din_ptr1 = zero_ptr;                               \
+      case 2:                                              \
+        din_ptr2 = zero_ptr;                               \
+      case 1:                                              \
+        din_ptr3 = zero_ptr;                               \
+      default:                                             \
+        break;                                             \
+    }                                                      \
+  }                                                        \
+  if (i + 2 > h_out) {                                     \
+    doutr1 = write_ptr;                                    \
   }
+
+#define PARAM1                                                           \
+  [cnt] "+r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), \
+      [din_ptr2] "+r"(din_ptr2), [din_ptr3] "+r"(din_ptr3),              \
+      [dout_ptr0] "+r"(doutr0), [dout_ptr1] "+r"(doutr1)
 
 #ifdef __aarch64__
-#define FILL_WEIGHTS_BIAS_INT8(wei_ptr, bias_val, scale_val, max_val) \
-  int8x8_t wr00 = vdup_n_s8(wei_ptr[0]);                              \
-  int8x8_t wr10 = vdup_n_s8(wei_ptr[3]);                              \
-  int8x8_t wr20 = vdup_n_s8(wei_ptr[6]);                              \
-  int8x8_t wr01 = vdup_n_s8(wei_ptr[1]);                              \
-  int8x8_t wr11 = vdup_n_s8(wei_ptr[4]);                              \
-  int8x8_t wr21 = vdup_n_s8(wei_ptr[7]);                              \
-  int8x8_t wr02 = vdup_n_s8(wei_ptr[2]);                              \
-  int8x8_t wr12 = vdup_n_s8(wei_ptr[5]);                              \
-  int8x8_t wr22 = vdup_n_s8(wei_ptr[8]);                              \
-  float32x4_t v_scale = vdupq_n_f32(scale_val);                       \
-  float vmax[4] = {max_val, max_val, max_val, max_val};
+#define FILL_WEIGHTS_BIAS_INT8(wei_ptr, bias_val, scale_val, max_val, alpha) \
+  int8x8_t wr00 = vdup_n_s8(wei_ptr[0]);                                     \
+  int8x8_t wr10 = vdup_n_s8(wei_ptr[3]);                                     \
+  int8x8_t wr20 = vdup_n_s8(wei_ptr[6]);                                     \
+  int8x8_t wr01 = vdup_n_s8(wei_ptr[1]);                                     \
+  int8x8_t wr11 = vdup_n_s8(wei_ptr[4]);                                     \
+  int8x8_t wr21 = vdup_n_s8(wei_ptr[7]);                                     \
+  int8x8_t wr02 = vdup_n_s8(wei_ptr[2]);                                     \
+  int8x8_t wr12 = vdup_n_s8(wei_ptr[5]);                                     \
+  int8x8_t wr22 = vdup_n_s8(wei_ptr[8]);                                     \
+  float32x4_t vscale = vdupq_n_f32(scale_val);                               \
+  float vmax[8] = {                                                          \
+      max_val, max_val, max_val, max_val, alpha, alpha, alpha, alpha};
+
+#define PARAM2                                                        \
+  [v0] "w"(wr00), [v1] "w"(wr01), [v2] "w"(wr02), [v3] "w"(wr10),     \
+      [v4] "w"(wr11), [v5] "w"(wr12), [v6] "w"(wr20), [v7] "w"(wr21), \
+      [v8] "w"(wr22), [bias] "r"(bias_val), [vscale] "w"(vscale),     \
+      [vmask] "r"(vmask), [right_pad_num_out] "r"(right_pad_num_out), \
+      [right_pad_num_in] "r"(right_pad_num_in)
+
+#define ASM_PARAM                                                             \
+  "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", \
+      "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18", "v19",   \
+      "v21"
 
 #else
-#define FILL_WEIGHTS_BIAS_INT8(wei_ptr, bias_val, scale_val, max_val) \
-  float vmax[4] = {max_val, max_val, max_val, max_val};
+#define FILL_WEIGHTS_BIAS_INT8(wei_ptr, bias_val, scale_val, max_val, alpha) \
+  float vmax[12] = {scale_val,                                               \
+                    scale_val,                                               \
+                    scale_val,                                               \
+                    scale_val,                                               \
+                    max_val,                                                 \
+                    max_val,                                                 \
+                    max_val,                                                 \
+                    max_val,                                                 \
+                    alpha,                                                   \
+                    alpha,                                                   \
+                    alpha,                                                   \
+                    alpha};
+
+#define PARAM2                                                            \
+  [vmask] "r"(vmask), [bias] "r"(bias_val), [vmax] "r"(vmax),             \
+      [wei_ptr] "r"(wei_ptr), [right_pad_num_out] "r"(right_pad_num_out), \
+      [right_pad_num_in] "r"(right_pad_num_in)
+
+#define ASM_PARAM                                                             \
+  "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", \
+      "q10", "q11", "q12", "q13", "q14", "q15"
 #endif
 
 template void conv_depthwise_3x3s1_int8<int8_t>(int8_t* dout,
@@ -1309,120 +1374,89 @@ void conv_depthwise_3x3s1p1_bias_int8_float(float* dout,
   int8_t* zero_ptr = ctx->workspace_data<int8_t>();
   memset(zero_ptr, 0, (w_in + 16) * sizeof(int8_t));
   uint8_t vmask[16];
-  auto&& res = right_mask_3x3s1p1_int8(win, wout, vmask);
+  auto&& res = right_mask_3x3s1p1_int8(w_in, w_out, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
 
-  uint32_t right_pad_num = (cnt_remain == 8) ? 0 : ((8 - cnt_remain) * 4);
+  uint32_t right_pad_num_out = (cnt_remain == 8) ? 0 : ((8 - cnt_remain) * 4);
+  uint32_t right_pad_num_in = (cnt_remain == 8) ? 0 : (8 - cnt_remain);
+  LOG(INFO) << "conv_depthwise_3x3s1p1_bias_int8_float";
+  LOG(INFO) << "right_pad_num_out: " << right_pad_num_out
+            << ", right_pad_num_in: " << right_pad_num_in;
+  LOG(INFO) << "cnt: " << cnt_col << ", cnt_remain: " << cnt_remain;
 
   float* write_ptr =
       reinterpret_cast<float*>(ctx->workspace_data<int8_t>() + w_in + 16);
-  int threads = ctx->threads();
 
   int size_in_channel = w_in * h_in;
   int size_out_channel = w_out * h_out;
   int w_stride = 9;
+  int8_t a[16] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+  int8_t b[16] = {0};
+  int8_t* tmp = &a[0];
+  /*printf("ptr: %x, data: %d\n", tmp, tmp[0]);
+  LOG(INFO) << "mask: ";
+  for (int i = 0; i < 16; i++) {
+    printf("%d ", vmask[i]);
+  }
+  printf("\n");
+  asm volatile(
+    "vld1.8 {d0-d1}, [%[a]]\n"
+    "vld1.8 {d2-d3}, [%[vmask]]\n"
+    "vmov.u32 d11, #0\n"
+    "add %[a], #8\n"
+    "vbif d0, d11, d2\n"
+    "vbif d1, d11, d3\n"
+    "sub %[a], %[right_pad_num_in]\n"
+    "vst1.8 {d0-d1}, [%[b]]\n"
+    : [a] "+r"(tmp)
+    : [b] "r"(b), [vmask] "r"(vmask), [right_pad_num_in] "r"(right_pad_num_in)
+    : "cc", "memory", "q0", "q1", "q5"
+  );
+  printf("--ptr: %x, data: %d\n", tmp, tmp[0]);
+  LOG(INFO) << "b: ";
+  for (int i = 0; i < 16; i++) {
+    printf("%d ", b[i]);
+  }
+  printf("\n");
+  */
 
   for (int n = 0; n < num; ++n) {
     const int8_t* din_batch = din + n * ch_in * size_in_channel;
     float* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
       float* dout_ptr = dout_batch + c * size_out_channel;
       const int8_t* din_ch_ptr = din_batch + c * size_in_channel;
       float bias_val = flag_bias ? bias[c] : 0;
       float scale_val = scale[c];
       const int8_t* wei_ptr = weights + c * w_stride;
 
-      FILL_WEIGHTS_BIAS_INT8(wei_ptr, bias_val, scale_val, -127.f)
-      INIT_PTR_3x3_S1_INT8(float, din_ch_ptr, win)
+      FILL_WEIGHTS_BIAS_INT8(wei_ptr, bias_val, scale_val, -127.f, 0.f)
+      INIT_PTR_3x3_S1_INT8(float, din_ch_ptr, w_in)
 
           for (int i = 0; i < h_in; i += 2) {
-        //! process top pad pad_h = 1
+        // clang-format off
         ASSIGN_PTR_3x3_S1_INT8(w_out)
-            TOP_BOTTOM_BORDER_3x3_S1P1_INT8(win, hin, hout)
-
-                int cnt = cnt_col;
+        TOP_BOTTOM_BORDER_3x3_S1P1_INT8(w_in, h_in, h_out)
+        int cnt = cnt_col;
 #ifdef __aarch64__
         asm volatile(INIT_S1 LEFT_COMPUTE_S1 LEFT_STORE_FLOAT MID_COMPUTE_S1
                          MID_STORE_FLOAT RIGHT_COMPUTE_S1 LEFT_STORE_FLOAT
-                     : [cnt] "+r"(cnt),
-                       [din_ptr0] "+r"(din_ptr0),
-                       [din_ptr1] "+r"(din_ptr1),
-                       [din_ptr2] "+r"(din_ptr2),
-                       [din_ptr3] "+r"(din_ptr3),
-                       [dout_ptr0] "+r"(doutr0),
-                       [dout_ptr1] "+r"(doutr1)
-                     : [v0] "w"(wr00),
-                       [v1] "w"(wr01),
-                       [v2] "w"(wr02),
-                       [v3] "w"(wr10),
-                       [v4] "w"(wr11),
-                       [v5] "w"(wr12),
-                       [v6] "w"(wr20),
-                       [v7] "w"(wr21),
-                       [v8] "w"(wr22),
-                       [bias] "r"(bias_val),
-                       [v_scale] "w"(v_scale)
-                     : "cc",
-                       "memory",
-                       "v0",
-                       "v1",
-                       "v2",
-                       "v3",
-                       "v4",
-                       "v5",
-                       "v6",
-                       "v7",
-                       "v8",
-                       "v9",
-                       "v10",
-                       "v11",
-                       "v12",
-                       "v13",
-                       "v14",
-                       "v15",
-                       "v16",
-                       "v17",
-                       "v18",
-                       "v19",
-                       "v21");
+                     : PARAM1
+                     : PARAM2
+                     : ASM_PARAM);
 #else
         asm volatile(INIT_S1 LEFT_COMPUTE_S1 LEFT_STORE_FLOAT MID_COMPUTE_S1
                          MID_STORE_FLOAT RIGHT_COMPUTE_S1 LEFT_STORE_FLOAT
-                     : [din_ptr0] "+r"(din_ptr0),
-                       [din_ptr1] "+r"(din_ptr1),
-                       [din_ptr2] "+r"(din_ptr2),
-                       [din_ptr3] "+r"(din_ptr3),
-                       [dout_ptr0] "+r"(doutr0),
-                       [dout_ptr1] "+r"(doutr1),
-                       [cnt] "+r"(cnt)
-                     : [vmask] "r"(vmask),
-                       [bias] "r"(bias_val),
-                       [scale] "r"(scale_val),
-                       [wei_ptr] "r"(wei_ptr)
-                     : "cc",
-                       "memory",
-                       "q0",
-                       "q1",
-                       "q2",
-                       "q3",
-                       "q4",
-                       "q5",
-                       "q6",
-                       "q7",
-                       "q8",
-                       "q9",
-                       "q10",
-                       "q11",
-                       "q12",
-                       "q13",
-                       "q14",
-                       "q15");
+                     : PARAM1
+                     : PARAM2
+                     : ASM_PARAM);
 #endif
+        // clang-format on
         dout_ptr += 2 * w_out;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1444,13 +1478,13 @@ void conv_depthwise_3x3s1p1_bias_int8_int8(int8_t* dout,
   int8_t* zero_ptr = ctx->workspace_data<int8_t>();
   memset(zero_ptr, 0, (w_in + 16) * sizeof(int8_t));
   uint8_t vmask[16];
-  auto&& res = right_mask_3x3s1p1_int8(win, wout, vmask);
+  auto&& res = right_mask_3x3s1p1_int8(w_in, w_out, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
 
-  uint32_t right_pad_num = (cnt_remain == 8) ? 0 : (8 - cnt_remain);
+  uint32_t right_pad_num_out = (cnt_remain == 8) ? 0 : (8 - cnt_remain);
+  uint32_t right_pad_num_in = (cnt_remain == 8) ? 0 : (8 - cnt_remain);
   int8_t* write_ptr = ctx->workspace_data<int8_t>() + w_in + 16;
-  int threads = ctx->threads();
 
   int size_in_channel = w_in * h_in;
   int size_out_channel = w_out * h_out;
@@ -1459,104 +1493,42 @@ void conv_depthwise_3x3s1p1_bias_int8_int8(int8_t* dout,
   for (int n = 0; n < num; ++n) {
     const int8_t* din_batch = din + n * ch_in * size_in_channel;
     int8_t* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
       int8_t* dout_ptr = dout_batch + c * size_out_channel;
       const int8_t* din_ch_ptr = din_batch + c * size_in_channel;
       float bias_val = flag_bias ? bias[c] : 0;
       float scale_val = scale[c];
       const int8_t* wei_ptr = weights + c * w_stride;
 
-      FILL_WEIGHTS_BIAS_INT8(wei_ptr, bias_val, scale_val, -127.f)
-      INIT_PTR_3x3_S1_INT8(int8_t, din_ch_ptr, win)
+      FILL_WEIGHTS_BIAS_INT8(wei_ptr, bias_val, scale_val, -127.f, 0.f)
+      INIT_PTR_3x3_S1_INT8(int8_t, din_ch_ptr, w_in)
 
           for (int i = 0; i < h_in; i += 2) {
+        // clang-format off
         ASSIGN_PTR_3x3_S1_INT8(w_out)
-            TOP_BOTTOM_BORDER_3x3_S1P1_INT8(win, hin, hout) int cnt = cnt_col;
+        TOP_BOTTOM_BORDER_3x3_S1P1_INT8(w_in, h_in, h_out)
+        int cnt = cnt_col;
 #ifdef __aarch64__
         asm volatile(
             INIT_S1 LEFT_COMPUTE_S1 RESULT_INT8_MAX RESULT_INT8 LEFT_STORE_INT8
                 MID_COMPUTE_S1 RESULT_INT8_MAX RESULT_INT8 MID_STORE_INT8
                     RIGHT_COMPUTE_S1 RESULT_INT8_MAX RESULT_INT8 LEFT_STORE_INT8
-            : [cnt] "+r"(cnt),
-              [din_ptr0] "+r"(din_ptr0),
-              [din_ptr1] "+r"(din_ptr1),
-              [din_ptr2] "+r"(din_ptr2),
-              [din_ptr3] "+r"(din_ptr3),
-              [dout_ptr0] "+r"(doutr0),
-              [dout_ptr1] "+r"(doutr1)
-            : [v0] "w"(wr00),
-              [v1] "w"(wr01),
-              [v2] "w"(wr02),
-              [v3] "w"(wr10),
-              [v4] "w"(wr11),
-              [v5] "w"(wr12),
-              [v6] "w"(wr20),
-              [v7] "w"(wr21),
-              [v8] "w"(wr22),
-              [bias] "r"(bias_val),
-              [v_scale] "w"(v_scale),
-              [vmax] "r"(vmax)
-            : "cc",
-              "memory",
-              "v0",
-              "v1",
-              "v2",
-              "v3",
-              "v4",
-              "v5",
-              "v6",
-              "v7",
-              "v8",
-              "v9",
-              "v10",
-              "v11",
-              "v12",
-              "v13",
-              "v14",
-              "v15",
-              "v16",
-              "v17",
-              "v18",
-              "v19",
-              "v21");
+            : PARAM1
+            : [vmax] "r"(vmax), PARAM2
+            : ASM_PARAM);
 #else
         asm volatile(INIT_S1 LEFT_COMPUTE_S1 RESULT_INT8 LEFT_STORE_INT8
                          MID_COMPUTE_S1 RESULT_INT8 MID_STORE_INT8
                              RIGHT_COMPUTE_S1 RESULT_INT8 LEFT_STORE_INT8
-                     : [din_ptr0] "+r"(din_ptr0),
-                       [din_ptr1] "+r"(din_ptr1),
-                       [din_ptr2] "+r"(din_ptr2),
-                       [din_ptr3] "+r"(din_ptr3),
-                       [dout_ptr0] "+r"(doutr0),
-                       [dout_ptr1] "+r"(doutr1),
-                       [cnt] "+r"(cnt)
-                     : [mask] "r"(vmask)，[bias] "r"(bias_val),
-                       [scale] "r"(scale_val),
-                       [wei_ptr] "r"(wei_ptr),
-                       [vmax_ptr] "r"(vmax)
-                     : "cc",
-                       "memory",
-                       "q0",
-                       "q1",
-                       "q2",
-                       "q3",
-                       "q4",
-                       "q5",
-                       "q6",
-                       "q7",
-                       "q8",
-                       "q9",
-                       "q10",
-                       "q11",
-                       "q12",
-                       "q13",
-                       "q14",
-                       "q15");
+                     : PARAM1
+                     : PARAM2
+                     : ASM_PARAM);
 #endif
+        // clang-format on
         dout_ptr += 2 * w_out;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1578,15 +1550,14 @@ void conv_depthwise_3x3s1p0_bias_int8_float(float* dout,
   int8_t* zero_ptr = ctx->workspace_data<int8_t>();
   memset(zero_ptr, 0, (w_in + 16) * sizeof(int8_t));
   uint8_t vmask[16];
-  auto&& res = right_mask_3x3s2p0_int8(win, wout, vmask);
+  auto&& res = right_mask_3x3s1p0_int8(w_in, w_out, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
-
-  uint32_t right_pad_num = (cnt_remain == 8) ? 0 : ((8 - cnt_remain) * 4);
+  uint32_t right_pad_num_out = (cnt_remain == 8) ? 0 : ((8 - cnt_remain) * 4);
+  uint32_t right_pad_num_in = (cnt_remain == 8) ? 0 : (8 - cnt_remain);
 
   float* write_ptr =
       reinterpret_cast<float*>(ctx->workspace_data<int8_t>() + w_in + 16);
-  int threads = ctx->threads();
 
   int size_in_channel = w_in * h_in;
   int size_out_channel = w_out * h_out;
@@ -1595,100 +1566,39 @@ void conv_depthwise_3x3s1p0_bias_int8_float(float* dout,
   for (int n = 0; n < num; ++n) {
     const int8_t* din_batch = din + n * ch_in * size_in_channel;
     float* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
       float* dout_ptr = dout_batch + c * size_out_channel;
       const int8_t* din_ch_ptr = din_batch + c * size_in_channel;
       float bias_val = flag_bias ? bias[c] : 0;
       float scale_val = scale[c];
       const int8_t* wei_ptr = weights + c * w_stride;
-      FILL_WEIGHTS_BIAS_INT8(wei_ptr, bias_val, scale_val, -127.f)
-      INIT_PTR_3x3_S1_INT8(float, din_ch_ptr, win)
+      FILL_WEIGHTS_BIAS_INT8(wei_ptr, bias_val, scale_val, -127.f, 0.f)
+      INIT_PTR_3x3_S1_INT8(float, din_ch_ptr, w_in)
 
           for (int i = 0; i < h_out; i += 2) {
-        //! process top pad pad_h = 1
+        // clang-format off
         ASSIGN_PTR_3x3_S1_INT8(w_out)
-            TOP_BOTTOM_BORDER_3x3_S1P0_INT8(win, hin, hout) int cnt = cnt_col;
+        TOP_BOTTOM_BORDER_3x3_S1P0_INT8(w_in, h_in, h_out)
+        int cnt = cnt_col;
 #ifdef __aarch64__
         asm volatile(
             MID_COMPUTE_S1 MID_STORE_FLOAT RIGHT_COMPUTE_S1 LEFT_STORE_FLOAT
-            : [cnt] "+r"(cnt),
-              [din_ptr0] "+r"(din_ptr0),
-              [din_ptr1] "+r"(din_ptr1),
-              [din_ptr2] "+r"(din_ptr2),
-              [din_ptr3] "+r"(din_ptr3),
-              [dout_ptr0] "+r"(doutr0),
-              [dout_ptr1] "+r"(doutr1)
-            : [v0] "w"(wr00),
-              [v1] "w"(wr01),
-              [v2] "w"(wr02),
-              [v3] "w"(wr10),
-              [v4] "w"(wr11),
-              [v5] "w"(wr12),
-              [v6] "w"(wr20),
-              [v7] "w"(wr21),
-              [v8] "w"(wr22),
-              [bias] "r"(bias_val),
-              [v_scale] "w"(v_scale)
-            : "cc",
-              "memory",
-              "v0",
-              "v1",
-              "v2",
-              "v3",
-              "v4",
-              "v5",
-              "v6",
-              "v7",
-              "v8",
-              "v9",
-              "v10",
-              "v11",
-              "v12",
-              "v13",
-              "v14",
-              "v15",
-              "v16",
-              "v17",
-              "v18",
-              "v19",
-              "v21");
+            : PARAM1
+            : PARAM2
+            : ASM_PARAM);
 #else
         asm volatile(
-            MID_COMPUTE_S1 MID_STORE_FLOAT RIGHT_COMPUTE_S1 LEFT_STORE_FLOAT
-            : [din_ptr0] "+r"(din_ptr0),
-              [din_ptr1] "+r"(din_ptr1),
-              [din_ptr2] "+r"(din_ptr2),
-              [din_ptr3] "+r"(din_ptr3),
-              [dout_ptr0] "+r"(doutr0),
-              [dout_ptr1] "+r"(doutr1),
-              [cnt] "+r"(cnt)
-            : [vmask] "r"(vmask),
-              [bias] "r"(bias_val),
-              [scale] "r"(scale_val),
-              [wei_ptr] "r"(wei_ptr)
-            : "cc",
-              "memory",
-              "q0",
-              "q1",
-              "q2",
-              "q3",
-              "q4",
-              "q5",
-              "q6",
-              "q7",
-              "q8",
-              "q9",
-              "q10",
-              "q11",
-              "q12",
-              "q13",
-              "q14",
-              "q15");
+            INIT_P0 MID_COMPUTE_S1 MID_STORE_FLOAT
+            RIGHT_COMPUTE_S1 LEFT_STORE_FLOAT
+            : PARAM1
+            : PARAM2
+            : ASM_PARAM);
 #endif
+        // clang-format off
         dout_ptr += 2 * w_out;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1710,14 +1620,14 @@ void conv_depthwise_3x3s1p0_bias_int8_int8(int8_t* dout,
   int8_t* zero_ptr = ctx->workspace_data<int8_t>();
   memset(zero_ptr, 0, (w_in + 16) * sizeof(int8_t));
   uint8_t vmask[16];
-  auto&& res = right_mask_3x3s2p0_int8(win, wout, vmask);
+  auto&& res = right_mask_3x3s1p0_int8(w_in, w_out, vmask);
   uint32_t cnt_col = res.first;
   uint32_t cnt_remain = res.second;
 
-  uint32_t right_pad_num = (cnt_remain == 8) ? 0 : ((8 - cnt_remain) * 4);
+  uint32_t right_pad_num_out = (cnt_remain == 8) ? 0 : (8 - cnt_remain);
+  uint32_t right_pad_num_in = (cnt_remain == 8) ? 0 : (8 - cnt_remain);
 
   int8_t* write_ptr = ctx->workspace_data<int8_t>() + w_in + 16;
-  int threads = ctx->threads();
 
   int size_in_channel = w_in * h_in;
   int size_out_channel = w_out * h_out;
@@ -1726,104 +1636,39 @@ void conv_depthwise_3x3s1p0_bias_int8_int8(int8_t* dout,
   for (int n = 0; n < num; ++n) {
     const int8_t* din_batch = din + n * ch_in * size_in_channel;
     int8_t* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
       int8_t* dout_ptr = dout_batch + c * size_out_channel;
       const int8_t* din_ch_ptr = din_batch + c * size_in_channel;
       float bias_val = flag_bias ? bias[c] : 0;
       float scale_val = scale[c];
       const int8_t* wei_ptr = weights + c * w_stride;
-      FILL_WEIGHTS_BIAS_INT8(wei_ptr, bias_val, scale_val, -127.f)
-      INIT_PTR_3x3_S1_INT8(int8_t, din_ch_ptr, win)
+      FILL_WEIGHTS_BIAS_INT8(wei_ptr, bias_val, scale_val, -127.f, 0.f)
+      INIT_PTR_3x3_S1_INT8(int8_t, din_ch_ptr, w_in)
 
-          for (int i = 0; i < h_out; i += 2) {
-        //! process top pad pad_h = 1
+      for (int i = 0; i < h_out; i += 2) {
+        // clang-format off
         ASSIGN_PTR_3x3_S1_INT8(w_out)
-            TOP_BOTTOM_BORDER_3x3_S1P0_INT8(win, hin, hout) int cnt = cnt_col;
+        TOP_BOTTOM_BORDER_3x3_S1P0_INT8(w_in, h_in, h_out)
+        int cnt = cnt_col;
 #ifdef __aarch64__
         asm volatile(
             MID_COMPUTE_S1 RESULT_INT8_MAX RESULT_INT8 MID_STORE_INT8
-                RIGHT_COMPUTE_S1 RESULT_INT8_MAX RESULT_INT8 LEFT_STORE_INT8
-            : [cnt] "+r"(cnt),
-              [din_ptr0] "+r"(din_ptr0),
-              [din_ptr1] "+r"(din_ptr1),
-              [din_ptr2] "+r"(din_ptr2),
-              [din_ptr3] "+r"(din_ptr3),
-              [dout_ptr0] "+r"(doutr0),
-              [dout_ptr1] "+r"(doutr1)
-            : [v0] "w"(wr00),
-              [v1] "w"(wr01),
-              [v2] "w"(wr02),
-              [v3] "w"(wr10),
-              [v4] "w"(wr11),
-              [v5] "w"(wr12),
-              [v6] "w"(wr20),
-              [v7] "w"(wr21),
-              [v8] "w"(wr22),
-              [bias] "r"(bias_val),
-              [v_scale] "w"(v_scale),
-              [vmax] "r"(vmax)
-            : "cc",
-              "memory",
-              "v0",
-              "v1",
-              "v2",
-              "v3",
-              "v4",
-              "v5",
-              "v6",
-              "v7",
-              "v8",
-              "v9",
-              "v10",
-              "v11",
-              "v12",
-              "v13",
-              "v14",
-              "v15",
-              "v16",
-              "v17",
-              "v18",
-              "v19",
-              "v21");
+            RIGHT_COMPUTE_S1 RESULT_INT8_MAX RESULT_INT8 LEFT_STORE_INT8
+            : PARAM1
+            : [vmax] "r"(vmax), PARAM2
+            : ASM_PARAM);
 #else
-        asm volatile(MID_COMPUTE_S1 RESULT_INT8 MID_STORE_INT8 RIGHT_COMPUTE_S1
-                         RESULT_INT8 LEFT_STORE_INT8
-                     : [din_ptr0] "+r"(din_ptr0),
-                       [din_ptr1] "+r"(din_ptr1),
-                       [din_ptr2] "+r"(din_ptr2),
-                       [din_ptr3] "+r"(din_ptr3),
-                       [dout_ptr0] "+r"(doutr0),
-                       [dout_ptr1] "+r"(doutr1),
-                       [cnt] "+r"(cnt)
-                     : [vmask] "r"(vmask),
-                       [bias] "r"(bias_val),
-                       [scale] "r"(scale_val),
-                       [wei_ptr] "r"(wei_ptr),
-                       [vmax] "r"(vmax)
-                     : "cc",
-                       "memory",
-                       "q0",
-                       "q1",
-                       "q2",
-                       "q3",
-                       "q4",
-                       "q5",
-                       "q6",
-                       "q7",
-                       "q8",
-                       "q9",
-                       "q10",
-                       "q11",
-                       "q12",
-                       "q13",
-                       "q14",
-                       "q15");
+        asm volatile(INIT_P0 MID_COMPUTE_S1 RESULT_INT8 MID_STORE_INT8
+                     RIGHT_COMPUTE_S1 RESULT_INT8 LEFT_STORE_INT8
+                     : PARAM1
+                     : PARAM2
+                     : ASM_PARAM);
 #endif
         // clang-format on
         dout_ptr += 2 * w_out;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1841,7 +1686,64 @@ void conv_depthwise_3x3s1p1_bias_relu_int8_float(float* dout,
                                                  int w_in,
                                                  int h_out,
                                                  int w_out,
-                                                 ARMContext* ctx) {}
+                                                 ARMContext* ctx) {
+  int8_t* zero_ptr = ctx->workspace_data<int8_t>();
+  memset(zero_ptr, 0, (w_in + 16) * sizeof(int8_t));
+  uint8_t vmask[16];
+  auto&& res = right_mask_3x3s1p1_int8(w_in, w_out, vmask);
+  uint32_t cnt_col = res.first;
+  uint32_t cnt_remain = res.second;
+
+  uint32_t right_pad_num_out = (cnt_remain == 8) ? 0 : ((8 - cnt_remain) * 4);
+  uint32_t right_pad_num_in = (cnt_remain == 8) ? 0 : (8 - cnt_remain);
+
+  float* write_ptr =
+      reinterpret_cast<float*>(ctx->workspace_data<int8_t>() + w_in + 16);
+
+  int size_in_channel = w_in * h_in;
+  int size_out_channel = w_out * h_out;
+  int w_stride = 9;
+
+  for (int n = 0; n < num; ++n) {
+    const int8_t* din_batch = din + n * ch_in * size_in_channel;
+    float* dout_batch = dout + n * ch_in * size_out_channel;
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
+      float* dout_ptr = dout_batch + c * size_out_channel;
+      const int8_t* din_ch_ptr = din_batch + c * size_in_channel;
+      float bias_val = flag_bias ? bias[c] : 0;
+      float scale_val = scale[c];
+      const int8_t* wei_ptr = weights + c * w_stride;
+
+      FILL_WEIGHTS_BIAS_INT8(wei_ptr, bias_val, scale_val, -127.f, 0.f)
+      INIT_PTR_3x3_S1_INT8(float, din_ch_ptr, w_in)
+
+          for (int i = 0; i < h_in; i += 2) {
+        // clang-format off
+        ASSIGN_PTR_3x3_S1_INT8(w_out)
+        TOP_BOTTOM_BORDER_3x3_S1P1_INT8(w_in, h_in, h_out)
+        int cnt = cnt_col;
+#ifdef __aarch64__
+        asm volatile(INIT_S1 LEFT_COMPUTE_S1 RELU LEFT_STORE_FLOAT
+                     MID_COMPUTE_S1 RELU MID_STORE_FLOAT
+                     RIGHT_COMPUTE_S1 RELU LEFT_STORE_FLOAT
+                     : PARAM1
+                     : PARAM2
+                     : ASM_PARAM);
+#else
+        asm volatile(INIT_S1 LEFT_COMPUTE_S1 RELU LEFT_STORE_FLOAT 
+                     MID_COMPUTE_S1 RELU MID_STORE_FLOAT
+                     RIGHT_COMPUTE_S1 RELU LEFT_STORE_FLOAT
+                     : PARAM1
+                     : PARAM2
+                     : ASM_PARAM);
+#endif
+        // clang-format on
+        dout_ptr += 2 * w_out;
+      }
+    }
+    LITE_PARALLEL_END();
+  }
+}
 
 void conv_depthwise_3x3s1p1_bias_relu6_int8_float(float* dout,
                                                   const int8_t* din,
@@ -1857,7 +1759,64 @@ void conv_depthwise_3x3s1p1_bias_relu6_int8_float(float* dout,
                                                   int w_in,
                                                   int h_out,
                                                   int w_out,
-                                                  ARMContext* ctx) {}
+                                                  ARMContext* ctx) {
+  int8_t* zero_ptr = ctx->workspace_data<int8_t>();
+  memset(zero_ptr, 0, (w_in + 16) * sizeof(int8_t));
+  uint8_t vmask[16];
+  auto&& res = right_mask_3x3s1p1_int8(w_in, w_out, vmask);
+  uint32_t cnt_col = res.first;
+  uint32_t cnt_remain = res.second;
+
+  uint32_t right_pad_num_out = (cnt_remain == 8) ? 0 : ((8 - cnt_remain) * 4);
+  uint32_t right_pad_num_in = (cnt_remain == 8) ? 0 : (8 - cnt_remain);
+
+  float* write_ptr =
+      reinterpret_cast<float*>(ctx->workspace_data<int8_t>() + w_in + 16);
+
+  int size_in_channel = w_in * h_in;
+  int size_out_channel = w_out * h_out;
+  int w_stride = 9;
+
+  for (int n = 0; n < num; ++n) {
+    const int8_t* din_batch = din + n * ch_in * size_in_channel;
+    float* dout_batch = dout + n * ch_in * size_out_channel;
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
+      float* dout_ptr = dout_batch + c * size_out_channel;
+      const int8_t* din_ch_ptr = din_batch + c * size_in_channel;
+      float bias_val = flag_bias ? bias[c] : 0;
+      float scale_val = scale[c];
+      const int8_t* wei_ptr = weights + c * w_stride;
+
+      FILL_WEIGHTS_BIAS_INT8(wei_ptr, bias_val, scale_val, -127.f, alpha[0])
+      INIT_PTR_3x3_S1_INT8(float, din_ch_ptr, w_in)
+
+          for (int i = 0; i < h_in; i += 2) {
+        // clang-format off
+        ASSIGN_PTR_3x3_S1_INT8(w_out)
+        TOP_BOTTOM_BORDER_3x3_S1P1_INT8(w_in, h_in, h_out)
+        int cnt = cnt_col;
+#ifdef __aarch64__
+        asm volatile(INIT_S1 LEFT_COMPUTE_S1 RELU6 LEFT_STORE_FLOAT
+                     MID_COMPUTE_S1 RELU6 MID_STORE_FLOAT
+                     RIGHT_COMPUTE_S1 RELU6 LEFT_STORE_FLOAT
+                     : PARAM1
+                     : [vmax] "r"(vmax), PARAM2
+                     : ASM_PARAM);
+#else
+        asm volatile(INIT_S1 LEFT_COMPUTE_S1 RELU6 LEFT_STORE_FLOAT 
+                     MID_COMPUTE_S1 RELU6 MID_STORE_FLOAT
+                     RIGHT_COMPUTE_S1 RELU6 LEFT_STORE_FLOAT
+                     : PARAM1
+                     : PARAM2
+                     : ASM_PARAM);
+#endif
+        // clang-format on
+        dout_ptr += 2 * w_out;
+      }
+    }
+    LITE_PARALLEL_END();
+  }
+}
 
 void conv_depthwise_3x3s1p1_bias_relu_int8_int8(int8_t* dout,
                                                 const int8_t* din,
@@ -1873,7 +1832,63 @@ void conv_depthwise_3x3s1p1_bias_relu_int8_int8(int8_t* dout,
                                                 int w_in,
                                                 int h_out,
                                                 int w_out,
-                                                ARMContext* ctx) {}
+                                                ARMContext* ctx) {
+  int8_t* zero_ptr = ctx->workspace_data<int8_t>();
+  memset(zero_ptr, 0, (w_in + 16) * sizeof(int8_t));
+  uint8_t vmask[16];
+  auto&& res = right_mask_3x3s1p1_int8(w_in, w_out, vmask);
+  uint32_t cnt_col = res.first;
+  uint32_t cnt_remain = res.second;
+
+  uint32_t right_pad_num_out = (cnt_remain == 8) ? 0 : (8 - cnt_remain);
+  uint32_t right_pad_num_in = (cnt_remain == 8) ? 0 : (8 - cnt_remain);
+  int8_t* write_ptr = ctx->workspace_data<int8_t>() + w_in + 16;
+
+  int size_in_channel = w_in * h_in;
+  int size_out_channel = w_out * h_out;
+  int w_stride = 9;
+
+  for (int n = 0; n < num; ++n) {
+    const int8_t* din_batch = din + n * ch_in * size_in_channel;
+    int8_t* dout_batch = dout + n * ch_in * size_out_channel;
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
+      int8_t* dout_ptr = dout_batch + c * size_out_channel;
+      const int8_t* din_ch_ptr = din_batch + c * size_in_channel;
+      float bias_val = flag_bias ? bias[c] : 0;
+      float scale_val = scale[c];
+      const int8_t* wei_ptr = weights + c * w_stride;
+
+      FILL_WEIGHTS_BIAS_INT8(wei_ptr, bias_val, scale_val, -127.f, 0.f)
+      INIT_PTR_3x3_S1_INT8(int8_t, din_ch_ptr, w_in)
+
+          for (int i = 0; i < h_in; i += 2) {
+        // clang-format off
+        ASSIGN_PTR_3x3_S1_INT8(w_out)
+        TOP_BOTTOM_BORDER_3x3_S1P1_INT8(w_in, h_in, h_out)
+        int cnt = cnt_col;
+#ifdef __aarch64__
+        asm volatile(
+            INIT_S1 LEFT_COMPUTE_S1 RELU RESULT_INT8 LEFT_STORE_INT8
+            MID_COMPUTE_S1 RELU RESULT_INT8 MID_STORE_INT8
+            RIGHT_COMPUTE_S1 RELU RESULT_INT8 LEFT_STORE_INT8
+            : PARAM1
+            : [vmax] "r"(vmax), PARAM2
+            : ASM_PARAM);
+#else
+        asm volatile(INIT_S1 LEFT_COMPUTE_S1 RELU RESULT_INT8 LEFT_STORE_INT8
+                     MID_COMPUTE_S1 RELU RESULT_INT8 MID_STORE_INT8
+                     RIGHT_COMPUTE_S1 RELU RESULT_INT8 LEFT_STORE_INT8
+                     : PARAM1
+                     : PARAM2
+                     : ASM_PARAM);
+#endif
+        // clang-format on
+        dout_ptr += 2 * w_out;
+      }
+    }
+    LITE_PARALLEL_END();
+  }
+}
 
 void conv_depthwise_3x3s1p1_bias_relu6_int8_int8(int8_t* dout,
                                                  const int8_t* din,
@@ -1889,7 +1904,63 @@ void conv_depthwise_3x3s1p1_bias_relu6_int8_int8(int8_t* dout,
                                                  int w_in,
                                                  int h_out,
                                                  int w_out,
-                                                 ARMContext* ctx) {}
+                                                 ARMContext* ctx) {
+  int8_t* zero_ptr = ctx->workspace_data<int8_t>();
+  memset(zero_ptr, 0, (w_in + 16) * sizeof(int8_t));
+  uint8_t vmask[16];
+  auto&& res = right_mask_3x3s1p1_int8(w_in, w_out, vmask);
+  uint32_t cnt_col = res.first;
+  uint32_t cnt_remain = res.second;
+
+  uint32_t right_pad_num_out = (cnt_remain == 8) ? 0 : (8 - cnt_remain);
+  uint32_t right_pad_num_in = (cnt_remain == 8) ? 0 : (8 - cnt_remain);
+  int8_t* write_ptr = ctx->workspace_data<int8_t>() + w_in + 16;
+
+  int size_in_channel = w_in * h_in;
+  int size_out_channel = w_out * h_out;
+  int w_stride = 9;
+
+  for (int n = 0; n < num; ++n) {
+    const int8_t* din_batch = din + n * ch_in * size_in_channel;
+    int8_t* dout_batch = dout + n * ch_in * size_out_channel;
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
+      int8_t* dout_ptr = dout_batch + c * size_out_channel;
+      const int8_t* din_ch_ptr = din_batch + c * size_in_channel;
+      float bias_val = flag_bias ? bias[c] : 0;
+      float scale_val = scale[c];
+      const int8_t* wei_ptr = weights + c * w_stride;
+
+      FILL_WEIGHTS_BIAS_INT8(wei_ptr, bias_val, scale_val, -127.f, alpha[0])
+      INIT_PTR_3x3_S1_INT8(int8_t, din_ch_ptr, w_in)
+
+          for (int i = 0; i < h_in; i += 2) {
+        // clang-format off
+        ASSIGN_PTR_3x3_S1_INT8(w_out)
+        TOP_BOTTOM_BORDER_3x3_S1P1_INT8(w_in, h_in, h_out)
+        int cnt = cnt_col;
+#ifdef __aarch64__
+        asm volatile(
+            INIT_S1 LEFT_COMPUTE_S1 RELU6 RESULT_INT8 LEFT_STORE_INT8
+            MID_COMPUTE_S1 RELU6 RESULT_INT8 MID_STORE_INT8
+            RIGHT_COMPUTE_S1 RELU6 RESULT_INT8 LEFT_STORE_INT8
+            : PARAM1
+            : [vmax] "r"(vmax), PARAM2
+            : ASM_PARAM);
+#else
+        asm volatile(INIT_S1 LEFT_COMPUTE_S1 RELU6 RESULT_INT8 LEFT_STORE_INT8
+                     MID_COMPUTE_S1 RELU6 RESULT_INT8 MID_STORE_INT8
+                     RIGHT_COMPUTE_S1 RELU6 RESULT_INT8 LEFT_STORE_INT8
+                     : PARAM1
+                     : PARAM2
+                     : ASM_PARAM);
+#endif
+        // clang-format on
+        dout_ptr += 2 * w_out;
+      }
+    }
+    LITE_PARALLEL_END();
+  }
+}
 
 void conv_depthwise_3x3s1p0_bias_relu_int8_float(float* dout,
                                                  const int8_t* din,
@@ -1905,7 +1976,63 @@ void conv_depthwise_3x3s1p0_bias_relu_int8_float(float* dout,
                                                  int w_in,
                                                  int h_out,
                                                  int w_out,
-                                                 ARMContext* ctx) {}
+                                                 ARMContext* ctx) {
+  int8_t* zero_ptr = ctx->workspace_data<int8_t>();
+  memset(zero_ptr, 0, (w_in + 16) * sizeof(int8_t));
+  uint8_t vmask[16];
+  auto&& res = right_mask_3x3s1p0_int8(w_in, w_out, vmask);
+  uint32_t cnt_col = res.first;
+  uint32_t cnt_remain = res.second;
+  uint32_t right_pad_num_out = (cnt_remain == 8) ? 0 : ((8 - cnt_remain) * 4);
+  uint32_t right_pad_num_in = (cnt_remain == 8) ? 0 : (8 - cnt_remain);
+
+  float* write_ptr =
+      reinterpret_cast<float*>(ctx->workspace_data<int8_t>() + w_in + 16);
+  int threads = ctx->threads();
+
+  int size_in_channel = w_in * h_in;
+  int size_out_channel = w_out * h_out;
+  int w_stride = 9;
+
+  for (int n = 0; n < num; ++n) {
+    const int8_t* din_batch = din + n * ch_in * size_in_channel;
+    float* dout_batch = dout + n * ch_in * size_out_channel;
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
+      float* dout_ptr = dout_batch + c * size_out_channel;
+      const int8_t* din_ch_ptr = din_batch + c * size_in_channel;
+      float bias_val = flag_bias ? bias[c] : 0;
+      float scale_val = scale[c];
+      const int8_t* wei_ptr = weights + c * w_stride;
+      FILL_WEIGHTS_BIAS_INT8(wei_ptr, bias_val, scale_val, -127.f, 0.f)
+      INIT_PTR_3x3_S1_INT8(float, din_ch_ptr, w_in)
+
+          for (int i = 0; i < h_out; i += 2) {
+        // clang-format off
+        ASSIGN_PTR_3x3_S1_INT8(w_out)
+        TOP_BOTTOM_BORDER_3x3_S1P0_INT8(w_in, h_in, h_out)
+        int cnt = cnt_col;
+#ifdef __aarch64__
+        asm volatile(
+            MID_COMPUTE_S1 RELU MID_STORE_FLOAT 
+            RIGHT_COMPUTE_S1 RELU LEFT_STORE_FLOAT
+            : PARAM1
+            : PARAM2
+            : ASM_PARAM);
+#else
+        asm volatile(
+            INIT_P0 MID_COMPUTE_S1 RELU MID_STORE_FLOAT
+            RIGHT_COMPUTE_S1 RELU LEFT_STORE_FLOAT
+            : PARAM1
+            : PARAM2
+            : ASM_PARAM);
+#endif
+        // clang-format off
+        dout_ptr += 2 * w_out;
+      }
+    }
+    LITE_PARALLEL_END();
+  }
+}
 
 void conv_depthwise_3x3s1p0_bias_relu6_int8_float(float* dout,
                                                   const int8_t* din,
@@ -1921,7 +2048,62 @@ void conv_depthwise_3x3s1p0_bias_relu6_int8_float(float* dout,
                                                   int w_in,
                                                   int h_out,
                                                   int w_out,
-                                                  ARMContext* ctx) {}
+                                                  ARMContext* ctx) {
+  int8_t* zero_ptr = ctx->workspace_data<int8_t>();
+  memset(zero_ptr, 0, (w_in + 16) * sizeof(int8_t));
+  uint8_t vmask[16];
+  auto&& res = right_mask_3x3s1p0_int8(w_in, w_out, vmask);
+  uint32_t cnt_col = res.first;
+  uint32_t cnt_remain = res.second;
+  uint32_t right_pad_num_out = (cnt_remain == 8) ? 0 : ((8 - cnt_remain) * 4);
+  uint32_t right_pad_num_in = (cnt_remain == 8) ? 0 : (8 - cnt_remain);
+
+  float* write_ptr =
+      reinterpret_cast<float*>(ctx->workspace_data<int8_t>() + w_in + 16);
+
+  int size_in_channel = w_in * h_in;
+  int size_out_channel = w_out * h_out;
+  int w_stride = 9;
+
+  for (int n = 0; n < num; ++n) {
+    const int8_t* din_batch = din + n * ch_in * size_in_channel;
+    float* dout_batch = dout + n * ch_in * size_out_channel;
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
+      float* dout_ptr = dout_batch + c * size_out_channel;
+      const int8_t* din_ch_ptr = din_batch + c * size_in_channel;
+      float bias_val = flag_bias ? bias[c] : 0;
+      float scale_val = scale[c];
+      const int8_t* wei_ptr = weights + c * w_stride;
+      FILL_WEIGHTS_BIAS_INT8(wei_ptr, bias_val, scale_val, -127.f, alpha[0])
+      INIT_PTR_3x3_S1_INT8(float, din_ch_ptr, w_in)
+
+      for (int i = 0; i < h_out; i += 2) {
+        // clang-format off
+        ASSIGN_PTR_3x3_S1_INT8(w_out)
+        TOP_BOTTOM_BORDER_3x3_S1P0_INT8(w_in, h_in, h_out)
+        int cnt = cnt_col;
+#ifdef __aarch64__
+        asm volatile(
+            MID_COMPUTE_S1 RELU6 MID_STORE_FLOAT 
+            RIGHT_COMPUTE_S1 RELU6 LEFT_STORE_FLOAT
+            : PARAM1
+            : [vmax] "r"(vmax), PARAM2
+            : ASM_PARAM);
+#else
+        asm volatile(
+            INIT_P0 MID_COMPUTE_S1 RELU6 MID_STORE_FLOAT
+            RIGHT_COMPUTE_S1 RELU6 LEFT_STORE_FLOAT
+            : PARAM1
+            : PARAM2
+            : ASM_PARAM);
+#endif
+        // clang-format off
+        dout_ptr += 2 * w_out;
+      }
+    }
+    LITE_PARALLEL_END();
+  }
+}
 
 void conv_depthwise_3x3s1p0_bias_relu_int8_int8(int8_t* dout,
                                                 const int8_t* din,
@@ -1937,7 +2119,61 @@ void conv_depthwise_3x3s1p0_bias_relu_int8_int8(int8_t* dout,
                                                 int w_in,
                                                 int h_out,
                                                 int w_out,
-                                                ARMContext* ctx) {}
+                                                ARMContext* ctx) {
+  int8_t* zero_ptr = ctx->workspace_data<int8_t>();
+  memset(zero_ptr, 0, (w_in + 16) * sizeof(int8_t));
+  uint8_t vmask[16];
+  auto&& res = right_mask_3x3s1p0_int8(w_in, w_out, vmask);
+  uint32_t cnt_col = res.first;
+  uint32_t cnt_remain = res.second;
+
+  uint32_t right_pad_num_out = (cnt_remain == 8) ? 0 : (8 - cnt_remain);
+  uint32_t right_pad_num_in = (cnt_remain == 8) ? 0 : (8 - cnt_remain);
+
+  int8_t* write_ptr = ctx->workspace_data<int8_t>() + w_in + 16;
+
+  int size_in_channel = w_in * h_in;
+  int size_out_channel = w_out * h_out;
+  int w_stride = 9;
+
+  for (int n = 0; n < num; ++n) {
+    const int8_t* din_batch = din + n * ch_in * size_in_channel;
+    int8_t* dout_batch = dout + n * ch_in * size_out_channel;
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
+      int8_t* dout_ptr = dout_batch + c * size_out_channel;
+      const int8_t* din_ch_ptr = din_batch + c * size_in_channel;
+      float bias_val = flag_bias ? bias[c] : 0;
+      float scale_val = scale[c];
+      const int8_t* wei_ptr = weights + c * w_stride;
+      FILL_WEIGHTS_BIAS_INT8(wei_ptr, bias_val, scale_val, -127.f, 0.f)
+      INIT_PTR_3x3_S1_INT8(int8_t, din_ch_ptr, w_in)
+
+      for (int i = 0; i < h_out; i += 2) {
+        // clang-format off
+        ASSIGN_PTR_3x3_S1_INT8(w_out)
+        TOP_BOTTOM_BORDER_3x3_S1P0_INT8(w_in, h_in, h_out)
+        int cnt = cnt_col;
+#ifdef __aarch64__
+        asm volatile(
+            MID_COMPUTE_S1 RELU RESULT_INT8 MID_STORE_INT8
+            RIGHT_COMPUTE_S1 RELU RESULT_INT8 LEFT_STORE_INT8
+            : PARAM1
+            : [vmax] "r"(vmax), PARAM2
+            : ASM_PARAM);
+#else
+        asm volatile(INIT_P0 MID_COMPUTE_S1 RELU RESULT_INT8 MID_STORE_INT8
+                     RIGHT_COMPUTE_S1 RELU RESULT_INT8 LEFT_STORE_INT8
+                     : PARAM1
+                     : PARAM2
+                     : ASM_PARAM);
+#endif
+        // clang-format on
+        dout_ptr += 2 * w_out;
+      }
+    }
+    LITE_PARALLEL_END();
+  }
+}
 
 void conv_depthwise_3x3s1p0_bias_relu6_int8_int8(int8_t* dout,
                                                  const int8_t* din,
@@ -1953,7 +2189,61 @@ void conv_depthwise_3x3s1p0_bias_relu6_int8_int8(int8_t* dout,
                                                  int w_in,
                                                  int h_out,
                                                  int w_out,
-                                                 ARMContext* ctx) {}
+                                                 ARMContext* ctx) {
+  int8_t* zero_ptr = ctx->workspace_data<int8_t>();
+  memset(zero_ptr, 0, (w_in + 16) * sizeof(int8_t));
+  uint8_t vmask[16];
+  auto&& res = right_mask_3x3s1p0_int8(w_in, w_out, vmask);
+  uint32_t cnt_col = res.first;
+  uint32_t cnt_remain = res.second;
+
+  uint32_t right_pad_num_out = (cnt_remain == 8) ? 0 : (8 - cnt_remain);
+  uint32_t right_pad_num_in = (cnt_remain == 8) ? 0 : (8 - cnt_remain);
+
+  int8_t* write_ptr = ctx->workspace_data<int8_t>() + w_in + 16;
+
+  int size_in_channel = w_in * h_in;
+  int size_out_channel = w_out * h_out;
+  int w_stride = 9;
+
+  for (int n = 0; n < num; ++n) {
+    const int8_t* din_batch = din + n * ch_in * size_in_channel;
+    int8_t* dout_batch = dout + n * ch_in * size_out_channel;
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
+      int8_t* dout_ptr = dout_batch + c * size_out_channel;
+      const int8_t* din_ch_ptr = din_batch + c * size_in_channel;
+      float bias_val = flag_bias ? bias[c] : 0;
+      float scale_val = scale[c];
+      const int8_t* wei_ptr = weights + c * w_stride;
+      FILL_WEIGHTS_BIAS_INT8(wei_ptr, bias_val, scale_val, -127.f, alpha[0])
+      INIT_PTR_3x3_S1_INT8(int8_t, din_ch_ptr, w_in)
+
+          for (int i = 0; i < h_out; i += 2) {
+        // clang-format off
+        ASSIGN_PTR_3x3_S1_INT8(w_out)
+        TOP_BOTTOM_BORDER_3x3_S1P0_INT8(w_in, h_in, h_out)
+        int cnt = cnt_col;
+#ifdef __aarch64__
+        asm volatile(
+            MID_COMPUTE_S1 RELU6 RESULT_INT8 MID_STORE_INT8
+            RIGHT_COMPUTE_S1 RELU6 RESULT_INT8 LEFT_STORE_INT8
+            : PARAM1
+            : [vmax] "r"(vmax), PARAM2
+            : ASM_PARAM);
+#else
+        asm volatile(INIT_P0 MID_COMPUTE_S1 RELU6 RESULT_INT8 MID_STORE_INT8
+                     RIGHT_COMPUTE_S1 RELU6 RESULT_INT8 LEFT_STORE_INT8
+                     : PARAM1
+                     : PARAM2
+                     : ASM_PARAM);
+#endif
+        // clang-format on
+        dout_ptr += 2 * w_out;
+      }
+    }
+    LITE_PARALLEL_END();
+  }
+}
 
 void conv_depthwise_3x3s1_int8_float_impl(float* dout,
                                           const int8_t* din,
