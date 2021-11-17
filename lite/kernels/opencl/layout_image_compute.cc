@@ -702,6 +702,132 @@ class LayoutComputeImageFolderToBufferChw
   std::string build_options_{"-DCL_DTYPE_float "};
 };
 
+// [NCHW] -> [ImageFolder]
+class LayoutComputeBufferChwToImageFolder
+    : public KernelLite<TARGET(kOpenCL),
+                        PRECISION(kAny),
+                        DATALAYOUT(kImageFolder)> {
+ public:
+  using param_t = operators::LayoutParam;
+
+  void PrepareForRun() override {
+    auto& param = Param<param_t>();
+    auto x_dims = param.x->dims();
+    if (x_dims.size() > 2) {
+      kernel_func_name_ = "buffer_to_image2d";
+    }
+    VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
+    auto& context = ctx_->As<OpenCLContext>();
+    context.cl_context()->AddKernel(kernel_func_name_,
+                                    "image/layout_kernel.cl",
+                                    build_options_,
+                                    time_stamp_);
+  }
+
+  void Run() override {
+    auto& param = Param<param_t>();
+    auto x_dims = param.x->dims();
+    auto y_dims = param.y->dims();
+    DDim image_shape;
+    if (y_dims.size() > 2) {
+      CLImageConverterFolder folder_converter;
+      image_shape = folder_converter.InitImageDimInfoWith(y_dims);
+    } else {
+      CLImageConverterDefault default_converter;
+      image_shape = default_converter.InitImageDimInfoWith(y_dims);
+    }
+    auto* y_data =
+        MUTABLE_DATA_GPU(param.y, image_shape[0], image_shape[1], nullptr);
+    auto* x_data = GET_BUFFER_GPU(param.x);
+
+    // out info
+    std::vector<size_t> new_dims = {1, 1, 1, 1};
+    for (int tidx = 0; tidx < x_dims.size(); ++tidx) {
+      new_dims[4 - x_dims.size() + tidx] = x_dims[tidx];
+    }
+
+#ifdef LITE_WITH_LOG
+    VLOG(2) << "x_dims:" << x_dims;
+    VLOG(2) << "y_dims:" << y_dims;
+    VLOG(2) << "image_shape(w,h):" << image_shape[0] << " " << image_shape[1];
+#endif
+
+    auto& context = ctx_->As<OpenCLContext>();
+    CHECK(context.cl_context() != nullptr);
+    STL::stringstream kernel_key;
+    kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
+    auto kernel = context.cl_context()->GetKernel(kernel_key.str());
+
+    int arg_idx = 0;
+    cl_int status;
+    status = kernel.setArg(arg_idx, *x_data);
+    CL_CHECK_FATAL(status);
+    status = kernel.setArg(++arg_idx, *y_data);
+    CL_CHECK_FATAL(status);
+    if (y_dims.size() <= 2) {
+      const int length = new_dims[0] * new_dims[1] * new_dims[2] * new_dims[3];
+      status = kernel.setArg(++arg_idx, static_cast<const int>(y_dims[0]));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, static_cast<const int>(y_dims[1]));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, static_cast<const int>(length));
+      CL_CHECK_FATAL(status);
+    } else {
+      const int out_C = new_dims[1];
+      const int out_H = new_dims[2];
+      const int out_W = new_dims[3];
+      const int Stride2 = out_C * out_H * out_W;
+      const int Stride1 = out_H * out_W;
+      const int Stride0 = out_W;
+      status = kernel.setArg(++arg_idx, static_cast<const int>(out_H));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, static_cast<const int>(out_W));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, static_cast<const int>(out_C));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, static_cast<const int>(Stride0));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, static_cast<const int>(Stride1));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, static_cast<const int>(Stride2));
+      CL_CHECK_FATAL(status);
+    }
+
+    if (y_dims.size() <= 2) {
+      gws_ = cl::NDRange{static_cast<cl::size_type>(image_shape[0]),
+                         static_cast<cl::size_type>(image_shape[1])};
+    } else {
+      gws_ = cl::NDRange{static_cast<cl::size_type>((new_dims[1] + 3) / 4),
+                         static_cast<cl::size_type>(new_dims[3]),
+                         static_cast<cl::size_type>(new_dims[0] * new_dims[2])};
+    }
+
+    status = EnqueueNDRangeKernel(
+        context, kernel, cl::NullRange, gws_, cl::NullRange, nullptr, event_);
+    CL_CHECK_FATAL(status);
+  }
+
+  std::string doc() const override {
+    return "Trans Layout from cl::Buffer(NCHW) to "
+           "cl::Image2D(ImageFolder)";
+  }
+
+#ifdef LITE_WITH_PROFILE
+  void SetProfileRuntimeKernelInfo(paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = kernel_func_name_;
+    ch->global_work_size = ch->NDRangeToStr(gws_);
+    ch->cl_event =
+        event_;  // `event_` defined in `kernel.h`, valid after kernel::Run
+  }
+#endif
+
+ private:
+  std::string time_stamp_{GetTimeStamp()};
+  std::string kernel_func_name_{"buffer_to_image2d_folder"};
+  std::string build_options_{"-DCL_DTYPE_float "};
+  cl::NDRange gws_;
+};
+
 }  // namespace opencl
 }  // namespace kernels
 }  // namespace lite
@@ -758,6 +884,24 @@ REGISTER_LITE_KERNEL(
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kAny),
                                        DATALAYOUT(kNCHW))})
+    .Finalize();
+
+// [NCHW] -> [ImageFolder]
+REGISTER_LITE_KERNEL(
+    layout,
+    kOpenCL,
+    kAny,
+    kImageFolder,
+    paddle::lite::kernels::opencl::LayoutComputeBufferChwToImageFolder,
+    NCHW_to_ImageFolder)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                      PRECISION(kAny),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kOpenCL),
+                                       PRECISION(kAny),
+                                       DATALAYOUT(kImageFolder))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(
