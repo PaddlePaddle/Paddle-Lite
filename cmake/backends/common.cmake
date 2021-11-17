@@ -32,14 +32,6 @@ if(LITE_WITH_XPU)
   include(backends/xpu)
 endif()
 
-if(LITE_WITH_APU)
-  include(backends/apu)
-endif()
-
-if(LITE_WITH_HUAWEI_ASCEND_NPU)
-  include(backends/huawei_ascend_npu)
-endif()
-
 if(LITE_WITH_MLU)
   include(mlu)
 endif()

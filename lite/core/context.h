@@ -63,14 +63,12 @@ using HostContext = Context<TargetType::kHost>;
 using X86Context = Context<TargetType::kX86>;
 using ARMContext = Context<TargetType::kARM>;
 using NPUContext = Context<TargetType::kNPU>;
-using APUContext = Context<TargetType::kAPU>;
 using XPUContext = Context<TargetType::kXPU>;
 using OpenCLContext = Context<TargetType::kOpenCL>;
 using FPGAContext = Context<TargetType::kFPGA>;
 using BMContext = Context<TargetType::kBM>;
 using MLUContext = Context<TargetType::kMLU>;
 using RKNPUContext = Context<TargetType::kRKNPU>;
-using HuaweiAscendNPUContext = Context<TargetType::kHuaweiAscendNPU>;
 using IntelFPGAContext = Context<TargetType::kIntelFPGA>;
 using NNAdapterContext = Context<TargetType::kNNAdapter>;
 using MTLContext = Context<TargetType::kMetal>;
@@ -105,65 +103,6 @@ class Context<TargetType::kNPU> {
     CHECK(data);
     *data = subgraph_model_cache_dir;
   }
-  static std::string SubgraphModelCacheDir(Scope* scope) {
-    auto var = scope->FindVar("SUBGRAPH_MODEL_CACHE_DIR");
-    if (!var) return "";
-    return var->Get<std::string>();
-  }
-};
-#endif
-
-#ifdef LITE_WITH_HUAWEI_ASCEND_NPU
-template <>
-class Context<TargetType::kHuaweiAscendNPU> {
- public:
-  // NOTE: InitOnce should only be used by ContextScheduler
-  void InitOnce() {}
-  void CopySharedTo(HuaweiAscendNPUContext* ctx) {}
-
-  HuaweiAscendNPUContext& operator=(const HuaweiAscendNPUContext& ctx) {
-    return *this;
-  }
-  std::string name() const { return "HuaweiAscendNPUContext"; }
-
-  static void SetSubgraphModelCacheDir(std::string subgraph_model_cache_dir) {
-    subgraph_model_cache_dir_ = subgraph_model_cache_dir;
-  }
-  static std::string SubgraphModelCacheDir() {
-    return subgraph_model_cache_dir_;
-  }
-
-  static void SetHuaweiAscendDeviceID(int huawei_ascend_device_id) {
-    huawei_ascend_device_id_ = huawei_ascend_device_id;
-  }
-  static int HuaweiAscendDeviceID() { return huawei_ascend_device_id_; }
-
- private:
-  static LITE_THREAD_LOCAL std::string subgraph_model_cache_dir_;
-  static LITE_THREAD_LOCAL int huawei_ascend_device_id_;
-};
-#endif
-
-#ifdef LITE_WITH_APU
-template <>
-class Context<TargetType::kAPU> {
- public:
-  // NOTE: InitOnce should only be used by ContextScheduler
-  void InitOnce() {}
-  void CopySharedTo(APUContext* ctx) {}
-
-  APUContext& operator=(const APUContext& ctx) {}
-  std::string name() const { return "APUContext"; }
-
-  static void SetSubgraphModelCacheDir(Scope* scope,
-                                       std::string subgraph_model_cache_dir) {
-    auto var = scope->Var("SUBGRAPH_MODEL_CACHE_DIR");
-    CHECK(var);
-    auto data = var->GetMutable<std::string>();
-    CHECK(data);
-    *data = subgraph_model_cache_dir;
-  }
-
   static std::string SubgraphModelCacheDir(Scope* scope) {
     auto var = scope->FindVar("SUBGRAPH_MODEL_CACHE_DIR");
     if (!var) return "";
@@ -710,19 +649,6 @@ class ContextScheduler {
             &ctx->As<NPUContext>());
         break;
 #endif
-#ifdef LITE_WITH_HUAWEI_ASCEND_NPU
-      case TARGET(kHuaweiAscendNPU):
-        kernel_contexts_[TargetType::kHuaweiAscendNPU]
-            .As<HuaweiAscendNPUContext>()
-            .CopySharedTo(&ctx->As<HuaweiAscendNPUContext>());
-        break;
-#endif
-#ifdef LITE_WITH_APU
-      case TARGET(kAPU):
-        kernel_contexts_[TargetType::kAPU].As<APUContext>().CopySharedTo(
-            &ctx->As<APUContext>());
-        break;
-#endif
 #ifdef LITE_WITH_RKNPU
       case TARGET(kRKNPU):
         kernel_contexts_[TargetType::kRKNPU].As<RKNPUContext>().CopySharedTo(
@@ -824,12 +750,6 @@ class ContextScheduler {
 #endif
 #ifdef LITE_WITH_NPU
     InitContext<TargetType::kNPU, NPUContext>();
-#endif
-#ifdef LITE_WITH_HUAWEI_ASCEND_NPU
-    InitContext<TargetType::kHuaweiAscendNPU, HuaweiAscendNPUContext>();
-#endif
-#ifdef LITE_WITH_APU
-    InitContext<TargetType::kAPU, APUContext>();
 #endif
 #ifdef LITE_WITH_RKNPU
     InitContext<TargetType::kRKNPU, RKNPUContext>();

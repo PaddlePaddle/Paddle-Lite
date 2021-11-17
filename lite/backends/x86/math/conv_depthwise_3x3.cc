@@ -13,6 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "lite/backends/x86/math/avx/avx_mathfuns.h"
+#include "lite/backends/x86/math/avx/conv_depthwise_pack4.h"
+#include "lite/backends/x86/math/avx/conv_depthwise_pack8.h"
 #include "lite/backends/x86/math/avx/conv_utils.h"
 #include "lite/backends/x86/math/conv_depthwise_impl.h"
 #include "lite/core/memory.h"
@@ -1320,6 +1322,120 @@ void conv_depthwise_3x3s1_p01_direct(
   TargetFree(TARGET(kX86), zero_ptr);
   TargetFree(TARGET(kX86), write_ptr);
 #endif
+}
+
+void conv_depthwise_3x3_pack(const operators::ConvParam &param,
+                             lite::Tensor *input_padding_,
+                             lite::Tensor *input_pack_,
+                             lite::Tensor *filter_pack_,
+                             lite::Tensor *output_pack_) {
+  auto input_dims = param.x->dims();
+  CHECK_EQ(input_dims.size(), 4UL);
+  int batch_size = param.x->dims()[0];
+  int input_channel = param.x->dims()[1];
+
+  const int pack_size =
+      input_channel % 8 == 0 ? 8 : input_channel % 4 == 0 ? 4 : 1;
+  const int pack_num = input_channel / pack_size;
+
+  if (pack_size == 8) {
+    pack_padding8_m256(param.x, input_padding_, pack_num, *(param.paddings));
+  } else if (pack_size == 4) {
+    pack4_m128(param.x, input_pack_, pack_num, false);
+    padding4_m128(input_pack_, input_padding_, *(param.paddings));
+  } else {
+    padding1_float(param.x, input_padding_, *(param.paddings));
+  }
+
+  // filter [oc, ic/groups=1, kh, kw]
+  auto filter_dims = param.filter->dims();
+  CHECK_EQ(filter_dims.size(), 4UL);
+  int kernel_h = param.filter->dims()[2];
+  int kernel_w = param.filter->dims()[3];
+
+  // filter [oc, 1, ih, iw] & pack_size=8 => [oc/8, ih, iw, 8]
+  // filter [oc, 1, ih, iw] & pack_size=4 => [ic/4, ih, iw, 4]
+  if (pack_size == 8) {
+    pack8_m256(param.filter, filter_pack_, pack_num, true);
+  } else if (pack_size == 4) {
+    pack4_m128(param.filter, filter_pack_, pack_num, true);
+  }
+
+  // attributes
+  const int stride_h = param.strides[0];
+  const int stride_w = param.strides[1];
+  const int dilation_h = (*param.dilations)[0];
+  const int dilation_w = (*param.dilations)[1];
+
+  // act type
+  auto act_param = param.activation_param;
+  bool has_act = act_param.has_active;
+  auto act_type = act_param.active_type;
+
+  // output [bs, oc, oh, ow]
+  CHECK_EQ(param.output->dims().size(), 4UL);
+  const int in_h = input_padding_->dims()[2], in_w = input_padding_->dims()[3];
+  const int kernel_extend_h = dilation_h * (kernel_h - 1) + 1;
+  const int kernel_extend_w = dilation_w * (kernel_w - 1) + 1;
+  int output_height = (in_h - kernel_extend_h) / stride_h + 1;
+  int output_width = (in_w - kernel_extend_w) / stride_w + 1;
+  // output_trans [bs, oc/8, oh, ow, 8]
+  // output_trans [bs, oc/4, oh, ow, 4]
+  output_pack_->Resize(
+      {batch_size, pack_num, output_height, output_width, pack_size});
+
+  if (pack_size == 8) {
+    if (kernel_h == 3 && kernel_w == 3 && stride_h == 1 && stride_w == 1 &&
+        dilation_h == 1 && dilation_w == 1) {
+      conv_depthwise_3x3s1_m256(input_padding_,
+                                output_pack_,
+                                filter_pack_,
+                                param.bias,
+                                has_act,
+                                act_type,
+                                act_param);
+    } else if (kernel_h == 3 && kernel_w == 3 && stride_h == 2 &&
+               stride_w == 2 && dilation_h == 1 && dilation_w == 1) {
+      conv_depthwise_3x3s2_m256(input_padding_,
+                                output_pack_,
+                                filter_pack_,
+                                param.bias,
+                                has_act,
+                                act_type,
+                                act_param);
+    } else {
+      conv_depthwise_m256(input_padding_,
+                          output_pack_,
+                          filter_pack_,
+                          param.bias,
+                          stride_h,
+                          stride_w,
+                          dilation_h,
+                          dilation_w,
+                          has_act,
+                          act_type,
+                          act_param);
+    }
+  } else if (pack_size == 4) {
+    conv_depthwise_m128(input_padding_,
+                        output_pack_,
+                        filter_pack_,
+                        param.bias,
+                        stride_h,
+                        stride_w,
+                        dilation_h,
+                        dilation_w,
+                        has_act,
+                        act_type,
+                        act_param);
+  }
+
+  // [bs, oh, ow, oc] => [bs, oc, oh, ow]
+  if (pack_size == 8) {
+    unpack8_m256(output_pack_, param.output);
+  } else if (pack_size == 4) {
+    unpack4_m128(output_pack_, param.output);
+  }
 }
 
 }  // namespace math

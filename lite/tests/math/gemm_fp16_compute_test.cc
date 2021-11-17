@@ -132,7 +132,7 @@ bool test_sgemm_fp16(bool tra,
 
   fill_data_rand<float16_t>(db, -1.f, 1.f, size_b);
   // fill_data_const<float16_t>(db, 1.f, size_b);
-  fp16_to_float(db, db_fp32, size_a);
+  fp16_to_float(db, db_fp32, size_b);
 
   fill_data_rand<float16_t>(dbias, -1.f, 1.f, m);
   // fill_data_const<float16_t>(dbias, -1.f, m);

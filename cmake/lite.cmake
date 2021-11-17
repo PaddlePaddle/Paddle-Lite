@@ -62,8 +62,6 @@ function (lite_deps TARGET)
     endforeach(var)
   endif()
 
-
-
   if (NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
     foreach(var ${lite_deps_HVY_DEPS})
       set(deps ${deps} ${var})
@@ -100,12 +98,6 @@ function (lite_deps TARGET)
     endforeach(var)
   endif()
 
-  if (LITE_WITH_APU)
-    foreach(var ${lite_deps_APU_DEPS})
-      set(deps ${deps} ${var})
-    endforeach(var)
-  endif()
-
   if (LITE_WITH_RKNPU)
     foreach(var ${lite_deps_RKNPU_DEPS})
       set(deps ${deps} ${var})
@@ -132,12 +124,6 @@ function (lite_deps TARGET)
 
   if (LITE_WITH_NNADAPTER)
     foreach(var ${lite_deps_NNADAPTER_DEPS})
-	    set(deps ${deps} ${var})
-    endforeach(var)
-  endif()
-
-  if (LITE_WITH_HUAWEI_ASCEND_NPU)
-    foreach(var ${lite_deps_HUAWEI_ASCEND_NPU_DEPS})
       set(deps ${deps} ${var})
     endforeach(var)
   endif()
@@ -255,8 +241,6 @@ function(lite_cc_binary TARGET)
     # link to paddle-lite static lib automatically
     add_dependencies(${TARGET} bundle_full_api)
 
-
-
     if(NOT WIN32)
       target_link_libraries(${TARGET} ${CMAKE_BINARY_DIR}/libpaddle_api_full_bundled.a)
       target_compile_options(${TARGET} BEFORE PRIVATE -Wno-ignored-qualifiers)
@@ -268,7 +252,6 @@ function(lite_cc_binary TARGET)
       target_link_libraries(${TARGET} ${CMAKE_BINARY_DIR}/lite/api/${CMAKE_BUILD_TYPE}/libpaddle_api_full_bundled.lib)
     endif()
 
-
     # link to dynamic runtime lib
     if(LITE_WITH_METAL)
         target_link_libraries(${TARGET} ${METAL_LIBRARY} ${GRAPHIC} ${MPS_LIBRARY} ${FOUNDATION_LIBRARY})
@@ -278,9 +261,6 @@ function(lite_cc_binary TARGET)
     endif()
     if(LITE_WITH_RKNPU)
         target_link_libraries(${TARGET} ${rknpu_runtime_libs})
-    endif()
-    if(LITE_WITH_HUAWEI_ASCEND_NPU)
-        target_link_libraries(${TARGET} ${huawei_ascend_npu_runtime_libs} ${huawei_ascend_npu_builder_libs})
     endif()
     if(LITE_WITH_NPU)
         target_link_libraries(${TARGET} ${npu_builder_libs} ${npu_runtime_libs})

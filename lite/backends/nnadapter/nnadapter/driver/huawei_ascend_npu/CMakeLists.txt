@@ -21,7 +21,10 @@ include(dependencies.cmake)
 aux_source_directory(converter CONVERTERS)
 aux_source_directory(optimizer OPTIMIZERS)
 set(SRCS utility.cc ${OPTIMIZERS} ${CONVERTERS} model_client.cc engine.cc driver.cc)
-set(DEPS ${NNADAPTER_CORE} ${NNADAPTER_UTILITIES} ${${DEVICE_NAME}_deps})
+set(DEPS ${NNADAPTER_CORE}
+        ${NNADAPTER_UTILITIES}
+        ${${DEVICE_NAME}_deps}
+        nnadapter_optimizer_fuse_matmul_add_into_fully_connected)
 
 add_library(${DEVICE_NAME} SHARED ${SRCS})
 target_link_libraries(${DEVICE_NAME} "-Wl,--start-group" ${DEPS} "-Wl,--end-group")

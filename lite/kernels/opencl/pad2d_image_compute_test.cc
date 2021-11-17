@@ -16,6 +16,7 @@
 #include <random>
 #include "lite/backends/opencl/target_wrapper.h"
 #include "lite/core/op_registry.h"
+#include "lite/core/parallel_defines.h"
 #include "lite/core/tensor.h"
 #include "lite/kernels/opencl/image_helper.h"
 
@@ -50,8 +51,7 @@ void pad2d_ref(const float *x_data,
   int in_h = h - pad_h0 - pad_h1;
   int spatial_size_out = w * h;
   int spatial_size_in = in_w * in_h;
-#pragma omp parallel for
-  for (int i = 0; i < n * c; ++i) {
+  LITE_PARALLEL_BEGIN(i, tid, n * c) {
     const float *din_batch = x_data + i * spatial_size_in;
     float *dout_batch = out_data + i * spatial_size_out;
     int in_y = 0;
@@ -87,6 +87,7 @@ void pad2d_ref(const float *x_data,
       }
     }
   }
+  LITE_PARALLEL_END();
 }
 
 // #define LOOP_TEST

@@ -498,7 +498,7 @@ TEST(TestConv3x3DWInt8, test_conv3x3_depthwise) {
                                  {1, 1},
                                  flag_bias,
                                  flag_act,
-                                 {FLAGS_threads},
+                                 {4},
                                  {FLAGS_power_mode},
                                  FLAGS_clipped_coef,
                                  FLAGS_leakey_relu_alpha);
@@ -533,7 +533,7 @@ TEST(TestConv5x5DWInt8, test_conv5x5_depthwise) {
                                  {1, 1},
                                  flag_bias,
                                  flag_act,
-                                 {1, 4},
+                                 {4},
                                  {FLAGS_power_mode},
                                  FLAGS_clipped_coef,
                                  FLAGS_leakey_relu_alpha);
