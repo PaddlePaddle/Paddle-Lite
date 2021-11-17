@@ -266,10 +266,10 @@ void ConvImageCompute::PrepareForRun() {
 
     if (filter_tensor_h_ == 1 && filter_tensor_w_ == 1) {
       CHECK(pad_equal && stride_equal && dilation_equal);
-      kernel_func_names_.push_back("conv2d_1x1_h2w2c2");
+      kernel_func_names_.push_back("conv2d_1x1_h1w4c1");
 
-      kernel_func_paths_.push_back("image/conv2d_1x1_opt_kernel.cl");
       kernel_func_paths_.push_back("image/conv2d_1x1_default_kernel.cl");
+      kernel_func_paths_.push_back("image/conv2d_1x1_opt_kernel.cl");
 
       CLImageConverterNWBlock converter;
       const DDim& filter_image_dims =
@@ -827,8 +827,8 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
     kernel_ = context.cl_context()->GetKernel(kernel_key.str());
 
     local_work_size_ = cl::NDRange(32, 4, 1);
-    //} else if (kernel_func_names_[0] == "conv2d_1x1_h1w4c1") {
-  } else if (0) {
+  } else if (kernel_func_names_[0] == "conv2d_1x1_h1w4c1") {
+    //} else if (0) {
     auto& context = ctx_->As<OpenCLContext>();
     std::stringstream kernel_key;
     auto tuned_map_key = GenerateTunedKey();
@@ -859,8 +859,10 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
         kernel_func_names_[0] = "conv2d_1x1_h1w7c1";
         w_blk_ = UP_DIV(default_w_blk_, 7);
       } else if (func_id == 3) {
-        kernel_func_names_[0] = "conv2d_1x1_h1w2c1";
-        w_blk_ = UP_DIV(default_w_blk_, 2);
+        kernel_func_names_[0] = "conv2d_1x1_h2w3c2";
+        c_blk_ = UP_DIV(default_c_blk_, 2);
+        w_blk_ = UP_DIV(default_w_blk_, 3);
+        nh_blk_ = UP_DIV(default_nh_blk_, 2);
       } else if (func_id == 4) {
         kernel_func_names_[0] = "conv2d_1x1_h2w2c1";
         w_blk_ = UP_DIV(default_w_blk_, 2);
@@ -926,12 +928,12 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
                                         time_stamp_);
       }
       if (i == 3) {
-        kernel_func_names_[0] = "conv2d_1x1_h1w2c1";
+        kernel_func_names_[0] = "conv2d_1x1_h2w3c2";
         kernel_id = 3;
         global_work_size_ =
-            cl::NDRange{static_cast<size_t>(default_c_blk_),
-                        static_cast<size_t>(UP_DIV(default_w_blk_, 2)),
-                        static_cast<size_t>(default_nh_blk_)};
+            cl::NDRange{static_cast<size_t>(UP_DIV(default_c_blk_, 2)),
+                        static_cast<size_t>(UP_DIV(default_w_blk_, 3)),
+                        static_cast<size_t>(UP_DIV(default_nh_blk_, 2))};
         context.cl_context()->AddKernel(kernel_func_names_[0],
                                         kernel_func_paths_[1],
                                         build_options_[0],
@@ -1020,8 +1022,10 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
     if (kernel_func_names_[0] == "conv2d_1x1_h1w7c1") {
       w_blk_ = UP_DIV(default_w_blk_, 7);
     }
-    if (kernel_func_names_[0] == "conv2d_1x1_h1w2c1") {
-      w_blk_ = UP_DIV(default_w_blk_, 2);
+    if (kernel_func_names_[0] == "conv2d_1x1_h2w3c2") {
+      c_blk_ = UP_DIV(default_c_blk_, 2);
+      w_blk_ = UP_DIV(default_w_blk_, 3);
+      nh_blk_ = UP_DIV(default_nh_blk_, 2);
     }
     if (kernel_func_names_[0] == "conv2d_1x1_h2w2c1") {
       w_blk_ = UP_DIV(default_w_blk_, 2);
@@ -1342,10 +1346,10 @@ void ConvImageCompute::SetGlobalWorkSize() {
         cl::NDRange{static_cast<size_t>(c_blk_ * UP_DIV(w_blk_, 4)),
                     static_cast<size_t>(nh_blk_)};
 
-  } else if (kernel_func_names_[0] == "conv2d_1x1_h2w2c2") {
-    w_blk_ = UP_DIV(default_w_blk_, 2);
-    c_blk_ = UP_DIV(default_c_blk_, 2);
-    nh_blk_ = UP_DIV(default_nh_blk_, 2);
+  } else if (kernel_func_names_[0] == "conv2d_1x1_h2w3c2") {
+    w_blk_ = UP_DIV(default_w_blk_, 4);
+    c_blk_ = UP_DIV(default_c_blk_, 1);
+    nh_blk_ = UP_DIV(default_nh_blk_, 1);
     global_work_size_ = cl::NDRange{static_cast<size_t>(c_blk_),
                                     static_cast<size_t>(w_blk_),
                                     static_cast<size_t>(nh_blk_)};
@@ -1699,9 +1703,6 @@ void ConvImageCompute::Conv2d1x1opt() {
     CL_CHECK_FATAL(status_);
     status_ = kernel_.setArg(cnt++, *bias_image_p_);
     CL_CHECK_FATAL(status_);
-    // auto* bias_buffer_p_ = GET_BUFFER_GPU(bias_gpu_t_);
-    // status_ = kernel_.setArg(cnt++, *bias_buffer_p_);
-    // CL_CHECK_FATAL(status_);
   }
   status_ = kernel_.setArg(cnt++, *output_image_p_);
   CL_CHECK_FATAL(status_);
