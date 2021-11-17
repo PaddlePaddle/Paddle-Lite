@@ -65,7 +65,7 @@ void WriteBackCompute::RunImplement(const lite::Tensor* x,
       if (mem_size > 0) {
         int r = xdnn::copy<int8_t>(
             TargetWrapperXPU::GetRawContext(),
-            reinterpret_cast<const int8_t*>(x->raw_data()),
+            ƒ reinterpret_cast<const int8_t*>(x->raw_data()),
             reinterpret_cast<int8_t*>(y->mutable_data(TARGET(kXPU), mem_size)),
             mem_size);
         CHECK_EQ(r, 0);
@@ -87,6 +87,7 @@ void WriteBackCompute::Run() {
     RunImplement(x, y, false);
   } else {
     auto size = param.array_y->size();
+
     for (size_t i = size; i > 0; i--) {
       auto& y = param.array_y->at(size - 1);
       auto& x = param.array_x->at(size - 1);
@@ -113,7 +114,7 @@ REGISTER_LITE_KERNEL(write_back,
                      kAny,
                      kAny,
                      paddle::lite::kernels::host::WriteBackCompute,
-                     write_back)
+                     tensor_copy)
     .BindInput("Src_LoDTensor",
                {LiteType::GetTensorTy(TARGET(kAny),
                                       PRECISION(kAny),

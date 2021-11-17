@@ -97,6 +97,23 @@ void MulCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   }
 }
 
+void mul_add_n_scale_bias(float* o_data, float* scale_, int m_, int n_) {
+  float32x4_t bias_v, scale_v, out_v, tmp_v;
+  int n_tail = n_ % 4;
+  int n_inner = n_ - n_tail;
+  for (int i = 0; i < m_; i++) {
+    for (int j = 0; j < n_inner; j += 4) {
+      tmp_v = vld1q_f32(&o_data[i * n_ + j]);
+      scale_v = vld1q_f32(&scale_[j]);
+      out_v = vmulq_f32(scale_v, tmp_v);
+      vst1q_f32(&o_data[i * n_ + j], out_v);
+    }
+    for (int j = n_inner; j < n_; j++) {
+      o_data[i * n_ + j] *= scale_[j];
+    }
+  }
+}
+
 template <>
 void MulCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
   auto& ctx = this->ctx_->template As<ARMContext>();
@@ -135,18 +152,6 @@ void MulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   operators::ActivationParam act_param;
   act_param.has_active = false;
-
-  //   std::cout << "x_data:" << ",";
-  // for (int i = 0; i < 10; i++) {
-  //   std::cout << (float)x_data[i]<<",";
-  // }
-  //   std::cout << std::endl;
-  //   std::cout << "y_data" <<",";
-  // for (int i = 0; i < 10; i++) {
-  //   std::cout <<  (float)y_data[i]<<",";
-  // }
-  //   std::cout << std::endl;
-
   if (n_ == 1) {
     lite::arm::math::gemv_int8(x_data,
                                y_data,
@@ -154,7 +159,7 @@ void MulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                false,
                                m_,
                                k_,
-                               scale_.data(),
+                               scale_one.data(),
                                false,
                                nullptr,
                                act_param,
@@ -167,8 +172,6 @@ void MulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
 
     auto* packed_x = static_cast<float*>(ctx.workspace_data<float>()) +
                      ctx.llc_size() / sizeof(float);
-    // lite::arm::math::prepackA(
-    //    packed_x, x_data, 1.f, k_, 0, m_, 0, k_, false, &ctx);
     int ldb = n_;
     if (is_tranposed_y) {
       ldb = k_;
@@ -183,29 +186,11 @@ void MulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                              o_data,
                              nullptr,
                              false,
-                             scale_.data(),
+                             scale_one.data(),
                              act_param,
                              &ctx);
   }
-  //    std::cout << "mull o_data:" <<",";
-  //  for (int i = 0; i < m_ * n_; i++) {
-  //    std::cout << o_data[i]<<",";
-  //  }
-  //
-  //    std::cout << std::endl;
-  //  for (int i = 0; i < 10; i++) {
-  //    std::cout << param.input_scale<<","<<param.weight_scale[i]<<std::endl;
-  //    std::cout << param.output_scale<<std::endl;
-  //  }
-  //    std::cout << std::endl;
-  //    std::cout << std::endl;
-  //    std::cout << std::endl;
-  //    std::cout << std::endl;
-  //    std::cout << std::endl;
-  //    std::cout << std::endl;
-  //    std::cout << std::endl;
-  //    std::cout << std::endl;
-  //    std::cout << std::endl;
+  mul_add_n_scale_bias(o_data, scale_.data(), m_, n_);
 }
 
 }  // namespace arm
@@ -227,7 +212,7 @@ typedef paddle::lite::kernels::arm::MulCompute<PRECISION(kInt8),
     Mul_int8_f32;
 
 REGISTER_LITE_KERNEL(mul, kARM, kInt8, kNCHW, Mul_int8_f32, def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();
