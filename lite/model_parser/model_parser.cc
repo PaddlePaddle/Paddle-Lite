@@ -114,12 +114,8 @@ void LoadCombinedParamsPb(const std::string &path,
 
   for (size_t i = 0; i < paramlist.size(); ++i) {
     auto *var = scope->Var(paramlist[i]);
-    std::cout << "paramlist:" << paramlist[i] << std::endl;
     LoadLoDTensor(&loader, reader.get(), var);
-    std::cout << reader->current() << std::endl;
   }
-  std::cout << paramlist.size() << std::endl;
-  std::cout << reader->length() << std::endl;
   CHECK(reader->ReachEnd()) << "You are not allowed to load partial data via"
                             << " LoadCombinedParamsPb, use LoadParam instead.";
 }
