@@ -102,10 +102,11 @@ int ConvertConv2dTranspose(Converter* converter, OpInfo* op, Scope* scope) {
 
   // Output_shape operand
   NNAdapterOperand* output_shape_operand = nullptr;
-  if (op->HasAttr("output_size") &&
-      !op->GetAttr<std::vector<int>>("output_size").empty()) {
+  if (op->HasAttr("output_size")) {
     std::vector<int> output_size = op->GetAttr<std::vector<int>>("output_size");
-    output_shape_operand = converter->AddConstantOperand(output_size);
+    if (output_size.size() != 0) {
+      output_shape_operand = converter->AddConstantOperand(output_size);
+    }
   }
 
   // Fuse code operand
