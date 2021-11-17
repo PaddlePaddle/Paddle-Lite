@@ -129,7 +129,7 @@ void Conv2dImageCompute::init_for_run() {
         }
     }
 
-    // MPS don't support LeakyRelu and kHardSwish
+    // MPS don't support LeakyRelu and HardSwish
     switch (param.activation_param.active_type) {
         case lite_api::ActivationType::kIndentity:
         case lite_api::ActivationType::kRelu:
