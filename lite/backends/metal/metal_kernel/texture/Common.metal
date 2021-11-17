@@ -85,6 +85,11 @@ struct ElementwiseAddParam {
     int32_t arithmetic_type;
 };
 
+struct MatmulParam {
+    bool xtrans;
+    bool ytrans;
+};
+
 struct ElementwiseParam {
     int32_t byChannel;
 };

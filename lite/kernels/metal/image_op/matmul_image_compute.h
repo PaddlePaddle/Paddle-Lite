@@ -51,6 +51,7 @@ class MatMulImageCompute
     MetalImage* output_buffer_{nullptr};
     const MetalImage* input_buffer_x_;
     const MetalImage* input_buffer_y_;
+    std::shared_ptr<MetalBuffer> params_buffer_;
 
     id<MTLComputePipelineState> pipline_;
     std::string function_name_;
