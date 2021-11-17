@@ -1329,8 +1329,7 @@ void conv_depthwise_3x3_pack(const operators::ConvParam &param,
                                 filter_pack_,
                                 param.bias,
                                 has_act,
-                                act_type,
-                                act_param);
+                                act_type);
     } else if (kernel_h == 3 && kernel_w == 3 && stride_h == 2 &&
                stride_w == 2 && dilation_h == 1 && dilation_w == 1) {
       conv_depthwise_3x3s2_m256(input_padding_,
@@ -1338,8 +1337,7 @@ void conv_depthwise_3x3_pack(const operators::ConvParam &param,
                                 filter_pack_,
                                 param.bias,
                                 has_act,
-                                act_type,
-                                act_param);
+                                act_type);
     } else {
       conv_depthwise_m256(input_padding_,
                           output_pack_,
@@ -1350,8 +1348,7 @@ void conv_depthwise_3x3_pack(const operators::ConvParam &param,
                           dilation_h,
                           dilation_w,
                           has_act,
-                          act_type,
-                          act_param);
+                          act_type);
     }
   } else if (pack_size == 4) {
     conv_depthwise_m128(input_padding_,
@@ -1363,8 +1360,7 @@ void conv_depthwise_3x3_pack(const operators::ConvParam &param,
                         dilation_h,
                         dilation_w,
                         has_act,
-                        act_type,
-                        act_param);
+                        act_type);
   }
 
   // [bs, oh, ow, oc] => [bs, oc, oh, ow]
