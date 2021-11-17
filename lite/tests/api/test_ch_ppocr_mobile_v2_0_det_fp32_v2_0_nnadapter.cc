@@ -18,7 +18,7 @@
 #include "lite/api/paddle_api.h"
 #include "lite/api/test/lite_api_test_helper.h"
 #include "lite/api/test/test_helper.h"
-#include "lite/tests/api/ocr_utility.h"
+#include "lite/tests/api/ocr_data_utility.h"
 #include "lite/tests/api/utility.h"
 #include "lite/utils/string.h"
 
@@ -71,11 +71,12 @@ TEST(ch_ppocr_mobile_v2_0_det,
   predictor = paddle::lite_api::CreatePaddlePredictor(mobile_config);
 
   std::string raw_data_dir =
-      FLAGS_data_dir + std::string("ICDAR_2015_50/raw_data");
+      FLAGS_data_dir + std::string("/ICDAR_2015_50/raw_data");
   std::string out_data_dir =
-      FLAGS_data_dir + std::string("ICDAR_2015_50/out_data");
+      FLAGS_data_dir +
+      std::string("/ICDAR_2015_50/ch_ppocr_mobile_v2_0_out_data");
   std::string images_shape_path =
-      FLAGS_data_dir + std::string("ICDAR_2015_50/images_shape.txt");
+      FLAGS_data_dir + std::string("/ICDAR_2015_50/images_shape.txt");
 
   auto input_lines = ReadLines(images_shape_path);
   std::vector<std::string> input_names;
@@ -94,28 +95,14 @@ TEST(ch_ppocr_mobile_v2_0_det,
 
   FLAGS_warmup = 1;
   for (int i = 0; i < FLAGS_warmup; ++i) {
-    auto input_tensor = predictor->GetInput(0);
-    input_tensor->Resize(input_shapes[i]);
-    auto *data = input_tensor->mutable_data<float>();
-    int input_size = 1;
-    for (auto size : input_shapes[i]) {
-      input_size *= size;
-    }
-    memcpy(data, raw_data[i].data(), sizeof(float) * input_size);
+    fill_tensor(predictor, 0, raw_data[i].data(), input_shapes[i]);
     predictor->Run();
   }
 
   double cost_time = 0;
   std::vector<std::vector<float>> results;
   for (size_t i = 0; i < raw_data.size(); ++i) {
-    auto input_tensor = predictor->GetInput(0);
-    input_tensor->Resize(input_shapes[i]);
-    auto *data = input_tensor->mutable_data<float>();
-    int input_size = 1;
-    for (auto size : input_shapes[i]) {
-      input_size *= size;
-    }
-    memcpy(data, raw_data[i].data(), sizeof(float) * input_size);
+    fill_tensor(predictor, 0, raw_data[i].data(), input_shapes[i]);
     predictor->Run();
 
     double start = GetCurrentUS();
@@ -137,7 +124,7 @@ TEST(ch_ppocr_mobile_v2_0_det,
     gt_data.push_back(ReadRawData(out_data_dir, input_names[i], output_shape));
   }
 
-  for (float abs_error : {1e-1, 1e-2, 1e-3, 1e-4, 1e-5}) {
+  for (float abs_error : {1e-1, 1e-2, 1e-3, 1e-4}) {
     float acc = CalOutAccuracy(results, gt_data, abs_error);
     LOG(INFO) << "acc: " << acc << ", if abs_error < " << abs_error;
     ASSERT_GE(CalOutAccuracy(results, gt_data, abs_error), 0.99);

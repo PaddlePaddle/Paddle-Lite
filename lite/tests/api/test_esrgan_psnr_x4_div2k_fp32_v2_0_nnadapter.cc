@@ -18,20 +18,17 @@
 #include "lite/api/paddle_api.h"
 #include "lite/api/test/lite_api_test_helper.h"
 #include "lite/api/test/test_helper.h"
-#include "lite/tests/api/COCO2017_utility.h"
+#include "lite/tests/api/gan_data_utility.h"
 #include "lite/tests/api/utility.h"
+#include "lite/utils/string.h"
 
 DEFINE_string(data_dir, "", "data dir");
-DEFINE_int32(iteration, 10, "iteration times to run");
-DEFINE_int32(batch, 1, "batch of image");
-DEFINE_int32(channel, 3, "image channel");
-DEFINE_int32(height, 608, "image height");
-DEFINE_int32(width, 608, "image width");
+DEFINE_int32(iteration, 3, "iteration times to run");
 
 namespace paddle {
 namespace lite {
 
-TEST(yolov3_mobilenet_v1, test_yolov3_mobilenet_v1_coco_fp32_v2_2_nnadapter) {
+TEST(esrgan_psnr_x4_div2k, test_esrgan_psnr_x4_div2k_fp32_v2_0_nnadapter) {
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;
@@ -73,26 +70,37 @@ TEST(yolov3_mobilenet_v1, test_yolov3_mobilenet_v1_coco_fp32_v2_2_nnadapter) {
   predictor = paddle::lite_api::CreatePaddlePredictor(mobile_config);
 
   std::string raw_data_dir = FLAGS_data_dir + std::string("/raw_data");
-  std::vector<int> input_shape{
-      FLAGS_batch, FLAGS_channel, FLAGS_height, FLAGS_width};
-  auto raw_data = ReadRawData(raw_data_dir, input_shape, FLAGS_iteration);
+  std::string out_data_dir =
+      FLAGS_data_dir + std::string("/esrgan_psnr_x4_div2k_out_data");
+  std::string images_shape_path =
+      FLAGS_data_dir + std::string("images_shape.txt");
 
-  int input_size = 1;
-  for (auto i : input_shape) {
-    input_size *= i;
+  auto input_lines = ReadLines(images_shape_path);
+  std::vector<std::string> input_names;
+  std::vector<std::vector<int64_t>> input_shapes;
+  for (auto line : input_lines) {
+    input_names.push_back(Split(line, ":")[0]);
+    input_shapes.push_back(Split<int64_t>(Split(line, ":")[1], " "));
+  }
+
+  std::vector<std::vector<float>> raw_data;
+  std::vector<std::vector<float>> gt_data;
+  for (size_t i = 0; i < FLAGS_iteration; i++) {
+    raw_data.push_back(
+        ReadRawData(raw_data_dir, input_names[i], input_shapes[i]));
   }
 
   FLAGS_warmup = 1;
   for (int i = 0; i < FLAGS_warmup; ++i) {
-    SetDetectionInput(predictor, input_shape, std::vector<float>(), input_size);
+    fill_tensor(predictor, 0, raw_data[i].data(), input_shapes[i]);
     predictor->Run();
   }
 
-  std::vector<std::vector<float>> out_rets;
-  out_rets.resize(FLAGS_iteration);
   double cost_time = 0;
+  std::vector<std::vector<float>> results;
   for (size_t i = 0; i < raw_data.size(); ++i) {
-    SetDetectionInput(predictor, input_shape, raw_data[i], input_size);
+    fill_tensor(predictor, 0, raw_data[i].data(), input_shapes[i]);
+    predictor->Run();
 
     double start = GetCurrentUS();
     predictor->Run();
@@ -101,18 +109,27 @@ TEST(yolov3_mobilenet_v1, test_yolov3_mobilenet_v1_coco_fp32_v2_2_nnadapter) {
     auto output_tensor = predictor->GetOutput(0);
     auto output_shape = output_tensor->shape();
     auto output_data = output_tensor->data<float>();
-    ASSERT_EQ(output_shape.size(), 2UL);
-    ASSERT_GT(output_shape[0], 0);
-    ASSERT_EQ(output_shape[1], 6);
+    ASSERT_EQ(output_shape.size(), 4UL);
 
-    int output_size = output_shape[0] * output_shape[1];
-    out_rets[i].resize(output_size);
-    memcpy(&(out_rets[i].at(0)), output_data, sizeof(float) * output_size);
+    int64_t output_size = 1;
+    for (auto dim : output_shape) {
+      output_size *= dim;
+    }
+    std::vector<float> ret(output_size);
+    memcpy(ret.data(), output_data, sizeof(float) * output_size);
+    results.push_back(ret);
+    gt_data.push_back(ReadRawData(out_data_dir, input_names[i], output_shape));
+  }
+
+  for (float abs_error : {1e-1, 1e-2, 1e-3}) {
+    float acc = CalOutAccuracy(results, gt_data, abs_error);
+    LOG(INFO) << "acc: " << acc << ", if abs_error < " << abs_error;
+    ASSERT_GE(CalOutAccuracy(results, gt_data, abs_error), 0.97);
   }
 
   LOG(INFO) << "================== Speed Report ===================";
   LOG(INFO) << "Model: " << FLAGS_model_dir << ", threads num " << FLAGS_threads
-            << ", warmup: " << FLAGS_warmup << ", batch: " << FLAGS_batch
+            << ", warmup: " << FLAGS_warmup
             << ", iteration: " << FLAGS_iteration << ", spend "
             << cost_time / FLAGS_iteration / 1000.0 << " ms in average.";
 }

@@ -71,5 +71,47 @@ void fill_tensor(std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor,
   memcpy(tensor_data, data, sizeof(T) * size);
 }
 
+template <class T = float>
+void SetDetectionInput(
+    std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor,
+    std::vector<int> input_shape,
+    std::vector<T> raw_data,
+    int input_size) {
+  auto input_names = predictor->GetInputNames();
+  int batch_size = input_shape[0];
+  int rh = input_shape[2];
+  int rw = input_shape[3];
+  for (const auto& tensor_name : input_names) {
+    auto in_tensor = predictor->GetInputByName(tensor_name);
+    if (tensor_name == "image") {
+      in_tensor->Resize(
+          std::vector<int64_t>(input_shape.begin(), input_shape.end()));
+      auto* input_data = in_tensor->mutable_data<T>();
+      if (raw_data.empty()) {
+        for (int i = 0; i < input_size; i++) {
+          input_data[i] = 0.f;
+        }
+      } else {
+        memcpy(input_data, raw_data.data(), sizeof(T) * input_size);
+      }
+    } else if (tensor_name == "im_shape" || tensor_name == "im_size") {
+      in_tensor->Resize({batch_size, 2});
+      auto* im_shape_data = in_tensor->mutable_data<T>();
+      for (int i = 0; i < batch_size * 2; i += 2) {
+        im_shape_data[i] = rh;
+        im_shape_data[i + 1] = rw;
+      }
+    } else if (tensor_name == "scale_factor") {
+      in_tensor->Resize({batch_size, 2});
+      auto* scale_factor_data = in_tensor->mutable_data<T>();
+      for (int i = 0; i < batch_size * 2; i++) {
+        scale_factor_data[i] = 1;
+      }
+    } else {
+      LOG(FATAL) << "Unsupported the input: " << tensor_name;
+    }
+  }
+}
+
 }  // namespace lite
 }  // namespace paddle
