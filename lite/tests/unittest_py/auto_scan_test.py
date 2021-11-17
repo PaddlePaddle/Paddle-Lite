@@ -23,7 +23,6 @@ from paddlelite.lite import *
 
 SkipReasons = SkipReasonsBase
 
-
 def ParsePlaceInfo(place_str):
    # todo: this func should be completed later
    infos = ''.join(place_str.split()).split(",")
