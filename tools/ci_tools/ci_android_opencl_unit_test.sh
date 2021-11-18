@@ -48,6 +48,7 @@ function build_target {
   rm -rf $build_directory && mkdir -p $build_directory
 
   prepare_workspace $WORKSPACE $build_directory
+  prepare_opencl_source_code $WORKSPACE
 
   cd $build_directory
   cmake .. \
