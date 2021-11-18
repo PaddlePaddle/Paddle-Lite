@@ -125,6 +125,7 @@ add_operator(distribute_fpn_proposals_op_lite extra SRCS distribute_fpn_proposal
 add_operator(crf_decoding_op_lite extra SRCS crf_decoding_op.cc)
 add_operator(ctc_align_op_lite extra SRCS ctc_align_op.cc)
 add_operator(cumsum_op_lite extra SRCS cumsum_op.cc)
+add_operator(sampling_id_op_lite extra SRCS sampling_id_op.cc)
 add_operator(polygon_box_transform_op_lite extra SRCS polygon_box_transform_op.cc)
 add_operator(max_pool_with_index_op extra SRCS max_pool_with_index_op.cc)
 add_operator(pixel_shuffle_op extra SRCS pixel_shuffle_op.cc)
