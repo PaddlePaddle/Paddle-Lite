@@ -803,8 +803,8 @@ __kernel void conv2d_1x1_h2w2c1(
 #endif
     ) {
   const int out_c = get_global_id(0);
-  const int out_w = mul24(get_global_id(1), 2);
-  const int out_nh = mul24(get_global_id(2), 2);
+  const int out_w = get_global_id(1) * 2;
+  const int out_nh = get_global_id(2) * 2;
 
   if (out_c >= global_size_dim0 || out_w >= output_width ||
       out_nh >= output_height) {
@@ -1006,9 +1006,9 @@ __kernel void conv2d_1x1_h2w2c2(
     __read_only image2d_t second_input_image
 #endif
     ) {
-  const int out_c = mul24(get_global_id(0), 2);
-  const int out_w = mul24(get_global_id(1), 2);
-  const int out_nh = mul24(get_global_id(2), 2);
+  const int out_c = get_global_id(0) * 2;
+  const int out_w = get_global_id(1) * 2;
+  const int out_nh = get_global_id(2) * 2;
 
   if (out_c >= global_size_dim0 || out_w >= output_width ||
       out_nh >= output_height) {
@@ -1330,9 +1330,9 @@ __kernel void conv2d_1x1_h2w3c2(
     __read_only image2d_t second_input_image
 #endif
     ) {
-  const int out_c = mul24(get_global_id(0), 2);
-  const int out_w = mul24(get_global_id(1), 3);
-  const int out_nh = mul24(get_global_id(2), 2);
+  const int out_c = get_global_id(0) * 2;
+  const int out_w = get_global_id(1) * 3;
+  const int out_nh = get_global_id(2) * 2;
 
   if (out_c >= global_size_dim0 || out_w >= output_width ||
       out_nh >= output_height) {
