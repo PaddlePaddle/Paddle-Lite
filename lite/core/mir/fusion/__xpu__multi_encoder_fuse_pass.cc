@@ -275,10 +275,20 @@ class XPUSingleEncoderFuser : public FuseBase {
     auto* qkv_ln_2_var = VarNode("qkv_ln_2_var")
                              ->assert_is_op_output("layer_norm", "Variance")
                              ->AsIntermediate();
+    auto qkv_weight_teller = [](const Node* node) -> bool {
+      auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
+      auto input_y_name = op_desc.Input("Y").front();
+      auto* scope = const_cast<Node*>(node)->AsStmt().op()->scope();
+      auto y_shape = scope->FindVar(input_y_name)->Get<lite::Tensor>().dims();
+      size_t y_rank = y_shape.size();
 
+      return (y_rank == 2) && (y_shape[1] == 4 * y_shape[0]);
+    };
     auto* qkv_mul_3_y =
         VarNode("qkv_mul_3_y")->assert_is_op_input(mul_type_, "Y")->AsInput();
-    auto* qkv_mul_3 = OpNode("qkv_mul_3", mul_type_)->AsIntermediate();
+    auto* qkv_mul_3 = OpNode("qkv_mul_3", mul_type_)
+                          ->assert_node_satisfied(qkv_weight_teller)
+                          ->AsIntermediate();
     auto* qkv_mul_3_out = VarNode("qkv_mul_3_out")
                               ->assert_is_op_output(mul_type_, "Out")
                               ->assert_is_op_input("elementwise_add", "X")
@@ -481,8 +491,23 @@ class XPUSingleEncoderFuser : public FuseBase {
     op_desc.SetAttr<int>("sub_block", 0);
     op_desc.SetAttr<std::vector<std::string>>("input_data_names", {});
     op_desc.SetAttr<std::vector<std::string>>("output_data_names", {});
-
+    int hidden_dim = 0;
     auto* q_mul_op_info = matched.at("q_mul")->stmt()->op_info();
+    auto q_mul_input_y_name = q_mul_op_info->Input("Y").front();
+    auto* scope = matched.at("q_mul")->stmt()->op()->scope();
+    auto q_mul_y_shape = scope->FindMutableTensor(q_mul_input_y_name)->dims();
+    hidden_dim = q_mul_y_shape[0];
+    VLOG(3) << "q mul Y shape: " << q_mul_y_shape
+            << ", hidden_dim:" << hidden_dim;
+    auto* qkv_mul_op_info = matched.at("qkv_mul")->stmt()->op_info();
+    auto qkv_mul_input_y_name = qkv_mul_op_info->Input("Y").front();
+    auto qkv_mul_y_shape =
+        scope->FindMutableTensor(qkv_mul_input_y_name)->dims();
+    CHECK_EQ(q_mul_y_shape.size(), qkv_mul_y_shape.size());
+    CHECK_EQ(q_mul_y_shape.size(), 2);
+    CHECK_EQ(q_mul_y_shape[0], qkv_mul_y_shape[1]);
+    CHECK_EQ(q_mul_y_shape[1], qkv_mul_y_shape[0]);
+    CHECK_GT(hidden_dim, 0) << "invalid hidden_dim: " << hidden_dim;
     if (q_mul_op_info->HasAttr("enable_int8") &&
         q_mul_op_info->GetAttr<bool>("enable_int8")) {
       op_desc.SetAttr<bool>("enable_int8", true);
@@ -590,6 +615,8 @@ class XPUSingleEncoderFuser : public FuseBase {
     CHECK(std::abs(expected_value - scale_val) < 1e-6f);
     op_desc.SetAttr<int>("head_num", reshape_dim[2]);
     op_desc.SetAttr<int>("size_per_head", size_per_head);
+    CHECK_EQ(size_per_head * reshape_dim[2], q_mul_y_shape[1]);
+    op_desc.SetAttr<int>("hidden_dim", hidden_dim);
     op_desc.SetAttr<std::string>("act_type", act_type_);
     op_desc.SetAttr<bool>("norm_before", norm_before_);
 
@@ -793,6 +820,8 @@ class XPUMultiEncoderFuser {
       fc_weight_max.resize(arg_map["FCWeight"].size());
     }
     auto* first_encoder_op_info = multi_encoder_stmt->op_info();
+    op_desc.SetAttr<int>("hidden_dim",
+                         first_encoder_op_info->GetAttr<int>("hidden_dim"));
     op_desc.SetAttr<int>("head_num",
                          first_encoder_op_info->GetAttr<int>("head_num"));
     op_desc.SetAttr<int>("size_per_head",
@@ -822,7 +851,7 @@ class XPUMultiEncoderFuser {
             (weight_dims_tmp[1] * 3 == weight_dims_tmp[0])) {
           // the weight already be updated( previous patter fused )
           VLOG(3) << "qkv-fused weight " << i
-                  << " were resued, dims: " << weight_dims_tmp;
+                  << " were reused, dims: " << weight_dims_tmp;
           i += 5;
           continue;
         }
