@@ -122,16 +122,16 @@ function test_fp16_model {
   done
 
   # step 3. compiling Android ARM lib
-  export NDK_ROOT=/opt/android-ndk-r23b/
+  export NDK_ROOT=/Users/paddle/Library/android-ndk-r20b/
   if [ -f build.lite.android.armv7.clang ]; then
     rm -rf build.lite.android.armv7.clang
   fi
   if [ -f build.lite.android.armv8.clang ]; then
     rm -rf build.lite.android.armv8.clang
   fi
-  ./lite/tools/build_android.sh --with_strip=ON --with_log=$WITH_LOG --with_cv=$WITH_CV --toolchain=$TOOL_CHAIN --with_exception=$WITH_EXCEPTION --android_stl=$ANDROID_STL --build_arm82_fp16=ON
+  ./lite/tools/build_android.sh --with_log=$WITH_LOG --with_cv=$WITH_CV --toolchain=$TOOL_CHAIN --with_exception=$WITH_EXCEPTION --android_stl=$ANDROID_STL --with_arm82_fp16=ON
 
-  ./lite/tools/build_android.sh --with_strip=ON --with_log=$WITH_LOG --arch=armv7 --with_cv=$WITH_CV --toolchain=$TOOL_CHAIN --with_exception=$WITH_EXCEPTION --android_stl=$ANDROID_STL --build_arm82_fp16=ON
+  ./lite/tools/build_android.sh --with_log=$WITH_LOG --arch=armv7 --with_cv=$WITH_CV --toolchain=$TOOL_CHAIN --with_exception=$WITH_EXCEPTION --android_stl=$ANDROID_STL --with_arm82_fp16=ON
 
   # step 4. pack compiling results and optimized models
   result_name=android_lib_fp16
