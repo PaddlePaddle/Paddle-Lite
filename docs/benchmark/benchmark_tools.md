@@ -32,7 +32,7 @@ Benchmark 工具可方便快捷地评测给定模型在如下硬件上运行时�
 
 | 参数 | 说明 | 可选值 | 默认值 |
 | :-- | :-- | :-- | :-- |
-| arch                  | 目标 ARM 架构    |  armv7 / armv8   |  armv8   |
+| arch                  | 目标 ARM 架构    |  armv7hf / armv7 / armv8   |  armv8   |
 | toolchain             | 工具链           |  gcc / clang     |  gcc     |
 | with_profile          | 逐层时间 profile |  ON / OFF        |  OFF     |
 | with_precision_profile| 逐层精度 profile |  ON / OFF        |  OFF     |
@@ -280,6 +280,7 @@ avg   = 33.918
 拉取 [Paddle Lite](https://github.com/PaddlePaddle/Paddle-Lite) 代码，切换到特定分支，然后在 Paddle Lite 根目录下执行编译命令：
 ```shell
 ./lite/tools/build_macos.sh --with_benchmark=ON x86
+./lite/tools/build_macos.sh --with_benchmark=ON arm64
 ```
 可选参数：
 
@@ -364,6 +365,7 @@ Benchnark 工具提供了丰富的运行时选项，来满足不同的运行时�
 
 #### 在 GPU 上运行模型
 - 设备 OS 为 Android 或 ARM Linux 时，通过使用`--backend=opencl,arm`来实现
+- 设备 OS 为 macOS(arm 芯片，如 m1) 时，通过使用`--backend=opencl,arm`来实现, 只支持精度为fp32，需设置`--gpu_precision=fp32`
 - 设备 OS 为 macOS(x86 芯片) 时，通过使用`--backend=opencl,x86`来实现
 
 说明：
@@ -460,7 +462,7 @@ export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH;
 ```shell
 # Host 侧为 x86 CPU 时
 # 拷贝 benchmark 文件夹到新硬件
-ssh name@ip -p22 "rm -rf ~/benchmark"
+ssh name@ip "rm -rf ~/benchmark"
 scp -r ~/benchmark name@ip:~
 ssh name@ip
 cd ~/benchmark
@@ -479,7 +481,7 @@ export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH
 
 # Host 侧为 ARM CPU 时
 # 拷贝 benchmark 文件夹到新硬件
-ssh name@ip -p22 "rm -rf ~/benchmark"
+ssh name@ip "rm -rf ~/benchmark"
 scp -r ~/benchmark name@ip:~
 ssh name@ip
 cd ~/benchmark
@@ -500,7 +502,7 @@ export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH
 #### 在 Rockchip NPU 上运行模型
 ```shell
 # 拷贝 benchmark 文件夹到新硬件
-ssh name@ip -p22 "rm -rf ~/benchmark"
+ssh name@ip "rm -rf ~/benchmark"
 scp -r ~/benchmark name@ip:~
 ssh name@ip
 cd ~/benchmark
@@ -519,7 +521,7 @@ export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH
 #### 在 Imagination NNA 上运行模型
 ```shell
 # 拷贝 benchmark 文件夹到新硬件
-ssh name@ip -p22 "rm -rf ~/benchmark"
+ssh name@ip "rm -rf ~/benchmark"
 scp -r ~/benchmark name@ip:~
 ssh name@ip
 cd ~/benchmark
@@ -557,7 +559,7 @@ export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH;
 ```shell
 # 在 C308X 或 A311D 上运行模型
 # 拷贝 benchmark 文件夹到新硬件
-ssh name@ip -p22 "rm -rf ~/benchmark"
+ssh name@ip "rm -rf ~/benchmark"
 scp -r ~/benchmark name@ip:~
 ssh name@ip
 cd ~/benchmark

@@ -25,13 +25,13 @@
 | CV | 分类 | [ResNeXt50](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/ResNeXt50_32x4d.tgz) | ARM, X86, HuaweiAscendNPU |
 | CV | 分类 | [MnasNet](https://paddlelite-demo.bj.bcebos.com/models/mnasnet_fp32_224_fluid.tar.gz)| ARM, HuaweiKirinNPU, HuaweiAscendNPU |
 | CV | 分类 | [SqueezeNet](https://paddlelite-demo.bj.bcebos.com/models/squeezenet_fp32_224_fluid.tar.gz) | ARM, HuaweiKirinNPU, BaiduXPU, HuaweiAscendNPU |
-| CV | 分类 | [ShuffleNet](https://paddlepaddle-inference-banchmark.bj.bcebos.com/shufflenet_inference.tar.gz) | ARM |
+| CV | 分类 | ShuffleNet | ARM |
 | CV | 分类 | [ShufflenetV2](https://paddlelite-demo.bj.bcebos.com/models/shufflenetv2.tar.gz) | ARM, BaiduXPU, HuaweiAscendNPU |
 | CV | 分类 | [InceptionV3](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleClas/InceptionV3.tgz) | ARM, X86, HuaweiAscendNPU |
 | CV | 分类 | [InceptionV4](https://paddlelite-demo.bj.bcebos.com/models/inceptionv4.tar.gz) | ARM, X86, HuaweiKirinNPU, BaiduXPU, HuaweiAscendNPU |
-| CV | 分类 | [VGG16](https://paddlepaddle-inference-banchmark.bj.bcebos.com/VGG16_inference.tar) | ARM, X86, GPU(OPENCL), BaiduXPU, HuaweiAscendNPU |
-| CV | 分类 | [VGG19](https://paddlepaddle-inference-banchmark.bj.bcebos.com/VGG19_inference.tar) | ARM, X86, GPU(OPENCL,METAL), BaiduXPU, HuaweiAscendNPU|
-| CV | 分类 | [GoogleNet](https://paddlepaddle-inference-banchmark.bj.bcebos.com/GoogleNet_inference.tar) | ARM, X86, BaiduXPU, HuaweiAscendNPU |
+| CV | 分类 | VGG16 | ARM, X86, GPU(OPENCL), BaiduXPU, HuaweiAscendNPU |
+| CV | 分类 | VGG19 | ARM, X86, GPU(OPENCL,METAL), BaiduXPU, HuaweiAscendNPU|
+| CV | 分类 | GoogleNet | ARM, X86, BaiduXPU, HuaweiAscendNPU |
 | CV | 检测 | [SSD-MobileNetV1](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_pascalvoc_fp32_300_fluid.tar.gz) | ARM, HuaweiKirinNPU*, HuaweiAscendNPU* |
 | CV | 检测 | [SSD-MobileNetV3-large](https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/ssdlite_mobilenet_v3_large.tar.gz) | ARM, X86, GPU(OPENCL,METAL) |
 | CV | 检测 | [SSD-VGG16](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/ssd_vgg16_300_240e_voc.tgz) | ARM, X86, HuaweiAscendNPU* |
@@ -40,7 +40,7 @@
 | CV | 检测 | [YOLOv3-MobileNetV3](https://paddlelite-demo.bj.bcebos.com/models/yolov3_mobilenet_v3_prune86_FPGM_320_fp32_fluid.tar.gz) | ARM, X86, HuaweiAscendNPU* |
 | CV | 检测 | [yolov3_r50vd_dcn](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/yolov3_r50vd_dcn_270e_coco.tgz) | ARM, HuaweiKirinNPU*, HuaweiAscendNPU*  |
 | CV | 检测 | [YOLOv4](https://paddlelite-demo.bj.bcebos.com/NNAdapter/models/PaddleDetection/yolov4_cspdarknet.tgz) | ARM, X86, HuaweiAscendNPU* |
-| CV | 检测 | [Faster RCNN](https://paddlepaddle-inference-banchmark.bj.bcebos.com/faster_rcnn.tar) | ARM |
+| CV | 检测 | Faster RCNN | ARM |
 | CV | 检测 | [Mask RCNN*](https://github.com/PaddlePaddle/PaddleDetection/blob/release/0.4/docs/MODEL_ZOO_cn.md) | ARM |
 | CV | 检测 | ppyolo_2x | ARM |
 | CV | 检测 | solov2_r50_fpn_1x | ARM |

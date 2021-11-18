@@ -26,6 +26,10 @@ struct ElementwiseAddMetalParam {
     int xtrans[4];
     int ydim[4];
     int ytrans[4];
+    int ByNum;
+    int ByHW;
+    int ByW;
+    int arithmetic_type;
 };
 
 struct ActivationMetalParam {
@@ -100,6 +104,11 @@ struct PoolMetalParam {
 
 struct MulMetalParam {};
 
+struct MatmulMetalParam {
+    bool transposeX;
+    bool transposeY;
+};
+
 struct FCMetalParam {
     int N;
     int K;
@@ -130,6 +139,8 @@ struct ConcatMetalParam {
     int odim[4];
     int axis;
     int offset;
+    int num;
+    int v_;
     int trans[4];
     int vdim[6];
 };
@@ -216,6 +227,8 @@ struct SplitMetalParam {
     int idim[4];
     int axis;
     int offset;
+    int num;
+    int v_;
     int trans[4];
     int vdim[4];
 };

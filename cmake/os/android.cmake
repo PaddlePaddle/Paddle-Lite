@@ -30,6 +30,8 @@ if(NOT DEFINED ANDROID_NATIVE_API_LEVEL)
     if(ARM_TARGET_ARCH_ABI STREQUAL "armv7")
         if(LITE_WITH_NPU AND NOT LITE_ON_TINY_PUBLISH)
             set(ANDROID_NATIVE_API_LEVEL "24") # HIAI DDK depends on android-24
+        elseif(NOT LITE_ON_TINY_PUBLISH)
+            set(ANDROID_NATIVE_API_LEVEL "21") # OpenCV-4.1.0 requires Android API Level >= 21
         else()
             set(ANDROID_NATIVE_API_LEVEL "16")
         endif()

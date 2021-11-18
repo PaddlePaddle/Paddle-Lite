@@ -1,8 +1,8 @@
 # 新增 Layout
 
-下面以增加 `kMetalTexture2DArray`、`kMetalTexture2D` 为例，介绍如何在 Paddle-Lite 中增加新的 Layout。
+下面以增加 `kMetalTexture2DArray`、`kMetalTexture2D` 为例，介绍如何在 Paddle Lite 中增加新的 Layout。
 
-> **首先在 paddle_place 文件中注册 Layout 信息，Paddle-Lite 中 Place 包含了 Target、Layout、Precision 信息，用来注册和选择模型中的具体 Kernel。**
+> **首先在 paddle_place 文件中注册 Layout 信息，Paddle Lite 中 Place 包含了 Target、Layout、Precision 信息，用来注册和选择模型中的具体 Kernel。**
 
 
 ## 1. lite/api/paddle_place.h

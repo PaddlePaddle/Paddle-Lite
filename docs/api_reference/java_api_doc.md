@@ -16,14 +16,14 @@ public class MobileConfig extends ConfigBase;
 
 ```java
 MobileConfig config = new MobileConfig();
-// 设置NaiveBuffer格式模型目录
+// 设置 NaiveBuffer 格式模型目录
 config.setModelFromFile(modelfile);
 // 设置能耗模式
 config.setPowerMode(PowerMode.LITE_POWER_HIGH);
 // 设置工作线程数
 config.setThreads(1);
 
-// 根据MobileConfig创建PaddlePredictor
+// 根据 MobileConfig 创建 PaddlePredictor
 PaddlePredictor predictor = PaddlePredictor.createPaddlePredictor(config);
 ```
 
@@ -127,11 +127,11 @@ public class PaddlePredictor;
 示例：
 
 ```java
-// 设置MobileConfig
+// 设置 MobileConfig
 MobileConfig config = new MobileConfig();
 config.setModelDir(modelPath);
 
-// 创建PaddlePredictor
+// 创建 PaddlePredictor
 PaddlePredictor predictor = PaddlePredictor.createPaddlePredictor(config);
 
 // 设置输入数据
@@ -252,12 +252,12 @@ public enum PowerMode;
 
 ```java
 MobileConfig config = new MobileConfig();
-// 设置NaiveBuffer格式模型目录
+// 设置 NaiveBuffer 格式模型目录
 config.setModelDir(modelPath);
 // 设置能耗模式
 config.setPowerMode(PowerMode.LITE_POWER_HIGH);
 
-// 根据MobileConfig创建PaddlePredictor
+// 根据 MobileConfig 创建 PaddlePredictor
 PaddlePredictor predictor = PaddlePredictor.createPaddlePredictor(config);
 ```
 
@@ -288,17 +288,17 @@ Tensor 是 Paddle Lite 的数据组织形式，用于对底层数据进行封装
 示例：
 
 ```java
-// 导入Java API
+// 导入 Java API
 import com.baidu.paddle.lite.MobileConfig;
 import com.baidu.paddle.lite.Tensor;
 import com.baidu.paddle.lite.Predictor;
 import com.baidu.paddle.lite.PowerMode;
 
-// 设置MobileConfig
+// 设置 MobileConfig
 MobileConfig config = new MobileConfig();
 config.setModelDir(modelPath);
 
-// 创建PaddlePredictor
+// 创建 PaddlePredictor
 PaddlePredictor predictor = PaddlePredictor.createPaddlePredictor(config);
 
 // 设置输入数据
@@ -307,7 +307,7 @@ float[] inputBuffer = new float[10000];
 for (int i = 0; i < 10000; ++i) {
     inputBuffer[i] = i;
 }
-// 获取输入Tensor
+// 获取输入 Tensor
 Tensor input = predictor.getInput(0);
 // 设置输入维度
 input.resize(dims);
@@ -317,7 +317,7 @@ input.setData(inputBuffer);
 // 执行预测
 predictor.run();
 
-// 获取输出Tensor
+// 获取输出 Tensor
 Tensor result = predictor.getOutput(0);
 // 获取输出数据
 float[] output = result.getFloatData();

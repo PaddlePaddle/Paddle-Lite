@@ -4,7 +4,7 @@
 ## 编译版本介绍
 
 - arch=`armv7/armv7hf/armv8/x86`        目标设备的 CPU 架构，可选择包括 `armv7`、`armv7hf`、`armv8` 和 `x86` 等
-- os=`Android/IOS/Linux/MacOS/Windows`  目标设备的操作系统，可选择包括 `Android`、`IOS`、`linux`、`MacOS` 和 `Windows` 等
+- os=`Android/IOS/Linux/MacOS/Windows`  目标设备的操作系统，可选择包括 `Android`、`IOS`、`Linux`、`MacOS` 和 `Windows` 等
 - toolchain=`gcc/clang`                 源码编译时的编译器，可选择包括 `gcc` 和 `clang` 等
 - android_stl=`c++_static/c++_shared`   预测库采用的 Android STL 库的种类，可选择包括 `c++_static` (静态链接)和 `c++_shared` (动态链接)
 - with_extra=`ON/OFF`                   是否编译全量 OP，OFF 时只编译 CV 相关基础 OP，[参数详情](../source_compile/compile_options)

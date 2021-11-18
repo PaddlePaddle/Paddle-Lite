@@ -36,21 +36,9 @@ Paddle Lite 已支持百度 XPU 在 X86 和 ARM 服务器（例如飞腾 FT-2000
 - K100 为全长半高 PCI-E 卡，K200 为全长全高 PCI-E 卡，要求使用 PCI-E x16 插槽，且需要单独的 8 针供电线进行供电；
 - 安装 K100/K200 驱动，目前支持 Ubuntu 和 CentOS 系统，由于驱动依赖 Linux kernel 版本，请正确安装对应版本的驱动安装包。
 
-### 准备本地编译环境
+### 准备编译环境
 
-- 为了保证编译环境一致，建议参考[编译环境准备](../source_compile/compile_env.rst#linux)中的 Linux 开发环境进行配置；
-- 由于编译示例程序需要依赖 OpenCV 和 CMake 3.10.3，请执行如下命令进行安装；
-
-  ```shell
-  $ sudo apt-get update
-  $ sudo apt-get install gcc g++ make wget unzip libopencv-dev pkg-config
-  $ wget https://www.cmake.org/files/v3.10/cmake-3.10.3.tar.gz
-  $ tar -zxvf cmake-3.10.3.tar.gz
-  $ cd cmake-3.10.3
-  $ ./configure
-  $ make
-  $ sudo make install
-  ```
+- 为了保证编译环境一致，建议根据机器的实际情况参考[ linux(x86) 编译](../source_compile/linux_x86_compile_linux_x86)或[ linux(ARM) 编译](../source_compile/arm_linux_compile_arm_linux)中的``准备编译环境``进行环境配置
 
 ### 运行图像分类示例程序
 
@@ -147,7 +135,7 @@ Paddle Lite 已支持百度 XPU 在 X86 和 ARM 服务器（例如飞腾 FT-2000
 ### 更新模型
 
 - 通过 Paddle 训练，或 X2Paddle 转换得到 ResNet50 float32 模型[ resnet50_fp32_224_fluid ](https://paddlelite-demo.bj.bcebos.com/models/resnet50_fp32_224_fluid.tar.gz)；
-- 由于 XPU 一般部署在 Server 端，因此将使用 Paddle Lite 的 `full api` 加载原始的 Paddle 模型进行预测，即采用 `CXXConfig` 配置相关参数。
+- 由于 XPU 一般部署在 Server 端，因此将使用 Paddle Lite 的 `full api` 加载原始的 Paddle 模型进行预测，即采用 `CxxConfig` 配置相关参数。
 
 ### 更新支持百度 XPU 的 Paddle Lite 库
 
@@ -198,7 +186,7 @@ Paddle Lite 已支持百度 XPU 在 X86 和 ARM 服务器（例如飞腾 FT-2000
   $ lite\\tools\\build_windows.bat with_extra without_python use_vs2017 with_dynamic_crt  with_baidu_xpu with_baidu_xpu_xtcl baidu_xpu_sdk_root D:\\xpu_toolchain_windows\\output
   ```
 
-  编译脚本 `build_windows.bat` 使用可参考[源码编译( Windows )](../source_compile/compile_windows.rst)进行环境配置和查找相应编译参数
+  编译脚本 `build_windows.bat` 使用可参考[源码编译( Windows )](../source_compile/windows_compile_windows)进行环境配置和查找相应编译参数
 
 ## 其它说明
 

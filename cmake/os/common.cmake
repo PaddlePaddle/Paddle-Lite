@@ -13,7 +13,7 @@
 # limitations under the License.
 
 if(NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
-    return()
+  return()
 endif()
 
 cmake_minimum_required(VERSION 3.10)
@@ -88,63 +88,85 @@ endif()
 set(HOST_C_COMPILER $ENV{CC})
 set(HOST_CXX_COMPILER $ENV{CXX})
 if(IOS OR ARMMACOS)
-    set(default_cc clang)
-    set(default_cxx clang++)
+  set(default_cc clang)
+  set(default_cxx clang++)
 else()
-    set(default_cc gcc)
-    set(default_cxx g++)
+  set(default_cc gcc)
+  set(default_cxx g++)
 endif()
 if(NOT HOST_C_COMPILER)
-    find_program(HOST_C_COMPILER NAMES ${default_cc} PATH
-        /usr/bin
-        /usr/local/bin)
+  find_program(HOST_C_COMPILER NAMES ${default_cc} PATH
+    /usr/bin
+    /usr/local/bin)
 endif()
 if(NOT HOST_CXX_COMPILER)
-    find_program(HOST_CXX_COMPILER NAMES ${default_cxx} PATH
-        /usr/bin
-        /usr/local/bin)
+  find_program(HOST_CXX_COMPILER NAMES ${default_cxx} PATH
+    /usr/bin
+    /usr/local/bin)
 endif()
 if(NOT HOST_C_COMPILER OR NOT EXISTS ${HOST_C_COMPILER})
-    MESSAGE(FATAL_ERROR "Cannot find host C compiler. export CC=/path/to/cc")
-ENDIF()
+  message(FATAL_ERROR "Cannot find host C compiler. export CC=/path/to/cc")
+endif()
 if(NOT HOST_CXX_COMPILER OR NOT EXISTS ${HOST_CXX_COMPILER})
-    MESSAGE(FATAL_ERROR "Cannot find host C compiler. export CC=/path/to/cc")
-ENDIF()
-MESSAGE(STATUS "Found host C compiler: " ${HOST_C_COMPILER})
-MESSAGE(STATUS "Found host CXX compiler: " ${HOST_CXX_COMPILER})
+  message(FATAL_ERROR "Cannot find host C compiler. export CC=/path/to/cc")
+endif()
+message(STATUS "Found host C compiler: " ${HOST_C_COMPILER})
+message(STATUS "Found host CXX compiler: " ${HOST_CXX_COMPILER})
 
 # Build type
 if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Default use Release in android" FORCE)
+  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Default use Release in android" FORCE)
 endif()
 
 # Third party build type
 if(NOT THIRD_PARTY_BUILD_TYPE)
-    set(THIRD_PARTY_BUILD_TYPE "MinSizeRel" CACHE STRING "Default use MinSizeRel in android" FORCE)
+  set(THIRD_PARTY_BUILD_TYPE "MinSizeRel" CACHE STRING "Default use MinSizeRel in android" FORCE)
 endif()
 
 message(STATUS "Lite ARM Compile ${ARM_TARGET_OS} with ${ARM_TARGET_ARCH_ABI} ${ARM_TARGET_LANG}")
 
 if(NOT APPLE)
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed")
 endif()
 
 # TODO(Superjomn) Remove WITH_ANAKIN option if not needed latter.
 if(ANDROID OR IOS OR ARMLINUX OR ARMMACOS)
-    set(WITH_GPU OFF CACHE STRING
-            "Disable GPU when cross-compiling for Android and iOS" FORCE)
-    set(WITH_DSO OFF CACHE STRING
-            "Disable DSO when cross-compiling for Android and iOS" FORCE)
-    set(WITH_AVX OFF CACHE STRING
-            "Disable AVX when cross-compiling for Android and iOS" FORCE)
-    set(WITH_RDMA OFF CACHE STRING
-            "Disable RDMA when cross-compiling for Android and iOS" FORCE)
-    set(WITH_MKL OFF CACHE STRING
-            "Disable MKL when cross-compiling for Android and iOS" FORCE)
+  set(WITH_GPU OFF CACHE STRING
+    "Disable GPU when cross-compiling for Android and iOS" FORCE)
+  set(WITH_DSO OFF CACHE STRING
+    "Disable DSO when cross-compiling for Android and iOS" FORCE)
+  set(WITH_AVX OFF CACHE STRING
+    "Disable AVX when cross-compiling for Android and iOS" FORCE)
+  set(WITH_RDMA OFF CACHE STRING
+    "Disable RDMA when cross-compiling for Android and iOS" FORCE)
+  set(WITH_MKL OFF CACHE STRING
+    "Disable MKL when cross-compiling for Android and iOS" FORCE)
 endif()
 
 # Python
 if(ANDROID OR IOS)
-    set(LITE_WITH_PYTHON OFF CACHE STRING
-            "Disable PYTHON when cross-compiling for Android and iOS" FORCE)
+  set(LITE_WITH_PYTHON OFF CACHE STRING
+    "Disable PYTHON when cross-compiling for Android and iOS" FORCE)
+endif()
+
+# Enable arc
+if(APPLE)
+  if(NOT DEFINED ENABLE_ARC)
+    # Unless specified, enable ARC support by default
+    set(ENABLE_ARC TRUE)
+    message(STATUS "Enabling ARC support by default. ENABLE_ARC not provided!")
+  endif()
+
+  set(ENABLE_ARC_INT ${ENABLE_ARC} CACHE BOOL "Whether or not to enable ARC" ${FORCE_CACHE})
+  if(ENABLE_ARC_INT)
+    set(FOBJC_ARC "-fobjc-arc")
+    set(CMAKE_XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES CACHE INTERNAL "")
+    message(STATUS "Enabling ARC support.")
+  else()
+    set(FOBJC_ARC "-fno-objc-arc")
+    set(CMAKE_XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC NO CACHE INTERNAL "")
+    message(STATUS "Disabling ARC support.")
+  endif()
+  set(CMAKE_C_FLAGS "${FOBJC_ARC} ${CMAKE_C_FLAGS}")
+  set(CMAKE_CXX_FLAGS "${FOBJC_ARC} ${CMAKE_CXX_FLAGS}")
 endif()

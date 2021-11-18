@@ -29,12 +29,11 @@ WITH_STATIC_MKL=OFF
 WITH_AVX=ON
 # options of compiling OPENCL lib.
 WITH_OPENCL=OFF
+# options of compiling Metal lib for Mac OS.
+WITH_METAL=OFF
 # options of compiling rockchip NPU lib.
 WITH_ROCKCHIP_NPU=OFF
 ROCKCHIP_NPU_SDK_ROOT="$(pwd)/rknpu_ddk"  # Download RKNPU SDK from https://github.com/airockchip/rknpu_ddk.git
-# options of compiling imagination NNA lib
-WITH_IMAGINATION_NNA=OFF
-IMAGINATION_NNA_SDK_ROOT="$(pwd)/imagination_nna_sdk"
 # options of compiling NNAdapter lib
 WITH_NNADAPTER=OFF
 NNADAPTER_WITH_ROCKCHIP_NPU=OFF
@@ -45,15 +44,14 @@ NNADAPTER_WITH_HUAWEI_ASCEND_NPU=OFF
 NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest"
 NNADAPTER_WITH_AMLOGIC_NPU=OFF
 NNADAPTER_AMLOGIC_NPU_SDK_ROOT="$(pwd)/amlnpu_ddk"
+NNADAPTER_WITH_CAMBRICON_MLU=OFF
+NNADAPTER_CAMBRICON_MLU_SDK_ROOT="$(pwd)/cambricon_mlu_sdk"
 # options of compiling baidu XPU lib.
 WITH_BAIDU_XPU=OFF
 WITH_BAIDU_XPU_XTCL=OFF
 BAIDU_XPU_SDK_ROOT=""
 BAIDU_XPU_SDK_URL=""
 BAIDU_XPU_SDK_ENV=""
-# options of compiling huawei ascend npu
-WITH_HUAWEI_ASCEND_NPU=OFF
-HUAWEI_ASCEND_NPU_DDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux"
 # options of compiling intel fpga.
 WITH_INTEL_FPGA=OFF
 INTEL_FPGA_SDK_ROOT="$(pwd)/intel_fpga_sdk"
@@ -80,8 +78,10 @@ readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
 # 2. local variables, these variables should not be changed.
 #####################################################################################################
-# url that stores third-party zip file to accelerate third-paty lib installation
-readonly THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
+# url that stores third-party tar.gz file to accelerate third-party lib installation
+readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
+readonly THIRDPARTY_TAR=third-party-801f670.tar.gz
+
 # absolute path of Paddle-Lite.
 readonly workspace=$PWD/$(dirname $0)/../../
 # basic options for linux compiling.
@@ -150,10 +150,6 @@ function init_cmake_mutable_options {
         WITH_TINY_PUBLISH=OFF
     fi
 
-    if [ "${WITH_HUAWEI_ASCEND_NPU}" == "ON" ]; then
-        WITH_EXTRA=ON
-    fi
-
     if [ "${WITH_BENCHMARK}" == "ON" ]; then
         set_benchmark_options
     fi
@@ -176,6 +172,7 @@ function init_cmake_mutable_options {
                         -DWITH_STATIC_MKL=$WITH_STATIC_MKL \
                         -DWITH_AVX=$WITH_AVX \
                         -DLITE_WITH_OPENCL=$WITH_OPENCL \
+                        -DLITE_WITH_METAL=$WITH_METAL \
                         -DLITE_WITH_RKNPU=$WITH_ROCKCHIP_NPU \
                         -DRKNPU_DDK_ROOT=$ROCKCHIP_NPU_SDK_ROOT \
                         -DLITE_WITH_XPU=$WITH_BAIDU_XPU \
@@ -183,11 +180,7 @@ function init_cmake_mutable_options {
                         -DXPU_SDK_ROOT=$BAIDU_XPU_SDK_ROOT \
                         -DXPU_SDK_URL=$BAIDU_XPU_SDK_URL \
                         -DXPU_SDK_ENV=$BAIDU_XPU_SDK_ENV \
-                        -DLITE_WITH_HUAWEI_ASCEND_NPU=$WITH_HUAWEI_ASCEND_NPU \
-                        -DHUAWEI_ASCEND_NPU_DDK_ROOT=$HUAWEI_ASCEND_NPU_DDK_ROOT \
                         -DLITE_WITH_TRAIN=$WITH_TRAIN  \
-                        -DLITE_WITH_IMAGINATION_NNA=$WITH_IMAGINATION_NNA \
-                        -DIMAGINATION_NNA_SDK_ROOT=$IMAGINATION_NNA_SDK_ROOT \
                         -DLITE_WITH_NNADAPTER=$WITH_NNADAPTER \
                         -DNNADAPTER_WITH_ROCKCHIP_NPU=$NNADAPTER_WITH_ROCKCHIP_NPU \
                         -DNNADAPTER_ROCKCHIP_NPU_SDK_ROOT=$NNADAPTER_ROCKCHIP_NPU_SDK_ROOT \
@@ -197,6 +190,8 @@ function init_cmake_mutable_options {
                         -DNNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT=$NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT \
                         -DNNADAPTER_WITH_AMLOGIC_NPU=$NNADAPTER_WITH_AMLOGIC_NPU \
                         -DNNADAPTER_AMLOGIC_NPU_SDK_ROOT=$NNADAPTER_AMLOGIC_NPU_SDK_ROOT \
+                        -DNNADAPTER_WITH_CAMBRICON_MLU=$NNADAPTER_WITH_CAMBRICON_MLU \
+                        -DNNADAPTER_CAMBRICON_MLU_SDK_ROOT=$NNADAPTER_CAMBRICON_MLU_SDK_ROOT \
                         -DLITE_WITH_INTEL_FPGA=$WITH_INTEL_FPGA \
                         -DINTEL_FPGA_SDK_ROOT=${INTEL_FPGA_SDK_ROOT} \
                         -DLITE_WITH_PROFILE=${WITH_PROFILE} \
@@ -250,12 +245,12 @@ function prepare_opencl_source_code {
 # 3.3 prepare third_party libraries for compiling
 # here we store third_party libraries into Paddle-Lite/third-party
 function prepare_thirdparty {
-    if [ ! -d $workspace/third-party -o -f $workspace/third-party-ea5576.tar.gz ]; then
+    if [ ! -d $workspace/third-party -o -f $workspace/$THIRDPARTY_TAR ]; then
         rm -rf $workspace/third-party
-        if [ ! -f $workspace/third-party-ea5576.tar.gz ]; then
-            wget $THIRDPARTY_TAR
+        if [ ! -f $workspace/$THIRDPARTY_TAR ]; then
+            wget $THIRDPARTY_URL/$THIRDPARTY_TAR
         fi
-        tar xzf third-party-ea5576.tar.gz
+        tar xzf $THIRDPARTY_TAR
     else
         git submodule update --init --recursive
     fi
@@ -287,11 +282,11 @@ function make_publish_so {
     if [ "${WITH_OPENCL}" = "ON" ]; then
         build_dir=${build_dir}.opencl
     fi
+    if [ "${WITH_METAL}" = "ON" ]; then
+        build_dir=${build_dir}.metal
+    fi
     if [ "${WITH_BAIDU_XPU}" = "ON" ]; then
         build_dir=${build_dir}.baidu_xpu
-    fi
-    if [ "${WITH_HUAWEI_ASCEND_NPU}" = "ON" ]; then
-        build_dir=${build_dir}.huawei_ascend_npu
     fi
 
     if [ -d $build_dir ]; then
@@ -369,6 +364,13 @@ function print_usage {
     echo -e "|             you can download rockchip NPU SDK from:  https://github.com/airockchip/rknpu_ddk.git                                                     |"
     echo -e "|  detailed information about Paddle-Lite RKNPU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/rockchip_npu.html                           |"
     echo -e "|                                                                                                                                                      |"
+    echo -e "|  arguments of cambricon mlu library compiling:                                                                                                       |"
+    echo -e "|     ./lite/tools/build_linux.sh --with_cambricon_mlu=ON --cambricon_mlu_sdk_root=YourCambriconMluSdkPath                                             |"
+    echo -e "|     --with_cambricon_mlu: (OFF|ON); controls whether to compile lib for cambricon_mlu, default is OFF                                                |"
+    echo -e "|     --cambricon_mlu_sdk_root: (path to cambricon_mlu SDK file) required when compiling cambricon_mlu library                                         |"
+    echo -e "|             you can download cambricon MLU SDK from:                                                                                                 |"
+    echo -e "|  detailed information about Paddle-Lite CAMBRICON MLU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/cambricon_mlu.html                  |"
+    echo -e "|                                                                                                                                                      |"
     echo -e "|  arguments of baidu xpu library compiling:                                                                                                           |"
     echo -e "|     ./lite/tools/build_linux.sh --arch=x86 --with_baidu_xpu=ON                                                                                       |"
     echo -e "|     ./lite/tools/build_linux.sh --arch=armv8 --with_baidu_xpu=ON                                                                                     |"
@@ -378,13 +380,6 @@ function print_usage {
     echo -e "|     --baidu_xpu_sdk_url: (baidu_xpu sdk download url) optional, default is 'https://baidu-kunlun-product.cdn.bcebos.com/KL-SDK/klsdk-dev_paddle'     |"
     echo -e "|     --baidu_xpu_sdk_env: (bdcentos_x86_64|centos7_x86_64|ubuntu_x86_64|kylin_aarch64) optional,                                                      |"
     echo -e "|             default is bdcentos_x86_64(if x86) / kylin_aarch64(if arm)                                                                               |"
-    echo -e "|                                                                                                                                                      |"
-    echo -e "|   arguments of huawei ascend npu library compiling:                                                                                                  |"
-    echo -e "|     ./lite/tools/build_linux.sh --arch=x86 --with_huawei_ascend_npu=ON                                                                               |"
-    echo -e "|     --with_huawei_ascend_npu: (OFF|ON); controls whether to compile lib for huawei ascend npu, default is OFF.                                       |"
-    echo -e "|     --huawei_ascend_npu_ddk_root: (path to huawei ascend npu ddk path).                                                                              |"
-    echo -e "|       x86 default path is '/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux'                                                                     |"
-    echo -e "|       arm default path is '/usr/local/Ascend/ascend-toolkit/latest/arm64-linux'                                                                      |"
     echo "--------------------------------------------------------------------------------------------------------------------------------------------------------"
     echo
 }
@@ -461,6 +456,11 @@ function main {
                 WITH_OPENCL="${i#*=}"
                 shift
                 ;;
+            # compiling lib for Mac OS with GPU support.
+            --with_metal=*)
+                WITH_METAL="${i#*=}"
+                shift
+                ;;
             # compiling lib which can operate on rockchip npu.
             --with_rockchip_npu=*)
                 WITH_ROCKCHIP_NPU="${i#*=}"
@@ -468,24 +468,6 @@ function main {
                 ;;
             --rockchip_npu_sdk_root=*)
                 ROCKCHIP_NPU_SDK_ROOT="${i#*=}"
-                shift
-                ;;
-            # compiling lib which can operate on huawei ascend npu.
-            --with_huawei_ascend_npu=*)
-                WITH_HUAWEI_ASCEND_NPU="${i#*=}"
-                shift
-                ;;
-            --huawei_ascend_npu_ddk_root=*)
-                HUAWEI_ASCEND_NPU_DDK_ROOT="${i#*=}"
-                shift
-                ;;
-            # compiling lib which can operate on imagination nna.
-            --with_imagination_nna=*)
-                WITH_IMAGINATION_NNA="${i#*=}"
-                shift
-                ;;
-            --imagination_nna_sdk_root=*)
-                IMAGINATION_NNA_SDK_ROOT="${i#*=}"
                 shift
                 ;;
             # compiling lib which can operate on nnadapter.
@@ -523,6 +505,14 @@ function main {
                 ;;
             --nnadapter_amlogic_npu_sdk_root=*)
                 NNADAPTER_AMLOGIC_NPU_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_with_cambricon_mlu=*)
+                NNADAPTER_WITH_CAMBRICON_MLU="${i#*=}"
+                shift
+                ;;
+            --nnadapter_cambricon_mlu_sdk_root=*)
+                NNADAPTER_CAMBRICON_MLU_SDK_ROOT="${i#*=}"
                 shift
                 ;;
             # compiling lib which can operate on baidu xpu.
