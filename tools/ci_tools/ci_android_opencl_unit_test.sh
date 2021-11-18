@@ -14,8 +14,6 @@ WORKSPACE=${SHELL_FOLDER%tools/ci_tools*}
 
 readonly OPENCL_UTEST_MASK="opencl"
 readonly TESTS_FILE="./lite_tests.txt"
-# The list of os for building(android,armlinux,linux,macos), such as "android"
-OS_LIST="android"
 # The list of arch abi for building(armv8,armv7,armv7hf), such as "armv8,armv7"
 # for android devices, "armv8" for RK3399, "armv7hf" for Raspberry pi 3B
 ARCH_LIST="armv8"
@@ -23,8 +21,7 @@ ARCH_LIST="armv8"
 # for android, "gcc" for armlinx
 TOOLCHAIN_LIST="clang"
 # The list of the device names for the real android devices, use commas to separate them, such as "bcd71650,8MY0220C22019318,A49BEMHY79"
-# The list of the device infos for the real armlinux devices, its format is "dev0_ip_addr,dev0_port,dev0_usr_id,dev0_usr_pwd:dev1_ip_addr,dev0_port,dev1_usr_id,dev1_usr_pwd"
-REMOTE_DEVICE_LIST="2GX0119401000796,0123456789ABCDEF"
+REMOTE_DEVICE_LIST=""
 # Work directory of the remote devices for running
 REMOTE_DEVICE_WORK_DIR="/data/local/tmp/ci_opencl_utest/"
 # Skip utests whose name has specific keys
@@ -50,9 +47,7 @@ function build_target {
   build_directory=$WORKSPACE/ci.android.opencl.$arch.$toolchain
   rm -rf $build_directory && mkdir -p $build_directory
 
-  git submodule update --init --recursive
   prepare_workspace $WORKSPACE $build_directory
-  prepare_opencl_source_code $WORKSPACE
 
   cd $build_directory
   cmake .. \
@@ -71,7 +66,8 @@ function build_target {
       -DLITE_WITH_CV=OFF \
       -DARM_TARGET_OS=android -DARM_TARGET_ARCH_ABI=$arch -DARM_TARGET_LANG=$toolchain
 
-  make lite_compile_deps -j$NUM_PROC
+  make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+  cd -
 }
 
 function run_on_remote_device() {
@@ -141,14 +137,12 @@ function run_on_remote_device() {
 }
 
 function build_and_test_on_remote_device() {
-  local os_list=$1
-  local arch_list=$2
-  local toolchain_list=$3
-  local build_target_func=$4
-  local prepare_device_func=$5
-  local remote_device_list=$6
-  local remote_device_work_dir=$7
-  local extra_arguments=$8
+  local arch_list=$1
+  local toolchain_list=$2
+  local build_target_func=$3
+  local prepare_device_func=$4
+  local remote_device_list=$5
+  local remote_device_work_dir=$6
 
   # 1. Check remote devices are available or not
   local remote_device_names=$($adb_device_pick $remote_device_list)
@@ -181,47 +175,45 @@ function build_and_test_on_remote_device() {
       # Build
       echo "Build with $arch+$toolchain ..."
       $build_target_func $arch $toolchain
+      cd ${PWD}/ci.android.opencl*
 
-      # Loop all remote devices
-      for remote_device_name in $remote_device_names; do
-        # Loop all test_name
-        for test_name in $(cat $TESTS_FILE); do
-          # Skip some utests
-          local skip_keys=(${SKIP_UTEST_KEYS//,/ })
-          local to_skip=0
-          for skip_key in ${skip_keys[@]}; do
-            if [[ $test_name == *${skip_key}* ]]; then
-              echo "Skip utest " $test_name
-              to_skip=1
-              break;
-            fi
-          done
-
-          # Extract the arguments from ctest command line
-          test_cmds=$(ctest -V -N -R ^$test_name$)
-          reg_expr=".*Test command:.*\/$test_name \(.*\) Test #[0-9]*: $test_name.*"
-          test_args=$(echo $test_cmds | sed -n "/$reg_expr/p")
-          if [[ -n "$test_args" ]]; then
-            # Matched, extract and remove the quotes
-            test_args=$(echo $test_cmds | sed "s/$reg_expr/\1/g")
-            test_args=$(echo $test_args | sed "s/\"//g")
-          fi
-
-          echo "test_args: " $test_args
-
-          # Tell if this test is marked with `opencl`
-          if [[ $test_name == *$OPENCL_UTEST_MASK* ]] && [[ $to_skip -eq 0 ]]; then
-            # Loop all remote devices
-            for remote_device_name in $remote_device_names; do
-              # Run
-              run_on_remote_device \
-                  --remote_device_name=$remote_device_name \
-                  --remote_device_work_dir=$remote_device_work_dir \
-                  --target_name=$EXE \
-                  $test_args
-            done
+      # Loop all test_name
+      for test_name in $(cat $TESTS_FILE); do
+        # Skip some utests
+        local skip_keys=(${SKIP_UTEST_KEYS//,/ })
+        local to_skip=0
+        for skip_key in ${skip_keys[@]}; do
+          if [[ $test_name == *${skip_key}* ]]; then
+            echo "Skip utest " $test_name
+            to_skip=1
+            break;
           fi
         done
+
+        # Extract the arguments from ctest command line
+        test_cmds=$(ctest -V -N -R ^$test_name$)
+        reg_expr=".*Test command:.*\/$test_name \(.*\) Test #[0-9]*: $test_name.*"
+        test_args=$(echo $test_cmds | sed -n "/$reg_expr/p")
+        if [[ -n "$test_args" ]]; then
+          # Matched, extract and remove the quotes
+          test_args=$(echo $test_cmds | sed "s/$reg_expr/\1/g")
+          test_args=$(echo $test_args | sed "s/\"//g")
+        fi
+
+        echo "test_args: " $test_args
+
+        # Tell if this test is marked with `opencl`
+        if [[ $test_name == *$OPENCL_UTEST_MASK* ]] && [[ $to_skip -eq 0 ]]; then
+          # Loop all remote devices
+          for remote_device_name in $remote_device_names; do
+            # Run
+            run_on_remote_device \
+                --remote_device_name=$remote_device_name \
+                --remote_device_work_dir=$remote_device_work_dir \
+                --target_name=$test_name \
+                $test_args
+          done
+        fi
       done
     done
   done
@@ -229,7 +221,7 @@ function build_and_test_on_remote_device() {
 }
 
 function android_build_and_test() {
-  build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST \
+  build_and_test_on_remote_device $ARCH_LIST $TOOLCHAIN_LIST \
       build_target android_prepare_device \
       $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR
 }
