@@ -36,7 +36,7 @@ if(ARM_TARGET_OS STREQUAL "android")
     lite_download_and_uncompress(${VALIDATION_DATASET_DIR} ${VALIDATION_DATASET_URL} "${ILSVRC2012_1K_CLS_LABELS}.tar.gz")
 endif()
 
-FILE(GLOB_RECURSE BENCHMARK_SRC *.cc ../opt_base.cc)
+FILE(GLOB_RECURSE BENCHMARK_SRC *.cc ../opt_base.cc ./profile/memory_info.cc ./profile/resource_usage_monitor.cc ./profile/cpu_usage_info.cc)
 FILE(GLOB_RECURSE BENCHMARK_PRECISION_SRC precision_evaluation/*.cc)
 if(NOT(ARM_TARGET_OS STREQUAL "android"))
     LIST(REMOVE_ITEM BENCHMARK_SRC ${BENCHMARK_PRECISION_SRC})
