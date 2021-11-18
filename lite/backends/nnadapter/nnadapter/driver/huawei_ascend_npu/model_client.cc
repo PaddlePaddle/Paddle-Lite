@@ -270,7 +270,7 @@ bool AclModelClient::Process(uint32_t input_count,
                              uint32_t output_count,
                              std::vector<NNAdapterOperandType>* output_types,
                              hal::Argument* output_arguments,
-                             AscendNPUDynamicShapeMode dynamic_shape_mode) {
+                             DynamicShapeMode dynamic_shape_mode) {
   if (!model_desc_) {
     NNADAPTER_LOG(FATAL) << "No ACL model is loaded.";
     return false;
@@ -293,7 +293,7 @@ bool AclModelClient::Process(uint32_t input_count,
   NNADAPTER_CHECK_EQ(output_types->size(), output_count);
   NNADAPTER_CHECK(input_dataset_);
   NNADAPTER_CHECK(output_dataset_);
-  if (dynamic_shape_mode == ASCEND_NPU_CONST_SHAPE) {
+  if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_NONE) {
     NNADAPTER_CHECK_EQ(input_count, aclmdlGetDatasetNumBuffers(input_dataset_));
   } else {
     NNADAPTER_CHECK_LT(input_count, aclmdlGetDatasetNumBuffers(input_dataset_));
@@ -331,18 +331,18 @@ bool AclModelClient::Process(uint32_t input_count,
     // Set true dynamic shapes
     if (dynamic_shape) {
       switch (dynamic_shape_mode) {
-        case ASCEND_NPU_DYNAMIC_BATCH:
+        case DYNAMIC_SHAPE_MODE_BTACH_SIZE:
           aclmdlSetDynamicBatchSize(
               model_id_, input_dataset_, i, type->dimensions.data[0]);
           break;
-        case ASCEND_NPU_DYNAMIC_HEIGHT_WEIGHT:
+        case DYNAMIC_SHAPE_MODE_HEIGHT_WIDTH:
           aclmdlSetDynamicHWSize(model_id_,
                                  input_dataset_,
                                  i,
                                  type->dimensions.data[2],
                                  type->dimensions.data[3]);
           break;
-        case ASCEND_NPU_DYNAMIC_N_DIM:
+        case DYNAMIC_SHAPE_MODE_N_DIMS:
           aclmdlSetInputDynamicDims(model_id_, input_dataset_, i, &dimensions);
           break;
         default:

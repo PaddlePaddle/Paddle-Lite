@@ -173,9 +173,9 @@ bool BuildOMModelToBuffer(
     std::vector<ge::Operator>& input_operators,   // NOLINT
     std::vector<ge::Operator>& output_operators,  // NOLINT
     std::vector<uint8_t>* model_buffer,
-    const std::vector<std::string>& dynamic_shapes,
+    const std::vector<std::string>& dynamic_shape_info,
     const std::string& optional_shapes_str,
-    const AscendNPUDynamicShapeMode dynamic_shape_mode) {
+    const DynamicShapeMode dynamic_shape_mode) {
   // Should initialize the GE graph builder before model building
   InitializeGraphBuilder();
   // Convert the CANN IR graph to the CANN om model
@@ -200,12 +200,12 @@ bool BuildOMModelToBuffer(
   options.insert(std::make_pair(ge::ir_option::INPUT_FORMAT, "NCHW"));
 
   std::string input_shape_info;
-  for (size_t i = 0; i < dynamic_shapes.size(); i++) {
-    if (!dynamic_shapes[i].empty()) {
+  for (size_t i = 0; i < dynamic_shape_info.size(); i++) {
+    if (!dynamic_shape_info[i].empty()) {
       ge::AscendString name;
       input_operators[i].GetName(name);
       input_shape_info +=
-          std::string(name.GetString()) + ":" + dynamic_shapes[i] + ";";
+          std::string(name.GetString()) + ":" + dynamic_shape_info[i] + ";";
     }
   }
   NNADAPTER_CHECK(!input_shape_info.empty());
@@ -214,13 +214,13 @@ bool BuildOMModelToBuffer(
       std::make_pair(ge::ir_option::INPUT_SHAPE, input_shape_info.data()));
 
   if (!optional_shapes_str.empty()) {
-    if (dynamic_shape_mode == ASCEND_NPU_DYNAMIC_BATCH) {
+    if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_BTACH_SIZE) {
       options.insert(std::make_pair(ge::ir_option::DYNAMIC_BATCH_SIZE,
                                     optional_shapes_str.data()));
-    } else if (dynamic_shape_mode == ASCEND_NPU_DYNAMIC_HEIGHT_WEIGHT) {
+    } else if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_HEIGHT_WIDTH) {
       options.insert(std::make_pair(ge::ir_option::DYNAMIC_IMAGE_SIZE,
                                     optional_shapes_str.data()));
-    } else if (dynamic_shape_mode == ASCEND_NPU_DYNAMIC_N_DIM) {
+    } else if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_N_DIMS) {
       options.insert(std::make_pair(ge::ir_option::DYNAMIC_DIMS,
                                     optional_shapes_str.data()));
     }
@@ -506,6 +506,44 @@ std::string ConvertPadModeCodeToGEPadMode(int pad_mode_code) {
       break;
   }
   return "constant";
+}
+
+std::string ShapeToString(const std::vector<int32_t>& shape) {
+  std::string shape_str;
+  for (size_t i = 0; i < shape.size(); i++) {
+    if (!shape_str.empty()) {
+      shape_str += ",";
+    }
+    shape_str += std::to_string(shape[i]);
+  }
+  return shape_str;
+}
+
+std::string MergeOptionalShapesString(
+    const std::vector<std::string>& optional_shapes,
+    const DynamicShapeMode mode) {
+  std::string merged_shape_str;
+  switch (mode) {
+    case DYNAMIC_SHAPE_MODE_NONE:
+      break;
+    case DYNAMIC_SHAPE_MODE_BTACH_SIZE: {
+      for (auto optional_shape : optional_shapes) {
+        merged_shape_str += optional_shape + ",";
+      }
+      merged_shape_str.pop_back();
+    } break;
+    case DYNAMIC_SHAPE_MODE_HEIGHT_WIDTH:
+    case DYNAMIC_SHAPE_MODE_N_DIMS: {
+      for (auto optional_shape : optional_shapes) {
+        merged_shape_str += optional_shape + ";";
+      }
+      merged_shape_str.pop_back();
+    } break;
+    default:
+      NNADAPTER_LOG(FATAL) << "Unsupported dynamic shape mode: " << mode;
+      break;
+  }
+  return merged_shape_str;
 }
 
 }  // namespace huawei_ascend_npu

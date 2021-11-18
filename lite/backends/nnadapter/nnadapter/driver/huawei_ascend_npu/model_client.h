@@ -27,11 +27,11 @@ namespace nnadapter {
 namespace huawei_ascend_npu {
 
 typedef enum {
-  ASCEND_NPU_CONST_SHAPE = -1,
-  ASCEND_NPU_DYNAMIC_BATCH = 0,
-  ASCEND_NPU_DYNAMIC_HEIGHT_WEIGHT = 1,
-  ASCEND_NPU_DYNAMIC_N_DIM = 2,
-} AscendNPUDynamicShapeMode;
+  DYNAMIC_SHAPE_MODE_NONE = -1,
+  DYNAMIC_SHAPE_MODE_BTACH_SIZE = 0,
+  DYNAMIC_SHAPE_MODE_HEIGHT_WIDTH = 1,
+  DYNAMIC_SHAPE_MODE_N_DIMS = 2,
+} DynamicShapeMode;
 
 class AclModelClient {
  public:
@@ -49,7 +49,7 @@ class AclModelClient {
                uint32_t output_count,
                std::vector<NNAdapterOperandType>* output_types,
                hal::Argument* output_arguments,
-               AscendNPUDynamicShapeMode dynamic_shape_mode);
+               DynamicShapeMode dynamic_shape_mode);
 
  private:
   void InitAclClientEnv(int device_id);

@@ -28,80 +28,43 @@ namespace nnadapter {
 namespace huawei_ascend_npu {
 
 static void UpdateDynamicShapeMode(
-    const NNAdapterOperandDimensionType& dimensions,
-    AscendNPUDynamicShapeMode* mode) {
+    const NNAdapterOperandDimensionType& dimensions, DynamicShapeMode* mode) {
   bool is_nchw = dimensions.count == 4;
   bool b_unk = dimensions.data[0] == NNADAPTER_UNKNOWN;
   bool c_unk = dimensions.data[1] == NNADAPTER_UNKNOWN;
   bool h_unk = dimensions.data[2] == NNADAPTER_UNKNOWN;
   bool w_unk = dimensions.data[3] == NNADAPTER_UNKNOWN;
   if (is_nchw && b_unk && !c_unk && !h_unk && !w_unk) {
-    if (*mode == ASCEND_NPU_CONST_SHAPE) {
-      *mode = ASCEND_NPU_DYNAMIC_BATCH;
+    if (*mode == DYNAMIC_SHAPE_MODE_NONE) {
+      *mode = DYNAMIC_SHAPE_MODE_BTACH_SIZE;
     }
-    if (*mode != ASCEND_NPU_DYNAMIC_BATCH) {
-      *mode = ASCEND_NPU_DYNAMIC_N_DIM;
+    if (*mode != DYNAMIC_SHAPE_MODE_BTACH_SIZE) {
+      *mode = DYNAMIC_SHAPE_MODE_N_DIMS;
     }
   } else if (is_nchw && !b_unk && !c_unk && (h_unk || w_unk)) {
-    if (*mode == ASCEND_NPU_CONST_SHAPE) {
-      *mode = ASCEND_NPU_DYNAMIC_HEIGHT_WEIGHT;
+    if (*mode == DYNAMIC_SHAPE_MODE_NONE) {
+      *mode = DYNAMIC_SHAPE_MODE_HEIGHT_WIDTH;
     } else {
       // only support one input has dynamic h&w
-      *mode = ASCEND_NPU_DYNAMIC_N_DIM;
+      *mode = DYNAMIC_SHAPE_MODE_N_DIMS;
     }
   } else {
-    *mode = ASCEND_NPU_DYNAMIC_N_DIM;
+    *mode = DYNAMIC_SHAPE_MODE_N_DIMS;
   }
-}
-
-static std::string ShapeToString(const std::vector<int32_t>& shape) {
-  NNADAPTER_CHECK(!shape.empty());
-  std::string shape_str;
-  for (size_t i = 0; i < shape.size(); i++) {
-    shape_str += std::to_string(shape[i]) + ",";
-  }
-  shape_str.pop_back();
-  return shape_str;
-}
-
-static std::string MergeOptionalShapesString(
-    const std::vector<std::string>& optional_shapes,
-    const AscendNPUDynamicShapeMode mode) {
-  std::string merged_shape_str;
-  switch (mode) {
-    case ASCEND_NPU_CONST_SHAPE:
-      break;
-    case ASCEND_NPU_DYNAMIC_BATCH: {
-      for (auto optional_shape : optional_shapes) {
-        merged_shape_str += optional_shape + ",";
-      }
-      merged_shape_str.pop_back();
-    } break;
-    case ASCEND_NPU_DYNAMIC_HEIGHT_WEIGHT:
-    case ASCEND_NPU_DYNAMIC_N_DIM: {
-      for (auto optional_shape : optional_shapes) {
-        merged_shape_str += optional_shape + ";";
-      }
-      merged_shape_str.pop_back();
-    } break;
-    default:
-      NNADAPTER_LOG(FATAL) << "Unsupported dynamic shape mode: " << mode;
-      break;
-  }
-  return merged_shape_str;
 }
 
 static void GetDynamicInfo(const std::vector<NNAdapterOperandType>& input_types,
                            std::vector<std::string>* shapes,
                            std::string* optional_shapes_str,
-                           AscendNPUDynamicShapeMode* mode) {
-  // Get dynamic shape mode from all inputs. Relus are as follows:
-  // 1. If all shapes are const, mode is ASCEND_NPU_CONST_SHAPE.
-  // 2. If only batch of inputs is unknown, mode is ASCEND_NPU_DYNAMIC_BATCH.
+                           DynamicShapeMode* mode) {
+  // Get dynamic shape mode from all inputs. Rules are as follows:
+  // 1. If all shapes are const, mode is DYNAMIC_SHAPE_MODE_NONE.
+  // 2. If only batch of inputs is unknown, mode is
+  // DYNAMIC_SHAPE_MODE_BTACH_SIZE.
   // 3. If only one 4-D input has dynamic height or weight, mode is
-  // ASCEND_NPU_DYNAMIC_HEIGHT_WEIGHT.
-  // 4. Others belong to ASCEND_NPU_DYNAMIC_N_DIM.
-  *mode = ASCEND_NPU_CONST_SHAPE;
+  // DYNAMIC_SHAPE_MODE_HEIGHT_WIDTH.
+  // 4. Others belong to DYNAMIC_SHAPE_MODE_N_DIMS.
+  *mode = DYNAMIC_SHAPE_MODE_NONE;
   for (auto& input_type : input_types) {
     auto dimensions = input_type.dimensions;
     if (dimensions.dynamic_count == 0) continue;
@@ -126,7 +89,7 @@ static void GetDynamicInfo(const std::vector<NNAdapterOperandType>& input_types,
     std::vector<int32_t> shape(dimensions.data,
                                dimensions.data + dimensions.count);
     switch (*mode) {
-      case ASCEND_NPU_DYNAMIC_BATCH: {
+      case DYNAMIC_SHAPE_MODE_BTACH_SIZE: {
         shapes->push_back(ShapeToString(shape));
         for (size_t i = 0; i < optional_shapes.size(); i++) {
           auto& optional_shape_str = optional_shapes.at(i);
@@ -138,7 +101,7 @@ static void GetDynamicInfo(const std::vector<NNAdapterOperandType>& input_types,
           NNADAPTER_CHECK_EQ(optional_shape_str, dynamic_batch_str);
         }
       } break;
-      case ASCEND_NPU_DYNAMIC_HEIGHT_WEIGHT: {
+      case DYNAMIC_SHAPE_MODE_HEIGHT_WIDTH: {
         NNADAPTER_CHECK_EQ(shape.size(), 4UL);
         shape[2] = -1;
         shape[3] = -1;
@@ -151,7 +114,7 @@ static void GetDynamicInfo(const std::vector<NNAdapterOperandType>& input_types,
                                std::to_string(dimensions.dynamic_data[i][3]);
         }
       } break;
-      case ASCEND_NPU_DYNAMIC_N_DIM: {
+      case DYNAMIC_SHAPE_MODE_N_DIMS: {
         shapes->push_back(ShapeToString(shape));
         for (size_t i = 0; i < optional_shapes.size(); i++) {
           auto& optional_shape_str = optional_shapes.at(i);
@@ -337,7 +300,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     return NNADAPTER_DEVICE_INTERNAL_ERROR;
   }
   auto input_count = input_types_.size();
-  if (dynamic_shape_mode_ == ASCEND_NPU_CONST_SHAPE) {
+  if (dynamic_shape_mode_ == DYNAMIC_SHAPE_MODE_NONE) {
     NNADAPTER_CHECK_EQ(input_tensor_descs.size(), input_count);
   } else {
     NNADAPTER_CHECK_GE(input_tensor_descs.size(), input_count);

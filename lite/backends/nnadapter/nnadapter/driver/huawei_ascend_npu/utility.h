@@ -59,7 +59,7 @@ bool BuildOMModelToBuffer(
     std::vector<uint8_t>* model_buffer,
     const std::vector<std::string>& dynamic_shapes,
     const std::string& optional_shapes_str,
-    const AscendNPUDynamicShapeMode dynamic_shape_mode);
+    const DynamicShapeMode dynamic_shape_mode);
 
 // Convert GE types to strings
 const std::string GEDataTypeToString(ge::DataType data_type);
@@ -104,6 +104,11 @@ std::vector<int64_t> ConvertToGEDimensions(const int32_t* input_dimensions,
 std::vector<int64_t> ConvertToGEDimensions(
     const std::vector<int32_t>& input_dimensions);
 std::string ConvertPadModeCodeToGEPadMode(int pad_mode_code);
+
+std::string ShapeToString(const std::vector<int32_t>& shape);
+std::string MergeOptionalShapesString(
+    const std::vector<std::string>& optional_shapes,
+    const DynamicShapeMode mode);
 
 }  // namespace huawei_ascend_npu
 }  // namespace nnadapter
