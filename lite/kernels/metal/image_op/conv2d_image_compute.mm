@@ -130,12 +130,17 @@ void Conv2dImageCompute::init_for_run() {
         }
     }
 
-    // MPS don't support relu6
+    // MPS don't support LeakyRelu
     switch (param.activation_param.active_type) {
         case lite_api::ActivationType::kIndentity:
         case lite_api::ActivationType::kRelu:
             break;
         case lite_api::ActivationType::kRelu6:
+            break;
+        case lite_api::ActivationType::kHardSigmoid:
+            break;
+        case lite_api::ActivationType::kPRelu:
+            break;
         case lite_api::ActivationType::kLeakyRelu:
             should_use_mps = NO;
             break;
@@ -477,6 +482,22 @@ void Conv2dImageCompute::setup_with_mps() {
             case lite_api::ActivationType::kRelu: {
                 description.fusedNeuronDescriptor =
                     [MPSNNNeuronDescriptor cnnNeuronDescriptorWithType:MPSCNNNeuronTypeReLU a:0.0];
+            } break;
+            case lite_api::ActivationType::kRelu6: {
+                description.fusedNeuronDescriptor = [MPSNNNeuronDescriptor
+                    cnnNeuronDescriptorWithType:MPSCNNNeuronTypeReLUN
+                                              a:0.0
+                                              b:param.activation_param.threshold];
+            } break;
+            case lite_api::ActivationType::kHardSigmoid: {
+                description.fusedNeuronDescriptor = [MPSNNNeuronDescriptor
+                    cnnNeuronDescriptorWithType:MPSCNNNeuronTypeHardSigmoid
+                                              a:param.activation_param.hard_sigmoid_slope
+                                              b:param.activation_param.hard_sigmoid_offset];
+            } break;
+            case lite_api::ActivationType::kPRelu: {
+                description.fusedNeuronDescriptor =
+                    [MPSNNNeuronDescriptor cnnNeuronDescriptorWithType:MPSCNNNeuronTypePReLU a:0.0];
             } break;
             default:
                 break;
