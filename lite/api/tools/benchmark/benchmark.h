@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef LITE_API_TOOLS_BENCHMARK_H_
-#define LITE_API_TOOLS_BENCHMARK_H_
+#ifndef LITE_API_TOOLS_BENCHMARK_BENCHMARK_H_
+#define LITE_API_TOOLS_BENCHMARK_BENCHMARK_H_
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -23,7 +23,7 @@
 #include <string>
 #include <vector>
 #include "lite/api/paddle_api.h"
-#include "lite/api/tools/flags.h"
+#include "lite/api/tools/benchmark/utils/flags.h"
 #include "lite/api/tools/opt_base.h"
 #include "lite/core/device_info.h"
 #include "lite/utils/log/cp_logging.h"
@@ -32,6 +32,65 @@
 
 namespace paddle {
 namespace lite_api {
+
+class PerfData {
+ public:
+  void init(const int repeats) { repeats_ = repeats; }
+  const float init_time() const { return init_time_; }
+  const float first_time() const { return run_time_.at(0); }
+  const float avg_pre_process_time() const {
+    return std::accumulate(pre_process_time_.end() - repeats_,
+                           pre_process_time_.end(),
+                           0.f) /
+           repeats_;
+  }
+  const float min_pre_process_time() const {
+    return *std::min_element(pre_process_time_.end() - repeats_,
+                             pre_process_time_.end());
+  }
+  const float max_pre_process_time() const {
+    return *std::max_element(pre_process_time_.end() - repeats_,
+                             pre_process_time_.end());
+  }
+  const float avg_post_process_time() const {
+    return std::accumulate(post_process_time_.end() - repeats_,
+                           post_process_time_.end(),
+                           0.f) /
+           repeats_;
+  }
+  const float min_post_process_time() const {
+    return *std::min_element(post_process_time_.end() - repeats_,
+                             post_process_time_.end());
+  }
+  const float max_post_process_time() const {
+    return *std::max_element(post_process_time_.end() - repeats_,
+                             post_process_time_.end());
+  }
+  const float avg_run_time() const {
+    return std::accumulate(run_time_.end() - repeats_, run_time_.end(), 0.f) /
+           repeats_;
+  }
+  const float min_run_time() const {
+    return *std::min_element(run_time_.end() - repeats_, run_time_.end());
+  }
+  const float max_run_time() const {
+    return *std::max_element(run_time_.end() - repeats_, run_time_.end());
+  }
+
+  void set_init_time(const float ms) { init_time_ = ms; }
+  void set_pre_process_time(const float ms) { pre_process_time_.push_back(ms); }
+  void set_post_process_time(const float ms) {
+    post_process_time_.push_back(ms);
+  }
+  void set_run_time(const float ms) { run_time_.push_back(ms); }
+
+ private:
+  int repeats_{0};
+  float init_time_{0.f};
+  std::vector<float> pre_process_time_;
+  std::vector<float> post_process_time_;
+  std::vector<float> run_time_;
+};
 
 int Benchmark(int argc, char** argv);
 void Run(const std::string& model_file,
@@ -107,8 +166,8 @@ bool CheckFlagsValid() {
     ret = false;
   }
   if (!FLAGS_input_data_path.empty()) {
-    auto paths = lite::SplitString(FLAGS_input_data_path);
-    auto shapes = lite::SplitString(FLAGS_input_shape);
+    auto paths = lite::Split(FLAGS_input_data_path, ":");
+    auto shapes = lite::Split(FLAGS_input_shape, ":");
     if (paths.size() != shapes.size()) {
       std::cerr << lite::string_format(
                        "Option invalid: --input_data_path=%s  --input_shape=%s "
@@ -116,6 +175,14 @@ bool CheckFlagsValid() {
                        FLAGS_input_data_path.c_str(),
                        FLAGS_input_shape.c_str())
                 << std::endl;
+      ret = false;
+    }
+  }
+  if (!FLAGS_validation_set.empty()) {
+    if (FLAGS_config_path.empty()) {
+      std::cerr
+          << "Both --validation_set and --config_path options should be set!"
+          << std::endl;
       ret = false;
     }
   }
@@ -329,7 +396,7 @@ const std::string OutputOptModel(const std::string& opt_model_file) {
              : FLAGS_uncombined_model_dir)
      << std::endl;
   ss << "Save optimized model to " << saved_opt_model_file << std::endl;
-  std::cout << ss.str() << std::endl;
+  std::cout << ss.str();
 
   StoreBenchmarkResult(ss.str());
   return saved_opt_model_file;
@@ -338,4 +405,4 @@ const std::string OutputOptModel(const std::string& opt_model_file) {
 }  // namespace lite_api
 }  // namespace paddle
 
-#endif  // LITE_API_TOOLS_BENCHMARK_H_
+#endif  // LITE_API_TOOLS_BENCHMARK_BENCHMARK_H_
