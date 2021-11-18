@@ -73,7 +73,7 @@ TEST(esrgan_psnr_x4_div2k, test_esrgan_psnr_x4_div2k_fp32_v2_0_nnadapter) {
   std::string out_data_dir =
       FLAGS_data_dir + std::string("/esrgan_psnr_x4_div2k_out_data");
   std::string images_shape_path =
-      FLAGS_data_dir + std::string("images_shape.txt");
+      FLAGS_data_dir + std::string("/images_shape.txt");
 
   auto input_lines = ReadLines(images_shape_path);
   std::vector<std::string> input_names;
