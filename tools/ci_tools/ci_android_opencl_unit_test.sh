@@ -21,7 +21,7 @@ ARCH_LIST="armv8"
 # for android, "gcc" for armlinx
 TOOLCHAIN_LIST="clang"
 # The list of the device names for the real android devices, use commas to separate them, such as "bcd71650,8MY0220C22019318,A49BEMHY79"
-REMOTE_DEVICE_LIST=""
+REMOTE_DEVICE_LIST="bcd71650"
 # Work directory of the remote devices for running
 REMOTE_DEVICE_WORK_DIR="/data/local/tmp/ci_opencl_utest/"
 # Skip utests whose name has specific keys
@@ -107,7 +107,7 @@ function run_on_remote_device() {
   done
 
   # Copy the executable to the remote device
-  local target_path=$(find ./build.* -name $target_name)
+  local target_path=$(find $WORKSPACE/ci.android.opencl.* -name $target_name)
   if [[ -z "$target_path" ]]; then
     echo -e "$target_name not found!"
     exit 1
@@ -143,6 +143,8 @@ function build_and_test_on_remote_device() {
   local prepare_device_func=$4
   local remote_device_list=$5
   local remote_device_work_dir=$6
+
+  echo "remote_device_work_dir: " $remote_device_work_dir
 
   # 1. Check remote devices are available or not
   local remote_device_names=$($adb_device_pick $remote_device_list)
@@ -194,13 +196,15 @@ function build_and_test_on_remote_device() {
         test_cmds=$(ctest -V -N -R ^$test_name$)
         reg_expr=".*Test command:.*\/$test_name \(.*\) Test #[0-9]*: $test_name.*"
         test_args=$(echo $test_cmds | sed -n "/$reg_expr/p")
+        echo "test_cmds: " $test_cmds
+        echo "test_args 1 : " $test_args
         if [[ -n "$test_args" ]]; then
           # Matched, extract and remove the quotes
           test_args=$(echo $test_cmds | sed "s/$reg_expr/\1/g")
           test_args=$(echo $test_args | sed "s/\"//g")
         fi
 
-        echo "test_args: " $test_args
+        echo "test_args 2 : " $test_args
 
         # Tell if this test is marked with `opencl`
         if [[ $test_name == *$OPENCL_UTEST_MASK* ]] && [[ $to_skip -eq 0 ]]; then
