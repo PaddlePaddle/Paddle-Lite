@@ -41,6 +41,12 @@ NNADAPTER_EXPORT void FuseMatMulAddIntoFullyConnected(hal::Model* model) {
         NNADAPTER_VLOG(5) << "Only support x is tensor and y is persistable";
         continue;
       }
+      if (x_operand->type.dimensions.count != 2 ||
+          y_operand->type.dimensions.count != 2) {
+        NNADAPTER_VLOG(5)
+            << "Only support x's dims count and y's dims count is 2.";
+        continue;
+      }
       auto transpose_x_operand = input_operands[2];
       auto transpose_y_operand = input_operands[3];
       auto mat_mul_out_operand = output_operands[0];

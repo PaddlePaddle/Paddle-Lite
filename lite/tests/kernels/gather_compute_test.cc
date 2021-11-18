@@ -169,9 +169,6 @@ TEST(Gather, precision) {
   abs_error = 1e-2;  // use fp16 in npu
   // TODO(zhupengyang): enable later
   return;
-#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
-  place = TARGET(kHuaweiAscendNPU);
-  abs_error = 1e-2;  // precision_mode default is force_fp16
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
   abs_error = 1e-2;  // use fp16 in xpu
@@ -190,7 +187,7 @@ TEST(Gather, precision) {
     for (auto index_dims : std::vector<std::vector<int64_t>>{{3}, {7}, {10}}) {
       for (auto axis_dims : std::vector<std::vector<int64_t>>{{1}, {0}}) {
 #if ((defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)) || \
-     defined(LITE_WITH_NPU) || defined(LITE_WITH_HUAWEI_ASCEND_NPU))
+     defined(LITE_WITH_NPU))
         axis_dims = {{0}};
         TestGather<float, int32_t, int32_t>(
             x_dims, index_dims, axis_dims, place, abs_error, "def");

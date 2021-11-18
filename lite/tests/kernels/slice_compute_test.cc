@@ -319,9 +319,6 @@ TEST(Slice, precision) {
   test_slice(place);
   test_slice_tensor(place);
   test_slice_tensor_list(place);
-#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
-  Place place = TARGET(kHuaweiAscendNPU);
-  test_slice(place);
 #elif defined(LITE_WITH_ARM)
   Place place(TARGET(kARM));
   test_slice(place);

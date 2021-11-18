@@ -741,7 +741,7 @@ void conv_depthwise_m256(lite::Tensor* input,
   const int output_width = output->dims()[3];
   float* output_data = output->mutable_data<float>();
 
-  const int input_group_step = input_width * 8;
+  const int input_group_step = input_width * 8 * stride_h;
   const int input_channel_step = input_height * input_width * 8;
   const int input_batch_step = channel_num * input_height * input_width * 8;
 
@@ -777,7 +777,8 @@ void conv_depthwise_m256(lite::Tensor* input,
             _sum = _mm256_loadu_ps((bias->data<float>()) + ic * 8);
           }
 
-          const float* start_ptr = input_ptr + i * input_group_step + j * 8;
+          const float* start_ptr =
+              input_ptr + i * input_group_step + j * 8 * stride_w;
 
           for (int k = 0; k < filter_kernel_size; k++) {
             __m256 _input = _mm256_loadu_ps(start_ptr + +space_ofs[k] * 8);

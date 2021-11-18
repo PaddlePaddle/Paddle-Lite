@@ -104,7 +104,7 @@ void conv_winograd3x3(const float* din,
     //! dot mul
     //! transpose input, convert from ch_in * tile_h * tile_w * 64 to
     //! 64 * ch_in * tile_h * tile_w
-    int hblock = get_hblock(ctx);
+    int hblock = get_hblock(ctx, m);
     int m_round = hblock * ((chout + hblock - 1) / hblock);
     int stride_a = m_round * chin;
     int stride_b = chin * size_tile;

@@ -291,17 +291,9 @@ void DepthwiseConv<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
     param.activation_param.Relu_clipped_coef =
         param.activation_param.Relu_clipped_coef / param.output_scale;
   }
-  //! update leakyRelu parameter
-  if (param.activation_param.active_type ==
-      lite_api::ActivationType::kLeakyRelu) {
-    param.activation_param.Leaky_relu_alpha =
-        param.activation_param.Leaky_relu_alpha / param.output_scale;
-  }
   //! update hardswish parameter
   if (param.activation_param.active_type ==
       lite_api::ActivationType::kHardSwish) {
-    param.activation_param.hard_swish_scale =
-        param.activation_param.hard_swish_scale / param.output_scale;
     param.activation_param.hard_swish_offset =
         param.activation_param.hard_swish_offset / param.output_scale;
     param.activation_param.hard_swish_threshold =

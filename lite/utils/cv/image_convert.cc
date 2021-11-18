@@ -16,6 +16,7 @@
 #include <arm_neon.h>
 #include <math.h>
 #include <string.h>
+#include "lite/core/parallel_defines.h"
 namespace paddle {
 namespace lite {
 namespace utils {
@@ -161,8 +162,7 @@ inline void nv12_to_bgr(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
   memset(zerobuf, 0, sizeof(uint8_t) * srcw);
 
   int i = 0;
-#pragma omp parallel for
-  for (i = 0; i < y_h; i += 2) {
+  LITE_PARALLEL_COMMON_BEGIN(i, tid, y_h, 0, 2) {
     const uint8_t* ptr_y1 = y + i * srcw;
     const uint8_t* ptr_y2 = ptr_y1 + srcw;
     const uint8_t* ptr_vu = vu + (i / 2) * srcw;
@@ -340,7 +340,6 @@ inline void nv12_to_bgr(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
       r00_0 = vtrn_u8(r00, r01);  // 014589  236710
       b00_0 = vtrn_u8(b00, b01);
       g00_0 = vtrn_u8(g00, g01);
-
       vst3_u8(ptr_bgr1, v_bgr);
 
       r0_16 = vreinterpret_u16_u8(r00_0.val[0]);
@@ -474,6 +473,7 @@ inline void nv12_to_bgr(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
       }
     }
   }
+  LITE_PARALLEL_COMMON_END();
   delete[] zerobuf;
   delete[] writebuf;
 }
@@ -500,8 +500,7 @@ inline void nv21_to_bgr(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
   memset(zerobuf, 0, sizeof(uint8_t) * srcw);
 
   int i = 0;
-#pragma omp parallel for
-  for (i = 0; i < y_h; i += 2) {
+  LITE_PARALLEL_COMMON_BEGIN(i, tid, y_h, 0, 2) {
     const uint8_t* ptr_y1 = y + i * srcw;
     const uint8_t* ptr_y2 = ptr_y1 + srcw;
     const uint8_t* ptr_vu = vu + (i / 2) * srcw;
@@ -813,6 +812,7 @@ inline void nv21_to_bgr(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
       }
     }
   }
+  LITE_PARALLEL_COMMON_END();
   delete[] zerobuf;
   delete[] writebuf;
 }
@@ -838,8 +838,7 @@ inline void nv12_to_bgra(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
   int16x8_t zero = vdupq_n_s16(0);
   int16x8_t max = vdupq_n_s16(255);
   uint8x8_t a_8 = vdup_n_u8(255);
-#pragma omp parallel for
-  for (int i = 0; i < y_h; i += 2) {
+  LITE_PARALLEL_COMMON_BEGIN(i, tid, y_h, 0, 2) {
     const uint8_t* ptr_y1 = y + i * srcw;
     const uint8_t* ptr_y2 = ptr_y1 + srcw;
     const uint8_t* ptr_vu = vu + (i / 2) * srcw;
@@ -1160,6 +1159,7 @@ inline void nv12_to_bgra(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
       }
     }
   }
+  LITE_PARALLEL_COMMON_END();
   delete[] zerobuf;
   delete[] writebuf;
 }
@@ -1176,7 +1176,7 @@ inline void nv21_to_bgra(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
   uint8_t* zerobuf = new uint8_t[srcw];
   uint8_t* writebuf = new uint8_t[wout];
   memset(zerobuf, 0, sizeof(uint8_t) * srcw);
-
+  uint8x8_t a_8 = vdup_n_u8(255);
   int16x8_t bias = vdupq_n_s16(128);
   int16x8_t ga = vdupq_n_s16(44);
   int16x8_t ra = vdupq_n_s16(179);
@@ -1184,9 +1184,8 @@ inline void nv21_to_bgra(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
   int16x8_t gb = vdupq_n_s16(91);
   int16x8_t zero = vdupq_n_s16(0);
   int16x8_t max = vdupq_n_s16(255);
-  uint8x8_t a_8 = vdup_n_u8(255);
-#pragma omp parallel for
-  for (int i = 0; i < y_h; i += 2) {
+
+  LITE_PARALLEL_COMMON_BEGIN(i, tid, y_h, 0, 2) {
     const uint8_t* ptr_y1 = y + i * srcw;
     const uint8_t* ptr_y2 = ptr_y1 + srcw;
     const uint8_t* ptr_vu = vu + (i / 2) * srcw;
@@ -1507,6 +1506,7 @@ inline void nv21_to_bgra(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
       }
     }
   }
+  LITE_PARALLEL_COMMON_END();
   delete[] zerobuf;
   delete[] writebuf;
 }
@@ -1535,8 +1535,7 @@ void hwc3_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
   int remain_pro = srcw % 8;
   int win = srcw * 3;
   int i = 0;
-#pragma omp parallel for
-  for (i = 0; i < srch - 3; i += 4) {
+  LITE_PARALLEL_COMMON_BEGIN(i, tid, srch - 3, 0, 4) {
     int j = 0;
     const uint8_t* inptr0 = src + i * win;
     const uint8_t* inptr1 = inptr0 + win;
@@ -1754,6 +1753,7 @@ void hwc3_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
       inptr3 += 3;
     }
   }
+  LITE_PARALLEL_COMMON_END();
   for (; i < srch; i++) {
     int j = 0;
     const uint8_t* inptr0 = src + i * win;
@@ -1811,8 +1811,7 @@ void hwc4_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
   int remain_pro = srcw % 8;
   int win = srcw * 4;
   int i = 0;
-#pragma omp parallel for
-  for (i = 0; i < srch - 3; i += 4) {
+  LITE_PARALLEL_COMMON_BEGIN(i, tid, srch - 3, 0, 4) {
     int j = 0;
     const uint8_t* inptr0 = src + i * win;
     const uint8_t* inptr1 = inptr0 + win;
@@ -2034,6 +2033,7 @@ void hwc4_to_hwc1(const uint8_t* src, uint8_t* dst, int srcw, int srch) {
       inptr3 += 4;
     }
   }
+  LITE_PARALLEL_COMMON_END();
   for (; i < srch; i++) {
     int j = 0;
     const uint8_t* inptr0 = src + i * win;

@@ -50,9 +50,6 @@ endif()
 if(LITE_WITH_INTEL_FPGA)
     set(external_libs_DEPS ${external_libs_DEPS} ${intel_fpga_deps})
 endif()
-if(LITE_WITH_HUAWEI_ASCEND_NPU)
-    set(external_libs_DEPS ${external_libs_DEPS} ${huawei_ascend_npu_deps})
-endif()
 if(LITE_WITH_NNADAPTER)
     set(external_libs_DEPS ${external_libs_DEPS} ${nnadapter_deps})
 endif()
@@ -208,16 +205,14 @@ if (LITE_WITH_PYTHON)
     lite_cc_library(lite_pybind SHARED SRCS python/pybind/pybind.cc tools/opt_base.cc DEPS ${full_lib_DEPS} paddle_api_full ${external_libs_DEPS}  pybind python)
 endif()
 
-
-
-# test_model_bin
 if(NOT IOS AND NOT LITE_ON_TINY_PUBLISH)
+    # test_model_bin
     lite_cc_binary(test_model_bin SRCS tools/model_test.cc
         DEPS gflags
         CV_DEPS paddle_cv_arm)
-    lite_cc_binary(benchmark_bin SRCS tools/benchmark.cc tools/flags.cc tools/opt_base.cc
-        DEPS gflags
-        CV_DEPS paddle_cv_arm)
+
+    # benchmark_bin
+    add_subdirectory(tools/benchmark)
 endif()
 
 # opt tool

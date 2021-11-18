@@ -206,8 +206,6 @@ void BindLitePlace(py::module *m) {
       .value("NPU", TargetType::kNPU)
       .value("MLU", TargetType::kMLU)
       .value("RKNPU", TargetType::kRKNPU)
-      .value("APU", TargetType::kAPU)
-      .value("HUAWEI_ASCEND_NPU", TargetType::kHuaweiAscendNPU)
       .value("INTEL_FPGA", TargetType::kIntelFPGA)
       .value("Any", TargetType::kAny);
 
