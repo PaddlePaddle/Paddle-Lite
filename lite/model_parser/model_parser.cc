@@ -87,6 +87,7 @@ void LoadCombinedParamsPb(const std::string &path,
   CHECK(scope) << "The input argument scope is nullptr.";
   auto &prog = cpp_prog;
   auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
+
   // Get vars
   std::vector<std::string> paramlist;
   for (size_t i = 0; i < main_block_desc.VarsSize(); ++i) {
@@ -108,7 +109,6 @@ void LoadCombinedParamsPb(const std::string &path,
     CHECK(reader->length())
         << "The model needs weights but the weight file is not existed.";
   }
-
   for (size_t i = 0; i < paramlist.size(); ++i) {
     auto *var = scope->Var(paramlist[i]);
     LoadLoDTensor(&loader, reader.get(), var);
