@@ -160,3 +160,21 @@ kernel void expand_half(texture2d_array<half, access::sample> inTexture
         gid.z);
   }
 }
+
+// activation function: hard swish
+// output = input * (min(max(0, input + offset), threshold)) / scale
+// please refer to
+// https://www.paddlepaddle.org.cn/documentation/docs/zh/api_cn/layers_cn/hard_swish_cn.html#hard-swish
+kernel void hard_swish(texture2d_array<ftype, access::sample> inTexture[[texture(0)]],
+    texture2d_array<ftype, access::write> outTexture[[texture(1)]],
+    constant HardSwishParam& param[[buffer(0)]],
+    uint3 gid[[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
+        gid.z >= outTexture.get_array_size())
+        return;
+    constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
+    const ftype4 input = inTexture.read(gid.xy, gid.z);
+    const ftype4 output =
+        input * (fmin(fmax(0.0, input + param.offset), param.threshold)) / param.scale;
+    outTexture.write(output, gid.xy, gid.z);
+}
