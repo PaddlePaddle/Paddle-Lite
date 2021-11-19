@@ -140,10 +140,12 @@ void MulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                             .production());
 
   scale_.resize(n_);
-  scale_one.resize(n_);
+  scale_one.resize(m_);
   for (int i = 0; i < n_; i++) {
     param.output_scale = param.input_scale * param.weight_scale[i];
     scale_[i] = param.output_scale;
+  }
+  for (int i = 0; i < m_; i++) {
     scale_one[i] = 1;
   }
 
