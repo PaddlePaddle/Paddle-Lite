@@ -617,6 +617,10 @@ class LayoutComputeImageFolderToBufferChw
 
   void PrepareForRun() override {
     auto& param = Param<param_t>();
+    auto x_dims = param.x->dims();
+    if (x_dims.size() > 2) {
+      kernel_func_name_ = "image2d_to_buffer";
+    }
     if (!fp16_support_) {
       build_options_ += " -DCL_DTYPE_FLOAT_FORCE";
     }
@@ -641,12 +645,24 @@ class LayoutComputeImageFolderToBufferChw
     auto x_dims = param.x->dims();
     auto y_dims = param.y->dims();
 
-    CLImageConverterFolder folder_converter;
-    auto x_image_shape = folder_converter.InitImageDimInfoWith(x_dims);
+    DDim x_image_shape;
+    if (x_dims.size() > 2) {
+      CLImageConverterFolder folder_converter;
+      x_image_shape = folder_converter.InitImageDimInfoWith(x_dims);
+    } else {
+      CLImageConverterDefault default_converter;
+      x_image_shape = default_converter.InitImageDimInfoWith(x_dims);
+    }
 
     const cl::Buffer* y_data =
         param.y->mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
     auto* x_data = GET_DATA_GPU(param.x);
+
+    // out info
+    std::vector<size_t> new_dims = {1, 1, 1, 1};
+    for (int tidx = 0; tidx < x_dims.size(); ++tidx) {
+      new_dims[4 - x_dims.size() + tidx] = x_dims[tidx];
+    }
 
 #ifdef LITE_WITH_LOG
     VLOG(2) << "x_dims:" << x_dims;
@@ -661,20 +677,53 @@ class LayoutComputeImageFolderToBufferChw
     kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
     auto kernel = context.cl_context()->GetKernel(kernel_key.str());
 
+    cl::NDRange global_work_size;
     int arg_idx = 0;
     cl_int status;
-    status = kernel.setArg(arg_idx, *x_data);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, *y_data);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(y_dims[0]));
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(++arg_idx, static_cast<const int>(y_dims[1]));
-    CL_CHECK_FATAL(status);
+    if (x_dims.size() <= 2) {
+      status = kernel.setArg(arg_idx, *x_data);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, *y_data);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, static_cast<const int>(y_dims[0]));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, static_cast<const int>(y_dims[1]));
+      CL_CHECK_FATAL(status);
 
-    auto global_work_size =
-        cl::NDRange{static_cast<cl::size_type>(x_image_shape[0]),
-                    static_cast<cl::size_type>(x_image_shape[1])};
+      global_work_size =
+          cl::NDRange{static_cast<cl::size_type>(x_image_shape[0]),
+                      static_cast<cl::size_type>(x_image_shape[1])};
+    } else {
+      size_t C = new_dims[1];
+      size_t in_height = new_dims[2];
+      size_t in_width = new_dims[3];
+      int size_ch = in_height * in_width;
+      int size_block = size_ch * 4;
+      int size_batch = size_ch * C;
+
+      status = kernel.setArg(arg_idx, *x_data);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, static_cast<const int>(in_width));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, static_cast<const int>(in_height));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, *y_data);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, static_cast<const int>(size_ch));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, static_cast<const int>(size_block));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, static_cast<const int>(size_batch));
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(++arg_idx, static_cast<const int>(C));
+      CL_CHECK_FATAL(status);
+
+      global_work_size =
+          cl::NDRange{static_cast<cl::size_type>((new_dims[1] + 3) / 4),
+                      static_cast<cl::size_type>(new_dims[3]),
+                      static_cast<cl::size_type>(new_dims[0] * new_dims[2])};
+    }
+
 #ifdef LITE_WITH_LOG
     for (auto i = 0; i < global_work_size.dimensions(); i++) {
       VLOG(2) << "global_work_size[" << i << "]: " << global_work_size[i];
@@ -715,6 +764,9 @@ class LayoutComputeBufferChwToImageFolder
     auto x_dims = param.x->dims();
     if (x_dims.size() > 2) {
       kernel_func_name_ = "buffer_to_image2d";
+    }
+    if (!fp16_support_) {
+      build_options_ += " -DCL_DTYPE_FLOAT_FORCE";
     }
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
