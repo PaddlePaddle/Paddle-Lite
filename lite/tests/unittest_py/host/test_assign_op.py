@@ -16,7 +16,7 @@ import sys
 sys.path.append('..')
 
 from auto_scan_test import AutoScanTest, SkipReasons
-from program_config import TensorConfig, ProgramConfig, OpConfig, PaddleLiteConfig
+from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import numpy as np
 from functools import partial
 from typing import Optional, List, Callable, Dict, Any, Set
@@ -51,7 +51,8 @@ class TestAssignOp(AutoScanTest):
         yield program_config
 
     def sample_predictor_configs(self, program_config):
-        config = PaddleLiteConfig(valid_targets=["Host,FP32,NCHW"])
+        config = CxxConfig()
+        config.set_valid_places({Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)})
         yield config, (1e-5, 1e-5)
 
     def add_skip_pass_case(self):

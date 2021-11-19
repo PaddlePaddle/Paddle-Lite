@@ -16,7 +16,7 @@ import sys
 sys.path.append('..')
 
 from auto_scan_test_rpc import AutoScanTest, SkipReasons
-from program_config import TensorConfig, ProgramConfig, OpConfig, PaddleLiteConfig
+from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import numpy as np
 import paddle.inference as paddle_infer
 from functools import partial
@@ -59,8 +59,9 @@ class TestMulOp(AutoScanTest):
         yield program_config
 
     def sample_predictor_configs(self, program_config):
-        config = PaddleLiteConfig(valid_targets=["ARM,FP32,NCHW"],
-                                  thread = 1)
+        config = CxxConfig()
+        config.set_valid_places({Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)})
+        config.set_threads(1)
         yield config, (1e-5, 1e-5)
 
     def add_skip_pass_case(self):
