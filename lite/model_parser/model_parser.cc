@@ -87,15 +87,15 @@ void LoadCombinedParamsPb(const std::string &path,
   CHECK(scope) << "The input argument scope is nullptr.";
   auto &prog = cpp_prog;
   std::vector<std::string> paramlist;
-  for (int j = 0; j < 2; j++) {
-    auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(j);
-    // Get vars
-    for (size_t i = 0; i < main_block_desc.VarsSize(); ++i) {
-      auto &var = *main_block_desc.GetVar<cpp::VarDesc>(i);
-      if (!IsPersistable(var)) continue;
-      paramlist.push_back(var.Name());
-    }
+  //  for (int j = 0; j < 2; j++) {
+  auto &main_block_desc = *prog.GetBlock<cpp::BlockDesc>(0);
+  // Get vars
+  for (size_t i = 0; i < main_block_desc.VarsSize(); ++i) {
+    auto &var = *main_block_desc.GetVar<cpp::VarDesc>(i);
+    if (!IsPersistable(var)) continue;
+    paramlist.push_back(var.Name());
   }
+  //}
 
   std::stable_sort(paramlist.begin(), paramlist.end());
 

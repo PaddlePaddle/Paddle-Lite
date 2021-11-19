@@ -113,7 +113,7 @@ REGISTER_LITE_KERNEL(write_back,
                      kAny,
                      kAny,
                      paddle::lite::kernels::host::WriteBackCompute,
-                     tensor_copy)
+                     write_back)
     .BindInput("Src_LoDTensor",
                {LiteType::GetTensorTy(TARGET(kAny),
                                       PRECISION(kAny),
