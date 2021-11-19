@@ -476,8 +476,8 @@ if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND LITE_WITH_ARM)
                     COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/*.dylib" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
                     COMMAND cp "${CMAKE_BINARY_DIR}/lite/api/libpaddle_api_light_bundled.a" "${INFER_LITE_PUBLISH_ROOT}/cxx/lib"
                     COMMAND cp "${CMAKE_SOURCE_DIR}/lite/utils/cv/paddle_*.h" "${INFER_LITE_PUBLISH_ROOT}/cxx/include"
-                    COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/mobile_light" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
-                    COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/macos_m1_mobile_light_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
+                    COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/armmacos_mobile_light_demo" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx"
+                    COMMAND cp -r "${CMAKE_SOURCE_DIR}/lite/demo/cxx/mobile_light/*" "${INFER_LITE_PUBLISH_ROOT}/demo/cxx/armmacos_mobile_light_demo"
                 )
                 add_dependencies(tiny_publish_cxx_lib paddle_api_light_bundled)
                 add_dependencies(tiny_publish_cxx_lib paddle_light_api_shared)
