@@ -25,13 +25,13 @@ DEFINE_string(data_dir, "", "data dir");
 DEFINE_int32(iteration, 10, "iteration times to run");
 DEFINE_int32(batch, 1, "batch of image");
 DEFINE_int32(channel, 3, "image channel");
-DEFINE_int32(height, 608, "image height");
-DEFINE_int32(width, 608, "image width");
+DEFINE_int32(height, 384, "image height");
+DEFINE_int32(width, 288, "image width");
 
 namespace paddle {
 namespace lite {
 
-TEST(yolov3_mobilenet_v1, test_yolov3_mobilenet_v1_coco_fp32_v2_2_nnadapter) {
+TEST(hrnet, test_hrnet_w32_384x288_fp32_v2_0_nnadapter) {
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;
@@ -72,7 +72,7 @@ TEST(yolov3_mobilenet_v1, test_yolov3_mobilenet_v1_coco_fp32_v2_2_nnadapter) {
   mobile_config.set_nnadapter_context_properties(nnadapter_context_properties);
   predictor = paddle::lite_api::CreatePaddlePredictor(mobile_config);
 
-  std::string raw_data_dir = FLAGS_data_dir + std::string("/raw_data");
+  std::string raw_data_dir = FLAGS_data_dir + std::string("/raw_data_384x288");
   std::vector<int> input_shape{
       FLAGS_batch, FLAGS_channel, FLAGS_height, FLAGS_width};
   auto raw_data = ReadRawData(raw_data_dir, input_shape, FLAGS_iteration);
@@ -100,14 +100,8 @@ TEST(yolov3_mobilenet_v1, test_yolov3_mobilenet_v1_coco_fp32_v2_2_nnadapter) {
 
     auto output_tensor = predictor->GetOutput(0);
     auto output_shape = output_tensor->shape();
-    auto output_data = output_tensor->data<float>();
-    ASSERT_EQ(output_shape.size(), 2UL);
-    ASSERT_GT(output_shape[0], 0);
-    ASSERT_EQ(output_shape[1], 6);
-
-    int output_size = output_shape[0] * output_shape[1];
-    out_rets[i].resize(output_size);
-    memcpy(&(out_rets[i].at(0)), output_data, sizeof(float) * output_size);
+    ASSERT_EQ(output_shape.size(), 4UL);
+    ASSERT_EQ(output_shape[1], 17);
   }
 
   LOG(INFO) << "================== Speed Report ===================";
