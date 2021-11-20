@@ -18,20 +18,15 @@
 #include "lite/api/paddle_api.h"
 #include "lite/api/test/lite_api_test_helper.h"
 #include "lite/api/test/test_helper.h"
-#include "lite/tests/api/COCO2017_utility.h"
 #include "lite/tests/api/utility.h"
 
 DEFINE_string(data_dir, "", "data dir");
-DEFINE_int32(iteration, 10, "iteration times to run");
-DEFINE_int32(batch, 1, "batch of image");
-DEFINE_int32(channel, 3, "image channel");
-DEFINE_int32(height, 608, "image height");
-DEFINE_int32(width, 608, "image width");
+DEFINE_int32(iteration, 5, "iteration times to run");
 
 namespace paddle {
 namespace lite {
 
-TEST(yolov3_mobilenet_v1, test_yolov3_mobilenet_v1_coco_fp32_v2_2_nnadapter) {
+TEST(ernie_tiny, test_ernie_tiny_fp32_v2_0_nnadapter) {
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;
@@ -45,6 +40,7 @@ TEST(yolov3_mobilenet_v1, test_yolov3_mobilenet_v1_coco_fp32_v2_2_nnadapter) {
   LOG(INFO) << "Unsupported host arch!";
   return;
 #endif
+  valid_places.push_back(lite_api::Place{TARGET(kHost), PRECISION(kFloat)});
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   nnadapter_device_names.emplace_back("huawei_ascend_npu");
   nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
@@ -59,6 +55,9 @@ TEST(yolov3_mobilenet_v1, test_yolov3_mobilenet_v1_coco_fp32_v2_2_nnadapter) {
   cxx_config.set_valid_places(valid_places);
   cxx_config.set_nnadapter_device_names(nnadapter_device_names);
   cxx_config.set_nnadapter_context_properties(nnadapter_context_properties);
+  cxx_config.set_nnadapter_subgraph_partition_config_path(
+      FLAGS_model_dir +
+      "/huawei_ascend_npu_subgraph_custom_partition_config_file.txt");
   predictor = lite_api::CreatePaddlePredictor(cxx_config);
   predictor->SaveOptimizedModel(FLAGS_model_dir,
                                 paddle::lite_api::LiteModelType::kNaiveBuffer);
@@ -72,27 +71,48 @@ TEST(yolov3_mobilenet_v1, test_yolov3_mobilenet_v1_coco_fp32_v2_2_nnadapter) {
   mobile_config.set_nnadapter_context_properties(nnadapter_context_properties);
   predictor = paddle::lite_api::CreatePaddlePredictor(mobile_config);
 
-  std::string raw_data_dir = FLAGS_data_dir + std::string("/raw_data");
-  std::vector<int> input_shape{
-      FLAGS_batch, FLAGS_channel, FLAGS_height, FLAGS_width};
-  auto raw_data = ReadRawData(raw_data_dir, input_shape, FLAGS_iteration);
+  // Load input_data
+  auto input_lines = ReadLines(FLAGS_data_dir + "/input.txt");
+  std::vector<std::vector<int64_t>> input0_data;
+  std::vector<std::vector<int64_t>> input1_data;
+  std::vector<std::vector<int64_t>> input0_shapes;
+  std::vector<std::vector<int64_t>> input1_shapes;
+  for (auto line : input_lines) {
+    input0_data.push_back(
+        Split<int64_t>(Split(Split(line, ";")[0], ":")[1], " "));
+    input0_shapes.push_back(
+        Split<int64_t>(Split(Split(line, ";")[0], ":")[0], " "));
+    input1_data.push_back(
+        Split<int64_t>(Split(Split(line, ";")[1], ":")[1], " "));
+    input1_shapes.push_back(
+        Split<int64_t>(Split(Split(line, ";")[1], ":")[0], " "));
+  }
 
-  int input_size = 1;
-  for (auto i : input_shape) {
-    input_size *= i;
+  // Load output_data
+  auto output_lines = ReadLines(FLAGS_data_dir + "/output.txt");
+  std::vector<std::vector<float>> output0_data;
+  for (auto line : output_lines) {
+    output0_data.push_back(Split<float>(Split(line, ":")[1], " "));
   }
 
   FLAGS_warmup = 1;
-  for (int i = 0; i < FLAGS_warmup; ++i) {
-    SetDetectionInput(predictor, input_shape, std::vector<float>(), input_size);
+  for (int i = 0; i < FLAGS_warmup; i++) {
+    int data_idx = i % static_cast<int>(input0_data.size());
+    fill_tensor(
+        predictor, 0, input0_data[data_idx].data(), input0_shapes[data_idx]);
+    fill_tensor(
+        predictor, 1, input1_data[data_idx].data(), input1_shapes[data_idx]);
     predictor->Run();
   }
 
-  std::vector<std::vector<float>> out_rets;
-  out_rets.resize(FLAGS_iteration);
+  std::vector<std::vector<float>> results;
   double cost_time = 0;
-  for (size_t i = 0; i < raw_data.size(); ++i) {
-    SetDetectionInput(predictor, input_shape, raw_data[i], input_size);
+  for (size_t i = 0; i < FLAGS_iteration; ++i) {
+    int data_idx = i % static_cast<int>(input0_data.size());
+    fill_tensor(
+        predictor, 0, input0_data[data_idx].data(), input0_shapes[data_idx]);
+    fill_tensor(
+        predictor, 1, input1_data[data_idx].data(), input1_shapes[data_idx]);
 
     double start = GetCurrentUS();
     predictor->Run();
@@ -102,17 +122,24 @@ TEST(yolov3_mobilenet_v1, test_yolov3_mobilenet_v1_coco_fp32_v2_2_nnadapter) {
     auto output_shape = output_tensor->shape();
     auto output_data = output_tensor->data<float>();
     ASSERT_EQ(output_shape.size(), 2UL);
-    ASSERT_GT(output_shape[0], 0);
-    ASSERT_EQ(output_shape[1], 6);
+    int64_t out_size = 1;
+    for (auto dim : output_shape) {
+      out_size *= dim;
+    }
+    std::vector<float> ret(out_size);
+    memcpy(ret.data(), output_data, sizeof(float) * out_size);
+    results.push_back(ret);
+  }
 
-    int output_size = output_shape[0] * output_shape[1];
-    out_rets[i].resize(output_size);
-    memcpy(&(out_rets[i].at(0)), output_data, sizeof(float) * output_size);
+  for (float abs_error : {1e-1, 1e-2}) {
+    float acc = CalOutAccuracy(results, output0_data, abs_error);
+    LOG(INFO) << "acc: " << acc << ", if abs_error < " << abs_error;
+    ASSERT_GE(CalOutAccuracy(results, output0_data, abs_error), 0.99);
   }
 
   LOG(INFO) << "================== Speed Report ===================";
   LOG(INFO) << "Model: " << FLAGS_model_dir << ", threads num " << FLAGS_threads
-            << ", warmup: " << FLAGS_warmup << ", batch: " << FLAGS_batch
+            << ", warmup: " << FLAGS_warmup
             << ", iteration: " << FLAGS_iteration << ", spend "
             << cost_time / FLAGS_iteration / 1000.0 << " ms in average.";
 }
