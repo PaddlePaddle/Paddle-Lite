@@ -25,41 +25,33 @@ namespace paddle {
 namespace lite {
 
 template <class T = float>
-std::vector<std::vector<T>> ReadRawData(
-    const std::string& raw_data_dir,
-    const std::vector<int>& input_shape = {1, 3, 300, 300},
-    int iteration = 1) {
+std::vector<float> ReadRawData(const std::string& raw_data_dir,
+                               const std::string& input_name,
+                               const std::vector<int64_t>& input_shape) {
   std::vector<std::vector<T>> raw_data;
-
   int image_size = 1;
   for (size_t i = 1; i < input_shape.size(); i++) {
     image_size *= input_shape[i];
   }
   int input_size = image_size * input_shape[0];
 
-  auto file_names = ListFile(raw_data_dir);
-  for (int i = 0; i < iteration; i++) {
-    std::vector<T> one_iter_raw_data;
-    one_iter_raw_data.resize(input_size);
-    T* data = &(one_iter_raw_data.at(0));
-    for (int j = 0; j < input_shape[0]; j++) {
-      std::string raw_data_file_dir =
-          raw_data_dir + std::string("/") + file_names[i * input_shape[0] + j];
-      std::ifstream fin(raw_data_file_dir, std::ios::in | std::ios::binary);
-      CHECK(fin.is_open()) << "failed to open file " << raw_data_file_dir;
-      fin.seekg(0, std::ios::end);
-      int file_size = fin.tellg();
-      fin.seekg(0, std::ios::beg);
-      CHECK_EQ(static_cast<size_t>(file_size),
-               static_cast<size_t>(image_size) * sizeof(T) / sizeof(char));
-      fin.read(reinterpret_cast<char*>(data), file_size);
-      fin.close();
-      data += image_size;
-    }
-    raw_data.emplace_back(one_iter_raw_data);
-  }
+  std::vector<T> one_iter_raw_data;
+  one_iter_raw_data.resize(input_size);
+  T* data = &(one_iter_raw_data.at(0));
 
-  return raw_data;
+  std::string raw_data_file_dir = raw_data_dir + std::string("/") + input_name;
+  std::ifstream fin(raw_data_file_dir, std::ios::in | std::ios::binary);
+  CHECK(fin.is_open()) << "failed to open file " << raw_data_file_dir;
+  fin.seekg(0, std::ios::end);
+  int file_size = fin.tellg();
+  fin.seekg(0, std::ios::beg);
+  CHECK_EQ(static_cast<size_t>(file_size),
+           static_cast<size_t>(image_size) * sizeof(T) / sizeof(char));
+  fin.read(reinterpret_cast<char*>(data), file_size);
+  fin.close();
+  data += image_size;
+
+  return one_iter_raw_data;
 }
 
 }  // namespace lite

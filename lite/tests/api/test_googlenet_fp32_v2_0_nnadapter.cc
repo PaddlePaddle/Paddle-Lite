@@ -18,38 +18,35 @@
 #include "lite/api/paddle_api.h"
 #include "lite/api/test/lite_api_test_helper.h"
 #include "lite/api/test/test_helper.h"
-#include "lite/tests/api/PASCALVOC2012_utility.h"
+#include "lite/tests/api/ILSVRC2012_utility.h"
 
 DEFINE_string(data_dir, "", "data dir");
-DEFINE_int32(iteration, 1, "iteration times to run");
+DEFINE_int32(iteration, 100, "iteration times to run");
 DEFINE_int32(batch, 1, "batch of image");
 DEFINE_int32(channel, 3, "image channel");
 
 namespace paddle {
 namespace lite {
 
-TEST(SSDMobileNetV1ReluVOC,
-     test_ssd_mobilenet_v1_relu_voc_int8_per_layer_nnadapter) {
+TEST(GoogLeNet, test_googlenet_fp32_v2_0_nnadapter) {
   std::vector<std::string> nnadapter_device_names;
   std::string nnadapter_context_properties;
   std::vector<paddle::lite_api::Place> valid_places;
-  valid_places.push_back(lite_api::Place{TARGET(kNNAdapter), PRECISION(kInt8)});
+  float out_accuracy_threshold = 1.0f;
   valid_places.push_back(
       lite_api::Place{TARGET(kNNAdapter), PRECISION(kFloat)});
 #if defined(LITE_WITH_ARM)
-  valid_places.push_back(lite_api::Place{TARGET(kARM), PRECISION(kInt8)});
   valid_places.push_back(lite_api::Place{TARGET(kARM), PRECISION(kFloat)});
 #elif defined(LITE_WITH_X86)
-  valid_places.push_back(lite_api::Place{TARGET(kX86), PRECISION(kInt8)});
   valid_places.push_back(lite_api::Place{TARGET(kX86), PRECISION(kFloat)});
 #else
   LOG(INFO) << "Unsupported host arch!";
   return;
 #endif
-#if defined(NNADAPTER_WITH_ROCKCHIP_NPU)
-  nnadapter_device_names.emplace_back("rockchip_npu");
-#elif defined(NNADAPTER_WITH_MEDIATEK_APU)
-  nnadapter_device_names.emplace_back("mediatek_apu");
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  nnadapter_device_names.emplace_back("huawei_ascend_npu");
+  nnadapter_context_properties = "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0";
+  out_accuracy_threshold = 0.73f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;
@@ -75,7 +72,8 @@ TEST(SSDMobileNetV1ReluVOC,
   predictor = paddle::lite_api::CreatePaddlePredictor(mobile_config);
 
   std::string raw_data_dir = FLAGS_data_dir + std::string("/raw_data");
-  std::vector<int> input_shape{FLAGS_batch, FLAGS_channel, 300, 300};
+  std::vector<int> input_shape{
+      FLAGS_batch, FLAGS_channel, FLAGS_im_width, FLAGS_im_height};
   auto raw_data = ReadRawData(raw_data_dir, input_shape, FLAGS_iteration);
 
   int input_size = 1;
@@ -112,8 +110,8 @@ TEST(SSDMobileNetV1ReluVOC,
     auto output_shape = output_tensor->shape();
     auto output_data = output_tensor->data<float>();
     ASSERT_EQ(output_shape.size(), 2UL);
-    ASSERT_GT(output_shape[0], 0);
-    ASSERT_EQ(output_shape[1], 6);
+    ASSERT_EQ(output_shape[0], 1);
+    ASSERT_EQ(output_shape[1], 1000);
 
     int output_size = output_shape[0] * output_shape[1];
     out_rets[i].resize(output_size);
@@ -125,6 +123,10 @@ TEST(SSDMobileNetV1ReluVOC,
             << ", warmup: " << FLAGS_warmup << ", batch: " << FLAGS_batch
             << ", iteration: " << FLAGS_iteration << ", spend "
             << cost_time / FLAGS_iteration / 1000.0 << " ms in average.";
+
+  std::string labels_dir = FLAGS_data_dir + std::string("/labels.txt");
+  float out_accuracy = CalOutAccuracy(out_rets, labels_dir);
+  ASSERT_GE(out_accuracy, out_accuracy_threshold);
 }
 
 }  // namespace lite
