@@ -59,7 +59,7 @@ class Conv2dImageCompute
     void init_memory();
     void release_memory();
     void release_mps_memory();
-    
+
     void setup_with_mps();
     void setup_without_mps();
 

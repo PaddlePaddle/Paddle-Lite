@@ -57,13 +57,13 @@ class ElementwiseAddImageCompute
     void init_memory();
     void release_memory();
     void release_mps_memory();
-        
+
     void setup_with_mps();
     void setup_without_mps();
 
     void run_with_mps();
     void run_without_mps();
-        
+
    private:
     MetalImage* output_buffer_{nullptr};
     const MetalImage* input_buffer_x_;
