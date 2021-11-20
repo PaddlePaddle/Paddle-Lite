@@ -12,8 +12,8 @@
  See the License for the specific language governing permissions and
  limitations under the License. */
 
-#include <metal_stdlib>
 #include "Common.metal"
+#include <metal_stdlib>
 using namespace metal;
 
 kernel void box_coder(texture2d_array<ftype, access::read> priorBox[[texture(0)]],

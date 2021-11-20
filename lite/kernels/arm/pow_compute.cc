@@ -33,10 +33,10 @@ void PowCompute::Run() {
       x_data, output_data, x_dims.production(), scale, shift, power);
 }
 
-} /* namespace arm */
-} /* namespace kernels */
-} /* namespace lite */
-} /* namespace paddle */
+}  // namespace arm
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle
 
 REGISTER_LITE_KERNEL(
     pow, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::PowCompute, def)

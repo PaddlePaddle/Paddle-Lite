@@ -71,7 +71,7 @@ void Conv2dTransposeImageCompute::init_for_run() {
     bool should_use_mps = false;
     if (@available(iOS 11.3, *)) {
         if (metal_context_->use_mps()) {
-            //TODO Daming6432 mps support 
+            // TODO Daming6432 mps support
         }
     }
 
@@ -109,8 +109,8 @@ void Conv2dTransposeImageCompute::setup_without_mps() {
     auto inputC = uint16_t(input_buffer_->tensor_dim_[1]);
     auto filterC = uint16_t(param.filter->dims()[1]);
     auto outputC = uint16_t(param.output->dims()[1]);
-    
-    //add
+
+    // add
     int xdim[4], ydim[4], xtrans[4], ytrans[4];
     for (int i = 0; i < 4; i++) {
         xdim[i] = (int)output_buffer_->dim_[i];
@@ -154,19 +154,19 @@ void Conv2dTransposeImageCompute::setup_without_mps() {
             bias_buffer_->transpose_[2],
             bias_buffer_->transpose_[3]}};
     ConvTransposeAddMetalParam metalParam = {kernelWidth,
-                                             kernelHeight,
-                                             strideX,
-                                             strideY,
-                                             paddingX,
-                                             paddingY,
-                                             dilationX,
-                                             dilationY,
-                                             groups,
-                                             inputC,
-                                             filterC,
-                                             outputC,
-                                             hasAdd,
-                                             addParam};
+        kernelHeight,
+        strideX,
+        strideY,
+        paddingX,
+        paddingY,
+        dilationX,
+        dilationY,
+        groups,
+        inputC,
+        filterC,
+        outputC,
+        hasAdd,
+        addParam};
 
     params_buffer_ = std::make_shared<MetalBuffer>(metal_context_, sizeof(metalParam), &metalParam);
 
@@ -190,9 +190,9 @@ void Conv2dTransposeImageCompute::ReInitWhenNeeded() {
     if (last_input_dims_ != input_dims) {
         release_memory();
         init_memory();
-        
+
         if (use_mps_) {
-        //TODO daming5432
+            // TODO daming5432
         }
     }
 }
@@ -231,10 +231,10 @@ void Conv2dTransposeImageCompute::run_without_mps() {
 }
 
 void Conv2dTransposeImageCompute::setup_with_mps() {
-    //TODO daming5432
+    // TODO daming5432
 }
 void Conv2dTransposeImageCompute::run_with_mps() {
-    //TODO daming5432
+    // TODO daming5432
 }
 
 std::string Conv2dTransposeImageCompute::KernelFunctionName(const param_t& param) {
@@ -265,25 +265,39 @@ bool Conv2dTransposeImageCompute::HasPrefix(const std::string& function_name,
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(conv2d_transpose,
-                    kMetal,
-                    kFloat,
-                    kMetalTexture2DArray,
-                    paddle::lite::kernels::metal::Conv2dTransposeImageCompute,
-                    def)
-   .BindInput("Input", {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray))})
-   .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray))})
-   .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
-   .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFloat),DATALAYOUT(kMetalTexture2DArray))}) 
-   .Finalize();
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::Conv2dTransposeImageCompute,
+    def)
+    .BindInput("Input",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("Bias",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("Filter",
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
+    .BindOutput("Output",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
 
 REGISTER_LITE_KERNEL(conv2d_transpose,
-                    kMetal,
-                    kFP16,
-                    kMetalTexture2DArray,
-                    paddle::lite::kernels::metal::Conv2dTransposeImageCompute,
-                    def)
-   .BindInput("Input", {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
-   .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
-   .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFP16), DATALAYOUT(kNCHW))})
-   .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16),DATALAYOUT(kMetalTexture2DArray))}) 
-   .Finalize();
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::Conv2dTransposeImageCompute,
+    def)
+    .BindInput("Input",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("Bias",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("Filter",
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFP16), DATALAYOUT(kNCHW))})
+    .BindOutput("Output",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();

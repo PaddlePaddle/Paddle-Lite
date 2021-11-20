@@ -150,24 +150,27 @@ namespace math {
     }                                                                 \
   }
 
-// marco func add
-ElementWiseFunc(Add) ElementWiseFuncBCast(Add)
-    // marco func sub
-    ElementWiseFunc(Sub) ElementWiseFuncBCast(Sub)
-    // marco func mul
-    ElementWiseFunc(Mul) ElementWiseFuncBCast(Mul)
-    // marco func max
-    ElementWiseFunc(Max) ElementWiseFuncBCast(Max)
-    // marco func min
-    ElementWiseFunc(Min) ElementWiseFuncBCast(Min)
-    // marco func div
-    ElementWiseFunc(Div) ElementWiseFuncBCast(Div)
-    // marco func floordiv
-    ElementWiseFunc(FloorDiv) ElementWiseFuncBCast(FloorDiv)
-    // marco func mod
-    ElementWiseFunc(Mod) ElementWiseFuncBCast(Mod)
-    // marco func pow
-    ElementWiseFunc(Pow) ElementWiseFuncBCast(Pow)
+// clang-format off
+ElementWiseFunc(Add)
+ElementWiseFuncBCast(Add)
+ElementWiseFunc(Sub)
+ElementWiseFuncBCast(Sub)
+ElementWiseFunc(Mul)
+ElementWiseFuncBCast(Mul)
+ElementWiseFunc(Max)
+ElementWiseFuncBCast(Max)
+ElementWiseFunc(Min)
+ElementWiseFuncBCast(Min)
+ElementWiseFunc(Div)
+ElementWiseFuncBCast(Div)
+ElementWiseFunc(FloorDiv)
+ElementWiseFuncBCast(FloorDiv)
+ElementWiseFunc(Mod)
+ElementWiseFuncBCast(Mod)
+ElementWiseFunc(Pow)
+ElementWiseFuncBCast(Pow)
+// clang-format on
+
 }  // namespace math
 }  // namespace x86
 }  // namespace lite

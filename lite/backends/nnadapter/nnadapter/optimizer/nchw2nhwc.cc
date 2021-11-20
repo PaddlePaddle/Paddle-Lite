@@ -58,6 +58,7 @@ class NCHW2NHWCDataLayoutConverter {
   void ConvertSoftmax(hal::Operation* operation);
   void ConvertSplit(hal::Operation* operation);
   void ConvertTranspose(hal::Operation* operation);
+  void ConvertMatMul(hal::Operation* operation);
 
  private:
   hal::Model* model_{nullptr};
@@ -241,8 +242,8 @@ void NCHW2NHWCDataLayoutConverter::ConvertConv2D(hal::Operation* operation) {
   auto input_dimensions_count = input_operand->type.dimensions.count;
   NNADAPTER_CHECK_EQ(input_dimensions_count, 4);
   auto filter_operand = input_operands[1];
-  bool is_per_channel = filter_operand->type.precision ==
-                        NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL;
+  bool is_per_channel =
+      filter_operand->type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL;
   NNADAPTER_VLOG(5) << "is_per_channel:" << is_per_channel;
   auto group = *reinterpret_cast<int32_t*>(input_operands[6]->buffer);
   // Force to apply the dimorder vector of NCHW2NHWC conversion
@@ -285,6 +286,19 @@ void NCHW2NHWCDataLayoutConverter::ConvertConv2D(hal::Operation* operation) {
 
 void NCHW2NHWCDataLayoutConverter::ConvertFullyConnected(
     hal::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 4);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto output_operand = output_operands[0];
+  auto output_dimensions_count = output_operand->type.dimensions.count;
+  // Skip NCHW2NHWC conversion
+  SetPermutation(output_operand, IdentityPermutation(output_dimensions_count));
+}
+
+void NCHW2NHWCDataLayoutConverter::ConvertMatMul(hal::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
   auto input_count = input_operands.size();
@@ -461,6 +475,9 @@ void NCHW2NHWCDataLayoutConverter::Apply(hal::Model* model) {
         break;
       case NNADAPTER_FULLY_CONNECTED:
         ConvertFullyConnected(operation);
+        break;
+      case NNADAPTER_MAT_MUL:
+        ConvertMatMul(operation);
         break;
       case NNADAPTER_RELU:
       case NNADAPTER_RELU6:

@@ -297,4 +297,8 @@ struct CastMetalParam {
     int outType;
 };
 
+struct ArgMetalParam {
+    int orank;
+};
+
 #endif  // LITE_KERNELS_METAL_IMAGE_OP_METAL_PARAMS_H_

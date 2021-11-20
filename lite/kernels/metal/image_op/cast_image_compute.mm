@@ -65,13 +65,15 @@ void CastImageCompute::run_without_mps() {
 void CastImageCompute::setup_without_mps() {
     const auto& param = this->Param<param_t>();
 
-    auto valid = false;
+    auto valid = true;
     // BOOL = 0;INT16 = 1;INT32 = 2;INT64 = 3;FP16 = 4;FP32 = 5;FP64 = 6;
-    if (param.in_dtype == 0 && param.out_dtype == 5) {
-        valid = true;
+    if (param.in_dtype == 3 || param.in_dtype == 6 || param.out_dtype == 3 ||
+        param.out_dtype == 6) {
+        valid = false;
     }
     if (!valid) {
-        LOG(FATAL) << "cast: only supports : 1.same shapes 2.by channel.";
+        LOG(FATAL) << "cast from in_type(" << param.in_dtype << ") to out_type(" << param.out_dtype
+                   << ") is not supported.";
     }
 
     CastMetalParam metal_params = {(int)param.in_dtype, (int)param.out_dtype};
@@ -100,9 +102,7 @@ REGISTER_LITE_KERNEL(cast,
     paddle::lite::kernels::metal::CastImageCompute,
     def)
     .BindInput("X",
-        {LiteType::GetTensorTy(TARGET(kMetal),
-            PRECISION(kAny),
-            DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kAny), DATALAYOUT(kMetalTexture2DArray))})
     .BindOutput("Out",
         {LiteType::GetTensorTy(TARGET(kMetal),
             PRECISION(kFloat),
@@ -116,12 +116,7 @@ REGISTER_LITE_KERNEL(cast,
     paddle::lite::kernels::metal::CastImageCompute,
     def)
     .BindInput("X",
-        {LiteType::GetTensorTy(TARGET(kMetal),
-            PRECISION(kAny),
-            DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kAny), DATALAYOUT(kMetalTexture2DArray))})
     .BindOutput("Out",
-        {LiteType::GetTensorTy(TARGET(kMetal),
-            PRECISION(kFP16),
-            DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();
-

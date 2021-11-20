@@ -26,8 +26,8 @@ namespace nnadapter {
 static void ConvertOperandSymmToAsymm(hal::Operand* operand,
                                       int32_t zero_point) {
   switch (operand->type.precision) {
-    case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER: {
-      operand->type.precision = NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER;
+    case NNADAPTER_QUANT_INT8_SYMM_PER_LAYER: {
+      operand->type.precision = NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER;
       auto scale = operand->type.symm_per_layer_params.scale;
       operand->type.asymm_per_layer_params = {.scale = scale,
                                               .zero_point = zero_point};
@@ -91,6 +91,7 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(hal::Model* model) {
       case NNADAPTER_ADD:
       case NNADAPTER_DIV:
       case NNADAPTER_FULLY_CONNECTED:
+      case NNADAPTER_MAT_MUL:
       case NNADAPTER_MUL:
       case NNADAPTER_SUB: {
         ConvertOperandSymmToAsymm(input_operands[0], 128);

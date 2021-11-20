@@ -294,7 +294,7 @@ uint32_t Converter::ConvertOperand(hal::Operand* operand,
   auto is_constant = is_constant_copy || is_constant_reference;
   uint32_t index = INVALID_INDEX;
   switch (type.precision) {
-    case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER: {
+    case NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER: {
       if (is_constant) {
         index =
             AddQuant8ConstantOperand(reinterpret_cast<uint8_t*>(buffer),
@@ -310,7 +310,7 @@ uint32_t Converter::ConvertOperand(hal::Operand* operand,
                                      type.asymm_per_layer_params.zero_point);
       }
     } break;
-    case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL: {
+    case NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL: {
       NNADAPTER_CHECK(is_constant);
       index =
           AddQuant8ConstantOperand(reinterpret_cast<int8_t*>(buffer),
@@ -320,11 +320,11 @@ uint32_t Converter::ConvertOperand(hal::Operand* operand,
                                    type.symm_per_channel_params.scale_count,
                                    type.symm_per_channel_params.channel_dim);
     } break;
-    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER:
-    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL: {
+    case NNADAPTER_QUANT_INT32_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL: {
       // Only for bias
       NNADAPTER_CHECK(is_constant);
-      if (type.precision == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER) {
+      if (type.precision == NNADAPTER_QUANT_INT32_SYMM_PER_LAYER) {
         index = AddQuant32ConstantOperand(reinterpret_cast<int32_t*>(buffer),
                                           &dimensions[0],
                                           dimensions.size(),

@@ -29,7 +29,7 @@ class RnnCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
   virtual ~RnnCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace x86
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle

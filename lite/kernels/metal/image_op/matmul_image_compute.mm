@@ -66,13 +66,11 @@ void MatMulImageCompute::run_without_mps() {
 void MatMulImageCompute::setup_without_mps() {
     auto valid = false;
     if (input_buffer_y_->tensor_dim_.size() == 4) {
-        
     } else if (input_buffer_y_->tensor_dim_.size() == 3) {
-        
     } else {
         // tensor.size = 1, 2
-        if(input_buffer_x_->dim_[0] == 1 &&
-           input_buffer_x_->dim_[1] == 1 && input_buffer_x_->dim_[2] == 1) {
+        if (input_buffer_x_->dim_[0] == 1 && input_buffer_x_->dim_[1] == 1 &&
+            input_buffer_x_->dim_[2] == 1) {
             valid = true;
         }
     }

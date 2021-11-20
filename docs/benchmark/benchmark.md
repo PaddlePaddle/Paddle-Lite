@@ -1,133 +1,146 @@
 # 性能数据
 
-大家可以参考[测试方法文档](benchmark_tools)对模型进行测试。
+请参考[性能测试文档](benchmark_tools)对模型进行测试。
 
-## ARM测试环境
+## 测试环境
 
-* 测试模型
-    * fp32模型
-        * mobilenet_v1
-        * mobilenet_v2
-        * squeezenet_v1.1
-        * mnasnet
-        * shufflenet_v1
-    
-    * int8模型
-        * mobilenet_v1
-        * mobilenet_v2
+* 模型
+    * fp32 浮点模型
+        * [MobileNetV1](https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/MobileNetV1.tar.gz)
+        * [MobileNetV2](https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/MobileNetV2.tar.gz)
+        * [MobileNetV3_large_x1_0](https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/MobileNetV3_large_x1_0.tar.gz)
+        * [MobileNetV3_small_x1_0](https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/MobileNetV3_small_x1_0.tar.gz)
+        * [ResNet50](https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/ResNet50.tar.gz)
+        * [SSD_MobileNetV3_large](https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/ssdlite_mobilenet_v3_large.tar.gz)
+        * [HRNet_w18](https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/HRNet_18_voc.tar.gz)
 
-* 测试机器(android ndk ndk-r17c)
-   *  骁龙855
-      * xiaomi mi9, snapdragon 855 (enable sdot instruction)
-      * 4xA76(1@2.84GHz + 3@2.4GHz) + 4xA55@1.78GHz
+    * int8 量化模型
+        * [MobileNetV1_quant](https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/MobileNetV1_quant.tar.gz)
+        * [MobileNetV2_quant](https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/MobileNetV2_quant.tar.gz)
+        * [MobileNetV3_large_x1_0_quant](https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/MobileNetV3_large_x1_0_quant.tar.gz)
+        * [MobileNetV3_small_x1_0_quant](https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/MobileNetV3_small_x1_0_quant.tar.gz)
+        * [ResNet50_quant](https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/ResNet50_quant.tar.gz)
+        * [SSD_MobileNetV3_large_quant](https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/SSD_MobileNetV3_large_quant.tar.gz)
+        * [HRNet_w18_quant](https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/HRNet_18_voc_quant.tar.gz)
 
-   *  骁龙845
-      * xiaomi mi8, 845
-      * 2.8GHz（大四核），1.7GHz（小四核）
+* 测试机器
+   *  骁龙 865
+      * Xiaomi MI10, Snapdragon 865 (enable sdot instruction)
+      * CPU: 1xA77 @2.84GHz + 3xA77 @2.42GHz + 4xA55 @1.8GHz
+      * GPU: Adreno 650
 
-   *  骁龙835
-      * xiaomi mix2, snapdragon 835
-      * 2.45GHz（大四核），1.9GHz（小四核）
+   *  骁龙 855
+      * Xiaomi MI9, Snapdragon 855 (enable sdot instruction)
+      * CPU: 1xA76 @2.84GHz + 3xA76 @2.42GHz + 4xA55 @1.78GHz
+      * GPU: Adreno 640
+
+   *  骁龙 845
+      * Xiaomi MI8, Snapdragon 845
+      * CPU: 4xA75 @2.8GHz + 4xA75 @1.7GHz
+      * GPU: Adreno 630
+
+   *  骁龙 835
+      * Xiaomi mi6, Snapdragon 835
+      * CPU: 4xA73 @2.45GHz + 4xA53 @1.9GHz
+      * GPU: Adreno 540
+
+   *  骁龙 625
+      * Xiaomi Redmi6 Pro, Snapdragon 625
+      * CPU: 4xA53 @1.8GHz + 4xA53 @1.6GHz
+      * GPU: Adreno 506
+
+   *  麒麟 990
+      * Huawei Mate 30, Kirin 990
+      * CPU: 2xA76 @2.86GHz + 2xA76 @2.09GHz + 4xA55 @1.86GHz
+      * GPU: 16 core Mali-G76
+
+   *  麒麟 980
+      * Huawei Mate 20, Kirin 980
+      * CPU: 2xA76 @2.6GHz + 2xA76 @1.92Ghz + 4xA55 @1.8Ghz
+      * GPU: 10 core Mali-G76
+
+   *  RK3399
+      * CPU: 2xA72 @1.8GHz + 4xA53 @1.4Ghz
+      * GPU: 4 core Mali-T860
 
 * 测试说明
-    * branch: release/v2.9
-    * warmup=10, repeats=100，统计平均时间，单位是ms
-    * 当线程数为1时，```DeviceInfo::Global().SetRunMode```设置LITE_POWER_HIGH，否者设置LITE_POWER_NO_BIND
-    * 模型的输入图像的维度是{1, 3, 224, 224}，输入图像的每一位数值是1
-## ARM测试数据
+    * Branch: release/v2.10, commit id: b2e9776
+    * 使用 Android ndk-r20b，armv8 编译
+    * CPU 线程数设为 1，绑定大核
+    * 在 GPU 上运行时，开启了 Auto Tune
+    * warmup=20, repeats=600，统计平均时间，单位 ms
+    * 输入数据全部设为 1.f
+## 测试数据
+
+### fp32 浮点模型测试数据
+
+#### CPU 数据
+运行时精度为 fp32 的性能数据如下：
+
+|模型|骁龙 865|骁龙 855|骁龙 845|骁龙 835|骁龙 625|麒麟 990|麒麟 980|RK3399|
+|:----|----:|----:|----:|----:|----:|----:|----:|----:|
+|MobileNetV1|28.52 |29.22 |60.78 |82.54 |144.20 |38.16 |32.86 |111.76 |
+|MobileNetV2|18.84 |23.17 |42.74 |56.23 |107.66 |24.91 |22.51 |79.95 |
+|MobileNetV3_large_x1_0|14.55 |18.39 |32.49 |41.95 |96.30 |19.46 |17.78 |71.17 |
+|MobileNetV3_small_x1_0|4.75 |6.41 |9.98 |13.98 |37.99 |6.50 |6.00 |23.34 |
+|ResNet50|162.40 |192.88 |430.72 |490.54 |842.96 |221.81 |191.14 |638.29 |
+|SSD_MobileNetV3_large|33.87 |42.84 |84.70 |103.32 |199.60 |46.02 |40.95 |157.08 |
+|HRNet_w18|640.62 |835.62 |1687.78 |2048.81 |4724.20 |910.09 |820.42 |3380.08 |
 
 
-### fp32模型测试数据
+运行时精度为 fp16 的性能数据如下：
 
-#### paddlepaddle model
-
-骁龙855|armv7 | armv7 |  armv7 |armv8 | armv8 |armv8 
-----| ---- | ---- | ---- | ----  |----  |----
-threads num|1 |2 |4 |1 |2 |4 
-mobilenet_v1 |32.19 |18.75 |11.02 |29.50 |17.50 |9.58 
-mobilenet_v2 |23.77 |14.23 |8.52 |19.98 |12.19 |7.44 
-shufflenet_v2 |10.63 |6.60 |4.24 |9.74 |6.02 |3.99 
-squeezenet |17.44 |11.39 |7.50 |15.33 |10.04 |6.91 
-mnasnet |20.54 |12.30 |7.04 |17.62 |10.62 |6.34 
-
+|模型|骁龙 865|骁龙 855|骁龙 845|麒麟 990|
+|:----|----:|----:|----:|----:|
+|MobileNetV1|14.83 |15.79 |29.62 |20.64 |
+|MobileNetV2|9.49 |10.28 |18.93 |12.29 |
+|MobileNetV3_large_x1_0|7.84 |8.29 |16.00 |9.75 |
+|MobileNetV3_small_x1_0|2.58 |3.03 |5.85 |3.47 |
+|ResNet50|84.06 |87.10 |179.46 |109.38 |
+|SSD_MobileNetV3_large|18.32 |19.99 |40.13 |24.37 |
+|HRNet_w18|388.43 |430.27 |954.59 |544.75 |
 
 
-骁龙845|armv7 | armv7 |  armv7 |armv8 | armv8 |armv8 
-----| ---- | ---- | ---- | ----  |----  |----
-threads num|1 |2 |4 |1 |2 |4 
-mobilenet_v1 |65.28 |36.37 |22.88 |59.27 |32.62 |19.57 
-mobilenet_v2 |43.40 |24.33 |15.43 |38.15 |21.77 |13.81 
-shufflenet_v2 |20.09 |11.55 |7.57 |18.45 |10.91 |7.16 
-squeezenet |32.89 |21.24 |13.46 |30.20 |19.30 |12.83 
-mnasnet |39.22 |21.41 |12.92 |34.79 |19.39 |12.05 
+#### GPU 数据
+
+|模型|骁龙 865|骁龙 855|骁龙 845|骁龙 835|骁龙 625|麒麟 990|麒麟 980|RK3399|
+|:----|----:|----:|----:|----:|----:|----:|----:|----:|
+|MobileNetV1|7.05 |8.85 |10.46 |10.87 |71.42 |8.15 |13.74 |45.91 |
+|MobileNetV2|9.48 |9.70 |8.58 |14.14 |52.09 |9.32 |13.08 |37.27 |
+|MobileNetV3_large_x1_0|8.90 |9.11 |10.20 |12.04 |46.48 |9.81 |15.19 |32.92 |
+|MobileNetV3_small_x1_0|5.79 |5.54 |8.52 |11.43 |20.00 |6.45 |8.71 |18.42 |
+|ResNet50|29.70 |35.46 |45.23 |53.66 |392.62 |36.15 |54.23 |238.12 |
+|SSD_MobileNetV3_large|27.69 |35.21 |33.37 |42.31 |152.37 |27.25 |35.79 |90.37 |
 
 
+### int8 量化模型测试数据
 
-骁龙835|armv7 | armv7 |  armv7 |armv8 | armv8 |armv8 
-----| ---- | ---- | ---- | ----  |----  |----
-threads num|1 |2 |4 |1 |2 |4 
-mobilenet_v1 |92.40 |51.29 |33.14 |86.65 |48.89 |27.06 
-mobilenet_v2 |63.60 |36.32 |23.82 |61.17 |33.08 |19.89 
-shufflenet_v2 |27.54 |16.75 |11.05 |24.02 |14.24 |8.74 
-squeezenet |47.71 |31.51 |20.51 |43.30 |27.07 |16.74 
-mnasnet |59.17 |32.38 |20.71 |51.29 |28.32 |16.95 
+#### CPU 数据
 
-#### caffe model
-
-骁龙855|armv7 | armv7 |  armv7 |armv8 | armv8 |armv8 
-----| ---- | ---- | ---- | ----  |----  |----
-threads num|1 |2 |4 |1 |2 |4 
-mobilenet_v1 |32.14 |18.70 |10.91 |29.49 |17.48 |9.60 
-mobilenet_v2 |29.87 |17.64 |10.68 |25.82 |15.58 |9.29 
-shufflenet_v1 |3.96 |2.80 |2.05 |3.64 |2.70 |2.04 
+|模型|骁龙 865|骁龙 855|骁龙 845|骁龙 835|骁龙 625|麒麟 990|麒麟 980|RK3399|
+|:----|----:|----:|----:|----:|----:|----:|----:|----:|
+|MobileNetV1_quant|11.34 |14.81 |52.34 |55.69 |118.76 |14.80 |13.83 |78.30 |
+|MobileNetV2_quant|10.55 |14.06 |33.99 |40.87 |85.81 |14.22 |13.06 |57.94 |
+|MobileNetV3_large_x1_0_quant|8.11 |10.76 |24.63 |31.30 |70.86 |10.52 |9.73 |48.36 |
+|MobileNetV3_small_x1_0_quant|3.04 |4.20 |8.93 |11.27 |25.13 |4.10 |3.75 |17.87 |
+|ResNet50_quant|64.60 |80.46 |313.63 |331.30 |691.06 |81.65 |74.68 |489.30 |
+|SSD_MobileNetV3_large_quant|20.84 |22.82 |64.16 |74.12 |165.91 |27.11 |25.29 |119.92 |
 
 
+## 华为昇腾 NPU 的性能数据
+请参考 [Paddle Lite 使用华为昇腾 NPU 预测部署](../demo_guides/huawei_ascend_npu)的最新性能数据
 
-骁龙845|armv7 | armv7 |  armv7 |armv8 | armv8 |armv8 
-----| ---- | ---- | ---- | ----  |----  |----
-threads num|1 |2 |4 |1 |2 |4 
-mobilenet_v1 |65.04 |36.13 |21.99 |58.55 |32.89 |19.18 
-mobilenet_v2 |55.35 |31.56 |19.63 |49.06 |27.87 |17.36 
-shufflenet_v1 |7.20 |4.44 |3.21 |6.75 |4.50 |3.26 
+## 华为麒麟 NPU 的性能数据
+请参考 [Paddle Lite 使用华为麒麟 NPU 预测部署](../demo_guides/huawei_kirin_npu)的最新性能数据
 
+## 瑞芯微 NPU 的性能数据
+请参考 [Paddle Lite 使用瑞芯微 NPU 预测部署](../demo_guides/rockchip_npu)的最新性能数据
 
+## 晶晨 NPU 的性能数据
+请参考 [Paddle Lite 使用晶晨NPU 预测部署](../demo_guides/amlogic_npu)的最新性能数据
 
-骁龙835|armv7 | armv7 |  armv7 |armv8 | armv8 |armv8 
-----| ---- | ---- | ---- | ----  |----  |----
-threads num|1 |2 |4 |1 |2 |4 
-mobilenet_v1 |94.00 |52.42 |31.61 |85.96 |45.89 |49.02 
-mobilenet_v2 |81.01 |46.32 |29.10 |81.07 |43.46 |42.66 
-shufflenet_v1 |10.22 |6.23 |4.60 |10.04 |6.11 |4.13 
+## 联发科 APU 的性能数据
+请参考 [Paddle Lite 使用联发科 APU 预测部署](../demo_guides/mediatek_apu)的最新性能数据
 
-#### int8量化模型测试数据
-
-骁龙855|armv7 | armv7 |  armv7 |armv8 | armv8 |armv8 
-----| ---- | ---- | ---- | ----  |----  |----
-threads num|1 |2 |4 |1 |2 |4 
-mobilenet_v1 |19.00 |10.93 |5.97 | 13.08 |7.68 |3.98 
-mobilenet_v2 |17.68 |10.49 |5.93 | 12.76 |7.70 |4.36 
-
-骁龙845|armv7 | armv7 |  armv7 |armv8 | armv8 |armv8 
-----| ---- | ---- | ---- | ----  |----  |----
-threads num|1 |2 |4 |1 |2 |4 
-mobilenet_v1 |51.37 |28.11 |15.50 | 45.06 |24.47 |13.80 
-mobilenet_v2 |38.90 |21.64 |12.33 | 33.03 |18.71 |10.77 
-
-骁龙835|armv7 | armv7 |  armv7 |armv8 | armv8 |armv8 
-----| ---- | ---- | ---- | ----  |----  |----
-threads num|1 |2 |4 |1 |2 |4 
-mobilenet_v1 |60.48 |31.94 |16.53 |56.70 |29.73 |15.22 
-mobilenet_v2 |47.02 |25.34 |13.57 |41.75 |22.27 |11.94 
-
-
-## 华为麒麟NPU的性能数据
-请参考[PaddleLite使用华为麒麟NPU预测部署](../demo_guides/huawei_kirin_npu)的最新性能数据
-
-## 瑞芯微NPU的性能数据
-请参考[PaddleLite使用瑞芯微NPU预测部署](../demo_guides/rockchip_npu)的最新性能数据
-
-## 联发科APU的性能数据
-请参考[PaddleLite使用联发科APU预测部署](../demo_guides/mediatek_apu)的最新性能数据
-
-## 颖脉NNA的性能数据
-请参考[PaddleLite使用颖脉NNA预测部署](../demo_guides/imagination_nna)的最新性能数据
+## 颖脉 NNA 的性能数据
+请参考 [Paddle Lite 使用颖脉 NNA 预测部署](../demo_guides/imagination_nna)的最新性能数据

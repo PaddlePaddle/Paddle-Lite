@@ -33,8 +33,7 @@ void ScaleImageCompute::PrepareForRun() {
 #ifdef LITE_WITH_METAL_FULL
 #else
     input_buffer_ = param.x->data<MetalHalf, MetalImage>();
-    output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(
-        metal_context_, output_dims);
+    output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
 #endif
 
     setup_without_mps();
@@ -62,7 +61,7 @@ void ScaleImageCompute::run_without_mps() {
 
 void ScaleImageCompute::setup_without_mps() {
     const auto& param = this->Param<param_t>();
-    
+
     // relu
     ActivationMetalParam activation_params{0, 0.0, 0.0, 0.0, 0.0};
     if (param.activation_type == "relu6") {

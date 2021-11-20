@@ -43,13 +43,13 @@ int Benchmark(int argc, char** argv) {
   }
 
   // Get optimized model file if necessary
-  OutputOptModel(FLAGS_optimized_model_path);
+  auto model_file = OutputOptModel(FLAGS_optimized_model_file);
 
   // Get input shapes
   auto input_shapes = lite::GetShapes(FLAGS_input_shape);
 
   // Run
-  Run(FLAGS_optimized_model_path + ".nb", input_shapes);
+  Run(model_file, input_shapes);
 
   return 0;
 }

@@ -30,8 +30,7 @@ CLRuntime* CLRuntime::Global() {
 }
 
 void CLRuntime::Flush(const int index) {
-  if (is_cl_runtime_initialized_ && gpu_type_ == GpuType::ARM_MALI &&
-      index % opencl_flush_period_ == 0) {
+  if (is_cl_runtime_initialized_ && index % opencl_flush_period_ == 0) {
     command_queue_->flush();
   }
 }

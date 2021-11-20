@@ -63,6 +63,27 @@ namespace arm {
 
 template <>
 void Conv2DTransposeCompute<PRECISION(kFloat),
+                            PRECISION(kFloat)>::ReInitWhenNeeded() {
+  INIT_PARAM
+  workspace_size_ = group * m * n * sizeof(float);
+}
+
+template <>
+void Conv2DTransposeCompute<PRECISION(kInt8),
+                            PRECISION(kFloat)>::ReInitWhenNeeded() {
+  INIT_PARAM
+  workspace_size_ = 2 * group * m * n * sizeof(int32_t);
+}
+
+template <>
+void Conv2DTransposeCompute<PRECISION(kInt8),
+                            PRECISION(kInt8)>::ReInitWhenNeeded() {
+  INIT_PARAM
+  workspace_size_ = 2 * group * m * n * sizeof(int32_t);
+}
+
+template <>
+void Conv2DTransposeCompute<PRECISION(kFloat),
                             PRECISION(kFloat)>::PrepareForRun() {
   INIT_PARAM
   workspace_size_ = group * m * n * sizeof(float);
@@ -472,6 +493,14 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
 }
 
 #ifdef ENABLE_ARM_FP16
+
+template <>
+void Conv2DTransposeCompute<PRECISION(kFP16),
+                            PRECISION(kFP16)>::ReInitWhenNeeded() {
+  INIT_PARAM
+  workspace_size_ = group * m * n * sizeof(float16_t);
+}
+
 template <>
 void Conv2DTransposeCompute<PRECISION(kFP16),
                             PRECISION(kFP16)>::PrepareForRun() {

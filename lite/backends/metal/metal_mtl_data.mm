@@ -18,7 +18,7 @@ namespace paddle {
 namespace lite {
 
 MetalMTLData::MetalMTLData(void* ptr) {
-  image_ = (__bridge id<MTLTexture>)ptr;
+    image_ = (__bridge id<MTLTexture>)ptr;
 }
 
 id<MTLTexture> MetalMTLData::image() const {
@@ -30,6 +30,5 @@ MetalMTLData::~MetalMTLData() {
         image_ = nil;
     }
 }
-
 }
 }

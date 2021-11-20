@@ -22,6 +22,16 @@ namespace lite {
 namespace kernels {
 namespace host {
 
+DDimLite stride_flip(const DDimLite& ddim) {
+  std::vector<int64_t> tmp(ddim.size(), 0);
+  DDimLite strides(tmp);
+  strides[ddim.size() - 1] = 1;
+  for (int i = ddim.size() - 2; i >= 0; --i) {
+    strides[i] = strides[i + 1] * ddim[i + 1];
+  }
+  return strides;
+}
+
 template <typename T>
 class FlipCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
  public:
@@ -43,7 +53,7 @@ class FlipCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
       }
       dim_bitset[dim] = true;
     }
-    auto x_strides = x_dims.Vectorize();
+    auto x_strides = stride_flip(x_dims);
     auto numel = x->numel();
     const T* x_data = x->template data<T>();
     T* out_data = out->template mutable_data<T>();

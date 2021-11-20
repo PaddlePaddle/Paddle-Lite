@@ -11,6 +11,7 @@ FILE(GLOB LITE_METAL_KERNELS_SRC ${CMAKE_SOURCE_DIR}/lite/backends/metal/metal_k
 IF (DEFINED SDK_VERSION)
     #Defined by iOS toolchain
     SET(SDK_NAME "iphoneos")
+    SET(METAL_STD_OPTION "-std=ios-metal1.1")
     SET(TARGET_OPTION "-mios-version-min=${DEPLOYMENT_TARGET}")
 ELSE ()
     SET(SDK_NAME "macosx")
@@ -22,7 +23,7 @@ add_custom_target(LiteMetalLIB
         COMMENT "Generating lite.metallib")
 
 add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/lite.metallib
-        COMMAND xcrun -sdk ${SDK_NAME} metal ${TARGET_OPTION} ${LITE_METAL_KERNELS_SRC} -o ${CMAKE_BINARY_DIR}/lite.metallib
+        COMMAND xcrun -sdk ${SDK_NAME} metal ${METAL_STD_OPTION} ${TARGET_OPTION} ${LITE_METAL_KERNELS_SRC} -o ${CMAKE_BINARY_DIR}/lite.metallib
         DEPENDS ${LITE_METAL_KERNELS_SRC}
         COMMENT "Built target lite.metallib")
 

@@ -132,9 +132,9 @@ void MemoryOptimizePass::CollectLifeCycleByDevice(
                             {"flatten", {{"X"}, {"Out"}}},
                             {"flatten2", {{"X"}, {"Out"}}},
                             {"squeeze", {{"X"}, {"Out"}}},
-                            {"squeeze2", {{"X"}, {"Out"}}},
+                            {"squeeze2", {{"X"}, {{"Out"}, {"XShape"}}}},
                             {"unsqueeze", {{"X"}, {"Out"}}},
-                            {"unsqueeze2", {{"X"}, {"Out"}}}};
+                            {"unsqueeze2", {{"X"}, {{"Out"}, {"XShape"}}}}};
     auto inplace_op_node = inplace_op_nodes.find(op_type);
     if (inplace_op_node != inplace_op_nodes.end()) {
       bool inplace = false;

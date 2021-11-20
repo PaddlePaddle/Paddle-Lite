@@ -43,6 +43,12 @@ void ElementwiseSubImageCompute::PrepareForRun() {
 }
 
 void ElementwiseSubImageCompute::Run() {
+    @autoreleasepool {
+        run_without_mps();
+    }
+}
+
+void ElementwiseSubImageCompute::run_without_mps() {
     auto pipline = pipline_;
     auto outTexture = output_buffer_->image();
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
@@ -64,8 +70,7 @@ void ElementwiseSubImageCompute::setup_without_mps() {
     int by_channel = 0;
     if (input_buffer_x_->tensor_dim_.size() == 4) {
         if (input_buffer_y_->tensor_dim_.size() == 4) {
-            if (input_buffer_y_->tensor_dim_[0] == 1 &&
-                input_buffer_y_->tensor_dim_[2] == 1 &&
+            if (input_buffer_y_->tensor_dim_[0] == 1 && input_buffer_y_->tensor_dim_[2] == 1 &&
                 input_buffer_y_->tensor_dim_[3] == 1 &&
                 input_buffer_x_->tensor_dim_[1] == input_buffer_y_->tensor_dim_[1]) {
                 by_channel = 1;

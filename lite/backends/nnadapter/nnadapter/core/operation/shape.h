@@ -17,25 +17,25 @@
 namespace nnadapter {
 namespace operation {
 
-#define SHAPE_OPERATION_EXTRACT_INPUTS_OUTPUTS                             \
-  auto& input_operands = operation->input_operands;                        \
-  auto& output_operands = operation->output_operands;                      \
-  auto input_count = input_operands.size();                                \
-  auto output_count = output_operands.size();                              \
-  NNADAPTER_CHECK_EQ(input_count, 2);                                      \
-  NNADAPTER_CHECK_EQ(output_count, 1);                                     \
-  /* Input */                                                              \
-  auto input_operand = input_operands[0];                                  \
-  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);        \
-  /* Dtype */                                                              \
-  auto dtype_operand = input_operands[1];                                  \
-  auto dtype = static_cast<NNAdapterOperandPrecisionCode>(                 \
-      reinterpret_cast<int32_t*>(dtype_operand->buffer)[0]);               \
-  NNADAPTER_VLOG(5) << "dtype: " << OperandPrecisionCodeToString(dtype);   \
-  NNADAPTER_CHECK(dtype == static_cast<int32_t>(NNADAPTER_TENSOR_INT32) || \
-                  dtype == static_cast<int32_t>(NNADAPTER_TENSOR_INT64));  \
-  /* Output */                                                             \
-  auto output_operand = output_operands[0];                                \
+#define SHAPE_OPERATION_EXTRACT_INPUTS_OUTPUTS                           \
+  auto& input_operands = operation->input_operands;                      \
+  auto& output_operands = operation->output_operands;                    \
+  auto input_count = input_operands.size();                              \
+  auto output_count = output_operands.size();                            \
+  NNADAPTER_CHECK_EQ(input_count, 2);                                    \
+  NNADAPTER_CHECK_EQ(output_count, 1);                                   \
+  /* Input */                                                            \
+  auto input_operand = input_operands[0];                                \
+  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);      \
+  /* Dtype */                                                            \
+  auto dtype_operand = input_operands[1];                                \
+  auto dtype = static_cast<NNAdapterOperandPrecisionCode>(               \
+      reinterpret_cast<int32_t*>(dtype_operand->buffer)[0]);             \
+  NNADAPTER_VLOG(5) << "dtype: " << OperandPrecisionCodeToString(dtype); \
+  NNADAPTER_CHECK(dtype == static_cast<int32_t>(NNADAPTER_INT32) ||      \
+                  dtype == static_cast<int32_t>(NNADAPTER_INT64));       \
+  /* Output */                                                           \
+  auto output_operand = output_operands[0];                              \
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
 }  // namespace operation

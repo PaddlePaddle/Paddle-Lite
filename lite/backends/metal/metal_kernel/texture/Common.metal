@@ -50,133 +50,133 @@ typedef half4x4 ftype4x4;
 #pragma mark -
 
 enum ActivationType : ushort {
-  NONE = 0,
-  RELU = 1,
-  RELU6 = 2,
-  PRELU = 3,
-  LEAKY_RELU = 4,
-  HARD_SIGMOID = 5,
+    NONE = 0,
+    RELU = 1,
+    RELU6 = 2,
+    PRELU = 3,
+    LEAKY_RELU = 4,
+    HARD_SIGMOID = 5,
 };
 
 struct DropoutParam {
-  float scale;
+    float scale;
 };
 
 struct MetalActivationParam {
-  ActivationType activationType;
-  float threshold;  // RELU6
-  float alpha;      // LEAKY_RELU
-  float offset;     // HARD_SIGMOID
-  float slope;
+    ActivationType activationType;
+    float threshold;  // RELU6
+    float alpha;      // LEAKY_RELU
+    float offset;     // HARD_SIGMOID
+    float slope;
 };
 
 struct ElementwiseAddParam {
-  int32_t fast;          // wise element add
-  int32_t addByChannel;  // only C channell
-  int32_t axis;          // input_y index at input_x
-  int32_t ylen;          // input_y axis
-  int32_t xdim[4];       // input_x dim [NCHW-CPU]-> [NHWC-GPU]
-  int32_t xtrans[4];     // input_x transpose dim
-  int32_t ydim[4];       // input_y dim on gpu
-  int32_t ytrans[4];     // input_x transpose dim
+    int32_t fast;          // wise element add
+    int32_t addByChannel;  // only C channell
+    int32_t axis;          // input_y index at input_x
+    int32_t ylen;          // input_y axis
+    int32_t xdim[4];       // input_x dim [NCHW-CPU]-> [NHWC-GPU]
+    int32_t xtrans[4];     // input_x transpose dim
+    int32_t ydim[4];       // input_y dim on gpu
+    int32_t ytrans[4];     // input_x transpose dim
 };
 
 struct ElementwiseParam {
-  int32_t byChannel;
+    int32_t byChannel;
 };
 
 struct MetalConvParam {
-  short offsetX;
-  short offsetY;
-  short offsetZ;
-  ushort strideX;
-  ushort strideY;
-  ushort dilationX;
-  ushort dilationY;
-  ushort groups;
-  ushort iC;
-  ushort fC;
-  ushort oC;
-  ushort hasAddOp;
-  ushort hasReluOp;
-  ElementwiseAddParam addParam;
-  MetalActivationParam activationParam;
+    short offsetX;
+    short offsetY;
+    short offsetZ;
+    ushort strideX;
+    ushort strideY;
+    ushort dilationX;
+    ushort dilationY;
+    ushort groups;
+    ushort iC;
+    ushort fC;
+    ushort oC;
+    ushort hasAddOp;
+    ushort hasReluOp;
+    ElementwiseAddParam addParam;
+    MetalActivationParam activationParam;
 };
 
 struct Pad2dParam {
-  short paddingTop;
-  short paddingBottom;
-  short paddingLeft;
-  short paddingRight;
-  float padValue;
-  short mode;
+    short paddingTop;
+    short paddingBottom;
+    short paddingLeft;
+    short paddingRight;
+    float padValue;
+    short mode;
 };
 
 struct MetalInstanceNormReluParam {
-  ushort hasReluOp;
+    ushort hasReluOp;
 };
 
 struct MetalConvTransposeParam {
-  ushort kernelW;
-  ushort kernelH;
+    ushort kernelW;
+    ushort kernelH;
 
-  ushort strideX;
-  ushort strideY;
+    ushort strideX;
+    ushort strideY;
 
-  ushort paddingX;
-  ushort paddingY;
+    ushort paddingX;
+    ushort paddingY;
 
-  ushort dilationX;
-  ushort dilationY;
+    ushort dilationX;
+    ushort dilationY;
 
-  ushort groups;
-  ushort iC;
-  ushort fC;
-  ushort oC;
+    ushort groups;
+    ushort iC;
+    ushort fC;
+    ushort oC;
 
-  ushort hasAddOp;
-  ElementwiseAddParam addParam;
+    ushort hasAddOp;
+    ElementwiseAddParam addParam;
 };
 
 struct LrnParam {
-  int32_t n;
-  int32_t channelN;
-  float k;
-  float alpha;
-  float beta;
+    int32_t n;
+    int32_t channelN;
+    float k;
+    float alpha;
+    float beta;
 };
 
 struct PixelShuffleParam {
-  int32_t upscale_factor;
+    int32_t upscale_factor;
 };
 
 struct ExpandParam {
-  ushort fast;
-  ushort c;
-  ushort h;
-  ushort w;
+    ushort fast;
+    ushort c;
+    ushort h;
+    ushort w;
 };
 
 struct B2TParam {
-  int32_t n;
-  int32_t c;
-  int32_t h;
-  int32_t w;
+    int32_t n;
+    int32_t c;
+    int32_t h;
+    int32_t w;
 };
 
 struct ReshapeParam {
-  int32_t idim[4];
-  int32_t itrans[4];
-  int32_t odim[4];
-  int32_t otrans[4];
+    int32_t idim[4];
+    int32_t itrans[4];
+    int32_t odim[4];
+    int32_t otrans[4];
 };
 
 struct Relu6Param {
-  float threshold;
+    float threshold;
 };
 
 struct LeakyReluParam {
-  float alpha;
+    float alpha;
 };
 
 struct HardSigmoidParam {
@@ -191,170 +191,163 @@ struct HardSwishParam {
 };
 
 struct ShuffleChannelParam {
-  uint32_t group;
-  uint32_t channel_per_group;
+    uint32_t group;
+    uint32_t channel_per_group;
 };
 
 struct SplitParam {
-  int32_t idim[4];
-  int32_t axis;
-  int32_t offset;
-  int32_t trans[4];
-  int32_t vdim[4];
+    int32_t idim[4];
+    int32_t axis;
+    int32_t offset;
+    int32_t trans[4];
+    int32_t vdim[4];
 };
 
 #pragma mark -
 
 inline void xyzn2abcd_1(int xyzn[4], int abcd[4]) {
-  abcd[0] = abcd[1] = abcd[2] = 0;
-  abcd[3] = xyzn[0] * 4 + xyzn[3];
+    abcd[0] = abcd[1] = abcd[2] = 0;
+    abcd[3] = xyzn[0] * 4 + xyzn[3];
 }
 inline void xyzn2abcd_2(int xyzn[4], int abcd[4]) {
-  abcd[0] = abcd[1] = 0;
-  abcd[2] = xyzn[1];
-  abcd[3] = xyzn[0] * 4 + xyzn[3];
+    abcd[0] = abcd[1] = 0;
+    abcd[2] = xyzn[1];
+    abcd[3] = xyzn[0] * 4 + xyzn[3];
 }
 inline void xyzn2abcd_3(int xyzn[4], int abcd[4]) {
-  abcd[0] = 0;
-  abcd[3] = xyzn[0];
-  abcd[2] = xyzn[1];
-  abcd[1] = xyzn[2] * 4 + xyzn[3];
+    abcd[0] = 0;
+    abcd[3] = xyzn[0];
+    abcd[2] = xyzn[1];
+    abcd[1] = xyzn[2] * 4 + xyzn[3];
 }
 inline void xyzn2abcd_4(int C, int xyzn[4], int abcd[4]) {
-  abcd[2] = xyzn[0];
-  abcd[1] = xyzn[1];
-  uint t = xyzn[2] * 4 + xyzn[3];
-  abcd[0] = t / C;
-  abcd[3] = t % C;
+    abcd[2] = xyzn[0];
+    abcd[1] = xyzn[1];
+    uint t = xyzn[2] * 4 + xyzn[3];
+    abcd[0] = t / C;
+    abcd[3] = t % C;
 }
 
 inline void abcd2xyzn_1(int abcd[4], int xyzn[4]) {
-  xyzn[1] = xyzn[2] = 0;
-  xyzn[0] = abcd[3] / 4;
-  xyzn[1] = abcd[3] % 4;
+    xyzn[1] = xyzn[2] = 0;
+    xyzn[0] = abcd[3] / 4;
+    xyzn[1] = abcd[3] % 4;
 }
 inline void abcd2xyzn_2(int abcd[4], int xyzn[4]) {
-  xyzn[2] = 0;
-  xyzn[1] = abcd[2];
-  xyzn[0] = abcd[3] / 4;
-  xyzn[3] = abcd[3] % 4;
+    xyzn[2] = 0;
+    xyzn[1] = abcd[2];
+    xyzn[0] = abcd[3] / 4;
+    xyzn[3] = abcd[3] % 4;
 }
 inline void abcd2xyzn_3(int abcd[4], int xyzn[4]) {
-  xyzn[0] = abcd[3];
-  xyzn[1] = abcd[2];
-  xyzn[2] = abcd[1] / 4;
-  xyzn[3] = abcd[1] % 4;
+    xyzn[0] = abcd[3];
+    xyzn[1] = abcd[2];
+    xyzn[2] = abcd[1] / 4;
+    xyzn[3] = abcd[1] % 4;
 }
 inline void abcd2xyzn_4(int C, int abcd[4], int xyzn[4]) {
-  xyzn[0] = abcd[2];
-  xyzn[1] = abcd[1];
-  uint t = abcd[0] * C + abcd[3];
-  xyzn[2] = t / 4;
-  xyzn[3] = t % 4;
+    xyzn[0] = abcd[2];
+    xyzn[1] = abcd[1];
+    uint t = abcd[0] * C + abcd[3];
+    xyzn[2] = t / 4;
+    xyzn[3] = t % 4;
 }
 
 inline void xyzn2abcd(int C, int xyzn[4], int abcd[4]) {
-  abcd[2] = xyzn[0];
-  abcd[1] = xyzn[1];
-  uint t = xyzn[2] * 4 + xyzn[3];
-  abcd[0] = t / C;
-  abcd[3] = t % C;
+    abcd[2] = xyzn[0];
+    abcd[1] = xyzn[1];
+    uint t = xyzn[2] * 4 + xyzn[3];
+    abcd[0] = t / C;
+    abcd[3] = t % C;
 }
 
 inline void abcd2xyzn(int C, int abcd[4], int xyzn[4]) {
-  xyzn[0] = abcd[2];
-  xyzn[1] = abcd[1];
-  uint t = abcd[0] * C + abcd[3];
-  xyzn[2] = t / 4;
-  xyzn[3] = t % 4;
+    xyzn[0] = abcd[2];
+    xyzn[1] = abcd[1];
+    uint t = abcd[0] * C + abcd[3];
+    xyzn[2] = t / 4;
+    xyzn[3] = t % 4;
 }
 
 inline int32_t abcd2index(int32_t dim[4], int32_t abcd[4]) {
-  int32_t r = abcd[0];
-  r = r * dim[1] + abcd[1];
-  r = r * dim[2] + abcd[2];
-  r = r * dim[3] + abcd[3];
-  return r;
+    int32_t r = abcd[0];
+    r = r * dim[1] + abcd[1];
+    r = r * dim[2] + abcd[2];
+    r = r * dim[3] + abcd[3];
+    return r;
 }
 
 inline void index2abcd(int32_t dim[4], int32_t ind, int32_t abcd[4]) {
-  abcd[3] = ind % dim[3];
-  ind /= dim[3];
-  abcd[2] = ind % dim[2];
-  ind /= dim[2];
-  abcd[1] = ind % dim[1];
-  ind /= dim[1];
-  abcd[0] = ind;
+    abcd[3] = ind % dim[3];
+    ind /= dim[3];
+    abcd[2] = ind % dim[2];
+    ind /= dim[2];
+    abcd[1] = ind % dim[1];
+    ind /= dim[1];
+    abcd[0] = ind;
 }
 
 inline void trans(int32_t trans[4], int32_t ipos[4], int32_t opos[4]) {
-  for (int i = 0; i < 4; i++) {
-    opos[i] = ipos[trans[i]];
-  }
+    for (int i = 0; i < 4; i++) {
+        opos[i] = ipos[trans[i]];
+    }
 }
 
 inline void invtrans(int32_t trans[4], int32_t ipos[4], int32_t opos[4]) {
-  for (int i = 0; i < 4; i++) {
-    opos[trans[i]] = ipos[i];
-  }
+    for (int i = 0; i < 4; i++) {
+        opos[trans[i]] = ipos[i];
+    }
 }
 
 #pragma -
 
-inline ftype4 activation(const ftype4 input,
-                         constant MetalActivationParam &param) {
-  switch (param.activationType) {
-    case NONE:
-      return input;
-    case RELU:
-      return fmax(0, input);
-    case RELU6:
-      return fmin(fmax(input, 0.0), ftype(param.threshold));
-    case PRELU:
-      return input;
-    case LEAKY_RELU:
-      return fmax(input, ftype(param.alpha) * input);
-    case HARD_SIGMOID:
-      return fmax(0.0,
-                  fmin(1.0, ftype(param.slope) * input + ftype(param.offset)));
-  }
+inline ftype4 activation(const ftype4 input, constant MetalActivationParam& param) {
+    switch (param.activationType) {
+        case NONE:
+            return input;
+        case RELU:
+            return fmax(0, input);
+        case RELU6:
+            return fmin(fmax(input, 0.0), ftype(param.threshold));
+        case PRELU:
+            return input;
+        case LEAKY_RELU:
+            return fmax(input, ftype(param.alpha) * input);
+        case HARD_SIGMOID:
+            return fmax(0.0, fmin(1.0, ftype(param.slope) * input + ftype(param.offset)));
+    }
 }
 
 #pragma -
 
 inline half4 getBiasHalf(uint3 gid,
-                         constant ElementwiseAddParam &addParam,
-                         texture2d_array<half, access::sample> biasTexture) {
-  half4 output;
-  if (addParam.fast == 1) {
-    output = biasTexture.read(gid.xy, gid.z);
-  } else if (addParam.addByChannel == 1) {
-    output = biasTexture.read(uint2(0, 0), gid.z);
-  } else {
-    int32_t x_xyzn[4] = {int32_t(gid.x), int32_t(gid.y), int32_t(gid.z), 0},
-            x_abcd[4], t_abcd[4];
-    int32_t y_abcd[4] = {0, 0, 0, 0}, y_xyzn[4];
-    int32_t xtrans[4] = {addParam.xtrans[0],
-                         addParam.xtrans[1],
-                         addParam.xtrans[2],
-                         addParam.xtrans[3]};
-    int32_t ytrans[4] = {addParam.ytrans[0],
-                         addParam.ytrans[1],
-                         addParam.ytrans[2],
-                         addParam.ytrans[3]};
-    int32_t yshift = 4 - addParam.ylen - addParam.axis;
-    for (int n = 0; n < 4; n++) {
-      x_xyzn[3] = n;
-      xyzn2abcd(addParam.xdim[3], x_xyzn, x_abcd);
-      invtrans(xtrans, x_abcd, t_abcd);
-      for (int k = addParam.axis; k < (addParam.axis + addParam.ylen); k++) {
-        y_abcd[yshift + k] = t_abcd[k];
-      }
-      trans(ytrans, y_abcd, t_abcd);
-      abcd2xyzn(addParam.ydim[3], t_abcd, y_xyzn);
-      output[n] =
-          biasTexture.read(uint2(y_xyzn[0], y_xyzn[1]), y_xyzn[2])[y_xyzn[3]];
+    constant ElementwiseAddParam& addParam,
+    texture2d_array<half, access::sample> biasTexture) {
+    half4 output;
+    if (addParam.fast == 1) {
+        output = biasTexture.read(gid.xy, gid.z);
+    } else if (addParam.addByChannel == 1) {
+        output = biasTexture.read(uint2(0, 0), gid.z);
+    } else {
+        int32_t x_xyzn[4] = {int32_t(gid.x), int32_t(gid.y), int32_t(gid.z), 0}, x_abcd[4],
+                t_abcd[4];
+        int32_t y_abcd[4] = {0, 0, 0, 0}, y_xyzn[4];
+        int32_t xtrans[4] = {
+            addParam.xtrans[0], addParam.xtrans[1], addParam.xtrans[2], addParam.xtrans[3]};
+        int32_t ytrans[4] = {
+            addParam.ytrans[0], addParam.ytrans[1], addParam.ytrans[2], addParam.ytrans[3]};
+        int32_t yshift = 4 - addParam.ylen - addParam.axis;
+        for (int n = 0; n < 4; n++) {
+            x_xyzn[3] = n;
+            xyzn2abcd(addParam.xdim[3], x_xyzn, x_abcd);
+            invtrans(xtrans, x_abcd, t_abcd);
+            for (int k = addParam.axis; k < (addParam.axis + addParam.ylen); k++) {
+                y_abcd[yshift + k] = t_abcd[k];
+            }
+            trans(ytrans, y_abcd, t_abcd);
+            abcd2xyzn(addParam.ydim[3], t_abcd, y_xyzn);
+            output[n] = biasTexture.read(uint2(y_xyzn[0], y_xyzn[1]), y_xyzn[2])[y_xyzn[3]];
+        }
     }
-  }
-  return output;
+    return output;
 }

@@ -392,6 +392,7 @@ REGISTER_LITE_KERNEL(elementwise_add,
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(elementwise_add,
                      kX86,
                      kFloat,
@@ -402,6 +403,7 @@ REGISTER_LITE_KERNEL(elementwise_add,
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(elementwise_add,
                      kX86,
                      kFloat,
@@ -412,6 +414,7 @@ REGISTER_LITE_KERNEL(elementwise_add,
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(
     fusion_elementwise_add_activation,
     kX86,
@@ -423,6 +426,7 @@ REGISTER_LITE_KERNEL(
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(elementwise_sub,
                      kX86,
                      kFloat,
@@ -433,6 +437,7 @@ REGISTER_LITE_KERNEL(elementwise_sub,
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(elementwise_sub,
                      kX86,
                      kFloat,
@@ -443,6 +448,7 @@ REGISTER_LITE_KERNEL(elementwise_sub,
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(elementwise_sub,
                      kX86,
                      kFloat,
@@ -453,6 +459,7 @@ REGISTER_LITE_KERNEL(elementwise_sub,
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(
     fusion_elementwise_sub_activation,
     kX86,
@@ -464,6 +471,7 @@ REGISTER_LITE_KERNEL(
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(elementwise_mul,
                      kX86,
                      kFloat,
@@ -474,6 +482,7 @@ REGISTER_LITE_KERNEL(elementwise_mul,
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(elementwise_mul,
                      kX86,
                      kFloat,
@@ -484,6 +493,7 @@ REGISTER_LITE_KERNEL(elementwise_mul,
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(elementwise_mul,
                      kX86,
                      kFloat,
@@ -494,6 +504,7 @@ REGISTER_LITE_KERNEL(elementwise_mul,
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(
     fusion_elementwise_mul_activation,
     kX86,
@@ -505,6 +516,7 @@ REGISTER_LITE_KERNEL(
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(elementwise_div,
                      kX86,
                      kFloat,
@@ -515,6 +527,7 @@ REGISTER_LITE_KERNEL(elementwise_div,
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(elementwise_div,
                      kX86,
                      kFloat,
@@ -525,6 +538,7 @@ REGISTER_LITE_KERNEL(elementwise_div,
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(elementwise_div,
                      kX86,
                      kFloat,
@@ -535,6 +549,7 @@ REGISTER_LITE_KERNEL(elementwise_div,
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(
     fusion_elementwise_div_activation,
     kX86,
@@ -546,6 +561,7 @@ REGISTER_LITE_KERNEL(
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(
     elementwise_floordiv,
     kX86,
@@ -557,6 +573,7 @@ REGISTER_LITE_KERNEL(
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(
     elementwise_floordiv,
     kX86,
@@ -568,6 +585,7 @@ REGISTER_LITE_KERNEL(
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(
     elementwise_floordiv,
     kX86,
@@ -579,6 +597,7 @@ REGISTER_LITE_KERNEL(
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(elementwise_pow,
                      kX86,
                      kFloat,
@@ -589,6 +608,7 @@ REGISTER_LITE_KERNEL(elementwise_pow,
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(elementwise_pow,
                      kX86,
                      kFloat,
@@ -599,6 +619,7 @@ REGISTER_LITE_KERNEL(elementwise_pow,
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(elementwise_pow,
                      kX86,
                      kFloat,
@@ -609,6 +630,7 @@ REGISTER_LITE_KERNEL(elementwise_pow,
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(elementwise_mod,
                      kX86,
                      kFloat,
@@ -619,6 +641,7 @@ REGISTER_LITE_KERNEL(elementwise_mod,
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(elementwise_mod,
                      kX86,
                      kFloat,
@@ -629,6 +652,7 @@ REGISTER_LITE_KERNEL(elementwise_mod,
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(elementwise_max,
                      kX86,
                      kFloat,
@@ -639,6 +663,7 @@ REGISTER_LITE_KERNEL(elementwise_max,
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(elementwise_max,
                      kX86,
                      kFloat,
@@ -649,6 +674,7 @@ REGISTER_LITE_KERNEL(elementwise_max,
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(elementwise_max,
                      kX86,
                      kFloat,
@@ -659,6 +685,7 @@ REGISTER_LITE_KERNEL(elementwise_max,
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(
     fusion_elementwise_max_activation,
     kX86,
@@ -670,6 +697,7 @@ REGISTER_LITE_KERNEL(
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(
     fusion_elementwise_min_activation,
     kX86,
@@ -681,6 +709,7 @@ REGISTER_LITE_KERNEL(
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(elementwise_min,
                      kX86,
                      kFloat,
@@ -691,6 +720,7 @@ REGISTER_LITE_KERNEL(elementwise_min,
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(elementwise_min,
                      kX86,
                      kFloat,
@@ -701,6 +731,7 @@ REGISTER_LITE_KERNEL(elementwise_min,
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .Finalize();
+
 REGISTER_LITE_KERNEL(elementwise_min,
                      kX86,
                      kFloat,

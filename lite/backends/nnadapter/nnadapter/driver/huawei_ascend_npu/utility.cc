@@ -150,13 +150,16 @@ const std::string ATCErrorToString(uint32_t error) {
 }
 
 std::shared_ptr<AclModelClient> LoadOMModelFromBuffer(
-    const std::vector<uint8_t>& model_buffer, int device_id) {
+    const std::vector<uint8_t>& model_buffer,
+    int device_id,
+    const std::string& profiling_file_path) {
   if (model_buffer.size() == 0) {
     NNADAPTER_LOG(ERROR) << "model_buffer size should not be 0!";
     return nullptr;
   }
   // Create a ACL model client to load the om model
-  auto model_client = std::make_shared<AclModelClient>(device_id);
+  auto model_client =
+      std::make_shared<AclModelClient>(device_id, profiling_file_path);
   // Load model from memory
   if (model_client->LoadModel(
           reinterpret_cast<const void*>(model_buffer.data()),
@@ -383,42 +386,30 @@ void ConvertACLDimsToGEDims(const aclmdlIODims& input_dimensions,
 ge::DataType ConvertToGEPrecision(
     NNAdapterOperandPrecisionCode precision_code) {
   switch (precision_code) {
-    case NNADAPTER_TENSOR_BOOL8:
     case NNADAPTER_BOOL8:
       return ge::DT_BOOL;
-    case NNADAPTER_TENSOR_INT8:
     case NNADAPTER_INT8:
       return ge::DT_INT8;
-    case NNADAPTER_TENSOR_INT16:
     case NNADAPTER_INT16:
       return ge::DT_INT16;
-    case NNADAPTER_TENSOR_INT32:
     case NNADAPTER_INT32:
       return ge::DT_INT32;
-    case NNADAPTER_TENSOR_INT64:
     case NNADAPTER_INT64:
       return ge::DT_INT64;
-    case NNADAPTER_TENSOR_UINT8:
     case NNADAPTER_UINT8:
       return ge::DT_UINT8;
-    case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER:
+    case NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER:
       return ge::DT_QUINT8;
-    case NNADAPTER_TENSOR_UINT16:
     case NNADAPTER_UINT16:
       return ge::DT_UINT16;
-    case NNADAPTER_TENSOR_UINT32:
     case NNADAPTER_UINT32:
       return ge::DT_UINT32;
-    case NNADAPTER_TENSOR_UINT64:
     case NNADAPTER_UINT64:
       return ge::DT_UINT64;
-    case NNADAPTER_TENSOR_FLOAT16:
     case NNADAPTER_FLOAT16:
       return ge::DT_FLOAT16;
-    case NNADAPTER_TENSOR_FLOAT32:
     case NNADAPTER_FLOAT32:
       return ge::DT_FLOAT;
-    case NNADAPTER_TENSOR_FLOAT64:
     case NNADAPTER_FLOAT64:
       return ge::DT_DOUBLE;
     default:

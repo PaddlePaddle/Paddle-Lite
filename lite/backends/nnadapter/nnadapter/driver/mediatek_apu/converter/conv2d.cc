@@ -52,10 +52,10 @@ int ConvertConv2D(Converter* converter, hal::Operation* operation) {
   if (input_index == INVALID_INDEX) {
     input_index = converter->ConvertOperand(input_operand);
   }
-  bool is_per_channel = filter_operand->type.precision ==
-                        NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL;
+  bool is_per_channel =
+      filter_operand->type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL;
   NNADAPTER_CHECK(filter_operand->type.precision ==
-                      NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER ||
+                      NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER ||
                   is_per_channel);
   NNADAPTER_VLOG(5) << "is_per_channel:" << is_per_channel;
   auto filter_index = converter->ConvertOperand(filter_operand);

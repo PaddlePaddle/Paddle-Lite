@@ -25,6 +25,8 @@ int NeuronOperandDataTypeLength(int data_type);
 
 // Convert NNAdapter types to Neuron types
 int ConvertToNeuronPrecision(NNAdapterOperandPrecisionCode precision_code);
+int ConvertToNeuronTensorPrecision(
+    NNAdapterOperandPrecisionCode precision_code);
 int ConvertToNeuronDataLayout(NNAdapterOperandLayoutCode layout_code);
 std::vector<uint32_t> ConvertToNeuronDimensions(
     int32_t* input_dimensions, uint32_t input_dimensions_count);

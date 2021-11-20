@@ -42,7 +42,7 @@ void Conv2dImageCompute::ReInitWhenNeeded() {
     if (last_input_dims_ != input_dims) {
         release_memory();
         init_memory();
-        
+
         if (use_mps_) {
             if (@available(iOS 11.3, *)) {
                 if (mps_input_image_) {
@@ -56,12 +56,12 @@ void Conv2dImageCompute::ReInitWhenNeeded() {
                 auto input_c = static_cast<int>(input_buffer_->tensor_dim_[1]);
                 auto output_c = static_cast<int>(output_buffer_->tensor_dim_[1]);
                 // MPS input and output
-                mps_input_image_ =
-                    (__bridge_retained void*)[[MPSImage alloc] initWithTexture:input_buffer_->image()
-                                                               featureChannels:input_c];
-                mps_output_image_ =
-                    (__bridge_retained void*)[[MPSImage alloc] initWithTexture:output_buffer_->image()
-                                                               featureChannels:output_c];
+                mps_input_image_ = (__bridge_retained void*)[[MPSImage alloc]
+                    initWithTexture:input_buffer_->image()
+                    featureChannels:input_c];
+                mps_output_image_ = (__bridge_retained void*)[[MPSImage alloc]
+                    initWithTexture:output_buffer_->image()
+                    featureChannels:output_c];
             }
         }
     }
@@ -130,12 +130,17 @@ void Conv2dImageCompute::init_for_run() {
         }
     }
 
-    // MPS don't support relu6
+    // MPS don't support LeakyRelu
     switch (param.activation_param.active_type) {
         case lite_api::ActivationType::kIndentity:
         case lite_api::ActivationType::kRelu:
             break;
         case lite_api::ActivationType::kRelu6:
+            break;
+        case lite_api::ActivationType::kHardSigmoid:
+            break;
+        case lite_api::ActivationType::kPRelu:
+            break;
         case lite_api::ActivationType::kLeakyRelu:
             should_use_mps = NO;
             break;
@@ -332,7 +337,7 @@ void Conv2dImageCompute::setup_without_mps() {
                 bias_buffer_->transpose_[3]}};
     } else {
     }
-    //activate
+    // activate
     uint16_t activate_type = 0;
     if (param.activation_param.has_active) {
         switch (param.activation_param.active_type) {
@@ -430,7 +435,7 @@ void Conv2dImageCompute::run_with_mps() {
                 encodeToCommandBuffer:cmdbuf
                           sourceImage:(__bridge MPSImage*)mps_input_image_
                      destinationImage:(__bridge MPSImage*)mps_output_image_];
-        }        
+        }
     }
     [backend commit:cmdbuf];
 }
@@ -478,6 +483,22 @@ void Conv2dImageCompute::setup_with_mps() {
                 description.fusedNeuronDescriptor =
                     [MPSNNNeuronDescriptor cnnNeuronDescriptorWithType:MPSCNNNeuronTypeReLU a:0.0];
             } break;
+            case lite_api::ActivationType::kRelu6: {
+                description.fusedNeuronDescriptor = [MPSNNNeuronDescriptor
+                    cnnNeuronDescriptorWithType:MPSCNNNeuronTypeReLUN
+                                              a:0.0
+                                              b:param.activation_param.threshold];
+            } break;
+            case lite_api::ActivationType::kHardSigmoid: {
+                description.fusedNeuronDescriptor = [MPSNNNeuronDescriptor
+                    cnnNeuronDescriptorWithType:MPSCNNNeuronTypeHardSigmoid
+                                              a:param.activation_param.hard_sigmoid_slope
+                                              b:param.activation_param.hard_sigmoid_offset];
+            } break;
+            case lite_api::ActivationType::kPRelu: {
+                description.fusedNeuronDescriptor =
+                    [MPSNNNeuronDescriptor cnnNeuronDescriptorWithType:MPSCNNNeuronTypePReLU a:0.0];
+            } break;
             default:
                 break;
         }
@@ -495,6 +516,7 @@ void Conv2dImageCompute::setup_with_mps() {
             converter->Convert(const_cast<float*>(filter), to_filter, from_dim);
         } catch (std::exception& error) {
             TargetWrapperMetal::Free(to_filter);
+            TargetWrapperMetal::Free(converter);
             LOG(FATAL) << "metal_conv2d: still not finish mps";
         }
         filter_buffer_ = std::make_shared<MetalBuffer>(
@@ -502,6 +524,7 @@ void Conv2dImageCompute::setup_with_mps() {
         filter_buffer_->convert_to_nhwc_ = false;
         filter_buffer_->CopyFromNCHW<float>(to_filter);
         TargetWrapperMetal::Free(to_filter);
+        TargetWrapperMetal::Free(converter);
         scoure.weights = filter_buffer_->rawdata();
         // bias
         if (param.bias && canMPSAddByChannel()) {

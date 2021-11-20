@@ -1493,6 +1493,8 @@ struct CastParam : ParamBase {
 struct SliceParam : ParamBase {
   const lite::Tensor* X{nullptr};
   lite::Tensor* Out{nullptr};
+  const std::vector<lite::Tensor>* XTensorList{nullptr};
+  std::vector<lite::Tensor>* OutTensorList{nullptr};
   std::vector<int> axes{};
   std::vector<int> starts{};
   std::vector<int> ends{};

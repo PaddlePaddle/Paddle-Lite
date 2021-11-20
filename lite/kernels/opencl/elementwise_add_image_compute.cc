@@ -275,43 +275,43 @@ namespace ocl = paddle::lite::kernels::opencl;
 //     may from anther branch like "X" (kOpenCL, nothing to do).
 // Consider 2 situations have different actions when pass running(pick kernel),
 //     set target of "Y" as kOpenCL temporarily.
-REGISTER_LITE_KERNEL(elementwise_add,
-                     kOpenCL,
-                     kFP16,
-                     kImageDefault,
-                     ocl::ElementwiseAddImageCompute,
-                     def)
-    .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kImageDefault))})
-    .BindInput("Y",
-               {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kImageDefault))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                       PRECISION(kFP16),
-                                       DATALAYOUT(kImageDefault))})
-    .Finalize();
+// REGISTER_LITE_KERNEL(elementwise_add,
+//                      kOpenCL,
+//                      kFP16,
+//                      kImageDefault,
+//                      ocl::ElementwiseAddImageCompute,
+//                      def)
+//     .BindInput("X",
+//                {LiteType::GetTensorTy(TARGET(kOpenCL),
+//                                       PRECISION(kFP16),
+//                                       DATALAYOUT(kImageDefault))})
+//     .BindInput("Y",
+//                {LiteType::GetTensorTy(TARGET(kOpenCL),
+//                                       PRECISION(kFP16),
+//                                       DATALAYOUT(kImageDefault))})
+//     .BindOutput("Out",
+//                 {LiteType::GetTensorTy(TARGET(kOpenCL),
+//                                        PRECISION(kFP16),
+//                                        DATALAYOUT(kImageDefault))})
+//     .Finalize();
 
-REGISTER_LITE_KERNEL(fusion_elementwise_add_activation,
-                     kOpenCL,
-                     kFP16,
-                     kImageDefault,
-                     ocl::ElementwiseAddImageCompute,
-                     def)
-    .BindInput("X",
-               {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kImageDefault))})
-    .BindInput("Y",
-               {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kImageDefault))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                       PRECISION(kFP16),
-                                       DATALAYOUT(kImageDefault))})
-    .Finalize();
-#define LITE_WITH_LOG
+// REGISTER_LITE_KERNEL(fusion_elementwise_add_activation,
+//                      kOpenCL,
+//                      kFP16,
+//                      kImageDefault,
+//                      ocl::ElementwiseAddImageCompute,
+//                      def)
+//     .BindInput("X",
+//                {LiteType::GetTensorTy(TARGET(kOpenCL),
+//                                       PRECISION(kFP16),
+//                                       DATALAYOUT(kImageDefault))})
+//     .BindInput("Y",
+//                {LiteType::GetTensorTy(TARGET(kOpenCL),
+//                                       PRECISION(kFP16),
+//                                       DATALAYOUT(kImageDefault))})
+//     .BindOutput("Out",
+//                 {LiteType::GetTensorTy(TARGET(kOpenCL),
+//                                        PRECISION(kFP16),
+//                                        DATALAYOUT(kImageDefault))})
+//     .Finalize();
+// #define LITE_WITH_LOG

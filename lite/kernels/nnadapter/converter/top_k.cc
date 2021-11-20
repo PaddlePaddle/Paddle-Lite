@@ -49,7 +49,7 @@ int ConvertTopK(Converter* converter, OpInfo* op, Scope* scope) {
       converter->AddConstantOperand(static_cast<int8_t>(sorted));
 
   // return_indices_dtype operand
-  int return_indices_dtype = NNADAPTER_TENSOR_INT64;
+  int return_indices_dtype = NNADAPTER_INT64;
   auto return_indices_dtype_operand =
       converter->AddConstantOperand(return_indices_dtype);
 

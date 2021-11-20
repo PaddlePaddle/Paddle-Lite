@@ -139,7 +139,7 @@ void sgemv_trans(const int M,
   valid_ths = (N + valid_block - 1) / valid_block;
   int block_cnt = valid_block / 4;
 
-#ifdef LITE_WITH_IOS
+#ifdef TARGET_IOS
   float *y_buf = new float[valid_ths * M];
   float *zero_buf = new float[M];
   float *x_buf = new float[valid_block * valid_ths];
@@ -199,39 +199,31 @@ void sgemv_trans(const int M,
         int cnt16 = m_cnt16;
         asm volatile(
             "ld1  {v4.4s},  [%[x]]    \n"                               /* load x   to v4     */
-            "ld1  {v5.4s,  v6.4s,  v7.4s,  v8.4s},   [%[in0]], #64 \n"  /* load in0 to v5,  v6,  v7,  v8  */
-            "ld1  {v9.4s,  v10.4s, v11.4s, v12.4s},  [%[in1]], #64 \n"  /* load in1 to v9,  v10, v11, v12 */
-            "ld1  {v13.4s, v14.4s, v15.4s, v16.4s},  [%[in2]], #64 \n"  /* load in2 to v13, v14, v15, v16 */
-            "ld1  {v17.4s, v18.4s, v19.4s, v20.4s},  [%[in3]], #64 \n"  /* load in3 to v17, v18, v19, v20 */
             "1:\n"
+            "ld1  {v5.4s, v6.4s,  v7.4s,  v8.4s},   [%[in0]], #64 \n" /* load in0 to v5,  v6,  v7,  v8  */
+            "ld1  {v9.4s, v10.4s, v11.4s, v12.4s},  [%[in1]], #64 \n" /* load in1 to v9,  v10, v11, v12 */
             "ld1  {v0.4s, v1.4s, v2.4s, v3.4s},  [%[y]]    \n"        /*load y to v0, v1, v2, v3  */
             "fmla v0.4s,  v5.4s,  v4.s[0]     \n" /*  v0 += v5 * v4[0]  */
             "fmla v1.4s,  v6.4s,  v4.s[0]     \n" /*  v1 += v6 * v4[0]  */
             "fmla v2.4s,  v7.4s,  v4.s[0]     \n" /*  v2 += v7 * v4[0]  */
             "fmla v3.4s,  v8.4s,  v4.s[0]     \n" /*  v3 += v8 * v4[0]  */
-            "ld1  {v5.4s, v6.4s,  v7.4s,  v8.4s},   [%[in0]], #64 \n" /* load in0 to v5,  v6,  v7,  v8  */
             "fmla v0.4s,  v9.4s,  v4.s[1]     \n" /*  v0 += v9  * v4[1]  */
+            "ld1  {v13.4s, v14.4s, v15.4s, v16.4s}, [%[in2]], #64 \n" /* load in2 to v13, v14, v15, v16 */
             "fmla v1.4s,  v10.4s, v4.s[1]     \n" /*  v1 += v10 * v4[1]  */
             "fmla v2.4s,  v11.4s, v4.s[1]     \n" /*  v2 += v11 * v4[1]  */
             "fmla v3.4s,  v12.4s, v4.s[1]     \n" /*  v3 += v12 * v4[1]  */
-            "ld1  {v9.4s, v10.4s, v11.4s, v12.4s},  [%[in1]], #64 \n" /* load in1 to v9,  v10, v11, v12 */
             "fmla v0.4s,  v13.4s, v4.s[2]     \n" /*  v0 += v13 * v4[2]  */
+            "ld1  {v17.4s, v18.4s, v19.4s, v20.4s}, [%[in3]], #64 \n" /* load in3 to v17, v18, v19, v20 */
             "fmla v1.4s,  v14.4s, v4.s[2]     \n" /*  v1 += v14 * v4[2]  */
             "fmla v2.4s,  v15.4s, v4.s[2]     \n" /*  v2 += v15 * v4[2]  */
             "fmla v3.4s,  v16.4s, v4.s[2]     \n" /*  v3 += v16 * v4[2]  */
-            "ld1  {v13.4s, v14.4s, v15.4s, v16.4s}, [%[in2]], #64 \n" /* load in2 to v13, v14, v15, v16 */
             "fmla v0.4s,  v17.4s, v4.s[3]     \n" /*  v0 += v17 * v4[3]  */
             "fmla v1.4s,  v18.4s, v4.s[3]     \n" /*  v1 += v18 * v4[3]  */
             "fmla v2.4s,  v19.4s, v4.s[3]     \n" /*  v2 += v19 * v4[3]  */
             "fmla v3.4s,  v20.4s, v4.s[3]     \n" /*  v3 += v20 * v4[3]  */
-            "ld1  {v17.4s, v18.4s, v19.4s, v20.4s}, [%[in3]], #64 \n" /* load in3 to v17, v18, v19, v20 */
             "subs %w[cnt], %w[cnt], #1        \n" /*       sub cnt       */
             "st1  {v0.4s, v1.4s, v2.4s, v3.4s}, [%[y]], #64   \n"     /*  store v0, v1, v2, v3 to y */
             "bne  1b  \n"                     /*  branch to label 1 */
-            "sub  %[in0], %[in0], #64     \n" /* restore in0 address */
-            "sub  %[in1], %[in1], #64     \n" /* restore in1 address */
-            "sub  %[in2], %[in2], #64     \n" /* restore in2 address */
-            "sub  %[in3], %[in3], #64     \n" /* restore in3 address */
             : [cnt] "+r"(cnt16),
               [in0] "+r"(in0_ptr),
               [in1] "+r"(in1_ptr),
@@ -248,35 +240,27 @@ void sgemv_trans(const int M,
         int cnt8 = m_cnt8;
         asm volatile(
             "ld1  {v2.4s},  [%[x]]                \n" /* load x   to v2     */
-            "ld1  {v3.4s, v4.4s},  [%[in0]], #32  \n" /* load in0 to v3, v4 */
-            "ld1  {v5.4s, v6.4s},  [%[in1]], #32  \n" /* load in1 to v5, v6 */
-            "ld1  {v7.4s, v8.4s},  [%[in2]], #32  \n" /* load in2 to v7, v8 */
-            "ld1  {v9.4s, v10.4s}, [%[in3]], #32  \n" /* load in3 to v9, v10*/
             "1:\n"
+            "ld1  {v3.4s, v4.4s},  [%[in0]], #32  \n" /* load in0 to v3, v4 */
             "ld1  {v0.4s, v1.4s}, [%[y]]    \n" /*  load y to v0, v1  */
             "fmla v0.4s, v3.4s,   v2.s[0]   \n" /*  v0 += v3 * v2[0]  */
             "fmla v1.4s, v4.4s,   v2.s[0]   \n" /*  v1 += v4 * v2[0]  */
+            "ld1  {v5.4s, v6.4s},  [%[in1]], #32  \n" /* load in1 to v5, v6 */
             "prfm pldl1keep,      [%[in0]]  \n" /*    preload in0     */
-            "ld1  {v3.4s, v4.4s}, [%[in0]], #32 \n" /* load in0 to v3, v4 */
             "fmla v0.4s, v5.4s,   v2.s[1]   \n" /*  v0 += v5 * v2[1]  */
             "fmla v1.4s, v6.4s,   v2.s[1]   \n" /*  v1 += v6 * v2[1]  */
+            "ld1  {v7.4s, v8.4s},  [%[in2]], #32  \n" /* load in2 to v7, v8 */
             "prfm pldl1keep,      [%[in1]]  \n" /*    preload in1     */
-            "ld1  {v5.4s, v6.4s}, [%[in1]], #32 \n" /* load in0 to v5, v6 */
             "fmla v0.4s, v7.4s,   v2.s[2]   \n" /*  v0 += v7 * v2[2]  */
+            "ld1  {v9.4s, v10.4s}, [%[in3]], #32  \n" /* load in3 to v9, v10*/
             "fmla v1.4s, v8.4s,   v2.s[2]   \n" /*  v1 += v8 * v2[2]  */
             "prfm pldl1keep,      [%[in2]]  \n" /*    preload in2     */
-            "ld1  {v7.4s, v8.4s}, [%[in2]], #32 \n" /* load in0 to v7, v8 */
             "fmla v0.4s, v9.4s,   v2.s[3]   \n" /*  v0 += v9 * v2[3]  */
             "fmla v1.4s, v10.4s,  v2.s[3]   \n" /*  v1 += v10 * v2[3] */
             "subs %w[cnt], %w[cnt], #1      \n" /*      sub cnt       */
             "prfm pldl1keep,      [%[in3]]  \n" /*    preload in3     */
             "st1  {v0.4s, v1.4s}, [%[y]],   #32 \n" /*  store v0, v1 to y */
-            "ld1  {v9.4s, v10.4s},[%[in3]], #32 \n" /* load in0 to v9, v10*/
             "bne  1b  \n"                       /*  branch to label 1 */
-            "sub  %[in0], %[in0], #32     \n" /* restore in0 address */
-            "sub  %[in1], %[in1], #32     \n" /* restore in1 address */
-            "sub  %[in2], %[in2], #32     \n" /* restore in2 address */
-            "sub  %[in3], %[in3], #32     \n" /* restore in3 address */
             : [cnt] "+r"(cnt8),
               [in0] "+r"(in0_ptr),
               [in1] "+r"(in1_ptr),
@@ -291,32 +275,24 @@ void sgemv_trans(const int M,
       if (m_cnt4 > 0) {
         int cnt4 = m_cnt4;
         asm volatile(
-            "ld1  {v1.4s},  [%[in0]], #16 \n" /* load in0 to v1  */
-            "ld1  {v2.4s},  [%[in1]], #16 \n" /* load in1 to v2  */
-            "ld1  {v3.4s},  [%[in2]], #16 \n" /* load in2 to v3  */
-            "ld1  {v4.4s},  [%[in3]], #16 \n" /* load in3 to v4  */
             "ld1  {v5.4s},  [%[x]]        \n" /* load x   to v5  */
             "1:\n"
+            "ld1  {v1.4s},  [%[in0]], #16 \n" /*  load in0 to v1   */
             "ld1  {v0.4s},  [%[y]]        \n" /*   load y to v0    */
             "fmla v0.4s, v1.4s, v5.s[0]   \n" /* v0 += v1 * v5[0]  */
-            "prfm  pldl1keep,   [%[in0]]  \n" /*    preload in0    */
-            "ld1  {v1.4s},  [%[in0]], #16 \n" /*  load in0 to v1   */
-            "fmla v0.4s, v2.4s, v5.s[1]   \n" /* v0 += v2 * v5[1]  */
-            "prfm  pldl1keep,  [%[in1]]   \n" /*    preload in1    */
             "ld1  {v2.4s},  [%[in1]], #16 \n" /*  load in1 to v2   */
-            "fmla v0.4s, v3.4s, v5.s[2]   \n" /* v0 += v3 * v5[2]  */
-            "prfm pldl1keep,  [%[in2]]    \n" /*    preload in2    */
+            "prfm  pldl1keep,   [%[in0]]  \n" /*    preload in0    */
             "ld1  {v3.4s},  [%[in2]], #16 \n" /*  load in2 to v3   */
+            "fmla v0.4s, v2.4s, v5.s[1]   \n" /* v0 += v2 * v5[1]  */
+            "fmla v0.4s, v3.4s, v5.s[2]   \n" /* v0 += v3 * v5[2]  */
+            "ld1  {v4.4s},  [%[in3]], #16 \n" /*  load in3 to v4   */
+            "prfm  pldl1keep,  [%[in1]]   \n" /*    preload in1    */
+            "prfm pldl1keep,  [%[in2]]    \n" /*    preload in2    */
             "fmla v0.4s, v4.4s, v5.s[3]   \n" /* v0 += v4 * v5[3]  */
             "subs %w[cnt], %w[cnt], #1    \n" /*      sub cnt      */
             "prfm pldl1keep,  [%[in3]]    \n" /*    preload in3    */
             "st1  {v0.4s},  [%[y]], #16   \n" /*  store v0 to y    */
-            "ld1  {v4.4s},  [%[in3]], #16 \n" /*  load in3 to v4   */
             "bne  1b  \n"                     /* branch to label 1 */
-            "sub  %[in0], %[in0], #16     \n" /* restore in0 address*/
-            "sub  %[in1], %[in1], #16     \n" /* restore in1 address*/
-            "sub  %[in2], %[in2], #16     \n" /* restore in2 address*/
-            "sub  %[in3], %[in3], #16     \n" /* restore in3 address*/
             : [cnt] "+r"(cnt4),
               [in0] "+r"(in0_ptr),
               [in1] "+r"(in1_ptr),

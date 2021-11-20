@@ -39,11 +39,12 @@ namespace arm {
   int out_h = param.out_h;                            \
   bool align_corners = param.align_corners;           \
   int align_mode = param.align_mode;                  \
+  auto scale_v = param.scale_v;                       \
   std::string interp_method = method_name;
 
 #define INTERP_PARAM                                                      \
   X, OutSize, SizeTensor, Scale, Out, out_h, out_w, scale, align_corners, \
-      align_mode, interp_method
+      align_mode, interp_method, scale_v
 
 template <>
 void BilinearInterpCompute<PRECISION(kFloat)>::Run() {
@@ -71,10 +72,10 @@ void NearestInterpCompute<PRECISION(kFP16)>::Run() {
 }
 #endif
 
-} /* namespace arm */
-} /* namespace kernels */
-} /* namespace lite */
-} /* namespace paddle */
+}  // namespace arm
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle
 
 #ifdef ENABLE_ARM_FP16
 typedef paddle::lite::kernels::arm::BilinearInterpCompute<PRECISION(kFP16)>
