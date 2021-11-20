@@ -55,7 +55,7 @@ void Conv2dImageCompute::ReInitWhenNeeded() {
                 }
                 auto input_c = static_cast<int>(input_buffer_->tensor_dim_[1]);
                 auto output_c = static_cast<int>(output_buffer_->tensor_dim_[1]);
-                // MPS算子输入输出
+                // mps input and output
                 mps_input_image_ =
                     (__bridge_retained void*)[[MPSImage alloc] initWithTexture:input_buffer_->image()
                                                                featureChannels:input_c];
@@ -137,6 +137,7 @@ void Conv2dImageCompute::init_for_run() {
             break;
         case lite_metal_api::ActivationType::kRelu6:
         case lite_metal_api::ActivationType::kLeakyRelu:
+        case lite_metal_api::ActivationType::kHardSwish:
             should_use_mps = NO;
             break;
         default:
@@ -341,11 +342,14 @@ void Conv2dImageCompute::setup_without_mps() {
             case lite_metal_api::ActivationType::kLeakyRelu: {
                 activate_type = (uint16_t)param.activation_param.active_type;
             } break;
+            case lite_metal_api::ActivationType::kHardSwish: {
+                activate_type = (uint16_t)param.activation_param.active_type;
+            } break;
             default: { LOG(FATAL) << "Conv2d: cannot support the activate type"; } break;
         }
     }
     // relu
-    ActivationMetalParam activation_params{(unsigned short)activate_type, 0.0, 0.0, 0.0, 0.0};
+    ActivationMetalParam activation_params{(unsigned short)activate_type, 0.0, 0.0, 0.0, 0.0, 0.0};
     switch (param.activation_param.active_type) {
         case lite_metal_api::ActivationType::kIndentity:
         case lite_metal_api::ActivationType::kRelu:
@@ -355,6 +359,11 @@ void Conv2dImageCompute::setup_without_mps() {
         } break;
         case lite_metal_api::ActivationType::kLeakyRelu: {
             activation_params.alpha = param.activation_param.Leaky_relu_alpha;
+        } break;
+        case lite_metal_api::ActivationType::kHardSwish: {
+            activation_params.threshold = param.activation_param.hard_swish_threshold;
+            activation_params.offset = param.activation_param.hard_swish_offset;
+            activation_params.scale = param.activation_param.hard_swish_scale;
         } break;
         default:
             break;
@@ -481,7 +490,7 @@ void Conv2dImageCompute::setup_with_mps() {
             default:
                 break;
         }
-        // MPS算子
+        // mps op
         MPSConvDataSource* scoure = [[MPSConvDataSource alloc] init];
         scoure.descriptor = description;
         // mps weights(filter) NHWC
@@ -516,7 +525,7 @@ void Conv2dImageCompute::setup_with_mps() {
                                                                        weights:scoure];
         ((__bridge MPSCNNConvolution*)mps_conv_op_).offset = MPSOffset{.x = offsetX, .y = offsetY};
         ((__bridge MPSCNNConvolution*)mps_conv_op_).edgeMode = MPSImageEdgeModeZero;
-        // MPS算子输入输出
+        // mps input and output
         mps_input_image_ =
             (__bridge_retained void*)[[MPSImage alloc] initWithTexture:input_buffer_->image()
                                                        featureChannels:input_c];

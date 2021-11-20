@@ -73,6 +73,7 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   if (has_metal) {
     act_types.push_back("relu");
     act_types.push_back("relu6");
+    act_types.push_back("hard_swish");
   }
 
   bool has_alpha = false;
@@ -94,7 +95,7 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }
 
 }  // namespace mir
-}  // namespace lite
+}  // namespace lite_metal
 }  // namespace paddle
 
 REGISTER_MIR_PASS(lite_conv_activation_fuse_pass,

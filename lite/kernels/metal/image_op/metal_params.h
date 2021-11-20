@@ -34,6 +34,7 @@ struct ActivationMetalParam {
     float alpha;      // LEAKY_RELU
     float offset;     // HARD_SIGMOID
     float slope;
+    float scale;
 };
 
 struct MetalConvParam {

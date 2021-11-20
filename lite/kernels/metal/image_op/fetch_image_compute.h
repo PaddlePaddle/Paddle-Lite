@@ -55,7 +55,7 @@ class FetchImageCompute
    private:
     void init_for_run();
     void init_memory();
-        
+
     const MetalImage* input_buffer_;
     std::shared_ptr<MetalBuffer> output_buffer_;
     std::shared_ptr<MetalBuffer> params_buffer_;

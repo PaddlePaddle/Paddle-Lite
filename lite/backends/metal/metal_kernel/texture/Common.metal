@@ -56,6 +56,7 @@ enum ActivationType : ushort {
   PRELU = 3,
   LEAKY_RELU = 4,
   HARD_SIGMOID = 5,
+  HARD_SWISH = 10,
 };
 
 struct MetalActivationParam {
@@ -64,6 +65,7 @@ struct MetalActivationParam {
   float alpha;      // LEAKY_RELU
   float offset;     // HARD_SIGMOID
   float slope;
+  float scale;
 };
 
 struct ElementwiseAddParam {
@@ -292,6 +294,9 @@ inline ftype4 activation(const ftype4 input,
     case HARD_SIGMOID:
       return fmax(0.0,
                   fmin(1.0, ftype(param.slope) * input + ftype(param.offset)));
+    case HARD_SWISH:
+      return (fmin(ftype(param.threshold), fmax(0.0, input + ftype(param.offset)))) * input /
+                  param.scale;
   }
 }
 
