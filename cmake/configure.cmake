@@ -38,7 +38,7 @@ if(WIN32)
   # windows header option for all targets.
   add_definitions(-D_XKEYCHECK_H)
   add_definitions(/openmp)
-  
+
   if (NOT MSVC)
     message(FATAL "Windows build only support msvc. Which was binded by the nvcc compiler of NVIDIA.")
   endif(NOT MSVC)
@@ -61,7 +61,7 @@ if(WIN32)
           endif()
       endif()
   endif()
-  
+
 endif(WIN32)
 
 if(LITE_WITH_CUDA)

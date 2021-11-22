@@ -19,7 +19,7 @@
 #include "lite/api/test/lite_api_test_helper.h"
 #include "lite/api/test/test_helper.h"
 #include "lite/tests/api/PASCALVOC2012_utility.h"
-#include "lite/tests/api/detection_utility.h"
+#include "lite/tests/api/utility.h"
 
 DEFINE_string(data_dir, "", "data dir");
 DEFINE_int32(iteration, 10, "iteration times to run");

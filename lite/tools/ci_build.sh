@@ -11,7 +11,10 @@ NUM_PROC=4
 readonly ADB_WORK_DIR="/data/local/tmp"
 readonly common_flags="-DWITH_LITE=ON -LITE_WITH_ARM=OFF -DWITH_PYTHON=OFF -DWITH_TESTING=ON -DLITE_WITH_ARM=OFF"
 
-readonly THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
+# url that stores third-party tar.gz file to accelerate third-party lib installation
+readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
+readonly THIRDPARTY_TAR=third-party-801f670.tar.gz
+
 readonly workspace=$PWD
 
 NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-8}
@@ -35,13 +38,13 @@ fi
 
 function prepare_thirdparty {
     cd $workspace
-    if [ ! -d $workspace/third-party -o -f $workspace/third-party-ea5576.tar.gz ]; then
+    if [ ! -d $workspace/third-party -o -f $workspace/$THIRDPARTY_TAR ]; then
         rm -rf $workspace/third-party
 
-        if [ ! -f $workspace/third-party-ea5576.tar.gz ]; then
-            wget $THIRDPARTY_TAR
+        if [ ! -f $workspace/$THIRDPARTY_TAR ]; then
+            wget $THIRDPARTY_URL/$THIRDPARTY_TAR
         fi
-        tar xzf third-party-ea5576.tar.gz
+        tar xzf $THIRDPARTY_TAR
     else
         git submodule update --init --recursive
     fi
@@ -147,7 +150,7 @@ function run_gen_code_test {
     # 1. build test_cxx_api
     make test_cxx_api -j$NUM_CORES_FOR_COMPILE
 
-    # 2. run test_cxx_api_lite in emulator to get opt model 
+    # 2. run test_cxx_api_lite in emulator to get opt model
     local test_cxx_api_lite_path=$(find ./lite -name test_cxx_api)
     adb -s ${device} push "./third_party/install/lite_naive_model" ${adb_work_dir}
     adb -s ${device} push ${test_cxx_api_lite_path} ${adb_work_dir}
@@ -254,8 +257,8 @@ function build_single {
 function build {
     make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
     if [ $LITE_WITH_COVERAGE = "ON" ];then
-        make coveralls_generate -j	
-    fi 
+        make coveralls_generate -j
+    fi
     # test publish inference lib
     # make publish_inference
 }
@@ -594,7 +597,7 @@ function run_test_case_on_remote_device {
         $remote_device_run $remote_device_name push "$config_dir" "$remote_device_work_dir"
         command_line="$command_line --config_dir ./$config_name"
     fi
-    
+
     # Run the model on the remote device
     $remote_device_run $remote_device_name shell "cd $remote_device_work_dir; export GLOG_v=5; LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. $command_line"
 }

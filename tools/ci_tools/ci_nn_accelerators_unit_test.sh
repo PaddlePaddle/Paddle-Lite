@@ -6,7 +6,9 @@ TESTS_FILE="./lite_tests.txt"
 LIBS_FILE="./lite_libs.txt"
 LITE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../" && pwd)"
 
-readonly THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
+# url that stores third-party tar.gz file to accelerate third-party lib installation
+readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
+readonly THIRDPARTY_TAR=third-party-801f670.tar.gz
 readonly workspace=$PWD
 
 NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-8}
@@ -46,15 +48,15 @@ if [ ${os_name} == "Darwin" ]; then
     ulimit -n 1024
 fi
 
-function prepare_thirdparty() {
+function prepare_thirdparty {
     cd $workspace
-    if [ ! -d $workspace/third-party -o -f $workspace/third-party-ea5576.tar.gz ]; then
+    if [ ! -d $workspace/third-party -o -f $workspace/$THIRDPARTY_TAR ]; then
         rm -rf $workspace/third-party
 
-        if [ ! -f $workspace/third-party-ea5576.tar.gz ]; then
-            wget $THIRDPARTY_TAR
+        if [ ! -f $workspace/$THIRDPARTY_TAR ]; then
+            wget $THIRDPARTY_URL/$THIRDPARTY_TAR
         fi
-        tar xzf third-party-ea5576.tar.gz
+        tar xzf $THIRDPARTY_TAR
     else
         git submodule update --init --recursive
     fi
