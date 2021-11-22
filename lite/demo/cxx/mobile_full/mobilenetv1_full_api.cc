@@ -64,9 +64,13 @@ void RunModel() {
     valid_places.emplace_back(
         Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)});
     valid_places.emplace_back(
+        Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageFolder)});
+    valid_places.emplace_back(
         Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)});
     valid_places.emplace_back(
         Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageDefault)});
+    valid_places.emplace_back(
+        Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageFolder)});
     valid_places.emplace_back(
         Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)});
     valid_places.emplace_back(

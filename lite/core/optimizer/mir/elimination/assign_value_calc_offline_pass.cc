@@ -35,7 +35,7 @@ void AssignValueCalcOfflinePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 void AssignValueCalcOfflinePass::RemoveAssignValuePattern(
     const std::unique_ptr<SSAGraph>& graph) {
   for (auto& node : graph->StmtTopologicalOrder()) {
-    if (node->AsStmt().picked_kernel().op_type() != "assign_value") continue;
+    if (node->AsStmt().op_type() != "assign_value") continue;
 
     std::set<const Node*> nodes2rm_;
     auto& assign_value_instruct = node->AsStmt();
