@@ -81,6 +81,10 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   if (has_metal) {
     act_types.push_back("relu");
     act_types.push_back("relu6");
+    act_types.push_back("hard_sigmoid");
+    act_types.push_back("hard_swish");
+    act_types.push_back("prelu");
+    act_types.push_back("leaky_relu");
   }
 
   if (has_nnadapter) {
@@ -98,8 +102,9 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
         has_alpha = false;
       }
       if (act_type == "hard_swish") {
-        if (has_arm && conv_type == "depthwise_conv2d") {
-          // it doesn't support conv_dw_conv+hardswish
+        if (has_arm && !has_metal && !has_opencl &&
+            conv_type == "depthwise_conv2d") {
+          // TARGET(kARM) doesn't support conv_dw_conv+hardswish
           continue;
         }
       }
