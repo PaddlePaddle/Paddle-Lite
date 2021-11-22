@@ -224,23 +224,26 @@ class MMDNNFcOp {
       CHECK_EQ(r, 0);
       in_max_by_caller = in_max_;
     }
-
-    r = xdnn::fc_int16(ctx,
-                       false,
-                       true,
-                       m,
-                       n_,
-                       k_,
-                       1.0f,
-                       in,
-                       in_max_by_caller,
-                       weight_,
-                       weight_max_,
-                       0.0f,
-                       out,
-                       out_max,
-                       bias_,
-                       act_type_);
+    r = xdnn::fc_fusion<float, int16_t, float, int16_t>(
+        ctx,               // ctx
+        in,                // x
+        weight_,           // w
+        out,               // y
+        m,                 // m
+        n_,                // n
+        k_,                // k
+        false,             // x_trans
+        true,              // w_trans
+        in_max_by_caller,  // x_maxptr
+        weight_max_,       // w_maxptr
+        out_max,           // y_maxptr
+        k_,                // ldx
+        k_,                // ldw
+        n_,                // ldy
+        1.0f,              // alpha
+        0.0f,              // beta
+        bias_,             // bias
+        act_type_);        // act
     CHECK_EQ(r, 0);
   }
 };
