@@ -30,7 +30,7 @@ class Conv2DTransposeCompute : public KernelLite<TARGET(kARM), Ptype> {
 
   void PrepareForRun() override;
 
-  void ReInitWhenNeeded() override;
+  void ReInitWhenNeeded();
 
   void Run() override;
 
