@@ -168,12 +168,6 @@ void MulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                &ctx);
   } else {
     constexpr bool is_tranposed_y = false;
-    int hblock = lite::arm::math::get_hblock(&ctx);
-    int m_round = hblock * ((m_ + hblock - 1) / hblock);
-    ctx.ExtendWorkspace(m_round * k_ * sizeof(float));
-
-    auto* packed_x = static_cast<float*>(ctx.workspace_data<float>()) +
-                     ctx.llc_size() / sizeof(float);
     int ldb = n_;
     if (is_tranposed_y) {
       ldb = k_;
