@@ -291,18 +291,12 @@ namespace math {
   "sub %[din_ptr4], %[din_ptr4], %[right_pad_num] \n"                     \
   "sub %[din_ptr5], %[din_ptr5], %[right_pad_num] \n"                     \
                                                                           \
-  "ld1 {v0.4s}, [%[din_ptr0]], #16 \n"                                    \
-  "ld1 {v1.4s}, [%[din_ptr0]]   \n"                                       \
-  "ld1 {v2.4s}, [%[din_ptr1]], #16   \n"                                  \
-  "ld1 {v3.4s}, [%[din_ptr1]]   \n"                                       \
-  "ld1 {v4.4s}, [%[din_ptr2]], #16   \n"                                  \
-  "ld1 {v5.4s}, [%[din_ptr2]]   \n"                                       \
-  "ld1 {v6.4s}, [%[din_ptr3]], #16   \n"                                  \
-  "ld1 {v7.4s}, [%[din_ptr3]]   \n"                                       \
-  "ld1 {v8.4s}, [%[din_ptr4]],#16   \n"                                   \
-  "ld1 {v9.4s}, [%[din_ptr4]]   \n"                                       \
-  "ld1 {v10.4s}, [%[din_ptr5]],#16   \n"                                  \
-  "ld1 {v11.4s}, [%[din_ptr5]]   \n"                                      \
+  "ld1 {v0.4s, v1.4s}, [%[din_ptr0]] \n"                                  \
+  "ld1 {v2.4s, v3.4s}, [%[din_ptr1]] \n"                                  \
+  "ld1 {v4.4s, v5.4s}, [%[din_ptr2]] \n"                                  \
+  "ld1 {v6.4s, v7.4s}, [%[din_ptr3]] \n"                                  \
+  "ld1 {v8.4s, v9.4s}, [%[din_ptr4]] \n"                                  \
+  "ld1 {v10.4s, v11.4s}, [%[din_ptr5]] \n"                                \
                                                                           \
   "ld1 {v18.4s, v19.4s}, [%[vmask]]         \n"                           \
                                                                           \
@@ -927,14 +921,10 @@ namespace math {
   "subs %[dout_ptr1], %[right_pad_num] \n"                                    \
   "subs %[dout_ptr2], %[right_pad_num] \n"                                    \
                                                                               \
-  "vld1.32  {d16-d17}, [%[din0_ptr]]!    @ load din r0\n"                     \
-  "vld1.32  {d18}, [%[din0_ptr]]    @ load din r0\n"                          \
-  "vld1.32  {d20-d21}, [%[din1_ptr]]!    @ load din r0\n"                     \
-  "vld1.32  {d22}, [%[din1_ptr]]    @ load din r0\n"                          \
-  "vld1.32  {d24-d25}, [%[din2_ptr]]!    @ load din r0\n"                     \
-  "vld1.32  {d26}, [%[din2_ptr]]    @ load din r0\n"                          \
-  "vld1.32  {d28-d29}, [%[din3_ptr]]!    @ load din r0\n"                     \
-  "vld1.32  {d30}, [%[din3_ptr]]    @ load din r0\n"                          \
+  "vld1.32  {d16-d18}, [%[din0_ptr]]    \n"                                   \
+  "vld1.32  {d20-d22}, [%[din1_ptr]]   \n"                                    \
+  "vld1.32  {d24-d26}, [%[din2_ptr]]    \n"                                   \
+  "vld1.32  {d28-d30}, [%[din3_ptr]]    \n"                                   \
                                                                               \
   "vld1.32  {d19}, [%[vmask]]!    @ load din r0\n"                            \
   "vld1.32  {d23}, [%[vmask]]!    @ load din r0\n"                            \
@@ -1268,7 +1258,6 @@ inline std::pair<uint32_t, uint32_t> right_mask_3x3s1_fp32(
     cnt_col--;
   }
 
-  uint32_t right_pad_num = (4 - remain) * 4;
   // at the beginning vmask[5,4,...,size_pad_right] = 0xffffffff！
   // Now the sliding window needs to move left 4-remain
   // so :
