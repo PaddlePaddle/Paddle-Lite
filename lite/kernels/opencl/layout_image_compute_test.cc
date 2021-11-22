@@ -19,6 +19,7 @@
 #include "lite/core/tensor.h"
 #include "lite/kernels/opencl/image_helper.h"
 #include "lite/kernels/opencl/test_helper.h"
+#include "lite/tests/utils/fill_data.h"
 
 #define FP16_MAX_DIFF (1e0)
 
@@ -154,6 +155,138 @@ TEST(layout_ImageDefault, compute) {
 #else
 // nothing to do.
 #endif
+}
+
+template <typename dtype>
+void fill_data(dtype* x, const int length, int set_value = -1) {
+  if (set_value == -1) {
+    for (size_t idx = 0; idx < length; ++idx) {
+      x[idx] = idx;
+    }
+  } else if (set_value != -1) {
+    for (size_t idx = 0; idx < length; ++idx) {
+      x[idx] = set_value;
+    }
+  }
+}
+
+int randint(int beg, int end) {
+  int res = 0;
+  fill_data_rand<int>(&res, beg, end, 1);
+  return res;
+}
+
+TEST(layout_ImageFolder, compute) {
+  LOG(INFO) << "main steps of test: host -> layout(kNCHW2ImageFolder) -> "
+               "layout(ImageFolder2kNCHW) "
+               "-> device";
+  const int n = randint(1, 2);
+  const int c = randint(1, 5);
+  const int h = randint(1, 7);
+  const int w = randint(1, 9);
+  std::vector<std::vector<int64_t>> dims{{w}, {h, w}, {c, h, w}, {n, c, h, w}};
+  for (const auto precision_type :
+       {lite_api::CLPrecisionType::CL_PRECISION_FP32,
+        lite_api::CLPrecisionType::CL_PRECISION_FP16}) {
+    for (auto dim : dims) {
+      // set context and kernel args
+      LOG(INFO) << "set context and kernel args";
+      std::unique_ptr<KernelContext> context(new KernelContext);
+      context->As<OpenCLContext>().InitOnce();
+      CLRuntime::Global()->set_precision(precision_type);
+      const bool fp16_flag = (CLRuntime::Global()->get_precision() ==
+                              lite_api::CLPrecisionType::CL_PRECISION_FP16);
+      LOG(INFO) << "\n\t[  START  ] Test Precision="
+                << lite_api::CLPrecisionTypeToStr(precision_type);
+      // set layout kernels
+      auto buf_to_img_kernels = KernelRegistry::Global().Create(
+          "layout", TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageFolder));
+      ASSERT_FALSE(buf_to_img_kernels.empty());
+
+      auto buf_to_img_kernel = std::move(buf_to_img_kernels.front());
+      LOG(INFO) << "get kernel: " << buf_to_img_kernel->doc();
+
+      // set tensors about op param
+      LOG(INFO) << "set tensors about op param";
+      lite::Tensor x, y_image;
+      operators::LayoutParam BufferToImageParam;
+      BufferToImageParam.x = &x;
+      BufferToImageParam.y = &y_image;
+
+      buf_to_img_kernel->SetParam(BufferToImageParam);
+      std::unique_ptr<KernelContext> buf_to_img_context(new KernelContext);
+      context->As<OpenCLContext>().CopySharedTo(
+          &(buf_to_img_context->As<OpenCLContext>()));
+      buf_to_img_kernel->SetContext(std::move(buf_to_img_context));
+
+      // init tensor
+      const DDim x_dim = DDim(dim);
+      const DDim y_dim = DDim(dim);
+      x.Resize(x_dim);
+      y_image.Resize(y_dim);
+
+      CLImageConverterFolder* folder_converter = new CLImageConverterFolder();
+      DDim out_image_shape = folder_converter->InitImageDimInfoWith(y_dim);
+      auto* x_data = x.mutable_data<float, cl::Buffer>(TARGET(kOpenCL));
+      auto* y_image_data = MUTABLE_DATA_GPU(
+          &y_image, out_image_shape[0], out_image_shape[1], nullptr);
+      std::vector<float> x_source(x_dim.production());
+      fill_data_rand(x_source.data(), -10.f, 10.f, x_source.size());
+      // fill_data<float>(x_source.data(), x_source.size());
+      size_t x_size = x_dim.production() * sizeof(float);
+      TargetWrapperCL::MemcpySync(
+          x_data, x_source.data(), x_size, IoDirection::HtoD);
+
+      // initialize tensors
+      LOG(INFO) << "initialize tensors";
+      LOG(INFO) << "x.dims():" << x.dims() << ", x_dim:" << x_dim;
+
+      // run kernels
+      LOG(INFO) << "run kernel: NCHW_to_ImageFolder_kernel";
+      buf_to_img_kernel->Launch();
+      CLRuntime::Global()->command_queue().finish();
+
+      std::vector<float> out_from_gpu(y_dim.production());
+
+      const size_t cl_image2d_row_pitch{0};
+      const size_t cl_image2d_slice_pitch{0};
+      std::vector<char> out_image_data(out_image_shape.production() * 4 *
+                                       sizeof(float));  // 4 : RGBA
+      TargetWrapperCL::ImgcpySync(out_image_data.data(),
+                                  y_image_data,
+                                  out_image_shape[0],
+                                  out_image_shape[1],
+                                  cl_image2d_row_pitch,
+                                  cl_image2d_slice_pitch,
+                                  IoDirection::DtoH);
+      folder_converter->ImageToNCHW(
+          out_image_data.data(), out_from_gpu.data(), out_image_shape, x_dim);
+
+#ifdef PRINT_RESULT
+      for (int i = 0; i < x_dim.production(); i++) {
+        std::cout << i << ": " << out_from_gpu[i] << std::endl;
+      }
+#endif  // PRINT_RESULT
+
+      // check result: compare input and output
+      for (int i = 0; i < x_dim.production(); i++) {
+        auto abs_diff = COMPUTE_ABS_DIFF(x_source[i], out_from_gpu[i]);
+        auto relative_diff =
+            COMPUTE_RELATIVE_DIFF(x_source[i], out_from_gpu[i]);
+        EXPECT_EQ(
+            (relative_diff <= FP16_MAX_DIFF) || (abs_diff <= FP16_MAX_DIFF),
+            true);
+        if ((relative_diff > FP16_MAX_DIFF) && (abs_diff > FP16_MAX_DIFF)) {
+          LOG(ERROR) << "error idx:" << i << " x_source[" << i
+                     << "]:" << x_source[i] << " out_from_gpu[" << i
+                     << "]:" << out_from_gpu[i] << " abs_diff:" << abs_diff
+                     << " relative_diff:" << relative_diff
+                     << " FP16_MAX_DIFF:" << FP16_MAX_DIFF;
+          break;
+        }
+      }
+    }
+  }
 }
 
 TEST(layout_ImageDefault_With_Pre_Post, compute) {
@@ -427,4 +560,6 @@ TEST(layout_ImageNW, compute) {
 
 USE_LITE_KERNEL(layout, kOpenCL, kAny, kImageDefault, NCHW_to_ImageDefault);
 USE_LITE_KERNEL(layout, kOpenCL, kAny, kNCHW, ImageDefault_to_NCHW);
+USE_LITE_KERNEL(layout, kOpenCL, kAny, kNCHW, ImageFolder_to_NCHW);
+USE_LITE_KERNEL(layout, kOpenCL, kAny, kImageFolder, NCHW_to_ImageFolder);
 // USE_LITE_KERNEL(layout_once, kOpenCL, kFloat, kImageNW, NCHW_to_ImageNW);
