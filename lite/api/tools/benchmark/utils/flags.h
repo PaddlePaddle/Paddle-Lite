@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef LITE_API_TOOLS_FLAGS_H_
-#define LITE_API_TOOLS_FLAGS_H_
+#ifndef LITE_API_TOOLS_BENCHMARK_UTILS_FLAGS_H_
+#define LITE_API_TOOLS_BENCHMARK_UTILS_FLAGS_H_
 #include <gflags/gflags.h>
 #define GLOG_NO_ABBREVIATED_SEVERITIES  // msvc conflict logging with windows.h
 
@@ -43,6 +43,10 @@ static const char input_data_path_msg[] =
     "such as /path/to/in.txt for only one input, "
     "/path/to/in0.txt:/path/to/in1.txt for two inputs."
     "The input of model will be 1.0 if this option in not set.";
+static const char validation_set_msg[] =
+    "Use validation images and lables as inputs. Only supports a minival "
+    "dataset of ILSVRC_2012 as inputs."
+    "Supported set: ILSVRC_2012";
 static const char show_output_elem_msg[] =
     "Show each output tensor's all elements.";
 
@@ -103,6 +107,9 @@ static const char memory_check_interval_ms_msg[] =
     "footprint checks. This is only used when "
     "--enable_memory_profile is set to true. Not supported yet.";
 
+// Configuration options
+static const char config_path_msg[] = "Configuration options.";
+
 // Others
 
 // Model options
@@ -112,6 +119,7 @@ DECLARE_string(model_file);
 DECLARE_string(param_file);
 DECLARE_string(input_shape);
 DECLARE_string(input_data_path);
+DECLARE_string(validation_set);
 DECLARE_bool(show_output_elem);
 
 // Common runtime options
@@ -138,9 +146,12 @@ DECLARE_bool(enable_op_time_profile);
 DECLARE_bool(enable_memory_profile);
 DECLARE_int32(memory_check_interval_ms);
 
+// Configuration options
+DECLARE_string(config_path);
+
 // Others
 
 }  // namespace lite_api
 }  // namespace paddle
 
-#endif  // LITE_API_TOOLS_FLAGS_H_
+#endif  // LITE_API_TOOLS_BENCHMARK_UTILS_FLAGS_H_
