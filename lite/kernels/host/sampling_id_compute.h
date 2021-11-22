@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #pragma once
+#include <memory>
+#include <random>
 #include "lite/core/kernel.h"
 #include "lite/core/op_registry.h"
 
@@ -30,6 +32,9 @@ class SamplingIdCompute
   void Run() override;
 
   virtual ~SamplingIdCompute() = default;
+
+ private:
+  std::shared_ptr<std::mt19937_64> engine;
 };
 
 }  // namespace host

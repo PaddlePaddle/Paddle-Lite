@@ -13,8 +13,6 @@
 // limitations under the License.
 
 #include "lite/kernels/host/sampling_id_compute.h"
-#include <memory>
-#include <random>
 
 namespace paddle {
 namespace lite {
@@ -43,7 +41,9 @@ void SamplingIdCompute<T>::Run() {
   auto out_data = out->mutable_data<int64_t>();
   std::uniform_real_distribution<T> dist(static_cast<T>(param.min),
                                          static_cast<T>(param.max));
-  static auto engine = GetRandomEngine(param.seed);
+  if (engine == nullptr) {
+    engine = GetRandomEngine(param.seed);
+  }
 
   for (int64_t i = 0; i < batch_size; ++i) {
     T r = dist(*engine);
