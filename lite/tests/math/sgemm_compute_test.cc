@@ -181,7 +181,7 @@ bool test_sgemm(bool tra,
   ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), ths);
   //! prepack
   Tensor tpackedA;
-  int hblock = paddle::lite::arm::math::get_hblock(&ctx);
+  int hblock = paddle::lite::arm::math::get_hblock(&ctx, m);
   int round_up_a = ((hblock + m - 1) / hblock) * hblock;
   tpackedA.Resize({round_up_a * k});
   paddle::lite::arm::math::prepackA(
@@ -290,7 +290,7 @@ TEST(TestSgemm, test_func_sgemm_prepacked) {
                           }
                           int ldc = n + offset;
                           float six = 6.f;
-                          float scale = 8.88f;
+                          float scale = 4.88f;
                           auto flag = test_sgemm(tra,
                                                  trb,
                                                  m,

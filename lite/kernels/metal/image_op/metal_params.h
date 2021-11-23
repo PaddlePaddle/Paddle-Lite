@@ -37,7 +37,8 @@ struct ActivationMetalParam {
     float threshold;  // RELU6
     float alpha;      // LEAKY_RELU
     float offset;     // HARD_SIGMOID
-    float slope;
+    float slope;      // HARD_SIGMOID
+    float scale;      // HARD_SWISH
 };
 
 struct MetalConvParam {
@@ -103,6 +104,11 @@ struct PoolMetalParam {
 };
 
 struct MulMetalParam {};
+
+struct MatmulMetalParam {
+    bool transposeX;
+    bool transposeY;
+};
 
 struct FCMetalParam {
     int N;

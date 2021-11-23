@@ -221,17 +221,13 @@ void test_conv_fp16(const DDim dim_in,
           int count = 0;
           bool check = false;
           for (int i = 0; i < size; i++) {
-            if (abs(ptr[i]) > 1) {
+            if (fabs(basic_ptr[i] - saber_ptr[i]) > 1e-1f &&
+                fabs(basic_ptr[i] - saber_ptr[i]) /
+                        (fmax(fabs(basic_ptr[i]), fabs(saber_ptr[i]))) >
+                    0.05) {
               check = true;
-              break;
-            }
-            if (abs(ptr[i]) > 0.01) {
-              count += 1;
             }
           }
-          VLOG(4) << "check: " << check << ", count: " << count;
-          check =
-              (check || count >= std::max(10, static_cast<int>(0.01 * size)));
           if (check) {
             int64_t width = tout_basic.dims()[tout_basic.dims().size() - 1];
             print_tensor_info_fp16(basic_ptr, saber_ptr, ptr, size, width);

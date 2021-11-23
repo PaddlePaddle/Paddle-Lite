@@ -44,9 +44,7 @@ BUILD_APU=OFF
 APU_DDK_ROOT="$(pwd)/apu_sdk_lib/"
 BUILD_RKNPU=OFF
 RKNPU_DDK_ROOT="$(pwd)/rknpu/"
-WITH_HUAWEI_ASCEND_NPU=OFF # Huawei Ascend Builder/Runtime Libs on X86 host
 # default installation path, ensure acllib/atc/opp directories are all in this root dir
-HUAWEI_ASCEND_NPU_DDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux"
 PYTHON_EXECUTABLE_OPTION=""
 IOS_DEPLOYMENT_TARGET=9.0
 # min android api level
@@ -56,7 +54,9 @@ MIN_ANDROID_API_LEVEL_ARMV8=21
 ANDROID_API_LEVEL="Default"
 CMAKE_API_LEVEL_OPTIONS=""
 
-readonly THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
+# url that stores third-party tar.gz file to accelerate third-party lib installation
+readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
+readonly THIRDPARTY_TAR=third-party-801f670.tar.gz
 readonly workspace=$PWD
 
 function readlinkf() {
@@ -100,13 +100,13 @@ function prepare_opencl_source_code {
 }
 
 function prepare_thirdparty {
-    if [ ! -d $workspace/third-party -o -f $workspace/third-party-ea5576.tar.gz ]; then
+    if [ ! -d $workspace/third-party -o -f $workspace/$THIRDPARTY_TAR ]; then
         rm -rf $workspace/third-party
 
-        if [ ! -f $workspace/third-party-ea5576.tar.gz ]; then
-            wget $THIRDPARTY_TAR
+        if [ ! -f $workspace/$THIRDPARTY_TAR ]; then
+            wget $THIRDPARTY_URL/$THIRDPARTY_TAR
         fi
-        tar xzf third-party-ea5576.tar.gz
+        tar xzf $THIRDPARTY_TAR
     else
         git submodule update --init --recursive
     fi
@@ -475,11 +475,6 @@ function make_x86 {
   root_dir=$(pwd)
   build_directory=$BUILD_DIR/build.lite.x86
 
-  if [ ${WITH_HUAWEI_ASCEND_NPU} == "ON" ]; then
-    export CXX=g++ # Huawei Ascend NPU need g++
-    build_directory=$BUILD_DIR/build.lite.huawei_ascend_npu
-  fi
-
   if [ ${WITH_OPENCL} == "ON" ]; then
     BUILD_EXTRA=ON
     build_directory=$BUILD_DIR/build.lite.x86.opencl
@@ -524,8 +519,6 @@ function make_x86 {
             -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
             -DXPU_SDK_URL=$XPU_SDK_URL \
             -DXPU_SDK_ENV=$XPU_SDK_ENV \
-            -DLITE_WITH_HUAWEI_ASCEND_NPU=$WITH_HUAWEI_ASCEND_NPU \
-            -DHUAWEI_ASCEND_NPU_DDK_ROOT=$HUAWEI_ASCEND_NPU_DDK_ROOT \
             -DCMAKE_BUILD_TYPE=Release \
             -DPY_VERSION=$PY_VERSION \
             $PYTHON_EXECUTABLE_OPTION
@@ -547,11 +540,6 @@ function make_x86_tests {
       # Linux. Otherwise opencl is not supported on Linux.
       WITH_OPENCL=OFF
     fi
-  fi
-
-  if [ ${WITH_HUAWEI_ASCEND_NPU} == "ON" ]; then
-    export CXX=g++ # Huawei Ascend NPU need g++
-    build_directory=$BUILD_DIR/build.lite.huawei_ascend_npu
   fi
 
   if [ ${WITH_OPENCL} == "ON" ]; then
@@ -598,8 +586,6 @@ function make_x86_tests {
             -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
             -DXPU_SDK_URL=$XPU_SDK_URL \
             -DXPU_SDK_ENV=$XPU_SDK_ENV \
-            -DLITE_WITH_HUAWEI_ASCEND_NPU=$WITH_HUAWEI_ASCEND_NPU \
-            -DHUAWEI_ASCEND_NPU_DDK_ROOT=$HUAWEI_ASCEND_NPU_DDK_ROOT \
             -DCMAKE_BUILD_TYPE=Debug \
             -DPY_VERSION=$PY_VERSION \
             $PYTHON_EXECUTABLE_OPTION
@@ -832,14 +818,6 @@ function main {
                 ;;
             --rknpu_ddk_root=*)
                 RKNPU_DDK_ROOT="${i#*=}"
-                shift
-                ;;
-            --with_huawei_ascend_npu=*)
-                WITH_HUAWEI_ASCEND_NPU="${i#*=}"
-                shift
-                ;;
-            --huawei_ascend_npu_ddk_root=*)
-                HUAWEI_ASCEND_NPU_DDK_ROOT="${i#*=}"
                 shift
                 ;;
             --ios_deployment_target=*)

@@ -49,8 +49,9 @@ int ConvertScale(Converter* converter, OpInfo* op, Scope* scope) {
   }
 
   if (!has_scale && !has_bias) {
-    CHECK_LE(fabs(x_scales[0] - out_scales[0]), 1e-6f);
-    converter->AddOutputOperand(out_name);
+    auto output_operand = converter->AddOutputOperand(out_name);
+    converter->AddOperation(
+        NNADAPTER_ASSIGN, {input_operand}, {output_operand});
   } else if (has_scale) {
     // Scale operand
     NNAdapterOperand* scale_operand = nullptr;
@@ -77,8 +78,8 @@ int ConvertScale(Converter* converter, OpInfo* op, Scope* scope) {
                             {input_operand, scale_operand, fuse_code_operand},
                             {scale_output_operand});
     // Bias operand
+    NNAdapterOperand* bias_operand = nullptr;
     if (has_bias) {
-      NNAdapterOperand* bias_operand = nullptr;
       if (has_x_scale) {
         int8_t quant_bias_data = bias > 0.0f ? 1 : -1;
         std::vector<int8_t> quant_bias_data_vec;

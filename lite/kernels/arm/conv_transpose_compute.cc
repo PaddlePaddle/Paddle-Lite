@@ -71,11 +71,9 @@ void Conv2DTransposeCompute<PRECISION(kFloat),
   DEPTHWISE_PARAM
   if (!depth_wise_s1 && !depth_wise_s2) {
     lite::Tensor tmp_weights;
+    flag_trans_weight_ = true;
     lite::arm::math::prepackA(
-        &tmp_weights, *(param.filter), 1.f, m, k, group, true, &ctx);
-    param.filter->Resize(tmp_weights.dims());
-    param.filter->CopyDataFrom(tmp_weights);
-    param.filter->Resize(w_dims);
+        &weights_, *(param.filter), 1.f, m, k, group, true, &ctx);
   }
   is_first_epoch_ = false;
 }
@@ -158,17 +156,9 @@ void Conv2DTransposeCompute<PRECISION(kInt8),
     param.activation_param.Relu_clipped_coef =
         param.activation_param.Relu_clipped_coef / param.output_scale;
   }
-  //! update leakyRelu parameter
-  if (param.activation_param.active_type ==
-      lite_api::ActivationType::kLeakyRelu) {
-    param.activation_param.Leaky_relu_alpha =
-        param.activation_param.Leaky_relu_alpha / param.output_scale;
-  }
   //! update hardswish parameter
   if (param.activation_param.active_type ==
       lite_api::ActivationType::kHardSwish) {
-    param.activation_param.hard_swish_scale =
-        param.activation_param.hard_swish_scale / param.output_scale;
     param.activation_param.hard_swish_offset =
         param.activation_param.hard_swish_offset / param.output_scale;
     param.activation_param.hard_swish_threshold =
@@ -194,7 +184,7 @@ void Conv2DTransposeCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   int group_size_coldata = m * n;
 
   bool pads_all_qual = pads_equal && (paddings[0] == paddings[2]);
-  int hblock = lite::arm::math::get_hblock(&ctx);
+  int hblock = lite::arm::math::get_hblock(&ctx, m);
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int group_size_weights = ((m_roundup * k + 15) / 16) * 16;
   bool flag_1x1s1p1 = (kw == 1) && (kh == 1) && (param.strides[0] == 1) &&
@@ -204,7 +194,8 @@ void Conv2DTransposeCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
 
   auto din = param.x->data<float>();
   auto dout = param.output->mutable_data<float>();
-  auto weights = param.filter->data<float>();
+  auto weights =
+      flag_trans_weight_ ? weights_.data<float>() : param.filter->data<float>();
   auto act_param = param.activation_param;
   bool has_act = act_param.has_active;
   bool depthwise_s1 =
@@ -240,9 +231,9 @@ void Conv2DTransposeCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
         const float* din_group = din_batch + g * group_size_in;
         const float* weights_group = weights + g * group_size_weights;
         float* coldata_group = col_data + g * group_size_coldata;
-        if (flag_bias) {
-          act_param.has_active = false;
-        }
+
+        act_param.has_active = false;
+
         lite::arm::math::sgemm_prepack(false,
                                        m,
                                        n,
@@ -276,15 +267,11 @@ void Conv2DTransposeCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                        dilations[1],
                                        dout_batch);
       }
-      if (flag_bias) {
+
+      if (bias_act) {
         act_param.has_active = has_act;
         lite::arm::math::fill_bias_act<float>(
-            dout_batch,
-            static_cast<const float*>(param.bias->data<float>()),
-            chout,
-            wout * hout,
-            flag_bias,
-            &act_param);
+            dout_batch, bias_ptr, chout, wout * hout, flag_bias, &act_param);
       }
     }
   }
@@ -308,7 +295,7 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   int group_size_coldata = m * n;
 
   bool pads_all_qual = pads_equal && (paddings[0] == paddings[2]);
-  int hblock = lite::arm::math::get_hblock(&ctx);
+  int hblock = lite::arm::math::get_hblock(&ctx, m);
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int group_size_weights = ((m_roundup * k + 15) / 16) * 16;
   bool flag_1x1s1p1 = (kw == 1) && (kh == 1) && (param.strides[0] == 1) &&
@@ -407,7 +394,7 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   int group_size_coldata = m * n;
 
   bool pads_all_qual = pads_equal && (paddings[0] == paddings[2]);
-  int hblock = lite::arm::math::get_hblock(&ctx);
+  int hblock = lite::arm::math::get_hblock(&ctx, m);
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int group_size_weights = ((m_roundup * k + 15) / 16) * 16;
   bool flag_1x1s1p1 = (kw == 1) && (kh == 1) && (param.strides[0] == 1) &&
@@ -527,6 +514,7 @@ void Conv2DTransposeCompute<PRECISION(kFP16), PRECISION(kFP16)>::Run() {
   int hblock = lite::arm::math::fp16::get_hblock_fp16(&ctx);
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int group_size_weights = ((m_roundup * k + 15) / 16) * 16;
+  // int group_size_weights = chin * chout * kernel_w * kernel_h / (group);
   bool flag_1x1s1p1 = (kw == 1) && (kh == 1) && (param.strides[0] == 1) &&
                       (param.strides[1] == 1) && pads_all_qual &&
                       (paddings[0] == 0) && (dilations[0] == 1) &&

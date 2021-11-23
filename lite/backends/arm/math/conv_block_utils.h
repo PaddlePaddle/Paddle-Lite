@@ -56,7 +56,7 @@ inline void trans_gemm_weights<PRECISION(kFloat)>(const Tensor& tin,
   CHECK_EQ(tin.dims().size(), 4) << "conv weights dims size must = 4";
   int m = tin.dims()[0] / group;
   int k = tin.dims().count(1, 4);
-  int hblock = lite::arm::math::get_hblock(ctx);
+  int hblock = lite::arm::math::get_hblock(ctx, m);
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int group_size_round_up = ((m_roundup * k + 15) / 16) * 16;
   float* w_trans_ptr = nullptr;

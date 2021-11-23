@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <vector>
 #include "lite/core/kernel.h"
+#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
@@ -57,8 +58,7 @@ class FlipCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
     auto numel = x->numel();
     const T* x_data = x->template data<T>();
     T* out_data = out->template mutable_data<T>();
-#pragma omp parallel for
-    for (int64_t i = 0; i < numel; ++i) {
+    LITE_PARALLEL_BEGIN(i, tid, numel) {
       int64_t cur_indices = i;
       int64_t rem = 0;
       int64_t dst_offset = 0;
@@ -74,6 +74,7 @@ class FlipCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
       }
       out_data[i] = x_data[dst_offset];
     }
+    LITE_PARALLEL_END()
   }
 
   ~FlipCompute() = default;

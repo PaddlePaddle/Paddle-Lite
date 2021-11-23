@@ -323,7 +323,7 @@ TEST(TestConv1x1s1, test_conv1x1s1) {
                                  {1, 1},
                                  flag_bias,
                                  flag_act,
-                                 {1, 2, 4},
+                                 {4},
                                  {FLAGS_power_mode},
                                  leakey_relu_scale);
                 }
@@ -356,7 +356,7 @@ TEST(TestConv3x3s1, test_conv_3x3s1) {
                         if (cin == 1 && cout == 1) {
                           continue;
                         }
-                        const float leakey_relu_scale = 8.88;
+                        const float leakey_relu_scale = 0.88;
                         test_conv_fp32(
                             dim_in,
                             weights_dim,
@@ -412,7 +412,7 @@ TEST(TestConv3x3s2, test_conv_3x3s2) {
                             {1, 1},
                             flag_bias,
                             flag_act,
-                            {1, 2, 4},
+                            {4},
                             {FLAGS_power_mode},
                             leakey_relu_scale);
                       }
@@ -450,7 +450,7 @@ TEST(TestConvRand, test_conv_rand) {
                               }
                               std::vector<DDim> dims;
                               DDim weights_dim({cout, cin / g, kh, kw});
-                              for (auto& batch : {1, 2}) {
+                              for (auto& batch : {2}) {
                                 for (auto& h : {1, 3, 19, 32}) {
                                   DDim dim_in({batch, cin, h, h});
                                   // skip 3x3 depthwise conv

@@ -169,13 +169,20 @@ class ElementwiseImageCompute : public KernelLite<TARGET(kOpenCL),
 
     // op_type
     auto elementwise_compute_type = op_type();
-    if (elementwise_compute_type == "elementwise_div") {
+    if (elementwise_compute_type == "elementwise_div" ||
+        elementwise_compute_type == "fusion_elementwise_div_activation") {
       build_options_ += " -DOPERATOR(in,bias)=(in/bias) ";
-    } else if (elementwise_compute_type == "elementwise_add") {
+    } else if (elementwise_compute_type == "elementwise_add" ||
+               elementwise_compute_type ==
+                   "fusion_elementwise_add_activation") {
       build_options_ += " -DOPERATOR(in,bias)=(in+bias) ";
-    } else if (elementwise_compute_type == "elementwise_sub") {
+    } else if (elementwise_compute_type == "elementwise_sub" ||
+               elementwise_compute_type ==
+                   "fusion_elementwise_sub_activation") {
       build_options_ += " -DOPERATOR(in,bias)=(in-bias) ";
-    } else if (elementwise_compute_type == "elementwise_mul") {
+    } else if (elementwise_compute_type == "elementwise_mul" ||
+               elementwise_compute_type ==
+                   "fusion_elementwise_mul_activation") {
       build_options_ += " -DOPERATOR(in,bias)=(in*bias) ";
     } else if (elementwise_compute_type == "elementwise_max") {
       build_options_ += " -DOPERATOR(in,bias)=fmax(in,bias) ";

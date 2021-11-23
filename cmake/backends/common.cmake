@@ -24,24 +24,12 @@ if(LITE_WITH_INTEL_FPGA)
   include(backends/intel_fpga)
 endif()
 
-if(LITE_WITH_IMAGINATION_NNA)
-  include(backends/imagination_nna)
-endif()
-
 if(LITE_WITH_NPU)
   include(backends/npu)
 endif()
 
 if(LITE_WITH_XPU)
   include(backends/xpu)
-endif()
-
-if(LITE_WITH_APU)
-  include(backends/apu)
-endif()
-
-if(LITE_WITH_HUAWEI_ASCEND_NPU)
-  include(backends/huawei_ascend_npu)
 endif()
 
 if(LITE_WITH_MLU)

@@ -71,9 +71,10 @@ extern NSString* cString2NSString(std::string cStr) {
 
 - (void)setMetalPath:(std::string)path {
     NSString* pathStr = cString2NSString(path);
+    NSError* libraryErr = nil;
     if (pathStr) {
         self.libPath = pathStr;
-        self.library = [self.device newLibraryWithFile:pathStr error:NULL];
+        self.library = [self.device newLibraryWithFile:pathStr error:&libraryErr];
     }
     if (nil == _library) {
         LOG(INFO) << "Can't load metallib: " << [pathStr cStringUsingEncoding:NSUTF8StringEncoding];
@@ -306,7 +307,7 @@ extern NSString* cString2NSString(std::string cStr) {
 - (void)setHeap:(id<MTLHeap>)heap key:(std::string)ptr API_AVAILABLE(ios(10.0)) {
     NSString* ptrStr = cString2NSString(ptr);
     if (!ptrStr) {
-        LOG(WARN) << "heap key is nil";
+        LOG(INFO) << "heap key is nil";
         return;
     }
     [self.memoryReuseHeaps setObject:heap forKey:ptrStr];

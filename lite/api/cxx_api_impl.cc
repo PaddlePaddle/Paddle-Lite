@@ -153,13 +153,6 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
       raw_predictor_->scope(), config.subgraph_model_cache_dir());
 #endif
 
-#ifdef LITE_WITH_APU
-  // Store the model-level configuration into scope for kernels, and use
-  // exe_scope to store the execution-level configuration
-  Context<TargetType::kAPU>::SetSubgraphModelCacheDir(
-      raw_predictor_->scope(), config.subgraph_model_cache_dir());
-#endif
-
 #ifdef LITE_WITH_RKNPU
   // Store the model-level configuration into scope for kernels, and use
   // exe_scope to store the execution-level configuration
@@ -169,12 +162,6 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
       raw_predictor_->scope(), config.subgraph_model_cache_buffers());
 #endif
 
-#ifdef LITE_WITH_HUAWEI_ASCEND_NPU
-  Context<TargetType::kHuaweiAscendNPU>::SetHuaweiAscendDeviceID(
-      config.get_device_id());
-  Context<TargetType::kHuaweiAscendNPU>::SetSubgraphModelCacheDir(
-      config.subgraph_model_cache_dir());
-#endif
 #if (defined LITE_WITH_X86) && (defined PADDLE_WITH_MKLML) && \
     !(defined LITE_ON_MODEL_OPTIMIZE_TOOL)
   int num_threads = config.x86_math_num_threads();
@@ -246,6 +233,18 @@ CxxPaddleApiImpl::~CxxPaddleApiImpl() {
 #endif
 }
 
+std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetInputByName(
+    const std::string &name) {
+  auto *x = raw_predictor_->GetInputByName(name);
+  return std::unique_ptr<lite_api::Tensor>(new lite_api::Tensor(x));
+}
+
+std::unique_ptr<const lite_api::Tensor> CxxPaddleApiImpl::GetOutputByName(
+    const std::string &name) const {
+  const auto *x = raw_predictor_->GetOutputByName(name);
+  return std::unique_ptr<lite_api::Tensor>(new lite_api::Tensor(x));
+}
+
 std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetInput(int i) {
   auto *x = raw_predictor_->GetInput(i);
   return std::unique_ptr<lite_api::Tensor>(new lite_api::Tensor(x));
@@ -305,12 +304,6 @@ std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetMutableTensor(
     const std::string &name) {
   return std::unique_ptr<lite_api::Tensor>(
       new lite_api::Tensor(raw_predictor_->GetMutableTensor(name)));
-}
-
-std::unique_ptr<lite_api::Tensor> CxxPaddleApiImpl::GetInputByName(
-    const std::string &name) {
-  return std::unique_ptr<lite_api::Tensor>(
-      new lite_api::Tensor(raw_predictor_->GetInputByName(name)));
 }
 
 void CxxPaddleApiImpl::SaveOptimizedModel(const std::string &model_dir,
