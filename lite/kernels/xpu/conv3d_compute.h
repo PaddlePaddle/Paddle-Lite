@@ -24,9 +24,9 @@ namespace xpu {
 template <PrecisionType FilterPtype>
 class Conv3DCompute : public KernelLite<TARGET(kXPU), FilterPtype> {
  public:
-  using param_t = operators::Conv3DParam;
+  using param_t = operators::ConvParam;
 
-  virtual void Run();
+  void Run() override;
 
   virtual ~Conv3DCompute() = default;
 };

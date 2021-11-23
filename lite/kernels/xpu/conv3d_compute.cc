@@ -72,5 +72,4 @@ REGISTER_LITE_KERNEL(conv3d, kXPU, kFloat, kNCHW, Conv3dFp32, def)
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Filter", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Output", {LiteType::GetTensorTy(TARGET(kXPU))})
-    .BindPaddleOpVersion("conv3d", 1)
     .Finalize();

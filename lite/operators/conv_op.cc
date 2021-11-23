@@ -34,7 +34,7 @@ bool ConvOpLite::CheckShape() const {
 
   CHECK_EQ_OR_FALSE(in_dims.size(), filter_dims.size());
   CHECK_OR_FALSE(in_dims.size() - param_.strides.size() == 2U);
-  CHECK_EQ_OR_FALSE(filter_dims.size(), 4UL);
+  CHECK_OR_FALSE(filter_dims.size() == 4UL || filter_dims.size() == 5UL);
 
   return true;
 }
@@ -115,4 +115,5 @@ bool ConvOpLite::InferShapeImpl() const {
 }  // namespace paddle
 
 REGISTER_LITE_OP(conv2d, paddle::lite::operators::ConvOpLite);
+REGISTER_LITE_OP(conv3d, paddle::lite::operators::ConvOpLite);
 REGISTER_LITE_OP(depthwise_conv2d, paddle::lite::operators::ConvOpLite);
