@@ -290,7 +290,7 @@ TEST(TestSgemm, test_func_sgemm_prepacked) {
                           }
                           int ldc = n + offset;
                           float six = 6.f;
-                          float scale = 8.88f;
+                          float scale = 4.88f;
                           auto flag = test_sgemm(tra,
                                                  trb,
                                                  m,

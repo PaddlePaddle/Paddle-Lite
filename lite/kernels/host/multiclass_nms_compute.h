@@ -385,12 +385,12 @@ class MulticlassNmsCompute : public KernelLite<TType, PType> {
 
     if (return_rois_num) {
       auto* nms_rois_num = param.nms_rois_num;
-      nms_rois_num->template mutable_data<int>();
+      nms_rois_num->Resize({n});
       int* num_data = nms_rois_num->template mutable_data<int>();
+
       for (int i = 1; i <= n; i++) {
         num_data[i - 1] = batch_starts[i] - batch_starts[i - 1];
       }
-      nms_rois_num->Resize({n});
     }
 
     LoD lod;
