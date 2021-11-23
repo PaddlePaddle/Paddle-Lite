@@ -18,7 +18,7 @@ Paddle Lite 支持多种 GPU 后端，包括 OpenCL、[Metal](https://developer.
 ./lite/tools/build_ios.sh --with_metal=ON --with_extra=ON
 ```
 ### 2、使用 Metal 加速的 API 使用示例
-Paddle Lite 提供了使用 Metal 进行加速的 API 接口，详细开发文档见[C++ API](api_reference/cxx_api_doc)。以下简单提供Predictor创建示例
+Paddle Lite 提供了使用 Metal 进行加速的 API 接口，详细开发文档见 [C++ API](api_reference/cxx_api_doc)。以下简单提供 Predictor 创建示例
 ```
 #include "paddle_api.h"
 
@@ -34,14 +34,14 @@ std::shared_ptr<PaddlePredictor> predictor =
 return predictor;
 ```
 ### 3、XCode 集成开发
-iOS 开发配置见[iOS 工程示例](demo_guides/ios_app_demo)。配置完成后，手动对```include```和```lib```目录进行替换，编译生成的```.metallib文件```也可以同时放置在```lib```目录下。
+iOS 开发配置见 [iOS 工程示例](demo_guides/ios_app_demo)。配置完成后，手动对 ```include``` 和 ```lib``` 目录进行替换，编译生成的 ```.metallib 文件```也可以同时放置在 ```lib``` 目录下。
 
-另外使用 Metal 加速会依赖[MetalPerformaceShaders](https://developer.apple.com/documentation/metalperformanceshaders?language=objc), 需要进行如以下配置
+另外使用 Metal 加速会依赖 [MetalPerformaceShaders](https://developer.apple.com/documentation/metalperformanceshaders?language=objc)，需要进行如下图配置，在```Project navigator ->  Your project -> PROJECT -> Your target -> General -> Frameworks, Libraries and Embedded Content``` 中添加 ```libpaddle_api_light_bundled.a``` 和 ```MetalPerformanceShaders.framework```.
 <p align="center"><img width="900" height="400"  src="https://paddlelite-data.bj.bcebos.com/doc_images/Android_iOS_demo/iOS/xcode-metal.png"/>
 
 完成这一步骤之后，你应该已经可以运行所开发的应用程序了。
 
-## 支持的模型与Ops
+## 支持的模型与 Ops
 GPU 支持的模型列表见[支持模型](../quick_start/support_model_list)，详细的 OP 支持列表见[支持算子](quick_start/support_operation_list).
 
 ## 优化建议
