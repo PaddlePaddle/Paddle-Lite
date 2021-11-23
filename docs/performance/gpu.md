@@ -7,13 +7,13 @@ GPU 可以用来运行较大运算强度的负载任务，将模型中计算任�
 Paddle Lite 支持多种 GPU 后端，包括 OpenCL、[Metal](https://developer.apple.com/metal/)，支持包括 ARM Mali、Qualcomm Adreno、Apple A Series 等系列 GPU 设备。
 
 ## Android 设备使用 OpenCL 获取最佳性能
-详细见[OpenCL 部署示例](opencl.md)
+详细见 [OpenCL 部署示例](opencl.md)
 
 ## iOS 设备使用 Metal 获取最佳性能
 这里介绍在苹果 iOS 设备上，通过使用 Metal 后端利用 GPU 设备获取最佳性能。
 
 ### 1、编译获取支持 Metal 后端的 Paddle Lite 预测库
-根据[源码编译](source_compile/compile_env)中[macOS 环境下编译适用于 iOS 的库](../source_compile/macos_compile_ios)准备编译环境, 拉取 Paddle Lite 代码，切换到特定分支，然后在 Paddle Lite 根目录下执行编译命令
+根据[源码编译](source_compile/compile_env)中 [macOS 环境下编译适用于 iOS 的库](../source_compile/macos_compile_ios)准备编译环境, 拉取 Paddle Lite 代码，切换到特定分支，然后在 Paddle Lite 根目录下执行编译命令
 ```
 ./lite/tools/build_ios.sh --with_metal=ON --with_extra=ON
 ```
