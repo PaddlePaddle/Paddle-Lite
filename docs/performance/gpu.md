@@ -37,7 +37,7 @@ return predictor;
 iOS 开发配置见[iOS 工程示例](demo_guides/ios_app_demo)。配置完成后，手动对```include```和```lib```目录进行替换，编译生成的```.metallib文件```也可以同时放置在```lib```目录下。
 
 另外使用 Metal 加速会依赖[MetalPerformaceShaders](https://developer.apple.com/documentation/metalperformanceshaders?language=objc), 需要进行如以下配置
-<p align="center"><img width="600" height="250"  src="https://paddlelite-data.bj.bcebos.com/doc_images/Android_iOS_demo/iOS/xcode-metal.jpg"/>
+<p align="center"><img width="600" height="250"  src="https://paddlelite-data.bj.bcebos.com/doc_images/Android_iOS_demo/iOS/xcode-metal.png"/>
 
 完成这一步骤之后，你应该已经可以运行所开发的应用程序了。
 
