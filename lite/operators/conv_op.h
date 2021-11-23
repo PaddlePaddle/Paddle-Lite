@@ -219,10 +219,10 @@ class ConvOpLite : public OpLite {
     }
 #endif
     size_t expected_pad_size = 2L;
-    // conv3d or conv2d
     if (in_dims.size() == 5) {
       expected_pad_size = 3L;
     }
+    // conv3d: 3-pad to 6-pad, or conv2d: 2-pad to 4-pad
     if (paddings.size() == expected_pad_size) {
       for (size_t i = 0; i < param_.strides.size(); ++i) {
         int copy_pad = *(paddings.begin() + 2 * i);
