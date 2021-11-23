@@ -73,7 +73,7 @@ bool ElementwiseOp::InferShapeImpl() const {
     }
     for (size_t i = 0; i < max_dim; i++) {
       if (x_dims_array[i] == -1 || y_dims_array[i] == -1) {
-        out_dims_array[i] = -1;
+        out_dims_array[i] = 1;
       } else {
         out_dims_array[i] = (std::max)(x_dims_array[i], y_dims_array[i]);
       }
