@@ -771,8 +771,6 @@ void OptBase::InitSupportedOpInfo() {
                                               "kBM",
                                               "kMLU",
                                               "kRKNPU",
-                                              "kAPU",
-                                              "kHuaweiAscendNPU",
                                               "kIntelFPGA",
                                               "kMetal",
                                               "kNNAdapter"};

@@ -66,7 +66,7 @@ void MulCompute::Run() {
 
   } else {
     constexpr bool is_tranposed_y = false;
-    int hblock = lite::arm::math::get_hblock(&ctx);
+    int hblock = lite::arm::math::get_hblock(&ctx, m_);
     int m_round = hblock * ((m_ + hblock - 1) / hblock);
     ctx.ExtendWorkspace(m_round * k_ * sizeof(float));
 

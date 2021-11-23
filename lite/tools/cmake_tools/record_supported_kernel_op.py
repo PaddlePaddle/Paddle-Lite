@@ -59,7 +59,7 @@ const std::vector<std::vector<std::string>> supported_ops_target = {
 ops_lines = []
 
 # valid targets and valid_ops
-valid_targets = ["kUnk", "kHost", "kX86", "kCUDA", "kARM", "kOpenCL", "kAny", "kFPGA", "kNPU", "kXPU", "kBM", "kMLU", "kRKNPU", "kAPU", "kHuaweiAscendNPU", "kIntelFPGA", "kMetal", "kNNAdapter"]
+valid_targets = ["kUnk", "kHost", "kX86", "kCUDA", "kARM", "kOpenCL", "kAny", "kFPGA", "kNPU", "kXPU", "kBM", "kMLU", "kRKNPU", "kIntelFPGA", "kMetal", "kNNAdapter"]
 valid_ops = [[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]]
 class TargetType:
     kUnk = 0
@@ -75,8 +75,6 @@ class TargetType:
     kBM = 10
     kMLU = 11
     kRKNPU = 12
-    kAPU = 13
-    kHuaweiAscendNPU = 14
     kIntelFPGA = 16
     kMetal = 17
     kNNAdapter = 18

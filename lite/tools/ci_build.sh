@@ -11,7 +11,10 @@ NUM_PROC=4
 readonly ADB_WORK_DIR="/data/local/tmp"
 readonly common_flags="-DWITH_LITE=ON -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF -DWITH_PYTHON=OFF -DWITH_TESTING=ON -DLITE_WITH_ARM=OFF"
 
-readonly THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
+# url that stores third-party tar.gz file to accelerate third-party lib installation
+readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
+readonly THIRDPARTY_TAR=third-party-801f670.tar.gz
+
 readonly workspace=$PWD
 
 NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-8}
@@ -35,13 +38,13 @@ fi
 
 function prepare_thirdparty {
     cd $workspace
-    if [ ! -d $workspace/third-party -o -f $workspace/third-party-ea5576.tar.gz ]; then
+    if [ ! -d $workspace/third-party -o -f $workspace/$THIRDPARTY_TAR ]; then
         rm -rf $workspace/third-party
 
-        if [ ! -f $workspace/third-party-ea5576.tar.gz ]; then
-            wget $THIRDPARTY_TAR
+        if [ ! -f $workspace/$THIRDPARTY_TAR ]; then
+            wget $THIRDPARTY_URL/$THIRDPARTY_TAR
         fi
-        tar xzf third-party-ea5576.tar.gz
+        tar xzf $THIRDPARTY_TAR
     else
         git submodule update --init --recursive
     fi
@@ -148,7 +151,7 @@ function run_gen_code_test {
     # 1. build test_cxx_api
     make test_cxx_api -j$NUM_CORES_FOR_COMPILE
 
-    # 2. run test_cxx_api_lite in emulator to get opt model 
+    # 2. run test_cxx_api_lite in emulator to get opt model
     local test_cxx_api_lite_path=$(find ./lite -name test_cxx_api)
     adb -s ${device} push "./third_party/install/lite_naive_model" ${adb_work_dir}
     adb -s ${device} push ${test_cxx_api_lite_path} ${adb_work_dir}
@@ -255,8 +258,8 @@ function build_single {
 function build {
     make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
     if [ $LITE_WITH_COVERAGE = "ON" ];then
-        make coveralls_generate -j	
-    fi 
+        make coveralls_generate -j
+    fi
     # test publish inference lib
     # make publish_inference
 }
@@ -595,7 +598,7 @@ function run_test_case_on_remote_device {
         $remote_device_run $remote_device_name push "$config_dir" "$remote_device_work_dir"
         command_line="$command_line --config_dir ./$config_name"
     fi
-    
+
     # Run the model on the remote device
     $remote_device_run $remote_device_name shell "cd $remote_device_work_dir; export GLOG_v=5; LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. $command_line"
 }
@@ -822,85 +825,6 @@ function rockchip_npu_build_and_test_ssh {
     run_all_tests_on_remote_device $1 "~/ci" ssh_device_pick ssh_device_check ssh_device_run $2 "$(readlink -f ./rknpu_ddk)" "armv8" "gcc" rockchip_npu_build_target rockchip_npu_prepare_device
 }
 
-# MediaTek APU
-function mediatek_apu_prepare_device {
-    local remote_device_name=$1
-    local remote_device_work_dir=$2
-    local remote_device_check=$3
-    local remote_device_run=$4
-    local arch=$5
-    local toolchain=$6
-    local sdk_root_dir=$7
-
-    # Check device is available
-    $remote_device_check $remote_device_name
-    if [[ $? -ne 0 ]]; then
-        echo "$remote_device_name not found!"
-        exit 1
-    fi
-
-    # Create work dir on the remote device
-    if [[ -z "$remote_device_work_dir" ]]; then
-        echo "$remote_device_work_dir can't be empty!"
-        exit 1
-    fi
-    if [[ "$remote_device_work_dir" == "/" ]]; then
-        echo "$remote_device_work_dir can't be root dir!"
-        exit 1
-    fi
-    $remote_device_run $remote_device_name shell "rm -rf $remote_device_work_dir"
-    $remote_device_run $remote_device_name shell "mkdir -p $remote_device_work_dir"
-
-    # Use high performance mode
-    $remote_device_run $remote_device_name root
-    if [[ $? -ne 0 ]]; then
-        echo "$remote_device_name hasn't the root permission!"
-        exit 1
-    fi
-    $remote_device_run $remote_device_name shell "echo performance > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
-    $remote_device_run $remote_device_name shell "echo performance > /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor"
-    $remote_device_run $remote_device_name shell "echo performance > /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor"
-    $remote_device_run $remote_device_name shell "echo performance > /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor"
-    $remote_device_run $remote_device_name shell "cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq"
-    $remote_device_run $remote_device_name shell "echo 800000 > /proc/gpufreq/gpufreq_opp_freq"
-    $remote_device_run $remote_device_name shell "echo dvfs_debug 0 > /sys/kernel/debug/vpu/power"
-    $remote_device_run $remote_device_name shell "echo 0 > /sys/devices/platform/soc/10012000.dvfsrc/helio-dvfsrc/dvfsrc_force_vcore_dvfs_opp"
-    $remote_device_run $remote_device_name shell "echo 0 > /sys/module/mmdvfs_pmqos/parameters/force_step"
-    $remote_device_run $remote_device_name shell "echo 0 > /proc/sys/kernel/printk"
-}
-
-function mediatek_apu_build_target {
-    local arch=$1
-    local toolchain=$2
-    local sdk_root_dir=$3
-
-    # Build all of tests
-    rm -rf ./build
-    mkdir -p ./build
-    cd ./build
-    prepare_workspace
-    cmake .. \
-        -DWITH_GPU=OFF \
-        -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
-        -DLITE_WITH_CUDA=OFF \
-        -DLITE_WITH_X86=OFF \
-        -DLITE_WITH_ARM=ON \
-        -DWITH_ARM_DOTPROD=ON   \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
-        -DWITH_TESTING=ON \
-        -DLITE_BUILD_EXTRA=ON \
-        -DLITE_WITH_TRAIN=ON \
-        -DLITE_WITH_APU=ON \
-        -DAPU_DDK_ROOT="$sdk_root_dir" \
-        -DARM_TARGET_OS="android" -DARM_TARGET_ARCH_ABI=$arch -DARM_TARGET_LANG=$toolchain
-    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
-}
-
-function mediatek_apu_build_and_test {
-    run_all_tests_on_remote_device $1 "/data/local/tmp/ci" adb_device_pick adb_device_check adb_device_run $2 "$(readlink -f ./apu_ddk)" "armv7" "gcc" mediatek_apu_build_target mediatek_apu_prepare_device
-}
-
 # ARMLinux (RK3399/pro, Raspberry pi etc.)
 function armlinux_prepare_device {
     local remote_device_name=$1
@@ -965,25 +889,6 @@ function armlinux_armhf_build_and_test {
     run_all_tests_on_remote_device $1 "~/ci" ssh_device_pick ssh_device_check ssh_device_run $2 "." "armv7hf" "gcc" armlinux_build_target armlinux_prepare_device
 }
 
-function cmake_huawei_ascend_npu {
-    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
-    prepare_workspace
-    cmake .. \
-        ${common_flags} \
-        -DWITH_GPU=OFF \
-        -DWITH_MKLDNN=OFF \
-        -DLITE_WITH_X86=ON \
-        -DWITH_MKL=ON \
-        -DLITE_BUILD_EXTRA=ON \
-        -DLITE_WITH_HUAWEI_ASCEND_NPU=ON \
-        -DHUAWEI_ASCEND_NPU_DDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux" \
-        -DCMAKE_BUILD_TYPE=Release
-}
-
-function build_huawei_ascend_npu {
-    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
-}
-
 # It will eagerly test all lite related unittests.
 function test_huawei_ascend_npu {
     # Due to the missing of ascend kernels, we skip the following tests temporarily.
@@ -1007,20 +912,6 @@ function test_huawei_ascend_npu {
             ctest -R $_test -V
         fi
     done
-}
-
-# Build the code and run lite server tests. This is executed in the CI system.
-function build_test_huawei_ascend_npu {
-    cur_dir=$(pwd)
-
-    build_dir=$cur_dir/build.lite.huawei_ascend_npu
-    mkdir -p $build_dir
-    cd $build_dir
-
-    cmake_huawei_ascend_npu
-    build_huawei_ascend_npu
-
-    # test_huawei_ascend_npu
 }
 
 # test_arm_android <some_test_name> <adb_port_number>
@@ -1690,20 +1581,12 @@ function main {
                 rockchip_npu_build_and_test_ssh $SSH_DEVICE_LIST $TEST_SKIP_LIST
                 shift
                 ;;
-            mediatek_apu_build_and_test)
-                mediatek_apu_build_and_test $ADB_DEVICE_LIST $TEST_SKIP_LIST
-                shift
-                ;;
             armlinux_arm64_build_and_test)
                 armlinux_arm64_build_and_test $SSH_DEVICE_LIST $TEST_SKIP_LIST
                 shift
                 ;;
             armlinux_armhf_build_and_test)
                 armlinux_armhf_build_and_test $SSH_DEVICE_LIST $TEST_SKIP_LIST
-                shift
-                ;;
-            build_test_huawei_ascend_npu)
-                build_test_huawei_ascend_npu
                 shift
                 ;;
             build_test_train)

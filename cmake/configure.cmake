@@ -38,7 +38,7 @@ if(WIN32)
   # windows header option for all targets.
   add_definitions(-D_XKEYCHECK_H)
   add_definitions(/openmp)
-  
+
   if (NOT MSVC)
     message(FATAL "Windows build only support msvc. Which was binded by the nvcc compiler of NVIDIA.")
   endif(NOT MSVC)
@@ -61,7 +61,7 @@ if(WIN32)
           endif()
       endif()
   endif()
-  
+
 endif(WIN32)
 
 if(LITE_WITH_CUDA)
@@ -170,10 +170,6 @@ if (LITE_WITH_NPU)
     add_definitions("-DLITE_WITH_NPU")
 endif()
 
-if (LITE_WITH_APU)
-    add_definitions("-DLITE_WITH_APU")
-endif()
-
 if (LITE_WITH_RKNPU)
     add_definitions("-DLITE_WITH_RKNPU")
 endif()
@@ -212,10 +208,6 @@ endif()
 
 if (LITE_WITH_MLU)
 add_definitions("-DLITE_WITH_MLU")
-endif()
-
-if (LITE_WITH_HUAWEI_ASCEND_NPU)
-add_definitions("-DLITE_WITH_HUAWEI_ASCEND_NPU")
 endif()
 
 if (LITE_WITH_NNADAPTER)

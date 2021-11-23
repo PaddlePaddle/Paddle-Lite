@@ -54,6 +54,7 @@ class SkipReasonsBase(enum.Enum):
     ACCURACY_ERROR = 2
 
 
+
 class AutoScanBaseTest(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         np.random.seed(1024)
@@ -197,10 +198,11 @@ class AutoScanBaseTest(unittest.TestCase):
                                      feed_data))
             self.success_log('RUN_CPU_BASELINE done')
 
-            for pred_config, (
+            for paddlelite_config, (
                     atol, rtol) in self.sample_predictor_configs(prog_config):
                 # skip info
                 skip_flag = False
+                pred_config = paddlelite_config.value()
                 for skip_info in self.skip_cases:
                     if skip_info[0](prog_config, pred_config):
                         skip_flag = True

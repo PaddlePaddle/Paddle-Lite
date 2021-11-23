@@ -52,7 +52,7 @@ void sgemm(bool is_transA,
     sgemv(B, A, C, !is_transB, N, K, beta, is_bias, bias_ptr, act_param, ctx);
     return;
   }
-  int hblock = get_hblock(ctx);
+  int hblock = get_hblock(ctx, M);
   int m_roundup = hblock * ((M + hblock - 1) / hblock);
   ctx->ExtendWorkspace(m_roundup * K * sizeof(float));
 

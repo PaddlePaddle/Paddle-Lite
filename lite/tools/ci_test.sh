@@ -6,7 +6,9 @@ TESTS_FILE="./lite_tests.txt"
 LIBS_FILE="./lite_libs.txt"
 LITE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../" && pwd)"
 
-readonly THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
+# url that stores third-party tar.gz file to accelerate third-party lib installation
+readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
+readonly THIRDPARTY_TAR=third-party-801f670.tar.gz
 readonly workspace=$PWD
 
 NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-8}
@@ -46,15 +48,15 @@ if [ ${os_name} == "Darwin" ]; then
     ulimit -n 1024
 fi
 
-function prepare_thirdparty() {
+function prepare_thirdparty {
     cd $workspace
-    if [ ! -d $workspace/third-party -o -f $workspace/third-party-ea5576.tar.gz ]; then
+    if [ ! -d $workspace/third-party -o -f $workspace/$THIRDPARTY_TAR ]; then
         rm -rf $workspace/third-party
 
-        if [ ! -f $workspace/third-party-ea5576.tar.gz ]; then
-            wget $THIRDPARTY_TAR
+        if [ ! -f $workspace/$THIRDPARTY_TAR ]; then
+            wget $THIRDPARTY_URL/$THIRDPARTY_TAR
         fi
-        tar xzf third-party-ea5576.tar.gz
+        tar xzf $THIRDPARTY_TAR
     else
         git submodule update --init --recursive
     fi
@@ -400,7 +402,7 @@ function android_cpu_build_target() {
     mkdir -p $BUILD_DIRECTORY
     cd $BUILD_DIRECTORY
     prepare_workspace $ROOT_DIR $BUILD_DIRECTORY
-    
+
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
@@ -567,88 +569,6 @@ function huawei_kirin_npu_build_and_test() {
     build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE huawei_kirin_npu_build_target huawei_kirin_npu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR "$(readlink -f ./hiai_ddk_lib_330)"
 }
 
-
-# Huawei Ascend NPU
-function huawei_ascend_npu_test_target() {
-    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
-    export GLOG_v=$UNIT_TEST_LOG_LEVEL
-    local unit_test_check_items=(${UNIT_TEST_CHECK_LIST//,/ })
-    for test_name in $(cat $TESTS_FILE); do
-        local is_matched=0
-        for unit_test_check_item in ${unit_test_check_items[@]}; do
-            if [[ "$unit_test_check_item" == "$test_name" ]]; then
-                echo "$test_name on the checklist."
-                is_matched=1
-                break
-            fi
-        done
-        # black list
-        if [[ $is_matched -eq 1 && $unit_test_filter_type -eq 0 ]]; then
-            continue
-        fi
-        # white list
-        if [[ $is_matched -eq 0 && $unit_test_filter_type -eq 1 ]]; then
-            continue
-        fi
-        ctest -V -R ^$test_name$
-    done
-    cd - >/dev/null
-}
-
-function huawei_ascend_npu_build_target() {
-    cur_dir=$(pwd)
-    BUILD_DIRECTORY=$cur_dir/build.lite.huawei_ascend_npu.test
-
-    rm -rf $BUILD_DIRECTORY
-    mkdir -p $BUILD_DIRECTORY
-    cd $BUILD_DIRECTORY
-    prepare_workspace $ROOT_DIR $BUILD_DIRECTORY
-    local archs=(${ARCH_LIST//,/ })
-    for arch in $archs; do 
-        if [ "${arch}" == "x86_64" ]; then
-            with_x86=ON
-            with_arm=OFF
-            with_light_weight_framework=OFF
-            huawei_ascend_npu_ddk_root="/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux"
-        elif [ "${arch}" == "armv8" ]; then
-            with_arm=ON
-            with_x86=OFF
-            arm_arch=armv8
-            arm_target_os=armlinux
-            toolchain=gcc
-            with_light_weight_framework=ON
-            huawei_ascend_npu_ddk_root="/usr/local/Ascend/ascend-toolkit/latest/arm64-linux"
-        else
-            echo "$arch isn't supported by Ascend NPU DDK!"
-            exit 1
-        fi
-
-        cmake .. \
-            -DLITE_WITH_ARM=$with_arm \
-            -DLITE_WITH_X86=$with_x86 \
-            -DARM_TARGET_ARCH_ABI=$arm_arch \
-            -DARM_TARGET_OS=$arm_target_os \
-            -DARM_TARGET_LANG=$toolchain \
-            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=$with_light_weight_framework \
-            -DWITH_LITE=ON \
-            -DWITH_PYTHON=OFF \
-            -DWITH_TESTING=ON \
-            -DWITH_GPU=OFF \
-            -DWITH_MKLDNN=OFF \
-            -DWITH_MKL=ON \
-            -DLITE_BUILD_EXTRA=ON \
-            -DLITE_WITH_HUAWEI_ASCEND_NPU=ON \
-            -DHUAWEI_ASCEND_NPU_DDK_ROOT=$huawei_ascend_npu_ddk_root \
-            -DCMAKE_BUILD_TYPE=Release
-        make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
-    done
-}
-
-function huawei_ascend_npu_build_and_test() {
-    huawei_ascend_npu_build_target
-    huawei_ascend_npu_test_target
-}
-
 # Rockchip NPU
 function rockchip_npu_prepare_device() {
     local os=$1
@@ -723,87 +643,6 @@ function rockchip_npu_build_target() {
 
 function rockchip_npu_build_and_test() {
     build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE rockchip_npu_build_target rockchip_npu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR "$(readlink -f ./rknpu_ddk)"
-}
-
-# MediaTek APU
-function mediatek_apu_prepare_device() {
-    local os=$1
-    local arch=$2
-    local toolchain=$3
-    local remote_device_name=$4
-    local remote_device_work_dir=$5
-    local remote_device_check=$6
-    local remote_device_run=$7
-    local sdk_root_dir=$8
-
-    # Check device is available
-    $remote_device_check $remote_device_name
-    if [[ $? -ne 0 ]]; then
-        echo "$remote_device_name not found!"
-        exit 1
-    fi
-
-    # Create work dir on the remote device
-    if [[ -z "$remote_device_work_dir" ]]; then
-        echo "$remote_device_work_dir can't be empty!"
-        exit 1
-    fi
-    if [[ "$remote_device_work_dir" == "/" ]]; then
-        echo "$remote_device_work_dir can't be root dir!"
-        exit 1
-    fi
-    $remote_device_run $remote_device_name shell "rm -rf $remote_device_work_dir"
-    $remote_device_run $remote_device_name shell "mkdir -p $remote_device_work_dir"
-
-    # Use high performance mode
-    $remote_device_run $remote_device_name root
-    if [[ $? -ne 0 ]]; then
-        echo "$remote_device_name hasn't the root permission!"
-        exit 1
-    fi
-    $remote_device_run $remote_device_name shell "echo performance > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
-    $remote_device_run $remote_device_name shell "echo performance > /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor"
-    $remote_device_run $remote_device_name shell "echo performance > /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor"
-    $remote_device_run $remote_device_name shell "echo performance > /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor"
-    $remote_device_run $remote_device_name shell "cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq"
-    $remote_device_run $remote_device_name shell "echo 800000 > /proc/gpufreq/gpufreq_opp_freq"
-    $remote_device_run $remote_device_name shell "echo dvfs_debug 0 > /sys/kernel/debug/vpu/power"
-    $remote_device_run $remote_device_name shell "echo 0 > /sys/devices/platform/soc/10012000.dvfsrc/helio-dvfsrc/dvfsrc_force_vcore_dvfs_opp"
-    $remote_device_run $remote_device_name shell "echo 0 > /sys/module/mmdvfs_pmqos/parameters/force_step"
-    $remote_device_run $remote_device_name shell "echo 0 > /proc/sys/kernel/printk"
-}
-
-function mediatek_apu_build_target() {
-    local os=$1
-    local arch=$2
-    local toolchain=$3
-    local sdk_root_dir=$4
-
-    # Build all of tests
-    rm -rf $BUILD_DIRECTORY
-    mkdir -p $BUILD_DIRECTORY
-    cd $BUILD_DIRECTORY
-    prepare_workspace $ROOT_DIR $BUILD_DIRECTORY
-    cmake .. \
-        -DWITH_GPU=OFF \
-        -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
-        -DLITE_WITH_CUDA=OFF \
-        -DLITE_WITH_X86=OFF \
-        -DLITE_WITH_ARM=ON \
-        -DWITH_ARM_DOTPROD=ON \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
-        -DWITH_TESTING=ON \
-        -DLITE_BUILD_EXTRA=ON \
-        -DLITE_WITH_TRAIN=ON \
-        -DLITE_WITH_APU=ON \
-        -DAPU_DDK_ROOT="$sdk_root_dir" \
-        -DARM_TARGET_OS=$os -DARM_TARGET_ARCH_ABI=$arch -DARM_TARGET_LANG=$toolchain
-    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
-}
-
-function mediatek_apu_build_and_test() {
-    build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE mediatek_apu_build_target mediatek_apu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR "$(readlink -f ./apu_ddk)"
 }
 
 function baidu_xpu_build_and_test() {
@@ -940,10 +779,6 @@ function main() {
             ;;
         rockchip_npu_build_and_test)
             rockchip_npu_build_and_test
-            shift
-            ;;
-        mediatek_apu_build_and_test)
-            mediatek_apu_build_and_test
             shift
             ;;
         baidu_xpu_disable_xtcl_build_and_test)
