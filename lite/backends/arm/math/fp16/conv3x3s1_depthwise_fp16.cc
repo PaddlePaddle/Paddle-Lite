@@ -778,7 +778,19 @@ inline void right_mask_3x3_s1p01_small_fp16(int w_in, uint16_t* vmask) {
         break;                                             \
     }                                                      \
   }
-
+#define SMALL_TMP_ADDR          \
+  float16_t tmp_out[4][8];      \
+  float16_t* tmp0 = tmp_out[0]; \
+  float16_t* tmp1 = tmp_out[1]; \
+  float16_t* tmp2 = tmp_out[2]; \
+  float16_t* tmp3 = tmp_out[3];
+#define SMALL_REAL_STORE            \
+  for (int j = 0; j < w_out; j++) { \
+    *(doutr0 + j) = tmp_out[0][j];  \
+    *(doutr1 + j) = tmp_out[1][j];  \
+    *(doutr2 + j) = tmp_out[2][j];  \
+    *(doutr3 + j) = tmp_out[3][j];  \
+  }
 // w_in > 8
 void conv_depthwise_3x3s1p1_bias_relu_common_fp16_fp16(float16_t* dout,
                                                        const float16_t* din,
@@ -1360,11 +1372,7 @@ void conv_depthwise_3x3s1p1_bias_noact_small_fp16_fp16(float16_t* dout,
     const float16_t* din_batch = din + n * ch_in * size_in_channel;
     float16_t* dout_batch = dout + n * ch_in * size_out_channel;
     LITE_PARALLEL_BEGIN(c, tid, ch_in) {
-      float16_t tmp_out[4][8];
-      float16_t* tmp0 = tmp_out[0];
-      float16_t* tmp1 = tmp_out[1];
-      float16_t* tmp2 = tmp_out[2];
-      float16_t* tmp3 = tmp_out[3];
+      SMALL_TMP_ADDR
       float16_t* dout_ptr = dout_batch + c * size_out_channel;
       const float16_t* din_ch_ptr = din_batch + c * size_in_channel;
       float16_t bias_val =
@@ -1393,12 +1401,7 @@ void conv_depthwise_3x3s1p1_bias_noact_small_fp16_fp16(float16_t* dout,
 #else
 #endif
         // clang-format on
-        for (int j = 0; j < w_out; j++) {
-          *(doutr0 + j) = tmp_out[0][j];
-          *(doutr1 + j) = tmp_out[1][j];
-          *(doutr2 + j) = tmp_out[2][j];
-          *(doutr3 + j) = tmp_out[3][j];
-        }
+        SMALL_REAL_STORE
         dout_ptr += 4 * w_out;
       }
     }
@@ -1433,11 +1436,7 @@ void conv_depthwise_3x3s1p1_bias_relu_small_fp16_fp16(float16_t* dout,
     const float16_t* din_batch = din + n * ch_in * size_in_channel;
     float16_t* dout_batch = dout + n * ch_in * size_out_channel;
     LITE_PARALLEL_BEGIN(c, tid, ch_in) {
-      float16_t tmp_out[4][8];
-      float16_t* tmp0 = tmp_out[0];
-      float16_t* tmp1 = tmp_out[1];
-      float16_t* tmp2 = tmp_out[2];
-      float16_t* tmp3 = tmp_out[3];
+      SMALL_TMP_ADDR
       float16_t* dout_ptr = dout_batch + c * size_out_channel;
       const float16_t* din_ch_ptr = din_batch + c * size_in_channel;
       float16_t bias_val =
@@ -1466,12 +1465,7 @@ void conv_depthwise_3x3s1p1_bias_relu_small_fp16_fp16(float16_t* dout,
 #else
 #endif
         // clang-format on
-        for (int j = 0; j < w_out; j++) {
-          *(doutr0 + j) = tmp_out[0][j];
-          *(doutr1 + j) = tmp_out[1][j];
-          *(doutr2 + j) = tmp_out[2][j];
-          *(doutr3 + j) = tmp_out[3][j];
-        }
+        SMALL_REAL_STORE
         dout_ptr += 4 * w_out;
       }
     }
@@ -1506,11 +1500,7 @@ void conv_depthwise_3x3s1p1_bias_relu6_small_fp16_fp16(float16_t* dout,
     const float16_t* din_batch = din + n * ch_in * size_in_channel;
     float16_t* dout_batch = dout + n * ch_in * size_out_channel;
     LITE_PARALLEL_BEGIN(c, tid, ch_in) {
-      float16_t tmp_out[4][8];
-      float16_t* tmp0 = tmp_out[0];
-      float16_t* tmp1 = tmp_out[1];
-      float16_t* tmp2 = tmp_out[2];
-      float16_t* tmp3 = tmp_out[3];
+      SMALL_TMP_ADDR
       float16_t* dout_ptr = dout_batch + c * size_out_channel;
       const float16_t* din_ch_ptr = din_batch + c * size_in_channel;
       float16_t bias_val =
@@ -1539,12 +1529,7 @@ void conv_depthwise_3x3s1p1_bias_relu6_small_fp16_fp16(float16_t* dout,
 #else
 #endif
         // clang-format on
-        for (int j = 0; j < w_out; j++) {
-          *(doutr0 + j) = tmp_out[0][j];
-          *(doutr1 + j) = tmp_out[1][j];
-          *(doutr2 + j) = tmp_out[2][j];
-          *(doutr3 + j) = tmp_out[3][j];
-        }
+        SMALL_REAL_STORE
         dout_ptr += 4 * w_out;
       }
     }
@@ -1580,11 +1565,7 @@ void conv_depthwise_3x3s1p1_bias_leaky_relu_small_fp16_fp16(
     const float16_t* din_batch = din + n * ch_in * size_in_channel;
     float16_t* dout_batch = dout + n * ch_in * size_out_channel;
     LITE_PARALLEL_BEGIN(c, tid, ch_in) {
-      float16_t tmp_out[4][8];
-      float16_t* tmp0 = tmp_out[0];
-      float16_t* tmp1 = tmp_out[1];
-      float16_t* tmp2 = tmp_out[2];
-      float16_t* tmp3 = tmp_out[3];
+      SMALL_TMP_ADDR
       float16_t* dout_ptr = dout_batch + c * size_out_channel;
       const float16_t* din_ch_ptr = din_batch + c * size_in_channel;
       float16_t bias_val =
@@ -1613,12 +1594,7 @@ void conv_depthwise_3x3s1p1_bias_leaky_relu_small_fp16_fp16(
 #else
 #endif
         // clang-format on
-        for (int j = 0; j < w_out; j++) {
-          *(doutr0 + j) = tmp_out[0][j];
-          *(doutr1 + j) = tmp_out[1][j];
-          *(doutr2 + j) = tmp_out[2][j];
-          *(doutr3 + j) = tmp_out[3][j];
-        }
+        SMALL_REAL_STORE
         dout_ptr += 4 * w_out;
       }
     }
@@ -1655,11 +1631,7 @@ void conv_depthwise_3x3s1p0_bias_noact_small_fp16_fp16(float16_t* dout,
     const float16_t* din_batch = din + n * ch_in * size_in_channel;
     float16_t* dout_batch = dout + n * ch_in * size_out_channel;
     LITE_PARALLEL_BEGIN(c, tid, ch_in) {
-      float16_t tmp_out[4][8];
-      float16_t* tmp0 = tmp_out[0];
-      float16_t* tmp1 = tmp_out[1];
-      float16_t* tmp2 = tmp_out[2];
-      float16_t* tmp3 = tmp_out[3];
+      SMALL_TMP_ADDR
       float16_t* dout_ptr = dout_batch + c * size_out_channel;
       const float16_t* din_ch_ptr = din_batch + c * size_in_channel;
       float16_t bias_val =
@@ -1689,12 +1661,7 @@ void conv_depthwise_3x3s1p0_bias_noact_small_fp16_fp16(float16_t* dout,
 #else
 #endif
         // clang-format on
-        for (int j = 0; j < w_out; j++) {
-          *(doutr0 + j) = tmp0[j];
-          *(doutr1 + j) = tmp1[j];
-          *(doutr2 + j) = tmp2[j];
-          *(doutr3 + j) = tmp3[j];
-        }
+        SMALL_REAL_STORE
         dout_ptr += 4 * w_out;
       }
     }
@@ -1731,11 +1698,7 @@ void conv_depthwise_3x3s1p0_bias_relu_small_fp16_fp16(float16_t* dout,
     const float16_t* din_batch = din + n * ch_in * size_in_channel;
     float16_t* dout_batch = dout + n * ch_in * size_out_channel;
     LITE_PARALLEL_BEGIN(c, tid, ch_in) {
-      float16_t tmp_out[4][8];
-      float16_t* tmp0 = tmp_out[0];
-      float16_t* tmp1 = tmp_out[1];
-      float16_t* tmp2 = tmp_out[2];
-      float16_t* tmp3 = tmp_out[3];
+      SMALL_TMP_ADDR
       float16_t* dout_ptr = dout_batch + c * size_out_channel;
       const float16_t* din_ch_ptr = din_batch + c * size_in_channel;
       float16_t bias_val =
@@ -1765,12 +1728,7 @@ void conv_depthwise_3x3s1p0_bias_relu_small_fp16_fp16(float16_t* dout,
 #else
 #endif
         // clang-format on
-        for (int j = 0; j < w_out; j++) {
-          *(doutr0 + j) = tmp_out[0][j];
-          *(doutr1 + j) = tmp_out[1][j];
-          *(doutr2 + j) = tmp_out[2][j];
-          *(doutr3 + j) = tmp_out[3][j];
-        }
+        SMALL_REAL_STORE
         dout_ptr += 4 * w_out;
       }
     }
@@ -1807,11 +1765,7 @@ void conv_depthwise_3x3s1p0_bias_relu6_small_fp16_fp16(float16_t* dout,
     const float16_t* din_batch = din + n * ch_in * size_in_channel;
     float16_t* dout_batch = dout + n * ch_in * size_out_channel;
     LITE_PARALLEL_BEGIN(c, tid, ch_in) {
-      float16_t tmp_out[4][8];
-      float16_t* tmp0 = tmp_out[0];
-      float16_t* tmp1 = tmp_out[1];
-      float16_t* tmp2 = tmp_out[2];
-      float16_t* tmp3 = tmp_out[3];
+      SMALL_TMP_ADDR
       float16_t* dout_ptr = dout_batch + c * size_out_channel;
       const float16_t* din_ch_ptr = din_batch + c * size_in_channel;
       float16_t bias_val =
@@ -1841,12 +1795,7 @@ void conv_depthwise_3x3s1p0_bias_relu6_small_fp16_fp16(float16_t* dout,
 #else
 #endif
         // clang-format on
-        for (int j = 0; j < w_out; j++) {
-          *(doutr0 + j) = tmp_out[0][j];
-          *(doutr1 + j) = tmp_out[1][j];
-          *(doutr2 + j) = tmp_out[2][j];
-          *(doutr3 + j) = tmp_out[3][j];
-        }
+        SMALL_REAL_STORE
         dout_ptr += 4 * w_out;
       }
     }
@@ -1884,11 +1833,7 @@ void conv_depthwise_3x3s1p0_bias_leaky_relu_small_fp16_fp16(
     const float16_t* din_batch = din + n * ch_in * size_in_channel;
     float16_t* dout_batch = dout + n * ch_in * size_out_channel;
     LITE_PARALLEL_BEGIN(c, tid, ch_in) {
-      float16_t tmp_out[4][8];
-      float16_t* tmp0 = tmp_out[0];
-      float16_t* tmp1 = tmp_out[1];
-      float16_t* tmp2 = tmp_out[2];
-      float16_t* tmp3 = tmp_out[3];
+      SMALL_TMP_ADDR
       float16_t* dout_ptr = dout_batch + c * size_out_channel;
       const float16_t* din_ch_ptr = din_batch + c * size_in_channel;
       float16_t bias_val =
@@ -1919,12 +1864,7 @@ void conv_depthwise_3x3s1p0_bias_leaky_relu_small_fp16_fp16(
 #else
 #endif
         // clang-format on
-        for (int j = 0; j < w_out; j++) {
-          *(doutr0 + j) = tmp_out[0][j];
-          *(doutr1 + j) = tmp_out[1][j];
-          *(doutr2 + j) = tmp_out[2][j];
-          *(doutr3 + j) = tmp_out[3][j];
-        }
+        SMALL_REAL_STORE
         dout_ptr += 4 * w_out;
       }
     }
