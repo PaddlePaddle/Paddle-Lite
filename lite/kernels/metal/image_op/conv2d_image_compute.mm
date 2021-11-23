@@ -102,6 +102,7 @@ void Conv2dImageCompute::init_memory() {
 
 void Conv2dImageCompute::init_for_run() {
     const auto& param = this->Param<param_t>();
+
     function_name_ =
         KernelFunctionName(param, metal_context_->use_winograde(), metal_context_->use_quadruple());
     // use mps or not
@@ -350,7 +351,6 @@ void Conv2dImageCompute::setup_without_mps() {
             } break;
             case lite_api::ActivationType::kHardSwish: {
                 activate_type = (uint16_t)param.activation_param.active_type;
-
             } break;
             default: { LOG(FATAL) << "Conv2d: cannot support the activate type"; } break;
         }
