@@ -293,7 +293,7 @@ TEST(TestConv3x3DwFp16, test_conv3x3_depthwise) {
       for (auto& pad : {0, 1}) {
         for (auto& pad1 : {0, 1}) {
           for (auto& flag_bias : {false, true}) {
-            for (auto& flag_act : {0, 1}) {
+            for (auto& flag_act : {0, 1, 2, 4}) {
               for (auto& c : {4, 7, 8, 10, 11, 16}) {
                 DDim weights_dim({c, 1, 3, 3});
                 for (auto& batch : {1}) {
