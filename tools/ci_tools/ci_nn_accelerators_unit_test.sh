@@ -39,6 +39,10 @@ REMOTE_DEVICE_WORK_DIR="/data/local/tmp"
 XPU_SDK_URL=""
 XPU_SDK_ENV=""
 XPU_SDK_ROOT=""
+# TIM-VX options
+NNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG=""
+NNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT=""
+NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL=""
 
 # if operating in mac env, we should expand the maximum file num
 os_name=$(uname -s)
@@ -991,6 +995,79 @@ function amlogic_npu_build_and_test() {
     build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE amlogic_npu_build_target amlogic_npu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR "$(readlink -f ./amlnpu_ddk)"
 }
 
+# Verisilicon TIM-VX
+function verisilicon_timvx_prepare_device() {
+    local os=$1
+    local arch=$2
+    local toolchain=$3
+    local remote_device_name=$4
+    local remote_device_work_dir=$5
+    local remote_device_check=$6
+    local remote_device_run=$7
+
+    # Check device is available
+    $remote_device_check $remote_device_name
+    if [[ $? -ne 0 ]]; then
+        echo "$remote_device_name not found!"
+        exit 1
+    fi
+
+    # Create work dir on the remote device
+    if [[ -z "$remote_device_work_dir" ]]; then
+        echo "$remote_device_work_dir can't be empty!"
+        exit 1
+    fi
+    if [[ "$remote_device_work_dir" == "/" ]]; then
+        echo "$remote_device_work_dir can't be root dir!"
+        exit 1
+    fi
+    $remote_device_run $remote_device_name shell "rm -rf $remote_device_work_dir"
+    $remote_device_run $remote_device_name shell "mkdir -p $remote_device_work_dir"
+
+    # Copy NNAdapter runtime, device HAL and TIM-VX libraries
+    local nnadapter_runtime_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
+    local nnadapter_driver_lib_path=$(find $BUILD_DIR/lite -name libverisilicon_timvx.so)
+    local verisilicon_timvx_lib_path=$(find $BUILD_DIR/lite -name libtim-vx.so)
+    $remote_device_run $remote_device_name push "$nnadapter_runtime_lib_path" "$remote_device_work_dir"
+    $remote_device_run $remote_device_name push "$nnadapter_driver_lib_path" "$remote_device_work_dir"
+    $remote_device_run $remote_device_name push "$verisilicon_timvx_lib_path" "$remote_device_work_dir"
+}
+
+function verisilicon_timvx_build_target() {
+    local os=$1
+    local arch=$2
+    local toolchain=$3
+
+    # Build all of tests
+    #rm -rf $BUILD_DIR
+    #mkdir -p $BUILD_DIR
+    cd $BUILD_DIR
+    #prepare_workspace $ROOT_DIR $BUILD_DIR
+    #cmake .. \
+    #    -DWITH_GPU=OFF \
+    #    -DWITH_MKL=OFF \
+    #    -DWITH_LITE=ON \
+    #    -DLITE_WITH_CUDA=OFF \
+    #    -DLITE_WITH_X86=OFF \
+    #    -DLITE_WITH_ARM=ON \
+    #    -DWITH_ARM_DOTPROD=ON \
+    #    -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
+    #    -DWITH_TESTING=ON \
+    #    -DLITE_BUILD_EXTRA=ON \
+    #    -DLITE_WITH_TRAIN=ON \
+    #    -DLITE_WITH_NNADAPTER=ON \
+    #    -DNNADAPTER_WITH_VERISILICON_TIMVX=ON \
+    #    -DNNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG=$NNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG \
+    #    -DNNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT=$NNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT \
+    #    -DNNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL=$NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL \
+    #    -DARM_TARGET_OS=$os -DARM_TARGET_ARCH_ABI=$arch -DARM_TARGET_LANG=$toolchain
+    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+}
+
+function verisilicon_timvx_build_and_test() {
+    build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE verisilicon_timvx_build_target verisilicon_timvx_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR
+}
+
 # Cambricon MLU
 function cambricon_mlu_prepare_device() {
     local os=$1
@@ -1201,6 +1278,18 @@ function main() {
             XPU_SDK_ROOT="${i#*=}"
             shift
             ;;
+        --nnadapter_verisilicon_timvx_src_git_tag=*)
+            NNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG="${i#*=}"
+            shift
+            ;;
+        --nnadapter_verisilicon_timvx_viv_sdk_root=*)
+            NNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT="${i#*=}"
+            shift
+            ;;
+        --nnadapter_verisilicon_timvx_viv_sdk_url=*)
+            NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL="${i#*=}"
+            shift
+            ;;
         android_cpu_build_and_test)
             android_cpu_build_and_test
             shift
@@ -1231,6 +1320,10 @@ function main() {
             ;;
         amlogic_npu_build_and_test)
             amlogic_npu_build_and_test
+            shift
+            ;;
+        verisilicon_timvx_build_and_test)
+            verisilicon_timvx_build_and_test
             shift
             ;;
         cambricon_mlu_build_and_test)

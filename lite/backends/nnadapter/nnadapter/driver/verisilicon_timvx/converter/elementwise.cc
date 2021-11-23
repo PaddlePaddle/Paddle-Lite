@@ -13,19 +13,17 @@
 // limitations under the License.
 
 #include "core/operation/elementwise.h"
-#include "driver/amlogic_npu/converter/converter.h"
+#include "driver/verisilicon_timvx/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
-namespace amlogic_npu {
+namespace verisilicon_timvx {
 
 int ConvertElementwise(Converter* converter, hal::Operation* operation) {
   ELEMENTWISE_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  NNADAPTER_CHECK_EQ(fuse_code, NNADAPTER_FUSED_NONE)
-      << "Unsupported fuse_code(" << fuse_code << ") is found.";
 
-  // Convert to amlnpu tensors and operators
+  // Convert to tim-vx tensors and operators
   auto input0_tensor = converter->GetMappedTensor(input0_operand);
   if (!input0_tensor) {
     input0_tensor = converter->ConvertOperand(input0_operand);
@@ -35,30 +33,33 @@ int ConvertElementwise(Converter* converter, hal::Operation* operation) {
     input1_tensor = converter->ConvertOperand(input1_operand);
   }
   auto output_tensor = converter->ConvertOperand(output_operand);
-  std::vector<std::shared_ptr<aml::nn::Tensor>> input_tensors = {input0_tensor,
-                                                                 input1_tensor};
-  std::vector<std::shared_ptr<aml::nn::Tensor>> output_tensors = {
-      output_tensor};
-  aml::nn::OperatorType op_type;
-  if (operation->type == NNADAPTER_ADD) {
-    op_type = aml::nn::OperatorType::ADD;
-  } else if (operation->type == NNADAPTER_SUB) {
-    op_type = aml::nn::OperatorType::SUBTRACT;
-  } else if (operation->type == NNADAPTER_MUL) {
-    op_type = aml::nn::OperatorType::MULTIPLY;
-  } else if (operation->type == NNADAPTER_DIV) {
-    op_type = aml::nn::OperatorType::DIVIDE;
-  } else {
-    NNADAPTER_LOG(FATAL) << "Unsupported element-wise operation type "
-                         << OperationTypeToString(operation->type)
-                         << " is found.";
+  switch (operation->type) {
+#define CONVERT_ELEMENTWISE(TYPE, CLASS_NAME)                            \
+  case NNADAPTER_##TYPE: {                                               \
+    auto eltwise_op =                                                    \
+        converter->graph()->CreateOperation<tim::vx::ops::CLASS_NAME>(); \
+    eltwise_op->BindInputs({input0_tensor, input1_tensor});              \
+    eltwise_op->BindOutput({output_tensor});                             \
+  } break;
+    CONVERT_ELEMENTWISE(ADD, Add);
+    CONVERT_ELEMENTWISE(DIV, Div);
+    CONVERT_ELEMENTWISE(MAX, Maximum);
+    CONVERT_ELEMENTWISE(MIN, Minimum);
+    CONVERT_ELEMENTWISE(MUL, Multiply);
+    CONVERT_ELEMENTWISE(POW, Pow);
+    CONVERT_ELEMENTWISE(SUB, Sub);
+#undef CONVERT_ELEMENTWISE
+    default:
+      NNADAPTER_LOG(FATAL) << "Unsupported element-wise operation type "
+                           << OperationTypeToString(operation->type)
+                           << " is found.";
+      break;
   }
-  converter->AddOperator(op_type, input_tensors, output_tensors, nullptr);
   NNADAPTER_CHECK_EQ(fuse_code, NNADAPTER_FUSED_NONE)
       << "Missing the processing of fuse_code(" << fuse_code
       << ") in unpack_op_fusion.cc";
   return NNADAPTER_NO_ERROR;
 }
 
-}  // namespace amlogic_npu
+}  // namespace verisilicon_timvx
 }  // namespace nnadapter
