@@ -17,10 +17,8 @@
 #include "lite/backends/arm/math/conv_block_utils.h"
 #include "lite/backends/arm/math/fp16/conv3x3_depthwise_fp16.h"
 #include "lite/core/context.h"
+#include "lite/core/parallel_defines.h"
 #include "lite/operators/op_params.h"
-#ifdef ARM_WITH_OMP
-#include <omp.h>
-#endif
 
 namespace paddle {
 namespace lite {
@@ -196,68 +194,86 @@ namespace fp16 {
   "st1    {v17.8h}, [%[ptr_out1]], #16              \n" \
   "bne    2b                                        \n"
 
-#define RIGHT_COMPUTE_FP16_S2                           \
-  "1:                                               \n" \
-  "cmp    %w[remain], #1                            \n" \
-  "blt    4f                                        \n" \
-  "3:                                               \n" \
-  "ld1    {v16.8h}, [%[bias_val]]                   \n" \
-  "ld1    {v17.8h}, [%[bias_val]]                   \n" \
-  "ld1    {v18.8h}, [%[vmask]], #16                 \n" \
-  "ld1    {v19.8h}, [%[vmask]], #16                 \n" \
-  "ld1    {v20.8h}, [%[rmask]], #16                 \n" \
-  "bif    v0.16b, %[vzero].16b, v18.16b             \n" \
-  "bif    v1.16b, %[vzero].16b, v19.16b             \n" \
-  "bif    v2.16b, %[vzero].16b, v18.16b             \n" \
-  "bif    v3.16b, %[vzero].16b, v19.16b             \n" \
-  "bif    v4.16b, %[vzero].16b, v18.16b             \n" \
-  "bif    v5.16b, %[vzero].16b, v19.16b             \n" \
-  "ext    v10.16b, v0.16b, %[vzero].16b, #2         \n" \
-  "bif    v6.16b, %[vzero].16b, v18.16b             \n" \
-  "bif    v7.16b, %[vzero].16b, v19.16b             \n" \
-  "fmul   v11.8h, v0.8h, %[wr00].8h                 \n" \
-  "fmul   v12.8h, v1.8h, %[wr01].8h                 \n" \
-  "fmla   v16.8h, v10.8h, %[wr02].8h                \n" \
-  "ext    v10.16b, v2.16b, %[vzero].16b, #2         \n" \
-  "bif    v8.16b, %[vzero].16b, v18.16b             \n" \
-  "bif    v9.16b, %[vzero].16b, v19.16b             \n" \
-  "fmla   v11.8h, v2.8h, %[wr10].8h                 \n" \
-  "fmla   v12.8h, v3.8h, %[wr11].8h                 \n" \
-  "fmla   v16.8h, v10.8h, %[wr12].8h                \n" \
-  "ext    v10.16b, v4.16b, %[vzero].16b, #2         \n" \
-  "fmul   v13.8h, v4.8h, %[wr00].8h                 \n" \
-  "fmla   v11.8h, v4.8h, %[wr20].8h                 \n" \
-  "fmul   v14.8h, v5.8h, %[wr01].8h                 \n" \
-  "fmla   v12.8h, v5.8h, %[wr21].8h                 \n" \
-  "fmla   v17.8h, v10.8h, %[wr02].8h                \n" \
-  "fmla   v16.8h, v10.8h, %[wr22].8h                \n" \
-  "ext    v10.16b, v6.16b, %[vzero].16b, #2         \n" \
-  "fmla   v13.8h, v6.8h, %[wr10].8h                 \n" \
-  "fmla   v14.8h, v7.8h, %[wr11].8h                 \n" \
-  "fmla   v17.8h, v10.8h, %[wr12].8h                \n" \
-  "ext    v10.16b, v8.16b, %[vzero].16b, #2         \n" \
-  "ld1    {v0.8h}, [%[ptr_out0]]                    \n" \
-  "fadd   v16.8h, v16.8h, v11.8h                    \n" \
-  "fadd   v16.8h, v16.8h, v12.8h                    \n" \
-  "ld1    {v1.8h}, [%[ptr_out1]]                    \n" \
-  "fmla   v13.8h, v8.8h, %[wr20].8h                 \n" \
-  "fmla   v14.8h, v9.8h, %[wr21].8h                 \n" \
-  "fmla   v17.8h, v10.8h, %[wr22].8h                \n" \
-  "bif    v16.16b, v0.16b, v20.16b                  \n" \
-  "fadd   v17.8h, v17.8h, v13.8h                    \n" \
-  "fadd   v17.8h, v17.8h, v14.8h                    \n" \
-  "bif    v17.16b, v1.16b, v20.16b                  \n"
+#define RIGHT_COMPUTE_FP16_S2                                 \
+  "1:                                                     \n" \
+  "cmp    %w[remain], #1                                  \n" \
+  "blt    4f                                              \n" \
+  "3:                                                     \n" \
+  "ld1    {v16.8h}, [%[bias_val]]                         \n" \
+  "ld1    {v17.8h}, [%[bias_val]]                         \n" \
+  "ld1    {v18.8h}, [%[vmask]], #16                       \n" \
+  "ld1    {v19.8h}, [%[vmask]], #16                       \n" \
+  "ld1    {v20.8h}, [%[vmask]]                            \n" \
+  "sub    %[din_ptr0], %[din_ptr0], %[right_pad_num]      \n" \
+  "sub    %[din_ptr1], %[din_ptr1], %[right_pad_num]      \n" \
+  "sub    %[din_ptr2], %[din_ptr2], %[right_pad_num]      \n" \
+  "sub    %[din_ptr3], %[din_ptr3], %[right_pad_num]      \n" \
+  "sub    %[din_ptr4], %[din_ptr4], %[right_pad_num]      \n" \
+  "sub    %[ptr_out0], %[ptr_out0], %[right_st_num]       \n" \
+  "sub    %[ptr_out1], %[ptr_out1], %[right_st_num]       \n" \
+  "ld2    {v0.8h, v1.8h}, [%[din_ptr0]]                   \n" \
+  "ld2    {v2.8h, v3.8h}, [%[din_ptr1]]                   \n" \
+  "ld2    {v4.8h, v5.8h}, [%[din_ptr2]]                   \n" \
+  "ld2    {v6.8h, v7.8h}, [%[din_ptr3]]                   \n" \
+  "ld2    {v8.8h, v9.8h}, [%[din_ptr4]]                   \n" \
+  "bif    v0.16b, %[vzero].16b, v18.16b                   \n" \
+  "bif    v1.16b, %[vzero].16b, v19.16b                   \n" \
+  "bif    v2.16b, %[vzero].16b, v18.16b                   \n" \
+  "bif    v3.16b, %[vzero].16b, v19.16b                   \n" \
+  "bif    v4.16b, %[vzero].16b, v18.16b                   \n" \
+  "bif    v5.16b, %[vzero].16b, v19.16b                   \n" \
+  "add    %[din_ptr0], %[din_ptr0], #4                    \n" \
+  "add    %[din_ptr1], %[din_ptr1], #4                    \n" \
+  "add    %[din_ptr2], %[din_ptr2], #4                    \n" \
+  "add    %[din_ptr3], %[din_ptr3], #4                    \n" \
+  "add    %[din_ptr4], %[din_ptr4], #4                    \n" \
+  "ld2    {v10.8h, v11.8h}, [%[din_ptr0]]                 \n" \
+  "bif    v10.16b, %[vzero].16b, v20.16b                  \n" \
+  "bif    v6.16b, %[vzero].16b, v18.16b                   \n" \
+  "bif    v7.16b, %[vzero].16b, v19.16b                   \n" \
+  "fmul   v21.8h, v0.8h, %[wr00].8h                       \n" \
+  "fmul   v12.8h, v1.8h, %[wr01].8h                       \n" \
+  "fmla   v16.8h, v10.8h, %[wr02].8h                      \n" \
+  "ld2    {v10.8h, v11.8h}, [%[din_ptr1]]                 \n" \
+  "bif    v10.16b, %[vzero].16b, v20.16b                  \n" \
+  "bif    v8.16b, %[vzero].16b, v18.16b                   \n" \
+  "bif    v9.16b, %[vzero].16b, v19.16b                   \n" \
+  "fmla   v21.8h, v2.8h, %[wr10].8h                       \n" \
+  "fmla   v12.8h, v3.8h, %[wr11].8h                       \n" \
+  "fmla   v16.8h, v10.8h, %[wr12].8h                      \n" \
+  "ld2    {v10.8h, v11.8h}, [%[din_ptr2]]                 \n" \
+  "bif    v10.16b, %[vzero].16b, v20.16b                  \n" \
+  "fmul   v13.8h, v4.8h, %[wr00].8h                       \n" \
+  "fmla   v21.8h, v4.8h, %[wr20].8h                       \n" \
+  "fmul   v14.8h, v5.8h, %[wr01].8h                       \n" \
+  "fmla   v12.8h, v5.8h, %[wr21].8h                       \n" \
+  "fmla   v17.8h, v10.8h, %[wr02].8h                      \n" \
+  "fmla   v16.8h, v10.8h, %[wr22].8h                      \n" \
+  "ld2    {v10.8h, v11.8h}, [%[din_ptr3]]                 \n" \
+  "bif    v10.16b, %[vzero].16b, v20.16b                  \n" \
+  "fmla   v13.8h, v6.8h, %[wr10].8h                       \n" \
+  "fmla   v14.8h, v7.8h, %[wr11].8h                       \n" \
+  "fmla   v17.8h, v10.8h, %[wr12].8h                      \n" \
+  "ld2    {v10.8h, v11.8h}, [%[din_ptr4]]                 \n" \
+  "bif    v10.16b, %[vzero].16b, v20.16b                  \n" \
+  "fadd   v16.8h, v16.8h, v21.8h                          \n" \
+  "fadd   v16.8h, v16.8h, v12.8h                          \n" \
+  "fmla   v13.8h, v8.8h, %[wr20].8h                       \n" \
+  "fmla   v14.8h, v9.8h, %[wr21].8h                       \n" \
+  "fmla   v17.8h, v10.8h, %[wr22].8h                      \n" \
+  "fadd   v17.8h, v17.8h, v13.8h                          \n" \
+  "fadd   v17.8h, v17.8h, v14.8h                          \n"
 
 #define RIGHT_RESULT_FP16_S2_RELU                       \
   "fmax   v16.8h,  v16.8h, %[vzero].8h              \n" \
   "fmax   v17.8h,  v17.8h, %[vzero].8h              \n" \
-  "st1    {v16.8h}, [%[ptr_out0]], #16              \n" \
-  "st1    {v17.8h}, [%[ptr_out1]], #16              \n" \
+  "st1    {v16.8h}, [%[ptr_out0]]                   \n" \
+  "st1    {v17.8h}, [%[ptr_out1]]                   \n" \
   "4:                                               \n"
 
 #define RIGHT_RESULT_FP16_S2                            \
-  "st1    {v16.8h}, [%[ptr_out0]], #16              \n" \
-  "st1    {v17.8h}, [%[ptr_out1]], #16              \n" \
+  "st1    {v16.8h}, [%[ptr_out0]]                   \n" \
+  "st1    {v17.8h}, [%[ptr_out1]]                   \n" \
   "4:                                               \n"
 
 #define RIGHT_RESULT_FP16_S2_RELU6                      \
@@ -266,8 +282,8 @@ namespace fp16 {
   "fmax   v17.8h,  v17.8h, %[vzero].8h              \n" \
   "fmin   v16.8h,  v16.8h, v21.8h                   \n" \
   "fmin   v17.8h,  v17.8h, v21.8h                   \n" \
-  "st1    {v16.8h}, [%[ptr_out0]], #16              \n" \
-  "st1    {v17.8h}, [%[ptr_out1]], #16              \n" \
+  "st1    {v16.8h}, [%[ptr_out0]]                   \n" \
+  "st1    {v17.8h}, [%[ptr_out1]]                   \n" \
   "4:                                               \n"
 
 #define RIGHT_RESULT_FP16_S2_LEAKY_RELU                 \
@@ -278,8 +294,8 @@ namespace fp16 {
   "fcmge  v14.8h,  v17.8h,  %[vzero].8h             \n" \
   "fmul   v15.8h,  v17.8h,  v21.8h                  \n" \
   "bif    v17.16b, v15.16b, v14.16b                 \n" \
-  "st1    {v16.8h}, [%[ptr_out0]], #16              \n" \
-  "st1    {v17.8h}, [%[ptr_out1]], #16              \n" \
+  "st1    {v16.8h}, [%[ptr_out0]]                   \n" \
+  "st1    {v17.8h}, [%[ptr_out1]]                   \n" \
   "4:                                               \n"
 
 #define RIGHT_COMPUTE_FP16_S2P1_SMALL                   \
@@ -456,7 +472,12 @@ namespace fp16 {
     }                                                      \
   }                                                        \
   if (i / 2 + 2 > h_out) {                                 \
-    doutr1 = write_ptr;                                    \
+    switch (i / 2 + 2 - h_out) {                           \
+      case 2:                                              \
+        doutr0 = write_ptr;                                \
+      case 1:                                              \
+        doutr1 = write_ptr;                                \
+    }                                                      \
   }
 
 #define TOP_BOTTOM_BORDER_3x3_S2P0_FP16(w_in, h_in, h_out) \
@@ -484,61 +505,43 @@ namespace fp16 {
   if (i + 2 > h_out) {                                     \
     doutr1 = write_ptr;                                    \
   }
-
-inline std::pair<uint16_t, uint16_t> right_mask_3x3s2p1_fp16(int w_in,
-                                                             int w_out,
-                                                             uint16_t* vmask,
-                                                             uint16_t* rmask) {
-  const uint16_t right_pad_idx[16] = {
-      0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15};
-  const uint16_t out_pad_idx[8] = {0, 1, 2, 3, 4, 5, 6, 7};
-  uint16_t cnt_col = ((w_out >> 3) - 2);
-  uint16_t size_right_remain =
-      static_cast<uint16_t>(w_in - (15 + cnt_col * 16));
-  if (size_right_remain >= 17) {
-    cnt_col++;
-    size_right_remain -= 16;
+#define SMALL_TMP_ADDR          \
+  float16_t tmp_out[2][8];      \
+  float16_t* tmp0 = tmp_out[0]; \
+  float16_t* tmp1 = tmp_out[1];
+#define SMALL_REAL_STORE            \
+  for (int j = 0; j < w_out; j++) { \
+    *(doutr0 + j) = tmp0[j];        \
+    *(doutr1 + j) = tmp1[j];        \
   }
-  uint16_t cnt_remain = (size_right_remain == 16 && w_out % 8 == 0)
-                            ? 8
-                            : static_cast<uint16_t>(w_out % 8);
-  uint16x8_t vmask_rp1 =
-      vcgtq_u16(vdupq_n_u16(size_right_remain), vld1q_u16(right_pad_idx));
-  uint16x8_t vmask_rp2 =
-      vcgtq_u16(vdupq_n_u16(size_right_remain), vld1q_u16(right_pad_idx + 8));
-  uint16x8_t rmask_rp =
-      vcgtq_u16(vdupq_n_u16(cnt_remain), vld1q_u16(out_pad_idx));
-  vst1q_u16(vmask, vmask_rp1);
-  vst1q_u16(vmask + 8, vmask_rp2);
-  vst1q_u16(rmask, rmask_rp);
-  return std::make_pair(cnt_col, cnt_remain);
-}
 
-inline std::pair<uint16_t, uint16_t> right_mask_3x3s2p0_fp16(int w_in,
-                                                             int w_out,
-                                                             uint16_t* vmask,
-                                                             uint16_t* rmask) {
-  const uint16_t right_pad_idx[16] = {
-      0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15};
+inline std::pair<uint16_t, uint16_t> right_mask_3x3s2p01_fp16(int w_in,
+                                                              int w_out,
+                                                              int pad,
+                                                              uint16_t* vmask) {
+  const uint16_t right_pad_idx[24] = {0, 2, 4, 6, 8,  10, 12, 14,
+                                      1, 3, 5, 7, 9,  11, 13, 15,
+                                      2, 4, 6, 8, 10, 12, 14, 16};
   const uint16_t out_pad_idx[8] = {0, 1, 2, 3, 4, 5, 6, 7};
   int tile_w = w_out >> 3;
+
   int cnt_remain = w_out % 8;
-  uint16_t size_right_remain = (uint16_t)(16 + (tile_w << 4) - w_in);
-  size_right_remain = 16 - size_right_remain;
-  if (cnt_remain == 0 && size_right_remain == 0) {
-    cnt_remain = 8;
-    tile_w -= 1;
-    size_right_remain = 16;
-  }
+  bool no_right_compute = ((w_out % 8) == 0) && ((2 * w_out + 1 - pad <= w_in));
+  uint16_t size_right_remain = w_in - (2 * w_out + 1 - pad - 17);
+  cnt_remain = ((!no_right_compute && (w_out % 8) == 0) ? 8 : cnt_remain);
+  tile_w = tile_w - (cnt_remain == 8 ? 1 : 0) - pad;
+
   uint16x8_t vmask_rp1 =
       vcgtq_u16(vdupq_n_u16(size_right_remain), vld1q_u16(right_pad_idx));
   uint16x8_t vmask_rp2 =
       vcgtq_u16(vdupq_n_u16(size_right_remain), vld1q_u16(right_pad_idx + 8));
-  uint16x8_t rmask_rp =
-      vcgtq_u16(vdupq_n_u16(cnt_remain), vld1q_u16(out_pad_idx));
+  uint16x8_t vmask_rp3 =
+      vcgtq_u16(vdupq_n_u16(size_right_remain), vld1q_u16(right_pad_idx + 16));
+
   vst1q_u16(vmask, vmask_rp1);
   vst1q_u16(vmask + 8, vmask_rp2);
-  vst1q_u16(rmask, rmask_rp);
+  vst1q_u16(vmask + 16, vmask_rp3);
+
   return std::make_pair(tile_w, cnt_remain);
 }
 
@@ -584,16 +587,16 @@ void conv_depthwise_3x3s2p1_bias_noact_common_fp16_fp16(
   int threads = ctx->threads();
   int size_in_channel = w_in * h_in;
   int size_out_channel = w_out * h_out;
-  uint16_t vmask[16];
-  uint16_t rmask[8];
-  auto&& res = right_mask_3x3s2p1_fp16(w_in, w_out, vmask, rmask);
+  uint16_t vmask[24];
+  auto&& res = right_mask_3x3s2p01_fp16(w_in, w_out, 1, vmask);
   uint16_t cnt_col = res.first;
   uint16_t cnt_remain = res.second;
+  uint16_t right_pad_num = (8 - cnt_remain) * 4 + 32;
+  uint16_t right_st_num = (8 - cnt_remain) * 2;
   for (int n = 0; n < num; ++n) {
     const float16_t* din_batch = din + n * ch_in * size_in_channel;
     float16_t* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
       float16_t* dout_ptr = dout_batch + c * size_out_channel;
       const float16_t* din_ch_ptr = din_batch + c * size_in_channel;
       float16_t bias_val =
@@ -603,7 +606,6 @@ void conv_depthwise_3x3s2p1_bias_noact_common_fp16_fp16(
       INIT_PTR_3x3_S2_FP16(din_ch_ptr, w_in) for (int i = 0; i < h_in; i += 4) {
         ASSIGN_PTR_3x3_S2_FP16(w_out) TOP_BOTTOM_BORDER_3x3_S2P1_FP16(
             w_in, h_in, h_out) int cnt = cnt_col;
-        uint16_t* rst_mask = rmask;
         uint16_t* val_mask = vmask;
 // clang-format off
 #ifdef __aarch64__
@@ -613,11 +615,11 @@ void conv_depthwise_3x3s2p1_bias_noact_common_fp16_fp16(
           RIGHT_COMPUTE_FP16_S2 RIGHT_RESULT_FP16_S2
             : [cnt] "+r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), \
               [din_ptr2] "+r"(din_ptr2), [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), \
-              [ptr_out0] "+r"(doutr0), [ptr_out1] "+r"(doutr1), [vmask] "+r" (val_mask), \
-              [rmask] "+r" (rst_mask)
+              [ptr_out0] "+r"(doutr0), [ptr_out1] "+r"(doutr1), [vmask] "+r" (val_mask)
             : [vzero] "w"(vzero), [wr00]"w"(wr00), [wr01]"w"(wr01), [wr02]"w"(wr02), \
               [wr10]"w"(wr10), [wr11]"w"(wr11), [wr12]"w"(wr12), [wr20]"w"(wr20), \
-              [wr21]"w"(wr21), [wr22] "w" (wr22), [bias_val] "r"(v_bias), [remain] "r"(cnt_remain)
+              [wr21]"w"(wr21), [wr22] "w" (wr22), [bias_val] "r"(v_bias), [remain] "r"(cnt_remain), \
+              [right_pad_num] "r"(right_pad_num), [right_st_num] "r"(right_st_num)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",\
               "v17", "v18", "v19", "v20", "v21"
@@ -628,6 +630,7 @@ void conv_depthwise_3x3s2p1_bias_noact_common_fp16_fp16(
         dout_ptr += 2 * w_out;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -652,16 +655,16 @@ void conv_depthwise_3x3s2p1_bias_relu_common_fp16_fp16(float16_t* dout,
   int threads = ctx->threads();
   int size_in_channel = w_in * h_in;
   int size_out_channel = w_out * h_out;
-  uint16_t vmask[16];
-  uint16_t rmask[8];
-  auto&& res = right_mask_3x3s2p1_fp16(w_in, w_out, vmask, rmask);
+  uint16_t vmask[24];
+  auto&& res = right_mask_3x3s2p01_fp16(w_in, w_out, 1, vmask);
   uint16_t cnt_col = res.first;
   uint16_t cnt_remain = res.second;
+  uint16_t right_pad_num = (8 - cnt_remain) * 4 + 32;
+  uint16_t right_st_num = (8 - cnt_remain) * 2;
   for (int n = 0; n < num; ++n) {
     const float16_t* din_batch = din + n * ch_in * size_in_channel;
     float16_t* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
       float16_t* dout_ptr = dout_batch + c * size_out_channel;
       const float16_t* din_ch_ptr = din_batch + c * size_in_channel;
       float16_t bias_val =
@@ -671,7 +674,6 @@ void conv_depthwise_3x3s2p1_bias_relu_common_fp16_fp16(float16_t* dout,
       INIT_PTR_3x3_S2_FP16(din_ch_ptr, w_in) for (int i = 0; i < h_in; i += 4) {
         ASSIGN_PTR_3x3_S2_FP16(w_out) TOP_BOTTOM_BORDER_3x3_S2P1_FP16(
             w_in, h_in, h_out) int cnt = cnt_col;
-        uint16_t* rst_mask = rmask;
         uint16_t* val_mask = vmask;
 // clang-format off
 #ifdef __aarch64__
@@ -687,8 +689,7 @@ void conv_depthwise_3x3s2p1_bias_relu_common_fp16_fp16(float16_t* dout,
               [din_ptr4] "+r"(din_ptr4),
               [ptr_out0] "+r"(doutr0),
               [ptr_out1] "+r"(doutr1),
-              [vmask] "+r" (val_mask),
-              [rmask] "+r" (rst_mask)
+              [vmask] "+r" (val_mask)
             : [vzero] "w"(vzero),
               [wr00]"w"(wr00),
               [wr01]"w"(wr01),
@@ -700,7 +701,9 @@ void conv_depthwise_3x3s2p1_bias_relu_common_fp16_fp16(float16_t* dout,
               [wr21]"w"(wr21),
               [wr22] "w" (wr22),
               [bias_val] "r"(v_bias),
-              [remain] "r"(cnt_remain)
+              [remain] "r"(cnt_remain),
+              [right_pad_num] "r"(right_pad_num), 
+              [right_st_num] "r"(right_st_num)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",\
               "v17", "v18", "v19", "v20", "v21"
@@ -711,6 +714,7 @@ void conv_depthwise_3x3s2p1_bias_relu_common_fp16_fp16(float16_t* dout,
         dout_ptr += 2 * w_out;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -735,16 +739,16 @@ void conv_depthwise_3x3s2p1_bias_relu6_common_fp16_fp16(
   int threads = ctx->threads();
   int size_in_channel = w_in * h_in;
   int size_out_channel = w_out * h_out;
-  uint16_t vmask[16];
-  uint16_t rmask[8];
-  auto&& res = right_mask_3x3s2p1_fp16(w_in, w_out, vmask, rmask);
-  int cnt_col = res.first;
-  int cnt_remain = res.second;
+  uint16_t vmask[24];
+  auto&& res = right_mask_3x3s2p01_fp16(w_in, w_out, 1, vmask);
+  uint16_t cnt_col = res.first;
+  uint16_t cnt_remain = res.second;
+  uint16_t right_pad_num = (8 - cnt_remain) * 4 + 32;
+  uint16_t right_st_num = (8 - cnt_remain) * 2;
   for (int n = 0; n < num; ++n) {
     const float16_t* din_batch = din + n * ch_in * size_in_channel;
     float16_t* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
       float16_t* dout_ptr = dout_batch + c * size_out_channel;
       const float16_t* din_ch_ptr = din_batch + c * size_in_channel;
       float16_t bias_val =
@@ -754,7 +758,6 @@ void conv_depthwise_3x3s2p1_bias_relu6_common_fp16_fp16(
       INIT_PTR_3x3_S2_FP16(din_ch_ptr, w_in) for (int i = 0; i < h_in; i += 4) {
         ASSIGN_PTR_3x3_S2_FP16(w_out) TOP_BOTTOM_BORDER_3x3_S2P1_FP16(
             w_in, h_in, h_out) int cnt = cnt_col;
-        uint16_t* rst_mask = rmask;
         uint16_t* val_mask = vmask;
 // clang-format off
 #ifdef __aarch64__
@@ -770,8 +773,7 @@ void conv_depthwise_3x3s2p1_bias_relu6_common_fp16_fp16(
               [din_ptr4] "+r"(din_ptr4),
               [ptr_out0] "+r"(doutr0),
               [ptr_out1] "+r"(doutr1),
-              [vmask] "+r" (val_mask),
-              [rmask] "+r" (rst_mask)
+              [vmask] "+r" (val_mask)
             : [vzero] "w"(vzero),
               [wr00]"w"(wr00),
               [wr01]"w"(wr01),
@@ -784,7 +786,9 @@ void conv_depthwise_3x3s2p1_bias_relu6_common_fp16_fp16(
               [wr22] "w" (wr22),
               [bias_val] "r"(v_bias),
               [remain] "r"(cnt_remain),
-              [six_ptr] "r"(six)
+              [six_ptr] "r"(six),
+              [right_pad_num] "r"(right_pad_num), 
+              [right_st_num] "r"(right_st_num)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",\
               "v17", "v18", "v19", "v20", "v21"
@@ -795,6 +799,7 @@ void conv_depthwise_3x3s2p1_bias_relu6_common_fp16_fp16(
         dout_ptr += 2 * w_out;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -819,16 +824,16 @@ void conv_depthwise_3x3s2p1_bias_leaky_relu_common_fp16_fp16(
   int threads = ctx->threads();
   int size_in_channel = w_in * h_in;
   int size_out_channel = w_out * h_out;
-  uint16_t vmask[16];
-  uint16_t rmask[8];
-  auto&& res = right_mask_3x3s2p1_fp16(w_in, w_out, vmask, rmask);
-  int cnt_col = res.first;
-  int cnt_remain = res.second;
+  uint16_t vmask[24];
+  auto&& res = right_mask_3x3s2p01_fp16(w_in, w_out, 1, vmask);
+  uint16_t cnt_col = res.first;
+  uint16_t cnt_remain = res.second;
+  uint16_t right_pad_num = (8 - cnt_remain) * 4 + 32;
+  uint16_t right_st_num = (8 - cnt_remain) * 2;
   for (int n = 0; n < num; ++n) {
     const float16_t* din_batch = din + n * ch_in * size_in_channel;
     float16_t* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
       float16_t* dout_ptr = dout_batch + c * size_out_channel;
       const float16_t* din_ch_ptr = din_batch + c * size_in_channel;
       float16_t bias_val =
@@ -838,7 +843,6 @@ void conv_depthwise_3x3s2p1_bias_leaky_relu_common_fp16_fp16(
       INIT_PTR_3x3_S2_FP16(din_ch_ptr, w_in) for (int i = 0; i < h_in; i += 4) {
         ASSIGN_PTR_3x3_S2_FP16(w_out) TOP_BOTTOM_BORDER_3x3_S2P1_FP16(
             w_in, h_in, h_out) int cnt = cnt_col;
-        uint16_t* rst_mask = rmask;
         uint16_t* val_mask = vmask;
 // clang-format off
 #ifdef __aarch64__
@@ -854,8 +858,7 @@ void conv_depthwise_3x3s2p1_bias_leaky_relu_common_fp16_fp16(
               [din_ptr4] "+r"(din_ptr4),
               [ptr_out0] "+r"(doutr0),
               [ptr_out1] "+r"(doutr1),
-              [vmask] "+r" (val_mask),
-              [rmask] "+r" (rst_mask)
+              [vmask] "+r" (val_mask)
             : [vzero] "w"(vzero),
               [wr00]"w"(wr00),
               [wr01]"w"(wr01),
@@ -868,7 +871,9 @@ void conv_depthwise_3x3s2p1_bias_leaky_relu_common_fp16_fp16(
               [wr22] "w" (wr22),
               [bias_val] "r"(v_bias),
               [remain] "r"(cnt_remain),
-              [scale_ptr] "r"(scale)
+              [scale_ptr] "r"(scale),
+              [right_pad_num] "r"(right_pad_num), 
+              [right_st_num] "r"(right_st_num)              
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",\
               "v17", "v18", "v19", "v20", "v21"
@@ -879,6 +884,7 @@ void conv_depthwise_3x3s2p1_bias_leaky_relu_common_fp16_fp16(
         dout_ptr += 2 * w_out;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -904,16 +910,16 @@ void conv_depthwise_3x3s2p0_bias_noact_common_fp16_fp16(
   int threads = ctx->threads();
   int size_in_channel = w_in * h_in;
   int size_out_channel = w_out * h_out;
-  uint16_t vmask[16];
-  uint16_t rmask[8];
-  auto&& res = right_mask_3x3s2p0_fp16(w_in, w_out, vmask, rmask);
+  uint16_t vmask[24];
+  auto&& res = right_mask_3x3s2p01_fp16(w_in, w_out, 0, vmask);
   uint16_t cnt_col = res.first;
   uint16_t cnt_remain = res.second;
+  uint16_t right_pad_num = (8 - cnt_remain) * 4 + 32;
+  uint16_t right_st_num = (8 - cnt_remain) * 2;
   for (int n = 0; n < num; ++n) {
     const float16_t* din_batch = din + n * ch_in * size_in_channel;
     float16_t* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
       float16_t* dout_ptr = dout_batch + c * size_out_channel;
       const float16_t* din_ch_ptr = din_batch + c * size_in_channel;
       float16_t bias_val =
@@ -924,14 +930,13 @@ void conv_depthwise_3x3s2p0_bias_noact_common_fp16_fp16(
                                                   i += 2) {
         ASSIGN_PTR_3x3_S2_FP16(w_out) TOP_BOTTOM_BORDER_3x3_S2P0_FP16(
             w_in, h_in, h_out) int cnt = cnt_col;
-        uint16_t* rst_mask = rmask;
         uint16_t* val_mask = vmask;
 // clang-format off
 #ifdef __aarch64__
         asm volatile(
           INIT_FP16_S2
           MID_COMPUTE_FP16_S2 MID_RESULT_FP16_S2
-          RIGHT_COMPUTE_FP16_S2 RIGHT_RESULT_FP16_S2
+          RIGHT_COMPUTE_FP16_S2 RIGHT_RESULT_FP16_S2          
             : [cnt] "+r"(cnt),
               [din_ptr0] "+r"(din_ptr0),
               [din_ptr1] "+r"(din_ptr1),
@@ -940,8 +945,7 @@ void conv_depthwise_3x3s2p0_bias_noact_common_fp16_fp16(
               [din_ptr4] "+r"(din_ptr4),
               [ptr_out0] "+r"(doutr0),
               [ptr_out1] "+r"(doutr1),
-              [vmask] "+r" (val_mask),
-              [rmask] "+r" (rst_mask)
+              [vmask] "+r" (val_mask)
             : [vzero] "w"(vzero),
               [wr00]"w"(wr00),
               [wr01]"w"(wr01),
@@ -953,7 +957,9 @@ void conv_depthwise_3x3s2p0_bias_noact_common_fp16_fp16(
               [wr21]"w"(wr21),
               [wr22] "w" (wr22),
               [bias_val] "r"(v_bias),
-              [remain] "r"(cnt_remain)
+              [remain] "r"(cnt_remain),
+              [right_pad_num] "r"(right_pad_num), 
+              [right_st_num] "r"(right_st_num)              
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",\
               "v17", "v18", "v19", "v20", "v21"
@@ -964,6 +970,7 @@ void conv_depthwise_3x3s2p0_bias_noact_common_fp16_fp16(
         dout_ptr += 2 * w_out;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -988,16 +995,16 @@ void conv_depthwise_3x3s2p0_bias_relu_common_fp16_fp16(float16_t* dout,
   int threads = ctx->threads();
   int size_in_channel = w_in * h_in;
   int size_out_channel = w_out * h_out;
-  uint16_t vmask[16];
-  uint16_t rmask[8];
-  auto&& res = right_mask_3x3s2p0_fp16(w_in, w_out, vmask, rmask);
+  uint16_t vmask[24];
+  auto&& res = right_mask_3x3s2p01_fp16(w_in, w_out, 0, vmask);
   uint16_t cnt_col = res.first;
   uint16_t cnt_remain = res.second;
+  uint16_t right_pad_num = (8 - cnt_remain) * 4 + 32;
+  uint16_t right_st_num = (8 - cnt_remain) * 2;
   for (int n = 0; n < num; ++n) {
     const float16_t* din_batch = din + n * ch_in * size_in_channel;
     float16_t* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
       float16_t* dout_ptr = dout_batch + c * size_out_channel;
       const float16_t* din_ch_ptr = din_batch + c * size_in_channel;
       float16_t bias_val =
@@ -1008,7 +1015,6 @@ void conv_depthwise_3x3s2p0_bias_relu_common_fp16_fp16(float16_t* dout,
                                                   i += 2) {
         ASSIGN_PTR_3x3_S2_FP16(w_out) TOP_BOTTOM_BORDER_3x3_S2P0_FP16(
             w_in, h_in, h_out) int cnt = cnt_col;
-        uint16_t* rst_mask = rmask;
         uint16_t* val_mask = vmask;
 // clang-format off
 #ifdef __aarch64__
@@ -1024,8 +1030,7 @@ void conv_depthwise_3x3s2p0_bias_relu_common_fp16_fp16(float16_t* dout,
               [din_ptr4] "+r"(din_ptr4),
               [ptr_out0] "+r"(doutr0),
               [ptr_out1] "+r"(doutr1),
-              [vmask] "+r" (val_mask),
-              [rmask] "+r" (rst_mask)
+              [vmask] "+r" (val_mask)
             : [vzero] "w"(vzero),
               [wr00]"w"(wr00),
               [wr01]"w"(wr01),
@@ -1037,7 +1042,9 @@ void conv_depthwise_3x3s2p0_bias_relu_common_fp16_fp16(float16_t* dout,
               [wr21]"w"(wr21),
               [wr22] "w" (wr22),
               [bias_val] "r"(v_bias),
-              [remain] "r"(cnt_remain)
+              [remain] "r"(cnt_remain),
+              [right_pad_num] "r"(right_pad_num), 
+              [right_st_num] "r"(right_st_num)              
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",\
               "v17", "v18", "v19", "v20", "v21"
@@ -1048,6 +1055,7 @@ void conv_depthwise_3x3s2p0_bias_relu_common_fp16_fp16(float16_t* dout,
         dout_ptr += 2 * w_out;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1072,16 +1080,16 @@ void conv_depthwise_3x3s2p0_bias_relu6_common_fp16_fp16(
   int threads = ctx->threads();
   int size_in_channel = w_in * h_in;
   int size_out_channel = w_out * h_out;
-  uint16_t vmask[16];
-  uint16_t rmask[8];
-  auto&& res = right_mask_3x3s2p0_fp16(w_in, w_out, vmask, rmask);
+  uint16_t vmask[24];
+  auto&& res = right_mask_3x3s2p01_fp16(w_in, w_out, 0, vmask);
   uint16_t cnt_col = res.first;
   uint16_t cnt_remain = res.second;
+  uint16_t right_pad_num = (8 - cnt_remain) * 4 + 32;
+  uint16_t right_st_num = (8 - cnt_remain) * 2;
   for (int n = 0; n < num; ++n) {
     const float16_t* din_batch = din + n * ch_in * size_in_channel;
     float16_t* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
       float16_t* dout_ptr = dout_batch + c * size_out_channel;
       const float16_t* din_ch_ptr = din_batch + c * size_in_channel;
       float16_t bias_val =
@@ -1092,7 +1100,6 @@ void conv_depthwise_3x3s2p0_bias_relu6_common_fp16_fp16(
                                                   i += 2) {
         ASSIGN_PTR_3x3_S2_FP16(w_out) TOP_BOTTOM_BORDER_3x3_S2P0_FP16(
             w_in, h_in, h_out) int cnt = cnt_col;
-        uint16_t* rst_mask = rmask;
         uint16_t* val_mask = vmask;
 // clang-format off
 #ifdef __aarch64__
@@ -1108,8 +1115,7 @@ void conv_depthwise_3x3s2p0_bias_relu6_common_fp16_fp16(
               [din_ptr4] "+r"(din_ptr4),
               [ptr_out0] "+r"(doutr0),
               [ptr_out1] "+r"(doutr1),
-              [vmask] "+r" (val_mask),
-              [rmask] "+r" (rst_mask)
+              [vmask] "+r" (val_mask)
             : [vzero] "w"(vzero),
               [wr00]"w"(wr00),
               [wr01]"w"(wr01),
@@ -1122,7 +1128,9 @@ void conv_depthwise_3x3s2p0_bias_relu6_common_fp16_fp16(
               [wr22] "w" (wr22),
               [bias_val] "r"(v_bias),
               [remain] "r"(cnt_remain),
-              [six_ptr] "r"(six)
+              [six_ptr] "r"(six),
+              [right_pad_num] "r"(right_pad_num), 
+              [right_st_num] "r"(right_st_num)
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",\
               "v17", "v18", "v19", "v20", "v21"
@@ -1133,6 +1141,7 @@ void conv_depthwise_3x3s2p0_bias_relu6_common_fp16_fp16(
         dout_ptr += 2 * w_out;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1157,16 +1166,16 @@ void conv_depthwise_3x3s2p0_bias_leaky_relu_common_fp16_fp16(
   int threads = ctx->threads();
   int size_in_channel = w_in * h_in;
   int size_out_channel = w_out * h_out;
-  uint16_t vmask[16];
-  uint16_t rmask[8];
-  auto&& res = right_mask_3x3s2p0_fp16(w_in, w_out, vmask, rmask);
+  uint16_t vmask[24];
+  auto&& res = right_mask_3x3s2p01_fp16(w_in, w_out, 0, vmask);
   uint16_t cnt_col = res.first;
   uint16_t cnt_remain = res.second;
+  uint16_t right_pad_num = (8 - cnt_remain) * 4 + 32;
+  uint16_t right_st_num = (8 - cnt_remain) * 2;
   for (int n = 0; n < num; ++n) {
     const float16_t* din_batch = din + n * ch_in * size_in_channel;
     float16_t* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
       float16_t* dout_ptr = dout_batch + c * size_out_channel;
       const float16_t* din_ch_ptr = din_batch + c * size_in_channel;
       float16_t bias_val =
@@ -1177,7 +1186,6 @@ void conv_depthwise_3x3s2p0_bias_leaky_relu_common_fp16_fp16(
                                                   i += 2) {
         ASSIGN_PTR_3x3_S2_FP16(w_out) TOP_BOTTOM_BORDER_3x3_S2P0_FP16(
             w_in, h_in, h_out) int cnt = cnt_col;
-        uint16_t* rst_mask = rmask;
         uint16_t* val_mask = vmask;
 // clang-format off
 #ifdef __aarch64__
@@ -1193,8 +1201,7 @@ void conv_depthwise_3x3s2p0_bias_leaky_relu_common_fp16_fp16(
               [din_ptr4] "+r"(din_ptr4),
               [ptr_out0] "+r"(doutr0),
               [ptr_out1] "+r"(doutr1),
-              [vmask] "+r" (val_mask),
-              [rmask] "+r" (rst_mask)
+              [vmask] "+r" (val_mask)
             : [vzero] "w"(vzero),
               [wr00]"w"(wr00),
               [wr01]"w"(wr01),
@@ -1207,7 +1214,9 @@ void conv_depthwise_3x3s2p0_bias_leaky_relu_common_fp16_fp16(
               [wr22] "w" (wr22),
               [bias_val] "r"(v_bias),
               [remain] "r"(cnt_remain),
-              [scale_ptr] "r"(scale)
+              [scale_ptr] "r"(scale),
+              [right_pad_num] "r"(right_pad_num), 
+              [right_st_num] "r"(right_st_num)              
             : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",\
               "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15", "v16",\
               "v17", "v18", "v19", "v20", "v21"
@@ -1218,6 +1227,7 @@ void conv_depthwise_3x3s2p0_bias_leaky_relu_common_fp16_fp16(
         dout_ptr += 2 * w_out;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1248,8 +1258,8 @@ void conv_depthwise_3x3s2p1_bias_noact_small_fp16_fp16(float16_t* dout,
   for (int n = 0; n < num; ++n) {
     const float16_t* din_batch = din + n * ch_in * size_in_channel;
     float16_t* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
+      SMALL_TMP_ADDR
       float16_t* dout_ptr = dout_batch + c * size_out_channel;
       const float16_t* din_ch_ptr = din_batch + c * size_in_channel;
       float16_t bias_val =
@@ -1269,8 +1279,8 @@ void conv_depthwise_3x3s2p1_bias_noact_small_fp16_fp16(float16_t* dout,
               [din_ptr2] "+r"(din_ptr2),
               [din_ptr3] "+r"(din_ptr3),
               [din_ptr4] "+r"(din_ptr4),
-              [ptr_out0] "+r"(doutr0),
-              [ptr_out1] "+r"(doutr1),
+              [ptr_out0] "+r"(tmp0),
+              [ptr_out1] "+r"(tmp1),
               [vmask] "+r" (val_mask),
               [rmask] "+r" (rst_mask)
             : [vzero] "w"(vzero),
@@ -1291,9 +1301,11 @@ void conv_depthwise_3x3s2p1_bias_noact_small_fp16_fp16(float16_t* dout,
 #else
 #endif
         // clang-format on
+        SMALL_REAL_STORE
         dout_ptr += 2 * w_out;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1324,8 +1336,8 @@ void conv_depthwise_3x3s2p1_bias_relu_small_fp16_fp16(float16_t* dout,
   for (int n = 0; n < num; ++n) {
     const float16_t* din_batch = din + n * ch_in * size_in_channel;
     float16_t* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
+      SMALL_TMP_ADDR
       float16_t* dout_ptr = dout_batch + c * size_out_channel;
       const float16_t* din_ch_ptr = din_batch + c * size_in_channel;
       float16_t bias_val =
@@ -1345,8 +1357,8 @@ void conv_depthwise_3x3s2p1_bias_relu_small_fp16_fp16(float16_t* dout,
               [din_ptr2] "+r"(din_ptr2),
               [din_ptr3] "+r"(din_ptr3),
               [din_ptr4] "+r"(din_ptr4),
-              [ptr_out0] "+r"(doutr0),
-              [ptr_out1] "+r"(doutr1),
+              [ptr_out0] "+r"(tmp0),
+              [ptr_out1] "+r"(tmp1),
               [vmask] "+r" (val_mask),
               [rmask] "+r" (rst_mask)
             : [vzero] "w"(vzero),
@@ -1367,9 +1379,11 @@ void conv_depthwise_3x3s2p1_bias_relu_small_fp16_fp16(float16_t* dout,
 #else
 #endif
         // clang-format on
+        SMALL_REAL_STORE
         dout_ptr += 2 * w_out;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1400,8 +1414,8 @@ void conv_depthwise_3x3s2p1_bias_relu6_small_fp16_fp16(float16_t* dout,
   for (int n = 0; n < num; ++n) {
     const float16_t* din_batch = din + n * ch_in * size_in_channel;
     float16_t* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
+      SMALL_TMP_ADDR
       float16_t* dout_ptr = dout_batch + c * size_out_channel;
       const float16_t* din_ch_ptr = din_batch + c * size_in_channel;
       float16_t bias_val =
@@ -1421,8 +1435,8 @@ void conv_depthwise_3x3s2p1_bias_relu6_small_fp16_fp16(float16_t* dout,
               [din_ptr2] "+r"(din_ptr2),
               [din_ptr3] "+r"(din_ptr3),
               [din_ptr4] "+r"(din_ptr4),
-              [ptr_out0] "+r"(doutr0),
-              [ptr_out1] "+r"(doutr1),
+              [ptr_out0] "+r"(tmp0),
+              [ptr_out1] "+r"(tmp1),
               [vmask] "+r" (val_mask),
               [rmask] "+r" (rst_mask)
             : [vzero] "w"(vzero),
@@ -1444,9 +1458,11 @@ void conv_depthwise_3x3s2p1_bias_relu6_small_fp16_fp16(float16_t* dout,
 #else
 #endif
         // clang-format on
+        SMALL_REAL_STORE
         dout_ptr += 2 * w_out;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1478,8 +1494,8 @@ void conv_depthwise_3x3s2p1_bias_leaky_relu_small_fp16_fp16(
   for (int n = 0; n < num; ++n) {
     const float16_t* din_batch = din + n * ch_in * size_in_channel;
     float16_t* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
+      SMALL_TMP_ADDR
       float16_t* dout_ptr = dout_batch + c * size_out_channel;
       const float16_t* din_ch_ptr = din_batch + c * size_in_channel;
       float16_t bias_val =
@@ -1499,8 +1515,8 @@ void conv_depthwise_3x3s2p1_bias_leaky_relu_small_fp16_fp16(
               [din_ptr2] "+r"(din_ptr2),
               [din_ptr3] "+r"(din_ptr3),
               [din_ptr4] "+r"(din_ptr4),
-              [ptr_out0] "+r"(doutr0),
-              [ptr_out1] "+r"(doutr1),
+              [ptr_out0] "+r"(tmp0),
+              [ptr_out1] "+r"(tmp1),
               [vmask] "+r" (val_mask),
               [rmask] "+r" (rst_mask)
             : [vzero] "w"(vzero),
@@ -1522,9 +1538,11 @@ void conv_depthwise_3x3s2p1_bias_leaky_relu_small_fp16_fp16(
 #else
 #endif
         // clang-format on
+        SMALL_REAL_STORE
         dout_ptr += 2 * w_out;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1555,8 +1573,8 @@ void conv_depthwise_3x3s2p0_bias_noact_small_fp16_fp16(float16_t* dout,
   for (int n = 0; n < num; ++n) {
     const float16_t* din_batch = din + n * ch_in * size_in_channel;
     float16_t* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
+      SMALL_TMP_ADDR
       float16_t* dout_ptr = dout_batch + c * size_out_channel;
       const float16_t* din_ch_ptr = din_batch + c * size_in_channel;
       float16_t bias_val =
@@ -1577,8 +1595,8 @@ void conv_depthwise_3x3s2p0_bias_noact_small_fp16_fp16(float16_t* dout,
               [din_ptr2] "+r"(din_ptr2),
               [din_ptr3] "+r"(din_ptr3),
               [din_ptr4] "+r"(din_ptr4),
-              [ptr_out0] "+r"(doutr0),
-              [ptr_out1] "+r"(doutr1),
+              [ptr_out0] "+r"(tmp0),
+              [ptr_out1] "+r"(tmp1),
               [vmask] "+r" (val_mask),
               [rmask] "+r" (rst_mask)
             : [vzero] "w"(vzero),
@@ -1599,9 +1617,11 @@ void conv_depthwise_3x3s2p0_bias_noact_small_fp16_fp16(float16_t* dout,
 #else
 #endif
         // clang-format on
+        SMALL_REAL_STORE
         dout_ptr += 2 * w_out;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1632,8 +1652,8 @@ void conv_depthwise_3x3s2p0_bias_relu_small_fp16_fp16(float16_t* dout,
   for (int n = 0; n < num; ++n) {
     const float16_t* din_batch = din + n * ch_in * size_in_channel;
     float16_t* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
+      SMALL_TMP_ADDR
       float16_t* dout_ptr = dout_batch + c * size_out_channel;
       const float16_t* din_ch_ptr = din_batch + c * size_in_channel;
       float16_t bias_val =
@@ -1654,8 +1674,8 @@ void conv_depthwise_3x3s2p0_bias_relu_small_fp16_fp16(float16_t* dout,
               [din_ptr2] "+r"(din_ptr2),
               [din_ptr3] "+r"(din_ptr3),
               [din_ptr4] "+r"(din_ptr4),
-              [ptr_out0] "+r"(doutr0),
-              [ptr_out1] "+r"(doutr1),
+              [ptr_out0] "+r"(tmp0),
+              [ptr_out1] "+r"(tmp1),
               [vmask] "+r" (val_mask),
               [rmask] "+r" (rst_mask)
             : [vzero] "w"(vzero),
@@ -1676,9 +1696,11 @@ void conv_depthwise_3x3s2p0_bias_relu_small_fp16_fp16(float16_t* dout,
 #else
 #endif
         // clang-format on
+        SMALL_REAL_STORE
         dout_ptr += 2 * w_out;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1709,8 +1731,8 @@ void conv_depthwise_3x3s2p0_bias_relu6_small_fp16_fp16(float16_t* dout,
   for (int n = 0; n < num; ++n) {
     const float16_t* din_batch = din + n * ch_in * size_in_channel;
     float16_t* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
+      SMALL_TMP_ADDR
       float16_t* dout_ptr = dout_batch + c * size_out_channel;
       const float16_t* din_ch_ptr = din_batch + c * size_in_channel;
       float16_t bias_val =
@@ -1731,8 +1753,8 @@ void conv_depthwise_3x3s2p0_bias_relu6_small_fp16_fp16(float16_t* dout,
               [din_ptr2] "+r"(din_ptr2),
               [din_ptr3] "+r"(din_ptr3),
               [din_ptr4] "+r"(din_ptr4),
-              [ptr_out0] "+r"(doutr0),
-              [ptr_out1] "+r"(doutr1),
+              [ptr_out0] "+r"(tmp0),
+              [ptr_out1] "+r"(tmp1),
               [vmask] "+r" (val_mask),
               [rmask] "+r" (rst_mask)
             : [vzero] "w"(vzero),
@@ -1754,9 +1776,11 @@ void conv_depthwise_3x3s2p0_bias_relu6_small_fp16_fp16(float16_t* dout,
 #else
 #endif
         // clang-format on
+        SMALL_REAL_STORE
         dout_ptr += 2 * w_out;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
@@ -1788,8 +1812,8 @@ void conv_depthwise_3x3s2p0_bias_leaky_relu_small_fp16_fp16(
   for (int n = 0; n < num; ++n) {
     const float16_t* din_batch = din + n * ch_in * size_in_channel;
     float16_t* dout_batch = dout + n * ch_in * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < ch_in; c++) {
+    LITE_PARALLEL_BEGIN(c, tid, ch_in) {
+      SMALL_TMP_ADDR
       float16_t* dout_ptr = dout_batch + c * size_out_channel;
       const float16_t* din_ch_ptr = din_batch + c * size_in_channel;
       float16_t bias_val =
@@ -1810,8 +1834,8 @@ void conv_depthwise_3x3s2p0_bias_leaky_relu_small_fp16_fp16(
               [din_ptr2] "+r"(din_ptr2),
               [din_ptr3] "+r"(din_ptr3),
               [din_ptr4] "+r"(din_ptr4),
-              [ptr_out0] "+r"(doutr0),
-              [ptr_out1] "+r"(doutr1),
+              [ptr_out0] "+r"(tmp0),
+              [ptr_out1] "+r"(tmp1),
               [vmask] "+r" (val_mask),
               [rmask] "+r" (rst_mask)
             : [vzero] "w"(vzero),
@@ -1833,9 +1857,11 @@ void conv_depthwise_3x3s2p0_bias_leaky_relu_small_fp16_fp16(
 #else
 #endif
         // clang-format on
+        SMALL_REAL_STORE
         dout_ptr += 2 * w_out;
       }
     }
+    LITE_PARALLEL_END();
   }
 }
 
