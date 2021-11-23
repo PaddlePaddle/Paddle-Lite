@@ -21,10 +21,10 @@ Welcome to Paddle-Lite's documentation!
   :caption: 性能
   :name: sec-performance
   
-  benchmark/best_practices
-  benchmark/benchmark_tools
-  benchmark/benchmark
-  benchmark/gpu
+  performance/best_practices
+  performance/benchmark_tools
+  performance/benchmark
+  performance/gpu
 
 .. toctree::
   :maxdepth: 1
