@@ -9,7 +9,7 @@ LITE_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}")/../../" && pwd )"
 NUM_PROC=4
 
 readonly ADB_WORK_DIR="/data/local/tmp"
-readonly common_flags="-DWITH_LITE=ON -LITE_WITH_ARM=OFF -DWITH_PYTHON=OFF -DWITH_TESTING=ON -DLITE_WITH_ARM=OFF"
+readonly common_flags="-DWITH_LITE=ON -DWITH_PYTHON=OFF -DWITH_TESTING=ON -DLITE_WITH_ARM=OFF"
 
 # url that stores third-party tar.gz file to accelerate third-party lib installation
 readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
