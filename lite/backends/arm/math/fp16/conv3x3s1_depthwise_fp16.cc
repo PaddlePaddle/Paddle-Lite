@@ -298,8 +298,7 @@ namespace fp16 {
 
 #define RIGHT_COMPUTE_FP16_S1                                          \
   "3:                                                     \n"          \
-  "ld1    {v20.8h}, [%[vmask]], #16                       \n"          \
-  "ld1    {v21.8h}, [%[vmask]]                            \n"          \
+  "ld1    {v20.8h, v21.8h}, [%[vmask]]                    \n"          \
   "ld1    {v16.8h}, [%[bias_val]]                         \n"          \
   "ld1    {v17.8h}, [%[bias_val]]                         \n"          \
   "ld1    {v18.8h}, [%[bias_val]]                         \n"          \
@@ -310,26 +309,20 @@ namespace fp16 {
   "sub    %[din_ptr3], %[din_ptr3], %[right_pad_num]      \n"          \
   "sub    %[din_ptr4], %[din_ptr4], %[right_pad_num]      \n"          \
   "sub    %[din_ptr5], %[din_ptr5], %[right_pad_num]      \n"          \
-  "ld1    {v0.8h}, [%[din_ptr0]], #16                     \n"          \
-  "ld1    {v1.8h}, [%[din_ptr0]]                          \n"          \
-  "ld1    {v2.8h}, [%[din_ptr1]], #16                     \n"          \
-  "ld1    {v3.8h}, [%[din_ptr1]]                          \n"          \
+  "ld1    {v0.8h, v1.8h}, [%[din_ptr0]]                   \n"          \
+  "ld1    {v2.8h, v3.8h}, [%[din_ptr1]]                   \n"          \
   "sub    %[ptr_out0], %[ptr_out0], %[right_st_num]       \n"          \
   "sub    %[ptr_out1], %[ptr_out1], %[right_st_num]       \n"          \
   "sub    %[ptr_out2], %[ptr_out2], %[right_st_num]       \n"          \
   "sub    %[ptr_out3], %[ptr_out3], %[right_st_num]       \n"          \
-  "ld1    {v4.8h}, [%[din_ptr2]], #16                     \n"          \
-  "ld1    {v5.8h}, [%[din_ptr2]]                          \n"          \
-  "ld1    {v6.8h}, [%[din_ptr3]], #16                     \n"          \
-  "ld1    {v7.8h}, [%[din_ptr3]]                          \n"          \
+  "ld1    {v4.8h, v5.8h}, [%[din_ptr2]]                   \n"          \
+  "ld1    {v6.8h, v7.8h}, [%[din_ptr3]]                   \n"          \
   "bif    v0.16b, %[vzero].16b, v20.16b                   \n"          \
   "bif    v1.16b, %[vzero].16b, v21.16b                   \n"          \
   "bif    v2.16b, %[vzero].16b, v20.16b                   \n"          \
   "bif    v3.16b, %[vzero].16b, v21.16b                   \n"          \
-  "ld1    {v8.8h}, [%[din_ptr4]], #16                     \n"          \
-  "ld1    {v9.8h}, [%[din_ptr4]]                          \n"          \
-  "ld1    {v10.8h}, [%[din_ptr5]], #16                    \n"          \
-  "ld1    {v11.8h}, [%[din_ptr5]]                         \n"          \
+  "ld1    {v8.8h, v9.8h}, [%[din_ptr4]]                   \n"          \
+  "ld1    {v10.8h, v11.8h}, [%[din_ptr5]]                 \n"          \
   "ext    v12.16b, v0.16b, v1.16b, #2                     \n"          \
   "ext    v13.16b, v0.16b, v1.16b, #4                     \n"          \
   "fmla   v16.8h,  %[ww0].8h,  v0.8h                      \n"          \
