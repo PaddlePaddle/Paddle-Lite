@@ -106,9 +106,11 @@ void conv_depthwise_5x5s2_int8(Dtype* dout,
       int hs = h * 2 - padh;
       int he = hs + h_kernel * 2 + 3;
 
-#pragma omp parallel for num_threads(threads)
-      for (int c = 0; c < chout; c += hout_c_block) {
-#ifdef ARM_WITH_OMP
+      LITE_PARALLEL_COMMON_BEGIN(c, tid, chout, 0, hout_c_block) {
+#ifdef LITE_USE_THREAD_POOL
+        int8_t* pre_din = tmp_din + tid * (pre_in_size + pre_out_size * 4);
+        int32_t* pre_out = reinterpret_cast<int*>(pre_din + pre_in_size);
+#elif defined(ARM_WITH_OMP)
         int8_t* pre_din =
             tmp_din + omp_get_thread_num() * (pre_in_size + pre_out_size * 4);
         int32_t* pre_out = reinterpret_cast<int*>(pre_din + pre_in_size);
@@ -754,6 +756,7 @@ void conv_depthwise_5x5s2_int8(Dtype* dout,
                                           ptr_write,
                                           scale + c);
       }
+      LITE_PARALLEL_END();
     }
   }
 }
