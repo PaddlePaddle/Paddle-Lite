@@ -17,6 +17,7 @@
 #include "lite/backends/arm/math/conv_depthwise.h"
 #include "lite/backends/arm/math/conv_impl.h"
 #include "lite/core/context.h"
+#include "lite/core/parallel_defines.h"
 #include "lite/operators/op_params.h"
 #ifdef ARM_WITH_OMP
 #include <omp.h>
