@@ -23,57 +23,6 @@ namespace lite {
 namespace arm {
 namespace math {
 namespace fp16 {
-/**
- * These macros will convert clang marco into function call
- */
-#ifdef __clang__
-#define __ai static inline __attribute__((__always_inline__, __nodebug__))
-
-__ai int32x4_t vld1q_s32_wrap(const int32_t *p0) { return vld1q_s32(p0); }
-#undef vld1q_s32
-#define vld1q_s32 vld1q_s32_wrap
-
-__ai void vst1q_s32_wrap(int32_t *a, int32x4_t b) { return vst1q_s32(a, b); }
-#undef vst1q_s32
-#define vst1q_s32 vst1q_s32_wrap
-
-__ai int64x2_t vld1q_s64_wrap(const int64_t *p0) { return vld1q_s64(p0); }
-#undef vld1q_s64
-#define vld1q_s64 vld1q_s64_wrap
-
-__ai void vst1q_s64_wrap(int64_t *a, int64x2_t b) { return vst1q_s64(a, b); }
-#undef vst1q_s64
-#define vst1q_s64 vst1q_s64_wrap
-
-__ai float32x4_t vld1q_f32_wrap(const float *p0) { return vld1q_f32(p0); }
-#undef vld1q_f32
-#define vld1q_f32 vld1q_f32_wrap
-
-__ai void vst1q_f32_wrap(float *a, float32x4_t b) { return vst1q_f32(a, b); }
-#undef vst1q_f32
-#define vst1q_f32 vst1q_f32_wrap
-
-#ifdef ENABLE_ARM_FP16
-typedef __fp16 flaot16_t;
-__ai float16x8_t vld1q_f16_wrap(const float16_t *p0) { return vld1q_f16(p0); }
-#undef vld1q_f16
-#define vld1q_f16 vld1q_f16_wrap
-
-__ai void vst1q_f16_wrap(float16_t *a, float16x8_t b) {
-  return vst1q_f16(a, b);
-}
-#undef vst1q_f16
-#define vst1q_f16 vst1q_f16_wrap
-
-__ai float16x8_t vdupq_n_f16_wrap(const float16_t p0) {
-  return vdupq_n_f16(p0);
-}
-#undef vdupq_n_f16
-#define vdupq_n_f16 vdupq_n_f16_wrap
-#endif
-
-#undef __ai
-#endif
 
 #ifdef __aarch64__
 #define CHANGEED_REG_0_11 \
@@ -1779,7 +1728,7 @@ void pooling3x3s1p0_avg_fp16(POOLING_PARAM,
       TargetMalloc(TARGET(kARM), win * sizeof(float16_t)));
   memset(zero_ptr, 0, win * sizeof(float16_t));
 
-  float16x8_t vzero = vdupq_n_f16(0.f);
+  // float16x8_t vzero = vdupq_n_f16(0.f);
   for (int n = 0; n < num; ++n) {
     float16_t *data_out_batch = dout + n * chout * size_channel_out;
     const float16_t *data_in_batch = din + n * chin * size_channel_in;
@@ -1801,17 +1750,10 @@ void pooling3x3s1p0_avg_fp16(POOLING_PARAM,
             float16x8_t vcoef = vdupq_n_f16(coef_h / 3);
         float16x4_t vcoef_4 = vget_low_f16(vcoef);
         int cnt_num = w_unroll_size;
-        int cnt_remain_4 = cnt;
-        P3x3S1P0_INIT_INTRIN P3x3S1P0_AVG_8TIMES_INTRIN
-            P3x3S1P0_AVG_4TIMES_INTRIN AVG_ONE_COMPUTE(dr0,
-                                                       dr1,
-                                                       dr2,
-                                                       dr_out,
-                                                       cnt_remain,
-                                                       minval,
-                                                       right_remain,
-                                                       wend,
-                                                       S) r0 = r1;
+        P3x3S1P0_INIT_INTRIN P3x3S1P0_AVG_8TIMES_INTRIN cnt_remain += cnt * 4;
+        AVG_ONE_COMPUTE(
+            dr0, dr1, dr2, dr_out, cnt_remain, minval, right_remain, wend, S)
+        r0 = r1;
         r1 = r2;
         r2 = r1 + win;
         data_out_channel += wout;
@@ -1919,7 +1861,37 @@ void pooling3x3s1p1_avg_fp16(POOLING_PARAM,
 }
 
 #undef CHANGEED_REG_0_11
-
+#undef GLOBAL_INIT
+#undef GLOBAL_MAX
+#undef GLOBAL_AVG
+#undef GLOBAL_MAX_REMAIN
+#undef GLOBAL_AVG_REMAIN
+#undef P3x3S2P1_INIT
+#undef P3x3S2P0_INIT
+#undef P3x3S2P1_MAX
+#undef P3x3S2P0_MAX
+#undef P3x3S2_REMIN
+#undef P3x3S2P1_MAX_REMAIN
+#undef P3x3S2P0_MAX_REMAIN
+#undef P3x3S2P1_AVG
+#undef P3x3S2P0_AVG
+#undef P3x3S2P1_AVG_REMAIN
+#undef P3x3S2P0_AVG_REMAIN
+#undef POOL_CNT_COMPUTE
+#undef MAX_ONE_COMPUTE
+#undef AVG_ONE_COMPUTE
+#undef P3x3S1_MAX_PTR_CHOOSE
+#undef P3x3S2_MAX_PTR_CHOOSE
+#undef P3x3s2_AVG_PTR_CHOOSE
+#undef P3x3S1P0_INIT_INTRIN
+#undef P3x3S1P1_WINLESS_INTRIN
+#undef P3x3S1P1_AVG_WINLESS_INTRIN
+#undef P3x3S1P1_INIT_INTRIN
+#undef P3x3S1P1_AVG_INIT_INTRIN
+#undef P3x3S1P0_MAX_8TIMES_INTRIN
+#undef P3x3S1P0_MAX_4TIMES_INTRIN
+#undef P3x3S1P0_AVG_8TIMES_INTRIN
+#undef P3x3S1P0_AVG_4TIMES_INTRIN
 }  // namespace fp16
 }  // namespace math
 }  // namespace arm
