@@ -14,6 +14,8 @@
 
 #include "lite/backends/arm/math/conv_transpose_depthwise.h"
 #include "lite/backends/arm/math/funcs.h"
+#include "lite/core/parallel_defines.h"
+
 namespace paddle {
 namespace lite {
 namespace arm {
@@ -44,7 +46,7 @@ void conv_transpose_depthwise_s1<float>(const float* dst,
   const int ic_plane_size = height * width;
   const int oc_plane_size = output_h * output_w;
   const int rr_plane_size = kernel_h * kernel_w;
-  for (int c = 0; c < channels; c++) {
+  LITE_PARALLEL_BEGIN(c, tid, channels) {
     int dst_z = c * oc_plane_size;
     int weight_z = c * rr_plane_size;
     int src_z = c * ic_plane_size;
@@ -177,6 +179,7 @@ void conv_transpose_depthwise_s1<float>(const float* dst,
       }
     }
   }
+  LITE_PARALLEL_END()
 }
 
 template <>
@@ -205,7 +208,7 @@ void conv_transpose_depthwise_s2<float>(const float* dst,
   const int ic_plane_size = height * width;
   const int oc_plane_size = output_h * output_w;
   const int rr_plane_size = kernel_h * kernel_w;
-  for (int c = 0; c < channels; c++) {
+  LITE_PARALLEL_BEGIN(c, tid, channels) {
     int dst_z = c * oc_plane_size;
     int weight_z = c * rr_plane_size;
     int src_z = c * ic_plane_size;
@@ -350,6 +353,7 @@ void conv_transpose_depthwise_s2<float>(const float* dst,
       }
     }
   }
+  LITE_PARALLEL_END()
 }
 }  // namespace math
 }  // namespace arm
