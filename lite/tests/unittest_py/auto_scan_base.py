@@ -37,7 +37,7 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 settings.register_profile(
     "ci",
-    max_examples=100,
+    max_examples=20,
     suppress_health_check=hypothesis.HealthCheck.all(),
     deadline=None,
     print_blob=True,
@@ -62,6 +62,8 @@ class AutoScanBaseTest(unittest.TestCase):
         super(AutoScanBaseTest, self).__init__(*args, **kwargs)
         self.skip_cases = []
         abs_dir = os.path.abspath(os.path.dirname(__file__))
+        self.cache_dir = os.path.join(abs_dir,
+                                      str(self.__module__) + '_cache_dir')
 
     @abc.abstractmethod
     def sample_program_configs(self):
@@ -213,8 +215,15 @@ class AutoScanBaseTest(unittest.TestCase):
                         else:
                             raise NotImplementedError
                         break
+                    
+                if os.path.exists(self.cache_dir):
+                    shutil.rmtree(self.cache_dir)
+                if not os.path.exists(self.cache_dir):
+                    os.mkdir(self.cache_dir)
+
                 try:
-                    results.append(self.run_lite_config(model, params, feed_data, pred_config))
+                    result, model = self.run_lite_config(model, params, feed_data, pred_config)
+                    results.append(result)
                     self.assert_tensors_near(atol, rtol, results[-1],
                                              results[0])
                 except Exception as e:
@@ -228,6 +237,7 @@ class AutoScanBaseTest(unittest.TestCase):
                                  paddlelite_config_str(pred_config) + ' done')
 
         self.assertTrue(status)
+        return model
 
     def inference_config_str(self, config) -> bool:
         dic = {}

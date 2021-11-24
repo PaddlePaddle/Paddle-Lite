@@ -259,10 +259,13 @@ bool test_sgemm_fp16(bool tra,
     auto ptr = tdiff.mutable_data<float16_t>();
     data_diff(basic_ptr, saber_ptr, ptr, tc_basic.numel(), max_ratio, max_diff);
     print_diff_info(max_diff, max_ratio);
-    if (std::abs(max_ratio) > 1e-3f) {
-      if (max_diff > 1e-1f) {
-        int64_t size = tc_basic.numel();
-        int64_t width = tc_basic.dims()[3];
+    int64_t size = tc_basic.numel();
+    int64_t width = tc_basic.dims()[3];
+    for (int i = 0; i < size; i++) {
+      if (fabs(basic_ptr[i] - saber_ptr[i]) > 1e-1f &&
+          fabs(basic_ptr[i] - saber_ptr[i]) /
+                  (fmax(fabs(basic_ptr[i]), fabs(saber_ptr[i]))) >
+              0.05) {
         print_tensor_info_fp16(basic_ptr, saber_ptr, ptr, size, width);
         LOG(FATAL) << "fp16 gemm M: " << m << ", N: " << n << ", K: " << k
                    << ", bias: " << (has_bias ? "true" : "false")
@@ -270,7 +273,7 @@ bool test_sgemm_fp16(bool tra,
                    << ", trans A: " << (tra ? "true" : "false")
                    << ", trans B: " << (trb ? "true" : "false")
                    << ", threads: " << ths << ", power_mode: " << cls
-                   << " failed!!\n";
+                   << ", i: " << i << " failed!!\n";
       }
     }
   }
