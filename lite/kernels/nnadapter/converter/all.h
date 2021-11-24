@@ -200,4 +200,5 @@ REGISTER_CONVERTER(fc,
 REGISTER_CONVERTER(norm, ConvertNorm, "huawei_ascend_npu");
 REGISTER_CONVERTER(pad2d, ConvertPad, "huawei_ascend_npu");
 REGISTER_CONVERTER(pad3d, ConvertPad, "huawei_ascend_npu");
+REGISTER_CONVERTER(where, ConvertWhere, "huawei_ascend_npu");
 #endif  // NOLINT
