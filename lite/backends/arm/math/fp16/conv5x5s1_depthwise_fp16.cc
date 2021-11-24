@@ -651,7 +651,15 @@ void conv_depthwise_5x5s1_fp16(const float16_t* i_data,
       float16x8_t w4 = vld1q_f16(weight_c + 32);  // w4, v27
       float16x8_t vbias = vdupq_n_f16(0.f);
       if (flag_bias) {
-        vbias = vld1q_f16(&bias[c]);  // v28
+        if (c + out_c_block < oc) {
+          vbias = vld1q_f16(&bias[c]);  // v28
+        } else {
+          int k = 0;
+          for (; k < 8; c + k < oc; k++) {
+            bias_local[k] = bias[c + k];
+          }
+          vbias = vld1q_f16(bias_local);  // v28
+        }
       }
       weight_c += 40;
 #else

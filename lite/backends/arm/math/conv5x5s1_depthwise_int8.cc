@@ -126,17 +126,6 @@ void conv_depthwise_5x5s1_int8(Dtype* dout,
         const int8_t* block_inr4 = block_inr3 + in_len;
 
         const int8_t* weight_c = weights + c * w_stride;
-        float bias_local[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-        if (flag_bias) {
-          bias_local[0] = bias[c];
-          bias_local[1] = bias[c + 1];
-          bias_local[2] = bias[c + 2];
-          bias_local[3] = bias[c + 3];
-          bias_local[4] = bias[c + 4];
-          bias_local[5] = bias[c + 5];
-          bias_local[6] = bias[c + 6];
-          bias_local[7] = bias[c + 7];
-        }
         for (int hk = 0; hk < h_kernel; hk += hout_r_kernel) {
           int cnt = w_loop;
           const int8_t* inr0 = block_inr0;
@@ -729,7 +718,7 @@ void conv_depthwise_5x5s1_int8(Dtype* dout,
                                           wout,
                                           flag_act,
                                           alpha,
-                                          bias_local,
+                                          bias + c,
                                           flag_bias,
                                           ptr_write,
                                           scale + c);

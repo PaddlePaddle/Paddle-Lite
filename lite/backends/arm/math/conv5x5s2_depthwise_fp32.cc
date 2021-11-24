@@ -824,10 +824,16 @@ void conv_depthwise_5x5s2_fp32(const float* i_data,
       float bias_local[4] = {0, 0, 0, 0};
 
       if (flag_bias) {
-        bias_local[0] = bias[c];
-        bias_local[1] = bias[c + 1];
-        bias_local[2] = bias[c + 2];
-        bias_local[3] = bias[c + 3];
+        if (c + out_c_block < chout) {
+          bias_local[0] = bias[c];
+          bias_local[1] = bias[c + 1];
+          bias_local[2] = bias[c + 2];
+          bias_local[3] = bias[c + 3];
+        } else {
+          for (int k = 0; k < 4 && k + c < chout; k++) {
+            bias_local[k] = bias[c + k];
+          }
+        }
       }
 #ifdef __aarch64__
       float32x4_t w0 = vld1q_f32(weight_c);       // w0, v23

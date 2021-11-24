@@ -4568,15 +4568,26 @@ inline void write_int32_nchwc8_to_nchw(const int* din,
   int cnt = valid_w / 4;
   int remain = valid_w & 3;
 
-  float32x4_t w_scale0 = vld1q_f32(scale);
-  float32x4_t w_scale1 = vld1q_f32(scale + 4);
+  float32x4_t w_scale0 = vdupq_n_f32(0.f);
+  float32x4_t w_scale1 = vdupq_n_f32(0.f);
   float vbias[8] = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
-  float32x4_t w_bias0 = flag_bias ? vld1q_f32(bias) : vdupq_n_f32(0.f);
-  float32x4_t w_bias1 = flag_bias ? vld1q_f32(bias + 4) : vdupq_n_f32(0.f);
   if (flag_bias) {
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 8 && i + cs < channel; i++) {
       vbias[i] = bias[i];
     }
+  }
+  float32x4_t w_bias0 = flag_bias ? vld1q_f32(vbias) : vdupq_n_f32(0.f);
+  float32x4_t w_bias1 = flag_bias ? vld1q_f32(vbias + 4) : vdupq_n_f32(0.f);
+  if (ce <= channel) {
+    w_scale0 = vld1q_f32(scale);
+    w_scale1 = vld1q_f32(scale + 4);
+  } else {
+    float scale_v[8] = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
+    for (int i = 0; i < 8 && i + cs < channel; i++) {
+      scale_v[i] = scale[i];
+    }
+    w_scale0 = vld1q_f32(scale_v);
+    w_scale1 = vld1q_f32(scale_v + 4);
   }
 
   for (int i = 0; i < size_h; i++) {

@@ -1618,10 +1618,10 @@ bool gemv_int8_trans_oth(const int8_t* A,
   const int8_t* weights_ptr = x;
   int out_cnt = M >> 4;
   int out_remain = M & 15;
-  int zero_ptr[M];  // NOLINT
-  memset(zero_ptr, 0, sizeof(int) * M);
-  float zerobuf[M];  // NOLINT
-  memset(zerobuf, 0, sizeof(float) * M);
+  int zero_ptr[M + 16];  // NOLINT
+  memset(zero_ptr, 0, sizeof(int) * (M + 16));
+  float zerobuf[M + 16];  // NOLINT
+  memset(zerobuf, 0, sizeof(float) * (M + 16));
   const float* bias_ptr = is_bias ? bias : zerobuf;
   float six = alpha;
 #ifdef __aarch64__
@@ -2637,7 +2637,13 @@ void gemv_int8_oth(const int8_t* A,
     const int8_t* ptr_w6 = ptr_w5 + N;
     const int8_t* ptr_w7 = ptr_w6 + N;
     auto bias_ptr = is_bias ? bias + out_idx : nullptr;
+    float scale_v[8] = {0.f};
+    float bias_v[8] = {0.f};
     if (j == out_cnt - 1 && remain) {
+      for (int p = 0; p < remain; p++) {
+        scale_v[p] = scale_ptr[p];
+        bias_v[p] = bias_ptr[p];
+      }
       switch (8 - remain) {
         case 7:
           ptr_w1 = ptr_zero;
@@ -2683,6 +2689,11 @@ void gemv_int8_oth(const int8_t* A,
         default:
           break;
       }
+    } else {
+      for (int p = 0; p < 8; p++) {
+        scale_v[p] = scale_ptr[p];
+        bias_v[p] = bias_ptr[p];
+      }
     }
     gemv_int8_asm<dtype>(ptr_in,
                          ptr_w0,
@@ -2694,8 +2705,8 @@ void gemv_int8_oth(const int8_t* A,
                          ptr_w6,
                          ptr_w7,
                          cnt,
-                         scale_ptr,
-                         bias_ptr,
+                         scale_v,
+                         bias_v,
                          static_cast<int>(act),
                          alpha,
                          offset,
@@ -2724,7 +2735,14 @@ void gemv_int8_oth(const int8_t* A,
     const int8_t* ptr_w1 = ptr_w0 + N;
     const int8_t* ptr_w2 = ptr_w1 + N;
     const int8_t* ptr_w3 = ptr_w2 + N;
+    auto bias_ptr = is_bias ? bias + out_idx : nullptr;
+    float scale_v[4] = {0.f};
+    float bias_v[4] = {0.f};
     if (j == out_cnt - 1 && remain) {
+      for (int p = 0; p < remain; p++) {
+        scale_v[p] = scale_ptr[p];
+        bias_v[p] = bias_ptr[p];
+      }
       switch (4 - remain) {
         case 3:
           ptr_w1 = ptr_zero;
@@ -2750,16 +2768,20 @@ void gemv_int8_oth(const int8_t* A,
         default:
           break;
       }
+    } else {
+      for (int p = 0; p < 4; p++) {
+        scale_v[p] = scale_ptr[p];
+        bias_v[p] = bias_ptr[p];
+      }
     }
-    auto bias_ptr = is_bias ? bias + out_idx : nullptr;
     gemv_int8_asm<dtype>(ptr_in,
                          ptr_w0,
                          ptr_w1,
                          ptr_w2,
                          ptr_w3,
                          cnt,
-                         scale_ptr,
-                         bias_ptr,
+                         scale_v,
+                         bias_v,
                          static_cast<int>(act),
                          alpha,
                          offset,
@@ -2821,7 +2843,13 @@ void gemv_int8_sdot(const int8_t* A,
     const int8_t* ptr_w5 = ptr_w4 + N;
     const int8_t* ptr_w6 = ptr_w5 + N;
     const int8_t* ptr_w7 = ptr_w6 + N;
+    float scale_v[8] = {0.f};
+    float bias_v[8] = {0.f};
     if (j == out_cnt - 1 && remain) {
+      for (int p = 0; p < remain; p++) {
+        scale_v[p] = scale_ptr[p];
+        bias_v[p] = bias_ptr[p];
+      }
       switch (8 - remain) {
         case 7:
           ptr_w1 = ptr_zero;
@@ -2867,6 +2895,11 @@ void gemv_int8_sdot(const int8_t* A,
         default:
           break;
       }
+    } else {
+      for (int p = 0; p < 8; p++) {
+        scale_v[p] = scale_ptr[p];
+        bias_v[p] = bias_ptr[p];
+      }
     }
 
     if (cnt > 0) {
@@ -2880,8 +2913,8 @@ void gemv_int8_sdot(const int8_t* A,
                                ptr_w6,
                                ptr_w7,
                                cnt,
-                               scale_ptr,
-                               bias_ptr,
+                               scale_v,
+                               bias_v,
                                static_cast<int>(act),
                                alpha,
                                offset,
