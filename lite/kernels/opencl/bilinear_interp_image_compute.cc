@@ -54,16 +54,79 @@ class BilinearInterpImageCompute
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
   }
 
+  inline std::vector<int> get_new_shape(
+      std::vector<const lite::Tensor*> list_new_shape_tensor) {
+    // get tensor from
+    std::vector<int> vec_new_shape;
+    for (size_t i = 0; i < list_new_shape_tensor.size(); ++i) {
+      auto tensor = list_new_shape_tensor[i];
+      vec_new_shape.push_back(static_cast<int32_t>(*tensor->data<int32_t>()));
+    }
+    return vec_new_shape;
+  }
+
+  template <typename T>
+  inline std::vector<T> get_new_data_from_tensor(
+      const Tensor* new_data_tensor) {
+    std::vector<T> vec_new_data;
+    auto* new_data = new_data_tensor->data<T>();
+    lite::Tensor cpu_starts_tensor;
+    vec_new_data = std::vector<T>(
+        new_data, new_data + new_data_tensor->dims().production());
+    return vec_new_data;
+  }
+
   void Run() override {
     auto& context = ctx_->As<OpenCLContext>();
     CHECK(context.cl_context() != nullptr);
 
     auto* x = bilinear_interp_param_->X;
     auto* out = bilinear_interp_param_->Out;
-    float scale_h = 0.0;
-    float scale_w = 0.0;
+
+    // init param
+    auto size_tensor = bilinear_interp_param_->SizeTensor;
+    int out_width = out->dims()[3];
+    int out_height = out->dims()[2];
+    if (bilinear_interp_param_->out_w > 0 &&
+        bilinear_interp_param_->out_h > 0) {
+      out_width = bilinear_interp_param_->out_w;
+      out_height = bilinear_interp_param_->out_h;
+    }
+    float scale = bilinear_interp_param_->scale;
+
+    // update out dims
+    int in_h = x->dims()[2];
+    int in_w = x->dims()[3];
+    if (size_tensor.size() > 0) {
+      auto new_size = get_new_shape(size_tensor);
+      out_height = new_size[0];
+      out_width = new_size[1];
+    } else {
+      auto scale_tensor = bilinear_interp_param_->Scale;
+      if (scale_tensor != nullptr) {
+        auto scale_data = get_new_data_from_tensor<float>(scale_tensor);
+        scale = scale_data[0];
+      }
+      if (scale > 0) {
+        out_height = static_cast<int>(in_h * scale);
+        out_width = static_cast<int>(in_w * scale);
+      }
+      auto out_size = bilinear_interp_param_->OutSize;
+      if (out_size != nullptr) {
+        auto out_size_data = get_new_data_from_tensor<int>(out_size);
+        out_height = out_size_data[0];
+        out_width = out_size_data[1];
+      }
+    }
+
+    int num_cout = x->dims()[0];
+    int c_cout = x->dims()[1];
+    out->Resize({num_cout, c_cout, out_height, out_width});
+
     auto out_dims = out->dims();
     auto in_dims = x->dims();
+    float scale_h = 0.0;
+    float scale_w = 0.0;
 
     if (bilinear_interp_param_->align_corners) {
       scale_h = (in_dims[2] - 1.0f) / (out_dims[2] - 1.0f);
@@ -78,8 +141,6 @@ class BilinearInterpImageCompute
       align_delta = 0.5f;
     }
 
-    int in_h = in_dims[2];
-    int in_w = in_dims[3];
     int out_h = out_dims[2];
     int out_w = out_dims[3];
 
