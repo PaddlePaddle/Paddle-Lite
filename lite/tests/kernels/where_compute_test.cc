@@ -105,7 +105,7 @@ class WhereComputeTester : public arena::TestCase {
     SetCommonTensor(y_, x_dims_, dy.data());
     std::vector<bool> dc(x_dims_.production());
     for (int i = 0; i < x_dims_.production(); i++) {
-      dc[i] = (i % 2) ? 1 : 0;
+      dc[i] = (i % 2) ? true : false;
     }
 
     SetCommonTensorForBool(condition_, x_dims_, dc);
