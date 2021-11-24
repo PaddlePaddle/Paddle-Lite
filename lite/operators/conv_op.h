@@ -81,10 +81,6 @@ class ConvOpLite : public OpLite {
     CHECK(param_.filter);
     CHECK(param_.output);
 
-    const auto in_dims = param_.x->dims();
-    if (in_dims.size() == 5) {
-      param_.strides.push_back(1);
-    }
     param_.strides = op_desc.GetAttr<std::vector<int>>("strides");
     std::vector<int> paddings = op_desc.GetAttr<std::vector<int>>("paddings");
     param_.groups = op_desc.GetAttr<int>("groups");
@@ -218,18 +214,14 @@ class ConvOpLite : public OpLite {
       }
     }
 #endif
-    size_t expected_pad_size = 2L;
-    if (in_dims.size() == 5) {
-      expected_pad_size = 3L;
-    }
     // conv3d: 3-pad to 6-pad, or conv2d: 2-pad to 4-pad
-    if (paddings.size() == expected_pad_size) {
+    if (paddings.size() == 2L || paddings.size() == 3L) {
       for (size_t i = 0; i < param_.strides.size(); ++i) {
         int copy_pad = *(paddings.begin() + 2 * i);
         paddings.insert(paddings.begin() + 2 * i + 1, copy_pad);
       }
     } else {
-      if (paddings.size() != 2 * expected_pad_size) {
+      if (paddings.size() != 4L || paddings.size() != 6L) {
         LOG(FATAL)
             << "Paddings size should be the same or twice as the input size.";
       }

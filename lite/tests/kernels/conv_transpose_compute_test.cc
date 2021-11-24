@@ -443,6 +443,17 @@ TEST(Conv_transpose, precision) {
   TestConvDepthWiseS1(place, abs_error);
   TestConvDepthWiseS2(place, abs_error);
   return;
+#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+  place = TARGET(kXPU);
+  TestConvTransposeKsize(place, abs_error);
+  TestConvTransposeStrides(place, abs_error);
+  TestConvTransposePaddings(place, abs_error);
+  TestConvTransposeGroups(place, abs_error);
+  TestConvTransposeDilations(place, abs_error);
+  TestConvTransposePaddingAlgorithm(place, abs_error);
+  TestConvTransposeOutputSize(place, abs_error);
+  TestConvTransposeOutputPadding(place, abs_error);
+  return;
 #else
   return;
 #endif

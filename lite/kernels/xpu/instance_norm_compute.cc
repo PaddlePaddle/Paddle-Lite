@@ -70,6 +70,12 @@ void InstanceNormCompute::Run() {
       param.saved_variance->mutable_data<float>(TARGET(kXPU)),
       true);
   CHECK_EQ(ret, 0);
+  if (param.scale == nullptr) {
+    XPU_CALL(xpu_free(xpu_scale));
+  }
+  if (param.bias == nullptr) {
+    XPU_CALL(xpu_free(xpu_bias));
+  }
 }
 
 }  // namespace xpu
