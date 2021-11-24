@@ -13,6 +13,8 @@
 # limitations under the License.
 
 import rpyc
+import  os
+import shutil
 from rpyc.utils.server import ThreadedServer
 from paddlelite.lite import *
 
@@ -67,7 +69,35 @@ class RPCService(rpyc.Service):
         result = {}
         for out_name in predictor.get_output_names():
             result[out_name] = predictor.get_output_by_name(out_name).numpy()
-        return result
+
+        abs_dir = os.path.abspath(os.path.dirname(__file__))
+        self.cache_dir = os.path.join(abs_dir,
+                                      str(self.__module__) + '_cache_dir')
+        if os.path.exists(self.cache_dir):
+            shutil.rmtree(self.cache_dir)
+        if not os.path.exists(self.cache_dir):
+            os.mkdir(self.cache_dir)
+        with open(self.cache_dir + "/model", "wb") as f:
+            f.write(model)
+        with open(self.cache_dir + "/params", "wb") as f:
+            f.write(params)
+        opt=Opt()
+        opt.set_model_dir(self.cache_dir)
+        valid_targets = ""
+        for place_str in config_str["valid_targets"]:
+            infos = ''.join(place_str.split()).split(",")
+            valid_targets += infos[0].lower()
+            valid_targets += ","
+        opt.set_valid_places(valid_targets)
+        opt.set_model_type("protobuf")
+        opt.set_optimize_out(self.cache_dir)
+        opt.run()
+        with open(self.cache_dir + "/model", "rb") as f:
+            model = f.read()
+        with open(self.cache_dir + "/model", "rb") as f:
+            model = f.read()
+
+        return result, model
 
 
 if __name__ == "__main__":
