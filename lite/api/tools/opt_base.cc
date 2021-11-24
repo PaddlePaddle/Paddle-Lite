@@ -201,6 +201,8 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(
           TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
       nnadapter_device_names.push_back(target_repr);
+    } else if (target_repr == "host") {
+      valid_places_.emplace_back(TARGET(kHost));
     } else {
       OPT_LOG_FATAL << lite::string_format(
           "Wrong target '%s' found, please check the command flag "
