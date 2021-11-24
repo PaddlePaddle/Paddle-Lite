@@ -27,7 +27,7 @@ import numpy as np
 # Command arguments
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "--model_dir", default="", type=str, help="Non-combined Model dir path")
+    "--model_dir", default="", type=str, help="NaiveBuffer Model dir path")
 
 def RunModel(args):
     # 1. Set config information
