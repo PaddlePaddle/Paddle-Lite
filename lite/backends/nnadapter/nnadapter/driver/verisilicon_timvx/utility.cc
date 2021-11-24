@@ -132,9 +132,7 @@ std::vector<uint32_t> ConvertToTimVXPermutation(const int32_t* input_perm_data,
                                                 size_t input_perm_count) {
   std::vector<uint32_t> output_perm;
   for (int i = input_perm_count - 1; i >= 0; i--) {
-    output_perm.push_back(input_perm_count > 3
-                              ? (input_perm_count - 1 - input_perm_data[i])
-                              : input_perm_data[i]);
+    output_perm.push_back(input_perm_count - 1 - input_perm_data[i]);
   }
   return output_perm;
 }
