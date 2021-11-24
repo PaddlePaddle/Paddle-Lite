@@ -339,7 +339,7 @@ namespace fp16 {
   "fmla   v14.8h, v9.8h, %[wr22].8h                 \n" \
   "fmla   v17.8h, v10.8h, %[wr20].8h                \n" \
   "fadd   v17.8h, v17.8h, v13.8h                    \n" \
-  "fadd   v17.8h, v17.8h, v14.8h                    \n" 
+  "fadd   v17.8h, v17.8h, v14.8h                    \n"
 
 #define RIGHT_COMPUTE_FP16_S2P0_SMALL                   \
   "ld1    {v18.8h}, [%[vmask]], #16                 \n" \
@@ -1255,7 +1255,8 @@ void conv_depthwise_3x3s2p1_bias_noact_small_fp16_fp16(float16_t* dout,
           flag_bias ? static_cast<const float16_t>(bias[c]) : 0;
       const float16_t* weight_ptr = weights + c * 9;
       FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val)
-      INIT_PTR_3x3_S2_FP16(din_ch_ptr, w_in) for (int i = 0; i < h_in && i / 2 < h_out; i += 4) {
+      INIT_PTR_3x3_S2_FP16(
+          din_ch_ptr, w_in) for (int i = 0; i < h_in && i / 2 < h_out; i += 4) {
         ASSIGN_PTR_3x3_S2_FP16(w_out) TOP_BOTTOM_BORDER_3x3_S2P1_FP16(
             w_in, h_in, h_out) uint16_t* rst_mask = rmask;
         uint16_t* val_mask = vmask;
@@ -1333,7 +1334,8 @@ void conv_depthwise_3x3s2p1_bias_relu_small_fp16_fp16(float16_t* dout,
           flag_bias ? static_cast<const float16_t>(bias[c]) : 0;
       const float16_t* weight_ptr = weights + c * 9;
       FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val)
-      INIT_PTR_3x3_S2_FP16(din_ch_ptr, w_in) for (int i = 0; i < h_in && i / 2 < h_out; i += 4) {
+      INIT_PTR_3x3_S2_FP16(
+          din_ch_ptr, w_in) for (int i = 0; i < h_in && i / 2 < h_out; i += 4) {
         ASSIGN_PTR_3x3_S2_FP16(w_out) TOP_BOTTOM_BORDER_3x3_S2P1_FP16(
             w_in, h_in, h_out) uint16_t* rst_mask = rmask;
         uint16_t* val_mask = vmask;
@@ -1411,7 +1413,8 @@ void conv_depthwise_3x3s2p1_bias_relu6_small_fp16_fp16(float16_t* dout,
           flag_bias ? static_cast<const float16_t>(bias[c]) : 0;
       const float16_t* weight_ptr = weights + c * 9;
       FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val)
-      INIT_PTR_3x3_S2_FP16(din_ch_ptr, w_in) for (int i = 0; i < h_in && i / 2 < h_out; i += 4) {
+      INIT_PTR_3x3_S2_FP16(
+          din_ch_ptr, w_in) for (int i = 0; i < h_in && i / 2 < h_out; i += 4) {
         ASSIGN_PTR_3x3_S2_FP16(w_out) TOP_BOTTOM_BORDER_3x3_S2P1_FP16(
             w_in, h_in, h_out) uint16_t* rst_mask = rmask;
         uint16_t* val_mask = vmask;
@@ -1491,7 +1494,8 @@ void conv_depthwise_3x3s2p1_bias_leaky_relu_small_fp16_fp16(
           flag_bias ? static_cast<const float16_t>(bias[c]) : 0;
       const float16_t* weight_ptr = weights + c * 9;
       FILL_WEIGHTS_BIAS_FP16(weight_ptr, bias_val)
-      INIT_PTR_3x3_S2_FP16(din_ch_ptr, w_in) for (int i = 0; i < h_in && i / 2 < h_out; i += 4) {
+      INIT_PTR_3x3_S2_FP16(
+          din_ch_ptr, w_in) for (int i = 0; i < h_in && i / 2 < h_out; i += 4) {
         ASSIGN_PTR_3x3_S2_FP16(w_out) TOP_BOTTOM_BORDER_3x3_S2P1_FP16(
             w_in, h_in, h_out) uint16_t* rst_mask = rmask;
         uint16_t* val_mask = vmask;
