@@ -98,18 +98,17 @@ void SequenceTopkAvgPoolingCompute::Run() {
                       topks.data(),
                       topks.size() * sizeof(int),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+  int r = xdnn::sequence_topk_avg_pooling<float, int>(
+      ctx.GetRawContext(),
+      in_data,
+      out_data,
+      pos_data,
+      channel_num,
+      {in_lod_cpu.get(), static_cast<int>(in_lod.size()), in_lod_xpu},
+      {row_lod_cpu.get(), static_cast<int>(row_lod.size()), row_lod_xpu},
+      {col_lod_cpu.get(), static_cast<int>(col_lod.size()), col_lod_xpu},
+      {topks.data(), static_cast<int>(k_num), topks_xpu});
 
-  int r = xdnn::sequence_topk_avg_pooling(ctx.GetRawContext(),
-                                          in_data,
-                                          out_data,
-                                          pos_data,
-                                          batch_size,
-                                          channel_num,
-                                          in_lod_xpu,
-                                          row_lod_xpu,
-                                          col_lod_xpu,
-                                          topks_xpu,
-                                          k_num);
   CHECK_EQ(r, 0);
 }
 
