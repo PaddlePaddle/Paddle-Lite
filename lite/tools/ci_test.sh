@@ -406,7 +406,6 @@ function android_cpu_build_target() {
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
@@ -466,7 +465,6 @@ function armlinux_cpu_build_target() {
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
@@ -547,7 +545,6 @@ function huawei_kirin_npu_build_target() {
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
@@ -623,7 +620,6 @@ function rockchip_npu_build_target() {
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
@@ -661,7 +657,6 @@ function baidu_xpu_build_and_test() {
     prepare_workspace $ROOT_DIR $BUILD_DIRECTORY
 
     cmake .. \
-        -DWITH_LITE=ON \
         -DWITH_PYTHON=OFF \
         -DWITH_TESTING=ON \
         -DLITE_WITH_ARM=OFF \

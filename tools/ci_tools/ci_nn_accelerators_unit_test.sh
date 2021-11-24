@@ -407,7 +407,6 @@ function android_cpu_build_target() {
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
@@ -467,7 +466,6 @@ function armlinux_cpu_build_target() {
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
@@ -554,7 +552,6 @@ function huawei_kirin_npu_build_target() {
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
@@ -604,7 +601,6 @@ function huawei_ascend_npu_build_and_test() {
             -DARM_TARGET_ARCH_ABI=$arm_arch \
             -DARM_TARGET_OS=$arm_target_os \
             -DARM_TARGET_LANG=$toolchain \
-            -DWITH_LITE=ON \
             -DWITH_PYTHON=OFF \
             -DWITH_TESTING=ON \
             -DWITH_GPU=OFF \
@@ -720,7 +716,6 @@ function rockchip_npu_build_target() {
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
@@ -807,7 +802,6 @@ function mediatek_apu_build_target() {
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
@@ -882,7 +876,6 @@ function imagination_nna_build_target() {
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
@@ -964,7 +957,6 @@ function amlogic_npu_build_target() {
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
@@ -1037,7 +1029,6 @@ function cambricon_mlu_build_target() {
         -DWITH_MKLDNN=OFF \
         -DWITH_MKL=ON \
         -DWITH_PYTHON=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=ON \
         -DLITE_WITH_ARM=OFF \
@@ -1096,7 +1087,6 @@ function baidu_xpu_build_and_test() {
     prepare_workspace $ROOT_DIR $BUILD_DIR
 
     cmake .. \
-        -DWITH_LITE=ON \
         -DWITH_PYTHON=OFF \
         -DWITH_TESTING=ON \
         -DLITE_WITH_ARM=OFF \

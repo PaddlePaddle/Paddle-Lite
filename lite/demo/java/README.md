@@ -17,7 +17,6 @@ cd build.lite.android.arm8.gcc
 cmake .. \
 -DWITH_GPU=OFF \
 -DWITH_MKL=OFF \
--DWITH_LITE=ON \
 -DLITE_WITH_JAVA=ON \
 -DLITE_WITH_CUDA=OFF \
 -DLITE_WITH_X86=OFF \
