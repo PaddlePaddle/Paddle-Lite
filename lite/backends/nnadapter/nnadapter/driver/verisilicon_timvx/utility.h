@@ -35,6 +35,8 @@ tim::vx::ShapeType ConvertToTimVXShapeType(int32_t* input_dimensions,
                                            uint32_t input_dimensions_count);
 tim::vx::TensorAttribute ConvertToTimVXTensorAttribute(
     NNAdapterOperandLifetimeCode input_lifetime);
+std::vector<uint32_t> ConvertToTimVXPermutation(const int32_t* input_perm_data,
+                                                size_t input_perm_count);
 
 // Create tim-vx tensor base on NNAdapter types
 std::shared_ptr<tim::vx::Tensor> CreateTimVXTensor(

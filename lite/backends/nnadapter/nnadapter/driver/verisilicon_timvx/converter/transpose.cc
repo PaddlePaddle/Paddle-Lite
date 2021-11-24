@@ -30,12 +30,9 @@ int ConvertTranspose(Converter* converter, hal::Operation* operation) {
   }
   auto output_tensor = converter->ConvertOperand(output_operand);
   // Reverse the permutation vector due to the 'WHCN' data layout
-  std::vector<uint32_t> perm;
-  for (int i = perm_count - 1; i >= 0; i--) {
-    perm.push_back(perm_data[i]);
-  }
   auto transpose_op =
-      converter->graph()->CreateOperation<tim::vx::ops::Transpose>(perm);
+      converter->graph()->CreateOperation<tim::vx::ops::Transpose>(
+          ConvertToTimVXPermutation(perm_data, perm_count));
   transpose_op->BindInputs({input_tensor});
   transpose_op->BindOutputs({output_tensor});
   return NNADAPTER_NO_ERROR;
