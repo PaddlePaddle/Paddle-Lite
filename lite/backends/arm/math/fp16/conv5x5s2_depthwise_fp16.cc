@@ -530,7 +530,7 @@ void conv_depthwise_5x5s2_fp16(const float16_t* i_data,
           vbias = vld1q_f16(&bias[c]);  // v28
         } else {
           int k = 0;
-          for (; k < 8; c + k < oc; k++) {
+          for (; k < 8 && c + k < oc; k++) {
             bias_local[k] = bias[c + k];
           }
           vbias = vld1q_f16(bias_local);  // v28

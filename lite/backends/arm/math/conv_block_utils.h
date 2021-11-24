@@ -3749,7 +3749,7 @@ inline void write_int32_nchwc4_to_nchw(const int* din,
                                        int width,
                                        int flag_act,
                                        float* alpha,
-                                       float* bias,
+                                       const float* bias,
                                        bool flag_bias,
                                        Dtype* trash_ptr,
                                        const float* scale) {
@@ -3767,13 +3767,12 @@ inline void write_int32_nchwc4_to_nchw(const int* din,
 
   float32x4_t w_scale = vld1q_f32(scale);
   float vbias[4] = {0.f, 0.f, 0.f, 0.f};
-  float32x4_t w_bias = flag_bias ? vld1q_f32(bias) : vdupq_n_f32(0.f);
   if (flag_bias) {
-    vbias[0] = bias[0];
-    vbias[1] = bias[1];
-    vbias[2] = bias[2];
-    vbias[3] = bias[3];
+    for (int i = 0; i < 4 && i + cs < channel; i++) {
+      vbias[i] = bias[i];
+    }
   }
+  float32x4_t w_bias = flag_bias ? vld1q_f32(vbias) : vdupq_n_f32(0.f);
 
   if (we > width) {
     cnt--;
