@@ -19,7 +19,7 @@ Paddle Lite 支持多种 GPU 后端，包括 OpenCL、[Metal](https://developer.
 ```
 
 ### 2、使用 opt 工具进行模型优化
-```opt``` 工具可以提供包括量化、子图融合、混合调度、Kernel优选等优化方法，自动完成优化步骤生成一个轻量级的、最优的可执行模型，详细使用可以参见[模型优化工具 opt](../user_guides/model_optimize_tool) 和[使用可执行文件 opt](../user_guides/opt/opt_bin)。Metal 后端支持与 Arm 后端算子混合调度执行，模型优化方式如下：
+```opt``` 工具可以提供包括量化、子图融合、混合调度、Kernel优选等优化方法，自动完成优化步骤生成一个轻量级的、最优的可执行模型，详细使用可以参见[模型优化工具 opt](../user_guides/model_optimize_tool) 和[使用可执行文件 opt](../user_guides/opt/opt_bin)。Metal 后端支持与 ARM 后端算子混合调度执行，模型优化方式如下：
 ```
 ./opt --model_dir=./mobilenet_v1 --valid_targets=metal,arm --optimize_out=mobilenet_v1_opt
 ```
@@ -29,7 +29,7 @@ Paddle Lite 提供了使用 Metal 进行加速的 API 接口，详细开发文�
 ```
 #include "paddle_api.h"
 
-// 1. Set MobileConfig，model_file is configured to nb. model path and metal_lib is configured to .metallib path
+// 1. Set MobileConfig，model_file is configured to .nb model path and metal_lib is configured to .metallib path
 MobileConfig config;
 config.set_model_from_file(model_file);
 config.set_metal_use_mps(true);
