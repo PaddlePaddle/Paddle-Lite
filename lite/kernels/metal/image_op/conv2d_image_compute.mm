@@ -130,7 +130,7 @@ void Conv2dImageCompute::init_for_run() {
         }
     }
 
-    // MPS don't support LeakyRelu
+    // MPS don't support LeakyRelu and HardSwish
     switch (param.activation_param.active_type) {
         case lite_api::ActivationType::kIndentity:
         case lite_api::ActivationType::kRelu:
@@ -138,6 +138,9 @@ void Conv2dImageCompute::init_for_run() {
         case lite_api::ActivationType::kRelu6:
             break;
         case lite_api::ActivationType::kHardSigmoid:
+            break;
+        case lite_api::ActivationType::kHardSwish:
+            should_use_mps = NO;
             break;
         case lite_api::ActivationType::kPRelu:
             break;
@@ -346,11 +349,14 @@ void Conv2dImageCompute::setup_without_mps() {
             case lite_api::ActivationType::kLeakyRelu: {
                 activate_type = (uint16_t)param.activation_param.active_type;
             } break;
+            case lite_api::ActivationType::kHardSwish: {
+                activate_type = (uint16_t)param.activation_param.active_type;
+            } break;
             default: { LOG(FATAL) << "Conv2d: cannot support the activate type"; } break;
         }
     }
     // relu
-    ActivationMetalParam activation_params{(unsigned short)activate_type, 0.0, 0.0, 0.0, 0.0};
+    ActivationMetalParam activation_params{(unsigned short)activate_type, 0.0, 0.0, 0.0, 0.0, 0.0};
     switch (param.activation_param.active_type) {
         case lite_api::ActivationType::kIndentity:
         case lite_api::ActivationType::kRelu:
@@ -360,6 +366,11 @@ void Conv2dImageCompute::setup_without_mps() {
         } break;
         case lite_api::ActivationType::kLeakyRelu: {
             activation_params.alpha = param.activation_param.Leaky_relu_alpha;
+        } break;
+        case lite_api::ActivationType::kHardSwish: {
+            activation_params.threshold = param.activation_param.hard_swish_threshold;
+            activation_params.offset = param.activation_param.hard_swish_offset;
+            activation_params.scale = param.activation_param.hard_swish_scale;
         } break;
         default:
             break;
