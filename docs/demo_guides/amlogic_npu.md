@@ -111,8 +111,7 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
    - `adb root + adb remount` 以获得修改系统库的权限。
    
     ```shell
-    # dmesg | grep version
-    [    9.020108] <4>[    9.020108@0] npu_version: 3
+    $ dmesg | grep Galcore
     [    9.020168] <6>[    9.020168@0] Galcore version 6.4.4.3.310723a
     ```
    
