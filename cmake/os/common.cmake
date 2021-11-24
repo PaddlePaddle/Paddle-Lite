@@ -12,10 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if(NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
-  return()
-endif()
-
 cmake_minimum_required(VERSION 3.10)
 
 set(ARM_TARGET_OS_LIST "android" "armlinux" "ios" "ios64" "armmacos")
@@ -80,8 +76,8 @@ endif()
 if(ARM_TARGET_OS STREQUAL "ios" OR ARM_TARGET_OS STREQUAL "ios64")
   include(os/ios)
 endif()
-if(ARM_TARGET_OS STREQUAL "armmacos")
-  include(os/armmacos)
+if(ARM_TARGET_OS STREQUAL "armmacos" OR (LITE_WITH_X86 AND APPLE))
+  include(os/macos)
 endif()
 
 # Detect origin host toolchain
@@ -147,26 +143,4 @@ endif()
 if(ANDROID OR IOS)
   set(LITE_WITH_PYTHON OFF CACHE STRING
     "Disable PYTHON when cross-compiling for Android and iOS" FORCE)
-endif()
-
-# Enable arc
-if(APPLE)
-  if(NOT DEFINED ENABLE_ARC)
-    # Unless specified, enable ARC support by default
-    set(ENABLE_ARC TRUE)
-    message(STATUS "Enabling ARC support by default. ENABLE_ARC not provided!")
-  endif()
-
-  set(ENABLE_ARC_INT ${ENABLE_ARC} CACHE BOOL "Whether or not to enable ARC" ${FORCE_CACHE})
-  if(ENABLE_ARC_INT)
-    set(FOBJC_ARC "-fobjc-arc")
-    set(CMAKE_XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES CACHE INTERNAL "")
-    message(STATUS "Enabling ARC support.")
-  else()
-    set(FOBJC_ARC "-fno-objc-arc")
-    set(CMAKE_XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC NO CACHE INTERNAL "")
-    message(STATUS "Disabling ARC support.")
-  endif()
-  set(CMAKE_C_FLAGS "${FOBJC_ARC} ${CMAKE_C_FLAGS}")
-  set(CMAKE_CXX_FLAGS "${FOBJC_ARC} ${CMAKE_CXX_FLAGS}")
 endif()

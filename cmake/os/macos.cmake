@@ -47,6 +47,8 @@
 #                   https://github.com/leetal/ios-cmake
 # *****************************************************************************
 
+if(LITE_WITH_ARM)
+
 ## Lite settings
 set(PLATFORM "MACOS")
 
@@ -409,3 +411,27 @@ macro(find_host_package)
   set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE BOTH)
   set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE BOTH)
 endmacro(find_host_package)
+# x86
+else()
+  # Enable arc
+  if(APPLE)
+    if(NOT DEFINED ENABLE_ARC)
+      # Unless specified, enable ARC support by default
+      set(ENABLE_ARC TRUE)
+      message(STATUS "Enabling ARC support by default. ENABLE_ARC not provided!")
+    endif()
+
+    set(ENABLE_ARC_INT ${ENABLE_ARC} CACHE BOOL "Whether or not to enable ARC" ${FORCE_CACHE})
+    if(ENABLE_ARC_INT)
+      set(FOBJC_ARC "-fobjc-arc")
+      set(CMAKE_XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES CACHE INTERNAL "")
+      message(STATUS "Enabling ARC support.")
+    else()
+      set(FOBJC_ARC "-fno-objc-arc")
+      set(CMAKE_XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC NO CACHE INTERNAL "")
+      message(STATUS "Disabling ARC support.")
+    endif()
+    set(CMAKE_C_FLAGS "${FOBJC_ARC} ${CMAKE_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${FOBJC_ARC} ${CMAKE_CXX_FLAGS}")
+  endif()
+endif()
