@@ -37,7 +37,7 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 settings.register_profile(
     "ci",
-    max_examples=20,
+    max_examples=10,
     suppress_health_check=hypothesis.HealthCheck.all(),
     deadline=None,
     print_blob=True,
@@ -116,7 +116,8 @@ class AutoScanBaseTest(unittest.TestCase):
                             rtol: float,
                             tensor: Dict[str, np.array],
                             baseline: Dict[str, np.array]):
-        for key, arr in tensor.items():
+        for key in tensor:
+            arr = np.array(tensor[key])
             self.assertTrue(
                 baseline[key].shape == arr.shape,
                 "The output shapes are not equal, the baseline shape is " +
@@ -201,7 +202,7 @@ class AutoScanBaseTest(unittest.TestCase):
             self.success_log('RUN_CPU_BASELINE done')
 
             for paddlelite_config, (
-                    atol, rtol) in self.sample_predictor_configs(prog_config):
+                    atol, rtol) in self.sample_predictor_configs():
                 # skip info
                 skip_flag = False
                 pred_config = paddlelite_config.value()
