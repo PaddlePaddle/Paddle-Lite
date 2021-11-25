@@ -25,8 +25,6 @@ int ConvertWhere(Converter* converter, OpInfo* op, Scope* scope) {
   auto condition_operand = converter->AddInputOperand(scope, condition_name);
   // Input0 operand
   auto x_name = op->Input("X").front();
-  auto x_tensor = scope->FindTensor(x_name);
-  auto x_persistable = x_tensor->persistable();
   auto x_scale_name = "X0_scale";
   std::vector<float> x_scales;
   if (op->HasInputScale(x_scale_name, true)) {
@@ -35,8 +33,6 @@ int ConvertWhere(Converter* converter, OpInfo* op, Scope* scope) {
   auto input0_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
   // Input1 operand
   auto y_name = op->Input("Y").front();
-  auto y_tensor = scope->FindTensor(y_name);
-  auto y_persistable = y_tensor->persistable();
   auto y_scale_name = "Y0_scale";
   std::vector<float> y_scales;
   if (op->HasInputScale(y_scale_name, true)) {
@@ -58,7 +54,6 @@ int ConvertWhere(Converter* converter, OpInfo* op, Scope* scope) {
                   "is 1, but the condition rank is "
                << condition_rank;
   }
-
   // Output operand
   auto output_name = op->Output("Out").front();
   auto output_scale_name = "Out0_scale";
@@ -71,6 +66,7 @@ int ConvertWhere(Converter* converter, OpInfo* op, Scope* scope) {
   converter->AddOperation(NNADAPTER_WHERE,
                           {condition_operand, input0_operand, input1_operand},
                           {output_operand});
+  return NO_ERROR;
 }
 
 }  // namespace nnadapter

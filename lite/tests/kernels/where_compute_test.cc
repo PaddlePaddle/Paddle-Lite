@@ -107,7 +107,6 @@ class WhereComputeTester : public arena::TestCase {
     for (int i = 0; i < x_dims_.production(); i++) {
       dc[i] = (i % 2) ? true : false;
     }
-
     SetCommonTensorForBool(condition_, x_dims_, dc);
   }
 };
