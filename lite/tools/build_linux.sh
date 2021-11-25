@@ -46,6 +46,11 @@ NNADAPTER_WITH_AMLOGIC_NPU=OFF
 NNADAPTER_AMLOGIC_NPU_SDK_ROOT="$(pwd)/amlnpu_ddk"
 NNADAPTER_WITH_CAMBRICON_MLU=OFF
 NNADAPTER_CAMBRICON_MLU_SDK_ROOT="$(pwd)/cambricon_mlu_sdk"
+NNADAPTER_WITH_VERISILICON_TIMVX=OFF
+NNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG="main"
+NNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT=""
+NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL="http://paddlelite-demo.bj.bcebos.com/devices/verisilicon/sdk/viv_sdk_linux_arm64_6_4_4_3_generic.tgz"
+
 # options of compiling baidu XPU lib.
 WITH_BAIDU_XPU=OFF
 WITH_BAIDU_XPU_XTCL=OFF
@@ -192,6 +197,10 @@ function init_cmake_mutable_options {
                         -DNNADAPTER_AMLOGIC_NPU_SDK_ROOT=$NNADAPTER_AMLOGIC_NPU_SDK_ROOT \
                         -DNNADAPTER_WITH_CAMBRICON_MLU=$NNADAPTER_WITH_CAMBRICON_MLU \
                         -DNNADAPTER_CAMBRICON_MLU_SDK_ROOT=$NNADAPTER_CAMBRICON_MLU_SDK_ROOT \
+                        -DNNADAPTER_WITH_VERISILICON_TIMVX=$NNADAPTER_WITH_VERISILICON_TIMVX \
+                        -DNNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG=$NNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG \
+                        -DNNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT=$NNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT \
+                        -DNNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL=$NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL \
                         -DLITE_WITH_INTEL_FPGA=$WITH_INTEL_FPGA \
                         -DINTEL_FPGA_SDK_ROOT=${INTEL_FPGA_SDK_ROOT} \
                         -DLITE_WITH_PROFILE=${WITH_PROFILE} \
@@ -513,6 +522,22 @@ function main {
                 ;;
             --nnadapter_cambricon_mlu_sdk_root=*)
                 NNADAPTER_CAMBRICON_MLU_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_with_verisilicon_timvx=*)
+                NNADAPTER_WITH_VERISILICON_TIMVX="${i#*=}"
+                shift
+                ;;
+            --nnadapter_verisilicon_timvx_src_git_tag=*)
+                NNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG="${i#*=}"
+                shift
+                ;;
+            --nnadapter_verisilicon_timvx_viv_sdk_root=*)
+                NNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_verisilicon_timvx_viv_sdk_url=*)
+                NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL="${i#*=}"
                 shift
                 ;;
             # compiling lib which can operate on baidu xpu.

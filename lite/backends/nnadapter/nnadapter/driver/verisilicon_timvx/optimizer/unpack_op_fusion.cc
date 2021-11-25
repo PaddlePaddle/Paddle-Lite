@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/amlogic_npu/optimizer/unpack_op_fusion.h"
+#include "driver/verisilicon_timvx/optimizer/unpack_op_fusion.h"
 #include <cmath>
 #include <vector>
 #include "utility/debug.h"
@@ -21,7 +21,7 @@
 #include "utility/utility.h"
 
 namespace nnadapter {
-namespace amlogic_npu {
+namespace verisilicon_timvx {
 
 static void UnpackActivations(hal::Model* model,
                               hal::Operand* output_operand,
@@ -55,7 +55,10 @@ void UnpackOpFusion(hal::Model* model) {
     switch (operation->type) {
       case NNADAPTER_ADD:
       case NNADAPTER_DIV:
+      case NNADAPTER_MAX:
+      case NNADAPTER_MIN:
       case NNADAPTER_MUL:
+      case NNADAPTER_POW:
       case NNADAPTER_SUB:
         UnpackActivations(model, output_operands[0], input_operands[2]);
         break;
@@ -65,11 +68,14 @@ void UnpackOpFusion(hal::Model* model) {
       case NNADAPTER_CONV_2D_TRANSPOSE:
         UnpackActivations(model, output_operands[0], input_operands[10]);
         break;
+      case NNADAPTER_FULLY_CONNECTED:
+        UnpackActivations(model, output_operands[0], input_operands[3]);
+        break;
       default:
         break;
     }
   }
 }
 
-}  // namespace amlogic_npu
+}  // namespace verisilicon_timvx
 }  // namespace nnadapter
