@@ -2833,7 +2833,9 @@ void gemv_int8_sdot(const int8_t* A,
     dtype* out_p = out_ptr;
     const float* scale_ptr = scale + out_idx;
     dtype out_temp[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-    auto bias_ptr = is_bias ? bias + out_idx : nullptr;
+    float scale_v[8] = {0.f};
+    float bias_v[8] = {0.f};
+    auto bias_ptr = is_bias ? bias + out_idx : bias_v;
     const int8_t* ptr_in = data_in;
     const int8_t* ptr_w0 = A + (N * out_idx);
     const int8_t* ptr_w1 = ptr_w0 + N;
@@ -2843,8 +2845,6 @@ void gemv_int8_sdot(const int8_t* A,
     const int8_t* ptr_w5 = ptr_w4 + N;
     const int8_t* ptr_w6 = ptr_w5 + N;
     const int8_t* ptr_w7 = ptr_w6 + N;
-    float scale_v[8] = {0.f};
-    float bias_v[8] = {0.f};
     if (j == out_cnt - 1 && remain) {
       for (int p = 0; p < remain; p++) {
         scale_v[p] = scale_ptr[p];
