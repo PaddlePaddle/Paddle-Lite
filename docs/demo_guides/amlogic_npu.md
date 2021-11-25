@@ -16,6 +16,8 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
 #### 模型
 
 - [mobilenet_v1_int8_224_per_layer](https://paddlelite-demo.bj.bcebos.com/models/mobilenet_v1_int8_224_per_layer.tar.gz)
+- [resnet50_int8_224_per_layer](https://paddlelite-demo.bj.bcebos.com/models/resnet50_int8_224_per_layer.tar.gz)
+- [ssd_mobilenet_v1_relu_voc_int8_300_per_layer](https://paddlelite-demo.bj.bcebos.com/models/ssd_mobilenet_v1_relu_voc_int8_300_per_layer.tar.gz)
 
 #### 性能
 
@@ -45,7 +47,9 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
   |模型 |C308X||A311D||S905D3(Android 版本)||
   |---|---|---|---|---|---|---|
   |  |CPU(ms) | NPU(ms) |CPU(ms) | NPU(ms) |CPU(ms) | NPU(ms) |
-  |mobilenet_v1_int8_224_per_layer| 167.6996 |  6.982800| 81.632133 | 5.607733 | 280.465997 | 13.411600 |
+  |mobilenet_v1_int8_224_per_layer| 167.6996 | 6.982800| 81.632133 | 5.607733 | 280.465997 | 13.411600 |
+  |resnet50_int8_224_per_layer| 695.527405| 20.288600| 390.498300| 18.002560| 787.532340 | 42.858800|
+  |ssd_mobilenet_v1_relu_voc_int8_300_per_layer| 281.442310| 18.015800| 134.991560| 15.978300| 295.48919| 41.035610|
 
 ### 已支持（或部分支持）NNAdapter 的 Paddle 算子
 
@@ -65,6 +69,12 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
 
    <img src="https://paddlelite-demo.bj.bcebos.com/devices/amlogic/A311D.jpg" alt="A311D" style="zoom: 33%;" />
 
+  
+
+- S905D3开发板
+
+   <img src="https://paddlelite-demo.bj.bcebos.com/devices/amlogic/S905D3.jpg" alt="A311D" style="zoom: 35%;" />
+
 ### 准备设备环境
 
 - C308X
@@ -73,10 +83,10 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
   - 注意是 64 位系统。
   - 将 MicroUSB 线插入到设备的 MicroUSB OTG 口，就可以使用 Android 的 `adb` 命令进行设备的交互，当然也提供了网络连接 SSH 登录的方式。
 
-    - 可通过 `dmesg | grep -r Galcore` 查询系统版本：
+    - 可通过 `dmesg | grep Galcore` 查询系统版本：
 
   ```shell
-    $ dmesg | grep -rsn Galcore
+    $ dmesg | grep  Galcore
     [   23.599566] Galcore version 6.4.4.3.310723AAA
   ```
 
@@ -88,10 +98,10 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
 
   - 将 MicroUSB 线插入到设备的 MicroUSB OTG 口，就可以使用 Android 的 `adb` 命令进行设备的交互，当然也提供了网络连接 SSH 登录的方式。
 
-    - 可通过 `dmesg | grep -r Galcore` 查询系统版本：
+    - 可通过 `dmesg | grep Galcore` 查询系统版本：
 
     ```shell
-    $ dmesg | grep -rsn Galcore
+    $ dmesg | grep Galcore
     [   24.140820] Galcore version 6.4.4.3.310723AAA
     ```
 
@@ -101,8 +111,7 @@ Paddle Lite 已支持晶晨 NPU 的预测部署。
    - `adb root + adb remount` 以获得修改系统库的权限。
    
     ```shell
-    # dmesg | grep version
-    [    9.020108] <4>[    9.020108@0] npu_version: 3
+    $ dmesg | grep Galcore
     [    9.020168] <6>[    9.020168@0] Galcore version 6.4.4.3.310723a
     ```
    
