@@ -116,7 +116,8 @@ class AutoScanBaseTest(unittest.TestCase):
                             rtol: float,
                             tensor: Dict[str, np.array],
                             baseline: Dict[str, np.array]):
-        for key, arr in tensor.items():
+        for key in tensor:
+            arr = np.array(tensor[key])
             self.assertTrue(
                 baseline[key].shape == arr.shape,
                 "The output shapes are not equal, the baseline shape is " +
