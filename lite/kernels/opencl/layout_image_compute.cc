@@ -647,11 +647,11 @@ class LayoutComputeImageFolderToBufferChw
 
     DDim x_image_shape;
     if (x_dims.size() > 2) {
-      CLImageConverterFolder folder_converter;
-      x_image_shape = folder_converter.InitImageDimInfoWith(x_dims);
-    } else {
       CLImageConverterDefault default_converter;
       x_image_shape = default_converter.InitImageDimInfoWith(x_dims);
+    } else {
+      CLImageConverterFolder folder_converter;
+      x_image_shape = folder_converter.InitImageDimInfoWith(x_dims);
     }
 
     const cl::Buffer* y_data =
@@ -782,11 +782,11 @@ class LayoutComputeBufferChwToImageFolder
     auto y_dims = param.y->dims();
     DDim image_shape;
     if (y_dims.size() > 2) {
-      CLImageConverterFolder folder_converter;
-      image_shape = folder_converter.InitImageDimInfoWith(y_dims);
-    } else {
       CLImageConverterDefault default_converter;
       image_shape = default_converter.InitImageDimInfoWith(y_dims);
+    } else {
+      CLImageConverterFolder folder_converter;
+      image_shape = folder_converter.InitImageDimInfoWith(y_dims);
     }
     auto* y_data =
         MUTABLE_DATA_GPU(param.y, image_shape[0], image_shape[1], nullptr);
