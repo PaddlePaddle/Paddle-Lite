@@ -141,7 +141,7 @@ class TestConvActiveFusePass(FusePassAutoScanTest):
         strides=st.sampled_from([[1, 1], [2, 2]]),
         threshold=st.floats(min_value=0, max_value=1),
         alpha=st.floats(min_value=0, max_value=1),
-        scale=st.floats(min_value=0, max_value=5),
+        scale=st.floats(min_value=0.5, max_value=5),
         offset=st.floats(min_value=0, max_value=1),
         )
     def test(self, *args, **kwargs):

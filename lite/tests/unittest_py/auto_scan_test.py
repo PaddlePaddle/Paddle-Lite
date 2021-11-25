@@ -21,6 +21,7 @@ import unittest
 import paddle
 from typing import Optional, List, Callable, Dict, Any, Set
 from paddlelite.lite import *
+import copy
 
 SkipReasons = SkipReasonsBase
 
@@ -89,7 +90,8 @@ class AutoScanTest(AutoScanBaseTest):
         with open(self.cache_dir + "/model", "rb") as f:
             model = f.read()
 
-        return result, model
+        result_res = copy.deepcopy(result)
+        return result_res, model
 
 
 class FusePassAutoScanTest(AutoScanBaseTest):
@@ -140,4 +142,5 @@ class FusePassAutoScanTest(AutoScanBaseTest):
         with open(self.cache_dir + "/model", "rb") as f:
             model = f.read()
 
-        return result, model
+        result_res = copy.deepcopy(result)
+        return result_res, model
