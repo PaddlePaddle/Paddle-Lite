@@ -7,7 +7,7 @@ GPU 可以用来运行较大运算强度的负载任务，将模型中计算任�
 Paddle Lite 支持多种 GPU 后端，包括 OpenCL、[Metal](https://developer.apple.com/metal/)，支持包括 ARM Mali、Qualcomm Adreno、Apple A Series 等系列 GPU 设备。
 
 ## Android 设备使用 OpenCL 获取最佳性能
-详细见 [OpenCL 部署示例](opencl.md)。
+详细见 [OpenCL 部署示例](../demo_guides/opencl)。
 
 ## iOS 设备使用 Metal 获取最佳性能
 这里介绍在苹果 iOS 设备上，通过使用 Metal 后端利用 GPU 设备获取最佳性能。
