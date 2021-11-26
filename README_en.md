@@ -11,7 +11,7 @@ For tutorials, please see [PaddleLite Document](https://paddle-lite.readthedocs.
 
 ## Key Features
 
-- Multiple platform support, covering Android and iOS devices, embedded Linux, windows, macOS and Linux computer.
+- Multiple platform support, covering Android and iOS devices, embedded Linux, Windows, macOS and Linux computer.
 - Diverse language support, which includes Java, C++, and Python.
 - High performance and light weight: optimized for on-device machine learning, reduced model and binary size, efficient inference and reduced memory usage.
 
@@ -34,7 +34,7 @@ As an update of Paddle-Mobile, Paddle Lite has incorporated many older capabilit
 
 Paddle Lite has referenced the following open-source projects:
 
-- [ARM compute library](https://github.com/ARM-software/ComputeLibrary%29)
+- [ARM compute library](https://github.com/ARM-software/ComputeLibrary)
 - [Anakin](https://github.com/PaddlePaddle/Anakin). The optimizations under Anakin has been incorporated into Paddle Lite, and so there will not be any future updates of Anakin. As another high-performance inference project under PaddlePaddle, Anakin has been forward-looking and helpful to the making of Paddle Lite.  
 
 

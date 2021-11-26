@@ -24,8 +24,9 @@ Paddle Lite 框架拥有优秀的加速、优化策略及实现，包含量化�
 
 **三. 下载或编译**
 
-Paddle Lite 提供了 Android/iOS/X86 平台的官方 Release 预测库下载，我们优先推荐您直接下载 [Paddle Lite 预编译库](https://paddle-lite.readthedocs.io/zh/release-v2.10_a/quick_start/release_lib.html)。
-您也可以根据目标平台选择对应的[源码编译方法](https://paddle-lite.readthedocs.io/zh/release-v2.10_a/quick_start/release_lib.html#id2)。Paddle Lite 提供了源码编译脚本，位于 `./lite/tools/` 文件夹下，只需要[准备环境](https://paddle-lite.readthedocs.io/zh/release-v2.10_a/source_compile/compile_env.html)和[调用编译脚本](https://paddle-lite.readthedocs.io/zh/release-v2.10_a/quick_start/release_lib.html#id2)两个步骤即可一键编译得到目标平台的 Paddle Lite 预测库。
+Paddle Lite 提供了 Android/iOS/X86/macOS 平台的官方 Release 预测库下载，我们优先推荐您直接下载 [Paddle Lite 预编译库](https://paddle-lite.readthedocs.io/zh/release-v2.10_a/quick_start/release_lib.html)。
+
+Paddle Lite 已支持多种环境下的源码编译，为了避免复杂、繁琐的环境搭建过程，我们建议您使用 [Docker 开发环境](https://paddle-lite.readthedocs.io/zh/release-v2.10_a/source_compile/docker_env.html) 进行编译。当然，您也可以根据宿主机和目标设备的 CPU 架构和操作系统，在[源码编译方法](https://paddle-lite.readthedocs.io/zh/release-v2.10_a/source_compile/compile_env.html)中找到相应的环境搭建及编译指南，自行完成编译环境的搭建。
 
 **四. 预测示例**
 
@@ -112,7 +113,7 @@ Paddle Lite 的架构设计着重考虑了对多硬件和平台的支持，并�
 - 飞桨预训练模型库：试试在 [PaddleHub](https://www.paddlepaddle.org.cn/hublist?filter=hot&value=1) 浏览和下载 Paddle 的预训练模型
 - 飞桨推理 AI 硬件统一适配框架 NNAdapter：点击[了解一下](https://paddle-lite.readthedocs.io/zh/release-v2.10_a/develop_guides/nnadapter.html)
 ### FAQ
-- FAQ：常见问题，可以访问 [FAQ](https://paddle-lite.readthedocs.io/zh/release-v2.10_a/introduction/faq.html)、搜索 Issues、或者通过页面底部的联系方式联系我们
+- FAQ：常见问题，可以访问 [FAQ](https://paddle-lite.readthedocs.io/zh/release-v2.10_a/quick_start/faq.html)、搜索 Issues、或者通过页面底部的联系方式联系我们
 ###贡献代码
 - 贡献代码：如果您想一起参与 Paddle Lite 的开发，贡献代码，请访问[开发者共享文档](https://paddle-lite.readthedocs.io/zh/release-v2.10_a/develop_guides/for-developer.html)
 
