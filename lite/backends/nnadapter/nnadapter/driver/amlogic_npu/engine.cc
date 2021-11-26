@@ -58,8 +58,8 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
 int Program::BuildFromModel(hal::Model* model) {
   // Convert the quantization parameters of the operands in the NNAdapter model
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
-  UnpackOpFusion(model);
   FuseMatMulAddIntoFullyConnected(model);
+  UnpackOpFusion(model);
   TransposeOpDimensions(model);
   ConvertQuantizationSymmToAsymm(model);
   NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);

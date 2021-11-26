@@ -442,6 +442,8 @@ TEST(Activation_relu, precision) {
   abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 2e-5;
 #else
   return;
 #endif
@@ -635,6 +637,8 @@ TEST(Activation_tanh, precision) {
   abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 2e-5;
 #else
   return;
 #endif
@@ -714,6 +718,8 @@ TEST(Activation_relu6, precision) {
   abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 2e-5;
 #else
   return;
 #endif
