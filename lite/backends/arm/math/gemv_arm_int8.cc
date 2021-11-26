@@ -2735,9 +2735,9 @@ void gemv_int8_oth(const int8_t* A,
     const int8_t* ptr_w1 = ptr_w0 + N;
     const int8_t* ptr_w2 = ptr_w1 + N;
     const int8_t* ptr_w3 = ptr_w2 + N;
-    auto bias_ptr = is_bias ? bias + out_idx : nullptr;
     float scale_v[4] = {0.f};
     float bias_v[4] = {0.f};
+    auto bias_ptr = is_bias ? bias + out_idx : bias_v;
     if (j == out_cnt - 1 && remain) {
       for (int p = 0; p < remain; p++) {
         scale_v[p] = scale_ptr[p];
