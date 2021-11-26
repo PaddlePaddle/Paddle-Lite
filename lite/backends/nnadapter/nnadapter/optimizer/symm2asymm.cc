@@ -69,11 +69,11 @@ static void PropagateAsymmZeroPoint(hal::Operand* reference_operand,
     target_type.asymm_per_layer_params.zero_point =
         reference_type.asymm_per_layer_params.zero_point;
   } else {
-    NNADAPTER_LOG(FATAL) << "Unhandled case: reference_precision="
-                         << OperandPrecisionCodeToString(
-                                reference_type.precision)
-                         << ", target_precision="
-                         << OperandPrecisionCodeToString(target_precision);
+    NNADAPTER_LOG(WARNING) << "Unhandled case: reference_precision="
+                           << OperandPrecisionCodeToString(
+                                  reference_type.precision)
+                           << ", target_precision="
+                           << OperandPrecisionCodeToString(target_precision);
   }
 }
 

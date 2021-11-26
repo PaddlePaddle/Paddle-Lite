@@ -19,7 +19,7 @@ import enum
 import unittest
 from typing import Optional, List, Callable, Dict, Any, Set
 import os
-
+import paddle
 import rpyc
 rpyc.core.protocol.DEFAULT_CONFIG['allow_pickle'] = True
 
@@ -29,5 +29,26 @@ SkipReasons = SkipReasonsBase
 class AutoScanTest(AutoScanBaseTest):
     def run_lite_config(self, model, params, feed_data, pred_config) -> Dict[str, np.ndarray]:
         conn = rpyc.connect("localhost", 18812, config = rpyc.core.protocol.DEFAULT_CONFIG)
-        out = conn.root.run_lite_model(model,params,feed_data, pred_config)
-        return out
+        out, model = conn.root.run_lite_model(model,params,feed_data, pred_config)
+        return out, model
+
+class FusePassAutoScanTest(AutoScanBaseTest):
+    def assert_op_size(self, fusion_before_num, fusion_after_num, origin_model, optimized_model):
+        pg = paddle.static.deserialize_program(optimized_model)
+        main_block = pg.desc.block(0)
+        after_op_size = main_block.op_size()
+        pg = paddle.static.deserialize_program(origin_model)
+        main_block = pg.desc.block(0)
+        before_op_size = main_block.op_size()
+        self.assertTrue(before_op_size == fusion_before_num,
+                        'before fusion op size is {}, but got {}!'.format(
+                            before_op_size, fusion_before_num))
+        self.assertTrue(after_op_size == fusion_after_num,
+                        'after fusion op size is {}, but got {}!'.format(
+                            after_op_size, fusion_after_num))
+
+    def run_lite_config(self, model, params, inputs, pred_config) -> Dict[str, np.ndarray]:
+        self.origin_model = model
+        conn = rpyc.connect("localhost", 18812, config = rpyc.core.protocol.DEFAULT_CONFIG)
+        out, model = conn.root.run_lite_model(model,params,inputs, pred_config)
+        return out, model

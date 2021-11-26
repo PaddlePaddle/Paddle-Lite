@@ -37,7 +37,7 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 settings.register_profile(
     "ci",
-    max_examples=100,
+    max_examples=10,
     suppress_health_check=hypothesis.HealthCheck.all(),
     deadline=None,
     print_blob=True,
@@ -62,6 +62,8 @@ class AutoScanBaseTest(unittest.TestCase):
         super(AutoScanBaseTest, self).__init__(*args, **kwargs)
         self.skip_cases = []
         abs_dir = os.path.abspath(os.path.dirname(__file__))
+        self.cache_dir = os.path.join(abs_dir,
+                                      str(self.__module__) + '_cache_dir')
 
     @abc.abstractmethod
     def sample_program_configs(self):
@@ -114,7 +116,8 @@ class AutoScanBaseTest(unittest.TestCase):
                             rtol: float,
                             tensor: Dict[str, np.array],
                             baseline: Dict[str, np.array]):
-        for key, arr in tensor.items():
+        for key in tensor:
+            arr = np.array(tensor[key])
             self.assertTrue(
                 baseline[key].shape == arr.shape,
                 "The output shapes are not equal, the baseline shape is " +
@@ -199,7 +202,7 @@ class AutoScanBaseTest(unittest.TestCase):
             self.success_log('RUN_CPU_BASELINE done')
 
             for paddlelite_config, (
-                    atol, rtol) in self.sample_predictor_configs(prog_config):
+                    atol, rtol) in self.sample_predictor_configs():
                 # skip info
                 skip_flag = False
                 pred_config = paddlelite_config.value()
@@ -213,9 +216,17 @@ class AutoScanBaseTest(unittest.TestCase):
                         else:
                             raise NotImplementedError
                         break
-                try:
-                    results.append(self.run_lite_config(model, params, feed_data, pred_config))
+                    
+                if os.path.exists(self.cache_dir):
+                    shutil.rmtree(self.cache_dir)
+                if not os.path.exists(self.cache_dir):
+                    os.mkdir(self.cache_dir)
 
+                try:
+                    result, model = self.run_lite_config(model, params, feed_data, pred_config)
+                    results.append(result)
+                    self.assert_tensors_near(atol, rtol, results[-1],
+                                             results[0])
                 except Exception as e:
                     self.fail_log(
                         self.paddlelite_config_str(pred_config) +
@@ -227,6 +238,7 @@ class AutoScanBaseTest(unittest.TestCase):
                                  paddlelite_config_str(pred_config) + ' done')
 
         self.assertTrue(status)
+        return model
 
     def inference_config_str(self, config) -> bool:
         dic = {}
