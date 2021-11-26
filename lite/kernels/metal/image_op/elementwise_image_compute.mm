@@ -124,18 +124,23 @@ void ElementwiseImageCompute::init_for_run() {
     if (use_mps_) {
         if (ele_type_ == ("elementwise_add")) {
             setup_with_mps<MPSCNNAdd>();
-            arithmetic_type = 0;
         } else if (ele_type_ == ("elementwise_div")) {
             setup_with_mps<MPSCNNDivide>();
-            arithmetic_type = 3;
         } else if (ele_type_ == ("elementwise_mul")) {
             setup_with_mps<MPSCNNMultiply>();
-            arithmetic_type = 2;
         } else if (ele_type_ == ("elementwise_sub")) {
             setup_with_mps<MPSCNNSubtract>();
-            arithmetic_type = 1;
         }
     } else {
+        if (ele_type_ == ("elementwise_add")) {
+            arithmetic_type = 0;
+        } else if (ele_type_ == ("elementwise_div")) {
+            arithmetic_type = 3;
+        } else if (ele_type_ == ("elementwise_mul")) {
+            arithmetic_type = 2;
+        } else if (ele_type_ == ("elementwise_sub")) {
+            arithmetic_type = 1;
+        }
         setup_without_mps();
     }
 }
@@ -210,11 +215,7 @@ void ElementwiseImageCompute::setup_without_mps() {
     } else if (ydim[0] == 1 && ydim[1] == 1 && ydim[2] == 1 && ydim[3] == xdim[2]) {
         by_W = 1;
     } else {
-        LOG(FATAL) << ele_type_ << ": not supports x_dims:[" << x_dims[0] << " " << x_dims[1] << " "
-                   << x_dims[2] << " " << x_dims[3] << "]"
-                   << " y_dims:[" << y_dims[0] << " " << y_dims[1] << " " << y_dims[2] << " "
-                   << y_dims[3] << "]"
-                   << " axis=" << axis;
+        LOG(FATAL) << ele_type_ << " does not support the current input dimensions.";
     }
 
     ElementwiseAddMetalParam element_params = {params_fast,
