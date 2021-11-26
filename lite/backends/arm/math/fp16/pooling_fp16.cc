@@ -1728,7 +1728,6 @@ void pooling3x3s1p0_avg_fp16(POOLING_PARAM,
       TargetMalloc(TARGET(kARM), win * sizeof(float16_t)));
   memset(zero_ptr, 0, win * sizeof(float16_t));
 
-  // float16x8_t vzero = vdupq_n_f16(0.f);
   for (int n = 0; n < num; ++n) {
     float16_t *data_out_batch = dout + n * chout * size_channel_out;
     const float16_t *data_in_batch = din + n * chin * size_channel_in;
