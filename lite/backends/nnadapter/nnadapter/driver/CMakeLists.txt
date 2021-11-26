@@ -41,3 +41,7 @@ endif()
 if(NNADAPTER_WITH_CAMBRICON_MLU)
   add_subdirectory(cambricon_mlu)
 endif()
+
+if(NNADAPTER_WITH_VERISILICON_TIMVX)
+  add_subdirectory(verisilicon_timvx)
+endif()

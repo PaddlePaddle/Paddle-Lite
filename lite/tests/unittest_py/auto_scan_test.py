@@ -19,9 +19,9 @@ import abc
 import enum
 import unittest
 import paddle
+import copy
 from typing import Optional, List, Callable, Dict, Any, Set
 from paddlelite.lite import *
-import copy
 
 SkipReasons = SkipReasonsBase
 

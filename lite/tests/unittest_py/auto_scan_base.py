@@ -225,7 +225,8 @@ class AutoScanBaseTest(unittest.TestCase):
                 try:
                     result, model = self.run_lite_config(model, params, feed_data, pred_config)
                     results.append(result)
-
+                    self.assert_tensors_near(atol, rtol, results[-1],
+                                             results[0])
                 except Exception as e:
                     self.fail_log(
                         self.paddlelite_config_str(pred_config) +

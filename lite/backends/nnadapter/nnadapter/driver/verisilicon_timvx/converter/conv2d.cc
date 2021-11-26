@@ -13,12 +13,12 @@
 // limitations under the License.
 
 #include "core/operation/conv2d.h"
-#include "driver/amlogic_npu/converter/converter.h"
+#include "driver/verisilicon_timvx/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 
 namespace nnadapter {
-namespace amlogic_npu {
+namespace verisilicon_timvx {
 
 int ConvertConv2D(Converter* converter, hal::Operation* operation) {
   CONV_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS
@@ -39,49 +39,47 @@ int ConvertConv2D(Converter* converter, hal::Operation* operation) {
                                         stride_width,
                                         &dilation_width);
 
-  // Convert to amlnpu tensors and operators
+  // Convert to tim-vx tensors and operators
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-  std::shared_ptr<aml::nn::Tensor> filter_tensor = nullptr;
+  int32_t multiplier = 0;
+  std::vector<int32_t> filter_dimensions(
+      filter_operand->type.dimensions.data,
+      filter_operand->type.dimensions.data +
+          filter_operand->type.dimensions.count);
   if (is_depthwise_mode) {
-    filter_tensor = converter->ConvertOperand(filter_operand,
-                                              {filter_channel_size,
-                                               output_channel_size,
-                                               filter_height,
-                                               filter_width});
-  } else {
-    filter_tensor = converter->ConvertOperand(filter_operand);
+    multiplier = output_channel_size / group;
+    NNADAPTER_CHECK_GT(filter_operand->type.dimensions.count, 2);
+    // Oc,1,H,W -> 1,Oc,H,W
+    filter_dimensions[0] = filter_dimensions[1];
+    filter_dimensions[1] = output_channel_size;
   }
+  auto filter_tensor =
+      converter->ConvertOperand(filter_operand, filter_dimensions);
   auto bias_tensor = converter->ConvertOperand(bias_operand);
+  if (!bias_tensor) {
+    bias_tensor = converter->ConvertOperand(bias_operand);
+  }
   auto output_tensor = converter->ConvertOperand(output_operand);
-  aml::nn::Conv2DAttr attr;
-  attr.ksize[0] = filter_height;
-  attr.ksize[1] = filter_width;
-  attr.stride[0] = stride_width;
-  attr.stride[1] = stride_height;
-  attr.pad[0] = pad_width_left;
-  attr.pad[1] = pad_width_right;
-  attr.pad[2] = pad_height_top;
-  attr.pad[3] = pad_height_bottom;
-  attr.group = group;
-  attr.multiplier = is_depthwise_mode ? output_channel_size / group : 0;
-  attr.weights = output_channel_size;
-  attr.dilation[0] = dilation_width;
-  attr.dilation[1] = dilation_height;
-  attr.pad_type = aml::nn::PadType::AUTO;
-  std::vector<std::shared_ptr<aml::nn::Tensor>> input_tensors = {
-      input_tensor, filter_tensor, bias_tensor};
-  std::vector<std::shared_ptr<aml::nn::Tensor>> output_tensors = {
-      output_tensor};
-  converter->AddOperator(
-      aml::nn::OperatorType::CONV2D, input_tensors, output_tensors, &attr);
+  auto conv2d_op = converter->graph()->CreateOperation<tim::vx::ops::Conv2d>(
+      std::array<uint32_t, 4>({static_cast<uint32_t>(pad_width_left),
+                               static_cast<uint32_t>(pad_width_right),
+                               static_cast<uint32_t>(pad_height_top),
+                               static_cast<uint32_t>(pad_height_bottom)}),
+      std::array<uint32_t, 2>({static_cast<uint32_t>(stride_width),
+                               static_cast<uint32_t>(stride_height)}),
+      std::array<uint32_t, 2>({static_cast<uint32_t>(dilation_width),
+                               static_cast<uint32_t>(dilation_height)}),
+      multiplier);
+  conv2d_op->BindInputs({input_tensor, filter_tensor, bias_tensor});
+  conv2d_op->BindOutputs({output_tensor});
   NNADAPTER_CHECK_EQ(fuse_code, NNADAPTER_FUSED_NONE)
       << "Missing the processing of fuse_code(" << fuse_code
       << ") in unpack_op_fusion.cc";
   return NNADAPTER_NO_ERROR;
 }
 
-}  // namespace amlogic_npu
+}  // namespace verisilicon_timvx
 }  // namespace nnadapter
