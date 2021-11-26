@@ -116,7 +116,8 @@ class AutoScanBaseTest(unittest.TestCase):
                             rtol: float,
                             tensor: Dict[str, np.array],
                             baseline: Dict[str, np.array]):
-        for key, arr in tensor.items():
+        for key in tensor:
+            arr = np.array(tensor[key])
             self.assertTrue(
                 baseline[key].shape == arr.shape,
                 "The output shapes are not equal, the baseline shape is " +
@@ -224,7 +225,8 @@ class AutoScanBaseTest(unittest.TestCase):
                 try:
                     result, model = self.run_lite_config(model, params, feed_data, pred_config)
                     results.append(result)
-
+                    self.assert_tensors_near(atol, rtol, results[-1],
+                                             results[0])
                 except Exception as e:
                     self.fail_log(
                         self.paddlelite_config_str(pred_config) +
