@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,39 +12,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "core/operation/reduce.h"
+#include "core/operation/binary_logical_op.h"
 #include "driver/huawei_ascend_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
-#include "utility/modeling.h"
 
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int ConvertReduce(Converter* converter, hal::Operation* operation) {
-  REDUCE_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int ConvertBinaryLogicalOp(Converter* converter, hal::Operation* operation) {
+  BINARY_LOGICAL_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
-  auto input_operator = converter->GetMappedOperator(input_operand);
-  if (!input_operator) {
-    input_operator = converter->ConvertOperand(input_operand);
+  auto input0_operator = converter->GetMappedOperator(input0_operand);
+  if (!input0_operator) {
+    input0_operator = converter->ConvertOperand(input0_operand);
   }
-  auto axes_operator = converter->ConvertOperand(axes_operand);
+  auto input1_operator = converter->GetMappedOperator(input1_operand);
+  if (!input1_operator) {
+    input1_operator = converter->ConvertOperand(input1_operand);
+  }
   switch (operation->type) {
-#define CONVERT_REDUCE(type, class_name)                            \
+#define CONVERT_BINARY_LOGICAL_OP(type, class_name)                 \
   case NNADAPTER_##type: {                                          \
-    auto reduce_op =                                                \
+    auto binary_logical_op =                                        \
         converter->AddOperator<ge::op::class_name>(output_operand); \
-    reduce_op->set_attr_keep_dims(keep_dim);                        \
-    SET_INPUT(reduce_op, x, input_operator);                        \
-    SET_INPUT(reduce_op, axes, axes_operator);                      \
-    MAP_OUTPUT(reduce_op, y, output_operand);                       \
+    SET_INPUT(binary_logical_op, x1, input0_operator);              \
+    SET_INPUT(binary_logical_op, x2, input1_operator);              \
+    MAP_OUTPUT(binary_logical_op, y, output_operand);               \
   } break;
-    CONVERT_REDUCE(REDUCE_MEAN, ReduceMean);
-    CONVERT_REDUCE(REDUCE_SUM, ReduceSum);
-#undef CONVERT_REDUCE
+    CONVERT_BINARY_LOGICAL_OP(AND, LogicalAnd);
+#undef CONVERT_BINARY_LOGICAL_OP
     default:
-      NNADAPTER_LOG(FATAL) << "Unsupported reduce operation type "
+      NNADAPTER_LOG(FATAL) << "Unsupported binary logical operation type "
                            << OperationTypeToString(operation->type)
                            << " is found.";
       break;

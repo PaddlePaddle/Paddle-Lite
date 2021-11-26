@@ -540,6 +540,8 @@ NNAdapterOperationType ConvertUnaryActTypeToNNOperationType(
     unary_act_op_code = NNADAPTER_ABS;
   } else if (unary_act_op_type == "exp") {
     unary_act_op_code = NNADAPTER_EXP;
+  } else if (unary_act_op_type == "floor") {
+    unary_act_op_code = NNADAPTER_FLOOR;
   } else {
     LOG(WARNING) << "Unable to convert a unary activation type("
                  << unary_act_op_type << ") to a NNAdapter operation type!";

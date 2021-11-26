@@ -66,6 +66,8 @@ int ConvertReduce(Converter* converter, OpInfo* op, Scope* scope) {
   auto op_type = op->Type();
   if (op_type == "reduce_mean") {
     reduce_operation_type = NNADAPTER_REDUCE_MEAN;
+  } else if (op_type == "reduce_sum") {
+    reduce_operation_type = NNADAPTER_REDUCE_SUM;
   } else {
     LOG(WARNING) << "Unsupported reduce operation type: " << op_type;
     return UNSUPPORTED_FEATURE;

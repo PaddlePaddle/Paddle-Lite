@@ -23,6 +23,11 @@ namespace huawei_ascend_npu {
 int ConvertUnaryActivations(Converter* converter, hal::Operation* operation) {
   UNARY_ACTIVATIONS_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
+  // Check op restrictions
+  if (operation->type == NNADAPTER_FLOOR) {
+    NNADAPTER_CHECK(input_operand->type.precision == NNADAPTER_FLOAT32);
+    return NNADAPTER_INVALID_PARAMETER;
+  }
   // Convert to GE operators
   auto input_operator = converter->GetMappedOperator(input_operand);
   if (!input_operator) {
@@ -42,6 +47,7 @@ int ConvertUnaryActivations(Converter* converter, hal::Operation* operation) {
     CONVERT_UNARY_ACTIVATION(LOG, Log);
     CONVERT_UNARY_ACTIVATION(ABS, Abs);
     CONVERT_UNARY_ACTIVATION(EXP, Exp);
+    CONVERT_UNARY_ACTIVATION(FLOOR, Floor);
 #undef CONVERT_UNARY_ACTIVATION
     default:
       NNADAPTER_LOG(FATAL) << "Unsupported activation operation type "

@@ -149,6 +149,7 @@ REGISTER_CONVERTER(less_than, ConvertComparisons, "huawei_ascend_npu");
 REGISTER_CONVERTER(less_equal, ConvertComparisons, "huawei_ascend_npu");
 REGISTER_CONVERTER(less_than, ConvertComparisons, "huawei_ascend_npu");
 REGISTER_CONVERTER(reduce_mean, ConvertReduce, "huawei_ascend_npu");
+REGISTER_CONVERTER(reduce_sum, ConvertReduce, "huawei_ascend_npu");
 REGISTER_CONVERTER(top_k, ConvertTopK, "huawei_ascend_npu");
 REGISTER_CONVERTER(top_k_v2, ConvertTopK, "huawei_ascend_npu");
 REGISTER_CONVERTER(
@@ -165,12 +166,16 @@ REGISTER_CONVERTER(
     "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_npu,amlogic_npu");
 REGISTER_CONVERTER(shape, ConvertShape, "huawei_ascend_npu");
 REGISTER_CONVERTER(slice, ConvertSlice, "huawei_ascend_npu");
+REGISTER_CONVERTER(strided_slice, ConvertStridedSlice, "huawei_ascend_npu");
 REGISTER_CONVERTER(squeeze, ConvertSqueeze, "huawei_ascend_npu");
 REGISTER_CONVERTER(squeeze2, ConvertSqueeze, "huawei_ascend_npu");
 REGISTER_CONVERTER(range, ConvertRange, "huawei_ascend_npu");
 REGISTER_CONVERTER(stack, ConvertStack, "huawei_ascend_npu");
 REGISTER_CONVERTER(fill_constant, ConvertFillConstant, "huawei_ascend_npu");
 REGISTER_CONVERTER(fill_any_like, ConvertFillAnyLike, "huawei_ascend_npu");
+REGISTER_CONVERTER(fill_constant_batch_size_like,
+                   ConvertFillConstantBatchSizeLike,
+                   "huawei_ascend_npu");
 REGISTER_CONVERTER(
     concat,
     ConvertConcat,
@@ -200,4 +205,9 @@ REGISTER_CONVERTER(fc,
 REGISTER_CONVERTER(norm, ConvertNorm, "huawei_ascend_npu");
 REGISTER_CONVERTER(pad2d, ConvertPad, "huawei_ascend_npu");
 REGISTER_CONVERTER(pad3d, ConvertPad, "huawei_ascend_npu");
+REGISTER_CONVERTER(gather, ConvertGather, "huawei_ascend_npu");
+REGISTER_CONVERTER(logical_not, ConvertUnaryLogicalOp, "huawei_ascend_npu");
+REGISTER_CONVERTER(logical_and, ConvertBinaryLogicalOp, "huawei_ascend_npu");
+REGISTER_CONVERTER(floor, ConvertUnaryActivations, "huawei_ascend_npu");
+REGISTER_CONVERTER(meshgrid, ConvertMeshgrid, "huawei_ascend_npu");
 #endif  // NOLINT

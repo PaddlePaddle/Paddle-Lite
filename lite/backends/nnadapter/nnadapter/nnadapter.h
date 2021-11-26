@@ -195,6 +195,22 @@ typedef enum {
   NNADAPTER_ADD,
 
   /**
+   * Performs element-wise binary and logical operation(with Numpy-style
+   * broadcasting https://numpy.org/doc/stable/user/basics.broadcasting.html).
+   * The output is calculated using this formula: output = input0 && input1
+   *
+   * Inputs:
+   * * 0: input0, a NNADAPTER_BOOL8 tensor.
+   * * 1: input1, a NNADAPTER_BOOL8 tensor.
+   *
+   * Outputs:
+   * * 0: output, a NNADAPTER_BOOL8 tensor.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_AND,
+
+  /**
    * Computes the indices of the max elements of the input tensor’s element
    * along the provided axis.
    *
@@ -536,9 +552,9 @@ typedef enum {
    * dimension along which softmax will be performed. It should be in range [-R,
    * R), where R is the rank of input, negative value works the same way as
    * axis+R.
-   * * 2: exclusive, a NNADAPTER_NOOL8 scalar. If set to true, the top element
+   * * 2: exclusive, a NNADAPTER_BOOL8 scalar. If set to true, the top element
    * will not be include. Default false.
-   * * 3: reverse, a NNADAPTER_NOOL8 scalar, whether to perform the cumsum in
+   * * 3: reverse, a NNADAPTER_BOOL8 scalar, whether to perform the cumsum in
    * the reversed direction. Default false.
    *
    * Outputs:
@@ -711,6 +727,21 @@ typedef enum {
    * Available since version 1.
    */
   NNADAPTER_FLATTEN,
+
+  /*
+   * Applies floor to the input tensor element-wise. The output is calculated
+   * using this formula: output = floor(input)
+   *
+   * Inputs:
+   * * 0: input, A NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
+   *
+   * Outputs:
+   * * 0: output, A tensor with the same shape and type as input.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_FLOOR,
 
   /**
    * Add a fully connected layer.
@@ -1102,6 +1133,23 @@ typedef enum {
   NNADAPTER_MAX_POOL_2D,
 
   /**
+   * Takes a list of N tensors as inputs, each of which is 1-dimensional vector,
+   * and creates N-dimensional grids.
+   *
+   * Inputs:
+   * * input0 ~ inputn-1, a NNADAPTER_FLOAT32,
+   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER  tensor with shape [d0], [d1], ...
+   * [dn-1].
+   *
+   * Outputs:
+   * * output0 ~ outputn-1, a  tensor with the same type as input, with shape
+   * [d0, d1, ... dn-1].
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_MESHGRID,
+
+  /**
    * Performs element-wise binary minimum(with Numpy-style broadcasting
    * https://numpy.org/doc/stable/user/basics.broadcasting.html).
    *
@@ -1136,6 +1184,20 @@ typedef enum {
    * Available since version 1.
    */
   NNADAPTER_MUL,
+
+  /**
+   * Applies logical not to the input tensor element-wise. The output is
+   * calculated using this formula: output = !input
+   *
+   * Inputs:
+   * * 0: input, a NNADAPTER_BOOL8 tensor.
+   *
+   * Outputs:
+   * * 0: output, a NNADAPTER_BOOL8 tensor with the same shape as input.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_NOT,
 
   /**
    * Performs element-wise binary not_equal relational operation(with
@@ -1286,6 +1348,29 @@ typedef enum {
   * Available since version 1.
   */
   NNADAPTER_REDUCE_MEAN,
+
+  /**
+  * Computes the sum of the input’s elements along axis. If axis has no
+  * data, sum is calculated over all elements of input.
+  * If keepdims equal 0, then the resulted tensor have the reduced dimension
+  * pruned.
+  *
+  * Inputs:
+  * * 0: input, a NNADAPTER_FLOAT32,
+  * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
+  * * 1: axes, a NNADAPTER_INT32 tensor. It indicating the dimensions to
+  * perform mean calculations. It should be in range [-R, R), where R is the
+  * rank of input, negative value works the same way as axis+ndim(input). If
+  * axis has no data, mean is calculated over all elements of input.
+  * * 2: keepdim, a NNADAPTER_BOOL8 scalar. Keep the reduced dimension or not,
+  * default 1 mean keep reduced dimension.
+  *
+  * Outputs:
+  * * 0: output, a tensor with the same type as input.
+  *
+  * Available since version 1.
+  */
+  NNADAPTER_REDUCE_SUM,
 
   /**
    * Applies rectified linear activation to the input tensor element-wise.
