@@ -89,6 +89,7 @@ class AutoScanTest(AutoScanBaseTest):
         opt.run()
         with open(self.cache_dir + "/model", "rb") as f:
             model = f.read()
+
         result_res = copy.deepcopy(result)
         return result_res, model
 

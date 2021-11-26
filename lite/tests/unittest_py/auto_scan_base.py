@@ -37,7 +37,7 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 settings.register_profile(
     "ci",
-    max_examples=20,
+    max_examples=10,
     suppress_health_check=hypothesis.HealthCheck.all(),
     deadline=None,
     print_blob=True,
@@ -202,7 +202,7 @@ class AutoScanBaseTest(unittest.TestCase):
             self.success_log('RUN_CPU_BASELINE done')
 
             for paddlelite_config, (
-                    atol, rtol) in self.sample_predictor_configs(prog_config):
+                    atol, rtol) in self.sample_predictor_configs():
                 # skip info
                 skip_flag = False
                 pred_config = paddlelite_config.value()
