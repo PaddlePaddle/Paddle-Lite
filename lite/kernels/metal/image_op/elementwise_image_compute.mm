@@ -274,9 +274,13 @@ void ElementwiseImageCompute::setup_with_mps() {
         auto backend = (__bridge MetalContextImp*)metal_context_->backend();
         mps_op_ = (__bridge_retained void*)[[T alloc] initWithDevice:backend.device];
         // MPS input and output
-        auto input_x_c = MAX(4, static_cast<int>(input_buffer_x_->tensor_dim_[1]));
-        auto input_y_c = MAX(4, static_cast<int>(input_buffer_y_->tensor_dim_[1]));
-        auto output_c = MAX(4, static_cast<int>(output_buffer_->tensor_dim_[1]));
+        auto input_x_c = 4;
+        auto input_y_c = 4;
+        auto output_c = 4;
+
+        input_x_c = MAX(4, static_cast<int>(input_buffer_x_->dim_[3]));
+        input_y_c = MAX(4, static_cast<int>(input_buffer_y_->dim_[3]));
+        output_c = MAX(4, static_cast<int>(output_buffer_->dim_[3]));
 
         mps_input_image_ =
             (__bridge_retained void*)[[MPSImage alloc] initWithTexture:input_buffer_x_->image()
