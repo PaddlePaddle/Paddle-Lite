@@ -407,16 +407,15 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         output_args = {"output"};
         break;
       case NNADAPTER_INSTANCE_NORMALIZATION:
-        input_args = {"input", "scale", "bias", "episilon", "fuse_code"};
+        input_args = {"input", "scale", "bias", "episilon"};
         output_args = {"output"};
         break;
       case NNADAPTER_LAYER_NORMALIZATION:
-        input_args = {"input",
-                      "scale",
-                      "bias",
-                      "begin_norm_axis",
-                      "episilon",
-                      "fuse_code"};
+        input_args = {"input", "scale", "bias", "begin_norm_axis", "episilon"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_GROUP_NORMALIZATION:
+        input_args = {"input", "scale", "bias", "episilon", "groups"};
         output_args = {"output"};
         break;
       case NNADAPTER_DEFORMABLE_CONV_2D:
@@ -584,6 +583,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(GELU);
     NNADAPTER_TYPE_TO_STRING(GREATER);
     NNADAPTER_TYPE_TO_STRING(GREATER_EQUAL);
+    NNADAPTER_TYPE_TO_STRING(GROUP_NORMALIZATION);
     NNADAPTER_TYPE_TO_STRING(HARD_SIGMOID);
     NNADAPTER_TYPE_TO_STRING(HARD_SWISH);
     NNADAPTER_TYPE_TO_STRING(INSTANCE_NORMALIZATION);

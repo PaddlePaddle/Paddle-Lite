@@ -826,6 +826,33 @@ typedef enum {
   NNADAPTER_GREATER_EQUAL,
 
   /**
+   * Applies Group Normalization over a ND input
+   * (a mini-batch of 2D inputs with additional channel dimension)
+   * as described in the paper Group Normalization.
+   *
+   * Inputs:
+   * * 0: input, a NNADAPTER_FLOAT32,
+   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor with shape [N,C,...]
+   * * 1: scale, a 1-D tensor, with shape [C].
+   *      1) If input's type is NNADAPTER_FLOAT32, its type must be the
+   * same type.
+   * * 2: bias, a tensor with the same shape as scale.
+   *      1) If input's type is NNADAPTER_FLOAT32, its type must be the
+   * same type.
+   * * 3: epsilon, a NNADAPTER_FLOAT32 scalar. Defaults to 1e-5.
+   * The small value added to the variance to prevent division by zero.
+   * * 4: groups, a NNADAPTER_FLOAT32 tensor with shape [1],
+   * that divided from channels.
+   *
+   * Outputs:
+   * * 0: output, a tensor with the same shape and type as input.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_GROUP_NORMALIZATION,
+
+  /**
    * Applies the hard-sigmoid activation to the input tensor element-wise.
    * The output is calculated using this formula:
    *     output = max(0, min(1, alpha * input + beta))
@@ -879,8 +906,6 @@ typedef enum {
    * same type.
    * * 3: epsilon, a NNADAPTER_FLOAT32 scalar. Defaults to 1e-5.
    * The small value added to the variance to prevent division by zero.
-   * * 4: fuse_code, a NNADAPTER_INT32 scalar, must be one of NNAdapterFuseCode
-   * values.
    *
    * Outputs:
    * * 0: output, a tensor with the same shape and type as input.
@@ -909,8 +934,6 @@ typedef enum {
    * from begin_norm_axis to rank (input). Default value: 1.
    * * 4: epsilon, a NNADAPTER_FLOAT32 scalar. Defaults to 1e-5.
    * The small value added to the variance to prevent division by zero.
-   * * 5: fuse_code, a NNADAPTER_INT32 scalar, must be one of NNAdapterFuseCode
-   * values.
    *
    * Outputs:
    * * 0: output, a tensor with the same shape and type as input.

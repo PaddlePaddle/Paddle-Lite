@@ -131,6 +131,7 @@ REGISTER_CONVERTER(abs, ConvertUnaryActivations, "huawei_ascend_npu");
 REGISTER_CONVERTER(exp, ConvertUnaryActivations, "huawei_ascend_npu");
 REGISTER_CONVERTER(instance_norm, ConvertInstanceNorm, "huawei_ascend_npu");
 REGISTER_CONVERTER(layer_norm, ConvertLayerNorm, "huawei_ascend_npu");
+REGISTER_CONVERTER(group_norm, ConvertGroupNorm, "huawei_ascend_npu");
 REGISTER_CONVERTER(log, ConvertUnaryActivations, "huawei_ascend_npu");
 REGISTER_CONVERTER(swish, ConvertUnaryActivations, "huawei_ascend_npu");
 REGISTER_CONVERTER(prelu, ConvertPRelu, "huawei_ascend_npu");
