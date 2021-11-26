@@ -17,6 +17,7 @@ import  os
 import shutil
 from rpyc.utils.server import ThreadedServer
 from paddlelite.lite import *
+import copy
 
 rpyc.core.protocol.DEFAULT_CONFIG['allow_pickle'] = True
 
@@ -97,7 +98,8 @@ class RPCService(rpyc.Service):
         with open(self.cache_dir + "/model", "rb") as f:
             model = f.read()
 
-        return result, model
+        result_res = copy.deepcopy(result)
+        return result_res, model
 
 
 if __name__ == "__main__":

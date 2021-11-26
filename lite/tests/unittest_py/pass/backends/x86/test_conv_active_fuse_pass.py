@@ -16,7 +16,8 @@ sys.path.append('../../common')
 sys.path.append('../../../')
 
 import abc
-from test_conv_active_fuse_pass_base import TestConvActiveFusePassBase
+import test_conv_active_fuse_pass_base
+from auto_scan_test import FusePassAutoScanTest
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import unittest
 
@@ -24,7 +25,13 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 
-class TestConvActiveFusePass(TestConvActiveFusePassBase):
+class TestConvActiveFusePass(FusePassAutoScanTest):
+    def is_program_valid(self, program_config: ProgramConfig) -> bool:
+        return True
+
+    def sample_program_configs(self, *args, **kwargs):
+        return test_conv_active_fuse_pass_base.sample_program_configs(*args, **kwargs)
+
     def sample_predictor_configs(self):
         config = CxxConfig()
         config.set_valid_places({Place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW)})
