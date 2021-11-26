@@ -31,9 +31,9 @@ Paddle Lite 提供了 Android/iOS/X86 平台的官方 Release 预测库下载，
 
 Paddle Lite 提供了 C++、Java、Python 三种 API，并且提供了相应 API 的完整使用示例:
 
-- [C++ 完整示例](https://paddle-lite.readthedocs.io/zh/latest/quick_start/cpp_demo.html)
-- [Java 完整示例](https://paddle-lite.readthedocs.io/zh/latest/quick_start/java_demo.html)
-- [Python 完整示例](https://paddle-lite.readthedocs.io/zh/latest/quick_start/python_demo.html)
+- [C++ 完整示例](https://paddle-lite.readthedocs.io/zh/latest/user_guides/cpp_demo.html)
+- [Java 完整示例](https://paddle-lite.readthedocs.io/zh/latest/user_guides/java_demo.html)
+- [Python 完整示例](https://paddle-lite.readthedocs.io/zh/latest/user_guides/python_demo.html)
 
 您可以参考示例中的说明快速了解使用方法，并集成到您自己的项目中去。
 
@@ -42,13 +42,19 @@ Paddle Lite 提供了 C++、Java、Python 三种 API，并且提供了相应 API
 - [Android 示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/android_app_demo.html) [[图像分类]](https://paddlelite-demo.bj.bcebos.com/apps/android/mobilenet_classification_demo.apk)  [[目标检测]](https://paddlelite-demo.bj.bcebos.com/apps/android/yolo_detection_demo.apk) [[口罩检测]](https://paddlelite-demo.bj.bcebos.com/apps/android/mask_detection_demo.apk)  [[人脸关键点]](https://paddlelite-demo.bj.bcebos.com/apps/android/face_keypoints_detection_demo.apk) [[人像分割]](https://paddlelite-demo.bj.bcebos.com/apps/android/human_segmentation_demo.apk)
 - [iOS 示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/ios_app_demo.html)
 - [ARMLinux 示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/linux_arm_demo.html)
+- [ARM CPU 示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/arm_cpu.html)
 - [X86 示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/x86.html)
 - [OpenCL 示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/opencl.html)
-- [FPGA 示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/fpga.html)
-- [华为 NPU 示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/huawei_kirin_npu.html)
-- [百度 XPU 示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/baidu_xpu.html)
+- [百度 EdgeBoard FPGA 示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/fpga.html)
+- [华为麒麟 NPU 示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/huawei_kirin_npu.html)
+- [华为昇腾 NPU 示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/huawei_ascend_npu.html)
+- [百度昆仑 XPU 示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/baidu_xpu.html)
 - [瑞芯微 NPU 示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/rockchip_npu.html)
 - [联发科 APU 示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/mediatek_apu.html)
+- [比特大陆 NPU 示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/bitmain.html)
+- [晶晨 NPU 示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/amlogic_npu.html)
+- [颖脉 NNA 示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/imagination_nna.html)
+- [英特尔 FPGA 示例](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/intel_fpga.html)
 
 
 
@@ -66,18 +72,23 @@ Paddle Lite 提供了 C++、Java、Python 三种 API，并且提供了相应 API
 | CPU(64bit) | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) |
 | OpenCL | - | - | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | - |
 | Metal | - | - | - | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) |
-| FPGA | - | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | - | - |
-| 华为NPU | - | - | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | - |
-| 百度 XPU | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | - | - |
-| RK NPU | - | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | - | - |
-| MTK APU | - | - | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | - |
+| 百度 EdgeBoard FPGA | - | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | - | - |
+| 华为麒麟 NPU | - | - | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | - |
+| 华为昇腾 NPU | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | - | - |
+| 百度昆仑 XPU | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | - | - |
+| 瑞芯微 NPU | - | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | - | - |
+| 联发科 APU | - | - | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | - |
+| 比特大陆 NPU | - | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | - | - |
+| 晶晨 NPU | - | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | - |
+| 颖脉 NPU | - | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | - | - |
+| 英特尔 FPGA | - | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | - | - |
 
 
 ## 架构设计
 
 Paddle Lite 的架构设计着重考虑了对多硬件和平台的支持，并且强化了多个硬件在一个模型中混合执行的能力，多个层面的性能优化处理，以及对端侧应用的轻量化设计。
 
-<p align="center"><img width="500" src="https://github.com/PaddlePaddle/Paddle-Lite/blob/develop/docs/images/architecture.png"/></p>
+<p align="center"><img width="500" src="https://paddlelite-demo.bj.bcebos.com/devices/generic/paddle_lite_with_nnadapter.png"/></p>
 
 其中，Analysis Phase 包括了 MIR(Machine IR) 相关模块，能够对原有的模型的计算图针对具体的硬件列表进行算子融合、计算裁剪 在内的多种优化。Execution Phase 只涉及到 Kernel 的执行，且可以单独部署，以支持极致的轻量级部署。
 
@@ -99,6 +110,7 @@ Paddle Lite 的架构设计着重考虑了对多硬件和平台的支持，并�
 - 调试分析：[调试和性能分析工具](https://paddle-lite.readthedocs.io/zh/latest/user_guides/profiler.html)
 - 移动端模型训练：点击[了解一下](https://paddle-lite.readthedocs.io/zh/latest/demo_guides/cpp_train_demo.html)
 - 飞桨预训练模型库：试试在 [PaddleHub](https://www.paddlepaddle.org.cn/hublist?filter=hot&value=1) 浏览和下载 Paddle 的预训练模型
+- 飞桨推理 AI 硬件统一适配框架 NNAdapter：点击[了解一下](https://paddle-lite.readthedocs.io/zh/latest/develop_guides/nnadapter.html)
 ### FAQ
 - FAQ：常见问题，可以访问 [FAQ](https://paddle-lite.readthedocs.io/zh/latest/introduction/faq.html)、搜索 Issues、或者通过页面底部的联系方式联系我们
 ###贡献代码
