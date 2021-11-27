@@ -16,7 +16,8 @@ import sys
 sys.path.append('../../common')
 sys.path.append('../../../')
 
-from test_assign_op_base import TestAssignOpBase
+import test_assign_op_base
+from auto_scan_test import AutoScanTest, SkipReasons
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import unittest
 
@@ -24,7 +25,13 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 
-class TestAssignOp(TestAssignOpBase):
+class TestAssignOp(AutoScanTest):
+    def is_program_valid(self, program_config: ProgramConfig) -> bool:
+        return True
+
+    def sample_program_configs(self, *args, **kwargs):
+        return test_assign_op_base.sample_program_configs(*args, **kwargs)
+
     def sample_predictor_configs(self):
         config = CxxConfig()
         config.set_valid_places({Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)})

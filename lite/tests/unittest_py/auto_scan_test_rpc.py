@@ -21,6 +21,7 @@ from typing import Optional, List, Callable, Dict, Any, Set
 import os
 import paddle
 import rpyc
+import copy
 rpyc.core.protocol.DEFAULT_CONFIG['allow_pickle'] = True
 
 
@@ -30,7 +31,8 @@ class AutoScanTest(AutoScanBaseTest):
     def run_lite_config(self, model, params, feed_data, pred_config) -> Dict[str, np.ndarray]:
         conn = rpyc.connect("localhost", 18812, config = rpyc.core.protocol.DEFAULT_CONFIG)
         out, model = conn.root.run_lite_model(model,params,feed_data, pred_config)
-        return out, model
+        result_res = copy.deepcopy(out)
+        return result_res, model
 
 class FusePassAutoScanTest(AutoScanBaseTest):
     def assert_op_size(self, fusion_before_num, fusion_after_num, origin_model, optimized_model):
@@ -51,4 +53,5 @@ class FusePassAutoScanTest(AutoScanBaseTest):
         self.origin_model = model
         conn = rpyc.connect("localhost", 18812, config = rpyc.core.protocol.DEFAULT_CONFIG)
         out, model = conn.root.run_lite_model(model,params,inputs, pred_config)
-        return out, model
+        result_res = copy.deepcopy(out)
+        return result_res, model
