@@ -59,6 +59,7 @@ ExternalProject_Add(
   ${EXTERNAL_PROJECT_LOG_ARGS}
   GIT_REPOSITORY      "https://github.com/VeriSilicon/TIM-VX.git"
   GIT_TAG             ${NNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG}
+  GIT_CONFIG          user.name=anonymous user.email=anonymous@anonymous.com
   SOURCE_DIR          ${VERISILICON_TIMVX_SOURCES_DIR}
   PREFIX              ${VERISILICON_TIMVX_INSTALL_DIR}
   PATCH_COMMAND       ${VERISILICON_TIMVX_PATCH_COMMAND}
