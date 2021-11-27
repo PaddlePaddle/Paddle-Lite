@@ -57,19 +57,7 @@ class RPCService(rpyc.Service):
         '''
         Test a single case.
         '''
-        config = ParsePaddleLiteConfig(self, config_str)
-        config.set_model_buffer(model, len(model), params, len(params))
-        predictor = create_paddle_predictor(config)
-        for name in inputs:
-            input_tensor = predictor.get_input_by_name(name)
-            input_tensor.from_numpy(inputs[name]['data'])
-            if inputs[name]['lod'] is not None:
-                input_tensor.set_lod(inputs[name]['lod'])
-        predictor.run()
-        result = {}
-        for out_name in predictor.get_output_names():
-            result[out_name] = predictor.get_output_by_name(out_name).numpy()
-
+        # 1. store original model
         abs_dir = os.path.abspath(os.path.dirname(__file__))
         self.cache_dir = os.path.join(abs_dir,
                                       str(self.__module__) + '_cache_dir')
@@ -81,23 +69,29 @@ class RPCService(rpyc.Service):
             f.write(model)
         with open(self.cache_dir + "/params", "wb") as f:
             f.write(params)
-        opt=Opt()
-        opt.set_model_dir(self.cache_dir)
-        valid_targets = ""
-        for place_str in config_str["valid_targets"]:
-            infos = ''.join(place_str.split()).split(",")
-            valid_targets += infos[0].lower()
-            valid_targets += ","
-        opt.set_valid_places(valid_targets)
-        opt.set_model_type("protobuf")
-        opt.set_optimize_out(self.cache_dir)
-        opt.run()
-        with open(self.cache_dir + "/model", "rb") as f:
-            model = f.read()
-        with open(self.cache_dir + "/model", "rb") as f:
-            model = f.read()
+        # 2. run inference
+        config = ParsePaddleLiteConfig(self, config_str)
+        config.set_model_buffer(model, len(model), params, len(params))
+        predictor = create_paddle_predictor(config)
+
+        for name in inputs:
+            input_tensor = predictor.get_input_by_name(name)
+            input_tensor.from_numpy(inputs[name]['data'])
+            if inputs[name]['lod'] is not None:
+                input_tensor.set_lod(inputs[name]['lod'])
+        predictor.run()
+        # 3. inference results
+        result = {}
+        for out_name in predictor.get_output_names():
+            result[out_name] = predictor.get_output_by_name(out_name).numpy()
         result_res = copy.deepcopy(result)
+        # 4. optimized model
+        predictor.save_optimized_pb_model(self.cache_dir+ "/opt_model")
+        with open(self.cache_dir + "/opt_model/model", "rb") as f:
+            model = f.read()
+
         return result_res, model
+
 
 
 if __name__ == "__main__":

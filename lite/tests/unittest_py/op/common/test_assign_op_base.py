@@ -20,11 +20,11 @@ import numpy as np
 from functools import partial
 from typing import Optional, List, Callable, Dict, Any, Set
 import unittest
+import hypothesis
+import hypothesis.strategies as st
 
-def sample_program_configs(*args, **kwargs):
-    def generate_input(*args, **kwargs):
-        return np.random.random(kwargs['in_shape']).astype(np.float32)
-
+def sample_program_configs(draw):
+    in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), max_size=2))
     assign_op = OpConfig(
         type = "assign",
         inputs = {"X" : ["input_data"]},
@@ -35,8 +35,7 @@ def sample_program_configs(*args, **kwargs):
         weights={},
         inputs={
             "input_data":
-            TensorConfig(data_gen=partial(generate_input, *args, **kwargs)),
+            TensorConfig(shape=in_shape)
         },
         outputs=["output_data"])
-
-    yield program_config
+    return program_config
