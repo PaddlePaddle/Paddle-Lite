@@ -70,7 +70,7 @@ class RPCService(rpyc.Service):
         with open(self.cache_dir + "/params", "wb") as f:
             f.write(params)
         # 2. run inference
-        config = ParsePaddleLiteConfig(self, pred_config)
+        config = ParsePaddleLiteConfig(self, config_str)
         config.set_model_buffer(model, len(model), params, len(params))
         predictor = create_paddle_predictor(config)
 
@@ -86,8 +86,8 @@ class RPCService(rpyc.Service):
             result[out_name] = predictor.get_output_by_name(out_name).numpy()
         result_res = copy.deepcopy(result)
         # 4. optimized model
-        predictor.save_optimized_pb_model(self.cache_dir+ "/"+ self.passes[-1])
-        with open(self.cache_dir + "/" + self.passes[-1] + "/model", "rb") as f:
+        predictor.save_optimized_pb_model(self.cache_dir+ "/opt_model")
+        with open(self.cache_dir + "/opt_model/model", "rb") as f:
             model = f.read()
 
         return result_res, model

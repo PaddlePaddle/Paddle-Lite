@@ -26,9 +26,13 @@ from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 
 def sample_program_configs(draw):
-    in_shape=draw(st.lists(
+    in_shape1=draw(st.lists(
         st.integers(
-            min_value=2, max_value=2), min_size=2, max_size=2))
+            min_value=20, max_value=200), min_size=2, max_size=2))
+    in_shape2=draw(st.lists(
+        st.integers(
+            min_value=20, max_value=200), min_size=2, max_size=2))
+    assume(in_shape1[1] == in_shape2[0])
 
     mul_op = OpConfig(
         type = "mul",
@@ -42,11 +46,11 @@ def sample_program_configs(draw):
         ops=[mul_op],
         weights={
             "input_data_y":
-             TensorConfig(shape=in_shape)
+             TensorConfig(shape=in_shape2)
         },
         inputs={
             "input_data_x":
-            TensorConfig(shape=in_shape)
+            TensorConfig(shape=in_shape1)
         },
         outputs=["output_data"])
 

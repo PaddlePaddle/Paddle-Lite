@@ -267,13 +267,6 @@ class AutoScanBaseTest(unittest.TestCase):
         if not self.passes:
             raise ValueError(
                 "In PassAutoScan you should give a valid pass name.")
-        last_passed_program = os.path.join(self.cache_dir,
-                                           self.passes[-1],
-                                           "model")
-        if not os.path.exists(last_passed_program):
-            raise ValueError(
-                "Cannot find file {}, please make sure that your pass name is correct".
-                format(last_passed_program))
         pg = paddle.static.deserialize_program(model_bytes)
         main_block = pg.desc.block(0)
         after_op_list = list()
