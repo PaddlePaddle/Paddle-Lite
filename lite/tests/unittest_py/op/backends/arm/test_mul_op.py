@@ -17,7 +17,7 @@ sys.path.append('../../common')
 sys.path.append('../../../')
 
 import test_mul_op_base
-from auto_scan_test_rpc import AutoScanTest, SkipReasons
+from auto_scan_test_rpc import AutoScanTest, IgnoreReasons
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import unittest
 
@@ -37,7 +37,7 @@ class TestMulOp(AutoScanTest):
         config.set_threads(1)
         yield config, ["mul"], (1e-5, 1e-5)
 
-    def add_skip_pass_case(self):
+    def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):

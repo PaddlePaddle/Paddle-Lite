@@ -17,7 +17,7 @@ sys.path.append('../../../')
 
 import abc
 import  test_conv_active_fuse_pass_base
-from auto_scan_test import FusePassAutoScanTest, SkipReasons
+from auto_scan_test import FusePassAutoScanTest, IgnoreReasons
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import unittest
 
@@ -33,7 +33,7 @@ class TestConvActiveFusePass(FusePassAutoScanTest):
     def sample_program_configs(self, draw):
         return test_conv_active_fuse_pass_base.sample_program_configs(draw)
 
-    def add_skip_pass_case(self):
+    def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):

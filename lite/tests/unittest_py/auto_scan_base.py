@@ -46,7 +46,7 @@ settings.register_profile(
     report_multiple_bugs=False)
 settings.load_profile("ci")
 
-class SkipReasonsBase(enum.Enum):
+class IgnoreReasonsBase(enum.Enum):
     # Paddle not support, but paddlelite support, we need to add the feature.
     PADDLE_NOT_IMPLEMENTED = 0
     # paddlelite not support.
@@ -61,14 +61,14 @@ class AutoScanBaseTest(unittest.TestCase):
         np.random.seed(1024)
         paddle.enable_static()
         super(AutoScanBaseTest, self).__init__(*args, **kwargs)
-        self.skip_cases = []
+        self.ignore_cases = []
         abs_dir = os.path.abspath(os.path.dirname(__file__))
         self.cache_dir = os.path.join(abs_dir,
                                       str(self.__module__) + '_cache_dir')
         self.available_passes_in_framework = set()
         self.num_ran_programs = 0
         self.num_invalid_programs = 0
-        self.num_skipped_tests = 0
+        self.num_ignore_tests = 0
         self.num_predictor_kinds = 0
 
 
@@ -85,12 +85,12 @@ class AutoScanBaseTest(unittest.TestCase):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def add_skip_case(
+    def add_ignore_check_case(
             self,
             teller: [Callable[[ProgramConfig, paddle_infer.Config], bool]],
-            reason: SkipReasonsBase,
+            reason: IgnoreReasonsBase,
             note: str):
-        self.skip_cases.append((teller, reason, note))
+        self.ignore_cases.append((teller, reason, note))
 
     @abc.abstractmethod
     def is_program_valid(self, program_config: ProgramConfig) -> bool:
@@ -151,7 +151,7 @@ class AutoScanBaseTest(unittest.TestCase):
         return ops
 
     @abc.abstractmethod
-    def skip_log(self, msg: str):
+    def ignore_log(self, msg: str):
         logging.warning("SKIP: " + msg)
 
     @abc.abstractmethod
@@ -185,7 +185,7 @@ class AutoScanBaseTest(unittest.TestCase):
     def run_test(self, quant=False, prog_configs=None):
         status = True
         for prog_config in prog_configs:
-            # if program is invalid, we should skip that cases.
+            # if program is invalid, we should ignore that cases.
             if not self.is_program_valid(prog_config):
                 self.num_invalid_programs += 1
                 continue
@@ -211,16 +211,16 @@ class AutoScanBaseTest(unittest.TestCase):
             for paddlelite_config, op_list, (
                     atol, rtol) in self.sample_predictor_configs():
                 self.num_predictor_kinds += 1
-                # skip info
-                skip_flag = False
+                # ignore info
+                ignore_flag = False
                 pred_config = paddlelite_config.value()
-                for skip_info in self.skip_cases:
-                    if skip_info[0](prog_config, pred_config):
-                        skip_flag = True
-                        self.num_skipped_tests += 1
-                        if skip_info[1] == SkipReasonsBase.ACCURACY_ERROR:
-                            self.skip_log("[ACCURACY_ERROR] " +
-                                          skip_info[2] + ' ' + ' vs ' + self.
+                for ignore_info in self.ignore_cases:
+                    if ignore_info[0](prog_config, pred_config):
+                        ignore_flag = True
+                        self.num_ignore_tests += 1
+                        if ignore_info[1] == IgnoreReasonsBase.ACCURACY_ERROR:
+                            self.ignore_log("[ACCURACY_ERROR] " +
+                                          ignore_info[2] + ' ' + ' vs ' + self.
                                           paddlelite_config_str(pred_config))
                         else:
                             raise NotImplementedError
@@ -234,18 +234,17 @@ class AutoScanBaseTest(unittest.TestCase):
                     results.append(result)
                     self.assert_tensors_near(atol, rtol, results[-1],
                                              results[0])
-                    if not skip_flag and self.passes is not None:
+                    if not ignore_flag and self.passes is not None:
                         self.assert_op_list(opt_model_bytes, op_list)
                 except Exception as e:
                     self.fail_log(
                         self.paddlelite_config_str(pred_config) +
                         '\033[1;31m \nERROR INFO: {}\033[0m'.format(str(e)))
-                    if not skip_flag:
+                    if not ignore_flag:
                         status = False
                     continue
                 self.success_log('PredictorConfig: ' + self.
                                  paddlelite_config_str(pred_config))
-
         self.assertTrue(status)
 
     def inference_config_str(self, config) -> bool:
@@ -258,8 +257,8 @@ class AutoScanBaseTest(unittest.TestCase):
     def paddlelite_config_str(self, config) -> bool:
         return str(config)
 
-    # method for skipping
-    def add_skip_pass_case(self):
+    # method for ignoring
+    def add_ignore_pass_case(self):
         return
 
     # judge if program contain op_list
@@ -305,7 +304,7 @@ class AutoScanBaseTest(unittest.TestCase):
         settings.load_profile("ci")
 
         self.passes = passes
-        self.add_skip_pass_case()
+        self.add_ignore_pass_case()
 
         def program_generator(draw):
             return self.sample_program_configs(draw)
@@ -326,17 +325,17 @@ class AutoScanBaseTest(unittest.TestCase):
         logging.info("Number of Invalid Programs: {}".format(
             self.num_invalid_programs))
         logging.info("Number of Ran Programs: {}".format(self.num_ran_programs))
-        logging.info("Number of Skipped Tests: {}".format(
-            self.num_skipped_tests))
+        logging.info("Number of Ignored Tests: {}".format(
+            self.num_ignore_tests))
         successful_ran_programs = int(self.num_ran_programs -
-                                      self.num_skipped_tests /
+                                      self.num_ignore_tests /
                                       self.num_predictor_kinds)
         logging.info(
             "Number of successfully ran programs approximately equal to {}".
             format(successful_ran_programs))
         if successful_ran_programs < min_success_num:
             logging.warning(
-                "satisfied_programs = ran_programs - num_skipped_tests / num_predictor_kinds"
+                "satisfied_programs = ran_programs - num_ignore_tests / num_predictor_kinds"
             )
             logging.error(
                 "At least {} programs need to ran successfully, but now only about {} programs satisfied.".

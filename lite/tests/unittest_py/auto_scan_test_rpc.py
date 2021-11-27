@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from auto_scan_base import AutoScanBaseTest, SkipReasonsBase
+from auto_scan_base import AutoScanBaseTest, IgnoreReasonsBase
 import numpy as np
 import abc
 import enum
@@ -25,7 +25,7 @@ import copy
 rpyc.core.protocol.DEFAULT_CONFIG['allow_pickle'] = True
 
 
-SkipReasons = SkipReasonsBase
+IgnoreReasons = IgnoreReasonsBase
 
 class AutoScanTest(AutoScanBaseTest):
     def run_lite_config(self, model, params, feed_data, pred_config) -> Dict[str, np.ndarray]:

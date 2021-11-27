@@ -36,7 +36,7 @@ class TestConvActiveFusePass(FusePassAutoScanTest):
         config.set_valid_places({Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)})
         yield config, ["conv2d"], (1e-5, 1e-5)
 
-    def add_skip_pass_case(self):
+    def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from auto_scan_base import AutoScanBaseTest, SkipReasonsBase
+from auto_scan_base import AutoScanBaseTest, IgnoreReasonsBase
 import numpy as np
 import logging
 import abc
@@ -23,7 +23,7 @@ import copy
 from typing import Optional, List, Callable, Dict, Any, Set
 from paddlelite.lite import *
 
-SkipReasons = SkipReasonsBase
+IgnoreReasons = IgnoreReasonsBase
 
 def ParsePlaceInfo(place_str):
    # todo: this func should be completed later
@@ -64,6 +64,7 @@ class AutoScanTest(AutoScanBaseTest):
             f.write(model)
         with open(self.cache_dir + "/params", "wb") as f:
             f.write(params)
+
         # 2. run inference
         config = ParsePaddleLiteConfig(self, pred_config)
         config.set_model_buffer(model, len(model), params, len(params))
@@ -75,14 +76,16 @@ class AutoScanTest(AutoScanBaseTest):
             if inputs[name]['lod'] is not None:
                 input_tensor.set_lod(inputs[name]['lod'])
         predictor.run()
+
         # 3. inference results
         result = {}
         for out_name in predictor.get_output_names():
             result[out_name] = predictor.get_output_by_name(out_name).numpy()
         result_res = copy.deepcopy(result)
+
         # 4. optimized model
-        predictor.save_optimized_pb_model(self.cache_dir+ "/"+ self.passes[-1])
-        with open(self.cache_dir + "/" + self.passes[-1] + "/model", "rb") as f:
+        predictor.save_optimized_pb_model(self.cache_dir+ "/opt_model/")
+        with open(self.cache_dir + "/opt_model/model", "rb") as f:
             model = f.read()
 
         return result_res, model
