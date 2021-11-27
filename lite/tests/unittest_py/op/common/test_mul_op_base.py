@@ -25,11 +25,11 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 
-def sample_program_configs(*args, **kwargs):
-    def generate_input(*args, **kwargs):
-        return np.random.random(kwargs['in_shape']).astype(np.float32)
-    def generate_input_y(*args, **kwargs):
-        return np.random.random(kwargs['in_shape']).astype(np.float32)
+def sample_program_configs(draw):
+    in_shape=draw(st.lists(
+        st.integers(
+            min_value=2, max_value=2), min_size=2, max_size=2))
+
     mul_op = OpConfig(
         type = "mul",
         inputs = {"X": ["input_data_x"],
@@ -42,12 +42,12 @@ def sample_program_configs(*args, **kwargs):
         ops=[mul_op],
         weights={
             "input_data_y":
-            TensorConfig(data_gen=partial(generate_input_y, *args, **kwargs)),
+             TensorConfig(shape=in_shape)
         },
         inputs={
             "input_data_x":
-            TensorConfig(data_gen=partial(generate_input, *args, **kwargs)),
+            TensorConfig(shape=in_shape)
         },
         outputs=["output_data"])
 
-    yield program_config
+    return program_config

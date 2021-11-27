@@ -23,30 +23,25 @@ import unittest
 
 import hypothesis
 from hypothesis import given, settings, seed, example, assume
-import hypothesis.strategies as st
+
 
 class TestAssignOp(AutoScanTest):
     def is_program_valid(self, program_config: ProgramConfig) -> bool:
         return True
 
-    def sample_program_configs(self, *args, **kwargs):
-        return test_assign_op_base.sample_program_configs(*args, **kwargs)
+    def sample_program_configs(self, draw):
+        return test_assign_op_base.sample_program_configs(draw)
 
     def sample_predictor_configs(self):
         config = CxxConfig()
         config.set_valid_places({Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)})
-        yield config, (1e-5, 1e-5)
+        yield config, ["assign"], (1e-5, 1e-5)
 
     def add_skip_pass_case(self):
         pass
 
-    @given(
-        in_shape=st.lists(
-            st.integers(
-                min_value=1, max_value=8), max_size=2))
     def test(self, *args, **kwargs):
-        self.add_skip_pass_case()
-        self.run_test(quant=False, *args, **kwargs)
+        self.run_and_statis(quant=False, max_examples=25)
 
 if __name__ == "__main__":
     unittest.main()

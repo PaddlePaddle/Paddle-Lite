@@ -31,7 +31,8 @@ from typing import Optional, List, Callable, Dict, Any, Set
 from program_config import TensorConfig, OpConfig, ProgramConfig, create_fake_model, create_quant_model
 
 import hypothesis
-from hypothesis import given, settings, seed, example, assume
+from hypothesis import given, settings, seed
+import hypothesis.strategies as st
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
@@ -64,9 +65,15 @@ class AutoScanBaseTest(unittest.TestCase):
         abs_dir = os.path.abspath(os.path.dirname(__file__))
         self.cache_dir = os.path.join(abs_dir,
                                       str(self.__module__) + '_cache_dir')
+        self.available_passes_in_framework = set()
+        self.num_ran_programs = 0
+        self.num_invalid_programs = 0
+        self.num_skipped_tests = 0
+        self.num_predictor_kinds = 0
+
 
     @abc.abstractmethod
-    def sample_program_configs(self):
+    def sample_program_configs(self, draw):
         '''
         Generate all config with the combination of different Input tensor shape and
         different Attr values.
@@ -87,7 +94,7 @@ class AutoScanBaseTest(unittest.TestCase):
 
     @abc.abstractmethod
     def is_program_valid(self, program_config: ProgramConfig) -> bool:
-        raise NotImplementedError
+        return True
 
     def run_test_config(self, model, params, prog_config, pred_config,
                         feed_data) -> Dict[str, np.ndarray]:
@@ -96,6 +103,8 @@ class AutoScanBaseTest(unittest.TestCase):
         '''
         pred_config.set_model_buffer(model, len(model), params, len(params))
         predictor = paddle_infer.create_predictor(pred_config)
+        self.available_passes_in_framework = self.available_passes_in_framework | set(
+            pred_config.pass_builder().all_passes())
 
         for name, _ in prog_config.inputs.items():
             input_tensor = predictor.get_input_handle(name)
@@ -173,14 +182,14 @@ class AutoScanBaseTest(unittest.TestCase):
             self.passes = passes
         return config
 
-    def run_test(self, quant=False, *args, **kwargs):
+    def run_test(self, quant=False, prog_configs=None):
         status = True
-
-        for prog_config in self.sample_program_configs(*args, **kwargs):
+        for prog_config in prog_configs:
             # if program is invalid, we should skip that cases.
             if not self.is_program_valid(prog_config):
+                self.num_invalid_programs += 1
                 continue
-
+            self.num_ran_programs += 1
             model, params = create_fake_model(prog_config)
             if quant:
                 model, params = create_quant_model(model, params)
@@ -195,20 +204,20 @@ class AutoScanBaseTest(unittest.TestCase):
 
             # baseline: cpu no ir_optim run
             base_config = self.create_inference_config(ir_optim=False)
-            logging.info('RUN program_config: ' + str(prog_config))
+            logging.info('[ProgramConfig]: ' + str(prog_config))
             results.append(
                 self.run_test_config(model, params, prog_config, base_config,
                                      feed_data))
-            self.success_log('RUN_CPU_BASELINE done')
-
-            for paddlelite_config, (
+            for paddlelite_config, op_list, (
                     atol, rtol) in self.sample_predictor_configs():
+                self.num_predictor_kinds += 1
                 # skip info
                 skip_flag = False
                 pred_config = paddlelite_config.value()
                 for skip_info in self.skip_cases:
                     if skip_info[0](prog_config, pred_config):
                         skip_flag = True
+                        self.num_skipped_tests += 1
                         if skip_info[1] == SkipReasonsBase.ACCURACY_ERROR:
                             self.skip_log("[ACCURACY_ERROR] " +
                                           skip_info[2] + ' ' + ' vs ' + self.
@@ -216,17 +225,17 @@ class AutoScanBaseTest(unittest.TestCase):
                         else:
                             raise NotImplementedError
                         break
-                    
                 if os.path.exists(self.cache_dir):
                     shutil.rmtree(self.cache_dir)
                 if not os.path.exists(self.cache_dir):
                     os.mkdir(self.cache_dir)
-
                 try:
-                    result, model = self.run_lite_config(model, params, feed_data, pred_config)
+                    result, opt_model_bytes = self.run_lite_config(model, params, feed_data, pred_config)
                     results.append(result)
                     self.assert_tensors_near(atol, rtol, results[-1],
                                              results[0])
+                    if not skip_flag and self.passes is not None:
+                        self.assert_op_list(opt_model_bytes, op_list)
                 except Exception as e:
                     self.fail_log(
                         self.paddlelite_config_str(pred_config) +
@@ -234,11 +243,10 @@ class AutoScanBaseTest(unittest.TestCase):
                     if not skip_flag:
                         status = False
                     continue
-                self.success_log('RUN predictor_config ' + self.
-                                 paddlelite_config_str(pred_config) + ' done')
+                self.success_log('PredictorConfig: ' + self.
+                                 paddlelite_config_str(pred_config))
 
         self.assertTrue(status)
-        return model
 
     def inference_config_str(self, config) -> bool:
         dic = {}
@@ -249,6 +257,105 @@ class AutoScanBaseTest(unittest.TestCase):
 
     def paddlelite_config_str(self, config) -> bool:
         return str(config)
+
+    # method for skipping
+    def add_skip_pass_case(self):
+        return
+
+    # judge if program contain op_list
+    def assert_op_list(self, model_bytes, op_list_after_fusion):
+        if not self.passes:
+            raise ValueError(
+                "In PassAutoScan you should give a valid pass name.")
+        last_passed_program = os.path.join(self.cache_dir,
+                                           self.passes[-1],
+                                           "model")
+        if not os.path.exists(last_passed_program):
+            raise ValueError(
+                "Cannot find file {}, please make sure that your pass name is correct".
+                format(last_passed_program))
+        pg = paddle.static.deserialize_program(model_bytes)
+        main_block = pg.desc.block(0)
+        after_op_list = list()
+        for i in range(main_block.op_size()):
+            if main_block.op(i).type() in ["feed", "fetch"]:
+                continue
+            after_op_list.append(main_block.op(i).type())
+        self.assertTrue(
+            op_list_after_fusion == after_op_list,
+            "Expected operator list after fusion is {}, but now it's {}".format(
+                op_list_after_fusion, after_op_list), )
+
+
+    def run_and_statis(
+            self,
+            quant=False,
+            max_examples=100,
+            reproduce=None,
+            min_success_num=25,
+            max_duration=180,
+            passes=None ):
+        if os.getenv('HYPOTHESIS_TEST_PROFILE', 'ci') == "dev":
+            max_examples *= 10
+            min_success_num *= 10
+            # while at ce phase, there's no limit on time
+            max_duration = -1
+        start_time = time.time()
+        settings.register_profile(
+            "ci",
+            max_examples=max_examples,
+            suppress_health_check=hypothesis.HealthCheck.all(),
+            deadline=None,
+            print_blob=True,
+            derandomize=True,
+            report_multiple_bugs=False, )
+        settings.load_profile("ci")
+
+        self.passes = passes
+        self.add_skip_pass_case()
+
+        def program_generator(draw):
+            return self.sample_program_configs(draw)
+
+        def run_test(prog_config):
+            return self.run_test(quant=quant, prog_configs=[prog_config])
+
+        generator = st.composite(program_generator)
+        loop_func = given(generator())(run_test)
+        if reproduce is not None:
+            loop_func = reproduce(loop_func)
+        logging.info("Start to running test of {}".format(type(self)))
+        loop_func()
+        logging.info(
+            "===================Statistical Information===================")
+        logging.info("Number of Generated Programs: {}".format(
+            self.num_ran_programs + self.num_invalid_programs))
+        logging.info("Number of Invalid Programs: {}".format(
+            self.num_invalid_programs))
+        logging.info("Number of Ran Programs: {}".format(self.num_ran_programs))
+        logging.info("Number of Skipped Tests: {}".format(
+            self.num_skipped_tests))
+        successful_ran_programs = int(self.num_ran_programs -
+                                      self.num_skipped_tests /
+                                      self.num_predictor_kinds)
+        logging.info(
+            "Number of successfully ran programs approximately equal to {}".
+            format(successful_ran_programs))
+        if successful_ran_programs < min_success_num:
+            logging.warning(
+                "satisfied_programs = ran_programs - num_skipped_tests / num_predictor_kinds"
+            )
+            logging.error(
+                "At least {} programs need to ran successfully, but now only about {} programs satisfied.".
+                format(min_success_num, successful_ran_programs))
+            assert False
+        used_time = time.time() - start_time
+        if max_duration > 0 and used_time > max_duration:
+            logging.error(
+                "The duration exceeds {} seconds, if this is neccessary, try to set a larger number for parameter `max_duration`.".
+                format(max_duration))
+            assert False
+
 
     @abc.abstractmethod
     def run_lite_config(self, model, params, feed_data, pred_config) -> Dict[str, np.ndarray]:
