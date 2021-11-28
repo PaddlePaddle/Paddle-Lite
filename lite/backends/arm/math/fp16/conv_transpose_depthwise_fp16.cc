@@ -48,7 +48,7 @@ void conv_transpose_depthwise_s1_fp16<float16_t>(const float16_t* dst,
   const int oc_plane_size = output_h * output_w;
   const int rr_plane_size = kernel_h * kernel_w;
   const int16_t width_s16 = static_cast<int16_t>(width);
-  LITE_PARALLEL_BEGIN(c, tid, channels) {
+  for (int c = 0; c < channels; c++) {
     int dst_z = c * oc_plane_size;
     int weight_z = c * rr_plane_size;
     int src_z = c * ic_plane_size;
@@ -170,7 +170,6 @@ void conv_transpose_depthwise_s1_fp16<float16_t>(const float16_t* dst,
       }
     }
   }
-  LITE_PARALLEL_END();
 }
 
 template <>
@@ -200,7 +199,7 @@ void conv_transpose_depthwise_s2_fp16<float16_t>(const float16_t* dst,
   const int oc_plane_size = output_h * output_w;
   const int rr_plane_size = kernel_h * kernel_w;
   const int16_t width_s16 = static_cast<int16_t>(width);
-  LITE_PARALLEL_BEGIN(c, tid, channels) {
+  for (int c = 0; c < channels; c++) {
     int dst_z = c * oc_plane_size;
     int weight_z = c * rr_plane_size;
     int src_z = c * ic_plane_size;
@@ -332,7 +331,6 @@ void conv_transpose_depthwise_s2_fp16<float16_t>(const float16_t* dst,
       }
     }
   }
-  LITE_PARALLEL_END();
 }
 }  // namespace fp16
 }  // namespace math
