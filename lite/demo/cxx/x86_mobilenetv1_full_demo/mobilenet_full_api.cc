@@ -161,7 +161,6 @@ void RunModel(std::string model_dir,
       ::IsOpenCLBackendValid(false /*check_fp16_valid = false*/);
   std::cout << "is_opencl_backend_valid:" << is_opencl_backend_valid
             << std::endl;
-  std::string optimized_model_dir = "mobilenet_v1_x86";
 
   if (!is_opencl_backend_valid) {
     config.set_valid_places({Place{TARGET(kX86), PRECISION(kFloat)},
