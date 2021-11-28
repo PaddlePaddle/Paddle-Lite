@@ -55,17 +55,17 @@ def sample_program_configs(draw):
         return attrs
 
     build_ops = OpConfig(
-            type = "group_norm",
-            inputs = {
-                "X" : ["input_data"],
-                "Scale" : ["scale_data"],
-                "Bias" : ["bias_data"]
-                },
-            outputs = {
-                "Y": ["output_data"],
-                "Mean" : ["mean1"],
-                "Variance" : ["var1"]},
-            attrs = generate_attr(with_channel)
+        type = "group_norm",
+        inputs = {
+            "X" : ["input_data"],
+            "Scale" : ["scale_data"],
+            "Bias" : ["bias_data"]
+            },
+        outputs = {
+            "Y": ["output_data"],
+            "Mean" : ["mean1"],
+            "Variance" : ["var1"]},
+        attrs = generate_attr(with_channel)
     )
     program_config = ProgramConfig(
         ops=[build_ops],

@@ -41,24 +41,24 @@ def sample_program_configs(draw):
         return np.random.random([h0_1, in_shape[0]]).astype(np.float32)
     
     build_ops = OpConfig(
-            type = "gru",
-            inputs = {
-                "Input" : ["input_data"],
-                "Weight" : ["weight_data"],
-                "Bias" : ["bias_data"],
-                "H0" : ["h0"]
-                },
-            outputs = {
-                "Hidden": ["hidden"],
-                "BatchGate": ["batch_gate"],
-                "BatchResetHiddenPrev": ["batch_reset_hidden_prev"],
-                "BatchHidden": ["batch_hidden"]},
-            attrs = {
-                "activation": "tanh",
-                "gate_activation": "sigmoid",
-                "is_reverse": is_rev,
-                "origin_mode": bool_orimode,
-            })
+        type = "gru",
+        inputs = {
+            "Input" : ["input_data"],
+            "Weight" : ["weight_data"],
+            "Bias" : ["bias_data"],
+            "H0" : ["h0"]
+            },
+        outputs = {
+            "Hidden": ["hidden"],
+            "BatchGate": ["batch_gate"],
+            "BatchResetHiddenPrev": ["batch_reset_hidden_prev"],
+            "BatchHidden": ["batch_hidden"]},
+        attrs = {
+            "activation": "tanh",
+            "gate_activation": "sigmoid",
+            "is_reverse": is_rev,
+            "origin_mode": bool_orimode,
+        })
     program_config = ProgramConfig(
         ops=[build_ops],
         weights={
