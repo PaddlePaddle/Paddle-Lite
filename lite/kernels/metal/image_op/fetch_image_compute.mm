@@ -150,6 +150,21 @@ REGISTER_LITE_KERNEL(fetch,
     paddle::lite::kernels::metal::FetchImageCompute,
     def)
     .BindInput("X",
-        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kAny), DATALAYOUT(kMetalTexture2DArray))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny), DATALAYOUT(kNCHW))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(fetch,
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::FetchImageCompute,
+    int64_def)
+    .BindInput("X",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kInt64),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64), DATALAYOUT(kNCHW))})
     .Finalize();
