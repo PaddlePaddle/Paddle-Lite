@@ -27,7 +27,7 @@ function(lite_cc_test_with_model_and_data TARGET)
     lite_cc_test(${TARGET} SRCS ${SOURCE}
         DEPS ${lite_model_test_DEPS} paddle_api_full kernels
         ARGS ${ARGS} SERIAL)
-    
+
     if(DEFINED args_MODEL)
         add_dependencies(${TARGET} extern_lite_download_${args_MODEL}_tar_gz)
     endif()
@@ -37,7 +37,7 @@ function(lite_cc_test_with_model_and_data TARGET)
     if(DEFINED args_CONFIG)
         add_dependencies(${TARGET} extern_lite_download_${args_CONFIG}_tar_gz)
     endif()
-    
+
     if(LITE_WITH_NNADAPTER)
         set(LINK_FLAGS "-Wl,--version-script ${PADDLE_SOURCE_DIR}/lite/core/lite.map")
         set_target_properties(${TARGET} PROPERTIES LINK_FLAGS "${LINK_FLAGS}")
@@ -61,6 +61,10 @@ if(LITE_WITH_ARM)
     lite_cc_test_with_model_and_data(test_nlp_lstm_int8_arm MODEL nlp_quant_lstm_int8_arm DATA nlp_quant_lstm_int8_data_txt)
     lite_cc_test_with_model_and_data(test_lac_crf_fp32_int16_arm MODEL lac_fp32_arm DATA lac_data_txt)
 endif()
+
+# if(LITE_WITH_OPENCL)
+#     lite_cc_test_with_model_and_data(test_mobilenet_v1_fp32_opencl MODEL mobilenet_v1 DATA ILSVRC2012_500)
+# endif()
 
 # Only test on android, disable it for ci error
 # if(ANDROID)

@@ -65,4 +65,4 @@ void gen_log(STL::ostream& log_stream_,
 }  // namespace paddle
 
 #endif  // LITE_WITH_LOG
-#endif  // LITE_WITH_LIGHT_FRAMEWORK
+#endif  // LITE_WITH_ARM

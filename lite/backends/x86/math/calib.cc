@@ -66,10 +66,10 @@ void fp32_to_int8(const float* din,
       vin3 = _mm256_blendv_ps(
           vzero_l, vout3, _mm256_cmp_ps(vout3, vzero_l, _CMP_GT_OS));
       // fp32->int32
-      __m256i vres0 = _mm256_cvttps_epi32(vin0);
-      __m256i vres1 = _mm256_cvttps_epi32(vin1);
-      __m256i vres2 = _mm256_cvttps_epi32(vin2);
-      __m256i vres3 = _mm256_cvttps_epi32(vin3);
+      __m256i vres0 = _mm256_cvtps_epi32(vin0);
+      __m256i vres1 = _mm256_cvtps_epi32(vin1);
+      __m256i vres2 = _mm256_cvtps_epi32(vin2);
+      __m256i vres3 = _mm256_cvtps_epi32(vin3);
       __m256i vres0_16 = _mm256_packs_epi32(vres0, vres0);
       __m256i vres1_16 = _mm256_packs_epi32(vres1, vres1);
       __m256i vres2_16 = _mm256_packs_epi32(vres2, vres2);
@@ -78,13 +78,21 @@ void fp32_to_int8(const float* din,
       __m256i vres1_8 = _mm256_packs_epi16(vres1_16, vres1_16);
       __m256i vres2_8 = _mm256_packs_epi16(vres2_16, vres2_16);
       __m256i vres3_8 = _mm256_packs_epi16(vres3_16, vres3_16);
-      *(reinterpret_cast<int*>(dout)) = (reinterpret_cast<int*>(&vres0_8))[0];
-      *(reinterpret_cast<int*>(dout + 8)) =
+      *(reinterpret_cast<int*>(dout_c)) = (reinterpret_cast<int*>(&vres0_8))[0];
+      *(reinterpret_cast<int*>(dout_c + 4)) =
+          (reinterpret_cast<int*>(&vres0_8))[4];
+      *(reinterpret_cast<int*>(dout_c + 8)) =
           (reinterpret_cast<int*>(&vres1_8))[0];
-      *(reinterpret_cast<int*>(dout + 16)) =
+      *(reinterpret_cast<int*>(dout_c + 12)) =
+          (reinterpret_cast<int*>(&vres1_8))[4];
+      *(reinterpret_cast<int*>(dout_c + 16)) =
           (reinterpret_cast<int*>(&vres2_8))[0];
-      *(reinterpret_cast<int*>(dout + 24)) =
+      *(reinterpret_cast<int*>(dout_c + 20)) =
+          (reinterpret_cast<int*>(&vres2_8))[4];
+      *(reinterpret_cast<int*>(dout_c + 24)) =
           (reinterpret_cast<int*>(&vres3_8))[0];
+      *(reinterpret_cast<int*>(dout_c + 28)) =
+          (reinterpret_cast<int*>(&vres3_8))[4];
       din_c += 32;
       dout_c += 32;
     }
@@ -103,10 +111,10 @@ void fp32_to_int8(const float* din,
       vin2 = _mm_blendv_ps(vzero, vout2, _mm_cmp_ps(vout2, vzero, _CMP_GT_OS));
       vin3 = _mm_blendv_ps(vzero, vout3, _mm_cmp_ps(vout3, vzero, _CMP_GT_OS));
       // fp32->int32
-      __m128i vres0 = _mm_cvttps_epi32(vin0);
-      __m128i vres1 = _mm_cvttps_epi32(vin1);
-      __m128i vres2 = _mm_cvttps_epi32(vin2);
-      __m128i vres3 = _mm_cvttps_epi32(vin3);
+      __m128i vres0 = _mm_cvtps_epi32(vin0);
+      __m128i vres1 = _mm_cvtps_epi32(vin1);
+      __m128i vres2 = _mm_cvtps_epi32(vin2);
+      __m128i vres3 = _mm_cvtps_epi32(vin3);
       __m128i vres0_16 = _mm_packs_epi32(vres0, vres0);
       __m128i vres1_16 = _mm_packs_epi32(vres1, vres1);
       __m128i vres2_16 = _mm_packs_epi32(vres2, vres2);
@@ -115,10 +123,10 @@ void fp32_to_int8(const float* din,
       __m128i vres1_8 = _mm_packs_epi16(vres1_16, vres1_16);
       __m128i vres2_8 = _mm_packs_epi16(vres2_16, vres2_16);
       __m128i vres3_8 = _mm_packs_epi16(vres3_16, vres3_16);
-      *(reinterpret_cast<int*>(dout)) = _mm_extract_epi32(vres0_8, 0);
-      *(reinterpret_cast<int*>(dout + 4)) = _mm_extract_epi32(vres1_8, 0);
-      *(reinterpret_cast<int*>(dout + 8)) = _mm_extract_epi32(vres2_8, 0);
-      *(reinterpret_cast<int*>(dout + 12)) = _mm_extract_epi32(vres3_8, 0);
+      *(reinterpret_cast<int*>(dout_c)) = _mm_extract_epi32(vres0_8, 0);
+      *(reinterpret_cast<int*>(dout_c + 4)) = _mm_extract_epi32(vres1_8, 0);
+      *(reinterpret_cast<int*>(dout_c + 8)) = _mm_extract_epi32(vres2_8, 0);
+      *(reinterpret_cast<int*>(dout_c + 12)) = _mm_extract_epi32(vres3_8, 0);
       din_c += 16;
       dout_c += 16;
     }
@@ -128,10 +136,10 @@ void fp32_to_int8(const float* din,
       __m128 vout0 = _mm_mul_ps(vin0, vscale);
       vin0 = _mm_blendv_ps(vzero, vout0, _mm_cmp_ps(vout0, vzero, _CMP_GT_OS));
       // fp32->int32
-      __m128i vres0 = _mm_cvttps_epi32(vin0);
+      __m128i vres0 = _mm_cvtps_epi32(vin0);
       __m128i vres0_16 = _mm_packs_epi32(vres0, vres0);
       __m128i vres0_8 = _mm_packs_epi16(vres0_16, vres0_16);
-      *(reinterpret_cast<int*>(dout)) = _mm_extract_epi32(vres0_8, 0);
+      *(reinterpret_cast<int*>(dout_c)) = _mm_extract_epi32(vres0_8, 0);
       din_c += 8;
       dout_c += 8;
     }

@@ -233,7 +233,9 @@ void LoadModelPb(const std::string &model_dir,
       model_buffer.is_empty()
           ? FindModelFileName(model_dir, model_file, combined)
           : "";
-  OPT_LOG << "Loading topology data from " << prog_path;
+  if (model_buffer.is_empty()) {
+    OPT_LOG << "Loading topology data from " << prog_path;
+  }
   framework::proto::ProgramDesc pb_proto_prog =
       *LoadProgram(prog_path, model_buffer);
   pb::ProgramDesc pb_prog(&pb_proto_prog);
@@ -260,7 +262,9 @@ void LoadModelPb(const std::string &model_dir,
 
     LoadCombinedParamsPb(param_file, scope, *cpp_prog, model_buffer);
   }
-  OPT_LOG << "1. Model is successfully loaded!";
+  if (model_buffer.is_empty()) {
+    OPT_LOG << "1. Model is successfully loaded!";
+  }
 }
 
 void SaveModelPb(const std::string &model_dir,
