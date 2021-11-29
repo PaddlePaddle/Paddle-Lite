@@ -253,10 +253,6 @@ if (LITE_WITH_PRECISION_PROFILE)
     add_definitions("-DLITE_WITH_PRECISION_PROFILE")
 endif()
 
-if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
-  add_definitions("-DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK")
-endif()
-
 if (LITE_WITH_LOG)
   add_definitions("-DLITE_WITH_LOG")
 endif()
