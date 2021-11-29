@@ -437,11 +437,14 @@ def Place(target_type:TargetType, precision_type: Optional[PrecisionType]=None, 
 class CxxConfig:
     def __init__(self):
         self.config = {}
+        self.config["discarded_passes"] = []
     def set_valid_places(self, places):
         self.config["valid_targets"] = places
     def set_threads(self, thread):
         self.config["thread"] = thread
     def set_power_mode(self, mode):
         self.config["power_mode"] = mode
+    def add_discarded_pass(self, discarded_pass):
+        self.config["discarded_passes"].append(discarded_pass)
     def value(self):
         return self.config

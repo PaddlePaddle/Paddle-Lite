@@ -50,6 +50,10 @@ def ParsePaddleLiteConfig(self, config):
         lite_config.set_valid_places(valid_places)
     if "thread" in config:
         lite_config.set_threads(config["thread"])
+    if "discarded_passes" in config:
+
+        for discarded_pass in config["discablqed_passes"]:
+            lite_config.add_discarded_pass(discarded_pass)
     return lite_config
 
 class RPCService(rpyc.Service):
