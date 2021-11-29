@@ -21,7 +21,7 @@ REGISTER_CONVERTER(clip, ConvertClip, "huawei_ascend_npu");
 REGISTER_CONVERTER(conv2d,
                    ConvertConv2D,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
-                   "npu,amlogic_npu,imagination_nna,cambricon_mlu,verisilicon_"
+                   "npu,amlogic_npu,imagination_nna,verisilicon_"
                    "timvx");
 REGISTER_CONVERTER(depthwise_conv2d,
                    ConvertConv2D,
@@ -32,7 +32,7 @@ REGISTER_CONVERTER(dropout, ConvertDropout, "huawei_ascend_npu");
 REGISTER_CONVERTER(pool2d,
                    ConvertPool,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
-                   "npu,amlogic_npu,imagination_nna,cambricon_mlu,verisilicon_"
+                   "npu,amlogic_npu,imagination_nna,verisilicon_"
                    "timvx");
 REGISTER_CONVERTER(matmul,
                    ConvertMatmul,
@@ -43,7 +43,7 @@ REGISTER_CONVERTER(matmul_v2,
 REGISTER_CONVERTER(softmax,
                    ConvertSoftmax,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
-                   "npu,amlogic_npu,imagination_nna,cambricon_mlu,verisilicon_"
+                   "npu,amlogic_npu,imagination_nna,verisilicon_"
                    "timvx");
 REGISTER_CONVERTER(cumsum, ConvertCumsum, "huawei_ascend_npu");
 REGISTER_CONVERTER(conv2d_transpose,
@@ -67,7 +67,7 @@ REGISTER_CONVERTER(lookup_table_v2, ConvertLookupTableV2, "huawei_ascend_npu");
 REGISTER_CONVERTER(elementwise_add,
                    ConvertElementwise,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
-                   "npu,amlogic_npu,imagination_nna,cambricon_mlu,verisilicon_"
+                   "npu,amlogic_npu,imagination_nna,verisilicon_"
                    "timvx");
 REGISTER_CONVERTER(elementwise_sub,
                    ConvertElementwise,
@@ -123,7 +123,7 @@ REGISTER_CONVERTER(sigmoid,
 REGISTER_CONVERTER(relu,
                    ConvertUnaryActivations,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
-                   "npu,amlogic_npu,imagination_nna,cambricon_mlu,verisilicon_"
+                   "npu,amlogic_npu,imagination_nna,verisilicon_"
                    "timvx");
 REGISTER_CONVERTER(relu6,
                    ConvertUnaryActivations,
@@ -204,7 +204,7 @@ REGISTER_CONVERTER(flatten_contiguous_range,
 REGISTER_CONVERTER(fc,
                    ConvertFC,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
-                   "npu,amlogic_npu,imagination_nna,cambricon_mlu,verisilicon_"
+                   "npu,amlogic_npu,imagination_nna,verisilicon_"
                    "timvx");
 REGISTER_CONVERTER(norm, ConvertNorm, "huawei_ascend_npu");
 REGISTER_CONVERTER(pad2d, ConvertPad, "huawei_ascend_npu");
