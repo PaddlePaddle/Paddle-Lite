@@ -135,9 +135,9 @@ function publish_metal_lib {
 
   # Step1. Compiling python installer on mac
   ./lite/tools/build_linux.sh \
-    --build_python=ON \
+    --with_python=ON \
     --python_version=$python_version \
-    --build_opencl=${with_opencl} \
+    --with_opencl=${with_opencl} \
     --with_metal=${with_metal} \
     --with_extra=$BUILD_EXTRA \
     --with_exception=$WITH_EXCEPTION \
