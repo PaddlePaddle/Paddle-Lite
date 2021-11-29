@@ -16,7 +16,7 @@ set -e
 # Architecture: armv7 or armv8, default armv8.
 ARCH=(armv8 armv7)
 # Whether to use GPU or not: ON or OFF, default OFF.
-WITH_GPU=(ON OFF)
+USE_GPU=(ON OFF)
 # Absolute path of Paddle-Lite source code.
 SHELL_FOLDER=$(cd "$(dirname "$0")";pwd)
 WORKSPACE=${SHELL_FOLDER%tools/ci_tools*}
@@ -60,7 +60,7 @@ function publish_inference_lib {
 
 # Compiling test
 for arch in ${ARCH[@]}; do
-  for use_gpu in ${WITH_GPU[@]}; do
+  for use_gpu in ${USE_GPU[@]}; do
     cd $WORKSPACE
     publish_inference_lib $arch use_gpu ON
   done
