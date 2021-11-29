@@ -9,7 +9,7 @@ LITE_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}")/../../" && pwd )"
 NUM_PROC=4
 
 readonly ADB_WORK_DIR="/data/local/tmp"
-readonly common_flags="-DWITH_LITE=ON -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF -DWITH_PYTHON=OFF -DWITH_TESTING=ON -DLITE_WITH_ARM=OFF"
+readonly common_flags="-DWITH_PYTHON=OFF -DWITH_TESTING=ON -DLITE_WITH_ARM=OFF"
 
 # url that stores third-party tar.gz file to accelerate third-party lib installation
 readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
@@ -129,12 +129,10 @@ function cmake_opencl {
         -DLITE_WITH_OPENCL=ON \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON   \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_LOG=ON \
@@ -231,7 +229,7 @@ function cmake_x86_for_CI {
 
 function cmake_cuda_for_CI {
     prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
-    cmake ..  -DLITE_WITH_CUDA=ON -DWITH_MKLDNN=OFF -DLITE_WITH_X86=OFF ${common_flags} -DLITE_WITH_PROFILE=OFF -DWITH_MKL=OFF -DLITE_BUILD_EXTRA=ON -DCUDNN_ROOT=${CUDNN_ROOT} -DWITH_LITE=OFF
+    cmake ..  -DLITE_WITH_CUDA=ON -DWITH_MKLDNN=OFF -DLITE_WITH_X86=OFF ${common_flags} -DLITE_WITH_PROFILE=OFF -DWITH_MKL=OFF -DLITE_BUILD_EXTRA=ON -DCUDNN_ROOT=${CUDNN_ROOT}
 }
 
 function cmake_gpu {
@@ -336,7 +334,7 @@ function build_test_train {
     cd ./build
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/paddle/build/third_party/install/mklml/lib"
     prepare_workspace # fake an empty __generated_code__.cc to pass cmake.
-    cmake .. -DWITH_LITE=ON -DWITH_GPU=OFF -DWITH_PYTHON=ON -DLITE_WITH_X86=ON -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF -DWITH_TESTING=ON -DWITH_MKL=OFF \
+    cmake .. -DWITH_GPU=OFF -DWITH_PYTHON=ON -DLITE_WITH_X86=ON -DLITE_WITH_ARM=OFF -DWITH_TESTING=ON -DWITH_MKL=OFF \
         -DLITE_BUILD_EXTRA=ON \
 
     make test_gen_code -j$NUM_CORES_FOR_COMPILE
@@ -727,12 +725,10 @@ function huawei_kirin_npu_build_target {
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON   \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_TRAIN=ON \
@@ -802,12 +798,10 @@ function rockchip_npu_build_target {
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON   \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_TRAIN=ON \
@@ -868,12 +862,10 @@ function armlinux_build_target {
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON   \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_TRAIN=ON \
@@ -1023,7 +1015,7 @@ function test_model_optimize_tool_compile {
     cd $workspace
     rm -rf build && mkdir build && cd build
     # Compile opt tool
-    cmake .. -DWITH_LITE=ON -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON -DWITH_TESTING=OFF -DLITE_BUILD_EXTRA=ON -DWITH_MKL=OFF
+    cmake .. -DLITE_ON_MODEL_OPTIMIZE_TOOL=ON -DWITH_TESTING=OFF -DLITE_BUILD_EXTRA=ON -DWITH_MKL=OFF
     make opt -j$NUM_CORES_FOR_COMPILE
     # Check whether opt can transform quantized mobilenetv1 successfully.
     cd lite/api && chmod +x ./opt
@@ -1067,12 +1059,10 @@ function cmake_arm {
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON   \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_TRAIN=ON \
@@ -1126,7 +1116,6 @@ function build_ios {
     cmake .. \
             -DWITH_GPU=OFF \
             -DWITH_MKL=OFF \
-            -DWITH_LITE=ON \
             -DLITE_WITH_CUDA=OFF \
             -DLITE_WITH_X86=OFF \
             -DLITE_WITH_ARM=ON \
@@ -1136,7 +1125,6 @@ function build_ios {
             -DLITE_ON_TINY_PUBLISH=ON \
             -DLITE_WITH_OPENMP=OFF \
             -DWITH_ARM_DOTPROD=OFF \
-            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
             -DARM_TARGET_ARCH_ABI=$abi \
             -DLITE_BUILD_EXTRA=ON \
             -DLITE_WITH_CV=$BUILD_CV \
@@ -1411,11 +1399,9 @@ function mobile_publish {
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=OFF \
         -DLITE_WITH_JAVA=ON \
         -DLITE_WITH_LOG=OFF \

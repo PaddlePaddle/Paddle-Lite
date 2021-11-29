@@ -69,7 +69,6 @@ lite_option(LITE_WITH_OPENCL                   "Enable OpenCL support in lite"  
 lite_option(LITE_WITH_METAL                    "Enable Metal support in lite"                                         OFF)
 lite_option(LITE_WITH_FPGA                     "Enable FPGA support in lite"                                          OFF)
 lite_option(LITE_WITH_INTEL_FPGA               "Enable Intel FPGA support in lite"                                    OFF)
-lite_option(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK   "Enable light-weight framework"                                        OFF)
 lite_option(LITE_WITH_PROFILE                  "Enable profile mode in lite framework"                                OFF)
 lite_option(LITE_WITH_PRECISION_PROFILE        "Enable precision profile in profile mode ON in lite"                  OFF)
 lite_option(LITE_WITH_LOG                      "Enable log printing or not."                                          ON)
@@ -96,7 +95,7 @@ lite_option(LITE_WITH_CODE_META_INFO           "include git version in the heade
 set(THIRD_PARTY_PATH "${CMAKE_BINARY_DIR}/third_party" CACHE STRING
   "A path setting third party libraries download & build directories.")
 
-if(NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+if(NOT LITE_WITH_ARM)
   find_package(CUDA QUIET)
 endif()
 find_package(Git REQUIRED)
@@ -119,8 +118,8 @@ message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
 # check options
 if(LITE_ON_TINY_PUBLISH)
-  if(NOT (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND NOT WITH_TESTING))#LITE_WITH_JAVA AND
-    message(FATAL_ERROR "LITE_ON_TINY_PUBLISH=ON must be used with WITH_LITE=ON LITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON LITE_WITH_JAVA=ON WITH_TESTING=OFF")
+  if(NOT (LITE_WITH_ARM AND NOT WITH_TESTING))#LITE_WITH_JAVA AND
+    message(FATAL_ERROR "LITE_ON_TINY_PUBLISH=ON must be used with LITE_WITH_ARM=ON LITE_WITH_JAVA=ON WITH_TESTING=OFF")
     return()
   endif()
 endif()
@@ -167,4 +166,26 @@ if(NOT DEFINED WITH_MKLDNN)
 endif()
 
 include(backends/common)
+
+# Enable arc
+if(APPLE)
+  if(NOT DEFINED ENABLE_ARC)
+    # Unless specified, enable ARC support by default
+    set(ENABLE_ARC TRUE)
+    message(STATUS "Enabling ARC support by default. ENABLE_ARC not provided!")
+  endif()
+
+  set(ENABLE_ARC_INT ${ENABLE_ARC} CACHE BOOL "Whether or not to enable ARC" ${FORCE_CACHE})
+  if(ENABLE_ARC_INT)
+    set(FOBJC_ARC "-fobjc-arc")
+    set(CMAKE_XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC YES CACHE INTERNAL "")
+    message(STATUS "Enabling ARC support.")
+  else()
+    set(FOBJC_ARC "-fno-objc-arc")
+    set(CMAKE_XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC NO CACHE INTERNAL "")
+    message(STATUS "Disabling ARC support.")
+  endif()
+  set(CMAKE_C_FLAGS "${FOBJC_ARC} ${CMAKE_C_FLAGS}")
+  set(CMAKE_CXX_FLAGS "${FOBJC_ARC} ${CMAKE_CXX_FLAGS}")
+endif()
 add_subdirectory(lite)

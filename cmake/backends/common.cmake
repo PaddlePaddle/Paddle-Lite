@@ -49,7 +49,7 @@ include(backends/x86)
 # Add dependencies
 include(generic)                # simplify cmake module
 include(configure)              # add paddle env configuration
-if(WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+if(LITE_WITH_ARM)
   message(STATUS "Building the mobile framework")
   include(postproject)
   if(NOT LITE_ON_TINY_PUBLISH)

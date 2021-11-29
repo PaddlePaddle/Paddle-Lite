@@ -19,7 +19,7 @@ namespace lite {
 namespace kernels {
 namespace nnadapter {
 
-int ConvertBatchNormalization(Converter* converter, OpInfo* op, Scope* scope) {
+int ConvertBatchNorm(Converter* converter, OpInfo* op, Scope* scope) {
   // Extract op attributes
   // Input
   auto x_name = op->Input("X").front();

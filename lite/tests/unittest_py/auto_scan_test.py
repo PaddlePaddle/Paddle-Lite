@@ -12,17 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from auto_scan_base import AutoScanBaseTest, SkipReasonsBase
+from auto_scan_base import AutoScanBaseTest, IgnoreReasonsBase
 import numpy as np
 import logging
 import abc
 import enum
 import unittest
 import paddle
+import copy
 from typing import Optional, List, Callable, Dict, Any, Set
 from paddlelite.lite import *
 
-SkipReasons = SkipReasonsBase
+IgnoreReasons = IgnoreReasonsBase
 
 def ParsePlaceInfo(place_str):
    # todo: this func should be completed later
@@ -58,86 +59,46 @@ def ParsePaddleLiteConfig(self, config):
 
 class AutoScanTest(AutoScanBaseTest):
     def run_lite_config(self, model, params, inputs, pred_config) -> Dict[str, np.ndarray]:
+        # 1. store original model
+        with open(self.cache_dir + "/model", "wb") as f:
+            f.write(model)
+        with open(self.cache_dir + "/params", "wb") as f:
+            f.write(params)
+
+        # 2. run inference
         config = ParsePaddleLiteConfig(self, pred_config)
         config.set_model_buffer(model, len(model), params, len(params))
         predictor = create_paddle_predictor(config)
+
         for name in inputs:
             input_tensor = predictor.get_input_by_name(name)
             input_tensor.from_numpy(inputs[name]['data'])
             if inputs[name]['lod'] is not None:
                 input_tensor.set_lod(inputs[name]['lod'])
         predictor.run()
+
+        # 3. inference results
         result = {}
         for out_name in predictor.get_output_names():
             result[out_name] = predictor.get_output_by_name(out_name).numpy()
+        result_res = copy.deepcopy(result)
 
-        with open(self.cache_dir + "/model", "wb") as f:
-            f.write(model)
-        with open(self.cache_dir + "/params", "wb") as f:
-            f.write(params)
-        opt=Opt()
-        opt.set_model_dir(self.cache_dir)
-        valid_targets = ""
-        for place_str in pred_config["valid_targets"]:
-            infos = ''.join(place_str.split()).split(",")
-            valid_targets += infos[0].lower()
-            valid_targets += ","
-        opt.set_valid_places(valid_targets)
-        opt.set_model_type("protobuf")
-        opt.set_optimize_out(self.cache_dir)
-        opt.run()
-        with open(self.cache_dir + "/model", "rb") as f:
+        # 4. optimized model
+        predictor.save_optimized_pb_model(self.cache_dir+ "/opt_model/")
+        with open(self.cache_dir + "/opt_model/model", "rb") as f:
             model = f.read()
 
-        return result, model
+        return result_res, model
 
 
-class FusePassAutoScanTest(AutoScanBaseTest):
-    def assert_op_size(self, fusion_before_num, fusion_after_num, origin_model, optimized_model):
-        pg = paddle.static.deserialize_program(optimized_model)
-        main_block = pg.desc.block(0)
-        after_op_size = main_block.op_size()
-        pg = paddle.static.deserialize_program(origin_model)
-        main_block = pg.desc.block(0)
-        before_op_size = main_block.op_size()
-        self.assertTrue(before_op_size == fusion_before_num,
-                        'before fusion op size is {}, but got {}!'.format(
-                            before_op_size, fusion_before_num))
-        self.assertTrue(after_op_size == fusion_after_num,
-                        'after fusion op size is {}, but got {}!'.format(
-                            after_op_size, fusion_after_num))
-
-    def run_lite_config(self, model, params, inputs, pred_config) -> Dict[str, np.ndarray]:
-        config = ParsePaddleLiteConfig(self, pred_config)
-        config.set_model_buffer(model, len(model), params, len(params))
-        self.origin_model = model
-        predictor = create_paddle_predictor(config)
-        for name in inputs:
-            input_tensor = predictor.get_input_by_name(name)
-            input_tensor.from_numpy(inputs[name]['data'])
-            if inputs[name]['lod'] is not None:
-                input_tensor.set_lod(inputs[name]['lod'])
-        predictor.run()
-        result = {}
-        for out_name in predictor.get_output_names():
-            result[out_name] = predictor.get_output_by_name(out_name).numpy()
-
-        with open(self.cache_dir + "/model", "wb") as f:
-            f.write(model)
-        with open(self.cache_dir + "/params", "wb") as f:
-            f.write(params)
-        opt=Opt()
-        opt.set_model_dir(self.cache_dir)
-        valid_targets = ""
-        for place_str in pred_config["valid_targets"]:
-            infos = ''.join(place_str.split()).split(",")
-            valid_targets += infos[0].lower()
-            valid_targets += ","
-        opt.set_valid_places(valid_targets)
-        opt.set_model_type("protobuf")
-        opt.set_optimize_out(self.cache_dir)
-        opt.run()
-        with open(self.cache_dir + "/model", "rb") as f:
-            model = f.read()
-
-        return result, model
+class FusePassAutoScanTest(AutoScanTest):
+    def run_and_statis(
+            self,
+            quant=False,
+            max_examples=100,
+            reproduce=None,
+            min_success_num=25,
+            max_duration=180,
+            passes=None ):
+        assert passes is not None, "Parameter of passes must be defined in function run_and_statis."
+        super().run_and_statis(quant, max_examples, reproduce, min_success_num, max_duration, passes)
