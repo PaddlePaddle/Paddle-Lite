@@ -168,7 +168,7 @@ function publish_metal_lib {
     # full demo
     cd ${cxx_demo_dir}/mobilenetv1_full/
     sh build.sh --with_metal=${with_metal}
-    ./mobilenet_full_api $WORKSPACE/${build_dir}/mobilenet_v1  1,3,224,224  10  2  0
+    # ./mobilenet_full_api $WORKSPACE/${build_dir}/mobilenet_v1  1,3,224,224  10  2  0
 
     # light demo
     # cd ${cxx_demo_dir}/mobilenetv1_light/
