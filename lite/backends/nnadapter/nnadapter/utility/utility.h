@@ -226,4 +226,28 @@ int64_t GetSpanCount(T start, T end, T step) {
              : std::ceil(std::abs((end - start) / step));
 }
 
+// The environment variables for selecting Huawei Ascend npu device ids, use
+// "HUAWEI_" as prefix. Specify the device ids of Huawei Ascend npu for model
+// inference, an example is shown as below:
+// HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS="0,1,2,3"
+// HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS="0"
+#define HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS \
+  "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS"
+
+// Read environment variables of string type
+std::string GetStringFromEnv(const std::string& str,
+                             const std::string& def = "");
+
+// Read environment variables of bool type
+bool GetBoolFromEnv(const std::string& str, bool def = false);
+
+// Read environment variables of int type
+int GetIntFromEnv(const std::string& str, int def = 0);
+
+// Read environment variables of double type
+double GetDoubleFromEnv(const std::string& str, double def = 0.0);
+
+// Read environment variables of int64 type
+uint64_t GetUInt64FromEnv(const std::string& str, uint64_t def = 0ul);
+
 }  // namespace nnadapter

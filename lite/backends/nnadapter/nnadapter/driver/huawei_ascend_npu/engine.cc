@@ -20,7 +20,6 @@
 #include "driver/huawei_ascend_npu/optimizer/fix_reduce_ops_scalar_output.h"
 #include "optimizer/fuse_matmul_add_into_fully_connected.h"
 #include "utility/debug.h"
-#include "utility/env.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
@@ -35,19 +34,20 @@ Device::~Device() {}
 Context::Context(void* device, const char* properties) : device_(device) {
   // Extract the runtime parameters from the context properties
   NNADAPTER_LOG(INFO) << "properties: " << std::string(properties);
-  auto key_values = GetKeyValues(properties);
   std::vector<int> selected_device_ids;
-  if (key_values.count("HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS")) {
-    selected_device_ids = string_split<int>(
-        key_values["HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS"], ",");
+  std::string selected_device_ids_value;
+  auto key_values = GetKeyValues(properties);
+  if (key_values.count(HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS)) {
+    selected_device_ids_value =
+        key_values[HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS];
   } else {
-    auto selected_device_env =
+    selected_device_ids_value =
         GetStringFromEnv(HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS);
-    if (!selected_device_env.empty()) {
-      selected_device_ids = string_split<int>(selected_device_env, ",");
-    }
   }
 
+  if (!selected_device_ids_value.empty()) {
+    selected_device_ids = string_split<int>(selected_device_ids_value, ",");
+  }
   NNADAPTER_CHECK_GE(selected_device_ids.size(), 1)
       << "Need to specify Ascend npu device id";
   // Only supports specifying one device
