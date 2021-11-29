@@ -146,7 +146,7 @@ function publish_metal_lib {
     x86
 
   # Step2. Checking results: cplus and python inference lib.
-  build_dir=build.lite.x86.gcc
+  build_dir=build.lite.linux.x86.gcc
   if [ ${BUILD_OPENCL} = ON ]; then
     build_dir=${build_dir}.opencl
   fi
@@ -162,7 +162,7 @@ function publish_metal_lib {
     exit 1
   fi
 
-  # Test x86 cxx demo
+  # Step3. Test x86 cxx demo
   local cxx_demo_dir=${WORKSPACE}/${build_dir}/inference_lite_lib/demo/cxx/
   if [ -d ${cxx_demo_dir} ]; then
     # full demo
