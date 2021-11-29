@@ -25,7 +25,7 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 
-class TestAssignOp(AutoScanTest):
+class TestAbsOp(AutoScanTest):
     def is_program_valid(self, program_config: ProgramConfig) -> bool:
         return True
 

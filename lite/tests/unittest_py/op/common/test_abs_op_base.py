@@ -25,8 +25,9 @@ import hypothesis.strategies as st
 
 def sample_program_configs(draw):
     in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=1, max_size=4))
+    
     abs_op = OpConfig(
-        type = "assign",
+        type = "abs",
         inputs = {"X" : ["input_data"]},
         outputs = {"Out": ["output_data"]},
         attrs = {})
@@ -39,4 +40,3 @@ def sample_program_configs(draw):
         },
         outputs=["output_data"])
     return program_config
-

@@ -31,7 +31,7 @@ def sample_program_configs(draw):
     dtype = draw(st.sampled_from([-1, 2, 3]))
     assume(axis < len(in_shape))
 
-    abs_op = OpConfig(
+    arg_max_op = OpConfig(
         type = "arg_max",
         inputs = {"X" : ["input_data"]},
         outputs = {"Out": ["output_data"]},
@@ -40,7 +40,7 @@ def sample_program_configs(draw):
                  "dtype": dtype,
                  "flatten": False})
     program_config = ProgramConfig(
-        ops=[abs_op],
+        ops=[arg_max_op],
         weights={},
         inputs={
             "input_data":
@@ -48,4 +48,3 @@ def sample_program_configs(draw):
         },
         outputs=["output_data"])
     return program_config
-

@@ -29,14 +29,14 @@ def sample_program_configs(draw):
     axis = draw(st.integers(min_value=-1, max_value=3))
     assume(axis < len(in_shape))
 
-    abs_op = OpConfig(
+    arg_sort_op = OpConfig(
         type = "argsort",
         inputs = {"X" : ["input_data"]},
         outputs = {"Out": ["output_data"],
                   "Indices": ["indices_data"]},
         attrs = {"axis": axis})
     program_config = ProgramConfig(
-        ops=[abs_op],
+        ops=[arg_sort_op],
         weights={},
         inputs={
             "input_data":
@@ -44,4 +44,3 @@ def sample_program_configs(draw):
         },
         outputs=["output_data"])
     return program_config
-

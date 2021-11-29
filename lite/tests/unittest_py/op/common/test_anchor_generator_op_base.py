@@ -29,7 +29,8 @@ def sample_program_configs(draw):
     aspect_ratios = draw(st.lists(st.floats(min_value=1, max_value=10), min_size=1, max_size=4))
     variances = draw(st.lists(st.floats(min_value=1, max_value=10), min_size=4, max_size=4))
     stride = draw(st.lists(st.floats(min_value=1, max_value=10), min_size=2, max_size=2))
-    assign_op = OpConfig(
+
+    anchor_generator_op = OpConfig(
         type = "anchor_generator",
         inputs = {"Input" : ["input_data"]},
         outputs = {"Anchors": ["anchors_data"],
@@ -40,7 +41,7 @@ def sample_program_configs(draw):
                 "variances": variances,
                 })
     program_config = ProgramConfig(
-        ops=[assign_op],
+        ops=[anchor_generator_op],
         weights={},
         inputs={
             "input_data":
