@@ -27,7 +27,8 @@ def sample_program_configs(draw):
     in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=1, max_size=4))
 
     def generate_input(*args, **kwargs):
-        return np.random.random(in_shape).astype(np.float32)
+        # Make sure input data is greater than 0
+        return np.random.random(in_shape).astype(np.float32) + 1
 
     rsqrt_op = OpConfig(
         type = "rsqrt",
