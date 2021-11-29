@@ -30,7 +30,6 @@ def sample_program_configs(draw):
     bias_after_scale = draw(st.booleans())
     scale = draw(st.floats(min_value=0, max_value=1))
     input_type = draw(st.sampled_from(["int8", "int32", "int64", "float32"]))
-    input_type = draw(st.sampled_from(["float32"]))
     has_scale_tensor = draw(st.booleans())
 
     def generate_input_int8(*args, **kwargs):
