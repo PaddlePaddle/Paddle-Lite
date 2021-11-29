@@ -42,7 +42,7 @@ void RangeCalcOfflinePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 void RangeCalcOfflinePass::RemoveRangePattern(
     const std::unique_ptr<SSAGraph>& graph) {
   for (auto& node : graph->StmtTopologicalOrder()) {
-    if (node->AsStmt().picked_kernel().op_type() != "range") continue;
+    if (node->AsStmt().op_type() != "range") continue;
 
     std::set<const Node*> nodes2rm_;
     auto& range_instruct = node->AsStmt();

@@ -590,6 +590,68 @@ kernel void depthwise_conv_3x3(texture2d_array<ftype, access::sample> inTexture[
     outTexture.write(relu, gid.xy, gid.z);
 }
 
+kernel void depthwise_conv_3x3_unequal(
+    texture2d_array<ftype, access::sample> inTexture[[texture(0)]],
+    texture2d_array<ftype, access::sample> biasTexture[[texture(1)]],
+    texture2d_array<ftype, access::write> outTexture[[texture(2)]],
+    constant MetalConvParam& param[[buffer(0)]],
+    const device ftype* weights[[buffer(1)]],
+    uint3 gid[[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
+        gid.z >= outTexture.get_array_size()) {
+        return;
+    }
+    uint inc = inTexture.get_array_size();
+    uint inw = inTexture.get_width();
+    uint inh = inTexture.get_height();
+    uint output_slice = gid.z / 2;
+
+    ushort2 stride = ushort2(param.strideX, param.strideY);
+    ushort2 posInInput = ushort2(gid.xy) * stride + ushort2(param.offsetX, param.offsetY);
+    constexpr sampler sample(coord::pixel, filter::nearest, address::clamp_to_zero);
+    const uint kernelHXW = 9;
+    uint weithTo = gid.z * kernelHXW * 4;
+
+    ftype4 output;
+    if (param.hasAddOp) {
+        output = get_bias(gid, param.addParam, biasTexture);
+    }
+
+    ushort dilation_x = param.dilationX;
+    ushort dilation_y = param.dilationY;
+    float2 intput_sample[9];
+    intput_sample[0] = float2(posInInput.x - dilation_x, posInInput.y - dilation_y);
+    intput_sample[1] = float2(posInInput.x, posInInput.y - dilation_y);
+    intput_sample[2] = float2(posInInput.x + dilation_x, posInInput.y - dilation_y);
+    intput_sample[3] = float2(posInInput.x - dilation_x, posInInput.y);
+    intput_sample[4] = float2(posInInput.x, posInInput.y);
+    intput_sample[5] = float2(posInInput.x + dilation_x, posInInput.y);
+    intput_sample[6] = float2(posInInput.x - dilation_x, posInInput.y + dilation_y);
+    intput_sample[7] = float2(posInInput.x, posInInput.y + dilation_y);
+    intput_sample[8] = float2(posInInput.x + dilation_x, posInInput.y + dilation_y);
+
+    ftype4 input;
+    for (int j = 0; j < 9; ++j) {
+        // if(intput_sample[j].x >= 0 && intput_sample[j].x < inw && intput_sample[j].y >= 0 &&
+        // intput_sample[j].y < inh){
+        input = inTexture.sample(sample, intput_sample[j], output_slice);
+        if (gid.z % 2 == 0) {
+            output.x += input.x * weights[weithTo + 0 * kernelHXW + j];
+            output.y += input.x * weights[weithTo + 1 * kernelHXW + j];
+            output.z += input.y * weights[weithTo + 2 * kernelHXW + j];
+            output.w += input.y * weights[weithTo + 3 * kernelHXW + j];
+        } else {
+            output.x += input.z * weights[weithTo + 0 * kernelHXW + j];
+            output.y += input.z * weights[weithTo + 1 * kernelHXW + j];
+            output.z += input.w * weights[weithTo + 2 * kernelHXW + j];
+            output.w += input.w * weights[weithTo + 3 * kernelHXW + j];
+        }
+        //}
+    }
+    ftype4 relu = activation(output, param.activationParam);
+    outTexture.write(relu, gid.xy, gid.z);
+}
+
 kernel void depthwise_conv_5x5(texture2d_array<ftype, access::sample> inTexture[[texture(0)]],
     texture2d_array<ftype, access::sample> biasTexture[[texture(1)]],
     texture2d_array<ftype, access::write> outTexture[[texture(2)]],
