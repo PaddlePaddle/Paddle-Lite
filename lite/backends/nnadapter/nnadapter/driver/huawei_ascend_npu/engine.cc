@@ -47,9 +47,10 @@ Context::Context(void* device, const char* properties) : device_(device) {
 
   if (!selected_device_ids_value.empty()) {
     selected_device_ids = string_split<int>(selected_device_ids_value, ",");
+  } else {
+    selected_device_ids = std::vector<int>({0});
   }
-  NNADAPTER_CHECK_GE(selected_device_ids.size(), 1)
-      << "Need to specify Ascend npu device id";
+  NNADAPTER_CHECK_GE(selected_device_ids.size(), 1);
   // Only supports specifying one device
   if (selected_device_ids.size() > 1) {
     NNADAPTER_LOG(WARNING) << "Only supports specifying one device, so the "
@@ -57,10 +58,6 @@ Context::Context(void* device, const char* properties) : device_(device) {
                               "ignored.";
   }
   selected_device_ids_.push_back(selected_device_ids[0]);
-
-  if (selected_device_ids_.empty()) {
-    selected_device_ids_.push_back(0);
-  }
   NNADAPTER_LOG(INFO) << "selected device ids: ";
   for (auto& selected_device_id : selected_device_ids_) {
     NNADAPTER_LOG(INFO) << selected_device_id;
