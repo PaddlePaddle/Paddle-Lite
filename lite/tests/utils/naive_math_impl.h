@@ -391,6 +391,7 @@ static void basic_gemv(int m,
  */
 //! for float, dtype1 and type2 is float
 //! for int8, dytpe1 is char, dtype2 is int
+//! attention! you need to clean output memory especially using float type
 template <typename Dtype1, typename Dtype2>
 static void conv_basic(const Dtype1* din,
                        Dtype2* dout,

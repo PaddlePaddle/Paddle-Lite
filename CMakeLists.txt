@@ -69,7 +69,6 @@ lite_option(LITE_WITH_OPENCL                   "Enable OpenCL support in lite"  
 lite_option(LITE_WITH_METAL                    "Enable Metal support in lite"                                         OFF)
 lite_option(LITE_WITH_FPGA                     "Enable FPGA support in lite"                                          OFF)
 lite_option(LITE_WITH_INTEL_FPGA               "Enable Intel FPGA support in lite"                                    OFF)
-lite_option(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK   "Enable light-weight framework"                                        OFF)
 lite_option(LITE_WITH_PROFILE                  "Enable profile mode in lite framework"                                OFF)
 lite_option(LITE_WITH_PRECISION_PROFILE        "Enable precision profile in profile mode ON in lite"                  OFF)
 lite_option(LITE_WITH_LOG                      "Enable log printing or not."                                          ON)
@@ -96,7 +95,7 @@ lite_option(LITE_WITH_CODE_META_INFO           "include git version in the heade
 set(THIRD_PARTY_PATH "${CMAKE_BINARY_DIR}/third_party" CACHE STRING
   "A path setting third party libraries download & build directories.")
 
-if(NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+if(NOT LITE_WITH_ARM)
   find_package(CUDA QUIET)
 endif()
 find_package(Git REQUIRED)
@@ -119,8 +118,8 @@ message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
 # check options
 if(LITE_ON_TINY_PUBLISH)
-  if(NOT (WITH_LITE AND LITE_WITH_LIGHT_WEIGHT_FRAMEWORK AND NOT WITH_TESTING))#LITE_WITH_JAVA AND
-    message(FATAL_ERROR "LITE_ON_TINY_PUBLISH=ON must be used with WITH_LITE=ON LITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON LITE_WITH_JAVA=ON WITH_TESTING=OFF")
+  if(NOT (LITE_WITH_ARM AND NOT WITH_TESTING))#LITE_WITH_JAVA AND
+    message(FATAL_ERROR "LITE_ON_TINY_PUBLISH=ON must be used with LITE_WITH_ARM=ON LITE_WITH_JAVA=ON WITH_TESTING=OFF")
     return()
   endif()
 endif()

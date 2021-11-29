@@ -110,19 +110,16 @@ if(LITE_WITH_ARM)
   endif()
   message(STATUS "Found host C compiler: " ${HOST_C_COMPILER})
   message(STATUS "Found host CXX compiler: " ${HOST_CXX_COMPILER})
+  # Build type
+  if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Default use Release in android" FORCE)
+  endif()
+  # Third party build type
+  if(NOT THIRD_PARTY_BUILD_TYPE)
+    set(THIRD_PARTY_BUILD_TYPE "MinSizeRel" CACHE STRING "Default use MinSizeRel in android" FORCE)
+  endif()
+  message(STATUS "Lite ARM Compile ${ARM_TARGET_OS} with ${ARM_TARGET_ARCH_ABI} ${ARM_TARGET_LANG}")
 endif()
-
-# Build type
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Default use Release in android" FORCE)
-endif()
-
-# Third party build type
-if(NOT THIRD_PARTY_BUILD_TYPE)
-  set(THIRD_PARTY_BUILD_TYPE "MinSizeRel" CACHE STRING "Default use MinSizeRel in android" FORCE)
-endif()
-
-message(STATUS "Lite ARM Compile ${ARM_TARGET_OS} with ${ARM_TARGET_ARCH_ABI} ${ARM_TARGET_LANG}")
 
 if(NOT APPLE)
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed")
@@ -155,7 +152,6 @@ if(APPLE)
     set(ENABLE_ARC TRUE)
     message(STATUS "Enabling ARC support by default. ENABLE_ARC not provided!")
   endif()
-
   set(ENABLE_ARC_INT ${ENABLE_ARC} CACHE BOOL "Whether or not to enable ARC" ${FORCE_CACHE})
   if(ENABLE_ARC_INT)
     set(FOBJC_ARC "-fobjc-arc")
