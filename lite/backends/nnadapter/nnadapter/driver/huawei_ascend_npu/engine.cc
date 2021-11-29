@@ -18,6 +18,7 @@
 #include "driver/huawei_ascend_npu/optimizer/fix_no_inputs_ops.h"
 #include "driver/huawei_ascend_npu/optimizer/fix_quant_ops.h"
 #include "driver/huawei_ascend_npu/optimizer/fix_reduce_ops_scalar_output.h"
+#include "lite/utils/env.h"
 #include "optimizer/fuse_matmul_add_into_fully_connected.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -35,18 +36,28 @@ Context::Context(void* device, const char* properties) : device_(device) {
   // Extract the runtime parameters from the context properties
   NNADAPTER_LOG(INFO) << "properties: " << std::string(properties);
   auto key_values = GetKeyValues(properties);
+  std::vector<int> selected_device_ids;
   if (key_values.count("HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS")) {
-    auto selected_device_ids = string_split<int>(
+    selected_device_ids = string_split<int>(
         key_values["HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS"], ",");
-    NNADAPTER_CHECK_GE(selected_device_ids.size(), 1);
-    // Only supports specifying one device
-    if (selected_device_ids.size() > 1) {
-      NNADAPTER_LOG(WARNING) << "Only supports specifying one device, so the "
-                                "first one is selected and others will be "
-                                "ignored.";
+  } else {
+    auto selected_device_env =
+        GetStringFromEnv(HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS);
+    if (!selected_device_env.empty()) {
+      selected_device_ids = string_split<int>(selected_device_env, ",");
     }
-    selected_device_ids_.push_back(selected_device_ids[0]);
   }
+
+  NNADAPTER_CHECK_GE(selected_device_ids.size(), 1)
+      << "Need to specify Ascend npu device id";
+  // Only supports specifying one device
+  if (selected_device_ids.size() > 1) {
+    NNADAPTER_LOG(WARNING) << "Only supports specifying one device, so the "
+                              "first one is selected and others will be "
+                              "ignored.";
+  }
+  selected_device_ids_.push_back(selected_device_ids[0]);
+
   if (selected_device_ids_.empty()) {
     selected_device_ids_.push_back(0);
   }
