@@ -143,7 +143,7 @@ function publish_metal_lib {
     --with_exception=$WITH_EXCEPTION \
     --with_profile=$WITH_PROFILE \
     --with_precision_profile=$WITH_PRECISION_PROFILE \
-    x86
+    --arch=x86
 
   # Step2. Checking results: cplus and python inference lib.
   build_dir=build.lite.linux.x86.gcc
