@@ -1,20 +1,3 @@
-if(NOT LITE_WITH_MLU)
-  return()
-endif()
-
-lite_cc_library(subgraph_bridge_utility_mlu SRCS utility.cc DEPS ${mlu_builder_libs} tensor)
-lite_cc_library(subgraph_bridge_tensor_mlu SRCS tensor.cc DEPS ${mlu_builder_libs} subgraph_bridge_utility_mlu)
-lite_cc_library(subgraph_bridge_graph_mlu SRCS graph.cc DEPS subgraph_bridge_utility_mlu subgraph_bridge_tensor_mlu)
-
-set(mlu_subgraph_bridge_deps core subgraph_bridge_utility_mlu subgraph_bridge_graph_mlu)
-
-lite_cc_library(subgraph_bridge_act_op_mlu SRCS act_op.cc DEPS ${mlu_subgraph_bridge_deps})
-lite_cc_library(subgraph_bridge_batch_norm_op_mlu SRCS batch_norm_op.cc DEPS ${mlu_subgraph_bridge_deps})
-lite_cc_library(subgraph_bridge_conv_op_mlu SRCS conv_op.cc DEPS ${mlu_subgraph_bridge_deps})
-lite_cc_library(subgraph_bridge_elementwise_ops_mlu SRCS elementwise_ops.cc DEPS ${mlu_subgraph_bridge_deps})
-lite_cc_library(subgraph_bridge_pool_op_mlu SRCS pool_op.cc DEPS ${subgraph_bridge_deps_mlu})
-lite_cc_library(subgraph_bridge_softmax_op_mlu SRCS softmax_op.cc DEPS ${subgraph_bridge_deps_mlu})
-lite_cc_library(subgraph_bridge_fc_op_mlu SRCS fc_op.cc DEPS ${subgraph_bridge_deps_mlu})
 lite_cc_library(subgraph_bridge_scale_op_mlu SRCS scale_op.cc DEPS ${subgraph_bridge_deps_mlu})
 lite_cc_library(subgraph_bridge_interp_op_mlu SRCS interpolate_op.cc DEPS ${subgraph_bridge_deps_mlu})
 lite_cc_library(subgraph_bridge_concat_op_mlu SRCS concat_op.cc DEPS ${subgraph_bridge_deps_mlu})
@@ -30,14 +13,6 @@ lite_cc_library(subgraph_bridge_reshape_op_mlu SRCS reshape_op.cc DEPS ${subgrap
 lite_cc_library(subgraph_bridge_flatten_op_mlu SRCS flatten_op.cc DEPS ${subgraph_bridge_deps_mlu})
 set(mlu_subgraph_bridges
         core
-        subgraph_bridge_utility_mlu
-        subgraph_bridge_graph_mlu
-        subgraph_bridge_act_op_mlu
-        subgraph_bridge_conv_op_mlu
-        subgraph_bridge_elementwise_ops_mlu
-        subgraph_bridge_pool_op_mlu
-        subgraph_bridge_softmax_op_mlu
-        subgraph_bridge_fc_op_mlu
         subgraph_bridge_transpose_op_mlu
         subgraph_bridge_batch_norm_op_mlu
         subgraph_bridge_scale_op_mlu

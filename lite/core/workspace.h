@@ -78,14 +78,6 @@ class WorkSpace {
   }
 #endif
 
-#if defined(LITE_WITH_MLU)
-  static WorkSpace& Global_MLU() {
-    static LITE_THREAD_LOCAL std::unique_ptr<WorkSpace> x(
-        new WorkSpace(TARGET(kMLU)));
-    return *x;
-  }
-#endif
-
  private:
   explicit WorkSpace(TargetType x) : target_(x) {}
 
