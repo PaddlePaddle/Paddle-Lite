@@ -26,6 +26,10 @@ struct ElementwiseAddMetalParam {
     int xtrans[4];
     int ydim[4];
     int ytrans[4];
+    int ByNum;
+    int ByHW;
+    int ByW;
+    int arithmetic_type;
 };
 
 struct ActivationMetalParam {
