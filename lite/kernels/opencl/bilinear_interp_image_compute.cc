@@ -171,12 +171,11 @@ class BilinearInterpImageCompute
 }  // namespace lite
 }  // namespace paddle
 
-namespace ocl = paddle::lite::kernels::opencl;
 REGISTER_LITE_KERNEL(bilinear_interp,
                      kOpenCL,
                      kFP16,
                      kImageDefault,
-                     ocl::BilinearInterpImageCompute,
+                     paddle::lite::kernels::opencl::BilinearInterpImageCompute,
                      ImageDefault)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
@@ -197,7 +196,7 @@ REGISTER_LITE_KERNEL(bilinear_interp_v2,
                      kOpenCL,
                      kFP16,
                      kImageDefault,
-                     ocl::BilinearInterpImageCompute,
+                     paddle::lite::kernels::opencl::BilinearInterpImageCompute,
                      ImageDefault)
     .BindInput("X",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
