@@ -25,44 +25,47 @@ import hypothesis.strategies as st
 from hypothesis import assume
 
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=1, max_size=4))
-    index_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=2, max_size=4))
-    print('1')
-    print('len(index_shape): ', len(index_shape))
-    assume(len(index_shape) <= len(in_shape))
-    print('2')
 
-    update_shape = index_shape[:-1] + in_shape[index_shape[-1]:]
+    def judge_update_shape(ref, index):
+        ref_shape = ref().shape
+        index_shape = index().shape
+        update_shape = []
+        for i in range(len(index_shape) - 1):
+            update_shape.append(index_shape[i])
+        for i in range(index_shape[-1], len(ref_shape), 1):
+            update_shape.append(ref_shape[i])
+        return update_shape
+
+    in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=4, max_size=4))
+
+    def generate_input_int32(*args, **kwargs):
+        return np.random.randint(-10, 10, in_shape).astype(np.int32)
+    def generate_input_int64(*args, **kwargs):
+        return np.random.randint(-10, 10, in_shape).astype(np.int64)
+    def generate_input_float32(*args, **kwargs):
+        return np.random.random(-10.0, 10.0, in_shape).astype(np.float32)
+
+    def generate_index_int32(*args, **kwargs):
+        index_np = np.vstack(
+            [np.random.randint(
+                0, s, size=10) for s in in_shape]).T.astype("int32")
+        return index_np
+    def generate_index_int64(*args, **kwargs):
+        index_np = np.vstack(
+            [np.random.randint(
+                0, s, size=10) for s in in_shape]).T.astype("int64")
+        return index_np
 
     input_type = draw(st.sampled_from(["int32", "int64", "float32"]))
     index_type = draw(st.sampled_from(["int32", "int64"]))
-    update_type = input_type
-
-    print('in_shape: ', in_shape)
-    print('index_shape: ', index_shape)
-    print('update_shape: ', update_shape)
-
-    def generate_input_int32(*args, **kwargs):
-        print('input int32: ', np.random.randint(in_shape).astype(np.int32))
-        return np.random.randint(in_shape).astype(np.int32)
-    def generate_input_int64(*args, **kwargs):
-        return np.random.randint(in_shape).astype(np.int64)
-    def generate_input_float32(*args, **kwargs):
-        return np.random.random(in_shape).astype(np.float32)
-
-    def generate_index_int32(*args, **kwargs):
-        print("index int32:", np.random.randint(index_shape).astype(np.int32))
-        return np.random.randint(index_shape).astype(np.int32)
-    def generate_index_int64(*args, **kwargs):
-        print("index int64:", np.random.randint(index_shape).astype(np.int64))
-        return np.random.randint(index_shape).astype(np.int64)
+    update_shape = judge_update_shape(generate_input_int32, generate_index_int32)
 
     def generate_update_int32(*args, **kwargs):
-        return np.random.randint(update_shape).astype(np.int32)
+        return np.random.randint(-10, 10, update_shape).astype(np.int32)
     def generate_update_int64(*args, **kwargs):
-        return np.random.randint(update_shape).astype(np.int64)
+        return np.random.randint(-10, 10, update_shape).astype(np.int64)
     def generate_update_float32(*args, **kwargs):
-        return np.random.random(update_shape).astype(np.float32)
+        return np.random.random(-10.0, 10.0, update_shape).astype(np.float32)
 
     scatter_nd_add_op = OpConfig(
         type = "scatter_nd_add",
