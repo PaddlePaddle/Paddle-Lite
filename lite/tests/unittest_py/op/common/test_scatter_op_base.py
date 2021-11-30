@@ -25,26 +25,26 @@ import hypothesis.strategies as st
 from hypothesis import assume
 
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=1, max_size=4))
+    in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=4, max_size=4))
 
-    update_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=1, max_size=4))
-    assume(update_shape.ndim == in_shape.ndim and update_shape[1:] = in_shape[1:])
+    update_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=4, max_size=4))
+    assume(len(update_shape) == len(in_shape) and update_shape[1:] == in_shape[1:])
 
     index_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=update_shape[-1], max_size=update_shape[-1]))
     index_type = draw(st.sampled_from(["int32", "int64"]))
     overwrite = draw(st.booleans())
 
     def generate_update(*args, **kwargs):
-        return np.random.random(update_shape).astype(np.float32)
+        return np.random.randint(-10, 10, update_shape).astype(np.float32)
 
     def generate_index_int32(*args, **kwargs):
-        return np.random.random(index_shape).astype(np.int32)
+        return np.random.randint(-10, 10, index_shape).astype(np.int32)
 
     def generate_index_int64(*args, **kwargs):
-        return np.random.random(index_shape).astype(np.int64)
+        return np.random.randint(-10, 10, index_shape).astype(np.int64)
 
     def generate_input_float32(*args, **kwargs):
-        return np.random.random(in_shape).astype(np.float32)
+        return np.random.random(-1.0, 1.0, in_shape).astype(np.float32)
 
     scatter_op = OpConfig(
         type = "scatter",

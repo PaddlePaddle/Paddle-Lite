@@ -24,22 +24,22 @@ import hypothesis
 import hypothesis.strategies as st
 
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=4, max_size=4))
+    in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=1, max_size=4))
 
-    bias = draw(st.floats(min_value=0, max_value=1))
+    bias = draw(st.floats(min_value=-5, max_value=5))
     bias_after_scale = draw(st.booleans())
-    scale = draw(st.floats(min_value=0, max_value=1))
+    scale = draw(st.floats(min_value=-5, max_value=5))
     input_type = draw(st.sampled_from(["int8", "int32", "int64", "float32"]))
     has_scale_tensor = draw(st.booleans())
 
     def generate_input_int8(*args, **kwargs):
-        return np.random.random(in_shape).astype(np.int8)
+        return np.random.randint(1, 10, in_shape).astype(np.int8)
 
     def generate_input_int32(*args, **kwargs):
-        return np.random.random(in_shape).astype(np.int32)
+        return np.random.randint(-10, 10, in_shape).astype(np.int32)
 
     def generate_input_int64(*args, **kwargs):
-        return np.random.random(in_shape).astype(np.int64)
+        return np.random.randint(-10, 10, in_shape).astype(np.int64)
 
     def generate_input_float32(*args, **kwargs):
         return np.random.random(in_shape).astype(np.float32)
