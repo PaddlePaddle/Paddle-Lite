@@ -125,6 +125,28 @@ class TestCase {
     inst_tensor->CopyDataFrom(*base_tensor);
   }
 
+  void SetCommonTensorForBool(const std::string& var_name,
+                              const DDim& ddim,
+                              const std::vector<bool> data,
+                              const LoD& lod = {},
+                              bool is_persistable = false) {
+    // Create and fill a input tensor with the given data for baseline
+    auto* base_tensor = base_scope_->NewTensor(var_name);
+    base_tensor->Resize(ddim);
+    auto base_data = base_tensor->mutable_data<bool>();
+    for (size_t i = 0; i < ddim.production(); i++) {
+      base_data[i] = data[i];
+    }
+    // set lod
+    if (!lod.empty()) *base_tensor->mutable_lod() = lod;
+    // set persistable
+    base_tensor->set_persistable(is_persistable);
+
+    // Create a copy for instruction
+    auto* inst_tensor = inst_scope_->NewTensor(var_name);
+    inst_tensor->CopyDataFrom(*base_tensor);
+  }
+
   /// Prepare a tensor_array in host. The tensors will be created in scope_.
   /// Need to specify the targets other than X86 or ARM.
   template <typename T>
