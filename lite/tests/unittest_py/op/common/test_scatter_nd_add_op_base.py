@@ -43,7 +43,7 @@ def sample_program_configs(draw):
     def generate_input_int64(*args, **kwargs):
         return np.random.randint(-10, 10, in_shape).astype(np.int64)
     def generate_input_float32(*args, **kwargs):
-        return np.random.random(-10.0, 10.0, in_shape).astype(np.float32)
+        return np.random.random(in_shape).astype(np.float32)
 
     def generate_index_int32(*args, **kwargs):
         index_np = np.vstack(
@@ -65,7 +65,7 @@ def sample_program_configs(draw):
     def generate_update_int64(*args, **kwargs):
         return np.random.randint(-10, 10, update_shape).astype(np.int64)
     def generate_update_float32(*args, **kwargs):
-        return np.random.random(-10.0, 10.0, update_shape).astype(np.float32)
+        return np.random.random(update_shape).astype(np.float32)
 
     scatter_nd_add_op = OpConfig(
         type = "scatter_nd_add",
