@@ -17,9 +17,7 @@ Benchmark 工具的详细功能包括但不限于：
 Benchmark 工具可方便快捷地评测给定模型在如下硬件上运行时的性能：
 - 安卓系统下的 ARM CPU / GPU / NNAdapter
 - Linux 系统下的 x86 CPU / ARM CPU / ARM GPU / NNAdapter
-- macOS 系统下的 CPU / GPU
-
-备注：本工具正在支持对运行在 M1 芯片上的模型进行性能测试
+- macOS 系统下的 x86 CPU / ARM CPU / GPU
 
 ## 在 Android 上运行性能测试
 ### 编译
@@ -37,7 +35,7 @@ Benchmark 工具可方便快捷地评测给定模型在如下硬件上运行时�
 | with_profile          | 逐层时间 profile |  ON / OFF        |  OFF     |
 | with_precision_profile| 逐层精度 profile |  ON / OFF        |  OFF     |
 
-编译完成后，会生成`build.lite.*./lite/api/benchmark_bin`二进制文件。
+编译完成后，会生成`build.lite.*./lite/api/tools/benchmark/benchmark_bin`二进制文件。
 
 ### 运行
 需要将如下文件通过`adb`上传至手机：
@@ -53,7 +51,7 @@ tar zxvf MobileNetV1.tar.gz
 # 上传文件
 adb shell mkdir /data/local/tmp/benchmark
 adb push MobileNetV1 /data/local/tmp/benchmark
-adb push build.lite.android.armv8.clang/lite/api/benchmark_bin /data/local/tmp/benchmark
+adb push build.lite.android.armv8.clang/lite/api/tools/benchmark/benchmark_bin /data/local/tmp/benchmark
 
 # 执行性能测试
 adb shell "cd /data/local/tmp/benchmark;
@@ -127,7 +125,7 @@ avg   = 32.723
 | with_profile          | 逐层时间 profile |  ON / OFF        |  OFF     |
 | with_precision_profile| 逐层精度 profile |  ON / OFF        |  OFF     |
 
-编译完成后，会生成`build.lite.*./lite/api/benchmark_bin`二进制文件。
+编译完成后，会生成`build.lite.*./lite/api/tools/benchmark/benchmark_bin`二进制文件。
 
 ### 运行
 需要将如下文件通过`scp`或其他方式上传至 ARM Linux 设备：
@@ -209,7 +207,7 @@ avg   = 32.723
 | with_profile          | 逐层时间 profile |  ON / OFF        |  OFF     |
 | with_precision_profile| 逐层精度 profile |  ON / OFF        |  OFF     |
 
-编译完成后，会生成`build.lite.*./lite/api/benchmark_bin`二进制文件。
+编译完成后，会生成`build.lite.*./lite/api/tools/benchmark/benchmark_bin`二进制文件。
 
 ### 运行
 运行所需文件：
@@ -227,7 +225,7 @@ tar zxvf MobileNetV1.tar.gz
 export LD_LIBRARY_PATH=build.lite.x86.gcc/third_party/install/mklml/lib/:$LD_LIBRARY_PATH
 
 # 执行性能测试
-./build.lite.linux.x86.gcc/lite/api/benchmark_bin \
+./build.lite.linux.x86.gcc/lite/api/tools/benchmark/benchmark_bin \
     --model_file=MobileNetV1/inference.pdmodel \
     --param_file=MobileNetV1/inference.pdiparams \
     --input_shape=1,3,224,224 \
@@ -279,7 +277,10 @@ avg   = 33.918
 根据[源码编译](../source_compile/compile_env)准备编译环境，可以使用 Docker 配置环境，也可以使用系统原生开发环境。
 拉取 [Paddle Lite](https://github.com/PaddlePaddle/Paddle-Lite) 代码，切换到特定分支，然后在 Paddle Lite 根目录下执行编译命令：
 ```shell
+# 芯片为 x86 架构时，执行：
 ./lite/tools/build_macos.sh --with_benchmark=ON x86
+
+# 芯片为 ARM 架构时，执行：
 ./lite/tools/build_macos.sh --with_benchmark=ON arm64
 ```
 可选参数：
@@ -290,7 +291,7 @@ avg   = 33.918
 | with_profile          | 逐层时间 profile |  ON / OFF        |  OFF     |
 | with_precision_profile| 逐层精度 profile |  ON / OFF        |  OFF     |
 
-编译完成后，会生成`build.lite.*./lite/api/benchmark_bin`二进制文件。
+编译完成后，会生成`build.lite.*./lite/api/tools/benchmark/benchmark_bin`二进制文件。
 
 ### 运行
 运行所需文件：
@@ -308,7 +309,7 @@ tar zxvf MobileNetV1.tar.gz
 export LD_LIBRARY_PATH=build.lite.x86.opencl/third_party/install/mklml/lib/:$LD_LIBRARY_PATH
 
 # 执行性能测试
-./build.lite.x86.opencl/lite/api/benchmark_bin \
+./build.lite.x86.opencl/lite/api/tools/benchmark/benchmark_bin \
     --model_file=MobileNetV1/inference.pdmodel \
     --param_file=MobileNetV1/inference.pdiparams \
     --input_shape=1,3,224,224 \
@@ -403,7 +404,7 @@ adb shell "cd /data/local/tmp/benchmark;
 - Huawei Ascend NPU（arm host） / Rockchip NPU / Imagination NNA / Amlogic NPU(C308X 或 A311D) 请参考 『在 ARM Linux 上运行性能测试』进行编译。
 - Huawei Ascend NPU（x86 host）请参考『在 Linux 上运行性能测试』进行编译。
 
-编译完成后，会生成`build.lite.*./lite/api/benchmark_bin`二进制文件。
+编译完成后，会生成`build.lite.*./lite/api/tools/benchmark/benchmark_bin`二进制文件。
 
 ##### 步骤 2：编译 NNAdapter 运行时库与 NNAdapter Device HAL 库
 请参考下表编译指南，编译 NNAdapter 运行时库及 NNAdapter Device HAL 库

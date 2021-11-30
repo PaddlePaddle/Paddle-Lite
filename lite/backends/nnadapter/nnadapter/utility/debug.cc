@@ -490,6 +490,10 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
                       "aligned"};
         output_args = {"output"};
         break;
+      case NNADAPTER_WHERE:
+        input_args = {"condition", "input0", "input1"};
+        output_args = {"output"};
+        break;
       default:
         NNADAPTER_LOG(FATAL) << "unsupported op: "
                              << static_cast<int>(operation->type);
@@ -674,6 +678,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(TOP_K);
     NNADAPTER_TYPE_TO_STRING(TRANSPOSE);
     NNADAPTER_TYPE_TO_STRING(UNSQUEEZE);
+    NNADAPTER_TYPE_TO_STRING(WHERE);
     default:
       name = "UNKNOWN";
       break;

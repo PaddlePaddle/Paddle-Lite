@@ -14,8 +14,6 @@
 import sys
 sys.path.append('..')
 
-from auto_scan_test import FusePassAutoScanTest, SkipReasons
-from auto_scan_test_rpc import FusePassAutoScanTest as RPCFusePassAutoScanTest
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import numpy as np
 from functools import partial
@@ -26,192 +24,65 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 
-class TestConvActiveFusePassBase(FusePassAutoScanTest):
-    def is_program_valid(self, program_config: ProgramConfig) -> bool:
-        return True
+def sample_program_configs(draw):
+    in_shape=draw(st.lists(st.integers(min_value=1, max_value=64), min_size=4, max_size=4))
+    weight_shape=draw(st.lists(st.integers(min_value=1, max_value=64), min_size=4, max_size=4))
+    assume(in_shape[1] == weight_shape[1])
+    assume(in_shape[2] >= weight_shape[2])
+    assume(in_shape[3] >= weight_shape[3])
 
-    def add_skip_pass_case(self):
-        pass
 
-    def sample_program_configs(self, *args, **kwargs):
-        def generate_input(*args, **kwargs):
-            return np.random.random(kwargs['in_shape']).astype(np.float32)
-        
-        def generate_weight(*args, **kwargs):
-            return np.random.random(kwargs['weight_shape']).astype(np.float32)
+    paddings=draw(st.sampled_from([[1, 2], [4, 2]]))
+    dilations=draw(st.sampled_from([[1, 1]]))
+    groups=draw(st.sampled_from([1]))
+    padding_algorithm=draw(st.sampled_from(["VALID", "SAME"]))
+    strides=draw(st.sampled_from([[1, 1], [2, 2]]))
+    threshold=draw(st.floats(min_value=0, max_value=1))
+    alpha=draw(st.floats(min_value=0, max_value=1))
+    scale=draw(st.floats(min_value=0.5, max_value=5))
+    offset=draw(st.floats(min_value=0, max_value=1))
 
-        conv_config = {
-            "op_type": "conv2d",
-            "op_inputs": {
-                "Input": ["input_data"],
-                "Filter":["weight_data"]
-            },
-            "op_outputs": {
-                "Output": ["conv_output_data"]
-            },
-            "op_attrs": {
-                "data_format": 'NCHW',
-                "dilations": kwargs["dilations"],
-                "padding_algorithm": kwargs['padding_algorithm'],
-                "groups": kwargs["groups"],
-                "paddings": kwargs["paddings"],
-                "strides": kwargs["strides"]
-            }
-        }
-        
-        active_configs = [
-        {
-            "op_type": "relu",
-            "op_inputs": {
-                "X": ["conv_output_data"],
-            },
-            "op_outputs": {
-                "Out": ["output_data"]
-            },
-            "op_attrs": {
-            }
+    act_type = draw(st.sampled_from(['relu', 'relu6', 'leaky_relu', 'hard_swish']))
+    def generate_act_attrs(act_type_str):
+        attrs = {}
+        if act_type_str == 'relu6':
+            attrs = {"threshold": threshold}
+        if act_type_str == 'leaky_relu':
+            attrs = {"alpha": alpha}
+        if act_type_str == 'hard_swish':
+            attrs = {"threshold" : threshold,
+                     "scale" : scale,
+                     "offset" : offset}
+        return attrs
+
+    conv_op = OpConfig(
+        type = "conv2d",
+        inputs = {"Input": ["input_data"],"Filter":["weight_data"]},
+        outputs = {"Output": ["conv_output_data"]},
+        attrs = {
+            "data_format": 'nchw',
+            "dilations": dilations,
+            "padding_algorithm": padding_algorithm,
+            "groups": groups,
+            "paddings": paddings,
+            "strides": strides
+        })
+
+    active_op = OpConfig(
+        type = act_type,
+        inputs = {"X": ["conv_output_data"]},
+        outputs = {"Out": ["output_data"]},
+        attrs = generate_act_attrs(act_type))
+
+
+    ops = [conv_op, active_op]
+    program_config = ProgramConfig(
+        ops=ops,
+        weights={
+            "weight_data": TensorConfig(shape=weight_shape)
         },
-        {
-            "op_type": "relu6",
-            "op_inputs": {
-                "X": ["conv_output_data"],
-            },
-            "op_outputs": {
-                "Out": ["output_data"]
-            },
-            "op_attrs": {
-                "threshold" : kwargs["threshold"]
-            }
+        inputs={
+            "input_data": TensorConfig(shape=in_shape)
         },
-        {
-            "op_type": "leaky_relu",
-            "op_inputs": {
-                "X": ["conv_output_data"],
-            },
-            "op_outputs": {
-                "Out": ["output_data"]
-            },
-            "op_attrs": {
-                "alpha" : kwargs["alpha"]
-            }
-        },
-        {
-            "op_type": "hard_swish",
-            "op_inputs": {
-                "X": ["conv_output_data"],
-            },
-            "op_outputs": {
-                "Out": ["output_data"]
-            },
-            "op_attrs": {
-                "threshold" : kwargs["threshold"],
-                "scale" : kwargs["scale"],
-                "offset" : kwargs["offset"],
-            }
-        }
-        ]
-
-        for active_config in active_configs:
-            ops_config = [conv_config, active_config]
-            ops = self.generate_op_config(ops_config)
-            program_config = ProgramConfig(
-                ops=ops,
-                weights={
-                    "weight_data":
-                    TensorConfig(data_gen=partial(generate_weight, *args, **kwargs)),
-                },
-                inputs={
-                    "input_data":
-                    TensorConfig(data_gen=partial(generate_input, *args, **kwargs)),
-                },
-                outputs=["output_data"])
-            yield program_config
-
-class ARMTestConvActiveFusePass(RPCFusePassAutoScanTest):
-    def is_program_valid(self, program_config: ProgramConfig) -> bool:
-        return True
-
-    def add_skip_pass_case(self):
-        pass
-
-    def sample_program_configs(self, *args, **kwargs):
-        def generate_input(*args, **kwargs):
-            return np.random.random(kwargs['in_shape']).astype(np.float32)
-        
-        def generate_weight(*args, **kwargs):
-            return np.random.random(kwargs['weight_shape']).astype(np.float32)
-
-        conv_config = {
-            "op_type": "conv2d",
-            "op_inputs": {
-                "Input": ["input_data"],
-                "Filter":["weight_data"]
-            },
-            "op_outputs": {
-                "Output": ["conv_output_data"]
-            },
-            "op_attrs": {
-                "data_format": 'NCHW',
-                "dilations": kwargs["dilations"],
-                "padding_algorithm": kwargs['padding_algorithm'],
-                "groups": kwargs["groups"],
-                "paddings": kwargs["paddings"],
-                "strides": kwargs["strides"]
-            }
-        }
-        
-        active_configs = [
-        {
-            "op_type": "relu",
-            "op_inputs": {
-                "X": ["conv_output_data"],
-            },
-            "op_outputs": {
-                "Out": ["output_data"]
-            },
-            "op_attrs": {
-            }
-        },
-        {
-            "op_type": "leaky_relu",
-            "op_inputs": {
-                "X": ["conv_output_data"],
-            },
-            "op_outputs": {
-                "Out": ["output_data"]
-            },
-            "op_attrs": {
-                "alpha" : kwargs["alpha"]
-            }
-        },
-        {
-            "op_type": "hard_swish",
-            "op_inputs": {
-                "X": ["conv_output_data"],
-            },
-            "op_outputs": {
-                "Out": ["output_data"]
-            },
-            "op_attrs": {
-                "threshold" : kwargs["threshold"],
-                "scale" : kwargs["scale"],
-                "offset" : kwargs["offset"],
-            }
-        }
-        ]
-
-        for active_config in active_configs:
-            ops_config = [conv_config, active_config]
-            ops = self.generate_op_config(ops_config)
-            program_config = ProgramConfig(
-                ops=ops,
-                weights={
-                    "weight_data":
-                    TensorConfig(data_gen=partial(generate_weight, *args, **kwargs)),
-                },
-                inputs={
-                    "input_data":
-                    TensorConfig(data_gen=partial(generate_input, *args, **kwargs)),
-                },
-                outputs=["output_data"])
-            yield program_config
+        outputs=["output_data"])
+    return program_config

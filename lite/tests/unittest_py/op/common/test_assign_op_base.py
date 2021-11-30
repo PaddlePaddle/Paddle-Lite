@@ -15,65 +15,27 @@
 import sys
 sys.path.append('..')
 
-from auto_scan_test import AutoScanTest, SkipReasons
-from auto_scan_test_rpc import AutoScanTest as RPCAutoScanTest
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import numpy as np
 from functools import partial
 from typing import Optional, List, Callable, Dict, Any, Set
 import unittest
+import hypothesis
+import hypothesis.strategies as st
 
-
-class TestAssignOpBase(AutoScanTest):
-    def is_program_valid(self, program_config: ProgramConfig) -> bool:
-        return True
-
-    def add_skip_pass_case(self):
-        pass
-
-    def sample_program_configs(self, *args, **kwargs):
-        def generate_input(*args, **kwargs):
-            return np.random.random(kwargs['in_shape']).astype(np.float32)
-
-        assign_op = OpConfig(
-            type = "assign",
-            inputs = {"X" : ["input_data"]},
-            outputs = {"Out": ["output_data"]},
-            attrs = {})
-        program_config = ProgramConfig(
-            ops=[assign_op],
-            weights={},
-            inputs={
-                "input_data":
-                TensorConfig(data_gen=partial(generate_input, *args, **kwargs)),
-            },
-            outputs=["output_data"])
-
-        yield program_config
-
-class ARMTestAssignOpBase(RPCAutoScanTest):
-    def is_program_valid(self, program_config: ProgramConfig) -> bool:
-        return True
-
-    def add_skip_pass_case(self):
-        pass
-
-    def sample_program_configs(self, *args, **kwargs):
-        def generate_input(*args, **kwargs):
-            return np.random.random(kwargs['in_shape']).astype(np.float32)
-
-        assign_op = OpConfig(
-            type = "assign",
-            inputs = {"X" : ["input_data"]},
-            outputs = {"Out": ["output_data"]},
-            attrs = {})
-        program_config = ProgramConfig(
-            ops=[assign_op],
-            weights={},
-            inputs={
-                "input_data":
-                TensorConfig(data_gen=partial(generate_input, *args, **kwargs)),
-            },
-            outputs=["output_data"])
-
-        yield program_config
+def sample_program_configs(draw):
+    in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), max_size=2))
+    assign_op = OpConfig(
+        type = "assign",
+        inputs = {"X" : ["input_data"]},
+        outputs = {"Out": ["output_data"]},
+        attrs = {})
+    program_config = ProgramConfig(
+        ops=[assign_op],
+        weights={},
+        inputs={
+            "input_data":
+            TensorConfig(shape=in_shape)
+        },
+        outputs=["output_data"])
+    return program_config

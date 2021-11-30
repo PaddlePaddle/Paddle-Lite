@@ -91,12 +91,10 @@ function build_android {
   cmake .. \
       -DWITH_GPU=OFF \
       -DWITH_MKL=OFF \
-      -DWITH_LITE=ON \
       -DLITE_WITH_CUDA=OFF \
       -DLITE_WITH_X86=OFF \
       -DLITE_WITH_ARM=ON \
       -DWITH_ARM_DOTPROD=ON   \
-      -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
       -DWITH_TESTING=ON \
       -DLITE_BUILD_EXTRA=ON \
       -DLITE_WITH_TRAIN=ON \

@@ -107,14 +107,14 @@ class WhereComputeTester : public arena::TestCase {
     for (int i = 0; i < x_dims_.production(); i++) {
       dc[i] = (i % 2) ? true : false;
     }
-    SetCommonTensor(condition_, x_dims_, dc);
+    SetCommonTensorForBool(condition_, x_dims_, dc);
   }
 };
 
 void TestWhere(Place place, float abs_error) {
-  DDimLite dims{{3, 5, 4, 4}};
+  DDimLite x_dims{{3, 5, 4, 4}};
   std::unique_ptr<arena::TestCase> tester(
-      new WhereComputeTester(place, "def", dims));
+      new WhereComputeTester(place, "def", x_dims));
   arena::Arena arena(std::move(tester), place, abs_error);
   arena.TestPrecision();
 }
@@ -122,7 +122,14 @@ void TestWhere(Place place, float abs_error) {
 TEST(where, precision) {
   Place place;
   float abs_error = 1e-5;
-#ifdef LITE_WITH_ARM
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_ARM)
   place = TARGET(kHost);
 #else
   return;

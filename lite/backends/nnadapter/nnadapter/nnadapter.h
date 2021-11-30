@@ -1851,6 +1851,24 @@ typedef enum {
    * Available since version 1.
    */
   NNADAPTER_UNSQUEEZE,
+
+  /**
+   * Return a tensor of elements selected from either input0 or input1,
+   * depending on condition (with Numpy-style broadcasting*
+   * https://numpy.org/doc/stable/user/basics.broadcasting.html).
+   *
+   * Inputs:
+   * * 0: condition, a NNADAPTER_BOOL8 tensor.
+   * * 1: input0, a NNADAPTER_FLOAT32, NNADAPTER_INT32,
+   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 2: input1, a tensor with the same type as input0.
+   *
+   * Outputs:
+   * * 0: output, a tensor with the same type as input0.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_WHERE,
 } NNAdapterOperationCode;
 
 /**

@@ -15,8 +15,6 @@
 import sys
 sys.path.append('..')
 
-from auto_scan_test import AutoScanTest, SkipReasons
-from auto_scan_test_rpc import AutoScanTest as RPCAutoScanTest
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import numpy as np
 from functools import partial
@@ -27,90 +25,33 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 
-class TestMulOpBase(AutoScanTest):
-    def is_program_valid(self, program_config: ProgramConfig) -> bool:
-        return True
+def sample_program_configs(draw):
+    in_shape1=draw(st.lists(
+        st.integers(
+            min_value=20, max_value=200), min_size=2, max_size=2))
+    in_shape2=draw(st.lists(
+        st.integers(
+            min_value=20, max_value=200), min_size=2, max_size=2))
+    assume(in_shape1[1] == in_shape2[0])
 
-    def add_skip_pass_case(self):
-        pass
+    mul_op = OpConfig(
+        type = "mul",
+        inputs = {"X": ["input_data_x"],
+                    "Y": ["input_data_y"]},
+        outputs = {"Out": ["output_data"]},
+        attrs = {"x_num_col_dims": 1,
+                    "y_num_col_dims": 1})
 
-    def sample_program_configs(self, *args, **kwargs):
-        def generate_input(*args, **kwargs):
-            return np.random.random(kwargs['in_shape']).astype(np.float32)
-        def generate_input_y(*args, **kwargs):
-            return np.random.random(kwargs['in_shape']).astype(np.float32)
-        mul_op = OpConfig(
-            type = "mul",
-            inputs = {"X": ["input_data_x"],
-                      "Y": ["input_data_y"]},
-            outputs = {"Out": ["output_data"]},
-            attrs = {"x_num_col_dims": 1,
-                     "y_num_col_dims": 1})
+    program_config = ProgramConfig(
+        ops=[mul_op],
+        weights={
+            "input_data_y":
+             TensorConfig(shape=in_shape2)
+        },
+        inputs={
+            "input_data_x":
+            TensorConfig(shape=in_shape1)
+        },
+        outputs=["output_data"])
 
-        program_config = ProgramConfig(
-            ops=[mul_op],
-            weights={
-                "input_data_y":
-                TensorConfig(data_gen=partial(generate_input_y, *args, **kwargs)),
-            },
-            inputs={
-                "input_data_x":
-                TensorConfig(data_gen=partial(generate_input, *args, **kwargs)),
-            },
-            outputs=["output_data"])
-
-        yield program_config
-
-    def sample_predictor_configs(self):
-        config = CxxConfig()
-        config.set_valid_places({Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)})
-        config.set_threads(1)
-        yield config, (1e-5, 1e-5)
-
-    @given(
-        in_shape=st.lists(
-            st.integers(
-                min_value=2, max_value=2), min_size=2, max_size=2))
-    def test(self, *args, **kwargs):
-        self.add_skip_pass_case()
-        self.run_test(quant=False, *args, **kwargs)
-
-class ARMTestMulOpBase(RPCAutoScanTest):
-    def is_program_valid(self, program_config: ProgramConfig) -> bool:
-        return True
-
-    def add_skip_pass_case(self):
-        pass
-
-    def sample_program_configs(self, *args, **kwargs):
-        def generate_input(*args, **kwargs):
-            return np.random.random(kwargs['in_shape']).astype(np.float32)
-        def generate_input_y(*args, **kwargs):
-            return np.random.random(kwargs['in_shape']).astype(np.float32)
-        mul_op = OpConfig(
-            type = "mul",
-            inputs = {"X": ["input_data_x"],
-                      "Y": ["input_data_y"]},
-            outputs = {"Out": ["output_data"]},
-            attrs = {"x_num_col_dims": 1,
-                     "y_num_col_dims": 1})
-
-        program_config = ProgramConfig(
-            ops=[mul_op],
-            weights={
-                "input_data_y":
-                TensorConfig(data_gen=partial(generate_input_y, *args, **kwargs)),
-            },
-            inputs={
-                "input_data_x":
-                TensorConfig(data_gen=partial(generate_input, *args, **kwargs)),
-            },
-            outputs=["output_data"])
-
-        yield program_config
-
-    def sample_predictor_configs(self, program_config):
-        config = CxxConfig()
-        config.set_valid_places({Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)})
-        config.set_threads(1)
-        yield config, (1e-5, 1e-5)
+    return program_config
