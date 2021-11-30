@@ -82,9 +82,9 @@
 |armv7hf |ON  |OFF |[v2.10-rc](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10-rc/inference_lite_lib.armlinux.armv7hf.gcc.with_extra.tar.gz)          |Raspberry Pi 3 Model B |Raspbian OS     |
 |armv7hf |ON  |ON  |[v2.10-rc](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10-rc/inference_lite_lib.armlinux.armv7hf.gcc.with_extra.with_cv.tar.gz)  |Raspberry Pi 3 Model B |Raspbian OS     |
 |armv8   |OFF |OFF |[v2.10-rc](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10-rc/inference_lite_lib.armlinux.armv8.gcc.tar.gz)                       |RK3399                 |firefly (Linux) |
-|armv8   |OFF |OFF |[v2.10-rc](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10-rc/inference_lite_lib.armlinux.armv8.gcc.with_cv.tar.gz)               |RK3399                 |firefly (Linux) |
-|armv8   |OFF |OFF |[v2.10-rc](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10-rc/inference_lite_lib.armlinux.armv8.gcc.with_extra.tar.gz)            |RK3399                 |firefly (Linux) |
-|armv8   |OFF |OFF |[v2.10-rc](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10-rc/inference_lite_lib.armlinux.armv8.gcc.with_extra.with_cv.tar.gz)    |RK3399                 |firefly (Linux) |
+|armv8   |OFF |ON |[v2.10-rc](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10-rc/inference_lite_lib.armlinux.armv8.gcc.with_cv.tar.gz)               |RK3399                 |firefly (Linux) |
+|armv8   |ON |OFF |[v2.10-rc](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10-rc/inference_lite_lib.armlinux.armv8.gcc.with_extra.tar.gz)            |RK3399                 |firefly (Linux) |
+|armv8   |ON |ON |[v2.10-rc](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10-rc/inference_lite_lib.armlinux.armv8.gcc.with_extra.with_cv.tar.gz)    |RK3399                 |firefly (Linux) |
 
 
 ## Linux (X86)
