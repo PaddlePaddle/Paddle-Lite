@@ -44,7 +44,6 @@ Context::Context(void* device, const char* properties) : device_(device) {
     selected_device_ids_value =
         GetStringFromEnv(HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS);
   }
-
   if (!selected_device_ids_value.empty()) {
     selected_device_ids = string_split<int>(selected_device_ids_value, ",");
   } else {
