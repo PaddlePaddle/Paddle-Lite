@@ -56,6 +56,7 @@ enum ActivationType : ushort {
     PRELU = 3,
     LEAKY_RELU = 4,
     HARD_SIGMOID = 5,
+    HARD_SWISH = 10,
 };
 
 struct DropoutParam {
@@ -67,7 +68,8 @@ struct MetalActivationParam {
     float threshold;  // RELU6
     float alpha;      // LEAKY_RELU
     float offset;     // HARD_SIGMOID
-    float slope;
+    float slope;      // HARD_SIGMOID
+    float scale;      // HARD_SWISH
 };
 
 struct ElementwiseAddParam {
@@ -79,6 +81,10 @@ struct ElementwiseAddParam {
     int32_t xtrans[4];     // input_x transpose dim
     int32_t ydim[4];       // input_y dim on gpu
     int32_t ytrans[4];     // input_x transpose dim
+    int32_t ByNum;         // only one number
+    int32_t ByHW;          // only HW
+    int32_t ByW;           // only W
+    int32_t arithmetic_type;
 };
 
 struct ElementwiseParam {
@@ -315,6 +321,9 @@ inline ftype4 activation(const ftype4 input, constant MetalActivationParam& para
             return fmax(input, ftype(param.alpha) * input);
         case HARD_SIGMOID:
             return fmax(0.0, fmin(1.0, ftype(param.slope) * input + ftype(param.offset)));
+        case HARD_SWISH:
+            return (fmin(ftype(param.threshold), fmax(0.0, input + ftype(param.offset)))) * input /
+                   param.scale;
     }
 }
 
