@@ -12,36 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "core/operation/layer_normalization.h"
+#include "core/operation/tile.h"
 #include "driver/huawei_ascend_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
-#include "utility/utility.h"
 
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int ConvertLayerNormalization(Converter* converter, hal::Operation* operation) {
-  LAYER_NORMALIZATION_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int ConvertTile(Converter* converter, hal::Operation* operation) {
+  TILE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
   auto input_operator = converter->GetMappedOperator(input_operand);
-  if (input_operator == nullptr) {
+  if (!input_operator) {
     input_operator = converter->ConvertOperand(input_operand);
   }
-  auto scale_operator = converter->ConvertOperand(scale_operand);
-  auto bias_operator = converter->ConvertOperand(bias_operand);
-
-  // Layer normalization
-  auto layer_norm_op =
-      converter->AddOperator<ge::op::LayerNorm>(output_operand);
-  layer_norm_op->set_attr_epsilon(epsilon);
-  layer_norm_op->set_attr_begin_norm_axis(begin_norm_axis);
-  layer_norm_op->set_attr_begin_params_axis(begin_norm_axis);
-  SET_INPUT(layer_norm_op, x, input_operator);
-  SET_INPUT(layer_norm_op, beta, bias_operator);
-  SET_INPUT(layer_norm_op, gamma, scale_operator);
-  MAP_OUTPUT(layer_norm_op, y, output_operand);
+  auto repeats_operator = converter->GetMappedOperator(input_operand);
+  if (!repeats_operator) {
+    repeats_operator = converter->ConvertOperand(input_operand);
+  }
+  auto tile_op = converter->AddOperator<ge::op::Tile>(output_operand);
+  SET_INPUT(tile_op, x, input_operator);
+  SET_INPUT(tile_op, multiples, repeats_operator);
+  MAP_OUTPUT(tile_op, y, output_operand);
   return NNADAPTER_NO_ERROR;
 }
 

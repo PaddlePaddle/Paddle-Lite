@@ -155,10 +155,10 @@ class GroupNormComputeTest : public arena::TestCase {
 void TestGroupNorm(Place place,
                    float abs_error = 6e-5,
                    std::vector<std::string> ignored_outs = {}) {
-  for (auto& n : {1, 3, 16}) {
-    for (auto& c : {1, 4, 16}) {
-      for (auto& h : {1, 16, 33, 56}) {
-        for (auto& w : {1, 5, 34, 55}) {
+  for (auto& n : {1, 3}) {
+    for (auto& c : {1, 8, 32}) {
+      for (auto& h : {1, 16}) {
+        for (auto& w : {1, 18}) {
           for (auto& has_scale_bias : {true, false}) {
             DDim dim_in({n, c, h, w});
             float epsilon = 1e-3f;
@@ -168,6 +168,9 @@ void TestGroupNorm(Place place,
               }
               std::unique_ptr<arena::TestCase> tester(new GroupNormComputeTest(
                   place, "def", dim_in, epsilon, groups, has_scale_bias));
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+              if (w == 1 && h == 1 && (n != 1 || c != 1)) continue;
+#endif
 #ifdef LITE_WITH_ARM
               if (place == TARGET(kARM)) {
                 auto& ctx = tester->context()->As<ARMContext>();
@@ -193,7 +196,15 @@ TEST(GroupNorm, precision) {
   Place place;
   float abs_error = 3e-3;
   std::vector<std::string> ignored_outs = {};
-#if defined(LITE_WITH_ARM)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+  ignored_outs = {"saved_mean", "saved_variance"};
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #elif defined(LITE_WITH_X86)
   place = TARGET(kX86);

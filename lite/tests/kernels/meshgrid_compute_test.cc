@@ -12,24 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "core/operation/unary_logical_op.h"
-#include "core/hal/types.h"
-#include "utility/debug.h"
-#include "utility/logging.h"
-#include "utility/modeling.h"
-#include "utility/utility.h"
+#include <gtest/gtest.h>
+#include "lite/api/paddle_use_kernels.h"
+#include "lite/api/paddle_use_ops.h"
+#include "lite/core/test/arena/framework.h"
+#include "lite/tests/utils/fill_data.h"
 
-namespace nnadapter {
-namespace operation {
+namespace paddle {
+namespace lite {
 
-int PrepareUnaryLogicalOp(hal::Operation* operation) {
-  UNARY_LOGICAL_OPERATION_EXTRACT_INPUTS_OUTPUTS
+class MeshgridComputeTester : public arena::TestCase {};
 
-  // Infer the shape and type of output operands
-  CopyOperandTypeExceptQuantParams(&output_operand->type, input_operand->type);
-  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
-  return NNADAPTER_NO_ERROR;
-}
-
-}  // namespace operation
-}  // namespace nnadapter
+}  // namespace lite
+}  // namespace paddle

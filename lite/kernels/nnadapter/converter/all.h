@@ -139,6 +139,7 @@ REGISTER_CONVERTER(abs, ConvertUnaryActivations, "huawei_ascend_npu");
 REGISTER_CONVERTER(exp, ConvertUnaryActivations, "huawei_ascend_npu");
 REGISTER_CONVERTER(instance_norm, ConvertInstanceNorm, "huawei_ascend_npu");
 REGISTER_CONVERTER(layer_norm, ConvertLayerNorm, "huawei_ascend_npu");
+REGISTER_CONVERTER(group_norm, ConvertGroupNorm, "huawei_ascend_npu");
 REGISTER_CONVERTER(log, ConvertUnaryActivations, "huawei_ascend_npu");
 REGISTER_CONVERTER(swish, ConvertUnaryActivations, "huawei_ascend_npu");
 REGISTER_CONVERTER(prelu, ConvertPRelu, "huawei_ascend_npu");
@@ -219,4 +220,9 @@ REGISTER_CONVERTER(logical_not, ConvertUnaryLogicalOp, "huawei_ascend_npu");
 REGISTER_CONVERTER(logical_and, ConvertBinaryLogicalOp, "huawei_ascend_npu");
 REGISTER_CONVERTER(floor, ConvertUnaryActivations, "huawei_ascend_npu");
 REGISTER_CONVERTER(meshgrid, ConvertMeshgrid, "huawei_ascend_npu");
+REGISTER_CONVERTER(square, ConvertUnaryActivations, "huawei_ascend_npu");
+REGISTER_CONVERTER(tile, ConvertTile, "huawei_ascend_npu");
+REGISTER_CONVERTER(sum, ConvertSum, "huawei_ascend_npu");
+REGISTER_CONVERTER(roi_align, ConvertRoiAlign, "huawei_ascend_npu");
+REGISTER_CONVERTER(grid_sample, ConvertGridSample, "huawei_ascend_npu");
 #endif  // NOLINT

@@ -1,4 +1,4 @@
-// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,26 +17,19 @@
 namespace nnadapter {
 namespace operation {
 
-#define GATHER_OPERATION_EXTRACT_INPUTS_OUTPUTS                         \
+#define TILE_OPERATION_EXTRACT_INPUTS_OUTPUTS                           \
   auto& input_operands = operation->input_operands;                     \
   auto& output_operands = operation->output_operands;                   \
   auto input_count = input_operands.size();                             \
   auto output_count = output_operands.size();                           \
-  NNADAPTER_CHECK_EQ(input_count, 3);                                   \
+  NNADAPTER_CHECK_EQ(input_count, 2);                                   \
   NNADAPTER_CHECK_EQ(output_count, 1);                                  \
   /* Input */                                                           \
   auto input_operand = input_operands[0];                               \
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);     \
-  /* Indices */                                                         \
-  auto indices_operand = input_operands[1];                             \
-  NNADAPTER_VLOG(5) << "indices: " << OperandToString(indices_operand); \
-  /* Axis */                                                            \
-  auto axis_operand = input_operands[2];                                \
-  auto axis = *reinterpret_cast<int32_t*>(axis_operand->buffer);        \
-  if (axis < 0) {                                                       \
-    axis += static_cast<int32_t>(input_operand->type.dimensions.count); \
-  }                                                                     \
-  NNADAPTER_VLOG(5) << "axis: " << axis;                                \
+  /* Repeat */                                                          \
+  auto repeats_operand = input_operands[1];                             \
+  NNADAPTER_VLOG(5) << "repeats: " << OperandToString(repeats_operand); \
   /* Output */                                                          \
   auto output_operand = output_operands[0];                             \
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);

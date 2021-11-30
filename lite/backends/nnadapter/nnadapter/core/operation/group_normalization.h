@@ -17,26 +17,28 @@
 namespace nnadapter {
 namespace operation {
 
-#define GATHER_OPERATION_EXTRACT_INPUTS_OUTPUTS                         \
+#define GROUP_NORMALIZATION_OPERATION_EXTRACT_INPUTS_OUTPUTS            \
   auto& input_operands = operation->input_operands;                     \
   auto& output_operands = operation->output_operands;                   \
   auto input_count = input_operands.size();                             \
   auto output_count = output_operands.size();                           \
-  NNADAPTER_CHECK_EQ(input_count, 3);                                   \
+  NNADAPTER_CHECK_EQ(input_count, 5);                                   \
   NNADAPTER_CHECK_EQ(output_count, 1);                                  \
   /* Input */                                                           \
   auto input_operand = input_operands[0];                               \
   NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);     \
-  /* Indices */                                                         \
-  auto indices_operand = input_operands[1];                             \
-  NNADAPTER_VLOG(5) << "indices: " << OperandToString(indices_operand); \
-  /* Axis */                                                            \
-  auto axis_operand = input_operands[2];                                \
-  auto axis = *reinterpret_cast<int32_t*>(axis_operand->buffer);        \
-  if (axis < 0) {                                                       \
-    axis += static_cast<int32_t>(input_operand->type.dimensions.count); \
-  }                                                                     \
-  NNADAPTER_VLOG(5) << "axis: " << axis;                                \
+  /* Scale */                                                           \
+  auto scale_operand = input_operands[1];                               \
+  NNADAPTER_VLOG(5) << "scale = " << OperandToString(scale_operand);    \
+  /* Bias */                                                            \
+  auto bias_operand = input_operands[2];                                \
+  NNADAPTER_VLOG(5) << "bias = " << OperandToString(bias_operand);      \
+  /* epsilon */                                                         \
+  auto epsilon = *reinterpret_cast<float*>(input_operands[3]->buffer);  \
+  NNADAPTER_VLOG(5) << "epsilon = " << epsilon;                         \
+  /* groups */                                                          \
+  auto groups = *reinterpret_cast<int32_t*>(input_operands[4]->buffer); \
+  NNADAPTER_VLOG(5) << "groups = " << groups;                           \
   /* Output */                                                          \
   auto output_operand = output_operands[0];                             \
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "core/operation/gather.h"
+#include "core/operation/sum.h"
 #include "driver/huawei_ascend_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -20,27 +20,22 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int ConvertGather(Converter* converter, hal::Operation* operation) {
-  GATHER_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int ConvertSum(Converter* converter, hal::Operation* operation) {
+  SUM_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
-  auto input_operator = converter->GetMappedOperator(input_operand);
-  if (!input_operator) {
-    input_operator = converter->ConvertOperand(input_operand);
+  auto sum_op = converter->AddOperator<ge::op::AddN>(output_operand);
+  sum_op->set_attr_N(input_count);
+  sum_op->create_dynamic_input_x(input_count);
+  for (int i = 0; i < input_count; i++) {
+    auto input_operand = input_operands[i];
+    auto input_operator = converter->GetMappedOperator(input_operand);
+    if (!input_operator) {
+      input_operator = converter->ConvertOperand(input_operand);
+    }
+    SET_DYNAMIC_INPUT(sum_op, x, i, input_operator);
   }
-  auto indices_operator = converter->GetMappedOperator(indices_operand);
-  if (!indices_operator) {
-    indices_operator = converter->ConvertOperand(indices_operand);
-  }
-  auto axis_operator = converter->GetMappedOperator(axis_operand);
-  if (!axis_operator) {
-    axis_operator = converter->ConvertOperand(axis_operand);
-  }
-  auto gather_op = converter->AddOperator<ge::op::GatherV2>(output_operand);
-  SET_INPUT(gather_op, x, input_operator);
-  SET_INPUT(gather_op, indices, indices_operator);
-  SET_INPUT(gather_op, axis, axis_operator);
-  MAP_OUTPUT(gather_op, y, output_operand);
+  MAP_OUTPUT(sum_op, y, output_operand);
   return NNADAPTER_NO_ERROR;
 }
 

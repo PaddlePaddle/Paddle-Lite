@@ -90,7 +90,7 @@ class FillConstantBatchSizeLikeComputeTester : public arena::TestCase {
 };
 
 void TestFillConstantBatchSizeLike(Place place, float abs_error) {
-  uint32_t test_num = 0;
+  // uint32_t test_num = 0;
   for (auto input_dim_idx : {0, 1, 2}) {
     for (auto output_dim_idx : {0, 1, 2}) {
       std::unique_ptr<arena::TestCase> tester(

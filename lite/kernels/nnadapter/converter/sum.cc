@@ -19,32 +19,28 @@ namespace lite {
 namespace kernels {
 namespace nnadapter {
 
-int ConvertGather(Converter* converter, OpInfo* op, Scope* scope) {
-  auto x_name = op->Input("X").front();
-  auto x_scale_name = "X0_scale";
-  std::vector<float> x_scales;
-  if (op->HasInputScale(x_scale_name, true)) {
-    x_scales = op->GetInputScale(x_scale_name, true);
-  }
+int ConvertSum(Converter* converter, OpInfo* op, Scope* scope) {
   // Input operand
-  auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
-  // Indices operand
-  auto index_name = op->Input("Index").front();
-  auto indices_operand = converter->AddInputOperand(scope, index_name);
-  // Axis operand
-  NNAdapterOperand* axis_operand = nullptr;
-  if (HasInput(op, scope, "Axis")) {
-    auto axis_name = op->Input("Axis").front();
-    axis_operand = converter->AddInputOperand(scope, axis_name);
-  } else {
-    axis_operand = converter->AddConstantOperand<int32_t>(0);
+  auto x_names = op->Input("X");
+  std::vector<NNAdapterOperand*> input_operands;
+  for (size_t i = 0; i < x_names.size(); i++) {
+    auto x_name = x_names[i];
+    auto x_scale_name = "X" + paddle::lite::to_string(i) + "_scale";
+    std::vector<float> x_scales;
+    if (op->HasInputScale(x_scale_name, true)) {
+      x_scales = op->GetInputScale(x_scale_name, true);
+    }
+    auto input_operand =
+        converter->AddInputOperand(scope, x_name, {}, x_scales);
+    input_operands.push_back(input_operand);
   }
+
   // Output operand
   auto out_name = op->Output("Out").front();
   auto output_operand = converter->AddOutputOperand(out_name);
-  converter->AddOperation(NNADAPTER_GATHER,
-                          {input_operand, indices_operand, axis_operand},
-                          {output_operand});
+
+  // Range operation
+  converter->AddOperation(NNADAPTER_SUM, input_operands, {output_operand});
   return NO_ERROR;
 }
 

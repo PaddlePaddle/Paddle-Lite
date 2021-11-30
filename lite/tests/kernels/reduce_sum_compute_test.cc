@@ -321,6 +321,9 @@ void test_reduce_sum(Place place) {
             for (bool reduce_all : {false, true}) {
               for (auto dim : reduce_dim) {
                 auto x_dims = DDim(std::vector<int64_t>({n, c, h, w}));
+                for (auto d : dim) {
+                  LOG(INFO) << "[DEBUG]dim: " << d;
+                }
                 std::unique_ptr<arena::TestCase> tester(
                     new ReduceSumComputeTester(
                         place, "def", dim, keep_dim, reduce_all, x_dims));
@@ -337,7 +340,9 @@ void test_reduce_sum(Place place) {
 
 TEST(ReduceSum, precision) {
   Place place;
-#if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_X86)
   place = TARGET(kX86);

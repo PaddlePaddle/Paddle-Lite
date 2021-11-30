@@ -19,32 +19,36 @@ namespace lite {
 namespace kernels {
 namespace nnadapter {
 
-int ConvertGather(Converter* converter, OpInfo* op, Scope* scope) {
+int ConvertTile(Converter* converter, OpInfo* op, Scope* scope) {
+  // Input operand
   auto x_name = op->Input("X").front();
   auto x_scale_name = "X0_scale";
   std::vector<float> x_scales;
   if (op->HasInputScale(x_scale_name, true)) {
     x_scales = op->GetInputScale(x_scale_name, true);
   }
-  // Input operand
   auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
-  // Indices operand
-  auto index_name = op->Input("Index").front();
-  auto indices_operand = converter->AddInputOperand(scope, index_name);
-  // Axis operand
-  NNAdapterOperand* axis_operand = nullptr;
-  if (HasInput(op, scope, "Axis")) {
-    auto axis_name = op->Input("Axis").front();
-    axis_operand = converter->AddInputOperand(scope, axis_name);
+
+  // Repeats operand
+  NNAdapterOperand* repeats_operand = nullptr;
+  if (HasInput(op, scope, "RepeatTimes") && !op->Input("RepeatTimes").empty()) {
+    auto repeats_name = op->Input("RepeatTimes").front();
+    repeats_operand = converter->AddInputOperand(scope, repeats_name);
+  } else if (HasInput(op, scope, "repeat_times_tensor") &&
+             !op->Input("repeat_times_tensor").empty()) {
+    LOG(FATAL) << "Not support repeat_times_tensor for tile now.";
   } else {
-    axis_operand = converter->AddConstantOperand<int32_t>(0);
+    auto repeats = op->GetAttr<std::vector<int>>("repeat_times");
+    repeats_operand = converter->AddConstantOperand(repeats);
   }
+
   // Output operand
   auto out_name = op->Output("Out").front();
   auto output_operand = converter->AddOutputOperand(out_name);
-  converter->AddOperation(NNADAPTER_GATHER,
-                          {input_operand, indices_operand, axis_operand},
-                          {output_operand});
+
+  // Tile operation
+  converter->AddOperation(
+      NNADAPTER_TILE, {input_operand, repeats_operand}, {output_operand});
   return NO_ERROR;
 }
 

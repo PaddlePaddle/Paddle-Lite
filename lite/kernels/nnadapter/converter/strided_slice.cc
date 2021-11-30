@@ -37,22 +37,18 @@ int ConvertStridedSlice(Converter* converter, OpInfo* op, Scope* scope) {
   // Starts
   std::vector<int> starts;
   if (HasInput(op, scope, "StartsTensorList")) {
-    LOG(WARNING) << "Not support StartsTensorList now.";
-    return PARAMETER_ERROR;
+    LOG(FATAL) << "Not support StartsTensorList for stride_slice now.";
   } else if (HasInput(op, scope, "StartsTensor")) {
-    LOG(WARNING) << "Not support StartsTensor now.";
-    return PARAMETER_ERROR;
+    LOG(FATAL) << "Not support StartsTensor for stride_slice now.";
   } else {
     starts = op->GetAttr<std::vector<int>>("starts");
   }
   // Ends
   std::vector<int> ends_ori;
   if (HasInput(op, scope, "EndsTensorList")) {
-    LOG(WARNING) << "Not support EndsTensorList now.";
-    return PARAMETER_ERROR;
+    LOG(FATAL) << "Not support EndsTensorList for stride_slice now.";
   } else if (HasInput(op, scope, "EndsTensor")) {
-    LOG(WARNING) << "Not support EndsTensor now.";
-    return PARAMETER_ERROR;
+    LOG(FATAL) << "Not support EndsTensor for stride_slice now.";
   } else {
     ends_ori = op->GetAttr<std::vector<int>>("ends");
   }
@@ -65,11 +61,9 @@ int ConvertStridedSlice(Converter* converter, OpInfo* op, Scope* scope) {
   // Steps
   std::vector<int> steps;
   if (HasInput(op, scope, "StridesTensorList")) {
-    LOG(WARNING) << "Not support StridesTensorList now.";
-    return PARAMETER_ERROR;
+    LOG(FATAL) << "Not support StridesTensorList for stride_slice now.";
   } else if (HasInput(op, scope, "StridesTensor")) {
-    LOG(WARNING) << "Not support StridesTensor now.";
-    return PARAMETER_ERROR;
+    LOG(FATAL) << "Not support StridesTensor for stride_slice now.";
   } else {
     steps = op->GetAttr<std::vector<int>>("strides");
   }

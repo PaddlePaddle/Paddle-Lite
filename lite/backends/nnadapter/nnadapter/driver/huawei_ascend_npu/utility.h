@@ -101,6 +101,8 @@ std::vector<int64_t> ConvertToGEDimensions(const int32_t* input_dimensions,
 std::vector<int64_t> ConvertToGEDimensions(
     const std::vector<int32_t>& input_dimensions);
 std::string ConvertPadModeCodeToGEPadMode(int pad_mode_code);
+std::string ConvertInterpolateModeCodeToGEInterpolateMode(
+    int interpolate_mode_code);
 
 }  // namespace huawei_ascend_npu
 }  // namespace nnadapter
