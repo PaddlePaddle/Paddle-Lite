@@ -211,6 +211,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "quantization_parameters_removal_pass",
        "mixed_precision_auto_insert_calib_op_pass",
        "graph_visualize_pass",
+       "graph_visualize_pass",
        "nnadapter_subgraph_pass",
        "npu_subgraph_pass",
        "xpu_subgraph_pass",
