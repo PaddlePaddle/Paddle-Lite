@@ -2187,7 +2187,6 @@ struct UniqueWithCountsParam : ParamBase {
   lite::Tensor* Index{};
   lite::Tensor* Count{};
 };
-
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
