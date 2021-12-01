@@ -64,6 +64,8 @@ lite_cc_test(test_kernel_strided_slice_compute SRCS strided_slice_compute_test.c
 lite_cc_test(test_kernel_expand_compute SRCS expand_compute_test.cc)
 lite_cc_test(test_kernel_expand_as_compute SRCS expand_as_compute_test.cc)
 lite_cc_test(test_kernel_expand_v2_compute SRCS expand_v2_compute_test.cc)
+lite_cc_test(test_kernel_tile_compute SRCS tile_compute_test.cc)
+lite_cc_test(test_kernel_sum_compute SRCS sum_compute_test.cc)
 lite_cc_test(test_kernel_matmul_compute SRCS matmul_compute_test.cc)
 lite_cc_test(test_kernel_flatten_compute SRCS flatten_compute_test.cc)
 lite_cc_test(test_kernel_p_norm_compute SRCS p_norm_compute_test.cc)

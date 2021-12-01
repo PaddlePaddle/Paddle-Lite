@@ -320,26 +320,35 @@ class RoiAlignComputeTester : public arena::TestCase {
   }
 };
 
+void TestRoiAlign(Place place, float abs_error) {
+  for (auto test_fluid_v18_api : {false, true}) {
+    std::unique_ptr<arena::TestCase> tester(
+        new RoiAlignComputeTester(place, "def", test_fluid_v18_api));
+    arena::Arena arena(std::move(tester), place, abs_error);
+    EXPECT_TRUE(arena.TestPrecision());
+  }
+}
+
 TEST(RoiAlign, precision) {
   // The unit test for roi_align needs the params,
   // which is obtained by runing model by paddle.
   LOG(INFO) << "test roi align op";
-#if defined(LITE_WITH_X86) || defined(LITE_WITH_ARM)
-  {
-    Place place(TARGET(kHost));
-    std::unique_ptr<arena::TestCase> tester(
-        new RoiAlignComputeTester(place, "def", false));
-    arena::Arena arena(std::move(tester), place, 2e-4);
-    EXPECT_TRUE(arena.TestPrecision());
-  }
-  {
-    Place place(TARGET(kHost));
-    std::unique_ptr<arena::TestCase> tester(
-        new RoiAlignComputeTester(place, "def", true));
-    arena::Arena arena(std::move(tester), place, 2e-4);
-    EXPECT_TRUE(arena.TestPrecision());
-  }
+  Place place;
+  float abs_error = 2e-4;
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#else
+  return;
 #endif
+#elif defined(LITE_WITH_X86) || defined(LITE_WITH_ARM)
+  place = TARGET(kHost);
+#else
+  return;
+#endif
+
+  TestRoiAlign(place, abs_error);
 }
 
 }  // namespace lite
