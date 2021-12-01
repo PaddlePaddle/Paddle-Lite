@@ -24,8 +24,8 @@ namespace lite {
 namespace kernels {
 namespace x86 {
 
-template <DataLayoutType DLType>
-void CalibComputeFp32ToInt8<DLType>::Run() {
+template <PrecisionType Ptype, DataLayoutType DLType>
+void CalibComputeFp32ToInt8<Ptype, DLType>::Run() {
   auto& param = this->template Param<operators::CalibParam>();
   std::vector<float> scale = {param.scale};
   const auto* din = param.input->template data<float>();
@@ -34,8 +34,8 @@ void CalibComputeFp32ToInt8<DLType>::Run() {
       din, dout, scale.data(), 1, 1, param.input->numel());
 }
 
-template <DataLayoutType DLType>
-void CalibComputeInt64ToInt32<DLType>::Run() {
+template <PrecisionType Ptype, DataLayoutType DLType>
+void CalibComputeInt64ToInt32<Ptype, DLType>::Run() {
   auto& param = this->template Param<operators::CalibParam>();
   const auto* din = param.input->template data<int64_t>();
   auto* dout = param.output->template mutable_data<int32_t>();
@@ -44,8 +44,8 @@ void CalibComputeInt64ToInt32<DLType>::Run() {
   }
 }
 
-template <DataLayoutType DLType>
-void CalibComputeInt32ToInt64<DLType>::Run() {
+template <PrecisionType Ptype, DataLayoutType DLType>
+void CalibComputeInt32ToInt64<Ptype, DLType>::Run() {
   auto& param = this->template Param<operators::CalibParam>();
   const auto* din = param.input->template data<int32_t>();
   auto* dout = param.output->template mutable_data<int64_t>();
@@ -54,8 +54,8 @@ void CalibComputeInt32ToInt64<DLType>::Run() {
   }
 }
 
-template <DataLayoutType DLType>
-void CalibComputeInt8ToFp32<DLType>::Run() {
+template <PrecisionType Ptype, DataLayoutType DLType>
+void CalibComputeInt8ToFp32<Ptype, DLType>::Run() {
   auto& param = this->template Param<operators::CalibParam>();
   const auto* din = param.input->template data<signed char>();
   std::vector<float> scale = {param.scale};
@@ -64,8 +64,8 @@ void CalibComputeInt8ToFp32<DLType>::Run() {
       din, dout, scale.data(), 1, 1, param.input->numel());
 }
 
-template <DataLayoutType DLType>
-void CalibComputeInt32ToFp32<DLType>::Run() {
+template <PrecisionType Ptype, DataLayoutType DLType>
+void CalibComputeInt32ToFp32<Ptype, DLType>::Run() {
   auto& param = this->template Param<operators::CalibParam>();
   const auto* din = param.input->template data<int32_t>();
   auto* dout = param.output->template mutable_data<float>();
@@ -74,8 +74,8 @@ void CalibComputeInt32ToFp32<DLType>::Run() {
   }
 }
 
-template <DataLayoutType DLType>
-void CalibComputeFp32ToInt32<DLType>::Run() {
+template <PrecisionType Ptype, DataLayoutType DLType>
+void CalibComputeFp32ToInt32<Ptype, DLType>::Run() {
   auto& param = this->template Param<operators::CalibParam>();
   const auto* din = param.input->template data<float>();
   auto* dout = param.output->template mutable_data<int32_t>();
@@ -84,8 +84,8 @@ void CalibComputeFp32ToInt32<DLType>::Run() {
   }
 }
 
-template <DataLayoutType DLType>
-void CalibComputeInt64ToFp32<DLType>::Run() {
+template <PrecisionType Ptype, DataLayoutType DLType>
+void CalibComputeInt64ToFp32<Ptype, DLType>::Run() {
   auto& param = this->template Param<operators::CalibParam>();
   const auto* din = param.input->template data<int64_t>();
   auto* dout = param.output->template mutable_data<float>();
@@ -99,124 +99,114 @@ void CalibComputeInt64ToFp32<DLType>::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(
-    calib,
-    kX86,
-    kInt8,
-    kNCHW,
-    paddle::lite::kernels::x86::CalibComputeFp32ToInt8<DATALAYOUT(kNCHW)>,
-    fp32_to_int8)
+typedef paddle::lite::kernels::x86::CalibComputeFp32ToInt8<PRECISION(kInt8),
+                                                           DATALAYOUT(kNCHW)>
+    i8_fp32_to_int8;
+REGISTER_LITE_KERNEL(calib, kX86, kInt8, kNCHW, i8_fp32_to_int8, fp32_to_int8)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt8))})
     .Finalize();
 
+typedef paddle::lite::kernels::x86::CalibComputeInt8ToFp32<PRECISION(kInt8),
+                                                           DATALAYOUT(kNCHW)>
+    i8_int8_to_fp32;
+REGISTER_LITE_KERNEL(calib, kX86, kInt8, kNCHW, i8_int8_to_fp32, int8_to_fp32)
+    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt8))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
+    .Finalize();
+
+typedef paddle::lite::kernels::x86::CalibComputeInt32ToFp32<PRECISION(kFloat),
+                                                            DATALAYOUT(kNCHW)>
+    fp_int32_to_fp32;
 REGISTER_LITE_KERNEL(
-    calib,
-    kX86,
-    kInt32,
-    kNCHW,
-    paddle::lite::kernels::x86::CalibComputeInt32ToFp32<DATALAYOUT(kNCHW)>,
-    int32_to_fp32)
+    calib, kX86, kFloat, kNCHW, fp_int32_to_fp32, int32_to_fp32)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .Finalize();
 
+typedef paddle::lite::kernels::x86::CalibComputeFp32ToInt32<PRECISION(kFloat),
+                                                            DATALAYOUT(kNCHW)>
+    fp_fp32_to_int32;
 REGISTER_LITE_KERNEL(
-    calib,
-    kX86,
-    kInt32,
-    kNCHW,
-    paddle::lite::kernels::x86::CalibComputeInt32ToInt64<DATALAYOUT(kNCHW)>,
-    int32_to_int64)
-    .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(
-    calib,
-    kX86,
-    kInt32,
-    kNCHW,
-    paddle::lite::kernels::x86::CalibComputeFp32ToInt32<DATALAYOUT(kNCHW)>,
-    fp32_to_int32)
+    calib, kX86, kFloat, kNCHW, fp_fp32_to_int32, fp32_to_int32)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
     .Finalize();
 
+typedef paddle::lite::kernels::x86::CalibComputeInt32ToInt64<PRECISION(kFloat),
+                                                             DATALAYOUT(kNCHW)>
+    fp_int32_to_int64;
 REGISTER_LITE_KERNEL(
-    calib,
-    kX86,
-    kInt64,
-    kNCHW,
-    paddle::lite::kernels::x86::CalibComputeInt64ToFp32<DATALAYOUT(kNCHW)>,
-    int64_to_fp32)
+    calib, kX86, kFloat, kNCHW, fp_int32_to_int64, int32_to_int64)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
+    .Finalize();
+
+typedef paddle::lite::kernels::x86::CalibComputeInt64ToInt32<PRECISION(kFloat),
+                                                             DATALAYOUT(kNCHW)>
+    fp_int64_to_int32;
+REGISTER_LITE_KERNEL(
+    calib, kX86, kFloat, kNCHW, fp_int64_to_int32, int64_to_int32)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kX86),
+                                      PRECISION(kInt64),
+                                      DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+                {LiteType::GetTensorTy(TARGET(kX86),
+                                       PRECISION(kInt32),
+                                       DATALAYOUT(kNCHW))})
+    .Finalize();
+
+typedef paddle::lite::kernels::x86::CalibComputeInt64ToFp32<PRECISION(kFloat),
+                                                            DATALAYOUT(kNCHW)>
+    fp_int64_to_fp32;
+REGISTER_LITE_KERNEL(
+    calib, kX86, kFloat, kNCHW, fp_int64_to_fp32, int64_to_fp32)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(
-    calib,
-    kX86,
-    kInt8,
-    kNCHW,
-    paddle::lite::kernels::x86::CalibComputeInt8ToFp32<DATALAYOUT(kNCHW)>,
-    int8_to_fp32)
-    .BindInput("Input", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt8))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(
-    calib,
-    kX86,
-    kInt64,
-    kNCHW,
-    paddle::lite::kernels::x86::CalibComputeInt64ToInt32<DATALAYOUT(kNCHW)>,
-    int64_to_int32)
-    .BindInput("Input",
-               {LiteType::GetTensorTy(TARGET(kX86),
-                                      PRECISION(kInt64),
-                                      DATALAYOUT(kNCHW))})
-    .BindOutput("Out",
-                {LiteType::GetTensorTy(TARGET(kX86),
-                                       PRECISION(kInt32),
-                                       DATALAYOUT(kNCHW))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(
-    calib_once,
-    kX86,
-    kInt8,
-    kNCHW,
-    paddle::lite::kernels::x86::CalibComputeFp32ToInt8<DATALAYOUT(kNCHW)>,
-    fp32_to_int8)
+    calib_once, kX86, kInt8, kNCHW, i8_fp32_to_int8, fp32_to_int8)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt8))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(
-    calib_once,
-    kX86,
-    kInt8,
-    kNCHW,
-    paddle::lite::kernels::x86::CalibComputeInt8ToFp32<DATALAYOUT(kNCHW)>,
-    int8_to_fp32)
+    calib_once, kX86, kInt8, kNCHW, i8_int8_to_fp32, int8_to_fp32)
     .BindInput("Input", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt8))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(
-    calib_once,
-    kX86,
-    kInt64,
-    kNCHW,
-    paddle::lite::kernels::x86::CalibComputeInt64ToInt32<DATALAYOUT(kNCHW)>,
-    int64_to_int32)
+    calib_once, kX86, kFloat, kNCHW, fp_int32_to_fp32, int32_to_fp32)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    calib_once, kX86, kFloat, kNCHW, fp_fp32_to_int32, fp32_to_int32)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    calib_once, kX86, kFloat, kNCHW, fp_int32_to_int64, int32_to_int64)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt32))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    calib_once, kX86, kFloat, kNCHW, fp_int64_to_int32, int64_to_int32)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kX86),
                                       PRECISION(kInt64),
@@ -225,4 +215,11 @@ REGISTER_LITE_KERNEL(
                 {LiteType::GetTensorTy(TARGET(kX86),
                                        PRECISION(kInt32),
                                        DATALAYOUT(kNCHW))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(
+    calib_once, kX86, kFloat, kNCHW, fp_int64_to_fp32, int64_to_fp32)
+    .BindInput("Input",
+               {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kX86), PRECISION(kFloat))})
     .Finalize();

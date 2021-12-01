@@ -113,7 +113,7 @@ add_subdirectory(test)
 
 
 # for mobile, unnecessary to compile the following testings.
-if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+if(LITE_WITH_ARM)
   return ()
 endif ()
 

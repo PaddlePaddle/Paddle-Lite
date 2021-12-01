@@ -220,7 +220,8 @@ void resize_one_channel(const uint8_t* src,
       rows1p += 8;
     }
 #else
-#pragma omp parallel for  // TODO: asm is not right , 1 only use rows0p; 2 can
+#pragma omp parallel for  // TODO(chenjiaoAngel): asm is not right , 1 only use
+    // rows0p; 2 can
     // not parallel because address(rows0p) depend
     if (cnt > 0) {
       asm volatile(

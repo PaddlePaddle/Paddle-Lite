@@ -55,12 +55,10 @@ function build_target {
       -DLITE_WITH_OPENCL=ON \
       -DWITH_GPU=OFF \
       -DWITH_MKL=OFF \
-      -DWITH_LITE=ON \
       -DLITE_WITH_CUDA=OFF \
       -DLITE_WITH_X86=OFF \
       -DLITE_WITH_ARM=ON \
       -DWITH_ARM_DOTPROD=ON   \
-      -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
       -DWITH_TESTING=ON \
       -DLITE_BUILD_EXTRA=ON \
       -DLITE_WITH_LOG=ON \
@@ -263,10 +261,10 @@ function main() {
   done
 }
 
-startTime=`date +%Y%m%d-%H:%M:%S`
-startTime_s=`date +%s`
+start_time=`date +%Y%m%d-%H:%M:%S`
+start_time_s=`date +%s`
 main android_build_and_test
-endTime=`date +%Y%m%d-%H:%M:%S`
-endTime_s=`date +%s`
-sumTime=$[ $endTime_s - $startTime_s ]
-echo "Start time: $startTime ---> End time: $endTime" "  This CI costs: $sumTime minutes."
+end_time=`date +%Y%m%d-%H:%M:%S`
+end_time_s=`date +%s`
+cost_ime_m=`echo "($end_time_s - $start_time_s) / 60" | bc`
+echo "Start time: $start_time ---> End time: $end_time" "  This CI costs: $cost_ime_m minutes."

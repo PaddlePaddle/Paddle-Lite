@@ -2187,6 +2187,18 @@ struct UniqueWithCountsParam : ParamBase {
   lite::Tensor* Index{};
   lite::Tensor* Count{};
 };
+
+struct GaussRandomParam : ParamBase {
+  const lite::Tensor* ShapeTensor{nullptr};
+  std::vector<const lite::Tensor*> ShapeTensorList{};
+  std::vector<int64_t> shape{};
+  lite::Tensor* Out{};
+  int seed{0};
+  int dtype{5};
+  float mean{0.f};
+  float gauss_std{0.f};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

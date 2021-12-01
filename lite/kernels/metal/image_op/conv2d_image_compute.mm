@@ -254,8 +254,10 @@ std::string Conv2dImageCompute::KernelFunctionName(const param_t& param,
                 }
 #endif
                 return "conv_3x3";
-            } else {
+            } else if ((input_c == (filter_c * param.groups)) && filter_n == input_c) {
                 return "group_conv_3x3";
+            } else {
+                return "depthwise_conv_3x3_unequal";
             }
         } else if (filter_w == 1 && filter_h == 5) {
             return "conv_5x1";
@@ -424,7 +426,10 @@ void Conv2dImageCompute::setup_without_mps() {
         bool pad_when_one_ch =
             !(param.filter->dims()[1] == 1 && param.filter->dims()[0] == param.x->dims()[1]);
         filter_buffer_ = std::make_shared<MetalBuffer>(metal_context_, param.filter->dims());
-        filter_buffer_->pad_when_one_channel_ = pad_when_one_ch;
+        if (param.groups != 1 && param.filter->dims()[0] != param.x->dims()[1]) {
+            filter_buffer_->pad_when_one_channel_ = false;
+        } else
+            filter_buffer_->pad_when_one_channel_ = pad_when_one_ch;
         filter_buffer_->CopyFromNCHW<float>(filter);
     }
 

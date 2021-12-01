@@ -110,7 +110,7 @@ add_kernel(flip_compute_host Host extra SRCS flip_compute.cc)
 add_kernel(unique_with_counts_compute  Host extra SRCS unique_with_counts_compute.cc)
 add_kernel(roi_align_compute Host extra SRCS roi_align_compute.cc)
 add_kernel(box_clip_compute Host extra SRCS box_clip_compute.cc)
-
+add_kernel(gaussian_random_compute Host extra SRCS gaussian_random_compute.cc)
 
 if(LITE_BUILD_EXTRA AND LITE_WITH_x86)
   lite_cc_test(test_where_index_compute_host SRCS where_index_compute.cc)

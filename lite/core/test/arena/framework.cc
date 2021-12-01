@@ -49,6 +49,9 @@ std::shared_ptr<lite::OpLite> TestCase::CreateSubgraphOp() {
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
   ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope,
                                                        {"cambricon_mlu"});
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope,
+                                                       {"verisilicon_timvx"});
 #endif
   // Create a new block desc to wrap the original op desc
   auto sub_program_desc = std::make_shared<cpp::ProgramDesc>();

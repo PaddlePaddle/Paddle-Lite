@@ -12,16 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from auto_scan_base import AutoScanBaseTest, SkipReasonsBase
+from auto_scan_base import AutoScanBaseTest, IgnoreReasonsBase
 import numpy as np
 import logging
 import abc
 import enum
 import unittest
+import paddle
+import copy
 from typing import Optional, List, Callable, Dict, Any, Set
 from paddlelite.lite import *
 
-SkipReasons = SkipReasonsBase
+IgnoreReasons = IgnoreReasonsBase
 
 def ParsePlaceInfo(place_str):
    # todo: this func should be completed later
@@ -57,16 +59,46 @@ def ParsePaddleLiteConfig(self, config):
 
 class AutoScanTest(AutoScanBaseTest):
     def run_lite_config(self, model, params, inputs, pred_config) -> Dict[str, np.ndarray]:
+        # 1. store original model
+        with open(self.cache_dir + "/model", "wb") as f:
+            f.write(model)
+        with open(self.cache_dir + "/params", "wb") as f:
+            f.write(params)
+
+        # 2. run inference
         config = ParsePaddleLiteConfig(self, pred_config)
         config.set_model_buffer(model, len(model), params, len(params))
         predictor = create_paddle_predictor(config)
+
         for name in inputs:
             input_tensor = predictor.get_input_by_name(name)
             input_tensor.from_numpy(inputs[name]['data'])
             if inputs[name]['lod'] is not None:
                 input_tensor.set_lod(inputs[name]['lod'])
         predictor.run()
+
+        # 3. inference results
         result = {}
         for out_name in predictor.get_output_names():
             result[out_name] = predictor.get_output_by_name(out_name).numpy()
-        return result
+        result_res = copy.deepcopy(result)
+
+        # 4. optimized model
+        predictor.save_optimized_pb_model(self.cache_dir+ "/opt_model/")
+        with open(self.cache_dir + "/opt_model/model", "rb") as f:
+            model = f.read()
+
+        return result_res, model
+
+
+class FusePassAutoScanTest(AutoScanTest):
+    def run_and_statis(
+            self,
+            quant=False,
+            max_examples=100,
+            reproduce=None,
+            min_success_num=25,
+            max_duration=180,
+            passes=None ):
+        assert passes is not None, "Parameter of passes must be defined in function run_and_statis."
+        super().run_and_statis(quant, max_examples, reproduce, min_success_num, max_duration, passes)

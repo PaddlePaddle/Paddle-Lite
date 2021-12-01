@@ -52,6 +52,9 @@ TEST(MobileNetV1, test_resnet50_int8_per_layer_nnadapter) {
 #elif defined(NNADAPTER_WITH_MEDIATEK_APU)
   nnadapter_device_names.emplace_back("mediatek_apu");
   out_accuracy_threshold = 0.74f;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  nnadapter_device_names.emplace_back("verisilicon_timvx");
+  out_accuracy_threshold = 0.76f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,13 +13,22 @@
 // limitations under the License.
 
 #pragma once
+#include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
-#include "core/hal/types.h"
+namespace paddle {
+namespace lite {
+namespace kernels {
+namespace host {
 
-namespace nnadapter {
-namespace amlogic_npu {
+class GaussRandomCompute : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
+ public:
+  void Run() override;
 
-void TransposeOpDimensions(hal::Model* model);
+  virtual ~GaussRandomCompute() = default;
+};
 
-}  // namespace amlogic_npu
-}  // namespace nnadapter
+}  // namespace host
+}  // namespace kernels
+}  // namespace lite
+}  // namespace paddle

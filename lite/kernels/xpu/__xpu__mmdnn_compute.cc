@@ -693,17 +693,20 @@ class MMDNNMatchConvTopk {
                                      1);
 
     CHECK_EQ(r, 0);
-    r = xdnn::sequence_topk_avg_pooling(ctx,
-                                        seq_concat_out,
-                                        seq_avg_topk_out,
-                                        useless_topk_pos_,
-                                        batch,
-                                        dim_t_ + out_channel_,
-                                        topk_offset_32_,
-                                        left_lod_32_,
-                                        right_lod_32_,
-                                        topks_xpu_,
-                                        topks_.size());
+    r = xdnn::sequence_topk_avg_pooling<float, int>(
+        ctx,
+        seq_concat_out,
+        seq_avg_topk_out,
+        useless_topk_pos_,
+        dim_t_ + out_channel_,
+        {lod_topk.data(), static_cast<int>(lod_topk.size()), topk_offset_32_},
+        {left_lod_32_cpu.data(),
+         static_cast<int>(left_lod_32_cpu.size()),
+         left_lod_32_},
+        {right_lod_32_cpu.data(),
+         static_cast<int>(right_lod_32_cpu.size()),
+         right_lod_32_},
+        {topks_.data(), static_cast<int>(topks_.size()), topks_xpu_});
     CHECK_EQ(r, 0);
   }
 };

@@ -156,7 +156,7 @@ function(lite_cc_test TARGET)
             MLU_DEPS ${args_MLU_DEPS}
             HUAWEI_ASCEND_NPU_DEPS ${args_HUAWEI_ASCEND_NPU_DEPS}
             )
-  if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+  if(LITE_WITH_ARM)
     cc_binary(${TARGET} SRCS ${args_SRCS} DEPS ${deps} core_tester gflags gtest)
   else()
     cc_binary(${TARGET} SRCS ${args_SRCS} DEPS ${deps} core_tester gflags gtest glog)

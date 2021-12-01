@@ -53,6 +53,8 @@ TEST(ssd_mobilentert_v1,
   nnadapter_device_names.emplace_back("rockchip_npu");
 #elif defined(NNADAPTER_WITH_MEDIATEK_APU)
   nnadapter_device_names.emplace_back("mediatek_apu");
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  nnadapter_device_names.emplace_back("verisilicon_timvx");
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;

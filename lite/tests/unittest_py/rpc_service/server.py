@@ -13,9 +13,11 @@
 # limitations under the License.
 
 import rpyc
+import  os
+import shutil
 from rpyc.utils.server import ThreadedServer
 from paddlelite.lite import *
-
+import copy
 rpyc.core.protocol.DEFAULT_CONFIG['allow_pickle'] = True
 
 def ParsePlaceInfo(place_str):
@@ -55,19 +57,41 @@ class RPCService(rpyc.Service):
         '''
         Test a single case.
         '''
+        # 1. store original model
+        abs_dir = os.path.abspath(os.path.dirname(__file__))
+        self.cache_dir = os.path.join(abs_dir,
+                                      str(self.__module__) + '_cache_dir')
+        if os.path.exists(self.cache_dir):
+            shutil.rmtree(self.cache_dir)
+        if not os.path.exists(self.cache_dir):
+            os.mkdir(self.cache_dir)
+        with open(self.cache_dir + "/model", "wb") as f:
+            f.write(model)
+        with open(self.cache_dir + "/params", "wb") as f:
+            f.write(params)
+        # 2. run inference
         config = ParsePaddleLiteConfig(self, config_str)
         config.set_model_buffer(model, len(model), params, len(params))
         predictor = create_paddle_predictor(config)
+
         for name in inputs:
             input_tensor = predictor.get_input_by_name(name)
             input_tensor.from_numpy(inputs[name]['data'])
             if inputs[name]['lod'] is not None:
                 input_tensor.set_lod(inputs[name]['lod'])
         predictor.run()
+        # 3. inference results
         result = {}
         for out_name in predictor.get_output_names():
             result[out_name] = predictor.get_output_by_name(out_name).numpy()
-        return result
+        result_res = copy.deepcopy(result)
+        # 4. optimized model
+        predictor.save_optimized_pb_model(self.cache_dir+ "/opt_model")
+        with open(self.cache_dir + "/opt_model/model", "rb") as f:
+            model = f.read()
+
+        return result_res, model
+
 
 
 if __name__ == "__main__":

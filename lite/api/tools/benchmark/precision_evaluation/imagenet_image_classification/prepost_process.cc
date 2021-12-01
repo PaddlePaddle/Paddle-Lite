@@ -110,8 +110,13 @@ std::vector<ImagenetClassification::RESULT> ImagenetClassification::PostProcess(
     }
     results[i].score = max_scores[i];
     results[i].class_id = max_indices[i];
-    if (repeat_flag) {
-      topk_accuracies_[i] += max_scores[i];
+
+    const int label = cnt;
+    if ((label == results[i].class_id) && repeat_flag) {
+      for (auto j = i; j < TOPK; j++) {
+        topk_accuracies_[j] += 1;
+      }
+      break;
     }
   }
 
@@ -139,6 +144,13 @@ std::vector<ImagenetClassification::RESULT> ImagenetClassification::PostProcess(
     std::string output_image_path = "./" + std::to_string(cnt) + ".png";
     cv::imwrite(output_image_path, output_image);
     std::cout << "Save output image into " << output_image_path << std::endl;
+  }
+
+  if (repeat_flag) {
+    for (int i = 0; i < results.size(); i++) {
+      std::cout << "top-" << i + 1 << ":" << topk_accuracies_[i] / (cnt + 1)
+                << std::endl;
+    }
   }
 
   return results;
