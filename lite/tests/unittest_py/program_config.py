@@ -187,6 +187,7 @@ def create_fake_model(program_config):
                     convert_np_dtype_to_dtype_(tensor_config.dtype))
         op_desc.infer_var_type(main_block_desc)
         op_desc.infer_shape(main_block_desc)
+        op_desc.check_attrs()
 
     for index, name in enumerate(program_config.outputs):
         var_desc = main_block_desc.var(cpt.to_bytes("fetch"))
