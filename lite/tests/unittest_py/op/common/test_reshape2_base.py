@@ -35,9 +35,12 @@ def sample_program_configs(draw):
         type = "relu",
         inputs = {
             "X" : ["input_data"],
-            },
+            "Shape" : ["shape_data"],
+            "ShapeTensor" : ["shape_tensor_data"],
+        },
         outputs = {
             "Out": ["output_data"],
+            "XShape": ["xshape_data"],
         })
     program_config = ProgramConfig(
         ops=[build_ops],

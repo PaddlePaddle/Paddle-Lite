@@ -35,6 +35,8 @@ def sample_program_configs(draw):
         type = "reshape",
         inputs = {
             "X" : ["input_data"],
+            "Shape" : ["shape_data"],
+            "ShapeTensor" : ["shape_tensor_data"],
         },
         outputs = {
             "Out": ["output_data"],

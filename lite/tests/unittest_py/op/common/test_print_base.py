@@ -41,7 +41,6 @@ def sample_program_configs(draw):
         },
         attrs = {
             "first_n": 10,
-            "summarize": summarize_data,
             "message": "",
         })
     program_config = ProgramConfig(
