@@ -19,14 +19,17 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-static std::shared_ptr<std::mt19937_64> GetRandomEngine(uint64_t seed) {
-  auto engine = std::make_shared<std::mt19937_64>();
+template <class T>
+void SamplingIdCompute<T>::PrepareForRun() {
+  auto& param = this->template Param<param_t>();
+  int seed = param.seed;
+
+  auto engine_ = std::make_shared<std::mt19937_64>();
   if (seed == 0) {
     std::random_device rd;
     seed = ((((uint64_t)rd()) << 32) + rd()) & 0x1FFFFFFFFFFFFF;
   }
-  engine->seed(seed);
-  return engine;
+  engine_->seed(seed);
 }
 
 template <class T>
@@ -41,12 +44,9 @@ void SamplingIdCompute<T>::Run() {
   auto out_data = out->mutable_data<int64_t>();
   std::uniform_real_distribution<T> dist(static_cast<T>(param.min),
                                          static_cast<T>(param.max));
-  if (engine == nullptr) {
-    engine = GetRandomEngine(param.seed);
-  }
 
   for (int64_t i = 0; i < batch_size; ++i) {
-    T r = dist(*engine);
+    T r = dist(*engine_);
     int64_t idx = width - 1;
     for (int64_t j = 0; j < width; ++j) {
       if ((r -= x_data[i * width + j]) < 0) {
