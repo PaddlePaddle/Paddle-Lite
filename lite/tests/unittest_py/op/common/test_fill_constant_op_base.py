@@ -36,16 +36,16 @@ def sample_program_configs(draw):
         return np.array(tensor_shape).astype(np.int32)
 
     def generate_input_bool(*args, **kwargs):
-        return np.random.randint([1]).astype(np.bool)
+        return np.random.random([1]).astype(np.bool)
 
     def generate_input_int8(*args, **kwargs):
-        return np.random.randint([1]).astype(np.int8)
+        return np.random.random([1]).astype(np.int8)
 
     def generate_input_int32(*args, **kwargs):
-        return np.random.randint([1]).astype(np.int32)
+        return np.random.random([1]).astype(np.int32)
 
     def generate_input_int64(*args, **kwargs):
-        return np.random.randint([1]).astype(np.int64)
+        return np.random.random([1]).astype(np.int64)
 
     def generate_input_float32(*args, **kwargs):
         return np.random.random([1]).astype(np.float32)

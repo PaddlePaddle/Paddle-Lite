@@ -30,10 +30,10 @@ def sample_program_configs(draw):
     dtype = draw(st.sampled_from([-1, 2, 3, 5]))
 
     def generate_input_int32(*args, **kwargs):
-        return np.random.randint(in_shape).astype(np.int32)
+        return np.random.random(in_shape).astype(np.int32)
 
     def generate_input_int64(*args, **kwargs):
-        return np.random.randint(in_shape).astype(np.int64)
+        return np.random.random(in_shape).astype(np.int64)
 
     def generate_input_float32(*args, **kwargs):
         return np.random.random(in_shape).astype(np.float32)
