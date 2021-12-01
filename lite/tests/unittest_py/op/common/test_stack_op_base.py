@@ -28,18 +28,36 @@ def sample_program_configs(draw):
     in_shape = draw(st.lists(
         st.integers(
             min_value=1, max_value=64), min_size=1, max_size=4))
+    input_type = draw(st.sampled_from(["type_float", "type_int", "type_int64"]))
     input_axis = draw(st.sampled_from([-2, -1, 0, 1, 2, 3]))
-    axis = input_axis if input_axis >= 0 else input_axis + 1
+    axis = input_axis if input_axis > 0 else input_axis + 1
     assume(abs(axis) < len(in_shape))
+    if(input_type != "type_float"):
+        assume(abs(axis) <= 1)
     
     def generate_input1(*args, **kwargs):
-        return np.random.normal(0.0, 1.0, in_shape).astype(np.float32)
+        if input_type == "type_float":
+            return np.random.normal(0.0, 1.0, in_shape).astype(np.float32)
+        elif input_type == "type_int":
+            return np.random.randint(in_shape).astype(np.int32)
+        elif input_type == "type_int64":
+            return np.random.randint(in_shape).astype(np.int64)
     
     def generate_input2(*args, **kwargs):
-        return np.random.normal(0.0, 1.0, in_shape).astype(np.float32)
+        if input_type == "type_float":
+            return np.random.normal(0.0, 1.0, in_shape).astype(np.float32)
+        elif input_type == "type_int":
+            return np.random.randint(in_shape).astype(np.int32)
+        elif input_type == "type_int64":
+            return np.random.randint(in_shape).astype(np.int64)
 
     def generate_input3(*args, **kwargs):
-        return np.random.normal(0.0, 1.0, in_shape).astype(np.float32)
+        if input_type == "type_float":
+            return np.random.normal(0.0, 1.0, in_shape).astype(np.float32)
+        elif input_type == "type_int":
+            return np.random.randint(in_shape).astype(np.int32)
+        elif input_type == "type_int64":
+            return np.random.randint(in_shape).astype(np.int64)
 
     ops_config = OpConfig(
         type = "stack",
