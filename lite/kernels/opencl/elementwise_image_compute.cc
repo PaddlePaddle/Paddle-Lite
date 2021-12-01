@@ -29,6 +29,7 @@
 #include "lite/core/profile/profiler.h"
 #endif
 #include "lite/backends/opencl/cl_utility.h"
+namespace ocl = paddle::lite::kernels::opencl;
 
 namespace paddle {
 namespace lite {
@@ -354,7 +355,6 @@ class ElementwiseImageCompute : public KernelLite<TARGET(kOpenCL),
 }  // namespace lite
 }  // namespace paddle
 
-namespace ocl = paddle::lite::kernels::opencl;
 REGISTER_LITE_KERNEL(elementwise_div,
                      kOpenCL,
                      kFP16,
