@@ -35,7 +35,7 @@ def sample_program_configs(draw):
     scale_out = draw(st.floats(min_value=0.001, max_value=0.1))
     weight_shape = [cout, cin, kh, kw]
     groups = draw(st.sampled_from([1, 2, cin]))
-    val = weight_shape[1]*groups
+    val = in_shape[1] * groups
     assume(val == cin)
     assume(in_shape[1] == weight_shape[1])
     assume(in_shape[2] >= weight_shape[2])
@@ -61,6 +61,7 @@ def sample_program_configs(draw):
         outputs = {"Output": ["output_data"]},
         attrs = {"strides" : strides,
                 "paddings" : paddings,
+                "use_mkldnn" : True,
                 "padding_algorithm" : padding_algorithm,
                 "groups" : groups,
                 "dilations" : dilations,

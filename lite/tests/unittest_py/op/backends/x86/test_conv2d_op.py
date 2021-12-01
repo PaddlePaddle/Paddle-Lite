@@ -41,7 +41,7 @@ class TestConv2dOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=100)
+        self.run_and_statis(quant=False, max_examples=300)
 
 if __name__ == "__main__":
     unittest.main()
