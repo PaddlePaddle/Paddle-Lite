@@ -6,6 +6,7 @@ echo ">>>>"
 read -r -p "use opencl/arm? [opencl/arm] " is_opencl
 case $is_opencl in
 opencl)
+
     WITH_OPENCL=ON
     echo "opencl"
     ;;
@@ -36,7 +37,7 @@ WITH_EXCEPTION=ON
 # ToolChain options: clang gcc
 TOOL_CHAIN=clang
 # AndroidStl options: c++_static c++_shared
-ANDROID_STL=c++_static
+ANDROID_STL=c++_shared
 
 ## step 1: compile opt tool
 cd $workspace
@@ -94,8 +95,19 @@ cd $workspace
 # step 5. pack compiling results and optimized models
 result_name=android_lib
 rm -rf $result_name && mkdir $result_name
+
+case $is_opencl in
+opencl)
 cp -rf build.lite.android.armv7.$TOOL_CHAIN.$targets/inference_lite_lib.android.armv7.$targets $result_name/armv7.$TOOL_CHAIN.$targets
 cp -rf build.lite.android.armv8.$TOOL_CHAIN.$targets/inference_lite_lib.android.armv8.$targets $result_name/armv8.$TOOL_CHAIN.$targets
+;;
+
+arm)
+  cp -rf build.lite.android.armv7.$TOOL_CHAIN/inference_lite_lib.android.armv7 $result_name/armv7.$TOOL_CHAIN
+  cp -rf build.lite.android.armv8.$TOOL_CHAIN/inference_lite_lib.android.armv8 $result_name/armv8.$TOOL_CHAIN
+;;
+esac
+
 cp build.opt/lite/api/opt $result_name/
 mv build.opt/lite/api/optimized_model $result_name
 
