@@ -65,10 +65,12 @@ class OpConfig:
                  inputs: Dict[str, List[str]],
                  outputs: Dict[str, List[str]],
                  attrs: Dict[str, Any]=None,
+                 outputs_dtype: Dict[str, np.dtype]=None,
                  **kwargs):
         self.type = type
         self.inputs = inputs
         self.outputs = outputs
+        self.outputs_dtype = outputs_dtype
         self.attrs = attrs
         if self.attrs is None:
             self.attrs = dict()
@@ -184,7 +186,10 @@ def create_fake_model(program_config):
                 var_desc = main_block_desc.var(cpt.to_bytes(v))
                 var_desc.set_type(core.VarDesc.VarType.LOD_TENSOR)
                 var_desc.set_dtype(
-                    convert_np_dtype_to_dtype_(tensor_config.dtype))
+                    convert_np_dtype_to_dtype_(np.float32))
+                if op_config.outputs_dtype is not None and v in op_config.outputs_dtype.keys():
+                    var_desc.set_dtype(convert_np_dtype_to_dtype_(op_config.outputs_dtype[v]))
+
         op_desc.infer_var_type(main_block_desc)
         op_desc.infer_shape(main_block_desc)
         op_desc.check_attrs()
