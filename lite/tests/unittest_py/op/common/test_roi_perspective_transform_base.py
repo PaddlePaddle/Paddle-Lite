@@ -24,26 +24,31 @@ import hypothesis
 import hypothesis.strategies as st
 from hypothesis import assume
 
+# https://github.com/PaddlePaddle/Paddle/blob/develop/python/paddle/fluid/layers/detection.py
 def sample_program_configs(draw):
     in_shape = draw(st.lists(st.integers(
             min_value=1, max_value=10), min_size=4, max_size=4))
-    attr_shape = draw(st.lists(st.integers(min_value=0, max_value=4),
-        min_size=len(in_shape), max_size=len(in_shape)))
-    with_shape = draw(st.sampled_from([True, False]))
 
     def generate_input(*args, **kwargs):
         return np.random.random(in_shape).astype(np.float32)
        
     build_ops = OpConfig(
-        type = "reshape",
+        type = "roi_perspective_transform",
         inputs = {
             "X" : ["input_data"],
-        },
+            "ROIs": [rois],
+            },
         outputs = {
             "Out": ["output_data"],
+            "Out2InIdx": ["out2in_idx"],
+            "Out2InWeights": ["out2in_w"],
+            "Mask": ["mask"],
+            "TransformMatrix": ["transform_matrix"],
         },
-        attrs = {
-            "shape": attr_shape,
+        attrs={
+            "transformed_height": ["transformed_height"],
+            "transformed_width": ["transformed_width"],
+            "spatial_scale": ["spatial_scale"],
         })
     program_config = ProgramConfig(
         ops=[build_ops],

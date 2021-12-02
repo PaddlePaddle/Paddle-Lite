@@ -42,7 +42,6 @@ def sample_program_configs(draw):
         },
         attrs= {
             "mode": mode,
-            "data_format": data_format,
         })
     program_config = ProgramConfig(
         ops=[build_ops],
