@@ -60,7 +60,8 @@ int ConvertRoiAlign(Converter* converter, OpInfo* op, Scope* scope) {
   auto spatial_scale_operand = converter->AddConstantOperand(spatial_scale);
 
   // Aligned operand
-  auto aligned = op->GetAttr<bool>("aligned");
+  // auto aligned = op->GetAttr<bool>("aligned");
+  bool aligned = false;
   auto aligned_operand = converter->AddConstantOperand(aligned);
 
   // Output operand

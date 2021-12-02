@@ -137,7 +137,6 @@ inline std::vector<int64_t> StridedSliceOutDims(
         << "axes_index: " << axes_index
         << " should be less than in_dims.size(): " << in_dims.size() << ".";
     int64_t axis_size = in_dims[axes_index];
-
     if (axis_size < 0) {
       continue;
     }
@@ -155,7 +154,6 @@ inline std::vector<int64_t> StridedSliceOutDims(
       start_index = start_index + 1;
       end_index = end_index + 1;
     }
-
     bool zero_dim_condition =
         ((stride_index < 0 && (start_index <= end_index)) ||
          (stride_index > 0 && (start_index >= end_index)));
@@ -167,7 +165,6 @@ inline std::vector<int64_t> StridedSliceOutDims(
         std::max(static_cast<int32_t>(0), std::min(start_index, end_index));
     int64_t right = std::min(axis_size, static_cast<int64_t>(tmp));
     int64_t step = std::abs(static_cast<int64_t>(stride_index));
-
     auto out_dims_index = (std::abs(right - left) + step - 1) / step;
 
     out_dims_vector[axes_index] = out_dims_index;
@@ -245,13 +242,11 @@ class StridedSliceComputeTester : public arena::TestCase {
   std::vector<int> strides_;
   std::vector<int64_t> starts_i64;
   std::vector<int64_t> ends_i64;
-  std::vector<int64_t> strides_i64;
   std::vector<int> decrease_axis_;
   DDim dims_;
   std::vector<int> infer_flags_;
   std::string starts_tensor_ = "StartsTensor";
   std::string ends_tensor_ = "EndsTensor";
-  std::string strides_tensor_ = "StridesTensor";
   bool use_tensor_;
   bool use_tensor_list_;
 
@@ -279,7 +274,6 @@ class StridedSliceComputeTester : public arena::TestCase {
         use_tensor_list_(use_tensor_list) {
     this->starts_i64 = vector_int2int64_t(starts);
     this->ends_i64 = vector_int2int64_t(ends);
-    this->strides_i64 = vector_int2int64_t(strides_);
   }
 
   void RunBaseline(Scope* scope) override {
@@ -303,7 +297,6 @@ class StridedSliceComputeTester : public arena::TestCase {
     auto out_dims = DDim(out_dims_vector);
     out->Resize(out_dims);
     auto* out_data = out->mutable_data<float>();
-
     std::vector<int> reverse_vector(starts_.size(), 0);
     StridedSliceFunctor(starts_.data(),
                         ends_.data(),
@@ -358,7 +351,6 @@ class StridedSliceComputeTester : public arena::TestCase {
       }
     }
     out->Resize(out_dims);
-
     if (need_reverse) {
       Tensor* tmp = new Tensor();
       tmp->Resize(out_dims);
@@ -380,7 +372,6 @@ class StridedSliceComputeTester : public arena::TestCase {
                    ends_indices,
                    strides_indices);
     }
-
     if (decrease_axis_.size() > 0) {
       out->Resize(out_dims_origin);
     }
@@ -393,22 +384,17 @@ class StridedSliceComputeTester : public arena::TestCase {
     if (use_tensor_) {
       op_desc->SetInput("StartsTensor", {starts_tensor_});
       op_desc->SetInput("EndsTensor", {ends_tensor_});
-      op_desc->SetInput("StridesTensor", {strides_tensor_});
     } else if (use_tensor_list_) {
       std::vector<std::string> starts_tensor_list_;
       std::vector<std::string> ends_tensor_list_;
-      std::vector<std::string> strides_tensor_list_;
       for (size_t i = 0; i < starts_.size(); ++i) {
         starts_tensor_list_.push_back("starts_tensor_list_" +
                                       paddle::lite::to_string(i));
         ends_tensor_list_.push_back("ends_tensor_list_" +
                                     paddle::lite::to_string(i));
-        strides_tensor_list_.push_back("strides_tensor_list_" +
-                                       paddle::lite::to_string(i));
       }
       op_desc->SetInput("StartsTensorList", {starts_tensor_list_});
       op_desc->SetInput("EndsTensorList", {ends_tensor_list_});
-      op_desc->SetInput("StridesTensorList", {strides_tensor_list_});
     }
 
     if (infer_flags_.size() > 0) {
@@ -418,13 +404,12 @@ class StridedSliceComputeTester : public arena::TestCase {
     op_desc->SetAttr("axes", axes_);
     op_desc->SetAttr("starts", starts_);
     op_desc->SetAttr("ends", ends_);
-    op_desc->SetAttr("strides", ends_);
+    op_desc->SetAttr("strides", strides_);
     op_desc->SetAttr("decrease_axis", decrease_axis_);
   }
 
   void PrepareData() override {
     std::vector<float> data(dims_.production());
-
     for (int i = 0; i < dims_.production(); i++) {
       data[i] = i;
     }
@@ -437,9 +422,6 @@ class StridedSliceComputeTester : public arena::TestCase {
       SetCommonTensor(ends_tensor_,
                       DDim({static_cast<int64_t>(ends_.size())}),
                       ends_i64.data());
-      SetCommonTensor(strides_tensor_,
-                      DDim({static_cast<int64_t>(strides_.size())}),
-                      strides_i64.data());
     } else if (use_tensor_list_) {
       for (size_t i = 0; i < starts_.size(); ++i) {
         SetCommonTensor("starts_tensor_list_" + paddle::lite::to_string(i),
@@ -451,74 +433,113 @@ class StridedSliceComputeTester : public arena::TestCase {
                         DDim({1}),
                         &ends_i64[i]);
       }
-      for (size_t i = 0; i < strides_.size(); ++i) {
-        SetCommonTensor("strides_tensor_list_" + paddle::lite::to_string(i),
-                        DDim({1}),
-                        &strides_i64[i]);
-      }
     }
   }
 };
 
-void test_slice(Place place) {
+void test_slice(Place place, float abs_error) {
   std::vector<int> axes({0, 1, 2});
   std::vector<int> starts({2, 2, 2});
-  std::vector<int> strides({2, 2, 2});
+  std::vector<int> strides({1, 1, 1});
   std::vector<int> ends({5, 6, 7});
+  std::vector<int> infer_flags({1, 1, 1});
   std::vector<int> decrease_axis({});
   DDim dims({10, 10, 10});
-  std::unique_ptr<arena::TestCase> tester(new StridedSliceComputeTester(
-      place, "def", axes, starts, ends, strides, decrease_axis, dims));
+  std::unique_ptr<arena::TestCase> tester(
+      new StridedSliceComputeTester(place,
+                                    "def",
+                                    axes,
+                                    starts,
+                                    ends,
+                                    strides,
+                                    decrease_axis,
+                                    dims,
+                                    false,
+                                    false,
+                                    infer_flags));
   arena::Arena arena(std::move(tester), place, 2e-4);
   arena.TestPrecision();
 }
 
-void test_slice_axes(Place place) {
+void test_slice_axes(Place place, float abs_error) {
   std::vector<int> axes({1, 2});
   std::vector<int> starts({1, 1});
   std::vector<int> strides({1, 1});
   std::vector<int> ends({2, 3});
+  std::vector<int> infer_flags({1, 1});
   std::vector<int> decrease_axis({});
   DDim dims({2, 3, 4, 5});
-  std::unique_ptr<arena::TestCase> tester(new StridedSliceComputeTester(
-      place, "def", axes, starts, ends, strides, decrease_axis, dims));
+  std::unique_ptr<arena::TestCase> tester(
+      new StridedSliceComputeTester(place,
+                                    "def",
+                                    axes,
+                                    starts,
+                                    ends,
+                                    strides,
+                                    decrease_axis,
+                                    dims,
+                                    false,
+                                    false,
+                                    infer_flags));
   arena::Arena arena(std::move(tester), place, 2e-4);
   arena.TestPrecision();
 }
 
-void test_slice_decrease_axis(Place place) {
+void test_slice_decrease_axis(Place place, float abs_error) {
   std::vector<int> axes({0});
   std::vector<int> starts({0});
   std::vector<int> ends({1});
   std::vector<int> strides({1});
   std::vector<int> decrease_axis({0});
+  std::vector<int> infer_flags({1});
   DDim dims({2, 3, 4, 5});
-  std::unique_ptr<arena::TestCase> tester(new StridedSliceComputeTester(
-      place, "def", axes, starts, ends, strides, decrease_axis, dims));
+  std::unique_ptr<arena::TestCase> tester(
+      new StridedSliceComputeTester(place,
+                                    "def",
+                                    axes,
+                                    starts,
+                                    ends,
+                                    strides,
+                                    decrease_axis,
+                                    dims,
+                                    false,
+                                    false,
+                                    infer_flags));
   arena::Arena arena(std::move(tester), place, 2e-4);
   arena.TestPrecision();
 }
 
-void test_slice_tensor(Place place) {
+void test_slice_tensor(Place place, float abs_error) {
   std::vector<int> axes({0, 1, 2});
   std::vector<int> starts({2, 2, 2});
   std::vector<int> ends({5, 6, 7});
   std::vector<int> strides({1, 1, 2});
+  std::vector<int> infer_flags({1, 1, 1});
   std::vector<int> decrease_axis({});
   DDim dims({10, 10, 10});
-  std::unique_ptr<arena::TestCase> tester(new StridedSliceComputeTester(
-      place, "def", axes, starts, ends, strides, decrease_axis, dims));
+  std::unique_ptr<arena::TestCase> tester(
+      new StridedSliceComputeTester(place,
+                                    "def",
+                                    axes,
+                                    starts,
+                                    ends,
+                                    strides,
+                                    decrease_axis,
+                                    dims,
+                                    false,
+                                    false,
+                                    infer_flags));
   arena::Arena arena(std::move(tester), place, 2e-4);
   arena.TestPrecision();
 }
 
-void test_slice_tensor_list(Place place) {
+void test_slice_tensor_list(Place place, float abs_error) {
   std::vector<int> axes({0, 1, 2});
   std::vector<int> starts({2, 2, 2});
   std::vector<int> ends({5, 6, 7});
   std::vector<int> strides({1, 1, 2});
   std::vector<int> decrease_axis({});
-  std::vector<int> infer_flags({});
+  std::vector<int> infer_flags({1, 1, 1});
   DDim dims({10, 10, 10});
   std::unique_ptr<arena::TestCase> tester(
       new StridedSliceComputeTester(place,
@@ -537,25 +558,28 @@ void test_slice_tensor_list(Place place) {
 }
 
 TEST(StrideSlice, precision) {
-// #if defined(LITE_WITH_NNADAPTER) && defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
-//   Place place = TARGET(kNNAdapter);
-//   test_slice(place);
-//   test_slice_axes(place);
-//   test_slice_decrease_axis(place);
-// #elif defined(LITE_WITH_ARM)
-#if defined(LITE_WITH_ARM)
-  Place place(TARGET(kHost));
-  test_slice(place);
-  test_slice_tensor(place);
-  test_slice_axes(place);
-  test_slice_decrease_axis(place);
-  test_slice_tensor_list(place);
-#elif defined(LITE_WITH_X86)
-  Place place(TARGET(kHost));
-  test_slice(place);
-  test_slice_tensor(place);
-  test_slice_tensor_list(place);
+  Place place;
+  float abs_error = 1e-5;
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+  test_slice(place, abs_error);
+  test_slice_axes(place, abs_error);
+  test_slice_decrease_axis(place, abs_error);
+  return;
+#else
+  return;
 #endif
+#elif defined(LITE_WITH_X86) || defined(LITE_WITH_ARM)
+  place = TARGET(kHost);
+#endif
+
+  test_slice(place, abs_error);
+  test_slice_axes(place, abs_error);
+  test_slice_decrease_axis(place, abs_error);
+  test_slice_tensor(place, abs_error);
+  test_slice_tensor_list(place, abs_error);
 }
 
 }  // namespace lite

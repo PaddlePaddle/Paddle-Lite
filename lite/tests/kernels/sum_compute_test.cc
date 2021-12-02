@@ -54,8 +54,8 @@ class SumComputeTester : public arena::TestCase {
   DDim dims_{{1, 5, 6, 7}};
 
  public:
-  SumComputeTester(const Place& place, const std::string& alias, float axis)
-      : TestCase(place, alias), axis_(axis) {}
+  SumComputeTester(const Place& place, const std::string& alias)
+      : TestCase(place, alias) {}
 
   void RunBaseline(Scope* scope) override {
     std::vector<const lite::Tensor*> x;
@@ -70,7 +70,7 @@ class SumComputeTester : public arena::TestCase {
     CHECK(out);
     out->Resize(x_dims);
     auto out_data = out->template mutable_data<T>();
-    memcpy(out_data, x[0]->template data<T>(), sizeof(T) * x_shape.production());
+    memcpy(out_data, x[0]->template data<T>(), sizeof(T) * x_dims.production());
 
     int xn = x_shape[0];
     int xc = x_shape[1];
@@ -106,7 +106,8 @@ class SumComputeTester : public arena::TestCase {
 template <class T = float>
 void test_sum(Place place, float abs_error) {
   place.precision = lite_api::PrecisionTypeTrait<T>::Type();
-  std::unique_ptr<arena::TestCase> tester(new SumComputeTester<T>(place, "def"));
+  std::unique_ptr<arena::TestCase> tester(
+      new SumComputeTester<T>(place, "def"));
   arena::Arena arena(std::move(tester), place, abs_error);
   arena.TestPrecision();
 }

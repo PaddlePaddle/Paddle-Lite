@@ -42,7 +42,7 @@ int ConvertRoiAlign(Converter* converter, hal::Operation* operation) {
   // Change batch indices date type to fp32
   auto cast_op = converter->AddOperator<ge::op::Cast>(output_operand, "cast");
   cast_op->set_attr_dst_type(ge::DT_FLOAT);
-  SET_INPUT(cast_op, x, input_operator);
+  SET_INPUT(cast_op, x, batch_indices_operator);
   auto roi_nums_fp32 = MAP_OUTPUT(cast_op, y, output_operand);
   // Unsqueeze batch indices shape to [N, 1]
   auto unsqueeze_op =
@@ -50,14 +50,14 @@ int ConvertRoiAlign(Converter* converter, hal::Operation* operation) {
   unsqueeze_op->set_attr_axes(
       ge::Operator::OpListInt(std::vector<int64_t>({1})));
   SET_INPUT(unsqueeze_op, x, roi_nums_fp32);
-  auto roi_nums_fp32_unsqueeze = MAP_OUTPUT(unsqueeze_op, y, output_operand);
+  auto roi_nums_unsqueeze = MAP_OUTPUT(unsqueeze_op, y, output_operand);
   // Concat to make (N, 5)
   auto concat_op =
       converter->AddOperator<ge::op::ConcatD>(output_operand, "concat");
   concat_op->set_attr_concat_dim(1);
   concat_op->set_attr_N(2);
   concat_op->create_dynamic_input_x(2);
-  SET_DYNAMIC_INPUT(concat_op, x, 0, roi_nums_fp32_unsqueeze);
+  SET_DYNAMIC_INPUT(concat_op, x, 0, roi_nums_unsqueeze);
   SET_DYNAMIC_INPUT(concat_op, x, 1, rois_operator);
   auto roisN5_operator = MAP_OUTPUT(concat_op, y, output_operand);
   // Roi align

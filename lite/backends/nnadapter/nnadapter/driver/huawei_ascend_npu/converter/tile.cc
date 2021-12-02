@@ -28,9 +28,9 @@ int ConvertTile(Converter* converter, hal::Operation* operation) {
   if (!input_operator) {
     input_operator = converter->ConvertOperand(input_operand);
   }
-  auto repeats_operator = converter->GetMappedOperator(input_operand);
+  auto repeats_operator = converter->GetMappedOperator(repeats_operand);
   if (!repeats_operator) {
-    repeats_operator = converter->ConvertOperand(input_operand);
+    repeats_operator = converter->ConvertOperand(repeats_operand);
   }
   auto tile_op = converter->AddOperator<ge::op::Tile>(output_operand);
   SET_INPUT(tile_op, x, input_operator);
