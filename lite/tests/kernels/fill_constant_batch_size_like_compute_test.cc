@@ -90,7 +90,6 @@ class FillConstantBatchSizeLikeComputeTester : public arena::TestCase {
 };
 
 void TestFillConstantBatchSizeLike(Place place, float abs_error) {
-  // uint32_t test_num = 0;
   for (auto input_dim_idx : {0, 1, 2}) {
     for (auto output_dim_idx : {0, 1, 2}) {
       std::unique_ptr<arena::TestCase> tester(
@@ -137,7 +136,7 @@ TEST(fill_constant_batch_size_like, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 5e-2;
-  TestFillConstantBatchSizeLike(place, abs_error);
+  // TestFillConstantBatchSizeLike(place, abs_error);
   // TestFillConstantBatchSizeLikeValue(place, abs_error);
   return;
 #else

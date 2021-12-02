@@ -343,6 +343,12 @@ TEST(ReduceSum, precision) {
   Place place;
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+  return;
+#else
+  return;
+#endif
 #elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
 #elif defined(LITE_WITH_X86)
