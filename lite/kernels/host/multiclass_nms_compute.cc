@@ -20,40 +20,6 @@ namespace kernels {}  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
-#ifdef ENABLE_ARM_FP16
-REGISTER_LITE_KERNEL(multiclass_nms, kARM, kFP16, kNCHW, nmsfp16, def)
-    .BindInput("BBoxes",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
-    .BindInput("Scores",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(multiclass_nms2, kARM, kFP16, kNCHW, nmsfp16, def)
-    .BindInput("BBoxes",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
-    .BindInput("Scores",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
-    .BindOutput("Index",
-                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .Finalize();
-
-REGISTER_LITE_KERNEL(multiclass_nms3, kARM, kFP16, kNCHW, nmsfp16, def)
-    .BindInput("BBoxes",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
-    .BindInput("Scores",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
-    .BindInput("RoisNum",
-               {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kFP16))})
-    .BindOutput("Index",
-                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .BindOutput("NmsRoisNum",
-                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
-    .Finalize();
-#endif  // ENABLE_ARM_FP16
-
 using nmsfp32 =
     paddle::lite::kernels::host::MulticlassNmsCompute<float,
                                                       TARGET(kHost),
