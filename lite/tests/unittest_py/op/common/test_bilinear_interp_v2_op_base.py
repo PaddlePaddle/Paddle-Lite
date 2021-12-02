@@ -70,7 +70,7 @@ def sample_program_configs(draw):
             TensorConfig(data_gen=partial(generate_size_tensor)),
             "size_tensor_data2":
             TensorConfig(data_gen=partial(generate_size_tensor)),
-            "Scale":
+            "scale_data":
             TensorConfig(data_gen=partial(generate_scale))
         },
         outputs=["output_data"])
