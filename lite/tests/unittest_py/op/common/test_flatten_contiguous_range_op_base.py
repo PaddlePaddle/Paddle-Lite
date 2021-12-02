@@ -37,18 +37,19 @@ def sample_program_configs(draw):
 
     input_type = draw(st.sampled_from([generate_input_int32, generate_input_int64, generate_input_float32]))
 
-    axis = draw(st.integers(min_value=0, max_value=len(in_shape)-1))
+    start_axis = draw(st.integers(min_value=0, max_value=len(in_shape)-1))
+    stop_axis = draw(st.integers(min_value=start_axis, max_value=len(in_shape)-1))
 
-    flatten_op = OpConfig(
-        type = "flatten",
+    flatten_contiguous_range_op = OpConfig(
+        type = "flatten_contiguous_range",
         inputs = {"X" : ["input_data"]},
-        outputs = {"Out": ["output_data"]},
-        attrs = {"axis" : axis})
+        outputs = {"Out": ["output_data"], "XShape" : ["xshape_data"]},
+        attrs = {"start_axis" : start_axis, "stop_axis" : stop_axis})
 
     program_config = ProgramConfig(
-        ops=[flatten_op],
-        weights={},
+        ops=[flatten_contiguous_range_op],
+        weights={"xshape_data" : TensorConfig(shape=in_shape)},
         inputs={"input_data" : TensorConfig(data_gen=partial(input_type))},
-        outputs=["output_data"])
+        outputs=["output_data", "xshape_data"])
 
     return program_config

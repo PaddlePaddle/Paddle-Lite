@@ -39,16 +39,16 @@ def sample_program_configs(draw):
 
     axis = draw(st.integers(min_value=0, max_value=len(in_shape)-1))
 
-    flatten_op = OpConfig(
-        type = "flatten",
+    flatten2_op = OpConfig(
+        type = "flatten2",
         inputs = {"X" : ["input_data"]},
-        outputs = {"Out": ["output_data"]},
+        outputs = {"Out": ["output_data"], "XShape" : ["xshape_data"]},
         attrs = {"axis" : axis})
 
     program_config = ProgramConfig(
-        ops=[flatten_op],
-        weights={},
+        ops=[flatten2_op],
+        weights={"xshape_data" : TensorConfig(shape=in_shape)},
         inputs={"input_data" : TensorConfig(data_gen=partial(input_type))},
-        outputs=["output_data"])
+        outputs=["output_data", "xshape_data"])
 
     return program_config
