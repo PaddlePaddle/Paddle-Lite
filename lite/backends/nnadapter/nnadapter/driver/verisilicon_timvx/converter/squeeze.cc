@@ -24,14 +24,21 @@ int ConvertSqueeze(Converter* converter, hal::Operation* operation) {
   SQUEEZE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to tim-vx tensors and operators
-  std::vector<uint32_t> axes_(axes.begin(), axes.end());
+  NNADAPTER_LOG(INFO) << "GO there!";
+  std::vector<uint32_t> axis;
+  for (int i = input_operand->type.dimensions.count - 1; i >= 0; i--) {
+    if (input_operand->type.dimensions.data[i] == 1) {
+      axis.push_back(ConvertToTimVXAxis(
+          i, input_operand->type.dimensions.count)); /* WHCN */
+    }
+  }
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
   auto output_tensor = converter->ConvertOperand(output_operand);
   auto squeeze_op =
-      converter->graph()->CreateOperation<tim::vx::ops::Squeeze>(axes_);
+      converter->graph()->CreateOperation<tim::vx::ops::Squeeze>(axis);
   squeeze_op->BindInputs({input_tensor});
   squeeze_op->BindOutputs({output_tensor});
   return NNADAPTER_NO_ERROR;
