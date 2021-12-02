@@ -34,7 +34,15 @@ WITH_EXCEPTION=OFF
 function auto_scan_test {
   python_version=$1
   for backend in "host" "x86"; do
-    cd $WORKSPACE/lite/tests/unittest_py/$backend
+    cd $WORKSPACE/lite/tests/unittest_py/op/backends/$backend
+    unittests=$(ls)
+    for test in ${unittests[@]}; do
+      python$python_version $test
+    done
+  done
+
+  for backend in "x86"; do
+    cd $WORKSPACE/lite/tests/unittest_py/pass/backends/$backend
     unittests=$(ls)
     for test in ${unittests[@]}; do
       python$python_version $test
