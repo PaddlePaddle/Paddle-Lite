@@ -32,7 +32,7 @@ def sample_program_configs(draw):
         return np.random.random(in_shape).astype(np.float32)
        
     build_ops = OpConfig(
-        type = "relu",
+        type = "pow",
         inputs = {
             "X" : ["input_data"],
         },
