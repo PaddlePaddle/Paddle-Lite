@@ -33,7 +33,7 @@ class TestOneHotOp(AutoScanTest):
 
     def sample_predictor_configs(self):
         config = CxxConfig()
-        config.set_valid_places({Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)})
+        config.set_valid_places({Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)})
         config.set_threads(1)
         yield config, ["one_hot"], (1e-5, 1e-5)
 

@@ -24,14 +24,24 @@ import hypothesis
 import hypothesis.strategies as st
 
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size = 4, max_size=4))
-    depth_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size = 4, max_size=4))
-    dtype = draw(st.sampled_from([0, 1]))
-    depth = draw(st.sampled_from([0, 1]))
+    max_value = 8
+    in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size = 2, max_size=2))
+    depth_shape = draw(st.lists(st.integers(min_value=8, max_value=8), min_size = 1, max_size=1))
+   # if def depth_tensor  will have rpc Connection refused error
+    #def generate_depth_tensor(*args, **kwargs):
+    #    len = np.ones(1)
+    #    len[0] = 8
+    #    return len.astype(np.int32)
+    def generate_input1(*args, **kwargs):
+        return np.random.randint([in_shape]).astype(np.int64)
+
+    dtype = draw(st.sampled_from([2]))
+    depth = draw(st.sampled_from([8]))
     allow_out_of_range = draw(st.booleans())
     one_hot_v2_op = OpConfig(
         type = "one_hot_v2",
-       inputs = {"X" : ["input_data"], "depth_tensor":["depth_tensor"]},
+       #inputs = {"X" : ["input_data"], "depth_tensor":["depth_tensor"]},
+       inputs = {"X" : ["input_data"]},
         outputs = {"Out": ["output_data"]},
         attrs = {"depth":depth, "dtype":dtype, "allow_out_of_range":allow_out_of_range})
     program_config = ProgramConfig(
@@ -39,9 +49,10 @@ def sample_program_configs(draw):
         weights={},
         inputs={
             "input_data":
-            TensorConfig(shape=in_shape),
-            "depth_tensor":
-            TensorConfig(shape=depth_shape),
+            TensorConfig(shape=in_shape, data_gen=generate_input1)
+            #TensorConfig(shape=in_shape, data_gen=generate_input1),
+            #"depth_tensor":
+            #TensorConfig(shape=depth_shape, data_gen=generate_depth_tensor)
         },
         outputs=["output_data"])
     return program_config
