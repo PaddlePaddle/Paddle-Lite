@@ -25,6 +25,8 @@ int ConvertWhere(Converter* converter, OpInfo* op, Scope* scope) {
   auto condition_operand = converter->AddInputOperand(scope, condition_name);
   // Input0 operand
   auto x_name = op->Input("X").front();
+  auto x_tensor = scope->FindTensor(x_name);
+  auto x_persistable = x_tensor->persistable();
   auto x_scale_name = "X0_scale";
   std::vector<float> x_scales;
   if (op->HasInputScale(x_scale_name, true)) {
@@ -33,6 +35,8 @@ int ConvertWhere(Converter* converter, OpInfo* op, Scope* scope) {
   auto input0_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
   // Input1 operand
   auto y_name = op->Input("Y").front();
+  auto y_tensor = scope->FindTensor(y_name);
+  auto y_persistable = y_tensor->persistable();
   auto y_scale_name = "Y0_scale";
   std::vector<float> y_scales;
   if (op->HasInputScale(y_scale_name, true)) {
@@ -44,16 +48,43 @@ int ConvertWhere(Converter* converter, OpInfo* op, Scope* scope) {
       converter->GetOperandType(condition_operand)->dimensions.count;
   uint32_t x_rank = converter->GetOperandType(input0_operand)->dimensions.count;
   uint32_t y_rank = converter->GetOperandType(input1_operand)->dimensions.count;
-  if (x_rank != y_rank) {
-    LOG(FATAL)
-        << "The rank of x needs to be the same as that of y, but x rank is "
-        << x_rank << ", y rank is " << y_rank;
-  }
-  if (condition_rank != 1 && condition_rank != x_rank) {
+  if (condition_rank != x_rank && condition_rank != y_rank) {
     LOG(FATAL) << "The rank of condition needs to be the same as that of x or "
-                  "is 1, but the condition rank is "
+                  "y, but the condition rank is "
                << condition_rank;
   }
+
+  uint32_t max_rank = std::max(x_rank, y_rank);
+  // Prepare unsqueeze axes
+  std::vector<int32_t> axes;
+  int32_t remain = max_rank - static_cast<int32_t>(std::min(x_rank, y_rank));
+  for (int32_t i = 0; i < remain; i++) {
+    axes.push_back(max_rank - remain + i);
+  }
+  // If persistable, set matcjed dims.
+  // If not persistable, add unsqueeze to match shape.
+  if (x_rank > y_rank) {
+    if (y_persistable) {
+      std::vector<int64_t> shape = y_tensor->dims().Vectorize();
+      shape.insert(shape.end(), max_rank - shape.size(), 1);
+      input1_operand = converter->AddConstantOperand(
+          *y_tensor, DDim(shape), false, y_scales);
+    } else {
+      CHECK(!axes.empty());
+      input1_operand = converter->AddUnsqueezeOperation(input1_operand, axes);
+    }
+  } else if (y_rank > x_rank) {
+    if (x_persistable) {
+      std::vector<int64_t> shape = x_tensor->dims().Vectorize();
+      shape.insert(shape.end(), max_rank - shape.size(), 1);
+      input0_operand = converter->AddConstantOperand(
+          *x_tensor, DDim(shape), false, x_scales);
+    } else {
+      CHECK(!axes.empty());
+      input0_operand = converter->AddUnsqueezeOperation(input0_operand, axes);
+    }
+  }
+
   // Output operand
   auto output_name = op->Output("Out").front();
   auto output_scale_name = "Out0_scale";

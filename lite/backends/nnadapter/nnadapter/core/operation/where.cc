@@ -13,10 +13,12 @@
 // limitations under the License.
 
 #include "core/operation/where.h"
-#include <vector>
+#include <algorithm>
 #include "core/hal/types.h"
+#include "core/operation/elementwise.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/micros.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
 
@@ -27,7 +29,9 @@ int PrepareWhere(hal::Operation* operation) {
   WHERE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
-  CopyOperandTypeExceptQuantParams(&output_operand->type, input0_operand->type);
+  CalcEltwiseBinaryOperationsOutputSize(
+      input0_operand->type, input1_operand->type, &output_operand->type);
+  output_operand->type.precision = input0_operand->type.precision;
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
 }
