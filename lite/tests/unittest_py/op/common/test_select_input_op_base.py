@@ -42,11 +42,6 @@ def sample_program_configs(draw):
     x2_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=4, max_size=max_dim_size))
     x3_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=4, max_size=max_dim_size))
     mask_shape = draw(st.lists(st.integers(min_value=1, max_value=1), min_size=1, max_size=3))
-    # x_shape = [[2, 3, 4, 5], [2, 3, 4, 5], [2, 3, 4, 5]] #draw(st.lists(st.integers(min_value=1, max_value=10), min_size=2, max_size=2))
-    # x1_shape = x_shape[0]
-    # x2_shape = x_shape[1]
-    # x3_shape = x_shape[2]
-    # mask_shape = [1, 1, 1, 1]
 
     select_input_op = OpConfig(
         type = "select_input",
