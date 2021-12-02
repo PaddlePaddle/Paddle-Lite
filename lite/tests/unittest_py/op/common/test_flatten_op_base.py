@@ -51,20 +51,4 @@ def sample_program_configs(draw):
         inputs={"input_data" : TensorConfig(data_gen=partial(input_type))},
         outputs=["output_data"])
 
-    flatten2_op = OpConfig(
-        type = "flatten2",
-        inputs = {"X" : ["input_data"]},
-        outputs = {"Out": ["output_data"], "Xshape" : ["xshape_data"]},
-        attrs = {"axis" : axis})
-
-    program2_config = ProgramConfig(
-        ops=[flatten2_op],
-        weights={},
-        inputs={"input_data" : TensorConfig(data_gen=partial(input_type))},
-        outputs=["output_data", "xshape_data"])
-    
-    use_flatten2 = draw(st.sampled_from([False]))
-    if(use_flatten2):
-        program_config = program2_config
-
     return program_config
