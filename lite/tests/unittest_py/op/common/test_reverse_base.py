@@ -27,17 +27,20 @@ from hypothesis import assume
 def sample_program_configs(draw):
     in_shape = draw(st.lists(st.integers(
             min_value=1, max_value=10), min_size=4, max_size=4))
-
+    axis = draw(st.sampled_from([[0], [1], [0, 1]]))
     def generate_input(*args, **kwargs):
         return np.random.random(in_shape).astype(np.float32)
        
     build_ops = OpConfig(
-        type = "relu",
+        type = "reverse",
         inputs = {
             "X" : ["input_data"],
-            },
+        },
         outputs = {
             "Out": ["output_data"],
+        },
+        attr = {
+            "axis": axis,
         })
     program_config = ProgramConfig(
         ops=[build_ops],

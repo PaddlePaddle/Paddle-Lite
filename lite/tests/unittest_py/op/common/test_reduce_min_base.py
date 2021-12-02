@@ -27,17 +27,27 @@ from hypothesis import assume
 def sample_program_configs(draw):
     in_shape = draw(st.lists(st.integers(
             min_value=1, max_value=10), min_size=4, max_size=4))
+    keep_dim = draw(st.booleans())
+    axis = draw(st.integers(min_value=-1, max_value=3))
+    assume(axis < len(in_shape))
+
+    reduce_all_data = True if axis == None or axis == [] else False
 
     def generate_input(*args, **kwargs):
         return np.random.random(in_shape).astype(np.float32)
        
     build_ops = OpConfig(
-        type = "relu",
+        type = "reduce_min",
         inputs = {
             "X" : ["input_data"],
-            },
+        },
         outputs = {
             "Out": ["output_data"],
+        },
+        attrs = {
+            "dim": axis,
+            "keep_dim": keep_dim,
+            "reduce_all": reduce_all_data,
         })
     program_config = ProgramConfig(
         ops=[build_ops],
