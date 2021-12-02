@@ -24,21 +24,29 @@ int ConvertSqueeze(Converter* converter, hal::Operation* operation) {
   SQUEEZE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to tim-vx tensors and operators
-  NNADAPTER_LOG(INFO) << "GO there!";
-  std::vector<uint32_t> axis;
-  for (int i = input_operand->type.dimensions.count - 1; i >= 0; i--) {
-    if (input_operand->type.dimensions.data[i] == 1) {
-      axis.push_back(ConvertToTimVXAxis(
-          i, input_operand->type.dimensions.count)); /* WHCN */
+  std::vector<uint32_t> mapped_axes;
+  if (axes.size() == 0) {
+    for (int i = input_operand->type.dimensions.count - 1; i >= 0; i--) {
+      if (input_operand->type.dimensions.data[i] == 1) {
+        mapped_axes.push_back(ConvertToTimVXAxis(
+            i, input_operand->type.dimensions.count)); /* WHCN */
+      }
+    }
+  } else {
+    for (int i = axes.size() - 1; i >= 0; i--) {
+      int axis = ConvertToTimVXAxis(
+          axes[i], input_operand->type.dimensions.count); /* WHCN */
+      mapped_axes.push_back(axis);
     }
   }
+
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
   auto output_tensor = converter->ConvertOperand(output_operand);
   auto squeeze_op =
-      converter->graph()->CreateOperation<tim::vx::ops::Squeeze>(axis);
+      converter->graph()->CreateOperation<tim::vx::ops::Squeeze>(mapped_axes);
   squeeze_op->BindInputs({input_tensor});
   squeeze_op->BindOutputs({output_tensor});
   return NNADAPTER_NO_ERROR;
