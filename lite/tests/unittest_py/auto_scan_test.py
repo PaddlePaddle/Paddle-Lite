@@ -12,15 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from auto_scan_base import IgnoreReasonsBase
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--target")
 
 args = parser.parse_args()
+
+
 if args.target == "arm":
-    from auto_scan_test_rpc import AutoScanTest, IgnoreReasons
+    from auto_scan_test_rpc import AutoScanTest
 else:
-    from auto_scan_test_no_rpc import AutoScanTest, IgnoreReasons
+    from auto_scan_test_no_rpc import AutoScanTest
 
 IgnoreReasons = IgnoreReasonsBase
 AutoScanTest = AutoScanTest

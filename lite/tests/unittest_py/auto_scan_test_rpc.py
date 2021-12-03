@@ -25,8 +25,6 @@ import copy
 rpyc.core.protocol.DEFAULT_CONFIG['allow_pickle'] = True
 
 
-IgnoreReasons = IgnoreReasonsBase
-
 class AutoScanTest(AutoScanBaseTest):
     def run_lite_config(self, model, params, feed_data, pred_config) -> Dict[str, np.ndarray]:
         conn = rpyc.connect("localhost", 18812, config = rpyc.core.protocol.DEFAULT_CONFIG)

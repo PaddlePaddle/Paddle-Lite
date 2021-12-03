@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from auto_scan_base import AutoScanBaseTest, IgnoreReasonsBase
+from auto_scan_base import AutoScanBaseTest
 import numpy as np
 import logging
 import abc
@@ -23,7 +23,6 @@ import copy
 from typing import Optional, List, Callable, Dict, Any, Set
 from paddlelite.lite import *
 
-IgnoreReasons = IgnoreReasonsBase
 
 def ParsePlaceInfo(place_str):
    # todo: this func should be completed later
