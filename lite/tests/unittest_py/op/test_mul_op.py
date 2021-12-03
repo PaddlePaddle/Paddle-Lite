@@ -65,6 +65,9 @@ class TestMulOp(AutoScanTest):
         if self.args.target == "arm":
             config.set_valid_places({Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)})
             config.set_threads(1)
+        else:
+           raise ValueError("[target=" + self.args.target + "] is not supported on unit_test[" + __file__ + "]!")
+
         yield config, ["mul"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
