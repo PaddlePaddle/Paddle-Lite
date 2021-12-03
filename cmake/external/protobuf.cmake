@@ -185,7 +185,7 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
 
     IF(BUILD_FOR_HOST)
         # set for server compile.
-        if (NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+        if(NOT LITE_WITH_ARM)
           set(HOST_C_COMPILER "${CMAKE_C_COMPILER}")
           set(HOST_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
         endif()
@@ -220,7 +220,7 @@ FUNCTION(build_protobuf TARGET_NAME BUILD_FOR_HOST)
             "-Dprotobuf_MSVC_STATIC_RUNTIME=${MSVC_STATIC_CRT}")
     ENDIF()
 
-    if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+    if(LITE_WITH_ARM)
         ExternalProject_Add(
             ${TARGET_NAME}
             ${EXTERNAL_PROJECT_LOG_ARGS}
@@ -277,7 +277,7 @@ ENDFUNCTION()
 
 SET(PROTOBUF_VERSION 3.3.0)
 
-IF(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+IF(LITE_WITH_ARM)
     build_protobuf(protobuf_host TRUE)
     LIST(APPEND external_project_dependencies protobuf_host)
     SET(PROTOBUF_PROTOC_EXECUTABLE ${protobuf_host_PROTOC_EXECUTABLE}
@@ -285,7 +285,7 @@ IF(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
 ENDIF()
 
 IF(NOT PROTOBUF_FOUND)
-    if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+    if (LITE_WITH_ARM)
       build_protobuf(extern_protobuf FALSE)
     else()
       build_protobuf(extern_protobuf TRUE)
@@ -300,7 +300,7 @@ IF(NOT PROTOBUF_FOUND)
     SET(PROTOBUF_PROTOC_LIBRARY ${extern_protobuf_PROTOC_LIBRARY}
         CACHE FILEPATH "protoc library." FORCE)
 
-    IF(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+    IF(LITE_WITH_ARM)
         PROMPT_PROTOBUF_LIB(protobuf_host extern_protobuf)
     ELSE()
         SET(PROTOBUF_PROTOC_EXECUTABLE ${extern_protobuf_PROTOC_EXECUTABLE}

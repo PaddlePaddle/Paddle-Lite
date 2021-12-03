@@ -18,6 +18,7 @@
 #include <cmath>
 #include "lite/backends/arm/math/packed_sgemm.h"
 #include "lite/core/context.h"
+#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
@@ -45,8 +46,7 @@ void loadb_6x8(
   uint32x4_t vmask2 =
       vcltq_u32(vld1q_u32(mask_buffer + 4), vdupq_n_u32(right_remain));
 
-#pragma omp parallel for
-  for (int y = 0; y < y_len - 3; y += 4) {
+  LITE_PARALLEL_COMMON_BEGIN(y, tid, y_len - 3, 0, 4) {
     const uint32_t *ptr0 = inptr + y * ldin;
     const uint32_t *ptr1 = ptr0 + ldin;
     const uint32_t *ptr2 = ptr1 + ldin;
@@ -125,8 +125,8 @@ void loadb_6x8(
           : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "cc", "memory");
     }
   }
-#pragma omp parallel for
-  for (int y = cnt_y; y < y_len; ++y) {
+  LITE_PARALLEL_COMMON_END()
+  LITE_PARALLEL_COMMON_BEGIN(y, tid, y_len, cnt_y, 1) {
     const uint32_t *ptr0 = inptr + y * ldin;
     uint32_t *outptr_row_col = outptr_row + y * 6;
     int i = 0;
@@ -155,6 +155,7 @@ void loadb_6x8(
           : "v0", "v1", "cc", "memory");
     }
   }
+  LITE_PARALLEL_COMMON_END()
 }
 // loadb_trans: 8x6 b=6
 void loadb_trans_6x8(
@@ -387,8 +388,8 @@ void sgemm_prepacked_8x6_a35(bool is_transB,
     } else {
       loadb_6x8(b_pannel, B, ldb, 0, K, x0, xmax);
     }
-#pragma omp parallel for num_threads(threads)
-    for (unsigned int y = 0; y < M; y += MBLOCK) {
+
+    LITE_PARALLEL_COMMON_BEGIN(y, tid, M, 0, MBLOCK) {
       unsigned int ymax = y + MBLOCK;
       if (ymax > M) {
         ymax = M;
@@ -965,6 +966,7 @@ void sgemm_prepacked_8x6_a35(bool is_transB,
         }
       }
     }
+    LITE_PARALLEL_COMMON_END()
   }
 }
 #undef FMLA_N8X6
@@ -1049,8 +1051,8 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
     } else {
       loadb(b_pannel, B, ldb, 0, K, x0, xmax);
     }
-#pragma omp parallel for num_threads(threads)
-    for (unsigned int y = 0; y < M; y += MBLOCK_A73) {
+
+    LITE_PARALLEL_COMMON_BEGIN(y, tid, M, 0, MBLOCK_A73) {
       unsigned int ymax = y + MBLOCK_A73;
       if (ymax > M) {
         ymax = M;
@@ -1419,6 +1421,7 @@ void sgemm_prepacked_4x8_a35(bool is_transB,
         }
       }
     }
+    LITE_PARALLEL_COMMON_END()
   }
 }
 #endif

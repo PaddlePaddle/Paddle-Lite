@@ -16,7 +16,6 @@
 
 | 编译选项 |  说明  | 默认值 |
 | :-- |  :-- | --: |
-| LITE_WITH_LIGHT_WEIGHT_FRAMEWORK | 编译移动端轻量级预测框架 | OFF |
 | LITE_ON_TINY_PUBLISH |  编译移动端部署库，无第三方库依赖 | OFF |
 
 ### 全功能编译选项
