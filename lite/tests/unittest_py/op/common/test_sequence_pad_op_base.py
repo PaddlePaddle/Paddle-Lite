@@ -37,10 +37,9 @@ def sample_program_configs(draw):
 
     input_type = draw(st.sampled_from(["int32", "int64", "float32"]))
 
-    x_shape = [12, 10] # draw(st.lists(st.integers(min_value=1, max_value=10), min_size=2, max_size=2))
-    # x_len_lod =
+    x_shape = [9, 2, 3, 4] # draw(st.lists(st.integers(min_value=1, max_value=10), min_size=2, max_size=2))
+    x_len_lod = [[0, 2, 5, x_shape[0]]]
     padded_length = -1
-    pad_value = np.random.random((10))
 
     sequence_pad_op = OpConfig(
         type = "sequence_pad",
@@ -53,7 +52,7 @@ def sample_program_configs(draw):
         weights={},
         inputs={
             "x_data":
-            TensorConfig(data_gen=partial(generate_input, type=input_type, low=-10, high=10, shape=x_shape), lod=[[0, 3, 4, 3]]),
+            TensorConfig(data_gen=partial(generate_input, type=input_type, low=-10, high=10, shape=x_shape), lod=x_len_lod),
             "pad_value":
             TensorConfig(data_gen=partial(generate_input, type=input_type, low=0, high=10, shape=[1]))
         },
