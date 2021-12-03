@@ -64,7 +64,7 @@ class TestMulOp(AutoScanTest):
 
     def sample_predictor_configs(self, args):
         config = CxxConfig()
-        if self.args.target == "x86":
+        if self.args.target == "arm":
             config.set_valid_places({Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)})
             config.set_threads(1)
         yield config, ["mul"], (1e-5, 1e-5)
