@@ -60,7 +60,7 @@ class TestMulOp(AutoScanTest):
 
         return program_config
 
-    def sample_predictor_configs(self, args):
+    def sample_predictor_configs(self):
         config = CxxConfig()
         if self.args.target == "arm":
             config.set_valid_places({Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)})
