@@ -33,6 +33,9 @@ from program_config import TensorConfig, OpConfig, ProgramConfig, create_fake_mo
 import hypothesis
 from hypothesis import given, settings, seed
 import hypothesis.strategies as st
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("--target")
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
@@ -70,6 +73,9 @@ class AutoScanBaseTest(unittest.TestCase):
         self.num_invalid_programs = 0
         self.num_ignore_tests = 0
         self.num_predictor_kinds = 0
+
+        args = parser.parse_args()
+        self.args = args
 
 
     @abc.abstractmethod

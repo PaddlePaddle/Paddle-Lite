@@ -13,28 +13,60 @@
 # limitations under the License.
 
 import sys
-sys.path.append('../../common')
+#sys.path.append('../../common')
 sys.path.append('../../../')
 
-import test_mul_op_base
+#import test_mul_op_base
 from auto_scan_test_rpc import AutoScanTest, IgnoreReasons
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import unittest
 
 import hypothesis
 from hypothesis import given, settings, seed, example, assume
+import hypothesis.strategies as st
+
+
 
 class TestMulOp(AutoScanTest):
     def is_program_valid(self, program_config: ProgramConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        return test_mul_op_base.sample_program_configs(draw)
+        in_shape1=draw(st.lists(
+            st.integers(
+                min_value=20, max_value=200), min_size=2, max_size=2))
+        in_shape2=draw(st.lists(
+            st.integers(
+                min_value=20, max_value=200), min_size=2, max_size=2))
+        assume(in_shape1[1] == in_shape2[0])
 
-    def sample_predictor_configs(self):
+        mul_op = OpConfig(
+            type = "mul",
+            inputs = {"X": ["input_data_x"],
+                        "Y": ["input_data_y"]},
+            outputs = {"Out": ["output_data"]},
+            attrs = {"x_num_col_dims": 1,
+                        "y_num_col_dims": 1})
+
+        program_config = ProgramConfig(
+            ops=[mul_op],
+            weights={
+                "input_data_y":
+                 TensorConfig(shape=in_shape2)
+            },
+            inputs={
+                "input_data_x":
+                TensorConfig(shape=in_shape1)
+            },
+            outputs=["output_data"])
+
+        return program_config
+
+    def sample_predictor_configs(self, args):
         config = CxxConfig()
-        config.set_valid_places({Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)})
-        config.set_threads(1)
+        if self.args.target == "x86":
+            config.set_valid_places({Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)})
+            config.set_threads(1)
         yield config, ["mul"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
