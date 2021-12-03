@@ -25,47 +25,31 @@ import hypothesis.strategies as st
 from hypothesis import assume
 
 def sample_program_configs(draw):
+    input_type = "float32" # draw(st.sampled_from(["int32", "int64", "float32"]))
+    index_type = "int64" # draw(st.sampled_from(["int32", "int64"]))
 
-    def judge_update_shape(ref, index):
-        ref_shape = ref().shape
-        index_shape = index().shape
-        update_shape = []
-        for i in range(len(index_shape) - 1):
-            update_shape.append(index_shape[i])
-        for i in range(index_shape[-1], len(ref_shape), 1):
-            update_shape.append(ref_shape[i])
-        return update_shape
+    in_shape = [2, 3, 4] # [3, 5, 9, 10] # draw(st.lists(st.integers(min_value=2, max_value=8), min_size=4, max_size=4))
+    index_shape = [2, 2] # [3, 2] # draw(st.lists(st.integers(min_value=1, max_value=3), min_size=2, max_size=4))
+    assume(index_shape[-1] <= len(in_shape))
+    update_shape = [2, 4] # [3, 9, 10] # index_shape[:-1] + in_shape[index_shape[-1]:]
 
-    in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=4, max_size=4))
+    def generate_data(*args, **kwargs):
+        if kwargs["type"] == "int32":
+            return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int32)
+        elif kwargs["type"] == "int64":
+            return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int64)
+        elif kwargs["type"] == "float32":
+            return (kwargs["high"] - kwargs["low"]) * np.random.random(kwargs["shape"]).astype(np.float32) + kwargs["low"]
 
-    def generate_input_int32(*args, **kwargs):
-        return np.random.randint(-10, 10, in_shape).astype(np.int32)
-    def generate_input_int64(*args, **kwargs):
-        return np.random.randint(-10, 10, in_shape).astype(np.int64)
-    def generate_input_float32(*args, **kwargs):
-        return np.random.random(in_shape).astype(np.float32)
-
-    def generate_index_int32(*args, **kwargs):
-        index_np = np.vstack(
-            [np.random.randint(
-                0, s, size=10) for s in in_shape]).T.astype("int32")
-        return index_np
-    def generate_index_int64(*args, **kwargs):
-        index_np = np.vstack(
-            [np.random.randint(
-                0, s, size=10) for s in in_shape]).T.astype("int64")
-        return index_np
-
-    input_type = draw(st.sampled_from(["int32", "int64", "float32"]))
-    index_type = draw(st.sampled_from(["int32", "int64"]))
-    update_shape = judge_update_shape(generate_input_int32, generate_index_int32)
-
-    def generate_update_int32(*args, **kwargs):
-        return np.random.randint(-10, 10, update_shape).astype(np.int32)
-    def generate_update_int64(*args, **kwargs):
-        return np.random.randint(-10, 10, update_shape).astype(np.int64)
-    def generate_update_float32(*args, **kwargs):
-        return np.random.random(update_shape).astype(np.float32)
+    def generate_index_data(*args, **kwargs):
+        if kwargs["type"] == "int32":
+            index_data = np.array([[0, 1],
+                        [1, 2]]).astype(np.int32)
+            return index_data
+        elif kwargs["type"] == "int64":
+            index_data = np.array([[0, 1],
+                        [1, 2]]).astype(np.int64)
+            return index_data
 
     scatter_nd_add_op = OpConfig(
         type = "scatter_nd_add",
@@ -73,68 +57,14 @@ def sample_program_configs(draw):
         outputs = {"Out" : ["output_data"]},
         attrs = {})
 
-    if input_type == "int32":
-        if index_type == "int32":
-            program_config = ProgramConfig(
-                ops=[scatter_nd_add_op],
-                weights={},
-                inputs={
-                    "input_data" : TensorConfig(data_gen=partial(generate_input_int32)),
-                    "index" : TensorConfig(data_gen=partial(generate_index_int32)),
-                    "updates" : TensorConfig(data_gen=partial(generate_update_int32))
-                },
-                outputs=["output_data"])
-        elif index_type == "int64":
-            program_config = ProgramConfig(
-                ops=[scatter_nd_add_op],
-                weights={},
-                inputs={
-                    "input_data" : TensorConfig(data_gen=partial(generate_input_int32)),
-                    "index" : TensorConfig(data_gen=partial(generate_index_int64)),
-                    "updates" : TensorConfig(data_gen=partial(generate_update_int32))
-                },
-                outputs=["output_data"])
-    elif input_type == "int64":
-        if index_type == "int32":
-            program_config = ProgramConfig(
-                ops=[scatter_nd_add_op],
-                weights={},
-                inputs={
-                    "input_data" : TensorConfig(data_gen=partial(generate_input_int64)),
-                    "index" : TensorConfig(data_gen=partial(generate_index_int32)),
-                    "updates" : TensorConfig(data_gen=partial(generate_update_int64))
-                },
-                outputs=["output_data"])
-        elif index_type == "int64":
-            program_config = ProgramConfig(
-                ops=[scatter_nd_add_op],
-                weights={},
-                inputs={
-                    "input_data" : TensorConfig(data_gen=partial(generate_input_int64)),
-                    "index" : TensorConfig(data_gen=partial(generate_index_int64)),
-                    "updates" : TensorConfig(data_gen=partial(generate_update_int64))
-                },
-                outputs=["output_data"])
-    elif input_type == "float32":
-        if index_type == "int32":
-            program_config = ProgramConfig(
-                ops=[scatter_nd_add_op],
-                weights={},
-                inputs={
-                    "input_data" : TensorConfig(data_gen=partial(generate_input_float32)),
-                    "index" : TensorConfig(data_gen=partial(generate_index_int32)),
-                    "updates" : TensorConfig(data_gen=partial(generate_update_float32))
-                },
-                outputs=["output_data"])
-        elif index_type == "int64":
-            program_config = ProgramConfig(
-                ops=[scatter_nd_add_op],
-                weights={},
-                inputs={
-                    "input_data" : TensorConfig(data_gen=partial(generate_input_float32)),
-                    "index" : TensorConfig(data_gen=partial(generate_index_int64)),
-                    "updates" : TensorConfig(data_gen=partial(generate_update_float32))
-                },
-                outputs=["output_data"])
+    program_config = ProgramConfig(
+        ops=[scatter_nd_add_op],
+        weights={},
+        inputs={
+            "input_data" : TensorConfig(data_gen=partial(generate_data, type=input_type, low=-10, high=10, shape=in_shape)),
+            "index" : TensorConfig(data_gen=partial(generate_index_data, type=index_type)),
+            "updates" : TensorConfig(data_gen=partial(generate_data, type=input_type, low=-10, high=10, shape=update_shape)),
+        },
+        outputs=["output_data"])
 
     return program_config
