@@ -511,4 +511,50 @@ NNADAPTER_EXPORT bool WriteFile(const std::string& path,
   return true;
 }
 
+NNADAPTER_EXPORT std::string GetStringFromEnv(const std::string& str,
+                                              const std::string& def) {
+  char* variable = std::getenv(str.c_str());
+  if (!variable) {
+    return def;
+  }
+  return std::string(variable);
+}
+
+NNADAPTER_EXPORT bool GetBoolFromEnv(const std::string& str, bool def) {
+  char* variable = std::getenv(str.c_str());
+  if (!variable) {
+    return def;
+  }
+  if (strcmp(variable, "false") == 0 || strcmp(variable, "0") == 0) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
+NNADAPTER_EXPORT int GetIntFromEnv(const std::string& str, int def) {
+  char* variable = std::getenv(str.c_str());
+  if (!variable) {
+    return def;
+  }
+  return atoi(variable);
+}
+
+NNADAPTER_EXPORT double GetDoubleFromEnv(const std::string& str, double def) {
+  char* variable = std::getenv(str.c_str());
+  if (!variable) {
+    return def;
+  }
+  return atof(variable);
+}
+
+NNADAPTER_EXPORT uint64_t GetUInt64FromEnv(const std::string& str,
+                                           uint64_t def) {
+  char* variable = std::getenv(str.c_str());
+  if (!variable) {
+    return def;
+  }
+  return static_cast<uint64_t>(atol(variable));
+}
+
 }  // namespace nnadapter
