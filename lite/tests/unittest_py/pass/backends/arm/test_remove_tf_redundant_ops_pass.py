@@ -24,7 +24,7 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 
-class TestConvActiveFusePass(FusePassAutoScanTest):
+class TestRemove_tf_redundant_ops_pass(FusePassAutoScanTest):
     def is_program_valid(self, program_config: ProgramConfig) -> bool:
         return True
 
