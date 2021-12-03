@@ -1447,7 +1447,6 @@ void loadb_trans(float16_t *out,
     const uint16_t *inptr6 = inptr5 + ldin;
     const uint16_t *inptr7 = inptr6 + ldin;
     const uint16_t *inptr8 = inptr7 + ldin;
-    const uint16_t *inptr9 = inptr8 + ldin;
 
     //! cope with row index exceed real size, set to zero buffer
     int cnt_col = cnt;
@@ -1470,7 +1469,6 @@ void loadb_trans(float16_t *out,
         "vld1.16 {d6-d7}, [%[inptr3]]!\n"
         "pld [%[inptr8]]        \n"
         "vld1.16 {d8-d9}, [%[inptr4]]!\n"
-        "pld [%[inptr9]]        \n"
         "vld1.16 {d10-d11}, [%[inptr5]]!\n"
         // a0b0a2b2a4b4a6b6
         "vtrn.16 q0, q1        \n"
@@ -1481,25 +1479,27 @@ void loadb_trans(float16_t *out,
         "vld1.16 {d16-d17}, [%[inptr8]]!\n"
         // e0f0e2f2...
         "vtrn.16 q4, q5        \n"
-        "vld1.16 {d18-d19}, [%[inptr9]]\n"
-        "add %[inptr9], %[stride_w]\n"
+        "add %[inptr8], %[stride_w]\n"
+        "vld1.16 {d18-d19}, [%[inptr8]]\n"
+        "add %[inptr8], %[stride_w]\n"
         "vtrn.16 q6, q7       \n"
         "vtrn.32 q0, q2       \n"
-        "vld1.16 {d20-d21}, [%[inptr9]]\n"
-        "add %[inptr9], %[stride_w]\n"
+        "vld1.16 {d20-d21}, [%[inptr8]]\n"
+        "add %[inptr8], %[stride_w]\n"
         "vtrn.32 q1, q3       \n"
         "vtrn.16 q8, q9       \n"
-        "vld1.16 {d22-d23}, [%[inptr9]]\n"
-        "sub %[inptr9], %[stride_w]\n"
+        "vld1.16 {d22-d23}, [%[inptr8]]\n"
+        "sub %[inptr8], %[stride_w]\n"
         "vtrn.32 q4, q6       \n"
         "vtrn.32 q5, q7       \n"
-        "sub %[inptr9], %[stride_w]\n"
+        "sub %[inptr8], %[stride_w]\n"
         "vtrn.16 q10, q11     \n"
 
         // 0 4
         "vswp d1, d8          \n"
         // 1 5
         "vswp d3, d10         \n"
+        "sub %[inptr8], %[stride_w]\n"
         // 2 6
         "vswp d5, d12         \n"
         // 3 7
@@ -1509,7 +1509,7 @@ void loadb_trans(float16_t *out,
         // 15 37
         "vtrn.32 q9, q11      \n"
         "vst1.16 {d0-d1}, [%[outptr]]!\n"
-        "add %[inptr9], #16\n"
+        "add %[inptr8], #16\n"
         "vst1.16 {d16}, [%[outptr]]!\n"
         "vst1.16 {d2-d3}, [%[outptr]]!\n"
         "vst1.16 {d18}, [%[outptr]]!\n"
@@ -1540,7 +1540,6 @@ void loadb_trans(float16_t *out,
           [inptr6] "+r"(inptr6),
           [inptr7] "+r"(inptr7),
           [inptr8] "+r"(inptr8),
-          [inptr9] "+r"(inptr9),
           [outptr] "+r"(outptr),
           [cnt] "+r"(cnt_col)
         : [stride_w] "r"(stride_w)
@@ -1560,6 +1559,7 @@ void loadb_trans(float16_t *out,
           "q11",
           "q12");
     // clang-format on
+    const uint16_t *inptr9 = inptr8 + ldin;
     const uint16_t *inptr10 = inptr9 + ldin;
     const uint16_t *inptr11 = inptr10 + ldin;
     for (int x = 0; x < remain; x++) {
@@ -1578,7 +1578,6 @@ void loadb_trans(float16_t *out,
     }
   }
   for (; y < nmax - 3; y += 4) {
-    LOG(INFO) << "y: " << y;
     const uint16_t *inptr0 = inptr + y * ldin + k0;
     const uint16_t *inptr1 = inptr0 + ldin;
     const uint16_t *inptr2 = inptr1 + ldin;

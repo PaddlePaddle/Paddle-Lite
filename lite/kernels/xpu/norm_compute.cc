@@ -21,7 +21,8 @@ namespace lite {
 namespace kernels {
 namespace xpu {
 
-void NormCompute::Run() {
+template <typename T>
+void NormCompute<T>::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
   auto x_dims = param.X->dims();
@@ -43,15 +44,13 @@ void NormCompute::Run() {
     n = n * x_dims[i];
   }
 
-  int r = xdnn::l2_normalize(ctx.GetRawContext(),
-                             param.X->data<float>(),
-                             param.Out->mutable_data<float>(TARGET(kXPU)),
-                             nullptr,
-                             epsilon,
-                             m,
-                             t,
-                             n,
-                             true);
+  int r = xdnn::l2_norm<T>(ctx.GetRawContext(),
+                           param.X->data<T>(),
+                           param.Out->mutable_data<T>(TARGET(kXPU)),
+                           nullptr,
+                           {m, t, n},
+                           axis,
+                           epsilon);
   CHECK_EQ(r, 0);
 }
 
@@ -60,9 +59,24 @@ void NormCompute::Run() {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(
-    norm, kXPU, kFloat, kNCHW, paddle::lite::kernels::xpu::NormCompute, def)
+REGISTER_LITE_KERNEL(norm,
+                     kXPU,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::xpu::NormCompute<float>,
+                     def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Norm", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(norm,
+                     kXPU,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::xpu::NormCompute<float16>,
+                     l2_norm_fp16)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
+    .BindOutput("Norm", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFP16))})
     .Finalize();

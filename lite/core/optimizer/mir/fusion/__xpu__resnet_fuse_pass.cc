@@ -987,8 +987,17 @@ class XPUResNet50Fuser : public xpu::XPUFuseBase {
         VarNode("resnet_block0_1_out")
             ->assert_is_op_output("resnet_block0", "Outputs")
             ->AsIntermediate();
-    auto* resnet_block1_1_1 =
-        OpNode("resnet_block1_1_1", "resnet_block1")->AsIntermediate();
+    // avoid matching ResNeXt50
+    auto resnext_teller = [](const Node* x) -> bool {
+      CHECK(x->IsStmt());
+      auto scope = x->stmt()->op()->scope();
+      auto filter0_name = x->stmt()->op_info()->Input("Filter")[0];
+      auto filter0 = scope->FindTensor(filter0_name);
+      return filter0->dims()[0] != 128L;
+    };
+    auto* resnet_block1_1_1 = OpNode("resnet_block1_1_1", "resnet_block1")
+                                  ->assert_node_satisfied(resnext_teller)
+                                  ->AsIntermediate();
     auto* resnet_block1_1_1_out =
         VarNode("resnet_block1_1_1_out")
             ->assert_is_op_output("resnet_block1", "Outputs")
