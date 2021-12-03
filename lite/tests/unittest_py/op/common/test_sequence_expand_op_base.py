@@ -32,10 +32,7 @@ def sample_program_configs(draw):
         elif kwargs["type"] == "int64":
             return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int64)
         elif kwargs["type"] == "float32":
-            tmp =  np.random.random(kwargs["shape"]).astype(np.float32)
-            print('type:', type(tmp))
-            print('tmp:', tmp)
-            return tmp
+            return np.random.random(kwargs["shape"]).astype(np.float32)
 
     def generate_lod(seq_num, max_len):
         seq_offset = []
