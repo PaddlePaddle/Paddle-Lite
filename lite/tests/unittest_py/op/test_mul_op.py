@@ -15,7 +15,7 @@
 import sys
 sys.path.append('../')
 
-from auto_scan_test_rpc import AutoScanTest, IgnoreReasons
+from auto_scan_test import AutoScanTest, IgnoreReasons
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import unittest
 
