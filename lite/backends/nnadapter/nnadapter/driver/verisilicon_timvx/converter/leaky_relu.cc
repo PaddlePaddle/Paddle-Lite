@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "core/operation/softmax.h"
+#include "core/operation/leaky_relu.h"
 #include "driver/verisilicon_timvx/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -20,8 +20,8 @@
 namespace nnadapter {
 namespace verisilicon_timvx {
 
-int ConvertSoftmax(Converter* converter, hal::Operation* operation) {
-  SOFTMAX_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int ConvertLeakyRelu(Converter* converter, hal::Operation* operation) {
+  LEAKY_RELU_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to tim-vx tensors and operators
   auto input_tensor = converter->GetMappedTensor(input_operand);
@@ -29,13 +29,10 @@ int ConvertSoftmax(Converter* converter, hal::Operation* operation) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
   auto output_tensor = converter->ConvertOperand(output_operand);
-  // WHCN
-  auto softmax_op = converter->graph()->CreateOperation<tim::vx::ops::Softmax>(
-      1.0 /* beta */,
-      ConvertToTimVXAxis(axis,
-                         input_operand->type.dimensions.count) /* WHCN */);
-  softmax_op->BindInputs({input_tensor});
-  softmax_op->BindOutputs({output_tensor});
+  auto act_op =
+      converter->graph()->CreateOperation<tim::vx::ops::LeakyRelu>(alpha);
+  act_op->BindInputs({input_tensor});
+  act_op->BindOutputs({output_tensor});
   return NNADAPTER_NO_ERROR;
 }
 

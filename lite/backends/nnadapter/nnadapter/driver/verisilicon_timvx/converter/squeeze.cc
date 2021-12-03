@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "core/operation/softmax.h"
+#include "core/operation/squeeze.h"
 #include "driver/verisilicon_timvx/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -20,22 +20,35 @@
 namespace nnadapter {
 namespace verisilicon_timvx {
 
-int ConvertSoftmax(Converter* converter, hal::Operation* operation) {
-  SOFTMAX_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int ConvertSqueeze(Converter* converter, hal::Operation* operation) {
+  SQUEEZE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to tim-vx tensors and operators
+  std::vector<uint32_t> mapped_axes;
+  if (axes.size() == 0) {
+    for (int i = input_operand->type.dimensions.count - 1; i >= 0; i--) {
+      if (input_operand->type.dimensions.data[i] == 1) {
+        mapped_axes.push_back(ConvertToTimVXAxis(
+            i, input_operand->type.dimensions.count)); /* WHCN */
+      }
+    }
+  } else {
+    for (int i = axes.size() - 1; i >= 0; i--) {
+      int axis = ConvertToTimVXAxis(
+          axes[i], input_operand->type.dimensions.count); /* WHCN */
+      mapped_axes.push_back(axis);
+    }
+  }
+
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
   auto output_tensor = converter->ConvertOperand(output_operand);
-  // WHCN
-  auto softmax_op = converter->graph()->CreateOperation<tim::vx::ops::Softmax>(
-      1.0 /* beta */,
-      ConvertToTimVXAxis(axis,
-                         input_operand->type.dimensions.count) /* WHCN */);
-  softmax_op->BindInputs({input_tensor});
-  softmax_op->BindOutputs({output_tensor});
+  auto squeeze_op =
+      converter->graph()->CreateOperation<tim::vx::ops::Squeeze>(mapped_axes);
+  squeeze_op->BindInputs({input_tensor});
+  squeeze_op->BindOutputs({output_tensor});
   return NNADAPTER_NO_ERROR;
 }
 

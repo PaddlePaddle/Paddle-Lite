@@ -248,6 +248,8 @@ TEST(squeeze, precision) {
   abs_error = 5e-2;
   // TODO(shentanyue): support later
   return;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 5e-2;
 #else
   return;
 #endif
@@ -275,6 +277,8 @@ TEST(squeeze2, precision) {
   abs_error = 5e-2;
   // TODO(shentanyue): support later
   return;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 5e-2;
 #else
   return;
 #endif

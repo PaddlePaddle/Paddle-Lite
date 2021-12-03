@@ -137,6 +137,10 @@ std::vector<uint32_t> ConvertToTimVXPermutation(const int32_t* input_perm_data,
   return output_perm;
 }
 
+int32_t ConvertToTimVXAxis(int32_t axis, size_t dimension_count) {
+  return dimension_count - 1 - (axis < 0 ? dimension_count + axis : axis);
+}
+
 std::shared_ptr<tim::vx::Tensor> CreateTimVXTensor(
     tim::vx::Graph* graph,
     tim::vx::ShapeType shape,
