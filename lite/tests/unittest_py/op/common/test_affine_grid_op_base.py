@@ -24,7 +24,7 @@ import hypothesis
 import hypothesis.strategies as st
 
 def sample_program_configs(draw):
-    in_shape = [st.integers(min_value=1, max_value=100), 2, 3]
+    in_shape = [draw(st.integers(min_value=1, max_value=50)), 2, 3]
     align_corners = draw(st.booleans())
     output_shape = draw(st.lists(st.integers(min_value=1, max_value=100), min_size=4, max_size=4))
 
@@ -36,7 +36,7 @@ def sample_program_configs(draw):
     affine_grid_op = OpConfig(
         type = "affine_grid",
         inputs = {"Theta" : ["input_data"],
-                 "OutputShape" : ["outpu_shape_data"]},
+                 "OutputShape" : ["output_shape_data"]},
         outputs = {"Output": ["output_data"]},
         attrs = {"output_shape" : output_shape,
                 "align_corners" : align_corners})
@@ -46,7 +46,7 @@ def sample_program_configs(draw):
         inputs={
             "input_data":
             TensorConfig(data_gen=partial(generate_input)),
-            "OutputShape":
+            "output_shape_data":
             TensorConfig(data_gen=partial(generate_output_shape))
         },
         outputs=["output_data"])

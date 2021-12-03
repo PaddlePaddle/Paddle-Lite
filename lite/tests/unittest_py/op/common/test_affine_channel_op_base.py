@@ -24,7 +24,7 @@ import hypothesis
 import hypothesis.strategies as st
 
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=1, max_value=100), min_size=4, max_size=4))
+    in_shape = draw(st.lists(st.integers(min_value=1, max_value=50), min_size=4, max_size=4))
     scale_shape = [in_shape[1]]
 
     def generate_input(*args, **kwargs):
