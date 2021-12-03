@@ -39,7 +39,7 @@ def sample_program_configs(draw):
 
     x_shape = [9, 2, 3, 4] # draw(st.lists(st.integers(min_value=1, max_value=10), min_size=2, max_size=2))
     x_len_lod = [[0, 2, 5, x_shape[0]]]
-    padded_length = -1
+    padded_length = 4
 
     sequence_pad_op = OpConfig(
         type = "sequence_pad",
