@@ -11,34 +11,45 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import sys
-sys.path.append('../../common')
-sys.path.append('../../../')
+sys.path.append('..')
 
-import abc
-import  test_conv_active_fuse_pass_base
-from auto_scan_test import FusePassAutoScanTest, IgnoreReasons
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
+import numpy as np
+from functools import partial
+from typing import Optional, List, Callable, Dict, Any, Set
 import unittest
-
 import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 
-class TestConvActiveFusePass(FusePassAutoScanTest):
-    def sample_predictor_configs(self):
-        config = CxxConfig()
-        config.set_valid_places({Place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW)})
-        yield config, ["conv2d"], (1e-5, 1e-5)
+def sample_program_configs(draw):
+    in_shape = draw(st.lists(
+        st.integers(
+            min_value=1, max_value=64), min_size=1, max_size=4))
 
-    def sample_program_configs(self, draw):
-        return test_conv_active_fuse_pass_base.sample_program_configs(draw)
+    def generate_input(*args, **kwargs):
+        return np.random.uniform(0.1, 1, in_shape).astype(np.float32)
 
-    def add_ignore_pass_case(self):
-        pass
+    ops_config = OpConfig(
+        type = "sqrt",
+        inputs = {
+            "X": ["input_data"]
+        },
+        outputs = {
+            "Out": ["output_data"]
+        },
+        attrs = {}
+        )
 
-    def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25, passes=["lite_conv_activation_fuse_pass"])
+    program_config = ProgramConfig(
+        ops=[ops_config],
+        weights={},
+        inputs={
+            "input_data": 
+            TensorConfig(data_gen=partial(generate_input))
+        },
+        outputs=["output_data"])
 
-if __name__ == "__main__":
-    unittest.main()
+    return program_config
