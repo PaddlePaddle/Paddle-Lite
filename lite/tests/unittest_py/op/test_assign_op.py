@@ -49,6 +49,8 @@ class TestAssignOp(AutoScanTest):
         config = CxxConfig()
         if self.args.target == "host":
             config.set_valid_places({Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)})
+        else:
+           raise ValueError("[target=" + self.args.target + "] is not supported on unit_test[" + __file__ + "]!")
         yield config, ["assign"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
