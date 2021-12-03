@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import sys
-sys.path.append('../../../')
+sys.path.append('../')
 
 from auto_scan_test import AutoScanTest, IgnoreReasons
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
