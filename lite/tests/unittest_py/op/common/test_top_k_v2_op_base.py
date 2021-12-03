@@ -21,36 +21,43 @@ from functools import partial
 from typing import Optional, List, Callable, Dict, Any, Set
 import unittest
 import hypothesis
+from hypothesis import assume
 import hypothesis.strategies as st
 
+# having diff !
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=2, max_value=6), min_size = 4, max_size=4))
-    axis_data = draw(st.integers(min_value=0, max_value=3))
-    use_stack_data = draw(st.booleans())
-    def generate_input_I_data():
-            return np.random.randint(0,1,[1]).astype(np.int64)
-    
-    write_to_array_op = OpConfig(
-        type = "write_to_array",
-        inputs = {"X" : ["input_data"],
-                  "I" : ["I_data"]},
-        outputs = {"Out": ["middle_data"]},
-        attrs = {})
-    tensor_array_to_tensor_op = OpConfig(
-        type = "tensor_array_to_tensor",
-        inputs = {"X" : ["middle_data"]},
-        outputs = {"Out": ["output_data"],
-                  "OutIndex" : ["OutIndex_data"]},
-        attrs = {"axis" : axis_data,
-                 "use_stack" : use_stack_data,
-                  })
+    in_shape = draw(st.lists(st.integers(min_value=1, max_value=5), min_size = 4, max_size=4))
 
+    def generate_K_data():
+        return np.random.randint(1,3,size=[1]).astype(np.int32)
+
+    k_data = draw(st.integers(min_value=1, max_value=2))
+    axis_data = draw(st.integers(min_value=0, max_value=3))
+    # Lite does not have these two attributes
+    largest_data = draw(st.booleans())
+    sorted_data =  draw(st.booleans())
+    
+    assume(k_data <= in_shape[-1])
+
+    top_k_v2_op = OpConfig(
+        type = "top_k_v2",
+        inputs = {"X" : ["X_data"],
+                  #"K": ["K_data"]
+                  },
+        outputs = {"Out": ["Out_data"],
+                  "Indices": ["Indices_data"]},
+        attrs = {"k" : k_data,
+                 "axis" : axis_data,
+                 #"largest": largest_data,
+                 #"sorted": sorted_data,
+                 })
     program_config = ProgramConfig(
-        ops=[write_to_array_op, tensor_array_to_tensor_op],
+        ops=[top_k_v2_op],
         weights={},
         inputs={
-            "input_data": TensorConfig(shape=in_shape),
-            "I_data": TensorConfig(data_gen=partial(generate_input_I_data))
+            "X_data": TensorConfig(shape=in_shape),
+            "K_data": TensorConfig(data_gen=partial(generate_K_data))
         },
-        outputs=["output_data","OutIndex_data"])
+        outputs= ["Out_data", "Indices_data"])
+    
     return program_config
