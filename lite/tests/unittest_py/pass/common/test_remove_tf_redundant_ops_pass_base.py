@@ -123,4 +123,3 @@ def sample_program_configs(draw):
             inputs={"input_data": TensorConfig(shape=in_shape)},
             outputs=["output_data"])
         return program_config
-        
