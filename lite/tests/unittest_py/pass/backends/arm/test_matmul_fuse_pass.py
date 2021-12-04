@@ -44,4 +44,3 @@ class TestMatmulFusePass(FusePassAutoScanTest):
 
 if __name__ == "__main__":
     unittest.main()
-    
