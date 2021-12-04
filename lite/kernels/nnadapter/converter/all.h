@@ -130,7 +130,9 @@ REGISTER_CONVERTER(relu6,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
                    "npu,amlogic_npu,imagination_nna,cambricon_mlu,verisilicon_"
                    "timvx");
-REGISTER_CONVERTER(leaky_relu, ConvertLeakyRelu, "huawei_ascend_npu");
+REGISTER_CONVERTER(leaky_relu,
+                   ConvertLeakyRelu,
+                   "huawei_ascend_npu,verisilicon_timvx");
 REGISTER_CONVERTER(tanh,
                    ConvertUnaryActivations,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
@@ -143,8 +145,12 @@ REGISTER_CONVERTER(log, ConvertUnaryActivations, "huawei_ascend_npu");
 REGISTER_CONVERTER(swish, ConvertUnaryActivations, "huawei_ascend_npu");
 REGISTER_CONVERTER(prelu, ConvertPRelu, "huawei_ascend_npu");
 REGISTER_CONVERTER(gelu, ConvertGelu, "huawei_ascend_npu");
-REGISTER_CONVERTER(hard_sigmoid, ConvertHardSigmoid, "huawei_ascend_npu");
-REGISTER_CONVERTER(hard_swish, ConvertHardSwish, "huawei_ascend_npu");
+REGISTER_CONVERTER(hard_sigmoid,
+                   ConvertHardSigmoid,
+                   "huawei_ascend_npu,verisilicon_timvx");
+REGISTER_CONVERTER(hard_swish,
+                   ConvertHardSwish,
+                   "huawei_ascend_npu,verisilicon_timvx");
 REGISTER_CONVERTER(arg_max, ConvertArgMinMax, "huawei_ascend_npu");
 REGISTER_CONVERTER(arg_min, ConvertArgMinMax, "huawei_ascend_npu");
 REGISTER_CONVERTER(assign, ConvertAssign, "huawei_ascend_npu");
@@ -173,8 +179,12 @@ REGISTER_CONVERTER(transpose2,
                    "npu,amlogic_npu,verisilicon_timvx");
 REGISTER_CONVERTER(shape, ConvertShape, "huawei_ascend_npu");
 REGISTER_CONVERTER(slice, ConvertSlice, "huawei_ascend_npu");
-REGISTER_CONVERTER(squeeze, ConvertSqueeze, "huawei_ascend_npu");
-REGISTER_CONVERTER(squeeze2, ConvertSqueeze, "huawei_ascend_npu");
+REGISTER_CONVERTER(squeeze,
+                   ConvertSqueeze,
+                   "huawei_ascend_npu,verisilicon_timvx");
+REGISTER_CONVERTER(squeeze2,
+                   ConvertSqueeze,
+                   "huawei_ascend_npu,verisilicon_timvx");
 REGISTER_CONVERTER(range, ConvertRange, "huawei_ascend_npu");
 REGISTER_CONVERTER(stack, ConvertStack, "huawei_ascend_npu");
 REGISTER_CONVERTER(fill_constant, ConvertFillConstant, "huawei_ascend_npu");

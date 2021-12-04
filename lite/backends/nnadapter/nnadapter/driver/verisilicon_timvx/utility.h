@@ -37,6 +37,7 @@ tim::vx::TensorAttribute ConvertToTimVXTensorAttribute(
     NNAdapterOperandLifetimeCode input_lifetime);
 std::vector<uint32_t> ConvertToTimVXPermutation(const int32_t* input_perm_data,
                                                 size_t input_perm_count);
+int32_t ConvertToTimVXAxis(int32_t axis, size_t dimension_count);
 
 // Create tim-vx tensor base on NNAdapter types
 std::shared_ptr<tim::vx::Tensor> CreateTimVXTensor(

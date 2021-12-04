@@ -83,6 +83,11 @@ Paddle Lite 已支持 Rockchip NPU 的预测部署。
   - 由于 RK1808 EVB 在刷 firmware 后，只是一个纯净的 Linux 系统，无法像 Ubuntu 那样使用 `apt-get` 命令方便的安装软件，因此，示例程序和 Paddle Lite 库的编译均采用交叉编译方式；
   - 将 `MicroUSB` 线插入到设备的 `MicroUSB OTG` 口，就可以使用 Android 的 `adb` 命令进行设备的交互，再也不用配置网络使用 `ssh` 或者通过串口的方式访问设备了，这个设计非常赞！
   - **将 rknpu_ddk 的 `lib64` 目录下除 `librknpu_ddk.so` 之外的动态库都拷贝到设备的 `/usr/lib` 目录下，更新 Rockchip NPU 的系统库。**
+  - **注意确认 Galcore 驱动版本，需为 6.4.0.X 方能正常运行。 Galcore 由开发板/解决方案厂商提供，在刷新固件时也会同时刷新 Galcore 驱动**
+    ```shell
+    $ dmesg | grep Galcore
+    [   15.978465] Galcore version 6.4.0.227915
+    ```
 
 - TB-RK1808S0 AI 计算棒
 
@@ -96,7 +101,11 @@ Paddle Lite 已支持 Rockchip NPU 的预测部署。
     toybrick-server-1.4.1-2.rk1808.fc28.aarch64
     ```
     - **将 rknpu_ddk 的 `lib64` 目录下除 `librknpu_ddk.so` 之外的动态库都拷贝到设备的 `/usr/lib` 目录下，更新 Rockchip NPU 的系统库。**
-
+    - **注意确认 Galcore 驱动版本，需为 6.4.0.X 方能正常运行。 Galcore 由开发板/解决方案厂商提供，在刷新固件时也会同时刷新 Galcore 驱动**
+    ```shell
+    $ dmesg | grep Galcore
+    [    7.919345] Galcore version 6.4.0.227915
+    ```
 - RV1126 EVB
 
    - 需要升级 1.51 的 firmware（下载和烧录方法请联系RK相关同学），可通过以下命令确认 librknn_runtime.so 的版本：
@@ -108,7 +117,11 @@ Paddle Lite 已支持 Rockchip NPU 的预测部署。
 
    - 示例程序和 Paddle Lite 库的编译需要采用交叉编译方式，通过 `adb` 进行设备的交互和示例程序的运行。
    - **将 rknpu_ddk 的 `lib64` 目录下除 `librknpu_ddk.so` 之外的动态库都拷贝到设备的 `/usr/lib` 目录下，更新 Rockchip NPU 的系统库。**
-   
+  - **注意确认 Galcore 驱动版本，需为 6.4.0.X 方能正常运行。 Galcore 由开发板/解决方案厂商提供，在刷新固件时也会同时刷新 Galcore 驱动**
+    ```shell
+    $ dmesg | grep Galcore
+    [    5.809874] Galcore version 6.4.0.227915
+    ```
 
 ### 准备交叉编译环境
 
