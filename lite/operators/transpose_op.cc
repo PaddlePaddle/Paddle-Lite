@@ -111,9 +111,12 @@ bool Transpose2Op::InferShapeImpl() const {
   for (size_t i = 0; i < x_dims.size(); i++) {
     xshape_dims[i + 1] = x_dims[i];
   }
-  param_.xshape->Resize(xshape_dims);
-  auto xshape_lod = param_.xshape->mutable_lod();
-  *xshape_lod = param_.x->lod();
+
+  if (param_.xshape) {
+    param_.xshape->Resize(xshape_dims);
+    auto xshape_lod = param_.xshape->mutable_lod();
+    *xshape_lod = param_.x->lod();
+  }
 
   return true;
 }
