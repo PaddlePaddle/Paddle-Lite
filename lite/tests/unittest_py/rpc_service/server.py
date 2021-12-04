@@ -18,6 +18,7 @@ import shutil
 from rpyc.utils.server import ThreadedServer
 from paddlelite.lite import *
 import copy
+import argparse
 rpyc.core.protocol.DEFAULT_CONFIG['allow_pickle'] = True
 
 def ParsePlaceInfo(place_str):
@@ -97,7 +98,13 @@ class RPCService(rpyc.Service):
         return result_res, model
 
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--rpc_port")
 
 if __name__ == "__main__":
-    server = ThreadedServer(RPCService, port =18812, protocol_config = rpyc.core.protocol.DEFAULT_CONFIG)
+    args=parser.parse_args()
+    port_id = 18812
+    if args.rpc_port != None:
+        port_id = args.rpc_port
+    server = ThreadedServer(RPCService, port_id, protocol_config = rpyc.core.protocol.DEFAULT_CONFIG)
     server.start()

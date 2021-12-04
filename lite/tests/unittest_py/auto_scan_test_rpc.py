@@ -27,7 +27,10 @@ rpyc.core.protocol.DEFAULT_CONFIG['allow_pickle'] = True
 
 class AutoScanTest(AutoScanBaseTest):
     def run_lite_config(self, model, params, feed_data, pred_config) -> Dict[str, np.ndarray]:
-        conn = rpyc.connect("localhost", 18812, config = rpyc.core.protocol.DEFAULT_CONFIG)
+        port_id = 18812
+        if self.rpc_port != None:
+           port_id = self.rpc_port
+        conn = rpyc.connect("localhost", port_id, config = rpyc.core.protocol.DEFAULT_CONFIG)
         out, model = conn.root.run_lite_model(model,params,feed_data, pred_config)
         result_res = copy.deepcopy(out)
         return result_res, model
