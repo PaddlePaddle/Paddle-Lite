@@ -229,7 +229,7 @@ CLContext::GenerateLocalWorkSizes(cl::NDRange gws, size_t max_ws) {
 }
 std::set<cl::NDRange, CLContext::CompareByRange>
 CLContext::DefaultLocalWorkSize(const cl::NDRange &gws,
-                                register size_t max_ws,
+                                size_t max_ws,
                                 size_t tune_type /*=0*/,
                                 const int &divisor /*=2*/,
                                 const bool &reverse /*=false*/,

@@ -44,8 +44,6 @@ void ConvImageCompute::PrepareForRun() {
     threshold_2 = 256.0f * 6.0f;
     threshold_4 = 256.0f * 16.0f;
   }
-  const bool fp16_support =
-      CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
   conv_param_ = param_.get_mutable<param_t>();
   auto output_dims = conv_param_->output->dims();
   output_tensor_n_ = output_dims[0];
@@ -1573,8 +1571,6 @@ void ConvImageCompute::OIHW2OHWIO4I4(
 
 void ConvImageCompute::NCHW2IMG4(
     void* src, void* dst, size_t oc, size_t ic, size_t index) {
-  bool fp16_support =
-      CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
   size_t oc_block = UP_DIV(oc, 4);
   size_t ic_block = UP_DIV(ic, 4);
 

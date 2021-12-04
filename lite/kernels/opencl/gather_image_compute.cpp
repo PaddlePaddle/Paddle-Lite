@@ -159,7 +159,7 @@ void GatherImageCompute::Run() {
   auto* x = ga_param_->X;
   auto* index = ga_param_->Index;
   auto* out = ga_param_->Out;
-  auto* axis = ga_param_->Axis;
+  // auto* axis = ga_param_->Axis;
   auto x_dims = x->dims();
   auto index_dims = index->dims();
   auto out_dims = out->dims();

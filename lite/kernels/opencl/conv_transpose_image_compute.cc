@@ -24,7 +24,6 @@ namespace opencl {
 void ConvTransposeImageCompute::PrepareForRun() {
   auto& context = ctx_->As<OpenCLContext>();
   CHECK(context.cl_context() != nullptr);
-  const bool is_mali = context.cl_context()->IsArmMali();
 
   conv_param_ = param_.get_mutable<param_t>();
   auto x_dims = conv_param_->x->dims();

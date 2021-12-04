@@ -426,7 +426,6 @@ class LayoutComputeImageDefaultToImageFolder
   using param_t = operators::LayoutParam;
 
   void PrepareForRun() override {
-    auto& param = Param<param_t>();
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(kernel_func_name_,
@@ -522,7 +521,6 @@ class LayoutComputeImageFolderToImageDefault
   using param_t = operators::LayoutParam;
 
   void PrepareForRun() override {
-    auto& param = Param<param_t>();
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(kernel_func_name_,

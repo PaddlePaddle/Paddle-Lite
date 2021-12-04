@@ -64,12 +64,8 @@ class ReshapeComputeFloatImage : public KernelLite<TARGET(kOpenCL),
     const std::map<std::string, size_t>& input_image_shape =
         InitImageDimInfoWith(x_dims);
 
-    const int64_t& input_image_width = input_image_shape.at("width");
-    const int64_t& input_image_height = input_image_shape.at("height");
-
     auto* x_image = GET_DATA_GPU(x);
 
-    const std::vector<int>& shape_vct = param.shape_vct;
     Tensor* const output = param.output;
     const DDimLite& out_dims = output->dims();
     VLOG(4) << "out_dims= " << out_dims;
