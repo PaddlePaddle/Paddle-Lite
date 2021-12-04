@@ -28,47 +28,48 @@ import hypothesis.strategies as st
 
 def sample_program_configs(draw):
     pick_test=draw(st.sampled_from(["RemoveReshape2Pattern"]))
-    if pick_test=="RemoveReshape2Pattern":
-        in_shape = draw(st.lists(
-            st.integers(
-                min_value=2, max_value=30), min_size=2, max_size=5))
-        input_axis = draw(st.sampled_from([0, 1, 2, 3, -1]))
-        assume(input_axis < len(in_shape))
+    #if pick_test=="RemoveReshape2Pattern":
+    in_shape = draw(st.lists(
+        st.integers(
+            min_value=2, max_value=30), min_size=2, max_size=5))
+    input_axis = draw(st.sampled_from([0, 1, 2, 3, -1]))
+    assume(input_axis < len(in_shape))
 
-        softmax_config = OpConfig(
-            type = "softmax",
-            inputs = {
-                "X": ["input_data"]
-            },
-            outputs = {
-                "Out": ["softmax_output_data"]
-            },
-            attrs = {
-                "axis": input_axis
-            }
-        )
+    softmax_config = OpConfig(
+        type = "softmax",
+        inputs = {
+            "X": ["input_data"]
+        },
+        outputs = {
+            "Out": ["softmax_data"]
+        },
+        attrs = {
+            "axis": input_axis
+        }
+    )
 
-        reshape2_config = OpConfig(
-            type = "reshape2",
-            inputs = {
-                "X" : ["softmax_output_data"],
-            },
-            outputs = {
-                "Out": ["output_data"],
-                "XShape": ["x_shape"],
-            },
-            attrs = {
-                "shape": in_shape,
-            }
-        )
+    reshape2_config = OpConfig(
+        type = "reshape2",
+        inputs = {
+            "X" : ["softmax_data"]
+        },
+        outputs = {
+            "Out": ["output_data"],
+            "XShape": ["x_shape"]
+        },
+        attrs = {
+            "shape": in_shape,
+        }
+    )
 
-        ops = [softmax_config, reshape2_config]
-        program_config = ProgramConfig(
-            ops=ops,
-            weights={},
-            inputs={"input_data": TensorConfig(shape=in_shape)},
-            outputs=["output_data"])
-        return program_config
+    ops = [softmax_config, reshape2_config]
+    program_config = ProgramConfig(
+        ops=ops,
+        weights={},
+        inputs={"input_data": TensorConfig(shape=in_shape)},
+        outputs=["output_data"])
+    return program_config
+    '''
     else:
         batch=draw(st.integers(min_value=2, max_value=8))
         in_shape=[batch, 1001, 1, 1]
@@ -123,3 +124,4 @@ def sample_program_configs(draw):
             inputs={"input_data": TensorConfig(shape=in_shape)},
             outputs=["output_data"])
         return program_config
+    '''
