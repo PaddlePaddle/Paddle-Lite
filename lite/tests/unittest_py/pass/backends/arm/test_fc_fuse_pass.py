@@ -24,7 +24,7 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 
-class TestConvScaleFusePass(FusePassAutoScanTest):
+class TestFcFusePass(FusePassAutoScanTest):
     def is_program_valid(self, program_config: ProgramConfig) -> bool:
         return True
 
