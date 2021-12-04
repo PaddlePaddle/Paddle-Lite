@@ -29,9 +29,11 @@ WITH_PROFILE=OFF
 WITH_PRECISION_PROFILE=OFF
 WITH_BENCHMARK=OFF
 WITH_LTO=OFF
+WITH_TESTING=OFF
 BUILD_ARM82_FP16=OFF
 BUILD_ARM82_INT8_SDOT=OFF
 PYTHON_EXECUTABLE_OPTION=""
+PY_VERSION=""
 workspace=$PWD/$(dirname $0)/../../
 OPTMODEL_DIR=""
 IOS_DEPLOYMENT_TARGET=11.0
@@ -222,8 +224,9 @@ function make_x86 {
 
   if [ ${BUILD_PYTHON} == "ON" ]; then
     BUILD_EXTRA=ON
+    LITE_ON_TINY_PUBLISH=OFF
   fi
-
+ 
   if [ ! -d third-party ]; then
     git checkout third-party
   fi
