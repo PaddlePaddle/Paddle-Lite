@@ -142,7 +142,8 @@ void BindLiteCxxConfig(py::module *m) {
            (void (CxxConfig::*)(std::shared_ptr<CxxModelBuffer>)) &
                CxxConfig::set_model_buffer)
       .def("set_passes_internal", &CxxConfig::set_passes_internal)
-      .def("is_model_from_memory", &CxxConfig::is_model_from_memory);
+      .def("is_model_from_memory", &CxxConfig::is_model_from_memory)
+      .def("add_discarded_pass", &CxxConfig::add_discarded_pass);
 #ifdef LITE_WITH_ARM
   cxx_config.def("set_threads", &CxxConfig::set_threads)
       .def("threads", &CxxConfig::threads)

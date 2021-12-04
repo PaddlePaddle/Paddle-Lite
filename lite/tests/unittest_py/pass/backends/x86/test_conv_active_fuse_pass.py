@@ -30,6 +30,7 @@ class TestConvActiveFusePass(FusePassAutoScanTest):
         config = CxxConfig()
         config.set_valid_places({Place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW)})
         yield config, ["conv2d"], (1e-5, 1e-5)
+
     def sample_program_configs(self, draw):
         return test_conv_active_fuse_pass_base.sample_program_configs(draw)
 
