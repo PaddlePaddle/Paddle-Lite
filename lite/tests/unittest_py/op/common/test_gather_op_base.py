@@ -52,7 +52,7 @@ def sample_program_configs(draw):
     def generate_input_float32(*args, **kwargs):
         return np.random.random(in_shape).astype(np.float32) 
 
-    input_type = draw(st.sampled_from([generate_input_int32, generate_input_int64, generate_input_float32]))
+    generate_input = draw(st.sampled_from([generate_input_int32, generate_input_int64, generate_input_float32]))
 
     op_inputs = {}
     program_inputs = {}
@@ -63,7 +63,7 @@ def sample_program_configs(draw):
                   "Axis" : ["axis_data"]
         }
         program_inputs={
-            "input_data" : TensorConfig(data_gen=partial(input_type)),
+            "input_data" : TensorConfig(data_gen=partial(generate_input)),
             "index_data" : TensorConfig(data_gen=partial(generate_index)),
             "axis_data" : TensorConfig(data_gen=partial(generate_axis))
         }
@@ -73,7 +73,7 @@ def sample_program_configs(draw):
                   "Index" : ["index_data"]
         }
         program_inputs={
-            "input_data" : TensorConfig(data_gen=partial(input_type)),
+            "input_data" : TensorConfig(data_gen=partial(generate_input)),
             "index_data" : TensorConfig(data_gen=partial(generate_index))
         }
 
