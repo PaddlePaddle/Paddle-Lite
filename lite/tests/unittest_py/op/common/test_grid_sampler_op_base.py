@@ -34,7 +34,7 @@ def sample_program_configs(draw):
     in_shape2.append(in_shape1[3])
     in_shape2.append(2)
 
-    align_corners=draw(st.sampled_from([True, False]))
+    align_corners=draw(st.booleans())
     mode=draw(st.sampled_from(["bilinear", "nearest"]))
     padding_mode=draw(st.sampled_from(["zeros", "reflection", "border"]))
 
