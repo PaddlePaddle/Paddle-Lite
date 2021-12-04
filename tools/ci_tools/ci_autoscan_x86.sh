@@ -24,6 +24,9 @@ BUILD_OPENCL=OFF
 BUILD_EXTRA=ON
 WITH_EXCEPTION=OFF
 
+SkipHostTest=(test_beam_serach_op.py test_beam_serach_decode_op.py test_box_clip_op.py)
+SkipX86Test=(test_batch_nom_op.py test_bilinear_interp_op.py test_bilinear_interp_v2_op.py test_conv2d_op.py test_gru_op.py test_sequence_pool_op.py test_sequence_topk_avg_pooling_op.py)
+SkipOpenclTest=()
 # Model download url
 
 ####################################################################################################
@@ -33,21 +36,38 @@ WITH_EXCEPTION=OFF
 ####################################################################################################
 function auto_scan_test {
   python_version=$1
-  for backend in "host" "x86"; do
-    cd $WORKSPACE/lite/tests/unittest_py/op/backends/$backend
-    unittests=$(ls)
-    for test in ${unittests[@]}; do
-      python$python_version $test
-    done
-  done
 
-  for backend in "x86"; do
-    cd $WORKSPACE/lite/tests/unittest_py/pass/backends/$backend
+  if [ ${BUILD_OPENCL} = ON ];then
+    cd $WORKSPACE/lite/tests/unittest_py/op/backends/opencl
     unittests=$(ls)
     for test in ${unittests[@]}; do
-      python$python_version $test
+      if [[ "${SkipOpenclTest[@]}" =~ "$test" ]];then
+        continue
+      else
+        python$python_version $test
+      fi
     done
+  else
+    cd $WORKSPACE/lite/tests/unittest_py/op/backends/host
+    unittests=$(ls)
+    for test in ${unittests[@]}; do
+      if [[ "${SkipHostTest[@]}" =~ "$test" ]];then
+        continue
+      else
+        python$python_version $test
+      fi
+    done
+
+    cd $WORKSPACE/lite/tests/unittest_py/op/backends/x86
+    unittests=$(ls)
+    for test in ${unittests[@]}; do
+      if [[ "${SkipX86Test[@]}" =~ "$test" ]];then
+        continue
+      else
+        python$python_version $test
+      fi
   done
+  fi
 }
 
 ####################################################################################################
@@ -98,6 +118,23 @@ function publish_inference_lib {
   done
 }
 
+function main() {
+  # Parse command line.
+  for i in "$@"; do
+    case $i in
+    --BUILD_OPENCL=*)
+      BUILD_OPENCL="${i#*=}"
+      shift
+      ;;
+    *)
+      echo "Unknown option, exit"
+      exit 1
+      ;;
+    esac
+  done
+}
+
+main $@
 # Compiling test
 for version in ${PYTHON_VERSION[@]}; do
     publish_inference_lib $version
