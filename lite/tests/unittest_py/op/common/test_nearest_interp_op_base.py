@@ -24,21 +24,22 @@ import hypothesis
 import hypothesis.strategies as st
 
 def sample_program_configs(draw):
-    X_shape = draw(st.sampled_from([[1, 3, 24, 24]]))
-    Scale_shape = draw(st.sampled_from([[1]]))
-    Tensor_shape = draw(st.sampled_from([[32, 64]]))
+    X_shape = in_shape1=draw(st.lists(st.integers(min_value=20, max_value=64), min_size=4, max_size=4))
+    Scale_shape = draw(st.lists(st.integers(min_value=2, max_value=4), min_size=1, max_size=1))
+    Tensor_shape = draw(st.lists(st.integers(min_value=20, max_value=64), min_size=4, max_size=4))
     align_corners = draw(st.booleans())
-    scale = draw(st.sampled_from([0.5, 0.3, 1.2]))
+    scale = draw(st.floats(min_value=0.1, max_value=10.0))
     interp_method = draw(st.sampled_from(["nearest"]))
-    out_w = draw(st.sampled_from([32, 64]))
-    out_h = draw(st.sampled_from([32, 64]))
+    out_w = draw(st.integers(min_value=20, max_value=64))
+    out_h = draw(st.integers(min_value=20, max_value=64))
     data_layout = draw(st.sampled_from(["NCHW"]))
 
     nearest_interp = OpConfig(
         type = "nearest_interp",
         inputs = {"X" : ["input_data_x"], "Scale":["Scale"]},
         outputs = {"Out": ["output_data"]},
-        attrs = {"data_layout":data_layout, "scale":scale, "out_w":out_w,"out_h":out_h, "interp_method":interp_method , "align_corners":align_corners})
+        attrs = {"data_layout" : data_layout, "scale" : scale, "out_w" : out_w,"out_h" : out_h,
+            "interp_method" : interp_method , "align_corners" : align_corners})
     program_config = ProgramConfig(
         ops=[nearest_interp],
         weights={},
