@@ -1681,6 +1681,7 @@ struct XPUMultiEncoderParam : ParamBase {
   int n_layers{};
   int head_num{};
   int size_per_head{};
+  int hidden_dim{};
   std::string act_type{};
   std::string precision{};
   bool enable_qkv_fusion{false};

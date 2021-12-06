@@ -14,6 +14,7 @@
 
 #include "lite/backends/arm/math/fp16/gemm_fp16.h"
 #include <arm_neon.h>
+#include "lite/core/parallel_defines.h"
 namespace paddle {
 namespace lite {
 namespace arm {
@@ -217,8 +218,7 @@ void prepackA_8x16(float16_t *out,
   int cnt_4 = remain >> 2;
   remain = remain & 3;
   float16x8_t valpha = vdupq_n_f16(alpha);
-#pragma omp parallel for
-  for (int y = m0; y < mmax; y += 8) {
+  LITE_PARALLEL_COMMON_BEGIN(y, tid, mmax, m0, 8) {
     float16_t *outptr = dout + (y - m0) * x_len;
     const float16_t *inptr0 = inptr + y * ldin + k0;
     const float16_t *inptr1 = inptr0 + ldin;
@@ -408,6 +408,7 @@ void prepackA_8x16(float16_t *out,
       }
     }
   }
+  LITE_PARALLEL_COMMON_END();
 }
 
 void prepackA_trans_8x16(float16_t *out,
@@ -434,8 +435,7 @@ void prepackA_trans_8x16(float16_t *out,
       vcltq_u16(vld1q_u16(mask_buffer), vdupq_n_u16(right_remain));
   float16x8_t valpha = vdupq_n_f16(alpha);
 
-#pragma omp parallel for
-  for (int y = 0; y < y_len - 3; y += 4) {
+  LITE_PARALLEL_COMMON_BEGIN(y, tid, y_len - 3, 0, 4) {
     const float16_t *ptr0 = inptr + y * ldin;
     const float16_t *ptr1 = ptr0 + ldin;
     const float16_t *ptr2 = ptr1 + ldin;
@@ -505,8 +505,9 @@ void prepackA_trans_8x16(float16_t *out,
           [vmask] "w"(vmask)
         : "cc", "memory", "v0", "v1", "v2", "v3");
   }
-#pragma omp parallel for
-  for (int y = 4 * (y_len / 4); y < y_len; ++y) {
+  LITE_PARALLEL_COMMON_END();
+
+  LITE_PARALLEL_COMMON_BEGIN(y, tid, y_len, 4 * (y_len / 4), 1) {
     const float16_t *ptr0 = inptr + y * ldin;
     float16_t *outptr_row_col = outptr + y * 8;
     int cnt_col = cnt;
@@ -544,6 +545,7 @@ void prepackA_trans_8x16(float16_t *out,
           [vmask] "w"(vmask)
         : "cc", "memory", "v0", "v1", "v2", "v3");
   }
+  LITE_PARALLEL_COMMON_END();
 }
 #else
 void prepackA_8x16(float16_t *out,
@@ -567,8 +569,7 @@ void prepackA_8x16(float16_t *out,
   int cnt_4 = remain >> 2;
   remain = remain & 3;
   float16x8_t valpha = vdupq_n_f16(alpha);
-#pragma omp parallel for
-  for (int y = m0; y < mmax; y += 8) {
+  LITE_PARALLEL_COMMON_BEGIN(y, tid, mmax, m0, 8) {
     float16_t *outptr = dout + (y - m0) * x_len;
     const float16_t *inptr0 = inptr + y * ldin + k0;
     const float16_t *inptr1 = inptr0 + ldin;
@@ -739,6 +740,7 @@ void prepackA_8x16(float16_t *out,
       }
     }
   }
+  LITE_PARALLEL_COMMON_END();
 }
 
 void prepackA_trans_8x16(float16_t *out,
@@ -765,8 +767,7 @@ void prepackA_trans_8x16(float16_t *out,
       vcltq_u16(vld1q_u16(mask_buffer), vdupq_n_u16(right_remain));
   float16x8_t valpha = vdupq_n_f16(alpha);
 
-#pragma omp parallel for
-  for (int y = 0; y < y_len - 3; y += 4) {
+  LITE_PARALLEL_COMMON_BEGIN(y, tid, y_len - 3, 0, 4) {
     const float16_t *ptr0 = inptr + y * ldin;
     const float16_t *ptr1 = ptr0 + ldin;
     const float16_t *ptr2 = ptr1 + ldin;
@@ -832,8 +833,9 @@ void prepackA_trans_8x16(float16_t *out,
           [vmask] "w"(vmask)
         : "cc", "memory", "q0", "q1", "q2", "q3");
   }
-#pragma omp parallel for
-  for (int y = 4 * (y_len / 4); y < y_len; ++y) {
+  LITE_PARALLEL_COMMON_END();
+
+  LITE_PARALLEL_COMMON_BEGIN(y, tid, y_len, 4 * (y_len / 4), 1) {
     const float16_t *ptr0 = inptr + y * ldin;
     float16_t *outptr_row_col = outptr + y * 8;
     int cnt_col = cnt;
@@ -871,6 +873,7 @@ void prepackA_trans_8x16(float16_t *out,
           [vmask] "w"(vmask)
         : "cc", "memory", "q0", "q1", "q2", "q3");
   }
+  LITE_PARALLEL_COMMON_END();
 }
 #endif
 
@@ -909,8 +912,7 @@ void loadb(float16_t *out,
   int stride_w_4 = stride_16 * cnt;
   int stride_w_1 = stride_w_4 + stride_4 * rem_cnt;
 
-#pragma omp parallel for
-  for (int y = 0; y < y_len - 3; y += 4) {
+  LITE_PARALLEL_COMMON_BEGIN(y, tid, y_len - 3, 0, 4) {
     const uint16_t *ptr0 = inptr + y * ldin;
     const uint16_t *ptr1 = ptr0 + ldin;
     const uint16_t *ptr2 = ptr1 + ldin;
@@ -971,9 +973,9 @@ void loadb(float16_t *out,
       }
     }
   }
+  LITE_PARALLEL_COMMON_END();
 
-#pragma omp parallel for
-  for (int y = cnt_y; y < y_len; ++y) {
+  LITE_PARALLEL_COMMON_BEGIN(y, tid, y_len, cnt_y, 1) {
     const uint16_t *ptr0 = inptr + y * ldin;
     uint16_t *outptr_row_col = outptr_row + y * cnt_16;
     uint16_t *outptr_row_4 = outptr_row + stride_w_4 + y * cnt_4;
@@ -1003,6 +1005,7 @@ void loadb(float16_t *out,
       }
     }
   }
+  LITE_PARALLEL_COMMON_END();
 }
 
 void loadb_trans(float16_t *out,
@@ -1186,6 +1189,7 @@ void loadb_trans(float16_t *out,
       *outptr++ = *inptr15++;
     }
   }
+
   for (; y < nmax - 3; y += 4) {
     const uint16_t *inptr0 = inptr + y * ldin + k0;
     const uint16_t *inptr1 = inptr0 + ldin;
@@ -1321,8 +1325,7 @@ void loadb(float16_t *out,
   int stride_w_4 = stride_12 * cnt;
   int stride_w_1 = stride_w_4 + stride_4 * rem_cnt;
 
-#pragma omp parallel for
-  for (int y = 0; y < y_len - 3; y += 4) {
+  LITE_PARALLEL_COMMON_BEGIN(y, tid, y_len - 3, 0, 4) {
     const uint16_t *ptr0 = inptr + y * ldin;
     const uint16_t *ptr1 = ptr0 + ldin;
     const uint16_t *ptr2 = ptr1 + ldin;
@@ -1383,9 +1386,9 @@ void loadb(float16_t *out,
       }
     }
   }
+  LITE_PARALLEL_COMMON_END();
 
-#pragma omp parallel for
-  for (int y = cnt_y; y < y_len; ++y) {
+  LITE_PARALLEL_COMMON_BEGIN(y, tid, y_len, cnt_y, 1) {
     const uint16_t *ptr0 = inptr + y * ldin;
     uint16_t *outptr_row_col = outptr_row + y * cnt_12;
     uint16_t *outptr_row_4 = outptr_row + stride_w_4 + y * cnt_4;
@@ -1415,6 +1418,7 @@ void loadb(float16_t *out,
       }
     }
   }
+  LITE_PARALLEL_COMMON_END();
 }
 
 void loadb_trans(float16_t *out,
@@ -1577,6 +1581,7 @@ void loadb_trans(float16_t *out,
       *outptr++ = *inptr11++;
     }
   }
+
   for (; y < nmax - 3; y += 4) {
     const uint16_t *inptr0 = inptr + y * ldin + k0;
     const uint16_t *inptr1 = inptr0 + ldin;
@@ -1903,8 +1908,8 @@ void gemm_prepack_8x16(bool is_transB,
     } else {
       loadb(b_pannel, B, ldb, 0, K, x0, xmax);
     }
-#pragma omp parallel for num_threads(threads)
-    for (unsigned int y = 0; y < M; y += MBLOCK_FP16) {
+
+    LITE_PARALLEL_COMMON_BEGIN(y, tid, M, 0, MBLOCK_FP16) {
       unsigned int ymax = y + MBLOCK_FP16;
       if (ymax > M) {
         ymax = M;
@@ -2588,6 +2593,7 @@ void gemm_prepack_8x16(bool is_transB,
         }
       }
     }
+    LITE_PARALLEL_COMMON_END();
   }
 }
 #undef FMLA_N00_4
@@ -2664,8 +2670,8 @@ void gemm_prepack_8x12(bool is_transB,
     } else {
       loadb(b_pannel, B, ldb, 0, K, x0, xmax);
     }
-#pragma omp parallel for num_threads(threads)
-    for (unsigned int y = 0; y < M; y += MBLOCK_FP16) {
+
+    LITE_PARALLEL_COMMON_BEGIN(y, tid, M, 0, MBLOCK_FP16) {
       unsigned int ymax = y + MBLOCK_FP16;
       if (ymax > M) {
         ymax = M;
@@ -3669,6 +3675,7 @@ void gemm_prepack_8x12(bool is_transB,
         }
       }
     }
+    LITE_PARALLEL_COMMON_END();
   }
 }
 #endif
