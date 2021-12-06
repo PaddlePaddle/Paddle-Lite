@@ -13,65 +13,65 @@
 # limitations under the License.
 
 if(LITE_WITH_OPENCL)
-  include(backends/opencl)
+  include(backend/opencl)
 endif()
 
 if(LITE_WITH_RKNPU)
-  include(backends/rknpu)
+  include(backend/rknpu)
 endif()
 
 if(LITE_WITH_INTEL_FPGA)
-  include(backends/intel_fpga)
+  include(backend/intel_fpga)
 endif()
 
 if(LITE_WITH_NPU)
-  include(backends/npu)
+  include(backend/npu)
 endif()
 
 if(LITE_WITH_XPU)
-  include(backends/xpu)
+  include(backend/xpu)
 endif()
 
 if(LITE_WITH_MLU)
-  include(mlu)
+  include(backend/mlu)
 endif()
 
 if(LITE_WITH_CUDA)
-  include(cuda)
+  include(backend/cuda)
 endif()
 
 if(LITE_WITH_BM)
-  include(bm)
+  include(backend/bm)
 endif()
 
-include(backends/x86)
+include(backend/x86)
 
 # Add dependencies
-include(generic)                # simplify cmake module
-include(configure)              # add paddle env configuration
+include(config/generic)                # simplify cmake module
+include(config/configure)              # add paddle env configuration
 if(LITE_WITH_ARM)
   message(STATUS "Building the mobile framework")
-  include(postproject)
+  include(config/postproject)
   if(NOT LITE_ON_TINY_PUBLISH)
     include(external/gflags)    # download, build, install gflags
     include(external/gtest)     # download, build, install gtest
-    include(ccache)
+    include(external/ccache)
     include(external/protobuf)  # download, build, install protobuf
   endif()
 else()
-  include(coveralls)
+  include(external/coveralls)
   include(external/gflags)      # download, build, install gflags
   include(external/glog)        # download, build, install glog
   include(external/gtest)       # download, build, install gtest
   include(external/protobuf)    # download, build, install protobuf
   include(external/openblas)    # download, build, install openblas
   include(external/eigen)       # download eigen3
-  include(cudnn)
-  include(ccache)               # set ccache for compilation
+  include(external/cudnn)
+  include(external/ccache)               # set ccache for compilation
   include(util)                 # set unittest and link libs
-  include(version)              # set PADDLE_VERSION
+  include(config/version)              # set PADDLE_VERSION
   if(NOT APPLE)
-    include(flags)
+    include(config/flags)
   endif()
   set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
   set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")

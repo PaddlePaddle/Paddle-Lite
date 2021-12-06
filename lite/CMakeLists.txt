@@ -1,4 +1,4 @@
-include(lite)
+include(util/lite)
 
 message(STATUS "LITE_WITH_CUDA:\t${LITE_WITH_CUDA}")
 message(STATUS "LITE_WITH_X86:\t${LITE_WITH_X86}")
