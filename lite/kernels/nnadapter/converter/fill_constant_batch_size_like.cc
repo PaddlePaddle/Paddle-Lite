@@ -67,34 +67,45 @@ int ConvertFillConstantBatchSizeLike(Converter* converter,
       LOG(FATAL) << "Not supported dtype: " << dtype;
       break;
   }
-  // Fill like out operand
+  // Fill_like out operand
   auto fill_like_out_operand = converter->AddOutputOperand(out_name);
-  // Fill like operation
+  // Fill_like operation
   converter->AddOperation(NNADAPTER_FILL_LIKE,
                           {input_operand, zero_value_operand},
                           {fill_like_out_operand});
-  // Reduce mean operation
-  std::vector<int> axes = {};
-  for (int i = 0; i < input_rank; i++) {
-    if (i == input_dim_idx) continue;
-    axes.push_back(i);
+  // Transpose operation
+  std::vector<int> perm_axes = {input_dim_idx};
+  for (int i = 1; i < input_rank; i++) {
+    if (i == input_dim_idx) {
+      perm_axes.push_back(0);
+      continue;
+    }
+    perm_axes.push_back(i);
   }
-  auto axes_operand = converter->AddConstantOperand(axes);
-  auto keep_dim_operand = converter->AddConstantOperand(1);
-  auto reduce_mean_output_operand = converter->AddOutputOperand(out_name);
-  converter->AddOperation(
-      NNADAPTER_REDUCE_MEAN,
-      {fill_like_out_operand, axes_operand, keep_dim_operand},
-      {reduce_mean_output_operand});
+  auto perm_operand = converter->AddConstantOperand(perm_axes);
+  auto transpose_output_operand = converter->AddOutputOperand(out_name);
+  converter->AddOperation(NNADAPTER_TRANSPOSE,
+                          {fill_like_out_operand, perm_operand},
+                          {transpose_output_operand});
+  // Slice operation
+  std::vector<int> slice_axes = {};
+  for (int i = 1; i < input_rank; i++) {
+    slice_axes.push_back(i);
+  }
+  auto starts = std::vector<int>(slice_axes.size(), 0);
+  auto ends = std::vector<int>(slice_axes.size(), 1);
+  auto steps = std::vector<int>(slice_axes.size(), 1);
+  auto slice_out_operand = converter->AddSliceOperation(
+      transpose_output_operand, slice_axes, starts, ends, steps, out_name);
   // Reshape operation
   std::vector<int> input_shape = std::vector<int>(shape_size, 1);
   input_shape[output_dim_idx] = -1;
   auto input_shape_operand = converter->AddConstantOperand(input_shape);
   auto reshape_output_operand = converter->AddOutputOperand(out_name);
   converter->AddOperation(NNADAPTER_RESHAPE,
-                          {reduce_mean_output_operand, input_shape_operand},
+                          {slice_out_operand, input_shape_operand},
                           {reshape_output_operand});
-  // Elementwise add
+  // Elementwise add operation
   std::vector<int64_t> out_shape;
   int32_t shape_count = 1;
   shape[output_dim_idx] = 1;
