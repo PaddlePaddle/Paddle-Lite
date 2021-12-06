@@ -31,6 +31,8 @@ parser.add_argument(
     "--model_file", default="", type=str, help="Model file")
 parser.add_argument(
     "--param_file", default="", type=str, help="Combined model param file")
+parser.add_argument(
+    "--enable_opencl", action="store_true", help="Enable OpenCL or not")
 
 def RunModel(args):
     # 1. Set config information
@@ -40,8 +42,21 @@ def RunModel(args):
         config.set_param_file(args.param_file)
     else:
         config.set_model_dir(args.model_dir)
+
     # For arm platform (armlinux), you can set places = [Place(TargetType.ARM, PrecisionType.FP32)]
-    places = [Place(TargetType.X86, PrecisionType.FP32)]
+    if args.enable_opencl:
+        places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
+                  Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
+                  Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+                  Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageDefault),
+                  Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageFolder),
+                  Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+                  Place(TargetType.X86, PrecisionType.FP32),
+                  Place(TargetType.ARM, PrecisionType.FP32),
+                  Place(TargetType.Host, PrecisionType.FP32)]
+    else:
+        places = [Place(TargetType.X86, PrecisionType.FP32)]
+
     config.set_valid_places(places)
 
     # 2. Create paddle predictor

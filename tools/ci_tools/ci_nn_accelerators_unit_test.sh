@@ -259,33 +259,36 @@ function run_unit_test_on_remote_device() {
     $remote_device_run $remote_device_name shell "rm -f $remote_device_work_dir/$target_name"
     $remote_device_run $remote_device_name push "$target_path" "$remote_device_work_dir"
 
-    local command_line="./$target_name"
+    local test_cmd_line="./$target_name"
+    local clean_cmd_line="rm -rf ./$target_name"
     # Copy the model files to the remote device
     if [[ -n "$model_dir" ]]; then
         local model_name=$(basename $model_dir)
-        $remote_device_run $remote_device_name shell "rm -rf $remote_device_work_dir/$model_name"
         $remote_device_run $remote_device_name push "$model_dir" "$remote_device_work_dir"
-        command_line="$command_line --model_dir ./$model_name"
+        test_cmd_line="$test_cmd_line --model_dir ./$model_name"
+        clean_cmd_line="$clean_cmd_line; rm -rf ./$model_name"
     fi
 
     # Copy the test data files to the remote device
     if [[ -n "$data_dir" ]]; then
         local data_name=$(basename $data_dir)
-        $remote_device_run $remote_device_name shell "rm -rf $remote_device_work_dir/$data_name"
         $remote_device_run $remote_device_name push "$data_dir" "$remote_device_work_dir"
-        command_line="$command_line --data_dir ./$data_name"
+        test_cmd_line="$test_cmd_line --data_dir ./$data_name"
+        clean_cmd_line="$clean_cmd_line; rm -rf ./$data_name"
     fi
 
     # Copy the config files to the remote device
     if [[ -n "$config_dir" ]]; then
         local config_name=$(basename $config_dir)
-        $remote_device_run $remote_device_name shell "rm -rf $remote_device_work_dir/$config_name"
         $remote_device_run $remote_device_name push "$config_dir" "$remote_device_work_dir"
-        command_line="$command_line --config_dir ./$config_name"
+        test_cmd_line="$test_cmd_line --config_dir ./$config_name"
+        clean_cmd_line="$clean_cmd_line; rm -rf ./$config_name"
     fi
 
-    # Run the model on the remote device
-    $remote_device_run $remote_device_name shell "cd $remote_device_work_dir; export GLOG_v=$UNIT_TEST_LOG_LEVEL; LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. $command_line"
+    # Run the test on the remote device
+    $remote_device_run $remote_device_name shell "cd $remote_device_work_dir; export GLOG_v=$UNIT_TEST_LOG_LEVEL; LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. $test_cmd_line"
+    # Clean the resources on the remote device, such as model and test data
+    $remote_device_run $remote_device_name shell "cd $remote_device_work_dir; $clean_cmd_line"
 }
 
 function build_and_test_on_remote_device() {

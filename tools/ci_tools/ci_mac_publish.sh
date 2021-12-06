@@ -1,14 +1,8 @@
 #!/bin/bash
 #
-# Start the CI task of examining Android inference lib compiling.
+# Start the CI task for inference lib compiling on MacOS platform.
 set +x
 set -e
-
-#####################################################################################################
-# Usage: test the publish period on Android platform.
-# Data: 20210104
-# Author: DannyIsFunny
-#####################################################################################################
 
 #####################################################################################################
 # 1. global variables, you can change them according to your requirements
@@ -43,7 +37,7 @@ function prepare_model {
 }
 
 ####################################################################################################
-# Functions of Android compiling test.
+# Functions of MacOS compiling test.
 # Globals:
 #   WORKSPACE
 # Arguments:
@@ -130,7 +124,69 @@ function publish_inference_lib {
   done
 }
 
+function publish_metal_lib {
+  cd $WORKSPACE
+  # Local variables
+  python_version=$1
+  with_metal=$2
+  with_opencl=$3
+  # Remove Compiling Cache
+  rm -rf build*
+
+  # Step1. Compiling python installer on mac
+  ./lite/tools/build_linux.sh \
+    --with_python=ON \
+    --python_version=$python_version \
+    --with_opencl=${with_opencl} \
+    --with_metal=${with_metal} \
+    --with_extra=$BUILD_EXTRA \
+    --with_exception=$WITH_EXCEPTION \
+    --with_profile=$WITH_PROFILE \
+    --with_precision_profile=$WITH_PRECISION_PROFILE \
+    --arch=x86
+
+  # Step2. Checking results: cplus and python inference lib.
+  build_dir=build.lite.linux.x86.gcc
+  if [ ${with_opencl} == ON ]; then
+    build_dir=${build_dir}.opencl
+  fi
+  if [ ${with_metal} == ON ]; then
+    build_dir=${build_dir}.metal
+  fi
+
+  if [ -d ${build_dir}/inference_lite_lib/python/install/dist ]; then
+    cd ${build_dir}
+    prepare_model mobilenet_v1 $mobilenet_v1_url
+  else
+    echo "dist not found."
+    exit 1
+  fi
+
+  # Step3. Test x86 cxx demo
+  local cxx_demo_dir=${WORKSPACE}/${build_dir}/inference_lite_lib/demo/cxx/
+  if [ -d ${cxx_demo_dir} ]; then
+    # full demo
+    cd ${cxx_demo_dir}/mobilenetv1_full/
+    sh build.sh --with_metal=${with_metal}
+    # ./mobilenet_full_api $WORKSPACE/${build_dir}/mobilenet_v1  1,3,224,224  10  2  0
+
+    # light demo
+    # cd ${cxx_demo_dir}/mobilenetv1_light/
+    # sh build.sh
+    # ./mobilenet_light_api $WORKSPACE/${build_dir}/mobilenet_v1_x86_opencl.nb 1,3,224,224  10  2  0
+  else
+    echo -e "Directory: ${cxx_demo_dir} not found!"
+    exit 1
+  fi
+}
+
 # Compiling test
 for version in ${PYTHON_VERSION[@]}; do
     publish_inference_lib $version
+done
+
+# Compiling test (use Metal)
+# publish_metal_lib ${py_version} ${with_metal} ${with_opencl}
+for version in ${PYTHON_VERSION[@]}; do
+    publish_metal_lib $version ON OFF
 done
