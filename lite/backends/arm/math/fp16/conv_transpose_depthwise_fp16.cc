@@ -14,6 +14,7 @@
 
 #include "lite/backends/arm/math/fp16/conv_transpose_depthwise_fp16.h"
 #include <arm_neon.h>
+#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
