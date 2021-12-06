@@ -158,6 +158,13 @@ void BindLiteCxxConfig(py::module *m) {
       .def("set_mlu_first_conv_mean", &CxxConfig::set_mlu_first_conv_mean)
       .def("set_mlu_first_conv_std", &CxxConfig::set_mlu_first_conv_std);
 #endif
+#ifdef LITE_WITH_METAL
+  cxx_config.def("set_metal_use_mps", &CxxConfig::set_metal_use_mps)
+      .def("set_metal_use_memory_reuse", &CxxConfig::set_metal_use_memory_reuse)
+      .def("set_metal_lib_path",
+           &CxxConfig::set_metal_lib_path,
+           py::arg("flag") = true);
+#endif
 }
 
 // TODO(sangoly): Should MobileConfig be renamed to LightConfig ??
@@ -208,7 +215,8 @@ void BindLitePlace(py::module *m) {
       .value("MLU", TargetType::kMLU)
       .value("RKNPU", TargetType::kRKNPU)
       .value("INTEL_FPGA", TargetType::kIntelFPGA)
-      .value("Any", TargetType::kAny);
+      .value("Any", TargetType::kAny)
+      .value("Metal", TargetType::kMetal);
 
   // PrecisionType
   py::enum_<PrecisionType>(*m, "PrecisionType")
@@ -230,7 +238,9 @@ void BindLitePlace(py::module *m) {
       .value("ImageDefault", DataLayoutType::kImageDefault)
       .value("ImageFolder", DataLayoutType::kImageFolder)
       .value("ImageNW", DataLayoutType::kImageNW)
-      .value("Any", DataLayoutType::kAny);
+      .value("Any", DataLayoutType::kAny)
+      .value("MetalTexture2DArray", DataLayoutType::kMetalTexture2DArray)
+      .value("MetalTexture2D", DataLayoutType::kMetalTexture2D);
 
   // Place
   py::class_<Place>(*m, "Place")
