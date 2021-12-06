@@ -324,6 +324,11 @@ class AutoScanBaseTest(unittest.TestCase):
         def run_test(prog_config):
             return self.run_test(quant=quant, prog_configs=[prog_config])
 
+        # if current unittest is not active on the input target, we will exit directly.
+        if not self.is_actived():
+            logging.info("Error: This test is not actived on " + self.get_target())
+            return
+
         generator = st.composite(program_generator)
         loop_func = given(generator())(run_test)
         if reproduce is not None:
@@ -395,7 +400,7 @@ class AutoScanBaseTest(unittest.TestCase):
 
 
     def is_actived(self) -> bool:
-        for valid_place_ in valid_places:
+        for valid_place_ in self.valid_places:
             if self.get_target() in valid_place_[0]:
                 return True
         return False
