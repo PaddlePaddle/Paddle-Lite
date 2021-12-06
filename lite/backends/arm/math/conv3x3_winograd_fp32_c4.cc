@@ -280,10 +280,16 @@ void conv_compute_6x6_3x3(const float* input,
           // trans output
           for (int ci = 0; ci < oc_4; ++ci) {
             if (param.bias) {
-              bias_value[0] = bias[ci * 4];
-              bias_value[1] = bias[ci * 4 + 1];
-              bias_value[2] = bias[ci * 4 + 2];
-              bias_value[3] = bias[ci * 4 + 3];
+              if (ci * 4 + 4 < chout) {
+                bias_value[0] = bias[ci * 4];
+                bias_value[1] = bias[ci * 4 + 1];
+                bias_value[2] = bias[ci * 4 + 2];
+                bias_value[3] = bias[ci * 4 + 3];
+              } else {
+                for (int p = 0; p < 4 && ci * 4 + p < chout; p++) {
+                  bias_value[p] = bias[ci * 4 + p];
+                }
+              }
             }
 
             float* dst_ci = dst_ptr + ci * oc_4_stride;
@@ -320,10 +326,16 @@ void conv_compute_6x6_3x3(const float* input,
         } else {
           for (int ci = 0; ci < oc_4; ++ci) {
             if (param.bias) {
-              bias_value[0] = bias[ci * 4];
-              bias_value[1] = bias[ci * 4 + 1];
-              bias_value[2] = bias[ci * 4 + 2];
-              bias_value[3] = bias[ci * 4 + 3];
+              if (ci * 4 + 4 < chout) {
+                bias_value[0] = bias[ci * 4];
+                bias_value[1] = bias[ci * 4 + 1];
+                bias_value[2] = bias[ci * 4 + 2];
+                bias_value[3] = bias[ci * 4 + 3];
+              } else {
+                for (int p = 0; p < 4 && ci * 4 + p < chout; p++) {
+                  bias_value[p] = bias[ci * 4 + p];
+                }
+              }
             }
             // trans output
             float* dst_ci = dst_ptr + ci * oc_4_stride;
@@ -568,10 +580,16 @@ void conv_compute_4x4_3x3(const float* input,
           // trans output
           for (int ci = 0; ci < oc_4; ++ci) {
             if (param.bias) {
-              bias_value[0] = bias[ci * 4];
-              bias_value[1] = bias[ci * 4 + 1];
-              bias_value[2] = bias[ci * 4 + 2];
-              bias_value[3] = bias[ci * 4 + 3];
+              if (ci * 4 + 4 < chout) {
+                bias_value[0] = bias[ci * 4];
+                bias_value[1] = bias[ci * 4 + 1];
+                bias_value[2] = bias[ci * 4 + 2];
+                bias_value[3] = bias[ci * 4 + 3];
+              } else {
+                for (int p = 0; p < 4 && ci * 4 + p < chout; p++) {
+                  bias_value[p] = bias[ci * 4 + p];
+                }
+              }
             }
 
             float* dst_ci = dst_ptr + ci * oc_4_stride;
@@ -608,10 +626,16 @@ void conv_compute_4x4_3x3(const float* input,
         } else {
           for (int ci = 0; ci < oc_4; ++ci) {
             if (param.bias) {
-              bias_value[0] = bias[ci * 4];
-              bias_value[1] = bias[ci * 4 + 1];
-              bias_value[2] = bias[ci * 4 + 2];
-              bias_value[3] = bias[ci * 4 + 3];
+              if (ci * 4 + 4 < chout) {
+                bias_value[0] = bias[ci * 4];
+                bias_value[1] = bias[ci * 4 + 1];
+                bias_value[2] = bias[ci * 4 + 2];
+                bias_value[3] = bias[ci * 4 + 3];
+              } else {
+                for (int p = 0; p < 4 && ci * 4 + p < chout; p++) {
+                  bias_value[p] = bias[ci * 4 + p];
+                }
+              }
             }
             // trans output
             float* dst_ci = dst_ptr + ci * oc_4_stride;
@@ -849,10 +873,16 @@ void conv_compute_2x2_3x3(const float* input,
           // trans output
           for (int ci = 0; ci < oc_4; ++ci) {
             if (param.bias) {
-              bias_value[0] = bias[ci * 4];
-              bias_value[1] = bias[ci * 4 + 1];
-              bias_value[2] = bias[ci * 4 + 2];
-              bias_value[3] = bias[ci * 4 + 3];
+              if (ci * 4 + 4 < chout) {
+                bias_value[0] = bias[ci * 4];
+                bias_value[1] = bias[ci * 4 + 1];
+                bias_value[2] = bias[ci * 4 + 2];
+                bias_value[3] = bias[ci * 4 + 3];
+              } else {
+                for (int p = 0; p < 4 && ci * 4 + p < chout; p++) {
+                  bias_value[p] = bias[ci * 4 + p];
+                }
+              }
             }
 
             float* dst_ci = dst_ptr + ci * oc_4_stride;
@@ -883,11 +913,18 @@ void conv_compute_2x2_3x3(const float* input,
         } else {
           for (int ci = 0; ci < oc_4; ++ci) {
             if (param.bias) {
-              bias_value[0] = bias[ci * 4];
-              bias_value[1] = bias[ci * 4 + 1];
-              bias_value[2] = bias[ci * 4 + 2];
-              bias_value[3] = bias[ci * 4 + 3];
+              if (ci * 4 + 4 < chout) {
+                bias_value[0] = bias[ci * 4];
+                bias_value[1] = bias[ci * 4 + 1];
+                bias_value[2] = bias[ci * 4 + 2];
+                bias_value[3] = bias[ci * 4 + 3];
+              } else {
+                for (int p = 0; p < 4 && ci * 4 + p < chout; p++) {
+                  bias_value[p] = bias[ci * 4 + p];
+                }
+              }
             }
+
             // trans output
             float* dst_ci = dst_ptr + ci * oc_4_stride;
             float* src_ci = src_ptr + ci * tile_count * 4;
@@ -1106,10 +1143,16 @@ void conv_compute_2x2_3x3_small(const float* input,
           // trans output
           for (int ci = 0; ci < oc_4; ++ci) {
             if (param.bias) {
-              bias_value[0] = bias[ci * 4];
-              bias_value[1] = bias[ci * 4 + 1];
-              bias_value[2] = bias[ci * 4 + 2];
-              bias_value[3] = bias[ci * 4 + 3];
+              if (ci * 4 + 4 < chout) {
+                bias_value[0] = bias[ci * 4];
+                bias_value[1] = bias[ci * 4 + 1];
+                bias_value[2] = bias[ci * 4 + 2];
+                bias_value[3] = bias[ci * 4 + 3];
+              } else {
+                for (int p = 0; p < 4 && ci * 4 + p < chout; p++) {
+                  bias_value[p] = bias[ci * 4 + p];
+                }
+              }
             }
 
             float* dst_ci = dst_ptr + ci * oc_4_stride;
@@ -1141,10 +1184,16 @@ void conv_compute_2x2_3x3_small(const float* input,
         } else {
           for (int ci = 0; ci < oc_4; ++ci) {
             if (param.bias) {
-              bias_value[0] = bias[ci * 4];
-              bias_value[1] = bias[ci * 4 + 1];
-              bias_value[2] = bias[ci * 4 + 2];
-              bias_value[3] = bias[ci * 4 + 3];
+              if (ci * 4 + 4 < chout) {
+                bias_value[0] = bias[ci * 4];
+                bias_value[1] = bias[ci * 4 + 1];
+                bias_value[2] = bias[ci * 4 + 2];
+                bias_value[3] = bias[ci * 4 + 3];
+              } else {
+                for (int p = 0; p < 4 && ci * 4 + p < chout; p++) {
+                  bias_value[p] = bias[ci * 4 + p];
+                }
+              }
             }
             // trans output
             float* dst_ci = dst_ptr + ci * oc_4_stride;
@@ -1278,15 +1327,13 @@ void output_trans_c4_post_6x8(const float* src,
                 vaddq_f32(vaddq_f32(tmp135a, vmulq_n_f32(tmp135b, 32)),
                           vmulq_n_f32(tmp135c, 0.03125f)));
 
-  if (bias_value) {
-    float32x4_t bias = vld1q_f32(bias_value);
-    dest0 = vaddq_f32(dest0, bias);
-    dest1 = vaddq_f32(dest1, bias);
-    dest2 = vaddq_f32(dest2, bias);
-    dest3 = vaddq_f32(dest3, bias);
-    dest4 = vaddq_f32(dest4, bias);
-    dest5 = vaddq_f32(dest5, bias);
-  }
+  float32x4_t bias = vld1q_f32(bias_value);
+  dest0 = vaddq_f32(dest0, bias);
+  dest1 = vaddq_f32(dest1, bias);
+  dest2 = vaddq_f32(dest2, bias);
+  dest3 = vaddq_f32(dest3, bias);
+  dest4 = vaddq_f32(dest4, bias);
+  dest5 = vaddq_f32(dest5, bias);
 
   vst1q_f32(dest, dest0);
   vst1q_f32(dest + dest_stride, dest1);
@@ -1356,13 +1403,11 @@ void output_trans_c4_post_4x6(const float* src,
   float32x4_t dest3 =
       vaddq_f32(vaddq_f32(tmp13a, vmulq_n_f32(tmp13b, 8)), src5);
 
-  if (bias_value) {
-    float32x4_t bias = vld1q_f32(bias_value);
-    dest0 = vaddq_f32(dest0, bias);
-    dest1 = vaddq_f32(dest1, bias);
-    dest2 = vaddq_f32(dest2, bias);
-    dest3 = vaddq_f32(dest3, bias);
-  }
+  float32x4_t bias = vld1q_f32(bias_value);
+  dest0 = vaddq_f32(dest0, bias);
+  dest1 = vaddq_f32(dest1, bias);
+  dest2 = vaddq_f32(dest2, bias);
+  dest3 = vaddq_f32(dest3, bias);
 
   vst1q_f32(dest, dest0);
   vst1q_f32(dest + dest_stride, dest1);
@@ -1608,13 +1653,11 @@ void output_trans_c4_post_2x4(const float* src,
   float32x4_t dest01 = vaddq_f32(vaddq_f32(dst10, dst11), dst12);
   float32x4_t dest11 = vsubq_f32(vsubq_f32(dst11, dst12), dst13);
 
-  if (bias_value) {
-    float32x4_t bias = vld1q_f32(bias_value);
-    dest00 = vaddq_f32(dest00, bias);
-    dest10 = vaddq_f32(dest10, bias);
-    dest01 = vaddq_f32(dest01, bias);
-    dest11 = vaddq_f32(dest11, bias);
-  }
+  float32x4_t bias = vld1q_f32(bias_value);
+  dest00 = vaddq_f32(dest00, bias);
+  dest10 = vaddq_f32(dest10, bias);
+  dest01 = vaddq_f32(dest01, bias);
+  dest11 = vaddq_f32(dest11, bias);
 
   vst1q_f32(dest, dest00);
   vst1q_f32(dest + dest_stride, dest10);
