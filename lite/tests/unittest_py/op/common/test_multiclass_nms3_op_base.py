@@ -24,24 +24,26 @@ import hypothesis
 import hypothesis.strategies as st
 
 def sample_program_configs(draw):
-    X_shape = draw(st.sampled_from([[24, 24, 4]]))
-    Y_shape = draw(st.sampled_from([[4, 24, 24]]))
-    background_label = draw(st.sampled_from([1]))
-    score_threshold = draw(st.sampled_from([0.1, 0.3]))
-    nms_threshold = draw(st.sampled_from([0.1, 0.5]))
-    nms_eta = draw(st.sampled_from([0.1]))
-    nms_top_k = draw(st.sampled_from([1, 10, 100]))
-    keep_top_k = draw(st.sampled_from([1]))
+    shape0 = draw(st.integers(min_value=12, max_value=64))
+    shape1 = draw(st.sampled_from([4, 8]))
+    shape2 = draw(st.integers(min_value=12, max_value=64))
+    shape3 = draw(st.integers(min_value=12, max_value=64))
+    X_shape = [shape0, shape2, shape1]
+    Y_shape = [shape1, shape3, shape2]
+    background_label = draw(st.sampled_from([1, 0]))
+    score_threshold = draw(st.floats(min_value=1.0, max_value=10.0))
+    nms_threshold = draw(st.floats(min_value=1.0, max_value=10.0))
+    nms_eta = draw(st.floats(min_value=1.0, max_value=10.0))
+    nms_top_k = draw(st.integers(min_value=1, max_value=64))
+    keep_top_k = draw(st.integers(min_value=1, max_value=64))
     normalized = draw(st.booleans())
-    use_gaussian = draw(st.sampled_from([0.1]))
-    gaussian_sigma = draw(st.sampled_from([0.1]))
-    
 
     multiclass_nms3_op = OpConfig(
         type = "multiclass_nms3",
         inputs = {"BBoxes" : ["input_data_BBoxes"], "Scores" : ["input_data_Scores"]},
-        outputs = {"Out": ["output_data"], "Index": ["Index"], "RoisNum" : ["RoisNum"], "NmsRoisNum" : ["NmsRoisNum"]},
-        attrs = {"background_label":background_label, "score_threshold":score_threshold, "nms_threshold":nms_threshold, "nms_top_k":nms_top_k, "keep_top_k":keep_top_k, "normalized":normalized, "nms_eta":nms_eta})
+        outputs = {"Out" : ["output_data"], "Index" : ["Index"], "RoisNum" : ["RoisNum"], "NmsRoisNum" : ["NmsRoisNum"]},
+        attrs = {"background_label" : background_label, "score_threshold" : score_threshold, "nms_threshold" : nms_threshold,
+            "nms_top_k" : nms_top_k, "keep_top_k" : keep_top_k, "normalized" : normalized, "nms_eta" : nms_eta})
 
     program_config = ProgramConfig(
         ops=[multiclass_nms3_op],
