@@ -31,19 +31,19 @@ def ParsePlaceInfo(place_str):
        if infos[0] in TargetType.__members__:
            return Place(eval("TargetType." + infos[0]))
        else:
-           logging.error("Error place info: " + place_str)
+           logging.fatal("Error place info: " + place_str)
    elif len(infos) == 2 :
        if (infos[0] in TargetType.__members__) and (infos[1] in PrecisionType.__members__):
            return Place(eval("TargetType." + infos[0]), eval("PrecisionType." +  infos[1]))
        else:
-           logging.error("Error place info: " + place_str)
+           logging.fatal("Error place info: " + place_str)
    elif len(infos) == 3 :
        if (infos[0] in TargetType.__members__) and (infos[1] in PrecisionType.__members__) and (infos[2] in DataLayoutType.__members__):
            return Place(eval("TargetType." + infos[0]), eval("PrecisionType." +  infos[1]), eval("DataLayoutType." + infos[2]))
        else:
-           logging.error("Error place info: " + place_str)
+           logging.fatal("Error place info: " + place_str)
    else:
-       logging.error("Error place info: " + place_str)
+       logging.fatal("Error place info: " + place_str)
 
 def ParsePaddleLiteConfig(self, config):
     lite_config = CxxConfig()

@@ -167,7 +167,7 @@ class AutoScanBaseTest(unittest.TestCase):
 
     @abc.abstractmethod
     def fail_log(self, msg: str):
-        logging.error("FAILE: " + msg)
+        logging.fatal("FAILE: " + msg)
 
     @abc.abstractmethod
     def success_log(self, msg: str):
@@ -349,13 +349,13 @@ class AutoScanBaseTest(unittest.TestCase):
             logging.warning(
                 "satisfied_programs = ran_programs - num_ignore_tests / num_predictor_kinds"
             )
-            logging.error(
+            logging.fatal(
                 "At least {} programs need to ran successfully, but now only about {} programs satisfied.".
                 format(min_success_num, successful_ran_programs))
             assert False
         used_time = time.time() - start_time
         if max_duration > 0 and used_time > max_duration:
-            logging.error(
+            logging.fatal(
                 "The duration exceeds {} seconds, if this is neccessary, try to set a larger number for parameter `max_duration`.".
                 format(max_duration))
             assert False
