@@ -54,4 +54,3 @@ def sample_program_configs(draw):
         },
         outputs= ["Out_data"])
     return program_config
-

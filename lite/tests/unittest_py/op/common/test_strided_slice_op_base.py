@@ -75,10 +75,3 @@ def sample_program_configs(draw):
         },
         outputs=["output_data"])
     return program_config
-
-
-
-
-
-
-
