@@ -35,7 +35,7 @@ from hypothesis import given, settings, seed
 import hypothesis.strategies as st
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument("--target", choices=['arm', 'x86','host','opencl','metal'], required=True)
+parser.add_argument("--target", choices=['arm', 'x86','host','opencl','metal'])
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
