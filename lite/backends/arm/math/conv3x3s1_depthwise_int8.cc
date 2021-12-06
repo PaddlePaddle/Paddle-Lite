@@ -820,17 +820,6 @@ void conv_depthwise_3x3s1_int8(Dtype* dout,
         const int8_t* block_inr2 = block_inr1 + in_len;
 
         const int8_t* weight_c = weights + c * w_stride;
-        float bias_local[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-        if (flag_bias) {
-          bias_local[0] = bias[c];
-          bias_local[1] = bias[c + 1];
-          bias_local[2] = bias[c + 2];
-          bias_local[3] = bias[c + 3];
-          bias_local[4] = bias[c + 4];
-          bias_local[5] = bias[c + 5];
-          bias_local[6] = bias[c + 6];
-          bias_local[7] = bias[c + 7];
-        }
 #ifdef __aarch64__
         int8x8_t vw0 = vld1_s8(weight_c);
         int8x8_t vw1 = vld1_s8(weight_c + 8);
@@ -1132,7 +1121,7 @@ void conv_depthwise_3x3s1_int8(Dtype* dout,
                                           wout,
                                           flag_act,
                                           alpha,
-                                          bias_local,
+                                          bias + c,
                                           flag_bias,
                                           ptr_write,
                                           scale + c);
