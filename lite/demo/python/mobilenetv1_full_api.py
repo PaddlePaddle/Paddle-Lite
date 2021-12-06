@@ -77,21 +77,21 @@ def RunModel(args):
         config.set_opencl_binary_path_name(bin_path, bin_name)
 
         '''
-        opencl tune option
-        CL_TUNE_NONE: 0
-        CL_TUNE_RAPID: 1
-        CL_TUNE_NORMAL: 2
-        CL_TUNE_EXHAUSTIVE: 3
+        opencl tune option:
+        CL_TUNE_NONE
+        CL_TUNE_RAPID
+        CL_TUNE_NORMAL
+        CL_TUNE_EXHAUSTIVE
         '''
         tuned_path = "./"
         tuned_name = "lite_opencl_tuned.bin"
         config.set_opencl_tune(CLTuneMode.CL_TUNE_NORMAL, tuned_path, tuned_name, 4)
 
         '''
-        opencl precision option
-        CL_PRECISION_AUTO: 0, first fp16 if valid, default
-        CL_PRECISION_FP32: 1, force fp32
-        CL_PRECISION_FP16: 2, force fp16
+        opencl precision option:
+        CL_PRECISION_AUTO, first fp16 if valid, default
+        CL_PRECISION_FP32, force fp32
+        CL_PRECISION_FP16, force fp16
         '''
         config.set_opencl_precision(CLPrecisionType.CL_PRECISION_AUTO)
     else:
