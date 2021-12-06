@@ -17,7 +17,7 @@ sys.path.append('../../common')
 sys.path.append('../../../')
 
 import test_slice_op_base
-from auto_scan_test_rpc import AutoScanTest, IgnoreReasons
+from auto_scan_test import AutoScanTest, IgnoreReasons
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import unittest
 
@@ -25,6 +25,10 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 
 class TestSliceOp(AutoScanTest):
+    def __init__(self, *args, **kwargs):
+        AutoScanTest.__init__(self, *args, **kwargs)
+        self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)
+
     def is_program_valid(self, program_config: ProgramConfig) -> bool:
         return True
 
@@ -32,10 +36,7 @@ class TestSliceOp(AutoScanTest):
         return test_slice_op_base.sample_program_configs(draw)
 
     def sample_predictor_configs(self):
-        config = CxxConfig()
-        config.set_valid_places({Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)})
-        config.set_threads(1)
-        yield config, ["slice"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["slice"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
@@ -44,4 +45,4 @@ class TestSliceOp(AutoScanTest):
         self.run_and_statis(quant=False, max_examples=25)
 
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main(argv=[''])
