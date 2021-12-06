@@ -233,7 +233,8 @@ REGISTER_CONVERTER(meshgrid, ConvertMeshgrid, "huawei_ascend_npu");
 REGISTER_CONVERTER(square, ConvertUnaryActivations, "huawei_ascend_npu");
 REGISTER_CONVERTER(tile, ConvertTile, "huawei_ascend_npu");
 REGISTER_CONVERTER(sum, ConvertSum, "huawei_ascend_npu");
-REGISTER_CONVERTER(roi_align, ConvertRoiAlign, "huawei_ascend_npu");
-REGISTER_CONVERTER(grid_sample, ConvertGridSample, "");
 REGISTER_CONVERTER(where, ConvertWhere, "huawei_ascend_npu");
+// TODO(shentanyue): open later
+// REGISTER_CONVERTER(roi_align, ConvertRoiAlign, "huawei_ascend_npu");
+// REGISTER_CONVERTER(grid_sample, ConvertGridSample, "huawei_ascend_npu");
 #endif  // NOLINT
