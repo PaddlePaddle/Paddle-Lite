@@ -38,10 +38,13 @@ def sample_program_configs(draw):
                       "int64" : np.int64,
                       "float32" : np.float32}
 
-    input_type = "float32" # draw(st.sampled_from(["int32", "int64", "float32"]))
-    x_shape = [9, 2, 3, 4] # draw(st.lists(st.integers(min_value=1, max_value=10), min_size=2, max_size=2))
-    x_len_lod = [[0, 2, 5, x_shape[0]]]
-    padded_length = 4
+    input_type = draw(st.sampled_from(["int32", "int64", "float32"]))
+    x_shape = draw(st.lists(st.integers(min_value=1, max_value=10), min_size=2, max_size=7))
+    x_len_lod = generate_input(type="int64", low=0, high=10, shape=[1, len(x_shape)])
+    x_len_lod = np.sort(x_len_lod)
+    x_len_lod[-1] = x_shape[0]
+
+    padded_length = len(x_shape)
     pad_value_shape = [1]
 
     # assume
