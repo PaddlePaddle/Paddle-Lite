@@ -30,7 +30,7 @@ def sample_program_configs(draw):
     weight_shape=draw(st.lists(st.integers(min_value=1, max_value=8), min_size=4, max_size=4))
     paddings=draw(st.sampled_from([[1, 2], [4, 2], [1, 1], [0, 0], [1, 0], [1, 1]]))
     dilations=draw(st.sampled_from([[1, 1], [2, 2]]))
-    groups=draw(st.sampled_from([1, 2]))
+    groups=draw(st.sampled_from([1, 2, in_shape[1]]))
     padding_algorithm=draw(st.sampled_from(["VALID", "SAME"]))
     strides=draw(st.sampled_from([[1, 1], [2, 2]]))
     threshold=draw(st.floats(min_value=0, max_value=1))
