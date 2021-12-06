@@ -53,7 +53,7 @@ def ParsePaddleLiteConfig(self, config):
             valid_places.append(ParsePlaceInfo(place_str))
         lite_config.set_valid_places(valid_places)
     if "thread" in config:
-        lite_config.set_thread(pred_config["thread"])
+        lite_config.set_threads(config["thread"])
     return lite_config
 
 class AutoScanTest(AutoScanBaseTest):
