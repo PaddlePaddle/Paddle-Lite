@@ -25,6 +25,10 @@ import hypothesis.strategies as st
 import argparse
 
 class TestAssignOp(AutoScanTest):
+    def __init__(self, *args, **kwargs):
+        AutoScanTest.__init__(self, *args, **kwargs)
+        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,2])
+
     def is_program_valid(self, program_config: ProgramConfig) -> bool:
         return True
 
@@ -46,12 +50,7 @@ class TestAssignOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        config = CxxConfig()
-        if self.args.target == "host":
-            config.set_valid_places({Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)})
-        else:
-           raise ValueError("[target=" + self.args.target + "] is not supported on unit_test[" + __file__ + "]!")
-        yield config, ["assign"], (1e-5, 1e-5)
+        return ["assign"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass

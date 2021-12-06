@@ -30,13 +30,15 @@ import paddle.inference as paddle_infer
 from typing import Optional, List, Callable, Dict, Any, Set
 from program_config import TensorConfig, OpConfig, ProgramConfig, create_fake_model, create_quant_model
 
+from itertools import product
+from program_config import CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
+
 import hypothesis
 from hypothesis import given, settings, seed
 import hypothesis.strategies as st
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument("--target", choices=['arm', 'x86','host','opencl','metal'])
-
+parser.add_argument("--target", choices=['Host', 'X86','CUDA','ARM','OpenCL','FPGA','NPU','MLU','RKNPU','APU','HUAWEI_ASCEND_NPU','INTEL_FPGA'])
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 settings.register_profile(
@@ -61,6 +63,9 @@ class IgnoreReasonsBase(enum.Enum):
 
 class AutoScanBaseTest(unittest.TestCase):
     def __init__(self, *args, **kwargs):
+        self.valid_places = []
+        self.thread_num = [1]
+
         np.random.seed(1024)
         paddle.enable_static()
         super(AutoScanBaseTest, self).__init__(*args, **kwargs)
@@ -214,8 +219,8 @@ class AutoScanBaseTest(unittest.TestCase):
             results.append(
                 self.run_test_config(model, params, prog_config, base_config,
                                      feed_data))
-            for paddlelite_config, op_list, (
-                    atol, rtol) in self.sample_predictor_configs():
+            op_list_, (atol_, rtol_) = self.sample_predictor_configs()
+            for paddlelite_config in self.get_predictor_configs():
                 self.num_predictor_kinds += 1
                 # ignore info
                 ignore_flag = False
@@ -238,10 +243,10 @@ class AutoScanBaseTest(unittest.TestCase):
                 try:
                     result, opt_model_bytes = self.run_lite_config(model, params, feed_data, pred_config)
                     results.append(result)
-                    self.assert_tensors_near(atol, rtol, results[-1],
+                    self.assert_tensors_near(atol_, rtol_, results[-1],
                                              results[0])
                     if not ignore_flag and self.passes is not None:
-                        self.assert_op_list(opt_model_bytes, op_list)
+                        self.assert_op_list(opt_model_bytes, op_list_)
                 except Exception as e:
                     self.fail_log(
                         self.paddlelite_config_str(pred_config) +
@@ -336,6 +341,7 @@ class AutoScanBaseTest(unittest.TestCase):
         successful_ran_programs = int(self.num_ran_programs -
                                       self.num_ignore_tests /
                                       self.num_predictor_kinds)
+
         logging.info(
             "Number of successfully ran programs approximately equal to {}".
             format(successful_ran_programs))
@@ -354,7 +360,57 @@ class AutoScanBaseTest(unittest.TestCase):
                 format(max_duration))
             assert False
 
-
     @abc.abstractmethod
     def run_lite_config(self, model, params, feed_data, pred_config) -> Dict[str, np.ndarray]:
         raise NotImplementedError
+
+
+    # enable a predictor config
+    # configs will be generated automatically according to inputs
+    def enable_testing_on_place(self, target=None, precision=None, layout=None, thread=None, places=None) -> None:
+        # set thread_num
+        if isinstance(thread,list):
+            self.thread_num = list(set(self.thread_num + thread))
+        if isinstance(thread,int):
+            self.thread_num.append(thread)
+            self.thread_num = list(self.thread_num)
+
+        # if list[Place] is inputed, this will be used directly
+        if places!=None and isinstance(places, list):
+            self.valid_places.append(places)
+            return
+        # otherwise we will generate a list[Place] from the inputed[target\precision\layout]
+        assert  (target is not None)
+        target_ = target if isinstance(target,list) else [target]
+        precision_ = precision if isinstance(precision, list) else [precision]
+        layout_ = precision if isinstance(layout,list) else [layout]
+        for tar_, pre_, lay_ in product(target_, precision_, layout_):
+            self.valid_places.append([Place(tar_, pre_, lay_)])
+        return
+
+
+    def get_target(self) -> str:
+        return self.args.target
+
+
+    def is_actived(self) -> bool:
+        for valid_place_ in valid_places:
+            if self.get_target() in valid_place_[0]:
+                return True
+        return False
+
+    def get_predictor_configs(self) -> List[CxxConfig]:
+        return self.target_to_predictor_configs(self, self.get_target())
+
+    # get valid test configs
+    @staticmethod
+    def target_to_predictor_configs(self,target:str) -> List[CxxConfig]:
+       configs_ = []
+       for elem_ in self.valid_places:
+           if target in elem_[0]:
+               for thread_ in self.thread_num:
+                 config_ = CxxConfig()
+                 config_.set_valid_places(elem_)
+                 config_.set_threads(thread_)
+                 configs_.append(config_)
+       return configs_
