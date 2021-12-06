@@ -219,8 +219,9 @@ class AutoScanBaseTest(unittest.TestCase):
             results.append(
                 self.run_test_config(model, params, prog_config, base_config,
                                      feed_data))
-            op_list_, (atol_, rtol_) = self.sample_predictor_configs()
-            for paddlelite_config in self.get_predictor_configs():
+
+            paddlelite_configs, op_list_, (atol_, rtol_) = self.sample_predictor_configs()
+            for paddlelite_config in paddlelite_configs:
                 self.num_predictor_kinds += 1
                 # ignore info
                 ignore_flag = False
@@ -376,7 +377,7 @@ class AutoScanBaseTest(unittest.TestCase):
             self.thread_num = list(self.thread_num)
 
         # if list[Place] is inputed, this will be used directly
-        if places!=None and isinstance(places, list):
+        if places is not None and isinstance(places, list):
             self.valid_places.append(places)
             return
         # otherwise we will generate a list[Place] from the inputed[target\precision\layout]

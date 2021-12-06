@@ -26,6 +26,11 @@ import hypothesis.strategies as st
 
 
 class TestMulOp(AutoScanTest):
+    def __init__(self, *args, **kwargs):
+        AutoScanTest.__init__(self, *args, **kwargs)
+        self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)
+
+
     def is_program_valid(self, program_config: ProgramConfig) -> bool:
         return True
 
@@ -61,14 +66,7 @@ class TestMulOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        config = CxxConfig()
-        if self.args.target == "arm":
-            config.set_valid_places({Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)})
-            config.set_threads(1)
-        else:
-           raise ValueError("[target=" + self.args.target + "] is not supported on unit_test[" + __file__ + "]!")
-
-        yield config, ["mul"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["mul"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass

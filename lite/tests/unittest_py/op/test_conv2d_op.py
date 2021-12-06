@@ -39,7 +39,7 @@ class TestConv2dOp(AutoScanTest):
 
     def sample_predictor_configs(self):
         config = CxxConfig()
-        return ["conv2d"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["conv2d"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass

@@ -50,7 +50,7 @@ class TestAssignOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return ["assign"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["assign"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
