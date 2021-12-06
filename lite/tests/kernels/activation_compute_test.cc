@@ -264,7 +264,7 @@ class ActivationComputeTester : public arena::TestCase {
       }
       case HARD_SIGMOID: {
         for (int i = 0; i < dims_.production(); ++i) {
-          T tmp = x_data[i] * hard_sigmoid_slope_ + hard_sigmoid_slope_;
+          T tmp = x_data[i] * hard_sigmoid_slope_ + hard_sigmoid_offset_;
           if (tmp < 1.f && tmp > 0.f) {
             output_data[i] = tmp;
           } else if (tmp <= 0.f) {
@@ -336,7 +336,7 @@ class ActivationComputeTester : public arena::TestCase {
     }
     if (act_type_ == HARD_SIGMOID) {
       op_desc->SetAttr("slope", hard_sigmoid_slope_);
-      op_desc->SetAttr("offset", hard_sigmoid_slope_);
+      op_desc->SetAttr("offset", hard_sigmoid_offset_);
     }
     if (act_type_ == MISH) {
       op_desc->SetAttr("threshold", threshold_);
@@ -483,6 +483,8 @@ TEST(Activation_leaky_relu, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-5;
 #else
   return;
 #endif
@@ -996,6 +998,8 @@ TEST(Activation_hard_swish, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-5;
 #else
   return;
 #endif
@@ -1153,6 +1157,8 @@ TEST(Activation_hard_sigmoid_fp32, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-5;
 #else
   return;
 #endif

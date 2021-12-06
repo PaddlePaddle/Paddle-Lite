@@ -166,13 +166,6 @@ void conv_3x3s1_direct_int8(const int8_t* din,
         const int8_t* block_inr3 = block_inr2 + in_len;
 
         const int8_t* weight_c = weights + c * w_stride;
-        float bias_local[4] = {0, 0, 0, 0};
-        if (flag_bias) {
-          bias_local[0] = bias[c];
-          bias_local[1] = bias[c + 1];
-          bias_local[2] = bias[c + 2];
-          bias_local[3] = bias[c + 3];
-        }
         memset(pre_out, 0, pre_out_size * sizeof(int32_t));
         for (int hk = 0; hk < h_kernel; hk += hout_r_kernel) {
           const int8_t* wc0 = weight_c;
@@ -477,7 +470,7 @@ void conv_3x3s1_direct_int8(const int8_t* din,
                                    wout,
                                    flag_act,
                                    alpha,
-                                   bias_local,
+                                   bias + c,
                                    flag_bias,
                                    ptr_write,
                                    scale + c);
