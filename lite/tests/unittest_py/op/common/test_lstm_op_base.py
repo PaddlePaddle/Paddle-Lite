@@ -24,9 +24,10 @@ import hypothesis
 import hypothesis.strategies as st
 
 def sample_program_configs(draw):
-    shape0 = st.integers(min_value=1, max_value=32)
-    shape1 = st.integers(min_value=1, max_value=32)
-    shape2 = st.integers(min_value=1, max_value=32)
+    # lstm run have bugs
+    shape0 = draw(st.integers(min_value=1, max_value=32))
+    shape1 = draw(st.integers(min_value=1, max_value=32))
+    shape2 = draw(st.integers(min_value=1, max_value=32))
     input_lod_ = draw(st.sampled_from([[[shape0, shape1, shape2]]]))
     N = len(input_lod_[0])
     D = 16
@@ -55,10 +56,11 @@ def sample_program_configs(draw):
     candidate_activation_ = draw(st.sampled_from(["tanh"]))
     lstm_op = OpConfig(
         type = "lstm",
-        inputs = {"Input" : ["input_data"], "H0" : ["input_h0_data"], "C0" : ["input_c0_data"], "Weight" : ["input_weight_data"], "Bias" : ["input_bias_data"]},
+        inputs = {"Input" : ["input_data"], "H0" : ["input_h0_data"], "C0" : ["input_c0_data"], "Weight" :
+            ["input_weight_data"], "Bias" : ["input_bias_data"]},
         outputs = { "Hidden": ["output_data_hidden"], "Cell" : ["output_data_cell"]},
-        attrs = {"use_peepholes" : 1, "is_reverse" : 0, "gate_activation" : gate_activation_, "cell_activation" : cell_activation_,
-            "candidate_activation" : candidate_activation_, "is_test" : 1})
+        attrs = {"use_peepholes" : 1, "is_reverse" : 0, "gate_activation" : gate_activation_, "cell_activation"
+            : cell_activation_, "candidate_activation" : candidate_activation_, "is_test" : 1})
     program_config = ProgramConfig(
         ops=[lstm_op],
         weights={},

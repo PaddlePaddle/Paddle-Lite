@@ -24,21 +24,24 @@ import hypothesis
 import hypothesis.strategies as st
 
 def sample_program_configs(draw):
-    #ix = st.integers(min_value=1, max_value=32)
-    #iy = st.integers(min_value=1, max_value=32)
-    #h = st.integers(min_value=1, max_value=32)
-    #dim_t = st.integers(min_value=1, max_value=32)
-    ix, iy, h, dim_t = [5, 8, 20, 4]
+    ix1 = st.integers(min_value=1, max_value=32)
+    iy1 = st.integers(min_value=1, max_value=32)
+    ix2 = st.integers(min_value=1, max_value=32)
+    iy2 = st.integers(min_value=1, max_value=32)
+    ix3 = st.integers(min_value=1, max_value=32)
+    iy3 = st.integers(min_value=1, max_value=32)
+    h = st.integers(min_value=1, max_value=32)
+    dim_t = st.integers(min_value=1, max_value=32)
     def generate_x_data_in_shape(*args, **kwargs):
         return np.random.random((ix, h)).astype('float32')
     def generate_y_data_in_shape(*args, **kwargs):
         return np.random.random((iy, h)).astype('float32')
     def generate_w_data_in_shape(*args, **kwargs):
         return np.random.random((h, dim_t, h)).astype('float32')
-    in_shape_x = draw(st.sampled_from([[ix, h]]))
-    in_shape_y = draw(st.sampled_from([[iy, h]]))
-    input_lod_x = draw(st.sampled_from([[[1, 2, 2]]]))
-    input_lod_y = draw(st.sampled_from([[[3, 1, 4]]]))
+    in_shape_x = draw(st.sampled_from([[ix1 + ix2 + ix3, h]]))
+    in_shape_y = draw(st.sampled_from([[iy1 + iy2 + iy3, h]]))
+    input_lod_x = draw(st.sampled_from([[[ix1, ix2, ix3]]]))
+    input_lod_y = draw(st.sampled_from([[[iy1, iy2, iy3]]]))
     input_weight_shape = draw(st.sampled_from([[h, dim_t, h]]))
     match_matrix_tensor_op = OpConfig(
         type = "match_matrix_tensor",
