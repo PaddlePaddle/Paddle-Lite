@@ -136,8 +136,8 @@ TEST(fill_constant_batch_size_like, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 5e-2;
-  // TestFillConstantBatchSizeLike(place, abs_error);
-  // TestFillConstantBatchSizeLikeValue(place, abs_error);
+  TestFillConstantBatchSizeLike(place, abs_error);
+  TestFillConstantBatchSizeLikeValue(place, abs_error);
   return;
 #else
   return;

@@ -710,6 +710,22 @@ typedef enum {
    */
   NNADAPTER_FILL,
 
+  /**
+   * Generate a tensor with the same shape as input and with 'value'.
+   *
+   * Inputs:
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER or
+   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: value, a NNADAPTER_FLOAT32,  NNADAPTER_INT32, NNADAPTER_INT64 or
+   * NNADAPTER_BOOL scalar.
+   *
+   * Outputs:
+   * * 0: output, a tensor with the same shape as input and with 'value'.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_FILL_LIKE,
+
   /*
    * According to the given start_axis and end_axis flattens successive
    * dimensions.

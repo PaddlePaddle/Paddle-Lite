@@ -103,7 +103,7 @@ class WhereComputeTester : public arena::TestCase {
     fill_data_rand(dy.data(), -1.f, 1.f, x_dims_.production());
     SetCommonTensor(x_, x_dims_, dx.data());
     SetCommonTensor(y_, x_dims_, dy.data());
-    std::vector<int> dc(x_dims_.production());
+    std::vector<uint8_t> dc(x_dims_.production());
     for (int i = 0; i < x_dims_.production(); i++) {
       dc[i] = (i % 2) ? true : false;
     }

@@ -310,7 +310,7 @@ class ReduceSumComputeTester : public arena::TestCase {
   }
 };
 
-void test_reduce_sum(Place place) {
+void test_reduce_sum(Place place, float abs_error) {
   std::vector<std::vector<int>> reduce_dim{
       {0}, {1}, {2}, {3}, {0, 1}, {1, 2}, {2, 3}, {-2, -1}};
   for (auto n : {1, 3}) {
@@ -328,7 +328,7 @@ void test_reduce_sum(Place place) {
                 std::unique_ptr<arena::TestCase> tester(
                     new ReduceSumComputeTester(
                         place, "def", dim, keep_dim, reduce_all, x_dims));
-                arena::Arena arena(std::move(tester), place, 2e-5);
+                arena::Arena arena(std::move(tester), place, abs_error);
                 arena.TestPrecision();
               }
             }
@@ -341,11 +341,11 @@ void test_reduce_sum(Place place) {
 
 TEST(ReduceSum, precision) {
   Place place;
+  float abs_error = 2e-5;
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
-  return;
 #else
   return;
 #endif
@@ -359,7 +359,7 @@ TEST(ReduceSum, precision) {
   return;
 #endif
 
-  test_reduce_sum(place);
+  test_reduce_sum(place, abs_error);
 }
 
 }  // namespace lite
