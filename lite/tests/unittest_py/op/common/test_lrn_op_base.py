@@ -25,16 +25,16 @@ import hypothesis.strategies as st
 
 def sample_program_configs(draw):
     in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size = 4, max_size=4))
-    n_ = draw(st.sampled_from([5,7, 9]))
-    k_ = draw(st.sampled_from([0.9, 1., 1.1]))
-    alpha_ = draw(st.sampled_from([0.9, 1., 1.1]))
-    beta_ = draw(st.sampled_from([0.5, 0.75, 1.]))
+    n_ = draw(st.integers(min_value=1, max_value=8)) * 2 + 1
+    k_ = draw(st.floats(min_value=1.0, max_value=10.0))
+    alpha_ = draw(st.floats(min_value=1.0, max_value=10.0))
+    beta_ = draw(st.floats(min_value=1.0, max_value=10.0))
     data_format_ = draw(st.sampled_from(["NCHW"]))
     lrn_op = OpConfig(
         type = "lrn",
        inputs = {"X" : ["input_data"]},
-        outputs = {"Out": ["output_data"], "MidOut": ["output_data_mid"]},
-        attrs = {"n":n_, "k":k_, "alpha":alpha_, "beta":beta_, "data_format":"NCHW", "is_test":1})
+        outputs = {"Out" : ["output_data"], "MidOut" : ["output_data_mid"]},
+        attrs = {"n" : n_, "k" : k_, "alpha" : alpha_, "beta" : beta_, "data_format" : "NCHW", "is_test" : 1})
     program_config = ProgramConfig(
         ops=[lrn_op],
         weights={},
