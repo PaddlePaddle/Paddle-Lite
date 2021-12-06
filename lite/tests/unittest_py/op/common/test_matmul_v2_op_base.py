@@ -24,16 +24,31 @@ import hypothesis
 import hypothesis.strategies as st
 
 def sample_program_configs(draw):
-    X_shape = draw(st.sampled_from([[24, 24], [24, 24], [24, 24]]))
-    Y_shape = draw(st.sampled_from([[24, 24], [24, 24], [24, 24]]))
-    trans_x = draw(st.booleans())
-    trans_y = draw(st.booleans())
+    shape0 = draw(st.integers(min_value=1, max_value=64))
+    shape1 = draw(st.integers(min_value=1, max_value=64))
+    shape2 = draw(st.integers(min_value=1, max_value=64))
+    batch0 = draw(st.integers(min_value=1, max_value=64)) 
+    batch1 = draw(st.integers(min_value=1, max_value=64)) 
+    transpose_X = draw(st.booleans())
+    transpose_Y = draw(st.booleans())
+    if ((not transpose_X) and (not transpose_Y)):
+        X_shape = [batch0, 1, shape0, shape1]
+        Y_shape = [batch0, shape1, shape2]
+    if ((transpose_X) and (not transpose_Y)):
+        X_shape = [batch1, 1, shape1, shape0]
+        Y_shape = [batch1, 1, shape1, shape2]
+    if ((not transpose_X) and (transpose_Y)):
+        X_shape = [batch0, shape0, shape1]
+        Y_shape = [batch0, shape2, shape1]
+    if ((transpose_X) and (transpose_Y)):
+        X_shape = [batch0, shape1, shape0]
+        Y_shape = [batch0, shape2, shape1]
 
     matmul_v2_op = OpConfig(
         type = "matmul_v2",
         inputs = {"X" : ["input_data_x"], "Y" : ["input_data_y"]},
-        outputs = {"Out": ["output_data"]},
-        attrs = {"trans_x":trans_x, "trans_y":trans_y})
+        outputs = {"Out" : ["output_data"]},
+        attrs = {"trans_x" : transpose_X, "trans_y" : transpose_Y})
     program_config = ProgramConfig(
         ops=[matmul_v2_op],
         weights={},

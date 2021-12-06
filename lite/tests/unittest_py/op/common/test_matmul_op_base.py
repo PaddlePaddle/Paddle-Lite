@@ -24,11 +24,26 @@ import hypothesis
 import hypothesis.strategies as st
 
 def sample_program_configs(draw):
-    X_shape = draw(st.sampled_from([[24, 24]]))
-    Y_shape = draw(st.sampled_from([[24, 24]]))
+    shape0 = draw(st.integers(min_value=1, max_value=64))
+    shape1 = draw(st.integers(min_value=1, max_value=64))
+    shape2 = draw(st.integers(min_value=1, max_value=64))
+    batch0 = draw(st.integers(min_value=1, max_value=64)) 
+    batch1 = draw(st.integers(min_value=1, max_value=64)) 
     transpose_X = draw(st.booleans())
     transpose_Y = draw(st.booleans())
-    alpha = draw(st.sampled_from([0.1, 1.1]))
+    if ((not transpose_X) and (not transpose_Y)):
+        X_shape = [batch0, 1, shape0, shape1]
+        Y_shape = [batch0, shape1, shape2]
+    if ((transpose_X) and (not transpose_Y)):
+        X_shape = [batch1, 1, shape1, shape0]
+        Y_shape = [batch1, 1, shape1, shape2]
+    if ((not transpose_X) and (transpose_Y)):
+        X_shape = [batch0, shape0, shape1]
+        Y_shape = [batch0, shape2, shape1]
+    if ((transpose_X) and (transpose_Y)):
+        X_shape = [batch0, shape1, shape0]
+        Y_shape = [batch0, shape2, shape1]
+    alpha = draw(st.sampled_from([0.1, 1.1, -1.5]))
     fused_reshape_X = draw(st.sampled_from([[]]))
     fused_reshape_Y = draw(st.sampled_from([[]]))
     fused_transpose_X = draw(st.sampled_from([[]]))
@@ -44,7 +59,10 @@ def sample_program_configs(draw):
         type = "matmul",
         inputs = {"X" : ["input_data_x"], "Y" : ["input_data_y"]},
         outputs = {"Out": ["output_data"]},
-        attrs = {"transpose_X":transpose_X, "transpose_Y":transpose_Y, "alpha":alpha, "fused_reshape_X":fused_reshape_X, "fused_reshape_Y":fused_reshape_Y, "fused_transpose_X":fused_transpose_X, "fused_transpose_Y":fused_transpose_Y, "fused_reshape_Out":fused_reshape_Out, "fused_transpose_Out":fused_transpose_Out, "Scale_x":Scale_x, "Scale_y":Scale_y, "Scale_out":Scale_out, "force_fp32_output":force_fp32_output})
+        attrs = {"transpose_X" : transpose_X, "transpose_Y" : transpose_Y, "alpha" : alpha, "fused_reshape_X" : fused_reshape_X,
+            "fused_reshape_Y" : fused_reshape_Y, "fused_transpose_X" : fused_transpose_X, "fused_transpose_Y" : fused_transpose_Y,
+            "fused_reshape_Out" : fused_reshape_Out, "fused_transpose_Out" : fused_transpose_Out, "Scale_x" : Scale_x, "Scale_y" : Scale_y,
+            "Scale_out" : Scale_out, "force_fp32_output" : force_fp32_output})
     program_config = ProgramConfig(
         ops=[matmul_op],
         weights={},
