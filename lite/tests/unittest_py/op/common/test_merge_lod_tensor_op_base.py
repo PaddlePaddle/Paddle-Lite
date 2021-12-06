@@ -35,9 +35,9 @@ def sample_program_configs(draw):
     use_merge_lod_infer = draw(st.sampled_from(["false"]))
     match_matrix_tensor_op = OpConfig(
         type = "merge_lod_tensor",
-        inputs = {"X" : ["input_data_x"], "Mask": ["Mask"], "InTrue" : ["InTrue"], "InFalse":["InFalse"]},
-        outputs = {"Out": ["output_data"]},
-        attrs = {"level":0, "use_merge_lod_infer":["use_merge_lod_infer"]})
+        inputs = {"X" : ["input_data_x"], "Mask" : ["Mask"], "InTrue" : ["InTrue"], "InFalse" : ["InFalse"]},
+        outputs = {"Out" : ["output_data"]},
+        attrs = {"level" : 0, "use_merge_lod_infer" : ["use_merge_lod_infer"]})
     program_config = ProgramConfig(
         ops=[match_matrix_tensor_op],
         weights={},

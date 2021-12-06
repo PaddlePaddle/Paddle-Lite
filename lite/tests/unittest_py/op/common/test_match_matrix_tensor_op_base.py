@@ -24,6 +24,10 @@ import hypothesis
 import hypothesis.strategies as st
 
 def sample_program_configs(draw):
+    #ix = st.integers(min_value=1, max_value=32)
+    #iy = st.integers(min_value=1, max_value=32)
+    #h = st.integers(min_value=1, max_value=32)
+    #dim_t = st.integers(min_value=1, max_value=32)
     ix, iy, h, dim_t = [5, 8, 20, 4]
     def generate_x_data_in_shape(*args, **kwargs):
         return np.random.random((ix, h)).astype('float32')
@@ -38,9 +42,9 @@ def sample_program_configs(draw):
     input_weight_shape = draw(st.sampled_from([[h, dim_t, h]]))
     match_matrix_tensor_op = OpConfig(
         type = "match_matrix_tensor",
-        inputs = {"X" : ["input_data_x"], "Y": ["input_data_y"], "W" : ["W"]},
-        outputs = {"Out": ["output_data"], "tmp":["tmp_data"]},
-        attrs = {"dim_t":dim_t})
+        inputs = {"X" : ["input_data_x"], "Y" : ["input_data_y"], "W" : ["W"]},
+        outputs = {"Out" : ["output_data"], "tmp" : ["tmp_data"]},
+        attrs = {"dim_t" : dim_t})
     program_config = ProgramConfig(
         ops=[match_matrix_tensor_op],
         weights={},
