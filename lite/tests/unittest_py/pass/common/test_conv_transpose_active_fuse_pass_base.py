@@ -19,13 +19,14 @@ from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, Tar
 import numpy as np
 from functools import partial
 from typing import Optional, List, Callable, Dict, Any, Set
-from test_conv_util import UpdatePaddingAndDilation,ConvOutputSize
+from test_conv_util import UpdatePaddingAndDilation,ConvTransposeOutputSize
 import unittest
 
 import hypothesis
 from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 def sample_program_configs(draw):
+    Transpose=draw(st.sampled_from([True]))
     in_shape=draw(st.lists(st.integers(min_value=1, max_value=64), min_size=4, max_size=4))
     weight_shape=draw(st.lists(st.integers(min_value=1, max_value=8), min_size=4, max_size=4))
     paddings=draw(st.sampled_from([[1, 2], [4, 2], [1, 1], [0, 0], [1, 0], [1, 1]]))
@@ -36,16 +37,21 @@ def sample_program_configs(draw):
     threshold=draw(st.floats(min_value=0, max_value=1))
     alpha=draw(st.floats(min_value=0, max_value=1))
     scale=draw(st.floats(min_value=0.5, max_value=5))
-    offset=draw(st.floats(min_value=0, max_value=1)) 
-
-    assume(in_shape[1] == weight_shape[1] * groups)
-    assume(weight_shape[0]%groups==0)    
+    offset=draw(st.floats(min_value=0, max_value=1))
+    output_padding=draw(st.sampled_from([[], draw(st.lists(st.integers(min_value = 0, max_value = 16), min_size = 2, max_size = 2))]))
 
     paddings_,dilations_ = UpdatePaddingAndDilation(in_shape, weight_shape, paddings, dilations, groups, padding_algorithm, strides)
-    conv_out_shape = [in_shape[0], weight_shape[0]]
-    oh,ow = ConvOutputSize(in_shape, weight_shape, dilations_, paddings_, strides)
+    assume(in_shape[1] == weight_shape[0])
+    if len(output_padding):
+        assume(output_padding[0] < max(strides[0], dilations_[0]))
+        assume(output_padding[1] < max(strides[1], dilations_[1]))
+    conv_out_shape = [in_shape[0], weight_shape[1] * groups]
+    oh,ow = ConvTransposeOutputSize(in_shape, weight_shape, dilations_, paddings_, strides)
+    if len(output_padding):
+        oh = oh + output_padding[0]
+        ow = ow + output_padding[1]
     conv_out_shape = conv_out_shape + [oh, ow]
-    assume(oh > 0 and ow > 0)    
+    #assume(oh > 0 and ow > 0)????
 
     Alpha_shape=[]
     mode_data = draw(st.sampled_from(["all", "channel", "element"]))
@@ -70,20 +76,14 @@ def sample_program_configs(draw):
         if act_type_str == "prelu":
             attrs = {"mode": mode_data,
                     "data_format": "NCHW"}
-        return attrs
+        return attrs  
 
     conv_op = OpConfig(
-        type = "conv2d",
+        type = conv_type,
         inputs = {"Input": ["input_data"],"Filter":["weight_data"]},
         outputs = {"Output": ["conv_output_data"]},
-        attrs = {
-            "data_format": 'nchw',
-            "dilations": dilations,
-            "padding_algorithm": padding_algorithm,
-            "groups": groups,
-            "paddings": paddings,
-            "strides": strides
-        })
+        attrs = conv_attrs)
+
     active_op_input={}
     inputs_data={}
     if act_type=="prelu":
@@ -97,8 +97,17 @@ def sample_program_configs(draw):
        inputs_data={"input_data": TensorConfig(shape=in_shape)}       
 
     active_op = OpConfig(
-        type = act_type,
-        inputs = active_op_input,
+        type = "conv2d_transpose",
+        inputs = {
+            "data_format": 'nchw',
+            "dilations": dilations,
+            "padding_algorithm": padding_algorithm,
+            "groups": groups,
+            "paddings": paddings,
+            "strides": strides,
+            "output_size":[],
+            "output_padding":output_padding   
+        },
         outputs = {"Out": ["output_data"]},
         attrs = generate_act_attrs(act_type))
 
