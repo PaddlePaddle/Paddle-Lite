@@ -15,7 +15,7 @@ import sys
 sys.path.append('../../common')
 sys.path.append('../../../')
 
-import test_conv_bn_fuse_pass_base 
+import test_elementwise_active_fuse_pass_base
 from auto_scan_test_rpc import FusePassAutoScanTest
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import unittest
@@ -24,23 +24,25 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 
-class TestConvBnFusePass(FusePassAutoScanTest):
+class TestElementActiveFusePass(FusePassAutoScanTest):
     def is_program_valid(self, program_config: ProgramConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        return test_conv_bn_fuse_pass_base.sample_program_configs(draw)
+        return test_elementwise_active_fuse_pass_base.sample_program_configs(draw, elementwise_type="elementwise_mul")
 
     def sample_predictor_configs(self):
         config = CxxConfig()
         config.set_valid_places({Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)})
-        yield config, ["conv2d"], (1e-5, 1e-5)
+        config.set_threads(1)
+
+        yield config, ["fusion_elementwise_mul_activation"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25, passes=["lite_conv_bn_fuse_pass"])
+        self.run_and_statis(quant=False, max_examples=25, passes=["lite_elementwise_activation_fuse_pass"])
 
 if __name__ == "__main__":
     unittest.main()

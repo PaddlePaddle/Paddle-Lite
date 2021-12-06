@@ -19,13 +19,30 @@ import numpy as np
 from functools import partial
 from typing import Optional, List, Callable, Dict, Any, Set
 import unittest
+import math
 
 import hypothesis
 from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 
+def prior_box_expand_aspect_ratios(aspect_ratios, flip, output_aspect_ratior):
+    epsilon = 1e-6
+    output_aspect_ratior.append(1.0)
+    for i in range(len(aspect_ratios)):
+        ar = aspect_ratios[i]
+        already_exist = False
+        for j in range(len(output_aspect_ratior)):
+            if math.fabs(ar - output_aspect_ratior[j]) < epsilon:
+                already_exist = True
+                break
+
+        if already_exist == False:
+            output_aspect_ratior.append(ar)
+            if flip == True:
+                output_aspect_ratior.append(1.0 / ar)
+
 def sample_program_configs(draw):
-    prior_box_type = draw(st.sampled_from(["density_prior_box", "prior_box"]))
+    prior_box_type = draw(st.sampled_from(["density_prior_box"]))
     if prior_box_type == "density_prior_box":
         #image params
         batch_size = draw(st.integers(min_value=1, max_value=4))
@@ -42,18 +59,17 @@ def sample_program_configs(draw):
         density_prior_box_layer2_h = draw(st.integers(min_value=30, max_value=40))
 
         def generate_image(*args, **kwargs):
-            return np.random.random((batch_size, image_channels, image_w, image_h)).astype('float32')
+            return np.random.random((batch_size, image_channels, image_h, image_w)).astype('float32')
 
         def generate_density_prior_box1(*args, **kwargs):
             return np.random.random((batch_size, density_prior_box_layer1_channels, 
-                            density_prior_box_layer1_w, density_prior_box_layer1_h)).astype('float32')
+                            density_prior_box_layer1_h, density_prior_box_layer1_w)).astype('float32')
 
         def generate_density_prior_box2(*args, **kwargs):
             return np.random.random((batch_size, density_prior_box_layer2_channels, 
-                            density_prior_box_layer2_w, density_prior_box_layer2_h)).astype('float32')
+                            density_prior_box_layer2_h, density_prior_box_layer2_w)).astype('float32')
 
         min_max_aspect_ratios_order = draw(st.sampled_from([True, False]))
-        flip = draw(st.sampled_from([True, False]))
         clip = draw(st.sampled_from([True, False]))
         variances = [0.1, 0.1, 0.2, 0.2]  #common value
 
@@ -75,22 +91,31 @@ def sample_program_configs(draw):
 
         #reshape2 params
         reshape2_w = draw(st.integers(min_value=4, max_value=4))
-        #box_coder params
-        density_prior_box_layer1_length = density_prior_box_layer1_channels * density_prior_box_layer1_w * density_prior_box_layer1_h
-        density_prior_box_layer2_length = density_prior_box_layer2_channels * density_prior_box_layer2_w * density_prior_box_layer2_h
+        #density_prior_box InferShape
+        num_priors_1 = 0
+        for index in range(len(densities_1)):
+            num_priors_1 += len(fixed_ratios_1) * (pow(densities_1[index], 2))
+        density_prior_box_out1_shape = [density_prior_box_layer1_h, density_prior_box_layer1_w, num_priors_1, 4]  #4 is a common value
+        num_priors_2 = 0
+        for index in range(len(densities_2)):
+            num_priors_2 += len(fixed_ratios_2) * (pow(densities_2[index], 2))
+        density_prior_box_out2_shape = [density_prior_box_layer2_h, density_prior_box_layer2_w, num_priors_2, 4]  #4 is a common value
+        density_prior_box_layer1_length = density_prior_box_layer1_h * density_prior_box_layer1_w * num_priors_1
+        density_prior_box_layer2_length = density_prior_box_layer2_h * density_prior_box_layer2_w * num_priors_2
         priorbox_shape = [density_prior_box_layer1_length + density_prior_box_layer2_length, 4]
-        code_type = draw(st.sampled_from(["encode_center_size", "decode_center_size"]))
+        #box_coder params
+        code_type = draw(st.sampled_from(["decode_center_size"]))
         axis = draw(st.sampled_from([0, 1]))
         box_normalized = draw(st.booleans())
         variance = draw(st.sampled_from([[0.1, 0.2, 0.3, 0.4], []]))
         lod_data = [[1, 1, 1, 1, 1]]
 
         if code_type == "encode_center_size":
-            targetbox_shape = draw(st.sampled_from([[30, 4], [80, 4]]))
+            targetbox_shape = draw(st.sampled_from([[30, 4], [80, 4]]))   #4 is required in paddle
         else:
-            num0=1
-            num1=1
-            num2=1
+            num0 = 1
+            num1 = 1
+            num2 = 1
             if axis == 0 :
                 num1 = priorbox_shape[0]
                 num0 = np.random.randint(1, 100)
@@ -130,7 +155,7 @@ def sample_program_configs(draw):
             outputs = {"Boxes": ["density_prior_box_output_boxes_2"],
                     "Variances": ["density_prior_box_output_variances_2"]},
             attrs = {
-                    "clip" : False,
+                    "clip" : clip,
                     "value" : value,
                     "min_max_aspect_ratios_order": min_max_aspect_ratios_order,
                     "variances": variances,
@@ -266,11 +291,20 @@ def sample_program_configs(draw):
 
         #reshape2 params
         reshape2_w = draw(st.integers(min_value=4, max_value=4))
-        #box_coder params
-        density_prior_box_layer1_length = density_prior_box_layer1_channels * density_prior_box_layer1_w * density_prior_box_layer1_h
-        density_prior_box_layer2_length = density_prior_box_layer2_channels * density_prior_box_layer2_w * density_prior_box_layer2_h
+        #density_prior_box InferShape
+        output_aspect_ratior = []
+        prior_box_expand_aspect_ratios(aspect_ratios, flip, output_aspect_ratior)  #compute output size
+        num_priors_1 = len(output_aspect_ratior) * len(min_sizes) #3 need compute
+        num_priors_1 += len(max_sizes)
+        density_prior_box_out1_shape = [density_prior_box_layer1_h, density_prior_box_layer1_w, num_priors_1, 4]  #4 is a common value
+        num_priors_2 = len(output_aspect_ratior) * len(min_sizes)
+        num_priors_2 += len(max_sizes)
+        density_prior_box_out2_shape = [density_prior_box_layer2_h, density_prior_box_layer2_w, num_priors_2, 4]  #4 is a common value
+        density_prior_box_layer1_length = density_prior_box_layer1_h * density_prior_box_layer1_w * num_priors_1
+        density_prior_box_layer2_length = density_prior_box_layer2_h * density_prior_box_layer2_w * num_priors_2
         priorbox_shape = [density_prior_box_layer1_length + density_prior_box_layer2_length, 4]
-        code_type = draw(st.sampled_from(["encode_center_size", "decode_center_size"]))
+        #box_coder params
+        code_type = draw(st.sampled_from(["decode_center_size"]))
         axis = draw(st.sampled_from([0, 1]))
         box_normalized = draw(st.booleans())
         variance = draw(st.sampled_from([[0.1, 0.2, 0.3, 0.4], []]))
@@ -290,6 +324,7 @@ def sample_program_configs(draw):
                 num1 = np.random.randint(1, 100)
             num2 = priorbox_shape[1]
             targetbox_shape=draw(st.sampled_from([[num0, num1, num2]]))
+            print(targetbox_shape)
 
         def generate_targetbox(*args, **kwargs):
             return np.random.random(targetbox_shape).astype(np.float32)

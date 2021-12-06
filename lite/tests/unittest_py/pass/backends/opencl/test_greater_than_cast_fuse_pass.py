@@ -33,7 +33,14 @@ class TestInterpolateFusePass(FusePassAutoScanTest):
 
     def sample_predictor_configs(self):
         config = CxxConfig()
-        config.set_valid_places({Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
+        config.set_valid_places({Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
+                                 Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
+                                 Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+                                 Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageDefault),
+                                 Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageFolder),
+                                 Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+                                 Place(TargetType.X86, PrecisionType.FP32),
+                                 Place(TargetType.ARM, PrecisionType.FP32),
                                  Place(TargetType.Host, PrecisionType.FP32)})
         yield config, ['greater_than'], (1e-5, 1e-5)
 

@@ -15,33 +15,34 @@ import sys
 sys.path.append('../../common')
 sys.path.append('../../../')
 
-import test_ssd_boxes_offline_pass_base 
+import test_elementwise_active_fuse_pass_base
 from auto_scan_test_rpc import FusePassAutoScanTest
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import unittest
 
 import hypothesis
-from hypothesis import given, settings, seed, example, assume, reproduce_failure
+from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 
-class TestSSDBoxesCalcOfflinePass(FusePassAutoScanTest):
+class TestElementActiveFusePass(FusePassAutoScanTest):
     def is_program_valid(self, program_config: ProgramConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        return test_ssd_boxes_offline_pass_base.sample_program_configs(draw)
+        return test_elementwise_active_fuse_pass_base.sample_program_configs(draw, elementwise_type="elementwise_sub")
 
     def sample_predictor_configs(self):
         config = CxxConfig()
         config.set_valid_places({Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)})
-        yield config, ['box_coder'], (1e-5, 1e-5)
+        config.set_threads(1)
+
+        yield config, ["fusion_elementwise_sub_activation"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25, passes=["ssd_boxes_calc_offline_pass"])
-
+        self.run_and_statis(quant=False, max_examples=25, passes=["lite_elementwise_activation_fuse_pass"])
 
 if __name__ == "__main__":
     unittest.main()

@@ -29,7 +29,7 @@ class TestElementActiveFusePass(FusePassAutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        return test_elementwise_active_fuse_pass_base.sample_program_configs(draw)
+        return test_elementwise_active_fuse_pass_base.sample_program_configs(draw, elementwise_type="elementwise_add")
 
     def sample_predictor_configs(self):
         config = CxxConfig()

@@ -37,9 +37,9 @@ def sample_program_configs(draw):
         attrs = {}
         if act_type_str == 'relu6':
             attrs = {"threshold": threshold}
-        if act_type_str == 'leaky_relu':
+        elif act_type_str == 'leaky_relu':
             attrs = {"alpha": alpha}
-        if act_type_str == 'relu':
+        elif act_type_str == 'relu':
             attrs = {}
         return attrs
 

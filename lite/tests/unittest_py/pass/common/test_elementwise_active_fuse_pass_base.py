@@ -24,7 +24,7 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 
-def sample_program_configs(draw):
+def sample_program_configs(draw, elementwise_type):
     in_shape_x = draw(st.lists(st.integers(min_value = 1, max_value = 20), min_size = 4, max_size = 4))
     in_shape_y = draw(st.lists(st.integers(min_value = 1, max_value = 20), min_size = 4, max_size = 4))
     assume((in_shape_x[0] == in_shape_y[0] or in_shape_x[0] == 1 or in_shape_y[0] == 1) 
@@ -37,7 +37,6 @@ def sample_program_configs(draw):
             and (in_shape_x[3] >= in_shape_y[3]))
 
     axis = -1
-    elementwise_type = draw(st.sampled_from(['elementwise_add']))
     elementwise_op = OpConfig(
         type = elementwise_type,
         inputs = {"X": ["input_data_x"],"Y": ["input_data_y"]},
