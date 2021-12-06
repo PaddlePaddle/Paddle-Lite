@@ -38,7 +38,7 @@ from hypothesis import given, settings, seed
 import hypothesis.strategies as st
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument("--target", choices=['Host', 'X86','CUDA','ARM','OpenCL','FPGA','NPU','MLU','RKNPU','APU','HUAWEI_ASCEND_NPU','INTEL_FPGA'])
+parser.add_argument("--target", choices=['Host', 'X86','CUDA','ARM','OpenCL','FPGA','NPU','MLU','RKNPU','APU','HUAWEI_ASCEND_NPU','INTEL_FPGA'], required=True)
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 settings.register_profile(

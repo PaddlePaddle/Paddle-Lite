@@ -18,7 +18,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--target")
 args = parser.parse_args()
 
-if args.target == "arm":
+if args.target == "ARM":
     from auto_scan_test_rpc import AutoScanTest
 else:
     from auto_scan_test_no_rpc import AutoScanTest
