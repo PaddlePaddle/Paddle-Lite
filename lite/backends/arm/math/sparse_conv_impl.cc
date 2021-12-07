@@ -5749,7 +5749,7 @@ void sparse_conv_fp32_pipelined(const float* A,
   /* do relu */                                  \
   "12: \n"                                       \
   "vmov.u32   q8,   #0                     \n"   \
-  "vld1.f32   {d18-21}, [%[hs_param]]!      \n"  \
+  "vld1.f32   {d18-d21}, [%[hs_param]]!      \n" \
   "vld1.f32   {d22-d23}, [%[hs_param]]       \n" \
   "vadd.f32   q12, q0, q9                 \n"    \
   "vadd.f32   q14, q1, q9                 \n"    \
@@ -7125,7 +7125,7 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   /* do relu */                                  \
   "12: \n"                                       \
   "vmov.u32   q8,   #0                     \n"   \
-  "vld1.f32   {d18-21}, [%[hs_param]]!      \n"  \
+  "vld1.f32   {d18-d21}, [%[hs_param]]!      \n" \
   "vld1.f32   {d22-d23}, [%[hs_param]]       \n" \
   "vadd.f32   q12, q0, q9                 \n"    \
   "vadd.f32   q14, q1, q9                 \n"    \
