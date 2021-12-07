@@ -30,6 +30,8 @@ def sample_program_configs(draw):
     keep_dim = draw(st.booleans())
     axis = draw(st.integers(min_value=-1, max_value=3))
     assume(axis < len(in_shape))
+    if isinstance(axis, int):
+        axis = [axis]
     dim_data = draw(st.sampled_from([[0],[1],[-1],[]]))
     reduce_all_data = True if len(axis) == len(in_shape) else False
 

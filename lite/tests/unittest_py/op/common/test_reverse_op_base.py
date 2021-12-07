@@ -27,7 +27,11 @@ from hypothesis import assume
 def sample_program_configs(draw):
     in_shape = draw(st.lists(st.integers(
             min_value=1, max_value=10), min_size=4, max_size=4))
-    axis = draw(st.sampled_from([[0], [1], [0, 1]]))
+    axis = draw(st.sampled_from([0, [1], [0, 1]]))
+
+    if isinstance(axis, int):
+        axis = [axis]
+
     def generate_input(*args, **kwargs):
         return np.random.random(in_shape).astype(np.float32)
        
@@ -39,7 +43,7 @@ def sample_program_configs(draw):
         outputs = {
             "Out": ["output_data"],
         },
-        attr = {
+        attrs = {
             "axis": axis,
         })
     program_config = ProgramConfig(

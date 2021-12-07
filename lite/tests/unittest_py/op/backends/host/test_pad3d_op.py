@@ -16,7 +16,7 @@ import sys
 sys.path.append('../../common')
 sys.path.append('../../../')
 
-import test_pad3d_base
+import test_pad3d_op_base
 from auto_scan_test import AutoScanTest, IgnoreReasons
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import unittest

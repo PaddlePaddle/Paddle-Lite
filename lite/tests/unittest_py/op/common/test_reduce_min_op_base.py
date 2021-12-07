@@ -31,6 +31,8 @@ def sample_program_configs(draw):
     axis = draw(st.integers(min_value=-1, max_value=3))
     assume(axis < len(in_shape))
 
+    if isinstance(axis, int):
+        axis = [axis]
     reduce_all_data = True if axis == None or axis == [] else False
 
     def generate_input(*args, **kwargs):

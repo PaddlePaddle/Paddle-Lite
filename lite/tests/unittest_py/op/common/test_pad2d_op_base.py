@@ -28,11 +28,11 @@ def sample_program_configs(draw):
     in_shape = draw(st.lists(st.integers(
             min_value=1, max_value=10), min_size=4, max_size=4))
     
-    mode = draw(st.sampled_from("constant", "reflect", "edge"))
+    mode = draw(st.sampled_from(["constant", "reflect", "edge"]))
     value_data = draw(st.floats(min_value=0.0, max_value=4.0))
     padding_data = draw(st.sampled_from([[2, 2, 1, 1]]))
 
-    assume(in_shape in [3, 4, 5])
+    # assume(in_shape in [3, 4, 5])
 
     def generate_input(*args, **kwargs):
         return np.random.random(in_shape).astype(np.float32)
@@ -41,15 +41,16 @@ def sample_program_configs(draw):
         type = "pad2d",
         inputs = {
             "X" : ["input_data"],
-            "Paddings": padding_data,
+            #"Paddings": padding_data,
             },
         outputs = {
             "Out": ["output_data"],
         },
         attrs = {
-            "paddings": [],
+            "paddings": padding_data,
             "mode": mode,
             "value": value_data,
+            "data_format": "NCHW",
         })
     program_config = ProgramConfig(
         ops=[build_ops],

@@ -31,11 +31,15 @@ def sample_program_configs(draw):
     padding_algorithm = draw(st.sampled_from(["SAME", "VALID"]))
     pool_padding = draw(st.sampled_from([[0, 0], [0, 0, 1, 1], [1,1,1,1],[1,1]]))
     global_pooling = draw(st.sampled_from([True, False]))
+    adaptive = draw(st.sampled_from([True, False]))
     exclusive = draw(st.sampled_from([True, False]))
     ceil_mode = draw(st.sampled_from([True, False]))
-    pool_size = draw(st.sampled_from([[1],[2],[3]]))
-    pool_stride = draw(st.sampled_from([[1],[2]]))
+    pool_stride = draw(st.sampled_from([0, 1, 2]))
+    pool_size = draw(st.sampled_from([0, 1, 2]))
+    pool_stride = [pool_stride,] * 2
+    pool_size = [pool_size,] * 2
 
+    # assume(len(in_shape) - len(pool_size) == 2)
     if padding_algorithm == "VALID" or padding_algorithm == "SAME":
         pool_padding = [0, 0]
 
@@ -50,6 +54,7 @@ def sample_program_configs(draw):
         attrs={
             "pooling_type": pool_type,
             "ksize": pool_size,
+            "adaptive": adaptive,
             "global_pooling": global_pooling,
             "strides": pool_stride,
             "paddings": pool_padding,

@@ -34,7 +34,7 @@ class TestPowOp(AutoScanTest):
 
     def sample_predictor_configs(self):
         config = CxxConfig()
-        config.set_valid_places({Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)})
+        config.set_valid_places({Place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW)})
         yield config, ["pow"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
