@@ -39,7 +39,7 @@ class TensorConfig:
         '''
         shape: The shape of the tensor.
         dtype: The data type of the tensor.
-        data: The value of WeightVar. for input, it should be None 
+        data: The value of WeightVar. for input, it should be None
         '''
         self.lod = lod
         if data_gen is not None:
@@ -139,6 +139,8 @@ def create_fake_model(program_config):
         var_desc.set_dtype(convert_np_dtype_to_dtype_(tensor_config.dtype))
         var_desc.set_shape(tensor_config.shape)
         var_desc.set_need_check_feed(True)
+        if tensor_config.lod is not None:
+            var_desc.set_lod_level(len(tensor_config.lod))
         op_desc = main_block_desc._prepend_op()
         op_desc.set_type("feed")
         op_desc.set_input('X', ["feed"])
