@@ -13,29 +13,44 @@
 # limitations under the License.
 
 import sys
-sys.path.append('../../common')
-sys.path.append('../../../')
+sys.path.append('../')
 
-import test_mul_op_base
-from auto_scan_test_rpc import AutoScanTest, IgnoreReasons
+from auto_scan_test import AutoScanTest, IgnoreReasons
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import unittest
 
 import hypothesis
 from hypothesis import given, settings, seed, example, assume
+import hypothesis.strategies as st
+import argparse
 
-class TestMulOp(AutoScanTest):
+class TestAssignOp(AutoScanTest):
+    def __init__(self, *args, **kwargs):
+        AutoScanTest.__init__(self, *args, **kwargs)
+        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,2])
+
     def is_program_valid(self, program_config: ProgramConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        return test_mul_op_base.sample_program_configs(draw)
+        in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), max_size=2))
+        assign_op = OpConfig(
+            type = "assign",
+            inputs = {"X" : ["input_data"]},
+            outputs = {"Out": ["output_data"]},
+            attrs = {})
+        program_config = ProgramConfig(
+            ops=[assign_op],
+            weights={},
+            inputs={
+                "input_data":
+                TensorConfig(shape=in_shape)
+            },
+            outputs=["output_data"])
+        return program_config
 
     def sample_predictor_configs(self):
-        config = CxxConfig()
-        config.set_valid_places({Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)})
-        config.set_threads(1)
-        yield config, ["mul"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["assign"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
@@ -44,4 +59,4 @@ class TestMulOp(AutoScanTest):
         self.run_and_statis(quant=False, max_examples=25)
 
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main(argv=[''])

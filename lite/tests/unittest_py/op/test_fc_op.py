@@ -13,10 +13,10 @@
 # limitations under the License.
 
 import sys
-sys.path.append('../../common')
-sys.path.append('../../../')
+sys.path.append('./common')
+sys.path.append('../')
 
-import test_assign_op_base
+import test_fc_op_base
 from auto_scan_test import AutoScanTest, IgnoreReasons
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import unittest
@@ -25,17 +25,19 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 
 
-class TestAssignOp(AutoScanTest):
+class TestFcOp(AutoScanTest):
+    def __init__(self, *args, **kwargs):
+        AutoScanTest.__init__(self, *args, **kwargs)
+        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW)
+
     def is_program_valid(self, program_config: ProgramConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        return test_assign_op_base.sample_program_configs(draw)
+        return test_fc_op_base.sample_program_configs(draw)
 
     def sample_predictor_configs(self):
-        config = CxxConfig()
-        config.set_valid_places({Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)})
-        yield config, ["assign"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["fc"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
@@ -44,4 +46,4 @@ class TestAssignOp(AutoScanTest):
         self.run_and_statis(quant=False, max_examples=25)
 
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main(argv=[''])
