@@ -457,14 +457,14 @@ class CxxConfig:
     def value(self):
         return self.config
 
-    def target():
-        if not self.config.has_key("valid_targets"):
+    def target(self):
+        if not "valid_targets" in self.config:
             return None
         first_place=self.config["valid_targets"][0].split(",")
         return eval("TargetType." + first_place[0])
 
-    def precision():
-        if not self.config.has_key("valid_targets"):
+    def precision(self):
+        if not "valid_targets" in self.config:
             return None
         first_place=''.join(self.config["valid_targets"][0]).split(",")
         if len(first_place) < 2:
@@ -472,8 +472,8 @@ class CxxConfig:
         else:
             return eval("PrecisionType." + first_place[1])
 
-    def layout():
-        if not self.config.has_key("valid_targets"):
+    def layout(self):
+        if not "valid_targets" in self.config:
             return None
         first_place=''.join(self.config["valid_targets"][0]).split(",")
         if len(first_place) < 3:
