@@ -31,7 +31,16 @@ class TestMulOp(AutoScanTest):
         self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)
 
 
-    def is_program_valid(self, program_config: ProgramConfig) -> bool:
+    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+        # {TargetType.Host, TargetType.X86, TargetType.ARM, TargetType.OpenCL}
+        if predictor_config.target() == TargetType.ARM:
+            return True
+        # {PrecisionType.FP16, PrecisionType.FP32, PrecisionType.FP64, PrecisionType.UINT8, PrecisionType.INT8, PrecisionType.INT16, PrecisionType.INT32, PrecisionType.INT64, PrecisionType.BOOL}
+        if predictor_config.precision() == PrecisionType.FP16:
+            return True
+        # {DataLayoutType.NCHW, DataLayoutType.NHWC, DataLayoutType.ImageDefault, DataLayoutType.ImageFolder, DataLayoutType.ImageNW, DataLayoutType.Any}
+        if predictor_config.layout() == DataLayoutType.NCHW:
+            return True
         return True
 
     def sample_program_configs(self, draw):
@@ -68,8 +77,24 @@ class TestMulOp(AutoScanTest):
     def sample_predictor_configs(self):
         return self.get_predictor_configs(), ["mul"], (1e-5, 1e-5)
 
+
     def add_ignore_pass_case(self):
-        pass
+        def teller1(program_config, predictor_config):
+            # {TargetType.Host, TargetType.X86, TargetType.ARM, TargetType.OpenCL}
+            if predictor_config.target() == TargetType.ARM:
+                return False
+            # {PrecisionType.FP16, PrecisionType.FP32, PrecisionType.FP64, PrecisionType.UINT8, PrecisionType.INT8, PrecisionType.INT16, PrecisionType.INT32, PrecisionType.INT64, PrecisionType.BOOL}
+            if predictor_config.precision() == PrecisionType.FP16:
+                return False
+            # {DataLayoutType.NCHW, DataLayoutType.NHWC, DataLayoutType.ImageDefault, DataLayoutType.ImageFolder, DataLayoutType.ImageNW, DataLayoutType.Any}
+            if predictor_config.layout() == DataLayoutType.NCHW:
+                return False
+            return False
+
+        self.add_ignore_check_case(
+            teller1, IgnoreReasons.ACCURACY_ERROR,
+            "The op output has diff in a specific case. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
