@@ -98,13 +98,13 @@ class AutoScanBaseTest(unittest.TestCase):
     @abc.abstractmethod
     def add_ignore_check_case(
             self,
-            teller: [Callable[[ProgramConfig, paddle_infer.Config], bool]],
+            teller: [Callable[[ProgramConfig, CxxConfig], bool]],
             reason: IgnoreReasonsBase,
             note: str):
         self.ignore_cases.append((teller, reason, note))
 
     @abc.abstractmethod
-    def is_program_valid(self, program_config: ProgramConfig) -> bool:
+    def is_program_valid(self, program_config: ProgramConfig, predictor_config: CxxConfig) -> bool:
         return True
 
     def run_test_config(self, model, params, prog_config, pred_config,
@@ -195,11 +195,20 @@ class AutoScanBaseTest(unittest.TestCase):
 
     def run_test(self, quant=False, prog_configs=None):
         status = True
+
+        paddlelite_configs, op_list_, (atol_, rtol_) = self.sample_predictor_configs()
         for prog_config in prog_configs:
-            # if program is invalid, we should ignore that cases.
-            if not self.is_program_valid(prog_config):
+            # if program is invalid, we should ignore this cases.
+            program_valid_ = False
+            for paddlelite_config in paddlelite_configs:
+                # judge validity of program
+                if self.is_program_valid(prog_config, paddlelite_config):
+                    program_valid_ = True
+            if not program_valid_:
                 self.num_invalid_programs += 1
                 continue
+
+
             self.num_ran_programs += 1
             model, params = create_fake_model(prog_config)
             if quant:
@@ -220,14 +229,18 @@ class AutoScanBaseTest(unittest.TestCase):
                 self.run_test_config(model, params, prog_config, base_config,
                                      feed_data))
 
-            paddlelite_configs, op_list_, (atol_, rtol_) = self.sample_predictor_configs()
+
             for paddlelite_config in paddlelite_configs:
+                # judge validity of program
+                if not self.is_program_valid(prog_config, paddlelite_config):
+                    continue
+
                 self.num_predictor_kinds += 1
                 # ignore info
                 ignore_flag = False
                 pred_config = paddlelite_config.value()
                 for ignore_info in self.ignore_cases:
-                    if ignore_info[0](prog_config, pred_config):
+                    if ignore_info[0](prog_config, paddlelite_config):
                         ignore_flag = True
                         self.num_ignore_tests += 1
                         if ignore_info[1] == IgnoreReasonsBase.ACCURACY_ERROR:

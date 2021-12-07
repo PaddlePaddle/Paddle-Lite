@@ -25,7 +25,7 @@ from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 
 class TestSSDBoxesCalcOfflinePass(FusePassAutoScanTest):
-    def is_program_valid(self, program_config: ProgramConfig) -> bool:
+    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
@@ -52,4 +52,4 @@ class TestSSDBoxesCalcOfflinePass(FusePassAutoScanTest):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main(argv=[''])

@@ -26,7 +26,7 @@ from hypothesis import given, settings, seed, example, assume
 
 
 class TestBoxCoderOp(AutoScanTest):
-    def is_program_valid(self, program_config: ProgramConfig) -> bool:
+    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
         if len(program_config.ops[0].attrs["variance"]) > 0:
             return False
         else:
@@ -47,4 +47,4 @@ class TestBoxCoderOp(AutoScanTest):
         self.run_and_statis(quant=False, max_examples=100)
 
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main(argv=[''])
