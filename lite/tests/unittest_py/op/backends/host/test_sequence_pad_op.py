@@ -16,26 +16,28 @@ import sys
 sys.path.append('../../common')
 sys.path.append('../../../')
 
-import test_mul_op_base
-from auto_scan_test_rpc import AutoScanTest, IgnoreReasons
+import test_sequence_pad_op_base
+from auto_scan_test import AutoScanTest, IgnoreReasons
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import unittest
 
 import hypothesis
 from hypothesis import given, settings, seed, example, assume
 
-class TestMulOp(AutoScanTest):
+
+class TestSequencePadOp(AutoScanTest):
     def is_program_valid(self, program_config: ProgramConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        return test_mul_op_base.sample_program_configs(draw)
+        return test_sequence_pad_op_base.sample_program_configs(draw)
 
     def sample_predictor_configs(self):
         config = CxxConfig()
-        config.set_valid_places({Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)})
-        config.set_threads(1)
-        yield config, ["mul"], (1e-5, 1e-5)
+        config.set_valid_places({Place(TargetType.Host, PrecisionType.INT32, DataLayoutType.NCHW),
+                                 Place(TargetType.Host, PrecisionType.INT64, DataLayoutType.NCHW),
+                                 Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)})
+        yield config, ["sequence_pad"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass

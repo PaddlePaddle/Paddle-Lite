@@ -26,6 +26,10 @@ from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 
 class TestAbsOp(AutoScanTest):
+    def __init__(self, *args, **kwargs):
+        AutoScanTest.__init__(self, *args, **kwargs)
+        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
+
     def is_program_valid(self, program_config: ProgramConfig) -> bool:
         return True
 
@@ -33,9 +37,7 @@ class TestAbsOp(AutoScanTest):
         return test_abs_op_base.sample_program_configs(draw)
 
     def sample_predictor_configs(self):
-        config = CxxConfig()
-        config.set_valid_places({Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)})
-        yield config, ["abs"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["abs"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
@@ -44,4 +46,4 @@ class TestAbsOp(AutoScanTest):
         self.run_and_statis(quant=False, max_examples=25)
 
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main(argv=[''])

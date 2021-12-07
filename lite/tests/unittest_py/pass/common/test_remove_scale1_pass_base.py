@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import sys
 sys.path.append('..')
 
@@ -20,22 +19,35 @@ import numpy as np
 from functools import partial
 from typing import Optional, List, Callable, Dict, Any, Set
 import unittest
+
 import hypothesis
+from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), max_size=2))
-    assign_op = OpConfig(
+    in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=1, max_size=4))
+    abs_op = OpConfig(
         type = "assign",
         inputs = {"X" : ["input_data"]},
-        outputs = {"Out": ["output_data"]},
+        outputs = {"Out": ["abs_output_data"]},
         attrs = {})
+
+    scale_op = OpConfig(
+        type = "scale",
+        inputs = {"X": ["abs_output_data"]},
+        outputs = {"Out": ["output_data"]},
+        attrs = {
+            "scale": 1.0,
+            "bias": 0.0,
+            "bias_after_scale": True
+        })
+
+    ops = [abs_op, scale_op]
     program_config = ProgramConfig(
-        ops=[assign_op],
+        ops=ops,
         weights={},
         inputs={
-            "input_data":
-            TensorConfig(shape=in_shape)
+            "input_data": TensorConfig(shape=in_shape)
         },
         outputs=["output_data"])
     return program_config

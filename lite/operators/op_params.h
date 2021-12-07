@@ -2085,6 +2085,15 @@ struct CumsumParam : ParamBase {
   bool reverse{false};
 };
 
+struct SamplingIdParam : ParamBase {
+  const lite::Tensor* x{};
+  lite::Tensor* out{};
+
+  float min{0.f};
+  float max{1.f};
+  int seed{0};
+};
+
 struct PolygonBoxTransformParam : ParamBase {
   const lite::Tensor* input{nullptr};
   lite::Tensor* output{nullptr};

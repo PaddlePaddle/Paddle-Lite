@@ -20,37 +20,35 @@ import numpy as np
 from functools import partial
 from typing import Optional, List, Callable, Dict, Any, Set
 import unittest
-
 import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 
 def sample_program_configs(draw):
-    in_shape1=draw(st.lists(
+    in_shape = draw(st.lists(
         st.integers(
-            min_value=20, max_value=200), min_size=2, max_size=2))
-    in_shape2=draw(st.lists(
-        st.integers(
-            min_value=20, max_value=200), min_size=2, max_size=2))
-    assume(in_shape1[1] == in_shape2[0])
+            min_value=1, max_value=64), min_size=1, max_size=4))
 
-    mul_op = OpConfig(
-        type = "mul",
-        inputs = {"X": ["input_data_x"],
-                    "Y": ["input_data_y"]},
-        outputs = {"Out": ["output_data"]},
-        attrs = {"x_num_col_dims": 1,
-                    "y_num_col_dims": 1})
+    def generate_input(*args, **kwargs):
+        return np.random.uniform(-10, 10, in_shape).astype(np.float32)
+
+    ops_config = OpConfig(
+        type = "sign",
+        inputs = {
+            "X": ["input_data"]
+        },
+        outputs = {
+            "Out": ["output_data"]
+        },
+        attrs = {}
+        )
 
     program_config = ProgramConfig(
-        ops=[mul_op],
-        weights={
-            "input_data_y":
-             TensorConfig(shape=in_shape2)
-        },
+        ops=[ops_config],
+        weights={},
         inputs={
-            "input_data_x":
-            TensorConfig(shape=in_shape1)
+            "input_data": 
+            TensorConfig(data_gen=partial(generate_input))
         },
         outputs=["output_data"])
 

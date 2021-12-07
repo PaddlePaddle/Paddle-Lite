@@ -289,11 +289,11 @@ TEST(TestConv3x3DwFp16, test_conv3x3_depthwise) {
       for (auto& pad : {0, 1}) {
         for (auto& pad1 : {0, 1}) {
           for (auto& flag_bias : {false, true}) {
-            for (auto& flag_act : {0, 1}) {
+            for (auto& flag_act : {0, 1, 2, 4}) {
               for (auto& c : {4, 7, 8, 10, 11, 16}) {
                 DDim weights_dim({c, 1, 3, 3});
                 for (auto& batch : {1}) {
-                  for (auto& h : {12, 13, 14, 15, 16, 17, 18, 33}) {
+                  for (auto& h : {4, 7, 12, 13, 14, 15, 16, 17, 18, 33}) {
                     DDim dim_in({batch, c, h, h});
                     const float leakey_relu_scale = 1.0f;
                     test_conv_fp16(dim_in,

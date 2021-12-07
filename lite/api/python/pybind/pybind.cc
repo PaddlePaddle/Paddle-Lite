@@ -150,17 +150,17 @@ void BindLiteCxxConfig(py::module *m) {
       .def("set_passes_internal", &CxxConfig::set_passes_internal)
       .def("is_model_from_memory", &CxxConfig::is_model_from_memory)
       .def("add_discarded_pass", &CxxConfig::add_discarded_pass);
-#ifdef LITE_WITH_ARM
   cxx_config.def("set_threads", &CxxConfig::set_threads)
       .def("threads", &CxxConfig::threads)
       .def("set_power_mode", &CxxConfig::set_power_mode)
       .def("power_mode", &CxxConfig::power_mode);
-#endif
+
   cxx_config
       .def("set_opencl_binary_path_name",
            &CxxConfig::set_opencl_binary_path_name)
       .def("set_opencl_tune", &CxxConfig::set_opencl_tune)
       .def("set_opencl_precision", &CxxConfig::set_opencl_precision);
+
 #ifdef LITE_WITH_MLU
   cxx_config.def("set_mlu_core_version", &CxxConfig::set_mlu_core_version)
       .def("set_mlu_core_number", &CxxConfig::set_mlu_core_number)
