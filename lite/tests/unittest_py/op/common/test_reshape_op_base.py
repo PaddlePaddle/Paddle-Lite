@@ -43,7 +43,7 @@ def sample_program_configs(draw):
             "Out": ["output_data"],
         },
         attrs = {
-            "shape": attr_shape,
+            "shape": in_shape,
         })
     program_config = ProgramConfig(
         ops=[build_ops],

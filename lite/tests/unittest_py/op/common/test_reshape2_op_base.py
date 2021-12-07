@@ -44,7 +44,7 @@ def sample_program_configs(draw):
             "XShape": ["x_shape"],
         },
         attrs = {
-            "shape": attr_shape,
+            "shape": in_shape,
         })
     program_config = ProgramConfig(
         ops=[build_ops],
