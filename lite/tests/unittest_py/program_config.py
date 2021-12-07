@@ -456,3 +456,27 @@ class CxxConfig:
         self.config["discarded_passes"].append(discarded_pass)
     def value(self):
         return self.config
+
+    def target():
+        if not self.config.has_key("valid_targets"):
+            return None
+        first_place=self.config["valid_targets"][0].split(",")
+        return eval("TargetType." + first_place[0])
+
+    def precision():
+        if not self.config.has_key("valid_targets"):
+            return None
+        first_place=''.join(self.config["valid_targets"][0]).split(",")
+        if len(first_place) < 2:
+            return PrecisionType.FP32
+        else:
+            return eval("PrecisionType." + first_place[1])
+
+    def layout():
+        if not self.config.has_key("valid_targets"):
+            return None
+        first_place=''.join(self.config["valid_targets"][0]).split(",")
+        if len(first_place) < 3:
+            return DataLayoutType.NCHW
+        else:
+            return eval("DataLayoutType." + first_place[2])
