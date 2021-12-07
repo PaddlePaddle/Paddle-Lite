@@ -34,7 +34,7 @@ class TestConvActiveFusePass(FusePassAutoScanTest):
     def sample_predictor_configs(self):
         config = CxxConfig()
         config.set_valid_places({Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)})
-        yield config, ["conv2d"], (1e-5, 1e-5)
+        yield config, ["conv2d_transpose"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass

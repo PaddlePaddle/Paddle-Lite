@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include "lite/core/optimizer/mir/elimination/remove_tf_redundant_ops_pass.h"
+
 #include <set>
+
 #include "lite/core/optimizer/mir/graph_visualize_pass.h"
 #include "lite/core/optimizer/mir/pass.h"
 #include "lite/core/optimizer/mir/pass_registry.h"
@@ -83,22 +85,27 @@ void RemoveTFRedundantOpsPass::RemoveReshape2Pattern(
 
   if (found) {
     // link out_arg to op
-    IR_NODE_LINK_TO(softmax_node->outlinks.front(), fetch_node);
+    // IR_NODE_LINK_TO(softmax_node->outlinks.front(), fetch_node);
 
     // collect nodes to safe remove
     std::set<const Node*> nodes_to_remove;
     auto remove_inst_node_and_out_args_node = [&](Node* n) {
       nodes_to_remove.insert(n);
-      for (auto& out : n->outlinks) {
-        nodes_to_remove.insert(out);
+      for (auto& in : n->inlinks) {
+        nodes_to_remove.insert(in);
       }
     };
 
     remove_inst_node_and_out_args_node(reshape2_node);
+    auto reshape2_node_outlinks = reshape2_node->outlinks;
     GraphSafeRemoveNodes(graph.get(), nodes_to_remove);
-    auto fetch_op_desc = fetch_node->AsStmt().mutable_op_info();
-    fetch_op_desc->SetInput("X",
-                            {softmax_node->outlinks.front()->AsArg().name});
+    IR_OP_VAR_LINK(softmax_node, reshape2_node_outlinks.front());
+    auto softmax_op_desc = softmax_node->stmt()->mutable_op_info();
+    softmax_op_desc->SetOutput("Out",
+                               {reshape2_node_outlinks.front()->AsArg().name});
+    auto undate_softmax_desc = *softmax_node->stmt()->mutable_op_info();
+    auto softmax_instruct = softmax_node->stmt();
+    softmax_instruct->ResetOp(undate_softmax_desc, graph.get()->valid_places());
   }
   VLOG(5) << "\n" << Visualize(graph.get());
 }
