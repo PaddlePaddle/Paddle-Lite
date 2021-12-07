@@ -41,35 +41,35 @@ class TestGatherOp(AutoScanTest):
         axis_type  = draw(st.sampled_from(["int32", "int64"]))
         index_type = draw(st.sampled_from(["int32", "int64"]))
         with_tenor_axis = draw(st.sampled_from([True, False]))
-    
+
         def generate_axis(*args, **kwargs):
             if axis_type == "int32":
                 return np.array([axis]).astype(np.int32)
             else:
                 return np.array([axis]).astype(np.int64)
-    
+
         def generate_index(*args, **kwargs):
             if index_type == "int32":
                 return np.array(index).astype(np.int32)
             else:
                 return np.array(index).astype(np.int64)
-    
+
         def generate_input_int32(*args, **kwargs):
-            return np.random.random(in_shape).astype(np.int32) 
-    
+            return np.random.random(in_shape).astype(np.int32)
+
         def generate_input_int64(*args, **kwargs):
-            return np.random.random(in_shape).astype(np.int64) 
-    
+            return np.random.random(in_shape).astype(np.int64)
+
         def generate_input_float32(*args, **kwargs):
-            return np.random.random(in_shape).astype(np.float32) 
-    
+            return np.random.random(in_shape).astype(np.float32)
+
         generate_input = draw(st.sampled_from([generate_input_int32, generate_input_int64, generate_input_float32]))
-    
+
         op_inputs = {}
         program_inputs = {}
         if(with_tenor_axis):
             op_inputs = {
-                      "X" : ["input_data"], 
+                      "X" : ["input_data"],
                       "Index" : ["index_data"],
                       "Axis" : ["axis_data"]
             }
@@ -80,14 +80,14 @@ class TestGatherOp(AutoScanTest):
             }
         else:
             op_inputs = {
-                      "X" : ["input_data"], 
+                      "X" : ["input_data"],
                       "Index" : ["index_data"]
             }
             program_inputs={
                 "input_data" : TensorConfig(data_gen=partial(generate_input)),
                 "index_data" : TensorConfig(data_gen=partial(generate_index))
             }
-    
+
         gather_op = OpConfig(
             type = "gather",
             inputs = op_inputs,
