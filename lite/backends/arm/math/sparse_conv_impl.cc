@@ -890,7 +890,7 @@ namespace math {
   "fcmge  v2.4s,    v21.4s,    v0.4s   \n" /* vcgeq_f32 */         \
   "fmul   v3.4s,    v21.4s,    v1.4s   \n" /* vmulq_f32 */         \
   "bif    v21.16b,   v3.16b,   v2.16b  \n" /* choose*/             \
- "b      9f                    \n"
+  "b      9f                    \n"
 
 #define SPARSE_F32_F32_W48_V8_HARD_SWISH                         \
   /* do hard_swish */                                            \
@@ -4001,10 +4001,12 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
               float32x4_t v0123 = vmulq_f32(vaccf0123, aph);
               vaccf0123 = vbslq_f32(vflag0123, vaccf0123, v0123);
             } else {
-              float32x4_t offset = vdupq_n_f32(act_param.hard_swish_offset / param.output_scale);
+              float32x4_t offset =
+                  vdupq_n_f32(act_param.hard_swish_offset / param.output_scale);
               float32x4_t hs_scale =
                   vdupq_n_f32(1.0 / act_param.hard_swish_scale);
-              float32x4_t thre = vdupq_n_f32(act_param.hard_swish_threshold / param.output_scale);
+              float32x4_t thre = vdupq_n_f32(act_param.hard_swish_threshold /
+                                             param.output_scale);
               float32x4_t vset0123 = vaddq_f32(vaccf0123, offset);
               float32x4_t vscale0123 = vmulq_f32(vaccf0123, hs_scale);
               vset0123 = vmaxq_f32(vset0123, vzero);
@@ -5443,7 +5445,7 @@ void sparse_conv_fp32_pipelined(const float* A,
 #define SPARSE_INT8_F32_W48_v7_LEAKY_RELU                      \
   /* do relu */                                                \
   "11: \n"                                                     \
-  "cmp   %[vflag_act],  #3       \n"  /* check leakey relu */ \
+  "cmp   %[vflag_act],  #3       \n"   /* check leakey relu */ \
   "bne   12f                     \n"   /* no act end */        \
   "vmov.i32   q0, #0\n"                /* for relu */          \
   "vdup.32    q1,  %[valpha]\n"        /* leakey relu alpha */ \
@@ -5715,7 +5717,7 @@ void sparse_conv_fp32_pipelined(const float* A,
 #define SPARSE_INT8_F32_W32_v7_LEAKY_RELU                     \
   /* do relu */                                               \
   "11: \n"                                                    \
-  "cmp   %[vflag_act],  #3       \n" /* check leakey relu */ \
+  "cmp   %[vflag_act],  #3       \n"  /* check leakey relu */ \
   "bne   12f                     \n"  /* no act end */        \
   "vmov.i32   q8, #0\n"               /* for relu */          \
   "vdup.32    q9,  %[valpha]\n"       /* leakey relu alpha */ \
@@ -5886,25 +5888,25 @@ void sparse_conv_fp32_pipelined(const float* A,
   "vmin.f32   q11,  q11,  q1\n"      /* relu6 */       \
   "b      9f                    \n"  /* relu end */
 
-#define SPARSE_INT8_F32_W16_v7_LEAKY_RELU                     \
-  /* do relu */                                               \
-  "11: \n"                                                    \
+#define SPARSE_INT8_F32_W16_v7_LEAKY_RELU                    \
+  /* do relu */                                              \
+  "11: \n"                                                   \
   "cmp   %[vflag_act],  #3       \n" /* check leakey relu */ \
-  "bne   12f                     \n"  /* no act end */        \
-  "vmov.i32   q0, #0\n"               /* for relu */          \
-  "vdup.32    q1,  %[valpha]\n"       /* leakey relu alpha */ \
-  "vcge.f32   q2,    q8,    q0   \n"  /* vcgeq_f32 */         \
-  "vmul.f32   q3,    q8,    q1   \n"  /* vmulq_f32 */         \
-  "vcge.f32   q4,    q9,    q0   \n"  /* vcgeq_f32 */         \
-  "vmul.f32   q5,    q9,    q1   \n"  /* vmulq_f32 */         \
-  "vcge.f32   q6,    q10,   q0   \n"  /* vcgeq_f32 */         \
-  "vmul.f32   q7,    q10,   q1   \n"  /* vmulq_f32 */         \
-  "vbif       q8,    q3,    q2   \n"                          \
-  "vbif       q9,    q5,    q4   \n"                          \
-  "vbif       q10,   q7,    q6   \n"                          \
-  "vcge.f32   q2,    q11,    q0   \n" /* vcgeq_f32 */         \
-  "vmul.f32   q3,    q11,    q1   \n" /* vmulq_f32 */         \
-  "vbif       q11,   q3,    q2   \n"                          \
+  "bne   12f                     \n" /* no act end */        \
+  "vmov.i32   q0, #0\n"              /* for relu */          \
+  "vdup.32    q1,  %[valpha]\n"      /* leakey relu alpha */ \
+  "vcge.f32   q2,    q8,    q0   \n" /* vcgeq_f32 */         \
+  "vmul.f32   q3,    q8,    q1   \n" /* vmulq_f32 */         \
+  "vcge.f32   q4,    q9,    q0   \n" /* vcgeq_f32 */         \
+  "vmul.f32   q5,    q9,    q1   \n" /* vmulq_f32 */         \
+  "vcge.f32   q6,    q10,   q0   \n" /* vcgeq_f32 */         \
+  "vmul.f32   q7,    q10,   q1   \n" /* vmulq_f32 */         \
+  "vbif       q8,    q3,    q2   \n"                         \
+  "vbif       q9,    q5,    q4   \n"                         \
+  "vbif       q10,   q7,    q6   \n"                         \
+  "vcge.f32   q2,    q11,    q0   \n" /* vcgeq_f32 */        \
+  "vmul.f32   q3,    q11,    q1   \n" /* vmulq_f32 */        \
+  "vbif       q11,   q3,    q2   \n"                         \
   "b      9f                    \n"
 
 #define SPARSE_INT8_F32_W16_v7_HARD_SWISH      \
@@ -6003,19 +6005,19 @@ void sparse_conv_fp32_pipelined(const float* A,
   "vmin.f32   q7,   q7,   q1\n"      /* relu6 */       \
   "b      9f                    \n"  /* relu end */
 
-#define SPARSE_INT8_F32_W8_v7_LEAKY_RELU                      \
-  /* do relu */                                               \
-  "11: \n"                                                    \
+#define SPARSE_INT8_F32_W8_v7_LEAKY_RELU                     \
+  /* do relu */                                              \
+  "11: \n"                                                   \
   "cmp   %[vflag_act],  #3       \n" /* check leakey relu */ \
-  "bne   12f                     \n"  /* no act end */        \
-  "vmov.i32   q0, #0\n"               /* for relu */          \
-  "vdup.32    q1,  %[valpha]\n"       /* leakey relu alpha */ \
-  "vcge.f32   q2,    q6,    q0   \n"  /* vcgeq_f32 */         \
-  "vmul.f32   q3,    q6,    q1   \n"  /* vmulq_f32 */         \
-  "vcge.f32   q4,    q7,    q0   \n"  /* vcgeq_f32 */         \
-  "vmul.f32   q5,    q7,    q1   \n"  /* vmulq_f32 */         \
-  "vbif       q6,    q3,    q2   \n"  /* vmulq_f32 */         \
-  "vbif       q7,    q5,    q4   \n"  /* vmulq_f32 */         \
+  "bne   12f                     \n" /* no act end */        \
+  "vmov.i32   q0, #0\n"              /* for relu */          \
+  "vdup.32    q1,  %[valpha]\n"      /* leakey relu alpha */ \
+  "vcge.f32   q2,    q6,    q0   \n" /* vcgeq_f32 */         \
+  "vmul.f32   q3,    q6,    q1   \n" /* vmulq_f32 */         \
+  "vcge.f32   q4,    q7,    q0   \n" /* vcgeq_f32 */         \
+  "vmul.f32   q5,    q7,    q1   \n" /* vmulq_f32 */         \
+  "vbif       q6,    q3,    q2   \n" /* vmulq_f32 */         \
+  "vbif       q7,    q5,    q4   \n" /* vmulq_f32 */         \
   "b      9f                    \n"
 
 #define SPARSE_INT8_F32_W8_v7_HARD_SWISH       \
@@ -6094,16 +6096,16 @@ void sparse_conv_fp32_pipelined(const float* A,
   "vmin.f32   q4,   q4,   q1\n"      /* relu6 */       \
   "b      9f                    \n"  /* relu end */
 
-#define SPARSE_INT8_F32_W4_v7_LEAKY_RELU                      \
-  /* do relu */                                               \
-  "11: \n"                                                    \
+#define SPARSE_INT8_F32_W4_v7_LEAKY_RELU                     \
+  /* do relu */                                              \
+  "11: \n"                                                   \
   "cmp   %[vflag_act],  #3       \n" /* check leakey relu */ \
-  "bne   12f                     \n"  /* no act end */        \
-  "vmov.i32   q0, #0\n"               /* for relu */          \
-  "vdup.32    q1,  %[valpha]\n"       /* leakey relu alpha */ \
-  "vcge.f32   q2,    q4,    q0   \n"  /* vcgeq_f32 */         \
-  "vmul.f32   q3,    q4,    q1   \n"  /* vmulq_f32 */         \
-  "vbif       q4,    q3,    q2   \n"                          \
+  "bne   12f                     \n" /* no act end */        \
+  "vmov.i32   q0, #0\n"              /* for relu */          \
+  "vdup.32    q1,  %[valpha]\n"      /* leakey relu alpha */ \
+  "vcge.f32   q2,    q4,    q0   \n" /* vcgeq_f32 */         \
+  "vmul.f32   q3,    q4,    q1   \n" /* vmulq_f32 */         \
+  "vbif       q4,    q3,    q2   \n"                         \
   "b      9f                    \n"
 
 #define SPARSE_INT8_F32_W4_v7_HARD_SWISH       \
@@ -6569,58 +6571,57 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
     }
 }
 
-#define SPARSE_INT8_INT8_W48_v7_KERNEL            \
-  "veor   q4,   q0,  q0\n"                        \
-  "veor   q5,   q1,  q1\n"                        \
-  "veor   q6,   q2,  q2\n"                        \
-  "veor   q7,   q3,  q3\n"                        \
-  "pld  [%[a_ptr], #32]    \n"                    \
-  "veor   q8,   q0,  q0\n"                        \
-  "veor   q9,   q1,  q1\n"                        \
-  "pld  [%[widx_dmap], #32]    \n"                \
-  "veor   q10,  q2,  q2\n"                        \
-  "veor   q11,  q3,  q3\n"                        \
-  "veor   q12,  q0,  q0\n"                        \
-  "pld  [%[b_ptr], #64]    \n"                    \
-  "veor   q13,  q1,  q1\n"                        \
-  "veor   q14,  q2,  q2\n"                        \
-  "veor   q15,  q3,  q3\n"                        \
-  "cmp    %[k],    #0\n"                          \
-  "beq    1f\n"                                   \
-  /* main loop*/                                  \
-  "0:\n"                                          \
-  "ldrsb   r0, [%[a_ptr]], #1\n"                  \
-  "subs    %[k],   %[k],   #1\n"                  \
-  "mov   r1,   %[b_ptr]\n"                        \
-  "vld1.8  {d2-d5}, [r1]\n"                       \
-  "vdup.8    d0,   r0\n"                          \
-  "vmull.s8    q3,    d2,  d0\n"                  \
-  "vaddw.s16   q4,    q4,  d6\n"                  \
-  "vaddw.s16   q5,    q5,  d7\n"                  \
-  "vmull.s8    q3,    d3,  d0\n"                  \
-  "pld  [%[widx_dmap], #32]    \n"                \
-  "vaddw.s16   q6,    q6,  d6\n"                  \
-  "vaddw.s16   q7,    q7,  d7\n"                  \
-  "vmull.s8    q3,    d4,  d0\n"                  \
-  "vaddw.s16   q8,    q8, d6\n"                   \
-  "vaddw.s16   q9,    q9, d7\n"                   \
-  "vmull.s8    q3,    d5,  d0\n"                  \
-  "ldr     r0, [%[widx_dmap]],   #4\n"            \
-  "add   %[b_ptr],  %[b_ptr], r0\n"               \
-  "vaddw.s16   q10,   q10, d6\n"                  \
-  "vaddw.s16   q11,   q11, d7\n"                  \
-  "pld  [%[b_ptr], #64]    \n"                    \
-  "add  r1,  r1,   #32\n"                         \
-  "vld1.8  {d2-d3}, [r1]\n"                       \
-  "vmull.s8    q3,    d2,  d0\n"                  \
-  "vaddw.s16   q12,   q12,  d6\n"                 \
-  "pld  [%[a_ptr], #32]    \n"                    \
-  "vaddw.s16   q13,   q13,  d7\n"                 \
-  "vmull.s8    q3,    d3,  d0\n"                  \
-  "vaddw.s16   q14,   q14,  d6\n"                 \
-  "vaddw.s16   q15,   q15,  d7\n"                 \
-  "bne     0b\n"                                  \
-  "1:\n"                                          \
+#define SPARSE_INT8_INT8_W48_v7_KERNEL \
+  "veor   q4,   q0,  q0\n"             \
+  "veor   q5,   q1,  q1\n"             \
+  "veor   q6,   q2,  q2\n"             \
+  "veor   q7,   q3,  q3\n"             \
+  "pld  [%[a_ptr], #32]    \n"         \
+  "veor   q8,   q0,  q0\n"             \
+  "veor   q9,   q1,  q1\n"             \
+  "pld  [%[widx_dmap], #32]    \n"     \
+  "veor   q10,  q2,  q2\n"             \
+  "veor   q11,  q3,  q3\n"             \
+  "veor   q12,  q0,  q0\n"             \
+  "pld  [%[b_ptr], #64]    \n"         \
+  "veor   q13,  q1,  q1\n"             \
+  "veor   q14,  q2,  q2\n"             \
+  "veor   q15,  q3,  q3\n"             \
+  "cmp    %[k],    #0\n"               \
+  "beq    1f\n" /* main loop*/         \
+  "0:\n"                               \
+  "ldrsb   r0, [%[a_ptr]], #1\n"       \
+  "subs    %[k],   %[k],   #1\n"       \
+  "mov   r1,   %[b_ptr]\n"             \
+  "vld1.8  {d2-d5}, [r1]\n"            \
+  "vdup.8    d0,   r0\n"               \
+  "vmull.s8    q3,    d2,  d0\n"       \
+  "vaddw.s16   q4,    q4,  d6\n"       \
+  "vaddw.s16   q5,    q5,  d7\n"       \
+  "vmull.s8    q3,    d3,  d0\n"       \
+  "pld  [%[widx_dmap], #32]    \n"     \
+  "vaddw.s16   q6,    q6,  d6\n"       \
+  "vaddw.s16   q7,    q7,  d7\n"       \
+  "vmull.s8    q3,    d4,  d0\n"       \
+  "vaddw.s16   q8,    q8, d6\n"        \
+  "vaddw.s16   q9,    q9, d7\n"        \
+  "vmull.s8    q3,    d5,  d0\n"       \
+  "ldr     r0, [%[widx_dmap]],   #4\n" \
+  "add   %[b_ptr],  %[b_ptr], r0\n"    \
+  "vaddw.s16   q10,   q10, d6\n"       \
+  "vaddw.s16   q11,   q11, d7\n"       \
+  "pld  [%[b_ptr], #64]    \n"         \
+  "add  r1,  r1,   #32\n"              \
+  "vld1.8  {d2-d3}, [r1]\n"            \
+  "vmull.s8    q3,    d2,  d0\n"       \
+  "vaddw.s16   q12,   q12,  d6\n"      \
+  "pld  [%[a_ptr], #32]    \n"         \
+  "vaddw.s16   q13,   q13,  d7\n"      \
+  "vmull.s8    q3,    d3,  d0\n"       \
+  "vaddw.s16   q14,   q14,  d6\n"      \
+  "vaddw.s16   q15,   q15,  d7\n"      \
+  "bne     0b\n"                       \
+  "1:\n"
 
 #define SPARSE_INT8_TRANS_INT32_TO_INT8_W48_v7      \
   /* write output */                                \
@@ -6720,7 +6721,7 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
 #define SPARSE_INT8_INT8_W48_v7_LEAKY_RELU                     \
   /* do relu */                                                \
   "11: \n"                                                     \
-  "cmp   %[vflag_act],  #3       \n"  /* check leakey relu */ \
+  "cmp   %[vflag_act],  #3       \n"   /* check leakey relu */ \
   "bne   12f                     \n"   /* no act end */        \
   "vmov.i32   q0, #0\n"                /* for relu */          \
   "vdup.32    q1,  %[valpha]\n"        /* leakey relu alpha */ \
@@ -7091,7 +7092,7 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
 #define SPARSE_INT8_INT8_W32_v7_LEAKY_RELU                    \
   /* do relu */                                               \
   "11: \n"                                                    \
-  "cmp   %[vflag_act],  #3       \n" /* check leakey relu */ \
+  "cmp   %[vflag_act],  #3       \n"  /* check leakey relu */ \
   "bne   12f                     \n"  /* no act end */        \
   "vmov.i32   q8, #0\n"               /* for relu */          \
   "vdup.32    q9,  %[valpha]\n"       /* leakey relu alpha */ \
@@ -7329,25 +7330,25 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   "vmin.f32   q11,  q11,  q1\n"      /* relu6 */       \
   "b      9f                    \n"  /* relu end */
 
-#define SPARSE_INT8_INT8_W16_v7_LEAKY_RELU                    \
-  /* do relu */                                               \
-  "11: \n"                                                    \
+#define SPARSE_INT8_INT8_W16_v7_LEAKY_RELU                   \
+  /* do relu */                                              \
+  "11: \n"                                                   \
   "cmp   %[vflag_act],  #3       \n" /* check leakey relu */ \
-  "bne   12f                     \n"  /* no act end */        \
-  "vmov.i32   q0, #0\n"               /* for relu */          \
-  "vdup.32    q1,  %[valpha]\n"       /* leakey relu alpha */ \
-  "vcge.f32   q2,    q8,    q0   \n"  /* vcgeq_f32 */         \
-  "vmul.f32   q3,    q8,    q1   \n"  /* vmulq_f32 */         \
-  "vcge.f32   q4,    q9,    q0   \n"  /* vcgeq_f32 */         \
-  "vmul.f32   q5,    q9,    q1   \n"  /* vmulq_f32 */         \
-  "vcge.f32   q6,    q10,   q0   \n"  /* vcgeq_f32 */         \
-  "vmul.f32   q7,    q10,   q1   \n"  /* vmulq_f32 */         \
-  "vbif       q8,    q3,    q2   \n"                          \
-  "vbif       q9,    q5,    q4   \n"                          \
-  "vbif       q10,   q7,    q6   \n"                          \
-  "vcge.f32   q2,    q11,    q0   \n" /* vcgeq_f32 */         \
-  "vmul.f32   q3,    q11,    q1   \n" /* vmulq_f32 */         \
-  "vbif       q11,   q3,    q2   \n"                          \
+  "bne   12f                     \n" /* no act end */        \
+  "vmov.i32   q0, #0\n"              /* for relu */          \
+  "vdup.32    q1,  %[valpha]\n"      /* leakey relu alpha */ \
+  "vcge.f32   q2,    q8,    q0   \n" /* vcgeq_f32 */         \
+  "vmul.f32   q3,    q8,    q1   \n" /* vmulq_f32 */         \
+  "vcge.f32   q4,    q9,    q0   \n" /* vcgeq_f32 */         \
+  "vmul.f32   q5,    q9,    q1   \n" /* vmulq_f32 */         \
+  "vcge.f32   q6,    q10,   q0   \n" /* vcgeq_f32 */         \
+  "vmul.f32   q7,    q10,   q1   \n" /* vmulq_f32 */         \
+  "vbif       q8,    q3,    q2   \n"                         \
+  "vbif       q9,    q5,    q4   \n"                         \
+  "vbif       q10,   q7,    q6   \n"                         \
+  "vcge.f32   q2,    q11,    q0   \n" /* vcgeq_f32 */        \
+  "vmul.f32   q3,    q11,    q1   \n" /* vmulq_f32 */        \
+  "vbif       q11,   q3,    q2   \n"                         \
   "b      9f                    \n"
 
 #define SPARSE_INT8_INT8_W16_v7_HARD_SWISH     \
@@ -7480,19 +7481,19 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   "vmin.f32   q7,   q7,   q1\n"      /* relu6 */       \
   "b      9f                    \n"  /* relu end */
 
-#define SPARSE_INT8_INT8_W8_v7_LEAKY_RELU                     \
-  /* do relu */                                               \
-  "11: \n"                                                    \
+#define SPARSE_INT8_INT8_W8_v7_LEAKY_RELU                    \
+  /* do relu */                                              \
+  "11: \n"                                                   \
   "cmp   %[vflag_act],  #3       \n" /* check leakey relu */ \
-  "bne   12f                     \n"  /* no act end */        \
-  "vmov.i32   q0, #0\n"               /* for relu */          \
-  "vdup.32    q1,  %[valpha]\n"       /* leakey relu alpha */ \
-  "vcge.f32   q2,    q6,    q0   \n"  /* vcgeq_f32 */         \
-  "vmul.f32   q3,    q6,    q1   \n"  /* vmulq_f32 */         \
-  "vcge.f32   q4,    q7,    q0   \n"  /* vcgeq_f32 */         \
-  "vmul.f32   q5,    q7,    q1   \n"  /* vmulq_f32 */         \
-  "vbif       q6,    q3,    q2   \n"                          \
-  "vbif       q7,    q5,    q4   \n"                          \
+  "bne   12f                     \n" /* no act end */        \
+  "vmov.i32   q0, #0\n"              /* for relu */          \
+  "vdup.32    q1,  %[valpha]\n"      /* leakey relu alpha */ \
+  "vcge.f32   q2,    q6,    q0   \n" /* vcgeq_f32 */         \
+  "vmul.f32   q3,    q6,    q1   \n" /* vmulq_f32 */         \
+  "vcge.f32   q4,    q7,    q0   \n" /* vcgeq_f32 */         \
+  "vmul.f32   q5,    q7,    q1   \n" /* vmulq_f32 */         \
+  "vbif       q6,    q3,    q2   \n"                         \
+  "vbif       q7,    q5,    q4   \n"                         \
   "b      9f                    \n"
 
 #define SPARSE_INT8_INT8_W8_v7_HARD_SWISH      \
@@ -7592,16 +7593,16 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   "vmin.f32   q4,   q4,   q1\n"      /* relu6 */       \
   "b      9f                    \n"  /* relu end */
 
-#define SPARSE_INT8_INT8_W4_v7_LEAKY_RELU                     \
-  /* do relu */                                               \
-  "11: \n"                                                    \
+#define SPARSE_INT8_INT8_W4_v7_LEAKY_RELU                    \
+  /* do relu */                                              \
+  "11: \n"                                                   \
   "cmp   %[vflag_act],  #3       \n" /* check leakey relu */ \
-  "bne   12f                     \n"  /* no act end */        \
-  "vmov.i32   q0, #0\n"               /* for relu */          \
-  "vdup.32    q1,  %[valpha]\n"       /* leakey relu alpha */ \
-  "vcge.f32   q2,    q4,    q0   \n"  /* vcgeq_f32 */         \
-  "vmul.f32   q3,    q4,    q1   \n"  /* vmulq_f32 */         \
-  "vbif       q4,    q3,    q2   \n"                          \
+  "bne   12f                     \n" /* no act end */        \
+  "vmov.i32   q0, #0\n"              /* for relu */          \
+  "vdup.32    q1,  %[valpha]\n"      /* leakey relu alpha */ \
+  "vcge.f32   q2,    q4,    q0   \n" /* vcgeq_f32 */         \
+  "vmul.f32   q3,    q4,    q1   \n" /* vmulq_f32 */         \
+  "vbif       q4,    q3,    q2   \n"                         \
   "b      9f                    \n"
 
 #define SPARSE_INT8_INT8_W4_v7_HARD_SWISH      \
@@ -8053,10 +8054,12 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
               float32x4_t v0123 = vmulq_f32(vaccf0123, aph);
               vaccf0123 = vbslq_f32(vflag0123, vaccf0123, v0123);
             } else {
-              float32x4_t offset = vdupq_n_f32(act_param.hard_swish_offset / param.output_scale);
+              float32x4_t offset =
+                  vdupq_n_f32(act_param.hard_swish_offset / param.output_scale);
               float32x4_t hs_scale =
                   vdupq_n_f32(1.0 / act_param.hard_swish_scale);
-              float32x4_t thre = vdupq_n_f32(act_param.hard_swish_threshold / param.output_scale);
+              float32x4_t thre = vdupq_n_f32(act_param.hard_swish_threshold /
+                                             param.output_scale);
               float32x4_t vset0123 = vaddq_f32(vaccf0123, offset);
               float32x4_t vscale0123 = vmulq_f32(vaccf0123, hs_scale);
               vset0123 = vmaxq_f32(vset0123, vzero);
