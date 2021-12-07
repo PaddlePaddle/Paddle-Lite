@@ -37,7 +37,8 @@ std::shared_ptr<std::mt19937_64> GetCPURandomEngine(uint64_t seed) {
   } else {
     VLOG(4) << "Use default random engine with fixed random seed = " << seed;
   }
-  engine->seed(seed);
+  std::seed_seq seq({seed});
+  engine->seed(seq);
   return engine;
 }
 

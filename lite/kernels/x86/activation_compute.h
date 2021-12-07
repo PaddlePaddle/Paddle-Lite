@@ -24,6 +24,7 @@
 
 #include "lite/backends/x86/fluid/eigen.h"
 #include "lite/backends/x86/math/activation.h"
+#include "lite/backends/x86/math/activation_functions.h"
 #include "lite/backends/x86/math/blas.h"
 #include "lite/core/kernel.h"
 #include "lite/core/op_lite.h"
@@ -174,9 +175,14 @@ class TanhCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
 
   void Run() override {
     auto& param = *param_.get_mutable<operators::ActivationParam>();
+    auto output_ptr = param.Out->template mutable_data<T>();
 
-    param.Out->template mutable_data<T>();
-    Activate<TanhFunctor<T>>(param.X, param.Out);
+    if (param.X->numel() == param.Out->numel()) {
+      paddle::lite::x86::math::detail::forward::avx::Tanh_fp32(
+          param.X->data<float>(), output_ptr, param.X->numel());
+    } else {
+      Activate<TanhFunctor<T>>(param.X, param.Out);
+    }
   }
 
   virtual ~TanhCompute() = default;

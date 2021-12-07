@@ -375,7 +375,91 @@ ElementwiseOpCompute(Mod)
 ElementwiseOpActivationCompute(Mod)
 ElementwiseOpCompute(Pow)
 ElementwiseOpActivationCompute(Pow)
-// clang-format on
+    // clang-format on
+
+    template <>
+    void ElementwiseAddCompute<float>::Run() {
+  auto& param = Param<operators::ElementwiseParam>();
+  auto x = param.X;
+  auto y = param.Y;
+  auto* x_data = x->data<float>();
+  auto* y_data = y->data<float>();
+  auto x_dims = x->dims();
+  auto y_dims = y->dims();
+
+  if (x_dims == y_dims) {
+    param.Out->Resize(x_dims);
+    auto* out_data = param.Out->mutable_data<float>();
+    int i = 0;
+#ifdef __AVX__
+    for (; i + 7 < param.X->numel(); i += 8) {
+      __m256 vec_x = _mm256_loadu_ps(x_data + i);
+      __m256 vec_y = _mm256_loadu_ps(y_data + i);
+      _mm256_storeu_ps(out_data + i, _mm256_add_ps(vec_x, vec_y));
+    }
+#endif
+    for (; i + 3 < param.X->numel(); i += 4) {
+      __m128 vec_x = _mm_loadu_ps(x_data + i);
+      __m128 vec_y = _mm_loadu_ps(y_data + i);
+      _mm_storeu_ps(out_data + i, _mm_add_ps(vec_x, vec_y));
+    }
+    for (; i < param.X->numel(); i++) {
+      out_data[i] = x_data[i] + y_data[i];
+    }
+  } else {
+    using X86Config = paddle::lite::x86::math::MergeConfig<
+        lite::x86::math::AddConfig<float>,
+        lite::x86::math::ActiveConfig<lite::x86::math::ActiveType::NO_ACTIVE,
+                                      float>>;
+    elementwise_compute_template<operators::ElementwiseParam, float, X86Config>(
+        this,
+        lite::x86::math::Elementwise_Broadcast_Add<float>,
+        lite::x86::math::Elementwise_Add<float>,
+        lite::x86::math::NaiveAdd<float>);
+  }
+}
+
+template <>
+void ElementwiseMulCompute<float>::Run() {
+  auto& param = Param<operators::ElementwiseParam>();
+  auto x = param.X;
+  auto y = param.Y;
+  auto* x_data = x->data<float>();
+  auto* y_data = y->data<float>();
+  auto x_dims = x->dims();
+  auto y_dims = y->dims();
+
+  if (x_dims == y_dims) {
+    param.Out->Resize(x_dims);
+    auto* out_data = param.Out->mutable_data<float>();
+    int i = 0;
+#ifdef __AVX__
+    for (; i + 7 < param.X->numel(); i += 8) {
+      __m256 vec_x = _mm256_loadu_ps(x_data + i);
+      __m256 vec_y = _mm256_loadu_ps(y_data + i);
+      _mm256_storeu_ps(out_data + i, _mm256_mul_ps(vec_x, vec_y));
+    }
+#endif
+    for (; i + 3 < param.X->numel(); i += 4) {
+      __m128 vec_x = _mm_loadu_ps(x_data + i);
+      __m128 vec_y = _mm_loadu_ps(y_data + i);
+      _mm_storeu_ps(out_data + i, _mm_mul_ps(vec_x, vec_y));
+    }
+    for (; i < param.X->numel(); i++) {
+      out_data[i] = x_data[i] * y_data[i];
+    }
+  } else {
+    using X86Config = paddle::lite::x86::math::MergeConfig<
+        lite::x86::math::MulConfig<float>,
+        lite::x86::math::ActiveConfig<lite::x86::math::ActiveType::NO_ACTIVE,
+                                      float>>;
+    elementwise_compute_template<operators::ElementwiseParam, float, X86Config>(
+        this,
+        lite::x86::math::Elementwise_Broadcast_Mul<float>,
+        lite::x86::math::Elementwise_Mul<float>,
+        lite::x86::math::NaiveMul<float>);
+  }
+}
 
 }  // namespace x86
 }  // namespace kernels

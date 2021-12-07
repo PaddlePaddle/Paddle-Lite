@@ -152,6 +152,19 @@ __m256 Relu(const __m256 a);
 __m256 Sigmoid(const __m256 a);
 __m256 Tanh(const __m256 a);
 __m256 Identity(const __m256 a);
+
+inline void Tanh_fp32(const float *input, float *output, int numel) {
+  int i = 0;
+  for (i = 0; i + 7 < numel; i += 8) {
+    const __m256 vec_in = _mm256_loadu_ps(input + i);
+    __m256 vec_out = Tanh(vec_in);
+    _mm256_storeu_ps(output + i, vec_out);
+  }
+  for (; i < numel; i++) {
+    const float a = input[i];
+    output[i] = forward::Tanh<float>(a);
+  }
+}
 }  // namespace avx
 }  // namespace forward
 
