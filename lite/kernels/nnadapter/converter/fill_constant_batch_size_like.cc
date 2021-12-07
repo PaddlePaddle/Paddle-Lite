@@ -30,7 +30,7 @@ int ConvertFillConstantBatchSizeLike(Converter* converter,
     input_scales = op->GetInputScale(input_scale_name, true);
   }
   auto dtype = op->GetAttr<int>("dtype");
-  auto shape = op->GetAttr<std::vector<int>>("shape");
+  std::vector<int> shape = op->GetAttr<std::vector<int>>("shape");
   auto shape_size = shape.size();
   float value = op->HasAttr("value") ? op->GetAttr<float>("value") : 0.0f;
   int input_dim_idx =

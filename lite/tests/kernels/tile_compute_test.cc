@@ -205,7 +205,6 @@ TEST(tile, precision) {
   TestTile<float>(place, alias, abs_error);
   TestTile<float>(place, alias, abs_error, {1, 1, 1}, {2, 3, 4});
   TestTile<float>(place, alias, abs_error, {2, 1, 4}, {2, 3, 4}, true);
-  TestTile<float>(place, alias, abs_error, {2, 1, 4}, {2, 3, 4}, false, true);
 }
 
 }  // namespace lite
