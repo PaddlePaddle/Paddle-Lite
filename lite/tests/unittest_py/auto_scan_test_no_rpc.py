@@ -69,6 +69,15 @@ class AutoScanTest(AutoScanBaseTest):
         config.set_model_buffer(model, len(model), params, len(params))
         predictor = create_paddle_predictor(config)
 
+        # WARN: The `predictor->SaveOptimizedModel` method must be executed
+        # before the `predictor->Run` method. Because some kernels' `PrepareForRun`
+        # method maybe change some parameters' values.
+
+        # 3. optimized model
+        predictor.save_optimized_pb_model(self.cache_dir+ "/opt_model/")
+        with open(self.cache_dir + "/opt_model/model", "rb") as f:
+            model = f.read()
+
         for name in inputs:
             input_tensor = predictor.get_input_by_name(name)
             input_tensor.from_numpy(inputs[name]['data'])
@@ -76,16 +85,11 @@ class AutoScanTest(AutoScanBaseTest):
                 input_tensor.set_lod(inputs[name]['lod'])
         predictor.run()
 
-        # 3. inference results
+        # 4. inference results
         result = {}
         for out_name in predictor.get_output_names():
             result[out_name] = predictor.get_output_by_name(out_name).numpy()
         result_res = copy.deepcopy(result)
-
-        # 4. optimized model
-        predictor.save_optimized_pb_model(self.cache_dir+ "/opt_model/")
-        with open(self.cache_dir + "/opt_model/model", "rb") as f:
-            model = f.read()
 
         return result_res, model
 

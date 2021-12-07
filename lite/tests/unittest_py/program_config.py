@@ -14,6 +14,7 @@
 
 from typing import Optional, List, Callable, Dict, Any, Set
 import numpy as np
+import enum
 import paddle
 import paddle.fluid as fluid
 import paddle.fluid.core as core
@@ -39,7 +40,7 @@ class TensorConfig:
         '''
         shape: The shape of the tensor.
         dtype: The data type of the tensor.
-        data: The value of WeightVar. for input, it should be None
+        data: The value of WeightVar. for input, it should be None 
         '''
         self.lod = lod
         if data_gen is not None:
@@ -57,6 +58,12 @@ class TensorConfig:
         return str({'shape': self.shape, 'lod': self.lod, 'dtype': self.dtype})
 
 
+class VarType(enum.Enum):
+    LOD_TENSOR = 1
+    LOD_TENSOR_ARRAY = 2
+    STEP_SCOPES = 3
+
+
 class OpConfig:
     '''  A config builder for generating a Op.  '''
 
@@ -65,12 +72,14 @@ class OpConfig:
                  inputs: Dict[str, List[str]],
                  outputs: Dict[str, List[str]],
                  attrs: Dict[str, Any]=None,
+                 outputs_var_type: Dict[str, VarType]=None,
                  outputs_dtype: Dict[str, np.dtype]=None,
                  **kwargs):
         self.type = type
         self.inputs = inputs
         self.outputs = outputs
         self.outputs_dtype = outputs_dtype
+        self.outputs_var_type = outputs_var_type
         self.attrs = attrs
         if self.attrs is None:
             self.attrs = dict()
@@ -80,6 +89,88 @@ class OpConfig:
         log_str = self.type
         log_str += str(self.attrs)
         return log_str
+
+
+_OP_WITHOUT_KERNEL_SET = {
+    'feed', 'fetch', 'recurrent', 'go', 'rnn_memory_helper_grad',
+    'conditional_block', 'while', 'send', 'recv', 'listen_and_serv',
+    'fl_listen_and_serv', 'ncclInit', 'select', 'checkpoint_notify',
+    'gen_bkcl_id', 'c_gen_bkcl_id', 'gen_nccl_id', 'c_gen_nccl_id',
+    'c_comm_init', 'c_sync_calc_stream', 'c_sync_comm_stream',
+    'queue_generator', 'dequeue', 'enqueue', 'heter_listen_and_serv',
+    'c_wait_comm', 'c_wait_compute', 'c_gen_hccl_id', 'c_comm_init_hccl',
+    'copy_cross_scope'
+}
+
+
+class BlockConfig:
+    ''' A config builder for generating a Block. '''
+
+    def __init__(self,
+                 ops: List[OpConfig],
+                 vars: List[str],
+                 vars_dtype: Dict[str, np.dtype]=None,
+                 vars_var_type: Dict[str, VarType]=None,
+                 vars_lod_level: Dict[str, int]=None):
+        self.ops = ops
+        self.vars = vars
+        self.vars_dtype = vars_dtype
+        self.vars_var_type = vars_var_type
+        self.vars_lod_level = vars_lod_level
+
+    def fill_block_desc(self, block_desc):
+        for name in self.vars:
+            var_desc = block_desc.var(cpt.to_bytes(name))
+            var_desc.set_type(core.VarDesc.VarType.LOD_TENSOR)
+            if self.vars_lod_level is not None and name in self.vars_lod_level.keys(
+            ):
+                var_desc.set_lod_level(self.vars_lod_level[name])
+            if self.vars_var_type is not None and name in self.vars_var_type.keys(
+            ):
+                if self.vars_var_type[name] == VarType.LOD_TENSOR_ARRAY:
+                    var_desc.set_type(core.VarDesc.VarType.LOD_TENSOR_ARRAY)
+                elif self.vars_var_type[name] == VarType.STEP_SCOPES:
+                    var_desc.set_type(core.VarDesc.VarType.STEP_SCOPES)
+                    continue
+            var_desc.set_dtype(convert_np_dtype_to_dtype_(np.float32))
+            if self.vars_dtype is not None and name in self.vars_dtype.keys():
+                var_desc.set_dtype(
+                    convert_np_dtype_to_dtype_(self.vars_dtype[name]))
+
+        for op_config in self.ops:
+            op_desc = block_desc.append_op()
+            op_desc.set_type(op_config.type)
+            for name, values in op_config.inputs.items():
+                op_desc.set_input(name, values)
+            for name, values in op_config.attrs.items():
+                op_desc._set_attr(name, values)
+            for name, values in op_config.outputs.items():
+                op_desc.set_output(name, values)
+                for v in values:
+                    if block_desc.has_var_recursive(cpt.to_bytes(v)):
+                        continue
+                    var_desc = block_desc.var(cpt.to_bytes(v))
+                    var_desc.set_type(core.VarDesc.VarType.LOD_TENSOR)
+                    if op_config.outputs_var_type is not None and v in op_config.outputs_var_type.keys(
+                    ):
+                        if op_config.outputs_var_type[
+                                v] == VarType.LOD_TENSOR_ARRAY:
+                            var_desc.set_type(
+                                core.VarDesc.VarType.LOD_TENSOR_ARRAY)
+                        elif op_config.outputs_var_type[
+                                v] == VarType.STEP_SCOPES:
+                            var_desc.set_type(core.VarDesc.VarType.STEP_SCOPES)
+                            continue
+                    var_desc.set_dtype(convert_np_dtype_to_dtype_(np.float32))
+                    if op_config.outputs_dtype is not None and v in op_config.outputs_dtype.keys(
+                    ):
+                        var_desc.set_dtype(
+                            convert_np_dtype_to_dtype_(op_config.outputs_dtype[
+                                v]))
+            if op_config.type not in _OP_WITHOUT_KERNEL_SET:
+                op_desc.infer_var_type(block_desc)
+                op_desc.infer_shape(block_desc)
+            op_desc.check_attrs()
 
 
 class ProgramConfig:
@@ -181,19 +272,35 @@ def create_fake_model(program_config):
         for name, values in op_config.inputs.items():
             op_desc.set_input(name, values)
         for name, values in op_config.attrs.items():
-            op_desc._set_attr(name, values)
+            if name == 'sub_block':
+                sub_block_desc = main_program_desc.append_block(main_block_desc)
+                values.fill_block_desc(sub_block_desc)
+                op_desc._set_attr(name, sub_block_desc)
+            else:
+                op_desc._set_attr(name, values)
         for name, values in op_config.outputs.items():
             op_desc.set_output(name, values)
             for v in values:
+                if main_block_desc.has_var_recursive(cpt.to_bytes(v)):
+                    continue
                 var_desc = main_block_desc.var(cpt.to_bytes(v))
                 var_desc.set_type(core.VarDesc.VarType.LOD_TENSOR)
-                var_desc.set_dtype(
-                    convert_np_dtype_to_dtype_(np.float32))
-                if op_config.outputs_dtype is not None and v in op_config.outputs_dtype.keys():
-                    var_desc.set_dtype(convert_np_dtype_to_dtype_(op_config.outputs_dtype[v]))
-
-        op_desc.infer_var_type(main_block_desc)
-        op_desc.infer_shape(main_block_desc)
+                if op_config.outputs_var_type is not None and v in op_config.outputs_var_type.keys(
+                ):
+                    if op_config.outputs_var_type[
+                            v] == VarType.LOD_TENSOR_ARRAY:
+                        var_desc.set_type(core.VarDesc.VarType.LOD_TENSOR_ARRAY)
+                    elif op_config.outputs_var_type[v] == VarType.STEP_SCOPES:
+                        var_desc.set_type(core.VarDesc.VarType.STEP_SCOPES)
+                        continue
+                var_desc.set_dtype(convert_np_dtype_to_dtype_(np.float32))
+                if op_config.outputs_dtype is not None and v in op_config.outputs_dtype.keys(
+                ):
+                    var_desc.set_dtype(
+                        convert_np_dtype_to_dtype_(op_config.outputs_dtype[v]))
+        if op_config.type not in _OP_WITHOUT_KERNEL_SET:
+            op_desc.infer_var_type(main_block_desc)
+            op_desc.infer_shape(main_block_desc)
         op_desc.check_attrs()
 
     for index, name in enumerate(program_config.outputs):
