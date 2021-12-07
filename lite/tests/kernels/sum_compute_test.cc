@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -112,7 +112,7 @@ void test_sum(Place place, float abs_error) {
   arena.TestPrecision();
 }
 
-TEST(Stack, precision) {
+TEST(Sum, precision) {
   Place place;
   float abs_error = 2e-4;
 #if defined(LITE_WITH_NNADAPTER)
@@ -122,8 +122,6 @@ TEST(Stack, precision) {
 #else
   return;
 #endif
-#elif defined(LITE_WITH_ARM)
-  place = TARGET(kARM);
 #else
   return;
 #endif

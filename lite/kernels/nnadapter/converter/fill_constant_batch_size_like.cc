@@ -18,7 +18,47 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace nnadapter {
-
+/**
+ * fill_constant_batch_size_like -> fill_like + transpose + slice +
+ * elementwise_add
+ *
+ * Such as:
+ * input: dims=(2, 5, 4, 3)
+ * value: 2
+ * input_dims_idx: 1
+ * output_dims_idx: 2
+ * shape: (7, 9, ?, 2)
+ *
+ *             input        zero_value(0)
+ *                \            /
+ *                  \        /
+ *                  [fill_like]
+ *                      |
+ *                      |  dims=(2,5,4,3)
+ *                      |
+ *                  [transpose]
+ *                      |
+ *                      |  dims=(5,2,4,3)
+ *                      |
+ *                   [slice]
+ *                      |
+ *                      |  dims=(5,1,1,1)
+ *                      |
+ *                  [reshape]
+ *                      |
+ *                      |  dims=(1,1,5,1)
+ *                      |
+ *                  new_input                   dummy_input
+ *            (dims=(1,1,5,1),value=0)  (dims=(7,9,1,2),value=2)
+ *                      |               /
+ *                      |             /
+ *                      |           /
+ *                    [elementwise_add]
+ *                            |
+ *                            |
+ *                          output
+ *                 (dims=(7,9,5,1), value=2)
+ */
 int ConvertFillConstantBatchSizeLike(Converter* converter,
                                      OpInfo* op,
                                      Scope* scope) {

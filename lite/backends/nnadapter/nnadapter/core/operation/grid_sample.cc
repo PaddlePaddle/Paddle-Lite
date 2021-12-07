@@ -29,6 +29,8 @@ int PrepareGridSample(hal::Operation* operation) {
   auto input_type = input_operand->type;
   auto grid_type = grid_operand->type;
   auto& output_type = output_operand->type;
+  NNADAPTER_CHECK_EQ(output_type.dimensions.count, 4)
+      << "Invalid output dimensions rank, the rank needs to be four";
   CopyOperandTypeExceptQuantParams(&output_type, input_type);
 
   auto infer_output_shape = [&](int32_t* input_dimensions_data,
