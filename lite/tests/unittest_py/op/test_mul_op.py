@@ -35,8 +35,8 @@ class TestMulOp(AutoScanTest):
         # get input&output shape, get op attributes
         x_shape = list(program_config.inputs["input_data_x"].shape)
         y_shape = list(program_config.weights["input_data_y"].shape)
-        x_num_col_dims = prog_config.ops[0].attrs["x_num_col_dims"]
-        y_num_col_dims = prog_config.ops[0].attrs["y_num_col_dims"]
+        x_num_col_dims = program_config.ops[0].attrs["x_num_col_dims"]
+        y_num_col_dims = program_config.ops[0].attrs["y_num_col_dims"]
 
         # {TargetType.Host, TargetType.X86, TargetType.ARM, TargetType.OpenCL}
         if predictor_config.target() == TargetType.ARM:
@@ -93,8 +93,8 @@ class TestMulOp(AutoScanTest):
             # get input&output shape, get op attributes
             x_shape = list(program_config.inputs["input_data_x"].shape)
             y_shape = list(program_config.weights["input_data_y"].shape)
-            x_num_col_dims = prog_config.ops[0].attrs["x_num_col_dims"]
-            y_num_col_dims = prog_config.ops[0].attrs["y_num_col_dims"]
+            x_num_col_dims = program_config.ops[0].attrs["x_num_col_dims"]
+            y_num_col_dims = program_config.ops[0].attrs["y_num_col_dims"]
 
             # {TargetType.Host, TargetType.X86, TargetType.ARM, TargetType.OpenCL}
             if predictor_config.target() == TargetType.ARM:
