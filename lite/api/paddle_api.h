@@ -173,6 +173,8 @@ class LITE_API ConfigBase {
   void* metal_device_{nullptr};
   bool metal_use_memory_reuse_{false};
 
+  std::vector<std::string> discarded_passes_{};
+
  public:
   explicit ConfigBase(PowerMode mode = LITE_POWER_NO_BIND, int threads = 1);
   // set Model_dir
@@ -270,6 +272,11 @@ class LITE_API ConfigBase {
   bool metal_use_aggressive() const { return metal_use_aggressive_; }
   void* metal_device() const { return metal_device_; }
   bool metal_use_memory_reuse() const { return metal_use_memory_reuse_; }
+
+  void add_discarded_pass(const std::string pass);
+  const std::vector<std::string> get_discarded_passes() const {
+    return discarded_passes_;
+  }
 };
 
 class LITE_API CxxModelBuffer {

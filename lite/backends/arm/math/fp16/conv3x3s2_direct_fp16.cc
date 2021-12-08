@@ -15,6 +15,7 @@
 #include "lite/backends/arm/math/fp16/common_preprocess.h"
 #include "lite/backends/arm/math/fp16/conv_block_utils_fp16.h"
 #include "lite/core/context.h"
+#include "lite/core/parallel_defines.h"
 #ifdef ARM_WITH_OMP
 #include <omp.h>
 #endif
@@ -652,9 +653,10 @@ void conv_3x3s2_direct_fp16(const float16_t* i_data,
       const float16_t* cblock_inr3 = cblock_inr2 + in_len;
       const float16_t* cblock_inr4 = cblock_inr3 + in_len;
 
-#pragma omp parallel for num_threads(threads)
-      for (int c = 0; c < c_round_down; c += OUT_C_BLOCK) {
-#ifdef ARM_WITH_OMP
+      LITE_PARALLEL_COMMON_BEGIN(c, tid, c_round_down, 0, OUT_C_BLOCK) {
+#ifdef LITE_USE_THREAD_POOL
+        float16_t* pre_out = pre_din + pre_in_size + tid * pre_out_size;
+#elif ARM_WITH_OMP
         float16_t* pre_out =
             pre_din + pre_in_size + omp_get_thread_num() * pre_out_size;
 #else
@@ -735,6 +737,7 @@ void conv_3x3s2_direct_fp16(const float16_t* i_data,
                           offset,
                           threshold);
       }
+      LITE_PARALLEL_COMMON_END();
     }
   }
 }
@@ -813,9 +816,10 @@ void conv_3x3s2_direct_fp16_c3(const float16_t* i_data,
       const float16_t* cblock_inr3 = cblock_inr2 + in_len;
       const float16_t* cblock_inr4 = cblock_inr3 + in_len;
 
-#pragma omp parallel for num_threads(threads)
-      for (int c = 0; c < c_round_down; c += OUT_C_BLOCK) {
-#ifdef ARM_WITH_OMP
+      LITE_PARALLEL_COMMON_BEGIN(c, tid, c_round_down, 0, OUT_C_BLOCK) {
+#ifdef LITE_USE_THREAD_POOL
+        float16_t* pre_out = pre_din + pre_in_size + tid * pre_out_size;
+#elif ARM_WITH_OMP
         float16_t* pre_out =
             pre_din + pre_in_size + omp_get_thread_num() * pre_out_size;
 #else
@@ -918,6 +922,7 @@ void conv_3x3s2_direct_fp16_c3(const float16_t* i_data,
                           offset,
                           threshold);
       }
+      LITE_PARALLEL_END();
     }
   }
 }

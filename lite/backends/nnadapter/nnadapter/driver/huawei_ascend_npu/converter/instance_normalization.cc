@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "core/operation/instance_normalization.h"
-
 #include "driver/huawei_ascend_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -73,25 +72,7 @@ int ConvertInstanceNormalization(Converter* converter,
   auto add_op = converter->AddOperator<ge::op::Add>(output_operand);
   SET_INPUT(add_op, x1, mul_operator);
   SET_INPUT(add_op, x2, bias_operator);
-  auto add_operator = MAP_OUTPUT(add_op, y, output_operand);
-  // Fuse activations
-  switch (fuse_code) {
-#define CONVERT_UNARY_ACTIVATION(type, class_name)                            \
-  case NNADAPTER_FUSED_##type: {                                              \
-    auto act_op = converter->AddOperator<ge::op::class_name>(output_operand); \
-    SET_INPUT(act_op, x, add_operator);                                       \
-    MAP_OUTPUT(act_op, y, output_operand);                                    \
-  } break;
-    CONVERT_UNARY_ACTIVATION(RELU, Relu);
-    CONVERT_UNARY_ACTIVATION(RELU6, Relu6);
-#undef CONVERT_UNARY_ACTIVATION
-    case NNADAPTER_FUSED_NONE:
-      break;
-    default:
-      NNADAPTER_LOG(FATAL) << "Unsupported fuse_code(" << fuse_code
-                           << ") is found.";
-      break;
-  }
+  MAP_OUTPUT(add_op, y, output_operand);
   return NNADAPTER_NO_ERROR;
 }
 
