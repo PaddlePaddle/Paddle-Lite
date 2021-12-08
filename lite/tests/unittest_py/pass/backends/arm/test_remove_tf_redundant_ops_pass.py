@@ -11,37 +11,36 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import sys
 sys.path.append('../../common')
 sys.path.append('../../../')
 
-import test_gather_op_base
-from auto_scan_test import AutoScanTest, IgnoreReasons
+import test_remove_tf_redundant_ops_pass_base
+from auto_scan_test_rpc import FusePassAutoScanTest
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import unittest
 
 import hypothesis
 from hypothesis import given, settings, seed, example, assume
+import hypothesis.strategies as st
 
-
-class TestGatherOp(AutoScanTest):
-    def is_program_valid(self, program_config: ProgramConfig) -> bool:
+class TestRemove_tf_redundant_ops_pass(FusePassAutoScanTest):
+    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
         return True
 
-    def sample_program_configs(self, draw):
-        return test_gather_op_base.sample_program_configs(draw)
+    def sample_program_configs(self, *args, **kwargs):
+        return test_remove_tf_redundant_ops_pass_base.sample_program_configs(*args, **kwargs)
 
     def sample_predictor_configs(self):
         config = CxxConfig()
-        config.set_valid_places({Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)})
-        yield config, ["gather"], (1e-5, 1e-5)
+        config.set_valid_places({Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)})
+        yield config, ["softmax"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=25, passes=["lite_remove_tf_redundant_ops_pass"])
 
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main(argv=[''])
