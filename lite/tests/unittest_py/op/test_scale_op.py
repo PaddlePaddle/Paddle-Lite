@@ -18,17 +18,17 @@ sys.path.append('../')
 from auto_scan_test import AutoScanTest, IgnoreReasons
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import unittest
-from functools import partial
-import numpy as np
+
 import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
+import numpy as np
+from functools import partial
 import argparse
 
-class TestRsqrtOp(AutoScanTest):
+class TestScaleOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,2,4])
         self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,2,4])
         self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,2,4])
         opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
@@ -37,48 +37,67 @@ class TestRsqrtOp(AutoScanTest):
                           Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageDefault),
                           Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageFolder),
                           Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-                          Place(TargetType.Host, PrecisionType.FP32)]
+                          Place(TargetType.Host, PrecisionType.FP32)    
+                        ]
         self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
-        in_shape = list(program_config.inputs["input_data"].shape)
-        if predictor_config.target() == TargetType.OpenCL:
-            if len(in_shape) != 4:
-                return False
-        if predictor_config.target() == TargetType.Metal:
+        if predictor_config.target() == TargetType.Host:
             return False
         return True
 
     def sample_program_configs(self, draw):
         in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=1, max_size=6))
+        bias = draw(st.floats(min_value=-5, max_value=5))
+        bias_after_scale = draw(st.booleans())
+        scale = draw(st.floats(min_value=-5, max_value=5))
+        input_type = draw(st.sampled_from(["int8", "int32", "int64", "float32"]))
+        has_scale_tensor = False
 
-        def generate_input(*args, **kwargs):
-            # Make sure input data is greater than 0
-            return np.random.random(in_shape).astype(np.float32) + 0.1
+        def generate_input_float32(*args, **kwargs):
+            return np.random.random(in_shape).astype(np.float32)
 
-        rsqrt_op = OpConfig(
-            type = "rsqrt",
-            inputs = {"X" : ["input_data"]},
-            outputs = {"Out": ["output_data"]},
-            attrs = {})
-        program_config = ProgramConfig(
-            ops=[rsqrt_op],
-            weights={},
-            inputs={
-                "input_data":
-                TensorConfig(data_gen=partial(generate_input))
-            },
-            outputs=["output_data"])
+        input_dict = {"X" : ["input_data"]}
+        if has_scale_tensor:
+            input_dict["ScaleTensor"] = "scale_tensor_data"
+
+        scale_op = OpConfig(
+            type = "scale",
+            inputs = input_dict,
+            outputs = {"Out" : ["output_data"]},
+            attrs = {"bias" : bias,
+                    "bias_after_scale" : bias_after_scale,
+                    "scale" : scale})
+
+        if has_scale_tensor:
+            program_config = ProgramConfig(
+                ops=[scale_op],
+                weights={},
+                inputs={
+                    "input_data" : TensorConfig(data_gen=partial(generate_input_float32)),
+                    "scale_tensor_data" : TensorConfig(shape=[1,])
+                },
+                outputs=["output_data"])
+        else:
+            program_config = ProgramConfig(
+                ops=[scale_op],
+                weights={},
+                inputs={
+                    "input_data":
+                    TensorConfig(data_gen=partial(generate_input_float32))
+                },
+                outputs=["output_data"])
+
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["rsqrt"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["scale"], (1e-5, 1e-5)    
 
     def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=220)
+        self.run_and_statis(quant=False, max_examples=25)
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
