@@ -25,11 +25,10 @@ import hypothesis.strategies as st
 
 def sample_program_configs(draw):
     in_shape = draw(st.lists(st.integers(min_value=2, max_value=6), min_size = 4, max_size=4))
-    I_shape = draw(st.lists(st.integers(min_value=1, max_value=1), min_size = 1, max_size=1))
     axis_data = draw(st.integers(min_value=0, max_value=3))
     use_stack_data = draw(st.booleans())
     def generate_input_I_data():
-            return np.random.randint(0,1,I_shape).astype(np.int64)
+            return np.random.randint(0,1,[1]).astype(np.int64)
     
     write_to_array_op = OpConfig(
         type = "write_to_array",

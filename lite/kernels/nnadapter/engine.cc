@@ -75,7 +75,7 @@ void* AccessModelOutput(void* memory, NNAdapterOperandType* type) {
     TENSOR_MUTABLE_DATA(kFloat, float)
     TENSOR_MUTABLE_DATA(kBool, bool)
     default:
-      LOG(ERROR) << "Failed to mutable data for the precsion type("
+      LOG(FATAL) << "Failed to mutable data for the precsion type("
                  << PrecisionToStr(precision) << ") at output@0x"
                  << string_format("%x", memory) << "!";
       break;

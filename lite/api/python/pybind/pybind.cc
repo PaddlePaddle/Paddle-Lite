@@ -50,6 +50,8 @@ using lite_api::Place;
 using lite_api::PowerMode;
 using lite_api::PrecisionType;
 using lite_api::TargetType;
+using lite_api::CLTuneMode;
+using lite_api::CLPrecisionType;
 using lite_api::Tensor;
 using lite_api::CxxModelBuffer;
 
@@ -92,6 +94,8 @@ static void BindLiteCxxConfig(py::module *m);
 static void BindLiteMobileConfig(py::module *m);
 static void BindLitePowerMode(py::module *m);
 static void BindLitePlace(py::module *m);
+static void BindLiteCLTuneMode(py::module *m);
+static void BindLiteCLPrecisionType(py::module *m);
 static void BindLiteTensor(py::module *m);
 static void BindLiteMLUCoreVersion(py::module *m);
 
@@ -100,6 +104,8 @@ void BindLiteApi(py::module *m) {
   BindLiteMobileConfig(m);
   BindLitePowerMode(m);
   BindLitePlace(m);
+  BindLiteCLTuneMode(m);
+  BindLiteCLPrecisionType(m);
   BindLiteTensor(m);
   BindLiteMLUCoreVersion(m);
 #ifndef LITE_ON_TINY_PUBLISH
@@ -144,18 +150,24 @@ void BindLiteCxxConfig(py::module *m) {
       .def("set_passes_internal", &CxxConfig::set_passes_internal)
       .def("is_model_from_memory", &CxxConfig::is_model_from_memory)
       .def("add_discarded_pass", &CxxConfig::add_discarded_pass);
-      .def("set_metal_use_mps", &CxxConfig::set_metal_use_mps)
-      .def("set_metal_use_memory_reuse", &CxxConfig::set_metal_use_memory_reuse)
-      .def("set_metal_lib_path",
-           &CxxConfig::set_metal_lib_path,
-           py::arg("flag") = true);
-
-#ifdef LITE_WITH_ARM
   cxx_config.def("set_threads", &CxxConfig::set_threads)
       .def("threads", &CxxConfig::threads)
       .def("set_power_mode", &CxxConfig::set_power_mode)
       .def("power_mode", &CxxConfig::power_mode);
-#endif
+
+  cxx_config
+      .def("set_opencl_binary_path_name",
+           &CxxConfig::set_opencl_binary_path_name)
+      .def("set_opencl_tune", &CxxConfig::set_opencl_tune)
+      .def("set_opencl_precision", &CxxConfig::set_opencl_precision);
+
+  cxx_config
+      .def("set_metal_use_mps",
+           &CxxConfig::set_metal_use_mps,
+           py::arg("flag") = true)
+      .def("set_metal_use_memory_reuse", &CxxConfig::set_metal_use_memory_reuse)
+      .def("set_metal_lib_path", &CxxConfig::set_metal_lib_path);
+
 #ifdef LITE_WITH_MLU
   cxx_config.def("set_mlu_core_version", &CxxConfig::set_mlu_core_version)
       .def("set_mlu_core_number", &CxxConfig::set_mlu_core_number)
@@ -183,6 +195,18 @@ void BindLiteMobileConfig(py::module *m) {
       .def("set_power_mode", &MobileConfig::set_power_mode)
       .def("power_mode", &MobileConfig::power_mode);
 #endif
+  mobile_config
+      .def("set_opencl_binary_path_name",
+           &MobileConfig::set_opencl_binary_path_name)
+      .def("set_opencl_tune", &MobileConfig::set_opencl_tune)
+      .def("set_opencl_precision", &MobileConfig::set_opencl_precision);
+  mobile_config
+      .def("set_metal_use_mps",
+           &MobileConfig::set_metal_use_mps,
+           py::arg("flag") = true)
+      .def("set_metal_use_memory_reuse",
+           &MobileConfig::set_metal_use_memory_reuse)
+      .def("set_metal_lib_path", &MobileConfig::set_metal_lib_path);
 }
 
 void BindLitePowerMode(py::module *m) {
@@ -193,6 +217,21 @@ void BindLitePowerMode(py::module *m) {
       .value("LITE_POWER_NO_BIND", PowerMode::LITE_POWER_NO_BIND)
       .value("LITE_POWER_RAND_HIGH", PowerMode::LITE_POWER_RAND_HIGH)
       .value("LITE_POWER_RAND_LOW", PowerMode::LITE_POWER_RAND_LOW);
+}
+
+void BindLiteCLTuneMode(py::module *m) {
+  py::enum_<CLTuneMode>(*m, "CLTuneMode")
+      .value("CL_TUNE_NONE", CLTuneMode::CL_TUNE_NONE)
+      .value("CL_TUNE_RAPID", CLTuneMode::CL_TUNE_RAPID)
+      .value("CL_TUNE_NORMAL", CLTuneMode::CL_TUNE_NORMAL)
+      .value("CL_TUNE_EXHAUSTIVE", CLTuneMode::CL_TUNE_EXHAUSTIVE);
+}
+
+void BindLiteCLPrecisionType(py::module *m) {
+  py::enum_<CLPrecisionType>(*m, "CLPrecisionType")
+      .value("CL_PRECISION_AUTO", CLPrecisionType::CL_PRECISION_AUTO)
+      .value("CL_PRECISION_FP32", CLPrecisionType::CL_PRECISION_FP32)
+      .value("CL_PRECISION_FP16", CLPrecisionType::CL_PRECISION_FP16);
 }
 
 void BindLiteMLUCoreVersion(py::module *m) {
