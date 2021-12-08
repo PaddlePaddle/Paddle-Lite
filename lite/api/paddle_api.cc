@@ -403,6 +403,11 @@ void ConfigBase::set_metal_use_memory_reuse(bool flag) {
   return;
 }
 
+void ConfigBase::add_discarded_pass(const std::string pass) {
+  discarded_passes_.push_back(pass);
+  return;
+}
+
 #ifdef LITE_WITH_X86
 void ConfigBase::set_x86_math_num_threads(int threads) {
   x86_math_num_threads_ = threads;
