@@ -171,17 +171,27 @@ struct TanhFunctor : public BaseActivationFunctor<T> {
 template <typename T>
 class TanhCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
  public:
-  using param_t = operators::ActivationParam;
-
   void Run() override {
     auto& param = *param_.get_mutable<operators::ActivationParam>();
     auto output_ptr = param.Out->template mutable_data<T>();
+    Activate<TanhFunctor<T>>(param.X, param.Out);
+  }
+
+  virtual ~TanhCompute() = default;
+};
+
+template <>
+class TanhCompute<float> : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+ public:
+  void Run() override {
+    auto& param = *param_.get_mutable<operators::ActivationParam>();
+    auto output_ptr = param.Out->mutable_data<float>();
 
     if (param.X->numel() == param.Out->numel()) {
       paddle::lite::x86::math::detail::forward::avx::Tanh_fp32(
           param.X->data<float>(), output_ptr, param.X->numel());
     } else {
-      Activate<TanhFunctor<T>>(param.X, param.Out);
+      Activate<TanhFunctor<float>>(param.X, param.Out);
     }
   }
 
