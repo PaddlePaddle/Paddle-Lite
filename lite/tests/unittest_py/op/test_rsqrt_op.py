@@ -41,6 +41,10 @@ class TestRsqrtOp(AutoScanTest):
         self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+        in_shape = list(program_config.inputs["input_data"].shape)
+        if predictor_config.target() == TargetType.OpenCL:
+            if len(in_shape) != 4:
+                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -69,18 +73,10 @@ class TestRsqrtOp(AutoScanTest):
         return self.get_predictor_configs(), ["rsqrt"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def teller_opencl(program_config, predictor_config):
-            in_shape = list(program_config.inputs["input_data"].shape)
-            if predictor_config.target() == TargetType.OpenCL:
-               if len(in_shape) != 4:
-                   return True
-            return False
-
-        self.add_ignore_check_case(teller_opencl, IgnoreReasons.ACCURACY_ERROR,
-            "The op outputs has diff in a specific case on TargetType.OpenCL.")
+        pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=220)
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
