@@ -147,6 +147,7 @@ struct MetalConvTransposeParam {
 
     ushort hasAddOp;
     ElementwiseAddParam addParam;
+    MetalActivationParam activationParam;
 };
 
 struct LrnParam {
@@ -367,3 +368,18 @@ inline half4 getBiasHalf(uint3 gid,
     }
     return output;
 }
+    
+inline ftype4 get_bias(uint3 gid,
+    constant ElementwiseAddParam& addParam,
+    texture2d_array<ftype, access::sample> biasTexture) {
+    ftype4 output = ftype4(0.0);
+    if (addParam.fast == 1) {
+        output = biasTexture.read(gid.xy, gid.z);
+    } else if (addParam.addByChannel == 1) {
+        output = biasTexture.read(uint2(0, 0), gid.z);
+    } else {
+        
+    }
+    return output;
+}
+

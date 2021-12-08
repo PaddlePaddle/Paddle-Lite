@@ -225,7 +225,7 @@ extern NSString* cString2NSString(std::string cStr) {
              outTexture:(id<MTLTexture>)outTexture
               quadruple:(bool)quadruple {
     if (!pipline) {
-        LOG(FATAL) << "[meta] invalid param, MTL Compute Pipeline is nil!";
+        LOG(ERROR) << "[metal] invalid param, MTL Compute Pipeline is nil!";
         return;
     }
     NSUInteger slices = (outTexture.arrayLength * 4 + 3) / 4;
@@ -258,12 +258,46 @@ extern NSString* cString2NSString(std::string cStr) {
     [encoder endEncoding];
 }
 
+//threadsShape: [n, h, w]
+- (void)dispatchEncoder:(id<MTLComputeCommandEncoder>)encoder
+                pipline:(id<MTLComputePipelineState>)pipline
+           threadsShape:(NSArray<NSNumber *> *)threadsShape {
+    if ([threadsShape count] != 3) {
+        LOG(ERROR) << "[metal] invalid param, MTL Compute Pipeline is nil!";
+        return;
+    }
+    
+    NSUInteger tZ = threadsShape[0].integerValue;
+    NSUInteger tH = threadsShape[1].integerValue;
+    NSUInteger tW = threadsShape[2].integerValue;
+    
+    NSUInteger slices = (tZ+ 3) / 4;
+    NSUInteger width = 0, height = 0;
+    width = MIN(pipline.threadExecutionWidth, tW);
+    height = MIN(pipline.maxTotalThreadsPerThreadgroup / width, tH);
+    MTLSize threadsPerGroup = MTLSize{.width = width, .height = height, .depth = 1};
+
+    NSUInteger groupWidth = 0, groupHeight = 0;
+    groupWidth = (tW + width - 1) / width;
+    groupHeight = (tH + height - 1) / height;
+    MTLSize groups = MTLSize{.width = groupWidth, .height = groupHeight, .depth = slices};
+    
+    [self dispatchEncoder:encoder
+                  pipline:pipline
+          threadsPerGroup:threadsPerGroup
+                   groups:groups];
+}
+
 - (void)dispatchEncoder:(id<MTLComputeCommandEncoder>)encoder
                 pipline:(id<MTLComputePipelineState>)pipline
         threadsPerGroup:(MTLSize)threadsPerGroup
                  groups:(MTLSize)groups {
+    if (!pipline) {
+        LOG(ERROR) << "[metal] invalid param, MTL Compute Pipeline is nil!";
+        return;
+    }
     if (groups.width <= 0 || groups.height <= 0 || groups.depth <= 0) {
-        VLOG(4) << "[METAL]: "
+        VLOG(ERROR) << "[METAL]: "
                 << "dispatch thread groups 2.{" << groups.width << "," << groups.height << ","
                 << groups.depth << "}";
         return;
