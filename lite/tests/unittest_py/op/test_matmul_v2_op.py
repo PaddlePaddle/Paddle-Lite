@@ -26,7 +26,7 @@ import numpy as np
 from functools import partial
 import hypothesis.strategies as st
 
-class TestMatMulOp(AutoScanTest):
+class TestMatMulV2Op(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)
@@ -38,8 +38,8 @@ class TestMatMulOp(AutoScanTest):
         shape0 = draw(st.integers(min_value=1, max_value=64))
         shape1 = draw(st.integers(min_value=1, max_value=64))
         shape2 = draw(st.integers(min_value=1, max_value=64))
-        batch0 = draw(st.integers(min_value=1, max_value=64))
-        batch1 = draw(st.integers(min_value=1, max_value=64))
+        batch0 = draw(st.integers(min_value=1, max_value=64)) 
+        batch1 = draw(st.integers(min_value=1, max_value=64)) 
         transpose_X = draw(st.booleans())
         transpose_Y = draw(st.booleans())
         if ((not transpose_X) and (not transpose_Y)):
@@ -54,28 +54,14 @@ class TestMatMulOp(AutoScanTest):
         if ((transpose_X) and (transpose_Y)):
             X_shape = [batch0, shape1, shape0]
             Y_shape = [batch0, shape2, shape1]
-        alpha = draw(st.sampled_from([0.1, 1.1, -1.5]))
-        fused_reshape_X = draw(st.sampled_from([[]]))
-        fused_reshape_Y = draw(st.sampled_from([[]]))
-        fused_transpose_X = draw(st.sampled_from([[]]))
-        fused_transpose_Y = draw(st.sampled_from([[]]))
-        fused_reshape_Out = draw(st.sampled_from([[]]))
-        fused_transpose_Out = draw(st.sampled_from([[]]))
-        Scale_x = draw(st.sampled_from([0.1, 1.1]))
-        Scale_y = draw(st.sampled_from([0.1, 1.1]))
-        Scale_out = draw(st.sampled_from([0.1, 1.1]))
-        force_fp32_output = draw(st.booleans())
 
-        matmul_op = OpConfig(
-            type = "matmul",
+        matmul_v2_op = OpConfig(
+            type = "matmul_v2",
             inputs = {"X" : ["input_data_x"], "Y" : ["input_data_y"]},
-            outputs = {"Out": ["output_data"]},
-            attrs = {"transpose_X" : transpose_X, "transpose_Y" : transpose_Y, "alpha" : alpha, "fused_reshape_X" : fused_reshape_X,
-                "fused_reshape_Y" : fused_reshape_Y, "fused_transpose_X" : fused_transpose_X, "fused_transpose_Y" : fused_transpose_Y,
-                "fused_reshape_Out" : fused_reshape_Out, "fused_transpose_Out" : fused_transpose_Out, "Scale_x" : Scale_x, "Scale_y" : Scale_y,
-                "Scale_out" : Scale_out, "force_fp32_output" : force_fp32_output})
+            outputs = {"Out" : ["output_data"]},
+            attrs = {"trans_x" : transpose_X, "trans_y" : transpose_Y})
         program_config = ProgramConfig(
-            ops=[matmul_op],
+            ops=[matmul_v2_op],
             weights={},
             inputs={
                 "input_data_x":
@@ -87,7 +73,7 @@ class TestMatMulOp(AutoScanTest):
 
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["matmul"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["matmul_v2"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
