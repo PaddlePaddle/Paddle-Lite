@@ -72,21 +72,10 @@ void SplitImageCompute::run_without_mps() {
         z += (metal_param_.vdim[1] + 3) / 4 * 4;
         z += (metal_param_.vdim[2] + 3) / 4 * 4;
         z += (metal_param_.vdim[3] + 3) / 4 * 4;
-        
-        NSUInteger width = 0, height = 0;
-        width = MIN(pipline.threadExecutionWidth, outTexture.width);
-        height = MIN(pipline.maxTotalThreadsPerThreadgroup / width, outTexture.height);
-        MTLSize threadsPerGroup = MTLSize{.width = width, .height = height, .depth = 1};
 
-        NSUInteger groupWidth = 0, groupHeight = 0;
-        groupWidth = (outTexture.width + width - 1) / width;
-        groupHeight = (outTexture.height + height - 1) / height;
-        MTLSize groups = MTLSize{.width = groupWidth, .height = groupHeight, .depth = z};
-        
         [backend dispatchEncoder:encoder
                          pipline:pipline
-                 threadsPerGroup:threadsPerGroup
-                          groups:groups];
+                    threadsShape:@[@(z), @(outTexture.height), @(outTexture.width)]];
     }
     
     [backend commit];
