@@ -26,6 +26,7 @@ import numpy as np
 from functools import partial
 import argparse
 
+
 class TestScaleOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
