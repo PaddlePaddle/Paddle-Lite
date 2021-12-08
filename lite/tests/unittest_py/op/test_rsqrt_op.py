@@ -45,8 +45,6 @@ class TestRsqrtOp(AutoScanTest):
         if predictor_config.target() == TargetType.OpenCL:
             if len(in_shape) != 4:
                 return False
-        if predictor_config.target() == TargetType.Metal:
-            return False
         return True
 
     def sample_program_configs(self, draw):
@@ -78,7 +76,7 @@ class TestRsqrtOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=220)
+        self.run_and_statis(quant=False, max_examples=25)
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
