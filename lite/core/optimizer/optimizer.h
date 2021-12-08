@@ -92,7 +92,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
     Program&& program,
     const std::vector<Place>& valid_places,
     core::KernelPickFactor kernel_pick_factor,
-    const std::vector<std::string>& passes);
-
+    const std::vector<std::string>& passes,
+    const lite_api::CxxConfig& config);
 }  // namespace lite
 }  // namespace paddle

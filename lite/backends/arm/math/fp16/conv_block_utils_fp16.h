@@ -813,7 +813,15 @@ static void write_to_oc8_fp16(const float16_t* din,
   float16x8_t vzero = vdupq_n_f16(0.f);
   float16x8_t valpha = vdupq_n_f16(alpha);
   if (flag_bias) {
-    vbias = vld1q_f16(bias);
+    if (ce <= channel) {
+      vbias = vld1q_f16(bias);
+    } else {
+      float16_t bias_val[8] = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
+      for (int i = 0; i < 8 && cs + i < channel; i++) {
+        bias_val[i] = bias[i];
+      }
+      vbias = vld1q_f16(bias_val);
+    }
   }
 #ifdef __aarch64__
   float16_t tmp0[8] = {0.f};

@@ -126,10 +126,16 @@ void conv_depthwise_5x5s1_fp32(float *dout,
         const float *weight_c = weights + c * w_stride;
         float bias_local[4] = {0, 0, 0, 0};
         if (flag_bias) {
-          bias_local[0] = bias[c];
-          bias_local[1] = bias[c + 1];
-          bias_local[2] = bias[c + 2];
-          bias_local[3] = bias[c + 3];
+          if (c + hout_c_block < chout) {
+            bias_local[0] = bias[c];
+            bias_local[1] = bias[c + 1];
+            bias_local[2] = bias[c + 2];
+            bias_local[3] = bias[c + 3];
+          } else {
+            for (int k = 0; k < 4 && k + c < chout; k++) {
+              bias_local[k] = bias[c + k];
+            }
+          }
         }
         for (int hk = 0; hk < h_kernel; hk += hout_r_kernel) {
           int cnt = w_loop;
@@ -547,10 +553,16 @@ void conv_depthwise_5x5s1_fp32(float *dout,
         const float *weight_c = weights + c * w_stride;
         float bias_local[4] = {0, 0, 0, 0};
         if (flag_bias) {
-          bias_local[0] = bias[c];
-          bias_local[1] = bias[c + 1];
-          bias_local[2] = bias[c + 2];
-          bias_local[3] = bias[c + 3];
+          if (c + hout_c_block < chout) {
+            bias_local[0] = bias[c];
+            bias_local[1] = bias[c + 1];
+            bias_local[2] = bias[c + 2];
+            bias_local[3] = bias[c + 3];
+          } else {
+            for (int k = 0; k < 4 && k + c < chout; k++) {
+              bias_local[k] = bias[c + k];
+            }
+          }
         }
         for (int hk = 0; hk < h_kernel; hk += hout_r_kernel) {
           int cnt = w_loop;

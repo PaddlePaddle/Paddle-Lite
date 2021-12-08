@@ -164,7 +164,14 @@ void TestGather(const std::vector<int64_t>& x_dims,
 TEST(Gather, precision) {
   float abs_error = 1e-5;
   Place place;
-#if defined(LITE_WITH_NPU)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // use fp16 in npu
   // TODO(zhupengyang): enable later
@@ -187,7 +194,7 @@ TEST(Gather, precision) {
     for (auto index_dims : std::vector<std::vector<int64_t>>{{3}, {7}, {10}}) {
       for (auto axis_dims : std::vector<std::vector<int64_t>>{{1}, {0}}) {
 #if ((defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)) || \
-     defined(LITE_WITH_NPU))
+     defined(LITE_WITH_NPU) || defined(LITE_WITH_NNADAPTER))
         axis_dims = {{0}};
         TestGather<float, int32_t, int32_t>(
             x_dims, index_dims, axis_dims, place, abs_error, "def");

@@ -15,6 +15,7 @@
 #include "lite/backends/arm/math/fp16/common_preprocess.h"
 #include "lite/backends/arm/math/fp16/conv_block_utils_fp16.h"
 #include "lite/core/context.h"
+#include "lite/core/parallel_defines.h"
 #ifdef ARM_WITH_OMP
 #include <omp.h>
 #endif
@@ -504,9 +505,10 @@ void conv_depthwise_5x5s2_fp16(const float16_t* i_data,
   for (int n = 0; n < bs; ++n) {
     const float16_t* din_batch = i_data + n * ic * size_in_channel;
     float16_t* dout_batch = o_data + n * oc * size_out_channel;
-#pragma omp parallel for num_threads(threads)
-    for (int c = 0; c < oc; c += out_c_block) {
-#ifdef ARM_WITH_OMP
+    LITE_PARALLEL_COMMON_BEGIN(c, tid, oc, 0, out_c_block) {
+#ifdef LITE_USE_THREAD_POOL
+      float16_t* pre_din = ptr_write + ow_round + tid * prein_size;
+#elif ARM_WITH_OMP
       float16_t* pre_din =
           ptr_write + ow_round + omp_get_thread_num() * prein_size;
 #else
@@ -526,7 +528,15 @@ void conv_depthwise_5x5s2_fp16(const float16_t* i_data,
       float16x8_t w4 = vld1q_f16(weight_c + 32);  // w4, v27
       float16x8_t vbias = vdupq_n_f16(0.f);
       if (flag_bias) {
-        vbias = vld1q_f16(&bias[c]);  // v28
+        if (c + out_c_block < oc) {
+          vbias = vld1q_f16(&bias[c]);  // v28
+        } else {
+          int k = 0;
+          for (; k < 8 && c + k < oc; k++) {
+            bias_local[k] = bias[c + k];
+          }
+          vbias = vld1q_f16(bias_local);  // v28
+        }
       }
       weight_c += 40;
 #endif
@@ -647,6 +657,7 @@ void conv_depthwise_5x5s2_fp16(const float16_t* i_data,
         }
       }
     }
+    LITE_PARALLEL_COMMON_END();
   }
 }
 }  // namespace fp16

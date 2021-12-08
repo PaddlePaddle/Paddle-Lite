@@ -35,7 +35,8 @@ int ConvertConcat(Converter* converter, hal::Operation* operation) {
   }
   auto output_tensor = converter->ConvertOperand(output_operand);
   auto concat_op = converter->graph()->CreateOperation<tim::vx::ops::Concat>(
-      output_operand->type.dimensions.count - 1 - axis /* WHCN */,
+      ConvertToTimVXAxis(axis,
+                         output_operand->type.dimensions.count) /* WHCN */,
       input_tensors.size());
   concat_op->BindInputs(input_tensors);
   concat_op->BindOutputs({output_tensor});

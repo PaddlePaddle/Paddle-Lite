@@ -28,6 +28,13 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
+// The following environment variables can be used at runtime:
+// Specify the list of device IDs, such as
+// HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0,1,2,3 or
+// HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0
+#define HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS \
+  "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS"
+
 // Prepare AscendCL environment and register the finalizer to be called at
 // normal process termination
 void InitializeAscendCL();
@@ -101,6 +108,8 @@ std::vector<int64_t> ConvertToGEDimensions(const int32_t* input_dimensions,
 std::vector<int64_t> ConvertToGEDimensions(
     const std::vector<int32_t>& input_dimensions);
 std::string ConvertPadModeCodeToGEPadMode(int pad_mode_code);
+std::string ConvertInterpolateModeCodeToGEInterpolateMode(
+    int interpolate_mode_code);
 
 }  // namespace huawei_ascend_npu
 }  // namespace nnadapter
