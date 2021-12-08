@@ -19,7 +19,7 @@ WORKSPACE=${SHELL_FOLDER%tools/ci_tools*}
 # Common options
 BUILD_EXTRA=ON
 WITH_EXCEPTION=OFF
-TARGETS=(Host, X86)
+TARGETS=(Host X86)
 PYTHON_VERSION=3.7
 
 # Model download url
@@ -64,13 +64,13 @@ function publish_inference_lib {
   rm -rf build*
 
   # Step1. Compiling python installer on mac
-  ./lite/tools/build.sh \
-    --build_python=ON \
+  ./lite/tools/build_linux.sh \
+    --with_python=ON \
     --python_version=$PYTHON_VERSION \
-    --build_extra=$BUILD_EXTRA \
-    x86
+    --with_extra=$BUILD_EXTRA \
+    --arch=x86
   # Step2. Checking results: cplus and python inference lib.
-  build_dir=build.lite.x86
+  build_dir=build.lite.linux.x86.gcc
 
   if [ -d ${build_dir}/inference_lite_lib/python/install/dist ]; then
     # install deps
