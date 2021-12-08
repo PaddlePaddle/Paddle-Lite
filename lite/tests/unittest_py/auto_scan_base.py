@@ -409,7 +409,8 @@ class AutoScanBaseTest(unittest.TestCase):
             self.thread_num = list(self.thread_num)
 
         # if list[Place] is inputed, this will be used directly
-        if places is not None and isinstance(places, list):
+        if places is not None:
+            assert isinstance(places, list)
             self.valid_places.append(places)
             return
         # otherwise we will generate a list[Place] from the inputed[target\precision\layout]
