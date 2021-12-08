@@ -43,6 +43,9 @@ class TestScaleOp(AutoScanTest):
         self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+        if "ScaleTensor" in program_config.inputs:
+            print("ScaleTensor as Input is not supported on Paddle Lite.")
+            return False
         if predictor_config.target() == TargetType.Host:
             return False
         return True
@@ -53,14 +56,16 @@ class TestScaleOp(AutoScanTest):
         bias_after_scale = draw(st.booleans())
         scale = draw(st.floats(min_value=-5, max_value=5))
         input_type = draw(st.sampled_from(["int8", "int32", "int64", "float32"]))
-        has_scale_tensor = False
+        has_scale_tensor = draw(st.booleans())
 
         def generate_input_float32(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
 
         input_dict = {"X" : ["input_data"]}
+        input_data_dict = {"input_data" : TensorConfig(data_gen=partial(generate_input_float32))}
         if has_scale_tensor:
             input_dict["ScaleTensor"] = "scale_tensor_data"
+            input_data_dict["scale_tensor_data"] = TensorConfig(shape=[1,])
 
         scale_op = OpConfig(
             type = "scale",
@@ -70,24 +75,11 @@ class TestScaleOp(AutoScanTest):
                     "bias_after_scale" : bias_after_scale,
                     "scale" : scale})
 
-        if has_scale_tensor:
-            program_config = ProgramConfig(
-                ops=[scale_op],
-                weights={},
-                inputs={
-                    "input_data" : TensorConfig(data_gen=partial(generate_input_float32)),
-                    "scale_tensor_data" : TensorConfig(shape=[1,])
-                },
-                outputs=["output_data"])
-        else:
-            program_config = ProgramConfig(
-                ops=[scale_op],
-                weights={},
-                inputs={
-                    "input_data":
-                    TensorConfig(data_gen=partial(generate_input_float32))
-                },
-                outputs=["output_data"])
+        program_config = ProgramConfig(
+            ops=[scale_op],
+            weights={},
+            inputs=input_data_dict,
+            outputs=["output_data"])
 
         return program_config
 
