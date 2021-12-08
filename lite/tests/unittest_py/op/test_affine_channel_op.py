@@ -24,7 +24,7 @@ from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 import argparse
 
-class TestAssignOp(AutoScanTest):
+class TestAffineChannelOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
@@ -39,29 +39,45 @@ class TestAssignOp(AutoScanTest):
                           Place(TargetType.Host, PrecisionType.FP32)]
         self.enable_testing_on_place(places=opencl_places)
 
-
     def is_program_valid(self, program_config: ProgramConfig) -> bool:
-        return True
+        # only support arm
+        if predictor_config.target() == TargetType.ARM:
+            return True
+        else:
+            return False
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), max_size=2))
-        assign_op = OpConfig(
-            type = "assign",
-            inputs = {"X" : ["input_data"]},
+        in_shape = draw(st.lists(st.integers(min_value=1, max_value=50), min_size=4, max_size=4))
+        scale_shape = [in_shape[1]]
+
+        def generate_input(*args, **kwargs):
+            return np.random.random(in_shape).astype(np.float32)
+        def generate_scale(*args, **kwargs):
+            return np.random.random(scale_shape).astype(np.float32)
+        
+        affine_channel_op = OpConfig(
+            type = "affine_channel",
+            inputs = {"X" : ["input_data"],
+                    "Scale" : ["scale_data"],
+                    "Bias" : ["bias_data"]},
             outputs = {"Out": ["output_data"]},
-            attrs = {})
+            attrs = {"data_layout" : "NCHW"})
         program_config = ProgramConfig(
-            ops=[assign_op],
+            ops=[affine_channel_op],
             weights={},
             inputs={
                 "input_data":
-                TensorConfig(shape=in_shape)
+                TensorConfig(data_gen=partial(generate_input)),
+                "scale_data":
+                TensorConfig(data_gen=partial(generate_scale)),
+                "bias_data":
+                TensorConfig(data_gen=partial(generate_scale))
             },
             outputs=["output_data"])
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["assign"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["affine_channel"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
