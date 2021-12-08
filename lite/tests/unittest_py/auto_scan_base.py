@@ -136,16 +136,30 @@ class AutoScanBaseTest(unittest.TestCase):
                             rtol: float,
                             tensor: Dict[str, np.array],
                             baseline: Dict[str, np.array]):
-        for key in tensor:
-            arr = np.array(tensor[key])
+        if len(tensor) == 1 and len(baseline) == 1:
+            tensor_key = list(tensor.keys())
+            arr = np.array(tensor[tensor_key[0]])
+            base_key = list(baseline.keys())
+            base = np.array(baseline[base_key[0]])
             self.assertTrue(
-                baseline[key].shape == arr.shape,
-                "The output shapes are not equal, the baseline shape is " +
-                str(baseline[key].shape) + ', but got ' + str(arr.shape))
+                    base.shape == arr.shape,
+                    "The output shapes are not equal, the baseline shape is " +
+                    str(base.shape) + ', but got ' + str(arr.shape))
             self.assertTrue(
                 np.allclose(
-                    baseline[key], arr, atol=atol, rtol=rtol),
+                    base, arr, atol=atol, rtol=rtol),
                 "Output has diff. ")
+        else:
+            for key in tensor:
+                arr = np.array(tensor[key])
+                self.assertTrue(
+                    baseline[key].shape == arr.shape,
+                    "The output shapes are not equal, the baseline shape is " +
+                    str(baseline[key].shape) + ', but got ' + str(arr.shape))
+                self.assertTrue(
+                    np.allclose(
+                        baseline[key], arr, atol=atol, rtol=rtol),
+                    "Output has diff. ")
 
 
     def generate_op_config(self,
