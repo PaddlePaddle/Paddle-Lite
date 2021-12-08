@@ -29,10 +29,12 @@ def sample_program_configs(draw):
             min_value=1, max_value=10), min_size=4, max_size=4))
     
     mode = draw(st.sampled_from(["constant", "reflect", "replicate", "circular"]))
+    data_format = draw(st.sampled_from(['NCDHW', 'NDHWC']))
     value_data = draw(st.floats(min_value=0.0, max_value=4.0))
     padding_data = draw(st.sampled_from([[2, 2, 1, 1, 0, 0]]))
 
-    assume(in_shape in [3, 4, 5])
+    in_shape.insert(0, 1)
+    # assume(in_shape in [3, 4, 5])
 
     def generate_input(*args, **kwargs):
         return np.random.random(in_shape).astype(np.float32)
@@ -50,7 +52,8 @@ def sample_program_configs(draw):
             "paddings": padding_data,
             "mode": mode,
             "value": value_data,
-            "data_format": "NCHW",
+            # "data_format": "NCDHW",
+            "data_format": data_format,
         })
     program_config = ProgramConfig(
         ops=[build_ops],

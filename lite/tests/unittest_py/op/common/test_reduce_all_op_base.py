@@ -33,7 +33,7 @@ def sample_program_configs(draw):
     if isinstance(axis, int):
         axis = [axis]
     dim_data = draw(st.sampled_from([[0],[1],[-1],[]]))
-    reduce_all_data = True if len(axis) == len(in_shape) else False
+    reduce_all_data = True if axis == None or axis == [] else False
 
     def generate_input(*args, **kwargs):
         return np.random.random(in_shape).astype(np.float32)
