@@ -23,7 +23,7 @@ BUILD_OPENCL=ON
 # Common options
 BUILD_EXTRA=ON
 WITH_EXCEPTION=OFF
-TARGETS=(ARM, OpenCL)
+TARGETS=(ARM OpenCL)
 
 # Model download url
 
@@ -95,5 +95,5 @@ function publish_inference_lib {
 }
 
 for target in ${TARGETS[@]}; do
-  publish_inference_lib target
+  publish_inference_lib $target
 done
