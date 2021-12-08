@@ -144,6 +144,12 @@ void BindLiteCxxConfig(py::module *m) {
       .def("set_passes_internal", &CxxConfig::set_passes_internal)
       .def("is_model_from_memory", &CxxConfig::is_model_from_memory)
       .def("add_discarded_pass", &CxxConfig::add_discarded_pass);
+      .def("set_metal_use_mps", &CxxConfig::set_metal_use_mps)
+      .def("set_metal_use_memory_reuse", &CxxConfig::set_metal_use_memory_reuse)
+      .def("set_metal_lib_path",
+           &CxxConfig::set_metal_lib_path,
+           py::arg("flag") = true);
+
 #ifdef LITE_WITH_ARM
   cxx_config.def("set_threads", &CxxConfig::set_threads)
       .def("threads", &CxxConfig::threads)
@@ -157,13 +163,6 @@ void BindLiteCxxConfig(py::module *m) {
       .def("set_mlu_use_first_conv", &CxxConfig::set_mlu_use_first_conv)
       .def("set_mlu_first_conv_mean", &CxxConfig::set_mlu_first_conv_mean)
       .def("set_mlu_first_conv_std", &CxxConfig::set_mlu_first_conv_std);
-#endif
-#ifdef LITE_WITH_METAL
-  cxx_config.def("set_metal_use_mps", &CxxConfig::set_metal_use_mps)
-      .def("set_metal_use_memory_reuse", &CxxConfig::set_metal_use_memory_reuse)
-      .def("set_metal_lib_path",
-           &CxxConfig::set_metal_lib_path,
-           py::arg("flag") = true);
 #endif
 }
 
