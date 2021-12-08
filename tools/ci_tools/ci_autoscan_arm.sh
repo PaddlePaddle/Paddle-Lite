@@ -95,5 +95,5 @@ function publish_inference_lib {
 }
 
 for target in ${TARGETS[@]}; do
-  publish_inference_lib target
+  publish_inference_lib $target
 done
