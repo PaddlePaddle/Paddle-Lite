@@ -29,6 +29,9 @@ namespace arm {
 #define INIT_PARAM                                   \
   auto& param = this->Param<param_t>();              \
   auto x_dims = param.x->dims();                     \
+  if (last_shape_ == x_dims) {                       \
+    return;                                          \
+  }                                                  \
   auto w_dims = param.filter->dims();                \
   auto o_dims = param.output->dims();                \
   int win = x_dims[3];                               \
@@ -44,7 +47,8 @@ namespace arm {
   /* deconv weights layout: chin * chout * kh * kw*/ \
   int m = chout * kw * kh / group;                   \
   int n = hin * win;                                 \
-  int k = chin / group;
+  int k = chin / group;                              \
+  last_shape_ = x_dims;
 
 #define DEPTHWISE_PARAM                                                   \
   auto dilations = *param.dilations;                                      \
