@@ -269,10 +269,6 @@ class AutoScanBaseTest(unittest.TestCase):
                 if not os.path.exists(self.cache_dir):
                     os.mkdir(self.cache_dir)
                 try:
-                    with open(self.cache_dir + "/model", "wb") as f:
-                        f.write(model)
-                    with open(self.cache_dir + "/params", "wb") as f:
-                        f.write(params)
                     result, opt_model_bytes = self.run_lite_config(model, params, feed_data, pred_config)
                     results.append(result)
                     self.assert_tensors_near(atol_, rtol_, results[-1],
