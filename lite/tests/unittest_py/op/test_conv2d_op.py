@@ -30,8 +30,21 @@ class TestConv2dOp(AutoScanTest):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
         self.enable_testing_on_place(TargetType.ARM, [PrecisionType.FP32,PrecisionType.FP16,PrecisionType.INT8], DataLayoutType.NCHW, thread=[1,4])
+        opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
+                          Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
+                          Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageDefault),
+                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageFolder),
+                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+                          Place(TargetType.Host, PrecisionType.FP32)]
+        self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+        # M1 dosen't support FP16 build and int8 kernel run error
+        if predictor_config.precision() == PrecisionType.FP16 or predictor_config.precision() == PrecisionType.INT8:
+            return False
+        else:
+            return True
         return True
 
     def sample_program_configs(self, draw):
@@ -55,6 +68,9 @@ class TestConv2dOp(AutoScanTest):
         padding_algorithm = draw(st.sampled_from(["VALID", "SAME"]))
         strides = draw(st.sampled_from([[1, 1], [2, 2]]))
         data_format = "NCHW"
+        use_mkldnn = False
+        if self.target[0] == "X86":
+            use_mkldnn = True
 
         def generate_input(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
@@ -62,15 +78,20 @@ class TestConv2dOp(AutoScanTest):
             return np.random.random(weight_shape).astype(np.float32)
         def generate_bias(*args, **kwargs):
             return np.random.random([cout]).astype(np.float32)
+        inputs_data = {"input_data":
+                TensorConfig(data_gen=partial(generate_input))}
+        inputs_type = {"Input": ["input_data"], "Filter" : ["filter_data"]}
+        if use_mkldnn:
+            inputs_data["bias_data"] = TensorConfig(data_gen=partial(generate_bias))
+            inputs_type["Bias"] = ["bias_data"]
+        
         conv_op = OpConfig(
             type = "conv2d",
-            inputs = {"Input" : ["input_data"],
-                     "Filter" : ["filter_data"],
-                     "Bias" : ["bias_data"]},
+            inputs = inputs_type,
             outputs = {"Output": ["output_data"]},
             attrs = {"strides" : strides,
                     "paddings" : paddings,
-                    "use_mkldnn" : True,
+                    "use_mkldnn" : use_mkldnn,
                     "padding_algorithm" : padding_algorithm,
                     "groups" : groups,
                     "dilations" : dilations,
@@ -81,14 +102,9 @@ class TestConv2dOp(AutoScanTest):
             ops=[conv_op],
             weights={
                 "filter_data":
-                TensorConfig(data_gen=partial(generate_filter)),
-                "bias_data":
-                TensorConfig(data_gen=partial(generate_bias))
+                TensorConfig(data_gen=partial(generate_filter))
             },
-            inputs={
-                "input_data":
-                TensorConfig(data_gen=partial(generate_input))
-            },
+            inputs=inputs_data,
             outputs=["output_data"])
         return program_config
 
