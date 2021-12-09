@@ -50,7 +50,7 @@ class TestScatterOp(AutoScanTest):
         index_shape = draw(st.lists(st.integers(min_value=1, max_value=len(update_shape)), min_size=1, max_size=2))
         assume(len(index_shape) == 1 or (len(index_shape) == 2 and index_shape[1] == 1))
 
-        index_type = "int64" # draw(st.sampled_from(["int32", "int64"]))
+        index_type = "int64"
         overwrite = draw(st.booleans())
 
 
