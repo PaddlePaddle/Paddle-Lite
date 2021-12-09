@@ -26,7 +26,7 @@ from hypothesis import given, settings, seed, example, assume
 
 
 class TestConcatOp(AutoScanTest):
-    def is_program_valid(self, program_config: ProgramConfig) -> bool:
+    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
         in_shape1 = program_config.inputs["input_data1"].shape
         in_shape2 = program_config.inputs["input_data2"].shape
         len1 = len(in_shape1)
@@ -63,4 +63,4 @@ class TestConcatOp(AutoScanTest):
         self.run_and_statis(quant=False, max_examples=100)
 
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main(argv=[''])

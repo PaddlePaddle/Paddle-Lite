@@ -41,6 +41,7 @@ int ConvertReduce(Converter* converter, hal::Operation* operation) {
     MAP_OUTPUT(reduce_op, y, output_operand);                       \
   } break;
     CONVERT_REDUCE(REDUCE_MEAN, ReduceMean);
+    CONVERT_REDUCE(REDUCE_SUM, ReduceSum);
 #undef CONVERT_REDUCE
     default:
       NNADAPTER_LOG(FATAL) << "Unsupported reduce operation type "

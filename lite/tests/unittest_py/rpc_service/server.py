@@ -99,5 +99,5 @@ class RPCService(rpyc.Service):
 
 
 if __name__ == "__main__":
-    server = ThreadedServer(RPCService, port =18812, protocol_config = rpyc.core.protocol.DEFAULT_CONFIG)
+    server = ThreadedServer(RPCService, port =18812, hostname='localhost')
     server.start()

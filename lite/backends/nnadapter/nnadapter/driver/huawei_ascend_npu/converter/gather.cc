@@ -25,16 +25,15 @@ int ConvertGather(Converter* converter, hal::Operation* operation) {
 
   // Convert to GE operators
   auto input_operator = converter->GetMappedOperator(input_operand);
-  if (input_operator == nullptr) {
+  if (!input_operator) {
     input_operator = converter->ConvertOperand(input_operand);
   }
   auto indices_operator = converter->GetMappedOperator(indices_operand);
-  if (indices_operator == nullptr) {
+  if (!indices_operator) {
     indices_operator = converter->ConvertOperand(indices_operand);
   }
-  auto axis_operand = input_operands[2];
   auto axis_operator = converter->GetMappedOperator(axis_operand);
-  if (axis_operator == nullptr) {
+  if (!axis_operator) {
     axis_operator = converter->ConvertOperand(axis_operand);
   }
   auto gather_op = converter->AddOperator<ge::op::GatherV2>(output_operand);

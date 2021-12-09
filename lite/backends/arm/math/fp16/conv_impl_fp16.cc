@@ -509,18 +509,16 @@ void conv_depthwise_3x3_fp16(CONV_PARAM(float16_t)) {
           if (ow <= 8)
             conv_depthwise_3x3s1p1_bias_relu_small_fp16_fp16(
                 CONV_DEPTHWISE_IN_PARAMS);
-          else {
+          else
             conv_depthwise_3x3s1p1_bias_relu_common_fp16_fp16(
                 CONV_DEPTHWISE_IN_PARAMS);
-          }
         } else if (stride == 1 && pad_h == 0 && pad_w == 0) {
           if (ow <= 8)
             conv_depthwise_3x3s1p0_bias_relu_small_fp16_fp16(
                 CONV_DEPTHWISE_IN_PARAMS);
-          else {
+          else
             conv_depthwise_3x3s1p0_bias_relu_common_fp16_fp16(
                 CONV_DEPTHWISE_IN_PARAMS);
-          }
         } else if (stride == 2 && pad_h == 1 && pad_w == 1) {
           if (win <= 15)
             conv_depthwise_3x3s2p1_bias_relu_small_fp16_fp16(
