@@ -66,7 +66,7 @@ REGISTER_LITE_KERNEL(batch_norm,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::BatchNormCompute,
+                     paddle::lite::kernels::arm::BatchNormCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("Scale", {LiteType::GetTensorTy(TARGET(kHost))})
