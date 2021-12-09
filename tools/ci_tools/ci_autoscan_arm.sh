@@ -34,7 +34,7 @@ TARGETS=(ARM OpenCL)
 ####################################################################################################
 function auto_scan_test {
   target_name=$1
-
+  echo $target_name
   cd $WORKSPACE/lite/tests/unittest_py/rpc_service
   sh start_rpc_server.sh
 
