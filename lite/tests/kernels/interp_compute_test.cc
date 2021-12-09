@@ -511,6 +511,10 @@ TEST(Interp, precision) {
   TestInterpAlignCorners(place, abs_error);
   TestInterpAlignMode(place, abs_error);
   return;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 5e-2;
+  TestInterpOuthw(place, abs_error);
+  return;
 #else
   return;
 #endif
