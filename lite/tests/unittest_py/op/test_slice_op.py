@@ -46,7 +46,6 @@ class TestSliceOp(AutoScanTest):
             return False
         if predictor_config.precision() == PrecisionType.INT32:
             return False
-        
         if predictor_config.target() == TargetType.ARM \
         or predictor_config.target() == TargetType.OpenCL :
             if x_dtype == np.int32 or  x_dtype == np.int64:
@@ -56,8 +55,6 @@ class TestSliceOp(AutoScanTest):
 
     def sample_program_configs(self, draw):
         in_shape = draw(st.lists(st.integers(min_value=6, max_value=64), min_size=4, max_size=4))
-    
-        
         axes = draw(st.sampled_from([[3], [0, 1], [0, 1, 2],[0, 1, 2, 3]]))
         starts = draw(st.sampled_from([[-1], [0, 1], [0, 1, 2], [0, 1, 2, 3]]))
         ends = draw(st.sampled_from([[10000], [1, 2], [1, 2, 3], [1, 2, 3, 4]]))
