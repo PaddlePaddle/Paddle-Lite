@@ -269,6 +269,10 @@ class AutoScanBaseTest(unittest.TestCase):
                 if not os.path.exists(self.cache_dir):
                     os.mkdir(self.cache_dir)
                 try:
+                    with open(self.cache_dir + "/model", "wb") as f:
+                        f.write(model)
+                    with open(self.cache_dir + "/params", "wb") as f:
+                        f.write(params)
                     result, opt_model_bytes = self.run_lite_config(model, params, feed_data, pred_config)
                     results.append(result)
                     self.assert_tensors_near(atol_, rtol_, results[-1],
@@ -371,9 +375,13 @@ class AutoScanBaseTest(unittest.TestCase):
         logging.info("Number of Ran Programs: {}".format(self.num_ran_programs))
         logging.info("Number of Ignored Tests: {}".format(
             self.num_ignore_tests))
-        successful_ran_programs = int(self.num_ran_programs -
-                                      self.num_ignore_tests /
-                                      self.num_predictor_kinds)
+        if self.num_predictor_kinds == 0:
+            successful_ran_programs = int(self.num_ran_programs)
+            min_success_num = 0
+        else:
+            successful_ran_programs = int(self.num_ran_programs -
+                                        self.num_ignore_tests /
+                                        self.num_predictor_kinds)
 
         logging.info(
             "Number of successfully ran programs approximately equal to {}".
