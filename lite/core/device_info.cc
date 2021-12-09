@@ -101,11 +101,11 @@ const int DEFAULT_L3_CACHE_SIZE = 0;
 int get_cpu_num() {
 #ifdef LITE_WITH_LINUX
   // get cpu count from /sys/devices/system/cpu/cpunum/uevent
-  int max_cpu_num = 128;
   int cpu_num = 0;
-  for (int i = 0; i < max_cpu_num; ++i) {
+  while (true) {
     char path[256];
-    snprintf(path, sizeof(path), "/sys/devices/system/cpu/cpu%d/uevent", i);
+    snprintf(
+        path, sizeof(path), "/sys/devices/system/cpu/cpu%d/uevent", cpu_num);
     FILE* fp = fopen(path, "rb");
     if (!fp) {
       break;
