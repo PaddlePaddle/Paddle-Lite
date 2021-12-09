@@ -26,7 +26,7 @@ from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 
 class TestConv2dTransposeOp(AutoScanTest):
-    def is_program_valid(self, program_config: ProgramConfig) -> bool:
+    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
         if (program_config.ops[0].attrs['data_format'] == 'NHWC'):
             return False
         return True
@@ -46,4 +46,4 @@ class TestConv2dTransposeOp(AutoScanTest):
         self.run_and_statis(quant=False, max_examples=25)
 
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main(argv=[''])

@@ -31,7 +31,26 @@ class TestMulOp(AutoScanTest):
         self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)
 
 
-    def is_program_valid(self, program_config: ProgramConfig) -> bool:
+    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+        # get input&output shape, get op attributes
+        x_shape = list(program_config.inputs["input_data_x"].shape)
+        y_shape = list(program_config.weights["input_data_y"].shape)
+        x_num_col_dims = program_config.ops[0].attrs["x_num_col_dims"]
+        y_num_col_dims = program_config.ops[0].attrs["y_num_col_dims"]
+
+        # {TargetType.Host, TargetType.X86, TargetType.ARM, TargetType.OpenCL}
+        if predictor_config.target() == TargetType.ARM:
+            # get input and output shape of current op
+            if x_shape[1] != y_shape[0]:
+                return False
+        # {PrecisionType.FP16, PrecisionType.FP32, PrecisionType.FP64, PrecisionType.UINT8, PrecisionType.INT8, PrecisionType.INT16, PrecisionType.INT32, PrecisionType.INT64, PrecisionType.BOOL}
+        elif predictor_config.precision() == PrecisionType.FP16:
+            if x_num_col_dims > 20:
+                return False
+        # {DataLayoutType.NCHW, DataLayoutType.NHWC, DataLayoutType.ImageDefault, DataLayoutType.ImageFolder, DataLayoutType.ImageNW, DataLayoutType.Any}
+        elif predictor_config.layout() != DataLayoutType.NCHW:
+            if y_num_col_dims > 20:
+                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -68,8 +87,36 @@ class TestMulOp(AutoScanTest):
     def sample_predictor_configs(self):
         return self.get_predictor_configs(), ["mul"], (1e-5, 1e-5)
 
+
     def add_ignore_pass_case(self):
-        pass
+        def teller1(program_config, predictor_config):
+            # get input&output shape, get op attributes
+            x_shape = list(program_config.inputs["input_data_x"].shape)
+            y_shape = list(program_config.weights["input_data_y"].shape)
+            x_num_col_dims = program_config.ops[0].attrs["x_num_col_dims"]
+            y_num_col_dims = program_config.ops[0].attrs["y_num_col_dims"]
+
+            # {TargetType.Host, TargetType.X86, TargetType.ARM, TargetType.OpenCL}
+            if predictor_config.target() == TargetType.ARM:
+                if len(x_shape) > 4:
+                    return True
+            # {PrecisionType.FP16, PrecisionType.FP32, PrecisionType.FP64, PrecisionType.UINT8, PrecisionType.INT8, PrecisionType.INT16, PrecisionType.INT32, PrecisionType.INT64, PrecisionType.BOOL}
+            elif predictor_config.precision() == PrecisionType.FP16:
+                if len(y_shape) > 4:
+                    return True
+            # {DataLayoutType.NCHW, DataLayoutType.NHWC, DataLayoutType.ImageDefault, DataLayoutType.ImageFolder, DataLayoutType.ImageNW, DataLayoutType.Any}
+            elif predictor_config.layout() != DataLayoutType.NCHW:
+                if x_num_col_dims != y_num_col_dims:
+                    return True
+            return False
+
+        self.add_ignore_check_case(
+            # IgnoreReasonsBase.PADDLE_NOT_IMPLEMENTED
+            # IgnoreReasonsBase.PADDLELITE_NOT_SUPPORT
+            # IgnoreReasonsBase.ACCURACY_ERROR
+            teller1, IgnoreReasons.ACCURACY_ERROR,
+            "The op output has diff in a specific case. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)

@@ -16,32 +16,32 @@ import sys
 sys.path.append('../../common')
 sys.path.append('../../../')
 
-import test_conv2d_op_base
+import test_relu6_op_base
 from auto_scan_test import AutoScanTest, IgnoreReasons
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import unittest
 
 import hypothesis
 from hypothesis import given, settings, seed, example, assume
+import hypothesis.strategies as st
 
-
-class TestConv2dOp(AutoScanTest):
+class TestRelu6Op(AutoScanTest):
     def is_program_valid(self, program_config: ProgramConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        return test_conv2d_op_base.sample_program_configs(draw)
+        return test_relu6_op_base.sample_program_configs(draw)
 
     def sample_predictor_configs(self):
         config = CxxConfig()
-        config.set_valid_places({Place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW)})
-        yield config, ["conv2d"], (1e-5, 1e-5)
+        config.set_valid_places({Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)})
+        yield config, ["relu6"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=300)
+        self.run_and_statis(quant=False, max_examples=25)
 
 if __name__ == "__main__":
     unittest.main()

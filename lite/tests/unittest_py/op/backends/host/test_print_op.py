@@ -16,26 +16,26 @@ import sys
 sys.path.append('../../common')
 sys.path.append('../../../')
 
-import test_gather_op_base
+import test_print_op_base
 from auto_scan_test import AutoScanTest, IgnoreReasons
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import unittest
 
 import hypothesis
 from hypothesis import given, settings, seed, example, assume
+import hypothesis.strategies as st
 
-
-class TestGatherOp(AutoScanTest):
+class TestPrintOp(AutoScanTest):
     def is_program_valid(self, program_config: ProgramConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        return test_gather_op_base.sample_program_configs(draw)
+        return test_print_op_base.sample_program_configs(draw)
 
     def sample_predictor_configs(self):
         config = CxxConfig()
         config.set_valid_places({Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)})
-        yield config, ["gather"], (1e-5, 1e-5)
+        yield config, ["print"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
