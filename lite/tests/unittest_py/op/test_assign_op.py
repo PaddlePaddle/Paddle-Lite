@@ -40,7 +40,7 @@ class TestAssignOp(AutoScanTest):
         self.enable_testing_on_place(places=opencl_places)
 
 
-    def is_program_valid(self, program_config: ProgramConfig) -> bool:
+    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):

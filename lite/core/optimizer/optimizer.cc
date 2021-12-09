@@ -277,9 +277,10 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
     if (iterator != passes_local.end()) {
       LOG(INFO) << "discarded pass : " << pass;
       passes_local.erase(iterator);
-    } else
+    } else {
       LOG(INFO) << "the pass : " << pass
                 << " dont't exit or has already discarded";
+    }
   }
 
   // It's just a workaround to avoid repeated op fusion if the filter weights

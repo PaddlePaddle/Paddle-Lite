@@ -258,6 +258,7 @@ void ConvImageCompute::PrepareForRun() {
     impl_ = &ConvImageCompute::Conv2d1x1opt;
   } else {
     filter_gpu_image_ = std::unique_ptr<Tensor>(new Tensor);
+    filter_gpu_image0_ = std::unique_ptr<Tensor>(new Tensor);
     filter_gpu_image1_ = std::unique_ptr<Tensor>(new Tensor);
     filter_gpu_image2_ = std::unique_ptr<Tensor>(new Tensor);
     filter_gpu_image3_ = std::unique_ptr<Tensor>(new Tensor);
@@ -266,7 +267,11 @@ void ConvImageCompute::PrepareForRun() {
 
     if (filter_tensor_h_ == 1 && filter_tensor_w_ == 1) {
       CHECK(pad_equal && stride_equal && dilation_equal);
-      kernel_func_names_.push_back("conv2d_1x1_h1w4c1");
+      if (input_tensor_c_ % 4 == 0) {
+        kernel_func_names_.push_back("conv2d_1x1_h1w4c1");
+      } else {
+        kernel_func_names_.push_back("conv2d_1x1_opt");
+      }
 
       kernel_func_paths_.push_back("image/conv2d_1x1_default_kernel.cl");
       kernel_func_paths_.push_back("image/conv2d_1x1_opt_kernel.cl");
@@ -274,15 +279,27 @@ void ConvImageCompute::PrepareForRun() {
       CLImageConverterNWBlock converter;
       const DDim& filter_image_dims =
           converter.InitImageDimInfoWith(filter_dims);
-      filter_image_h_ = UP_DIV(filter_dims[1], 4);
-      filter_image_w_ = UP_DIV(filter_dims[0], 4);
+      filter_image_h_ = filter_image_dims[1];
+      filter_image_w_ = filter_image_dims[0];
       tensor_hold_filter_image_->Resize(
           {1, filter_image_w_, filter_image_h_, 4});
       auto* filter_image_data = MUTABLE_DATA_CPU(tensor_hold_filter_image_);
 
+      converter.NCHWToImage(filter_cpu, filter_image_data, filter_dims);
+      MUTABLE_DATA_GPU(filter_gpu_image_,
+                       filter_image_w_,
+                       filter_image_h_,
+                       filter_image_data);
+
+      filter_image_h_ = UP_DIV(filter_dims[1], 4);
+      filter_image_w_ = UP_DIV(filter_dims[0], 4);
+      tensor_hold_filter_image_->Resize(
+          {1, filter_image_w_, filter_image_h_, 4});
+      filter_image_data = MUTABLE_DATA_CPU(tensor_hold_filter_image_);
+
       NCHW2IMG4(
           filter_cpu, filter_image_data, filter_dims[0], filter_dims[1], 0);
-      MUTABLE_DATA_GPU(filter_gpu_image_,
+      MUTABLE_DATA_GPU(filter_gpu_image0_,
                        filter_image_w_,
                        filter_image_h_,
                        filter_image_data);
@@ -305,6 +322,7 @@ void ConvImageCompute::PrepareForRun() {
                        filter_image_h_,
                        filter_image_data);
 
+      filter_image_p0_ = DATA_GPU(filter_gpu_image0_);
       filter_image_p1_ = DATA_GPU(filter_gpu_image1_);
       filter_image_p2_ = DATA_GPU(filter_gpu_image2_);
       filter_image_p3_ = DATA_GPU(filter_gpu_image3_);
@@ -828,7 +846,6 @@ void ConvImageCompute::SetLocalWorkSize(size_t repeats /*=4*/) {
 
     local_work_size_ = cl::NDRange(32, 4, 1);
   } else if (kernel_func_names_[0] == "conv2d_1x1_h1w4c1") {
-    //} else if (0) {
     auto& context = ctx_->As<OpenCLContext>();
     std::stringstream kernel_key;
     auto tuned_map_key = GenerateTunedKey();
@@ -1346,7 +1363,8 @@ void ConvImageCompute::SetGlobalWorkSize() {
         cl::NDRange{static_cast<size_t>(c_blk_ * UP_DIV(w_blk_, 4)),
                     static_cast<size_t>(nh_blk_)};
 
-  } else if (kernel_func_names_[0] == "conv2d_1x1_h2w3c2") {
+  } else if (kernel_func_names_[0] == "conv2d_1x1_h1w4c1" ||
+             kernel_func_names_[0] == "conv2d_1x1_opt") {
     w_blk_ = UP_DIV(default_w_blk_, 4);
     c_blk_ = UP_DIV(default_c_blk_, 1);
     nh_blk_ = UP_DIV(default_nh_blk_, 1);
@@ -1692,8 +1710,14 @@ void ConvImageCompute::Conv2d1x1opt() {
     CL_CHECK_FATAL(status_);
     status_ = kernel_.setArg(cnt++, *bias_buffer_p_);
     CL_CHECK_FATAL(status_);
-  } else {
+  } else if (kernel_func_names_[0] == "conv2d_1x1_h1w4c1" ||
+             kernel_func_names_[0] == "conv2d_1x1_opt") {
     status_ = kernel_.setArg(cnt++, *filter_image_p_);
+    CL_CHECK_FATAL(status_);
+    status_ = kernel_.setArg(cnt++, *bias_image_p_);
+    CL_CHECK_FATAL(status_);
+  } else {
+    status_ = kernel_.setArg(cnt++, *filter_image_p0_);
     CL_CHECK_FATAL(status_);
     status_ = kernel_.setArg(cnt++, *filter_image_p1_);
     CL_CHECK_FATAL(status_);
