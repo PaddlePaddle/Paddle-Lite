@@ -39,16 +39,14 @@ class TestFillAnyLikeOp(AutoScanTest):
         value_data = draw(st.floats(min_value=-1, max_value=1))
         dtype = draw(st.sampled_from([-1, 2, 3, 5]))
 
-        def generate_input_int32(*args, **kwargs):
-            return np.random.random(in_shape).astype(np.int32)
-
-        def generate_input_int64(*args, **kwargs):
-            return np.random.random(in_shape).astype(np.int64)
-
-        def generate_input_float32(*args, **kwargs):
-            return np.random.random(in_shape).astype(np.float32)
-
-        generate_inputs = draw(st.sampled_from([generate_input_int32, generate_input_int64, generate_input_float32]))
+        def generate_input(*args, **kwargs):
+             if kwargs["type"] == "int32":
+                 return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int32)
+             elif kwargs["type"] == "int64":
+                 return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int64)
+             elif kwargs["type"] == "float32":
+                 return (kwargs["high"] - kwargs["low"]) * np.random.random(kwargs["shape"]).astype(np.float32) + kwargs["low"]
+        input_type = draw(st.sampled_from(["float32", "int64", "int32"]))  
 
         fill_any_like_op = OpConfig(
             type = "fill_any_like",
@@ -59,7 +57,7 @@ class TestFillAnyLikeOp(AutoScanTest):
         program_config = ProgramConfig(
             ops=[fill_any_like_op],
             weights={},
-            inputs={"input_data" : TensorConfig(data_gen=partial(generate_inputs))},
+            inputs={"input_data" : TensorConfig(data_gen=partial(generate_input, type=input_type, low=-10, high=10, shape=in_shape))},
             outputs=["output_data"])
         return program_config
 

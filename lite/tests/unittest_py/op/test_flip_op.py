@@ -37,13 +37,14 @@ class TestflipOp(AutoScanTest):
     def sample_program_configs(self, draw):
         in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=3, max_size=3))
 
-        def generate_input_int64(*args, **kwargs):
-            return np.random.random(in_shape).astype(np.int64)
-
-        def generate_input_float32(*args, **kwargs):
-            return np.random.random(in_shape).astype(np.float32)
-
-        generate_inputs = draw(st.sampled_from([generate_input_int64, generate_input_float32]))
+        def generate_input(*args, **kwargs):
+             if kwargs["type"] == "int32":
+                 return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int32)
+             elif kwargs["type"] == "int64":
+                 return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int64)
+             elif kwargs["type"] == "float32":
+                 return (kwargs["high"] - kwargs["low"]) * np.random.random(kwargs["shape"]).astype(np.float32) + kwargs["low"]
+        input_type = draw(st.sampled_from(["float32", "int64"])) # "int32"
 
         axis = draw(st.sampled_from([[0, 1, 2], [1], [0, 2], [2, 1], [0, 1]]))
 
@@ -56,7 +57,7 @@ class TestflipOp(AutoScanTest):
         program_config = ProgramConfig(
             ops=[flip_op],
             weights={},
-            inputs={"input_data" : TensorConfig(data_gen=partial(generate_inputs))},
+            inputs={"input_data" : TensorConfig(data_gen=partial(generate_input, type=input_type, low=-10, high=10, shape=in_shape))},
             outputs=["output_data"])
         return program_config
 

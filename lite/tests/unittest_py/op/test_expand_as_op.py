@@ -41,20 +41,14 @@ class TestExpandAsOp(AutoScanTest):
             target2.append(in_shape[i] * (i + 1) * 2 )
             target3.append(in_shape[i] * (i + 1) * 3 )
         target_shape = draw(st.sampled_from([target1, target2, target3]))
-
-        def generate_input_int64(*args, **kwargs):
-            return np.random.random(in_shape).astype(np.int64) 
-
-        def generate_input_float32(*args, **kwargs):
-            return np.random.random(in_shape).astype(np.float32) 
-            
-        generate_inputs = draw(st.sampled_from([generate_input_int64, generate_input_float32]))
-
-        def generate_target(*args, **kwargs):
-            if generate_inputs == generate_input_int64:
-                return np.random.random(target_shape).astype(np.int64) 
-            else :
-                return np.random.random(target_shape).astype(np.float32) 
+        def generate_input(*args, **kwargs):
+             if kwargs["type"] == "int32":
+                 return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int32)
+             elif kwargs["type"] == "int64":
+                 return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int64)
+             elif kwargs["type"] == "float32":
+                 return (kwargs["high"] - kwargs["low"]) * np.random.random(kwargs["shape"]).astype(np.float32) + kwargs["low"]
+        input_type = draw(st.sampled_from(["float32", "int64"])) # "int32"       
 
         expand_as_op = OpConfig(
             type = "expand_as",
@@ -67,8 +61,8 @@ class TestExpandAsOp(AutoScanTest):
             ops=[expand_as_op],
             weights={},
             inputs={
-                "input_data" : TensorConfig(data_gen=partial(generate_inputs)),
-                "target_data" : TensorConfig(data_gen=partial(generate_target))},
+                "input_data" : TensorConfig(data_gen=partial(generate_input, type=input_type, low=-10, high=10, shape=in_shape)),
+                "target_data" : TensorConfig(data_gen=partial(generate_input, type=input_type, low=-10, high=10, shape=target_shape))},
             outputs=["output_data"])
         return program_config
 
