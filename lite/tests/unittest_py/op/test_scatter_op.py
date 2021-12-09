@@ -35,27 +35,32 @@ class TestScatterOp(AutoScanTest):
     def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
         target_type = predictor_config.target()
         if target_type == TargetType.ARM:
-            dtype = program_config.inputs["index"].dtype
-            if dtype != "int64":
-                print('Index only support int64 on ARM impl, but got data type is {}, skip!'.format(dtype))
+            index_dtype = program_config.inputs["index"].dtype
+            index_shape = program_config.inputs["index"].shape
+            if index_dtype != "int64":
+                print('Index only support int64 on ARM impl, but got data type is {}, skip!'.format(index_dtype))
+                return False
+            if len(index_shape) == 2:
+                print('Index only support 1-dim on ARM impl, but got dims is {}, skip!'.format(index_shape))
+                return False
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=2, max_size=2))
-
-        update_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=2, max_size=2))
+        in_shape = draw(st.lists(st.integers(min_value=1, max_value=7), min_size=2, max_size=6))
+        update_shape = in_shape
         assume(len(update_shape) == len(in_shape) and update_shape[1:] == in_shape[1:])
 
         # index'dims shape is 1 or 2 and index.dims[1] is 1
         index_shape = draw(st.lists(st.integers(min_value=1, max_value=len(update_shape)), min_size=1, max_size=2))
+        index_shape[0] = in_shape[0]
         assume(len(index_shape) == 1 or (len(index_shape) == 2 and index_shape[1] == 1))
 
-        index_type = "int64"
+        index_type = draw(st.sampled_from(["int32", "int64"]))
         overwrite = draw(st.booleans())
 
 
         def generate_data(*args, **kwargs):
-            low, high = 0, 1
+            low, high = -10, 10
             dtype = "float32"
             shape = kwargs["shape"]
             if "low" in kwargs:
@@ -78,6 +83,13 @@ class TestScatterOp(AutoScanTest):
             elif dtype == "float32":
                 return high * np.random.random(shape).astype(np.float32) + low
 
+        def generate_index(*args, **kwargs):
+            index_np = np.ones(index_shape).astype(np.int64)
+            for i in range(index_shape[0]):
+                index_np[i] = i
+            if kwargs["dtype"] == "int32":
+                index_np = index_np.astype(np.int32)
+            return index_np
 
         scatter_op = OpConfig(
             type = "scatter",
@@ -90,7 +102,7 @@ class TestScatterOp(AutoScanTest):
             weights={},
             inputs={
                 "input_data" : TensorConfig(data_gen=partial(generate_data, shape=in_shape)),
-                "index" : TensorConfig(data_gen=partial(generate_data, dtype=index_type, shape=index_shape, low=0, high=in_shape[0])),
+                "index" : TensorConfig(data_gen=partial(generate_index, dtype=index_type)),
                 "updates" : TensorConfig(data_gen=partial(generate_data, shape=update_shape))
             },
             outputs=["output_data"])
@@ -107,7 +119,8 @@ class TestScatterOp(AutoScanTest):
 
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        # Note: The min success num on ARM is 9.
+        self.run_and_statis(quant=False, min_success_num=9, max_examples=25)
 
 
 if __name__ == "__main__":
