@@ -13,8 +13,8 @@ set -e
 #####################################################################################################
 # 1. global variables, you can change them according to your requirements
 #####################################################################################################
-# Architecture: armv7 or armv8, default armv8.
-ARCH=(armv8 armv7)
+# Architecture: armv8, default armv8.
+ARCH=(armv8)
 # Whether to use GPU or not: ON or OFF, default OFF.
 USE_GPU=(ON OFF)
 # Absolute path of Paddle-Lite source code.
