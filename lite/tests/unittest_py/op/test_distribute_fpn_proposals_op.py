@@ -20,7 +20,7 @@ from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, Tar
 import unittest
 
 import hypothesis
-from hypothesis import given, settings, seed, example, assume
+from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 import numpy as np
 from functools import partial
@@ -28,9 +28,7 @@ from functools import partial
 class TestDistributeFpnProposalsOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        #self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
-        #self.enable_testing_on_place(TargetType.ARM, [PrecisionType.FP32,PrecisionType.FP16,PrecisionType.INT8], DataLayoutType.NCHW, thread=[1,4])
+        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
     
     def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
         return True
@@ -54,10 +52,10 @@ class TestDistributeFpnProposalsOp(AutoScanTest):
         refer_level = draw(st.integers())
         assume(refer_level <= max_level)
         assume(refer_level >= min_level)
-        refer_scale = draw(st.integers(min_value = 1))
+        refer_scale = draw(st.integers(min_value = 1, max_value = 1000))
         pixel_offset = draw(st.booleans())
         
-        input_fpn_rois_dtype = draw(st.sampled_from(["float32", "float64"]))
+        input_fpn_rois_dtype = draw(st.sampled_from(["float32"]))
 
         def gen_input_fpn_rois(*args, **kwargs):
             image_shape = [512, 512]
