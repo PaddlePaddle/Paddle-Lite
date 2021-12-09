@@ -12,21 +12,19 @@
  See the License for the specific language governing permissions and
  limitations under the License. */
 
-#include <metal_stdlib>
 #include "Common.metal"
+#include <metal_stdlib>
 using namespace metal;
 
-kernel void dropout(texture2d_array<ftype, access::sample> inTexture
-                    [[texture(0)]],
-                    texture2d_array<ftype, access::write> outTexture
-                    [[texture(1)]],
-                    constant DropoutParam &pm [[buffer(0)]],
-                    uint3 gid [[thread_position_in_grid]]) {
-  if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
-      gid.z >= outTexture.get_array_size())
-    return;
-  constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
-  const ftype4 input = inTexture.read(gid.xy, gid.z);
-  const ftype4 dropout = (ftype4)input * pm.scale;
-  outTexture.write(dropout, gid.xy, gid.z);
+kernel void dropout(texture2d_array<ftype, access::sample> inTexture[[texture(0)]],
+    texture2d_array<ftype, access::write> outTexture[[texture(1)]],
+    constant DropoutParam& pm[[buffer(0)]],
+    uint3 gid[[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
+        gid.z >= outTexture.get_array_size())
+        return;
+    constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
+    const ftype4 input = inTexture.read(gid.xy, gid.z);
+    const ftype4 dropout = (ftype4)input * pm.scale;
+    outTexture.write(dropout, gid.xy, gid.z);
 }

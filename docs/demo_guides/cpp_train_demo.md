@@ -2,26 +2,26 @@
 
 ## Introduction
 
-我们都知道，PaddleLite可以做移动端预测，事实上PaddleLite支持在移动端做模型训练。本文给出使用PaddleLite做训练的例子，这一例子对应的任务是“波士顿房价预测”，又称作“fit-a-line”。
+我们都知道，Paddle Lite 可以做移动端预测，事实上 Paddle Lite 支持在移动端做模型训练。本文给出使用Paddle Lite 做训练的例子，这一例子对应的任务是“波士顿房价预测”，又称作 “fit-a-line”。
   
-你可以通过book库中的
+你可以通过 book 库中的
 [文档](https://paddlepaddle.org.cn/documentation/docs/zh/user_guides/simple_case/fit_a_line/README.cn.html)
 和
 [源码](https://github.com/PaddlePaddle/book/tree/develop/01.fit_a_line)
 进一步了解“波士顿房价预测”这一任务的定义及其建模过程，
-其使用线性回归（Linear Regression）
-模型做建模。本文主要介绍如何将其迁移至Paddle-Lite进行训练。
+其使用线性回归（ Linear Regression ）
+模型做建模。本文主要介绍如何将其迁移至 Paddle Lite 进行训练。
 
 ## Requirements
 
 - 一部安卓手机，用于运行训练程序
-- 装了Paddle (version >= 1.7.0) 的python
+- 装了 Paddle (version >= 1.7.0) 的 python
 
 ## Quick start
 
 ### Step1 build paddle-lite
 
-请按照paddle-lite官方文档的教程编译full_publish的paddle-lite lib。以Linux上编译为例，其具体的命令为：
+请按照 paddle lite 官方文档的教程编译 full_publish 的 paddle-lite lib。以 Linux 上编译为例，其具体的命令为：
 
 ```shell
 ## 配置环境
@@ -51,7 +51,7 @@ cd Paddle-Lite
 Paddle-Lite/build.lite.android.armv7.gcc/inference_lite_lib.android.armv7/cxx/lib/libpaddle_full_api_shared.so
 ```
 
-### Step2 编译lr_trainer
+### Step2 编译 lr_trainer
 
 ```shell
 cd Paddle-Lite/lite/demo/cxx/train_demo/cplus_train/
@@ -66,7 +66,7 @@ bin/
 
 ### Step3 download model and run it!
 
-在你的笔记本电脑上，用usb连接到手机，开启开发者模式，在任意目录下执行：
+在你的笔记本电脑上，用 usb 连接到手机，开启开发者模式，在任意目录下执行：
 
 ```shell
 local_path=/data/local/tmp/linear_regression
@@ -123,13 +123,13 @@ model_dir/
 md5sum fc_0.w_0: 2c7b3649b2a9cf7bcd19f8b256ce795d
 ```
 
-如果你想生成自己的模型用于训练，可以参考`train.py`中保存模型的方式。
+如果你想生成自己的模型用于训练，可以参考 `train.py` 中保存模型的方式。
 
-## 与Paddle训练结果做校对
+## 与 Paddle 训练结果做校对
 
-### 前10个Loss值
+### 前 10 个 Loss 值
 
-为了验证paddle与lite的一致性，我们控制模型参数一致、数据一致、batch size = 1的情况下，训练10个batch， 记录了二者的loss值。
+为了验证 Paddle 与 Paddle Lite 的一致性，我们控制模型参数一致、数据一致、batch size = 1 的情况下，训练10 个 batch， 记录了二者的 loss 值。
 
 python + paddle 命令:
 
@@ -157,7 +157,7 @@ c++ 与 paddle-lite命令：
 ./demo_trainer true
 ```
 
-c++ 与 paddle-lite结果：
+c++ 与 Paddle Lite 结果：
 ```
 sample 0: Loss: 564.317
 sample 1: Loss: 463.9
@@ -173,11 +173,11 @@ sample 9: Loss: 325.135
 
 ### Loss 曲线
 
-控制训练时的batch size为20，每个epoch对训练数据做全局shuffle，训练100个epoch后，paddle和lite的loss曲线对比如下。
+控制训练时的 batch size 为 20，每个 epoch 对训练数据做全局 shuffle，训练 100 个 epoch 后，Paddle 和 Paddle Lite 的 loss 曲线对比如下。
 
 ![lr_loss](../images/lr_loss.png)
 
-如果想复现上述效果，paddle+python的运行命令为：
+如果想复现上述效果，paddle+python 的运行命令为：
 
 ```
 git clone https://github.com/PaddlePaddle/book.git
@@ -185,7 +185,7 @@ cd book/01.fit_a_line
 python train.py
 ```
 
-lite + c++的运行命令为：
+Paddle Lite + c++ 的运行命令为：
 ```
 ./demo_trainer false
 ```

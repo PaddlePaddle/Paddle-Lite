@@ -17,6 +17,7 @@
 #include "lite/backends/arm/math/conv_depthwise.h"
 #include "lite/backends/arm/math/conv_impl.h"
 #include "lite/core/context.h"
+#include "lite/core/parallel_defines.h"
 #include "lite/operators/op_params.h"
 #ifdef ARM_WITH_OMP
 #include <omp.h>
@@ -106,9 +107,11 @@ void conv_depthwise_5x5s2_int8(Dtype* dout,
       int hs = h * 2 - padh;
       int he = hs + h_kernel * 2 + 3;
 
-#pragma omp parallel for num_threads(threads)
-      for (int c = 0; c < chout; c += hout_c_block) {
-#ifdef ARM_WITH_OMP
+      LITE_PARALLEL_COMMON_BEGIN(c, tid, chout, 0, hout_c_block) {
+#ifdef LITE_USE_THREAD_POOL
+        int8_t* pre_din = tmp_din + tid * (pre_in_size + pre_out_size * 4);
+        int32_t* pre_out = reinterpret_cast<int*>(pre_din + pre_in_size);
+#elif defined(ARM_WITH_OMP)
         int8_t* pre_din =
             tmp_din + omp_get_thread_num() * (pre_in_size + pre_out_size * 4);
         int32_t* pre_out = reinterpret_cast<int*>(pre_din + pre_in_size);
@@ -126,17 +129,6 @@ void conv_depthwise_5x5s2_int8(Dtype* dout,
         const int8_t* block_inr4 = block_inr3 + in_len;
 
         const int8_t* weight_c = weights + c * w_stride;
-        float bias_local[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-        if (flag_bias) {
-          bias_local[0] = bias[c];
-          bias_local[1] = bias[c + 1];
-          bias_local[2] = bias[c + 2];
-          bias_local[3] = bias[c + 3];
-          bias_local[4] = bias[c + 4];
-          bias_local[5] = bias[c + 5];
-          bias_local[6] = bias[c + 6];
-          bias_local[7] = bias[c + 7];
-        }
         for (int hk = 0; hk < h_kernel; hk += hout_r_kernel) {
           int cnt = w_loop;
           const int8_t* inr0 = block_inr0;
@@ -749,11 +741,12 @@ void conv_depthwise_5x5s2_int8(Dtype* dout,
                                           wout,
                                           flag_act,
                                           alpha,
-                                          bias_local,
+                                          bias + c,
                                           flag_bias,
                                           ptr_write,
                                           scale + c);
       }
+      LITE_PARALLEL_END();
     }
   }
 }

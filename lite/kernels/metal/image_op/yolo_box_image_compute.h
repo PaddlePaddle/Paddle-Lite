@@ -46,6 +46,7 @@ class YoloBoxImageCompute
     virtual ~YoloBoxImageCompute();
 
    private:
+    void reset_data();
     void setup_without_mps();
     void run_tex_to_buf();
     void run_yolo_box();

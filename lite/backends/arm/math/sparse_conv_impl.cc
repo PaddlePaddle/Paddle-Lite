@@ -1015,29 +1015,34 @@ void sparse_conv_fp32_pipelined(const float* A,
   size_t nc = M;
   size_t output_stride = N * sizeof(float);
   size_t output_decrement = output_stride * nc - 48 * sizeof(float);
-
-  size_t output_total = output_stride * nc;
-  size_t mend = N / 48;
-  size_t mnum = mend * 48;
-  if (mend > 0) {
-    LITE_PARALLEL_COMMON_BEGIN(mi, tid, mnum, 0, 48) {
-      size_t cur_i = mi / 48;
-      const float* cur_B = B + cur_i * 48;
-      float* cur_output = reinterpret_cast<float*>((uintptr_t)output +
-                                                   48 * sizeof(float) * cur_i);
-
-      const float* w = A;
-      const int32_t* dmap = widx_dmap;
-      const uint32_t* nnzmap = nidx_nnzmap;
-      for (size_t i = 0; i < nc; i++) {
-        uint32_t nnz = *nnzmap++;
+  while
+    SPARSE_LIKELY(mc >= 48 * sizeof(float)) {
+      LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+        float* cur_output =
+            reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+        const float* cur_w = A;
+        uint32_t nnz = nidx_nnzmap[i];
+        const float* cur_b = B;
+        const int32_t* dmap = widx_dmap;
+        if (i != 0) {
+          int cur_rem = nidx_nnzmap[i - 1] & 3;
+          if (cur_rem != 0) {
+            cur_rem = 4 - cur_rem;
+          }
+          nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
+          cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
+          cur_b += ((nidx_nnzmap[i - 1] == 0)
+                        ? 0
+                        : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
+          dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
+        }
         uint32_t pair_num = nnz / 4;
         uint32_t lave_num = nnz % 4;
         float vbias = (bias != nullptr) ? bias[i] : 0.0;
         // clang-format off
             asm volatile(SPARSE_F32_F32_W48_V8_OUT  
-              : [a_ptr] "+r"(w),
-                [b_ptr] "+r"(cur_B),
+              : [a_ptr] "+r"(cur_w),
+                [b_ptr] "+r"(cur_b),
                 [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
                 [n] "+r"(pair_num),
@@ -1051,35 +1056,44 @@ void sparse_conv_fp32_pipelined(const float* A,
                 "v16", "v17", "v18", "v21", "v22", "v23", "v24", "v25", 
                 "v26", "v27", "v28", "v30", "v31", "w1", "x1", "cc", "memory");
         // clang-format on
-        cur_output =
-            reinterpret_cast<float*>((uintptr_t)cur_output + output_stride);
       }
+      LITE_PARALLEL_COMMON_END();
+      output = reinterpret_cast<float*>((uintptr_t)output + 48 * sizeof(float));
+      B += 48;
+      mc -= 48 * sizeof(float);
     }
-    LITE_PARALLEL_COMMON_END();
-  }
-  B += mend * 48;
-  mc -= mend * 48 * sizeof(float);
-  output =
-      reinterpret_cast<float*>((uintptr_t)output + 48 * sizeof(float) * mend);
 
   if
     SPARSE_UNLIKELY(mc != 0) {
       output_decrement += 16 * sizeof(float);
       if (mc & (32 * sizeof(float))) {
-        const float* w = A;
-        const int32_t* dmap = widx_dmap;
-        const uint32_t* nnzmap = nidx_nnzmap;
-
-        for (size_t i = 0; i < nc; i++) {
-          uint32_t nnz = *nnzmap++;
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          const float* cur_w = A;
+          uint32_t nnz = nidx_nnzmap[i];
+          const float* cur_b = B;
+          const int32_t* dmap = widx_dmap;
+          if (i != 0) {
+            int cur_rem = nidx_nnzmap[i - 1] & 3;
+            if (cur_rem != 0) {
+              cur_rem = 4 - cur_rem;
+            }
+            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
+            cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
+            cur_b += ((nidx_nnzmap[i - 1] == 0)
+                          ? 0
+                          : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
+            dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
+          }
           uint32_t pair_num = nnz / 4;
           uint32_t lave_num = nnz % 4;
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
           // clang-format off
             asm volatile(SPARSE_F32_F32_W32_V8_OUT  
-              : [a_ptr] "+r"(w),
-                [b_ptr] "+r"(B),
-                [c_ptr] "+r"(output),
+              : [a_ptr] "+r"(cur_w),
+                [b_ptr] "+r"(cur_b),
+                [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
                 [n] "+r"(pair_num),
                 [m] "+r"(lave_num),
@@ -1092,28 +1106,42 @@ void sparse_conv_fp32_pipelined(const float* A,
                 "v16", "v17", "v18", "v21", "v22", "v23", "v24", "v25", 
                 "v26", "v27", "v28", "v30", "v31", "w1", "x1", "cc", "memory");
           // clang-format on
-          output = reinterpret_cast<float*>((uintptr_t)output + output_stride);
         }
-        output = reinterpret_cast<float*>((uintptr_t)output - output_decrement);
+        LITE_PARALLEL_COMMON_END();
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 32 * sizeof(float));
         B += 32;
         mc -= 32 * sizeof(float);
       }
       output_decrement += 16 * sizeof(float);
       if (mc & (16 * sizeof(float))) {
-        const float* w = A;
-        const int32_t* dmap = widx_dmap;
-        const uint32_t* nnzmap = nidx_nnzmap;
-
-        for (size_t i = 0; i < nc; i++) {
-          uint32_t nnz = *nnzmap++;
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          const float* cur_w = A;
+          uint32_t nnz = nidx_nnzmap[i];
+          const float* cur_b = B;
+          const int32_t* dmap = widx_dmap;
+          if (i != 0) {
+            int cur_rem = nidx_nnzmap[i - 1] & 3;
+            if (cur_rem != 0) {
+              cur_rem = 4 - cur_rem;
+            }
+            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
+            cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
+            cur_b += ((nidx_nnzmap[i - 1] == 0)
+                          ? 0
+                          : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
+            dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
+          }
           uint32_t pair_num = nnz / 4;
           uint32_t lave_num = nnz % 4;
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
           // clang-format off
             asm volatile(SPARSE_F32_F32_W16_V8_OUT  
-              : [a_ptr] "+r"(w),
-                [b_ptr] "+r"(B),
-                [c_ptr] "+r"(output),
+              : [a_ptr] "+r"(cur_w),
+                [b_ptr] "+r"(cur_b),
+                [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
                 [n] "+r"(pair_num),
                 [m] "+r"(lave_num),
@@ -1125,28 +1153,42 @@ void sparse_conv_fp32_pipelined(const float* A,
                 "v8", "v9", "v11", "v12", "v13", "v14", "v21", "v22", "v23",
                 "v24", "w1", "x1", "cc", "memory");
           // clang-format on
-          output = reinterpret_cast<float*>((uintptr_t)output + output_stride);
         }
-        output = reinterpret_cast<float*>((uintptr_t)output - output_decrement);
+        LITE_PARALLEL_COMMON_END();
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 16 * sizeof(float));
         B += 16;
         mc -= 16 * sizeof(float);
       }
       output_decrement += 8 * sizeof(float);
       if (mc & (8 * sizeof(float))) {
-        const float* w = A;
-        const int32_t* dmap = widx_dmap;
-        const uint32_t* nnzmap = nidx_nnzmap;
-
-        for (size_t i = 0; i < nc; i++) {
-          uint32_t nnz = *nnzmap++;
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          const float* cur_w = A;
+          uint32_t nnz = nidx_nnzmap[i];
+          const float* cur_b = B;
+          const int32_t* dmap = widx_dmap;
+          if (i != 0) {
+            int cur_rem = nidx_nnzmap[i - 1] & 3;
+            if (cur_rem != 0) {
+              cur_rem = 4 - cur_rem;
+            }
+            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
+            cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
+            cur_b += ((nidx_nnzmap[i - 1] == 0)
+                          ? 0
+                          : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
+            dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
+          }
           uint32_t pair_num = nnz / 4;
           uint32_t lave_num = nnz % 4;
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
           // clang-format off
             asm volatile(SPARSE_F32_F32_W8_V8_OUT  
-              : [a_ptr] "+r"(w),
-                [b_ptr] "+r"(B),
-                [c_ptr] "+r"(output),
+              : [a_ptr] "+r"(cur_w),
+                [b_ptr] "+r"(cur_b),
+                [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
                 [n] "+r"(pair_num),
                 [m] "+r"(lave_num),
@@ -1157,28 +1199,42 @@ void sparse_conv_fp32_pipelined(const float* A,
               : "v0", "v1", "v2", "v3", "v4", "v5", "v9", "v11", "v12", "v21", 
               "v22", "w1", "x1", "cc", "memory");
           // clang-format on
-          output = reinterpret_cast<float*>((uintptr_t)output + output_stride);
         }
-        output = reinterpret_cast<float*>((uintptr_t)output - output_decrement);
+        LITE_PARALLEL_COMMON_END();
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 8 * sizeof(float));
         B += 8;
         mc -= 8 * sizeof(float);
       }
       output_decrement += 4 * sizeof(float);
       if (mc & (4 * sizeof(float))) {
-        const float* w = A;
-        const int32_t* dmap = widx_dmap;
-        const uint32_t* nnzmap = nidx_nnzmap;
-
-        for (size_t i = 0; i < nc; i++) {
-          uint32_t nnz = *nnzmap++;
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          const float* cur_w = A;
+          uint32_t nnz = nidx_nnzmap[i];
+          const float* cur_b = B;
+          const int32_t* dmap = widx_dmap;
+          if (i != 0) {
+            int cur_rem = nidx_nnzmap[i - 1] & 3;
+            if (cur_rem != 0) {
+              cur_rem = 4 - cur_rem;
+            }
+            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
+            cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
+            cur_b += ((nidx_nnzmap[i - 1] == 0)
+                          ? 0
+                          : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
+            dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
+          }
           uint32_t pair_num = nnz / 4;
           uint32_t lave_num = nnz % 4;
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
           // clang-format off
             asm volatile(SPARSE_F32_F32_W4_V8_OUT  
-              : [a_ptr] "+r"(w),
-                [b_ptr] "+r"(B),
-                [c_ptr] "+r"(output),
+              : [a_ptr] "+r"(cur_w),
+                [b_ptr] "+r"(cur_b),
+                [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
                 [n] "+r"(pair_num),
                 [m] "+r"(lave_num),
@@ -1189,67 +1245,131 @@ void sparse_conv_fp32_pipelined(const float* A,
               : "v0", "v1", "v2", "v3", "v4", "v9", "v11", "v21", 
               "w1", "w2", "w3", "w4", "w5", "x1", "cc", "memory");
           // clang-format on
-          output = reinterpret_cast<float*>((uintptr_t)output + output_stride);
         }
-        output = reinterpret_cast<float*>((uintptr_t)output - output_decrement);
+        LITE_PARALLEL_COMMON_END();
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 4 * sizeof(float));
         B += 4;
         mc -= 4 * sizeof(float);
       }
 
-      if
-        SPARSE_UNLIKELY(mc != 0 && mc < 4 * sizeof(float)) {
-          const float* w = A;
+      output_decrement += 2 * sizeof(float);
+      if (mc & (2 * sizeof(float))) {
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          const float* cur_w = A;
+          uint32_t nnz = nidx_nnzmap[i];
+          const float* cur_b = B;
           const int32_t* dmap = widx_dmap;
-          const uint32_t* nnzmap = nidx_nnzmap;
-          const float* bs = bias;
-          int mindex = mc / sizeof(float);
-
-          for (size_t i = 0; i < nc; i++) {
-            float vbias = (bias != nullptr) ? *bs++ : 0;
-            for (size_t k = 0; k < mindex; k++) {
-              *(output + k) = vbias;
+          if (i != 0) {
+            int cur_rem = nidx_nnzmap[i - 1] & 3;
+            if (cur_rem != 0) {
+              cur_rem = 4 - cur_rem;
             }
-            uint32_t nnz = *nnzmap++;
-            for (size_t j = 0; j < nnz; j++) {
-              for (size_t k = 0; k < mindex; k++) {
-                *(output + k) += (*w) * (*(B + k));
-              }
-              w += 1;
-              intptr_t diff = *dmap++;
-              B = (const float*)((uintptr_t)B + (uintptr_t)diff);
-            }
-            size_t re = nnz % 4;
-            if (re != 0) {
-              for (int j = 0; j < (4 - re); j++) {
-                w++;
-                dmap++;
-              }
-            }
-            switch (flag_act) {
-              case 0:
-                break;
-              case 1:
-                for (size_t k = 0; k < mindex; k++) {
-                  *(output + k) = *(output + k) > 0 ? *(output + k) : 0;
-                }
-                break;
-              case 2:
-                for (size_t k = 0; k < mindex; k++) {
-                  *(output + k) = *(output + k) > 0 ? *(output + k) : 0;
-                  *(output + k) = *(output + k) < alpha ? *(output + k) : alpha;
-                }
-                break;
-              default:
-                for (size_t k = 0; k < mindex; k++) {
-                  *(output + k) = *(output + k) >= 0 ? *(output + k)
-                                                     : *(output + k) * alpha;
-                }
-                break;
-            }
-            output =
-                reinterpret_cast<float*>((uintptr_t)output + output_stride);
+            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
+            cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
+            cur_b += ((nidx_nnzmap[i - 1] == 0)
+                          ? 0
+                          : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
+            dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
           }
+          float vbias = (bias != nullptr) ? bias[i] : 0.0;
+          float32x2_t vacc01n0 = vdup_n_f32(vbias);
+          if
+            SPARSE_LIKELY(nnz != 0) {
+              do {
+                const intptr_t diff = *dmap++;
+                const float32x2_t vi01 = vld1_f32(cur_b);
+                cur_b = (const float*)((uintptr_t)cur_b + (uintptr_t)diff);
+                const float32x2_t vw = vld1_dup_f32(cur_w);
+                cur_w += 1;
+                vacc01n0 = vmla_lane_f32(vacc01n0, vi01, vw, 0);
+              } while (--nnz != 0);
+            }
+          if (flag_act == 1) {
+            float32x2_t vzero = vdup_n_f32(0);
+            vacc01n0 = vmax_f32(vacc01n0, vzero);
+          } else if (flag_act == 2) {
+            float32x2_t vzero = vdup_n_f32(0);
+            float32x2_t aph = vdup_n_f32(alpha);
+            vacc01n0 = vmax_f32(vacc01n0, vzero);
+            vacc01n0 = vmin_f32(vacc01n0, aph);
+          } else if (flag_act == 0) {
+          } else {
+            float32x2_t vzero = vdup_n_f32(0);
+            float32x2_t aph = vdup_n_f32(alpha);
+            uint32x2_t vflag0123 = vcge_f32(vacc01n0, vzero);
+            float32x2_t v0123 = vmul_f32(vacc01n0, aph);
+            vacc01n0 = vbsl_f32(vflag0123, vacc01n0, v0123);
+          }
+          vst1_f32(cur_output, vacc01n0);
         }
+        LITE_PARALLEL_COMMON_END();
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 2 * sizeof(float));
+        B += 2;
+        mc -= 2 * sizeof(float);
+      }
+
+      output_decrement += 1 * sizeof(float);
+      if (mc & (1 * sizeof(float))) {
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          const float* cur_w = A;
+          uint32_t nnz = nidx_nnzmap[i];
+          const float* cur_b = B;
+          const int32_t* dmap = widx_dmap;
+          if (i != 0) {
+            int cur_rem = nidx_nnzmap[i - 1] & 3;
+            if (cur_rem != 0) {
+              cur_rem = 4 - cur_rem;
+            }
+            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
+            cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
+            cur_b += ((nidx_nnzmap[i - 1] == 0)
+                          ? 0
+                          : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
+            dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
+          }
+          float vbias = (bias != nullptr) ? bias[i] : 0.0;
+          float32x2_t vacc01n0 = vdup_n_f32(vbias);
+          if
+            SPARSE_LIKELY(nnz != 0) {
+              do {
+                const intptr_t diff = *dmap++;
+                const float32x2_t vi01 = vld1_dup_f32(cur_b);
+                cur_b = (const float*)((uintptr_t)cur_b + (uintptr_t)diff);
+                const float32x2_t vw = vld1_dup_f32(cur_w);
+                cur_w += 1;
+                vacc01n0 = vmla_lane_f32(vacc01n0, vi01, vw, 0);
+              } while (--nnz != 0);
+            }
+          if (flag_act == 1) {
+            float32x2_t vzero = vdup_n_f32(0);
+            vacc01n0 = vmax_f32(vacc01n0, vzero);
+          } else if (flag_act == 2) {
+            float32x2_t vzero = vdup_n_f32(0);
+            float32x2_t aph = vdup_n_f32(alpha);
+            vacc01n0 = vmax_f32(vacc01n0, vzero);
+            vacc01n0 = vmin_f32(vacc01n0, aph);
+          } else if (flag_act == 0) {
+          } else {
+            float32x2_t vzero = vdup_n_f32(0);
+            float32x2_t aph = vdup_n_f32(alpha);
+            uint32x2_t vflag0123 = vcge_f32(vacc01n0, vzero);
+            float32x2_t v0123 = vmul_f32(vacc01n0, aph);
+            vacc01n0 = vbsl_f32(vflag0123, vacc01n0, v0123);
+          }
+          vst1_lane_f32(cur_output, vacc01n0, 0);
+        }
+        LITE_PARALLEL_COMMON_END();
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 1 * sizeof(float));
+        B += 1;
+        mc -= 1 * sizeof(float);
+      }
     }
 }
 
@@ -1905,30 +2025,29 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   size_t nc = M;
   size_t output_stride = N * sizeof(float);
   size_t output_decrement = output_stride * nc - 48 * sizeof(float);
-
-  size_t output_total = output_stride * nc;
-  size_t mend = N / 48;
-  size_t mnum = mend * 48;
-  if (mend > 0) {
-    LITE_PARALLEL_COMMON_BEGIN(mi, tid, mnum, 0, 48) {
-      size_t cur_i = mi / 48;
-      const int8_t* cur_B = B + cur_i * 48;
-      float* cur_output = reinterpret_cast<float*>((uintptr_t)output +
-                                                   48 * sizeof(float) * cur_i);
-
-      const int8_t* w = A;
-      const int32_t* dmap = widx_dmap;
-      const uint32_t* nnzmap = nidx_nnzmap;
-      const float* sc = scale;
-
-      for (size_t i = 0; i < nc; i++) {
-        uint32_t nnz = *nnzmap++;
-        float vsclae = *sc++;
+  while
+    SPARSE_LIKELY(mc >= 48 * sizeof(int8_t)) {
+      LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+        float* cur_output =
+            reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+        const int8_t* cur_w = A;
+        uint32_t nnz = nidx_nnzmap[i];
+        const int8_t* cur_b = B;
+        const int32_t* dmap = widx_dmap;
+        if (i != 0) {
+          cur_w = A + nidx_nnzmap[i - 1];
+          nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
+          cur_b +=
+              ((nidx_nnzmap[i - 1] == 0) ? 0
+                                         : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+          dmap = widx_dmap + nidx_nnzmap[i - 1];
+        }
+        float vsclae = scale[i];
         float vbias = (bias != nullptr) ? bias[i] : 0.0;
         // clang-format off
           asm volatile(SPARSE_INT8_F32_W48_V8_OUT
-            : [a_ptr] "+r"(w),
-              [b_ptr] "+r"(cur_B),
+            : [a_ptr] "+r"(cur_w),
+              [b_ptr] "+r"(cur_b),
               [c_ptr] "+r"(cur_output),
               [k] "+r"(nnz),
               [widx_dmap] "+r"(dmap)
@@ -1941,35 +2060,38 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
                 "v16", "v17", "v18", "v21", "v22", "v23", "v24", "v25", 
                 "v26", "v27", "v28", "v30", "v31", "w1", "x1", "cc", "memory");
         // clang-format on
-        cur_output =
-            reinterpret_cast<float*>((uintptr_t)cur_output + output_stride);
       }
+      LITE_PARALLEL_COMMON_END();
+      output = reinterpret_cast<float*>((uintptr_t)output + 48 * sizeof(float));
+      B += 48;
+      mc -= 48 * sizeof(int8_t);
     }
-    LITE_PARALLEL_COMMON_END();
-  }
-  B += mend * 48;
-  mc -= mend * 48 * sizeof(int8_t);
-  output =
-      reinterpret_cast<float*>((uintptr_t)output + 48 * sizeof(float) * mend);
-
   if
     SPARSE_UNLIKELY(mc != 0) {
       output_decrement += 16 * sizeof(float);
       if (mc & (32 * sizeof(int8_t))) {
-        const int8_t* w = A;
-        const int32_t* dmap = widx_dmap;
-        const uint32_t* nnzmap = nidx_nnzmap;
-        const float* sc = scale;
-
-        for (size_t i = 0; i < nc; i++) {
-          uint32_t nnz = *nnzmap++;
-          float vsclae = *sc++;
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          const int8_t* cur_w = A;
+          uint32_t nnz = nidx_nnzmap[i];
+          const int8_t* cur_b = B;
+          const int32_t* dmap = widx_dmap;
+          if (i != 0) {
+            cur_w = A + nidx_nnzmap[i - 1];
+            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
+            cur_b +=
+                ((nidx_nnzmap[i - 1] == 0) ? 0
+                                           : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+            dmap = widx_dmap + nidx_nnzmap[i - 1];
+          }
+          float vsclae = scale[i];
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
           // clang-format off
             asm volatile(SPARSE_INT8_F32_W32_V8_OUT
-              : [a_ptr] "+r"(w),
-                [b_ptr] "+r"(B),
-                [c_ptr] "+r"(output),
+              : [a_ptr] "+r"(cur_w),
+                [b_ptr] "+r"(cur_b),
+                [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
                 [widx_dmap] "+r"(dmap)
               : [vscale] "r"(vsclae),
@@ -1981,28 +2103,37 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
                 "v16", "v17", "v18", "v21", "v22", "v23", "v24", "v25", 
                 "v26", "v27", "v28", "v30", "v31", "w1", "x1", "cc", "memory");
           // clang-format on
-          output = reinterpret_cast<float*>((uintptr_t)output + output_stride);
         }
-        output = reinterpret_cast<float*>((uintptr_t)output - output_decrement);
+        LITE_PARALLEL_COMMON_END();
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 32 * sizeof(float));
         B += 32;
         mc -= 32 * sizeof(int8_t);
       }
       output_decrement += 16 * sizeof(float);
       if (mc & (16 * sizeof(int8_t))) {
-        const int8_t* w = A;
-        const int32_t* dmap = widx_dmap;
-        const uint32_t* nnzmap = nidx_nnzmap;
-        const float* sc = scale;
-
-        for (size_t i = 0; i < nc; i++) {
-          uint32_t nnz = *nnzmap++;
-          float vsclae = *sc++;
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          const int8_t* cur_w = A;
+          uint32_t nnz = nidx_nnzmap[i];
+          const int8_t* cur_b = B;
+          const int32_t* dmap = widx_dmap;
+          if (i != 0) {
+            cur_w = A + nidx_nnzmap[i - 1];
+            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
+            cur_b +=
+                ((nidx_nnzmap[i - 1] == 0) ? 0
+                                           : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+            dmap = widx_dmap + nidx_nnzmap[i - 1];
+          }
+          float vsclae = scale[i];
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
           // clang-format off
             asm volatile(SPARSE_INT8_F32_W16_V8_OUT
-              : [a_ptr] "+r"(w),
-                [b_ptr] "+r"(B),
-                [c_ptr] "+r"(output),
+              : [a_ptr] "+r"(cur_w),
+                [b_ptr] "+r"(cur_b),
+                [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
                 [widx_dmap] "+r"(dmap)
               : [vscale] "r"(vsclae),
@@ -2013,28 +2144,37 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
                   "v8", "v9", "v11", "v12", "v13", "v14", "v21", "v22", "v23",
                   "v24", "w1", "x1", "cc", "memory");
           // clang-format on
-          output = reinterpret_cast<float*>((uintptr_t)output + output_stride);
         }
-        output = reinterpret_cast<float*>((uintptr_t)output - output_decrement);
+        LITE_PARALLEL_COMMON_END();
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 16 * sizeof(float));
         B += 16;
         mc -= 16 * sizeof(int8_t);
       }
       output_decrement += 8 * sizeof(float);
       if (mc & (8 * sizeof(int8_t))) {
-        const int8_t* w = A;
-        const int32_t* dmap = widx_dmap;
-        const uint32_t* nnzmap = nidx_nnzmap;
-        const float* sc = scale;
-
-        for (size_t i = 0; i < nc; i++) {
-          uint32_t nnz = *nnzmap++;
-          float vsclae = *sc++;
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          const int8_t* cur_w = A;
+          uint32_t nnz = nidx_nnzmap[i];
+          const int8_t* cur_b = B;
+          const int32_t* dmap = widx_dmap;
+          if (i != 0) {
+            cur_w = A + nidx_nnzmap[i - 1];
+            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
+            cur_b +=
+                ((nidx_nnzmap[i - 1] == 0) ? 0
+                                           : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+            dmap = widx_dmap + nidx_nnzmap[i - 1];
+          }
+          float vsclae = scale[i];
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
           // clang-format off
             asm volatile(SPARSE_INT8_F32_W8_V8_OUT
-              : [a_ptr] "+r"(w),
-                [b_ptr] "+r"(B),
-                [c_ptr] "+r"(output),
+              : [a_ptr] "+r"(cur_w),
+                [b_ptr] "+r"(cur_b),
+                [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
                 [widx_dmap] "+r"(dmap)
               : [vscale] "r"(vsclae),
@@ -2044,28 +2184,37 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
               : "v0", "v1", "v2", "v3", "v4", "v5", "v9", "v11", "v12", "v21", 
               "v22", "w1", "x1", "cc", "memory");
           // clang-format on
-          output = reinterpret_cast<float*>((uintptr_t)output + output_stride);
         }
-        output = reinterpret_cast<float*>((uintptr_t)output - output_decrement);
+        LITE_PARALLEL_COMMON_END();
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 8 * sizeof(float));
         B += 8;
         mc -= 8 * sizeof(int8_t);
       }
       output_decrement += 4 * sizeof(float);
       if (mc & (4 * sizeof(int8_t))) {
-        const int8_t* w = A;
-        const int32_t* dmap = widx_dmap;
-        const uint32_t* nnzmap = nidx_nnzmap;
-        const float* sc = scale;
-
-        for (size_t i = 0; i < nc; i++) {
-          uint32_t nnz = *nnzmap++;
-          float vsclae = *sc++;
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          const int8_t* cur_w = A;
+          uint32_t nnz = nidx_nnzmap[i];
+          const int8_t* cur_b = B;
+          const int32_t* dmap = widx_dmap;
+          if (i != 0) {
+            cur_w = A + nidx_nnzmap[i - 1];
+            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
+            cur_b +=
+                ((nidx_nnzmap[i - 1] == 0) ? 0
+                                           : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+            dmap = widx_dmap + nidx_nnzmap[i - 1];
+          }
+          float vsclae = scale[i];
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
           // clang-format off
             asm volatile(SPARSE_INT8_F32_W4_V8_OUT
-              : [a_ptr] "+r"(w),
-                [b_ptr] "+r"(B),
-                [c_ptr] "+r"(output),
+              : [a_ptr] "+r"(cur_w),
+                [b_ptr] "+r"(cur_b),
+                [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
                 [widx_dmap] "+r"(dmap)
               : [vscale] "r"(vsclae),
@@ -2075,67 +2224,86 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
               : "v0", "v1", "v2", "v3", "v4", "v9", "v11", "v21", 
               "w1", "w2", "w3", "w4", "w5", "x1", "cc", "memory");
           // clang-format on
-          output = reinterpret_cast<float*>((uintptr_t)output + output_stride);
         }
-        output = reinterpret_cast<float*>((uintptr_t)output - output_decrement);
+        LITE_PARALLEL_COMMON_END();
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 4 * sizeof(float));
         B += 4;
         mc -= 4 * sizeof(int8_t);
       }
 
       if
         SPARSE_UNLIKELY(mc != 0 && mc < 4 * sizeof(int8_t)) {
-          const int8_t* w = A;
-          const int32_t* dmap = widx_dmap;
-          const uint32_t* nnzmap = nidx_nnzmap;
-          const float* bs = bias;
-          const float* sc = scale;
           int mindex = mc / sizeof(int8_t);
 
-          for (size_t i = 0; i < nc; i++) {
-            float vbias = (bias != nullptr) ? *bs++ : 0;
-            float vscale = *sc++;
-            for (size_t k = 0; k < mc; k++) {
-              *(output + k) = 0;
+          LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+            float* out_ptr =
+                reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+            const int8_t* cur_w = A;
+            uint32_t nnz = nidx_nnzmap[i];
+            const int8_t* cur_b = B;
+            const int32_t* dmap = widx_dmap;
+            if (i != 0) {
+              cur_w = A + nidx_nnzmap[i - 1];
+              nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
+              cur_b += ((nidx_nnzmap[i - 1] == 0)
+                            ? 0
+                            : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+              dmap = widx_dmap + nidx_nnzmap[i - 1];
             }
-            uint32_t nnz = *nnzmap++;
-            for (size_t j = 0; j < nnz; j++) {
-              for (size_t k = 0; k < mc; k++) {
-                *(output + k) += (*w) * (*(B + k));
+            float32x4_t vbias =
+                (bias != nullptr) ? vdupq_n_f32(bias[i]) : vdupq_n_f32(0);
+            float vscale = scale[i];
+            int32x4_t vacc0123 = vdupq_n_s32(0);
+            for (int j = 0; j < nnz; j++) {
+              int8x8_t vi0123 = vdup_n_s8(0);
+              if (mc == 1) {
+                vi0123 = vld1_lane_s8(cur_b, vi0123, 0);
+              } else if (mc == 2) {
+                vi0123 = vld1_lane_s8(cur_b, vi0123, 0);
+                vi0123 = vld1_lane_s8(cur_b + 1, vi0123, 1);
+              } else {
+                vi0123 = vld1_lane_s8(cur_b, vi0123, 0);
+                vi0123 = vld1_lane_s8(cur_b + 1, vi0123, 1);
+                vi0123 = vld1_lane_s8(cur_b + 2, vi0123, 2);
               }
-              w += 1;
+              int8x8_t vw = vld1_dup_s8(cur_w);
+              cur_w += 1;
               intptr_t diff = *dmap++;
-              B = (const int8_t*)((uintptr_t)B + (uintptr_t)diff);
+              cur_b = (const int8_t*)((uintptr_t)cur_b + (uintptr_t)diff);
+              int16x8_t vo0123 = vmull_s8(vi0123, vw);
+              vacc0123 = vaddw_s16(vacc0123, vget_low_s16(vo0123));
             }
-            switch (flag_act) {
-              case 0:
-                for (size_t k = 0; k < mindex; k++) {
-                  *(output + k) = *(output + k) * vscale + vbias;
-                }
-                break;
-              case 1:
-                for (size_t k = 0; k < mindex; k++) {
-                  *(output + k) = *(output + k) * vscale + vbias;
-                  *(output + k) = *(output + k) > 0 ? *(output + k) : 0;
-                }
-                break;
-              case 2:
-                for (size_t k = 0; k < mindex; k++) {
-                  *(output + k) = *(output + k) * vscale + vbias;
-                  *(output + k) = *(output + k) > 0 ? *(output + k) : 0;
-                  *(output + k) = *(output + k) < alpha ? *(output + k) : alpha;
-                }
-                break;
-              default:
-                for (size_t k = 0; k < mindex; k++) {
-                  *(output + k) = *(output + k) * vscale + vbias;
-                  *(output + k) = *(output + k) >= 0 ? *(output + k)
-                                                     : *(output + k) * alpha;
-                }
-                break;
+
+            float32x4_t vaccf0123 = vcvtq_f32_s32(vacc0123);
+            vaccf0123 = vmlaq_n_f32(vbias, vaccf0123, vscale);
+            float32x4_t vzero = vdupq_n_f32(0);
+            if (flag_act == 1) {
+              vaccf0123 = vmaxq_f32(vaccf0123, vzero);
+            } else if (flag_act == 0) {
+            } else if (flag_act == 2) {
+              float32x4_t aph = vdupq_n_f32(alpha);
+              vaccf0123 = vmaxq_f32(vaccf0123, vzero);
+              vaccf0123 = vminq_f32(vaccf0123, aph);
+            } else {
+              float32x4_t aph = vdupq_n_f32(alpha);
+              uint32x4_t vflag0123 = vcgeq_f32(vaccf0123, vzero);
+              float32x4_t v0123 = vmulq_f32(vaccf0123, aph);
+              vaccf0123 = vbslq_f32(vflag0123, vaccf0123, v0123);
             }
-            output =
-                reinterpret_cast<float*>((uintptr_t)output + output_stride);
+
+            if (mc == 1) {
+              vst1q_lane_f32(out_ptr, vaccf0123, 0);
+            } else if (mc == 2) {
+              vst1q_lane_f32(out_ptr, vaccf0123, 0);
+              vst1q_lane_f32(out_ptr + 1, vaccf0123, 1);
+            } else {
+              vst1q_lane_f32(out_ptr, vaccf0123, 0);
+              vst1q_lane_f32(out_ptr + 1, vaccf0123, 1);
+              vst1q_lane_f32(out_ptr + 2, vaccf0123, 2);
+            }
           }
+          LITE_PARALLEL_COMMON_END();
         }
     }
 }
@@ -2909,29 +3077,29 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
   size_t output_stride = N * sizeof(int8_t);
   size_t output_decrement = output_stride * nc - 48 * sizeof(int8_t);
   float vmax[4] = {-127.0, -127.0, -127.0, -127.0};
-  size_t output_total = output_stride * nc;
-  size_t mend = N / 48;
-  size_t mnum = mend * 48;
-  if (mend > 0) {
-    LITE_PARALLEL_COMMON_BEGIN(mi, tid, mnum, 0, 48) {
-      size_t cur_i = mi / 48;
-      const int8_t* cur_B = B + cur_i * 48;
-      int8_t* cur_output = reinterpret_cast<int8_t*>(
-          (uintptr_t)output + 48 * sizeof(int8_t) * cur_i);
-
-      const int8_t* w = A;
-      const int32_t* dmap = widx_dmap;
-      const uint32_t* nnzmap = nidx_nnzmap;
-      const float* sc = scale;
-
-      for (size_t i = 0; i < nc; i++) {
-        uint32_t nnz = *nnzmap++;
-        float vsclae = *sc++;
+  while
+    SPARSE_LIKELY(mc >= 48 * sizeof(int8_t)) {
+      LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+        int8_t* cur_output =
+            reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
+        const int8_t* cur_w = A;
+        uint32_t nnz = nidx_nnzmap[i];
+        const int8_t* cur_b = B;
+        const int32_t* dmap = widx_dmap;
+        if (i != 0) {
+          cur_w = A + nidx_nnzmap[i - 1];
+          nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
+          cur_b +=
+              ((nidx_nnzmap[i - 1] == 0) ? 0
+                                         : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+          dmap = widx_dmap + nidx_nnzmap[i - 1];
+        }
+        float vsclae = scale[i];
         float vbias = (bias != nullptr) ? bias[i] : 0.0;
         // clang-format off
           asm volatile(SPARSE_INT8_INT8_W48_V8_OUT
-            : [a_ptr] "+r"(w),
-              [b_ptr] "+r"(cur_B),
+            : [a_ptr] "+r"(cur_w),
+              [b_ptr] "+r"(cur_b),
               [c_ptr] "+r"(cur_output),
               [k] "+r"(nnz),
               [widx_dmap] "+r"(dmap)
@@ -2945,35 +3113,39 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
                 "v16", "v17", "v18", "v19", "v21", "v22", "v23", "v24", "v25", 
                 "v26", "v27", "v28", "v30", "v31", "w0", "w1", "x1", "cc", "memory");
         // clang-format on
-        cur_output =
-            reinterpret_cast<int8_t*>((uintptr_t)cur_output + output_stride);
       }
+      LITE_PARALLEL_COMMON_END();
+      output =
+          reinterpret_cast<int8_t*>((uintptr_t)output + 48 * sizeof(int8_t));
+      B += 48;
+      mc -= 48 * sizeof(int8_t);
     }
-    LITE_PARALLEL_COMMON_END();
-  }
-  B += mend * 48;
-  mc -= mend * 48 * sizeof(int8_t);
-  output =
-      reinterpret_cast<int8_t*>((uintptr_t)output + 48 * sizeof(int8_t) * mend);
-
   if
     SPARSE_UNLIKELY(mc != 0) {
       output_decrement += 16 * sizeof(int8_t);
       if (mc & (32 * sizeof(int8_t))) {
-        const int8_t* w = A;
-        const int32_t* dmap = widx_dmap;
-        const uint32_t* nnzmap = nidx_nnzmap;
-        const float* sc = scale;
-
-        for (size_t i = 0; i < nc; i++) {
-          uint32_t nnz = *nnzmap++;
-          float vsclae = *sc++;
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          int8_t* cur_output =
+              reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
+          const int8_t* cur_w = A;
+          uint32_t nnz = nidx_nnzmap[i];
+          const int8_t* cur_b = B;
+          const int32_t* dmap = widx_dmap;
+          if (i != 0) {
+            cur_w = A + nidx_nnzmap[i - 1];
+            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
+            cur_b +=
+                ((nidx_nnzmap[i - 1] == 0) ? 0
+                                           : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+            dmap = widx_dmap + nidx_nnzmap[i - 1];
+          }
+          float vsclae = scale[i];
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
           // clang-format off
             asm volatile(SPARSE_INT8_INT8_W32_V8_OUT
-              : [a_ptr] "+r"(w),
-                [b_ptr] "+r"(B),
-                [c_ptr] "+r"(output),
+              : [a_ptr] "+r"(cur_w),
+                [b_ptr] "+r"(cur_b),
+                [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
                 [widx_dmap] "+r"(dmap)
               : [vscale] "r"(vsclae),
@@ -2986,29 +3158,37 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
                 "v16", "v17", "v18", "v19", "v21", "v22", "v23", "v24", "v25", 
                 "v26", "v27", "v28", "v30", "v31", "w0", "w1", "x1", "cc", "memory");
           // clang-format on
-          output = reinterpret_cast<int8_t*>((uintptr_t)output + output_stride);
         }
+        LITE_PARALLEL_COMMON_END();
         output =
-            reinterpret_cast<int8_t*>((uintptr_t)output - output_decrement);
+            reinterpret_cast<int8_t*>((uintptr_t)output + 32 * sizeof(int8_t));
         B += 32;
         mc -= 32 * sizeof(int8_t);
       }
       output_decrement += 16 * sizeof(int8_t);
       if (mc & (16 * sizeof(int8_t))) {
-        const int8_t* w = A;
-        const int32_t* dmap = widx_dmap;
-        const uint32_t* nnzmap = nidx_nnzmap;
-        const float* sc = scale;
-
-        for (size_t i = 0; i < nc; i++) {
-          uint32_t nnz = *nnzmap++;
-          float vsclae = *sc++;
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          int8_t* cur_output =
+              reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
+          const int8_t* cur_w = A;
+          uint32_t nnz = nidx_nnzmap[i];
+          const int8_t* cur_b = B;
+          const int32_t* dmap = widx_dmap;
+          if (i != 0) {
+            cur_w = A + nidx_nnzmap[i - 1];
+            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
+            cur_b +=
+                ((nidx_nnzmap[i - 1] == 0) ? 0
+                                           : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+            dmap = widx_dmap + nidx_nnzmap[i - 1];
+          }
+          float vsclae = scale[i];
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
           // clang-format off
             asm volatile(SPARSE_INT8_INT8_W16_V8_OUT
-              : [a_ptr] "+r"(w),
-                [b_ptr] "+r"(B),
-                [c_ptr] "+r"(output),
+              : [a_ptr] "+r"(cur_w),
+                [b_ptr] "+r"(cur_b),
+                [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
                 [widx_dmap] "+r"(dmap)
               : [vscale] "r"(vsclae),
@@ -3020,29 +3200,37 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
                   "v8", "v9", "v11", "v12", "v13", "v14", "v16", "v17", "v21", "v22", "v23",
                   "v24", "w1", "x1", "cc", "memory");
           // clang-format on
-          output = reinterpret_cast<int8_t*>((uintptr_t)output + output_stride);
         }
+        LITE_PARALLEL_COMMON_END();
         output =
-            reinterpret_cast<int8_t*>((uintptr_t)output - output_decrement);
+            reinterpret_cast<int8_t*>((uintptr_t)output + 16 * sizeof(int8_t));
         B += 16;
         mc -= 16 * sizeof(int8_t);
       }
       output_decrement += 8 * sizeof(int8_t);
       if (mc & (8 * sizeof(int8_t))) {
-        const int8_t* w = A;
-        const int32_t* dmap = widx_dmap;
-        const uint32_t* nnzmap = nidx_nnzmap;
-        const float* sc = scale;
-
-        for (size_t i = 0; i < nc; i++) {
-          uint32_t nnz = *nnzmap++;
-          float vsclae = *sc++;
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          int8_t* cur_output =
+              reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
+          const int8_t* cur_w = A;
+          uint32_t nnz = nidx_nnzmap[i];
+          const int8_t* cur_b = B;
+          const int32_t* dmap = widx_dmap;
+          if (i != 0) {
+            cur_w = A + nidx_nnzmap[i - 1];
+            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
+            cur_b +=
+                ((nidx_nnzmap[i - 1] == 0) ? 0
+                                           : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+            dmap = widx_dmap + nidx_nnzmap[i - 1];
+          }
+          float vsclae = scale[i];
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
           // clang-format off
             asm volatile(SPARSE_INT8_INT8_W8_V8_OUT
-              : [a_ptr] "+r"(w),
-                [b_ptr] "+r"(B),
-                [c_ptr] "+r"(output),
+              : [a_ptr] "+r"(cur_w),
+                [b_ptr] "+r"(cur_b),
+                [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
                 [widx_dmap] "+r"(dmap)
               : [vscale] "r"(vsclae),
@@ -3053,29 +3241,37 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
               : "v0", "v1", "v2", "v3", "v4", "v5", "v8", "v9", "v10", "v11", "v12", "v16", "v21", 
               "v22", "w1", "x1", "cc", "memory");
           // clang-format on
-          output = reinterpret_cast<int8_t*>((uintptr_t)output + output_stride);
         }
+        LITE_PARALLEL_COMMON_END();
         output =
-            reinterpret_cast<int8_t*>((uintptr_t)output - output_decrement);
+            reinterpret_cast<int8_t*>((uintptr_t)output + 8 * sizeof(int8_t));
         B += 8;
         mc -= 8 * sizeof(int8_t);
       }
       output_decrement += 4 * sizeof(int8_t);
       if (mc & (4 * sizeof(int8_t))) {
-        const int8_t* w = A;
-        const int32_t* dmap = widx_dmap;
-        const uint32_t* nnzmap = nidx_nnzmap;
-        const float* sc = scale;
-
-        for (size_t i = 0; i < nc; i++) {
-          uint32_t nnz = *nnzmap++;
-          float vsclae = *sc++;
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          int8_t* cur_output =
+              reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
+          const int8_t* cur_w = A;
+          uint32_t nnz = nidx_nnzmap[i];
+          const int8_t* cur_b = B;
+          const int32_t* dmap = widx_dmap;
+          if (i != 0) {
+            cur_w = A + nidx_nnzmap[i - 1];
+            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
+            cur_b +=
+                ((nidx_nnzmap[i - 1] == 0) ? 0
+                                           : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+            dmap = widx_dmap + nidx_nnzmap[i - 1];
+          }
+          float vsclae = scale[i];
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
           // clang-format off
             asm volatile(SPARSE_INT8_INT8_W4_V8_OUT
-              : [a_ptr] "+r"(w),
-                [b_ptr] "+r"(B),
-                [c_ptr] "+r"(output),
+              : [a_ptr] "+r"(cur_w),
+                [b_ptr] "+r"(cur_b),
+                [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
                 [widx_dmap] "+r"(dmap)
               : [vscale] "r"(vsclae),
@@ -3086,59 +3282,99 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
               : "v0", "v1", "v2", "v3", "v4", "v8", "v9", "v11", "v16", "v21", 
               "w1", "w2", "w3", "w4", "w5", "x1", "cc", "memory");
           // clang-format on
-          output = reinterpret_cast<int8_t*>((uintptr_t)output + output_stride);
         }
+        LITE_PARALLEL_COMMON_END();
         output =
-            reinterpret_cast<int8_t*>((uintptr_t)output - output_decrement);
+            reinterpret_cast<int8_t*>((uintptr_t)output + 4 * sizeof(int8_t));
         B += 4;
         mc -= 4 * sizeof(int8_t);
       }
 
       if
         SPARSE_UNLIKELY(mc != 0 && mc < 4 * sizeof(int8_t)) {
-          const int8_t* w = A;
-          const int32_t* dmap = widx_dmap;
-          const uint32_t* nnzmap = nidx_nnzmap;
-          const float* bs = bias;
-          const float* sc = scale;
-
-          for (size_t i = 0; i < nc; i++) {
-            float vbias = (bias != nullptr) ? *bs++ : 0;
-            float vscale = *sc++;
-            std::vector<float> out(mc, 0);
-            uint32_t nnz = *nnzmap++;
-            for (size_t j = 0; j < nnz; j++) {
-              for (size_t k = 0; k < mc; k++) {
-                out[k] += (*w) * (*(B + k));
+          LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+            int8_t* out_ptr = reinterpret_cast<int8_t*>((uintptr_t)output +
+                                                        output_stride * i);
+            const int8_t* cur_w = A;
+            uint32_t nnz = nidx_nnzmap[i];
+            const int8_t* cur_b = B;
+            const int32_t* dmap = widx_dmap;
+            if (i != 0) {
+              cur_w = A + nidx_nnzmap[i - 1];
+              nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
+              cur_b += ((nidx_nnzmap[i - 1] == 0)
+                            ? 0
+                            : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+              dmap = widx_dmap + nidx_nnzmap[i - 1];
+            }
+            float32x4_t vbias =
+                (bias != nullptr) ? vdupq_n_f32(bias[i]) : vdupq_n_f32(0);
+            float vscale = scale[i];
+            int32x4_t vacc0123 = vdupq_n_s32(0);
+            for (int j = 0; j < nnz; j++) {
+              int8x8_t vi0123 = vdup_n_s8(0);
+              if (mc == 1) {
+                vi0123 = vld1_lane_s8(cur_b, vi0123, 0);
+              } else if (mc == 2) {
+                vi0123 = vld1_lane_s8(cur_b, vi0123, 0);
+                vi0123 = vld1_lane_s8(cur_b + 1, vi0123, 1);
+              } else {
+                vi0123 = vld1_lane_s8(cur_b, vi0123, 0);
+                vi0123 = vld1_lane_s8(cur_b + 1, vi0123, 1);
+                vi0123 = vld1_lane_s8(cur_b + 2, vi0123, 2);
               }
-              w += 1;
+              int8x8_t vw = vld1_dup_s8(cur_w);
+              cur_w += 1;
               intptr_t diff = *dmap++;
-              B = (const int8_t*)((uintptr_t)B + (uintptr_t)diff);
+              cur_b = (const int8_t*)((uintptr_t)cur_b + (uintptr_t)diff);
+              int16x8_t vo0123 = vmull_s8(vi0123, vw);
+              vacc0123 = vaddw_s16(vacc0123, vget_low_s16(vo0123));
             }
-            for (size_t k = 0; k < mc; k++) {
-              out[k] = out[k] * vscale + vbias;
-              switch (flag_act) {
-                case 0:
-                  break;
-                case 1:  // relu
-                  out[k] = out[k] > 0 ? out[k] : 0;
-                  break;
-                case 2:  // relu6
-                  out[k] = out[k] > 0 ? out[k] : 0;
-                  out[k] = out[k] < alpha ? out[k] : alpha;
-                  break;
-                default:  // leaky_relu
-                  out[k] = out[k] >= 0 ? out[k] : out[k] * alpha;
-                  break;
-              }
-              float vax = out[k] > -127.0 ? out[k] : -127.0;
-              vax = vax >= 0 ? vax + 0.5 : vax - 0.5;
-              int32_t out_val = static_cast<int32_t>(vax);
-              *(output + k) = out_val > 127 ? 127 : out_val;
+
+            float32x4_t vaccf0123 = vcvtq_f32_s32(vacc0123);
+            vaccf0123 = vmlaq_n_f32(vbias, vaccf0123, vscale);
+            float32x4_t vzero = vdupq_n_f32(0);
+            if (flag_act == 1) {
+              vaccf0123 = vmaxq_f32(vaccf0123, vzero);
+            } else if (flag_act == 0) {
+            } else if (flag_act == 2) {
+              float32x4_t aph = vdupq_n_f32(alpha);
+              vaccf0123 = vmaxq_f32(vaccf0123, vzero);
+              vaccf0123 = vminq_f32(vaccf0123, aph);
+            } else {
+              float32x4_t aph = vdupq_n_f32(alpha);
+              uint32x4_t vflag0123 = vcgeq_f32(vaccf0123, vzero);
+              float32x4_t v0123 = vmulq_f32(vaccf0123, aph);
+              vaccf0123 = vbslq_f32(vflag0123, vaccf0123, v0123);
             }
-            output =
-                reinterpret_cast<int8_t*>((uintptr_t)output + output_stride);
+
+            vaccf0123 = vbslq_f32(vcgeq_f32(vaccf0123, vdupq_n_f32(-127.0)),
+                                  vaccf0123,
+                                  vdupq_n_f32(-127.0));
+            float32x4_t vpos = vdupq_n_f32(0.5);
+            float32x4_t vneg = vdupq_n_f32(-0.5);
+            vaccf0123 = vbslq_f32(vcgeq_f32(vaccf0123, vzero),
+                                  vaddq_f32(vaccf0123, vpos),
+                                  vaddq_f32(vaccf0123, vneg));
+
+            int32x4_t vacci0123 = vcvtq_s32_f32(vaccf0123);
+
+            int16x4_t v16i0123 = vqmovn_s32(vacci0123);
+            int16x4_t v16i4567 = vdup_n_s16(0);
+            int8x8_t v8i01234567 = vqmovn_s16(vcombine_s16(v16i0123, v16i4567));
+
+            if (mc == 1) {
+              vst1_lane_s8(out_ptr, v8i01234567, 0);
+            } else if (mc == 2) {
+              vst1_lane_s8(out_ptr, v8i01234567, 0);
+              vst1_lane_s8(out_ptr + 1, v8i01234567, 1);
+            } else {
+              vst1_lane_s8(out_ptr, v8i01234567, 0);
+              vst1_lane_s8(out_ptr + 1, v8i01234567, 1);
+              vst1_lane_s8(out_ptr + 2, v8i01234567, 2);
+            }
           }
+          LITE_PARALLEL_COMMON_END();
         }
     }
 }
@@ -3703,7 +3939,7 @@ void sparse_conv_fp32_pipelined(const float* A,
                                 ARMContext* ctx) {
   auto act_param = param.activation_param;
   auto act_type = act_param.active_type;
-  float alpha = 0.f;
+  volatile float alpha = 0.f;
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
   if (act_param.has_active) {
     if (act_type == lite_api::ActivationType::kRelu) {
@@ -3721,29 +3957,34 @@ void sparse_conv_fp32_pipelined(const float* A,
   size_t nc = M;
   size_t output_stride = N * sizeof(float);
   size_t output_decrement = output_stride * nc - 48 * sizeof(float);
-  size_t output_total = output_stride * nc;
-  size_t mend = N / 48;
-  size_t mnum = mend * 48;
-  if (mend > 0) {
-    LITE_PARALLEL_COMMON_BEGIN(mi, tid, mnum, 0, 48) {
-      size_t cur_i = mi / 48;
-      const float* cur_B = B + cur_i * 48;
-      float* cur_output = reinterpret_cast<float*>((uintptr_t)output +
-                                                   48 * sizeof(float) * cur_i);
-      const float* w = A;
-      const int32_t* dmap = widx_dmap;
-      const uint32_t* nnzmap = nidx_nnzmap;
-      float valpha = alpha;
-
-      for (size_t i = 0; i < nc; i++) {
-        uint32_t nnz = *nnzmap++;
+  while
+    SPARSE_LIKELY(mc >= 48 * sizeof(float)) {
+      LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+        float* cur_output =
+            reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+        const float* cur_w = A;
+        uint32_t nnz = nidx_nnzmap[i];
+        const float* cur_b = B;
+        const int32_t* dmap = widx_dmap;
+        if (i != 0) {
+          int cur_rem = nidx_nnzmap[i - 1] & 3;
+          if (cur_rem != 0) {
+            cur_rem = 4 - cur_rem;
+          }
+          nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
+          cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
+          cur_b += ((nidx_nnzmap[i - 1] == 0)
+                        ? 0
+                        : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
+          dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
+        }
         uint32_t pair_num = nnz % 4;
         uint32_t lave_num = (pair_num == 0) ? 0 : (4 - pair_num);
         float vbias = (bias != nullptr) ? bias[i] : 0.0;
         // clang-format off
             asm volatile(SPARSE_F32_F32_W48_v7_OUT  
-              : [a_ptr] "+r"(w),
-                [b_ptr] "+r"(cur_B),
+              : [a_ptr] "+r"(cur_w),
+                [b_ptr] "+r"(cur_b),
                 [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
                 [n] "+r"(pair_num),
@@ -3751,7 +3992,7 @@ void sparse_conv_fp32_pipelined(const float* A,
                 [widx_dmap] "+r"(dmap)
               : [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
-                [valpha] "r"(valpha)
+                [valpha] "r"(alpha)
               : "q0",
                 "q1",
                 "q2",
@@ -3774,46 +4015,51 @@ void sparse_conv_fp32_pipelined(const float* A,
                 "cc",
                 "memory");
         // clang-format on
-        // TODO(yingyu): check the modifications
-        cur_output =
-            reinterpret_cast<float*>((uintptr_t)cur_output + output_stride);
-        w = w + lave_num;
-        dmap = dmap + lave_num;
       }
+      LITE_PARALLEL_COMMON_END();
+      output = reinterpret_cast<float*>((uintptr_t)output + 48 * sizeof(float));
+      B += 48;
+      mc -= 48 * sizeof(float);
     }
-    LITE_PARALLEL_COMMON_END();
-  }
-  B += mend * 48;
-  mc -= mend * 48 * sizeof(float);
-  output =
-      reinterpret_cast<float*>((uintptr_t)output + 48 * sizeof(float) * mend);
 
   if
     SPARSE_UNLIKELY(mc != 0) {
       output_decrement += 16 * sizeof(float);
       if (mc & (32 * sizeof(float))) {
-        const float* w = A;
-        const int32_t* dmap = widx_dmap;
-        const uint32_t* nnzmap = nidx_nnzmap;
-        float valpha = alpha;
-
-        for (size_t i = 0; i < nc; i++) {
-          uint32_t nnz = *nnzmap++;
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          const float* cur_w = A;
+          uint32_t nnz = nidx_nnzmap[i];
+          const float* cur_b = B;
+          const int32_t* dmap = widx_dmap;
+          if (i != 0) {
+            int cur_rem = nidx_nnzmap[i - 1] & 3;
+            if (cur_rem != 0) {
+              cur_rem = 4 - cur_rem;
+            }
+            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
+            cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
+            cur_b += ((nidx_nnzmap[i - 1] == 0)
+                          ? 0
+                          : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
+            dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
+          }
           uint32_t pair_num = nnz % 4;
           uint32_t lave_num = (pair_num == 0) ? 0 : (4 - pair_num);
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
           // clang-format off
             asm volatile(SPARSE_F32_F32_W32_v7_OUT  
-              : [a_ptr] "+r"(w),
-                [b_ptr] "+r"(B),
-                [c_ptr] "+r"(output),
+              : [a_ptr] "+r"(cur_w),
+                [b_ptr] "+r"(cur_b),
+                [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
                 [n] "+r"(pair_num),
                 [m] "+r"(lave_num),
                 [widx_dmap] "+r"(dmap)
               : [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
-                [valpha] "r"(valpha)
+                [valpha] "r"(alpha)
               : "q0",
                 "q1",
                 "q2",
@@ -3832,38 +4078,49 @@ void sparse_conv_fp32_pipelined(const float* A,
                 "cc",
                 "memory");
           // clang-format on
-          output = reinterpret_cast<float*>((uintptr_t)output + output_stride);
-          w = w + lave_num;
-          dmap = dmap + lave_num;
         }
-        output = reinterpret_cast<float*>((uintptr_t)output - output_decrement);
+        LITE_PARALLEL_COMMON_END();
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 32 * sizeof(float));
         B += 32;
         mc -= 32 * sizeof(float);
       }
       output_decrement += 16 * sizeof(float);
       if (mc & (16 * sizeof(float))) {
-        const float* w = A;
-        const int32_t* dmap = widx_dmap;
-        const uint32_t* nnzmap = nidx_nnzmap;
-        float valpha = alpha;
-
-        for (size_t i = 0; i < nc; i++) {
-          uint32_t nnz = *nnzmap++;
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          const float* cur_w = A;
+          uint32_t nnz = nidx_nnzmap[i];
+          const float* cur_b = B;
+          const int32_t* dmap = widx_dmap;
+          if (i != 0) {
+            int cur_rem = nidx_nnzmap[i - 1] & 3;
+            if (cur_rem != 0) {
+              cur_rem = 4 - cur_rem;
+            }
+            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
+            cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
+            cur_b += ((nidx_nnzmap[i - 1] == 0)
+                          ? 0
+                          : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
+            dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
+          }
           uint32_t pair_num = nnz % 4;
           uint32_t lave_num = (pair_num == 0) ? 0 : (4 - pair_num);
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
           // clang-format off
             asm volatile(SPARSE_F32_F32_W16_v7_OUT  
-              : [a_ptr] "+r"(w),
-                [b_ptr] "+r"(B),
-                [c_ptr] "+r"(output),
+              : [a_ptr] "+r"(cur_w),
+                [b_ptr] "+r"(cur_b),
+                [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
                 [n] "+r"(pair_num),
                 [m] "+r"(lave_num),
                 [widx_dmap] "+r"(dmap)
               : [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
-                [valpha] "r"(valpha)
+                [valpha] "r"(alpha)
               : "q0",
                 "q1",
                 "q2",
@@ -3882,38 +4139,49 @@ void sparse_conv_fp32_pipelined(const float* A,
                 "cc",
                 "memory");
           // clang-format on
-          output = reinterpret_cast<float*>((uintptr_t)output + output_stride);
-          w = w + lave_num;
-          dmap = dmap + lave_num;
         }
-        output = reinterpret_cast<float*>((uintptr_t)output - output_decrement);
+        LITE_PARALLEL_COMMON_END();
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 16 * sizeof(float));
         B += 16;
         mc -= 16 * sizeof(float);
       }
       output_decrement += 8 * sizeof(float);
       if (mc & (8 * sizeof(float))) {
-        const float* w = A;
-        const int32_t* dmap = widx_dmap;
-        const uint32_t* nnzmap = nidx_nnzmap;
-        float valpha = alpha;
-
-        for (size_t i = 0; i < nc; i++) {
-          uint32_t nnz = *nnzmap++;
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          const float* cur_w = A;
+          uint32_t nnz = nidx_nnzmap[i];
+          const float* cur_b = B;
+          const int32_t* dmap = widx_dmap;
+          if (i != 0) {
+            int cur_rem = nidx_nnzmap[i - 1] & 3;
+            if (cur_rem != 0) {
+              cur_rem = 4 - cur_rem;
+            }
+            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
+            cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
+            cur_b += ((nidx_nnzmap[i - 1] == 0)
+                          ? 0
+                          : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
+            dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
+          }
           uint32_t pair_num = nnz % 4;
           uint32_t lave_num = (pair_num == 0) ? 0 : (4 - pair_num);
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
           // clang-format off
             asm volatile(SPARSE_F32_F32_W8_v7_OUT  
-              : [a_ptr] "+r"(w),
-                [b_ptr] "+r"(B),
-                [c_ptr] "+r"(output),
+              : [a_ptr] "+r"(cur_w),
+                [b_ptr] "+r"(cur_b),
+                [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
                 [n] "+r"(pair_num),
                 [m] "+r"(lave_num),
                 [widx_dmap] "+r"(dmap)
               : [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
-                [valpha] "r"(valpha)
+                [valpha] "r"(alpha)
               : "q0",
                 "q1",
                 "q2",
@@ -3928,38 +4196,49 @@ void sparse_conv_fp32_pipelined(const float* A,
                 "cc",
                 "memory");
           // clang-format on
-          output = reinterpret_cast<float*>((uintptr_t)output + output_stride);
-          w = w + lave_num;
-          dmap = dmap + lave_num;
         }
-        output = reinterpret_cast<float*>((uintptr_t)output - output_decrement);
+        LITE_PARALLEL_COMMON_END();
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 8 * sizeof(float));
         B += 8;
         mc -= 8 * sizeof(float);
       }
       output_decrement += 4 * sizeof(float);
       if (mc & (4 * sizeof(float))) {
-        const float* w = A;
-        const int32_t* dmap = widx_dmap;
-        const uint32_t* nnzmap = nidx_nnzmap;
-        float valpha = alpha;
-
-        for (size_t i = 0; i < nc; i++) {
-          uint32_t nnz = *nnzmap++;
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          const float* cur_w = A;
+          uint32_t nnz = nidx_nnzmap[i];
+          const float* cur_b = B;
+          const int32_t* dmap = widx_dmap;
+          if (i != 0) {
+            int cur_rem = nidx_nnzmap[i - 1] & 3;
+            if (cur_rem != 0) {
+              cur_rem = 4 - cur_rem;
+            }
+            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
+            cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
+            cur_b += ((nidx_nnzmap[i - 1] == 0)
+                          ? 0
+                          : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
+            dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
+          }
           uint32_t pair_num = nnz % 4;
           uint32_t lave_num = (pair_num == 0) ? 0 : (4 - pair_num);
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
           // clang-format off
             asm volatile(SPARSE_F32_F32_W4_v7_OUT  
-              : [a_ptr] "+r"(w),
-                [b_ptr] "+r"(B),
-                [c_ptr] "+r"(output),
+              : [a_ptr] "+r"(cur_w),
+                [b_ptr] "+r"(cur_b),
+                [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
                 [n] "+r"(pair_num),
                 [m] "+r"(lave_num),
                 [widx_dmap] "+r"(dmap)
               : [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
-                [valpha] "r"(valpha)
+                [valpha] "r"(alpha)
               : "q0",
                 "q1",
                 "q3",
@@ -3970,70 +4249,130 @@ void sparse_conv_fp32_pipelined(const float* A,
                 "cc",
                 "memory");
           // clang-format on
-          output = reinterpret_cast<float*>((uintptr_t)output + output_stride);
-          w = w + lave_num;
-          dmap = dmap + lave_num;
         }
-        output = reinterpret_cast<float*>((uintptr_t)output - output_decrement);
+        LITE_PARALLEL_COMMON_END();
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 4 * sizeof(float));
         B += 4;
         mc -= 4 * sizeof(float);
       }
-
-      if
-        SPARSE_UNLIKELY(mc != 0 && mc < 4 * sizeof(float)) {
-          const float* w = A;
+      output_decrement += 2 * sizeof(float);
+      if (mc & (2 * sizeof(float))) {
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          const float* cur_w = A;
+          uint32_t nnz = nidx_nnzmap[i];
+          const float* cur_b = B;
           const int32_t* dmap = widx_dmap;
-          const uint32_t* nnzmap = nidx_nnzmap;
-          const float* bs = bias;
-          float val = alpha;
-          int mindex = mc / sizeof(float);
-
-          for (size_t i = 0; i < nc; i++) {
-            float vbias = (bias != nullptr) ? *bs++ : 0;
-            for (size_t k = 0; k < mindex; k++) {
-              *(output + k) = vbias;
+          if (i != 0) {
+            int cur_rem = nidx_nnzmap[i - 1] & 3;
+            if (cur_rem != 0) {
+              cur_rem = 4 - cur_rem;
             }
-            uint32_t nnz = *nnzmap++;
-            for (size_t j = 0; j < nnz; j++) {
-              for (size_t k = 0; k < mindex; k++) {
-                *(output + k) += (*w) * (*(B + k));
-              }
-              w += 1;
-              intptr_t diff = *dmap++;
-              B = (const float*)((uintptr_t)B + (uintptr_t)diff);
-            }
-            size_t re = nnz % 4;
-            if (re != 0) {
-              for (int j = 0; j < (4 - re); j++) {
-                w++;
-                dmap++;
-              }
-            }
-            switch (flag_act) {
-              case 0:
-                break;
-              case 1:
-                for (size_t k = 0; k < mindex; k++) {
-                  *(output + k) = *(output + k) > 0 ? *(output + k) : 0;
-                }
-                break;
-              case 2:
-                for (size_t k = 0; k < mindex; k++) {
-                  *(output + k) = *(output + k) > 0 ? *(output + k) : 0;
-                  *(output + k) = *(output + k) < val ? *(output + k) : val;
-                }
-                break;
-              default:
-                for (size_t k = 0; k < mindex; k++) {
-                  *(output + k) =
-                      *(output + k) >= 0 ? *(output + k) : *(output + k) * val;
-                }
-                break;
-            }
-            output =
-                reinterpret_cast<float*>((uintptr_t)output + output_stride);
+            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
+            cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
+            cur_b += ((nidx_nnzmap[i - 1] == 0)
+                          ? 0
+                          : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
+            dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
           }
+          float vbias = (bias != nullptr) ? bias[i] : 0.0;
+          float32x2_t vacc01n0 = vdup_n_f32(vbias);
+          if
+            SPARSE_LIKELY(nnz != 0) {
+              do {
+                const intptr_t diff = *dmap++;
+                const float32x2_t vi01 = vld1_f32(cur_b);
+                cur_b = (const float*)((uintptr_t)cur_b + (uintptr_t)diff);
+                const float32x2_t vw = vld1_dup_f32(cur_w);
+                cur_w += 1;
+                vacc01n0 = vmla_lane_f32(vacc01n0, vi01, vw, 0);
+              } while (--nnz != 0);
+            }
+          if (flag_act == 1) {
+            float32x2_t vzero = vdup_n_f32(0);
+            vacc01n0 = vmax_f32(vacc01n0, vzero);
+          } else if (flag_act == 2) {
+            float32x2_t vzero = vdup_n_f32(0);
+            float32x2_t aph = vdup_n_f32(alpha);
+            vacc01n0 = vmax_f32(vacc01n0, vzero);
+            vacc01n0 = vmin_f32(vacc01n0, aph);
+          } else if (flag_act == 0) {
+          } else {
+            float32x2_t vzero = vdup_n_f32(0);
+            float32x2_t aph = vdup_n_f32(alpha);
+            uint32x2_t vflag0123 = vcge_f32(vacc01n0, vzero);
+            float32x2_t v0123 = vmul_f32(vacc01n0, aph);
+            vacc01n0 = vbsl_f32(vflag0123, vacc01n0, v0123);
+          }
+          vst1_f32(cur_output, vacc01n0);
         }
+        LITE_PARALLEL_COMMON_END();
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 2 * sizeof(float));
+        B += 2;
+        mc -= 2 * sizeof(float);
+      }
+
+      output_decrement += 1 * sizeof(float);
+      if (mc & (1 * sizeof(float))) {
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          const float* cur_w = A;
+          uint32_t nnz = nidx_nnzmap[i];
+          const float* cur_b = B;
+          const int32_t* dmap = widx_dmap;
+          if (i != 0) {
+            int cur_rem = nidx_nnzmap[i - 1] & 3;
+            if (cur_rem != 0) {
+              cur_rem = 4 - cur_rem;
+            }
+            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1] - cur_rem;
+            cur_w = A + nidx_nnzmap[i - 1] + cur_rem;
+            cur_b += ((nidx_nnzmap[i - 1] == 0)
+                          ? 0
+                          : widx_dmap[nidx_nnzmap[i - 1] - 1] / sizeof(float));
+            dmap = widx_dmap + nidx_nnzmap[i - 1] + cur_rem;
+          }
+          float vbias = (bias != nullptr) ? bias[i] : 0.0;
+          float32x2_t vacc01n0 = vdup_n_f32(vbias);
+          if
+            SPARSE_LIKELY(nnz != 0) {
+              do {
+                const intptr_t diff = *dmap++;
+                const float32x2_t vi01 = vld1_dup_f32(cur_b);
+                cur_b = (const float*)((uintptr_t)cur_b + (uintptr_t)diff);
+                const float32x2_t vw = vld1_dup_f32(cur_w);
+                cur_w += 1;
+                vacc01n0 = vmla_lane_f32(vacc01n0, vi01, vw, 0);
+              } while (--nnz != 0);
+            }
+          if (flag_act == 1) {
+            float32x2_t vzero = vdup_n_f32(0);
+            vacc01n0 = vmax_f32(vacc01n0, vzero);
+          } else if (flag_act == 2) {
+            float32x2_t vzero = vdup_n_f32(0);
+            float32x2_t aph = vdup_n_f32(alpha);
+            vacc01n0 = vmax_f32(vacc01n0, vzero);
+            vacc01n0 = vmin_f32(vacc01n0, aph);
+          } else if (flag_act == 0) {
+          } else {
+            float32x2_t vzero = vdup_n_f32(0);
+            float32x2_t aph = vdup_n_f32(alpha);
+            uint32x2_t vflag0123 = vcge_f32(vacc01n0, vzero);
+            float32x2_t v0123 = vmul_f32(vacc01n0, aph);
+            vacc01n0 = vbsl_f32(vflag0123, vacc01n0, v0123);
+          }
+          vst1_lane_f32(cur_output, vacc01n0, 0);
+        }
+        LITE_PARALLEL_COMMON_END();
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 1 * sizeof(float));
+        B += 1;
+        mc -= 1 * sizeof(float);
+      }
     }
 }
 
@@ -4704,7 +5043,7 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
                                      ARMContext* ctx) {
   auto act_param = param.activation_param;
   auto act_type = act_param.active_type;
-  float alpha = 0.f;
+  volatile float alpha = 0.f;
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
   if (act_param.has_active) {
     if (act_type == lite_api::ActivationType::kRelu) {
@@ -4723,37 +5062,36 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
   size_t output_stride = N * sizeof(float);
   size_t output_decrement = output_stride * nc - 48 * sizeof(float);
 
-  size_t output_total = output_stride * nc;
-  size_t mend = N / 48;
-  size_t mnum = mend * 48;
-  if (mend > 0) {
-    LITE_PARALLEL_COMMON_BEGIN(mi, tid, mnum, 0, 48) {
-      size_t cur_i = mi / 48;
-      const int8_t* cur_B = B + cur_i * 48;
-      float* cur_output = reinterpret_cast<float*>((uintptr_t)output +
-                                                   48 * sizeof(float) * cur_i);
-
-      const int8_t* w = A;
-      const int32_t* dmap = widx_dmap;
-      const uint32_t* nnzmap = nidx_nnzmap;
-      const float* sc = scale;
-
-      for (size_t i = 0; i < nc; i++) {
-        uint32_t nnz = *nnzmap++;
-        float vsclae = *sc++;
-        float valpha = alpha;
+  while
+    SPARSE_LIKELY(mc >= 48 * sizeof(int8_t)) {
+      LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+        float* cur_output =
+            reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+        const int8_t* cur_w = A;
+        uint32_t nnz = nidx_nnzmap[i];
+        const int8_t* cur_b = B;
+        const int32_t* dmap = widx_dmap;
+        if (i != 0) {
+          cur_w = A + nidx_nnzmap[i - 1];
+          nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
+          cur_b +=
+              ((nidx_nnzmap[i - 1] == 0) ? 0
+                                         : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+          dmap = widx_dmap + nidx_nnzmap[i - 1];
+        }
+        float vsclae = scale[i];
         float vbias = (bias != nullptr) ? bias[i] : 0.0;
         // clang-format off
           asm volatile(SPARSE_INT8_F32_W48_v7_OUT
-            : [a_ptr] "+r"(w),
-              [b_ptr] "+r"(cur_B),
+            : [a_ptr] "+r"(cur_w),
+              [b_ptr] "+r"(cur_b),
               [c_ptr] "+r"(cur_output),
               [k] "+r"(nnz),
               [widx_dmap] "+r"(dmap)
             : [vscale] "r"(vsclae),
               [vbias] "r"(vbias),
               [vflag_act] "r"(flag_act),
-              [valpha] "r"(valpha)
+              [valpha] "r"(alpha)
             : "q0",
               "q1",
               "q2",
@@ -4776,42 +5114,44 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
               "cc",
               "memory");
         // clang-format on
-        cur_output =
-            reinterpret_cast<float*>((uintptr_t)cur_output + output_stride);
       }
+      LITE_PARALLEL_COMMON_END();
+      output = reinterpret_cast<float*>((uintptr_t)output + 48 * sizeof(float));
+      B += 48;
+      mc -= 48 * sizeof(int8_t);
     }
-    LITE_PARALLEL_COMMON_END();
-  }
-  B += mend * 48;
-  mc -= mend * 48 * sizeof(int8_t);
-  output =
-      reinterpret_cast<float*>((uintptr_t)output + 48 * sizeof(float) * mend);
-
   if
     SPARSE_UNLIKELY(mc != 0) {
       output_decrement += 16 * sizeof(float);
       if (mc & (32 * sizeof(int8_t))) {
-        const int8_t* w = A;
-        const int32_t* dmap = widx_dmap;
-        const uint32_t* nnzmap = nidx_nnzmap;
-        const float* sc = scale;
-        float valpha = alpha;
-
-        for (size_t i = 0; i < nc; i++) {
-          uint32_t nnz = *nnzmap++;
-          float vsclae = *sc++;
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          const int8_t* cur_w = A;
+          uint32_t nnz = nidx_nnzmap[i];
+          const int8_t* cur_b = B;
+          const int32_t* dmap = widx_dmap;
+          if (i != 0) {
+            cur_w = A + nidx_nnzmap[i - 1];
+            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
+            cur_b +=
+                ((nidx_nnzmap[i - 1] == 0) ? 0
+                                           : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+            dmap = widx_dmap + nidx_nnzmap[i - 1];
+          }
+          float vsclae = scale[i];
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
           // clang-format off
             asm volatile(SPARSE_INT8_F32_W32_v7_OUT
-              : [a_ptr] "+r"(w),
-                [b_ptr] "+r"(B),
-                [c_ptr] "+r"(output),
+              : [a_ptr] "+r"(cur_w),
+                [b_ptr] "+r"(cur_b),
+                [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
                 [widx_dmap] "+r"(dmap)
               : [vscale] "r"(vsclae),
                 [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
-                [valpha] "r"(valpha)
+                [valpha] "r"(alpha)
               : "q0",
                 "q1",
                 "q2",
@@ -4830,35 +5170,43 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
                 "cc",
                 "memory");
           // clang-format on
-          output = reinterpret_cast<float*>((uintptr_t)output + output_stride);
         }
-        output = reinterpret_cast<float*>((uintptr_t)output - output_decrement);
+        LITE_PARALLEL_COMMON_END();
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 32 * sizeof(float));
         B += 32;
         mc -= 32 * sizeof(int8_t);
       }
       output_decrement += 16 * sizeof(float);
       if (mc & (16 * sizeof(int8_t))) {
-        const int8_t* w = A;
-        const int32_t* dmap = widx_dmap;
-        const uint32_t* nnzmap = nidx_nnzmap;
-        const float* sc = scale;
-        float valpha = alpha;
-
-        for (size_t i = 0; i < nc; i++) {
-          uint32_t nnz = *nnzmap++;
-          float vsclae = *sc++;
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          const int8_t* cur_w = A;
+          uint32_t nnz = nidx_nnzmap[i];
+          const int8_t* cur_b = B;
+          const int32_t* dmap = widx_dmap;
+          if (i != 0) {
+            cur_w = A + nidx_nnzmap[i - 1];
+            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
+            cur_b +=
+                ((nidx_nnzmap[i - 1] == 0) ? 0
+                                           : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+            dmap = widx_dmap + nidx_nnzmap[i - 1];
+          }
+          float vsclae = scale[i];
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
           // clang-format off
             asm volatile(SPARSE_INT8_F32_W16_v7_OUT
-              : [a_ptr] "+r"(w),
-                [b_ptr] "+r"(B),
-                [c_ptr] "+r"(output),
+              : [a_ptr] "+r"(cur_w),
+                [b_ptr] "+r"(cur_b),
+                [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
                 [widx_dmap] "+r"(dmap)
               : [vscale] "r"(vsclae),
                 [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
-                [valpha] "r"(valpha)
+                [valpha] "r"(alpha)
               : "q0",
                 "q1",
                 "q2",
@@ -4877,35 +5225,43 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
                 "cc",
                 "memory");
           // clang-format on
-          output = reinterpret_cast<float*>((uintptr_t)output + output_stride);
         }
-        output = reinterpret_cast<float*>((uintptr_t)output - output_decrement);
+        LITE_PARALLEL_COMMON_END();
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 16 * sizeof(float));
         B += 16;
         mc -= 16 * sizeof(int8_t);
       }
       output_decrement += 8 * sizeof(float);
       if (mc & (8 * sizeof(int8_t))) {
-        const int8_t* w = A;
-        const int32_t* dmap = widx_dmap;
-        const uint32_t* nnzmap = nidx_nnzmap;
-        const float* sc = scale;
-        float valpha = alpha;
-
-        for (size_t i = 0; i < nc; i++) {
-          uint32_t nnz = *nnzmap++;
-          float vsclae = *sc++;
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          const int8_t* cur_w = A;
+          uint32_t nnz = nidx_nnzmap[i];
+          const int8_t* cur_b = B;
+          const int32_t* dmap = widx_dmap;
+          if (i != 0) {
+            cur_w = A + nidx_nnzmap[i - 1];
+            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
+            cur_b +=
+                ((nidx_nnzmap[i - 1] == 0) ? 0
+                                           : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+            dmap = widx_dmap + nidx_nnzmap[i - 1];
+          }
+          float vsclae = scale[i];
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
           // clang-format off
             asm volatile(SPARSE_INT8_F32_W8_v7_OUT
-              : [a_ptr] "+r"(w),
-                [b_ptr] "+r"(B),
-                [c_ptr] "+r"(output),
+              : [a_ptr] "+r"(cur_w),
+                [b_ptr] "+r"(cur_b),
+                [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
                 [widx_dmap] "+r"(dmap)
               : [vscale] "r"(vsclae),
                 [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
-                [valpha] "r"(valpha)
+                [valpha] "r"(alpha)
               : "q0",
                 "q1",
                 "q2",
@@ -4920,35 +5276,43 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
                 "cc",
                 "memory");
           // clang-format on
-          output = reinterpret_cast<float*>((uintptr_t)output + output_stride);
         }
-        output = reinterpret_cast<float*>((uintptr_t)output - output_decrement);
+        LITE_PARALLEL_COMMON_END();
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 8 * sizeof(float));
         B += 8;
         mc -= 8 * sizeof(int8_t);
       }
       output_decrement += 4 * sizeof(float);
       if (mc & (4 * sizeof(int8_t))) {
-        const int8_t* w = A;
-        const int32_t* dmap = widx_dmap;
-        const uint32_t* nnzmap = nidx_nnzmap;
-        const float* sc = scale;
-        float valpha = alpha;
-
-        for (size_t i = 0; i < nc; i++) {
-          uint32_t nnz = *nnzmap++;
-          float vsclae = *sc++;
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          float* cur_output =
+              reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+          const int8_t* cur_w = A;
+          uint32_t nnz = nidx_nnzmap[i];
+          const int8_t* cur_b = B;
+          const int32_t* dmap = widx_dmap;
+          if (i != 0) {
+            cur_w = A + nidx_nnzmap[i - 1];
+            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
+            cur_b +=
+                ((nidx_nnzmap[i - 1] == 0) ? 0
+                                           : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+            dmap = widx_dmap + nidx_nnzmap[i - 1];
+          }
+          float vsclae = scale[i];
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
           // clang-format off
             asm volatile(SPARSE_INT8_F32_W4_v7_OUT
-              : [a_ptr] "+r"(w),
-                [b_ptr] "+r"(B),
-                [c_ptr] "+r"(output),
+              : [a_ptr] "+r"(cur_w),
+                [b_ptr] "+r"(cur_b),
+                [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
                 [widx_dmap] "+r"(dmap)
               : [vscale] "r"(vsclae),
                 [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
-                [valpha] "r"(valpha)
+                [valpha] "r"(alpha)
               : "q0",
                 "q1",
                 "q2",
@@ -4960,69 +5324,86 @@ void sparse_conv_int8_fp32_pipelined(const int8_t* A,
                 "cc",
                 "memory");
           // clang-format on
-          output = reinterpret_cast<float*>((uintptr_t)output + output_stride);
         }
-        output = reinterpret_cast<float*>((uintptr_t)output - output_decrement);
+        LITE_PARALLEL_COMMON_END();
+        output =
+            reinterpret_cast<float*>((uintptr_t)output + 4 * sizeof(float));
         B += 4;
         mc -= 4 * sizeof(int8_t);
       }
 
       if
         SPARSE_UNLIKELY(mc != 0 && mc < 4 * sizeof(int8_t)) {
-          const int8_t* w = A;
-          const int32_t* dmap = widx_dmap;
-          const uint32_t* nnzmap = nidx_nnzmap;
-          const float* bs = bias;
-          const float* sc = scale;
-          // const float* al = alpha;
-          float val = alpha;
           int mindex = mc / sizeof(int8_t);
 
-          for (size_t i = 0; i < nc; i++) {
-            float vbias = (bias != nullptr) ? *bs++ : 0;
-            float vscale = *sc++;
-            for (size_t k = 0; k < mc; k++) {
-              *(output + k) = 0;
+          LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+            float* out_ptr =
+                reinterpret_cast<float*>((uintptr_t)output + output_stride * i);
+            const int8_t* cur_w = A;
+            uint32_t nnz = nidx_nnzmap[i];
+            const int8_t* cur_b = B;
+            const int32_t* dmap = widx_dmap;
+            if (i != 0) {
+              cur_w = A + nidx_nnzmap[i - 1];
+              nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
+              cur_b += ((nidx_nnzmap[i - 1] == 0)
+                            ? 0
+                            : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+              dmap = widx_dmap + nidx_nnzmap[i - 1];
             }
-            uint32_t nnz = *nnzmap++;
-            for (size_t j = 0; j < nnz; j++) {
-              for (size_t k = 0; k < mc; k++) {
-                *(output + k) += (*w) * (*(B + k));
+            float32x4_t vbias =
+                (bias != nullptr) ? vdupq_n_f32(bias[i]) : vdupq_n_f32(0);
+            float vscale = scale[i];
+            int32x4_t vacc0123 = vdupq_n_s32(0);
+            for (int j = 0; j < nnz; j++) {
+              int8x8_t vi0123 = vdup_n_s8(0);
+              if (mc == 1) {
+                vi0123 = vld1_lane_s8(cur_b, vi0123, 0);
+              } else if (mc == 2) {
+                vi0123 = vld1_lane_s8(cur_b, vi0123, 0);
+                vi0123 = vld1_lane_s8(cur_b + 1, vi0123, 1);
+              } else {
+                vi0123 = vld1_lane_s8(cur_b, vi0123, 0);
+                vi0123 = vld1_lane_s8(cur_b + 1, vi0123, 1);
+                vi0123 = vld1_lane_s8(cur_b + 2, vi0123, 2);
               }
-              w += 1;
+              int8x8_t vw = vld1_dup_s8(cur_w);
+              cur_w += 1;
               intptr_t diff = *dmap++;
-              B = (const int8_t*)((uintptr_t)B + (uintptr_t)diff);
+              cur_b = (const int8_t*)((uintptr_t)cur_b + (uintptr_t)diff);
+              int16x8_t vo0123 = vmull_s8(vi0123, vw);
+              vacc0123 = vaddw_s16(vacc0123, vget_low_s16(vo0123));
             }
-            switch (flag_act) {
-              case 0:
-                for (size_t k = 0; k < mindex; k++) {
-                  *(output + k) = *(output + k) * vscale + vbias;
-                }
-                break;
-              case 1:
-                for (size_t k = 0; k < mindex; k++) {
-                  *(output + k) = *(output + k) * vscale + vbias;
-                  *(output + k) = *(output + k) > 0 ? *(output + k) : 0;
-                }
-                break;
-              case 2:
-                for (size_t k = 0; k < mindex; k++) {
-                  *(output + k) = *(output + k) * vscale + vbias;
-                  *(output + k) = *(output + k) > 0 ? *(output + k) : 0;
-                  *(output + k) = *(output + k) < val ? *(output + k) : val;
-                }
-                break;
-              default:
-                for (size_t k = 0; k < mindex; k++) {
-                  *(output + k) = *(output + k) * vscale + vbias;
-                  *(output + k) =
-                      *(output + k) >= 0 ? *(output + k) : *(output + k) * val;
-                }
-                break;
+
+            float32x4_t vaccf0123 = vcvtq_f32_s32(vacc0123);
+            vaccf0123 = vmlaq_n_f32(vbias, vaccf0123, vscale);
+            float32x4_t vzero = vdupq_n_f32(0);
+            if (flag_act == 1) {
+              vaccf0123 = vmaxq_f32(vaccf0123, vzero);
+            } else if (flag_act == 0) {
+            } else if (flag_act == 2) {
+              float32x4_t aph = vdupq_n_f32(alpha);
+              vaccf0123 = vmaxq_f32(vaccf0123, vzero);
+              vaccf0123 = vminq_f32(vaccf0123, aph);
+            } else {
+              float32x4_t aph = vdupq_n_f32(alpha);
+              uint32x4_t vflag0123 = vcgeq_f32(vaccf0123, vzero);
+              float32x4_t v0123 = vmulq_f32(vaccf0123, aph);
+              vaccf0123 = vbslq_f32(vflag0123, vaccf0123, v0123);
             }
-            output =
-                reinterpret_cast<float*>((uintptr_t)output + output_stride);
+
+            if (mc == 1) {
+              vst1q_lane_f32(out_ptr, vaccf0123, 0);
+            } else if (mc == 2) {
+              vst1q_lane_f32(out_ptr, vaccf0123, 0);
+              vst1q_lane_f32(out_ptr + 1, vaccf0123, 1);
+            } else {
+              vst1q_lane_f32(out_ptr, vaccf0123, 0);
+              vst1q_lane_f32(out_ptr + 1, vaccf0123, 1);
+              vst1q_lane_f32(out_ptr + 2, vaccf0123, 2);
+            }
           }
+          LITE_PARALLEL_COMMON_END();
         }
     }
 }
@@ -5924,7 +6305,7 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
                                      ARMContext* ctx) {
   auto act_param = param.activation_param;
   auto act_type = act_param.active_type;
-  float alpha = 0.f;
+  volatile float alpha = 0.f;
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
   if (act_param.has_active) {
     if (act_type == lite_api::ActivationType::kRelu) {
@@ -5943,37 +6324,36 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
   size_t output_stride = N * sizeof(int8_t);
   size_t output_decrement = output_stride * nc - 48 * sizeof(int8_t);
   float vmax[4] = {-127.0, -127.0, -127.0, -127.0};
-  size_t output_total = output_stride * nc;
-  size_t mend = N / 48;
-  size_t mnum = mend * 48;
-  if (mend > 0) {
-    LITE_PARALLEL_COMMON_BEGIN(mi, tid, mnum, 0, 48) {
-      size_t cur_i = mi / 48;
-      const int8_t* cur_B = B + cur_i * 48;
-      int8_t* cur_output = reinterpret_cast<int8_t*>(
-          (uintptr_t)output + 48 * sizeof(int8_t) * cur_i);
-
-      const int8_t* w = A;
-      const int32_t* dmap = widx_dmap;
-      const uint32_t* nnzmap = nidx_nnzmap;
-      const float* sc = scale;
-
-      for (size_t i = 0; i < nc; i++) {
-        uint32_t nnz = *nnzmap++;
-        float vsclae = *sc++;
-        float valpha = alpha;
+  while
+    SPARSE_LIKELY(mc >= 48 * sizeof(int8_t)) {
+      LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+        int8_t* cur_output =
+            reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
+        const int8_t* cur_w = A;
+        uint32_t nnz = nidx_nnzmap[i];
+        const int8_t* cur_b = B;
+        const int32_t* dmap = widx_dmap;
+        if (i != 0) {
+          cur_w = A + nidx_nnzmap[i - 1];
+          nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
+          cur_b +=
+              ((nidx_nnzmap[i - 1] == 0) ? 0
+                                         : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+          dmap = widx_dmap + nidx_nnzmap[i - 1];
+        }
+        float vsclae = scale[i];
         float vbias = (bias != nullptr) ? bias[i] : 0.0;
         // clang-format off
           asm volatile(SPARSE_INT8_INT8_W48_v7_OUT
-            : [a_ptr] "+r"(w),
-              [b_ptr] "+r"(cur_B),
+            : [a_ptr] "+r"(cur_w),
+              [b_ptr] "+r"(cur_b),
               [c_ptr] "+r"(cur_output),
               [k] "+r"(nnz),
               [widx_dmap] "+r"(dmap)
             : [vscale] "r"(vsclae),
               [vbias] "r"(vbias),
               [vflag_act] "r"(flag_act),
-              [valpha] "r"(valpha),
+              [valpha] "r"(alpha),
               [vmax] "r"(vmax)
             : "q0",
               "q1",
@@ -5997,42 +6377,45 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
               "cc",
               "memory");
         // clang-format on
-        cur_output =
-            reinterpret_cast<int8_t*>((uintptr_t)cur_output + output_stride);
       }
+      LITE_PARALLEL_COMMON_END();
+      output =
+          reinterpret_cast<int8_t*>((uintptr_t)output + 48 * sizeof(int8_t));
+      B += 48;
+      mc -= 48 * sizeof(int8_t);
     }
-    LITE_PARALLEL_COMMON_END();
-  }
-  B += mend * 48;
-  mc -= mend * 48 * sizeof(int8_t);
-  output =
-      reinterpret_cast<int8_t*>((uintptr_t)output + 48 * sizeof(int8_t) * mend);
-
   if
     SPARSE_UNLIKELY(mc != 0) {
       output_decrement += 16 * sizeof(int8_t);
       if (mc & (32 * sizeof(int8_t))) {
-        const int8_t* w = A;
-        const int32_t* dmap = widx_dmap;
-        const uint32_t* nnzmap = nidx_nnzmap;
-        const float* sc = scale;
-        float valpha = alpha;
-
-        for (size_t i = 0; i < nc; i++) {
-          uint32_t nnz = *nnzmap++;
-          float vsclae = *sc++;
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          int8_t* cur_output =
+              reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
+          const int8_t* cur_w = A;
+          uint32_t nnz = nidx_nnzmap[i];
+          const int8_t* cur_b = B;
+          const int32_t* dmap = widx_dmap;
+          if (i != 0) {
+            cur_w = A + nidx_nnzmap[i - 1];
+            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
+            cur_b +=
+                ((nidx_nnzmap[i - 1] == 0) ? 0
+                                           : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+            dmap = widx_dmap + nidx_nnzmap[i - 1];
+          }
+          float vsclae = scale[i];
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
           // clang-format off
             asm volatile(SPARSE_INT8_INT8_W32_v7_OUT
-              : [a_ptr] "+r"(w),
-                [b_ptr] "+r"(B),
-                [c_ptr] "+r"(output),
+              : [a_ptr] "+r"(cur_w),
+                [b_ptr] "+r"(cur_b),
+                [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
                 [widx_dmap] "+r"(dmap)
               : [vscale] "r"(vsclae),
                 [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
-                [valpha] "r"(valpha),
+                [valpha] "r"(alpha),
                 [vmax] "r"(vmax)
               : "q0",
                 "q1",
@@ -6053,36 +6436,43 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
                 "cc",
                 "memory");
           // clang-format on
-          output = reinterpret_cast<int8_t*>((uintptr_t)output + output_stride);
         }
+        LITE_PARALLEL_COMMON_END();
         output =
-            reinterpret_cast<int8_t*>((uintptr_t)output - output_decrement);
+            reinterpret_cast<int8_t*>((uintptr_t)output + 32 * sizeof(int8_t));
         B += 32;
         mc -= 32 * sizeof(int8_t);
       }
       output_decrement += 16 * sizeof(int8_t);
       if (mc & (16 * sizeof(int8_t))) {
-        const int8_t* w = A;
-        const int32_t* dmap = widx_dmap;
-        const uint32_t* nnzmap = nidx_nnzmap;
-        const float* sc = scale;
-        float valpha = alpha;
-
-        for (size_t i = 0; i < nc; i++) {
-          uint32_t nnz = *nnzmap++;
-          float vsclae = *sc++;
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          int8_t* cur_output =
+              reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
+          const int8_t* cur_w = A;
+          uint32_t nnz = nidx_nnzmap[i];
+          const int8_t* cur_b = B;
+          const int32_t* dmap = widx_dmap;
+          if (i != 0) {
+            cur_w = A + nidx_nnzmap[i - 1];
+            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
+            cur_b +=
+                ((nidx_nnzmap[i - 1] == 0) ? 0
+                                           : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+            dmap = widx_dmap + nidx_nnzmap[i - 1];
+          }
+          float vsclae = scale[i];
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
           // clang-format off
             asm volatile(SPARSE_INT8_INT8_W16_v7_OUT
-              : [a_ptr] "+r"(w),
-                [b_ptr] "+r"(B),
-                [c_ptr] "+r"(output),
+              : [a_ptr] "+r"(cur_w),
+                [b_ptr] "+r"(cur_b),
+                [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
                 [widx_dmap] "+r"(dmap)
               : [vscale] "r"(vsclae),
                 [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
-                [valpha] "r"(valpha),
+                [valpha] "r"(alpha),
                 [vmax] "r"(vmax)
               : "q0",
                 "q1",
@@ -6103,36 +6493,43 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
                 "cc",
                 "memory");
           // clang-format on
-          output = reinterpret_cast<int8_t*>((uintptr_t)output + output_stride);
         }
+        LITE_PARALLEL_COMMON_END();
         output =
-            reinterpret_cast<int8_t*>((uintptr_t)output - output_decrement);
+            reinterpret_cast<int8_t*>((uintptr_t)output + 16 * sizeof(int8_t));
         B += 16;
         mc -= 16 * sizeof(int8_t);
       }
       output_decrement += 8 * sizeof(int8_t);
       if (mc & (8 * sizeof(int8_t))) {
-        const int8_t* w = A;
-        const int32_t* dmap = widx_dmap;
-        const uint32_t* nnzmap = nidx_nnzmap;
-        const float* sc = scale;
-        float valpha = alpha;
-
-        for (size_t i = 0; i < nc; i++) {
-          uint32_t nnz = *nnzmap++;
-          float vsclae = *sc++;
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          int8_t* cur_output =
+              reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
+          const int8_t* cur_w = A;
+          uint32_t nnz = nidx_nnzmap[i];
+          const int8_t* cur_b = B;
+          const int32_t* dmap = widx_dmap;
+          if (i != 0) {
+            cur_w = A + nidx_nnzmap[i - 1];
+            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
+            cur_b +=
+                ((nidx_nnzmap[i - 1] == 0) ? 0
+                                           : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+            dmap = widx_dmap + nidx_nnzmap[i - 1];
+          }
+          float vsclae = scale[i];
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
           // clang-format off
             asm volatile(SPARSE_INT8_INT8_W8_v7_OUT
-              : [a_ptr] "+r"(w),
-                [b_ptr] "+r"(B),
-                [c_ptr] "+r"(output),
+              : [a_ptr] "+r"(cur_w),
+                [b_ptr] "+r"(cur_b),
+                [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
                 [widx_dmap] "+r"(dmap)
               : [vscale] "r"(vsclae),
                 [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
-                [valpha] "r"(valpha),
+                [valpha] "r"(alpha),
                 [vmax] "r"(vmax)
               : "q0",
                 "q1",
@@ -6148,36 +6545,43 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
                 "cc",
                 "memory");
           // clang-format on
-          output = reinterpret_cast<int8_t*>((uintptr_t)output + output_stride);
         }
+        LITE_PARALLEL_COMMON_END();
         output =
-            reinterpret_cast<int8_t*>((uintptr_t)output - output_decrement);
+            reinterpret_cast<int8_t*>((uintptr_t)output + 8 * sizeof(int8_t));
         B += 8;
         mc -= 8 * sizeof(int8_t);
       }
       output_decrement += 4 * sizeof(int8_t);
       if (mc & (4 * sizeof(int8_t))) {
-        const int8_t* w = A;
-        const int32_t* dmap = widx_dmap;
-        const uint32_t* nnzmap = nidx_nnzmap;
-        const float* sc = scale;
-        float valpha = alpha;
-
-        for (size_t i = 0; i < nc; i++) {
-          uint32_t nnz = *nnzmap++;
-          float vsclae = *sc++;
+        LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+          int8_t* cur_output =
+              reinterpret_cast<int8_t*>((uintptr_t)output + output_stride * i);
+          const int8_t* cur_w = A;
+          uint32_t nnz = nidx_nnzmap[i];
+          const int8_t* cur_b = B;
+          const int32_t* dmap = widx_dmap;
+          if (i != 0) {
+            cur_w = A + nidx_nnzmap[i - 1];
+            nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
+            cur_b +=
+                ((nidx_nnzmap[i - 1] == 0) ? 0
+                                           : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+            dmap = widx_dmap + nidx_nnzmap[i - 1];
+          }
+          float vsclae = scale[i];
           float vbias = (bias != nullptr) ? bias[i] : 0.0;
           // clang-format off
             asm volatile(SPARSE_INT8_INT8_W4_v7_OUT
-              : [a_ptr] "+r"(w),
-                [b_ptr] "+r"(B),
-                [c_ptr] "+r"(output),
+              : [a_ptr] "+r"(cur_w),
+                [b_ptr] "+r"(cur_b),
+                [c_ptr] "+r"(cur_output),
                 [k] "+r"(nnz),
                 [widx_dmap] "+r"(dmap)
               : [vscale] "r"(vsclae),
                 [vbias] "r"(vbias),
                 [vflag_act] "r"(flag_act),
-                [valpha] "r"(valpha),
+                [valpha] "r"(alpha),
                 [vmax] "r"(vmax)
               : "q0",
                 "q1",
@@ -6190,61 +6594,99 @@ void sparse_conv_int8_int8_pipelined(const int8_t* A,
                 "cc",
                 "memory");
           // clang-format on
-          output = reinterpret_cast<int8_t*>((uintptr_t)output + output_stride);
         }
+        LITE_PARALLEL_COMMON_END();
         output =
-            reinterpret_cast<int8_t*>((uintptr_t)output - output_decrement);
+            reinterpret_cast<int8_t*>((uintptr_t)output + 4 * sizeof(int8_t));
         B += 4;
         mc -= 4 * sizeof(int8_t);
       }
 
       if
         SPARSE_UNLIKELY(mc != 0 && mc < 4 * sizeof(int8_t)) {
-          const int8_t* w = A;
-          const int32_t* dmap = widx_dmap;
-          const uint32_t* nnzmap = nidx_nnzmap;
-          const float* bs = bias;
-          const float* sc = scale;
-          // const float* al = alpha;
-          float val = alpha;
-
-          for (size_t i = 0; i < nc; i++) {
-            float vbias = (bias != nullptr) ? *bs++ : 0;
-            float vscale = *sc++;
-            std::vector<float> out(mc, 0);
-            uint32_t nnz = *nnzmap++;
-            for (size_t j = 0; j < nnz; j++) {
-              for (size_t k = 0; k < mc; k++) {
-                out[k] += (*w) * (*(B + k));
+          LITE_PARALLEL_COMMON_BEGIN(i, tid, nc, 0, 1) {
+            int8_t* out_ptr = reinterpret_cast<int8_t*>((uintptr_t)output +
+                                                        output_stride * i);
+            const int8_t* cur_w = A;
+            uint32_t nnz = nidx_nnzmap[i];
+            const int8_t* cur_b = B;
+            const int32_t* dmap = widx_dmap;
+            if (i != 0) {
+              cur_w = A + nidx_nnzmap[i - 1];
+              nnz = nidx_nnzmap[i] - nidx_nnzmap[i - 1];
+              cur_b += ((nidx_nnzmap[i - 1] == 0)
+                            ? 0
+                            : widx_dmap[nidx_nnzmap[i - 1] - 1]);
+              dmap = widx_dmap + nidx_nnzmap[i - 1];
+            }
+            float32x4_t vbias =
+                (bias != nullptr) ? vdupq_n_f32(bias[i]) : vdupq_n_f32(0);
+            float vscale = scale[i];
+            int32x4_t vacc0123 = vdupq_n_s32(0);
+            for (int j = 0; j < nnz; j++) {
+              int8x8_t vi0123 = vdup_n_s8(0);
+              if (mc == 1) {
+                vi0123 = vld1_lane_s8(cur_b, vi0123, 0);
+              } else if (mc == 2) {
+                vi0123 = vld1_lane_s8(cur_b, vi0123, 0);
+                vi0123 = vld1_lane_s8(cur_b + 1, vi0123, 1);
+              } else {
+                vi0123 = vld1_lane_s8(cur_b, vi0123, 0);
+                vi0123 = vld1_lane_s8(cur_b + 1, vi0123, 1);
+                vi0123 = vld1_lane_s8(cur_b + 2, vi0123, 2);
               }
-              w += 1;
+              int8x8_t vw = vld1_dup_s8(cur_w);
+              cur_w += 1;
               intptr_t diff = *dmap++;
-              B = (const int8_t*)((uintptr_t)B + (uintptr_t)diff);
+              cur_b = (const int8_t*)((uintptr_t)cur_b + (uintptr_t)diff);
+              int16x8_t vo0123 = vmull_s8(vi0123, vw);
+              vacc0123 = vaddw_s16(vacc0123, vget_low_s16(vo0123));
             }
-            for (size_t k = 0; k < mc; k++) {
-              out[k] = out[k] * vscale + vbias;
-              switch (flag_act) {
-                case 0:
-                  break;
-                case 1:  // relu
-                  out[k] = out[k] > 0 ? out[k] : 0;
-                  break;
-                case 2:  // relu6
-                  out[k] = out[k] > 0 ? out[k] : 0;
-                  out[k] = out[k] < val ? out[k] : val;
-                  break;
-                default:  // leaky_relu
-                  out[k] = out[k] >= 0 ? out[k] : out[k] * val;
-                  break;
-              }
-              float vax = out[k] > -127.0 ? out[k] : -127.0;
-              vax = vax >= 0 ? vax + 0.5 : vax - 0.5;
-              int32_t out_val = static_cast<int32_t>(vax);
-              *(output + k) = out_val > 127 ? 127 : out_val;
+
+            float32x4_t vaccf0123 = vcvtq_f32_s32(vacc0123);
+            vaccf0123 = vmlaq_n_f32(vbias, vaccf0123, vscale);
+            float32x4_t vzero = vdupq_n_f32(0);
+            if (flag_act == 1) {
+              vaccf0123 = vmaxq_f32(vaccf0123, vzero);
+            } else if (flag_act == 0) {
+            } else if (flag_act == 2) {
+              float32x4_t aph = vdupq_n_f32(alpha);
+              vaccf0123 = vmaxq_f32(vaccf0123, vzero);
+              vaccf0123 = vminq_f32(vaccf0123, aph);
+            } else {
+              float32x4_t aph = vdupq_n_f32(alpha);
+              uint32x4_t vflag0123 = vcgeq_f32(vaccf0123, vzero);
+              float32x4_t v0123 = vmulq_f32(vaccf0123, aph);
+              vaccf0123 = vbslq_f32(vflag0123, vaccf0123, v0123);
             }
-            output =
-                reinterpret_cast<int8_t*>((uintptr_t)output + output_stride);
+
+            vaccf0123 = vbslq_f32(vcgeq_f32(vaccf0123, vdupq_n_f32(-127.0)),
+                                  vaccf0123,
+                                  vdupq_n_f32(-127.0));
+            float32x4_t vpos = vdupq_n_f32(0.5);
+            float32x4_t vneg = vdupq_n_f32(-0.5);
+            vaccf0123 = vbslq_f32(vcgeq_f32(vaccf0123, vzero),
+                                  vaddq_f32(vaccf0123, vpos),
+                                  vaddq_f32(vaccf0123, vneg));
+
+            int32x4_t vacci0123 = vcvtq_s32_f32(vaccf0123);
+
+            int16x4_t v16i0123 = vqmovn_s32(vacci0123);
+            int16x4_t v16i4567 = vdup_n_s16(0);
+            int8x8_t v8i01234567 = vqmovn_s16(vcombine_s16(v16i0123, v16i4567));
+
+            if (mc == 1) {
+              vst1_lane_s8(out_ptr, v8i01234567, 0);
+            } else if (mc == 2) {
+              vst1_lane_s8(out_ptr, v8i01234567, 0);
+              vst1_lane_s8(out_ptr + 1, v8i01234567, 1);
+            } else {
+              vst1_lane_s8(out_ptr, v8i01234567, 0);
+              vst1_lane_s8(out_ptr + 1, v8i01234567, 1);
+              vst1_lane_s8(out_ptr + 2, v8i01234567, 2);
+            }
           }
+          LITE_PARALLEL_COMMON_END();
         }
     }
 }

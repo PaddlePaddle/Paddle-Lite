@@ -58,19 +58,32 @@ int ConvertToNeuronPrecision(NNAdapterOperandPrecisionCode precision_code) {
       return NEURON_INT32;
     case NNADAPTER_UINT32:
       return NEURON_UINT32;
-    case NNADAPTER_TENSOR_BOOL8:
+    default:
+      NNADAPTER_LOG(FATAL)
+          << "Failed to convert the NNAdapter operand precision code("
+          << OperandPrecisionCodeToString(precision_code)
+          << ") to the Neuron operand precision code!";
+      break;
+  }
+  return 0;
+}
+
+int ConvertToNeuronTensorPrecision(
+    NNAdapterOperandPrecisionCode precision_code) {
+  switch (precision_code) {
+    case NNADAPTER_BOOL8:
       return NEURON_TENSOR_BOOL8;
-    case NNADAPTER_TENSOR_FLOAT16:
+    case NNADAPTER_FLOAT16:
       return NEURON_TENSOR_FLOAT16;
-    case NNADAPTER_TENSOR_FLOAT32:
+    case NNADAPTER_FLOAT32:
       return NEURON_TENSOR_FLOAT32;
-    case NNADAPTER_TENSOR_INT32:
+    case NNADAPTER_INT32:
       return NEURON_TENSOR_INT32;
-    case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT8_SYMM_PER_LAYER:
       return NEURON_TENSOR_QUANT8_SYMM;
-    case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL:
+    case NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL:
       return NEURON_TENSOR_QUANT8_SYMM_PER_CHANNEL;
-    case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER:
+    case NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER:
       return NEURON_TENSOR_QUANT8_ASYMM;
     default:
       NNADAPTER_LOG(FATAL)

@@ -486,15 +486,15 @@ void RuntimeProgram::Run() {
     monitor.preRun(inst);
 #endif
 
+#ifdef LITE_WITH_OPENCL
+    // delegate flush judgement to specify target , it is too heavy for Inst
+    inst.Flush(idx);
+#endif
+
     inst.Run();
 
 #ifdef LITE_WITH_FPGA
     monitor.postRun(inst);
-#endif
-
-#ifdef LITE_WITH_OPENCL
-    // delegate flush judgement to specify target , it is too heavy for Inst
-    inst.Flush(idx);
 #endif
 
 #ifdef LITE_WITH_PRECISION_PROFILE

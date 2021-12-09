@@ -71,17 +71,15 @@ int ConvertConv2D(Converter* converter, hal::Operation* operation) {
   attr.dilation[0] = dilation_width;
   attr.dilation[1] = dilation_height;
   attr.pad_type = aml::nn::PadType::AUTO;
-  // fuse RELU ?
-  if (fuse_code != NNADAPTER_FUSED_NONE) {
-    NNADAPTER_LOG(FATAL) << "Unsupported fuse_code(" << fuse_code
-                         << ") is found.";
-  }
   std::vector<std::shared_ptr<aml::nn::Tensor>> input_tensors = {
       input_tensor, filter_tensor, bias_tensor};
   std::vector<std::shared_ptr<aml::nn::Tensor>> output_tensors = {
       output_tensor};
   converter->AddOperator(
       aml::nn::OperatorType::CONV2D, input_tensors, output_tensors, &attr);
+  NNADAPTER_CHECK_EQ(fuse_code, NNADAPTER_FUSED_NONE)
+      << "Missing the processing of fuse_code(" << fuse_code
+      << ") in unpack_op_fusion.cc";
   return NNADAPTER_NO_ERROR;
 }
 

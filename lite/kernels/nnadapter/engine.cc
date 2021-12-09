@@ -18,9 +18,6 @@
 #include <utility>
 #include "lite/core/op_registry.h"
 #include "lite/core/subgraph/subgraph_bridge_registry.h"
-#include "lite/kernels/nnadapter/bridges/converter.h"
-#include "lite/kernels/nnadapter/bridges/paddle_use_bridges.h"
-#include "lite/kernels/nnadapter/bridges/utility.h"
 #include "lite/kernels/nnadapter/converter/converter.h"
 #include "lite/utils/env.h"
 #include "lite/utils/md5.h"
@@ -78,7 +75,7 @@ void* AccessModelOutput(void* memory, NNAdapterOperandType* type) {
     TENSOR_MUTABLE_DATA(kFloat, float)
     TENSOR_MUTABLE_DATA(kBool, bool)
     default:
-      LOG(ERROR) << "Failed to mutable data for the precsion type("
+      LOG(FATAL) << "Failed to mutable data for the precsion type("
                  << PrecisionToStr(precision) << ") at output@0x"
                  << string_format("%x", memory) << "!";
       break;

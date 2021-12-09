@@ -38,7 +38,7 @@ if(WIN32)
   # windows header option for all targets.
   add_definitions(-D_XKEYCHECK_H)
   add_definitions(/openmp)
-  
+
   if (NOT MSVC)
     message(FATAL "Windows build only support msvc. Which was binded by the nvcc compiler of NVIDIA.")
   endif(NOT MSVC)
@@ -61,7 +61,7 @@ if(WIN32)
           endif()
       endif()
   endif()
-  
+
 endif(WIN32)
 
 if(LITE_WITH_CUDA)
@@ -170,10 +170,6 @@ if (LITE_WITH_NPU)
     add_definitions("-DLITE_WITH_NPU")
 endif()
 
-if (LITE_WITH_APU)
-    add_definitions("-DLITE_WITH_APU")
-endif()
-
 if (LITE_WITH_RKNPU)
     add_definitions("-DLITE_WITH_RKNPU")
 endif()
@@ -191,6 +187,8 @@ endif()
 
 if (LITE_WITH_METAL)
     find_library(METAL_LIBRARY Metal REQUIRED)
+    find_library(GRAPHIC CoreGraphics REQUIRED)
+    find_library(MPS_LIBRARY MetalPerformanceShaders REQUIRED)
     find_library(FOUNDATION_LIBRARY Foundation)
     add_definitions("-DLITE_WITH_METAL")
 endif()
@@ -210,14 +208,6 @@ endif()
 
 if (LITE_WITH_MLU)
 add_definitions("-DLITE_WITH_MLU")
-endif()
-
-if (LITE_WITH_IMAGINATION_NNA)
-  add_definitions("-DLITE_WITH_IMAGINATION_NNA")
-endif()
-
-if (LITE_WITH_HUAWEI_ASCEND_NPU)
-add_definitions("-DLITE_WITH_HUAWEI_ASCEND_NPU")
 endif()
 
 if (LITE_WITH_NNADAPTER)
@@ -242,6 +232,12 @@ if (LITE_WITH_NNADAPTER)
     if (NNADAPTER_WITH_AMLOGIC_NPU)
       add_definitions("-DNNADAPTER_WITH_AMLOGIC_NPU")
     endif()
+    if (NNADAPTER_WITH_CAMBRICON_MLU)
+      add_definitions("-DNNADAPTER_WITH_CAMBRICON_MLU")
+    endif()
+    if (NNADAPTER_WITH_VERISILICON_TIMVX)
+      add_definitions("-DNNADAPTER_WITH_VERISILICON_TIMVX")
+    endif()
   endif()
 endif()
 
@@ -255,10 +251,6 @@ endif()
 
 if (LITE_WITH_PRECISION_PROFILE)
     add_definitions("-DLITE_WITH_PRECISION_PROFILE")
-endif()
-
-if (LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
-  add_definitions("-DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK")
 endif()
 
 if (LITE_WITH_LOG)

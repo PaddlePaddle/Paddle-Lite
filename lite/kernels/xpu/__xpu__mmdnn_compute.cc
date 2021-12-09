@@ -224,23 +224,26 @@ class MMDNNFcOp {
       CHECK_EQ(r, 0);
       in_max_by_caller = in_max_;
     }
-
-    r = xdnn::fc_int16(ctx,
-                       false,
-                       true,
-                       m,
-                       n_,
-                       k_,
-                       1.0f,
-                       in,
-                       in_max_by_caller,
-                       weight_,
-                       weight_max_,
-                       0.0f,
-                       out,
-                       out_max,
-                       bias_,
-                       act_type_);
+    r = xdnn::fc_fusion<float, int16_t, float, int16_t>(
+        ctx,               // ctx
+        in,                // x
+        weight_,           // w
+        out,               // y
+        m,                 // m
+        n_,                // n
+        k_,                // k
+        false,             // x_trans
+        true,              // w_trans
+        in_max_by_caller,  // x_maxptr
+        weight_max_,       // w_maxptr
+        out_max,           // y_maxptr
+        k_,                // ldx
+        k_,                // ldw
+        n_,                // ldy
+        1.0f,              // alpha
+        0.0f,              // beta
+        bias_,             // bias
+        act_type_);        // act
     CHECK_EQ(r, 0);
   }
 };
@@ -690,17 +693,20 @@ class MMDNNMatchConvTopk {
                                      1);
 
     CHECK_EQ(r, 0);
-    r = xdnn::sequence_topk_avg_pooling(ctx,
-                                        seq_concat_out,
-                                        seq_avg_topk_out,
-                                        useless_topk_pos_,
-                                        batch,
-                                        dim_t_ + out_channel_,
-                                        topk_offset_32_,
-                                        left_lod_32_,
-                                        right_lod_32_,
-                                        topks_xpu_,
-                                        topks_.size());
+    r = xdnn::sequence_topk_avg_pooling<float, int>(
+        ctx,
+        seq_concat_out,
+        seq_avg_topk_out,
+        useless_topk_pos_,
+        dim_t_ + out_channel_,
+        {lod_topk.data(), static_cast<int>(lod_topk.size()), topk_offset_32_},
+        {left_lod_32_cpu.data(),
+         static_cast<int>(left_lod_32_cpu.size()),
+         left_lod_32_},
+        {right_lod_32_cpu.data(),
+         static_cast<int>(right_lod_32_cpu.size()),
+         right_lod_32_},
+        {topks_.data(), static_cast<int>(topks_.size()), topks_xpu_});
     CHECK_EQ(r, 0);
   }
 };

@@ -79,9 +79,9 @@ class Graph {
                             PrecisionType precision = PRECISION(kFloat),
                             DataLayoutType layout = DATALAYOUT(kNCHW)) {
     Node::Role role = Node::Role::kVar;
-    if (typeid(T) == typeid(ge::op::Const)) {
+    if (FastTypeId<T>() == FastTypeId<ge::op::Const>()) {
       role = Node::Role::kConst;
-    } else if (typeid(T) == typeid(ge::op::Data)) {
+    } else if (FastTypeId<T>() == FastTypeId<ge::op::Data>()) {
       role = Node::Role::kData;
     }
     auto node = std::make_shared<Node>(precision, layout, role);

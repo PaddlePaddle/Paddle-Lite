@@ -23,14 +23,16 @@ namespace kernels {
 namespace xpu {
 
 void MatchMatrixTensorCompute::PrepareForRun() {
+  auto& ctx = this->ctx_->As<XPUContext>();
   auto& param = this->Param<param_t>();
   float w_max = param.__xpu__w_max;
-  std::vector<float> w_max_v(XPU_QUANT_SCALE_NUM, w_max);
+  int max_ptr_size = get_max_ptr_size(ctx.GetRawContext());
+  std::vector<float> w_max_v(max_ptr_size, w_max);
   weight_max_xpu_guard_ =
-      TargetWrapperXPU::MallocScratchPad(XPU_QUANT_SCALE_NUM * sizeof(float));
+      TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
   XPU_CALL(xpu_memcpy(reinterpret_cast<float*>(weight_max_xpu_guard_->addr_),
                       w_max_v.data(),
-                      XPU_QUANT_SCALE_NUM * sizeof(float),
+                      max_ptr_size * sizeof(float),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 
   offset_l_xpu_guard_ =

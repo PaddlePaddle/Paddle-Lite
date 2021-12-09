@@ -19,72 +19,72 @@
 using namespace metal;
 
 struct FetchParam {
-  int32_t isize;
-  int32_t idim[4];
+    int32_t isize;
+    int32_t idim[4];
 };
 
-kernel void fetch(texture2d_array<ftype, access::read> inTexture [[texture(0)]],
-                  device float *output [[buffer(0)]],
-                  constant FetchParam &param [[buffer(1)]],
-                  uint3 gid [[thread_position_in_grid]]) {
-  uint input_width = inTexture.get_width();
-  uint input_height = inTexture.get_height();
-  if (gid.x >= input_width || gid.y >= input_height ||
-      gid.z >= inTexture.get_array_size()) {
-    return;
-  }
-
-  uint count = param.idim[0] * param.idim[1] * param.idim[2] * param.idim[3];
-  //  dimensions == 4, data layout on CPU is NCHW, data layout on GPU is NHWC
-  if (param.isize == 4) {
-    const ftype4 input = inTexture.read(gid.xy, gid.z);
-    uint delta = input_width * input_height;
-    uint output_to = 4 * gid.z * delta + gid.y * input_width + gid.x;
-
-    uint dst = output_to;
-    if (dst < count) {
-      output[dst] = input.x;
-    }
-    dst = output_to + 1 * delta;
-    if (dst < count) {
-      output[dst] = input.y;
-    }
-    dst = output_to + 2 * delta;
-    if (dst < count) {
-      output[dst] = input.z;
-    }
-    dst = output_to + 3 * delta;
-    if (dst < count) {
-      output[dst] = input.w;
-    }
-  }
-  //  dimensions < 4, data layout on CPU is NCHW(texture width is H, height is W), data layout on GPU is NCHW
-  //arraylength=(W+3)/4
-  else {
-    const ftype4 input = inTexture.read(gid.xy, gid.z);
-    uint w = param.idim[2];
-    uint c = param.idim[3];
-
-    uint output_to = gid.y * c * w + gid.x * c + gid.z * 4;
-    uint output_max = gid.y * c * w + gid.x * c + c;
-
-    if (output_to < output_max) {
-      output[output_to] = input.x;
+kernel void fetch(texture2d_array<ftype, access::read> inTexture[[texture(0)]],
+    device float* output[[buffer(0)]],
+    constant FetchParam& param[[buffer(1)]],
+    uint3 gid[[thread_position_in_grid]]) {
+    uint input_width = inTexture.get_width();
+    uint input_height = inTexture.get_height();
+    if (gid.x >= input_width || gid.y >= input_height || gid.z >= inTexture.get_array_size()) {
+        return;
     }
 
-    output_to += 1;
-    if (output_to < output_max) {
-      output[output_to] = input.y;
-    }
+    uint count = param.idim[0] * param.idim[1] * param.idim[2] * param.idim[3];
+    //  dimensions == 4, data layout on CPU is NCHW, data layout on GPU is NHWC
+    if (param.isize == 4) {
+        const ftype4 input = inTexture.read(gid.xy, gid.z);
+        uint delta = input_width * input_height;
+        uint output_to = 4 * gid.z * delta + gid.y * input_width + gid.x;
 
-    output_to += 1;
-    if (output_to < output_max) {
-      output[output_to] = input.z;
+        uint dst = output_to;
+        if (dst < count) {
+            output[dst] = input.x;
+        }
+        dst = output_to + 1 * delta;
+        if (dst < count) {
+            output[dst] = input.y;
+        }
+        dst = output_to + 2 * delta;
+        if (dst < count) {
+            output[dst] = input.z;
+        }
+        dst = output_to + 3 * delta;
+        if (dst < count) {
+            output[dst] = input.w;
+        }
     }
+    //  dimensions < 4, data layout on CPU is NCHW(texture width is H, height is W), data layout on
+    //  GPU is NCHW
+    // arraylength=(W+3)/4
+    else {
+        const ftype4 input = inTexture.read(gid.xy, gid.z);
+        uint w = param.idim[2];
+        uint c = param.idim[3];
 
-    output_to += 1;
-    if (output_to < output_max) {
-      output[output_to] = input.w;
+        uint output_to = gid.y * c * w + gid.x * c + gid.z * 4;
+        uint output_max = gid.y * c * w + gid.x * c + c;
+
+        if (output_to < output_max) {
+            output[output_to] = input.x;
+        }
+
+        output_to += 1;
+        if (output_to < output_max) {
+            output[output_to] = input.y;
+        }
+
+        output_to += 1;
+        if (output_to < output_max) {
+            output[output_to] = input.z;
+        }
+
+        output_to += 1;
+        if (output_to < output_max) {
+            output[output_to] = input.w;
+        }
     }
-  }
 }

@@ -163,8 +163,7 @@ void transpose_mat(const lite_api::float16_t* din,
   for (int i = 0; i < num; ++i) {
     lite_api::float16_t* ptr_out = dout + i * size_in;
     const lite_api::float16_t* ptr_in = din + i * size_in;
-#pragma omp parallel for
-    for (int h = 0; h < nh; h++) {
+    LITE_PARALLEL_BEGIN(h, tid, nh) {
       const lite_api::float16_t* ptr_din_row = ptr_in + h * size_w;
 #ifdef __aarch64__
       int tmp_h = h << 3;
@@ -226,8 +225,8 @@ void transpose_mat(const lite_api::float16_t* din,
             "trn2 v15.2d, v3.2d, v7.2d\n"  // 7
             "str q11, [%[dout6]], #16\n"
             "str q12, [%[dout1]], #16\n"
-            "str q13, [%[dout3]], #16\n"
-            "str q14, [%[dout5]], #16\n"
+            "str q14, [%[dout3]], #16\n"
+            "str q13, [%[dout5]], #16\n"
             "str q15, [%[dout7]], #16\n"
             : [din0] "+r"(din0),
               [din1] "+r"(din1),
@@ -426,8 +425,10 @@ void transpose_mat(const lite_api::float16_t* din,
         *data_out_ptr++ = *din5;
         *data_out_ptr++ = *din6;
         *data_out_ptr++ = *din7;
+        ptr_din_row++;
       }
     }
+    LITE_PARALLEL_END()
 #ifdef __aarch64__
     // remain
     for (int h = nh * 8; h < height; h++) {

@@ -17,29 +17,29 @@
 #include "Common.metal"
 
 struct FeedParam {
-  int32_t isize;
-  int32_t idim[4];
+    int32_t isize;
+    int32_t idim[4];
 };
 
 using namespace metal;
 
-kernel void buf_to_tex_c_n(const device float *input [[buffer(0)]],
-                           texture2d_array<ftype, access::write> outTexture [[texture(0)]],
-                           constant FeedParam &param [[buffer(1)]],
-                           uint3 gid [[thread_position_in_grid]]) {
+kernel void buf_to_tex_c_n(const device float* input[[buffer(0)]],
+    texture2d_array<ftype, access::write> outTexture[[texture(0)]],
+    constant FeedParam& param[[buffer(1)]],
+    uint3 gid[[thread_position_in_grid]]) {
     if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
-      gid.z >= outTexture.get_array_size()) {
+        gid.z >= outTexture.get_array_size()) {
         return;
     }
 
     int inMax = param.idim[0] * param.idim[1] * param.idim[2] * param.idim[3];
     int page = outTexture.get_width() * outTexture.get_height();
     int offset = outTexture.get_width() * gid.y + gid.x;
-    
+
     float4 output = float4(0.0);
-    for(int i = 0; i < 4; i++) {
+    for (int i = 0; i < 4; i++) {
         int index = offset + (gid.z * 4 + i) * page;
-        if(index < inMax) {
+        if (index < inMax) {
             output[i] = input[index];
         }
     }
@@ -47,14 +47,13 @@ kernel void buf_to_tex_c_n(const device float *input [[buffer(0)]],
 }
 
 // half -> half
-kernel void buf_h_to_tex_h(const device half *input [[buffer(0)]],
-                           texture2d_array<half, access::write> outTexture [[texture(0)]],
-                           uint3 gid [[thread_position_in_grid]]){
-    if (gid.x >= outTexture.get_width() ||
-        gid.y >= outTexture.get_height()) {
+kernel void buf_h_to_tex_h(const device half* input[[buffer(0)]],
+    texture2d_array<half, access::write> outTexture[[texture(0)]],
+    uint3 gid[[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height()) {
         return;
     }
-    
+
     half y = input[outTexture.get_width() * gid.y + gid.x];
     outTexture.write(half4(y, 0.0f, 0.0f, 0.0f), gid.xy, gid.z);
 }

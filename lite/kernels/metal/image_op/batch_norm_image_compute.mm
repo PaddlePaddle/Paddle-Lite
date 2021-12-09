@@ -35,7 +35,7 @@ void BatchNormImageCompute::PrepareForRun() {
     input_buffer_ = param.x->data<MetalHalf, MetalImage>();
     output_buffer_ = param.y->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
 #endif
-    
+
     setup_without_mps();
 }
 
@@ -65,7 +65,7 @@ void BatchNormImageCompute::setup_without_mps() {
     auto bias_dims = param.bias->dims();
     auto scale_dims = param.scale->dims();
     auto count = param.variance->dims().production();
-    
+
     CHECK_EQ(bias_dims.production(), count) << "batchnorm: param error";
     CHECK_EQ(scale_dims.production(), count) << "batchnorm: param error";
 
@@ -74,8 +74,10 @@ void BatchNormImageCompute::setup_without_mps() {
     auto scale_raw_ptr = param.scale->template data<float>();
     auto variance_raw_ptr = param.variance->template data<float>();
 
-    bias_buffer_ = std::make_shared<MetalBuffer>(metal_context_, bias_dims, METAL_PRECISION_TYPE::HALF);
-    scale_buffer_ = std::make_shared<MetalBuffer>(metal_context_, scale_dims, METAL_PRECISION_TYPE::HALF);
+    bias_buffer_ =
+        std::make_shared<MetalBuffer>(metal_context_, bias_dims, METAL_PRECISION_TYPE::HALF);
+    scale_buffer_ =
+        std::make_shared<MetalBuffer>(metal_context_, scale_dims, METAL_PRECISION_TYPE::HALF);
 
     auto scale_ptr = (float*)TargetWrapperHost::Malloc(sizeof(float) * count);
     auto bias_ptr = (float*)TargetWrapperHost::Malloc(sizeof(float) * count);
@@ -106,47 +108,29 @@ BatchNormImageCompute::~BatchNormImageCompute() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(batch_norm,
-     kMetal,
-     kFloat,
-     kMetalTexture2DArray,
-     paddle::lite::kernels::metal::BatchNormImageCompute,
-     def)
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::BatchNormImageCompute,
+    def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal),
-           PRECISION(kFloat),
-           DATALAYOUT(kMetalTexture2DArray))})
-    .BindInput("Bias",
-        {LiteType::GetTensorTy(TARGET(kHost),
-           PRECISION(kFloat),
-           DATALAYOUT(kNCHW))})
-    .BindInput("Scale",
-        {LiteType::GetTensorTy(TARGET(kHost),
-           PRECISION(kFloat),
-           DATALAYOUT(kNCHW))})
-    .BindInput("Mean",
-        {LiteType::GetTensorTy(TARGET(kHost),
-           PRECISION(kFloat),
-           DATALAYOUT(kNCHW))})
-    .BindInput("Variance",
-        {LiteType::GetTensorTy(TARGET(kHost),
-           PRECISION(kFloat),
-           DATALAYOUT(kNCHW))})
-    .BindOutput("VarianceOut",
-        {LiteType::GetTensorTy(TARGET(kHost),
-           PRECISION(kFloat),
-           DATALAYOUT(kNCHW))})
-    .BindOutput("SavedMean",
-        {LiteType::GetTensorTy(TARGET(kHost),
-           PRECISION(kFloat),
-           DATALAYOUT(kNCHW))})
-    .BindOutput("SavedVariance",
-        {LiteType::GetTensorTy(TARGET(kHost),
-           PRECISION(kFloat),
-           DATALAYOUT(kNCHW))})
-    .BindOutput("MeanOut",
-        {LiteType::GetTensorTy(TARGET(kHost),
             PRECISION(kFloat),
-            DATALAYOUT(kNCHW))})
+            DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
+    .BindInput("Scale",
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
+    .BindInput("Mean", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
+    .BindInput("Variance",
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
+    .BindOutput("VarianceOut",
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
+    .BindOutput("SavedMean",
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
+    .BindOutput("SavedVariance",
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
+    .BindOutput("MeanOut",
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
     .BindOutput("Y",
         {LiteType::GetTensorTy(TARGET(kMetal),
             PRECISION(kFloat),
@@ -154,49 +138,27 @@ REGISTER_LITE_KERNEL(batch_norm,
     .Finalize();
 
 REGISTER_LITE_KERNEL(batch_norm,
-     kMetal,
-     kFP16,
-     kMetalTexture2DArray,
-     paddle::lite::kernels::metal::BatchNormImageCompute,
-     def)
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::BatchNormImageCompute,
+    def)
     .BindInput("X",
-        {LiteType::GetTensorTy(TARGET(kMetal),
-           PRECISION(kFP16),
-           DATALAYOUT(kMetalTexture2DArray))})
-    .BindInput("Bias",
-        {LiteType::GetTensorTy(TARGET(kHost),
-           PRECISION(kFloat),
-           DATALAYOUT(kNCHW))})
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
     .BindInput("Scale",
-        {LiteType::GetTensorTy(TARGET(kHost),
-           PRECISION(kFloat),
-           DATALAYOUT(kNCHW))})
-    .BindInput("Mean",
-        {LiteType::GetTensorTy(TARGET(kHost),
-           PRECISION(kFloat),
-           DATALAYOUT(kNCHW))})
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
+    .BindInput("Mean", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
     .BindInput("Variance",
-        {LiteType::GetTensorTy(TARGET(kHost),
-           PRECISION(kFloat),
-           DATALAYOUT(kNCHW))})
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
     .BindOutput("VarianceOut",
-        {LiteType::GetTensorTy(TARGET(kHost),
-           PRECISION(kFloat),
-           DATALAYOUT(kNCHW))})
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
     .BindOutput("SavedMean",
-        {LiteType::GetTensorTy(TARGET(kHost),
-           PRECISION(kFloat),
-           DATALAYOUT(kNCHW))})
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
     .BindOutput("SavedVariance",
-        {LiteType::GetTensorTy(TARGET(kHost),
-           PRECISION(kFloat),
-           DATALAYOUT(kNCHW))})
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
     .BindOutput("MeanOut",
-        {LiteType::GetTensorTy(TARGET(kHost),
-            PRECISION(kFloat),
-            DATALAYOUT(kNCHW))})
+        {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
     .BindOutput("Y",
-        {LiteType::GetTensorTy(TARGET(kMetal),
-            PRECISION(kFP16),
-            DATALAYOUT(kMetalTexture2DArray))})
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .Finalize();

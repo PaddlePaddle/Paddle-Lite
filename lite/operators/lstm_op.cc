@@ -117,7 +117,7 @@ bool LstmOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
       GetActivationType(opdesc.GetAttr<std::string>("candidate_activation"));
 
   // For int8
-  const OpInfo *op_info = dynamic_cast<const OpInfo *>(&opdesc);
+  const OpInfo *op_info = static_cast<const OpInfo *>(&opdesc);
   if (op_info != nullptr && op_info->HasAttr("enable_int8") &&
       op_info->GetAttr<bool>("enable_int8")) {
     param_.enable_int8 = true;

@@ -32,15 +32,21 @@ void sincos256_ps(v8sf x, v8sf *s, v8sf *c);
 // FMA support
 #ifndef __AVX2__
 #define _mm256_fmadd_ps(a, b, c) _mm256_add_ps(c, _mm256_mul_ps(a, b))
-#define _mm256_permutevar8x32_ps(a, b)                  \
-  _mm256_setr_ps(*((float *)(&a) + *((int *)(&b))),     \
-                 *((float *)(&a) + *((int *)(&b) + 1)), \
-                 *((float *)(&a) + *((int *)(&b) + 2)), \
-                 *((float *)(&a) + *((int *)(&b) + 3)), \
-                 *((float *)(&a) + *((int *)(&b) + 4)), \
-                 *((float *)(&a) + *((int *)(&b) + 5)), \
-                 *((float *)(&a) + *((int *)(&b) + 6)), \
-                 *((float *)(&a) + *((int *)(&b) + 7)))
+
+#define _mm256_permutevar8x32_ps(a, b)                                       \
+  _mm256_setr_ps(                                                            \
+      *(reinterpret_cast<float *>(&a)) + *(reinterpret_cast<int *>(&b)),     \
+      *(reinterpret_cast<float *>(&a)) + *(reinterpret_cast<int *>(&b) + 1), \
+      *(reinterpret_cast<float *>(&a)) + *(reinterpret_cast<int *>(&b) + 2), \
+      *(reinterpret_cast<float *>(&a)) + *(reinterpret_cast<int *>(&b) + 3), \
+      *(reinterpret_cast<float *>(&a)) + *(reinterpret_cast<int *>(&b) + 4), \
+      *(reinterpret_cast<float *>(&a)) + *(reinterpret_cast<int *>(&b) + 5), \
+      *(reinterpret_cast<float *>(&a)) + *(reinterpret_cast<int *>(&b) + 6), \
+      *(reinterpret_cast<float *>(&a)) + *(reinterpret_cast<int *>(&b) + 7))
+#endif
+#ifndef __AVX512__
+#define _mm_loadu_epi8(ptr) \
+  _mm_loadu_si128(reinterpret_cast<__m128i const *>(ptr))
 #endif
 
 #ifndef __AVX512__

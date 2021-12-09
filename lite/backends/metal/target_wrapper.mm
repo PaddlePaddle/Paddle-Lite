@@ -51,10 +51,10 @@ void* TargetWrapperMetal::MallocMTLData(void* ptr) {
 }
 
 void TargetWrapperMetal::FreeMTLData(void* ptr) {
-  if (ptr != nullptr) {
-      delete (MetalMTLData*)ptr;
-      ptr = nullptr;
-  }
+    if (ptr != nullptr) {
+        delete (MetalMTLData*)ptr;
+        ptr = nullptr;
+    }
 }
 
 void* TargetWrapperMetal::Malloc(size_t size) {

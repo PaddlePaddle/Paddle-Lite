@@ -180,6 +180,8 @@ LITE_THREAD_LOCAL std::string TargetWrapperXPU::conv_autotune_file;
 LITE_THREAD_LOCAL bool TargetWrapperXPU::need_l3_mutex{false};
 LITE_THREAD_LOCAL size_t TargetWrapperXPU::local_l3_size{
     std::numeric_limits<size_t>::max()};
+LITE_THREAD_LOCAL size_t TargetWrapperXPU::local_gm_size{
+    0x4000000};  // 64 * 1024 * 1024
 LITE_THREAD_LOCAL void* TargetWrapperXPU::local_l3_ptr_{nullptr};
 void* TargetWrapperXPU::shared_l3_ptr_{nullptr};
 size_t TargetWrapperXPU::shared_l3_size{0};

@@ -109,7 +109,7 @@ std::shared_ptr<Operator> Converter::AddZeroConstantOperator(
 
 std::shared_ptr<Operator> Converter::AddInt32ConstantOperator(
     const int32_t* values, const std::vector<int32_t>& dimensions) {
-  return AddConstantOperator(values, NNADAPTER_TENSOR_INT32, dimensions);
+  return AddConstantOperator(values, NNADAPTER_INT32, dimensions);
 }
 
 std::shared_ptr<Operator> Converter::AddInt32ConstantOperator(
@@ -129,7 +129,7 @@ std::shared_ptr<Operator> Converter::AddInt32ConstantOperator(
 
 std::shared_ptr<Operator> Converter::AddFloat32ConstantOperator(
     const float* values, const std::vector<int32_t>& dimensions) {
-  return AddConstantOperator(values, NNADAPTER_TENSOR_FLOAT32, dimensions);
+  return AddConstantOperator(values, NNADAPTER_FLOAT32, dimensions);
 }
 
 std::shared_ptr<Operator> Converter::AddFloat32ConstantOperator(

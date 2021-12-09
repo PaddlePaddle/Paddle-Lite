@@ -30,6 +30,7 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   bool has_cuda = false;
   bool has_x86 = false;
   bool has_metal = false;
+  bool has_nnadapter = false;
   for (auto& place : graph->valid_places()) {
     if (place.precision == PRECISION(kInt8)) {
       has_int8 = true;
@@ -48,6 +49,9 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     }
     if (place.target == TARGET(kMetal)) {
       has_metal = true;
+    }
+    if (place.target == TARGET(kNNAdapter)) {
+      has_nnadapter = true;
     }
   }
 
@@ -77,6 +81,14 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   if (has_metal) {
     act_types.push_back("relu");
     act_types.push_back("relu6");
+    act_types.push_back("hard_sigmoid");
+    act_types.push_back("hard_swish");
+    act_types.push_back("prelu");
+    act_types.push_back("leaky_relu");
+  }
+
+  if (has_nnadapter) {
+    act_types = std::vector<std::string>{"relu", "relu1", "relu6"};
   }
 
   bool has_alpha = false;
@@ -90,11 +102,10 @@ void ConvActivationFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
         has_alpha = false;
       }
       if (act_type == "hard_swish") {
-        if (has_arm) {
-          // it doesn't support conv_dw/int8_conv+hardswish
-          if (has_int8 || conv_type == "depthwise_conv2d") {
-            continue;
-          }
+        if (has_arm && !has_metal && !has_opencl &&
+            conv_type == "depthwise_conv2d") {
+          // TARGET(kARM) doesn't support conv_dw_conv+hardswish
+          continue;
         }
       }
       for (auto has_bias : {true, false}) {

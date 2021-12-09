@@ -129,7 +129,8 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
     Program&& program,
     const std::vector<Place>& valid_places,
     core::KernelPickFactor kernel_pick_factor,
-    const std::vector<std::string>& passes) {
+    const std::vector<std::string>& passes,
+    const lite_api::CxxConfig& config) {
   Optimizer optim(valid_places, kernel_pick_factor);
 
   std::vector<std::string> passes_local{
@@ -171,7 +172,10 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "lite_conv_scale_fuse_pass",
        "lite_conv_elementwise_tree_fuse_pass",
        "lite_greater_than_cast_fuse_pass",
+       "fill_range_fuse_pass",
+       "range_calc_offline_pass",
        "identity_dropout_eliminate_pass",
+       "p_norm_fill_constant_max_div_fuse_pass",
        "sparse_conv_detect_pass",
        "__xpu__max_pooling_pad_zero_detect_fuse_pass",
        "__xpu__graph_dedup_pass",
@@ -197,6 +201,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "__xpu__dynamic_lstm_fuse_pass",
        "__xpu__multi_softmax_fuse_pass",
        "ssd_boxes_calc_offline_pass",
+       "assign_value_calc_offline_pass",
        // Only for fully quantized model, infer the output scale and fix the
        // attribute 'enable_int8' for all of the quantized ops.
        "quantized_op_attributes_inference_pass",
@@ -204,13 +209,12 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        // Apply the constraints for the quantized ops(such as concat) that the
        // inputs and outputs must have the same scale.
        "restrict_quantized_op_with_same_input_output_scale_pass",
+       "quantization_parameters_removal_pass",
+       "mixed_precision_auto_insert_calib_op_pass",
        "nnadapter_subgraph_pass",
        "npu_subgraph_pass",
-       "huawei_ascend_npu_subgraph_pass",
-       "imagination_nna_subgraph_pass",
        "xpu_subgraph_pass",
        "bm_subgraph_pass",
-       "apu_subgraph_pass",
        "rknpu_subgraph_pass",
        "mlu_subgraph_pass",
        "fpga_concat_fuse_pass",
@@ -265,6 +269,20 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
 #endif
       }};
 
+  // skip the discarded pass
+  const std::vector<std::string> discarded_passes =
+      config.get_discarded_passes();
+  for (auto& pass : discarded_passes) {
+    auto iterator = std::find(passes_local.begin(), passes_local.end(), pass);
+    if (iterator != passes_local.end()) {
+      LOG(INFO) << "discarded pass : " << pass;
+      passes_local.erase(iterator);
+    } else {
+      LOG(INFO) << "the pass : " << pass
+                << " dont't exit or has already discarded";
+    }
+  }
+
   // It's just a workaround to avoid repeated op fusion if the filter weights
   // are shared among sub-blocks
   if (program.block_size() > 1) {
@@ -290,7 +308,6 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
   const std::string pqd_pass{"post_quant_dynamic_pass"};
   const std::string pqd_depend_pass{"lite_quant_dequant_fuse_pass"};
   const std::string fp16_pass{"fp16_attribute_pass"};
-  const std::string x86_int8_pass{"x86_int8_attribute_pass"};
 
   for (const std::string& pass : passes) {
     if (pass == msa_pass) {
@@ -312,15 +329,6 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
     if (place.target == TARGET(kARM)) {
       if (place.precision == PRECISION(kFP16)) {
         passes_local.push_back(fp16_pass);
-        break;
-      }
-    }
-  }
-
-  for (auto place : valid_places) {
-    if (place.target == TARGET(kX86)) {
-      if (place.precision == PRECISION(kInt8)) {
-        passes_local.push_back(x86_int8_pass);
         break;
       }
     }

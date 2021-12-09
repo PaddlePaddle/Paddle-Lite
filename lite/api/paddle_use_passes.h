@@ -67,8 +67,6 @@ USE_MIR_PASS(lite_inplace_fuse_pass);
 USE_MIR_PASS(multi_stream_analysis_pass);
 USE_MIR_PASS(elementwise_mul_constant_eliminate_pass)
 USE_MIR_PASS(npu_subgraph_pass);
-USE_MIR_PASS(huawei_ascend_npu_subgraph_pass);
-USE_MIR_PASS(imagination_nna_subgraph_pass);
 USE_MIR_PASS(nnadapter_subgraph_pass);
 USE_MIR_PASS(xpu_subgraph_pass);
 USE_MIR_PASS(mlu_subgraph_pass);
@@ -76,10 +74,11 @@ USE_MIR_PASS(mlu_postprocess_pass);
 USE_MIR_PASS(weight_quantization_preprocess_pass);
 USE_MIR_PASS(post_quant_dynamic_pass);
 USE_MIR_PASS(fp16_attribute_pass);
-USE_MIR_PASS(apu_subgraph_pass);
 USE_MIR_PASS(fpga_concat_fuse_pass);
 USE_MIR_PASS(quantized_op_attributes_inference_pass);
 USE_MIR_PASS(quantization_parameters_propagation_pass);
+USE_MIR_PASS(quantization_parameters_removal_pass)
+USE_MIR_PASS(mixed_precision_auto_insert_calib_op_pass)
 USE_MIR_PASS(restrict_quantized_op_with_same_input_output_scale_pass);
 USE_MIR_PASS(control_flow_op_unused_inputs_and_outputs_eliminate_pass);
 USE_MIR_PASS(control_flow_op_shared_inputs_and_outputs_place_sync_pass);
@@ -90,6 +89,7 @@ USE_MIR_PASS(fix_mismatched_precision_pass);
 USE_MIR_PASS(lite_flatten_fc_fuse_pass);
 USE_MIR_PASS(lite_fc_prelu_fuse_pass);
 USE_MIR_PASS(lite_greater_than_cast_fuse_pass);
+USE_MIR_PASS(assign_value_calc_offline_pass);
 USE_MIR_PASS(__xpu__graph_dedup_pass);
 USE_MIR_PASS(__xpu__resnet_fuse_pass);
 USE_MIR_PASS(__xpu__resnet_cbam_fuse_pass);
@@ -113,3 +113,6 @@ USE_MIR_PASS(__xpu__dynamic_lstm_fuse_pass);
 USE_MIR_PASS(__xpu__multi_softmax_fuse_pass);
 USE_MIR_PASS(__xpu__max_pooling_pad_zero_detect_fuse_pass);
 USE_MIR_PASS(x86_int8_attribute_pass);
+USE_MIR_PASS(fill_range_fuse_pass);
+USE_MIR_PASS(range_calc_offline_pass);
+USE_MIR_PASS(p_norm_fill_constant_max_div_fuse_pass);

@@ -114,6 +114,22 @@ Tensor* LightPredictor::GetInputByName(const std::string& name) {
   }
 }
 
+// get output by name
+const lite::Tensor* LightPredictor::GetOutputByName(const std::string& name) {
+  auto element = std::find(output_names_.begin(), output_names_.end(), name);
+  if (element == output_names_.end()) {
+    LOG(ERROR) << "Model do not have output named with: [" << name
+               << "], model's outputs include:";
+    for (size_t i = 0; i < output_names_.size(); i++) {
+      LOG(ERROR) << "[" << output_names_[i] << "]";
+    }
+    return nullptr;
+  } else {
+    int position = std::distance(output_names_.begin(), element);
+    return GetOutput(position);
+  }
+}
+
 #if !defined(LITE_WITH_METAL)
 const Tensor* LightPredictor::GetOutput(size_t offset) {
   CHECK(output_names_.size() > offset)
@@ -317,6 +333,8 @@ void LightPredictor::WeightFP32ToFP16() {
                                     "gru",
                                     "sequence_conv",
                                     "elementwise_add",
+                                    "elementwise_sub",
+                                    "elementwise_div",
                                     "elementwise_mul",
                                     "prelu"};
   for (size_t i = 0; i < program_desc->BlocksSize(); i++) {
@@ -333,6 +351,9 @@ void LightPredictor::WeightFP32ToFP16() {
             Tensor tmp_tensor;
             auto input_tensor =
                 scope_->FindVar(input_name)->GetMutable<lite::Tensor>();
+
+            if (input_tensor->precision() != PRECISION(kFloat)) continue;
+
             tmp_tensor.CopyDataFrom(*input_tensor);
             input_tensor->clear();
             input_tensor->set_precision(PRECISION(kFP16));
@@ -401,8 +422,9 @@ void LightPredictor::ClearTensorArray(
       const cpp::VarDesc* var = block->GetVar<cpp::VarDesc>(var_idx);
       CHECK(var);
 
-      auto tmp = program_->exec_scope()->FindVar(var->Name());
-      if (tmp->IsType<std::vector<Tensor>>()) {
+      auto* var_ptr = program_->exec_scope()->FindVar(var->Name());
+      if (var_ptr->IsType<std::vector<Tensor>>() &&
+          (var->Name() != "feed" && var->Name() != "fetch")) {
         std::vector<Tensor>* tensor_array_var =
             program_->exec_scope()->FindMutableTensorList(var->Name());
         CHECK(tensor_array_var);

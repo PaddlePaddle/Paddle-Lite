@@ -37,7 +37,7 @@ void ActivationImageCompute::PrepareForRun() {
     input_buffer_ = param.X->data<MetalHalf, MetalImage>();
     output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
 #endif
-  setup_without_mps();
+    setup_without_mps();
 }
 
 void ActivationImageCompute::setup_without_mps() {
@@ -93,9 +93,9 @@ void ActivationImageCompute::setup_without_mps() {
 }
 
 void ActivationImageCompute::Run() {
-  @autoreleasepool {
-    run_without_mps();
-  }
+    @autoreleasepool {
+        run_without_mps();
+    }
 }
 
 void ActivationImageCompute::run_without_mps() {
@@ -106,7 +106,8 @@ void ActivationImageCompute::run_without_mps() {
     auto encoder = [backend commandEncoder];
     [encoder setTexture:input_buffer_->image() atIndex:(0)];
     [encoder setTexture:output_buffer_->image() atIndex:(1)];
-    if (function_name_ == "relu" || function_name_ == "leaky_relu" || function_name_ == "hard_swish" || function_name_ == "hard_sigmoid") {
+    if (function_name_ == "relu" || function_name_ == "leaky_relu" ||
+        function_name_ == "hard_swish" || function_name_ == "hard_sigmoid") {
         [encoder setBuffer:param_buffer_->buffer() offset:(0) atIndex:(0)];
     }
 

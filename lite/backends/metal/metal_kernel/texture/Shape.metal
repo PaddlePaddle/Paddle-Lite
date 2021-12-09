@@ -15,5 +15,7 @@
 #include <metal_stdlib>
 using namespace metal;
 
-kernel void shape() {}
-kernel void shape_half() {}
+kernel void shape() {
+}
+kernel void shape_half() {
+}

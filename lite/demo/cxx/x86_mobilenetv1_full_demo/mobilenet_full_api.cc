@@ -141,11 +141,26 @@ void RunModel(std::string model_dir,
   CxxConfig config;
   config.set_model_dir(model_dir);
 
+  std::string optimized_model_dir = "mobilenet_v1_x86";
+#ifdef METAL
+  std::string metal_lib_path = "../../../metal/lite.metallib";
+  config.set_metal_lib_path(metal_lib_path);
+  config.set_metal_use_mps(true);
+
+  config.set_valid_places(
+      {Place{
+           TARGET(kMetal), PRECISION(kFloat), DATALAYOUT(kMetalTexture2DArray)},
+       Place{
+           TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray)},
+       Place{TARGET(kX86), PRECISION(kFloat)},
+       Place{TARGET(kX86), PRECISION(kInt64)},
+       Place{TARGET(kX86), PRECISION(kAny)}});
+  optimized_model_dir += "_metal";
+#else
   bool is_opencl_backend_valid =
       ::IsOpenCLBackendValid(false /*check_fp16_valid = false*/);
   std::cout << "is_opencl_backend_valid:" << is_opencl_backend_valid
             << std::endl;
-  std::string optimized_model_dir = "mobilenet_v1_x86";
 
   if (!is_opencl_backend_valid) {
     config.set_valid_places({Place{TARGET(kX86), PRECISION(kFloat)},
@@ -155,8 +170,10 @@ void RunModel(std::string model_dir,
   } else {
     config.set_valid_places(
         {Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault)},
+         Place{TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageFolder)},
          Place{TARGET(kOpenCL), PRECISION(kFloat), DATALAYOUT(kNCHW)},
          Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageDefault)},
+         Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kImageFolder)},
          Place{TARGET(kOpenCL), PRECISION(kAny), DATALAYOUT(kNCHW)},
          Place{TARGET(kOpenCL), PRECISION(kInt32), DATALAYOUT(kNCHW)},
          Place{TARGET(kX86), PRECISION(kFloat)},
@@ -194,6 +211,7 @@ void RunModel(std::string model_dir,
 
     optimized_model_dir += "_opencl";
   }
+#endif
 
   // 2. Create PaddlePredictor by CxxConfig
   std::shared_ptr<PaddlePredictor> predictor =

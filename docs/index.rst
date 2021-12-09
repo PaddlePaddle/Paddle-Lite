@@ -10,7 +10,7 @@ Welcome to Paddle-Lite's documentation!
 
 .. toctree::
   :maxdepth: 1
-  :caption: Paddle Lite介绍
+  :caption: Paddle Lite 介绍
   :name: introduction
 
   guide/introduction
@@ -18,51 +18,43 @@ Welcome to Paddle-Lite's documentation!
 
 .. toctree::
   :maxdepth: 1
-  :caption: 简介
-  :name: sec-introduction
-
-  introduction/tech_highlights
-  introduction/architecture
-  introduction/support_operation_list
-  introduction/support_model_list
-
-.. toctree::
-  :maxdepth: 1
-  :caption: Benchmark
-  :name: sec-benchmark
+  :caption: 性能
+  :name: sec-performance
   
-  benchmark/benchmark
-  benchmark/benchmark_tools
-  benchmark/ best_practices
+  performance/best_practices
+  performance/benchmark_tools
+  performance/benchmark
+  performance/gpu
 
 .. toctree::
   :maxdepth: 1
   :caption: 快速开始
   :name: sec-quick-start
 
-  quick_start/support_hardware
   quick_start/tutorial
   quick_start/release_lib
-  quick_start/cpp_demo
-  quick_start/java_demo
-  quick_start/python_demo
-  quick_start/quant_post_dynamic_demo
   quick_start/quick_run_demo
-  quick_start/roadmap
-
+  quick_start/support_hardware
+  quick_start/support_model_list
+  quick_start/support_operation_list
+  quick_start/faq
 
 .. toctree::
   :maxdepth: 1
   :caption: 程序开发
   :name: program-development
 
+  user_guides/cpp_demo
+  user_guides/java_demo
+  user_guides/python_demo
+  user_guides/quant_post_dynamic_demo
   user_guides/development_overview
   user_guides/model_optimize_tool
   user_guides/quant_aware
   user_guides/quant_post_dynamic
   user_guides/quant_post_static
   user_guides/model_visualization
-  user_guides/debug
+  user_guides/profiler
 
 .. toctree::
   :maxdepth: 1
@@ -72,6 +64,7 @@ Welcome to Paddle-Lite's documentation!
   demo_guides/android_app_demo
   demo_guides/ios_app_demo
   demo_guides/linux_arm_demo
+  demo_guides/arm_cpu
   demo_guides/x86
   demo_guides/opencl
   demo_guides/fpga
@@ -90,11 +83,16 @@ Welcome to Paddle-Lite's documentation!
   :caption: 源码编译
   :name: sec-source-compile
 
-  source_compile/docker_enviroment
-  source_compile/compile_android
-  source_compile/compile_ios
-  source_compile/compile_linux
-  source_compile/compile_windows
+  source_compile/compile_env
+  source_compile/docker_env
+  source_compile/linux_x86_compile_linux_x86
+  source_compile/linux_x86_compile_arm_linux
+  source_compile/linux_x86_compile_android
+  source_compile/arm_linux_compile_arm_linux
+  source_compile/macos_compile_macos
+  source_compile/macos_compile_ios
+  source_compile/macos_compile_android
+  source_compile/windows_compile_windows
   source_compile/compile_options
   source_compile/library_tailoring
 
@@ -124,11 +122,18 @@ Welcome to Paddle-Lite's documentation!
   develop_guides/add_layout
   develop_guides/add_new_pass
   develop_guides/add_hardware
+  develop_guides/nnadapter
 
 .. toctree::
   :maxdepth: 1
   :caption: FAQ
 
-  introduction/faq
+  quick_start/faq
+
+.. toctree::
+  :maxdepth: 1
+  :caption: 训练推理示例说明
+
+  introduction/training_to_deployment
 
 

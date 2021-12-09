@@ -36,7 +36,7 @@ void ReluImageCompute::PrepareForRun() {
     output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
     input_buffer_ = param.X->data<MetalHalf, MetalImage>();
 #endif
-    
+
     setup_without_mps();
 }
 
@@ -82,7 +82,7 @@ void Relu6ImageCompute::PrepareForRun() {
     output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
     input_buffer_ = param.X->data<MetalHalf, MetalImage>();
 #endif
-    
+
     setup_without_mps();
 }
 
@@ -133,7 +133,7 @@ void LeakyReluImageCompute::PrepareForRun() {
     output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
     input_buffer_ = param.X->data<MetalHalf, MetalImage>();
 #endif
-    
+
     setup_without_mps();
 }
 

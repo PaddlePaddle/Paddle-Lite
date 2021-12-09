@@ -1681,6 +1681,7 @@ struct XPUMultiEncoderParam : ParamBase {
   int n_layers{};
   int head_num{};
   int size_per_head{};
+  int hidden_dim{};
   std::string act_type{};
   std::string precision{};
   bool enable_qkv_fusion{false};
@@ -2084,6 +2085,15 @@ struct CumsumParam : ParamBase {
   bool reverse{false};
 };
 
+struct SamplingIdParam : ParamBase {
+  const lite::Tensor* x{};
+  lite::Tensor* out{};
+
+  float min{0.f};
+  float max{1.f};
+  int seed{0};
+};
+
 struct PolygonBoxTransformParam : ParamBase {
   const lite::Tensor* input{nullptr};
   lite::Tensor* output{nullptr};
@@ -2178,6 +2188,18 @@ struct UniqueWithCountsParam : ParamBase {
   lite::Tensor* Index{};
   lite::Tensor* Count{};
 };
+
+struct GaussRandomParam : ParamBase {
+  const lite::Tensor* ShapeTensor{nullptr};
+  std::vector<const lite::Tensor*> ShapeTensorList{};
+  std::vector<int64_t> shape{};
+  lite::Tensor* Out{};
+  int seed{0};
+  int dtype{5};
+  float mean{0.f};
+  float gauss_std{0.f};
+};
+
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle

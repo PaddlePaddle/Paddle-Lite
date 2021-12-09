@@ -161,10 +161,6 @@ TEST(Concat, precision) {
   abs_error = 1e-2;  // use fp16 in npu
   axes = std::vector<int>{1, 2};
   use_axis_tensor = std::vector<bool>{false};
-#elif defined(LITE_WITH_HUAWEI_ASCEND_NPU)
-  place = TARGET(kHuaweiAscendNPU);
-  abs_error = 1e-2;  // precision_mode default is force_fp16
-  axes = std::vector<int>{1, 2};
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #elif defined(LITE_WITH_X86)
@@ -175,8 +171,7 @@ TEST(Concat, precision) {
 
   for (int axis : axes) {
     for (bool is_use_axis_tensor : use_axis_tensor) {
-#if defined(LITE_WITH_HUAWEI_ASCEND_NPU) || \
-    defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
       if (is_use_axis_tensor) {
         continue;
       }

@@ -18,39 +18,37 @@
 using namespace metal;
 
 struct ScaleParam {
-  float scale;
-  float abias;
-  MetalActivationParam activationParam;
+    float scale;
+    float abias;
+    MetalActivationParam activationParam;
 };
 
-kernel void scale_before_bias(
-    texture2d_array<ftype, access::read> inTexture [[texture(0)]],
-    texture2d_array<ftype, access::write> outTexture [[texture(1)]],
-    constant ScaleParam &pm [[buffer(0)]],
-    uint3 gid [[thread_position_in_grid]]) {
-  if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
-      gid.z >= outTexture.get_array_size())
-    return;
-  const ftype4 input = inTexture.read(gid.xy, gid.z);
-  const float scale = pm.scale;
-  const float abias = pm.abias;
-  const ftype4 output = scale * input + abias;
-  ftype4 relu = activation(output, pm.activationParam);
-  outTexture.write(relu, gid.xy, gid.z);
+kernel void scale_before_bias(texture2d_array<ftype, access::read> inTexture[[texture(0)]],
+    texture2d_array<ftype, access::write> outTexture[[texture(1)]],
+    constant ScaleParam& pm[[buffer(0)]],
+    uint3 gid[[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
+        gid.z >= outTexture.get_array_size())
+        return;
+    const ftype4 input = inTexture.read(gid.xy, gid.z);
+    const float scale = pm.scale;
+    const float abias = pm.abias;
+    const ftype4 output = scale * input + abias;
+    ftype4 relu = activation(output, pm.activationParam);
+    outTexture.write(relu, gid.xy, gid.z);
 }
 
-kernel void scale_after_bias(
-    texture2d_array<ftype, access::read> inTexture [[texture(0)]],
-    texture2d_array<ftype, access::write> outTexture [[texture(1)]],
-    constant ScaleParam &pm [[buffer(0)]],
-    uint3 gid [[thread_position_in_grid]]) {
-  if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
-      gid.z >= outTexture.get_array_size())
-    return;
-  const ftype4 input = inTexture.read(gid.xy, gid.z);
-  const float scale = pm.scale;
-  const float abias = pm.abias;
-  const ftype4 output = scale * (input + abias);
-  ftype4 relu = activation(output, pm.activationParam);
-  outTexture.write(relu, gid.xy, gid.z);
+kernel void scale_after_bias(texture2d_array<ftype, access::read> inTexture[[texture(0)]],
+    texture2d_array<ftype, access::write> outTexture[[texture(1)]],
+    constant ScaleParam& pm[[buffer(0)]],
+    uint3 gid[[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
+        gid.z >= outTexture.get_array_size())
+        return;
+    const ftype4 input = inTexture.read(gid.xy, gid.z);
+    const float scale = pm.scale;
+    const float abias = pm.abias;
+    const ftype4 output = scale * (input + abias);
+    ftype4 relu = activation(output, pm.activationParam);
+    outTexture.write(relu, gid.xy, gid.z);
 }

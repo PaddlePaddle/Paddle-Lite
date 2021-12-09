@@ -23,10 +23,7 @@ namespace arena {
 
 std::shared_ptr<lite::OpLite> TestCase::CreateSubgraphOp() {
   static const std::set<TargetType> subgraph_op_supported_targets(
-      {TARGET(kNPU),
-       TARGET(kXPU),
-       TARGET(kHuaweiAscendNPU),
-       TARGET(kNNAdapter)});
+      {TARGET(kNPU), TARGET(kXPU), TARGET(kNNAdapter)});
   bool create_subgraph_op = subgraph_op_supported_targets.find(place_.target) !=
                             subgraph_op_supported_targets.end();
 #if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
@@ -49,6 +46,12 @@ std::shared_ptr<lite::OpLite> TestCase::CreateSubgraphOp() {
                                                        {"imagination_nna"});
 #elif defined(NNADAPTER_WITH_AMLOGIC_NPU)
   ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope, {"amlogic_npu"});
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope,
+                                                       {"cambricon_mlu"});
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  ctx_->As<NNAdapterContext>().SetNNAdapterDeviceNames(scope,
+                                                       {"verisilicon_timvx"});
 #endif
   // Create a new block desc to wrap the original op desc
   auto sub_program_desc = std::make_shared<cpp::ProgramDesc>();

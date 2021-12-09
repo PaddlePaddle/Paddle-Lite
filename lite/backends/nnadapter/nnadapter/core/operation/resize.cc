@@ -59,12 +59,12 @@ int PrepareResize(hal::Operation* operation) {
     NNAdapterOperandDimensionType shape_dims;
     if (IsConstantOperand(shape_operand)) {
       shape_dims.dynamic_count = 0;
-      if (shape_operand->type.precision == NNADAPTER_TENSOR_INT32) {
+      if (shape_operand->type.precision == NNADAPTER_INT32) {
         shape_dims.count = shape_operand->length / sizeof(int32_t);
         memcpy(shape_dims.data,
                shape_operand->buffer,
                shape_dims.count * sizeof(int32_t));
-      } else if (shape_operand->type.precision == NNADAPTER_TENSOR_INT64) {
+      } else if (shape_operand->type.precision == NNADAPTER_INT64) {
         shape_dims.count = shape_operand->length / sizeof(int64_t);
         auto shape_data = reinterpret_cast<int64_t*>(shape_operand->buffer);
         for (uint32_t i = 0; i < shape_dims.count; i++) {

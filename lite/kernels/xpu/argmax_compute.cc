@@ -43,8 +43,23 @@ void ArgmaxCompute::Run() {
                                      x_dims,
                                      axis);
     CHECK_EQ(r, 0);
+  } else if (param.dtype == 2) {
+    // int32
+    Tensor out_int64;
+    out_int64.Resize(out->dims());
+    int r = xdnn::argmax<float, int64_t>(
+        ctx.GetRawContext(),
+        x->data<float>(),
+        out_int64.mutable_data<int64_t>(TARGET(kXPU)),
+        x_dims,
+        axis);
+    CHECK_EQ(r, 0);
+    r = xdnn::cast_v2<int64_t, int>(ctx.GetRawContext(),
+                                    out_int64.data<int64_t>(),
+                                    out->mutable_data<int>(TARGET(kXPU)),
+                                    out_int64.numel());
+    CHECK_EQ(r, 0);
   } else {
-    // else if (param.dtype == 2) {}    xpu not support int32 now
     LOG(FATAL) << "argmax unsupported param type for xpu: " << param.dtype;
   }
 }

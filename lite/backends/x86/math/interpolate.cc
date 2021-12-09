@@ -535,6 +535,7 @@ void interpolate(lite::Tensor* input,
                  lite::Tensor* scale_tensor,
                  lite::Tensor* output,
                  float scale,
+                 std::vector<float> scale_v,
                  int out_h,
                  int out_w,
                  const int align_mode,
@@ -550,6 +551,16 @@ void interpolate(lite::Tensor* input,
     auto new_size = get_new_shape(list_new_size_tensor);
     out_h = new_size[0];
     out_w = new_size[1];
+  } else if (scale_v.size() == 2) {
+    if (scale_v[0] > 0 && scale_v[1] > 0) {
+      out_h = static_cast<int>(in_h * scale_v[0]);
+      out_w = static_cast<int>(in_w * scale_v[1]);
+    }
+    if (out_size != nullptr) {
+      auto out_size_data = get_new_data_from_tensor<int>(out_size);
+      out_h = out_size_data[0];
+      out_w = out_size_data[1];
+    }
   } else {
     if (scale_tensor != nullptr) {
       auto scale_data = get_new_data_from_tensor<float>(scale_tensor);

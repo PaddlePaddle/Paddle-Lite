@@ -55,6 +55,7 @@ add_operator(grid_sampler_op basic SRCS grid_sampler_op.cc)
 add_operator(flatten_op basic SRCS flatten_op.cc)
 add_operator(write_back_op basic SRCS write_back_op.cc)
 add_operator(lod_array_length_op basic SRCS lod_array_length_op.cc)
+add_operator(unbind_op basic SRCS unbind_op.cc)
 
 add_operator(pow_op extra SRCS pow_op.cc)
 add_operator(sign_op extra SRCS sign_op.cc)
@@ -125,6 +126,7 @@ add_operator(distribute_fpn_proposals_op_lite extra SRCS distribute_fpn_proposal
 add_operator(crf_decoding_op_lite extra SRCS crf_decoding_op.cc)
 add_operator(ctc_align_op_lite extra SRCS ctc_align_op.cc)
 add_operator(cumsum_op_lite extra SRCS cumsum_op.cc)
+add_operator(sampling_id_op_lite extra SRCS sampling_id_op.cc)
 add_operator(polygon_box_transform_op_lite extra SRCS polygon_box_transform_op.cc)
 add_operator(max_pool_with_index_op extra SRCS max_pool_with_index_op.cc)
 add_operator(pixel_shuffle_op extra SRCS pixel_shuffle_op.cc)
@@ -153,6 +155,7 @@ add_operator(roi_perspective_transform_op extra SRCS roi_perspective_transform_o
 add_operator(argsort_op extra SRCS argsort_op.cc)
 add_operator(flip_op extra SRCS flip_op.cc)
 add_operator(index_select_op extra SRCS index_select_op.cc)
+add_operator(gaussian_random_op extra SRCS gaussian_random_op.cc)
 
 # for OCR specific
 add_operator(while_op extra SRCS while_op.cc)

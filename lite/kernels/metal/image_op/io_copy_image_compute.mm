@@ -62,8 +62,7 @@ class IoCopyHostToMetalTexture
         auto input_dims = param.x->dims();
         auto output_dims = param.y->dims();
 
-        if ((input_dims.size() == 4 && input_dims[1] <= 4) ||
-            (input_dims.size() == 3 && input_dims[0] <= 4)) {
+        if (input_dims.size() == 4 || input_dims.size() == 3) {
             auto src = param.x->template data<float>();
             output_buffer_->CopyFromNCHW<float>(src);
         } else {
@@ -75,7 +74,7 @@ class IoCopyHostToMetalTexture
             MetalDebug::SaveOutput(function_name_, output_buffer_);
         }
     };
-        
+
     virtual ~IoCopyHostToMetalTexture() {
         TargetWrapperMetal::FreeImage(output_buffer_);
     }

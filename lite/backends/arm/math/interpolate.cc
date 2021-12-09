@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 #include "lite/backends/arm/math/funcs.h"
+#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
@@ -509,13 +510,39 @@ void interpolate(lite::Tensor* X,
                  float scale,
                  bool with_align,
                  int align_mode,
-                 std::string interpolate_type) {
+                 std::string interpolate_type,
+                 std::vector<float> scale_data) {
   int in_h = X->dims()[2];
   int in_w = X->dims()[3];
+  float height_scale = 0.f;
+  float width_scale = 0.f;
+
   if (SizeTensor.size() > 0) {
     auto new_size = get_new_shape(SizeTensor);
     out_height = new_size[0];
     out_width = new_size[1];
+  } else if (scale_data.size() > 0) {
+    if (scale_data.size() == 1) {
+      if (scale_data[0] > 0) {
+        out_height = static_cast<int>(in_h * scale_data[0]);
+        out_width = static_cast<int>(in_w * scale_data[0]);
+      } else {
+        LOG(FATAL) << "scale data <= 0";
+      }
+    } else if (scale_data.size() == 2) {
+      if (scale_data[0] > 0 && scale_data[1] > 0) {
+        out_height = static_cast<int>(in_h * scale_data[0]);
+        out_width = static_cast<int>(in_w * scale_data[1]);
+      } else {
+        LOG(FATAL) << "scale data <= 0";
+      }
+    }
+    auto out_size = OutSize;
+    if (out_size != nullptr) {
+      auto out_size_data = get_new_data_from_tensor<int>(out_size);
+      out_height = out_size_data[0];
+      out_width = out_size_data[1];
+    }
   } else {
     auto scale_tensor = Scale;
     if (scale_tensor != nullptr) {
@@ -533,11 +560,14 @@ void interpolate(lite::Tensor* X,
       out_width = out_size_data[1];
     }
   }
-  float height_scale = scale;
-  float width_scale = scale;
+  height_scale = scale;
+  width_scale = scale;
   if (out_width > 0 && out_height > 0) {
     height_scale = static_cast<float>(out_height / X->dims()[2]);
     width_scale = static_cast<float>(out_width / X->dims()[3]);
+  } else {
+    out_height = static_cast<int>(X->dims()[2] * height_scale + 0.5f);
+    out_width = static_cast<int>(X->dims()[3] * width_scale + 0.5f);
   }
   int num_cout = X->dims()[0];
   int c_cout = X->dims()[1];
@@ -554,8 +584,7 @@ void interpolate(lite::Tensor* X,
   int spatial_out = out_h * out_w;
 
   if ("Bilinear" == interpolate_type) {
-#pragma omp parallel for
-    for (int i = 0; i < count; ++i) {
+    LITE_PARALLEL_BEGIN(i, tid, count) {
       bilinear_interp(din + spatial_in * i,
                       in_w,
                       in_h,
@@ -567,9 +596,9 @@ void interpolate(lite::Tensor* X,
                       with_align,
                       align_mode);
     }
+    LITE_PARALLEL_END()
   } else if ("Nearest" == interpolate_type) {
-#pragma omp parallel for
-    for (int i = 0; i < count; ++i) {
+    LITE_PARALLEL_BEGIN(i, tid, count) {
       nearest_interp(din + spatial_in * i,
                      in_w,
                      in_h,
@@ -580,6 +609,7 @@ void interpolate(lite::Tensor* X,
                      1.f / height_scale,
                      with_align);
     }
+    LITE_PARALLEL_END()
   }
 }
 

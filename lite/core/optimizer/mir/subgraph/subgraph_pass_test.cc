@@ -185,10 +185,6 @@ TEST(Subgraph, generate_model_and_check_precision) {
 #ifdef LITE_WITH_NPU
   valid_places.push_back(lite_api::Place{TARGET(kNPU), PRECISION(kFloat)});
 #endif
-#ifdef LITE_WITH_HUAWEI_ASCEND_NPU
-  valid_places.push_back(
-      lite_api::Place{TARGET(kHuaweiAscendNPU), PRECISION(kFloat)});
-#endif
 #ifdef LITE_WITH_XTCL
   valid_places.push_back(lite_api::Place{TARGET(kXPU), PRECISION(kFloat)});
 #endif

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,9 +34,9 @@ namespace operation {
   if (IsConstantOperand(k_operand)) {                                    \
     auto k_precision = k_operand->type.precision;                        \
     auto k_buffer = k_operand->buffer;                                   \
-    if (k_precision == NNADAPTER_TENSOR_INT32) {                         \
+    if (k_precision == NNADAPTER_INT32) {                                \
       k = *reinterpret_cast<int32_t*>(k_buffer);                         \
-    } else if (k_precision == NNADAPTER_TENSOR_INT64) {                  \
+    } else if (k_precision == NNADAPTER_INT64) {                         \
       k = *reinterpret_cast<int64_t*>(k_buffer);                         \
     } else {                                                             \
       NNADAPTER_LOG(FATAL) << "Unsupported the precision type:"          \

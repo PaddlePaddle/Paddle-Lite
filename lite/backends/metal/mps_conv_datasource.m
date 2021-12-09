@@ -17,35 +17,34 @@
 @implementation MPSConvDataSource
 
 - (MPSDataType)dataType API_AVAILABLE(ios(11.0)) {
-	return MPSDataTypeFloat16;
+    return MPSDataTypeFloat16;
 }
 
-- (MPSCNNConvolutionDescriptor * __nonnull) descriptor API_AVAILABLE(ios(10.0)) {
-	return _descriptor;
+- (MPSCNNConvolutionDescriptor* __nonnull)descriptor API_AVAILABLE(ios(10.0)) {
+    return _descriptor;
 }
 
-- (void *)weights {
-	return _weights;
+- (void*)weights {
+    return _weights;
 }
 
-- (float *)biasTerms {
-	return _biasTerms;
+- (float*)biasTerms {
+    return _biasTerms;
 }
 
 - (BOOL)load {
-	return YES;
+    return YES;
 }
 
-- (void)purge{
-
+- (void)purge {
 }
 
 - (NSString*)label {
-	return @"mps_conv_add_relu_label";
+    return @"mps_conv_add_relu_label";
 }
 
-- (nonnull id)copyWithZone:(nullable NSZone *)zone {
-	return self;
+- (nonnull id)copyWithZone:(nullable NSZone*)zone {
+    return self;
 }
 
 @end

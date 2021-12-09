@@ -1,3 +1,7 @@
+if(NOT WITH_TESTING)
+    return()
+endif()
+
 add_subdirectory(kernels)
 add_subdirectory(math)
 add_subdirectory(cv)

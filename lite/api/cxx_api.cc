@@ -301,6 +301,7 @@ void Predictor::Build(const lite_api::CxxConfig &config,
           valid_places,
           passes,
           model_type,
+          config,
           config.get_model_buffer());
   } else {
     LOG(INFO) << "Load model from file.";
@@ -309,7 +310,8 @@ void Predictor::Build(const lite_api::CxxConfig &config,
           config.param_file(),
           valid_places,
           passes,
-          model_type);
+          model_type,
+          config);
   }
 }
 void Predictor::Build(const std::string &model_path,
@@ -318,6 +320,7 @@ void Predictor::Build(const std::string &model_path,
                       const std::vector<Place> &valid_places,
                       const std::vector<std::string> &passes,
                       lite_api::LiteModelType model_type,
+                      const lite_api::CxxConfig &config,
                       const lite_api::CxxModelBuffer &model_buffer) {
   switch (model_type) {
     case lite_api::LiteModelType::kProtobuf: {
@@ -342,12 +345,14 @@ void Predictor::Build(const std::string &model_path,
     default:
       LOG(FATAL) << "Unknown model type";
   }
-  Build(program_desc_, valid_places, passes);
+
+  Build(program_desc_, valid_places, passes, config);
 }
 
 void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &program_desc,
                       const std::vector<Place> &valid_places,
-                      const std::vector<std::string> &passes) {
+                      const std::vector<std::string> &passes,
+                      const lite_api::CxxConfig &config) {
   program_desc_ = program_desc;
   // `inner_places` is used to optimize passes
   std::vector<Place> inner_places = valid_places;
@@ -363,6 +368,10 @@ void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &program_desc,
         inner_places.insert(inner_places.begin(),
                             Place{TARGET(kARM), PRECISION(kInt8)});
       }
+      if (valid_place.target == TARGET(kX86)) {
+        inner_places.insert(inner_places.begin(),
+                            Place{TARGET(kX86), PRECISION(kInt8)});
+      }
     }
   }
 
@@ -376,8 +385,8 @@ void Predictor::Build(const std::shared_ptr<cpp::ProgramDesc> &program_desc,
 
   exec_scope_ = program.exec_scope();
 
-  program_ =
-      RunDefaultOptimizer(std::move(program), inner_places, factor, passes);
+  program_ = RunDefaultOptimizer(
+      std::move(program), inner_places, factor, passes, config);
 
   if (program_desc->HasVersion())
     program_->set_version(program_desc->Version());
@@ -418,6 +427,22 @@ lite::Tensor *Predictor::GetInputByName(const std::string &name) {
   } else {
     int position = std::distance(input_names_.begin(), element);
     return GetInput(position);
+  }
+}
+
+// get output by name
+const lite::Tensor *Predictor::GetOutputByName(const std::string &name) {
+  auto element = std::find(output_names_.begin(), output_names_.end(), name);
+  if (element == output_names_.end()) {
+    LOG(ERROR) << "Model do not have output named with: [" << name
+               << "], model's outputs include:";
+    for (size_t i = 0; i < output_names_.size(); i++) {
+      LOG(ERROR) << "[" << output_names_[i] << "]";
+    }
+    return nullptr;
+  } else {
+    int position = std::distance(output_names_.begin(), element);
+    return GetOutput(position);
   }
 }
 
@@ -526,8 +551,9 @@ void Predictor::ClearTensorArray(
       const cpp::VarDesc *var = block->GetVar<cpp::VarDesc>(var_idx);
       CHECK(var);
 
-      auto tmp = program_->exec_scope()->FindVar(var->Name());
-      if (tmp->IsType<std::vector<Tensor>>()) {
+      auto *var_ptr = program_->exec_scope()->FindVar(var->Name());
+      if (var_ptr->IsType<std::vector<Tensor>>() &&
+          (var->Name() != "feed" && var->Name() != "fetch")) {
         std::vector<Tensor> *tensor_array_var =
             program_->exec_scope()->FindMutableTensorList(var->Name());
         CHECK(tensor_array_var);

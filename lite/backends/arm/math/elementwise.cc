@@ -225,8 +225,8 @@ void elementwise_add_broadcast<int32_t>(const int32_t* dinx,
                                         int batch,
                                         int channels,
                                         int num) {
-  for (int i = 0; i < batch; ++i) {
-    LITE_PARALLEL_BEGIN(j, tid, channels) {
+  LITE_PARALLEL_BEGIN(i, tid, batch) {
+    for (int j = 0; j < channels; ++j) {
       int offset = (i * channels + j) * num;
       const auto* dinx_ptr = dinx + offset;
       const auto* diny_ptr = diny + j;
@@ -237,8 +237,8 @@ void elementwise_add_broadcast<int32_t>(const int32_t* dinx,
                       ActiveConfig<ActiveType::NO_ACTIVE, int32_t>>>(
           dinx_ptr, diny_ptr, dout_ptr, num);
     }
-    LITE_PARALLEL_END();
   }
+  LITE_PARALLEL_END();
 }
 
 template <>
@@ -248,8 +248,8 @@ void elementwise_add_broadcast<float>(const float* dinx,
                                       int batch,
                                       int channels,
                                       int num) {
-  for (int i = 0; i < batch; ++i) {
-    LITE_PARALLEL_BEGIN(j, tid, channels) {
+  LITE_PARALLEL_BEGIN(i, tid, batch) {
+    for (int j = 0; j < channels; ++j) {
       int offset = (i * channels + j) * num;
       const float* din_ptr = dinx + offset;
       const float diny_data = diny[j];
@@ -303,8 +303,8 @@ void elementwise_add_broadcast<float>(const float* dinx,
         }
       }
     }
-    LITE_PARALLEL_END();
   }
+  LITE_PARALLEL_END();
 }
 
 template <>
@@ -314,8 +314,8 @@ void elementwise_add_broadcast<int64_t>(const int64_t* dinx,
                                         int batch,
                                         int channels,
                                         int num) {
-  for (int i = 0; i < batch; ++i) {
-    LITE_PARALLEL_BEGIN(j, tid, channels) {
+  LITE_PARALLEL_BEGIN(i, tid, batch) {
+    for (int j = 0; j < channels; ++j) {
       int offset = (i * channels + j) * num;
       const int64_t* dinx_ptr = dinx + offset;
       const int64_t diny_data = diny[j];
@@ -326,8 +326,8 @@ void elementwise_add_broadcast<int64_t>(const int64_t* dinx,
         dinx_ptr++;
       }
     }
-    LITE_PARALLEL_END();
   }
+  LITE_PARALLEL_END();
 }
 
 template <>
@@ -338,8 +338,8 @@ void elementwise_add_relu_broadcast<float>(const float* dinx,
                                            int channels,
                                            int num) {
   float32x4_t vzero = vdupq_n_f32(0.f);
-  for (int i = 0; i < batch; ++i) {
-    LITE_PARALLEL_BEGIN(j, tid, channels) {
+  LITE_PARALLEL_BEGIN(i, tid, batch) {
+    for (int j = 0; j < channels; ++j) {
       int offset = (i * channels + j) * num;
       const float* din_ptr = dinx + offset;
       const float diny_data = diny[j];
@@ -405,8 +405,8 @@ void elementwise_add_relu_broadcast<float>(const float* dinx,
         }
       }
     }
-    LITE_PARALLEL_END();
   }
+  LITE_PARALLEL_END();
 }
 
 template <>
@@ -416,8 +416,8 @@ void elementwise_add_relu_broadcast<int64_t>(const int64_t* dinx,
                                              int batch,
                                              int channels,
                                              int num) {
-  for (int i = 0; i < batch; ++i) {
-    LITE_PARALLEL_BEGIN(j, tid, channels) {
+  LITE_PARALLEL_BEGIN(i, tid, batch) {
+    for (int j = 0; j < channels; ++j) {
       int offset = (i * channels + j) * num;
       const int64_t* dinx_ptr = dinx + offset;
       const int64_t diny_data = diny[j];
@@ -429,8 +429,8 @@ void elementwise_add_relu_broadcast<int64_t>(const int64_t* dinx,
         dinx_ptr++;
       }
     }
-    LITE_PARALLEL_END();
   }
+  LITE_PARALLEL_END();
 }
 
 template <>
@@ -629,8 +629,8 @@ void elementwise_sub_broadcast<int32_t>(const int32_t* dinx,
                                         int batch,
                                         int channels,
                                         int num) {
-  for (int i = 0; i < batch; ++i) {
-    LITE_PARALLEL_BEGIN(j, tid, channels) {
+  LITE_PARALLEL_BEGIN(i, tid, batch) {
+    for (int j = 0; j < channels; ++j) {
       int offset = (i * channels + j) * num;
       const auto* dinx_ptr = dinx + offset;
       const auto* diny_ptr = diny + j;
@@ -641,8 +641,8 @@ void elementwise_sub_broadcast<int32_t>(const int32_t* dinx,
                       ActiveConfig<ActiveType::NO_ACTIVE, int32_t>>>(
           dinx_ptr, diny_ptr, dout_ptr, num);
     }
-    LITE_PARALLEL_END();
   }
+  LITE_PARALLEL_END();
 }
 
 template <>
@@ -652,8 +652,8 @@ void elementwise_sub_broadcast<int64_t>(const int64_t* dinx,
                                         int batch,
                                         int channels,
                                         int num) {
-  for (int i = 0; i < batch; ++i) {
-    LITE_PARALLEL_BEGIN(j, tid, channels) {
+  LITE_PARALLEL_BEGIN(i, tid, batch) {
+    for (int j = 0; j < channels; ++j) {
       int offset = (i * channels + j) * num;
       const int64_t* dinx_ptr = dinx + offset;
       const int64_t diny_data = diny[j];
@@ -664,8 +664,8 @@ void elementwise_sub_broadcast<int64_t>(const int64_t* dinx,
         dinx_ptr++;
       }
     }
-    LITE_PARALLEL_END();
   }
+  LITE_PARALLEL_END();
 }
 
 template <>
@@ -675,8 +675,8 @@ void elementwise_sub_broadcast<float>(const float* dinx,
                                       int batch,
                                       int channels,
                                       int num) {
-  for (int i = 0; i < batch; ++i) {
-    LITE_PARALLEL_BEGIN(j, tid, channels) {
+  LITE_PARALLEL_BEGIN(i, tid, batch) {
+    for (int j = 0; j < channels; ++j) {
       int offset = (i * channels + j) * num;
       const float* din_ptr = dinx + offset;
       const float diny_data = diny[j];
@@ -730,8 +730,8 @@ void elementwise_sub_broadcast<float>(const float* dinx,
         }
       }
     }
-    LITE_PARALLEL_END();
   }
+  LITE_PARALLEL_END();
 }
 
 template <>
@@ -742,8 +742,8 @@ void elementwise_sub_relu_broadcast<float>(const float* dinx,
                                            int channels,
                                            int num) {
   float32x4_t vzero = vdupq_n_f32(0.f);
-  for (int i = 0; i < batch; ++i) {
-    LITE_PARALLEL_BEGIN(j, tid, channels) {
+  LITE_PARALLEL_BEGIN(i, tid, batch) {
+    for (int j = 0; j < channels; ++j) {
       int offset = (i * channels + j) * num;
       const float* din_ptr = dinx + offset;
       const float diny_data = diny[j];
@@ -809,8 +809,8 @@ void elementwise_sub_relu_broadcast<float>(const float* dinx,
         }
       }
     }
-    LITE_PARALLEL_END();
   }
+  LITE_PARALLEL_END();
 }
 // we assume the formula is x-y
 template <>
@@ -1065,8 +1065,8 @@ void elementwise_mul_broadcast<float>(const float* dinx,
                                       int batch,
                                       int channels,
                                       int num) {
-  for (int i = 0; i < batch; ++i) {
-    LITE_PARALLEL_BEGIN(j, tid, channels) {
+  LITE_PARALLEL_BEGIN(i, tid, batch) {
+    for (int j = 0; j < channels; ++j) {
       int offset = (i * channels + j) * num;
       const float* din_ptr = dinx + offset;
       const float diny_data = diny[j];
@@ -1121,8 +1121,8 @@ void elementwise_mul_broadcast<float>(const float* dinx,
         }
       }
     }
-    LITE_PARALLEL_END();
   }
+  LITE_PARALLEL_END();
 }
 
 template <>
@@ -1132,8 +1132,8 @@ void elementwise_mul_broadcast<int>(const int* dinx,
                                     int batch,
                                     int channels,
                                     int num) {
-  for (int i = 0; i < batch; ++i) {
-    LITE_PARALLEL_BEGIN(j, tid, channels) {
+  LITE_PARALLEL_BEGIN(i, tid, batch) {
+    for (int j = 0; j < channels; ++j) {
       int offset = (i * channels + j) * num;
       const int* din_ptr = dinx + offset;
       const int diny_data = diny[j];
@@ -1188,8 +1188,8 @@ void elementwise_mul_broadcast<int>(const int* dinx,
         }
       }
     }
-    LITE_PARALLEL_END();
   }
+  LITE_PARALLEL_END();
 }
 
 template <>
@@ -1199,8 +1199,8 @@ void elementwise_mul_broadcast<int64_t>(const int64_t* dinx,
                                         int batch,
                                         int channels,
                                         int num) {
-  for (int i = 0; i < batch; ++i) {
-    LITE_PARALLEL_BEGIN(j, tid, channels) {
+  LITE_PARALLEL_BEGIN(i, tid, batch) {
+    for (int j = 0; j < channels; ++j) {
       int offset = (i * channels + j) * num;
       const int64_t* dinx_ptr = dinx + offset;
       const int64_t diny_data = diny[j];
@@ -1211,8 +1211,8 @@ void elementwise_mul_broadcast<int64_t>(const int64_t* dinx,
         dinx_ptr++;
       }
     }
-    LITE_PARALLEL_END();
   }
+  LITE_PARALLEL_END();
 }
 
 template <>
@@ -1223,8 +1223,8 @@ void elementwise_mul_relu_broadcast<float>(const float* dinx,
                                            int channels,
                                            int num) {
   float32x4_t vzero = vdupq_n_f32(0.f);
-  for (int i = 0; i < batch; ++i) {
-    LITE_PARALLEL_BEGIN(j, tid, channels) {
+  LITE_PARALLEL_BEGIN(i, tid, batch) {
+    for (int j = 0; j < channels; ++j) {
       int offset = (i * channels + j) * num;
       const float* din_ptr = dinx + offset;
       const float diny_data = diny[j];
@@ -1290,8 +1290,8 @@ void elementwise_mul_relu_broadcast<float>(const float* dinx,
         }
       }
     }
-    LITE_PARALLEL_END();
   }
+  LITE_PARALLEL_END();
 }
 
 template <>
@@ -1301,8 +1301,8 @@ void elementwise_mul_relu_broadcast<int64_t>(const int64_t* dinx,
                                              int batch,
                                              int channels,
                                              int num) {
-  for (int i = 0; i < batch; ++i) {
-    LITE_PARALLEL_BEGIN(j, tid, channels) {
+  LITE_PARALLEL_BEGIN(i, tid, batch) {
+    for (int j = 0; j < channels; ++j) {
       int offset = (i * channels + j) * num;
       const int64_t* dinx_ptr = dinx + offset;
       const int64_t diny_data = diny[j];
@@ -1314,8 +1314,8 @@ void elementwise_mul_relu_broadcast<int64_t>(const int64_t* dinx,
         dinx_ptr++;
       }
     }
-    LITE_PARALLEL_END();
   }
+  LITE_PARALLEL_END();
 }
 
 template <>
@@ -1419,8 +1419,8 @@ void elementwise_max_broadcast<float>(const float* dinx,
                                       int batch,
                                       int channels,
                                       int num) {
-  for (int i = 0; i < batch; ++i) {
-    LITE_PARALLEL_BEGIN(j, tid, channels) {
+  LITE_PARALLEL_BEGIN(i, tid, batch) {
+    for (int j = 0; j < channels; ++j) {
       int offset = (i * channels + j) * num;
       const float* din_ptr = dinx + offset;
       const float diny_data = diny[j];
@@ -1475,8 +1475,8 @@ void elementwise_max_broadcast<float>(const float* dinx,
         }
       }
     }
-    LITE_PARALLEL_END();
   }
+  LITE_PARALLEL_END();
 }
 
 template <>
@@ -1487,8 +1487,8 @@ void elementwise_max_relu_broadcast<float>(const float* dinx,
                                            int channels,
                                            int num) {
   float32x4_t vzero = vdupq_n_f32(0.f);
-  for (int i = 0; i < batch; ++i) {
-    LITE_PARALLEL_BEGIN(j, tid, channels) {
+  LITE_PARALLEL_BEGIN(i, tid, batch) {
+    for (int j = 0; j < channels; ++j) {
       int offset = (i * channels + j) * num;
       const float* din_ptr = dinx + offset;
       const float diny_data = diny[j];
@@ -1554,8 +1554,8 @@ void elementwise_max_relu_broadcast<float>(const float* dinx,
         }
       }
     }
-    LITE_PARALLEL_END();
   }
+  LITE_PARALLEL_END();
 }
 
 template <>
@@ -1659,8 +1659,8 @@ void elementwise_min_broadcast<float>(const float* dinx,
                                       int batch,
                                       int channels,
                                       int num) {
-  for (int i = 0; i < batch; ++i) {
-    LITE_PARALLEL_BEGIN(j, tid, channels) {
+  LITE_PARALLEL_BEGIN(i, tid, batch) {
+    for (int j = 0; j < channels; ++j) {
       int offset = (i * channels + j) * num;
       const float* din_ptr = dinx + offset;
       const float diny_data = diny[j];
@@ -1715,8 +1715,8 @@ void elementwise_min_broadcast<float>(const float* dinx,
         }
       }
     }
-    LITE_PARALLEL_END();
   }
+  LITE_PARALLEL_END();
 }
 
 template <>
@@ -1727,8 +1727,8 @@ void elementwise_min_relu_broadcast<float>(const float* dinx,
                                            int channels,
                                            int num) {
   float32x4_t vzero = vdupq_n_f32(0.f);
-  for (int i = 0; i < batch; ++i) {
-    LITE_PARALLEL_BEGIN(j, tid, channels) {
+  LITE_PARALLEL_BEGIN(i, tid, batch) {
+    for (int j = 0; j < channels; ++j) {
       int offset = (i * channels + j) * num;
       const float* din_ptr = dinx + offset;
       const float diny_data = diny[j];
@@ -1794,8 +1794,8 @@ void elementwise_min_relu_broadcast<float>(const float* dinx,
         }
       }
     }
-    LITE_PARALLEL_END();
   }
+  LITE_PARALLEL_END();
 }
 
 template <>
@@ -1911,8 +1911,8 @@ void elementwise_div_broadcast<float>(const float* dinx,
                                       int batch,
                                       int channels,
                                       int num) {
-  for (int i = 0; i < batch; ++i) {
-    LITE_PARALLEL_BEGIN(j, tid, channels) {
+  LITE_PARALLEL_BEGIN(i, tid, batch) {
+    for (int j = 0; j < channels; ++j) {
       int offset = (i * channels + j) * num;
       const float* din_ptr = dinx + offset;
       const float diny_data = diny[j];
@@ -1982,8 +1982,8 @@ void elementwise_div_broadcast<float>(const float* dinx,
         }
       }
     }
-    LITE_PARALLEL_END();
   }
+  LITE_PARALLEL_END();
 }
 
 template <>
@@ -2108,8 +2108,8 @@ void elementwise_div_relu_broadcast<float>(const float* dinx,
                                            int channels,
                                            int num) {
   float32x4_t vzero = vdupq_n_f32(0.f);
-  for (int i = 0; i < batch; ++i) {
-    LITE_PARALLEL_BEGIN(j, tid, channels) {
+  LITE_PARALLEL_BEGIN(i, tid, batch) {
+    for (int j = 0; j < channels; ++j) {
       int offset = (i * channels + j) * num;
       const float* din_ptr = dinx + offset;
       const float diny_data = diny[j];
@@ -2190,15 +2190,15 @@ void elementwise_div_relu_broadcast<float>(const float* dinx,
         }
       }
     }
-    LITE_PARALLEL_END();
   }
+  LITE_PARALLEL_END();
 }
 
 template <typename T>
 void elementwise_mod_broadcast(
     const T* dinx, const T* diny, T* dout, int batch, int channels, int num) {
-  for (int i = 0; i < batch; ++i) {
-    LITE_PARALLEL_BEGIN(j, tid, channels) {
+  LITE_PARALLEL_BEGIN(i, tid, batch) {
+    for (int j = 0; j < channels; ++j) {
       int offset = (i * channels + j) * num;
       const T* din_ptr = dinx + offset;
       const T diny_data = diny[j];
@@ -2224,8 +2224,8 @@ void elementwise_mod_broadcast(
         }
       }
     }
-    LITE_PARALLEL_END();
   }
+  LITE_PARALLEL_END();
 }
 
 template <typename T>
@@ -2275,8 +2275,7 @@ void elementwise_mod<int32_t>(const int32_t* dinx,
                               int num) {
   int cnt = num >> 2;
   int remain = num % 4;
-#pragma omp parallel for
-  for (int i = 0; i < cnt; i++) {
+  LITE_PARALLEL_BEGIN(i, tid, cnt) {
     const int32_t* dinx_ptr = dinx + (i << 2);
     const int32_t* diny_ptr = diny + (i << 2);
     int32_t* dout_ptr = dout + (i << 2);
@@ -2296,6 +2295,7 @@ void elementwise_mod<int32_t>(const int32_t* dinx,
     dout_ptr[2] = dinx2 % diny2;
     dout_ptr[3] = dinx3 % diny3;
   }
+  LITE_PARALLEL_END()
   if (remain > 0) {
     const int32_t* dinx_ptr = dinx + (cnt << 2);
     const int32_t* diny_ptr = diny + (cnt << 2);
@@ -2320,8 +2320,7 @@ void elementwise_mod_broadcast<int32_t>(const int32_t* dinx,
                                         int batch,
                                         int channels,
                                         int num) {
-#pragma omp parallel for collapse(2)
-  for (int i = 0; i < batch; ++i) {
+  LITE_PARALLEL_BEGIN(i, tid, batch) {
     for (int j = 0; j < channels; ++j) {
       int offset = (i * channels + j) * num;
       const int32_t* din_ptr = dinx + offset;
@@ -2349,6 +2348,7 @@ void elementwise_mod_broadcast<int32_t>(const int32_t* dinx,
       }
     }
   }
+  LITE_PARALLEL_END();
 }
 
 template <>

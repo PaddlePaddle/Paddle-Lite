@@ -14,11 +14,6 @@
 
 #include "lite/backends/x86/cpu_info.h"
 
-#ifdef PADDLE_WITH_XBYAK
-#include "xbyak/xbyak.h"
-#include "xbyak/xbyak_util.h"
-#endif
-
 #ifdef __APPLE__
 #include <sys/sysctl.h>
 #include <sys/types.h>
@@ -34,6 +29,11 @@
 #include "lite/utils/log/cp_logging.h"
 
 #include "lite/utils/env.h"
+
+#ifdef PADDLE_WITH_XBYAK
+#include "xbyak/xbyak.h"
+#include "xbyak/xbyak_util.h"
+#endif
 
 // DEFINE_double(fraction_of_cpu_memory_to_use,
 //               1,

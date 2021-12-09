@@ -18,27 +18,25 @@
 using namespace metal;
 
 struct NearestInterpParam {
-  float ratio_h;
-  float ratio_w;
-  float align_delta;
+    float ratio_h;
+    float ratio_w;
+    float align_delta;
 };
 
-kernel void nearest_interp(texture2d_array<ftype, access::read> inTexture
-                           [[texture(0)]],
-                           texture2d_array<ftype, access::write> outTexture
-                           [[texture(1)]],
-                           constant NearestInterpParam &param [[buffer(0)]],
-                           uint3 gid [[thread_position_in_grid]]) {
-  if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
-      gid.z >= outTexture.get_array_size())
-    return;
-  float ratio_h = param.ratio_h;
-  float ratio_w = param.ratio_w;
-  //  if align center then align_delta=0.5, else align_delta=-1; calculate on CPU
-  float align_delta = param.align_delta;
+kernel void nearest_interp(texture2d_array<ftype, access::read> inTexture[[texture(0)]],
+    texture2d_array<ftype, access::write> outTexture[[texture(1)]],
+    constant NearestInterpParam& param[[buffer(0)]],
+    uint3 gid[[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
+        gid.z >= outTexture.get_array_size())
+        return;
+    float ratio_h = param.ratio_h;
+    float ratio_w = param.ratio_w;
+    //  if align center then align_delta=0.5, else align_delta=-1; calculate on CPU
+    float align_delta = param.align_delta;
 
-  uint x = uint(floor(gid.x * ratio_w + align_delta));
-  uint y = uint(floor(gid.y * ratio_h + align_delta));
-  ftype4 input = inTexture.read(uint2(x, y), gid.z);
-  outTexture.write(input, gid.xy, gid.z);
+    uint x = uint(floor(gid.x * ratio_w + align_delta));
+    uint y = uint(floor(gid.y * ratio_h + align_delta));
+    ftype4 input = inTexture.read(uint2(x, y), gid.z);
+    outTexture.write(input, gid.xy, gid.z);
 }
