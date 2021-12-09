@@ -40,12 +40,13 @@ class TestConv2dOp(AutoScanTest):
         self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
-        # M1 dosen't support FP16 build and int8 kernel run error
-        if predictor_config.precision() == PrecisionType.FP16 or predictor_config.precision() == PrecisionType.INT8:
-            return False
+        if predictor_config.target() == TargetType.ARM:
+            if predictor_config.precision() == PrecisionType.FP16 or predictor_config.precision() == PrecisionType.INT8:
+                return False
+            else:
+                return True
         else:
             return True
-        return True
 
     def sample_program_configs(self, draw):
         in_shape=draw(st.lists(st.integers(min_value=1, max_value=64), min_size=4, max_size=4))

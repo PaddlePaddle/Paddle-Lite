@@ -44,12 +44,9 @@ class TestClipOp(AutoScanTest):
 
     def sample_program_configs(self, draw):
         in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=1, max_size=4))
-        # min_val = draw(st.sampled_from([0.1, 0.3, 0.5]))
-        # max_val = draw(st.sampled_from([1.0, 3.1, 5.1]))
-        # min_max_shape = draw(st.sampled_from([1, 3, 5]))
         min_val = draw(st.floats())
         max_val = min_val + 0.5
-        min_max_shape = draw(st.integers())
+        min_max_shape = draw(st.integers(min_value=1, max_value=20))
 
         def generate_input(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)

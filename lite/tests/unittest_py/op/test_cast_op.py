@@ -42,7 +42,10 @@ class TestCastOp(AutoScanTest):
         self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
-        return True
+        if program_config.ops[0].attrs["in_dtype"] == 0 or program_config.ops[0].attrs["out_dtype"] == 0:
+            return False
+        else:
+            return True
 
     def sample_program_configs(self, draw):
         in_shape = draw(st.lists(st.integers(min_value=1, max_value=10), min_size=1, max_size=4))
@@ -71,6 +74,7 @@ class TestCastOp(AutoScanTest):
             outputs = {"Out" : ["output_data"]},
             attrs = {"in_dtype" : in_dtype,
                     "out_dtype" : out_dtype})
+
         program_config = ProgramConfig(
             ops=[cast_op],
             weights={},
@@ -88,7 +92,7 @@ class TestCastOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=250)
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
