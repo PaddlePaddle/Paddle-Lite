@@ -36,6 +36,13 @@ class TestFcOp(AutoScanTest):
                      Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
                      ]
         self.enable_testing_on_place(places=x86_places)
+
+        arm_places = [
+                    Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
+                    Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
+                    ]
+        self.enable_testing_on_place(places=arm_places)
+
         # opencl demo
         opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
                           Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
@@ -52,19 +59,10 @@ class TestFcOp(AutoScanTest):
 
     def sample_program_configs(self, draw):
         in_shape = draw(st.lists(st.integers(min_value=4, max_value=5), min_size = 4, max_size=4))
-        in_dtype = draw(st.sampled_from([0,1,2]))
+        in_dtype = draw(st.sampled_from([np.float32, np.int32, np.int64]))
 
         def generate_X_data():
-            if (in_dtype == 0):
-                return np.random.normal(0.0, 1.0, in_shape).astype(np.float32)
-            elif (in_dtype == 1):
-                return np.random.randint(1, 500, in_shape).astype(np.int32)
-            elif (in_dtype == 2):
-                return np.random.randint(1, 500, in_shape).astype(np.int64)
-            elif (in_dtype == 3):
-                return np.random.randint(-1, 1, in_shape).astype(np.bool)
-            elif (in_dtype == 4):
-                return np.random.randint(0, 128, in_shape).astype(np.int8)
+            return np.random.normal(0.0, 5.0, in_shape).astype(in_dtype)
 
         repeat_times_data = draw(st.lists(st.integers(min_value=1, max_value=5), min_size = 1, max_size=4))
 
@@ -105,7 +103,7 @@ class TestFcOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["tile"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), [""], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass

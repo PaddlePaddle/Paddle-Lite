@@ -35,6 +35,13 @@ class TestFcOp(AutoScanTest):
                      Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
                      ]
         self.enable_testing_on_place(places=x86_places)
+        
+        arm_places = [
+                     Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
+                     Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
+                     ]
+        self.enable_testing_on_place(places=arm_places)
+        
         # opencl demo
         opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
                           Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
@@ -81,7 +88,7 @@ class TestFcOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["where_index"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), [""], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass

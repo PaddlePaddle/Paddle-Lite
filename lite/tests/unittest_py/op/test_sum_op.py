@@ -31,11 +31,13 @@ import numpy as np
 class TestFcOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        x86_places = [
-                     Place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW),
-                     Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
-                     ]
-        self.enable_testing_on_place(places=x86_places)
+
+        arm_places = [
+                    Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
+                    Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
+                    ]
+        self.enable_testing_on_place(places=arm_places)
+
         # opencl demo
         opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
                           Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
@@ -52,15 +54,10 @@ class TestFcOp(AutoScanTest):
 
     def sample_program_configs(self, draw):
         in_shape = draw(st.lists(st.integers(min_value=2, max_value=8), min_size = 4, max_size=4))
-        in_dtype = draw(st.sampled_from([0,1,2]))
+        in_dtype = draw(st.sampled_from([np.float32, np.int32, np.int64]))
 
         def generate_X_data():
-            if (in_dtype == 0):
-                return np.random.normal(0.0, 1.0, in_shape).astype(np.float32)
-            elif (in_dtype == 1):
-                return np.random.randint(1, 500, in_shape).astype(np.int32)
-            elif (in_dtype == 2):
-                return np.random.randint(1, 500, in_shape).astype(np.int64)
+            return np.random.normal(0.0, 5.0, in_shape).astype(in_dtype)
 
         sum_op = OpConfig(
             type = "sum",
@@ -76,7 +73,7 @@ class TestFcOp(AutoScanTest):
             outputs=["output_data"])
         return program_config
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["sum"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), [""], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass

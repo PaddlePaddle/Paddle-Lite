@@ -384,8 +384,7 @@ void StridedSliceCompute<T, PType>::Run() {
 
 using slice_float =
     paddle::lite::kernels::host::StridedSliceCompute<float, PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(
-    strided_slice, kHost, kFloat, kNCHW, slice_float, def_float)
+REGISTER_LITE_KERNEL(strided_slice, kHost, kFloat, kNCHW, slice_float, def)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
     .BindInput("StartsTensor",

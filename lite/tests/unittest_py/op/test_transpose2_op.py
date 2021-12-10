@@ -35,6 +35,13 @@ class TestFcOp(AutoScanTest):
                      Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
                      ]
         self.enable_testing_on_place(places=x86_places)
+
+        arm_places = [
+        Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
+        Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
+        ]
+        self.enable_testing_on_place(places=arm_places)
+
         # opencl demo
         opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
                           Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
@@ -51,21 +58,15 @@ class TestFcOp(AutoScanTest):
 
     def sample_program_configs(self, draw):
         in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size = 4, max_size=4))
-        # tranpose only support float32
-        in_dtype = draw(st.sampled_from([0, 1, 2]))
+        in_dtype = draw(st.sampled_from([np.float32, np.int32, np.int64]))
         def generate_X_data():
-            if (in_dtype == 0):
-                return np.random.normal(0.0, 1.0, in_shape).astype(np.float32)
-            elif (in_dtype == 1):
-                return np.random.randint(1, 500, in_shape).astype(np.int32)
-            elif (in_dtype == 2):
-                return np.random.randint(1, 500, in_shape).astype(np.int64)
+            return np.random.normal(0.0, 5.0, in_shape).astype(in_dtype)
         
         axis_int32_data = draw(st.lists(st.integers(min_value=0, max_value=3), min_size = 4, max_size=4))
 
         assume(sorted(axis_int32_data)==[0,1,2,3])
 
-        transpose_op = OpConfig(
+        transpose2_op = OpConfig(
             type = "transpose2",
             inputs = {"X" : ["X_data"]},
             outputs = {"Out": ["output_data"],
@@ -77,7 +78,7 @@ class TestFcOp(AutoScanTest):
                     })
 
         program_config = ProgramConfig(
-            ops=[transpose_op],
+            ops=[transpose2_op],
             weights={
                 "XShape_data" : TensorConfig(shape=[4])
             },
@@ -88,7 +89,7 @@ class TestFcOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["tranpose2"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), [""], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass

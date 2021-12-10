@@ -35,6 +35,13 @@ class TestFcOp(AutoScanTest):
                      Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
                      ]
         self.enable_testing_on_place(places=x86_places)
+
+        arm_places = [
+                    Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
+                    Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
+                    ]
+        self.enable_testing_on_place(places=arm_places)
+
         # opencl demo
         opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
                           Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
@@ -53,11 +60,10 @@ class TestFcOp(AutoScanTest):
         
         in_shape = draw(st.lists(st.integers(min_value=1, max_value=5), min_size = 1, max_size=4))
         # top_k only supports fp32
-        in_dtype = draw(st.sampled_from([0]))
+        in_dtype = draw(st.sampled_from([np.float32]))
 
         def generate_X_data():
-            if (in_dtype == 0):
-                return np.random.normal(0.0, 1.0, in_shape).astype(np.float32)
+            return np.random.normal(0.0, 5.0, in_shape).astype(in_dtype)
 
         k_data = draw(st.integers(min_value=1, max_value=4))
 
@@ -81,7 +87,7 @@ class TestFcOp(AutoScanTest):
 
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["top_k"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), [""], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
