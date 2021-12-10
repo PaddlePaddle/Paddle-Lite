@@ -15,7 +15,7 @@ import sys
 sys.path.append('..')
 sys.path.append('.')
 
-from auto_scan_test import AutoScanTest, IgnoreReasons
+from auto_scan_test import FusePassAutoScanTest, IgnoreReasons
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import numpy as np
 from functools import partial
@@ -28,9 +28,9 @@ from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 
 
-class TestConvBnFuse(AutoScanTest):
+class TestConvActiveFuse(FusePassAutoScanTest):
     def __init__(self, *args, **kwargs):
-        AutoScanTest.__init__(self, *args, **kwargs)
+        FusePassAutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(TargetType.ARM, [PrecisionType.FP32], DataLayoutType.NCHW, thread=[1, 4])
         self.enable_testing_on_place(TargetType.X86, [PrecisionType.FP32], DataLayoutType.NCHW, thread=[1, 4])        
         opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
@@ -41,19 +41,20 @@ class TestConvBnFuse(AutoScanTest):
                           Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
                           Place(TargetType.Host, PrecisionType.FP32)    
                         ]
-        #self.enable_testing_on_place(places=opencl_places)
+        self.enable_testing_on_place(places=opencl_places)
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool: 
+        result = True
+        if predictor_config.target() == TargetType.OpenCL:
+            result = result and (program_config.ops[0].attrs["groups"] == 1 and program_config.ops[0].type != "conv2d_transpose")             
         if program_config.ops[0].type == "conv2d_transpose" :#TODO
-            return program_config.ops[1].type != "hard_swish" and program_config.ops[1].type != "hard_sigmoid" and program_config.ops[1].type != "prelu"
+            result = result and program_config.ops[1].type != "hard_swish" and program_config.ops[1].type != "hard_sigmoid" and program_config.ops[1].type != "prelu"
         if predictor_config.target() == TargetType.ARM or  predictor_config.target() == TargetType.X86:
-            return program_config.ops[1].type != 'prelu' and  program_config.ops[1].type != 'hard_sigmoid'
+            result = result and program_config.ops[1].type != 'prelu' and  program_config.ops[1].type != 'hard_sigmoid'
         if predictor_config.target() == TargetType.ARM and self.depthwise == True:
-            return rogram_config.ops[1].type != 'hard_swish'
-        #if predictor_config.target() == TargetType.OpenCL:
-        #    return False
-          
-        return True      
+            result = result and program_config.ops[1].type != 'hard_swish'
+  
+        return result     
 
     def sample_program_configs(self, draw):
         #conv or conv_transpose
@@ -92,7 +93,7 @@ class TestConvBnFuse(AutoScanTest):
             if len(output_padding):
                 oh = oh + output_padding[0]
                 ow = ow + output_padding[1]
-            conv_out_shape = conv_out_shape + [oh, ow]
+            conv_out_shape = conv_out_shape + [int(oh), int(ow)]
             #assume(oh > 0 and ow > 0)????
         else:
             self.depthwise = in_shape[1] == weight_shape[1] and in_shape[1] == groups
@@ -100,7 +101,7 @@ class TestConvBnFuse(AutoScanTest):
             assume(weight_shape[0]%groups==0)              
             conv_out_shape = [in_shape[0], weight_shape[0]]
             oh,ow = ConvOutputSize(in_shape, weight_shape, dilations_, paddings_, strides)
-            conv_out_shape = conv_out_shape + [oh, ow]
+            conv_out_shape = conv_out_shape + [int(oh), int(ow)]
             assume(oh > 0 and ow > 0)
         
         Alpha_shape=[]
@@ -195,15 +196,18 @@ class TestConvBnFuse(AutoScanTest):
             },
             inputs=inputs_data,
             outputs=["output_data"])        
-        return program_config   
+        return program_config
 
     def sample_predictor_configs(self):
         config = CxxConfig()
-        return self.get_predictor_configs(), [self.ops[0].type], (1e-5, 1e-5)
+        if self.get_target() == 'OpenCL':
+            return self.get_predictor_configs(), ['io_copy', 'layout', self.ops[0].type, 'layout', 'io_copy'], (1e-5, 1e-5)
+        else:
+            return self.get_predictor_configs(), [self.ops[0].type], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
-            if predictor_config.target() == TargetType.ARM or predictor_config.target() == TargetType.OpenCL:
+            if predictor_config.target() == TargetType.OpenCL:
                 return True
 
         self.add_ignore_check_case(
@@ -215,7 +219,7 @@ class TestConvBnFuse(AutoScanTest):
         )
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=300)
+        self.run_and_statis(quant=False, max_examples=100, max_duration=540, passes=["lite_conv_active_fuse_pass"])
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
