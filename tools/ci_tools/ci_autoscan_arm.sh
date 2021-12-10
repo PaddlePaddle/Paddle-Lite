@@ -23,7 +23,7 @@ BUILD_OPENCL=ON
 # Common options
 BUILD_EXTRA=ON
 WITH_EXCEPTION=OFF
-TARGETS=(ARM, OpenCL)
+TARGETS=(ARM OpenCL)
 
 # Model download url
 
@@ -59,13 +59,10 @@ function auto_scan_test {
 # Functions of Android compiling test.
 # Globals:
 #   WORKSPACE
-# Arguments:
-#   1. target_name
 ####################################################################################################
-function publish_inference_lib {
+function compile_publish_inference_lib {
   cd $WORKSPACE
-  # Local variables
-  target_name=$1
+
   # Remove Compiling Cache
   rm -rf build*
 
@@ -78,11 +75,6 @@ function publish_inference_lib {
     #install deps
     python$PYTHON_VERSION -m pip install --force-reinstall  ${build_dir}/inference_lite_lib.armmacos.armv8.opencl/python/install/dist/*.whl
     python3.8 -m pip install -r ./lite/tests/unittest_py/requirements.txt
-    #operate test
-    auto_scan_test $target_name
-    # uninstall paddlelite
-    python$PYTHON_VERSION -m pip uninstall -y paddlelite
-    echo "Success."
   else
     # Error message.
     echo "**************************************************************************************"
@@ -94,6 +86,17 @@ function publish_inference_lib {
   fi
 }
 
+function run_test {
+  target_name=$1
+  # operate test
+  auto_scan_test  $target_name
+}
+
+compile_publish_inference_lib
 for target in ${TARGETS[@]}; do
-  publish_inference_lib $target
+  run_test $target
 done
+
+# uninstall paddlelite
+python$PYTHON_VERSION -m pip uninstall -y paddlelite
+echo "Success."
