@@ -368,7 +368,7 @@ inline half4 getBiasHalf(uint3 gid,
     }
     return output;
 }
-    
+
 inline ftype4 get_bias(uint3 gid,
     constant ElementwiseAddParam& addParam,
     texture2d_array<ftype, access::sample> biasTexture) {
@@ -378,8 +378,6 @@ inline ftype4 get_bias(uint3 gid,
     } else if (addParam.addByChannel == 1) {
         output = biasTexture.read(uint2(0, 0), gid.z);
     } else {
-        
     }
     return output;
 }
-

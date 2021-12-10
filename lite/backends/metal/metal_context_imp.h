@@ -63,7 +63,7 @@ extern NSString* cString2NSString(std::string cStr);
 
 - (void)dispatchEncoder:(id<MTLComputeCommandEncoder>)encoder
                 pipline:(id<MTLComputePipelineState>)pipline
-           threadsShape:(NSArray<NSNumber *> *)threadsShape;
+           threadsShape:(NSArray<NSNumber*>*)threadsShape;
 
 // pre-process
 - (MPSImageLanczosScale*)lanczosScalePtrCreate;

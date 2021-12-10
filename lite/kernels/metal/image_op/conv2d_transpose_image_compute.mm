@@ -37,13 +37,13 @@ void Conv2dTransposeImageCompute::PrepareForRun() {
 void Conv2dTransposeImageCompute::init_attention() {
     const auto& param = this->Param<param_t>();
     auto dims = param.filter->dims();
-    auto dims_nchw = DDimLite({ dims[1], dims[0], dims[2], dims[3]});
+    auto dims_nchw = DDimLite({dims[1], dims[0], dims[2], dims[3]});
     filter_metal_dims_ = dims_nchw;
 }
 
 void Conv2dTransposeImageCompute::init_memory() {
     const auto& param = this->Param<param_t>();
-    
+
     auto input_dims = param.x->dims();
     auto output_dims = param.output->dims();
 
@@ -98,26 +98,26 @@ void Conv2dTransposeImageCompute::Run() {
 
 void Conv2dTransposeImageCompute::setup_without_mps() {
     const auto& param = this->Param<param_t>();
-    
+
     auto filterWidth = filter_metal_dims_[3];
     auto filterHeight = filter_metal_dims_[2];
     auto kernelWidth = (uint16_t)(filterWidth);
     auto kernelHeight = (uint16_t)(filterHeight);
-    
+
     auto strideX = uint16_t(param.strides[1]);
     auto strideY = uint16_t(param.strides[0]);
     auto paddingX = uint16_t((*param.paddings)[2]);
     auto paddingY = uint16_t((*param.paddings)[0]);
     auto dilationX = uint16_t((*param.dilations)[1]);
     auto dilationY = uint16_t((*param.dilations)[0]);
-    
+
     auto groups = uint16_t(param.groups);
     auto inputC = uint16_t(input_buffer_->tensor_dim_[1]);
     auto filterC = uint16_t(filter_metal_dims_[1]);
     auto outputC = uint16_t(param.output->dims()[1]);
-    
+
     auto hasAdd = (uint16_t)((param.bias) ? 1 : 0);
-    
+
     // add
     ElementwiseAddMetalParam element_params = {};
     if (param.bias) {
@@ -169,8 +169,8 @@ void Conv2dTransposeImageCompute::setup_without_mps() {
                 bias_buffer_->transpose_[3]}};
     } else {
     }
-    
-    //activate
+
+    // activate
     uint16_t activate_type = 0;
     if (param.activation_param.has_active) {
         switch (param.activation_param.active_type) {
@@ -205,7 +205,7 @@ void Conv2dTransposeImageCompute::setup_without_mps() {
         default:
             break;
     }
-    
+
     ConvTransposeAddMetalParam metalParam = {kernelWidth,
         kernelHeight,
         strideX,
@@ -227,7 +227,7 @@ void Conv2dTransposeImageCompute::setup_without_mps() {
     // attention!!! filter: CNHW2NCHW
     auto rawdata = param.filter->data<float>();
     auto dims = filter_metal_dims_;
-    auto tensorDim = DDimLite({ dims[1], dims[0], dims[2], dims[3]});
+    auto tensorDim = DDimLite({dims[1], dims[0], dims[2], dims[3]});
     auto count = tensorDim.production();
 
     void* convertedPointer = TargetWrapperMetal::Malloc(count * sizeof(float));
@@ -236,7 +236,7 @@ void Conv2dTransposeImageCompute::setup_without_mps() {
     auto transposed = (float*)convertedPointer;
 
     int index = 0;
-    int order[4] = {1, 0 ,2, 3};
+    int order[4] = {1, 0, 2, 3};
     int index_order[4] = {0, 0, 0, 0};
 
     for (int d = 0; d < tensorDim[order[0]]; d++) {
@@ -247,10 +247,11 @@ void Conv2dTransposeImageCompute::setup_without_mps() {
                 index_order[order[2]] = b;
                 for (int a = 0; a < tensorDim[order[3]]; a++) {
                     index_order[order[3]] = a;
-                    int tIndex = int(index_order[3]
-                                     + tensorDim[3] * (index_order[2]
-                                                       + tensorDim[2] * (index_order[1]
-                                                                         + tensorDim[1] * (index_order[0]))));
+                    int tIndex = int(
+                        index_order[3] +
+                        tensorDim[3] *
+                            (index_order[2] +
+                                tensorDim[2] * (index_order[1] + tensorDim[1] * (index_order[0]))));
                     transposed[index] = weightsPointer[tIndex];
                     index += 1;
                 }
@@ -264,36 +265,32 @@ void Conv2dTransposeImageCompute::setup_without_mps() {
     filter_buffer_->pad_when_one_channel_ = pad_when_one_ch;
     filter_buffer_->CopyFromNCHW<float>(transposed);
     TargetWrapperMetal::Free(convertedPointer);
-    
+
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     pipline_ = [backend pipline:function_name_];
 
     // 4x4
     if (function_name_ == "conv_transpose4x4_caculate") {
-        //left
-        auto left_dims = DDimLite({
-            param.output->dims()[0],
+        // left
+        auto left_dims = DDimLite({param.output->dims()[0],
             param.output->dims()[1],
             4 * param.x->dims()[2],
-            4 * param.x->dims()[3]
-        });
+            4 * param.x->dims()[3]});
         intermediate_shift_left_ = new MetalImage(metal_context_, left_dims);
         intermediate_shift_left_->initImage(metal_context_);
         pipline_shift_left_ = [backend pipline:"conv_transpose4x4_stride2_shift_left"];
-        
-        //right
-        auto right_dims = DDimLite({
-            param.output->dims()[0],
+
+        // right
+        auto right_dims = DDimLite({param.output->dims()[0],
             param.output->dims()[1],
             4 * param.x->dims()[2],
-            2 * param.x->dims()[3]
-        });
+            2 * param.x->dims()[3]});
         intermediate_shift_right_ = new MetalImage(metal_context_, right_dims);
         intermediate_shift_right_->initImage(metal_context_);
         pipline_shift_right_ = [backend pipline:"conv_transpose4x4_stride2_shift_top"];
-        
-        //bias&relu
+
+        // bias&relu
         auto output_dims = param.output->dims();
         intermediate_bias_relu_output_ = new MetalImage(metal_context_, output_dims);
         intermediate_bias_relu_output_->initImage(metal_context_);
@@ -346,9 +343,11 @@ void Conv2dTransposeImageCompute::run_3x3() {
 
     [backend dispatchEncoder:encoder
                      pipline:pipline
-                threadsShape:@[@(param.output->dims()[1]),
-                             @(param.x->dims()[2]),
-                             @(param.x->dims()[3])]];
+                threadsShape:@[
+                    @(param.output->dims()[1]),
+                    @(param.x->dims()[2]),
+                    @(param.x->dims()[3])
+                ]];
     [backend commit];
 }
 
@@ -365,12 +364,14 @@ void Conv2dTransposeImageCompute::run_4x4() {
 
         [backend dispatchEncoder:encoder
                          pipline:pipline
-                    threadsShape:@[@(param.output->dims()[1]),
-                                 @(param.x->dims()[2]),
-                                 @(param.x->dims()[3])]];
+                    threadsShape:@[
+                        @(param.output->dims()[1]),
+                        @(param.x->dims()[2]),
+                        @(param.x->dims()[3])
+                    ]];
         [backend commit];
-    }while(0);
-    
+    } while (0);
+
     do {
         auto pipline = pipline_shift_left_;
         auto encoder = [backend commandEncoder];
@@ -379,13 +380,15 @@ void Conv2dTransposeImageCompute::run_4x4() {
 
         [backend dispatchEncoder:encoder
                          pipline:pipline
-                    threadsShape:@[@(param.output->dims()[1]),
-                                 @(param.x->dims()[2]),
-                                 @(param.x->dims()[3])]];
+                    threadsShape:@[
+                        @(param.output->dims()[1]),
+                        @(param.x->dims()[2]),
+                        @(param.x->dims()[3])
+                    ]];
         [backend commit];
-    }while(0);
-    
-    
+    } while (0);
+
+
     do {
         auto pipline = pipline_shift_right_;
         auto encoder = [backend commandEncoder];
@@ -394,12 +397,14 @@ void Conv2dTransposeImageCompute::run_4x4() {
 
         [backend dispatchEncoder:encoder
                          pipline:pipline
-                    threadsShape:@[@(param.output->dims()[1]),
-                                 @(param.x->dims()[2]),
-                                 @(param.x->dims()[3])]];
+                    threadsShape:@[
+                        @(param.output->dims()[1]),
+                        @(param.x->dims()[2]),
+                        @(param.x->dims()[3])
+                    ]];
         [backend commit];
-    }while(0);
-    
+    } while (0);
+
     do {
         auto pipline = pipline_bias_relu_output_;
         auto outTexture = output_buffer_->image();
@@ -416,7 +421,7 @@ void Conv2dTransposeImageCompute::run_4x4() {
 
         [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
         [backend commit];
-    }while(0);
+    } while (0);
 }
 
 #pragma mark - MPS
@@ -436,11 +441,10 @@ std::string Conv2dTransposeImageCompute::KernelFunctionName(const param_t& param
         }
     } else if (filter_metal_dims_[3] == 3 && filter_metal_dims_[2] == 3) {
         if (param.strides[0] == 2 && param.strides[1] == 2) {
-            if (filter_metal_dims_[0] == 1 &&
-                filter_metal_dims_[1] == param.x->dims()[1] &&
+            if (filter_metal_dims_[0] == 1 && filter_metal_dims_[1] == param.x->dims()[1] &&
                 param.groups == param.x->dims()[1]) {
                 return "depthwise_conv_transpose3x3_stride2x2";
-            } else if(filter_metal_dims_[1] == param.x->dims()[1]) {
+            } else if (filter_metal_dims_[1] == param.x->dims()[1]) {
                 return "conv_transpose3x3_stride2x2";
             }
         }
@@ -465,8 +469,7 @@ bool Conv2dTransposeImageCompute::HasSuffix(const std::string& function_name,
     const std::string& suffix) {
     auto s_size = suffix.size();
     auto f_size = function_name.size();
-    if ( f_size >= s_size &&
-        function_name.compare(f_size - s_size , s_size, suffix) == 0) {
+    if (f_size >= s_size && function_name.compare(f_size - s_size, s_size, suffix) == 0) {
         return true;
     }
     return false;
@@ -508,7 +511,6 @@ void Conv2dTransposeImageCompute::release_intermediate() {
 }
 
 void Conv2dTransposeImageCompute::release_mps_memory() {
-    
 }
 
 Conv2dTransposeImageCompute::~Conv2dTransposeImageCompute() {
