@@ -24,7 +24,7 @@ from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 import argparse
 
-class TestAssignOp(AutoScanTest):
+class TestArgMaxOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
@@ -39,19 +39,29 @@ class TestAssignOp(AutoScanTest):
                           Place(TargetType.Host, PrecisionType.FP32)]
         self.enable_testing_on_place(places=opencl_places)
 
-
     def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
-        return True
+        if predictor_config.target() == TargetType.OpenCL:
+            return False
+        else:
+            return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), max_size=2))
-        assign_op = OpConfig(
-            type = "assign",
+        in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=1, max_size=4))
+        axis = draw(st.integers(min_value=-1, max_value=3))
+        keepdims = draw(st.booleans())
+        dtype = draw(st.sampled_from([-1, 2, 3]))
+        assume(axis < len(in_shape))
+
+        arg_max_op = OpConfig(
+            type = "arg_max",
             inputs = {"X" : ["input_data"]},
             outputs = {"Out": ["output_data"]},
-            attrs = {})
+            attrs = {"axis": axis,
+                    "keepdims": keepdims,
+                    "dtype": dtype,
+                    "flatten": False})
         program_config = ProgramConfig(
-            ops=[assign_op],
+            ops=[arg_max_op],
             weights={},
             inputs={
                 "input_data":
@@ -61,7 +71,7 @@ class TestAssignOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["assign"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["arg_max"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass

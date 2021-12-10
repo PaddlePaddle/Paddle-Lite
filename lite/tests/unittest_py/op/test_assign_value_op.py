@@ -23,8 +23,9 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 import argparse
+import numpy as np
 
-class TestAssignOp(AutoScanTest):
+class TestAssignValueOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
@@ -39,29 +40,46 @@ class TestAssignOp(AutoScanTest):
                           Place(TargetType.Host, PrecisionType.FP32)]
         self.enable_testing_on_place(places=opencl_places)
 
-
     def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), max_size=2))
-        assign_op = OpConfig(
-            type = "assign",
-            inputs = {"X" : ["input_data"]},
+        in_shape = draw(st.lists(st.integers(min_value=1, max_value=4), min_size=1, max_size=4))
+        dtype = draw(st.sampled_from([2, 3, 5]))
+        bool_values = draw(st.lists(st.booleans(), min_size=1, max_size=4))
+        fp32_values = draw(st.lists(st.floats(min_value=1, max_value=4), min_size=1, max_size=4))
+        int32_values = draw(st.lists(st.integers(min_value=1, max_value=4), min_size=1, max_size=4))
+        int64_values = np.random.random([1]).astype(np.int64).tolist()
+        in_shape_num = 1
+        for val in in_shape:
+            in_shape_num *= val
+        if dtype == 2:
+            assume(in_shape_num == len(int32_values))
+        if dtype == 3:
+            assume(in_shape_num == len(int64_values))
+        if dtype == 5:
+            assume(in_shape_num == len(fp32_values))
+
+        assign_value_op = OpConfig(
+            type = "assign_value",
+            inputs = {},
             outputs = {"Out": ["output_data"]},
-            attrs = {})
+            attrs = {"shape": in_shape,
+                    "dtype": dtype,
+                    "bool_values": bool_values,
+                    "fp32_values": fp32_values,
+                    "int32_values": int32_values,
+                    "int64_values": int64_values})
+        
         program_config = ProgramConfig(
-            ops=[assign_op],
+            ops=[assign_value_op],
             weights={},
-            inputs={
-                "input_data":
-                TensorConfig(shape=in_shape)
-            },
+            inputs={},
             outputs=["output_data"])
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["assign"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["assign_value"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
