@@ -384,7 +384,8 @@ void StridedSliceCompute<T, PType>::Run() {
 
 using slice_float =
     paddle::lite::kernels::host::StridedSliceCompute<float, PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(strided_slice, kHost, kFloat, kNCHW, slice_float, def_float)
+REGISTER_LITE_KERNEL(
+    strided_slice, kHost, kFloat, kNCHW, slice_float, def_float)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat))})
     .BindInput("StartsTensor",
@@ -401,7 +402,8 @@ REGISTER_LITE_KERNEL(strided_slice, kHost, kFloat, kNCHW, slice_float, def_float
 
 using slice_int32 =
     paddle::lite::kernels::host::StridedSliceCompute<int, PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(strided_slice, kHost, kFloat, kNCHW, slice_int32, def_int32)
+REGISTER_LITE_KERNEL(
+    strided_slice, kHost, kFloat, kNCHW, slice_int32, def_int32)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindInput("StartsTensor",
@@ -419,7 +421,8 @@ REGISTER_LITE_KERNEL(strided_slice, kHost, kFloat, kNCHW, slice_int32, def_int32
 using slice_int64 =
     paddle::lite::kernels::host::StridedSliceCompute<int64_t,
                                                      PRECISION(kFloat)>;
-REGISTER_LITE_KERNEL(strided_slice, kHost, kFloat, kNCHW, slice_int64, def_int64)
+REGISTER_LITE_KERNEL(
+    strided_slice, kHost, kFloat, kNCHW, slice_int64, def_int64)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .BindInput("StartsTensor",
