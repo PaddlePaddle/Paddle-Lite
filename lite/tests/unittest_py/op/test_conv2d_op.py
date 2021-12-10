@@ -32,7 +32,10 @@ class TestConv2dOp(AutoScanTest):
         self.enable_testing_on_place(TargetType.ARM, [PrecisionType.FP32,PrecisionType.FP16,PrecisionType.INT8], DataLayoutType.NCHW, thread=[1,4])
 
     def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
-        return True
+        if predictor_config.target() == TargetType.ARM:
+            return False
+        else:
+            return True
 
     def sample_program_configs(self, draw):
         in_shape=draw(st.lists(st.integers(min_value=1, max_value=64), min_size=4, max_size=4))
