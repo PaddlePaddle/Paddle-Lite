@@ -36,9 +36,9 @@ class TestOneHotV2Op(AutoScanTest):
 
     def sample_program_configs(self, draw):
         max_value = 8
-        in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size = 2, max_size=2))
+        in_shape = draw(st.lists(st.integers(min_value=1, max_value=32), min_size = 2, max_size=2))
         depth_shape = draw(st.lists(st.integers(min_value=8, max_value=8), min_size = 1, max_size=1))
-       # if def depth_tensor  will have rpc Connection refused error
+       # if def depth_tensor  will have crash
         #def generate_depth_tensor(*args, **kwargs):
         #    len = np.ones(1)
         #    len[0] = 8

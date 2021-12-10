@@ -29,14 +29,14 @@ import hypothesis.strategies as st
 class TestNotEqualOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
+        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
 
     def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        in_shape_x = draw(st.lists(st.integers(min_value=1, max_value=8), min_size = 4, max_size=4))
-        in_shape_y = draw(st.lists(st.integers(min_value=1, max_value=8), min_size = 4, max_size=4))
+        in_shape_x = draw(st.lists(st.integers(min_value=1, max_value=8), min_size = 1, max_size=4))
+        in_shape_y = draw(st.lists(st.integers(min_value=1, max_value=8), min_size = 1, max_size=4))
         axis = draw(st.sampled_from([0, 1, 2, 3]))
         not_equal_op = OpConfig(
             type = "not_equal",
