@@ -26,29 +26,25 @@ import numpy as np
 from functools import partial
 import hypothesis.strategies as st
 
-class TestNormOp(AutoScanTest):
+class TestMishOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
+        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
 
     def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
-        x_shape = list(program_config.inputs["input_data"].shape)
-        if len(x_shape) < program_config.ops[0].attrs["axis"] + 1:
-            return False
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(min_value=1, max_value=32), min_size = 1, max_size=4))
-        axis = draw(st.sampled_from([0, 1, 2, 3]))
-        epsilon = draw(st.sampled_from([0.9, 1., 1.1]))
-        norm_op = OpConfig(
-            type = "norm",
+        in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size = 1, max_size=4))
+        threshold = draw(st.sampled_from([20.0, 10.0, 5.0]))
+        mish_op = OpConfig(
+            type = "mish",
            inputs = {"X" : ["input_data"]},
-            outputs = {"Out": ["output_data"], "Norm": ["Norm"]},
-            attrs = {"axis":axis, "epsilon":epsilon, "is_test":1})
+            outputs = {"Out": ["output_data"]},
+            attrs = {"threshold": threshold})
         program_config = ProgramConfig(
-            ops=[norm_op],
+            ops=[mish_op],
             weights={},
             inputs={
                 "input_data":
@@ -59,13 +55,13 @@ class TestNormOp(AutoScanTest):
 
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["norm"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["mish"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=50)
+        self.run_and_statis(quant=False, max_examples=25)
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

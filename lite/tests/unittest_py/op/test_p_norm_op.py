@@ -26,7 +26,7 @@ import numpy as np
 from functools import partial
 import hypothesis.strategies as st
 
-class TestNormOp(AutoScanTest):
+class TestPNormOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
@@ -36,19 +36,24 @@ class TestNormOp(AutoScanTest):
         x_shape = list(program_config.inputs["input_data"].shape)
         if len(x_shape) < program_config.ops[0].attrs["axis"] + 1:
             return False
+        # if True Paddle-lite run crash so omit it
+        if program_config.ops[0].attrs["asvector"]:
+            return False 
         return True
 
     def sample_program_configs(self, draw):
         in_shape = draw(st.lists(st.integers(min_value=1, max_value=32), min_size = 1, max_size=4))
         axis = draw(st.sampled_from([0, 1, 2, 3]))
-        epsilon = draw(st.sampled_from([0.9, 1., 1.1]))
-        norm_op = OpConfig(
-            type = "norm",
+        epsilon = draw(st.sampled_from([0, 1.0, 3.0]))
+        keepdim = draw(st.booleans())
+        asvector = draw(st.booleans())
+        p_norm_op = OpConfig(
+            type = "p_norm",
            inputs = {"X" : ["input_data"]},
-            outputs = {"Out": ["output_data"], "Norm": ["Norm"]},
-            attrs = {"axis":axis, "epsilon":epsilon, "is_test":1})
+            outputs = {"Out": ["output_data"]},
+            attrs = {"axis":axis, "epsilon":epsilon, "keepdim":keepdim, "asvector":asvector})
         program_config = ProgramConfig(
-            ops=[norm_op],
+            ops=[p_norm_op],
             weights={},
             inputs={
                 "input_data":
@@ -59,13 +64,20 @@ class TestNormOp(AutoScanTest):
 
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["norm"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["p_norm"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def teller1(program_config, predictor_config):
+            epsilon = program_config.ops[0].attrs["epsilon"]
+            asvector = program_config.ops[0].attrs["asvector"]
+            if epsilon:
+                return True
+        self.add_ignore_check_case(
+            teller1, IgnoreReasons.ACCURACY_ERROR,
+            "The op output has diff in a specific case. We need to fix it as soon as possible.")
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=50)
+        self.run_and_statis(quant=False, max_examples=100)
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
