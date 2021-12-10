@@ -476,5 +476,21 @@ std::string ConvertPadModeCodeToGEPadMode(int pad_mode_code) {
   return "constant";
 }
 
+std::string ConvertInterpolateModeCodeToGEInterpolateMode(
+    int interpolate_mode_code) {
+  switch (interpolate_mode_code) {
+    case NNADAPTER_INTERPOLATE_MODE_BILINEAR:
+      return "bilinear";
+    case NNADAPTER_INTERPOLATE_MODE_NEAREST:
+      return "nearest";
+    default:
+      NNADAPTER_LOG(FATAL)
+          << "Failed to convert the NNAdapter operand interpolate mode code("
+          << interpolate_mode_code << ") to interpolate mode !";
+      break;
+  }
+  return "bilinear";
+}
+
 }  // namespace huawei_ascend_npu
 }  // namespace nnadapter
