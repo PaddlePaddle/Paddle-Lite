@@ -49,18 +49,19 @@ class TestConv2dOp(AutoScanTest):
             return True
 
     def sample_program_configs(self, draw):
-        in_shape=draw(st.lists(st.integers(min_value=1, max_value=64), min_size=4, max_size=4))
+        num = draw(st.integers(min_value=1, max_value=64))
+        w_cin = draw(st.integers(min_value=1, max_value=128))
+        height = draw(st.integers(min_value=1, max_value=128))
+        width = draw(st.integers(min_value=1, max_value=128))
+        cout = draw(st.integers(min_value=1, max_value=128))
         kw = np.random.randint(1, 9)
         kh = np.random.randint(1, 9)
-        cout = np.random.randint(1, 128)
-        cin = np.random.randint(1, 128)
+        groups = draw(st.sampled_from([1, 2, 128]))
         scale_in = draw(st.floats(min_value=0.001, max_value=0.1))
         scale_out = draw(st.floats(min_value=0.001, max_value=0.1))
-        weight_shape = [cout, cin, kh, kw]
-        groups = draw(st.sampled_from([1, 2, cin]))
-        val = in_shape[1] * groups
-        assume(val == cin)
-        assume(in_shape[1] == weight_shape[1])
+        cin = w_cin * groups
+        in_shape = [num, cin, height, width]
+        weight_shape = [cout, w_cin, kh, kw]
         assume(in_shape[2] >= weight_shape[2])
         assume(in_shape[3] >= weight_shape[3])
 
