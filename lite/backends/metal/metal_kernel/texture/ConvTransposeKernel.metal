@@ -12,8 +12,8 @@
  See the License for the specific language governing permissions and
  limitations under the License. */
 
-#include <metal_stdlib>
 #include "Common.metal"
+#include <metal_stdlib>
 using namespace metal;
 
 kernel void conv_transpose2x2_stride2(
@@ -195,8 +195,7 @@ kernel void depthwise_conv_transpose3x3_stride2x2_half(
     outTexture.write(output4, uint2(ox + 1, oy + 1), gid.z);
 }
 
-kernel void conv_transpose4x4_caculate(
-    texture2d_array<ftype, access::read> inTexture[[texture(0)]],
+kernel void conv_transpose4x4_caculate(texture2d_array<ftype, access::read> inTexture[[texture(0)]],
     texture2d_array<ftype, access::write> outTexture[[texture(1)]],
     const device ftype4* weights[[buffer(0)]],
     uint3 gid[[thread_position_in_grid]]) {
@@ -217,13 +216,13 @@ kernel void conv_transpose4x4_caculate(
         for (ushort j = 0; j < 16; ++j) {
             w = weights[weightTo + 0 * 16 * input_array_size + j * input_array_size + i];
             results[j].x += dot(input, w);
-            
+
             w = weights[weightTo + 1 * 16 * input_array_size + j * input_array_size + i];
             results[j].y += dot(input, w);
-            
+
             w = weights[weightTo + 2 * 16 * input_array_size + j * input_array_size + i];
             results[j].z += dot(input, w);
-            
+
             w = weights[weightTo + 3 * 16 * input_array_size + j * input_array_size + i];
             results[j].w += dot(input, w);
         }
@@ -238,11 +237,11 @@ kernel void conv_transpose4x4_caculate(
 }
 
 kernel void conv_transpose4x4_stride2_bias_relu(
-    texture2d_array<ftype, access::read> inTexture [[texture(0)]],
-    texture2d_array<ftype, access::sample> biasTexture [[texture(1)]],
-    texture2d_array<ftype, access::write> outTexture [[texture(2)]],
-    constant MetalConvTransposeParam &param [[buffer(0)]],
-    uint3 gid [[thread_position_in_grid]]) {
+    texture2d_array<ftype, access::read> inTexture[[texture(0)]],
+    texture2d_array<ftype, access::sample> biasTexture[[texture(1)]],
+    texture2d_array<ftype, access::write> outTexture[[texture(2)]],
+    constant MetalConvTransposeParam& param[[buffer(0)]],
+    uint3 gid[[thread_position_in_grid]]) {
     if (gid.x >= inTexture.get_width() || gid.y >= inTexture.get_height() ||
         gid.z >= outTexture.get_array_size()) {
         return;
@@ -253,7 +252,7 @@ kernel void conv_transpose4x4_stride2_bias_relu(
         output = get_bias(gid, param.addParam, biasTexture);
     }
     output += inTexture.read(gid.xy, gid.z);
-        
+
     ftype4 relu = activation(output, param.activationParam);
     outTexture.write(relu, gid.xy, gid.z);
 }
@@ -315,4 +314,3 @@ kernel void conv_transpose4x4_stride2_shift_top(
         }
     }
 }
-

@@ -258,20 +258,20 @@ extern NSString* cString2NSString(std::string cStr) {
     [encoder endEncoding];
 }
 
-//threadsShape: [n, h, w]
+// threadsShape: [n, h, w]
 - (void)dispatchEncoder:(id<MTLComputeCommandEncoder>)encoder
                 pipline:(id<MTLComputePipelineState>)pipline
-           threadsShape:(NSArray<NSNumber *> *)threadsShape {
+           threadsShape:(NSArray<NSNumber*>*)threadsShape {
     if ([threadsShape count] != 3) {
         LOG(ERROR) << "[metal] invalid param, MTL Compute Pipeline is nil!";
         return;
     }
-    
+
     NSUInteger tZ = threadsShape[0].integerValue;
     NSUInteger tH = threadsShape[1].integerValue;
     NSUInteger tW = threadsShape[2].integerValue;
-    
-    NSUInteger slices = (tZ+ 3) / 4;
+
+    NSUInteger slices = (tZ + 3) / 4;
     NSUInteger width = 0, height = 0;
     width = MIN(pipline.threadExecutionWidth, tW);
     height = MIN(pipline.maxTotalThreadsPerThreadgroup / width, tH);
@@ -281,11 +281,8 @@ extern NSString* cString2NSString(std::string cStr) {
     groupWidth = (tW + width - 1) / width;
     groupHeight = (tH + height - 1) / height;
     MTLSize groups = MTLSize{.width = groupWidth, .height = groupHeight, .depth = slices};
-    
-    [self dispatchEncoder:encoder
-                  pipline:pipline
-          threadsPerGroup:threadsPerGroup
-                   groups:groups];
+
+    [self dispatchEncoder:encoder pipline:pipline threadsPerGroup:threadsPerGroup groups:groups];
 }
 
 - (void)dispatchEncoder:(id<MTLComputeCommandEncoder>)encoder
@@ -298,8 +295,8 @@ extern NSString* cString2NSString(std::string cStr) {
     }
     if (groups.width <= 0 || groups.height <= 0 || groups.depth <= 0) {
         VLOG(ERROR) << "[METAL]: "
-                << "dispatch thread groups 2.{" << groups.width << "," << groups.height << ","
-                << groups.depth << "}";
+                    << "dispatch thread groups 2.{" << groups.width << "," << groups.height << ","
+                    << groups.depth << "}";
         return;
     }
     [encoder setComputePipelineState:pipline];

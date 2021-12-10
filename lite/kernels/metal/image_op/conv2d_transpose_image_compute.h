@@ -51,7 +51,7 @@ class Conv2dTransposeImageCompute
     void* mps_conv_op_{nullptr};
     void* mps_input_image_{nullptr};
     void* mps_output_image_{nullptr};
-        
+
     void init_for_run();
     void init_attention();
     void init_memory();
@@ -61,33 +61,31 @@ class Conv2dTransposeImageCompute
 
     void setup_with_mps();
     void setup_without_mps();
-        
+
     void run_with_mps();
     void run_without_mps();
 
     void run_2x2();
     void run_3x3();
     void run_4x4();
-        
+
     bool canAddUseMPS();
     bool canMPSAddByChannel();
     bool canMPSAddByElement();
-        
-    std::string KernelFunctionName(const param_t& param);
-    static bool HasPrefix(const std::string& function_name,
-                          const std::string& prefix_name);
-    static bool HasSuffix(const std::string& function_name,
-                          const std::string& suffix);
 
-    private:
+    std::string KernelFunctionName(const param_t& param);
+    static bool HasPrefix(const std::string& function_name, const std::string& prefix_name);
+    static bool HasSuffix(const std::string& function_name, const std::string& suffix);
+
+   private:
     int16_t activate_type_ = 0;
     int16_t relu6_thredhold_ = 6;
-    
+
     id<MTLComputePipelineState> pipline_;
     std::string function_name_;
     MetalContext* metal_context_;
     DDim last_input_dims_{};
-    
+
     MetalImage* output_buffer_{nullptr};
     const MetalImage* input_buffer_;
     const MetalImage* bias_buffer_;

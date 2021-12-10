@@ -75,7 +75,7 @@ void SplitImageCompute::run_without_mps() {
 
         [backend dispatchEncoder:encoder
                          pipline:pipline
-                    threadsShape:@[@(z), @(outTexture.height), @(outTexture.width)]];
+                    threadsShape:@[ @(z), @(outTexture.height), @(outTexture.width) ]];
     }
     [backend commit];
 }
