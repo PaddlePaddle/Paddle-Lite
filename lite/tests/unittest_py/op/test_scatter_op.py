@@ -81,7 +81,7 @@ class TestScatterOp(AutoScanTest):
                 else:
                     return np.random.randint(low, high, shape).astype(np.int64)
             elif dtype == "float32":
-                return high * np.random.random(shape).astype(np.float32) + low
+                return (high - low) * np.random.random(shape).astype(np.float32) + low
 
         def generate_index(*args, **kwargs):
             index_np = np.ones(index_shape).astype(np.int64)

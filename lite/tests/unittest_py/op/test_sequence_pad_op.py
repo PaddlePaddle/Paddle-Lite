@@ -41,7 +41,7 @@ class TestSequencePadOp(AutoScanTest):
             elif kwargs["type"] == "int64":
                 return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int64)
             elif kwargs["type"] == "float32":
-                return kwargs["high"] * np.random.random(kwargs["shape"]).astype(np.float32) + kwargs["low"]
+                return (kwargs["high"] - kwargs["low"]) * np.random.random(kwargs["shape"]).astype(np.float32) + kwargs["low"]
 
         out_dtype_dict = {"int32" : np.int32,
                         "int64" : np.int64,

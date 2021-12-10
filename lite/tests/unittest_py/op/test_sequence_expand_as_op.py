@@ -48,7 +48,7 @@ class TestSequenceExpandAsOp(AutoScanTest):
             elif kwargs["type"] == "int64":
                 return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int64)
             elif kwargs["type"] == "float32":
-                return kwargs["high"] * np.random.random(kwargs["shape"]).astype(np.float32) + kwargs["low"]
+                return (kwargs["high"] - kwargs["low"]) * np.random.random(kwargs["shape"]).astype(np.float32) + kwargs["low"]
 
         input_type = draw(st.sampled_from(["int32", "int64", "float32"]))
         x_shape = draw(st.lists(st.integers(min_value=1, max_value=10), min_size=2, max_size=2))
