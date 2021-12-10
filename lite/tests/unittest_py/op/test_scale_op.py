@@ -85,7 +85,7 @@ class TestScaleOp(AutoScanTest):
                 else:
                     return np.random.randint(low, high, shape).astype(np.int64)
             elif dtype == "float32":
-                return high * np.random.random(shape).astype(np.float32) + low
+                return (high - low) * np.random.random(shape).astype(np.float32) + low
 
         input_dict = {"X" : ["input_data"]}
         input_data_dict = {"input_data" : TensorConfig(data_gen=partial(generate_data, dtype=input_type, shape=in_shape))}
