@@ -208,7 +208,7 @@ if (LITE_WITH_PYTHON)
     lite_cc_library(lite_pybind SHARED SRCS python/pybind/pybind.cc tools/opt_base.cc DEPS ${full_lib_DEPS} paddle_api_full ${external_libs_DEPS}  pybind python)
 endif()
 
-if (LITE_WITH_METAL)
+if(LITE_WITH_METAL)
     target_link_libraries(lite_pybind ${METAL_LIBRARY} ${MPS_LIBRARY} ${GRAPHIC} ${FOUNDATION_LIBRARY})
 endif()
 
