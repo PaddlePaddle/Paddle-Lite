@@ -151,16 +151,23 @@ class AutoScanBaseTest(unittest.TestCase):
                 "Output has diff. ")
         else:
             for key in tensor:
+                opencl_str = "/target_trans"
+                index = key.rfind(opencl_str)
+                paddlekey=key
+                if index > 0:
+                    paddlekey = key[0: index]
+                if (key == "saved_mean" or key == "saved_variance"):
+                    # training using data
+                    continue
                 arr = np.array(tensor[key])
                 self.assertTrue(
-                    baseline[key].shape == arr.shape,
+                    baseline[paddlekey].shape == arr.shape,
                     "The output shapes are not equal, the baseline shape is " +
-                    str(baseline[key].shape) + ', but got ' + str(arr.shape))
+                    str(baseline[paddlekey].shape) + ', but got ' + str(arr.shape))
                 self.assertTrue(
                     np.allclose(
-                        baseline[key], arr, atol=atol, rtol=rtol),
+                        baseline[paddlekey], arr, atol=atol, rtol=rtol),
                     "Output has diff. ")
-
 
     def generate_op_config(self,
                            ops_config: List[Dict[str, Any]]) -> List[OpConfig]:
@@ -371,9 +378,13 @@ class AutoScanBaseTest(unittest.TestCase):
         logging.info("Number of Ran Programs: {}".format(self.num_ran_programs))
         logging.info("Number of Ignored Tests: {}".format(
             self.num_ignore_tests))
-        successful_ran_programs = int(self.num_ran_programs -
-                                      self.num_ignore_tests /
-                                      self.num_predictor_kinds)
+        if self.num_predictor_kinds == 0:
+            successful_ran_programs = int(self.num_ran_programs)
+            min_success_num = 0
+        else:
+            successful_ran_programs = int(self.num_ran_programs -
+                                        self.num_ignore_tests /
+                                        self.num_predictor_kinds)
 
         logging.info(
             "Number of successfully ran programs approximately equal to {}".
