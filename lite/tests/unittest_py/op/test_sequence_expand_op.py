@@ -46,7 +46,7 @@ class TestSequenceExpandOp(AutoScanTest):
             elif kwargs["type"] == "int64":
                 return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int64)
             elif kwargs["type"] == "float32":
-                return kwargs["high"] * np.random.random(kwargs["shape"]).astype(np.float32) + kwargs["low"]
+                return (kwargs["high"] - kwargs["low"]) * np.random.random(kwargs["shape"]).astype(np.float32) + kwargs["low"]
 
         def generate_lod(seq_num, max_len):
             seq_offset = []
