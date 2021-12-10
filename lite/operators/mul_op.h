@@ -59,7 +59,7 @@ class MulOpLite : public OpLite {
     param_.x_num_col_dims = op_desc.GetAttr<int>("x_num_col_dims");
     param_.y_num_col_dims = op_desc.GetAttr<int>("y_num_col_dims");
 
-    const OpInfo *op_info = dynamic_cast<const OpInfo *>(&op_desc);
+    const OpInfo *op_info = static_cast<const OpInfo *>(&op_desc);
     if (op_info != nullptr && op_info->HasAttr("enable_int8")) {
       param_.enable_int8 = op_info->GetAttr<bool>("enable_int8");
       auto input_scale_name = "X0_scale";
