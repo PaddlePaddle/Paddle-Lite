@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Start the CI task of examining Android inference lib compiling.
-set +x
+set -x
 set -e
 
 #####################################################################################################
