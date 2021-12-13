@@ -14,7 +14,7 @@
 import sys
 sys.path.append('..')
 
-from auto_scan_test import AutoScanTest, IgnoreReasons
+from auto_scan_test import FusePassAutoScanTest, IgnoreReasons
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import numpy as np
 from functools import partial
@@ -26,9 +26,9 @@ from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 
 
-class TestConvBnFuse(AutoScanTest):
+class TestConvBnFuse(FusePassAutoScanTest):
     def __init__(self, *args, **kwargs):
-        AutoScanTest.__init__(self, *args, **kwargs)
+        FusePassAutoScanTest.__init__(self, *args, **kwargs)
         self.ops = []
         self.enable_testing_on_place(TargetType.ARM, [PrecisionType.FP32], DataLayoutType.NCHW, thread=[1, 4])
         self.enable_testing_on_place(TargetType.X86, [PrecisionType.FP32], DataLayoutType.NCHW, thread=[1, 4])        
@@ -43,11 +43,15 @@ class TestConvBnFuse(AutoScanTest):
         self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
-        return True        
+        result = True
+        if predictor_config.target() == TargetType.OpenCL:
+            result = result and (program_config.ops[0].attrs["groups"] == 1 and program_config.ops[0].type != "conv2d_transpose")          
+        return result        
 
     def sample_program_configs(self, draw):
         #conv param
-        in_shape = draw(st.lists(st.integers(min_value = 1, max_value = 64), min_size = 4, max_size = 4))
+        in_shape=draw(st.lists(st.integers(min_value=1, max_value=24), min_size=3, max_size=3))
+        in_shape=[draw(st.integers(min_value=1, max_value=3))] + in_shape
         kw = np.random.randint(1, 9)
         kh = np.random.randint(1, 9)
         cout = np.random.randint(1, 64)
@@ -137,11 +141,7 @@ class TestConvBnFuse(AutoScanTest):
                 "filter_data":
                 TensorConfig(data_gen = partial(generate_filter)),
                 "conv_bias_data":
-                TensorConfig(data_gen = partial(generate_conv_bias))
-            },
-            inputs = {
-                "input_data":
-                TensorConfig(data_gen = partial(generate_input)),
+                TensorConfig(data_gen = partial(generate_conv_bias)),
                 "scale_data":
                 TensorConfig(data_gen = partial(generate_scale)),
                 "bias_data":
@@ -149,28 +149,27 @@ class TestConvBnFuse(AutoScanTest):
                 "mean_data":
                 TensorConfig(data_gen = partial(generate_mean)),
                 "variance_data":
-                TensorConfig(data_gen = partial(generate_variance)),
+                TensorConfig(data_gen = partial(generate_variance)),                
             },
-            outputs=["output_data", "mean_data", "variance_data", "saved_mean", "saved_variance"])
+            inputs = {
+                "input_data":
+                TensorConfig(data_gen = partial(generate_input)),
+            },
+            outputs=["output_data"])
 
         return program_config
     def sample_predictor_configs(self):
         config = CxxConfig()
-        return self.get_predictor_configs(), [self.ops[0].type], (1e-5, 1e-5)
+        if self.get_target() == 'OpenCL':
+            return self.get_predictor_configs(), ['io_copy', 'layout', self.ops[0].type, 'layout', 'io_copy'], (1e-5, 1e-5)
+        else:
+            return self.get_predictor_configs(), [self.ops[0].type], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def teller1(program_config, predictor_config):
-            return True    
-        self.add_ignore_check_case(
-            # IgnoreReasonsBase.PADDLE_NOT_IMPLEMENTED
-            # IgnoreReasonsBase.PADDLELITE_NOT_SUPPORT
-            # IgnoreReasonsBase.ACCURACY_ERROR
-            teller1, IgnoreReasons.ACCURACY_ERROR,
-            "conv bn fuse only one output"
-        )
+        pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=300)
+        self.run_and_statis(quant=False, max_examples=100, max_duration=540, passes=["lite_conv_bn_fuse_pass"])
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
