@@ -34,6 +34,8 @@ parser.add_argument(
 parser.add_argument(
     "--enable_opencl", action="store_true", help="Enable OpenCL or not")
 parser.add_argument(
+    "--use_metal", action="store_true", default=False, help="use metal on Appel GPU. Default: False")
+parser.add_argument(
     "--disable_print_results", action="store_false", help="Print results or not")
 
 
@@ -94,6 +96,18 @@ def RunModel(args):
         CL_PRECISION_FP16, force fp16
         '''
         config.set_opencl_precision(CLPrecisionType.CL_PRECISION_AUTO)
+    elif args.use_metal:
+        # set metallib path
+        import paddlelite, os
+        module_path = os.path.dirname(paddlelite.__file__)
+        config.set_metal_lib_path(module_path + "/libs/lite.metallib")
+        config.set_metal_use_mps(True)
+        # set places for Metal
+        places = [Place(TargetType.Metal, PrecisionType.FP32, DataLayoutType.MetalTexture2DArray),
+                  Place(TargetType.Metal, PrecisionType.FP16, DataLayoutType.MetalTexture2DArray),
+                  Place(TargetType.X86, PrecisionType.FP32),
+                  Place(TargetType.ARM, PrecisionType.FP32),
+                  Place(TargetType.Host, PrecisionType.FP32)]
     else:
         places = [Place(TargetType.X86, PrecisionType.FP32)]
 
