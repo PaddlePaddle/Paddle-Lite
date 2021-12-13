@@ -61,7 +61,8 @@ class TestConvActiveFuse(FusePassAutoScanTest):
         Transpose=draw(st.sampled_from([True, False]))
 
         #conv param or conv_transpose param
-        in_shape=draw(st.lists(st.integers(min_value=1, max_value=64), min_size=4, max_size=4))
+        in_shape=draw(st.lists(st.integers(min_value=2, max_value=24), min_size=3, max_size=3))
+        in_shape=[draw(st.integers(min_value=1, max_value=3))] + in_shape
         weight_shape=draw(st.lists(st.integers(min_value=1, max_value=8), min_size=4, max_size=4))
         paddings=draw(st.sampled_from([[1, 2], [4, 2], [1, 1], [0, 0], [1, 0], [1, 1]]))
         dilations=draw(st.sampled_from([[1, 1], [2, 2]]))
@@ -81,6 +82,7 @@ class TestConvActiveFuse(FusePassAutoScanTest):
 
         conv_out_shape=[]
         paddings_,dilations_ = UpdatePaddingAndDilation(in_shape, weight_shape, paddings, dilations, groups, padding_algorithm, strides)
+        self.depthwise=False
 
         if Transpose:
             assume(in_shape[1] == weight_shape[0])
