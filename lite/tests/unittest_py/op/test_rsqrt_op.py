@@ -76,7 +76,12 @@ class TestRsqrtOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        target_str = self.get_target()
+        max_examples = 25
+        if target_str == "OpenCL":
+            max_examples = 200
+
+        self.run_and_statis(quant=False, max_examples=max_examples)
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
