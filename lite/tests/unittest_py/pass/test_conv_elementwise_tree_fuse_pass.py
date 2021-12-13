@@ -15,7 +15,7 @@ import sys
 sys.path.append('..')
 sys.path.append('.')
 
-from auto_scan_test import AutoScanTest, IgnoreReasons
+from auto_scan_test import FusePassAutoScanTest, IgnoreReasons
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import numpy as np
 from functools import partial
@@ -28,9 +28,9 @@ from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 
 
-class TestConvBnFuse(AutoScanTest):
+class TestConvBnFuse(FusePassAutoScanTest):
     def __init__(self, *args, **kwargs):
-        AutoScanTest.__init__(self, *args, **kwargs)     
+        FusePassAutoScanTest.__init__(self, *args, **kwargs)     
         opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
                           Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
                           Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
@@ -39,10 +39,13 @@ class TestConvBnFuse(AutoScanTest):
                           Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
                           Place(TargetType.Host, PrecisionType.FP32)    
                         ]
-        #self.enable_testing_on_place(places=opencl_places)
+        self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
-        return True      
+        result = True
+        if predictor_config.target() == TargetType.OpenCL:
+            result = result and (program_config.ops[0].attrs["groups"] == 1 and program_config.ops[0].type != "conv2d_transpose")          
+        return result    
 
     def sample_program_configs(self, draw):
 
@@ -109,13 +112,13 @@ class TestConvBnFuse(AutoScanTest):
 
     def sample_predictor_configs(self):
         config = CxxConfig()
-        return self.get_predictor_configs(), [self.ops[0].type], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ['io_copy', 'layout', 'io_copy',  'layout', self.ops[0].type, 'layout', 'io_copy'], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=300)
+        self.run_and_statis(quant=False, max_examples=100, max_duration=540, passes=["lite_conv_elementwise_tree_fuse_pass"])
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
