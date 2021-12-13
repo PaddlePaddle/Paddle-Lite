@@ -414,6 +414,7 @@ class TargetType(Enum):
     HUAWEI_ASCEND_NPU = 10
     INTEL_FPGA = 11
     Any = 12
+    Metal = 13
 
 class PrecisionType(Enum):
     FP16 = 0
