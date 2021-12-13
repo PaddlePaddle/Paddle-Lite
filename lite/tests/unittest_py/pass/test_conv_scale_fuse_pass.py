@@ -15,7 +15,7 @@ import sys
 sys.path.append('..')
 sys.path.append('.')
 
-from auto_scan_test import AutoScanTest, IgnoreReasons
+from auto_scan_test import FusePassAutoScanTest, IgnoreReasons
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import numpy as np
 from functools import partial
@@ -28,9 +28,9 @@ from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 
 
-class TestConvBnFuse(AutoScanTest):
+class TestConvScaleFuse(FusePassAutoScanTest):
     def __init__(self, *args, **kwargs):
-        AutoScanTest.__init__(self, *args, **kwargs)     
+        FusePassAutoScanTest.__init__(self, *args, **kwargs)     
         #self.enable_testing_on_place(TargetType.ARM, [PrecisionType.FP32], DataLayoutType.NCHW, thread=[1, 4])
         self.enable_testing_on_place(TargetType.X86, [PrecisionType.FP32], DataLayoutType.NCHW, thread=[1, 4])        
         opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
@@ -74,13 +74,13 @@ class TestConvBnFuse(AutoScanTest):
         conv_out_shape = conv_out_shape + [oh, ow]
         assume(oh > 0 and ow > 0)
 
-        use_mkldnn = False
+        use_mkldnn = True
 
         inputs_type = {"Input" : ["input_data"],"Filter" : ["filter_data"]}
-        inputs_data = {"input_data": TensorConfig(shape=in_shape)}
+        weights_data = {"filter_data": TensorConfig(shape=weight_shape)}
         if use_mkldnn:
             inputs_type["Bias"] = ["bias_data"]
-            inputs_data["bias_data"] =  TensorConfig(shape=[weight_shape[0]])
+            weights_data["bias_data"] = TensorConfig(shape=[weight_shape[0]])
 
         conv_type = "conv2d"
         conv_attrs = {
@@ -116,16 +116,17 @@ class TestConvBnFuse(AutoScanTest):
         self.ops = ops 
         program_config = ProgramConfig(
         ops=ops,
-        weights={            
-            "filter_data": TensorConfig(shape=weight_shape)
-        },
-        inputs=inputs_data,
+        weights=weights_data,
+        inputs={"input_data": TensorConfig(shape=in_shape)},
         outputs=["output_data"])
         return program_config 
 
     def sample_predictor_configs(self):
         config = CxxConfig()
-        return self.get_predictor_configs(), ["conv2d"], (1e-5, 1e-5)
+        if self.get_target() == 'OpenCL':
+            return self.get_predictor_configs(), ['io_copy', 'layout', self.ops[0].type, 'layout', 'io_copy'], (1e-5, 1e-5)
+        else:
+            return self.get_predictor_configs(), [self.ops[0].type], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
@@ -138,10 +139,10 @@ class TestConvBnFuse(AutoScanTest):
             # IgnoreReasonsBase.ACCURACY_ERROR
             teller1, IgnoreReasons.ACCURACY_ERROR,
             "The op output has diff in a specific case. We need to fix it as soon as possible."
-        )        
+        )
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=300)
+        self.run_and_statis(quant=False, max_examples=100, max_duration=540, passes=["lite_conv_scale_fuse_pass"])
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
