@@ -60,6 +60,7 @@ else()
   add_kernel(grid_sampler_compute_xpu XPU basic SRCS grid_sampler_compute.cc)
   add_kernel(fill_zeros_like_compute_xpu XPU basic SRCS fill_zeros_like_compute.cc)
   add_kernel(reduce_compute_xpu XPU basic SRCS reduce_compute.cc)
+  add_kernel(expand_compute_xpu XPU basic SRCS expand_compute.cc)
   add_kernel(expand_v2_compute_xpu XPU basic SRCS expand_v2_compute.cc)
 
   # extra
