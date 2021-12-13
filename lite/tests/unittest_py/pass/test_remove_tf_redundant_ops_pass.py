@@ -14,7 +14,7 @@
 import sys
 sys.path.append('..')
 
-from auto_scan_test import AutoScanTest, IgnoreReasons
+from auto_scan_test import FusePassAutoScanTest, IgnoreReasons
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import numpy as np
 from functools import partial
@@ -26,11 +26,11 @@ from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 
 
-class TestConvBnFuse(AutoScanTest):
+class TestConvBnFuse(FusePassAutoScanTest):
     def __init__(self, *args, **kwargs):
-        AutoScanTest.__init__(self, *args, **kwargs)
+        FusePassAutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(TargetType.ARM, [PrecisionType.FP32], DataLayoutType.NCHW, thread=[1, 4])
-        self.enable_testing_on_place(TargetType.X86, [PrecisionType.FP32], DataLayoutType.NCHW, thread=[1, 4])        
+        #self.enable_testing_on_place(TargetType.X86, [PrecisionType.FP32], DataLayoutType.NCHW, thread=[1, 4])        
         opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
                           Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
                           Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
@@ -42,8 +42,8 @@ class TestConvBnFuse(AutoScanTest):
         self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
-        return  predictor_config.target() != TargetType.X86
-#"RemoveSqueeze2Reshape2Pattern"
+        return  True
+
     def sample_program_configs(self, draw):
         pick_test=draw(st.sampled_from(["RemoveReshape2Pattern", ]))
         if pick_test=="RemoveReshape2Pattern":
@@ -143,7 +143,7 @@ class TestConvBnFuse(AutoScanTest):
             return program_config    
     def sample_predictor_configs(self):
         config = CxxConfig()
-        return self.get_predictor_configs(), ["softmax"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ['softmax'], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
@@ -156,10 +156,10 @@ class TestConvBnFuse(AutoScanTest):
             # IgnoreReasonsBase.ACCURACY_ERROR
             teller1, IgnoreReasons.ACCURACY_ERROR,
             "The op output has diff in a specific case. We need to fix it as soon as possible."
-        )     
+        )
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=25, passes=["lite_remove_tf_redundant_ops_pass"])
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

@@ -14,7 +14,7 @@
 import sys
 sys.path.append('..')
 
-from auto_scan_test import AutoScanTest, IgnoreReasons
+from auto_scan_test import FusePassAutoScanTest, IgnoreReasons
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import numpy as np
 from functools import partial
@@ -26,9 +26,9 @@ from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 
 
-class TestConvBnFuse(AutoScanTest):
+class TestElementwiseScaleFuse(FusePassAutoScanTest):
     def __init__(self, *args, **kwargs):
-        AutoScanTest.__init__(self, *args, **kwargs)     
+        FusePassAutoScanTest.__init__(self, *args, **kwargs)     
         opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
                           Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
                           Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
@@ -94,7 +94,7 @@ class TestConvBnFuse(AutoScanTest):
     
     def sample_predictor_configs(self):
         config = CxxConfig()
-        return self.get_predictor_configs(), ["elementwise_mul"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ['elementwise_mul'], (1e-5, 1e-5)        
 
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
@@ -110,7 +110,7 @@ class TestConvBnFuse(AutoScanTest):
         )
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=40,reproduce=None, min_success_num=10)
+        self.run_and_statis(quant=False, max_examples=40, min_success_num=15, passes=["lite_elementwise_scale_fuse_pass"])
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

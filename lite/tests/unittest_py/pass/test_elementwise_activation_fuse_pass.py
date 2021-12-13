@@ -14,7 +14,7 @@
 import sys
 sys.path.append('..')
 
-from auto_scan_test import AutoScanTest, IgnoreReasons
+from auto_scan_test import FusePassAutoScanTest, IgnoreReasons
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import numpy as np
 from functools import partial
@@ -26,11 +26,11 @@ from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 
 
-class TestConvBnFuse(AutoScanTest):
+class TestElementwiseActivationFuse(FusePassAutoScanTest):
     def __init__(self, *args, **kwargs):
-        AutoScanTest.__init__(self, *args, **kwargs)
+        FusePassAutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(TargetType.ARM, [PrecisionType.FP32], DataLayoutType.NCHW, thread=[1, 4])
-        self.enable_testing_on_place(TargetType.X86, [PrecisionType.FP32], DataLayoutType.NCHW, thread=[1, 4])        
+        #self.enable_testing_on_place(TargetType.X86, [PrecisionType.FP32], DataLayoutType.NCHW, thread=[1, 4])        
         opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
                           Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
                           Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
@@ -42,7 +42,7 @@ class TestConvBnFuse(AutoScanTest):
         self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
-        return  predictor_config.target() != TargetType.X86
+        return  True
 
     def sample_program_configs(self, draw):
         elementwise_type = draw(st.sampled_from(["elementwise_add", "elementwise_sub", "elementwise_mul"]))
@@ -100,7 +100,7 @@ class TestConvBnFuse(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=50, reproduce=None, min_success_num=10)
+        self.run_and_statis(quant=False, max_examples=30, min_success_num=10, passes=["lite_elementwise_activation_fuse_pass"])
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
