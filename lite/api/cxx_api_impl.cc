@@ -146,6 +146,10 @@ void CxxPaddleApiImpl::Init(const lite_api::CxxConfig &config) {
     CHECK(raw_predictor_) << "The Predictor can not be nullptr in Clone mode.";
   }
 
+#ifdef LITE_WITH_METAL
+  raw_predictor_->ConfigMetalContext(config);
+#endif
+
 #ifdef LITE_WITH_NPU
   // Store the model-level configuration into scope for kernels, and use
   // exe_scope to store the execution-level configuration
