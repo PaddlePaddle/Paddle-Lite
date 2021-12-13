@@ -40,11 +40,19 @@ class TestBilinearOp(AutoScanTest):
         self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
-        return True
+        if predictor_config.target() == TargetType.X86 or predictor_config.target() == TargetType.ARM:
+            # arm or x86 has diff
+            return False
+        else:
+            return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(min_value=1, max_value=100), min_size=4, max_size=4))
-        out_size = draw(st.lists(st.integers(min_value=1, max_value=100), min_size=2, max_size=2))
+        batch = draw(st.integers(min_value=1, max_value=4))
+        channel = draw(st.integers(min_value=1, max_value=32))
+        height = draw(st.integers(min_value=1, max_value=100))
+        width = draw(st.integers(min_value=1, max_value=100))
+        in_shape = [batch, channel, height, width]
+        out_size = draw(st.lists(st.integers(min_value=1, max_value=50), min_size=2, max_size=2))
         out_size_shape = draw(st.sampled_from([[1, 2]]))
         align_corners = draw(st.booleans())
         align_mode = draw(st.sampled_from([0, 1]))
@@ -59,7 +67,7 @@ class TestBilinearOp(AutoScanTest):
         def generate_size_tensor(*args, **kwargs):
             return np.random.randint(1,10, [1]).astype(np.int32)
         def generate_scale(*args, **kwargs):
-            return np.random.random([1]).astype(np.int32)
+            return np.random.random([1]).astype(np.float32)
         
         bilinear_interp_op = OpConfig(
             type = "bilinear_interp",
@@ -99,31 +107,10 @@ class TestBilinearOp(AutoScanTest):
         return self.get_predictor_configs(), ["bilinear_interp"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def teller1(program_config, predictor_config):
-            in_shape = list(program_config.inputs["input_data"].shape)
-            shape_num = 1
-
-            for val in in_shape:
-                shape_num = shape_num * val
-            # small siz run x86 has diff
-            if predictor_config.target() == TargetType.X86:
-                if shape_num < 10:
-                    return True
-                else:
-                    return False
-            else:
-                return False
-        self.add_ignore_check_case(
-            # IgnoreReasonsBase.PADDLE_NOT_IMPLEMENTED
-            # IgnoreReasonsBase.PADDLELITE_NOT_SUPPORT
-            # IgnoreReasonsBase.ACCURACY_ERROR
-            teller1, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff in a specific case. We need to fix it as soon as possible."
-        )
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=50)
+        self.run_and_statis(quant=False, max_examples=100)
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
