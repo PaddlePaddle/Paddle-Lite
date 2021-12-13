@@ -18,7 +18,7 @@ sys.path.append('../')
 from auto_scan_test import AutoScanTest, IgnoreReasons
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import unittest
-
+import paddle.fluid.core as core
 import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
@@ -35,6 +35,7 @@ class TestMulOp(AutoScanTest):
         # get input&output shape, get op attributes
         x_shape = list(program_config.inputs["input_data_x"].shape)
         y_shape = list(program_config.weights["input_data_y"].shape)
+        x_precision = program_config.inputs["input_data_x"].dtype();
         x_num_col_dims = program_config.ops[0].attrs["x_num_col_dims"]
         y_num_col_dims = program_config.ops[0].attrs["y_num_col_dims"]
 
@@ -45,7 +46,7 @@ class TestMulOp(AutoScanTest):
                 return False
         # {PrecisionType.FP16, PrecisionType.FP32, PrecisionType.FP64, PrecisionType.UINT8, PrecisionType.INT8, PrecisionType.INT16, PrecisionType.INT32, PrecisionType.INT64, PrecisionType.BOOL}
         elif predictor_config.precision() == PrecisionType.FP16:
-            if x_num_col_dims > 20:
+            if x_precision != core.VarDesc.VarType.FP16:
                 return False
         # {DataLayoutType.NCHW, DataLayoutType.NHWC, DataLayoutType.ImageDefault, DataLayoutType.ImageFolder, DataLayoutType.ImageNW, DataLayoutType.Any}
         elif predictor_config.layout() != DataLayoutType.NCHW:
