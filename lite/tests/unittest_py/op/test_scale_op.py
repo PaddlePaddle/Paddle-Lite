@@ -43,7 +43,6 @@ class TestScaleOp(AutoScanTest):
         self.enable_testing_on_place(places=opencl_places)
         # metal demo
         metal_places = [Place(TargetType.Metal, PrecisionType.FP32, DataLayoutType.MetalTexture2DArray),
-                        Place(TargetType.Metal, PrecisionType.FP16, DataLayoutType.MetalTexture2DArray),
                         Place(TargetType.ARM, PrecisionType.FP32),
                         Place(TargetType.Host, PrecisionType.FP32)]
         self.enable_testing_on_place(places=metal_places)
@@ -65,7 +64,7 @@ class TestScaleOp(AutoScanTest):
         bias = draw(st.floats(min_value=-5, max_value=5))
         bias_after_scale = draw(st.booleans())
         scale = draw(st.floats(min_value=-5, max_value=5))
-        input_type = draw(st.sampled_from(["int32", "int64", "float32"]))
+        input_type = "float32"
         has_scale_tensor = False # draw(st.booleans())
 
 

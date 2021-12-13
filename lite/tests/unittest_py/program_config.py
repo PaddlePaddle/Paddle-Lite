@@ -434,6 +434,7 @@ class DataLayoutType(Enum):
     ImageFolder = 3
     ImageNW = 4
     Any = 5
+    MetalTexture2DArray = 6
 
 def Place(target_type:TargetType, precision_type: Optional[PrecisionType]=None, data_layout:Optional[DataLayoutType] = None):
     place = target_type.name
