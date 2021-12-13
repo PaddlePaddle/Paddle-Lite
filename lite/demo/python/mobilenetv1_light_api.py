@@ -28,11 +28,20 @@ import numpy as np
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "--model_dir", default="", type=str, help="Non-combined Model dir path")
+parser.add_argument(
+    "--use_metal", action="store_true", default=False, help="use metal on Appel GPU. Default: False")
 
 def RunModel(args):
     # 1. Set config information
     config = MobileConfig()
     config.set_model_from_file(args.model_dir)
+    if args.use_metal:
+        # set metallib path
+        import paddlelite, os
+        module_path = os.path.dirname(paddlelite.__file__)
+        config.set_metal_lib_path(module_path + "/libs/lite.metallib")
+        config.set_metal_use_mps(True)
+
 
     # 2. Create paddle predictor
     predictor = create_paddle_predictor(config)
