@@ -236,7 +236,7 @@ class LITE_API RuntimeProgram {
 #endif
 
 for (auto& inst : instructions_[kRootBlockIdx]) {
-    kernel = inst.mutable_kernel();
+    KernelBase* kernel = inst.mutable_kernel();
 #ifdef LITE_WITH_OPENCL
     if (kernel->target() == TARGET(kOpenCL)) {
       if (opencl_valid) {
