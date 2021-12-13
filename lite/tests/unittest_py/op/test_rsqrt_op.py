@@ -28,9 +28,9 @@ import argparse
 class TestRsqrtOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,2,4])
-        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,2,4])
-        self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,2,4])
+        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
+        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
+        self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
         opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
                           Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
                           Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
@@ -79,9 +79,10 @@ class TestRsqrtOp(AutoScanTest):
         target_str = self.get_target()
         max_examples = 25
         if target_str == "OpenCL":
+            # Make sure to generate enough valid cases for OpenCL
             max_examples = 200
 
-        self.run_and_statis(quant=False, max_examples=max_examples)
+        self.run_and_statis(quant=False, min_success_num=25, max_examples=max_examples)
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
