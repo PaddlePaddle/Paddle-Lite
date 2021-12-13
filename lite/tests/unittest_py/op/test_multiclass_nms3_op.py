@@ -26,7 +26,7 @@ import numpy as np
 from functools import partial
 import hypothesis.strategies as st
 
-class TestMulticlassNmsOp(AutoScanTest):
+class TestMulticlassNms3Op(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 4])
@@ -53,16 +53,15 @@ class TestMulticlassNmsOp(AutoScanTest):
         nms_top_k = draw(st.integers(min_value=1, max_value=64))
         keep_top_k = draw(st.integers(min_value=1, max_value=64))
         normalized = draw(st.booleans())
-
-        multiclass_nms_op = OpConfig(
-            type = "multiclass_nms",
+        multiclass_nms3_op = OpConfig(
+            type = "multiclass_nms3",
             inputs = {"BBoxes" : ["input_data_BBoxes"], "Scores" : ["input_data_Scores"]},
-            outputs = {"Out": ["output_data"]},
-            attrs = {"background_label":background_label, "score_threshold":score_threshold, "nms_threshold":nms_threshold,
-               "nms_top_k":nms_top_k, "keep_top_k":keep_top_k, "normalized":normalized, "nms_eta":nms_eta})
+            outputs = {"Out" : ["output_data"], "Index" : ["Index"], "RoisNum" : ["RoisNum"], "NmsRoisNum" : ["NmsRoisNum"]},
+            attrs = {"background_label" : background_label, "score_threshold" : score_threshold, "nms_threshold" : nms_threshold,
+                "nms_top_k" : nms_top_k, "keep_top_k" : keep_top_k, "normalized" : normalized, "nms_eta" : nms_eta})
 
         program_config = ProgramConfig(
-            ops=[multiclass_nms_op],
+            ops=[multiclass_nms3_op],
             weights={},
             inputs={
                 "input_data_BBoxes":
@@ -74,13 +73,13 @@ class TestMulticlassNmsOp(AutoScanTest):
 
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["multiclass_nms"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["multiclass_nms3"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=40)
+        self.run_and_statis(quant=False, max_examples=25)
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
