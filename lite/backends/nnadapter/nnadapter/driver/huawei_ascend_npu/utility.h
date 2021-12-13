@@ -24,6 +24,8 @@
 #include "graph/ge_error_codes.h"
 #include "graph/graph.h"
 #include "utility/logging.h"
+#include "utility/string.h"
+#include "utility/utility.h"
 
 namespace nnadapter {
 namespace huawei_ascend_npu {
@@ -34,6 +36,8 @@ namespace huawei_ascend_npu {
 // HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0
 #define HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS \
   "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS"
+
+#define LD_LIBRARY_PATH "LD_LIBRARY_PATH"
 
 // Prepare AscendCL environment and register the finalizer to be called at
 // normal process termination
@@ -113,20 +117,32 @@ std::string ConvertInterpolateModeCodeToGEInterpolateMode(
 
 // Get Ascend CANN version
 inline void GetAscendCANNVersion() {
-  static int major_version;
-  static int minor_version;
-  static int patch_version;
-  for (int major : std::vector<int>{3, 5}) {
-    for (int minor = 0; minor < 6; ++minor) {
-      for (int patch = 0; patch < 6; ++patch) {
-        if (ge::aclrtGetVersion(major, minor, patch)) {
-          major_version = major;
-          minor_version = minor;
-          patch_version = patch;
-        }
-      }
+  // static int major_version = 3;
+  // static int minor_version = 3;
+  // static int patch_version = 0;
+  std::string ascend_cann_path;
+  std::string ld_library_paths = GetStringFromEnv(LD_LIBRARY_PATH);
+  std::vector<std::string> paths =
+      string_split<std::string>(ld_library_paths, ":");
+  for (auto path : paths) {
+    NNADAPTER_VLOG(5) << "DEBUG: PATH:" << path;
+    if (path.find("ascend-toolkit") != std::string::npos) {
+      ascend_cann_path = path;
+      break;
+    } else {
+      ascend_cann_path = "/usr/local/Ascend/ascend-toolkit/latest";
     }
   }
+  NNADAPTER_VLOG(5) << "DEBUG: ascend_cann_path:" << ascend_cann_path;
+
+  // //获取文件路径, 填充到abs_path_buff
+  // //realpath函数返回: null表示获取失败; 否则返回指向abs_path_buff的指针
+  // if(realpath(file_name, abs_path_buff)){
+  //     printf("%s %s\n", file_name, abs_path_buff);
+  // }
+  // else{
+  //     printf("the file '%s' is not exist\n", file_name);
+  // }
 }
 
 }  // namespace huawei_ascend_npu
