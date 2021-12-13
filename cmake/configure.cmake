@@ -151,6 +151,10 @@ if (LITE_WITH_ARM)
     add_definitions("-DLITE_WITH_ARM")
 endif()
 
+if(LITE_WITH_ARM82_FP16)
+    add_definitions(-DENABLE_ARM_FP16)
+endif()
+
 if (LITE_WITH_CV)
     if(NOT LITE_WITH_ARM)
         message(FATAL_ERROR "CV functions uses the ARM instructions, so LITE_WITH_ARM must be turned on")
