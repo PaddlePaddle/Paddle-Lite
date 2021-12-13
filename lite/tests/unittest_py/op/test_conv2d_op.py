@@ -49,14 +49,15 @@ class TestConv2dOp(AutoScanTest):
             return True
 
     def sample_program_configs(self, draw):
-        num = draw(st.integers(min_value=1, max_value=64))
+        num = draw(st.integers(min_value=1, max_value=4))
         w_cin = draw(st.integers(min_value=1, max_value=128))
         height = draw(st.integers(min_value=1, max_value=128))
         width = draw(st.integers(min_value=1, max_value=128))
         cout = draw(st.integers(min_value=1, max_value=128))
-        kw = np.random.randint(1, 9)
-        kh = np.random.randint(1, 9)
+        kw = np.random.randint(1, 5)
+        kh = np.random.randint(1, 5)
         groups = draw(st.sampled_from([1, 2, 128]))
+        cout = groups * cout
         scale_in = draw(st.floats(min_value=0.001, max_value=0.1))
         scale_out = draw(st.floats(min_value=0.001, max_value=0.1))
         cin = w_cin * groups
