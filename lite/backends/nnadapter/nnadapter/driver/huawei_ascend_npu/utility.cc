@@ -58,9 +58,17 @@ void InitializeGraphBuilder() {
   if (!initialized) {
     NNADAPTER_VLOG(5) << "Initialize Graph Builder.";
     // The following APIs can only be called once in one process
+    std::string soc_version = "Ascend310";
+    const char* soc_name = ge::aclrtGetSocName();
+    if (soc_name != nullptr) {
+      soc_version = soc_name;
+    } else {
+      NNADAPTER_VLOG(WARNING)
+          << "Get Ascend soc name failed. Ascend310 is used by default";
+    }
     std::map<ge::AscendString, ge::AscendString> global_options;
     global_options.insert(
-        std::make_pair(ge::ir_option::SOC_VERSION, "Ascend310"));
+        std::make_pair(ge::ir_option::SOC_VERSION, soc_version));
     ge::aclgrphBuildInitialize(global_options);
     // Register 'FinalizeGraphBuilder' to be called at normal process
     // termination

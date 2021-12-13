@@ -111,5 +111,23 @@ std::string ConvertPadModeCodeToGEPadMode(int pad_mode_code);
 std::string ConvertInterpolateModeCodeToGEInterpolateMode(
     int interpolate_mode_code);
 
+// Get Ascend CANN version
+inline void GetAscendCANNVersion() {
+  static int major_version;
+  static int minor_version;
+  static int patch_version;
+  for (int major : std::vector<int>{3, 5}) {
+    for (int minor = 0; minor < 6; ++minor) {
+      for (int patch = 0; patch < 6; ++patch) {
+        if (ge::aclrtGetVersion(major, minor, patch)) {
+          major_version = major;
+          minor_version = minor;
+          patch_version = patch;
+        }
+      }
+    }
+  }
+}
+
 }  // namespace huawei_ascend_npu
 }  // namespace nnadapter
