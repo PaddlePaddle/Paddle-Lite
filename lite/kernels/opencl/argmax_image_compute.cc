@@ -42,7 +42,7 @@ class ArgmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
     axis_ = argmax_param_->Axis;
     if (axis_ < 0) axis_ += x_dims.size();
     int padding_axis = axis_ + (4 - x_dims.size());
-    int padding_axis = argmax_param_->Axis + (4 - x_dims.size());
+    padding_axis = argmax_param_->Axis + (4 - x_dims.size());
     switch (padding_axis) {
       case 0:
         kernel_func_name_ = "argmax_n";
