@@ -90,7 +90,7 @@ void test(const lite_api::CLPrecisionType p,
   for (size_t i = 0; i < x_dim.size(); i++) {
     output_shape.push_back(x_dim[i]);
   }
-  int axis_new = (axis >= 0) : axis : axis + x_dim.size();
+  int axis_new = (axis >= 0) ? axis : axis + x_dim.size();
   output_shape[axis_new] = 1L;
   DDim out_dim(output_shape);
 
