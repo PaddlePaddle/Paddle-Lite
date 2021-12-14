@@ -40,12 +40,7 @@ class TestConv2dOp(AutoScanTest):
         self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
-        # M1 dosen't support FP16 build and int8 kernel run error
-        if predictor_config.precision() == PrecisionType.FP16 or predictor_config.precision() == PrecisionType.INT8:
-            return False
-        else:
-            return True
-        return True
+        return False
 
     def sample_program_configs(self, draw):
         in_shape=draw(st.lists(st.integers(min_value=1, max_value=64), min_size=4, max_size=4))
@@ -68,9 +63,6 @@ class TestConv2dOp(AutoScanTest):
         padding_algorithm = draw(st.sampled_from(["VALID", "SAME"]))
         strides = draw(st.sampled_from([[1, 1], [2, 2]]))
         data_format = "NCHW"
-        use_mkldnn = False
-        if self.target[0] == "X86":
-            use_mkldnn = True
 
         def generate_input(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
@@ -78,20 +70,15 @@ class TestConv2dOp(AutoScanTest):
             return np.random.random(weight_shape).astype(np.float32)
         def generate_bias(*args, **kwargs):
             return np.random.random([cout]).astype(np.float32)
-        inputs_data = {"input_data":
-                TensorConfig(data_gen=partial(generate_input))}
-        inputs_type = {"Input": ["input_data"], "Filter" : ["filter_data"]}
-        if use_mkldnn:
-            inputs_data["bias_data"] = TensorConfig(data_gen=partial(generate_bias))
-            inputs_type["Bias"] = ["bias_data"]
-        
         conv_op = OpConfig(
             type = "conv2d",
-            inputs = inputs_type,
+            inputs = {"Input" : ["input_data"],
+                     "Filter" : ["filter_data"],
+                     "Bias" : ["bias_data"]},
             outputs = {"Output": ["output_data"]},
             attrs = {"strides" : strides,
                     "paddings" : paddings,
-                    "use_mkldnn" : use_mkldnn,
+                    "use_mkldnn" : True,
                     "padding_algorithm" : padding_algorithm,
                     "groups" : groups,
                     "dilations" : dilations,
@@ -102,9 +89,14 @@ class TestConv2dOp(AutoScanTest):
             ops=[conv_op],
             weights={
                 "filter_data":
-                TensorConfig(data_gen=partial(generate_filter))
+                TensorConfig(data_gen=partial(generate_filter)),
+                "bias_data":
+                TensorConfig(data_gen=partial(generate_bias))
             },
-            inputs=inputs_data,
+            inputs={
+                "input_data":
+                TensorConfig(data_gen=partial(generate_input))
+            },
             outputs=["output_data"])
         return program_config
 
