@@ -41,14 +41,14 @@ class TestSequenceReshapeOp(AutoScanTest):
         lod_data=draw(st.lists(st.integers(min_value=0, max_value=64), min_size=0, max_size=3))
         lod_data.append(12)
         new_dim = draw(st.sampled_from([12]))
-        input_type = draw(st.sampled_from(["type_float", "type_int", "type_int64"]))
+        input_type = draw(st.sampled_from(["float32", "int32", "int64"]))
 
         def generate_input(*args, **kwargs):
-            if input_type == "type_float":
+            if input_type == "float32":
                 return np.random.normal(0.0, 1.0, [12, 12]).astype(np.float32)
-            elif input_type == "type_int":
+            elif input_type == "int32":
                 return np.random.normal(0.0, 1.0, [12, 12]).astype(np.int32)
-            elif input_type == "type_int64":
+            elif input_type == "int64":
                 return np.random.normal(0.0, 1.0, [12, 12]).astype(np.int64)
 
         ops_config = OpConfig(

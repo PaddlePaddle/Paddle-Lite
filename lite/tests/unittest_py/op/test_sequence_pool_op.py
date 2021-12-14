@@ -30,6 +30,7 @@ class TestSequenceReshapeOp(AutoScanTest):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(TargetType.X86, [PrecisionType.FP32], DataLayoutType.NCHW, thread=[1,4])
         self.enable_testing_on_place(TargetType.ARM, [PrecisionType.FP32], DataLayoutType.NCHW, thread=[1,4])
+        self.enable_testing_on_place(TargetType.ARM, [PrecisionType.FP16], DataLayoutType.NCHW, thread=[1,4])
 
     def is_program_valid(self, program_config: ProgramConfig, predictor_config: CxxConfig) -> bool:
         return True
@@ -76,7 +77,10 @@ class TestSequenceReshapeOp(AutoScanTest):
 
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["sequence_pool"], (1e-5, 1e-5)
+        if self.precision[0] == PrecisionType.FP32:
+            return self.get_predictor_configs(), ["sequence_pool"], (1e-5, 1e-5)
+        elif self.precision[0] == PrecisionType.FP16:
+            return self.get_predictor_configs(), ["sequence_pool"], (1e-3, 1e-3)
 
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
