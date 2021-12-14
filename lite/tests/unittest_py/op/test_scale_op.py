@@ -62,6 +62,8 @@ class TestScaleOp(AutoScanTest):
             elif  predictor_config.precision() == PrecisionType.FP32 and in_data_type != np.float32:
                 return False
         return True
+        if target_type == TargetType.Metal and in_data_type not in [np.float16, np.float32]:
+            return False
 
         if "ScaleTensor" in program_config.inputs:
             print("ScaleTensor as Input is not supported on Paddle Lite.")
