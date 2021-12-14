@@ -44,10 +44,12 @@ class TestMulOp(AutoScanTest):
             if x_shape[1] != y_shape[0]:
                 return False
         # {PrecisionType.FP16, PrecisionType.FP32, PrecisionType.FP64, PrecisionType.UINT8, PrecisionType.INT8, PrecisionType.INT16, PrecisionType.INT32, PrecisionType.INT64, PrecisionType.BOOL}
-        if predictor_config.precision() == PrecisionType.FP16 and x_precision != np.float16:
-            return False
-        elif predictor_config.precision() == PrecisionType.FP32 and x_precision != np.float32:
-           return False
+        target_type = predictor_config.target()
+        if target_type not in [TargetType.OpenCL, TargetType.Metal]:
+            if predictor_config.precision() == PrecisionType.FP16 and in_data_type != np.float16:
+                return False
+            elif  predictor_config.precision() == PrecisionType.FP32 and in_data_type != np.float32:
+                return False
 
         # {DataLayoutType.NCHW, DataLayoutType.NHWC, DataLayoutType.ImageDefault, DataLayoutType.ImageFolder, DataLayoutType.ImageNW, DataLayoutType.Any}
         elif predictor_config.layout() != DataLayoutType.NCHW:
