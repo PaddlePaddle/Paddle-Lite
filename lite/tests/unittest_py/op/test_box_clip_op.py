@@ -54,17 +54,9 @@ class TestBoxClipOp(AutoScanTest):
         in_shape = [dim0, dim1, 4]
         iminfo_shape = [dim0, 3]
         def generate_input(*args, **kwargs):
-            a = np.random.random(in_shape).astype(np.float32)
-            print("a: ", a)
-            return a
+            return np.random.random(in_shape).astype(np.float32)
         def generate_iminfo(*args, **kwargs):
-            # return np.random.random(iminfo_shape).astype(np.float32)
-            arr = np.ones(iminfo_shape).astype(np.float32)
-            for i in range(0, dim0):
-                arr[i][0] = 3
-                arr[i][1] = 2
-                arr[i][2] = 1
-            return arr #np.ones(iminfo_shape).astype(np.float32)
+            return np.random.random(iminfo_shape).astype(np.float32)
         box_clip_op = OpConfig(
             type = "box_clip",
             inputs = {"Input" : ["input_data"],
