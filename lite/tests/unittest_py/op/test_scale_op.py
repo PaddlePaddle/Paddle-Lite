@@ -42,16 +42,33 @@ class TestScaleOp(AutoScanTest):
                         ]
         self.enable_testing_on_place(places=opencl_places)
         # metal demo
+        #   fp32 metal kernel
         metal_places = [Place(TargetType.Metal, PrecisionType.FP32, DataLayoutType.MetalTexture2DArray),
                         Place(TargetType.ARM, PrecisionType.FP32),
                         Place(TargetType.Host, PrecisionType.FP32)]
         self.enable_testing_on_place(places=metal_places)
+        #   fp16 metal kernel
+        fp16_metal_places = [Place(TargetType.Metal, PrecisionType.FP16, DataLayoutType.MetalTexture2DArray),
+                        Place(TargetType.ARM, PrecisionType.FP32),
+                        Place(TargetType.Host, PrecisionType.FP32)]
+        self.enable_testing_on_place(places=fp16_metal_places)
 
     def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
         in_shape = list(program_config.inputs["input_data"].shape)
-        if "int8" == program_config.inputs["input_data"].dtype:
+        in_data_type = program_config.inputs["input_data"].dtype
+        if np.int8 == in_data_type:
             print("int8 as Input data type is not supported.")
             return False
+        if predictor_config.precision() == PrecisionType.FP16 and in_data_type != np.float16:
+            return False
+        elif predictor_config.precision() == PrecisionType.FP32 and in_data_type != np.float32:
+           return False
+        return True
+
+        if in_data_type != np.float16
+            print("int8 as Input data type is not supported.")
+            return False
+
         if "ScaleTensor" in program_config.inputs:
             print("ScaleTensor as Input is not supported on Paddle Lite.")
             return False
@@ -64,7 +81,7 @@ class TestScaleOp(AutoScanTest):
         bias = draw(st.floats(min_value=-5, max_value=5))
         bias_after_scale = draw(st.booleans())
         scale = draw(st.floats(min_value=-5, max_value=5))
-        input_type = "float32"
+        input_type = draw(st.sampled_from(["int32", "int64", "float32"]))
         has_scale_tensor = False # draw(st.booleans())
 
 
