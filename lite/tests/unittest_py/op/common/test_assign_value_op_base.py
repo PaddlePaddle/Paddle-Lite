@@ -25,12 +25,22 @@ from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 import numpy
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=1, max_value=4), min_size=1, max_size=4))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=4), min_size=1, max_size=4))
     dtype = draw(st.sampled_from([2, 3, 5]))
     bool_values = draw(st.lists(st.booleans(), min_size=1, max_size=4))
-    fp32_values = draw(st.lists(st.floats(min_value=1, max_value=4), min_size=1, max_size=4))
-    int32_values = draw(st.lists(st.integers(min_value=1, max_value=4), min_size=1, max_size=4))
+    fp32_values = draw(
+        st.lists(
+            st.floats(
+                min_value=1, max_value=4), min_size=1, max_size=4))
+    int32_values = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=4), min_size=1, max_size=4))
     int64_values = np.random.random([1]).astype(np.int64).tolist()
     in_shape_num = 1
     for val in in_shape:
@@ -43,19 +53,18 @@ def sample_program_configs(draw):
         assume(in_shape_num == len(fp32_values))
 
     assign_value_op = OpConfig(
-        type = "assign_value",
-        inputs = {},
-        outputs = {"Out": ["output_data"]},
-        attrs = {"shape": in_shape,
-                "dtype": dtype,
-                "bool_values": bool_values,
-                "fp32_values": fp32_values,
-                "int32_values": int32_values,
-                "int64_values": int64_values})
-    
-    program_config = ProgramConfig(
-        ops=[assign_value_op],
-        weights={},
+        type="assign_value",
         inputs={},
-        outputs=["output_data"])
+        outputs={"Out": ["output_data"]},
+        attrs={
+            "shape": in_shape,
+            "dtype": dtype,
+            "bool_values": bool_values,
+            "fp32_values": fp32_values,
+            "int32_values": int32_values,
+            "int64_values": int64_values
+        })
+
+    program_config = ProgramConfig(
+        ops=[assign_value_op], weights={}, inputs={}, outputs=["output_data"])
     return program_config

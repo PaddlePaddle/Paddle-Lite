@@ -25,20 +25,33 @@ import numpy as np
 from functools import partial
 import hypothesis.strategies as st
 
+
 class TestGatherOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,2])
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 2])
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         # run ut is error
         return False
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(min_value=4, max_value=8), min_size=3, max_size=4))
-        axis = draw(st.integers(min_value=0, max_value=len(in_shape) -1))
-        index = draw(st.sampled_from([[0],[2], [3], [1, 2], [1, 2, 3], [in_shape[axis] -1], [in_shape[axis] - 2, in_shape[axis] - 1]]))
-        axis_type  = draw(st.sampled_from(["int32", "int64"]))
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=4, max_value=8), min_size=3, max_size=4))
+        axis = draw(st.integers(min_value=0, max_value=len(in_shape) - 1))
+        index = draw(
+            st.sampled_from([[0], [2], [3], [1, 2], [1, 2, 3], [
+                in_shape[axis] - 1
+            ], [in_shape[axis] - 2, in_shape[axis] - 1]]))
+        axis_type = draw(st.sampled_from(["int32", "int64"]))
         index_type = draw(st.sampled_from(["int32", "int64"]))
         with_tenor_axis = draw(st.sampled_from([True, False]))
 
@@ -63,44 +76,43 @@ class TestGatherOp(AutoScanTest):
         def generate_input_float32(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
 
-        generate_input = draw(st.sampled_from([generate_input_int32, generate_input_int64, generate_input_float32]))
+        generate_input = draw(
+            st.sampled_from([
+                generate_input_int32, generate_input_int64,
+                generate_input_float32
+            ]))
 
         op_inputs = {}
         program_inputs = {}
-        if(with_tenor_axis):
+        if (with_tenor_axis):
             op_inputs = {
-                      "X" : ["input_data"],
-                      "Index" : ["index_data"],
-                      "Axis" : ["axis_data"]
+                "X": ["input_data"],
+                "Index": ["index_data"],
+                "Axis": ["axis_data"]
             }
-            program_inputs={
-                "input_data" : TensorConfig(data_gen=partial(generate_input)),
-                "index_data" : TensorConfig(data_gen=partial(generate_index)),
-                "axis_data" : TensorConfig(data_gen=partial(generate_axis))
+            program_inputs = {
+                "input_data": TensorConfig(data_gen=partial(generate_input)),
+                "index_data": TensorConfig(data_gen=partial(generate_index)),
+                "axis_data": TensorConfig(data_gen=partial(generate_axis))
             }
         else:
-            op_inputs = {
-                      "X" : ["input_data"],
-                      "Index" : ["index_data"]
-            }
-            program_inputs={
-                "input_data" : TensorConfig(data_gen=partial(generate_input)),
-                "index_data" : TensorConfig(data_gen=partial(generate_index))
+            op_inputs = {"X": ["input_data"], "Index": ["index_data"]}
+            program_inputs = {
+                "input_data": TensorConfig(data_gen=partial(generate_input)),
+                "index_data": TensorConfig(data_gen=partial(generate_index))
             }
 
         gather_op = OpConfig(
-            type = "gather",
-            inputs = op_inputs,
-            outputs = {"Out": ["output_data"]},
-            attrs = {"axis" : axis})
+            type="gather",
+            inputs=op_inputs,
+            outputs={"Out": ["output_data"]},
+            attrs={"axis": axis})
         program_config = ProgramConfig(
             ops=[gather_op],
             weights={},
             inputs=program_inputs,
             outputs=["output_data"])
         return program_config
-
-
 
     def sample_predictor_configs(self):
         return self.get_predictor_configs(), ["gather"], (1e-5, 1e-5)
@@ -110,6 +122,7 @@ class TestGatherOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
