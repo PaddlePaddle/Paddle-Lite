@@ -30,6 +30,11 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
+static int major_version = -1;
+static int minor_version = -1;
+static int patch_version = -1;
+static int bugfix_version = -1;
+
 // The following environment variables can be used at runtime:
 // Specify the list of device IDs, such as
 // HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0,1,2,3 or
@@ -38,6 +43,11 @@ namespace huawei_ascend_npu {
   "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS"
 
 #define LD_LIBRARY_PATH "LD_LIBRARY_PATH"
+
+#define NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MIN_VERSION( \
+    major, minor, patch, bugfix)                      \
+  NNADAPTE_HUAWEI_ASCEND_NPU_CANN_VERSION >=          \
+      ((major)*1000 + (minor)*100 + (patch)*10 + bugfix)
 
 // Prepare AscendCL environment and register the finalizer to be called at
 // normal process termination
@@ -115,35 +125,20 @@ std::string ConvertPadModeCodeToGEPadMode(int pad_mode_code);
 std::string ConvertInterpolateModeCodeToGEInterpolateMode(
     int interpolate_mode_code);
 
-// Get Ascend CANN version
-inline void GetAscendCANNVersion() {
-  // static int major_version = 3;
-  // static int minor_version = 3;
-  // static int patch_version = 0;
-  std::string ascend_cann_path;
-  std::string ld_library_paths = GetStringFromEnv(LD_LIBRARY_PATH);
-  std::vector<std::string> paths =
-      string_split<std::string>(ld_library_paths, ":");
-  for (auto path : paths) {
-    NNADAPTER_VLOG(5) << "DEBUG: PATH:" << path;
-    if (path.find("ascend-toolkit") != std::string::npos) {
-      ascend_cann_path = path;
-      break;
-    } else {
-      ascend_cann_path = "/usr/local/Ascend/ascend-toolkit/latest";
-    }
-  }
-  NNADAPTER_VLOG(5) << "DEBUG: ascend_cann_path:" << ascend_cann_path;
+// Get real path
+inline std::string GetRealPath(const char* path);
 
-  // //获取文件路径, 填充到abs_path_buff
-  // //realpath函数返回: null表示获取失败; 否则返回指向abs_path_buff的指针
-  // if(realpath(file_name, abs_path_buff)){
-  //     printf("%s %s\n", file_name, abs_path_buff);
-  // }
-  // else{
-  //     printf("the file '%s' is not exist\n", file_name);
-  // }
-}
+// Get Ascend CANN version
+inline void GetAscendCANNVersion();
+
+// Compose version number
+inline std::string ComposeCANNVersion();
+
+// Split CANN version into major, minor, patch and bugfix version
+inline std::string SplitCANNVersion();
+
+// Get Ascend soc name
+inline ge::AscendString GetAscendSocName();
 
 }  // namespace huawei_ascend_npu
 }  // namespace nnadapter

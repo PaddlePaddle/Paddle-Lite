@@ -15,6 +15,7 @@
 #include "driver/huawei_ascend_npu/utility.h"
 #include <map>
 #include <mutex>  // NOLINT
+#include <regex>  // NOLINT
 #include <utility>
 #include "utility/debug.h"
 #include "utility/string.h"
@@ -60,16 +61,7 @@ void InitializeGraphBuilder() {
   if (!initialized) {
     NNADAPTER_VLOG(5) << "Initialize Graph Builder.";
     // The following APIs can only be called once in one process
-    ge::AscendString soc_version = "Ascend310";
-    // #ifdef (NNADAPTER_ASCEND_CANN_VERSION_5_0_3)
-    //     const char* soc_name = aclrtGetSocName();
-    //     if (soc_name != nullptr) {
-    //       soc_version = soc_name;
-    //     } else {
-    //       NNADAPTER_VLOG(5) << "Get Ascend soc name failed. Ascend310 is used
-    //       by default";
-    //     }
-    // #endif
+    ge::AscendString soc_version = GetAscendSocName();
     std::map<ge::AscendString, ge::AscendString> global_options;
     global_options.insert(
         std::make_pair(ge::ir_option::SOC_VERSION, soc_version));
@@ -502,6 +494,114 @@ std::string ConvertInterpolateModeCodeToGEInterpolateMode(
       break;
   }
   return "bilinear";
+}
+
+std::string GetRealPath(const char* path) {
+  if (path == nullptr) {
+    NNADAPTER_LOG(FATAL) << "Input path is nullptr";
+    return nullptr;
+  }
+
+  char real_path[4096] = {0};
+  if (strlen(path) >= 4096 || realpath(path, real_path) == nullptr) {
+    NNADAPTER_LOG(FATAL) << "Get real path failed, path[" << path << "]";
+    return nullptr;
+  }
+  return std::string(real_path);
+}
+
+inline void GetAscendCANNVersion() {
+  std::string ascend_cann_path;
+  std::string ld_library_paths = GetStringFromEnv(LD_LIBRARY_PATH);
+  std::vector<std::string> paths =
+      string_split<std::string>(ld_library_paths, ":");
+  for (auto path : paths) {
+    if (path.find("ascend-toolkit") != std::string::npos) {
+      ascend_cann_path = path;
+      break;
+    } else {
+      ascend_cann_path = "/usr/local/Ascend/ascend-toolkit/latest";
+    }
+  }
+  auto ascend_cann_real_path = GetRealPath(ascend_cann_path.c_str());
+  std::vector<std::string> path_split =
+      string_split<std::string>(ascend_cann_real_path, "/");
+  std::string cann_version;
+  for (size_t i = 0; i < path_split.size(); i++) {
+    if (path_split[i] == "ascend-toolkit") {
+      if (i <= path_split.size() - 1) {
+        cann_version = path_split[i + 1];
+      }
+      break;
+    }
+  }
+  auto cann_version_split = string_split<std::string>(cann_version, ".");
+  if (cann_version_split.size() == 3) {
+    major_version = atoi(cann_version_split[0].c_str());
+    minor_version = atoi(cann_version_split[1].c_str());
+    patch_version = atoi(cann_version_split[2].c_str());
+  } else if (cann_version_split.size() == 4) {
+    major_version = atoi(cann_version_split[0].c_str());
+    minor_version = atoi(cann_version_split[1].c_str());
+    patch_version = atoi(cann_version_split[2].c_str());
+    std::regex reg("(\\d+)");
+    std::smatch matchResult;
+    if (std::regex_search(cann_version_split[3], matchResult, reg)) {
+      if (matchResult.size() >= 1) {
+        bugfix_version = atoi(matchResult[0].str().c_str());
+      } else {
+        bugfix_version = 0;
+      }
+    }
+  } else {
+    NNADAPTER_LOG(FATAL) << "Can't get cann version";
+  }
+}
+
+inline std::string ComposeCANNVersion() {
+  if (bugfix_version == -1)
+    return string_format(
+        "%d.%d.%d", major_version, minor_version, patch_version);
+  else
+    return string_format("%d.%d.%d.alpha00%d",
+                         major_version,
+                         minor_version,
+                         patch_version,
+                         bugfix_version);
+}
+
+inline std::string SplitCANNVersion() {
+  if (bugfix_version == -1) {
+    return string_format(
+        "%d.%d.%d", major_version, minor_version, patch_version);
+  } else {
+    int major = NNADAPTE_HUAWEI_ASCEND_NPU_CANN_VERSION / 1000;
+    int minor = NNADAPTE_HUAWEI_ASCEND_NPU_CANN_VERSION / 100;
+    int patch = NNADAPTE_HUAWEI_ASCEND_NPU_CANN_VERSION / 10;
+    int bugfix = NNADAPTE_HUAWEI_ASCEND_NPU_CANN_VERSION / 1;
+    return string_format("%d.%d.%d.alpha00%d", major, minor, patch, bugfix);
+  }
+}
+
+inline ge::AscendString GetAscendSocName() {
+  ge::AscendString soc_version = "Ascend310";
+#if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MIN_VERSION(5, 0, 2, 1)
+  if (major_version >= 5 && minor_version >= 0 && patch_version >= 2) {
+    const char* soc_name = aclrtGetSocName();
+    if (soc_name != nullptr) {
+      soc_version = ge::AscendString(soc_name);
+    } else {
+      NNADAPTER_LOG(WARNING)
+          << "Get Ascend soc name failed. Ascend310 is used by default";
+    }
+  } else {
+    NNADAPTER_LOG(FATAL) << "The Ascend CANN version you actually installed("
+                         << ComposeCANNVersion() << ")"
+                         << "is lower than the minimum version you specified("
+                         << SplitCANNVersion() << ")";
+  }
+#endif
+  return soc_version;
 }
 
 }  // namespace huawei_ascend_npu

@@ -11,7 +11,7 @@ readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
 readonly THIRDPARTY_TAR=third-party-801f670.tar.gz
 readonly workspace=$PWD
 
-NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-8}
+NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-32}
 ROOT_DIR=$(pwd)
 BUILD_DIR=$(pwd)/build
 
@@ -45,6 +45,9 @@ XPU_SDK_ROOT=""
 NNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG=""
 NNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT=""
 NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL=""
+# Huawei Ascend NPU options
+NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest"
+NNADAPTER_HUAWEI_ASCEND_NPU_SDK_VERSION="3.3.0"
 
 # if operating in mac env, we should expand the maximum file num
 os_name=$(uname -s)
@@ -587,7 +590,7 @@ function huawei_ascend_npu_build_and_test() {
     prepare_workspace $ROOT_DIR $BUILD_DIR
     local archs=(${ARCH_LIST//,/ })
     for arch in ${archs[@]}; do
-        sdk_root_dir="/usr/local/Ascend/ascend-toolkit/latest"
+        sdk_root_dir=$NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT
         if [ "${arch}" == "x86" ]; then
             with_x86=ON
             with_arm=OFF
@@ -616,7 +619,8 @@ function huawei_ascend_npu_build_and_test() {
             -DLITE_BUILD_EXTRA=ON \
             -DLITE_WITH_NNADAPTER=ON \
             -DNNADAPTER_WITH_HUAWEI_ASCEND_NPU=ON \
-            -DNNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT="$sdk_root_dir" \
+            -DNNADAPTER_HUAWEI_ASCEND_NPU_SDK_VERSION="$NNADAPTER_HUAWEI_ASCEND_NPU_SDK_VERSION" \
+            -DNNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT="$NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT" \
             -DCMAKE_BUILD_TYPE=Release
         make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 
@@ -1229,6 +1233,14 @@ function main() {
             ;;
         --nnadapter_verisilicon_timvx_viv_sdk_url=*)
             NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL="${i#*=}"
+            shift
+            ;;
+        --nnadapter_huawei_ascend_npu_sdk_root=*)
+            NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT="${i#*=}"
+            shift
+            ;;
+        --nnadapter_huawei_ascend_npu_sdk_version=*)
+            NNADAPTER_HUAWEI_ASCEND_NPU_SDK_VERSION="${i#*=}"
             shift
             ;;
         android_cpu_build_and_test)
