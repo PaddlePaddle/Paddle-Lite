@@ -428,7 +428,7 @@ class AutoScanBaseTest(unittest.TestCase):
         assert  (target is not None)
         target_ = target if isinstance(target,list) else [target]
         precision_ = precision if isinstance(precision, list) else [precision]
-        layout_ = precision if isinstance(layout,list) else [layout]
+        layout_ = layout if isinstance(layout,list) else [layout]
         for tar_, pre_, lay_ in product(target_, precision_, layout_):
             self.valid_places.append([Place(tar_, pre_, lay_)])
         return
