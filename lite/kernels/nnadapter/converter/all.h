@@ -15,7 +15,10 @@
 #ifndef __NNADAPTER_CONVERTER_ALL_H__  // NOLINT
 #define __NNADAPTER_CONVERTER_ALL_H__
 
-REGISTER_CONVERTER(batch_norm, ConvertBatchNorm, "huawei_ascend_npu");
+REGISTER_CONVERTER(batch_norm,
+                   ConvertBatchNorm,
+                   "huawei_ascend_npu,verisilicon_"
+                   "timvx");
 REGISTER_CONVERTER(cast, ConvertCast, "huawei_ascend_npu");
 REGISTER_CONVERTER(clip, ConvertClip, "huawei_ascend_npu");
 REGISTER_CONVERTER(conv2d,
@@ -34,9 +37,11 @@ REGISTER_CONVERTER(pool2d,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
                    "npu,amlogic_npu,imagination_nna,cambricon_mlu,verisilicon_"
                    "timvx");
-REGISTER_CONVERTER(matmul,
-                   ConvertMatmul,
-                   "huawei_ascend_npu,huawei_kirin_npu,imagination_nna");
+REGISTER_CONVERTER(
+    matmul,
+    ConvertMatmul,
+    "huawei_ascend_npu,huawei_kirin_npu,imagination_nna,verisilicon"
+    "_timvx");
 REGISTER_CONVERTER(matmul_v2,
                    ConvertMatmulV2,
                    "huawei_ascend_npu,huawei_kirin_npu,imagination_nna");
@@ -48,7 +53,7 @@ REGISTER_CONVERTER(softmax,
 REGISTER_CONVERTER(cumsum, ConvertCumsum, "huawei_ascend_npu");
 REGISTER_CONVERTER(conv2d_transpose,
                    ConvertConv2dTranspose,
-                   "huawei_ascend_npu,amlogic_npu");
+                   "huawei_ascend_npu,amlogic_npu,verisilicon_timvx");
 REGISTER_CONVERTER(reshape,
                    ConvertReshape,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
@@ -201,10 +206,22 @@ REGISTER_CONVERTER(concat,
                    "npu,amlogic_npu,verisilicon_timvx");
 REGISTER_CONVERTER(split, ConvertSplit, "huawei_kirin_npu,huawei_ascend_npu");
 REGISTER_CONVERTER(calib, ConvertCalib, "huawei_ascend_npu");
-REGISTER_CONVERTER(nearest_interp, ConvertInterpolate, "huawei_ascend_npu");
-REGISTER_CONVERTER(nearest_interp_v2, ConvertInterpolate, "huawei_ascend_npu");
-REGISTER_CONVERTER(bilinear_interp, ConvertInterpolate, "huawei_ascend_npu");
-REGISTER_CONVERTER(bilinear_interp_v2, ConvertInterpolate, "huawei_ascend_npu");
+REGISTER_CONVERTER(nearest_interp,
+                   ConvertInterpolate,
+                   "huawei_ascend_npu,"
+                   "verisilicon_timvx");
+REGISTER_CONVERTER(nearest_interp_v2,
+                   ConvertInterpolate,
+                   "huawei_ascend_npu,"
+                   "verisilicon_timvx");
+REGISTER_CONVERTER(bilinear_interp,
+                   ConvertInterpolate,
+                   "huawei_ascend_npu,"
+                   "verisilicon_timvx");
+REGISTER_CONVERTER(bilinear_interp_v2,
+                   ConvertInterpolate,
+                   "huawei_ascend_npu,"
+                   "verisilicon_timvx");
 REGISTER_CONVERTER(flatten,
                    ConvertFlatten,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"

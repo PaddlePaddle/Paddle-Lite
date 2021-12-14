@@ -42,7 +42,10 @@ class TestFcOp(AutoScanTest):
         self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
-        return True
+        if predictor_config.target() == TargetType.OpenCL:
+            return False
+        else:
+            return True
 
     def sample_program_configs(self, draw):
         in_shape = draw(st.lists(st.integers(min_value=2, max_value=10), min_size=2, max_size=4))
