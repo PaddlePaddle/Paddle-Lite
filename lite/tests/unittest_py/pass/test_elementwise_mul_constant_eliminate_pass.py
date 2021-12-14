@@ -121,7 +121,7 @@ class TestElementwiseMulConstantEliminateFuse(FusePassAutoScanTest):
         )
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25, passes=["lite_elementwise_mul_constant_eliminate_pass"])
+        self.run_and_statis(quant=False, max_examples=30, passes=["lite_elementwise_mul_constant_eliminate_pass"])
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
