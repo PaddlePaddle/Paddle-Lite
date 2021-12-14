@@ -32,11 +32,11 @@ class XPUFcCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
   virtual ~XPUFcCompute() = default;
 
  private:
-  XPUScratchPadGuard quant_weight_guard_;
-  XPUScratchPadGuard weight_max_guard_;
+  XPUScratchPadGuard quant_weight_guard_;  // for paddle slim int8 quant
   // TODO(weihaoji): remove cpu w_max after xpu fc wrapper refactor
   float w_max;
   XPUScratchPadGuard input_max_guard_;
+  XPUQuantData xpu_quant_weight_;
 };
 
 }  // namespace xpu

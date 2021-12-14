@@ -44,6 +44,8 @@ void MulCompute::Run() {
   int k = x_matrix.dims()[1];
   int n = y_matrix.dims()[1];
 
+  VLOG(4) << "DEBUG: mul weight size=" << k * n * sizeof(float);
+
   int r = xdnn::fc_fusion<float, float, float, int16_t>(
       ctx.GetRawContext(),                              // ctx
       x_matrix.data<float>(),                           // x

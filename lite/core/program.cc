@@ -491,6 +491,7 @@ void RuntimeProgram::Run() {
     inst.Flush(idx);
 #endif
 
+    VLOG(4) << "BEGIN RUN OP: " << inst.op()->Type();
     inst.Run();
 
 #ifdef LITE_WITH_FPGA

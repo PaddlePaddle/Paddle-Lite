@@ -19,10 +19,13 @@
 #include <memory>
 #include <mutex>  // NOLINT
 #include <string>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/backends/xpu/xpu_l3_cache_block.h"
 #include "lite/backends/xpu/xpu_l3_strategy.h"
+#include "lite/core/dim.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/utils/log/cp_logging.h"
 #include "lite/utils/macros.h"
@@ -59,6 +62,14 @@ struct XPUScratchPadDeleter {
 
 using XPUScratchPadGuard = std::unique_ptr<XPUScratchPad, XPUScratchPadDeleter>;
 
+struct XPUQuantData {
+  XPUQuantData() : data_ptr_(nullptr), max_ptr_(nullptr) {}
+  XPUQuantData(float* max_ptr, void* data_ptr)
+      : data_ptr_(data_ptr), max_ptr_(max_ptr) {}
+  void* data_ptr_{nullptr};
+  float* max_ptr_{nullptr};
+};
+
 template <>
 class TargetWrapper<TARGET(kXPU)> {
  public:
@@ -74,6 +85,12 @@ class TargetWrapper<TARGET(kXPU)> {
                          IoDirection dir);
 
   static XPUScratchPadGuard MallocScratchPad(size_t size);
+
+  static XPUQuantData ConvertCPUWeightToXPUQuantWeight(
+      const float* cpu_data,
+      const DDimLite& dims,
+      const std::string& precision,
+      bool data_transpose);
 
   static xdnn::Context* GetRawContext() {
     if (tls_raw_ctx_ == nullptr) {
@@ -166,6 +183,10 @@ class TargetWrapper<TARGET(kXPU)> {
   static void* shared_l3_ptr_;
   static std::mutex mutex_l3_;
   static LITE_THREAD_LOCAL XPUL3Planner* l3_planner_;
+  static LITE_THREAD_LOCAL
+      std::unordered_map<size_t,
+                         std::pair<XPUScratchPadGuard, XPUScratchPadGuard>>
+          w_map_;  // cpu data to xpu quant data
 };
 
 }  // namespace lite
