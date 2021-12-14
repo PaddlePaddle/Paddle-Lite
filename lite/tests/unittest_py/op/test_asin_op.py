@@ -18,7 +18,8 @@ sys.path.append('../')
 from auto_scan_test import AutoScanTest, IgnoreReasons
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import unittest
-
+import numpy as np
+from functools import partial
 import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
@@ -40,6 +41,31 @@ class TestAsinOp(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
+
+        def generate_data(*args, **kwargs):
+            low, high = -10, 10
+            dtype = "float32"
+            shape = kwargs["shape"]
+            if "low" in kwargs:
+                low = kwargs["low"]
+            if "high" in kwargs:
+                high = kwargs["high"]
+            if "dtype" in kwargs:
+                dtype = kwargs["dtype"]
+
+            if dtype == "int32":
+                if low == high:
+                    return low * np.ones(shape).astype(np.int32)
+                else:
+                    return np.random.randint(low, high, shape).astype(np.int32)
+            elif dtype == "int64":
+                if low == high:
+                    return low * np.ones(shape).astype(np.int64)
+                else:
+                    return np.random.randint(low, high, shape).astype(np.int64)
+            elif dtype == "float32":
+                return (high - low) * np.random.random(shape).astype(np.float32) + low
+
         in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=1, max_size=4))
 
         asin_op = OpConfig(
@@ -47,12 +73,13 @@ class TestAsinOp(AutoScanTest):
             inputs = {"X" : ["input_data"]},
             outputs = {"Out": ["output_data"]},
             attrs = {})
+        # Make sure abs of input data is less than 0.9 because the output is infinite when abs of input is 1
         program_config = ProgramConfig(
             ops=[asin_op],
             weights={},
             inputs={
                 "input_data":
-                TensorConfig(shape=in_shape)
+                TensorConfig(data_gen=partial(generate_data, low=-0.9, high=0.9, shape=in_shape))
             },
             outputs=["output_data"])
         return program_config
