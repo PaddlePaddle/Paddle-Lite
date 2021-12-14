@@ -65,7 +65,7 @@ class TestScaleOp(AutoScanTest):
            return False
         return True
 
-        if in_data_type != np.float16
+        if in_data_type == np.int8:
             print("int8 as Input data type is not supported.")
             return False
 
