@@ -85,8 +85,12 @@ class TestSequenceExpandAsOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        # Note: The min success num on ARM is 10.
-        self.run_and_statis(quant=False, min_success_num=10, max_examples=25)
+        target_str = self.get_target()
+        max_examples = 25
+        if target_str == "ARM":
+            # Make sure to generate enough valid cases for ARM
+            max_examples = 100
+        self.run_and_statis(quant=False, max_examples=max_examples)
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
