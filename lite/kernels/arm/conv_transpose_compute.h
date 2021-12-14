@@ -32,8 +32,6 @@ class Conv2DTransposeCompute : public KernelLite<TARGET(kARM), Ptype> {
 
   void Run() override;
 
-  ~Conv2DTransposeCompute() = default;
-
   virtual void ReInitWhenNeeded() {
     auto& param = this->template Param<param_t>();
     auto x_dims = param.x->dims();
@@ -56,6 +54,8 @@ class Conv2DTransposeCompute : public KernelLite<TARGET(kARM), Ptype> {
     workspace_size_ = group * m * n;
     last_shape_ = x_dims;
   }
+
+  ~Conv2DTransposeCompute() = default;
 
 #ifdef LITE_WITH_PROFILE
   virtual void SetProfileRuntimeKernelInfo(

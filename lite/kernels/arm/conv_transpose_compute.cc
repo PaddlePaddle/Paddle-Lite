@@ -475,7 +475,6 @@ void Conv2DTransposeCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
 }
 
 #ifdef ENABLE_ARM_FP16
-
 template <>
 void Conv2DTransposeCompute<PRECISION(kFP16),
                             PRECISION(kFP16)>::PrepareForRun() {
