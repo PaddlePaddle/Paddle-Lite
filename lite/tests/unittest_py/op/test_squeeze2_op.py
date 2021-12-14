@@ -28,9 +28,9 @@ import numpy as np
 class TestSqueeze2Op(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, [PrecisionType.FP32, PrecisionType.INT32, PrecisionType.INT64], DataLayoutType.NCHW, thread=[1,4])
-        self.enable_testing_on_place(TargetType.X86, [PrecisionType.FP32, PrecisionType.INT32, PrecisionType.INT64], DataLayoutType.NCHW, thread=[1,4])
-        self.enable_testing_on_place(TargetType.ARM, [PrecisionType.FP32, PrecisionType.INT32, PrecisionType.INT64], DataLayoutType.NCHW, thread=[1,4])
+        self.enable_testing_on_place(TargetType.Host, [PrecisionType.Any], DataLayoutType.NCHW, thread=[1,4])
+        self.enable_testing_on_place(TargetType.X86, [PrecisionType.Any], DataLayoutType.NCHW, thread=[1,4])
+        self.enable_testing_on_place(TargetType.ARM, [PrecisionType.Any], DataLayoutType.NCHW, thread=[1,4])
         opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
                           Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
                           Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
@@ -43,19 +43,13 @@ class TestSqueeze2Op(AutoScanTest):
         
     def is_program_valid(self, program_config: ProgramConfig, predictor_config: CxxConfig) -> bool:
         x_dtype = program_config.inputs["input_data"].dtype
-        if predictor_config.precision() == PrecisionType.INT64:
-            if x_dtype != np.int64:
-                return False
-        if predictor_config.precision() == PrecisionType.INT32:
-            if x_dtype != np.int32:
-                return False
         if x_dtype == np.int32 or x_dtype == np.int64:
             return False
         return True
 
     def sample_program_configs(self, draw):
         in_shape = draw(st.lists( st.integers(min_value=1, max_value=32), min_size=1, max_size=4))
-        input_type = draw(st.sampled_from(["type_float", "type_int", "type_int64"]))
+        input_type = draw(st.sampled_from(["float32", "int32", "int64"]))
         input_axis = draw(st.sampled_from([[0, 1, 2, 3], [-1, 2, 3], [], [-1], [1], [2], [3], [-1, 0, 1]]))
         assume(len(input_axis) <= len(in_shape))
         if len(input_axis) > 0:
@@ -64,19 +58,19 @@ class TestSqueeze2Op(AutoScanTest):
                 assume(num < len(in_shape))
 
         def generate_input(*args, **kwargs):
-            if input_type == "type_float":
+            if input_type == "float32":
                 return np.random.normal(1.0, 6.0, in_shape).astype(np.float32)
-            elif input_type == "type_int":
+            elif input_type == "int32":
                 return np.random.normal(1.0, 6.0, in_shape).astype(np.int32)
-            elif input_type == "type_int64":
+            elif input_type == "int64":
                 return np.random.normal(1.0, 6.0, in_shape).astype(np.int64)
 
         def generate_xshape(*args, **kwargs):
-            if input_type == "type_float":
+            if input_type == "float32":
                 return np.random.normal(1.0, 1.0, in_shape).astype(np.float32)
-            elif input_type == "type_int":
+            elif input_type == "int32":
                 return np.random.normal(1.0, 1.0, in_shape).astype(np.int32)
-            elif input_type == "type_int64":
+            elif input_type == "int64":
                 return np.random.normal(1.0, 1.0, in_shape).astype(np.int64)
 
         ops_config = OpConfig(

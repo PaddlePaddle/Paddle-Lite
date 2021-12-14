@@ -39,7 +39,7 @@ class TestSoftplusOp(AutoScanTest):
         threshold = draw(st.integers(min_value=10, max_value=20))
 
         def generate_input(*args, **kwargs):
-            return np.random.normal(1.0, 6.0, in_shape).astype(np.float32)
+            return np.random.normal(1.0, 1.0, in_shape).astype(np.float32)
 
         ops_config = OpConfig(
             type = "softplus",
@@ -59,7 +59,8 @@ class TestSoftplusOp(AutoScanTest):
             ops=[ops_config],
             weights={},
             inputs={
-                "input_data": TensorConfig(data_gen=partial(generate_input))
+                "input_data": 
+                TensorConfig(data_gen=partial(generate_input))
             },
             outputs=["output_data"])
 

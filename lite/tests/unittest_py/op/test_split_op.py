@@ -28,26 +28,15 @@ import numpy as np
 class TestSplitOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, [PrecisionType.FP32, PrecisionType.INT32, PrecisionType.INT64], DataLayoutType.NCHW, thread=[1,4])
-        self.enable_testing_on_place(TargetType.X86, [PrecisionType.FP32, PrecisionType.INT32, PrecisionType.INT64], DataLayoutType.NCHW, thread=[1,4])
-        self.enable_testing_on_place(TargetType.ARM, [PrecisionType.FP32, PrecisionType.INT32, PrecisionType.INT64], DataLayoutType.NCHW, thread=[1,4])
-        opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-                          Place(TargetType.Host, PrecisionType.FP32)    
-                        ]
-        self.enable_testing_on_place(places=opencl_places)
+        self.enable_testing_on_place(TargetType.X86, [PrecisionType.FP32, PrecisionType.INT64], DataLayoutType.NCHW, thread=[1,4])
+        self.enable_testing_on_place(TargetType.Host, [PrecisionType.FP32, PrecisionType.INT64], DataLayoutType.NCHW, thread=[1,4])
+        self.enable_testing_on_place(TargetType.ARM, [PrecisionType.FP32, PrecisionType.INT64], DataLayoutType.NCHW, thread=[1,4])
 
     def is_program_valid(self, program_config: ProgramConfig, predictor_config: CxxConfig) -> bool:
+        x_dtype = program_config.inputs["input_data"].dtype
         if predictor_config.precision() == PrecisionType.INT64:
-            return False
-        if predictor_config.precision() == PrecisionType.INT32:
-            return False
-        if predictor_config.target() == TargetType.OpenCL:
-            return False
+            if x_dtype != np.int64:
+                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -60,7 +49,7 @@ class TestSplitOp(AutoScanTest):
         input_num = draw(st.sampled_from([0, 1]))
         num = draw(st.sampled_from([0, 3]))
         input_axis = draw(st.sampled_from([0, 1, 2, 3]))
-        input_type = draw(st.sampled_from(["type_float", "type_int", "type_int64"]))
+        input_type = draw(st.sampled_from(["float32", "int32", "int64"]))
         Out = draw(st.sampled_from([["output_var0", "output_var1"],
                                     ["output_var0", "output_var1", "output_var2"]]))
         
@@ -88,13 +77,13 @@ class TestSplitOp(AutoScanTest):
             assume((len(in_shape) == 2) & (in_shape[1] == 24) & (sections == [10, 14]) & (len(Out) == 2))
 
         def generate_input(*args, **kwargs):
-            if input_type == "type_float":
+            if input_type == "float32":
                 return np.random.normal(0.0, 1.0, in_shape).astype(np.float32)
-            elif input_type == "type_int":
+            elif input_type == "int32":
                 return np.random.normal(0.0, 1.0, in_shape).astype(np.int32)
-            elif input_type == "type_int64":
+            elif input_type == "int64":
                 return np.random.normal(0.0, 1.0, in_shape).astype(np.int64)
-        
+            
         def generate_AxisTensor(*args, **kwargs):
             return np.ones([1]).astype(np.int32)
 

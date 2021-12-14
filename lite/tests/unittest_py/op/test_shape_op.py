@@ -28,23 +28,23 @@ import numpy as np
 class TestShapeOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, [PrecisionType.FP32, PrecisionType.INT32, PrecisionType.INT64], DataLayoutType.NCHW, thread=[1,4])
-        self.enable_testing_on_place(TargetType.X86, [PrecisionType.FP32, PrecisionType.INT32, PrecisionType.INT64], DataLayoutType.NCHW, thread=[1,4])
-        self.enable_testing_on_place(TargetType.ARM, [PrecisionType.FP32, PrecisionType.INT32, PrecisionType.INT64], DataLayoutType.NCHW, thread=[1,4])
+        self.enable_testing_on_place(TargetType.Host, [PrecisionType.Any], DataLayoutType.NCHW, thread=[1,4])
+        self.enable_testing_on_place(TargetType.X86, [PrecisionType.Any], DataLayoutType.NCHW, thread=[1,4])
+        self.enable_testing_on_place(TargetType.ARM, [PrecisionType.Any], DataLayoutType.NCHW, thread=[1,4])
 
     def is_program_valid(self, program_config: ProgramConfig, predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
         in_shape = draw(st.lists(st.integers(min_value=1, max_value=64), min_size=1, max_size=4))
-        input_type = draw(st.sampled_from(["type_float", "type_int", "type_int64"]))
+        input_type = draw(st.sampled_from(["float32", "int32", "int64"]))
 
         def generate_input(*args, **kwargs):
-            if input_type == "type_float":
+            if input_type == "float32":
                 return np.random.normal(1.0, 6.0, in_shape).astype(np.float32)
-            elif input_type == "type_int":
+            elif input_type == "int32":
                 return np.random.normal(1.0, 6.0, in_shape).astype(np.int32)
-            elif input_type == "type_int64":
+            elif input_type == "int64":
                 return np.random.normal(1.0, 6.0, in_shape).astype(np.int64)
 
         ops_config = OpConfig(

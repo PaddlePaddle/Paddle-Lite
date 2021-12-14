@@ -28,8 +28,8 @@ import numpy as np
 class TestSliceOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.X86, [PrecisionType.FP32, PrecisionType.INT32, PrecisionType.INT64], DataLayoutType.NCHW, thread=[1,4])
-        self.enable_testing_on_place(TargetType.ARM, [PrecisionType.FP32, PrecisionType.INT32, PrecisionType.INT64], DataLayoutType.NCHW, thread=[1,4])
+        self.enable_testing_on_place(TargetType.X86, [PrecisionType.FP32], DataLayoutType.NCHW, thread=[1,4])
+        self.enable_testing_on_place(TargetType.ARM, [PrecisionType.FP32], DataLayoutType.NCHW, thread=[1,4])
         opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
                           Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
                           Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
@@ -42,11 +42,6 @@ class TestSliceOp(AutoScanTest):
 
     def is_program_valid(self, program_config: ProgramConfig, predictor_config: CxxConfig) -> bool:
         x_dtype = program_config.inputs["input_data"].dtype
-        if predictor_config.precision() == PrecisionType.INT64:
-            return False
-        if predictor_config.precision() == PrecisionType.INT32:
-            return False
-        
         if predictor_config.target() == TargetType.ARM \
         or predictor_config.target() == TargetType.OpenCL :
             if x_dtype == np.int32 or  x_dtype == np.int64:
@@ -56,15 +51,13 @@ class TestSliceOp(AutoScanTest):
 
     def sample_program_configs(self, draw):
         in_shape = draw(st.lists(st.integers(min_value=6, max_value=64), min_size=4, max_size=4))
-    
-        
         axes = draw(st.sampled_from([[3], [0, 1], [0, 1, 2],[0, 1, 2, 3]]))
         starts = draw(st.sampled_from([[-1], [0, 1], [0, 1, 2], [0, 1, 2, 3]]))
         ends = draw(st.sampled_from([[10000], [1, 2], [1, 2, 3], [1, 2, 3, 4]]))
         decrease_axis = draw(st.sampled_from([[3], [0, 1], [0, 1, 2],[0, 1, 2, 3]]))
         infer_flags = draw(st.sampled_from([[1, 1, 1]]))
         input_num = draw(st.sampled_from([0, 1, 2]))
-        input_type = draw(st.sampled_from(["type_float", "type_int", "type_int64"]))
+        input_type = draw(st.sampled_from(["float32", "int32", "int64"]))
 
         assume((len(starts) == len(ends)) & (len(starts) == len(axes)))
         assume(len(decrease_axis) == len(starts))
@@ -73,11 +66,11 @@ class TestSliceOp(AutoScanTest):
             assume(len(axes) == 2)
 
         def generate_input(*args, **kwargs):
-            if input_type == "type_float":
+            if input_type == "float32":
                 return np.random.normal(0.0, 1.0, in_shape).astype(np.float32)
-            elif input_type == "type_int":
+            elif input_type == "int32":
                 return np.random.normal(0.0, 1.0, in_shape).astype(np.int32)
-            elif input_type == "type_int64":
+            elif input_type == "int64":
                 return np.random.normal(0.0, 1.0, in_shape).astype(np.int64)
 
         def generate_starts(*args, **kwargs):

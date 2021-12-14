@@ -68,7 +68,8 @@ class TestSoftmaxOp(AutoScanTest):
             ops=[ops_config],
             weights={},
             inputs={
-                "input_data": TensorConfig(data_gen=partial(generate_input))
+                "input_data": 
+                TensorConfig(data_gen=partial(generate_input))
             },
             outputs=["output_data"])
 
@@ -78,14 +79,7 @@ class TestSoftmaxOp(AutoScanTest):
         return self.get_predictor_configs(), ["softmax"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def teller1(program_config, predictor_config):
-            if predictor_config.target() == TargetType.OpenCL :
-                return True
-            
-        self.add_ignore_check_case(
-            teller1, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff in a specific case. We need to fix it as soon as possible."
-        )
+        pass
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
