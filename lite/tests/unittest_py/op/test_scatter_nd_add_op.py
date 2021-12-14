@@ -28,11 +28,15 @@ import argparse
 class TestRsqrtOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,2,4])
+        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
 
     def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
-        return False # fix arm_opencl ci error
-        # return True
+        in_dtype = program_config.inputs["input_data"].dtype
+        index_dtype = program_config.inputs["index"].dtype
+        if in_dtype == "float32" and index_dtype == "int32":
+            return True
+        else:
+            return False
 
     def sample_program_configs(self, draw):
         def judge_update_shape(ref_shape, index_shape):
@@ -43,8 +47,8 @@ class TestRsqrtOp(AutoScanTest):
                 update_shape.append(ref_shape[i])
             return update_shape
 
-        input_type = "float32" # draw(st.sampled_from(["int32", "int64", "float32"]))
-        index_type = "int32" # draw(st.sampled_from(["int32", "int64"]))
+        input_type = draw(st.sampled_from(["int32", "int64", "float32"]))
+        index_type = draw(st.sampled_from(["int32", "int64"]))
         out_dtype_dict = {"int32" : np.int32,
                           "int64" : np.int64,
                           "float32" : np.float32}
@@ -93,7 +97,12 @@ class TestRsqrtOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        target_str = self.get_target()
+        max_examples = 25
+        if target_str == "Host":
+            # Make sure to generate enough valid cases for Host
+            max_examples = 220
+        self.run_and_statis(quant=False, min_success_num=25, max_examples=max_examples)
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
