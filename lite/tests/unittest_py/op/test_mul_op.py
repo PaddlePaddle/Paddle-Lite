@@ -18,11 +18,10 @@ sys.path.append('../')
 from auto_scan_test import AutoScanTest, IgnoreReasons
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import unittest
-
 import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
-
+import numpy as np
 
 
 class TestMulOp(AutoScanTest):
@@ -36,6 +35,7 @@ class TestMulOp(AutoScanTest):
         # get input&output shape, get op attributes
         x_shape = list(program_config.inputs["input_data_x"].shape)
         y_shape = list(program_config.weights["input_data_y"].shape)
+        x_precision = program_config.inputs["input_data_x"].dtype;
         x_num_col_dims = program_config.ops[0].attrs["x_num_col_dims"]
         y_num_col_dims = program_config.ops[0].attrs["y_num_col_dims"]
 
@@ -45,9 +45,13 @@ class TestMulOp(AutoScanTest):
             if x_shape[1] != y_shape[0]:
                 return False
         # {PrecisionType.FP16, PrecisionType.FP32, PrecisionType.FP64, PrecisionType.UINT8, PrecisionType.INT8, PrecisionType.INT16, PrecisionType.INT32, PrecisionType.INT64, PrecisionType.BOOL}
-        elif predictor_config.precision() == PrecisionType.FP16:
-            if x_num_col_dims > 20:
+        target_type = predictor_config.target()
+        if target_type not in [TargetType.OpenCL, TargetType.Metal]:
+            if predictor_config.precision() == PrecisionType.FP16 and in_data_type != np.float16:
                 return False
+            elif  predictor_config.precision() == PrecisionType.FP32 and in_data_type != np.float32:
+                return False
+
         # {DataLayoutType.NCHW, DataLayoutType.NHWC, DataLayoutType.ImageDefault, DataLayoutType.ImageFolder, DataLayoutType.ImageNW, DataLayoutType.Any}
         elif predictor_config.layout() != DataLayoutType.NCHW:
             if y_num_col_dims > 20:
@@ -111,6 +115,7 @@ class TestMulOp(AutoScanTest):
                     return True
             return False
 
+        # ACCURACY_ERROR ignore case will be operated, but we will not check the output precision.
         self.add_ignore_check_case(
             # IgnoreReasonsBase.PADDLE_NOT_IMPLEMENTED
             # IgnoreReasonsBase.PADDLELITE_NOT_SUPPORT
@@ -118,6 +123,20 @@ class TestMulOp(AutoScanTest):
             teller1, IgnoreReasons.ACCURACY_ERROR,
             "The op output has diff in a specific case. We need to fix it as soon as possible."
         )
+
+        def teller2(program_config, predictor_config):
+            if x_num_col_dims != y_num_col_dims:
+                return True
+            return False
+        # PADDLELITE_NOT_SUPPORT ignore case will not be operated.
+        self.add_ignore_check_case(
+            # IgnoreReasonsBase.PADDLE_NOT_IMPLEMENTED
+            # IgnoreReasonsBase.PADDLELITE_NOT_SUPPORT
+            # IgnoreReasonsBase.ACCURACY_ERROR
+            teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "The format 'x_num_col_dims != y_num_col_dims' is not supported, we need to fix it as soon as possible."
+        )
+
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)

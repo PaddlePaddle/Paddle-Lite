@@ -259,6 +259,7 @@ class AutoScanBaseTest(unittest.TestCase):
                 self.num_predictor_kinds += 1
                 # ignore info
                 ignore_flag = False
+                paddle_lite_not_support_flag = False
                 pred_config = paddlelite_config.value()
                 for ignore_info in self.ignore_cases:
                     if ignore_info[0](prog_config, paddlelite_config):
@@ -268,9 +269,18 @@ class AutoScanBaseTest(unittest.TestCase):
                             self.ignore_log("[ACCURACY_ERROR] " +
                                           ignore_info[2] + ' ' + ' vs ' + self.
                                           paddlelite_config_str(pred_config))
+                        elif  ignore_info[1] == IgnoreReasonsBase.PADDLELITE_NOT_SUPPORT:
+                            paddle_lite_not_support_flag = True
+                            self.ignore_log("[PADDLELITE_NOT_SUPPORT ERROR] " +
+                                          ignore_info[2] + ' ' + ' vs ' + self.
+                                          paddlelite_config_str(pred_config))
+                            break
                         else:
                             raise NotImplementedError
                         break
+                if paddle_lite_not_support_flag:
+                    continue
+
                 if os.path.exists(self.cache_dir):
                     shutil.rmtree(self.cache_dir)
                 if not os.path.exists(self.cache_dir):
@@ -278,10 +288,13 @@ class AutoScanBaseTest(unittest.TestCase):
                 try:
                     result, opt_model_bytes = self.run_lite_config(model, params, feed_data, pred_config)
                     results.append(result)
-                    self.assert_tensors_near(atol_, rtol_, results[-1],
-                                             results[0])
-                    if not ignore_flag and self.passes is not None:
-                        self.assert_op_list(opt_model_bytes, op_list_)
+                    if self.passes is not None:
+                        # op unit test: we will not check precision in ignore case
+                        self.assert_tensors_near(atol_, rtol_, results[-1],
+                                                 results[0])
+                        if not ignore_flag:
+                            # pass unit test: we will not check fusion in ignore case
+                            self.assert_op_list(opt_model_bytes, op_list_)
                 except Exception as e:
                     self.fail_log(
                         self.paddlelite_config_str(pred_config) +
@@ -358,7 +371,7 @@ class AutoScanBaseTest(unittest.TestCase):
         def run_test(prog_config):
             return self.run_test(quant=quant, prog_configs=[prog_config])
 
-        # if current unittest is not active on the input target, we will exit directly.
+        # if current unittest is not active on the input targ    paddlelite_not_support_flag = Trueet, we will exit directly.
         if not self.is_actived():
             logging.info("Error: This test is not actived on " + self.get_target())
             return
@@ -428,7 +441,7 @@ class AutoScanBaseTest(unittest.TestCase):
         assert  (target is not None)
         target_ = target if isinstance(target,list) else [target]
         precision_ = precision if isinstance(precision, list) else [precision]
-        layout_ = precision if isinstance(layout,list) else [layout]
+        layout_ = layout if isinstance(layout,list) else [layout]
         for tar_, pre_, lay_ in product(target_, precision_, layout_):
             self.valid_places.append([Place(tar_, pre_, lay_)])
         return
