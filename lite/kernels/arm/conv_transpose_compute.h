@@ -30,11 +30,32 @@ class Conv2DTransposeCompute : public KernelLite<TARGET(kARM), Ptype> {
 
   void PrepareForRun() override;
 
-  void ReInitWhenNeeded() override;
-
   void Run() override;
 
   ~Conv2DTransposeCompute() = default;
+
+  virtual void ReInitWhenNeeded() {
+    auto& param = this->template Param<param_t>();
+    auto x_dims = param.x->dims();
+    if (last_shape_ == x_dims) {
+      return;
+    }
+    auto w_dims = param.filter->dims();
+    auto o_dims = param.output->dims();
+    int chin = x_dims[1];
+    int hin = x_dims[2];
+    int win = x_dims[3];
+    int chout = o_dims[1];
+    int kw = w_dims[3];
+    int kh = w_dims[2];
+    int group = param.groups;
+    /* deconv weights layout: chin * chout * kh * kw*/
+    int m = chout * kw * kh / group;
+    int n = hin * win;
+    int k = chin / group;
+    workspace_size_ = group * m * n;
+    last_shape_ = x_dims;
+  }
 
 #ifdef LITE_WITH_PROFILE
   virtual void SetProfileRuntimeKernelInfo(
