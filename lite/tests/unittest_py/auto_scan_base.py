@@ -34,7 +34,7 @@ from itertools import product
 from program_config import CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 
 import hypothesis
-from hypothesis import given, settings, seed
+from hypothesis import given, settings, seed, Verbosity
 import hypothesis.strategies as st
 import argparse
 parser = argparse.ArgumentParser()
@@ -43,13 +43,21 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 settings.register_profile(
     "ci",
-    max_examples=10,
+    max_examples=100,
     suppress_health_check=hypothesis.HealthCheck.all(),
     deadline=None,
     print_blob=True,
     derandomize=True,
     report_multiple_bugs=False)
-settings.load_profile("ci")
+
+settings.register_profile(
+    "ce",
+    max_examples=1000,
+    suppress_health_check=hypothesis.HealthCheck.all(),
+    deadline=None,
+    print_blob=True,
+    derandomize=True,
+    report_multiple_bugs=False)
 
 class IgnoreReasonsBase(enum.Enum):
     # Paddle not support, but paddlelite support, we need to add the feature.
@@ -218,6 +226,7 @@ class AutoScanBaseTest(unittest.TestCase):
         status = True
 
         paddlelite_configs, op_list_, (atol_, rtol_) = self.sample_predictor_configs()
+
         for prog_config in prog_configs:
             # if program is invalid, we should ignore this cases.
             program_valid_ = False
@@ -228,7 +237,6 @@ class AutoScanBaseTest(unittest.TestCase):
             if not program_valid_:
                 self.num_invalid_programs += 1
                 continue
-
 
             self.num_ran_programs += 1
             model, params = create_fake_model(prog_config)
@@ -252,10 +260,6 @@ class AutoScanBaseTest(unittest.TestCase):
 
 
             for paddlelite_config in paddlelite_configs:
-                # judge validity of program
-                if not self.is_program_valid(prog_config, paddlelite_config):
-                    continue
-
                 self.num_predictor_kinds += 1
                 # ignore info
                 ignore_flag = False
@@ -331,23 +335,24 @@ class AutoScanBaseTest(unittest.TestCase):
             max_examples=100,
             reproduce=None,
             min_success_num=25,
-            max_duration=180,
             passes=None ):
-        if os.getenv('HYPOTHESIS_TEST_PROFILE', 'ci') == "dev":
-            max_examples *= 10
-            min_success_num *= 10
-            # while at ce phase, there's no limit on time
-            max_duration = -1
-        start_time = time.time()
+
         settings.register_profile(
-            "ci",
+            "dev",
             max_examples=max_examples,
             suppress_health_check=hypothesis.HealthCheck.all(),
             deadline=None,
             print_blob=True,
             derandomize=True,
-            report_multiple_bugs=False, )
-        settings.load_profile("ci")
+            report_multiple_bugs=False, 
+            verbosity=Verbosity.verbose)
+
+        if os.getenv('HYPOTHESIS_TEST_PROFILE') == "ci":
+            settings.load_profile("ci")
+        elif os.getenv('HYPOTHESIS_TEST_PROFILE') == "ce":
+            settings.load_profile("ce")
+        else:
+            settings.load_profile("dev")
 
         self.passes = passes
         self.add_ignore_pass_case()
@@ -378,30 +383,21 @@ class AutoScanBaseTest(unittest.TestCase):
         logging.info("Number of Ran Programs: {}".format(self.num_ran_programs))
         logging.info("Number of Ignored Tests: {}".format(
             self.num_ignore_tests))
+        logging.info("Number of Predictor Kinds: {}".format(
+            int(self.num_predictor_kinds / (self.num_invalid_programs + self.num_ran_programs))))
         if self.num_predictor_kinds == 0:
             successful_ran_programs = int(self.num_ran_programs)
             min_success_num = 0
         else:
-            successful_ran_programs = int(self.num_ran_programs -
-                                        self.num_ignore_tests /
-                                        self.num_predictor_kinds)
+            successful_ran_programs = int(self.num_ran_programs - self.num_ignore_tests)
 
         logging.info(
             "Number of successfully ran programs approximately equal to {}".
             format(successful_ran_programs))
         if successful_ran_programs < min_success_num:
-            logging.warning(
-                "satisfied_programs = ran_programs - num_ignore_tests / num_predictor_kinds"
-            )
             logging.fatal(
                 "At least {} programs need to ran successfully, but now only about {} programs satisfied.".
                 format(min_success_num, successful_ran_programs))
-            assert False
-        used_time = time.time() - start_time
-        if max_duration > 0 and used_time > max_duration:
-            logging.fatal(
-                "The duration exceeds {} seconds, if this is neccessary, try to set a larger number for parameter `max_duration`.".
-                format(max_duration))
             assert False
 
     @abc.abstractmethod
