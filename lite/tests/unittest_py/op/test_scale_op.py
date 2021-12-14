@@ -41,14 +41,34 @@ class TestScaleOp(AutoScanTest):
                           Place(TargetType.Host, PrecisionType.FP32)
                         ]
         self.enable_testing_on_place(places=opencl_places)
+        # metal demo
+        metal_places = [Place(TargetType.Metal, PrecisionType.FP32, DataLayoutType.MetalTexture2DArray),
+                        Place(TargetType.Metal, PrecisionType.FP16, DataLayoutType.MetalTexture2DArray),
+                        Place(TargetType.ARM, PrecisionType.FP32),
+                        Place(TargetType.Host, PrecisionType.FP32)]
+        self.enable_testing_on_place(places=metal_places)
 
     def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+
         return False # fix arm_opencl ci error
+      
+        target_type = predictor_config.target()
+        in_shape = list(program_config.inputs["input_data"].shape)
+        in_data_type = program_config.inputs["input_data"].dtype
         in_shape = list(program_config.inputs["input_data"].shape)
         in_dtype = program_config.inputs["input_data"].dtype
         if "int8" == in_dtype:
             print("int8 as Input data type is not supported.")
             return False
+
+        if target_type not in [TargetType.OpenCL, TargetType.Metal]:
+            if predictor_config.precision() == PrecisionType.FP16 and in_data_type != np.float16:
+                return False
+            elif  predictor_config.precision() == PrecisionType.FP32 and in_data_type != np.float32:
+                return False
+        if target_type == TargetType.Metal and in_data_type not in [np.float16, np.float32]:
+            return False
+
         if "ScaleTensor" in program_config.inputs:
             print("ScaleTensor as Input is not supported on Paddle Lite.")
             return False

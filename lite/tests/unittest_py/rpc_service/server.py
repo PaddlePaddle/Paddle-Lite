@@ -16,6 +16,7 @@ import rpyc
 import  os
 import shutil
 from rpyc.utils.server import ThreadedServer
+import paddlelite
 from paddlelite.lite import *
 import copy
 rpyc.core.protocol.DEFAULT_CONFIG['allow_pickle'] = True
@@ -76,6 +77,11 @@ class RPCService(rpyc.Service):
         # 2. run inference
         config = ParsePaddleLiteConfig(self, config_str)
         config.set_model_buffer(model, len(model), params, len(params))
+        #  2.1 metal configs
+        module_path = os.path.dirname(paddlelite.__file__)
+        config.set_metal_lib_path(module_path + "/libs/lite.metallib")
+        config.set_metal_use_mps(True)
+
         predictor = create_paddle_predictor(config)
 
         for name in inputs:
