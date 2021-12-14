@@ -55,7 +55,6 @@ class TestScaleOp(AutoScanTest):
         target_type = predictor_config.target()
         in_shape = list(program_config.inputs["input_data"].shape)
         in_data_type = program_config.inputs["input_data"].dtype
-        if np.int8 == in_data_type:
         in_shape = list(program_config.inputs["input_data"].shape)
         in_dtype = program_config.inputs["input_data"].dtype
         if "int8" == in_dtype:
