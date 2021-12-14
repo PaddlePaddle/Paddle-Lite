@@ -110,6 +110,7 @@ class TestMulOp(AutoScanTest):
                     return True
             return False
 
+        # ACCURACY_ERROR ignore case will be operated, but we will not check the output precision.
         self.add_ignore_check_case(
             # IgnoreReasonsBase.PADDLE_NOT_IMPLEMENTED
             # IgnoreReasonsBase.PADDLELITE_NOT_SUPPORT
@@ -117,6 +118,20 @@ class TestMulOp(AutoScanTest):
             teller1, IgnoreReasons.ACCURACY_ERROR,
             "The op output has diff in a specific case. We need to fix it as soon as possible."
         )
+
+        def teller2(program_config, predictor_config):
+            if x_num_col_dims != y_num_col_dims:
+                return True
+            return False
+        # PADDLELITE_NOT_SUPPORT ignore case will not be operated.
+        self.add_ignore_check_case(
+            # IgnoreReasonsBase.PADDLE_NOT_IMPLEMENTED
+            # IgnoreReasonsBase.PADDLELITE_NOT_SUPPORT
+            # IgnoreReasonsBase.ACCURACY_ERROR
+            teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "The format 'x_num_col_dims != y_num_col_dims' is not supported, we need to fix it as soon as possible."
+        )
+
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)

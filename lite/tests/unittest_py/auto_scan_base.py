@@ -259,6 +259,7 @@ class AutoScanBaseTest(unittest.TestCase):
                 self.num_predictor_kinds += 1
                 # ignore info
                 ignore_flag = False
+                paddle_lite_not_support_flag = False
                 pred_config = paddlelite_config.value()
                 for ignore_info in self.ignore_cases:
                     if ignore_info[0](prog_config, paddlelite_config):
@@ -268,9 +269,18 @@ class AutoScanBaseTest(unittest.TestCase):
                             self.ignore_log("[ACCURACY_ERROR] " +
                                           ignore_info[2] + ' ' + ' vs ' + self.
                                           paddlelite_config_str(pred_config))
+                        elif  ignore_info[1] == IgnoreReasonsBase.PADDLELITE_NOT_SUPPORT:
+                            paddle_lite_not_support_flag = True
+                            self.ignore_log("[PADDLELITE_NOT_SUPPORT ERROR] " +
+                                          ignore_info[2] + ' ' + ' vs ' + self.
+                                          paddlelite_config_str(pred_config))
+                            break
                         else:
                             raise NotImplementedError
                         break
+                if paddle_lite_not_support_flag:
+                    continue
+
                 if os.path.exists(self.cache_dir):
                     shutil.rmtree(self.cache_dir)
                 if not os.path.exists(self.cache_dir):
@@ -361,7 +371,7 @@ class AutoScanBaseTest(unittest.TestCase):
         def run_test(prog_config):
             return self.run_test(quant=quant, prog_configs=[prog_config])
 
-        # if current unittest is not active on the input target, we will exit directly.
+        # if current unittest is not active on the input targ    paddlelite_not_support_flag = Trueet, we will exit directly.
         if not self.is_actived():
             logging.info("Error: This test is not actived on " + self.get_target())
             return
