@@ -33,7 +33,7 @@ namespace huawei_ascend_npu {
 static int major_version = -1;
 static int minor_version = -1;
 static int patch_version = -1;
-static int bugfix_version = -1;
+static int bugfix_version = 0;
 
 // The following environment variables can be used at runtime:
 // Specify the list of device IDs, such as

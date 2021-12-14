@@ -559,7 +559,7 @@ inline void GetAscendCANNVersion() {
 }
 
 inline std::string ComposeCANNVersion() {
-  if (bugfix_version == -1)
+  if (bugfix_version == 0)
     return string_format(
         "%d.%d.%d", major_version, minor_version, patch_version);
   else
@@ -571,7 +571,7 @@ inline std::string ComposeCANNVersion() {
 }
 
 inline std::string SplitCANNVersion() {
-  if (bugfix_version == -1) {
+  if (bugfix_version == 0) {
     return string_format(
         "%d.%d.%d", major_version, minor_version, patch_version);
   } else {

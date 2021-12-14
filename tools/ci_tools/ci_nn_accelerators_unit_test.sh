@@ -11,7 +11,7 @@ readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
 readonly THIRDPARTY_TAR=third-party-801f670.tar.gz
 readonly workspace=$PWD
 
-NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-32}
+NUM_CORES_FOR_COMPILE=${LITE_BUILD_THREADS:-8}
 ROOT_DIR=$(pwd)
 BUILD_DIR=$(pwd)/build
 
