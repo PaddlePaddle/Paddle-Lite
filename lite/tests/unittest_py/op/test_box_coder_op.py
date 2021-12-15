@@ -27,30 +27,60 @@ from functools import partial
 import random
 import numpy as np
 
+
 class TestBoxCoderOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 4])
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 4])
-        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.X86,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
         # opencl demo
-        opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-                          Place(TargetType.Host, PrecisionType.FP32)    
-                        ]
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
         self.enable_testing_on_place(places=opencl_places)
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
-        return True
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
+        if predictor_config.target() == TargetType.OpenCL:
+            if program_config.ops[0].attrs[
+                    "code_type"] == "encode_center_size":
+                # OpenCL doesn't support
+                return False
+            else:
+                # run segmentation
+                return False
+        else:
+            return True
 
     def sample_program_configs(self, draw):
         num_pri = draw(st.integers(min_value=10, max_value=100))
         priorbox_shape = [num_pri, 4]
-        code_type = draw(st.sampled_from(["encode_center_size", "decode_center_size"]))
+        code_type = draw(
+            st.sampled_from(["encode_center_size", "decode_center_size"]))
         axis = draw(st.sampled_from([0, 1]))
         box_normalized = draw(st.booleans())
         variance = draw(st.sampled_from([[0.1, 0.2, 0.3, 0.4], []]))
@@ -59,44 +89,51 @@ class TestBoxCoderOp(AutoScanTest):
         if code_type == "encode_center_size":
             targetbox_shape = draw(st.sampled_from([[30, 4], [80, 4]]))
         else:
-            num0=1
-            num1=1
-            num2=1
-            if axis == 0 :
+            num0 = 1
+            num1 = 1
+            num2 = 1
+            if axis == 0:
                 num1 = priorbox_shape[0]
                 num0 = np.random.randint(1, 100)
             else:
                 num0 = priorbox_shape[0]
                 num1 = np.random.randint(1, 100)
             num2 = priorbox_shape[1]
-            targetbox_shape=draw(st.sampled_from([[num0, num1, num2]]))
+            targetbox_shape = draw(st.sampled_from([[num0, num1, num2]]))
 
         def generate_priorbox(*args, **kwargs):
             return np.random.random(priorbox_shape).astype(np.float32)
+
         def generate_priorbox_var(*args, **kwargs):
             return np.random.random(priorbox_shape).astype(np.float32)
+
         def generate_targetbox(*args, **kwargs):
             return np.random.random(targetbox_shape).astype(np.float32)
-        
+
         input_type_dict = {}
         input_data_dict = {}
         input_type_dict["PriorBox"] = ["priorbox_data"]
         input_type_dict["TargetBox"] = ["targetbox_data"]
-        input_data_dict["priorbox_data"] = TensorConfig(data_gen=partial(generate_priorbox), lod=lod_data)
-        input_data_dict["targetbox_data"] = TensorConfig(data_gen=partial(generate_targetbox), lod=lod_data)
-        if len(variance) == 0 :
+        input_data_dict["priorbox_data"] = TensorConfig(
+            data_gen=partial(generate_priorbox), lod=lod_data)
+        input_data_dict["targetbox_data"] = TensorConfig(
+            data_gen=partial(generate_targetbox), lod=lod_data)
+        if len(variance) == 0:
             input_type_dict["PriorBoxVar"] = ["priorbox_var_data"]
-            input_data_dict["priorbox_var_data"] = TensorConfig(data_gen=partial(generate_priorbox_var))
-        
+            input_data_dict["priorbox_var_data"] = TensorConfig(
+                data_gen=partial(generate_priorbox_var))
+
         box_coder_op = OpConfig(
-            type = "box_coder",
-            inputs = input_type_dict,
-            outputs = {"OutputBox": ["outputbox_data"]},
-            attrs = {"code_type" : code_type,
-                    "box_normalized" : box_normalized,
-                    "axis" : axis,
-                    "variance" : variance})
-        
+            type="box_coder",
+            inputs=input_type_dict,
+            outputs={"OutputBox": ["outputbox_data"]},
+            attrs={
+                "code_type": code_type,
+                "box_normalized": box_normalized,
+                "axis": axis,
+                "variance": variance
+            })
+
         program_config = ProgramConfig(
             ops=[box_coder_op],
             weights={},
@@ -112,6 +149,7 @@ class TestBoxCoderOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

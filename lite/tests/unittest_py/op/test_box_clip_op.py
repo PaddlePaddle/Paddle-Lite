@@ -27,12 +27,19 @@ from functools import partial
 import random
 import numpy as np
 
+
 class TestBoxClipOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
@@ -41,25 +48,28 @@ class TestBoxClipOp(AutoScanTest):
         dim1 = draw(st.integers(min_value=4, max_value=10))
         in_shape = [dim0, dim1, 4]
         iminfo_shape = [dim0, 3]
+
         def generate_input(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
+
         def generate_iminfo(*args, **kwargs):
             return np.random.random(iminfo_shape).astype(np.float32)
+
         box_clip_op = OpConfig(
-            type = "box_clip",
-            inputs = {"Input" : ["input_data"],
-                    "ImInfo" : ["iminfo_data"]},
-            outputs = {"Output": ["output_data"]},
-            attrs = {})
-        
+            type="box_clip",
+            inputs={"Input": ["input_data"],
+                    "ImInfo": ["iminfo_data"]},
+            outputs={"Output": ["output_data"]},
+            attrs={})
+
         program_config = ProgramConfig(
             ops=[box_clip_op],
             weights={},
             inputs={
-                "input_data":
-                TensorConfig(data_gen=partial(generate_input), lod=lod_data),
-                "iminfo_data":
-                TensorConfig(data_gen=partial(generate_iminfo), lod=lod_data),
+                "input_data": TensorConfig(
+                    data_gen=partial(generate_input), lod=lod_data),
+                "iminfo_data": TensorConfig(
+                    data_gen=partial(generate_iminfo), lod=lod_data),
             },
             outputs=["output_data"])
         return program_config
@@ -72,6 +82,7 @@ class TestBoxClipOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
