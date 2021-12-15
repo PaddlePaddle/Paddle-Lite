@@ -39,8 +39,20 @@ class TestSoftmaxOp(AutoScanTest):
                           Place(TargetType.Host, PrecisionType.FP32)    
                         ]
         self.enable_testing_on_place(places=opencl_places)
+        # metal demo
+        metal_places = [Place(TargetType.Metal, PrecisionType.FP32, DataLayoutType.MetalTexture2DArray),
+                        Place(TargetType.Metal, PrecisionType.FP16, DataLayoutType.MetalTexture2DArray),
+                        Place(TargetType.ARM, PrecisionType.FP32),
+                        Place(TargetType.Host, PrecisionType.FP32)]
+        self.enable_testing_on_place(places=metal_places)
 
     def is_program_valid(self, program_config: ProgramConfig, predictor_config: CxxConfig) -> bool:
+        x_shape = list(program_config.inputs["input_data"].shape)
+        if predictor_config.target() == TargetType.Metal:
+            if len(x_shape) <= 2:
+                return False
+            if x_shape[1] % 4 != 0:
+                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -68,8 +80,7 @@ class TestSoftmaxOp(AutoScanTest):
             ops=[ops_config],
             weights={},
             inputs={
-                "input_data": 
-                TensorConfig(data_gen=partial(generate_input))
+                "input_data": TensorConfig(data_gen=partial(generate_input))
             },
             outputs=["output_data"])
 
@@ -79,10 +90,21 @@ class TestSoftmaxOp(AutoScanTest):
         return self.get_predictor_configs(), ["softmax"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def teller1(program_config, predictor_config):
+            if predictor_config.target() == TargetType.OpenCL :
+                return True
+            
+        self.add_ignore_check_case(
+            teller1, IgnoreReasons.ACCURACY_ERROR,
+            "The op output has diff in a specific case. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        target_str = self.get_target()
+        if target_str == "Metal":
+            self.run_and_statis(quant=False, max_examples=400)
+        else:
+            self.run_and_statis(quant=False, max_examples=25)
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

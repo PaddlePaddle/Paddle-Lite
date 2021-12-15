@@ -40,8 +40,18 @@ class TestSigmoidOp(AutoScanTest):
                           Place(TargetType.Host, PrecisionType.FP32)    
                         ]
         self.enable_testing_on_place(places=opencl_places)
+        # metal demo
+        metal_places = [Place(TargetType.Metal, PrecisionType.FP32, DataLayoutType.MetalTexture2DArray),
+                        Place(TargetType.Metal, PrecisionType.FP16, DataLayoutType.MetalTexture2DArray),
+                        Place(TargetType.ARM, PrecisionType.FP32),
+                        Place(TargetType.Host, PrecisionType.FP32)]
+        self.enable_testing_on_place(places=metal_places)
         
     def is_program_valid(self, program_config: ProgramConfig, predictor_config: CxxConfig) -> bool:
+        x_shape = list(program_config.inputs["input_data"].shape)
+        if predictor_config.target() == TargetType.Metal:
+            if len(x_shape) <= 2:
+                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -78,7 +88,7 @@ class TestSigmoidOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=60)
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
