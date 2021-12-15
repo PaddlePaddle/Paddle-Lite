@@ -25,23 +25,31 @@ from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 import argparse
 
+
 class TestAsinOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-                          Place(TargetType.Host, PrecisionType.FP32)]
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
         self.enable_testing_on_place(places=opencl_places)
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-
         def generate_data(*args, **kwargs):
             low, high = -10, 10
             dtype = "float32"
@@ -64,22 +72,26 @@ class TestAsinOp(AutoScanTest):
                 else:
                     return np.random.randint(low, high, shape).astype(np.int64)
             elif dtype == "float32":
-                return (high - low) * np.random.random(shape).astype(np.float32) + low
+                return (high - low
+                        ) * np.random.random(shape).astype(np.float32) + low
 
-        in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=1, max_size=4))
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=8), min_size=1, max_size=4))
 
         asin_op = OpConfig(
-            type = "asin",
-            inputs = {"X" : ["input_data"]},
-            outputs = {"Out": ["output_data"]},
-            attrs = {})
+            type="asin",
+            inputs={"X": ["input_data"]},
+            outputs={"Out": ["output_data"]},
+            attrs={})
         # Make sure abs of input data is less than 0.9 because the output is infinite when abs of input is 1
         program_config = ProgramConfig(
             ops=[asin_op],
             weights={},
             inputs={
-                "input_data":
-                TensorConfig(data_gen=partial(generate_data, low=-0.9, high=0.9, shape=in_shape))
+                "input_data": TensorConfig(data_gen=partial(
+                    generate_data, low=-0.9, high=0.9, shape=in_shape))
             },
             outputs=["output_data"])
         return program_config
@@ -92,6 +104,7 @@ class TestAsinOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

@@ -23,10 +23,10 @@ namespace paddle {
 namespace lite {
 namespace operators {
 
-class AcosOpLite : public OpLite {
+class AtanOpLite : public OpLite {
  public:
-  AcosOpLite() {}
-  explicit AcosOpLite(const std::string &op_type) : OpLite(op_type) {}
+  AtanOpLite() {}
+  explicit AtanOpLite(const std::string &op_type) : OpLite(op_type) {}
 
   bool CheckShape() const override;
 
@@ -36,10 +36,10 @@ class AcosOpLite : public OpLite {
 
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
-  std::string DebugString() const override { return "acos"; }
+  std::string DebugString() const override { return "atan"; }
 
  private:
-  mutable AcosParam param_;
+  mutable AtanParam param_;
 };
 
 }  // namespace operators

@@ -12,36 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-#include <string>
-#include <vector>
-#include "lite/core/op_lite.h"
-#include "lite/core/scope.h"
-#include "lite/utils/all.h"
+#include "lite/operators/atan_op.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace operators {
 
-class AcosOpLite : public OpLite {
- public:
-  AcosOpLite() {}
-  explicit AcosOpLite(const std::string &op_type) : OpLite(op_type) {}
+bool AtanOpLite::CheckShape() const {
+  CHECK_OR_FALSE(param_.X);
+  CHECK_OR_FALSE(param_.Out);
+  return true;
+}
 
-  bool CheckShape() const override;
+bool AtanOpLite::InferShape() {
+  lite::DDim x_dims = param_.X->dims();
+  param_.Out->Resize(x_dims);
 
-  bool InferShape() override;
+  return true;
+}
 
-  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+bool AtanOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+  auto x = op_desc.Input("X").front();
+  auto out = op_desc.Output("Out").front();
 
-  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+  param_.X = scope->FindVar(x)->GetMutable<lite::Tensor>();
+  param_.Out = scope->FindVar(out)->GetMutable<lite::Tensor>();
 
-  std::string DebugString() const override { return "acos"; }
-
- private:
-  mutable AcosParam param_;
-};
+  return true;
+}
 
 }  // namespace operators
 }  // namespace lite
 }  // namespace paddle
+
+REGISTER_LITE_OP(atan, paddle::lite::operators::AtanOpLite);
