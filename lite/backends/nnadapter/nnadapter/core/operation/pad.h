@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #pragma once
-#include <vector>
 
 namespace nnadapter {
 namespace operation {
