@@ -26,11 +26,11 @@ import argparse
 import numpy as np
 from functools import partial
 
-class TestAssignOp(AutoScanTest):
+class TestGruUnitOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,2])
-        self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
+        self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 2, 4])
 
     def is_program_valid(self, program_config: ProgramConfig, predictor_config: CxxConfig) -> bool:
         return True
@@ -79,7 +79,7 @@ class TestAssignOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["gru_unit"], (3e-2, 3e-2)
+        return self.get_predictor_configs(), ["gru_unit"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass

@@ -26,17 +26,17 @@ import argparse
 import numpy as np
 from functools import partial
 
-class TestAssignOp(AutoScanTest):
+class TestIndexSelectOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.Any, DataLayoutType.NCHW, thread=[1,2])
+        self.enable_testing_on_place(TargetType.Host, PrecisionType.Any, DataLayoutType.NCHW, thread=[1, 2])
 
     def is_program_valid(self, program_config: ProgramConfig, predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
         in_shape = draw(st.lists(st.integers(
-            min_value=6, max_value=10), min_size=4, max_size=4))
+            min_value=6, max_value=64), min_size=4, max_size=4))
         idx_shape = draw(st.lists(st.integers(
                 min_value=1, max_value=5), min_size=1, max_size=1))
         dim_data = draw(st.sampled_from([1, 2, 3]))

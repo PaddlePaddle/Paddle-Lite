@@ -28,7 +28,7 @@ import argparse
 import numpy as np
 from functools import partial
 
-class TestAssignOp(AutoScanTest):
+class TestIsEmptyOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         host_op_config = [
@@ -41,7 +41,7 @@ class TestAssignOp(AutoScanTest):
 
     def sample_program_configs(self, draw):
         in_shape = draw(st.lists(st.integers(
-            min_value=3, max_value=10), min_size=3, max_size=4))
+            min_value=3, max_value=64), min_size=3, max_size=4))
         process_type = draw(st.sampled_from(["type_int32", "type_int64", "type_float"]))
         
         def generate_data(type, size_list):
