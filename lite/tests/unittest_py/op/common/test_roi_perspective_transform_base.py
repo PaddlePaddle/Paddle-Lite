@@ -24,21 +24,24 @@ import hypothesis
 import hypothesis.strategies as st
 from hypothesis import assume
 
+
 # https://github.com/PaddlePaddle/Paddle/blob/develop/python/paddle/fluid/layers/detection.py
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(
-            min_value=1, max_value=10), min_size=4, max_size=4))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=10), min_size=4, max_size=4))
 
     def generate_input(*args, **kwargs):
         return np.random.random(in_shape).astype(np.float32)
-       
+
     build_ops = OpConfig(
-        type = "roi_perspective_transform",
-        inputs = {
-            "X" : ["input_data"],
+        type="roi_perspective_transform",
+        inputs={
+            "X": ["input_data"],
             "ROIs": [rois],
-            },
-        outputs = {
+        },
+        outputs={
             "Out": ["output_data"],
             "Out2InIdx": ["out2in_idx"],
             "Out2InWeights": ["out2in_w"],
@@ -54,8 +57,7 @@ def sample_program_configs(draw):
         ops=[build_ops],
         weights={},
         inputs={
-            "input_data":
-            TensorConfig(data_gen=partial(generate_input)),
+            "input_data": TensorConfig(data_gen=partial(generate_input)),
         },
         outputs=["output_data"])
     return program_config

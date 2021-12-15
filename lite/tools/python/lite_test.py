@@ -55,7 +55,8 @@ class NaiveModelTest(unittest.TestCase):
 
         with fluid.program_guard(main_prog, start_prog):
             a = fluid.layers.data(name="a", shape=[1, 20], dtype='float32')
-            label = fluid.layers.data(name="label", shape=[10], dtype='float32')
+            label = fluid.layers.data(
+                name="label", shape=[10], dtype='float32')
             a1 = fluid.layers.fc(input=a, size=10, act=None, bias_attr=False)
             cost = fluid.layers.square_error_cost(a1, label)
             avg_cost = fluid.layers.mean(cost)

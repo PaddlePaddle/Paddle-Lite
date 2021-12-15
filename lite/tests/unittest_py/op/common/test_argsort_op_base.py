@@ -24,23 +24,24 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=1, max_size=4))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=8), min_size=1, max_size=4))
     axis = draw(st.integers(min_value=-1, max_value=3))
     assume(axis < len(in_shape))
 
     arg_sort_op = OpConfig(
-        type = "argsort",
-        inputs = {"X" : ["input_data"]},
-        outputs = {"Out": ["output_data"],
-                  "Indices": ["indices_data"]},
-        attrs = {"axis": axis})
+        type="argsort",
+        inputs={"X": ["input_data"]},
+        outputs={"Out": ["output_data"],
+                 "Indices": ["indices_data"]},
+        attrs={"axis": axis})
     program_config = ProgramConfig(
         ops=[arg_sort_op],
         weights={},
-        inputs={
-            "input_data":
-            TensorConfig(shape=in_shape)
-        },
+        inputs={"input_data": TensorConfig(shape=in_shape)},
         outputs=["output_data"])
     return program_config
