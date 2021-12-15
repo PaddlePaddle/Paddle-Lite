@@ -24,33 +24,32 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape=draw(st.lists(
-        st.integers(
-            min_value=1, max_value=64), min_size=1, max_size=3))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=64), min_size=1, max_size=3))
     in_shape.insert(0, 10)
-    lod_data = draw(st.sampled_from([[[0, 0, 10]], [[2, 0, 10]], [[1, 0, 10]], [[0, 1, 0, 10]]]))
+    lod_data = draw(
+        st.sampled_from([[[0, 0, 10]], [[2, 0, 10]], [[1, 0, 10]],
+                         [[0, 1, 0, 10]]]))
 
     def generate_input(*args, **kwargs):
         return np.random.uniform(0.1, 1, in_shape).astype('float32')
 
     ops_config = OpConfig(
-        type = "sequence_reverse",
-        inputs = {
-            "X": ["input_data"]
-        },
-        outputs = {
-            "Y": ["output_data"]
-        },
-        attrs = {}
-        )
+        type="sequence_reverse",
+        inputs={"X": ["input_data"]},
+        outputs={"Y": ["output_data"]},
+        attrs={})
 
     program_config = ProgramConfig(
         ops=[ops_config],
         weights={},
         inputs={
-            "input_data": 
-            TensorConfig(data_gen=partial(generate_input), lod=lod_data)
+            "input_data": TensorConfig(
+                data_gen=partial(generate_input), lod=lod_data)
         },
         outputs=["output_data"])
 

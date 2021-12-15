@@ -4,7 +4,7 @@
 class Opt;
 ```
 
-`Opt`模型离线优化接口，Paddle原生模型需经`opt`优化图结构后才能在Paddle-Lite上运行。
+`Opt`模型离线优化接口，Paddle原生模型需经`opt`优化图结构后才能在Paddle Lite上运行。
 
 示例：  
 
