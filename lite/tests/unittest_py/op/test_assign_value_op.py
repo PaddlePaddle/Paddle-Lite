@@ -25,20 +25,36 @@ import hypothesis.strategies as st
 import argparse
 import numpy as np
 
+
 class TestAssignValueOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(min_value=1, max_value=4), min_size=1, max_size=4))
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=4), min_size=1, max_size=4))
         dtype = draw(st.sampled_from([2, 3, 5]))
         bool_values = draw(st.lists(st.booleans(), min_size=1, max_size=4))
-        fp32_values = draw(st.lists(st.floats(min_value=1, max_value=4), min_size=1, max_size=4))
-        int32_values = draw(st.lists(st.integers(min_value=1, max_value=4), min_size=1, max_size=4))
+        fp32_values = draw(
+            st.lists(
+                st.floats(
+                    min_value=1, max_value=4), min_size=1, max_size=4))
+        int32_values = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=4), min_size=1, max_size=4))
         int64_values = np.random.random([1]).astype(np.int64).tolist()
         in_shape_num = 1
         for val in in_shape:
@@ -51,16 +67,18 @@ class TestAssignValueOp(AutoScanTest):
             assume(in_shape_num == len(fp32_values))
 
         assign_value_op = OpConfig(
-            type = "assign_value",
-            inputs = {},
-            outputs = {"Out": ["output_data"]},
-            attrs = {"shape": in_shape,
-                    "dtype": dtype,
-                    "bool_values": bool_values,
-                    "fp32_values": fp32_values,
-                    "int32_values": int32_values,
-                    "int64_values": int64_values})
-        
+            type="assign_value",
+            inputs={},
+            outputs={"Out": ["output_data"]},
+            attrs={
+                "shape": in_shape,
+                "dtype": dtype,
+                "bool_values": bool_values,
+                "fp32_values": fp32_values,
+                "int32_values": int32_values,
+                "int64_values": int64_values
+            })
+
         program_config = ProgramConfig(
             ops=[assign_value_op],
             weights={},
@@ -76,6 +94,7 @@ class TestAssignValueOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

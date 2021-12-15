@@ -24,40 +24,62 @@ from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 import argparse
 
+
 class TestAnchorGeneratorOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=4, max_size=4))
-        anchor_sizes = draw(st.lists(st.floats(min_value=1, max_value=10), min_size=1, max_size=4))
-        aspect_ratios = draw(st.lists(st.floats(min_value=1, max_value=10), min_size=1, max_size=4))
-        variances = draw(st.lists(st.floats(min_value=1, max_value=10), min_size=4, max_size=4))
-        stride = draw(st.lists(st.floats(min_value=1, max_value=10), min_size=2, max_size=2))
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=8), min_size=4, max_size=4))
+        anchor_sizes = draw(
+            st.lists(
+                st.floats(
+                    min_value=1, max_value=10), min_size=1, max_size=4))
+        aspect_ratios = draw(
+            st.lists(
+                st.floats(
+                    min_value=1, max_value=10), min_size=1, max_size=4))
+        variances = draw(
+            st.lists(
+                st.floats(
+                    min_value=1, max_value=10), min_size=4, max_size=4))
+        stride = draw(
+            st.lists(
+                st.floats(
+                    min_value=1, max_value=10), min_size=2, max_size=2))
 
         anchor_generator_op = OpConfig(
-            type = "anchor_generator",
-            inputs = {"Input" : ["input_data"]},
-            outputs = {"Anchors": ["anchors_data"],
-                    "Variances": ["variance_data"]},
-            attrs = {"anchor_sizes": anchor_sizes,
-                    "aspect_ratios": aspect_ratios,
-                    "stride": stride,
-                    "variances": variances,
-                    })
+            type="anchor_generator",
+            inputs={"Input": ["input_data"]},
+            outputs={
+                "Anchors": ["anchors_data"],
+                "Variances": ["variance_data"]
+            },
+            attrs={
+                "anchor_sizes": anchor_sizes,
+                "aspect_ratios": aspect_ratios,
+                "stride": stride,
+                "variances": variances,
+            })
         program_config = ProgramConfig(
             ops=[anchor_generator_op],
             weights={},
-            inputs={
-                "input_data":
-                TensorConfig(shape=in_shape)
-            },
+            inputs={"input_data": TensorConfig(shape=in_shape)},
             outputs=["anchors_data", "variance_data"])
-    
+
         return program_config
 
     def sample_predictor_configs(self):
@@ -68,6 +90,7 @@ class TestAnchorGeneratorOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

@@ -26,41 +26,51 @@ import argparse
 from functools import partial
 import numpy as np
 
+
 class TestAffineChannelOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         # only support arm
-        self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(min_value=1, max_value=50), min_size=4, max_size=4))
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=50), min_size=4, max_size=4))
         scale_shape = [in_shape[1]]
 
         def generate_input(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
+
         def generate_scale(*args, **kwargs):
             return np.random.random(scale_shape).astype(np.float32)
-        
+
         affine_channel_op = OpConfig(
-            type = "affine_channel",
-            inputs = {"X" : ["input_data"],
-                    "Scale" : ["scale_data"],
-                    "Bias" : ["bias_data"]},
-            outputs = {"Out": ["output_data"]},
-            attrs = {"data_layout" : "NCHW"})
+            type="affine_channel",
+            inputs={
+                "X": ["input_data"],
+                "Scale": ["scale_data"],
+                "Bias": ["bias_data"]
+            },
+            outputs={"Out": ["output_data"]},
+            attrs={"data_layout": "NCHW"})
         program_config = ProgramConfig(
             ops=[affine_channel_op],
             weights={},
             inputs={
-                "input_data":
-                TensorConfig(data_gen=partial(generate_input)),
-                "scale_data":
-                TensorConfig(data_gen=partial(generate_scale)),
-                "bias_data":
-                TensorConfig(data_gen=partial(generate_scale))
+                "input_data": TensorConfig(data_gen=partial(generate_input)),
+                "scale_data": TensorConfig(data_gen=partial(generate_scale)),
+                "bias_data": TensorConfig(data_gen=partial(generate_scale))
             },
             outputs=["output_data"])
         return program_config
@@ -73,6 +83,7 @@ class TestAffineChannelOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
