@@ -32,18 +32,55 @@ class TestMulOp(AutoScanTest):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32,
                                      DataLayoutType.NCHW)
+        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32,
+                                     DataLayoutType.NCHW)
+        self.enable_testing_on_place(TargetType.Metal, PrecisionType.FP32,
+                                     DataLayoutType.NCHW)
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        return False  # True ci run matmul has diff
+        target_str = self.get_target()
+        # opencl bugs to be fix in the future
+        if target_str == "OpenCL":
+            in_shape = list(program_config.inputs["input_data_x"].shape)
+            if in_shape[0] % 4 != 0:
+                return False
+            if program_config.ops[0].attrs["alpha"] != 1.0:
+                return False
+        if target_str == "Metal":
+            return False
+
+        return True  # True ci run matmul has diff
 
     def sample_program_configs(self, draw):
-        shape0 = draw(st.integers(min_value=1, max_value=64))
-        shape1 = draw(st.integers(min_value=1, max_value=64))
-        shape2 = draw(st.integers(min_value=1, max_value=64))
-        batch0 = draw(st.integers(min_value=1, max_value=64))
-        batch1 = draw(st.integers(min_value=1, max_value=64))
+        target_str = self.get_target()
+        if target_str == "OpenCL":
+            shape0 = draw(st.integers(min_value=1, max_value=4)) * 4
+            shape1 = draw(st.integers(min_value=1, max_value=4)) * 4
+            shape2 = draw(st.integers(min_value=1, max_value=4)) * 4
+            batch0 = draw(st.integers(min_value=1, max_value=4)) * 4
+            batch1 = draw(st.integers(min_value=1, max_value=4)) * 4
+        if target_str == "ARM":
+            shape0 = draw(st.integers(min_value=1, max_value=64))
+            shape1 = draw(st.integers(min_value=1, max_value=64))
+            shape2 = draw(st.integers(min_value=1, max_value=64))
+            batch0 = draw(st.integers(min_value=1, max_value=64))
+            batch1 = draw(st.integers(min_value=1, max_value=64))
         transpose_X = draw(st.booleans())
         transpose_Y = draw(st.booleans())
         if ((not transpose_X) and (not transpose_Y)):
@@ -58,16 +95,16 @@ class TestMulOp(AutoScanTest):
         if ((transpose_X) and (transpose_Y)):
             X_shape = [batch0, shape1, shape0]
             Y_shape = [batch0, shape2, shape1]
-        alpha = draw(st.sampled_from([0.1, 1.1, -1.5]))
+        alpha = draw(st.sampled_from([0.1, 1.0, 1.1, -1.5]))
         fused_reshape_X = draw(st.sampled_from([[]]))
         fused_reshape_Y = draw(st.sampled_from([[]]))
         fused_transpose_X = draw(st.sampled_from([[]]))
         fused_transpose_Y = draw(st.sampled_from([[]]))
         fused_reshape_Out = draw(st.sampled_from([[]]))
         fused_transpose_Out = draw(st.sampled_from([[]]))
-        Scale_x = draw(st.sampled_from([0.1, 1.1]))
-        Scale_y = draw(st.sampled_from([0.1, 1.1]))
-        Scale_out = draw(st.sampled_from([0.1, 1.1]))
+        Scale_x = draw(st.floats(min_value=0.1, max_value=10.0))
+        Scale_y = draw(st.floats(min_value=0.1, max_value=10.0))
+        Scale_out = draw(st.floats(min_value=0.1, max_value=10.0))
         force_fp32_output = draw(st.booleans())
 
         matmul_op = OpConfig(
@@ -107,7 +144,11 @@ class TestMulOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        sample_size = 25
+        target_str = self.get_target()
+        if target_str == "OpenCL":
+            sample_size = 100
+        self.run_and_statis(quant=False, max_examples=sample_size)
 
 
 if __name__ == "__main__":
