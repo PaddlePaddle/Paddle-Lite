@@ -28,41 +28,65 @@ import numpy as np
 class TestSliceOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.X86, [PrecisionType.FP32], DataLayoutType.NCHW, thread=[1,4])
-        self.enable_testing_on_place(TargetType.ARM, [PrecisionType.FP32], DataLayoutType.NCHW, thread=[1,4])
-        opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-                          Place(TargetType.Host, PrecisionType.FP32)    
-                        ]
+        self.enable_testing_on_place(
+            TargetType.X86, [PrecisionType.FP32],
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM, [PrecisionType.FP32],
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
         self.enable_testing_on_place(places=opencl_places)
         # metal demo
-        metal_places = [Place(TargetType.Metal, PrecisionType.FP32, DataLayoutType.MetalTexture2DArray),
-                        Place(TargetType.Metal, PrecisionType.FP16, DataLayoutType.MetalTexture2DArray),
-                        Place(TargetType.ARM, PrecisionType.FP32),
-                        Place(TargetType.Host, PrecisionType.FP32)]
+        metal_places = [
+            Place(TargetType.Metal, PrecisionType.FP32,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.Metal, PrecisionType.FP16,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.ARM, PrecisionType.FP32),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
         self.enable_testing_on_place(places=metal_places)
 
-    def is_program_valid(self, program_config: ProgramConfig, predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         x_dtype = program_config.inputs["input_data"].dtype
-        if predictor_config.target() == TargetType.Metal:
+        if predictor_config.precision() == PrecisionType.INT64:
+            return False
+        if predictor_config.precision() == PrecisionType.INT32:
             return False
         if predictor_config.target() == TargetType.ARM \
-        or predictor_config.target() == TargetType.OpenCL \
-        or predictor_config.target() == TargetType.Metal :
-            if x_dtype == np.int32 or  x_dtype == np.int64:
+        or predictor_config.target() == TargetType.OpenCL :
+            if x_dtype == np.int32 or x_dtype == np.int64:
                 return False
+
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(min_value=6, max_value=64), min_size=4, max_size=4))
-        axes = draw(st.sampled_from([[3], [0, 1], [0, 1, 2],[0, 1, 2, 3]]))
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=6, max_value=64), min_size=4, max_size=4))
+        axes = draw(st.sampled_from([[3], [0, 1], [0, 1, 2], [0, 1, 2, 3]]))
         starts = draw(st.sampled_from([[-1], [0, 1], [0, 1, 2], [0, 1, 2, 3]]))
-        ends = draw(st.sampled_from([[10000], [1, 2], [1, 2, 3], [1, 2, 3, 4]]))
-        decrease_axis = draw(st.sampled_from([[3], [0, 1], [0, 1, 2],[0, 1, 2, 3]]))
+        ends = draw(
+            st.sampled_from([[10000], [1, 2], [1, 2, 3], [1, 2, 3, 4]]))
+        decrease_axis = draw(
+            st.sampled_from([[3], [0, 1], [0, 1, 2], [0, 1, 2, 3]]))
         infer_flags = draw(st.sampled_from([[1, 1, 1]]))
         input_num = draw(st.sampled_from([0, 1, 2]))
         input_type = draw(st.sampled_from(["float32", "int32", "int64"]))
@@ -86,76 +110,67 @@ class TestSliceOp(AutoScanTest):
 
         def generate_ends(*args, **kwargs):
             return np.array(ends, dtype="int32")
-        
+
         def generate_startlist1(*args, **kwargs):
             return np.array([1], dtype="int32")
-        
+
         def generate_startlist2(*args, **kwargs):
             return np.array([1], dtype="int32")
 
         def generate_endlist1(*args, **kwargs):
             return np.array([2], dtype="int32")
-        
+
         def generate_endlist2(*args, **kwargs):
             return np.array([2], dtype="int32")
 
         dics_intput = [{
             "Input": ["input_data"],
-            "StartsTensorList":[
-                "StartsTensorList1",
-                "StartsTensorList2"
-            ],
-            "EndsTensorList": [
-                "EndsTensorList1",
-                "EndsTensorList2"
-            ]
-        },
-        {
+            "StartsTensorList": ["StartsTensorList1", "StartsTensorList2"],
+            "EndsTensorList": ["EndsTensorList1", "EndsTensorList2"]
+        }, {
             "Input": ["input_data"],
             "StartsTensor": ["starts_data"],
             "EndsTensor": ["ends_data"],
-            "StartsTensorList":[
-                "StartsTensorList1",
-                "StartsTensorList2"
-            ],
-            "EndsTensorList": [
-                "EndsTensorList1",
-                "EndsTensorList2"
-            ]
-        },
-        {
+            "StartsTensorList": ["StartsTensorList1", "StartsTensorList2"],
+            "EndsTensorList": ["EndsTensorList1", "EndsTensorList2"]
+        }, {
             "Input": ["input_data"]
-        },{}]
+        }, {}]
 
         dics_weight = [{
-            "StartsTensorList1": TensorConfig(data_gen=partial(generate_startlist1)),
-            "StartsTensorList2": TensorConfig(data_gen=partial(generate_startlist2)),
-            "EndsTensorList1": TensorConfig(data_gen=partial(generate_endlist1)),
-            "EndsTensorList2": TensorConfig(data_gen=partial(generate_endlist2))
+            "StartsTensorList1":
+            TensorConfig(data_gen=partial(generate_startlist1)),
+            "StartsTensorList2":
+            TensorConfig(data_gen=partial(generate_startlist2)),
+            "EndsTensorList1":
+            TensorConfig(data_gen=partial(generate_endlist1)),
+            "EndsTensorList2":
+            TensorConfig(data_gen=partial(generate_endlist2))
         }, {
-            "starts_data":TensorConfig(data_gen=partial(generate_starts)),
+            "starts_data": TensorConfig(data_gen=partial(generate_starts)),
             "ends_data": TensorConfig(data_gen=partial(generate_ends)),
-            "StartsTensorList1": TensorConfig(data_gen=partial(generate_startlist1)),
-            "StartsTensorList2": TensorConfig(data_gen=partial(generate_startlist2)),
-            "EndsTensorList1": TensorConfig(data_gen=partial(generate_endlist1)),
-            "EndsTensorList2": TensorConfig(data_gen=partial(generate_endlist2))
-        },{}]
+            "StartsTensorList1":
+            TensorConfig(data_gen=partial(generate_startlist1)),
+            "StartsTensorList2":
+            TensorConfig(data_gen=partial(generate_startlist2)),
+            "EndsTensorList1":
+            TensorConfig(data_gen=partial(generate_endlist1)),
+            "EndsTensorList2":
+            TensorConfig(data_gen=partial(generate_endlist2))
+        }, {}]
 
         ops_config = OpConfig(
-            type = "slice",
-            inputs = dics_intput[input_num],
-            outputs = {
-                "Out": ["output_data"]
-            },
-            attrs = {
+            type="slice",
+            inputs=dics_intput[input_num],
+            outputs={"Out": ["output_data"]},
+            attrs={
                 "axes": axes,
                 "starts": starts,
                 "ends": ends,
                 "decrease_axis": decrease_axis,
                 "infer_flags": infer_flags,
                 "input_num": input_num
-            }
-            )
+            })
 
         program_config = ProgramConfig(
             ops=[ops_config],
@@ -172,10 +187,10 @@ class TestSliceOp(AutoScanTest):
 
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
-            if predictor_config.target() == TargetType.OpenCL :
-                if  program_config.ops[0].attrs["input_num"] == 0:
+            if predictor_config.target() == TargetType.OpenCL:
+                if program_config.ops[0].attrs["input_num"] == 0:
                     return True
-            
+
         self.add_ignore_check_case(
             teller1, IgnoreReasons.ACCURACY_ERROR,
             "The op output has diff in a specific case. We need to fix it as soon as possible."
@@ -183,6 +198,7 @@ class TestSliceOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
