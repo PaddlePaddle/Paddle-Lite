@@ -25,7 +25,7 @@ int ConvertPad(Converter* converter, hal::Operation* operation) {
 
   // Convert to GE operators
   std::string pad_mode = ConvertPadModeCodeToGEPadMode(mode);
-  auto value =
+  int32_t value =
       static_cast<int32_t>(*reinterpret_cast<float*>(value_operand->buffer));
   NNADAPTER_CHECK_EQ(pad_mode, "constant")
       << "Only support mode=constant right now, "
