@@ -26,72 +26,81 @@ import argparse
 import numpy as np
 from functools import partial
 
-class TestAssignOp(AutoScanTest):
+
+class TestLayerNormOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,2])
-        self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 2, 4])
+        self.enable_testing_on_place(
+            TargetType.X86,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 2])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 2, 4])
 
-    def is_program_valid(self, program_config: ProgramConfig, predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        in_shape=draw(st.lists(st.integers(
-            min_value=1, max_value=10), min_size=4, max_size=4))
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=64), min_size=4, max_size=4))
         epsilon = draw(st.floats(min_value=0.0001, max_value=0.0005))
         begin_norm_axis = draw(st.sampled_from([1, 2]))
 
         def generate_input(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
-        
-        channel_dim = 1;
+
+        channel_dim = 1
         for dim in range(begin_norm_axis, 4):
             channel_dim = channel_dim * in_shape[dim]
 
         def generate_scale(*args, **kwargs):
             return np.random.random([channel_dim]).astype(np.float32)
-        
+
         def generate_bias(*args, **kwargs):
             return np.random.random([channel_dim]).astype(np.float32)
-        
+
         run_op = OpConfig(
-            type = "layer_norm",
-            inputs = {
-                "X" : ["input_data"],
-                "Scale" : ["scale_data"],
-                "Bias" : ["bias_data"]
-                },
-            outputs = {
-                "Y": ["output_data"],
-                "Mean" : ["mean_data"],
-                "Variance" : ["var_data"],
+            type="layer_norm",
+            inputs={
+                "X": ["input_data"],
+                "Scale": ["scale_data"],
+                "Bias": ["bias_data"]
             },
-            attrs = {
-                "epsilon" : epsilon,
-                "begin_norm_axis" : begin_norm_axis
-            })
+            outputs={
+                "Y": ["output_data"],
+                "Mean": ["mean_data"],
+                "Variance": ["var_data"],
+            },
+            attrs={"epsilon": epsilon,
+                   "begin_norm_axis": begin_norm_axis})
         program_config = ProgramConfig(
             ops=[run_op],
             weights={},
             inputs={
-                "input_data":
-                TensorConfig(data_gen=partial(generate_input)),
-                "scale_data":
-                TensorConfig(data_gen=partial(generate_scale)),
-                "bias_data":
-                TensorConfig(data_gen=partial(generate_bias)),
+                "input_data": TensorConfig(data_gen=partial(generate_input)),
+                "scale_data": TensorConfig(data_gen=partial(generate_scale)),
+                "bias_data": TensorConfig(data_gen=partial(generate_bias)),
             },
             outputs=["output_data", "mean_data", "var_data"])
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["layer_norm"], (5e-5, 5e-5)
+        return self.get_predictor_configs(), ["layer_norm"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
