@@ -26,52 +26,75 @@ import argparse
 import numpy as np
 from functools import partial
 
+
 class TestClipOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
-        self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
-        opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-                          Place(TargetType.Host, PrecisionType.FP32)]
+        self.enable_testing_on_place(
+            TargetType.X86,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
         self.enable_testing_on_place(places=opencl_places)
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=1, max_size=4))
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=8), min_size=1, max_size=4))
         min_val = draw(st.floats())
         max_val = min_val + 0.5
         min_max_shape = draw(st.integers(min_value=1, max_value=20))
 
         def generate_input(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
+
         def generate_min(*args, **kwargs):
             return np.random.random(min_max_shape).astype(np.float32)
+
         def generate_max(*args, **kwargs):
             return np.random.random(min_max_shape).astype(np.float32) + 1.0
+
         clip_op = OpConfig(
-            type = "clip",
-            inputs = {"X" : ["input_data"],
-                    "Min" : ["min_data"],
-                    "Max" : ["max_data"]},
-            outputs = {"Out": ["output_data"]},
-            attrs = {"min" : min_val,
-                    "max" : max_val})
+            type="clip",
+            inputs={
+                "X": ["input_data"],
+                "Min": ["min_data"],
+                "Max": ["max_data"]
+            },
+            outputs={"Out": ["output_data"]},
+            attrs={"min": min_val,
+                   "max": max_val})
         program_config = ProgramConfig(
             ops=[clip_op],
             weights={},
             inputs={
-                "input_data":
-                TensorConfig(data_gen=partial(generate_input)),
-                "min_data":
-                TensorConfig(data_gen=partial(generate_min)),
-                "max_data":
-                TensorConfig(data_gen=partial(generate_max)),
+                "input_data": TensorConfig(data_gen=partial(generate_input)),
+                "min_data": TensorConfig(data_gen=partial(generate_min)),
+                "max_data": TensorConfig(data_gen=partial(generate_max)),
             },
             outputs=["output_data"])
         return program_config
@@ -84,6 +107,7 @@ class TestClipOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

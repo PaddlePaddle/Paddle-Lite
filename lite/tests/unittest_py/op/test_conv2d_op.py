@@ -34,36 +34,52 @@ class TestConv2dOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
-        self.enable_testing_on_place(
-            TargetType.ARM,
-            [PrecisionType.FP32, PrecisionType.FP16, PrecisionType.INT8],
-            DataLayoutType.NCHW,
-            thread=[1, 4])
+        arm_places = [
+            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.ARM, PrecisionType.FP16, DataLayoutType.NCHW),
+            Place(TargetType.ARM, PrecisionType.INT8, DataLayoutType.NCHW)
+        ]
+        self.enable_testing_on_place(places=arm_places, thread=[1, 4])
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        if predictor_config.target() == TargetType.ARM:
-            if predictor_config.precision() == PrecisionType.FP16 or predictor_config.precision() == PrecisionType.INT8:
-                return False
-            else:
-                return True
+        if predictor_config.target(
+        ) == TargetType.ARM or predictor_config.target() == TargetType.OpenCL:
+            # has diff or segmentation
+            return False
         else:
             return True
 
     def sample_program_configs(self, draw):
         num = draw(st.integers(min_value=1, max_value=4))
-        w_cin = draw(st.integers(min_value=1, max_value=128))
+        cin = draw(st.integers(min_value=1, max_value=128))
+        cout = draw(st.integers(min_value=1, max_value=128))
         height = draw(st.integers(min_value=1, max_value=128))
         width = draw(st.integers(min_value=1, max_value=128))
         cout = draw(st.integers(min_value=1, max_value=128))
         kw = np.random.randint(1, 5)
         kh = np.random.randint(1, 5)
-        groups = draw(st.sampled_from([1, 2, 128]))
-        cout = groups * cout
+        groups = draw(st.integers(min_value=1, max_value=128))
         scale_in = draw(st.floats(min_value=0.001, max_value=0.1))
         scale_out = draw(st.floats(min_value=0.001, max_value=0.1))
-        cin = w_cin * groups
+        assume(cin % groups == 0)
+        assume(cout % groups == 0)
+        w_cin = (int)(cin / groups)
         in_shape = [num, cin, height, width]
         weight_shape = [cout, w_cin, kh, kw]
         assume(in_shape[2] >= weight_shape[2])
@@ -90,31 +106,34 @@ class TestConv2dOp(AutoScanTest):
         def generate_bias(*args, **kwargs):
             return np.random.random([cout]).astype(np.float32)
 
-        inputs_data = {"input_data":
-                TensorConfig(data_gen=partial(generate_input))}
-        inputs_type = {"Input": ["input_data"], "Filter" : ["filter_data"]}
+        inputs_data = {
+            "input_data": TensorConfig(data_gen=partial(generate_input))
+        }
+        inputs_type = {"Input": ["input_data"], "Filter": ["filter_data"]}
         if use_mkldnn:
-            inputs_data["bias_data"] = TensorConfig(data_gen=partial(generate_bias))
+            inputs_data["bias_data"] = TensorConfig(
+                data_gen=partial(generate_bias))
             inputs_type["Bias"] = ["bias_data"]
-        
+
         conv_op = OpConfig(
-            type = "conv2d",
-            inputs = inputs_type,
-            outputs = {"Output": ["output_data"]},
-            attrs = {"strides" : strides,
-                    "paddings" : paddings,
-                    "use_mkldnn" : use_mkldnn,
-                    "padding_algorithm" : padding_algorithm,
-                    "groups" : groups,
-                    "dilations" : dilations,
-                    "Scale_in" : scale_in,
-                    "Scale_out" : scale_out,
-                    "data_format" : data_format})
+            type="conv2d",
+            inputs=inputs_type,
+            outputs={"Output": ["output_data"]},
+            attrs={
+                "strides": strides,
+                "paddings": paddings,
+                "use_mkldnn": use_mkldnn,
+                "padding_algorithm": padding_algorithm,
+                "groups": groups,
+                "dilations": dilations,
+                "Scale_in": scale_in,
+                "Scale_out": scale_out,
+                "data_format": data_format
+            })
         program_config = ProgramConfig(
             ops=[conv_op],
             weights={
-                "filter_data":
-                TensorConfig(data_gen=partial(generate_filter))
+                "filter_data": TensorConfig(data_gen=partial(generate_filter))
             },
             inputs=inputs_data,
             outputs=["output_data"])

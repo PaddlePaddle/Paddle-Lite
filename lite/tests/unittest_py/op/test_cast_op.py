@@ -26,22 +26,34 @@ import argparse
 import numpy as np
 from functools import partial
 
+
 class TestCastOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
-        if program_config.ops[0].attrs["in_dtype"] == 0 or program_config.ops[0].attrs["out_dtype"] == 0:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
+        if program_config.ops[0].attrs["in_dtype"] == 0 or program_config.ops[
+                0].attrs["out_dtype"] == 0:
             return False
         else:
             return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(min_value=1, max_value=10), min_size=1, max_size=4))
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=10), min_size=1, max_size=4))
         # BOOL = 0;INT16 = 1;INT32 = 2;INT64 = 3;FP16 = 4;FP32 = 5;FP64 = 6;
         in_dtype = draw(st.sampled_from([0, 2, 3, 5]))
         out_dtype = draw(st.sampled_from([0, 2, 3, 5]))
+
         # BOOL and INT16 and FP16 and FP64 paddle-lite doesn't support
         def generate_input(*args, **kwargs):
             if in_dtype == 0:
@@ -58,19 +70,19 @@ class TestCastOp(AutoScanTest):
                 return np.random.random(in_shape).astype(np.float32)
             else:
                 print("in_dtype is error! ", in_dtype)
+
         cast_op = OpConfig(
-            type = "cast",
-            inputs = {"X" : ["input_data"]},
-            outputs = {"Out" : ["output_data"]},
-            attrs = {"in_dtype" : in_dtype,
-                    "out_dtype" : out_dtype})
+            type="cast",
+            inputs={"X": ["input_data"]},
+            outputs={"Out": ["output_data"]},
+            attrs={"in_dtype": in_dtype,
+                   "out_dtype": out_dtype})
 
         program_config = ProgramConfig(
             ops=[cast_op],
             weights={},
             inputs={
-                "input_data":
-                TensorConfig(data_gen=partial(generate_input))
+                "input_data": TensorConfig(data_gen=partial(generate_input))
             },
             outputs=["output_data"])
         return program_config
@@ -83,6 +95,7 @@ class TestCastOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=250)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
