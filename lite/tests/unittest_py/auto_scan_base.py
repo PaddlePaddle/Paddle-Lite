@@ -41,8 +41,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "--target",
     choices=[
-        'Host', 'X86', 'CUDA', 'ARM', 'OpenCL', 'FPGA', 'NPU', 'MLU', 'RKNPU',
-        'APU', 'HUAWEI_ASCEND_NPU', 'INTEL_FPGA'
+        'Host', 'X86', 'CUDA', 'ARM', 'OpenCL', 'FPGA', 'NPU', 'XPU', 'BM',
+        'MLU', 'RKNPU', 'APU', 'HUAWEI_ASCEND_NPU', 'IMAGINATION_NNA',
+        'INTEL_FPGA', 'Metal', 'NNAdapter'
     ],
     required=True)
 logging.basicConfig(level=logging.INFO, format="%(message)s")
