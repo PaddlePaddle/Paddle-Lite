@@ -297,7 +297,7 @@ output_data = output_handle.copy_to_cpu() # numpy.ndarray 类型
 print(output_data)
 ```
 
-## 四、使用 Paddle-Lite 预测库和 C++ 接口预测部署
+## 四、使用 Paddle Lite 预测库和 C++ 接口预测部署
 
 存储好的模型可以使用 Paddle-Lite C++ 接口执行预测部署，具体可以参考文档 [ c++ 完整示例](../cpp_demo)
 

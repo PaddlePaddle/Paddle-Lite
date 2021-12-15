@@ -157,7 +157,7 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::PrepareForRun() {
   if (param.bias) {
     bias_.Resize(param.bias->dims());
     auto* ptr = bias_.mutable_data<float>();
-    auto* ptr_in = bias_.data<float>();
+    auto* ptr_in = param.bias->data<float>();
     float out_scale = param.output_scale;
     for (int i = 0; i < bias_.numel(); ++i) {
       ptr[i] = ptr_in[i] / out_scale;
@@ -300,6 +300,7 @@ void FcCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   if (flag_trans_bias_) {
     b_data = bias_.data<float>();
   }
+  // b_data = param.bias->data<float>();
   bool flag_relu = false;
   operators::ActivationParam act_param;
   act_param.has_active = false;

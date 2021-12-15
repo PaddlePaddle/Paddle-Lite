@@ -23,23 +23,31 @@ import unittest
 import hypothesis
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    input_data_x_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size = 1, max_size = 8))
-    axis = draw(st.integers(min_value=-1, max_value=(len(input_data_x_shape) - 1)))
-    input_data_y_shape = input_data_x_shape[axis:] 
+    input_data_x_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=8), min_size=1, max_size=8))
+    axis = draw(
+        st.integers(
+            min_value=-1, max_value=(len(input_data_x_shape) - 1)))
+    input_data_y_shape = input_data_x_shape[axis:]
 
     def gen_input_data_x():
-        return np.random.randint(1, 3, size=(input_data_x_shape)).astype(np.int64)
+        return np.random.randint(
+            1, 3, size=(input_data_x_shape)).astype(np.int64)
 
     def gen_input_data_y():
-        return np.random.randint(1, 3, size=(input_data_y_shape)).astype(np.int64)
+        return np.random.randint(
+            1, 3, size=(input_data_y_shape)).astype(np.int64)
 
     elementwise_sub_op = OpConfig(
-        type = "elementwise_sub",
-        inputs = {"X" : ["input_data_x"],
+        type="elementwise_sub",
+        inputs={"X": ["input_data_x"],
                 "Y": ["input_data_y"]},
-        outputs = {"Out": ["output_data"]},
-        attrs = {"axis" : axis})
+        outputs={"Out": ["output_data"]},
+        attrs={"axis": axis})
     program_config = ProgramConfig(
         ops=[elementwise_sub_op],
         weights={},
