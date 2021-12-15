@@ -26,17 +26,31 @@ import argparse
 import numpy as np
 from functools import partial
 
+
 class TestGroupNormOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 2])
-        self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 2, 4])
+        self.enable_testing_on_place(
+            TargetType.X86,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 2])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 2, 4])
 
-    def is_program_valid(self, program_config: ProgramConfig, predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(min_value=1, max_value=64), min_size=4, max_size=4))
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=64), min_size=4, max_size=4))
         group = draw(st.integers(min_value=1, max_value=4))
         with_channel = draw(st.sampled_from([True, False]))
 
@@ -44,50 +58,50 @@ class TestGroupNormOp(AutoScanTest):
 
         def generate_input(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
+
         def generate_scale(*args, **kwargs):
             return np.random.random([in_shape[1]]).astype(np.float32) + 0.5
+
         def generate_bias(*args, **kwargs):
             return np.random.random([in_shape[1]]).astype(np.float32)
+
         def generate_attr(with_channel):
             attrs = {}
             if with_channel == True:
                 attrs = {
-                    "data_layout" : "NCHW",
-                    "epsilon" : float(1e-5),
-                    "groups" : int(group)
+                    "data_layout": "NCHW",
+                    "epsilon": float(1e-5),
+                    "groups": int(group)
                 }
-            else :
+            else:
                 attrs = {
-                    "data_layout" : "NCHW",
-                    "channels" : in_shape[1],
-                    "epsilon" : float(1e-5),
-                    "groups" : int(group)
+                    "data_layout": "NCHW",
+                    "channels": in_shape[1],
+                    "epsilon": float(1e-5),
+                    "groups": int(group)
                 }
             return attrs
 
         build_ops = OpConfig(
-            type = "group_norm",
-            inputs = {
-                "X" : ["input_data"],
-                "Scale" : ["scale_data"],
-                "Bias" : ["bias_data"]
-                },
-            outputs = {
+            type="group_norm",
+            inputs={
+                "X": ["input_data"],
+                "Scale": ["scale_data"],
+                "Bias": ["bias_data"]
+            },
+            outputs={
                 "Y": ["output_data"],
-                "Mean" : ["mean1"],
-                "Variance" : ["var1"]},
-            attrs = generate_attr(with_channel)
-        )
+                "Mean": ["mean1"],
+                "Variance": ["var1"]
+            },
+            attrs=generate_attr(with_channel))
         program_config = ProgramConfig(
             ops=[build_ops],
             weights={},
             inputs={
-                "input_data":
-                TensorConfig(data_gen=partial(generate_input)),
-                "scale_data":
-                TensorConfig(data_gen=partial(generate_scale)),
-                "bias_data":
-                TensorConfig(data_gen=partial(generate_bias)),
+                "input_data": TensorConfig(data_gen=partial(generate_input)),
+                "scale_data": TensorConfig(data_gen=partial(generate_scale)),
+                "bias_data": TensorConfig(data_gen=partial(generate_bias)),
             },
             outputs=["output_data", "mean1", "var1"])
         return program_config
@@ -100,6 +114,7 @@ class TestGroupNormOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

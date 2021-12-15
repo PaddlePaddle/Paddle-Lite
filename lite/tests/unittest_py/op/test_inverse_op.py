@@ -27,43 +27,48 @@ import numpy as np
 from functools import partial
 import copy
 
+
 class TestInverseOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 2])
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 2])
 
-    def is_program_valid(self, program_config: ProgramConfig, predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(
-            min_value=1, max_value=64), min_size=1, max_size=2))
-   
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=64), min_size=1, max_size=2))
+
         def generate_input(*args, **kwargs):
-            last_dim = np.random.randint(low=1, high=64, size=[1]).astype(np.int32)
+            last_dim = np.random.randint(
+                low=1, high=64, size=[1]).astype(np.int32)
             input_dim = copy.deepcopy(in_shape)
-            input_dim.append(last_dim[0])   #last 2 dim must be equal
+            input_dim.append(last_dim[0])  #last 2 dim must be equal
             input_dim.append(last_dim[0])
             return np.random.random(input_dim).astype(np.float32)
-    
+
         build_ops = OpConfig(
-            type = "inverse",
-            inputs = {
-                "Input" : ["input_data"],
-                },
-            outputs = {
-                "Output": ["output_data"],
-            },
-            attrs = {})
-        
+            type="inverse",
+            inputs={"Input": ["input_data"], },
+            outputs={"Output": ["output_data"], },
+            attrs={})
+
         program_config = ProgramConfig(
-        ops=[build_ops],
-        weights={},
-        inputs={
-            "input_data":
-            TensorConfig(data_gen=partial(generate_input)),
-        },
-        outputs=["output_data"])
+            ops=[build_ops],
+            weights={},
+            inputs={
+                "input_data": TensorConfig(data_gen=partial(generate_input)),
+            },
+            outputs=["output_data"])
         return program_config
 
     def sample_predictor_configs(self):
@@ -74,6 +79,7 @@ class TestInverseOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
