@@ -27,35 +27,50 @@ from functools import partial
 import random
 import numpy as np
 
+
 class TestCollectFpnProposalsOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         # it doesn't support std::vector<tensor>
         return False
 
     def sample_program_configs(self, draw):
-        rois_shape = draw(st.sampled_from([[30, 4], [80, 4], [70, 4], [66, 4]]))
+        rois_shape = draw(
+            st.sampled_from([[30, 4], [80, 4], [70, 4], [66, 4]]))
         scores_shape = draw(st.sampled_from([[30, 1], [65, 1], [70, 1]]))
         post_nms_topN = draw(st.integers(min_value=1, max_value=10))
         lod_data = [[1, 1, 1, 1]]
 
         def generate_rois(*args, **kwargs):
             return np.random.random(rois_shape).astype(np.float32)
+
         def generate_scores(*args, **kwargs):
             return np.random.random(scores_shape).astype(np.float32)
+
         def generate_rois_num(*args, **kwargs):
             return np.random.random(rois_shape).astype(np.int32)
+
         collect_fpn_proposals_op = OpConfig(
-            type = "collect_fpn_proposals",
-            inputs = {"MultiLevelRois" : ["multi_level_rois_data"],
-                    "MultiLevelScores" : ["multi_level_scores_data"],
-                    "MultiLevelRoIsNum" : ["multi_level_rois_num_data"]},
-            outputs = {"FpnRois": ["fpn_rois_data"],
-                    "RoisNum" : ["rois_num_data"]},
-            attrs = {"post_nms_topN" : post_nms_topN})
+            type="collect_fpn_proposals",
+            inputs={
+                "MultiLevelRois": ["multi_level_rois_data"],
+                "MultiLevelScores": ["multi_level_scores_data"],
+                "MultiLevelRoIsNum": ["multi_level_rois_num_data"]
+            },
+            outputs={
+                "FpnRois": ["fpn_rois_data"],
+                "RoisNum": ["rois_num_data"]
+            },
+            attrs={"post_nms_topN": post_nms_topN})
         program_config = ProgramConfig(
             ops=[collect_fpn_proposals_op],
             weights={},
@@ -71,13 +86,15 @@ class TestCollectFpnProposalsOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["collect_fpn_proposals"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["collect_fpn_proposals"], (1e-5,
+                                                                         1e-5)
 
     def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

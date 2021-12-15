@@ -27,31 +27,58 @@ from functools import partial
 import random
 import numpy as np
 
+
 class TestConcatOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 4])
-        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.X86,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
         # opencl demo
-        opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-                          Place(TargetType.Host, PrecisionType.FP32)    
-                        ]
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
         self.enable_testing_on_place(places=opencl_places)
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         if predictor_config.target() == TargetType.OpenCL:
-            # run error
+            # run connect error
             return False
         else:
             return True
 
     def sample_program_configs(self, draw):
-        in_shape1 = draw(st.lists(st.integers(min_value=1, max_value=100), min_size=1, max_size=4))
-        in_shape2 = draw(st.lists(st.integers(min_value=1, max_value=100), min_size=1, max_size=4))
+        in_shape1 = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=100),
+                min_size=1,
+                max_size=4))
+        in_shape2 = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=100),
+                min_size=1,
+                max_size=4))
         axis = draw(st.sampled_from([0, 1, 2, 3]))
         assume(len(in_shape1) == len(in_shape2))
         assume(axis < len(in_shape1))
@@ -63,24 +90,27 @@ class TestConcatOp(AutoScanTest):
 
         def generate_input1(*args, **kwargs):
             return np.random.random(in_shape1).astype(np.float32)
+
         def generate_input2(*args, **kwargs):
             return np.random.random(in_shape2).astype(np.float32)
+
         def generate_axis(*args, **kwargs):
             return np.array([axis]).astype("int32")
+
         concat_op = OpConfig(
-            type = "concat",
-            inputs = {"X" : ["input_data1", "input_data2"],
-                    "AxisTensor" : ["axis_tensor_data"]},
-            outputs = {"Out": ["output_data"]},
-            attrs = {"axis" : axis})
+            type="concat",
+            inputs={
+                "X": ["input_data1", "input_data2"],
+                "AxisTensor": ["axis_tensor_data"]
+            },
+            outputs={"Out": ["output_data"]},
+            attrs={"axis": axis})
         program_config = ProgramConfig(
             ops=[concat_op],
             weights={},
             inputs={
-                "input_data1":
-                TensorConfig(data_gen=partial(generate_input1)),
-                "input_data2":
-                TensorConfig(data_gen=partial(generate_input2)),
+                "input_data1": TensorConfig(data_gen=partial(generate_input1)),
+                "input_data2": TensorConfig(data_gen=partial(generate_input2)),
                 "axis_tensor_data":
                 TensorConfig(data_gen=partial(generate_axis)),
             },
@@ -95,6 +125,7 @@ class TestConcatOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
