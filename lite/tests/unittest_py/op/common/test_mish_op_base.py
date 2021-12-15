@@ -23,20 +23,21 @@ import unittest
 import hypothesis
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size = 4, max_size=4))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=8), min_size=4, max_size=4))
     threshold = draw(st.sampled_from([20.0, 10.0, 5.0]))
     mish_op = OpConfig(
-        type = "mish",
-       inputs = {"X" : ["input_data"]},
-        outputs = {"Out": ["output_data"]},
-        attrs = {"threshold": threshold})
+        type="mish",
+        inputs={"X": ["input_data"]},
+        outputs={"Out": ["output_data"]},
+        attrs={"threshold": threshold})
     program_config = ProgramConfig(
         ops=[mish_op],
         weights={},
-        inputs={
-            "input_data":
-            TensorConfig(shape=in_shape)
-        },
+        inputs={"input_data": TensorConfig(shape=in_shape)},
         outputs=["output_data"])
     return program_config

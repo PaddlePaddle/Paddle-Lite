@@ -23,16 +23,22 @@ import unittest
 import hypothesis
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    input_shape = draw(st.lists(st.integers(min_value=2, max_value=8), min_size=2, max_size=4))
+    input_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=2, max_value=8), min_size=2, max_size=4))
     cos_sim_op = OpConfig(
-        type = "cos_sim",
-        inputs = {"X" : ["input1"],
-                  "Y" : ["input2"]},  
-        outputs = {"Out": ["output"],
-                  "XNorm": ["output_xnorm"],
-                  "YNorm": ["output_ynorm"]},
-        attrs = {})
+        type="cos_sim",
+        inputs={"X": ["input1"],
+                "Y": ["input2"]},
+        outputs={
+            "Out": ["output"],
+            "XNorm": ["output_xnorm"],
+            "YNorm": ["output_ynorm"]
+        },
+        attrs={})
     program_config = ProgramConfig(
         ops=[cos_sim_op],
         weights={},
