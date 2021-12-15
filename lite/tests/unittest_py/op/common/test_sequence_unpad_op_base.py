@@ -24,13 +24,16 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    length = draw(st.lists(
-        st.integers(
-            min_value=1, max_value=5), min_size=4, max_size=10))
-    in_shape = draw(st.lists(
-        st.integers(
-            min_value=5, max_value=10), min_size=1, max_size=3))
+    length = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=5), min_size=4, max_size=10))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=5, max_value=10), min_size=1, max_size=3))
     in_shape.insert(0, len(length))
 
     def generate_input(*args, **kwargs):
@@ -40,25 +43,20 @@ def sample_program_configs(draw):
         return np.array(length).astype('int64')
 
     ops_config = OpConfig(
-        type = "sequence_unpad",
-        inputs = {
+        type="sequence_unpad",
+        inputs={
             "X": ["input_data"],
             "Length": ["length_data"],
         },
-        outputs = {
-            "Out": ["output_data"]
-        },
-        attrs = {}
-        )
+        outputs={"Out": ["output_data"]},
+        attrs={})
 
     program_config = ProgramConfig(
         ops=[ops_config],
         weights={},
         inputs={
-            "input_data": 
-            TensorConfig(data_gen=partial(generate_input)),
-            "length_data":
-            TensorConfig(data_gen=partial(generate_length))
+            "input_data": TensorConfig(data_gen=partial(generate_input)),
+            "length_data": TensorConfig(data_gen=partial(generate_length))
         },
         outputs=["output_data"])
 

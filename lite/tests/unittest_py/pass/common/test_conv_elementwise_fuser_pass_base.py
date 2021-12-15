@@ -19,37 +19,50 @@ from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, Tar
 import numpy as np
 from functools import partial
 from typing import Optional, List, Callable, Dict, Any, Set
-from test_conv_util import UpdatePaddingAndDilation,ConvOutputSize
+from test_conv_util import UpdatePaddingAndDilation, ConvOutputSize
 import unittest
 
 import hypothesis
 from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
+
+
 def sample_program_configs(draw):
-    in_shape=draw(st.lists(st.integers(min_value=3, max_value=64), min_size=4, max_size=4))
-    weight_shape=draw(st.lists(st.integers(min_value=1, max_value=7), min_size=4, max_size=4))
-    paddings=draw(st.sampled_from([[1, 2], [4, 2], [1, 1], [0, 0], [1, 0], [1, 1]]))
-    dilations=draw(st.sampled_from([[1, 1], [2, 2]]))
-    groups=draw(st.sampled_from([1, 2, in_shape[1]]))
-    padding_algorithm=draw(st.sampled_from(["VALID", "SAME"]))
-    strides=draw(st.sampled_from([[1, 1], [2, 2], [1, 2], [2, 1]]))
-    elementwise_bias_shape=draw(st.sampled_from([[weight_shape[0]], [1]]))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=3, max_value=64), min_size=4, max_size=4))
+    weight_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=7), min_size=4, max_size=4))
+    paddings = draw(
+        st.sampled_from([[1, 2], [4, 2], [1, 1], [0, 0], [1, 0], [1, 1]]))
+    dilations = draw(st.sampled_from([[1, 1], [2, 2]]))
+    groups = draw(st.sampled_from([1, 2, in_shape[1]]))
+    padding_algorithm = draw(st.sampled_from(["VALID", "SAME"]))
+    strides = draw(st.sampled_from([[1, 1], [2, 2], [1, 2], [2, 1]]))
+    elementwise_bias_shape = draw(st.sampled_from([[weight_shape[0]], [1]]))
 
     assume(in_shape[1] == weight_shape[1] * groups)
-    assume(weight_shape[0]%groups==0)
-    
-    paddings_,dilations_ = UpdatePaddingAndDilation(in_shape, weight_shape, paddings, dilations, groups, padding_algorithm, strides)
+    assume(weight_shape[0] % groups == 0)
+
+    paddings_, dilations_ = UpdatePaddingAndDilation(
+        in_shape, weight_shape, paddings, dilations, groups, padding_algorithm,
+        strides)
     out_shape = [in_shape[0], weight_shape[0]]
-    oh,ow = ConvOutputSize(in_shape, weight_shape, dilations_, paddings_, strides)
+    oh, ow = ConvOutputSize(in_shape, weight_shape, dilations_, paddings_,
+                            strides)
     out_shape = out_shape + [oh, ow]
 
     assume(oh > 0 and ow > 0)
 
     conv_op = OpConfig(
-        type = "conv2d",
-        inputs = {"Input": ["input_data"],"Filter":["weight_data"]},
-        outputs = {"Output": ["conv_output_data"]},
-        attrs = {
+        type="conv2d",
+        inputs={"Input": ["input_data"],
+                "Filter": ["weight_data"]},
+        outputs={"Output": ["conv_output_data"]},
+        attrs={
             "data_format": 'nchw',
             "dilations": dilations,
             "padding_algorithm": padding_algorithm,
@@ -59,11 +72,11 @@ def sample_program_configs(draw):
         })
 
     elementwise_add_op = OpConfig(
-        type = "elementwise_add",
-        inputs = {"X": ["conv_output_data"], "Y": ["add_bias_data"]},
-        outputs = {"Out": ["output_data"]},
-        attrs = {"axis": 1})
-
+        type="elementwise_add",
+        inputs={"X": ["conv_output_data"],
+                "Y": ["add_bias_data"]},
+        outputs={"Out": ["output_data"]},
+        attrs={"axis": 1})
 
     ops = [conv_op, elementwise_add_op]
     program_config = ProgramConfig(
@@ -72,8 +85,6 @@ def sample_program_configs(draw):
             "weight_data": TensorConfig(shape=weight_shape),
             "add_bias_data": TensorConfig(shape=elementwise_bias_shape)
         },
-        inputs={
-            "input_data": TensorConfig(shape=in_shape)
-        },
+        inputs={"input_data": TensorConfig(shape=in_shape)},
         outputs=["output_data"])
     return program_config

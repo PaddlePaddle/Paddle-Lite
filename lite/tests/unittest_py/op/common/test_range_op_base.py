@@ -24,6 +24,7 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
     input_start = draw(st.sampled_from([0, 1, 2, 10, 20]))
     input_end = draw(st.sampled_from([1, 5, 10, 50, 100]))
@@ -43,7 +44,7 @@ def sample_program_configs(draw):
             return np.array([input_start]).astype(np.int32)
         elif input_type == "type_int64":
             return np.array([input_start]).astype(np.int64)
-    
+
     def generate_end(*args, **kwargs):
         if input_type == "type_float":
             return np.array([input_end]).astype(np.float32)
@@ -51,7 +52,7 @@ def sample_program_configs(draw):
             return np.array([input_end]).astype(np.int32)
         elif input_type == "type_int64":
             return np.array([input_end]).astype(np.int64)
-    
+
     def generate_step(*args, **kwargs):
         if input_type == "type_float":
             return np.array([input_step]).astype(np.float32)
@@ -61,29 +62,20 @@ def sample_program_configs(draw):
             return np.array([input_step]).astype(np.int64)
 
     ops_config = OpConfig(
-        type = "range",
-        inputs = {
-            "Start": ["start"],
-            "End": ["end"],
-            "Step": ["step"]
-        },
-        outputs = {
-            "Out": ["output_data"]
-        },
-        attrs = {},
-        )
+        type="range",
+        inputs={"Start": ["start"],
+                "End": ["end"],
+                "Step": ["step"]},
+        outputs={"Out": ["output_data"]},
+        attrs={}, )
 
     program_config = ProgramConfig(
         ops=[ops_config],
         weights={},
         inputs={
-            "start": 
-            TensorConfig(data_gen=partial(generate_start)),
-            "end": 
-            TensorConfig(data_gen=partial(generate_end)),
-            "step": 
-            TensorConfig(data_gen=partial(generate_step)),
-
+            "start": TensorConfig(data_gen=partial(generate_start)),
+            "end": TensorConfig(data_gen=partial(generate_end)),
+            "step": TensorConfig(data_gen=partial(generate_step)),
         },
         outputs=["output_data"])
 

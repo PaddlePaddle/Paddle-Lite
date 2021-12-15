@@ -23,32 +23,36 @@ import unittest
 import hypothesis
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=1, max_value=50), min_size=4, max_size=4))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=50), min_size=4, max_size=4))
     scale_shape = [in_shape[1]]
 
     def generate_input(*args, **kwargs):
         return np.random.random(in_shape).astype(np.float32)
+
     def generate_scale(*args, **kwargs):
         return np.random.random(scale_shape).astype(np.float32)
-    
+
     affine_channel_op = OpConfig(
-        type = "affine_channel",
-        inputs = {"X" : ["input_data"],
-                 "Scale" : ["scale_data"],
-                 "Bias" : ["bias_data"]},
-        outputs = {"Out": ["output_data"]},
-        attrs = {"data_layout" : "NCHW"})
+        type="affine_channel",
+        inputs={
+            "X": ["input_data"],
+            "Scale": ["scale_data"],
+            "Bias": ["bias_data"]
+        },
+        outputs={"Out": ["output_data"]},
+        attrs={"data_layout": "NCHW"})
     program_config = ProgramConfig(
         ops=[affine_channel_op],
         weights={},
         inputs={
-            "input_data":
-            TensorConfig(data_gen=partial(generate_input)),
-            "scale_data":
-            TensorConfig(data_gen=partial(generate_scale)),
-            "bias_data":
-            TensorConfig(data_gen=partial(generate_scale))
+            "input_data": TensorConfig(data_gen=partial(generate_input)),
+            "scale_data": TensorConfig(data_gen=partial(generate_scale)),
+            "bias_data": TensorConfig(data_gen=partial(generate_scale))
         },
         outputs=["output_data"])
     return program_config

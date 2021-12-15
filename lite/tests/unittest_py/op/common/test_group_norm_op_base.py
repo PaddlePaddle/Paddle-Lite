@@ -24,8 +24,12 @@ import hypothesis
 import hypothesis.strategies as st
 from hypothesis import assume
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=4, max_size=4))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=8), min_size=4, max_size=4))
     group = draw(st.integers(min_value=1, max_value=4))
     with_channel = draw(st.sampled_from([True, False]))
 
@@ -33,50 +37,50 @@ def sample_program_configs(draw):
 
     def generate_input(*args, **kwargs):
         return np.random.random(in_shape).astype(np.float32)
+
     def generate_scale(*args, **kwargs):
         return np.random.random([in_shape[1]]).astype(np.float32) + 0.5
+
     def generate_bias(*args, **kwargs):
         return np.random.random([in_shape[1]]).astype(np.float32)
+
     def generate_attr(with_channel):
         attrs = {}
         if with_channel == True:
             attrs = {
-                "data_layout" : "NCHW",
-                "epsilon" : float(1e-5),
-                "groups" : int(group)
+                "data_layout": "NCHW",
+                "epsilon": float(1e-5),
+                "groups": int(group)
             }
-        else :
+        else:
             attrs = {
-                "data_layout" : "NCHW",
-                "channels" : in_shape[1],
-                "epsilon" : float(1e-5),
-                "groups" : int(group)
+                "data_layout": "NCHW",
+                "channels": in_shape[1],
+                "epsilon": float(1e-5),
+                "groups": int(group)
             }
         return attrs
 
     build_ops = OpConfig(
-        type = "group_norm",
-        inputs = {
-            "X" : ["input_data"],
-            "Scale" : ["scale_data"],
-            "Bias" : ["bias_data"]
-            },
-        outputs = {
+        type="group_norm",
+        inputs={
+            "X": ["input_data"],
+            "Scale": ["scale_data"],
+            "Bias": ["bias_data"]
+        },
+        outputs={
             "Y": ["output_data"],
-            "Mean" : ["mean1"],
-            "Variance" : ["var1"]},
-        attrs = generate_attr(with_channel)
-    )
+            "Mean": ["mean1"],
+            "Variance": ["var1"]
+        },
+        attrs=generate_attr(with_channel))
     program_config = ProgramConfig(
         ops=[build_ops],
         weights={},
         inputs={
-            "input_data":
-            TensorConfig(data_gen=partial(generate_input)),
-            "scale_data":
-            TensorConfig(data_gen=partial(generate_scale)),
-            "bias_data":
-            TensorConfig(data_gen=partial(generate_bias)),
+            "input_data": TensorConfig(data_gen=partial(generate_input)),
+            "scale_data": TensorConfig(data_gen=partial(generate_scale)),
+            "bias_data": TensorConfig(data_gen=partial(generate_bias)),
         },
         outputs=["output_data", "mean1", "var1"])
     return program_config

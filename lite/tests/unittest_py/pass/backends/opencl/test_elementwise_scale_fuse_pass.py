@@ -24,24 +24,34 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 
+
 class TestElementScaleFusePass(FusePassAutoScanTest):
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        return test_elementwise_scale_fuse_pass_base.sample_program_configs(draw)
+        return test_elementwise_scale_fuse_pass_base.sample_program_configs(
+            draw)
 
     def sample_predictor_configs(self):
         config = CxxConfig()
-        config.set_valid_places({Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
-                                 Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
-                                 Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-                                 Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageDefault),
-                                 Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageFolder),
-                                 Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-                                 Place(TargetType.X86, PrecisionType.FP32),
-                                 Place(TargetType.ARM, PrecisionType.FP32),
-                                 Place(TargetType.Host, PrecisionType.FP32)})
+        config.set_valid_places({
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.X86, PrecisionType.FP32),
+            Place(TargetType.ARM, PrecisionType.FP32),
+            Place(TargetType.Host, PrecisionType.FP32)
+        })
         config.set_threads(1)
         yield config, ['elementwise_mul'], (1e-5, 1e-5)
 
@@ -49,7 +59,11 @@ class TestElementScaleFusePass(FusePassAutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25, passes=["lite_elementwise_scale_fuse_pass"])
+        self.run_and_statis(
+            quant=False,
+            max_examples=25,
+            passes=["lite_elementwise_scale_fuse_pass"])
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
