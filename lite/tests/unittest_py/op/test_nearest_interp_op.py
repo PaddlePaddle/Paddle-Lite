@@ -89,12 +89,13 @@ class TestNearestInterpOp(AutoScanTest):
 
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
-            in_shape = list(program_config.inputs["input_data_x"].shape)
-            if in_shape == [3, 10, 10, 14]:
-                return True
             target_str = self.get_target()
             if target_str == "OpenCL":
                 return True
+            if target_str == "ARM":
++               in_shape = list(program_config.inputs["input_data_x"].shape)
++               if in_shape == [3, 10, 10, 14]:
++                   return True
         self.add_ignore_check_case(
             teller1, IgnoreReasons.ACCURACY_ERROR,
             "The op output has diff in a specific case. We need to fix it as soon as possible.")

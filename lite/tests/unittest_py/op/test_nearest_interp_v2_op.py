@@ -30,6 +30,7 @@ class TestNearestInterpV2Op(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(TargetType.ARM, [PrecisionType.FP16, PrecisionType.FP32], DataLayoutType.NCHW, thread=[1, 4])
+        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 4])
         opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
                           Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
                           Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
@@ -93,6 +94,8 @@ class TestNearestInterpV2Op(AutoScanTest):
             if target_str == "OpenCL":
                 return True
             if target_str == "ARM":
+                return True
+            if target_str == "X86":
                 return True
         self.add_ignore_check_case(
             teller1, IgnoreReasons.ACCURACY_ERROR,
