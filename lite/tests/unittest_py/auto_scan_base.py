@@ -446,7 +446,7 @@ class AutoScanBaseTest(unittest.TestCase):
             self.thread_num = list(self.thread_num)
 
         # arm basic places:
-        arm_basic_places = [Place(TargetType.ARM,PrecisionType.INT32), Place(TargetType.ARM,PrecisionType.INT64]
+        arm_basic_places = [Place(TargetType.ARM,PrecisionType.INT32), Place(TargetType.ARM,PrecisionType.INT64)]
 
         # if list[Place] is inputed, this will be used directly
         if places is not None:
