@@ -187,10 +187,11 @@ def create_fake_model(program_config):
             for v in values:
                 var_desc = main_block_desc.var(cpt.to_bytes(v))
                 var_desc.set_type(core.VarDesc.VarType.LOD_TENSOR)
-                var_desc.set_dtype(
-                    convert_np_dtype_to_dtype_(np.float32))
-                if op_config.outputs_dtype is not None and v in op_config.outputs_dtype.keys():
-                    var_desc.set_dtype(convert_np_dtype_to_dtype_(op_config.outputs_dtype[v]))
+                var_desc.set_dtype(convert_np_dtype_to_dtype_(np.float32))
+                if op_config.outputs_dtype is not None and v in op_config.outputs_dtype.keys(
+                ):
+                    var_desc.set_dtype(
+                        convert_np_dtype_to_dtype_(op_config.outputs_dtype[v]))
 
         op_desc.infer_var_type(main_block_desc)
         op_desc.infer_shape(main_block_desc)
@@ -398,8 +399,11 @@ def create_quant_model(model,
         feed_vars, fetch_targets, executor=exe, program=main_program)
     return serialized_program, serialized_params
 
+
 from typing import Optional
 from enum import Enum
+
+
 class TargetType(Enum):
     Unk =0
     Host = 1
@@ -421,6 +425,7 @@ class TargetType(Enum):
     Metal =17
     NNAdapter = 18
 
+
 class PrecisionType(Enum):
     Unk = 0
     FP32 = 1
@@ -434,7 +439,6 @@ class PrecisionType(Enum):
     UINT8 = 9
     FP64 = 10
 
-
 class DataLayoutType(Enum):
     Unk = 0
     NCHW = 1
@@ -446,39 +450,48 @@ class DataLayoutType(Enum):
     MetalTexture2DArray = 7
     MetalTexture2D = 8
 
-def Place(target_type:TargetType, precision_type: Optional[PrecisionType]=None, data_layout:Optional[DataLayoutType] = None):
+
+def Place(target_type: TargetType,
+          precision_type: Optional[PrecisionType]=None,
+          data_layout: Optional[DataLayoutType]=None):
     place = target_type.name
     if precision_type != None:
-        place = place+ "," + precision_type.name
+        place = place + "," + precision_type.name
         if data_layout != None:
             place = place + "," + data_layout.name
     return place
+
 
 class CxxConfig:
     def __init__(self):
         self.config = {}
         self.config["discarded_passes"] = []
+
     def set_valid_places(self, places):
         self.config["valid_targets"] = places
+
     def set_threads(self, thread):
         self.config["thread"] = thread
+
     def set_power_mode(self, mode):
         self.config["power_mode"] = mode
+
     def add_discarded_pass(self, discarded_pass):
         self.config["discarded_passes"].append(discarded_pass)
+
     def value(self):
         return self.config
 
     def target(self):
         if not "valid_targets" in self.config:
             return None
-        first_place=self.config["valid_targets"][0].split(",")
+        first_place = self.config["valid_targets"][0].split(",")
         return eval("TargetType." + first_place[0])
 
     def precision(self):
         if not "valid_targets" in self.config:
             return None
-        first_place=''.join(self.config["valid_targets"][0]).split(",")
+        first_place = ''.join(self.config["valid_targets"][0]).split(",")
         if len(first_place) < 2:
             return PrecisionType.FP32
         else:
@@ -487,7 +500,7 @@ class CxxConfig:
     def layout(self):
         if not "valid_targets" in self.config:
             return None
-        first_place=''.join(self.config["valid_targets"][0]).split(",")
+        first_place = ''.join(self.config["valid_targets"][0]).split(",")
         if len(first_place) < 3:
             return DataLayoutType.NCHW
         else:

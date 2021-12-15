@@ -32,7 +32,7 @@ kernel_op_map_dest_path = sys.argv[4]
 with_extra = sys.argv[5]
 
 out_lines = [
-'''
+    '''
 // Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -59,8 +59,15 @@ const std::vector<std::vector<std::string>> supported_ops_target = {
 ops_lines = []
 
 # valid targets and valid_ops
-valid_targets = ["kUnk", "kHost", "kX86", "kCUDA", "kARM", "kOpenCL", "kAny", "kFPGA", "kNPU", "kXPU", "kBM", "kMLU", "kRKNPU", "kIntelFPGA", "kMetal", "kNNAdapter"]
-valid_ops = [[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]]
+valid_targets = [
+    "kUnk", "kHost", "kX86", "kCUDA", "kARM", "kOpenCL", "kAny", "kFPGA",
+    "kNPU", "kXPU", "kBM", "kMLU", "kRKNPU", "kIntelFPGA", "kMetal",
+    "kNNAdapter"
+]
+valid_ops = [[], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [],
+             [], [], []]
+
+
 class TargetType:
     kUnk = 0
     kHost = 1
@@ -126,11 +133,11 @@ with open(ops_list_path) as f:
                 if op in valid_ops[getattr(TargetType, target)]:
                     op_targets.append(target)
             if len(op_targets) > 0:
-                out = out +'", "'.join(op_targets)+ '" }}'
+                out = out + '", "'.join(op_targets) + '" }}'
             else:
                 # unknow type op:  kUnk = 0
                 valid_ops[0].append(op)
-                out = out +'kUnk" }}'
+                out = out + 'kUnk" }}'
             ops_lines.append(out)
 
 with open(kernel_op_map_dest_path, 'w') as f:
@@ -139,15 +146,17 @@ with open(kernel_op_map_dest_path, 'w') as f:
     # write kernels into head file
     for target in valid_targets:
         if len(valid_ops[getattr(TargetType, target)]) == 0:
-            f.write("\n    // %s_OPS: " %target)
+            f.write("\n    // %s_OPS: " % target)
             f.write('\n    {},')
         else:
-            f.write("\n    // %s_OPS: " %target)
+            f.write("\n    // %s_OPS: " % target)
             f.write('\n    {"')
             f.write('","'.join(valid_ops[getattr(TargetType, target)]))
             f.write('"},\n')
     f.write('};')
     # write op info into head file
-    f.write('\nconst std::map<std::string, std::vector<std::string>> supported_ops={\n')
+    f.write(
+        '\nconst std::map<std::string, std::vector<std::string>> supported_ops={\n'
+    )
     f.write(',\n'.join(ops_lines))
     f.write('\n};')

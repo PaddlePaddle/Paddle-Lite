@@ -24,42 +24,41 @@ import hypothesis
 import hypothesis.strategies as st
 from hypothesis import assume
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.sampled_from([[5,1]]))
+    in_shape = draw(st.sampled_from([[5, 1]]))
     lod_data = draw(st.sampled_from([[[0, 1, 2], [0, 2, 4]]]))
 
     def generate_pre_ids(*args, **kwargs):
         return np.random.random(in_shape).astype(np.int64)
+
     def generate_pre_score(*args, **kwargs):
         return np.random.random(in_shape).astype(np.float32)
-    
+
     beam_search_ops = OpConfig(
-                type = "beam_search_decode",
-                inputs = {
-                    "Ids" : ["ids_data", "ids_data2"],
-                    "Scores" : ["scores_data", "scores_data2"]
-                },
-                outputs = {
-                    "SentenceIds" : ["sentence_ids_data"],
-                    "SentenceScores" : ["sentence_scores_data"]
-                },
-                attrs = {
-                    "beam_size" : in_shape[0],
-                    "end_id" : 0
-                }
-            )
+        type="beam_search_decode",
+        inputs={
+            "Ids": ["ids_data", "ids_data2"],
+            "Scores": ["scores_data", "scores_data2"]
+        },
+        outputs={
+            "SentenceIds": ["sentence_ids_data"],
+            "SentenceScores": ["sentence_scores_data"]
+        },
+        attrs={"beam_size": in_shape[0],
+               "end_id": 0})
     program_config = ProgramConfig(
         ops=[beam_search_ops],
         weights={},
         inputs={
-            "ids_data":
-            TensorConfig(data_gen=partial(generate_pre_ids), lod=lod_data),
-            "ids_data2":
-            TensorConfig(data_gen=partial(generate_pre_ids), lod=lod_data),
-            "scores_data":
-            TensorConfig(data_gen=partial(generate_pre_score), lod=lod_data),
-            "scores_data2":
-            TensorConfig(data_gen=partial(generate_pre_score), lod=lod_data),
+            "ids_data": TensorConfig(
+                data_gen=partial(generate_pre_ids), lod=lod_data),
+            "ids_data2": TensorConfig(
+                data_gen=partial(generate_pre_ids), lod=lod_data),
+            "scores_data": TensorConfig(
+                data_gen=partial(generate_pre_score), lod=lod_data),
+            "scores_data2": TensorConfig(
+                data_gen=partial(generate_pre_score), lod=lod_data),
         },
         outputs=["sentence_ids_data", "sentence_scores_data"])
     return program_config

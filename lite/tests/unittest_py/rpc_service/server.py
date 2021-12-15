@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import rpyc
-import  os
+import os
 import shutil
 from rpyc.utils.server import ThreadedServer
 import paddlelite
@@ -21,26 +21,36 @@ from paddlelite.lite import *
 import copy
 rpyc.core.protocol.DEFAULT_CONFIG['allow_pickle'] = True
 
+
 def ParsePlaceInfo(place_str):
-   # todo: this func should be completed later
-   infos = ''.join(place_str.split()).split(",")
-   if len(infos) == 1 :
-       if infos[0] in TargetType.__members__:
-           return Place(eval("TargetType." + infos[0]))
-       else:
-           logging.error("Error place info: " + place_str)
-   elif len(infos) == 2 :
-       if (infos[0] in TargetType.__members__) and (infos[1] in PrecisionType.__members__):
-           return Place(eval("TargetType." + infos[0]), eval("PrecisionType." +  infos[1]))
-       else:
-           logging.error("Error place info: " + place_str)
-   elif len(infos) == 3 :
-       if (infos[0] in TargetType.__members__) and (infos[1] in PrecisionType.__members__) and (infos[2] in DataLayoutType.__members__):
-           return Place(eval("TargetType." + infos[0]), eval("PrecisionType." +  infos[1]), eval("DataLayoutType." + infos[2]))
-       else:
-           logging.error("Error place info: " + place_str)
-   else:
-       logging.error("Error place info: " + place_str)
+    # todo: this func should be completed later
+    infos = ''.join(place_str.split()).split(",")
+    if len(infos) == 1:
+        if infos[0] in TargetType.__members__:
+            return Place(eval("TargetType." + infos[0]))
+        else:
+            logging.error("Error place info: " + place_str)
+    elif len(infos) == 2:
+        if (infos[0] in TargetType.__members__) and (
+                infos[1] in PrecisionType.__members__):
+            return Place(
+                eval("TargetType." + infos[0]),
+                eval("PrecisionType." + infos[1]))
+        else:
+            logging.error("Error place info: " + place_str)
+    elif len(infos) == 3:
+        if (infos[0] in TargetType.__members__) and (
+                infos[1] in PrecisionType.__members__) and (
+                    infos[2] in DataLayoutType.__members__):
+            return Place(
+                eval("TargetType." + infos[0]),
+                eval("PrecisionType." + infos[1]),
+                eval("DataLayoutType." + infos[2]))
+        else:
+            logging.error("Error place info: " + place_str)
+    else:
+        logging.error("Error place info: " + place_str)
+
 
 def ParsePaddleLiteConfig(self, config):
     lite_config = CxxConfig()
@@ -56,6 +66,7 @@ def ParsePaddleLiteConfig(self, config):
         for discarded_pass in config["discarded_passes"]:
             lite_config.add_discarded_pass(discarded_pass)
     return lite_config
+
 
 class RPCService(rpyc.Service):
     def exposed_run_lite_model(self, model, params, inputs, config_str):
@@ -96,14 +107,13 @@ class RPCService(rpyc.Service):
             result[out_name] = predictor.get_output_by_name(out_name).numpy()
         result_res = copy.deepcopy(result)
         # 4. optimized model
-        predictor.save_optimized_pb_model(self.cache_dir+ "/opt_model")
+        predictor.save_optimized_pb_model(self.cache_dir + "/opt_model")
         with open(self.cache_dir + "/opt_model/model", "rb") as f:
             model = f.read()
 
         return result_res, model
 
 
-
 if __name__ == "__main__":
-    server = ThreadedServer(RPCService, port =18812, hostname='localhost')
+    server = ThreadedServer(RPCService, port=18812, hostname='localhost')
     server.start()
