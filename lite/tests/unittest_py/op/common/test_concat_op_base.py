@@ -23,33 +23,42 @@ import unittest
 import hypothesis
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape1 = draw(st.lists(st.integers(min_value=1, max_value=10), min_size=1, max_size=4))
-    in_shape2 = draw(st.lists(st.integers(min_value=1, max_value=10), min_size=1, max_size=4))
+    in_shape1 = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=10), min_size=1, max_size=4))
+    in_shape2 = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=10), min_size=1, max_size=4))
     axis = draw(st.sampled_from([-1, 0, 1, 2, 3]))
 
     def generate_input1(*args, **kwargs):
         return np.random.random(in_shape1).astype(np.float32)
+
     def generate_input2(*args, **kwargs):
         return np.random.random(in_shape2).astype(np.float32)
+
     def generate_axis(*args, **kwargs):
         return np.array([axis]).astype("int32")
+
     concat_op = OpConfig(
-        type = "concat",
-        inputs = {"X" : ["input_data1", "input_data2"],
-                 "AxisTensor" : ["axis_tensor_data"]},
-        outputs = {"Out": ["output_data"]},
-        attrs = {"axis" : axis})
+        type="concat",
+        inputs={
+            "X": ["input_data1", "input_data2"],
+            "AxisTensor": ["axis_tensor_data"]
+        },
+        outputs={"Out": ["output_data"]},
+        attrs={"axis": axis})
     program_config = ProgramConfig(
         ops=[concat_op],
         weights={},
         inputs={
-            "input_data1":
-            TensorConfig(data_gen=partial(generate_input1)),
-            "input_data2":
-            TensorConfig(data_gen=partial(generate_input2)),
-            "axis_tensor_data":
-            TensorConfig(data_gen=partial(generate_axis)),
+            "input_data1": TensorConfig(data_gen=partial(generate_input1)),
+            "input_data2": TensorConfig(data_gen=partial(generate_input2)),
+            "axis_tensor_data": TensorConfig(data_gen=partial(generate_axis)),
         },
         outputs=["output_data"])
     return program_config

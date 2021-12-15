@@ -24,25 +24,32 @@ import hypothesis
 from hypothesis import assume
 import hypothesis.strategies as st
 
-def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=2, max_value=8), min_size = 4, max_size=4))
-    axis_int32_data = draw(st.lists(st.integers(min_value=0, max_value=3), min_size = 4, max_size=4))
 
-    assume(sorted(axis_int32_data)==[0,1,2,3])
+def sample_program_configs(draw):
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=2, max_value=8), min_size=4, max_size=4))
+    axis_int32_data = draw(
+        st.lists(
+            st.integers(
+                min_value=0, max_value=3), min_size=4, max_size=4))
+
+    assume(sorted(axis_int32_data) == [0, 1, 2, 3])
 
     transpose2_op = OpConfig(
-        type = "transpose2",
-        inputs = {"X" : ["input_data"]},
-        outputs = {"Out": ["output_data"],
-                   "XShape": ["XShape_data"]},
-        attrs = {"axis": axis_int32_data,
-                 "data_format": "AnyLayout",
-                 "use_mkldnn": False,})
+        type="transpose2",
+        inputs={"X": ["input_data"]},
+        outputs={"Out": ["output_data"],
+                 "XShape": ["XShape_data"]},
+        attrs={
+            "axis": axis_int32_data,
+            "data_format": "AnyLayout",
+            "use_mkldnn": False,
+        })
     program_config = ProgramConfig(
         ops=[transpose2_op],
-        weights={"XShape_data" : TensorConfig(shape=[4])},
-        inputs={
-            "input_data": TensorConfig(shape=in_shape),
-        },
-        outputs=["output_data","XShape_data"])
+        weights={"XShape_data": TensorConfig(shape=[4])},
+        inputs={"input_data": TensorConfig(shape=in_shape), },
+        outputs=["output_data", "XShape_data"])
     return program_config

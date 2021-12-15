@@ -27,14 +27,20 @@ import numpy as np
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "--model_dir", default="", type=str, help="Non-combined Model dir path")
-parser.add_argument(
-    "--model_file", default="", type=str, help="Model file")
+parser.add_argument("--model_file", default="", type=str, help="Model file")
 parser.add_argument(
     "--param_file", default="", type=str, help="Combined model param file")
 parser.add_argument(
     "--enable_opencl", action="store_true", help="Enable OpenCL or not")
 parser.add_argument(
-    "--disable_print_results", action="store_false", help="Print results or not")
+    "--use_metal",
+    action="store_true",
+    default=False,
+    help="use metal on Appel GPU. Default: False")
+parser.add_argument(
+    "--disable_print_results",
+    action="store_false",
+    help="Print results or not")
 
 
 def RunModel(args):
@@ -49,15 +55,21 @@ def RunModel(args):
     # For arm platform (armlinux), you can set places = [Place(TargetType.ARM, PrecisionType.FP32)]
 
     if args.enable_opencl:
-        places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
-                  Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
-                  Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-                  Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageDefault),
-                  Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageFolder),
-                  Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-                  Place(TargetType.X86, PrecisionType.FP32),
-                  Place(TargetType.ARM, PrecisionType.FP32),
-                  Place(TargetType.Host, PrecisionType.FP32)]
+        places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.X86, PrecisionType.FP32),
+            Place(TargetType.ARM, PrecisionType.FP32),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
         '''
         Set opencl kernel binary.
         Large addtitional prepare time is cost due to algorithm selecting and
@@ -75,7 +87,6 @@ def RunModel(args):
         bin_path = "./"
         bin_name = "lite_opencl_kernel.bin"
         config.set_opencl_binary_path_name(bin_path, bin_name)
-
         '''
         opencl tune option:
         CL_TUNE_NONE
@@ -85,8 +96,8 @@ def RunModel(args):
         '''
         tuned_path = "./"
         tuned_name = "lite_opencl_tuned.bin"
-        config.set_opencl_tune(CLTuneMode.CL_TUNE_NORMAL, tuned_path, tuned_name, 4)
-
+        config.set_opencl_tune(CLTuneMode.CL_TUNE_NORMAL, tuned_path,
+                               tuned_name, 4)
         '''
         opencl precision option:
         CL_PRECISION_AUTO, first fp16 if valid, default
@@ -94,6 +105,22 @@ def RunModel(args):
         CL_PRECISION_FP16, force fp16
         '''
         config.set_opencl_precision(CLPrecisionType.CL_PRECISION_AUTO)
+    elif args.use_metal:
+        # set metallib path
+        import paddlelite, os
+        module_path = os.path.dirname(paddlelite.__file__)
+        config.set_metal_lib_path(module_path + "/libs/lite.metallib")
+        config.set_metal_use_mps(True)
+        # set places for Metal
+        places = [
+            Place(TargetType.Metal, PrecisionType.FP32,
+                  DataLayoutType.MetalTexture2DArray), Place(
+                      TargetType.Metal, PrecisionType.FP16,
+                      DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.X86, PrecisionType.FP32),
+            Place(TargetType.ARM, PrecisionType.FP32),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
     else:
         places = [Place(TargetType.X86, PrecisionType.FP32)]
 
@@ -105,7 +132,6 @@ def RunModel(args):
     # 3. Set input data
     input_tensor = predictor.get_input(0)
     input_tensor.from_numpy(np.ones((1, 3, 224, 224)).astype("float32"))
-
 
     # 4. Run model
     predictor.run()

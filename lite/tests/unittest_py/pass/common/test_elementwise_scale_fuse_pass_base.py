@@ -24,39 +24,45 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
     #elementwise param
-    in_shape_x = draw(st.lists(st.integers(min_value = 1, max_value = 20), min_size = 4, max_size = 4))
-    in_shape_y = draw(st.lists(st.integers(min_value = 1, max_value = 20), min_size = 4, max_size = 4))
-    assume((in_shape_x[0] == in_shape_y[0] or in_shape_x[0] == 1 or in_shape_y[0] == 1) 
-            and (in_shape_x[0] >= in_shape_y[0]))
-    assume((in_shape_x[1] == in_shape_y[1] or in_shape_x[1] == 1 or in_shape_y[1] == 1) 
-            and (in_shape_x[1] >= in_shape_y[1]))
-    assume((in_shape_x[2] == in_shape_y[2] or in_shape_x[2] == 1 or in_shape_y[2] == 1) 
-            and (in_shape_x[2] >= in_shape_y[2]))
-    assume((in_shape_x[3] == in_shape_y[3] or in_shape_x[3] == 1 or in_shape_y[3] == 1) 
-            and (in_shape_x[3] >= in_shape_y[3]))
+    in_shape_x = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=20), min_size=4, max_size=4))
+    in_shape_y = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=20), min_size=4, max_size=4))
+    assume((in_shape_x[0] == in_shape_y[0] or in_shape_x[0] == 1 or
+            in_shape_y[0] == 1) and (in_shape_x[0] >= in_shape_y[0]))
+    assume((in_shape_x[1] == in_shape_y[1] or in_shape_x[1] == 1 or
+            in_shape_y[1] == 1) and (in_shape_x[1] >= in_shape_y[1]))
+    assume((in_shape_x[2] == in_shape_y[2] or in_shape_x[2] == 1 or
+            in_shape_y[2] == 1) and (in_shape_x[2] >= in_shape_y[2]))
+    assume((in_shape_x[3] == in_shape_y[3] or in_shape_x[3] == 1 or
+            in_shape_y[3] == 1) and (in_shape_x[3] >= in_shape_y[3]))
     axis = -1
     #scale param
-    scale = draw(st.floats(min_value = 0.5, max_value = 5))
-    bias = draw(st.floats(min_value = 0, max_value = 1))
-    alpha = draw(st.floats(min_value = 0, max_value = 1))
+    scale = draw(st.floats(min_value=0.5, max_value=5))
+    bias = draw(st.floats(min_value=0, max_value=1))
+    alpha = draw(st.floats(min_value=0, max_value=1))
     bias_after_scale = draw(st.sampled_from([False, True]))
 
     elementwise_op = OpConfig(
-        type = 'elementwise_mul',
-        inputs = {"X": ["input_data_x"],"Y": ["input_data_y"]},
-        outputs = {"Out": ["elementwise_output_data"]},
-        attrs = {
-            "data_format": 'nchw',
-            "axis": axis
-        })
+        type='elementwise_mul',
+        inputs={"X": ["input_data_x"],
+                "Y": ["input_data_y"]},
+        outputs={"Out": ["elementwise_output_data"]},
+        attrs={"data_format": 'nchw',
+               "axis": axis})
 
     scale_op = OpConfig(
-        type = 'scale',
-        inputs = {"X": ["elementwise_output_data"]},
-        outputs = {"Out": ["output_data"]},
-        attrs = {
+        type='scale',
+        inputs={"X": ["elementwise_output_data"]},
+        outputs={"Out": ["output_data"]},
+        attrs={
             "scale": scale,
             "bias": bias,
             "alpha": alpha,
@@ -65,11 +71,11 @@ def sample_program_configs(draw):
 
     ops = [elementwise_op, scale_op]
     program_config = ProgramConfig(
-        ops = ops,
-        weights = {},
-        inputs = {
-            "input_data_x":TensorConfig(shape = in_shape_x),
-            "input_data_y":TensorConfig(shape = in_shape_y)
+        ops=ops,
+        weights={},
+        inputs={
+            "input_data_x": TensorConfig(shape=in_shape_x),
+            "input_data_y": TensorConfig(shape=in_shape_y)
         },
-        outputs = ["output_data"])
+        outputs=["output_data"])
     return program_config
