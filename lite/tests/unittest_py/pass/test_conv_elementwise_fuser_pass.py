@@ -46,7 +46,9 @@ class TestConvElementwiseFuse(FusePassAutoScanTest):
     def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
         result = True
         if predictor_config.target() == TargetType.OpenCL:
-            result = result and (program_config.ops[0].attrs["groups"] == 1 and program_config.ops[0].type != "conv2d_transpose")          
+            result = result and (program_config.ops[0].attrs["groups"] == 1 and program_config.ops[0].type != "conv2d_transpose")
+        if program_config.ops[0].type == "conv2d_transpose":
+            result = result and program_config.ops[0].attrs["dilations"] == [1, 1]       
         return result   
 
     def sample_program_configs(self, draw):
@@ -54,7 +56,7 @@ class TestConvElementwiseFuse(FusePassAutoScanTest):
         Transpose=draw(st.sampled_from([True, False]))
 
         #conv param or conv_transpose param
-        in_shape=draw(st.lists(st.integers(min_value=2, max_value=32), min_size=3, max_size=3))
+        in_shape=draw(st.lists(st.integers(min_value=3, max_value=32), min_size=3, max_size=3))
         in_shape=[draw(st.integers(min_value=1, max_value=3))] + in_shape
         weight_shape=draw(st.lists(st.integers(min_value=1, max_value=8), min_size=4, max_size=4))
         paddings=draw(st.sampled_from([[1, 2], [4, 2], [1, 1], [0, 0], [1, 0], [1, 1]]))
@@ -62,14 +64,14 @@ class TestConvElementwiseFuse(FusePassAutoScanTest):
         groups=draw(st.sampled_from([1, 2, in_shape[1]]))
         padding_algorithm=draw(st.sampled_from(["VALID", "SAME"]))
         strides=draw(st.sampled_from([[1, 1], [2, 2]]))
-        output_padding=draw(st.sampled_from([[], draw(st.lists(st.integers(min_value = 0, max_value = 16), min_size = 2, max_size = 2))]))
+        output_padding=draw(st.sampled_from([[], [1,1], [2,2]]))
         scale_in = draw(st.floats(min_value = 0.001, max_value = 0.1))
         scale_out = draw(st.floats(min_value = 0.001, max_value = 0.1))
         if Transpose:
-            bias_sample_shape=weight_shape[1]
+            bias_sample_shape=weight_shape[1] * groups
         else:
             bias_sample_shape=weight_shape[0]
-        elementwise_bias_shape=draw(st.sampled_from([[bias_sample_shape]])) 
+        elementwise_bias_shape=[bias_sample_shape]
 
         conv_out_shape=[]
         paddings_,dilations_ = UpdatePaddingAndDilation(in_shape, weight_shape, paddings, dilations, groups, padding_algorithm, strides)
@@ -86,7 +88,7 @@ class TestConvElementwiseFuse(FusePassAutoScanTest):
                 oh = oh + output_padding[0]
                 ow = ow + output_padding[1]
             conv_out_shape = conv_out_shape + [oh, ow]
-            #assume(oh > 0 and ow > 0)????
+            #assume(oh > 0 and ow > 0)???
         else:
             assume(in_shape[1] == weight_shape[1] * groups)
             assume(weight_shape[0]%groups==0)              
@@ -152,14 +154,11 @@ class TestConvElementwiseFuse(FusePassAutoScanTest):
 
     def sample_predictor_configs(self):
         config = CxxConfig()
-        if self.get_target() == 'OpenCL':
-            return self.get_predictor_configs(), ['io_copy', 'layout', self.ops[0].type, 'layout', 'io_copy'], (1e-5, 1e-5)
-        else:
-            return self.get_predictor_configs(), [self.ops[0].type], (1e-5, 1e-5)
+        return self.get_predictor_configs(), [self.ops[0].type], (1e-4, 1e-5)
 
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
-            if predictor_config.target() == TargetType.ARM or predictor_config.target() == TargetType.OpenCL or predictor_config.target() == TargetType.X86:
+            if predictor_config.target() == TargetType.OpenCL:
                 return True
 
         self.add_ignore_check_case(
