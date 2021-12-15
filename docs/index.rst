@@ -1,9 +1,9 @@
-.. Paddle-Lite documentation master file, created by
+.. Paddle Lite documentation master file, created by
    sphinx-quickstart on Thu Feb  6 14:11:30 2020.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Paddle-Lite's documentation!
+Welcome to Paddle Lite's documentation!
 =======================================
 
 *请在页面左下角选择特定版本的文档。*

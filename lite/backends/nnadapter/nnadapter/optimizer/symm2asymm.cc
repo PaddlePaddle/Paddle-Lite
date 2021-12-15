@@ -99,10 +99,13 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(hal::Model* model) {
         ConvertOperandSymmToAsymm(output_operands[0], 128);
       } break;
       case NNADAPTER_AVERAGE_POOL_2D:
+      case NNADAPTER_BATCH_NORMALIZATION:
       case NNADAPTER_MAX_POOL_2D:
       case NNADAPTER_RELU:
       case NNADAPTER_RELU6:
       case NNADAPTER_RESHAPE:
+      case NNADAPTER_RESIZE_NEAREST:
+      case NNADAPTER_RESIZE_LINEAR:
       case NNADAPTER_TANH:
       case NNADAPTER_FLATTEN:
       case NNADAPTER_TRANSPOSE:

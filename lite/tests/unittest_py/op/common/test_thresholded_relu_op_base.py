@@ -23,19 +23,21 @@ import unittest
 import hypothesis
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=2, max_value=8), min_size = 4, max_size=4))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=2, max_value=8), min_size=4, max_size=4))
     threshold_data = draw(st.floats(min_value=0.0, max_value=1.0))
     thresholded_relu_op = OpConfig(
-        type = "thresholded_relu",
-        inputs = {"X" : ["input_data"]},
-        outputs = {"Out": ["output_data"]},
-        attrs = {"threshold" : threshold_data})
+        type="thresholded_relu",
+        inputs={"X": ["input_data"]},
+        outputs={"Out": ["output_data"]},
+        attrs={"threshold": threshold_data})
     program_config = ProgramConfig(
         ops=[thresholded_relu_op],
         weights={},
-        inputs={
-            "input_data": TensorConfig(shape=in_shape),
-        },
+        inputs={"input_data": TensorConfig(shape=in_shape), },
         outputs=["output_data"])
     return program_config

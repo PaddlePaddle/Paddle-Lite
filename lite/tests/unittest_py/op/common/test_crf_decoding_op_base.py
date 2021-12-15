@@ -23,21 +23,26 @@ import unittest
 import hypothesis
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
     # LoD tensor need
-    sequence_num = draw(st.integers(min_value = 1, max_value = 20))
-    tag_num = draw(st.integers(min_value = 10, max_value = 20))
-    max_sequence_length = draw(st.integers(min_value = 10, max_value = 10))
+    sequence_num = draw(st.integers(min_value=1, max_value=20))
+    tag_num = draw(st.integers(min_value=10, max_value=20))
+    max_sequence_length = draw(st.integers(min_value=10, max_value=10))
+
     def gen_lod_data(sequence_num, max_sequence_length):
-        sequence_length_list = [np.random.randint(1, max_sequence_length + 1) for i in range(sequence_num)]
+        sequence_length_list = [
+            np.random.randint(1, max_sequence_length + 1)
+            for i in range(sequence_num)
+        ]
         lod_data_init_list = sequence_length_list
         lod_data_init_list.insert(0, 0)
         lod_data_init_array = np.array(lod_data_init_list)
         lod_data = np.cumsum(lod_data_init_array)
         return [lod_data.tolist()]
-    
+
     has_label_input_flag = draw(st.booleans())
-    input_lod_tensor_flag =  draw(st.booleans())
+    input_lod_tensor_flag = draw(st.booleans())
 
     if input_lod_tensor_flag:
         emission_lod_data = gen_lod_data(sequence_num, max_sequence_length)
@@ -47,49 +52,70 @@ def sample_program_configs(draw):
     def gen_input_emission_data():
         if input_lod_tensor_flag:
             total_sequence_length_of_mini_batch = emission_lod_data[-1][-1]
-            emission_data = np.random.uniform(-1, 1, [total_sequence_length_of_mini_batch, tag_num]).astype(np.float32)
+            emission_data = np.random.uniform(
+                -1, 1, [total_sequence_length_of_mini_batch, tag_num]).astype(
+                    np.float32)
         else:
-            emission_data = np.random.uniform(-1, 1, [sequence_num, max_sequence_length, tag_num]).astype(np.float32)
-        return  emission_data
+            emission_data = np.random.uniform(
+                -1, 1, [sequence_num, max_sequence_length, tag_num]).astype(
+                    np.float32)
+        return emission_data
 
     def gen_input_transition_data():
-        return np.random.uniform(-0.5, 0.5, [tag_num + 2, tag_num]).astype(np.float32)
+        return np.random.uniform(-0.5, 0.5,
+                                 [tag_num + 2, tag_num]).astype(np.float32)
 
     def gen_input_length_data():
-        input_length_data = [np.random.randint(1, max_sequence_length + 1) for i in range(sequence_num)]
+        input_length_data = [
+            np.random.randint(1, max_sequence_length + 1)
+            for i in range(sequence_num)
+        ]
         return np.array(input_length_data).reshape(-1, 1).astype(np.int64)
 
     def gen_input_label_data():
         if input_lod_tensor_flag:
             total_sequence_length_of_mini_batch = emission_lod_data[-1][-1]
-            label_data = np.random.randint(0, tag_num, [total_sequence_length_of_mini_batch, 1]).astype(np.int64)
+            label_data = np.random.randint(
+                0, tag_num,
+                [total_sequence_length_of_mini_batch, 1]).astype(np.int64)
         else:
-            label_data = np.random.randint(0, tag_num, [sequence_num, max_sequence_length]).astype(np.int64)
+            label_data = np.random.randint(
+                0, tag_num,
+                [sequence_num, max_sequence_length]).astype(np.int64)
         return label_data
 
     def gen_inputs():
-        inputs = {"Emission": ["input_emission_data"], "Transition": ["input_transition_data"]}
-        inputs_tensor = {"input_emission_data": TensorConfig(data_gen=partial(gen_input_emission_data), lod=emission_lod_data),
-                         "input_transition_data": TensorConfig(data_gen=partial(gen_input_transition_data))}
+        inputs = {
+            "Emission": ["input_emission_data"],
+            "Transition": ["input_transition_data"]
+        }
+        inputs_tensor = {
+            "input_emission_data": TensorConfig(
+                data_gen=partial(gen_input_emission_data),
+                lod=emission_lod_data),
+            "input_transition_data":
+            TensorConfig(data_gen=partial(gen_input_transition_data))
+        }
         if has_label_input_flag:
             inputs['Label'] = ["input_label_data"]
-            inputs_tensor['input_label_data'] = TensorConfig(data_gen=partial(gen_input_label_data), lod=emission_lod_data)  
+            inputs_tensor['input_label_data'] = TensorConfig(
+                data_gen=partial(gen_input_label_data), lod=emission_lod_data)
         if not input_lod_tensor_flag:
             inputs['Length'] = ['input_length_data']
-            inputs_tensor['input_length_data'] = TensorConfig(data_gen=partial(gen_input_length_data))
+            inputs_tensor['input_length_data'] = TensorConfig(
+                data_gen=partial(gen_input_length_data))
         return inputs, inputs_tensor
 
     inputs, inputs_tensor = gen_inputs()
     crf_decoding_op = OpConfig(
-        type = "crf_decoding",
-        inputs = inputs,  
-        outputs = {"ViterbiPath": ["viterbi_path"]},
-        attrs = {})
-    crf_decoding_op.outputs_dtype = {"viterbi_path" : np.int64}
+        type="crf_decoding",
+        inputs=inputs,
+        outputs={"ViterbiPath": ["viterbi_path"]},
+        attrs={})
+    crf_decoding_op.outputs_dtype = {"viterbi_path": np.int64}
     program_config = ProgramConfig(
         ops=[crf_decoding_op],
         weights={},
         inputs=inputs_tensor,
         outputs=["viterbi_path"])
     return program_config
-    

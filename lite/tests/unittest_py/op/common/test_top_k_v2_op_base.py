@@ -24,33 +24,39 @@ import hypothesis
 from hypothesis import assume
 import hypothesis.strategies as st
 
+
 # having diff !
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=1, max_value=5), min_size = 4, max_size=4))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=5), min_size=4, max_size=4))
 
     def generate_K_data():
-        return np.random.randint(1,3,size=[1]).astype(np.int32)
+        return np.random.randint(1, 3, size=[1]).astype(np.int32)
 
     k_data = draw(st.integers(min_value=1, max_value=2))
     axis_data = draw(st.integers(min_value=0, max_value=3))
     # Lite does not have these two attributes
     largest_data = draw(st.booleans())
-    sorted_data =  draw(st.booleans())
-    
+    sorted_data = draw(st.booleans())
+
     assume(k_data <= in_shape[-1])
 
     top_k_v2_op = OpConfig(
-        type = "top_k_v2",
-        inputs = {"X" : ["X_data"],
-                  #"K": ["K_data"]
-                  },
-        outputs = {"Out": ["Out_data"],
-                  "Indices": ["Indices_data"]},
-        attrs = {"k" : k_data,
-                 "axis" : axis_data,
-                 #"largest": largest_data,
-                 #"sorted": sorted_data,
-                 })
+        type="top_k_v2",
+        inputs={
+            "X": ["X_data"],
+            #"K": ["K_data"]
+        },
+        outputs={"Out": ["Out_data"],
+                 "Indices": ["Indices_data"]},
+        attrs={
+            "k": k_data,
+            "axis": axis_data,
+            #"largest": largest_data,
+            #"sorted": sorted_data,
+        })
     program_config = ProgramConfig(
         ops=[top_k_v2_op],
         weights={},
@@ -58,6 +64,6 @@ def sample_program_configs(draw):
             "X_data": TensorConfig(shape=in_shape),
             "K_data": TensorConfig(data_gen=partial(generate_K_data))
         },
-        outputs= ["Out_data", "Indices_data"])
-    
+        outputs=["Out_data", "Indices_data"])
+
     return program_config

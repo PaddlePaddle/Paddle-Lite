@@ -23,6 +23,7 @@ import unittest
 import hypothesis
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
     rois_shape = draw(st.sampled_from([[30, 4], [80, 4], [70, 4], [66, 4]]))
     scores_shape = draw(st.sampled_from([[30, 1], [65, 1], [70, 1]]))
@@ -31,16 +32,22 @@ def sample_program_configs(draw):
 
     def generate_rois(*args, **kwargs):
         return np.random.random(rois_shape).astype(np.float32)
+
     def generate_scores(*args, **kwargs):
         return np.random.random(scores_shape).astype(np.float32)
+
     collect_fpn_proposals_op = OpConfig(
-        type = "collect_fpn_proposals",
-        inputs = {"MultiLevelRois" : ["multi_level_rois_data"],
-                 "MultiLevelScores" : ["multi_level_scores_data"],
-                 "RoisNum" : ["rois_num_data"]},
-        outputs = {"FpnRois": ["fpn_rois_data"],
-                   "MultiLevelRoIsNum" : ["multi_level_rois_num_data"]},
-        attrs = {"post_nms_topN" : post_nms_topN})
+        type="collect_fpn_proposals",
+        inputs={
+            "MultiLevelRois": ["multi_level_rois_data"],
+            "MultiLevelScores": ["multi_level_scores_data"],
+            "RoisNum": ["rois_num_data"]
+        },
+        outputs={
+            "FpnRois": ["fpn_rois_data"],
+            "MultiLevelRoIsNum": ["multi_level_rois_num_data"]
+        },
+        attrs={"post_nms_topN": post_nms_topN})
     program_config = ProgramConfig(
         ops=[collect_fpn_proposals_op],
         weights={},
@@ -49,8 +56,7 @@ def sample_program_configs(draw):
             TensorConfig(data_gen=partial(generate_rois)),
             "multi_level_scores_data":
             TensorConfig(data_gen=partial(generate_scores)),
-            "rois_num_data":
-            TensorConfig(data_gen=partial(generate_rois))
+            "rois_num_data": TensorConfig(data_gen=partial(generate_rois))
         },
         outputs=["fpn_rois_data", "multi_level_rois_num_data"])
     return program_config
