@@ -27,63 +27,80 @@ import numpy as np
 from functools import partial
 import copy
 
-class TestAssignOp(AutoScanTest):
+
+class TestLookupTablebleOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,2])
-        self.enable_testing_on_place(TargetType.ARM, PrecisionType.Any, DataLayoutType.NCHW, thread=[1,2,4])
+        self.enable_testing_on_place(
+            TargetType.X86,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 2])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.Any,
+            DataLayoutType.NCHW,
+            thread=[1, 2, 4])
 
-    def is_program_valid(self, program_config: ProgramConfig, predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(
-        min_value=2, max_value=100), min_size=2, max_size=2))
-        id_shape = draw(st.lists(st.integers(
-            min_value=2, max_value=100), min_size=2, max_size=3))
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=2, max_value=100),
+                min_size=2,
+                max_size=2))
+        id_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=2, max_value=100),
+                min_size=2,
+                max_size=3))
         pidx = draw(st.sampled_from([-1, 0, 1, 2]))
-        op_type_str = draw(st.sampled_from(["lookup_table", "lookup_table_v2"]))
-        
+        op_type_str = draw(
+            st.sampled_from(["lookup_table", "lookup_table_v2"]))
+
         def generate_input(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
 
         def generate_ids(*args, **kwargs):
             extend_id = copy.deepcopy(id_shape)
             extend_id.append(1)
-            return np.random.randint(low=0, high=in_shape[0], size=extend_id).astype(np.int64)
+            return np.random.randint(
+                low=0, high=in_shape[0], size=extend_id).astype(np.int64)
 
         build_ops = OpConfig(
-            type = op_type_str,
-            inputs = {
-                "W" : ["w_data"],
-                "Ids" : ["ids_data"],
-                },
-            outputs = {
-                "Out": ["output_data"],
+            type=op_type_str,
+            inputs={
+                "W": ["w_data"],
+                "Ids": ["ids_data"],
             },
-            attrs = {
-                "padding_idx" : int(pidx),
-            })
+            outputs={"Out": ["output_data"], },
+            attrs={"padding_idx": int(pidx), })
         program_config = ProgramConfig(
             ops=[build_ops],
             weights={},
             inputs={
-                "w_data":
-                TensorConfig(data_gen=partial(generate_input)),
-                "ids_data":
-                TensorConfig(data_gen=partial(generate_ids)),
+                "w_data": TensorConfig(data_gen=partial(generate_input)),
+                "ids_data": TensorConfig(data_gen=partial(generate_ids)),
             },
             outputs=["output_data"])
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["lookup_table_v1_and_v2"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["lookup_table_v1_and_v2"], (1e-5,
+                                                                          1e-5)
 
     def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=50)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

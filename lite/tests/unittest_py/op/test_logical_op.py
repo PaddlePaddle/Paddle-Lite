@@ -26,82 +26,74 @@ import argparse
 import numpy as np
 from functools import partial
 
-class TestAssignOp(AutoScanTest):
+
+class TestLogicalOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.Any, DataLayoutType.NCHW)
+        self.enable_testing_on_place(TargetType.Host, PrecisionType.Any,
+                                     DataLayoutType.NCHW)
 
-    def is_program_valid(self, program_config: ProgramConfig, predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(
-            min_value=3, max_value=10), min_size=2, max_size=4))
-        op_type_str = draw(st.sampled_from(["logical_and", "logical_not", "logical_or", "logical_xor"]))
-    
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=3, max_value=64), min_size=2, max_size=4))
+        op_type_str = draw(
+            st.sampled_from(
+                ["logical_and", "logical_not", "logical_or", "logical_xor"]))
+
         def generate_input_x():
             return np.random.choice(a=[0, 1], size=in_shape).astype(np.int32)
+
         def generate_input_y():
             return np.random.choice(a=[0, 1], size=in_shape).astype(np.int32)
-        
+
         cast_x = OpConfig(
-            type = "cast",
-            inputs = {
-                "X" : ["input_data_x"],
-                },
-            outputs = {
-                "Out": ["cast_data_x"],
-            },
-            attrs = {"in_dtype" : int(2), "out_dtype" : int(0)})
-        cast_x.outputs_dtype = {"cast_data_x" : np.bool_}
-        
+            type="cast",
+            inputs={"X": ["input_data_x"], },
+            outputs={"Out": ["cast_data_x"], },
+            attrs={"in_dtype": int(2),
+                   "out_dtype": int(0)})
+        cast_x.outputs_dtype = {"cast_data_x": np.bool_}
+
         cast_y = OpConfig(
-            type = "cast",
-            inputs = {
-                "X" : ["input_data_y"],
-                },
-            outputs = {
-                "Out": ["cast_data_y"],
-            },
-            attrs = {"in_dtype" : int(2), "out_dtype" : int(0)})
-        cast_y.outputs_dtype = {"cast_data_y" : np.bool_}
-       
+            type="cast",
+            inputs={"X": ["input_data_y"], },
+            outputs={"Out": ["cast_data_y"], },
+            attrs={"in_dtype": int(2),
+                   "out_dtype": int(0)})
+        cast_y.outputs_dtype = {"cast_data_y": np.bool_}
+
         # two args 
         build_ops = OpConfig(
-                type = op_type_str,
-                inputs = {
-                    "X" : ["cast_data_x"],
-                    "Y" : ["cast_data_y"]
-                    },
-                outputs = {
-                    "Out": ["output_data"],
-                },
-                attrs = {})
-        build_ops.outputs_dtype = {"output_data" : np.bool_}
+            type=op_type_str,
+            inputs={"X": ["cast_data_x"],
+                    "Y": ["cast_data_y"]},
+            outputs={"Out": ["output_data"], },
+            attrs={})
+        build_ops.outputs_dtype = {"output_data": np.bool_}
 
         #one args
         build_op = OpConfig(
-                type = "logical_not",
-                inputs = {
-                    "X" : ["cast_data_x"]
-                    },
-                outputs = {
-                    "Out": ["output_data"],
-                },
-                attrs = {})
-        build_op.outputs_dtype = {"output_data" : np.bool_}
-        
+            type="logical_not",
+            inputs={"X": ["cast_data_x"]},
+            outputs={"Out": ["output_data"], },
+            attrs={})
+        build_op.outputs_dtype = {"output_data": np.bool_}
+
         cast_out = OpConfig(
-            type = "cast",
-            inputs = {
-                "X" : ["output_data"],
-                },
-            outputs = {
-                "Out": ["cast_data_out"],
-            },
-            attrs = {"in_dtype" : int(0), "out_dtype" : int(2)})
-        cast_out.outputs_dtype = {"cast_data_out" : np.int32}
-        
+            type="cast",
+            inputs={"X": ["output_data"], },
+            outputs={"Out": ["cast_data_out"], },
+            attrs={"in_dtype": int(0),
+                   "out_dtype": int(2)})
+        cast_out.outputs_dtype = {"cast_data_out": np.int32}
+
         tmp_ops = []
         if op_type_str == "logical_not":
             tmp_ops = [cast_x, build_op, cast_out]
@@ -127,6 +119,7 @@ class TestAssignOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=60)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
