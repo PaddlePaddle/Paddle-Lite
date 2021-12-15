@@ -26,7 +26,9 @@ from hypothesis import given, settings, seed, example, assume
 
 
 class TestBoxCoderOp(AutoScanTest):
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         if len(program_config.ops[0].attrs["variance"]) > 0:
             return False
         else:
@@ -37,7 +39,8 @@ class TestBoxCoderOp(AutoScanTest):
 
     def sample_predictor_configs(self):
         config = CxxConfig()
-        config.set_valid_places({Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)})
+        config.set_valid_places(
+            {Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)})
         yield config, ["box_coder"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
@@ -45,6 +48,7 @@ class TestBoxCoderOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

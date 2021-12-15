@@ -24,43 +24,37 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape=draw(st.lists(
-        st.integers(
-            min_value=1, max_value=64), min_size=4, max_size=4))
-    
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=64), min_size=4, max_size=4))
+
     upscale_factor = draw(st.sampled_from([1, 2, 3]))
     data_format = draw(st.sampled_from(["NCHW"]))
     #data_format = draw(st.sampled_from(["NCHW", "NHWC"]))
-    
+
     if data_format == "NCHW":
         assume(in_shape[1] % (upscale_factor * upscale_factor) == 0)
     elif data_format == "NHWC":
         assume(in_shape[3] % (upscale_factor * upscale_factor) == 0)
 
     def generate_input(*args, **kwargs):
-       return np.random.random(in_shape).astype("float32")
-        
+        return np.random.random(in_shape).astype("float32")
+
     ops_config = OpConfig(
-        type = "pixel_shuffle",
-        inputs = {
-            "X": ["intput_data"]
-        },
-        outputs = {
-            "Out": ["output_data"]
-        },
-        attrs = {
-            "upscale_factor": upscale_factor,
-            "data_format": data_format
-        },
-        )
+        type="pixel_shuffle",
+        inputs={"X": ["intput_data"]},
+        outputs={"Out": ["output_data"]},
+        attrs={"upscale_factor": upscale_factor,
+               "data_format": data_format}, )
 
     program_config = ProgramConfig(
         ops=[ops_config],
         weights={},
         inputs={
-            "intput_data": 
-            TensorConfig(data_gen=partial(generate_input))
+            "intput_data": TensorConfig(data_gen=partial(generate_input))
         },
         outputs=["output_data"])
 
