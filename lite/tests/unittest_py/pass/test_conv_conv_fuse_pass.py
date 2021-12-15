@@ -55,7 +55,12 @@ class TestConvConvFuse(FusePassAutoScanTest):
         weight_shape1=[draw(st.integers(min_value=3, max_value=64)), weight_shape0[0], 1, 1]
 
         scale_in = draw(st.floats(min_value = 0.001, max_value = 0.1))
-        scale_out = draw(st.floats(min_value = 0.001, max_value = 0.1))        
+        scale_out = draw(st.floats(min_value = 0.001, max_value = 0.1))
+        
+        padding_algorithm0=draw(st.sampled_from(["VALID", "SAME"]))
+        strides0=draw(st.sampled_from([[1, 1], [2, 2]]))        
+        paddings0=draw(st.sampled_from([[1, 2], [2, 2], [1, 1], [0, 0], [1, 0], [1, 1]]))
+        dilations0=draw(st.sampled_from([[1, 1], [2, 2]]))
 
         assume(in_shape0[1] == weight_shape0[1] * 1)
         mula = in_shape0[1] * (weight_shape1[0] - weight_shape0[0])
@@ -82,13 +87,13 @@ class TestConvConvFuse(FusePassAutoScanTest):
             outputs = {"Output": ["conv_output_data"]},
             attrs = {
                 "data_format": 'nchw',
-                "dilations": [1,1],
-                "padding_algorithm": "VALID",
+                "dilations": dilations0,
+                "padding_algorithm": padding_algorithm0,
                 "groups": 1,
                 "Scale_in" : scale_in,
                 "Scale_out" : scale_out,                
-                "paddings": [0,0],
-                "strides": [1,1]
+                "paddings": paddings0,
+                "strides": strides0
             })
 
         conv1_op = OpConfig(
@@ -122,14 +127,12 @@ class TestConvConvFuse(FusePassAutoScanTest):
         return program_config
     def sample_predictor_configs(self):
         config = CxxConfig()
-        if self.get_target() == 'OpenCL':
-            return self.get_predictor_configs(), ['io_copy', 'layout', self.ops[0].type, 'layout', 'io_copy'], (1e-5, 1e-5)
-        else:
-            return self.get_predictor_configs(), [self.ops[0].type], (1e-5, 1e-5)
+        return self.get_predictor_configs(), [self.ops[0].type], (1e-4, 1e-5)
 
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
-            return True
+            if predictor_config.target() == TargetType.OpenCL:
+                return True
 
         self.add_ignore_check_case(
             # IgnoreReasonsBase.PADDLE_NOT_IMPLEMENTED
