@@ -235,6 +235,17 @@ class LITE_API RuntimeProgram {
     register_layer_names_.push_back(annotator.RegisterString("one_loop"));
 #endif
 
+#ifdef LITE_WITH_OPENCL
+    bool opencl_valid = paddle::lite::CLWrapper::Global()->OpenclLibFound() &&
+                        paddle::lite::CLWrapper::Global()->DlsymSuccess() &&
+                        CLRuntime::Global()->OpenCLAvaliableForDevice();
+    using OpenCLContext = Context<TargetType::kOpenCL>;
+    std::unique_ptr<KernelContext> unique_opencl_ctx(new KernelContext());
+    if (opencl_valid) {
+      unique_opencl_ctx->As<OpenCLContext>().InitOnce();
+    }
+#endif
+
     for (auto& inst : instructions_[kRootBlockIdx]) {
       KernelBase* kernel = inst.mutable_kernel();
 #ifdef LITE_WITH_OPENCL

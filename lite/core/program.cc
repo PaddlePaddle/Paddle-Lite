@@ -260,16 +260,6 @@ RuntimeProgram::RuntimeProgram(
     Scope* exec_scope,
     int block_idx)
     : exec_scope_(exec_scope) {
-#ifdef LITE_WITH_OPENCL
-  bool opencl_valid = paddle::lite::CLWrapper::Global()->OpenclLibFound() &&
-                      paddle::lite::CLWrapper::Global()->DlsymSuccess() &&
-                      CLRuntime::Global()->OpenCLAvaliableForDevice();
-  using OpenCLContext = Context<TargetType::kOpenCL>;
-  std::unique_ptr<KernelContext> unique_opencl_ctx(new KernelContext());
-  if (opencl_valid) {
-    unique_opencl_ctx->As<OpenCLContext>().InitOnce();
-  }
-#endif
   CHECK(program_desc);
   auto block_size = program_desc->BlocksSize();
   CHECK(block_size) << "No block found!";
