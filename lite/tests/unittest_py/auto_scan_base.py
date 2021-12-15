@@ -34,22 +34,37 @@ from itertools import product
 from program_config import CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 
 import hypothesis
-from hypothesis import given, settings, seed
+from hypothesis import given, settings, seed, Verbosity
 import hypothesis.strategies as st
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument("--target", choices=['Host', 'X86','CUDA','ARM','OpenCL','FPGA','NPU','MLU','RKNPU','APU','HUAWEI_ASCEND_NPU','INTEL_FPGA'], required=True)
+parser.add_argument(
+    "--target",
+    choices=[
+        'Host', 'X86', 'CUDA', 'ARM', 'OpenCL', 'FPGA', 'NPU', 'MLU', 'RKNPU',
+        'APU', 'HUAWEI_ASCEND_NPU', 'INTEL_FPGA'
+    ],
+    required=True)
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 settings.register_profile(
     "ci",
-    max_examples=10,
+    max_examples=100,
     suppress_health_check=hypothesis.HealthCheck.all(),
     deadline=None,
     print_blob=True,
     derandomize=True,
     report_multiple_bugs=False)
-settings.load_profile("ci")
+
+settings.register_profile(
+    "ce",
+    max_examples=1000,
+    suppress_health_check=hypothesis.HealthCheck.all(),
+    deadline=None,
+    print_blob=True,
+    derandomize=True,
+    report_multiple_bugs=False)
+
 
 class IgnoreReasonsBase(enum.Enum):
     # Paddle not support, but paddlelite support, we need to add the feature.
@@ -58,7 +73,6 @@ class IgnoreReasonsBase(enum.Enum):
     PADDLELITE_NOT_SUPPORT = 1
     # Accuracy is abnormal after enabling pass.
     ACCURACY_ERROR = 2
-
 
 
 class AutoScanBaseTest(unittest.TestCase):
@@ -82,7 +96,6 @@ class AutoScanBaseTest(unittest.TestCase):
         args = parser.parse_args()
         self.args = args
 
-
     @abc.abstractmethod
     def sample_program_configs(self, draw):
         '''
@@ -104,7 +117,9 @@ class AutoScanBaseTest(unittest.TestCase):
         self.ignore_cases.append((teller, reason, note))
 
     @abc.abstractmethod
-    def is_program_valid(self, program_config: ProgramConfig, predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def run_test_config(self, model, params, prog_config, pred_config,
@@ -126,9 +141,9 @@ class AutoScanBaseTest(unittest.TestCase):
         result = {}
         for out_name, o_name in zip(prog_config.outputs,
                                     predictor.get_output_names()):
-            result[out_name] = predictor.get_output_handle(o_name).copy_to_cpu()
+            result[out_name] = predictor.get_output_handle(o_name).copy_to_cpu(
+            )
         return result
-
 
     @abc.abstractmethod
     def assert_tensors_near(self,
@@ -142,9 +157,9 @@ class AutoScanBaseTest(unittest.TestCase):
             base_key = list(baseline.keys())
             base = np.array(baseline[base_key[0]])
             self.assertTrue(
-                    base.shape == arr.shape,
-                    "The output shapes are not equal, the baseline shape is " +
-                    str(base.shape) + ', but got ' + str(arr.shape))
+                base.shape == arr.shape,
+                "The output shapes are not equal, the baseline shape is " +
+                str(base.shape) + ', but got ' + str(arr.shape))
             self.assertTrue(
                 np.allclose(
                     base, arr, atol=atol, rtol=rtol),
@@ -154,7 +169,7 @@ class AutoScanBaseTest(unittest.TestCase):
                 opencl_str = "/target_trans"
                 other_str = "__Mangled_1"
                 index = key.rfind(opencl_str)
-                paddlekey=key
+                paddlekey = key
                 if index > 0:
                     paddlekey = key[0: index]
                 index = key.rfind(other_str)
@@ -168,7 +183,8 @@ class AutoScanBaseTest(unittest.TestCase):
                 self.assertTrue(
                     baseline[paddlekey].shape == arr.shape,
                     "The output shapes are not equal, the baseline shape is " +
-                    str(baseline[paddlekey].shape) + ', but got ' + str(arr.shape))
+                    str(baseline[paddlekey].shape) + ', but got ' +
+                    str(arr.shape))
                 self.assertTrue(
                     np.allclose(
                         baseline[paddlekey], arr, atol=atol, rtol=rtol),
@@ -222,7 +238,8 @@ class AutoScanBaseTest(unittest.TestCase):
     def run_test(self, quant=False, prog_configs=None):
         status = True
 
-        paddlelite_configs, op_list_, (atol_, rtol_) = self.sample_predictor_configs()
+        paddlelite_configs, op_list_, (atol_,
+                                       rtol_) = self.sample_predictor_configs()
         for prog_config in prog_configs:
             # if program is invalid, we should ignore this cases.
             program_valid_ = False
@@ -233,7 +250,6 @@ class AutoScanBaseTest(unittest.TestCase):
             if not program_valid_:
                 self.num_invalid_programs += 1
                 continue
-
 
             self.num_ran_programs += 1
             model, params = create_fake_model(prog_config)
@@ -255,38 +271,49 @@ class AutoScanBaseTest(unittest.TestCase):
                 self.run_test_config(model, params, prog_config, base_config,
                                      feed_data))
 
-
             for paddlelite_config in paddlelite_configs:
-                # judge validity of program
-                if not self.is_program_valid(prog_config, paddlelite_config):
-                    continue
-
                 self.num_predictor_kinds += 1
                 # ignore info
                 ignore_flag = False
+                paddle_lite_not_support_flag = False
                 pred_config = paddlelite_config.value()
                 for ignore_info in self.ignore_cases:
                     if ignore_info[0](prog_config, paddlelite_config):
                         ignore_flag = True
                         self.num_ignore_tests += 1
                         if ignore_info[1] == IgnoreReasonsBase.ACCURACY_ERROR:
-                            self.ignore_log("[ACCURACY_ERROR] " +
-                                          ignore_info[2] + ' ' + ' vs ' + self.
-                                          paddlelite_config_str(pred_config))
+                            self.ignore_log("[ACCURACY_ERROR] " + ignore_info[
+                                2] + ' ' + ' vs ' + self.paddlelite_config_str(
+                                    pred_config))
+                        elif ignore_info[
+                                1] == IgnoreReasonsBase.PADDLELITE_NOT_SUPPORT:
+                            paddle_lite_not_support_flag = True
+                            self.ignore_log("[PADDLELITE_NOT_SUPPORT ERROR] " +
+                                            ignore_info[2] + ' ' + ' vs ' +
+                                            self.paddlelite_config_str(
+                                                pred_config))
+                            break
                         else:
                             raise NotImplementedError
                         break
+                if paddle_lite_not_support_flag:
+                    continue
+
                 if os.path.exists(self.cache_dir):
                     shutil.rmtree(self.cache_dir)
                 if not os.path.exists(self.cache_dir):
                     os.mkdir(self.cache_dir)
                 try:
-                    result, opt_model_bytes = self.run_lite_config(model, params, feed_data, pred_config)
+                    result, opt_model_bytes = self.run_lite_config(
+                        model, params, feed_data, pred_config)
                     results.append(result)
-                    self.assert_tensors_near(atol_, rtol_, results[-1],
-                                             results[0])
-                    if not ignore_flag and self.passes is not None:
-                        self.assert_op_list(opt_model_bytes, op_list_)
+                    if self.passes is not None:
+                        # op unit test: we will not check precision in ignore case
+                        self.assert_tensors_near(atol_, rtol_, results[-1],
+                                                 results[0])
+                        if not ignore_flag:
+                            # pass unit test: we will not check fusion in ignore case
+                            self.assert_op_list(opt_model_bytes, op_list_)
                 except Exception as e:
                     self.fail_log(
                         self.paddlelite_config_str(pred_config) +
@@ -294,8 +321,8 @@ class AutoScanBaseTest(unittest.TestCase):
                     if not ignore_flag:
                         status = False
                     continue
-                self.success_log('PredictorConfig: ' + self.
-                                 paddlelite_config_str(pred_config))
+                self.success_log('PredictorConfig: ' +
+                                 self.paddlelite_config_str(pred_config))
         self.assertTrue(status)
 
     def inference_config_str(self, config) -> bool:
@@ -326,33 +353,32 @@ class AutoScanBaseTest(unittest.TestCase):
             after_op_list.append(main_block.op(i).type())
         self.assertTrue(
             op_list_after_fusion == after_op_list,
-            "Expected operator list after fusion is {}, but now it's {}".format(
-                op_list_after_fusion, after_op_list), )
+            "Expected operator list after fusion is {}, but now it's {}".
+            format(op_list_after_fusion, after_op_list), )
 
+    def run_and_statis(self,
+                       quant=False,
+                       max_examples=100,
+                       reproduce=None,
+                       min_success_num=25,
+                       passes=None):
 
-    def run_and_statis(
-            self,
-            quant=False,
-            max_examples=100,
-            reproduce=None,
-            min_success_num=25,
-            max_duration=180,
-            passes=None ):
-        if os.getenv('HYPOTHESIS_TEST_PROFILE', 'ci') == "dev":
-            max_examples *= 10
-            min_success_num *= 10
-            # while at ce phase, there's no limit on time
-            max_duration = -1
-        start_time = time.time()
         settings.register_profile(
-            "ci",
+            "dev",
             max_examples=max_examples,
             suppress_health_check=hypothesis.HealthCheck.all(),
             deadline=None,
             print_blob=True,
             derandomize=True,
-            report_multiple_bugs=False, )
-        settings.load_profile("ci")
+            report_multiple_bugs=False,
+            verbosity=Verbosity.verbose)
+
+        if os.getenv('HYPOTHESIS_TEST_PROFILE') == "ci":
+            settings.load_profile("ci")
+        elif os.getenv('HYPOTHESIS_TEST_PROFILE') == "ce":
+            settings.load_profile("ce")
+        else:
+            settings.load_profile("dev")
 
         self.passes = passes
         self.add_ignore_pass_case()
@@ -363,9 +389,10 @@ class AutoScanBaseTest(unittest.TestCase):
         def run_test(prog_config):
             return self.run_test(quant=quant, prog_configs=[prog_config])
 
-        # if current unittest is not active on the input target, we will exit directly.
+        # if current unittest is not active on the input targ    paddlelite_not_support_flag = Trueet, we will exit directly.
         if not self.is_actived():
-            logging.info("Error: This test is not actived on " + self.get_target())
+            logging.info("Error: This test is not actived on " +
+                         self.get_target())
             return
 
         generator = st.composite(program_generator)
@@ -380,47 +407,46 @@ class AutoScanBaseTest(unittest.TestCase):
             self.num_ran_programs + self.num_invalid_programs))
         logging.info("Number of Invalid Programs: {}".format(
             self.num_invalid_programs))
-        logging.info("Number of Ran Programs: {}".format(self.num_ran_programs))
+        logging.info("Number of Ran Programs: {}".format(
+            self.num_ran_programs))
         logging.info("Number of Ignored Tests: {}".format(
             self.num_ignore_tests))
+        logging.info("Number of Predictor Kinds: {}".format(
+            int(self.num_predictor_kinds / (self.num_invalid_programs +
+                                            self.num_ran_programs))))
         if self.num_predictor_kinds == 0:
             successful_ran_programs = int(self.num_ran_programs)
             min_success_num = 0
         else:
             successful_ran_programs = int(self.num_ran_programs -
-                                        self.num_ignore_tests /
-                                        self.num_predictor_kinds)
+                                          self.num_ignore_tests)
 
         logging.info(
             "Number of successfully ran programs approximately equal to {}".
             format(successful_ran_programs))
         if successful_ran_programs < min_success_num:
-            logging.warning(
-                "satisfied_programs = ran_programs - num_ignore_tests / num_predictor_kinds"
-            )
             logging.fatal(
                 "At least {} programs need to ran successfully, but now only about {} programs satisfied.".
                 format(min_success_num, successful_ran_programs))
             assert False
-        used_time = time.time() - start_time
-        if max_duration > 0 and used_time > max_duration:
-            logging.fatal(
-                "The duration exceeds {} seconds, if this is neccessary, try to set a larger number for parameter `max_duration`.".
-                format(max_duration))
-            assert False
 
     @abc.abstractmethod
-    def run_lite_config(self, model, params, feed_data, pred_config) -> Dict[str, np.ndarray]:
+    def run_lite_config(self, model, params, feed_data,
+                        pred_config) -> Dict[str, np.ndarray]:
         raise NotImplementedError
-
 
     # enable a predictor config
     # configs will be generated automatically according to inputs
-    def enable_testing_on_place(self, target=None, precision=None, layout=None, thread=None, places=None) -> None:
+    def enable_testing_on_place(self,
+                                target=None,
+                                precision=None,
+                                layout=None,
+                                thread=None,
+                                places=None) -> None:
         # set thread_num
-        if isinstance(thread,list):
+        if isinstance(thread, list):
             self.thread_num = list(set(self.thread_num + thread))
-        if isinstance(thread,int):
+        if isinstance(thread, int):
             self.thread_num.append(thread)
             self.thread_num = list(self.thread_num)
 
@@ -430,18 +456,16 @@ class AutoScanBaseTest(unittest.TestCase):
             self.valid_places.append(places)
             return
         # otherwise we will generate a list[Place] from the inputed[target\precision\layout]
-        assert  (target is not None)
-        target_ = target if isinstance(target,list) else [target]
+        assert (target is not None)
+        target_ = target if isinstance(target, list) else [target]
         precision_ = precision if isinstance(precision, list) else [precision]
-        layout_ = precision if isinstance(layout,list) else [layout]
+        layout_ = layout if isinstance(layout, list) else [layout]
         for tar_, pre_, lay_ in product(target_, precision_, layout_):
             self.valid_places.append([Place(tar_, pre_, lay_)])
         return
 
-
     def get_target(self) -> str:
         return self.args.target
-
 
     def is_actived(self) -> bool:
         for valid_place_ in self.valid_places:
@@ -454,13 +478,13 @@ class AutoScanBaseTest(unittest.TestCase):
 
     # get valid test configs
     @staticmethod
-    def target_to_predictor_configs(self,target:str) -> List[CxxConfig]:
-       configs_ = []
-       for elem_ in self.valid_places:
-           if target in elem_[0]:
-               for thread_ in self.thread_num:
-                 config_ = CxxConfig()
-                 config_.set_valid_places(elem_)
-                 config_.set_threads(thread_)
-                 configs_.append(config_)
-       return configs_
+    def target_to_predictor_configs(self, target: str) -> List[CxxConfig]:
+        configs_ = []
+        for elem_ in self.valid_places:
+            if target in elem_[0]:
+                for thread_ in self.thread_num:
+                    config_ = CxxConfig()
+                    config_.set_valid_places(elem_)
+                    config_.set_threads(thread_)
+                    configs_.append(config_)
+        return configs_

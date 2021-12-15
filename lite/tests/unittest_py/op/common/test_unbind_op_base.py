@@ -23,24 +23,26 @@ import unittest
 import hypothesis
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=2, max_value=5), min_size = 4, max_size=4))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=2, max_value=5), min_size=4, max_size=4))
     axis_data = draw(st.integers(min_value=1, max_value=3))
-    
-    output_string =  ["out"] * in_shape[axis_data]
+
+    output_string = ["out"] * in_shape[axis_data]
     for i in range(in_shape[axis_data]):
         output_string[i] += str(i)
-    
+
     unbind_op = OpConfig(
-        type = "unbind",
-        inputs = {"X" : ["input_data"]},
-        outputs = {"Out": output_string},
-        attrs = {"axis": axis_data})
+        type="unbind",
+        inputs={"X": ["input_data"]},
+        outputs={"Out": output_string},
+        attrs={"axis": axis_data})
     program_config = ProgramConfig(
         ops=[unbind_op],
         weights={},
-        inputs={
-            "input_data": TensorConfig(shape=in_shape),
-        },
+        inputs={"input_data": TensorConfig(shape=in_shape), },
         outputs=output_string)
     return program_config

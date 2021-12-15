@@ -23,33 +23,40 @@ import unittest
 import hypothesis
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), max_size=1))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=8), max_size=1))
     sub_block = draw(st.integers(min_value=1, max_value=8))
     is_scalar_condition = draw(st.booleans())
 
     def generate_input(*args, **kwargs):
         return np.random.random(in_shape).astype(np.float32)
+
     def generate_cond(*args, **kwargs):
         return np.random.random(in_shape).astype(np.bool)
+
     conditional_block_op = OpConfig(
-        type = "conditional_block",
-        inputs = {"Input" : ["input_data"],
-                 "Cond" : ["cond_data"],
-                 },
-        outputs = {"Out" : ["output_data"],
-                  "Scope" : ["scope_data"]},
-        attrs = {"is_scalar_condition" : is_scalar_condition,
-                "sub_block" : sub_block})
-    
+        type="conditional_block",
+        inputs={
+            "Input": ["input_data"],
+            "Cond": ["cond_data"],
+        },
+        outputs={"Out": ["output_data"],
+                 "Scope": ["scope_data"]},
+        attrs={
+            "is_scalar_condition": is_scalar_condition,
+            "sub_block": sub_block
+        })
+
     program_config = ProgramConfig(
         ops=[conditional_block_op],
         weights={},
         inputs={
-            "input_data" :
-            TensorConfig(data_gen=partial(generate_input)),
-            "cond_data" :
-            TensorConfig(data_gen=partial(generate_cond))
+            "input_data": TensorConfig(data_gen=partial(generate_input)),
+            "cond_data": TensorConfig(data_gen=partial(generate_cond))
         },
         outputs=["output_data", "scope_data"])
     return program_config
