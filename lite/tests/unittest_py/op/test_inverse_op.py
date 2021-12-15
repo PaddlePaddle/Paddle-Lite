@@ -27,20 +27,20 @@ import numpy as np
 from functools import partial
 import copy
 
-class TestAssignOp(AutoScanTest):
+class TestInverseOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,2])
+        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 2])
 
     def is_program_valid(self, program_config: ProgramConfig, predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
         in_shape = draw(st.lists(st.integers(
-            min_value=1, max_value=10), min_size=1, max_size=2))
+            min_value=1, max_value=64), min_size=1, max_size=2))
    
         def generate_input(*args, **kwargs):
-            last_dim = np.random.randint(low=1, high=3, size=[1]).astype(np.int32)
+            last_dim = np.random.randint(low=1, high=64, size=[1]).astype(np.int32)
             input_dim = copy.deepcopy(in_shape)
             input_dim.append(last_dim[0])   #last 2 dim must be equal
             input_dim.append(last_dim[0])

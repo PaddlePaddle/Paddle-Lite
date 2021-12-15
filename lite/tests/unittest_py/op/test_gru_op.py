@@ -26,13 +26,13 @@ import argparse
 import numpy as np
 from functools import partial
 
-class TestAssignOp(AutoScanTest):
+class TestGruOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1])
         #self.enable_testing_on_place(TargetType.ARM, PrecisionType.INT8, DataLayoutType.NCHW, thread=[1, 4])
-        #self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP16, DataLayoutType.NCHW, thread=[1, 4])
-        self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 4])
+        self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP16, DataLayoutType.NCHW, thread=[1, 2, 4])
+        self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 2, 4])
 
     def is_program_valid(self, program_config: ProgramConfig, predictor_config: CxxConfig) -> bool:
         x_dtype = program_config.inputs["input_data"].dtype
@@ -48,10 +48,9 @@ class TestAssignOp(AutoScanTest):
         bool_orimode = draw(st.sampled_from([True, False]))
         in_shape = draw(st.sampled_from([[20, 60], [30, 90], [40, 120], [60, 180]]))
         h0_1 = draw(st.sampled_from([3]))
-        process_type = draw(st.sampled_from(["type_fp32", "type_fp16", "type_int8"]))
         process_type = draw(st.sampled_from(["type_fp32"]))  #paddle only support float
         
-        #ref:lite/kernels/x86/gru_compute_test.cc
+        #FP32
         def generate_input(*args, **kwargs):
             return np.random.random([9, in_shape[1]]).astype(np.float32)
         def generate_weight(*args, **kwargs):
@@ -61,17 +60,7 @@ class TestAssignOp(AutoScanTest):
         def generate_h0(*args, **kwargs):
             return np.random.random([h0_1, in_shape[0]]).astype(np.float32)
         
-        #FP16
-        def generate_input_fp16(*args, **kwargs):
-            return np.random.random([9, in_shape[1]]).astype(np.float16)
-        def generate_weight_fp16(*args, **kwargs):
-            return np.random.random(in_shape).astype(np.float16)
-        def generate_bias_fp16(*args, **kwargs):
-            return np.random.random([1, in_shape[1]]).astype(np.float16)
-        def generate_h0_fp16(*args, **kwargs):
-            return np.random.random([h0_1, in_shape[0]]).astype(np.float16)
-        
-        #INT8
+        #INT8, to be supported
         def generate_input_int8(*args, **kwargs):
             return np.random.randint(low=0, high=10, size=[9, in_shape[1]]).astype(np.int8)
         def generate_weight_int8(*args, **kwargs):
@@ -117,25 +106,6 @@ class TestAssignOp(AutoScanTest):
                     TensorConfig(data_gen=partial(generate_bias)),
                     "h0":
                     TensorConfig(data_gen=partial(generate_h0)),
-                },
-                outputs=["hidden"])
-        elif process_type == "type_fp16":
-            build_ops.outputs_dtype = {"hidden" : np.float16, 
-                                       "batch_gate" : np.float16, 
-                                       "batch_reset_hidden_prev" : np.float16, 
-                                       "batch_hidden" : np.float16}
-            program_config = ProgramConfig(
-                ops=[build_ops],
-                weights={
-                    "weight_data":
-                    TensorConfig(data_gen=partial(generate_weight_fp16)),},
-                inputs={
-                    "input_data":
-                    TensorConfig(data_gen=partial(generate_input_fp16), lod=[[0, 2, 6, 9]]),
-                    "bias_data":
-                    TensorConfig(data_gen=partial(generate_bias_fp16)),
-                    "h0":
-                    TensorConfig(data_gen=partial(generate_h0_fp16)),
                 },
                 outputs=["hidden"])
         elif process_type == "type_int8":

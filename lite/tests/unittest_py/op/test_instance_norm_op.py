@@ -26,11 +26,11 @@ import argparse
 import numpy as np
 from functools import partial
 
-class TestAssignOp(AutoScanTest):
+class TestInstanceNormOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,2])
-        self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,2])
+        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 2])
+        self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 2, 4])
         opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
                           Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
                           Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
@@ -38,18 +38,23 @@ class TestAssignOp(AutoScanTest):
                           Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageFolder),
                           Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
                           Place(TargetType.Host, PrecisionType.FP32)]
+        metal_places = [Place(TargetType.Metal, PrecisionType.FP32, DataLayoutType.MetalTexture2DArray),
+                        Place(TargetType.Metal, PrecisionType.FP16, DataLayoutType.MetalTexture2DArray),
+                        Place(TargetType.ARM, PrecisionType.FP32),
+                        Place(TargetType.Host, PrecisionType.FP32)]
         # ToDo:
-        # OpenCL running error
+        # OpenCL and Metal running error
         #self.enable_testing_on_place(places=opencl_places)
-        #self.enable_testing_on_place(TargetType.METAL, PrecisionType.FP32, DataLayoutType.NCHW)
+        #self.enable_testing_on_place(places=metal_places)
 
+        
     def is_program_valid(self, program_config: ProgramConfig, predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
         #lite requires input has 4 dims and the min_val of shape should > 1
         in_shape=draw(st.lists(st.integers(
-                min_value=2, max_value=10), min_size=4, max_size=4))
+                min_value=2, max_value=64), min_size=4, max_size=4))
         epsilon = draw(st.floats(min_value=0.0, max_value=0.001))
 
         def generate_input(*args, **kwargs):
