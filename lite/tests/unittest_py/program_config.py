@@ -401,40 +401,50 @@ def create_quant_model(model,
 from typing import Optional
 from enum import Enum
 class TargetType(Enum):
-    Host = 0
-    X86 = 1
-    CUDA = 2
-    ARM = 3
-    OpenCL = 4
-    FPGA = 5
-    NPU = 6
-    MLU = 7
-    RKNPU = 8
-    APU = 9
-    HUAWEI_ASCEND_NPU = 10
-    INTEL_FPGA = 11
-    Any = 12
-    Metal = 13
+    Unk =0
+    Host = 1
+    X86 = 2
+    CUDA = 3
+    ARM = 4
+    OpenCL = 5
+    Any = 6
+    FPGA = 7
+    NPU = 8
+    XPU = 9
+    BM = 10
+    MLU = 11
+    RKNPU = 12
+    APU = 13
+    HUAWEI_ASCEND_NPU = 14
+    IMAGINATION_NNA =15
+    INTEL_FPGA = 16
+    Metal =17
+    NNAdapter = 18
 
 class PrecisionType(Enum):
-    FP16 = 0
+    Unk = 0
     FP32 = 1
-    FP64 = 2
-    UINT8 = 3
-    INT8 = 4
-    INT16 = 5
-    INT32 = 6
+    INT8 = 2
+    INT32 = 3
+    Any = 4
+    FP16 = 5
+    BOOL = 6
     INT64 = 7
-    BOOL = 8
-    Any = 9
+    INT16 = 8
+    UINT8 = 9
+    FP64 = 10
+
+
 class DataLayoutType(Enum):
-    NCHW = 0
-    NHWC = 1
-    ImageDefault = 2
-    ImageFolder = 3
-    ImageNW = 4
-    Any = 5
-    MetalTexture2DArray = 6
+    Unk = 0
+    NCHW = 1
+    Any = 2
+    NHWC = 3
+    ImageDefault = 4
+    ImageFolder = 5
+    ImageNW = 6
+    MetalTexture2DArray = 7
+    MetalTexture2D = 8
 
 def Place(target_type:TargetType, precision_type: Optional[PrecisionType]=None, data_layout:Optional[DataLayoutType] = None):
     place = target_type.name
