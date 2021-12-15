@@ -24,34 +24,36 @@ import hypothesis
 import hypothesis.strategies as st
 from hypothesis import assume
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(
-            min_value=1, max_value=10), min_size=4, max_size=4))
-    attr_shape = draw(st.lists(st.integers(min_value=0, max_value=4),
-        min_size=len(in_shape), max_size=len(in_shape)))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=10), min_size=4, max_size=4))
+    attr_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=0, max_value=4),
+            min_size=len(in_shape),
+            max_size=len(in_shape)))
     with_shape = draw(st.sampled_from([True, False]))
 
     def generate_input(*args, **kwargs):
         return np.random.random(in_shape).astype(np.float32)
-       
+
     build_ops = OpConfig(
-        type = "reshape2",
-        inputs = {
-            "X" : ["input_data"],
-        },
-        outputs = {
+        type="reshape2",
+        inputs={"X": ["input_data"], },
+        outputs={
             "Out": ["output_data"],
             "XShape": ["x_shape"],
         },
-        attrs = {
-            "shape": in_shape,
-        })
+        attrs={"shape": in_shape, })
     program_config = ProgramConfig(
         ops=[build_ops],
         weights={},
         inputs={
-            "input_data":
-            TensorConfig(data_gen=partial(generate_input)),
+            "input_data": TensorConfig(data_gen=partial(generate_input)),
         },
         outputs=["output_data"])
     return program_config
