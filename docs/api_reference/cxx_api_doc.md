@@ -499,7 +499,7 @@ bool metal_use_mps() const;
 class PaddlePredictor;
 ```
 
-`PaddlePredictor` 是 Paddle-Lite 的预测器，由 `CreatePaddlePredictor` 根据 `MobileConfig` 进行创建。用户可以根据 PaddlePredictor 提供的接口设置输入数据、执行模型预测、获取输出以及获得当前使用 lib 的版本信息等。
+`PaddlePredictor` 是 Paddle Lite 的预测器，由 `CreatePaddlePredictor` 根据 `MobileConfig` 进行创建。用户可以根据 PaddlePredictor 提供的接口设置输入数据、执行模型预测、获取输出以及获得当前使用 lib 的版本信息等。
 
 示例：
 
@@ -762,7 +762,7 @@ PowerMode详细说明如下：
 struct Tensor
 ```
 
-Tensor 是 Paddle-Lite 的数据组织形式，用于对底层数据进行封装并提供接口对数据进行操作，包括设置 Shape、数据、LoD 信息等。
+Tensor 是 Paddle Lite 的数据组织形式，用于对底层数据进行封装并提供接口对数据进行操作，包括设置 Shape、数据、LoD 信息等。
 
 *注意：用户应使用 `PaddlePredictor` 的 `GetInput` 和 `GetOuput` 接口获取输入 / 输出的 `Tensor`。*
 

@@ -23,6 +23,7 @@ import unittest
 import hypothesis
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
     ids_shape = draw(st.sampled_from([[3, 2, 2], [10, 9, 12], [4, 4, 3]]))
     ids_size = ids_shape[0] * ids_shape[1] * ids_shape[2]
@@ -31,30 +32,31 @@ def sample_program_configs(draw):
 
     def generate_ids_data(*args, **kwargs):
         if index_type == "int32":
-            return np.random.randint(0, ids_size, ids_shape).astype(np.int32) 
+            return np.random.randint(0, ids_size, ids_shape).astype(np.int32)
         else:
-            return np.random.randint(0, ids_size, ids_shape).astype(np.int64)  
+            return np.random.randint(0, ids_size, ids_shape).astype(np.int64)
 
     def generate_parents_data(*args, **kwargs):
         if index_type == "int32":
-            return np.random.randint(0, ids_shape[2], ids_shape).astype(np.int32) 
+            return np.random.randint(0, ids_shape[2],
+                                     ids_shape).astype(np.int32)
         else:
-            return np.random.randint(0, ids_shape[2], ids_shape).astype(np.int64)  
+            return np.random.randint(0, ids_shape[2],
+                                     ids_shape).astype(np.int64)
 
     gather_tree_op = OpConfig(
-        type = "gather_tree",
-        inputs = {
-                "Ids" : ["ids_data"], 
-                "Parents" : ["parents_data"]
-        },
-        outputs = {"Out": ["output_data"]},
-        attrs = {})
+        type="gather_tree",
+        inputs={"Ids": ["ids_data"],
+                "Parents": ["parents_data"]},
+        outputs={"Out": ["output_data"]},
+        attrs={})
     program_config = ProgramConfig(
         ops=[gather_tree_op],
         weights={},
         inputs={
-            "ids_data" : TensorConfig(data_gen=partial(generate_ids_data)),
-            "parents_data" : TensorConfig(data_gen=partial(generate_parents_data))
+            "ids_data": TensorConfig(data_gen=partial(generate_ids_data)),
+            "parents_data":
+            TensorConfig(data_gen=partial(generate_parents_data))
         },
         outputs=["output_data"])
     return program_config

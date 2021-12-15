@@ -17,20 +17,27 @@ import sys
 import os
 import re
 
+
 def compute_vsdot_vec_vec(vd, vn, vm):
     i = 0x4e809400 | int(vd) | (int(vn) << 5) | (int(vm) << 16)
     return '".word 0x{:08x}\\n"'.format(i) + \
            ' /* vsdot v{vd}.4s, v{vn}.16b, v{vm}.16b */'.format(
                vd=vd, vn=vn, vm=vm)
 
+
 def compute_vsdot_vec_elem(vd, vn, vm, idx):
-    i = 0x0d40fe20 | ((int(vd) & 0x7) << 29) | ((int(vd) & 0x8) << 3) | ((int(vn) & 0x7) << 1) | ((int(vn) & 0x8) << 20) | (int(vm) << 16) | (int(idx % 2) << 21)
+    i = 0x0d40fe20 | ((int(vd) & 0x7) << 29) | ((int(vd) & 0x8) << 3) | (
+        (int(vn) & 0x7) << 1) | (
+            (int(vn) & 0x8) << 20) | (int(vm) << 16) | (int(idx % 2) << 21)
     return '".word 0x{:08x}\\n"'.format(i) + \
            ' /* vsdot.s8 q{vd}, q{vn}, d{vm}[{idx}] */\\\r\n'.format(
                vd=vd, vn=vn, vm=vm, idx=idx)
 
+
 def match_vsdot_patten(line):
-    matched = re.search(r'vsdot.s8\s+q(.*?)\s*,\s*q(.*?)\s*,\s*d(.*?)\[(.*?)\].*', line, re.M|re.I)
+    matched = re.search(
+        r'vsdot.s8\s+q(.*?)\s*,\s*q(.*?)\s*,\s*d(.*?)\[(.*?)\].*', line, re.M |
+        re.I)
     if matched:
         vd = int(matched.group(1))
         vn = int(matched.group(2))
@@ -39,6 +46,7 @@ def match_vsdot_patten(line):
         return compute_vsdot_vec_elem(vd, vn, vm, idx)
     else:
         return line
+
 
 def parser_file(file_in, file_out):
     out = open(file_out, 'w')
@@ -49,6 +57,7 @@ def parser_file(file_in, file_out):
             out.write(new_line)
     else:
         print('input file {} not exist'.format(file_in))
+
 
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser('convert arm vsdot to machine code')
