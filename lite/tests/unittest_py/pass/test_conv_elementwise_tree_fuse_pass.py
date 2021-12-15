@@ -50,8 +50,10 @@ class TestConvElementwiseTreeFuse(FusePassAutoScanTest):
     def sample_program_configs(self, draw):
 
         #conv param or conv_transpose param
-        in_shape=draw(st.lists(st.integers(min_value=1, max_value=64), min_size=4, max_size=4))
-        weight_shape=draw(st.lists(st.integers(min_value=1, max_value=8), min_size=4, max_size=4))
+        in_shape=draw(st.lists(st.integers(min_value=2, max_value=24), min_size=3, max_size=3))
+        in_shape=[draw(st.integers(min_value=1, max_value=3))] + in_shape
+        weight_shape=draw(st.lists(st.integers(min_value=1, max_value=8), min_size=2, max_size=2))
+        weight_shape = weight_shape + [1, 1]
         paddings=draw(st.lists(st.integers(min_value=0, max_value=2), min_size=2, max_size=2))
         dilations=draw(st.sampled_from([[1, 1], [2, 2]]))
         groups=draw(st.sampled_from([1, 2, in_shape[1]]))
@@ -112,7 +114,7 @@ class TestConvElementwiseTreeFuse(FusePassAutoScanTest):
 
     def sample_predictor_configs(self):
         config = CxxConfig()
-        return self.get_predictor_configs(), ['io_copy', 'layout', 'io_copy',  'layout', self.ops[0].type, 'layout', 'io_copy'], (1e-5, 1e-5)
+        return self.get_predictor_configs(), [self.ops[0].type], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
