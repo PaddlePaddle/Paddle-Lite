@@ -79,7 +79,7 @@ TEST(trigonometrics_image2d_fp16, compute) {
     LOG(INFO) << "Get kernel:" << kernel->doc();
 
     lite::Tensor x, out;
-    operators::SinParam param;
+    operators::TrigonometricParam param;
     param.X = &x;
     param.Out = &out;
 
