@@ -30,6 +30,8 @@ class TestNearestInterpOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(TargetType.ARM, [PrecisionType.FP16, PrecisionType.FP32], DataLayoutType.NCHW, thread=[1, 4])
+        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 4])
+        self.enable_testing_on_place(TargetType.Metal, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 4])
         opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
                           Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
                           Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
@@ -89,13 +91,15 @@ class TestNearestInterpOp(AutoScanTest):
 
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
+            in_shape = list(program_config.inputs["input_data_x"].shape)
             target_str = self.get_target()
             if target_str == "OpenCL":
                 return True
+            if target_str == "Metal":
+                return True
             if target_str == "ARM":
-+               in_shape = list(program_config.inputs["input_data_x"].shape)
-+               if in_shape == [3, 10, 10, 14]:
-+                   return True
+                if in_shape == [3, 10, 10, 14]:
+                    return True
         self.add_ignore_check_case(
             teller1, IgnoreReasons.ACCURACY_ERROR,
             "The op output has diff in a specific case. We need to fix it as soon as possible.")
