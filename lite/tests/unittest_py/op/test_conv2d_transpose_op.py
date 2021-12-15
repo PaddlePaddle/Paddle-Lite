@@ -53,21 +53,23 @@ def update_padding_and_dilation(input_h, input_w, filter_h, filter_w, paddings,
 class TestConv2dTransposeOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
+        x86_valid_places = [
+            Place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW)
+        ]
+        self.enable_testing_on_place(places=x86_valid_places, thread=[1, 4])
+        '''
         arm_valid_places = [
             Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
             Place(TargetType.ARM, PrecisionType.FP16, DataLayoutType.NCHW),
             Place(TargetType.ARM, PrecisionType.INT8, DataLayoutType.NCHW)
         ]
         self.enable_testing_on_place(places=arm_valid_places, thread=[1, 4])
-        x86_valid_places = [
-            Place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW)
-        ]
-        self.enable_testing_on_place(places=x86_valid_places, thread=[1, 4])
         opencl_valid_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault)
         ]
         self.enable_testing_on_place(places=opencl_valid_places)
+        '''
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
