@@ -201,11 +201,7 @@ class TestConvActiveFuse(FusePassAutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        config = CxxConfig()
-        if self.get_target() == 'OpenCL':
-            return self.get_predictor_configs(), ['io_copy', 'layout', self.ops[0].type, 'layout', 'io_copy'], (1e-5, 1e-5)
-        else:
-            return self.get_predictor_configs(), [self.ops[0].type], (1e-5, 1e-5)
+        return self.get_predictor_configs(), [self.ops[0].type], (1e-4, 1e-5)
 
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
