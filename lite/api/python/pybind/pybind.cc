@@ -260,25 +260,25 @@ void BindLitePlace(py::module *m) {
       .value("HUAWEI_ASCEND_NPU", TargetType::kHuaweiAscendNPU)
       .value("IMAGINATION_NNA", TargetType::kImaginationNNA)
       .value("INTEL_FPGA", TargetType::kIntelFPGA)
-      .value("Metal", TargetType::kMetal);
-  .value("NNAdapter", TargetType::kNNAdapter)
+      .value("Metal", TargetType::kMetal)
+      .value("NNAdapter", TargetType::kNNAdapter);
 
-      // PrecisionType
-      py::enum_<PrecisionType>(*m, "PrecisionType")
-          .value("Unk", PrecisionType::kUnk)
-          .value("FP32", PrecisionType::kFloat)
-          .value("INT8", PrecisionType::kInt8)
-          .value("INT32", PrecisionType::kInt32)
-          .value("Any", PrecisionType::kAny);
-  .value("FP16", PrecisionType::kFP16)
+  // PrecisionType
+  py::enum_<PrecisionType>(*m, "PrecisionType")
+      .value("Unk", PrecisionType::kUnk)
+      .value("FP32", PrecisionType::kFloat)
+      .value("INT8", PrecisionType::kInt8)
+      .value("INT32", PrecisionType::kInt32)
+      .value("Any", PrecisionType::kAny)
+      .value("FP16", PrecisionType::kFP16)
       .value("BOOL", PrecisionType::kBool)
       .value("INT64", PrecisionType::kInt64)
       .value("INT16", PrecisionType::kInt16)
       .value("UINT8", PrecisionType::kUInt8)
-      .value("FP64", PrecisionType::kFP64)
+      .value("FP64", PrecisionType::kFP64);
 
-      // DataLayoutType
-      py::enum_<DataLayoutType>(*m, "DataLayoutType")
+  // DataLayoutType
+  py::enum_<DataLayoutType>(*m, "DataLayoutType")
       .value("Unk", DataLayoutType::kUnk)
       .value("NCHW", DataLayoutType::kNCHW)
       .value("Any", DataLayoutType::kAny)
