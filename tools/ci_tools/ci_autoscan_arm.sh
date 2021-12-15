@@ -1,14 +1,6 @@
-#!/bin/bash
-#
-# Start the CI task of examining Android inference lib compiling.
-set +x
+tart the CI task of unittest for op and pass.
+set -x
 set -e
-
-#####################################################################################################
-# Usage: test the publish period on Android platform.
-# Data: 20210104
-# Author: DannyIsFunny
-#####################################################################################################
 
 #####################################################################################################
 # 1. global variables, you can change them according to your requirements
@@ -19,15 +11,15 @@ PYTHON_VERSION=3.9
 SHELL_FOLDER=$(cd "$(dirname "$0")";pwd)
 WORKSPACE=${SHELL_FOLDER%tools/ci_tools*}
 # Common options
-BUILD_EXTRA=ON
-WITH_EXCEPTION=OFF
 TARGET_LIST="ARM,OpenCL,Metal"
 
 
 ####################################################################################################
 # Functions of operate unit test
 # Arguments:
-#   1. python version
+#   target_name: can be ARM or OpenCL or Metal
+# Globals:
+#   WORKSPACE
 ####################################################################################################
 function auto_scan_test {
   target_name=$1
@@ -53,14 +45,14 @@ function auto_scan_test {
 }
 
 ####################################################################################################
-# Functions of Android compiling test.
+# Functions of compiling test.
+# Arguments:
+#   --target_list
 # Globals:
-#   WORKSPACE
+#   WORKSPACE, PYTHON_VERSION
 ####################################################################################################
 function compile_publish_inference_lib {
   local target_list=""
-  local build_opencl=""
-  local build_metal=""
   # Extract arguments from command line
   for i in "$@"; do
     case $i in
@@ -75,27 +67,20 @@ function compile_publish_inference_lib {
   done
 
   local targets=(${target_list//,/ })
+  local build_opencl=OFF
+  local build_metal=OFF
   for target in ${targets[@]}; do
-    case $target in
-      OpenCL)
-        build_opencl=ON
-        shift
-        ;;
-      Metal)
-        build_metal=ON
-        shift
-        ;;
-      *)
-        echo "Invalid target name! Skip!"
-        shift
-        ;;
-    esac
+    if [[ "$target" == "OpenCL" ]]; then
+      build_opencl=ON
+    elif [[ "$target" == "Metal" ]]; then
+      build_metal=ON
+    fi
   done
 
   cd $WORKSPACE
 
   # Remove Compiling Cache
-  rm -rf build*
+  rm -rf build.macos.*
 
   # Step1. Compiling python installer on mac
   cmd_line="./lite/tools/build_macos.sh --with_python=ON --with_opencl=$build_opencl --with_metal=$build_metal --with_arm82_fp16=ON --python_version=$PYTHON_VERSION arm64"
@@ -138,9 +123,9 @@ function main() {
         exit 1
         ;;
     esac
-  done 
+  done
 
-  # Compile 
+  # Compile
   compile_publish_inference_lib --target_list=$TARGET_LIST
 
   # Run unittests
@@ -150,3 +135,5 @@ function main() {
   python$PYTHON_VERSION -m pip uninstall -y paddlelite
   echo "Success."
 }
+
+main $@
