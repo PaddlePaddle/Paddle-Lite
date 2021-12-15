@@ -18,16 +18,11 @@ PYTHON_VERSION=3.9
 # Absolute path of Paddle-Lite source code.
 SHELL_FOLDER=$(cd "$(dirname "$0")";pwd)
 WORKSPACE=${SHELL_FOLDER%tools/ci_tools*}
-# OpenCL
-BUILD_OPENCL=ON
-# Metal
-BUILD_METAL=ON
 # Common options
 BUILD_EXTRA=ON
 WITH_EXCEPTION=OFF
-TARGETS=(ARM OpenCL Metal)
+TARGET_LIST="ARM,OpenCL,Metal"
 
-# Model download url
 
 ####################################################################################################
 # Functions of operate unit test
@@ -63,13 +58,47 @@ function auto_scan_test {
 #   WORKSPACE
 ####################################################################################################
 function compile_publish_inference_lib {
+  local target_list=""
+  local build_opencl=""
+  local build_metal=""
+  # Extract arguments from command line
+  for i in "$@"; do
+    case $i in
+      --target_list=*)
+        target_list="${i#*=}"
+        shift
+        ;;
+      *)
+        shift
+        ;;
+    esac
+  done
+
+  local targets=(${target_list//,/ })
+  for target in ${targets[@]}; do
+    case $target in
+      OpenCL)
+        build_opencl=ON
+        shift
+        ;;
+      Metal)
+        build_metal=ON
+        shift
+        ;;
+      *)
+        echo "Invalid target name! Skip!"
+        shift
+        ;;
+    esac
+  done
+
   cd $WORKSPACE
 
   # Remove Compiling Cache
   rm -rf build*
 
   # Step1. Compiling python installer on mac
-  cmd_line="./lite/tools/build_macos.sh --with_python=ON --with_opencl=$BUILD_OPENCL --with_metal=$BUILD_METAL --with_arm82_fp16=ON --python_version=$PYTHON_VERSION arm64"
+  cmd_line="./lite/tools/build_macos.sh --with_python=ON --with_opencl=$build_opencl --with_metal=$build_metal --with_arm82_fp16=ON --python_version=$PYTHON_VERSION arm64"
   $cmd_line
   # Step2. Checking results: cplus and python inference lib.
   build_dir=build.macos.armmacos.armv8.metal.opencl
@@ -87,17 +116,37 @@ function compile_publish_inference_lib {
   fi
 }
 
-function run_test {
-  target_name=$1
-  # operate test
-  auto_scan_test  $target_name
+function run_test() {
+  local target_list=$1
+  local targets=(${target_list//,/ })
+
+  for target in ${targets[@]}; do
+    auto_scan_test $target
+  done
 }
 
-compile_publish_inference_lib
-for target in ${TARGETS[@]}; do
-  run_test $target
-done
+function main() {
+  # Parse command line.
+  for i in "$@"; do
+    case $i in
+      --target_list=*)
+        TARGET_LIST="${i#*=}"
+        shift
+        ;;
+      *)
+        echo "Unknown option, exit"
+        exit 1
+        ;;
+    esac
+  done 
 
-# uninstall paddlelite
-python$PYTHON_VERSION -m pip uninstall -y paddlelite
-echo "Success."
+  # Compile 
+  compile_publish_inference_lib --target_list=$TARGET_LIST
+
+  # Run unittests
+  run_test $TARGET_LIST
+
+  # Uninstall paddlelite
+  python$PYTHON_VERSION -m pip uninstall -y paddlelite
+  echo "Success."
+}
