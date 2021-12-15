@@ -26,54 +26,67 @@ import argparse
 import numpy as np
 from functools import partial
 
+
 class TestGruUnitOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,2])
-        self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 2, 4])
+        self.enable_testing_on_place(
+            TargetType.X86,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 2])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 2, 4])
 
-    def is_program_valid(self, program_config: ProgramConfig, predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
         bool_orimode = draw(st.sampled_from([True, False]))
-        in_shape = draw(st.sampled_from([[20, 60], [30, 90], [40, 120], [60, 180]]))
+        in_shape = draw(
+            st.sampled_from([[20, 60], [30, 90], [40, 120], [60, 180]]))
         batch = draw(st.integers(min_value=1, max_value=10))
-        
+
         def generate_input(*args, **kwargs):
             return np.random.random([batch, in_shape[1]]).astype(np.float32)
+
         def generate_weight(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
+
         def generate_hid(*args, **kwargs):
             return np.random.random([batch, in_shape[0]]).astype(np.float32)
-        
+
         build_ops = OpConfig(
-            type = "gru_unit",
-            inputs = {
-                "Input" : ["input_data"],
-                "HiddenPrev" : ["hid_data"],
-                "Weight" : ["weight_data"]
-                },
-            outputs = {
+            type="gru_unit",
+            inputs={
+                "Input": ["input_data"],
+                "HiddenPrev": ["hid_data"],
+                "Weight": ["weight_data"]
+            },
+            outputs={
                 "Gate": ["gate"],
                 "ResetHiddenPrev": ["reset_hidden"],
                 "Hidden": ["hidden"],
-                },
-            attrs = {
-                "activation": 2,      #tanh
-                "gate_activation": 1, #sigmoid
+            },
+            attrs={
+                "activation": 2,  #tanh
+                "gate_activation": 1,  #sigmoid
                 "origin_mode": bool_orimode,
             })
         program_config = ProgramConfig(
             ops=[build_ops],
             weights={
-                "weight_data":
-                TensorConfig(data_gen=partial(generate_weight)),},
+                "weight_data": TensorConfig(data_gen=partial(generate_weight)),
+            },
             inputs={
-                "input_data":
-                TensorConfig(data_gen=partial(generate_input), lod=[[0, 2, 6, 9]]),
-                "hid_data":
-                TensorConfig(data_gen=partial(generate_hid)),
+                "input_data": TensorConfig(
+                    data_gen=partial(generate_input), lod=[[0, 2, 6, 9]]),
+                "hid_data": TensorConfig(data_gen=partial(generate_hid)),
             },
             outputs=["hidden"])
         return program_config
@@ -86,6 +99,7 @@ class TestGruUnitOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
