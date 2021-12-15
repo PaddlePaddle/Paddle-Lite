@@ -310,7 +310,8 @@ class AutoScanBaseTest(unittest.TestCase):
                             # pass unit test: we will not check fusion in ignore case
                             self.assert_op_list(opt_model_bytes, op_list_)
                     else:
-                        self.assert_kernel_type(opt_model_bytes, op_list_, paddlelite_config)
+                        self.assert_kernel_type(opt_model_bytes, op_list_,
+                                                paddlelite_config)
                 except Exception as e:
                     self.fail_log(
                         self.paddlelite_config_str(pred_config) +
@@ -364,22 +365,34 @@ class AutoScanBaseTest(unittest.TestCase):
 
         for i in range(main_block.op_size()):
             if main_block.op(i).type() in op_list:
-                kernel_type_info = main_block.op(i).attr("__@kernel_type_attr@__").split("/")
-                self.assertTrue(len(kernel_type_info) == 5, "Incompleted kernel info of {}:{}".format(main_block.op(i).type(), main_block.op(i).attr("__@kernel_type_attr@__")))
+                kernel_type_info = main_block.op(i).attr(
+                    "__@kernel_type_attr@__").split("/")
+                self.assertTrue(
+                    len(kernel_type_info) == 5,
+                    "Incompleted kernel info of {}:{}".format(
+                        main_block.op(i).type(),
+                        main_block.op(i).attr("__@kernel_type_attr@__")))
                 current_target_ = TargetType(int(kernel_type_info[2]))
                 current_precision_ = PrecisionType(int(kernel_type_info[3]))
                 current_layout_ = DataLayoutType(int(kernel_type_info[4]))
-                correct_kernel_flag_ = (target_ == current_target_) and (precision_ == current_precision_ or current_precision_ == PrecisionType.Any) and (layout_ == current_layout_ or current_layout_ == DataLayoutType.Any)
-                self.assertTrue(correct_kernel_flag_ == True, "Expected kernel_type of op {} is ({},{},{}), but now it's ({},{},{})".format(main_block.op(i).type(), target_, precision_, layout_, current_target_, current_precision_, current_layout_))
+                correct_kernel_flag_ = (target_ == current_target_) and (
+                    precision_ == current_precision_ or
+                    current_precision_ == PrecisionType.Any) and (
+                        layout_ == current_layout_ or
+                        current_layout_ == DataLayoutType.Any)
+                self.assertTrue(
+                    correct_kernel_flag_ == True,
+                    "Expected kernel_type of op {} is ({},{},{}), but now it's ({},{},{})".
+                    format(
+                        main_block.op(i).type(), target_, precision_, layout_,
+                        current_target_, current_precision_, current_layout_))
 
-
-    def run_and_statis(
-            self,
-            quant=False,
-            max_examples=100,
-            reproduce=None,
-            min_success_num=25,
-            passes=None ):
+    def run_and_statis(self,
+                       quant=False,
+                       max_examples=100,
+                       reproduce=None,
+                       min_success_num=25,
+                       passes=None):
 
         settings.register_profile(
             "dev",

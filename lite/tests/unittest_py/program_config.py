@@ -405,7 +405,7 @@ from enum import Enum
 
 
 class TargetType(Enum):
-    Unk =0
+    Unk = 0
     Host = 1
     X86 = 2
     CUDA = 3
@@ -420,9 +420,9 @@ class TargetType(Enum):
     RKNPU = 12
     APU = 13
     HUAWEI_ASCEND_NPU = 14
-    IMAGINATION_NNA =15
+    IMAGINATION_NNA = 15
     INTEL_FPGA = 16
-    Metal =17
+    Metal = 17
     NNAdapter = 18
 
 
@@ -438,6 +438,7 @@ class PrecisionType(Enum):
     INT16 = 8
     UINT8 = 9
     FP64 = 10
+
 
 class DataLayoutType(Enum):
     Unk = 0
