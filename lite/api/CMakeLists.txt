@@ -75,6 +75,9 @@ if (NOT LITE_ON_TINY_PUBLISH)
     if (LITE_WITH_CUDA)
         target_link_libraries(paddle_full_api_shared "-Wl,--whole-archive" ${math_cuda} "-Wl,--no-whole-archive")
     endif()
+    if(LITE_WITH_METAL)
+        target_link_libraries(paddle_full_api_shared ${METAL_LIBRARY} ${MPS_LIBRARY} ${GRAPHIC} ${FOUNDATION_LIBRARY})
+    endif()
 
 
     #static library
@@ -203,6 +206,10 @@ if (LITE_WITH_PYTHON)
     # add library for opt_base
     add_subdirectory(python)
     lite_cc_library(lite_pybind SHARED SRCS python/pybind/pybind.cc tools/opt_base.cc DEPS ${full_lib_DEPS} paddle_api_full ${external_libs_DEPS}  pybind python)
+endif()
+
+if(LITE_WITH_METAL)
+    target_link_libraries(lite_pybind ${METAL_LIBRARY} ${MPS_LIBRARY} ${GRAPHIC} ${FOUNDATION_LIBRARY})
 endif()
 
 if(NOT IOS AND NOT LITE_ON_TINY_PUBLISH)

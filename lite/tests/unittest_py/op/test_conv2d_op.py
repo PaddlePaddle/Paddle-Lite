@@ -25,21 +25,24 @@ import hypothesis.strategies as st
 import numpy as np
 from functools import partial
 
+
 class TestConv2dOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
-        self.enable_testing_on_place(TargetType.ARM, [PrecisionType.FP32,PrecisionType.FP16,PrecisionType.INT8], DataLayoutType.NCHW, thread=[1,4])
-        opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-                          Place(TargetType.Host, PrecisionType.FP32)]
-        self.enable_testing_on_place(places=opencl_places)
+        self.enable_testing_on_place(
+            TargetType.X86,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            [PrecisionType.FP32, PrecisionType.FP16, PrecisionType.INT8],
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         if predictor_config.target() == TargetType.ARM:
             if predictor_config.precision() == PrecisionType.FP16 or predictor_config.precision() == PrecisionType.INT8:
                 return False
@@ -66,7 +69,10 @@ class TestConv2dOp(AutoScanTest):
         assume(in_shape[2] >= weight_shape[2])
         assume(in_shape[3] >= weight_shape[3])
 
-        paddings = draw(st.lists(st.integers(min_value=0, max_value=2), min_size=2, max_size=2))
+        paddings = draw(
+            st.lists(
+                st.integers(
+                    min_value=0, max_value=2), min_size=2, max_size=2))
         dilations = draw(st.sampled_from([[1, 1]]))
         padding_algorithm = draw(st.sampled_from(["VALID", "SAME"]))
         strides = draw(st.sampled_from([[1, 1], [2, 2]]))
@@ -77,10 +83,13 @@ class TestConv2dOp(AutoScanTest):
 
         def generate_input(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
+
         def generate_filter(*args, **kwargs):
             return np.random.random(weight_shape).astype(np.float32)
+
         def generate_bias(*args, **kwargs):
             return np.random.random([cout]).astype(np.float32)
+
         inputs_data = {"input_data":
                 TensorConfig(data_gen=partial(generate_input))}
         inputs_type = {"Input": ["input_data"], "Filter" : ["filter_data"]}
@@ -120,6 +129,7 @@ class TestConv2dOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
