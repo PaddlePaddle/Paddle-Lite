@@ -27,12 +27,19 @@ from functools import partial
 import random
 import numpy as np
 
+
 class TestBeamSearchOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         # precision has diff
         return False
 
@@ -47,33 +54,35 @@ class TestBeamSearchOp(AutoScanTest):
 
         def generate_pre_ids(*args, **kwargs):
             return np.random.randint(1, 5, in_shape).astype(np.int64)
+
         def generate_pre_score(*args, **kwargs):
             return np.random.uniform(1, 5, in_shape).astype(np.float32)
+
         def generate_ids(*args, **kwargs):
             return np.random.random(ids_shape).astype(np.int64)
+
         def generate_scores(*args, **kwargs):
             return np.random.random(ids_shape).astype(np.float32)
 
         beam_search_ops = OpConfig(
-                    type = "beam_search",
-                    inputs = {
-                        "pre_ids" : ["pre_ids_data"],
-                        "pre_scores" : ["pre_scores_data"],
-                        "ids" : ["ids_data"],
-                        "scores" : ["scores_data"]
-                    },
-                    outputs = {
-                        "selected_ids": ["selected_ids_data"],
-                        "selected_scores" : ["selected_scores_data"],
-                        "parent_idx" : ["parent_idx_data"]
-                    },
-                    attrs = {
-                        "level" : level,
-                        "beam_size" : beam_size,
-                        "end_id" : end_id,
-                        "is_accumulated" : is_accumulated
-                    }
-                )
+            type="beam_search",
+            inputs={
+                "pre_ids": ["pre_ids_data"],
+                "pre_scores": ["pre_scores_data"],
+                "ids": ["ids_data"],
+                "scores": ["scores_data"]
+            },
+            outputs={
+                "selected_ids": ["selected_ids_data"],
+                "selected_scores": ["selected_scores_data"],
+                "parent_idx": ["parent_idx_data"]
+            },
+            attrs={
+                "level": level,
+                "beam_size": beam_size,
+                "end_id": end_id,
+                "is_accumulated": is_accumulated
+            })
         program_config = ProgramConfig(
             ops=[beam_search_ops],
             weights={},
@@ -82,12 +91,14 @@ class TestBeamSearchOp(AutoScanTest):
                 TensorConfig(data_gen=partial(generate_pre_ids)),
                 "pre_scores_data":
                 TensorConfig(data_gen=partial(generate_pre_score)),
-                "ids_data":
-                TensorConfig(data_gen=partial(generate_ids), lod=lod_data),
-                "scores_data":
-                TensorConfig(data_gen=partial(generate_pre_score), lod=lod_data),
+                "ids_data": TensorConfig(
+                    data_gen=partial(generate_ids), lod=lod_data),
+                "scores_data": TensorConfig(
+                    data_gen=partial(generate_pre_score), lod=lod_data),
             },
-            outputs=["selected_ids_data", "selected_scores_data", "parent_idx_data"])
+            outputs=[
+                "selected_ids_data", "selected_scores_data", "parent_idx_data"
+            ])
         return program_config
 
     def sample_predictor_configs(self):
@@ -98,6 +109,7 @@ class TestBeamSearchOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

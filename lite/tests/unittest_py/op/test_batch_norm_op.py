@@ -27,81 +27,103 @@ from functools import partial
 import random
 import numpy as np
 
+
 class TestBatchNormOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 4])
-        self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 4])
-        opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-                          Place(TargetType.Host, PrecisionType.FP32)]
+        self.enable_testing_on_place(
+            TargetType.X86,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
         self.enable_testing_on_place(places=opencl_places)
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=4, max_size=4))
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=8), min_size=4, max_size=4))
         is_test_val = draw(st.sampled_from([True, False]))
         epsilon = draw(st.floats(min_value=0.00001, max_value=0.001))
         momentum = draw(st.floats(min_value=0.1, max_value=0.9))
 
         def generate_input(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
+
         def generate_scale(*args, **kwargs):
             return np.random.random([in_shape[1]]).astype(np.float32) + 0.5
+
         def generate_bias(*args, **kwargs):
             return np.random.random([in_shape[1]]).astype(np.float32)
+
         def generate_mean(*args, **kwargs):
             return np.random.random([in_shape[1]]).astype(np.float32)
+
         def generate_variance(*args, **kwargs):
             return np.random.random([in_shape[1]]).astype(np.float32)
-        
+
         batch_norm_ops = OpConfig(
-                    type = "batch_norm",
-                    inputs = {
-                        "X" : ["input_data"],
-                        "Scale" : ["scale_data"],
-                        "Bias" : ["bias_data"],
-                        "Mean" : ["mean_data"],
-                        "Variance" : ["variance_data"]
-                    },
-                    outputs = {
-                        "Y": ["output_data"],
-                        "MeanOut" : ["mean_data"],
-                        "VarianceOut" : ["variance_data"],
-                        "SavedMean" : ["saved_mean"],
-                        "SavedVariance" : ["saved_variance"]
-                    },
-                    attrs = {
-                        "is_test" : False,
-                        "trainable_statistics" : False,
-                        "data_layout" : "NCHW",
-                        "use_global_stats" : True,
-                        "epsilon" : epsilon,
-                        "momentum" : momentum
-                    }
-                )
+            type="batch_norm",
+            inputs={
+                "X": ["input_data"],
+                "Scale": ["scale_data"],
+                "Bias": ["bias_data"],
+                "Mean": ["mean_data"],
+                "Variance": ["variance_data"]
+            },
+            outputs={
+                "Y": ["output_data"],
+                "MeanOut": ["mean_data"],
+                "VarianceOut": ["variance_data"],
+                "SavedMean": ["saved_mean"],
+                "SavedVariance": ["saved_variance"]
+            },
+            attrs={
+                "is_test": False,
+                "trainable_statistics": False,
+                "data_layout": "NCHW",
+                "use_global_stats": True,
+                "epsilon": epsilon,
+                "momentum": momentum
+            })
         program_config = ProgramConfig(
             ops=[batch_norm_ops],
             weights={},
             inputs={
-                "input_data":
-                TensorConfig(data_gen=partial(generate_input)),
-                "scale_data":
-                TensorConfig(data_gen=partial(generate_scale)),
-                "bias_data":
-                TensorConfig(data_gen=partial(generate_bias)),
-                "mean_data":
-                TensorConfig(data_gen=partial(generate_mean)),
+                "input_data": TensorConfig(data_gen=partial(generate_input)),
+                "scale_data": TensorConfig(data_gen=partial(generate_scale)),
+                "bias_data": TensorConfig(data_gen=partial(generate_bias)),
+                "mean_data": TensorConfig(data_gen=partial(generate_mean)),
                 "variance_data":
                 TensorConfig(data_gen=partial(generate_variance)),
             },
-            outputs=["output_data", "mean_data", "variance_data", "saved_mean", "saved_variance"])
+            outputs=[
+                "output_data", "mean_data", "variance_data", "saved_mean",
+                "saved_variance"
+            ])
         return program_config
 
     def sample_predictor_configs(self):
@@ -112,6 +134,7 @@ class TestBatchNormOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
