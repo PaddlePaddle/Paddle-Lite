@@ -29,6 +29,10 @@ class TestMulOp(AutoScanTest):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)
 
+        # metal
+        metal_places = [Place(TargetType.Metal, PrecisionType.FP32, DataLayoutType.MetalTexture2DArray),
+                        Place(TargetType.Metal, PrecisionType.FP16, DataLayoutType.MetalTexture2DArray)]
+        self.enable_testing_on_place(places=metal_places)
 
     def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
         return False # ci run on arm_opencl error
