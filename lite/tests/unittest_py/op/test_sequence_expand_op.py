@@ -29,24 +29,34 @@ import argparse
 class TestSequenceExpandOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         dtype = program_config.inputs["x_data"].dtype
         if "float32" != dtype:
-            print("The input data type defined in Paddle can be float32, int32, int64. But input data type only support float32 on Host target in Paddle Lite, while got data type", dtype)
+            print(
+                "The input data type defined in Paddle can be float32, int32, int64. But input data type only support float32 on Host target in Paddle Lite, while got data type",
+                dtype)
             return False
         return True
 
     def sample_program_configs(self, draw):
-
         def generate_input(*args, **kwargs):
             if kwargs["type"] == "int32":
-                return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int32)
+                return np.random.randint(kwargs["low"], kwargs["high"],
+                                         kwargs["shape"]).astype(np.int32)
             elif kwargs["type"] == "int64":
-                return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int64)
+                return np.random.randint(kwargs["low"], kwargs["high"],
+                                         kwargs["shape"]).astype(np.int64)
             elif kwargs["type"] == "float32":
-                return (kwargs["high"] - kwargs["low"]) * np.random.random(kwargs["shape"]).astype(np.float32) + kwargs["low"]
+                return (kwargs["high"] - kwargs["low"]) * np.random.random(
+                    kwargs["shape"]).astype(np.float32) + kwargs["low"]
 
         def generate_lod(seq_num, max_len):
             seq_offset = []
@@ -61,7 +71,10 @@ class TestSequenceExpandOp(AutoScanTest):
         max_len = draw(st.integers(min_value=1, max_value=5))
         ref_level_data = draw(st.integers(min_value=-1, max_value=4))
         seq_num = draw(st.integers(min_value=1, max_value=7))
-        in_shape = draw(st.lists(st.integers(min_value=1, max_value=10), min_size=2, max_size=8))
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=10), min_size=2, max_size=8))
         lod_x = generate_lod(seq_num, max_len)
         lod_y = generate_lod(seq_num, max_len)
         in_shape[0] = lod_x[0][-1]
@@ -72,28 +85,43 @@ class TestSequenceExpandOp(AutoScanTest):
         # x lod level is <= 1; y lod level is > 0
         assume((np.array(lod_x)).shape[0] <= 1)
         assume((np.array(lod_y)).shape[0] > 0)
-        assume(ref_level_data == -1 or (ref_level_data >= 0 and ref_level_data < (np.array(lod_y)).shape[0]))
-        assume((np.array(lod_x)).shape[0] == 1 and x_lod_len == (len(lod_y[ref_level_data])))
+        assume(ref_level_data == -1 or
+               (ref_level_data >= 0 and
+                ref_level_data < (np.array(lod_y)).shape[0]))
+        assume((np.array(lod_x)).shape[0] == 1 and
+               x_lod_len == (len(lod_y[ref_level_data])))
 
         # ! The input data type defined in Paddle can be float32, int32, int64.
         # There is only Host implementention which only support float32.
         assume(input_type == "float32")
 
-
         sequence_expand_op = OpConfig(
-            type = "sequence_expand",
-            inputs = {"X" : ["x_data"], "Y" : ["y_data"]},
-            outputs = {"Out": ["output_data"]},
-            attrs = {"ref_level" : ref_level_data})
+            type="sequence_expand",
+            inputs={"X": ["x_data"],
+                    "Y": ["y_data"]},
+            outputs={"Out": ["output_data"]},
+            attrs={"ref_level": ref_level_data})
 
         program_config = ProgramConfig(
             ops=[sequence_expand_op],
             weights={},
             inputs={
-                "x_data":
-                TensorConfig(data_gen=partial(generate_input, type=input_type, low=-10, high=10, shape=in_shape), lod=lod_x),
-                "y_data":
-                TensorConfig(data_gen=partial(generate_input, type=input_type, low=-10, high=10, shape=in_shape), lod=lod_y)
+                "x_data": TensorConfig(
+                    data_gen=partial(
+                        generate_input,
+                        type=input_type,
+                        low=-10,
+                        high=10,
+                        shape=in_shape),
+                    lod=lod_x),
+                "y_data": TensorConfig(
+                    data_gen=partial(
+                        generate_input,
+                        type=input_type,
+                        low=-10,
+                        high=10,
+                        shape=in_shape),
+                    lod=lod_y)
             },
             outputs=["output_data"])
 
@@ -107,6 +135,7 @@ class TestSequenceExpandOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

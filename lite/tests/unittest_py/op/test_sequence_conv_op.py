@@ -29,10 +29,20 @@ import argparse
 class TestSequenceConvOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
-        self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
+        self.enable_testing_on_place(
+            TargetType.X86,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         if predictor_config.target() == TargetType.ARM:
             print("Output has diff on ARM. Skip.")
             return False
@@ -43,7 +53,12 @@ class TestSequenceConvOp(AutoScanTest):
         context_stride = 1
         context_length = 3
         kernel_num = draw(st.integers(min_value=2, max_value=8))
-        in_dims = draw(st.lists(st.integers(min_value=4, max_value=100), min_size=2, max_size=2))
+        in_dims = draw(
+            st.lists(
+                st.integers(
+                    min_value=4, max_value=100),
+                min_size=2,
+                max_size=2))
         filter_dims = [context_length * in_dims[1], kernel_num]
         lod_info = draw(st.sampled_from([[[0, 4]], [[0, 2, 4]]]))
         padding_trainable = draw(st.booleans())
@@ -51,41 +66,46 @@ class TestSequenceConvOp(AutoScanTest):
         assume(context_stride == 1)
         assume(len(in_dims) == 2 and len(filter_dims) == 2)
         if padding_trainable:
-            print('paddingTrainable == True is not supported for now.')
+            print('paddingTrainable == True is not supported by now.')
         assume(padding_trainable == False)
 
         def generate_input(*args, **kwargs):
             return np.random.random(in_dims).astype(np.float32)
+
         def generate_filter(*args, **kwargs):
             return np.random.random(filter_dims).astype(np.float32)
+
         def generate_padding(*args, **kwargs):
             begin_pad = np.max([0, -context_start])
             end_pad = np.max([0, context_start + context_length - 1])
             total_pad = begin_pad + end_pad
-            return np.random.uniform(
-                0.1, 1, [total_pad, in_dims[1]]).astype('float32')
+            return np.random.uniform(0.1, 1,
+                                     [total_pad, in_dims[1]]).astype('float32')
 
-        inputs_dict = {"X" : ["input_data"],
-                    "Filter" : ["filter_data"]}
-        inputs_gen_dict = {"input_data":
-                            TensorConfig(data_gen=partial(generate_input), lod=lod_info)}
+        inputs_dict = {"X": ["input_data"], "Filter": ["filter_data"]}
+        inputs_gen_dict = {
+            "input_data": TensorConfig(
+                data_gen=partial(generate_input), lod=lod_info)
+        }
         if padding_trainable:
             inputs_dict["PaddingData"] = ["padding_data"]
-            inputs_gen_dict["padding_data"] = TensorConfig(data_gen=partial(generate_padding))
+            inputs_gen_dict["padding_data"] = TensorConfig(
+                data_gen=partial(generate_padding))
 
         sequence_conv_op = OpConfig(
-            type = "sequence_conv",
-            inputs = inputs_dict,
-            outputs = {"Out": ["output_data"]},
-            attrs = {"contextStart" : context_start,
-                    "contextStride" : context_stride,
-                    "contextLength" : context_length,
-                    "paddingTrainable" : padding_trainable})
+            type="sequence_conv",
+            inputs=inputs_dict,
+            outputs={"Out": ["output_data"]},
+            attrs={
+                "contextStart": context_start,
+                "contextStride": context_stride,
+                "contextLength": context_length,
+                "paddingTrainable": padding_trainable
+            })
         program_config = ProgramConfig(
             ops=[sequence_conv_op],
             weights={
-                "filter_data":
-                TensorConfig(data_gen=partial(generate_filter))
+                "filter_data": TensorConfig(data_gen=partial(generate_filter))
             },
             inputs=inputs_gen_dict,
             outputs=["output_data"])
@@ -99,6 +119,7 @@ class TestSequenceConvOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

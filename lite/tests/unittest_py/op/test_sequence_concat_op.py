@@ -29,23 +29,34 @@ import argparse
 class TestSequenceConcatOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
+        self.enable_testing_on_place(
+            TargetType.X86,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
         def generate_input(*args, **kwargs):
             if kwargs["type"] == "int64":
-                return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int64)
+                return np.random.randint(kwargs["low"], kwargs["high"],
+                                         kwargs["shape"]).astype(np.int64)
             elif kwargs["type"] == "float32":
-                return (kwargs["high"] - kwargs["low"]) * np.random.random(kwargs["shape"]).astype(np.float32) + kwargs["low"]
+                return (kwargs["high"] - kwargs["low"]) * np.random.random(
+                    kwargs["shape"]).astype(np.float32) + kwargs["low"]
 
         input_type = draw(st.sampled_from(["int64", "float32"]))
         feature_len = draw(st.integers(min_value=3, max_value=90))
-        lod_info_x1 = generate_input(type="int64", low=0, high=10, shape=[1, feature_len+1])
-        lod_info_x2 = generate_input(type="int64", low=0, high=11, shape=[1, feature_len+1])
-        lod_info_x3 = generate_input(type="int64", low=0, high=12, shape=[1, feature_len+1])
+        lod_info_x1 = generate_input(
+            type="int64", low=0, high=10, shape=[1, feature_len + 1])
+        lod_info_x2 = generate_input(
+            type="int64", low=0, high=11, shape=[1, feature_len + 1])
+        lod_info_x3 = generate_input(
+            type="int64", low=0, high=12, shape=[1, feature_len + 1])
         lod_info_x1 = np.sort(lod_info_x1)
         lod_info_x2 = np.sort(lod_info_x2)
         lod_info_x3 = np.sort(lod_info_x3)
@@ -57,21 +68,39 @@ class TestSequenceConcatOp(AutoScanTest):
         assume(lod_info_x2[0][0] == lod_info_x3[0][0])
 
         sequence_concat_op = OpConfig(
-            type = "sequence_concat",
-            inputs = {"X" : ["input1_data", "input2_data", "input3_data"]},
-            outputs = {"Out": ["output_data"]},
-            attrs = {})
+            type="sequence_concat",
+            inputs={"X": ["input1_data", "input2_data", "input3_data"]},
+            outputs={"Out": ["output_data"]},
+            attrs={})
 
         program_config = ProgramConfig(
             ops=[sequence_concat_op],
             weights={},
             inputs={
-                "input1_data":
-                TensorConfig(data_gen=partial(generate_input, type=input_type, low=-10, high=10, shape=[x1_lod_len, feature_len]), lod=lod_info_x1),
-                "input2_data":
-                TensorConfig(data_gen=partial(generate_input, type=input_type, low=-10, high=10, shape=[x2_lod_len, feature_len]), lod=lod_info_x2),
-                "input3_data":
-                TensorConfig(data_gen=partial(generate_input, type=input_type, low=-10, high=10, shape=[x3_lod_len, feature_len]), lod=lod_info_x3),
+                "input1_data": TensorConfig(
+                    data_gen=partial(
+                        generate_input,
+                        type=input_type,
+                        low=-10,
+                        high=10,
+                        shape=[x1_lod_len, feature_len]),
+                    lod=lod_info_x1),
+                "input2_data": TensorConfig(
+                    data_gen=partial(
+                        generate_input,
+                        type=input_type,
+                        low=-10,
+                        high=10,
+                        shape=[x2_lod_len, feature_len]),
+                    lod=lod_info_x2),
+                "input3_data": TensorConfig(
+                    data_gen=partial(
+                        generate_input,
+                        type=input_type,
+                        low=-10,
+                        high=10,
+                        shape=[x3_lod_len, feature_len]),
+                    lod=lod_info_x3),
             },
             outputs=["output_data"])
 
@@ -85,6 +114,7 @@ class TestSequenceConcatOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
