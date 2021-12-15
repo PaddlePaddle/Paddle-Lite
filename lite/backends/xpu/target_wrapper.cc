@@ -243,28 +243,6 @@ void TargetWrapperXPU::MallocL3Cache(
 }
 
 void TargetWrapperXPU::FreeL3Cache() {
-  VLOG(3) << "raw_ctx gm_mgr size=" << tls_raw_ctx_->_gm_mgr.get_size();
-  VLOG(3) << "BEGIN PRINT MEMORY INFOS";
-  for (size_t block_idx = 0; block_idx < l3_block_dict.size(); block_idx++) {
-    XPUL3CacheBlock* cur_block = l3_block_dict[block_idx];
-    std::vector<size_t>& history = cur_block->history_;
-    int history_size = history.size();
-    std::sort(history.begin(), history.end());
-    size_t max_size = 0;
-    std::stringstream ss;
-    ss << "Size History: ";
-    for (int i = 0; i < history_size - 1; i++) {
-      ss << history[i] << ", ";
-      max_size = std::max(max_size, history[i]);
-    }
-    if (history_size > 0) {
-      ss << history[history_size - 1];
-      max_size = std::max(max_size, history[history_size - 1]);
-    }
-    VLOG(3) << "Block Idx is " << block_idx << ", history_size=" << history_size
-            << ", cur max size=" << max_size;
-    VLOG(3) << ss.str();
-  }
   if (local_l3_size != 0) {
     if (local_l3_ptr_ != nullptr) {
       TargetWrapperXPU::Free(local_l3_ptr_);

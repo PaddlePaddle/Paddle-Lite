@@ -29,7 +29,6 @@ void ReadFromArrayCompute::Run() {
   int64_t id;
   TargetWrapperXPU::MemcpySync(
       &id, param.I->raw_data(), sizeof(int64_t), IoDirection::DtoH);
-  VLOG(4) << "cpu id is " << static_cast<size_t>(id);
   CHECK_LT(static_cast<size_t>(id), param.X->size()) << "id is not valid";
   const auto& elem = (*param.X)[id];
   param.Out->Resize(elem.dims());
