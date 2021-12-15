@@ -23,27 +23,34 @@ import unittest
 import hypothesis
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    input1_shape = draw(st.lists(st.integers(min_value = 1), min_size = 4, max_size=4))
-    input2_shape = draw(st.lists(st.integers(min_value = 1), min_size = 4, max_size=4))
-    pad_size = draw(st.integers(min_value = 0))
-    kernel_size = draw(st.integers(min_value = 1))
-    max_displacement = draw(st.integers(min_value = 1))
-    stride1 = draw(st.integers(min_value = 1))
-    stride2 = draw(st.integers(min_value = 1))
-    corr_type_multiply = draw(st.integers(min_value = 1))
+    input1_shape = draw(
+        st.lists(
+            st.integers(min_value=1), min_size=4, max_size=4))
+    input2_shape = draw(
+        st.lists(
+            st.integers(min_value=1), min_size=4, max_size=4))
+    pad_size = draw(st.integers(min_value=0))
+    kernel_size = draw(st.integers(min_value=1))
+    max_displacement = draw(st.integers(min_value=1))
+    stride1 = draw(st.integers(min_value=1))
+    stride2 = draw(st.integers(min_value=1))
+    corr_type_multiply = draw(st.integers(min_value=1))
 
     correlation_op = OpConfig(
-        type = "correlation",
-        inputs = {"Input1" : ["input1"],
-                  "Input2" : ["input2"]},
-        outputs = {"Output": ["output"]},
-        attrs = {"pad_size" : pad_size,
-                 "kernel_size" : kernel_size,
-                 "max_displacement" : max_displacement,
-                 "stride1" : stride1,
-                 "stride2" : stride2,
-                 "corr_type_multiply" : corr_type_multiply})
+        type="correlation",
+        inputs={"Input1": ["input1"],
+                "Input2": ["input2"]},
+        outputs={"Output": ["output"]},
+        attrs={
+            "pad_size": pad_size,
+            "kernel_size": kernel_size,
+            "max_displacement": max_displacement,
+            "stride1": stride1,
+            "stride2": stride2,
+            "corr_type_multiply": corr_type_multiply
+        })
 
     program_config = ProgramConfig(
         ops=[correlation_op],

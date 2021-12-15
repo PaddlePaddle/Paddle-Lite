@@ -24,23 +24,32 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 
+
 class TestIdentifyDropoutEleminatePass(FusePassAutoScanTest):
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, *args, **kwargs):
-        return test_identity_dropout_eliminate_pass_base.sample_program_configs(*args, **kwargs)
+        return test_identity_dropout_eliminate_pass_base.sample_program_configs(
+            *args, **kwargs)
 
     def sample_predictor_configs(self):
         config = CxxConfig()
-        config.set_valid_places({Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)})
+        config.set_valid_places(
+            {Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)})
         yield config, ["assign"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25, passes=["lite_identity_dropout_eliminate_pass"])
+        self.run_and_statis(
+            quant=False,
+            max_examples=25,
+            passes=["lite_identity_dropout_eliminate_pass"])
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

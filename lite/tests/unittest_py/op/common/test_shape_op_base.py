@@ -24,11 +24,14 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(
-        st.integers(
-            min_value=1, max_value=64), min_size=1, max_size=4))
-    input_type = draw(st.sampled_from(["type_float", "type_int", "type_int64"]))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=64), min_size=1, max_size=4))
+    input_type = draw(
+        st.sampled_from(["type_float", "type_int", "type_int64"]))
 
     def generate_input(*args, **kwargs):
         if input_type == "type_float":
@@ -39,22 +42,17 @@ def sample_program_configs(draw):
             return np.random.randint(in_shape).astype(np.int64)
 
     ops_config = OpConfig(
-        type = "shape",
-        inputs = {
-            "Input": ["input_data"]
-        },
-        outputs = {
-            "Out": ["output_data"]
-        },
-        attrs = {}
-        )
+        type="shape",
+        inputs={"Input": ["input_data"]},
+        outputs={"Out": ["output_data"]},
+        attrs={})
 
     program_config = ProgramConfig(
         ops=[ops_config],
         weights={},
         inputs={
-            "input_data": 
-            TensorConfig(data_gen=partial(generate_input), lod = [[0, 2]])
+            "input_data": TensorConfig(
+                data_gen=partial(generate_input), lod=[[0, 2]])
         },
         outputs=["output_data"])
 

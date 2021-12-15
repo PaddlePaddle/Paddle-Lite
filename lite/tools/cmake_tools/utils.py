@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 def gen_use_kernel_statement(op_type, target, precision, layout, alias):
-    return 'USE_LITE_KERNEL(%s, %s, %s, %s, %s);' %(
-        op_type, target, precision, layout, alias
-    )
+    return 'USE_LITE_KERNEL(%s, %s, %s, %s, %s);' % (op_type, target,
+                                                     precision, layout, alias)

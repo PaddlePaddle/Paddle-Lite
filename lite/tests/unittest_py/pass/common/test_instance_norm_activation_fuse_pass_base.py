@@ -24,11 +24,16 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape=draw(st.lists(st.integers(min_value=2, max_value=64), min_size=2, max_size=4))
-    epsilon_data=draw(st.floats(min_value=0.0, max_value=0.001))     
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=2, max_value=64), min_size=2, max_size=4))
+    epsilon_data = draw(st.floats(min_value=0.0, max_value=0.001))
 
     act_type = draw(st.sampled_from(['relu', 'relu6', 'leaky_relu']))
+
     def generate_act_attrs(act_type_str):
         attrs = {}
         if act_type_str == 'relu6':
@@ -38,17 +43,24 @@ def sample_program_configs(draw):
         return attrs
 
     instance_norm_op = OpConfig(
-        type = "instance_norm",
-        inputs = {"X": ["input_data"],"Scale":["scale_data"],"Bias":["bisa_data"]},
-        outputs = {"Y": ["y_output_data"], "SavedMean": ["SavedMean_data"], "SavedVariance": ["SavedVariance_data"]},
-        attrs = {"epsilon": epsilon_data})
+        type="instance_norm",
+        inputs={
+            "X": ["input_data"],
+            "Scale": ["scale_data"],
+            "Bias": ["bisa_data"]
+        },
+        outputs={
+            "Y": ["y_output_data"],
+            "SavedMean": ["SavedMean_data"],
+            "SavedVariance": ["SavedVariance_data"]
+        },
+        attrs={"epsilon": epsilon_data})
 
     active_op = OpConfig(
-        type = act_type,
-        inputs = {"X": ["y_output_data"]},
-        outputs = {"Out": ["output_data"]},
-        attrs = generate_act_attrs(act_type))
-
+        type=act_type,
+        inputs={"X": ["y_output_data"]},
+        outputs={"Out": ["output_data"]},
+        attrs=generate_act_attrs(act_type))
 
     ops = [instance_norm_op, active_op]
     program_config = ProgramConfig(
@@ -57,7 +69,7 @@ def sample_program_configs(draw):
         inputs={
             "input_data": TensorConfig(shape=in_shape),
             "scale_data": TensorConfig(shape=[in_shape[1]]),
-            "bisa_data": TensorConfig(shape=[in_shape[1]])          
+            "bisa_data": TensorConfig(shape=[in_shape[1]])
         },
         outputs=["output_data"])
     return program_config

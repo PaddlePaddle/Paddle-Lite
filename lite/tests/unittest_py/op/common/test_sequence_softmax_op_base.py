@@ -24,34 +24,32 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(
-        st.integers(
-            min_value=1, max_value=1), min_size=0, max_size=3))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=1), min_size=0, max_size=3))
     in_shape.insert(0, 110)
-    lod_data = draw(st.sampled_from([[[0, 110]], [[0, 0, 110]], 
-            [[0, 1, 110]], [[0, 0, 1, 110]],[[0, 1, 1, 110]]]))
+    lod_data = draw(
+        st.sampled_from([[[0, 110]], [[0, 0, 110]], [[0, 1, 110]],
+                         [[0, 0, 1, 110]], [[0, 1, 1, 110]]]))
 
     def generate_input(*args, **kwargs):
         return np.random.uniform(0.1, 1, in_shape).astype('float32')
 
     ops_config = OpConfig(
-        type = "sequence_softmax",
-        inputs = {
-            "X": ["input_data"],
-        },
-        outputs = {
-            "Out": ["output_data"]
-        },
-        attrs = {}
-        )
+        type="sequence_softmax",
+        inputs={"X": ["input_data"], },
+        outputs={"Out": ["output_data"]},
+        attrs={})
 
     program_config = ProgramConfig(
         ops=[ops_config],
         weights={},
         inputs={
-            "input_data": 
-            TensorConfig(data_gen=partial(generate_input), lod=lod_data)
+            "input_data": TensorConfig(
+                data_gen=partial(generate_input), lod=lod_data)
         },
         outputs=["output_data"])
 

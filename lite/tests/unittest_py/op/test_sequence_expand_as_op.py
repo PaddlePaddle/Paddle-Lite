@@ -29,57 +29,90 @@ import argparse
 class TestSequenceExpandAsOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
-        self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
+        self.enable_testing_on_place(
+            TargetType.X86,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         target_type = predictor_config.target()
         if target_type == TargetType.ARM:
             if program_config.inputs["x_data"].dtype != "float32":
-                print("The input data type only support float32 on ARM impl. Skip!")
+                print(
+                    "The input data type only support float32 on ARM impl. Skip!"
+                )
                 return False
         return True
 
     def sample_program_configs(self, draw):
-
         def generate_input(*args, **kwargs):
             if kwargs["type"] == "int32":
-                return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int32)
+                return np.random.randint(kwargs["low"], kwargs["high"],
+                                         kwargs["shape"]).astype(np.int32)
             elif kwargs["type"] == "int64":
-                return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int64)
+                return np.random.randint(kwargs["low"], kwargs["high"],
+                                         kwargs["shape"]).astype(np.int64)
             elif kwargs["type"] == "float32":
-                return (kwargs["high"] - kwargs["low"]) * np.random.random(kwargs["shape"]).astype(np.float32) + kwargs["low"]
+                return (kwargs["high"] - kwargs["low"]) * np.random.random(
+                    kwargs["shape"]).astype(np.float32) + kwargs["low"]
 
         input_type = draw(st.sampled_from(["int32", "int64", "float32"]))
-        x_shape = draw(st.lists(st.integers(min_value=1, max_value=10), min_size=2, max_size=2))
-        y_shape = draw(st.lists(st.integers(min_value=1, max_value=10), min_size=2, max_size=2))
-        y_lod = generate_input(type="int64", low=1, high=10, shape=[x_shape[0]+1])
+        x_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=10), min_size=2, max_size=2))
+        y_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=10), min_size=2, max_size=2))
+        y_lod = generate_input(
+            type="int64", low=1, high=10, shape=[x_shape[0] + 1])
         y_lod = list(set(y_lod))
         y_lod = np.sort(y_lod)
         y_lod[0] = 0
         assume(x_shape[0] == len(y_lod) - 1)
 
         sequence_expand_as_op = OpConfig(
-            type = "sequence_expand_as",
-            inputs = {"X" : ["x_data"], "Y" : ["y_data"]},
-            outputs = {"Out": ["output_data"]},
-            attrs = {})
+            type="sequence_expand_as",
+            inputs={"X": ["x_data"],
+                    "Y": ["y_data"]},
+            outputs={"Out": ["output_data"]},
+            attrs={})
 
         program_config = ProgramConfig(
             ops=[sequence_expand_as_op],
             weights={},
             inputs={
-                "x_data":
-                TensorConfig(data_gen=partial(generate_input, type=input_type, low=-10, high=10, shape=x_shape)),
-                "y_data":
-                TensorConfig(data_gen=partial(generate_input, type=input_type, low=-10, high=10, shape=y_shape), lod=[y_lod])
+                "x_data": TensorConfig(data_gen=partial(
+                    generate_input,
+                    type=input_type,
+                    low=-10,
+                    high=10,
+                    shape=x_shape)),
+                "y_data": TensorConfig(
+                    data_gen=partial(
+                        generate_input,
+                        type=input_type,
+                        low=-10,
+                        high=10,
+                        shape=y_shape),
+                    lod=[y_lod])
             },
             outputs=["output_data"])
 
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["sequence_expand_as"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["sequence_expand_as"], (1e-5,
+                                                                      1e-5)
 
     def add_ignore_pass_case(self):
         pass
@@ -91,6 +124,7 @@ class TestSequenceExpandAsOp(AutoScanTest):
             # Make sure to generate enough valid cases for ARM
             max_examples = 100
         self.run_and_statis(quant=False, max_examples=max_examples)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

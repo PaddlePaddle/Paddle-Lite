@@ -29,35 +29,55 @@ import argparse
 class TestScatterOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
-
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         target_type = predictor_config.target()
         if target_type == TargetType.ARM:
             index_dtype = program_config.inputs["index"].dtype
             index_shape = program_config.inputs["index"].shape
             if index_dtype != "int64":
-                print('Index only support int64 on ARM impl, but got data type is {}, skip!'.format(index_dtype))
+                print(
+                    'Index only support int64 on ARM impl, but got data type is {}, skip!'.
+                    format(index_dtype))
                 return False
             if len(index_shape) == 2:
-                print('Index only support 1-dim on ARM impl, but got dims is {}, skip!'.format(index_shape))
+                print(
+                    'Index only support 1-dim on ARM impl, but got dims is {}, skip!'.
+                    format(index_shape))
                 return False
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(min_value=1, max_value=7), min_size=2, max_size=6))
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=7), min_size=2, max_size=6))
         update_shape = in_shape
-        assume(len(update_shape) == len(in_shape) and update_shape[1:] == in_shape[1:])
+        assume(
+            len(update_shape) == len(in_shape) and
+            update_shape[1:] == in_shape[1:])
 
         # index'dims shape is 1 or 2 and index.dims[1] is 1
-        index_shape = draw(st.lists(st.integers(min_value=1, max_value=len(update_shape)), min_size=1, max_size=2))
+        index_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=len(update_shape)),
+                min_size=1,
+                max_size=2))
         index_shape[0] = in_shape[0]
-        assume(len(index_shape) == 1 or (len(index_shape) == 2 and index_shape[1] == 1))
+        assume(
+            len(index_shape) == 1 or
+            (len(index_shape) == 2 and index_shape[1] == 1))
 
         index_type = draw(st.sampled_from(["int32", "int64"]))
         overwrite = draw(st.booleans())
-
 
         def generate_data(*args, **kwargs):
             low, high = -10, 10
@@ -81,7 +101,8 @@ class TestScatterOp(AutoScanTest):
                 else:
                     return np.random.randint(low, high, shape).astype(np.int64)
             elif dtype == "float32":
-                return (high - low) * np.random.random(shape).astype(np.float32) + low
+                return (high - low
+                        ) * np.random.random(shape).astype(np.float32) + low
 
         def generate_index(*args, **kwargs):
             index_np = np.ones(index_shape).astype(np.int64)
@@ -92,31 +113,35 @@ class TestScatterOp(AutoScanTest):
             return index_np
 
         scatter_op = OpConfig(
-            type = "scatter",
-            inputs = {"X" : ["input_data"], "Ids" : ["index"], "Updates" : ["updates"]},
-            outputs = {"Out" : ["output_data"]},
-            attrs = {"overwrite" : overwrite})
+            type="scatter",
+            inputs={
+                "X": ["input_data"],
+                "Ids": ["index"],
+                "Updates": ["updates"]
+            },
+            outputs={"Out": ["output_data"]},
+            attrs={"overwrite": overwrite})
 
         program_config = ProgramConfig(
             ops=[scatter_op],
             weights={},
             inputs={
-                "input_data" : TensorConfig(data_gen=partial(generate_data, shape=in_shape)),
-                "index" : TensorConfig(data_gen=partial(generate_index, dtype=index_type)),
-                "updates" : TensorConfig(data_gen=partial(generate_data, shape=update_shape))
+                "input_data": TensorConfig(data_gen=partial(
+                    generate_data, shape=in_shape)),
+                "index": TensorConfig(data_gen=partial(
+                    generate_index, dtype=index_type)),
+                "updates": TensorConfig(data_gen=partial(
+                    generate_data, shape=update_shape))
             },
             outputs=["output_data"])
 
         return program_config
 
-
     def sample_predictor_configs(self):
         return self.get_predictor_configs(), ["scatter"], (1e-5, 1e-5)
 
-
     def add_ignore_pass_case(self):
         pass
-
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()
