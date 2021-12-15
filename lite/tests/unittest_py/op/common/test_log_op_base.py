@@ -25,28 +25,26 @@ import hypothesis.strategies as st
 from hypothesis import assume
 import copy
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(
-        min_value=3, max_value=10), min_size=2, max_size=4))
-    
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=3, max_value=10), min_size=2, max_size=4))
+
     def generate_input(*args, **kwargs):
         return np.random.random(in_shape).astype(np.float32)
 
     build_ops = OpConfig(
-        type = "log",
-        inputs = {
-            "X" : ["input_data"],
-            },
-        outputs = {
-            "Out": ["output_data"],
-        },
-        attrs = {})
+        type="log",
+        inputs={"X": ["input_data"], },
+        outputs={"Out": ["output_data"], },
+        attrs={})
     program_config = ProgramConfig(
         ops=[build_ops],
         weights={},
         inputs={
-            "input_data":
-            TensorConfig(data_gen=partial(generate_input)),
+            "input_data": TensorConfig(data_gen=partial(generate_input)),
         },
         outputs=["output_data"])
     return program_config

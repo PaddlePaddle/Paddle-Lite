@@ -25,14 +25,25 @@ from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 import argparse
 
+
 class TestRsqrtOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,2,4])
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
-        return False # fix arm_opencl ci error
-        # return True
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
+        in_dtype = program_config.inputs["input_data"].dtype
+        index_dtype = program_config.inputs["index"].dtype
+        if in_dtype == "float32" and index_dtype == "int32":
+            return True
+        else:
+            return False
 
     def sample_program_configs(self, draw):
         def judge_update_shape(ref_shape, index_shape):
@@ -43,12 +54,17 @@ class TestRsqrtOp(AutoScanTest):
                 update_shape.append(ref_shape[i])
             return update_shape
 
-        input_type = "float32" # draw(st.sampled_from(["int32", "int64", "float32"]))
-        index_type = "int32" # draw(st.sampled_from(["int32", "int64"]))
-        out_dtype_dict = {"int32" : np.int32,
-                          "int64" : np.int64,
-                          "float32" : np.float32}
-        in_shape = draw(st.lists(st.integers(min_value=2, max_value=8), min_size=3, max_size=7))
+        input_type = draw(st.sampled_from(["int32", "int64", "float32"]))
+        index_type = draw(st.sampled_from(["int32", "int64"]))
+        out_dtype_dict = {
+            "int32": np.int32,
+            "int64": np.int64,
+            "float32": np.float32
+        }
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=2, max_value=8), min_size=3, max_size=7))
 
         index_np = np.vstack(
             [np.random.randint(
@@ -58,29 +74,46 @@ class TestRsqrtOp(AutoScanTest):
 
         def generate_data(*args, **kwargs):
             if kwargs["type"] == "int32":
-                return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int32)
+                return np.random.randint(kwargs["low"], kwargs["high"],
+                                         kwargs["shape"]).astype(np.int32)
             elif kwargs["type"] == "int64":
-                return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int64)
+                return np.random.randint(kwargs["low"], kwargs["high"],
+                                         kwargs["shape"]).astype(np.int64)
             elif kwargs["type"] == "float32":
-                return kwargs["high"] * np.random.random(kwargs["shape"]).astype(np.float32) + kwargs["low"]
+                return kwargs["high"] * np.random.random(kwargs[
+                    "shape"]).astype(np.float32) + kwargs["low"]
 
         def generate_index_data(*args, **kwargs):
             return index_np
 
         scatter_nd_add_op = OpConfig(
-                type = "scatter_nd_add",
-                inputs = {"X" : ["input_data"], "Index" : ["index"], "Updates" : ["updates"]},
-                outputs = {"Out" : ["output_data"]},
-                outputs_dtype = {"output_data" : out_dtype_dict[input_type]},
-                attrs = {})
+            type="scatter_nd_add",
+            inputs={
+                "X": ["input_data"],
+                "Index": ["index"],
+                "Updates": ["updates"]
+            },
+            outputs={"Out": ["output_data"]},
+            outputs_dtype={"output_data": out_dtype_dict[input_type]},
+            attrs={})
 
         program_config = ProgramConfig(
             ops=[scatter_nd_add_op],
             weights={},
             inputs={
-                "input_data" : TensorConfig(data_gen=partial(generate_data, type=input_type, low=-10, high=10, shape=in_shape)),
-                "index" : TensorConfig(data_gen=partial(generate_index_data)),
-                "updates" : TensorConfig(data_gen=partial(generate_data, type=input_type, low=-10, high=10, shape=update_shape)),
+                "input_data": TensorConfig(data_gen=partial(
+                    generate_data,
+                    type=input_type,
+                    low=-10,
+                    high=10,
+                    shape=in_shape)),
+                "index": TensorConfig(data_gen=partial(generate_index_data)),
+                "updates": TensorConfig(data_gen=partial(
+                    generate_data,
+                    type=input_type,
+                    low=-10,
+                    high=10,
+                    shape=update_shape)),
             },
             outputs=["output_data"])
 
@@ -93,7 +126,14 @@ class TestRsqrtOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        target_str = self.get_target()
+        max_examples = 25
+        if target_str == "Host":
+            # Make sure to generate enough valid cases for Host
+            max_examples = 220
+        self.run_and_statis(
+            quant=False, min_success_num=25, max_examples=max_examples)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
