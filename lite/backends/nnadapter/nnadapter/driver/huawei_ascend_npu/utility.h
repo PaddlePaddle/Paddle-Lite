@@ -16,6 +16,7 @@
 
 #include <memory>
 #include <string>
+#include <tuple>
 #include <vector>
 #include "core/hal/types.h"
 #include "driver/huawei_ascend_npu/model_client.h"
@@ -30,11 +31,6 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-static int major_version = -1;
-static int minor_version = -1;
-static int patch_version = -1;
-static int bugfix_version = 0;
-
 // The following environment variables can be used at runtime:
 // Specify the list of device IDs, such as
 // HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0,1,2,3 or
@@ -42,12 +38,10 @@ static int bugfix_version = 0;
 #define HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS \
   "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS"
 
-#define LD_LIBRARY_PATH "LD_LIBRARY_PATH"
-
-#define NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MIN_VERSION( \
-    major, minor, patch, bugfix)                      \
-  NNADAPTE_HUAWEI_ASCEND_NPU_CANN_VERSION >=          \
-      ((major)*1000 + (minor)*100 + (patch)*10 + bugfix)
+#define NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MINIMUM_SUPPORTED_VERSION( \
+    major, minor, patch, bugfix)                                    \
+  CANN_MAJOR_VERSION >= major&& CANN_MINOR_VERSION >=               \
+      minor&& CANN_PATCH_VERSION >= patch&& CANN_BUGFIX_VERSION >= bugfix
 
 // Prepare AscendCL environment and register the finalizer to be called at
 // normal process termination
@@ -125,20 +119,17 @@ std::string ConvertPadModeCodeToGEPadMode(int pad_mode_code);
 std::string ConvertInterpolateModeCodeToGEInterpolateMode(
     int interpolate_mode_code);
 
-// Get real path
-inline std::string GetRealPath(const char* path);
-
 // Get Ascend CANN version
-inline void GetAscendCANNVersion();
+std::tuple<int, int, int, int> GetAscendCANNVersion();
 
-// Compose version number
-inline std::string ComposeCANNVersion();
-
-// Split CANN version into major, minor, patch and bugfix version
-inline std::string SplitCANNVersion();
+// Convert Ascend CANN version to strings
+std::string AscendCANNVersion2String(int major_version,
+                                     int minor_version,
+                                     int patch_version,
+                                     int bugfix_version);
 
 // Get Ascend soc name
-inline ge::AscendString GetAscendSocName();
+ge::AscendString GetAscendSocName();
 
 }  // namespace huawei_ascend_npu
 }  // namespace nnadapter

@@ -41,8 +41,7 @@ NNADAPTER_ROCKCHIP_NPU_SDK_ROOT="$(pwd)/rknpu_ddk"  # Download RKNPU SDK from ht
 NNADAPTER_WITH_IMAGINATION_NNA=OFF
 NNADAPTER_IMAGINATION_NNA_SDK_ROOT="$(pwd)/imagination_nna_sdk"
 NNADAPTER_WITH_HUAWEI_ASCEND_NPU=OFF
-NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest"
-NNADAPTER_HUAWEI_ASCEND_NPU_SDK_VERSION="3.3.0"
+NNADAPTER_HUAWEI_ASCEND_NPU_CANN_SDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest"
 NNADAPTER_WITH_AMLOGIC_NPU=OFF
 NNADAPTER_AMLOGIC_NPU_SDK_ROOT="$(pwd)/amlnpu_ddk"
 NNADAPTER_WITH_CAMBRICON_MLU=OFF
@@ -193,8 +192,7 @@ function init_cmake_mutable_options {
                         -DNNADAPTER_WITH_IMAGINATION_NNA=$NNADAPTER_WITH_IMAGINATION_NNA \
                         -DNNADAPTER_IMAGINATION_NNA_SDK_ROOT=$NNADAPTER_IMAGINATION_NNA_SDK_ROOT \
                         -DNNADAPTER_WITH_HUAWEI_ASCEND_NPU=$NNADAPTER_WITH_HUAWEI_ASCEND_NPU \
-                        -DNNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT=$NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT \
-                        -DNNADAPTER_HUAWEI_ASCEND_NPU_SDK_VERSION=$NNADAPTER_HUAWEI_ASCEND_NPU_SDK_VERSION \
+                        -DNNADAPTER_HUAWEI_ASCEND_NPU_CANN_SDK_ROOT=$NNADAPTER_HUAWEI_ASCEND_NPU_CANN_SDK_ROOT \
                         -DNNADAPTER_WITH_AMLOGIC_NPU=$NNADAPTER_WITH_AMLOGIC_NPU \
                         -DNNADAPTER_AMLOGIC_NPU_SDK_ROOT=$NNADAPTER_AMLOGIC_NPU_SDK_ROOT \
                         -DNNADAPTER_WITH_CAMBRICON_MLU=$NNADAPTER_WITH_CAMBRICON_MLU \
@@ -507,11 +505,7 @@ function main {
                 shift
                 ;;
             --nnadapter_huawei_ascend_npu_sdk_root=*)
-                NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT="${i#*=}"
-                shift
-                ;;
-            --nnadapter_huawei_ascend_npu_sdk_version=*)
-                NNADAPTER_HUAWEI_ASCEND_NPU_SDK_VERSION="${i#*=}"
+                NNADAPTER_HUAWEI_ASCEND_NPU_CANN_SDK_ROOT="${i#*=}"
                 shift
                 ;;
             --nnadapter_with_amlogic_npu=*)

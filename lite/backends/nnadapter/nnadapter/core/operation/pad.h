@@ -31,12 +31,6 @@ namespace operation {
   /* Pads */                                                             \
   auto pads_operand = input_operands[1];                                 \
   NNADAPTER_VLOG(5) << "pads: " << OperandToString(pads_operand);        \
-  auto pads_buffer = reinterpret_cast<int32_t*>(pads_operand->buffer);   \
-  int32_t pads_size = pads_operand->length / sizeof(int32_t);            \
-  std::vector<int32_t> pads(pads_buffer, pads_buffer + pads_size);       \
-  for (size_t i = 0; i < pads.size(); i++) {                             \
-    NNADAPTER_VLOG(5) << "pads[" << i << "]: " << pads[i];               \
-  }                                                                      \
   /* Mode */                                                             \
   auto mode = *reinterpret_cast<int32_t*>(input_operands[2]->buffer);    \
   NNADAPTER_VLOG(5) << "mode: " << mode;                                 \
