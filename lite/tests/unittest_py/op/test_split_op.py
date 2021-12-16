@@ -40,13 +40,32 @@ class TestSplitOp(AutoScanTest):
             TargetType.ARM, [PrecisionType.FP32, PrecisionType.INT64],
             DataLayoutType.NCHW,
             thread=[1, 4])
+        # metal demo
+        metal_places = [
+            Place(TargetType.Metal, PrecisionType.FP32,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.Metal, PrecisionType.FP16,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.ARM, PrecisionType.FP32),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=metal_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
         x_dtype = program_config.inputs["input_data"].dtype
+        x_shape = list(program_config.inputs["input_data"].shape)
+        axis = program_config.ops[0].attrs["axis"]
         if predictor_config.precision() == PrecisionType.INT64:
             if x_dtype != np.int64:
+                return False
+        if predictor_config.target() == TargetType.Metal:
+            if len(x_shape) == 2 or axis == 0:
+                return False
+            if axis == 1 and x_shape[0] != 1:
+                return False
+            if x_dtype != np.float32:
                 return False
         return True
 
@@ -151,7 +170,11 @@ class TestSplitOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=50)
+        target_str = self.get_target()
+        if target_str == "Metal":
+            self.run_and_statis(quant=False, max_examples=300)
+        else:
+            self.run_and_statis(quant=False, max_examples=50)
 
 
 if __name__ == "__main__":
