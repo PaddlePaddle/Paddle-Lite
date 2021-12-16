@@ -52,7 +52,7 @@ class TestAtanOp(AutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=8), min_size=1, max_size=4))
+                    min_value=1, max_value=8), min_size=4, max_size=4))
 
         atan_op = OpConfig(
             type="atan",
