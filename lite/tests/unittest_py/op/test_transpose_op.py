@@ -69,7 +69,12 @@ class TestFcOp(AutoScanTest):
                 st.integers(
                     min_value=1, max_value=8), min_size=4, max_size=4))
         # tranpose only support float32
+        # so we only feed input np.float
         in_dtype = draw(st.sampled_from([np.float32]))
+        use_mkldnn_data = False
+        target = self.get_target()
+        if(target == "X86"):
+            use_mkldnn_data = True
 
         def generate_X_data():
             return np.random.normal(0.0, 5.0, in_shape).astype(in_dtype)
@@ -88,7 +93,7 @@ class TestFcOp(AutoScanTest):
             attrs={
                 "axis": axis_int32_data,
                 "data_format": "AnyLayout",
-                "use_mkldnn": False,
+                "use_mkldnn": use_mkldnn_data,
             })
 
         program_config = ProgramConfig(

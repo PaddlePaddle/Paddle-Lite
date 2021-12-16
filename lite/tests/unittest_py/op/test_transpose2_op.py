@@ -68,7 +68,15 @@ class TestFcOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=8), min_size=4, max_size=4))
-        in_dtype = draw(st.sampled_from([np.float32, np.int32, np.int64]))
+        target = self.get_target()
+        use_mkldnn_data = False
+        if(target == "X86"):
+            use_mkldnn_data = True
+            in_dtype = draw(st.sampled_from([np.float32]))
+        elif(target == "ARM"):
+            in_dtype = draw(st.sampled_from([np.float64, np.int32, np.int64, np.int8]))
+            # ToDo : 
+            # fp16 can not be verified
 
         def generate_X_data():
             return np.random.normal(0.0, 5.0, in_shape).astype(in_dtype)
@@ -88,8 +96,9 @@ class TestFcOp(AutoScanTest):
             attrs={
                 "axis": axis_int32_data,
                 "data_format": "AnyLayout",
-                "use_mkldnn": False,
+                "use_mkldnn": use_mkldnn_data,
             })
+        transpose2_op.outputs_dtype = {"output_data": in_dtype}
 
         program_config = ProgramConfig(
             ops=[transpose2_op],
