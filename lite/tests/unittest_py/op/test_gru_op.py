@@ -62,7 +62,8 @@ class TestGruOp(AutoScanTest):
         is_rev = draw(st.sampled_from([False, True]))
         bool_orimode = draw(st.sampled_from([True, False]))
         in_shape = draw(
-            st.sampled_from([[20, 60], [30, 90], [40, 120], [60, 180]]))
+            st.sampled_from([[20, 60], [30, 90], [40, 120], [50, 150],
+                             [60, 180]]))
         h0_1 = draw(st.sampled_from([3]))
         process_type = draw(st.sampled_from(
             ["type_fp32"]))  #paddle only support float
@@ -193,7 +194,7 @@ class TestGruOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=50)
+        self.run_and_statis(quant=False, max_examples=60)
 
 
 if __name__ == "__main__":
