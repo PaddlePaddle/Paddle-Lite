@@ -23,12 +23,13 @@ import unittest
 import hypothesis
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
     shape0 = draw(st.integers(min_value=1, max_value=64))
     shape1 = draw(st.integers(min_value=1, max_value=64))
     shape2 = draw(st.integers(min_value=1, max_value=64))
-    batch0 = draw(st.integers(min_value=1, max_value=64)) 
-    batch1 = draw(st.integers(min_value=1, max_value=64)) 
+    batch0 = draw(st.integers(min_value=1, max_value=64))
+    batch1 = draw(st.integers(min_value=1, max_value=64))
     transpose_X = draw(st.booleans())
     transpose_Y = draw(st.booleans())
     if ((not transpose_X) and (not transpose_Y)):
@@ -45,17 +46,18 @@ def sample_program_configs(draw):
         Y_shape = [batch0, shape2, shape1]
 
     matmul_v2_op = OpConfig(
-        type = "matmul_v2",
-        inputs = {"X" : ["input_data_x"], "Y" : ["input_data_y"]},
-        outputs = {"Out" : ["output_data"]},
-        attrs = {"trans_x" : transpose_X, "trans_y" : transpose_Y})
+        type="matmul_v2",
+        inputs={"X": ["input_data_x"],
+                "Y": ["input_data_y"]},
+        outputs={"Out": ["output_data"]},
+        attrs={"trans_x": transpose_X,
+               "trans_y": transpose_Y})
     program_config = ProgramConfig(
         ops=[matmul_v2_op],
         weights={},
         inputs={
-            "input_data_x":
-            TensorConfig(shape=X_shape),
-            "input_data_y" : TensorConfig(shape=Y_shape)
+            "input_data_x": TensorConfig(shape=X_shape),
+            "input_data_y": TensorConfig(shape=Y_shape)
         },
         outputs={"output_data"})
     return program_config

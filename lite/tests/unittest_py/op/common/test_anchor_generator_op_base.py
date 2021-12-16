@@ -23,29 +23,43 @@ import unittest
 import hypothesis
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=4, max_size=4))
-    anchor_sizes = draw(st.lists(st.floats(min_value=1, max_value=10), min_size=1, max_size=4))
-    aspect_ratios = draw(st.lists(st.floats(min_value=1, max_value=10), min_size=1, max_size=4))
-    variances = draw(st.lists(st.floats(min_value=1, max_value=10), min_size=4, max_size=4))
-    stride = draw(st.lists(st.floats(min_value=1, max_value=10), min_size=2, max_size=2))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=8), min_size=4, max_size=4))
+    anchor_sizes = draw(
+        st.lists(
+            st.floats(
+                min_value=1, max_value=10), min_size=1, max_size=4))
+    aspect_ratios = draw(
+        st.lists(
+            st.floats(
+                min_value=1, max_value=10), min_size=1, max_size=4))
+    variances = draw(
+        st.lists(
+            st.floats(
+                min_value=1, max_value=10), min_size=4, max_size=4))
+    stride = draw(
+        st.lists(
+            st.floats(
+                min_value=1, max_value=10), min_size=2, max_size=2))
 
     anchor_generator_op = OpConfig(
-        type = "anchor_generator",
-        inputs = {"Input" : ["input_data"]},
-        outputs = {"Anchors": ["anchors_data"],
-                  "Variances": ["variance_data"]},
-        attrs = {"anchor_sizes": anchor_sizes,
-                "aspect_ratios": aspect_ratios,
-                "stride": stride,
-                "variances": variances,
-                })
+        type="anchor_generator",
+        inputs={"Input": ["input_data"]},
+        outputs={"Anchors": ["anchors_data"],
+                 "Variances": ["variance_data"]},
+        attrs={
+            "anchor_sizes": anchor_sizes,
+            "aspect_ratios": aspect_ratios,
+            "stride": stride,
+            "variances": variances,
+        })
     program_config = ProgramConfig(
         ops=[anchor_generator_op],
         weights={},
-        inputs={
-            "input_data":
-            TensorConfig(shape=in_shape)
-        },
+        inputs={"input_data": TensorConfig(shape=in_shape)},
         outputs=["anchors_data", "variance_data"])
     return program_config

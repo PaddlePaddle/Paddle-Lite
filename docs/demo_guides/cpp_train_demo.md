@@ -19,9 +19,9 @@
 
 ## Quick start
 
-### Step1 build paddle-lite
+### Step1 build paddle lite
 
-请按照 paddle lite 官方文档的教程编译 full_publish 的 paddle-lite lib。以 Linux 上编译为例，其具体的命令为：
+请按照 paddle lite 官方文档的教程编译 full_publish 的 paddle lite lib。以 Linux 上编译为例，其具体的命令为：
 
 ```shell
 ## 配置环境
@@ -152,7 +152,7 @@ Train cost, Step 8, Cost 248.444885
 Train cost, Step 9, Cost 325.135132
 ```
 
-c++ 与 paddle-lite命令：
+c++ 与 paddle lite命令：
 ```
 ./demo_trainer true
 ```
@@ -170,7 +170,7 @@ sample 7: Loss: 698.496
 sample 8: Loss: 248.445
 sample 9: Loss: 325.135
 ```
-
+ 
 ### Loss 曲线
 
 控制训练时的 batch size 为 20，每个 epoch 对训练数据做全局 shuffle，训练 100 个 epoch 后，Paddle 和 Paddle Lite 的 loss 曲线对比如下。
