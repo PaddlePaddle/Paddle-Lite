@@ -46,7 +46,7 @@ NNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG=""
 NNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT=""
 NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL=""
 # Huawei Ascend NPU options
-NNADAPTER_HUAWEI_ASCEND_NPU_CANN_SDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest"
+NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest"
 
 # if operating in mac env, we should expand the maximum file num
 os_name=$(uname -s)
@@ -589,7 +589,7 @@ function huawei_ascend_npu_build_and_test() {
     prepare_workspace $ROOT_DIR $BUILD_DIR
     local archs=(${ARCH_LIST//,/ })
     for arch in ${archs[@]}; do
-        sdk_root_dir=$NNADAPTER_HUAWEI_ASCEND_NPU_CANN_SDK_ROOT
+        sdk_root_dir=$NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT
         if [ "${arch}" == "x86" ]; then
             with_x86=ON
             with_arm=OFF
@@ -618,7 +618,7 @@ function huawei_ascend_npu_build_and_test() {
             -DLITE_BUILD_EXTRA=ON \
             -DLITE_WITH_NNADAPTER=ON \
             -DNNADAPTER_WITH_HUAWEI_ASCEND_NPU=ON \
-            -DNNADAPTER_HUAWEI_ASCEND_NPU_CANN_SDK_ROOT="$NNADAPTER_HUAWEI_ASCEND_NPU_CANN_SDK_ROOT" \
+            -DNNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT="$NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT" \
             -DCMAKE_BUILD_TYPE=Release
         make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 
@@ -628,7 +628,7 @@ function huawei_ascend_npu_build_and_test() {
         local nnadapter_device_lib_dir=${nnadapter_device_lib_path%/*}
         export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$nnadapter_runtime_lib_dir:$nnadapter_device_lib_dir"
         export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
-        export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/stub"
+        export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/stub:/usr/local/Ascend/driver/lib64/driver:/usr/local/Ascend/driver/lib64/common"
         export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$sdk_root_dir/fwkacllib/lib64:$sdk_root_dir/acllib/lib64:$sdk_root_dir/atc/lib64:$sdk_root_dir/opp/op_proto/built-in"
         export PYTHONPATH="$PYTHONPATH:$sdk_root_dir/fwkacllib/python/site-packages:$sdk_root_dir/acllib/python/site-packages:$sdk_root_dir/toolkit/python/site-packages:$sdk_root_dir/atc/python/site-packages:$sdk_root_dir/pyACL/python/site-packages/acl"
         export PATH="$PATH:$sdk_root_dir/atc/ccec_compiler/bin:$sdk_root_dir/acllib/bin:$sdk_root_dir/atc/bin"
@@ -1234,7 +1234,7 @@ function main() {
             shift
             ;;
         --nnadapter_huawei_ascend_npu_sdk_root=*)
-            NNADAPTER_HUAWEI_ASCEND_NPU_CANN_SDK_ROOT="${i#*=}"
+            NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT="${i#*=}"
             shift
             ;;
         android_cpu_build_and_test)

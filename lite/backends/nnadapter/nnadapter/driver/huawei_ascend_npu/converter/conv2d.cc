@@ -58,7 +58,7 @@ int ConvertConv2D(Converter* converter, hal::Operation* operation) {
                      output_channel_size);
   auto bias_operator = converter->ConvertOperand(bias_operand);
   std::shared_ptr<Operator> conv_operator = nullptr;
-#if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MINIMUM_SUPPORTED_VERSION(5, 0, 3, 1)
+#if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(5, 0, 3, 1)
   if (use_depthwise_conv && is_depthwise_mode) {
     auto depthwise_conv_op =
         converter->AddOperator<ge::op::DepthwiseConv2D>(output_operand);
@@ -89,7 +89,7 @@ int ConvertConv2D(Converter* converter, hal::Operation* operation) {
     SET_INPUT(normal_conv_op, bias, bias_operator);
     conv_operator = MAP_OUTPUT(normal_conv_op, y, output_operand);
   }
-#elif NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MINIMUM_SUPPORTED_VERSION(3, 3, 0, 0)
+#elif NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(3, 3, 0, 0)
   auto normal_conv_op = converter->AddOperator<ge::op::Conv2D>(output_operand);
   normal_conv_op->set_attr_pads(ge::Operator::OpListInt(
       {pad_height_top, pad_height_bottom, pad_width_left, pad_width_right}));

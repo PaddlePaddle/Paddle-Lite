@@ -34,30 +34,29 @@ void InitializeAscendCL() {
   static bool initialized = false;
   mtx.lock();
   if (!initialized) {
-    NNADAPTER_VLOG(5)
-        << "Get the installed version of the local Ascend CANN...";
-    std::tuple<int, int, int, int> ascend_cann_versions =
-        GetAscendCANNVersion();
-    int major_version, minor_version, patch_version, bugfix_version;
-    std::tie(major_version, minor_version, patch_version, bugfix_version) =
-        ascend_cann_versions;
-    NNADAPTER_VLOG(5) << "The installed version of the local Ascend CANN is "
-                      << AscendCANNVersion2String(major_version,
-                                                  minor_version,
-                                                  patch_version,
-                                                  bugfix_version);
-    NNADAPTER_VLOG(5) << "The version of Ascend CANN compiled by PaddleLite is "
-                      << AscendCANNVersion2String(CANN_MAJOR_VERSION,
-                                                  CANN_MINOR_VERSION,
-                                                  CANN_PATCH_VERSION,
-                                                  CANN_BUGFIX_VERSION);
-    if (major_version != CANN_MAJOR_VERSION &&
-        minor_version != CANN_MINOR_VERSION &&
-        patch_version != CANN_PATCH_VERSION &&
-        bugfix_version != CANN_BUGFIX_VERSION) {
-      NNADAPTER_LOG(WARNING) << "The installed version of the local Ascend "
-                                "CANN is inconsistent with the actual compiled "
-                                "version";
+    int major_version = 0, minor_version = 0, patch_version = 0,
+        bugfix_version = 0;
+    GetAscendCANNVersion(
+        &major_version, &minor_version, &patch_version, &bugfix_version);
+    auto current_env_cann_version = AscendCANNVersion2String(
+        NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MAJOR_VERSION,
+        NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MINOR_VERSION,
+        NNADAPTER_HUAWEI_ASCEND_NPU_CANN_PATCH_VERSION,
+        NNADAPTER_HUAWEI_ASCEND_NPU_CANN_BUGFIX_VERSION);
+    auto build_version = AscendCANNVersion2String(
+        major_version, minor_version, patch_version, bugfix_version);
+    NNADAPTER_VLOG(5) << "The current library is compiled based on CANN "
+                      << current_env_cann_version;
+    NNADAPTER_VLOG(5) << "The CANN version of the current environment is "
+                      << build_version;
+    if (major_version != NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MAJOR_VERSION &&
+        minor_version != NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MINOR_VERSION &&
+        patch_version != NNADAPTER_HUAWEI_ASCEND_NPU_CANN_PATCH_VERSION &&
+        bugfix_version != NNADAPTER_HUAWEI_ASCEND_NPU_CANN_BUGFIX_VERSION) {
+      NNADAPTER_LOG(WARNING) << "CANN version mismatch. The build version is "
+                             << build_version
+                             << ", but the current environment version is "
+                             << current_env_cann_version << ".";
     }
     NNADAPTER_VLOG(5) << "Initialize AscendCL.";
     // The following APIs can only be called once in one process
@@ -85,6 +84,8 @@ void InitializeGraphBuilder() {
     NNADAPTER_VLOG(5) << "Initialize Graph Builder.";
     // The following APIs can only be called once in one process
     ge::AscendString soc_version = GetAscendSocName();
+    NNADAPTER_VLOG(5) << "Initialize the Graph Builder based on SoC name: "
+                      << soc_version.GetString();
     std::map<ge::AscendString, ge::AscendString> global_options;
     global_options.insert(
         std::make_pair(ge::ir_option::SOC_VERSION, soc_version));
@@ -519,20 +520,21 @@ std::string ConvertInterpolateModeCodeToGEInterpolateMode(
   return "bilinear";
 }
 
-std::tuple<int, int, int, int> GetAscendCANNVersion() {
+bool GetAscendCANNVersion(int* major, int* minor, int* patch, int* bugfix) {
   static std::mutex mtx;
+  std::lock_guard<std::mutex> lock(mtx);
   static bool initialized = false;
   static int major_version = 0;
   static int minor_version = 0;
   static int patch_version = 0;
   static int bugfix_version = 0;
-  mtx.lock();
   if (!initialized) {
     std::string ascend_cann_path;
-    std::string ld_library_paths = GetStringFromEnv("LD_LIBRARY_PATH");
-    std::vector<std::string> paths =
-        string_split<std::string>(ld_library_paths, ":");
-    for (auto path : paths) {
+    std::string ld_library_path = GetStringFromEnv("LD_LIBRARY_PATH");
+    // Split ld_library_path string by ":"
+    std::vector<std::string> tokens =
+        string_split<std::string>(ld_library_path, ":");
+    for (auto path : tokens) {
       if (path.find("Ascend/ascend-toolkit") != std::string::npos ||
           path.find("Ascend/nnrt") != std::string::npos) {
         ascend_cann_path = path;
@@ -546,33 +548,33 @@ std::tuple<int, int, int, int> GetAscendCANNVersion() {
                            << ascend_cann_path << "]";
     }
     auto ascend_cann_real_path = GetRealPath(ascend_cann_path.c_str());
-    std::vector<std::string> ascend_cann_real_path_split =
-        string_split<std::string>(ascend_cann_real_path, "/");
-    std::string cann_version;
-    for (size_t i = 0; i < ascend_cann_real_path_split.size(); i++) {
-      if (ascend_cann_real_path_split[i] == "ascend-toolkit" ||
-          ascend_cann_real_path_split[i] == "nnrt") {
-        if (i <= ascend_cann_real_path_split.size() - 1) {
-          cann_version = ascend_cann_real_path_split[i + 1];
+    // Split ascend_cann_real_path string by "/"
+    tokens = string_split<std::string>(ascend_cann_real_path, "/");
+    std::string ascend_cann_version;
+    for (size_t i = 0; i < tokens.size(); i++) {
+      if (tokens[i] == "ascend-toolkit" || tokens[i] == "nnrt") {
+        if (i <= tokens.size() - 1) {
+          ascend_cann_version = tokens[i + 1];
           break;
         } else {
           NNADAPTER_LOG(ERROR) << "Unable to find the version of Ascend CANN";
-          return std::make_tuple(0, 0, 0, 0);
+          return false;
         }
       }
     }
-    auto cann_version_split = string_split<std::string>(cann_version, ".");
-    if (cann_version_split.size() == 3) {
-      major_version = atoi(cann_version_split[0].c_str());
-      minor_version = atoi(cann_version_split[1].c_str());
-      patch_version = atoi(cann_version_split[2].c_str());
-    } else if (cann_version_split.size() == 4) {
-      major_version = atoi(cann_version_split[0].c_str());
-      minor_version = atoi(cann_version_split[1].c_str());
-      patch_version = atoi(cann_version_split[2].c_str());
+    // Split ascend_cann_version string by "."
+    tokens = string_split<std::string>(ascend_cann_version, ".");
+    if (tokens.size() == 3) {
+      major_version = atoi(tokens[0].c_str());
+      minor_version = atoi(tokens[1].c_str());
+      patch_version = atoi(tokens[2].c_str());
+    } else if (tokens.size() == 4) {
+      major_version = atoi(tokens[0].c_str());
+      minor_version = atoi(tokens[1].c_str());
+      patch_version = atoi(tokens[2].c_str());
       std::regex reg("(\\d+)");
       std::smatch match_result;
-      if (std::regex_search(cann_version_split[3], match_result, reg)) {
+      if (std::regex_search(tokens[3], match_result, reg)) {
         if (match_result.size() >= 1) {
           bugfix_version = atoi(match_result[0].str().c_str());
         } else {
@@ -581,13 +583,15 @@ std::tuple<int, int, int, int> GetAscendCANNVersion() {
       }
     } else {
       NNADAPTER_LOG(ERROR) << "Unable to get the version of Ascend CANN";
-      return std::make_tuple(0, 0, 0, 0);
+      return false;
     }
     initialized = true;
   }
-  mtx.unlock();
-  return std::make_tuple(
-      major_version, minor_version, patch_version, bugfix_version);
+  *major = major_version;
+  *minor = minor_version;
+  *patch = patch_version;
+  *bugfix = bugfix_version;
+  return true;
 }
 
 std::string AscendCANNVersion2String(int major_version,
@@ -607,14 +611,21 @@ std::string AscendCANNVersion2String(int major_version,
 
 ge::AscendString GetAscendSocName() {
   ge::AscendString soc_version = "Ascend310";
-#if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MINIMUM_SUPPORTED_VERSION(5, 0, 2, 1)
+#if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(5, 0, 2, 1)
   const char* soc_name = aclrtGetSocName();
-  if (soc_name != nullptr) {
+  if (!soc_name) {
     soc_version = ge::AscendString(soc_name);
   } else {
-    NNADAPTER_LOG(WARNING)
-        << "Get Ascend soc name failed. Ascend310 is used by default";
+    NNADAPTER_LOG(WARNING) << "Failed to call aclrtGetSocName to obtain the "
+                              "SoC name, so Ascend 310 is used by default.";
   }
+#else
+  NNADAPTER_LOG(WARNING) << "Since the current library is compiled based on "
+                            "CANN versions below 5.0.2.1, aclrtGetSocName "
+                            "cannot be called to obtain the SoC name of the "
+                            "current device, so Ascend 310 is used by default. "
+                            "If you want to use ascend 710, please recompile "
+                            "the library based on CANN 5.0.2.1 and above.";
 #endif
   return soc_version;
 }
