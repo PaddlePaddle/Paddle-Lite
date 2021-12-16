@@ -228,7 +228,6 @@ class AutoScanBaseTest(unittest.TestCase):
             config.enable_mkldnn()
         if passes is not None:
             config.pass_builder().set_passes(passes)
-            self.passes = passes
         return config
 
     def run_test(self, quant=False, prog_configs=None):
