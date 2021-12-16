@@ -42,25 +42,6 @@ int ConvertLayerNormalization(Converter* converter, hal::Operation* operation) {
   SET_INPUT(layer_norm_op, beta, bias_operator);
   SET_INPUT(layer_norm_op, gamma, scale_operator);
   MAP_OUTPUT(layer_norm_op, y, output_operand);
-  auto layer_norm_operator = MAP_OUTPUT(layer_norm_op, y, output_operand);
-  // Fuse activations
-  switch (fuse_code) {
-#define CONVERT_UNARY_ACTIVATION(type, class_name)                            \
-  case NNADAPTER_FUSED_##type: {                                              \
-    auto act_op = converter->AddOperator<ge::op::class_name>(output_operand); \
-    SET_INPUT(act_op, x, layer_norm_operator);                                \
-    MAP_OUTPUT(act_op, y, output_operand);                                    \
-  } break;
-    CONVERT_UNARY_ACTIVATION(RELU, Relu);
-    CONVERT_UNARY_ACTIVATION(RELU6, Relu6);
-#undef CONVERT_UNARY_ACTIVATION
-    case NNADAPTER_FUSED_NONE:
-      break;
-    default:
-      NNADAPTER_LOG(FATAL) << "Unsupported fuse_code(" << fuse_code
-                           << ") is found.";
-      break;
-  }
   return NNADAPTER_NO_ERROR;
 }
 

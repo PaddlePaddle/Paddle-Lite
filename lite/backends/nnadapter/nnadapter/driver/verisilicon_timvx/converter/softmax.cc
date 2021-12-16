@@ -32,7 +32,8 @@ int ConvertSoftmax(Converter* converter, hal::Operation* operation) {
   // WHCN
   auto softmax_op = converter->graph()->CreateOperation<tim::vx::ops::Softmax>(
       1.0 /* beta */,
-      input_operand->type.dimensions.count - 1 - axis /* WHCN */);
+      ConvertToTimVXAxis(axis,
+                         input_operand->type.dimensions.count) /* WHCN */);
   softmax_op->BindInputs({input_tensor});
   softmax_op->BindOutputs({output_tensor});
   return NNADAPTER_NO_ERROR;

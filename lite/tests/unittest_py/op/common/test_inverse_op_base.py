@@ -25,33 +25,31 @@ import hypothesis.strategies as st
 from hypothesis import assume
 import copy
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(
-            min_value=1, max_value=10), min_size=1, max_size=2))
-   
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=10), min_size=1, max_size=2))
+
     def generate_input(*args, **kwargs):
         last_dim = np.random.randint(low=1, high=3, size=[1]).astype(np.int32)
         input_dim = copy.deepcopy(in_shape)
-        input_dim.append(last_dim[0])   #last 2 dim must be equal
+        input_dim.append(last_dim[0])  #last 2 dim must be equal
         input_dim.append(last_dim[0])
         return np.random.random(input_dim).astype(np.float32)
-   
+
     build_ops = OpConfig(
-        type = "inverse",
-        inputs = {
-            "Input" : ["input_data"],
-            },
-        outputs = {
-            "Output": ["output_data"],
-        },
-        attrs = {})
-    
+        type="inverse",
+        inputs={"Input": ["input_data"], },
+        outputs={"Output": ["output_data"], },
+        attrs={})
+
     program_config = ProgramConfig(
-    ops=[build_ops],
-    weights={},
-    inputs={
-        "input_data":
-        TensorConfig(data_gen=partial(generate_input)),
-    },
-    outputs=["output_data"])
+        ops=[build_ops],
+        weights={},
+        inputs={
+            "input_data": TensorConfig(data_gen=partial(generate_input)),
+        },
+        outputs=["output_data"])
     return program_config

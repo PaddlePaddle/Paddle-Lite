@@ -24,36 +24,41 @@ import hypothesis
 import hypothesis.strategies as st
 from hypothesis import assume
 
+
 def sample_program_configs(draw):
     is_rev = draw(st.sampled_from([False, True]))
     bool_orimode = draw(st.sampled_from([True, False]))
     in_shape = draw(st.sampled_from([[5, 15], [10, 30], [25, 75], [40, 120]]))
     h0_1 = draw(st.sampled_from([3, 4]))
-    
+
     #ref:lite/kernels/x86/gru_compute_test.cc
     def generate_input(*args, **kwargs):
         return np.random.random([9, in_shape[1]]).astype(np.float32)
+
     def generate_weight(*args, **kwargs):
         return np.random.random(in_shape).astype(np.float32)
+
     def generate_bias(*args, **kwargs):
         return np.random.random([1, in_shape[1]]).astype(np.float32)
+
     def generate_h0(*args, **kwargs):
         return np.random.random([h0_1, in_shape[0]]).astype(np.float32)
-    
+
     build_ops = OpConfig(
-        type = "gru",
-        inputs = {
-            "Input" : ["input_data"],
-            "Weight" : ["weight_data"],
-            "Bias" : ["bias_data"],
-            "H0" : ["h0"]
-            },
-        outputs = {
+        type="gru",
+        inputs={
+            "Input": ["input_data"],
+            "Weight": ["weight_data"],
+            "Bias": ["bias_data"],
+            "H0": ["h0"]
+        },
+        outputs={
             "Hidden": ["hidden"],
             "BatchGate": ["batch_gate"],
             "BatchResetHiddenPrev": ["batch_reset_hidden_prev"],
-            "BatchHidden": ["batch_hidden"]},
-        attrs = {
+            "BatchHidden": ["batch_hidden"]
+        },
+        attrs={
             "activation": "tanh",
             "gate_activation": "sigmoid",
             "is_reverse": is_rev,
@@ -62,15 +67,15 @@ def sample_program_configs(draw):
     program_config = ProgramConfig(
         ops=[build_ops],
         weights={
-            "weight_data":
-            TensorConfig(data_gen=partial(generate_weight)),},
-        inputs={
-            "input_data":
-            TensorConfig(data_gen=partial(generate_input), lod=[[0, 2, 6, 9]]),
-            "bias_data":
-            TensorConfig(data_gen=partial(generate_bias)),
-            "h0":
-            TensorConfig(data_gen=partial(generate_h0)),
+            "weight_data": TensorConfig(data_gen=partial(generate_weight)),
         },
-        outputs=["hidden", "batch_gate", "batch_reset_hidden_prev", "batch_hidden"])
+        inputs={
+            "input_data": TensorConfig(
+                data_gen=partial(generate_input), lod=[[0, 2, 6, 9]]),
+            "bias_data": TensorConfig(data_gen=partial(generate_bias)),
+            "h0": TensorConfig(data_gen=partial(generate_h0)),
+        },
+        outputs=[
+            "hidden", "batch_gate", "batch_reset_hidden_prev", "batch_hidden"
+        ])
     return program_config

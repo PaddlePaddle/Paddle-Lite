@@ -25,6 +25,7 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
     topks = [1, 3]
     channel_num = draw(st.sampled_from([1, 3, 5]))
@@ -36,41 +37,34 @@ def sample_program_configs(draw):
 
     def generate_input(*args, **kwargs):
         return np.arange(sum(feature) * channel_num).astype('float32')
-    
+
     def generate_row(*args, **kwargs):
         return np.random.random((sum(row), dim)).astype('float32')
-    
+
     def generate_column(*args, **kwargs):
         return np.random.random((sum(col), dim)).astype('float32')
 
     ops_config = OpConfig(
-        type = "sequence_topk_avg_pooling",
-        inputs = {
-            "X": ["input_data"],
-            "ROW": ["row"],
-            "COLUMN": ["column"]
-        },
-        outputs = {
-            "Out": ["output_data"],
-            "pos": ["pos"]
-        },
-        attrs = {
-            "topks": topks,
-            "channel_num": channel_num
-        }
-        )
+        type="sequence_topk_avg_pooling",
+        inputs={"X": ["input_data"],
+                "ROW": ["row"],
+                "COLUMN": ["column"]},
+        outputs={"Out": ["output_data"],
+                 "pos": ["pos"]},
+        attrs={"topks": topks,
+               "channel_num": channel_num})
 
     program_config = ProgramConfig(
         ops=[ops_config],
         weights={},
         inputs={
-            "input_data": 
-            TensorConfig(data_gen=partial(generate_input),lod=lod_),
-            "row":
-            TensorConfig(data_gen=partial(generate_row), lod=[row]),
-            "column":
-            TensorConfig(data_gen=partial(generate_column), lod=[col])
+            "input_data": TensorConfig(
+                data_gen=partial(generate_input), lod=lod_),
+            "row": TensorConfig(
+                data_gen=partial(generate_row), lod=[row]),
+            "column": TensorConfig(
+                data_gen=partial(generate_column), lod=[col])
         },
-        outputs=["output_data","pos"])
+        outputs=["output_data", "pos"])
 
     return program_config

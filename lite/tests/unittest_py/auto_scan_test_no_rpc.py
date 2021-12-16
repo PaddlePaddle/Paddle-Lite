@@ -25,25 +25,33 @@ from paddlelite.lite import *
 
 
 def ParsePlaceInfo(place_str):
-   # todo: this func should be completed later
-   infos = ''.join(place_str.split()).split(",")
-   if len(infos) == 1 :
-       if infos[0] in TargetType.__members__:
-           return Place(eval("TargetType." + infos[0]))
-       else:
-           logging.error("Error place info: " + place_str)
-   elif len(infos) == 2 :
-       if (infos[0] in TargetType.__members__) and (infos[1] in PrecisionType.__members__):
-           return Place(eval("TargetType." + infos[0]), eval("PrecisionType." +  infos[1]))
-       else:
-           logging.error("Error place info: " + place_str)
-   elif len(infos) == 3 :
-       if (infos[0] in TargetType.__members__) and (infos[1] in PrecisionType.__members__) and (infos[2] in DataLayoutType.__members__):
-           return Place(eval("TargetType." + infos[0]), eval("PrecisionType." +  infos[1]), eval("DataLayoutType." + infos[2]))
-       else:
-           logging.error("Error place info: " + place_str)
-   else:
-       logging.error("Error place info: " + place_str)
+    # todo: this func should be completed later
+    infos = ''.join(place_str.split()).split(",")
+    if len(infos) == 1:
+        if infos[0] in TargetType.__members__:
+            return Place(eval("TargetType." + infos[0]))
+        else:
+            logging.fatal("Error place info: " + place_str)
+    elif len(infos) == 2:
+        if (infos[0] in TargetType.__members__) and (
+                infos[1] in PrecisionType.__members__):
+            return Place(
+                eval("TargetType." + infos[0]),
+                eval("PrecisionType." + infos[1]))
+        else:
+            logging.fatal("Error place info: " + place_str)
+    elif len(infos) == 3:
+        if (infos[0] in TargetType.__members__) and (
+                infos[1] in PrecisionType.__members__) and (
+                    infos[2] in DataLayoutType.__members__):
+            return Place(
+                eval("TargetType." + infos[0]),
+                eval("PrecisionType." + infos[1]),
+                eval("DataLayoutType." + infos[2]))
+        else:
+            logging.fatal("Error place info: " + place_str)
+    else:
+        logging.fatal("Error place info: " + place_str)
 
 def ParsePaddleLiteConfig(self, config):
     lite_config = CxxConfig()
@@ -53,11 +61,13 @@ def ParsePaddleLiteConfig(self, config):
             valid_places.append(ParsePlaceInfo(place_str))
         lite_config.set_valid_places(valid_places)
     if "thread" in config:
-        lite_config.set_thread(pred_config["thread"])
+        lite_config.set_threads(config["thread"])
     return lite_config
 
+
 class AutoScanTest(AutoScanBaseTest):
-    def run_lite_config(self, model, params, inputs, pred_config) -> Dict[str, np.ndarray]:
+    def run_lite_config(self, model, params, inputs,
+                        pred_config) -> Dict[str, np.ndarray]:
         # 1. store original model
         with open(self.cache_dir + "/model", "wb") as f:
             f.write(model)
@@ -83,7 +93,7 @@ class AutoScanTest(AutoScanBaseTest):
         result_res = copy.deepcopy(result)
 
         # 4. optimized model
-        predictor.save_optimized_pb_model(self.cache_dir+ "/opt_model/")
+        predictor.save_optimized_pb_model(self.cache_dir + "/opt_model/")
         with open(self.cache_dir + "/opt_model/model", "rb") as f:
             model = f.read()
 
@@ -91,13 +101,13 @@ class AutoScanTest(AutoScanBaseTest):
 
 
 class FusePassAutoScanTest(AutoScanTest):
-    def run_and_statis(
-            self,
-            quant=False,
-            max_examples=100,
-            reproduce=None,
-            min_success_num=25,
-            max_duration=180,
-            passes=None ):
+    def run_and_statis(self,
+                       quant=False,
+                       max_examples=100,
+                       reproduce=None,
+                       min_success_num=25,
+                       max_duration=180,
+                       passes=None):
         assert passes is not None, "Parameter of passes must be defined in function run_and_statis."
-        super().run_and_statis(quant, max_examples, reproduce, min_success_num, max_duration, passes)
+        super().run_and_statis(quant, max_examples, reproduce, min_success_num,
+                               max_duration, passes)
