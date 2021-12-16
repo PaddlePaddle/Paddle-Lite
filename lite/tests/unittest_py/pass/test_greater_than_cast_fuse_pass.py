@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import sys
 sys.path.append('..')
 
@@ -26,7 +27,7 @@ from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 
 
-class TestInterpolateFusePass(FusePassAutoScanTest):
+class TestGreaterThanCastFusePass(FusePassAutoScanTest):
     def __init__(self, *args, **kwargs):
         FusePassAutoScanTest.__init__(self, *args, **kwargs)
         #opencl
@@ -48,11 +49,7 @@ class TestInterpolateFusePass(FusePassAutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        if predictor_config.target(
-        ) == TargetType.X86 or predictor_config.target() == TargetType.ARM:
-            return False
-        else:
-            return True
+        return True
 
     def sample_program_configs(self, draw):
         cast_in_type = draw(st.sampled_from([0]))
