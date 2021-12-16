@@ -35,12 +35,3 @@ class GatherCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
-
-typedef paddle::lite::kernels::xpu::GatherCompute<int32_t, int32_t>
-    GatherXPUInt32Int32;
-typedef paddle::lite::kernels::xpu::GatherCompute<int32_t, int64_t>
-    GatherXPUInt32Int64;
-typedef paddle::lite::kernels::xpu::GatherCompute<float, int32_t>
-    GatherXPUFloatInt32;
-typedef paddle::lite::kernels::xpu::GatherCompute<float, int64_t>
-    GatherXPUFloatInt64;
