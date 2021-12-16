@@ -24,44 +24,46 @@ import hypothesis
 import hypothesis.strategies as st
 from hypothesis import assume
 
+
 def sample_program_configs(draw):
     #lite requires input has 4 dims and the min_val of shape should > 1
-    in_shape=draw(st.lists(st.integers(
-            min_value=2, max_value=10), min_size=4, max_size=4))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=2, max_value=10), min_size=4, max_size=4))
     epsilon = draw(st.floats(min_value=0.0, max_value=0.001))
 
     def generate_input(*args, **kwargs):
         return np.random.random(in_shape).astype(np.float32)
+
     def generate_scale(*args, **kwargs):
         return np.random.random([in_shape[1]]).astype(np.float32)
+
     def generate_bias(*args, **kwargs):
         return np.random.random([in_shape[1]]).astype(np.float32)
-    
+
     run_op = OpConfig(
-        type = "instance_norm",
-        inputs = {
-            "X" : ["input_data"],
-            "Scale" : ["scale_data"],
-            "Bias" : ["bias_data"]
-            },
-        outputs = {
-            "Y": ["output_data"],
-            "SavedMean" : ["mean_data"],
-            "SavedVariance" : ["var_data"],
+        type="instance_norm",
+        inputs={
+            "X": ["input_data"],
+            "Scale": ["scale_data"],
+            "Bias": ["bias_data"]
         },
-        attrs = {
-            "epsilon" : epsilon   #0~0.001
+        outputs={
+            "Y": ["output_data"],
+            "SavedMean": ["mean_data"],
+            "SavedVariance": ["var_data"],
+        },
+        attrs={
+            "epsilon": epsilon  #0~0.001
         })
     program_config = ProgramConfig(
         ops=[run_op],
         weights={},
         inputs={
-            "input_data":
-            TensorConfig(data_gen=partial(generate_input)),
-            "scale_data":
-            TensorConfig(data_gen=partial(generate_scale)),
-            "bias_data":
-            TensorConfig(data_gen=partial(generate_bias)),
+            "input_data": TensorConfig(data_gen=partial(generate_input)),
+            "scale_data": TensorConfig(data_gen=partial(generate_scale)),
+            "bias_data": TensorConfig(data_gen=partial(generate_bias)),
         },
         outputs=["output_data", "mean_data", "var_data"])
     return program_config

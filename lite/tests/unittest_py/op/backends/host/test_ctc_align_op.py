@@ -25,8 +25,11 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 
+
 class TestCtcAlignOp(AutoScanTest):
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
@@ -34,8 +37,10 @@ class TestCtcAlignOp(AutoScanTest):
 
     def sample_predictor_configs(self):
         config = CxxConfig()
-        config.set_valid_places({Place(TargetType.Host, PrecisionType.INT64, DataLayoutType.NCHW),
-                                Place(TargetType.Host, PrecisionType.INT32, DataLayoutType.NCHW)})
+        config.set_valid_places({
+            Place(TargetType.Host, PrecisionType.INT64, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.INT32, DataLayoutType.NCHW)
+        })
         yield config, ["ctc_align"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
@@ -43,6 +48,7 @@ class TestCtcAlignOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

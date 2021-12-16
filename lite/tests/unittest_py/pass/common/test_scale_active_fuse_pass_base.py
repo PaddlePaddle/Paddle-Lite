@@ -24,15 +24,20 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape_x = draw(st.lists(st.integers(min_value = 1, max_value = 20), min_size = 4, max_size = 4))
-    threshold = draw(st.floats(min_value = 0, max_value = 1))
-    alpha = draw(st.floats(min_value = 0, max_value = 1))
-    scale = draw(st.floats(min_value = 0.5, max_value = 5))
-    bias  = draw(st.floats(min_value = 0, max_value = 1))
+    in_shape_x = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=20), min_size=4, max_size=4))
+    threshold = draw(st.floats(min_value=0, max_value=1))
+    alpha = draw(st.floats(min_value=0, max_value=1))
+    scale = draw(st.floats(min_value=0.5, max_value=5))
+    bias = draw(st.floats(min_value=0, max_value=1))
     bias_after_scale = draw(st.sampled_from([True]))
 
     act_type = draw(st.sampled_from(['relu', 'relu6', 'leaky_relu']))
+
     def generate_act_attrs(act_type_str):
         attrs = {}
         if act_type_str == 'relu6':
@@ -44,27 +49,25 @@ def sample_program_configs(draw):
         return attrs
 
     scale_op = OpConfig(
-        type = "scale",
-        inputs = {"X": ["input_data_x"]},
-        outputs = {"Out": ["scale_output_data"]},
-        attrs = {
+        type="scale",
+        inputs={"X": ["input_data_x"]},
+        outputs={"Out": ["scale_output_data"]},
+        attrs={
             "scale": scale,
             "bias": bias,
             "bias_after_scale": bias_after_scale
         })
 
     active_op = OpConfig(
-        type = act_type,
-        inputs = {"X": ["scale_output_data"]},
-        outputs = {"Out": ["output_data"]},
-        attrs = generate_act_attrs(act_type))
+        type=act_type,
+        inputs={"X": ["scale_output_data"]},
+        outputs={"Out": ["output_data"]},
+        attrs=generate_act_attrs(act_type))
 
     ops = [scale_op, active_op]
     program_config = ProgramConfig(
-        ops = ops,
-        weights = {},
-        inputs = {
-            "input_data_x":TensorConfig(shape=in_shape_x)
-        },
-        outputs = ["output_data"])
+        ops=ops,
+        weights={},
+        inputs={"input_data_x": TensorConfig(shape=in_shape_x)},
+        outputs=["output_data"])
     return program_config

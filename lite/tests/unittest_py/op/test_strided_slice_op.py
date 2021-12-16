@@ -28,60 +28,91 @@ import numpy as np
 
 # having diff
 
+
 class TestFcOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         x86_places = [
-                     Place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW),
-                     Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
-                     ]
+            Place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
+        ]
         self.enable_testing_on_place(places=x86_places)
 
         arm_places = [
-                    Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
-                    Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
-                    ]
+            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
+        ]
         self.enable_testing_on_place(places=arm_places)
 
         # opencl demo
-        opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-                          Place(TargetType.Host, PrecisionType.FP32)    
-                        ]
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
         self.enable_testing_on_place(places=opencl_places)
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(min_value=5, max_value=8), min_size = 4, max_size=4))
-        
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=5, max_value=8), min_size=4, max_size=4))
+
         in_dtype = draw(st.sampled_from([np.float32, np.int32, np.int64]))
 
         def generate_input_data():
             return np.random.normal(0.0, 5.0, in_shape).astype(in_dtype)
-        
-        starts_data=draw(st.lists(st.integers(min_value=0, max_value=2), min_size=1, max_size=4))
-        ends_data=draw(st.lists(st.integers(min_value=3, max_value=4), min_size=1, max_size=4))
-        strides_data=draw(st.lists(st.integers(min_value=1, max_value=1), min_size=1, max_size=4))
-        axes_data=draw(st.lists(st.integers(min_value=0, max_value=3), min_size=1, max_size=4))
+
+        starts_data = draw(
+            st.lists(
+                st.integers(
+                    min_value=0, max_value=2), min_size=1, max_size=4))
+        ends_data = draw(
+            st.lists(
+                st.integers(
+                    min_value=3, max_value=4), min_size=1, max_size=4))
+        strides_data = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=1), min_size=1, max_size=4))
+        axes_data = draw(
+            st.lists(
+                st.integers(
+                    min_value=0, max_value=3), min_size=1, max_size=4))
         # whether this axis for runtime calculations
-        infer_flags_data=draw(st.lists(st.integers(min_value=1, max_value=1), min_size=1, max_size=4))
-    
+        infer_flags_data = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=1), min_size=1, max_size=4))
+
         assume(len(starts_data) == len(ends_data))
         assume(len(ends_data) == len(strides_data))
         assume(len(strides_data) == len(axes_data))
         assume(len(axes_data) == len(infer_flags_data))
 
-        inputs = {"Input" : ["input_data"]}
-        choose_start = draw(st.sampled_from(["starts", "StartsTensor_data", "StartsTensorList_data1"]))
-        choose_end = draw(st.sampled_from(["ends", "EndsTensor_data", "EndsTensorList_data1"]))
-        choose_stride = draw(st.sampled_from(["strides", "StridesTensor_data", "StridesTensorList_data1"]))
-
+        inputs = {"Input": ["input_data"]}
+        choose_start = draw(
+            st.sampled_from(
+                ["starts", "StartsTensor_data", "StartsTensorList_data1"]))
+        choose_end = draw(
+            st.sampled_from(
+                ["ends", "EndsTensor_data", "EndsTensorList_data1"]))
+        choose_stride = draw(
+            st.sampled_from(
+                ["strides", "StridesTensor_data", "StridesTensorList_data1"]))
 
         # some of below 6 inputs are not supported by lite
         # So not add them to the input of the operator
@@ -119,7 +150,7 @@ class TestFcOp(AutoScanTest):
                 return np.array(ends_data).astype(np.int32)
             else:
                 return np.random.randint(1, 5, []).astype(np.int32)
-        
+
         def generate_StridesTensorList_data():
             if (choose_stride == "StridesTensorList_data"):
                 #inputs["StridesTensorList"] = ["StridesTensorList_data"]
@@ -128,27 +159,35 @@ class TestFcOp(AutoScanTest):
                 return np.random.randint(1, 5, []).astype(np.int32)
 
         strideslice_op = OpConfig(
-            type = "strided_slice",
-            inputs = inputs,
-            outputs = {"Out": ["output_data"]},
-            attrs = {"starts": starts_data,
-                    "ends": ends_data,
-                    "strides": strides_data,
-                    "axes": axes_data,
-                    "infer_flags": infer_flags_data,
-                    "decrease_axis": []
-                     })
+            type="strided_slice",
+            inputs=inputs,
+            outputs={"Out": ["output_data"]},
+            attrs={
+                "starts": starts_data,
+                "ends": ends_data,
+                "strides": strides_data,
+                "axes": axes_data,
+                "infer_flags": infer_flags_data,
+                "decrease_axis": []
+            })
         program_config = ProgramConfig(
             ops=[strideslice_op],
             weights={},
             inputs={
-                "input_data": TensorConfig(data_gen=partial(generate_input_data)),
-                "StartsTensorList_data":TensorConfig(data_gen=partial(generate_EndsTensorList_data)),
-                "EndsTensorList_data": TensorConfig(data_gen=partial(generate_StartsTensorList_data)),
-                "StridesTensorList_data":  TensorConfig(data_gen=partial(generate_StridesTensorList_data)),
-                "StartsTensor_data": TensorConfig(data_gen=partial(generate_EndsTensor_data)),
-                "EndsTensor_data": TensorConfig(data_gen=partial(generate_StartsTensor_data)),
-                "StridesTensor_data": TensorConfig(data_gen=partial(generate_StridesTensor_data)),
+                "input_data":
+                TensorConfig(data_gen=partial(generate_input_data)),
+                "StartsTensorList_data":
+                TensorConfig(data_gen=partial(generate_EndsTensorList_data)),
+                "EndsTensorList_data":
+                TensorConfig(data_gen=partial(generate_StartsTensorList_data)),
+                "StridesTensorList_data": TensorConfig(
+                    data_gen=partial(generate_StridesTensorList_data)),
+                "StartsTensor_data":
+                TensorConfig(data_gen=partial(generate_EndsTensor_data)),
+                "EndsTensor_data":
+                TensorConfig(data_gen=partial(generate_StartsTensor_data)),
+                "StridesTensor_data":
+                TensorConfig(data_gen=partial(generate_StridesTensor_data)),
             },
             outputs=["output_data"])
         return program_config
@@ -161,6 +200,7 @@ class TestFcOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

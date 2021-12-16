@@ -31,50 +31,65 @@ class TestFcOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         x86_places = [
-                     Place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW),
-                     Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
-                     ]
+            Place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
+        ]
         self.enable_testing_on_place(places=x86_places)
 
         arm_places = [
-                    Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
-                    Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
-                    ]
+            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
+        ]
         self.enable_testing_on_place(places=arm_places)
 
         # opencl demo
-        opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-                          Place(TargetType.Host, PrecisionType.FP32)    
-                        ]
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
         self.enable_testing_on_place(places=opencl_places)
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size = 4, max_size=4))
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=8), min_size=4, max_size=4))
         # tranpose only support float32
         in_dtype = draw(st.sampled_from([np.float32]))
+
         def generate_X_data():
             return np.random.normal(0.0, 5.0, in_shape).astype(in_dtype)
-        
-        axis_int32_data = draw(st.lists(st.integers(min_value=0, max_value=3), min_size = 4, max_size=4))
 
-        assume(sorted(axis_int32_data)==[0,1,2,3])
+        axis_int32_data = draw(
+            st.lists(
+                st.integers(
+                    min_value=0, max_value=3), min_size=4, max_size=4))
+
+        assume(sorted(axis_int32_data) == [0, 1, 2, 3])
 
         transpose_op = OpConfig(
-            type = "transpose",
-            inputs = {"X" : ["X_data"]},
-            outputs = {"Out": ["output_data"]},
-            attrs = {"axis": axis_int32_data,
-                    "data_format": "AnyLayout",
-                    "use_mkldnn": False,
-                    })
+            type="transpose",
+            inputs={"X": ["X_data"]},
+            outputs={"Out": ["output_data"]},
+            attrs={
+                "axis": axis_int32_data,
+                "data_format": "AnyLayout",
+                "use_mkldnn": False,
+            })
 
         program_config = ProgramConfig(
             ops=[transpose_op],
@@ -93,6 +108,7 @@ class TestFcOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

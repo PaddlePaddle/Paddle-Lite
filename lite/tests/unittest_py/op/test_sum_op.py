@@ -28,50 +28,62 @@ import numpy as np
 
 # having diff
 
+
 class TestFcOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
 
         arm_places = [
-                    Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
-                    Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
-                    ]
+            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
+        ]
         self.enable_testing_on_place(places=arm_places)
 
         # opencl demo
-        opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-                          Place(TargetType.Host, PrecisionType.FP32)    
-                        ]
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
         self.enable_testing_on_place(places=opencl_places)
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(min_value=2, max_value=8), min_size = 4, max_size=4))
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=2, max_value=8), min_size=4, max_size=4))
         in_dtype = draw(st.sampled_from([np.float32, np.int32, np.int64]))
 
         def generate_X_data():
             return np.random.normal(0.0, 5.0, in_shape).astype(in_dtype)
 
         sum_op = OpConfig(
-            type = "sum",
-            inputs = {"X" : ["X_data"]},
-            outputs = {"Out": ["output_data"]},
-            attrs = {})
+            type="sum",
+            inputs={"X": ["X_data"]},
+            outputs={"Out": ["output_data"]},
+            attrs={})
         program_config = ProgramConfig(
             ops=[sum_op],
             weights={},
             inputs={
-                "X_data" : TensorConfig(data_gen=partial(generate_X_data)),
+                "X_data": TensorConfig(data_gen=partial(generate_X_data)),
             },
             outputs=["output_data"])
         return program_config
+
     def sample_predictor_configs(self):
         return self.get_predictor_configs(), [""], (1e-5, 1e-5)
 
@@ -80,6 +92,7 @@ class TestFcOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
