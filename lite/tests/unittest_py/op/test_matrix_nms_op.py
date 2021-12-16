@@ -26,17 +26,23 @@ import numpy as np
 from functools import partial
 import hypothesis.strategies as st
 
+
 class TestMatrixNMSOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         x_shape = list(program_config.inputs["input_data_BBoxes"].shape)
         y_shape = list(program_config.inputs["input_data_Scores"].shape)
         if x_shape[0] <= y_shape[0]:
             return False
-
         return True
 
     def sample_program_configs(self, draw):
@@ -58,24 +64,36 @@ class TestMatrixNMSOp(AutoScanTest):
         gaussian_sigma = draw(st.floats(min_value=0.1, max_value=1.0))
 
         matrix_nms_op = OpConfig(
-            type = "matrix_nms",
-            inputs = {"BBoxes" : ["input_data_BBoxes"], "Scores" : ["input_data_Scores"]},
-            outputs = {"Out": ["output_data"], "Index":["output_index"], "RoisNum":["RoisNum"]},
-            attrs = {"background_label":background_label, "score_threshold":score_threshold,
-                "post_threshold":post_threshold, "nms_top_k":nms_top_k, "keep_top_k":keep_top_k,
-                "normalized":normalized, "use_gaussian":use_gaussian, "gaussian_sigma":gaussian_sigma})
+            type="matrix_nms",
+            inputs={
+                "BBoxes": ["input_data_BBoxes"],
+                "Scores": ["input_data_Scores"]
+            },
+            outputs={
+                "Out": ["output_data"],
+                "Index": ["output_index"],
+                "RoisNum": ["RoisNum"]
+            },
+            attrs={
+                "background_label": background_label,
+                "score_threshold": score_threshold,
+                "post_threshold": post_threshold,
+                "nms_top_k": nms_top_k,
+                "keep_top_k": keep_top_k,
+                "normalized": normalized,
+                "use_gaussian": use_gaussian,
+                "gaussian_sigma": gaussian_sigma
+            })
 
         program_config = ProgramConfig(
             ops=[matrix_nms_op],
             weights={},
             inputs={
-                "input_data_BBoxes":
-                TensorConfig(shape=X_shape),
-                "input_data_Scores" : TensorConfig(shape=Y_shape)
+                "input_data_BBoxes": TensorConfig(shape=X_shape),
+                "input_data_Scores": TensorConfig(shape=Y_shape)
             },
             outputs={"output_data"})
         return program_config
-
 
     def sample_predictor_configs(self):
         return self.get_predictor_configs(), ["matrix_nms"], (1e-5, 1e-5)
@@ -86,13 +104,16 @@ class TestMatrixNMSOp(AutoScanTest):
             y_shape = list(program_config.inputs["input_data_Scores"].shape)
             if x_shape[1] == 1:
                 return True
+
         self.add_ignore_check_case(
             teller1, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff in a specific case. We need to fix it as soon as possible.")
+            "The op output has diff in a specific case. We need to fix it as soon as possible."
+        )
         #pass
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=50)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

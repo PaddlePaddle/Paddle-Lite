@@ -26,37 +26,50 @@ import numpy as np
 from functools import partial
 import hypothesis.strategies as st
 
+
 class TestNormOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         x_shape = list(program_config.inputs["input_data"].shape)
         if len(x_shape) < program_config.ops[0].attrs["axis"] + 1:
             return False
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(min_value=1, max_value=32), min_size = 1, max_size=4))
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=32), min_size=1, max_size=4))
         axis = draw(st.sampled_from([0, 1, 2, 3]))
         epsilon = draw(st.sampled_from([0.9, 1., 1.1]))
         norm_op = OpConfig(
-            type = "norm",
-           inputs = {"X" : ["input_data"]},
-            outputs = {"Out": ["output_data"], "Norm": ["Norm"]},
-            attrs = {"axis":axis, "epsilon":epsilon, "is_test":1})
+            type="norm",
+            inputs={"X": ["input_data"]},
+            outputs={"Out": ["output_data"],
+                     "Norm": ["Norm"]},
+            attrs={"axis": axis,
+                   "epsilon": epsilon,
+                   "is_test": 1})
         program_config = ProgramConfig(
             ops=[norm_op],
             weights={},
-            inputs={
-                "input_data":
-                TensorConfig(shape=in_shape)
-            },
+            inputs={"input_data": TensorConfig(shape=in_shape)},
             outputs=["output_data"])
         return program_config
-
 
     def sample_predictor_configs(self):
         return self.get_predictor_configs(), ["norm"], (1e-5, 1e-5)
@@ -66,6 +79,7 @@ class TestNormOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=50)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
