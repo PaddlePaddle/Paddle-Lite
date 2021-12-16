@@ -33,13 +33,33 @@ class TestGatherOp(AutoScanTest):
             TargetType.Host,
             PrecisionType.FP32,
             DataLayoutType.NCHW,
-            thread=[1, 2])
+            thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.X86,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                DataLayoutType.ImageDefault), Place(
+                    TargetType.OpenCL, PrecisionType.FP16,
+                    DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                DataLayoutType.ImageDefault), Place(
+                    TargetType.OpenCL, PrecisionType.Any,
+                    DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        # run ut is error
-        return False
+        if predictor_config.target() == TargetType.OpenCL:
+            return False
+        return True
 
     def sample_program_configs(self, draw):
         in_shape = draw(
@@ -67,20 +87,18 @@ class TestGatherOp(AutoScanTest):
             else:
                 return np.array(index).astype(np.int64)
 
-        def generate_input_int32(*args, **kwargs):
-            return np.random.random(in_shape).astype(np.int32)
+        def generate_input(*args, **kwargs):
+             if kwargs["type"] == "int32":
+                 return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int32)
+             elif kwargs["type"] == "int64":
+                 return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int64)
+             elif kwargs["type"] == "float32":
+                 return (kwargs["high"] - kwargs["low"]) * np.random.random(kwargs["shape"]).astype(np.float32) + kwargs["low"]
 
-        def generate_input_int64(*args, **kwargs):
-            return np.random.random(in_shape).astype(np.int64)
+        input_type = draw(st.sampled_from(["float32", "int64", "int32"]))
 
-        def generate_input_float32(*args, **kwargs):
-            return np.random.random(in_shape).astype(np.float32)
-
-        generate_input = draw(
-            st.sampled_from([
-                generate_input_int32, generate_input_int64,
-                generate_input_float32
-            ]))
+        #wait for atuo_scan_base bug fix
+        input_type = "float32"
 
         op_inputs = {}
         program_inputs = {}
@@ -91,14 +109,14 @@ class TestGatherOp(AutoScanTest):
                 "Axis": ["axis_data"]
             }
             program_inputs = {
-                "input_data": TensorConfig(data_gen=partial(generate_input)),
+                "input_data": TensorConfig(data_gen=partial(generate_input, type=input_type, low=-10, high=10, shape=in_shape)),
                 "index_data": TensorConfig(data_gen=partial(generate_index)),
                 "axis_data": TensorConfig(data_gen=partial(generate_axis))
             }
         else:
             op_inputs = {"X": ["input_data"], "Index": ["index_data"]}
             program_inputs = {
-                "input_data": TensorConfig(data_gen=partial(generate_input)),
+                "input_data": TensorConfig(data_gen=partial(generate_input, type=input_type, low=-10, high=10, shape=in_shape)),
                 "index_data": TensorConfig(data_gen=partial(generate_index))
             }
 
@@ -121,7 +139,7 @@ class TestGatherOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=300)
 
 
 if __name__ == "__main__":
