@@ -27,51 +27,60 @@ import argparse
 import numpy as np
 from functools import partial
 
+
 class TestPreluOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,2])
-        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,2])
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 2])
+        self.enable_testing_on_place(
+            TargetType.X86,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 2])
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(
-                min_value=1, max_value=10), min_size=4, max_size=4))
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=10), min_size=4, max_size=4))
         mode_data = draw(st.sampled_from(["channel", "element"]))
         alpha_shape = [1]
         if mode_data == "channel":
-            alpha_shape = [1, in_shape[1], 1, 1] 
+            alpha_shape = [1, in_shape[1], 1, 1]
         elif mode_data == 'element':
             alpha_shape = [1] + list(in_shape)[1:]
-    
+
         def generate_input(*args, **kwargs):
             return np.random.random(kwargs['tensor_shape']).astype(np.float32)
-     
+
         def generate_alpha(*args, **kwargs):
             return np.random.random(alpha_shape).astype(np.float32)
-           
+
         build_ops = OpConfig(
-            type = "prelu",
-            inputs = {
-                "X" : ["input_data"],
+            type="prelu",
+            inputs={
+                "X": ["input_data"],
                 "Alpha": ['alpha_data'],
             },
-            outputs = {
-                "Out": ["output_data"],
-            },
-            attrs= {
-                "mode": mode_data,
-            })
+            outputs={"Out": ["output_data"], },
+            attrs={"mode": mode_data, })
         program_config = ProgramConfig(
             ops=[build_ops],
             weights={},
             inputs={
-                "input_data":
-                TensorConfig(data_gen=partial(generate_input, tensor_shape=in_shape)),
-                "alpha_data":
-                TensorConfig(data_gen=partial(generate_input, tensor_shape=alpha_shape)),
+                "input_data": TensorConfig(data_gen=partial(
+                    generate_input, tensor_shape=in_shape)),
+                "alpha_data": TensorConfig(data_gen=partial(
+                    generate_input, tensor_shape=alpha_shape)),
             },
             outputs=["output_data"])
         return program_config
@@ -84,6 +93,7 @@ class TestPreluOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

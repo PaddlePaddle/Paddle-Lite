@@ -27,42 +27,52 @@ import argparse
 import numpy as np
 from functools import partial
 
+
 class TestReshapeOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,2])
-        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,2])
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 2])
+        self.enable_testing_on_place(
+            TargetType.X86,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 2])
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(
-                min_value=1, max_value=10), min_size=4, max_size=4))
-        attr_shape = draw(st.lists(st.integers(min_value=0, max_value=4),
-            min_size=len(in_shape), max_size=len(in_shape)))
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=10), min_size=4, max_size=4))
+        attr_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=0, max_value=4),
+                min_size=len(in_shape),
+                max_size=len(in_shape)))
         with_shape = draw(st.sampled_from([True, False]))
-    
+
         def generate_input(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
-           
+
         build_ops = OpConfig(
-            type = "reshape",
-            inputs = {
-                "X" : ["input_data"],
-            },
-            outputs = {
-                "Out": ["output_data"],
-            },
-            attrs = {
-                "shape": in_shape,
-            })
+            type="reshape",
+            inputs={"X": ["input_data"], },
+            outputs={"Out": ["output_data"], },
+            attrs={"shape": in_shape, })
         program_config = ProgramConfig(
             ops=[build_ops],
             weights={},
             inputs={
-                "input_data":
-                TensorConfig(data_gen=partial(generate_input)),
+                "input_data": TensorConfig(data_gen=partial(generate_input)),
             },
             outputs=["output_data"])
         return program_config
@@ -75,6 +85,7 @@ class TestReshapeOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

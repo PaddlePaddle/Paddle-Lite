@@ -27,31 +27,40 @@ import argparse
 import numpy as np
 from functools import partial
 
+
 class TestPrintOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,2])
-        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,2])
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 2])
+        self.enable_testing_on_place(
+            TargetType.X86,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 2])
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(
-                min_value=1, max_value=10), min_size=4, max_size=4))
-    
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=10), min_size=4, max_size=4))
+
         def generate_input(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
-           
+
         build_ops = OpConfig(
-            type = "print",
-            inputs = {
-                "In" : ["input_data"],
-            },
-            outputs = {
-                "Out": ["output_data"],
-            },
-            attrs = {
+            type="print",
+            inputs={"In": ["input_data"], },
+            outputs={"Out": ["output_data"], },
+            attrs={
                 "first_n": 10,
                 "summarize": 20,
                 "message": "",
@@ -60,8 +69,7 @@ class TestPrintOp(AutoScanTest):
             ops=[build_ops],
             weights={},
             inputs={
-                "input_data":
-                TensorConfig(data_gen=partial(generate_input)),
+                "input_data": TensorConfig(data_gen=partial(generate_input)),
             },
             outputs=["output_data"])
         return program_config
@@ -74,6 +82,7 @@ class TestPrintOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
