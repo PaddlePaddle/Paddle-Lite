@@ -50,6 +50,8 @@ class TestNotEqualOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
+
+        # bugs will be fixed in the future
         return False
         return True
 
