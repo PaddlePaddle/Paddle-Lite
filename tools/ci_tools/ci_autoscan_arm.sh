@@ -117,7 +117,7 @@ function run_test() {
   done
 }
 
-function pipline() {
+function pipeline() {
   # Compile
   compile_publish_inference_lib --target_list=$1
 
@@ -147,9 +147,9 @@ function main() {
   local targets=(${TARGET_LIST//,/ })
   for target in ${targets[@]}; do
     if [[ "$target" == "OpenCL" ]]; then
-      pipline "ARM,OpenCL"
+      pipeline "ARM,OpenCL"
     elif [[ "$target" == "Metal" ]]; then
-      pipline "Metal"
+      pipeline "Metal"
     fi
   done
 
