@@ -24,38 +24,47 @@ import hypothesis
 from hypothesis import assume
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=1, max_value=5), min_size = 4, max_size=4))
-    axes_data = draw(st.lists(st.integers(min_value=0, max_value=3), min_size = 1, max_size=2))
-    
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=5), min_size=4, max_size=4))
+    axes_data = draw(
+        st.lists(
+            st.integers(
+                min_value=0, max_value=3), min_size=1, max_size=2))
+
     def generate_AxesTensor_data():
-        return np.random.choice([0,1,2,3], axes_data , replace=True)
-    
+        return np.random.choice([0, 1, 2, 3], axes_data, replace=True)
+
     def generate_AxesTensorList_data():
-        return np.random.choice([0,1,2,3], [] , replace=True)
-    
+        return np.random.choice([0, 1, 2, 3], [], replace=True)
+
     def generate_XShape_data():
         return np.random.random([6]).astype(np.float32)
 
     unsqueeze2_op = OpConfig(
-        type = "unsqueeze2",
-        inputs = {"X" : ["X_data"],
-                  "AxesTensor":["AxesTensor_data"],
-                  "AxesTensorList":["AxesTensorList_data"]
-                  },
-        outputs = {"Out": ["Out_data"],
-                   "XShape": ["XShape_data"]},
-        attrs = {"axes": axes_data
-                 })
+        type="unsqueeze2",
+        inputs={
+            "X": ["X_data"],
+            "AxesTensor": ["AxesTensor_data"],
+            "AxesTensorList": ["AxesTensorList_data"]
+        },
+        outputs={"Out": ["Out_data"],
+                 "XShape": ["XShape_data"]},
+        attrs={"axes": axes_data})
     program_config = ProgramConfig(
         ops=[unsqueeze2_op],
         weights={
-            "XShape_data" : TensorConfig(data_gen=partial(generate_XShape_data))
+            "XShape_data": TensorConfig(data_gen=partial(generate_XShape_data))
         },
         inputs={
             "X_data": TensorConfig(shape=in_shape),
-            "AxesTensor_data": TensorConfig(data_gen=partial(generate_AxesTensor_data)),
-            "AxesTensorList_data": TensorConfig(data_gen=partial(generate_AxesTensorList_data)),
+            "AxesTensor_data":
+            TensorConfig(data_gen=partial(generate_AxesTensor_data)),
+            "AxesTensorList_data":
+            TensorConfig(data_gen=partial(generate_AxesTensorList_data)),
         },
-        outputs= ["Out_data","XShape_data"])
+        outputs=["Out_data", "XShape_data"])
     return program_config

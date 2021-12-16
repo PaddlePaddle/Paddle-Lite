@@ -24,8 +24,11 @@ from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 import argparse
 
+import numpy as np
+from functools import partial
 
-class TestAssignOp(AutoScanTest):
+
+class TestPad2dOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(
@@ -33,6 +36,20 @@ class TestAssignOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 2])
+        self.enable_testing_on_place(
+            TargetType.X86,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 2])
+
+        # metal
+        metal_places = [
+            Place(TargetType.Metal, PrecisionType.FP32,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.Metal, PrecisionType.FP16,
+                  DataLayoutType.MetalTexture2DArray)
+        ]
+        self.enable_testing_on_place(places=metal_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -43,21 +60,41 @@ class TestAssignOp(AutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=8), max_size=2))
-        assign_op = OpConfig(
-            type="assign",
-            inputs={"X": ["input_data"]},
-            outputs={"Out": ["output_data"]},
-            attrs={})
+                    min_value=1, max_value=10), min_size=4, max_size=4))
+
+        mode = draw(st.sampled_from(["constant", "reflect", "edge"]))
+        value_data = draw(st.floats(min_value=0.0, max_value=4.0))
+        padding_data = draw(st.sampled_from([[2, 2, 1, 1]]))
+
+        # assume(in_shape in [3, 4, 5])
+
+        def generate_input(*args, **kwargs):
+            return np.random.random(in_shape).astype(np.float32)
+
+        build_ops = OpConfig(
+            type="pad2d",
+            inputs={
+                "X": ["input_data"],
+                #"Paddings": padding_data,
+            },
+            outputs={"Out": ["output_data"], },
+            attrs={
+                "paddings": padding_data,
+                "mode": mode,
+                "value": value_data,
+                "data_format": "NCHW",
+            })
         program_config = ProgramConfig(
-            ops=[assign_op],
+            ops=[build_ops],
             weights={},
-            inputs={"input_data": TensorConfig(shape=in_shape)},
+            inputs={
+                "input_data": TensorConfig(data_gen=partial(generate_input)),
+            },
             outputs=["output_data"])
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["assign"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["pad2d"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass

@@ -24,59 +24,57 @@ import hypothesis
 import hypothesis.strategies as st
 from hypothesis import assume
 
+
 def sample_program_configs(draw):
     start_id = draw(st.integers(min_value=0, max_value=5))
     stop_id = draw(st.integers(min_value=50, max_value=60))
     num_data = draw(st.integers(min_value=1, max_value=10))
-    op_type_str = draw(st.sampled_from([5]))  #2:int 5:float, lite only support float
+    op_type_str = draw(st.sampled_from(
+        [5]))  #2:int 5:float, lite only support float
 
     def generate_start1(*args, **kwargs):
         return np.array([float(start_id)]).astype(np.float32)
+
     def generate_start2(*args, **kwargs):
         return np.array([int(start_id)]).astype(np.int32)
+
     def generate_stop1(*args, **kwargs):
         return np.array([float(stop_id)]).astype(np.float32)
+
     def generate_stop2(*args, **kwargs):
         return np.array([int(stop_id)]).astype(np.int32)
+
     def generate_num(*args, **kwargs):
         return np.array([int(num_data)]).astype(np.int32)
-   
+
     build_ops = OpConfig(
-        type = "linspace",
-        inputs = {
-            "Start" : ["start_data"],
-            "Stop" : ["stop_data"],
-            "Num" : ["num_data"],
+        type="linspace",
+        inputs={
+            "Start": ["start_data"],
+            "Stop": ["stop_data"],
+            "Num": ["num_data"],
+        },
+        outputs={"Out": ["output_data"], },
+        attrs={"dtype": int(op_type_str)})
+
+    if op_type_str == 2:
+        program_config = ProgramConfig(
+            ops=[build_ops],
+            weights={},
+            inputs={
+                "start_data": TensorConfig(data_gen=partial(generate_start2)),
+                "stop_data": TensorConfig(data_gen=partial(generate_stop2)),
+                "num_data": TensorConfig(data_gen=partial(generate_num)),
             },
-        outputs = {
-            "Out": ["output_data"],
-        },
-        attrs = {"dtype" : int(op_type_str)})
-    
-    if op_type_str == 2 :
+            outputs=["output_data"])
+    elif op_type_str == 5:
         program_config = ProgramConfig(
-        ops=[build_ops],
-        weights={},
-        inputs={
-            "start_data":
-            TensorConfig(data_gen=partial(generate_start2)),
-            "stop_data":
-            TensorConfig(data_gen=partial(generate_stop2)),
-            "num_data":
-            TensorConfig(data_gen=partial(generate_num)),
-        },
-        outputs=["output_data"])
-    elif op_type_str == 5 :
-        program_config = ProgramConfig(
-        ops=[build_ops],
-        weights={},
-        inputs={
-            "start_data":
-            TensorConfig(data_gen=partial(generate_start1)),
-            "stop_data":
-            TensorConfig(data_gen=partial(generate_stop1)),
-            "num_data":
-            TensorConfig(data_gen=partial(generate_num)),
-        },
-        outputs=["output_data"])
+            ops=[build_ops],
+            weights={},
+            inputs={
+                "start_data": TensorConfig(data_gen=partial(generate_start1)),
+                "stop_data": TensorConfig(data_gen=partial(generate_stop1)),
+                "num_data": TensorConfig(data_gen=partial(generate_num)),
+            },
+            outputs=["output_data"])
     return program_config
