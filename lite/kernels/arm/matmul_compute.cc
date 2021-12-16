@@ -96,10 +96,21 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::ReInitWhenNeeded() {
   }
 
   scale_.resize(n_);
-  scale_one.resize(n_);
-  for (int i = 0; i < n_; i++) {
-    param.output_scale = param.input_scale * param.weight_scale[i];
-    scale_[i] = param.output_scale;
+  scale_one.resize(m_);
+
+  if (param.weight_scale.size() == 1) {
+    param.output_scale =
+        param.input_scale * param.weight_scale[0] * param.alpha;
+    for (int i = 0; i < n_; i++) {
+      scale_[i] = param.output_scale;
+    }
+  } else {
+    for (int i = 0; i < n_; i++) {
+      param.output_scale = param.input_scale * param.weight_scale[i];
+      scale_[i] = param.output_scale;
+    }
+  }
+  for (int i = 0; i < m_; i++) {
     scale_one[i] = 1;
   }
 }
@@ -362,6 +373,7 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   auto& ctx = this->ctx_->template As<ARMContext>();
   operators::ActivationParam act_param;
   act_param.has_active = false;
+
   if ((x_dims.size() >= 2 && y_dims.size() >= 2) &&
       (x_dims.size() != 2 || y_dims.size() != 2)) {
     // x: [B, ..., M, K], y: [B, ..., K, N], out: [B, ..., M, N]
@@ -385,9 +397,10 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                  o_data + i * out_inner,
                                  nullptr,
                                  false,
-                                 scale_.data(),
+                                 scale_one.data(),
                                  act_param,
                                  &ctx);
+        matmul_add_n_scale_bias(o_data + i * out_inner, scale_.data(), m_, n_);
       }
     } else if (x_dims.size() > 2 && y_dims.size() == 2) {
       for (size_t i = 0; i < x_dims.count(0, x_dims.size() - 2); ++i) {
@@ -404,6 +417,7 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                  scale_one.data(),
                                  act_param,
                                  &ctx);
+        matmul_add_n_scale_bias(o_data + i * out_inner, scale_.data(), m_, n_);
       }
     } else if (x_dims.size() == 2 && y_dims.size() > 2) {
       for (size_t i = 0; i < y_dims.count(0, y_dims.size() - 2); ++i) {
@@ -417,9 +431,10 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                  o_data + i * out_inner,
                                  nullptr,
                                  false,
-                                 scale_.data(),
+                                 scale_one.data(),
                                  act_param,
                                  &ctx);
+        matmul_add_n_scale_bias(o_data + i * out_inner, scale_.data(), m_, n_);
       }
     }
   } else if ((x_dims.size() == 2 && y_dims.size() == 2) ||
@@ -435,9 +450,10 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                              o_data,
                              nullptr,
                              false,
-                             scale_.data(),
+                             scale_one.data(),
                              act_param,
                              &ctx);
+    matmul_add_n_scale_bias(o_data, scale_.data(), m_, n_);
   } else if (x_dims.size() > 2 && y_dims.size() == 1) {
     // x: [B, M, K], y: [K], out: [B, M]
     CHECK_EQ(x_dims[x_dims.size() - 1], y_dims[0])
@@ -449,6 +465,7 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
         o_data[i] += x_data[i * y_dims[0] + j] * y_data[j] * alpha;
       }
     }
+    matmul_add_n_scale_bias(o_data, scale_.data(), m_, n_);
   } else if (x_dims.size() == 1 && y_dims.size() == 1) {
     // x: [K], y: [K], out: [1]
     if (x_dims[0] == y_dims[0] && x_transpose == false &&
@@ -467,7 +484,7 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                    false,
                                    m_,
                                    k_,
-                                   scale_.data(),
+                                   scale_one.data(),
                                    false,
                                    nullptr,
                                    act_param,
@@ -488,16 +505,17 @@ void MatMulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                  o_data,
                                  nullptr,
                                  false,
-                                 scale_.data(),
+                                 scale_one.data(),
                                  act_param,
                                  &ctx);
       }
     }
+
+    matmul_add_n_scale_bias(o_data, scale_.data(), m_, n_);
   } else {
     LOG(FATAL) << "not supported x_dims(" << x_dims << ") and y_dims(" << y_dims
                << ")";
   }
-  matmul_add_n_scale_bias(o_data, scale_.data(), m_, n_);
 }
 
 }  // namespace arm

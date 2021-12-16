@@ -28,13 +28,10 @@ def parse_args():
     parser = argparse.ArgumentParser("fit_a_line")
     parser.add_argument(
         '--save_model',
-        action='store_true',    
+        action='store_true',
         help="Whether to save main program")
     parser.add_argument(
-        '--num_steps',
-        type=int, 
-        default=1000000000000,
-        help="train steps")
+        '--num_steps', type=int, default=1000000000000, help="train steps")
     parser.add_argument(
         '--num_epochs', type=int, default=100, help="number of epochs.")
     parser.add_argument(
@@ -46,13 +43,15 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+
 # For training test cost
 def train_test(executor, program, reader, feeder, fetch_list):
     accumulated = 1 * [0]
     count = 0
     for data_test in reader():
-        outs = executor.run(
-            program=program, feed=feeder.feed(data_test), fetch_list=fetch_list)
+        outs = executor.run(program=program,
+                            feed=feeder.feed(data_test),
+                            fetch_list=fetch_list)
         accumulated = [x_c[0] + x_c[1][0] for x_c in zip(accumulated, outs)]
         count += 1
     return [x_d / count for x_d in accumulated]
@@ -62,13 +61,13 @@ def main():
     if args.shuffle:
         print("doing shuffle")
         train_reader = paddle.batch(
-                         paddle.reader.shuffle(
-                             paddle.dataset.uci_housing.train(), buf_size=500),
-                         batch_size=args.batch_size)
+            paddle.reader.shuffle(
+                paddle.dataset.uci_housing.train(), buf_size=500),
+            batch_size=args.batch_size)
     else:
         train_reader = paddle.batch(
             paddle.dataset.uci_housing.train(), batch_size=args.batch_size)
-    
+
     # feature vector of length 13
     x = fluid.data(name='x', shape=[None, 13], dtype='float32')
     y = fluid.data(name='y', shape=[None, 1], dtype='float32')
@@ -113,16 +112,15 @@ def main():
         return
 
     train_prompt = "Train cost"
-    step = 0 
+    step = 0
     for pass_id in range(num_epochs):
         for data_train in train_reader():
-            avg_loss_value, = exe.run(
-                main_program,
-                feed=feeder.feed(data_train),
-                fetch_list=[avg_loss])
+            avg_loss_value, = exe.run(main_program,
+                                      feed=feeder.feed(data_train),
+                                      fetch_list=[avg_loss])
             print("%s, Step %d, Cost %f" %
-                      (train_prompt, step, avg_loss_value[0]))
-            if step  == args.num_steps - 1:
+                  (train_prompt, step, avg_loss_value[0]))
+            if step == args.num_steps - 1:
                 return
             step += 1
 

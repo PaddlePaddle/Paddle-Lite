@@ -24,10 +24,12 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(
-        st.integers(
-            min_value=1, max_value=64), min_size=1, max_size=4))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=64), min_size=1, max_size=4))
     beta = draw(st.sampled_from([1, 2, 3]))
     threshold = draw(st.integers(min_value=10, max_value=20))
 
@@ -35,26 +37,16 @@ def sample_program_configs(draw):
         return np.random.uniform(-1, 1.0, in_shape).astype(np.float32)
 
     ops_config = OpConfig(
-        type = "softplus",
-        inputs = {
-            "X": ["input_data"]
-        },
-        outputs = {
-            "Out": ["output_data"]
-        },
-        attrs = {
-            "beta": beta,
-            "threshold": threshold
-        }
-        )
+        type="softplus",
+        inputs={"X": ["input_data"]},
+        outputs={"Out": ["output_data"]},
+        attrs={"beta": beta,
+               "threshold": threshold})
 
     program_config = ProgramConfig(
         ops=[ops_config],
         weights={},
-        inputs={
-            "input_data": 
-            TensorConfig(data_gen=partial(generate_input))
-        },
+        inputs={"input_data": TensorConfig(data_gen=partial(generate_input))},
         outputs=["output_data"])
 
     return program_config
