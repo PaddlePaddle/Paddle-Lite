@@ -111,6 +111,7 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   std::string time_stamp_{GetTimeStamp()};
 
   std::unique_ptr<Tensor> filter_gpu_image_{nullptr};
+  std::unique_ptr<Tensor> filter_gpu_image0_{nullptr};
   std::unique_ptr<Tensor> filter_gpu_image1_{nullptr};
   std::unique_ptr<Tensor> filter_gpu_image2_{nullptr};
   std::unique_ptr<Tensor> filter_gpu_image3_{nullptr};
@@ -136,6 +137,7 @@ class ConvImageCompute : public KernelLite<TARGET(kOpenCL),
   const cl::Image2D* input_image_p_{nullptr};
   const cl::Image2D* second_input_image_p_{nullptr};
   const cl::Image2D* filter_image_p_{nullptr};
+  const cl::Image2D* filter_image_p0_{nullptr};
   const cl::Image2D* filter_image_p1_{nullptr};
   const cl::Image2D* filter_image_p2_{nullptr};
   const cl::Image2D* filter_image_p3_{nullptr};

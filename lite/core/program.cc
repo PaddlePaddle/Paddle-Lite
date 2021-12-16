@@ -260,16 +260,6 @@ RuntimeProgram::RuntimeProgram(
     Scope* exec_scope,
     int block_idx)
     : exec_scope_(exec_scope) {
-#ifdef LITE_WITH_OPENCL
-  bool opencl_valid = paddle::lite::CLWrapper::Global()->OpenclLibFound() &&
-                      paddle::lite::CLWrapper::Global()->DlsymSuccess() &&
-                      CLRuntime::Global()->OpenCLAvaliableForDevice();
-  using OpenCLContext = Context<TargetType::kOpenCL>;
-  std::unique_ptr<KernelContext> unique_opencl_ctx(new KernelContext());
-  if (opencl_valid) {
-    unique_opencl_ctx->As<OpenCLContext>().InitOnce();
-  }
-#endif
   CHECK(program_desc);
   auto block_size = program_desc->BlocksSize();
   CHECK(block_size) << "No block found!";
@@ -377,41 +367,6 @@ RuntimeProgram::RuntimeProgram(
         LOG(WARNING) << "No kernels found for " << op_type;
       }
     }
-#ifdef LITE_WITH_OPENCL
-    if (kernel->target() == TARGET(kOpenCL)) {
-      if (opencl_valid) {
-        std::unique_ptr<KernelContext> ctx(new KernelContext());
-        (*unique_opencl_ctx)
-            .As<OpenCLContext>()
-            .CopySharedTo(&ctx->As<OpenCLContext>());
-        kernel->SetContext(std::move(ctx));
-      } else {
-        // if gpu not support , fatal when user init gpu model.
-        LOG(FATAL) << "opencl_valid:" << opencl_valid;
-      }
-    } else {
-      kernel->SetContext(
-          ContextScheduler::Global().NewContext(kernel->target()));
-    }
-#elif LITE_WITH_METAL
-    if (kernel->target() == TARGET(kMetal)) {
-      if (!metal_ctx_) {
-        metal_ctx_ = std::make_unique<KernelContext>();
-        (*metal_ctx_).As<MTLContext>().InitOnce();
-      }
-      std::unique_ptr<KernelContext> ctx(new KernelContext());
-      (*metal_ctx_).As<MTLContext>().CopySharedTo(&ctx->As<MTLContext>());
-      kernel->SetContext(std::move(ctx));
-    } else {
-      kernel->SetContext(
-          ContextScheduler::Global().NewContext(kernel->target()));
-    }
-#else
-    if (kernel != nullptr) {
-      kernel->SetContext(
-          ContextScheduler::Global().NewContext(kernel->target()));
-    }
-#endif
     instructions_[kRootBlockIdx].emplace_back(std::move(op), std::move(kernel));
   }
   Init();

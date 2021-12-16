@@ -23,8 +23,12 @@ import unittest
 import hypothesis
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    input_data_x_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size = 1, max_size = 8))
+    input_data_x_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=8), min_size=1, max_size=8))
     x_dims_size = len(input_data_x_shape)
     flatten = draw(st.booleans())
     axis = draw(st.integers(min_value=-x_dims_size, max_value=x_dims_size - 1))
@@ -34,18 +38,18 @@ def sample_program_configs(draw):
     reverse = draw(st.booleans())
 
     cumsum_op = OpConfig(
-        type = "cumsum",
-        inputs = {"X" : ["input_data_x"]},
-        outputs = {"Out": ["output_data"]},
-        attrs = {"axis" : axis,
-                "flatten": flatten,
-                "exclusive": exclusive,
-                "reverse": reverse})
+        type="cumsum",
+        inputs={"X": ["input_data_x"]},
+        outputs={"Out": ["output_data"]},
+        attrs={
+            "axis": axis,
+            "flatten": flatten,
+            "exclusive": exclusive,
+            "reverse": reverse
+        })
     program_config = ProgramConfig(
         ops=[cumsum_op],
         weights={},
-        inputs={
-            "input_data_x": TensorConfig(shape=input_data_x_shape),
-        },
+        inputs={"input_data_x": TensorConfig(shape=input_data_x_shape), },
         outputs=["output_data"])
     return program_config

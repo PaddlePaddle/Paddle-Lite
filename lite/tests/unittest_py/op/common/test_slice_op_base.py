@@ -24,15 +24,18 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(
-        st.integers(
-            min_value=6, max_value=64), min_size=4, max_size=4))
-    
-    axes = draw(st.sampled_from([[3], [0, 1], [0, 1, 2],[0, 1, 2, 3]]))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=6, max_value=64), min_size=4, max_size=4))
+
+    axes = draw(st.sampled_from([[3], [0, 1], [0, 1, 2], [0, 1, 2, 3]]))
     starts = draw(st.sampled_from([[-1], [0, 1], [0, 1, 2], [0, 1, 2, 3]]))
     ends = draw(st.sampled_from([[10000], [1, 2], [1, 2, 3], [1, 2, 3, 4]]))
-    decrease_axis = draw(st.sampled_from([[3], [0, 1], [0, 1, 2],[0, 1, 2, 3]]))
+    decrease_axis = draw(
+        st.sampled_from([[3], [0, 1], [0, 1, 2], [0, 1, 2, 3]]))
     infer_flags = draw(st.sampled_from([[1, 1, 1]]))
     input_num = draw(st.sampled_from([0, 1]))
     input_type = draw(st.sampled_from(["type_float"]))
@@ -64,44 +67,38 @@ def sample_program_configs(draw):
         "ends": ends,
         "decrease_axis": decrease_axis,
         "infer_flags": [-1, -1, -1]
-    },{
+    }, {
         "axes": axes,
         "starts": starts,
         "ends": ends,
         "decrease_axis": decrease_axis,
         "infer_flags": infer_flags
-    },{}]
+    }, {}]
 
     dics_intput = [{
         "Input": ["input_data"],
         "StartsTensor": ["starts_data"],
         "EndsTensor": ["ends_data"],
-    },
-    {
+    }, {
         "Input": ["input_data"]
-    },{}]
+    }, {}]
 
     dics_weight = [{
-        "starts_data":
-        TensorConfig(data_gen=partial(generate_starts)),
-        "ends_data": 
-        TensorConfig(data_gen=partial(generate_ends))
+        "starts_data": TensorConfig(data_gen=partial(generate_starts)),
+        "ends_data": TensorConfig(data_gen=partial(generate_ends))
     }, {}]
 
     ops_config = OpConfig(
-        type = "slice",
-        inputs = dics_intput[input_num],
-        outputs = {
-            "Out": ["output_data"]
-        },
-        attrs = dics[input_num]
-        )
+        type="slice",
+        inputs=dics_intput[input_num],
+        outputs={"Out": ["output_data"]},
+        attrs=dics[input_num])
 
     program_config = ProgramConfig(
         ops=[ops_config],
         weights=dics_weight[input_num],
         inputs={
-            "input_data": 
+            "input_data":
             TensorConfig(data_gen=partial(generate_input, dics, input_type))
         },
         outputs=["output_data"])

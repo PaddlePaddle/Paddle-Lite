@@ -193,7 +193,7 @@ TEST(TestLiteSgemv, Sgemv) {
             for (auto& flag_act : {0, 1, 2, 4, 10}) {
               for (auto& th : {1, 2, 4}) {
                 float six = 6.f;
-                float alpha = 8.88f;
+                float alpha = 4.88f;
                 float beta = 0.f;
                 auto flag = test_sgemv(tra,
                                        m,
