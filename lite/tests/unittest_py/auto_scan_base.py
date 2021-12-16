@@ -50,7 +50,7 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 settings.register_profile(
     "ci",
-    max_examples=100,
+    max_examples=200,
     suppress_health_check=hypothesis.HealthCheck.all(),
     deadline=None,
     print_blob=True,
@@ -89,11 +89,6 @@ class AutoScanBaseTest(unittest.TestCase):
         self.cache_dir = os.path.join(abs_dir,
                                       str(self.__module__) + '_cache_dir')
         self.available_passes_in_framework = set()
-        self.num_ran_programs = 0
-        self.num_invalid_programs = 0
-        self.num_ignore_tests = 0
-        self.num_predictor_kinds = 0
-
         args = parser.parse_args()
         self.args = args
 
@@ -152,6 +147,8 @@ class AutoScanBaseTest(unittest.TestCase):
                             rtol: float,
                             tensor: Dict[str, np.array],
                             baseline: Dict[str, np.array]):
+        if len(tensor) == 0 and len(baseline) == 0:
+            return
         if len(tensor) == 1 and len(baseline) == 1:
             tensor_key = list(tensor.keys())
             arr = np.array(tensor[tensor_key[0]])
@@ -244,38 +241,36 @@ class AutoScanBaseTest(unittest.TestCase):
         paddlelite_configs, op_list_, (atol_,
                                        rtol_) = self.sample_predictor_configs()
         for prog_config in prog_configs:
-            # if program is invalid, we should ignore this cases.
-            program_valid_ = False
+
+            predictor_idx = -1
             for paddlelite_config in paddlelite_configs:
+                predictor_idx += 1
                 # judge validity of program
-                if self.is_program_valid(prog_config, paddlelite_config):
-                    program_valid_ = True
-            if not program_valid_:
-                self.num_invalid_programs += 1
-                continue
+                if not self.is_program_valid(prog_config, paddlelite_config):
+                    self.num_invalid_programs_list[predictor_idx] += 1
+                    continue
+                self.num_ran_programs_list[predictor_idx] += 1
 
-            self.num_ran_programs += 1
-            model, params = create_fake_model(prog_config)
-            if quant:
-                model, params = create_quant_model(model, params)
+                # creat model and prepare feed data
+                model, params = create_fake_model(prog_config)
+                if quant:
+                    model, params = create_quant_model(model, params)
 
-            feed_data = {}
-            for name, tensor_config in prog_config.inputs.items():
-                feed_data[name] = {
-                    'data': tensor_config.data,
-                    'lod': tensor_config.lod
-                }
-            results: List[Dict[str, np.ndarray]] = []
+                feed_data = {}
+                for name, tensor_config in prog_config.inputs.items():
+                    feed_data[name] = {
+                        'data': tensor_config.data,
+                        'lod': tensor_config.lod
+                    }
+                results: List[Dict[str, np.ndarray]] = []
 
-            # baseline: cpu no ir_optim run
-            base_config = self.create_inference_config(ir_optim=False)
-            logging.info('[ProgramConfig]: ' + str(prog_config))
-            results.append(
-                self.run_test_config(model, params, prog_config, base_config,
-                                     feed_data))
+                # baseline: cpu no ir_optim run
+                base_config = self.create_inference_config(ir_optim=False)
+                logging.info('[ProgramConfig]: ' + str(prog_config))
+                results.append(
+                    self.run_test_config(model, params, prog_config,
+                                         base_config, feed_data))
 
-            for paddlelite_config in paddlelite_configs:
-                self.num_predictor_kinds += 1
                 # ignore info
                 ignore_flag = False
                 paddle_lite_not_support_flag = False
@@ -283,7 +278,7 @@ class AutoScanBaseTest(unittest.TestCase):
                 for ignore_info in self.ignore_cases:
                     if ignore_info[0](prog_config, paddlelite_config):
                         ignore_flag = True
-                        self.num_ignore_tests += 1
+                        self.num_ignore_tests_list[predictor_idx] += 1
                         if ignore_info[1] == IgnoreReasonsBase.ACCURACY_ERROR:
                             self.ignore_log("[ACCURACY_ERROR] " + ignore_info[
                                 2] + ' ' + ' vs ' + self.paddlelite_config_str(
@@ -402,7 +397,7 @@ class AutoScanBaseTest(unittest.TestCase):
                        reproduce=None,
                        min_success_num=25,
                        passes=None):
-
+        self.init_statistical_parameters()
         settings.register_profile(
             "dev",
             max_examples=max_examples,
@@ -443,23 +438,20 @@ class AutoScanBaseTest(unittest.TestCase):
         loop_func()
         logging.info(
             "===================Statistical Information===================")
-        logging.info("Number of Generated Programs: {}".format(
-            self.num_ran_programs + self.num_invalid_programs))
-        logging.info("Number of Invalid Programs: {}".format(
-            self.num_invalid_programs))
-        logging.info("Number of Ran Programs: {}".format(
-            self.num_ran_programs))
-        logging.info("Number of Ignored Tests: {}".format(
-            self.num_ignore_tests))
+        logging.info("Number of Generated Programs: {}".format(max_examples))
         logging.info("Number of Predictor Kinds: {}".format(
-            int(self.num_predictor_kinds / (self.num_invalid_programs +
-                                            self.num_ran_programs))))
-        if self.num_predictor_kinds == 0:
-            successful_ran_programs = int(self.num_ran_programs)
-            min_success_num = 0
-        else:
-            successful_ran_programs = int(self.num_ran_programs -
-                                          self.num_ignore_tests)
+            int(self.num_predictor_kinds)))
+        self.assertTrue(self.num_predictor_kinds > 0,
+                        "Number of Predictor Kinds must be greater than 0")
+        logging.info("Number of Ran Programs: {}".format(
+            self.num_ran_programs_list))
+        logging.info("Number of Invalid Programs: {}".format(
+            self.num_invalid_programs_list))
+        logging.info("Number of Ignored Tests: {}".format(
+            self.num_ignore_tests_list))
+        successful_ran_programs = int(
+            (sum(self.num_ran_programs_list) + sum(self.num_ignore_tests_list))
+            / self.num_predictor_kinds)
 
         logging.info(
             "Number of successfully ran programs approximately equal to {}".
@@ -524,6 +516,12 @@ class AutoScanBaseTest(unittest.TestCase):
 
     def get_predictor_configs(self) -> List[CxxConfig]:
         return self.target_to_predictor_configs(self, self.get_target())
+
+    def init_statistical_parameters(self):
+        self.num_predictor_kinds = len(self.get_predictor_configs())
+        self.num_invalid_programs_list = [0] * self.num_predictor_kinds
+        self.num_ran_programs_list = [0] * self.num_predictor_kinds
+        self.num_ignore_tests_list = [0] * self.num_predictor_kinds
 
     # get valid test configs
     @staticmethod
