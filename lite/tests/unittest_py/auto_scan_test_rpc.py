@@ -32,7 +32,7 @@ class AutoScanTest(AutoScanBaseTest):
         port_id = 18812
         if self.rpc_port != None:
            port_id = self.rpc_port
-        conn = rpyc.connect("localhost", 18812)
+        conn = rpyc.connect("localhost", port_id)
         out, model = conn.root.run_lite_model(model, params, feed_data,
                                               pred_config)
         result_res = copy.deepcopy(out)
