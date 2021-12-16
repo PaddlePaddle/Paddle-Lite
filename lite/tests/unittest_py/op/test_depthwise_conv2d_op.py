@@ -29,24 +29,36 @@ from functools import partial
 class TestDepthwiseConv2dOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        # arm_valid_places = [Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
-        #                     Place(TargetType.ARM, PrecisionType.FP16, DataLayoutType.NCHW),
-        #                     Place(TargetType.ARM, PrecisionType.INT8, DataLayoutType.NCHW)]
-        # self.enable_testing_on_place(places=arm_valid_places, thread=[1,4])
+        arm_valid_places = [
+            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.ARM, PrecisionType.FP16, DataLayoutType.NCHW),
+            Place(TargetType.ARM, PrecisionType.INT8, DataLayoutType.NCHW)
+        ]
+        self.enable_testing_on_place(places=arm_valid_places, thread=[1, 4])
         x86_valid_places = [
             Place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW),
             Place(TargetType.X86, PrecisionType.INT8, DataLayoutType.NCHW)
         ]
         self.enable_testing_on_place(places=x86_valid_places, thread=[1, 4])
-        # opencl_valid_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
-        #                        Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW)]
-        # self.enable_testing_on_place(places=opencl_valid_places)
+        opencl_valid_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=opencl_valid_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        # 1. Current not support quantize unit test.
-        if program_config.weights['filter_data'].dtype == np.int8:
+        if predictor_config.target() in [TargetType.ARM, TargetType.OpenCL]:
             return False
         return True
 
@@ -80,6 +92,8 @@ class TestDepthwiseConv2dOp(AutoScanTest):
                     min_value=1, max_value=10), min_size=2, max_size=2))
         data_format = "NCHW"
         use_mkldnn = False
+        if self.get_target().upper() == "X86":
+            use_mkldnn = True
 
         def calc_output_size():
             if padding_algorithm == "SAME":
@@ -106,23 +120,6 @@ class TestDepthwiseConv2dOp(AutoScanTest):
         in_shape = [input_n, input_c, input_h, input_w]
         weight_shape = [filter_m, filter_c, filter_h, filter_w]
 
-        def gen_data_type():
-            input_data_type = draw(st.sampled_from([np.float32, np.int8]))
-            filter_data_type = draw(st.sampled_from([np.float32, np.int8]))
-            output_data_type = draw(st.sampled_from([np.float32, np.int8]))
-            if filter_data_type == np.float32:
-                input_data_type = np.float32
-                output_data_type == np.float32
-            return input_data_type, filter_data_type, output_data_type
-
-        def generate_data(*args, **kwargs):
-            if kwargs['dtype'] == np.float32:
-                return np.random.random(kwargs['shape']).astype(kwargs[
-                    'dtype'])
-            elif kwargs['dtype'] == np.int8:
-                return np.random.randint(
-                    -128, 128, size=kwargs['shape']).astype(kwargs['dtype'])
-
         def generate_bias(*args, **kwargs):
             if use_mkldnn:
                 return np.random.randint(
@@ -130,7 +127,6 @@ class TestDepthwiseConv2dOp(AutoScanTest):
             else:
                 return np.zeros(shape=kwargs['shape']).astype(kwargs['dtype'])
 
-        input_data_type, filter_data_type, output_data_type = gen_data_type()
         depthwise_conv2d_op = OpConfig(
             type="depthwise_conv2d",
             inputs={
@@ -142,7 +138,7 @@ class TestDepthwiseConv2dOp(AutoScanTest):
             attrs={
                 "strides": strides,
                 "paddings": paddings,
-                "use_mkldnn": True,
+                "use_mkldnn": use_mkldnn,
                 "padding_algorithm": padding_algorithm,
                 "groups": groups,
                 "dilations": dilations,
@@ -150,20 +146,14 @@ class TestDepthwiseConv2dOp(AutoScanTest):
                 "Scale_out": scale_out,
                 "data_format": data_format
             })
-        depthwise_conv2d_op.outputs_dtype = {"Output": output_data_type}
         program_config = ProgramConfig(
             ops=[depthwise_conv2d_op],
             weights={
-                "filter_data": TensorConfig(data_gen=partial(
-                    generate_data, shape=weight_shape,
-                    dtype=filter_data_type)),
+                "filter_data": TensorConfig(shape=weight_shape),
                 "bias_data": TensorConfig(data_gen=partial(
                     generate_bias, shape=[filter_m], dtype=np.float32))
             },
-            inputs={
-                "input_data": TensorConfig(data_gen=partial(
-                    generate_data, shape=in_shape, dtype=input_data_type))
-            },
+            inputs={"input_data": TensorConfig(shape=in_shape)},
             outputs=["output_data"])
         return program_config
 

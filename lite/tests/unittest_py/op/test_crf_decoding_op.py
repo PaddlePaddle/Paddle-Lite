@@ -40,7 +40,8 @@ class TestCrfDecodingOp(AutoScanTest):
                          predictor_config: CxxConfig) -> bool:
         if program_config.inputs['input_emission_data'].lod != None:
             return False
-        return True
+        else:
+            return True
 
     def sample_program_configs(self, draw):
         # LoD tensor need

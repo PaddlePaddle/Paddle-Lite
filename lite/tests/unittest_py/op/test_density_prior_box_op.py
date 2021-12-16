@@ -43,7 +43,7 @@ class TestDensityPriorBoxOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        # 1. Current is not support attrs['flatten_to_2d']
+        # 1. Current Paddle-Lite is not support attrs['flatten_to_2d']
         if program_config.ops[0].attrs['flatten_to_2d'] == True:
             return False
         return True

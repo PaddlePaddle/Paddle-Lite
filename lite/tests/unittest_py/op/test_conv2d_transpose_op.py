@@ -57,7 +57,6 @@ class TestConv2dTransposeOp(AutoScanTest):
             Place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW)
         ]
         self.enable_testing_on_place(places=x86_valid_places, thread=[1, 4])
-        '''
         arm_valid_places = [
             Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
             Place(TargetType.ARM, PrecisionType.FP16, DataLayoutType.NCHW),
@@ -69,15 +68,13 @@ class TestConv2dTransposeOp(AutoScanTest):
                   DataLayoutType.ImageDefault)
         ]
         self.enable_testing_on_place(places=opencl_valid_places)
-        '''
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        # 1. Current not support quantize unit test.
-        if program_config.weights['filter_data'].dtype == np.int8:
+        if predictor_config.target() in [TargetType.ARM, TargetType.OpenCL]:
             return False
-        # 2. This will cause paddle-lite error, need fix.
+        # 1. This will cause paddle-lite error, need fix.
         if program_config.ops[0].attrs[
                 'output_padding'] != [] and program_config.ops[0].attrs[
                     'output_size'] != []:
@@ -115,6 +112,8 @@ class TestConv2dTransposeOp(AutoScanTest):
                 st.integers(
                     min_value=1, max_value=16), min_size=2, max_size=2))
         use_mkldnn = False
+        if self.get_target().upper() == "X86":
+            use_mkldnn = True
         has_output_padding = draw(st.booleans())
         has_output_size = draw(st.booleans())
         paddings, dilations = update_padding_and_dilation(
@@ -193,17 +192,6 @@ class TestConv2dTransposeOp(AutoScanTest):
 
         check_constrains()
 
-        def gen_data_type():
-            input_data_type = draw(st.sampled_from([np.float32, np.int8]))
-            filter_data_type = draw(st.sampled_from([np.float32, np.int8]))
-            output_data_type = draw(st.sampled_from([np.float32, np.int8]))
-            if filter_data_type == np.float32:
-                input_data_type = np.float32
-                output_data_type == np.float32
-            return input_data_type, filter_data_type, output_data_type
-
-        input_data_type, filter_data_type, output_data_type = gen_data_type()
-
         input_shape = []
         if data_format == 'NCHW':
             input_shape = [input_n, input_c, input_h, input_w]
@@ -211,14 +199,6 @@ class TestConv2dTransposeOp(AutoScanTest):
             input_shape = [input_n, input_h, input_w, input_c]
         weight_shape = [filter_c, filter_m // groups, filter_h,
                         filter_w]  # data_format = 'CMHW'
-
-        def generate_data(*args, **kwargs):
-            if kwargs['dtype'] == np.float32:
-                return np.random.random(kwargs['shape']).astype(kwargs[
-                    'dtype'])
-            elif kwargs['dtype'] == np.int8:
-                return np.random.randint(
-                    -128, 128, size=kwargs['shape']).astype(kwargs['dtype'])
 
         def generate_bias(*args, **kwargs):
             if use_mkldnn:
@@ -249,16 +229,11 @@ class TestConv2dTransposeOp(AutoScanTest):
         program_config = ProgramConfig(
             ops=[conv2d_transpose_op],
             weights={
-                "filter_data": TensorConfig(data_gen=partial(
-                    generate_data, shape=weight_shape,
-                    dtype=filter_data_type)),
+                "filter_data": TensorConfig(shape=weight_shape),
                 "bias_data": TensorConfig(data_gen=partial(
                     generate_bias, shape=[filter_m, 1], dtype=np.float32))
             },
-            inputs={
-                "input_data": TensorConfig(data_gen=partial(
-                    generate_data, shape=input_shape, dtype=input_data_type))
-            },
+            inputs={"input_data": TensorConfig(shape=input_shape)},
             outputs=["output_data"])
         return program_config
 
