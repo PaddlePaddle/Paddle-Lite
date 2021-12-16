@@ -111,4 +111,3 @@ class FusePassAutoScanTest(AutoScanTest):
         assert passes is not None, "Parameter of passes must be defined in function run_and_statis."
         super().run_and_statis(quant, max_examples, reproduce, min_success_num,
                                max_duration, passes)
-        
