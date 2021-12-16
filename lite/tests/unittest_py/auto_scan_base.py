@@ -482,6 +482,12 @@ class AutoScanBaseTest(unittest.TestCase):
             self.thread_num.append(thread)
             self.thread_num = list(self.thread_num)
 
+        # arm basic places:
+        arm_basic_places = [
+            Place(TargetType.ARM, PrecisionType.INT32),
+            Place(TargetType.ARM, PrecisionType.INT64)
+        ]
+
         # if list[Place] is inputed, this will be used directly
         if places is not None:
             assert isinstance(places, list)
@@ -493,8 +499,11 @@ class AutoScanBaseTest(unittest.TestCase):
         precision_ = precision if isinstance(precision, list) else [precision]
         layout_ = layout if isinstance(layout, list) else [layout]
         for tar_, pre_, lay_ in product(target_, precision_, layout_):
-            self.valid_places.append([Place(tar_, pre_, lay_)])
-        return
+            if (tar_ == TargetType.ARM):
+                self.valid_places.append([Place(tar_, pre_, lay_)] +
+                                         arm_basic_places)
+            else:
+                self.valid_places.append([Place(tar_, pre_, lay_)])
 
     def get_target(self) -> str:
         return self.args.target
