@@ -85,13 +85,12 @@ class TestAsinOp(AutoScanTest):
             inputs={"X": ["input_data"]},
             outputs={"Out": ["output_data"]},
             attrs={})
-        # Make sure abs of input data is less than 0.9 because the output is infinite when abs of input is 1
         program_config = ProgramConfig(
             ops=[asin_op],
             weights={},
             inputs={
                 "input_data": TensorConfig(data_gen=partial(
-                    generate_data, low=-0.9, high=0.9, shape=in_shape))
+                    generate_data, low=-1, high=1, shape=in_shape))
             },
             outputs=["output_data"])
         return program_config
