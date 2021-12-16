@@ -243,40 +243,49 @@ void BindLiteMLUCoreVersion(py::module *m) {
 void BindLitePlace(py::module *m) {
   // TargetType
   py::enum_<TargetType>(*m, "TargetType")
+      .value("Unk", TargetType::kUnk)
       .value("Host", TargetType::kHost)
       .value("X86", TargetType::kX86)
       .value("CUDA", TargetType::kCUDA)
       .value("ARM", TargetType::kARM)
       .value("OpenCL", TargetType::kOpenCL)
+      .value("Any", TargetType::kAny)
       .value("FPGA", TargetType::kFPGA)
       .value("NPU", TargetType::kNPU)
+      .value("XPU", TargetType::kXPU)
+      .value("BM", TargetType::kBM)
       .value("MLU", TargetType::kMLU)
       .value("RKNPU", TargetType::kRKNPU)
+      .value("APU", TargetType::kAPU)
+      .value("HUAWEI_ASCEND_NPU", TargetType::kHuaweiAscendNPU)
+      .value("IMAGINATION_NNA", TargetType::kImaginationNNA)
       .value("INTEL_FPGA", TargetType::kIntelFPGA)
-      .value("Any", TargetType::kAny)
-      .value("Metal", TargetType::kMetal);
+      .value("Metal", TargetType::kMetal)
+      .value("NNAdapter", TargetType::kNNAdapter);
 
   // PrecisionType
   py::enum_<PrecisionType>(*m, "PrecisionType")
-      .value("FP16", PrecisionType::kFP16)
+      .value("Unk", PrecisionType::kUnk)
       .value("FP32", PrecisionType::kFloat)
-      .value("FP64", PrecisionType::kFP64)
-      .value("UINT8", PrecisionType::kUInt8)
       .value("INT8", PrecisionType::kInt8)
-      .value("INT16", PrecisionType::kInt16)
       .value("INT32", PrecisionType::kInt32)
-      .value("INT64", PrecisionType::kInt64)
+      .value("Any", PrecisionType::kAny)
+      .value("FP16", PrecisionType::kFP16)
       .value("BOOL", PrecisionType::kBool)
-      .value("Any", PrecisionType::kAny);
+      .value("INT64", PrecisionType::kInt64)
+      .value("INT16", PrecisionType::kInt16)
+      .value("UINT8", PrecisionType::kUInt8)
+      .value("FP64", PrecisionType::kFP64);
 
   // DataLayoutType
   py::enum_<DataLayoutType>(*m, "DataLayoutType")
+      .value("Unk", DataLayoutType::kUnk)
       .value("NCHW", DataLayoutType::kNCHW)
+      .value("Any", DataLayoutType::kAny)
       .value("NHWC", DataLayoutType::kNHWC)
       .value("ImageDefault", DataLayoutType::kImageDefault)
       .value("ImageFolder", DataLayoutType::kImageFolder)
       .value("ImageNW", DataLayoutType::kImageNW)
-      .value("Any", DataLayoutType::kAny)
       .value("MetalTexture2DArray", DataLayoutType::kMetalTexture2DArray)
       .value("MetalTexture2D", DataLayoutType::kMetalTexture2D);
 
