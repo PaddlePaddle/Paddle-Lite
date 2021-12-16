@@ -53,6 +53,7 @@ def ParsePlaceInfo(place_str):
     else:
         logging.fatal("Error place info: " + place_str)
 
+
 def ParsePaddleLiteConfig(self, config):
     lite_config = CxxConfig()
     if "valid_targets" in config:
