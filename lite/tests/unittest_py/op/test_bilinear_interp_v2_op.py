@@ -58,11 +58,7 @@ class TestBilinearV2Op(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        if predictor_config.target() == TargetType.ARM:
-            # run error: cann't find <host.int32> -> <arm, fp32>
-            return False
-        else:
-            return True
+        return True
 
     def sample_program_configs(self, draw):
         batch = draw(st.integers(min_value=1, max_value=4))
