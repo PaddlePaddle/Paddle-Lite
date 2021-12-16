@@ -181,7 +181,7 @@ Paddle Lite 仓库中 \ ``/lite/tools/build_android.sh``\  脚本文件用于构
    # (可选) 删除 third-party 目录，编译脚本会自动从国内 CDN 下载第三方库文件
    # rm -rf third-party
 
-   # 3. 编译 Paddle-Lite Android 预测库
+   # 3. 编译 Paddle Lite Android 预测库
    ./lite/tools/build_android.sh
 
 ..

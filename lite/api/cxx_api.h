@@ -182,6 +182,16 @@ class LITE_API Predictor {
     ClearTensorArray(program_desc_);
   }
 
+#ifdef LITE_WITH_METAL
+  void ConfigMetalContext(const lite_api::CxxConfig& config) {
+    program_->ConfigMetalContext(config.metal_lib_path(),
+                                 config.metal_use_mps(),
+                                 config.metal_use_aggressive(),
+                                 config.metal_use_memory_reuse(),
+                                 config.metal_device());
+  }
+#endif
+
   /// \brief Release all tmp tensor to compress the size of the memory pool.
   /// The memory pool is considered to be composed of a list of chunks, if
   /// the chunk is not occupied, it can be released.

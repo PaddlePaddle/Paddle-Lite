@@ -23,22 +23,24 @@ import unittest
 import hypothesis
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=2, max_value=8), min_size = 2, max_size=2))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=2, max_value=8), min_size=2, max_size=2))
     lower_data = draw(st.booleans())
     diagonal_data = draw(st.integers(min_value=2, max_value=8))
-    
+
     tril_triu_op = OpConfig(
-        type = "tril_triu",
-        inputs = {"X" : ["input_data"]},
-        outputs = {"Out": ["output_data"]},
-        attrs = {"lower": lower_data,
-                 "diagonal" : diagonal_data})
+        type="tril_triu",
+        inputs={"X": ["input_data"]},
+        outputs={"Out": ["output_data"]},
+        attrs={"lower": lower_data,
+               "diagonal": diagonal_data})
     program_config = ProgramConfig(
         ops=[tril_triu_op],
         weights={},
-        inputs={
-            "input_data": TensorConfig(shape=in_shape),
-        },
+        inputs={"input_data": TensorConfig(shape=in_shape), },
         outputs=["output_data"])
     return program_config

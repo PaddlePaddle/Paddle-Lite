@@ -23,28 +23,34 @@ import unittest
 import hypothesis
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=2, max_value=6), min_size = 4, max_size=4))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=2, max_value=6), min_size=4, max_size=4))
     axis_data = draw(st.integers(min_value=0, max_value=3))
     use_stack_data = draw(st.booleans())
+
     def generate_input_I_data():
-            return np.random.randint(0,1,[1]).astype(np.int64)
+        return np.random.randint(0, 1, [1]).astype(np.int64)
 
     write_to_array_op = OpConfig(
-        type = "write_to_array",
-        inputs = {"X" : ["X_data"],
-                  "I" : ["I_data"]},
-        outputs = {"Out": ["middle_data"]},
-        attrs = {})
+        type="write_to_array",
+        inputs={"X": ["X_data"],
+                "I": ["I_data"]},
+        outputs={"Out": ["middle_data"]},
+        attrs={})
 
     tensor_array_to_tensor_op = OpConfig(
-        type = "tensor_array_to_tensor",
-        inputs = {"X" : ["middle_data"]},
-        outputs = {"Out": ["output_data"],
-                  "OutIndex" : ["OutIndex_data"]},
-        attrs = {"axis" : 1,
-                 "use_stack" : False,
-                  })
+        type="tensor_array_to_tensor",
+        inputs={"X": ["middle_data"]},
+        outputs={"Out": ["output_data"],
+                 "OutIndex": ["OutIndex_data"]},
+        attrs={
+            "axis": 1,
+            "use_stack": False,
+        })
     program_config = ProgramConfig(
         ops=[write_to_array_op, tensor_array_to_tensor_op],
         weights={},
@@ -52,5 +58,5 @@ def sample_program_configs(draw):
             "X_data": TensorConfig(shape=in_shape),
             "I_data": TensorConfig(data_gen=partial(generate_input_I_data))
         },
-        outputs=["output_data","OutIndex_data"])
+        outputs=["output_data", "OutIndex_data"])
     return program_config
