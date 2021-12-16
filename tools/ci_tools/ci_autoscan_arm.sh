@@ -1,4 +1,5 @@
-tart the CI task of unittest for op and pass.
+#!/bin/bash
+# Start the CI task of unittest for op and pass.
 set -x
 set -e
 
