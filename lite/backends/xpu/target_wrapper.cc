@@ -15,7 +15,6 @@
 #include "lite/backends/xpu/target_wrapper.h"
 #include <limits>
 #include <vector>
-#include "lite/backends/xpu/math.h"
 #include "lite/utils/macros.h"
 
 namespace paddle {
@@ -77,97 +76,11 @@ XPUScratchPadGuard TargetWrapperXPU::MallocScratchPad(size_t size) {
   return XPUScratchPadGuard(new XPUScratchPad(ptr, size));
 }
 
-template <typename T>
-static inline size_t hash_combine(size_t seed, const T& v) {
-  std::hash<T> hasher;
-  seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-  return seed;
-}
-
-static size_t Hashed(const float* cpu_data,
-                     int numel,
-                     const std::string& precision,
-                     bool trans) {
-  std::hash<const float*> ptr_hasher;
-  auto hash_res = ptr_hasher(cpu_data);
-  hash_res = hash_combine(hash_res, numel);
-  hash_res = hash_combine(hash_res, precision);
-  hash_res = hash_combine(hash_res, trans);
-  return hash_res;
-}
-
+template <typename Tcpu, typename Txpu>
 XPUQuantData TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight(
-    const float* cpu_data,
-    const DDimLite& dims,
-    const std::string& precision,
-    bool data_transpose) {
-  int numel = dims.production();
-  auto hashed_key = Hashed(cpu_data, numel, precision, data_transpose);
-  VLOG(3) << "cpu_data=" << cpu_data << ", numel=" << numel
-          << ", precision=" << precision << ", transpose=" << data_transpose
-          << ", hashed_key=" << hashed_key;
-  if (w_map_.find(hashed_key) == w_map_.end()) {
-    const float* cpu_ptr = nullptr;
-    std::vector<float> transpose_data(numel, 0);
-    if (data_transpose) {
-      CHECK(dims.size() == 2) << "Not support: dims.size = " << dims.size();
-      paddle::lite::xpu::math::Transpose(
-          cpu_data, transpose_data.data(), dims[0], dims[1]);
-      cpu_ptr = transpose_data.data();
-    } else {
-      cpu_ptr = cpu_data;
-    }
-
-    XPUScratchPadGuard weight_max_guard;
-    XPUScratchPadGuard quant_weight_guard;
-
-    float max_val = paddle::lite::xpu::math::FindMaxAbs(cpu_ptr, numel);
-    int max_ptr_size = xdnn::get_max_ptr_size(GetRawContext());
-    std::vector<float> max_vec(max_ptr_size, max_val);
-    weight_max_guard =
-        std::move(MallocScratchPad(max_ptr_size * sizeof(float)));
-    MemcpySync(weight_max_guard->addr_,
-               max_vec.data(),
-               max_ptr_size * sizeof(float),
-               IoDirection::HtoD);
-
-    if (precision == "int31") {
-      quant_weight_guard = std::move(MallocScratchPad(numel * sizeof(float)));
-      MemcpySync(quant_weight_guard->addr_,
-                 cpu_ptr,
-                 numel * sizeof(float),
-                 IoDirection::HtoD);
-    } else if (precision == "int16") {
-      quant_weight_guard = std::move(MallocScratchPad(numel * sizeof(int16_t)));
-      std::vector<int16_t> quant_data_cpu(numel, 0);
-      paddle::lite::xpu::math::ConvertFP32ToInt16(
-          cpu_ptr, quant_data_cpu.data(), max_val, numel);
-      MemcpySync(quant_weight_guard->addr_,
-                 quant_data_cpu.data(),
-                 numel * sizeof(int16_t),
-                 IoDirection::HtoD);
-    } else if (precision == "int8") {
-      quant_weight_guard = std::move(MallocScratchPad(numel * sizeof(int8_t)));
-      std::vector<int8_t> quant_data_cpu(numel, 0);
-      paddle::lite::xpu::math::ConvertFP32ToInt8(
-          cpu_ptr, quant_data_cpu.data(), max_val, numel);
-      MemcpySync(quant_weight_guard->addr_,
-                 quant_data_cpu.data(),
-                 numel * sizeof(int8_t),
-                 IoDirection::HtoD);
-    } else {
-      CHECK(false) << "Unknown precision: " << precision;
-    }
-
-    w_map_[hashed_key] = std::make_pair(std::move(weight_max_guard),
-                                        std::move(quant_weight_guard));
-  }
-
-  float* max_ptr = reinterpret_cast<float*>(w_map_[hashed_key].first->addr_);
-  void* qdata_ptr = w_map_[hashed_key].second->addr_;
-  XPUQuantData xpu_qdata(max_ptr, qdata_ptr);
-
-  return xpu_qdata;
+    const Tcpu* cpu_data, const DDimLite& dims, bool data_transpose) {
+  CHECK(quantizer_);
+  return quantizer_->quant<Tcpu, Txpu>(cpu_data, dims, data_transpose);
 }
 
 void TargetWrapperXPU::ScatterL3Cache(
@@ -284,10 +197,8 @@ LITE_THREAD_LOCAL std::vector<XPUL3CacheBlock*> TargetWrapperXPU::l3_block_dict;
 std::mutex TargetWrapperXPU::mutex_l3_;
 // l3 planner
 LITE_THREAD_LOCAL XPUL3Planner* TargetWrapperXPU::l3_planner_{nullptr};
-// cpu data to xpu quant data
-LITE_THREAD_LOCAL
-std::unordered_map<size_t, std::pair<XPUScratchPadGuard, XPUScratchPadGuard>>
-    TargetWrapperXPU::w_map_;
+// xpu quantizer
+LITE_THREAD_LOCAL XPUQuantizer* TargetWrapperXPU::quantizer_{nullptr};
 
 }  // namespace lite
 }  // namespace paddle

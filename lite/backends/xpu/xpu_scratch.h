@@ -14,31 +14,24 @@
 
 #pragma once
 
-#include "lite/core/kernel.h"
+#include <memory>
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace xpu {
 
-class XPUFcCompute : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
- public:
-  using param_t = operators::XPUFcParam;
-
-  void PrepareForRun() override;
-
-  virtual void Run();
-
-  virtual ~XPUFcCompute() = default;
-
- private:
-  // TODO(weihaoji): remove cpu w_max after xpu fc wrapper refactor
-  float w_max;
-  XPUScratchPadGuard input_max_guard_;
-  XPUQuantData xpu_quant_weight_;
+struct XPUScratchPad {
+  XPUScratchPad(void* addr, size_t size) : addr_(addr), size_(size) {}
+  // XXX(miaotianxiang): |size_| increases monotonically
+  void Reserve(size_t new_size);
+  void* addr_{nullptr};
+  size_t size_{0};
 };
 
-}  // namespace xpu
-}  // namespace kernels
+struct XPUScratchPadDeleter {
+  void operator()(XPUScratchPad* sp) const;
+};
+
+using XPUScratchPadGuard = std::unique_ptr<XPUScratchPad, XPUScratchPadDeleter>;
+
 }  // namespace lite
 }  // namespace paddle

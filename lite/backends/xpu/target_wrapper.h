@@ -16,15 +16,14 @@
 
 #include <algorithm>
 #include <map>
-#include <memory>
 #include <mutex>  // NOLINT
 #include <string>
-#include <unordered_map>
-#include <utility>
 #include <vector>
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/backends/xpu/xpu_l3_cache_block.h"
 #include "lite/backends/xpu/xpu_l3_strategy.h"
+#include "lite/backends/xpu/xpu_quantizer.h"
+#include "lite/backends/xpu/xpu_scratch.h"
 #include "lite/core/dim.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/utils/log/cp_logging.h"
@@ -48,28 +47,6 @@ const int XPU_MAX_LOD_SEQ_LEN = 512;
 
 using TargetWrapperXPU = TargetWrapper<TARGET(kXPU)>;
 
-struct XPUScratchPad {
-  XPUScratchPad(void* addr, size_t size) : addr_(addr), size_(size) {}
-  // XXX(miaotianxiang): |size_| increases monotonically
-  void Reserve(size_t new_size);
-  void* addr_{nullptr};
-  size_t size_{0};
-};
-
-struct XPUScratchPadDeleter {
-  void operator()(XPUScratchPad* sp) const;
-};
-
-using XPUScratchPadGuard = std::unique_ptr<XPUScratchPad, XPUScratchPadDeleter>;
-
-struct XPUQuantData {
-  XPUQuantData() : data_ptr_(nullptr), max_ptr_(nullptr) {}
-  XPUQuantData(float* max_ptr, void* data_ptr)
-      : data_ptr_(data_ptr), max_ptr_(max_ptr) {}
-  void* data_ptr_{nullptr};
-  float* max_ptr_{nullptr};
-};
-
 template <>
 class TargetWrapper<TARGET(kXPU)> {
  public:
@@ -86,11 +63,10 @@ class TargetWrapper<TARGET(kXPU)> {
 
   static XPUScratchPadGuard MallocScratchPad(size_t size);
 
-  static XPUQuantData ConvertCPUWeightToXPUQuantWeight(
-      const float* cpu_data,
-      const DDimLite& dims,
-      const std::string& precision,
-      bool data_transpose);
+  template <typename Tcpu, typename Txpu>
+  static XPUQuantData ConvertCPUWeightToXPUQuantWeight(const Tcpu* cpu_data,
+                                                       const DDimLite& dims,
+                                                       bool data_transpose);
 
   static xdnn::Context* GetRawContext() {
     if (tls_raw_ctx_ == nullptr) {
@@ -100,6 +76,10 @@ class TargetWrapper<TARGET(kXPU)> {
         l3_planner_ = new XPUL3Planner;
       }
       CHECK(l3_planner_);
+      if (quantizer_ == nullptr) {
+        quantizer_ = new XPUQuantizer();
+      }
+      CHECK(quantizer_);
       if (conv_autotune) {
         tls_raw_ctx_->_xpu1_conv_selector.set_autotune_loop(true);
         tls_raw_ctx_->_xpu1_conv_selector.set_inference_mode(true);
@@ -118,7 +98,7 @@ class TargetWrapper<TARGET(kXPU)> {
       }
       CHECK_LE(shared_l3_size, max_l3_size);
       if (local_gm_size > 0) {
-        VLOG(3) << "Try To Malloc Local GM Workspace Size is" << local_gm_size;
+        VLOG(3) << "Try To Malloc Local GM Workspace Size is " << local_gm_size;
         void* local_gm_ptr = nullptr;
         int ret =
             xpu_malloc(reinterpret_cast<void**>(&local_gm_ptr), local_gm_size);
@@ -183,10 +163,7 @@ class TargetWrapper<TARGET(kXPU)> {
   static void* shared_l3_ptr_;
   static std::mutex mutex_l3_;
   static LITE_THREAD_LOCAL XPUL3Planner* l3_planner_;
-  static LITE_THREAD_LOCAL
-      std::unordered_map<size_t,
-                         std::pair<XPUScratchPadGuard, XPUScratchPadGuard>>
-          w_map_;  // cpu data to xpu quant data
+  static LITE_THREAD_LOCAL XPUQuantizer* quantizer_;
 };
 
 }  // namespace lite
