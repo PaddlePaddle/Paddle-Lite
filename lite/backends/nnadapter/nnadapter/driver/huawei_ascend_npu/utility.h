@@ -16,9 +16,7 @@
 
 #include <memory>
 #include <string>
-#include <tuple>
 #include <vector>
-
 #include "core/hal/types.h"
 #include "driver/huawei_ascend_npu/model_client.h"
 #include "ge/ge_api_types.h"
