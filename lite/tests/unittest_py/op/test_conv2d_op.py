@@ -58,9 +58,12 @@ class TestConv2dOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        if predictor_config.target(
-        ) == TargetType.ARM or predictor_config.target() == TargetType.OpenCL:
-            # has diff or segmentation
+        if predictor_config.target() == TargetType.OpenCL:
+            return False
+        elif predictor_config.target() == TargetType.ARM and (
+                predictor_config.precision() == PrecisionType.FP16 or
+                predictor_config.precision() == PrecisionType.INT8):
+            # fp16 has diff and int8 doesn't support
             return False
         else:
             return True
