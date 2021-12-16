@@ -73,7 +73,7 @@ class TestFcOp(AutoScanTest):
         in_dtype = draw(st.sampled_from([np.float32]))
         use_mkldnn_data = False
         target = self.get_target()
-        if(target == "X86"):
+        if (target == "X86"):
             use_mkldnn_data = True
 
         def generate_X_data():

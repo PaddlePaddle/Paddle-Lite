@@ -70,11 +70,12 @@ class TestFcOp(AutoScanTest):
                     min_value=1, max_value=8), min_size=4, max_size=4))
         target = self.get_target()
         use_mkldnn_data = False
-        if(target == "X86"):
+        if (target == "X86"):
             use_mkldnn_data = True
             in_dtype = draw(st.sampled_from([np.float32]))
-        elif(target == "ARM"):
-            in_dtype = draw(st.sampled_from([np.float64, np.int32, np.int64, np.int8]))
+        elif (target == "ARM"):
+            in_dtype = draw(
+                st.sampled_from([np.float64, np.int32, np.int64, np.int8]))
             # ToDo : 
             # fp16 can not be verified
 
