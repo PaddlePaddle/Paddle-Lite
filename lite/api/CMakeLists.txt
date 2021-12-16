@@ -202,14 +202,13 @@ if (LITE_WITH_JAVA AND LITE_WITH_ARM)
     add_subdirectory(android)
 endif()
 # python API
-if (LITE_WITH_PYTHON)
+if(LITE_WITH_PYTHON)
     # add library for opt_base
     add_subdirectory(python)
     lite_cc_library(lite_pybind SHARED SRCS python/pybind/pybind.cc tools/opt_base.cc DEPS ${full_lib_DEPS} paddle_api_full ${external_libs_DEPS}  pybind python)
-endif()
-
-if(LITE_WITH_METAL)
-    target_link_libraries(lite_pybind ${METAL_LIBRARY} ${MPS_LIBRARY} ${GRAPHIC} ${FOUNDATION_LIBRARY})
+    if(LITE_WITH_METAL)
+        target_link_libraries(lite_pybind ${METAL_LIBRARY} ${MPS_LIBRARY} ${GRAPHIC} ${FOUNDATION_LIBRARY})
+    endif()
 endif()
 
 if(NOT IOS AND NOT LITE_ON_TINY_PUBLISH)
