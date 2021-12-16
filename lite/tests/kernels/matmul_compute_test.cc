@@ -617,6 +617,10 @@ TEST(Matmulnxn, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-2;
+  test_matmulnxn(place, abs_error);
+  return;
 #else
   return;
 #endif

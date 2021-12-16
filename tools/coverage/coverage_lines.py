@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 """
 usage: coverage_lines.py info_file expected
 """
@@ -55,11 +54,9 @@ if __name__ == '__main__':
 
     if actual < expected:
         print 'expected >= {} %, actual {} %, failed'.format(
-            round(expected * 100, 1),
-            round(actual * 100, 1))
+            round(expected * 100, 1), round(actual * 100, 1))
 
         exit(1)
 
     print 'expected >= {} %, actual {} %, passed'.format(
-        round(expected * 100, 1),
-        round(actual * 100, 1))
+        round(expected * 100, 1), round(actual * 100, 1))

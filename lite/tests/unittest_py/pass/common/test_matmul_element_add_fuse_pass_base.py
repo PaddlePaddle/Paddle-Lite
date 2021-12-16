@@ -24,50 +24,52 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 
-def sample_program_configs(draw):
-    matmul_x_shape=draw(st.lists(st.integers(min_value=5, max_value=10), min_size=3, max_size=4))
 
-    transpose_Y_data=draw(st.sampled_from([False, True]))
-    matmul_y_shape=[]
-    matmul_y1=draw(st.integers(min_value=5, max_value=10))
-    if transpose_Y_data==False:
-        matmul_y_shape=[matmul_x_shape[-1], matmul_y1]
+def sample_program_configs(draw):
+    matmul_x_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=5, max_value=10), min_size=3, max_size=4))
+
+    transpose_Y_data = draw(st.sampled_from([False, True]))
+    matmul_y_shape = []
+    matmul_y1 = draw(st.integers(min_value=5, max_value=10))
+    if transpose_Y_data == False:
+        matmul_y_shape = [matmul_x_shape[-1], matmul_y1]
     else:
-        matmul_y_shape=[matmul_y1,matmul_x_shape[-1]]
-    add_x_data_shape=[int(1), matmul_y1] 
+        matmul_y_shape = [matmul_y1, matmul_x_shape[-1]]
+    add_x_data_shape = [int(1), matmul_y1]
 
     matmul_op = OpConfig(
-        type = "matmul",
-        inputs = {"X": ["x_data"],"Y":["y_data"]},
-        outputs = {"Out": ["matmul_output_data"]},
-        attrs = {
+        type="matmul",
+        inputs={"X": ["x_data"],
+                "Y": ["y_data"]},
+        outputs={"Out": ["matmul_output_data"]},
+        attrs={
             "transpose_X": False,
             "transpose_Y": transpose_Y_data,
             "alpha": 1.0,
             "fused_reshape_X": [],
             "fused_reshape_Y": [],
             "fused_transpose_X": [],
-            "fused_transpose_Y": []             
+            "fused_transpose_Y": []
         })
-    
+
     elementwise_add_op = OpConfig(
-        type = "elementwise_add",
-        inputs = {"X": ["matmul_output_data"], "Y": ["add_x_data"]},
-        outputs = {"Out": ["output_data"]},
-        attrs = {"axis": -1})       
+        type="elementwise_add",
+        inputs={"X": ["matmul_output_data"],
+                "Y": ["add_x_data"]},
+        outputs={"Out": ["output_data"]},
+        attrs={"axis": -1})
 
     ops = [matmul_op, elementwise_add_op]
 
     weights_ = {
         "add_x_data": TensorConfig(shape=add_x_data_shape),
-        "y_data": TensorConfig(shape=matmul_y_shape)}
-    inputs_ = {
-        "x_data": TensorConfig(shape=matmul_x_shape)
-    }  
+        "y_data": TensorConfig(shape=matmul_y_shape)
+    }
+    inputs_ = {"x_data": TensorConfig(shape=matmul_x_shape)}
 
     program_config = ProgramConfig(
-        ops=ops,
-        weights=weights_,
-        inputs=inputs_,
-        outputs=["output_data"])
+        ops=ops, weights=weights_, inputs=inputs_, outputs=["output_data"])
     return program_config

@@ -23,23 +23,29 @@ import unittest
 import hypothesis
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape_x = draw(st.lists(st.integers(min_value=1, max_value=8), min_size = 4, max_size=4))
-    in_shape_y = draw(st.lists(st.integers(min_value=1, max_value=8), min_size = 4, max_size=4))
+    in_shape_x = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=8), min_size=4, max_size=4))
+    in_shape_y = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=8), min_size=4, max_size=4))
     axis = draw(st.sampled_from([0, 1, 2, 3]))
     not_equal_op = OpConfig(
-        type = "not_equal",
-       inputs = {"X" : ["input_data_x"], "Y": ["input_data_y"]},
-        outputs = {"Out": ["output_data"]},
-        attrs = {"axis":axis})
+        type="not_equal",
+        inputs={"X": ["input_data_x"],
+                "Y": ["input_data_y"]},
+        outputs={"Out": ["output_data"]},
+        attrs={"axis": axis})
     program_config = ProgramConfig(
         ops=[not_equal_op],
         weights={},
         inputs={
-            "input_data_x":
-            TensorConfig(shape=in_shape_x),
-            "input_data_y":
-            TensorConfig(shape=in_shape_y)
+            "input_data_x": TensorConfig(shape=in_shape_x),
+            "input_data_y": TensorConfig(shape=in_shape_y)
         },
         outputs=["output_data"])
     return program_config

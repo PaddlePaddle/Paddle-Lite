@@ -23,24 +23,25 @@ import unittest
 import hypothesis
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=1, max_size=4))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=8), min_size=1, max_size=4))
 
     def generate_input(*args, **kwargs):
         # Make sure input data is greater than 0
         return np.random.random(in_shape).astype(np.float32) + 1
 
     rsqrt_op = OpConfig(
-        type = "rsqrt",
-        inputs = {"X" : ["input_data"]},
-        outputs = {"Out": ["output_data"]},
-        attrs = {})
+        type="rsqrt",
+        inputs={"X": ["input_data"]},
+        outputs={"Out": ["output_data"]},
+        attrs={})
     program_config = ProgramConfig(
         ops=[rsqrt_op],
         weights={},
-        inputs={
-            "input_data":
-            TensorConfig(data_gen=partial(generate_input))
-        },
+        inputs={"input_data": TensorConfig(data_gen=partial(generate_input))},
         outputs=["output_data"])
     return program_config
