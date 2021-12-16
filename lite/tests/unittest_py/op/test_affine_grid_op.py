@@ -40,8 +40,7 @@ class TestAffineGridOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        # run lite error: not find cast: int32->fp32
-        return False
+        return True
 
     def sample_program_configs(self, draw):
         in_shape = [draw(st.integers(min_value=1, max_value=50)), 2, 3]
