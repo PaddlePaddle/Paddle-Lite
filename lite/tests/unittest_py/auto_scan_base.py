@@ -236,6 +236,9 @@ class AutoScanBaseTest(unittest.TestCase):
 
         paddlelite_configs, op_list_, (atol_,
                                        rtol_) = self.sample_predictor_configs()
+        for paddlelite_config in paddlelite_configs:
+            self.num_predictor_kinds += 1
+
         for prog_config in prog_configs:
             # if program is invalid, we should ignore this cases.
             program_valid_ = False
@@ -268,7 +271,6 @@ class AutoScanBaseTest(unittest.TestCase):
                                      feed_data))
 
             for paddlelite_config in paddlelite_configs:
-                self.num_predictor_kinds += 1
                 # ignore info
                 ignore_flag = False
                 paddle_lite_not_support_flag = False
@@ -347,7 +349,8 @@ class AutoScanBaseTest(unittest.TestCase):
         main_block = pg.desc.block(0)
         after_op_list = list()
         for i in range(main_block.op_size()):
-            if main_block.op(i).type() in ["feed", "fetch"]:
+            if main_block.op(i).type(
+            ) in ["feed", "fetch", "layout", "io_copy"]:
                 continue
             after_op_list.append(main_block.op(i).type())
         self.assertTrue(
@@ -523,6 +526,7 @@ class AutoScanBaseTest(unittest.TestCase):
         configs_ = []
         for elem_ in self.valid_places:
             if target in elem_[0]:
+                print("elem", elem_)
                 for thread_ in self.thread_num:
                     config_ = CxxConfig()
                     config_.set_valid_places(elem_)
