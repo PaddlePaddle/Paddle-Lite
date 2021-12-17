@@ -9843,7 +9843,7 @@ void sparse_semi_conv_int8_fp32_pipelined(const int8_t* A,
         // clang-format on
         vbias = (bias != nullptr) ? bias[i * 2 + 1] : 0.0;
         vscale = scale[i * 2 + 1];
-        float* hs_param = vhs_param;
+        hs_param = vhs_param;
         // clang-format off
         asm volatile(SPARSE_INT8_F32_W48_v7_SEMI2_OUT
           : [a_ptr] "+r"(cur_w2),
@@ -9940,7 +9940,7 @@ void sparse_semi_conv_int8_fp32_pipelined(const int8_t* A,
         // clang-format on
         vbias = (bias != nullptr) ? bias[i * 2 + 1] : 0.0;
         vscale = scale[i * 2 + 1];
-        float* hs_param = vhs_param;
+        hs_param = vhs_param;
         // clang-format off
         asm volatile(SPARSE_INT8_F32_W32_v7_SEMI2_OUT
           : [a_ptr] "+r"(cur_w2),
@@ -10036,7 +10036,7 @@ void sparse_semi_conv_int8_fp32_pipelined(const int8_t* A,
         // clang-format on
         vbias = (bias != nullptr) ? bias[i * 2 + 1] : 0.0;
         vscale = scale[i * 2 + 1];
-        float* hs_param = vhs_param;
+        hs_param = vhs_param;
         // clang-format off
         asm volatile(SPARSE_INT8_F32_W16_v7_SEMI2_OUT
           : [a_ptr] "+r"(cur_w2),
@@ -10131,7 +10131,7 @@ void sparse_semi_conv_int8_fp32_pipelined(const int8_t* A,
         // clang-format on
         vbias = (bias != nullptr) ? bias[i * 2 + 1] : 0.0;
         vscale = scale[i * 2 + 1];
-        float* hs_param = vhs_param;
+        hs_param = vhs_param;
         // clang-format off
         asm volatile(SPARSE_INT8_F32_W8_v7_SEMI2_OUT
           : [a_ptr] "+r"(cur_w2),
@@ -10224,7 +10224,7 @@ void sparse_semi_conv_int8_fp32_pipelined(const int8_t* A,
         // clang-format on
         vbias = (bias != nullptr) ? bias[i * 2 + 1] : 0.0;
         vscale = scale[i * 2 + 1];
-        float* hs_param = vhs_param;
+        hs_param = vhs_param;
         // clang-format off
         asm volatile(SPARSE_INT8_F32_W4_v7_SEMI2_OUT
           : [a_ptr] "+r"(cur_w2),
@@ -11662,7 +11662,7 @@ void sparse_semi_conv_int8_int8_pipelined(const int8_t* A,
         bias_scale[5] = bias_scale[4];
         bias_scale[6] = bias_scale[4];
         bias_scale[7] = bias_scale[4];
-        float* hs_param = vhs_param;
+        hs_param = vhs_param;
         // clang-format off
         asm volatile(SPARSE_INT8_INT8_W48_v7_SEMI2_OUT
           : [a_ptr] "+r"(cur_w2),
@@ -11787,7 +11787,7 @@ void sparse_semi_conv_int8_int8_pipelined(const int8_t* A,
         bias_scale[5] = bias_scale[4];
         bias_scale[6] = bias_scale[4];
         bias_scale[7] = bias_scale[4];
-        float* hs_param = vhs_param;
+        hs_param = vhs_param;
         // clang-format off
         asm volatile(SPARSE_INT8_INT8_W32_v7_SEMI2_OUT
           : [a_ptr] "+r"(cur_w2),
@@ -11910,7 +11910,7 @@ void sparse_semi_conv_int8_int8_pipelined(const int8_t* A,
         bias_scale[5] = bias_scale[4];
         bias_scale[6] = bias_scale[4];
         bias_scale[7] = bias_scale[4];
-        float* hs_param = vhs_param;
+        hs_param = vhs_param;
         // clang-format off
         asm volatile(SPARSE_INT8_INT8_W16_v7_SEMI2_OUT
           : [a_ptr] "+r"(cur_w2),
@@ -12032,7 +12032,7 @@ void sparse_semi_conv_int8_int8_pipelined(const int8_t* A,
         bias_scale[5] = bias_scale[4];
         bias_scale[6] = bias_scale[4];
         bias_scale[7] = bias_scale[4];
-        float* hs_param = vhs_param;
+        hs_param = vhs_param;
         // clang-format off
         asm volatile(SPARSE_INT8_INT8_W8_v7_SEMI2_OUT
           : [a_ptr] "+r"(cur_w2),
@@ -12152,7 +12152,7 @@ void sparse_semi_conv_int8_int8_pipelined(const int8_t* A,
         bias_scale[5] = bias_scale[4];
         bias_scale[6] = bias_scale[4];
         bias_scale[7] = bias_scale[4];
-        float* hs_param = vhs_param;
+        hs_param = vhs_param;
         // clang-format off
         asm volatile(SPARSE_INT8_INT8_W4_v7_SEMI2_OUT
           : [a_ptr] "+r"(cur_w2),
