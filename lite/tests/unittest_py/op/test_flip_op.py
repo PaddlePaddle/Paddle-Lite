@@ -26,38 +26,59 @@ import numpy as np
 from functools import partial
 import hypothesis.strategies as st
 
+
 class TestflipOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 2, 4])
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 2, 4])
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=3, max_size=3))
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=8), min_size=3, max_size=3))
 
         def generate_input(*args, **kwargs):
-             if kwargs["type"] == "int32":
-                 return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int32)
-             elif kwargs["type"] == "int64":
-                 return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int64)
-             elif kwargs["type"] == "float32":
-                 return (kwargs["high"] - kwargs["low"]) * np.random.random(kwargs["shape"]).astype(np.float32) + kwargs["low"]
-        input_type = draw(st.sampled_from(["float32", "int64"])) # "int32"
+            if kwargs["type"] == "int32":
+                return np.random.randint(kwargs["low"], kwargs["high"],
+                                         kwargs["shape"]).astype(np.int32)
+            elif kwargs["type"] == "int64":
+                return np.random.randint(kwargs["low"], kwargs["high"],
+                                         kwargs["shape"]).astype(np.int64)
+            elif kwargs["type"] == "float32":
+                return (kwargs["high"] - kwargs["low"]) * np.random.random(
+                    kwargs["shape"]).astype(np.float32) + kwargs["low"]
+
+        input_type = draw(st.sampled_from(["float32", "int64"]))  # "int32"
 
         axis = draw(st.sampled_from([[0, 1, 2], [1], [0, 2], [2, 1], [0, 1]]))
 
         flip_op = OpConfig(
-            type = "flip",
-            inputs = {"X" : ["input_data"]},
-            outputs = {"Out": ["output_data"]},
-            attrs = {"axis" : axis})
+            type="flip",
+            inputs={"X": ["input_data"]},
+            outputs={"Out": ["output_data"]},
+            attrs={"axis": axis})
 
         program_config = ProgramConfig(
             ops=[flip_op],
             weights={},
-            inputs={"input_data" : TensorConfig(data_gen=partial(generate_input, type=input_type, low=-10, high=10, shape=in_shape))},
+            inputs={
+                "input_data": TensorConfig(data_gen=partial(
+                    generate_input,
+                    type=input_type,
+                    low=-10,
+                    high=10,
+                    shape=in_shape))
+            },
             outputs=["output_data"])
         return program_config
 
@@ -69,6 +90,7 @@ class TestflipOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

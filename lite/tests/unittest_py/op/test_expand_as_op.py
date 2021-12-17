@@ -26,43 +26,68 @@ import numpy as np
 from functools import partial
 import hypothesis.strategies as st
 
+
 class TestExpandAsOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 2, 4])
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 2, 4])
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=3, max_size=4))
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=8), min_size=3, max_size=4))
         target1 = []
         target2 = []
         target3 = []
-        for i in range(len(in_shape)) :
-            target1.append(in_shape[i] * (i + 1) )
-            target2.append(in_shape[i] * (i + 1) * 2 )
-            target3.append(in_shape[i] * (i + 1) * 3 )
+        for i in range(len(in_shape)):
+            target1.append(in_shape[i] * (i + 1))
+            target2.append(in_shape[i] * (i + 1) * 2)
+            target3.append(in_shape[i] * (i + 1) * 3)
         target_shape = draw(st.sampled_from([target1, target2, target3]))
+
         def generate_input(*args, **kwargs):
-             if kwargs["type"] == "int32":
-                 return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int32)
-             elif kwargs["type"] == "int64":
-                 return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int64)
-             elif kwargs["type"] == "float32":
-                 return (kwargs["high"] - kwargs["low"]) * np.random.random(kwargs["shape"]).astype(np.float32) + kwargs["low"]
-        input_type = draw(st.sampled_from(["float32", "int64"])) # "int32"       
+            if kwargs["type"] == "int32":
+                return np.random.randint(kwargs["low"], kwargs["high"],
+                                         kwargs["shape"]).astype(np.int32)
+            elif kwargs["type"] == "int64":
+                return np.random.randint(kwargs["low"], kwargs["high"],
+                                         kwargs["shape"]).astype(np.int64)
+            elif kwargs["type"] == "float32":
+                return (kwargs["high"] - kwargs["low"]) * np.random.random(
+                    kwargs["shape"]).astype(np.float32) + kwargs["low"]
+
+        input_type = draw(st.sampled_from(
+            ["float32", "int64"]))  # "int32"       
 
         expand_as_op = OpConfig(
-            type = "expand_as",
-            inputs = {"X" : ["input_data"],
-                    "target_tensor" : ["target_data"]},
-            outputs = {"Out": ["output_data"]},
-            attrs = {})
+            type="expand_as",
+            inputs={"X": ["input_data"],
+                    "target_tensor": ["target_data"]},
+            outputs={"Out": ["output_data"]},
+            attrs={})
 
         program_config = ProgramConfig(
             ops=[expand_as_op],
             weights={},
             inputs={
-                "input_data" : TensorConfig(data_gen=partial(generate_input, type=input_type, low=-10, high=10, shape=in_shape)),
-                "target_data" : TensorConfig(data_gen=partial(generate_input, type=input_type, low=-10, high=10, shape=target_shape))},
+                "input_data": TensorConfig(data_gen=partial(
+                    generate_input,
+                    type=input_type,
+                    low=-10,
+                    high=10,
+                    shape=in_shape)),
+                "target_data": TensorConfig(data_gen=partial(
+                    generate_input,
+                    type=input_type,
+                    low=-10,
+                    high=10,
+                    shape=target_shape))
+            },
             outputs=["output_data"])
         return program_config
 
@@ -74,6 +99,7 @@ class TestExpandAsOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

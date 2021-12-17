@@ -26,17 +26,30 @@ import numpy as np
 from functools import partial
 import hypothesis.strategies as st
 
+
 class TestFillConstantOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 2, 4])
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 2, 4])
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(min_value=1, max_value=10), min_size=1, max_size=4))
-        tensor_shape = draw(st.lists(st.integers(min_value=1, max_value=10), min_size=1, max_size=4))
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=10), min_size=1, max_size=4))
+        tensor_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=10), min_size=1, max_size=4))
         dtype = draw(st.sampled_from([2, 3, 5]))
 
         with_value_tensor = draw(st.sampled_from([True, False]))
@@ -46,12 +59,15 @@ class TestFillConstantOp(AutoScanTest):
             return np.array(tensor_shape).astype(np.int32)
 
         def generate_input(*args, **kwargs):
-             if kwargs["type"] == "int32":
-                 return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int32)
-             elif kwargs["type"] == "int64":
-                 return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int64)
-             elif kwargs["type"] == "float32":
-                 return (kwargs["high"] - kwargs["low"]) * np.random.random(kwargs["shape"]).astype(np.float32) + kwargs["low"] 
+            if kwargs["type"] == "int32":
+                return np.random.randint(kwargs["low"], kwargs["high"],
+                                         kwargs["shape"]).astype(np.int32)
+            elif kwargs["type"] == "int64":
+                return np.random.randint(kwargs["low"], kwargs["high"],
+                                         kwargs["shape"]).astype(np.int64)
+            elif kwargs["type"] == "float32":
+                return (kwargs["high"] - kwargs["low"]) * np.random.random(
+                    kwargs["shape"]).astype(np.float32) + kwargs["low"]
 
         if dtype == 2:
             input_type = "int32"
@@ -65,29 +81,48 @@ class TestFillConstantOp(AutoScanTest):
         program_inputs = {}
 
         #ShapeTensorList not support now 
-        if(with_value_tensor and with_shape_tensor):
-            op_inputs = {"ValueTensor" : ["value_data"], "ShapeTensor" : ["shape_data"]}
+        if (with_value_tensor and with_shape_tensor):
+            op_inputs = {
+                "ValueTensor": ["value_data"],
+                "ShapeTensor": ["shape_data"]
+            }
             program_inputs = {
-                    "value_data":TensorConfig(data_gen=partial(generate_input, type=input_type, low=-10, high=10, shape=[1])),
-                    "shape_data":TensorConfig(data_gen=partial(generate_shape_tensor))}
-        elif((not with_value_tensor) and with_shape_tensor):
-            op_inputs = {"ShapeTensor" : ["shape_data"]}
+                "value_data": TensorConfig(data_gen=partial(
+                    generate_input,
+                    type=input_type,
+                    low=-10,
+                    high=10,
+                    shape=[1])),
+                "shape_data":
+                TensorConfig(data_gen=partial(generate_shape_tensor))
+            }
+        elif ((not with_value_tensor) and with_shape_tensor):
+            op_inputs = {"ShapeTensor": ["shape_data"]}
             program_inputs = {
-                    "shape_data":TensorConfig(data_gen=partial(generate_shape_tensor))}
-        elif(with_value_tensor and (not with_shape_tensor)):
-            op_inputs = {"ValueTensor" : ["value_data"]}
+                "shape_data":
+                TensorConfig(data_gen=partial(generate_shape_tensor))
+            }
+        elif (with_value_tensor and (not with_shape_tensor)):
+            op_inputs = {"ValueTensor": ["value_data"]}
             program_inputs = {
-                    "value_data": TensorConfig(data_gen=partial(generate_input, type=input_type, low=-10, high=10, shape=[1]))}
+                "value_data": TensorConfig(data_gen=partial(
+                    generate_input,
+                    type=input_type,
+                    low=-10,
+                    high=10,
+                    shape=[1]))
+            }
 
         fill_constant_op = OpConfig(
-            type = "fill_constant",
-            inputs = op_inputs,
-            outputs = {"Out": ["output_data"]},
-            attrs = {"dtype" : dtype,
-                    "shape" : in_shape,
-                    "value" : value,
-                    "force_cpu" : False
-                    })
+            type="fill_constant",
+            inputs=op_inputs,
+            outputs={"Out": ["output_data"]},
+            attrs={
+                "dtype": dtype,
+                "shape": in_shape,
+                "value": value,
+                "force_cpu": False
+            })
         program_config = ProgramConfig(
             ops=[fill_constant_op],
             weights={},
@@ -103,6 +138,7 @@ class TestFillConstantOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
