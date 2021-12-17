@@ -248,7 +248,7 @@ class LITE_API RuntimeProgram {
 
     for (auto& inst : instructions_[kRootBlockIdx]) {
       KernelBase* kernel = inst.mutable_kernel();
-#ifdef LITE_WITH_OPENCL
+#if defined(LITE_WITH_METAL) || defined(LITE_WITH_OPENCL)
       if (kernel->target() == TARGET(kOpenCL)) {
         if (opencl_valid) {
           std::unique_ptr<KernelContext> ctx(new KernelContext());
@@ -260,12 +260,7 @@ class LITE_API RuntimeProgram {
           // if gpu not support , fatal when user init gpu model.
           LOG(FATAL) << "opencl_valid:" << opencl_valid;
         }
-      } else {
-        kernel->SetContext(
-            ContextScheduler::Global().NewContext(kernel->target()));
-      }
-#elif LITE_WITH_METAL
-      if (kernel->target() == TARGET(kMetal)) {
+      } else if (kernel->target() == TARGET(kMetal)) {
         if (!metal_ctx_) {
           metal_ctx_ = std::make_unique<KernelContext>();
           (*metal_ctx_).As<MTLContext>().InitOnce();
