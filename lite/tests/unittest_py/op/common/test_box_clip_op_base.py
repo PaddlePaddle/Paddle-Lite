@@ -23,29 +23,34 @@ import unittest
 import hypothesis
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.sampled_from([[3, 6, 4], [5, 7, 4], [4, 8, 4], [10, 10, 4]]))
-    iminfo_shape = draw(st.sampled_from([[3, 3], [6,3], [8, 3]]))
+    in_shape = draw(
+        st.sampled_from([[3, 6, 4], [5, 7, 4], [4, 8, 4], [10, 10, 4]]))
+    iminfo_shape = draw(st.sampled_from([[3, 3], [6, 3], [8, 3]]))
     lod_data = [[1, 2, 3]]
+
     def generate_input(*args, **kwargs):
         return np.random.random(in_shape).astype(np.float32)
+
     def generate_iminfo(*args, **kwargs):
         return np.random.random(iminfo_shape).astype(np.float32)
+
     box_clip_op = OpConfig(
-        type = "box_clip",
-        inputs = {"Input" : ["input_data"],
-                 "ImInfo" : ["iminfo_data"]},
-        outputs = {"Output": ["output_data"]},
-        attrs = {})
-    
+        type="box_clip",
+        inputs={"Input": ["input_data"],
+                "ImInfo": ["iminfo_data"]},
+        outputs={"Output": ["output_data"]},
+        attrs={})
+
     program_config = ProgramConfig(
         ops=[box_clip_op],
         weights={},
         inputs={
-            "input_data":
-            TensorConfig(data_gen=partial(generate_input), lod=lod_data),
-            "iminfo_data":
-            TensorConfig(data_gen=partial(generate_iminfo), lod=lod_data),
+            "input_data": TensorConfig(
+                data_gen=partial(generate_input), lod=lod_data),
+            "iminfo_data": TensorConfig(
+                data_gen=partial(generate_iminfo), lod=lod_data),
         },
         outputs=["output_data"])
     return program_config

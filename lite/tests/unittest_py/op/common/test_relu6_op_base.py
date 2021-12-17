@@ -24,31 +24,27 @@ import hypothesis
 import hypothesis.strategies as st
 from hypothesis import assume
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(
-            min_value=1, max_value=10), min_size=4, max_size=4))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=10), min_size=4, max_size=4))
     threshold_data = draw(st.floats(min_value=6.0, max_value=6.0))
 
     def generate_input(*args, **kwargs):
         return np.random.random(in_shape).astype(np.float32)
-       
+
     build_ops = OpConfig(
-        type = "relu6",
-        inputs = {
-            "X" : ["input_data"],
-        },
-        outputs = {
-            "Out": ["output_data"],
-        },
-        attrs = {
-            "threshold": threshold_data,
-        })
+        type="relu6",
+        inputs={"X": ["input_data"], },
+        outputs={"Out": ["output_data"], },
+        attrs={"threshold": threshold_data, })
     program_config = ProgramConfig(
         ops=[build_ops],
         weights={},
         inputs={
-            "input_data":
-            TensorConfig(data_gen=partial(generate_input)),
+            "input_data": TensorConfig(data_gen=partial(generate_input)),
         },
         outputs=["output_data"])
     return program_config

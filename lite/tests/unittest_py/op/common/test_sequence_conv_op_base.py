@@ -25,12 +25,16 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
     context_start = draw(st.sampled_from([-2, -1, 0]))
     context_stride = 1
     context_length = 3
     kernel_num = draw(st.integers(min_value=2, max_value=8))
-    in_dims = draw(st.lists(st.integers(min_value=4, max_value=100), min_size=2, max_size=2))
+    in_dims = draw(
+        st.lists(
+            st.integers(
+                min_value=4, max_value=100), min_size=2, max_size=2))
     filter_dims = [context_length * in_dims[1], kernel_num]
     lod_info = draw(st.sampled_from([[[0, 4]], [[0, 2, 4]]]))
     padding_trainable = draw(st.booleans())
@@ -43,36 +47,41 @@ def sample_program_configs(draw):
 
     def generate_input(*args, **kwargs):
         return np.random.random(in_dims).astype(np.float32)
+
     def generate_filter(*args, **kwargs):
         return np.random.random(filter_dims).astype(np.float32)
+
     def generate_padding(*args, **kwargs):
         begin_pad = np.max([0, -context_start])
         end_pad = np.max([0, context_start + context_length - 1])
         total_pad = begin_pad + end_pad
-        return np.random.uniform(
-            0.1, 1, [total_pad, in_dims[1]]).astype('float32')
+        return np.random.uniform(0.1, 1,
+                                 [total_pad, in_dims[1]]).astype('float32')
 
-    inputs_dict = {"X" : ["input_data"],
-                   "Filter" : ["filter_data"]}
-    inputs_gen_dict = {"input_data":
-                        TensorConfig(data_gen=partial(generate_input), lod=lod_info)}
+    inputs_dict = {"X": ["input_data"], "Filter": ["filter_data"]}
+    inputs_gen_dict = {
+        "input_data": TensorConfig(
+            data_gen=partial(generate_input), lod=lod_info)
+    }
     if padding_trainable:
         inputs_dict["PaddingData"] = ["padding_data"]
-        inputs_gen_dict["padding_data"] = TensorConfig(data_gen=partial(generate_padding))
+        inputs_gen_dict["padding_data"] = TensorConfig(
+            data_gen=partial(generate_padding))
 
     sequence_conv_op = OpConfig(
-        type = "sequence_conv",
-        inputs = inputs_dict,
-        outputs = {"Out": ["output_data"]},
-        attrs = {"contextStart" : context_start,
-                "contextStride" : context_stride,
-                "contextLength" : context_length,
-                "paddingTrainable" : padding_trainable})
+        type="sequence_conv",
+        inputs=inputs_dict,
+        outputs={"Out": ["output_data"]},
+        attrs={
+            "contextStart": context_start,
+            "contextStride": context_stride,
+            "contextLength": context_length,
+            "paddingTrainable": padding_trainable
+        })
     program_config = ProgramConfig(
         ops=[sequence_conv_op],
         weights={
-            "filter_data":
-            TensorConfig(data_gen=partial(generate_filter))
+            "filter_data": TensorConfig(data_gen=partial(generate_filter))
         },
         inputs=inputs_gen_dict,
         outputs=["output_data"])

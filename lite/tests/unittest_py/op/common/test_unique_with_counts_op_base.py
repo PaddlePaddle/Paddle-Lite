@@ -23,25 +23,30 @@ import unittest
 import hypothesis
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=2, max_value=100), min_size = 1, max_size=1))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=2, max_value=100), min_size=1, max_size=1))
+
     def generate_IndexTensor():
-        return np.random.randint(1,5,size=in_shape).astype(np.int32)
+        return np.random.randint(1, 5, size=in_shape).astype(np.int32)
 
     unique_with_counts_op = OpConfig(
-        type = "unique_with_counts",
-        inputs = {"X" : ["input_data"]},
-        outputs = {"Out": ["output_data"],
-                  "Index": ["Index_data"],
-                  "Count": ["Count_data"]},
-        attrs = {"dtype": 2})
+        type="unique_with_counts",
+        inputs={"X": ["input_data"]},
+        outputs={
+            "Out": ["output_data"],
+            "Index": ["Index_data"],
+            "Count": ["Count_data"]
+        },
+        attrs={"dtype": 2})
     program_config = ProgramConfig(
         ops=[unique_with_counts_op],
         weights={
             "Index_data": TensorConfig(data_gen=partial(generate_IndexTensor))
         },
-        inputs={
-            "input_data": TensorConfig(shape=in_shape),
-        },
+        inputs={"input_data": TensorConfig(shape=in_shape), },
         outputs=["output_data", "Index_data", "Count_data"])
     return program_config

@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # this module will record kernels in unvalid_places into all_kernel_faked.cc
-
 """
 Name: create_fake_kernel_registry.py
 Usage: to generate `all_kernel_faked.cc`, `all_kernel_faked.cc` is used for
@@ -72,7 +71,7 @@ class %s : public KernelLite<TARGET(%s), PRECISION(%s), DATALAYOUT(%s)> {
 
 # create .h file to store kernel&source relationship
 kernel_src_map_lines = [
-'''
+    '''
 // Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -96,6 +95,7 @@ const std::map<std::string, std::string> kernel2path_map{
 '''
 ]
 
+
 def parse_fake_kernels_from_path(list_path):
     with open(list_path) as f:
         paths = set([path for path in f])
@@ -105,61 +105,54 @@ def parse_fake_kernels_from_path(list_path):
                 kernel_parser = RegisterLiteKernelParser(c)
                 kernel_parser.parse("ON", "ON")
                 for k in kernel_parser.kernels:
-                    out_src_lines = [
-                        '#include "all_kernel_faked.h"',
-                    ]
+                    out_src_lines = ['#include "all_kernel_faked.h"', ]
                     out_src_lines.append("")
                     kernel_name = "{op_type}_{target}_{precision}_{data_layout}_{alias}_class".format(
                         op_type=k.op_type,
                         target=k.target,
                         precision=k.precision,
                         data_layout=k.data_layout,
-                        alias=k.alias
-                    )
+                        alias=k.alias)
 
-                    kernel_define = fake_kernel % (
-                        kernel_name,
-                        k.target,
-                        k.precision,
-                        k.data_layout,
-                        kernel_name
-                    )
+                    kernel_define = fake_kernel % (kernel_name, k.target,
+                                                   k.precision, k.data_layout,
+                                                   kernel_name)
 
                     out_lines.append(kernel_define)
                     out_lines.append("")
                     out_hdr_lines.append(kernel_define)
                     out_hdr_lines.append("")
 
-
                     key = "REGISTER_LITE_KERNEL(%s, %s, %s, %s, %s, %s)" % (
-                        k.op_type,
-                        k.target,
-                        k.precision,
-                        k.data_layout,
-                        '::paddle::lite::' + kernel_name,
-                        k.alias
-                    )
+                        k.op_type, k.target, k.precision, k.data_layout,
+                        '::paddle::lite::' + kernel_name, k.alias)
                     out_lines.append(key)
                     out_src_lines.append(key)
 
                     for input in k.inputs:
-                        io = '    .BindInput("%s", {%s})' % (input.name, input.type)
+                        io = '    .BindInput("%s", {%s})' % (input.name,
+                                                             input.type)
                         out_lines.append(io)
                         out_src_lines.append(io)
                     for output in k.outputs:
-                        io = '    .BindOutput("%s", {%s})' % (output.name, output.type)
+                        io = '    .BindOutput("%s", {%s})' % (output.name,
+                                                              output.type)
                         out_lines.append(io)
                         out_src_lines.append(io)
                     for op_versions in k.op_versions:
-                        io = '    .BindPaddleOpVersion("%s", %s)' % (op_versions.name, op_versions.version)
+                        io = '    .BindPaddleOpVersion("%s", %s)' % (
+                            op_versions.name, op_versions.version)
                         out_lines.append(io)
                         out_src_lines.append(io)
                     out_lines.append("    .Finalize();")
                     out_lines.append("")
                     out_src_lines.append("    .Finalize();")
                     out_src_lines.append("")
-                    with open(os.path.join(src_dest_path, '%s.cc' %(kernel_name)), 'w') as file:
+                    with open(
+                            os.path.join(src_dest_path, '%s.cc' %
+                                         (kernel_name)), 'w') as file:
                         file.write('\n'.join(out_src_lines))
+
 
 def parse_sppported_kernels_from_path(list_path):
     with open(list_path) as f:
@@ -174,13 +167,8 @@ def parse_sppported_kernels_from_path(list_path):
                     index = path.rindex('/')
                     filename = path[index + 1:]
                     map_element = '  {"%s,%s,%s,%s,%s", "%s"},' % (
-                        k.op_type,
-                        k.target,
-                        k.precision,
-                        k.data_layout,
-                        k.alias,
-                        filename.strip()
-                    )
+                        k.op_type, k.target, k.precision, k.data_layout,
+                        k.alias, filename.strip())
                     kernel_src_map_lines.append(map_element)
 
 

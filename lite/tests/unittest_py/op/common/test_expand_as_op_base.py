@@ -23,43 +23,49 @@ import unittest
 import hypothesis
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=3, max_size=4))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=8), min_size=3, max_size=4))
     target1 = []
     target2 = []
     target3 = []
-    for i in range(len(in_shape)) :
-        target1.append(in_shape[i] * (i + 1) )
-        target2.append(in_shape[i] * (i + 1) * 2 )
-        target3.append(in_shape[i] * (i + 1) * 3 )
+    for i in range(len(in_shape)):
+        target1.append(in_shape[i] * (i + 1))
+        target2.append(in_shape[i] * (i + 1) * 2)
+        target3.append(in_shape[i] * (i + 1) * 3)
     target_shape = draw(st.sampled_from([target1, target2, target3]))
 
     def generate_input_int64(*args, **kwargs):
-        return np.random.random(in_shape).astype(np.int64) 
+        return np.random.random(in_shape).astype(np.int64)
 
     def generate_input_float32(*args, **kwargs):
-        return np.random.random(in_shape).astype(np.float32) 
-        
-    input_type = draw(st.sampled_from([generate_input_int64, generate_input_float32]))
+        return np.random.random(in_shape).astype(np.float32)
+
+    input_type = draw(
+        st.sampled_from([generate_input_int64, generate_input_float32]))
 
     def generate_target(*args, **kwargs):
         if input_type == generate_input_int64:
-            return np.random.random(target_shape).astype(np.int64) 
-        else :
-            return np.random.random(target_shape).astype(np.float32) 
+            return np.random.random(target_shape).astype(np.int64)
+        else:
+            return np.random.random(target_shape).astype(np.float32)
 
     expand_as_op = OpConfig(
-        type = "expand_as",
-        inputs = {"X" : ["input_data"],
-                  "target_tensor" : ["target_data"]},
-        outputs = {"Out": ["output_data"]},
-        attrs = {})
+        type="expand_as",
+        inputs={"X": ["input_data"],
+                "target_tensor": ["target_data"]},
+        outputs={"Out": ["output_data"]},
+        attrs={})
 
     program_config = ProgramConfig(
         ops=[expand_as_op],
         weights={},
         inputs={
-            "input_data" : TensorConfig(data_gen=partial(input_type)),
-            "target_data" : TensorConfig(data_gen=partial(generate_target))},
+            "input_data": TensorConfig(data_gen=partial(input_type)),
+            "target_data": TensorConfig(data_gen=partial(generate_target))
+        },
         outputs=["output_data"])
     return program_config

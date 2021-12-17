@@ -23,11 +23,16 @@ import unittest
 import hypothesis
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    input_data_x_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size = 4, max_size = 4))
+    input_data_x_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=8), min_size=4, max_size=4))
     dropout_prob = draw(st.floats(min_value=0, max_value=1))
     seed = draw(st.integers())
-    dropout_implementation = draw(st.sampled_from(['downgrade_in_infer', 'upscale_in_train']))
+    dropout_implementation = draw(
+        st.sampled_from(['downgrade_in_infer', 'upscale_in_train']))
     is_test = draw(st.booleans())
     fix_seed = draw(st.booleans())
 
@@ -38,24 +43,29 @@ def sample_program_configs(draw):
         '''
             AsDispensable { "X": False, "Seed": True }
         '''
-        inputs = {"X" : ["input_data_x"]}
-        inputs_tensor = {"input_data_x" : TensorConfig(shape=input_data_x_shape)}
+        inputs = {"X": ["input_data_x"]}
+        inputs_tensor = {
+            "input_data_x": TensorConfig(shape=input_data_x_shape)
+        }
         if draw(st.booleans()):
             inputs["Seed"] = ["input_data_seed"]
-            inputs_tensor["input_data_seed"] = TensorConfig(data_gen=partial(gen_input_data_seed))
+            inputs_tensor["input_data_seed"] = TensorConfig(
+                data_gen=partial(gen_input_data_seed))
         return inputs, inputs_tensor
-    
+
     inputs, inputs_tensor = GenOpInputs()
     dropout_op = OpConfig(
-        type = "dropout",
-        inputs = inputs,
-        outputs = {"Out": ["output_data"],
-                   "Mask": ["mask_data"]},
-        attrs = {"dropout_prob" : dropout_prob,
-                 "fix_seed" : fix_seed,
-                 "seed" : seed,
-                 "dropout_implementation" : dropout_implementation,
-                 "is_test" : is_test})
+        type="dropout",
+        inputs=inputs,
+        outputs={"Out": ["output_data"],
+                 "Mask": ["mask_data"]},
+        attrs={
+            "dropout_prob": dropout_prob,
+            "fix_seed": fix_seed,
+            "seed": seed,
+            "dropout_implementation": dropout_implementation,
+            "is_test": is_test
+        })
     program_config = ProgramConfig(
         ops=[dropout_op],
         weights={},

@@ -23,11 +23,16 @@ import unittest
 import hypothesis
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=1, max_value=10), min_size=1, max_size=4))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=10), min_size=1, max_size=4))
     # BOOL = 0;INT16 = 1;INT32 = 2;INT64 = 3;FP16 = 4;FP32 = 5;FP64 = 6;
     in_dtype = draw(st.sampled_from([0, 2, 3, 5]))
     out_dtype = draw(st.sampled_from([0, 2, 3, 5]))
+
     # BOOL and INT16 and FP16 and FP64 paddle-lite doesn't support
     def generate_input(*args, **kwargs):
         if in_dtype == 0:
@@ -44,18 +49,16 @@ def sample_program_configs(draw):
             return np.random.random(in_shape).astype(np.float32)
         else:
             print("in_dtype is error! ", in_dtype)
+
     cast_op = OpConfig(
-        type = "cast",
-        inputs = {"X" : ["input_data"]},
-        outputs = {"Out" : ["output_data"]},
-        attrs = {"in_dtype" : in_dtype,
-                "out_dtype" : out_dtype})
+        type="cast",
+        inputs={"X": ["input_data"]},
+        outputs={"Out": ["output_data"]},
+        attrs={"in_dtype": in_dtype,
+               "out_dtype": out_dtype})
     program_config = ProgramConfig(
         ops=[cast_op],
         weights={},
-        inputs={
-            "input_data":
-            TensorConfig(data_gen=partial(generate_input))
-        },
+        inputs={"input_data": TensorConfig(data_gen=partial(generate_input))},
         outputs=["output_data"])
     return program_config
