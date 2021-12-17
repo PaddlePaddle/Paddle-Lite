@@ -33,7 +33,7 @@ void ExpandCompute<T>::Run() {
   std::vector<int> x_dims(x_shape.begin(), x_shape.end());
   std::vector<int> out_dims(out_shape.begin(), out_shape.end());
   x_dims.insert(x_dims.begin(), out_dims.size() - x_dims.size(), 1);
-  // test
+
   int r = xdnn::broadcast<T>(ctx.GetRawContext(),
                              x->template data<T>(),
                              out->template mutable_data<T>(TARGET(kXPU)),
