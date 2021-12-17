@@ -30,9 +30,15 @@ import hypothesis.strategies as st
 class TestFlattenContiguousRangeOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.Any, DataLayoutType.Any, thread=[1,4])
-         
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.Any,
+            DataLayoutType.Any,
+            thread=[1, 4])
+
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         in_dtype = program_config.inputs["input_data"].dtype
 
         #wait for atuo_scan_base bug fix 
@@ -41,43 +47,64 @@ class TestFlattenContiguousRangeOp(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=2, max_size=4))
-        
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=8), min_size=2, max_size=4))
+
         def generate_input(*args, **kwargs):
             if kwargs["type"] == "int32":
-                return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int32)
+                return np.random.randint(kwargs["low"], kwargs["high"],
+                                         kwargs["shape"]).astype(np.int32)
             elif kwargs["type"] == "int64":
-                return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int64)
+                return np.random.randint(kwargs["low"], kwargs["high"],
+                                         kwargs["shape"]).astype(np.int64)
             elif kwargs["type"] == "float32":
-                return (kwargs["high"] - kwargs["low"]) * np.random.random(kwargs["shape"]).astype(np.float32) + kwargs["low"]
-                
+                return (kwargs["high"] - kwargs["low"]) * np.random.random(
+                    kwargs["shape"]).astype(np.float32) + kwargs["low"]
+
         input_type = draw(st.sampled_from(["float32", "int64", "int32"]))
 
-        start_axis = draw(st.integers(min_value=0, max_value=len(in_shape)-1))
-        stop_axis = draw(st.integers(min_value=start_axis, max_value=len(in_shape)-1))
+        start_axis = draw(
+            st.integers(
+                min_value=0, max_value=len(in_shape) - 1))
+        stop_axis = draw(
+            st.integers(
+                min_value=start_axis, max_value=len(in_shape) - 1))
 
         flatten_contiguous_range_op = OpConfig(
-            type = "flatten_contiguous_range",
-            inputs = {"X" : ["input_data"]},
-            outputs = {"Out": ["output_data"], "XShape" : ["xshape_data"]},
-            attrs = {"start_axis" : start_axis, "stop_axis" : stop_axis})
+            type="flatten_contiguous_range",
+            inputs={"X": ["input_data"]},
+            outputs={"Out": ["output_data"],
+                     "XShape": ["xshape_data"]},
+            attrs={"start_axis": start_axis,
+                   "stop_axis": stop_axis})
 
         program_config = ProgramConfig(
             ops=[flatten_contiguous_range_op],
-            weights={"xshape_data" : TensorConfig(shape=in_shape)},
-            inputs={"input_data" : TensorConfig(data_gen=partial(generate_input, type=input_type, low=-10, high=10, shape=in_shape))},
+            weights={"xshape_data": TensorConfig(shape=in_shape)},
+            inputs={
+                "input_data": TensorConfig(data_gen=partial(
+                    generate_input,
+                    type=input_type,
+                    low=-10,
+                    high=10,
+                    shape=in_shape))
+            },
             outputs=["output_data", "xshape_data"])
 
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["flatten_contiguous_range"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["flatten_contiguous_range"], (
+            1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

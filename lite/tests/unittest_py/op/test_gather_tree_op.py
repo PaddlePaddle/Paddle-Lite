@@ -26,46 +26,59 @@ import numpy as np
 from functools import partial
 import hypothesis.strategies as st
 
+
 class TestGatherTreeOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.Any, thread=[1,4])
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.FP32,
+            DataLayoutType.Any,
+            thread=[1, 4])
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        ids_shape = draw(st.lists(st.integers(min_value=3, max_value=10), min_size=3, max_size=3))
+        ids_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=3, max_value=10), min_size=3, max_size=3))
         ids_size = ids_shape[0] * ids_shape[1] * ids_shape[2]
 
         index_type = draw(st.sampled_from(["int32", "int64"]))
 
         def generate_ids_data(*args, **kwargs):
             if index_type == "int32":
-                return np.random.randint(0, ids_size, ids_shape).astype(np.int32) 
+                return np.random.randint(0, ids_size,
+                                         ids_shape).astype(np.int32)
             else:
-                return np.random.randint(0, ids_size, ids_shape).astype(np.int64)  
+                return np.random.randint(0, ids_size,
+                                         ids_shape).astype(np.int64)
 
         def generate_parents_data(*args, **kwargs):
             if index_type == "int32":
-                return np.random.randint(0, ids_shape[2], ids_shape).astype(np.int32) 
+                return np.random.randint(0, ids_shape[2],
+                                         ids_shape).astype(np.int32)
             else:
-                return np.random.randint(0, ids_shape[2], ids_shape).astype(np.int64)  
+                return np.random.randint(0, ids_shape[2],
+                                         ids_shape).astype(np.int64)
 
         gather_tree_op = OpConfig(
-            type = "gather_tree",
-            inputs = {
-                    "Ids" : ["ids_data"], 
-                    "Parents" : ["parents_data"]
-            },
-            outputs = {"Out": ["output_data"]},
-            attrs = {})
+            type="gather_tree",
+            inputs={"Ids": ["ids_data"],
+                    "Parents": ["parents_data"]},
+            outputs={"Out": ["output_data"]},
+            attrs={})
         program_config = ProgramConfig(
             ops=[gather_tree_op],
             weights={},
             inputs={
-                "ids_data" : TensorConfig(data_gen=partial(generate_ids_data)),
-                "parents_data" : TensorConfig(data_gen=partial(generate_parents_data))
+                "ids_data": TensorConfig(data_gen=partial(generate_ids_data)),
+                "parents_data":
+                TensorConfig(data_gen=partial(generate_parents_data))
             },
             outputs=["output_data"])
         return program_config
@@ -78,6 +91,7 @@ class TestGatherTreeOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

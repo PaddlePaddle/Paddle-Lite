@@ -26,13 +26,19 @@ import numpy as np
 from functools import partial
 import hypothesis.strategies as st
 
+
 class TestExpandV2Op(AutoScanTest):
     def __init__(self, *args, **kwargs):
-         AutoScanTest.__init__(self, *args, **kwargs)
-         host_places = [Place(TargetType.Host, PrecisionType.INT32, DataLayoutType.NCHW),Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)]
-         self.enable_testing_on_place(thread=[1,4], places=host_places)
+        AutoScanTest.__init__(self, *args, **kwargs)
+        host_places = [
+            Place(TargetType.Host, PrecisionType.INT32, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
+        ]
+        self.enable_testing_on_place(thread=[1, 4], places=host_places)
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
@@ -43,6 +49,7 @@ class TestExpandV2Op(AutoScanTest):
 
         #todo daming5432 input vector tensor
         with_expand_shape = draw(st.sampled_from([False]))
+
         def generate_shape(*args, **kwargs):
             return np.array(Shape).astype(np.int32)
 
@@ -51,50 +58,86 @@ class TestExpandV2Op(AutoScanTest):
 
         def generate_input(*args, **kwargs):
             if kwargs["type"] == "int32":
-                return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int32)
+                return np.random.randint(kwargs["low"], kwargs["high"],
+                                         kwargs["shape"]).astype(np.int32)
             elif kwargs["type"] == "int64":
-                return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int64)
+                return np.random.randint(kwargs["low"], kwargs["high"],
+                                         kwargs["shape"]).astype(np.int64)
             elif kwargs["type"] == "float32":
-                return (kwargs["high"] - kwargs["low"]) * np.random.random(kwargs["shape"]).astype(np.float32) + kwargs["low"]
+                return (kwargs["high"] - kwargs["low"]) * np.random.random(
+                    kwargs["shape"]).astype(np.float32) + kwargs["low"]
 
         input_type = draw(st.sampled_from(["float32", "int64", "int32"]))
-        
-        def gnerate_inputs(with_Shape, with_expand_shape) :
+
+        def gnerate_inputs(with_Shape, with_expand_shape):
             inputs1 = {}
             inputs2 = {}
-            if(with_Shape and with_expand_shape) :
-                inputs1 = {"X" : ["input_data"],
-                        "Shape" : ["shape_data"],
-                        "expand_shapes_tensor" : ["expand_data"]}
-                inputs2={
-                    "input_data":TensorConfig(data_gen=partial(generate_input, type=input_type, low=-10, high=10, shape=in_shape)),
-                    "shape_data": TensorConfig(data_gen=partial(generate_shape)),
-                    "expand_data":TensorConfig(data_gen=partial(generate_expand_shape))}
-            elif((not with_Shape) and with_expand_shape) :
-                inputs1 = {"X" : ["input_data"],
-                        "expand_shapes_tensor" : ["expand_data"]}
-                inputs2={
-                    "input_data":TensorConfig(data_gen=partial(generate_input, type=input_type, low=-10, high=10, shape=in_shape)),
-                    "expand_data":TensorConfig(data_gen=partial(generate_expand_shape))}
-            elif(with_Shape and (not with_expand_shape)) :
-                inputs1 = {"X" : ["input_data"],
-                    "Shape" : ["shape_data"]}
-                inputs2={
-                    "input_data":TensorConfig(data_gen=partial(generate_input, type=input_type, low=-10, high=10, shape=in_shape)),
-                    "shape_data": TensorConfig(data_gen=partial(generate_shape))}
-            else :
-                inputs1 = {"X" : ["input_data"]}
-                inputs2={
-                    "input_data":TensorConfig(data_gen=partial(generate_input, type=input_type, low=-10, high=10, shape=in_shape))}
+            if (with_Shape and with_expand_shape):
+                inputs1 = {
+                    "X": ["input_data"],
+                    "Shape": ["shape_data"],
+                    "expand_shapes_tensor": ["expand_data"]
+                }
+                inputs2 = {
+                    "input_data": TensorConfig(data_gen=partial(
+                        generate_input,
+                        type=input_type,
+                        low=-10,
+                        high=10,
+                        shape=in_shape)),
+                    "shape_data":
+                    TensorConfig(data_gen=partial(generate_shape)),
+                    "expand_data":
+                    TensorConfig(data_gen=partial(generate_expand_shape))
+                }
+            elif ((not with_Shape) and with_expand_shape):
+                inputs1 = {
+                    "X": ["input_data"],
+                    "expand_shapes_tensor": ["expand_data"]
+                }
+                inputs2 = {
+                    "input_data": TensorConfig(data_gen=partial(
+                        generate_input,
+                        type=input_type,
+                        low=-10,
+                        high=10,
+                        shape=in_shape)),
+                    "expand_data":
+                    TensorConfig(data_gen=partial(generate_expand_shape))
+                }
+            elif (with_Shape and (not with_expand_shape)):
+                inputs1 = {"X": ["input_data"], "Shape": ["shape_data"]}
+                inputs2 = {
+                    "input_data": TensorConfig(data_gen=partial(
+                        generate_input,
+                        type=input_type,
+                        low=-10,
+                        high=10,
+                        shape=in_shape)),
+                    "shape_data":
+                    TensorConfig(data_gen=partial(generate_shape))
+                }
+            else:
+                inputs1 = {"X": ["input_data"]}
+                inputs2 = {
+                    "input_data": TensorConfig(data_gen=partial(
+                        generate_input,
+                        type=input_type,
+                        low=-10,
+                        high=10,
+                        shape=in_shape))
+                }
             return [inputs1, inputs2]
 
-        attr_shape = draw(st.sampled_from([[2, 3, 4], [2, 4, 4], [2, 2, 3, 4], [3, 2, 5, 4]]))
+        attr_shape = draw(
+            st.sampled_from([[2, 3, 4], [2, 4, 4], [2, 2, 3, 4], [3, 2, 5, 4]
+                             ]))
         inputs = gnerate_inputs(with_Shape, with_expand_shape)
         expand_v2_op = OpConfig(
-            type = "expand_v2",
-            inputs = inputs[0],
-            outputs = {"Out": ["output_data"]},
-            attrs = {"shape" : attr_shape})
+            type="expand_v2",
+            inputs=inputs[0],
+            outputs={"Out": ["output_data"]},
+            attrs={"shape": attr_shape})
 
         program_config = ProgramConfig(
             ops=[expand_v2_op],
@@ -111,6 +154,7 @@ class TestExpandV2Op(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
