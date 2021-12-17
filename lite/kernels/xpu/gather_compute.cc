@@ -73,8 +73,6 @@ using GatherXPUFloatInt64 =
     paddle::lite::kernels::xpu::GatherCompute<float, int64_t>;
 using GatherXPUInt64Int32 =
     paddle::lite::kernels::xpu::GatherCompute<int64_t, int32_t>;
-using GatherXPUInt64Int64 =
-    paddle::lite::kernels::xpu::GatherCompute<int64_t, int64_t>;
 
 REGISTER_LITE_KERNEL(gather, kXPU, kFloat, kNCHW, GatherXPUFloatInt32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kFloat))})
@@ -120,12 +118,4 @@ REGISTER_LITE_KERNEL(
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .Finalize();
-REGISTER_LITE_KERNEL(
-    gather, kXPU, kFloat, kNCHW, GatherXPUInt64Int64, gather_i64_i64)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
-    .BindInput("Index",
-               {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
-    .BindInput("Axis",
-               {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
-    .Finalize();
+
