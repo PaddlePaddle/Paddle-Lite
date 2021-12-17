@@ -24,13 +24,27 @@ import hypothesis
 import hypothesis.strategies as st
 from hypothesis import assume
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=4, max_size=4))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=8), min_size=4, max_size=4))
 
-    update_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=4, max_size=4))
-    assume(len(update_shape) == len(in_shape) and update_shape[1:] == in_shape[1:])
+    update_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=8), min_size=4, max_size=4))
+    assume(
+        len(update_shape) == len(in_shape) and
+        update_shape[1:] == in_shape[1:])
 
-    index_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=update_shape[-1], max_size=update_shape[-1]))
+    index_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=8),
+            min_size=update_shape[-1],
+            max_size=update_shape[-1]))
     index_type = draw(st.sampled_from(["int32", "int64"]))
     overwrite = draw(st.booleans())
 
@@ -47,19 +61,24 @@ def sample_program_configs(draw):
         return np.random.random(-1.0, 1.0, in_shape).astype(np.float32)
 
     scatter_op = OpConfig(
-        type = "scatter",
-        inputs = {"X" : ["input_data"], "Ids" : ["index"], "Updates" : ["updates"]},
-        outputs = {"Out" : ["output_data"]},
-        attrs = {"overwrite" : overwrite})
+        type="scatter",
+        inputs={
+            "X": ["input_data"],
+            "Ids": ["index"],
+            "Updates": ["updates"]
+        },
+        outputs={"Out": ["output_data"]},
+        attrs={"overwrite": overwrite})
 
     if index_type == "int32":
         program_config = ProgramConfig(
             ops=[scatter_op],
             weights={},
             inputs={
-                "input_data" : TensorConfig(data_gen=partial(generate_input_float32)),
-                "index" : TensorConfig(data_gen=partial(generate_index_int32)),
-                "updates" : TensorConfig(data_gen=partial(generate_update))
+                "input_data":
+                TensorConfig(data_gen=partial(generate_input_float32)),
+                "index": TensorConfig(data_gen=partial(generate_index_int32)),
+                "updates": TensorConfig(data_gen=partial(generate_update))
             },
             outputs=["output_data"])
     elif index_type == "int64":
@@ -67,9 +86,10 @@ def sample_program_configs(draw):
             ops=[scatter_op],
             weights={},
             inputs={
-                "input_data" : TensorConfig(data_gen=partial(generate_input_float32)),
-                "index" : TensorConfig(data_gen=partial(generate_index_int64)),
-                "updates" : TensorConfig(data_gen=partial(generate_update))
+                "input_data":
+                TensorConfig(data_gen=partial(generate_input_float32)),
+                "index": TensorConfig(data_gen=partial(generate_index_int64)),
+                "updates": TensorConfig(data_gen=partial(generate_update))
             },
             outputs=["output_data"])
 

@@ -198,6 +198,9 @@ TEST(flatten_contiguous_range, precision) {
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kNNAdapter);
   abs_error = 1e-2;  // precision_mode default is force_fp16
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  place = TARGET(kNNAdapter);
+  abs_error = 1e-2;
 #else
   return;
 #endif

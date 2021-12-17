@@ -24,42 +24,41 @@ import hypothesis
 import hypothesis.strategies as st
 from hypothesis import assume
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(
-            min_value=1, max_value=10), min_size=4, max_size=4))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=10), min_size=4, max_size=4))
     mode_data = draw(st.sampled_from(["channel", "element"]))
     alpha_shape = [1]
     if mode_data == "channel":
-        alpha_shape = [1, in_shape[1], 1, 1] 
+        alpha_shape = [1, in_shape[1], 1, 1]
     elif mode_data == 'element':
         alpha_shape = [1] + list(in_shape)[1:]
 
     def generate_input(*args, **kwargs):
         return np.random.random(kwargs['tensor_shape']).astype(np.float32)
- 
+
     def generate_alpha(*args, **kwargs):
         return np.random.random(alpha_shape).astype(np.float32)
-       
+
     build_ops = OpConfig(
-        type = "prelu",
-        inputs = {
-            "X" : ["input_data"],
+        type="prelu",
+        inputs={
+            "X": ["input_data"],
             "Alpha": ['alpha_data'],
         },
-        outputs = {
-            "Out": ["output_data"],
-        },
-        attrs= {
-            "mode": mode_data,
-        })
+        outputs={"Out": ["output_data"], },
+        attrs={"mode": mode_data, })
     program_config = ProgramConfig(
         ops=[build_ops],
         weights={},
         inputs={
-            "input_data":
-            TensorConfig(data_gen=partial(generate_input, tensor_shape=in_shape)),
-            "alpha_data":
-            TensorConfig(data_gen=partial(generate_input, tensor_shape=alpha_shape)),
+            "input_data": TensorConfig(data_gen=partial(
+                generate_input, tensor_shape=in_shape)),
+            "alpha_data": TensorConfig(data_gen=partial(
+                generate_input, tensor_shape=alpha_shape)),
         },
         outputs=["output_data"])
     return program_config

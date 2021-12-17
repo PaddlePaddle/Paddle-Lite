@@ -24,24 +24,26 @@ import hypothesis
 from hypothesis import assume
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=1, max_value=5), min_size = 1, max_size=4))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=5), min_size=1, max_size=4))
     k_data = draw(st.integers(min_value=1, max_value=4))
 
     assume(k_data <= in_shape[-1])
 
     top_k_op = OpConfig(
-        type = "top_k",
-        inputs = {"X" : ["X_data"]},
-        outputs = {"Out": ["Out_data"],
-                  "Indices": ["Indices_data"]},
-        attrs = {"k" : k_data})
+        type="top_k",
+        inputs={"X": ["X_data"]},
+        outputs={"Out": ["Out_data"],
+                 "Indices": ["Indices_data"]},
+        attrs={"k": k_data})
     program_config = ProgramConfig(
         ops=[top_k_op],
         weights={},
-        inputs={
-            "X_data": TensorConfig(shape=in_shape)
-        },
-        outputs= ["Out_data","Indices_data"])
-    
+        inputs={"X_data": TensorConfig(shape=in_shape)},
+        outputs=["Out_data", "Indices_data"])
+
     return program_config
