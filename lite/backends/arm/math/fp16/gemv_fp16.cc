@@ -438,10 +438,10 @@ namespace fp16 {
       [ptr_w1] "+r"(ptr_w1),             \
       [ptr_w2] "+r"(ptr_w2),             \
       [ptr_w3] "+r"(ptr_w3),             \
-      [ptr_w0] "+r"(ptr_w4),             \
-      [ptr_w1] "+r"(ptr_w5),             \
-      [ptr_w2] "+r"(ptr_w6),             \
-      [ptr_w3] "+r"(ptr_w7),             \
+      [ptr_w4] "+r"(ptr_w4),             \
+      [ptr_w5] "+r"(ptr_w5),             \
+      [ptr_w6] "+r"(ptr_w6),             \
+      [ptr_w7] "+r"(ptr_w7),             \
       [cnt] "+r"(cnt_col)                \
     : [alpha_ptr] "r"(alpha_ptr),        \
       [outptr] "r"(out_p),               \
@@ -479,9 +479,9 @@ void gemv_fp16_trans(const float16_t *A,
   lite::TargetWrapperHost::MemcpySync(
       data_in, x + (M - 1) * N, N * sizeof(float16_t));
   int cnt = Nup >> 3;
-  float local_alpha = 0.f;
-  float offset = 0.f;
-  float threshold = 6.f;
+  float16_t local_alpha = 0.f;
+  float16_t offset = 0.f;
+  float16_t threshold = 6.f;
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
   if (is_act) {
     act_acquire(act_param.active_type,
@@ -652,9 +652,9 @@ void gemv_fp16(const float16_t *A,
   lite::TargetWrapperHost::MemcpySync(
       ptr_w, A + (M - 1) * N, N * sizeof(float16_t));
   int cnt = Nup >> 4;
-  float local_alpha = 0.f;
-  float offset = 0.f;
-  float threshold = 6.f;
+  float16_t local_alpha = 0.f;
+  float16_t offset = 0.f;
+  float16_t threshold = 6.f;
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
   if (is_act) {
     act_acquire(act_param.active_type,

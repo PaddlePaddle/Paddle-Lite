@@ -168,10 +168,10 @@ typedef __fp16 float16_t;
   }
 
 inline void act_acquire(lite_api::ActivationType act,
-                        int &flag_act,       // NOLINT
-                        float &local_alpha,  // NOLINT
-                        float &offset,       // NOLINT
-                        float &threshold,    // NOLINT
+                        int &flag_act,           // NOLINT
+                        float16_t &local_alpha,  // NOLINT
+                        float16_t &offset,       // NOLINT
+                        float16_t &threshold,    // NOLINT
                         const operators::ActivationParam act_param) {
   switch (act) {
     case lite_api::ActivationType::kRelu:
@@ -179,17 +179,17 @@ inline void act_acquire(lite_api::ActivationType act,
       break;
     case lite_api::ActivationType::kRelu6:
       flag_act = 0x02;
-      local_alpha = act_param.Relu_clipped_coef;
+      local_alpha = static_cast<float16_t>(act_param.Relu_clipped_coef);
       break;
     case lite_api::ActivationType::kLeakyRelu:
       flag_act = 0x03;
-      local_alpha = act_param.Leaky_relu_alpha;
+      local_alpha = static_cast<float16_t>(act_param.Leaky_relu_alpha);
       break;
     case lite_api::ActivationType::kHardSwish:
       flag_act = 0x04;
-      local_alpha = 1.0 / act_param.hard_swish_scale;
-      offset = act_param.hard_swish_offset;
-      threshold = act_param.hard_swish_threshold;
+      local_alpha = static_cast<float16_t>(1.0 / act_param.hard_swish_scale);
+      offset = static_cast<float16_t>(act_param.hard_swish_offset);
+      threshold = static_cast<float16_t>(act_param.hard_swish_threshold);
       break;
     default:
       break;

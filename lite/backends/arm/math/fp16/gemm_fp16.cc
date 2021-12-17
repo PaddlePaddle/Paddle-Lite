@@ -1874,9 +1874,9 @@ void gemm_prepack_8x16(bool is_transB,
   llc_size = llc_size * 9 / 10;
 
   auto act_type = act_param.active_type;
-  float local_alpha = 0.f;
-  float offset = 0.f;
-  float threshold = 6.f;
+  float16_t local_alpha = 0.f;
+  float16_t offset = 0.f;
+  float16_t threshold = 6.f;
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
   if (act_param.has_active) {
     act_acquire(act_type, flag_act, local_alpha, offset, threshold, act_param);
@@ -2634,9 +2634,9 @@ void gemm_prepack_8x12(bool is_transB,
   llc_size = llc_size * 9 / 10;
 
   auto act_type = act_param.active_type;
-  float local_alpha = 0.f;
-  float offset = 0.f;
-  float threshold = 6.f;
+  float16_t local_alpha = 0.f;
+  float16_t offset = 0.f;
+  float16_t threshold = 6.f;
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
   if (act_param.has_active) {
     act_acquire(act_type, flag_act, local_alpha, offset, threshold, act_param);
