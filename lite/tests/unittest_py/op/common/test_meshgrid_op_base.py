@@ -23,19 +23,20 @@ import unittest
 import hypothesis
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape_x = draw(st.lists(st.integers(min_value=1, max_value=8), min_size = 4, max_size=4))
+    in_shape_x = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=8), min_size=4, max_size=4))
     mashgrid_op = OpConfig(
-        type = "meshgrid",
-       inputs = {"X" : ["input_data_x"]},
-        outputs = {"Out": ["output_data"]},
-        attrs = {})
+        type="meshgrid",
+        inputs={"X": ["input_data_x"]},
+        outputs={"Out": ["output_data"]},
+        attrs={})
     program_config = ProgramConfig(
         ops=[mashgrid_op],
         weights={},
-        inputs={
-            "input_data_x":
-            TensorConfig(shape=in_shape_x)
-        },
+        inputs={"input_data_x": TensorConfig(shape=in_shape_x)},
         outputs=["output_data"])
     return program_config

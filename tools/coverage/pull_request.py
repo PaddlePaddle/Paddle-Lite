@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 """
 usage: pull_request.py files pull_id
        pull_request.py diff  pull_id
@@ -12,6 +11,7 @@ import os
 from github import Github
 
 token = os.getenv('GITHUB_API_TOKEN')
+
 
 def get_pull(pull_id):
     """

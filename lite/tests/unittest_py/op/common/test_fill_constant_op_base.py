@@ -24,9 +24,16 @@ import hypothesis
 import hypothesis.strategies as st
 import random
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=1, max_value=10), min_size=1, max_size=4))
-    tensor_shape = draw(st.lists(st.integers(min_value=1, max_value=10), min_size=1, max_size=4))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=10), min_size=1, max_size=4))
+    tensor_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=10), min_size=1, max_size=4))
     dtype = draw(st.sampled_from([2, 3, 5]))
 
     with_value_tensor = draw(st.sampled_from([True, False]))
@@ -66,30 +73,37 @@ def sample_program_configs(draw):
     program_inputs = {}
 
     #ShapeTensorList not support now 
-    if(with_value_tensor and with_shape_tensor):
-         op_inputs = {"ValueTensor" : ["value_data"], "ShapeTensor" : ["shape_data"]}
-         program_inputs = {
-                 "value_data":TensorConfig(data_gen=partial(value_data)),
-                 "shape_data":TensorConfig(data_gen=partial(generate_shape_tensor))}
-    elif((not with_value_tensor) and with_shape_tensor):
-         op_inputs = {"ShapeTensor" : ["shape_data"]}
-         program_inputs = {
-                 "shape_data":TensorConfig(data_gen=partial(generate_shape_tensor))}
-    elif(with_value_tensor and (not with_shape_tensor)):
-         op_inputs = {"ValueTensor" : ["value_data"]}
-         program_inputs = {
-                 "value_data": TensorConfig(data_gen=partial(value_data))}
+    if (with_value_tensor and with_shape_tensor):
+        op_inputs = {
+            "ValueTensor": ["value_data"],
+            "ShapeTensor": ["shape_data"]
+        }
+        program_inputs = {
+            "value_data": TensorConfig(data_gen=partial(value_data)),
+            "shape_data": TensorConfig(data_gen=partial(generate_shape_tensor))
+        }
+    elif ((not with_value_tensor) and with_shape_tensor):
+        op_inputs = {"ShapeTensor": ["shape_data"]}
+        program_inputs = {
+            "shape_data": TensorConfig(data_gen=partial(generate_shape_tensor))
+        }
+    elif (with_value_tensor and (not with_shape_tensor)):
+        op_inputs = {"ValueTensor": ["value_data"]}
+        program_inputs = {
+            "value_data": TensorConfig(data_gen=partial(value_data))
+        }
 
     fill_constant_op = OpConfig(
-        type = "fill_constant",
-        inputs = op_inputs,
-        outputs = {"Out": ["output_data"]},
-        attrs = {"dtype" : dtype,
-                 "shape" : in_shape,
-                 "value" : value,
-                 "force_cpu" : False
-                 #"place_type" : -1
-                 })
+        type="fill_constant",
+        inputs=op_inputs,
+        outputs={"Out": ["output_data"]},
+        attrs={
+            "dtype": dtype,
+            "shape": in_shape,
+            "value": value,
+            "force_cpu": False
+            #"place_type" : -1
+        })
     program_config = ProgramConfig(
         ops=[fill_constant_op],
         weights={},

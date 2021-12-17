@@ -1996,6 +1996,9 @@ struct TrigonometricParam : ParamBase {
 
 using SinParam = TrigonometricParam;
 using CosParam = TrigonometricParam;
+using AsinParam = TrigonometricParam;
+using AcosParam = TrigonometricParam;
+using AtanParam = TrigonometricParam;
 
 struct FlattenContiguousRangeParam : ParamBase {
   const lite::Tensor* x{nullptr};

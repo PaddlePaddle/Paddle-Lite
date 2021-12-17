@@ -24,36 +24,28 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(
-        st.integers(
-            min_value=1, max_value=64), min_size=1, max_size=4))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=64), min_size=1, max_size=4))
     input_axis = draw(st.sampled_from([0, 1, 2, 3, -1]))
     assume(input_axis < len(in_shape))
-    
+
     def generate_input(*args, **kwargs):
         return np.random.normal(0.0, 1.0, in_shape).astype(np.float32)
 
     ops_config = OpConfig(
-        type = "softmax",
-        inputs = {
-            "X": ["input_data"]
-        },
-        outputs = {
-            "Out": ["output_data"]
-        },
-        attrs = {
-            "axis": input_axis
-        }
-        )
+        type="softmax",
+        inputs={"X": ["input_data"]},
+        outputs={"Out": ["output_data"]},
+        attrs={"axis": input_axis})
 
     program_config = ProgramConfig(
         ops=[ops_config],
         weights={},
-        inputs={
-            "input_data": 
-            TensorConfig(data_gen=partial(generate_input))
-        },
+        inputs={"input_data": TensorConfig(data_gen=partial(generate_input))},
         outputs=["output_data"])
 
     return program_config

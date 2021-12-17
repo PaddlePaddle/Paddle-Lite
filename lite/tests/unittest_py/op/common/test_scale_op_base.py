@@ -23,8 +23,12 @@ import unittest
 import hypothesis
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=1, max_size=4))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=8), min_size=1, max_size=4))
 
     bias = draw(st.floats(min_value=-5, max_value=5))
     bias_after_scale = draw(st.booleans())
@@ -44,17 +48,19 @@ def sample_program_configs(draw):
     def generate_input_float32(*args, **kwargs):
         return np.random.random(in_shape).astype(np.float32)
 
-    input_dict = {"X" : ["input_data"]}
+    input_dict = {"X": ["input_data"]}
     if has_scale_tensor:
         input_dict["ScaleTensor"] = "scale_tensor_data"
 
     scale_op = OpConfig(
-        type = "scale",
-        inputs = input_dict,
-        outputs = {"Out" : ["output_data"]},
-        attrs = {"bias" : bias,
-                "bias_after_scale" : bias_after_scale,
-                "scale" : scale})
+        type="scale",
+        inputs=input_dict,
+        outputs={"Out": ["output_data"]},
+        attrs={
+            "bias": bias,
+            "bias_after_scale": bias_after_scale,
+            "scale": scale
+        })
 
     if input_type == "int8":
         if has_scale_tensor:
@@ -62,8 +68,9 @@ def sample_program_configs(draw):
                 ops=[scale_op],
                 weights={},
                 inputs={
-                    "input_data" : TensorConfig(data_gen=partial(generate_input_int8)),
-                    "scale_tensor_data" : TensorConfig(shape=[1,])
+                    "input_data":
+                    TensorConfig(data_gen=partial(generate_input_int8)),
+                    "scale_tensor_data": TensorConfig(shape=[1, ])
                 },
                 outputs=["output_data"])
         else:
@@ -81,8 +88,9 @@ def sample_program_configs(draw):
                 ops=[scale_op],
                 weights={},
                 inputs={
-                    "input_data" : TensorConfig(data_gen=partial(generate_input_int32)),
-                    "scale_tensor_data" : TensorConfig(shape=[1,])
+                    "input_data":
+                    TensorConfig(data_gen=partial(generate_input_int32)),
+                    "scale_tensor_data": TensorConfig(shape=[1, ])
                 },
                 outputs=["output_data"])
         else:
@@ -100,8 +108,9 @@ def sample_program_configs(draw):
                 ops=[scale_op],
                 weights={},
                 inputs={
-                    "input_data" : TensorConfig(data_gen=partial(generate_input_int64)),
-                    "scale_tensor_data" : TensorConfig(shape=[1,])
+                    "input_data":
+                    TensorConfig(data_gen=partial(generate_input_int64)),
+                    "scale_tensor_data": TensorConfig(shape=[1, ])
                 },
                 outputs=["output_data"])
         else:
@@ -119,8 +128,9 @@ def sample_program_configs(draw):
                 ops=[scale_op],
                 weights={},
                 inputs={
-                    "input_data" : TensorConfig(data_gen=partial(generate_input_float32)),
-                    "scale_tensor_data" : TensorConfig(shape=[1,])
+                    "input_data":
+                    TensorConfig(data_gen=partial(generate_input_float32)),
+                    "scale_tensor_data": TensorConfig(shape=[1, ])
                 },
                 outputs=["output_data"])
         else:
