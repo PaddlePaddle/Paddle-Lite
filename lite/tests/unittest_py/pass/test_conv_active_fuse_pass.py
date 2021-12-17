@@ -41,14 +41,14 @@ class TestConvActiveFuse(FusePassAutoScanTest):
             thread=[1, 4])
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
-                  DataLayoutType.ImageDefault),
-            Place(TargetType.OpenCL, PrecisionType.FP16,
-                  DataLayoutType.ImageFolder),
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
             Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
             Place(TargetType.OpenCL, PrecisionType.Any,
-                  DataLayoutType.ImageDefault),
-            Place(TargetType.OpenCL, PrecisionType.Any,
-                  DataLayoutType.ImageFolder),
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
             Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
@@ -58,7 +58,7 @@ class TestConvActiveFuse(FusePassAutoScanTest):
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
         if predictor_config.target() == TargetType.OpenCL:
-            return False        
+            return False
         result = True
         if predictor_config.target() == TargetType.OpenCL:
             result = result and (

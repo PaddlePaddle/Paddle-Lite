@@ -204,12 +204,14 @@ void ConvBNFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
     if (conv_type_ == "conv2d_transpose") {
       int cout_group = conv_weight_t->dims()[1];
       int cin_group = conv_weight_t->dims()[0] / groups;
-      int c_size = cout_group * conv_weight_t->dims()[2] * conv_weight_t->dims()[3];
+      int c_size =
+          cout_group * conv_weight_t->dims()[2] * conv_weight_t->dims()[3];
       int hw = conv_weight_t->dims()[2] * conv_weight_t->dims()[3];
       for (int g = 0; g < groups; g++) {
         for (int k = 0; k < cin_group; ++k) {
           for (int i = 0; i < cout_group; ++i) {
-            auto ptr_row = conv_weight_d + g * cin_group * c_size + k  * c_size + i * hw;
+            auto ptr_row =
+                conv_weight_d + g * cin_group * c_size + k * c_size + i * hw;
             for (int j = 0; j < hw; ++j) {
               ptr_row[j] *= alpha_data[g * cout_group + i];
             }

@@ -268,7 +268,7 @@ class AutoScanBaseTest(unittest.TestCase):
                                      feed_data))
 
             for paddlelite_config in paddlelite_configs:
-                self.num_predictor_kinds += 1                
+                self.num_predictor_kinds += 1
                 # ignore info
                 ignore_flag = False
                 paddle_lite_not_support_flag = False
