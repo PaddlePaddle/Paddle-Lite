@@ -33,6 +33,11 @@ class TestFlattenContiguousRangeOp(AutoScanTest):
         self.enable_testing_on_place(TargetType.Host, PrecisionType.Any, DataLayoutType.Any, thread=[1,4])
          
     def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+        in_dtype = program_config.inputs["input_data"].dtype
+
+        #wait for atuo_scan_base bug fix 
+        if "float32" != in_dtype:
+            return False
         return True
 
     def sample_program_configs(self, draw):
@@ -47,9 +52,6 @@ class TestFlattenContiguousRangeOp(AutoScanTest):
                 return (kwargs["high"] - kwargs["low"]) * np.random.random(kwargs["shape"]).astype(np.float32) + kwargs["low"]
                 
         input_type = draw(st.sampled_from(["float32", "int64", "int32"]))
-
-        #wait for atuo_scan_base bug fix
-        input_type = "float32"
 
         start_axis = draw(st.integers(min_value=0, max_value=len(in_shape)-1))
         stop_axis = draw(st.integers(min_value=start_axis, max_value=len(in_shape)-1))
@@ -75,7 +77,7 @@ class TestFlattenContiguousRangeOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=300)
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
