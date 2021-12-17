@@ -17,6 +17,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+
 #include "core/hal/types.h"
 #include "driver/huawei_ascend_npu/model_client.h"
 #include "ge/ge_api_types.h"
@@ -37,19 +38,20 @@ namespace huawei_ascend_npu {
 #define HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS \
   "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS"
 
-#define NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(  \
-    major, minor, patch, bugfix)                                \
-  NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MAJOR_VERSION >=             \
-      major&& NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MINOR_VERSION >= \
-      minor&& NNADAPTER_HUAWEI_ASCEND_NPU_CANN_PATCH_VERSION >= \
-      patch&& NNADAPTER_HUAWEI_ASCEND_NPU_CANN_BUGFIX_VERSION >= bugfix
+#define NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(   \
+    major, minor, patch)                                         \
+  NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MAJOR_VERSION * 1000 +        \
+          NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MINOR_VERSION * 100 + \
+          NNADAPTER_HUAWEI_ASCEND_NPU_CANN_PATCH_VERSION >=      \
+      major * 1000 + minor * 100 + patch
 
-#define NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_LESS_THAN(     \
-    major, minor, patch, bugfix)                                \
-  NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MAJOR_VERSION <=             \
-      major&& NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MINOR_VERSION <= \
-      minor&& NNADAPTER_HUAWEI_ASCEND_NPU_CANN_PATCH_VERSION <= \
-      patch&& NNADAPTER_HUAWEI_ASCEND_NPU_CANN_BUGFIX_VERSION <= bugfix
+#define NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_LESS_THAN(      \
+    major, minor, patch)                                         \
+  NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MAJOR_VERSION * 1000 +        \
+          NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MINOR_VERSION * 100 + \
+          NNADAPTER_HUAWEI_ASCEND_NPU_CANN_PATCH_VERSION <=      \
+      major * 1000 + minor * 100 + patch
+
 // Prepare AscendCL environment and register the finalizer to be called at
 // normal process termination
 void InitializeAscendCL();
@@ -127,13 +129,7 @@ std::string ConvertInterpolateModeCodeToGEInterpolateMode(
     int interpolate_mode_code);
 
 // Get Ascend CANN version
-bool GetAscendCANNVersion(int* major, int* minor, int* patch, int* bugfix);
-
-// Convert Ascend CANN version to strings
-std::string AscendCANNVersion2String(int major_version,
-                                     int minor_version,
-                                     int patch_version,
-                                     int bugfix_version);
+bool GetAscendCANNVersion(int* major, int* minor, int* patch);
 
 // Get Ascend soc name
 ge::AscendString GetAscendSocName();

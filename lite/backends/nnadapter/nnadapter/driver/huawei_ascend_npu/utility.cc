@@ -34,29 +34,26 @@ void InitializeAscendCL() {
   static bool initialized = false;
   mtx.lock();
   if (!initialized) {
-    int major_version = 0, minor_version = 0, patch_version = 0,
-        bugfix_version = 0;
-    GetAscendCANNVersion(
-        &major_version, &minor_version, &patch_version, &bugfix_version);
-    auto current_env_cann_version = AscendCANNVersion2String(
-        NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MAJOR_VERSION,
-        NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MINOR_VERSION,
-        NNADAPTER_HUAWEI_ASCEND_NPU_CANN_PATCH_VERSION,
-        NNADAPTER_HUAWEI_ASCEND_NPU_CANN_BUGFIX_VERSION);
-    auto build_version = AscendCANNVersion2String(
-        major_version, minor_version, patch_version, bugfix_version);
+    int major_version = 0, minor_version = 0, patch_version = 0;
+    GetAscendCANNVersion(&major_version, &minor_version, &patch_version);
+    auto current_version =
+        string_format("%d.%d.%d",
+                      NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MAJOR_VERSION,
+                      NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MINOR_VERSION,
+                      NNADAPTER_HUAWEI_ASCEND_NPU_CANN_PATCH_VERSION);
+    auto build_version =
+        string_format("%d.%d.%d", major_version, minor_version, patch_version);
     NNADAPTER_VLOG(5) << "The current library is compiled based on CANN "
-                      << current_env_cann_version;
+                      << current_version;
     NNADAPTER_VLOG(5) << "The CANN version of the current environment is "
                       << build_version;
     if (major_version != NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MAJOR_VERSION &&
         minor_version != NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MINOR_VERSION &&
-        patch_version != NNADAPTER_HUAWEI_ASCEND_NPU_CANN_PATCH_VERSION &&
-        bugfix_version != NNADAPTER_HUAWEI_ASCEND_NPU_CANN_BUGFIX_VERSION) {
-      NNADAPTER_LOG(WARNING) << "CANN version mismatch. The build version is "
-                             << build_version
-                             << ", but the current environment version is "
-                             << current_env_cann_version << ".";
+        patch_version != NNADAPTER_HUAWEI_ASCEND_NPU_CANN_PATCH_VERSION) {
+      NNADAPTER_LOG(WARNING)
+          << "CANN version mismatch. The build version is " << build_version
+          << ", but the current environment version is " << current_version
+          << ".";
     }
     NNADAPTER_VLOG(5) << "Initialize AscendCL.";
     // The following APIs can only be called once in one process
@@ -520,15 +517,15 @@ std::string ConvertInterpolateModeCodeToGEInterpolateMode(
   return "bilinear";
 }
 
-bool GetAscendCANNVersion(int* major, int* minor, int* patch, int* bugfix) {
+bool GetAscendCANNVersion(int* major, int* minor, int* patch) {
   static std::mutex mtx;
   std::lock_guard<std::mutex> lock(mtx);
   static bool initialized = false;
   static int major_version = 0;
   static int minor_version = 0;
   static int patch_version = 0;
-  static int bugfix_version = 0;
   if (!initialized) {
+    initialized = true;
     std::string ascend_cann_path;
     std::string ld_library_path = GetStringFromEnv("LD_LIBRARY_PATH");
     // Split ld_library_path string by ":"
@@ -564,54 +561,24 @@ bool GetAscendCANNVersion(int* major, int* minor, int* patch, int* bugfix) {
     }
     // Split ascend_cann_version string by "."
     tokens = string_split<std::string>(ascend_cann_version, ".");
-    if (tokens.size() == 3) {
+    if (tokens.size() == 3 || tokens.size() == 4) {
       major_version = atoi(tokens[0].c_str());
       minor_version = atoi(tokens[1].c_str());
       patch_version = atoi(tokens[2].c_str());
-    } else if (tokens.size() == 4) {
-      major_version = atoi(tokens[0].c_str());
-      minor_version = atoi(tokens[1].c_str());
-      patch_version = atoi(tokens[2].c_str());
-      std::regex reg("(\\d+)");
-      std::smatch match_result;
-      if (std::regex_search(tokens[3], match_result, reg)) {
-        if (match_result.size() >= 1) {
-          bugfix_version = atoi(match_result[0].str().c_str());
-        } else {
-          bugfix_version = 0;
-        }
-      }
     } else {
       NNADAPTER_LOG(ERROR) << "Unable to get the version of Ascend CANN";
       return false;
     }
-    initialized = true;
   }
   *major = major_version;
   *minor = minor_version;
   *patch = patch_version;
-  *bugfix = bugfix_version;
   return true;
-}
-
-std::string AscendCANNVersion2String(int major_version,
-                                     int minor_version,
-                                     int patch_version,
-                                     int bugfix_version) {
-  if (bugfix_version == 0)
-    return string_format(
-        "%d.%d.%d", major_version, minor_version, patch_version);
-  else
-    return string_format("%d.%d.%d.alpha%d",
-                         major_version,
-                         minor_version,
-                         patch_version,
-                         bugfix_version);
 }
 
 ge::AscendString GetAscendSocName() {
   ge::AscendString soc_version = "Ascend310";
-#if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(5, 0, 2, 1)
+#if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(5, 0, 2)
   const char* soc_name = aclrtGetSocName();
   if (!soc_name) {
     soc_version = ge::AscendString(soc_name);
@@ -621,11 +588,11 @@ ge::AscendString GetAscendSocName() {
   }
 #else
   NNADAPTER_LOG(WARNING) << "Since the current library is compiled based on "
-                            "CANN versions below 5.0.2.1, aclrtGetSocName "
+                            "CANN versions below 5.0.2, aclrtGetSocName "
                             "cannot be called to obtain the SoC name of the "
                             "current device, so Ascend 310 is used by default. "
                             "If you want to use ascend 710, please recompile "
-                            "the library based on CANN 5.0.2.1 and above.";
+                            "the library based on CANN 5.0.2 and above.";
 #endif
   return soc_version;
 }
