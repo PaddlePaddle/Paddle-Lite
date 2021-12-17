@@ -14,6 +14,7 @@
 
 import rpyc
 import os
+import re
 import shutil
 from rpyc.utils.server import ThreadedServer
 import paddlelite
