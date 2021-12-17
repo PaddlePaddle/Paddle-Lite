@@ -29,12 +29,6 @@
 #include "lite/utils/log/cp_logging.h"
 #include "lite/utils/macros.h"
 
-#define XPU_CALL(func)                                        \
-  {                                                           \
-    auto e = (func);                                          \
-    CHECK_EQ(e, 0) << "XPU: (" << #func << ") returns " << e; \
-  }
-
 namespace paddle {
 namespace lite {
 
@@ -53,15 +47,17 @@ class TargetWrapper<TARGET(kXPU)> {
   static size_t num_devices() { return 1; }
   static size_t maximum_stream() { return 0; }
 
-  static void* Malloc(size_t size);
-  static void Free(void* ptr);
+  static void* Malloc(size_t size) { return XPUMemory::Malloc(size); }
+  static void Free(void* ptr) { XPUMemory::Free(ptr); }
 
   static void MemcpySync(void* dst,
                          const void* src,
                          size_t size,
                          IoDirection dir);
 
-  static XPUScratchPadGuard MallocScratchPad(size_t size);
+  static XPUScratchPadGuard MallocScratchPad(size_t size) {
+    return XPUMemory::MallocScratchPad(size);
+  }
 
   template <typename Tcpu, typename Txpu>
   static XPUQuantData ConvertCPUWeightToXPUQuantWeight(const Tcpu* cpu_data,

@@ -15,6 +15,14 @@
 #pragma once
 
 #include <memory>
+#include "lite/backends/xpu/xpu_header_sitter.h"
+#include "lite/utils/log/cp_logging.h"
+
+#define XPU_CALL(func)                                        \
+  {                                                           \
+    auto e = (func);                                          \
+    CHECK_EQ(e, 0) << "XPU: (" << #func << ") returns " << e; \
+  }
 
 namespace paddle {
 namespace lite {
@@ -32,6 +40,16 @@ struct XPUScratchPadDeleter {
 };
 
 using XPUScratchPadGuard = std::unique_ptr<XPUScratchPad, XPUScratchPadDeleter>;
+
+class XPUMemory {
+ public:
+  static void* Malloc(size_t size);
+  static void Free(void* ptr);
+  static void MemcpyHtoDSync(void* dst, const void* src, size_t size);
+  static void MemcpyDtoHSync(void* dst, const void* src, size_t size);
+  static XPUScratchPadGuard MallocScratchPad(size_t size);
+  static int get_max_ptr_size();
+};
 
 }  // namespace lite
 }  // namespace paddle
