@@ -46,11 +46,11 @@ class TestInverseOp(AutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=64), min_size=1, max_size=2))
+                    min_value=1, max_value=32), min_size=1, max_size=2))
 
         def generate_input(*args, **kwargs):
             last_dim = np.random.randint(
-                low=1, high=64, size=[1]).astype(np.int32)
+                low=1, high=16, size=[1]).astype(np.int32)
             input_dim = copy.deepcopy(in_shape)
             input_dim.append(last_dim[0])  #last 2 dim must be equal
             input_dim.append(last_dim[0])
@@ -72,7 +72,7 @@ class TestInverseOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["inverse"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["inverse"], (5e-5, 5e-5)
 
     def add_ignore_pass_case(self):
         pass

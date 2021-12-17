@@ -92,7 +92,7 @@ class TestGruUnitOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["gru_unit"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["gru_unit"], (3e-2, 3e-2)
 
     def add_ignore_pass_case(self):
         pass

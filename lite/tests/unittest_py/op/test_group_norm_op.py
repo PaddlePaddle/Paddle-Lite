@@ -107,13 +107,13 @@ class TestGroupNormOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["group_norm"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["group_norm"], (2e-4, 2e-4)
 
     def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=50)
 
 
 if __name__ == "__main__":
