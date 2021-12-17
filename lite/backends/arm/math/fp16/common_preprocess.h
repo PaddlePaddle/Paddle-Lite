@@ -32,6 +32,10 @@ typedef __fp16 float16_t;
       const dtype *ptr_w5, const dtype *ptr_w6, const dtype *ptr_w7, \
       int remain
 
+#define PTR_ACQUIRE_PARAM_4(dtype)                                 \
+  const dtype *ptr_zero, const dtype *ptr_w0, const dtype *ptr_w1, \
+      const dtype *ptr_w2, const dtype *ptr_w3, int remain
+
 #define PTR_ACQUIRE_PARAM_A8(dtype)                                  \
   const dtype *zerobuff, const dtype *inptr1, const dtype *inptr2,   \
       const dtype *inptr3, const dtype *inptr4, const dtype *inptr5, \
@@ -222,6 +226,23 @@ inline void ptr_acquire_remain(PTR_ACQUIRE_PARAM(dtype)) {
 }
 
 template <typename dtype>
+inline void ptr_acquire_remain_four(PTR_ACQUIRE_PARAM_4(dtype)) {
+  switch (4 - remain) {
+    case 3:
+      ptr_w0 = ptr_zero;
+      break;
+    case 2:
+      ptr_w1 = ptr_zero;
+      break;
+    case 1:
+      ptr_w2 = ptr_zero;
+      break;
+    default:
+      break;
+  }
+}
+
+template <typename dtype>
 inline void ptr_acquire_norm(PTR_ACQUIRE_PARAM(dtype)) {
   switch (8 - remain) {
     case 7:
@@ -244,6 +265,20 @@ inline void ptr_acquire_norm(PTR_ACQUIRE_PARAM(dtype)) {
   }
 }
 
+template <typename dtype>
+inline void ptr_acquire_norm_four(PTR_ACQUIRE_PARAM_4(dtype)) {
+  switch (4 - remain) {
+    case 3:
+      ptr_w1 = ptr_zero;
+    case 2:
+      ptr_w2 = ptr_zero;
+    case 1:
+      ptr_w3 = ptr_zero;
+      break;
+    default:
+      break;
+  }
+}
 template <typename dtype>
 inline void ptr_acquire_a8(PTR_ACQUIRE_PARAM_A8(dtype)) {
   switch (numa - numb) {
