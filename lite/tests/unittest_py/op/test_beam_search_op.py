@@ -47,7 +47,7 @@ class TestBeamSearchOp(AutoScanTest):
         level = draw(st.integers(min_value=1, max_value=1))
         beam_size = draw(st.integers(min_value=1, max_value=10))
         end_id = draw(st.integers(min_value=1, max_value=10))
-        lod_data = [[0, 2, 4],[0, 1, 2, 3, 4]]
+        lod_data = [[0, 2, 4], [0, 1, 2, 3, 4]]
         num0 = draw(st.integers(min_value=4, max_value=10))
         num1 = draw(st.integers(min_value=5, max_value=10))
         in_shape = [num0, num1]
