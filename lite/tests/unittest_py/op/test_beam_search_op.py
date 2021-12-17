@@ -40,17 +40,18 @@ class TestBeamSearchOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        # precision has diff
-        return False
+        return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.sampled_from([[1, 5], [5, 1]]))
-        ids_shape = draw(st.sampled_from([[4, 3], [4, 2]]))
         is_accumulated = draw(st.sampled_from([True, False]))
-        level = draw(st.integers(min_value=1, max_value=10))
+        level = draw(st.integers(min_value=1, max_value=1))
         beam_size = draw(st.integers(min_value=1, max_value=10))
         end_id = draw(st.integers(min_value=1, max_value=10))
-        lod_data = [[0, 2, 4], [0, 1, 2, 3, 4]]
+        lod_data = [[0, 2, 4],[0, 1, 2, 3, 4]]
+        num0 = draw(st.integers(min_value=4, max_value=10))
+        num1 = draw(st.integers(min_value=5, max_value=10))
+        in_shape = [num0, num1]
+        ids_shape = [num0, num1]
 
         def generate_pre_ids(*args, **kwargs):
             return np.random.randint(1, 5, in_shape).astype(np.int64)
