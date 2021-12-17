@@ -19,6 +19,7 @@ import enum
 import unittest
 from typing import Optional, List, Callable, Dict, Any, Set
 import os
+import re
 import paddle
 import rpyc
 import copy
