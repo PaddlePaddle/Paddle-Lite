@@ -24,6 +24,7 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
     min_sizes = [2.0, 4.0]
     max_sizes = [5.0, 10.0]
@@ -47,22 +48,20 @@ def sample_program_configs(draw):
     min_max_aspect_ratios_order = draw(st.sampled_from([True, False]))
 
     def generate_input(*args, **kwargs):
-       return np.random.random((batch_size, image_channels, image_w, image_h)).astype('float32')
-    
+        return np.random.random(
+            (batch_size, image_channels, image_w, image_h)).astype('float32')
+
     def generate_image(*args, **kwargs):
-       return np.random.random((batch_size, input_channels, layer_w, layer_h)).astype('float32')
-        
+        return np.random.random(
+            (batch_size, input_channels, layer_w, layer_h)).astype('float32')
+
     ops_config = OpConfig(
-        type = "prior_box",
-        inputs = {
-            "Input": ["intput_data"],
-            "Image": ["intput_image"]
-        },
-        outputs = {
-            "Boxes": ["output_boxes"],
-            "Variances": ["variances"]
-        },
-        attrs = {
+        type="prior_box",
+        inputs={"Input": ["intput_data"],
+                "Image": ["intput_image"]},
+        outputs={"Boxes": ["output_boxes"],
+                 "Variances": ["variances"]},
+        attrs={
             "min_sizes": min_sizes,
             "max_sizes": max_sizes,
             "aspect_ratios": aspect_ratios,
@@ -73,17 +72,14 @@ def sample_program_configs(draw):
             "step_h": step_h,
             "offset": offset,
             "min_max_aspect_ratios_order": min_max_aspect_ratios_order,
-        },
-        )
+        }, )
 
     program_config = ProgramConfig(
         ops=[ops_config],
         weights={},
         inputs={
-            "intput_data": 
-            TensorConfig(data_gen=partial(generate_input)),
-            "intput_image":
-            TensorConfig(data_gen=partial(generate_image)),
+            "intput_data": TensorConfig(data_gen=partial(generate_input)),
+            "intput_image": TensorConfig(data_gen=partial(generate_image)),
         },
         outputs=["output_boxes", "variances"])
 

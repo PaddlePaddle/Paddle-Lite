@@ -29,6 +29,10 @@ int PrepareReduce(hal::Operation* operation) {
   auto input_type = input_operand->type;
   auto& output_type = output_operand->type;
   CopyOperandTypeExceptQuantParams(&output_type, input_type);
+  // special case
+  if (input_type.dimensions.count == 1) {
+    keep_dim = true;
+  }
   if (keep_dim) {
     output_type.dimensions.count = input_type.dimensions.count;
   } else {

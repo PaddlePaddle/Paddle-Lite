@@ -276,7 +276,7 @@ class LITE_API ConfigBase {
   void add_discarded_pass(const std::string pass);
   const std::vector<std::string> get_discarded_passes() const {
     return discarded_passes_;
-  };
+  }
 };
 
 class LITE_API CxxModelBuffer {

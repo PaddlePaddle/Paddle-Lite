@@ -99,6 +99,8 @@ TEST(Dropout, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 2e-1;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 2e-5;
 #else
   return;
 #endif

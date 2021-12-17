@@ -18,10 +18,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--target")
 args = parser.parse_args()
 
-if args.target == "ARM":
+if args.target == "ARM" or args.target == "OpenCL" or args.target == "Metal":
     from auto_scan_test_rpc import AutoScanTest
+    from auto_scan_test_rpc import FusePassAutoScanTest
 else:
     from auto_scan_test_no_rpc import AutoScanTest
+    from auto_scan_test_no_rpc import FusePassAutoScanTest
 
 IgnoreReasons = IgnoreReasonsBase
 AutoScanTest = AutoScanTest
+FusePassAutoScanTest = FusePassAutoScanTest
