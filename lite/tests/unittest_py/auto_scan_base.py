@@ -497,6 +497,7 @@ class AutoScanBaseTest(unittest.TestCase):
         # otherwise we will generate a list[Place] from the inputed[target\precision\layout]
         assert (target is not None)
         target_ = target if isinstance(target, list) else [target]
+        self.target = target_
         precision_ = precision if isinstance(precision, list) else [precision]
         layout_ = layout if isinstance(layout, list) else [layout]
         for tar_, pre_, lay_ in product(target_, precision_, layout_):
