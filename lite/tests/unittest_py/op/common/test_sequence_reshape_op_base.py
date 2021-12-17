@@ -24,13 +24,16 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    lod_data=draw(st.lists(
-        st.integers(
-            min_value=0, max_value=64), min_size=0, max_size=3))
+    lod_data = draw(
+        st.lists(
+            st.integers(
+                min_value=0, max_value=64), min_size=0, max_size=3))
     lod_data.append(12)
     new_dim = draw(st.sampled_from([12]))
-    input_type = draw(st.sampled_from(["type_float", "type_int", "type_int64"]))
+    input_type = draw(
+        st.sampled_from(["type_float", "type_int", "type_int64"]))
 
     def generate_input(*args, **kwargs):
         if input_type == "type_float":
@@ -41,24 +44,17 @@ def sample_program_configs(draw):
             return np.random.normal(0.0, 1.0, [12, 12]).astype(np.int64)
 
     ops_config = OpConfig(
-        type = "sequence_reshape",
-        inputs = {
-            "X": ["input_data"]
-        },
-        outputs = {
-            "Out": ["output_data"]
-        },
-        attrs = {
-            "new_dim": new_dim
-        },
-        )
+        type="sequence_reshape",
+        inputs={"X": ["input_data"]},
+        outputs={"Out": ["output_data"]},
+        attrs={"new_dim": new_dim}, )
 
     program_config = ProgramConfig(
         ops=[ops_config],
         weights={},
         inputs={
-            "input_data": 
-            TensorConfig(data_gen=partial(generate_input), lod=[lod_data])
+            "input_data": TensorConfig(
+                data_gen=partial(generate_input), lod=[lod_data])
         },
         outputs=["output_data"])
 

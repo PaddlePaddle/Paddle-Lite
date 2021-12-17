@@ -23,23 +23,29 @@ import unittest
 import hypothesis
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size = 4, max_size=4))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=8), min_size=4, max_size=4))
     axis = draw(st.sampled_from([0, 1]))
     epsilon = draw(st.sampled_from([0.1, 1.1]))
     keepdim = draw(st.booleans())
     asvector = draw(st.booleans())
     p_norm_op = OpConfig(
-        type = "p_norm",
-       inputs = {"X" : ["input_data"]},
-        outputs = {"Out": ["output_data"]},
-        attrs = {"axis":axis, "epsilon":epsilon, "keepdim":keepdim, "asvector":asvector})
+        type="p_norm",
+        inputs={"X": ["input_data"]},
+        outputs={"Out": ["output_data"]},
+        attrs={
+            "axis": axis,
+            "epsilon": epsilon,
+            "keepdim": keepdim,
+            "asvector": asvector
+        })
     program_config = ProgramConfig(
         ops=[p_norm_op],
         weights={},
-        inputs={
-            "input_data":
-            TensorConfig(shape=in_shape)
-        },
+        inputs={"input_data": TensorConfig(shape=in_shape)},
         outputs=["output_data"])
     return program_config
