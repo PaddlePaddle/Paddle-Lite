@@ -15,7 +15,6 @@
 #include "driver/huawei_ascend_npu/utility.h"
 #include <map>
 #include <mutex>  // NOLINT
-#include <regex>  // NOLINT
 #include <utility>
 #include "utility/debug.h"
 #include "utility/string.h"
