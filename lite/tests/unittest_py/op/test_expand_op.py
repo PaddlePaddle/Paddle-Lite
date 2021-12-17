@@ -41,6 +41,7 @@ class TestExpandOp(AutoScanTest):
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
         in_dtype = program_config.inputs["input_data"].dtype
+        #wait for atuo_scan_base bug fix 
         if "float32" != in_dtype:
             return False
         return True
@@ -74,8 +75,6 @@ class TestExpandOp(AutoScanTest):
 
         input_type = draw(st.sampled_from(["float32", "int32", "int64"]))
 
-        #wait for atuo_scan_base bug fix 
-        #input_type = "float32"
         def gnerate_inputs(with_tensor):
             inputs1 = {}
             inputs2 = {}
