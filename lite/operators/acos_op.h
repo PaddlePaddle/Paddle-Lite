@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,33 +13,35 @@
 // limitations under the License.
 
 #pragma once
+#include <string>
 #include <vector>
-#include "lite/core/kernel.h"
-#include "lite/core/op_registry.h"
-#include "lite/core/types.h"
+#include "lite/core/op_lite.h"
+#include "lite/core/scope.h"
+#include "lite/utils/all.h"
 
 namespace paddle {
 namespace lite {
-namespace kernels {
-namespace arm {
+namespace operators {
 
-template <PrecisionType PType, PrecisionType OutType>
-class MulCompute : public KernelLite<TARGET(kARM), PType> {
+class AcosOpLite : public OpLite {
  public:
-  using param_t = operators::MulParam;
+  AcosOpLite() {}
+  explicit AcosOpLite(const std::string &op_type) : OpLite(op_type) {}
 
-  void PrepareForRun() override;
+  bool CheckShape() const override;
 
-  void Run() override;
+  bool InferShape() override;
 
-  virtual ~MulCompute() = default;
+  bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) override;
+
+  void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
+
+  std::string DebugString() const override { return "acos"; }
 
  private:
-  int m_, n_, k_;
-  std::vector<float> scale_, scale_one;
+  mutable AcosParam param_;
 };
 
-}  // namespace arm
-}  // namespace kernels
+}  // namespace operators
 }  // namespace lite
 }  // namespace paddle

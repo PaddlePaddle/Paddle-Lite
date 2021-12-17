@@ -41,8 +41,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "--target",
     choices=[
-        'Host', 'X86', 'CUDA', 'ARM', 'OpenCL', 'FPGA', 'NPU', 'MLU', 'RKNPU',
-        'APU', 'HUAWEI_ASCEND_NPU', 'INTEL_FPGA'
+        'Host', 'X86', 'CUDA', 'ARM', 'OpenCL', 'FPGA', 'NPU', 'XPU', 'BM',
+        'MLU', 'RKNPU', 'APU', 'HUAWEI_ASCEND_NPU', 'IMAGINATION_NNA',
+        'INTEL_FPGA', 'Metal', 'NNAdapter'
     ],
     required=True)
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -235,7 +236,6 @@ class AutoScanBaseTest(unittest.TestCase):
             config.enable_mkldnn()
         if passes is not None:
             config.pass_builder().set_passes(passes)
-            self.passes = passes
         return config
 
     def run_test(self, quant=False, prog_configs=None):
@@ -310,13 +310,17 @@ class AutoScanBaseTest(unittest.TestCase):
                     result, opt_model_bytes = self.run_lite_config(
                         model, params, feed_data, pred_config)
                     results.append(result)
+                    self.assert_tensors_near(atol_, rtol_, results[-1],
+                                             results[0])
+                    # add ignore methods
                     if self.passes is not None:
                         # op unit test: we will not check precision in ignore case
-                        self.assert_tensors_near(atol_, rtol_, results[-1],
-                                                 results[0])
                         if not ignore_flag:
                             # pass unit test: we will not check fusion in ignore case
                             self.assert_op_list(opt_model_bytes, op_list_)
+                    else:
+                        self.assert_kernel_type(opt_model_bytes, op_list_,
+                                                paddlelite_config)
                 except Exception as e:
                     self.fail_log(
                         self.paddlelite_config_str(pred_config) +
@@ -358,6 +362,39 @@ class AutoScanBaseTest(unittest.TestCase):
             op_list_after_fusion == after_op_list,
             "Expected operator list after fusion is {}, but now it's {}".
             format(op_list_after_fusion, after_op_list), )
+
+    # judge if correct kernel is picked
+    def assert_kernel_type(self, model_bytes, op_list, paddlelite_config):
+        pg = paddle.static.deserialize_program(model_bytes)
+        main_block = pg.desc.block(0)
+        after_op_list = list()
+        target_ = paddlelite_config.target()
+        precision_ = paddlelite_config.precision()
+        layout_ = paddlelite_config.layout()
+
+        for i in range(main_block.op_size()):
+            if main_block.op(i).type() in op_list:
+                kernel_type_info = main_block.op(i).attr(
+                    "__@kernel_type_attr@__").split("/")
+                self.assertTrue(
+                    len(kernel_type_info) == 5,
+                    "Incompleted kernel info of {}:{}".format(
+                        main_block.op(i).type(),
+                        main_block.op(i).attr("__@kernel_type_attr@__")))
+                current_target_ = TargetType(int(kernel_type_info[2]))
+                current_precision_ = PrecisionType(int(kernel_type_info[3]))
+                current_layout_ = DataLayoutType(int(kernel_type_info[4]))
+                correct_kernel_flag_ = (target_ == current_target_) and (
+                    precision_ == current_precision_ or
+                    current_precision_ == PrecisionType.Any) and (
+                        layout_ == current_layout_ or
+                        current_layout_ == DataLayoutType.Any)
+                self.assertTrue(
+                    correct_kernel_flag_ == True,
+                    "Expected kernel_type of op {} is ({},{},{}), but now it's ({},{},{})".
+                    format(
+                        main_block.op(i).type(), target_, precision_, layout_,
+                        current_target_, current_precision_, current_layout_))
 
     def run_and_statis(self,
                        quant=False,
@@ -453,6 +490,12 @@ class AutoScanBaseTest(unittest.TestCase):
             self.thread_num.append(thread)
             self.thread_num = list(self.thread_num)
 
+        # arm basic places:
+        arm_basic_places = [
+            Place(TargetType.ARM, PrecisionType.INT32),
+            Place(TargetType.ARM, PrecisionType.INT64)
+        ]
+
         # if list[Place] is inputed, this will be used directly
         if places is not None:
             assert isinstance(places, list)
@@ -464,8 +507,11 @@ class AutoScanBaseTest(unittest.TestCase):
         precision_ = precision if isinstance(precision, list) else [precision]
         layout_ = layout if isinstance(layout, list) else [layout]
         for tar_, pre_, lay_ in product(target_, precision_, layout_):
-            self.valid_places.append([Place(tar_, pre_, lay_)])
-        return
+            if (tar_ == TargetType.ARM):
+                self.valid_places.append([Place(tar_, pre_, lay_)] +
+                                         arm_basic_places)
+            else:
+                self.valid_places.append([Place(tar_, pre_, lay_)])
 
     def get_target(self) -> str:
         return self.args.target
