@@ -44,7 +44,7 @@ class TestGruOp(AutoScanTest):
         #     PrecisionType.FP16,
         #     DataLayoutType.NCHW,
         #     thread=[1, 2, 4])
-        
+
         self.enable_testing_on_place(
             TargetType.ARM,
             PrecisionType.FP32,
