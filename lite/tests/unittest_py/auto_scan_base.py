@@ -228,7 +228,6 @@ class AutoScanBaseTest(unittest.TestCase):
             config.enable_mkldnn()
         if passes is not None:
             config.pass_builder().set_passes(passes)
-            self.passes = passes
         return config
 
     def run_test(self, quant=False, prog_configs=None):
@@ -303,10 +302,11 @@ class AutoScanBaseTest(unittest.TestCase):
                     result, opt_model_bytes = self.run_lite_config(
                         model, params, feed_data, pred_config)
                     results.append(result)
+                    self.assert_tensors_near(atol_, rtol_, results[-1],
+                                             results[0])
+                    # add ignore methods
                     if self.passes is not None:
                         # op unit test: we will not check precision in ignore case
-                        self.assert_tensors_near(atol_, rtol_, results[-1],
-                                                 results[0])
                         if not ignore_flag:
                             # pass unit test: we will not check fusion in ignore case
                             self.assert_op_list(opt_model_bytes, op_list_)
