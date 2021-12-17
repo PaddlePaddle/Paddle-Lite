@@ -310,7 +310,7 @@ namespace fp16 {
   "vadd.f16 q4, q12, q13        \n"      \
   "vadd.f16 q5, q14, q15        \n"      \
   "beq 2f                       \n"      \
-  "cmp %w[cnt], #1              \n"      \
+  "cmp  %[cnt], #1              \n"      \
   "vldr   d0, [%[alpha_ptr], #48]\n"     \
   "vldr   d1, [%[alpha_ptr], #56]\n"     \
   "vadd.f16 q10, q2,  q3        \n"      \
@@ -318,9 +318,9 @@ namespace fp16 {
   "vmov.u32 q15, #0             \n"      \
   "vadd.f16 q12, q10, q11       \n"      \
   "beq 3f                       \n"      \
-  "cmp %w[cnt], #2              \n"      \
+  "cmp  %[cnt], #2              \n"      \
   "beq 4f                       \n"      \
-  "cmp %w[cnt], #3              \n"      \
+  "cmp  %[cnt], #3              \n"      \
   "beq 6f                       \n"      \
   /* hardswish */                        \
   "vld1.16 {d2-d5}, [%[alpha_ptr]]\n"    \
@@ -370,17 +370,20 @@ namespace fp16 {
 #define STORE                            \
   "1:                           \n"      \
   "cmp  %[flag_act], #0         \n"      \
-  "vpadd.f16 q4, q12, q13       \n"      \
-  "vpadd.f16 q5, q14, q15       \n"      \
+  "vpadd.f16 d8,  d24, d26      \n"      \
+  "vpadd.f16 d9,  d25, d27      \n"      \
+  "vpadd.f16 d10, d28, d30      \n"      \
+  "vpadd.f16 d11, d29, d31      \n"      \
   "beq 2f                       \n"      \
-  "cmp %w[flag_act], #1         \n"      \
-  "vpadd.f16 q10, q4,  q5       \n"      \
-  "vpadd.f16 q6,  q10, q10      \n"      \
+  "cmp  %[flag_act], #1         \n"      \
+  "vpadd.f16 d20, d8,  d10      \n"      \
+  "vpadd.f16 d21, d9,  d11      \n"      \
+  "vpadd.f16 d12, d20, d21      \n"      \
   "vadd.f16 d12,  d12, %e[vbias]\n"      \
   "beq 3f                       \n"      \
-  "cmp %w[flag_act], #2         \n"      \
+  "cmp  %[flag_act], #2         \n"      \
   "beq 4f                       \n"      \
-  "cmp %w[flag_act], #3         \n"      \
+  "cmp  %[flag_act], #3         \n"      \
   "beq 6f                       \n"      \
   /* hardswish */                        \
   "vld1.16 {d8-d9}, [%[hard_parameter]]\n"\
@@ -407,8 +410,9 @@ namespace fp16 {
   "b 5f                         \n"      \
   /* no act */                           \
   "2:                           \n"      \
-  "vpadd.f16 q10, q4,  q5       \n"      \
-  "vpadd.f16 q6,  q10, q10      \n"      \
+  "vpadd.f16 d20, d8,  d10      \n"      \
+  "vpadd.f16 d21, d9,  d11      \n"      \
+  "vpadd.f16 d12, d20, d21      \n"      \
   "vadd.f16 d12,  d12, %e[vbias]\n"      \
   /* store */                            \
   "5:                           \n"      \
