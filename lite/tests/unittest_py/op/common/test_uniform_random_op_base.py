@@ -23,40 +23,47 @@ import unittest
 import hypothesis
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-
     def generate_ShapeTensor():
-        return np.random.randint(1,5,size=[4]).astype(np.int64)
+        return np.random.randint(1, 5, size=[4]).astype(np.int64)
 
-    shape_data = draw(st.lists(st.integers(min_value=1, max_value=5), min_size = 4, max_size = 4))
+    shape_data = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=5), min_size=4, max_size=4))
     min_data = draw(st.floats(min_value=-1, max_value=-1))
     max_data = draw(st.floats(min_value=1, max_value=1))
     seed_data = draw(st.integers(min_value=0, max_value=0))
-    dtype_data = draw(st.integers(min_value=5, max_value=5)) # out is float
+    dtype_data = draw(st.integers(min_value=5, max_value=5))  # out is float
 
     uniform_random_op = OpConfig(
-        type = "uniform_random",
-        inputs = {"ShapeTensor" : ["ShapeTensor_data"],
-                  "ShapeTensorList" : ["ShapeTensorList_data"]
-                  },
-        outputs = {"Out": ["output_data"]},
-        attrs = {"shape": shape_data,
-                 "min" : min_data,
-                 "max": max_data,
-                 "seed": seed_data,
-                 "dtype": dtype_data,
-                 # lite does not use these 3 attr
-                 # so I default them
-                 "diag_num": 0,
-                 "diag_step": 0,
-                 "diag_val": 1.0,
-                 })
+        type="uniform_random",
+        inputs={
+            "ShapeTensor": ["ShapeTensor_data"],
+            "ShapeTensorList": ["ShapeTensorList_data"]
+        },
+        outputs={"Out": ["output_data"]},
+        attrs={
+            "shape": shape_data,
+            "min": min_data,
+            "max": max_data,
+            "seed": seed_data,
+            "dtype": dtype_data,
+            # lite does not use these 3 attr
+            # so I default them
+            "diag_num": 0,
+            "diag_step": 0,
+            "diag_val": 1.0,
+        })
     program_config = ProgramConfig(
         ops=[uniform_random_op],
         weights={},
         inputs={
-            "ShapeTensor_data": TensorConfig(data_gen=partial(generate_ShapeTensor)),
-            "ShapeTensorList_data": TensorConfig(data_gen=partial(generate_ShapeTensor))
+            "ShapeTensor_data":
+            TensorConfig(data_gen=partial(generate_ShapeTensor)),
+            "ShapeTensorList_data":
+            TensorConfig(data_gen=partial(generate_ShapeTensor))
         },
         outputs=["output_data"])
     return program_config

@@ -24,39 +24,35 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(
-        st.integers(
-            min_value=13, max_value=64), min_size=0, max_size=3))
-    in_shape.insert(0, 7)        
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=13, max_value=64), min_size=0, max_size=3))
+    in_shape.insert(0, 7)
     pad_value = draw(st.sampled_from([0.0, 0.2, 0.5]))
-    pooltype = draw(st.sampled_from(["AVERAGE", "SUM", "SQRT", "MAX", "LAST", "FIRST"]))
+    pooltype = draw(
+        st.sampled_from(["AVERAGE", "SUM", "SQRT", "MAX", "LAST", "FIRST"]))
     lod_tensor = [[0, 2, 5, 7]]
 
     def generate_input(*args, **kwargs):
         return np.random.uniform(0.1, 1, in_shape).astype('float32')
-    
+
     ops_config = OpConfig(
-        type = "sequence_pool",
-        inputs = {
-            "X": ["input_data"],
-        },
-        outputs = {
-            "Out": ["output_data"],
-            "MaxIndex": ["maxindex"]
-        },
-        attrs = {
-            "pad_value": pad_value,
-            "pooltype": pooltype
-        }
-        )
+        type="sequence_pool",
+        inputs={"X": ["input_data"], },
+        outputs={"Out": ["output_data"],
+                 "MaxIndex": ["maxindex"]},
+        attrs={"pad_value": pad_value,
+               "pooltype": pooltype})
 
     program_config = ProgramConfig(
         ops=[ops_config],
         weights={},
         inputs={
-            "input_data": 
-            TensorConfig(data_gen=partial(generate_input), lod=lod_tensor),
+            "input_data": TensorConfig(
+                data_gen=partial(generate_input), lod=lod_tensor),
         },
         outputs=["output_data", "maxindex"])
 

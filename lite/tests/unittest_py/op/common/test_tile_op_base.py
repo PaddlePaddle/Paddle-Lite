@@ -24,39 +24,52 @@ import hypothesis
 from hypothesis import assume
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=4, max_value=5), min_size = 4, max_size=4))
-    repeat_times_data = draw(st.lists(st.integers(min_value=1, max_value=5), min_size = 4, max_size=4))
-    
-    choose_repeat = draw(st.sampled_from(["RepeatTimes", "repeat_times_tensor", "repeat_times"]))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=4, max_value=5), min_size=4, max_size=4))
+    repeat_times_data = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=5), min_size=4, max_size=4))
+
+    choose_repeat = draw(
+        st.sampled_from(
+            ["RepeatTimes", "repeat_times_tensor", "repeat_times"]))
 
     def generate_RepeatTimes_data():
-        if(choose_repeat == "RepeatTimes"):
+        if (choose_repeat == "RepeatTimes"):
             return np.array(repeat_times_data).astype(np.int32)
         else:
             return np.random.randint(1, 5, []).astype(np.int32)
+
     def generate_repeat_times_tensor_data():
-        if(choose_repeat == "repeat_times_tensor"):
+        if (choose_repeat == "repeat_times_tensor"):
             return np.array(repeat_times_data).astype(np.int32)
         else:
             return np.random.randint(1, 5, []).astype(np.int32)
 
     tile_op = OpConfig(
-        type = "tile",
-        inputs = {"X" : ["X_data"],
-                  "RepeatTimes": ["RepeatTimes_data"],
-                  "repeat_times_tensor":["repeat_times_tensor_data"]
-                  },
-        outputs = {"Out": ["Out_data"]},
-        attrs = {"repeat_times" : repeat_times_data})
+        type="tile",
+        inputs={
+            "X": ["X_data"],
+            "RepeatTimes": ["RepeatTimes_data"],
+            "repeat_times_tensor": ["repeat_times_tensor_data"]
+        },
+        outputs={"Out": ["Out_data"]},
+        attrs={"repeat_times": repeat_times_data})
     program_config = ProgramConfig(
         ops=[tile_op],
         weights={},
         inputs={
             "X_data": TensorConfig(shape=in_shape),
-            "RepeatTimes_data": TensorConfig(data_gen=partial(generate_RepeatTimes_data)),
-            "repeat_times_tensor_data": TensorConfig(data_gen=partial(generate_repeat_times_tensor_data)),
+            "RepeatTimes_data":
+            TensorConfig(data_gen=partial(generate_RepeatTimes_data)),
+            "repeat_times_tensor_data":
+            TensorConfig(data_gen=partial(generate_repeat_times_tensor_data)),
         },
-        outputs= ["Out_data"])
-    
+        outputs=["Out_data"])
+
     return program_config

@@ -24,30 +24,31 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    x_dim0=draw(st.integers(min_value=1, max_value=100))
-    x_dim1=draw(st.integers(min_value=1, max_value=100))
-    y_dim1=draw(st.integers(min_value=1, max_value=100))
+    x_dim0 = draw(st.integers(min_value=1, max_value=100))
+    x_dim1 = draw(st.integers(min_value=1, max_value=100))
+    y_dim1 = draw(st.integers(min_value=1, max_value=100))
 
     matmul_op = OpConfig(
-        type = "matmul",
-        inputs = {"X": ["x_data"],"Y":["y_data"]},
-        outputs = {"Out": ["output_data"]},
-        attrs = {
+        type="matmul",
+        inputs={"X": ["x_data"],
+                "Y": ["y_data"]},
+        outputs={"Out": ["output_data"]},
+        attrs={
             "transpose_X": False,
             "transpose_Y": False,
             "alpha": 1.0,
             "fused_reshape_X": [],
             "fused_reshape_Y": [],
             "fused_transpose_X": [],
-            "fused_transpose_Y": []             
+            "fused_transpose_Y": []
         })
 
     ops = [matmul_op]
     program_config = ProgramConfig(
         ops=ops,
-        weights={
-        },
+        weights={},
         inputs={
             "x_data": TensorConfig(shape=[x_dim0, x_dim1]),
             "y_data": TensorConfig(shape=[x_dim1, y_dim1])
