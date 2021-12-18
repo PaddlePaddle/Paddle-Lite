@@ -26,7 +26,7 @@ import hypothesis.strategies as st
 import argparse
 
 
-class TestRsqrtOp(AutoScanTest):
+class TestScatterNdAddOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(
