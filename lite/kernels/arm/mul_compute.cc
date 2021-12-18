@@ -23,11 +23,13 @@ namespace lite {
 namespace kernels {
 namespace arm {
 
-void MulCompute::PrepareForRun() {
+template <>
+void MulCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   auto& ctx = this->ctx_->template As<ARMContext>();
 }
 
-void MulCompute::Run() {
+template <>
+void MulCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto& param = Param<param_t>();
 
   const auto* x_data = param.x->data<float>();
@@ -95,14 +97,118 @@ void MulCompute::Run() {
   }
 }
 
+void mul_add_n_scale_bias(float* o_data, float* scale_, int m_, int n_) {
+  float32x4_t bias_v, scale_v, out_v, tmp_v;
+  int n_tail = n_ % 4;
+  int n_inner = n_ - n_tail;
+  for (int i = 0; i < m_; i++) {
+    for (int j = 0; j < n_inner; j += 4) {
+      tmp_v = vld1q_f32(&o_data[i * n_ + j]);
+      scale_v = vld1q_f32(&scale_[j]);
+      out_v = vmulq_f32(scale_v, tmp_v);
+      vst1q_f32(&o_data[i * n_ + j], out_v);
+    }
+    for (int j = n_inner; j < n_; j++) {
+      o_data[i * n_ + j] *= scale_[j];
+    }
+  }
+}
+
+template <>
+void MulCompute<PRECISION(kInt8), PRECISION(kFloat)>::PrepareForRun() {
+  auto& ctx = this->ctx_->template As<ARMContext>();
+}
+
+template <>
+void MulCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
+  auto& param = Param<param_t>();
+
+  const auto* x_data = param.x->data<int8_t>();
+  const auto* y_data = param.y->data<int8_t>();
+  auto* o_data = param.output->mutable_data<float>();
+
+  m_ = static_cast<int>(
+      param.x->dims().Slice(0, param.x_num_col_dims).production());
+  int x_w =
+      static_cast<int>(param.x->dims()
+                           .Slice(param.x_num_col_dims, param.x->dims().size())
+                           .production());
+  int y_h = static_cast<int>(
+      param.y->dims().Slice(0, param.y_num_col_dims).production());
+  n_ = static_cast<int>(param.y->dims()
+                            .Slice(param.y_num_col_dims, param.y->dims().size())
+                            .production());
+
+  scale_.resize(n_);
+  scale_one.resize(m_);
+  for (int i = 0; i < n_; i++) {
+    param.output_scale = param.input_scale * param.weight_scale[i];
+    scale_[i] = param.output_scale;
+  }
+  for (int i = 0; i < m_; i++) {
+    scale_one[i] = 1;
+  }
+
+  CHECK_EQ(x_w, y_h) << "x_w must be equal with y_h";
+  k_ = x_w;
+  auto& ctx = this->ctx_->template As<ARMContext>();
+  operators::ActivationParam act_param;
+  act_param.has_active = false;
+  if (n_ == 1) {
+    lite::arm::math::gemv_int8(x_data,
+                               y_data,
+                               o_data,
+                               false,
+                               m_,
+                               k_,
+                               scale_one.data(),
+                               false,
+                               nullptr,
+                               act_param,
+                               &ctx);
+  } else {
+    constexpr bool is_tranposed_y = false;
+    int ldb = n_;
+    if (is_tranposed_y) {
+      ldb = k_;
+    }
+    lite::arm::math::gemm_s8(is_tranposed_y,
+                             false,
+                             m_,
+                             n_,
+                             k_,
+                             x_data,
+                             y_data,
+                             o_data,
+                             nullptr,
+                             false,
+                             scale_one.data(),
+                             act_param,
+                             &ctx);
+  }
+  mul_add_n_scale_bias(o_data, scale_.data(), m_, n_);
+}
+
 }  // namespace arm
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
+typedef paddle::lite::kernels::arm::MulCompute<PRECISION(kFloat),
+                                               PRECISION(kFloat)>
+    Mul_f32_f32;
 
-REGISTER_LITE_KERNEL(
-    mul, kARM, kFloat, kNCHW, paddle::lite::kernels::arm::MulCompute, def)
+REGISTER_LITE_KERNEL(mul, kARM, kFloat, kNCHW, Mul_f32_f32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
+    .Finalize();
+
+typedef paddle::lite::kernels::arm::MulCompute<PRECISION(kInt8),
+                                               PRECISION(kFloat)>
+    Mul_int8_f32;
+
+REGISTER_LITE_KERNEL(mul, kARM, kInt8, kNCHW, Mul_int8_f32, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt8))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
     .Finalize();

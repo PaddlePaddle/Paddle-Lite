@@ -24,20 +24,24 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape_x = draw(st.lists(st.integers(min_value = 1, max_value = 64), min_size = 4, max_size = 4))
-    scale1 = draw(st.floats(min_value = 0.5, max_value = 5))
-    bias1  = draw(st.floats(min_value = 0, max_value = 1))
-    scale2 = draw(st.floats(min_value = 0.5, max_value = 5))
-    bias2  = draw(st.floats(min_value = 0, max_value = 1))
-    bias_after_scale1 = draw(st.sampled_from([True]))   #required in pass
-    bias_after_scale2 = draw(st.sampled_from([True]))   #required in pass
+    in_shape_x = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=64), min_size=4, max_size=4))
+    scale1 = draw(st.floats(min_value=0.5, max_value=5))
+    bias1 = draw(st.floats(min_value=0, max_value=1))
+    scale2 = draw(st.floats(min_value=0.5, max_value=5))
+    bias2 = draw(st.floats(min_value=0, max_value=1))
+    bias_after_scale1 = draw(st.sampled_from([True]))  #required in pass
+    bias_after_scale2 = draw(st.sampled_from([True]))  #required in pass
 
     scale1_op = OpConfig(
-        type = "scale",
-        inputs = {"X": ["input_data_x"]},
-        outputs = {"Out": ["scale1_output_data"]},
-        attrs = {
+        type="scale",
+        inputs={"X": ["input_data_x"]},
+        outputs={"Out": ["scale1_output_data"]},
+        attrs={
             "data_format": 'nchw',
             "scale": scale1,
             "bias": bias1,
@@ -45,10 +49,10 @@ def sample_program_configs(draw):
         })
 
     scale2_op = OpConfig(
-        type = "scale",
-        inputs = {"X": ["scale1_output_data"]},
-        outputs = {"Out": ["output_data"]},
-        attrs = {
+        type="scale",
+        inputs={"X": ["scale1_output_data"]},
+        outputs={"Out": ["output_data"]},
+        attrs={
             "scale": scale2,
             "bias": bias2,
             "bias_after_scale": bias_after_scale2
@@ -56,10 +60,8 @@ def sample_program_configs(draw):
 
     ops = [scale1_op, scale2_op]
     program_config = ProgramConfig(
-        ops = ops,
-        weights = {},
-        inputs = {
-            "input_data_x":TensorConfig(shape=in_shape_x)
-        },
-        outputs = ["output_data"])
+        ops=ops,
+        weights={},
+        inputs={"input_data_x": TensorConfig(shape=in_shape_x)},
+        outputs=["output_data"])
     return program_config

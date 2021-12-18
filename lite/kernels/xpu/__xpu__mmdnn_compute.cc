@@ -605,7 +605,6 @@ class MMDNNMatchConvTopk {
 
     std::vector<int> seqlens_match;
     std::vector<int> seqlens_conv;
-    std::vector<int> lod_topk = {0};
     int x_mul_y_sum = 0;
     int left_seqlen_sum = 0;
     int left_seqlen_max = 0;
@@ -618,17 +617,12 @@ class MMDNNMatchConvTopk {
       x_mul_y_sum = x_mul_y_sum + imgsize;
       seqlens_match.push_back(imgsize * dim_t_);
       seqlens_conv.push_back(imgsize * out_channel_);
-      lod_topk.push_back(lod_topk.back() + imgsize * (dim_t_ + out_channel_));
 
       left_seqlen_max = std::max(left_seqlen_max, len_x);
       right_seqlen_max = std::max(right_seqlen_max, len_y);
       left_seqlen_sum += len_x;
       right_seqlen_sum += len_y;
     }
-    XPU_CALL(xpu_memcpy(topk_offset_32_,
-                        lod_topk.data(),
-                        lod_topk.size() * sizeof(int),
-                        XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 
     float* xwy_out = hbm_buffer_;
     float* conv_out = hbm_buffer_ + x_mul_y_sum * dim_t_;
@@ -680,8 +674,12 @@ class MMDNNMatchConvTopk {
         1,
         xwy_out,
         conv_weight_,
-        right_lod_32_,
-        left_lod_32_,
+        {right_lod_32_cpu.data(),
+         static_cast<int>(right_lod_32_cpu.size()),
+         right_lod_32_},
+        {left_lod_32_cpu.data(),
+         static_cast<int>(left_lod_32_cpu.size()),
+         left_lod_32_},
         conv_out,
         conv_weight_max_,
         xdnn::Activation_t::RELU);  // TODO(miaotianxiang):
@@ -699,7 +697,6 @@ class MMDNNMatchConvTopk {
         seq_avg_topk_out,
         useless_topk_pos_,
         dim_t_ + out_channel_,
-        {lod_topk.data(), static_cast<int>(lod_topk.size()), topk_offset_32_},
         {left_lod_32_cpu.data(),
          static_cast<int>(left_lod_32_cpu.size()),
          left_lod_32_},

@@ -24,27 +24,30 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=1, max_size=4))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=8), min_size=1, max_size=4))
     axis = draw(st.integers(min_value=-1, max_value=3))
     keepdims = draw(st.booleans())
     dtype = draw(st.sampled_from([-1, 2, 3]))
     assume(axis < len(in_shape))
 
     arg_max_op = OpConfig(
-        type = "arg_max",
-        inputs = {"X" : ["input_data"]},
-        outputs = {"Out": ["output_data"]},
-        attrs = {"axis": axis,
-                 "keepdims": keepdims,
-                 "dtype": dtype,
-                 "flatten": False})
+        type="arg_max",
+        inputs={"X": ["input_data"]},
+        outputs={"Out": ["output_data"]},
+        attrs={
+            "axis": axis,
+            "keepdims": keepdims,
+            "dtype": dtype,
+            "flatten": False
+        })
     program_config = ProgramConfig(
         ops=[arg_max_op],
         weights={},
-        inputs={
-            "input_data":
-            TensorConfig(shape=in_shape)
-        },
+        inputs={"input_data": TensorConfig(shape=in_shape)},
         outputs=["output_data"])
     return program_config

@@ -34,7 +34,6 @@ class SequenceTopkAvgPoolingCompute
 
  private:
   XPUScratchPadGuard lod_xpu_guard_;
-  std::unique_ptr<int[]> in_lod_cpu;
   std::unique_ptr<int[]> row_lod_cpu;
   std::unique_ptr<int[]> col_lod_cpu;
 };

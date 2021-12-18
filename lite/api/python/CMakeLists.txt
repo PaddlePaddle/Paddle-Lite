@@ -2,7 +2,7 @@ if (NOT LITE_WITH_PYTHON)
     return()
 endif()
 
-# to create setup.py for packeting whl for Paddle-Lite and opt
+# to create setup.py for packeting whl for Paddle Lite and opt
 
 execute_process(
   COMMAND git describe --tags --exact-match

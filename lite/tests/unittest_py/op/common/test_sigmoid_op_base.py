@@ -24,32 +24,26 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(
-        st.integers(
-            min_value=1, max_value=64), min_size=1, max_size=4))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=64), min_size=1, max_size=4))
 
     def generate_input(*args, **kwargs):
         return np.random.uniform(-1, 1.0, in_shape).astype(np.float32)
 
     ops_config = OpConfig(
-        type = "sigmoid",
-        inputs = {
-            "X": ["input_data"]
-        },
-        outputs = {
-            "Out": ["output_data"]
-        },
-        attrs = {}
-        )
-        
+        type="sigmoid",
+        inputs={"X": ["input_data"]},
+        outputs={"Out": ["output_data"]},
+        attrs={})
+
     program_config = ProgramConfig(
         ops=[ops_config],
         weights={},
-        inputs={
-            "input_data": 
-            TensorConfig(data_gen=partial(generate_input))
-        },
+        inputs={"input_data": TensorConfig(data_gen=partial(generate_input))},
         outputs=["output_data"])
 
     return program_config
