@@ -249,7 +249,7 @@ class LITE_API RuntimeProgram {
     for (auto& inst : instructions_[kRootBlockIdx]) {
       KernelBase* kernel = inst.mutable_kernel();
       if (kernel->target() == TARGET(kOpenCL)) {
-#if defined(LITE_WITH_OPENCL) 
+#if defined(LITE_WITH_OPENCL)
         if (opencl_valid) {
           std::unique_ptr<KernelContext> ctx(new KernelContext());
           (*unique_opencl_ctx)
@@ -262,7 +262,7 @@ class LITE_API RuntimeProgram {
         }
 #endif
       } else if (kernel->target() == TARGET(kMetal)) {
-#if defined(LITE_WITH_METAL) 
+#if defined(LITE_WITH_METAL)
         if (!metal_ctx_) {
           metal_ctx_ = std::make_unique<KernelContext>();
           (*metal_ctx_).As<MTLContext>().InitOnce();
