@@ -77,7 +77,8 @@ extern NSString* cString2NSString(std::string cStr) {
         self.library = [self.device newLibraryWithFile:pathStr error:&libraryErr];
     }
     if (nil == _library) {
-        LOG(ERROR) << "Can't load metallib: " << [pathStr cStringUsingEncoding:NSUTF8StringEncoding];
+        LOG(ERROR) << "Can't load metallib: "
+                   << [pathStr cStringUsingEncoding:NSUTF8StringEncoding];
     }
 }
 
@@ -249,8 +250,8 @@ extern NSString* cString2NSString(std::string cStr) {
     MTLSize groups = MTLSize{.width = groupWidth, .height = groupHeight, .depth = slices};
     if (groups.width <= 0 || groups.height <= 0 || groups.depth <= 0) {
         LOG(ERROR) << "[METAL]: "
-                << "dispatch thread groups 1.{" << groups.width << "," << groups.height << ","
-                << groups.depth << "}";
+                   << "dispatch thread groups 1.{" << groups.width << "," << groups.height << ","
+                   << groups.depth << "}";
         return;
     }
     [encoder setComputePipelineState:pipline];
@@ -295,8 +296,8 @@ extern NSString* cString2NSString(std::string cStr) {
     }
     if (groups.width <= 0 || groups.height <= 0 || groups.depth <= 0) {
         LOG(ERROR) << "[METAL]: "
-                    << "dispatch thread groups 2.{" << groups.width << "," << groups.height << ","
-                    << groups.depth << "}";
+                   << "dispatch thread groups 2.{" << groups.width << "," << groups.height << ","
+                   << groups.depth << "}";
         return;
     }
     [encoder setComputePipelineState:pipline];
