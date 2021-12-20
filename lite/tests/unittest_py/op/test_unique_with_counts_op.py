@@ -31,49 +31,63 @@ class TestFcOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         x86_places = [
-                     Place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW),
-                     Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
-                     ]
+            Place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
+        ]
         self.enable_testing_on_place(places=x86_places)
-        
+
         arm_places = [
-                     Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
-                     Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
-                     ]
+            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
+        ]
         self.enable_testing_on_place(places=arm_places)
-        
+
         # opencl demo
-        opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-                          Place(TargetType.Host, PrecisionType.FP32)    
-                        ]
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault),
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
         self.enable_testing_on_place(places=opencl_places)
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(min_value=2, max_value=100), min_size = 1, max_size=1))
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=2, max_value=100),
+                min_size=1,
+                max_size=1))
         in_dtype = draw(st.sampled_from([np.float32, np.int32, np.int64]))
 
         def generate_X_data():
             return np.random.normal(0.0, 5.0, in_shape).astype(in_dtype)
 
         def generate_IndexTensor():
-            return np.random.randint(1,5,size=in_shape).astype(np.int32)
+            return np.random.randint(1, 5, size=in_shape).astype(np.int32)
 
         unique_with_counts_op = OpConfig(
-            type = "unique_with_counts",
-            inputs = {"X" : ["input_data"]},
-            outputs = {"Out": ["Out_data"],
-                    "Index": ["Index_data"],
-                    "Count": ["Count_data"]},
-            attrs = {"dtype": 2})# data type for output index,int32
-        
+            type="unique_with_counts",
+            inputs={"X": ["input_data"]},
+            outputs={
+                "Out": ["Out_data"],
+                "Index": ["Index_data"],
+                "Count": ["Count_data"]
+            },
+            attrs={"dtype": 2})  # data type for output index,int32
+
         unique_with_counts_op.outputs_dtype = {"Out_data": in_dtype}
         unique_with_counts_op.outputs_dtype = {"Index_data": np.int32}
         unique_with_counts_op.outputs_dtype = {"Count_data": np.int32}
@@ -81,7 +95,8 @@ class TestFcOp(AutoScanTest):
         program_config = ProgramConfig(
             ops=[unique_with_counts_op],
             weights={
-                "Index_data": TensorConfig(data_gen=partial(generate_IndexTensor))
+                "Index_data":
+                TensorConfig(data_gen=partial(generate_IndexTensor))
             },
             inputs={
                 "input_data": TensorConfig(data_gen=partial(generate_X_data)),
@@ -97,6 +112,7 @@ class TestFcOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
