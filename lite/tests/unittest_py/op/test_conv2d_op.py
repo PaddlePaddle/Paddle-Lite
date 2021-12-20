@@ -59,7 +59,12 @@ class TestConv2dOp(AutoScanTest):
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
         if predictor_config.target() == TargetType.OpenCL:
-            return False
+            groups = program_config.ops[0].attrs["groups"]
+            # opencl doesn't support
+            if groups != 1:
+                return False
+            else:
+                return True
         elif predictor_config.target() == TargetType.ARM and (
                 predictor_config.precision() == PrecisionType.FP16 or
                 predictor_config.precision() == PrecisionType.INT8):
