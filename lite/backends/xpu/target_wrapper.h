@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <map>
+#include <memory>
 #include <mutex>  // NOLINT
 #include <string>
 #include <vector>
@@ -72,10 +73,10 @@ class TargetWrapper<TARGET(kXPU)> {
         l3_planner_ = new XPUL3Planner;
       }
       CHECK(l3_planner_);
-      if (quantizer_ == nullptr) {
-        quantizer_ = new XPUQuantizer();
+      if (quantizer_.get() == nullptr) {
+        quantizer_.reset(new XPUQuantizer());
       }
-      CHECK(quantizer_);
+      CHECK(quantizer_.get());
       if (conv_autotune) {
         tls_raw_ctx_->_xpu1_conv_selector.set_autotune_loop(true);
         tls_raw_ctx_->_xpu1_conv_selector.set_inference_mode(true);
@@ -159,7 +160,7 @@ class TargetWrapper<TARGET(kXPU)> {
   static void* shared_l3_ptr_;
   static std::mutex mutex_l3_;
   static LITE_THREAD_LOCAL XPUL3Planner* l3_planner_;
-  static LITE_THREAD_LOCAL XPUQuantizer* quantizer_;
+  static LITE_THREAD_LOCAL std::shared_ptr<XPUQuantizer> quantizer_;
 };
 
 }  // namespace lite

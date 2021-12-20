@@ -105,5 +105,5 @@ REGISTER_LITE_KERNEL(
                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .BindInput("Axis",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .Finalize();

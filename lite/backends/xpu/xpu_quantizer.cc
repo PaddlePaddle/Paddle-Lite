@@ -21,7 +21,7 @@ namespace paddle {
 namespace lite {
 
 template <typename T>
-static inline size_t hash_combine(size_t seed, const T& v) {
+static inline size_t HashCombine(size_t seed, const T& v) {
   std::hash<T> hasher;
   seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
   return seed;
@@ -33,9 +33,9 @@ static size_t Hashed(const void* cpu_data,
                      bool trans) {
   std::hash<const void*> ptr_hasher;
   auto hash_res = ptr_hasher(cpu_data);
-  hash_res = hash_combine(hash_res, numel);
-  hash_res = hash_combine(hash_res, precision);
-  hash_res = hash_combine(hash_res, trans);
+  hash_res = HashCombine(hash_res, numel);
+  hash_res = HashCombine(hash_res, precision);
+  hash_res = HashCombine(hash_res, trans);
   return hash_res;
 }
 
@@ -73,7 +73,7 @@ static void QuantFP32ToIntX(const float* src_ptr,
                             T* dst_ptr,
                             float max_val,
                             int numel) {
-  CHECK(false) << "Not support for T is " << CppTypeToString<T>();
+  LOG(FATAL) << "Not support for T is " << CppTypeToString<T>();
 }
 template <>
 void QuantFP32ToIntX<float>(const float* src_ptr,
@@ -109,7 +109,7 @@ static void ConvertWithQuant(
                        std::pair<XPUScratchPadGuard, XPUScratchPadGuard>>&
         weight_cache_,
     size_t hashed_key) {
-  CHECK(false) << "Not support for Tcpu is " << CppTypeToString<Tcpu>();
+  LOG(FATAL) << "Not support for Tcpu is " << CppTypeToString<Tcpu>();
 }
 
 template <typename Tcpu,
@@ -129,7 +129,7 @@ static void ConvertWithQuant(
   int numel = dims.production();
   std::vector<Tcpu> transpose_data(numel, 0);
   if (data_transpose) {
-    CHECK(dims.size() == 2) << "Not support: dims.size = " << dims.size();
+    CHECK_EQ(dims.size(), 2UL);
     paddle::lite::xpu::math::Transpose<Tcpu>(
         cpu_data, transpose_data.data(), dims[0], dims[1]);
     cpu_ptr = transpose_data.data();

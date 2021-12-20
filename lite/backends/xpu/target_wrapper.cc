@@ -44,7 +44,7 @@ void TargetWrapperXPU::MemcpySync(void* dst,
 template <typename Tcpu, typename Txpu>
 XPUQuantData TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight(
     const Tcpu* cpu_data, const DDimLite& dims, bool data_transpose) {
-  CHECK(quantizer_);
+  CHECK(quantizer_.get());
   return quantizer_->quant<Tcpu, Txpu>(cpu_data, dims, data_transpose);
 }
 
@@ -176,7 +176,8 @@ std::mutex TargetWrapperXPU::mutex_l3_;
 // l3 planner
 LITE_THREAD_LOCAL XPUL3Planner* TargetWrapperXPU::l3_planner_{nullptr};
 // xpu quantizer
-LITE_THREAD_LOCAL XPUQuantizer* TargetWrapperXPU::quantizer_{nullptr};
+LITE_THREAD_LOCAL std::shared_ptr<XPUQuantizer> TargetWrapperXPU::quantizer_{
+    nullptr};
 
 }  // namespace lite
 }  // namespace paddle

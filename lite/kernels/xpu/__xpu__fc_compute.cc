@@ -28,7 +28,6 @@ void XPUFcCompute::PrepareForRun() {
   auto& ctx = this->ctx_->As<XPUContext>();
   auto& param = this->Param<param_t>();
   auto w_ptr = param.w->data<float>();
-  //  auto w_len = param.w->numel();
   auto weight_dims = param.w->dims();
   bool quant_int8 = false;
   if (param.quant_w_max > 0.f) {
