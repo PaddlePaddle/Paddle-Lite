@@ -34,6 +34,7 @@ class TestMulOp(AutoScanTest):
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
         return False  # ci run on arm_opencl error
+
         # get input&output shape, get op attributes
         x_shape = list(program_config.inputs["input_data_x"].shape)
         y_shape = list(program_config.weights["input_data_y"].shape)
