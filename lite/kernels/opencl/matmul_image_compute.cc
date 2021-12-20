@@ -91,7 +91,6 @@ class MatMulV2ImageCompute : public KernelLite<TARGET(kOpenCL),
     auto y_dims = y_t->dims();
 
     const int thres_k = 1024;
-    // mix-precision computation
     bool precision_forced_to_fp32 = false;
     const bool enable_fp16 =
         CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
