@@ -157,6 +157,7 @@ class AutoScanBaseTest(unittest.TestCase):
             arr = np.array(tensor[tensor_key[0]])
             base_key = list(baseline.keys())
             base = np.array(baseline[base_key[0]])
+
             self.assertTrue(
                 base.shape == arr.shape,
                 "The output shapes are not equal, the baseline shape is " +
@@ -168,11 +169,18 @@ class AutoScanBaseTest(unittest.TestCase):
         else:
             for key in tensor:
                 opencl_str = "/target_trans"
+                other_str = "__Mangled_1"
                 index = key.rfind(opencl_str)
                 paddlekey = key
                 if index > 0:
                     paddlekey = key[0:index]
-                if (key == "saved_mean" or key == "saved_variance"):
+                index = key.rfind(other_str)
+                if index > 0:
+                    paddlekey = key[0:index]
+                if (paddlekey == "saved_mean" or
+                        paddlekey == "saved_variance" or
+                        paddlekey == "mean_data" or
+                        paddlekey == "variance_data"):
                     # training using data
                     continue
                 arr = np.array(tensor[key])
