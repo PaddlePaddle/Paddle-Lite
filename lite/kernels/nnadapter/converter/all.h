@@ -20,7 +20,7 @@ REGISTER_CONVERTER(batch_norm,
                    "huawei_ascend_npu,verisilicon_"
                    "timvx");
 REGISTER_CONVERTER(cast, ConvertCast, "huawei_ascend_npu");
-REGISTER_CONVERTER(clip, ConvertClip, "huawei_ascend_npu");
+REGISTER_CONVERTER(clip, ConvertClip, "huawei_ascend_npu,verisilicon_timvx");
 REGISTER_CONVERTER(conv2d,
                    ConvertConv2D,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
