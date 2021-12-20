@@ -49,6 +49,11 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
 
     // TODO(ysh329): add instance_norm + relu pass
     // std::string build_options_ += "-DRELU";
+    const bool enable_fp16 =
+        CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
+    if (enable_fp16) {
+      build_options_ += " -DCL_DTYPE_half -DCL_DTYPE_FLOAT_FORCE ";
+    }
     if (out_h == 128) {
       build_options_ += " -DLOCAL_MEM_128";
     } else if (out_h == 64) {
@@ -75,24 +80,26 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
     int cgroup = (channel + 3) / 4;
     int cround = cgroup * 4;
 
-    std::vector<half_t> scale_img(cround * batch);
-    std::vector<half_t> bias_img(cround * batch);
+    std::vector<float> scale_img(cround * batch);
+    std::vector<float> bias_img(cround * batch);
+
     const float* scale_data = instance_norm_param_->scale->data<float>();
     const float* bias_data = instance_norm_param_->bias->data<float>();
 
     for (int i = 0; i < channel; ++i) {
-      scale_img[i] = Float2Half(scale_data[i]);
-      bias_img[i] = Float2Half(bias_data[i]);
+      scale_img[i] = scale_data[i];
+      bias_img[i] = bias_data[i];
     }
 
     for (int i = 1; i < batch; ++i) {
       memcpy(scale_img.data() + i * cround,
              scale_img.data(),
-             cround * sizeof(half_t));
+             cround * sizeof(float));
       memcpy(bias_img.data() + i * cround,
              bias_img.data(),
-             cround * sizeof(half_t));
+             cround * sizeof(float));
     }
+
     DDim scale_img_size{{ cgroup, batch }};
     MUTABLE_DATA_GPU(
         &scale_image_, scale_img_size[0], scale_img_size[1], scale_img.data());
@@ -109,12 +116,8 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
       last_x_dims_ = x_dims;
       first_epoch_for_reinit_ = false;
 
-      // compute global/local work size
-      auto device_info = CLRuntime::Global()->GetDeviceInfo();
-      int max_work_item_size1 = device_info["CL_DEVICE_MAX_WORK_ITEM_SIZES_1"];
       int lws0 = 1;
-      int lws1 = std::min(max_work_item_size1,
-                          std::min(256, static_cast<int>(x_dims[3])));
+      int lws1 = std::min(256, static_cast<int>(x_dims[3]));
       int lws2 = 1;
       gws_ = cl::NDRange{
           static_cast<cl::size_type>(x_dims[0] * ((x_dims[1] + 3) / 4)),
@@ -139,7 +142,12 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
 
     float epsilon = instance_norm_param_->epsilon;
 
+    // compute global/local work size
+    auto device_info = CLRuntime::Global()->GetDeviceInfo();
+    int max_work_item_size1 = device_info["CL_DEVICE_MAX_WORK_ITEM_SIZES_1"];
+
 #ifdef LITE_WITH_LOG
+    VLOG(4) << "max_work_item_size1:" << max_work_item_size1;
     VLOG(4) << "global_work_size:" << static_cast<int>(gws_[0]) << " "
             << static_cast<int>(gws_[1]) << " " << static_cast<int>(gws_[2]);
     VLOG(4) << "local_work_size:" << static_cast<int>(lws_[0]) << " "
@@ -182,6 +190,7 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
 
     status = EnqueueNDRangeKernel(
         context, kernel_, cl::NullRange, gws_, lws_, nullptr, event_);
+
     CL_CHECK_FATAL(status);
   }
 
@@ -324,7 +333,6 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
   std::string time_stamp_{GetTimeStamp()};
   cl::Kernel kernel_;
   cl::NDRange gws_, lws_;
-
   Tensor scale_image_;
   Tensor bias_image_;
 };
