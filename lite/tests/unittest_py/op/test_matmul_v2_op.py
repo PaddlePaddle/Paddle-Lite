@@ -77,7 +77,7 @@ class TestMatmulV2Op(AutoScanTest):
         transpose_Y = draw(st.booleans())
         if ((not transpose_X) and (not transpose_Y)):
             X_shape = [batch0, 1, shape0, shape1]
-            Y_shape = [batch0, shape1, shape2]
+            Y_shape = [batch0, 1, shape1, shape2]
         if ((transpose_X) and (not transpose_Y)):
             X_shape = [batch1, 1, shape1, shape0]
             Y_shape = [batch1, 1, shape1, shape2]
