@@ -75,7 +75,7 @@ REGISTER_LITE_KERNEL(top_k_v2,
                      paddle::lite::kernels::host::TopkV2Compute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindInput("K", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("K", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Indices",
                 {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
