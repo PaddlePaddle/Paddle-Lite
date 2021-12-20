@@ -102,12 +102,7 @@ class TestShuffleChannelOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        if self.precision[0] == PrecisionType.FP32:
-            return self.get_predictor_configs(), ["shuffle_channel"], (1e-5,
-                                                                       1e-5)
-        elif self.precision[0] == PrecisionType.FP16:
-            return self.get_predictor_configs(), ["shuffle_channel"], (1e-3,
-                                                                       1e-3)
+        return self.get_predictor_configs(), ["shuffle_channel"], (1e-3, 1e-3)
 
     def add_ignore_pass_case(self):
         pass
