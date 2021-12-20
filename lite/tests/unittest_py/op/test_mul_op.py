@@ -37,7 +37,7 @@ class TestMulOp(AutoScanTest):
         # get input&output shape, get op attributes
         x_shape = list(program_config.inputs["input_data_x"].shape)
         y_shape = list(program_config.weights["input_data_y"].shape)
-        x_precision = program_config.inputs["input_data_x"].dtype
+        in_data_type = program_config.inputs["input_data_x"].dtype
         x_num_col_dims = program_config.ops[0].attrs["x_num_col_dims"]
         y_num_col_dims = program_config.ops[0].attrs["y_num_col_dims"]
 
@@ -129,6 +129,8 @@ class TestMulOp(AutoScanTest):
         )
 
         def teller2(program_config, predictor_config):
+            x_num_col_dims = program_config.ops[0].attrs["x_num_col_dims"]
+            y_num_col_dims = program_config.ops[0].attrs["y_num_col_dims"]
             if x_num_col_dims != y_num_col_dims:
                 return True
             return False
