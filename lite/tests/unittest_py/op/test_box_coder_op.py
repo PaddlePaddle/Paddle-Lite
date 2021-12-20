@@ -31,11 +31,12 @@ import numpy as np
 class TestBoxCoderOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(
-            TargetType.ARM,
-            PrecisionType.FP32,
-            DataLayoutType.NCHW,
-            thread=[1, 4])
+        # precision has diff on arm
+        # self.enable_testing_on_place(
+        #     TargetType.ARM,
+        #     PrecisionType.FP32,
+        #     DataLayoutType.NCHW,
+        #     thread=[1, 4])
         self.enable_testing_on_place(
             TargetType.Host,
             PrecisionType.FP32,
@@ -47,37 +48,36 @@ class TestBoxCoderOp(AutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 4])
         # opencl demo
-        opencl_places = [
-            Place(TargetType.OpenCL, PrecisionType.FP16,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.FP16,
-                      DataLayoutType.ImageFolder),
-            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-            Place(TargetType.OpenCL, PrecisionType.Any,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.Any,
-                      DataLayoutType.ImageFolder),
-            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-            Place(TargetType.Host, PrecisionType.FP32)
-        ]
-        self.enable_testing_on_place(places=opencl_places)
+        # opencl dosen't support code_type = encode_center_size case
+        # opencl other case run segment
+        # opencl_places = [
+        #     Place(TargetType.OpenCL, PrecisionType.FP16,
+        #           DataLayoutType.ImageDefault), Place(
+        #               TargetType.OpenCL, PrecisionType.FP16,
+        #               DataLayoutType.ImageFolder),
+        #     Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+        #     Place(TargetType.OpenCL, PrecisionType.Any,
+        #           DataLayoutType.ImageDefault), Place(
+        #               TargetType.OpenCL, PrecisionType.Any,
+        #               DataLayoutType.ImageFolder),
+        #     Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+        #     Place(TargetType.Host, PrecisionType.FP32)
+        # ]
+        # self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        if predictor_config.target() == TargetType.OpenCL:
-            if program_config.ops[0].attrs[
-                    "code_type"] == "encode_center_size":
-                # OpenCL doesn't support
-                return False
-            else:
-                # run segmentation
-                return False
-        elif predictor_config.target() == TargetType.ARM:
-            # run case has diff and this case doesn't has rule
-            return False
-        else:
-            return True
+        # if predictor_config.target() == TargetType.OpenCL:
+        #     if program_config.ops[0].attrs[
+        #             "code_type"] == "encode_center_size":
+        #         # OpenCL doesn't support
+        #         return False
+        #     else:
+        #         # run segmentation
+        #         return False
+        # else:
+        return True
 
     def sample_program_configs(self, draw):
         num_pri = draw(st.integers(min_value=10, max_value=100))
