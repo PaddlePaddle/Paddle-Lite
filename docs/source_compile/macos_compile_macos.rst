@@ -57,8 +57,11 @@ macOS 环境下编译适用于 macOS 的库
 
 .. code-block:: shell
 
-   # 1. Install basic software
-   brew install curl gcc git make unzip wget 
+   # 1-1. Install basic software
+   brew install curl gcc git make unzip wget
+
+   # 1-2. 安装 Xcode，可通过 App Store 下载并安装，安装后需要启动一次并执行下面语句。
+   sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 
    # 2-1. 如果是 x86 macOS 则安装 CMake，以下命令以3.15版本为例，其他版本步骤类似。
    mkdir /usr/local/Cellar/cmake/ && cd /usr/local/Cellar/cmake/ \

@@ -53,25 +53,28 @@ macOS 环境下编译适用于 Android 的库
 ^^^^^^^^^^^^
 .. code-block:: shell
 
-   # 1. 安装 curl gcc git make unzip wget 等基础软件 
-   brew install  curl gcc git make unzip wget
+   # 1. Install basic software
+   brew install curl gcc git make unzip wget
 
-   # 2. 安装 CMake，以下命令以 3.10.2 版本为例，其他版本步骤类似。
+   # 2. 安装 Xcode，可通过 App Store 下载并安装，安装后需要启动一次并执行下面语句。
+   sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+
+   # 3. 安装 CMake，以下命令以 3.10.2 版本为例，其他版本步骤类似。
    mkdir /usr/local/Cellar/cmake/ && cd /usr/local/Cellar/cmake/
    wget https://cmake.org/files/v3.10/cmake-3.10.2-Darwin-x86_64.tar.gz
    tar zxf ./cmake-3.10.2-Darwin-x86_64.tar.gz
    mv cmake-3.10.2-Darwin-x86_64/CMake.app/Contents/ ./3.10.2
    ln -s /usr/local/Cellar/cmake/3.10.2/bin/cmake /usr/local/bin/cmake
 
-   # 3. 下载 Mac 版本的 Android NDK，以下命令以 r17c 版本为例，其他版本步骤类似。
+   # 4. 下载 Mac 版本的 Android NDK，以下命令以 r17c 版本为例，其他版本步骤类似。
    cd ~/Documents && curl -O https://dl.google.com/android/repository/android-ndk-r17c-darwin-x86_64.zip
    cd ~/Library && unzip ~/Documents/android-ndk-r17c-darwin-x86_64.zip
 
-   # 4. 添加环境变量 NDK_ROOT 指向 Android NDK 的安装路径
+   # 5. 添加环境变量 NDK_ROOT 指向 Android NDK 的安装路径
    echo "export NDK_ROOT=~/Library/android-ndk-r17c" >> ~/.bash_profile
    source ~/.bash_profile
 
-   # 5. Install Java Environment 
+   # 6. Install Java Environment
    brew install java
 
 了解基础编译参数
