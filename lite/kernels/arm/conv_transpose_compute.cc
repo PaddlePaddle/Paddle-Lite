@@ -482,6 +482,18 @@ void Conv2DTransposeCompute<PRECISION(kFP16),
 
   auto& ctx = this->ctx_->template As<ARMContext>();
   DEPTHWISE_PARAM
+  // when running op python unit_test, the weight dtype is float
+  auto filter_tensor = param.filter;
+  if (filter_tensor->precision() != PRECISION(kFP16)) {
+    Tensor tmp_tensor;
+    tmp_tensor.CopyDataFrom(*filter_tensor);
+    filter_tensor->clear();
+    filter_tensor->set_precision(PRECISION(kFP16));
+    float16_t* fp_data = filter_tensor->mutable_data<float16_t>();
+    const float* in_data = tmp_tensor.data<float>();
+    lite::arm::math::fp16::fp32_to_fp16(
+        in_data, fp_data, filter_tensor->numel());
+  }
   if (!depth_wise_s1 && !depth_wise_s2) {
     lite::Tensor tmp_weights;
     lite::arm::math::fp16::prepackA_fp16(
