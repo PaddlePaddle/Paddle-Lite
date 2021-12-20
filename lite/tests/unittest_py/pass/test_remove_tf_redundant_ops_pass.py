@@ -45,13 +45,14 @@ class TestConvBnFuse(FusePassAutoScanTest):
         return  True
 
     def sample_program_configs(self, draw):
-        pick_test=draw(st.sampled_from(["RemoveReshape2Pattern", ]))
+        pick_test=draw(st.sampled_from(["RemoveReshape2Pattern", "RemoveSqueeze2Reshape2Pattern"]))
         if pick_test=="RemoveReshape2Pattern":
             in_shape = draw(st.lists(
                 st.integers(
                     min_value=2, max_value=30), min_size=2, max_size=5))
             input_axis = draw(st.sampled_from([0, 1, 2, 3, -1]))
             assume(input_axis < len(in_shape))
+            print()
 
             softmax_config = OpConfig(
                 type = "softmax",
@@ -90,8 +91,8 @@ class TestConvBnFuse(FusePassAutoScanTest):
         else:
             batch=draw(st.integers(min_value=2, max_value=8))
             in_shape=[batch, 1001, 1, 1]
-            input_axis = draw(st.sampled_from([0, 1, 2, 3, -1]))
-            assume(input_axis < len(in_shape))
+            input_axis = draw(st.sampled_from([0, 1, -1]))
+            assume(input_axis < 2)
 
             squeeze2_config = OpConfig(
                 type = "squeeze2",
@@ -159,7 +160,7 @@ class TestConvBnFuse(FusePassAutoScanTest):
         )
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25, passes=["lite_remove_tf_redundant_ops_pass"])
+        self.run_and_statis(quant=False, max_examples=100, passes=["lite_remove_tf_redundant_ops_pass"])
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
