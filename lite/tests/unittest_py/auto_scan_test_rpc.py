@@ -19,6 +19,7 @@ import enum
 import unittest
 from typing import Optional, List, Callable, Dict, Any, Set
 import os
+import re
 import paddle
 import rpyc
 import copy
@@ -29,7 +30,13 @@ IgnoreReasons = IgnoreReasonsBase
 class AutoScanTest(AutoScanBaseTest):
     def run_lite_config(self, model, params, feed_data,
                         pred_config) -> Dict[str, np.ndarray]:
-        conn = rpyc.connect("localhost", 18812)
+        paddle_lite_path = os.path.abspath(__file__)
+        paddlelite_source_path = re.findall(r"(.+?)Paddle-Lite",
+                                            paddle_lite_path)[0]
+        rpc_port_file = paddlelite_source_path + "Paddle-Lite/lite/tests/unittest_py/rpc_service/.port_id"
+        port_id = int(open(rpc_port_file).read())
+
+        conn = rpyc.connect("localhost", port_id)
         out, model = conn.root.run_lite_model(model, params, feed_data,
                                               pred_config)
         result_res = copy.deepcopy(out)
