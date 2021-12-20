@@ -55,10 +55,27 @@ class TestElementwiseAddOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_valid_places)
+        '''
+        metal_places = [
+            Place(TargetType.Metal, PrecisionType.FP32,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.Metal, PrecisionType.FP16,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.ARM, PrecisionType.FP32),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=metal_places)
+        '''
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
+        target_type = predictor_config.target()
+        in_x_shape = list(program_config.inputs["input_data_x"].shape)
+        in_y_shape = list(program_config.inputs["input_data_y"].shape)
+        if target_type == TargetType.Metal:
+            if in_x_shape != in_y_shape:
+                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -109,9 +126,11 @@ class TestElementwiseAddOp(AutoScanTest):
         def teller1(program_config, predictor_config):
             target_type = predictor_config.target()
             in_data_type = program_config.inputs["input_data_x"].dtype
-            if target_type == TargetType.OpenCL:
+            if target_type in [TargetType.OpenCL, TargetType.Metal]:
                 if in_data_type != np.float32:
-                    err_msg = "Elementwise_add op on OpenCL backend only support input data type[float32/float16], but got" + str(
+                    err_msg = "Elementwise_add op on" + str(
+                        target_type
+                    ) + "backend only support input data type[float32/float16], but got" + str(
                         in_data_type)
                     return True
             return False
