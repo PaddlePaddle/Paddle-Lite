@@ -45,12 +45,27 @@ class TestFcFuse(FusePassAutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        mul_x_in_shape=draw(st.lists(st.integers(min_value=5, max_value=10), min_size=3, max_size=5))
-        x_num_col_dims_data=len(mul_x_in_shape)
-        last=draw(st.integers(min_value=5, max_value=10))
-        mul_x_in_shape=mul_x_in_shape+[last]
+        mul_x_in_shape=draw(st.lists(st.integers(min_value=5, max_value=10), min_size=2, max_size=5))
+        x_num_col_dims_data=draw(st.integers(min_value=1, max_value=len(mul_x_in_shape)-1))
+        x0=1
+        x1=1
+        for i in range (0, x_num_col_dims_data):
+            x0 = x0 * mul_x_in_shape[i]
+        for i in range (x_num_col_dims_data, len(mul_x_in_shape)):
+            x1 = x1 * mul_x_in_shape[i]   
+             
         #lite not check fuse condition : bias[0]=1 bias[1]=weight[1] 
-        add_x_data_shape= [1, draw(st.integers(min_value=5, max_value=10))]
+        add_x_data_shape = draw(st.sampled_from([[1, draw(st.integers(min_value=5, max_value=10))], [draw(st.integers(min_value=5, max_value=10))]]))
+
+        y_dims = 2
+        y_num_col_dims = 1
+        mul_out_shape = x_num_col_dims_data + y_dims - y_num_col_dims
+
+        axis=mul_out_shape - len(add_x_data_shape)
+
+        y1 = add_x_data_shape[0]
+        if len(add_x_data_shape) == 2:
+            y1 = add_x_data_shape[1]
 
         mul_op = OpConfig(
             type =  "mul",
@@ -67,7 +82,7 @@ class TestFcFuse(FusePassAutoScanTest):
             type = "elementwise_add",
             inputs = {"X": ["mul_output_data"], "Y": ["add_x_data"]},
             outputs = {"Out": ["output_data"]},
-            attrs = {"axis": -1})    
+            attrs = {"axis": axis})    
 
         ops = [mul_op, elementwise_add_op]
         program_config = ProgramConfig(
@@ -77,7 +92,7 @@ class TestFcFuse(FusePassAutoScanTest):
             },
             inputs={
                 "mul_x_data": TensorConfig(shape=mul_x_in_shape),
-                "mul_y_data": TensorConfig(shape=[last, add_x_data_shape[1]])
+                "mul_y_data": TensorConfig(shape=[x1, y1])
 
             },
             outputs=["output_data"])
@@ -85,13 +100,13 @@ class TestFcFuse(FusePassAutoScanTest):
     
     def sample_predictor_configs(self):
         config = CxxConfig()
-        return self.get_predictor_configs(), ['fc'], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ['fc'], (1e-4, 1e-4)
 
     def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25, passes=["lite_fc_fuse_pass"])        
+        self.run_and_statis(quant=False, max_examples=100, passes=["lite_fc_fuse_pass"])        
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
