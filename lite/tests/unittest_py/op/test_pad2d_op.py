@@ -42,6 +42,22 @@ class TestPad2dOp(AutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 2])
 
+        # opencl
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=opencl_places)
+
         # metal
         metal_places = [
             Place(TargetType.Metal, PrecisionType.FP32,
@@ -54,7 +70,10 @@ class TestPad2dOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        return True
+        if predictor_config.target() == TargetType.OpenCL:
+            return False
+        else:
+            return True
 
     def sample_program_configs(self, draw):
         in_shape = draw(
@@ -67,8 +86,8 @@ class TestPad2dOp(AutoScanTest):
         padding_data = draw(st.sampled_from([[2, 2, 1, 1]]))
 
         # assume(in_shape in [3, 4, 5])
-        if mode == "constant":
-            padding_data = [1] * (len(in_shape) * 2)
+        # if mode == "constant":
+        #     padding_data = [1] * (len(in_shape) * 2)
 
         def generate_input(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
