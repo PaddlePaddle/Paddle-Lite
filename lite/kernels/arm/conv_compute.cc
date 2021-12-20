@@ -162,6 +162,18 @@ void ConvCompute<PRECISION(kFP16), PRECISION(kFP16)>::PrepareForRun() {
   } else {
     impl_ = new GemmLikeConv<PRECISION(kFP16), PRECISION(kFP16)>;
   }
+  // when running op python unit_test, the weight dtype is float
+  auto filter_tensor = param.filter;
+  if (filter_tensor->precision() != PRECISION(kFP16)) {
+    Tensor tmp_tensor;
+    tmp_tensor.CopyDataFrom(*filter_tensor);
+    filter_tensor->clear();
+    filter_tensor->set_precision(PRECISION(kFP16));
+    float16_t* fp_data = filter_tensor->mutable_data<float16_t>();
+    const float* in_data = tmp_tensor.data<float>();
+    lite::arm::math::fp16::fp32_to_fp16(
+        in_data, fp_data, filter_tensor->numel());
+  }
   impl_->SetContext(std::move(this->ctx_));
   impl_->SetParam(param);
   impl_->PrepareForRun();
