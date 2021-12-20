@@ -39,7 +39,9 @@ class ArgmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
       in_nchw_.insert(in_nchw_.cbegin(), 1);
     }
 
-    int padding_axis = argmax_param_->Axis + (4 - x_dims.size());
+    axis_ = argmax_param_->Axis;
+    if (axis_ < 0) axis_ += x_dims.size();
+    int padding_axis = axis_ + (4 - x_dims.size());
     switch (padding_axis) {
       case 0:
         kernel_func_name_ = "argmax_n";
@@ -82,7 +84,7 @@ class ArgmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
       // compute global work size
       // padding out_dims to 4-dims
       out_nchw_ = in_nchw_;
-      out_nchw_[argmax_param_->Axis + (4 - x_dims.size())] = 1;
+      out_nchw_[axis_ + (4 - x_dims.size())] = 1;
 
       int hb = out_nchw_[0] * out_nchw_[2];
       int cw =
@@ -156,6 +158,7 @@ class ArgmaxComputeImage2D : public KernelLite<TARGET(kOpenCL),
   param_t* argmax_param_{nullptr};
   bool first_epoch_for_reinit_{true};
   DDim last_x_dims_;
+  int axis_{-1};
   std::vector<int64_t> in_nchw_{};
   std::vector<int64_t> out_nchw_{};
   std::string kernel_func_name_{};

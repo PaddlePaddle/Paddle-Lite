@@ -228,7 +228,6 @@ class AutoScanBaseTest(unittest.TestCase):
             config.enable_mkldnn()
         if passes is not None:
             config.pass_builder().set_passes(passes)
-            self.passes = passes
         return config
 
     def run_test(self, quant=False, prog_configs=None):
@@ -303,10 +302,11 @@ class AutoScanBaseTest(unittest.TestCase):
                     result, opt_model_bytes = self.run_lite_config(
                         model, params, feed_data, pred_config)
                     results.append(result)
+                    self.assert_tensors_near(atol_, rtol_, results[-1],
+                                             results[0])
+                    # add ignore methods
                     if self.passes is not None:
                         # op unit test: we will not check precision in ignore case
-                        self.assert_tensors_near(atol_, rtol_, results[-1],
-                                                 results[0])
                         if not ignore_flag:
                             # pass unit test: we will not check fusion in ignore case
                             self.assert_op_list(opt_model_bytes, op_list_)
@@ -482,6 +482,12 @@ class AutoScanBaseTest(unittest.TestCase):
             self.thread_num.append(thread)
             self.thread_num = list(self.thread_num)
 
+        # arm basic places:
+        arm_basic_places = [
+            Place(TargetType.ARM, PrecisionType.INT32),
+            Place(TargetType.ARM, PrecisionType.INT64)
+        ]
+
         # if list[Place] is inputed, this will be used directly
         if places is not None:
             assert isinstance(places, list)
@@ -493,8 +499,11 @@ class AutoScanBaseTest(unittest.TestCase):
         precision_ = precision if isinstance(precision, list) else [precision]
         layout_ = layout if isinstance(layout, list) else [layout]
         for tar_, pre_, lay_ in product(target_, precision_, layout_):
-            self.valid_places.append([Place(tar_, pre_, lay_)])
-        return
+            if (tar_ == TargetType.ARM):
+                self.valid_places.append([Place(tar_, pre_, lay_)] +
+                                         arm_basic_places)
+            else:
+                self.valid_places.append([Place(tar_, pre_, lay_)])
 
     def get_target(self) -> str:
         return self.args.target
