@@ -17,7 +17,7 @@
 
 USE_MIR_PASS(demo);
 USE_MIR_PASS(static_kernel_pick_pass);
-USE_MIR_PASS(lite_unsqueeze2_pad3d_squeeze2_fuse_pass);//cyh
+USE_MIR_PASS(lite_unsqueeze2_pad3d_squeeze2_fuse_pass);  // cyh
 USE_MIR_PASS(op_transformation_pass);
 USE_MIR_PASS(variable_place_inference_pass);
 USE_MIR_PASS(type_target_cast_pass);

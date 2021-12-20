@@ -14,19 +14,19 @@ namespace mir {
 namespace fusion {
 
 class Unsqueeze2Pad3dSqueeze2Fuser : public FuseBase {
-public:
+ public:
   explicit Unsqueeze2Pad3dSqueeze2Fuser(const std::string& unsqueeze2_type,
-                                const std::string& pad3d_type,
-                                const std::string& squeeze2_type) {
-      pad3d_type_ = pad3d_type;
-      squeeze2_type_=squeeze2_type;
-      unsqueeze2_type_=unsqueeze2_type;
+                                        const std::string& pad3d_type,
+                                        const std::string& squeeze2_type) {
+    pad3d_type_ = pad3d_type;
+    squeeze2_type_ = squeeze2_type;
+    unsqueeze2_type_ = unsqueeze2_type;
   }
 
   void BuildPattern() override;
   void InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) override;
 
-private:
+ private:
   std::string pad3d_type_{"pad3d"};
   std::string squeeze2_type_{"squeeze2"};
   std::string unsqueeze2_type_{"unsqueeze2"};
