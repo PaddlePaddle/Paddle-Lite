@@ -30,15 +30,20 @@ import hypothesis.strategies as st
 class TestExpandV2Op(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        host_places = [
-            Place(TargetType.Host, PrecisionType.INT32, DataLayoutType.NCHW),
-            Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
-        ]
-        self.enable_testing_on_place(thread=[1, 4], places=host_places)
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.FP32,
+            DataLayoutType.Any,
+            thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
+        in_dtype = program_config.inputs["input_data"].dtype
+
+        #wait for atuo_scan_base bug fix 
+        if "float32" != in_dtype:
+            return False
         return True
 
     def sample_program_configs(self, draw):
@@ -153,7 +158,7 @@ class TestExpandV2Op(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=300)
 
 
 if __name__ == "__main__":
