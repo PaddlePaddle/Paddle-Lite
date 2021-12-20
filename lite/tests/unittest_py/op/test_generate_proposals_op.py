@@ -30,35 +30,61 @@ import hypothesis.strategies as st
 class TestGenerateProposalsOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(min_value=16, max_value=32), min_size=4, max_size=4))
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=16, max_value=32),
+                min_size=4,
+                max_size=4))
         in_shape[0] = 1
-        anchor_sizes = draw(st.sampled_from([[32.0], [32.0, 64.0], [64.0, 128.0], [32.0, 64.0, 128.0]]))
-        aspect_ratios = draw(st.sampled_from([[1.0], [1.0, 2.0], [0.5, 1.0, 2.0]]))  
-        variances = draw(st.lists(st.floats(min_value=0.5, max_value=1.5), min_size=4, max_size=4))
-        stride = draw(st.sampled_from([[16.0, 16.0], [24.0, 24.0], [16.0, 24.0]]))
+        anchor_sizes = draw(
+            st.sampled_from([[32.0], [32.0, 64.0], [64.0, 128.0],
+                             [32.0, 64.0, 128.0]]))
+        aspect_ratios = draw(
+            st.sampled_from([[1.0], [1.0, 2.0], [0.5, 1.0, 2.0]]))
+        variances = draw(
+            st.lists(
+                st.floats(
+                    min_value=0.5, max_value=1.5),
+                min_size=4,
+                max_size=4))
+        stride = draw(
+            st.sampled_from([[16.0, 16.0], [24.0, 24.0], [16.0, 24.0]]))
         num_anchors = len(anchor_sizes) * len(aspect_ratios)
 
         anchor_generator_op = OpConfig(
-            type = "anchor_generator",
-            inputs = {"Input" : ["input_data"]},
-            outputs = {"Anchors": ["anchors_data"],
-                    "Variances": ["variance_data"]},
-            attrs = {"anchor_sizes": anchor_sizes,
-                    "aspect_ratios": aspect_ratios,
-                    "stride": stride,
-                    "variances": variances,
-                    "offset": 0.5
-                    }) 
+            type="anchor_generator",
+            inputs={"Input": ["input_data"]},
+            outputs={
+                "Anchors": ["anchors_data"],
+                "Variances": ["variance_data"]
+            },
+            attrs={
+                "anchor_sizes": anchor_sizes,
+                "aspect_ratios": aspect_ratios,
+                "stride": stride,
+                "variances": variances,
+                "offset": 0.5
+            })
 
         scale = draw(st.floats(min_value=1, max_value=1))
         scores_shape = [in_shape[0], num_anchors, in_shape[2], in_shape[3]]
-        bbox_delta_shape = [scores_shape[0], scores_shape[1] * 4, scores_shape[2], scores_shape[3]]
+        bbox_delta_shape = [
+            scores_shape[0], scores_shape[1] * 4, scores_shape[2],
+            scores_shape[3]
+        ]
 
         pre_nms_topN = draw(st.integers(min_value=2000, max_value=8000))
         post_nms_topN = draw(st.integers(min_value=1000, max_value=1500))
@@ -67,43 +93,44 @@ class TestGenerateProposalsOp(AutoScanTest):
         eta = draw(st.floats(min_value=0.5, max_value=1.5))
 
         def generate_im_info(*args, **kwargs):
-            return np.array([in_shape[2] * stride[0], in_shape[3] * stride[1], scale]).astype(np.float32)
+            return np.array(
+                [in_shape[2] * stride[0], in_shape[3] * stride[1],
+                 scale]).astype(np.float32)
 
         generate_proposals_op = OpConfig(
-            type = "generate_proposals",
-            inputs = {
-                "Scores" : ["scores_data"], 
-                "BboxDeltas" : ["bbox_delta_data"], 
-                "ImInfo" : ["im_info_data"], 
-                "Anchors" : ["anchors_data"],
-                "Variances" : ["variance_data"]
-                },
-            outputs = {
-                "RpnRois": ["rpn_rois_data"], 
-                "RpnRoiProbs" : ["rpn_rois_probs_data"],
-                "RpnRoisNum" : ["rpn_rois_num_data"]
-                },
-            attrs = {
-                "pre_nms_topN" : pre_nms_topN,
-                "post_nms_topN" : post_nms_topN,
-                "nms_thresh" : nms_thresh,
-                "min_size" : min_size,
-                "eta" : eta
+            type="generate_proposals",
+            inputs={
+                "Scores": ["scores_data"],
+                "BboxDeltas": ["bbox_delta_data"],
+                "ImInfo": ["im_info_data"],
+                "Anchors": ["anchors_data"],
+                "Variances": ["variance_data"]
+            },
+            outputs={
+                "RpnRois": ["rpn_rois_data"],
+                "RpnRoiProbs": ["rpn_rois_probs_data"],
+                "RpnRoisNum": ["rpn_rois_num_data"]
+            },
+            attrs={
+                "pre_nms_topN": pre_nms_topN,
+                "post_nms_topN": post_nms_topN,
+                "nms_thresh": nms_thresh,
+                "min_size": min_size,
+                "eta": eta
             })
         program_config = ProgramConfig(
             ops=[anchor_generator_op, generate_proposals_op],
             weights={},
             inputs={
-                "input_data":
-                TensorConfig(shape=in_shape),
-                "scores_data":
-                TensorConfig(shape=scores_shape),
-                "bbox_delta_data":
-                TensorConfig(shape=bbox_delta_shape),
+                "input_data": TensorConfig(shape=in_shape),
+                "scores_data": TensorConfig(shape=scores_shape),
+                "bbox_delta_data": TensorConfig(shape=bbox_delta_shape),
                 "im_info_data":
                 TensorConfig(data_gen=partial(generate_im_info))
             },
-            outputs=["rpn_rois_data", "rpn_rois_probs_data", "rpn_rois_num_data"])
+            outputs=[
+                "rpn_rois_data", "rpn_rois_probs_data", "rpn_rois_num_data"
+            ])
         return program_config
 
     def sample_predictor_configs(self):
@@ -114,6 +141,7 @@ class TestGenerateProposalsOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

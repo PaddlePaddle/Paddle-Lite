@@ -11,9 +11,10 @@ PYTHON_VERSION=3.9
 # Absolute path of Paddle-Lite source code.
 SHELL_FOLDER=$(cd "$(dirname "$0")";pwd)
 WORKSPACE=${SHELL_FOLDER%tools/ci_tools*}
-# Common options
+# Common options, use commas to separate them, such as "ARM,OpenCL,Metal" or "ARM,OpenCL" or "ARM,Metal".
 TARGET_LIST="ARM,OpenCL,Metal"
-
+# Skip op or pass, use | to separate them, such as "expand_op" or "expand_op|abc_pass", etc.
+SKIP_LIST="abc_op|abc_pass"
 
 ####################################################################################################
 # Functions of operate unit test
@@ -29,7 +30,7 @@ function auto_scan_test {
   sh start_rpc_server.sh
 
   cd $WORKSPACE/lite/tests/unittest_py/op/
-  unittests=$(ls)
+  unittests=$(ls | egrep -v $SKIP_LIST)
   for test in ${unittests[@]}; do
     if [[ "$test" =~ py$ ]];then
       python3.8 $test --target=$target_name
@@ -37,7 +38,7 @@ function auto_scan_test {
   done
 
   cd $WORKSPACE/lite/tests/unittest_py/pass/
-  unittests=$(ls)
+  unittests=$(ls | egrep -v $SKIP_LIST)
   for test in ${unittests[@]}; do
     if [[ "$test" =~ py$ ]];then
       python3.8 $test --target=$target_name
@@ -135,6 +136,10 @@ function main() {
     case $i in
       --target_list=*)
         TARGET_LIST="${i#*=}"
+        shift
+        ;;
+      --skip_list=*)
+        SKIP_LIST="${i#*=}"
         shift
         ;;
       *)

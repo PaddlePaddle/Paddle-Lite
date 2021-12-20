@@ -36,13 +36,9 @@ namespace nnadapter {
  *                      |
  *                      |  dims=(2,5,4,3)
  *                      |
- *                  [transpose]
- *                      |
- *                      |  dims=(5,2,4,3)
- *                      |
  *                   [slice]
  *                      |
- *                      |  dims=(5,1,1,1)
+ *                      |  dims=(1,5,1,1)
  *                      |
  *                  [reshape]
  *                      |
@@ -107,36 +103,23 @@ int ConvertFillConstantBatchSizeLike(Converter* converter,
       LOG(FATAL) << "Not supported dtype: " << dtype;
       break;
   }
-  // Fill_like out operand
+  // Fill like out operand
   auto fill_like_out_operand = converter->AddOutputOperand(out_name);
-  // Fill_like operation
+  // Fill like operation
   converter->AddOperation(NNADAPTER_FILL_LIKE,
                           {input_operand, zero_value_operand},
                           {fill_like_out_operand});
-  // Transpose operation
-  std::vector<int> perm_axes = {input_dim_idx};
-  for (int i = 1; i < input_rank; i++) {
-    if (i == input_dim_idx) {
-      perm_axes.push_back(0);
-      continue;
-    }
-    perm_axes.push_back(i);
-  }
-  auto perm_operand = converter->AddConstantOperand(perm_axes);
-  auto transpose_output_operand = converter->AddOutputOperand(out_name);
-  converter->AddOperation(NNADAPTER_TRANSPOSE,
-                          {fill_like_out_operand, perm_operand},
-                          {transpose_output_operand});
   // Slice operation
   std::vector<int> slice_axes = {};
-  for (int i = 1; i < input_rank; i++) {
+  for (int i = 0; i < input_rank; i++) {
+    if (i == input_dim_idx) continue;
     slice_axes.push_back(i);
   }
   auto starts = std::vector<int>(slice_axes.size(), 0);
   auto ends = std::vector<int>(slice_axes.size(), 1);
   auto steps = std::vector<int>(slice_axes.size(), 1);
   auto slice_out_operand = converter->AddSliceOperation(
-      transpose_output_operand, slice_axes, starts, ends, steps, out_name);
+      fill_like_out_operand, slice_axes, starts, ends, steps, out_name);
   // Reshape operation
   std::vector<int> input_shape = std::vector<int>(shape_size, 1);
   input_shape[output_dim_idx] = -1;
