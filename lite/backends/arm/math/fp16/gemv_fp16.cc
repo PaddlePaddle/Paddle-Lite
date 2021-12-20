@@ -236,10 +236,10 @@ namespace fp16 {
   "pld    [%[ptr_w1]]           \n"     \
   "pld    [%[ptr_w2]]           \n"     \
   "pld    [%[ptr_w3]]           \n"     \
-  "vmov.u32 q8,  #0             \n"     \
-  "vmov.u32 q9,  #0             \n"     \
-  "vmov.u32 q10, #0             \n"     \
-  "vmov.u32 q11, #0             \n"
+  "vmov.u32 q12, #0             \n"     \
+  "vmov.u32 q13, #0             \n"     \
+  "vmov.u32 q14, #0             \n"     \
+  "vmov.u32 q15, #0             \n"
 
 #define GEMV_TRANS_COMPUTE              \
   "cmp  %[cnt], #8              \n"     \
@@ -247,13 +247,13 @@ namespace fp16 {
   "0:                           \n"     \
   "vld1.16 {d0-d1},   [%[ptr_in]]!\n"   \
   "vld1.16 {d2-d3},   [%[ptr_w0]]!\n"   \
-  "vmov.u32 q12, #0             \n"     \
+  "vmov.u32 q8,  #0             \n"     \
   "vld1.16 {d4-d5},   [%[ptr_w1]]!\n"   \
-  "vmov.u32 q13, #0             \n"     \
+  "vmov.u32 q9,  #0             \n"     \
   "vld1.16 {d6-d7},   [%[ptr_w2]]!\n"   \
-  "vmov.u32 q14, #0             \n"     \
+  "vmov.u32 q10, #0             \n"     \
   "vld1.16 {d8-d9},   [%[ptr_w3]]!\n"   \
-  "vmov.u32 q15, #0             \n"     \
+  "vmov.u32 q11, #0             \n"     \
   "vld1.16 {d10-d11},   [%[ptr_w4]]!\n" \
   "vmla.f16 q8,  q1, d0[0]      \n"     \
   "vld1.16 {d12-d13},   [%[ptr_w5]]!\n" \
@@ -370,16 +370,16 @@ namespace fp16 {
 #define STORE                            \
   "1:                           \n"      \
   "cmp  %[flag_act], #0         \n"      \
-  "vpadd.f16 d8,  d24, d26      \n"      \
-  "vpadd.f16 d9,  d25, d27      \n"      \
-  "vpadd.f16 d10, d28, d30      \n"      \
-  "vpadd.f16 d11, d29, d31      \n"      \
+  "vpadd.f16 d8,  d24, d25      \n"      \
+  "vpadd.f16 d9,  d26, d27      \n"      \
+  "vpadd.f16 d10, d28, d29      \n"      \
+  "vpadd.f16 d11, d30, d31      \n"      \
   "beq 2f                       \n"      \
   "cmp  %[flag_act], #1         \n"      \
-  "vpadd.f16 d20, d8,  d10      \n"      \
-  "vpadd.f16 d21, d9,  d11      \n"      \
+  "vpadd.f16 d20, d8,  d9       \n"      \
+  "vpadd.f16 d21, d10, d11      \n"      \
   "vpadd.f16 d12, d20, d21      \n"      \
-  "vadd.f16 d12,  d12, %e[vbias]\n"      \
+  "vadd.f16  d12, d12, %e[vbias]\n"      \
   "beq 3f                       \n"      \
   "cmp  %[flag_act], #2         \n"      \
   "beq 4f                       \n"      \
@@ -410,8 +410,8 @@ namespace fp16 {
   "b 5f                         \n"      \
   /* no act */                           \
   "2:                           \n"      \
-  "vpadd.f16 d20, d8,  d10      \n"      \
-  "vpadd.f16 d21, d9,  d11      \n"      \
+  "vpadd.f16 d20, d8,  d9       \n"      \
+  "vpadd.f16 d21, d10, d11      \n"      \
   "vpadd.f16 d12, d20, d21      \n"      \
   "vadd.f16 d12,  d12, %e[vbias]\n"      \
   /* store */                            \
