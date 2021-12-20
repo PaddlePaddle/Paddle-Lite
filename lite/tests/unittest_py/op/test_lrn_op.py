@@ -26,10 +26,15 @@ import numpy as np
 from functools import partial
 import hypothesis.strategies as st
 
+
 class TestLrnOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
         # opencl bug will be fix in the future
         #opencl_places = [
         #                  Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
@@ -42,11 +47,13 @@ class TestLrnOp(AutoScanTest):
         #                 ]
         #self.enable_testing_on_place(places=opencl_places)
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         n = program_config.ops[0].attrs["n"]
         x_shape = list(program_config.inputs["input_data"].shape)
         if n % 2 == 0:
-           return False
+            return False
         return True
 
     def sample_program_configs(self, draw):
@@ -58,26 +65,32 @@ class TestLrnOp(AutoScanTest):
         alpha_ = draw(st.sampled_from([1e-4]))
         beta_ = draw(st.sampled_from([0.75]))
         '''
-        in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size = 4, max_size=4))
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=8), min_size=4, max_size=4))
         n_ = draw(st.integers(min_value=1, max_value=8))
         k_ = draw(st.floats(min_value=1.0, max_value=10.0))
         alpha_ = draw(st.floats(min_value=1.0, max_value=10.0))
         beta_ = draw(st.floats(min_value=1.0, max_value=10.0))
         lrn_op = OpConfig(
-            type = "lrn",
-           inputs = {"X" : ["input_data"]},
-            outputs = {"Out" : ["output_data"], "MidOut" : ["output_data_mid"]},
-            attrs = {"n" : n_, "k" : k_, "alpha" : alpha_, "beta" : beta_, "is_test" : 1})
+            type="lrn",
+            inputs={"X": ["input_data"]},
+            outputs={"Out": ["output_data"],
+                     "MidOut": ["output_data_mid"]},
+            attrs={
+                "n": n_,
+                "k": k_,
+                "alpha": alpha_,
+                "beta": beta_,
+                "is_test": 1
+            })
         program_config = ProgramConfig(
             ops=[lrn_op],
             weights={},
-            inputs={
-                "input_data":
-                TensorConfig(shape=in_shape)
-            },
+            inputs={"input_data": TensorConfig(shape=in_shape)},
             outputs=["output_data"])
         return program_config
-
 
     def sample_predictor_configs(self):
         return self.get_predictor_configs(), ["lrn"], (1e-5, 1e-5)
@@ -87,6 +100,7 @@ class TestLrnOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=150)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
