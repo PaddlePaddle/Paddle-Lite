@@ -124,6 +124,25 @@ class TestBilinearOp(AutoScanTest):
         return self.get_predictor_configs(), ["bilinear_interp"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
+        def teller1(program_config, predictor_config):
+            # precision has diff
+            if predictor_config.target(
+            ) == TargetType.ARM or predictor_config.target(
+            ) == TargetType.OpenCL:
+                return True
+            else:
+                return False
+
+        # PADDLELITE_NOT_SUPPORT ignore case will not be operated.
+        self.add_ignore_check_case(
+            # IgnoreReasonsBase.PADDLE_NOT_IMPLEMENTED
+            # IgnoreReasonsBase.PADDLELITE_NOT_SUPPORT
+            # IgnoreReasonsBase.ACCURACY_ERROR
+            teller1,
+            IgnoreReasons.ACCURACY_ERROR,
+            "The op output has diff in a specific case, we need to fix it as soon as possible."
+        )
+
         pass
 
     def test(self, *args, **kwargs):

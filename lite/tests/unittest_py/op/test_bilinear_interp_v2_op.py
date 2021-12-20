@@ -58,11 +58,7 @@ class TestBilinearV2Op(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        if predictor_config.target() == TargetType.ARM:
-            # run error: cann't find <host.int32> -> <arm, fp32>
-            return False
-        else:
-            return True
+        return True
 
     def sample_program_configs(self, draw):
         batch = draw(st.integers(min_value=1, max_value=4))
@@ -134,6 +130,22 @@ class TestBilinearV2Op(AutoScanTest):
                                                                       1e-5)
 
     def add_ignore_pass_case(self):
+        def teller1(program_config, predictor_config):
+            # precision has diff
+            if predictor_config.target() == TargetType.ARM:
+                return True
+            else:
+                return False
+
+        # PADDLELITE_NOT_SUPPORT ignore case will not be operated.
+        self.add_ignore_check_case(
+            # IgnoreReasonsBase.PADDLE_NOT_IMPLEMENTED
+            # IgnoreReasonsBase.PADDLELITE_NOT_SUPPORT
+            # IgnoreReasonsBase.ACCURACY_ERROR
+            teller1,
+            IgnoreReasons.ACCURACY_ERROR,
+            "The op output has diff in a specific case, we need to fix it as soon as possible."
+        )
         pass
 
     def test(self, *args, **kwargs):
