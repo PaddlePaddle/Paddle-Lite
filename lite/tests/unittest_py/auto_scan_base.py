@@ -310,10 +310,10 @@ class AutoScanBaseTest(unittest.TestCase):
                     result, opt_model_bytes = self.run_lite_config(
                         model, params, feed_data, pred_config)
                     results.append(result)
-                    self.assert_tensors_near(atol_, rtol_, results[-1],
-                                             results[0])
                     # add ignore methods
                     if self.passes is not None:
+                        self.assert_tensors_near(atol_, rtol_, results[-1],
+                                                 results[0])
                         # op unit test: we will not check precision in ignore case
                         if not ignore_flag:
                             # pass unit test: we will not check fusion in ignore case
@@ -321,6 +321,9 @@ class AutoScanBaseTest(unittest.TestCase):
                     else:
                         self.assert_kernel_type(opt_model_bytes, op_list_,
                                                 paddlelite_config)
+                        if not ignore_flag:
+                            self.assert_tensors_near(atol_, rtol_, results[-1],
+                                                  results[0])
                 except Exception as e:
                     self.fail_log(
                         self.paddlelite_config_str(pred_config) +
