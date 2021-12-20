@@ -58,7 +58,7 @@ class TestFcOp(AutoScanTest):
 
     def sample_program_configs(self, draw):
         in_shape = draw(st.lists(st.integers(min_value=1, max_value=5), min_size = 4, max_size=4))
-        in_dtype = draw(st.sampled_from([np.float32, np.int32, np.int64]))
+        in_dtype = draw(st.sampled_from([np.float32, np.int32]))
 
         def generate_X_data():
             return np.random.normal(0.0, 5.0, in_shape).astype(in_dtype)
