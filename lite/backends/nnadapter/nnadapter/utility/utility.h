@@ -16,6 +16,7 @@
 
 #include <sys/time.h>
 #include <algorithm>
+#include <climits>
 #include <cmath>
 #include <map>
 #include <string>
@@ -241,5 +242,8 @@ double GetDoubleFromEnv(const std::string& str, double def = 0.0);
 
 // Read environment variables of int64 type
 uint64_t GetUInt64FromEnv(const std::string& str, uint64_t def = 0ul);
+
+// Get the real path of the path argument
+std::string GetRealPath(const char* path);
 
 }  // namespace nnadapter

@@ -248,8 +248,8 @@ class LITE_API RuntimeProgram {
 
     for (auto& inst : instructions_[kRootBlockIdx]) {
       KernelBase* kernel = inst.mutable_kernel();
-#ifdef LITE_WITH_OPENCL
       if (kernel->target() == TARGET(kOpenCL)) {
+#if defined(LITE_WITH_OPENCL)
         if (opencl_valid) {
           std::unique_ptr<KernelContext> ctx(new KernelContext());
           (*unique_opencl_ctx)
@@ -260,12 +260,9 @@ class LITE_API RuntimeProgram {
           // if gpu not support , fatal when user init gpu model.
           LOG(FATAL) << "opencl_valid:" << opencl_valid;
         }
-      } else {
-        kernel->SetContext(
-            ContextScheduler::Global().NewContext(kernel->target()));
-      }
-#elif LITE_WITH_METAL
-      if (kernel->target() == TARGET(kMetal)) {
+#endif
+      } else if (kernel->target() == TARGET(kMetal)) {
+#if defined(LITE_WITH_METAL)
         if (!metal_ctx_) {
           metal_ctx_ = std::make_unique<KernelContext>();
           (*metal_ctx_).As<MTLContext>().InitOnce();
@@ -273,16 +270,13 @@ class LITE_API RuntimeProgram {
         std::unique_ptr<KernelContext> ctx(new KernelContext());
         (*metal_ctx_).As<MTLContext>().CopySharedTo(&ctx->As<MTLContext>());
         kernel->SetContext(std::move(ctx));
-      } else {
-        kernel->SetContext(
-            ContextScheduler::Global().NewContext(kernel->target()));
-      }
-#else
-      if (kernel != nullptr) {
-        kernel->SetContext(
-            ContextScheduler::Global().NewContext(kernel->target()));
-      }
 #endif
+      } else {
+        if (kernel != nullptr) {
+          kernel->SetContext(
+              ContextScheduler::Global().NewContext(kernel->target()));
+        }
+      }
     }
   }
 
