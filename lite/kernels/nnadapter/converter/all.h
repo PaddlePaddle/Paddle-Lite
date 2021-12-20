@@ -31,7 +31,9 @@ REGISTER_CONVERTER(depthwise_conv2d,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
                    "npu,amlogic_npu,imagination_nna,verisilicon_timvx");
 REGISTER_CONVERTER(deformable_conv, ConvertDeformableConv, "huawei_ascend_npu");
-REGISTER_CONVERTER(dropout, ConvertDropout, "huawei_ascend_npu");
+REGISTER_CONVERTER(dropout,
+                   ConvertDropout,
+                   "huawei_ascend_npu,verisilicon_timvx");
 REGISTER_CONVERTER(pool2d,
                    ConvertPool,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
