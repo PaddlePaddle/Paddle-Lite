@@ -58,7 +58,7 @@ macOS 环境下编译适用于 macOS 的库
 .. code-block:: shell
 
    # 1-1. Install basic software
-   brew install curl gcc git make unzip wget wheel
+   brew install curl gcc git make unzip wget
 
    # 1-2. 安装 Xcode，可通过 App Store 下载并安装，安装后需要启动一次并执行下面语句。
    sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
