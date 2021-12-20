@@ -26,25 +26,27 @@ import hypothesis.strategies as st
 import numpy as np
 from functools import partial
 
+
 class TestFlattenOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
+        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32,
+                                     DataLayoutType.NCHW)
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
-                DataLayoutType.ImageDefault), Place(
-                    TargetType.OpenCL, PrecisionType.FP16,
-                    DataLayoutType.ImageFolder),
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
             Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
             Place(TargetType.OpenCL, PrecisionType.Any,
-                DataLayoutType.ImageDefault), Place(
-                    TargetType.OpenCL, PrecisionType.Any,
-                    DataLayoutType.ImageFolder),
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
             Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
-        
+
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
@@ -58,11 +60,14 @@ class TestFlattenOp(AutoScanTest):
 
         def generate_input(*args, **kwargs):
             if kwargs["type"] == "int32":
-                return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int32)
+                return np.random.randint(kwargs["low"], kwargs["high"],
+                                         kwargs["shape"]).astype(np.int32)
             elif kwargs["type"] == "int64":
-                return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int64)
+                return np.random.randint(kwargs["low"], kwargs["high"],
+                                         kwargs["shape"]).astype(np.int64)
             elif kwargs["type"] == "float32":
-                return (kwargs["high"] - kwargs["low"]) * np.random.random(kwargs["shape"]).astype(np.float32) + kwargs["low"]
+                return (kwargs["high"] - kwargs["low"]) * np.random.random(
+                    kwargs["shape"]).astype(np.float32) + kwargs["low"]
 
         input_type = draw(st.sampled_from(["float32", "int64", "int32"]))
 
@@ -80,7 +85,14 @@ class TestFlattenOp(AutoScanTest):
         program_config = ProgramConfig(
             ops=[flatten_op],
             weights={},
-            inputs={"input_data": TensorConfig(data_gen=partial(generate_input, type=input_type, low=-10, high=10, shape=in_shape))},
+            inputs={
+                "input_data": TensorConfig(data_gen=partial(
+                    generate_input,
+                    type=input_type,
+                    low=-10,
+                    high=10,
+                    shape=in_shape))
+            },
             outputs=["output_data"])
 
         return program_config

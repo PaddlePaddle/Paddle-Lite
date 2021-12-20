@@ -41,14 +41,14 @@ class TestGatherOp(AutoScanTest):
             thread=[1, 4])
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
-                DataLayoutType.ImageDefault), Place(
-                    TargetType.OpenCL, PrecisionType.FP16,
-                    DataLayoutType.ImageFolder),
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
             Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
             Place(TargetType.OpenCL, PrecisionType.Any,
-                DataLayoutType.ImageDefault), Place(
-                    TargetType.OpenCL, PrecisionType.Any,
-                    DataLayoutType.ImageFolder),
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
             Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
@@ -88,12 +88,15 @@ class TestGatherOp(AutoScanTest):
                 return np.array(index).astype(np.int64)
 
         def generate_input(*args, **kwargs):
-             if kwargs["type"] == "int32":
-                 return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int32)
-             elif kwargs["type"] == "int64":
-                 return np.random.randint(kwargs["low"], kwargs["high"], kwargs["shape"]).astype(np.int64)
-             elif kwargs["type"] == "float32":
-                 return (kwargs["high"] - kwargs["low"]) * np.random.random(kwargs["shape"]).astype(np.float32) + kwargs["low"]
+            if kwargs["type"] == "int32":
+                return np.random.randint(kwargs["low"], kwargs["high"],
+                                         kwargs["shape"]).astype(np.int32)
+            elif kwargs["type"] == "int64":
+                return np.random.randint(kwargs["low"], kwargs["high"],
+                                         kwargs["shape"]).astype(np.int64)
+            elif kwargs["type"] == "float32":
+                return (kwargs["high"] - kwargs["low"]) * np.random.random(
+                    kwargs["shape"]).astype(np.float32) + kwargs["low"]
 
         input_type = draw(st.sampled_from(["float32", "int64", "int32"]))
 
@@ -109,14 +112,24 @@ class TestGatherOp(AutoScanTest):
                 "Axis": ["axis_data"]
             }
             program_inputs = {
-                "input_data": TensorConfig(data_gen=partial(generate_input, type=input_type, low=-10, high=10, shape=in_shape)),
+                "input_data": TensorConfig(data_gen=partial(
+                    generate_input,
+                    type=input_type,
+                    low=-10,
+                    high=10,
+                    shape=in_shape)),
                 "index_data": TensorConfig(data_gen=partial(generate_index)),
                 "axis_data": TensorConfig(data_gen=partial(generate_axis))
             }
         else:
             op_inputs = {"X": ["input_data"], "Index": ["index_data"]}
             program_inputs = {
-                "input_data": TensorConfig(data_gen=partial(generate_input, type=input_type, low=-10, high=10, shape=in_shape)),
+                "input_data": TensorConfig(data_gen=partial(
+                    generate_input,
+                    type=input_type,
+                    low=-10,
+                    high=10,
+                    shape=in_shape)),
                 "index_data": TensorConfig(data_gen=partial(generate_index))
             }
 
