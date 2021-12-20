@@ -68,6 +68,7 @@ class TestPad2dOp(AutoScanTest):
         in_shape = list(program_config.inputs["input_data"].shape)
         target = predictor_config.target()
         if target == TargetType.OpenCL:
+            return False
             if len(in_shape) != 4:
                 return False
 
