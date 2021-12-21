@@ -30,7 +30,7 @@ from functools import partial
 class TestIm2sequenceOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        #has diff!
+        #all has diff and case c2 segment fault!
         #self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 2, 4])
 
     def is_program_valid(self,
@@ -61,7 +61,7 @@ class TestIm2sequenceOp(AutoScanTest):
         pad = draw(
             st.lists(
                 st.integers(
-                    min_value=0, max_value=0), min_size=4, max_size=4))
+                    min_value=0, max_value=2), min_size=4, max_size=4))
 
         def generate_input1(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
@@ -87,8 +87,6 @@ class TestIm2sequenceOp(AutoScanTest):
                 outputs=["output_data"])
         elif case_num == "c2":
             # To be solved!
-            print("SegmentFault in PaddleLite Arm")
-
             build_op = OpConfig(
                 type="im2sequence",
                 inputs={

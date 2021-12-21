@@ -48,8 +48,8 @@ class TestGruUnitOp(AutoScanTest):
 
     def sample_program_configs(self, draw):
         bool_orimode = draw(st.sampled_from([True, False]))
-        in_shape = draw(
-            st.sampled_from([[20, 60], [30, 90], [40, 120], [60, 180]]))
+        shape_0 = draw(st.integers(min_value=1, max_value=60))
+        in_shape = [shape_0, shape_0 * 3]
         batch = draw(st.integers(min_value=1, max_value=10))
 
         def generate_input(*args, **kwargs):
@@ -92,7 +92,8 @@ class TestGruUnitOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["gru_unit"], (3e-2, 3e-2)
+        return self.get_predictor_configs(), ["gru_unit"], (
+            3e-2, 3e-2)  # ARM diff:3e-2
 
     def add_ignore_pass_case(self):
         pass
