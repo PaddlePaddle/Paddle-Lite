@@ -51,8 +51,7 @@ class TestRangeOp(AutoScanTest):
         input_start = draw(st.sampled_from([0, 1, 2, 10, 20]))
         input_end = draw(st.sampled_from([1, 5, 10, 50, 100]))
         input_step = draw(st.sampled_from([0.1, 0.2, 0.5, 2, 5]))
-        input_type = draw(st.sampled_from(["type_float"]))
-        #input_type = draw(st.sampled_from(["type_float", "type_int", "type_int64"]))
+        input_type = draw(st.sampled_from(["type_float", "type_int", "type_int64"]))
 
         assume(input_start < input_end)
         if input_type != "type_float":

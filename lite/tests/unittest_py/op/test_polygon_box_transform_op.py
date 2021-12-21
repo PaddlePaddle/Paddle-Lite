@@ -59,10 +59,6 @@ class TestPolygonBoxTransformOp(AutoScanTest):
         def generate_input(*args, **kwargs):
             return (np.random.random(kwargs['tensor_shape']).astype(np.float32)
                     - 0.5) * 2
-            #if input_type == "type_float":
-            #    return (np.random.random(kwargs['tensor_shape']).astype(np.float32) - 0.5) * 2
-            #elif input_type == "type_float64":
-            #    return (np.random.random(kwargs['tensor_shape']).astype(np.float64) - 0.5) * 2
 
         build_op = OpConfig(
             type="polygon_box_transform",
