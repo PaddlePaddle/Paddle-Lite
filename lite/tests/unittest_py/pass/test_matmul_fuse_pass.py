@@ -13,26 +13,29 @@
 # limitations under the License.
 
 import sys
-sys.path.append('../')
+sys.path.append('..')
 
-from auto_scan_test import AutoScanTest, IgnoreReasons
+from auto_scan_test import FusePassAutoScanTest
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
+import numpy as np
+from functools import partial
+from typing import Optional, List, Callable, Dict, Any, Set
 import unittest
 
 import hypothesis
-from hypothesis import given, settings, seed, example, assume
+from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
-import argparse
 
 
-class TestAbsOp(AutoScanTest):
+class TestMatmulFusePass(FusePassAutoScanTest):
     def __init__(self, *args, **kwargs):
-        AutoScanTest.__init__(self, *args, **kwargs)
+        FusePassAutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(
-            TargetType.Host,
+            TargetType.ARM,
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
+        #opencl
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -47,49 +50,68 @@ class TestAbsOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
+        #x86
+        self.enable_testing_on_place(
+            TargetType.X86,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        in_shape = list(program_config.inputs["input_data"].shape)
         if predictor_config.target() == TargetType.OpenCL:
-            if len(in_shape) != 4:
-                return False
-        return True
+            return False
+        else:
+            return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(
-            st.lists(
-                st.integers(
-                    min_value=1, max_value=8), min_size=1, max_size=4))
+        x_dim0 = draw(st.integers(min_value=1, max_value=100))
+        x_dim1 = draw(st.integers(min_value=1, max_value=100))
+        y_dim1 = draw(st.integers(min_value=1, max_value=100))
 
-        abs_op = OpConfig(
-            type="abs",
-            inputs={"X": ["input_data"]},
+        matmul_op = OpConfig(
+            type="matmul",
+            inputs={"X": ["x_data"],
+                    "Y": ["y_data"]},
             outputs={"Out": ["output_data"]},
-            attrs={})
+            attrs={
+                "transpose_X": False,
+                "transpose_Y": False,
+                "alpha": 1.0,
+                "fused_reshape_X": [],
+                "fused_reshape_Y": [],
+                "fused_transpose_X": [],
+                "fused_transpose_Y": [],
+                "fused_reshape_Out": [],
+                "fused_transpose_Out": [],
+                "head_number": int(1)
+            })
+
+        ops = [matmul_op]
         program_config = ProgramConfig(
-            ops=[abs_op],
+            ops=ops,
             weights={},
-            inputs={"input_data": TensorConfig(shape=in_shape)},
+            inputs={
+                "x_data": TensorConfig(shape=[x_dim0, x_dim1]),
+                "y_data": TensorConfig(shape=[x_dim1, y_dim1])
+            },
             outputs=["output_data"])
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["abs"], (1e-5, 1e-5)
+        if self.get_target() == 'OpenCL':
+            return self.get_predictor_configs(
+            ), ['io_copy', 'layout', 'mul', 'layout', 'io_copy'], (1e-5, 1e-5)
+        else:
+            return self.get_predictor_configs(), ['mul'], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):
-        target_str = self.get_target()
-        max_examples = 25
-        if target_str == "OpenCL":
-            # Make sure to generate enough valid cases for OpenCL
-            max_examples = 100
-
         self.run_and_statis(
-            quant=False, min_success_num=25, max_examples=max_examples)
+            quant=False, max_examples=25, passes=["lite_matmul_fuse_pass"])
 
 
 if __name__ == "__main__":

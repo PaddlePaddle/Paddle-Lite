@@ -157,6 +157,7 @@ class AutoScanBaseTest(unittest.TestCase):
             arr = np.array(tensor[tensor_key[0]])
             base_key = list(baseline.keys())
             base = np.array(baseline[base_key[0]])
+
             self.assertTrue(
                 base.shape == arr.shape,
                 "The output shapes are not equal, the baseline shape is " +
@@ -168,11 +169,18 @@ class AutoScanBaseTest(unittest.TestCase):
         else:
             for key in tensor:
                 opencl_str = "/target_trans"
+                other_str = "__Mangled_1"
                 index = key.rfind(opencl_str)
                 paddlekey = key
                 if index > 0:
                     paddlekey = key[0:index]
-                if (key == "saved_mean" or key == "saved_variance"):
+                index = key.rfind(other_str)
+                if index > 0:
+                    paddlekey = key[0:index]
+                if (paddlekey == "saved_mean" or
+                        paddlekey == "saved_variance" or
+                        paddlekey == "mean_data" or
+                        paddlekey == "variance_data"):
                     # training using data
                     continue
                 arr = np.array(tensor[key])
@@ -302,10 +310,10 @@ class AutoScanBaseTest(unittest.TestCase):
                     result, opt_model_bytes = self.run_lite_config(
                         model, params, feed_data, pred_config)
                     results.append(result)
-                    self.assert_tensors_near(atol_, rtol_, results[-1],
-                                             results[0])
                     # add ignore methods
                     if self.passes is not None:
+                        self.assert_tensors_near(atol_, rtol_, results[-1],
+                                                 results[0])
                         # op unit test: we will not check precision in ignore case
                         if not ignore_flag:
                             # pass unit test: we will not check fusion in ignore case
@@ -313,6 +321,9 @@ class AutoScanBaseTest(unittest.TestCase):
                     else:
                         self.assert_kernel_type(opt_model_bytes, op_list_,
                                                 paddlelite_config)
+                        if not ignore_flag:
+                            self.assert_tensors_near(atol_, rtol_, results[-1],
+                                                     results[0])
                 except Exception as e:
                     self.fail_log(
                         self.paddlelite_config_str(pred_config) +

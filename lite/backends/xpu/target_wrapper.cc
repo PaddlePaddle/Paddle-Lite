@@ -168,7 +168,8 @@ void TargetWrapperXPU::FreeL3Cache() {
 }
 
 // xpu context
-LITE_THREAD_LOCAL xdnn::Context* TargetWrapperXPU::tls_raw_ctx_{nullptr};
+LITE_THREAD_LOCAL std::shared_ptr<xdnn::Context> TargetWrapperXPU::tls_raw_ctx_{
+    nullptr};
 // multi encoder config
 LITE_THREAD_LOCAL std::string
     TargetWrapperXPU::multi_encoder_precision;  // NOLINT
