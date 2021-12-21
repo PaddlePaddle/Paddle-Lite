@@ -72,14 +72,18 @@ class TestConvBnFuse(FusePassAutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=2, max_value=24), min_size=3, max_size=3))
-        in_shape = [draw(st.integers(min_value=1, max_value=3))] + in_shape
+                    min_value=2, max_value=128),
+                min_size=3,
+                max_size=3))
+        in_shape = [draw(st.integers(min_value=1, max_value=4))] + in_shape
         weight_shape = draw(
             st.lists(
                 st.integers(
                     min_value=1, max_value=8), min_size=4, max_size=4))
         paddings = draw(
-            st.sampled_from([[1, 2], [4, 2], [1, 1], [0, 0], [1, 0], [1, 1]]))
+            st.lists(
+                st.integers(
+                    min_value=0, max_value=2), min_size=2, max_size=2))
         dilations = draw(st.sampled_from([[1, 1], [2, 2]]))
         groups = draw(st.sampled_from([1, 2, in_shape[1]]))
         padding_algorithm = draw(st.sampled_from(["VALID", "SAME"]))

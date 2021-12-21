@@ -44,6 +44,8 @@ class TestConvConvFuse(FusePassAutoScanTest):
             TargetType.X86, [PrecisionType.FP32],
             DataLayoutType.NCHW,
             thread=[1, 4])
+        #OpenCL outdiff
+        '''
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -57,7 +59,8 @@ class TestConvConvFuse(FusePassAutoScanTest):
             Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
-        #self.enable_testing_on_place(places=opencl_places)
+        self.enable_testing_on_place(places=opencl_places)
+        '''
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -69,8 +72,10 @@ class TestConvConvFuse(FusePassAutoScanTest):
         in_shape0 = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=20), min_size=3, max_size=3))
-        in_shape0 = [draw(st.integers(min_value=1, max_value=3))] + in_shape0
+                    min_value=1, max_value=128),
+                min_size=3,
+                max_size=3))
+        in_shape0 = [draw(st.integers(min_value=1, max_value=4))] + in_shape0
         weight_shape0 = [
             draw(st.integers(
                 min_value=3, max_value=64)), in_shape0[1], 1, 1
@@ -85,8 +90,10 @@ class TestConvConvFuse(FusePassAutoScanTest):
 
         padding_algorithm0 = draw(st.sampled_from(["VALID", "SAME"]))
         strides0 = draw(st.sampled_from([[1, 1], [2, 2]]))
-        paddings0 = draw(
-            st.sampled_from([[1, 2], [2, 2], [1, 1], [0, 0], [1, 0], [1, 1]]))
+        paddings = draw(
+            st.lists(
+                st.integers(
+                    min_value=0, max_value=2), min_size=2, max_size=2))
         dilations0 = draw(st.sampled_from([[1, 1], [2, 2]]))
 
         assume(in_shape0[1] == weight_shape0[1] * 1)
@@ -183,18 +190,7 @@ class TestConvConvFuse(FusePassAutoScanTest):
         return self.get_predictor_configs(), [self.ops[0].type], (1e-4, 1e-5)
 
     def add_ignore_pass_case(self):
-        def teller1(program_config, predictor_config):
-            if predictor_config.target() == TargetType.OpenCL:
-                return True
-
-        self.add_ignore_check_case(
-            # IgnoreReasonsBase.PADDLE_NOT_IMPLEMENTED
-            # IgnoreReasonsBase.PADDLELITE_NOT_SUPPORT
-            # IgnoreReasonsBase.ACCURACY_ERROR
-            teller1,
-            IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff in a specific case. We need to fix it as soon as possible."
-        )
+        pass
 
     def test(self, *args, **kwargs):
         self.run_and_statis(
