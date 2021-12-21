@@ -31,10 +31,12 @@ import hypothesis.strategies as st
 class TestConvScaleFuse(FusePassAutoScanTest):
     def __init__(self, *args, **kwargs):
         FusePassAutoScanTest.__init__(self, *args, **kwargs)
+        '''
         self.enable_testing_on_place(
             TargetType.ARM, [PrecisionType.FP32],
             DataLayoutType.NCHW,
             thread=[1, 4])
+        '''
         self.enable_testing_on_place(
             TargetType.X86, [PrecisionType.FP32],
             DataLayoutType.NCHW,
@@ -52,14 +54,11 @@ class TestConvScaleFuse(FusePassAutoScanTest):
             Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
-        self.enable_testing_on_place(places=opencl_places)
+        #self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        if predictor_config.target(
-        ) == TargetType.OpenCL and predictor_config.target() == TargetType.ARM:
-            return False
         return True
 
     def sample_program_configs(self, draw):
