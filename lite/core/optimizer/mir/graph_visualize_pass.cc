@@ -27,7 +27,7 @@ namespace lite {
 namespace mir {
 
 void GraphVisualizePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
-  // VLOG(5) << "\n" << Visualize(graph.get());
+  VLOG(5) << "\n" << Visualize(graph.get());
 }
 
 std::string Visualize(mir::SSAGraph* graph) {

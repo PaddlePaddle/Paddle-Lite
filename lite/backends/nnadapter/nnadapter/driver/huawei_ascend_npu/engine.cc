@@ -110,7 +110,6 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     FixNoInputsOps(model);
     FixReduceOpsScalarOutput(model);
     FuseMatMulAddIntoFullyConnected(model);
-    NNADAPTER_VLOG(0) << "Origin model:" << std::endl << Visualize(model);
     FixQuantOps(model);
     NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
     // Convert a NNAdapter model to a GE graph
