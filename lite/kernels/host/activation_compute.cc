@@ -269,10 +269,8 @@ void EluCompute::Run() {
   auto output_data = param.Out->mutable_data<float>();
   float alpha = param.Elu_alpha;
   for (int i = 0; i < x_dims.production(); i++) {
-    float beta = alpha * (std::exp(x_data[i]) - 1);
-    float max = x_data[i] >= 0.f ? x_data[i] : 0.f;
-    float min = beta <= 0.f ? beta : 0.f;
-    output_data[i] = max + min;
+    output_data[i] =
+        (x_data[i] < 0) ? (alpha * (std::exp(x_data[i]) - 1)) : x_data[i];
   }
 }
 
