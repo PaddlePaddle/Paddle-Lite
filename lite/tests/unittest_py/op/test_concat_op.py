@@ -60,11 +60,7 @@ class TestConcatOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        if predictor_config.target() == TargetType.OpenCL:
-            # run connect error
-            return False
-        else:
-            return True
+        return True
 
     def sample_program_configs(self, draw):
         in_shape1 = draw(
@@ -80,6 +76,7 @@ class TestConcatOp(AutoScanTest):
                 min_size=1,
                 max_size=4))
         axis = draw(st.sampled_from([0, 1, 2, 3]))
+        has_axis_tensor = draw(st.booleans())
         assume(len(in_shape1) == len(in_shape2))
         assume(axis < len(in_shape1))
         for i in range(0, len(in_shape1)):
@@ -97,23 +94,25 @@ class TestConcatOp(AutoScanTest):
         def generate_axis(*args, **kwargs):
             return np.array([axis]).astype("int32")
 
+        input_type_dict = {"X": ["input_data1", "input_data2"]}
+        input_data_dict = {
+            "input_data1": TensorConfig(data_gen=partial(generate_input1)),
+            "input_data2": TensorConfig(data_gen=partial(generate_input2))
+        }
+        if has_axis_tensor:
+            input_type_dict["AxisTensor"] = ["axis_tensor_data"]
+            input_data_dict["axis_tensor_data"] = TensorConfig(
+                data_gen=partial(generate_axis))
+
         concat_op = OpConfig(
             type="concat",
-            inputs={
-                "X": ["input_data1", "input_data2"],
-                "AxisTensor": ["axis_tensor_data"]
-            },
+            inputs=input_type_dict,
             outputs={"Out": ["output_data"]},
             attrs={"axis": axis})
         program_config = ProgramConfig(
             ops=[concat_op],
             weights={},
-            inputs={
-                "input_data1": TensorConfig(data_gen=partial(generate_input1)),
-                "input_data2": TensorConfig(data_gen=partial(generate_input2)),
-                "axis_tensor_data":
-                TensorConfig(data_gen=partial(generate_axis)),
-            },
+            inputs=input_data_dict,
             outputs=["output_data"])
         return program_config
 
