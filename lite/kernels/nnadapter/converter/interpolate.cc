@@ -31,8 +31,13 @@ int ConvertInterpolate(Converter* converter, OpInfo* op, Scope* scope) {
                                                    "bilinear_interp_v2"};
 
   // Input operand
-  auto input_name = op->Input("X").front();
-  auto input_operand = converter->GetMappedOperand(input_name);
+  auto x_name = op->Input("X").front();
+  auto x_scale_name = "X0_scale";
+  std::vector<float> x_scales;
+  if (op->HasInputScale(x_scale_name, true)) {
+    x_scales = op->GetInputScale(x_scale_name, true);
+  }
+  auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
 
   // Shape operand
   // Priority: SizeTensor(tensor) > OutSize(tensor) > out_d/out_h/out_w(attr)
@@ -107,7 +112,8 @@ int ConvertInterpolate(Converter* converter, OpInfo* op, Scope* scope) {
           converter->AddConstantOperand(std::vector<float>{scale, scale});
     } else {
       std::vector<float> scales = op->GetAttr<std::vector<float>>("scale");
-      scales_operand = converter->AddConstantOperand(scales);
+      if (!scales.empty())
+        scales_operand = converter->AddConstantOperand(scales);
     }
   } else {
     VLOG(5) << op_type << " doesn't have 'Scale'(tensor) or 'scale'(attr).";
