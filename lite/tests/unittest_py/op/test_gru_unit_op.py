@@ -35,11 +35,11 @@ class TestGruUnitOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 2])
-        self.enable_testing_on_place(
-            TargetType.ARM,
-            PrecisionType.FP32,
-            DataLayoutType.NCHW,
-            thread=[1, 2, 4])
+        # self.enable_testing_on_place(
+        #     TargetType.ARM,
+        #     PrecisionType.FP32,
+        #     DataLayoutType.NCHW,
+        #     thread=[1, 2, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -92,8 +92,7 @@ class TestGruUnitOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["gru_unit"], (
-            3e-2, 3e-2)  # ARM diff:3e-2
+        return self.get_predictor_configs(), ["gru_unit"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass

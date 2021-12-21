@@ -50,11 +50,11 @@ class TestGruOp(AutoScanTest):
         #     DataLayoutType.NCHW,
         #     thread=[1, 2, 4])
 
-        self.enable_testing_on_place(
-            TargetType.ARM,
-            PrecisionType.FP32,
-            DataLayoutType.NCHW,
-            thread=[1, 2, 4])
+        # self.enable_testing_on_place(
+        #     TargetType.ARM,
+        #     PrecisionType.FP32,
+        #     DataLayoutType.NCHW,
+        #     thread=[1, 2, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -126,14 +126,6 @@ class TestGruOp(AutoScanTest):
 
     def sample_predictor_configs(self):
         return self.get_predictor_configs(), ["gru"], (6e-4, 6e-4)
-
-    # def add_ignore_pass_case(self):
-    #     def teller1(program_config, predictor_config):
-    #         batch_number = program_config.inputs["input_data"].shape[0]
-    #         lod_number = program_config.inputs["input_data"].lod[0][3]
-    #         if batch_number > lod_number:
-    #             return True
-    #     self.add_ignore_check_case(teller1, IgnoreReasons.ACCURACY_ERROR, "Gru has diff when input.shape[0] > lod[last_dim]")
 
     def add_ignore_pass_case(self):
         pass
