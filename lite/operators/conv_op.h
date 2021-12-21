@@ -214,6 +214,7 @@ class ConvOpLite : public OpLite {
       }
     }
 #endif
+
     // conv3d: 3-pad to 6-pad, or conv2d: 2-pad to 4-pad
     if (paddings.size() == 2L || paddings.size() == 3L) {
       for (size_t i = 0; i < param_.strides.size(); ++i) {
