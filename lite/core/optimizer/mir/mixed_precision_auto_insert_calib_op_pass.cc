@@ -276,4 +276,5 @@ void MixedPrecisionAutoInsertCalibOpPass::InsertDequantCalib(
 
 REGISTER_MIR_PASS(mixed_precision_auto_insert_calib_op_pass,
                   paddle::lite::mir::MixedPrecisionAutoInsertCalibOpPass)
-    .BindTargets({TARGET(kNNAdapter)});
+    .BindTargets({TARGET(kNNAdapter)})
+    .ExcludeTargets({TARGET(kAny)});

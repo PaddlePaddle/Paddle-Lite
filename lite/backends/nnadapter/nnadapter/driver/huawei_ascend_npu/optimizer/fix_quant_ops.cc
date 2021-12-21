@@ -28,9 +28,9 @@ static bool NeedPreQuant(hal::Model* model, hal::Operand* operand) {
 }
 
 static bool NeedNextDequant(hal::Model* model, hal::Operand* operand) {
-  auto next_operation = GetOperandConsumers(model, operand)[0];
-  return next_operation != nullptr &&
-         next_operation->type != NNADAPTER_DEQUANTIZE;
+  auto next_operations = GetOperandConsumers(model, operand);
+  return !next_operations.empty() &&
+         next_operations[0]->type != NNADAPTER_DEQUANTIZE;
 }
 
 // Add a quant operation after input_operand
@@ -115,7 +115,7 @@ float GetDequantScale(hal::Model* model, hal::Operation* dequant) {
  * before:
  *   conv(quant) -> out -> op(not_dequant)
  * after:
- *   conv(quant) -> out1 -> dequant -> (out2 -> act ->) out -> op(not_dequant)
+ *   conv(quant) -> out1 -> dequant -> out -> op(not_dequant)
  */
 static void FixQuantConv(hal::Model* model) {
   std::vector<hal::Operation*> operations =
@@ -137,28 +137,6 @@ static void FixQuantConv(hal::Model* model) {
     if (NeedNextDequant(model, output_operand)) {
       AddDequantOperation(model, output_operand);
     }
-
-    // Unpack activations after dequant
-    auto next_operation = GetOperandConsumers(model, output_operand)[0];
-    if (next_operation->type == NNADAPTER_DEQUANTIZE) {
-      output_operand = next_operation->output_operands[0];
-    }
-    NNADAPTER_CHECK_EQ(GetOperandProducer(model, output_operand)->type,
-                       NNADAPTER_DEQUANTIZE);
-    auto fuse_code = reinterpret_cast<int32_t*>(input_operands[8]->buffer);
-    switch (*fuse_code) {
-      case NNADAPTER_FUSED_RELU:
-        AddUnaryOperation(model, output_operand, NNADAPTER_RELU);
-        break;
-      case NNADAPTER_FUSED_RELU6:
-        AddUnaryOperation(model, output_operand, NNADAPTER_RELU6);
-        break;
-      default:
-        NNADAPTER_CHECK_EQ(*fuse_code, NNADAPTER_FUSED_NONE)
-            << "Unsupported fuse code: "
-            << FuseCodeToString(static_cast<NNAdapterFuseCode>(*fuse_code));
-    }
-    *fuse_code = NNADAPTER_FUSED_NONE;
   }
 }
 
@@ -250,6 +228,33 @@ static void FixQuantFullyConnected(hal::Model* model) {
   }
 }
 
+// Ascend int8 conv or fc only support int32 out. If last op is a quanted op,
+// its out should be int8.
+// For example:
+// before:
+//    conv -> out_var
+// after:
+//    conv -> var0 -> dequant -> var1 -> quant -> out_var
+static void FixLastQuantOp(hal::Model* model) {
+  std::vector<NNAdapterOperationCode> operation_types{
+      NNADAPTER_CONV_2D, NNADAPTER_FULLY_CONNECTED};
+  std::vector<hal::Operation*> operations =
+      SortOperationsInTopologicalOrder(model);
+  for (auto operation : operations) {
+    if (std::find(operation_types.begin(),
+                  operation_types.end(),
+                  operation->type) == operation_types.end()) {
+      continue;
+    }
+    auto output_operand = operation->output_operands[0];
+    auto next_operations = GetOperandConsumers(model, output_operand);
+    if (!next_operations.empty()) continue;
+
+    AddDequantOperation(model, output_operand);
+    AddQuantOperation(model, output_operand);
+  }
+}
+
 // dequant's input's precision should be NNADAPTER_QUANT_INT32_SYMM_PER_LAYER.
 // dequant's input's scale should be calculated.
 static void FixDequant(hal::Model* model) {
@@ -268,6 +273,7 @@ static void FixDequant(hal::Model* model) {
 void FixQuantOps(hal::Model* model) {
   FixQuantConv(model);
   FixQuantFullyConnected(model);
+  FixLastQuantOp(model);
   FixDequant(model);
 }
 
