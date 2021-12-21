@@ -94,6 +94,8 @@ bool ActivationOp::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
     param_.active_type = lite_api::ActivationType::kSign;
   } else if (opdesc.Type() == "softplus") {
     param_.active_type = lite_api::ActivationType::kSoftPlus;
+    param_.softplus_threshold = opdesc.GetAttr<float>("threshold");
+    param_.softplus_beta = opdesc.GetAttr<float>("beta");
   } else if (opdesc.Type() == "mish") {
     param_.active_type = lite_api::ActivationType::kMish;
     param_.threshold = opdesc.GetAttr<float>("threshold");

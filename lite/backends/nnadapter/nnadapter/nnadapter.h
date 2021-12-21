@@ -384,6 +384,22 @@ typedef enum {
   NNADAPTER_CAST,
 
   /**
+   * It divides the input channels in each group into several subgroups, and
+   * obtain a new order by selecting element from every subgroup one by one.
+   *
+   * Inputs:
+   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * tensor.
+   * * 1: group, a NNADAPTER_INT32 tensor with shape [1].
+   *
+   * Outputs:
+   * * 0: output, a tensor with the same shape as input.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_CHANNEL_SHUFFLE,
+
+  /**
    * Clip all elements in input into the range [ min, max ].
    * The output is calculated using this formula:
    *     output = MIN(MAX(input, min), max)
@@ -1648,6 +1664,25 @@ typedef enum {
    * Available since version 1.
    */
   NNADAPTER_SOFTMAX,
+
+  /**
+   * Applies softplus to the input tensor element-wise. The output is calculated
+   * using this formula: output = log(1 + exp^(beta * input)) / beta For
+   * numerical stability, the implementation reverts to the linear function
+   * when: beta * x > threshold.
+   *
+   * Inputs:
+   * * 0: input, a NNADAPTER_FLOAT32,
+   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
+   * * 1: beta, a NNADAPTER_FLOAT32 tensor with shape [1].
+   * * 2: threshold, a NNADAPTER_FLOAT32 tensor with shape [1].
+   *
+   * Outputs:
+   * * 0: output, a tensor with the same shape and type as input.
+   *
+   * Available since version 1.
+   */
+  NNADAPTER_SOFTPLUS,
 
   /**
    * Split a tensor into a list of tensors along the given dimension.
