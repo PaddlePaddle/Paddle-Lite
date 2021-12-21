@@ -31,11 +31,6 @@ class TestMulticlassNms3Op(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(
-            TargetType.ARM,
-            PrecisionType.FP32,
-            DataLayoutType.NCHW,
-            thread=[1, 4])
-        self.enable_testing_on_place(
             TargetType.Host,
             PrecisionType.FP32,
             DataLayoutType.NCHW,

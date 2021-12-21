@@ -26,13 +26,19 @@ import numpy as np
 from functools import partial
 import hypothesis.strategies as st
 
+
 class TestMulticlassNmsOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 4])
-        self.enable_testing_on_place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         x_shape = list(program_config.inputs["input_data_BBoxes"].shape)
         y_shape = list(program_config.inputs["input_data_Scores"].shape)
         if x_shape[0] <= y_shape[0]:
@@ -55,23 +61,31 @@ class TestMulticlassNmsOp(AutoScanTest):
         normalized = draw(st.booleans())
 
         multiclass_nms_op = OpConfig(
-            type = "multiclass_nms",
-            inputs = {"BBoxes" : ["input_data_BBoxes"], "Scores" : ["input_data_Scores"]},
-            outputs = {"Out": ["output_data"]},
-            attrs = {"background_label":background_label, "score_threshold":score_threshold, "nms_threshold":nms_threshold,
-               "nms_top_k":nms_top_k, "keep_top_k":keep_top_k, "normalized":normalized, "nms_eta":nms_eta})
+            type="multiclass_nms",
+            inputs={
+                "BBoxes": ["input_data_BBoxes"],
+                "Scores": ["input_data_Scores"]
+            },
+            outputs={"Out": ["output_data"]},
+            attrs={
+                "background_label": background_label,
+                "score_threshold": score_threshold,
+                "nms_threshold": nms_threshold,
+                "nms_top_k": nms_top_k,
+                "keep_top_k": keep_top_k,
+                "normalized": normalized,
+                "nms_eta": nms_eta
+            })
 
         program_config = ProgramConfig(
             ops=[multiclass_nms_op],
             weights={},
             inputs={
-                "input_data_BBoxes":
-                TensorConfig(shape=X_shape),
-                "input_data_Scores" : TensorConfig(shape=Y_shape)
+                "input_data_BBoxes": TensorConfig(shape=X_shape),
+                "input_data_Scores": TensorConfig(shape=Y_shape)
             },
             outputs={"output_data"})
         return program_config
-
 
     def sample_predictor_configs(self):
         return self.get_predictor_configs(), ["multiclass_nms"], (1e-5, 1e-5)
@@ -81,6 +95,7 @@ class TestMulticlassNmsOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=40)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

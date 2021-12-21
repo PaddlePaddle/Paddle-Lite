@@ -31,11 +31,6 @@ class TestMulticlassNms2Op(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(
-            TargetType.ARM,
-            PrecisionType.FP32,
-            DataLayoutType.NCHW,
-            thread=[1, 4])
-        self.enable_testing_on_place(
             TargetType.Host,
             PrecisionType.FP32,
             DataLayoutType.NCHW,
@@ -47,9 +42,6 @@ class TestMulticlassNms2Op(AutoScanTest):
         x_shape = list(program_config.inputs["input_data_BBoxes"].shape)
         y_shape = list(program_config.inputs["input_data_Scores"].shape)
         if x_shape[0] <= y_shape[0]:
-            return False
-        target_str = self.get_target()
-        if target_str == "ARM":
             return False
         return True
 
