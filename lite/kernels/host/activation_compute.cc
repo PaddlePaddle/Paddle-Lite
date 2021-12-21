@@ -276,7 +276,7 @@ void EluCompute::Run() {
   }
 }
 
-void SoftPlusCompute::Run() {
+void SoftplusCompute::Run() {
   auto& param = this->Param<param_t>();
   CHECK(param.X);
   auto x_dims = param.X->dims();
@@ -432,7 +432,7 @@ REGISTER_LITE_KERNEL(softplus,
                      kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::host::SoftPlusCompute,
+                     paddle::lite::kernels::host::SoftplusCompute,
                      def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
