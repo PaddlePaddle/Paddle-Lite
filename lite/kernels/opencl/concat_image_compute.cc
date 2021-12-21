@@ -42,7 +42,7 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     axis_ = concat_param_->axis;
     auto* axis_tensor = concat_param_->axis_tensor;
     if (axis_tensor != nullptr) {
-      auto* d_image = GET_DATA_GPU(axis_tensor);
+      auto* d_image = DATA_GPU(axis_tensor);
       cl::Image2D* cl_image = static_cast<cl::Image2D*>(d_image);
       size_t cl_image2d_width, cl_image2d_height;
       cl_image->getImageInfo(CL_IMAGE_WIDTH, &cl_image2d_width);
@@ -51,14 +51,14 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
       const bool fp16_support =
           CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
       if (fp16_support) {
-        auto* h_image = static_cast<float*>(TargetWrapperCL::MapImage(
-            d_image, cl_image2d_width, cl_image2d_height, 0, 0));
-        axis_ = h_image[0];
-        TargetWrapperCL::Unmap(d_image, h_image);
-      } else {
         auto* h_image = static_cast<half_t*>(TargetWrapperCL::MapImage(
             d_image, cl_image2d_width, cl_image2d_height, 0, 0));
         axis_ = Half2Float(h_image[0]);
+        TargetWrapperCL::Unmap(d_image, h_image);
+      } else {
+        auto* h_image = static_cast<float*>(TargetWrapperCL::MapImage(
+            d_image, cl_image2d_width, cl_image2d_height, 0, 0));
+        axis_ = h_image[0];
         TargetWrapperCL::Unmap(d_image, h_image);
       }
     }

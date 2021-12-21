@@ -41,7 +41,6 @@ class TestConcatOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
-        # opencl demo
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -60,6 +59,10 @@ class TestConcatOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
+        target_type = predictor_config.target()
+        if target_type == TargetType.OpenCL:
+            if "AxisTensor" in program_config.ops[0].inputs:
+                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -123,7 +126,14 @@ class TestConcatOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        target_str = self.get_target()
+        max_examples = 25
+        if target_str == "OpenCL":
+            # Make sure to generate enough valid cases for OpenCL
+            max_examples = 100
+
+        self.run_and_statis(
+            quant=False, min_success_num=25, max_examples=max_examples)
 
 
 if __name__ == "__main__":
