@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <cn_api.h>
 #include <cnrt.h>
 #include <interface_builder.h>
 #include <interface_network.h>
@@ -39,6 +40,7 @@ int64_t ConvertToMagicMindAxis(NNAdapterOperandLayoutCode input_layout);
 // Convert NNAdapter dims to magicmind dims
 magicmind::Dims ConvertToMagicMindDims(const int32_t* input_dimensions,
                                        uint32_t input_dimensions_count);
+bool IsDeviceMemory(void* pointer);
 
 template <typename T>
 struct MMDestroyer {
