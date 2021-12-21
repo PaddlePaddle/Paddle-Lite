@@ -29,7 +29,7 @@ import numpy as np
 from functools import partial
 
 
-class TestAssignOp(AutoScanTest):
+class TestCompareLessOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         host_op_config = [
