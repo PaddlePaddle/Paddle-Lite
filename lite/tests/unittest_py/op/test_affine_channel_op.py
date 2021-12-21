@@ -23,33 +23,19 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 import argparse
-
-import numpy as np
 from functools import partial
+import numpy as np
 
 
-class TestPad2dOp(AutoScanTest):
+class TestAffineChannelOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
+        # only support arm
         self.enable_testing_on_place(
-            TargetType.Host,
+            TargetType.ARM,
             PrecisionType.FP32,
             DataLayoutType.NCHW,
-            thread=[1, 2])
-        self.enable_testing_on_place(
-            TargetType.X86,
-            PrecisionType.FP32,
-            DataLayoutType.NCHW,
-            thread=[1, 2])
-
-        # metal
-        metal_places = [
-            Place(TargetType.Metal, PrecisionType.FP32,
-                  DataLayoutType.MetalTexture2DArray),
-            Place(TargetType.Metal, PrecisionType.FP16,
-                  DataLayoutType.MetalTexture2DArray)
-        ]
-        self.enable_testing_on_place(places=metal_places)
+            thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -60,41 +46,37 @@ class TestPad2dOp(AutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=10), min_size=4, max_size=4))
-
-        mode = draw(st.sampled_from(["constant", "reflect", "edge"]))
-        value_data = draw(st.floats(min_value=0.0, max_value=4.0))
-        padding_data = draw(st.sampled_from([[2, 2, 1, 1]]))
-
-        # assume(in_shape in [3, 4, 5])
+                    min_value=1, max_value=50), min_size=4, max_size=4))
+        scale_shape = [in_shape[1]]
 
         def generate_input(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
 
-        build_ops = OpConfig(
-            type="pad2d",
+        def generate_scale(*args, **kwargs):
+            return np.random.random(scale_shape).astype(np.float32)
+
+        affine_channel_op = OpConfig(
+            type="affine_channel",
             inputs={
                 "X": ["input_data"],
-                #"Paddings": padding_data,
+                "Scale": ["scale_data"],
+                "Bias": ["bias_data"]
             },
-            outputs={"Out": ["output_data"], },
-            attrs={
-                "paddings": padding_data,
-                "mode": mode,
-                "value": value_data,
-                "data_format": "NCHW",
-            })
+            outputs={"Out": ["output_data"]},
+            attrs={"data_layout": "NCHW"})
         program_config = ProgramConfig(
-            ops=[build_ops],
+            ops=[affine_channel_op],
             weights={},
             inputs={
                 "input_data": TensorConfig(data_gen=partial(generate_input)),
+                "scale_data": TensorConfig(data_gen=partial(generate_scale)),
+                "bias_data": TensorConfig(data_gen=partial(generate_scale))
             },
             outputs=["output_data"])
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["pad2d"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["affine_channel"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
