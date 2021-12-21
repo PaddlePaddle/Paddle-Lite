@@ -312,12 +312,11 @@ class AutoScanBaseTest(unittest.TestCase):
                     results.append(result)
                     # add ignore methods
                     if self.passes is not None:
-                        self.assert_tensors_near(atol_, rtol_, results[-1],
-                                                 results[0])
-                        # op unit test: we will not check precision in ignore case
+                        self.assert_op_list(opt_model_bytes, op_list_)
                         if not ignore_flag:
                             # pass unit test: we will not check fusion in ignore case
-                            self.assert_op_list(opt_model_bytes, op_list_)
+                            self.assert_tensors_near(atol_, rtol_, results[-1],
+                                                     results[0])
                     else:
                         self.assert_kernel_type(opt_model_bytes, op_list_,
                                                 paddlelite_config)
@@ -358,7 +357,8 @@ class AutoScanBaseTest(unittest.TestCase):
         main_block = pg.desc.block(0)
         after_op_list = list()
         for i in range(main_block.op_size()):
-            if main_block.op(i).type() in ["feed", "fetch"]:
+            if main_block.op(i).type(
+            ) in ["feed", "fetch", "io_copy", "layout"]:
                 continue
             after_op_list.append(main_block.op(i).type())
         self.assertTrue(
