@@ -221,7 +221,7 @@ class ConvOpLite : public OpLite {
         paddings.insert(paddings.begin() + 2 * i + 1, copy_pad);
       }
     } else {
-      if (paddings.size() != 4L || paddings.size() != 6L) {
+      if (paddings.size() != 4L && paddings.size() != 6L) {
         LOG(FATAL)
             << "Paddings size should be the same or twice as the input size.";
       }
