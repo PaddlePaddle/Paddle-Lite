@@ -24,72 +24,67 @@ from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 import argparse
 
+import numpy as np
+from functools import partial
 
-class TestAbsOp(AutoScanTest):
+
+class TestReshapeOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(
             TargetType.Host,
             PrecisionType.FP32,
             DataLayoutType.NCHW,
-            thread=[1, 4])
-        opencl_places = [
-            Place(TargetType.OpenCL, PrecisionType.FP16,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.FP16,
-                      DataLayoutType.ImageFolder),
-            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-            Place(TargetType.OpenCL, PrecisionType.Any,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.Any,
-                      DataLayoutType.ImageFolder),
-            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-            Place(TargetType.Host, PrecisionType.FP32)
-        ]
-        self.enable_testing_on_place(places=opencl_places)
+            thread=[1, 2])
+        # self.enable_testing_on_place(
+        #     TargetType.X86,
+        #     PrecisionType.FP32,
+        #     DataLayoutType.NCHW,
+        #     thread=[1, 2])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        in_shape = list(program_config.inputs["input_data"].shape)
-        if predictor_config.target() == TargetType.OpenCL:
-            if len(in_shape) != 4:
-                return False
         return True
 
     def sample_program_configs(self, draw):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=8), min_size=1, max_size=4))
+                    min_value=1, max_value=10), min_size=4, max_size=4))
+        attr_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=0, max_value=4),
+                min_size=len(in_shape),
+                max_size=len(in_shape)))
+        with_shape = draw(st.sampled_from([True, False]))
 
-        abs_op = OpConfig(
-            type="abs",
-            inputs={"X": ["input_data"]},
-            outputs={"Out": ["output_data"]},
-            attrs={})
+        def generate_input(*args, **kwargs):
+            return np.random.random(in_shape).astype(np.float32)
+
+        build_ops = OpConfig(
+            type="reshape",
+            inputs={"X": ["input_data"], },
+            outputs={"Out": ["output_data"], },
+            attrs={"shape": in_shape, })
         program_config = ProgramConfig(
-            ops=[abs_op],
+            ops=[build_ops],
             weights={},
-            inputs={"input_data": TensorConfig(shape=in_shape)},
+            inputs={
+                "input_data": TensorConfig(data_gen=partial(generate_input)),
+            },
             outputs=["output_data"])
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["abs"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["reshape"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):
-        target_str = self.get_target()
-        max_examples = 25
-        if target_str == "OpenCL":
-            # Make sure to generate enough valid cases for OpenCL
-            max_examples = 100
-
-        self.run_and_statis(
-            quant=False, min_success_num=25, max_examples=max_examples)
+        self.run_and_statis(quant=False, max_examples=25)
 
 
 if __name__ == "__main__":

@@ -21,75 +21,72 @@ import unittest
 
 import hypothesis
 from hypothesis import given, settings, seed, example, assume
+
+import numpy as np
+from functools import partial
 import hypothesis.strategies as st
-import argparse
 
 
-class TestAbsOp(AutoScanTest):
+class TestFillConstantBatchSizeLikeOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(
             TargetType.Host,
             PrecisionType.FP32,
             DataLayoutType.NCHW,
-            thread=[1, 4])
-        opencl_places = [
-            Place(TargetType.OpenCL, PrecisionType.FP16,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.FP16,
-                      DataLayoutType.ImageFolder),
-            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-            Place(TargetType.OpenCL, PrecisionType.Any,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.Any,
-                      DataLayoutType.ImageFolder),
-            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-            Place(TargetType.Host, PrecisionType.FP32)
-        ]
-        self.enable_testing_on_place(places=opencl_places)
+            thread=[1, 2, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        in_shape = list(program_config.inputs["input_data"].shape)
-        if predictor_config.target() == TargetType.OpenCL:
-            if len(in_shape) != 4:
-                return False
         return True
 
     def sample_program_configs(self, draw):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=8), min_size=1, max_size=4))
+                    min_value=1, max_value=10), min_size=2, max_size=4))
+        shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=10), min_size=2, max_size=4))
+        dtype = draw(st.sampled_from([2, 3, 5]))
+        input_dim_idx = draw(
+            st.integers(
+                min_value=0, max_value=(len(in_shape) - 1)))
+        out_dim_idx = draw(
+            st.integers(
+                min_value=0, max_value=(len(shape) - 1)))
+        value = draw(st.floats(min_value=-10, max_value=10))
 
-        abs_op = OpConfig(
-            type="abs",
-            inputs={"X": ["input_data"]},
+        fill_constant_batch_size_like_op = OpConfig(
+            type="fill_constant_batch_size_like",
+            inputs={"Input": ["input_data"]},
             outputs={"Out": ["output_data"]},
-            attrs={})
+            attrs={
+                "dtype": dtype,
+                "shape": shape,
+                "value": value,
+                "force_cpu": False,
+                "input_dim_idx": input_dim_idx,
+                "output_dim_idx": out_dim_idx
+            })
         program_config = ProgramConfig(
-            ops=[abs_op],
+            ops=[fill_constant_batch_size_like_op],
             weights={},
             inputs={"input_data": TensorConfig(shape=in_shape)},
             outputs=["output_data"])
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["abs"], (1e-5, 1e-5)
+        return self.get_predictor_configs(
+        ), ["fill_constant_batch_size_like"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):
-        target_str = self.get_target()
-        max_examples = 25
-        if target_str == "OpenCL":
-            # Make sure to generate enough valid cases for OpenCL
-            max_examples = 100
-
-        self.run_and_statis(
-            quant=False, min_success_num=25, max_examples=max_examples)
+        self.run_and_statis(quant=False, max_examples=25)
 
 
 if __name__ == "__main__":
