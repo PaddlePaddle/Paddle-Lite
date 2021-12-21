@@ -85,7 +85,7 @@ class TestConvActiveFuse(FusePassAutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=2, max_value=24), min_size=3, max_size=3))
+                    min_value=2, max_value=128), min_size=3, max_size=3))
         in_shape = [draw(st.integers(min_value=1, max_value=3))] + in_shape
         weight_shape = draw(
             st.lists(
