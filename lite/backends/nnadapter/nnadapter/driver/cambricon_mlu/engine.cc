@@ -180,14 +180,6 @@ int Program::Execute(uint32_t input_count,
         ConvertToMagicMindDims(type->dimensions.data, type->dimensions.count));
   }
 
-  /* This is for dumping tensor when debugging.
-    magicmind::IContext::ContextDumpInfo dump_info;
-    dump_info.dump_mode = 1;
-    dump_info.path = "dump_test";
-    dump_info.file_format = 1;
-    mm_context_->SetContextDumpInfo(dump_info);
-  */
-
   mm_context_->Enqueue(inputs, &outputs, queue_);
   MLU_CNRT_CHECK(cnrtSyncQueue(queue_));
   NNADAPTER_VLOG(3) << "Execute ending.";

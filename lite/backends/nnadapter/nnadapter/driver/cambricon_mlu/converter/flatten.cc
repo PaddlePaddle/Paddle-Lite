@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,10 +33,7 @@ int ConvertFlatten(Converter* converter, hal::Operation* operation) {
   auto end_axis_tensor = converter->ConvertOperand(input_operands[2]);
   auto flatten_node = converter->network()->AddIFlattenNode(
       input_tensor, start_axis_tensor, end_axis_tensor);
-  if (flatten_node == nullptr) {
-    NNADAPTER_VLOG(5) << "Failed to add flatten node.";
-    return NNADAPTER_DEVICE_INTERNAL_ERROR;
-  }
+  NNADAPTER_CHECK(flatten_node) << "Failed to add flatten node.";
   auto output_tensor = flatten_node->GetOutput(0);
   converter->UpdateTensorMap(output_operand, output_tensor);
   return NNADAPTER_NO_ERROR;

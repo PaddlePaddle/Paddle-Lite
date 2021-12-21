@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,10 +38,7 @@ int ConvertRange(Converter* converter, hal::Operation* operation) {
   }
   auto range_node = converter->network()->AddIRangeNode(
       start_tensor, limit_tensor, delta_tensor);
-  if (range_node == nullptr) {
-    NNADAPTER_VLOG(5) << "Failed to add range node.";
-    return NNADAPTER_DEVICE_INTERNAL_ERROR;
-  }
+  NNADAPTER_CHECK(range_node) << "Failed to add range node.";
   auto output_tensor = range_node->GetOutput(0);
   converter->UpdateTensorMap(output_operand, output_tensor);
   return NNADAPTER_NO_ERROR;

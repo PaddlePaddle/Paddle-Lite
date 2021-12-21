@@ -30,10 +30,7 @@ int ConvertCast(Converter* converter, hal::Operation* operation) {
   }
   magicmind::DataType dst_type = ConvertToMagicMindDtype(dtype);
   auto cast_node = converter->network()->AddICastNode(input_tensor, dst_type);
-  if (cast_node == nullptr) {
-    NNADAPTER_VLOG(5) << "Failed to add cast node.";
-    return NNADAPTER_DEVICE_INTERNAL_ERROR;
-  }
+  NNADAPTER_CHECK(cast_node) << "Failed to add cast node.";
   auto output_tensor = cast_node->GetOutput(0);
   converter->UpdateTensorMap(output_operand, output_tensor);
   return NNADAPTER_NO_ERROR;

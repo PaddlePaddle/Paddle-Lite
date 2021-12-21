@@ -68,10 +68,8 @@ int ConvertConv2DTranspose(Converter* converter, hal::Operation* operation) {
   }
   auto conv2d_transpose_node = converter->network()->AddIDeconvNode(
       input_tensor, filter_tensor, bias_tensor, output_shape_tensor);
-  if (conv2d_transpose_node == nullptr) {
-    NNADAPTER_VLOG(5) << "Failed to add convolution transpose node.";
-    return NNADAPTER_DEVICE_INTERNAL_ERROR;
-  }
+  NNADAPTER_CHECK(conv2d_transpose_node)
+      << "Failed to add convolution transpose node.";
 
   magicmind::Layout layout =
       ConvertToMagicMindDataLayout(input_operand->type.layout);

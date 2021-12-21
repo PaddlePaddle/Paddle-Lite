@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
 #ifndef __NNADAPTER_DRIVER_CAMBRICON_MLU_CONVERTER_ALL_H__  // NOLINT
 #define __NNADAPTER_DRIVER_CAMBRICON_MLU_CONVERTER_ALL_H__
 
-REGISTER_CONVERTER(ADD, ConvertElementwise)
 REGISTER_CONVERTER(ADAPTIVE_AVERAGE_POOL_2D, ConvertAdaptivePool2D)
+REGISTER_CONVERTER(ADD, ConvertElementwise)
 REGISTER_CONVERTER(AVERAGE_POOL_2D, ConvertPool2D)
 REGISTER_CONVERTER(BATCH_NORMALIZATION, ConvertBatchNormalization)
 REGISTER_CONVERTER(CAST, ConvertCast)

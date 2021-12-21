@@ -31,10 +31,8 @@ int ConvertLpNormalization(Converter* converter, hal::Operation* operation) {
   auto axis_tensor = converter->ConvertOperand(axis_operand);
   auto lp_normalization_node =
       converter->network()->AddINormalizeNode(input_tensor, axis_tensor);
-  if (lp_normalization_node == nullptr) {
-    NNADAPTER_VLOG(5) << "Failed to add lp_normalization node.";
-    return NNADAPTER_DEVICE_INTERNAL_ERROR;
-  }
+  NNADAPTER_CHECK(lp_normalization_node)
+      << "Failed to add lp_normalization node.";
   lp_normalization_node->SetP(static_cast<float>(p));
   lp_normalization_node->SetEpsilon(epsilon);
   auto output_tensor = lp_normalization_node->GetOutput(0);

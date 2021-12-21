@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,10 +29,7 @@ int ConvertLeakyRelu(Converter* converter, hal::Operation* operation) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
   auto leaky_relu_node = converter->network()->AddILeakyReluNode(input_tensor);
-  if (leaky_relu_node == nullptr) {
-    NNADAPTER_VLOG(5) << "Failed to add leaky_relu node.";
-    return NNADAPTER_DEVICE_INTERNAL_ERROR;
-  }
+  NNADAPTER_CHECK(leaky_relu_node) << "Failed to add leaky_relu node.";
   leaky_relu_node->SetNegativeSlope(alpha);
   auto output_tensor = leaky_relu_node->GetOutput(0);
   converter->UpdateTensorMap(output_operand, output_tensor);

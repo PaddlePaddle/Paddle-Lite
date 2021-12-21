@@ -44,10 +44,7 @@ int ConvertResizeNearest(Converter* converter, hal::Operation* operation) {
   }
   auto resize_nearest_node = converter->network()->AddIResizeNode(
       input_tensor, shape_tensor, scale_tensor);
-  if (resize_nearest_node == nullptr) {
-    NNADAPTER_VLOG(5) << "Failed to add resize_nearest node.";
-    return NNADAPTER_DEVICE_INTERNAL_ERROR;
-  }
+  NNADAPTER_CHECK(resize_nearest_node) << "Failed to add resize_nearest node.";
 
   resize_nearest_node->SetMode(magicmind::IResizeMode::NEAREST_NEIGHBOR);
   resize_nearest_node->SetAlignCorners(align_corners);

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,10 +31,7 @@ int ConvertLog(Converter* converter, hal::Operation* operation) {
   }
   auto log_node =
       converter->network()->AddILogNode(input_tensor, magicmind::ILog::LOG_E);
-  if (log_node == nullptr) {
-    NNADAPTER_VLOG(5) << "Failed to add log node.";
-    return NNADAPTER_DEVICE_INTERNAL_ERROR;
-  }
+  NNADAPTER_CHECK(log_node) << "Failed to add log node.";
   auto output_tensor = log_node->GetOutput(0);
   converter->UpdateTensorMap(output_operand, output_tensor);
   return NNADAPTER_NO_ERROR;

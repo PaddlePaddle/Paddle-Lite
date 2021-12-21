@@ -44,15 +44,12 @@ int ConvertResizeLinear(Converter* converter, hal::Operation* operation) {
   }
   auto resize_linear_node = converter->network()->AddIResizeNode(
       input_tensor, shape_tensor, scale_tensor);
-  if (resize_linear_node == nullptr) {
-    NNADAPTER_VLOG(5) << "Failed to add resize_linear node.";
-    return NNADAPTER_DEVICE_INTERNAL_ERROR;
-  }
+  NNADAPTER_CHECK(resize_linear_node) << "Failed to add resize_linear node.";
 
   resize_linear_node->SetMode(magicmind::IResizeMode::BILINEAR);
-  bool align_center = align_mode == 0 ? true : false;
+  bool align_center = align_mode == 0;
   // align_corners and align_center cannot be True at the same time.
-  NNADAPTER_CHECK_LT(align_corners && align_center, 1);
+  NNADAPTER_CHECK(align_corners && align_center);
   resize_linear_node->SetAlignCorners(align_corners);
   if (align_mode == 0) {
     resize_linear_node->SetHalfPixelCenters(true);

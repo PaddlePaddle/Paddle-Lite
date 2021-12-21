@@ -29,10 +29,7 @@ int ConvertShape(Converter* converter, hal::Operation* operation) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
   auto shape_node = converter->network()->AddIShapeNode(input_tensor, nullptr);
-  if (shape_node == nullptr) {
-    NNADAPTER_VLOG(5) << "Failed to add shape node.";
-    return NNADAPTER_DEVICE_INTERNAL_ERROR;
-  }
+  NNADAPTER_CHECK(shape_node) << "Failed to add shape node.";
   auto output_tensor = shape_node->GetOutput(0);
   converter->UpdateTensorMap(output_operand, output_tensor);
   return NNADAPTER_NO_ERROR;

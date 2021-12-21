@@ -36,10 +36,7 @@ int ConvertFill(Converter* converter, hal::Operation* operation) {
   value_tensor->SetDimension(magicmind::Dims(vec));
   auto fill_node =
       converter->network()->AddIFillNode(shape_tensor, value_tensor);
-  if (fill_node == nullptr) {
-    NNADAPTER_VLOG(5) << "Failed to add fill node.";
-    return NNADAPTER_DEVICE_INTERNAL_ERROR;
-  }
+  NNADAPTER_CHECK(fill_node) << "Failed to add fill node.";
   auto output_tensor = fill_node->GetOutput(0);
   converter->UpdateTensorMap(output_operand, output_tensor);
   return NNADAPTER_NO_ERROR;

@@ -97,9 +97,7 @@ magicmind::ITensor* Converter::AddFloat32ConstantTensor(
   NNADAPTER_CHECK(buffer);
   auto const_node = network_->AddIConstNode(
       magicmind::DataType::FLOAT32, magicmind::Dims(dimensions), buffer);
-  if (const_node == nullptr) {
-    NNADAPTER_LOG(FATAL) << "Failed to add const node.";
-  }
+  NNADAPTER_CHECK(const_node) << "Failed to add const node.";
   return const_node->GetOutput(0);
 }
 
@@ -115,9 +113,7 @@ magicmind::ITensor* Converter::AddTensor(const NNAdapterOperandType* type,
   auto mm_dtype = ConvertToMagicMindDtype(type->precision);
   auto const_node =
       network_->AddIConstNode(mm_dtype, magicmind::Dims(dimensions), buffer);
-  if (const_node == nullptr) {
-    NNADAPTER_LOG(FATAL) << "Failed to add const node.";
-  }
+  NNADAPTER_CHECK(const_node) << "Failed to add const node.";
   return const_node->GetOutput(0);
 }
 

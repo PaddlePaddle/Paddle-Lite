@@ -29,14 +29,12 @@ int ConvertAdaptivePool2D(Converter* converter, hal::Operation* operation) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
   if (operation->type == NNADAPTER_ADAPTIVE_MAX_POOL_2D) {
+    LOG(FATAL) << "Not support max pool2d.";
     return NNADAPTER_DEVICE_INTERNAL_ERROR;
   } else {
     auto pool2d_node =
         converter->network()->AddIAdaptiveAvgPool2DNode(input_tensor);
-    if (pool2d_node == nullptr) {
-      NNADAPTER_VLOG(5) << "Failed to add adaptive_avg_pool2d node.";
-      return NNADAPTER_DEVICE_INTERNAL_ERROR;
-    }
+    NNADAPTER_CHECK(pool2d_node) << "Failed to add adaptive_avg_pool2d node.";
     pool2d_node->SetOutputSize(static_cast<int64_t>(kernel_height),
                                static_cast<int64_t>(kernel_width));
     pool2d_node->SetLayout(magicmind::Layout::NHWC, magicmind::Layout::NHWC);
