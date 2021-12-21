@@ -248,7 +248,7 @@ class TestConvBnFuse(FusePassAutoScanTest):
 
     def sample_predictor_configs(self):
         config = CxxConfig()
-        return self.get_predictor_configs(), [self.ops[0].type], (1e-4, 1e-5)
+        return self.get_predictor_configs(), [self.ops[0].type], (1e-4, 1e-4)
 
     def add_ignore_pass_case(self):
         pass
