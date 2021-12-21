@@ -323,7 +323,7 @@ class AutoScanBaseTest(unittest.TestCase):
                                                 paddlelite_config)
                         if not ignore_flag:
                             self.assert_tensors_near(atol_, rtol_, results[-1],
-                                                  results[0])
+                                                     results[0])
                 except Exception as e:
                     self.fail_log(
                         self.paddlelite_config_str(pred_config) +
