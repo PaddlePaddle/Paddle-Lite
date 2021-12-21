@@ -77,7 +77,7 @@ int ConvertSoftplus(Converter* converter, OpInfo* op, Scope* scope) {
     }
   }
   auto output_operand = converter->AddOutputOperand(out_name, out_scales);
-  // LeakyRelu operation
+  // Softplus operation
   converter->AddOperation(NNADAPTER_SOFTPLUS,
                           {input_operand, beta_operand, threshold_operand},
                           {output_operand});

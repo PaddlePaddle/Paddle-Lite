@@ -34,7 +34,7 @@ int ConvertShuffleChannel(Converter* converter, OpInfo* op, Scope* scope) {
   // Output operand
   auto out_name = op->Output("Out").front();
   auto output_operand = converter->AddOutputOperand(out_name);
-  // Group operation
+  // Channel shuffle operation
   converter->AddOperation(NNADAPTER_CHANNEL_SHUFFLE,
                           {input_operand, group_operand},
                           {output_operand});
