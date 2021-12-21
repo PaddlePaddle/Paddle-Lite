@@ -248,7 +248,9 @@ static void FixLastQuantOp(hal::Model* model) {
     }
     auto output_operand = operation->output_operands[0];
     auto next_operations = GetOperandConsumers(model, output_operand);
-    if (!next_operations.empty()) continue;
+    if (output_operand->type.precision == NNADAPTER_FLOAT32 ||
+        !next_operations.empty())
+      continue;
 
     AddDequantOperation(model, output_operand);
     AddQuantOperation(model, output_operand);

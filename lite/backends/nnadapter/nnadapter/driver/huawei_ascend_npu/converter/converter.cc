@@ -140,6 +140,21 @@ std::shared_ptr<Operator> Converter::AddFloat32ConstantOperator(
       dimensions.empty() ? std::vector<int32_t>({num_values}) : dimensions);
 }
 
+std::shared_ptr<Operator> Converter::AddUint64ConstantOperator(
+    const uint64_t* values, const std::vector<int32_t>& dimensions) {
+  return AddConstantOperator(
+      reinterpret_cast<const void*>(values), NNADAPTER_UINT64, dimensions);
+}
+
+std::shared_ptr<Operator> Converter::AddUint64ConstantOperator(
+    const std::vector<uint64_t>& values,
+    const std::vector<int32_t>& dimensions) {
+  int num_values = values.size();
+  return AddUint64ConstantOperator(
+      &values[0],
+      dimensions.empty() ? std::vector<int32_t>({num_values}) : dimensions);
+}
+
 std::shared_ptr<Operator> Converter::ConvertOperand(
     hal::Operand* operand, std::vector<int32_t> dimensions) {
   if (dimensions.empty()) {
