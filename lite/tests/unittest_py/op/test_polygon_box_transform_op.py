@@ -52,7 +52,7 @@ class TestPolygonBoxTransformOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=2, max_value=10), min_size=2, max_size=4))
-        input_type = draw(st.sampled_from(["type_float", "type_float64"]))
+        input_type = draw(st.sampled_from(["type_float"]))
         assume(len(in_shape) == 4)
         assume(in_shape[1] % 2 == 0)
 
