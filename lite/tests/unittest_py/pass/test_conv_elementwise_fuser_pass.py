@@ -39,6 +39,8 @@ class TestConvElementwiseFuse(FusePassAutoScanTest):
             TargetType.X86, [PrecisionType.FP32],
             DataLayoutType.NCHW,
             thread=[1, 4])
+        #some case OpenCL not support 
+        '''
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -52,19 +54,13 @@ class TestConvElementwiseFuse(FusePassAutoScanTest):
             Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
-        #self.enable_testing_on_place(places=opencl_places)
+        self.enable_testing_on_place(places=opencl_places)
+        '''
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        if predictor_config.target() == TargetType.OpenCL:
-            return False
-        result = True
-        if predictor_config.target() == TargetType.OpenCL:
-            result = result and (
-                program_config.ops[0].attrs["groups"] == 1 and
-                program_config.ops[0].type != "conv2d_transpose")
-        return result
+        return True
 
     def sample_program_configs(self, draw):
         #conv or conv_transpose
@@ -74,14 +70,16 @@ class TestConvElementwiseFuse(FusePassAutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=3, max_value=32), min_size=3, max_size=3))
-        in_shape = [draw(st.integers(min_value=1, max_value=3))] + in_shape
+                    min_value=3, max_value=128), min_size=3, max_size=3))
+        in_shape = [draw(st.integers(min_value=1, max_value=4))] + in_shape
         weight_shape = draw(
             st.lists(
                 st.integers(
                     min_value=1, max_value=8), min_size=4, max_size=4))
         paddings = draw(
-            st.sampled_from([[1, 2], [4, 2], [1, 1], [0, 0], [1, 0], [1, 1]]))
+            st.lists(
+                st.integers(
+                    min_value=0, max_value=2), min_size=2, max_size=2))
         dilations = draw(st.sampled_from([[2, 2]]))
         groups = draw(st.sampled_from([1, 2, in_shape[1]]))
         padding_algorithm = draw(st.sampled_from(["VALID", "SAME"]))

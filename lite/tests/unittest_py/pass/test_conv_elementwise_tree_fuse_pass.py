@@ -31,6 +31,8 @@ import hypothesis.strategies as st
 class TestConvElementwiseTreeFuse(FusePassAutoScanTest):
     def __init__(self, *args, **kwargs):
         FusePassAutoScanTest.__init__(self, *args, **kwargs)
+        #some case OpenCL not support         
+        '''
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -44,19 +46,13 @@ class TestConvElementwiseTreeFuse(FusePassAutoScanTest):
             Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
-        #self.enable_testing_on_place(places=opencl_places)
+        self.enable_testing_on_place(places=opencl_places)
+        '''
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        if predictor_config.target() == TargetType.OpenCL:
-            return False
-        result = True
-        if predictor_config.target() == TargetType.OpenCL:
-            result = result and (
-                program_config.ops[0].attrs["groups"] == 1 and
-                program_config.ops[0].type != "conv2d_transpose")
-        return result
+        return True
 
     def sample_program_configs(self, draw):
 
@@ -64,8 +60,8 @@ class TestConvElementwiseTreeFuse(FusePassAutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=2, max_value=24), min_size=3, max_size=3))
-        in_shape = [draw(st.integers(min_value=1, max_value=3))] + in_shape
+                    min_value=2, max_value=128), min_size=3, max_size=3))
+        in_shape = [draw(st.integers(min_value=1, max_value=4))] + in_shape
         weight_shape = draw(
             st.lists(
                 st.integers(

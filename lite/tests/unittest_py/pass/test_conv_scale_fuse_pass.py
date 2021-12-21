@@ -31,6 +31,7 @@ import hypothesis.strategies as st
 class TestConvScaleFuse(FusePassAutoScanTest):
     def __init__(self, *args, **kwargs):
         FusePassAutoScanTest.__init__(self, *args, **kwargs)
+        #M1 not support bias
         '''
         self.enable_testing_on_place(
             TargetType.ARM, [PrecisionType.FP32],
@@ -41,6 +42,7 @@ class TestConvScaleFuse(FusePassAutoScanTest):
             TargetType.X86, [PrecisionType.FP32],
             DataLayoutType.NCHW,
             thread=[1, 4])
+        '''
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -54,7 +56,8 @@ class TestConvScaleFuse(FusePassAutoScanTest):
             Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
-        #self.enable_testing_on_place(places=opencl_places)
+        self.enable_testing_on_place(places=opencl_places)
+        '''
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -67,7 +70,8 @@ class TestConvScaleFuse(FusePassAutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=64), min_size=4, max_size=4))
+                    min_value=2, max_value=128), min_size=3, max_size=3))
+        in_shape = [draw(st.integers(min_value=1, max_value=4))] + in_shape
         weight_shape = draw(
             st.lists(
                 st.integers(
