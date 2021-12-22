@@ -73,13 +73,11 @@ class TestElementwiseAddOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
-        arm_places = [
-            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
-            Place(TargetType.ARM, PrecisionType.FP16, DataLayoutType.NCHW),
-            Place(TargetType.ARM, PrecisionType.INT32, DataLayoutType.NCHW),
-            Place(TargetType.ARM, PrecisionType.INT64, DataLayoutType.NCHW)
-        ]
-        self.enable_testing_on_place(places=arm_places, thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            [PrecisionType.FP32, PrecisionType.INT32, PrecisionType.INT64],
+            DataLayoutType.NCHW,
+            thread=[1, 4])
         opencl_valid_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -106,11 +104,29 @@ class TestElementwiseAddOp(AutoScanTest):
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
         target_type = predictor_config.target()
+        input_data_type = program_config.inputs["input_data_x"].dtype
+        # Check config
+        if target_type in [TargetType.ARM]:
+            if predictor_config.precision(
+            ) == PrecisionType.INT64 and input_data_type != np.int64:
+                return False
+            if predictor_config.precision(
+            ) == PrecisionType.FP32 and input_data_type != np.float32:
+                return False
+            if predictor_config.precision(
+            ) == PrecisionType.FP16 and input_data_type != np.float16:
+                return False
+            if predictor_config.precision(
+            ) == PrecisionType.INT32 and input_data_type != np.int32:
+                return False
+
         in_x_shape = list(program_config.inputs["input_data_x"].shape)
         in_y_shape = list(program_config.inputs["input_data_y"].shape)
         if target_type == TargetType.Metal:
             if in_x_shape != in_y_shape:
                 return False
+        #if target_type == TargetType.ARM:
+
         return True
 
     def sample_program_configs(self, draw):
@@ -130,7 +146,7 @@ class TestElementwiseAddOp(AutoScanTest):
             axis = abs(len(input_data_x_shape) - len(
                 input_data_y_shape)) + axis + 1
         input_data_type = draw(
-            st.sampled_from([np.int32, np.int64, np.float32]))
+            st.sampled_from([np.float32, np.int32, np.int64]))
 
         def gen_input_data(*args, **kwargs):
             return np.random.randint(
@@ -163,22 +179,29 @@ class TestElementwiseAddOp(AutoScanTest):
         return self.get_predictor_configs(), ["elementwise_add"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        err_msg = ""
-
         def teller1(program_config, predictor_config):
             target_type = predictor_config.target()
             in_data_type = program_config.inputs["input_data_x"].dtype
             if target_type in [TargetType.OpenCL, TargetType.Metal]:
                 if in_data_type != np.float32:
-                    err_msg = "Elementwise_add op on" + str(
-                        target_type
-                    ) + "backend only support input data type[float32/float16], but got" + str(
-                        in_data_type)
                     return True
             return False
 
         self.add_ignore_check_case(
-            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT, err_msg)
+            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Elementwise_add op on this backend only support input data type[float32/float16]"
+        )
+
+        # def teller2(program_config, predictor_config):
+        #     target_type = predictor_config.target()
+        #     in_data_type = program_config.inputs["input_data_x"].dtype
+        #     if target_type in [TargetType.ARM]:
+        #         if in_data_type == np.int64:
+        #             return True
+        #     return False
+
+        # self.add_ignore_check_case(
+        #     teller2, IgnoreReasons.ACCURACY_ERROR, "Elementwise_add op on this backend will crash with int64 dtype")
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)
