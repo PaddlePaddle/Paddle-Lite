@@ -174,8 +174,8 @@ REGISTER_LITE_KERNEL(collect_fpn_proposals,
                      def)
     .BindInput("MultiLevelRois", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("MultiLevelScores", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindInput("RoisNum", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("MultiLevelRoIsNum", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("FpnRois", {LiteType::GetTensorTy(TARGET(kHost))})
-    .BindOutput("MultiLevelRoIsNum", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("RoisNum", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindPaddleOpVersion("collect_fpn_proposals", 1)
     .Finalize();

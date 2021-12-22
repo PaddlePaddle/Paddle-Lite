@@ -38,7 +38,7 @@ function auto_scan_test {
   done
 
   cd $WORKSPACE/lite/tests/unittest_py/pass/
-  unittests=$(ls)
+  unittests=$(ls | egrep -v $SKIP_LIST)
   for test in ${unittests[@]}; do
     if [[ "$test" =~ py$ ]];then
       python3.8 $test --target=$target_name
