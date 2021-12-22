@@ -11,12 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <gflags/gflags.h>
+
 #include <gtest/gtest.h>
 #include "lite/backends/opencl/cl_image_converter.h"
 #include "lite/backends/opencl/target_wrapper.h"
 #include "lite/core/op_registry.h"
-#include "lite/core/profile/timer.h"
 #include "lite/core/tensor.h"
 #include "lite/kernels/opencl/test_helper.h"
 #include "lite/tests/utils/fill_data.h"
@@ -25,10 +24,8 @@
 #define FP32_RELATIVE_DIFF (1e-3)
 #define FP16_ABS_DIFF (8e-2)
 #define FP16_RELATIVE_DIFF (8e-2)
-DEFINE_int32(warmup, 2, "warmup times");
-DEFINE_int32(repeats, 10, "repeats times");
+
 // #define PRINT_RESULT
-using paddle::lite::profile::Timer;
 
 namespace paddle {
 namespace lite {
@@ -38,14 +35,14 @@ namespace lite {
 #define C(i, j) c[i * ldc + j]
 
 template <typename T>
-void gemm_bias(const T* a,
-               const int M,
-               const int K,
-               const T* b,
-               const int K_,
-               const int N,
-               T* biases,
-               T* c) {
+void gemm_bias_mid_int8(const T* a,
+                        const int M,
+                        const int K,
+                        signed char* b,
+                        const int K_,
+                        const int N,
+                        T* biases,
+                        T* c) {
   EXPECT_TRUE(K_ == K && M > 0 && N > 0 && K > 0);
   EXPECT_TRUE(a && b && c);
   const int lda = K;
@@ -56,6 +53,8 @@ void gemm_bias(const T* a,
       C(m, n) = 0.0f;
       for (int k = 0; k < K; ++k) {
         C(m, n) += A(m, k) * B(k, n);
+        // std::cout << "m: " << m << "n: " << n << "k: " << k << " -> " <<
+        // C(m, n) << std::endl;
       }
     }
   }
@@ -91,8 +90,10 @@ void test(const lite_api::CLPrecisionType p,
             << lite_api::CLPrecisionTypeToStr(p) << " bias_flag=" << bias_flag
             << " m=" << m << " n=" << n << " k=" << k;
 
-  auto kernels = KernelRegistry::Global().Create(
-      "fc", TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageFolder));
+  auto kernels = KernelRegistry::Global().Create("fc_mid_int8",
+                                                 TARGET(kOpenCL),
+                                                 PRECISION(kFP16),
+                                                 DATALAYOUT(kImageFolder));
   ASSERT_FALSE(kernels.empty());
   auto kernel = std::move(kernels.front());
 
@@ -122,12 +123,12 @@ void test(const lite_api::CLPrecisionType p,
   out.Resize(out_dim);
 
   std::vector<float> x_source(x_dim.production());
-  std::vector<float> w_source(w_dim.production());
+  std::vector<int8_t> w_source(w_dim.production());
   std::vector<float> bias_source;
   std::vector<float> out_ref(out_dim.production());
   std::vector<float> out_gpu(out_dim.production());
-  fill_data_rand(x_source.data(), -1.f, 1.f, x_source.size());
-  fill_data_rand(w_source.data(), -1.f, 1.f, w_source.size());
+  fill_data_rand(x_source.data(), 0.5f, 0.5f, x_source.size());
+  fill_data_rand<int8_t>(w_source.data(), 1, 100, w_source.size());
 
   CLImageConverterDefault* default_converter = new CLImageConverterDefault();
   DDim x_image_shape = default_converter->InitImageDimInfoWith(x_ext_dim);
@@ -144,7 +145,7 @@ void test(const lite_api::CLPrecisionType p,
   auto* out_image =
       MUTABLE_DATA_GPU(&out, out_image_shape[0], out_image_shape[1], nullptr);
 
-  w.Assign<float, lite::DDim, TARGET(kARM)>(w_source.data(), w_dim);
+  w.Assign<int8_t, lite::DDim, TARGET(kARM)>(w_source.data(), w_dim);
 
   if (bias_flag) {
     bias.Resize(bias_dim);
@@ -154,22 +155,8 @@ void test(const lite_api::CLPrecisionType p,
   }
 
   // run opencl kernel
-  //! warm up
-  for (int i = 0; i < FLAGS_warmup; ++i) {
-    kernel->Launch();
-  }
+  kernel->Launch();
   CLRuntime::Global()->command_queue().finish();
-
-  //! compute
-  Timer t0;
-  t0.Start();
-  for (int i = 0; i < FLAGS_repeats; ++i) {
-    kernel->Launch();
-  }
-  CLRuntime::Global()->command_queue().finish();
-  t0.Stop();
-  LOG(INFO) << "fc avg time: " << t0.LapTimes().Avg() / FLAGS_repeats
-            << " ms, ";
 
   const size_t cl_image2d_row_pitch{0};
   const size_t cl_image2d_slice_pitch{0};
@@ -186,17 +173,18 @@ void test(const lite_api::CLPrecisionType p,
       out_image_data.data(), out_gpu.data(), out_image_shape, out_ext_dim);
 
   // run cpu ref
-  gemm_bias<float>(x_source.data(),
-                   m,
-                   k,
-                   w_source.data(),
-                   k,
-                   n,
-                   bias_source.data(),
-                   out_ref.data());
+  gemm_bias_mid_int8<float>(x_source.data(),
+                            m,
+                            k,
+                            w_source.data(),
+                            k,
+                            n,
+                            bias_source.data(),
+                            out_ref.data());
 #ifdef PRINT_RESULT
   PrintData("x", static_cast<float*>(x_source.data()), m, k);
-  PrintData("w", static_cast<float*>(w_source.data()), k, n);
+  // PrintData("w", static_cast<float*>(w_source.data()), k, n);
+  PrintData("w", static_cast<int8_t*>(w_source.data()), k, n);
   if (bias_flag) {
     PrintData("bias", static_cast<float*>(bias_source.data()), 1, n);
   }
@@ -221,6 +209,7 @@ void test(const lite_api::CLPrecisionType p,
                    << "\t out_ins: " << out_gpu[i]
                    << "\t out_ref: " << out_ref[i];
       diff_cnt++;
+      break;
     }
   }
   if (diff_cnt != 0) {
@@ -233,9 +222,9 @@ void test(const lite_api::CLPrecisionType p,
             << " k=" << k;
 }
 
-TEST(fc, compute_basic) {
+TEST(fc_mid_int8, compute_basic) {
   for (const auto precision_type :
-       {lite_api::CLPrecisionType::CL_PRECISION_FP32,
+       {lite_api::CLPrecisionType::CL_PRECISION_FP16,
         lite_api::CLPrecisionType::CL_PRECISION_FP16}) {
     for (const bool bias_flag : {false, true}) {
       for (auto m = 1; m <= 1; m++) {
@@ -255,4 +244,4 @@ TEST(fc, compute_basic) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(fc, kOpenCL, kFP16, kImageFolder, image2d);
+USE_LITE_KERNEL(fc_mid_int8, kOpenCL, kFP16, kImageFolder, image2d);

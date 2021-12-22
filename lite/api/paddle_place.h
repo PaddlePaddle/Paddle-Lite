@@ -110,7 +110,8 @@ typedef enum {
 typedef enum {
   CL_PRECISION_AUTO = 0,
   CL_PRECISION_FP32 = 1,
-  CL_PRECISION_FP16 = 2
+  CL_PRECISION_FP16 = 2,
+  CL_PRECISION_INT8 = 3
 } CLPrecisionType;
 
 typedef enum { MLU_220 = 0, MLU_270 = 1 } MLUCoreVersion;

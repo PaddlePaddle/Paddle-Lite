@@ -126,6 +126,31 @@ void *TargetWrapperCL::MallocImage<float>(const size_t cl_image2d_width,
   return cl_image;
 }
 
+template <>
+void *TargetWrapperCL::MallocImage<int8_t>(const size_t cl_image2d_width,
+                                           const size_t cl_image2d_height,
+                                           void *host_ptr) {
+  ImageValid(cl_image2d_width, cl_image2d_height);
+  cl::ImageFormat img_format(CL_RGBA, GetCLChannelType(PRECISION(kInt8)));
+  cl_int status;
+  cl::Image2D *cl_image = new cl::Image2D(
+      CLRuntime::Global()->context(),
+      (host_ptr ? CL_MEM_READ_ONLY : CL_MEM_READ_WRITE) |
+          (host_ptr ? CL_MEM_COPY_HOST_PTR : CL_MEM_ALLOC_HOST_PTR),
+      img_format,
+      cl_image2d_width,
+      cl_image2d_height,
+      0,
+      host_ptr,
+      &status);
+  if (status != CL_SUCCESS) {
+    delete cl_image;
+    cl_image = nullptr;
+  }
+  CL_CHECK_FATAL(status);
+  return cl_image;
+}
+
 template <>  // use uint16_t represents half float
 void *TargetWrapperCL::MallocImage<uint16_t>(const size_t cl_image2d_width,
                                              const size_t cl_image2d_height,

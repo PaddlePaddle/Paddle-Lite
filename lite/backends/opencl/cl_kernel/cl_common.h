@@ -34,6 +34,13 @@ limitations under the License. */
 #define CL_COMPUTE_DTYPE_CHAR f
 #endif  // CL_DTYPE_float
 
+#ifdef CL_DTYPE_int8
+#define CL_DTYPE char
+#define CL_DTYPE_CHAR i
+#define CL_COMPUTE_DTYPE char
+#define CL_COMPUTE_DTYPE_CHAR i
+#endif  // CL_DTYPE_CHAR
+
 #ifdef CL_DTYPE_half
 #define CL_DTYPE half
 #define CL_DTYPE_CHAR h

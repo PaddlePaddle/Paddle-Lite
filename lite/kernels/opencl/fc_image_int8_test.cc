@@ -25,6 +25,7 @@
 #define FP32_RELATIVE_DIFF (1e-3)
 #define FP16_ABS_DIFF (8e-2)
 #define FP16_RELATIVE_DIFF (8e-2)
+
 DEFINE_int32(warmup, 2, "warmup times");
 DEFINE_int32(repeats, 10, "repeats times");
 // #define PRINT_RESULT
@@ -38,14 +39,14 @@ namespace lite {
 #define C(i, j) c[i * ldc + j]
 
 template <typename T>
-void gemm_bias(const T* a,
-               const int M,
-               const int K,
-               const T* b,
-               const int K_,
-               const int N,
-               T* biases,
-               T* c) {
+void gemm_bias_int8(const T* a,
+                    const int M,
+                    const int K,
+                    const T* b,
+                    const int K_,
+                    const int N,
+                    T* biases,
+                    int* c) {
   EXPECT_TRUE(K_ == K && M > 0 && N > 0 && K > 0);
   EXPECT_TRUE(a && b && c);
   const int lda = K;
@@ -68,7 +69,7 @@ void gemm_bias(const T* a,
   }
 }
 
-void PrintData(std::string name, float* a, const int rows, const int cols) {
+void PrintData(std::string name, int8_t* a, const int rows, const int cols) {
   std::cout << "==== " << name << " ====" << std::endl;
   for (int r = 0; r < rows; ++r) {
     for (int c = 0; c < cols; ++c) {
@@ -76,6 +77,12 @@ void PrintData(std::string name, float* a, const int rows, const int cols) {
     }
     std::cout << std::endl;
   }
+}
+
+int randint(int beg, int end) {
+  int res = 0;
+  fill_data_rand<int>(&res, beg, end, 1);
+  return res;
 }
 
 void test(const lite_api::CLPrecisionType p,
@@ -86,13 +93,13 @@ void test(const lite_api::CLPrecisionType p,
   std::unique_ptr<KernelContext> context(new KernelContext);
   context->As<OpenCLContext>().InitOnce();
   CLRuntime::Global()->set_precision(p);
-  const bool fp16_flag = (p == lite_api::CLPrecisionType::CL_PRECISION_FP16);
+  const bool fp16_flag = (p == lite_api::CLPrecisionType::CL_PRECISION_INT8);
   LOG(INFO) << "\n\t[  START  ] Test Precision="
             << lite_api::CLPrecisionTypeToStr(p) << " bias_flag=" << bias_flag
             << " m=" << m << " n=" << n << " k=" << k;
 
   auto kernels = KernelRegistry::Global().Create(
-      "fc", TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageFolder));
+      "fc_in8", TARGET(kOpenCL), PRECISION(kInt8), DATALAYOUT(kImageFolder));
   ASSERT_FALSE(kernels.empty());
   auto kernel = std::move(kernels.front());
 
@@ -121,13 +128,17 @@ void test(const lite_api::CLPrecisionType p,
   w.Resize(w_dim);
   out.Resize(out_dim);
 
-  std::vector<float> x_source(x_dim.production());
-  std::vector<float> w_source(w_dim.production());
-  std::vector<float> bias_source;
-  std::vector<float> out_ref(out_dim.production());
-  std::vector<float> out_gpu(out_dim.production());
-  fill_data_rand(x_source.data(), -1.f, 1.f, x_source.size());
-  fill_data_rand(w_source.data(), -1.f, 1.f, w_source.size());
+  std::vector<int8_t> x_source(x_dim.production());
+  std::vector<int8_t> w_source(w_dim.production());
+  std::vector<int8_t> bias_source;
+  std::vector<int> out_ref(out_dim.production());
+  std::vector<int> out_gpu(out_dim.production());
+  fill_data_rand<int8_t>(x_source.data(), 1, 1, x_source.size());
+  fill_data_rand<int8_t>(w_source.data(), 1, 1, w_source.size());
+  // fill_data<int8_t>(x_source.data(), x_source.size());  // fill with index
+  // value
+  // fill_data<int8_t>(w_source.data(), w_source.size());  // fill with index
+  // value
 
   CLImageConverterDefault* default_converter = new CLImageConverterDefault();
   DDim x_image_shape = default_converter->InitImageDimInfoWith(x_ext_dim);
@@ -136,21 +147,30 @@ void test(const lite_api::CLPrecisionType p,
   VLOG(4) << "out_image_shape = " << out_image_shape[0] << " "
           << out_image_shape[1];
 
-  const size_t dtype_size = fp16_flag ? sizeof(half_t) : sizeof(float);
-  std::vector<char> x_image_data(x_image_shape.production() * 4 * dtype_size);
-  default_converter->NCHWToImage(
+  const size_t dtype_size = sizeof(int8_t);
+  std::vector<int8_t> x_image_data(x_image_shape.production() * 4 * dtype_size);
+  default_converter->NCHWToImageInt8(
       x_source.data(), x_image_data.data(), x_ext_dim);
   MUTABLE_DATA_GPU(&x, x_image_shape[0], x_image_shape[1], x_image_data.data());
-  auto* out_image =
-      MUTABLE_DATA_GPU(&out, out_image_shape[0], out_image_shape[1], nullptr);
+  // auto* out_image =
+  //     MUTABLE_DATA_GPU(&out, out_image_shape[0], out_image_shape[1],
+  //     nullptr);
+  // auto* out_image =
+  //     out->mutable_data<int, cl::Image2D>(out_image_shape[0],
+  //     out_image_shape[1], nullptr);
 
-  w.Assign<float, lite::DDim, TARGET(kARM)>(w_source.data(), w_dim);
+  auto* out_image = out.mutable_data<int, cl::Image2D>(out_image_shape[0],
+                                                       out_image_shape[1]);
+
+  w.Assign<int8_t, lite::DDim, TARGET(kARM)>(w_source.data(), w_dim);
 
   if (bias_flag) {
     bias.Resize(bias_dim);
     bias_source.resize(bias_dim.production());
-    fill_data_rand(bias_source.data(), -1.f, 1.f, bias_source.size());
-    bias.Assign<float, lite::DDim, TARGET(kARM)>(bias_source.data(), bias_dim);
+    fill_data_rand<int8_t>(bias_source.data(), 1, 1, bias_source.size());
+    // fill_data<int8_t>(bias_source.data(), bias_source.size());  // fill with
+    // index value
+    bias.Assign<int8_t, lite::DDim, TARGET(kARM)>(bias_source.data(), bias_dim);
   }
 
   // run opencl kernel
@@ -168,13 +188,13 @@ void test(const lite_api::CLPrecisionType p,
   }
   CLRuntime::Global()->command_queue().finish();
   t0.Stop();
-  LOG(INFO) << "fc avg time: " << t0.LapTimes().Avg() / FLAGS_repeats
+  LOG(INFO) << "fc int8 avg time: " << t0.LapTimes().Avg() / FLAGS_repeats
             << " ms, ";
 
   const size_t cl_image2d_row_pitch{0};
   const size_t cl_image2d_slice_pitch{0};
-  std::vector<char> out_image_data(out_image_shape.production() * 4 *
-                                   dtype_size);  // 4 : RGBA
+  std::vector<int> out_image_data(out_image_shape.production() * 4 *
+                                  sizeof(int));  // 4 : RGBA
   TargetWrapperCL::ImgcpySync(out_image_data.data(),
                               out_image,
                               out_image_shape[0],
@@ -182,26 +202,26 @@ void test(const lite_api::CLPrecisionType p,
                               cl_image2d_row_pitch,
                               cl_image2d_slice_pitch,
                               IoDirection::DtoH);
-  default_converter->ImageToNCHW(
+  default_converter->ImageToNCHWInt(
       out_image_data.data(), out_gpu.data(), out_image_shape, out_ext_dim);
 
   // run cpu ref
-  gemm_bias<float>(x_source.data(),
-                   m,
-                   k,
-                   w_source.data(),
-                   k,
-                   n,
-                   bias_source.data(),
-                   out_ref.data());
+  gemm_bias_int8<int8_t>(x_source.data(),
+                         m,
+                         k,
+                         w_source.data(),
+                         k,
+                         n,
+                         bias_source.data(),
+                         out_ref.data());
 #ifdef PRINT_RESULT
-  PrintData("x", static_cast<float*>(x_source.data()), m, k);
-  PrintData("w", static_cast<float*>(w_source.data()), k, n);
+  PrintData("x", static_cast<int8_t*>(x_source.data()), m, k);
+  PrintData("w", static_cast<int8_t*>(w_source.data()), k, n);
   if (bias_flag) {
-    PrintData("bias", static_cast<float*>(bias_source.data()), 1, n);
+    PrintData("bias", static_cast<int8_t*>(bias_source.data()), 1, n);
   }
-  PrintData("out_ref", static_cast<float*>(out_ref), m, n);
-  PrintData("gpu_out", static_cast<float*>(out_gpu.data()), m, n);
+  PrintData("out_ref", static_cast<int*>(out_ref), m, n);
+  PrintData("gpu_out", static_cast<int*>(out_gpu.data()), m, n);
 #endif
 
   VLOG(4) << "output_data vs output_ref_data";
@@ -233,11 +253,11 @@ void test(const lite_api::CLPrecisionType p,
             << " k=" << k;
 }
 
-TEST(fc, compute_basic) {
+TEST(fc_int8, compute_basic) {
   for (const auto precision_type :
-       {lite_api::CLPrecisionType::CL_PRECISION_FP32,
-        lite_api::CLPrecisionType::CL_PRECISION_FP16}) {
-    for (const bool bias_flag : {false, true}) {
+       {lite_api::CLPrecisionType::CL_PRECISION_INT8}) {
+    // for (const bool bias_flag : {false, true}) {
+    for (const bool bias_flag : {false}) {
       for (auto m = 1; m <= 1; m++) {
         for (auto n = 1000; n <= 1000; n += 2) {
           for (auto k = 1024; k <= 1024; k += 2) {
@@ -255,4 +275,4 @@ TEST(fc, compute_basic) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(fc, kOpenCL, kFP16, kImageFolder, image2d);
+USE_LITE_KERNEL(fc_in8, kOpenCL, kInt8, kImageFolder, image2d);

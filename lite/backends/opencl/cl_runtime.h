@@ -133,6 +133,9 @@ class CLRuntime {
     } else if (lite_api::CL_PRECISION_AUTO == p ||
                lite_api::CL_PRECISION_FP32 == p) {
       precision_ = lite_api::CL_PRECISION_FP32;
+    } else if (lite_api::CL_PRECISION_AUTO == p ||
+               lite_api::CL_PRECISION_INT8 == p) {
+      precision_ = lite_api::CL_PRECISION_INT8;
     } else {
       LOG(FATAL) << "unsupported precision for opencl:"
                  << static_cast<size_t>(p);
@@ -262,7 +265,7 @@ class CLRuntime {
 
   std::shared_ptr<cl::CommandQueue> CreateCommandQueue(
       const cl::Context& context) {
-    cl_command_queue_properties properties = 0;
+    cl_command_queue_properties properties = CL_QUEUE_PROFILING_ENABLE;
 
 #ifdef LITE_WITH_PROFILE
     properties |= CL_QUEUE_PROFILING_ENABLE;

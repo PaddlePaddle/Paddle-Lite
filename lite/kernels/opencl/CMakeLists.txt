@@ -54,6 +54,9 @@ add_kernel(fc_opencl_image OPENCL basic SRCS fc_image_compute.cc)
 add_kernel(argmax_opencl_image OPENCL basic SRCS argmax_image_compute.cc)
 add_kernel(max_opencl_image OPENCL basic SRCS max_image_compute.cc)
 add_kernel(matmul_opencl_image OPENCL basic SRCS matmul_image_compute.cc)
+
+add_kernel(fc_opencl_image_int8 OPENCL basic SRCS fc_image_int8.cc)
+add_kernel(fc_opencl_image_mid_int8 OPENCL basic SRCS fc_image_mid_int8.cc)
 # extra
 # wait to add ...
 
@@ -143,6 +146,12 @@ lite_cc_test(test_trigonometric_image_opencl SRCS trigonometric_image_compute_te
              DEPS kernels core)
 
 lite_cc_test(test_fc_image_opencl SRCS fc_image_compute_test.cc
+             DEPS kernels core)
+
+lite_cc_test(test_fc_image_opencl_int8 SRCS fc_image_int8_test.cc
+             DEPS kernels core)
+
+lite_cc_test(test_fc_image_opencl_mid_int8 SRCS fc_image_mid_int8_test.cc
              DEPS kernels core)
 
 lite_cc_test(test_softmax_image_opencl SRCS softmax_image_compute_test.cc

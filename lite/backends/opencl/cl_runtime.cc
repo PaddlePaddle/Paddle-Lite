@@ -147,6 +147,8 @@ cl::Program& CLRuntime::GetProgram(const std::string& file_name,
   if (build_option.find("CL_DTYPE_") == std::string::npos) {
     if (lite_api::CL_PRECISION_FP16 == get_precision()) {
       build_option += " -DCL_DTYPE_half ";
+    } else if (lite_api::CL_PRECISION_INT8 == get_precision()) {
+      build_option += " -DCL_DTYPE_int8 ";
     } else {
       build_option += " -DCL_DTYPE_float -DCL_DTYPE_FLOAT_FORCE ";
     }

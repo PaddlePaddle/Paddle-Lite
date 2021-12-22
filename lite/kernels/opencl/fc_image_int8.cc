@@ -19,14 +19,11 @@ namespace paddle {
 namespace lite {
 namespace kernels {
 namespace opencl {
-float kernel_run_time_sum_fp16 = 0.0;
-int kernel_run_count_fp16 = 0;
-
-float kernel_run_time_sum_fp32 = 0.0;
-int kernel_run_count_fp32 = 0;
-class FcImageCompute : public KernelLite<TARGET(kOpenCL),
-                                         PRECISION(kFP16),
-                                         DATALAYOUT(kImageFolder)> {
+float kernel_run_time_sum = 0.0;
+int kernel_run_count = 0;
+class FcImageComputeInt8 : public KernelLite<TARGET(kOpenCL),
+                                             PRECISION(kInt8),
+                                             DATALAYOUT(kImageFolder)> {
  public:
   void PrepareForRun() override {
     auto& param = this->Param<operators::FcParam>();
@@ -66,8 +63,8 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
     auto* w_buffer_data = MUTABLE_DATA_CPU(w_cpu_t.get());
     size_t buf_size = w_cpu_t->memory_size();
 
-    auto* w_cpu = param.w->mutable_data<float>();
-    OI2OIO4I4(w_cpu, w_buffer_data, w_dims[0], w_dims[1]);
+    auto* w_cpu = param.w->mutable_data<int8_t>();
+    OI2OIO4I4INT8(w_cpu, w_buffer_data, w_dims[0], w_dims[1]);
 
     auto* w_gpu_data =
         w_gpu_t_->mutable_data(TARGET(kOpenCL), w_cpu_t->memory_size());
@@ -156,7 +153,7 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
       k_blks_ = UP_DIV(k_, 4);
       n_blks_ = UP_DIV(n_, 4);
 
-      kernel_func_name_ = "fc";
+      kernel_func_name_ = "fc_int8";
 #ifdef LITE_WITH_LOG
       VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
       VLOG(4) << "x_dims:" << x_dims;
@@ -168,8 +165,10 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
 #endif
 
       auto& context = ctx_->As<OpenCLContext>();
-      context.cl_context()->AddKernel(
-          kernel_func_name_, "image/fc_kernel.cl", build_options_, time_stamp_);
+      context.cl_context()->AddKernel(kernel_func_name_,
+                                      "image/fc_kernel_int8.cl",
+                                      build_options_,
+                                      time_stamp_);
       STL::stringstream kernel_key;
       kernel_key << kernel_func_name_ << build_options_ << time_stamp_;
       kernel_ = context.cl_context()->GetKernel(kernel_key.str());
@@ -219,7 +218,6 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
                                   nullptr,
                                   event_);
     CL_CHECK_FATAL(status);
-
     event_.wait();
     auto queue_start_nanos =
         event_.getProfilingInfo<CL_PROFILING_COMMAND_QUEUED>();
@@ -238,19 +236,10 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
     time_ms = (run_stop_nanos - run_start_nanos) / 1000000.0;
     VLOG(4) << "GetStartToEndTime: " << time_ms << std::endl;
 
-    const bool enable_fp16 =
-        CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
-    if (enable_fp16) {
-      kernel_run_time_sum_fp16 += time_ms;
-      kernel_run_count_fp16 += 1;
-      float avg_time = kernel_run_time_sum_fp16 / kernel_run_count_fp16;
-      VLOG(4) << "GetStartToEndTime fp16 avg: " << avg_time << std::endl;
-    } else {
-      kernel_run_time_sum_fp32 += time_ms;
-      kernel_run_count_fp32 += 1;
-      float avg_time = kernel_run_time_sum_fp32 / kernel_run_count_fp32;
-      VLOG(4) << "GetStartToEndTime fp32 avg: " << avg_time << std::endl;
-    }
+    kernel_run_time_sum += time_ms;
+    kernel_run_count += 1;
+    float avg_time = kernel_run_time_sum / kernel_run_count;
+    VLOG(4) << "GetStartToEndTime int8 avg: " << avg_time << std::endl;
   }
 
 #ifdef LITE_WITH_PROFILE
@@ -290,14 +279,9 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
   // block of the matrix, where the first 4 elements is the first row of the
   // block, second 4 elements is the second row of the block, etc. Subsequent
   // blocks contain elements of the same 4 columns.
-  // This comment and impl refer to TFLite.
-  void OI2OIO4I4(void* src, void* dst, size_t O, size_t I) {
-    bool fp16_support =
-        CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
-
-    float* dst_fp32 = static_cast<float*>(dst);
-    half_t* dst_fp16 = static_cast<half_t*>(dst);
-    float* src_fp32 = static_cast<float*>(src);
+  void OI2OIO4I4INT8(void* src, void* dst, size_t O, size_t I) {
+    int8_t* dst_int8 = static_cast<int8_t*>(dst);
+    int8_t* src_int8 = static_cast<int8_t*>(src);
 
     size_t i_blocks = UP_DIV(I, 4);
     size_t o_blocks = UP_DIV(O, 4);
@@ -309,12 +293,9 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
           for (size_t x_in_block = 0; x_in_block < 4; x_in_block++) {
             const int x = block_x * 4 + x_in_block;
             if (y < O && x < I) {
-              fp16_support
-                  ? dst_fp16[dst_index++] = Float2Half(src_fp32[y * I + x])
-                  : dst_fp32[dst_index++] = src_fp32[y * I + x];
+              dst_int8[dst_index++] = src_int8[y * I + x];
             } else {
-              fp16_support ? dst_fp16[dst_index++] = Float2Half(0.f)
-                           : dst_fp32[dst_index++] = 0.f;
+              dst_int8[dst_index++] = 0;
             }
           }
         }
@@ -351,21 +332,21 @@ class FcImageCompute : public KernelLite<TARGET(kOpenCL),
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_LITE_KERNEL(fc,
+REGISTER_LITE_KERNEL(fc_in8,
                      kOpenCL,
-                     kFP16,
+                     kInt8,
                      kImageFolder,
-                     paddle::lite::kernels::opencl::FcImageCompute,
+                     paddle::lite::kernels::opencl::FcImageComputeInt8,
                      image2d)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFP16),
+                                      PRECISION(kInt8),
                                       DATALAYOUT(kImageFolder))})
     .BindInput("Bias", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("W", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindInput("Alpha", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                       PRECISION(kFP16),
+                                       PRECISION(kInt32),
                                        DATALAYOUT(kImageFolder))})
     .Finalize();

@@ -72,30 +72,43 @@ const char *opencl_error_to_str(cl_int error);
       kernel, gws_offset, gws, lws, event_wait_list, &event)
 
 // mutable_data
-#define MUTABLE_DATA_GPU(tensor_ins_p, img_w, img_h, ptr)                    \
-  (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16)      \
-      ? (tensor_ins_p)->mutable_data<half_t, cl::Image2D>(img_w, img_h, ptr) \
-      : (tensor_ins_p)->mutable_data<float, cl::Image2D>(img_w, img_h, ptr)
+// mutable_data
+#define MUTABLE_DATA_GPU(tensor_ins_p, img_w, img_h, ptr)                      \
+  (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16)        \
+      ? (tensor_ins_p)->mutable_data<half_t, cl::Image2D>(img_w, img_h, ptr)   \
+      : ((CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP32) \
+             ? (tensor_ins_p)                                                  \
+                   ->mutable_data<float, cl::Image2D>(img_w, img_h, ptr)       \
+             : (tensor_ins_p)                                                  \
+                   ->mutable_data<int8_t, cl::Image2D>(img_w, img_h, ptr))
 
-#define DATA_GPU(tensor_ins_p)                                          \
-  (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16) \
-      ? (tensor_ins_p)->mutable_data<half_t, cl::Image2D>()             \
-      : (tensor_ins_p)->mutable_data<float, cl::Image2D>()
+#define DATA_GPU(tensor_ins_p)                                                 \
+  (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16)        \
+      ? (tensor_ins_p)->mutable_data<half_t, cl::Image2D>()                    \
+      : ((CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP32) \
+             ? (tensor_ins_p)->mutable_data<float, cl::Image2D>()              \
+             : (tensor_ins_p)->mutable_data<int8_t, cl::Image2D>())
 
-#define GET_DATA_GPU(tensor_ins_p)                                      \
-  (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16) \
-      ? (tensor_ins_p)->data<half_t, cl::Image2D>()                     \
-      : (tensor_ins_p)->data<float, cl::Image2D>()
+#define GET_DATA_GPU(tensor_ins_p)                                             \
+  (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16)        \
+      ? (tensor_ins_p)->data<half_t, cl::Image2D>()                            \
+      : ((CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP32) \
+             ? (tensor_ins_p)->data<float, cl::Image2D>()                      \
+             : (tensor_ins_p)->data<int8_t, cl::Image2D>())
 
-#define MUTABLE_DATA_CPU(tensor_ins_p)                                  \
-  (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16) \
-      ? static_cast<void *>((tensor_ins_p)->mutable_data<half_t>())     \
-      : static_cast<void *>((tensor_ins_p)->mutable_data<float>())
+#define MUTABLE_DATA_CPU(tensor_ins_p)                                         \
+  (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16)        \
+      ? static_cast<void *>((tensor_ins_p)->mutable_data<half_t>())            \
+      : ((CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP32) \
+             ? static_cast<void *>((tensor_ins_p)->mutable_data<float>())      \
+             : static_cast<void *>((tensor_ins_p)->mutable_data<int8_t>()))
 
-#define GET_BUFFER_GPU(tensor_ins_p)                                    \
-  (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16) \
-      ? (tensor_ins_p)->data<half_t, cl::Buffer>()                      \
-      : (tensor_ins_p)->data<float, cl::Buffer>()
+#define GET_BUFFER_GPU(tensor_ins_p)                                           \
+  (CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16)        \
+      ? (tensor_ins_p)->data<half_t, cl::Buffer>()                             \
+      : ((CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP32) \
+             ? (tensor_ins_p)->data<float, cl::Buffer>()                       \
+             : (tensor_ins_p)->data<int8_t, cl::Buffer>())
 
 template <typename T, typename Dim>
 inline void IOHW2OIHW(const T *src, T *dst, Dim O, Dim I, Dim H, Dim W) {
