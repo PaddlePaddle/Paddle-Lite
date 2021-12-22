@@ -59,7 +59,7 @@ class TestNormOp(AutoScanTest):
                 st.integers(
                     min_value=1, max_value=32), min_size=1, max_size=4))
         axis = draw(st.sampled_from([0, 1, 2, 3]))
-        epsilon = draw(st.sampled_from([0.9, 1., 1.1]))
+        epsilon = draw(st.sampled_from([0.9, 1., 1.1, 1e-5]))
         norm_op = OpConfig(
             type="norm",
             inputs={"X": ["input_data"]},
