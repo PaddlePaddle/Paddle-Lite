@@ -112,7 +112,7 @@ class ElementwiseImageCompute : public KernelLite<TARGET(kOpenCL),
       }
       if ((y_dims_.size() == 1) &&
           (axis_ != -1) &&  // x{n,c,h,w} && y{h} || x{c,h,w} && y{h}
-          (axis_ == x_dims_.size() - 2)) {
+          (axis_ == x_dims_.size() - 2 || axis_ == x_dims_.size() - 4)) {
         image_folder_flag_y_ = 2;
       }
       if ((y_dims_.size() == 2) &&
@@ -134,7 +134,7 @@ class ElementwiseImageCompute : public KernelLite<TARGET(kOpenCL),
         image_folder_flag_x_ = 1;
       }
       if ((x_dims_.size() == 1) && (axis_ != -1) &&
-          (axis_ == y_dims_.size() - 2)) {
+          (axis_ == y_dims_.size() - 2 || axis_ == y_dims_.size() - 4)) {
         image_folder_flag_x_ = 2;
       }
       if ((x_dims_.size() == 2) && (axis_ != -1) &&
