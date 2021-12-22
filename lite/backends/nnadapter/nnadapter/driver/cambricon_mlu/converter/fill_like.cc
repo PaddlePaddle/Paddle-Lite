@@ -34,8 +34,7 @@ int ConvertFillLike(Converter* converter, hal::Operation* operation) {
   if (value_tensor == nullptr) {
     value_tensor = converter->ConvertOperand(value_operand);
   }
-  std::vector<int64_t> vec = {};
-  value_tensor->SetDimension(magicmind::Dims(vec));
+  value_tensor->SetDimension(magicmind::Dims(std::vector<int64_t>()));
   auto fill_node = converter->network()->AddIFillNode(shape_node->GetOutput(0),
                                                       value_tensor);
   NNADAPTER_CHECK(fill_node) << "Failed to add fill node.";

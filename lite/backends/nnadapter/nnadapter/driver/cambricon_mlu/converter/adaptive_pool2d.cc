@@ -29,7 +29,7 @@ int ConvertAdaptivePool2D(Converter* converter, hal::Operation* operation) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
   if (operation->type == NNADAPTER_ADAPTIVE_MAX_POOL_2D) {
-    LOG(FATAL) << "Not support max pool2d.";
+    NNADAPTER_LOG(FATAL) << "Not support max pool2d.";
     return NNADAPTER_DEVICE_INTERNAL_ERROR;
   } else {
     auto pool2d_node =

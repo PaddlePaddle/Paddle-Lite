@@ -26,6 +26,11 @@
 namespace nnadapter {
 namespace cambricon_mlu {
 
+// The following environment variables can be used at runtime:
+//
+#define CAMBRICON_MLU_BUILD_CONFIG_FILE_PATH \
+  "CAMBRICON_MLU_BUILD_CONFIG_FILE_PATH"
+
 #define MLU_CNRT_CHECK(msg) \
   NNADAPTER_CHECK_EQ(msg, cnrtSuccess) << (msg) << " " << cnrtGetErrorStr(msg)
 
