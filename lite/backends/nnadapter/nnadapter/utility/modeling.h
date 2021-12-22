@@ -113,14 +113,17 @@ void TransposeOperand(hal::Operand* operand, std::vector<int32_t> permutation);
 void ReshapeOperand(hal::Operand* operand, std::vector<int32_t> dimensions);
 // Insert a operand at the back or front of a operand
 // For 'after' = true, 'target_operand' is added at back of 'reference_operand',
-// so only update the inputs of the operations and the outputs of the model
+// at front of 'reference_operations'(if not empty), so only update the inputs
+// of the operations and the outputs of the model
 // For 'after' = false, 'target_operand' is added at front of
-// 'reference_operand', so only update the outputs of the operations and the
-// input of the model
-bool InsertOperand(hal::Model* model,
-                   hal::Operand* reference_operand,
-                   hal::Operand* target_operand,
-                   bool after);
+// 'reference_operand', at back of 'reference_operations'(if not empty), so only
+// update the outputs of the operations and the input of the model
+bool InsertOperand(
+    hal::Model* model,
+    hal::Operand* reference_operand,
+    hal::Operand* target_operand,
+    bool after,
+    const std::vector<hal::Operation*> reference_operations = {});
 // Check if it is a constant operand
 bool IsConstantOperand(hal::Operand* operand);
 bool IsModelInputOperand(hal::Operand* operand);

@@ -36,7 +36,7 @@ int ConvertDequantize(Converter* converter, hal::Operation* operation) {
   uint64_t scale_uint64 =
       static_cast<uint64_t>(*reinterpret_cast<int32_t*>(&scale));
   auto scale_operator =
-      converter->AddUint64ConstantOperator(&scale_uint64, {1});
+      converter->AddUInt64ConstantOperator(&scale_uint64, {1});
   auto dequantize_op =
       converter->AddOperator<ge::op::AscendDequant>(output_operand);
   SET_INPUT(dequantize_op, x, input_operator);
