@@ -90,7 +90,7 @@ class TestConvConvFuse(FusePassAutoScanTest):
 
         padding_algorithm0 = draw(st.sampled_from(["VALID", "SAME"]))
         strides0 = draw(st.sampled_from([[1, 1], [2, 2]]))
-        paddings = draw(
+        paddings0 = draw(
             st.lists(
                 st.integers(
                     min_value=0, max_value=2), min_size=2, max_size=2))
