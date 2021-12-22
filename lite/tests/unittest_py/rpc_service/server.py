@@ -14,6 +14,7 @@
 
 import rpyc
 import os
+import re
 import shutil
 from rpyc.utils.server import ThreadedServer
 import paddlelite
@@ -115,5 +116,10 @@ class RPCService(rpyc.Service):
 
 
 if __name__ == "__main__":
-    server = ThreadedServer(RPCService, port=18812, hostname='localhost')
+    paddle_lite_path = os.path.abspath(__file__)
+    paddlelite_source_path = re.findall(r"(.+?)Paddle-Lite",
+                                        paddle_lite_path)[0]
+    rpc_port_file = paddlelite_source_path + "Paddle-Lite/lite/tests/unittest_py/rpc_service/.port_id"
+    port_id = int(open(rpc_port_file).read())
+    server = ThreadedServer(RPCService, port=port_id, hostname='localhost')
     server.start()

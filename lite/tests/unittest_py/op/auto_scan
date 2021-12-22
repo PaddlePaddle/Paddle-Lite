@@ -1,0 +1,40 @@
+#!/bin/bash
+set -e
+
+ARCH=""
+TEST_FILE=""
+
+function get_inputs {
+    # Parse command line.
+    for i in "$@"; do
+        case $i in
+            # armv7 or armv8, default armv8
+            --target=*)
+                ARCH="${i#*=}"
+                shift
+                ;;
+            *)
+                # unknown option
+                TEST_FILE="$i"
+                ;;
+        esac
+    done
+    # compiling result contains light_api lib only, recommanded.
+}
+
+get_inputs $@
+
+if [ $ARCH = "" ] || [ $TEST_FILE = "" ]; then
+  echo "Error input: ./auto_scan test_assign_op.py --target=Host"
+  exit 1
+fi
+
+
+if [ $ARCH = "ARM" ] || [ $ARCH = "OpenCL" ] || [ $ARCH = "Metal" ]; then
+  cd ../rpc_service
+  sh start_rpc_server.sh
+  cd ../op
+  python3.8 $TEST_FILE --target=$ARCH
+else
+  python3.7 $TEST_FILE --target=$ARCH
+fi
