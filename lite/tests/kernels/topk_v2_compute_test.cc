@@ -81,7 +81,8 @@ class TopkV2ComputeTester : public arena::TestCase {
         for (int j = 0; j < axis_size; j++) {
           vec.push_back(std::make_pair(x_data[glb_in_off + j * inner_size], j));
         }
-        std::partial_sort(vec.begin(), vec.begin() + k_, vec.end(), comp_func<T1, T2>);
+        std::partial_sort(
+            vec.begin(), vec.begin() + k_, vec.end(), comp_func<T1, T2>);
 
         // we should start from here and put
         // `k` float from here  strided by inner_size
