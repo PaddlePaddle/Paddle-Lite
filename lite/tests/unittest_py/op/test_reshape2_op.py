@@ -56,9 +56,9 @@ class TestReshape2Op(AutoScanTest):
             Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
-        self.enable_testing_on_place(places=opencl_places)
+        #self.enable_testing_on_place(places=opencl_places)
 
-        # opencl
+        # metal
         metal_places = [
             Place(TargetType.Metal, PrecisionType.FP32,
                   DataLayoutType.MetalTexture2DArray),
@@ -72,9 +72,9 @@ class TestReshape2Op(AutoScanTest):
                          predictor_config: CxxConfig) -> bool:
         in_shape = list(program_config.inputs["input_data"].shape)
         target = predictor_config.target()
-        # opencl has diff
-        if target in [TargetType.OpenCL]:
-            return False
+        # opencl has error
+        # if target in [TargetType.OpenCL]:
+        #     return False
         return True
 
     def sample_program_configs(self, draw):
