@@ -388,12 +388,13 @@ typedef enum {
    * obtain a new order by selecting element from every subgroup one by one.
    *
    * Inputs:
-   * * 0: input, a NNADAPTER_FLOAT32, NNADAPTER_QUANT_INT8_SYMM_PER_LAYER
+   * * 0: input, a NNADAPTER_FLOAT32,
+   * NNADAPTER_QUANT_INT8_SYMM_PER_LAYER tensor.
    * tensor.
    * * 1: group, a NNADAPTER_INT32 tensor with shape [1].
    *
    * Outputs:
-   * * 0: output, a tensor with the same shape as input.
+   * * 0: output, a tensor with the same shape and type as input.
    *
    * Available since version 1.
    */
