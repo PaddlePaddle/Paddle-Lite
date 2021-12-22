@@ -28,53 +28,65 @@ import hypothesis.strategies as st
 
 class TestElementwiseScaleFuse(FusePassAutoScanTest):
     def __init__(self, *args, **kwargs):
-        FusePassAutoScanTest.__init__(self, *args, **kwargs)     
-        opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-                          Place(TargetType.Host, PrecisionType.FP32)    
-                        ]
+        FusePassAutoScanTest.__init__(self, *args, **kwargs)
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
         self.enable_testing_on_place(places=opencl_places)
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
         #elementwise param
-        in_shape_x = draw(st.lists(st.integers(min_value = 1, max_value = 20), min_size = 4, max_size = 4))
-        in_shape_y = draw(st.lists(st.integers(min_value = 1, max_value = 20), min_size = 4, max_size = 4))
-        assume((in_shape_x[0] == in_shape_y[0] or in_shape_x[0] == 1 or in_shape_y[0] == 1) 
-                and (in_shape_x[0] >= in_shape_y[0]))
-        assume((in_shape_x[1] == in_shape_y[1] or in_shape_x[1] == 1 or in_shape_y[1] == 1) 
-                and (in_shape_x[1] >= in_shape_y[1]))
-        assume((in_shape_x[2] == in_shape_y[2] or in_shape_x[2] == 1 or in_shape_y[2] == 1) 
-                and (in_shape_x[2] >= in_shape_y[2]))
-        assume((in_shape_x[3] == in_shape_y[3] or in_shape_x[3] == 1 or in_shape_y[3] == 1) 
-                and (in_shape_x[3] >= in_shape_y[3]))
+        in_shape_x = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=20), min_size=4, max_size=4))
+        in_shape_y = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=20), min_size=4, max_size=4))
+        assume((in_shape_x[0] == in_shape_y[0] or in_shape_x[0] == 1 or
+                in_shape_y[0] == 1) and (in_shape_x[0] >= in_shape_y[0]))
+        assume((in_shape_x[1] == in_shape_y[1] or in_shape_x[1] == 1 or
+                in_shape_y[1] == 1) and (in_shape_x[1] >= in_shape_y[1]))
+        assume((in_shape_x[2] == in_shape_y[2] or in_shape_x[2] == 1 or
+                in_shape_y[2] == 1) and (in_shape_x[2] >= in_shape_y[2]))
+        assume((in_shape_x[3] == in_shape_y[3] or in_shape_x[3] == 1 or
+                in_shape_y[3] == 1) and (in_shape_x[3] >= in_shape_y[3]))
         axis = -1
         #scale param
-        scale = draw(st.floats(min_value = 0.5, max_value = 5))
-        bias = draw(st.floats(min_value = 0, max_value = 1))
-        alpha = draw(st.floats(min_value = 0, max_value = 1))
+        scale = draw(st.floats(min_value=0.5, max_value=5))
+        bias = draw(st.floats(min_value=0, max_value=1))
+        alpha = draw(st.floats(min_value=0, max_value=1))
         bias_after_scale = draw(st.sampled_from([False, True]))
 
         elementwise_op = OpConfig(
-            type = 'elementwise_mul',
-            inputs = {"X": ["input_data_x"],"Y": ["input_data_y"]},
-            outputs = {"Out": ["elementwise_output_data"]},
-            attrs = {
-                "data_format": 'nchw',
-                "axis": axis
-            })
+            type='elementwise_mul',
+            inputs={"X": ["input_data_x"],
+                    "Y": ["input_data_y"]},
+            outputs={"Out": ["elementwise_output_data"]},
+            attrs={"data_format": 'nchw',
+                   "axis": axis})
 
         scale_op = OpConfig(
-            type = 'scale',
-            inputs = {"X": ["elementwise_output_data"]},
-            outputs = {"Out": ["output_data"]},
-            attrs = {
+            type='scale',
+            inputs={"X": ["elementwise_output_data"]},
+            outputs={"Out": ["output_data"]},
+            attrs={
                 "scale": scale,
                 "bias": bias,
                 "alpha": alpha,
@@ -83,18 +95,18 @@ class TestElementwiseScaleFuse(FusePassAutoScanTest):
 
         ops = [elementwise_op, scale_op]
         program_config = ProgramConfig(
-            ops = ops,
-            weights = {},
-            inputs = {
-                "input_data_x":TensorConfig(shape = in_shape_x),
-                "input_data_y":TensorConfig(shape = in_shape_y)
+            ops=ops,
+            weights={},
+            inputs={
+                "input_data_x": TensorConfig(shape=in_shape_x),
+                "input_data_y": TensorConfig(shape=in_shape_y)
             },
-            outputs = ["output_data"])
+            outputs=["output_data"])
         return program_config
-    
+
     def sample_predictor_configs(self):
         config = CxxConfig()
-        return self.get_predictor_configs(), ['elementwise_mul'], (1e-5, 1e-5)        
+        return self.get_predictor_configs(), ['elementwise_mul'], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
@@ -105,12 +117,18 @@ class TestElementwiseScaleFuse(FusePassAutoScanTest):
             # IgnoreReasonsBase.PADDLE_NOT_IMPLEMENTED
             # IgnoreReasonsBase.PADDLELITE_NOT_SUPPORT
             # IgnoreReasonsBase.ACCURACY_ERROR
-            teller1, IgnoreReasons.ACCURACY_ERROR,
+            teller1,
+            IgnoreReasons.ACCURACY_ERROR,
             "The op output has diff in a specific case. We need to fix it as soon as possible."
         )
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=40, min_success_num=15, passes=["lite_elementwise_scale_fuse_pass"])
+        self.run_and_statis(
+            quant=False,
+            max_examples=40,
+            min_success_num=15,
+            passes=["lite_elementwise_scale_fuse_pass"])
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

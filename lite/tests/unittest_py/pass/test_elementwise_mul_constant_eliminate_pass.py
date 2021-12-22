@@ -29,83 +29,105 @@ import hypothesis.strategies as st
 class TestElementwiseMulConstantEliminateFuse(FusePassAutoScanTest):
     def __init__(self, *args, **kwargs):
         FusePassAutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.ARM, [PrecisionType.FP32], DataLayoutType.NCHW, thread=[1, 4])
-        self.enable_testing_on_place(TargetType.X86, [PrecisionType.FP32], DataLayoutType.NCHW, thread=[1, 4])        
-        opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-                          Place(TargetType.Host, PrecisionType.FP32)    
-                        ]
+        self.enable_testing_on_place(
+            TargetType.ARM, [PrecisionType.FP32],
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.X86, [PrecisionType.FP32],
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
         self.enable_testing_on_place(places=opencl_places)
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
-        return True      
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
+        return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(min_value=1, max_value=20), min_size=2, max_size=5))
-        axis=draw(st.integers(min_value=-1, max_value=len(in_shape)-1))
-        right=draw(st.integers(min_value=axis, max_value=len(in_shape)-1))
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=20), min_size=2, max_size=5))
+        axis = draw(st.integers(min_value=-1, max_value=len(in_shape) - 1))
+        right = draw(st.integers(min_value=axis, max_value=len(in_shape) - 1))
 
-        fill_constant_shape=[]
-        if axis==-1:
-            fill_constant_shape=in_shape
+        fill_constant_shape = []
+        if axis == -1:
+            fill_constant_shape = in_shape
         else:
-            left=axis
-            fill_constant_shape=in_shape[left:max(left+1,right)] 
+            left = axis
+            fill_constant_shape = in_shape[left:max(left + 1, right)]
 
-        threshold=draw(st.floats(min_value=0, max_value=1))
-        scale=draw(st.floats(min_value=0.5, max_value=5))
-        offset=draw(st.floats(min_value=0, max_value=1))
+        threshold = draw(st.floats(min_value=0, max_value=1))
+        scale = draw(st.floats(min_value=0.5, max_value=5))
+        offset = draw(st.floats(min_value=0, max_value=1))
 
         hard_swish_op0 = OpConfig(
-            type = "hard_swish",
-            inputs = {"X" : ["input_data"]},
-            outputs = {"Out": ["hard_swish_output_data"]},
-            attrs = {
-                "threshold" : threshold,
-                "scale" : scale,
-                "offset" : offset})
+            type="hard_swish",
+            inputs={"X": ["input_data"]},
+            outputs={"Out": ["hard_swish_output_data"]},
+            attrs={"threshold": threshold,
+                   "scale": scale,
+                   "offset": offset})
 
         fill_constant_op = OpConfig(
-            type = "fill_constant",
-            inputs = {},
-            outputs = {"Out": ["fill_constant_output_data"]},
-            attrs = {"dtype" : 5,
-                     "shape" : fill_constant_shape,
-                     "value" : 1.,
-                     "force_cpu" : False,
-                     "place_type" : -1
-                     })
+            type="fill_constant",
+            inputs={},
+            outputs={"Out": ["fill_constant_output_data"]},
+            attrs={
+                "dtype": 5,
+                "shape": fill_constant_shape,
+                "value": 1.,
+                "force_cpu": False,
+                "place_type": -1
+            })
 
         elementwise_mul_op = OpConfig(
-            type = "elementwise_mul",
-            inputs = {"X": ["hard_swish_output_data"], "Y": ["fill_constant_output_data"]},
-            outputs = {"Out": ["elementwise_mul_output_data"]},
-            attrs = {"axis": axis})    
+            type="elementwise_mul",
+            inputs={
+                "X": ["hard_swish_output_data"],
+                "Y": ["fill_constant_output_data"]
+            },
+            outputs={"Out": ["elementwise_mul_output_data"]},
+            attrs={"axis": axis})
 
         hard_swish_op1 = OpConfig(
-            type = "hard_swish",
-            inputs = {"X" : ["elementwise_mul_output_data"]},
-            outputs = {"Out": ["output_data"]},
-            attrs = {
-                "threshold" : threshold,
-                "scale" : scale,
-                "offset" : offset})
+            type="hard_swish",
+            inputs={"X": ["elementwise_mul_output_data"]},
+            outputs={"Out": ["output_data"]},
+            attrs={"threshold": threshold,
+                   "scale": scale,
+                   "offset": offset})
 
-        ops = [hard_swish_op0, fill_constant_op, elementwise_mul_op, hard_swish_op1]
+        ops = [
+            hard_swish_op0, fill_constant_op, elementwise_mul_op,
+            hard_swish_op1
+        ]
         program_config = ProgramConfig(
             ops=ops,
             weights={},
-            inputs={"input_data":TensorConfig(shape=in_shape)},
+            inputs={"input_data": TensorConfig(shape=in_shape)},
             outputs=["output_data"])
         return program_config
-    
+
     def sample_predictor_configs(self):
         config = CxxConfig()
-        return self.get_predictor_configs(), ['hard_swish', 'hard_swish'], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ['hard_swish', 'hard_swish'], (
+            1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
@@ -116,12 +138,17 @@ class TestElementwiseMulConstantEliminateFuse(FusePassAutoScanTest):
             # IgnoreReasonsBase.PADDLE_NOT_IMPLEMENTED
             # IgnoreReasonsBase.PADDLELITE_NOT_SUPPORT
             # IgnoreReasonsBase.ACCURACY_ERROR
-            teller1, IgnoreReasons.ACCURACY_ERROR,
+            teller1,
+            IgnoreReasons.ACCURACY_ERROR,
             "The op output has diff in a specific case. We need to fix it as soon as possible."
         )
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=30, passes=["lite_elementwise_mul_constant_eliminate_pass"])
+        self.run_and_statis(
+            quant=False,
+            max_examples=30,
+            passes=["lite_elementwise_mul_constant_eliminate_pass"])
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

@@ -29,57 +29,58 @@ import hypothesis.strategies as st
 class TestConvBnFuse(FusePassAutoScanTest):
     def __init__(self, *args, **kwargs):
         FusePassAutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.ARM, [PrecisionType.FP32], DataLayoutType.NCHW, thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM, [PrecisionType.FP32],
+            DataLayoutType.NCHW,
+            thread=[1, 4])
         #self.enable_testing_on_place(TargetType.X86, [PrecisionType.FP32], DataLayoutType.NCHW, thread=[1, 4])        
-        opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-                          Place(TargetType.Host, PrecisionType.FP32)    
-                        ]
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
         self.enable_testing_on_place(places=opencl_places)
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
-        return  True
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
+        return True
 
     def sample_program_configs(self, draw):
-        pick_test=draw(st.sampled_from(["RemoveReshape2Pattern", "RemoveSqueeze2Reshape2Pattern"]))
-        if pick_test=="RemoveReshape2Pattern":
-            in_shape = draw(st.lists(
-                st.integers(
-                    min_value=2, max_value=30), min_size=2, max_size=5))
+        pick_test = draw(
+            st.sampled_from(
+                ["RemoveReshape2Pattern", "RemoveSqueeze2Reshape2Pattern"]))
+        if pick_test == "RemoveReshape2Pattern":
+            in_shape = draw(
+                st.lists(
+                    st.integers(
+                        min_value=2, max_value=30),
+                    min_size=2,
+                    max_size=5))
             input_axis = draw(st.sampled_from([0, 1, 2, 3, -1]))
             assume(input_axis < len(in_shape))
             print()
 
             softmax_config = OpConfig(
-                type = "softmax",
-                inputs = {
-                    "X": ["input_data"]
-                },
-                outputs = {
-                    "Out": ["softmax_data"]
-                },
-                attrs = {
-                    "axis": input_axis
-                }
-            )
+                type="softmax",
+                inputs={"X": ["input_data"]},
+                outputs={"Out": ["softmax_data"]},
+                attrs={"axis": input_axis})
 
             reshape2_config = OpConfig(
-                type = "reshape2",
-                inputs = {
-                    "X" : ["softmax_data"]
-                },
-                outputs = {
-                    "Out": ["output_data"],
-                    "XShape": ["x_shape"]
-                },
-                attrs = {
-                    "shape": in_shape,
-                }
-            )
+                type="reshape2",
+                inputs={"X": ["softmax_data"]},
+                outputs={"Out": ["output_data"],
+                         "XShape": ["x_shape"]},
+                attrs={"shape": in_shape, })
 
             ops = [softmax_config, reshape2_config]
             program_config = ProgramConfig(
@@ -89,51 +90,34 @@ class TestConvBnFuse(FusePassAutoScanTest):
                 outputs=["output_data"])
             return program_config
         else:
-            batch=draw(st.integers(min_value=2, max_value=8))
-            in_shape=[batch, 1001, 1, 1]
+            batch = draw(st.integers(min_value=2, max_value=8))
+            in_shape = [batch, 1001, 1, 1]
             input_axis = draw(st.sampled_from([0, 1, -1]))
             assume(input_axis < 2)
 
             squeeze2_config = OpConfig(
-                type = "squeeze2",
-                inputs = {
-                    "X":["input_data"]
-                },
-                outputs = {
+                type="squeeze2",
+                inputs={"X": ["input_data"]},
+                outputs={
                     "Out": ["squeeze2_output_data"],
-                    "XShape":["squeeze2_xshape"]
+                    "XShape": ["squeeze2_xshape"]
                 },
-                attrs = {
-                    "axes": []
-                }
-            )
+                attrs={"axes": []})
 
             reshape2_config = OpConfig(
-                type = "reshape2",
-                inputs = {
-                    "X" : ["squeeze2_output_data"],
-                },
-                outputs = {
+                type="reshape2",
+                inputs={"X": ["squeeze2_output_data"], },
+                outputs={
                     "Out": ["reshape2_output_data"],
                     "XShape": ["squeeze2_xshape"],
                 },
-                attrs = {
-                    "shape": [batch, 1001]
-                }
-            )
+                attrs={"shape": [batch, 1001]})
 
             softmax_config = OpConfig(
-                type = "softmax",
-                inputs = {
-                    "X": ["reshape2_output_data"]
-                },
-                outputs = {
-                    "Out": ["output_data"]
-                },
-                attrs = {
-                    "axis": input_axis
-                }
-            )
+                type="softmax",
+                inputs={"X": ["reshape2_output_data"]},
+                outputs={"Out": ["output_data"]},
+                attrs={"axis": input_axis})
 
             ops = [squeeze2_config, reshape2_config, softmax_config]
             program_config = ProgramConfig(
@@ -141,7 +125,8 @@ class TestConvBnFuse(FusePassAutoScanTest):
                 weights={},
                 inputs={"input_data": TensorConfig(shape=in_shape)},
                 outputs=["output_data"])
-            return program_config    
+            return program_config
+
     def sample_predictor_configs(self):
         config = CxxConfig()
         return self.get_predictor_configs(), ['softmax'], (1e-5, 1e-5)
@@ -155,12 +140,17 @@ class TestConvBnFuse(FusePassAutoScanTest):
             # IgnoreReasonsBase.PADDLE_NOT_IMPLEMENTED
             # IgnoreReasonsBase.PADDLELITE_NOT_SUPPORT
             # IgnoreReasonsBase.ACCURACY_ERROR
-            teller1, IgnoreReasons.ACCURACY_ERROR,
+            teller1,
+            IgnoreReasons.ACCURACY_ERROR,
             "The op output has diff in a specific case. We need to fix it as soon as possible."
         )
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=100, passes=["lite_remove_tf_redundant_ops_pass"])
+        self.run_and_statis(
+            quant=False,
+            max_examples=100,
+            passes=["lite_remove_tf_redundant_ops_pass"])
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

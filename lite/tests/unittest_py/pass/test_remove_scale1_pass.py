@@ -29,57 +29,68 @@ import hypothesis.strategies as st
 class TestRemoveScale1Fuse(FusePassAutoScanTest):
     def __init__(self, *args, **kwargs):
         FusePassAutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.ARM, [PrecisionType.FP32], DataLayoutType.NCHW, thread=[1, 4])
-        self.enable_testing_on_place(TargetType.X86, [PrecisionType.FP32], DataLayoutType.NCHW, thread=[1, 4])        
-        opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-                          Place(TargetType.Host, PrecisionType.FP32)    
-                        ]
+        self.enable_testing_on_place(
+            TargetType.ARM, [PrecisionType.FP32],
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.X86, [PrecisionType.FP32],
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
         self.enable_testing_on_place(places=opencl_places)
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
-        return True      
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
+        return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size=1, max_size=4))
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=8), min_size=1, max_size=4))
 
-        threshold=draw(st.floats(min_value=0, max_value=1))
-        scale=draw(st.floats(min_value=0.5, max_value=5))
-        offset=draw(st.floats(min_value=0, max_value=1))
+        threshold = draw(st.floats(min_value=0, max_value=1))
+        scale = draw(st.floats(min_value=0.5, max_value=5))
+        offset = draw(st.floats(min_value=0, max_value=1))
 
         hard_swish_op = OpConfig(
-            type = "hard_swish",
-            inputs = {"X" : ["input_data"]},
-            outputs = {"Out": ["hard_swish_output_data"]},
-            attrs = {
-                "threshold" : threshold,
-                "scale" : scale,
-                "offset" : offset})
-    
+            type="hard_swish",
+            inputs={"X": ["input_data"]},
+            outputs={"Out": ["hard_swish_output_data"]},
+            attrs={"threshold": threshold,
+                   "scale": scale,
+                   "offset": offset})
+
         scale_op = OpConfig(
-            type = "scale",
-            inputs = {"X": ["hard_swish_output_data"]},
-            outputs = {"Out": ["output_data"]},
-            attrs = {
-                "scale": 1.0,
-                "bias": 0.0,
-                "bias_after_scale": True
-            })
-    
+            type="scale",
+            inputs={"X": ["hard_swish_output_data"]},
+            outputs={"Out": ["output_data"]},
+            attrs={"scale": 1.0,
+                   "bias": 0.0,
+                   "bias_after_scale": True})
+
         ops = [hard_swish_op, scale_op]
         program_config = ProgramConfig(
             ops=ops,
             weights={},
-            inputs={
-                "input_data": TensorConfig(shape=in_shape)
-            },
+            inputs={"input_data": TensorConfig(shape=in_shape)},
             outputs=["output_data"])
         return program_config
-    
+
     def sample_predictor_configs(self):
         config = CxxConfig()
         return self.get_predictor_configs(), ['hard_swish'], (1e-5, 1e-5)
@@ -88,7 +99,12 @@ class TestRemoveScale1Fuse(FusePassAutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25, max_duration=540, passes=["lite_remove_scale1_pass"])
+        self.run_and_statis(
+            quant=False,
+            max_examples=25,
+            max_duration=540,
+            passes=["lite_remove_scale1_pass"])
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
