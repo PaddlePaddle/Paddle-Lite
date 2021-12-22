@@ -27,8 +27,6 @@ bool SoftmaxOp::CheckShape() const {
   auto x_rank = x_dims.size();
   CHECK_OR_FALSE(param_.axis >= -static_cast<int>(x_rank) &&
                  param_.axis < static_cast<int>(x_rank));
-  VLOG(5) << "softmax checkshape " << static_cast<void *>(param_.x) << " "
-          << x_dims;
   return true;
 }
 
