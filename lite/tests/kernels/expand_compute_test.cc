@@ -169,10 +169,10 @@ TEST(Expand, precision) {
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
-#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
-  place = Place(TARGET(kHost), PRECISION(kAny));
 #elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
+#elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
+  place = Place(TARGET(kHost), PRECISION(kAny));
 #else
   return;
 #endif
