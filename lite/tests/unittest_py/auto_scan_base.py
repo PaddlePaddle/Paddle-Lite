@@ -430,8 +430,6 @@ class AutoScanBaseTest(unittest.TestCase):
         def run_test(prog_config):
             return self.run_test(quant=quant, prog_configs=[prog_config])
 
-
-
         # if current unittest is not active on the input targ    paddlelite_not_support_flag = Trueet, we will exit directly.
         if not self.is_actived():
             logging.info("Error: This test is not actived on " +
@@ -447,12 +445,14 @@ class AutoScanBaseTest(unittest.TestCase):
                 cache_file = open(test_num_cache_file)
                 test_num = int(cache_file.read())
                 cache_file.close()
-                cache_file = open(test_num_cache_file,'w')
+                cache_file = open(test_num_cache_file, 'w')
                 cache_file.write(str(test_num + 1))
                 cache_file.close()
             if os.path.isfile(test_names_cache_file):
-                cache_file = open(test_names_cache_file,'a+')
-                cache_file.write(str(type(self)))
+                cache_file = open(test_names_cache_file, 'a+')
+                test_name_ = str(type(self))[17:][:-2]
+                cache_file.write(test_name_ + ", ")
+                cache_file.close()
                 return
 
         generator = st.composite(program_generator)
