@@ -3953,7 +3953,36 @@ void sparse_semi_conv_int8_fp32_pipelined(
     int N,
     const operators::SparseConvParam& param,
     ARMContext* ctx) {
-  INIT_SEMI_CONV_PARAM(int8_t, float, 32)
+  auto act_param = param.activation_param;
+  auto act_type = act_param.active_type;
+  volatile float alpha = 0.f;
+  float hs_param[12] = {0.f};
+  int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
+  if (act_param.has_active) {
+    if (act_type == lite_api::ActivationType::kRelu) {
+      flag_act = 0x01;
+    } else if (act_type == lite_api::ActivationType::kRelu6) {
+      flag_act = 0x02;
+      alpha = act_param.Relu_clipped_coef;
+    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+      flag_act = 0x03;
+      alpha = act_param.Leaky_relu_alpha;
+    } else if (act_type == lite_api::ActivationType::kHardSwish) {
+      flag_act = 0x04;
+      for (int i = 0; i < 4; i++) {
+        hs_param[i] = act_param.hard_swish_offset;
+        hs_param[i + 4] = 1.0 / act_param.hard_swish_scale;
+        hs_param[i + 8] = act_param.hard_swish_threshold;
+      }
+    }
+  }
+  int flag_bias = (bias != nullptr) ? 1 : 0;
+  size_t mc = N * sizeof(int8_t);
+  size_t nc = M;
+  size_t output_stride = N * sizeof(float);
+  size_t output_decrement = output_stride * nc - 32 * sizeof(float);
+  size_t pair_num = M / 2;
+  size_t lave_num = M % 2;
   float bias_zero[2] = {0.f, 0.f};
   while
     SPARSE_LIKELY(mc >= 32 * sizeof(int8_t)) {
@@ -6238,7 +6267,36 @@ void sparse_semi_conv_int8_int8_pipelined(
     int N,
     const operators::SparseConvParam& param,
     ARMContext* ctx) {
-  INIT_SEMI_CONV_PARAM(int8_t, int8_t, 32)
+  auto act_param = param.activation_param;
+  auto act_type = act_param.active_type;
+  volatile float alpha = 0.f;
+  float hs_param[12] = {0.f};
+  int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
+  if (act_param.has_active) {
+    if (act_type == lite_api::ActivationType::kRelu) {
+      flag_act = 0x01;
+    } else if (act_type == lite_api::ActivationType::kRelu6) {
+      flag_act = 0x02;
+      alpha = act_param.Relu_clipped_coef;
+    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+      flag_act = 0x03;
+      alpha = act_param.Leaky_relu_alpha;
+    } else if (act_type == lite_api::ActivationType::kHardSwish) {
+      flag_act = 0x04;
+      for (int i = 0; i < 4; i++) {
+        hs_param[i] = act_param.hard_swish_offset / param.output_scale;
+        hs_param[i + 4] = 1.0 / act_param.hard_swish_scale;
+        hs_param[i + 8] = act_param.hard_swish_threshold / param.output_scale;
+      }
+    }
+  }
+  int flag_bias = (bias != nullptr) ? 1 : 0;
+  size_t mc = N * sizeof(int8_t);
+  size_t nc = M;
+  size_t output_stride = N * sizeof(int8_t);
+  size_t output_decrement = output_stride * nc - 32 * sizeof(int8_t);
+  size_t pair_num = M / 2;
+  size_t lave_num = M % 2;
   float vmax[4] = {-127.0, -127.0, -127.0, -127.0};
   float bias_zero[2] = {0.f, 0.f};
   while
@@ -8963,7 +9021,36 @@ void sparse_semi_conv_int8_fp32_pipelined(
     int N,
     const operators::SparseConvParam& param,
     ARMContext* ctx) {
-  INIT_SEMI_CONV_PARAM(int8_t, float, 48)
+  auto act_param = param.activation_param;
+  auto act_type = act_param.active_type;
+  volatile float alpha = 0.f;
+  float vhs_param[12] = {0.f};
+  int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
+  if (act_param.has_active) {
+    if (act_type == lite_api::ActivationType::kRelu) {
+      flag_act = 0x01;
+    } else if (act_type == lite_api::ActivationType::kRelu6) {
+      flag_act = 0x02;
+      alpha = act_param.Relu_clipped_coef;
+    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+      flag_act = 0x03;
+      alpha = act_param.Leaky_relu_alpha;
+    } else if (act_type == lite_api::ActivationType::kHardSwish) {
+      flag_act = 0x04;
+      for (int i = 0; i < 4; i++) {
+        vhs_param[i] = act_param.hard_swish_offset;
+        vhs_param[i + 4] = 1.0 / act_param.hard_swish_scale;
+        vhs_param[i + 8] = act_param.hard_swish_threshold;
+      }
+    }
+  }
+  int flag_bias = (bias != nullptr) ? 1 : 0;
+  size_t mc = N * sizeof(int8_t);
+  size_t nc = M;
+  size_t output_stride = N * sizeof(float);
+  size_t output_decrement = output_stride * nc - 48 * sizeof(float);
+  size_t pair_num = M / 2;
+  size_t lave_num = M % 2;
   float bias_zero[2] = {0.f, 0.f};
   while
     SPARSE_LIKELY(mc >= 48 * sizeof(int8_t)) {
@@ -10526,7 +10613,36 @@ void sparse_semi_conv_int8_int8_pipelined(
     int N,
     const operators::SparseConvParam& param,
     ARMContext* ctx) {
-  INIT_SEMI_CONV_PARAM(int8_t, int8_t, 48)
+  auto act_param = param.activation_param;
+  auto act_type = act_param.active_type;
+  volatile float alpha = 0.f;
+  float vhs_param[12] = {0.f};
+  int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
+  if (act_param.has_active) {
+    if (act_type == lite_api::ActivationType::kRelu) {
+      flag_act = 0x01;
+    } else if (act_type == lite_api::ActivationType::kRelu6) {
+      flag_act = 0x02;
+      alpha = act_param.Relu_clipped_coef;
+    } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
+      flag_act = 0x03;
+      alpha = act_param.Leaky_relu_alpha;
+    } else if (act_type == lite_api::ActivationType::kHardSwish) {
+      flag_act = 0x04;
+      for (int i = 0; i < 4; i++) {
+        vhs_param[i] = act_param.hard_swish_offset / param.output_scale;
+        vhs_param[i + 4] = 1.0 / act_param.hard_swish_scale;
+        vhs_param[i + 8] = act_param.hard_swish_threshold / param.output_scale;
+      }
+    }
+  }
+  int flag_bias = (bias != nullptr) ? 1 : 0;
+  size_t mc = N * sizeof(int8_t);
+  size_t nc = M;
+  size_t output_stride = N * sizeof(int8_t);
+  size_t output_decrement = output_stride * nc - 48 * sizeof(int8_t);
+  size_t pair_num = M / 2;
+  size_t lave_num = M % 2;
   float vmax[4] = {-127.0, -127.0, -127.0, -127.0};
   float vbias_scale[8] = {0.f};
   while
