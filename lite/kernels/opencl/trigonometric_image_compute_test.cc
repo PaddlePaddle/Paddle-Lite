@@ -61,14 +61,9 @@ void acos(const float* input_data, const DDim& in_dim, float* output_data) {
   }
 }
 
-TEST(sin_image2d_fp16, compute) {
-  LOG(INFO) << "to get kernel ...";
-
-  // todo other test....
+TEST(trigonometrics_image2d_fp16, compute) {
   std::vector<std::string> trigonometrics{
       "sin", "cos", "tan", "atan", "asin", "acos"};
-  // std::vector<std::string> trigonometrics{
-  //     /*"sin", "cos" ,*/ "tan", "atan", "asin", "acos"};
   for (size_t i = 0; i < trigonometrics.size(); i++) {
     auto trigonometric = trigonometrics[i];
 
@@ -84,7 +79,7 @@ TEST(sin_image2d_fp16, compute) {
     LOG(INFO) << "Get kernel:" << kernel->doc();
 
     lite::Tensor x, out;
-    operators::SinParam param;
+    operators::TrigonometricParam param;
     param.X = &x;
     param.Out = &out;
 

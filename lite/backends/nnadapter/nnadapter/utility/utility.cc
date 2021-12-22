@@ -550,4 +550,18 @@ NNADAPTER_EXPORT uint64_t GetUInt64FromEnv(const std::string& str,
   return static_cast<uint64_t>(atol(variable));
 }
 
+NNADAPTER_EXPORT std::string GetRealPath(const char* path) {
+  if (path == nullptr) {
+    NNADAPTER_LOG(FATAL) << "Input path is nullptr";
+    return nullptr;
+  }
+
+  char real_path[PATH_MAX] = {0};
+  if (strlen(path) >= PATH_MAX || realpath(path, real_path) == nullptr) {
+    NNADAPTER_LOG(FATAL) << "Get real path failed, path[" << path << "]";
+    return nullptr;
+  }
+  return std::string(real_path);
+}
+
 }  // namespace nnadapter
