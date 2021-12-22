@@ -74,7 +74,7 @@ class TestReshape2Op(AutoScanTest):
         target = predictor_config.target()
         # opencl has diff
         if target in [TargetType.OpenCL]:
-             return False
+            return False
         return True
 
     def sample_program_configs(self, draw):
