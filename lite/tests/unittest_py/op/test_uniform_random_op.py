@@ -27,7 +27,7 @@ import random
 import numpy as np
 
 
-class TestWhereIndexOp(AutoScanTest):
+class TestUniformRandomOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
 
@@ -46,36 +46,62 @@ class TestWhereIndexOp(AutoScanTest):
         C = draw(st.integers(min_value=1, max_value=128))
         H = draw(st.integers(min_value=1, max_value=128))
         W = draw(st.integers(min_value=1, max_value=128))
-        in_shape = draw(st.sampled_from([[N, C, H, W], [N, H, W]]))
+        shape_data = draw(st.sampled_from([[N, C, H, W], [N, H, W]]))
 
-        in_dtype = draw(st.sampled_from([0, 1, 2, 3]))
+        def generate_ShapeTensor():
+            return np.array(shape_data).astype(np.int64)  # must be int64
 
-        def generate_Condition_data():
-            if (in_dtype == 0):
-                return np.random.normal(0.0, 1.0, in_shape).astype(np.float32)
-            elif (in_dtype == 1):
-                return np.random.randint(1, 500, in_shape).astype(np.int32)
-            elif (in_dtype == 2):
-                return np.random.randint(1, 500, in_shape).astype(np.int64)
-            elif (in_dtype == 3):
-                return np.random.choice([True, False], in_shape, replace=True)
+        min_data = draw(st.floats(min_value=-1, max_value=-1))
+        max_data = draw(st.floats(min_value=1, max_value=1))
+        seed_data = draw(st.integers(min_value=1, max_value=1))
+        dtype_data = draw(st.integers(
+            min_value=5, max_value=5))  # out is float
 
-        where_index_op = OpConfig(
-            type="where_index",
-            inputs={"Condition": ["Condition_data"]},
-            outputs={"Out": ["Out_data"]},
-            attrs={})
-        where_index_op.outputs_dtype = {"Out_data": np.int64}
+        choose_shape = draw(
+            st.sampled_from(["shape", "ShapeTensor", "ShapeTensorList"]))
+        inputs = {}
 
+        def generate_ShapeTensor_data():
+            if (choose_shape == "ShapeTensor"):
+                inputs["ShapeTensor"] = ["ShapeTensor_data"]
+                return np.array(shape_data).astype(np.int64)
+            else:
+                return np.random.randint(1, 5, []).astype(np.int64)
+
+        def generate_ShapeTensorList_data():
+            if (choose_shape == "ShapeTensorList"):
+                # TensorList is not supported by lite
+                # inputs["ShapeTensorList"] : ["ShapeTensorList_data"]
+                return np.array(shape_data).astype(np.int64)
+            else:
+                return np.random.randint(1, 5, []).astype(np.int64)
+
+        uniform_random_op = OpConfig(
+            type="uniform_random",
+            inputs=inputs,
+            outputs={"Out": ["output_data"]},
+            attrs={
+                "shape": shape_data,
+                "min": min_data,
+                "max": max_data,
+                "seed": seed_data,
+                "dtype": dtype_data,
+                # lite does not use these 3 attr
+                # so I default them
+                "diag_num": 0,
+                "diag_step": 0,
+                "diag_val": 1.0,
+            })
         program_config = ProgramConfig(
-            ops=[where_index_op],
+            ops=[uniform_random_op],
             weights={},
             inputs={
-                "Condition_data":
-                TensorConfig(data_gen=partial(generate_Condition_data))
+                "ShapeTensor_data":
+                TensorConfig(data_gen=partial(generate_ShapeTensor_data)),
+                "ShapeTensorList_data":
+                TensorConfig(data_gen=partial(generate_ShapeTensorList_data))
             },
-            outputs=["Out_data"])
-
+            outputs=["output_data"])
         return program_config
 
     def sample_predictor_configs(self):

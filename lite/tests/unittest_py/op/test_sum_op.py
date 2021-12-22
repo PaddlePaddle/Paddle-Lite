@@ -26,10 +26,8 @@ from functools import partial
 import random
 import numpy as np
 
-# having diff
 
-
-class TestFcOp(AutoScanTest):
+class TestSumOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
 
@@ -39,19 +37,19 @@ class TestFcOp(AutoScanTest):
         ]
         self.enable_testing_on_place(places=arm_places)
 
-        # opencl does not support sum kernel
-        # if I add opencl valid place , no kernel found error arises
-
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(
-            st.lists(
-                st.integers(
-                    min_value=2, max_value=8), min_size=4, max_size=4))
+
+        N = draw(st.integers(min_value=1, max_value=4))
+        C = draw(st.integers(min_value=1, max_value=128))
+        H = draw(st.integers(min_value=1, max_value=128))
+        W = draw(st.integers(min_value=1, max_value=128))
+        in_shape = draw(st.sampled_from([[N, C, H, W], [N, H, W]]))
+
         in_dtype = draw(st.sampled_from([np.float32, np.int32, np.int64]))
 
         def generate_X_data():

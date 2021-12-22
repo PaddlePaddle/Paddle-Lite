@@ -27,36 +27,13 @@ import random
 import numpy as np
 
 
-class TestFcOp(AutoScanTest):
+class TestUniqueWithCountsOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        x86_places = [
-            Place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW),
+        host_places = [
             Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
         ]
-        self.enable_testing_on_place(places=x86_places)
-
-        arm_places = [
-            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
-            Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
-        ]
-        self.enable_testing_on_place(places=arm_places)
-
-        # opencl demo
-        opencl_places = [
-            Place(TargetType.OpenCL, PrecisionType.FP16,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.FP16,
-                      DataLayoutType.ImageFolder),
-            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-            Place(TargetType.OpenCL, PrecisionType.Any,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.Any,
-                      DataLayoutType.ImageFolder),
-            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-            Place(TargetType.Host, PrecisionType.FP32)
-        ]
-        self.enable_testing_on_place(places=opencl_places)
+        self.enable_testing_on_place(places=host_places, thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,

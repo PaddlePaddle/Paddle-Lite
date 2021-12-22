@@ -27,9 +27,10 @@ import random
 import numpy as np
 
 
-class TestUnbindOp(AutoScanTest):
+class TestTopKV2Op(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
+
         host_places = [
             Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
         ]
@@ -41,36 +42,65 @@ class TestUnbindOp(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        N = draw(st.integers(min_value=2, max_value=4))
-        C = draw(st.integers(min_value=2, max_value=128))
-        H = draw(st.integers(min_value=2, max_value=128))
-        W = draw(st.integers(min_value=2, max_value=128))
-        in_shape = draw(st.sampled_from([[N, C, H, W]]))
 
-        # host only register float32 and int64
-        in_dtype = draw(st.sampled_from([np.float32, np.int64]))
+        N = draw(st.integers(min_value=1, max_value=4))
+        C = draw(st.integers(min_value=1, max_value=128))
+        H = draw(st.integers(min_value=1, max_value=128))
+        W = draw(st.integers(min_value=1, max_value=128))
+        in_shape = draw(st.sampled_from([[N, C, H, W]]))
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=3, max_value=5), min_size=1, max_size=4))
+        in_dtype = draw(st.sampled_from([np.float32]))
 
         def generate_X_data():
             return np.random.normal(0.0, 5.0, in_shape).astype(in_dtype)
 
-        axis_data = draw(st.integers(min_value=1, max_value=3))
+        k_data = draw(st.integers(min_value=1, max_value=2))
 
-        output_string = ["out"] * in_shape[axis_data]
-        for i in range(in_shape[axis_data]):
-            output_string[i] += str(i)
+        axis_data = draw(st.integers(min_value=0, max_value=1))
 
-        unbind_op = OpConfig(
-            type="unbind",
-            inputs={"X": ["input_data"]},
-            outputs={"Out": output_string},
-            attrs={"axis": axis_data})
+        choose_k = draw(st.sampled_from(["k", "K"]))
+        inputs = {"X": ["X_data"]}
+
+        def generate_K_data():
+            if (choose_k == "K"):
+                inputs["K"] = ["K_data"]
+                a = np.array([k_data]).astype(np.int32)
+                return a
+            else:
+                return np.random.randint(1, 5, []).astype(np.int32)
+
+        assume(k_data <= in_shape[-1])
+        assume(axis_data < len(in_shape))
+
+        # Lite does not have these two attributes
+        largest_data = draw(st.booleans())
+        sorted_data = draw(st.booleans())
+
+        top_k_v2_op = OpConfig(
+            type="top_k_v2",
+            inputs=inputs,
+            outputs={"Out": ["Out_data"],
+                     "Indices": ["Indices_data"]},
+            attrs={
+                "k": k_data,
+                "axis": axis_data,
+                #"largest": largest_data,
+                #"sorted": sorted_data
+            })
+        top_k_v2_op.outputs_dtype = {"Out_data": in_dtype}
+
         program_config = ProgramConfig(
-            ops=[unbind_op],
+            ops=[top_k_v2_op],
             weights={},
             inputs={
-                "input_data": TensorConfig(data_gen=partial(generate_X_data)),
+                "X_data": TensorConfig(data_gen=partial(generate_X_data)),
+                "K_data": TensorConfig(data_gen=partial(generate_K_data))
             },
-            outputs=output_string)
+            outputs=["Out_data", "Indices_data"])
+
         return program_config
 
     def sample_predictor_configs(self):

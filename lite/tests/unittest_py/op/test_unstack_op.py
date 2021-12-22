@@ -27,36 +27,14 @@ import random
 import numpy as np
 
 
-class TestFcOp(AutoScanTest):
+class TestUnstackOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        x86_places = [
-            Place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW),
+
+        host_places = [
             Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
         ]
-        self.enable_testing_on_place(places=x86_places)
-
-        arm_places = [
-            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
-            Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
-        ]
-        self.enable_testing_on_place(places=arm_places)
-
-        # opencl demo
-        opencl_places = [
-            Place(TargetType.OpenCL, PrecisionType.FP16,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.FP16,
-                      DataLayoutType.ImageFolder),
-            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-            Place(TargetType.OpenCL, PrecisionType.Any,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.Any,
-                      DataLayoutType.ImageFolder),
-            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-            Place(TargetType.Host, PrecisionType.FP32)
-        ]
-        self.enable_testing_on_place(places=opencl_places)
+        self.enable_testing_on_place(places=host_places, thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -64,16 +42,19 @@ class TestFcOp(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(
-            st.lists(
-                st.integers(
-                    min_value=1, max_value=5), min_size=4, max_size=4))
+
+        N = draw(st.integers(min_value=2, max_value=4))
+        C = draw(st.integers(min_value=2, max_value=128))
+        H = draw(st.integers(min_value=2, max_value=128))
+        W = draw(st.integers(min_value=2, max_value=128))
+        in_shape = draw(st.sampled_from([[N, C, H, W], [N, H, W]]))
+
         in_dtype = draw(st.sampled_from([np.float32, np.int32]))
 
         def generate_X_data():
             return np.random.normal(0.0, 5.0, in_shape).astype(in_dtype)
 
-        axis_data = draw(st.integers(min_value=0, max_value=3))
+        axis_data = draw(st.integers(min_value=0, max_value=2))
         num_data = draw(st.integers(min_value=1, max_value=2))
 
         # declare multiple outputs
