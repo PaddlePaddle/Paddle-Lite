@@ -249,6 +249,7 @@ struct ConvTransposeAddMetalParam {
     uint16_t oC;
     uint16_t hasAddOp;
     ElementwiseAddMetalParam addParam;
+    ActivationMetalParam activationParam;
 };
 
 struct SliceMetalParam {
