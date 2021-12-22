@@ -119,7 +119,7 @@ class TestConvElementwiseFuse(FusePassAutoScanTest):
             if len(output_padding):
                 oh = oh + output_padding[0]
                 ow = ow + output_padding[1]
-            conv_out_shape = conv_out_shape + [oh, ow]
+            conv_out_shape = conv_out_shape + [int(oh), int(ow)]
             assume(oh > 0 and ow > 0)
             if len(output_padding):
                 conv_output_h = (oh + output_padding[0] + paddings[0] +
@@ -138,7 +138,7 @@ class TestConvElementwiseFuse(FusePassAutoScanTest):
             conv_out_shape = [in_shape[0], weight_shape[0]]
             oh, ow = ConvOutputSize(in_shape, weight_shape, dilations_,
                                     paddings_, strides)
-            conv_out_shape = conv_out_shape + [oh, ow]
+            conv_out_shape = conv_out_shape + [int(oh), int(ow)]
             assume(oh > 0 and ow > 0)
 
         conv_type = ""
@@ -206,7 +206,7 @@ class TestConvElementwiseFuse(FusePassAutoScanTest):
     def test(self, *args, **kwargs):
         self.run_and_statis(
             quant=False,
-            max_examples=100,
+            max_examples=200,
             passes=["lite_conv_elementwise_fuser_pass"])
 
 
