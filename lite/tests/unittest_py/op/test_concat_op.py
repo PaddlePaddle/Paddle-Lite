@@ -64,7 +64,7 @@ class TestConcatOp(AutoScanTest):
         if target_type == TargetType.OpenCL:
             if "AxisTensor" in program_config.ops[0].inputs:
                 return False
-            if len(program_config.inputs["input_data1"]
+            if len(program_config.inputs["input_data0"]
                    .shape) == 3 and program_config.ops[0].attrs["axis"] == 0:
                 for v in program_config.inputs.values():
                     if v.shape[0] % 4 != 0:
@@ -72,29 +72,69 @@ class TestConcatOp(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        in_shape1 = draw(
+        max_num_input = 6
+        num_input = draw(st.integers(min_value=2, max_value=max_num_input))
+        input_name_list = ["input_data" + str(i) for i in range(num_input)]
+        input_type_dict = {"X": input_name_list}
+
+        input_shape0 = draw(
             st.lists(
                 st.integers(
                     min_value=1, max_value=20), min_size=1, max_size=4))
-        in_shape2 = copy.deepcopy(in_shape1)
-        axis = draw(st.integers(min_value=-1, max_value=len(in_shape1) - 1))
-        in_shape2[axis] = draw(st.integers(min_value=1, max_value=20))
+        axis = draw(st.integers(min_value=-1, max_value=len(input_shape0) - 1))
+
+        # Create n-1 variables: input_shape1, input_shape2, ... , input_shape{n-1}
+        for i in range(1, num_input):
+            var_name = "input_shape" + str(i)
+            globals()[var_name] = copy.deepcopy(input_shape0)
+
         has_axis_tensor = draw(st.booleans())
 
-        def generate_input1(*args, **kwargs):
-            return np.random.random(in_shape1).astype(np.float32)
-
-        def generate_input2(*args, **kwargs):
-            return np.random.random(in_shape2).astype(np.float32)
+        def generate_input(*args, **kwargs):
+            i = kwargs["id"]
+            input_shape = []
+            if i == 0:
+                input_shape = input_shape0
+            elif i == 1:
+                input_shape1[axis] = draw(
+                    st.integers(
+                        min_value=1, max_value=20))
+                input_shape = input_shape1
+            elif i == 2:
+                input_shape2[axis] = draw(
+                    st.integers(
+                        min_value=1, max_value=20))
+                input_shape = input_shape2
+            elif i == 3:
+                input_shape3[axis] = draw(
+                    st.integers(
+                        min_value=1, max_value=20))
+                input_shape = input_shape3
+            elif i == 4:
+                input_shape4[axis] = draw(
+                    st.integers(
+                        min_value=1, max_value=20))
+                input_shape = input_shape4
+            elif i == 5:
+                input_shape5[axis] = draw(
+                    st.integers(
+                        min_value=1, max_value=20))
+                input_shape = input_shape5
+            else:
+                print("The max num of inputs is {}, but got input index is {}".
+                      format(max_num_input, i))
+                sys.exit()
+            return np.random.random(input_shape).astype(np.float32)
 
         def generate_axis(*args, **kwargs):
             return np.array([axis]).astype("int32")
 
-        input_type_dict = {"X": ["input_data1", "input_data2"]}
-        input_data_dict = {
-            "input_data1": TensorConfig(data_gen=partial(generate_input1)),
-            "input_data2": TensorConfig(data_gen=partial(generate_input2))
-        }
+        input_data_dict = {}
+        for i in range(num_input):
+            input_data_dict[input_name_list[i]] = TensorConfig(
+                data_gen=partial(
+                    generate_input, id=i))
+
         if has_axis_tensor:
             input_type_dict["AxisTensor"] = ["axis_tensor_data"]
             input_data_dict["axis_tensor_data"] = TensorConfig(
