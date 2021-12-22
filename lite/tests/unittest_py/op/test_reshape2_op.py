@@ -111,7 +111,13 @@ class TestReshape2Op(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["reshape2"], (2e-4, 2e-4)
+        atol, rtol = 1e-5, 1e-5
+        config_lists = self.get_predictor_configs()
+        for config in config_lists:
+            if config.target() in [TargetType.Metal]:
+                atol, rtol = 2e-4, 2e-4
+
+        return self.get_predictor_configs(), ["reshape2"], (atol, rtol)
 
     def add_ignore_pass_case(self):
         pass
