@@ -26,6 +26,7 @@ import argparse
 from functools import partial
 import random
 import numpy as np
+import copy
 
 
 class TestConcatOp(AutoScanTest):
@@ -63,30 +64,22 @@ class TestConcatOp(AutoScanTest):
         if target_type == TargetType.OpenCL:
             if "AxisTensor" in program_config.ops[0].inputs:
                 return False
+            if len(program_config.inputs["input_data1"]
+                   .shape) == 3 and program_config.ops[0].attrs["axis"] == 0:
+                for v in program_config.inputs.values():
+                    if v.shape[0] % 4 != 0:
+                        return False
         return True
 
     def sample_program_configs(self, draw):
         in_shape1 = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=100),
-                min_size=1,
-                max_size=4))
-        in_shape2 = draw(
-            st.lists(
-                st.integers(
-                    min_value=1, max_value=100),
-                min_size=1,
-                max_size=4))
-        axis = draw(st.sampled_from([-1, 0, 1, 2, 3]))
+                    min_value=1, max_value=20), min_size=1, max_size=4))
+        in_shape2 = copy.deepcopy(in_shape1)
+        axis = draw(st.integers(min_value=-1, max_value=len(in_shape1) - 1))
+        in_shape2[axis] = draw(st.integers(min_value=1, max_value=20))
         has_axis_tensor = draw(st.booleans())
-        assume(len(in_shape1) == len(in_shape2))
-        assume(axis < len(in_shape1))
-        for i in range(-1, len(in_shape1)):
-            if i == axis:
-                continue
-            else:
-                assume(in_shape1[i] == in_shape2[i])
 
         def generate_input1(*args, **kwargs):
             return np.random.random(in_shape1).astype(np.float32)
