@@ -21,6 +21,7 @@ import time
 import logging
 import shutil
 import paddle
+import re
 import paddle.fluid as fluid
 from paddle.fluid.initializer import NumpyArrayInitializer
 from paddle.fluid.core import PassVersionChecker
@@ -429,11 +430,30 @@ class AutoScanBaseTest(unittest.TestCase):
         def run_test(prog_config):
             return self.run_test(quant=quant, prog_configs=[prog_config])
 
+
+
         # if current unittest is not active on the input targ    paddlelite_not_support_flag = Trueet, we will exit directly.
         if not self.is_actived():
             logging.info("Error: This test is not actived on " +
                          self.get_target())
             return
+        else:
+            # collect valid test infos
+            paddlelite_source_path = re.findall(r"(.+?)Paddle-Lite",
+                                                os.path.abspath(__file__))[0]
+            test_num_cache_file = paddlelite_source_path + "Paddle-Lite/lite/tests/unittest_py/.test_num"
+            test_names_cache_file = paddlelite_source_path + "Paddle-Lite/lite/tests/unittest_py/.test_names"
+            if os.path.isfile(test_num_cache_file):
+                cache_file = open(test_num_cache_file)
+                test_num = int(cache_file.read())
+                cache_file.close()
+                cache_file = open(test_num_cache_file,'w')
+                cache_file.write(str(test_num + 1))
+                cache_file.close()
+            if os.path.isfile(test_names_cache_file):
+                cache_file = open(test_names_cache_file,'a+')
+                cache_file.write(str(type(self)))
+                return
 
         generator = st.composite(program_generator)
         loop_func = given(generator())(run_test)

@@ -3,7 +3,7 @@ set -e
 
 ARCH=""
 TEST_FILE=""
-
+COLLECT_TEST_INFO=false
 function get_inputs {
     # Parse command line.
     for i in "$@"; do
@@ -11,6 +11,10 @@ function get_inputs {
             # armv7 or armv8, default armv8
             --target=*)
                 ARCH="${i#*=}"
+                shift
+                ;;
+            test_info)
+                COLLECT_TEST_INFO=true
                 shift
                 ;;
             *)
@@ -21,20 +25,43 @@ function get_inputs {
     done
     # compiling result contains light_api lib only, recommanded.
 }
+#if [ $ARCH = "" ] || [ $TEST_FILE = "" ]; then
+#  echo "Error input: ./auto_scan test_assign_op.py --target=Host"
+#  exit 1
+#fi
+
+function run_test {
+  if [[ $ARCH = "" ]] || [[ $1 = "" ]]; then
+    echo "Error input: ./auto_scan test_assign_op.py --target=Host"
+    exit 1
+  fi
+
+  if [[ $ARCH = "ARM" ]] || [[ $ARCH = "OpenCL" ]] || [[ $ARCH = "Metal" ]]; then
+    cd ../rpc_service
+    sh start_rpc_server.sh
+    cd ../op
+    python3.8 $1 --target=$ARCH
+  else
+    python3.7 $1 --target=$ARCH
+  fi
+}
 
 get_inputs $@
 
-if [ $ARCH = "" ] || [ $TEST_FILE = "" ]; then
-  echo "Error input: ./auto_scan test_assign_op.py --target=Host"
-  exit 1
-fi
-
-
-if [ $ARCH = "ARM" ] || [ $ARCH = "OpenCL" ] || [ $ARCH = "Metal" ]; then
-  cd ../rpc_service
-  sh start_rpc_server.sh
-  cd ../op
-  python3.8 $TEST_FILE --target=$ARCH
+if [ $COLLECT_TEST_INFO = true ]; then
+  echo "hello"
+  echo "0" > "../.test_num"
+  echo "" > "../.test_names"
+  tests=$(ls | grep test)
+  for test in $tests[@]; do
+      run_test $test
+  done
+  echo "-----------------unit test info--------------------------------"
+  echo "target=$ARCH"
+  test_num_=$(cat ../.test_num)
+  echo "test_num=$test_num_"
+  rm -f ../.test_num ../.test_names
 else
-  python3.7 $TEST_FILE --target=$ARCH
+  run_test $TEST_FILE
+  rm -f ../.test_num ../.test_names
 fi
