@@ -160,13 +160,13 @@ class TestConcatOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()
-        max_examples = 25
+        max_examples = 50
         if target_str == "OpenCL":
             # Make sure to generate enough valid cases for OpenCL
             max_examples = 100
 
         self.run_and_statis(
-            quant=False, min_success_num=25, max_examples=max_examples)
+            quant=False, min_success_num=50, max_examples=max_examples)
 
 
 if __name__ == "__main__":
