@@ -51,10 +51,13 @@ class TestArgMaxOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        if predictor_config.target() == TargetType.OpenCL:
-            return False
-        else:
-            return True
+        in_shape = list(program_config.inputs["input_data"].shape)
+        target_type = predictor_config.target()
+        keep_dims = program_config.ops[0].attrs["keepdims"]
+        if target_type == TargetType.OpenCL:
+            if len(in_shape) != 4 or keep_dims == False:
+                return False
+        return True
 
     def sample_program_configs(self, draw):
         in_shape = draw(
@@ -90,7 +93,14 @@ class TestArgMaxOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        target_str = self.get_target()
+        max_examples = 25
+        if target_str == "OpenCL":
+            # Make sure to generate enough valid cases for OpenCL
+            max_examples = 200
+
+        self.run_and_statis(
+            quant=False, min_success_num=25, max_examples=max_examples)
 
 
 if __name__ == "__main__":
