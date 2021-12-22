@@ -22,22 +22,17 @@ import unittest
 import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
+
+from functools import partial
+import numpy as np
 import argparse
 
-import numpy as np
-from functools import partial
 
-
-class TestReduceMaxOp(AutoScanTest):
+class TestReduceMeanOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-
-        self.enable_testing_on_place(
-            TargetType.X86,
-            PrecisionType.FP32,
-            DataLayoutType.NCHW,
-            thread=[1, 2])
-
+        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32,
+                                     DataLayoutType.NCHW)
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -78,7 +73,7 @@ class TestReduceMaxOp(AutoScanTest):
             return np.random.random(in_shape).astype(np.float32)
 
         build_ops = OpConfig(
-            type="reduce_max",
+            type="reduce_mean",
             inputs={"X": ["input_data"], },
             outputs={"Out": ["output_data"], },
             attrs={
@@ -96,7 +91,7 @@ class TestReduceMaxOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["reduce_max"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["reduce_mean"], (1e-2, 1e-2)
 
     def add_ignore_pass_case(self):
         pass
