@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,6 +26,16 @@ int ConvertSplit(Converter* converter, hal::Operation* operation) {
   NNADAPTER_CHECK(IsConstantOperand(split_operand));
 
   // Convert to XTCL exprs
+  auto input_expr = converter->GetMappedExpr(input_operand);
+  if (!input_expr.defined()) {
+    input_expr = converter->ConvertOperand(input_operand);
+  }
+  auto split_expr = converter->builder()->CreateSplit(
+      input_expr, ConvertToXTCLArray<xtcl::Integer>(split), axis);
+  for (size_t i = 0; i < split.size(); i++) {
+    converter->UpdateExprMap(output_operands[i],
+                             converter->builder()->GetField(split_expr, i));
+  }
   return NNADAPTER_NO_ERROR;
 }
 

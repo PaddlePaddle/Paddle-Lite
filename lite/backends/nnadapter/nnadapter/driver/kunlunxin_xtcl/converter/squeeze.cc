@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "core/operation/unsqueeze.h"
+#include "core/operation/squeeze.h"
 #include "driver/kunlunxin_xtcl/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -20,10 +20,17 @@
 namespace nnadapter {
 namespace kunlunxin_xtcl {
 
-int ConvertUnsqueeze(Converter* converter, hal::Operation* operation) {
-  UNSQUEEZE_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int ConvertSqueeze(Converter* converter, hal::Operation* operation) {
+  SQUEEZE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
-  // Convert to XTCL expressions
+  // Convert to XTCL exprs
+  auto input_expr = converter->GetMappedExpr(input_operand);
+  if (!input_expr.defined()) {
+    input_expr = converter->ConvertOperand(input_operand);
+  }
+  auto squeeze_expr = converter->builder()->CreateSqueeze(
+      input_expr, ConvertToXTCLArray<xtcl::Integer>(axes));
+  converter->UpdateExprMap(output_operand, squeeze_expr);
   return NNADAPTER_NO_ERROR;
 }
 

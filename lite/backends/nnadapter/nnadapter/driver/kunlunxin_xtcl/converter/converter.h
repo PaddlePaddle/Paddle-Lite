@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -36,35 +36,39 @@ class Converter {
   // Convert a NNAdapter model to XTC network and exprs
   int Apply(hal::Model* model);
   xtcl::network::xNetworkBuilder* builder() { return builder_; }
+  std::string GetUniqueName(const std::string& suffix = "");
   // Mapping a XTCL expr to a NNAdapter operand
   xtcl::xExpr GetMappedExpr(hal::Operand* operand);
   xtcl::xExpr UpdateExprMap(hal::Operand* operand, xtcl::xExpr expr);
-  template <typename T>
-  std::shared_ptr<T> AddExpr(hal::Operand* operand = nullptr,
-                             const std::string& custom_name = "") {
-    std::string operand_id = OperandIdToString(operand);
-    std::string expr_name = string_format("op_%d_%s_%s_%s",
-                                          expr_index_++,
-                                          typeid(T).name(),
-                                          operand_id.c_str(),
-                                          custom_name.c_str());
-    return std::make_shared<T>(expr_name);
-  }
-  xtcl::xExpr AddConstantExpr(const void* values,
-                              NNAdapterOperandPrecisionCode precision,
-                              const std::vector<int32_t>& dimensions = {});
-  xtcl::xExpr AddInt32ConstantExpr(const int32_t* values,
-                                   const std::vector<int32_t>& dimensions);
-  xtcl::xExpr AddInt32ConstantExpr(const std::vector<int32_t>& values,
-                                   const std::vector<int32_t>& dimensions = {});
-  xtcl::xExpr AddFloat32ConstantExpr(const float* values,
-                                     const std::vector<int32_t>& dimensions);
-  xtcl::xExpr AddFloat32ConstantExpr(
+  xtcl::xExpr AddInputTensor(const std::string& name,
+                             NNAdapterOperandPrecisionCode precision,
+                             const int32_t* dimensions_data,
+                             uint32_t dimensions_count);
+  xtcl::xExpr AddInputTensor(const std::string& name,
+                             NNAdapterOperandPrecisionCode precision,
+                             const std::vector<int32_t>& dimensions);
+  xtcl::xExpr AddConstantTensor(const void* values,
+                                NNAdapterOperandPrecisionCode precision,
+                                const std::vector<int32_t>& dimensions = {},
+                                std::string name = "");
+  xtcl::xExpr AddInt32ConstantTensor(const int32_t* values,
+                                     const std::vector<int32_t>& dimensions,
+                                     const std::string& name = "");
+  xtcl::xExpr AddInt32ConstantTensor(
+      const std::vector<int32_t>& values,
+      const std::vector<int32_t>& dimensions = {},
+      const std::string& name = "");
+  xtcl::xExpr AddFloat32ConstantTensor(const float* values,
+                                       const std::vector<int32_t>& dimensions,
+                                       const std::string& name = "");
+  xtcl::xExpr AddFloat32ConstantTensor(
       const std::vector<float>& values,
-      const std::vector<int32_t>& dimensions = {});
+      const std::vector<int32_t>& dimensions = {},
+      const std::string& name = "");
   // Convert a constant and model input operand and map to a XTCL expr
   xtcl::xExpr ConvertOperand(hal::Operand* operand,
-                             std::vector<int32_t> dimensions = {});
+                             std::vector<int32_t> dimensions = {},
+                             const std::string& name = "");
 
  private:
   xtcl::network::xNetworkBuilder* builder_{nullptr};

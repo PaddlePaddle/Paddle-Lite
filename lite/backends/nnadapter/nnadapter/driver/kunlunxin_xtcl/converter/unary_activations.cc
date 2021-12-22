@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,24 +25,24 @@ int ConvertUnaryActivations(Converter* converter, hal::Operation* operation) {
 
   // Convert to XTCL exprs
   auto input_expr = converter->GetMappedExpr(input_operand);
-  if (!input_expr) {
+  if (!input_expr.defined()) {
     input_expr = converter->ConvertOperand(input_operand);
   }
-  xtcl::xExpr act_expr = nullptr;
   switch (operation->type) {
-    case NNADAPTER_RELU:
-      act_expr = converter->builder()->CreateRelu(input_expr);
-      break;
-    case NNADAPTER_TANH:
-      act_expr = converter->builder()->CreateUnaryOp("tanh", input_expr);
-      break;
+#define CONVERT_UNARY_ACTIVATION(type, func)                              \
+  case NNADAPTER_##type:                                                  \
+    converter->UpdateExprMap(output_operand, converter->builder()->func); \
+    break;
+    CONVERT_UNARY_ACTIVATION(RELU, CreateRelu(input_expr));
+    CONVERT_UNARY_ACTIVATION(RELU6, CreateRelu6(input_expr));
+    CONVERT_UNARY_ACTIVATION(TANH, CreateUnaryOp("tanh", input_expr));
+#undef CONVERT_UNARY_ACTIVATION
     default:
-      NNADAPTER_LOG(FATAL) << "Unsupported activation unary operation type "
+      NNADAPTER_LOG(FATAL) << "Unsupported activation operation type "
                            << OperationTypeToString(operation->type)
                            << " is found.";
       break;
   }
-  UpdateExprMap(output_operand, act_expr);
   return NNADAPTER_NO_ERROR;
 }
 

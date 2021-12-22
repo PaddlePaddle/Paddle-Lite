@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,6 +24,13 @@ int ConvertTranspose(Converter* converter, hal::Operation* operation) {
   TRANSPOSE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to XTCL exprs
+  auto input_expr = converter->GetMappedExpr(input_operand);
+  if (!input_expr.defined()) {
+    input_expr = converter->ConvertOperand(input_operand);
+  }
+  auto transpose_expr = converter->builder()->CreateTranspose(
+      input_expr, ConvertToXTCLArray<xtcl::Integer>(perm_data, perm_count));
+  converter->UpdateExprMap(output_operand, transpose_expr);
   return NNADAPTER_NO_ERROR;
 }
 

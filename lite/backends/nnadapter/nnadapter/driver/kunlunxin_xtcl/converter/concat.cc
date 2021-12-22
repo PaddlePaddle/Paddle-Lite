@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,6 +24,19 @@ int ConvertConcat(Converter* converter, hal::Operation* operation) {
   CONCAT_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to XTCL exprs
+  auto N = input_count - 1;
+  xtcl::Array<xtcl::xExpr> input_exprs;
+  for (int i = 0; i < N; i++) {
+    auto input_operand = input_operands[i];
+    auto input_expr = converter->GetMappedExpr(input_operand);
+    if (!input_expr.defined()) {
+      input_expr = converter->ConvertOperand(input_operand);
+    }
+    input_exprs.push_back(input_expr);
+  }
+  auto concat_expr = converter->builder()->CreateConcatenate(
+      xtcl::network::Tuple(input_exprs), axis);
+  converter->UpdateExprMap(output_operand, concat_expr);
   return NNADAPTER_NO_ERROR;
 }
 

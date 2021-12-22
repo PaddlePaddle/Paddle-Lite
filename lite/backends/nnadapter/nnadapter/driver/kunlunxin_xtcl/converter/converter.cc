@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,6 +29,11 @@ namespace kunlunxin_xtcl {
 
 int Converter::Apply(hal::Model* model) {
   expr_index_ = 0;
+  // Create the model input exprs based on the specified name
+  for (int i = 0; i < model->input_operands.size(); i++) {
+    ConvertOperand(
+        model->input_operands[i], {}, string_format("model_input_%d", i));
+  }
   // Convert the NNAdapter operations to XTCL exprs
   std::vector<hal::Operation*> operations =
       SortOperationsInTopologicalOrder(model);
@@ -53,12 +58,16 @@ int Converter::Apply(hal::Model* model) {
   return NNADAPTER_NO_ERROR;
 }
 
+std::string Converter::GetUniqueName(const std::string& suffix) {
+  return string_format("_%d_%s_", expr_index_++, suffix.c_str());
+}
+
 xtcl::xExpr Converter::GetMappedExpr(hal::Operand* operand) {
-  auto it = exps_->find(operand);
+  auto it = exprs_->find(operand);
   if (it != exprs_->end()) {
     return it->second.back();
   }
-  return nullptr;
+  return xtcl::xExpr();
 }
 
 xtcl::xExpr Converter::UpdateExprMap(hal::Operand* operand, xtcl::xExpr expr) {
@@ -73,58 +82,98 @@ xtcl::xExpr Converter::UpdateExprMap(hal::Operand* operand, xtcl::xExpr expr) {
   return expr;
 }
 
-xtcl::xExpr Converter::AddConstantExpr(const void* values,
-                                       NNAdapterOperandPrecisionCode precision,
-                                       const std::vector<int32_t>& dimensions) {
+xtcl::xExpr Converter::AddInputTensor(const std::string& name,
+                                      NNAdapterOperandPrecisionCode precision,
+                                      const int32_t* dimensions_data,
+                                      uint32_t dimensions_count) {
+  NNADAPTER_CHECK(!name.empty());
+  auto shape =
+      ConvertToXTCLArray<xtcl::xIndexExpr>(dimensions_data, dimensions_count);
+  auto dtype = ConvertToXTCLDataType(precision);
+  return builder_->CreateTensor(name, shape, dtype);
+}
+
+xtcl::xExpr Converter::AddInputTensor(const std::string& name,
+                                      NNAdapterOperandPrecisionCode precision,
+                                      const std::vector<int32_t>& dimensions) {
+  return AddInputTensor(name, precision, dimensions.data(), dimensions.size());
+}
+
+xtcl::xExpr Converter::AddConstantTensor(
+    const void* values,
+    NNAdapterOperandPrecisionCode precision,
+    const std::vector<int32_t>& dimensions,
+    std::string name) {
   NNADAPTER_CHECK(values)
       << "The values of constant expr should not be nullptr.";
-  auto num_values = ProductionOfDimensions(dimensions);
-  // auto shape = ConvertToArrayOf<xtcl::xIndexExpr>(dimensions);
-  // auto dtype = ConvertToDataType(precision);
-  // auto constant_expr = builder_->CreateTensor(name, shape, dtype);
-  // params_.emplace(std::make_pair(name, ConvertToxNDArray(tensor, shape,
-  // layout)));
-  // Add anonymous constant operator
-  return nullptr;
+  if (name.empty()) {
+    name = GetUniqueName();
+  }
+  params_->emplace(std::make_pair(
+      name,
+      CreateXTCLNDArray(
+          std::vector<int64_t>(dimensions.begin(), dimensions.end()),
+          ConvertToDLDataType(precision),
+          values)));
+  return AddInputTensor(name, precision, dimensions);
 }
 
-xtcl::xExpr Converter::AddInt32ConstantExpr(
-    const int32_t* values, const std::vector<int32_t>& dimensions) {
-  return AddConstantOperator(values, NNADAPTER_INT32, dimensions);
+xtcl::xExpr Converter::AddInt32ConstantTensor(
+    const int32_t* values,
+    const std::vector<int32_t>& dimensions,
+    const std::string& name) {
+  return AddConstantTensor(values, NNADAPTER_INT32, dimensions, name);
 }
 
-xtcl::xExpr Converter::AddInt32ConstantExpr(
+xtcl::xExpr Converter::AddInt32ConstantTensor(
     const std::vector<int32_t>& values,
-    const std::vector<int32_t>& dimensions) {
+    const std::vector<int32_t>& dimensions,
+    const std::string& name) {
   int num_values = values.size();
-  return AddInt32ConstantExpr(
+  return AddInt32ConstantTensor(
       &values[0],
-      dimensions.empty() ? std::vector<int32_t>({num_values}) : dimensions);
+      dimensions.empty() ? std::vector<int32_t>({num_values}) : dimensions,
+      name);
 }
 
-xtcl::xExpr Converter::AddFloat32ConstantExpr(
-    const float* values, const std::vector<int32_t>& dimensions) {
-  return AddConstantExpr(values, NNADAPTER_FLOAT32, dimensions);
+xtcl::xExpr Converter::AddFloat32ConstantTensor(
+    const float* values,
+    const std::vector<int32_t>& dimensions,
+    const std::string& name) {
+  return AddConstantTensor(values, NNADAPTER_FLOAT32, dimensions, name);
 }
 
-xtcl::xExpr Converter::AddFloat32ConstantExpr(
-    const std::vector<float>& values, const std::vector<int32_t>& dimensions) {
+xtcl::xExpr Converter::AddFloat32ConstantTensor(
+    const std::vector<float>& values,
+    const std::vector<int32_t>& dimensions,
+    const std::string& name) {
   int num_values = values.size();
-  return AddFloat32ConstantExpr(
+  return AddFloat32ConstantTensor(
       &values[0],
-      dimensions.empty() ? std::vector<int32_t>({num_values}) : dimensions);
+      dimensions.empty() ? std::vector<int32_t>({num_values}) : dimensions,
+      name);
 }
 
 xtcl::xExpr Converter::ConvertOperand(hal::Operand* operand,
-                                      std::vector<int32_t> dimensions) {
+                                      std::vector<int32_t> dimensions,
+                                      const std::string& name) {
   if (dimensions.empty()) {
     for (uint32_t i = 0; i < operand->type.dimensions.count; i++) {
       dimensions.push_back(operand->type.dimensions.data[i]);
     }
   }
-  NNADAPTER_LOG(FATAL) << "Only constant and model input operands can be "
-                          "converted to xtcl::xExpr!";
-  return nullptr;
+  xtcl::xExpr tensor;
+  if (IsConstantOperand(operand)) {
+    tensor = AddConstantTensor(
+        operand->buffer, operand->type.precision, dimensions, name);
+  } else if (IsModelInputOperand(operand)) {
+    tensor = AddInputTensor(name, operand->type.precision, dimensions);
+  } else {
+    NNADAPTER_LOG(FATAL) << "Only constant and model input operands can be "
+                            "converted to xtcl::xExpr!";
+  }
+  UpdateExprMap(operand, tensor);
+  return tensor;
 }
 
 }  // namespace kunlunxin_xtcl

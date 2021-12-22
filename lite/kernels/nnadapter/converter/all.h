@@ -43,12 +43,10 @@ REGISTER_CONVERTER(pool2d,
 REGISTER_CONVERTER(
     matmul,
     ConvertMatmul,
-    "huawei_ascend_npu,huawei_kirin_npu,imagination_nna,verisilicon"
-    "_timvx,kunlunxin_xtcl");
-REGISTER_CONVERTER(
-    matmul_v2,
-    ConvertMatmulV2,
-    "huawei_ascend_npu,huawei_kirin_npu,imagination_nna,kunlunxin_xtcl");
+    "huawei_ascend_npu,huawei_kirin_npu,imagination_nna,verisilicon_timvx");
+REGISTER_CONVERTER(matmul_v2,
+                   ConvertMatmulV2,
+                   "huawei_ascend_npu,huawei_kirin_npu,imagination_nna");
 REGISTER_CONVERTER(softmax,
                    ConvertSoftmax,
                    "rockchip_npu,mediatek_apu,huawei_kirin_npu,huawei_ascend_"
@@ -97,11 +95,13 @@ REGISTER_CONVERTER(
     "npu,amlogic_npu,imagination_nna,verisilicon_timvx,kunlunxin_xtcl");
 REGISTER_CONVERTER(elementwise_max,
                    ConvertElementwise,
-                   "huawei_ascend_npu,imagination_nna");
+                   "huawei_ascend_npu,imagination_nna,kunlunxin_xtcl");
 REGISTER_CONVERTER(elementwise_min,
                    ConvertElementwise,
-                   "huawei_ascend_npu,imagination_nna");
-REGISTER_CONVERTER(elementwise_pow, ConvertElementwise, "huawei_ascend_npu");
+                   "huawei_ascend_npu,imagination_nna,kunlunxin_xtcl");
+REGISTER_CONVERTER(elementwise_pow,
+                   ConvertElementwise,
+                   "huawei_ascend_npu,kunlunxin_xtcl");
 REGISTER_CONVERTER(
     fusion_elementwise_add_activation,
     ConvertElementwise,
@@ -124,14 +124,14 @@ REGISTER_CONVERTER(
     "npu,amlogic_npu,imagination_nna,verisilicon_timvx,kunlunxin_xtcl");
 REGISTER_CONVERTER(fusion_elementwise_min_activation,
                    ConvertElementwise,
-                   "huawei_ascend_npu,imagination_nna");
+                   "huawei_ascend_npu,imagination_nna,kunlunxin_xtcl");
 REGISTER_CONVERTER(fusion_elementwise_max_activation,
                    ConvertElementwise,
-                   "huawei_ascend_npu,imagination_nna");
+                   "huawei_ascend_npu,imagination_nna,kunlunxin_xtcl");
 REGISTER_CONVERTER(fusion_elementwise_pow_activation,
                    ConvertElementwise,
-                   "huawei_ascend_npu");
-REGISTER_CONVERTER(pow, ConvertPow, "huawei_ascend_npu");
+                   "huawei_ascend_npu,kunlunxin_xtcl");
+REGISTER_CONVERTER(pow, ConvertPow, "huawei_ascend_npu,kunlunxin_xtcl");
 REGISTER_CONVERTER(
     sigmoid,
     ConvertUnaryActivations,
@@ -149,7 +149,7 @@ REGISTER_CONVERTER(relu6,
                    "timvx,kunlunxin_xtcl");
 REGISTER_CONVERTER(leaky_relu,
                    ConvertLeakyRelu,
-                   "huawei_ascend_npu,verisilicon_timvx");
+                   "huawei_ascend_npu,verisilicon_timvx,kunlunxin_xtcl");
 REGISTER_CONVERTER(
     tanh,
     ConvertUnaryActivations,
@@ -202,10 +202,10 @@ REGISTER_CONVERTER(slice, ConvertSlice, "huawei_ascend_npu");
 REGISTER_CONVERTER(strided_slice, ConvertStridedSlice, "huawei_ascend_npu");
 REGISTER_CONVERTER(squeeze,
                    ConvertSqueeze,
-                   "huawei_ascend_npu,verisilicon_timvx");
+                   "huawei_ascend_npu,verisilicon_timvx,kunlunxin_xtcl");
 REGISTER_CONVERTER(squeeze2,
                    ConvertSqueeze,
-                   "huawei_ascend_npu,verisilicon_timvx");
+                   "huawei_ascend_npu,verisilicon_timvx,kunlunxin_xtcl");
 REGISTER_CONVERTER(range, ConvertRange, "huawei_ascend_npu");
 REGISTER_CONVERTER(stack, ConvertStack, "huawei_ascend_npu");
 REGISTER_CONVERTER(fill_constant, ConvertFillConstant, "huawei_ascend_npu");

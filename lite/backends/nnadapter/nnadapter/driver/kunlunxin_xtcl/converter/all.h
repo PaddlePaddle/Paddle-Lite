@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,18 +23,21 @@ REGISTER_CONVERTER(DIV, ConvertElementwise)
 REGISTER_CONVERTER(FLATTEN, ConvertFlatten)
 REGISTER_CONVERTER(FULLY_CONNECTED, ConvertFullyConnected)
 REGISTER_CONVERTER(GELU, ConvertGelu)
-REGISTER_CONVERTER(MAT_MUL, ConvertMatMul)
+REGISTER_CONVERTER(LEAKY_RELU, ConvertLeakyRelu)
+REGISTER_CONVERTER(MAX, ConvertElementwise)
 REGISTER_CONVERTER(MAX_POOL_2D, ConvertPool2D)
+REGISTER_CONVERTER(MIN, ConvertElementwise)
 REGISTER_CONVERTER(MUL, ConvertElementwise)
+REGISTER_CONVERTER(POW, ConvertElementwise)
 REGISTER_CONVERTER(RELU, ConvertUnaryActivations)
 REGISTER_CONVERTER(RELU6, ConvertUnaryActivations)
 REGISTER_CONVERTER(RESHAPE, ConvertReshape)
 REGISTER_CONVERTER(SIGMOID, ConvertUnaryActivations)
 REGISTER_CONVERTER(SOFTMAX, ConvertSoftmax)
 REGISTER_CONVERTER(SPLIT, ConvertSplit)
+REGISTER_CONVERTER(SQUEEZE, ConvertSqueeze)
 REGISTER_CONVERTER(SUB, ConvertElementwise)
 REGISTER_CONVERTER(TANH, ConvertUnaryActivations)
 REGISTER_CONVERTER(TRANSPOSE, ConvertTranspose)
-REGISTER_CONVERTER(UNSQUEEZE, ConvertUnsqueeze)
 
 #endif  // NOLINT

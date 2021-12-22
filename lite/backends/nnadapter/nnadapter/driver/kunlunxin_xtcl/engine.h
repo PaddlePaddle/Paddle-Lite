@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,11 +34,17 @@ class Device {
 class Context {
  public:
   explicit Context(void* device, const char* properties);
+  int GetFirstDeviceID() {
+    return selected_device_ids_.empty() ? 0 : selected_device_ids_[0];
+  }
+  std::string GetDeviceTarget() { return device_target_; }
   ~Context();
 
  private:
   void* device_{nullptr};
   void* context_{nullptr};
+  std::vector<int> selected_device_ids_;
+  std::string device_target_{""};
 };
 
 class Program {
@@ -61,7 +67,7 @@ class Program {
   std::map<hal::Operand*, std::vector<xtcl::xExpr>> exprs_;
   xtcl::network::xTensorCompiler::ParamNDArrayMap params_;
   xtcl::network::xNetworkBuilder builder_;
-  std::unique_ptr<xtcl::network::xRuntimeInstance> runtime_{nullptr};
+  std::shared_ptr<xtcl::network::xRuntimeInstance> runtime_{nullptr};
   std::vector<DLTensor> input_tensors_{};
   std::vector<DLTensor> output_tensors_{};
   std::vector<NNAdapterOperandType> input_types_;

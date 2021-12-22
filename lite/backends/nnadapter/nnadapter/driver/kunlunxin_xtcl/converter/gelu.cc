@@ -27,11 +27,11 @@ int ConvertGelu(Converter* converter, hal::Operation* operation) {
 
   // Convert to XTCL exprs
   auto input_expr = converter->GetMappedExpr(input_operand);
-  if (!input_expr) {
+  if (input_expr.defined()) {
     input_expr = converter->ConvertOperand(input_operand);
   }
   auto gelu_expr = converter->builder()->CreateGelu(input_expr);
-  UpdateExprMap(output_operand, gelu_expr);
+  converter->UpdateExprMap(output_operand, gelu_expr);
   return NNADAPTER_NO_ERROR;
 }
 

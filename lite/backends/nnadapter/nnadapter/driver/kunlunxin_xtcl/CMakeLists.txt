@@ -1,4 +1,4 @@
-# Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+# Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ include(dependencies.cmake)
 
 aux_source_directory(converter CONVERTERS)
 set(SRCS utility.cc ${CONVERTERS} engine.cc driver.cc)
-set(DEPS ${NNADAPTER_CORE} ${NNADAPTER_UTILITIES} ${${DEVICE_NAME}_deps})
+set(DEPS ${NNADAPTER_CORE} ${NNADAPTER_UTILITIES} nnadapter_optimizer_fuse_matmul_add_into_fully_connected ${${DEVICE_NAME}_deps})
 
 add_library(${DEVICE_NAME} SHARED ${SRCS})
 target_link_libraries(${DEVICE_NAME} "-Wl,--start-group" ${DEPS} "-Wl,--end-group")

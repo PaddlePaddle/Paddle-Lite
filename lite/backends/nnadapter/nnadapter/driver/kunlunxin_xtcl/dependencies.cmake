@@ -1,4 +1,4 @@
-# Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+# Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,21 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if(NOT NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT)
-  set(NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT $ENV{NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT})
-endif()
-
-if(NOT NNADAPTER_KUNLUNXIN_XTCL_SDK_URL)
-  set(NNADAPTER_KUNLUNXIN_XTCL_SDK_URL $ENV{NNADAPTER_KUNLUNXIN_XTCL_SDK_URL})
-endif()
-
-if(NOT NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV)
-  set(NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV $ENV{NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV})
-endif()
-
 include(ExternalProject)
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDMLC_USE_GLOG=1")
 
 # Download and extract XTCL archive file
 macro(download_and_extract_xtcl_archive_file ARCHIVE_URL DOWNLOAD_DIR INSTALL_DIR)
@@ -35,7 +21,7 @@ macro(download_and_extract_xtcl_archive_file ARCHIVE_URL DOWNLOAD_DIR INSTALL_DI
   string(REPLACE "-" ";" ARCHIVE_FILE_NAME_TOKEN_LIST ${ARCHIVE_FILE_NAME})
   list(LENGTH ARCHIVE_FILE_NAME_TOKEN_LIST ARCHIVE_FILE_NAME_TOKEN_LIST_LENGTH)
   if(${ARCHIVE_FILE_NAME_TOKEN_LIST_LENGTH} LESS 2)
-    message(FATAL_ERROR "Invalid URL is found in the xtcl archive file: ${ARCHIVE_URL}")  
+    message(FATAL_ERROR "Invalid URL is found in the xtcl archive file: ${ARCHIVE_URL}")
   endif()
   list(GET ARCHIVE_FILE_NAME_TOKEN_LIST 0 ARCHIVE_NAME)
   message(STATUS "Downloading and extract ${ARCHIVE_NAME} from ${ARCHIVE_URL} to ${DOWNLOAD_DIR} ...")
@@ -63,6 +49,8 @@ macro(add_xtcl_lib_deps LIB_PATH)
   get_filename_component(LIB_NAME ${LIB_PATH} NAME_WE)
   get_filename_component(LIB_EXT ${LIB_PATH} EXT)
   string(REPLACE "." "_" LIB_NAME ${LIB_NAME}${LIB_EXT})
+  string(REPLACE ";" "_" LIB_DEPS "${args_DEPS}")
+  set(LIB_NAME ${LIB_NAME}_${LIB_DEPS})
   set(LIB_TYPE STATIC)
   if(${LIB_EXT} STREQUAL ".so")
     set(LIB_TYPE SHARED)
@@ -80,6 +68,30 @@ macro(add_xtcl_lib_deps LIB_PATH)
   set(${DEVICE_NAME}_deps ${${DEVICE_NAME}_deps} ${LIB_NAME})
 endmacro()
 
+if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
+  message(FATAL_ERROR "Since the Kunlunxin XTCL HAL library needs to be compiled based on C++14, the gcc version is required to be greater than 5.0")
+endif()
+
+# Resolve the compilation error caused by the introduction of XTCL and TVM header files
+set(CMAKE_CXX_STANDARD 14)
+string(REPLACE "-std=c++11" "-std=c++14" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+string(REPLACE "-Werror" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+string(REPLACE "-Wnon-virtual-dtor" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDMLC_USE_GLOG=1")
+message(STATUS "${CMAKE_CXX_FLAGS}")
+
+if(NOT NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT)
+  set(NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT $ENV{NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT})
+endif()
+
+if(NOT NNADAPTER_KUNLUNXIN_XTCL_SDK_URL)
+  set(NNADAPTER_KUNLUNXIN_XTCL_SDK_URL $ENV{NNADAPTER_KUNLUNXIN_XTCL_SDK_URL})
+endif()
+
+if(NOT NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV)
+  set(NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV $ENV{NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV})
+endif()
+
 if(NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT)
   message(STATUS "NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT: ${NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT}")
   set(XPU_INC_DIR "${NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT}/XTCL/include" CACHE PATH "XPU include directory" FORCE)
@@ -95,7 +107,10 @@ if(NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT)
     add_xtcl_lib_deps(${NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT}/XTCL/shlib/libxpujitc.so)
     add_xtcl_lib_deps(${NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT}/XTCL/shlib/libLLVM-10.so)
     add_xtcl_lib_deps(${NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT}/XTCL/shlib/libtvm.so)
-    add_xtcl_lib_deps(${NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT}/XTCL/shlib/libxtcl.so)
+    add_custom_target(copy_bkcl_lib
+      COMMAND cp -r ${NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT}/XTCL/shlib/libbkcl.so ${CMAKE_CURRENT_BINARY_DIR}
+    )
+    add_xtcl_lib_deps(${NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT}/XTCL/shlib/libxtcl.so DEPS copy_bkcl_lib)
   endif()
 endif()
 
@@ -162,6 +177,7 @@ set(NNADAPTER_KUNLUNXIN_XTCL_SDK_INSTALL_DIR ${THIRD_PARTY_PATH}/install/xtcl)
 download_and_extract_xtcl_archive_file(${NNADAPTER_KUNLUNXIN_XTCL_SDK_URL}/xdnn-${NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV}.tar.gz ${NNADAPTER_KUNLUNXIN_XTCL_SDK_DOWNLOAD_DIR} ${NNADAPTER_KUNLUNXIN_XTCL_SDK_INSTALL_DIR})
 download_and_extract_xtcl_archive_file(${NNADAPTER_KUNLUNXIN_XTCL_SDK_URL}/xre-${NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV}.tar.gz ${NNADAPTER_KUNLUNXIN_XTCL_SDK_DOWNLOAD_DIR} ${NNADAPTER_KUNLUNXIN_XTCL_SDK_INSTALL_DIR})
 download_and_extract_xtcl_archive_file(${NNADAPTER_KUNLUNXIN_XTCL_SDK_URL}/xtdk-${NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV}.tar.gz ${NNADAPTER_KUNLUNXIN_XTCL_SDK_DOWNLOAD_DIR} ${NNADAPTER_KUNLUNXIN_XTCL_SDK_INSTALL_DIR})
+download_and_extract_xtcl_archive_file(${NNADAPTER_KUNLUNXIN_XTCL_SDK_URL}/xccl-${NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV}.tar.gz ${NNADAPTER_KUNLUNXIN_XTCL_SDK_DOWNLOAD_DIR} ${NNADAPTER_KUNLUNXIN_XTCL_SDK_INSTALL_DIR})
 download_and_extract_xtcl_archive_file(${NNADAPTER_KUNLUNXIN_XTCL_SDK_URL}/xtcl-${NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV}.tar.gz ${NNADAPTER_KUNLUNXIN_XTCL_SDK_DOWNLOAD_DIR} ${NNADAPTER_KUNLUNXIN_XTCL_SDK_INSTALL_DIR})
 if(MSVC)
   # TODO(hong19860320) Supports for Visual Studio and Win32
@@ -172,5 +188,9 @@ else()
   add_xtcl_lib_deps(${NNADAPTER_KUNLUNXIN_XTCL_SDK_INSTALL_DIR}/xtdk/so/libxpujitc.so DEPS xtdk)
   add_xtcl_lib_deps(${NNADAPTER_KUNLUNXIN_XTCL_SDK_INSTALL_DIR}/xtdk/so/libLLVM-10.so DEPS xtdk)
   add_xtcl_lib_deps(${NNADAPTER_KUNLUNXIN_XTCL_SDK_INSTALL_DIR}/xtcl/so/libtvm.so DEPS xtcl)
-  add_xtcl_lib_deps(${NNADAPTER_KUNLUNXIN_XTCL_SDK_INSTALL_DIR}/xtcl/so/libxtcl.so DEPS xtcl)
+  add_custom_target(copy_bkcl_xccl_lib
+    COMMAND cp -r ${NNADAPTER_KUNLUNXIN_XTCL_SDK_INSTALL_DIR}/xccl/so/libbkcl.so ${CMAKE_CURRENT_BINARY_DIR}
+    DEPENDS xccl
+  )
+  add_xtcl_lib_deps(${NNADAPTER_KUNLUNXIN_XTCL_SDK_INSTALL_DIR}/xtcl/so/libxtcl.so DEPS xtcl copy_bkcl_xccl_lib)
 endif()

@@ -12,25 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "core/operation/mat_mul.h"
+#include "core/operation/leaky_relu.h"
 #include "driver/kunlunxin_xtcl/converter/converter.h"
 #include "utility/debug.h"
-#include "utility/utility.h"
+#include "utility/logging.h"
 
 namespace nnadapter {
 namespace kunlunxin_xtcl {
 
-int ConvertMatMul(Converter* converter, hal::Operation* operation) {
-  MAT_MUL_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  // TODO(shentanyue) Support BatchMatMul later.
-  NNADAPTER_CHECK_EQ(x_operand->type.dimensions.count, 2)
-      << "Only support the dimension of x is 2 now.";
-  NNADAPTER_CHECK_EQ(y_operand->type.dimensions.count, 2)
-      << "Only support the dimension of y is 2 now.";
+int ConvertLeakyRelu(Converter* converter, hal::Operation* operation) {
+  LEAKY_RELU_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to XTCL exprs
-  // TODO(hong19860320) mapping NNADAPTER_MATMUL to XTCL CreateBatchMatmul or
-  // CreateMatmul2D
+  auto input_expr = converter->GetMappedExpr(input_operand);
+  if (!input_expr.defined()) {
+    input_expr = converter->ConvertOperand(input_operand);
+  }
+  auto leaky_relu_expr =
+      converter->builder()->CreateLeakyRelu(input_expr, alpha);
+  converter->UpdateExprMap(output_operand, leaky_relu_expr);
   return NNADAPTER_NO_ERROR;
 }
 
