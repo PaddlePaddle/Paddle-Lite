@@ -27,20 +27,17 @@ bool CropOpLite::CheckShape() const {
 }
 
 bool CropOpLite::InferShapeImpl() const {
-  std::vector<int64_t> shape;
   if (param_.Y != nullptr) {
-    auto shape_data = param_.Y->template data<int>();
-    for (int64_t i = 0; i < param_.Y->numel(); i++) {
-      shape.push_back(shape_data[i]);
-    }
+    auto output_dims = param_.Y->dims();
+    param_.Out->Resize(output_dims);
   } else {
-    shape = std::vector<int64_t>(param_.shape.begin(), param_.shape.end());
+    std::vector<int64_t> shape(param_.shape.begin(), param_.shape.end());
     if (shape[0] == -1) {
       auto x_dims = param_.X->dims();
       shape[0] = x_dims[0];
     }
+    param_.Out->Resize(shape);
   }
-  param_.Out->Resize(shape);
   return true;
 }
 
