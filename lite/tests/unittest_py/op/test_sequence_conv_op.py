@@ -34,18 +34,18 @@ class TestSequenceConvOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
-        self.enable_testing_on_place(
-            TargetType.ARM,
-            PrecisionType.FP32,
-            DataLayoutType.NCHW,
-            thread=[1, 4])
+        # self.enable_testing_on_place(
+        #     TargetType.ARM,
+        #     PrecisionType.FP32,
+        #     DataLayoutType.NCHW,
+        #     thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        if predictor_config.target() == TargetType.ARM:
-            print("Output has diff on ARM. Skip.")
-            return False
+        # if predictor_config.target() == TargetType.ARM:
+        #     print("Output has diff on ARM. Skip.")
+        #     return False
         return True
 
     def sample_program_configs(self, draw):
