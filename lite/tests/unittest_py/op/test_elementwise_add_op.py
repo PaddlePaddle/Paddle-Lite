@@ -142,7 +142,7 @@ class TestElementwiseAddOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=20), min_size=1, max_size=4))
-        axis = draw(st.integers(min_value=-4, max_value=4))
+        axis = draw(st.integers(min_value=-1, max_value=4))
         assume(
             check_broadcast(input_data_x_shape, input_data_y_shape, axis) ==
             True)
