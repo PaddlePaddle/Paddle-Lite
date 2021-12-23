@@ -54,6 +54,9 @@ int ConvertElementwise(Converter* converter, hal::Operation* operation) {
                          << " is found.";
   }
   converter->AddOperator(op_type, input_tensors, output_tensors, nullptr);
+  NNADAPTER_CHECK_EQ(fuse_code, NNADAPTER_FUSED_NONE)
+      << "Missing the processing of fuse_code(" << fuse_code
+      << ") in unpack_op_fusion.cc";
   return NNADAPTER_NO_ERROR;
 }
 

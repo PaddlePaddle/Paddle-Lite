@@ -24,9 +24,32 @@
 #include "graph/ge_error_codes.h"
 #include "graph/graph.h"
 #include "utility/logging.h"
+#include "utility/string.h"
+#include "utility/utility.h"
 
 namespace nnadapter {
 namespace huawei_ascend_npu {
+
+// The following environment variables can be used at runtime:
+// Specify the list of device IDs, such as
+// HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0,1,2,3 or
+// HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS=0
+#define HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS \
+  "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS"
+
+#define NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(   \
+    major, minor, patch)                                         \
+  NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MAJOR_VERSION * 1000 +        \
+          NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MINOR_VERSION * 100 + \
+          NNADAPTER_HUAWEI_ASCEND_NPU_CANN_PATCH_VERSION >=      \
+      major * 1000 + minor * 100 + patch
+
+#define NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_LESS_THAN(      \
+    major, minor, patch)                                         \
+  NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MAJOR_VERSION * 1000 +        \
+          NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MINOR_VERSION * 100 + \
+          NNADAPTER_HUAWEI_ASCEND_NPU_CANN_PATCH_VERSION <=      \
+      major * 1000 + minor * 100 + patch
 
 // Prepare AscendCL environment and register the finalizer to be called at
 // normal process termination
@@ -104,6 +127,14 @@ std::vector<int64_t> ConvertToGEDimensions(const int32_t* input_dimensions,
 std::vector<int64_t> ConvertToGEDimensions(
     const std::vector<int32_t>& input_dimensions);
 std::string ConvertPadModeCodeToGEPadMode(int pad_mode_code);
+std::string ConvertInterpolateModeCodeToGEInterpolateMode(
+    int interpolate_mode_code);
+
+// Get Ascend CANN version
+bool GetAscendCANNVersion(int* major, int* minor, int* patch);
+
+// Get Ascend soc name
+ge::AscendString GetAscendSocName();
 
 std::string ShapeToString(const std::vector<int32_t>& shape);
 std::string MergeOptionalShapesString(

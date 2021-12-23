@@ -25,7 +25,7 @@ namespace arm {
 
 using param_t = operators::MulParam;
 using grad_param_t = operators::MulGradParam;
-using kernel_t = MulCompute;
+using kernel_t = MulCompute<PRECISION(kFloat), PRECISION(kFloat)>;
 using grad_kernel_t = MulGradCompute;
 
 class MulGradTester {

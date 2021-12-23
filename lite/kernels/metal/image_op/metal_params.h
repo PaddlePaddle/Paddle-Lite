@@ -37,7 +37,8 @@ struct ActivationMetalParam {
     float threshold;  // RELU6
     float alpha;      // LEAKY_RELU
     float offset;     // HARD_SIGMOID
-    float slope;
+    float slope;      // HARD_SIGMOID
+    float scale;      // HARD_SWISH
 };
 
 struct MetalConvParam {
@@ -248,6 +249,7 @@ struct ConvTransposeAddMetalParam {
     uint16_t oC;
     uint16_t hasAddOp;
     ElementwiseAddMetalParam addParam;
+    ActivationMetalParam activationParam;
 };
 
 struct SliceMetalParam {

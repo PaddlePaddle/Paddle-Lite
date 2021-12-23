@@ -46,6 +46,7 @@ shutil.copy('${PADDLE_SOURCE_DIR}/lite/api/python/bin/paddle_lite_opt', LITE_PAT
 # put all thirdparty libraries in paddlelite.libs
 PACKAGE_DATA['paddlelite.libs'] = []
 LIB_PATH = INFERENCE_LITE_LIB_PATH + '/python/install/libs'
+METAL_LIB_PATH = '${PADDLE_BINARY_DIR}/' + 'lite.metallib'
 
 if '${WITH_MKL}' == 'ON':
     if '${WITH_STATIC_MKL}' == 'OFF':
@@ -53,6 +54,10 @@ if '${WITH_MKL}' == 'ON':
         PACKAGE_DATA['paddlelite.libs'] += ['libmklml.dylib']
     shutil.copy('${MKLML_SHARED_IOMP_LIB}', LIB_PATH)
     PACKAGE_DATA['paddlelite.libs'] += ['libiomp5.dylib']
+
+if '${LITE_WITH_METAL}' == 'ON':
+    shutil.copy(METAL_LIB_PATH, LIB_PATH)
+    PACKAGE_DATA['paddlelite.libs'] += ['lite.metallib']
 
 # link lite.so to paddlelite.libs
 COMMAND = "install_name_tool -add_rpath \"@loader_path/libs/\" " + LITE_PATH + "/lite.so"

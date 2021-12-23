@@ -56,13 +56,13 @@ function (lite_deps TARGET)
     endforeach(var)
   endif()
 
-  if(LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+  if(LITE_WITH_ARM)
     foreach(var ${lite_deps_LIGHT_DEPS})
       set(deps ${deps} ${var})
     endforeach(var)
   endif()
 
-  if (NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK)
+  if (NOT LITE_WITH_ARM)
     foreach(var ${lite_deps_HVY_DEPS})
       set(deps ${deps} ${var})
     endforeach(var)
@@ -146,8 +146,6 @@ file(WRITE ${offline_lib_registry_file} "") # clean
 #  CUDA_DEPS:     LITE_WITH_CUDA
 #  ARM_DEPS:      LITE_WITH_ARM
 #  PROFILE_DEPS:  LITE_WITH_PROFILE
-#  LIGHT_DEPS:    LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
-#  HVY_DEPS:      NOT LITE_WITH_LIGHT_WEIGHT_FRAMEWORK
 #  EXCLUDE_COMPILE_DEPS: TARGET will not be included in lite_compile_deps if this is not None
 #  CV_DEPS:       LITE_WITH_CV
 function(lite_cc_library TARGET)

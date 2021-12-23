@@ -20,8 +20,7 @@ namespace kernels {
 namespace nnadapter {
 
 int ConvertFillAnyLike(Converter* converter, OpInfo* op, Scope* scope) {
-  // Use "shape" + "fill" to implement "fill_any_like"
-  // Shape operand
+  // Input operand
   auto x_name = op->Input("X").front();
   auto x_scale_name = "X0_scale";
   std::vector<float> x_scales;
@@ -29,7 +28,6 @@ int ConvertFillAnyLike(Converter* converter, OpInfo* op, Scope* scope) {
     x_scales = op->GetInputScale(x_scale_name, true);
   }
   auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
-  auto shape_operand = converter->AddShapeOperation(input_operand);
 
   // Value operand
   NNAdapterOperand* value_operand = nullptr;
@@ -76,7 +74,7 @@ int ConvertFillAnyLike(Converter* converter, OpInfo* op, Scope* scope) {
 
   // Fill operation
   converter->AddOperation(
-      NNADAPTER_FILL, {shape_operand, value_operand}, {output_operand});
+      NNADAPTER_FILL_LIKE, {input_operand, value_operand}, {output_operand});
   return NO_ERROR;
 }
 

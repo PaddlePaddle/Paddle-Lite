@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -52,22 +52,13 @@ int ConvertConv2D(Converter* converter, hal::Operation* operation) {
       stride_height == stride_width) {
     use_depthwise_conv = true;
   }
-  if (use_depthwise_conv && is_depthwise_mode) {
-    // [C_out, 1, filter_height, filter_width] -> [1, C_out, filter_height,
-    // filter_width]
-    NNADAPTER_CHECK_EQ(filter_channel_size, 1);
-    filter_operator = converter->ConvertOperand(
-        filter_operand,
-        std::vector<int32_t>(
-            {1, output_channel_size, filter_height, filter_width}));
-  } else {
-    filter_operator = converter->ConvertOperand(filter_operand);
-  }
+  filter_operator = converter->ConvertOperand(filter_operand);
   NNADAPTER_CHECK_EQ(bias_operand->type.dimensions.count, 1);
   NNADAPTER_CHECK_EQ(bias_operand->type.dimensions.data[0],
                      output_channel_size);
   auto bias_operator = converter->ConvertOperand(bias_operand);
   std::shared_ptr<Operator> conv_operator = nullptr;
+#if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(5, 0, 3)
   if (use_depthwise_conv && is_depthwise_mode) {
     auto depthwise_conv_op =
         converter->AddOperator<ge::op::DepthwiseConv2D>(output_operand);
@@ -98,6 +89,21 @@ int ConvertConv2D(Converter* converter, hal::Operation* operation) {
     SET_INPUT(normal_conv_op, bias, bias_operator);
     conv_operator = MAP_OUTPUT(normal_conv_op, y, output_operand);
   }
+#elif NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(3, 3, 0)
+  auto normal_conv_op = converter->AddOperator<ge::op::Conv2D>(output_operand);
+  normal_conv_op->set_attr_pads(ge::Operator::OpListInt(
+      {pad_height_top, pad_height_bottom, pad_width_left, pad_width_right}));
+  normal_conv_op->set_attr_dilations(
+      ge::Operator::OpListInt({1, 1, dilation_height, dilation_width}));
+  normal_conv_op->set_attr_strides(
+      ge::Operator::OpListInt({1, 1, stride_height, stride_width}));
+  normal_conv_op->set_attr_groups(group);
+  normal_conv_op->set_attr_data_format("NCHW");
+  SET_INPUT(normal_conv_op, x, input_operator);
+  SET_INPUT(normal_conv_op, filter, filter_operator);
+  SET_INPUT(normal_conv_op, bias, bias_operator);
+  conv_operator = MAP_OUTPUT(normal_conv_op, y, output_operand);
+#endif
   // fuse activations ?
   switch (fuse_code) {
 #define CONVERT_UNARY_ACTIVATION(type, class_name)                            \

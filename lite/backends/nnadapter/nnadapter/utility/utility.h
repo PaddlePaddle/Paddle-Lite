@@ -16,6 +16,7 @@
 
 #include <sys/time.h>
 #include <algorithm>
+#include <climits>
 #include <cmath>
 #include <map>
 #include <string>
@@ -225,5 +226,24 @@ int64_t GetSpanCount(T start, T end, T step) {
              ? ((std::abs(end - start) + std::abs(step) - 1) / std::abs(step))
              : std::ceil(std::abs((end - start) / step));
 }
+
+// Read environment variables of string type
+std::string GetStringFromEnv(const std::string& str,
+                             const std::string& def = "");
+
+// Read environment variables of bool type
+bool GetBoolFromEnv(const std::string& str, bool def = false);
+
+// Read environment variables of int type
+int GetIntFromEnv(const std::string& str, int def = 0);
+
+// Read environment variables of double type
+double GetDoubleFromEnv(const std::string& str, double def = 0.0);
+
+// Read environment variables of int64 type
+uint64_t GetUInt64FromEnv(const std::string& str, uint64_t def = 0ul);
+
+// Get the real path of the path argument
+std::string GetRealPath(const char* path);
 
 }  // namespace nnadapter

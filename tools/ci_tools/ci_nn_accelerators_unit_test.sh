@@ -41,6 +41,12 @@ REMOTE_DEVICE_WORK_DIR="/data/local/tmp"
 XPU_SDK_URL=""
 XPU_SDK_ENV=""
 XPU_SDK_ROOT=""
+# TIM-VX options
+NNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG=""
+NNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT=""
+NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL=""
+# Huawei Ascend NPU options
+NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest"
 
 # if operating in mac env, we should expand the maximum file num
 os_name=$(uname -s)
@@ -255,33 +261,36 @@ function run_unit_test_on_remote_device() {
     $remote_device_run $remote_device_name shell "rm -f $remote_device_work_dir/$target_name"
     $remote_device_run $remote_device_name push "$target_path" "$remote_device_work_dir"
 
-    local command_line="./$target_name"
+    local test_cmd_line="./$target_name"
+    local clean_cmd_line="rm -rf ./$target_name"
     # Copy the model files to the remote device
     if [[ -n "$model_dir" ]]; then
         local model_name=$(basename $model_dir)
-        $remote_device_run $remote_device_name shell "rm -rf $remote_device_work_dir/$model_name"
         $remote_device_run $remote_device_name push "$model_dir" "$remote_device_work_dir"
-        command_line="$command_line --model_dir ./$model_name"
+        test_cmd_line="$test_cmd_line --model_dir ./$model_name"
+        clean_cmd_line="$clean_cmd_line; rm -rf ./$model_name"
     fi
 
     # Copy the test data files to the remote device
     if [[ -n "$data_dir" ]]; then
         local data_name=$(basename $data_dir)
-        $remote_device_run $remote_device_name shell "rm -rf $remote_device_work_dir/$data_name"
         $remote_device_run $remote_device_name push "$data_dir" "$remote_device_work_dir"
-        command_line="$command_line --data_dir ./$data_name"
+        test_cmd_line="$test_cmd_line --data_dir ./$data_name"
+        clean_cmd_line="$clean_cmd_line; rm -rf ./$data_name"
     fi
 
     # Copy the config files to the remote device
     if [[ -n "$config_dir" ]]; then
         local config_name=$(basename $config_dir)
-        $remote_device_run $remote_device_name shell "rm -rf $remote_device_work_dir/$config_name"
         $remote_device_run $remote_device_name push "$config_dir" "$remote_device_work_dir"
-        command_line="$command_line --config_dir ./$config_name"
+        test_cmd_line="$test_cmd_line --config_dir ./$config_name"
+        clean_cmd_line="$clean_cmd_line; rm -rf ./$config_name"
     fi
 
-    # Run the model on the remote device
-    $remote_device_run $remote_device_name shell "cd $remote_device_work_dir; export GLOG_v=$UNIT_TEST_LOG_LEVEL; LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. $command_line"
+    # Run the test on the remote device
+    $remote_device_run $remote_device_name shell "cd $remote_device_work_dir; export GLOG_v=$UNIT_TEST_LOG_LEVEL; LD_LIBRARY_PATH=$LD_LIBRARY_PATH:. $test_cmd_line"
+    # Clean the resources on the remote device, such as model and test data
+    $remote_device_run $remote_device_name shell "cd $remote_device_work_dir; $clean_cmd_line"
 }
 
 function build_and_test_on_remote_device() {
@@ -407,12 +416,10 @@ function android_cpu_build_target() {
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_TRAIN=ON \
@@ -468,12 +475,10 @@ function armlinux_cpu_build_target() {
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_TRAIN=ON \
@@ -556,12 +561,10 @@ function huawei_kirin_npu_build_target() {
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_TRAIN=ON \
@@ -586,18 +589,16 @@ function huawei_ascend_npu_build_and_test() {
     prepare_workspace $ROOT_DIR $BUILD_DIR
     local archs=(${ARCH_LIST//,/ })
     for arch in ${archs[@]}; do
-        sdk_root_dir="/usr/local/Ascend/ascend-toolkit/latest"
+        sdk_root_dir=$NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT
         if [ "${arch}" == "x86" ]; then
             with_x86=ON
             with_arm=OFF
-            with_light_weight_framework=OFF
         elif [ "${arch}" == "armv8" ]; then
             with_arm=ON
             with_x86=OFF
             arm_arch=armv8
             arm_target_os=armlinux
             toolchain=gcc
-            with_light_weight_framework=ON
         else
             echo "$arch isn't supported by Ascend NPU DDK!"
             exit 1
@@ -609,8 +610,6 @@ function huawei_ascend_npu_build_and_test() {
             -DARM_TARGET_ARCH_ABI=$arm_arch \
             -DARM_TARGET_OS=$arm_target_os \
             -DARM_TARGET_LANG=$toolchain \
-            -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=$with_light_weight_framework \
-            -DWITH_LITE=ON \
             -DWITH_PYTHON=OFF \
             -DWITH_TESTING=ON \
             -DWITH_GPU=OFF \
@@ -619,7 +618,7 @@ function huawei_ascend_npu_build_and_test() {
             -DLITE_BUILD_EXTRA=ON \
             -DLITE_WITH_NNADAPTER=ON \
             -DNNADAPTER_WITH_HUAWEI_ASCEND_NPU=ON \
-            -DNNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT="$sdk_root_dir" \
+            -DNNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT="$NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT" \
             -DCMAKE_BUILD_TYPE=Release
         make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 
@@ -629,7 +628,7 @@ function huawei_ascend_npu_build_and_test() {
         local nnadapter_device_lib_dir=${nnadapter_device_lib_path%/*}
         export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$nnadapter_runtime_lib_dir:$nnadapter_device_lib_dir"
         export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$PWD/third_party/install/mklml/lib"
-        export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/stub"
+        export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/stub:/usr/local/Ascend/driver/lib64/driver:/usr/local/Ascend/driver/lib64/common"
         export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$sdk_root_dir/fwkacllib/lib64:$sdk_root_dir/acllib/lib64:$sdk_root_dir/atc/lib64:$sdk_root_dir/opp/op_proto/built-in"
         export PYTHONPATH="$PYTHONPATH:$sdk_root_dir/fwkacllib/python/site-packages:$sdk_root_dir/acllib/python/site-packages:$sdk_root_dir/toolkit/python/site-packages:$sdk_root_dir/atc/python/site-packages:$sdk_root_dir/pyACL/python/site-packages/acl"
         export PATH="$PATH:$sdk_root_dir/atc/ccec_compiler/bin:$sdk_root_dir/acllib/bin:$sdk_root_dir/atc/bin"
@@ -726,12 +725,10 @@ function rockchip_npu_build_target() {
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_TRAIN=ON \
@@ -814,12 +811,10 @@ function mediatek_apu_build_target() {
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_TRAIN=ON \
@@ -890,12 +885,10 @@ function imagination_nna_build_target() {
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_TRAIN=ON \
@@ -973,12 +966,10 @@ function amlogic_npu_build_target() {
     cmake .. \
         -DWITH_GPU=OFF \
         -DWITH_MKL=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=OFF \
         -DLITE_WITH_ARM=ON \
         -DWITH_ARM_DOTPROD=ON \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_TRAIN=ON \
@@ -993,8 +984,8 @@ function amlogic_npu_build_and_test() {
     build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE amlogic_npu_build_target amlogic_npu_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR "$(readlink -f ./amlnpu_ddk)"
 }
 
-# Cambricon MLU
-function cambricon_mlu_prepare_device() {
+# Verisilicon TIM-VX
+function verisilicon_timvx_prepare_device() {
     local os=$1
     local arch=$2
     local toolchain=$3
@@ -1002,7 +993,6 @@ function cambricon_mlu_prepare_device() {
     local remote_device_work_dir=$5
     local remote_device_check=$6
     local remote_device_run=$7
-    local sdk_root_dir=$8
 
     # Check device is available
     $remote_device_check $remote_device_name
@@ -1023,17 +1013,49 @@ function cambricon_mlu_prepare_device() {
     $remote_device_run $remote_device_name shell "rm -rf $remote_device_work_dir"
     $remote_device_run $remote_device_name shell "mkdir -p $remote_device_work_dir"
 
-    # Copy sdk dynamic libraries to work dir
-    $remote_device_run $remote_device_name push "$sdk_root_dir/lib/*" "$remote_device_work_dir"
-    $remote_device_run $remote_device_name push "$sdk_root_dir/lib64/*" "$remote_device_work_dir"
-
-    # Copy NNAdapter runtime and device HAL libraries
+    # Copy NNAdapter runtime, device HAL and TIM-VX libraries
     local nnadapter_runtime_lib_path=$(find $BUILD_DIR/lite -name libnnadapter.so)
-    local nnadapter_device_lib_path=$(find $BUILD_DIR/lite -name libcambricon_mlu.so)
+    local nnadapter_driver_lib_path=$(find $BUILD_DIR/lite -name libverisilicon_timvx.so)
+    local verisilicon_timvx_lib_path=$(find $BUILD_DIR/lite -name libtim-vx.so)
     $remote_device_run $remote_device_name push "$nnadapter_runtime_lib_path" "$remote_device_work_dir"
-    $remote_device_run $remote_device_name push "$nnadapter_device_lib_path" "$remote_device_work_dir"
+    $remote_device_run $remote_device_name push "$nnadapter_driver_lib_path" "$remote_device_work_dir"
+    $remote_device_run $remote_device_name push "$verisilicon_timvx_lib_path" "$remote_device_work_dir"
 }
 
+function verisilicon_timvx_build_target() {
+    local os=$1
+    local arch=$2
+    local toolchain=$3
+
+    # Build all of tests
+    rm -rf $BUILD_DIR
+    mkdir -p $BUILD_DIR
+    cd $BUILD_DIR
+    prepare_workspace $ROOT_DIR $BUILD_DIR
+    cmake .. \
+        -DWITH_GPU=OFF \
+        -DWITH_MKL=OFF \
+        -DLITE_WITH_CUDA=OFF \
+        -DLITE_WITH_X86=OFF \
+        -DLITE_WITH_ARM=ON \
+        -DWITH_ARM_DOTPROD=ON \
+        -DWITH_TESTING=ON \
+        -DLITE_BUILD_EXTRA=ON \
+        -DLITE_WITH_TRAIN=ON \
+        -DLITE_WITH_NNADAPTER=ON \
+        -DNNADAPTER_WITH_VERISILICON_TIMVX=ON \
+        -DNNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG=$NNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG \
+        -DNNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT=$NNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT \
+        -DNNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL=$NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL \
+        -DARM_TARGET_OS=$os -DARM_TARGET_ARCH_ABI=$arch -DARM_TARGET_LANG=$toolchain
+    make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
+}
+
+function verisilicon_timvx_build_and_test() {
+    build_and_test_on_remote_device $OS_LIST $ARCH_LIST $TOOLCHAIN_LIST $UNIT_TEST_CHECK_LIST $UNIT_TEST_FILTER_TYPE verisilicon_timvx_build_target verisilicon_timvx_prepare_device $REMOTE_DEVICE_TYPE $REMOTE_DEVICE_LIST $REMOTE_DEVICE_WORK_DIR
+}
+
+# Cambricon MLU
 function cambricon_mlu_build_target() {
     local sdk_root_dir="/usr/local/neuware"
 
@@ -1047,12 +1069,10 @@ function cambricon_mlu_build_target() {
         -DWITH_MKLDNN=OFF \
         -DWITH_MKL=ON \
         -DWITH_PYTHON=OFF \
-        -DWITH_LITE=ON \
         -DLITE_WITH_CUDA=OFF \
         -DLITE_WITH_X86=ON \
         -DLITE_WITH_ARM=OFF \
         -DWITH_ARM_DOTPROD=OFF \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
         -DWITH_TESTING=ON \
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_TRAIN=OFF \
@@ -1107,8 +1127,6 @@ function baidu_xpu_build_and_test() {
     prepare_workspace $ROOT_DIR $BUILD_DIR
 
     cmake .. \
-        -DWITH_LITE=ON \
-        -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=OFF \
         -DWITH_PYTHON=OFF \
         -DWITH_TESTING=ON \
         -DLITE_WITH_ARM=OFF \
@@ -1203,6 +1221,22 @@ function main() {
             XPU_SDK_ROOT="${i#*=}"
             shift
             ;;
+        --nnadapter_verisilicon_timvx_src_git_tag=*)
+            NNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG="${i#*=}"
+            shift
+            ;;
+        --nnadapter_verisilicon_timvx_viv_sdk_root=*)
+            NNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT="${i#*=}"
+            shift
+            ;;
+        --nnadapter_verisilicon_timvx_viv_sdk_url=*)
+            NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL="${i#*=}"
+            shift
+            ;;
+        --nnadapter_huawei_ascend_npu_sdk_root=*)
+            NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT="${i#*=}"
+            shift
+            ;;
         android_cpu_build_and_test)
             android_cpu_build_and_test
             shift
@@ -1233,6 +1267,10 @@ function main() {
             ;;
         amlogic_npu_build_and_test)
             amlogic_npu_build_and_test
+            shift
+            ;;
+        verisilicon_timvx_build_and_test)
+            verisilicon_timvx_build_and_test
             shift
             ;;
         cambricon_mlu_build_and_test)

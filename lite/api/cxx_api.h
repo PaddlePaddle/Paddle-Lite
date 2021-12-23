@@ -92,12 +92,14 @@ class LITE_API Predictor {
       const std::vector<Place>& valid_places,
       const std::vector<std::string>& passes = {},
       lite_api::LiteModelType model_type = lite_api::LiteModelType::kProtobuf,
+      const lite_api::CxxConfig& config = lite_api::CxxConfig(),
       const lite_api::CxxModelBuffer& model_buffer =
           lite_api::CxxModelBuffer());
 
   void Build(const std::shared_ptr<cpp::ProgramDesc>& program_desc,
              const std::vector<Place>& valid_places,
-             const std::vector<std::string>& passes = {});
+             const std::vector<std::string>& passes = {},
+             const lite_api::CxxConfig& config = lite_api::CxxConfig());
 
   //////////////////////////////////////////////////////////
   // Function: Clone
@@ -179,6 +181,16 @@ class LITE_API Predictor {
 
     ClearTensorArray(program_desc_);
   }
+
+#ifdef LITE_WITH_METAL
+  void ConfigMetalContext(const lite_api::CxxConfig& config) {
+    program_->ConfigMetalContext(config.metal_lib_path(),
+                                 config.metal_use_mps(),
+                                 config.metal_use_aggressive(),
+                                 config.metal_use_memory_reuse(),
+                                 config.metal_device());
+  }
+#endif
 
   /// \brief Release all tmp tensor to compress the size of the memory pool.
   /// The memory pool is considered to be composed of a list of chunks, if

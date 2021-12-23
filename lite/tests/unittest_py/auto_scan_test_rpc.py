@@ -12,22 +12,44 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from auto_scan_base import AutoScanBaseTest, SkipReasonsBase
+from auto_scan_base import AutoScanBaseTest, IgnoreReasonsBase
 import numpy as np
 import abc
 import enum
 import unittest
 from typing import Optional, List, Callable, Dict, Any, Set
 import os
-
+import re
+import paddle
 import rpyc
+import copy
 rpyc.core.protocol.DEFAULT_CONFIG['allow_pickle'] = True
+IgnoreReasons = IgnoreReasonsBase
 
-
-SkipReasons = SkipReasonsBase
 
 class AutoScanTest(AutoScanBaseTest):
-    def run_lite_config(self, model, params, feed_data, pred_config) -> Dict[str, np.ndarray]:
-        conn = rpyc.connect("localhost", 18812, config = rpyc.core.protocol.DEFAULT_CONFIG)
-        out = conn.root.run_lite_model(model,params,feed_data, pred_config)
-        return out
+    def run_lite_config(self, model, params, feed_data,
+                        pred_config) -> Dict[str, np.ndarray]:
+        paddle_lite_path = os.path.abspath(__file__)
+        paddlelite_source_path = re.findall(r"(.+?)Paddle-Lite",
+                                            paddle_lite_path)[0]
+        rpc_port_file = paddlelite_source_path + "Paddle-Lite/lite/tests/unittest_py/rpc_service/.port_id"
+        port_id = int(open(rpc_port_file).read())
+
+        conn = rpyc.connect("localhost", port_id)
+        out, model = conn.root.run_lite_model(model, params, feed_data,
+                                              pred_config)
+        result_res = copy.deepcopy(out)
+        return result_res, model
+
+
+class FusePassAutoScanTest(AutoScanTest):
+    def run_and_statis(self,
+                       quant=False,
+                       max_examples=100,
+                       reproduce=None,
+                       min_success_num=25,
+                       passes=None):
+        assert passes is not None, "Parameter of passes must be defined in function run_and_statis."
+        super().run_and_statis(quant, max_examples, reproduce, min_success_num,
+                               passes)

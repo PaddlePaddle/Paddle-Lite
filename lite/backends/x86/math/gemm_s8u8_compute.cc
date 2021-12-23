@@ -36,7 +36,7 @@ void generate_gemm_s8u8_x86_kern<int8_t>::repack_bias(bool is_trans,
   for (int i = 0; i < M; i++) {
     float bias_val = bias ? bias[i] : 0.f;
     float sum = 0.f;
-    float scale = TRANS_INT8_UINT8_OFFT / (Sa[i] * Sb);
+    float scale = (Sa[i] * Sb) * TRANS_INT8_UINT8_OFFT;
     a_ptr = A + i * K;
     if (is_trans) {
       for (int j = 0; j < K; j++) {
@@ -48,7 +48,7 @@ void generate_gemm_s8u8_x86_kern<int8_t>::repack_bias(bool is_trans,
       }
     }
     out[i] = bias_val - sum;
-    out[i] = out[i] * Sc;
+    out[i] = out[i] / Sc;
   }
 }
 
@@ -66,7 +66,7 @@ void generate_gemm_s8u8_x86_kern<float>::repack_bias(bool is_trans,
   for (int i = 0; i < M; i++) {
     float bias_val = bias ? bias[i] : 0.f;
     float sum = 0.f;
-    float scale = TRANS_INT8_UINT8_OFFT / (Sa[i] * Sb);
+    float scale = (Sa[i] * Sb) * TRANS_INT8_UINT8_OFFT;
     a_ptr = A + i * K;
     if (is_trans) {
       for (int j = 0; j < K; j++) {
@@ -85,10 +85,7 @@ template <>
 void generate_gemm_s8u8_x86_kern<int8_t>::calc_scale(
     int M, float *Sa, float Sb, float Sc, float *out) {
   for (int i = 0; i < M; i++) {
-    if (0 == (Sa[i] * Sb))
-      out[i] = 0.f;
-    else
-      out[i] = Sc / (Sa[i] * Sb);
+    out[i] = (Sa[i] * Sb) / Sc;
   }
 }
 
@@ -96,10 +93,7 @@ template <>
 void generate_gemm_s8u8_x86_kern<float>::calc_scale(
     int M, float *Sa, float Sb, float Sc, float *out) {
   for (int i = 0; i < M; i++) {
-    if (0 == (Sa[i] * Sb))
-      out[i] = 0.f;
-    else
-      out[i] = 1.f / (Sa[i] * Sb);
+    out[i] = (Sa[i] * Sb);
   }
 }
 

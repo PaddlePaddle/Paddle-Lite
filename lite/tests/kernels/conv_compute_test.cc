@@ -504,6 +504,10 @@ TEST(Conv2d, precision) {
   TestConvPaddings(place, abs_error);
   TestConvBias(place, abs_error);
   return;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 5e-2;
+  TestConvKsize(place, abs_error);
+  return;
 #else
   return;
 #endif

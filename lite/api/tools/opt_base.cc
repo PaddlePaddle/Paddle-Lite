@@ -144,7 +144,6 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
     } else if (target_repr == "x86") {
       valid_places_.emplace_back(Place{TARGET(kX86), PRECISION(kFloat)});
       valid_places_.emplace_back(Place{TARGET(kX86), PRECISION(kInt64)});
-      valid_places_.emplace_back(Place{TARGET(kX86), PRECISION(kInt8)});
       valid_places_.emplace_back(Place{TARGET(kX86), PRECISION(kAny)});
     } else if (target_repr == "x86_opencl") {
       valid_places_.emplace_back(
@@ -201,6 +200,8 @@ void OptBase::SetValidPlaces(const std::string& valid_places) {
       valid_places_.emplace_back(
           TARGET(kNNAdapter), PRECISION(kFloat), DATALAYOUT(kNCHW));
       nnadapter_device_names.push_back(target_repr);
+    } else if (target_repr == "host") {
+      valid_places_.emplace_back(TARGET(kHost));
     } else {
       OPT_LOG_FATAL << lite::string_format(
           "Wrong target '%s' found, please check the command flag "

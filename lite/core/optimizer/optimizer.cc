@@ -129,7 +129,8 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
     Program&& program,
     const std::vector<Place>& valid_places,
     core::KernelPickFactor kernel_pick_factor,
-    const std::vector<std::string>& passes) {
+    const std::vector<std::string>& passes,
+    const lite_api::CxxConfig& config) {
   Optimizer optim(valid_places, kernel_pick_factor);
 
   std::vector<std::string> passes_local{
@@ -209,7 +210,6 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        // inputs and outputs must have the same scale.
        "restrict_quantized_op_with_same_input_output_scale_pass",
        "quantization_parameters_removal_pass",
-       "mixed_precision_auto_insert_calib_op_pass",
        "nnadapter_subgraph_pass",
        "npu_subgraph_pass",
        "xpu_subgraph_pass",
@@ -268,6 +268,20 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
 #endif
       }};
 
+  // skip the discarded pass
+  const std::vector<std::string> discarded_passes =
+      config.get_discarded_passes();
+  for (auto& pass : discarded_passes) {
+    auto iterator = std::find(passes_local.begin(), passes_local.end(), pass);
+    if (iterator != passes_local.end()) {
+      LOG(INFO) << "discarded pass : " << pass;
+      passes_local.erase(iterator);
+    } else {
+      LOG(INFO) << "the pass : " << pass
+                << " dont't exit or has already discarded";
+    }
+  }
+
   // It's just a workaround to avoid repeated op fusion if the filter weights
   // are shared among sub-blocks
   if (program.block_size() > 1) {
@@ -293,7 +307,6 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
   const std::string pqd_pass{"post_quant_dynamic_pass"};
   const std::string pqd_depend_pass{"lite_quant_dequant_fuse_pass"};
   const std::string fp16_pass{"fp16_attribute_pass"};
-  const std::string x86_int8_pass{"x86_int8_attribute_pass"};
 
   for (const std::string& pass : passes) {
     if (pass == msa_pass) {
@@ -315,15 +328,6 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
     if (place.target == TARGET(kARM)) {
       if (place.precision == PRECISION(kFP16)) {
         passes_local.push_back(fp16_pass);
-        break;
-      }
-    }
-  }
-
-  for (auto place : valid_places) {
-    if (place.target == TARGET(kX86)) {
-      if (place.precision == PRECISION(kInt8)) {
-        passes_local.push_back(x86_int8_pass);
         break;
       }
     }

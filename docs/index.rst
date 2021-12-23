@@ -1,9 +1,9 @@
-.. Paddle-Lite documentation master file, created by
+.. Paddle Lite documentation master file, created by
    sphinx-quickstart on Thu Feb  6 14:11:30 2020.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Paddle-Lite's documentation!
+Welcome to Paddle Lite's documentation!
 =======================================
 
 *请在页面左下角选择特定版本的文档。*
@@ -19,11 +19,12 @@ Welcome to Paddle-Lite's documentation!
 .. toctree::
   :maxdepth: 1
   :caption: 性能
-  :name: sec-benchmark
+  :name: sec-performance
   
-  benchmark/best_practices
-  benchmark/benchmark_tools
-  benchmark/benchmark
+  performance/best_practices
+  performance/benchmark_tools
+  performance/benchmark
+  performance/gpu
 
 .. toctree::
   :maxdepth: 1

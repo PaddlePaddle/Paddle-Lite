@@ -14,6 +14,7 @@
 
 #include "lite/backends/arm/math/fp16/gemv_fp16.h"
 #include <arm_neon.h>
+#include "lite/core/parallel_defines.h"
 namespace paddle {
 namespace lite {
 namespace arm {
@@ -281,8 +282,7 @@ void gemv_fp16_trans(const float16_t *A,
   float16x8_t vthreshold = vdupq_n_f16(threshold);
   int stride = 16 * (M - 1);  // (8 * M - 8) * 2
   int rem_n = N & 7;
-#pragma omp parallel for
-  for (int j = 0; j < out_cnt; j++) {
+  LITE_PARALLEL_BEGIN(j, tid, out_cnt) {
     int out_idx = j * 8;
     float16_t out_temp[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     float16_t *out_ptr = y + out_idx;
@@ -329,6 +329,7 @@ void gemv_fp16_trans(const float16_t *A,
       }
     }
   }
+  LITE_PARALLEL_END();
 #else
 #endif
 }
@@ -391,8 +392,8 @@ void gemv_fp16(const float16_t *A,
   float16x8_t voffset = vdupq_n_f16(offset);
   float16x8_t vthreshold = vdupq_n_f16(threshold);
   int stride = 1;
-#pragma omp parallel for
-  for (int j = 0; j < out_cnt; j++) {
+
+  LITE_PARALLEL_BEGIN(j, tid, out_cnt) {
     int out_idx = j * 8;
     float16_t out_temp[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     float16_t *out_ptr = y + out_idx;
@@ -439,6 +440,7 @@ void gemv_fp16(const float16_t *A,
       }
     }
   }
+  LITE_PARALLEL_END();
 #else
 #endif
 }

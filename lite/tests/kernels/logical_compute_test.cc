@@ -106,7 +106,7 @@ void TestLogical(Place place, float abs_error) {
   arena::Arena arena_and(std::move(logical_and_tester), place, abs_error);
   arena_and.TestPrecision();
 
-#if !defined(LITE_WITH_XPU)
+#if !((defined LITE_WITH_XPU) || (defined NNADAPTER_WITH_HUAWEI_ASCEND_NPU))
   std::unique_ptr<arena::TestCase> logical_or_tester(
       new LogicalTester<_logical_or_func>(place, "def", "logical_or"));
   arena::Arena arena_or(std::move(logical_or_tester), place, abs_error);
@@ -127,7 +127,14 @@ void TestLogical(Place place, float abs_error) {
 TEST(Logical, precision) {
   Place place;
   float abs_error = 1e-5;
-#if defined(LITE_WITH_ARM)
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_ARM)
   place = TARGET(kHost);
 #elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);

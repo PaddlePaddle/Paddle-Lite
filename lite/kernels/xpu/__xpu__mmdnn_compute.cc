@@ -25,10 +25,14 @@ namespace xpu {
 
 namespace {
 
+const int XPU_QUANT_SCALE_NUM = 6;
+
 void FillMax(float max, float* xpu_ptr) {
-  float maxs[4] = {max, 0.0f, 0.0f, 0.0f};
-  XPU_CALL(xpu_memcpy(
-      xpu_ptr, maxs, 4 * sizeof(float), XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+  float maxs[XPU_QUANT_SCALE_NUM] = {max};
+  XPU_CALL(xpu_memcpy(xpu_ptr,
+                      maxs,
+                      XPU_QUANT_SCALE_NUM * sizeof(float),
+                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 }
 
 void GrnnLayout(int batch,
@@ -85,29 +89,39 @@ class MMDNNIdInfo {
   std::unique_ptr<char[]> cpu_buffer_guard_;
   char* cpu_buffer_{nullptr};
 
+  std::vector<int> lod;
+  std::vector<int> new_offset;
+  std::vector<int> idx_sorted;
+  std::vector<int64_t> id0_64_cpu;
+  std::vector<int64_t> id1_64_cpu;
+  std::vector<int> seqlen_list;
+
  public:
-  const int64_t* id0_64{nullptr};
-  const int64_t* id1_64{nullptr};
+  int64_t* id0_64{nullptr};
+  int64_t* id1_64{nullptr};
   int64_t* lod_64{nullptr};
   int* lod_32{nullptr};
   int* new_offset_32{nullptr};
   int* idx_sorted_32{nullptr};
 
-  std::vector<int> lod;
-  std::vector<int> new_offset;
-  std::vector<int> idx_sorted;
   int batch;
   int seqlen_max;
   int seqlen_sum;
   int seqlen_square_sum;
+
+  xdnn::VectorParam<int64_t> id0_64_vector;
+  xdnn::VectorParam<int64_t> id1_64_vector;
+  xdnn::VectorParam<int> lod_32_vector;
+  xdnn::VectorParam<int> seqlen_list_vector;
 
   void Init(int upper_bound_batch, int upper_bound_seqlen) {
     int ub_lod_64_size = (upper_bound_batch + 1) * sizeof(int64_t);
     int ub_lod_32_size = (upper_bound_batch + 1) * sizeof(int);
     int ub_new_offset_32_size = (upper_bound_seqlen + 1) * sizeof(int);
     int ub_idx_sorted_32_size = (upper_bound_batch + 1) * sizeof(int);
+    int ub_seqlen_list_size = upper_bound_batch * sizeof(int);
     int total_size = ub_lod_64_size + ub_lod_32_size + ub_new_offset_32_size +
-                     ub_idx_sorted_32_size;
+                     ub_idx_sorted_32_size + ub_seqlen_list_size;
 
     // TODO(miaotianxiang): use l3?
     l3_buffer_guard_ = TargetWrapperXPU::MallocScratchPad(total_size);
@@ -118,6 +132,7 @@ class MMDNNIdInfo {
 
   void Update(lite::Tensor* id0, lite::Tensor* id1) {
     auto& id0_lod = id0->lod()[0];
+    int idx_len = id0_lod.back();
     lod.clear();
     for (auto e : id0_lod) {
       lod.push_back(e);
@@ -127,16 +142,32 @@ class MMDNNIdInfo {
     seqlen_sum = 0;
     seqlen_square_sum = 0;
     batch = lod.size() - 1;
+    seqlen_list.resize(batch);
     for (int i = 0; i < batch; i++) {
       int seqlen = lod[i + 1] - lod[i];
       seqlen_max = std::max(seqlen_max, seqlen);
       seqlen_sum = seqlen_sum + seqlen;
       seqlen_square_sum = seqlen_square_sum + seqlen * seqlen;
+      seqlen_list[i] = seqlen;
     }
     GrnnLayout(batch, lod, &new_offset, &idx_sorted);
 
-    id0_64 = id0->data<int64_t>();
-    id1_64 = id1->data<int64_t>();
+    id0_64 = const_cast<int64_t*>(id0->data<int64_t>());
+    id1_64 = const_cast<int64_t*>(id1->data<int64_t>());
+    id0_64_cpu.resize(idx_len);
+    id1_64_cpu.resize(idx_len);
+    XPU_CALL(xpu_memcpy(id0_64_cpu.data(),
+                        id0_64,
+                        idx_len * sizeof(int64_t),
+                        XPUMemcpyKind::XPU_DEVICE_TO_HOST));
+    XPU_CALL(xpu_memcpy(id1_64_cpu.data(),
+                        id1_64,
+                        idx_len * sizeof(int64_t),
+                        XPUMemcpyKind::XPU_DEVICE_TO_HOST));
+    id0_64_vector =
+        xdnn::VectorParam<int64_t>{id0_64_cpu.data(), idx_len, id0_64};
+    id1_64_vector =
+        xdnn::VectorParam<int64_t>{id1_64_cpu.data(), idx_len, id1_64};
 
     int offset = 0;
     lod_64 = reinterpret_cast<int64_t*>(l3_buffer_ + offset);
@@ -144,6 +175,8 @@ class MMDNNIdInfo {
         cpu_buffer_ + offset, id0_lod.data(), id0_lod.size() * sizeof(int64_t));
     offset += id0_lod.size() * sizeof(int64_t);
     lod_32 = reinterpret_cast<int*>(l3_buffer_ + offset);
+    lod_32_vector = xdnn::VectorParam<int>{
+        lod.data(), static_cast<int>(lod.size()), lod_32};
     memcpy(cpu_buffer_ + offset, lod.data(), lod.size() * sizeof(int));
     offset += lod.size() * sizeof(int);
     new_offset_32 = reinterpret_cast<int*>(l3_buffer_ + offset);
@@ -156,6 +189,12 @@ class MMDNNIdInfo {
            idx_sorted.data(),
            idx_sorted.size() * sizeof(int));
     offset += idx_sorted.size() * sizeof(int);
+    seqlen_list_vector = xdnn::VectorParam<int>{
+        seqlen_list.data(), batch, reinterpret_cast<int*>(l3_buffer_ + offset)};
+    memcpy(cpu_buffer_ + offset,
+           seqlen_list.data(),
+           seqlen_list.size() * sizeof(int));
+    offset += seqlen_list.size() * sizeof(int);
     XPU_CALL(xpu_memcpy(
         l3_buffer_, cpu_buffer_, offset, XPUMemcpyKind::XPU_HOST_TO_DEVICE));
   }
@@ -187,16 +226,19 @@ class MMDNNFcOp {
     act_type_ = act_type;
 
     weight_ = weight;
-    weight_max_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
+    weight_max_guard_ =
+        TargetWrapperXPU::MallocScratchPad(XPU_QUANT_SCALE_NUM * sizeof(float));
     weight_max_ = reinterpret_cast<float*>(weight_max_guard_->addr_);
     FillMax(weight_max, weight_max_);
 
     bias_ = bias;
 
-    in_max_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
-    out_max_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
+    in_max_guard_ =
+        TargetWrapperXPU::MallocScratchPad(XPU_QUANT_SCALE_NUM * sizeof(float));
     in_max_ = reinterpret_cast<float*>(in_max_guard_->addr_);
-    out_max = reinterpret_cast<float*>(in_max_guard_->addr_);
+    out_max_guard_ =
+        TargetWrapperXPU::MallocScratchPad(XPU_QUANT_SCALE_NUM * sizeof(float));
+    out_max = reinterpret_cast<float*>(out_max_guard_->addr_);
   }
 
   void Init(lite::Tensor* weight,
@@ -304,7 +346,8 @@ class MMDNNGrnnOp {
     dense_h2h_max_[1] = wh_maxs[1];
     dense_h2h_max_[2] = wh_maxs[2];
 
-    input_max_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
+    input_max_guard_ =
+        TargetWrapperXPU::MallocScratchPad(XPU_QUANT_SCALE_NUM * sizeof(float));
     input_max_ = reinterpret_cast<float*>(input_max_guard_->addr_);
     hbm_buffer_guard_ = TargetWrapperXPU::MallocScratchPad(
         5 * std::max(cap_e_, cap_h_) * max_cap_l_ * sizeof(float));
@@ -384,6 +427,8 @@ class MMDNNAttentionOp {
   MMDNNFcOp seqfc_;
   XPUScratchPadGuard hbm_buffer_guard_;
   float* hbm_buffer_{nullptr};
+  XPUScratchPadGuard dim_vector_buffer_guard_;
+  int* dim_vector_buffer_{nullptr};
   // require: cap_l * dim_ + seqlen_square_sum
   // seqfc_out: [cap_l, dim_]
   // batchgemm0_out: [seqlen_square_sum]
@@ -412,6 +457,10 @@ class MMDNNAttentionOp {
                               upper_bound_seqlen * upper_bound_seqlen)) *
         sizeof(float));
     hbm_buffer_ = reinterpret_cast<float*>(hbm_buffer_guard_->addr_);
+    dim_vector_buffer_guard_ =
+        TargetWrapperXPU::MallocScratchPad(upper_bound_batch * sizeof(int));
+    dim_vector_buffer_ =
+        reinterpret_cast<int*>(dim_vector_buffer_guard_->addr_);
   }
 
   void Infer(xdnn::Context* ctx,
@@ -422,9 +471,8 @@ class MMDNNAttentionOp {
              int l3_size = 0) {
     int batch = sentense.batch;
     int cap_l = sentense.seqlen_sum;
-    int max_width = sentense.seqlen_max;
-    int* lod_32 = sentense.lod_32;
 
+    xdnn::VectorParam<int> seqlen_list_vector = sentense.seqlen_list_vector;
     float* seqfc_out = hbm_buffer_;
     float* batchgemm0_out = hbm_buffer_ + cap_l * dim_;
     float* seq_softmax_out = batchgemm0_out;
@@ -439,42 +487,46 @@ class MMDNNAttentionOp {
     }
 
     seqfc_.Infer(ctx, input, cap_l, seqfc_out);
+    std::vector<int> dim_vector(batch, dim_);
+    XPU_CALL(xpu_memcpy(dim_vector_buffer_,
+                        dim_vector.data(),
+                        batch * sizeof(float),
+                        XPUMemcpyKind::XPU_HOST_TO_DEVICE));
     int r = 0;
-    r = xdnn::search_noaligned_mat_mul(ctx,
-                                       0,
-                                       1,
-                                       batch,
-                                       lod_32,
-                                       max_width,
-                                       dim_,
-                                       alpha0_,
-                                       input,
-                                       seqfc_out,
-                                       batchgemm0_out);
+    r = xdnn::fc_batched_vsl<float, float, float, int, int16_t>(
+        ctx,
+        input,
+        seqfc_out,
+        batchgemm0_out,
+        seqlen_list_vector,
+        seqlen_list_vector,
+        {dim_vector.data(), batch, dim_vector_buffer_},
+        false,
+        true,
+        alpha0_,
+        true);
     CHECK_EQ(r, 0);
-    r = xdnn::search_seq_softmax(
-        ctx, batchgemm0_out, seq_softmax_out, lod_32, batch, max_width);
+    r = xdnn::fc_batched_vsl<float, float, float, int, int16_t>(
+        ctx,
+        seq_softmax_out,
+        input,
+        batchgemm1_out,
+        seqlen_list_vector,
+        {dim_vector.data(), batch, dim_vector_buffer_},
+        seqlen_list_vector,
+        false,
+        false,
+        alpha1_,
+        false);
     CHECK_EQ(r, 0);
-    r = xdnn::search_noaligned_mat_mul(ctx,
-                                       0,
-                                       0,
-                                       batch,
-                                       lod_32,
-                                       max_width,
-                                       dim_,
-                                       alpha1_,
-                                       seq_softmax_out,
-                                       input,
-                                       batchgemm1_out);
-    CHECK_EQ(r, 0);
-    r = xdnn::sequence_pooling_forward(ctx,
-                                       xdnn::Pooling_t::MAX_WITHOUT_INDEX,
-                                       batch,
-                                       lod_32,
-                                       dim_,
-                                       batchgemm1_out,
-                                       nullptr,
-                                       pool_out);
+    r = xdnn::sequence_max_pool<float, int>(ctx,
+                                            batchgemm1_out,
+                                            pool_out,
+                                            sentense.lod_32_vector,
+                                            batch,
+                                            dim_,
+                                            0,
+                                            nullptr);
     CHECK_EQ(r, 0);
   }
 };
@@ -509,8 +561,6 @@ class MMDNNMatchConvTopk {
   int* match_lod_32_{nullptr};
   XPUScratchPadGuard conv_lod_32_guard_;
   int* conv_lod_32_{nullptr};
-  XPUScratchPadGuard topk_offset_32_guard_;
-  int* topk_offset_32_{nullptr};
   XPUScratchPadGuard topks_xpu_guard_;
   int* topks_xpu_{nullptr};
   XPUScratchPadGuard useless_topk_pos_guard_;
@@ -536,13 +586,15 @@ class MMDNNMatchConvTopk {
 
     match_weight_ = input_w->data<int16_t>();
     match_weight_max_guard_ =
-        TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
+        TargetWrapperXPU::MallocScratchPad(XPU_QUANT_SCALE_NUM * sizeof(float));
     match_weight_max_ =
         reinterpret_cast<float*>(match_weight_max_guard_->addr_);
     FillMax(input_w_max, match_weight_max_);
-    in_max_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
+    in_max_guard_ =
+        TargetWrapperXPU::MallocScratchPad(XPU_QUANT_SCALE_NUM * sizeof(float));
     in_max_ = reinterpret_cast<float*>(in_max_guard_->addr_);
-    out_max_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
+    out_max_guard_ =
+        TargetWrapperXPU::MallocScratchPad(XPU_QUANT_SCALE_NUM * sizeof(float));
     out_max_ = reinterpret_cast<float*>(out_max_guard_->addr_);
 
     conv_weight_ = conv_w->data<int16_t>();
@@ -561,9 +613,6 @@ class MMDNNMatchConvTopk {
     right_lod_32_guard_ = TargetWrapperXPU::MallocScratchPad(
         (upper_bound_batch + 1) * sizeof(int));
     right_lod_32_ = reinterpret_cast<int*>(right_lod_32_guard_->addr_);
-    topk_offset_32_guard_ = TargetWrapperXPU::MallocScratchPad(
-        (upper_bound_batch + 1) * sizeof(int));
-    topk_offset_32_ = reinterpret_cast<int*>(topk_offset_32_guard_->addr_);
     topks_xpu_guard_ =
         TargetWrapperXPU::MallocScratchPad(topks_.size() * sizeof(int));
     topks_xpu_ = reinterpret_cast<int*>(topks_xpu_guard_->addr_);
@@ -605,7 +654,6 @@ class MMDNNMatchConvTopk {
 
     std::vector<int> seqlens_match;
     std::vector<int> seqlens_conv;
-    std::vector<int> lod_topk = {0};
     int x_mul_y_sum = 0;
     int left_seqlen_sum = 0;
     int left_seqlen_max = 0;
@@ -618,17 +666,12 @@ class MMDNNMatchConvTopk {
       x_mul_y_sum = x_mul_y_sum + imgsize;
       seqlens_match.push_back(imgsize * dim_t_);
       seqlens_conv.push_back(imgsize * out_channel_);
-      lod_topk.push_back(lod_topk.back() + imgsize * (dim_t_ + out_channel_));
 
       left_seqlen_max = std::max(left_seqlen_max, len_x);
       right_seqlen_max = std::max(right_seqlen_max, len_y);
       left_seqlen_sum += len_x;
       right_seqlen_sum += len_y;
     }
-    XPU_CALL(xpu_memcpy(topk_offset_32_,
-                        lod_topk.data(),
-                        lod_topk.size() * sizeof(int),
-                        XPUMemcpyKind::XPU_HOST_TO_DEVICE));
 
     float* xwy_out = hbm_buffer_;
     float* conv_out = hbm_buffer_ + x_mul_y_sum * dim_t_;
@@ -680,8 +723,12 @@ class MMDNNMatchConvTopk {
         1,
         xwy_out,
         conv_weight_,
-        right_lod_32_,
-        left_lod_32_,
+        {right_lod_32_cpu.data(),
+         static_cast<int>(right_lod_32_cpu.size()),
+         right_lod_32_},
+        {left_lod_32_cpu.data(),
+         static_cast<int>(left_lod_32_cpu.size()),
+         left_lod_32_},
         conv_out,
         conv_weight_max_,
         xdnn::Activation_t::RELU);  // TODO(miaotianxiang):
@@ -693,17 +740,19 @@ class MMDNNMatchConvTopk {
                                      1);
 
     CHECK_EQ(r, 0);
-    r = xdnn::sequence_topk_avg_pooling(ctx,
-                                        seq_concat_out,
-                                        seq_avg_topk_out,
-                                        useless_topk_pos_,
-                                        batch,
-                                        dim_t_ + out_channel_,
-                                        topk_offset_32_,
-                                        left_lod_32_,
-                                        right_lod_32_,
-                                        topks_xpu_,
-                                        topks_.size());
+    r = xdnn::sequence_topk_avg_pooling<float, int>(
+        ctx,
+        seq_concat_out,
+        seq_avg_topk_out,
+        useless_topk_pos_,
+        dim_t_ + out_channel_,
+        {left_lod_32_cpu.data(),
+         static_cast<int>(left_lod_32_cpu.size()),
+         left_lod_32_},
+        {right_lod_32_cpu.data(),
+         static_cast<int>(right_lod_32_cpu.size()),
+         right_lod_32_},
+        {topks_.data(), static_cast<int>(topks_.size()), topks_xpu_});
     CHECK_EQ(r, 0);
   }
 };
@@ -844,14 +893,8 @@ class MMDNNBidEmbGrnnAtt {
     r = xdnn::sequence_reverse<float, int>(
         ctx, grnn_rv, sentense.lod_32, grnn_rv_rv, batch, cap_h_);
     CHECK_EQ(r, 0);
-    r = xdnn::sequence_pooling_forward(ctx,
-                                       xdnn::Pooling_t::LAST,
-                                       batch,
-                                       sentense.lod_32,
-                                       cap_h_,
-                                       grnn_rv,
-                                       nullptr,
-                                       pool_rv);
+    r = xdnn::sequence_last_pool(
+        ctx, grnn_rv, pool_rv, sentense.lod_32_vector, batch, cap_h_, 0);
     CHECK_EQ(r, 0);
 
     bi_fw_.Infer(ctx,
@@ -860,14 +903,8 @@ class MMDNNBidEmbGrnnAtt {
                  grnn_fw,
                  l3_buffer + 2 * slot_len,
                  l3_size - 2 * slot_len * sizeof(float));
-    r = xdnn::sequence_pooling_forward(ctx,
-                                       xdnn::Pooling_t::LAST,
-                                       batch,
-                                       sentense.lod_32,
-                                       cap_h_,
-                                       grnn_fw,
-                                       nullptr,
-                                       pool_fw);
+    r = xdnn::sequence_last_pool(
+        ctx, grnn_fw, pool_fw, sentense.lod_32_vector, batch, cap_h_, 0);
     CHECK_EQ(r, 0);
     const int concat_widths[] = {cap_h_, cap_h_, cap_h_};
     const float* concat_ptrs[] = {emb_fw, grnn_fw, grnn_rv_rv};
@@ -923,20 +960,15 @@ class MMDNNEmbAtt {
     emb_fw = emb_fw_out->mutable_data<float>(TARGET(kXPU));
     att_out = att_pool_out->mutable_data<float>(TARGET(kXPU));
 
-    int cap_l = sentense.lod.back();
-    const float* emb_tables[] = {table_, table_};
-    const int64_t* emb_indices[] = {sentense.id0_64, sentense.id1_64};
-    int r =
-        xdnn::embedding_with_ewadd<float, int64_t, false, false>(ctx,
-                                                                 emb_dim_,
-                                                                 cap_l,
-                                                                 2,
-                                                                 table_len_ - 2,
-                                                                 emb_tables,
-                                                                 emb_indices,
-                                                                 nullptr,
-                                                                 nullptr,
-                                                                 emb_fw);
+    int r = xdnn::multi_embedding_fusion<float, float, int64_t>(
+        ctx,
+        {table_, table_},
+        emb_fw,
+        {sentense.id0_64_vector, sentense.id1_64_vector},
+        {table_len_, table_len_},
+        emb_dim_,
+        {1.0f, 1.0f},
+        {-1, -1});
     CHECK_EQ(r, 0);
     att_.Infer(ctx, sentense, emb_fw, att_out, l3_buffer, l3_size);
   }
@@ -1089,23 +1121,11 @@ class MMDNNMergeAll {
                        grnn_rv,
                        l3_buffer + hbm_total_len,
                        l3_size - hbm_total_len * sizeof(float));
-    r = xdnn::sequence_pooling_forward(ctx,
-                                       xdnn::Pooling_t::LAST,
-                                       batch,
-                                       sentense.lod_32,
-                                       cap_h_,
-                                       grnn_fw,
-                                       nullptr,
-                                       pool_fw);
+    r = xdnn::sequence_last_pool(
+        ctx, grnn_fw, pool_fw, sentense.lod_32_vector, batch, cap_h_, 0);
     CHECK_EQ(r, 0);
-    r = xdnn::sequence_pooling_forward(ctx,
-                                       xdnn::Pooling_t::LAST,
-                                       batch,
-                                       sentense.lod_32,
-                                       cap_h_,
-                                       grnn_rv,
-                                       nullptr,
-                                       pool_rv);
+    r = xdnn::sequence_last_pool(
+        ctx, grnn_rv, pool_rv, sentense.lod_32_vector, batch, cap_h_, 0);
     CHECK_EQ(r, 0);
 
     const int concat_widths_fc0[] = {

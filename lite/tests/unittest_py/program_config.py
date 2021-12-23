@@ -34,17 +34,24 @@ class TensorConfig:
 
     def __init__(self,
                  lod: Optional[List[List[int]]]=None,
-                 data_gen: Optional[Callable[..., np.array]]=None):
+                 data_gen: Optional[Callable[..., np.array]]=None,
+                 shape: Optional[List[List[int]]]=None):
         '''
         shape: The shape of the tensor.
         dtype: The data type of the tensor.
-        data: The value of WeightVar. for input, it should be None 
+        data: The value of WeightVar. for input, it should be None
         '''
         self.lod = lod
-        self.data_gen = data_gen
-        self.data = data_gen()
-        self.dtype = data_gen().dtype
-        self.shape = data_gen().shape
+        if data_gen is not None:
+            self.data_gen = data_gen
+            self.data = data_gen()
+            self.dtype = data_gen().dtype
+            self.shape = data_gen().shape
+        else:
+            assert shape is not None, "While data_gen is not defined, shape must not be None"
+            self.data = np.random.normal(0.0, 1.0, shape).astype(np.float32)
+            self.shape = shape
+            self.dtype = self.data.dtype
 
     def __repr__(self):
         return str({'shape': self.shape, 'lod': self.lod, 'dtype': self.dtype})
@@ -57,11 +64,17 @@ class OpConfig:
                  type: str,
                  inputs: Dict[str, List[str]],
                  outputs: Dict[str, List[str]],
-                 attrs: Dict[str, Any]):
+                 attrs: Dict[str, Any]=None,
+                 outputs_dtype: Dict[str, np.dtype]=None,
+                 **kwargs):
         self.type = type
         self.inputs = inputs
         self.outputs = outputs
+        self.outputs_dtype = outputs_dtype
         self.attrs = attrs
+        if self.attrs is None:
+            self.attrs = dict()
+        self.attrs.update(kwargs)
 
     def __repr__(self):
         log_str = self.type
@@ -126,6 +139,8 @@ def create_fake_model(program_config):
         var_desc.set_dtype(convert_np_dtype_to_dtype_(tensor_config.dtype))
         var_desc.set_shape(tensor_config.shape)
         var_desc.set_need_check_feed(True)
+        if tensor_config.lod is not None:
+            var_desc.set_lod_level(len(tensor_config.lod))
         op_desc = main_block_desc._prepend_op()
         op_desc.set_type("feed")
         op_desc.set_input('X', ["feed"])
@@ -172,10 +187,15 @@ def create_fake_model(program_config):
             for v in values:
                 var_desc = main_block_desc.var(cpt.to_bytes(v))
                 var_desc.set_type(core.VarDesc.VarType.LOD_TENSOR)
-                var_desc.set_dtype(
-                    convert_np_dtype_to_dtype_(tensor_config.dtype))
+                var_desc.set_dtype(convert_np_dtype_to_dtype_(np.float32))
+                if op_config.outputs_dtype is not None and v in op_config.outputs_dtype.keys(
+                ):
+                    var_desc.set_dtype(
+                        convert_np_dtype_to_dtype_(op_config.outputs_dtype[v]))
+
         op_desc.infer_var_type(main_block_desc)
         op_desc.infer_shape(main_block_desc)
+        op_desc.check_attrs()
 
     for index, name in enumerate(program_config.outputs):
         var_desc = main_block_desc.var(cpt.to_bytes("fetch"))
@@ -380,63 +400,109 @@ def create_quant_model(model,
     return serialized_program, serialized_params
 
 
-
-
-
-
 from typing import Optional
 from enum import Enum
+
+
 class TargetType(Enum):
-    Host = 0
-    X86 = 1
-    CUDA = 2
-    ARM = 3
-    OpenCL = 4
-    FPGA = 5
-    NPU = 6
-    MLU = 7
-    RKNPU = 8
-    APU = 9
-    HUAWEI_ASCEND_NPU = 10
-    INTEL_FPGA = 11
-    Any = 12
+    Unk = 0
+    Host = 1
+    X86 = 2
+    CUDA = 3
+    ARM = 4
+    OpenCL = 5
+    Any = 6
+    FPGA = 7
+    NPU = 8
+    XPU = 9
+    BM = 10
+    MLU = 11
+    RKNPU = 12
+    APU = 13
+    HUAWEI_ASCEND_NPU = 14
+    IMAGINATION_NNA = 15
+    INTEL_FPGA = 16
+    Metal = 17
+    NNAdapter = 18
+
 
 class PrecisionType(Enum):
-    FP16 = 0
+    Unk = 0
     FP32 = 1
-    FP64 = 2
-    UINT8 = 3
-    INT8 = 4
-    INT16 = 5
-    INT32 = 6
+    INT8 = 2
+    INT32 = 3
+    Any = 4
+    FP16 = 5
+    BOOL = 6
     INT64 = 7
-    BOOL = 8
-    Any = 9
-class DataLayoutType(Enum):
-    NCHW = 0
-    NHWC = 1
-    ImageDefault = 2
-    ImageFolder = 3
-    ImageNW = 4
-    Any = 5
+    INT16 = 8
+    UINT8 = 9
+    FP64 = 10
 
-def Place(target_type:TargetType, precision_type: Optional[PrecisionType]=None, data_layout:Optional[DataLayoutType] = None):
+
+class DataLayoutType(Enum):
+    Unk = 0
+    NCHW = 1
+    Any = 2
+    NHWC = 3
+    ImageDefault = 4
+    ImageFolder = 5
+    ImageNW = 6
+    MetalTexture2DArray = 7
+    MetalTexture2D = 8
+
+
+def Place(target_type: TargetType,
+          precision_type: Optional[PrecisionType]=None,
+          data_layout: Optional[DataLayoutType]=None):
     place = target_type.name
-    print("target_type.name:" + target_type.name)
     if precision_type != None:
-        place = place+ "," + precision_type.name
+        place = place + "," + precision_type.name
         if data_layout != None:
             place = place + "," + data_layout.name
     return place
 
+
 class CxxConfig:
     def __init__(self):
         self.config = {}
+        self.config["discarded_passes"] = []
+
     def set_valid_places(self, places):
         self.config["valid_targets"] = places
+
     def set_threads(self, thread):
         self.config["thread"] = thread
+
     def set_power_mode(self, mode):
         self.config["power_mode"] = mode
+
+    def add_discarded_pass(self, discarded_pass):
+        self.config["discarded_passes"].append(discarded_pass)
+
     def value(self):
         return self.config
+
+    def target(self):
+        if not "valid_targets" in self.config:
+            return None
+        first_place = self.config["valid_targets"][0].split(",")
+        return eval("TargetType." + first_place[0])
+
+    def precision(self):
+        if not "valid_targets" in self.config:
+            return None
+        first_place = ''.join(self.config["valid_targets"][0]).split(",")
+        if len(first_place) < 2:
+            return PrecisionType.FP32
+        else:
+            return eval("PrecisionType." + first_place[1])
+
+    def layout(self):
+        if not "valid_targets" in self.config:
+            return None
+        first_place = ''.join(self.config["valid_targets"][0]).split(",")
+        if len(first_place) < 3:
+            return DataLayoutType.NCHW
+        else:
+            return eval("DataLayoutType." + first_place[2])

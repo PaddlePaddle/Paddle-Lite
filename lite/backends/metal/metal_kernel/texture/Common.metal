@@ -56,6 +56,7 @@ enum ActivationType : ushort {
     PRELU = 3,
     LEAKY_RELU = 4,
     HARD_SIGMOID = 5,
+    HARD_SWISH = 10,
 };
 
 struct DropoutParam {
@@ -67,7 +68,8 @@ struct MetalActivationParam {
     float threshold;  // RELU6
     float alpha;      // LEAKY_RELU
     float offset;     // HARD_SIGMOID
-    float slope;
+    float slope;      // HARD_SIGMOID
+    float scale;      // HARD_SWISH
 };
 
 struct ElementwiseAddParam {
@@ -145,6 +147,7 @@ struct MetalConvTransposeParam {
 
     ushort hasAddOp;
     ElementwiseAddParam addParam;
+    MetalActivationParam activationParam;
 };
 
 struct LrnParam {
@@ -326,6 +329,9 @@ inline ftype4 activation(const ftype4 input, constant MetalActivationParam& para
             return fmax(input, ftype(param.alpha) * input);
         case HARD_SIGMOID:
             return fmax(0.0, fmin(1.0, ftype(param.slope) * input + ftype(param.offset)));
+        case HARD_SWISH:
+            return (fmin(ftype(param.threshold), fmax(0.0, input + ftype(param.offset)))) * input /
+                   param.scale;
     }
 }
 
@@ -359,6 +365,19 @@ inline half4 getBiasHalf(uint3 gid,
             abcd2xyzn(addParam.ydim[3], t_abcd, y_xyzn);
             output[n] = biasTexture.read(uint2(y_xyzn[0], y_xyzn[1]), y_xyzn[2])[y_xyzn[3]];
         }
+    }
+    return output;
+}
+
+inline ftype4 get_bias(uint3 gid,
+    constant ElementwiseAddParam& addParam,
+    texture2d_array<ftype, access::sample> biasTexture) {
+    ftype4 output = ftype4(0.0);
+    if (addParam.fast == 1) {
+        output = biasTexture.read(gid.xy, gid.z);
+    } else if (addParam.addByChannel == 1) {
+        output = biasTexture.read(uint2(0, 0), gid.z);
+    } else {
     }
     return output;
 }
