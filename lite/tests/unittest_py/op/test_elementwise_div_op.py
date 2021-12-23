@@ -35,13 +35,11 @@ class TestElementwiseDivOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
-        arm_places = [
-            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
-            Place(TargetType.ARM, PrecisionType.FP16, DataLayoutType.NCHW),
-            Place(TargetType.ARM, PrecisionType.INT32, DataLayoutType.NCHW),
-            Place(TargetType.ARM, PrecisionType.INT64, DataLayoutType.NCHW)
-        ]
-        self.enable_testing_on_place(places=arm_places, thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            [PrecisionType.FP32, PrecisionType.INT32, PrecisionType.INT64],
+            DataLayoutType.NCHW,
+            thread=[1, 4])
         opencl_valid_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -56,43 +54,58 @@ class TestElementwiseDivOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_valid_places)
-        metal_valid_places = [
-            Place(TargetType.Metal, PrecisionType.FP32,
-                  DataLayoutType.MetalTexture2DArray),
-            Place(TargetType.Metal, PrecisionType.FP16,
-                  DataLayoutType.MetalTexture2DArray)
-        ]
-        self.enable_testing_on_place(places=metal_valid_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
         target_type = predictor_config.target()
-        in_x_shape = list(program_config.inputs["input_data_x"].shape)
-        in_y_shape = list(program_config.inputs["input_data_y"].shape)
-        if target_type == TargetType.Metal:
-            if in_x_shape != in_y_shape:
+        input_data_type = program_config.inputs["input_data_x"].dtype
+        # Check config
+        if target_type in [TargetType.ARM]:
+            if predictor_config.precision(
+            ) == PrecisionType.INT64 and input_data_type != np.int64:
                 return False
+            if predictor_config.precision(
+            ) == PrecisionType.FP32 and input_data_type != np.float32:
+                return False
+            if predictor_config.precision(
+            ) == PrecisionType.FP16 and input_data_type != np.float16:
+                return False
+            if predictor_config.precision(
+            ) == PrecisionType.INT32 and input_data_type != np.int32:
+                return False
+
         return True
 
     def sample_program_configs(self, draw):
         input_data_x_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=20), min_size=1, max_size=6))
+                    min_value=1, max_value=20), min_size=1, max_size=4))
         input_data_y_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=20), min_size=1, max_size=6))
-        axis = draw(st.integers(min_value=-6, max_value=6))
+                    min_value=1, max_value=20), min_size=1, max_size=4))
+        axis = draw(st.integers(min_value=-1, max_value=4))
         assume(
             check_broadcast(input_data_x_shape, input_data_y_shape, axis) ==
             True)
         if axis < 0:
             axis = abs(len(input_data_x_shape) - len(
                 input_data_y_shape)) + axis + 1
-        input_data_type = draw(
-            st.sampled_from([np.int32, np.int64, np.float32]))
+
+        if self.get_target().upper() == 'X86':
+            input_data_type = draw(
+                st.sampled_from([np.float32, np.int32, np.int64]))
+        elif self.get_target().upper() == 'ARM':
+            input_data_type = draw(
+                st.sampled_from([np.float32, np.int32, np.int64]))
+        elif self.get_target().upper() == 'OPENCL':
+            input_data_type = draw(
+                st.sampled_from([np.float32]))   
+        elif self.get_target().upper() == 'METAL':
+            input_data_type = draw(
+                st.sampled_from([np.float32]))
 
         def gen_input_data(*args, **kwargs):
             return np.random.randint(
@@ -121,26 +134,10 @@ class TestElementwiseDivOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        config = CxxConfig()
         return self.get_predictor_configs(), ["elementwise_div"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        err_msg = ""
-
-        def teller1(program_config, predictor_config):
-            target_type = predictor_config.target()
-            in_data_type = program_config.inputs["input_data_x"].dtype
-            if target_type in [TargetType.OpenCL, TargetType.Metal]:
-                if in_data_type != np.float32:
-                    err_msg = "Elementwise_add op on" + str(
-                        target_type
-                    ) + "backend only support input data type[float32/float16], but got" + str(
-                        in_data_type)
-                    return True
-            return False
-
-        self.add_ignore_check_case(
-            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT, err_msg)
+        pass
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)

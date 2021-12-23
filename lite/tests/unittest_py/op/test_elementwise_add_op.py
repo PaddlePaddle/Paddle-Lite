@@ -92,13 +92,6 @@ class TestElementwiseAddOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_valid_places)
-        metal_valid_places = [
-            Place(TargetType.Metal, PrecisionType.FP32,
-                  DataLayoutType.MetalTexture2DArray),
-            Place(TargetType.Metal, PrecisionType.FP16,
-                  DataLayoutType.MetalTexture2DArray)
-        ]
-        self.enable_testing_on_place(places=metal_valid_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -118,12 +111,6 @@ class TestElementwiseAddOp(AutoScanTest):
                 return False
             if predictor_config.precision(
             ) == PrecisionType.INT32 and input_data_type != np.int32:
-                return False
-
-        in_x_shape = list(program_config.inputs["input_data_x"].shape)
-        in_y_shape = list(program_config.inputs["input_data_y"].shape)
-        if target_type == TargetType.Metal:
-            if in_x_shape != in_y_shape:
                 return False
 
         if target_type == TargetType.ARM:
@@ -193,18 +180,7 @@ class TestElementwiseAddOp(AutoScanTest):
         return self.get_predictor_configs(), ["elementwise_add"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def teller1(program_config, predictor_config):
-            target_type = predictor_config.target()
-            in_data_type = program_config.inputs["input_data_x"].dtype
-            if target_type in [TargetType.OpenCL, TargetType.Metal]:
-                if in_data_type != np.float32:
-                    return True
-            return False
-
-        self.add_ignore_check_case(
-            teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Elementwise_add op on this backend only support input data type[float32/float16]"
-        )
+        pass
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)
