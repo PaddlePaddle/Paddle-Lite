@@ -142,7 +142,7 @@ class TestElementwiseAddOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=20), min_size=1, max_size=4))
-        axis = draw(st.integers(min_value=-4, max_value=4))
+        axis = draw(st.integers(min_value=-1, max_value=4))
         assume(
             check_broadcast(input_data_x_shape, input_data_y_shape, axis) ==
             True)
@@ -159,6 +159,8 @@ class TestElementwiseAddOp(AutoScanTest):
         elif self.get_target().upper() == 'OPENCL':
             input_data_type = draw(
                 st.sampled_from([np.float32]))
+            if input_data_x_shape ==  input_data_y_shape:
+                axis = 0    
         elif self.get_target().upper() == 'METAL':
             input_data_type = draw(
                 st.sampled_from([np.float32]))
@@ -190,7 +192,6 @@ class TestElementwiseAddOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        config = CxxConfig()
         return self.get_predictor_configs(), ["elementwise_add"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
