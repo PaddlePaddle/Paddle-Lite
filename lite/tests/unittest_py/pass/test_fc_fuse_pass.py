@@ -37,6 +37,8 @@ class TestFcFuse(FusePassAutoScanTest):
             TargetType.ARM, [PrecisionType.FP32],
             DataLayoutType.NCHW,
             thread=[1, 4])
+        #OpenCL not support mul 
+        '''
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -50,14 +52,18 @@ class TestFcFuse(FusePassAutoScanTest):
             Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
-        #self.enable_testing_on_place(places=opencl_places)
+        self.enable_testing_on_place(places=opencl_places)
+        '''
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
+        if predictor_config.target() != TargetType.X86:
+            return len(program_config.ops) == 2
         return True
 
     def sample_program_configs(self, draw):
+        has_relu = draw(st.sampled_from([True, False]))
         mul_x_in_shape = draw(
             st.lists(
                 st.integers(
@@ -104,10 +110,21 @@ class TestFcFuse(FusePassAutoScanTest):
             type="elementwise_add",
             inputs={"X": ["mul_output_data"],
                     "Y": ["add_x_data"]},
-            outputs={"Out": ["output_data"]},
+            outputs={"Out": ["elementwise_add_output_data"]},
             attrs={"axis": axis})
+        
+        active_op = OpConfig(
+        type="relu",
+        inputs={"X": ["elementwise_add_output_data"]},
+        outputs={"Out": ["output_data"]},
+        attrs={})
+        
 
         ops = [mul_op, elementwise_add_op]
+        output_data = "elementwise_add_output_data"
+        if has_relu:
+            ops.append(active_op)
+            output_data = "output_data"
         program_config = ProgramConfig(
             ops=ops,
             weights={"add_x_data": TensorConfig(shape=add_x_data_shape)},
@@ -115,7 +132,7 @@ class TestFcFuse(FusePassAutoScanTest):
                 "mul_x_data": TensorConfig(shape=mul_x_in_shape),
                 "mul_y_data": TensorConfig(shape=[x1, y1])
             },
-            outputs=["output_data"])
+            outputs=[output_data])
         return program_config
 
     def sample_predictor_configs(self):
