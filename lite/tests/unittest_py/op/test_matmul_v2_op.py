@@ -32,31 +32,25 @@ class TestMatmulV2Op(AutoScanTest):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32,
                                      DataLayoutType.NCHW)
-        opencl_places = [
-            Place(TargetType.OpenCL, PrecisionType.FP16,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.FP16,
-                      DataLayoutType.ImageFolder),
-            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-            Place(TargetType.OpenCL, PrecisionType.Any,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.Any,
-                      DataLayoutType.ImageFolder),
-            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-            Place(TargetType.Host, PrecisionType.FP32)
-        ]
-        self.enable_testing_on_place(places=opencl_places)
+        # opencl bugs to be fix in the future
+        #opencl_places = [
+        #    Place(TargetType.OpenCL, PrecisionType.FP16,
+        #          DataLayoutType.ImageDefault), Place(
+        #              TargetType.OpenCL, PrecisionType.FP16,
+        #              DataLayoutType.ImageFolder),
+        #    Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+        #    Place(TargetType.OpenCL, PrecisionType.Any,
+        #          DataLayoutType.ImageDefault), Place(
+        #              TargetType.OpenCL, PrecisionType.Any,
+        #              DataLayoutType.ImageFolder),
+        #    Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+        #    Place(TargetType.Host, PrecisionType.FP32)
+        #]
+        #self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        target_str = self.get_target()
-        # opencl bugs to be fix in the future
-        if target_str == "OpenCL":
-            return False
-            in_shape = list(program_config.inputs["input_data_x"].shape)
-            if in_shape[0] % 4 != 0:
-                return False
         return True  # True ci run matmul has diff
 
     def sample_program_configs(self, draw):

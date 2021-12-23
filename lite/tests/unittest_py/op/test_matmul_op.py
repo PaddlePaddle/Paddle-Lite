@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-'''
 import sys
 sys.path.append('../')
 
@@ -34,38 +33,26 @@ class TestMulOp(AutoScanTest):
                                      DataLayoutType.NCHW)
         self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32,
                                      DataLayoutType.NCHW)
-        self.enable_testing_on_place(TargetType.Metal, PrecisionType.FP32,
-                                     DataLayoutType.NCHW)
-        opencl_places = [
-            Place(TargetType.OpenCL, PrecisionType.FP16,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.FP16,
-                      DataLayoutType.ImageFolder),
-            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-            Place(TargetType.OpenCL, PrecisionType.Any,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.Any,
-                      DataLayoutType.ImageFolder),
-            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-            Place(TargetType.Host, PrecisionType.FP32)
-        ]
-        self.enable_testing_on_place(places=opencl_places)
+        #self.enable_testing_on_place(TargetType.Metal, PrecisionType.FP32,
+        #                             DataLayoutType.NCHW)
+        #opencl_places = [
+        #    Place(TargetType.OpenCL, PrecisionType.FP16,
+        #          DataLayoutType.ImageDefault), Place(
+        #              TargetType.OpenCL, PrecisionType.FP16,
+        #              DataLayoutType.ImageFolder),
+        #    Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+        #    Place(TargetType.OpenCL, PrecisionType.Any,
+        #          DataLayoutType.ImageDefault), Place(
+        #              TargetType.OpenCL, PrecisionType.Any,
+        #              DataLayoutType.ImageFolder),
+        #    Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+        #    Place(TargetType.Host, PrecisionType.FP32)
+        #]
+        #self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        target_str = self.get_target()
-        # opencl bugs to be fix in the future
-        if target_str == "OpenCL":
-            return False
-            in_shape = list(program_config.inputs["input_data_x"].shape)
-            if in_shape[0] % 4 != 0:
-                return False
-            if program_config.ops[0].attrs["alpha"] != 1.0:
-                return False
-        if target_str == "Metal":
-            return False
-
         return True  # True ci run matmul has diff
 
     def sample_program_configs(self, draw):
@@ -154,4 +141,3 @@ class TestMulOp(AutoScanTest):
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
-'''
