@@ -94,7 +94,11 @@ class TestYoloBoxOp(AutoScanTest):
         conf_thresh_data = draw(st.floats(min_value=0.01, max_value=0.1))
         clip_bbox_data = draw(st.booleans())
         scale_x_y_data = draw(st.floats(min_value=1.0, max_value=1.0))
+        # iou_aware_data is not supported by lite
+        # I default them
         iou_aware_data = draw(st.booleans())
+        iou_aware_data = False
+
         iou_aware_factor_data = draw(st.floats(min_value=0, max_value=1))
 
         def generate_ImgSize_data():
@@ -103,8 +107,9 @@ class TestYoloBoxOp(AutoScanTest):
         anchor_size = 2  # len(anchors_data) / 2
 
         # in paddle : develop and v2.1.2 differs here
+        # here consistent with develop
         if (iou_aware_data):
-            in_shape[1] = anchor_size * (5 + class_num_data)
+            in_shape[1] = anchor_size * (6 + class_num_data)
         else:
             in_shape[1] = anchor_size * (5 + class_num_data)
 
