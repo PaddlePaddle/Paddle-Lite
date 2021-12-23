@@ -33,7 +33,7 @@ int ConvertAdaptivePool2D(Converter* converter, hal::Operation* operation) {
     auto pool2d_op =
         converter->AddOperator<ge::op::AdaptiveMaxPool2d>(output_operand);
     pool2d_op->set_attr_output_size(
-        ge::Operator::OpListInt({kernel_height, kernel_width}));
+        ge::Operator::OpListInt({output_height, output_width}));
     SET_INPUT(pool2d_op, x, input_operator);
     auto adaptive_pool2d_operator = MAP_OUTPUT(pool2d_op, y, output_operand);
     auto tensor_desc = std::make_shared<ge::TensorDesc>(
@@ -63,7 +63,7 @@ int ConvertAdaptivePool2D(Converter* converter, hal::Operation* operation) {
     auto pool2d_op =
         converter->AddOperator<ge::op::AdaptiveAvgPool2d>(output_operand);
     pool2d_op->set_attr_output_size(
-        ge::Operator::OpListInt({kernel_height, kernel_width}));
+        ge::Operator::OpListInt({output_height, output_width}));
     SET_INPUT(pool2d_op, x, input_operator);
     MAP_OUTPUT(pool2d_op, y, output_operand);
   }
