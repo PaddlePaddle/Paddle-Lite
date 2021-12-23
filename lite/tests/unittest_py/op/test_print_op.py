@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-'''
+
 import sys
 sys.path.append('../')
 
@@ -23,67 +23,59 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 import argparse
-from functools import partial
-import random
+
 import numpy as np
+from functools import partial
 
 
-class TestBeamSearchDecodeOp(AutoScanTest):
+class TestPrintOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(
             TargetType.Host,
             PrecisionType.FP32,
             DataLayoutType.NCHW,
-            thread=[1, 4])
+            thread=[1, 2])
+        # self.enable_testing_on_place(
+        #     TargetType.X86,
+        #     PrecisionType.FP32,
+        #     DataLayoutType.NCHW,
+        #     thread=[1, 2])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        # doesn't support tensorList type
-        return False
+        return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.sampled_from([[5, 1]]))
-        lod_data = draw(st.sampled_from([[[0, 1, 2], [0, 2, 4]]]))
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=10), min_size=4, max_size=4))
 
-        def generate_pre_ids(*args, **kwargs):
-            return np.random.random(in_shape).astype(np.int64)
-
-        def generate_pre_score(*args, **kwargs):
+        def generate_input(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
 
-        beam_search_ops = OpConfig(
-            type="beam_search_decode",
-            inputs={
-                "Ids": ["ids_data", "ids_data2"],
-                "Scores": ["scores_data", "scores_data2"]
-            },
-            outputs={
-                "SentenceIds": ["sentence_ids_data"],
-                "SentenceScores": ["sentence_scores_data"]
-            },
-            attrs={"beam_size": in_shape[0],
-                   "end_id": 0})
+        build_ops = OpConfig(
+            type="print",
+            inputs={"In": ["input_data"], },
+            outputs={"Out": ["output_data"], },
+            attrs={
+                "first_n": 10,
+                "summarize": 20,
+                "message": "",
+            })
         program_config = ProgramConfig(
-            ops=[beam_search_ops],
+            ops=[build_ops],
             weights={},
             inputs={
-                "ids_data": TensorConfig(
-                    data_gen=partial(generate_pre_ids), lod=lod_data),
-                "ids_data2": TensorConfig(
-                    data_gen=partial(generate_pre_ids), lod=lod_data),
-                "scores_data": TensorConfig(
-                    data_gen=partial(generate_pre_score), lod=lod_data),
-                "scores_data2": TensorConfig(
-                    data_gen=partial(generate_pre_score), lod=lod_data),
+                "input_data": TensorConfig(data_gen=partial(generate_input)),
             },
-            outputs=["sentence_ids_data", "sentence_scores_data"])
+            outputs=["output_data"])
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["beam_search_decode"], (1e-5,
-                                                                      1e-5)
+        return self.get_predictor_configs(), ["print"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
@@ -94,4 +86,3 @@ class TestBeamSearchDecodeOp(AutoScanTest):
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
-'''

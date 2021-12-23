@@ -107,8 +107,7 @@ class FusePassAutoScanTest(AutoScanTest):
                        max_examples=100,
                        reproduce=None,
                        min_success_num=25,
-                       max_duration=180,
                        passes=None):
         assert passes is not None, "Parameter of passes must be defined in function run_and_statis."
         super().run_and_statis(quant, max_examples, reproduce, min_success_num,
-                               max_duration, passes)
+                               passes)
