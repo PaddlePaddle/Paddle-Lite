@@ -32,14 +32,6 @@ class TestSqueezeOp(AutoScanTest):
             TargetType.Host, [PrecisionType.Any],
             DataLayoutType.NCHW,
             thread=[1, 4])
-        self.enable_testing_on_place(
-            TargetType.X86, [PrecisionType.Any],
-            DataLayoutType.NCHW,
-            thread=[1, 4])
-        self.enable_testing_on_place(
-            TargetType.ARM, [PrecisionType.Any],
-            DataLayoutType.NCHW,
-            thread=[1, 4])
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
             Place(TargetType.OpenCL, PrecisionType.FP16,
