@@ -29,15 +29,7 @@ class TestSplitOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(
-            TargetType.X86, [PrecisionType.FP32, PrecisionType.INT64],
-            DataLayoutType.NCHW,
-            thread=[1, 4])
-        self.enable_testing_on_place(
             TargetType.Host, [PrecisionType.FP32, PrecisionType.INT64],
-            DataLayoutType.NCHW,
-            thread=[1, 4])
-        self.enable_testing_on_place(
-            TargetType.ARM, [PrecisionType.FP32, PrecisionType.INT64],
             DataLayoutType.NCHW,
             thread=[1, 4])
         # metal demo
@@ -68,15 +60,6 @@ class TestSplitOp(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        '''
-        in_shape = [1, 8, 24]
-        sections = []
-        num = 2
-        input_axis = 2
-        input_num = 1
-        input_type = "float32"
-        Out = ["output_var0", "output_var1"]
-        '''
         in_shape = draw(
             st.sampled_from([[3, 3, 24], [3, 24, 24], [3, 24], [24, 24], [24]
                              ]))
@@ -171,7 +154,13 @@ class TestSplitOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["split"], (1e-3, 1e-3)
+        atol, rtol = 1e-5, 1e-5
+        config_lists = self.get_predictor_configs()
+        for config in config_lists:
+            if config.target() in [TargetType.Metal]:
+                atol, rtol = 1e-3, 1e-3
+
+        return self.get_predictor_configs(), ["split"], (atol, rtol)
 
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
