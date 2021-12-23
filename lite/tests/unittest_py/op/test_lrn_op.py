@@ -73,7 +73,7 @@ class TestLrnOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=128),
-                min_size=1,
+                min_size=3,
                 max_size=3))
         in_shape = in_num + in_c_h_w
         n_ = draw(st.integers(min_value=1, max_value=8))
