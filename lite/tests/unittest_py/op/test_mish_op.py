@@ -47,10 +47,17 @@ class TestMishOp(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(
+        in_num = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=8), min_size=1, max_size=4))
+                    min_value=1, max_value=4), min_size=1, max_size=1))
+        in_c_h_w = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=128),
+                min_size=1,
+                max_size=3))
+        in_shape = in_num + in_c_h_w
         threshold = draw(st.sampled_from([20.0, 10.0, 5.0]))
         mish_op = OpConfig(
             type="mish",

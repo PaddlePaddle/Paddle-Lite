@@ -46,11 +46,18 @@ class TestNormOp(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(
+        in_num = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=32), min_size=1, max_size=4))
-        axis = draw(st.sampled_from([0, 1, 2, 3]))
+                    min_value=1, max_value=4), min_size=1, max_size=1))
+        in_c_h_w = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=128),
+                min_size=1,
+                max_size=3))
+        in_shape = in_num + in_c_h_w
+        axis = draw(st.sampled_from([-1, 0, 1, 2, 3]))
         epsilon = draw(st.sampled_from([0.9, 1., 1.1, 1e-5]))
         norm_op = OpConfig(
             type="norm",

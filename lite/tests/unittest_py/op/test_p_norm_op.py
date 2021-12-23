@@ -49,12 +49,19 @@ class TestPNormOp(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(
+        in_num = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=32), min_size=1, max_size=4))
-        axis = draw(st.sampled_from([0, 1, 2, 3]))
-        epsilon = draw(st.sampled_from([0, 1.0, 3.0]))
+                    min_value=1, max_value=4), min_size=1, max_size=1))
+        in_c_h_w = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=128),
+                min_size=1,
+                max_size=3))
+        in_shape = in_num + in_c_h_w
+        axis = draw(st.sampled_from([-1, 0, 1, 2, 3]))
+        epsilon = draw(st.sampled_from([0, 1e-6]))
         keepdim = draw(st.booleans())
         asvector = draw(st.booleans())
         p_norm_op = OpConfig(
@@ -88,9 +95,10 @@ class TestPNormOp(AutoScanTest):
             teller1, IgnoreReasons.ACCURACY_ERROR,
             "The op output has diff in a specific case. We need to fix it as soon as possible."
         )
+        #pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=100)
+        self.run_and_statis(quant=False, max_examples=300)
 
 
 if __name__ == "__main__":

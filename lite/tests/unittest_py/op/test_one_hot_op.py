@@ -42,15 +42,17 @@ class TestOneHotOp(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        max_value = 8
+        # if max_value > 32 will crash, todo fix
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=8), min_size=2, max_size=2))
+                    min_value=1, max_value=32), min_size=2, max_size=2))
         depth_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=8, max_value=8), min_size=1, max_size=1))
+                    min_value=32, max_value=256),
+                min_size=1,
+                max_size=1))
 
         # if def depth_tensor  will have rpc Connection refused error
         #def generate_depth_tensor(*args, **kwargs):
@@ -61,7 +63,7 @@ class TestOneHotOp(AutoScanTest):
             return np.random.randint([in_shape]).astype(np.int64)
 
         dtype = draw(st.sampled_from([2]))
-        depth = draw(st.sampled_from([8]))
+        depth = draw(st.integers(min_value=32, max_value=256))
         allow_out_of_range = draw(st.booleans())
         one_hot_op = OpConfig(
             type="one_hot",
