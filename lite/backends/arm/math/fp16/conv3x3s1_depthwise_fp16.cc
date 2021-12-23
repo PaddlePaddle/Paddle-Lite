@@ -674,7 +674,6 @@ namespace fp16 {
   "vld1.16  {d22-d23}, [%[din_ptr3]]    \n"
 
 /* q12 q13 is to hold output */
-
 #define LEFT_RESULT_FP16_S1_RELU                         \
   "vmax.f16   q12,  q12, %q[vzero]              \n"      \
   "vmax.f16   q13,  q13, %q[vzero]              \n"      \
@@ -684,7 +683,6 @@ namespace fp16 {
   "blt    3f                                        \n"
 
 /* q12 q13 is to hold output */
-
 #define LEFT_RESULT_FP16_S1                              \
   "vst1.32    {d24-d25}, [%[ptr_out0]]!              \n" \
   "vst1.32    {d26-d27}, [%[ptr_out1]]!            \n"   \
@@ -893,6 +891,7 @@ namespace fp16 {
   "vld1.16    {d24-d25}, [%[bias_val]]\n"                                    \
   "vld1.16    {d26-d27}, [%[bias_val]]\n"                                    \
                                                                              \
+  /* updtae q4，6，8，10 */                                               \
   "vbif q4, %q[vzero], q14 \n"                                               \
   "vbif q6, %q[vzero], q14 \n"                                               \
   "vbif q8, %q[vzero], q14  \n"                                              \
