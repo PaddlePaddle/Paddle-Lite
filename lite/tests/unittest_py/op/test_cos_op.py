@@ -20,29 +20,20 @@ from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, Tar
 import unittest
 
 import hypothesis
-from hypothesis import given, settings, seed, example, assume
+from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
-import argparse
-
 import numpy as np
 from functools import partial
 
 
-class TestReshape2Op(AutoScanTest):
+class TestCosOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(
             TargetType.Host,
             PrecisionType.FP32,
             DataLayoutType.NCHW,
-            thread=[1, 2])
-        # self.enable_testing_on_place(
-        #     TargetType.X86,
-        #     PrecisionType.FP32,
-        #     DataLayoutType.NCHW,
-        #     thread=[1, 2])
-
-        # opencl
+            thread=[1, 4])
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -56,74 +47,39 @@ class TestReshape2Op(AutoScanTest):
             Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
-        #self.enable_testing_on_place(places=opencl_places)
-
-        # metal
-        metal_places = [
-            Place(TargetType.Metal, PrecisionType.FP32,
-                  DataLayoutType.MetalTexture2DArray),
-            Place(TargetType.Metal, PrecisionType.FP16,
-                  DataLayoutType.MetalTexture2DArray)
-        ]
-        self.enable_testing_on_place(places=metal_places)
+        self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        in_shape = list(program_config.inputs["input_data"].shape)
-        target = predictor_config.target()
-        # opencl has error
-        # if target in [TargetType.OpenCL]:
-        #     return False
         return True
 
     def sample_program_configs(self, draw):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=10), min_size=4, max_size=4))
-        attr_shape = draw(
-            st.lists(
-                st.integers(
-                    min_value=0, max_value=4),
-                min_size=len(in_shape),
-                max_size=len(in_shape)))
-        with_shape = draw(st.sampled_from([True, False]))
-
-        def generate_input(*args, **kwargs):
-            return np.random.random(in_shape).astype(np.float32)
-
-        build_ops = OpConfig(
-            type="reshape2",
-            inputs={"X": ["input_data"], },
-            outputs={
-                "Out": ["output_data"],
-                "XShape": ["x_shape"],
-            },
-            attrs={"shape": in_shape, })
+                    min_value=1, max_value=8), min_size=4, max_size=4))
+        cos_op = OpConfig(
+            type="cos",
+            inputs={"X": ["input_data"]},
+            outputs={"Out": ["output_data"]},
+            attrs={})
         program_config = ProgramConfig(
-            ops=[build_ops],
+            ops=[cos_op],
             weights={},
-            inputs={
-                "input_data": TensorConfig(data_gen=partial(generate_input)),
-            },
+            inputs={"input_data": TensorConfig(shape=in_shape)},
             outputs=["output_data"])
         return program_config
 
     def sample_predictor_configs(self):
-        atol, rtol = 1e-5, 1e-5
-        config_lists = self.get_predictor_configs()
-        for config in config_lists:
-            if config.target() in [TargetType.Metal]:
-                atol, rtol = 2e-4, 2e-4
-
-        return self.get_predictor_configs(), ["reshape2"], (atol, rtol)
+        config = CxxConfig()
+        return self.get_predictor_configs(), ["cos"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=300)
 
 
 if __name__ == "__main__":
