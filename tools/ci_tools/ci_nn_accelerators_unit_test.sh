@@ -37,10 +37,10 @@ REMOTE_DEVICE_TYPE=0
 REMOTE_DEVICE_LIST="2GX0119401000796,0123456789ABCDEF"
 # Work directory of the remote devices for running the unit tests
 REMOTE_DEVICE_WORK_DIR="/data/local/tmp"
-# Xpu sdk option
-XPU_SDK_URL=""
-XPU_SDK_ENV=""
-XPU_SDK_ROOT=""
+# Kunlunxin XPU options
+KUNLUNXIN_XPU_SDK_URL=""
+KUNLUNXIN_XPU_SDK_ENV=""
+KUNLUNXIN_XPU_SDK_ROOT=""
 # TIM-VX options
 NNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG=""
 NNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT=""
@@ -1211,9 +1211,9 @@ function kunlunxin_xpu_build_and_test() {
         -DLITE_BUILD_EXTRA=ON \
         -DLITE_WITH_XPU=ON \
         -DLITE_WITH_LTO=OFF \
-        -DXPU_SDK_URL=$XPU_SDK_URL \
-        -DXPU_SDK_ENV=$XPU_SDK_ENV \
-        -DXPU_SDK_ROOT=$XPU_SDK_ROOT \
+        -DXPU_SDK_URL=$KUNLUNXIN_XPU_SDK_URL \
+        -DXPU_SDK_ENV=$KUNLUNXIN_XPU_SDK_ENV \
+        -DXPU_SDK_ROOT=$KUNLUNXIN_XPU_SDK_ROOT \
         -DLITE_WITH_XTCL=OFF
 
     make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
@@ -1283,16 +1283,16 @@ function main() {
             REMOTE_DEVICE_WORK_DIR="${i#*=}"
             shift
             ;;
-        --xpu_sdk_url=*)
-            XPU_SDK_URL="${i#*=}"
+        --kunlunxin_xpu_sdk_url=*)
+            KUNLUNXIN_XPU_SDK_URL="${i#*=}"
             shift
             ;;
-        --xpu_sdk_env=*)
-            XPU_SDK_ENV="${i#*=}"
+        --kunlunxin_xpu_sdk_env=*)
+            KUNLUNXIN_XPU_SDK_ENV="${i#*=}"
             shift
             ;;
-        --xpu_sdk_root=*)
-            XPU_SDK_ROOT="${i#*=}"
+        --kunlunxin_xpu_sdk_root=*)
+            KUNLUNXIN_XPU_SDK_ROOT="${i#*=}"
             shift
             ;;
         --nnadapter_verisilicon_timvx_src_git_tag=*)
