@@ -30,34 +30,34 @@ import hypothesis.strategies as st
 class TestNearestInterpOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(
-            TargetType.ARM, [PrecisionType.FP16, PrecisionType.FP32],
-            DataLayoutType.NCHW,
-            thread=[1, 4])
-        self.enable_testing_on_place(
-            TargetType.X86,
-            PrecisionType.FP32,
-            DataLayoutType.NCHW,
-            thread=[1, 4])
-        self.enable_testing_on_place(
-            TargetType.Metal,
-            PrecisionType.FP32,
-            DataLayoutType.NCHW,
-            thread=[1, 4])
-        opencl_places = [
-            Place(TargetType.OpenCL, PrecisionType.FP16,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.FP16,
-                      DataLayoutType.ImageFolder),
-            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-            Place(TargetType.OpenCL, PrecisionType.Any,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.Any,
-                      DataLayoutType.ImageFolder),
-            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-            Place(TargetType.Host, PrecisionType.FP32)
-        ]
-        self.enable_testing_on_place(places=opencl_places)
+        #self.enable_testing_on_place(
+        #    TargetType.ARM, [PrecisionType.FP16, PrecisionType.FP32],
+        #    DataLayoutType.NCHW,
+        #    thread=[1, 4])
+        #self.enable_testing_on_place(
+        #    TargetType.X86,
+        #    PrecisionType.FP32,
+        #    DataLayoutType.NCHW,
+        #    thread=[1, 4])
+        #self.enable_testing_on_place(
+        #    TargetType.Metal,
+        #    PrecisionType.FP32,
+        #    DataLayoutType.NCHW,
+        #    thread=[1, 4])
+        #opencl_places = [
+        #    Place(TargetType.OpenCL, PrecisionType.FP16,
+        #          DataLayoutType.ImageDefault), Place(
+        #              TargetType.OpenCL, PrecisionType.FP16,
+        #              DataLayoutType.ImageFolder),
+        #    Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+        #    Place(TargetType.OpenCL, PrecisionType.Any,
+        #          DataLayoutType.ImageDefault), Place(
+        #              TargetType.OpenCL, PrecisionType.Any,
+        #              DataLayoutType.ImageFolder),
+        #    Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+        #    Place(TargetType.Host, PrecisionType.FP32)
+        #]
+        #self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -70,16 +70,20 @@ class TestNearestInterpOp(AutoScanTest):
             return False
         if in_shape[2] * scale_data[0] < 1 or in_shape[3] * scale_data[0] < 1:
             return False
-        target_str = self.get_target()
-        if target_str == "ARM":
-            return False
         return True
 
     def sample_program_configs(self, draw):
-        X_shape = draw(
+        in_num = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=16), min_size=4, max_size=4))
+                    min_value=1, max_value=4), min_size=1, max_size=1))
+        in_c_h_w = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=128),
+                min_size=3,
+                max_size=3))
+        X_shape = in_num + in_c_h_w
         Scale_shape = draw(
             st.lists(
                 st.integers(
