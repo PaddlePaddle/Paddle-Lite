@@ -63,7 +63,9 @@ class TestDropoutOp(AutoScanTest):
         input_data_x_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=8), min_size=4, max_size=4))
+                    min_value=1, max_value=128),
+                min_size=4,
+                max_size=4))
         dropout_prob = draw(st.floats(min_value=0, max_value=1))
         # seed is useless on inference, so fix this var to default value
         seed = 0
