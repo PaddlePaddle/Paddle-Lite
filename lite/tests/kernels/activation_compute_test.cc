@@ -724,6 +724,8 @@ TEST(Activation_relu6, precision) {
   abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   abs_error = 2e-5;
+#elif defined(NNADAPTER_WITH_KUNLUNXIN_XTCL)
+  abs_error = 2e-5;
 #else
   return;
 #endif
