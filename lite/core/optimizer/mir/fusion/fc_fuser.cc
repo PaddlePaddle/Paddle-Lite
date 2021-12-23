@@ -26,10 +26,9 @@ void FcFuser::BuildPattern() {
   auto* x = VarNode("x")->assert_is_op_input("mul", "X");
   auto* W = VarNode("W")->assert_is_op_input("mul", "Y");
   auto* b = VarNode("b")->assert_is_persistable_var();
-  auto* mul = OpNode("mul", "mul")->assert_node_satisfied(inputs_teller0);
+  auto* mul = OpNode("mul", "mul");
   auto* mul_out = VarNode("mul_out");
-  auto* add =
-      OpNode("add", "elementwise_add")->assert_node_satisfied(inputs_teller1);
+  auto* add = OpNode("add", "elementwise_add");
   auto* Out = VarNode("Out");
 
   // create topology.
