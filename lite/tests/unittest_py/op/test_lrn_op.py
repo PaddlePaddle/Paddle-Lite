@@ -65,10 +65,17 @@ class TestLrnOp(AutoScanTest):
         alpha_ = draw(st.sampled_from([1e-4]))
         beta_ = draw(st.sampled_from([0.75]))
         '''
-        in_shape = draw(
+        in_num = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=8), min_size=4, max_size=4))
+                    min_value=1, max_value=4), min_size=1, max_size=1))
+        in_c_h_w = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=128),
+                min_size=1,
+                max_size=3))
+        in_shape = in_num + in_c_h_w
         n_ = draw(st.integers(min_value=1, max_value=8))
         k_ = draw(st.floats(min_value=1.0, max_value=10.0))
         alpha_ = draw(st.floats(min_value=1.0, max_value=10.0))
