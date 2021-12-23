@@ -86,7 +86,7 @@ class NormComputeTester : public arena::TestCase {
 };
 void test_norm(Place place, float abs_error, const std::vector<int>& axis_vec) {
   DDimLite dims{{3, 5, 4, 4}};
-  for (int axis : {1, 2, 3}) {
+  for (int axis : axis_vec) {
     for (float epsilon : {1e-9}) {
       std::unique_ptr<arena::TestCase> tester(
           new NormComputeTester(place, "def", axis, epsilon, dims));

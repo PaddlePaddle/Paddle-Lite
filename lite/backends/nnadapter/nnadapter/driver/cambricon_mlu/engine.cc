@@ -34,7 +34,6 @@ Context::Context(void* device, const char* properties) : device_(device) {
   // Extract the build parameters from the context properties
   NNADAPTER_LOG(INFO) << "properties: " << std::string(properties);
   std::string build_config_file_path;
-  std::vector<std::string> build_config_file_vec;
   auto key_values = GetKeyValues(properties);
   if (key_values.count(CAMBRICON_MLU_BUILD_CONFIG_FILE_PATH)) {
     build_config_file_path = key_values[CAMBRICON_MLU_BUILD_CONFIG_FILE_PATH];
@@ -43,17 +42,7 @@ Context::Context(void* device, const char* properties) : device_(device) {
         GetStringFromEnv(CAMBRICON_MLU_BUILD_CONFIG_FILE_PATH);
   }
   if (!build_config_file_path.empty()) {
-    build_config_file_vec =
-        string_split<std::string>(build_config_file_path, ",");
-    NNADAPTER_CHECK_GE(build_config_file_vec.size(), 1);
-    // Only supports specifying one path
-    if (build_config_file_vec.size() > 1) {
-      NNADAPTER_LOG(WARNING)
-          << "Only supports specifying one config path, so the "
-             "first one is selected and others will be "
-             "ignored.";
-    }
-    build_config_file_path_ = build_config_file_vec[0];
+    build_config_file_path_ = build_config_file_path;
     NNADAPTER_LOG(INFO) << "BuildConfig file path: " << build_config_file_path_;
   } else {
     NNADAPTER_LOG(INFO) << "Build model with default config.";

@@ -26,8 +26,18 @@
 namespace nnadapter {
 namespace cambricon_mlu {
 
-// The following environment variables can be used at runtime:
-//
+// The following environment variables can be used at runtime.
+// Configuration parameter file used to compile model, such as
+// {
+//     "graph_shape_mutable": false,
+//     "precision_config":{
+//       "precision_mode":"force_float32"
+//     },
+//     "opt_config": {
+//       "type64to32_conversion": true,
+//       "conv_scale_fold": true
+//     }
+// }
 #define CAMBRICON_MLU_BUILD_CONFIG_FILE_PATH \
   "CAMBRICON_MLU_BUILD_CONFIG_FILE_PATH"
 
