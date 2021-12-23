@@ -38,10 +38,10 @@ class SparseConvDetectPass : public ProgramPass {
 
   template <typename T>
   int ComputeSemiSparseZeros(const lite::Tensor* weights,
-                             int& count_nonzeroes,
-                             int& count_channels,
-                             int& count_blocks,
-                             int& flag_semi,
+                             int* count_nonzeroes,
+                             int* count_channels,
+                             int* count_blocks,
+                             int* flag_semi,
                              const int height,
                              const int width);
 

@@ -17,10 +17,10 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include "lite/backends/arm/math/sparse_conv_impl.h"
 #include "lite/core/context.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/operators/op_params.h"
-#include "lite/backends/arm/math/sparse_conv_impl.h"
 
 namespace paddle {
 namespace lite {
@@ -39,31 +39,33 @@ void sparse_semi_conv_fp32_pipelined(const float* A,
                                      const operators::SparseConvParam& param,
                                      ARMContext* ctx);
 
-void sparse_semi_conv_int8_fp32_pipelined(const int8_t* A,
-                                          const int8_t* B,
-                                          const int32_t* widx_dmap,
-                                          const uint32_t* nidx_nnzmap,
-                                          const float* bias,
-                                          const float* scale,
-                                          float* output,
-                                          int M,
-                                          int K,
-                                          int N,
-                                          const operators::SparseConvParam& param,
-                                          ARMContext* ctx);
+void sparse_semi_conv_int8_fp32_pipelined(
+    const int8_t* A,
+    const int8_t* B,
+    const int32_t* widx_dmap,
+    const uint32_t* nidx_nnzmap,
+    const float* bias,
+    const float* scale,
+    float* output,
+    int M,
+    int K,
+    int N,
+    const operators::SparseConvParam& param,
+    ARMContext* ctx);
 
-void sparse_semi_conv_int8_int8_pipelined(const int8_t* A,
-                                          const int8_t* B,
-                                          const int32_t* widx_dmap,
-                                          const uint32_t* nidx_nnzmap,
-                                          const float* bias,
-                                          const float* scale,
-                                          int8_t* output,
-                                          int M,
-                                          int K,
-                                          int N,
-                                          const operators::SparseConvParam& param,
-                                          ARMContext* ctx);
+void sparse_semi_conv_int8_int8_pipelined(
+    const int8_t* A,
+    const int8_t* B,
+    const int32_t* widx_dmap,
+    const uint32_t* nidx_nnzmap,
+    const float* bias,
+    const float* scale,
+    int8_t* output,
+    int M,
+    int K,
+    int N,
+    const operators::SparseConvParam& param,
+    ARMContext* ctx);
 
 }  // namespace math
 }  // namespace arm

@@ -125,16 +125,16 @@ void SparseConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
                                                      &ctx);
   } else {
     lite::arm::math::sparse_conv_fp32_pipelined(nonzero_weights,
-                                              din,
-                                              diffs,
-                                              oc_nonzeros,
-                                              bias,
-                                              dout,
-                                              oc,
-                                              ic,
-                                              im_size,
-                                              param,
-                                              &ctx);
+                                                din,
+                                                diffs,
+                                                oc_nonzeros,
+                                                bias,
+                                                dout,
+                                                oc,
+                                                ic,
+                                                im_size,
+                                                param,
+                                                &ctx);
   }
   KERNEL_FUNC_NAME("sparse_conv_fp32_pipelined")
 }
@@ -181,17 +181,17 @@ void SparseConvCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
                                                           &ctx);
   } else {
     lite::arm::math::sparse_conv_int8_fp32_pipelined(nonzero_weights,
-                                                   din,
-                                                   diffs,
-                                                   oc_nonzeros,
-                                                   bias,
-                                                   w_scale_.data(),
-                                                   dout,
-                                                   oc,
-                                                   ic,
-                                                   im_size,
-                                                   param,
-                                                   &ctx);
+                                                     din,
+                                                     diffs,
+                                                     oc_nonzeros,
+                                                     bias,
+                                                     w_scale_.data(),
+                                                     dout,
+                                                     oc,
+                                                     ic,
+                                                     im_size,
+                                                     param,
+                                                     &ctx);
   }
   KERNEL_FUNC_NAME("sparse_conv_int8_fp32_pipelined")
 }
@@ -238,17 +238,17 @@ void SparseConvCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
                                                           &ctx);
   } else {
     lite::arm::math::sparse_conv_int8_int8_pipelined(nonzero_weights,
-                                                   din,
-                                                   diffs,
-                                                   oc_nonzeros,
-                                                   bias,
-                                                   w_scale_.data(),
-                                                   dout,
-                                                   oc,
-                                                   ic,
-                                                   im_size,
-                                                   param,
-                                                   &ctx);
+                                                     din,
+                                                     diffs,
+                                                     oc_nonzeros,
+                                                     bias,
+                                                     w_scale_.data(),
+                                                     dout,
+                                                     oc,
+                                                     ic,
+                                                     im_size,
+                                                     param,
+                                                     &ctx);
   }
   KERNEL_FUNC_NAME("sparse_conv_int8_int8_pipelined")
 }

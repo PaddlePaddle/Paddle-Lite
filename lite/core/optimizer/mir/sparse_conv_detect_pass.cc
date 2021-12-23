@@ -218,14 +218,15 @@ int SparseConvDetectPass::ComputeSemiSparseWeight(
     for (size_t ic = 0; ic < K; ic++) {
       bool is_nonzero_block = false;
       for (size_t oco = 0; oco < output_channels_block_size; oco++) {
-        is_nonzero_block |= (weights[(ocb + oco) * K + ic] != static_cast<T>(0));
+        is_nonzero_block |=
+            (weights[(ocb + oco) * K + ic] != static_cast<T>(0));
       }
       if (is_nonzero_block) {
         for (size_t oco = 0; oco < output_channels_block_size; oco++) {
-            nonzero_output[nonzero_index++] = weights[(ocb + oco) * K + ic];
+          nonzero_output[nonzero_index++] = weights[(ocb + oco) * K + ic];
         }
         if (first_nonzero) {
-            first_ic = ic;
+          first_ic = ic;
         } else {
           const int diff = (ic - last_ic) * sizeof(T);
           diffs[diff_index++] = diff * N;
@@ -243,7 +244,7 @@ int SparseConvDetectPass::ComputeSemiSparseWeight(
       if (weights[ocb * K + ic] != static_cast<T>(0)) {
         nonzero_output[nonzero_index++] = weights[ocb * K + ic];
         if (first_nonzero) {
-            first_ic = ic;
+          first_ic = ic;
         } else {
           const int diff = (ic - last_ic) * sizeof(T);
           diffs[diff_index++] = diff * N;
@@ -262,26 +263,28 @@ int SparseConvDetectPass::ComputeSemiSparseWeight(
   for (size_t ocb = 0; ocb < align2; ocb += output_channels_block_size) {
     if (block_i == 0) {
       for (int ik = 0; ik < oc_nonzeros[block_i]; ik++) {
-              tmp_diff += diffs[tmp_ik++];
+        tmp_diff += diffs[tmp_ik++];
       }
     } else {
-      for (int ik = 0; ik < (oc_nonzeros[block_i] - oc_nonzeros[block_i - 1]); ik++) {
-              tmp_diff += diffs[tmp_ik++];
+      for (int ik = 0; ik < (oc_nonzeros[block_i] - oc_nonzeros[block_i - 1]);
+           ik++) {
+        tmp_diff += diffs[tmp_ik++];
       }
     }
     if (tmp_ik != 0) {
-        diffs[tmp_ik - 1] = tmp_diff;
+      diffs[tmp_ik - 1] = tmp_diff;
     }
     block_i++;
   }
   for (size_t ocb = align2; ocb < M; ocb++) {
     if (block_i == 0) {
       for (int ik = 0; ik < oc_nonzeros[block_i]; ik++) {
-              tmp_diff += diffs[tmp_ik++];
+        tmp_diff += diffs[tmp_ik++];
       }
     } else {
-      for (int ik = 0; ik < (oc_nonzeros[block_i] - oc_nonzeros[block_i - 1]); ik++) {
-              tmp_diff += diffs[tmp_ik++];
+      for (int ik = 0; ik < (oc_nonzeros[block_i] - oc_nonzeros[block_i - 1]);
+           ik++) {
+        tmp_diff += diffs[tmp_ik++];
       }
     }
     if (tmp_ik != 0) {
@@ -297,14 +300,13 @@ int SparseConvDetectPass::ComputeSemiSparseWeight(
 }
 
 template <typename T>
-int SparseConvDetectPass::ComputeSemiSparseZeros(
-    const lite::Tensor* weights,
-    int& count_nonzeroes,
-    int& count_channels,
-    int& count_blocks,
-    int& flag_semi,
-    const int height,
-    const int width) {
+int SparseConvDetectPass::ComputeSemiSparseZeros(const lite::Tensor* weights,
+                                                 int* count_nonzeroes,
+                                                 int* count_channels,
+                                                 int* count_blocks,
+                                                 int* flag_semi,
+                                                 const int height,
+                                                 const int width) {
   const T* data = weights->data<T>();
   int num_nonzeroes = 0;
   int num_nonzero_blocks2 = 0;
@@ -313,19 +315,28 @@ int SparseConvDetectPass::ComputeSemiSparseZeros(
   int align2 = height & (-2);
   for (size_t oc = 0; oc < align4; oc += 4) {
     for (size_t ic = 0; ic < width; ic++) {
-      const size_t row0_nonzero = (size_t) (data[oc * width + ic] != static_cast<T>(0));
-      const size_t row1_nonzero = (size_t) (data[(oc + 1) * width + ic] != static_cast<T>(0));
-      const size_t row2_nonzero = (size_t) (data[(oc + 2) * width + ic] != static_cast<T>(0));
-      const size_t row3_nonzero = (size_t) (data[(oc + 3) * width + ic] != static_cast<T>(0));
-      num_nonzeroes += row0_nonzero + row1_nonzero + row2_nonzero + row3_nonzero;
-      num_nonzero_blocks2 += (row0_nonzero | row1_nonzero) + (row2_nonzero | row3_nonzero);
-      num_nonzero_blocks4 += (row0_nonzero | row1_nonzero | row2_nonzero | row3_nonzero);
+      const size_t row0_nonzero =
+          static_cast<size_t>(data[oc * width + ic] != static_cast<T>(0));
+      const size_t row1_nonzero =
+          static_cast<size_t>(data[(oc + 1) * width + ic] != static_cast<T>(0));
+      const size_t row2_nonzero =
+          static_cast<size_t>(data[(oc + 2) * width + ic] != static_cast<T>(0));
+      const size_t row3_nonzero =
+          static_cast<size_t>(data[(oc + 3) * width + ic] != static_cast<T>(0));
+      num_nonzeroes +=
+          row0_nonzero + row1_nonzero + row2_nonzero + row3_nonzero;
+      num_nonzero_blocks2 +=
+          (row0_nonzero | row1_nonzero) + (row2_nonzero | row3_nonzero);
+      num_nonzero_blocks4 +=
+          (row0_nonzero | row1_nonzero | row2_nonzero | row3_nonzero);
     }
   }
   for (size_t oc = align4; oc < align2; oc += 2) {
     for (size_t ic = 0; ic < width; ic++) {
-      const size_t row0_nonzero = (size_t) (data[oc * width + ic] != static_cast<T>(0));
-      const size_t row1_nonzero = (size_t) (data[(oc + 1) * width + ic] != static_cast<T>(0));
+      const size_t row0_nonzero =
+          static_cast<size_t>(data[oc * width + ic] != static_cast<T>(0));
+      const size_t row1_nonzero =
+          static_cast<size_t>(data[(oc + 1) * width + ic] != static_cast<T>(0));
       num_nonzeroes += row0_nonzero + row1_nonzero;
       num_nonzero_blocks2 += (row0_nonzero | row1_nonzero);
     }
@@ -333,24 +344,26 @@ int SparseConvDetectPass::ComputeSemiSparseZeros(
   const size_t num_block2_nonzeroes = num_nonzeroes;
   for (size_t oc = align2; oc < height; oc++) {
     for (size_t ic = 0; ic < width; ic++) {
-      num_nonzeroes += (size_t) (data[oc * width + ic] != static_cast<T>(0));
+      num_nonzeroes +=
+          static_cast<size_t>(data[oc * width + ic] != static_cast<T>(0));
     }
   }
-  flag_semi = 0;
-  count_channels = height;
-  count_nonzeroes = num_nonzeroes;
-  count_blocks = num_nonzeroes;
+  *flag_semi = 0;
+  *count_channels = height;
+  *count_nonzeroes = num_nonzeroes;
+  *count_blocks = num_nonzeroes;
   if (num_block2_nonzeroes * 5 >= num_nonzero_blocks2 * 9) {
     // 2-channel blocks have 90%+ non-zeroes
-    count_channels = count_channels / 2 + count_channels % 2;
+    *count_channels = (*count_channels) / 2 + (*count_channels) % 2;
     // spmm_parameters = &xnn_params.f32.spmm2;
-    flag_semi = 1;
-    // Non-zeroes which don't fit into whole 2-channel blocks, processed one-by-one
+    *flag_semi = 1;
+    // Non-zeroes which don't fit into whole 2-channel blocks, processed
+    // one-by-one
     const size_t num_remaining_nonzeroes = num_nonzeroes - num_block2_nonzeroes;
-    count_nonzeroes = num_nonzero_blocks2 * 2 + num_remaining_nonzeroes;
-    count_blocks = num_nonzero_blocks2 + num_remaining_nonzeroes;
+    *count_nonzeroes = num_nonzero_blocks2 * 2 + num_remaining_nonzeroes;
+    *count_blocks = num_nonzero_blocks2 + num_remaining_nonzeroes;
   }
-  return height * width - count_nonzeroes;
+  return height * width - (*count_nonzeroes);
 }
 
 /**
@@ -424,10 +437,12 @@ template int SparseConvDetectPass::ComputeSparseWeight<int8_t>(
     lite::Tensor* diffs_tensor);
 
 /**
- * \brief Semi-structured representation of weights consists of three components:
+ * \brief Semi-structured representation of weights consists of three
+ * components:
  * @param w_tensor original dense weight data.
  * @param count_nonzeroes the number of non-zero kernel elements.
- * @param count_channels When semi-structured, it is equal to output channel / 2 + output channel% 2
+ * @param count_channels When semi-structured, it is equal to output channel / 2
+ * + output channel% 2
  * @param count_blocks When semi-structured, the number of 2-channel blocks.
  * @param nonzero_output_tensor An array of float values storing non-zero kernel
  * elements.
@@ -518,19 +533,19 @@ template int SparseConvDetectPass::ComputeSparseZeros<int8_t>(
 
 template int SparseConvDetectPass::ComputeSemiSparseZeros<int8_t>(
     const lite::Tensor* weights,
-    int& count_nonzeroes,
-    int& count_channels,
-    int& count_blocks,
-    int& flag_semi,
+    int* count_nonzeroes,
+    int* count_channels,
+    int* count_blocks,
+    int* flag_semi,
     const int height,
     const int width);
 
 template int SparseConvDetectPass::ComputeSemiSparseZeros<float>(
     const lite::Tensor* weights,
-    int& count_nonzeroes,
-    int& count_channels,
-    int& count_blocks,
-    int& flag_semi,
+    int* count_nonzeroes,
+    int* count_channels,
+    int* count_blocks,
+    int* flag_semi,
     const int height,
     const int width);
 
@@ -637,12 +652,25 @@ void SparseConvDetectPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
       int count_blocks = 0;
       int flag_semi = 0;
       if (use_fp32) {
-        zero_num = ComputeSemiSparseZeros<float>(&w_tensor, count_nonzeroes, count_channels, count_blocks, flag_semi, ch_out, ch_in);
+        zero_num = ComputeSemiSparseZeros<float>(&w_tensor,
+                                                 &count_nonzeroes,
+                                                 &count_channels,
+                                                 &count_blocks,
+                                                 &flag_semi,
+                                                 ch_out,
+                                                 ch_in);
         if (flag_semi == 0) {
-            zero_num = ComputeSparseZeros<float>(&w_tensor, &num_build_nonzeroes, ch_out, ch_in);
+          zero_num = ComputeSparseZeros<float>(
+              &w_tensor, &num_build_nonzeroes, ch_out, ch_in);
         }
       } else if (use_int8) {
-        zero_num = ComputeSemiSparseZeros<int8_t>(&w_tensor, count_nonzeroes, count_channels, count_blocks, flag_semi, ch_out, ch_in);
+        zero_num = ComputeSemiSparseZeros<int8_t>(&w_tensor,
+                                                  &count_nonzeroes,
+                                                  &count_channels,
+                                                  &count_blocks,
+                                                  &flag_semi,
+                                                  ch_out,
+                                                  ch_in);
       }
       int nonzero_num = weight_num - zero_num;
       VLOG(4) << "zero_num: " << zero_num << "weight_num: " << weight_num;
@@ -709,15 +737,15 @@ void SparseConvDetectPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
                                                     ic_diffs_t);
         } else {
           first_ic = ComputeSparseWeight<float>(&w_tensor,
-                                              ch_out,
-                                              ch_in,
-                                              im_size,
-                                              nonzero_num,
-                                              num_build_nonzeroes,
-                                              nonzeros_output_t,
-                                              oc_nonzeros_t,
-                                              ic_diffs_t);
-        }       
+                                                ch_out,
+                                                ch_in,
+                                                im_size,
+                                                nonzero_num,
+                                                num_build_nonzeroes,
+                                                nonzeros_output_t,
+                                                oc_nonzeros_t,
+                                                ic_diffs_t);
+        }
       } else if (use_int8) {
         if (flag_semi == 1) {
           first_ic = ComputeSemiSparseWeight<int8_t>(&w_tensor,
