@@ -33,6 +33,27 @@ void InitializeAscendCL() {
   static bool initialized = false;
   mtx.lock();
   if (!initialized) {
+    int major_version = 0, minor_version = 0, patch_version = 0;
+    GetAscendCANNVersion(&major_version, &minor_version, &patch_version);
+    auto current_version =
+        string_format("%d.%d.%d",
+                      NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MAJOR_VERSION,
+                      NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MINOR_VERSION,
+                      NNADAPTER_HUAWEI_ASCEND_NPU_CANN_PATCH_VERSION);
+    auto build_version =
+        string_format("%d.%d.%d", major_version, minor_version, patch_version);
+    NNADAPTER_VLOG(5) << "The current library is compiled based on CANN "
+                      << current_version;
+    NNADAPTER_VLOG(5) << "The CANN version of the current environment is "
+                      << build_version;
+    if (major_version != NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MAJOR_VERSION &&
+        minor_version != NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MINOR_VERSION &&
+        patch_version != NNADAPTER_HUAWEI_ASCEND_NPU_CANN_PATCH_VERSION) {
+      NNADAPTER_LOG(WARNING)
+          << "CANN version mismatch. The build version is " << build_version
+          << ", but the current environment version is " << current_version
+          << ".";
+    }
     NNADAPTER_VLOG(5) << "Initialize AscendCL.";
     // The following APIs can only be called once in one process
     aclInit(NULL);
@@ -58,9 +79,12 @@ void InitializeGraphBuilder() {
   if (!initialized) {
     NNADAPTER_VLOG(5) << "Initialize Graph Builder.";
     // The following APIs can only be called once in one process
+    ge::AscendString soc_version = GetAscendSocName();
+    NNADAPTER_VLOG(5) << "Initialize the Graph Builder based on SoC name: "
+                      << soc_version.GetString();
     std::map<ge::AscendString, ge::AscendString> global_options;
     global_options.insert(
-        std::make_pair(ge::ir_option::SOC_VERSION, "Ascend310"));
+        std::make_pair(ge::ir_option::SOC_VERSION, soc_version));
     ge::aclgrphBuildInitialize(global_options);
     // Register 'FinalizeGraphBuilder' to be called at normal process
     // termination
@@ -172,10 +196,7 @@ std::shared_ptr<AclModelClient> LoadOMModelFromBuffer(
 bool BuildOMModelToBuffer(
     std::vector<ge::Operator>& input_operators,   // NOLINT
     std::vector<ge::Operator>& output_operators,  // NOLINT
-    std::vector<uint8_t>* model_buffer,
-    const std::vector<std::string>& dynamic_shape_info,
-    const std::string& optional_shapes_str,
-    const DynamicShapeMode dynamic_shape_mode) {
+    std::vector<uint8_t>* model_buffer) {
   // Should initialize the GE graph builder before model building
   InitializeGraphBuilder();
   // Convert the CANN IR graph to the CANN om model
@@ -197,35 +218,6 @@ bool BuildOMModelToBuffer(
   std::map<ge::AscendString, ge::AscendString> options;
   options.insert(std::make_pair(ge::ir_option::LOG_LEVEL, "error"));
   options.insert(std::make_pair(ge::ir_option::OP_DEBUG_LEVEL, "0"));
-  options.insert(std::make_pair(ge::ir_option::INPUT_FORMAT, "NCHW"));
-
-  std::string input_shape_info;
-  for (size_t i = 0; i < dynamic_shape_info.size(); i++) {
-    if (!dynamic_shape_info[i].empty()) {
-      ge::AscendString name;
-      input_operators[i].GetName(name);
-      input_shape_info +=
-          std::string(name.GetString()) + ":" + dynamic_shape_info[i] + ";";
-    }
-  }
-  NNADAPTER_CHECK(!input_shape_info.empty());
-  input_shape_info.pop_back();
-  options.insert(
-      std::make_pair(ge::ir_option::INPUT_SHAPE, input_shape_info.data()));
-
-  if (!optional_shapes_str.empty()) {
-    if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_BTACH_SIZE) {
-      options.insert(std::make_pair(ge::ir_option::DYNAMIC_BATCH_SIZE,
-                                    optional_shapes_str.data()));
-    } else if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_HEIGHT_WIDTH) {
-      options.insert(std::make_pair(ge::ir_option::DYNAMIC_IMAGE_SIZE,
-                                    optional_shapes_str.data()));
-    } else if (dynamic_shape_mode == DYNAMIC_SHAPE_MODE_N_DIMS) {
-      options.insert(std::make_pair(ge::ir_option::DYNAMIC_DIMS,
-                                    optional_shapes_str.data()));
-    }
-  }
-
   ATC_CALL(aclgrphBuildModel(ir_graph, options, om_buffer));
   // Copy from om model buffer
   model_buffer->resize(om_buffer.length);
@@ -508,42 +500,100 @@ std::string ConvertPadModeCodeToGEPadMode(int pad_mode_code) {
   return "constant";
 }
 
-std::string ShapeToString(const std::vector<int32_t>& shape) {
-  std::string shape_str;
-  for (size_t i = 0; i < shape.size(); i++) {
-    if (!shape_str.empty()) {
-      shape_str += ",";
-    }
-    shape_str += std::to_string(shape[i]);
+std::string ConvertInterpolateModeCodeToGEInterpolateMode(
+    int interpolate_mode_code) {
+  switch (interpolate_mode_code) {
+    case NNADAPTER_INTERPOLATE_MODE_BILINEAR:
+      return "bilinear";
+    case NNADAPTER_INTERPOLATE_MODE_NEAREST:
+      return "nearest";
+    default:
+      NNADAPTER_LOG(FATAL)
+          << "Failed to convert the NNAdapter operand interpolate mode code("
+          << interpolate_mode_code << ") to interpolate mode !";
+      break;
   }
-  return shape_str;
+  return "bilinear";
 }
 
-std::string MergeOptionalShapesString(
-    const std::vector<std::string>& optional_shapes,
-    const DynamicShapeMode mode) {
-  std::string merged_shape_str;
-  switch (mode) {
-    case DYNAMIC_SHAPE_MODE_NONE:
-      break;
-    case DYNAMIC_SHAPE_MODE_BTACH_SIZE: {
-      for (auto optional_shape : optional_shapes) {
-        merged_shape_str += optional_shape + ",";
+bool GetAscendCANNVersion(int* major, int* minor, int* patch) {
+  static std::mutex mtx;
+  std::lock_guard<std::mutex> lock(mtx);
+  static bool initialized = false;
+  static int major_version = 0;
+  static int minor_version = 0;
+  static int patch_version = 0;
+  if (!initialized) {
+    initialized = true;
+    std::string ascend_cann_path;
+    std::string ld_library_path = GetStringFromEnv("LD_LIBRARY_PATH");
+    // Split ld_library_path string by ":"
+    std::vector<std::string> tokens =
+        string_split<std::string>(ld_library_path, ":");
+    for (auto path : tokens) {
+      if (path.find("Ascend/ascend-toolkit") != std::string::npos ||
+          path.find("Ascend/nnrt") != std::string::npos) {
+        ascend_cann_path = path;
+        break;
       }
-      merged_shape_str.pop_back();
-    } break;
-    case DYNAMIC_SHAPE_MODE_HEIGHT_WIDTH:
-    case DYNAMIC_SHAPE_MODE_N_DIMS: {
-      for (auto optional_shape : optional_shapes) {
-        merged_shape_str += optional_shape + ";";
+    }
+    if (ascend_cann_path.empty()) {
+      ascend_cann_path = "/usr/local/Ascend/ascend-toolkit/latest";
+      NNADAPTER_LOG(ERROR) << "Unable to find the Ascend CANN installation "
+                              "path, use the default path["
+                           << ascend_cann_path << "]";
+    }
+    auto ascend_cann_real_path = GetRealPath(ascend_cann_path.c_str());
+    // Split ascend_cann_real_path string by "/"
+    tokens = string_split<std::string>(ascend_cann_real_path, "/");
+    std::string ascend_cann_version;
+    for (size_t i = 0; i < tokens.size(); i++) {
+      if (tokens[i] == "ascend-toolkit" || tokens[i] == "nnrt") {
+        if (i <= tokens.size() - 1) {
+          ascend_cann_version = tokens[i + 1];
+          break;
+        } else {
+          NNADAPTER_LOG(ERROR) << "Unable to find the version of Ascend CANN";
+          return false;
+        }
       }
-      merged_shape_str.pop_back();
-    } break;
-    default:
-      NNADAPTER_LOG(FATAL) << "Unsupported dynamic shape mode: " << mode;
-      break;
+    }
+    // Split ascend_cann_version string by "."
+    tokens = string_split<std::string>(ascend_cann_version, ".");
+    if (tokens.size() == 3 || tokens.size() == 4) {
+      major_version = atoi(tokens[0].c_str());
+      minor_version = atoi(tokens[1].c_str());
+      patch_version = atoi(tokens[2].c_str());
+    } else {
+      NNADAPTER_LOG(ERROR) << "Unable to get the version of Ascend CANN";
+      return false;
+    }
   }
-  return merged_shape_str;
+  *major = major_version;
+  *minor = minor_version;
+  *patch = patch_version;
+  return true;
+}
+
+ge::AscendString GetAscendSocName() {
+  ge::AscendString soc_version = "Ascend310";
+#if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(5, 0, 2)
+  const char* soc_name = aclrtGetSocName();
+  if (!soc_name) {
+    soc_version = ge::AscendString(soc_name);
+  } else {
+    NNADAPTER_LOG(WARNING) << "Failed to call aclrtGetSocName to obtain the "
+                              "SoC name, so Ascend 310 is used by default.";
+  }
+#else
+  NNADAPTER_LOG(WARNING) << "Since the current library is compiled based on "
+                            "CANN versions below 5.0.2, aclrtGetSocName "
+                            "cannot be called to obtain the SoC name of the "
+                            "current device, so Ascend 310 is used by default. "
+                            "If you want to use ascend 710, please recompile "
+                            "the library based on CANN 5.0.2 and above.";
+#endif
+  return soc_version;
 }
 
 }  // namespace huawei_ascend_npu
