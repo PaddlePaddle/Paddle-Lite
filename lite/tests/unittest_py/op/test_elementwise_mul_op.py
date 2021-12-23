@@ -55,7 +55,6 @@ class TestElementwiseMulOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_valid_places)
-
         metal_places = [
             Place(TargetType.Metal, PrecisionType.FP32,
                   DataLayoutType.MetalTexture2DArray),
@@ -74,13 +73,9 @@ class TestElementwiseMulOp(AutoScanTest):
         in_y_shape = list(program_config.inputs["input_data_y"].shape)
         in_data_type = program_config.inputs["input_data_x"].dtype
         if target_type == TargetType.Metal:
-            if in_data_type != np.float32:
+            if in_data_type != np.float32 or in_x_shape != in_y_shape or in_x_shape[
+                    0] != 1:
                 return False
-            if in_x_shape != in_y_shape:
-                return False
-            if in_x_shape[0] != 1:
-                return False
-
         return True
 
     def sample_program_configs(self, draw):
