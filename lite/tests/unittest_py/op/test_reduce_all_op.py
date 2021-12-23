@@ -31,11 +31,12 @@ from functools import partial
 class TestReduceAllOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(
-            TargetType.Host,
-            PrecisionType.FP32,
-            DataLayoutType.NCHW,
-            thread=[1, 2])
+        # not support
+        # self.enable_testing_on_place(
+        #     TargetType.Host,
+        #     PrecisionType.FP32,
+        #     DataLayoutType.NCHW,
+        #     thread=[1, 2])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -54,9 +55,11 @@ class TestReduceAllOp(AutoScanTest):
             axis = [axis]
         dim_data = draw(st.sampled_from([[0], [1], [-1], []]))
         reduce_all_data = True if axis == None or axis == [] else False
+        in_dtype = draw(st.sampled_from([0]))
 
         def generate_input(*args, **kwargs):
-            return np.random.random(in_shape).astype(np.float32)
+            if in_dtype == 0:
+                return np.random.random(in_shape).astype(np.bool)
 
         build_ops = OpConfig(
             type="reduce_all",
