@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lite/kernels/xpu/norm_compute.h"
+#include <vector>
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/core/op_registry.h"
 
@@ -28,27 +29,25 @@ void NormCompute<T>::Run() {
   auto x_dims = param.X->dims();
   int axis = param.axis;
   float epsilon = param.epsilon;
+  std::vector<int> xshape;
+  int x_dims_size = x_dims.size();
+  xshape.resize(x_dims_size);
+
   if (axis < 0) {
     axis += x_dims.size();
   }
   CHECK_GE(axis, 0) << " axis < 0: " << axis;
   CHECK_LT(axis, x_dims.size()) << " axis >= rank: " << axis;
 
-  int m = 1;
-  for (int i = 0; i < axis; i++) {
-    m = m * x_dims[i];
-  }
-  int t = x_dims[axis];
-  int n = 1;
-  for (int i = axis + 1; i < x_dims.size(); i++) {
-    n = n * x_dims[i];
+  for (int i = 0; i < x_dims_size; i++) {
+    xshape[i] = static_cast<int>(x_dims[i]);
   }
 
   int r = xdnn::l2_norm<T>(ctx.GetRawContext(),
                            param.X->data<T>(),
                            param.Out->mutable_data<T>(TARGET(kXPU)),
                            nullptr,
-                           {m, t, n},
+                           xshape,
                            axis,
                            epsilon);
   CHECK_EQ(r, 0);

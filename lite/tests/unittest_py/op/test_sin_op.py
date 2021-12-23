@@ -20,12 +20,13 @@ from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, Tar
 import unittest
 
 import hypothesis
-from hypothesis import given, settings, seed, example, assume
+from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
-import argparse
+import numpy as np
+from functools import partial
 
 
-class TestArgMaxOp(AutoScanTest):
+class TestSinOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(
@@ -51,56 +52,34 @@ class TestArgMaxOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        in_shape = list(program_config.inputs["input_data"].shape)
-        target_type = predictor_config.target()
-        keep_dims = program_config.ops[0].attrs["keepdims"]
-        if target_type == TargetType.OpenCL:
-            if len(in_shape) != 4 or keep_dims == False:
-                return False
         return True
 
     def sample_program_configs(self, draw):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=8), min_size=1, max_size=4))
-        axis = draw(st.integers(min_value=-1, max_value=3))
-        keepdims = draw(st.booleans())
-        dtype = draw(st.sampled_from([-1, 2, 3]))
-        assume(axis < len(in_shape))
-
-        arg_max_op = OpConfig(
-            type="arg_max",
+                    min_value=1, max_value=8), min_size=4, max_size=4))
+        sin_op = OpConfig(
+            type="sin",
             inputs={"X": ["input_data"]},
             outputs={"Out": ["output_data"]},
-            attrs={
-                "axis": axis,
-                "keepdims": keepdims,
-                "dtype": dtype,
-                "flatten": False
-            })
+            attrs={})
         program_config = ProgramConfig(
-            ops=[arg_max_op],
+            ops=[sin_op],
             weights={},
             inputs={"input_data": TensorConfig(shape=in_shape)},
             outputs=["output_data"])
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["arg_max"], (1e-5, 1e-5)
+        config = CxxConfig()
+        return self.get_predictor_configs(), ["sin"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):
-        target_str = self.get_target()
-        max_examples = 25
-        if target_str == "OpenCL":
-            # Make sure to generate enough valid cases for OpenCL
-            max_examples = 200
-
-        self.run_and_statis(
-            quant=False, min_success_num=25, max_examples=max_examples)
+        self.run_and_statis(quant=False, max_examples=300)
 
 
 if __name__ == "__main__":
