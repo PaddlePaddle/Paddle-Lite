@@ -42,9 +42,39 @@ class TestReshape2Op(AutoScanTest):
         #     DataLayoutType.NCHW,
         #     thread=[1, 2])
 
+        # opencl
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        #self.enable_testing_on_place(places=opencl_places)
+
+        # metal
+        metal_places = [
+            Place(TargetType.Metal, PrecisionType.FP32,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.Metal, PrecisionType.FP16,
+                  DataLayoutType.MetalTexture2DArray)
+        ]
+        self.enable_testing_on_place(places=metal_places)
+
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
+        in_shape = list(program_config.inputs["input_data"].shape)
+        target = predictor_config.target()
+        # opencl has error
+        # if target in [TargetType.OpenCL]:
+        #     return False
         return True
 
     def sample_program_configs(self, draw):
@@ -81,7 +111,13 @@ class TestReshape2Op(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["reshape2"], (1e-5, 1e-5)
+        atol, rtol = 1e-5, 1e-5
+        config_lists = self.get_predictor_configs()
+        for config in config_lists:
+            if config.target() in [TargetType.Metal]:
+                atol, rtol = 2e-4, 2e-4
+
+        return self.get_predictor_configs(), ["reshape2"], (atol, rtol)
 
     def add_ignore_pass_case(self):
         pass
