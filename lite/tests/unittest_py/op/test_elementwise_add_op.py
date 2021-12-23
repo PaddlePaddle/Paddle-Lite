@@ -125,7 +125,7 @@ class TestElementwiseAddOp(AutoScanTest):
         if target_type == TargetType.Metal:
             if in_x_shape != in_y_shape:
                 return False
-        
+
         if target_type == TargetType.ARM:
             if input_data_type == np.int64:
                 err_msg = "Elementwise_add op on this backend will crash with int64 dtype, we should fix it as soon as possible!"
@@ -149,7 +149,7 @@ class TestElementwiseAddOp(AutoScanTest):
         if axis < 0:
             axis = abs(len(input_data_x_shape) - len(
                 input_data_y_shape)) + axis + 1
-        
+
         if self.get_target().upper() == 'X86':
             input_data_type = draw(
                 st.sampled_from([np.float32, np.int32, np.int64]))
@@ -158,7 +158,7 @@ class TestElementwiseAddOp(AutoScanTest):
                 st.sampled_from([np.float32, np.int32, np.int64]))
         elif self.get_target().upper() == 'OPENCL':
             input_data_type = draw(
-                st.sampled_from([np.float32]))
+                st.sampled_from([np.float32]))   
         elif self.get_target().upper() == 'METAL':
             input_data_type = draw(
                 st.sampled_from([np.float32]))
@@ -190,7 +190,6 @@ class TestElementwiseAddOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        config = CxxConfig()
         return self.get_predictor_configs(), ["elementwise_add"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
