@@ -176,21 +176,20 @@ class TestTransposeSoftmaxTransposeFusePass(FusePassAutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        if self.get_target() == 'OpenCL':
-            return self.get_predictor_configs(
-            ), ['io_copy', 'layout', 'softmax', 'layout', 'io_copy'], (1e-5,
-                                                                       1e-5)
-        else:
-            return self.get_predictor_configs(), ['softmax'], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ['softmax'], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):
+        target_str = self.get_target()
+        max_examples = 25
+        if target_str == "OpenCL":
+            # Make sure to generate enough valid cases for OpenCL
+            max_examples = 300
         self.run_and_statis(
             quant=False,
-            max_examples=25,
-            min_success_num=5,
+            max_examples=max_examples,
             passes=["lite_transpose_softmax_transpose_fuse_pass"])
 
 

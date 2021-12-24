@@ -30,20 +30,20 @@ import hypothesis.strategies as st
 class TestScaleActiveFusePass(FusePassAutoScanTest):
     def __init__(self, *args, **kwargs):
         FusePassAutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(
-            TargetType.ARM,
-            PrecisionType.FP32,
-            DataLayoutType.NCHW,
-            thread=[1, 4])
+        # self.enable_testing_on_place(
+        #     TargetType.ARM,
+        #     PrecisionType.FP32,
+        #     DataLayoutType.NCHW,
+        #     thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
         #Output has diff
-        if predictor_config.target() == TargetType.ARM:
-            return False
-        else:
-            return True
+        # if predictor_config.target() == TargetType.ARM:
+        #     return False
+        # else:
+        return True
 
     def sample_program_configs(self, draw):
         in_shape_x = draw(
@@ -93,12 +93,7 @@ class TestScaleActiveFusePass(FusePassAutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        if self.get_target() == 'OpenCL':
-            return self.get_predictor_configs(
-            ), ['io_copy', 'layout', 'scale', 'layout', 'io_copy'], (1e-5,
-                                                                     1e-5)
-        else:
-            return self.get_predictor_configs(), ['scale'], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ['scale'], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass

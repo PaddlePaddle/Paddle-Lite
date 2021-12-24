@@ -36,20 +36,20 @@ class TestMatmulElementwiseAddFusePass(FusePassAutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 4])
         #opencl
-        opencl_places = [
-            Place(TargetType.OpenCL, PrecisionType.FP16,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.FP16,
-                      DataLayoutType.ImageFolder),
-            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-            Place(TargetType.OpenCL, PrecisionType.Any,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.Any,
-                      DataLayoutType.ImageFolder),
-            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-            Place(TargetType.Host, PrecisionType.FP32)
-        ]
-        self.enable_testing_on_place(places=opencl_places)
+        # opencl_places = [
+        #     Place(TargetType.OpenCL, PrecisionType.FP16,
+        #           DataLayoutType.ImageDefault), Place(
+        #               TargetType.OpenCL, PrecisionType.FP16,
+        #               DataLayoutType.ImageFolder),
+        #     Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+        #     Place(TargetType.OpenCL, PrecisionType.Any,
+        #           DataLayoutType.ImageDefault), Place(
+        #               TargetType.OpenCL, PrecisionType.Any,
+        #               DataLayoutType.ImageFolder),
+        #     Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+        #     Place(TargetType.Host, PrecisionType.FP32)
+        # ]
+        # self.enable_testing_on_place(places=opencl_places)
         #x86
         self.enable_testing_on_place(
             TargetType.X86,
@@ -61,10 +61,10 @@ class TestMatmulElementwiseAddFusePass(FusePassAutoScanTest):
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
         #Output has diff, and output->dims() must = 2
-        if predictor_config.target() == TargetType.OpenCL:
-            return False
-        else:
-            return True
+        # if predictor_config.target() == TargetType.OpenCL:
+        #     return False
+        # else:
+        return True
 
     def sample_program_configs(self, draw):
         matmul_x_shape = draw(
@@ -119,11 +119,7 @@ class TestMatmulElementwiseAddFusePass(FusePassAutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        if self.get_target() == 'OpenCL':
-            return self.get_predictor_configs(
-            ), ['io_copy', 'layout', 'fc', 'layout', 'io_copy'], (1e-5, 1e-5)
-        else:
-            return self.get_predictor_configs(), ['fc'], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ['fc'], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
