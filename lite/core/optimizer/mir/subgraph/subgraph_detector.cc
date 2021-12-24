@@ -644,10 +644,10 @@ void SubgraphFuser::ReplaceNodesWithSubgraphs(
 void SubgraphFuser::operator()() {
   std::vector<std::vector<Node *>> subgraphs =
       SubgraphDetector(graph_, teller_, subgraph_partition_configs_)();
-  if (support_mix_precision_) {
-    MixPrecisionAutoInsertCalibFuser mix_precision_auto_insert_calib_fuser(
+  if (support_mixed_precision_) {
+    MixPrecisionAutoInsertCalibFuser mixed_precision_auto_insert_calib_fuser(
         graph_, &subgraphs);
-    mix_precision_auto_insert_calib_fuser();
+    mixed_precision_auto_insert_calib_fuser();
   }
   SubgraphVisualizer(graph_, subgraphs)();
   ReplaceNodesWithSubgraphs(graph_, subgraphs, min_subgraph_size_);

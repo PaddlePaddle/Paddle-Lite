@@ -118,12 +118,29 @@ void ReshapeOperand(hal::Operand* operand, std::vector<int32_t> dimensions);
 // For 'after' = false, 'target_operand' is added at front of
 // 'reference_operand', at back of 'reference_operations'(if not empty), so only
 // update the outputs of the operations and the input of the model
+// For example:
+//   op0 -> var0 -> op1
+//            |---> op2
+// case0: reference_operand=var0, after=true, specified_affected_operations={}
+//   op0 -> var0   new_var -> op1
+//                      |---> op2
+// case1: reference_operand=var0, after=true,
+// specified_affected_operations={op1}
+//   op0 -> var0   new_var -> op1
+//            |---> op2
+// case2: reference_operand=var0, after=false, specified_affected_operations={}
+//   op0 -> new_var var0 -> op1
+//                    |---> op2
+// case3: reference_operand=var0, after=false,
+// specified_affected_operations={op0}
+//   op0 -> new_var var0 -> op1
+//                    |---> op2
 bool InsertOperand(
     hal::Model* model,
     hal::Operand* reference_operand,
     hal::Operand* target_operand,
     bool after,
-    const std::vector<hal::Operation*> reference_operations = {});
+    const std::vector<hal::Operation*> specified_affected_operations = {});
 // Check if it is a constant operand
 bool IsConstantOperand(hal::Operand* operand);
 bool IsModelInputOperand(hal::Operand* operand);

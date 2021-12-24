@@ -396,15 +396,15 @@ NNADAPTER_EXPORT bool InsertOperand(
     hal::Operand* reference_operand,
     hal::Operand* target_operand,
     bool after,
-    const std::vector<hal::Operation*> reference_operations) {
+    const std::vector<hal::Operation*> specified_affected_operations) {
   bool found = false;
   if (after) {
     // Update if any operation use the 'reference_operand' as input
     for (auto& operation : model->operations) {
-      if (!reference_operations.empty() &&
-          std::find(reference_operations.begin(),
-                    reference_operations.end(),
-                    &operation) == reference_operations.end()) {
+      if (!specified_affected_operations.empty() &&
+          std::find(specified_affected_operations.begin(),
+                    specified_affected_operations.end(),
+                    &operation) == specified_affected_operations.end()) {
         continue;
       }
       for (auto& operand : operation.input_operands) {
@@ -426,10 +426,10 @@ NNADAPTER_EXPORT bool InsertOperand(
   } else {
     // Replace if any operation use the 'reference_operand' as output
     for (auto& operation : model->operations) {
-      if (!reference_operations.empty() &&
-          std::find(reference_operations.begin(),
-                    reference_operations.end(),
-                    &operation) == reference_operations.end()) {
+      if (!specified_affected_operations.empty() &&
+          std::find(specified_affected_operations.begin(),
+                    specified_affected_operations.end(),
+                    &operation) == specified_affected_operations.end()) {
         continue;
       }
       for (auto& operand : operation.output_operands) {
