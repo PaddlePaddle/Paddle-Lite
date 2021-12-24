@@ -17,34 +17,35 @@
 namespace nnadapter {
 namespace operation {
 
-#define ADAPTIVE_POOL_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS                     \
-  auto& input_operands = operation->input_operands;                           \
-  auto& output_operands = operation->output_operands;                         \
-  auto input_count = input_operands.size();                                   \
-  auto output_count = output_operands.size();                                 \
-  auto operation_type = operation->type;                                      \
-  if (operation_type == NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D) {                 \
-    NNADAPTER_CHECK_EQ(input_count, 2);                                       \
-    NNADAPTER_CHECK_EQ(output_count, 1);                                      \
-  } else if (operation_type == NNADAPTER_ADAPTIVE_MAX_POOL_2D) {              \
-    NNADAPTER_CHECK_EQ(input_count, 4);                                       \
-    NNADAPTER_CHECK_EQ(output_count, 2);                                      \
-  } else {                                                                    \
-    NNADAPTER_LOG(FATAL) << "Unsupported pooling operation type "             \
-                         << OperationTypeToString(operation->type)            \
-                         << " is found.";                                     \
-  }                                                                           \
-  /* Input */                                                                 \
-  auto input_operand = input_operands[0];                                     \
-  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand);           \
-  /* Output size */                                                           \
-  auto kernel_buffer = reinterpret_cast<int32_t*>(input_operands[1]->buffer); \
-  auto kernel_height = kernel_buffer[0];                                      \
-  auto kernel_width = kernel_buffer[1];                                       \
-  NNADAPTER_VLOG(5) << "filter=[" << kernel_height << "," << kernel_width     \
-                    << "]";                                                   \
-  /* Output */                                                                \
-  auto output_operand = output_operands[0];                                   \
+#define ADAPTIVE_POOL_2D_OPERATION_EXTRACT_INPUTS_OUTPUTS           \
+  auto& input_operands = operation->input_operands;                 \
+  auto& output_operands = operation->output_operands;               \
+  auto input_count = input_operands.size();                         \
+  auto output_count = output_operands.size();                       \
+  auto operation_type = operation->type;                            \
+  if (operation_type == NNADAPTER_ADAPTIVE_AVERAGE_POOL_2D) {       \
+    NNADAPTER_CHECK_EQ(input_count, 2);                             \
+    NNADAPTER_CHECK_EQ(output_count, 1);                            \
+  } else if (operation_type == NNADAPTER_ADAPTIVE_MAX_POOL_2D) {    \
+    NNADAPTER_CHECK_EQ(input_count, 4);                             \
+    NNADAPTER_CHECK_EQ(output_count, 2);                            \
+  } else {                                                          \
+    NNADAPTER_LOG(FATAL) << "Unsupported pooling operation type "   \
+                         << OperationTypeToString(operation->type)  \
+                         << " is found.";                           \
+  }                                                                 \
+  /* Input */                                                       \
+  auto input_operand = input_operands[0];                           \
+  NNADAPTER_VLOG(5) << "input: " << OperandToString(input_operand); \
+  /* Output shape */                                                \
+  auto output_height =                                              \
+      reinterpret_cast<int32_t*>(input_operands[1]->buffer)[0];     \
+  auto output_width =                                               \
+      reinterpret_cast<int32_t*>(input_operands[1]->buffer)[1];     \
+  NNADAPTER_VLOG(5) << "output_shape=[" << output_height << ","     \
+                    << output_width << "]";                         \
+  /* Output */                                                      \
+  auto output_operand = output_operands[0];                         \
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
 
 }  // namespace operation

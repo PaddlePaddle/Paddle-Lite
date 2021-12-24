@@ -29,7 +29,7 @@ USE_MIR_PASS(argument_type_display_pass);
 USE_MIR_PASS(runtime_context_assign_pass);
 USE_MIR_PASS(graph_visualize_pass);
 
-USE_MIR_PASS(sparse_conv_detect_pass)
+USE_MIR_PASS(sparse_conv_detect_pass);
 USE_MIR_PASS(adaptive_1x1_pool2d_convert_global_pass);
 USE_MIR_PASS(remove_scale1_pass);
 USE_MIR_PASS(remove_tf_redundant_ops_pass);
@@ -65,7 +65,7 @@ USE_MIR_PASS(memory_optimize_pass);
 USE_MIR_PASS(xpu_memory_optimize_pass);
 USE_MIR_PASS(lite_inplace_fuse_pass);
 USE_MIR_PASS(multi_stream_analysis_pass);
-USE_MIR_PASS(elementwise_mul_constant_eliminate_pass)
+USE_MIR_PASS(elementwise_mul_constant_eliminate_pass);
 USE_MIR_PASS(npu_subgraph_pass);
 USE_MIR_PASS(nnadapter_subgraph_pass);
 USE_MIR_PASS(xpu_subgraph_pass);
@@ -77,8 +77,7 @@ USE_MIR_PASS(fp16_attribute_pass);
 USE_MIR_PASS(fpga_concat_fuse_pass);
 USE_MIR_PASS(quantized_op_attributes_inference_pass);
 USE_MIR_PASS(quantization_parameters_propagation_pass);
-USE_MIR_PASS(quantization_parameters_removal_pass)
-USE_MIR_PASS(mixed_precision_auto_insert_calib_op_pass)
+USE_MIR_PASS(quantization_parameters_removal_pass);
 USE_MIR_PASS(restrict_quantized_op_with_same_input_output_scale_pass);
 USE_MIR_PASS(control_flow_op_unused_inputs_and_outputs_eliminate_pass);
 USE_MIR_PASS(control_flow_op_shared_inputs_and_outputs_place_sync_pass);
