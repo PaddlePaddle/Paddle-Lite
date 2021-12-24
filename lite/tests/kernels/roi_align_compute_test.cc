@@ -306,7 +306,7 @@ class RoiAlignComputeTester : public arena::TestCase {
       DDim dims(std::vector<int64_t>({batch_size, channels, height, width}));
       std::vector<float> datas;
       datas.resize(dims.production());
-      std::generate(datas.begin(), datas.end(), std::rand);
+      fill_data_rand<float>(datas.data(), 0.f, 1.f, dims.production());
       SetCommonTensor(x_, dims, datas.data());
     }
 

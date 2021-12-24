@@ -90,6 +90,11 @@ class Converter {
   std::shared_ptr<Operator> AddFloat32ConstantOperator(
       const std::vector<float>& values,
       const std::vector<int32_t>& dimensions = {});
+  std::shared_ptr<Operator> AddUint64ConstantOperator(
+      const uint64_t* values, const std::vector<int32_t>& dimensions);
+  std::shared_ptr<Operator> AddUint64ConstantOperator(
+      const std::vector<uint64_t>& values,
+      const std::vector<int32_t>& dimensions = {});
   std::shared_ptr<Operator> AddZeroConstantOperator(
       NNAdapterOperandPrecisionCode precision,
       const std::vector<int32_t>& dimensions);

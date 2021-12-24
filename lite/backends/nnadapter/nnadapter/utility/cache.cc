@@ -41,9 +41,21 @@ bool Cache::Set(const std::string& key, const void* value, uint64_t size) {
   return true;
 }
 
+bool Cache::Set(const std::string& key, const std::string& value) {
+  if (entries_.count(key)) return false;
+  entries_[key] = std::vector<uint8_t>(value.begin(), value.end());
+  return true;
+}
+
 bool Cache::Get(const std::string& key, std::vector<uint8_t>* value) {
   if (!entries_.count(key)) return false;
   *value = entries_[key];
+  return true;
+}
+
+bool Cache::Get(const std::string& key, std::string* value) {
+  if (!entries_.count(key)) return false;
+  value->assign(entries_[key].begin(), entries_[key].end());
   return true;
 }
 

@@ -41,15 +41,16 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "--target",
     choices=[
-        'Host', 'X86', 'CUDA', 'ARM', 'OpenCL', 'FPGA', 'NPU', 'MLU', 'RKNPU',
-        'APU', 'HUAWEI_ASCEND_NPU', 'INTEL_FPGA'
+        'Host', 'X86', 'CUDA', 'ARM', 'OpenCL', 'FPGA', 'NPU', 'XPU', 'BM',
+        'MLU', 'RKNPU', 'APU', 'HUAWEI_ASCEND_NPU', 'IMAGINATION_NNA',
+        'INTEL_FPGA', 'Metal', 'NNAdapter'
     ],
     required=True)
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 settings.register_profile(
     "ci",
-    max_examples=100,
+    max_examples=200,
     suppress_health_check=hypothesis.HealthCheck.all(),
     deadline=None,
     print_blob=True,
@@ -88,11 +89,6 @@ class AutoScanBaseTest(unittest.TestCase):
         self.cache_dir = os.path.join(abs_dir,
                                       str(self.__module__) + '_cache_dir')
         self.available_passes_in_framework = set()
-        self.num_ran_programs = 0
-        self.num_invalid_programs = 0
-        self.num_ignore_tests = 0
-        self.num_predictor_kinds = 0
-
         args = parser.parse_args()
         self.args = args
 
@@ -151,11 +147,14 @@ class AutoScanBaseTest(unittest.TestCase):
                             rtol: float,
                             tensor: Dict[str, np.array],
                             baseline: Dict[str, np.array]):
+        if len(tensor) == 0 and len(baseline) == 0:
+            return
         if len(tensor) == 1 and len(baseline) == 1:
             tensor_key = list(tensor.keys())
             arr = np.array(tensor[tensor_key[0]])
             base_key = list(baseline.keys())
             base = np.array(baseline[base_key[0]])
+
             self.assertTrue(
                 base.shape == arr.shape,
                 "The output shapes are not equal, the baseline shape is " +
@@ -167,11 +166,18 @@ class AutoScanBaseTest(unittest.TestCase):
         else:
             for key in tensor:
                 opencl_str = "/target_trans"
+                other_str = "__Mangled_1"
                 index = key.rfind(opencl_str)
                 paddlekey = key
                 if index > 0:
                     paddlekey = key[0:index]
-                if (key == "saved_mean" or key == "saved_variance"):
+                index = key.rfind(other_str)
+                if index > 0:
+                    paddlekey = key[0:index]
+                if (paddlekey == "saved_mean" or
+                        paddlekey == "saved_variance" or
+                        paddlekey == "mean_data" or
+                        paddlekey == "variance_data"):
                     # training using data
                     continue
                 arr = np.array(tensor[key])
@@ -227,7 +233,6 @@ class AutoScanBaseTest(unittest.TestCase):
             config.enable_mkldnn()
         if passes is not None:
             config.pass_builder().set_passes(passes)
-            self.passes = passes
         return config
 
     def run_test(self, quant=False, prog_configs=None):
@@ -236,38 +241,36 @@ class AutoScanBaseTest(unittest.TestCase):
         paddlelite_configs, op_list_, (atol_,
                                        rtol_) = self.sample_predictor_configs()
         for prog_config in prog_configs:
-            # if program is invalid, we should ignore this cases.
-            program_valid_ = False
+
+            predictor_idx = -1
             for paddlelite_config in paddlelite_configs:
+                predictor_idx += 1
                 # judge validity of program
-                if self.is_program_valid(prog_config, paddlelite_config):
-                    program_valid_ = True
-            if not program_valid_:
-                self.num_invalid_programs += 1
-                continue
+                if not self.is_program_valid(prog_config, paddlelite_config):
+                    self.num_invalid_programs_list[predictor_idx] += 1
+                    continue
+                self.num_ran_programs_list[predictor_idx] += 1
 
-            self.num_ran_programs += 1
-            model, params = create_fake_model(prog_config)
-            if quant:
-                model, params = create_quant_model(model, params)
+                # creat model and prepare feed data
+                model, params = create_fake_model(prog_config)
+                if quant:
+                    model, params = create_quant_model(model, params)
 
-            feed_data = {}
-            for name, tensor_config in prog_config.inputs.items():
-                feed_data[name] = {
-                    'data': tensor_config.data,
-                    'lod': tensor_config.lod
-                }
-            results: List[Dict[str, np.ndarray]] = []
+                feed_data = {}
+                for name, tensor_config in prog_config.inputs.items():
+                    feed_data[name] = {
+                        'data': tensor_config.data,
+                        'lod': tensor_config.lod
+                    }
+                results: List[Dict[str, np.ndarray]] = []
 
-            # baseline: cpu no ir_optim run
-            base_config = self.create_inference_config(ir_optim=False)
-            logging.info('[ProgramConfig]: ' + str(prog_config))
-            results.append(
-                self.run_test_config(model, params, prog_config, base_config,
-                                     feed_data))
+                # baseline: cpu no ir_optim run
+                base_config = self.create_inference_config(ir_optim=False)
+                logging.info('[ProgramConfig]: ' + str(prog_config))
+                results.append(
+                    self.run_test_config(model, params, prog_config,
+                                         base_config, feed_data))
 
-            for paddlelite_config in paddlelite_configs:
-                self.num_predictor_kinds += 1
                 # ignore info
                 ignore_flag = False
                 paddle_lite_not_support_flag = False
@@ -275,7 +278,7 @@ class AutoScanBaseTest(unittest.TestCase):
                 for ignore_info in self.ignore_cases:
                     if ignore_info[0](prog_config, paddlelite_config):
                         ignore_flag = True
-                        self.num_ignore_tests += 1
+                        self.num_ignore_tests_list[predictor_idx] += 1
                         if ignore_info[1] == IgnoreReasonsBase.ACCURACY_ERROR:
                             self.ignore_log("[ACCURACY_ERROR] " + ignore_info[
                                 2] + ' ' + ' vs ' + self.paddlelite_config_str(
@@ -302,13 +305,20 @@ class AutoScanBaseTest(unittest.TestCase):
                     result, opt_model_bytes = self.run_lite_config(
                         model, params, feed_data, pred_config)
                     results.append(result)
+                    # add ignore methods
                     if self.passes is not None:
-                        # op unit test: we will not check precision in ignore case
                         self.assert_tensors_near(atol_, rtol_, results[-1],
                                                  results[0])
+                        # op unit test: we will not check precision in ignore case
                         if not ignore_flag:
                             # pass unit test: we will not check fusion in ignore case
                             self.assert_op_list(opt_model_bytes, op_list_)
+                    else:
+                        self.assert_kernel_type(opt_model_bytes, op_list_,
+                                                paddlelite_config)
+                        if not ignore_flag:
+                            self.assert_tensors_near(atol_, rtol_, results[-1],
+                                                     results[0])
                 except Exception as e:
                     self.fail_log(
                         self.paddlelite_config_str(pred_config) +
@@ -351,13 +361,46 @@ class AutoScanBaseTest(unittest.TestCase):
             "Expected operator list after fusion is {}, but now it's {}".
             format(op_list_after_fusion, after_op_list), )
 
+    # judge if correct kernel is picked
+    def assert_kernel_type(self, model_bytes, op_list, paddlelite_config):
+        pg = paddle.static.deserialize_program(model_bytes)
+        main_block = pg.desc.block(0)
+        after_op_list = list()
+        target_ = paddlelite_config.target()
+        precision_ = paddlelite_config.precision()
+        layout_ = paddlelite_config.layout()
+
+        for i in range(main_block.op_size()):
+            if main_block.op(i).type() in op_list:
+                kernel_type_info = main_block.op(i).attr(
+                    "__@kernel_type_attr@__").split("/")
+                self.assertTrue(
+                    len(kernel_type_info) == 5,
+                    "Incompleted kernel info of {}:{}".format(
+                        main_block.op(i).type(),
+                        main_block.op(i).attr("__@kernel_type_attr@__")))
+                current_target_ = TargetType(int(kernel_type_info[2]))
+                current_precision_ = PrecisionType(int(kernel_type_info[3]))
+                current_layout_ = DataLayoutType(int(kernel_type_info[4]))
+                correct_kernel_flag_ = (target_ == current_target_) and (
+                    precision_ == current_precision_ or
+                    current_precision_ == PrecisionType.Any) and (
+                        layout_ == current_layout_ or
+                        current_layout_ == DataLayoutType.Any)
+                self.assertTrue(
+                    correct_kernel_flag_ == True,
+                    "Expected kernel_type of op {} is ({},{},{}), but now it's ({},{},{})".
+                    format(
+                        main_block.op(i).type(), target_, precision_, layout_,
+                        current_target_, current_precision_, current_layout_))
+
     def run_and_statis(self,
                        quant=False,
                        max_examples=100,
                        reproduce=None,
                        min_success_num=25,
                        passes=None):
-
+        self.init_statistical_parameters()
         settings.register_profile(
             "dev",
             max_examples=max_examples,
@@ -398,23 +441,20 @@ class AutoScanBaseTest(unittest.TestCase):
         loop_func()
         logging.info(
             "===================Statistical Information===================")
-        logging.info("Number of Generated Programs: {}".format(
-            self.num_ran_programs + self.num_invalid_programs))
-        logging.info("Number of Invalid Programs: {}".format(
-            self.num_invalid_programs))
-        logging.info("Number of Ran Programs: {}".format(
-            self.num_ran_programs))
-        logging.info("Number of Ignored Tests: {}".format(
-            self.num_ignore_tests))
+        logging.info("Number of Generated Programs: {}".format(max_examples))
         logging.info("Number of Predictor Kinds: {}".format(
-            int(self.num_predictor_kinds / (self.num_invalid_programs +
-                                            self.num_ran_programs))))
-        if self.num_predictor_kinds == 0:
-            successful_ran_programs = int(self.num_ran_programs)
-            min_success_num = 0
-        else:
-            successful_ran_programs = int(self.num_ran_programs -
-                                          self.num_ignore_tests)
+            int(self.num_predictor_kinds)))
+        self.assertTrue(self.num_predictor_kinds > 0,
+                        "Number of Predictor Kinds must be greater than 0")
+        logging.info("Number of Ran Programs: {}".format(
+            self.num_ran_programs_list))
+        logging.info("Number of Invalid Programs: {}".format(
+            self.num_invalid_programs_list))
+        logging.info("Number of Ignored Tests: {}".format(
+            self.num_ignore_tests_list))
+        successful_ran_programs = int(
+            (sum(self.num_ran_programs_list) + sum(self.num_ignore_tests_list))
+            / self.num_predictor_kinds)
 
         logging.info(
             "Number of successfully ran programs approximately equal to {}".
@@ -445,19 +485,29 @@ class AutoScanBaseTest(unittest.TestCase):
             self.thread_num.append(thread)
             self.thread_num = list(self.thread_num)
 
+        # arm basic places:
+        arm_basic_places = [
+            Place(TargetType.ARM, PrecisionType.INT32),
+            Place(TargetType.ARM, PrecisionType.INT64)
+        ]
+
         # if list[Place] is inputed, this will be used directly
         if places is not None:
             assert isinstance(places, list)
             self.valid_places.append(places)
             return
         # otherwise we will generate a list[Place] from the inputed[target\precision\layout]
-        assert (target is not None)
-        target_ = target if isinstance(target, list) else [target]
+        assert  (target is not None)
+        target_ = target if isinstance(target,list) else [target]
+        self.target = target_
         precision_ = precision if isinstance(precision, list) else [precision]
         layout_ = layout if isinstance(layout, list) else [layout]
         for tar_, pre_, lay_ in product(target_, precision_, layout_):
-            self.valid_places.append([Place(tar_, pre_, lay_)])
-        return
+            if (tar_ == TargetType.ARM):
+                self.valid_places.append([Place(tar_, pre_, lay_)] +
+                                         arm_basic_places)
+            else:
+                self.valid_places.append([Place(tar_, pre_, lay_)])
 
     def get_target(self) -> str:
         return self.args.target
@@ -470,6 +520,12 @@ class AutoScanBaseTest(unittest.TestCase):
 
     def get_predictor_configs(self) -> List[CxxConfig]:
         return self.target_to_predictor_configs(self, self.get_target())
+
+    def init_statistical_parameters(self):
+        self.num_predictor_kinds = len(self.get_predictor_configs())
+        self.num_invalid_programs_list = [0] * self.num_predictor_kinds
+        self.num_ran_programs_list = [0] * self.num_predictor_kinds
+        self.num_ignore_tests_list = [0] * self.num_predictor_kinds
 
     # get valid test configs
     @staticmethod
