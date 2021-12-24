@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "core/operation/concat.h"
+#include "core/operation/channel_shuffle.h"
 #include "driver/huawei_ascend_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -20,24 +20,19 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-int ConvertConcat(Converter* converter, hal::Operation* operation) {
-  CONCAT_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int ConvertChannelShuffle(Converter* converter, hal::Operation* operation) {
+  CHANNEL_SHUFFLE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to GE operators
-  auto N = input_count - 1;
-  auto concat_op = converter->AddOperator<ge::op::ConcatD>(output_operand);
-  concat_op->set_attr_concat_dim(axis);
-  concat_op->set_attr_N(N);
-  concat_op->create_dynamic_input_x(N);
-  for (int i = 0; i < N; i++) {
-    auto input_operand = input_operands[i];
-    auto input_operator = converter->GetMappedOperator(input_operand);
-    if (!input_operator) {
-      input_operator = converter->ConvertOperand(input_operand);
-    }
-    SET_DYNAMIC_INPUT(concat_op, x, i, input_operator);
+  auto input_operator = converter->GetMappedOperator(input_operand);
+  if (!input_operator) {
+    input_operator = converter->ConvertOperand(input_operand);
   }
-  MAP_OUTPUT(concat_op, y, output_operand);
+  auto shuffle_channel_op =
+      converter->AddOperator<ge::op::ShuffleChannel>(output_operand);
+  shuffle_channel_op->set_attr_group(group);
+  SET_INPUT(shuffle_channel_op, x, input_operator);
+  MAP_OUTPUT(shuffle_channel_op, y, output_operand);
   return NNADAPTER_NO_ERROR;
 }
 
