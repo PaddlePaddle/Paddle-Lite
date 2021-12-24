@@ -184,6 +184,10 @@ struct HardSigmoidMetalParam {
     float offset;
 };
 
+struct SwishMetalParam {
+    float beta;
+};
+
 struct HardSwishMetalParam {
     float offset;
     float threshold;

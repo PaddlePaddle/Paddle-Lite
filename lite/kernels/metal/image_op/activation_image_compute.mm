@@ -64,7 +64,11 @@ void ActivationImageCompute::setup_without_mps() {
         case 5:
             function_name_ = "sigmoid";
             break;
-        case 7:
+        case 7: {
+            SwishMetalParam metal_param{param.Swish_beta};
+            param_buffer_ =
+                std::make_shared<MetalBuffer>(metal_context_, sizeof(metal_param), &metal_param);
+        }
             function_name_ = "swish";
             break;
         case 8:
@@ -110,7 +114,8 @@ void ActivationImageCompute::run_without_mps() {
     [encoder setTexture:input_buffer_->image() atIndex:(0)];
     [encoder setTexture:output_buffer_->image() atIndex:(1)];
     if (function_name_ == "leaky_relu" || function_name_ == "relu6" ||
-        function_name_ == "hard_swish" || function_name_ == "hard_sigmoid") {
+        function_name_ == "hard_swish" || function_name_ == "hard_sigmoid" ||
+        function_name_ == "swish") {
         [encoder setBuffer:param_buffer_->buffer() offset:(0) atIndex:(0)];
     }
 
