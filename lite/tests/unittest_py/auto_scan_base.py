@@ -354,7 +354,7 @@ class AutoScanBaseTest(unittest.TestCase):
         after_op_list = list()
         for i in range(main_block.op_size()):
             if main_block.op(i).type(
-            ) in ["feed", "fetch", "layout", "io_copy"]:                
+            ) in ["feed", "fetch", "layout", "io_copy"]:
                 continue
             after_op_list.append(main_block.op(i).type())
         self.assertTrue(
@@ -498,8 +498,8 @@ class AutoScanBaseTest(unittest.TestCase):
             self.valid_places.append(places)
             return
         # otherwise we will generate a list[Place] from the inputed[target\precision\layout]
-        assert  (target is not None)
-        target_ = target if isinstance(target,list) else [target]
+        assert (target is not None)
+        target_ = target if isinstance(target, list) else [target]
         self.target = target_
         precision_ = precision if isinstance(precision, list) else [precision]
         layout_ = layout if isinstance(layout, list) else [layout]
