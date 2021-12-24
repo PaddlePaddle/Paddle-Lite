@@ -57,20 +57,20 @@ class TestFlattenFcFusePass(FusePassAutoScanTest):
         self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32,
                                      DataLayoutType.NCHW)
         #opencl
-        opencl_places = [
-            Place(TargetType.OpenCL, PrecisionType.FP16,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.FP16,
-                      DataLayoutType.ImageFolder),
-            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-            Place(TargetType.OpenCL, PrecisionType.Any,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.Any,
-                      DataLayoutType.ImageFolder),
-            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-            Place(TargetType.Host, PrecisionType.FP32)
-        ]
-        self.enable_testing_on_place(places=opencl_places)
+        # opencl_places = [
+        #     Place(TargetType.OpenCL, PrecisionType.FP16,
+        #           DataLayoutType.ImageDefault), Place(
+        #               TargetType.OpenCL, PrecisionType.FP16,
+        #               DataLayoutType.ImageFolder),
+        #     Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+        #     Place(TargetType.OpenCL, PrecisionType.Any,
+        #           DataLayoutType.ImageDefault), Place(
+        #               TargetType.OpenCL, PrecisionType.Any,
+        #               DataLayoutType.ImageFolder),
+        #     Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+        #     Place(TargetType.Host, PrecisionType.FP32)
+        # ]
+        # self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -79,9 +79,7 @@ class TestFlattenFcFusePass(FusePassAutoScanTest):
         #opencl: has diff
         #in_num_col_dims == start_axis == 1 is right, Other case has diff
         # get input&output shape, get op attributes
-        if predictor_config.target() == TargetType.OpenCL:
-            return False
-        else:
+        if predictor_config.target() == TargetType.ARM:
             x_shape = list(program_config.inputs["input_data_x"].shape)
             in_num_col_dims = program_config.ops[1].attrs["in_num_col_dims"]
             start_axis = program_config.ops[0].attrs["start_axis"]
