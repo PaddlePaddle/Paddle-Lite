@@ -194,11 +194,7 @@ class TestFlattenFcFusePass(FusePassAutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        if self.get_target() == 'OpenCL':
-            return self.get_predictor_configs(
-            ), ['io_copy', 'layout', 'fc', 'layout', 'io_copy'], (1e-5, 1e-5)
-        else:
-            return self.get_predictor_configs(), ['fc'], (1e-4, 1e-4)
+        return self.get_predictor_configs(), ['fc'], (1e-4, 1e-4)
 
     def add_ignore_pass_case(self):
         pass
