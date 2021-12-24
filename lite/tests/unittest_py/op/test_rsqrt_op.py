@@ -62,9 +62,9 @@ class TestRsqrtOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        return False  # fix arm_opencl ci error
         in_shape = list(program_config.inputs["input_data"].shape)
-        if predictor_config.target() == TargetType.OpenCL:
+        target = predictor_config.target()
+        if target == TargetType.OpenCL:
             if len(in_shape) != 4:
                 return False
         return True
