@@ -14,8 +14,8 @@
 
 #include "lite/kernels/x86/conv_direct.h"
 #include <cmath>
-#include "lite/backends/x86/math/conv_direct_fp32.h"
 #include "lite/backends/x86/math/conv_bias.h"
+#include "lite/backends/x86/math/conv_direct_fp32.h"
 namespace paddle {
 namespace lite {
 namespace kernels {
@@ -24,8 +24,8 @@ namespace x86 {
 template <>
 void DirectConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   auto& param = this->Param<param_t>();
-  //CHECK_EQ(param.strides[0], 2);
-  //CHECK_EQ(param.strides[1], 2);
+  // CHECK_EQ(param.strides[0], 2);
+  // CHECK_EQ(param.strides[1], 2);
   // auto& ctx = this->ctx_->template As<X86Context>();
 
   const auto* i_data = param.x->data<float>();
@@ -73,14 +73,14 @@ void DirectConv<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
              param.strides[0]);
 
   lite::x86::math::conv_direct_transpose_out(bs,
-                                                  oc,
-                                                  oh,
-                                                  ow,
-                                                  o_data,
-                                                  trans_out,
-                                                  b_data,
-                                                  act_param.active_type,
-                                                  act_param);
+                                             oc,
+                                             oh,
+                                             ow,
+                                             o_data,
+                                             trans_out,
+                                             b_data,
+                                             act_param.active_type,
+                                             act_param);
   TargetFree(TARGET(kX86), trans_out);
 }
 }  // namespace x86

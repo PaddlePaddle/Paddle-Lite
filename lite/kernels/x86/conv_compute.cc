@@ -109,8 +109,10 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
 
   // support 3x3s1p01,5x5s1p01,7x7s1p01
   //  3x3s2p012,5x5s1p012,7x7s1p012
-  if (output_channel % 8 == 0 && groups == 1 && (kernel_h == 3 || kernel_h == 5 || kernel_h == 7) &&
-      (stride_h == 2 || stride_h == 1) && nodilations && kps_equal && pad_all_equal && flag_p) {
+  if (output_channel % 8 == 0 && groups == 1 &&
+      (kernel_h == 3 || kernel_h == 5 || kernel_h == 7) &&
+      (stride_h == 2 || stride_h == 1) && nodilations && kps_equal &&
+      pad_all_equal && flag_p) {
     impl_ = new DirectConv<PRECISION(kFloat), PRECISION(kFloat)>();
     VLOG(3) << "invoking directConv";
   }

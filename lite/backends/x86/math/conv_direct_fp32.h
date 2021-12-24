@@ -55,14 +55,14 @@ struct conv_direct : lite::jit::gen::JitCode {
 };
 
 void conv_direct_transpose_out(int bs,
-                                    int oc,
-                                    int oh,
-                                    int ow,
-                                    float* o_data,
-                                    float* trans_out,
-                                    const float* bias,
-                                    lite_api::ActivationType active_type,
-                                    operators::ActivationParam act_param);
+                               int oc,
+                               int oh,
+                               int ow,
+                               float* o_data,
+                               float* trans_out,
+                               const float* bias,
+                               lite_api::ActivationType active_type,
+                               operators::ActivationParam act_param);
 
 }  // namespace math
 }  // namespace x86

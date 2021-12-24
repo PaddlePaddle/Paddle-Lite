@@ -43,17 +43,17 @@ struct jit_param {
 conv_direct::conv_direct() : JitCode(8192, Xbyak::AutoGrow) {}
 
 void conv_direct::generate_code(int ic,
-                                      int ih,
-                                      int iw,
-                                      int oc,
-                                      int oc_expand,
-                                      int oh,
-                                      int ow,
-                                      int ph,
-                                      int pw, 
-                                      int ww,
-                                      int wh,
-                                      int stridew) {
+                                int ih,
+                                int iw,
+                                int oc,
+                                int oc_expand,
+                                int oh,
+                                int ow,
+                                int ph,
+                                int pw,
+                                int ww,
+                                int wh,
+                                int stridew) {
 #ifdef __AVX__
   constexpr int BLOCK = 8;
 #else
@@ -166,7 +166,8 @@ void conv_direct::generate_code(int ic,
           for (int j = 0; j < bulk; j++) {
             // no need to fetch this input
             if (ww_i + stridew * j < l_pad) continue;
-            if (ww_i + stridew * j >= stridew * (bulk - 1) + ww - r_pad) continue;
+            if (ww_i + stridew * j >= stridew * (bulk - 1) + ww - r_pad)
+              continue;
 
             Vmm input = Vmm(oc_group / BLOCK * bulk + j);
             Vmm res(oc_gi / BLOCK * bulk + j);
@@ -182,7 +183,6 @@ void conv_direct::generate_code(int ic,
   auto cal_out_whole_line = [=, &temp](int oc_group, int ic_group) {
     int ow_bulk_i = ow / ow_bulk;
 
-    
     auto cal_bulk = [=, &temp](
         int oc_group, int ic_group, int l_pad, int r_pad, int bulk) {
       load(oc_group, bulk);
@@ -210,13 +210,13 @@ void conv_direct::generate_code(int ic,
     // entry !
     // left
     // we need check if there is a left part
-    // besided, we need check if the first ow_bulk output is 
+    // besided, we need check if the first ow_bulk output is
     // associated with right boundry
     int ow_rpad = 0;
     int first_ow_bulk_rpad = (ow_bulk - 1) * stridew + ww - pw - iw;
-    if (first_ow_bulk_rpad > 0)// means ow <= 3
+    if (first_ow_bulk_rpad > 0)  // means ow <= 3
       ow_rpad = (ow - 1) * stridew + ww - pw - iw;
- 
+
     mov(ow_bulk_i_xb, 0);
     if (pw > 0 || ow <= ow_bulk) {
       int temp_rpad = 0;
@@ -302,21 +302,21 @@ void conv_direct::generate_code(int ic,
 }
 
 void conv_direct::run(const float* i_data,
-                            const float* trans_weight,
-                            float* trans_out,
-                            int bs,
-                            int ic,
-                            int ih,
-                            int iw,
-                            int oc,
-                            int oc_expand,
-                            int oh,
-                            int ow,
-                            int ph,
-                            int pw,
-                            int wh,
-                            int ww,
-                            int strideh) {
+                      const float* trans_weight,
+                      float* trans_out,
+                      int bs,
+                      int ic,
+                      int ih,
+                      int iw,
+                      int oc,
+                      int oc_expand,
+                      int oh,
+                      int ow,
+                      int ph,
+                      int pw,
+                      int wh,
+                      int ww,
+                      int strideh) {
 #ifdef __AVX__
   constexpr int BLOCK = 8;
 #else
@@ -362,10 +362,11 @@ void conv_direct::run(const float* i_data,
 
     int oh_i = 0;
     if (ph > 0) {  // upper boundry
-      int temp_wh = wh - ph; // we olny need deal with temp_wh rows not wh rows!
+      int temp_wh =
+          wh - ph;  // we olny need deal with temp_wh rows not wh rows!
 
       // check if the kernel will occupy lower boundry
-      // if so, we need decrease temp_wh again 
+      // if so, we need decrease temp_wh again
       if (ih + ph < wh) temp_wh -= (wh - ih - ph);
       cal_out_line(
           in_row_addr, trans_weight + ph * ww * BLOCK, out_row_addr, temp_wh);
@@ -381,10 +382,10 @@ void conv_direct::run(const float* i_data,
     }
 
     if (oh_i >= oh) continue;
-    
-    // lower boundary, 
+
+    // lower boundary,
     // compute how many boundry rows is used to the lowerest output row
-    int lower =  strideh * (oh - 1) + wh - ph - ih;
+    int lower = strideh * (oh - 1) + wh - ph - ih;
 
     if (lower > 0) {
       cal_out_line(in_row_addr, trans_weight, out_row_addr, wh - lower);
@@ -397,14 +398,14 @@ void conv_direct::run(const float* i_data,
 // we always assume oc % BLOCK == 0!
 // convert [N C/8 H W 8] to [N C H W]!
 void conv_direct_transpose_out(int bs,
-                                    int oc,
-                                    int oh,
-                                    int ow,
-                                    float* o_data,
-                                    float* trans_out,
-                                    const float* bias,
-                                    lite_api::ActivationType active_type,
-                                    operators::ActivationParam act_param) {
+                               int oc,
+                               int oh,
+                               int ow,
+                               float* o_data,
+                               float* trans_out,
+                               const float* bias,
+                               lite_api::ActivationType active_type,
+                               operators::ActivationParam act_param) {
 #ifdef __AVX__
   constexpr int BLOCK = 8;
 #else

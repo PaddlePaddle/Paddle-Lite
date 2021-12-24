@@ -72,7 +72,8 @@ class DirectConv : public KernelLite<TARGET(kX86), Ptype> {
     int oh = o_dims[2];
     int ow = o_dims[3];
     code_ = new lite::x86::math::conv_direct();
-    code_->generate_code(ic, ih, iw, oc, oc_expand_, oh, ow, ph, pw, wh, ww, param.strides[1]);
+    code_->generate_code(
+        ic, ih, iw, oc, oc_expand_, oh, ow, ph, pw, wh, ww, param.strides[1]);
     code_->ready();
   }
 
