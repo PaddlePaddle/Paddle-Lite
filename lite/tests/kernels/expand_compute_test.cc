@@ -114,9 +114,7 @@ class ExpandComputeTester : public arena::TestCase {
 template <class T,
           bool has_expandtimes = false,
           bool has_expand_times_tensor = false>
-void test_expand_3dim(Place place, float abs_error) {
-  std::string alias{"def"};
-
+void test_expand_3dim(Place place, float abs_error, const std::string& alias) {
   for (std::vector<int> expand_times : {std::vector<int>({2, 3, 1}),
                                         std::vector<int>({2, 2, 2}),
                                         std::vector<int>({3, 1, 2})}) {
@@ -139,9 +137,7 @@ void test_expand_3dim(Place place, float abs_error) {
 template <class T,
           bool has_expandtimes = false,
           bool has_expand_times_tensor = false>
-void test_expand_4dim(Place place, float abs_error) {
-  std::string alias{"def"};
-
+void test_expand_4dim(Place place, float abs_error, const std::string& alias) {
   for (std::vector<int> expand_times : {std::vector<int>({2, 3, 1, 4}),
                                         std::vector<int>({2, 2, 2, 2}),
                                         std::vector<int>({3, 1, 2, 1})}) {
@@ -166,25 +162,28 @@ void test_expand_4dim(Place place, float abs_error) {
 TEST(Expand, precision) {
   Place place;
   float abs_error = 1e-5;
+  std::string float_alias{"def"};
+  std::string int_alias{"def"};
 #if defined(LITE_WITH_NPU)
   place = TARGET(kNPU);
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
+  int_alias = {"int32"};
 #elif defined(LITE_WITH_ARM) || defined(LITE_WITH_X86)
   place = Place(TARGET(kHost), PRECISION(kAny));
 #else
   return;
 #endif
 
-  test_expand_3dim<float>(place, abs_error);
-  test_expand_4dim<float>(place, abs_error);
+  test_expand_3dim<float>(place, abs_error, float_alias);
+  test_expand_4dim<float>(place, abs_error, float_alias);
 #ifndef LITE_WITH_NPU
-  test_expand_3dim<int>(place, abs_error);
-  test_expand_4dim<int>(place, abs_error);
-  test_expand_4dim<float, true>(place, abs_error);
-  test_expand_4dim<float, false, true>(place, abs_error);
-  test_expand_4dim<int, true, true>(place, abs_error);
+  test_expand_3dim<int>(place, abs_error, int_alias);
+  test_expand_4dim<int>(place, abs_error, int_alias);
+  test_expand_4dim<float, true>(place, abs_error, float_alias);
+  test_expand_4dim<float, false, true>(place, abs_error, float_alias);
+  test_expand_4dim<int, true, true>(place, abs_error, int_alias);
 #endif
 }
 
