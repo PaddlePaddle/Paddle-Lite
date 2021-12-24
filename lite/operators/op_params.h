@@ -1995,6 +1995,7 @@ struct TrigonometricParam : ParamBase {
 
 using SinParam = TrigonometricParam;
 using CosParam = TrigonometricParam;
+using TanParam = TrigonometricParam;
 using AsinParam = TrigonometricParam;
 using AcosParam = TrigonometricParam;
 using AtanParam = TrigonometricParam;
