@@ -214,7 +214,8 @@ void NNAdapterSubgraphPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   SubgraphFuser fuser(graph.get(),
                       teller,
                       1 /* min_subgraph_size */,
-                      subgraph_partition_configs);
+                      subgraph_partition_configs,
+                      true);
   fuser();
 }
 

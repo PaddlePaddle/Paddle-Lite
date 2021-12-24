@@ -34,48 +34,42 @@ Device::~Device() {}
 Context::Context(void* device, const char* properties) : device_(device) {
   // Extract the runtime parameters from the context properties
   NNADAPTER_LOG(INFO) << "properties: " << std::string(properties);
-  std::vector<int> selected_device_ids;
-  std::string selected_device_ids_value;
   auto key_values = GetKeyValues(properties);
+  // HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS
+  std::string selected_device_ids;
   if (key_values.count(HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS)) {
-    selected_device_ids_value =
-        key_values[HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS];
+    selected_device_ids = key_values[HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS];
   } else {
-    selected_device_ids_value =
+    selected_device_ids =
         GetStringFromEnv(HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS);
   }
-  if (!selected_device_ids_value.empty()) {
-    selected_device_ids = string_split<int>(selected_device_ids_value, ",");
+  if (!selected_device_ids.empty()) {
+    selected_device_ids_ = string_split<int>(selected_device_ids, ",");
   } else {
-    selected_device_ids = std::vector<int>({0});
+    selected_device_ids_ = std::vector<int>({0});
   }
-  NNADAPTER_CHECK_GE(selected_device_ids.size(), 1);
+  NNADAPTER_CHECK_GE(selected_device_ids_.size(), 1);
   // Only supports specifying one device
-  if (selected_device_ids.size() > 1) {
+  if (selected_device_ids_.size() > 1) {
     NNADAPTER_LOG(WARNING) << "Only supports specifying one device, so the "
                               "first one is selected and others will be "
                               "ignored.";
+    auto first_device_id = selected_device_ids_[0];
+    selected_device_ids_.clear();
+    selected_device_ids_.push_back(first_device_id);
   }
-  selected_device_ids_.push_back(selected_device_ids[0]);
   NNADAPTER_LOG(INFO) << "selected device ids: ";
   for (auto& selected_device_id : selected_device_ids_) {
     NNADAPTER_LOG(INFO) << selected_device_id;
   }
-  // Profiling config
-  if (key_values.count("HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH")) {
-    auto profiling_file_path = string_split<std::string>(
-        key_values["HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH"], ",");
-    NNADAPTER_CHECK_GE(profiling_file_path.size(), 1);
-    // Only supports specifying one path
-    if (profiling_file_path.size() > 1) {
-      NNADAPTER_LOG(WARNING)
-          << "Only supports specifying one profiling path, so the "
-             "first one is selected and others will be "
-             "ignored.";
-    }
-    profiling_file_path_ = profiling_file_path[0];
-    NNADAPTER_LOG(INFO) << "Profiling path: " << profiling_file_path_;
+  // HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH
+  if (key_values.count(HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH)) {
+    profiling_file_path_ = key_values[HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH];
+  } else {
+    profiling_file_path_ =
+        GetStringFromEnv(HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH);
   }
+  NNADAPTER_LOG(INFO) << "profiling path: " << profiling_file_path_;
 }
 
 Context::~Context() {}

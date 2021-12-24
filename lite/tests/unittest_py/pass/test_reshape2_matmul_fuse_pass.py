@@ -36,20 +36,20 @@ class TestReshape2MatmulFusePass(FusePassAutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 4])
         #opencl
-        opencl_places = [
-            Place(TargetType.OpenCL, PrecisionType.FP16,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.FP16,
-                      DataLayoutType.ImageFolder),
-            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-            Place(TargetType.OpenCL, PrecisionType.Any,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.Any,
-                      DataLayoutType.ImageFolder),
-            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-            Place(TargetType.Host, PrecisionType.FP32)
-        ]
-        self.enable_testing_on_place(places=opencl_places)
+        # opencl_places = [
+        #     Place(TargetType.OpenCL, PrecisionType.FP16,
+        #           DataLayoutType.ImageDefault), Place(
+        #               TargetType.OpenCL, PrecisionType.FP16,
+        #               DataLayoutType.ImageFolder),
+        #     Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+        #     Place(TargetType.OpenCL, PrecisionType.Any,
+        #           DataLayoutType.ImageDefault), Place(
+        #               TargetType.OpenCL, PrecisionType.Any,
+        #               DataLayoutType.ImageFolder),
+        #     Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+        #     Place(TargetType.Host, PrecisionType.FP32)
+        # ]
+        # self.enable_testing_on_place(places=opencl_places)
         #x86
         self.enable_testing_on_place(
             TargetType.X86,
@@ -64,9 +64,9 @@ class TestReshape2MatmulFusePass(FusePassAutoScanTest):
         x_shape = list(program_config.inputs["input_data_x"].shape)
         y_shape = list(program_config.inputs["input_data_y"].shape)
 
-        if predictor_config.target() == TargetType.OpenCL:
-            return False
-        elif x_shape[1] != y_shape[0]:
+        # if predictor_config.target() == TargetType.OpenCL:
+        #     return False
+        if x_shape[1] != y_shape[0]:
             return False
         return True
 

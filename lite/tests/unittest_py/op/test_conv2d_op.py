@@ -34,36 +34,62 @@ class TestConv2dOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
-        self.enable_testing_on_place(
-            TargetType.ARM,
-            [PrecisionType.FP32, PrecisionType.FP16, PrecisionType.INT8],
-            DataLayoutType.NCHW,
-            thread=[1, 4])
+        arm_places = [
+            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.ARM, PrecisionType.FP16, DataLayoutType.NCHW),
+            Place(TargetType.ARM, PrecisionType.INT8, DataLayoutType.NCHW)
+        ]
+        self.enable_testing_on_place(places=arm_places, thread=[1, 4])
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        if predictor_config.target() == TargetType.ARM:
+        if predictor_config.target() == TargetType.OpenCL:
+            groups = program_config.ops[0].attrs["groups"]
+            # opencl doesn't support
+            if groups != 1:
+                return False
+            else:
+                return True
+        elif predictor_config.target() == TargetType.ARM and (
+                predictor_config.precision() == PrecisionType.FP16 or
+                predictor_config.precision() == PrecisionType.INT8):
+            # fp16 has diff and int8 doesn't support
             return False
         else:
             return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(
-            st.lists(
-                st.integers(
-                    min_value=1, max_value=64), min_size=4, max_size=4))
-        kw = np.random.randint(1, 9)
-        kh = np.random.randint(1, 9)
-        cout = np.random.randint(1, 128)
-        cin = np.random.randint(1, 128)
+        num = draw(st.integers(min_value=1, max_value=4))
+        cin = draw(st.integers(min_value=1, max_value=128))
+        cout = draw(st.integers(min_value=1, max_value=128))
+        height = draw(st.integers(min_value=1, max_value=128))
+        width = draw(st.integers(min_value=1, max_value=128))
+        cout = draw(st.integers(min_value=1, max_value=128))
+        kw = np.random.randint(1, 5)
+        kh = np.random.randint(1, 5)
+        groups = draw(st.integers(min_value=1, max_value=128))
         scale_in = draw(st.floats(min_value=0.001, max_value=0.1))
         scale_out = draw(st.floats(min_value=0.001, max_value=0.1))
-        weight_shape = [cout, cin, kh, kw]
-        groups = draw(st.sampled_from([1, 2, cin]))
-        val = in_shape[1] * groups
-        assume(val == cin)
-        assume(in_shape[1] == weight_shape[1])
+        assume(cin % groups == 0)
+        assume(cout % groups == 0)
+        w_cin = (int)(cin / groups)
+        in_shape = [num, cin, height, width]
+        weight_shape = [cout, w_cin, kh, kw]
         assume(in_shape[2] >= weight_shape[2])
         assume(in_shape[3] >= weight_shape[3])
 
@@ -75,6 +101,9 @@ class TestConv2dOp(AutoScanTest):
         padding_algorithm = draw(st.sampled_from(["VALID", "SAME"]))
         strides = draw(st.sampled_from([[1, 1], [2, 2]]))
         data_format = "NCHW"
+        use_mkldnn = False
+        if self.target[0] == "X86":
+            use_mkldnn = True
 
         def generate_input(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
@@ -85,18 +114,23 @@ class TestConv2dOp(AutoScanTest):
         def generate_bias(*args, **kwargs):
             return np.random.random([cout]).astype(np.float32)
 
+        inputs_data = {
+            "input_data": TensorConfig(data_gen=partial(generate_input))
+        }
+        inputs_type = {"Input": ["input_data"], "Filter": ["filter_data"]}
+        if use_mkldnn:
+            inputs_data["bias_data"] = TensorConfig(
+                data_gen=partial(generate_bias))
+            inputs_type["Bias"] = ["bias_data"]
+
         conv_op = OpConfig(
             type="conv2d",
-            inputs={
-                "Input": ["input_data"],
-                "Filter": ["filter_data"],
-                "Bias": ["bias_data"]
-            },
+            inputs=inputs_type,
             outputs={"Output": ["output_data"]},
             attrs={
                 "strides": strides,
                 "paddings": paddings,
-                "use_mkldnn": True,
+                "use_mkldnn": use_mkldnn,
                 "padding_algorithm": padding_algorithm,
                 "groups": groups,
                 "dilations": dilations,
@@ -107,12 +141,9 @@ class TestConv2dOp(AutoScanTest):
         program_config = ProgramConfig(
             ops=[conv_op],
             weights={
-                "filter_data": TensorConfig(data_gen=partial(generate_filter)),
-                "bias_data": TensorConfig(data_gen=partial(generate_bias))
+                "filter_data": TensorConfig(data_gen=partial(generate_filter))
             },
-            inputs={
-                "input_data": TensorConfig(data_gen=partial(generate_input))
-            },
+            inputs=inputs_data,
             outputs=["output_data"])
         return program_config
 
