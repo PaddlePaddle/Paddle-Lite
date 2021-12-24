@@ -67,6 +67,9 @@ void ActivationImageCompute::setup_without_mps() {
         case 7:
             function_name_ = "swish";
             break;
+        case 8:
+            function_name_ = "exp";
+            break;
         case 10: {
             HardSwishMetalParam metal_param{
                 param.hard_swish_offset, param.hard_swish_threshold, param.hard_swish_scale};
@@ -106,7 +109,7 @@ void ActivationImageCompute::run_without_mps() {
     auto encoder = [backend commandEncoder];
     [encoder setTexture:input_buffer_->image() atIndex:(0)];
     [encoder setTexture:output_buffer_->image() atIndex:(1)];
-    if (function_name_ == "relu" || function_name_ == "leaky_relu" ||
+    if (function_name_ == "leaky_relu" || function_name_ == "relu6" ||
         function_name_ == "hard_swish" || function_name_ == "hard_sigmoid") {
         [encoder setBuffer:param_buffer_->buffer() offset:(0) atIndex:(0)];
     }
