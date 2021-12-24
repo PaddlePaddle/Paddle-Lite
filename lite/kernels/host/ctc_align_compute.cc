@@ -105,7 +105,6 @@ void CtcAlignCompute<T, PT>::Run() {
     const size_t level = 0;
 
     auto input_lod = input->lod();
-    input_lod = ToAbs(input->lod());
     input_lod = ToAbsOffset(input_lod);
     CHECK_EQ(input_dims[0], static_cast<int64_t>(input_lod[level].back()));
 
