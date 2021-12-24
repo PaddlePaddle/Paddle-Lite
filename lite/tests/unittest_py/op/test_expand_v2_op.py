@@ -42,8 +42,10 @@ class TestExpandV2Op(AutoScanTest):
         in_dtype = program_config.inputs["input_data"].dtype
 
         #wait for atuo_scan_base bug fix 
-        if "float32" != in_dtype:
+        if "float32" != in_dtype or "expand_shapes_tensor" in program_config.ops[
+                0].inputs:
             return False
+
         return True
 
     def sample_program_configs(self, draw):
@@ -53,7 +55,7 @@ class TestExpandV2Op(AutoScanTest):
         with_Shape = draw(st.sampled_from([True, False]))
 
         #todo daming5432 input vector tensor
-        with_expand_shape = draw(st.sampled_from([False]))
+        with_expand_shape = draw(st.booleans())
 
         def generate_shape(*args, **kwargs):
             return np.array(Shape).astype(np.int32)
