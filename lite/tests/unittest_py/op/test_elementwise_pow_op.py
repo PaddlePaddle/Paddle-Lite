@@ -36,8 +36,7 @@ class TestElementwisePowOp(AutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 4])
         self.enable_testing_on_place(
-            TargetType.ARM,
-            [PrecisionType.FP32, PrecisionType.INT32],
+            TargetType.ARM, [PrecisionType.FP32, PrecisionType.INT32],
             DataLayoutType.NCHW,
             thread=[1, 4])
         opencl_valid_places = [
@@ -98,14 +97,11 @@ class TestElementwisePowOp(AutoScanTest):
             input_data_type = draw(
                 st.sampled_from([np.float32, np.int32, np.int64]))
         elif self.get_target().upper() == 'ARM':
-            input_data_type = draw(
-                st.sampled_from([np.float32, np.int32]))
+            input_data_type = draw(st.sampled_from([np.float32, np.int32]))
         elif self.get_target().upper() == 'OPENCL':
-            input_data_type = draw(
-                st.sampled_from([np.float32]))   
+            input_data_type = draw(st.sampled_from([np.float32]))
         elif self.get_target().upper() == 'METAL':
-            input_data_type = draw(
-                st.sampled_from([np.float32]))
+            input_data_type = draw(st.sampled_from([np.float32]))
 
         def gen_input_data(*args, **kwargs):
             return np.random.randint(
@@ -137,13 +133,13 @@ class TestElementwisePowOp(AutoScanTest):
         return self.get_predictor_configs(), ["elementwise_pow"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-
         def teller1(program_config, predictor_config):
             return True
 
         self.add_ignore_check_case(
-            teller1, IgnoreReasons.PADDLE_NOT_IMPLEMENTED,
-            "The elementwise_pow op's result is different from paddle, because paddle has bug on this op, wait paddle fix!")
+            teller1, IgnoreReasons.ACCURACY_ERROR,
+            "The elementwise_pow op's result is different from paddle, because paddle has bug on this op, wait paddle fix!"
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)
