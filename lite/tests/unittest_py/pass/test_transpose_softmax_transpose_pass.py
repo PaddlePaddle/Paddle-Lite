@@ -56,6 +56,16 @@ class TestTransposeSoftmaxTransposeFusePass(FusePassAutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
+        # metal has diff(test case: transpose1_input_shape = [1, 1, 64, 64])
+        # metal_places = [
+        #     Place(TargetType.Metal, PrecisionType.FP32,
+        #           DataLayoutType.MetalTexture2DArray),
+        #     Place(TargetType.Metal, PrecisionType.FP16,
+        #           DataLayoutType.MetalTexture2DArray),
+        #     Place(TargetType.ARM, PrecisionType.FP32),
+        #     Place(TargetType.Host, PrecisionType.FP32)
+        # ]
+        # self.enable_testing_on_place(places=metal_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -70,6 +80,7 @@ class TestTransposeSoftmaxTransposeFusePass(FusePassAutoScanTest):
     def sample_program_configs(self, draw):
         dim = draw(st.sampled_from([2, 3, 4]))
         transpose_type = draw(st.sampled_from(["transpose", "transpose2"]))
+
         #default dim = 4
         transpose1_input_shape = draw(
             st.lists(
