@@ -34,6 +34,11 @@ if [ ${os_name} == "Darwin" ]; then
    ulimit -n 1024
 fi
 
+# url that stores third-party tar.gz file to accelerate third-party lib installation
+readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
+readonly THIRDPARTY_TAR=third-party-801f670.tar.gz
+readonly workspace=$PWD
+
 ####################################################################################################
 # 1. functions of prepare workspace before compiling
 ####################################################################################################
@@ -51,6 +56,20 @@ function prepare_workspace {
     DEBUG_TOOL_PATH_PREFIX=$build_dir/lite/tools/debug
     mkdir -p ${DEBUG_TOOL_PATH_PREFIX}
     cp $root_dir/lite/tools/debug/analysis_tool.py ${DEBUG_TOOL_PATH_PREFIX}/
+}
+
+# 1.2 prepare third-party lib
+function prepare_thirdparty {
+    if [ ! -d $workspace/third-party -o -f $workspace/$THIRDPARTY_TAR ]; then
+        rm -rf $workspace/third-party
+
+        if [ ! -f $workspace/$THIRDPARTY_TAR ]; then
+            wget $THIRDPARTY_URL/$THIRDPARTY_TAR
+        fi
+        tar xzf $THIRDPARTY_TAR
+    else
+        git submodule update --init --recursive
+    fi
 }
 
 ####################################################################################################
@@ -84,7 +103,7 @@ function build_android {
   rm -rf $build_directory && mkdir -p $build_directory
 
 
-  git submodule update --init --recursive
+  prepare_thirdparty
   prepare_workspace $WORKSPACE $build_directory
 
   cd $build_directory
