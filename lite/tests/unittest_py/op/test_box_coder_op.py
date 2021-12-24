@@ -47,36 +47,32 @@ class TestBoxCoderOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
-        # opencl demo
-        # opencl dosen't support code_type = encode_center_size case
-        # opencl other case run segment
-        # opencl_places = [
-        #     Place(TargetType.OpenCL, PrecisionType.FP16,
-        #           DataLayoutType.ImageDefault), Place(
-        #               TargetType.OpenCL, PrecisionType.FP16,
-        #               DataLayoutType.ImageFolder),
-        #     Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-        #     Place(TargetType.OpenCL, PrecisionType.Any,
-        #           DataLayoutType.ImageDefault), Place(
-        #               TargetType.OpenCL, PrecisionType.Any,
-        #               DataLayoutType.ImageFolder),
-        #     Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-        #     Place(TargetType.Host, PrecisionType.FP32)
-        # ]
-        # self.enable_testing_on_place(places=opencl_places)
+
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        # if predictor_config.target() == TargetType.OpenCL:
-        #     if program_config.ops[0].attrs[
-        #             "code_type"] == "encode_center_size":
-        #         # OpenCL doesn't support
-        #         return False
-        #     else:
-        #         # run segmentation
-        #         return False
-        # else:
+        if predictor_config.target() == TargetType.OpenCL:
+            if program_config.ops[0].attrs[
+                    "code_type"] == "encode_center_size" or program_config.ops[
+                        0].attrs["axis"] != 0 or program_config.ops[0].attrs[
+                            "box_normalized"] == False or "PriorBoxVar" not in program_config.ops[
+                                0].inputs:
+                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -151,7 +147,14 @@ class TestBoxCoderOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        target_str = self.get_target()
+        max_examples = 25
+        if target_str == "OpenCL":
+            # Make sure to generate enough valid cases for OpenCL
+            max_examples = 600
+
+        self.run_and_statis(
+            quant=False, min_success_num=25, max_examples=max_examples)
 
 
 if __name__ == "__main__":

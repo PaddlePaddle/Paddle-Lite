@@ -34,19 +34,16 @@ class TestConv2dOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
-        self.enable_testing_on_place(
-            TargetType.ARM,
-            [PrecisionType.FP32, PrecisionType.FP16, PrecisionType.INT8],
-            DataLayoutType.NCHW,
-            thread=[1, 4])
+        # self.enable_testing_on_place(
+        #     TargetType.ARM,
+        #     [PrecisionType.FP32, PrecisionType.FP16, PrecisionType.INT8],
+        #     DataLayoutType.NCHW,
+        #     thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        if predictor_config.target() == TargetType.ARM:
-            return False
-        else:
-            return True
+        return True
 
     def sample_program_configs(self, draw):
         in_shape = draw(
