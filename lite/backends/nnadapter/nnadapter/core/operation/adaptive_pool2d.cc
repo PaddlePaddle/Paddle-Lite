@@ -28,11 +28,11 @@ int PrepareAdaptivePool2D(hal::Operation* operation) {
   // Infer the shape and type of output operands
   CopyOperandTypeExceptQuantParams(&output_operand->type, input_operand->type);
   auto& out_dimensions = output_operand->type.dimensions;
-  out_dimensions.data[2] = kernel_height;
-  out_dimensions.data[3] = kernel_width;
+  out_dimensions.data[2] = output_height;
+  out_dimensions.data[3] = output_width;
   for (uint32_t i = 0; i < out_dimensions.dynamic_count; i++) {
-    out_dimensions.dynamic_data[i][2] = kernel_height;
-    out_dimensions.dynamic_data[i][3] = kernel_width;
+    out_dimensions.dynamic_data[i][2] = output_height;
+    out_dimensions.dynamic_data[i][3] = output_width;
   }
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
