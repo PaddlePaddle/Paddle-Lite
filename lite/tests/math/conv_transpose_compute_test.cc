@@ -559,7 +559,7 @@ TEST(TestConvRand, test_conv_transpose_fp16_rand) {
                               }
                               std::vector<DDim> dims;
                               DDim weights_dim({cin, cout / g, kh, kw});
-                              for (auto& batch : {1}) {
+                              for (auto& batch : {2}) {
                                 for (auto& h : {1, 3, 19, 32, 28}) {
                                   dims.push_back(DDim({batch, cin, h, h}));
                                 }
