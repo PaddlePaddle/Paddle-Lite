@@ -40,9 +40,9 @@ class TestMulOp(AutoScanTest):
         shape0 = draw(st.integers(min_value=1, max_value=32))
         shape1 = draw(st.integers(min_value=1, max_value=32))
         shape2 = draw(st.integers(min_value=1, max_value=32))
-        shape3 = draw(st.integers(min_value=1, max_value=32))
-        shape4 = draw(st.integers(min_value=1, max_value=32))
-        shape5 = draw(st.integers(min_value=1, max_value=32))
+        shape3 = draw(st.integers(min_value=1, max_value=16))
+        shape4 = draw(st.integers(min_value=1, max_value=16))
+        shape5 = draw(st.integers(min_value=1, max_value=16))
         shape6 = shape4 * shape5
         case = draw(st.sampled_from([1, 2, 3, 4]))
         if case == 1:
