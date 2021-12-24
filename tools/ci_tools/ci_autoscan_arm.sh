@@ -1,4 +1,5 @@
-tart the CI task of unittest for op and pass.
+#!/bin/bash
+# Start the CI task of unittest for op and pass.
 set -x
 set -e
 
@@ -10,9 +11,10 @@ PYTHON_VERSION=3.9
 # Absolute path of Paddle-Lite source code.
 SHELL_FOLDER=$(cd "$(dirname "$0")";pwd)
 WORKSPACE=${SHELL_FOLDER%tools/ci_tools*}
-# Common options
+# Common options, use commas to separate them, such as "ARM,OpenCL,Metal" or "ARM,OpenCL" or "ARM,Metal".
 TARGET_LIST="ARM,OpenCL,Metal"
-
+# Skip op or pass, use | to separate them, such as "expand_op" or "expand_op|abc_pass", etc.
+SKIP_LIST="abc_op|abc_pass"
 
 ####################################################################################################
 # Functions of operate unit test
@@ -22,13 +24,13 @@ TARGET_LIST="ARM,OpenCL,Metal"
 #   WORKSPACE
 ####################################################################################################
 function auto_scan_test {
-  target_name=$1
+  local target_name=$1
 
   cd $WORKSPACE/lite/tests/unittest_py/rpc_service
   sh start_rpc_server.sh
 
   cd $WORKSPACE/lite/tests/unittest_py/op/
-  unittests=$(ls)
+  unittests=$(ls | egrep -v $SKIP_LIST)
   for test in ${unittests[@]}; do
     if [[ "$test" =~ py$ ]];then
       python3.8 $test --target=$target_name
@@ -36,7 +38,7 @@ function auto_scan_test {
   done
 
   cd $WORKSPACE/lite/tests/unittest_py/pass/
-  unittests=$(ls)
+  unittests=$(ls | egrep -v $SKIP_LIST)
   for test in ${unittests[@]}; do
     if [[ "$test" =~ py$ ]];then
       python3.8 $test --target=$target_name
@@ -47,7 +49,7 @@ function auto_scan_test {
 ####################################################################################################
 # Functions of compiling test.
 # Arguments:
-#   --target_list
+#   --target_list: can be ARM,OpenCL,Metal or ARM,OpenCL or ARM,Metal
 # Globals:
 #   WORKSPACE, PYTHON_VERSION
 ####################################################################################################
@@ -82,23 +84,24 @@ function compile_publish_inference_lib {
   # Remove Compiling Cache
   rm -rf build.macos.*
 
-  # Step1. Compiling python installer on mac
-  cmd_line="./lite/tools/build_macos.sh --with_python=ON --with_opencl=$build_opencl --with_metal=$build_metal --with_arm82_fp16=ON --python_version=$PYTHON_VERSION arm64"
+  # Step1. Compiling python installer on mac M1
+  local cmd_line="./lite/tools/build_macos.sh --with_python=ON --with_opencl=$build_opencl --with_metal=$build_metal --with_arm82_fp16=ON --python_version=$PYTHON_VERSION arm64"
   $cmd_line
-  # Step2. Checking results: cplus and python inference lib.
-  build_dir=build.macos.armmacos.armv8.metal.opencl
 
-  if [ -d ${build_dir}/inference_lite_lib.armmacos.armv8.opencl.metal/python/install/dist ]; then
-    #install deps
-    python$PYTHON_VERSION -m pip install --force-reinstall  ${build_dir}/inference_lite_lib.armmacos.armv8.opencl.metal/python/install/dist/*.whl
-    python3.8 -m pip install -r ./lite/tests/unittest_py/requirements.txt
-  else
+  # Step2. Checking results: cplus and python inference lib
+  local whl_path=$(find ./build.macos.armmacos.armv8.* -name *whl)
+  if [[ -z "$whl_path" ]]; then
     # Error message.
     echo "**************************************************************************************"
+    echo -e "$whl_path not found!"
     echo -e "Compiling task failed on the following instruction:\n $cmd_line"
     echo "**************************************************************************************"
     exit 1
   fi
+
+  # Step3. Install whl and its depends
+  python$PYTHON_VERSION -m pip install --force-reinstall $whl_path
+  python3.8 -m pip install -r ./lite/tests/unittest_py/requirements.txt
 }
 
 function run_test() {
@@ -110,12 +113,28 @@ function run_test() {
   done
 }
 
+function pipeline() {
+  # Compile
+  compile_publish_inference_lib --target_list=$1
+
+  # Run unittests
+  run_test $1
+
+  # Uninstall paddlelite
+  python$PYTHON_VERSION -m pip uninstall -y paddlelite
+  echo "Success for targets:" $1
+}
+
 function main() {
   # Parse command line.
   for i in "$@"; do
     case $i in
       --target_list=*)
         TARGET_LIST="${i#*=}"
+        shift
+        ;;
+      --skip_list=*)
+        SKIP_LIST="${i#*=}"
         shift
         ;;
       *)
@@ -125,15 +144,9 @@ function main() {
     esac
   done
 
-  # Compile
-  compile_publish_inference_lib --target_list=$TARGET_LIST
+  pipeline $TARGET_LIST
 
-  # Run unittests
-  run_test $TARGET_LIST
-
-  # Uninstall paddlelite
-  python$PYTHON_VERSION -m pip uninstall -y paddlelite
-  echo "Success."
+  echo "Success for targets:" $TARGET_LIST
 }
 
 main $@

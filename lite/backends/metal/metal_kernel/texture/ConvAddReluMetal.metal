@@ -18,21 +18,6 @@
 
 using namespace metal;
 
-#pragma mark -
-
-inline ftype4 get_bias(uint3 gid,
-    constant ElementwiseAddParam& addParam,
-    texture2d_array<ftype, access::sample> biasTexture) {
-    ftype4 output = ftype4(0.0);
-    if (addParam.fast == 1) {
-        output = biasTexture.read(gid.xy, gid.z);
-    } else if (addParam.addByChannel == 1) {
-        output = biasTexture.read(uint2(0, 0), gid.z);
-    } else {
-    }
-    return output;
-}
-
 #pragma mark - conv
 
 kernel void conv_1x1(texture2d_array<ftype, access::sample> inTexture[[texture(0)]],
@@ -54,6 +39,7 @@ kernel void conv_1x1(texture2d_array<ftype, access::sample> inTexture[[texture(0
 
     uint input_arr_size = inTexture.get_array_size();
     uint weithTo = gid.z * kernelHXW * input_arr_size * 4;
+    uint weights_len = kernelHXW * input_arr_size * param.oC - 1;
 
     ftype4 output = ftype4(0.0);
     if (param.hasAddOp) {
@@ -63,16 +49,21 @@ kernel void conv_1x1(texture2d_array<ftype, access::sample> inTexture[[texture(0
     ftype4 input;
     for (uint i = 0; i < input_arr_size; ++i) {
         input = inTexture.sample(sample, float2(posInInput.x, posInInput.y), i);
-        ftype4 weight_x = weights[weithTo + 0 * kernelHXW * input_arr_size + i];
+
+        uint x = min(weithTo + 0 * kernelHXW * input_arr_size + i, weights_len);
+        ftype4 weight_x = weights[x];
         output.x += dot(input, weight_x);
 
-        ftype4 weight_y = weights[weithTo + 1 * kernelHXW * input_arr_size + i];
+        uint y = min(weithTo + 1 * kernelHXW * input_arr_size + i, weights_len);
+        ftype4 weight_y = weights[y];
         output.y += dot(input, weight_y);
 
-        ftype4 weight_z = weights[weithTo + 2 * kernelHXW * input_arr_size + i];
+        uint z = min(weithTo + 2 * kernelHXW * input_arr_size + i, weights_len);
+        ftype4 weight_z = weights[z];
         output.z += dot(input, weight_z);
 
-        ftype4 weight_w = weights[weithTo + 3 * kernelHXW * input_arr_size + i];
+        uint w = min(weithTo + 3 * kernelHXW * input_arr_size + i, weights_len);
+        ftype4 weight_w = weights[w];
         output.w += dot(input, weight_w);
     }
 

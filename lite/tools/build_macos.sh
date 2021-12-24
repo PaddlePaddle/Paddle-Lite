@@ -231,7 +231,7 @@ function make_x86 {
     BUILD_EXTRA=ON
     LITE_ON_TINY_PUBLISH=OFF
   fi
- 
+
   if [ ! -d third-party ]; then
     git checkout third-party
   fi
@@ -253,7 +253,7 @@ function make_x86 {
             -DLITE_WITH_X86=ON  \
             -DWITH_LITE=ON \
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=${WITH_LIGHT_WEIGHT_FRAMEWORK} \
-            -DLITE_ON_TINY_PUBLISH=${LITE_ON_TINY_PUBLISH} \
+            -DLITE_ON_TINY_PUBLISH=OFF \
             -DLITE_WITH_PROFILE=${WITH_PROFILE} \
             -DLITE_WITH_PRECISION_PROFILE=${WITH_PRECISION_PROFILE} \
             -DLITE_WITH_ARM=OFF \
