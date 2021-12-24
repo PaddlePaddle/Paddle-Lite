@@ -12,29 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "core/operation/pow.h"
-#include "driver/huawei_ascend_npu/converter/converter.h"
+#include "core/operation/softplus.h"
+#include "core/hal/types.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/modeling.h"
+#include "utility/utility.h"
 
 namespace nnadapter {
-namespace huawei_ascend_npu {
+namespace operation {
 
-int ConvertPow(Converter* converter, hal::Operation* operation) {
-  POW_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int PrepareSoftplus(hal::Operation* operation) {
+  SOFTPLUS_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
-  // Convert to GE operators
-  auto input_operator = converter->GetMappedOperator(input_operand);
-  if (!input_operator) {
-    input_operator = converter->ConvertOperand(input_operand);
-  }
-  auto factor_operator = converter->ConvertOperand(factor_operand);
-  auto pow_op = converter->AddOperator<ge::op::Pow>(output_operand);
-  SET_INPUT(pow_op, x1, input_operator);
-  SET_INPUT(pow_op, x2, factor_operator);
-  MAP_OUTPUT(pow_op, y, output_operand);
+  // Infer the shape and type of output operands
+  CopyOperandTypeExceptQuantParams(&output_operand->type, input_operand->type);
+  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
 }
 
-}  // namespace huawei_ascend_npu
+}  // namespace operation
 }  // namespace nnadapter
