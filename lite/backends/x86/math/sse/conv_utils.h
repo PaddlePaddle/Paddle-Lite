@@ -14,9 +14,9 @@
 
 #pragma once
 
-#include <vector>
 #include <smmintrin.h>
 #include <xmmintrin.h>
+#include <vector>
 #include "lite/core/tensor.h"
 
 namespace paddle {
@@ -24,12 +24,15 @@ namespace lite {
 namespace x86 {
 namespace math {
 
-inline void transpose4_ps(__m128& row0, __m128& row1, __m128& row2, __m128& row3) {
+inline void transpose4_ps(__m128& row0,
+                          __m128& row1,
+                          __m128& row2,
+                          __m128& row3) {
   __m128 tmp3, tmp2, tmp1, tmp0;
-  tmp0 = _mm_unpacklo_ps((row0), (row1)); 
-  tmp2 = _mm_unpacklo_ps((row2), (row3)); 
-  tmp1 = _mm_unpackhi_ps((row0), (row1)); 
-  tmp3 = _mm_unpackhi_ps((row2), (row3)); 
+  tmp0 = _mm_unpacklo_ps((row0), (row1));
+  tmp2 = _mm_unpacklo_ps((row2), (row3));
+  tmp1 = _mm_unpackhi_ps((row0), (row1));
+  tmp3 = _mm_unpackhi_ps((row2), (row3));
   row0 = _mm_movelh_ps(tmp0, tmp2);
   row1 = _mm_movehl_ps(tmp2, tmp0);
   row2 = _mm_movelh_ps(tmp1, tmp3);
@@ -37,16 +40,16 @@ inline void transpose4_ps(__m128& row0, __m128& row1, __m128& row2, __m128& row3
 }
 
 void packC4_common(const float* din,
-                       float* dout,
-                       const std::vector<int>& pad,
-                       int h_in,
-                       int w_in,
-                       int channel);
+                   float* dout,
+                   const std::vector<int>& pad,
+                   int h_in,
+                   int w_in,
+                   int channel);
 
 void unpackC4_common(const float* din,
-                         float* dout,
-                         int size_out_channel,
-                         int channel);
+                     float* dout,
+                     int size_out_channel,
+                     int channel);
 }  // namespace math
 }  // namespace x86
 }  // namespace lite

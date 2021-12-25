@@ -1,10 +1,10 @@
-         /* Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+/* Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,11 +21,11 @@ namespace x86 {
 namespace math {
 
 void packC4_common(const float* din,
-                       float* dout,
-                       const std::vector<int>& pad,
-                       int h_in,
-                       int w_in,
-                       int channel) {
+                   float* dout,
+                   const std::vector<int>& pad,
+                   int h_in,
+                   int w_in,
+                   int channel) {
   int top = pad[0];
   int bottom = pad[1];
   int left = pad[2];
@@ -90,7 +90,7 @@ void packC4_common(const float* din,
           if (channel - c > 1) _row1 = _mm_loadu_ps(dinr1);
           if (channel - c > 2) _row2 = _mm_loadu_ps(dinr2);
           if (channel - c > 3) _row3 = _mm_loadu_ps(dinr3);
-          transpose4_ps(_row0, _row1, _row2, _row3);                                          
+          transpose4_ps(_row0, _row1, _row2, _row3);
           _mm_storeu_ps(douth, _row0);
           _mm_storeu_ps(douth + 4, _row1);
           _mm_storeu_ps(douth + 8, _row2);
@@ -119,9 +119,9 @@ void packC4_common(const float* din,
 }
 
 void unpackC4_common(const float* din,
-                         float* dout,
-                         int size_out_channel,
-                         int channel) {
+                     float* dout,
+                     int size_out_channel,
+                     int channel) {
   int block_channel = 4;
   float* dout_init = dout;
 
@@ -183,7 +183,7 @@ void unpackC4_common(const float* din,
       }
     }
   }
-}    
+}
 }  // namespace math
 }  // namespace x86
 }  // namespace lite
