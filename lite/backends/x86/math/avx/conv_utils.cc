@@ -732,7 +732,7 @@ void pack_padding8_m256(lite::Tensor* input,
   }
 }
 
-void packC8_with_Cleft(const float* din,
+void packC8_common(const float* din,
                        float* dout,
                        const std::vector<int>& pad,
                        int h_in,
@@ -869,7 +869,7 @@ void packC8_with_Cleft(const float* din,
   }
 }
 
-void unpackC8_with_Cleft(const float* din,
+void unpackC8_common(const float* din,
                          float* dout,
                          int size_out_channel,
                          int channel) {
