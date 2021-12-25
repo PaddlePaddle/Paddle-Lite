@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-'''
+
 import sys
 sys.path.append('../')
 
@@ -64,7 +64,7 @@ class TestScaleOp(AutoScanTest):
             Place(TargetType.ARM, PrecisionType.FP32),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
-        self.enable_testing_on_place(places=metal_places)
+        #self.enable_testing_on_place(places=metal_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -78,10 +78,6 @@ class TestScaleOp(AutoScanTest):
 
         if "ScaleTensor" in program_config.inputs:
             print("ScaleTensor as Input is not supported on Paddle Lite.")
-            return False
-
-        # Metal is not support by now
-        if target_type == TargetType.Metal:
             return False
 
         if target_type in [TargetType.OpenCL, TargetType.Metal]:
@@ -170,4 +166,3 @@ class TestScaleOp(AutoScanTest):
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
-'''
