@@ -129,11 +129,7 @@ class TestReshape2MatmulFusePass(FusePassAutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        if self.get_target() == 'OpenCL':
-            return self.get_predictor_configs(
-            ), ['io_copy', 'layout', 'mul', 'layout', 'io_copy'], (1e-5, 1e-5)
-        else:
-            return self.get_predictor_configs(), ['mul'], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ['mul'], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
