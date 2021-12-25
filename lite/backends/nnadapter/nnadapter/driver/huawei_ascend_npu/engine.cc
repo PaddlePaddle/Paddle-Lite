@@ -16,7 +16,9 @@
 #include <utility>
 #include "driver/huawei_ascend_npu/optimizer/fix_multiple_outputs_ops.h"
 #include "driver/huawei_ascend_npu/optimizer/fix_no_inputs_ops.h"
-#include "driver/huawei_ascend_npu/optimizer/fix_op_constraints.h"
+#include "driver/huawei_ascend_npu/optimizer/fix_quant_ops.h"
+#include "driver/huawei_ascend_npu/optimizer/fix_reduce_ops_scalar_output.h"
+#include "optimizer/fuse_matmul_add_into_fully_connected.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
@@ -33,25 +35,41 @@ Context::Context(void* device, const char* properties) : device_(device) {
   // Extract the runtime parameters from the context properties
   NNADAPTER_LOG(INFO) << "properties: " << std::string(properties);
   auto key_values = GetKeyValues(properties);
-  if (key_values.count("HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS")) {
-    auto selected_device_ids = string_split<int>(
-        key_values["HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS"], ",");
-    NNADAPTER_CHECK_GE(selected_device_ids.size(), 1);
-    // Only supports specifying one device
-    if (selected_device_ids.size() > 1) {
-      NNADAPTER_LOG(WARNING) << "Only supports specifying one device, so the "
-                                "first one is selected and others will be "
-                                "ignored.";
-    }
-    selected_device_ids_.push_back(selected_device_ids[0]);
+  // HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS
+  std::string selected_device_ids;
+  if (key_values.count(HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS)) {
+    selected_device_ids = key_values[HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS];
+  } else {
+    selected_device_ids =
+        GetStringFromEnv(HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS);
   }
-  if (selected_device_ids_.empty()) {
-    selected_device_ids_.push_back(0);
+  if (!selected_device_ids.empty()) {
+    selected_device_ids_ = string_split<int>(selected_device_ids, ",");
+  } else {
+    selected_device_ids_ = std::vector<int>({0});
+  }
+  NNADAPTER_CHECK_GE(selected_device_ids_.size(), 1);
+  // Only supports specifying one device
+  if (selected_device_ids_.size() > 1) {
+    NNADAPTER_LOG(WARNING) << "Only supports specifying one device, so the "
+                              "first one is selected and others will be "
+                              "ignored.";
+    auto first_device_id = selected_device_ids_[0];
+    selected_device_ids_.clear();
+    selected_device_ids_.push_back(first_device_id);
   }
   NNADAPTER_LOG(INFO) << "selected device ids: ";
   for (auto& selected_device_id : selected_device_ids_) {
     NNADAPTER_LOG(INFO) << selected_device_id;
   }
+  // HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH
+  if (key_values.count(HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH)) {
+    profiling_file_path_ = key_values[HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH];
+  } else {
+    profiling_file_path_ =
+        GetStringFromEnv(HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH);
+  }
+  NNADAPTER_LOG(INFO) << "profiling path: " << profiling_file_path_;
 }
 
 Context::~Context() {}
@@ -84,7 +102,9 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
     FixMultipleOutputsOps(model);
     FixNoInputsOps(model);
-    NNADAPTER_CHECK_EQ(FixOpConstraints(model), NNADAPTER_NO_ERROR);
+    FixReduceOpsScalarOutput(model);
+    FuseMatMulAddIntoFullyConnected(model);
+    FixQuantOps(model);
     NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
     // Convert a NNAdapter model to a GE graph
     Converter converter(&operators_);
@@ -133,8 +153,9 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
   NNADAPTER_CHECK(model_buffer);
   // Load a CANN OM model from a buffer, and create a CANN model manager
   // client(from CANN service) for inference
-  model_client_ =
-      LoadOMModelFromBuffer(*model_buffer, context_->GetFirstDeviceID());
+  model_client_ = LoadOMModelFromBuffer(*model_buffer,
+                                        context_->GetFirstDeviceID(),
+                                        context_->GetProfilingFilePath());
   if (!model_client_) {
     NNADAPTER_LOG(FATAL) << "Failed to load a CANN OM model from a buffer!";
     return NNADAPTER_DEVICE_INTERNAL_ERROR;

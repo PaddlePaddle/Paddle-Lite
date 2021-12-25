@@ -76,7 +76,6 @@ bool TensorArrayToTensorOpLite::InferShapeImpl() const {
 
 bool TensorArrayToTensorOpLite::AttachImpl(const cpp::OpDesc &op_desc,
                                            lite::Scope *scope) {
-  AttachParam(&param_);
   auto out = op_desc.Output("Out").front();
   auto outIndex = op_desc.Output("OutIndex").front();
 

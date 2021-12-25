@@ -25,7 +25,6 @@ namespace xpu {
 void SequenceTopkAvgPoolingCompute::PrepareForRun() {
   lod_xpu_guard_ =
       TargetWrapperXPU::MallocScratchPad(4 * XPU_MAX_LOD_SIZE * sizeof(int));
-  in_lod_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
   row_lod_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
   col_lod_cpu.reset(new int[XPU_MAX_LOD_SIZE]);
 }
@@ -44,7 +43,6 @@ void SequenceTopkAvgPoolingCompute::Run() {
   auto topks = param.topks;
   auto k_num = topks.size();
   auto max_k = topks[topks.size() - 1];
-  auto in_lod = in->lod()[0];
 
   auto row_lod = row->lod()[0];
   auto col_lod = col->lod()[0];
@@ -69,23 +67,15 @@ void SequenceTopkAvgPoolingCompute::Run() {
   auto in_data = in->data<float>();
   auto out_data = out->mutable_data<float>(TARGET(kXPU));
 
-  int* in_lod_xpu = reinterpret_cast<int*>(lod_xpu_guard_->addr_);
-  int* row_lod_xpu = in_lod_xpu + in_lod.size();
+  int* row_lod_xpu = reinterpret_cast<int*>(lod_xpu_guard_->addr_);
   int* col_lod_xpu = row_lod_xpu + row_lod.size();
   int* topks_xpu = col_lod_xpu + col_lod.size();
-  for (int i = 0; i < in_lod.size(); ++i) {
-    in_lod_cpu[i] = in_lod[i];
-  }
   for (int i = 0; i < row_lod.size(); ++i) {
     row_lod_cpu[i] = row_lod[i];
   }
   for (int i = 0; i < col_lod.size(); ++i) {
     col_lod_cpu[i] = col_lod[i];
   }
-  XPU_CALL(xpu_memcpy(in_lod_xpu,
-                      in_lod_cpu.get(),
-                      in_lod.size() * sizeof(int),
-                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
   XPU_CALL(xpu_memcpy(row_lod_xpu,
                       row_lod_cpu.get(),
                       row_lod.size() * sizeof(int),
@@ -98,18 +88,16 @@ void SequenceTopkAvgPoolingCompute::Run() {
                       topks.data(),
                       topks.size() * sizeof(int),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+  int r = xdnn::sequence_topk_avg_pooling<float, int>(
+      ctx.GetRawContext(),
+      in_data,
+      out_data,
+      pos_data,
+      channel_num,
+      {row_lod_cpu.get(), static_cast<int>(row_lod.size()), row_lod_xpu},
+      {col_lod_cpu.get(), static_cast<int>(col_lod.size()), col_lod_xpu},
+      {topks.data(), static_cast<int>(k_num), topks_xpu});
 
-  int r = xdnn::sequence_topk_avg_pooling(ctx.GetRawContext(),
-                                          in_data,
-                                          out_data,
-                                          pos_data,
-                                          batch_size,
-                                          channel_num,
-                                          in_lod_xpu,
-                                          row_lod_xpu,
-                                          col_lod_xpu,
-                                          topks_xpu,
-                                          k_num);
   CHECK_EQ(r, 0);
 }
 

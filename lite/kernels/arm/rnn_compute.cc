@@ -684,6 +684,7 @@ static void RunRnnLayer(ARMContext* ctx,
 void RnnCompute::Run() {
   auto& param = this->Param<operators::RnnParam>();
   auto& ctx = this->ctx_->As<ARMContext>();
+  param.Out->mutable_data<float>();
   std::string mode = param.mode;
   auto input = param.Input;
   auto weight_list = param.WeightList;
@@ -700,7 +701,7 @@ void RnnCompute::Run() {
   } else if ("GRU" == mode) {
     gate_num = 3;
   } else {
-    LOG(FATAL) << "X86 RNN ERROR: unsupport mode except gru and lstm,"
+    LOG(FATAL) << "ARM RNN ERROR: unsupport mode except gru and lstm,"
                   " present mode is "
                << mode;
     return;

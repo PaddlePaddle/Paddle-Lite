@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ namespace operation {
   /* Bias */                                                                   \
   auto bias_operand = input_operands[2];                                       \
   NNADAPTER_VLOG(5) << "bias: " << OperandToString(bias_operand);              \
-  /* Auto pad: not support auto_pad. */                                        \
+  /* Auto pad */                                                               \
   auto auto_pad = static_cast<NNAdapterAutoPadCode>(                           \
       *reinterpret_cast<int32_t*>(input_operands[3]->buffer));                 \
   NNADAPTER_VLOG(5) << "auto_pad: " << AutoPadCodeToString(auto_pad);          \

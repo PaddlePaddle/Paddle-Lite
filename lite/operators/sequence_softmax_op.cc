@@ -34,7 +34,6 @@ bool SequenceSoftmaxOp::InferShapeImpl() const {
 
 bool SequenceSoftmaxOp::AttachImpl(const cpp::OpDesc &opdesc,
                                    lite::Scope *scope) {
-  AttachParam(&param_);
   param_.X =
       scope->FindVar(opdesc.Input("X").front())->GetMutable<lite::Tensor>();
   param_.Out =

@@ -17,7 +17,6 @@
 #include "lite/backends/metal/metal_debug.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
-#include "lite/kernels/metal/image_op/metal_params.h"
 
 namespace paddle {
 namespace lite {
@@ -65,7 +64,19 @@ void SplitImageCompute::run_without_mps() {
     }
     [encoder setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(0)];
 
-    [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
+    if (split_v_ != "zz") {
+        [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
+    } else {
+        NSUInteger z = 0;
+        z += (metal_param_.vdim[0] + 3) / 4 * 4;
+        z += (metal_param_.vdim[1] + 3) / 4 * 4;
+        z += (metal_param_.vdim[2] + 3) / 4 * 4;
+        z += (metal_param_.vdim[3] + 3) / 4 * 4;
+
+        [backend dispatchEncoder:encoder
+                         pipline:pipline
+                    threadsShape:@[ @(z), @(outTexture.height), @(outTexture.width) ]];
+    }
     [backend commit];
 }
 
@@ -73,7 +84,8 @@ void SplitImageCompute::setup_without_mps() {
     const auto& param = this->Param<param_t>();
 
     auto outputs = param.output;
-    size_t num = outputs.size();
+    int num = outputs.size();
+    int vaxis = 0;
     int irank = (int)input_buffer_->tensor_dim_.size();
 
     // intput dims: CPU NCHW
@@ -146,18 +158,35 @@ void SplitImageCompute::setup_without_mps() {
         throw std::logic_error("ERROR: unsupported split type");
     }
 
+    if (v_ == "normal")
+        vaxis = 0;
+    else if (v_ == "x")
+        vaxis = 1;
+    else if (v_ == "y")
+        vaxis = 2;
+    else if (v_ == "z")
+        vaxis = 3;
+    else if (v_ == "zz")
+        vaxis = 4;
+    split_v_ = v_;
+
     SplitMetalParam metal_param = {{idm[0], idm[1], idm[2], idm[3]},
         static_cast<int>(axis),
         0,
+        num,
+        vaxis,
         {trans[0], trans[1], trans[2], trans[3]},
         {(int)vdim[0], (int)vdim[1], (int)vdim[2], (int)vdim[3]}};
+    metal_param_ = metal_param;
 
     params_buffer_ =
         std::make_shared<MetalBuffer>(metal_context_, sizeof(metal_param), &metal_param);
 
-    std::string function_name =
-        "split_" + std::to_string(irank) + "_" + std::to_string(num) + "_" + v_;
-    function_name_ = function_name;
+    if (v_ == "zz")
+        function_name_ = "split_zz";
+    else
+        function_name_ = "split";
+
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     pipline_ = [backend pipline:function_name_];

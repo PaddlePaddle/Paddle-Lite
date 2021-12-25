@@ -65,13 +65,6 @@ void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
       raw_predictor_->scope(), config.subgraph_model_cache_dir());
 #endif
 
-#ifdef LITE_WITH_APU
-  // Store the model-level configuration into scope for kernels, and use
-  // exe_scope to store the execution-level configuration
-  Context<TargetType::kAPU>::SetSubgraphModelCacheDir(
-      raw_predictor_->scope(), config.subgraph_model_cache_dir());
-#endif
-
 #ifdef LITE_WITH_RKNPU
   // Store the model-level configuration into scope for kernels, and use
   // exe_scope to store the execution-level configuration
@@ -92,20 +85,8 @@ void LightPredictorImpl::Init(const lite_api::MobileConfig& config) {
       raw_predictor_->scope(), config.nnadapter_model_cache_dir());
   Context<TargetType::kNNAdapter>::SetNNAdapterModelCacheBuffers(
       raw_predictor_->scope(), config.nnadapter_model_cache_buffers());
-  Context<TargetType::kNNAdapter>::SetNNAdapterSubgraphPartitionConfigPath(
-      raw_predictor_->scope(),
-      config.nnadapter_subgraph_partition_config_path());
-  Context<TargetType::kNNAdapter>::SetNNAdapterSubgraphPartitionConfigBuffer(
-      raw_predictor_->scope(),
-      config.nnadapter_subgraph_partition_config_buffer());
 #endif
 
-#ifdef LITE_WITH_HUAWEI_ASCEND_NPU
-  Context<TargetType::kHuaweiAscendNPU>::SetHuaweiAscendDeviceID(
-      config.get_device_id());
-  Context<TargetType::kHuaweiAscendNPU>::SetSubgraphModelCacheDir(
-      config.subgraph_model_cache_dir());
-#endif
 #if (defined LITE_WITH_X86) && (defined PADDLE_WITH_MKLML) && \
     !(defined LITE_ON_MODEL_OPTIMIZE_TOOL)
   int num_threads = config.x86_math_num_threads();
@@ -125,6 +106,18 @@ LightPredictorImpl::~LightPredictorImpl() {
 #ifdef LITE_USE_THREAD_POOL
   ThreadPool::ReleaseThreadPool();
 #endif
+}
+
+std::unique_ptr<lite_api::Tensor> LightPredictorImpl::GetInputByName(
+    const std::string& name) {
+  return std::unique_ptr<lite_api::Tensor>(
+      new lite_api::Tensor(raw_predictor_->GetInputByName(name)));
+}
+
+std::unique_ptr<const lite_api::Tensor> LightPredictorImpl::GetOutputByName(
+    const std::string& name) const {
+  return std::unique_ptr<lite_api::Tensor>(
+      new lite_api::Tensor(raw_predictor_->GetOutputByName(name)));
 }
 
 std::unique_ptr<lite_api::Tensor> LightPredictorImpl::GetInput(int i) {
@@ -162,11 +155,6 @@ std::unique_ptr<const lite_api::Tensor> LightPredictorImpl::GetTensor(
     const std::string& name) const {
   return std::unique_ptr<const lite_api::Tensor>(
       new lite_api::Tensor(raw_predictor_->GetTensor(name)));
-}
-std::unique_ptr<lite_api::Tensor> LightPredictorImpl::GetInputByName(
-    const std::string& name) {
-  return std::unique_ptr<lite_api::Tensor>(
-      new lite_api::Tensor(raw_predictor_->GetInputByName(name)));
 }
 
 std::vector<std::string> LightPredictorImpl::GetInputNames() {

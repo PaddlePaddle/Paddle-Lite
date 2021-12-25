@@ -74,17 +74,14 @@ void Pad2dImageCompute::setup_without_mps() {
     } else {
         LOG(FATAL) << "pad2d: only supports : 1.same shapes 2.by channel.";
     }
-    
-    Pad2dParam pad_params = {
-        static_cast<uint16_t>(param.paddings[0]),
+
+    Pad2dParam pad_params = {static_cast<uint16_t>(param.paddings[0]),
         static_cast<uint16_t>(param.paddings[1]),
         static_cast<uint16_t>(param.paddings[2]),
         static_cast<uint16_t>(param.paddings[3]),
         param.pad_value,
-        static_cast<uint16_t>(mode)
-    };
-    params_buffer_ =
-        std::make_shared<MetalBuffer>(metal_context_, sizeof(pad_params), &pad_params);
+        static_cast<uint16_t>(mode)};
+    params_buffer_ = std::make_shared<MetalBuffer>(metal_context_, sizeof(pad_params), &pad_params);
 
     // input y: 4-dims come from last output; 3-dims come from tensor input;
     function_name_ = "pad2d";

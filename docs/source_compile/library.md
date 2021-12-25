@@ -44,7 +44,7 @@ mobilenet_v1   mobilenet_v2   resnet50
 
 ### 支持功能
 
-   Paddle-Lite中的全量算子（ [基础算子](../introduction/support_operation_list.html#id2) + [附加算子](../introduction/support_operation_list.html#id3) ）
+   Paddle Lite中的全量算子（ [基础算子](../introduction/support_operation_list.html#id2) + [附加算子](../introduction/support_operation_list.html#id3) ）
 
 ### 特点
    包含更多算子、支持更多模型，但体量更大。

@@ -157,6 +157,8 @@ std::string FindModelFileName(const std::string &model_dir,
       prog_path = model_dir + "/model";
     } else if (IsFileExists(model_dir + "/model.pdmodel")) {
       prog_path = model_dir + "/model.pdmodel";
+    } else if (IsFileExists(model_dir + "/inference.pdmodel")) {
+      prog_path = model_dir + "/inference.pdmodel";
     } else {
       PrintPbModelErrorMessage();
     }
@@ -205,6 +207,8 @@ void LoadNonCombinedParamsPb(const std::string &model_dir,
           params_path = model_dir + "/weights";
         } else if (IsFileExists(model_dir + "/model.pdiparams")) {
           params_path = model_dir + "/model.pdiparams";
+        } else if (IsFileExists(model_dir + "/inference.pdiparams")) {
+          params_path = model_dir + "/inference.pdiparams";
         } else {
           PrintPbModelErrorMessage();
         }
@@ -233,7 +237,9 @@ void LoadModelPb(const std::string &model_dir,
       model_buffer.is_empty()
           ? FindModelFileName(model_dir, model_file, combined)
           : "";
-  OPT_LOG << "Loading topology data from " << prog_path;
+  if (model_buffer.is_empty()) {
+    OPT_LOG << "Loading topology data from " << prog_path;
+  }
   framework::proto::ProgramDesc pb_proto_prog =
       *LoadProgram(prog_path, model_buffer);
   pb::ProgramDesc pb_prog(&pb_proto_prog);
@@ -260,7 +266,9 @@ void LoadModelPb(const std::string &model_dir,
 
     LoadCombinedParamsPb(param_file, scope, *cpp_prog, model_buffer);
   }
-  OPT_LOG << "1. Model is successfully loaded!";
+  if (model_buffer.is_empty()) {
+    OPT_LOG << "1. Model is successfully loaded!";
+  }
 }
 
 void SaveModelPb(const std::string &model_dir,

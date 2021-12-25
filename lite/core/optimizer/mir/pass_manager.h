@@ -73,7 +73,7 @@ class PassManager {
   template <typename PassTy>
   PassTy* LookUp(const std::string& key) {
     auto it = pass_map_.find(key);
-    if (it != pass_map_.end()) return dynamic_cast<PassTy*>(it->second);
+    if (it != pass_map_.end()) return static_cast<PassTy*>(it->second);
     return nullptr;
   }
 

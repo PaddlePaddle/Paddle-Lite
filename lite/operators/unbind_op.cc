@@ -33,7 +33,7 @@ bool UnbindOp::InferShapeImpl() const {
   const auto &outs = param_.output;
   auto in_dims = param_.x->dims();
 
-  lite::DDim outs_dims;
+  std::vector<int64_t> outs_dims;
   param_.axis = param_.axis >= 0 ? param_.axis : param_.axis + in_dims.size();
   for (int i = 0; i < in_dims.size(); i++) {
     if (i == param_.axis) continue;
@@ -48,7 +48,6 @@ bool UnbindOp::InferShapeImpl() const {
 }
 
 bool UnbindOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
-  AttachParam(&param_);
   param_.axis = opdesc.GetAttr<int>("axis");
   auto input = opdesc.Input("X").front();
   auto outs = opdesc.Output("Out");

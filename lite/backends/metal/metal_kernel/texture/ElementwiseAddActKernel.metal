@@ -40,4 +40,3 @@ using namespace metal;
 #include "ElementwiseAddActKernel.inc.metal"
 #undef ACT_TYPE
 #undef PRELU_OTHER
-

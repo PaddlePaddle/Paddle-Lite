@@ -51,7 +51,7 @@ void FeedImageCompute::init_memory() {
     const auto& param = this->Param<param_t>();
     Tensor& input_tensor = param.feed_list->at(param.col);
     auto input_dims = input_tensor.dims();
-    
+
     param.out->Resize(input_dims);
 #ifdef LITE_WITH_METAL_FULL
 #else
@@ -89,7 +89,7 @@ void FeedImageCompute::setup_pipeline() {
 void FeedImageCompute::run_raw() {
     const auto& param = this->Param<param_t>();
     Tensor& input_tensor = param.feed_list->at(param.col);
-    
+
     if (input_tensor.precision() == lite_api::PrecisionType::kFloat) {
         run_float();
     } else if (input_tensor.precision() == lite_api::PrecisionType::kInt32) {
@@ -132,7 +132,7 @@ void FeedImageCompute::setup_float() {
     FeedMetalParam metal_params{(int)irank, {idm[0], idm[1], idm[2], idm[3]}};
     params_buffer_ =
         std::make_shared<MetalBuffer>(metal_context_, sizeof(metal_params), &metal_params);
-    
+
     function_name_ = "buf_to_tex_c_n";
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
@@ -141,7 +141,7 @@ void FeedImageCompute::setup_float() {
 
 void FeedImageCompute::run_int32() {
     const auto& param = this->Param<param_t>();
-    
+
     auto output_int32_ = param.out->mutable_data<int32_t>();
 
     Tensor& input_tensor = param.feed_list->at(param.col);
@@ -163,7 +163,7 @@ void FeedImageCompute::run_mtl_texture() {
     if (input_dims.size() != 4) {
         return;
     }
-    //need scale
+    // need scale
     do {
         id<MTLTexture> inTexture = input_tensor.data<MetalMTLData>()->image();
         auto cmdbuf = [backend commandBuffer];
@@ -172,7 +172,7 @@ void FeedImageCompute::run_mtl_texture() {
                                                      destinationTexture:resize_texture_];
         [backend commit:cmdbuf];
     } while (0);
-    
+
     // texture to texture_array
     do {
         auto pipline = pipline_;
@@ -190,10 +190,10 @@ void FeedImageCompute::run_mtl_texture() {
 void FeedImageCompute::setup_mtl_texture() {
     const auto& param = this->Param<param_t>();
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
-  
+
     Tensor& input_tensor = param.feed_list->at(param.col);
     auto input_dims = input_tensor.dims();
-    NSMutableArray *dimsAry = [NSMutableArray arrayWithCapacity:3];
+    NSMutableArray* dimsAry = [NSMutableArray arrayWithCapacity:3];
     for (int i = 0; i < input_dims.size(); i++) {
         [dimsAry addObject:@(input_dims[i])];
     }
@@ -206,12 +206,12 @@ void FeedImageCompute::setup_mtl_texture() {
 #pragma mark - internal
 
 void FeedImageCompute::release_memory() {
-    if(lanczos_) {
+    if (lanczos_) {
         CFRelease(lanczos_);
         lanczos_ = nullptr;
     }
     if (resize_texture_) {
-      resize_texture_ = nil;
+        resize_texture_ = nil;
     }
     TargetWrapperMetal::FreeImage(output_buffer_);
 }
@@ -227,11 +227,29 @@ FeedImageCompute::~FeedImageCompute() {
 
 REGISTER_LITE_KERNEL(feed,
     kMetal,
-    kAny,
-    kAny,
+    kFloat,
+    kMetalTexture2DArray,
     paddle::lite::kernels::metal::FeedImageCompute,
     def)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
     .BindOutput("Out",
-        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kAny), DATALAYOUT(kAny))})
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(feed,
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::FeedImageCompute,
+    def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW))})
+    .BindOutput("Out",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(feed, kMetal, kAny, kAny, paddle::lite::kernels::metal::FeedImageCompute, def)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kAny), DATALAYOUT(kAny))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kAny), DATALAYOUT(kAny))})
     .Finalize();

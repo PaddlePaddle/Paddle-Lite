@@ -16,11 +16,22 @@
 #include <stdint.h>
 #include <vector>
 #include "lite/core/kernel.h"
+#include "lite/core/parallel_defines.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace host {
+
+DDimLite stride_flip(const DDimLite& ddim) {
+  std::vector<int64_t> tmp(ddim.size(), 0);
+  DDimLite strides(tmp);
+  strides[ddim.size() - 1] = 1;
+  for (int i = ddim.size() - 2; i >= 0; --i) {
+    strides[i] = strides[i + 1] * ddim[i + 1];
+  }
+  return strides;
+}
 
 template <typename T>
 class FlipCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
@@ -43,12 +54,11 @@ class FlipCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
       }
       dim_bitset[dim] = true;
     }
-    auto x_strides = x_dims.Vectorize();
+    auto x_strides = stride_flip(x_dims);
     auto numel = x->numel();
     const T* x_data = x->template data<T>();
     T* out_data = out->template mutable_data<T>();
-#pragma omp parallel for
-    for (int64_t i = 0; i < numel; ++i) {
+    LITE_PARALLEL_BEGIN(i, tid, numel) {
       int64_t cur_indices = i;
       int64_t rem = 0;
       int64_t dst_offset = 0;
@@ -64,6 +74,7 @@ class FlipCompute : public KernelLite<TARGET(kHost), PRECISION(kAny)> {
       }
       out_data[i] = x_data[dst_offset];
     }
+    LITE_PARALLEL_END()
   }
 
   ~FlipCompute() = default;

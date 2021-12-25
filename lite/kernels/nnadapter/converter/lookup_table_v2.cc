@@ -54,7 +54,7 @@ int ConvertLookupTableV2(Converter* converter, OpInfo* op, Scope* scope) {
   auto out_name = op->Output("Out").front();
   auto output_operand = converter->AddOutputOperand(out_name);
 
-  // Mat_mul operation
+  // Gather operation
   converter->AddOperation(NNADAPTER_GATHER,
                           {input_operand, indices_operand, axis_operand},
                           {output_operand});

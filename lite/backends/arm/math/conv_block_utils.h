@@ -14,6 +14,7 @@
 
 #pragma once
 #include <arm_neon.h>
+#include <algorithm>
 #include <cmath>
 #include "lite/backends/arm/math/funcs.h"
 #include "lite/backends/arm/math/gemm_s8.h"
@@ -55,7 +56,7 @@ inline void trans_gemm_weights<PRECISION(kFloat)>(const Tensor& tin,
   CHECK_EQ(tin.dims().size(), 4) << "conv weights dims size must = 4";
   int m = tin.dims()[0] / group;
   int k = tin.dims().count(1, 4);
-  int hblock = lite::arm::math::get_hblock(ctx);
+  int hblock = lite::arm::math::get_hblock(ctx, m);
   int m_roundup = hblock * ((m + hblock - 1) / hblock);
   int group_size_round_up = ((m_roundup * k + 15) / 16) * 16;
   float* w_trans_ptr = nullptr;
@@ -791,7 +792,11 @@ inline void prepack_input_nxwc8_int8_dw(const int8_t* din,
   "ldr q2, [%[ptr_din]], #16      \n" /* load data, c0r0, c1r0, c0r1*/ \
   "ldr q3, [%[ptr_din]], #16      \n" /* load data, c0r0, c1r0, c0r1*/ \
   "movi v20.4s, #0                \n" /* for relu */                   \
-  "1:                             \n" /* main loop*/
+  "1:                             \n" /* main loop*/                   \
+  "fadd v0.4s, v0.4s, %[vbias].4s\n"                                \
+  "fadd v1.4s, v1.4s, %[vbias].4s\n"                                \
+  "fadd v2.4s, v2.4s, %[vbias].4s\n"                                \
+  "fadd v3.4s, v3.4s, %[vbias].4s\n"
 
 #define NCHWC1_TRANS_FP32_RELU                 \
   "fmax   v0.4s, v0.4s, v20.4s    \n" /*relu*/ \
@@ -819,6 +824,28 @@ inline void prepack_input_nxwc8_int8_dw(const int8_t* din,
   "bif  v2.16b, v10.16b, v6.16b \n"    /* choose*/     \
   "bif  v3.16b, v11.16b, v7.16b \n"    /* choose*/
 
+#define NCHWC1_TRANS_FP32_HARD_SWISH                    \
+  "fadd v4.4s,  v0.4s, %[offset].4s\n"                  \
+  "fadd v5.4s,  v1.4s, %[offset].4s\n"                  \
+  "fadd v6.4s,  v2.4s, %[offset].4s\n"                  \
+  "fadd v7.4s,  v3.4s, %[offset].4s\n"                  \
+  "fmul v8.4s,  v0.4s, %[scale].4s\n"                   \
+  "fmul v9.4s,  v1.4s, %[scale].4s\n"                   \
+  "fmul v10.4s, v2.4s, %[scale].4s\n"                   \
+  "fmul v11.4s, v3.4s, %[scale].4s\n"                   \
+  "fmax v4.4s,  v4.4s, v20.4s     \n"                   \
+  "fmax v5.4s,  v5.4s, v20.4s     \n"                   \
+  "fmax v6.4s,  v6.4s, v20.4s     \n"                   \
+  "fmax v7.4s,  v7.4s, v20.4s     \n"                   \
+  "fmin v4.4s,  v4.4s, %[threshold].4s\n"               \
+  "fmin v5.4s,  v5.4s, %[threshold].4s\n"               \
+  "fmin v6.4s,  v6.4s, %[threshold].4s\n"               \
+  "fmin v7.4s,  v7.4s, %[threshold].4s\n"               \
+  "fmul v0.4s,  v4.4s, v8.4s       \n"                  \
+  "fmul v1.4s,  v5.4s, v9.4s       \n"                  \
+  "fmul v2.4s,  v6.4s, v10.4s      \n"                  \
+  "fmul v3.4s,  v7.4s, v11.4s      \n"
+
 #define NCHWC1_TRANS_FP32_STORE                                        \
   "subs   %w[cnt], %w[cnt], #1    \n" /* loop count -1*/               \
                                                                        \
@@ -837,7 +864,11 @@ inline void prepack_input_nxwc8_int8_dw(const int8_t* din,
   "vld1.32 {d0-d3}, [%[ptr_din]]!                 @ load data, c0r0 \n" \
   "vld1.32 {d4-d7}, [%[ptr_din]]!                 @ load data, c0r0 \n" \
   "vmov.u32 q15, #0                       @ dump zero\n"                \
-  "1:                                     @ main loop\n"
+  "1:                                     @ main loop\n"                \
+  "vadd.f32  q0, q0,  %q[vbias]           \n"                           \
+  "vadd.f32  q1, q1,  %q[vbias]           \n"                           \
+  "vadd.f32  q2, q2,  %q[vbias]           \n"                           \
+  "vadd.f32  q3, q3,  %q[vbias]           \n"
 
 #define NCHWC1_TRANS_FP32_RELU                      \
   "vmax.f32   q0, q0, q15                 @ relu\n" \
@@ -865,6 +896,29 @@ inline void prepack_input_nxwc8_int8_dw(const int8_t* din,
   "vbif q2, q11, q7 @ choose \n"              \
   "vbif q3, q12, q8 @ choose \n"
 
+#define NCHWC1_TRANS_FP32_HARD_SWISH          \
+  "vadd.f32 q5, q0, %q[offset]\n"             \
+  "vadd.f32 q6, q1, %q[offset]\n"             \
+  "vadd.f32 q7, q2, %q[offset]\n"             \
+  "vadd.f32 q8, q3, %q[offset]\n"             \
+  "vmul.f32 q0, q0, %q[scale]\n"              \
+  "vmul.f32 q1, q1, %q[scale]\n"              \
+  "vmul.f32 q2, q2, %q[scale]\n"              \
+  "vmul.f32 q3, q3, %q[scale]\n"              \
+  "vmax.f32 q5, q5, q15      \n"              \
+  "vmax.f32 q6, q6, q15      \n"              \
+  "vmax.f32 q7, q7, q15      \n"              \
+  "vmax.f32 q8, q8, q15      \n"              \
+  "vmin.f32 q5, q5, %q[threshold]\n"          \
+  "vmin.f32 q6, q6, %q[threshold]\n"          \
+  "vmin.f32 q7, q7, %q[threshold]\n"          \
+  "vmin.f32 q8, q8, %q[threshold]\n"          \
+  "vmul.f32 q0, q0, q5       \n"              \
+  "vmul.f32 q1, q1, q6       \n"              \
+  "vmul.f32 q2, q2, q7       \n"              \
+  "vmul.f32 q3, q3, q8       \n"
+
+
 #define NCHWC1_TRANS_FP32_STORE                                 \
   "vst1.32  {d0-d1}, [%[doutc0r0]]!       @ store result  \n"   \
   "vst1.32  {d2-d3}, [%[doutc0r0]]!       @ store result, \n"   \
@@ -882,128 +936,178 @@ inline void prepack_input_nxwc8_int8_dw(const int8_t* din,
 inline void act_switch_c1_fp32(const float* din_ptr,
                                float* doutc0_ptr,
                                int cnt_loop,
+                               float bias,
                                const operators::ActivationParam* act_param) {
+  float32x4_t vbias = vdupq_n_f32(bias);
   if (act_param != nullptr && act_param->has_active) {
-    float32x4_t six = vdupq_n_f32(act_param->Relu_clipped_coef);
-    float32x4_t scale = vdupq_n_f32(act_param->Leaky_relu_alpha);
-    switch (act_param->active_type) {
-      case lite_api::ActivationType::kRelu:
+    if (act_param->active_type == lite_api::ActivationType::kRelu) {
 #ifdef __aarch64__
-        asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_RELU
-                         NCHWC1_TRANS_FP32_STORE
-                     : [doutc0r0] "+r"(doutc0_ptr),
-                       [cnt] "+r"(cnt_loop),
-                       [ptr_din] "+r"(din_ptr)
-                     :
-                     : "cc",
-                       "memory",
-                       "v0",
-                       "v1",
-                       "v2",
-                       "v3",
-                       "v4",
-                       "v5",
-                       "v6",
-                       "v7",
-                       "v8",
-                       "v9",
-                       "v10",
-                       "v20");
+      asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_RELU
+                       NCHWC1_TRANS_FP32_STORE
+                   : [doutc0r0] "+r"(doutc0_ptr),
+                     [cnt] "+r"(cnt_loop),
+                     [ptr_din] "+r"(din_ptr)
+                   : [vbias] "w"(vbias)
+                   : "cc",
+                     "memory",
+                     "v0",
+                     "v1",
+                     "v2",
+                     "v3",
+                     "v4",
+                     "v5",
+                     "v6",
+                     "v7",
+                     "v8",
+                     "v9",
+                     "v10",
+                     "v20");
 #else
-        asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_RELU
-                         NCHWC1_TRANS_FP32_STORE
-                     : [doutc0r0] "+r"(doutc0_ptr),
-                       [ptr_din] "+r"(din_ptr),
-                       [cnt] "+r"(cnt_loop)
-                     :
-                     : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
+      asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_RELU
+                       NCHWC1_TRANS_FP32_STORE
+                   : [doutc0r0] "+r"(doutc0_ptr),
+                     [ptr_din] "+r"(din_ptr),
+                     [cnt] "+r"(cnt_loop)
+                   : [vbias] "w"(vbias)
+                   : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
 #endif
-        break;
-      case lite_api::ActivationType::kRelu6:
-/* 0 <= din <= 6 */
+    } else if (act_param->active_type == lite_api::ActivationType::kRelu6) {
+      float32x4_t six = vdupq_n_f32(act_param->Relu_clipped_coef);
 #ifdef __aarch64__
-        asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_RELU
-                         NCHWC1_TRANS_FP32_RELU6 NCHWC1_TRANS_FP32_STORE
-                     : [doutc0r0] "+r"(doutc0_ptr),
-                       [cnt] "+r"(cnt_loop),
-                       [ptr_din] "+r"(din_ptr)
-                     : [six] "w"(six)
-                     : "cc",
-                       "memory",
-                       "v0",
-                       "v1",
-                       "v2",
-                       "v3",
-                       "v4",
-                       "v5",
-                       "v6",
-                       "v7",
-                       "v8",
-                       "v9",
-                       "v10",
-                       "v20");
+      asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_RELU
+                       NCHWC1_TRANS_FP32_RELU6 NCHWC1_TRANS_FP32_STORE
+                   : [doutc0r0] "+r"(doutc0_ptr),
+                     [cnt] "+r"(cnt_loop),
+                     [ptr_din] "+r"(din_ptr)
+                   : [six] "w"(six), [vbias] "w"(vbias)
+                   : "cc",
+                     "memory",
+                     "v0",
+                     "v1",
+                     "v2",
+                     "v3",
+                     "v4",
+                     "v5",
+                     "v6",
+                     "v7",
+                     "v8",
+                     "v9",
+                     "v10",
+                     "v20");
 #else
-        asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_RELU
-                         NCHWC1_TRANS_FP32_RELU6 NCHWC1_TRANS_FP32_STORE
-                     : [doutc0r0] "+r"(doutc0_ptr),
-                       [ptr_din] "+r"(din_ptr),
-                       [cnt] "+r"(cnt_loop)
-                     : [six] "w"(six)
-                     : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
+      asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_RELU
+                       NCHWC1_TRANS_FP32_RELU6 NCHWC1_TRANS_FP32_STORE
+                   : [doutc0r0] "+r"(doutc0_ptr),
+                     [ptr_din] "+r"(din_ptr),
+                     [cnt] "+r"(cnt_loop)
+                   : [six] "w"(six), [vbias] "w"(vbias)
+                   : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
 #endif
-        break;
-      case lite_api::ActivationType::kLeakyRelu:
-/*din = din >= 0 ? din : din * scale*/
+    } else if (act_param->active_type == lite_api::ActivationType::kLeakyRelu) {
+      float32x4_t scale = vdupq_n_f32(act_param->Leaky_relu_alpha);
 #ifdef __aarch64__
-        asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_LEAKY_RELU
-                         NCHWC1_TRANS_FP32_STORE
-                     : [doutc0r0] "+r"(doutc0_ptr),
-                       [cnt] "+r"(cnt_loop),
-                       [ptr_din] "+r"(din_ptr)
-                     : [scale] "w"(scale)
-                     : "cc",
-                       "memory",
-                       "v0",
-                       "v1",
-                       "v2",
-                       "v3",
-                       "v4",
-                       "v5",
-                       "v6",
-                       "v7",
-                       "v8",
-                       "v9",
-                       "v10",
-                       "v11",
-                       "v20");
+      asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_LEAKY_RELU
+                       NCHWC1_TRANS_FP32_STORE
+                   : [doutc0r0] "+r"(doutc0_ptr),
+                     [cnt] "+r"(cnt_loop),
+                     [ptr_din] "+r"(din_ptr)
+                   : [scale] "w"(scale), [vbias] "w"(vbias)
+                   : "cc",
+                     "memory",
+                     "v0",
+                     "v1",
+                     "v2",
+                     "v3",
+                     "v4",
+                     "v5",
+                     "v6",
+                     "v7",
+                     "v8",
+                     "v9",
+                     "v10",
+                     "v11",
+                     "v20");
 #else
-        asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_LEAKY_RELU
-                         NCHWC1_TRANS_FP32_STORE
-                     : [doutc0r0] "+r"(doutc0_ptr),
-                       [ptr_din] "+r"(din_ptr),
-                       [cnt] "+r"(cnt_loop)
-                     : [scale] "w"(scale)
-                     : "cc",
-                       "memory",
-                       "q0",
-                       "q1",
-                       "q2",
-                       "q3",
-                       "q5",
-                       "q6",
-                       "q7",
-                       "q8",
-                       "q9",
-                       "q10",
-                       "q11",
-                       "q12",
-                       "q15");
+      asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_LEAKY_RELU
+                       NCHWC1_TRANS_FP32_STORE
+                   : [doutc0r0] "+r"(doutc0_ptr),
+                     [ptr_din] "+r"(din_ptr),
+                     [cnt] "+r"(cnt_loop)
+                   : [scale] "w"(scale), [vbias] "w"(vbias)
+                   : "cc",
+                     "memory",
+                     "q0",
+                     "q1",
+                     "q2",
+                     "q3",
+                     "q5",
+                     "q6",
+                     "q7",
+                     "q8",
+                     "q9",
+                     "q10",
+                     "q11",
+                     "q12",
+                     "q15");
 #endif
-        break;
-      default:
-        LOG(FATAL) << "this act_type: "
-                   << static_cast<int>(act_param->active_type)
-                   << " fuse not support";
+    } else if (act_param->active_type == lite_api::ActivationType::kHardSwish) {
+      float32x4_t scale = vdupq_n_f32(1.0 / act_param->hard_swish_scale);
+      float32x4_t offset = vdupq_n_f32(act_param->hard_swish_offset);
+      float32x4_t threshold = vdupq_n_f32(act_param->hard_swish_threshold);
+#ifdef __aarch64__
+      asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_HARD_SWISH
+                       NCHWC1_TRANS_FP32_STORE
+                   : [doutc0r0] "+r"(doutc0_ptr),
+                     [cnt] "+r"(cnt_loop),
+                     [ptr_din] "+r"(din_ptr)
+                   : [scale] "w"(scale),
+                     [vbias] "w"(vbias),
+                     [offset] "w"(offset),
+                     [threshold] "w"(threshold)
+                   : "cc",
+                     "memory",
+                     "v0",
+                     "v1",
+                     "v2",
+                     "v3",
+                     "v4",
+                     "v5",
+                     "v6",
+                     "v7",
+                     "v8",
+                     "v9",
+                     "v10",
+                     "v11",
+                     "v20");
+#else
+      asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_HARD_SWISH
+                       NCHWC1_TRANS_FP32_STORE
+                   : [doutc0r0] "+r"(doutc0_ptr),
+                     [ptr_din] "+r"(din_ptr),
+                     [cnt] "+r"(cnt_loop)
+                   : [scale] "w"(scale),
+                     [vbias] "w"(vbias),
+                     [offset] "w"(offset),
+                     [threshold] "w"(threshold)
+                   : "cc",
+                     "memory",
+                     "q0",
+                     "q1",
+                     "q2",
+                     "q3",
+                     "q5",
+                     "q6",
+                     "q7",
+                     "q8",
+                     "q9",
+                     "q10",
+                     "q11",
+                     "q15");
+#endif
+    } else {
+      LOG(FATAL) << "this act_type: "
+                 << static_cast<int>(act_param->active_type)
+                 << " fuse not support";
     }
   } else {
 #ifdef __aarch64__
@@ -1011,14 +1115,14 @@ inline void act_switch_c1_fp32(const float* din_ptr,
                  : [doutc0r0] "+r"(doutc0_ptr),
                    [cnt] "+r"(cnt_loop),
                    [ptr_din] "+r"(din_ptr)
-                 :
+                 : [vbias] "w"(vbias)
                  : "cc", "memory", "v0", "v1", "v2", "v3", "v20");
 #else
     asm volatile(NCHWC1_TRANS_FP32_COMPUTE NCHWC1_TRANS_FP32_STORE
                  : [doutc0r0] "+r"(doutc0_ptr),
                    [ptr_din] "+r"(din_ptr),
                    [cnt] "+r"(cnt_loop)
-                 :
+                 : [vbias] "w"(vbias)
                  : "cc", "memory", "q0", "q1", "q2", "q3", "q15");
 #endif
   }
@@ -1039,7 +1143,8 @@ inline bool write_to_output_c1_fp32(const float* din,
                                     int width,
                                     bool flag_relu,
                                     float* trash_ptr,
-                                    operators::ActivationParam* act_param) {
+                                    operators::ActivationParam* act_param,
+                                    const float* bias_ptr = nullptr) {
   if (cs > channel) {
     return true;
   }
@@ -1058,13 +1163,14 @@ inline bool write_to_output_c1_fp32(const float* din,
   int w_round = we - ws;
   int cnt = (width - ws) / w4;
   int remain = (width - ws) % w4;
+  float bias = bias_ptr == nullptr ? 0.f : bias_ptr[0];
   for (int i = 0; i < size_h; i++) {
     int size_w = i * width;
     float* doutc0_ptr = doutc0r0 + size_w;  // doutc0r0 + width;
     const float* din_hei_ptr = ptr_din + i * w_round * c1;
     if (cnt > 0) {
       int cnt_loop = cnt;
-      act_switch_c1_fp32(din_hei_ptr, doutc0_ptr, cnt_loop, act_param);
+      act_switch_c1_fp32(din_hei_ptr, doutc0_ptr, cnt_loop, bias, act_param);
     }
     if (remain > 0) {
       int offset = i * w_round * c1 + c1 * w4 * cnt;
@@ -1072,42 +1178,49 @@ inline bool write_to_output_c1_fp32(const float* din,
       doutc0_ptr += w4 * cnt;
       int j = w4 * cnt;
       if (act_param != nullptr && act_param->has_active) {
-        float six = act_param->Relu_clipped_coef;
-        float scale = act_param->Leaky_relu_alpha;
-        switch (act_param->active_type) {
-          case lite_api::ActivationType::kRelu:
-            for (; j < width; ++j) {
-              *(doutc0_ptr++) = LITEMAX(din_hei_ptr[0], 0.f);
-              din_hei_ptr++;
+        if (act_param->active_type == lite_api::ActivationType::kRelu) {
+          for (; j < width; ++j) {
+            *(doutc0_ptr++) = LITEMAX((din_hei_ptr[0] + bias), 0.f);
+            din_hei_ptr++;
+          }
+        } else if (act_param->active_type == lite_api::ActivationType::kRelu6) {
+          float six = act_param->Relu_clipped_coef;
+          for (; j < width; ++j) {
+            float tmp = LITEMAX((din_hei_ptr[0] + bias), 0.f);
+            *(doutc0_ptr++) = LITEMIN(tmp, six);
+            din_hei_ptr++;
+          }
+        } else if (act_param->active_type ==
+                   lite_api::ActivationType::kLeakyRelu) {
+          float scale = act_param->Leaky_relu_alpha;
+          for (; j < width; ++j) {
+            auto tmp = din_hei_ptr[0] + bias;
+            if (tmp >= 0) {
+              *(doutc0_ptr++) = tmp;
+            } else {
+              *(doutc0_ptr++) = tmp * scale;
             }
-            break;
-          case lite_api::ActivationType::kRelu6:
-            /* 0 <= din <= 6 */
-            for (; j < width; ++j) {
-              float tmp = LITEMAX(din_hei_ptr[0], 0.f);
-              *(doutc0_ptr++) = LITEMIN(tmp, six);
-              din_hei_ptr++;
-            }
-            break;
-          case lite_api::ActivationType::kLeakyRelu:
-            /*din = din >= 0 ? din : din * scale*/
-            for (; j < width; ++j) {
-              if (din_hei_ptr[0] >= 0) {
-                *(doutc0_ptr++) = din_hei_ptr[0];
-              } else {
-                *(doutc0_ptr++) = din_hei_ptr[0] * scale;
-              }
-              din_hei_ptr++;
-            }
-            break;
-          default:
-            LOG(FATAL) << "this act_type: "
-                       << static_cast<int>(act_param->active_type)
-                       << " fuse not support";
+            din_hei_ptr++;
+          }
+        } else if (act_param->active_type ==
+                   lite_api::ActivationType::kHardSwish) {
+          float scale = 1.0 / act_param->hard_swish_scale;
+          float offset = act_param->hard_swish_offset;
+          float threshold = act_param->hard_swish_threshold;
+          for (; j < width; ++j) {
+            auto tmp = din_hei_ptr[0] + bias;
+            *doutc0_ptr++ = std::min(threshold, std::max(0.f, (tmp + offset))) *
+                            tmp * scale;
+            din_hei_ptr++;
+          }
+        } else {
+          LOG(FATAL) << "this act_type: "
+                     << static_cast<int>(act_param->active_type)
+                     << " fuse not support";
         }
       } else {
         for (; j < width; ++j) {
-          *(doutc0_ptr++) = *(din_hei_ptr++);
+          *(doutc0_ptr++) = *(din_hei_ptr++) + bias;
         }
       }
     }
@@ -1462,6 +1575,10 @@ inline bool write_to_output_c2_fp32(const float* din,
   "movi v20.4s, #0                \n" /* for relu */                \
   "blt 2f\n"                                                        \
   "1:                             \n" /* main loop*/                \
+  "fadd v0.4s, v0.4s, %[vbias].4s\n"                                \
+  "fadd v1.4s, v1.4s, %[vbias].4s\n"                                \
+  "fadd v2.4s, v2.4s, %[vbias].4s\n"                                \
+  "fadd v3.4s, v3.4s, %[vbias].4s\n"                                \
   "trn1   v8.4s, v0.4s, v1.4s     \n" /* trans q0, q1*/             \
   "trn2   v9.4s, v0.4s, v1.4s     \n" /* trans q0, q1*/             \
   "ldp q0, q1, [%[ptr_din]], #32  \n" /* load r00, r01 to q0, q1 */ \
@@ -1532,6 +1649,10 @@ inline bool write_to_output_c2_fp32(const float* din,
   "2: \n"                                                \
   "cmp %w[remain], #1\n"                                 \
   "blt 3f\n"                                             \
+  "fadd v0.4s, v0.4s, %[vbias].4s\n"                                \
+  "fadd v1.4s, v1.4s, %[vbias].4s\n"                                \
+  "fadd v2.4s, v2.4s, %[vbias].4s\n"                                \
+  "fadd v3.4s, v3.4s, %[vbias].4s\n"                                \
   "trn1   v8.4s, v0.4s, v1.4s     \n" /* trans q0, q1*/             \
   "trn2   v9.4s, v0.4s, v1.4s     \n" /* trans q0, q1*/             \
   "trn1   v10.4s, v2.4s, v3.4s    \n" /* trans q2, q3*/             \
@@ -1549,17 +1670,18 @@ inline bool write_to_output_c2_fp32(const float* din,
   "3: \n"
 #else
 #define NCHWC4_TRANS_FP32_COMPUTE                                     \
-  "cmp %[cnt], #1 \n"                                                \
+  "cmp %[cnt], #1 \n"                                                 \
   "vld1.32 {d0-d3}, [%[ptr_din]]!                 @load data \n"      \
   "vld1.32 {d4-d7}, [%[ptr_din]]!         @load data \n"              \
   "vmov.u32 q15, #0                       @ dump zero\n"              \
   "blt 2f\n"                                                          \
   "1:                                     @ main loop\n"              \
-  "vtrn.32 q0, q1                         @ trans data:c00c01c20c21 " \
-  "\n"                                                                \
-  "vtrn.32 q2, q3                         @ trans data:c02c03c22c23 " \
-  "\n"                                                                \
-                                                                      \
+  "vadd.f32 q0, q0, %q[vbias]\n"                                      \
+  "vadd.f32 q1, q1, %q[vbias]\n"                                      \
+  "vadd.f32 q2, q2, %q[vbias]\n"                                      \
+  "vadd.f32 q3, q3, %q[vbias]\n"                                      \
+  "vtrn.32 q0, q1                       @ trans data:c00c01c20c21\n"  \
+  "vtrn.32 q2, q3                       @ trans data:c02c03c22c23\n"  \
   "vswp   d1, d4                          @ swap data\n"              \
   "vswp   d3, d6                          @ swap data\n"
 
@@ -1589,27 +1711,27 @@ inline bool write_to_output_c2_fp32(const float* din,
   "vbif q2, q11, q7 @ choose \n"              \
   "vbif q3, q12, q8 @ choose \n"
 
-#define NCHWC4_TRANS_FP32_HARD_SWISH          \
-  "vadd.f32   q5, q0, %q[offset] @ add \n"    \
-  "vadd.f32   q6, q1, %q[offset] @ add \n"    \
-  "vadd.f32   q7, q2, %q[offset] @ add \n"    \
-  "vadd.f32   q8, q3, %q[offset] @ add \n"    \
-  "vmul.f32 q9, q0,  %q[scale] \n"            \
-  "vmul.f32 q10, q1, %q[scale] \n"            \
-  "vmax.f32 q5, q5,  q15 \n"                  \
-  "vmax.f32 q6, q6,  q15 \n"                  \
-  "vmul.f32 q11, q2, %q[scale] \n"            \
-  "vmax.f32 q7, q7,  q15 \n"                  \
-  "vmax.f32 q8, q8,  q15 \n"                  \
-  "vmul.f32 q12, q3, %q[scale] \n"            \
-  "vmin.f32 q5, q5,  %q[threshold] \n"        \
-  "vmin.f32 q6, q6,  %q[threshold] \n"        \
-  "vmin.f32 q7, q7,  %q[threshold] \n"        \
-  "vmin.f32 q8, q8,  %q[threshold] \n"        \
-  "vmul.f32 q0, q9,   q5 \n"                  \
-  "vmul.f32 q1, q10,  q6 \n"                  \
-  "vmul.f32 q2, q11,  q7 \n"                  \
-  "vmul.f32 q3, q12,  q8 \n"
+#define NCHWC4_TRANS_FP32_HARD_SWISH            \
+  "vadd.f32   q5,  q0,  %q[offset] @ add \n"    \
+  "vadd.f32   q6,  q1,  %q[offset] @ add \n"    \
+  "vadd.f32   q7,  q2,  %q[offset] @ add \n"    \
+  "vadd.f32   q8,  q3,  %q[offset] @ add \n"    \
+  "vmul.f32   q9,  q0,  %q[scale] \n"            \
+  "vmul.f32   q10, q1,  %q[scale] \n"            \
+  "vmax.f32   q5,  q5,  q15 \n"                  \
+  "vmax.f32   q6,  q6,  q15 \n"                  \
+  "vmul.f32   q11, q2,  %q[scale] \n"            \
+  "vmax.f32   q7,  q7,  q15 \n"                  \
+  "vmax.f32   q8,  q8,  q15 \n"                  \
+  "vmul.f32   q3, q3,  %q[scale] \n"            \
+  "vmin.f32   q5, q5,  %q[threshold] \n"        \
+  "vmin.f32   q6, q6,  %q[threshold] \n"        \
+  "vmin.f32   q7, q7,  %q[threshold] \n"        \
+  "vmin.f32   q8, q8,  %q[threshold] \n"        \
+  "vmul.f32   q0, q9,  q5 \n"                  \
+  "vmul.f32   q1, q10, q6 \n"                  \
+  "vmul.f32   q2, q11, q7 \n"                  \
+  "vmul.f32   q3, q3,  q8 \n"
 
 #define NCHWC4_TRANS_FP32_STORE                                        \
   "subs   %[cnt], %[cnt], #1    @ loop count - 1\n"                    \
@@ -1625,9 +1747,12 @@ inline bool write_to_output_c2_fp32(const float* din,
   "2: \n"                                                \
   "cmp %[remain], #1\n"                                 \
   "blt 3f\n"                                             \
+  "vadd.f32 q0, q0, %q[vbias]\n"                                      \
+  "vadd.f32 q1, q1, %q[vbias]\n"                                      \
+  "vadd.f32 q2, q2, %q[vbias]\n"                                      \
+  "vadd.f32 q3, q3, %q[vbias]\n"                                      \
   "vtrn.32 q0, q1                       @ trans data:c00c01c20c21 \n" \
   "vtrn.32 q2, q3                       @ trans data:c02c03c22c23 \n" \
-                                                                      \
   "vswp   d1, d4                          @ swap data\n"              \
   "vswp   d3, d6                          @ swap data\n"
 #define NCHWC4_TRANS_FP32_RSTORE                                   \
@@ -1654,7 +1779,8 @@ inline bool write_to_output_c4_fp32(const float* din,
                                     int width,
                                     bool flag_relu,
                                     float* trash_ptr,
-                                    operators::ActivationParam* act_param) {
+                                    operators::ActivationParam* act_param,
+                                    const float* bias_ptr = nullptr) {
   const int c4 = 4;
   const int w4 = 4;
   const int w_round = we - ws;
@@ -1684,6 +1810,13 @@ inline bool write_to_output_c4_fp32(const float* din,
   float tmp1[4] = {0.f};
   float tmp2[4] = {0.f};
   float tmp3[4] = {0.f};
+  float bias[4] = {0.f, 0.f, 0.f, 0.f};
+  if (bias_ptr) {
+    for (int i = cs, k = 0; i < ce && i < channel; i++) {
+      bias[k++] = *bias_ptr++;
+    }
+  }
+  float32x4_t vbias = vld1q_f32(bias);
   if (act_param != nullptr && act_param->has_active) {
     if (act_param->active_type == lite_api::ActivationType::kRelu) {
       for (int i = 0; i < size_h; i++) {
@@ -1717,6 +1850,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                     [cnt] "+r"(cnt_col),
                     [ptr_din] "+r"(din_ptr)
                   : [remain] "r"(remain),
+                    [vbias] "w"(vbias),
                     [tmp0] "r"(tmp0),
                     [tmp1] "r"(tmp1),
                     [tmp2] "r"(tmp2),
@@ -1745,6 +1879,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                    [ptr_din] "+r"(din_ptr),
                    [cnt] "+r"(cnt_col)
                  : [remain] "r"(remain),
+                   [vbias] "w"(vbias),
                    [tmp0] "r"(tmp0),
                    [tmp1] "r"(tmp1),
                    [tmp2] "r"(tmp2),
@@ -1798,6 +1933,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                     [cnt] "+r"(cnt_col),
                     [ptr_din] "+r"(din_ptr)
                   : [remain] "r"(remain),
+                    [vbias] "w"(vbias),
                     [six] "w"(six),
                     [tmp0] "r"(tmp0),
                     [tmp1] "r"(tmp1),
@@ -1828,6 +1964,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                    [cnt] "+r"(cnt_col)
                  : [remain] "r"(remain),
                    [six] "w"(six),
+                   [vbias] "w"(vbias),
                    [tmp0] "r"(tmp0),
                    [tmp1] "r"(tmp1),
                    [tmp2] "r"(tmp2),
@@ -1881,6 +2018,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                     [cnt] "+r"(cnt_col),
                     [ptr_din] "+r"(din_ptr)
                   : [remain] "r"(remain),
+                    [vbias] "w"(vbias),
                     [scale] "w"(scale),
                     [tmp0] "r"(tmp0),
                     [tmp1] "r"(tmp1),
@@ -1916,6 +2054,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                    [cnt] "+r"(cnt_col)
                  : [remain] "r"(remain),
                    [scale] "w"(scale),
+                   [vbias] "w"(vbias),
                    [tmp0] "r"(tmp0),
                    [tmp1] "r"(tmp1),
                    [tmp2] "r"(tmp2),
@@ -1988,6 +2127,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                     [scale] "w"(scale),
                     [offset] "w"(offset),
                     [threshold] "w"(threshold),
+                    [vbias] "w"(vbias),
                     [tmp0] "r"(tmp0),
                     [tmp1] "r"(tmp1),
                     [tmp2] "r"(tmp2),
@@ -2028,6 +2168,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                    [scale] "w"(scale),
                    [offset] "w"(offset),
                    [threshold] "w"(threshold),
+                   [vbias] "w"(vbias),
                    [tmp0] "r"(tmp0),
                    [tmp1] "r"(tmp1),
                    [tmp2] "r"(tmp2),
@@ -2045,7 +2186,6 @@ inline bool write_to_output_c4_fp32(const float* din,
                        "q9",
                        "q10",
                        "q11",
-                       "q12",
                        "q15");
 #endif
               if (remain > 0) {
@@ -2100,6 +2240,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                     [cnt] "+r"(cnt_col),
                     [ptr_din] "+r"(din_ptr)
                   : [remain] "r"(remain),
+                    [vbias] "w"(vbias),
                     [tmp0] "r"(tmp0),
                     [tmp1] "r"(tmp1),
                     [tmp2] "r"(tmp2),
@@ -2128,6 +2269,7 @@ inline bool write_to_output_c4_fp32(const float* din,
                    [ptr_din] "+r"(din_ptr),
                    [cnt] "+r"(cnt_col)
                  : [remain] "r"(remain),
+                   [vbias] "w"(vbias),
                    [tmp0] "r"(tmp0),
                    [tmp1] "r"(tmp1),
                    [tmp2] "r"(tmp2),
@@ -2470,12 +2612,16 @@ inline void act_switch_c8_fp32(const float* din_ptr,
                        "v19",
                        "v20");
 #else
-        asm volatile(NCHWC4_TRANS_FP32_COMPUTE NCHWC4_TRANS_FP32_RELU
-                         NCHWC4_TRANS_FP32_RELU6 NCHWC4_TRANS_FP32_STORE
+        asm volatile(NCHWC8_TRANS_FP32_COMPUTE NCHWC8_TRANS_FP32_RELU6
+                         NCHWC8_TRANS_FP32_STORE
                      : [doutc0r0] "+r"(doutc0_ptr),
                        [doutc1r0] "+r"(doutc1_ptr),
                        [doutc2r0] "+r"(doutc2_ptr),
                        [doutc3r0] "+r"(doutc3_ptr),
+                       [doutc4r0] "+r"(doutc4_ptr),
+                       [doutc5r0] "+r"(doutc5_ptr),
+                       [doutc6r0] "+r"(doutc6_ptr),
+                       [doutc7r0] "+r"(doutc7_ptr),
                        [ptr_din] "+r"(din_ptr),
                        [cnt] "+r"(cnt_loop)
                      : [six] "w"(six)
@@ -2489,6 +2635,12 @@ inline void act_switch_c8_fp32(const float* din_ptr,
                        "q5",
                        "q6",
                        "q7",
+                       "q9",
+                       "q10",
+                       "q11",
+                       "q12",
+                       "q13",
+                       "q14",
                        "q15");
 #endif
         break;
@@ -3101,39 +3253,63 @@ inline void int32_nchwc4_kernel(Dtype*& dout0,        // NOLINT
   "fmla    v18.4s, v6.4s, %[scale].s[1]\n"                      \
   "fmla    v19.4s, v7.4s, %[scale].s[3]\n"                      \
   "cmp    %w[flag_act],   #1\n"                                 \
-  "bne    12f                     \n"                           \
   "movi   v20.4s,  #0             \n" /* for relu*/             \
+  "bne    12f                     \n"                           \
   "fmax   v16.4s, v16.4s, v20.4s  \n"                           \
   "fmax   v17.4s, v17.4s, v20.4s  \n"                           \
   "fmax   v18.4s, v18.4s, v20.4s  \n"                           \
   "fmax   v19.4s, v19.4s, v20.4s  \n"                           \
-  "b      2f                      \n"   /* relu end */          \
-  "12:                            \n"   /* no relu */           \
-  "cmp    %w[flag_act],  #0       \n"   /* check no act */      \
-  "beq    2f                      \n"   /* no act end */        \
-  "cmp    %w[flag_act],  #2       \n"   /* check relu6 */       \
-  "bne    13f                     \n"   /* jump no relu6*/      \
-  "movi   v8.4s, #0               \n"   /* for relu6 */         \
+  "b      2f                      \n" /* relu end */            \
+  "12:                            \n" /* no relu */             \
+  "cmp    %w[flag_act],  #0       \n" /* check no act */        \
+  "beq    2f                      \n" /* no act end */          \
+  "cmp    %w[flag_act],  #1       \n" /* check relu6 */         \
+  "beq    14f                     \n" /* jump no relu6*/        \
+  "cmp    %w[flag_act],  #2       \n" /* check leakyrelu */     \
+  "beq    13f                     \n" /* jump no relu6*/        \
+  "ldp    q4, q5,  [%[alpha]]     \n" /* hardswish */           \
+  "ldr    q6,      [%[alpha], #32]\n" /* hardswish */           \
+  "fmul   v12.4s, v16.4s, v4.4s  \n"                            \
+  "fadd   v7.4s,  v16.4s, v5.4s  \n"                            \
+  "fmul   v13.4s, v17.4s, v4.4s  \n"                            \
+  "fadd   v8.4s,  v17.4s, v5.4s  \n"                            \
+  "fmul   v14.4s, v18.4s, v4.4s  \n"                            \
+  "fadd   v9.4s,  v18.4s, v5.4s  \n"                            \
+  "fmul   v15.4s, v19.4s, v4.4s  \n"                            \
+  "fadd   v10.4s, v19.4s, v5.4s  \n"                            \
+  "fmax   v7.4s,  v7.4s,  v20.4s \n"                            \
+  "fmax   v8.4s,  v8.4s,  v20.4s \n"                            \
+  "fmax   v9.4s,  v9.4s,  v20.4s \n"                            \
+  "fmax   v10.4s, v10.4s, v20.4s \n"                            \
+  "fmin   v7.4s,  v7.4s,  v6.4s  \n"                            \
+  "fmin   v8.4s,  v8.4s,  v6.4s  \n"                            \
+  "fmin   v9.4s,  v9.4s,  v6.4s  \n"                            \
+  "fmin   v10.4s, v10.4s, v6.4s  \n"                            \
+  "fmul   v16.4s, v12.4s, v7.4s  \n"                            \
+  "fmul   v17.4s, v13.4s, v8.4s  \n"                            \
+  "fmul   v18.4s, v14.4s, v9.4s  \n"                            \
+  "fmul   v19.4s, v15.4s, v10.4s \n"                            \
+  "b      2f                     \n"    /* hardswish end */     \
+  "14:                              \n" /* relu6 */             \
   "ld1    {v9.4s}, [%[alpha]]     \n"   /* relu6 alpha */       \
-  "fmax   v16.4s, v16.4s, v8.4s  \n"    /* relu6 */             \
-  "fmax   v17.4s, v17.4s, v8.4s  \n"    /* relu6 */             \
-  "fmax   v18.4s, v18.4s, v8.4s  \n"    /* relu6 */             \
-  "fmax   v19.4s, v19.4s, v8.4s  \n"    /* relu6 */             \
+  "fmax   v16.4s, v16.4s, v20.4s  \n"   /* relu6 */             \
+  "fmax   v17.4s, v17.4s, v20.4s  \n"   /* relu6 */             \
+  "fmax   v18.4s, v18.4s, v20.4s  \n"   /* relu6 */             \
+  "fmax   v19.4s, v19.4s, v20.4s  \n"   /* relu6 */             \
   "fmin   v16.4s, v16.4s, v9.4s  \n"    /* relu6 */             \
   "fmin   v17.4s, v17.4s, v9.4s  \n"    /* relu6 */             \
   "fmin   v18.4s, v18.4s, v9.4s  \n"    /* relu6 */             \
   "fmin   v19.4s, v19.4s, v9.4s  \n"    /* relu6 */             \
   "b      2f                     \n"    /* relu6 end */         \
   "13:                              \n" /* leakey relu */       \
-  "movi   v12.4s,   #0              \n" /* for leakey relu */   \
   "ld1    {v13.4s}, [%[alpha]]      \n" /* leakey relu alpha */ \
-  "fcmge  v4.4s,   v16.4s,  v12.4s  \n" /* vcgeq_f32 */         \
+  "fcmge  v4.4s,   v16.4s,  v20.4s  \n" /* vcgeq_f32 */         \
   "fmul   v5.4s,   v16.4s,  v13.4s  \n" /* vmulq_f32 */         \
-  "fcmge  v6.4s,   v17.4s,  v12.4s  \n" /* vcgeq_f32 */         \
+  "fcmge  v6.4s,   v17.4s,  v20.4s  \n" /* vcgeq_f32 */         \
   "fmul   v7.4s,   v17.4s,  v13.4s  \n" /* vmulq_f32 */         \
-  "fcmge  v8.4s,   v18.4s,  v12.4s  \n" /* vcgeq_f32 */         \
+  "fcmge  v8.4s,   v18.4s,  v20.4s  \n" /* vcgeq_f32 */         \
   "fmul   v9.4s,   v18.4s,  v13.4s  \n" /* vmulq_f32 */         \
-  "fcmge  v10.4s,  v19.4s,  v12.4s  \n" /* vcgeq_f32 */         \
+  "fcmge  v10.4s,  v19.4s,  v20.4s  \n" /* vcgeq_f32 */         \
   "fmul   v11.4s,  v19.4s,  v13.4s  \n" /* vmulq_f32 */         \
   "bif    v16.16b, v5.16b,  v4.16b  \n" /* choose*/             \
   "bif    v17.16b, v7.16b,  v6.16b  \n" /* choose*/             \
@@ -3174,7 +3350,34 @@ inline void int32_nchwc4_kernel(Dtype*& dout0,        // NOLINT
   "cmp    %[flag_act],  #0         \n"            \
   "beq    2f                       \n"            \
   "cmp    %[flag_act],  #2         \n"            \
-  "bne    13f                      \n"            \
+  "beq    14f                      \n"            \
+  "cmp    %[flag_act],  #3         \n"            \
+  "beq    13f                      \n"            \
+  "vld1.32  {d4-d7}, [%[alpha]]    \n"            \
+  "vldr   d8,  [%[alpha], #32]     \n"            \
+  "vldr   d9,  [%[alpha], #40]     \n"            \
+  "vmul.f32  q5,  q10, q2          \n"            \
+  "vadd.f32  q10, q10, q3          \n"            \
+  "vmul.f32  q6,  q11, q2          \n"            \
+  "vadd.f32  q11, q11, q3          \n"            \
+  "vmul.f32  q7,  q12, q2          \n"            \
+  "vadd.f32  q12, q12, q3          \n"            \
+  "vmul.f32  q8,  q13, q2          \n"            \
+  "vadd.f32  q13, q13, q3          \n"            \
+  "vmax.f32   q10, q10, q15        \n"            \
+  "vmax.f32   q11, q11, q15        \n"            \
+  "vmax.f32   q12, q12, q15        \n"            \
+  "vmax.f32   q13, q13, q15        \n"            \
+  "vmin.f32   q10, q10, q4         \n"            \
+  "vmin.f32   q11, q11, q4         \n"            \
+  "vmin.f32   q12, q12, q4         \n"            \
+  "vmin.f32   q13, q13, q4         \n"            \
+  "vmul.f32   q10, q10, q5         \n"            \
+  "vmul.f32   q11, q11, q6         \n"            \
+  "vmul.f32   q12, q12, q7         \n"            \
+  "vmul.f32   q13, q13, q8         \n"            \
+  "b      2f                       \n"            \
+  "14:                             \n"            \
   "vld1.f32  {d14-d15}, [%[alpha]] \n"            \
   "vmax.f32   q10, q10, q15        \n"            \
   "vmax.f32   q11, q11, q15        \n"            \
@@ -3465,12 +3668,22 @@ inline void int32_nchwc4_kernel(int8_t*& dout0,       // NOLINT
 }
 
 template <typename Dtype>
-inline Dtype cvt_kernel(
-    int din, float scale, float bias, int flag_act, float alpha);
+inline Dtype cvt_kernel(int din,
+                        float scale,
+                        float bias,
+                        int flag_act,
+                        float alpha,
+                        float offset,
+                        float threshold);
 
 template <>
-inline float cvt_kernel(
-    int din, float scale, float bias, int flag_act, float alpha) {
+inline float cvt_kernel(int din,
+                        float scale,
+                        float bias,
+                        int flag_act,
+                        float alpha,
+                        float offset,
+                        float threshold) {
   if (flag_act == 1) {
     return LITEMAX(din * scale + bias, 0);
   } else if (flag_act == 0) {
@@ -3478,15 +3691,25 @@ inline float cvt_kernel(
   } else if (flag_act == 2) {
     float max = LITEMAX(din * scale + bias, 0);
     return LITEMIN(max, alpha);
-  } else {
+  } else if (flag_act == 3) {  // leakyrelu
     float result = din * scale + bias;
     return result > 0 ? result : alpha * result;
+  } else {
+    float result = din * scale + bias;
+    float val0 = result * alpha;
+    float val1 = LITEMIN(LITEMAX(result + offset, 0), threshold);
+    return (val0 * val1);
   }
 }
 
 template <>
-inline int8_t cvt_kernel(
-    int din, float scale, float bias, int flag_act, float alpha) {
+inline int8_t cvt_kernel(int din,
+                         float scale,
+                         float bias,
+                         int flag_act,
+                         float alpha,
+                         float offset,
+                         float threshold) {
   if (flag_act == 1) {
     auto tmp = saturate_cast<int8_t>(round(LITEMAX(din * scale + bias, 0)));
     return tmp < -127 ? -127 : tmp;
@@ -3498,10 +3721,16 @@ inline int8_t cvt_kernel(
     float relu6_result = LITEMIN(max, alpha);
     auto tmp = saturate_cast<int8_t>(round(relu6_result));
     return tmp < -127 ? -127 : tmp;
-  } else {
+  } else if (flag_act == 3) {
     float result = din * scale + bias;
     float leaky_result = result > 0 ? result : alpha * result;
     auto tmp = saturate_cast<int8_t>(round(leaky_result));
+    return tmp < -127 ? -127 : tmp;
+  } else {
+    float result = din * scale + bias;
+    float val0 = result * alpha;
+    float val1 = LITEMIN(LITEMAX(result + offset, 0), threshold);
+    auto tmp = saturate_cast<int8_t>(round(val0 * val1));
     return tmp < -127 ? -127 : tmp;
   }
 }
@@ -3520,7 +3749,7 @@ inline void write_int32_nchwc4_to_nchw(const int* din,
                                        int width,
                                        int flag_act,
                                        float* alpha,
-                                       float* bias,
+                                       const float* bias,
                                        bool flag_bias,
                                        Dtype* trash_ptr,
                                        const float* scale) {
@@ -3537,7 +3766,13 @@ inline void write_int32_nchwc4_to_nchw(const int* din,
   int cnt = valid_w / 4;
 
   float32x4_t w_scale = vld1q_f32(scale);
-  float32x4_t w_bias = flag_bias ? vld1q_f32(bias) : vdupq_n_f32(0.f);
+  float vbias[4] = {0.f, 0.f, 0.f, 0.f};
+  if (flag_bias) {
+    for (int i = 0; i < 4 && i + cs < channel; i++) {
+      vbias[i] = bias[i];
+    }
+  }
+  float32x4_t w_bias = flag_bias ? vld1q_f32(vbias) : vdupq_n_f32(0.f);
 
   if (we > width) {
     cnt--;
@@ -3579,14 +3814,34 @@ inline void write_int32_nchwc4_to_nchw(const int* din,
       din_hei_ptr = din + index + offset;
       int j = we - 4;
       for (; j < width; ++j) {
-        *(doutc0_ptr++) = cvt_kernel<Dtype>(
-            din_hei_ptr[0], scale[0], bias[0], flag_act, alpha[0]);
-        *(doutc1_ptr++) = cvt_kernel<Dtype>(
-            din_hei_ptr[1], scale[1], bias[1], flag_act, alpha[0]);
-        *(doutc2_ptr++) = cvt_kernel<Dtype>(
-            din_hei_ptr[2], scale[2], bias[2], flag_act, alpha[0]);
-        *(doutc3_ptr++) = cvt_kernel<Dtype>(
-            din_hei_ptr[3], scale[3], bias[3], flag_act, alpha[0]);
+        *(doutc0_ptr++) = cvt_kernel<Dtype>(din_hei_ptr[0],
+                                            scale[0],
+                                            vbias[0],
+                                            flag_act,
+                                            alpha[0],
+                                            alpha[4],
+                                            alpha[8]);
+        *(doutc1_ptr++) = cvt_kernel<Dtype>(din_hei_ptr[1],
+                                            scale[1],
+                                            vbias[1],
+                                            flag_act,
+                                            alpha[0],
+                                            alpha[4],
+                                            alpha[8]);
+        *(doutc2_ptr++) = cvt_kernel<Dtype>(din_hei_ptr[2],
+                                            scale[2],
+                                            vbias[2],
+                                            flag_act,
+                                            alpha[0],
+                                            alpha[4],
+                                            alpha[8]);
+        *(doutc3_ptr++) = cvt_kernel<Dtype>(din_hei_ptr[3],
+                                            scale[3],
+                                            vbias[3],
+                                            flag_act,
+                                            alpha[0],
+                                            alpha[4],
+                                            alpha[8]);
         din_hei_ptr += 4;
       }
     }
@@ -3670,8 +3925,8 @@ inline void int32_nchwc8_kernel(Dtype*& dout0,        // NOLINT
   "fmla    v13.4s, v15.4s, %[scale1].s[3]\n"                       \
   /* activation */                                                 \
   "cmp    %w[flag_act],   #1\n"                                    \
-  "bne    12f                     \n"                              \
   "movi   v31.4s,  #0             \n" /* for relu*/                \
+  "bne    12f                     \n"                              \
   "fmax   v16.4s, v16.4s, v31.4s  \n" /*relu*/                     \
   "fmax   v17.4s, v17.4s, v31.4s  \n" /*relu*/                     \
   "fmax   v18.4s, v18.4s, v31.4s  \n" /*relu*/                     \
@@ -3685,17 +3940,62 @@ inline void int32_nchwc8_kernel(Dtype*& dout0,        // NOLINT
   "cmp    %w[flag_act],  #0       \n" /* check no act */           \
   "beq    2f                      \n" /* no act end */             \
   "cmp    %w[flag_act],  #2       \n" /* check relu6 */            \
-  "bne    13f                     \n" /* jump no relu6*/           \
-  "movi   v20.4s, #0              \n" /* for relu6 */              \
+  "beq    14f                     \n" /* jump  relu6*/             \
+  "cmp    %w[flag_act],  #3       \n" /* check leakyrelu */        \
+  "beq    13f                     \n" /* leakyrelu */              \
+  "ldp    q20, q21, [%[alpha]]    \n" /* hardsiwsh */              \
+  "ldr    q22, [%[alpha], #32]    \n"                              \
+  "fmul   v10.4s, v16.4s, v20.4s  \n"                              \
+  "fadd   v16.4s, v16.4s, v21.4s  \n"                              \
+  "fmul   v11.4s, v17.4s, v20.4s  \n"                              \
+  "fadd   v17.4s, v17.4s, v21.4s  \n"                              \
+  "fmul   v14.4s, v18.4s, v20.4s  \n"                              \
+  "fadd   v18.4s, v18.4s, v21.4s  \n"                              \
+  "fmul   v15.4s, v19.4s, v20.4s  \n"                              \
+  "fadd   v19.4s, v19.4s, v21.4s  \n"                              \
+  "fmax   v16.4s, v16.4s, v31.4s  \n"                              \
+  "fmax   v17.4s, v17.4s, v31.4s  \n"                              \
+  "fmax   v18.4s, v18.4s, v31.4s  \n"                              \
+  "fmax   v19.4s, v19.4s, v31.4s  \n"                              \
+  "fmin   v16.4s, v16.4s, v22.4s  \n"                              \
+  "fmin   v17.4s, v17.4s, v22.4s  \n"                              \
+  "fmin   v18.4s, v18.4s, v22.4s  \n"                              \
+  "fmin   v19.4s, v19.4s, v22.4s  \n"                              \
+  "fmul   v16.4s, v16.4s, v10.4s  \n"                              \
+  "fmul   v17.4s, v17.4s, v11.4s  \n"                              \
+  "fmul   v18.4s, v18.4s, v14.4s  \n"                              \
+  "fmul   v19.4s, v19.4s, v15.4s  \n"                              \
+  "fmul   v10.4s, v8.4s,  v20.4s  \n"                              \
+  "fadd   v8.4s,  v8.4s,  v21.4s  \n"                              \
+  "fmul   v11.4s, v9.4s,  v20.4s  \n"                              \
+  "fadd   v9.4s,  v9.4s,  v21.4s  \n"                              \
+  "fmul   v14.4s, v12.4s, v20.4s  \n"                              \
+  "fadd   v12.4s, v12.4s, v21.4s  \n"                              \
+  "fmul   v15.4s, v13.4s, v20.4s  \n"                              \
+  "fadd   v13.4s, v13.4s, v21.4s  \n"                              \
+  "fmax   v8.4s,  v8.4s,  v31.4s  \n"                              \
+  "fmax   v9.4s,  v9.4s,  v31.4s  \n"                              \
+  "fmax   v12.4s, v12.4s, v31.4s  \n"                              \
+  "fmax   v13.4s, v13.4s, v31.4s  \n"                              \
+  "fmin   v8.4s,  v8.4s,  v22.4s  \n"                              \
+  "fmin   v9.4s,  v9.4s,  v22.4s  \n"                              \
+  "fmin   v12.4s, v12.4s, v22.4s  \n"                              \
+  "fmin   v13.4s, v13.4s, v22.4s  \n"                              \
+  "fmul   v8.4s,  v8.4s,  v10.4s  \n"                              \
+  "fmul   v9.4s,  v9.4s,  v11.4s  \n"                              \
+  "fmul   v12.4s, v12.4s, v14.4s  \n"                              \
+  "fmul   v13.4s, v13.4s, v15.4s  \n"                              \
+  "b      2f                      \n" /* hardsiwsh end */          \
+  "14:                               \n" /* leakey relu */         \
   "ld1    {v21.4s}, [%[alpha]]    \n" /* relu6 alpha */            \
-  "fmax   v16.4s, v16.4s, v20.4s  \n" /* relu6 */                  \
-  "fmax   v17.4s, v17.4s, v20.4s  \n" /* relu6 */                  \
-  "fmax   v18.4s, v18.4s, v20.4s  \n" /* relu6 */                  \
-  "fmax   v19.4s, v19.4s, v20.4s  \n" /* relu6 */                  \
-  "fmax   v8.4s,  v8.4s,  v20.4s  \n" /* relu6 */                  \
-  "fmax   v9.4s,  v9.4s,  v20.4s  \n" /* relu6 */                  \
-  "fmax   v12.4s, v12.4s, v20.4s  \n" /* relu6 */                  \
-  "fmax   v13.4s, v13.4s, v20.4s  \n" /* relu6 */                  \
+  "fmax   v16.4s, v16.4s, v31.4s  \n" /* relu6 */                  \
+  "fmax   v17.4s, v17.4s, v31.4s  \n" /* relu6 */                  \
+  "fmax   v18.4s, v18.4s, v31.4s  \n" /* relu6 */                  \
+  "fmax   v19.4s, v19.4s, v31.4s  \n" /* relu6 */                  \
+  "fmax   v8.4s,  v8.4s,  v31.4s  \n" /* relu6 */                  \
+  "fmax   v9.4s,  v9.4s,  v31.4s  \n" /* relu6 */                  \
+  "fmax   v12.4s, v12.4s, v31.4s  \n" /* relu6 */                  \
+  "fmax   v13.4s, v13.4s, v31.4s  \n" /* relu6 */                  \
   "fmin   v16.4s, v16.4s, v21.4s  \n" /* relu6 */                  \
   "fmin   v17.4s, v17.4s, v21.4s  \n" /* relu6 */                  \
   "fmin   v18.4s, v18.4s, v21.4s  \n" /* relu6 */                  \
@@ -3706,27 +4006,26 @@ inline void int32_nchwc8_kernel(Dtype*& dout0,        // NOLINT
   "fmin   v13.4s, v13.4s, v21.4s  \n" /* relu6 */                  \
   "b      2f                      \n" /* relu6 end */              \
   "13:                               \n" /* leakey relu */         \
-  "movi   v20.4s,   #0               \n" /* for leakey relu */     \
   "ld1    {v21.4s}, [%[alpha]]       \n" /* leakey relu alpha */   \
-  "fcmge  v10.4s,   v16.4s,  v20.4s  \n" /* vcgeq_f32 */           \
+  "fcmge  v10.4s,   v16.4s,  v31.4s  \n" /* vcgeq_f32 */           \
   "fmul   v11.4s,   v16.4s,  v21.4s  \n" /* vmulq_f32 */           \
-  "fcmge  v14.4s,   v17.4s,  v20.4s  \n" /* vcgeq_f32 */           \
+  "fcmge  v14.4s,   v17.4s,  v31.4s  \n" /* vcgeq_f32 */           \
   "fmul   v15.4s,   v17.4s,  v21.4s  \n" /* vmulq_f32 */           \
-  "fcmge  v22.4s,   v18.4s,  v20.4s  \n" /* vcgeq_f32 */           \
+  "fcmge  v22.4s,   v18.4s,  v31.4s  \n" /* vcgeq_f32 */           \
   "fmul   v23.4s,   v18.4s,  v21.4s  \n" /* vmulq_f32 */           \
-  "fcmge  v24.4s,   v19.4s,  v20.4s  \n" /* vcgeq_f32 */           \
+  "fcmge  v24.4s,   v19.4s,  v31.4s  \n" /* vcgeq_f32 */           \
   "fmul   v25.4s,   v19.4s,  v21.4s  \n" /* vmulq_f32 */           \
   "bif    v16.16b, v11.16b,  v10.16b \n" /* choose*/               \
   "bif    v17.16b, v15.16b,  v14.16b \n" /* choose*/               \
   "bif    v18.16b, v23.16b,  v22.16b \n" /* choose*/               \
   "bif    v19.16b, v25.16b,  v24.16b \n" /* choose*/               \
-  "fcmge  v10.4s,   v8.4s,   v20.4s  \n" /* vcgeq_f32 */           \
+  "fcmge  v10.4s,   v8.4s,   v31.4s  \n" /* vcgeq_f32 */           \
   "fmul   v11.4s,   v8.4s,   v21.4s  \n" /* vmulq_f32 */           \
-  "fcmge  v14.4s,   v9.4s,   v20.4s  \n" /* vcgeq_f32 */           \
+  "fcmge  v14.4s,   v9.4s,   v31.4s  \n" /* vcgeq_f32 */           \
   "fmul   v15.4s,   v9.4s,   v21.4s  \n" /* vmulq_f32 */           \
-  "fcmge  v22.4s,   v12.4s,  v20.4s  \n" /* vcgeq_f32 */           \
+  "fcmge  v22.4s,   v12.4s,  v31.4s  \n" /* vcgeq_f32 */           \
   "fmul   v23.4s,   v12.4s,  v21.4s  \n" /* vmulq_f32 */           \
-  "fcmge  v24.4s,   v13.4s,  v20.4s  \n" /* vcgeq_f32 */           \
+  "fcmge  v24.4s,   v13.4s,  v31.4s  \n" /* vcgeq_f32 */           \
   "fmul   v25.4s,   v13.4s,  v21.4s  \n" /* vmulq_f32 */           \
   "bif    v8.16b,  v11.16b,  v10.16b \n" /* choose*/               \
   "bif    v9.16b,  v15.16b,  v14.16b \n" /* choose*/               \
@@ -3779,8 +4078,8 @@ inline void int32_nchwc8_kernel(Dtype*& dout0,        // NOLINT
   "vswp    d3, d10\n" /* q1: e0-e3, q5: g0-g3 */                  \
   "vswp    d7, d14\n" /* q3: f0-f3, q7: h0-h3 */                  \
   /* activation */                                                \
-  "vmov.u32   q8, #0                \n"                           \
   "cmp    %[flag_act],   #1         \n"                           \
+  "vmov.u32   q8, #0                \n"                           \
   "bne    12f                       \n"                           \
   "vmax.f32 q0, q0, q8              \n" /*relu*/                  \
   "vmax.f32 q2, q2, q8              \n" /*relu*/                  \
@@ -3795,7 +4094,84 @@ inline void int32_nchwc8_kernel(Dtype*& dout0,        // NOLINT
   "cmp    %[flag_act],  #0          \n"                           \
   "beq    2f                        \n"                           \
   "cmp    %[flag_act],  #2          \n"                           \
-  "bne    13f                       \n"                           \
+  "beq    14f                       \n"                           \
+  "cmp    %[flag_act],  #3          \n"                           \
+  "beq    13f                       \n"                           \
+  "vld1.f32  {d18-d21}, [%[alpha]]  \n"                           \
+  "vadd.f32  q11, q0,  q10          \n"                           \
+  "vmul.f32  q0,  q0,  q9           \n"                           \
+  "vldr   d20,  [%[alpha], #32]     \n"                           \
+  "vldr   d21,  [%[alpha], #40]     \n"                           \
+  "vmax.f32  q11, q11, q8           \n"                           \
+  "vmin.f32  q11, q11, q10          \n"                           \
+  "vldr   d20,  [%[alpha], #16]     \n"                           \
+  "vldr   d21,  [%[alpha], #24]     \n"                           \
+  "vmul.f32  q0,  q0,  q11          \n"                           \
+  "vmul.f32  q11,  q2,  q9          \n"                           \
+  "vadd.f32  q2, q2,  q10           \n"                           \
+  "vldr   d20,  [%[alpha], #32]     \n"                           \
+  "vldr   d21,  [%[alpha], #40]     \n"                           \
+  "vmax.f32  q2,  q2, q8            \n"                           \
+  "vmin.f32  q2,  q2, q10           \n"                           \
+  "vldr   d20,  [%[alpha], #16]     \n"                           \
+  "vldr   d21,  [%[alpha], #24]     \n"                           \
+  "vmul.f32  q2,  q2,  q11          \n"                           \
+  "vmul.f32  q11, q4,  q9           \n"                           \
+  "vadd.f32  q4,  q4,  q10          \n"                           \
+  "vldr   d20,  [%[alpha], #32]     \n"                           \
+  "vldr   d21,  [%[alpha], #40]     \n"                           \
+  "vmax.f32  q4,  q4,  q8           \n"                           \
+  "vmin.f32  q4,  q4,  q10          \n"                           \
+  "vldr   d20,  [%[alpha], #16]     \n"                           \
+  "vldr   d21,  [%[alpha], #24]     \n"                           \
+  "vmul.f32  q4,  q4,  q11          \n"                           \
+  "vmul.f32  q11, q6,  q9           \n"                           \
+  "vadd.f32  q6,  q6,  q10          \n"                           \
+  "vldr   d20,  [%[alpha], #32]     \n"                           \
+  "vldr   d21,  [%[alpha], #40]     \n"                           \
+  "vmax.f32  q6,  q6,  q8           \n"                           \
+  "vmin.f32  q6,  q6,  q10          \n"                           \
+  "vldr   d20,  [%[alpha], #16]     \n"                           \
+  "vldr   d21,  [%[alpha], #24]     \n"                           \
+  "vmul.f32  q6,  q6,  q11          \n"                           \
+  "vmul.f32  q11, q1,  q9           \n"                           \
+  "vadd.f32  q1,  q1,  q10          \n"                           \
+  "vldr   d20,  [%[alpha], #32]     \n"                           \
+  "vldr   d21,  [%[alpha], #40]     \n"                           \
+  "vmax.f32  q1,  q1,  q8           \n"                           \
+  "vmin.f32  q1,  q1,  q10          \n"                           \
+  "vldr   d20,  [%[alpha], #16]     \n"                           \
+  "vldr   d21,  [%[alpha], #24]     \n"                           \
+  "vmul.f32  q1,  q1,  q11          \n"                           \
+  "vmul.f32  q11, q3,  q9           \n"                           \
+  "vadd.f32  q3,  q3,  q10          \n"                           \
+  "vldr   d20,  [%[alpha], #32]     \n"                           \
+  "vldr   d21,  [%[alpha], #40]     \n"                           \
+  "vmax.f32  q3,  q3,  q8           \n"                           \
+  "vmin.f32  q3,  q3,  q10          \n"                           \
+  "vldr   d20,  [%[alpha], #16]     \n"                           \
+  "vldr   d21,  [%[alpha], #24]     \n"                           \
+  "vmul.f32  q3,  q3,  q11          \n"                           \
+  "vmul.f32  q11, q5,  q9           \n"                           \
+  "vadd.f32  q5,  q5,  q10          \n"                           \
+  "vldr   d20,  [%[alpha], #32]     \n"                           \
+  "vldr   d21,  [%[alpha], #40]     \n"                           \
+  "vmax.f32  q5,  q5,  q8           \n"                           \
+  "vmin.f32  q5,  q5,  q10          \n"                           \
+  "vldr   d20,  [%[alpha], #16]     \n"                           \
+  "vldr   d21,  [%[alpha], #24]     \n"                           \
+  "vmul.f32  q5,  q5,  q11          \n"                           \
+  "vmul.f32  q11, q7,  q9           \n"                           \
+  "vadd.f32  q7,  q7,  q10          \n"                           \
+  "vldr   d20,  [%[alpha], #32]     \n"                           \
+  "vldr   d21,  [%[alpha], #40]     \n"                           \
+  "vmax.f32  q7,  q7,  q8           \n"                           \
+  "vmin.f32  q7,  q7,  q10          \n"                           \
+  "vldr   d20,  [%[alpha], #16]     \n"                           \
+  "vldr   d21,  [%[alpha], #24]     \n"                           \
+  "vmul.f32  q7,  q7,  q11          \n"                           \
+  "b      2f                        \n"                           \
+  "14:                              \n"                           \
   "vld1.f32  {d18-d19}, [%[alpha]]  \n"                           \
   "vmax.f32   q0, q0, q8            \n"                           \
   "vmax.f32   q2, q2, q8            \n"                           \
@@ -4191,10 +4567,27 @@ inline void write_int32_nchwc8_to_nchw(const int* din,
   int cnt = valid_w / 4;
   int remain = valid_w & 3;
 
-  float32x4_t w_scale0 = vld1q_f32(scale);
-  float32x4_t w_scale1 = vld1q_f32(scale + 4);
-  float32x4_t w_bias0 = flag_bias ? vld1q_f32(bias) : vdupq_n_f32(0.f);
-  float32x4_t w_bias1 = flag_bias ? vld1q_f32(bias + 4) : vdupq_n_f32(0.f);
+  float32x4_t w_scale0 = vdupq_n_f32(0.f);
+  float32x4_t w_scale1 = vdupq_n_f32(0.f);
+  float vbias[8] = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
+  if (flag_bias) {
+    for (int i = 0; i < 8 && i + cs < channel; i++) {
+      vbias[i] = bias[i];
+    }
+  }
+  float32x4_t w_bias0 = flag_bias ? vld1q_f32(vbias) : vdupq_n_f32(0.f);
+  float32x4_t w_bias1 = flag_bias ? vld1q_f32(vbias + 4) : vdupq_n_f32(0.f);
+  if (ce <= channel) {
+    w_scale0 = vld1q_f32(scale);
+    w_scale1 = vld1q_f32(scale + 4);
+  } else {
+    float scale_v[8] = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
+    for (int i = 0; i < 8 && i + cs < channel; i++) {
+      scale_v[i] = scale[i];
+    }
+    w_scale0 = vld1q_f32(scale_v);
+    w_scale1 = vld1q_f32(scale_v + 4);
+  }
 
   for (int i = 0; i < size_h; i++) {
     int size_w = i * width;
@@ -4250,41 +4643,62 @@ inline void write_int32_nchwc8_to_nchw(const int* din,
       int offset = 32 * cnt;
       din_hei_ptr = ptr_din + offset;
       for (int j = 0; j < remain; ++j) {
-        if (flag_bias) {
-          *(doutc0_ptr++) = cvt_kernel<Dtype>(
-              din_hei_ptr[0], scale[0], bias[0], flag_act, alpha[0]);
-          *(doutc1_ptr++) = cvt_kernel<Dtype>(
-              din_hei_ptr[1], scale[1], bias[1], flag_act, alpha[0]);
-          *(doutc2_ptr++) = cvt_kernel<Dtype>(
-              din_hei_ptr[2], scale[2], bias[2], flag_act, alpha[0]);
-          *(doutc3_ptr++) = cvt_kernel<Dtype>(
-              din_hei_ptr[3], scale[3], bias[3], flag_act, alpha[0]);
-          *(doutc4_ptr++) = cvt_kernel<Dtype>(
-              din_hei_ptr[4], scale[4], bias[4], flag_act, alpha[0]);
-          *(doutc5_ptr++) = cvt_kernel<Dtype>(
-              din_hei_ptr[5], scale[5], bias[5], flag_act, alpha[0]);
-          *(doutc6_ptr++) = cvt_kernel<Dtype>(
-              din_hei_ptr[6], scale[6], bias[6], flag_act, alpha[0]);
-          *(doutc7_ptr++) = cvt_kernel<Dtype>(
-              din_hei_ptr[7], scale[7], bias[7], flag_act, alpha[0]);
-        } else {
-          *(doutc0_ptr++) = cvt_kernel<Dtype>(
-              din_hei_ptr[0], scale[0], 0.f, flag_act, alpha[0]);
-          *(doutc1_ptr++) = cvt_kernel<Dtype>(
-              din_hei_ptr[1], scale[1], 0.f, flag_act, alpha[0]);
-          *(doutc2_ptr++) = cvt_kernel<Dtype>(
-              din_hei_ptr[2], scale[2], 0.f, flag_act, alpha[0]);
-          *(doutc3_ptr++) = cvt_kernel<Dtype>(
-              din_hei_ptr[3], scale[3], 0.f, flag_act, alpha[0]);
-          *(doutc4_ptr++) = cvt_kernel<Dtype>(
-              din_hei_ptr[4], scale[4], 0.f, flag_act, alpha[0]);
-          *(doutc5_ptr++) = cvt_kernel<Dtype>(
-              din_hei_ptr[5], scale[5], 0.f, flag_act, alpha[0]);
-          *(doutc6_ptr++) = cvt_kernel<Dtype>(
-              din_hei_ptr[6], scale[6], 0.f, flag_act, alpha[0]);
-          *(doutc7_ptr++) = cvt_kernel<Dtype>(
-              din_hei_ptr[7], scale[7], 0.f, flag_act, alpha[0]);
-        }
+        *(doutc0_ptr++) = cvt_kernel<Dtype>(din_hei_ptr[0],
+                                            scale[0],
+                                            vbias[0],
+                                            flag_act,
+                                            alpha[0],
+                                            alpha[4],
+                                            alpha[8]);
+        *(doutc1_ptr++) = cvt_kernel<Dtype>(din_hei_ptr[1],
+                                            scale[1],
+                                            vbias[1],
+                                            flag_act,
+                                            alpha[0],
+                                            alpha[4],
+                                            alpha[8]);
+        *(doutc2_ptr++) = cvt_kernel<Dtype>(din_hei_ptr[2],
+                                            scale[2],
+                                            vbias[2],
+                                            flag_act,
+                                            alpha[0],
+                                            alpha[4],
+                                            alpha[8]);
+        *(doutc3_ptr++) = cvt_kernel<Dtype>(din_hei_ptr[3],
+                                            scale[3],
+                                            vbias[3],
+                                            flag_act,
+                                            alpha[0],
+                                            alpha[4],
+                                            alpha[8]);
+        *(doutc4_ptr++) = cvt_kernel<Dtype>(din_hei_ptr[4],
+                                            scale[4],
+                                            vbias[4],
+                                            flag_act,
+                                            alpha[0],
+                                            alpha[4],
+                                            alpha[8]);
+        *(doutc5_ptr++) = cvt_kernel<Dtype>(din_hei_ptr[5],
+                                            scale[5],
+                                            vbias[5],
+                                            flag_act,
+                                            alpha[0],
+                                            alpha[4],
+                                            alpha[8]);
+        *(doutc6_ptr++) = cvt_kernel<Dtype>(din_hei_ptr[6],
+                                            scale[6],
+                                            vbias[6],
+                                            flag_act,
+                                            alpha[0],
+                                            alpha[4],
+                                            alpha[8]);
+        *(doutc7_ptr++) = cvt_kernel<Dtype>(din_hei_ptr[7],
+                                            scale[7],
+                                            vbias[7],
+                                            flag_act,
+                                            alpha[0],
+                                            alpha[4],
+                                            alpha[8]);
         din_hei_ptr += 8;
       }
     }

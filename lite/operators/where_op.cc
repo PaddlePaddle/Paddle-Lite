@@ -43,7 +43,6 @@ bool WhereOp::InferShapeImpl() const {
 }
 
 bool WhereOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
-  AttachParam(&param_);
   auto x = opdesc.Input("X").front();
   auto y = opdesc.Input("Y").front();
   auto condition = opdesc.Input("Condition").front();

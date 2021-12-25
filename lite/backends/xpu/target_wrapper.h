@@ -38,10 +38,10 @@ namespace lite {
 
 // MAX(lod.size()) = 32
 const int XPU_MAX_LOD_SIZE = 32;
+// MAX(lod.size()) = 64 in XPU refactor
+const int XPU_MAX_LOD_SIZE_64 = 64;
 // MAX(lod[i + 1] - lod[i]) = 512
 const int XPU_MAX_LOD_SEQ_LEN = 512;
-// QUANT SCALE NUM == XPU CDNN NUM
-const int XPU_QUANT_SCALE_NUM = 6;
 
 using TargetWrapperXPU = TargetWrapper<TARGET(kXPU)>;
 
@@ -76,9 +76,9 @@ class TargetWrapper<TARGET(kXPU)> {
   static XPUScratchPadGuard MallocScratchPad(size_t size);
 
   static xdnn::Context* GetRawContext() {
-    if (tls_raw_ctx_ == nullptr) {
-      tls_raw_ctx_ = xdnn::create_context();
-      CHECK(tls_raw_ctx_);
+    if (tls_raw_ctx_.get() == nullptr) {
+      tls_raw_ctx_.reset(xdnn::create_context(), xdnn::destroy_context);
+      CHECK(tls_raw_ctx_.get());
       if (l3_planner_ == nullptr) {
         l3_planner_ = new XPUL3Planner;
       }
@@ -100,8 +100,28 @@ class TargetWrapper<TARGET(kXPU)> {
         local_l3_size = max_l3_size;
       }
       CHECK_LE(shared_l3_size, max_l3_size);
+      if (local_gm_size > 0) {
+        VLOG(3) << "Try To Malloc Local GM Workspace Size is" << local_gm_size;
+        void* local_gm_ptr = nullptr;
+        int ret =
+            xpu_malloc(reinterpret_cast<void**>(&local_gm_ptr), local_gm_size);
+        if (ret != 0 || local_gm_ptr == nullptr) {
+          VLOG(3) << "No Enough GM Workspace For Current Predictor.";
+        } else {
+          void* old_ptr = tls_raw_ctx_->_gm_mgr.get_ptr();
+          if (old_ptr != nullptr) {
+            TargetWrapperXPU::Free(old_ptr);
+          }
+          ret = tls_raw_ctx_->_gm_mgr.set(local_gm_ptr, local_gm_size);
+          if (ret != 0) {
+            LOG(WARNING) << "XPU GM Mgr Init Fail, Please Check Configuration.";
+            TargetWrapperXPU::Free(local_gm_ptr);
+            local_gm_ptr = nullptr;
+          }
+        }
+      }
     }
-    return tls_raw_ctx_;
+    return tls_raw_ctx_.get();
   }
   static void MallocL3Cache(
       const std::vector<std::vector<int64_t>>& query_shape);
@@ -131,7 +151,8 @@ class TargetWrapper<TARGET(kXPU)> {
   // l3 cache config
   static LITE_THREAD_LOCAL bool need_l3_mutex;    // model level l3 size
   static LITE_THREAD_LOCAL size_t local_l3_size;  // model level l3 size
-  static size_t shared_l3_size;                   // model level l3 size
+  static LITE_THREAD_LOCAL size_t local_gm_size;
+  static size_t shared_l3_size;  // model level l3 size
   static LITE_THREAD_LOCAL std::vector<XPUL3CacheBlock*>
       l3_block_dict;  // l3 cache block used between op layers
 
@@ -140,7 +161,7 @@ class TargetWrapper<TARGET(kXPU)> {
       void* l3_ptr,
       size_t l3_size,
       const std::vector<std::vector<int64_t>>& query_shape);
-  static LITE_THREAD_LOCAL xdnn::Context* tls_raw_ctx_;
+  static LITE_THREAD_LOCAL std::shared_ptr<xdnn::Context> tls_raw_ctx_;
   static LITE_THREAD_LOCAL void* local_l3_ptr_;
   static void* shared_l3_ptr_;
   static std::mutex mutex_l3_;

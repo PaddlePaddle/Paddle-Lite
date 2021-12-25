@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,16 +25,15 @@ int ConvertGather(Converter* converter, hal::Operation* operation) {
 
   // Convert to GE operators
   auto input_operator = converter->GetMappedOperator(input_operand);
-  if (input_operator == nullptr) {
+  if (!input_operator) {
     input_operator = converter->ConvertOperand(input_operand);
   }
   auto indices_operator = converter->GetMappedOperator(indices_operand);
-  if (indices_operator == nullptr) {
+  if (!indices_operator) {
     indices_operator = converter->ConvertOperand(indices_operand);
   }
-  auto axis_operand = input_operands[2];
   auto axis_operator = converter->GetMappedOperator(axis_operand);
-  if (axis_operator == nullptr) {
+  if (!axis_operator) {
     axis_operator = converter->ConvertOperand(axis_operand);
   }
   auto gather_op = converter->AddOperator<ge::op::GatherV2>(output_operand);

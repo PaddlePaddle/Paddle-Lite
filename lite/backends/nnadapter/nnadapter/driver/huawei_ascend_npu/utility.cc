@@ -33,6 +33,27 @@ void InitializeAscendCL() {
   static bool initialized = false;
   mtx.lock();
   if (!initialized) {
+    int major_version = 0, minor_version = 0, patch_version = 0;
+    GetAscendCANNVersion(&major_version, &minor_version, &patch_version);
+    auto current_version =
+        string_format("%d.%d.%d",
+                      NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MAJOR_VERSION,
+                      NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MINOR_VERSION,
+                      NNADAPTER_HUAWEI_ASCEND_NPU_CANN_PATCH_VERSION);
+    auto build_version =
+        string_format("%d.%d.%d", major_version, minor_version, patch_version);
+    NNADAPTER_VLOG(5) << "The current library is compiled based on CANN "
+                      << current_version;
+    NNADAPTER_VLOG(5) << "The CANN version of the current environment is "
+                      << build_version;
+    if (major_version != NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MAJOR_VERSION &&
+        minor_version != NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MINOR_VERSION &&
+        patch_version != NNADAPTER_HUAWEI_ASCEND_NPU_CANN_PATCH_VERSION) {
+      NNADAPTER_LOG(WARNING)
+          << "CANN version mismatch. The build version is " << build_version
+          << ", but the current environment version is " << current_version
+          << ".";
+    }
     NNADAPTER_VLOG(5) << "Initialize AscendCL.";
     // The following APIs can only be called once in one process
     aclInit(NULL);
@@ -58,9 +79,12 @@ void InitializeGraphBuilder() {
   if (!initialized) {
     NNADAPTER_VLOG(5) << "Initialize Graph Builder.";
     // The following APIs can only be called once in one process
+    ge::AscendString soc_version = GetAscendSocName();
+    NNADAPTER_VLOG(5) << "Initialize the Graph Builder based on SoC name: "
+                      << soc_version.GetString();
     std::map<ge::AscendString, ge::AscendString> global_options;
     global_options.insert(
-        std::make_pair(ge::ir_option::SOC_VERSION, "Ascend310"));
+        std::make_pair(ge::ir_option::SOC_VERSION, soc_version));
     ge::aclgrphBuildInitialize(global_options);
     // Register 'FinalizeGraphBuilder' to be called at normal process
     // termination
@@ -150,13 +174,16 @@ const std::string ATCErrorToString(uint32_t error) {
 }
 
 std::shared_ptr<AclModelClient> LoadOMModelFromBuffer(
-    const std::vector<uint8_t>& model_buffer, int device_id) {
+    const std::vector<uint8_t>& model_buffer,
+    int device_id,
+    const std::string& profiling_file_path) {
   if (model_buffer.size() == 0) {
     NNADAPTER_LOG(ERROR) << "model_buffer size should not be 0!";
     return nullptr;
   }
   // Create a ACL model client to load the om model
-  auto model_client = std::make_shared<AclModelClient>(device_id);
+  auto model_client =
+      std::make_shared<AclModelClient>(device_id, profiling_file_path);
   // Load model from memory
   if (model_client->LoadModel(
           reinterpret_cast<const void*>(model_buffer.data()),
@@ -383,42 +410,36 @@ void ConvertACLDimsToGEDims(const aclmdlIODims& input_dimensions,
 ge::DataType ConvertToGEPrecision(
     NNAdapterOperandPrecisionCode precision_code) {
   switch (precision_code) {
-    case NNADAPTER_TENSOR_BOOL8:
     case NNADAPTER_BOOL8:
       return ge::DT_BOOL;
-    case NNADAPTER_TENSOR_INT8:
     case NNADAPTER_INT8:
+    case NNADAPTER_QUANT_INT8_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL:
       return ge::DT_INT8;
-    case NNADAPTER_TENSOR_INT16:
     case NNADAPTER_INT16:
+    case NNADAPTER_QUANT_INT16_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT16_SYMM_PER_CHANNEL:
       return ge::DT_INT16;
-    case NNADAPTER_TENSOR_INT32:
     case NNADAPTER_INT32:
+    case NNADAPTER_QUANT_INT32_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL:
       return ge::DT_INT32;
-    case NNADAPTER_TENSOR_INT64:
     case NNADAPTER_INT64:
       return ge::DT_INT64;
-    case NNADAPTER_TENSOR_UINT8:
     case NNADAPTER_UINT8:
       return ge::DT_UINT8;
-    case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER:
+    case NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER:
       return ge::DT_QUINT8;
-    case NNADAPTER_TENSOR_UINT16:
     case NNADAPTER_UINT16:
       return ge::DT_UINT16;
-    case NNADAPTER_TENSOR_UINT32:
     case NNADAPTER_UINT32:
       return ge::DT_UINT32;
-    case NNADAPTER_TENSOR_UINT64:
     case NNADAPTER_UINT64:
       return ge::DT_UINT64;
-    case NNADAPTER_TENSOR_FLOAT16:
     case NNADAPTER_FLOAT16:
       return ge::DT_FLOAT16;
-    case NNADAPTER_TENSOR_FLOAT32:
     case NNADAPTER_FLOAT32:
       return ge::DT_FLOAT;
-    case NNADAPTER_TENSOR_FLOAT64:
     case NNADAPTER_FLOAT64:
       return ge::DT_DOUBLE;
     default:
@@ -477,6 +498,102 @@ std::string ConvertPadModeCodeToGEPadMode(int pad_mode_code) {
       break;
   }
   return "constant";
+}
+
+std::string ConvertInterpolateModeCodeToGEInterpolateMode(
+    int interpolate_mode_code) {
+  switch (interpolate_mode_code) {
+    case NNADAPTER_INTERPOLATE_MODE_BILINEAR:
+      return "bilinear";
+    case NNADAPTER_INTERPOLATE_MODE_NEAREST:
+      return "nearest";
+    default:
+      NNADAPTER_LOG(FATAL)
+          << "Failed to convert the NNAdapter operand interpolate mode code("
+          << interpolate_mode_code << ") to interpolate mode !";
+      break;
+  }
+  return "bilinear";
+}
+
+bool GetAscendCANNVersion(int* major, int* minor, int* patch) {
+  static std::mutex mtx;
+  std::lock_guard<std::mutex> lock(mtx);
+  static bool initialized = false;
+  static int major_version = 0;
+  static int minor_version = 0;
+  static int patch_version = 0;
+  if (!initialized) {
+    initialized = true;
+    std::string ascend_cann_path;
+    std::string ld_library_path = GetStringFromEnv("LD_LIBRARY_PATH");
+    // Split ld_library_path string by ":"
+    std::vector<std::string> tokens =
+        string_split<std::string>(ld_library_path, ":");
+    for (auto path : tokens) {
+      if (path.find("Ascend/ascend-toolkit") != std::string::npos ||
+          path.find("Ascend/nnrt") != std::string::npos) {
+        ascend_cann_path = path;
+        break;
+      }
+    }
+    if (ascend_cann_path.empty()) {
+      ascend_cann_path = "/usr/local/Ascend/ascend-toolkit/latest";
+      NNADAPTER_LOG(ERROR) << "Unable to find the Ascend CANN installation "
+                              "path, use the default path["
+                           << ascend_cann_path << "]";
+    }
+    auto ascend_cann_real_path = GetRealPath(ascend_cann_path.c_str());
+    // Split ascend_cann_real_path string by "/"
+    tokens = string_split<std::string>(ascend_cann_real_path, "/");
+    std::string ascend_cann_version;
+    for (size_t i = 0; i < tokens.size(); i++) {
+      if (tokens[i] == "ascend-toolkit" || tokens[i] == "nnrt") {
+        if (i <= tokens.size() - 1) {
+          ascend_cann_version = tokens[i + 1];
+          break;
+        } else {
+          NNADAPTER_LOG(ERROR) << "Unable to find the version of Ascend CANN";
+          return false;
+        }
+      }
+    }
+    // Split ascend_cann_version string by "."
+    tokens = string_split<std::string>(ascend_cann_version, ".");
+    if (tokens.size() == 3 || tokens.size() == 4) {
+      major_version = atoi(tokens[0].c_str());
+      minor_version = atoi(tokens[1].c_str());
+      patch_version = atoi(tokens[2].c_str());
+    } else {
+      NNADAPTER_LOG(ERROR) << "Unable to get the version of Ascend CANN";
+      return false;
+    }
+  }
+  *major = major_version;
+  *minor = minor_version;
+  *patch = patch_version;
+  return true;
+}
+
+ge::AscendString GetAscendSocName() {
+  ge::AscendString soc_version = "Ascend310";
+#if NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(5, 0, 2)
+  const char* soc_name = aclrtGetSocName();
+  if (!soc_name) {
+    soc_version = ge::AscendString(soc_name);
+  } else {
+    NNADAPTER_LOG(WARNING) << "Failed to call aclrtGetSocName to obtain the "
+                              "SoC name, so Ascend 310 is used by default.";
+  }
+#else
+  NNADAPTER_LOG(WARNING) << "Since the current library is compiled based on "
+                            "CANN versions below 5.0.2, aclrtGetSocName "
+                            "cannot be called to obtain the SoC name of the "
+                            "current device, so Ascend 310 is used by default. "
+                            "If you want to use ascend 710, please recompile "
+                            "the library based on CANN 5.0.2 and above.";
+#endif
+  return soc_version;
 }
 
 }  // namespace huawei_ascend_npu

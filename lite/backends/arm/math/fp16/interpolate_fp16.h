@@ -68,7 +68,8 @@ void interpolate(lite::Tensor* X,
                  float scale,
                  bool with_align,
                  int align_mode,
-                 std::string interpolate_type);
+                 std::string interpolate_type,
+                 std::vector<float> scale_data);
 
 }  // namespace fp16
 }  // namespace math

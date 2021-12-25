@@ -264,31 +264,31 @@ ge::DataType GetGEDataType<bool>() {
 ge::DataType ConvertToGEPrecision(
     NNAdapterOperandPrecisionCode precision_code) {
   switch (precision_code) {
-    case NNADAPTER_TENSOR_BOOL8:
+    case NNADAPTER_BOOL8:
       return ge::DT_BOOL;
-    case NNADAPTER_TENSOR_INT8:
+    case NNADAPTER_INT8:
       return ge::DT_INT8;
-    case NNADAPTER_TENSOR_INT16:
+    case NNADAPTER_INT16:
       return ge::DT_INT16;
-    case NNADAPTER_TENSOR_INT32:
+    case NNADAPTER_INT32:
       return ge::DT_INT32;
-    case NNADAPTER_TENSOR_INT64:
+    case NNADAPTER_INT64:
       return ge::DT_INT64;
-    case NNADAPTER_TENSOR_UINT8:
+    case NNADAPTER_UINT8:
       return ge::DT_UINT8;
-    case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER:
+    case NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER:
       return ge::DT_QUINT8;
-    case NNADAPTER_TENSOR_UINT16:
+    case NNADAPTER_UINT16:
       return ge::DT_UINT16;
-    case NNADAPTER_TENSOR_UINT32:
+    case NNADAPTER_UINT32:
       return ge::DT_UINT32;
-    case NNADAPTER_TENSOR_UINT64:
+    case NNADAPTER_UINT64:
       return ge::DT_UINT64;
-    case NNADAPTER_TENSOR_FLOAT16:
+    case NNADAPTER_FLOAT16:
       return ge::DT_FLOAT16;
-    case NNADAPTER_TENSOR_FLOAT32:
+    case NNADAPTER_FLOAT32:
       return ge::DT_FLOAT;
-    case NNADAPTER_TENSOR_FLOAT64:
+    case NNADAPTER_FLOAT64:
       return ge::DT_DOUBLE;
     default:
       NNADAPTER_LOG(FATAL)

@@ -87,11 +87,6 @@ class OpLite : public Registry {
   // Link the external execution environ to internal context.
   bool Attach(const cpp::OpDesc &opdesc, lite::Scope *scope);
 
-  template <typename T>
-  inline void AttachParam(T *param) {
-    op_param_ = static_cast<T *>(param);
-  }
-
   const OpInfo *op_info() const { return op_info_.get(); }
   OpInfo *mutable_op_info() { return op_info_.get(); }
 
@@ -140,6 +135,7 @@ class OpLite : public Registry {
   // Attach it with the runtime environment.
   virtual bool AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) = 0;
 
+  virtual bool InferShapeWithCache() const { return false; }
   // Specify the kernel to run by default. This will specify the value of
   // `kernel_place_`.
   virtual void StaticPickKernel(const std::vector<Place> &valid_targets) {
@@ -185,16 +181,15 @@ class OpLite : public Registry {
   // todo: it's prefered to combine last_input_shapes and
   // last_input_lods into a single hash value to decrease
   // memory usage.
-  std::vector<DDimLite> last_input_shapes{};
-  std::vector<std::vector<std::vector<uint64_t>>> last_input_lods{};
-  std::vector<DDimLite> last_output_shapes{};
-  std::vector<std::vector<std::vector<uint64_t>>> last_output_lods{};
-  mutable operators::ParamBase *op_param_{nullptr};
-
  private:
+  std::vector<DDimLite> last_input_shapes_{};
+  std::vector<LoD> last_input_lods_{};
+  std::vector<DDimLite> last_output_shapes_{};
+  std::vector<LoD> last_output_lods_{};
+  std::vector<const Tensor *> input_tensor_ptrs_cache_{};
+  std::vector<Tensor *> output_tensor_ptrs_cache_{};
   // Infer Shape according to memory, if current input shapes are consistent
   // with that of previous inputs, output shapes of last time will be reused.
-  bool InferShapeWithCache();
 };
 
 /*

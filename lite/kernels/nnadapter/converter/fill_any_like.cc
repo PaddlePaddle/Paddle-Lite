@@ -20,8 +20,7 @@ namespace kernels {
 namespace nnadapter {
 
 int ConvertFillAnyLike(Converter* converter, OpInfo* op, Scope* scope) {
-  // Use "shape" + "fill" to implement "fill_any_like"
-  // Shape operand
+  // Input operand
   auto x_name = op->Input("X").front();
   auto x_scale_name = "X0_scale";
   std::vector<float> x_scales;
@@ -29,7 +28,6 @@ int ConvertFillAnyLike(Converter* converter, OpInfo* op, Scope* scope) {
     x_scales = op->GetInputScale(x_scale_name, true);
   }
   auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
-  auto shape_operand = converter->AddShapeOperation(input_operand);
 
   // Value operand
   NNAdapterOperand* value_operand = nullptr;
@@ -38,18 +36,18 @@ int ConvertFillAnyLike(Converter* converter, OpInfo* op, Scope* scope) {
   auto input_precision = converter->GetOperandType(input_operand)->precision;
   if (dtype == -1) {
     switch (input_precision) {
-      case NNADAPTER_TENSOR_FLOAT32:
+      case NNADAPTER_FLOAT32:
         dtype = static_cast<int32_t>(lite::core::FluidType::FP32);
         break;
-      case NNADAPTER_TENSOR_INT32:
+      case NNADAPTER_INT32:
         dtype = static_cast<int32_t>(lite::core::FluidType::INT32);
         break;
-      case NNADAPTER_TENSOR_INT64:
+      case NNADAPTER_INT64:
         dtype = static_cast<int32_t>(lite::core::FluidType::INT64);
         break;
       default:
         LOG(FATAL) << "Not supported x dtype: "
-                   << static_cast<int>(NNADAPTER_TENSOR_FLOAT32);
+                   << static_cast<int>(NNADAPTER_FLOAT32);
         break;
     }
   }
@@ -76,7 +74,7 @@ int ConvertFillAnyLike(Converter* converter, OpInfo* op, Scope* scope) {
 
   // Fill operation
   converter->AddOperation(
-      NNADAPTER_FILL, {shape_operand, value_operand}, {output_operand});
+      NNADAPTER_FILL_LIKE, {input_operand, value_operand}, {output_operand});
   return NO_ERROR;
 }
 

@@ -15,6 +15,7 @@
 #include "lite/backends/arm/math/fp16/conv_block_utils_fp16.h"
 #include "lite/backends/arm/math/fp16/conv_impl_fp16.h"
 #include "lite/backends/arm/math/fp16/gemm_c8_fp16.h"
+#include "lite/core/parallel_defines.h"
 #ifdef ARM_WITH_OMP
 #include <omp.h>
 #endif
@@ -114,13 +115,11 @@ void conv_compute_2x2_3x3_fp16(const float16_t* input,
   auto act_type = act_param.active_type;
   float local_alpha = 0.f;
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
+  float offset = 0.f;
+  float threshold = 6.f;
 
   if (act_param.has_active) {
-    act_acquire(act_type,
-                flag_act,
-                local_alpha,
-                act_param.Relu_clipped_coef,
-                act_param.Leaky_relu_alpha);
+    act_acquire(act_type, flag_act, local_alpha, offset, threshold, act_param);
   }
 
   // begin compute
@@ -143,9 +142,12 @@ void conv_compute_2x2_3x3_fp16(const float16_t* input,
 
     const float16_t* weight_ptr = weight;
     const float16_t* bias_ptr = bias;
-#pragma omp parallel for num_threads(threads)
-    for (int tbi = 0; tbi < block_count; ++tbi) {
-#ifdef ARM_WITH_OMP
+    LITE_PARALLEL_BEGIN(tbi, tid, block_count) {
+#ifdef LITE_USE_THREAD_POOL
+      float16_t* tmp_data = g_tmp_data + tid * tmp_data_thread_stride;
+      float16_t* trans_tmp_data = g_trans_tmp_data + tid * 128;
+      float16_t* trans_remain_tmp_data = g_trans_remain_tmp_data + tid * 128;
+#elif defined(ARM_WITH_OMP)
       float16_t* tmp_data =
           g_tmp_data + omp_get_thread_num() * tmp_data_thread_stride;
       float16_t* trans_tmp_data = g_trans_tmp_data + omp_get_thread_num() * 128;
@@ -265,7 +267,9 @@ void conv_compute_2x2_3x3_fp16(const float16_t* input,
                               flag_act,
                               local_alpha,
                               bias + ci * 8,
-                              flag_bias);
+                              flag_bias,
+                              offset,
+                              threshold);
           }
         } else {
           for (int ci = 0; ci < oc_8; ++ci) {
@@ -299,12 +303,15 @@ void conv_compute_2x2_3x3_fp16(const float16_t* input,
                               flag_act,
                               local_alpha,
                               bias + ci * 8,
-                              flag_bias);
+                              flag_bias,
+                              offset,
+                              threshold);
           }
         }
       }
     }  // for block_count
-  }    // for num
+    LITE_PARALLEL_END();
+  }  // for num
 }  // conv_compute
 
 void conv_compute_4x4_3x3_fp16(const float16_t* input,
@@ -373,13 +380,11 @@ void conv_compute_4x4_3x3_fp16(const float16_t* input,
   float local_alpha = 0.f;
   bool flag_bias = (bias != nullptr);
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
+  float offset = 0.f;
+  float threshold = 6.f;
 
   if (act_param.has_active) {
-    act_acquire(act_type,
-                flag_act,
-                local_alpha,
-                act_param.Relu_clipped_coef,
-                act_param.Leaky_relu_alpha);
+    act_acquire(act_type, flag_act, local_alpha, offset, threshold, act_param);
   }
 
   // begin compute
@@ -402,10 +407,13 @@ void conv_compute_4x4_3x3_fp16(const float16_t* input,
 
     const float16_t* weight_ptr = weight;
     const float16_t* bias_ptr = bias;
-//
-#pragma omp parallel for num_threads(threads)
-    for (int tbi = 0; tbi < block_count; ++tbi) {
-#ifdef ARM_WITH_OMP
+    //
+    LITE_PARALLEL_BEGIN(tbi, tid, block_count) {
+#ifdef LITE_USE_THREAD_POOL
+      float16_t* tmp_data = g_tmp_data + tid * tmp_data_thread_stride;
+      float16_t* trans_tmp_data = g_trans_tmp_data + tid * 288;
+      float16_t* trans_remain_tmp_data = g_trans_remain_tmp_data + tid * 288;
+#elif ARM_WITH_OMP
       float16_t* tmp_data =
           g_tmp_data + omp_get_thread_num() * tmp_data_thread_stride;
       float16_t* trans_tmp_data = g_trans_tmp_data + omp_get_thread_num() * 288;
@@ -543,7 +551,9 @@ void conv_compute_4x4_3x3_fp16(const float16_t* input,
                               flag_act,
                               local_alpha,
                               bias + ci * 8,
-                              flag_bias);
+                              flag_bias,
+                              offset,
+                              threshold);
           }
         } else {
           for (int ci = 0; ci < oc_8; ++ci) {
@@ -583,13 +593,16 @@ void conv_compute_4x4_3x3_fp16(const float16_t* input,
                               flag_act,
                               local_alpha,
                               bias + ci * 8,
-                              flag_bias);
+                              flag_bias,
+                              offset,
+                              threshold);
           }
         }
       }
       //*/
     }  // for block_count
-  }    // for num
+    LITE_PARALLEL_END();
+  }  // for num
 }  // conv_compute
 
 // BT=[1, 0, -1, 0,

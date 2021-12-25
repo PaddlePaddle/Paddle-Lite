@@ -31,7 +31,7 @@ int PrepareComparisons(hal::Operation* operation) {
   CopyOperandTypeExceptQuantParams(&output_operand->type, input0_operand->type);
   CalcEltwiseBinaryOperationsOutputSize(
       input0_operand->type, input1_operand->type, &output_operand->type);
-  output_operand->type.precision = NNADAPTER_TENSOR_BOOL8;
+  output_operand->type.precision = NNADAPTER_BOOL8;
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
 }

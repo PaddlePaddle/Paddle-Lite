@@ -137,14 +137,7 @@ void test_p_norm(Place place, float abs_error) {
 TEST(PNorm, precision) {
   Place place;
   float abs_error = 2e-5;
-#if defined(LITE_WITH_NNADAPTER)
-  place = TARGET(kNNAdapter);
-#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
-  abs_error = 1e-2;
-#else
-  return;
-#endif
-#elif defined(LITE_WITH_ARM)
+#if defined(LITE_WITH_ARM)
   place = TARGET(kHost);
 #elif defined(LITE_WITH_X86)
   place = TARGET(kHost);

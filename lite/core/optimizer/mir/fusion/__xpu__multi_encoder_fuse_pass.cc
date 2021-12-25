@@ -275,10 +275,20 @@ class XPUSingleEncoderFuser : public FuseBase {
     auto* qkv_ln_2_var = VarNode("qkv_ln_2_var")
                              ->assert_is_op_output("layer_norm", "Variance")
                              ->AsIntermediate();
+    auto qkv_weight_teller = [](const Node* node) -> bool {
+      auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
+      auto input_y_name = op_desc.Input("Y").front();
+      auto* scope = const_cast<Node*>(node)->AsStmt().op()->scope();
+      auto y_shape = scope->FindVar(input_y_name)->Get<lite::Tensor>().dims();
+      size_t y_rank = y_shape.size();
 
+      return (y_rank == 2) && (y_shape[1] == 4 * y_shape[0]);
+    };
     auto* qkv_mul_3_y =
         VarNode("qkv_mul_3_y")->assert_is_op_input(mul_type_, "Y")->AsInput();
-    auto* qkv_mul_3 = OpNode("qkv_mul_3", mul_type_)->AsIntermediate();
+    auto* qkv_mul_3 = OpNode("qkv_mul_3", mul_type_)
+                          ->assert_node_satisfied(qkv_weight_teller)
+                          ->AsIntermediate();
     auto* qkv_mul_3_out = VarNode("qkv_mul_3_out")
                               ->assert_is_op_output(mul_type_, "Out")
                               ->assert_is_op_input("elementwise_add", "X")
@@ -481,8 +491,23 @@ class XPUSingleEncoderFuser : public FuseBase {
     op_desc.SetAttr<int>("sub_block", 0);
     op_desc.SetAttr<std::vector<std::string>>("input_data_names", {});
     op_desc.SetAttr<std::vector<std::string>>("output_data_names", {});
-
+    int hidden_dim = 0;
     auto* q_mul_op_info = matched.at("q_mul")->stmt()->op_info();
+    auto q_mul_input_y_name = q_mul_op_info->Input("Y").front();
+    auto* scope = matched.at("q_mul")->stmt()->op()->scope();
+    auto q_mul_y_shape = scope->FindMutableTensor(q_mul_input_y_name)->dims();
+    hidden_dim = q_mul_y_shape[0];
+    VLOG(3) << "q mul Y shape: " << q_mul_y_shape
+            << ", hidden_dim:" << hidden_dim;
+    auto* qkv_mul_op_info = matched.at("qkv_mul")->stmt()->op_info();
+    auto qkv_mul_input_y_name = qkv_mul_op_info->Input("Y").front();
+    auto qkv_mul_y_shape =
+        scope->FindMutableTensor(qkv_mul_input_y_name)->dims();
+    CHECK_EQ(q_mul_y_shape.size(), qkv_mul_y_shape.size());
+    CHECK_EQ(q_mul_y_shape.size(), 2);
+    CHECK_EQ(q_mul_y_shape[0], qkv_mul_y_shape[1]);
+    CHECK_EQ(q_mul_y_shape[1], qkv_mul_y_shape[0]);
+    CHECK_GT(hidden_dim, 0) << "invalid hidden_dim: " << hidden_dim;
     if (q_mul_op_info->HasAttr("enable_int8") &&
         q_mul_op_info->GetAttr<bool>("enable_int8")) {
       op_desc.SetAttr<bool>("enable_int8", true);
@@ -590,6 +615,8 @@ class XPUSingleEncoderFuser : public FuseBase {
     CHECK(std::abs(expected_value - scale_val) < 1e-6f);
     op_desc.SetAttr<int>("head_num", reshape_dim[2]);
     op_desc.SetAttr<int>("size_per_head", size_per_head);
+    CHECK_EQ(size_per_head * reshape_dim[2], q_mul_y_shape[1]);
+    op_desc.SetAttr<int>("hidden_dim", hidden_dim);
     op_desc.SetAttr<std::string>("act_type", act_type_);
     op_desc.SetAttr<bool>("norm_before", norm_before_);
 
@@ -665,21 +692,24 @@ class XPUMultiEncoderFuser {
 
   void operator()(SSAGraph* graph) {
     std::vector<Node*> all_encoders;
-    for (auto* node : graph->StmtTopologicalOrder()) {
-      CHECK(node->IsStmt());
-      if (node->stmt()->op_info()->Type() == "single_encoder") {
-        if (all_encoders.empty() ||
-            IsDirectPredecessorOf(all_encoders.back(), node)) {
-          all_encoders.push_back(node);
-        } else {
-          break;
+    // if no node linked from all_encoders.back(), search is over
+    int encoder_num = 0;
+    do {
+      encoder_num = all_encoders.size();
+      for (auto* node : graph->StmtTopologicalOrder()) {
+        CHECK(node->IsStmt());
+        if (node->stmt()->op_info()->Type() == "single_encoder") {
+          if (all_encoders.empty() ||
+              IsDirectPredecessorOf(all_encoders.back(), node)) {
+            all_encoders.push_back(node);
+          }
         }
       }
-    }
-    VLOG(3) << "Found continuous " << all_encoders.size() << " single_encoder";
+    } while (encoder_num != all_encoders.size());
     if (all_encoders.size() == 0) {
       return;
     }
+    VLOG(3) << "Found continuous " << all_encoders.size() << " single_encoder";
 
     const bool enable_int8 =
         all_encoders[0]->stmt()->op_info()->HasAttr("enable_int8") &&
@@ -773,6 +803,14 @@ class XPUMultiEncoderFuser {
       CHECK_EQ(fc_precision_, "int8");
       CHECK_EQ(fc_input_max.size(), all_encoders.size() * 6);
       CHECK_EQ(fc_weight_max.size(), all_encoders.size() * 6);
+      for (int i = 0; i < fc_weight_max.size(); i += 6) {
+        CHECK_LT(std::abs(fc_weight_max[i] - fc_weight_max[i + 1]), 1e-5)
+            << " quanted ernie's q/k weight scale should be euqal: "
+            << fc_weight_max[i] << ", " << fc_weight_max[i + 1];
+        CHECK_LT(std::abs(fc_weight_max[i] - fc_weight_max[i + 2]), 1e-5)
+            << " quanted ernie's q/v weight scale should be euqal: "
+            << fc_weight_max[i] << ", " << fc_weight_max[i + 2];
+      }
       op_desc.SetAttr<std::vector<float>>("FCInputMax", fc_input_max);
       // "FCWeightMax" is also stored as "Input" now
       op_desc.SetAttr<std::vector<float>>("FCWeightMax", fc_weight_max);
@@ -782,6 +820,8 @@ class XPUMultiEncoderFuser {
       fc_weight_max.resize(arg_map["FCWeight"].size());
     }
     auto* first_encoder_op_info = multi_encoder_stmt->op_info();
+    op_desc.SetAttr<int>("hidden_dim",
+                         first_encoder_op_info->GetAttr<int>("hidden_dim"));
     op_desc.SetAttr<int>("head_num",
                          first_encoder_op_info->GetAttr<int>("head_num"));
     op_desc.SetAttr<int>("size_per_head",
@@ -804,6 +844,17 @@ class XPUMultiEncoderFuser {
     CHECK_EQ(fc_weight_max.size(), fc_weight_names.size());
     for (size_t i = 0; i < fc_weight_names.size(); ++i) {
       if (enable_qkv_fusion && (i % 6 == 0)) {
+        auto weight_tensor_tmp = scope->FindMutableTensor(fc_weight_names[i]);
+        CHECK(weight_tensor_tmp != nullptr);
+        auto weight_dims_tmp = weight_tensor_tmp->dims();
+        if (weight_dims_tmp.size() == 2 &&
+            (weight_dims_tmp[1] * 3 == weight_dims_tmp[0])) {
+          // the weight already be updated( previous patter fused )
+          VLOG(3) << "qkv-fused weight " << i
+                  << " were reused, dims: " << weight_dims_tmp;
+          i += 5;
+          continue;
+        }
         // quant q/k/v weight into q
         update_weight(
             scope, fc_weight_names, i, i + 3, enable_int8, &fc_weight_max);
@@ -828,6 +879,11 @@ class XPUMultiEncoderFuser {
       int bias_q_len = bias_q->numel();
       int bias_k_len = bias_k->numel();
       int bias_v_len = bias_v->numel();
+      if (bias_q_len == (3 * bias_k_len) && (bias_k_len == bias_v_len)) {
+        VLOG(3) << "qkv-fused bias " << i
+                << " already be updated, dims:" << bias_q_dims;
+        continue;
+      }
       float* bias_q_on_host = bias_q->mutable_data<float>();
       float* bias_k_on_host = bias_k->mutable_data<float>();
       float* bias_v_on_host = bias_v->mutable_data<float>();
@@ -861,19 +917,26 @@ class XPUMultiEncoderFuser {
     // TODO(mayang02): we could use attr to store FCWeightMax
     std::string max_name = "encoder_max_" + fc_weight_names[0];
     VLOG(3) << "multi-encoder max weight name: " << max_name;
-    CHECK(graph->RetrieveArgument(max_name) == nullptr);
-    auto* max_filter_node = graph->NewArgumentNode(max_name);
-    max_filter_node->arg()->is_weight = true;
-    max_filter_node->arg()->type = LiteType::GetTensorTy(
-        TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
+    auto* max_filter_node = graph->RetrieveArgument(max_name);
+    if (max_filter_node == nullptr) {
+      max_filter_node = graph->NewArgumentNode(max_name);
+      CHECK(max_filter_node != nullptr) << "NewArgumentNode failed";
+      max_filter_node->arg()->is_weight = true;
+      max_filter_node->arg()->type = LiteType::GetTensorTy(
+          TARGET(kHost), PRECISION(kFloat), DATALAYOUT(kNCHW));
+      auto* max_filter_tensor = scope->NewTensor(max_name);
+      max_filter_tensor->Resize({static_cast<int>(fc_weight_max.size())});
+      memcpy(max_filter_tensor->mutable_data<float>(),
+             &fc_weight_max[0],
+             sizeof(float) * fc_weight_max.size());
+      max_filter_tensor->set_precision(paddle::lite_api::PrecisionType::kFloat);
+      max_filter_tensor->set_persistable(true);
+    } else {
+      // the weight/bias were used in another multiencoder pattern
+      auto weight_max_tensor_tmp = scope->FindMutableTensor(max_name);
+      CHECK(weight_max_tensor_tmp != nullptr) << "max xpu weight not exist";
+    }
     DirectedLink(max_filter_node, first_encoder);
-    auto* max_filter_tensor = scope->NewTensor(max_name);
-    max_filter_tensor->Resize({static_cast<int>(fc_weight_max.size())});
-    memcpy(max_filter_tensor->mutable_data<float>(),
-           &fc_weight_max[0],
-           sizeof(float) * fc_weight_max.size());
-    max_filter_tensor->set_precision(paddle::lite_api::PrecisionType::kFloat);
-    max_filter_tensor->set_persistable(true);
     op_desc.SetInput("FCWeightMax", {max_name});
 
     auto multi_encoder_op = LiteOpRegistry::Global().Create(op_desc.Type());
@@ -930,6 +993,7 @@ class XPUMultiEncoderFuser {
  private:
   std::string fc_precision_;
   bool adaptive_seqlen_;
+  // to transpose + quant + concat the weight inplace
   void update_weight(Scope* scope,
                      const std::vector<std::string>& fc_weight_names,
                      int start,
@@ -953,6 +1017,7 @@ class XPUMultiEncoderFuser {
       weight_dim1_acc += weight_dims_vec[i][1];
       if (i > 0) {
         CHECK_EQ(weight_dims_vec[i][0], weight_dims_vec[i - 1][0]);
+        CHECK_EQ(start % 6, 0) << " qkv fuse position invalid: " << start;
       }
     }
 
@@ -1022,7 +1087,7 @@ class XPUMultiEncoderFuser {
                                                    weight_qkv_trans_int8.get(),
                                                    max_f,
                                                    qkv_len);
-        memcpy(weight_tensor_vec[0]->mutable_data<float>(),
+        memcpy(weight_tensor_vec[0]->mutable_data<int8_t>(),
                weight_qkv_trans_int8.get(),
                qkv_len * sizeof(int8_t));
       } else {
@@ -1032,7 +1097,7 @@ class XPUMultiEncoderFuser {
             weight_qkv_trans_int16.get(),
             max_f,
             qkv_len);
-        memcpy(weight_tensor_vec[0]->mutable_data<float>(),
+        memcpy(weight_tensor_vec[0]->mutable_data<int16_t>(),
                weight_qkv_trans_int16.get(),
                qkv_len * sizeof(int16_t));
       }

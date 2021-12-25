@@ -42,6 +42,9 @@ class ConditionalBlockOp : public OpLite {
   void SetProgramDesc(std::shared_ptr<const cpp::ProgramDesc> program_desc) {
     param_.program_desc = program_desc;
   }
+
+  bool InferType() override { return true; }
+
   std::shared_ptr<const cpp::ProgramDesc> GetProgramDesc() {
     return param_.program_desc;
   }

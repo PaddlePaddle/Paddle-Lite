@@ -1,3 +1,4 @@
+
 if(LITE_WITH_OPENCL)
   set(IS_FAKED_KERNEL false CACHE INTERNAL "")
   set(cl_kernel_deps ops cl_runtime cl_context cl_wrapper cl_target_wrapper cl_image_converter)
@@ -14,12 +15,12 @@ endif()
 #####################
 # basic
 add_kernel(gather_opencl_image OPENCL basic SRCS gather_image_compute.cpp)
-
-add_kernel(elementwise_add_opencl_image OPENCL basic SRCS elementwise_add_image_compute.cc)
-add_kernel(elementwise_sub_opencl_image OPENCL basic SRCS elementwise_sub_image_compute.cc)
-add_kernel(elementwise_mul_opencl_image OPENCL basic SRCS elementwise_mul_image_compute.cc)
-add_kernel(fusion_elementwise_sub_activation_opencl_image
-           OPENCL basic SRCS fusion_elementwise_sub_activation_image_compute.cc)
+#add_kernel(elementwise_add_opencl_image OPENCL basic SRCS elementwise_add_image_compute.cc)
+#add_kernel(elementwise_sub_opencl_image OPENCL basic SRCS elementwise_sub_image_compute.cc)
+#add_kernel(elementwise_mul_opencl_image OPENCL basic SRCS elementwise_mul_image_compute.cc)
+#add_kernel(fusion_elementwise_sub_activation_opencl_image
+#           OPENCL basic SRCS fusion_elementwise_sub_activation_image_compute.cc)
+add_kernel(elementwise_opencl_image OPENCL basic SRCS elementwise_image_compute.cc)
 
 add_kernel(pool_opencl_image OPENCL basic SRCS pool_image_compute.cc)
 add_kernel(activation_opencl_image OPENCL basic SRCS activation_image_compute.cc)
@@ -52,6 +53,7 @@ add_kernel(greater_than_opencl_image OPENCL basic SRCS greater_than_image_comput
 add_kernel(fc_opencl_image OPENCL basic SRCS fc_image_compute.cc)
 add_kernel(argmax_opencl_image OPENCL basic SRCS argmax_image_compute.cc)
 add_kernel(max_opencl_image OPENCL basic SRCS max_image_compute.cc)
+add_kernel(matmul_opencl_image OPENCL basic SRCS matmul_image_compute.cc)
 # extra
 # wait to add ...
 
@@ -106,9 +108,12 @@ lite_cc_test(test_pixel_shuffle_image_opencl SRCS pixel_shuffle_image_compute_te
 lite_cc_test(test_expand_image_opencl SRCS expand_image_compute_test.cc
              DEPS kernels core)
 
-lite_cc_test(test_elementwise_add_image_opencl SRCS elementwise_add_image_compute_test.cc
-             DEPS kernels core)
-lite_cc_test(test_elementwise_sub_image_opencl SRCS elementwise_sub_image_compute_test.cc
+#lite_cc_test(test_elementwise_add_image_opencl SRCS elementwise_add_image_compute_test.cc
+#             DEPS kernels core)
+#lite_cc_test(test_elementwise_sub_image_opencl SRCS elementwise_sub_image_compute_test.cc
+#             DEPS kernels core)
+
+lite_cc_test(test_elementwise_image_opencl SRCS elementwise_image_compute_test.cc
              DEPS kernels core)
 
 lite_cc_test(test_grid_sampler_image_opencl SRCS grid_sampler_image_compute_test.cc
@@ -146,9 +151,11 @@ lite_cc_test(test_softmax_image_opencl SRCS softmax_image_compute_test.cc
 lite_cc_test(test_argmax_image_opencl SRCS argmax_image_compute_test.cc
              DEPS kernels core)
 
- lite_cc_test(test_max_image_opencl SRCS max_image_compute_test.cc
+lite_cc_test(test_max_image_opencl SRCS max_image_compute_test.cc
              DEPS kernels core)
 
+lite_cc_test(test_matmul_image_opencl SRCS matmul_image_compute_test.cc
+             DEPS kernels core)
 ######################
 # buffer kernel      #
 ######################

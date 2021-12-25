@@ -40,7 +40,7 @@ bool SubgraphOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   param_.output_data_names =
       op_desc.GetAttr<std::vector<std::string>>("output_data_names");
   // Get the quantization parameters of input and output data variables
-  auto op_info = dynamic_cast<const OpInfo*>(&op_desc);
+  auto op_info = static_cast<const OpInfo*>(&op_desc);
   param_.input_data_scales.clear();
   param_.output_data_scales.clear();
   for (auto& input_data_name : param_.input_data_names) {

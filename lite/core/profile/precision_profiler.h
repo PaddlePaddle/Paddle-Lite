@@ -277,9 +277,11 @@ class PrecisionProfiler {
         }
 #endif
         case PRECISION(kBool): {
-          *mean = -333333333333;
-          *std_dev = -33333333333;
-          *ave_grow_rate = -33333333333;
+          auto ptr = in->data<bool>();
+          *mean = compute_mean<bool>(ptr, in->numel());
+          *std_dev =
+              compute_standard_deviation<bool>(ptr, in->numel(), true, *mean);
+          *ave_grow_rate = compute_average_grow_rate<bool>(ptr, in->numel());
           if (write_result_to_file) {
             write_tensorfile<bool>(in, name, log_dir_);
           }

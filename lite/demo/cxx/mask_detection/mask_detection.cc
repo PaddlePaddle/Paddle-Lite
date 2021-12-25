@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <sys/time.h>
+#include <time.h>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -132,6 +134,12 @@ void pre_process(const cv::Mat& img,
   neon_mean_scale(dimg, data, width * height, mean, scale);
 }
 
+inline double GetCurrentUS() {
+  struct timeval time;
+  gettimeofday(&time, NULL);
+  return 1e+6 * time.tv_sec + time.tv_usec;
+}
+
 void RunModel(std::string det_model_file,
               std::string class_model_file,
               std::string img_path) {
@@ -160,10 +168,44 @@ void RunModel(std::string det_model_file,
   // Do PreProcess
   std::vector<float> detect_mean = {104.f, 117.f, 123.f};
   std::vector<float> detect_scale = {0.007843, 0.007843, 0.007843};
+  auto start_pre = GetCurrentUS();
   pre_process(img, s_width, s_height, detect_mean, detect_scale, data, false);
+  auto detec_pre_end = (GetCurrentUS() - start_pre) / 1000.0;
 
   // Detection Model Run
-  predictor->Run();
+  double sum_duration = 0.0;  // millisecond;
+  double max_duration = 1e-5;
+  double min_duration = 1e5;
+  double avg_duration = -1;
+  double first_duration = -1;
+  auto repeats = 100;
+  for (int widx = 0; widx < 10; widx++) {
+    if (widx == 0) {
+      auto start0 = GetCurrentUS();
+      predictor->Run();
+      first_duration = (GetCurrentUS() - start0) / 1000.0;
+    } else {
+      predictor->Run();
+    }
+  }
+  for (int ridx = 0; ridx < repeats; ridx++) {
+    auto start0 = GetCurrentUS();
+    predictor->Run();
+    auto duration = (GetCurrentUS() - start0) / 1000.0;
+    sum_duration += duration;
+    max_duration = duration > max_duration ? duration : max_duration;
+    min_duration = duration < min_duration ? duration : min_duration;
+  }
+  avg_duration = sum_duration / static_cast<float>(repeats);
+  std::cout << "\n======= benchmark summary =======\n"
+            << "model_dir: " << det_model_file << "\n"
+            << "repeats: " << repeats << "\n"
+            << "*** time info(ms) ***\n"
+            << "1st_duration: " << first_duration << "\n"
+            << "max_duration: " << max_duration << "\n"
+            << "min_duration: " << min_duration << "\n"
+            << "avg_duration: " << avg_duration << "\n"
+            << "detection pre_process time: " << detec_pre_end << "\n";
 
   // Get Output Tensor
   std::unique_ptr<const Tensor> output_tensor0(

@@ -127,6 +127,7 @@ function check_benchmark_result() {
   else
     echo -e "$GREEN_COLOR avg_time[${avg_time}] <= avg_time_thres[${avg_time_thres}] on device[$device_alias] Passed. $OFF_COLOR"
     # TODO: update .json automatically(after this pr is merged)
+    # sed -i "s/\${avg_time_baseline}\b/${avg_time}/" $config_path
   fi
   return 0
 }
@@ -282,9 +283,9 @@ function build_and_test_on_remote_device() {
   local oss=(${os_list//,/ })
   local archs=(${arch_list//,/ })
   local toolchains=(${toolchain_list//,/ })
-  for os in $oss; do
-    for arch in $archs; do
-      for toolchain in $toolchains; do
+  for os in ${oss[@]}; do
+    for arch in ${archs[@]}; do
+      for toolchain in ${toolchains[@]}; do
         # Build
         echo "Build with $os+$arch+$toolchain ..."
         $build_target_func $os $arch $toolchain

@@ -31,8 +31,6 @@ bool PrintOp::InferShapeImpl() const {
 }
 
 bool PrintOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
-  AttachParam(&param_);
-
   param_.name = op_desc.Input("In").front();
   param_.in = scope->FindTensor(param_.name);
   param_.out = scope->FindMutableTensor(op_desc.Output("Out").front());

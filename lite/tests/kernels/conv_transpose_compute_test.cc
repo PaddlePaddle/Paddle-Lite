@@ -180,8 +180,10 @@ class ConvTransposeComputeTester : public arena::TestCase {
     if (!output_size_.empty()) {
       op_desc->SetAttr("output_size", output_size_);
     }
-
-    op_desc->SetAttr("fuse_relu", fuse_relu_);
+    if (fuse_relu_) {
+      op_desc->SetAttr("with_act", true);
+      op_desc->SetAttr("act_type", std::string("relu"));
+    }
   }
 
   void PrepareData() override {

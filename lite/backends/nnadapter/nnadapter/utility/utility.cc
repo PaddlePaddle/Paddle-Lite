@@ -23,35 +23,35 @@
 namespace nnadapter {
 
 NNADAPTER_EXPORT bool IsPerLayerQuantType(NNAdapterOperandPrecisionCode type) {
-  return type == NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER ||
-         type == NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER ||
-         type == NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_LAYER ||
-         type == NNADAPTER_TENSOR_QUANT_UINT16_ASYMM_PER_LAYER ||
-         type == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER ||
-         type == NNADAPTER_TENSOR_QUANT_UINT32_ASYMM_PER_LAYER;
+  return type == NNADAPTER_QUANT_INT8_SYMM_PER_LAYER ||
+         type == NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER ||
+         type == NNADAPTER_QUANT_INT16_SYMM_PER_LAYER ||
+         type == NNADAPTER_QUANT_UINT16_ASYMM_PER_LAYER ||
+         type == NNADAPTER_QUANT_INT32_SYMM_PER_LAYER ||
+         type == NNADAPTER_QUANT_UINT32_ASYMM_PER_LAYER;
 }
 
 NNADAPTER_EXPORT bool IsPerChannelQuantType(
     NNAdapterOperandPrecisionCode type) {
-  return type == NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL ||
-         type == NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_CHANNEL ||
-         type == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL;
+  return type == NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL ||
+         type == NNADAPTER_QUANT_INT16_SYMM_PER_CHANNEL ||
+         type == NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL;
 }
 
 NNADAPTER_EXPORT bool IsAsymmetricQuantType(
     NNAdapterOperandPrecisionCode type) {
-  return type == NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER ||
-         type == NNADAPTER_TENSOR_QUANT_UINT16_ASYMM_PER_LAYER ||
-         type == NNADAPTER_TENSOR_QUANT_UINT32_ASYMM_PER_LAYER;
+  return type == NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER ||
+         type == NNADAPTER_QUANT_UINT16_ASYMM_PER_LAYER ||
+         type == NNADAPTER_QUANT_UINT32_ASYMM_PER_LAYER;
 }
 
 NNADAPTER_EXPORT bool IsSymmetricQuantType(NNAdapterOperandPrecisionCode type) {
-  return type == NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER ||
-         type == NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL ||
-         type == NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_LAYER ||
-         type == NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_CHANNEL ||
-         type == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER ||
-         type == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL;
+  return type == NNADAPTER_QUANT_INT8_SYMM_PER_LAYER ||
+         type == NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL ||
+         type == NNADAPTER_QUANT_INT16_SYMM_PER_LAYER ||
+         type == NNADAPTER_QUANT_INT16_SYMM_PER_CHANNEL ||
+         type == NNADAPTER_QUANT_INT32_SYMM_PER_LAYER ||
+         type == NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL;
 }
 
 NNADAPTER_EXPORT bool IsAsymmPerLayerQuantType(
@@ -71,47 +71,47 @@ NNADAPTER_EXPORT bool IsSymmPerChannelQuantType(
 
 NNADAPTER_EXPORT bool IsUInt8AsymmPerLayerQuantType(
     NNAdapterOperandPrecisionCode type) {
-  return type == NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER;
+  return type == NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER;
 }
 
 NNADAPTER_EXPORT bool IsInt8SymmPerLayerQuantType(
     NNAdapterOperandPrecisionCode type) {
-  return type == NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER;
+  return type == NNADAPTER_QUANT_INT8_SYMM_PER_LAYER;
 }
 
 NNADAPTER_EXPORT bool IsInt8SymmPerChannelQuantType(
     NNAdapterOperandPrecisionCode type) {
-  return type == NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL;
+  return type == NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL;
 }
 
 NNADAPTER_EXPORT bool IsUInt16AsymmPerLayerQuantType(
     NNAdapterOperandPrecisionCode type) {
-  return type == NNADAPTER_TENSOR_QUANT_UINT16_ASYMM_PER_LAYER;
+  return type == NNADAPTER_QUANT_UINT16_ASYMM_PER_LAYER;
 }
 
 NNADAPTER_EXPORT bool IsInt16SymmPerLayerQuantType(
     NNAdapterOperandPrecisionCode type) {
-  return type == NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_LAYER;
+  return type == NNADAPTER_QUANT_INT16_SYMM_PER_LAYER;
 }
 
 NNADAPTER_EXPORT bool IsInt16SymmPerChannelQuantType(
     NNAdapterOperandPrecisionCode type) {
-  return type == NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_CHANNEL;
+  return type == NNADAPTER_QUANT_INT16_SYMM_PER_CHANNEL;
 }
 
 NNADAPTER_EXPORT bool IsUInt32AsymmPerLayerQuantType(
     NNAdapterOperandPrecisionCode type) {
-  return type == NNADAPTER_TENSOR_QUANT_UINT32_ASYMM_PER_LAYER;
+  return type == NNADAPTER_QUANT_UINT32_ASYMM_PER_LAYER;
 }
 
 NNADAPTER_EXPORT bool IsInt32SymmPerLayerQuantType(
     NNAdapterOperandPrecisionCode type) {
-  return type == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER;
+  return type == NNADAPTER_QUANT_INT32_SYMM_PER_LAYER;
 }
 
 NNADAPTER_EXPORT bool IsInt32SymmPerChannelQuantType(
     NNAdapterOperandPrecisionCode type) {
-  return type == NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL;
+  return type == NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL;
 }
 
 NNADAPTER_EXPORT int64_t
@@ -120,39 +120,27 @@ GetOperandPrecisionDataLength(NNAdapterOperandPrecisionCode type) {
     case NNADAPTER_BOOL8:
     case NNADAPTER_INT8:
     case NNADAPTER_UINT8:
-    case NNADAPTER_TENSOR_BOOL8:
-    case NNADAPTER_TENSOR_INT8:
-    case NNADAPTER_TENSOR_UINT8:
-    case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER:
-    case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL:
-    case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT8_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL:
+    case NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER:
       return 1;
     case NNADAPTER_INT16:
     case NNADAPTER_UINT16:
     case NNADAPTER_FLOAT16:
-    case NNADAPTER_TENSOR_INT16:
-    case NNADAPTER_TENSOR_UINT16:
-    case NNADAPTER_TENSOR_FLOAT16:
-    case NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_LAYER:
-    case NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_CHANNEL:
-    case NNADAPTER_TENSOR_QUANT_UINT16_ASYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT16_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT16_SYMM_PER_CHANNEL:
+    case NNADAPTER_QUANT_UINT16_ASYMM_PER_LAYER:
       return 2;
     case NNADAPTER_INT32:
     case NNADAPTER_UINT32:
     case NNADAPTER_FLOAT32:
-    case NNADAPTER_TENSOR_INT32:
-    case NNADAPTER_TENSOR_UINT32:
-    case NNADAPTER_TENSOR_FLOAT32:
-    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER:
-    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL:
-    case NNADAPTER_TENSOR_QUANT_UINT32_ASYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT32_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL:
+    case NNADAPTER_QUANT_UINT32_ASYMM_PER_LAYER:
       return 4;
     case NNADAPTER_INT64:
     case NNADAPTER_UINT64:
     case NNADAPTER_FLOAT64:
-    case NNADAPTER_TENSOR_INT64:
-    case NNADAPTER_TENSOR_UINT64:
-    case NNADAPTER_TENSOR_FLOAT64:
       return 8;
     default:
       NNADAPTER_LOG(ERROR) << "Failed to get the length of type("
@@ -514,6 +502,66 @@ NNADAPTER_EXPORT bool WriteFile(const std::string& path,
   }
   fclose(fp);
   return true;
+}
+
+NNADAPTER_EXPORT std::string GetStringFromEnv(const std::string& str,
+                                              const std::string& def) {
+  char* variable = std::getenv(str.c_str());
+  if (!variable) {
+    return def;
+  }
+  return std::string(variable);
+}
+
+NNADAPTER_EXPORT bool GetBoolFromEnv(const std::string& str, bool def) {
+  char* variable = std::getenv(str.c_str());
+  if (!variable) {
+    return def;
+  }
+  if (strcmp(variable, "false") == 0 || strcmp(variable, "0") == 0) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
+NNADAPTER_EXPORT int GetIntFromEnv(const std::string& str, int def) {
+  char* variable = std::getenv(str.c_str());
+  if (!variable) {
+    return def;
+  }
+  return atoi(variable);
+}
+
+NNADAPTER_EXPORT double GetDoubleFromEnv(const std::string& str, double def) {
+  char* variable = std::getenv(str.c_str());
+  if (!variable) {
+    return def;
+  }
+  return atof(variable);
+}
+
+NNADAPTER_EXPORT uint64_t GetUInt64FromEnv(const std::string& str,
+                                           uint64_t def) {
+  char* variable = std::getenv(str.c_str());
+  if (!variable) {
+    return def;
+  }
+  return static_cast<uint64_t>(atol(variable));
+}
+
+NNADAPTER_EXPORT std::string GetRealPath(const char* path) {
+  if (path == nullptr) {
+    NNADAPTER_LOG(FATAL) << "Input path is nullptr";
+    return nullptr;
+  }
+
+  char real_path[PATH_MAX] = {0};
+  if (strlen(path) >= PATH_MAX || realpath(path, real_path) == nullptr) {
+    NNADAPTER_LOG(FATAL) << "Get real path failed, path[" << path << "]";
+    return nullptr;
+  }
+  return std::string(real_path);
 }
 
 }  // namespace nnadapter

@@ -168,7 +168,8 @@ void TargetWrapperXPU::FreeL3Cache() {
 }
 
 // xpu context
-LITE_THREAD_LOCAL xdnn::Context* TargetWrapperXPU::tls_raw_ctx_{nullptr};
+LITE_THREAD_LOCAL std::shared_ptr<xdnn::Context> TargetWrapperXPU::tls_raw_ctx_{
+    nullptr};
 // multi encoder config
 LITE_THREAD_LOCAL std::string
     TargetWrapperXPU::multi_encoder_precision;  // NOLINT
@@ -180,6 +181,8 @@ LITE_THREAD_LOCAL std::string TargetWrapperXPU::conv_autotune_file;
 LITE_THREAD_LOCAL bool TargetWrapperXPU::need_l3_mutex{false};
 LITE_THREAD_LOCAL size_t TargetWrapperXPU::local_l3_size{
     std::numeric_limits<size_t>::max()};
+LITE_THREAD_LOCAL size_t TargetWrapperXPU::local_gm_size{
+    0x4000000};  // 64 * 1024 * 1024
 LITE_THREAD_LOCAL void* TargetWrapperXPU::local_l3_ptr_{nullptr};
 void* TargetWrapperXPU::shared_l3_ptr_{nullptr};
 size_t TargetWrapperXPU::shared_l3_size{0};

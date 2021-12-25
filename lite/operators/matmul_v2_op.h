@@ -35,6 +35,8 @@ class MatMulV2OpLite : public OpLite {
 
   bool InferShapeImpl() const override;
 
+  bool InferShapeWithCache() const override { return true; }
+
   void AttachKernel(KernelBase *kernel) override { kernel->SetParam(param_); }
 
   bool AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) override;

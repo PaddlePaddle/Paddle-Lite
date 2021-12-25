@@ -1,4 +1,4 @@
-# NOTE we leave the add_kernel not protected by LITE_WITH_LIGHT_WEIGHT_FRAMEWORK so that all the kernels will be registered
+# NOTE we leave the add_kernel not protected by LITE_WITH_ARM so that all the kernels will be registered
 # to the model_optimize_tool.
 
 if(LITE_WITH_ARM AND NOT LITE_ON_MODEL_OPTIMIZE_TOOL)
@@ -37,6 +37,7 @@ add_kernel(transpose_compute_arm ARM basic SRCS transpose_compute.cc)
 add_kernel(shuffle_channel_compute_arm ARM basic SRCS shuffle_channel_compute.cc)
 add_kernel(argmax_compute_arm ARM basic SRCS argmax_compute.cc)
 add_kernel(conv_transpose_compute_arm ARM basic SRCS conv_transpose_compute.cc)
+add_kernel(depthwise_conv_transpose_compute_arm ARM extra SRCS depthwise_conv_transpose_compute.cc)
 add_kernel(interpolate_compute_arm ARM basic SRCS interpolate_compute.cc)
 add_kernel(box_coder_compute_arm ARM basic SRCS box_coder_compute.cc)
 add_kernel(slice_compute_arm ARM basic SRCS slice_compute.cc)
@@ -70,7 +71,6 @@ add_kernel(reduce_prod_compute_arm ARM extra SRCS reduce_prod_compute.cc)
 add_kernel(reduce_sum_compute_arm ARM extra SRCS reduce_sum_compute.cc)
 add_kernel(split_lod_tensor_compute_arm ARM extra SRCS split_lod_tensor_compute.cc)
 add_kernel(merge_lod_tensor_compute_arm ARM extra SRCS merge_lod_tensor_compute.cc)
-add_kernel(generate_proposals_v2_compute_arm ARM extra SRCS generate_proposals_v2_compute.cc)
 add_kernel(clip_compute_arm ARM extra SRCS clip_compute.cc)
 add_kernel(pixel_shuffle_compute_arm ARM extra SRCS pixel_shuffle_compute.cc)
 add_kernel(scatter_compute_arm ARM extra SRCS scatter_compute.cc)

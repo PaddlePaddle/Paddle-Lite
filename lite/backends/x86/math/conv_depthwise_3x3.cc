@@ -13,6 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include "lite/backends/x86/math/avx/avx_mathfuns.h"
+#include "lite/backends/x86/math/avx/conv_depthwise_pack4.h"
+#include "lite/backends/x86/math/avx/conv_depthwise_pack8.h"
 #include "lite/backends/x86/math/avx/conv_utils.h"
 #include "lite/backends/x86/math/conv_depthwise_impl.h"
 #include "lite/core/memory.h"
@@ -29,7 +31,7 @@ namespace x86 {
 namespace math {
 #define Max(a, b) (a > b ? a : b)
 
-void conv_depthwise_3x3s2_p1_direct(
+void conv_depthwise_3x3s2_p01_direct(
     const float *din,
     float *dout,
     int num,
@@ -45,6 +47,7 @@ void conv_depthwise_3x3s2_p1_direct(
     bool flag_bias,
     const operators::ActivationParam act_param) {
 #ifdef __AVX__
+
   bool right = false;  // for right result
 
   bool has_active = act_param.has_active;
@@ -59,21 +62,23 @@ void conv_depthwise_3x3s2_p1_direct(
   //! prepare for processing right result
   int rmask_o[4] = {0};
   float rmaskr[8] = {-1.f, -1.f, -1.f, -1.f, -1.f, -1.f, -1.f, -1.f};
-  int r = w_out % 3;
+  int ro = w_out % 3;
   int col = w_out / 3;
-  if (r > 0) col++;
-  if (r > 0) {
+  if (ro > 0) col++;
+  if (ro > 0) {
     for (int i = 0; i < 4; i++) {
-      if (i < r) {
+      if (i < ro) {
         rmask_o[i] = 0x80000000;
       }
     }
     right = true;
   }
-  r = w_in % 6;
-  if (r > 0) {
+  int ri = (w_in - (1 - pad)) % 6;
+  // [pad == 0 && w_out == 3 && win == 8] ===>>> [ri == 1 && ro == 0]
+  // add condition ro > 0 for avoiding wrong rmaskr when pad == 0
+  if (ri > 0 && (ro > 0 || pad == 1)) {
     for (int i = 0; i < 8; i++) {
-      if (i <= r) {
+      if (i <= ri) {
         rmaskr[i] = -1.f;
       } else {
         rmaskr[i] = 1.f;
@@ -120,7 +125,7 @@ void conv_depthwise_3x3s2_p1_direct(
       __m256i shift_1 = _mm256_set_epi32(7, 7, 7, 6, 5, 4, 3, 2);
       __m256i shift_3 = _mm256_set_epi32(6, 5, 4, 3, 2, 1, 0, 7);
 
-      for (int i = 0; i < h_in; i += 4) {
+      for (int i = 0; i + (1 - pad) < h_in; i += 4) {
         din_ptr0 = dr0;
         din_ptr1 = dr1;
         din_ptr2 = dr2;
@@ -131,7 +136,7 @@ void conv_depthwise_3x3s2_p1_direct(
         doutr1 = doutr0 + w_out;
 
         //! process top pad
-        if (i == 0) {
+        if (i == 0 && pad == 1) {
           din_ptr0 = zero_ptr;
           din_ptr1 = dr0;
           din_ptr2 = dr1;
@@ -148,8 +153,8 @@ void conv_depthwise_3x3s2_p1_direct(
         dr4 = dr3 + w_in;
 
         //! process bottom pad
-        if (i + 4 > h_in) {
-          switch (i + 4 - h_in) {
+        if (i + 4 + (1 - pad) > h_in) {
+          switch (i + 4 + (1 - pad) - h_in) {
             case 4:
               din_ptr1 = zero_ptr;
             case 3:
@@ -165,7 +170,14 @@ void conv_depthwise_3x3s2_p1_direct(
 
         //! process bottom remain
         if (i / 2 + 2 > h_out) {
-          doutr1 = write_ptr;
+          switch (i / 2 + 2 - h_out) {
+            case 2:
+              doutr0 = write_ptr;
+            case 1:
+              doutr1 = write_ptr;
+            default:
+              break;
+          }
         }
 
         for (int j = 0; j < col; j += 1) {
@@ -176,7 +188,7 @@ void conv_depthwise_3x3s2_p1_direct(
           __m256 i4 = _mm256_loadu_ps(din_ptr4);
 
           //! process left pad
-          if (j == 0) {
+          if (j == 0 && pad == 1) {
             din_ptr0 += 5;
             din_ptr1 += 5;
             din_ptr2 += 5;
@@ -339,21 +351,21 @@ void conv_depthwise_3x3s2_p1_direct(
   float rmasko[4] = {1.f, 1.f, 1.f, 1.f};
   float rmaskr[12] = {
       -1.f, -1.f, -1.f, -1.f, -1.f, -1.f, -1.f, -1.f, -1.f, -1.f, -1.f, -1.f};
-  int r = w_out % 4;
+  int ro = w_out % 4;
   int col = w_out / 4;
-  if (r > 0) col++;
-  if (r > 0) {
+  if (ro > 0) col++;
+  if (ro > 0) {
     for (int i = 0; i < 4; i++) {
-      if (i < r) {
+      if (i < ro) {
         rmasko[i] = -1.f;
       }
     }
     right = true;
   }
-  r = w_in % 8;
-  if (r > 0) {
+  int ri = (w_in - (1 - pad)) % 8;
+  if (ri > 0 && (ro > 0 || pad == 1)) {
     for (int i = 0; i < 12; i++) {
-      if (i <= r) {
+      if (i <= ri) {
         rmaskr[i] = -1.f;
       } else {
         rmaskr[i] = 1.f;
@@ -390,7 +402,7 @@ void conv_depthwise_3x3s2_p1_direct(
       float *doutr0 = dout_ptr;
       float *doutr0_ptr = doutr0;
 
-      for (int i = 0; i < h_in; i += 2) {
+      for (int i = 0; i + (1 - pad) < h_in; i += 2) {
         din_ptr0 = dr0;
         din_ptr1 = dr1;
         din_ptr2 = dr2;
@@ -398,7 +410,7 @@ void conv_depthwise_3x3s2_p1_direct(
         doutr0_ptr = doutr0;
 
         //! process top pad
-        if (i == 0) {
+        if (i == 0 && pad == 1) {
           din_ptr0 = zero_ptr;
           din_ptr1 = dr0;
           din_ptr2 = dr1;
@@ -412,13 +424,19 @@ void conv_depthwise_3x3s2_p1_direct(
         }
 
         //! process bottom pad
-        if (i + 2 > h_in) {
-          switch (i + 2 - h_in) {
+        if (i + 2 + (1 - pad) > h_in) {
+          switch (i + 2 + (1 - pad) - h_in) {
+            case 2:
+              din_ptr1 = zero_ptr;
             case 1:
               din_ptr2 = zero_ptr;
             default:
               break;
           }
+        }
+
+        if (i / 2 + 1 > h_out) {
+          doutr0_ptr = write_ptr;
         }
 
         for (int j = 0; j < col; j++) {
@@ -435,7 +453,7 @@ void conv_depthwise_3x3s2_p1_direct(
           __m128 i2_2 = _mm_loadu_ps(din_ptr2 + 8);
 
           //! process left pad
-          if (j == 0) {
+          if (j == 0 && pad == 1) {
             __m128 tmp0 = _mm_blend_ps(zero, i0_0, 0b0111);
             tmp0 = _mm_shuffle_ps(tmp0, tmp0, 0b10010011);
             __m128 tmp1 = _mm_blend_ps(i0_0, i0_1, 0b0111);
@@ -591,7 +609,7 @@ void conv_depthwise_3x3s2_p1_direct(
   TargetFree(TARGET(kX86), write_ptr);
 #endif
 }
-void conv_depthwise_3x3s1_p1_direct(
+void conv_depthwise_3x3s1_p01_direct(
     const float *din,
     float *dout,
     int num,
@@ -628,13 +646,14 @@ void conv_depthwise_3x3s1_p1_direct(
     for (int i = 0; i < 8; i++) {
       if (i < r) {
         rmask_o[i] = 0x80000000;
+      }
+      if (i <= r + (1 - pad)) {
         rmaskr[i] = -1.f;
       }
     }
-    rmaskr[r] = -1.f;
     right = true;
   } else {
-    for (int i = 0; i < 7; i++) {
+    for (int i = 0; i < 7 + (1 - pad); i++) {
       rmaskr[i] = -1.f;
     }
   }
@@ -694,7 +713,7 @@ void conv_depthwise_3x3s1_p1_direct(
         doutr3 = doutr2 + w_out;
 
         //! process top pad
-        if (i == 0) {
+        if (i == 0 && pad == 1) {
           din_ptr0 = zero_ptr;
           din_ptr1 = dr0;
           din_ptr2 = dr1;
@@ -714,8 +733,8 @@ void conv_depthwise_3x3s1_p1_direct(
         dr5 = dr4 + w_in;
 
         //! process bottom pad
-        if (i + 5 > h_in) {
-          switch (i + 5 - h_in) {
+        if (i + 5 + (1 - pad) > h_in) {
+          switch (i + 5 + (1 - pad) - h_in) {
             case 5:
               din_ptr1 = zero_ptr;
             case 4:
@@ -754,7 +773,7 @@ void conv_depthwise_3x3s1_p1_direct(
           __m256 i5 = _mm256_loadu_ps(din_ptr5);
 
           //! process left pad
-          if (j == 0) {
+          if (j == 0 && pad == 1) {
             din_ptr0 += 5;
             din_ptr1 += 5;
             din_ptr2 += 5;
@@ -1014,12 +1033,12 @@ void conv_depthwise_3x3s1_p1_direct(
   }
   if (r > 0) {
     for (int i = 0; i < 8; i++) {
-      if (i <= r) {
+      if (i <= r + 1 - pad) {
         rmaskr[i] = -1.f;
       }
     }
   } else {
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 5 + (1 - pad); i++) {
       rmaskr[i] = -1.f;
     }
   }
@@ -1055,7 +1074,7 @@ void conv_depthwise_3x3s1_p1_direct(
       const float *din_ptr2 = dr2;
       const float *din_ptr3 = dr3;
 
-      for (int i = 0; i < h_in; i += 2) {
+      for (int i = 0; i < h_out; i += 2) {
         din_ptr0 = dr0;
         din_ptr1 = dr1;
         din_ptr2 = dr2;
@@ -1065,7 +1084,7 @@ void conv_depthwise_3x3s1_p1_direct(
         doutr1 = doutr0 + w_out;
 
         //! process top pad
-        if (i == 0) {
+        if (i == 0 && pad == 1) {
           din_ptr0 = zero_ptr;
           din_ptr1 = dr0;
           din_ptr2 = dr1;
@@ -1079,8 +1098,8 @@ void conv_depthwise_3x3s1_p1_direct(
         dr3 = dr2 + w_in;
 
         //! process bottom pad
-        if (i + 3 > h_in) {
-          switch (i + 3 - h_in) {
+        if (i + 3 + (1 - pad) > h_in) {
+          switch (i + 3 + (1 - pad) - h_in) {
             case 3:
               din_ptr1 = zero_ptr;
             case 2:
@@ -1112,7 +1131,7 @@ void conv_depthwise_3x3s1_p1_direct(
           __m128 i3_1 = _mm_loadu_ps(din_ptr3 + 4);
 
           //! process left pad
-          if (j == 0) {
+          if (j == 0 && pad == 1) {
             __m128 tmp0 = _mm_blend_ps(zero, i0_0, 0b0111);
             tmp0 = _mm_shuffle_ps(tmp0, tmp0, 0b10010011);
             i0_1 = _mm_blend_ps(i0_0, i0_1, 0b0111);
@@ -1303,6 +1322,120 @@ void conv_depthwise_3x3s1_p1_direct(
   TargetFree(TARGET(kX86), zero_ptr);
   TargetFree(TARGET(kX86), write_ptr);
 #endif
+}
+
+void conv_depthwise_3x3_pack(const operators::ConvParam &param,
+                             lite::Tensor *input_padding_,
+                             lite::Tensor *input_pack_,
+                             lite::Tensor *filter_pack_,
+                             lite::Tensor *output_pack_) {
+  auto input_dims = param.x->dims();
+  CHECK_EQ(input_dims.size(), 4UL);
+  int batch_size = param.x->dims()[0];
+  int input_channel = param.x->dims()[1];
+
+  const int pack_size =
+      input_channel % 8 == 0 ? 8 : input_channel % 4 == 0 ? 4 : 1;
+  const int pack_num = input_channel / pack_size;
+
+  if (pack_size == 8) {
+    pack_padding8_m256(param.x, input_padding_, pack_num, *(param.paddings));
+  } else if (pack_size == 4) {
+    pack4_m128(param.x, input_pack_, pack_num, false);
+    padding4_m128(input_pack_, input_padding_, *(param.paddings));
+  } else {
+    padding1_float(param.x, input_padding_, *(param.paddings));
+  }
+
+  // filter [oc, ic/groups=1, kh, kw]
+  auto filter_dims = param.filter->dims();
+  CHECK_EQ(filter_dims.size(), 4UL);
+  int kernel_h = param.filter->dims()[2];
+  int kernel_w = param.filter->dims()[3];
+
+  // filter [oc, 1, ih, iw] & pack_size=8 => [oc/8, ih, iw, 8]
+  // filter [oc, 1, ih, iw] & pack_size=4 => [ic/4, ih, iw, 4]
+  if (pack_size == 8) {
+    pack8_m256(param.filter, filter_pack_, pack_num, true);
+  } else if (pack_size == 4) {
+    pack4_m128(param.filter, filter_pack_, pack_num, true);
+  }
+
+  // attributes
+  const int stride_h = param.strides[0];
+  const int stride_w = param.strides[1];
+  const int dilation_h = (*param.dilations)[0];
+  const int dilation_w = (*param.dilations)[1];
+
+  // act type
+  auto act_param = param.activation_param;
+  bool has_act = act_param.has_active;
+  auto act_type = act_param.active_type;
+
+  // output [bs, oc, oh, ow]
+  CHECK_EQ(param.output->dims().size(), 4UL);
+  const int in_h = input_padding_->dims()[2], in_w = input_padding_->dims()[3];
+  const int kernel_extend_h = dilation_h * (kernel_h - 1) + 1;
+  const int kernel_extend_w = dilation_w * (kernel_w - 1) + 1;
+  int output_height = (in_h - kernel_extend_h) / stride_h + 1;
+  int output_width = (in_w - kernel_extend_w) / stride_w + 1;
+  // output_trans [bs, oc/8, oh, ow, 8]
+  // output_trans [bs, oc/4, oh, ow, 4]
+  output_pack_->Resize(
+      {batch_size, pack_num, output_height, output_width, pack_size});
+
+  if (pack_size == 8) {
+    if (kernel_h == 3 && kernel_w == 3 && stride_h == 1 && stride_w == 1 &&
+        dilation_h == 1 && dilation_w == 1) {
+      conv_depthwise_3x3s1_m256(input_padding_,
+                                output_pack_,
+                                filter_pack_,
+                                param.bias,
+                                has_act,
+                                act_type,
+                                act_param);
+    } else if (kernel_h == 3 && kernel_w == 3 && stride_h == 2 &&
+               stride_w == 2 && dilation_h == 1 && dilation_w == 1) {
+      conv_depthwise_3x3s2_m256(input_padding_,
+                                output_pack_,
+                                filter_pack_,
+                                param.bias,
+                                has_act,
+                                act_type,
+                                act_param);
+    } else {
+      conv_depthwise_m256(input_padding_,
+                          output_pack_,
+                          filter_pack_,
+                          param.bias,
+                          stride_h,
+                          stride_w,
+                          dilation_h,
+                          dilation_w,
+                          has_act,
+                          act_type,
+                          act_param);
+    }
+  } else if (pack_size == 4) {
+    conv_depthwise_m128(input_padding_,
+                        output_pack_,
+                        filter_pack_,
+                        param.bias,
+                        stride_h,
+                        stride_w,
+                        dilation_h,
+                        dilation_w,
+                        has_act,
+                        act_type,
+                        act_param);
+  }
+
+  // [bs, oh, ow, oc] => [bs, oc, oh, ow]
+  if (pack_size == 8) {
+    unpack8_m256(output_pack_, param.output);
+  } else if (pack_size == 4) {
+    unpack4_m128(output_pack_, param.output);
+  }
 }
 
 }  // namespace math

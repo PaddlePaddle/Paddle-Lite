@@ -22,8 +22,8 @@ namespace lite {
 namespace operators {
 
 bool SliceOp::CheckShape() const {
-  CHECK(param_.X);
-  CHECK(param_.Out);
+  CHECK(!(param_.X == nullptr && param_.XTensorList == nullptr));
+  CHECK(!(param_.Out == nullptr && param_.OutTensorList == nullptr));
   CHECK_LT(param_.X->dims().size(), 7u)
       << "The rank of input X should be less than 7";
   return true;
@@ -88,13 +88,26 @@ bool SliceOp::InferShapeImpl() const {
 }
 
 bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
-  AttachParam(&param_);
-  param_.X =
-      scope->FindVar(opdesc.Input("Input").front())->GetMutable<lite::Tensor>();
-  param_.Out =
-      scope->FindVar(opdesc.Output("Out").front())->GetMutable<lite::Tensor>();
-  CHECK(param_.X);
-  CHECK(param_.Out);
+  auto input_var = scope->FindVar(opdesc.Input("Input").front());
+  auto output_var = scope->FindVar(opdesc.Output("Out").front());
+  bool input_is_array = input_var->IsType<std::vector<lite::Tensor>>();
+  bool out_is_array = output_var->IsType<std::vector<lite::Tensor>>();
+  if (input_is_array) {
+    param_.XTensorList = input_var->GetMutable<std::vector<lite::Tensor>>();
+    CHECK(param_.XTensorList);
+  } else {
+    param_.X = scope->FindVar(opdesc.Input("Input").front())
+                   ->GetMutable<lite::Tensor>();
+    CHECK(param_.X);
+  }
+  if (out_is_array) {
+    param_.OutTensorList = output_var->GetMutable<std::vector<lite::Tensor>>();
+    CHECK(param_.OutTensorList);
+  } else {
+    param_.Out = scope->FindVar(opdesc.Output("Out").front())
+                     ->GetMutable<lite::Tensor>();
+    CHECK(param_.Out);
+  }
   param_.axes = opdesc.GetAttr<std::vector<int>>("axes");
 
   if (opdesc.HasAttr("infer_flags")) {
@@ -125,9 +138,19 @@ bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
       !opdesc.Input("StartsTensorList").empty()) {
     param_.StartsTensorList.clear();
     auto StartsTensorList = opdesc.Input("StartsTensorList");
-    for (auto var : StartsTensorList) {
-      param_.StartsTensorList.push_back(
-          scope->FindVar(var)->GetMutable<lite::Tensor>());
+    if (!StartsTensorList.empty() &&
+        scope->FindVar(StartsTensorList[0])
+            ->IsType<std::vector<lite::Tensor>>()) {
+      auto tmp_tensor_list = scope->FindVar(StartsTensorList[0])
+                                 ->GetMutable<std::vector<lite::Tensor>>();
+      for (auto tensor : *tmp_tensor_list) {
+        param_.StartsTensorList.push_back(&tensor);
+      }
+    } else {
+      for (auto var : StartsTensorList) {
+        param_.StartsTensorList.push_back(
+            scope->FindVar(var)->GetMutable<lite::Tensor>());
+      }
     }
     CHECK_GT(param_.StartsTensorList.size(), 0u)
         << "StartsTensorList size can't be zero";
@@ -138,9 +161,19 @@ bool SliceOp::AttachImpl(const cpp::OpDesc &opdesc, lite::Scope *scope) {
       !opdesc.Input("EndsTensorList").empty()) {
     param_.EndsTensorList.clear();
     auto EndsTensorList = opdesc.Input("EndsTensorList");
-    for (auto var : EndsTensorList) {
-      param_.EndsTensorList.push_back(
-          scope->FindVar(var)->GetMutable<lite::Tensor>());
+    if (!EndsTensorList.empty() &&
+        scope->FindVar(EndsTensorList[0])
+            ->IsType<std::vector<lite::Tensor>>()) {
+      auto tmp_tensor_list = scope->FindVar(EndsTensorList[0])
+                                 ->GetMutable<std::vector<lite::Tensor>>();
+      for (auto tensor : *tmp_tensor_list) {
+        param_.EndsTensorList.push_back(&tensor);
+      }
+    } else {
+      for (auto var : EndsTensorList) {
+        param_.EndsTensorList.push_back(
+            scope->FindVar(var)->GetMutable<lite::Tensor>());
+      }
     }
     CHECK_GT(param_.EndsTensorList.size(), 0u)
         << "EndsTensorList size can't be zero";

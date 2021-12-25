@@ -47,14 +47,8 @@ endif()
 if(LITE_WITH_RKNPU)
     set(external_libs_DEPS ${external_libs_DEPS} ${rknpu_deps})
 endif()
-if(LITE_WITH_IMAGINATION_NNA)
-    set(external_libs_DEPS ${external_libs_DEPS} ${imagination_nna_deps})
-endif()
 if(LITE_WITH_INTEL_FPGA)
     set(external_libs_DEPS ${external_libs_DEPS} ${intel_fpga_deps})
-endif()
-if(LITE_WITH_HUAWEI_ASCEND_NPU)
-    set(external_libs_DEPS ${external_libs_DEPS} ${huawei_ascend_npu_deps})
 endif()
 if(LITE_WITH_NNADAPTER)
     set(external_libs_DEPS ${external_libs_DEPS} ${nnadapter_deps})
@@ -80,6 +74,9 @@ if (NOT LITE_ON_TINY_PUBLISH)
     add_dependencies(paddle_full_api_shared fbs_headers)
     if (LITE_WITH_CUDA)
         target_link_libraries(paddle_full_api_shared "-Wl,--whole-archive" ${math_cuda} "-Wl,--no-whole-archive")
+    endif()
+    if(LITE_WITH_METAL)
+        target_link_libraries(paddle_full_api_shared ${METAL_LIBRARY} ${MPS_LIBRARY} ${GRAPHIC} ${FOUNDATION_LIBRARY})
     endif()
 
 
@@ -138,18 +135,21 @@ else()
     add_dependencies(PADDLELITE_OBJS fbs_headers)
     if (IOS)
         # only sttaic lib is produced for IOS platform.
-        add_library(paddle_api_light_bundled STATIC $<TARGET_OBJECTS:PADDLELITE_OBJS>)
+        add_library(paddle_api_light_bundled STATIC ${__lite_cc_files})
+        add_dependencies(paddle_api_light_bundled fbs_headers)
     else()
         # 1. enable -flto compiling flag if toochain==gcc
         # TODO (hong19860320): Disable lto temporarily since it causes fail to catch the exceptions in android when toolchain is gcc.
         if (NOT (ARM_TARGET_LANG STREQUAL "clang"))
-            if (ARM_TARGET_OS STREQUAL "android" AND LITE_WITH_EXCEPTION)
+            if ((ARM_TARGET_OS STREQUAL "android" OR ARM_TARGET_OS STREQUAL "armmacos") AND LITE_WITH_EXCEPTION)
                 set(TARGET_COMIPILE_FLAGS "")
             else()
                 set(TARGET_COMIPILE_FLAGS "-fdata-sections -flto")
             endif()
         else()
-            set(TARGET_COMIPILE_FLAGS "-fdata-sections")
+            if (NOT LITE_WITH_METAL)
+                set(TARGET_COMIPILE_FLAGS "-fdata-sections")
+            endif()
         endif()
         #   1.1 enable -flto on PADDLELITE_OBJS
         set_target_properties(PADDLELITE_OBJS PROPERTIES COMPILE_FLAGS "${TARGET_COMIPILE_FLAGS}")
@@ -158,6 +158,9 @@ else()
         add_library(paddle_light_api_shared SHARED $<TARGET_OBJECTS:PADDLELITE_OBJS>)
         set_target_properties(paddle_light_api_shared PROPERTIES COMPILE_FLAGS "${TARGET_COMIPILE_FLAGS}")
         #   2.1 link `paddle_light_api_shared` to third-party libs
+        if (LITE_WITH_METAL)
+            target_link_libraries(paddle_light_api_shared ${METAL_LIBRARY} ${MPS_LIBRARY} ${FOUNDATION_LIBRARY})
+        endif()
         if (LITE_WITH_NPU)
             # Need to add HIAI runtime libs (libhiai.so) dependency
             target_link_libraries(paddle_light_api_shared ${npu_builder_libs} ${npu_runtime_libs})
@@ -165,10 +168,6 @@ else()
         if (LITE_WITH_RKNPU)
             # Need to add RKNPU runtime libs dependency
             target_link_libraries(paddle_light_api_shared ${rknpu_builder_libs} ${rknpu_runtime_libs})
-        endif()
-        if (LITE_WITH_IMAGINATION_NNA)
-            # Need to add IMG IMAGINATION_NNA runtime libs (libimgdnn.so, libnnasession.so) dependency
-            #target_link_libraries(paddle_light_api_shared ${nna_builder_libs} ${nna_runtime_libs})
         endif()
 
         # 3. produce java lib from `PADDLELITE_OBJS` if LITE_WITH_JAVA=ON
@@ -203,22 +202,23 @@ if (LITE_WITH_JAVA AND LITE_WITH_ARM)
     add_subdirectory(android)
 endif()
 # python API
-if (LITE_WITH_PYTHON)
+if(LITE_WITH_PYTHON)
     # add library for opt_base
     add_subdirectory(python)
     lite_cc_library(lite_pybind SHARED SRCS python/pybind/pybind.cc tools/opt_base.cc DEPS ${full_lib_DEPS} paddle_api_full ${external_libs_DEPS}  pybind python)
+    if(LITE_WITH_METAL)
+        target_link_libraries(lite_pybind ${METAL_LIBRARY} ${MPS_LIBRARY} ${GRAPHIC} ${FOUNDATION_LIBRARY})
+    endif()
 endif()
 
-
-
-# test_model_bin
 if(NOT IOS AND NOT LITE_ON_TINY_PUBLISH)
+    # test_model_bin
     lite_cc_binary(test_model_bin SRCS tools/model_test.cc
         DEPS gflags
         CV_DEPS paddle_cv_arm)
-    lite_cc_binary(benchmark_bin SRCS tools/benchmark.cc tools/flags.cc tools/opt_base.cc
-        DEPS gflags
-        CV_DEPS paddle_cv_arm)
+
+    # benchmark_bin
+    add_subdirectory(tools/benchmark)
 endif()
 
 # opt tool

@@ -31,7 +31,8 @@ namespace operation {
   auto indices_operand = input_operands[1];                             \
   NNADAPTER_VLOG(5) << "indices: " << OperandToString(indices_operand); \
   /* Axis */                                                            \
-  auto axis = *reinterpret_cast<int32_t*>(input_operands[2]->buffer);   \
+  auto axis_operand = input_operands[2];                                \
+  auto axis = *reinterpret_cast<int32_t*>(axis_operand->buffer);        \
   if (axis < 0) {                                                       \
     axis += static_cast<int32_t>(input_operand->type.dimensions.count); \
   }                                                                     \

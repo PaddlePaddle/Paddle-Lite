@@ -30,10 +30,10 @@ int ConvertShape(Converter* converter, hal::Operation* operation) {
   }
   auto shape_op = converter->AddOperator<ge::op::Shape>(output_operand);
   switch (dtype) {
-    case NNADAPTER_TENSOR_INT32:
+    case NNADAPTER_INT32:
       shape_op->set_attr_dtype(ge::DT_INT32);
       break;
-    case NNADAPTER_TENSOR_INT64:
+    case NNADAPTER_INT64:
       shape_op->set_attr_dtype(ge::DT_INT64);
       break;
     default:

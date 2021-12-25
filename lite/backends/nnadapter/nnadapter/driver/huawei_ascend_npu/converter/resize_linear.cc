@@ -43,13 +43,13 @@ int ConvertResizeLinear(Converter* converter, hal::Operation* operation) {
     SET_INPUT(resize_linear_op, size, shape_operator);
   } else {
     // shape -> cast -> slice -> mul -> cast
-    output_operand->type.precision = NNADAPTER_TENSOR_INT32;
+    output_operand->type.precision = NNADAPTER_INT32;
     auto shape_op = converter->AddOperator<ge::op::Shape>(output_operand);
     shape_op->set_attr_dtype(ge::DT_INT32);
     SET_INPUT(shape_op, x, input_operator);
     auto shape_operator = MAP_OUTPUT(shape_op, y, output_operand);
 
-    output_operand->type.precision = NNADAPTER_TENSOR_FLOAT32;
+    output_operand->type.precision = NNADAPTER_FLOAT32;
     auto cast0_op = converter->AddOperator<ge::op::Cast>(output_operand);
     cast0_op->set_attr_dst_type(ge::DT_FLOAT);
     SET_INPUT(cast0_op, x, shape_operator);
@@ -81,12 +81,12 @@ int ConvertResizeLinear(Converter* converter, hal::Operation* operation) {
     SET_INPUT(mul_op, x2, scales_operator);
     auto mul_operator = MAP_OUTPUT(mul_op, y, output_operand);
 
-    output_operand->type.precision = NNADAPTER_TENSOR_INT32;
+    output_operand->type.precision = NNADAPTER_INT32;
     auto cast1_op = converter->AddOperator<ge::op::Cast>(output_operand);
     cast1_op->set_attr_dst_type(ge::DT_INT32);
     SET_INPUT(cast1_op, x, mul_operator);
     shape_operator = MAP_OUTPUT(cast1_op, y, output_operand);
-    output_operand->type.precision = NNADAPTER_TENSOR_FLOAT32;
+    output_operand->type.precision = NNADAPTER_FLOAT32;
 
     SET_INPUT(resize_linear_op, size, shape_operator);
   }

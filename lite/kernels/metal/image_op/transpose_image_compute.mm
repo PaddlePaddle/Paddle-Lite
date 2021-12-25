@@ -34,8 +34,7 @@ void TransposeImageCompute::PrepareForRun() {
 #ifdef LITE_WITH_METAL_FULL
 #else
     input_buffer_ = param.x->data<MetalHalf, MetalImage>();
-    output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(
-        metal_context_, output_dims);
+    output_buffer_ = param.output->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
 #endif
 
     setup_without_mps();
@@ -63,10 +62,10 @@ void TransposeImageCompute::run_without_mps() {
 
 void TransposeImageCompute::setup_without_mps() {
     const auto& param = this->Param<param_t>();
-    
+
     int irank = (int)input_buffer_->tensor_dim_.size();
     int orank = (int)output_buffer_->tensor_dim_.size();
-    
+
     // intput dims: CPU NCHW
     std::vector<int> idm = {1, 1, 1, 1};
     for (int i = 0; i < irank; i++) {
@@ -93,16 +92,15 @@ void TransposeImageCompute::setup_without_mps() {
     for (int i = 0; i < param.axis.size(); i++) {
         axis[4 - irank + i] = static_cast<int>(4 - irank + (int)(param.axis[i]));
     }
-    
-    TransposeMetalParam metal_params = {
-        {idm[0], idm[1], idm[2], idm[3]},
+
+    TransposeMetalParam metal_params = {{idm[0], idm[1], idm[2], idm[3]},
         {it[0], it[1], it[2], it[3]},
         {odm[0], odm[1], odm[2], odm[3]},
         {ot[0], ot[1], ot[2], ot[3]},
         {axis[0], axis[1], axis[2], axis[3]}};
     params_buffer_ =
         std::make_shared<MetalBuffer>(metal_context_, sizeof(metal_params), &metal_params);
-    
+
     function_name_ = "transpose";
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
@@ -119,11 +117,11 @@ TransposeImageCompute::~TransposeImageCompute() {
 }  // namespace paddle
 
 REGISTER_LITE_KERNEL(transpose,
-                     kMetal,
-                     kFloat,
-                     kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::TransposeImageCompute,
-                     def)
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::TransposeImageCompute,
+    def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal),
             PRECISION(kFloat),
@@ -135,11 +133,11 @@ REGISTER_LITE_KERNEL(transpose,
     .Finalize();
 
 REGISTER_LITE_KERNEL(transpose,
-                     kMetal,
-                     kFP16,
-                     kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::TransposeImageCompute,
-                     def)
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::TransposeImageCompute,
+    def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .BindOutput("Out",
@@ -147,11 +145,11 @@ REGISTER_LITE_KERNEL(transpose,
     .Finalize();
 
 REGISTER_LITE_KERNEL(transpose2,
-                     kMetal,
-                     kFloat,
-                     kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::TransposeImageCompute,
-                     def)
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::TransposeImageCompute,
+    def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal),
             PRECISION(kFloat),
@@ -167,11 +165,11 @@ REGISTER_LITE_KERNEL(transpose2,
     .Finalize();
 
 REGISTER_LITE_KERNEL(transpose2,
-                     kMetal,
-                     kFP16,
-                     kMetalTexture2DArray,
-                     paddle::lite::kernels::metal::TransposeImageCompute,
-                     def)
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::TransposeImageCompute,
+    def)
     .BindInput("X",
         {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
     .BindOutput("Out",

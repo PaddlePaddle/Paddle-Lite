@@ -100,6 +100,23 @@ int ComputeSparseWeight(const Tensor* w_tensor,
         oc_nonzeros[ocb] += 1;
       }
     }
+    oc_nonzeros[ocb] = nonzero_index;
+  }
+  int tmp_diff = 0;
+  int tmp_ik = 0;
+  for (size_t ocb = 0; ocb < M; ocb++) {
+    if (ocb == 0) {
+      for (int ik = 0; ik < oc_nonzeros[ocb]; ik++) {
+        tmp_diff += diffs[tmp_ik++];
+      }
+    } else {
+      for (int ik = 0; ik < (oc_nonzeros[ocb] - oc_nonzeros[ocb - 1]); ik++) {
+        tmp_diff += diffs[tmp_ik++];
+      }
+    }
+    if (tmp_ik != 0) {
+      diffs[tmp_ik - 1] = tmp_diff;
+    }
   }
   if (!first_nonzero) {
     const int diff = (first_ic - last_ic) * sizeof(T);

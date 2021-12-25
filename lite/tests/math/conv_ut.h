@@ -43,7 +43,12 @@ DEFINE_int32(power_mode,
 DEFINE_int32(threads, 1, "threads num");
 DEFINE_int32(warmup, 0, "warmup times");
 DEFINE_int32(repeats, 1, "repeats times");
+
+#if defined(LITE_WITH_ARM)
+DEFINE_bool(basic_test, true, "do all tests");
+#else
 DEFINE_bool(basic_test, false, "do all tests");
+#endif
 DEFINE_bool(check_result, true, "check the result");
 
 DEFINE_int32(batch, 1, "batch size");
@@ -111,7 +116,10 @@ void act_init(ConvParam& param,  // NOLINT
               const int group,
               const int flag_act,
               const float six,
-              const float leakey_relu_scale) {
+              const float leakey_relu_scale,
+              const float scale = 6.f,
+              const float offset = 3.f,
+              const float threshold = 6.f) {
   param.strides = strides;
   param.paddings = std::make_shared<std::vector<int>>(pads);
   param.dilations = std::make_shared<std::vector<int>>(dilas);
@@ -127,6 +135,10 @@ void act_init(ConvParam& param,  // NOLINT
       act_param.Relu_clipped_coef = six;
     } else if (flag_act == 4) {
       act_param.Leaky_relu_alpha = leakey_relu_scale;
+    } else if (flag_act == 10) {
+      act_param.hard_swish_scale = scale;
+      act_param.hard_swish_offset = offset;
+      act_param.hard_swish_threshold = threshold;
     }
     param.activation_param = act_param;
   }

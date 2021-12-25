@@ -140,7 +140,7 @@ class XPUL3Planner {
         }
       }
       res.clear();
-      for (int i = 0; i < new_nodes.size(); i++) {
+      for (size_t i = 0; i < new_nodes.size(); i++) {
         if (stay[i] == true) {
           res.push_back(new_nodes[i]);
         }

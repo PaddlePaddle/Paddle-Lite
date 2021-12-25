@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "core/operation/conv2d_transpose.h"
+#include "core/operation/conv2d.h"
 #include "driver/huawei_ascend_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -27,6 +28,24 @@ int ConvertConv2DTranspose(Converter* converter, hal::Operation* operation) {
       << "AscendNPU must set out shape.";
   NNADAPTER_CHECK_NE(output_dimensions[3], NNADAPTER_UNKNOWN)
       << "AscendNPU must set out shape.";
+  if (auto_pad != NNADAPTER_AUTO_PAD_NONE) {
+    operation::UpdateConv2DPadAndDilation(
+        input_operand->type.dimensions.data[2],
+        filter_height,
+        auto_pad,
+        &pad_height_top,
+        &pad_height_bottom,
+        stride_height,
+        &dilation_height);
+    operation::UpdateConv2DPadAndDilation(
+        input_operand->type.dimensions.data[3],
+        filter_width,
+        auto_pad,
+        &pad_width_left,
+        &pad_width_right,
+        stride_width,
+        &dilation_width);
+  }
   // Group of AscendNPU may be different from paddle.
   NNADAPTER_CHECK_EQ(group, 1);
 
@@ -51,8 +70,8 @@ int ConvertConv2DTranspose(Converter* converter, hal::Operation* operation) {
   auto conv2d_transpose_operator =
       MAP_OUTPUT(conv2d_transpose_op, y, output_operand);
   conv2d_transpose_op->set_attr_input_size(
-      ge::Operator::OpListInt({input_operand->type.dimensions.data[0],
-                               output_channel_size,
+      ge::Operator::OpListInt({output_dimensions[0],
+                               output_dimensions[1],
                                output_dimensions[2],
                                output_dimensions[3]}));
   conv2d_transpose_op->set_attr_strides(

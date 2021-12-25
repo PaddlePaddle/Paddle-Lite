@@ -241,6 +241,10 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         input_args[input_count - 1] = "axis";
         output_args = {"output"};
         break;
+      case NNADAPTER_CHANNEL_SHUFFLE:
+        input_args = {"input", "group"};
+        output_args = {"output"};
+        break;
       case NNADAPTER_CONV_2D:
         input_args = {"input",
                       "filter",
@@ -279,6 +283,10 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         input_args = {"shape", "value"};
         output_args = {"output"};
         break;
+      case NNADAPTER_FILL_LIKE:
+        input_args = {"input", "value"};
+        output_args = {"output"};
+        break;
       case NNADAPTER_FLATTEN:
         input_args = {"input", "start_axis", "end_axis"};
         output_args = {"output"};
@@ -291,6 +299,9 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
       case NNADAPTER_ABS:
       case NNADAPTER_EXP:
       case NNADAPTER_SWISH:
+      case NNADAPTER_FLOOR:
+      case NNADAPTER_SQUARE:
+      case NNADAPTER_NOT:
         input_args = {"input"};
         output_args = {"output"};
         break;
@@ -307,6 +318,10 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         input_args = {"input", "slope"};
         output_args = {"output"};
         break;
+      case NNADAPTER_SOFTPLUS:
+        input_args = {"input", "beta", "threshold"};
+        output_args = {"output"};
+        break;
       case NNADAPTER_SLICE:
         input_args = {"input", "axes", "start", "ends"};
         output_args = {"output"};
@@ -316,6 +331,7 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         output_args = {"output"};
         break;
       case NNADAPTER_REDUCE_MEAN:
+      case NNADAPTER_REDUCE_SUM:
         input_args = {"input", "axes", "keep_dim"};
         output_args = {"output"};
         break;
@@ -338,6 +354,14 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         break;
       case NNADAPTER_SOFTMAX:
         input_args = {"input", "axis"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_QUANTIZE:
+        input_args = {"input", "axis", "scale", "zero_point"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_DEQUANTIZE:
+        input_args = {"input"};
         output_args = {"output"};
         break;
       case NNADAPTER_CUM_SUM:
@@ -399,16 +423,15 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         output_args = {"output"};
         break;
       case NNADAPTER_INSTANCE_NORMALIZATION:
-        input_args = {"input", "scale", "bias", "episilon", "fuse_code"};
+        input_args = {"input", "scale", "bias", "episilon"};
         output_args = {"output"};
         break;
       case NNADAPTER_LAYER_NORMALIZATION:
-        input_args = {"input",
-                      "scale",
-                      "bias",
-                      "begin_norm_axis",
-                      "episilon",
-                      "fuse_code"};
+        input_args = {"input", "scale", "bias", "begin_norm_axis", "episilon"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_GROUP_NORMALIZATION:
+        input_args = {"input", "scale", "bias", "episilon", "groups"};
         output_args = {"output"};
         break;
       case NNADAPTER_DEFORMABLE_CONV_2D:
@@ -439,11 +462,52 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
       case NNADAPTER_GREATER_EQUAL:
       case NNADAPTER_LESS:
       case NNADAPTER_LESS_EQUAL:
+      case NNADAPTER_AND:
         input_args = {"input0", "input1"};
         output_args = {"output"};
         break;
+      case NNADAPTER_MESHGRID:
+        input_args.resize(input_count);
+        for (size_t i = 0; i < input_count; i++) {
+          input_args[i] = string_format("input%d", i);
+        }
+        output_args.resize(output_count);
+        for (size_t i = 0; i < output_count; i++) {
+          output_args[i] = string_format("output%d", i);
+        }
+        break;
+      case NNADAPTER_TILE:
+        input_args = {"input", "repeats"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_SUM:
+        input_args.resize(input_count);
+        for (size_t i = 0; i < input_count; i++) {
+          input_args[i] = string_format("input%d", i);
+        }
+        output_args = {"output"};
+        break;
+      case NNADAPTER_GRID_SAMPLE:
+        input_args = {"input", "grid", "aligned_corners", "mode", "pad_pad"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_ROI_ALIGN:
+        input_args = {"input",
+                      "rois",
+                      "batch_indices",
+                      "output_height",
+                      "output_width",
+                      "sampling_ratio",
+                      "spatial_scale",
+                      "aligned"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_WHERE:
+        input_args = {"condition", "input0", "input1"};
+        output_args = {"output"};
+        break;
       default:
-        NNADAPTER_LOG(ERROR) << "unsupported op: "
+        NNADAPTER_LOG(FATAL) << "unsupported op: "
                              << static_cast<int>(operation->type);
     }
     for (size_t i = 0; i < input_count; i++) {
@@ -498,27 +562,15 @@ NNADAPTER_EXPORT std::string OperandPrecisionCodeToString(
     NNADAPTER_TYPE_TO_STRING(FLOAT16);
     NNADAPTER_TYPE_TO_STRING(FLOAT32);
     NNADAPTER_TYPE_TO_STRING(FLOAT64);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_BOOL8);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_INT8);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_UINT8);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_INT16);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_UINT16);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_INT32);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_UINT32);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_INT64);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_UINT64);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_FLOAT16);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_FLOAT32);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_FLOAT64);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_QUANT_INT8_SYMM_PER_LAYER);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_QUANT_INT8_SYMM_PER_CHANNEL);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_QUANT_UINT8_ASYMM_PER_LAYER);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_QUANT_INT16_SYMM_PER_LAYER);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_QUANT_INT16_SYMM_PER_CHANNEL);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_QUANT_UINT16_ASYMM_PER_LAYER);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_QUANT_INT32_SYMM_PER_LAYER);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_QUANT_INT32_SYMM_PER_CHANNEL);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_QUANT_UINT32_ASYMM_PER_LAYER);
+    NNADAPTER_TYPE_TO_STRING(QUANT_INT8_SYMM_PER_LAYER);
+    NNADAPTER_TYPE_TO_STRING(QUANT_INT8_SYMM_PER_CHANNEL);
+    NNADAPTER_TYPE_TO_STRING(QUANT_UINT8_ASYMM_PER_LAYER);
+    NNADAPTER_TYPE_TO_STRING(QUANT_INT16_SYMM_PER_LAYER);
+    NNADAPTER_TYPE_TO_STRING(QUANT_INT16_SYMM_PER_CHANNEL);
+    NNADAPTER_TYPE_TO_STRING(QUANT_UINT16_ASYMM_PER_LAYER);
+    NNADAPTER_TYPE_TO_STRING(QUANT_INT32_SYMM_PER_LAYER);
+    NNADAPTER_TYPE_TO_STRING(QUANT_INT32_SYMM_PER_CHANNEL);
+    NNADAPTER_TYPE_TO_STRING(QUANT_UINT32_ASYMM_PER_LAYER);
     default:
       name = "UNKNOWN";
       break;
@@ -564,6 +616,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(ADAPTIVE_AVERAGE_POOL_2D);
     NNADAPTER_TYPE_TO_STRING(ADAPTIVE_MAX_POOL_2D);
     NNADAPTER_TYPE_TO_STRING(ADD);
+    NNADAPTER_TYPE_TO_STRING(AND);
     NNADAPTER_TYPE_TO_STRING(ARG_MAX);
     NNADAPTER_TYPE_TO_STRING(ARG_MIN);
     NNADAPTER_TYPE_TO_STRING(ASSIGN);
@@ -571,22 +624,28 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(BATCH_NORMALIZATION);
     NNADAPTER_TYPE_TO_STRING(CAST);
     NNADAPTER_TYPE_TO_STRING(CLIP);
+    NNADAPTER_TYPE_TO_STRING(CHANNEL_SHUFFLE);
     NNADAPTER_TYPE_TO_STRING(CONCAT);
     NNADAPTER_TYPE_TO_STRING(CONV_2D);
     NNADAPTER_TYPE_TO_STRING(CONV_2D_TRANSPOSE);
     NNADAPTER_TYPE_TO_STRING(CUM_SUM);
     NNADAPTER_TYPE_TO_STRING(DEFORMABLE_CONV_2D);
+    NNADAPTER_TYPE_TO_STRING(DEQUANTIZE);
     NNADAPTER_TYPE_TO_STRING(DIV);
     NNADAPTER_TYPE_TO_STRING(EQUAL);
     NNADAPTER_TYPE_TO_STRING(EXP);
     NNADAPTER_TYPE_TO_STRING(EXPAND);
     NNADAPTER_TYPE_TO_STRING(FILL);
+    NNADAPTER_TYPE_TO_STRING(FILL_LIKE);
     NNADAPTER_TYPE_TO_STRING(FLATTEN);
+    NNADAPTER_TYPE_TO_STRING(FLOOR);
     NNADAPTER_TYPE_TO_STRING(FULLY_CONNECTED);
     NNADAPTER_TYPE_TO_STRING(GATHER);
     NNADAPTER_TYPE_TO_STRING(GELU);
     NNADAPTER_TYPE_TO_STRING(GREATER);
     NNADAPTER_TYPE_TO_STRING(GREATER_EQUAL);
+    NNADAPTER_TYPE_TO_STRING(GRID_SAMPLE);
+    NNADAPTER_TYPE_TO_STRING(GROUP_NORMALIZATION);
     NNADAPTER_TYPE_TO_STRING(HARD_SIGMOID);
     NNADAPTER_TYPE_TO_STRING(HARD_SWISH);
     NNADAPTER_TYPE_TO_STRING(INSTANCE_NORMALIZATION);
@@ -599,32 +658,42 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(MAT_MUL);
     NNADAPTER_TYPE_TO_STRING(MAX);
     NNADAPTER_TYPE_TO_STRING(MAX_POOL_2D);
+    NNADAPTER_TYPE_TO_STRING(MESHGRID);
     NNADAPTER_TYPE_TO_STRING(MIN);
     NNADAPTER_TYPE_TO_STRING(MUL);
+    NNADAPTER_TYPE_TO_STRING(NOT);
     NNADAPTER_TYPE_TO_STRING(NOT_EQUAL);
     NNADAPTER_TYPE_TO_STRING(PAD);
     NNADAPTER_TYPE_TO_STRING(POW);
     NNADAPTER_TYPE_TO_STRING(PRELU);
+    NNADAPTER_TYPE_TO_STRING(QUANTIZE);
     NNADAPTER_TYPE_TO_STRING(RELU);
     NNADAPTER_TYPE_TO_STRING(RELU6);
     NNADAPTER_TYPE_TO_STRING(RANGE);
     NNADAPTER_TYPE_TO_STRING(REDUCE_MEAN);
+    NNADAPTER_TYPE_TO_STRING(REDUCE_SUM);
     NNADAPTER_TYPE_TO_STRING(RESHAPE);
     NNADAPTER_TYPE_TO_STRING(RESIZE_NEAREST);
     NNADAPTER_TYPE_TO_STRING(RESIZE_LINEAR);
+    NNADAPTER_TYPE_TO_STRING(ROI_ALIGN);
     NNADAPTER_TYPE_TO_STRING(SHAPE);
     NNADAPTER_TYPE_TO_STRING(SIGMOID);
     NNADAPTER_TYPE_TO_STRING(SLICE);
     NNADAPTER_TYPE_TO_STRING(STACK);
     NNADAPTER_TYPE_TO_STRING(SOFTMAX);
+    NNADAPTER_TYPE_TO_STRING(SOFTPLUS);
     NNADAPTER_TYPE_TO_STRING(SPLIT);
+    NNADAPTER_TYPE_TO_STRING(SQUARE);
     NNADAPTER_TYPE_TO_STRING(SQUEEZE);
     NNADAPTER_TYPE_TO_STRING(SUB);
+    NNADAPTER_TYPE_TO_STRING(SUM);
     NNADAPTER_TYPE_TO_STRING(SWISH);
     NNADAPTER_TYPE_TO_STRING(TANH);
+    NNADAPTER_TYPE_TO_STRING(TILE);
     NNADAPTER_TYPE_TO_STRING(TOP_K);
     NNADAPTER_TYPE_TO_STRING(TRANSPOSE);
     NNADAPTER_TYPE_TO_STRING(UNSQUEEZE);
+    NNADAPTER_TYPE_TO_STRING(WHERE);
     default:
       name = "UNKNOWN";
       break;
@@ -704,29 +773,17 @@ NNADAPTER_EXPORT std::string OperandPrecisionCodeToSymbol(
     NNADAPTER_TYPE_TO_STRING(FLOAT16, f16);
     NNADAPTER_TYPE_TO_STRING(FLOAT32, f32);
     NNADAPTER_TYPE_TO_STRING(FLOAT64, f64);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_BOOL8, b);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_INT8, i8);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_UINT8, u8);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_INT16, i16);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_UINT16, u16);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_INT32, i32);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_UINT32, u32);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_INT64, i64);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_UINT64, u64);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_FLOAT16, f16);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_FLOAT32, f32);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_FLOAT64, f16);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_QUANT_INT8_SYMM_PER_LAYER, qi8sl);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_QUANT_INT8_SYMM_PER_CHANNEL, qi8sc);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_QUANT_UINT8_ASYMM_PER_LAYER, qu8al);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_QUANT_INT16_SYMM_PER_LAYER, qi16sl);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_QUANT_INT16_SYMM_PER_CHANNEL, qi16sc);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_QUANT_UINT16_ASYMM_PER_LAYER, qu16al);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_QUANT_INT32_SYMM_PER_LAYER, qi32sl);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_QUANT_INT32_SYMM_PER_CHANNEL, qi32sc);
-    NNADAPTER_TYPE_TO_STRING(TENSOR_QUANT_UINT32_ASYMM_PER_LAYER, qu32al);
+    NNADAPTER_TYPE_TO_STRING(QUANT_INT8_SYMM_PER_LAYER, qi8sl);
+    NNADAPTER_TYPE_TO_STRING(QUANT_INT8_SYMM_PER_CHANNEL, qi8sc);
+    NNADAPTER_TYPE_TO_STRING(QUANT_UINT8_ASYMM_PER_LAYER, qu8al);
+    NNADAPTER_TYPE_TO_STRING(QUANT_INT16_SYMM_PER_LAYER, qi16sl);
+    NNADAPTER_TYPE_TO_STRING(QUANT_INT16_SYMM_PER_CHANNEL, qi16sc);
+    NNADAPTER_TYPE_TO_STRING(QUANT_UINT16_ASYMM_PER_LAYER, qu16al);
+    NNADAPTER_TYPE_TO_STRING(QUANT_INT32_SYMM_PER_LAYER, qi32sl);
+    NNADAPTER_TYPE_TO_STRING(QUANT_INT32_SYMM_PER_CHANNEL, qi32sc);
+    NNADAPTER_TYPE_TO_STRING(QUANT_UINT32_ASYMM_PER_LAYER, qu32al);
     default:
-      NNADAPTER_LOG(ERROR) << "Unhandle case: type="
+      NNADAPTER_LOG(FATAL) << "Unhandle case: type="
                            << OperandPrecisionCodeToString(type) << ".";
       break;
   }
@@ -773,7 +830,7 @@ NNADAPTER_EXPORT std::string OperandValueToString(hal::Operand* operand) {
       OPERAND_SCALAR_VALUE_TO_STRING(FLOAT32, float, f);
       OPERAND_SCALAR_VALUE_TO_STRING(FLOAT64, double, f);
       default:
-        NNADAPTER_LOG(ERROR) << "Can't peek the scalar value for "
+        NNADAPTER_LOG(FATAL) << "Can't peek the scalar value for "
                              << OperandPrecisionCodeToString(type.precision)
                              << ".";
         break;
@@ -794,38 +851,37 @@ NNADAPTER_EXPORT std::string OperandValueToString(hal::Operand* operand) {
     break;
         label = "{";
         switch (type.precision) {
-          OPERAND_VECTOR_VALUE_TO_STRING(TENSOR_BOOL8, bool, d);
-          OPERAND_VECTOR_VALUE_TO_STRING(TENSOR_INT8, int8_t, d);
+          OPERAND_VECTOR_VALUE_TO_STRING(BOOL8, bool, d);
+          OPERAND_VECTOR_VALUE_TO_STRING(INT8, int8_t, d);
+          OPERAND_VECTOR_VALUE_TO_STRING(QUANT_INT8_SYMM_PER_LAYER, int8_t, d);
           OPERAND_VECTOR_VALUE_TO_STRING(
-              TENSOR_QUANT_INT8_SYMM_PER_LAYER, int8_t, d);
+              QUANT_INT8_SYMM_PER_CHANNEL, int8_t, d);
+          OPERAND_VECTOR_VALUE_TO_STRING(UINT8, uint8_t, u);
           OPERAND_VECTOR_VALUE_TO_STRING(
-              TENSOR_QUANT_INT8_SYMM_PER_CHANNEL, int8_t, d);
-          OPERAND_VECTOR_VALUE_TO_STRING(TENSOR_UINT8, uint8_t, u);
+              QUANT_UINT8_ASYMM_PER_LAYER, uint8_t, u);
+          OPERAND_VECTOR_VALUE_TO_STRING(INT16, int16_t, d);
           OPERAND_VECTOR_VALUE_TO_STRING(
-              TENSOR_QUANT_UINT8_ASYMM_PER_LAYER, uint8_t, u);
-          OPERAND_VECTOR_VALUE_TO_STRING(TENSOR_INT16, int16_t, d);
+              QUANT_INT16_SYMM_PER_LAYER, int16_t, d);
           OPERAND_VECTOR_VALUE_TO_STRING(
-              TENSOR_QUANT_INT16_SYMM_PER_LAYER, int16_t, d);
+              QUANT_INT16_SYMM_PER_CHANNEL, int16_t, d);
+          OPERAND_VECTOR_VALUE_TO_STRING(UINT16, uint16_t, u);
           OPERAND_VECTOR_VALUE_TO_STRING(
-              TENSOR_QUANT_INT16_SYMM_PER_CHANNEL, int16_t, d);
-          OPERAND_VECTOR_VALUE_TO_STRING(TENSOR_UINT16, uint16_t, u);
+              QUANT_UINT16_ASYMM_PER_LAYER, uint16_t, u);
+          OPERAND_VECTOR_VALUE_TO_STRING(INT32, int32_t, d);
           OPERAND_VECTOR_VALUE_TO_STRING(
-              TENSOR_QUANT_UINT16_ASYMM_PER_LAYER, uint16_t, u);
-          OPERAND_VECTOR_VALUE_TO_STRING(TENSOR_INT32, int32_t, d);
+              QUANT_INT32_SYMM_PER_LAYER, int32_t, d);
           OPERAND_VECTOR_VALUE_TO_STRING(
-              TENSOR_QUANT_INT32_SYMM_PER_LAYER, int32_t, d);
+              QUANT_INT32_SYMM_PER_CHANNEL, int32_t, d);
+          OPERAND_VECTOR_VALUE_TO_STRING(UINT32, uint32_t, u);
           OPERAND_VECTOR_VALUE_TO_STRING(
-              TENSOR_QUANT_INT32_SYMM_PER_CHANNEL, int32_t, d);
-          OPERAND_VECTOR_VALUE_TO_STRING(TENSOR_UINT32, uint32_t, u);
-          OPERAND_VECTOR_VALUE_TO_STRING(
-              TENSOR_QUANT_UINT32_ASYMM_PER_LAYER, uint32_t, u);
-          OPERAND_VECTOR_VALUE_TO_STRING(TENSOR_INT64, int64_t, lld);
-          OPERAND_VECTOR_VALUE_TO_STRING(TENSOR_UINT64, uint64_t, lld);
-          OPERAND_VECTOR_VALUE_TO_STRING(TENSOR_FLOAT16, int16_t, d);
-          OPERAND_VECTOR_VALUE_TO_STRING(TENSOR_FLOAT32, float, f);
-          OPERAND_VECTOR_VALUE_TO_STRING(TENSOR_FLOAT64, double, f);
+              QUANT_UINT32_ASYMM_PER_LAYER, uint32_t, u);
+          OPERAND_VECTOR_VALUE_TO_STRING(INT64, int64_t, lld);
+          OPERAND_VECTOR_VALUE_TO_STRING(UINT64, uint64_t, lld);
+          OPERAND_VECTOR_VALUE_TO_STRING(FLOAT16, int16_t, d);
+          OPERAND_VECTOR_VALUE_TO_STRING(FLOAT32, float, f);
+          OPERAND_VECTOR_VALUE_TO_STRING(FLOAT64, double, f);
           default:
-            NNADAPTER_LOG(ERROR) << "Can't peek the vector value for "
+            NNADAPTER_LOG(FATAL) << "Can't peek the vector value for "
                                  << OperandPrecisionCodeToString(type.precision)
                                  << ".";
             break;
@@ -858,14 +914,14 @@ NNADAPTER_EXPORT std::string OperandTypeToString(NNAdapterOperandType* type) {
   }
   os << "]" << std::endl;
   switch (type->precision) {
-    case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_LAYER:
-    case NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_LAYER:
-    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_LAYER: {
+    case NNADAPTER_QUANT_INT8_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT16_SYMM_PER_LAYER:
+    case NNADAPTER_QUANT_INT32_SYMM_PER_LAYER: {
       os << " scale: " << type->symm_per_layer_params.scale;
     } break;
-    case NNADAPTER_TENSOR_QUANT_INT8_SYMM_PER_CHANNEL:
-    case NNADAPTER_TENSOR_QUANT_INT16_SYMM_PER_CHANNEL:
-    case NNADAPTER_TENSOR_QUANT_INT32_SYMM_PER_CHANNEL: {
+    case NNADAPTER_QUANT_INT8_SYMM_PER_CHANNEL:
+    case NNADAPTER_QUANT_INT16_SYMM_PER_CHANNEL:
+    case NNADAPTER_QUANT_INT32_SYMM_PER_CHANNEL: {
       os << " scales: [";
       for (uint32_t i = 0; i < max_scale_display_size &&
                            i < type->symm_per_channel_params.scale_count;
@@ -878,9 +934,9 @@ NNADAPTER_EXPORT std::string OperandTypeToString(NNAdapterOperandType* type) {
       os << "]";
       os << " channel_dim: " << type->symm_per_channel_params.channel_dim;
     } break;
-    case NNADAPTER_TENSOR_QUANT_UINT8_ASYMM_PER_LAYER:
-    case NNADAPTER_TENSOR_QUANT_UINT16_ASYMM_PER_LAYER:
-    case NNADAPTER_TENSOR_QUANT_UINT32_ASYMM_PER_LAYER: {
+    case NNADAPTER_QUANT_UINT8_ASYMM_PER_LAYER:
+    case NNADAPTER_QUANT_UINT16_ASYMM_PER_LAYER:
+    case NNADAPTER_QUANT_UINT32_ASYMM_PER_LAYER: {
       os << " scale: " << type->asymm_per_layer_params.scale;
       os << " zero_point: " << type->asymm_per_layer_params.zero_point;
     } break;

@@ -24,56 +24,41 @@ namespace paddle {
 namespace lite {
 
 bool OpLite::InferShape() {
-  // if input_tensor_ptrs and output_tensor_ptrs are overloaded in param_
-  // InferShapeByMemoryInternal will be applied.
-  if (op_param_ && op_param_->input_tensor_ptrs() &&
-      op_param_->output_tensor_ptrs()) {
-    return this->InferShapeWithCache();
-  } else {
-    return this->InferShapeImpl();
-  }
-}
-bool OpLite::InferShapeWithCache() {
-  // 1. Get vector of current input tensors
-  auto *current_inputs = op_param_->input_tensor_ptrs();
-  // 2. Get hash value of current inputs shape and lod
-  bool use_cache = true;
-  if (last_input_shapes.size() == current_inputs->size()) {
-    for (size_t i = 0; i < current_inputs->size(); i++) {
-      if (last_input_shapes[i] != current_inputs->at(i)->dims() ||
-          last_input_lods[i] != current_inputs->at(i)->lod()) {
-        use_cache = false;
-        break;
+  auto UseCache = [&, this]() -> bool {
+    if (last_input_shapes_.empty()) {
+      return false;
+    }
+    if (last_input_shapes_.size() == input_tensor_ptrs_cache_.size()) {
+      for (size_t i = 0; i < input_tensor_ptrs_cache_.size(); i++) {
+        if (last_input_shapes_[i] != input_tensor_ptrs_cache_[i]->dims() ||
+            last_input_lods_[i] != input_tensor_ptrs_cache_[i]->lod()) {
+          return false;
+        }
       }
+      return true;
+    }
+    return false;
+  };
+  if (InferShapeWithCache() && UseCache()) {
+    for (size_t i = 0; i < output_tensor_ptrs_cache_.size(); i++) {
+      output_tensor_ptrs_cache_[i]->Resize(last_output_shapes_[i]);
+      output_tensor_ptrs_cache_[i]->set_lod(last_output_lods_[i]);
     }
   } else {
-    use_cache = false;
-  }
-
-  // 3. infer shapes of output tensors
-  if (use_cache) {
-    // if current hash value is consistent with io_shape_lod_hash_,
-    // previous outputs shape and lod are reused.
-    auto *current_outputs = op_param_->output_tensor_ptrs();
-    for (size_t i = 0; i < current_outputs->size(); i++) {
-      current_outputs->at(i)->Resize(last_output_shapes[i]);
-      current_outputs->at(i)->set_lod(last_output_lods[i]);
-    }
-  } else {
-    // otherwise, current hash value is changed, InferShapeImpl will apply.
     this->InferShapeImpl();
-    auto *current_outputs = op_param_->output_tensor_ptrs();
-    last_output_shapes.clear();
-    last_output_lods.clear();
-    for (size_t i = 0; i < current_outputs->size(); i++) {
-      last_output_shapes.push_back(current_outputs->at(i)->dims());
-      last_output_lods.push_back(current_outputs->at(i)->lod());
-    }
-    last_input_shapes.clear();
-    last_input_lods.clear();
-    for (size_t i = 0; i < current_inputs->size(); i++) {
-      last_input_shapes.push_back(current_inputs->at(i)->dims());
-      last_input_lods.push_back(current_inputs->at(i)->lod());
+    if (InferShapeWithCache()) {
+      last_output_shapes_.clear();
+      last_output_lods_.clear();
+      for (size_t i = 0; i < output_tensor_ptrs_cache_.size(); i++) {
+        last_output_shapes_.push_back(output_tensor_ptrs_cache_[i]->dims());
+        last_output_lods_.push_back(output_tensor_ptrs_cache_[i]->lod());
+      }
+      last_input_shapes_.clear();
+      last_input_lods_.clear();
+      for (size_t i = 0; i < input_tensor_ptrs_cache_.size(); i++) {
+        last_input_shapes_.push_back(input_tensor_ptrs_cache_[i]->dims());
+        last_input_lods_.push_back(input_tensor_ptrs_cache_[i]->lod());
+      }
     }
   }
   return true;

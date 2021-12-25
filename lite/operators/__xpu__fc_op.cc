@@ -62,7 +62,6 @@ bool XPUFcOp::InferShapeImpl() const {
   }
   output_dims[in_num_col_dims] = w_dims_1;
   param_.output->Resize(output_dims);
-  param_.output_max->Resize({4});
 
   // share LoD
   param_.output->set_lod(param_.input->lod());
@@ -71,7 +70,6 @@ bool XPUFcOp::InferShapeImpl() const {
 }
 
 bool XPUFcOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
-  AttachParam(&param_);
   CHECK(scope->FindVar(op_desc.Input("Input").front()));
   CHECK(scope->FindVar(op_desc.Input("Filter").front()));
   CHECK(scope->FindVar(op_desc.Output("Output").front()));

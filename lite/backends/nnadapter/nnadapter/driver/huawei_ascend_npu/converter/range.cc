@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,12 +16,15 @@
 #include "driver/huawei_ascend_npu/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/modeling.h"
 
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
 int ConvertRange(Converter* converter, hal::Operation* operation) {
   RANGE_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  NNADAPTER_CHECK(IsOperationWithAllInputConstantOperands(operation))
+      << "Range input operands only support constant!";
 
   // Convert to GE operators
   auto start_operator = converter->GetMappedOperator(start_operand);

@@ -12,13 +12,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+#include "lite/backends/x86/math/conv_depthwise_5x5.h"
 #include <vector>
 #include "lite/backends/x86/math/avx/avx_mathfuns.h"
-#include "lite/backends/x86/math/avx/conv_utils.h"
 #include "lite/backends/x86/math/avx/avx_mathfuns.h"
-#include "lite/backends/x86/math/conv_utils.h"
+#include "lite/backends/x86/math/avx/conv_utils.h"
 #include "lite/backends/x86/math/conv_depthwise_impl.h"
-#include "lite/backends/x86/math/conv_depthwise_5x5.h"
+#include "lite/backends/x86/math/sse/conv_utils.h"
 #include "lite/core/memory.h"
 
 namespace paddle {
@@ -41,7 +41,6 @@ void conv_depthwise_5x5s1(const float* din,
                           int pad,
                           bool flag_bias,
                           const operators::ActivationParam act_param) {
-  std :: cout << " aaaaa " << block_channel << std :: endl;
   bool has_active = act_param.has_active;
   auto act_type = act_param.active_type;
 
@@ -50,20 +49,20 @@ void conv_depthwise_5x5s1(const float* din,
   int in_len = block_channel * (2 * pad + w_in);
 
   int channel_num = ROUNDUP(ch_in, block_channel);
-  float* pack_weight = static_cast<float*>(TargetMalloc(
-      TARGET(kX86),
-      1 * channel_num / block_channel * 5 * 5 * block_channel * sizeof(float)));
+  float* pack_weight = static_cast<float*>(
+      TargetMalloc(TARGET(kX86), channel_num * 5 * 5 * sizeof(float)));
   float* pack_input = static_cast<float*>(TargetMalloc(
       TARGET(kX86),
-      1 * (h_in + 2 * pad) * (w_in + 2 * pad) * block_channel * sizeof(float)));
+      (h_in + 2 * pad) * (w_in + 2 * pad) * block_channel * sizeof(float)));
   float* pack_out = static_cast<float*>(TargetMalloc(
-      TARGET(kX86), 1 * h_out * w_out * block_channel * sizeof(float)));
+      TARGET(kX86), h_out * w_out * block_channel * sizeof(float)));
 
-  /*#ifdef __AVX__
-    packC8_common(weights, pack_weight, {0, 0, 0, 0}, 5, 5, ch_in);
-  #else*/
-    packC4_common(weights, pack_weight, {0, 0, 0, 0}, 5, 5, ch_in); 
-  //#endif
+#ifdef __AVX__
+  packC8_common(weights, pack_weight, {0, 0, 0, 0}, 5, 5, ch_in);
+#else
+  packC4_common(weights, pack_weight, {0, 0, 0, 0}, 5, 5, ch_in);
+#endif
+
   for (int n = 0; n < num; n++) {
     const float* din_batch = din + n * ch_in * size_in_channel;
     float* dout_batch = dout + n * ch_out * size_out_channel;
@@ -74,11 +73,21 @@ void conv_depthwise_5x5s1(const float* din,
       auto* din_ptr = din_batch + c * size_in_channel;
       auto* weights_data = pack_weight + c * 5 * 5;
 
-      /*#ifdef __AVX__
-        packC8_common(din_ptr, pack_input, {pad, pad, pad, pad}, h_in, w_in, real_block_channel);
-      #else*/
-        packC4_common(din_ptr, pack_input, {pad, pad, pad, pad}, h_in, w_in, real_block_channel); 
-      //#endif
+#ifdef __AVX__
+      packC8_common(din_ptr,
+                    pack_input,
+                    {pad, pad, pad, pad},
+                    h_in,
+                    w_in,
+                    real_block_channel);
+#else
+      packC4_common(din_ptr,
+                    pack_input,
+                    {pad, pad, pad, pad},
+                    h_in,
+                    w_in,
+                    real_block_channel);
+#endif
 
       float bias_ptr[block_channel] = {0.f};
       if (flag_bias) {
@@ -303,25 +312,33 @@ void conv_depthwise_5x5s1(const float* din,
               r2 = max_ps(r2, zero);
               r3 = max_ps(r3, zero);
             } else if (act_type == lite_api::ActivationType::kRelu6) {
-              Type six = set1_ps(6.f);
+              Type six = set1_ps(act_param.Relu_clipped_coef);
               r0 = min_ps(max_ps(r0, zero), six);
               r1 = min_ps(max_ps(r1, zero), six);
               r2 = min_ps(max_ps(r2, zero), six);
               r3 = min_ps(max_ps(r3, zero), six);
             } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
               Type negative_slope = set1_ps(act_param.Leaky_relu_alpha);
-              r0 = blendv_ps(r0, mul_ps(negative_slope, r0), cmp_ps(r0, zero, 2));
-              r1 = blendv_ps(r1, mul_ps(negative_slope, r1), cmp_ps(r1, zero, 2));
-              r2 = blendv_ps(r2, mul_ps(negative_slope, r2), cmp_ps(r2, zero, 2));
-              r3 = blendv_ps(r3, mul_ps(negative_slope, r3), cmp_ps(r3, zero, 2));
+              r0 = blendv_ps(
+                  r0, mul_ps(negative_slope, r0), cmp_ps(r0, zero, 2));
+              r1 = blendv_ps(
+                  r1, mul_ps(negative_slope, r1), cmp_ps(r1, zero, 2));
+              r2 = blendv_ps(
+                  r2, mul_ps(negative_slope, r2), cmp_ps(r2, zero, 2));
+              r3 = blendv_ps(
+                  r3, mul_ps(negative_slope, r3), cmp_ps(r3, zero, 2));
             } else if (act_type == lite_api::ActivationType::kHardSwish) {
               Type vscale = set1_ps(1.0 / act_param.hard_swish_scale);
               Type voffset = set1_ps(act_param.hard_swish_offset);
               Type vthreshold = set1_ps(act_param.hard_swish_threshold);
-              r0 = mul_ps(min_ps(vthreshold, max_ps(zero, add_ps(r0, voffset))), mul_ps(r0, vscale));
-              r1 = mul_ps(min_ps(vthreshold, max_ps(zero, add_ps(r1, voffset))), mul_ps(r1, vscale));
-              r2 = mul_ps(min_ps(vthreshold, max_ps(zero, add_ps(r2, voffset))), mul_ps(r2, vscale));
-              r3 = mul_ps(min_ps(vthreshold, max_ps(zero, add_ps(r3, voffset))), mul_ps(r3, vscale));
+              r0 = mul_ps(min_ps(vthreshold, max_ps(zero, add_ps(r0, voffset))),
+                          mul_ps(r0, vscale));
+              r1 = mul_ps(min_ps(vthreshold, max_ps(zero, add_ps(r1, voffset))),
+                          mul_ps(r1, vscale));
+              r2 = mul_ps(min_ps(vthreshold, max_ps(zero, add_ps(r2, voffset))),
+                          mul_ps(r2, vscale));
+              r3 = mul_ps(min_ps(vthreshold, max_ps(zero, add_ps(r3, voffset))),
+                          mul_ps(r3, vscale));
             } else {
               LOG(FATAL) << " [X86] activation type "
                          << static_cast<int>(act_type) << " not supported ";
@@ -345,11 +362,10 @@ void conv_depthwise_5x5s1(const float* din,
           Type r = _bias;
           for (int m = 0; m < 5; m++) {
             for (int n = 0; n < 5; n++) {
-              Type weight = loadu_ps(
-                  weights_data + 5 * block_channel * m + block_channel * n);
-              Type input =
-                  loadu_ps(block_inr0 + block_channel * (j % 4) +
-                                  in_len * m + block_channel * n);
+              Type weight = loadu_ps(weights_data + 5 * block_channel * m +
+                                     block_channel * n);
+              Type input = loadu_ps(block_inr0 + block_channel * (j % 4) +
+                                    in_len * m + block_channel * n);
               r = fmadd_ps(input, weight, r);
             }
           }
@@ -358,17 +374,17 @@ void conv_depthwise_5x5s1(const float* din,
             if (act_type == lite_api::ActivationType::kRelu) {
               r = max_ps(r, zero);
             } else if (act_type == lite_api::ActivationType::kRelu6) {
-              Type six = set1_ps(6.f);
+              Type six = set1_ps(act_param.Relu_clipped_coef);
               r = min_ps(max_ps(r, zero), six);
             } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
-              Type negative_slope =
-                  set1_ps(act_param.Leaky_relu_alpha);
+              Type negative_slope = set1_ps(act_param.Leaky_relu_alpha);
               r = blendv_ps(r, mul_ps(negative_slope, r), cmp_ps(r, zero, 2));
             } else if (act_type == lite_api::ActivationType::kHardSwish) {
               Type vscale = set1_ps(1.0 / act_param.hard_swish_scale);
               Type voffset = set1_ps(act_param.hard_swish_offset);
               Type vthreshold = set1_ps(act_param.hard_swish_threshold);
-              r = mul_ps(min_ps(vthreshold, max_ps(zero, add_ps(r, voffset))), mul_ps(r, vscale));
+              r = mul_ps(min_ps(vthreshold, max_ps(zero, add_ps(r, voffset))),
+                         mul_ps(r, vscale));
             } else {
               LOG(FATAL) << " [X86] activation type "
                          << static_cast<int>(act_type) << " not supported ";
@@ -379,11 +395,11 @@ void conv_depthwise_5x5s1(const float* din,
         }
       }
 
-      /*#ifdef __AVX__      
-        unpackC8_common(pack_out, dout_ptr, size_out_channel, real_block_channel);
-      #else*/
-        unpackC4_common(pack_out, dout_ptr, size_out_channel, real_block_channel);    
-      //#endif  
+#ifdef __AVX__
+      unpackC8_common(pack_out, dout_ptr, size_out_channel, real_block_channel);
+#else
+      unpackC4_common(pack_out, dout_ptr, size_out_channel, real_block_channel);
+#endif
     }
   }
 
@@ -413,20 +429,19 @@ void conv_depthwise_5x5s2(const float* din,
   int in_len = block_channel * (2 * pad + w_in);
 
   int channel_num = ROUNDUP(ch_in, block_channel);
-  float* pack_weight = static_cast<float*>(TargetMalloc(
-      TARGET(kX86),
-      1 * channel_num / block_channel * 5 * 5 * block_channel * sizeof(float)));
+  float* pack_weight = static_cast<float*>(
+      TargetMalloc(TARGET(kX86), channel_num * 5 * 5 * sizeof(float)));
   float* pack_input = static_cast<float*>(TargetMalloc(
       TARGET(kX86),
-      1 * (h_in + 2 * pad) * (w_in + 2 * pad) * block_channel * sizeof(float)));
+      (h_in + 2 * pad) * (w_in + 2 * pad) * block_channel * sizeof(float)));
   float* pack_out = static_cast<float*>(TargetMalloc(
-      TARGET(kX86), 1 * h_out * w_out * block_channel * sizeof(float)));
+      TARGET(kX86), h_out * w_out * block_channel * sizeof(float)));
 
-  /*#ifdef __AVX__
-    packC8_common(weights, pack_weight, {0, 0, 0, 0}, 5, 5, ch_in);
-  #else*/
-    packC4_common(weights, pack_weight, {0, 0, 0, 0}, 5, 5, ch_in); 
-  //#endif
+#ifdef __AVX__
+  packC8_common(weights, pack_weight, {0, 0, 0, 0}, 5, 5, ch_in);
+#else
+  packC4_common(weights, pack_weight, {0, 0, 0, 0}, 5, 5, ch_in);
+#endif
 
   for (int n = 0; n < num; n++) {
     const float* din_batch = din + n * ch_in * size_in_channel;
@@ -438,11 +453,21 @@ void conv_depthwise_5x5s2(const float* din,
       auto* din_ptr = din_batch + c * size_in_channel;
       auto* weights_data = pack_weight + c * 5 * 5;
 
-      /*#ifdef __AVX__
-        packC8_common(din_ptr, pack_input, {pad, pad, pad, pad}, h_in, w_in, real_block_channel);
-      #else*/
-        packC4_common(din_ptr, pack_input, {pad, pad, pad, pad}, h_in, w_in, real_block_channel); 
-      //#endif    
+#ifdef __AVX__
+      packC8_common(din_ptr,
+                    pack_input,
+                    {pad, pad, pad, pad},
+                    h_in,
+                    w_in,
+                    real_block_channel);
+#else
+      packC4_common(din_ptr,
+                    pack_input,
+                    {pad, pad, pad, pad},
+                    h_in,
+                    w_in,
+                    real_block_channel);
+#endif
 
       float bias_ptr[block_channel] = {0.f};
       if (flag_bias) {
@@ -549,16 +574,16 @@ void conv_depthwise_5x5s2(const float* din,
           r3 = fmadd_ps(i1a, w14, r3);
 
           Type i20 = loadu_ps(block_inr2);
-          Type i21 = loadu_ps(block_inr2 + 8);
-          Type i22 = loadu_ps(block_inr2 + 16);
-          Type i23 = loadu_ps(block_inr2 + 24);
-          Type i24 = loadu_ps(block_inr2 + 32);
-          Type i25 = loadu_ps(block_inr2 + 40);
-          Type i26 = loadu_ps(block_inr2 + 48);
-          Type i27 = loadu_ps(block_inr2 + 56);
-          Type i28 = loadu_ps(block_inr2 + 64);
-          Type i29 = loadu_ps(block_inr2 + 72);
-          Type i2a = loadu_ps(block_inr2 + 80);
+          Type i21 = loadu_ps(block_inr2 + 1 * block_channel);
+          Type i22 = loadu_ps(block_inr2 + 2 * block_channel);
+          Type i23 = loadu_ps(block_inr2 + 3 * block_channel);
+          Type i24 = loadu_ps(block_inr2 + 4 * block_channel);
+          Type i25 = loadu_ps(block_inr2 + 5 * block_channel);
+          Type i26 = loadu_ps(block_inr2 + 6 * block_channel);
+          Type i27 = loadu_ps(block_inr2 + 7 * block_channel);
+          Type i28 = loadu_ps(block_inr2 + 8 * block_channel);
+          Type i29 = loadu_ps(block_inr2 + 9 * block_channel);
+          Type i2a = loadu_ps(block_inr2 + 10 * block_channel);
 
           Type w20 = loadu_ps(weights_data + 10 * block_channel);
           r0 = fmadd_ps(i20, w20, r0);
@@ -682,25 +707,33 @@ void conv_depthwise_5x5s2(const float* din,
               r2 = max_ps(r2, zero);
               r3 = max_ps(r3, zero);
             } else if (act_type == lite_api::ActivationType::kRelu6) {
-              Type six = set1_ps(6.f);
+              Type six = set1_ps(act_param.Relu_clipped_coef);
               r0 = min_ps(max_ps(r0, zero), six);
               r1 = min_ps(max_ps(r1, zero), six);
               r2 = min_ps(max_ps(r2, zero), six);
               r3 = min_ps(max_ps(r3, zero), six);
             } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
               Type negative_slope = set1_ps(act_param.Leaky_relu_alpha);
-              r0 = blendv_ps(r0, mul_ps(negative_slope, r0), cmp_ps(r0, zero, 2));
-              r1 = blendv_ps(r1, mul_ps(negative_slope, r1), cmp_ps(r1, zero, 2));
-              r2 = blendv_ps(r2, mul_ps(negative_slope, r2), cmp_ps(r2, zero, 2));
-              r3 = blendv_ps(r3, mul_ps(negative_slope, r3), cmp_ps(r3, zero, 2));
+              r0 = blendv_ps(
+                  r0, mul_ps(negative_slope, r0), cmp_ps(r0, zero, 2));
+              r1 = blendv_ps(
+                  r1, mul_ps(negative_slope, r1), cmp_ps(r1, zero, 2));
+              r2 = blendv_ps(
+                  r2, mul_ps(negative_slope, r2), cmp_ps(r2, zero, 2));
+              r3 = blendv_ps(
+                  r3, mul_ps(negative_slope, r3), cmp_ps(r3, zero, 2));
             } else if (act_type == lite_api::ActivationType::kHardSwish) {
               Type vscale = set1_ps(1.0 / act_param.hard_swish_scale);
               Type voffset = set1_ps(act_param.hard_swish_offset);
               Type vthreshold = set1_ps(act_param.hard_swish_threshold);
-              r0 = mul_ps(min_ps(vthreshold, max_ps(zero, add_ps(r0, voffset))), mul_ps(r0, vscale));
-              r1 = mul_ps(min_ps(vthreshold, max_ps(zero, add_ps(r1, voffset))), mul_ps(r1, vscale));
-              r2 = mul_ps(min_ps(vthreshold, max_ps(zero, add_ps(r2, voffset))), mul_ps(r2, vscale));
-              r3 = mul_ps(min_ps(vthreshold, max_ps(zero, add_ps(r3, voffset))), mul_ps(r3, vscale));
+              r0 = mul_ps(min_ps(vthreshold, max_ps(zero, add_ps(r0, voffset))),
+                          mul_ps(r0, vscale));
+              r1 = mul_ps(min_ps(vthreshold, max_ps(zero, add_ps(r1, voffset))),
+                          mul_ps(r1, vscale));
+              r2 = mul_ps(min_ps(vthreshold, max_ps(zero, add_ps(r2, voffset))),
+                          mul_ps(r2, vscale));
+              r3 = mul_ps(min_ps(vthreshold, max_ps(zero, add_ps(r3, voffset))),
+                          mul_ps(r3, vscale));
             } else {
               LOG(FATAL) << " [X86] activation type "
                          << static_cast<int>(act_type) << " not supported ";
@@ -724,11 +757,10 @@ void conv_depthwise_5x5s2(const float* din,
           Type r = _bias;
           for (int m = 0; m < 5; m++) {
             for (int n = 0; n < 5; n++) {
-              Type weight = loadu_ps(
-                  weights_data + 5 * block_channel * m + block_channel * n);
-              Type input =
-                  loadu_ps(block_inr0 + block_channel * (j % 4) * 2 +
-                                  in_len * m + block_channel * n);
+              Type weight = loadu_ps(weights_data + 5 * block_channel * m +
+                                     block_channel * n);
+              Type input = loadu_ps(block_inr0 + block_channel * (j % 4) * 2 +
+                                    in_len * m + block_channel * n);
               r = fmadd_ps(input, weight, r);
             }
           }
@@ -737,7 +769,7 @@ void conv_depthwise_5x5s2(const float* din,
             if (act_type == lite_api::ActivationType::kRelu) {
               r = max_ps(r, zero);
             } else if (act_type == lite_api::ActivationType::kRelu6) {
-              Type six = set1_ps(6.f);
+              Type six = set1_ps(act_param.Relu_clipped_coef);
               r = min_ps(max_ps(r, zero), six);
             } else if (act_type == lite_api::ActivationType::kLeakyRelu) {
               Type negative_slope = set1_ps(act_param.Leaky_relu_alpha);
@@ -746,7 +778,8 @@ void conv_depthwise_5x5s2(const float* din,
               Type vscale = set1_ps(1.0 / act_param.hard_swish_scale);
               Type voffset = set1_ps(act_param.hard_swish_offset);
               Type vthreshold = set1_ps(act_param.hard_swish_threshold);
-              r = mul_ps(min_ps(vthreshold, max_ps(zero, add_ps(r, voffset))), mul_ps(r, vscale));
+              r = mul_ps(min_ps(vthreshold, max_ps(zero, add_ps(r, voffset))),
+                         mul_ps(r, vscale));
             } else {
               LOG(FATAL) << " [X86] activation type "
                          << static_cast<int>(act_type) << "not supported";
@@ -757,11 +790,11 @@ void conv_depthwise_5x5s2(const float* din,
         }
       }
 
-      /*#ifdef __AVX__      
-        unpackC8_common(pack_out, dout_ptr, size_out_channel, real_block_channel);
-      #else*/
-        unpackC4_common(pack_out, dout_ptr, size_out_channel, real_block_channel);    
-      //#endif  
+#ifdef __AVX__
+      unpackC8_common(pack_out, dout_ptr, size_out_channel, real_block_channel);
+#else
+      unpackC4_common(pack_out, dout_ptr, size_out_channel, real_block_channel);
+#endif
     }
   }
 

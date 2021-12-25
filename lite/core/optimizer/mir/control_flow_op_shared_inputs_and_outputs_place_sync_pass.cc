@@ -54,10 +54,12 @@ void ControlFlowOpSharedInputsAndOutputsPlaceSyncPass::Apply(
     auto op_type = op_info->Type();
     if (!control_flow_op_types.count(op_type)) continue;
     int sub_block_idx = op_info->GetAttr<int32_t>("sub_block");
-    CHECK(sub_block_idx >= 0 && sub_block_idx < block_size);
+    CHECK_GE(sub_block_idx, 0);
+    CHECK_LT(sub_block_idx, block_size);
     std::unordered_map<std::string, const Type*> ref_var_types;
     for (auto* var_node : op_node->inlinks) {
       CHECK(var_node->IsArg());
+      if (var_node->inlinks.empty()) continue;
       auto& var_name = var_node->AsArg().name;
       if (!ref_var_types.count(var_name)) {
         ref_var_types.insert(std::pair<std::string, const Type*>(

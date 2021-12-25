@@ -73,7 +73,6 @@ bool BatchNormOp::InferShapeImpl() const {
 }
 
 bool BatchNormOp::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
-  AttachParam(&param_);
   param_.x = scope->FindVar(op_desc.Input("X").front())->GetMutable<Tensor>();
   param_.bias =
       scope->FindVar(op_desc.Input("Bias").front())->GetMutable<Tensor>();
