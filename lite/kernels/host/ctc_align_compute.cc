@@ -24,19 +24,6 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-LoD ToAbs(const LoD& in) {
-  if (in.empty()) return in;
-  LoD result;
-  for (auto& src : in) {
-    std::vector<uint64_t> dest(src.size() + 1, 0);
-    for (int i = 0; i < src.size(); i++) {
-      dest[i + 1] = dest[i] + src[i];
-    }
-    result.emplace_back(dest);
-  }
-  return result;
-}
-
 LoD ToNorm(const LoD& in) {
   if (in.empty()) return in;
   LoD result;
