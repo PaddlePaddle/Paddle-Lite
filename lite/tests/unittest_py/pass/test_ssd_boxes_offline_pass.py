@@ -494,12 +494,7 @@ class TestSSDBoxesCalcOfflinePass(FusePassAutoScanTest):
         return sample_program_configs(draw)
 
     def sample_predictor_configs(self):
-        if self.get_target() == 'OpenCL':
-            return self.get_predictor_configs(
-            ), ['io_copy', 'layout', 'box_coder', 'layout', 'io_copy'], (1e-5,
-                                                                         1e-5)
-        else:
-            return self.get_predictor_configs(), ['box_coder'], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ['box_coder'], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
