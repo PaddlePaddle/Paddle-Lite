@@ -32,7 +32,7 @@ bool TanOpLite::InferShape() {
   return true;
 }
 
-bool TahOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
+bool TanOpLite::AttachImpl(const cpp::OpDesc &op_desc, lite::Scope *scope) {
   auto x = op_desc.Input("X").front();
   auto out = op_desc.Output("Out").front();
 
