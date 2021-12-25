@@ -18,6 +18,8 @@ sys.path.append('../')
 from auto_scan_test import AutoScanTest, IgnoreReasons
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import unittest
+from functools import partial
+import numpy as np
 
 import hypothesis
 from hypothesis import given, settings, seed, example, assume
@@ -49,6 +51,17 @@ class TestTanOp(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
+        def generate_input(*args, **kwargs):
+            if kwargs["type"] == "int32":
+                return np.random.randint(kwargs["low"], kwargs["high"],
+                                         kwargs["shape"]).astype(np.int32)
+            elif kwargs["type"] == "int64":
+                return np.random.randint(kwargs["low"], kwargs["high"],
+                                         kwargs["shape"]).astype(np.int64)
+            elif kwargs["type"] == "float32":
+                return (kwargs["high"] - kwargs["low"]) * np.random.random(
+                    kwargs["shape"]).astype(np.float32) + kwargs["low"]
+
         in_shape = draw(
             st.lists(
                 st.integers(
@@ -62,7 +75,14 @@ class TestTanOp(AutoScanTest):
         program_config = ProgramConfig(
             ops=[tan_op],
             weights={},
-            inputs={"input_data": TensorConfig(shape=in_shape)},
+            inputs={
+                "input_data": TensorConfig(data_gen=partial(
+                    generate_input,
+                    type="float32",
+                    low=-0.9,
+                    high=0.9,
+                    shape=in_shape))
+            },
             outputs=["output_data"])
         return program_config
 
@@ -73,7 +93,7 @@ class TestTanOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=50)
 
 
 if __name__ == "__main__":
