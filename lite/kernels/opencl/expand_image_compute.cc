@@ -46,7 +46,6 @@ class ExpandComputeImage2D : public KernelLite<TARGET(kOpenCL),
     CHECK(expand_times.size() == 4)
         << "expand image now only support in_expand_timesdims size 4";
     CHECK(expand_times[1] == 1) << "expand image do not support expend c now";
-
     kernel_func_name_ = "expend_cn";
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
