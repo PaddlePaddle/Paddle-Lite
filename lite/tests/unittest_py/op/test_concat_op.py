@@ -169,10 +169,9 @@ class TestConcatOp(AutoScanTest):
 
     def sample_predictor_configs(self):
         atol, rtol = 1e-5, 1e-5
-        config_lists = self.get_predictor_configs()
-        for config in config_lists:
-            if config.target() in [TargetType.Metal]:
-                atol, rtol = 2e-4, 2e-4
+        target_str = self.get_target()
+        if target_str == "Metal":
+            atol, rtol = 2e-4, 2e-4
 
         return self.get_predictor_configs(), ["concat"], (atol, rtol)
 
