@@ -525,49 +525,44 @@ bool GetAscendCANNVersion(int* major, int* minor, int* patch) {
   static int patch_version = 0;
   if (!initialized) {
     initialized = true;
-    std::string ascend_cann_path;
     std::string ld_library_path = GetStringFromEnv("LD_LIBRARY_PATH");
-    // Split ld_library_path string by ":"
-    std::vector<std::string> tokens =
+    // Split the value of LD_LIBRARY_PATH by ":", and obtain the root directory
+    // of the Ascend CANN toolkit
+    std::vector<std::string> paths =
         string_split<std::string>(ld_library_path, ":");
-    for (auto path : tokens) {
-      if (path.find("Ascend/ascend-toolkit") != std::string::npos ||
-          path.find("Ascend/nnrt") != std::string::npos) {
-        ascend_cann_path = path;
-        break;
-      }
-    }
-    if (ascend_cann_path.empty()) {
-      ascend_cann_path = "/usr/local/Ascend/ascend-toolkit/latest";
-      NNADAPTER_LOG(ERROR) << "Unable to find the Ascend CANN installation "
-                              "path, use the default path["
-                           << ascend_cann_path << "]";
-    }
-    auto ascend_cann_real_path = GetRealPath(ascend_cann_path.c_str());
-    // Split ascend_cann_real_path string by "/"
-    tokens = string_split<std::string>(ascend_cann_real_path, "/");
-    std::string ascend_cann_version;
-    for (size_t i = 0; i < tokens.size(); i++) {
-      if (tokens[i] == "ascend-toolkit" || tokens[i] == "nnrt") {
-        if (i <= tokens.size() - 1) {
-          ascend_cann_version = tokens[i + 1];
-          break;
-        } else {
-          NNADAPTER_LOG(ERROR) << "Unable to find the version of Ascend CANN";
-          return false;
+    paths.push_back("/usr/local/Ascend/ascend-toolkit/latest");
+    for (auto path : paths) {
+      if (path.find("Ascend/ascend-toolkit") == std::string::npos &&
+          path.find("Ascend/nnrt") == std::string::npos)
+        continue;
+      auto ascend_cann_path = GetRealPath(path.c_str());
+      // Check if the file path is valid
+      if (ascend_cann_path.empty()) continue;
+      // Split ascend_cann_path string by "/"
+      auto tokens = string_split<std::string>(ascend_cann_path, "/");
+      std::string ascend_cann_version;
+      for (size_t i = 0; i < tokens.size(); i++) {
+        if (tokens[i] == "ascend-toolkit" || tokens[i] == "nnrt") {
+          if (i < tokens.size() - 1) {
+            ascend_cann_version = tokens[i + 1];
+            break;
+          }
         }
       }
+      if (ascend_cann_version.empty()) continue;
+      // Split ascend_cann_version string by "."
+      tokens = string_split<std::string>(ascend_cann_version, ".");
+      if (tokens.size() == 3 || tokens.size() == 4) {
+        major_version = atoi(tokens[0].c_str());
+        minor_version = atoi(tokens[1].c_str());
+        patch_version = atoi(tokens[2].c_str());
+        return true;
+      }
     }
-    // Split ascend_cann_version string by "."
-    tokens = string_split<std::string>(ascend_cann_version, ".");
-    if (tokens.size() == 3 || tokens.size() == 4) {
-      major_version = atoi(tokens[0].c_str());
-      minor_version = atoi(tokens[1].c_str());
-      patch_version = atoi(tokens[2].c_str());
-    } else {
-      NNADAPTER_LOG(ERROR) << "Unable to get the version of Ascend CANN";
-      return false;
-    }
+    NNADAPTER_LOG(FATAL) << "Unable to find the Ascend CANN installation path! "
+                            "Please install the Ascend CANN and add the root "
+                            "directory into LD_LIBRARY_PATH.";
+    return false;
   }
   *major = major_version;
   *minor = minor_version;
