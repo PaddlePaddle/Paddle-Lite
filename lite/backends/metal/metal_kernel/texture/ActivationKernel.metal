@@ -107,6 +107,7 @@ kernel void hard_sigmoid(texture2d_array<ftype, access::sample> inTexture[[textu
     outTexture.write(output, gid.xy, gid.z);
 }
 
+// activation function: swish
 kernel void swish(texture2d_array<ftype, access::sample> inTexture[[texture(0)]],
     texture2d_array<ftype, access::write> outTexture[[texture(1)]],
     constant SwishParam& param[[buffer(0)]],
