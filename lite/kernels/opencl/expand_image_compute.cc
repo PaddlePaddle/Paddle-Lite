@@ -74,6 +74,7 @@ class ExpandComputeImage2D : public KernelLite<TARGET(kOpenCL),
         first_epoch_for_reinit_) {
       last_x_dims_ = x_dims;
       first_epoch_for_reinit_ = false;
+
       // compute image shape
       paddle::lite::CLImageConverterDefault default_convertor;
       out_img_shape_ = default_convertor.InitImageDimInfoWith(out_dims);
