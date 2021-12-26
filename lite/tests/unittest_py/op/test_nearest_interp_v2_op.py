@@ -70,7 +70,7 @@ class TestNearestInterpV2Op(AutoScanTest):
         Scale_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=1), min_size=1, max_size=1))
+                    min_value=1, max_value=64), min_size=1, max_size=1))
         Tensor_shape = draw(
             st.lists(
                 st.integers(
