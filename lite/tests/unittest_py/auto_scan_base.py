@@ -16,12 +16,14 @@ import numpy as np
 import unittest
 import abc
 import os
+import sys
 import enum
 import time
 import logging
 import shutil
 import paddle
 import paddle.fluid as fluid
+import global_var_model as gl
 from paddle.fluid.initializer import NumpyArrayInitializer
 from paddle.fluid.core import PassVersionChecker
 import paddle.fluid.core as core
@@ -248,6 +250,7 @@ class AutoScanBaseTest(unittest.TestCase):
                 # judge validity of program
                 if not self.is_program_valid(prog_config, paddlelite_config):
                     self.num_invalid_programs_list[predictor_idx] += 1
+                    gl.set_not_supported_ops(self.get_target(), sys.argv[0])
                     continue
                 self.num_ran_programs_list[predictor_idx] += 1
 
@@ -283,6 +286,7 @@ class AutoScanBaseTest(unittest.TestCase):
                             self.ignore_log("[ACCURACY_ERROR] " + ignore_info[
                                 2] + ' ' + ' vs ' + self.paddlelite_config_str(
                                     pred_config))
+                            gl.set_out_diff_ops(self.get_target(), sys.argv[0])
                         elif ignore_info[
                                 1] == IgnoreReasonsBase.PADDLELITE_NOT_SUPPORT:
                             paddle_lite_not_support_flag = True
@@ -295,6 +299,7 @@ class AutoScanBaseTest(unittest.TestCase):
                             raise NotImplementedError
                         break
                 if paddle_lite_not_support_flag:
+                    gl.set_not_supported_ops(self.get_target(), sys.argv[0])
                     continue
 
                 if os.path.exists(self.cache_dir):
@@ -329,6 +334,7 @@ class AutoScanBaseTest(unittest.TestCase):
                 self.success_log('PredictorConfig: ' +
                                  self.paddlelite_config_str(pred_config))
         self.assertTrue(status)
+        gl.set_success_ops(self.get_target(), sys.argv[0])
 
     def inference_config_str(self, config) -> bool:
         dic = {}
@@ -353,7 +359,8 @@ class AutoScanBaseTest(unittest.TestCase):
         main_block = pg.desc.block(0)
         after_op_list = list()
         for i in range(main_block.op_size()):
-            if main_block.op(i).type() in ["feed", "fetch"]:
+            if main_block.op(i).type(
+            ) in ["feed", "fetch", "layout", "io_copy"]:
                 continue
             after_op_list.append(main_block.op(i).type())
         self.assertTrue(
@@ -428,6 +435,7 @@ class AutoScanBaseTest(unittest.TestCase):
             return self.run_test(quant=quant, prog_configs=[prog_config])
 
         # if current unittest is not active on the input targ    paddlelite_not_support_flag = Trueet, we will exit directly.
+        gl.set_all_test_ops(self.get_target(), sys.argv[0])
         if not self.is_actived():
             logging.info("Error: This test is not actived on " +
                          self.get_target())
@@ -499,6 +507,7 @@ class AutoScanBaseTest(unittest.TestCase):
         # otherwise we will generate a list[Place] from the inputed[target\precision\layout]
         assert (target is not None)
         target_ = target if isinstance(target, list) else [target]
+        self.target = target_
         precision_ = precision if isinstance(precision, list) else [precision]
         layout_ = layout if isinstance(layout, list) else [layout]
         for tar_, pre_, lay_ in product(target_, precision_, layout_):

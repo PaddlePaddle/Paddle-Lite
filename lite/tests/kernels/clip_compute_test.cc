@@ -110,6 +110,8 @@ TEST(Clip, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_err = 1e-2;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_err = 1e-5;
 #else
   return;
 #endif
@@ -130,7 +132,7 @@ TEST(Clip, precision) {
     for (int c : {3, 5}) {
       for (int h : {5, 6}) {
         for (int w : {6, 7}) {
-#ifdef LITE_WITH_OPENCL
+#if defined(LITE_WITH_OPENCL) || defined(NNADAPTER_WITH_VERISILICON_TIMVX)
           for (bool use_minmax_tensor : {false}) {
 #else
           for (bool use_minmax_tensor : {true, false}) {

@@ -288,7 +288,8 @@ void SetBackendConfig(lite_api::MobileConfig& config) {  // NOLINT
                                                  "mediatek_apu",
                                                  "huawei_kirin_npu",
                                                  "huawei_ascend_npu",
-                                                 "amlogic_npu"};
+                                                 "amlogic_npu",
+                                                 "verisilicon_timvx"};
   auto backends_list = lite::Split(FLAGS_backend, ",");
   bool with_nnadapter =
       std::find(backends_list.begin(), backends_list.end(), "nnadapter") !=
