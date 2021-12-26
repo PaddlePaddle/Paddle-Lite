@@ -56,19 +56,34 @@ class TestConcatOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
+        metal_places = [
+            Place(TargetType.Metal, PrecisionType.FP32,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.Metal, PrecisionType.FP16,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.ARM, PrecisionType.FP32),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=metal_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
         target_type = predictor_config.target()
+        input_shape = program_config.inputs["input_data0"].shape
         if target_type == TargetType.OpenCL:
             if "AxisTensor" in program_config.ops[0].inputs:
                 return False
-            if len(program_config.inputs["input_data0"]
-                   .shape) == 3 and program_config.ops[0].attrs["axis"] == 0:
+            if len(input_shape) == 3 and program_config.ops[0].attrs[
+                    "axis"] == 0:
                 for v in program_config.inputs.values():
                     if v.shape[0] % 4 != 0:
                         return False
+        if target_type == TargetType.Metal:
+            if "AxisTensor" in program_config.ops[0].inputs:
+                return False
+            if len(input_shape) != 4:
+                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -153,7 +168,13 @@ class TestConcatOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["concat"], (1e-5, 1e-5)
+        atol, rtol = 1e-5, 1e-5
+        config_lists = self.get_predictor_configs()
+        for config in config_lists:
+            if config.target() in [TargetType.Metal]:
+                atol, rtol = 2e-4, 2e-4
+
+        return self.get_predictor_configs(), ["concat"], (atol, rtol)
 
     def add_ignore_pass_case(self):
         pass
@@ -164,6 +185,9 @@ class TestConcatOp(AutoScanTest):
         if target_str == "OpenCL":
             # Make sure to generate enough valid cases for OpenCL
             max_examples = 100
+        if target_str == "Metal":
+            # Make sure to generate enough valid cases for Metal
+            max_examples = 400
 
         self.run_and_statis(
             quant=False, min_success_num=50, max_examples=max_examples)
