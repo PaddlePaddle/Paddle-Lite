@@ -19,7 +19,7 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-void FixQuantOps(hal::Model* model);
+void FixQuantizedOps(hal::Model* model);
 
 }  // namespace huawei_ascend_npu
 }  // namespace nnadapter

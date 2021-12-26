@@ -70,8 +70,16 @@ int ConvertFullyConnected(Converter* converter, hal::Operation* operation) {
     SET_INPUT(fc_op, x, input_operator);
     SET_INPUT(fc_op, w, weight_operator);
     SET_INPUT(fc_op, b, bias_operator);
-    std::shared_ptr<Operator> output_operator =
-        MAP_OUTPUT(fc_op, y, output_operand);
+    auto fc_output_operator = MAP_OUTPUT(fc_op, y, output_operand);
+    // reshape to 2D
+    auto reshape_op = converter->AddOperator<ge::op::Reshape>(output_operand);
+    auto shape_data = output_operand->type.dimensions.data;
+    auto shape_operator = converter->AddInt32ConstantOperator(
+        std::vector<int32_t>{static_cast<int32_t>(shape_data[0]),
+                             static_cast<int32_t>(shape_data[1])});
+    SET_INPUT(reshape_op, x, fc_output_operator);
+    SET_INPUT(reshape_op, shape, shape_operator);
+    output_operator = MAP_OUTPUT(reshape_op, y, output_operand);
   } else {
     NNADAPTER_LOG(FATAL) << "Unsupported precision.";
   }
