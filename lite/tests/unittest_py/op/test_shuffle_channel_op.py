@@ -106,10 +106,10 @@ class TestShuffleChannelOp(AutoScanTest):
 
     def sample_predictor_configs(self):
         atol, rtol = 1e-5, 1e-5
-        config_lists = self.get_predictor_configs()
-        for config in config_lists:
-            if config.target() in [TargetType.ARM, TargetType.Metal]:
-                atol, rtol = 5e-4, 5e-4
+        target_str = self.get_target()
+        if target_str == "Metal" or \
+            target_str == "ARM" :
+            atol, rtol = 5e-4, 5e-4
 
         return self.get_predictor_configs(), ["shuffle_channel"], (atol, rtol)
 
