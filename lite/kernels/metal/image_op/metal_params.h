@@ -108,6 +108,7 @@ struct MulMetalParam {};
 struct MatmulMetalParam {
     bool transposeX;
     bool transposeY;
+    bool broadcast;
 };
 
 struct FCMetalParam {
@@ -182,6 +183,10 @@ struct InstanceNormReluMetalParam {
 struct HardSigmoidMetalParam {
     float slope;
     float offset;
+};
+
+struct SwishMetalParam {
+    float beta;
 };
 
 struct HardSwishMetalParam {

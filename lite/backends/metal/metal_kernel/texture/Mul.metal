@@ -133,35 +133,19 @@ kernel void mat_mul_2dims_trans_y(texture2d_array<ftype, access::read> inputX[[t
 kernel void mat_mul_4dims(texture2d_array<ftype, access::read> inputX[[texture(0)]],
     texture2d_array<ftype, access::read> inputY[[texture(1)]],
     texture2d_array<ftype, access::write> outTexture[[texture(2)]],
+    constant MatmulParam& param[[buffer(0)]],
     uint3 gid[[thread_position_in_grid]]) {
     if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
         gid.z >= outTexture.get_array_size())
         return;
     ftype4 r = 0;
+    bool broadcast = param.broadcast;
+    int gidz = broadcast ? 0 : gid.z;
     int xLen = inputX.get_width();
     for (int i = 0; i < xLen; i++) {
         ftype4 iX = inputX.read(uint2(i, gid.y), gid.z);
-        ftype4 iY = inputY.read(uint2(gid.x, i), gid.z);
-
-        r += iX * iY;
-    }
-    outTexture.write(r, gid.xy, gid.z);
-}
-
-kernel void mat_mul_4dims_broadcast_y(texture2d_array<ftype, access::read> inputX[[texture(0)]],
-    texture2d_array<ftype, access::read> inputY[[texture(1)]],
-    texture2d_array<ftype, access::write> outTexture[[texture(2)]],
-    uint3 gid[[thread_position_in_grid]]) {
-    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
-        gid.z >= outTexture.get_array_size())
-        return;
-    ftype4 r = 0;
-    int xLen = inputX.get_width();
-    for (int i = 0; i < xLen; i++) {
-        ftype4 iX = inputX.read(uint2(i, gid.y), gid.z);
-        ftype4 iY = inputY.read(uint2(gid.x, i), 0);
-
-        iY = ftype4(iY.x, iY.x, iY.x, iY.x);
+        ftype4 iY = inputY.read(uint2(gid.x, i), gidz);
+        iY = broadcast ? ftype4(iY.x, iY.x, iY.x, iY.x) : iY;
         r += iX * iY;
     }
     outTexture.write(r, gid.xy, gid.z);
@@ -170,16 +154,19 @@ kernel void mat_mul_4dims_broadcast_y(texture2d_array<ftype, access::read> input
 kernel void mat_mul_4dim_trans_y(texture2d_array<ftype, access::read> inputX[[texture(0)]],
     texture2d_array<ftype, access::read> inputY[[texture(1)]],
     texture2d_array<ftype, access::write> outTexture[[texture(2)]],
+    constant MatmulParam& param[[buffer(0)]],
     uint3 gid[[thread_position_in_grid]]) {
     if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
         gid.z >= outTexture.get_array_size())
         return;
     ftype4 r = 0;
+    bool broadcast = param.broadcast;
+    int gidz = broadcast ? 0 : gid.z;
     int xLen = inputX.get_width();
     for (int i = 0; i < xLen; i++) {
         ftype4 iX = inputX.read(uint2(i, gid.y), gid.z);
-        ftype4 iY = inputY.read(uint2(i, gid.x), gid.z);
-
+        ftype4 iY = inputY.read(uint2(i, gid.x), gidz);
+        iY = broadcast ? ftype4(iY.x, iY.x, iY.x, iY.x) : iY;
         r += iX * iY;
     }
     outTexture.write(r, gid.xy, gid.z);
@@ -188,16 +175,19 @@ kernel void mat_mul_4dim_trans_y(texture2d_array<ftype, access::read> inputX[[te
 kernel void mat_mul_4dim_trans_x(texture2d_array<ftype, access::read> inputX[[texture(0)]],
     texture2d_array<ftype, access::read> inputY[[texture(1)]],
     texture2d_array<ftype, access::write> outTexture[[texture(2)]],
+    constant MatmulParam& param[[buffer(0)]],
     uint3 gid[[thread_position_in_grid]]) {
     if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
         gid.z >= outTexture.get_array_size())
         return;
     ftype4 r = 0;
+    bool broadcast = param.broadcast;
+    int gidz = broadcast ? 0 : gid.z;
     int xLen = inputX.get_height();
     for (int i = 0; i < xLen; i++) {
         ftype4 iX = inputX.read(uint2(gid.y, i), gid.z);
-        ftype4 iY = inputY.read(uint2(gid.x, i), gid.z);
-
+        ftype4 iY = inputY.read(uint2(gid.x, i), gidz);
+        iY = broadcast ? ftype4(iY.x, iY.x, iY.x, iY.x) : iY;
         r += iX * iY;
     }
     outTexture.write(r, gid.xy, gid.z);
@@ -206,16 +196,19 @@ kernel void mat_mul_4dim_trans_x(texture2d_array<ftype, access::read> inputX[[te
 kernel void mat_mul_4dim_trans_xy(texture2d_array<ftype, access::read> inputX[[texture(0)]],
     texture2d_array<ftype, access::read> inputY[[texture(1)]],
     texture2d_array<ftype, access::write> outTexture[[texture(2)]],
+    constant MatmulParam& param[[buffer(0)]],
     uint3 gid[[thread_position_in_grid]]) {
     if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
         gid.z >= outTexture.get_array_size())
         return;
     ftype4 r = 0;
+    bool broadcast = param.broadcast;
+    int gidz = broadcast ? 0 : gid.z;
     int xLen = inputX.get_height();
     for (int i = 0; i < xLen; i++) {
         ftype4 iX = inputX.read(uint2(gid.y, i), gid.z);
-        ftype4 iY = inputY.read(uint2(i, gid.x), gid.z);
-
+        ftype4 iY = inputY.read(uint2(i, gid.x), gidz);
+        iY = broadcast ? ftype4(iY.x, iY.x, iY.x, iY.x) : iY;
         r += iX * iY;
     }
     outTexture.write(r, gid.xy, gid.z);
