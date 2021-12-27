@@ -525,25 +525,25 @@ void conv_direct_transpose_out(int bs,
                                     row0,
                                     _mm256_cmp_ps(row0, vzero, _CMP_GT_OS));
             row1 = _mm256_blendv_ps(_mm256_mul_ps(row1, vscale),
-                                    row0,
+                                    row1,
                                     _mm256_cmp_ps(row1, vzero, _CMP_GT_OS));
             row2 = _mm256_blendv_ps(_mm256_mul_ps(row2, vscale),
-                                    row0,
+                                    row2,
                                     _mm256_cmp_ps(row2, vzero, _CMP_GT_OS));
             row3 = _mm256_blendv_ps(_mm256_mul_ps(row3, vscale),
-                                    row0,
+                                    row3,
                                     _mm256_cmp_ps(row3, vzero, _CMP_GT_OS));
             row4 = _mm256_blendv_ps(_mm256_mul_ps(row4, vscale),
-                                    row0,
+                                    row4,
                                     _mm256_cmp_ps(row4, vzero, _CMP_GT_OS));
             row5 = _mm256_blendv_ps(_mm256_mul_ps(row5, vscale),
-                                    row0,
+                                    row5,
                                     _mm256_cmp_ps(row5, vzero, _CMP_GT_OS));
             row6 = _mm256_blendv_ps(_mm256_mul_ps(row6, vscale),
-                                    row0,
+                                    row6,
                                     _mm256_cmp_ps(row6, vzero, _CMP_GT_OS));
             row7 = _mm256_blendv_ps(_mm256_mul_ps(row7, vscale),
-                                    row0,
+                                    row7,
                                     _mm256_cmp_ps(row7, vzero, _CMP_GT_OS));
 #else
             __m128 vzero = _mm_set1_ps(0.f);
@@ -552,13 +552,13 @@ void conv_direct_transpose_out(int bs,
                                  row0,
                                  _mm_cmp_ps(row0, vzero, _CMP_GT_OS));
             row1 = _mm_blendv_ps(_mm_mul_ps(row1, vscale),
-                                 row0,
+                                 row1,
                                  _mm_cmp_ps(row1, vzero, _CMP_GT_OS));
             row2 = _mm_blendv_ps(_mm_mul_ps(row2, vscale),
-                                 row0,
+                                 row2,
                                  _mm_cmp_ps(row2, vzero, _CMP_GT_OS));
             row3 = _mm_blendv_ps(_mm_mul_ps(row3, vscale),
-                                 row0,
+                                 row3,
                                  _mm_cmp_ps(row3, vzero, _CMP_GT_OS));
 #endif
           } else if (active_type == lite_api::ActivationType::kHardSwish) {
