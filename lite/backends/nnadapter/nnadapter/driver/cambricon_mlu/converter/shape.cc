@@ -12,29 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "core/operation/softmax.h"
+#include "core/operation/shape.h"
 #include "driver/cambricon_mlu/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
-#include "utility/utility.h"
 
 namespace nnadapter {
 namespace cambricon_mlu {
 
-int ConvertSoftmax(Converter* converter, hal::Operation* operation) {
-  SOFTMAX_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int ConvertShape(Converter* converter, hal::Operation* operation) {
+  SHAPE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to magicmind tensors and node
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-  auto axis_operand = input_operands[1];
-  auto axis_tensor = converter->ConvertOperand(axis_operand);
-  auto softmax_node =
-      converter->network()->AddISoftmaxNode(input_tensor, axis_tensor);
-  NNADAPTER_CHECK(softmax_node) << "Failed to add softmax node.";
-  auto output_tensor = softmax_node->GetOutput(0);
+  auto shape_node = converter->network()->AddIShapeNode(input_tensor, nullptr);
+  NNADAPTER_CHECK(shape_node) << "Failed to add shape node.";
+  auto output_tensor = shape_node->GetOutput(0);
   converter->UpdateTensorMap(output_operand, output_tensor);
   return NNADAPTER_NO_ERROR;
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,10 +31,7 @@ int ConvertPool2D(Converter* converter, hal::Operation* operation) {
   if (operation->type == NNADAPTER_AVERAGE_POOL_2D) {
     auto avg_pool2d_node =
         converter->network()->AddIAvgPool2DNode(input_tensor);
-    if (avg_pool2d_node == nullptr) {
-      NNADAPTER_VLOG(5) << "Failed to add avg_pool2d node.";
-      return NNADAPTER_DEVICE_INTERNAL_ERROR;
-    }
+    NNADAPTER_CHECK(avg_pool2d_node) << "Failed to add avg_pool2d node.";
 
     avg_pool2d_node->SetKernel(static_cast<int64_t>(kernel_height),
                                static_cast<int64_t>(kernel_width));
@@ -53,10 +50,7 @@ int ConvertPool2D(Converter* converter, hal::Operation* operation) {
   } else if (operation->type == NNADAPTER_MAX_POOL_2D) {
     auto max_pool2d_node =
         converter->network()->AddIMaxPool2DNode(input_tensor, flag);
-    if (max_pool2d_node == nullptr) {
-      NNADAPTER_VLOG(5) << "Failed to add max_pool2d node.";
-      return NNADAPTER_DEVICE_INTERNAL_ERROR;
-    }
+    NNADAPTER_CHECK(max_pool2d_node) << "Failed to add max_pool2d node.";
 
     max_pool2d_node->SetKernel(static_cast<int64_t>(kernel_height),
                                static_cast<int64_t>(kernel_width));

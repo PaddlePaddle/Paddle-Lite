@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "core/operation/softmax.h"
+#include "core/operation/clip.h"
 #include "driver/cambricon_mlu/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -21,20 +21,26 @@
 namespace nnadapter {
 namespace cambricon_mlu {
 
-int ConvertSoftmax(Converter* converter, hal::Operation* operation) {
-  SOFTMAX_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int ConvertClip(Converter* converter, hal::Operation* operation) {
+  CLIP_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to magicmind tensors and node
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-  auto axis_operand = input_operands[1];
-  auto axis_tensor = converter->ConvertOperand(axis_operand);
-  auto softmax_node =
-      converter->network()->AddISoftmaxNode(input_tensor, axis_tensor);
-  NNADAPTER_CHECK(softmax_node) << "Failed to add softmax node.";
-  auto output_tensor = softmax_node->GetOutput(0);
+  auto min_tensor = converter->GetMappedTensor(min_operand);
+  if (!min_tensor) {
+    min_tensor = converter->ConvertOperand(min_operand);
+  }
+  auto max_tensor = converter->GetMappedTensor(max_operand);
+  if (!max_tensor) {
+    max_tensor = converter->ConvertOperand(max_operand);
+  }
+  auto clip_node =
+      converter->network()->AddIClipNode(input_tensor, min_tensor, max_tensor);
+  NNADAPTER_CHECK(clip_node) << "Failed to add clip node.";
+  auto output_tensor = clip_node->GetOutput(0);
   converter->UpdateTensorMap(output_operand, output_tensor);
   return NNADAPTER_NO_ERROR;
 }

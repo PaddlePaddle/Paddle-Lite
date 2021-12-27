@@ -12,29 +12,43 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "core/operation/softmax.h"
+#include "core/operation/resize_nearest.h"
 #include "driver/cambricon_mlu/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
-#include "utility/utility.h"
 
 namespace nnadapter {
 namespace cambricon_mlu {
 
-int ConvertSoftmax(Converter* converter, hal::Operation* operation) {
-  SOFTMAX_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int ConvertResizeNearest(Converter* converter, hal::Operation* operation) {
+  RESIZE_NEAREST_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to magicmind tensors and node
   auto input_tensor = converter->GetMappedTensor(input_operand);
-  if (!input_tensor) {
+  if (input_tensor == nullptr) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-  auto axis_operand = input_operands[1];
-  auto axis_tensor = converter->ConvertOperand(axis_operand);
-  auto softmax_node =
-      converter->network()->AddISoftmaxNode(input_tensor, axis_tensor);
-  NNADAPTER_CHECK(softmax_node) << "Failed to add softmax node.";
-  auto output_tensor = softmax_node->GetOutput(0);
+
+  magicmind::ITensor* shape_tensor = nullptr;
+  magicmind::ITensor* scale_tensor = nullptr;
+  if (shape_operand != nullptr) {
+    shape_tensor = converter->GetMappedTensor(shape_operand);
+    if (shape_tensor == nullptr) {
+      shape_tensor = converter->ConvertOperand(shape_operand);
+    }
+  } else {
+    scale_tensor = converter->GetMappedTensor(scales_operand);
+    if (scale_tensor == nullptr) {
+      scale_tensor = converter->ConvertOperand(scales_operand);
+    }
+  }
+  auto resize_nearest_node = converter->network()->AddIResizeNode(
+      input_tensor, shape_tensor, scale_tensor);
+  NNADAPTER_CHECK(resize_nearest_node) << "Failed to add resize_nearest node.";
+
+  resize_nearest_node->SetMode(magicmind::IResizeMode::NEAREST_NEIGHBOR);
+  resize_nearest_node->SetAlignCorners(align_corners);
+  auto output_tensor = resize_nearest_node->GetOutput(0);
   converter->UpdateTensorMap(output_operand, output_tensor);
   return NNADAPTER_NO_ERROR;
 }

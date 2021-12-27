@@ -12,30 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "core/operation/softmax.h"
+#include "core/operation/reduce.h"
 #include "driver/cambricon_mlu/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
-#include "utility/utility.h"
 
 namespace nnadapter {
 namespace cambricon_mlu {
 
-int ConvertSoftmax(Converter* converter, hal::Operation* operation) {
-  SOFTMAX_OPERATION_EXTRACT_INPUTS_OUTPUTS
+const std::map<NNAdapterOperationType, magicmind::IReduce>*
+ReduceOperationMap() {
+  static auto* const m =
+      new std::map<NNAdapterOperationType, magicmind::IReduce>{
+          {NNADAPTER_REDUCE_MEAN, magicmind::IReduce::MEAN},
+          {NNADAPTER_REDUCE_SUM, magicmind::IReduce::ADD},
+      };
+  return m;
+}
+
+int ConvertReduce(Converter* converter, hal::Operation* operation) {
+  REDUCE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to magicmind tensors and node
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-  auto axis_operand = input_operands[1];
-  auto axis_tensor = converter->ConvertOperand(axis_operand);
-  auto softmax_node =
-      converter->network()->AddISoftmaxNode(input_tensor, axis_tensor);
-  NNADAPTER_CHECK(softmax_node) << "Failed to add softmax node.";
-  auto output_tensor = softmax_node->GetOutput(0);
+  auto axes_tensor = converter->ConvertOperand(axes_operand);
+  auto op_pair = ReduceOperationMap()->find(operation->type);
+  auto reduce_node = converter->network()->AddIReduceNode(
+      input_tensor, axes_tensor, op_pair->second, keep_dim);
+  NNADAPTER_CHECK(reduce_node) << "Failed to add reduce node.";
+  auto output_tensor = reduce_node->GetOutput(0);
   converter->UpdateTensorMap(output_operand, output_tensor);
+
   return NNADAPTER_NO_ERROR;
 }
 

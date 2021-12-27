@@ -12,29 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "core/operation/softmax.h"
+#include "core/operation/flatten.h"
 #include "driver/cambricon_mlu/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
-#include "utility/utility.h"
+#include "utility/modeling.h"
 
 namespace nnadapter {
 namespace cambricon_mlu {
 
-int ConvertSoftmax(Converter* converter, hal::Operation* operation) {
-  SOFTMAX_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int ConvertFlatten(Converter* converter, hal::Operation* operation) {
+  FLATTEN_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to magicmind tensors and node
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-  auto axis_operand = input_operands[1];
-  auto axis_tensor = converter->ConvertOperand(axis_operand);
-  auto softmax_node =
-      converter->network()->AddISoftmaxNode(input_tensor, axis_tensor);
-  NNADAPTER_CHECK(softmax_node) << "Failed to add softmax node.";
-  auto output_tensor = softmax_node->GetOutput(0);
+  auto start_axis_tensor = converter->ConvertOperand(input_operands[1]);
+  auto end_axis_tensor = converter->ConvertOperand(input_operands[2]);
+  auto flatten_node = converter->network()->AddIFlattenNode(
+      input_tensor, start_axis_tensor, end_axis_tensor);
+  NNADAPTER_CHECK(flatten_node) << "Failed to add flatten node.";
+  auto output_tensor = flatten_node->GetOutput(0);
   converter->UpdateTensorMap(output_operand, output_tensor);
   return NNADAPTER_NO_ERROR;
 }
