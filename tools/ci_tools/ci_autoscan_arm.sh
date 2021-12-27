@@ -34,7 +34,7 @@ function auto_scan_test {
   unittests=$(ls | egrep -v $SKIP_LIST)
   for test in ${unittests[@]}; do
     if [[ "$test" =~ py$ ]];then
-      ./auto_scan.sh $test --target=$target_name
+      bash ./auto_scan.sh $test --target=$target_name
     fi
   done
 
@@ -43,7 +43,7 @@ function auto_scan_test {
   unittests=$(ls | egrep -v $SKIP_LIST)
   for test in ${unittests[@]}; do
     if [[ "$test" =~ py$ ]];then
-      ./auto_scan.sh $test --target=$target_name
+      bash ./auto_scan.sh $test --target=$target_name
     fi
   done
 }
