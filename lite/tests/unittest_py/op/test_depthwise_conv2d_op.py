@@ -58,7 +58,7 @@ class TestDepthwiseConv2dOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        if predictor_config.target() in [TargetType.ARM, TargetType.OpenCL]:
+        if predictor_config.target() in [TargetType.OpenCL]:
             return False
         return True
 
@@ -84,15 +84,14 @@ class TestDepthwiseConv2dOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=10), min_size=2, max_size=2))
-        padding_algorithm = draw(
-            st.sampled_from(["EXPLICIT", "VALID", "SAME"]))
+        padding_algorithm = draw(st.sampled_from(["VALID", "SAME"]))
         strides = draw(
             st.lists(
                 st.integers(
                     min_value=1, max_value=10), min_size=2, max_size=2))
         data_format = "NCHW"
         use_mkldnn = False
-        if self.get_target().upper() == "X86":
+        if self.get_target() == "X86":
             use_mkldnn = True
 
         def calc_output_size():
@@ -121,19 +120,26 @@ class TestDepthwiseConv2dOp(AutoScanTest):
         weight_shape = [filter_m, filter_c, filter_h, filter_w]
 
         def generate_bias(*args, **kwargs):
+            return np.random.random([filter_m]).astype(np.float32)
             if use_mkldnn:
                 return np.random.randint(
                     -10, 10, size=kwargs['shape']).astype(kwargs['dtype'])
             else:
                 return np.zeros(shape=kwargs['shape']).astype(kwargs['dtype'])
 
+        inputs_type = {"Input": ["input_data"], "Filter": ["filter_data"]}
+        inputs_data = {"input_data": TensorConfig(shape=in_shape)}
+        weights_data = {"filter_data": TensorConfig(shape=weight_shape)}
+        if use_mkldnn:
+            has_bias = draw(st.booleans())
+            if has_bias:
+                inputs_type["Bias"] = ["bias_data"]
+                weights_data['bias_data'] = TensorConfig(data_gen=partial(
+                    generate_bias, shape=[filter_m], dtype=np.float32))
+
         depthwise_conv2d_op = OpConfig(
             type="depthwise_conv2d",
-            inputs={
-                "Input": ["input_data"],
-                "Filter": ["filter_data"],
-                "Bias": ["bias_data"]
-            },
+            inputs=inputs_type,
             outputs={"Output": ["output_data"]},
             attrs={
                 "strides": strides,
@@ -144,25 +150,28 @@ class TestDepthwiseConv2dOp(AutoScanTest):
                 "dilations": dilations,
                 "Scale_in": scale_in,
                 "Scale_out": scale_out,
-                "data_format": data_format
+                "data_format": data_format,
             })
         program_config = ProgramConfig(
             ops=[depthwise_conv2d_op],
-            weights={
-                "filter_data": TensorConfig(shape=weight_shape),
-                "bias_data": TensorConfig(data_gen=partial(
-                    generate_bias, shape=[filter_m], dtype=np.float32))
-            },
-            inputs={"input_data": TensorConfig(shape=in_shape)},
+            weights=weights_data,
+            inputs=inputs_data,
             outputs=["output_data"])
         return program_config
 
     def sample_predictor_configs(self):
-        config = CxxConfig()
         return self.get_predictor_configs(), ["depthwise_conv2d"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def skip_bias_teller(program_config, predictor_config):
+            if "Bias" in program_config.ops[0].inputs.keys():
+                return True
+            return False
+
+        self.add_ignore_check_case(
+            skip_bias_teller, IgnoreReasons.ACCURACY_ERROR,
+            "When paddle is opening the use_mkldnn flag, the kernel implementation of depthwise_conv2d is not registered, so depthwise_conv2d will execute on cpu, the kernel of cpu doesn't support bias, need paddle fix!"
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)

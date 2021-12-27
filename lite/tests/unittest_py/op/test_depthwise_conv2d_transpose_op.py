@@ -50,20 +50,16 @@ def update_padding_and_dilation(input_h, input_w, filter_h, filter_w, paddings,
     return update_paddings, update_dilations
 
 
-class TestConv2dTransposeOp(AutoScanTest):
+class TestDepthwiseConv2dTransposeOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        x86_valid_places = [
-            Place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW)
-        ]
-        self.enable_testing_on_place(places=x86_valid_places, thread=[1, 4])
         arm_valid_places = [
             Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
             Place(TargetType.ARM, PrecisionType.FP16, DataLayoutType.NCHW),
             Place(TargetType.ARM, PrecisionType.INT8, DataLayoutType.NCHW)
         ]
         self.enable_testing_on_place(places=arm_valid_places, thread=[1, 4])
-        opencl_valid_places = [
+        opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
                       TargetType.OpenCL, PrecisionType.FP16,
@@ -76,7 +72,7 @@ class TestConv2dTransposeOp(AutoScanTest):
             Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
-        self.enable_testing_on_place(places=opencl_valid_places)
+        self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -87,11 +83,10 @@ class TestConv2dTransposeOp(AutoScanTest):
 
     def sample_program_configs(self, draw):
         input_n = draw(st.integers(min_value=1, max_value=4))
-        input_c = draw(st.integers(min_value=1, max_value=128))
-        input_h = draw(st.integers(min_value=1, max_value=128))
-        input_w = draw(st.integers(min_value=1, max_value=128))
-        filter_m = draw(st.integers(min_value=1, max_value=16))
-        filter_c = input_c
+        input_c = draw(st.integers(min_value=1, max_value=64))
+        input_h = draw(st.integers(min_value=1, max_value=64))
+        input_w = draw(st.integers(min_value=1, max_value=64))
+        filter_m = input_c
         filter_h = draw(st.integers(min_value=1, max_value=7))
         filter_w = draw(st.integers(min_value=1, max_value=7))
         assume(input_h >= filter_h)
@@ -106,20 +101,14 @@ class TestConv2dTransposeOp(AutoScanTest):
                     min_value=0, max_value=16), min_size=2, max_size=2))
         output_padding = []
         output_size = []
-        groups = draw(st.integers(min_value=1, max_value=input_c))
-        assume(filter_c % groups == 0)
-        assume(filter_m >= groups)
+        groups = input_c
         data_format = draw(st.sampled_from(['NCHW']))
         padding_algorithm = draw(st.sampled_from(['VALID', 'SAME']))
         dilations = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=16), min_size=2, max_size=2))
+                    min_value=1, max_value=4), min_size=2, max_size=2))
         use_mkldnn = False
-        if self.get_target() == "X86":
-            err_info = "Paddle will crash if use_mkldnn == True, need paddle fix!"
-            # use_mkldnn = True
-
         has_output_padding = draw(st.booleans())
         has_output_size = draw(st.booleans())
         paddings, dilations = update_padding_and_dilation(
@@ -203,8 +192,7 @@ class TestConv2dTransposeOp(AutoScanTest):
             input_shape = [input_n, input_c, input_h, input_w]
         elif data_format == 'NHWC':
             input_shape = [input_n, input_h, input_w, input_c]
-        weight_shape = [filter_c, filter_m // groups, filter_h,
-                        filter_w]  # data_format = 'CMHW'
+        weight_shape = [input_c, filter_m // groups, filter_h, filter_w]
 
         def generate_bias(*args, **kwargs):
             if use_mkldnn:
@@ -214,7 +202,7 @@ class TestConv2dTransposeOp(AutoScanTest):
                 return np.zeros(shape=kwargs['shape']).astype(kwargs['dtype'])
 
         conv2d_transpose_op = OpConfig(
-            type="conv2d_transpose",
+            type="depthwise_conv2d_transpose",
             inputs={
                 "Input": ["input_data"],
                 "Filter": ["filter_data"],
@@ -230,8 +218,7 @@ class TestConv2dTransposeOp(AutoScanTest):
                 "paddings": paddings,
                 "data_format": data_format,
                 "padding_algorithm": padding_algorithm,
-                "use_mkldnn": use_mkldnn,
-                "is_test": True
+                "use_mkldnn": use_mkldnn
             })
 
         program_config = ProgramConfig(
@@ -239,14 +226,15 @@ class TestConv2dTransposeOp(AutoScanTest):
             weights={
                 "filter_data": TensorConfig(shape=weight_shape),
                 "bias_data": TensorConfig(data_gen=partial(
-                    generate_bias, shape=[filter_m], dtype=np.float32))
+                    generate_bias, shape=[filter_m, 1], dtype=np.float32))
             },
             inputs={"input_data": TensorConfig(shape=input_shape)},
             outputs=["output_data"])
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["conv2d_transpose"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["depthwise_conv2d_transpose"], (
+            1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
