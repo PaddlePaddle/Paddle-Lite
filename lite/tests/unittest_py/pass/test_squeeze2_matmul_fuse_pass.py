@@ -35,35 +35,32 @@ class TestSqueeze2MatmulFusePass(FusePassAutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
-        #opencl
-        opencl_places = [
-            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-            Place(TargetType.OpenCL, PrecisionType.FP16,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.FP16,
-                      DataLayoutType.ImageFolder), Place(
-                          TargetType.OpenCL, PrecisionType.Any,
-                          DataLayoutType.ImageDefault), Place(
-                              TargetType.OpenCL, PrecisionType.Any,
-                              DataLayoutType.ImageFolder),
-            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-            Place(TargetType.Host, PrecisionType.FP32)
-        ]
-        self.enable_testing_on_place(places=opencl_places)
         #x86
         self.enable_testing_on_place(
             TargetType.X86,
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
+        #Metal
+        metal_places = [
+            Place(TargetType.Metal, PrecisionType.FP32,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.Metal, PrecisionType.FP16,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.ARM, PrecisionType.FP32),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=metal_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        if predictor_config.target() == TargetType.OpenCL:
-            return False
-        else:
-            return True
+        target_type = predictor_config.target()
+        in_shape = list(program_config.inputs["squeeze2_input_x"].shape)
+        if target_type in [TargetType.Metal]:
+            if in_shape[1] != 1:
+                return False
+        return True
 
     def sample_program_configs(self, draw):
         alpha = draw(st.floats(min_value=1, max_value=1))  #required in pass
@@ -126,19 +123,26 @@ class TestSqueeze2MatmulFusePass(FusePassAutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        if self.get_target() == 'OpenCL':
-            return self.get_predictor_configs(
-            ), ['io_copy', 'layout', 'mul', 'layout', 'io_copy'], (1e-5, 1e-5)
-        else:
-            return self.get_predictor_configs(), ['mul'], (1e-5, 1e-5)
+        atol, rtol = 1e-5, 1e-5
+        config_lists = self.get_predictor_configs()
+        for config in config_lists:
+            if config.target() in [TargetType.Metal]:
+                atol, rtol = 1e-2, 1e-2
+
+        return self.get_predictor_configs(), ["mul"], (atol, rtol)
 
     def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):
+        target_str = self.get_target()
+        max_examples = 25
+        if target_str in ["Metal"]:
+            # Make sure to generate enough valid cases for specific targets
+            max_examples = 500
         self.run_and_statis(
             quant=False,
-            max_examples=25,
+            max_examples=max_examples,
             passes=["lite_squeeze2_matmul_fuse_pass"])
 
 
