@@ -100,9 +100,7 @@ class TestRemoveScale1Fuse(FusePassAutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(
-            quant=False,
-            max_examples=25,
-            passes=["lite_remove_scale1_pass"])
+            quant=False, max_examples=25, passes=["lite_remove_scale1_pass"])
 
 
 if __name__ == "__main__":

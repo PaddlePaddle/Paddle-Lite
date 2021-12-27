@@ -112,13 +112,12 @@ class TestFcFuse(FusePassAutoScanTest):
                     "Y": ["add_x_data"]},
             outputs={"Out": ["elementwise_add_output_data"]},
             attrs={"axis": axis})
-        
+
         active_op = OpConfig(
-        type="relu",
-        inputs={"X": ["elementwise_add_output_data"]},
-        outputs={"Out": ["output_data"]},
-        attrs={})
-        
+            type="relu",
+            inputs={"X": ["elementwise_add_output_data"]},
+            outputs={"Out": ["output_data"]},
+            attrs={})
 
         ops = [mul_op, elementwise_add_op]
         output_data = "elementwise_add_output_data"
