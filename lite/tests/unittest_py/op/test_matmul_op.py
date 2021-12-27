@@ -63,7 +63,7 @@ class TestMulOp(AutoScanTest):
             shape2 = draw(st.integers(min_value=1, max_value=4)) * 4
             batch0 = draw(st.integers(min_value=1, max_value=4)) * 4
             batch1 = draw(st.integers(min_value=1, max_value=4)) * 4
-        if target_str == "ARM":
+        if target_str == "ARM" or target_str == "X86":
             shape0 = draw(st.integers(min_value=1, max_value=64))
             shape1 = draw(st.integers(min_value=1, max_value=64))
             shape2 = draw(st.integers(min_value=1, max_value=64))
@@ -93,6 +93,8 @@ class TestMulOp(AutoScanTest):
         Scale_x = draw(st.floats(min_value=0.1, max_value=10.0))
         Scale_y = draw(st.floats(min_value=0.1, max_value=10.0))
         Scale_out = draw(st.floats(min_value=0.1, max_value=10.0))
+        # not use for lite
+        head_number = draw(st.integers(min_value=1, max_value=1))
         force_fp32_output = draw(st.booleans())
 
         matmul_op = OpConfig(
@@ -113,6 +115,7 @@ class TestMulOp(AutoScanTest):
                 "Scale_x": Scale_x,
                 "Scale_y": Scale_y,
                 "Scale_out": Scale_out,
+                "head_number": head_number,
                 "force_fp32_output": force_fp32_output
             })
         program_config = ProgramConfig(

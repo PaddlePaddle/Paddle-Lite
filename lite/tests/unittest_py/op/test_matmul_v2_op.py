@@ -61,7 +61,7 @@ class TestMatmulV2Op(AutoScanTest):
             shape2 = draw(st.integers(min_value=1, max_value=4)) * 4
             batch0 = draw(st.integers(min_value=1, max_value=4)) * 4
             batch1 = draw(st.integers(min_value=1, max_value=4)) * 4
-        if target_str == "ARM":
+        if target_str == "ARM" or target_str == "X86":
             shape0 = draw(st.integers(min_value=1, max_value=64))
             shape1 = draw(st.integers(min_value=1, max_value=64))
             shape2 = draw(st.integers(min_value=1, max_value=64))
