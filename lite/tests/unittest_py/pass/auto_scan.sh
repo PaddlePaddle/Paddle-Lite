@@ -33,7 +33,7 @@ function run_test {
   if [[ $ARCH = "ARM" ]] || [[ $ARCH = "OpenCL" ]] || [[ $ARCH = "Metal" ]]; then
     cd ../rpc_service
     sh start_rpc_server.sh
-    cd ../op
+    cd ../pass
     python3.8 $1 --target=$ARCH
   else
     python3.7 $1 --target=$ARCH
