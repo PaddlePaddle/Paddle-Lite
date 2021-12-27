@@ -36,19 +36,19 @@ class TestMatmulElementwiseAddFusePass(FusePassAutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 4])
         #opencl
-        # opencl_places = [
-        #     Place(TargetType.OpenCL, PrecisionType.FP16,
-        #           DataLayoutType.ImageDefault), Place(
-        #               TargetType.OpenCL, PrecisionType.FP16,
-        #               DataLayoutType.ImageFolder),
-        #     Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-        #     Place(TargetType.OpenCL, PrecisionType.Any,
-        #           DataLayoutType.ImageDefault), Place(
-        #               TargetType.OpenCL, PrecisionType.Any,
-        #               DataLayoutType.ImageFolder),
-        #     Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-        #     Place(TargetType.Host, PrecisionType.FP32)
-        # ]
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
         # self.enable_testing_on_place(places=opencl_places)
         #x86
         self.enable_testing_on_place(
@@ -70,13 +70,6 @@ class TestMatmulElementwiseAddFusePass(FusePassAutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        #OpenCL Output has diff, and output->dims() must = 2
-        # target_type = predictor_config.target()
-        # in_shape = list(program_config.inputs["x_data"].shape)
-        # bias_shape = list(program_config.weights["add_x_data"].shape)
-        # if target_type in [TargetType.Metal]:
-        #     if len(in_shape) != 2 or len(bias_shape) != 1:
-        #         return False
         return True
 
     def sample_program_configs(self, draw):
