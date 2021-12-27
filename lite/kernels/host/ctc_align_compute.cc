@@ -24,19 +24,6 @@ namespace lite {
 namespace kernels {
 namespace host {
 
-LoD ToNorm(const LoD& in) {
-  if (in.empty()) return in;
-  LoD result;
-  for (auto& src : in) {
-    std::vector<uint64_t> dest(src.size() - 1, 0);
-    for (int i = 0; i < dest.size(); i++) {
-      dest[i] = src[i + 1] - src[i];
-    }
-    result.emplace_back(dest);
-  }
-  return result;
-}
-
 LoD ToAbsOffset(const LoD& in) {
   // the lowest level stores relative offsets
   if (in.empty() || in.size() == 1) return in;
@@ -116,7 +103,6 @@ void CtcAlignCompute<T, PT>::Run() {
 
     LoD output_lod;
     output_lod.push_back(output_lod0);
-    output_lod = ToNorm(output_lod);
     output->set_lod(output_lod);
     output->Resize({static_cast<int64_t>(output_lod0.back()), 1});
     if (output_lod0.back() == 0) {
