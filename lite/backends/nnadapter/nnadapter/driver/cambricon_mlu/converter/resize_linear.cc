@@ -49,7 +49,7 @@ int ConvertResizeLinear(Converter* converter, hal::Operation* operation) {
   resize_linear_node->SetMode(magicmind::IResizeMode::BILINEAR);
   bool align_center = align_mode == 0;
   // align_corners and align_center cannot be True at the same time.
-  NNADAPTER_CHECK(align_corners && align_center);
+  NNADAPTER_CHECK_LT(align_corners && align_center, 1);
   resize_linear_node->SetAlignCorners(align_corners);
   if (align_mode == 0) {
     resize_linear_node->SetHalfPixelCenters(true);
