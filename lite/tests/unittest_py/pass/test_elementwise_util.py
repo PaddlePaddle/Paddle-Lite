@@ -25,6 +25,7 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 
+
 def trim_trailing_singular_dims(dims):
     actual_dims_size = len(dims)
     i = actual_dims_size
@@ -38,7 +39,11 @@ def trim_trailing_singular_dims(dims):
         trim_dims.append(dims[i])
     return trim_dims
 
-def check_input_shape_available(in_shape_x=[], in_shape_y=[], axis=[], out_shape=[]):
+
+def check_input_shape_available(in_shape_x=[],
+                                in_shape_y=[],
+                                axis=[],
+                                out_shape=[]):
     #infer shape
     max_dim = max(len(in_shape_x), len(in_shape_y))
     if len(in_shape_x) == len(in_shape_y):
@@ -76,7 +81,8 @@ def check_input_shape_available(in_shape_x=[], in_shape_y=[], axis=[], out_shape
             for i in range(axis_ + len(in_shape_x), max_dim):
                 x_dims_array.append(1)
     for i in range(0, max_dim):
-        if not (x_dims_array[i] == y_dims_array[i] or x_dims_array[i] <= 1 or y_dims_array[i] <= 1):
+        if not (x_dims_array[i] == y_dims_array[i] or x_dims_array[i] <= 1 or
+                y_dims_array[i] <= 1):
             return False
         out_shape.append(max(x_dims_array[i], y_dims_array[i]))
     #ElementwiseComputeEx
@@ -92,16 +98,18 @@ def check_input_shape_available(in_shape_x=[], in_shape_y=[], axis=[], out_shape
             if not i + axis_trim < len(in_shape_x):  # Paddle error???
                 return False
             if in_shape_x[i + axis_trim] != y_dims_trimed[i]:
-                if not (in_shape_x[i + axis_trim] == 1 or y_dims_trimed[i] == 1):
+                if not (in_shape_x[i + axis_trim] == 1 or
+                        y_dims_trimed[i] == 1):
                     return False
     else:
         x_dims_trimed = trim_trailing_singular_dims(in_shape_x)
         axis_trim = in_shape_y if len(x_dims_trimed) == 0 else axis_
         for i in range(len(x_dims_trimed)):
             if not (i + axis_trim < len(in_shape_y)):  # Paddle error???
-                return False                
+                return False
             if in_shape_y[i + axis_trim] != x_dims_trimed[i]:
-                if not (in_shape_y[i + axis_trim] == 1 or x_dims_trimed[i] == 1):
+                if not (in_shape_y[i + axis_trim] == 1 or
+                        x_dims_trimed[i] == 1):
                     return False
-    
+
     return True

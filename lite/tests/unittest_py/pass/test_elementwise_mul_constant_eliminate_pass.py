@@ -69,12 +69,20 @@ class TestElementwiseMulConstantEliminateFuse(FusePassAutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=20), min_size=2, max_size=5))
-        
-        axis = draw(st.integers(min_value=-1, max_value=max(len(in_shape), len(fill_constant_shape))))
+
+        axis = draw(
+            st.integers(
+                min_value=-1,
+                max_value=max(len(in_shape), len(fill_constant_shape))))
 
         out_shape = []
-        assume(check_input_shape_available(in_shape_x=in_shape, in_shape_y=fill_constant_shape, axis=axis, out_shape=out_shape) == True)
-        assume(out_shape == in_shape) 
+        assume(
+            check_input_shape_available(
+                in_shape_x=in_shape,
+                in_shape_y=fill_constant_shape,
+                axis=axis,
+                out_shape=out_shape) == True)
+        assume(out_shape == in_shape)
 
         threshold = draw(st.floats(min_value=0, max_value=1))
         scale = draw(st.floats(min_value=0.5, max_value=5))

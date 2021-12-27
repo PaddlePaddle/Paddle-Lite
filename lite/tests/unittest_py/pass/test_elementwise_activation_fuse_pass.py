@@ -39,17 +39,21 @@ class TestElementwiseActivationFuse(FusePassAutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 4])
         #out diff
-        
-        opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-                          Place(TargetType.Host, PrecisionType.FP32)    
-                        ]
+
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault),
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
         self.enable_testing_on_place(places=opencl_places)
-        
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -69,10 +73,15 @@ class TestElementwiseActivationFuse(FusePassAutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=20), min_size=2, max_size=5))
-        
-        axis = draw(st.integers(min_value=-1, max_value=max(len(in_shape_x), len(in_shape_y))))
-        
-        assume(check_input_shape_available(in_shape_x=in_shape_x, in_shape_y=in_shape_y, axis=axis) == True)
+
+        axis = draw(
+            st.integers(
+                min_value=-1, max_value=max(len(in_shape_x), len(in_shape_y))))
+
+        assume(
+            check_input_shape_available(
+                in_shape_x=in_shape_x, in_shape_y=in_shape_y, axis=axis) ==
+            True)
 
         elementwise_op = OpConfig(
             type=elementwise_type,
