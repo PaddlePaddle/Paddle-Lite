@@ -172,7 +172,6 @@ class TestConcatOp(AutoScanTest):
         target_str = self.get_target()
         if target_str == "Metal":
             atol, rtol = 2e-4, 2e-4
-
         return self.get_predictor_configs(), ["concat"], (atol, rtol)
 
     def add_ignore_pass_case(self):
