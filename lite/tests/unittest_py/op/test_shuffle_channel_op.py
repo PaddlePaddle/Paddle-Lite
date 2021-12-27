@@ -110,7 +110,6 @@ class TestShuffleChannelOp(AutoScanTest):
         if target_str == "Metal" or \
             target_str == "ARM" :
             atol, rtol = 5e-4, 5e-4
-
         return self.get_predictor_configs(), ["shuffle_channel"], (atol, rtol)
 
     def add_ignore_pass_case(self):
