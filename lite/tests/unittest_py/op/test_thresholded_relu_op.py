@@ -28,18 +28,23 @@ import numpy as np
 
 # having diff
 
+
 class TestFcOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         host_places = [
-                     Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
-                     ]
+            Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
+        ]
         self.enable_testing_on_place(places=host_places)
 
-        arm_places = [Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)]
+        arm_places = [
+            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)
+        ]
         self.enable_testing_on_place(places=arm_places)
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
@@ -50,16 +55,14 @@ class TestFcOp(AutoScanTest):
         in_shape = draw(st.sampled_from([[N, C, H, W], [N, H, W]]))
         threshold_data = draw(st.floats(min_value=0.0, max_value=1.0))
         thresholded_relu_op = OpConfig(
-            type = "thresholded_relu",
-            inputs = {"X" : ["input_data"]},
-            outputs = {"Out": ["output_data"]},
-            attrs = {"threshold" : threshold_data})
+            type="thresholded_relu",
+            inputs={"X": ["input_data"]},
+            outputs={"Out": ["output_data"]},
+            attrs={"threshold": threshold_data})
         program_config = ProgramConfig(
             ops=[thresholded_relu_op],
             weights={},
-            inputs={
-                "input_data": TensorConfig(shape=in_shape),
-            },
+            inputs={"input_data": TensorConfig(shape=in_shape), },
             outputs=["output_data"])
         return program_config
 
@@ -71,6 +74,7 @@ class TestFcOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
