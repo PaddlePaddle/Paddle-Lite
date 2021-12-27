@@ -57,7 +57,6 @@ void FcFuser::BuildPattern() {
 void FcFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
   auto mul = matched.at("mul")->stmt()->op();
   auto* scope = mul->scope();
-  auto add = matched.at("add")->stmt();
   auto mul_weight = scope->FindVar(matched.at("W")->arg()->name);
   auto mul_weight_dims = mul_weight->Get<lite::Tensor>().dims();
   auto bias = scope->FindVar(matched.at("b")->arg()->name);
