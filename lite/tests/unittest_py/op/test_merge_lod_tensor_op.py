@@ -30,17 +30,16 @@ import hypothesis.strategies as st
 class TestMergeLodTensorOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(
-            TargetType.ARM,
-            PrecisionType.FP32,
-            DataLayoutType.NCHW,
-            thread=[1, 4])
+        # bugs will be fixed in the future
+        #self.enable_testing_on_place(
+        #    TargetType.ARM,
+        #    PrecisionType.FP32,
+        #    DataLayoutType.NCHW,
+        #    thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        # bugs will be fixed in the future
-        return False
         return True
 
     def sample_program_configs(self, draw):
