@@ -108,6 +108,7 @@ struct MulMetalParam {};
 struct MatmulMetalParam {
     bool transposeX;
     bool transposeY;
+    bool broadcast;
 };
 
 struct FCMetalParam {

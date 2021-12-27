@@ -90,6 +90,7 @@ struct ElementwiseAddParam {
 struct MatmulParam {
     bool xtrans;
     bool ytrans;
+    bool broadcast;
 };
 
 struct ElementwiseParam {
