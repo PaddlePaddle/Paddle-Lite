@@ -128,8 +128,6 @@ void Unsqueeze2Pad3dSqueeze2Fuser::InsertNewNode(SSAGraph* graph,
     pad2d_op->Attach(*op_desc, scope);
     auto* new_op_node = graph->GraphCreateInstructNode(
         pad2d_op, pad3d_instruct->op()->valid_places());
-    //    new_op_node->stmt()->ResetOp(*(new_op_node->stmt())->op_info(),
-    //                                 graph->valid_places());
     IR_NODE_LINK_TO(matched.at("unsqu_input"), new_op_node);
     IR_OP_VAR_LINK(new_op_node, matched.at("sque_out"));
   }

@@ -26,6 +26,12 @@
 namespace paddle {
 namespace lite {
 namespace mir {
+// This pass fuse unsqueeze2 pad3d and squeeze2.
+// unsqueeze2 ->pad3d -> squeeze2 == pad2d
+// unsqueeze2 and squeeze2 are essentially the dimension increase and dimension
+// reduction of input data.
+// Therefore, this pass can reduce the operation of the kernel. And pad2d
+// supports more kinds (OpenCL, arm..)
 
 class Unsqueeze2Pad3dSqueeze2FusePass : public ProgramPass {
  public:

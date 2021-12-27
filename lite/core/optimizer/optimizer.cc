@@ -139,7 +139,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "op_transformation_pass",                    //
        "remove_scale1_pass",                        //
        "adaptive_1x1_pool2d_convert_global_pass",   //
-       "lite_unsqueeze2_pad3d_squeeze2_fuse_pass",  // cyh
+       "lite_unsqueeze2_pad3d_squeeze2_fuse_pass",  //
 
        "lite_conv_elementwise_fuse_pass",  // conv-elemwise-bn
        "lite_conv_bn_fuse_pass",           //
