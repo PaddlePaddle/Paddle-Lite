@@ -45,3 +45,7 @@ endif()
 if(NNADAPTER_WITH_VERISILICON_TIMVX)
   add_subdirectory(verisilicon_timvx)
 endif()
+
+if(NNADAPTER_WITH_KUNLUNXIN_XTCL)
+  add_subdirectory(kunlunxin_xtcl)
+endif()

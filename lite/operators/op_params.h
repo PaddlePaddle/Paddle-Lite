@@ -307,6 +307,9 @@ struct ActivationParam : ParamBase {
   float threshold{6.0f};
   // gelu
   bool gelu_approximate{false};
+  // softplus
+  float softplus_beta{1.0f};
+  float softplus_threshold{20.f};
 };
 
 struct ActivationGradParam : ParamBase {
@@ -1995,6 +1998,10 @@ struct TrigonometricParam : ParamBase {
 
 using SinParam = TrigonometricParam;
 using CosParam = TrigonometricParam;
+using TanParam = TrigonometricParam;
+using AsinParam = TrigonometricParam;
+using AcosParam = TrigonometricParam;
+using AtanParam = TrigonometricParam;
 
 struct FlattenContiguousRangeParam : ParamBase {
   const lite::Tensor* x{nullptr};

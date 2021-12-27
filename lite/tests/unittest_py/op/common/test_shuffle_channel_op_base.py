@@ -24,10 +24,12 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(
-        st.integers(
-            min_value=1, max_value=64), min_size=4, max_size=4))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=64), min_size=4, max_size=4))
     group = draw(st.integers(min_value=1, max_value=10))
 
     assume(in_shape[1] % group == 0)
@@ -36,25 +38,15 @@ def sample_program_configs(draw):
         return np.random.normal(0.0, 1.0, in_shape).astype(np.float32)
 
     ops_config = OpConfig(
-        type = "shuffle_channel",
-        inputs = {
-            "X": ["input_data"]
-        },
-        outputs = {
-            "Out": ["output_data"]
-        },
-        attrs = {
-            "group": group
-        }
-        )
+        type="shuffle_channel",
+        inputs={"X": ["input_data"]},
+        outputs={"Out": ["output_data"]},
+        attrs={"group": group})
 
     program_config = ProgramConfig(
         ops=[ops_config],
         weights={},
-        inputs={
-            "input_data": 
-            TensorConfig(data_gen=partial(generate_input))
-        },
+        inputs={"input_data": TensorConfig(data_gen=partial(generate_input))},
         outputs=["output_data"])
 
     return program_config

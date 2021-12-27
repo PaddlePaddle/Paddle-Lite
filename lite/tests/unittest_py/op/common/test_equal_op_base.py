@@ -23,25 +23,30 @@ import unittest
 import hypothesis
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=1, max_value=8), min_size = 1, max_size=6))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=8), min_size=1, max_size=6))
     equal_op = OpConfig(
-        type = "equal",
-        inputs = {"X" : ["input_data_x"],
-                  "Y" : ["input_data_y"]},
-        outputs = {"Out": ["output_data"]},
-        attrs = {})
+        type="equal",
+        inputs={"X": ["input_data_x"],
+                "Y": ["input_data_y"]},
+        outputs={"Out": ["output_data"]},
+        attrs={})
     cast_op = OpConfig(
-        type = "cast",
-        inputs = {"X" : ["output_data"]},
-        outputs = {"Out": ["cast_output_data"]},
-        attrs = {'in_dtype': 0,
-                 'out_dtype': 5}) # 0: bool , 5: float
+        type="cast",
+        inputs={"X": ["output_data"]},
+        outputs={"Out": ["cast_output_data"]},
+        attrs={'in_dtype': 0,
+               'out_dtype': 5})  # 0: bool , 5: float
     program_config = ProgramConfig(
         ops=[equal_op, cast_op],
         weights={},
-        inputs={ "input_data_x": TensorConfig(shape=in_shape),
-                 "input_data_y": TensorConfig(shape=in_shape)
+        inputs={
+            "input_data_x": TensorConfig(shape=in_shape),
+            "input_data_y": TensorConfig(shape=in_shape)
         },
         outputs=["cast_output_data"])
     return program_config

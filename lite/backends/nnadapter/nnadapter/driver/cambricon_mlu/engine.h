@@ -34,11 +34,13 @@ class Device {
 class Context {
  public:
   explicit Context(void* device, const char* properties);
+  std::string GetBuildConfigFilePath() { return build_config_file_path_; }
   ~Context();
 
  private:
   void* device_{nullptr};
   void* context_{nullptr};
+  std::string build_config_file_path_ = "";
 };
 
 class Program {
@@ -80,6 +82,7 @@ class Program {
   std::map<hal::Operand*, std::vector<magicmind::ITensor*>> tensors_;
   std::vector<NNAdapterOperandType> input_types_;
   std::vector<NNAdapterOperandType> output_types_;
+  std::vector<std::string> input_names_;
   std::string dump_graph_path_;
   std::vector<uint8_t>* dump_graph_buffer_{nullptr};
 };

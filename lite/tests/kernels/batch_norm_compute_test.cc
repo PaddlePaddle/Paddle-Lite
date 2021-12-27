@@ -166,6 +166,8 @@ TEST(BatchNorm, precision) {
   abs_error = 1e-2;
   // TODO(shentanyue): support later
   return;
+#elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 1e-2;
 #else
   return;
 #endif

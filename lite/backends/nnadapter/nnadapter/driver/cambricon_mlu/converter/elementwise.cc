@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -52,10 +52,7 @@ int ConvertElementwise(Converter* converter, hal::Operation* operation) {
   }
   auto elementwise_node = converter->network()->AddIElementwiseNode(
       input0_tensor, input1_tensor, op_pair->second);
-  if (elementwise_node == nullptr) {
-    NNADAPTER_VLOG(5) << "Failed to add elementwise node.";
-    return NNADAPTER_DEVICE_INTERNAL_ERROR;
-  }
+  NNADAPTER_CHECK(elementwise_node) << "Failed to add elementwise node.";
   auto output_tensor = elementwise_node->GetOutput(0);
   // fuse activations ?
   switch (fuse_code) {

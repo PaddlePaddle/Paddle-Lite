@@ -107,15 +107,17 @@ kernel void hard_sigmoid(texture2d_array<ftype, access::sample> inTexture[[textu
     outTexture.write(output, gid.xy, gid.z);
 }
 
+// activation function: swish
 kernel void swish(texture2d_array<ftype, access::sample> inTexture[[texture(0)]],
     texture2d_array<ftype, access::write> outTexture[[texture(1)]],
+    constant SwishParam& param[[buffer(0)]],
     uint3 gid[[thread_position_in_grid]]) {
     if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
         gid.z >= outTexture.get_array_size())
         return;
     constexpr sampler s(coord::pixel, filter::nearest, address::clamp_to_zero);
     const ftype4 input = inTexture.read(gid.xy, gid.z);
-    const ftype4 output = input / (1.0 + exp(-input));
+    const ftype4 output = input / (1.0 + exp(-(input * param.beta)));
     outTexture.write(output, gid.xy, gid.z);
 }
 
