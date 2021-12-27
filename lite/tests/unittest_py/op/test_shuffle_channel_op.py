@@ -32,6 +32,7 @@ class TestShuffleChannelOp(AutoScanTest):
             TargetType.Host, [PrecisionType.FP32],
             DataLayoutType.NCHW,
             thread=[1, 4])
+        #The selection of TargetType.ARM errors.
         '''
         self.enable_testing_on_place(
             TargetType.ARM, [PrecisionType.FP32],
@@ -107,8 +108,7 @@ class TestShuffleChannelOp(AutoScanTest):
     def sample_predictor_configs(self):
         atol, rtol = 1e-5, 1e-5
         target_str = self.get_target()
-        if target_str == "Metal" or \
-            target_str == "ARM" :
+        if target_str == "Metal":
             atol, rtol = 5e-4, 5e-4
         return self.get_predictor_configs(), ["shuffle_channel"], (atol, rtol)
 
