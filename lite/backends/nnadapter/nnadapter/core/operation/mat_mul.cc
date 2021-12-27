@@ -118,6 +118,11 @@ int PrepareMatMul(hal::Operation* operation) {
   }
 
   out_type.precision = x_type.precision;
+#if defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  if (x_type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_LAYER) {
+    out_type.precision = NNAdapterOperandPrecisionCode::NNADAPTER_FLOAT32;
+  }
+#endif
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
 }
