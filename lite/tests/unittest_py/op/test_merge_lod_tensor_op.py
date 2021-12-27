@@ -30,7 +30,7 @@ import hypothesis.strategies as st
 class TestMergeLodTensorOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        # bugs will be fixed in the future
+        #crash bugs will be fixed in the future
         #self.enable_testing_on_place(
         #    TargetType.ARM,
         #    PrecisionType.FP32,

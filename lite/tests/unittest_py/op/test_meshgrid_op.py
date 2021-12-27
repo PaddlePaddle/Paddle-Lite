@@ -30,12 +30,12 @@ import hypothesis.strategies as st
 class TestMeshgridOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        # bugs will be fixed in the future
-        #self.enable_testing_on_place(
-        #    TargetType.Host,
-        #    PrecisionType.FP32,
-        #    DataLayoutType.NCHW,
-        #    thread=[1, 4])
+        #input tensorlist bugs will be fixed in the future
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,

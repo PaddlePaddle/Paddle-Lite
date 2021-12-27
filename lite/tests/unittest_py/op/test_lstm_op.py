@@ -30,9 +30,14 @@ import hypothesis.strategies as st
 class TestLstmOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        # bugs will be fixed in the future
+        # paddle crash bugs will be fixed in the future
         #self.enable_testing_on_place(
         #    TargetType.ARM,
+        #    PrecisionType.FP32,
+        #    DataLayoutType.NCHW,
+        #    thread=[1, 4])
+        #self.enable_testing_on_place(
+        #    TargetType.X86,
         #    PrecisionType.FP32,
         #    DataLayoutType.NCHW,
         #    thread=[1, 4])
@@ -44,9 +49,6 @@ class TestLstmOp(AutoScanTest):
 
     def sample_program_configs(self, draw):
         # lstm run have bugs
-        shape0 = draw(st.integers(min_value=1, max_value=32))
-        shape1 = draw(st.integers(min_value=1, max_value=32))
-        shape2 = draw(st.integers(min_value=1, max_value=32))
         shape0 = 2
         shape1 = 3
         shape2 = 2
