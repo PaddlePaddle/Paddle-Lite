@@ -27,18 +27,20 @@ function auto_scan_test {
   local target_name=$1
 
   cd $WORKSPACE/lite/tests/unittest_py/op/
+  rm -rf statics_data
   unittests=$(ls | egrep -v $SKIP_LIST)
   for test in ${unittests[@]}; do
     if [[ "$test" =~ py$ ]];then
-      python$PYTHON_VERSION $test --target=$target_name
+      ./auto_scan.sh $test --target=$target_name
     fi
   done
 
   cd $WORKSPACE/lite/tests/unittest_py/pass/
+  rm -rf statics_data
   unittests=$(ls | egrep -v $SKIP_LIST)
   for test in ${unittests[@]}; do
     if [[ "$test" =~ py$ ]];then
-      python$PYTHON_VERSION $test --target=$target_name
+      ./auto_scan.sh $test --target=$target_name
     fi
   done
 }
