@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,10 +33,7 @@ int ConvertSoftmax(Converter* converter, hal::Operation* operation) {
   auto axis_tensor = converter->ConvertOperand(axis_operand);
   auto softmax_node =
       converter->network()->AddISoftmaxNode(input_tensor, axis_tensor);
-  if (softmax_node == nullptr) {
-    NNADAPTER_VLOG(5) << "Failed to add softmax node.";
-    return NNADAPTER_DEVICE_INTERNAL_ERROR;
-  }
+  NNADAPTER_CHECK(softmax_node) << "Failed to add softmax node.";
   auto output_tensor = softmax_node->GetOutput(0);
   converter->UpdateTensorMap(output_operand, output_tensor);
   return NNADAPTER_NO_ERROR;

@@ -53,12 +53,14 @@ void BoxClipCompute::Run() {
   const auto* input = param.Input;
   const auto* im_info = param.ImInfo;
   auto* output = param.Output;
-  output->mutable_data<float>();
   if (input->lod().size() > 1) {
     LOG(FATAL) << "Only support 0 and 1 level of LoD.";
   }
 
   auto box_lod = input->lod().back();
+  // init output data
+  auto* out_data = output->mutable_data<float>();
+  memset(out_data, 0, sizeof(float) * output->numel());
   int64_t n = static_cast<int64_t>(box_lod.size() - 1);
   for (int i = 0; i < n; ++i) {
     Tensor im_info_slice = im_info->Slice<float>(i, i + 1);

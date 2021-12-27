@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -140,17 +140,17 @@ std::shared_ptr<Operator> Converter::AddFloat32ConstantOperator(
       dimensions.empty() ? std::vector<int32_t>({num_values}) : dimensions);
 }
 
-std::shared_ptr<Operator> Converter::AddUint64ConstantOperator(
+std::shared_ptr<Operator> Converter::AddUInt64ConstantOperator(
     const uint64_t* values, const std::vector<int32_t>& dimensions) {
   return AddConstantOperator(
       reinterpret_cast<const void*>(values), NNADAPTER_UINT64, dimensions);
 }
 
-std::shared_ptr<Operator> Converter::AddUint64ConstantOperator(
+std::shared_ptr<Operator> Converter::AddUInt64ConstantOperator(
     const std::vector<uint64_t>& values,
     const std::vector<int32_t>& dimensions) {
   int num_values = values.size();
-  return AddUint64ConstantOperator(
+  return AddUInt64ConstantOperator(
       &values[0],
       dimensions.empty() ? std::vector<int32_t>({num_values}) : dimensions);
 }

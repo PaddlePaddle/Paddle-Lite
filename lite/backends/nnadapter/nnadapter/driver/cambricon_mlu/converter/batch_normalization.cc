@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,10 +34,7 @@ int ConvertBatchNormalization(Converter* converter, hal::Operation* operation) {
   auto variance_tensor = converter->ConvertOperand(variance_operand);
   auto batch_norm_node = converter->network()->AddIFusedBatchNormNode(
       input_tensor, mean_tensor, variance_tensor, scale_tensor, offset_tensor);
-  if (batch_norm_node == nullptr) {
-    NNADAPTER_VLOG(5) << "Failed to add batch_norm node.";
-    return NNADAPTER_DEVICE_INTERNAL_ERROR;
-  }
+  NNADAPTER_CHECK(batch_norm_node) << "Failed to add batch_norm node.";
   batch_norm_node->SetEpsilon(epsilon);
   int64_t axis = ConvertToMagicMindAxis(input_operand->type.layout);
   batch_norm_node->SetAxis(axis);

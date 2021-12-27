@@ -47,6 +47,7 @@ class TestBoxCoderOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
+
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -113,9 +114,9 @@ class TestBoxCoderOp(AutoScanTest):
         input_type_dict["PriorBox"] = ["priorbox_data"]
         input_type_dict["TargetBox"] = ["targetbox_data"]
         input_data_dict["priorbox_data"] = TensorConfig(
-            data_gen=partial(generate_priorbox))
+            data_gen=partial(generate_priorbox), lod=lod_data)
         input_data_dict["targetbox_data"] = TensorConfig(
-            data_gen=partial(generate_targetbox))
+            data_gen=partial(generate_targetbox), lod=lod_data)
         if len(variance) == 0:
             input_type_dict["PriorBoxVar"] = ["priorbox_var_data"]
             input_data_dict["priorbox_var_data"] = TensorConfig(

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -90,9 +90,9 @@ class Converter {
   std::shared_ptr<Operator> AddFloat32ConstantOperator(
       const std::vector<float>& values,
       const std::vector<int32_t>& dimensions = {});
-  std::shared_ptr<Operator> AddUint64ConstantOperator(
+  std::shared_ptr<Operator> AddUInt64ConstantOperator(
       const uint64_t* values, const std::vector<int32_t>& dimensions);
-  std::shared_ptr<Operator> AddUint64ConstantOperator(
+  std::shared_ptr<Operator> AddUInt64ConstantOperator(
       const std::vector<uint64_t>& values,
       const std::vector<int32_t>& dimensions = {});
   std::shared_ptr<Operator> AddZeroConstantOperator(
