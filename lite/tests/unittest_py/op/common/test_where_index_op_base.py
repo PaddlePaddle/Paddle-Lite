@@ -24,22 +24,28 @@ import hypothesis
 from hypothesis import assume
 import hypothesis.strategies as st
 
+
 def sample_program_configs(draw):
-    in_shape = draw(st.lists(st.integers(min_value=1, max_value=10), min_size = 4, max_size=4))
+    in_shape = draw(
+        st.lists(
+            st.integers(
+                min_value=1, max_value=10), min_size=4, max_size=4))
+
     def generate_Condition_data():
-        return np.random.choice([True,False], in_shape , replace=True)
+        return np.random.choice([True, False], in_shape, replace=True)
 
     where_index_op = OpConfig(
-        type = "where_index",
-        inputs = {"Condition" : ["Condition_data"]},
-        outputs = {"Out": ["Out_data"]},
-        attrs = {})
+        type="where_index",
+        inputs={"Condition": ["Condition_data"]},
+        outputs={"Out": ["Out_data"]},
+        attrs={})
     program_config = ProgramConfig(
         ops=[where_index_op],
         weights={},
         inputs={
-            "Condition_data": TensorConfig(data_gen=partial(generate_Condition_data))
+            "Condition_data":
+            TensorConfig(data_gen=partial(generate_Condition_data))
         },
-        outputs= ["Out_data"])
-    
+        outputs=["Out_data"])
+
     return program_config

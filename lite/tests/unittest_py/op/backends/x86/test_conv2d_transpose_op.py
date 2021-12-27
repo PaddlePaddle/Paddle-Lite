@@ -25,8 +25,11 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume, reproduce_failure
 import hypothesis.strategies as st
 
+
 class TestConv2dTransposeOp(AutoScanTest):
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         if (program_config.ops[0].attrs['data_format'] == 'NHWC'):
             return False
         return True
@@ -36,14 +39,16 @@ class TestConv2dTransposeOp(AutoScanTest):
 
     def sample_predictor_configs(self):
         config = CxxConfig()
-        config.set_valid_places({Place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW)})
+        config.set_valid_places(
+            {Place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW)})
         yield config, ["conv2d_transpose"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
-    
+
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

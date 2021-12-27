@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -57,10 +57,7 @@ int ConvertFullyConnected(Converter* converter, hal::Operation* operation) {
   auto bias_tensor = converter->ConvertOperand(bias_operand);
   auto matmul_node = converter->network()->AddIMatMulNode(
       final_input_tensor, weight_tensor, bias_tensor);
-  if (matmul_node == nullptr) {
-    NNADAPTER_VLOG(5) << "Failed to add fully_connected node.";
-    return NNADAPTER_DEVICE_INTERNAL_ERROR;
-  }
+  NNADAPTER_CHECK(matmul_node) << "Failed to add fully_connected node.";
   matmul_node->SetTransA(false);
   matmul_node->SetTransB(true);
   auto output_tensor = matmul_node->GetOutput(0);

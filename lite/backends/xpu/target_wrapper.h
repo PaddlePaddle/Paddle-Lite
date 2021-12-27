@@ -76,9 +76,9 @@ class TargetWrapper<TARGET(kXPU)> {
   static XPUScratchPadGuard MallocScratchPad(size_t size);
 
   static xdnn::Context* GetRawContext() {
-    if (tls_raw_ctx_ == nullptr) {
-      tls_raw_ctx_ = xdnn::create_context();
-      CHECK(tls_raw_ctx_);
+    if (tls_raw_ctx_.get() == nullptr) {
+      tls_raw_ctx_.reset(xdnn::create_context(), xdnn::destroy_context);
+      CHECK(tls_raw_ctx_.get());
       if (l3_planner_ == nullptr) {
         l3_planner_ = new XPUL3Planner;
       }
@@ -121,7 +121,7 @@ class TargetWrapper<TARGET(kXPU)> {
         }
       }
     }
-    return tls_raw_ctx_;
+    return tls_raw_ctx_.get();
   }
   static void MallocL3Cache(
       const std::vector<std::vector<int64_t>>& query_shape);
@@ -161,7 +161,7 @@ class TargetWrapper<TARGET(kXPU)> {
       void* l3_ptr,
       size_t l3_size,
       const std::vector<std::vector<int64_t>>& query_shape);
-  static LITE_THREAD_LOCAL xdnn::Context* tls_raw_ctx_;
+  static LITE_THREAD_LOCAL std::shared_ptr<xdnn::Context> tls_raw_ctx_;
   static LITE_THREAD_LOCAL void* local_l3_ptr_;
   static void* shared_l3_ptr_;
   static std::mutex mutex_l3_;

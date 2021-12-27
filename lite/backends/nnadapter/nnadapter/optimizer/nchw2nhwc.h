@@ -35,15 +35,30 @@ class NCHW2NHWCDataLayoutConverter {
 
  private:
   // Operation converters
+  void ConvertAdaptivePool2D(hal::Operation* operation);
+  void ConvertCast(hal::Operation* operation);
+  void ConvertClip(hal::Operation* operation);
+  void ConvertConv2DTranspose(hal::Operation* operation);
   void ConvertElementwise(hal::Operation* operation);
   void ConvertPool2D(hal::Operation* operation);
   void ConvertConcat(hal::Operation* operation);
+  void ConvertFill(hal::Operation* operation);
+  void ConvertFillLike(hal::Operation* operation);
   void ConvertFlatten(hal::Operation* operation);
   void ConvertFullyConnected(hal::Operation* operation);
+  void ConvertGather(hal::Operation* operation);
+  void ConvertLeakyRelu(hal::Operation* operation);
+  void ConvertLpNormalization(hal::Operation* operation);
   void ConvertActivation(hal::Operation* operation);
+  void ConvertPow(hal::Operation* operation);
+  void ConvertReduce(hal::Operation* operation);
   void ConvertReshape(hal::Operation* operation);
+  void ConvertResizeNearest(hal::Operation* operation);
+  void ConvertResizeLinear(hal::Operation* operation);
+  void ConvertShape(hal::Operation* operation);
   void ConvertSoftmax(hal::Operation* operation);
   void ConvertSplit(hal::Operation* operation);
+  void ConvertSqueeze(hal::Operation* operation);
   void ConvertTranspose(hal::Operation* operation);
   void ConvertMatMul(hal::Operation* operation);
 

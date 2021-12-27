@@ -46,7 +46,8 @@ enum activation_type_test {
   SOFTSIGN,
   HARD_SIGMOID,
   ABS,
-  MISH
+  MISH,
+  SOFTPLUS
 };
 
 template <class T = float>
@@ -69,6 +70,8 @@ class ActivationComputeTester : public arena::TestCase {
 
   float hard_sigmoid_slope_ = 0.2f;
   float hard_sigmoid_offset_ = 0.5f;
+  float softplus_beta_ = 1.f;
+  float softplus_threshold_ = 20.f;
   DDim dims_{{1}};
   std::string type_ = "";
   activation_type_test act_type_ = RELU;
@@ -295,6 +298,16 @@ class ActivationComputeTester : public arena::TestCase {
         }
         break;
       }
+      case SOFTPLUS: {
+        for (int i = 0; i < dims_.production(); i++) {
+          output_data[i] =
+              x_data[i] * softplus_beta_ > softplus_threshold_
+                  ? x_data[i]
+                  : std::log(1 + std::exp(x_data[i] * softplus_beta_)) /
+                        softplus_beta_;
+        }
+        break;
+      }
       default:
         LOG(FATAL) << "the type of activation " << act_type_ << " is unknow.";
     }
@@ -340,6 +353,10 @@ class ActivationComputeTester : public arena::TestCase {
     }
     if (act_type_ == MISH) {
       op_desc->SetAttr("threshold", threshold_);
+    }
+    if (act_type_ == SOFTPLUS) {
+      op_desc->SetAttr("beta", softplus_beta_);
+      op_desc->SetAttr("threshold", softplus_threshold_);
     }
   }
 
@@ -441,8 +458,10 @@ TEST(Activation_relu, precision) {
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
-  abs_error = 1e-2;
+  abs_error = 1e-3;
 #elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 2e-5;
+#elif defined(NNADAPTER_WITH_KUNLUNXIN_XTCL)
   abs_error = 2e-5;
 #else
   return;
@@ -485,6 +504,8 @@ TEST(Activation_leaky_relu, precision) {
   abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   abs_error = 1e-5;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 1e-3;
 #else
   return;
 #endif
@@ -597,7 +618,7 @@ TEST(Activation_sigmoid, precision) {
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
-  abs_error = 1e-2;
+  abs_error = 1e-3;
 #else
   return;
 #endif
@@ -638,7 +659,7 @@ TEST(Activation_tanh, precision) {
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
-  abs_error = 1e-2;
+  abs_error = 1e-3;
 #elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   abs_error = 2e-5;
 #else
@@ -719,8 +740,10 @@ TEST(Activation_relu6, precision) {
 #elif defined(NNADAPTER_WITH_HUAWEI_KIRIN_NPU)
   abs_error = 1e-2;
 #elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
-  abs_error = 1e-2;
+  abs_error = 1e-3;
 #elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
+  abs_error = 2e-5;
+#elif defined(NNADAPTER_WITH_KUNLUNXIN_XTCL)
   abs_error = 2e-5;
 #else
   return;
@@ -759,6 +782,8 @@ TEST(Activation_log, precision) {
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 1e-3;
 #else
   return;
 #endif
@@ -987,6 +1012,39 @@ TEST(Activation_mish, precision) {
             DDim(dims),
             "mish",
             MISH,
+            abs_error);
+  }
+}
+
+TEST(Activation_softplus, precision) {
+  Place place;
+  float abs_error = 2e-5;
+#if defined(LITE_WITH_NNADAPTER)
+  place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
+  abs_error = 1e-2;
+#else
+  return;
+#endif
+#elif defined(LITE_WITH_X86)
+  place = TARGET(kHost);
+#elif defined(LITE_WITH_ARM)
+  place = TARGET(kARM);
+#else
+  return;
+#endif
+  for (auto dims : std::vector<std::vector<int64_t>>{
+           {1, 3, 2, 4}, {2, 3, 4}, {5, 4}, {8}}) {
+    TestAct(place,
+            "def",
+            0.0,
+            0.,
+            "all",
+            0.,
+            0.0,
+            DDim(dims),
+            "softplus",
+            SOFTPLUS,
             abs_error);
   }
 }

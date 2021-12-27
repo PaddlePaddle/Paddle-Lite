@@ -84,9 +84,9 @@ class NormComputeTester : public arena::TestCase {
     SetCommonTensor(input_, dims_, data.data());
   }
 };
-void test_norm(Place place, float abs_error) {
+void test_norm(Place place, float abs_error, const std::vector<int>& axis_vec) {
   DDimLite dims{{3, 5, 4, 4}};
-  for (int axis : {1, 2, 3}) {
+  for (int axis : axis_vec) {
     for (float epsilon : {1e-9}) {
       std::unique_ptr<arena::TestCase> tester(
           new NormComputeTester(place, "def", axis, epsilon, dims));
@@ -99,13 +99,19 @@ void test_norm(Place place, float abs_error) {
 TEST(Norm, precision) {
   Place place;
   float abs_error = 2e-5;
+  std::vector<int> axis_vec = {1, 2, 3};
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 1e-3;
+  axis_vec = std::vector<int>{3};
 #else
   return;
 #endif
+#elif defined(LITE_WITH_XPU)
+  place = TARGET(kXPU);
 #elif defined(LITE_WITH_ARM)
   place = TARGET(kARM);
 #elif defined(LITE_WITH_X86)
@@ -114,7 +120,7 @@ TEST(Norm, precision) {
   return;
 #endif
 
-  test_norm(place, abs_error);
+  test_norm(place, abs_error, axis_vec);
 }
 
 }  // namespace lite

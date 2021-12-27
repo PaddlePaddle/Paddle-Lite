@@ -16,7 +16,7 @@ sys.path.append('../../common')
 sys.path.append('../../../')
 
 import abc
-import  test_conv_active_fuse_pass_base
+import test_conv_active_fuse_pass_base
 from auto_scan_test import FusePassAutoScanTest, IgnoreReasons
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import unittest
@@ -25,10 +25,12 @@ import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
 
+
 class TestConvActiveFusePass(FusePassAutoScanTest):
     def sample_predictor_configs(self):
         config = CxxConfig()
-        config.set_valid_places({Place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW)})
+        config.set_valid_places(
+            {Place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW)})
         yield config, ["conv2d"], (1e-5, 1e-5)
 
     def sample_program_configs(self, draw):
@@ -38,7 +40,11 @@ class TestConvActiveFusePass(FusePassAutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25, passes=["lite_conv_activation_fuse_pass"])
+        self.run_and_statis(
+            quant=False,
+            max_examples=25,
+            passes=["lite_conv_activation_fuse_pass"])
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

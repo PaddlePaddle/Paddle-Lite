@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,10 +40,7 @@ int ConvertConv2D(Converter* converter, hal::Operation* operation) {
   } else {
     auto conv_node = converter->network()->AddIConvNode(
         input_tensor, filter_tensor, bias_tensor);
-    if (conv_node == nullptr) {
-      NNADAPTER_VLOG(5) << "Failed to add convolution node.";
-      return NNADAPTER_DEVICE_INTERNAL_ERROR;
-    }
+    NNADAPTER_CHECK(conv_node) << "Failed to add convolution node.";
     auto pre_h = pads_buffer[0];
     auto post_h = pads_buffer[1];
     auto pre_w = pads_buffer[2];

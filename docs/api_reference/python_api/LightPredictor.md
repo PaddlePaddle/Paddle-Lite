@@ -4,7 +4,7 @@
 class LightPredictor
 ```
 
-`LightPredictor`是Paddle-Lite的预测器，由`create_paddle_predictor`根据`MobileConfig`进行创建。用户可以根据LightPredictor提供的接口设置输入数据、执行模型预测、获取输出以及获得当前使用lib的版本信息等。
+`LightPredictor`是Paddle Lite的预测器，由`create_paddle_predictor`根据`MobileConfig`进行创建。用户可以根据LightPredictor提供的接口设置输入数据、执行模型预测、获取输出以及获得当前使用lib的版本信息等。
 
 示例：
 

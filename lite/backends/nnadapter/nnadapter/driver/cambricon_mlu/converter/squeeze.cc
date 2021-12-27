@@ -31,10 +31,7 @@ int ConvertSqueeze(Converter* converter, hal::Operation* operation) {
   auto axis_tensor = converter->ConvertOperand(axes_operand);
   auto squeeze_node =
       converter->network()->AddISqueezeNode(input_tensor, axis_tensor);
-  if (squeeze_node == nullptr) {
-    NNADAPTER_VLOG(5) << "Failed to add squeeze node.";
-    return NNADAPTER_DEVICE_INTERNAL_ERROR;
-  }
+  NNADAPTER_CHECK(squeeze_node) << "Failed to add squeeze node.";
   auto output_tensor = squeeze_node->GetOutput(0);
   converter->UpdateTensorMap(output_operand, output_tensor);
   return NNADAPTER_NO_ERROR;
