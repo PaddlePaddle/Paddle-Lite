@@ -518,7 +518,9 @@ void QuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
     op_info.UpdateAllInputs(output_var_name, input_var_name);
     op_info.SetAttr<int>("bit_length", bit_length);
 #ifndef LITE_WITH_FPGA
-    op_info.SetAttr("enable_int8", true);
+    std::string op_type = op_info.Type();
+    if (op_type == "matmul") op_info.SetAttr("enable_int8", true);
+
 #endif
 
     if (input_var_is_activation) {
