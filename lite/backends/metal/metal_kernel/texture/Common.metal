@@ -90,6 +90,7 @@ struct ElementwiseAddParam {
 struct MatmulParam {
     bool xtrans;
     bool ytrans;
+    bool broadcast;
 };
 
 struct ElementwiseParam {
@@ -147,6 +148,7 @@ struct MetalConvTransposeParam {
 
     ushort hasAddOp;
     ElementwiseAddParam addParam;
+    MetalActivationParam activationParam;
 };
 
 struct LrnParam {
@@ -193,6 +195,10 @@ struct LeakyReluParam {
 struct HardSigmoidParam {
     float slope;
     float offset;
+};
+
+struct SwishParam {
+    float beta;
 };
 
 struct HardSwishParam {
@@ -364,6 +370,19 @@ inline half4 getBiasHalf(uint3 gid,
             abcd2xyzn(addParam.ydim[3], t_abcd, y_xyzn);
             output[n] = biasTexture.read(uint2(y_xyzn[0], y_xyzn[1]), y_xyzn[2])[y_xyzn[3]];
         }
+    }
+    return output;
+}
+
+inline ftype4 get_bias(uint3 gid,
+    constant ElementwiseAddParam& addParam,
+    texture2d_array<ftype, access::sample> biasTexture) {
+    ftype4 output = ftype4(0.0);
+    if (addParam.fast == 1) {
+        output = biasTexture.read(gid.xy, gid.z);
+    } else if (addParam.addByChannel == 1) {
+        output = biasTexture.read(uint2(0, 0), gid.z);
+    } else {
     }
     return output;
 }

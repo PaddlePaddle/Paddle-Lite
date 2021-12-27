@@ -26,79 +26,104 @@ from functools import partial
 import random
 import numpy as np
 
+
 class TestFcOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW)
+        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32,
+                                     DataLayoutType.NCHW)
         # opencl demo
-        opencl_places = [Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageDefault),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageFolder),
-                          Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-                          Place(TargetType.Host, PrecisionType.FP32)    
-                        ]
-        self.enable_testing_on_place(places=opencl_places)
+        # opencl_places = [
+        #     Place(TargetType.OpenCL, PrecisionType.FP16,
+        #           DataLayoutType.ImageDefault), Place(
+        #               TargetType.OpenCL, PrecisionType.FP16,
+        #               DataLayoutType.ImageFolder),
+        #     Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+        #     Place(TargetType.OpenCL, PrecisionType.Any,
+        #           DataLayoutType.ImageDefault), Place(
+        #               TargetType.OpenCL, PrecisionType.Any,
+        #               DataLayoutType.ImageFolder),
+        #     Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+        #     Place(TargetType.Host, PrecisionType.FP32)
+        # ]
+        # self.enable_testing_on_place(places=opencl_places)
 
-    def is_program_valid(self, program_config: ProgramConfig , predictor_config: CxxConfig) -> bool:
+    def is_program_valid(self,
+                         program_config: ProgramConfig,
+                         predictor_config: CxxConfig) -> bool:
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(st.lists(st.integers(min_value=2, max_value=10), min_size=2, max_size=4))
-        in_num_col_dims = draw(st.integers(min_value=1, max_value=len(in_shape)-1))
+        in_shape = draw(
+            st.lists(
+                st.integers(
+                    min_value=2, max_value=10), min_size=2, max_size=4))
+        in_num_col_dims = draw(
+            st.integers(
+                min_value=1, max_value=len(in_shape) - 1))
         weights_0 = 1
         weights_1 = 1
         for i in range(len(in_shape)):
-            if(i < in_num_col_dims):
+            if (i < in_num_col_dims):
                 weights_1 = weights_1 * in_shape[i]
             else:
                 weights_0 = weights_0 * in_shape[i]
         weights_shape = [weights_0, weights_1]
         bias_shape = [weights_1]
         with_bias = draw(st.sampled_from([True, False]))
-    
+
         def generate_input(*args, **kwargs):
-             return (np.random.random(in_shape).astype(np.float32) - 0.5) * 2
-    
+            return (np.random.random(in_shape).astype(np.float32) - 0.5) * 2
+
         def generate_weights(*args, **kwargs):
-             return (np.random.random(weights_shape).astype(np.float32) - 0.5) * 2
-    
+            return (
+                np.random.random(weights_shape).astype(np.float32) - 0.5) * 2
+
         def generate_bias(*args, **kwargs):
-             return (np.random.random(bias_shape).astype(np.float32) - 0.5) * 2 
-    
+            return (np.random.random(bias_shape).astype(np.float32) - 0.5) * 2
+
         act_type = ""
-        
-        if(with_bias and random.random() > 0.5):
+
+        if (with_bias and random.random() > 0.5):
             act_type = "relu"
-    
+
         op_inputs = {}
         program_inputs = {}
-    
-        if(with_bias):
-             op_inputs = {"Input" : ["input_data"], "W" : ["weights_data"], "Bias" : ["bias_data"]}
-             program_inputs = {
-                     "input_data":TensorConfig(data_gen=partial(generate_input)),
-                     "weights_data":TensorConfig(data_gen=partial(generate_weights)),
-                     "bias_data": TensorConfig(data_gen=partial(generate_bias))}
+
+        if (with_bias):
+            op_inputs = {
+                "Input": ["input_data"],
+                "W": ["weights_data"],
+                "Bias": ["bias_data"]
+            }
+            program_inputs = {
+                "input_data": TensorConfig(data_gen=partial(generate_input)),
+                "weights_data":
+                TensorConfig(data_gen=partial(generate_weights)),
+                "bias_data": TensorConfig(data_gen=partial(generate_bias))
+            }
         else:
-             op_inputs = {"Input" : ["input_data"],"W" : ["weights_data"]}
-             program_inputs = {
-                     "input_data":TensorConfig(data_gen=partial(generate_input)),
-                     "weights_data":TensorConfig(data_gen=partial(generate_weights))}
-    
+            op_inputs = {"Input": ["input_data"], "W": ["weights_data"]}
+            program_inputs = {
+                "input_data": TensorConfig(data_gen=partial(generate_input)),
+                "weights_data":
+                TensorConfig(data_gen=partial(generate_weights))
+            }
+
         fc_op = OpConfig(
-            type = "fc",
-            inputs = op_inputs,
-            outputs = {"Out": ["output_data"]},
-            attrs = {"in_num_col_dims" : in_num_col_dims,
-                     "activation_type" : act_type,
-                     "use_mkldnn" : False,
-                     "padding_weights" : False,
-                     "use_quantizer" : False,
-                     "Scale_in" : float(1),
-                     "Scale_weights" : [float(1)],
-                     "Scale_out" : float(1)})
+            type="fc",
+            inputs=op_inputs,
+            outputs={"Out": ["output_data"]},
+            attrs={
+                "in_num_col_dims": in_num_col_dims,
+                "activation_type": act_type,
+                "use_mkldnn": False,
+                "padding_weights": False,
+                "use_quantizer": False,
+                "Scale_in": float(1),
+                "Scale_weights": [float(1)],
+                "Scale_out": float(1)
+            })
         program_config = ProgramConfig(
             ops=[fc_op],
             weights={},
@@ -114,6 +139,7 @@ class TestFcOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''])

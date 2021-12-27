@@ -146,6 +146,10 @@ function make_armosx {
       LITE_ON_TINY_PUBLISH=OFF
     fi
 
+    if [ "${BUILD_ARM82_FP16}" == "ON" ]; then
+      TOOLCHAIN=clang
+    fi
+
     if [ -d $build_dir ]
     then
         rm -rf $build_dir
@@ -183,6 +187,7 @@ function make_armosx {
             -DARM_TARGET_ARCH_ABI=$arch \
             -DLITE_BUILD_EXTRA=$BUILD_EXTRA \
             -DLITE_WITH_CV=$BUILD_CV \
+            -DLITE_WITH_ARM82_FP16=$BUILD_ARM82_FP16 \
             -DDEPLOYMENT_TARGET=${IOS_DEPLOYMENT_TARGET} \
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=ON \
             -DARM_TARGET_OS=armmacos
@@ -226,7 +231,7 @@ function make_x86 {
     BUILD_EXTRA=ON
     LITE_ON_TINY_PUBLISH=OFF
   fi
- 
+
   if [ ! -d third-party ]; then
     git checkout third-party
   fi
@@ -248,7 +253,7 @@ function make_x86 {
             -DLITE_WITH_X86=ON  \
             -DWITH_LITE=ON \
             -DLITE_WITH_LIGHT_WEIGHT_FRAMEWORK=${WITH_LIGHT_WEIGHT_FRAMEWORK} \
-            -DLITE_ON_TINY_PUBLISH=${LITE_ON_TINY_PUBLISH} \
+            -DLITE_ON_TINY_PUBLISH=OFF \
             -DLITE_WITH_PROFILE=${WITH_PROFILE} \
             -DLITE_WITH_PRECISION_PROFILE=${WITH_PRECISION_PROFILE} \
             -DLITE_WITH_ARM=OFF \
@@ -294,6 +299,8 @@ function print_usage {
     echo -e "|     --with_extra: (OFF|ON); controls whether to publish extra operators and kernels for (sequence-related model such as OCR or NLP) |"
     echo -e "|     --with_benchmark: (OFF|ON); controls whether to compile benchmark binary, default is OFF                                         |"
     echo -e "|     --with_testing: (OFF|ON); controls whether to compile unit test, default is OFF                                                  |"
+    echo -e "|     --with_arm82_fp16: (OFF|ON); controls whether to include FP16 kernels, default is OFF                                            |"
+    echo -e "|                                  warning: when --with_arm82_fp16=ON, toolchain will be set as clang, arch will be set as armv8.      |"
     echo -e "|                                                                                                                                      |"
     echo -e "|  arguments of benchmark binary compiling for macos x86:                                                                              |"
     echo -e "|     ./lite/tools/build_macos.sh --with_benchmark=ON x86                                                                              |"
@@ -354,6 +361,11 @@ function main {
                 ;;
             --with_log=*)
                 WITH_LOG="${i#*=}"
+                shift
+                ;;
+            # controls whether to include FP16 kernels, default is OFF
+            --with_arm82_fp16=*)
+                BUILD_ARM82_FP16="${i#*=}"
                 shift
                 ;;
             --with_mkl=*)

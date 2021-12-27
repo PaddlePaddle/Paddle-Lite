@@ -38,7 +38,10 @@ class Cache {
   void Clear();
   bool Set(const std::string& key, const std::vector<uint8_t>& value);
   bool Set(const std::string& key, const void* value, uint64_t size);
+  bool Set(const std::string& key, const std::string& value);
   bool Get(const std::string& key, std::vector<uint8_t>* value);
+  bool Get(const std::string& key, std::string* value);
+
   uint64_t GetSerializedSize();
   // Serializes all of cache entries into the memory
   bool Serialize(void* buffer, uint64_t size);
