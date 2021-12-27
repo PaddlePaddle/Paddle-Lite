@@ -31,15 +31,13 @@ class TestSwishOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
 
-        x86_places = [
-            Place(TargetType.X86, PrecisionType.FP32, DataLayoutType.NCHW),
+        host_places = [
             Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
         ]
-        self.enable_testing_on_place(places=x86_places)
+        self.enable_testing_on_place(places=host_places)
 
         arm_places = [
-            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
-            Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
+            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)
         ]
         self.enable_testing_on_place(places=arm_places)
 
