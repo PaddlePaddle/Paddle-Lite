@@ -241,6 +241,10 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         input_args[input_count - 1] = "axis";
         output_args = {"output"};
         break;
+      case NNADAPTER_CHANNEL_SHUFFLE:
+        input_args = {"input", "group"};
+        output_args = {"output"};
+        break;
       case NNADAPTER_CONV_2D:
         input_args = {"input",
                       "filter",
@@ -312,6 +316,10 @@ NNADAPTER_EXPORT std::string Visualize(hal::Model* model) {
         break;
       case NNADAPTER_PRELU:
         input_args = {"input", "slope"};
+        output_args = {"output"};
+        break;
+      case NNADAPTER_SOFTPLUS:
+        input_args = {"input", "beta", "threshold"};
         output_args = {"output"};
         break;
       case NNADAPTER_SLICE:
@@ -616,6 +624,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(BATCH_NORMALIZATION);
     NNADAPTER_TYPE_TO_STRING(CAST);
     NNADAPTER_TYPE_TO_STRING(CLIP);
+    NNADAPTER_TYPE_TO_STRING(CHANNEL_SHUFFLE);
     NNADAPTER_TYPE_TO_STRING(CONCAT);
     NNADAPTER_TYPE_TO_STRING(CONV_2D);
     NNADAPTER_TYPE_TO_STRING(CONV_2D_TRANSPOSE);
@@ -672,6 +681,7 @@ NNADAPTER_EXPORT std::string OperationTypeToString(
     NNADAPTER_TYPE_TO_STRING(SLICE);
     NNADAPTER_TYPE_TO_STRING(STACK);
     NNADAPTER_TYPE_TO_STRING(SOFTMAX);
+    NNADAPTER_TYPE_TO_STRING(SOFTPLUS);
     NNADAPTER_TYPE_TO_STRING(SPLIT);
     NNADAPTER_TYPE_TO_STRING(SQUARE);
     NNADAPTER_TYPE_TO_STRING(SQUEEZE);

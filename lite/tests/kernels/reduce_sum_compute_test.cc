@@ -310,14 +310,16 @@ class ReduceSumComputeTester : public arena::TestCase {
   }
 };
 
-void test_reduce_sum(Place place, float abs_error) {
+void test_reduce_sum(Place place,
+                     float abs_error,
+                     const std::vector<bool>& keep_dim_vec) {
   std::vector<std::vector<int>> reduce_dim{
       {0}, {1}, {2}, {3}, {0, 1}, {1, 2}, {2, 3}, {-2, -1}};
   for (auto n : {1, 3}) {
     for (auto c : {1, 2}) {
       for (auto h : {1, 3}) {
         for (auto w : {1, 3}) {
-          for (bool keep_dim : {false, true}) {
+          for (bool keep_dim : keep_dim_vec) {
             for (bool reduce_all : {false, true}) {
 #if defined(LITE_WITH_NNADAPTER)
               if (reduce_all == true) continue;
@@ -342,10 +344,14 @@ void test_reduce_sum(Place place, float abs_error) {
 TEST(ReduceSum, precision) {
   Place place;
   float abs_error = 2e-5;
+  std::vector<bool> keep_dim_vec{false, true};
 #if defined(LITE_WITH_NNADAPTER)
   place = TARGET(kNNAdapter);
 #if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 1e-3;
+  keep_dim_vec = std::vector<bool>{false};
 #else
   return;
 #endif
@@ -359,7 +365,7 @@ TEST(ReduceSum, precision) {
   return;
 #endif
 
-  test_reduce_sum(place, abs_error);
+  test_reduce_sum(place, abs_error, keep_dim_vec);
 }
 
 }  // namespace lite

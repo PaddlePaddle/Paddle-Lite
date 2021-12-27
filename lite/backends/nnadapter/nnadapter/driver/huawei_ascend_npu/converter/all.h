@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ REGISTER_CONVERTER(AVERAGE_POOL_2D, ConvertPool2D)
 REGISTER_CONVERTER(BATCH_NORMALIZATION, ConvertBatchNormalization)
 REGISTER_CONVERTER(CAST, ConvertCast)
 REGISTER_CONVERTER(CLIP, ConvertClip)
+REGISTER_CONVERTER(CHANNEL_SHUFFLE, ConvertChannelShuffle)
 REGISTER_CONVERTER(CONCAT, ConvertConcat)
 REGISTER_CONVERTER(CONV_2D, ConvertConv2D)
 REGISTER_CONVERTER(CONV_2D_TRANSPOSE, ConvertConv2DTranspose)
@@ -81,6 +82,7 @@ REGISTER_CONVERTER(SHAPE, ConvertShape)
 REGISTER_CONVERTER(SIGMOID, ConvertUnaryActivations)
 REGISTER_CONVERTER(SLICE, ConvertSlice)
 REGISTER_CONVERTER(SOFTMAX, ConvertSoftmax)
+REGISTER_CONVERTER(SOFTPLUS, ConvertSoftplus)
 REGISTER_CONVERTER(SPLIT, ConvertSplit)
 REGISTER_CONVERTER(SQUARE, ConvertUnaryActivations)
 REGISTER_CONVERTER(SQUEEZE, ConvertSqueeze)

@@ -14,18 +14,14 @@
 '''
 import sys
 sys.path.append('../')
-
 from auto_scan_test import AutoScanTest, IgnoreReasons
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import unittest
-
 import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import numpy as np
 from functools import partial
 import hypothesis.strategies as st
-
-
 class TestGatherOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
@@ -34,13 +30,11 @@ class TestGatherOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 2])
-
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
         # run ut is error
         return False
-
     def sample_program_configs(self, draw):
         in_shape = draw(
             st.lists(
@@ -54,34 +48,27 @@ class TestGatherOp(AutoScanTest):
         axis_type = draw(st.sampled_from(["int32", "int64"]))
         index_type = draw(st.sampled_from(["int32", "int64"]))
         with_tenor_axis = draw(st.sampled_from([True, False]))
-
         def generate_axis(*args, **kwargs):
             if axis_type == "int32":
                 return np.array([axis]).astype(np.int32)
             else:
                 return np.array([axis]).astype(np.int64)
-
         def generate_index(*args, **kwargs):
             if index_type == "int32":
                 return np.array(index).astype(np.int32)
             else:
                 return np.array(index).astype(np.int64)
-
         def generate_input_int32(*args, **kwargs):
             return np.random.random(in_shape).astype(np.int32)
-
         def generate_input_int64(*args, **kwargs):
             return np.random.random(in_shape).astype(np.int64)
-
         def generate_input_float32(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
-
         generate_input = draw(
             st.sampled_from([
                 generate_input_int32, generate_input_int64,
                 generate_input_float32
             ]))
-
         op_inputs = {}
         program_inputs = {}
         if (with_tenor_axis):
@@ -101,7 +88,6 @@ class TestGatherOp(AutoScanTest):
                 "input_data": TensorConfig(data_gen=partial(generate_input)),
                 "index_data": TensorConfig(data_gen=partial(generate_index))
             }
-
         gather_op = OpConfig(
             type="gather",
             inputs=op_inputs,
@@ -113,17 +99,12 @@ class TestGatherOp(AutoScanTest):
             inputs=program_inputs,
             outputs=["output_data"])
         return program_config
-
     def sample_predictor_configs(self):
         return self.get_predictor_configs(), ["gather"], (1e-5, 1e-5)
-
     def add_ignore_pass_case(self):
         pass
-
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)
-
-
 if __name__ == "__main__":
     unittest.main(argv=[''])
 '''
