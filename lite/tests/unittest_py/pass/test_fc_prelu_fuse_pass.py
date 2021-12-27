@@ -33,8 +33,6 @@ def mul(x, y):
 class TestFcPreluFusePass(FusePassAutoScanTest):
     def __init__(self, *args, **kwargs):
         FusePassAutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32,
-                                     DataLayoutType.NCHW)
         #opencl not support padding_weights
         '''
         opencl_places = [
