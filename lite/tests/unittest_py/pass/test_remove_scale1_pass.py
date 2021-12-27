@@ -102,7 +102,6 @@ class TestRemoveScale1Fuse(FusePassAutoScanTest):
         self.run_and_statis(
             quant=False,
             max_examples=25,
-            max_duration=540,
             passes=["lite_remove_scale1_pass"])
 
 
