@@ -63,7 +63,7 @@ class TestLrnOp(AutoScanTest):
         n_ = draw(st.sampled_from([5]))
         k_ = draw(st.sampled_from([1.0]))
         alpha_ = draw(st.sampled_from([1e-4]))
-        beta_ = draw(st.sampled_from([0.75]))
+        beta_ = draw(st.sampled_from([0.75, 1]))
         '''
         in_num = draw(
             st.lists(
