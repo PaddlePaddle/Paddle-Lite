@@ -128,7 +128,7 @@ class TestUnsqueeze2Op(AutoScanTest):
                 TensorConfig(data_gen=partial(generate_AxesTensorList_data))
             },
             outputs=["Out_data"])
-            # OpenCL Check failed so remove "XShape_data"
+        # OpenCL Check failed so remove "XShape_data"
         return program_config
 
     def sample_predictor_configs(self):
