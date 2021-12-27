@@ -24,8 +24,6 @@ namespace huawei_ascend_npu {
 
 int ConvertExpand(Converter* converter, hal::Operation* operation) {
   EXPAND_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  NNADAPTER_CHECK(IsConstantOperand(shape_operand))
-      << "Shape input only support const tensor.";
 
   // Convert to GE operators
   auto input_operator = converter->GetMappedOperator(input_operand);
@@ -33,14 +31,28 @@ int ConvertExpand(Converter* converter, hal::Operation* operation) {
     input_operator = converter->ConvertOperand(input_operand);
   }
   auto expand_op = converter->AddOperator<ge::op::ExpandD>(output_operand);
-  std::vector<int64_t> expand_shape(shape_count);
-  for (uint32_t i = 0; i < shape_count; i++) {
-    expand_shape[i] = shape_data[i];
+  // TODO(shentanyue): When it is a dynamic shape, there may be multiple expand
+  // shapes to be solved.
+  if (shape_operand->type.lifetime == NNADAPTER_TEMPORARY_SHAPE ||
+      IsConstantOperand(shape_operand)) {
+    auto processed_shape_info =
+        *(shape_operand->hints[NNADAPTER_PROCESSED_SHAPE_INFO])
+             .get_mutable<NNAdapterOperandDimensionType>();
+    auto shape_count = processed_shape_info.count;
+    auto shape_data = processed_shape_info.data;
+    std::vector<int64_t> expand_shape(shape_count);
+    for (uint32_t i = 0; i < shape_count; i++) {
+      expand_shape[i] = shape_data[i];
+    }
+    expand_op->set_attr_shape(ge::Operator::OpListInt(expand_shape));
+    SET_INPUT(expand_op, x, input_operator);
+    MAP_OUTPUT(expand_op, y, output_operand);
+    return NNADAPTER_NO_ERROR;
+  } else {
+    NNADAPTER_LOG(FATAL) << "Unsupported shape lifetime: "
+                         << static_cast<int32_t>(shape_operand->type.lifetime);
+    return NNADAPTER_INVALID_PARAMETER;
   }
-  expand_op->set_attr_shape(ge::Operator::OpListInt(expand_shape));
-  SET_INPUT(expand_op, x, input_operator);
-  MAP_OUTPUT(expand_op, y, output_operand);
-  return NNADAPTER_NO_ERROR;
 }
 
 }  // namespace huawei_ascend_npu

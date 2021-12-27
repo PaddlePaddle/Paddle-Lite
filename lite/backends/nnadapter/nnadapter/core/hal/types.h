@@ -15,17 +15,25 @@
 #pragma once
 
 #include <list>
+#include <map>
 #include <string>
 #include <vector>
 #include "nnadapter.h"  // NOLINT
+#include "utility/any.h"
 
 namespace nnadapter {
 namespace hal {
+
+// Store tempory shape information
+#define NNADAPTER_TEMPORY_SHAPE_INFO 1
+// Store processed shape information
+#define NNADAPTER_PROCESSED_SHAPE_INFO 2
 
 typedef struct Operand {
   NNAdapterOperandType type;
   void* buffer;
   uint32_t length;
+  std::map<int32_t, Any> hints;
 } Operand;
 
 typedef struct Argument {
