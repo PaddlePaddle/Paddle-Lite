@@ -54,7 +54,6 @@ class TestSigmoidOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
-        # metal demo
         metal_places = [
             Place(TargetType.Metal, PrecisionType.FP32,
                   DataLayoutType.MetalTexture2DArray),
@@ -104,7 +103,6 @@ class TestSigmoidOp(AutoScanTest):
         target_str = self.get_target()
         if target_str == "Metal":
             atol, rtol = 5e-4, 5e-4
-
         return self.get_predictor_configs(), ["sigmoid"], (atol, rtol)
 
     def add_ignore_pass_case(self):
