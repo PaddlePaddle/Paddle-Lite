@@ -53,13 +53,13 @@ const int OUT_W_BLOCK = 4;
   const float16_t* r3 = inr3;           \
   const float16_t* r4 = inr4;
 #else
-#define COMPUT_INIT                     \
-  float16_t* ptr_out0 = pre_out0;       \
-  float16_t* ptr_out1 = pre_out1;       \
-  const float16_t* r0 = inr0;           \
-  const float16_t* r1 = inr1;           \
-  const float16_t* r2 = inr2;           \
-  const float16_t* r3 = inr3;           \
+#define COMPUT_INIT               \
+  float16_t* ptr_out0 = pre_out0; \
+  float16_t* ptr_out1 = pre_out1; \
+  const float16_t* r0 = inr0;     \
+  const float16_t* r1 = inr1;     \
+  const float16_t* r2 = inr2;     \
+  const float16_t* r3 = inr3;     \
   const float16_t* r4 = inr4;
 #endif
 
@@ -622,18 +622,18 @@ size_t conv3x3s2_direct_workspace_size(const operators::ConvParam& param,
 #define COMPUTE                        \
   /* r0-1 */                           \
   "vld1.16    {d6-d8}, [%[r1]]           @ load r1\n"                          \
-  "add  %[r1], %[r1], #16\n"                                                         \
+  "add  %[r1], %[r1], #16\n"                                                   \
   "vmla.f16   q8, q6, d0[1]              @ w0 * inr00\n"                       \
   "vmla.f16   q9, q6, d0[3]              @ w0 * inr02\n"                       \
   "vmla.f16   q10, q6, d1[1]             @ w0 * inr04\n"                       \
-  "vmla.f16   q11, q6, d1[3]             @ w0 * inr06\n" /* mul r0, with w0*/  \  
+  "vmla.f16   q11, q6, d1[3]             @ w0 * inr06\n" /* mul r0, with w0*/  \
   /* r2-1 */                           \
   "vmla.f16   q12, q6, d3[1]             @ w0 * inr20\n"                       \
   "vmla.f16   q13, q6, d3[3]             @ w0 * inr22\n"                       \
   "vmla.f16   q14, q6, d4[1]             @ w0 * inr24\n"                       \
   "vmla.f16   q15, q6, d4[3]             @ w0 * inr26\n"                       \
   /* r0-2 */                           \
-  "vmla.f16   q8, q7, d0[2]              @ w0 * inr00\n"                       \  
+  "vmla.f16   q8, q7, d0[2]              @ w0 * inr00\n"                       \
   "vmla.f16   q9, q7, d1[0]              @ w0 * inr02\n"                       \
   "vmla.f16   q10, q7, d1[2]             @ w0 * inr04\n"                       \
   "vmla.f16   q11, q7, d2[0]             @ w0 * inr06\n" /* mul r0, with w0*/  \
@@ -657,11 +657,11 @@ size_t conv3x3s2_direct_workspace_size(const operators::ConvParam& param,
   "vmla.f16   q10, q6, d7[1]             @ w0 * inr04\n"                       \
   "vmla.f16   q11, q6, d7[3]             @ w0 * inr06\n" /* mul r0, with w0*/  \
   /* r1-2 */                                                                   \
-  "vmla.f16   q8, q7, d6[2]              @ w0 * inr00\n"                       \   
+  "vmla.f16   q8, q7, d6[2]              @ w0 * inr00\n"                       \
   "vmla.f16   q9, q7, d7[0]              @ w0 * inr02\n"                       \
   "vmla.f16   q10, q7, d7[2]             @ w0 * inr04\n"                       \
   "vmov d6, d8 \n"                \
-  "vmla.f16   q11, q7, d6[0]             @ w0 * inr06\n" /* mul r0, with w0*/  \ 
+  "vmla.f16   q11, q7, d6[0]             @ w0 * inr06\n" /* mul r0, with w0*/  \
   /* r3-0 */                                                                   \
   "vmla.f16   q12, q5, d0[0]              @ w0 * inr00\n"                       \
   "vmla.f16   q13, q5, d0[2]              @ w0 * inr02\n"                       \
@@ -683,7 +683,7 @@ size_t conv3x3s2_direct_workspace_size(const operators::ConvParam& param,
   "vld1.32    {d14-d15}, [%[wc0]]!       @ load w5, to q7\n" /* mul r1, with*/ \
   "sub    %[wc0], %[wc0], #144\n"                                                \
   /* r2-0 */                                                                   \
-  "vmla.f16   q8, q5, d3[0]              @ w0 * inr00\n"                       \ 
+  "vmla.f16   q8, q5, d3[0]              @ w0 * inr00\n"                       \
   "vmla.f16   q9, q5, d3[2]              @ w0 * inr02\n"                       \
   "vmla.f16   q10, q5, d4[0]             @ w0 * inr04\n"                       \
   "vmla.f16   q11, q5, d4[2]             @ w0 * inr06\n" /* mul r0, with w0*/  \
@@ -691,7 +691,7 @@ size_t conv3x3s2_direct_workspace_size(const operators::ConvParam& param,
   "vmla.f16   q8, q6, d3[1]              @ w0 * inr00\n"                       \
   "vmla.f16   q9, q6, d3[3]              @ w0 * inr02\n"                       \
   "vmla.f16   q10, q6, d4[1]             @ w0 * inr04\n"                       \
-  "vmla.f16   q11, q6, d4[3]             @ w0 * inr06\n" /* mul r0, with w0*/  \ 
+  "vmla.f16   q11, q6, d4[3]             @ w0 * inr06\n" /* mul r0, with w0*/  \
   /* r2-2 */                                                                   \
   "vmla.f16   q8, q7, d3[2]              @ w0 * inr00\n"                       \
   "vmla.f16   q9, q7, d4[0]              @ w0 * inr02\n"                       \
@@ -1043,7 +1043,6 @@ void conv_3x3s2_direct_fp16(const float16_t* i_data,
 
           float16_t* pre_out0 = pre_out + hk * out_row_stride;
           float16_t* pre_out1 = pre_out0 + out_row_stride;
-#ifdef __aarch64__
           // first
           if (1) {
             COMPUT_INIT
@@ -1056,55 +1055,8 @@ void conv_3x3s2_direct_fp16(const float16_t* i_data,
             inr2 += win_round;
             inr3 += win_round;
             inr4 += win_round;
-          }
-          for (int i = 0; i < ic - 1; ++i) {           
-            COMPUT_INIT
-
-            int cnt = w_loop;
-            asm volatile(INIT COMPUTE ASM_PARAM);
-            wc0 += 9 * OUT_C_BLOCK;
-            inr0 += win_round;
-            inr1 += win_round;
-            inr2 += win_round;
-            inr3 += win_round;
-            inr4 += win_round;
-          }
-#else   // not __aarch64__
-          // first
-          //float16_t tmp[5000];
-          //float16_t * addr =  tmp;
-          //float16_t tmp1[5000];
-          //float16_t * addr1 =  tmp1;                   
-          if (1) {
-            //std :: cout << " 11111111 " << std :: endl;            
-            COMPUT_INIT
-            //std :: cout << " output " <<  (float)(*pre_out0)  << " addr "  <<  static_cast<void*>(pre_out0) << std :: endl;            
-
-            int cnt = w_loop;
-            //std :: cout << " output " <<  (float)(*pre_out0)  << " addr "  <<  static_cast<void*>(pre_out0) << std :: endl;            
-            asm volatile(INIT_FIRST COMPUTE ASM_PARAM);
-            wc0 += 9 * OUT_C_BLOCK;
-            inr0 += win_round;
-            inr1 += win_round;
-            inr2 += win_round;
-            inr3 += win_round;
-            inr4 += win_round;
-            /*for (int i = 0; i < 11 * 8; i++) {
-              if (i % 8 == 0) {
-                std :: cout <<  i << "  tmp i " << (float)(*(tmp + i)) << std :: endl;
-              }
-            }*/
-            /*
-            for (int i = 0; i < 10; i++) {
-                std :: cout <<  i << "  hahahaha i " << (float)(*(tmp1 + i)) << std :: endl;              
-            }*/
-            /*
-            std :: cout << " output " <<  (float)(*pre_out0)  << " addr "  <<  static_cast<void*>(pre_out0) << std :: endl;
-            std :: cout << " output222222222 " <<  (float)(*pre_out)  << " addr "  <<  static_cast<void*>(pre_out) << std :: endl;    
-            std :: cout << " output333333333 " <<  (float)(*ptr_out0)  << " addr "  <<  static_cast<void*>(ptr_out0) << std :: endl;*/                    
           }
           for (int i = 0; i < ic - 1; ++i) {
-            //std :: cout << " 2222222 " << std :: endl;             
             COMPUT_INIT
 
             int cnt = w_loop;
@@ -1116,7 +1068,6 @@ void conv_3x3s2_direct_fp16(const float16_t* i_data,
             inr3 += win_round;
             inr4 += win_round;
           }
-#endif  // __aarch64__
           block_inr0 = block_inr4;
           block_inr1 = block_inr0 + in_len;
           block_inr2 = block_inr1 + in_len;
@@ -1217,12 +1168,6 @@ void conv_3x3s2_direct_fp16_c3(const float16_t* i_data,
       int he = hs + h_kernel * 2 /*stride_h*/ + 1;
       prepack_input_nxwc4(
           din_batch, pre_din, 0, ic, hs, he, ws, we, ic, win, ih, ptr_zero);
-      
-
-      /*for (int i = 0; i < 100; i++) {
-        std :: cout << " pre_din " << *(pre_din+i) << std :: endl;
-
-      }*/
 
       const float16_t* cblock_inr0 = pre_din;
       const float16_t* cblock_inr1 = cblock_inr0 + in_len;
@@ -1310,13 +1255,6 @@ void conv_3x3s2_direct_fp16_c3(const float16_t* i_data,
                          "v31");
 #else   // not __aarch64__
           int cnt = w_loop;
-          //std :: cout << " cnt " << cnt << std :: endl;
-          //std :: cout << " inr0 " << (float)(*inr0) << std :: endl;
-          //std :: cout << " wc0 " << (float)(*wc0) << std :: endl;      
-          //float16_t tmp[5000];
-          //float16_t * addr =  tmp;
-          //float16_t tmp1[5000];
-          //float16_t * addr1 =  tmp1;                       
           asm volatile(COMPUTE_C3
                        : [cnt] "+r"(cnt),
                          [r0] "+r"(inr0),
@@ -1325,7 +1263,7 @@ void conv_3x3s2_direct_fp16_c3(const float16_t* i_data,
                          [wc] "+r"(wc0),
                          [ptr_out0] "+r"(pre_out0),
                          [wc0] "+r"(wc0)
-                       : 
+                       :
                        : "cc",
                          "memory",
                          "q0",
@@ -1344,15 +1282,6 @@ void conv_3x3s2_direct_fp16_c3(const float16_t* i_data,
                          "q13",
                          "q14",
                          "q15");
-        /*for (int i = 0; i < 24; i++) {
-          std :: cout << " input "  << i << "    " << (float)*(block_inr0+i) << std :: endl;
-        }
-        std :: cout << " tmp1 " << (float)tmp1[0] << std :: endl;
-        for (int i = 0; i < 27 * 8; i ++) {
-          if (i % 8 == 0) {
-            std :: cout << i << "    rrrrrrrrrrrrr02 " << (float)tmp[i] << std :: endl;
-          }
-        }*/
 #endif  // __aarch64__
           block_inr0 = block_inr2;
           block_inr1 = block_inr0 + in_len;
