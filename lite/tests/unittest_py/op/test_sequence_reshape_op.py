@@ -65,7 +65,7 @@ class TestSequenceReshapeOp(AutoScanTest):
             type="sequence_reshape",
             inputs={"X": ["input_data"]},
             outputs={"Out": ["output_data"]},
-            attrs={"new_dim": new_dim}, )
+            attrs={"new_dim": new_dim})
 
         program_config = ProgramConfig(
             ops=[ops_config],
