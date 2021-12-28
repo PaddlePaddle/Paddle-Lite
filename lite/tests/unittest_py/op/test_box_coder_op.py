@@ -32,11 +32,11 @@ class TestBoxCoderOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         # precision has diff on arm
-        # self.enable_testing_on_place(
-        #     TargetType.ARM,
-        #     PrecisionType.FP32,
-        #     DataLayoutType.NCHW,
-        #     thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
         self.enable_testing_on_place(
             TargetType.Host,
             PrecisionType.FP32,
@@ -79,7 +79,7 @@ class TestBoxCoderOp(AutoScanTest):
         num_pri = draw(st.integers(min_value=10, max_value=100))
         priorbox_shape = [num_pri, 4]
         code_type = draw(
-            st.sampled_from(["encode_center_size", "decode_center_size"]))
+            st.sampled_from(["decode_center_size", "encode_center_size"]))
         axis = draw(st.sampled_from([0, 1]))
         box_normalized = draw(st.booleans())
         variance = draw(st.sampled_from([[0.1, 0.2, 0.3, 0.4], []]))
@@ -148,7 +148,7 @@ class TestBoxCoderOp(AutoScanTest):
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()
-        max_examples = 25
+        max_examples = 100
         if target_str == "OpenCL":
             # Make sure to generate enough valid cases for OpenCL
             max_examples = 600
