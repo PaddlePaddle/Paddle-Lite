@@ -31,12 +31,13 @@ import hypothesis.strategies as st
 def sample_program_configs(draw, interp_type):
     interpolate_type = draw(
         st.sampled_from(['interpolate_type_1', 'interpolate_type_2']))
+
     if interpolate_type == "interpolate_type_1":
         #shape params
         shape_op_input_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=2, max_value=10), min_size=4,
+                    min_value=1, max_value=32), min_size=4,
                 max_size=4))  #2dim unsupport
         #slice params
         axes = [0]
@@ -44,18 +45,16 @@ def sample_program_configs(draw, interp_type):
         ends = [4]
         infer_flags = [1]
         #cast params
-        cast_op_in_dtype = draw(st.sampled_from([2, 3]))  #float type has diff
-        cast_op_out_dtype = draw(st.sampled_from(
-            [2]))  #bilinear_interp's OutSize must be int
+        cast_op_in_dtype = draw(st.sampled_from([2, 3]))
+        cast_op_out_dtype = draw(st.sampled_from([2]))
         #fill_constant_op params
         fill_constant_in_shape = draw(
             st.lists(
                 st.integers(
                     min_value=1, max_value=2), min_size=1, max_size=1))
-        fill_constant_value = draw(st.integers(min_value=1, max_value=5))
+        fill_constant_value = draw(st.integers(min_value=1, max_value=16))
         #bilinear_interp params
-        scale = draw(st.integers(min_value=1, max_value=10))
-        # fill_constant_value = scale
+        scale = draw(st.integers(min_value=1, max_value=16))
 
         if interp_type == "bilinear_interp":
             interp_method = "bilinear"
@@ -98,7 +97,7 @@ def sample_program_configs(draw, interp_type):
 
         fill_constant_op = OpConfig(
             type="fill_constant",
-            inputs={},  #Only when the input is empty can the fusion succeed
+            inputs={},
             outputs={"Out": ["fill_constant_output"]},
             attrs={
                 "dtype": cast_op_out_dtype,
@@ -118,8 +117,7 @@ def sample_program_configs(draw, interp_type):
         interpolate_op = OpConfig(
             type=interp_type,
             inputs={"X": ["input_data"],
-                    "OutSize": ["elementwise_mul_out"]
-                    },  #OutSize's dimension[0] must be 2
+                    "OutSize": ["elementwise_mul_out"]},
             outputs={"Out": ["output_data"]},
             attrs={
                 "data_layout": "NCHW",
@@ -130,7 +128,7 @@ def sample_program_configs(draw, interp_type):
             })
 
         ops = [
-            fill_constant_op, shape_op, slice_op, cast_op, elementwise_mul_op,
+            shape_op, slice_op, cast_op, fill_constant_op, elementwise_mul_op,
             interpolate_op
         ]
         program_config = ProgramConfig(
@@ -146,23 +144,22 @@ def sample_program_configs(draw, interp_type):
         shape_op_input_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=2, max_value=10), min_size=4,
-                max_size=4))  #min_value=1, Output has nan
+                    min_value=1, max_value=32), min_size=4, max_size=4))
         #slice params
         axes = [0]
         starts = [2]
         ends = [4]
         infer_flags = [1]
         #cast params
-        cast_op_in_dtype = draw(st.sampled_from([2, 3]))  #float type has diff
-        cast_op_out_dtype = draw(st.sampled_from(
-            [2]))  #bilinear_interp's OutSize must be int
+        cast_op_in_dtype = draw(st.sampled_from([2, 3]))
+        cast_op_out_dtype = draw(st.sampled_from([2]))
         #scale op params
-        scale = draw(st.integers(min_value=1, max_value=3))
-        bias = draw(st.floats(min_value=0, max_value=1))
+        scale = draw(st.integers(
+            min_value=1, max_value=10))  #floats output shapes are not equal
+        bias = draw(st.floats(
+            min_value=0, max_value=1))  #>1 output shapes are not equal
         bias_after_scale = draw(st.sampled_from([False]))  #required in pass
         #bilinear_interp params
-        # interpolate_op_scale = draw(st.floats(min_value=1, max_value=1))
         if interp_type == "bilinear_interp":
             interp_method = "bilinear"
             align_corners = draw(st.booleans())
@@ -215,13 +212,11 @@ def sample_program_configs(draw, interp_type):
         interpolate_op = OpConfig(
             type=interp_type,
             inputs={"X": ["input_data"],
-                    "OutSize":
-                    ["scale_output"]},  #OutSize's dimension[0] must be 2
+                    "OutSize": ["scale_output"]},
             outputs={"Out": ["output_data"]},
             attrs={
                 "data_layout": "NCHW",
-                "scale":
-                scale,  #only interpolate_scale == scale_op_scale, out is ok, else out_shape has diff
+                "scale": scale,
                 "interp_method": interp_method,
                 "align_corners": align_corners,
                 "align_mode": align_mode
@@ -241,11 +236,11 @@ def sample_program_configs(draw, interp_type):
 class TestInterpolateBilinearFusePass(FusePassAutoScanTest):
     def __init__(self, *args, **kwargs):
         FusePassAutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(
-            TargetType.ARM,
-            PrecisionType.FP32,
-            DataLayoutType.NCHW,
-            thread=[1, 4])
+        # self.enable_testing_on_place(
+        #     TargetType.ARM,
+        #     PrecisionType.FP32,
+        #     DataLayoutType.NCHW,
+        #     thread=[1, 4])
         #opencl
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
@@ -262,32 +257,36 @@ class TestInterpolateBilinearFusePass(FusePassAutoScanTest):
         ]
         self.enable_testing_on_place(places=opencl_places)
         #x86
-        self.enable_testing_on_place(
-            TargetType.X86,
-            PrecisionType.FP32,
-            DataLayoutType.NCHW,
-            thread=[1, 4])
+        # self.enable_testing_on_place(
+        #     TargetType.X86,
+        #     PrecisionType.FP32,
+        #     DataLayoutType.NCHW,
+        #     thread=[1, 4])
+        # metal
+        metal_places = [
+            Place(TargetType.Metal, PrecisionType.FP32,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.Metal, PrecisionType.FP16,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.ARM, PrecisionType.FP32),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        # self.enable_testing_on_place(places=metal_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        if predictor_config.target(
-        ) == TargetType.ARM or predictor_config.target() == TargetType.X86:
+        cast_intype = program_config.ops[2].attrs["in_dtype"]
+        if cast_intype != 2 and cast_intype != 3:
+            print("The cast only support in_dtype 2, 3. Skip!")
             return False
-        else:
-            return True
+        return True
 
     def sample_program_configs(self, draw):
         return sample_program_configs(draw, interp_type="bilinear_interp")
 
     def sample_predictor_configs(self):
-        if self.get_target() == 'OpenCL':
-            return self.get_predictor_configs(
-            ), ['io_copy', 'layout', 'bilinear_interp', 'layout', 'io_copy'], (
-                1e-5, 1e-5)
-        else:
-            return self.get_predictor_configs(), ['bilinear_interp'], (1e-5,
-                                                                       1e-5)
+        return self.get_predictor_configs(), ['bilinear_interp'], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
@@ -302,8 +301,8 @@ class TestInterpolateBilinearFusePass(FusePassAutoScanTest):
 class TestInterpolateNearestFusePass(FusePassAutoScanTest):
     def __init__(self, *args, **kwargs):
         FusePassAutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32,
-                                     DataLayoutType.NCHW)
+        # self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32,
+        #                              DataLayoutType.NCHW)
         #opencl
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
@@ -320,11 +319,21 @@ class TestInterpolateNearestFusePass(FusePassAutoScanTest):
         ]
         self.enable_testing_on_place(places=opencl_places)
         #x86
-        self.enable_testing_on_place(
-            TargetType.X86,
-            PrecisionType.FP32,
-            DataLayoutType.NCHW,
-            thread=[1, 4])
+        # self.enable_testing_on_place(
+        #     TargetType.X86,
+        #     PrecisionType.FP32,
+        #     DataLayoutType.NCHW,
+        #     thread=[1, 4])
+        # metal
+        metal_places = [
+            Place(TargetType.Metal, PrecisionType.FP32,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.Metal, PrecisionType.FP16,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.ARM, PrecisionType.FP32),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        # self.enable_testing_on_place(places=metal_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -335,13 +344,7 @@ class TestInterpolateNearestFusePass(FusePassAutoScanTest):
         return sample_program_configs(draw, interp_type="nearest_interp")
 
     def sample_predictor_configs(self):
-        if self.get_target() == 'OpenCL':
-            return self.get_predictor_configs(
-            ), ['io_copy', 'layout', 'nearest_interp', 'layout', 'io_copy'], (
-                1e-5, 1e-5)
-        else:
-            return self.get_predictor_configs(), ['nearest_interp'], (1e-5,
-                                                                      1e-5)
+        return self.get_predictor_configs(), ['nearest_interp'], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
