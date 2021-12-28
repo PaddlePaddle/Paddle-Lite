@@ -48,10 +48,13 @@ class TestLstmOp(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        # lstm run have bugs
-        shape0 = 2
-        shape1 = 3
-        shape2 = 2
+        shape0 = draw(st.integers(min_value=1, max_value=32))
+        shape1 = draw(st.integers(min_value=1, max_value=32))
+        shape2 = draw(st.integers(min_value=1, max_value=32))
+        # lstm run have bugs, for debug
+        #shape0 = 2
+        #shape1 = 3
+        #shape2 = 2
         input_lod_ = draw(st.sampled_from([[[shape0, shape1, shape2]]]))
         N = len(input_lod_[0])
         D = 16
