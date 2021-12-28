@@ -341,7 +341,7 @@ namespace fp16 {
   "vmla.f16 q13,  q6,   q1  \n"   /* out01 = w1 * inr02 */         \
   "vmla.f16 q14,  q7,   q1  \n"   /* out02 = w1 * inr03 */         \
   "vmla.f16 q15,  q8,   q1  \n"   /* out03 = w1 * inr04 */         \
-  "vld1.16  {d8-d11},   [%[inr1]]!\n" /* load inr1, 0-1 */         \     
+  "vld1.16  {d8-d11},   [%[inr1]]!\n" /* load inr1, 0-1 */         \
   "vmla.f16 q12,  q6,   q2  \n"   /* out00 = w2 * inr02 */         \
   "vmla.f16 q13,  q7,   q2  \n"   /* out01 = w2 * inr03 */         \
   "vmla.f16 q14,  q8,   q2  \n"   /* out02 = w2 * inr04 */         \
@@ -458,7 +458,6 @@ namespace fp16 {
   "vld1.16  {d4-d5},    [%[wc0]]   \n" /* load w24 */                \
   "vmla.f16 q12,  q7,   q3  \n"   /* out00 = w23 * inr43 */         \
   "vmla.f16 q13,  q8,   q3  \n"   /* out01 = w23 * inr44 */         \
-  "sub  %[wc0],  %[wc0], #384 \n"   /* wptr = wptr - 384 */           \
   "vmla.f16 q14,  q9,   q3  \n"   /* out02 = w23 * inr45 */         \
   "vmla.f16 q15,  q10,  q3  \n"   /* out03 = w23 * inr46 */         \
   "vmla.f16 q12,  q8,   q2  \n"   /* out00 = w24 * inr44 */         \
@@ -975,6 +974,9 @@ void conv_depthwise_5x5s1_fp16(const float16_t* i_data,
           bias_local[k] = bias[c + k];
         }
       }
+      float16_t pre_out_[32];
+      float16_t *pre_din0_ = &(pre_out_[0]), *pre_din1_ = &(pre_out_[8]),
+                *pre_din2_ = &(pre_out_[16]), *pre_din3_ = &(pre_out_[24]);
 #endif
 
       for (int h = 0; h < oh; h += out_h_kernel) {
@@ -1065,22 +1067,19 @@ void conv_depthwise_5x5s1_fp16(const float16_t* i_data,
                            bias_local,
                            act_param);
 #else
-          float16_t pre_out_[32];
-          float16_t *pre_din0_ = &(pre_out_[0]), *pre_din1_ = &(pre_out_[8]),
-                    *pre_din2_ = &(pre_out_[16]), *pre_din3_ = &(pre_out_[24]);
           act_switch_5x5s1(inr0,
                            inr1,
                            inr2,
                            inr3,
                            inr4,
-                           &pre_out_[0],
-                           &pre_out_[8],
-                           &pre_out_[16],
-                           &pre_out_[24],
-                           &pre_out[32],
-                           &pre_out[40],
-                           &pre_out[48],
-                           &pre_out[56],
+                           pre_din0_,
+                           pre_din1_,
+                           pre_din2_,
+                           pre_din3_,
+                           vzero,
+                           vzero,
+                           vzero,
+                           vzero,
                            vzero,
                            vzero,
                            vzero,
