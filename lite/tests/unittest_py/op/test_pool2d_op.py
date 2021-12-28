@@ -78,12 +78,16 @@ class TestReluOp(AutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=4, max_value=32), min_size=3, max_size=3))
+                    min_value=4, max_value=128),
+                min_size=3,
+                max_size=3))
         in_shape.insert(0, draw(st.integers(min_value=1, max_value=4)))
         ksize = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=32), min_size=2, max_size=2))
+                    min_value=1, max_value=128),
+                min_size=2,
+                max_size=2))
         strides = draw(
             st.lists(
                 st.integers(
@@ -147,10 +151,12 @@ class TestReluOp(AutoScanTest):
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
             if predictor_config.target() == TargetType.ARM:
-                if program_config.ops[0].attrs["padding_algorithm"] == "SAME" \
-                    or program_config.ops[0].attrs["ceil_mode"] == True \
+                if program_config.ops[0].attrs["ceil_mode"] == True \
                     or program_config.ops[0].attrs["adaptive"] == True :
                     return True
+                if program_config.ops[0].attrs["padding_algorithm"] == "SAME":
+                    if program_config.ops[0].attrs["pooling_type"] == "avg":
+                        return True
             if predictor_config.target() == TargetType.OpenCL:
                 return True
             if predictor_config.target() == TargetType.Metal:
