@@ -536,8 +536,18 @@ void act_switch_5x5s2(const float16_t* inr0,
                        [outc0] "+r"(outc0),
                        [outc1] "+r"(outc1),
                        [outc2] "+r"(outc2),
-                       [outc3] "+r"(outc3)
-                     : [vbias] "w"(bias_local), [vsix] "w"(vsix)
+                       [outc3] "+r"(outc3),
+                       [outc4] "+r"(outc4),
+                       [outc5] "+r"(outc5),
+                       [outc6] "+r"(outc6),
+                       [outc7] "+r"(outc7)
+                     : [w0] "w"(w0),
+                       [w1] "w"(w1),
+                       [w2] "w"(w2),
+                       [w3] "w"(w3),
+                       [w4] "w"(w4),
+                       [vbias] "w"(vbias),
+                       [vsix] "w"(vsix)
                      : "cc",
                        "memory",
                        "v0",
