@@ -30,6 +30,7 @@ import hypothesis.strategies as st
 class TestNearestInterpOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
+        # precision bugs will be fix in the future
         #self.enable_testing_on_place(
         #    TargetType.ARM, [PrecisionType.FP16, PrecisionType.FP32],
         #    DataLayoutType.NCHW,
@@ -133,21 +134,7 @@ class TestNearestInterpOp(AutoScanTest):
         return self.get_predictor_configs(), ["nearest_interp"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def teller1(program_config, predictor_config):
-            in_shape = list(program_config.inputs["input_data_x"].shape)
-            target_str = self.get_target()
-            if target_str == "OpenCL":
-                return True
-            if target_str == "Metal":
-                return True
-            if target_str == "ARM":
-                return True
-
-        self.add_ignore_check_case(
-            teller1, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff in a specific case. We need to fix it as soon as possible."
-        )
-        #pass
+        pass
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)
