@@ -40,6 +40,10 @@ class TestStackOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
+        x_dtype = program_config.inputs["stack_input1"].dtype
+        if predictor_config.target() == TargetType.X86:
+            if x_dtype != np.float32:
+                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -48,7 +52,7 @@ class TestStackOp(AutoScanTest):
                 st.integers(
                     min_value=1, max_value=64), min_size=1, max_size=4))
         input_type = draw(st.sampled_from(["float32", "int32", "int64"]))
-        input_axis = draw(st.sampled_from([-2, -1, 0, 1, 2, 3]))
+        input_axis = draw(st.sampled_from([-1, 0, 1, 2, 3]))
         axis = input_axis if input_axis >= 0 else input_axis + len(in_shape)
         assume(axis < len(in_shape))
 
@@ -103,7 +107,7 @@ class TestStackOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":
