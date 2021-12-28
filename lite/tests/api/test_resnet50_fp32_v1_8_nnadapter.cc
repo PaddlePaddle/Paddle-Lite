@@ -56,6 +56,9 @@ TEST(ResNet50, test_resnet50_fp32_v1_8_nndapter) {
 #elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
   nnadapter_device_names.emplace_back("verisilicon_timvx");
   out_accuracy_threshold = 0.76f;
+#elif defined(NNADAPTER_WITH_KUNLUNXIN_XTCL)
+  nnadapter_device_names.emplace_back("kunlunxin_xtcl");
+  out_accuracy_threshold = 0.77f;
 #else
   LOG(INFO) << "Unsupported NNAdapter device!";
   return;

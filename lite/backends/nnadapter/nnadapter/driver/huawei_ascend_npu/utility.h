@@ -37,6 +37,10 @@ namespace huawei_ascend_npu {
 #define HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS \
   "HUAWEI_ASCEND_NPU_SELECTED_DEVICE_IDS"
 
+// Specify the file path of the profiling results
+#define HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH \
+  "HUAWEI_ASCEND_NPU_PROFILING_FILE_PATH"
+
 #define NNADAPTER_HUAWEI_ASCEND_NPU_CANN_VERSION_GREATER_THAN(   \
     major, minor, patch)                                         \
   NNADAPTER_HUAWEI_ASCEND_NPU_CANN_MAJOR_VERSION * 1000 +        \

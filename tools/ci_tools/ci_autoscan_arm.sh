@@ -49,7 +49,7 @@ function auto_scan_test {
 ####################################################################################################
 # Functions of compiling test.
 # Arguments:
-#   --target_list: can be ARM,OpenCL or ARM,Metal
+#   --target_list: can be ARM,OpenCL,Metal or ARM,OpenCL or ARM,Metal
 # Globals:
 #   WORKSPACE, PYTHON_VERSION
 ####################################################################################################
@@ -78,11 +78,6 @@ function compile_publish_inference_lib {
       build_metal=ON
     fi
   done
-
-  if [[ "$build_opencl" == "ON" && "$build_metal" == "ON" ]]; then
-    echo "ERROR: OpenCL and Metal both turn on, which will cause unittests for Metal crash. You can only turn on one option."
-    exit 1
-  fi
 
   cd $WORKSPACE
 
@@ -149,14 +144,7 @@ function main() {
     esac
   done
 
-  local targets=(${TARGET_LIST//,/ })
-  for target in ${targets[@]}; do
-    if [[ "$target" == "OpenCL" ]]; then
-      pipeline "ARM,OpenCL"
-    elif [[ "$target" == "Metal" ]]; then
-      pipeline "Metal"
-    fi
-  done
+  pipeline $TARGET_LIST
 
   echo "Success for targets:" $TARGET_LIST
 }

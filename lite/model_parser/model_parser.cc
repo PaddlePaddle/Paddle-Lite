@@ -157,6 +157,8 @@ std::string FindModelFileName(const std::string &model_dir,
       prog_path = model_dir + "/model";
     } else if (IsFileExists(model_dir + "/model.pdmodel")) {
       prog_path = model_dir + "/model.pdmodel";
+    } else if (IsFileExists(model_dir + "/inference.pdmodel")) {
+      prog_path = model_dir + "/inference.pdmodel";
     } else {
       PrintPbModelErrorMessage();
     }
@@ -205,6 +207,8 @@ void LoadNonCombinedParamsPb(const std::string &model_dir,
           params_path = model_dir + "/weights";
         } else if (IsFileExists(model_dir + "/model.pdiparams")) {
           params_path = model_dir + "/model.pdiparams";
+        } else if (IsFileExists(model_dir + "/inference.pdiparams")) {
+          params_path = model_dir + "/inference.pdiparams";
         } else {
           PrintPbModelErrorMessage();
         }

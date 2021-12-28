@@ -23,6 +23,7 @@
 #include "lite/core/profile/profiler.h"
 #endif
 #include "lite/backends/opencl/cl_utility.h"
+#include "lite/backends/opencl/target_wrapper.h"
 
 namespace paddle {
 namespace lite {
@@ -39,42 +40,54 @@ class ConcatComputeImage : public KernelLite<TARGET(kOpenCL),
     auto& context = ctx_->As<OpenCLContext>();
     concat_param_ = param_.get_mutable<param_t>();
     axis_ = concat_param_->axis;
+    auto* axis_tensor = concat_param_->axis_tensor;
+    if (axis_tensor != nullptr) {
+      auto* d_image = DATA_GPU(axis_tensor);
+      cl::Image2D* cl_image = static_cast<cl::Image2D*>(d_image);
+      size_t cl_image2d_width, cl_image2d_height;
+      cl_image->getImageInfo(CL_IMAGE_WIDTH, &cl_image2d_width);
+      cl_image->getImageInfo(CL_IMAGE_HEIGHT, &cl_image2d_height);
+
+      const bool fp16_support =
+          CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
+      if (fp16_support) {
+        auto* h_image = static_cast<half_t*>(TargetWrapperCL::MapImage(
+            d_image, cl_image2d_width, cl_image2d_height, 0, 0));
+        axis_ = Half2Float(h_image[0]);
+        TargetWrapperCL::Unmap(d_image, h_image);
+      } else {
+        auto* h_image = static_cast<float*>(TargetWrapperCL::MapImage(
+            d_image, cl_image2d_width, cl_image2d_height, 0, 0));
+        axis_ = h_image[0];
+        TargetWrapperCL::Unmap(d_image, h_image);
+      }
+    }
     axis_ = axis_ >= 0 ? axis_ : axis_ + concat_param_->x[0]->dims().size();
 
     auto inputs = concat_param_->x;
     auto output_tensor_dims = concat_param_->output->dims();
 
-    if (output_tensor_dims.size() < 4) {
-      if (output_tensor_dims.size() - axis_ == 1) {
-        // width
-        width_ = output_tensor_dims[1];  // c
-        flag_ = 3;
-      } else {
-        // height
-        width_ = output_tensor_dims[0];  // n
-        flag_ = 2;
-      }
-    } else {
-      switch (axis_) {
-        case 0:
-          width_ = output_tensor_dims[2];  // h
-          flag_ = 0;
-          break;
-        case 1:                            // channel
-          width_ = output_tensor_dims[3];  // w
-          flag_ = 1;
-          break;
-        case 2:                            // height
-          width_ = output_tensor_dims[0];  // n
-          flag_ = 2;
-          break;
-        case 3:                            // width
-          width_ = output_tensor_dims[1];  // c
-          flag_ = 3;
-          break;
-        default:
-          LOG(FATAL) << "Unsupported axis:" << axis_;
-      }
+    std::vector<size_t> new_dims = {1, 1, 1, 1};
+    size_t offset = 4 - output_tensor_dims.size();
+    for (auto i = 0; i < output_tensor_dims.size(); ++i) {
+      new_dims[offset + i] = output_tensor_dims[i];
+    }
+    flag_ = offset + axis_;
+    switch (flag_) {
+      case 0:
+        width_ = new_dims[2];
+        break;
+      case 1:
+        width_ = new_dims[3];
+        break;
+      case 2:
+        width_ = new_dims[0];
+        break;
+      case 3:
+        width_ = new_dims[1];
+        break;
+      default:
+        LOG(FATAL) << "Unsupported axis:" << axis_;
     }
 
     for (auto& input : inputs) {

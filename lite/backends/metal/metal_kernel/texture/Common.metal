@@ -90,6 +90,7 @@ struct ElementwiseAddParam {
 struct MatmulParam {
     bool xtrans;
     bool ytrans;
+    bool broadcast;
 };
 
 struct ElementwiseParam {
@@ -194,6 +195,10 @@ struct LeakyReluParam {
 struct HardSigmoidParam {
     float slope;
     float offset;
+};
+
+struct SwishParam {
+    float beta;
 };
 
 struct HardSwishParam {
