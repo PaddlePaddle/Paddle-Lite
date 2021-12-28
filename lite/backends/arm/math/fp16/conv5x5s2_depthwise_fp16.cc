@@ -438,7 +438,7 @@ void act_switch_5x5s2(const float16_t* inr0,
   if (has_active) {
     float16_t tmp = act_param.Relu_clipped_coef;
     float16_t ss = act_param.Leaky_relu_alpha;
-#ifdef __aarch64__    
+#ifdef __aarch64__
     float16x8_t vsix = vdupq_n_f16(tmp);
     float16x8_t vscale = vdupq_n_f16(ss);
 #else
@@ -502,8 +502,8 @@ void act_switch_5x5s2(const float16_t* inr0,
                        [outc0] "+r"(outc0),
                        [outc1] "+r"(outc1),
                        [outc2] "+r"(outc2),
-                       [outc3] "+r"(outc3)                
-                     : [bias] "r"(bias_local),[six_ptr] "r"(vsix)
+                       [outc3] "+r"(outc3)
+                     : [bias] "r"(bias_local), [six_ptr] "r"(vsix)
                      : "cc",
                        "memory",
                        "q0",
@@ -537,8 +537,7 @@ void act_switch_5x5s2(const float16_t* inr0,
                        [outc1] "+r"(outc1),
                        [outc2] "+r"(outc2),
                        [outc3] "+r"(outc3)
-                     : [vbias] "w"(bias_local),
-                       [vsix] "w"(vsix)
+                     : [vbias] "w"(bias_local), [vsix] "w"(vsix)
                      : "cc",
                        "memory",
                        "v0",
@@ -572,9 +571,8 @@ void act_switch_5x5s2(const float16_t* inr0,
                        [outc0] "+r"(outc0),
                        [outc1] "+r"(outc1),
                        [outc2] "+r"(outc2),
-                       [outc3] "+r"(outc3)              
-                     : [bias] "r"(bias_local),
-                       [six_ptr] "r"(vsix)                                           
+                       [outc3] "+r"(outc3)
+                     : [bias] "r"(bias_local), [six_ptr] "r"(vsix)
                      : "cc",
                        "memory",
                        "q0",
@@ -652,9 +650,8 @@ void act_switch_5x5s2(const float16_t* inr0,
                        [outc0] "+r"(outc0),
                        [outc1] "+r"(outc1),
                        [outc2] "+r"(outc2),
-                       [outc3] "+r"(outc3)             
-                     : [bias] "r"(bias_local),
-                       [scale_ptr] "r"(vscale)                        
+                       [outc3] "+r"(outc3)
+                     : [bias] "r"(bias_local), [scale_ptr] "r"(vscale)
                      : "cc",
                        "memory",
                        "q0",
@@ -672,7 +669,7 @@ void act_switch_5x5s2(const float16_t* inr0,
                        "q12",
                        "q13",
                        "q14",
-                       "q15"); 
+                       "q15");
 #endif
         break;
       default:
@@ -726,38 +723,36 @@ void act_switch_5x5s2(const float16_t* inr0,
                    "v21",
                    "v22");
 #else
-//std :: cout << " s2222222222 " << std :: endl;
-        asm volatile(COMPUTE STORE
-                     : [inr0] "+r"(inr0),
-                       [inr1] "+r"(inr1),
-                       [inr2] "+r"(inr2),
-                       [inr3] "+r"(inr3),
-                       [inr4] "+r"(inr4),
-                       [wc0] "+r"(weight_c),
-                       [outc0] "+r"(outc0),
-                       [outc1] "+r"(outc1),
-                       [outc2] "+r"(outc2),
-                       [outc3] "+r"(outc3)                                        
-                     : [bias] "r"(bias_local)
-                     : "cc",
-                       "memory",
-                       "q0",
-                       "q1",
-                       "q2",
-                       "q3",
-                       "q4",
-                       "q5",
-                       "q6",
-                       "q7",
-                       "q8",
-                       "q9",
-                       "q10",
-                       "q11",
-                       "q12",
-                       "q13",
-                       "q14",
-                       "q15");
-//std :: cout << " s3333333333333 " << std :: endl;
+    asm volatile(COMPUTE STORE
+                 : [inr0] "+r"(inr0),
+                   [inr1] "+r"(inr1),
+                   [inr2] "+r"(inr2),
+                   [inr3] "+r"(inr3),
+                   [inr4] "+r"(inr4),
+                   [wc0] "+r"(weight_c),
+                   [outc0] "+r"(outc0),
+                   [outc1] "+r"(outc1),
+                   [outc2] "+r"(outc2),
+                   [outc3] "+r"(outc3)
+                 : [bias] "r"(bias_local)
+                 : "cc",
+                   "memory",
+                   "q0",
+                   "q1",
+                   "q2",
+                   "q3",
+                   "q4",
+                   "q5",
+                   "q6",
+                   "q7",
+                   "q8",
+                   "q9",
+                   "q10",
+                   "q11",
+                   "q12",
+                   "q13",
+                   "q14",
+                   "q15");
 #endif
   }
 }
@@ -775,7 +770,6 @@ void conv_depthwise_5x5s2_fp16(const float16_t* i_data,
                                const float16_t* bias,
                                const operators::ConvParam& param,
                                ARMContext* ctx) {
-//std :: cout << " s3333333333333 " << std :: endl;                                 
   auto paddings = *param.paddings;
   int threads = ctx->threads();
   const int pad_h = paddings[0];
@@ -833,7 +827,7 @@ void conv_depthwise_5x5s2_fp16(const float16_t* i_data,
       const float16_t* weight_c = weights + c * 25;  // kernel_w * kernel_h
       float16_t* dout_c00 = dout_batch + c * size_out_channel;
       float16_t bias_local[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-#ifdef __aarch64__   
+#ifdef __aarch64__
       float16x8_t w0 = vld1q_f16(weight_c);       // w0, v23
       float16x8_t w1 = vld1q_f16(weight_c + 8);   // w1, v24
       float16x8_t w2 = vld1q_f16(weight_c + 16);  // w2, v25
@@ -853,18 +847,12 @@ void conv_depthwise_5x5s2_fp16(const float16_t* i_data,
         }
       }
 #else
-      //std :: cout << " s444444444444444 " << std :: endl;
       if (flag_bias) {
-      for (int k = 0; k < 8 && c + k < oc; k++) {
-        //      std :: cout << " s555555555555555 " << std :: endl;
-        //      std :: cout << " k " << k << std :: endl;
-        //      std :: cout << c + k << " " << std :: endl;
-        bias_local[k] = bias[c + k];
+        for (int k = 0; k < 8 && c + k < oc; k++) {
+          bias_local[k] = bias[c + k];
+        }
       }
-      }        
 #endif
-//std :: cout << " s444444444444444 " << std :: endl;   
-
       for (int h = 0; h < oh; h += out_h_kernel) {
         float16_t* outc0 = dout_c00 + h * ow;
         float16_t* outc1 = outc0 + size_out_channel;
@@ -954,8 +942,8 @@ void conv_depthwise_5x5s2_fp16(const float16_t* i_data,
                            act_param);
 #else
           float16_t pre_out_[32];
-          float16_t * pre_din0_ =  &(pre_out_[0]), * pre_din1_ =  &(pre_out_[8]), * pre_din2_ =  &(pre_out_[16]), * pre_din3_ =  &(pre_out_[24]);  
-          //std :: cout << " 1111111 " << std :: endl;       
+          float16_t *pre_din0_ = &(pre_out_[0]), *pre_din1_ = &(pre_out_[8]),
+                    *pre_din2_ = &(pre_out_[16]), *pre_din3_ = &(pre_out_[24]);
           act_switch_5x5s2(inr0,
                            inr1,
                            inr2,
@@ -978,47 +966,42 @@ void conv_depthwise_5x5s2_fp16(const float16_t* i_data,
                            weight_c,
                            bias_local,
                            act_param);
-          //std :: cout << " 22222222 " << std :: endl;                              
-        asm volatile ("vld1.32 {d0-d1},  [%[r0]]\n"
-                      "vld1.32 {d2-d3},  [%[r1]]\n"
-                      "vld1.32 {d4-d5},  [%[r2]]\n"
-                      "vld1.32 {d6-d7},  [%[r3]]\n"
-                      "vtrn.16   q0, q1\n"
-                      "vtrn.16   q2, q3\n"
-                      "vtrn.32   q0, q2\n"
-                      "vtrn.32   q1, q3\n"
+          asm volatile(
+              "vld1.32 {d0-d1},  [%[r0]]\n"
+              "vld1.32 {d2-d3},  [%[r1]]\n"
+              "vld1.32 {d4-d5},  [%[r2]]\n"
+              "vld1.32 {d6-d7},  [%[r3]]\n"
+              "vtrn.16   q0, q1\n"
+              "vtrn.16   q2, q3\n"
+              "vtrn.32   q0, q2\n"
+              "vtrn.32   q1, q3\n"
 
-                      "vswp      d1, d2\n"
-                      "vswp      d5, d6\n"
-                      "vst1.16 {d0}, [%[outc0]]\n"
-                      "vst1.16 {d1}, [%[outc1]]\n"
-                      "vst1.16 {d4}, [%[outc2]]\n"                      
-                      "vst1.16 {d5}, [%[outc3]]\n" 
-                      "vst1.16 {d2}, [%[outc4]]\n"
-                      "vst1.16 {d3}, [%[outc5]]\n"
-                      "vst1.16 {d6}, [%[outc6]]\n"                      
-                      "vst1.16 {d7}, [%[outc7]]\n"
+              "vswp      d1, d2\n"
+              "vswp      d5, d6\n"
+              "vst1.16 {d0}, [%[outc0]]\n"
+              "vst1.16 {d1}, [%[outc1]]\n"
+              "vst1.16 {d4}, [%[outc2]]\n"
+              "vst1.16 {d5}, [%[outc3]]\n"
+              "vst1.16 {d2}, [%[outc4]]\n"
+              "vst1.16 {d3}, [%[outc5]]\n"
+              "vst1.16 {d6}, [%[outc6]]\n"
+              "vst1.16 {d7}, [%[outc7]]\n"
 
-                     : [r0] "+r"(pre_din0_),
-                       [r1] "+r"(pre_din1_),
-                       [r2] "+r"(pre_din2_),
-                       [r3] "+r"(pre_din3_),
-                       [outc0] "+r"(outc0),
-                       [outc1] "+r"(outc1),
-                       [outc2] "+r"(outc2),
-                       [outc3] "+r"(outc3),                       
-                       [outc4] "+r"(outc4),
-                       [outc5] "+r"(outc5),
-                       [outc6] "+r"(outc6),
-                       [outc7] "+r"(outc7)
-                      : 
-                      : "cc",
-                       "memory",
-                       "q0",
-                       "q1",
-                       "q2",
-                       "q3");                      
-          
+              : [r0] "+r"(pre_din0_),
+                [r1] "+r"(pre_din1_),
+                [r2] "+r"(pre_din2_),
+                [r3] "+r"(pre_din3_),
+                [outc0] "+r"(outc0),
+                [outc1] "+r"(outc1),
+                [outc2] "+r"(outc2),
+                [outc3] "+r"(outc3),
+                [outc4] "+r"(outc4),
+                [outc5] "+r"(outc5),
+                [outc6] "+r"(outc6),
+                [outc7] "+r"(outc7)
+              :
+              : "cc", "memory", "q0", "q1", "q2", "q3");
+
 #endif
           if (flag_mask) {
             for (int i = 0; i < remain; ++i) {
