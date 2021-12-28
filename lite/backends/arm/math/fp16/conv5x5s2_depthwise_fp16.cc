@@ -219,7 +219,7 @@ namespace fp16 {
 #define COMPUTE                                                              \
   /* fill with bias */                                                       \
   "vld1.16  {d12-d13}, [%[bias]]\n" /* load bias */ /* load weights */       \
-  "vld1.16    {d14-d17}, [%[wc0]]!\n"               /* load w0-1, to q7-8 */ \
+  "vld1.16  {d14-d17}, [%[wc0]]!\n"               /* load w0-1, to q7-8 */ \
   "vld1.16  {d0-d3},   [%[inr0]]!\n"                  /* load input r0, 0,1*/  \
   "vand.i16 q12,  q6, q6\n"                                                  \
   "vld1.16  {d4-d7},   [%[inr0]]!\n" /* load input r0, 2,3*/                   \
