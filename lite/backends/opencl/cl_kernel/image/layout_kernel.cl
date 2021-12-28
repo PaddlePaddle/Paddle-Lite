@@ -395,22 +395,17 @@ __kernel void image2d_folder_to_buffer(__read_only image2d_t input,
   CL_DTYPE4 in =
       READ_IMG_TYPE(CL_DTYPE_CHAR, input, SAMPLER, (int2)(pos_x, pos_y));
 
-  float4 out0 = 0.f;
-  float4 out1 = 0.f;
-  float4 out2 = 0.f;
-  float4 out3 = 0.f;
   float4 out = convert_float4(in);
-
   int outpos_base = out_w * pos_y + pos_x * 4;
-  int length = out_w * out_h;
+
   output[outpos_base] = out.x;
-  if (outpos_base + 1 < length) {
+  if (pos_x * 4 + 1 < out_w) {
     output[outpos_base + 1] = out.y;
   }
-  if (outpos_base + 2 < length) {
+  if (pos_x * 4 + 2 < out_w) {
     output[outpos_base + 2] = out.z;
   }
-  if (outpos_base + 3 < length) {
+  if (pos_x * 4 + 3 < out_w) {
     output[outpos_base + 3] = out.w;
   }
 }
