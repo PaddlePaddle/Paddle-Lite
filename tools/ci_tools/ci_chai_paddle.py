@@ -8,4 +8,8 @@ def func(filename):
     with open(filename, 'w') as file_object:
         file_object.write("Add a word")
 if __name__ == '__main__':
+
+
+
+
     func(filenaiime)
