@@ -20,13 +20,13 @@ namespace paddle {
 namespace lite {
 namespace arm {
 namespace math {
-void decode_bbox_center_variance_kernel(const int batch_num,  // N
-                                        const float* loc_data,
-                                        const float* prior_data,
-                                        const float* variance,
-                                        const bool var_len4,
-                                        const int num_priors,  // M
-                                        float* bbox_data) {
+void encode_bbox_center_kernel(const int batch_num,  // N
+                               const float* loc_data,
+                               const float* prior_data,
+                               const float* variance,
+                               const bool var_len4,
+                               const int num_priors,  // M
+                               float* bbox_data) {
   int cnt = num_priors / 4;
   //! vprior 0: xmin, 1: ymin, 2: xmax, 3: ymax
   //! vloc   0: xmin, 1: ymin, 2: xmax, 3: ymax

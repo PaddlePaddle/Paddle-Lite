@@ -64,13 +64,13 @@ void BoxCoderCompute::Run() {
     var_len4 = true;
   }
   if (code_type == "encode_center_size") {
-    lite::arm::math::decode_bbox_center_variance_kernel(row,
-                                                        target_box_data,
-                                                        prior_box_data,
-                                                        variance_data,
-                                                        var_len4,
-                                                        col,
-                                                        output);
+    lite::arm::math::encode_bbox_center_kernel(row,
+                                               target_box_data,
+                                               prior_box_data,
+                                               variance_data,
+                                               var_len4,
+                                               col,
+                                               output);
   } else if (code_type == "decode_center_size") {
     if (axis == 0) {
       lite::arm::math::decode_bbox_center_kernel(row,
