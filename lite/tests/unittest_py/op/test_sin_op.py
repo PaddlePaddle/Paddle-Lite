@@ -72,7 +72,6 @@ class TestSinOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        config = CxxConfig()
         return self.get_predictor_configs(), ["sin"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):

@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-'''
+
 import sys
 sys.path.append('../')
 
@@ -40,6 +40,7 @@ class TestScaleOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
+
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -54,7 +55,7 @@ class TestScaleOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
-        # metal demo
+
         metal_places = [
             Place(TargetType.Metal, PrecisionType.FP32,
                   DataLayoutType.MetalTexture2DArray),
@@ -63,14 +64,11 @@ class TestScaleOp(AutoScanTest):
             Place(TargetType.ARM, PrecisionType.FP32),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
-        self.enable_testing_on_place(places=metal_places)
+        #self.enable_testing_on_place(places=metal_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-
-        return False  # fix arm_opencl ci error
-
         target_type = predictor_config.target()
         in_shape = list(program_config.inputs["input_data"].shape)
         in_data_type = program_config.inputs["input_data"].dtype
@@ -78,24 +76,11 @@ class TestScaleOp(AutoScanTest):
             print("int8 as Input data type is not supported.")
             return False
 
-        if target_type not in [TargetType.OpenCL, TargetType.Metal]:
-            if predictor_config.precision(
-            ) == PrecisionType.FP16 and in_data_type != np.float16:
-                return False
-            elif predictor_config.precision(
-            ) == PrecisionType.FP32 and in_data_type != np.float32:
-                return False
-        if target_type == TargetType.Metal and in_data_type not in [
-                np.float16, np.float32
-        ]:
-            return False
-
         if "ScaleTensor" in program_config.inputs:
             print("ScaleTensor as Input is not supported on Paddle Lite.")
             return False
-        if predictor_config.target() == TargetType.Host:
-            return False
-        if predictor_config.target() == TargetType.OpenCL:
+
+        if target_type in [TargetType.OpenCL, TargetType.Metal]:
             if len(in_shape) != 4 or in_data_type != "float32":
                 return False
         return True
@@ -172,8 +157,8 @@ class TestScaleOp(AutoScanTest):
     def test(self, *args, **kwargs):
         target_str = self.get_target()
         max_examples = 25
-        if target_str == "OpenCL":
-            # Make sure to generate enough valid cases for OpenCL
+        if target_str in ["OpenCL", "Metal"]:
+            # Make sure to generate enough valid cases for specific targets
             max_examples = 2000
         self.run_and_statis(
             quant=False, min_success_num=25, max_examples=max_examples)
@@ -181,4 +166,3 @@ class TestScaleOp(AutoScanTest):
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
-'''
