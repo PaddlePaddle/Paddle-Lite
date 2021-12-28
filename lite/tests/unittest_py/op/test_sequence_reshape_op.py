@@ -50,7 +50,7 @@ class TestSequenceReshapeOp(AutoScanTest):
         lod_data = draw(
             st.lists(
                 st.integers(
-                    min_value=0, max_value=64), min_size=0, max_size=3))
+                    min_value=0, max_value=32), min_size=0, max_size=3))
         lod_data.append(12)
         new_dim = draw(st.sampled_from([12]))
         input_type = draw(st.sampled_from(["float32", "int64"]))
