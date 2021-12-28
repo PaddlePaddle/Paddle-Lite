@@ -2310,6 +2310,11 @@ int NNAdapterCompilation_queryInputsAndOutputs(
     uint32_t* output_count,
     NNAdapterOperandType** output_types);
 
+bool NNAdapterCompilation_checkShapeValid(
+    NNAdapterCompilation* compilation,
+    uint32_t input_count,
+    int32_t (*input_dimensions_data)[NNADAPTER_MAX_SIZE_OF_DIMENSIONS]);
+
 /**
  * Create an execution plan to execute the hardware-related binary program.
  *

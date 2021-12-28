@@ -190,6 +190,43 @@ void Program::Clear() {
   model_client_ = nullptr;
   input_types_.clear();
   output_types_.clear();
+  valid_shapes_.clear();
+}
+
+void Program::SetValidShapes(
+    const std::vector<NNAdapterOperandType>& input_types) {
+  std::vector<std::vector<int32_t>> shapes;
+  for (auto input_type : input_types) {
+    auto shape_size = input_type.dimensions.count;
+    auto shape_data = input_type.dimensions.data;
+    std::vector<int32_t> shape(shape_data, shape_data + shape_size);
+    shapes.push_back(shape);
+  }
+  valid_shapes_.insert(shapes);
+
+  uint32_t dynamic_count = 0;
+  for (auto input_type : input_types) {
+    uint32_t cnt = input_type.dimensions.dynamic_count;
+    if (cnt > 0) {
+      if (dynamic_count == 0) {
+        dynamic_count += cnt;
+      } else {
+        NNADAPTER_CHECK_EQ(dynamic_count, cnt);
+      }
+    }
+  }
+  for (uint32_t i = 0; i < dynamic_count; i++) {
+    for (size_t j = 0; j < input_types.size(); j++) {
+      if (input_types[j].dimensions.dynamic_count == 0) {
+        continue;
+      }
+      auto shape_size = input_types[j].dimensions.count;
+      auto shape_data = input_types[j].dimensions.dynamic_data[i];
+      std::vector<int32_t> shape(shape_data, shape_data + shape_size);
+      shapes[j] = shape;
+    }
+    valid_shapes_.insert(shapes);
+  }
 }
 
 int Program::Build(hal::Model* model, hal::Cache* cache) {
@@ -205,6 +242,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
       input_types.push_back(input_operand->type);
     }
   }
+  SetValidShapes(input_types);
   GetDynamicInfo(
       input_types, &dynamic_shapes, &optional_shapes_str, &dynamic_shape_mode_);
   for (auto dynamic_shape : dynamic_shapes) {

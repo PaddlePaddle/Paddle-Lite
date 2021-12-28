@@ -17,6 +17,7 @@
 #include <limits.h>
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 #include "driver/huawei_ascend_npu/converter/converter.h"
@@ -59,9 +60,13 @@ class Program {
               hal::Argument* input_arguments,
               uint32_t output_count,
               hal::Argument* output_arguments);
+  bool CheckShapeValid(const std::vector<std::vector<int32_t>>& shapes) {
+    return valid_shapes_.count(shapes) > 0;
+  }
 
  private:
   void Clear();
+  void SetValidShapes(const std::vector<NNAdapterOperandType>& input_types);
 
  private:
   Context* context_{nullptr};
@@ -71,6 +76,7 @@ class Program {
   std::vector<NNAdapterOperandType> input_types_;
   std::vector<NNAdapterOperandType> output_types_;
   DynamicShapeMode dynamic_shape_mode_{DYNAMIC_SHAPE_MODE_NONE};
+  std::set<std::vector<std::vector<int32_t>>> valid_shapes_;
 };
 
 }  // namespace huawei_ascend_npu

@@ -86,6 +86,10 @@ class NNAdapterWrapper final {
       NNAdapterOperandType** input_types,
       uint32_t* output_count,
       NNAdapterOperandType** output_types);
+  typedef bool (*NNAdapterCompilation_checkShapeValid_fn)(
+      NNAdapterCompilation* compilation,
+      uint32_t input_count,
+      int32_t (*input_dimensions_data)[NNADAPTER_MAX_SIZE_OF_DIMENSIONS]);
   typedef int (*NNAdapterExecution_create_fn)(NNAdapterCompilation* compilation,
                                               NNAdapterExecution** execution);
   typedef void (*NNAdapterExecution_destroy_fn)(NNAdapterExecution* execution);
@@ -125,6 +129,7 @@ class NNAdapterWrapper final {
   NNADAPTER_DECLARE_FUNCTION(NNAdapterCompilation_destroy)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterCompilation_finish)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterCompilation_queryInputsAndOutputs)
+  NNADAPTER_DECLARE_FUNCTION(NNAdapterCompilation_checkShapeValid)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterExecution_create)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterExecution_destroy)
   NNADAPTER_DECLARE_FUNCTION(NNAdapterExecution_setInput)
@@ -287,6 +292,14 @@ inline int NNAdapterCompilation_queryInputsAndOutputs_invoke(
     NNAdapterOperandType** output_types) {
   return NNAdapterWrapper::Global().NNAdapterCompilation_queryInputsAndOutputs(
       compilation, input_count, input_types, output_count, output_types);
+}
+
+inline bool NNAdapterCompilation_checkShapeValid_invoke(
+    NNAdapterCompilation* compilation,
+    uint32_t input_count,
+    int32_t (*input_dimensions_data)[NNADAPTER_MAX_SIZE_OF_DIMENSIONS]) {
+  return NNAdapterWrapper::Global().NNAdapterCompilation_checkShapeValid(
+      compilation, input_count, input_dimensions_data);
 }
 
 inline int NNAdapterExecution_create_invoke(NNAdapterCompilation* compilation,

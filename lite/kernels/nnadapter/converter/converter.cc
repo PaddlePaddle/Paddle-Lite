@@ -117,7 +117,6 @@ int Converter::Apply(
 #undef REGISTER_CONVERTER
     LOG(FATAL) << "Unsupported type '" << op_type << "' in block " << block_idx;
   }
-
   // Query the output operands, and update if exists the useless output
   // variables such as 'XShape' in reshape2 and transpose2
   std::vector<Variable> valid_output_vars;

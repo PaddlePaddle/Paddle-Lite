@@ -241,6 +241,26 @@ bool Program::Execute() {
   return true;
 }
 
+bool Program::CheckShapeValid(
+    const std::vector<std::vector<int64_t>>& input_shapes) {
+  uint32_t input_count = input_shapes.size();
+  int(*shapes_data)[NNADAPTER_MAX_SIZE_OF_DIMENSIONS] =
+      new int[input_count][NNADAPTER_MAX_SIZE_OF_DIMENSIONS];
+  for (uint32_t i = 0; i < input_count; i++) {
+    memset(
+        shapes_data[i], 0, NNADAPTER_MAX_SIZE_OF_DIMENSIONS * sizeof(int32_t));
+  }
+  for (uint32_t i = 0; i < input_count; i++) {
+    for (size_t j = 0; j < input_shapes[i].size(); j++) {
+      shapes_data[i][j] = input_shapes[i][j];
+    }
+  }
+  bool ret = NNAdapterCompilation_checkShapeValid_invoke(
+      compilation_, input_count, shapes_data);
+  delete[] shapes_data;
+  return ret;
+}
+
 Engine::Engine(KernelContext* ctx,
                int block_idx,
                const std::shared_ptr<const cpp::ProgramDesc>& program_desc,
@@ -340,10 +360,12 @@ bool Engine::Run() {
     input_dims[i] = input_vars_[i].value->dims().Vectorize();
   }
   // Find the compiled device program according to the input dimensions
-  std::shared_ptr<Program> program = nullptr;
-  if (!programs_.count(input_dims)) {
+  std::shared_ptr<Program> program = GetValibProgram(input_dims);
+  if (program == nullptr) {
     // Rebuild the device program corresponding to the input dimensions if not
     // found
+    VLOG(1) << "Not found valid program for the current input shapes. New "
+               "progam will be created.";
     std::vector<std::string> device_names;
     for (auto* device : devices_) {
       const char* name = nullptr;
@@ -375,30 +397,21 @@ bool Engine::Run() {
     }
     CHECK(program->IsValid());
     CHECK(program->SetInputsAndOutputs(&input_vars_, &output_vars_));
-    programs_[input_dims] = program;
-    // Dynamic shapes share the same program
-    size_t groups = 0;
-    for (auto input_var : input_vars_) {
-      groups = (std::max)(groups, input_var.dynamic_dimensions.size());
-    }
-    for (size_t i = 0; i < groups; i++) {
-      std::vector<std::vector<int64_t>> dynamic_dims(input_count);
-      for (size_t j = 0; j < input_count; j++) {
-        if (!input_vars_[j].dynamic_dimensions.empty()) {
-          CHECK_EQ(input_vars_[j].dynamic_dimensions.size(), groups);
-          dynamic_dims[j] = input_vars_[j].dynamic_dimensions[i];
-        } else {
-          dynamic_dims[j] = input_vars_[j].value->dims().Vectorize();
-        }
-      }
-      programs_[dynamic_dims] = program;
-    }
-  } else {
-    program = programs_[input_dims];
-    CHECK(program);
-    CHECK(program->IsValid());
+    programs_.push_back(program);
   }
   return program->Execute();
+}
+
+std::shared_ptr<Program> Engine::GetValibProgram(
+    const std::vector<std::vector<int64_t>>& input_shapes) {
+  std::shared_ptr<Program> valid_program;
+  for (auto program : programs_) {
+    if (program->CheckShapeValid(input_shapes)) {
+      valid_program = program;
+      break;
+    }
+  }
+  return valid_program;
 }
 
 }  // namespace nnadapter

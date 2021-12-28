@@ -236,6 +236,13 @@ int Compilation::QueryInputsAndOutputs(uint32_t* input_count,
   return NNADAPTER_NO_ERROR;
 }
 
+bool Compilation::CheckShapeValid(
+    uint32_t input_count,
+    int32_t (*input_dimensions_data)[NNADAPTER_MAX_SIZE_OF_DIMENSIONS]) {
+  return programs_[0].device_context->device->CheckShapeValid(
+      programs_[0].program, input_count, input_dimensions_data);
+}
+
 // TODO(hong19860320) Supports the model partition for the multi-devices in
 // future
 std::vector<std::pair<Context::DeviceContext*, Model*>>

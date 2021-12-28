@@ -48,6 +48,9 @@ class Compilation {
                             NNAdapterOperandType** output_types);
   int Execute(std::vector<hal::Argument>* input_arguments,
               std::vector<hal::Argument>* output_arguments);
+  bool CheckShapeValid(
+      uint32_t input_count,
+      int32_t (*input_dimensions_data)[NNADAPTER_MAX_SIZE_OF_DIMENSIONS]);
 
  private:
   std::vector<std::pair<Context::DeviceContext*, Model*>> PartitionModel(
