@@ -30,11 +30,6 @@ import hypothesis.strategies as st
 class TestScaleactsFusePass(FusePassAutoScanTest):
     def __init__(self, *args, **kwargs):
         FusePassAutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(
-            TargetType.ARM,
-            PrecisionType.FP32,
-            DataLayoutType.NCHW,
-            thread=[1, 4])
         # opencl
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
@@ -50,11 +45,6 @@ class TestScaleactsFusePass(FusePassAutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
-        self.enable_testing_on_place(
-            TargetType.X86,
-            PrecisionType.FP32,
-            DataLayoutType.NCHW,
-            thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -66,12 +56,12 @@ class TestScaleactsFusePass(FusePassAutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=64), min_size=2, max_size=4))
-        # act_type = draw(st.sampled_from(['relu', 'relu6', 'leaky_relu']))
-        act_type = draw(st.sampled_from(['relu6']))
+        act_type = draw(st.sampled_from(['relu', 'relu6', 'leaky_relu']))
         threshold = draw(st.floats(min_value=0, max_value=1))
         alpha = draw(st.floats(min_value=0, max_value=1))
         scale = draw(st.floats(min_value=0.5, max_value=5))
         bias = draw(st.floats(min_value=0, max_value=1))
+        bias_after_scale = draw(st.sampled_from([True]))
 
         def generate_act_attrs(act_type_str):
             attrs = {}
@@ -90,9 +80,7 @@ class TestScaleactsFusePass(FusePassAutoScanTest):
             attrs={
                 "scale": scale,
                 "bias": bias,
-                "bias_after_scale": True,
-                "activation_type": 'relu6',
-                "alpha": alpha
+                "bias_after_scale": bias_after_scale,
             })
 
         active_op = OpConfig(
@@ -105,9 +93,11 @@ class TestScaleactsFusePass(FusePassAutoScanTest):
             type="scale",
             inputs={"X": ["active1_output_data"]},
             outputs={"Out": ["output_data"]},
-            attrs={"scale": scale,
-                   "bias": bias,
-                   "bias_after_scale": True})
+            attrs={
+                "scale": scale,
+                "bias": bias,
+                "bias_after_scale": bias_after_scale
+            })
 
         ops = [scale_op1, active_op, scale_op2]
         program_config = ProgramConfig(
@@ -118,12 +108,7 @@ class TestScaleactsFusePass(FusePassAutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        if self.get_target() == 'OpenCL':
-            return self.get_predictor_configs(
-            ), ['io_copy', 'layout', 'scale', 'layout', 'io_copy'], (1e-5,
-                                                                     1e-5)
-        else:
-            return self.get_predictor_configs(), ['scale'], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ['scale'], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
