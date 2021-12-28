@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "driver/huawei_ascend_npu/optimizer/fix_quant_ops.h"
+#include "driver/huawei_ascend_npu/optimizer/fix_quantized_ops.h"
 #include <vector>
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -24,7 +24,18 @@ namespace huawei_ascend_npu {
 
 static bool NeedPreQuant(hal::Model* model, hal::Operand* operand) {
   auto pre_operation = GetOperandProducer(model, operand);
-  return pre_operation != nullptr && pre_operation->type != NNADAPTER_QUANTIZE;
+  if (pre_operation == nullptr || pre_operation->type == NNADAPTER_QUANTIZE) {
+    return false;
+  }
+  if (pre_operation->type == NNADAPTER_RESHAPE) {
+    auto prepre_operation =
+        GetOperandProducer(model, pre_operation->input_operands[0]);
+    if (prepre_operation != nullptr &&
+        prepre_operation->type == NNADAPTER_QUANTIZE) {
+      return false;
+    }
+  }
+  return true;
 }
 
 static bool NeedNextDequant(hal::Model* model, hal::Operand* operand) {
@@ -33,9 +44,49 @@ static bool NeedNextDequant(hal::Model* model, hal::Operand* operand) {
          next_operations[0]->type != NNADAPTER_DEQUANTIZE;
 }
 
-// Add a quant operation after input_operand
-static hal::Operand* AddQuantOperation(hal::Model* model,
-                                       hal::Operand* input_operand) {
+// Return quant operations after/before reference_operand
+// For example:
+// If graph is:
+//
+//     conv0_int8 -> var -> conv3_int8
+//     conv1_int8 --|   |--> conv4_int8
+//  conv2_float32 --|   |--> conv5_float32
+//
+// return {conv0_int8, conv1_int8}, if after is true.
+// return {conv3_int8, conv4_int8}, if after is false.
+static std::vector<hal::Operation*> GetQuantOpsAroundOperand(
+    const std::vector<hal::Operation*>& operations,
+    hal::Operand* reference_operand,
+    bool after,
+    const std::vector<NNAdapterOperationCode>& valid_quant_ops_type) {
+  std::vector<hal::Operation*> target_operations;
+  for (auto operation : operations) {
+    if (std::find(valid_quant_ops_type.begin(),
+                  valid_quant_ops_type.end(),
+                  operation->type) == valid_quant_ops_type.end() ||
+        operation->output_operands[0]->type.precision !=
+            NNADAPTER_QUANT_INT8_SYMM_PER_LAYER) {
+      continue;
+    }
+    std::vector<nnadapter::hal::Operand*> operands;
+    if (after) {
+      operands = operation->input_operands;
+    } else {
+      operands = operation->output_operands;
+    }
+    if (std::find(operands.begin(), operands.end(), reference_operand) !=
+        operands.end()) {
+      target_operations.push_back(operation);
+    }
+  }
+  return target_operations;
+}
+
+// Add a quant operation after input_operand, before reference_operations
+static hal::Operand* AddQuantOperation(
+    hal::Model* model,
+    hal::Operand* input_operand,
+    const std::vector<hal::Operation*>& reference_operations = {}) {
   NNADAPTER_CHECK_EQ(input_operand->type.precision, NNADAPTER_FLOAT32);
   NNADAPTER_CHECK_GE(input_operand->type.symm_per_layer_params.scale, 0.f);
   // Insert a new operand after input_operand
@@ -43,7 +94,8 @@ static hal::Operand* AddQuantOperation(hal::Model* model,
   memcpy(&output_operand->type,
          &input_operand->type,
          sizeof(NNAdapterOperandType));
-  InsertOperand(model, input_operand, output_operand, true);
+  InsertOperand(
+      model, input_operand, output_operand, true, reference_operations);
   output_operand->type.precision = NNADAPTER_QUANT_INT8_SYMM_PER_LAYER;
   // Insert a new quant operation between input_operand and output_operand
   auto quant_operation = AddOperation(model);
@@ -58,9 +110,11 @@ static hal::Operand* AddQuantOperation(hal::Model* model,
   return output_operand;
 }
 
-// Add a dequant operation before output_operand
-static hal::Operand* AddDequantOperation(hal::Model* model,
-                                         hal::Operand* output_operand) {
+// Add a dequant operation before output_operand, after reference_operations
+static hal::Operand* AddDequantOperation(
+    hal::Model* model,
+    hal::Operand* output_operand,
+    const std::vector<hal::Operation*>& reference_operations = {}) {
   NNADAPTER_CHECK_EQ(output_operand->type.precision,
                      NNADAPTER_QUANT_INT8_SYMM_PER_LAYER);
   // Insert a new operand before output_operand
@@ -68,7 +122,8 @@ static hal::Operand* AddDequantOperation(hal::Model* model,
   memcpy(&input_operand->type,
          &output_operand->type,
          sizeof(NNAdapterOperandType));
-  InsertOperand(model, output_operand, input_operand, false);
+  NNADAPTER_CHECK(InsertOperand(
+      model, output_operand, input_operand, false, reference_operations));
   input_operand->type.precision = NNADAPTER_QUANT_INT32_SYMM_PER_LAYER;
   output_operand->type.precision = NNADAPTER_FLOAT32;
   // Insert a new dequant operation between input_operand and output_operand
@@ -117,113 +172,33 @@ float GetDequantScale(hal::Model* model, hal::Operation* dequant) {
  * after:
  *   conv(quant) -> out1 -> dequant -> out -> op(not_dequant)
  */
-static void FixQuantConv(hal::Model* model) {
+static void InsertExtraQuantDequant(hal::Model* model) {
+  std::vector<NNAdapterOperationCode> valid_quant_ops_type{
+      NNADAPTER_CONV_2D, NNADAPTER_FULLY_CONNECTED};
   std::vector<hal::Operation*> operations =
       SortOperationsInTopologicalOrder(model);
   for (auto operation : operations) {
-    if (operation->type != NNADAPTER_CONV_2D) {
-      continue;
-    }
     auto output_operand = operation->output_operands[0];
-    if (output_operand->type.precision != NNADAPTER_QUANT_INT8_SYMM_PER_LAYER) {
+    if (std::find(valid_quant_ops_type.begin(),
+                  valid_quant_ops_type.end(),
+                  operation->type) == valid_quant_ops_type.end() ||
+        output_operand->type.precision == NNADAPTER_FLOAT32) {
       continue;
     }
 
     auto input_operands = operation->input_operands;
     if (NeedPreQuant(model, input_operands[0])) {
-      AddQuantOperation(model, input_operands[0]);
+      // Brother int8 ops share the same input.
+      auto reference_operations = GetQuantOpsAroundOperand(
+          operations, input_operands[0], true, valid_quant_ops_type);
+      AddQuantOperation(model, input_operands[0], reference_operations);
     }
 
     if (NeedNextDequant(model, output_operand)) {
-      AddDequantOperation(model, output_operand);
-    }
-  }
-}
-
-static void SwapQuantReshape(hal::Operation* quantize_operation,
-                             hal::Operation* reshape_operation) {
-  auto quant_in = quantize_operation->input_operands[0];
-  auto reshape_in = reshape_operation->input_operands[0];
-  auto reshape_out = reshape_operation->output_operands[0];
-  CopyOperandTypeExceptQuantParams(&reshape_in->type, reshape_out->type);
-  reshape_in->type.precision = quant_in->type.precision;
-
-  quantize_operation->input_operands[0] = reshape_in;
-  quantize_operation->output_operands[0] = reshape_out;
-  reshape_operation->input_operands[0] = quant_in;
-  reshape_operation->output_operands[0] = reshape_in;
-}
-
-/**
- * step 1:
- * before:
- *   quant -> reshape -> fc(quant)
- * after:
- *   reshape -> quant -> fc(quant)
- *
- * step 2:
- * before:
- *   op(not_quant) -> in -> fc(quant)
- * after:
- *   op(not_quant) -> in -> quant -> in1 -> fc(quant)
- *
- * before:
- *   fc(quant) -> out -> op(not_dequant)
- * after:
- *   fc(quant) -> out1 -> dequant -> out -> op(not_dequant)
- *
- * step3:
- * before:
- *   fc(quant) -> dequant
- * after:
- *   fc(quant) -> dequant -> reshape
- */
-static void FixQuantFullyConnected(hal::Model* model) {
-  std::vector<hal::Operation*> operations =
-      SortOperationsInTopologicalOrder(model);
-  for (auto operation : operations) {
-    if (operation->type != NNADAPTER_FULLY_CONNECTED) {
-      continue;
-    }
-    auto output_operand = operation->output_operands[0];
-    if (output_operand->type.precision != NNADAPTER_QUANT_INT8_SYMM_PER_LAYER) {
-      continue;
-    }
-
-    // step1, swap quantize and reshape
-    auto input_operands = operation->input_operands;
-    auto pre_operation = GetOperandProducer(model, input_operands[0]);
-    if (pre_operation != nullptr && pre_operation->type == NNADAPTER_RESHAPE) {
-      auto reshape_operation = pre_operation;
-      pre_operation =
-          GetOperandProducer(model, reshape_operation->input_operands[0]);
-      if (pre_operation != nullptr &&
-          pre_operation->type == NNADAPTER_QUANTIZE) {
-        SwapQuantReshape(pre_operation, reshape_operation);
-      }
-    }
-
-    // step2, add quantize and dequantize
-    if (NeedPreQuant(model, input_operands[0])) {
-      AddQuantOperation(model, input_operands[0]);
-    }
-    if (NeedPreQuant(model, input_operands[1])) {
-      AddQuantOperation(model, input_operands[1]);
-    }
-
-    if (NeedNextDequant(model, output_operand)) {
-      AddDequantOperation(model, output_operand);
-    }
-
-    // step3, add reshape after dequantize
-    output_operand = operation->output_operands[0];
-    auto next_operations = GetOperandConsumers(model, output_operand);
-    if (next_operations.size() == 1 &&
-        next_operations[0]->type == NNADAPTER_DEQUANTIZE) {
-      auto dims_data = output_operand->type.dimensions.data;
-      AddReshapeOperation(model,
-                          next_operations[0]->output_operands[0],
-                          {dims_data[0], dims_data[1]});
+      // Brother int8 ops share the same output.
+      auto reference_operations = GetQuantOpsAroundOperand(
+          operations, output_operand, false, valid_quant_ops_type);
+      AddDequantOperation(model, output_operand, reference_operations);
     }
   }
 }
@@ -232,25 +207,26 @@ static void FixQuantFullyConnected(hal::Model* model) {
 // its out should be int8.
 // For example:
 // before:
-//    conv -> out_var
+//    conv -> model_out_var
 // after:
-//    conv -> var0 -> dequant -> var1 -> quant -> out_var
-static void FixLastQuantOp(hal::Model* model) {
-  std::vector<NNAdapterOperationCode> operation_types{
+//    conv -> var0 -> dequant -> var1 -> quant -> model_out_var
+static void FixLastQuantizedOp(hal::Model* model) {
+  std::vector<NNAdapterOperationCode> valid_quant_ops_type{
       NNADAPTER_CONV_2D, NNADAPTER_FULLY_CONNECTED};
   std::vector<hal::Operation*> operations =
       SortOperationsInTopologicalOrder(model);
   for (auto operation : operations) {
-    if (std::find(operation_types.begin(),
-                  operation_types.end(),
-                  operation->type) == operation_types.end()) {
+    if (std::find(valid_quant_ops_type.begin(),
+                  valid_quant_ops_type.end(),
+                  operation->type) == valid_quant_ops_type.end()) {
       continue;
     }
     auto output_operand = operation->output_operands[0];
     auto next_operations = GetOperandConsumers(model, output_operand);
     if (output_operand->type.precision == NNADAPTER_FLOAT32 ||
-        !next_operations.empty())
+        !next_operations.empty()) {
       continue;
+    }
 
     AddDequantOperation(model, output_operand);
     AddQuantOperation(model, output_operand);
@@ -259,7 +235,7 @@ static void FixLastQuantOp(hal::Model* model) {
 
 // dequant's input's precision should be NNADAPTER_QUANT_INT32_SYMM_PER_LAYER.
 // dequant's input's scale should be calculated.
-static void FixDequant(hal::Model* model) {
+static void FixDequantOps(hal::Model* model) {
   std::vector<hal::Operation*> operations =
       SortOperationsInTopologicalOrder(model);
   for (auto operation : operations) {
@@ -272,11 +248,10 @@ static void FixDequant(hal::Model* model) {
   }
 }
 
-void FixQuantOps(hal::Model* model) {
-  FixQuantConv(model);
-  FixQuantFullyConnected(model);
-  FixLastQuantOp(model);
-  FixDequant(model);
+void FixQuantizedOps(hal::Model* model) {
+  InsertExtraQuantDequant(model);
+  FixLastQuantizedOp(model);
+  FixDequantOps(model);
 }
 
 }  // namespace huawei_ascend_npu

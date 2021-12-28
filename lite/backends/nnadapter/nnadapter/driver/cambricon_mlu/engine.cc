@@ -31,7 +31,22 @@ namespace nnadapter {
 namespace cambricon_mlu {
 
 Context::Context(void* device, const char* properties) : device_(device) {
-  // TODO(hong19860320) create the raw context from cambricon
+  // Extract the build parameters from the context properties
+  NNADAPTER_LOG(INFO) << "properties: " << std::string(properties);
+  std::string build_config_file_path;
+  auto key_values = GetKeyValues(properties);
+  if (key_values.count(CAMBRICON_MLU_BUILD_CONFIG_FILE_PATH)) {
+    build_config_file_path = key_values[CAMBRICON_MLU_BUILD_CONFIG_FILE_PATH];
+  } else {
+    build_config_file_path =
+        GetStringFromEnv(CAMBRICON_MLU_BUILD_CONFIG_FILE_PATH);
+  }
+  if (!build_config_file_path.empty()) {
+    build_config_file_path_ = build_config_file_path;
+    NNADAPTER_LOG(INFO) << "BuildConfig file path: " << build_config_file_path_;
+  } else {
+    NNADAPTER_LOG(INFO) << "Build model with default config.";
+  }
 }
 
 Context::~Context() {}
@@ -78,6 +93,7 @@ int Program::BuildFromModel(hal::Model* model) {
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
   FuseMatMulAddIntoFullyConnected(model);
   ConvertDataLayoutNCHWToNHWC(model);
+  NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
   Converter converter(&tensors_, mm_network_.get());
   NNADAPTER_CHECK_EQ(converter.Apply(model), NNADAPTER_NO_ERROR);
 
@@ -88,6 +104,7 @@ int Program::BuildFromModel(hal::Model* model) {
   if (input_count > 0) {
     input_tensors.resize(input_count);
     input_types_.resize(input_count);
+    input_names_.resize(input_count);
     for (size_t i = 0; i < input_count; i++) {
       auto operand = model->input_operands[i];
       const auto& type = operand->type;
@@ -95,6 +112,7 @@ int Program::BuildFromModel(hal::Model* model) {
       input_tensors[i] = tensors_[operand].back();
       NNADAPTER_CHECK(input_tensors[i]);
       input_types_[i] = type;
+      input_names_[i] = input_tensors[i]->GetTensorName();
     }
   }
   auto output_count = model->output_operands.size();
@@ -118,8 +136,16 @@ int Program::BuildFromModel(hal::Model* model) {
   int num_outputs = mm_network_->GetOutputCount();
   NNADAPTER_CHECK_EQ(output_count, num_outputs);
 
-  mm_model_.reset(mm_builder_->BuildModel(
-      "camb_model", mm_network_.get(), mm_builder_config_.get()));
+  magicmind::IBuilderConfig* config = mm_builder_config_.get();
+  magicmind::INetwork* network = mm_network_.get();
+  if (context_->GetBuildConfigFilePath().empty()) {
+    config->ParseFromString(R"({"graph_shape_mutable": true})");
+    config->ParseFromString(
+        R"({"precision_config": {"precision_mode": "force_float32"}})");
+  } else {
+    config->ParseFromFile(context_->GetBuildConfigFilePath());
+  }
+  mm_model_.reset(mm_builder_->BuildModel("camb_model", network, config));
   NNADAPTER_VLOG(3) << "Build success.";
   return NNADAPTER_NO_ERROR;
 }
@@ -146,10 +172,13 @@ int Program::Execute(uint32_t input_count,
     MLU_CNRT_CHECK(cnrtMalloc(&ptr, length));
     MLU_CNRT_CHECK(
         cnrtMemcpy(ptr, buffer, length, CNRT_MEM_TRANS_DIR_HOST2DEV));
-    inputs[i]->SetData(ptr);
-    inputs[i]->SetDimensions(
+    auto tensor_name = input_names_[arg.index];
+    auto input_tensor = magicmind::FindIRTTensorByName(inputs, tensor_name);
+    input_tensor->SetData(ptr);
+    input_tensor->SetDimensions(
         ConvertToMagicMindDims(type->dimensions.data, type->dimensions.count));
   }
+
   mm_context_->Enqueue(inputs, &outputs, queue_);
   MLU_CNRT_CHECK(cnrtSyncQueue(queue_));
   NNADAPTER_VLOG(3) << "Execute ending.";
@@ -163,10 +192,14 @@ int Program::Execute(uint32_t input_count,
     auto buffer = arg.access(arg.memory, type);
     NNADAPTER_CHECK(buffer);
     void* output_mlu_ptr = outputs[i]->GetMutableData();
-    MLU_CNRT_CHECK(cnrtMemcpy(buffer,
-                              output_mlu_ptr,
-                              outputs[i]->GetSize(),
-                              CNRT_MEM_TRANS_DIR_DEV2HOST));
+    if (IsDeviceMemory(output_mlu_ptr)) {
+      MLU_CNRT_CHECK(cnrtMemcpy(buffer,
+                                output_mlu_ptr,
+                                outputs[i]->GetSize(),
+                                CNRT_MEM_TRANS_DIR_DEV2HOST));
+    } else {
+      memcpy(buffer, output_mlu_ptr, outputs[i]->GetSize());
+    }
   }
 
   for (auto input : inputs) {

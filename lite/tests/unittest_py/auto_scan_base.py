@@ -359,7 +359,8 @@ class AutoScanBaseTest(unittest.TestCase):
         main_block = pg.desc.block(0)
         after_op_list = list()
         for i in range(main_block.op_size()):
-            if main_block.op(i).type() in ["feed", "fetch"]:
+            if main_block.op(i).type(
+            ) in ["feed", "fetch", "layout", "io_copy"]:
                 continue
             after_op_list.append(main_block.op(i).type())
         self.assertTrue(

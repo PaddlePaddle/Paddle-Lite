@@ -32,8 +32,6 @@ namespace operation {
   /* Filter */                                                                 \
   auto filter_operand = input_operands[1];                                     \
   NNADAPTER_VLOG(5) << "filter: " << OperandToString(filter_operand);          \
-  NNADAPTER_CHECK_EQ(input_channel_size,                                       \
-                     filter_operand->type.dimensions.data[0]);                 \
   auto output_channel_size = filter_operand->type.dimensions.data[1];          \
   auto filter_height = filter_operand->type.dimensions.data[2];                \
   auto filter_width = filter_operand->type.dimensions.data[3];                 \

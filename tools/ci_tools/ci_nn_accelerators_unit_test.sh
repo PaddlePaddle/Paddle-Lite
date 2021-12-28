@@ -47,6 +47,7 @@ NNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT=""
 NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL=""
 # Huawei Ascend NPU options
 NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest"
+NNADAPTER_HUAWEI_ASCEND_NPU_SDK_VERSION=""
 # Kunlunxin XTCL options
 NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT=""
 NNADAPTER_KUNLUNXIN_XTCL_SDK_URL=""
@@ -595,6 +596,7 @@ function huawei_ascend_npu_build_and_test() {
     local archs=(${ARCH_LIST//,/ })
     for arch in ${archs[@]}; do
         sdk_root_dir=$NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT
+        sdk_version=$NNADAPTER_HUAWEI_ASCEND_NPU_SDK_VERSION
         if [ "${arch}" == "x86" ]; then
             with_x86=ON
             with_arm=OFF
@@ -624,6 +626,7 @@ function huawei_ascend_npu_build_and_test() {
             -DLITE_WITH_NNADAPTER=ON \
             -DNNADAPTER_WITH_HUAWEI_ASCEND_NPU=ON \
             -DNNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT="$sdk_root_dir" \
+            -DNNADAPTER_HUAWEI_ASCEND_NPU_SDK_VERSION="$sdk_version" \
             -DCMAKE_BUILD_TYPE=Release
         make lite_compile_deps -j$NUM_CORES_FOR_COMPILE
 
@@ -1309,6 +1312,10 @@ function main() {
             ;;
         --nnadapter_huawei_ascend_npu_sdk_root=*)
             NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT="${i#*=}"
+            shift
+            ;;
+        --nnadapter_huawei_ascend_npu_sdk_version=*)
+            NNADAPTER_HUAWEI_ASCEND_NPU_SDK_VERSION="${i#*=}"
             shift
             ;;
         --nnadapter_kunlunxin_xtcl_sdk_root=*)

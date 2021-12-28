@@ -28,75 +28,35 @@ void XPUFcCompute::PrepareForRun() {
   auto& ctx = this->ctx_->As<XPUContext>();
   auto& param = this->Param<param_t>();
   auto w_ptr = param.w->data<float>();
-  auto w_len = param.w->numel();
   auto weight_dims = param.w->dims();
   bool quant_int8 = false;
   if (param.quant_w_max > 0.f) {
     quant_int8 = true;
   }
-  int max_ptr_size = get_max_ptr_size(ctx.GetRawContext());
-  param.output_max->Resize({max_ptr_size});
-
   // max
-  if (!quant_int8) {
-    w_max = paddle::lite::xpu::math::FindMaxAbs(w_ptr, w_len);
-    std::vector<float> w_max_v(max_ptr_size, w_max);
-    weight_max_guard_ =
-        TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
-    XPU_CALL(xpu_memcpy(reinterpret_cast<float*>(weight_max_guard_->addr_),
-                        w_max_v.data(),
-                        max_ptr_size * sizeof(float),
-                        XPUMemcpyKind::XPU_HOST_TO_DEVICE));
-    input_max_guard_ =
-        TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
-  }
-  // transpose
-  if (quant_int8) {
-    std::vector<int8_t> transpose_w_int8(w_len, 0);
-    paddle::lite::xpu::math::Transpose<int8_t>(
-        reinterpret_cast<const int8_t*>(w_ptr),
-        transpose_w_int8.data(),
-        weight_dims[0],
-        weight_dims[1]);
-    quant_weight_guard_ =
-        TargetWrapperXPU::MallocScratchPad(w_len * sizeof(int8_t));
-    XPU_CALL(xpu_memcpy(reinterpret_cast<int8_t*>(quant_weight_guard_->addr_),
-                        transpose_w_int8.data(),
-                        w_len * sizeof(int8_t),
-                        XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+  int max_ptr_size = xdnn::get_max_ptr_size(ctx.GetRawContext());
+  param.output_max->Resize({max_ptr_size});
+  input_max_guard_ =
+      TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
+  if (quant_int8) {  // for paddle slim int8 quant
+    xpu_quant_weight_ =
+        TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<int8_t, int8_t>(
+            reinterpret_cast<const int8_t*>(w_ptr), weight_dims, true);
     return;
   }
-  std::vector<float> transpose_w(w_len, 0);
-  paddle::lite::xpu::math::Transpose(
-      w_ptr, transpose_w.data(), weight_dims[0], weight_dims[1]);
-  // quant
+
   if (param.precision == "int31") {
-    quant_weight_guard_ =
-        TargetWrapperXPU::MallocScratchPad(w_len * sizeof(float));
-    XPU_CALL(xpu_memcpy(reinterpret_cast<float*>(quant_weight_guard_->addr_),
-                        transpose_w.data(),
-                        w_len * sizeof(float),
-                        XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+    xpu_quant_weight_ =
+        TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<float, float>(
+            w_ptr, weight_dims, true);
   } else if (param.precision == "int16") {
-    quant_weight_guard_ =
-        TargetWrapperXPU::MallocScratchPad(w_len * sizeof(int16_t));
-    std::vector<int16_t> quant_weight_cpu(w_len, 0);
-    paddle::lite::xpu::math::ConvertFP32ToInt16(
-        transpose_w.data(), quant_weight_cpu.data(), w_max, w_len);
-    XPU_CALL(xpu_memcpy(reinterpret_cast<int16_t*>(quant_weight_guard_->addr_),
-                        quant_weight_cpu.data(),
-                        w_len * sizeof(int16_t),
-                        XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+    xpu_quant_weight_ =
+        TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<float, int16_t>(
+            w_ptr, weight_dims, true);
   } else if (param.precision == "int8") {
-    quant_weight_guard_ =
-        TargetWrapperXPU::MallocScratchPad(w_len * sizeof(int8_t));
-    std::vector<int8_t> quant_weight_cpu(w_len, 0);
-    paddle::lite::xpu::math::ConvertFP32ToInt8(
-        transpose_w.data(), quant_weight_cpu.data(), w_max, w_len);
-    XPU_CALL(xpu_memcpy(reinterpret_cast<int8_t*>(quant_weight_guard_->addr_),
-                        quant_weight_cpu.data(),
-                        w_len * sizeof(int8_t),
-                        XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+    xpu_quant_weight_ =
+        TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<float, int8_t>(
+            w_ptr, weight_dims, true);
   }
 }
 
@@ -128,17 +88,17 @@ void XPUFcCompute::Run() {
   // TODO(weihaoji): remove fc_int31 and fc_int16 after xpu fc wrapper refactor
   if (param.precision == "int31") {
     int r = xdnn::fc_fusion<float, float, float, int>(
-        ctx.GetRawContext(),                                         // ctx
-        param.input->data<float>(),                                  // x
-        reinterpret_cast<const float*>(quant_weight_guard_->addr_),  // w
-        param.output->mutable_data<float>(TARGET(kXPU)),             // y
-        m,                                                           // m
-        n,                                                           // n
-        k,                                                           // k
-        false,                                                       // x_trans
-        true,                                                        // w_trans
+        ctx.GetRawContext(),                                          // ctx
+        param.input->data<float>(),                                   // x
+        reinterpret_cast<const float*>(xpu_quant_weight_.data_ptr_),  // w
+        param.output->mutable_data<float>(TARGET(kXPU)),              // y
+        m,                                                            // m
+        n,                                                            // n
+        k,                                                            // k
+        false,                                                        // x_trans
+        true,                                                         // w_trans
         input_max,                                                   // x_maxptr
-        reinterpret_cast<const float*>(weight_max_guard_->addr_),    // w_maxptr
+        reinterpret_cast<const float*>(xpu_quant_weight_.max_ptr_),  // w_maxptr
         output_max,                                                  // y_maxptr
         k,                                                           // ldx
         k,                                                           // ldw
@@ -159,27 +119,27 @@ void XPUFcCompute::Run() {
       CHECK_EQ(r, 0);
     }
     r = xdnn::fc_fusion<float, int16_t, float, int16_t>(
-        ctx.GetRawContext(),                                           // ctx
-        param.input->data<float>(),                                    // x
-        reinterpret_cast<const int16_t*>(quant_weight_guard_->addr_),  // w
-        param.output->mutable_data<float>(TARGET(kXPU)),               // y
-        m,                                                             // m
-        n,                                                             // n
-        k,                                                             // k
+        ctx.GetRawContext(),                                            // ctx
+        param.input->data<float>(),                                     // x
+        reinterpret_cast<const int16_t*>(xpu_quant_weight_.data_ptr_),  // w
+        param.output->mutable_data<float>(TARGET(kXPU)),                // y
+        m,                                                              // m
+        n,                                                              // n
+        k,                                                              // k
         false,  // x_trans
         true,   // w_trans
         (input_max == nullptr)
             ? reinterpret_cast<const float*>(input_max_guard_->addr_)
-            : input_max,                                           // x_maxptr
-        reinterpret_cast<const float*>(weight_max_guard_->addr_),  // w_maxptr
-        output_max,                                                // y_maxptr
-        k,                                                         // ldx
-        k,                                                         // ldw
-        n,                                                         // ldy
-        1.0f,                                                      // alpha
-        0.0f,                                                      // beta
-        bias,                                                      // bias
-        act);                                                      // act
+            : input_max,                                             // x_maxptr
+        reinterpret_cast<const float*>(xpu_quant_weight_.max_ptr_),  // w_maxptr
+        output_max,                                                  // y_maxptr
+        k,                                                           // ldx
+        k,                                                           // ldw
+        n,                                                           // ldy
+        1.0f,                                                        // alpha
+        0.0f,                                                        // beta
+        bias,                                                        // bias
+        act);                                                        // act
 
     CHECK_EQ(r, 0);
   } else if (param.precision == "int8") {
@@ -196,7 +156,7 @@ void XPUFcCompute::Run() {
           1.0f,
           param.input->data<float>(),
           param.quant_input_max,
-          reinterpret_cast<const int8_t*>(quant_weight_guard_->addr_),
+          reinterpret_cast<const int8_t*>(xpu_quant_weight_.data_ptr_),
           param.quant_w_max,
           0.f,
           param.output->mutable_data<float>(TARGET(kXPU)),
@@ -211,23 +171,23 @@ void XPUFcCompute::Run() {
     int r = xdnn::fc_fusion<float, int8_t, float, int8_t>(
         ctx.GetRawContext(),        /* context */
         param.input->data<float>(), /* x */
-        reinterpret_cast<const int8_t*>(quant_weight_guard_->addr_),
-        param.output->mutable_data<float>(TARGET(kXPU)),    /* y */
-        m,                                                  /* m */
-        n,                                                  /* n */
-        k,                                                  /* k */
-        x_trans,                                            /* x_trans */
-        w_trans,                                            /* w_trans */
-        input_max,                                          /* x_max */
-        reinterpret_cast<float*>(weight_max_guard_->addr_), /* w_max */
-        output_max,                                         /* y_max */
-        ldx,                                                /* ldx */
-        ldw,                                                /* ldw */
-        ldy,                                                /* ldy */
-        1.0f,                                               /* alpha */
-        0.0f,                                               /* beta */
-        bias,                                               /* bias */
-        act);                                               /* act_type */
+        reinterpret_cast<const int8_t*>(xpu_quant_weight_.data_ptr_),
+        param.output->mutable_data<float>(TARGET(kXPU)),      /* y */
+        m,                                                    /* m */
+        n,                                                    /* n */
+        k,                                                    /* k */
+        x_trans,                                              /* x_trans */
+        w_trans,                                              /* w_trans */
+        input_max,                                            /* x_max */
+        reinterpret_cast<float*>(xpu_quant_weight_.max_ptr_), /* w_max */
+        output_max,                                           /* y_max */
+        ldx,                                                  /* ldx */
+        ldw,                                                  /* ldw */
+        ldy,                                                  /* ldy */
+        1.0f,                                                 /* alpha */
+        0.0f,                                                 /* beta */
+        bias,                                                 /* bias */
+        act);                                                 /* act_type */
     CHECK_EQ(r, 0);
   } else {
     LOG(FATAL) << "Unsupport XPUFC Precision: " << param.precision;

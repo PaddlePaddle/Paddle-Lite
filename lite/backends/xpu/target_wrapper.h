@@ -23,15 +23,12 @@
 #include "lite/backends/xpu/xpu_header_sitter.h"
 #include "lite/backends/xpu/xpu_l3_cache_block.h"
 #include "lite/backends/xpu/xpu_l3_strategy.h"
+#include "lite/backends/xpu/xpu_quantizer.h"
+#include "lite/backends/xpu/xpu_scratch.h"
+#include "lite/core/dim.h"
 #include "lite/core/target_wrapper.h"
 #include "lite/utils/log/cp_logging.h"
 #include "lite/utils/macros.h"
-
-#define XPU_CALL(func)                                        \
-  {                                                           \
-    auto e = (func);                                          \
-    CHECK_EQ(e, 0) << "XPU: (" << #func << ") returns " << e; \
-  }
 
 namespace paddle {
 namespace lite {
@@ -45,35 +42,28 @@ const int XPU_MAX_LOD_SEQ_LEN = 512;
 
 using TargetWrapperXPU = TargetWrapper<TARGET(kXPU)>;
 
-struct XPUScratchPad {
-  XPUScratchPad(void* addr, size_t size) : addr_(addr), size_(size) {}
-  // XXX(miaotianxiang): |size_| increases monotonically
-  void Reserve(size_t new_size);
-  void* addr_{nullptr};
-  size_t size_{0};
-};
-
-struct XPUScratchPadDeleter {
-  void operator()(XPUScratchPad* sp) const;
-};
-
-using XPUScratchPadGuard = std::unique_ptr<XPUScratchPad, XPUScratchPadDeleter>;
-
 template <>
 class TargetWrapper<TARGET(kXPU)> {
  public:
   static size_t num_devices() { return 1; }
   static size_t maximum_stream() { return 0; }
 
-  static void* Malloc(size_t size);
-  static void Free(void* ptr);
+  static void* Malloc(size_t size) { return XPUMemory::Malloc(size); }
+  static void Free(void* ptr) { XPUMemory::Free(ptr); }
 
   static void MemcpySync(void* dst,
                          const void* src,
                          size_t size,
                          IoDirection dir);
 
-  static XPUScratchPadGuard MallocScratchPad(size_t size);
+  static XPUScratchPadGuard MallocScratchPad(size_t size) {
+    return XPUMemory::MallocScratchPad(size);
+  }
+
+  template <typename Tcpu, typename Txpu>
+  static XPUQuantData ConvertCPUWeightToXPUQuantWeight(const Tcpu* cpu_data,
+                                                       const DDimLite& dims,
+                                                       bool data_transpose);
 
   static xdnn::Context* GetRawContext() {
     if (tls_raw_ctx_.get() == nullptr) {
@@ -83,6 +73,10 @@ class TargetWrapper<TARGET(kXPU)> {
         l3_planner_ = new XPUL3Planner;
       }
       CHECK(l3_planner_);
+      if (quantizer_.get() == nullptr) {
+        quantizer_.reset(new XPUQuantizer());
+      }
+      CHECK(quantizer_.get());
       if (conv_autotune) {
         tls_raw_ctx_->_xpu1_conv_selector.set_autotune_loop(true);
         tls_raw_ctx_->_xpu1_conv_selector.set_inference_mode(true);
@@ -101,7 +95,7 @@ class TargetWrapper<TARGET(kXPU)> {
       }
       CHECK_LE(shared_l3_size, max_l3_size);
       if (local_gm_size > 0) {
-        VLOG(3) << "Try To Malloc Local GM Workspace Size is" << local_gm_size;
+        VLOG(3) << "Try To Malloc Local GM Workspace Size is " << local_gm_size;
         void* local_gm_ptr = nullptr;
         int ret =
             xpu_malloc(reinterpret_cast<void**>(&local_gm_ptr), local_gm_size);
@@ -166,6 +160,7 @@ class TargetWrapper<TARGET(kXPU)> {
   static void* shared_l3_ptr_;
   static std::mutex mutex_l3_;
   static LITE_THREAD_LOCAL XPUL3Planner* l3_planner_;
+  static LITE_THREAD_LOCAL std::shared_ptr<XPUQuantizer> quantizer_;
 };
 
 }  // namespace lite

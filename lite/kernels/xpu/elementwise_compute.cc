@@ -133,8 +133,10 @@ void ElementwiseCompute<T, Functor>::Run() {
 namespace xpu = paddle::lite::kernels::xpu;
 using AddFloat32 = xpu::ElementwiseCompute<float, xpu::AddFunctor<float>>;
 using AddInt32 = xpu::ElementwiseCompute<int, xpu::AddFunctor<int>>;
+using AddInt64 = xpu::ElementwiseCompute<int64_t, xpu::AddFunctor<int64_t>>;
 using SubFloat32 = xpu::ElementwiseCompute<float, xpu::SubFunctor<float>>;
 using MulFloat32 = xpu::ElementwiseCompute<float, xpu::MulFunctor<float>>;
+using MulInt64 = xpu::ElementwiseCompute<int64_t, xpu::MulFunctor<int64_t>>;
 using DivFloat32 = xpu::ElementwiseCompute<float, xpu::DivFunctor<float>>;
 using MaxFloat32 = xpu::ElementwiseCompute<float, xpu::MaxFunctor<float>>;
 using MaxInt32 = xpu::ElementwiseCompute<int, xpu::MaxFunctor<int>>;
@@ -151,6 +153,12 @@ REGISTER_LITE_KERNEL(elementwise_add, kXPU, kFloat, kNCHW, AddInt32, int32)
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt32))})
     .Finalize();
 
+REGISTER_LITE_KERNEL(elementwise_add, kXPU, kFloat, kNCHW, AddInt64, int64)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
+    .Finalize();
+
 REGISTER_LITE_KERNEL(elementwise_sub, kXPU, kFloat, kNCHW, SubFloat32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
@@ -161,6 +169,12 @@ REGISTER_LITE_KERNEL(elementwise_mul, kXPU, kFloat, kNCHW, MulFloat32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(elementwise_mul, kXPU, kFloat, kNCHW, MulInt64, int64)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
+    .BindInput("Y", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .Finalize();
 
 REGISTER_LITE_KERNEL(elementwise_div, kXPU, kFloat, kNCHW, DivFloat32, def)
