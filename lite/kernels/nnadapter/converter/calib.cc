@@ -31,12 +31,6 @@ int ConvertCalib(Converter* converter, OpInfo* op, Scope* scope) {
   CHECK(op->HasAttr("scale"));
   float scale = op->GetAttr<float>("scale");
   auto scale_operand = converter->AddConstantOperand(scale);
-  NNAdapterOperand* scale_operand = nullptr;
-  if (op->HasAttr("need_quant") && !op->GetAttr<bool>("need_quant")) {
-    scale_operand = converter->AddConstantOperand(1.0f);
-  } else {
-    scale_operand = converter->AddConstantOperand(scale);
-  }
 
   // Zero_point operand
   auto zero_point_operand = converter->AddConstantOperand<int32_t>(0);

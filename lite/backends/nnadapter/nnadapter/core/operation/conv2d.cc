@@ -101,12 +101,6 @@ int PrepareConv2D(hal::Operation* operation) {
     infer_output_shape(input_operand->type.dimensions.dynamic_data[i],
                        output_operand->type.dimensions.dynamic_data[i]);
   }
-#if defined(NNADAPTER_WITH_CAMBRICON_MLU)
-  if (input_operand->type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_LAYER) {
-    auto& out_type = output_operand->type;
-    out_type.precision = NNAdapterOperandPrecisionCode::NNADAPTER_FLOAT32;
-  }
-#endif
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
 }

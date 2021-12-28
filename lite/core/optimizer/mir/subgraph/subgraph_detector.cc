@@ -100,8 +100,7 @@ static Node *CreateCalibNode(SSAGraph *graph,
                              Scope *scope,
                              std::string in_arg_name,
                              std::string out_arg_name,
-                             float scale,
-                             bool need_quant = true) {
+                             float scale) {
   auto calib_inst = graph->NewInstructNode();
   std::string calib_type{"calib"};
   auto calib_op = LiteOpRegistry::Global().Create(calib_type);
@@ -111,9 +110,6 @@ static Node *CreateCalibNode(SSAGraph *graph,
   op_desc.SetInput("Input", {in_arg_name});
   op_desc.SetOutput("Out", {out_arg_name});
   op_desc.SetAttr("scale", scale);
-  if (!need_quant) {
-    op_desc.SetAttr("need_quant", false);
-  }
   calib_op->Attach(op_desc, scope);
   calib_op->SetValidPlaces(graph->valid_places());
   auto kernels = calib_op->CreateKernels(graph->valid_places());
@@ -687,12 +683,10 @@ void MixedPrecisionAutoInsertCalibFuser::InsertQuantCalib(
       auto pre_inst_node = pre_arg_node->inlinks.front();
       auto pre_op_type = pre_inst_node->AsStmt().op_type();
       if (!HasItem(nodes_org, pre_inst_node) ||
+          IsQuantInstNode(pre_inst_node) ||
           HasItem(skip_pre_ops, pre_op_type)) {
         continue;
       }
-#ifndef NNADAPTER_WITH_CAMBRICON_MLU
-      if (IsQuantInstNode(pre_inst_node)) continue;
-#endif
       VLOG(3) << "insert calib before " << node->AsStmt().op_type()
               << " to quant input tensor.";
 
@@ -720,12 +714,8 @@ void MixedPrecisionAutoInsertCalibFuser::InsertQuantCalib(
         CHECK(op_info->HasInputScale(calib_in_name));
         auto scales = op_info->GetInputScale(calib_in_name);
         CHECK_EQ(scales.size(), 1UL);
-        bool need_quant = true;
-        if (pre_inst_node->AsStmt().op_type() == "feed") {
-          need_quant = false;
-        }
         auto calib_inst = CreateCalibNode(
-            graph, scope, calib_in_name, calib_out_name, scales[0], need_quant);
+            graph, scope, calib_in_name, calib_out_name, scales[0]);
 
         // Create topology
         RemoveDirectedLink(pre_arg_node, node);
@@ -813,13 +803,9 @@ void MixedPrecisionAutoInsertCalibFuser::InsertDeQuantCalib(
 
 void MixedPrecisionAutoInsertCalibFuser::operator()() {
   for (auto &nodes : *subgraphs_) {
-#if defined(NNADAPTER_WITH_CAMBRICON_MLU)
-    InsertQuantCalib(graph_, &nodes);
-#else
     UpdateQuantOpOut(nodes);
     InsertQuantCalib(graph_, &nodes);
     InsertDeQuantCalib(graph_, &nodes);
-#endif
   }
 }
 

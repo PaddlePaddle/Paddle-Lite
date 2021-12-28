@@ -16,7 +16,3 @@ aux_source_directory(operation OPERATIONS)
 add_library(nnadapter_core_operations STATIC ${OPERATIONS})
 
 set(NNADAPTER_CORE nnadapter_core_operations CACHE INTERNAL "")
-
-if (NNADAPTER_WITH_CAMBRICON_MLU)
-  add_definitions("-DNNADAPTER_WITH_CAMBRICON_MLU")
-endif()
