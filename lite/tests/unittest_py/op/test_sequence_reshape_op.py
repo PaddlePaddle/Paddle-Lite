@@ -29,7 +29,11 @@ class TestSequenceReshapeOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(
-            TargetType.X86, [PrecisionType.FP32, PrecisionType.INT64],
+            TargetType.X86, [PrecisionType.FP32],
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.X86, [PrecisionType.INT64],
             DataLayoutType.NCHW,
             thread=[1, 4])
 
@@ -49,13 +53,11 @@ class TestSequenceReshapeOp(AutoScanTest):
                     min_value=0, max_value=64), min_size=0, max_size=3))
         lod_data.append(12)
         new_dim = draw(st.sampled_from([12]))
-        input_type = draw(st.sampled_from(["float32", "int32", "int64"]))
+        input_type = draw(st.sampled_from(["float32", "int64"]))
 
         def generate_input(*args, **kwargs):
             if input_type == "float32":
                 return np.random.normal(0.0, 1.0, [12, 12]).astype(np.float32)
-            elif input_type == "int32":
-                return np.random.normal(0.0, 1.0, [12, 12]).astype(np.int32)
             elif input_type == "int64":
                 return np.random.normal(0.0, 1.0, [12, 12]).astype(np.int64)
 
