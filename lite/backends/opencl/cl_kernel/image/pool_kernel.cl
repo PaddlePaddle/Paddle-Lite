@@ -40,11 +40,11 @@ __kernel void pool(__read_only image2d_t input,
   int start_w = out_w * stride_w - pad_left;
   int end_w = min(start_w + ksize_w, in_width);
   start_w = max(start_w, 0);
-  if(adaptive==1){
-       start_h = out_h * in_height/out_height;
-       end_h  = (out_h+1) * in_height/out_height;
-       start_w = out_w * in_width /out_width;
-       end_w = (out_w+1) * in_width /out_width;
+  if (adaptive == 1) {
+    start_h = out_h * in_height / out_height;
+    end_h = (out_h + 1) * in_height / out_height;
+    start_w = out_w * in_width / out_width;
+    end_w = (out_w + 1) * in_width / out_width;
   }
 
   const int pos_in_x = out_c * in_width;
