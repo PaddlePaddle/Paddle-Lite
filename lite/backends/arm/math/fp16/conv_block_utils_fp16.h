@@ -149,7 +149,6 @@ inline void prepack_input_nxwc4(const float16_t* din,
 
   int valid_cnt = valid_w >> 3;
   int remain = valid_w & 7;
-  float16_t * tmp;
 
   for (int h = hs; h < he; ++h) {
     const float16_t* ptr_c0 = din + h * width + cs * size_c;
@@ -221,7 +220,6 @@ inline void prepack_input_nxwc4(const float16_t* din,
           :
           : "cc", "memory", "v0", "v1", "v2", "v3", "v8", "v9", "v10", "v11");
 #else
-      tmp = dout;
       asm volatile(
           /* main loop */
           "1:\n"
@@ -240,7 +238,7 @@ inline void prepack_input_nxwc4(const float16_t* din,
           "subs %[cnt], #1\n"
           "vst1.16 {d0-d1}, [%[ptr_out]]!\n"
           "vst1.16 {d4-d5}, [%[ptr_out]]!\n"
-          "vst1.16 {d2-d3}, [%[ptr_out]]!\n"                      
+          "vst1.16 {d2-d3}, [%[ptr_out]]!\n"
           "vst1.16 {d6-d7}, [%[ptr_out]]!\n"
           "bne    1b\n"
           : [cnt] "+r"(cnt),
@@ -253,9 +251,6 @@ inline void prepack_input_nxwc4(const float16_t* din,
           : "cc", "memory", "q0", "q1", "q2", "q3");
 #endif  // __aarch64__
     }
-    /*for (int i = 0; i < 8 * 4; i++) {
-      std :: cout << " tmp " << (float)(*(tmp+i)) << std :: endl;
-    }*/
     for (int i = 0; i < remain; ++i) {
       dout[0] = *(ptr_c0++);
       dout[1] = *(ptr_c1++);
