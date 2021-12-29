@@ -195,12 +195,13 @@ TEST(flatten_contiguous_range, precision) {
   Place place;
   float abs_error = 1e-5;
 #if defined(LITE_WITH_NNADAPTER)
-#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   place = TARGET(kNNAdapter);
+#if defined(NNADAPTER_WITH_HUAWEI_ASCEND_NPU)
   abs_error = 1e-2;  // precision_mode default is force_fp16
 #elif defined(NNADAPTER_WITH_VERISILICON_TIMVX)
-  place = TARGET(kNNAdapter);
   abs_error = 1e-2;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 1e-3;
 #else
   return;
 #endif

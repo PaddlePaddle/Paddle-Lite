@@ -42,6 +42,7 @@ NNADAPTER_WITH_IMAGINATION_NNA=OFF
 NNADAPTER_IMAGINATION_NNA_SDK_ROOT="$(pwd)/imagination_nna_sdk"
 NNADAPTER_WITH_HUAWEI_ASCEND_NPU=OFF
 NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest"
+NNADAPTER_HUAWEI_ASCEND_NPU_SDK_VERSION=""
 NNADAPTER_WITH_AMLOGIC_NPU=OFF
 NNADAPTER_AMLOGIC_NPU_SDK_ROOT="$(pwd)/amlnpu_ddk"
 NNADAPTER_WITH_CAMBRICON_MLU=OFF
@@ -50,6 +51,11 @@ NNADAPTER_WITH_VERISILICON_TIMVX=OFF
 NNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG="main"
 NNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT=""
 NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL="http://paddlelite-demo.bj.bcebos.com/devices/verisilicon/sdk/viv_sdk_linux_arm64_6_4_4_3_generic.tgz"
+NNADAPTER_WITH_KUNLUNXIN_XTCL=OFF
+NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT=""
+NNADAPTER_KUNLUNXIN_XTCL_SDK_URL=""
+# bdcentos_x86_64, ubuntu_x86_64 or kylin_aarch64
+NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV=""
 
 # options of compiling baidu XPU lib.
 WITH_BAIDU_XPU=OFF
@@ -193,6 +199,7 @@ function init_cmake_mutable_options {
                         -DNNADAPTER_IMAGINATION_NNA_SDK_ROOT=$NNADAPTER_IMAGINATION_NNA_SDK_ROOT \
                         -DNNADAPTER_WITH_HUAWEI_ASCEND_NPU=$NNADAPTER_WITH_HUAWEI_ASCEND_NPU \
                         -DNNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT=$NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT \
+                        -DNNADAPTER_HUAWEI_ASCEND_NPU_SDK_VERSION=$NNADAPTER_HUAWEI_ASCEND_NPU_SDK_VERSION \
                         -DNNADAPTER_WITH_AMLOGIC_NPU=$NNADAPTER_WITH_AMLOGIC_NPU \
                         -DNNADAPTER_AMLOGIC_NPU_SDK_ROOT=$NNADAPTER_AMLOGIC_NPU_SDK_ROOT \
                         -DNNADAPTER_WITH_CAMBRICON_MLU=$NNADAPTER_WITH_CAMBRICON_MLU \
@@ -201,6 +208,10 @@ function init_cmake_mutable_options {
                         -DNNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG=$NNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG \
                         -DNNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT=$NNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT \
                         -DNNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL=$NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL \
+                        -DNNADAPTER_WITH_KUNLUNXIN_XTCL=$NNADAPTER_WITH_KUNLUNXIN_XTCL \
+                        -DNNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT=$NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT \
+                        -DNNADAPTER_KUNLUNXIN_XTCL_SDK_URL=$NNADAPTER_KUNLUNXIN_XTCL_SDK_URL \
+                        -DNNADAPTER_KUNLUNXIN_XTCL_SDK_ENV=$NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV \
                         -DLITE_WITH_INTEL_FPGA=$WITH_INTEL_FPGA \
                         -DINTEL_FPGA_SDK_ROOT=${INTEL_FPGA_SDK_ROOT} \
                         -DLITE_WITH_PROFILE=${WITH_PROFILE} \
@@ -508,6 +519,10 @@ function main {
                 NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT="${i#*=}"
                 shift
                 ;;
+            --nnadapter_huawei_ascend_npu_sdk_version=*)
+                NNADAPTER_HUAWEI_ASCEND_NPU_SDK_VERSION="${i#*=}"
+                shift
+                ;;
             --nnadapter_with_amlogic_npu=*)
                 NNADAPTER_WITH_AMLOGIC_NPU="${i#*=}"
                 shift
@@ -538,6 +553,23 @@ function main {
                 ;;
             --nnadapter_verisilicon_timvx_viv_sdk_url=*)
                 NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL="${i#*=}"
+                shift
+                ;;
+            --nnadapter_with_kunlunxin_xtcl=*)
+                NNADAPTER_WITH_KUNLUNXIN_XTCL="${i#*=}"
+                shift
+                ;;
+            --nnadapter_kunlunxin_xtcl_sdk_root=*)
+                NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_kunlunxin_xtcl_sdk_url=*)
+                NNADAPTER_KUNLUNXIN_XTCL_SDK_URL="${i#*=}"
+                shift
+                ;;
+            --nnadapter_kunlunxin_xtcl_sdk_env=*)
+                # bdcentos_x86_64, ubuntu_x86_64, kylin_aarch64
+                NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV="${i#*=}"
                 shift
                 ;;
             # compiling lib which can operate on baidu xpu.

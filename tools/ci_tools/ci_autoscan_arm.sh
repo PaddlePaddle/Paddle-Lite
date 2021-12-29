@@ -49,7 +49,7 @@ function auto_scan_test {
 ####################################################################################################
 # Functions of compiling test.
 # Arguments:
-#   --target_list: can be ARM,OpenCL or ARM,Metal
+#   --target_list: can be ARM,OpenCL,Metal or ARM,OpenCL or ARM,Metal
 # Globals:
 #   WORKSPACE, PYTHON_VERSION
 ####################################################################################################
@@ -79,11 +79,6 @@ function compile_publish_inference_lib {
     fi
   done
 
-  if [[ "$build_opencl" == "ON" && "$build_metal" == "ON" ]]; then
-    echo "ERROR: OpenCL and Metal both turn on, which will cause unittests for Metal crash. You can only turn on one option."
-    exit 1
-  fi
-
   cd $WORKSPACE
 
   # Remove Compiling Cache
@@ -112,10 +107,16 @@ function compile_publish_inference_lib {
 function run_test() {
   local target_list=$1
   local targets=(${target_list//,/ })
+  rm -rf $(find $WORKSPACE/lite/tests/unittest_py/ -name statics_data)
 
   for target in ${targets[@]}; do
     auto_scan_test $target
   done
+
+  cd $WORKSPACE/lite/tests/unittest_py/op/
+  python3.8 ../global_var_model.py
+  cd $WORKSPACE/lite/tests/unittest_py/pass/
+  python3.8 ../global_var_model.py
 }
 
 function pipeline() {
@@ -149,14 +150,7 @@ function main() {
     esac
   done
 
-  local targets=(${TARGET_LIST//,/ })
-  for target in ${targets[@]}; do
-    if [[ "$target" == "OpenCL" ]]; then
-      pipeline "ARM,OpenCL"
-    elif [[ "$target" == "Metal" ]]; then
-      pipeline "Metal"
-    fi
-  done
+  pipeline $TARGET_LIST
 
   echo "Success for targets:" $TARGET_LIST
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -47,10 +47,7 @@ int ConvertActivations(Converter* converter, hal::Operation* operation) {
   }
   auto activation_node =
       converter->network()->AddIActivationNode(input_tensor, op_pair->second);
-  if (activation_node == nullptr) {
-    NNADAPTER_VLOG(5) << "Failed to add activation node.";
-    return NNADAPTER_DEVICE_INTERNAL_ERROR;
-  }
+  NNADAPTER_CHECK(activation_node) << "Failed to add activation node.";
   auto output_tensor = activation_node->GetOutput(0);
   converter->UpdateTensorMap(output_operand, output_tensor);
 

@@ -419,6 +419,18 @@ TEST(Conv_transpose, precision) {
   TestConvTransposeOutputPadding(place, abs_error);
   TestConvTransposeBiasRelu(place, abs_error);
   return;
+#elif defined(NNADAPTER_WITH_CAMBRICON_MLU)
+  abs_error = 1e-2;
+  TestConvTransposeKsize(place, abs_error);
+  TestConvTransposeStrides(place, abs_error);
+  TestConvTransposePaddings(place, abs_error);
+  // TestConvTransposeGroups(place, abs_error);
+  TestConvTransposeDilations(place, abs_error);
+  // TestConvTransposePaddingAlgorithm(place, abs_error);
+  // TestConvTransposeOutputSize(place, abs_error);
+  // TestConvTransposeOutputPadding(place, abs_error);
+  TestConvTransposeBiasRelu(place, abs_error);
+  return;
 #else
   return;
 #endif

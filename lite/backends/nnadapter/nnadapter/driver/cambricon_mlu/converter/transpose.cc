@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -35,10 +35,7 @@ int ConvertTranspose(Converter* converter, hal::Operation* operation) {
 
   auto transpose_node =
       converter->network()->AddIPermuteNode(input_tensor, perm_tensor);
-  if (transpose_node == nullptr) {
-    NNADAPTER_VLOG(5) << "Failed to add transpose node.";
-    return NNADAPTER_DEVICE_INTERNAL_ERROR;
-  }
+  NNADAPTER_CHECK(transpose_node) << "Failed to add transpose node.";
   auto output_tensor = transpose_node->GetOutput(0);
   converter->UpdateTensorMap(output_operand, output_tensor);
 

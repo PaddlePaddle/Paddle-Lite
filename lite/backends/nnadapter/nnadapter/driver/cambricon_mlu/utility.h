@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <cn_api.h>
 #include <cnrt.h>
 #include <interface_builder.h>
 #include <interface_network.h>
@@ -24,6 +25,21 @@
 
 namespace nnadapter {
 namespace cambricon_mlu {
+
+// The following environment variables can be used at runtime.
+// Configuration parameter file used to compile model, such as
+// {
+//     "graph_shape_mutable": false,
+//     "precision_config":{
+//       "precision_mode":"force_float32"
+//     },
+//     "opt_config": {
+//       "type64to32_conversion": true,
+//       "conv_scale_fold": true
+//     }
+// }
+#define CAMBRICON_MLU_BUILD_CONFIG_FILE_PATH \
+  "CAMBRICON_MLU_BUILD_CONFIG_FILE_PATH"
 
 #define MLU_CNRT_CHECK(msg) \
   NNADAPTER_CHECK_EQ(msg, cnrtSuccess) << (msg) << " " << cnrtGetErrorStr(msg)
@@ -39,6 +55,7 @@ int64_t ConvertToMagicMindAxis(NNAdapterOperandLayoutCode input_layout);
 // Convert NNAdapter dims to magicmind dims
 magicmind::Dims ConvertToMagicMindDims(const int32_t* input_dimensions,
                                        uint32_t input_dimensions_count);
+bool IsDeviceMemory(void* pointer);
 
 template <typename T>
 struct MMDestroyer {
