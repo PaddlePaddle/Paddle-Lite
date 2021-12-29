@@ -323,22 +323,22 @@ namespace fp16 {
 
 #define COMPUTE                                                    \
   "vld1.16  {d24-d25},  [%[bias]]   \n" /* load bias to out00 */   \
+  "vmov.u32 q13,  q12 \n" /* mov bias to out01 */                  \  
   "vld1.16  {d0-d3},    [%[wc0]]!    \n" /* load w0-w1 */          \
-  "vld1.16  {d4-d7},    [%[wc0]]!    \n" /* load w2-w3 */          \
-  "vld1.16  {d8-d11},   [%[inr0]]!  \n" /* load inr0, 0-1 */       \
-  "vld1.16  {d12-d15},  [%[inr0]]!  \n" /* load inr0, 2-3 */       \
-  "vld1.16  {d16-d19},  [%[inr0]]!  \n" /* load inr0, 4-5 */       \
-  "vmov.u32 q13,  q12 \n" /* mov bias to out01 */                  \
   "vmov.u32 q14,  q12 \n" /* mov bias to out02 */                  \
+  "vld1.16  {d8-d11},   [%[inr0]]!  \n" /* load inr0, 0-1 */       \
   "vmov.u32 q15,  q12 \n" /* mov bias to out03 */                  \
-  /*  out row0*/\
+  "vld1.16  {d12-d15},  [%[inr0]]!  \n" /* load inr0, 2-3 */       \
+  /*  out row0*/ \
   "vmla.f16 q12,  q4,   q0  \n"   /* out00 = w0 * inr00 */         \
   "vmla.f16 q13,  q5,   q0  \n"   /* out01 = w0 * inr01 */         \
+  "vld1.16  {d16-d19},  [%[inr0]]!  \n" /* load inr0, 4-5 */       \
   "vmla.f16 q14,  q6,   q0  \n"   /* out02 = w0 * inr02 */         \
   "vmla.f16 q15,  q7,   q0  \n"   /* out03 = w0 * inr03 */         \
   "vld1.16  {d20-d23},  [%[inr0]]!  \n" /* load inr0, 6-7 */       \
   "vmla.f16 q12,  q5,   q1  \n"   /* out00 = w1 * inr01 */         \
   "vmla.f16 q13,  q6,   q1  \n"   /* out01 = w1 * inr02 */         \
+  "vld1.16  {d4-d7},    [%[wc0]]!    \n" /* load w2-w3 */          \
   "vmla.f16 q14,  q7,   q1  \n"   /* out02 = w1 * inr03 */         \
   "vmla.f16 q15,  q8,   q1  \n"   /* out03 = w1 * inr04 */         \
   "vld1.16  {d8-d11},   [%[inr1]]!\n" /* load inr1, 0-1 */         \
@@ -1076,10 +1076,10 @@ void conv_depthwise_5x5s1_fp16(const float16_t* i_data,
                            pre_din1_,
                            pre_din2_,
                            pre_din3_,
-                           vzero,
-                           vzero,
-                           vzero,
-                           vzero,
+                           pre_din0_,
+                           pre_din1_,
+                           pre_din2_,
+                           pre_din3_,
                            vzero,
                            vzero,
                            vzero,

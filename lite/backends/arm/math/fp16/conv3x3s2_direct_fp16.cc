@@ -582,7 +582,6 @@ size_t conv3x3s2_direct_workspace_size(const operators::ConvParam& param,
 #define INIT_FIRST                                                             \
   "2:\n"                                                                       \
   "vld1.16    {d10-d13}, [%[wc0]]!       @ load w0, w1\n"                      \
-  "vld1.16    {d14-d15}, [%[wc0]]!       @ load w2\n"                          \
   "vld1.16    {d0-d2}, [%[r0]]           @ load r0\n"                          \
   "add    %[r0], %[r0], #16\n"                                                        \
   "vmul.f16   q8, q5, d0[0]              @ w0 * inr00\n"                       \
@@ -590,26 +589,27 @@ size_t conv3x3s2_direct_workspace_size(const operators::ConvParam& param,
   "vmul.f16   q10, q5, d1[0]             @ w0 * inr04\n"                       \
   "vmul.f16   q11, q5, d1[2]             @ w0 * inr06\n" /* mul r0, with w0*/  \
   "vld1.16    {d3-d5}, [%[r2]]           @ load r2\n"                          \
-  "add    %[r2], %[r2], #16\n"                                                        \
+  "add    %[r2], %[r2], #16\n"                                                 \
   "vmul.f16   q12, q5, d3[0]             @ w0 * inr20\n"                       \
   "vmul.f16   q13, q5, d3[2]             @ w0 * inr22\n"                       \
+  "vld1.16    {d14-d15}, [%[wc0]]!       @ load w2\n"                          \  
   "vmul.f16   q14, q5, d4[0]             @ w0 * inr24\n"                       \
   "vmul.f16   q15, q5, d4[2]             @ w0 * inr26\n"
 
 #define INIT                          \
   "2:\n"                              \
   "vld1.16    {d10-d13}, [%[wc0]]!       @ load w0, w1\n"                      \
-  "vld1.16    {d14-d15}, [%[wc0]]!       @ load w2\n"                          \
   "vld1.16    {d16-d19}, [%[ptr_out0]]!   @ load outr0\n"                      \
-  "vld1.16    {d20-d23}, [%[ptr_out0]]    @ load outr0\n"                      \
   "sub    %[ptr_out0], %[ptr_out0], #32\n"                                     \
   "vld1.16    {d0-d2}, [%[r0]]          @ load r0\n"                           \
   "add    %[r0], %[r0], #16\n"                                                        \
+  "vld1.16    {d20-d23}, [%[ptr_out0]]    @ load outr0\n"                      \  
   "vmla.f16   q8, q5, d0[0]              @ w0 * inr00\n"                       \
+  "vld1.16    {d14-d15}, [%[wc0]]!       @ load w2\n"                          \   
   "vmla.f16   q9, q5, d0[2]              @ w0 * inr02\n"                       \
+  "vld1.16    {d24-d27}, [%[ptr_out1]]!   @ load outr0\n"                      \  
   "vmla.f16   q10, q5, d1[0]             @ w0 * inr04\n"                       \
-  "vmla.f16   q11, q5, d1[2]             @ w0 * inr06\n" /* mul r0, with w0*/  \
-  "vld1.16    {d24-d27}, [%[ptr_out1]]!   @ load outr0\n"                      \
+  "vmla.f16   q11, q5, d1[2]             @ w0 * inr06\n" /* mul r0, with w0*/  \ 
   "vld1.16    {d28-d31}, [%[ptr_out1]]    @ load outr0\n"                      \
   "sub    %[ptr_out1], %[ptr_out1], #32\n"                                     \
   "vld1.16    {d3-d5}, [%[r2]]          @ load r2\n"                           \
@@ -638,14 +638,13 @@ size_t conv3x3s2_direct_workspace_size(const operators::ConvParam& param,
   "vmla.f16   q10, q7, d1[2]             @ w0 * inr04\n"                       \
   "vmla.f16   q11, q7, d2[0]             @ w0 * inr06\n" /* mul r0, with w0*/  \
   /* r2-2 */                           \
+  "vld1.16    {d0-d2}, [%[r3]]           @ load r1\n"                          \    
+  "add  %[r3], %[r3], #16\n"                                                         \  
   "vmla.f16   q12, q7, d3[2]             @ w0 * inr20\n"                       \
   "vmla.f16   q13, q7, d4[0]             @ w0 * inr22\n"                       \
   "vmla.f16   q14, q7, d4[2]             @ w0 * inr24\n"                       \
   "vmla.f16   q15, q7, d5[0]             @ w0 * inr26\n"                       \
   "vld1.16    {d10-d13}, [%[wc0]]!       @ load w5, to q7\n" /* mul r1, with*/ \
-  "vld1.16    {d14-d15}, [%[wc0]]!       @ load w5, to q7\n" /* mul r1, with*/ \
-  "vld1.16    {d0-d2}, [%[r3]]           @ load r1\n"                          \
-  "add  %[r3], %[r3], #16\n"                                                         \
   /* r1-0 */                                                                   \
   "vmla.f16   q8, q5, d6[0]              @ w0 * inr00\n"                       \
   "vmla.f16   q9, q5, d6[2]              @ w0 * inr02\n"                       \
@@ -654,6 +653,7 @@ size_t conv3x3s2_direct_workspace_size(const operators::ConvParam& param,
   /* r1-1 */                                                                   \
   "vmla.f16   q8, q6, d6[1]              @ w0 * inr00\n"                       \
   "vmla.f16   q9, q6, d6[3]              @ w0 * inr02\n"                       \
+  "vld1.16    {d14-d15}, [%[wc0]]!       @ load w5, to q7\n" /* mul r1, with*/ \    
   "vmla.f16   q10, q6, d7[1]             @ w0 * inr04\n"                       \
   "vmla.f16   q11, q6, d7[3]             @ w0 * inr06\n" /* mul r0, with w0*/  \
   /* r1-2 */                                                                   \
