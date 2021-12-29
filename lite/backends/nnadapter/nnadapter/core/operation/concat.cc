@@ -24,12 +24,11 @@ namespace nnadapter {
 namespace operation {
 
 template <typename T>
-static void concat_offline_calc(
-    const std::vector<int32_t*> inputs,
-    const std::vector<std::vector<int64_t>> inputs_dims,
+static void ConcatOfflineCalc(
+    const std::vector<T*>& inputs,
+    const std::vector<std::vector<int32_t>>& inputs_dims,
     const int axis,
-    int32_t* output,
-    std::vector<int64_t> output_dims) {
+    T* output) {
   size_t num = inputs.size();
   auto dim_0 = inputs_dims[0];
   int64_t concat_input_size = 1;
@@ -39,6 +38,15 @@ static void concat_offline_calc(
   }
   for (int i = 0; i < axis; i++) {
     num_cancats *= dim_0[i];
+  }
+
+  std::vector<int32_t> output_dims = dim_0;
+  for (uint32_t i = 1; i < num; i++) {
+    for (uint32_t j = 0; j < output_dims.size(); j++) {
+      if (j == axis) {
+        output_dims[j] += inputs_dims[i][j];
+      }
+    }
   }
   auto* dst_ptr = output;
   const int out_concat_axis = output_dims[axis];
@@ -114,8 +122,9 @@ int PrepareConcat(hal::Operation* operation) {
     }
   }
   if (temporary_shape_flag) {
+    // Static shape
     std::vector<int32_t*> concat_inputs;
-    std::vector<std::vector<int64_t>> concat_inputs_dims;
+    std::vector<std::vector<int32_t>> concat_inputs_dims;
     for (size_t i = 0; i < input_count - 1; i++) {
       if (input_operands[i]->type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {
         auto tempory_shape_info =
@@ -124,11 +133,11 @@ int PrepareConcat(hal::Operation* operation) {
         NNADAPTER_CHECK(tempory_shape_info.data);
         NNADAPTER_CHECK(tempory_shape_info.data[0]);
         concat_inputs.push_back(tempory_shape_info.data);
-      } else {
+      } else {  // Constant Operand
         auto input_data = reinterpret_cast<int32_t*>(input_operands[i]->buffer);
         concat_inputs.push_back(input_data);
       }
-      std::vector<int64_t> input_dims;
+      std::vector<int32_t> input_dims;
       for (uint32_t j = 0; j < input_operands[i]->type.dimensions.count; j++) {
         input_dims.push_back(input_operands[i]->type.dimensions.data[j]);
       }
@@ -136,7 +145,7 @@ int PrepareConcat(hal::Operation* operation) {
     }
     // Dynamic shape
     std::vector<std::vector<int32_t*>> dynamic_concat_inputs;
-    std::vector<std::vector<std::vector<int64_t>>> dynamic_concat_inputs_dims;
+    std::vector<std::vector<std::vector<int32_t>>> dynamic_concat_inputs_dims;
     for (uint32_t i = 0; i < output_operand->type.dimensions.dynamic_count;
          i++) {
       for (size_t j = 0; j < input_count - 1; j++) {
@@ -147,12 +156,12 @@ int PrepareConcat(hal::Operation* operation) {
           NNADAPTER_CHECK(tempory_shape_info.data);
           NNADAPTER_CHECK(tempory_shape_info.data[0]);
           dynamic_concat_inputs[i].push_back(tempory_shape_info.data);
-        } else {
+        } else {  // Constant Operand
           auto input_data =
               reinterpret_cast<int32_t*>(input_operands[j]->buffer);
           dynamic_concat_inputs[i].push_back(input_data);
         }
-        std::vector<int64_t> input_dims;
+        std::vector<int32_t> input_dims;
         for (uint32_t k = 0; k < input_operands[j]->type.dimensions.count;
              k++) {
           input_dims.push_back(input_operands[j]->type.dimensions.data[k]);
@@ -161,35 +170,18 @@ int PrepareConcat(hal::Operation* operation) {
       }
     }
 
-    std::vector<int64_t> output_dims;
-    std::vector<std::vector<int64_t>> dynamic_output_dims;
-    for (uint32_t i = 0; i < output_operand->type.dimensions.count; i++) {
-      output_dims.push_back(output_operand->type.dimensions.data[i]);
-    }
-    for (uint32_t j = 0; j < output_operand->type.dimensions.dynamic_count;
-         j++) {
-      for (uint32_t i = 0; i < output_operand->type.dimensions.count; i++) {
-        dynamic_output_dims[j].push_back(
-            output_operand->type.dimensions.data[i]);
-      }
-    }
     NNAdapterOperandDimensionType dimension_type;
     dimension_type.count = output_operand->type.dimensions.data[0];
     dimension_type.dynamic_count =
         output_operand->type.dimensions.dynamic_count;
-
-    concat_offline_calc<int32_t>(concat_inputs,
-                                 concat_inputs_dims,
-                                 axis,
-                                 dimension_type.data,
-                                 output_dims);
+    ConcatOfflineCalc<int32_t>(
+        concat_inputs, concat_inputs_dims, axis, dimension_type.data);
     for (uint32_t i = 0; i < output_operand->type.dimensions.dynamic_count;
          i++) {
-      concat_offline_calc<int32_t>(dynamic_concat_inputs[i],
-                                   dynamic_concat_inputs_dims[i],
-                                   axis,
-                                   dimension_type.dynamic_data[i],
-                                   dynamic_output_dims[i]);
+      ConcatOfflineCalc<int32_t>(dynamic_concat_inputs[i],
+                                 dynamic_concat_inputs_dims[i],
+                                 axis,
+                                 dimension_type.dynamic_data[i]);
     }
     output_operand->type.lifetime = NNADAPTER_TEMPORARY_SHAPE;
     output_operand->hints[NNADAPTER_TEMPORY_SHAPE_INFO].set(dimension_type);
