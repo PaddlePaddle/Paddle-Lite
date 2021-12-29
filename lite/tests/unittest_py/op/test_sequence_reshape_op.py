@@ -85,7 +85,7 @@ class TestSequenceReshapeOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=50)
 
 
 if __name__ == "__main__":
