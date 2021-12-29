@@ -70,8 +70,9 @@ class TestTransposeOp(AutoScanTest):
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
         x_shape = list(program_config.inputs["X_data"].shape)
+        axis = program_config.ops[0].attrs["axis"]
         if predictor_config.target() == TargetType.Metal:
-            if x_shape[0] != 1 or x_shape[1] > 64:
+            if x_shape[0] != 1:
                 return False
         return True
 
@@ -98,6 +99,13 @@ class TestTransposeOp(AutoScanTest):
                     min_value=0, max_value=3), min_size=4, max_size=4))
 
         assume(sorted(axis_int32_data) == [0, 1, 2, 3])
+        if (target == "Metal"):
+            for i in range(4):
+                for j in range(4):
+                    if i != j:
+                        assume(in_shape[axis_int32_data.index(i)] *
+                               (in_shape[axis_int32_data.index(j)] + 3
+                                ) / 4 <= 2048)
 
         transpose_op = OpConfig(
             type="transpose",
@@ -131,7 +139,7 @@ class TestTransposeOp(AutoScanTest):
     def test(self, *args, **kwargs):
         target_str = self.get_target()
         if target_str == "Metal":
-            self.run_and_statis(quant=False, max_examples=300)
+            self.run_and_statis(quant=False, max_examples=1000)
         else:
             self.run_and_statis(quant=False, max_examples=25)
 
