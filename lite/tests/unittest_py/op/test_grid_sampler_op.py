@@ -70,9 +70,7 @@ class TestGridSamplerOp(AutoScanTest):
         in_shape1 = draw(
             st.lists(
                 st.integers(
-                    min_value=10, max_value=100),
-                min_size=4,
-                max_size=4))
+                    min_value=3, max_value=10), min_size=4, max_size=4))
 
         in_shape2 = []
         in_shape2.append(in_shape1[0])
