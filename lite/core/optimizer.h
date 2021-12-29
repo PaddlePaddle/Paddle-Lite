@@ -83,88 +83,88 @@ class Optimizer {
     InitControlFlowOpUnusedInputsAndOutputsEliminatePass();
     InitControlFlowOpSharedInputsAndOutputsPlaceSyncPass();
 
-    std::vector<std::string> passes_local{{
-        "lite_quant_dequant_fuse_pass",              //
-        "weight_quantization_preprocess_pass",       //
-        "remove_scale1_pass",                        //
-        "adaptive_1x1_pool2d_convert_global_pass",   //
-        "lite_unsqueeze2_pad3d_squeeze2_fuse_pass",  //
-        "lite_conv_elementwise_fuse_pass",           // conv-elemwise-bn
-        "lite_conv_bn_fuse_pass",                    //
-        "lite_conv_elementwise_fuse_pass",           // conv-bn-elemwise
-        "lite_conv_conv_fuse_pass",                  //
-        // TODO(Superjomn) Refine the fusion related design to select fusion
-        // kernels for devices automatically.
-        "lite_conv_activation_fuse_pass",              //
-        "lite_var_conv_2d_activation_fuse_pass",       //
-        "lite_match_matrix_activation_fuse_pass",      //
-        "lite_squeeze2_matmul_fuse_pass",              //
-        "lite_reshape2_matmul_fuse_pass",              //
-        "lite_matmul_element_add_fuse_pass",           //
-        "lite_matmul_fuse_pass",                       //
-        "lite_fc_fuse_pass",                           //
-        "lite_shuffle_channel_fuse_pass",              //
-        "lite_transpose_softmax_transpose_fuse_pass",  //
-        "lite_interpolate_fuse_pass",                  //
-        "identity_scale_eliminate_pass",               //
-        "lite_scales_fuse_pass",                       //
-        "lite_sequence_reverse_embedding_fuse_pass",   //
-        "elementwise_mul_constant_eliminate_pass",     //
-        "lite_sequence_pool_concat_fuse_pass",         //
-        "lite_scale_activation_fuse_pass",             //
-        "lite_scaleacts_fuse_pass",                    //
-        "lite_elementwise_scale_fuse_pass",            //
-        "lite_instance_norm_activation_fuse_pass",     //
-        "lite_flatten_fc_fuse_pass",                   //
-        "lite_fc_prelu_fuse_pass",                     //
-        "lite_elementwise_activation_fuse_pass",
-        "lite_conv_scale_fuse_pass",
-        "lite_conv_elementwise_tree_fuse_pass",
-        "identity_dropout_eliminate_pass",
-        "__xpu__graph_dedup_pass",
-        "__xpu__resnet_fuse_pass",
-        "__xpu__resnet_cbam_fuse_pass",
-        "__xpu__conv2d_affine_channel_fuse_pass",
-        "__xpu__conv2d_fuse_pass",
-        "__xpu__squeeze_excitation_fuse_pass",
-        "__xpu__resblock_reduction_fuse_pass",
-        "__xpu__resblock_normal_fuse_pass",
-        "__xpu__conv2d_concat_pool2d_fuse_pass",
-        "__xpu__consecutive_conv2d_fuse_pass",
-        "__xpu__conv2d_pool2d_fuse_pass",
-        "__xpu__concat_conv2d_fuse_pass",
-        "__xpu__consecutive_block_fuse_pass",
-        "__xpu__sfa_head_meanstd_fuse_pass",
-        "__xpu__sfa_head_moment_fuse_pass",
-        "__xpu__mmdnn_fuse_pass",
-        "__xpu__bigru_fuse_pass",
-        "__xpu__multi_encoder_fuse_pass",
-        "__xpu__embedding_with_eltwise_add_fuse_pass",
-        "__xpu__fc_fuse_pass",
-        "__xpu__softmax_topk_fuse_pass",
-        "__xpu__multi_encoder_adaptive_seqlen_fuse_pass",
-        "__xpu__multi_encoder_slice_link_fuse_pass",
-        "__xpu__generate_sequence_fuse_pass",
-        "__xpu__logit_fuse_pass",
-        "__xpu__link_previous_out_max_pass",
-        "fix_mismatched_precision_pass",
-        "ssd_boxes_calc_offline_pass",
-        // Only for fully quantized model, infer the output scale and fix the
-        // attribute 'enable_int8' for all of the quantized ops.
-        "quantized_op_attributes_inference_pass",
-        // Apply the constraints for the quantized ops(such as concat) that the
-        // inputs and outputs must have the same scale.
-        "restrict_quantized_op_with_same_input_output_scale_pass",
-        "npu_subgraph_pass",
-        "huawei_ascend_npu_subgraph_pass",
-        "imagination_nna_subgraph_pass",
-        "xpu_subgraph_pass",
-        "bm_subgraph_pass",
-        "apu_subgraph_pass",
-        "rknpu_subgraph_pass",
-        "mlu_subgraph_pass",
-        "control_flow_op_unused_inputs_and_outputs_eliminate_pass",
-        "static_kernel_pick_pass",  // pick original kernel from graph
+    std::vector<std::string> passes_local{
+        {"lite_quant_dequant_fuse_pass",              //
+         "weight_quantization_preprocess_pass",       //
+         "remove_scale1_pass",                        //
+         "adaptive_1x1_pool2d_convert_global_pass",   //
+         "lite_unsqueeze2_pad3d_squeeze2_fuse_pass",  //
+         "lite_conv_elementwise_fuse_pass",           // conv-elemwise-bn
+         "lite_conv_bn_fuse_pass",                    //
+         "lite_conv_elementwise_fuse_pass",           // conv-bn-elemwise
+         "lite_conv_conv_fuse_pass",                  //
+         // TODO(Superjomn) Refine the fusion related design to select fusion
+         // kernels for devices automatically.
+         "lite_conv_activation_fuse_pass",              //
+         "lite_var_conv_2d_activation_fuse_pass",       //
+         "lite_match_matrix_activation_fuse_pass",      //
+         "lite_squeeze2_matmul_fuse_pass",              //
+         "lite_reshape2_matmul_fuse_pass",              //
+         "lite_matmul_element_add_fuse_pass",           //
+         "lite_matmul_fuse_pass",                       //
+         "lite_fc_fuse_pass",                           //
+         "lite_shuffle_channel_fuse_pass",              //
+         "lite_transpose_softmax_transpose_fuse_pass",  //
+         "lite_interpolate_fuse_pass",                  //
+         "identity_scale_eliminate_pass",               //
+         "lite_scales_fuse_pass",                       //
+         "lite_sequence_reverse_embedding_fuse_pass",   //
+         "elementwise_mul_constant_eliminate_pass",     //
+         "lite_sequence_pool_concat_fuse_pass",         //
+         "lite_scale_activation_fuse_pass",             //
+         "lite_scaleacts_fuse_pass",                    //
+         "lite_elementwise_scale_fuse_pass",            //
+         "lite_instance_norm_activation_fuse_pass",     //
+         "lite_flatten_fc_fuse_pass",                   //
+         "lite_fc_prelu_fuse_pass",                     //
+         "lite_elementwise_activation_fuse_pass",
+         "lite_conv_scale_fuse_pass",
+         "lite_conv_elementwise_tree_fuse_pass",
+         "identity_dropout_eliminate_pass",
+         "__xpu__graph_dedup_pass",
+         "__xpu__resnet_fuse_pass",
+         "__xpu__resnet_cbam_fuse_pass",
+         "__xpu__conv2d_affine_channel_fuse_pass",
+         "__xpu__conv2d_fuse_pass",
+         "__xpu__squeeze_excitation_fuse_pass",
+         "__xpu__resblock_reduction_fuse_pass",
+         "__xpu__resblock_normal_fuse_pass",
+         "__xpu__conv2d_concat_pool2d_fuse_pass",
+         "__xpu__consecutive_conv2d_fuse_pass",
+         "__xpu__conv2d_pool2d_fuse_pass",
+         "__xpu__concat_conv2d_fuse_pass",
+         "__xpu__consecutive_block_fuse_pass",
+         "__xpu__sfa_head_meanstd_fuse_pass",
+         "__xpu__sfa_head_moment_fuse_pass",
+         "__xpu__mmdnn_fuse_pass",
+         "__xpu__bigru_fuse_pass",
+         "__xpu__multi_encoder_fuse_pass",
+         "__xpu__embedding_with_eltwise_add_fuse_pass",
+         "__xpu__fc_fuse_pass",
+         "__xpu__softmax_topk_fuse_pass",
+         "__xpu__multi_encoder_adaptive_seqlen_fuse_pass",
+         "__xpu__multi_encoder_slice_link_fuse_pass",
+         "__xpu__generate_sequence_fuse_pass",
+         "__xpu__logit_fuse_pass",
+         "__xpu__link_previous_out_max_pass",
+         "fix_mismatched_precision_pass",
+         "ssd_boxes_calc_offline_pass",
+         // Only for fully quantized model, infer the output scale and fix the
+         // attribute 'enable_int8' for all of the quantized ops.
+         "quantized_op_attributes_inference_pass",
+         // Apply the constraints for the quantized ops(such as concat) that the
+         // inputs and outputs must have the same scale.
+         "restrict_quantized_op_with_same_input_output_scale_pass",
+         "npu_subgraph_pass",
+         "huawei_ascend_npu_subgraph_pass",
+         "imagination_nna_subgraph_pass",
+         "xpu_subgraph_pass",
+         "bm_subgraph_pass",
+         "apu_subgraph_pass",
+         "rknpu_subgraph_pass",
+         "mlu_subgraph_pass",
+         "control_flow_op_unused_inputs_and_outputs_eliminate_pass",
+         "static_kernel_pick_pass",  // pick original kernel from graph
 
          "remove_tf_redundant_ops_pass",
          "variable_place_inference_pass",  // inference arg/var's

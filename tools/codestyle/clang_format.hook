@@ -3,7 +3,7 @@ set -e
 
 readonly VERSION="3.8"
 
-version=$(clang-format -version)
+version=$(/Users/chenyaohuang/Downloads/clang+llvm-3.8.0-x86_64-apple-darwin/bin/clang-format -version)
 
 if ! [[ $version == *"$VERSION"* ]]; then
     echo "clang-format version check failed."
@@ -12,4 +12,4 @@ if ! [[ $version == *"$VERSION"* ]]; then
     exit -1
 fi
 
-clang-format $@
+/Users/chenyaohuang/Downloads/clang+llvm-3.8.0-x86_64-apple-darwin/bin/clang-format $@
