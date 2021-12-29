@@ -141,6 +141,7 @@ void BindLiteCxxConfig(py::module *m) {
       .def("set_param_file", &CxxConfig::set_param_file)
       .def("param_file", &CxxConfig::param_file)
       .def("set_valid_places", &CxxConfig::set_valid_places)
+      .def("get_valid_places", &CxxConfig::valid_places)
       .def("set_model_buffer",
            (void (CxxConfig::*)(const char *, size_t, const char *, size_t)) &
                CxxConfig::set_model_buffer)
@@ -167,6 +168,24 @@ void BindLiteCxxConfig(py::module *m) {
            py::arg("flag") = true)
       .def("set_metal_use_memory_reuse", &CxxConfig::set_metal_use_memory_reuse)
       .def("set_metal_lib_path", &CxxConfig::set_metal_lib_path);
+
+  cxx_config
+      .def("set_nnadapter_device_names", &CxxConfig::set_nnadapter_device_names)
+      .def("set_nnadapter_context_properties",
+           &CxxConfig::set_nnadapter_context_properties)
+      .def("set_nnadapter_model_cache_dir",
+           &CxxConfig::set_nnadapter_model_cache_dir)
+      .def("set_nnadapter_model_cache_buffers",
+           &CxxConfig::set_nnadapter_model_cache_buffers)
+      .def("set_nnadapter_subgraph_partition_config_path",
+           &CxxConfig::set_nnadapter_subgraph_partition_config_path)
+      .def("set_nnadapter_subgraph_partition_config_buffer",
+           &CxxConfig::set_nnadapter_subgraph_partition_config_buffer)
+      .def("set_nnadapter_mixed_precision_quantization_config_path",
+           &CxxConfig::set_nnadapter_mixed_precision_quantization_config_path)
+      .def(
+          "set_nnadapter_mixed_precision_quantization_config_buffer",
+          &CxxConfig::set_nnadapter_mixed_precision_quantization_config_buffer);
 
 #ifdef LITE_WITH_MLU
   cxx_config.def("set_mlu_core_version", &CxxConfig::set_mlu_core_version)

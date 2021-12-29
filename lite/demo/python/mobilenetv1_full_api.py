@@ -41,6 +41,16 @@ parser.add_argument(
     "--disable_print_results",
     action="store_false",
     help="Print results or not")
+parser.add_argument(
+    "--enable_nnadapter",
+    action="store_true",
+    default=False,
+    help="Enable nnadapter or not")
+parser.add_argument(
+    "--nnadapter_device_names",
+    default="",
+    type=str,
+    help="Set nnadapter device names")
 
 
 def RunModel(args):
@@ -121,8 +131,22 @@ def RunModel(args):
             Place(TargetType.ARM, PrecisionType.FP32),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
+    elif args.enable_nnadapter:
+        places = [
+            Place(TargetType.NNAdapter, PrecisionType.FP32),
+            Place(TargetType.X86, PrecisionType.FP32),
+            Place(TargetType.ARM, PrecisionType.FP32),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        if args.nnadapter_device_names == "":
+            print(
+                "You should set nnadapter_device_names when enable_nnadapter == True!"
+            )
+            return
+        config.set_nnadapter_device_names([args.nnadapter_device_names])
     else:
         places = [Place(TargetType.X86, PrecisionType.FP32)]
+    print(config.get_nnadapter_device_names())
 
     config.set_valid_places(places)
 
@@ -135,7 +159,7 @@ def RunModel(args):
 
     # 4. Run model
     predictor.run()
-
+    print("haha")
     # 5. Get output data
     output_tensor = predictor.get_output(0)
     output_data = output_tensor.numpy()
