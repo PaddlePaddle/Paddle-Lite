@@ -34,7 +34,11 @@ class TestDeformableConvOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
-        # self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW, thread=[1,4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -43,9 +47,9 @@ class TestDeformableConvOp(AutoScanTest):
 
     def sample_program_configs(self, draw):
         input_n = draw(st.integers(min_value=1, max_value=64))
-        input_c = draw(st.integers(min_value=1, max_value=128))
-        input_h = draw(st.integers(min_value=1, max_value=128))
-        input_w = draw(st.integers(min_value=1, max_value=128))
+        input_c = draw(st.integers(min_value=1, max_value=64))
+        input_h = draw(st.integers(min_value=1, max_value=64))
+        input_w = draw(st.integers(min_value=1, max_value=64))
         filter_m = draw(st.integers(min_value=1, max_value=128))
         filter_c = input_c
         filter_h = draw(st.integers(min_value=1, max_value=7))
@@ -55,7 +59,7 @@ class TestDeformableConvOp(AutoScanTest):
         groups = draw(st.integers(min_value=1, max_value=input_c))
         assume(groups * filter_c == input_c)
         assume(filter_m % groups == 0)
-        deformable_groups = groups  #draw(st.integers(min_value = 1, max_value = filter_m))
+        deformable_groups = groups
         assume(filter_m % deformable_groups == 0)
 
         paddings = draw(
@@ -70,7 +74,7 @@ class TestDeformableConvOp(AutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=10), min_size=2, max_size=2))
-        im2col_step = 1  #draw(st.sampled_from([32,64]))#draw(st.integers(min_value = 1, max_value = 128))
+        im2col_step = draw(st.integers(min_value=1, max_value=64))
         assume(input_n % im2col_step == 0)
 
         in_shape = [input_n, input_c, input_h, input_w]
@@ -131,16 +135,21 @@ class TestDeformableConvOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["deformable_conv"], (1e-5, 1e-5)
+        if self.get_target().lower() == "host":
+            return self.get_predictor_configs(), ["deformable_conv"], (3e-4,
+                                                                       1e-5)
+        elif self.get_target().lower() == "arm":
+            return self.get_predictor_configs(), ["deformable_conv"], (1e-4,
+                                                                       1e-5)
+        else:
+            return self.get_predictor_configs(), ["deformable_conv"], (1e-5,
+                                                                       1e-5)
 
     def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(
-            quant=False,
-            max_examples=300,
-            reproduce=reproduce_failure('6.31.6', b'AAA5KwE8BgAAAAAAAAAA'))
+        self.run_and_statis(quant=False, max_examples=300)
 
 
 if __name__ == "__main__":
