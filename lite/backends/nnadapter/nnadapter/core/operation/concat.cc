@@ -121,6 +121,14 @@ int PrepareConcat(hal::Operation* operation) {
       }
     }
   }
+  for (size_t i = 0; i < input_count - 1; i++) {
+    if (temporary_shape_flag &&
+        (input_operands[i]->type.lifetime != NNADAPTER_TEMPORARY_SHAPE ||
+         !IsConstantOperand(input_operands[i]))) {
+      NNADAPTER_LOG(FATAL)
+          << "Tempory shape operand can only be used with constant operand";
+    }
+  }
   if (temporary_shape_flag) {
     // Static shape
     std::vector<int32_t*> concat_inputs;
