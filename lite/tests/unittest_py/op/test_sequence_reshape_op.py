@@ -57,9 +57,9 @@ class TestSequenceReshapeOp(AutoScanTest):
 
         def generate_input(*args, **kwargs):
             if input_type == "float32":
-                return np.random.normal(0.0, 1.0, [12, 12]).astype(np.float32)
+                return np.random.normal(0.0, 6.0, [12, 12]).astype(np.float32)
             elif input_type == "int64":
-                return np.random.normal(0.0, 1.0, [12, 12]).astype(np.int64)
+                return np.random.normal(0.0, 6.0, [12, 12]).astype(np.int64)
 
         ops_config = OpConfig(
             type="sequence_reshape",
