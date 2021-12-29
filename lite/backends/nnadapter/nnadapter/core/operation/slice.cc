@@ -25,13 +25,13 @@
 namespace nnadapter {
 namespace operation {
 
-static void slice_offline_calc(const int32_t* input,
-                               std::vector<int64_t> in_dims,
-                               uint32_t axes_count,
-                               int32_t* axes,
-                               int32_t* starts,
-                               int32_t* ends,
-                               int32_t* out) {
+static void SliceOfflineCalc(const int32_t* input,
+                             std::vector<int64_t> in_dims,
+                             uint32_t axes_count,
+                             int32_t* axes,
+                             int32_t* starts,
+                             int32_t* ends,
+                             int32_t* out) {
   auto out_dims = in_dims;
   std::vector<int> real_starts(in_dims.size(), 0);
   std::vector<int> real_ends(in_dims.size(), 0);
@@ -112,21 +112,21 @@ int PrepareSlice(hal::Operation* operation) {
     NNAdapterOperandDimensionType dimension_type;
     dimension_type.count = output_operand->type.dimensions.data[0];
     dimension_type.dynamic_count = input_operand->type.dimensions.dynamic_count;
-    slice_offline_calc(tempory_shape_info.data,
+    SliceOfflineCalc(tempory_shape_info.data,
+                     std::vector<int64_t>({dimension_type.count}),
+                     axes_count,
+                     axes,
+                     starts,
+                     ends,
+                     dimension_type.data);
+    for (uint32_t i = 0; i < dimension_type.dynamic_count; i++) {
+      SliceOfflineCalc(tempory_shape_info.dynamic_data[i],
                        std::vector<int64_t>({dimension_type.count}),
                        axes_count,
                        axes,
                        starts,
                        ends,
-                       dimension_type.data);
-    for (uint32_t i = 0; i < dimension_type.dynamic_count; i++) {
-      slice_offline_calc(tempory_shape_info.dynamic_data[i],
-                         std::vector<int64_t>({dimension_type.count}),
-                         axes_count,
-                         axes,
-                         starts,
-                         ends,
-                         dimension_type.dynamic_data[i]);
+                       dimension_type.dynamic_data[i]);
     }
     output_operand->hints[NNADAPTER_TEMPORY_SHAPE_INFO].set(dimension_type);
   }

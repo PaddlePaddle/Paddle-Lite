@@ -14,7 +14,6 @@
 
 #include "core/operation/shape.h"
 #include "core/hal/types.h"
-#include "utility/any.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
