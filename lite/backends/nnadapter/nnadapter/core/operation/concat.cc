@@ -112,21 +112,16 @@ int PrepareConcat(hal::Operation* operation) {
   for (size_t i = 0; i < input_count - 1; i++) {
     if (input_operands[i]->type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {
       temporary_shape_flag = true;
-    } else if (IsConstantOperand(input_operands[i])) {
-      continue;
-    } else {
-      if (temporary_shape_flag) {
-        NNADAPTER_LOG(FATAL)
-            << "Tempory shape operand can only be used with constant operand";
-      }
     }
   }
   for (size_t i = 0; i < input_count - 1; i++) {
     if (temporary_shape_flag &&
-        (input_operands[i]->type.lifetime != NNADAPTER_TEMPORARY_SHAPE ||
-         !IsConstantOperand(input_operands[i]))) {
-      NNADAPTER_LOG(FATAL)
-          << "Tempory shape operand can only be used with constant operand";
+        input_operands[i]->type.lifetime != NNADAPTER_TEMPORARY_SHAPE &&
+        !IsConstantOperand(input_operands[i])) {
+      NNADAPTER_LOG(FATAL) << "Tempory shape operand can only be used with "
+                              "constant operand, current operand lifetime is "
+                           << OperandLifetimeCodeToString(
+                                  input_operands[i]->type.lifetime);
     }
   }
   if (temporary_shape_flag) {
