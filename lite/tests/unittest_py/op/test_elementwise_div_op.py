@@ -88,7 +88,7 @@ class TestElementwiseDivOp(AutoScanTest):
         if target_type == TargetType.Metal:
             if input_data_type != np.float32 \
                 or in_x_shape != in_y_shape \
-                or len(in_x_shape) != 4 \
+                or len(in_x_shape) == 3 \
                 or in_x_shape[0] != 1:
                 return False
 
@@ -149,7 +149,12 @@ class TestElementwiseDivOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["elementwise_div"], (1e-5, 1e-5)
+        atol, rtol = 1e-5, 1e-5
+        target_str = self.get_target()
+        if target_str == "Metal":
+            atol, rtol = 3e-4, 3e-4
+
+        return self.get_predictor_configs(), ["elementwise_div"], (atol, rtol)
 
     def add_ignore_pass_case(self):
         pass
