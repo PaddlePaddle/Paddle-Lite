@@ -80,11 +80,11 @@ class TestElementwisePowOp(AutoScanTest):
         input_data_x_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=20), min_size=4, max_size=4))
+                    min_value=1, max_value=20), min_size=1, max_size=4))
         input_data_y_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=20), min_size=4, max_size=4))
+                    min_value=1, max_value=20), min_size=1, max_size=4))
         axis = draw(st.integers(min_value=-1, max_value=4))
         assume(
             check_broadcast(input_data_x_shape, input_data_y_shape, axis) ==
@@ -135,11 +135,14 @@ class TestElementwisePowOp(AutoScanTest):
 
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
+            input_data_shape = program_config.inputs["input_data_x"].shape
+            if len(input_data_shape) != 4:
+                return True
             return False
 
         self.add_ignore_check_case(
             teller1, IgnoreReasons.ACCURACY_ERROR,
-            "The elementwise_pow op's result is different from paddle, because paddle has bug on this op, wait paddle fix!"
+            "The elementwise_pow op's result is different from paddle, we should fix it as soon as possible!"
         )
 
     def test(self, *args, **kwargs):
