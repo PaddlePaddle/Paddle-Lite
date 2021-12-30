@@ -35,7 +35,6 @@ int PrepareShape(hal::Operation* operation) {
   output_type.lifetime = NNADAPTER_TEMPORARY_SHAPE;
   output_operand->hints[NNADAPTER_TEMPORY_SHAPE_INFO].set(
       input_type.dimensions);
-  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
 }
 

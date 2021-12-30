@@ -27,11 +27,32 @@ int PrepareReshape(hal::Operation* operation) {
   RESHAPE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
-  NNADAPTER_CHECK(IsConstantOperand(shape_operand))
-      << "Only support constant shape now.";
+  // NNADAPTER_CHECK(IsConstantOperand(shape_operand))
+  //     << "Only support constant shape now.";
   auto input_type = input_operand->type;
+  auto& shape_type = shape_operand->type;
   auto& output_type = output_operand->type;
   CopyOperandTypeWithQuantParams(&output_type, input_type);
+
+  uint32_t shape_count;
+  int32_t* shape_data = nullptr;
+  if (shape_type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {
+    auto& tempory_shape_info =
+        *(shape_operand->hints[NNADAPTER_TEMPORY_SHAPE_INFO])
+             .get_mutable<NNAdapterOperandDimensionType>();
+    shape_count = tempory_shape_info.count;
+    shape_data = tempory_shape_info.data;
+  } else if (IsConstantOperand(shape_operand)) {
+    shape_count = shape_operand->length / sizeof(int32_t);
+    shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);
+  } else {
+    NNADAPTER_LOG(FATAL) << "Unsupported shape lifetime: "
+                         << OperandLifetimeCodeToString(shape_type.lifetime);
+    return NNADAPTER_INVALID_PARAMETER;
+  }
+  for (uint32_t i = 0; i < shape_count; i++) {
+    NNADAPTER_VLOG(5) << "shape[" << i << "] = " << shape_data[i];
+  }
   output_type.dimensions.count = shape_count;
   for (uint32_t i = 0; i < shape_count; i++) {
     if (shape_data[i] == 0 &&

@@ -29,7 +29,9 @@ int ConvertReshape(Converter* converter, hal::Operation* operation) {
     input_expr = converter->ConvertOperand(input_operand);
   }
   auto reshape_expr = converter->builder()->CreateReshape(
-      input_expr, ConvertToXTCLArray<xtcl::Integer>(shape_data, shape_count));
+      input_expr,
+      ConvertToXTCLArray<xtcl::Integer>(output_operand->type.dimensions.data,
+                                        output_operand->type.dimensions.count));
   converter->UpdateExprMap(output_operand, reshape_expr);
   return NNADAPTER_NO_ERROR;
 }

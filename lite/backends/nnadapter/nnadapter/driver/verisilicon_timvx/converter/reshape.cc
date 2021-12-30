@@ -22,7 +22,7 @@ namespace verisilicon_timvx {
 
 int ConvertReshape(Converter* converter, hal::Operation* operation) {
   RESHAPE_OPERATION_EXTRACT_INPUTS_OUTPUTS
-  NNADAPTER_CHECK_LE(shape_count, 4);
+  NNADAPTER_CHECK_LE(output_operand->type.dimensions.count, 4);
 
   // Convert to tim-vx tensors and operators
   auto input_tensor = converter->GetMappedTensor(input_operand);

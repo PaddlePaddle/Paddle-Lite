@@ -130,7 +130,7 @@ int PrepareConcat(hal::Operation* operation) {
     std::vector<std::vector<int32_t>> concat_inputs_dims;
     for (size_t i = 0; i < input_count - 1; i++) {
       if (input_operands[i]->type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {
-        auto tempory_shape_info =
+        auto& tempory_shape_info =
             *(input_operands[i]->hints[NNADAPTER_TEMPORY_SHAPE_INFO])
                  .get_mutable<NNAdapterOperandDimensionType>();
         NNADAPTER_CHECK(tempory_shape_info.data);
@@ -153,7 +153,7 @@ int PrepareConcat(hal::Operation* operation) {
          i++) {
       for (size_t j = 0; j < input_count - 1; j++) {
         if (input_operands[j]->type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {
-          auto tempory_shape_info =
+          auto& tempory_shape_info =
               *(input_operands[j]->hints[NNADAPTER_TEMPORY_SHAPE_INFO])
                    .get_mutable<NNAdapterOperandDimensionType>();
           NNADAPTER_CHECK(tempory_shape_info.data);

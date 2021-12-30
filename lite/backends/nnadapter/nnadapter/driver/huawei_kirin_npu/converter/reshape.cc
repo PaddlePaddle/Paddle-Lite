@@ -30,7 +30,9 @@ int ConvertReshape(Converter* converter, hal::Operation* operation) {
   }
   auto reshape_op = converter->AddOperator<hiai::op::Reshape>(output_operand);
   auto shape_operator = converter->AddInt32ConstantOperator(
-      std::vector<int32_t>(shape_data, shape_data + shape_count));
+      std::vector<int32_t>(output_operand->type.dimensions.data,
+                           output_operand->type.dimensions.data +
+                               output_operand->type.dimensions.count));
   SET_INPUT(reshape_op, x, input_operator);
   SET_INPUT(reshape_op, shape, shape_operator);
   MAP_OUTPUT(reshape_op, y, output_operand);

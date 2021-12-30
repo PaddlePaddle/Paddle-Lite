@@ -76,10 +76,13 @@ int PrepareResize(hal::Operation* operation) {
             << OperandPrecisionCodeToString(shape_operand->type.precision);
       }
     } else if (shape_operand->type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {
-      NNADAPTER_CHECK_EQ(shape_operand->length,
-                         sizeof(NNAdapterOperandDimensionType));
+      auto tempory_shape_info =
+          *(shape_operand->hints[NNADAPTER_TEMPORY_SHAPE_INFO])
+               .get_mutable<NNAdapterOperandDimensionType>();
+      NNADAPTER_CHECK(tempory_shape_info.data);
+      NNADAPTER_CHECK(tempory_shape_info.data[0]);
       memcpy(&shape_dims,
-             shape_operand->buffer,
+             &tempory_shape_info,
              sizeof(NNAdapterOperandDimensionType));
     } else {
       NNADAPTER_LOG(FATAL) << "Unsupported shape lifetime: "
