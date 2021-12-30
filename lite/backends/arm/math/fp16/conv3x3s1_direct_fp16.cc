@@ -492,11 +492,11 @@ void conv_3x3s1_direct_fp16(const float16_t* i_data,
   int out_row_stride = OUT_C_BLOCK * wout_round;
   auto act_type = act_param.active_type;
   bool flag_bias = param.bias != nullptr;
-  float alpha = 0.f;
+  float16_t alpha = 0.f;
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
 
-  float offset = 0.f;
-  float threshold = 6.f;
+  float16_t offset = 0.f;
+  float16_t threshold = 6.f;
 
   if (act_param.has_active) {
     act_acquire(act_type, flag_act, alpha, offset, threshold, act_param);
