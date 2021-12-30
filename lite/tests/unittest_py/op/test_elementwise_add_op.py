@@ -131,7 +131,7 @@ class TestElementwiseAddOp(AutoScanTest):
         if target_type == TargetType.Metal:
             if input_data_type != np.float32 \
                 or in_x_shape != in_y_shape \
-                or len(in_x_shape) != 4 \
+                or len(in_x_shape) == 3 \
                 or in_x_shape[0] != 1:
                 return False
 
