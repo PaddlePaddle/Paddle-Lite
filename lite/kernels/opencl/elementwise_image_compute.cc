@@ -71,6 +71,9 @@ class ElementwiseImageCompute : public KernelLite<TARGET(kOpenCL),
     axis_ = ele_param_->axis;
     out_nchw_ = out_dims.Vectorize();
 
+    if (x_dims_ == y_dims_) {
+      axis_ = -1;
+    }
     host::fix_x_y_dims<int64_t>(
         x, y, ele_param_->Out, axis_, &x_nchw_, &y_nchw_);
 
@@ -112,7 +115,7 @@ class ElementwiseImageCompute : public KernelLite<TARGET(kOpenCL),
       }
       if ((y_dims_.size() == 1) &&
           (axis_ != -1) &&  // x{n,c,h,w} && y{h} || x{c,h,w} && y{h}
-          (axis_ == x_dims_.size() - 2)) {
+          (axis_ == x_dims_.size() - 2 || axis_ == x_dims_.size() - 4)) {
         image_folder_flag_y_ = 2;
       }
       if ((y_dims_.size() == 2) &&
@@ -134,7 +137,7 @@ class ElementwiseImageCompute : public KernelLite<TARGET(kOpenCL),
         image_folder_flag_x_ = 1;
       }
       if ((x_dims_.size() == 1) && (axis_ != -1) &&
-          (axis_ == y_dims_.size() - 2)) {
+          (axis_ == y_dims_.size() - 2 || axis_ == y_dims_.size() - 4)) {
         image_folder_flag_x_ = 2;
       }
       if ((x_dims_.size() == 2) && (axis_ != -1) &&
@@ -155,16 +158,13 @@ class ElementwiseImageCompute : public KernelLite<TARGET(kOpenCL),
 
     if (y_dims_ == x_dims_) {
       kernel_func_name_ = "elementwise_compute";
+      kernel_func_paths_ = "image/elementwise_kernel.cl";
     } else if (broadcast_elementwise_common_flag == 0) {
       kernel_func_name_ = "broadcast_elementwise_basic";
+      kernel_func_paths_ = "image/elementwise_kernel.cl";
     } else {
       kernel_func_name_ = "broadcast_elementwise_common";
-    }
-
-    if (broadcast_elementwise_common_flag == 1) {
       kernel_func_paths_ = "image/elementwise_broadcast_kernel.cl";
-    } else {
-      kernel_func_paths_ = "image/elementwise_kernel.cl";
     }
 
     // op_type
