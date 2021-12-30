@@ -73,13 +73,13 @@ void bilinear_interp(const float* src,
                      float scale_y,
                      bool with_align,
                      int align_mode) {
-  int* buf = new int[w_out + h_out + w_out * 2 + h_out * 2];
+  int* buf = new int[w_out * 4 + h_out * 4];
 
   int* xofs = buf;
-  int* yofs = buf + w_out;
+  int* yofs = buf + w_out * 2;
 
-  float* alpha = reinterpret_cast<float*>(buf + w_out + h_out);
-  float* beta = reinterpret_cast<float*>(buf + w_out + h_out + w_out * 2);
+  float* alpha = reinterpret_cast<float*>(buf + w_out * 2 + h_out * 2);
+  float* beta = reinterpret_cast<float*>(buf + h_out * 2 + w_out * 4);
 
   float fx = 0.0f;
   float fy = 0.0f;
@@ -93,7 +93,8 @@ void bilinear_interp(const float* src,
       fx = dx * scale_x;
       sx = static_cast<int>(fx);
       fx -= sx;
-      xofs[dx] = sx;
+      xofs[dx * 2] = sx;
+      xofs[dx * 2 + 1] = (sx + 1) < w_in - 1 ? (sx + 1) : (w_in - 1);
       alpha[dx * 2] = 1.f - fx;
       alpha[dx * 2 + 1] = fx;
     }
@@ -102,7 +103,8 @@ void bilinear_interp(const float* src,
       fy = dy * scale_y;
       sy = static_cast<int>(fy);
       fy -= sy;
-      yofs[dy] = sy;
+      yofs[dy * 2] = sy;
+      yofs[dy * 2 + 1] = (sy + 1) < h_in - 1 ? (sy + 1) : (h_in - 1);
       beta[dy * 2] = 1.f - fy;
       beta[dy * 2 + 1] = fy;
     }
@@ -115,7 +117,8 @@ void bilinear_interp(const float* src,
       fx = fx < 0 ? 0.f : fx;
       sx = static_cast<int>(fx);
       fx -= sx;
-      xofs[dx] = sx;
+      xofs[dx * 2] = sx;
+      xofs[dx * 2 + 1] = (sx + 1) < w_in - 1 ? (sx + 1) : (w_in - 1);
       alpha[dx * 2] = 1.f - fx;
       alpha[dx * 2 + 1] = fx;
     }
@@ -125,7 +128,8 @@ void bilinear_interp(const float* src,
       fy = fy < 0 ? 0.f : fy;
       sy = static_cast<int>(fy);
       fy -= sy;
-      yofs[dy] = sy;
+      yofs[dy * 2] = sy;
+      yofs[dy * 2 + 1] = (sy + 1) < h_in - 1 ? (sy + 1) : (h_in - 1);
       beta[dy * 2] = 1.f - fy;
       beta[dy * 2 + 1] = fy;
     }
@@ -146,10 +150,11 @@ void bilinear_interp(const float* src,
   }
   // h_bound loop
   for (int dy = 0; dy < h_bound; dy++) {
-    int sy = yofs[dy];
+    int sy0 = yofs[dy * 2];
+    int sy1 = yofs[dy * 2 + 1];
 
-    const float* s0 = src + sy * w_in;
-    const float* s1 = src + (sy + 1) * w_in;
+    const float* s0 = src + sy0 * w_in;
+    const float* s1 = src + sy1 * w_in;
 
     const float* alphap = alpha;
     float* rows0p = rows0;
@@ -158,22 +163,25 @@ void bilinear_interp(const float* src,
     int dx = 0;
     // w_bound loop
     for (; dx + 1 < w_bound; dx += 2) {
-      int sx = xofs[dx];
-      int sxn = xofs[dx + 1];
-      const float* s0p = s0 + sx;
-      const float* s1p = s1 + sx;
-      const float* s0np = s0 + sxn;
-      const float* s1np = s1 + sxn;
+      auto idx = dx * 2;
+      int sx = xofs[idx];
+      int sx1 = xofs[idx + 1];
+      int sxn = xofs[idx + 2];
+      int sxn1 = xofs[idx + 3];
+
+      float32x4_t _s0s0n;
+      _s0s0n[0] = *(s0 + sx);
+      _s0s0n[1] = *(s0 + sx1);
+      _s0s0n[2] = *(s0 + sxn);
+      _s0s0n[3] = *(s0 + sxn1);
+      float32x4_t _s1s1n;
+      _s1s1n[0] = *(s1 + sx);
+      _s1s1n[1] = *(s1 + sx1);
+      _s1s1n[2] = *(s1 + sxn);
+      _s1s1n[3] = *(s1 + sxn1);
 
       float32x4_t _a = vld1q_f32(alphap);
-      float32x2_t _s0 = vld1_f32(s0p);
-      float32x2_t _s1 = vld1_f32(s1p);
-      float32x2_t _s0n = vld1_f32(s0np);
-      float32x2_t _s1n = vld1_f32(s1np);
-
-      float32x4_t _s0s0n = vcombine_f32(_s0, _s0n);
       float32x4_t _ms0 = vmulq_f32(_s0s0n, _a);
-      float32x4_t _s1s1n = vcombine_f32(_s1, _s1n);
       float32x4_t _ms1 = vmulq_f32(_s1s1n, _a);
 
       float32x2_t _rows0 = vpadd_f32(vget_low_f32(_ms0), vget_high_f32(_ms0));
@@ -185,22 +193,20 @@ void bilinear_interp(const float* src,
     }
     // w_bound remain loop
     for (; dx < w_bound; dx++) {
-      int sx = xofs[dx];
-      const float* s0p = s0 + sx;
-      const float* s1p = s1 + sx;
+      auto idx = dx * 2;
+      int sx = xofs[idx];
+      int sx1 = xofs[idx + 1];
 
-      float a0 = alphap[0];
-      float a1 = alphap[1];
-      rows0p[dx] = s0p[0] * a0 + s0p[1] * a1;
-      rows1p[dx] = s1p[0] * a0 + s1p[1] * a1;
+      rows0p[dx] = s0[sx] * alphap[0] + s0[sx1] * alphap[1];
+      rows1p[dx] = s1[sx] * alphap[0] + s1[sx1] * alphap[1];
 
       alphap += 2;
     }
 
-    const float buffer1[2] = {*(src + sy * w_in + w_in - 1),
-                              *(src + sy * w_in + w_in - 1)};
-    const float buffer2[2] = {*(src + (sy + 1) * w_in + w_in - 1),
-                              *(src + (sy + 1) * w_in + w_in - 1)};
+    const float buffer1[2] = {*(src + sy0 * w_in + w_in - 1),
+                              *(src + sy0 * w_in + w_in - 1)};
+    const float buffer2[2] = {*(src + sy1 * w_in + w_in - 1),
+                              *(src + sy1 * w_in + w_in - 1)};
     // w_bound - w_out loop
     for (; dx + 1 < w_out; dx += 2) {
       const float* s0p = buffer1;
@@ -318,22 +324,24 @@ void bilinear_interp(const float* src,
     int dx = 0;
     // w_bound loop
     for (; dx + 1 < w_bound; dx += 2) {
-      int sx = xofs[dx];
-      int sxn = xofs[dx + 1];
-      const float* s0p = s0 + sx;
-      const float* s1p = s1 + sx;
-      const float* s0np = s0 + sxn;
-      const float* s1np = s1 + sxn;
+      int idx = dx * 2;
+      int sx = xofs[idx];
+      int sx1 = xofs[idx + 1];
+      int sxn = xofs[idx + 2];
+      int sxn1 = xofs[idx + 3];
+      float32x4_t _s0s0n;
+      _s0s0n[0] = *(s0 + sx);
+      _s0s0n[1] = *(s0 + sx1);
+      _s0s0n[2] = *(s0 + sxn);
+      _s0s0n[3] = *(s0 + sxn1);
+      float32x4_t _s1s1n;
+      _s1s1n[0] = *(s1 + sx);
+      _s1s1n[1] = *(s1 + sx1);
+      _s1s1n[2] = *(s1 + sxn);
+      _s1s1n[3] = *(s1 + sxn1);
 
       float32x4_t _a = vld1q_f32(alphap);
-      float32x2_t _s0 = vld1_f32(s0p);
-      float32x2_t _s1 = vld1_f32(s1p);
-      float32x2_t _s0n = vld1_f32(s0np);
-      float32x2_t _s1n = vld1_f32(s1np);
-
-      float32x4_t _s0s0n = vcombine_f32(_s0, _s0n);
       float32x4_t _ms0 = vmulq_f32(_s0s0n, _a);
-      float32x4_t _s1s1n = vcombine_f32(_s1, _s1n);
       float32x4_t _ms1 = vmulq_f32(_s1s1n, _a);
 
       float32x2_t _rows0 = vpadd_f32(vget_low_f32(_ms0), vget_high_f32(_ms0));
@@ -345,11 +353,10 @@ void bilinear_interp(const float* src,
     }
     // w_bound remain loop
     for (; dx < w_bound; dx++) {
-      int sx = xofs[dx];
+      int sx = xofs[dx * 2];
+      int sx1 = xofs[dx * 2 + 1];
       const float* s0p = s0 + sx;
-      float a0 = alphap[0];
-      float a1 = alphap[1];
-      rows0p[dx] = s0p[0] * a0 + s0p[1] * a1;
+      rows0p[dx] = s0p[0] * alphap[0] + s0[sx1] * alphap[1];
       rows1p[dx] = rows0p[dx];
 
       alphap += 2;
