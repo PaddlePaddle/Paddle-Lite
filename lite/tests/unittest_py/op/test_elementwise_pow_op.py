@@ -80,11 +80,11 @@ class TestElementwisePowOp(AutoScanTest):
         input_data_x_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=20), min_size=1, max_size=4))
+                    min_value=1, max_value=20), min_size=4, max_size=4))
         input_data_y_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=20), min_size=1, max_size=4))
+                    min_value=1, max_value=20), min_size=4, max_size=4))
         axis = draw(st.integers(min_value=-1, max_value=4))
         assume(
             check_broadcast(input_data_x_shape, input_data_y_shape, axis) ==
@@ -104,8 +104,9 @@ class TestElementwisePowOp(AutoScanTest):
             input_data_type = draw(st.sampled_from([np.float32]))
 
         def gen_input_data(*args, **kwargs):
+            # The value is small because we do pow operation. The result will be very large if input data is large.
             return np.random.randint(
-                1, 20, size=(kwargs['shape'])).astype(kwargs['dtype'])
+                1, 5, size=(kwargs['shape'])).astype(kwargs['dtype'])
 
         elementwise_pow_op = OpConfig(
             type="elementwise_pow",
@@ -134,7 +135,7 @@ class TestElementwisePowOp(AutoScanTest):
 
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
-            return True
+            return False
 
         self.add_ignore_check_case(
             teller1, IgnoreReasons.ACCURACY_ERROR,
