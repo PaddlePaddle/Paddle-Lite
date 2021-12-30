@@ -52,7 +52,6 @@ int ConvertReshape(Converter* converter, OpInfo* op, Scope* scope) {
   if (HasInput(op, scope, "ShapeTensor")) {
     std::vector<NNAdapterOperand*> shapes_operands;
     for (auto shapes_tensor_name : op->Input("ShapeTensor")) {
-      LOG(INFO) << "DEBUG[shapes_tensor_name]: " << shapes_tensor_name;
       auto shapes_tensor_scale_name = shapes_tensor_name + "_scale";
       std::vector<float> shapes_tensor_scales;
       if (op->HasInputScale(shapes_tensor_scale_name, true)) {

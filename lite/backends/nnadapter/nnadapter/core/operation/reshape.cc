@@ -27,8 +27,6 @@ int PrepareReshape(hal::Operation* operation) {
   RESHAPE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
-  // NNADAPTER_CHECK(IsConstantOperand(shape_operand))
-  //     << "Only support constant shape now.";
   auto input_type = input_operand->type;
   auto& shape_type = shape_operand->type;
   auto& output_type = output_operand->type;

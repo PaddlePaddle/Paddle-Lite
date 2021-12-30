@@ -76,7 +76,7 @@ int PrepareResize(hal::Operation* operation) {
             << OperandPrecisionCodeToString(shape_operand->type.precision);
       }
     } else if (shape_operand->type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {
-      auto tempory_shape_info =
+      auto& tempory_shape_info =
           *(shape_operand->hints[NNADAPTER_TEMPORY_SHAPE_INFO])
                .get_mutable<NNAdapterOperandDimensionType>();
       NNADAPTER_CHECK(tempory_shape_info.data);
