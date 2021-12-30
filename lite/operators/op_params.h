@@ -435,6 +435,9 @@ struct BatchNormParam : ParamBase {
 struct PoolParam : ParamBase {
   lite::Tensor* x{};
   lite::Tensor* output{};
+#ifdef LITE_WITH_ARM
+  lite::Tensor* mask{};
+#endif
   std::string pooling_type{""};
   std::vector<int> ksize{};
   bool global_pooling{

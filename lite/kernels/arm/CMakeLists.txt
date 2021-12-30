@@ -77,6 +77,7 @@ add_kernel(scatter_compute_arm ARM extra SRCS scatter_compute.cc)
 add_kernel(sequence_expand_as_compute_arm ARM extra SRCS sequence_expand_as_compute.cc)
 add_kernel(matmul_v2_compute ARM extra SRCS matmul_v2_compute.cc)
 add_kernel(sum_compute ARM extra SRCS sum_compute.cc)
+add_kernel(max_pool_with_index_compute ARM extra SRCS max_pool_with_index_compute.cc)
 
 
 # for OCR specific
