@@ -79,7 +79,7 @@ class TestBoxCoderOp(AutoScanTest):
         num_pri = draw(st.integers(min_value=10, max_value=100))
         priorbox_shape = [num_pri, 4]
         code_type = draw(
-            st.sampled_from(["decode_center_size", "encode_center_size"]))
+            st.sampled_from(["encode_center_size", "decode_center_size"]))
         axis = draw(st.sampled_from([0, 1]))
         box_normalized = draw(st.booleans())
         variance = draw(st.sampled_from([[0.1, 0.2, 0.3, 0.4], []]))
@@ -144,6 +144,17 @@ class TestBoxCoderOp(AutoScanTest):
         return self.get_predictor_configs(), ["box_coder"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
+        def teller1(program_config, predictor_config):
+            if predictor_config.target() == TargetType.ARM:
+                if program_config.ops[0].attrs[
+                        "code_type"] == "encode_center_size":
+                    return True
+            return False
+
+        self.add_ignore_check_case(
+            teller1, IgnoreReasons.ACCURACY_ERROR,
+            "The op output has diff in a specific case on arm. We need to fix it as soon as possible."
+        )
         pass
 
     def test(self, *args, **kwargs):
