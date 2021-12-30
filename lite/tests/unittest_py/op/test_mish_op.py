@@ -21,39 +21,25 @@ import unittest
 
 import hypothesis
 from hypothesis import given, settings, seed, example, assume
-import hypothesis.strategies as st
-import argparse
+
 import numpy as np
 from functools import partial
+import hypothesis.strategies as st
 
 
-class TestLeakyReluOp(AutoScanTest):
+class TestMishOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(
-            TargetType.X86,
-            PrecisionType.FP32,
-            DataLayoutType.NCHW,
-            thread=[1, 2])
         self.enable_testing_on_place(
             TargetType.ARM,
             PrecisionType.FP32,
             DataLayoutType.NCHW,
-            thread=[1, 2, 4])
+            thread=[1, 4])
         self.enable_testing_on_place(
-            TargetType.Host,
+            TargetType.X86,
             PrecisionType.FP32,
             DataLayoutType.NCHW,
-            thread=[1, 2])
-        metal_places = [
-            Place(TargetType.Metal, PrecisionType.FP32,
-                  DataLayoutType.MetalTexture2DArray),
-            Place(TargetType.Metal, PrecisionType.FP16,
-                  DataLayoutType.MetalTexture2DArray),
-            Place(TargetType.ARM, PrecisionType.FP32),
-            Place(TargetType.Host, PrecisionType.FP32)
-        ]
-        self.enable_testing_on_place(places=metal_places)
+            thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -61,35 +47,32 @@ class TestLeakyReluOp(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(
+        in_num = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=64), min_size=4, max_size=4))
-        alpha_data = draw(st.floats(min_value=0.1, max_value=0.9))
-
-        def generate_input(*args, **kwargs):
-            return np.random.random(in_shape).astype(np.float32)
-
-        build_ops = OpConfig(
-            type="leaky_relu",
-            inputs={"X": ["input_data"], },
-            outputs={"Out": ["output_data"], },
-            attrs={"alpha": alpha_data, })
+                    min_value=1, max_value=4), min_size=1, max_size=1))
+        in_c_h_w = draw(
+            st.lists(
+                st.integers(
+                    min_value=1, max_value=128),
+                min_size=1,
+                max_size=3))
+        in_shape = in_num + in_c_h_w
+        threshold = draw(st.sampled_from([20.0, 10.0, 5.0]))
+        mish_op = OpConfig(
+            type="mish",
+            inputs={"X": ["input_data"]},
+            outputs={"Out": ["output_data"]},
+            attrs={"threshold": threshold})
         program_config = ProgramConfig(
-            ops=[build_ops],
+            ops=[mish_op],
             weights={},
-            inputs={
-                "input_data": TensorConfig(data_gen=partial(generate_input)),
-            },
+            inputs={"input_data": TensorConfig(shape=in_shape)},
             outputs=["output_data"])
         return program_config
 
     def sample_predictor_configs(self):
-        atol, rtol = 1e-5, 1e-5
-        target_str = self.get_target()
-        if target_str == "Metal":
-            atol, rtol = 2e-4, 2e-4
-        return self.get_predictor_configs(), ["leaky_relu"], (atol, rtol)
+        return self.get_predictor_configs(), ["mish"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass

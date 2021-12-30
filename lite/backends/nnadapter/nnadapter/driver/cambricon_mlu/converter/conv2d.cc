@@ -35,7 +35,23 @@ int ConvertConv2D(Converter* converter, hal::Operation* operation) {
   NNADAPTER_CHECK_EQ(bias_operand->type.dimensions.data[0], filter_width);
   // NNADAPTER_CHECK_EQ(bias_operand->type.dimensions.data[0],
   // output_channel_size);
-  auto bias_tensor = converter->ConvertOperand(bias_operand);
+  magicmind::ITensor* bias_tensor = nullptr;
+  auto bias_tmp_tensor = converter->ConvertOperand(bias_operand);
+  if (input_operand->type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_LAYER) {
+    auto cast_node = converter->network()->AddICastNode(
+        bias_tmp_tensor, magicmind::DataType::FLOAT32);
+    auto cast_out_tensor = cast_node->GetOutput(0);
+
+    float bias_scale = bias_operand->type.symm_per_layer_params.scale;
+    auto scale_tensor = converter->AddFloat32ConstantTensor(&bias_scale, {1});
+    auto dequantize_node = converter->network()->AddIElementwiseNode(
+        cast_out_tensor, scale_tensor, magicmind::IElementwise::MUL);
+    auto dequant_out_tensor = dequantize_node->GetOutput(0);
+    bias_tensor = dequant_out_tensor;
+  } else {
+    bias_tensor = bias_tmp_tensor;
+  }
+
   if (use_depthwise_conv && is_depthwise_mode) {
   } else {
     auto conv_node = converter->network()->AddIConvNode(
@@ -57,6 +73,21 @@ int ConvertConv2D(Converter* converter, hal::Operation* operation) {
     magicmind::Layout input_layout =
         ConvertToMagicMindDataLayout(input_operand->type.layout);
     conv_node->SetLayout(input_layout, magicmind::Layout::HWCN, input_layout);
+    if (input_operand->type.precision == NNADAPTER_QUANT_INT8_SYMM_PER_LAYER) {
+      float input_scale = input_operand->type.symm_per_layer_params.scale;
+      auto input_tensor_range = magicmind::UniformQuantParamToRangeWithQuantAlg(
+          {input_scale, 0}, 8, "symmetric");
+      auto input = conv_node->GetInput(0);
+      input->SetDynamicRange(input_tensor_range, true);
+
+      float filter_scale = filter_operand->type.symm_per_layer_params.scale;
+      auto filter_tensor_range =
+          magicmind::UniformQuantParamToRangeWithQuantAlg(
+              {filter_scale, 0}, 8, "symmetric");
+      auto filter = conv_node->GetInput(1);
+      filter->SetDynamicRange(filter_tensor_range, true);
+    }
+
     auto output_tensor = conv_node->GetOutput(0);
     // fuse activations ?
     switch (fuse_code) {

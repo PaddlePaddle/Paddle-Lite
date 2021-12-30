@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import sys
 sys.path.append('../')
 
@@ -26,15 +27,12 @@ from functools import partial
 import hypothesis.strategies as st
 
 
-class TestMulOp(AutoScanTest):
+class TestMatmulV2Op(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(TargetType.ARM, PrecisionType.FP32,
                                      DataLayoutType.NCHW)
-        self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32,
-                                     DataLayoutType.NCHW)
-        #self.enable_testing_on_place(TargetType.Metal, PrecisionType.FP32,
-        #                             DataLayoutType.NCHW)
+        # opencl bugs to be fix in the future
         #opencl_places = [
         #    Place(TargetType.OpenCL, PrecisionType.FP16,
         #          DataLayoutType.ImageDefault), Place(
@@ -73,7 +71,7 @@ class TestMulOp(AutoScanTest):
         transpose_Y = draw(st.booleans())
         if ((not transpose_X) and (not transpose_Y)):
             X_shape = [batch0, 1, shape0, shape1]
-            Y_shape = [batch0, shape1, shape2]
+            Y_shape = [batch0, 1, shape1, shape2]
         if ((transpose_X) and (not transpose_Y)):
             X_shape = [batch1, 1, shape1, shape0]
             Y_shape = [batch1, 1, shape1, shape2]
@@ -83,43 +81,16 @@ class TestMulOp(AutoScanTest):
         if ((transpose_X) and (transpose_Y)):
             X_shape = [batch0, shape1, shape0]
             Y_shape = [batch0, shape2, shape1]
-        alpha = draw(st.sampled_from([0.1, 1.0, 1.1, -1.5]))
-        fused_reshape_X = draw(st.sampled_from([[]]))
-        fused_reshape_Y = draw(st.sampled_from([[]]))
-        fused_transpose_X = draw(st.sampled_from([[]]))
-        fused_transpose_Y = draw(st.sampled_from([[]]))
-        fused_reshape_Out = draw(st.sampled_from([[]]))
-        fused_transpose_Out = draw(st.sampled_from([[]]))
-        Scale_x = draw(st.floats(min_value=0.1, max_value=10.0))
-        Scale_y = draw(st.floats(min_value=0.1, max_value=10.0))
-        Scale_out = draw(st.floats(min_value=0.1, max_value=10.0))
-        # not use for lite
-        head_number = draw(st.integers(min_value=1, max_value=1))
-        force_fp32_output = draw(st.booleans())
 
-        matmul_op = OpConfig(
-            type="matmul",
+        matmul_v2_op = OpConfig(
+            type="matmul_v2",
             inputs={"X": ["input_data_x"],
                     "Y": ["input_data_y"]},
             outputs={"Out": ["output_data"]},
-            attrs={
-                "transpose_X": transpose_X,
-                "transpose_Y": transpose_Y,
-                "alpha": alpha,
-                "fused_reshape_X": fused_reshape_X,
-                "fused_reshape_Y": fused_reshape_Y,
-                "fused_transpose_X": fused_transpose_X,
-                "fused_transpose_Y": fused_transpose_Y,
-                "fused_reshape_Out": fused_reshape_Out,
-                "fused_transpose_Out": fused_transpose_Out,
-                "Scale_x": Scale_x,
-                "Scale_y": Scale_y,
-                "Scale_out": Scale_out,
-                "head_number": head_number,
-                "force_fp32_output": force_fp32_output
-            })
+            attrs={"trans_x": transpose_X,
+                   "trans_y": transpose_Y})
         program_config = ProgramConfig(
-            ops=[matmul_op],
+            ops=[matmul_v2_op],
             weights={},
             inputs={
                 "input_data_x": TensorConfig(shape=X_shape),
@@ -129,7 +100,7 @@ class TestMulOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["matmul"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["matmul_v2"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass

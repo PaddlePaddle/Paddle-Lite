@@ -130,7 +130,7 @@ TEST(CtcAlign1, precision) {
   const std::vector<int>& input_data = {
       0, 1, 2, 2, 0, 4, 0, 4, 5, 0, 6, 6, 0, 0, 7, 7, 7, 0};
   const std::vector<int64_t> input_shape = {18, 1};
-  const std::vector<std::vector<uint64_t>> input_lod = {{11, 7}};
+  const std::vector<std::vector<uint64_t>> input_lod = {{0, 11, 18}};
   const std::vector<int> input_length_data = {};
   const std::vector<int64_t> input_length_shape = {};
   const int blank = 0;
@@ -138,7 +138,7 @@ TEST(CtcAlign1, precision) {
   const int padding_value = 0;
   const std::vector<int> output_data = {1, 2, 2, 4, 4, 5, 6, 6, 7, 7, 7};
   const std::vector<int64_t> output_shape = {11, 1};
-  const std::vector<std::vector<uint64_t>> output_lod = {{7, 4}};
+  const std::vector<std::vector<uint64_t>> output_lod = {{0, 7, 11}};
   const std::vector<int> output_length_data = {};
   const std::vector<int64_t> output_length_shape = {};
 

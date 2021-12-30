@@ -795,7 +795,8 @@ void prepackA_trans_8x16(float16_t *out,
         "3:                                       \n"
         "subs %[cnt], #1                          \n"
         "vst1.16 {d0-d3}, [%[outptr]]!            \n"
-        "vst1.16 {d4-d7}, [%[outptr]]!            \n"
+        "vst1.16 {d4-d7}, [%[outptr]]             \n"
+        "sub  %[outptr], #32                      \n"
         "add  %[outptr],   %[stride]              \n"
         "bne 0b                                   \n"
         "1:                                       \n"
@@ -817,7 +818,7 @@ void prepackA_trans_8x16(float16_t *out,
         "vmul.f16 q3, q3, %q[valpha]              \n"
         "4:                                       \n"
         "vst1.16 {d0-d3}, [%[outptr]]!            \n"
-        "vst1.16 {d4-d7}, [%[outptr]]!            \n"
+        "vst1.16 {d4-d7}, [%[outptr]]             \n"
         "2:                                       \n"
         : [ptr0] "+r"(ptr0),
           [ptr1] "+r"(ptr1),
@@ -850,7 +851,7 @@ void prepackA_trans_8x16(float16_t *out,
         "vmul.f16 q0, q0, %q[valpha]              \n"
         "3:                                       \n"
         "subs %[cnt], #1                          \n"
-        "vst1.16 {d0-d1}, [%[outptr]]!            \n"
+        "vst1.16 {d0-d1}, [%[outptr]]             \n"
         "add  %[outptr],   %[stride]              \n"
         "bne 0b                                   \n"
         "1:                                       \n"
@@ -862,7 +863,7 @@ void prepackA_trans_8x16(float16_t *out,
         "bne 4f                                   \n"
         "vmul.f16 q0, q0, %q[valpha]              \n"
         "4:                                       \n"
-        "vst1.16 {d0-d1}, [%[outptr]]!            \n"
+        "vst1.16 {d0-d1}, [%[outptr]]             \n"
         "2:                                       \n"
         : [ptr0] "+r"(ptr0), [outptr] "+r"(outptr_row_col), [cnt] "+r"(cnt_col)
         : [right_remain] "r"(right_remain),
@@ -875,6 +876,7 @@ void prepackA_trans_8x16(float16_t *out,
   }
   LITE_PARALLEL_COMMON_END();
 }
+
 #endif
 
 /**
@@ -1480,7 +1482,7 @@ void loadb_trans(float16_t *out,
         "vld1.16 {d14-d15}, [%[inptr7]]!\n"
         // c0d0c2d2c4d4c6d6
         "vtrn.16 q2, q3        \n"
-        "vld1.16 {d16-d17}, [%[inptr8]]!\n"
+        "vld1.16 {d16-d17}, [%[inptr8]]\n"
         // e0f0e2f2...
         "vtrn.16 q4, q5        \n"
         "add %[inptr8], %[stride_w]\n"
@@ -1874,9 +1876,9 @@ void gemm_prepack_8x16(bool is_transB,
   llc_size = llc_size * 9 / 10;
 
   auto act_type = act_param.active_type;
-  float local_alpha = 0.f;
-  float offset = 0.f;
-  float threshold = 6.f;
+  float16_t local_alpha = 0.f;
+  float16_t offset = 0.f;
+  float16_t threshold = 6.f;
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
   if (act_param.has_active) {
     act_acquire(act_type, flag_act, local_alpha, offset, threshold, act_param);
@@ -2634,9 +2636,9 @@ void gemm_prepack_8x12(bool is_transB,
   llc_size = llc_size * 9 / 10;
 
   auto act_type = act_param.active_type;
-  float local_alpha = 0.f;
-  float offset = 0.f;
-  float threshold = 6.f;
+  float16_t local_alpha = 0.f;
+  float16_t offset = 0.f;
+  float16_t threshold = 6.f;
   int flag_act = 0x00;  // relu: 1, relu6: 2, leakey: 3
   if (act_param.has_active) {
     act_acquire(act_type, flag_act, local_alpha, offset, threshold, act_param);
