@@ -51,6 +51,7 @@ class NCHW2NHWCDataLayoutConverter {
   void ConvertLpNormalization(hal::Operation* operation);
   void ConvertActivation(hal::Operation* operation);
   void ConvertPow(hal::Operation* operation);
+  void ConvertQuantize(hal::Operation* operation);
   void ConvertReduce(hal::Operation* operation);
   void ConvertReshape(hal::Operation* operation);
   void ConvertResizeNearest(hal::Operation* operation);
