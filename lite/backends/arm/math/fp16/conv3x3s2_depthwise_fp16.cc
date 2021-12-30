@@ -25,7 +25,6 @@ namespace lite {
 namespace arm {
 namespace math {
 namespace fp16 {
-
 #ifdef __aarch64__
 #define INIT_FP16_S2                                    \
   "PRFM PLDL1KEEP, [%[din_ptr0]]                    \n" \
@@ -910,10 +909,10 @@ namespace fp16 {
     *(doutr1 + j) = tmp1[j];        \
   }
 
-std::pair<uint16_t, uint16_t> right_mask_3x3s2p01_fp16(int w_in,
-                                                       int w_out,
-                                                       int pad,
-                                                       uint16_t* vmask) {
+inline std::pair<uint16_t, uint16_t> right_mask_3x3s2p01_fp16(int w_in,
+                                                              int w_out,
+                                                              int pad,
+                                                              uint16_t* vmask) {
   const uint16_t right_pad_idx[24] = {0, 2, 4, 6, 8,  10, 12, 14,
                                       1, 3, 5, 7, 9,  11, 13, 15,
                                       2, 4, 6, 8, 10, 12, 14, 16};
@@ -940,10 +939,10 @@ std::pair<uint16_t, uint16_t> right_mask_3x3s2p01_fp16(int w_in,
   return std::make_pair(tile_w, cnt_remain);
 }
 
-void right_mask_3x3_s2_small_fp16(int w_in,
-                                  int w_out,
-                                  uint16_t* vmask,
-                                  uint16_t* rmask) {
+inline void right_mask_3x3_s2_small_fp16(int w_in,
+                                         int w_out,
+                                         uint16_t* vmask,
+                                         uint16_t* rmask) {
   const uint16_t right_pad_idx[16] = {
       0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15};
   const uint16_t out_pad_idx[8] = {0, 1, 2, 3, 4, 5, 6, 7};
@@ -983,7 +982,7 @@ void conv_depthwise_3x3s2p1_bias_noact_common_fp16_fp16(
   int size_in_channel = w_in * h_in;
   int size_out_channel = w_out * h_out;
   uint16_t vmask[24];
-  auto res = right_mask_3x3s2p01_fp16(w_in, w_out, 1, vmask);
+  auto&& res = right_mask_3x3s2p01_fp16(w_in, w_out, 1, vmask);
   uint16_t cnt_col = res.first;
   uint16_t cnt_remain = res.second;
   uint16_t right_pad_num = (8 - cnt_remain) * 4 + 32;
@@ -1016,13 +1015,9 @@ void conv_depthwise_3x3s2p1_bias_noact_common_fp16_fp16(
 // clang-format off
 #ifdef __aarch64__
         asm volatile(
-          INIT_FP16_S2 
-          LEFT_COMPUTE_FP16_S2 
-          LEFT_RESULT_FP16_S2
-          MID_COMPUTE_FP16_S2 
-          MID_RESULT_FP16_S2
-          RIGHT_COMPUTE_FP16_S2 
-          RIGHT_RESULT_FP16_S2
+          INIT_FP16_S2 LEFT_COMPUTE_FP16_S2 LEFT_RESULT_FP16_S2
+          MID_COMPUTE_FP16_S2 MID_RESULT_FP16_S2
+          RIGHT_COMPUTE_FP16_S2 RIGHT_RESULT_FP16_S2
             : [cnt] "+r"(cnt), [din_ptr0] "+r"(din_ptr0), [din_ptr1] "+r"(din_ptr1), \
               [din_ptr2] "+r"(din_ptr2), [din_ptr3] "+r"(din_ptr3), [din_ptr4] "+r"(din_ptr4), \
               [ptr_out0] "+r"(doutr0), [ptr_out1] "+r"(doutr1), [vmask] "+r" (val_mask)
