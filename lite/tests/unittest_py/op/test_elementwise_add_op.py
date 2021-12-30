@@ -129,8 +129,10 @@ class TestElementwiseAddOp(AutoScanTest):
                 err_msg = "Elementwise_add op on this backend will crash with int64 dtype, we should fix it as soon as possible!"
                 return False
         if target_type == TargetType.Metal:
-            if input_data_type != np.float32 or in_x_shape != in_y_shape or in_x_shape[
-                    0] != 1:
+            if input_data_type != np.float32 \
+                or in_x_shape != in_y_shape \
+                or len(in_x_shape) != 4 \
+                or in_x_shape[0] != 1:
                 return False
 
         return True
@@ -203,7 +205,7 @@ class TestElementwiseAddOp(AutoScanTest):
             max_examples = 300
         if target_str == "Metal":
             # Make sure to generate enough valid cases for Metal
-            max_examples = 800
+            max_examples = 1000
         self.run_and_statis(quant=False, max_examples=max_examples)
 
 
