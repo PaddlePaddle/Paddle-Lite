@@ -22,13 +22,34 @@ namespace mir {
 namespace fusion {
 
 void FcFuser::BuildPattern() {
+  auto inputs_teller0 = [](const Node* node) -> bool {
+    return true;
+    auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
+    auto input_w_name = op_desc.Input("Y").front();
+    auto* scope = const_cast<Node*>(node)->AsStmt().op()->scope();
+    auto w_shape = scope->FindVar(input_w_name)->Get<lite::Tensor>().dims();
+    size_t w_rank = w_shape.size();
+
+    return w_rank == 2;
+  };
+
+  auto inputs_teller1 = [](const Node* node) -> bool {
+    auto op_desc = *const_cast<Node*>(node)->stmt()->op_info();
+    auto input_b_name = op_desc.Input("Y").front();
+    auto* scope = const_cast<Node*>(node)->AsStmt().op()->scope();
+    auto b_shape = scope->FindVar(input_b_name)->Get<lite::Tensor>().dims();
+    size_t b_rank = b_shape.size();
+    return b_rank == 2 || b_rank == 1;
+  };
+
   // create nodes.
   auto* x = VarNode("x")->assert_is_op_input("mul", "X");
   auto* W = VarNode("W")->assert_is_op_input("mul", "Y");
   auto* b = VarNode("b")->assert_is_persistable_var();
-  auto* mul = OpNode("mul", "mul");
+  auto* mul = OpNode("mul", "mul")->assert_node_satisfied(inputs_teller0);
   auto* mul_out = VarNode("mul_out");
-  auto* add = OpNode("add", "elementwise_add");
+  auto* add =
+      OpNode("add", "elementwise_add")->assert_node_satisfied(inputs_teller1);
   auto* Out = VarNode("Out");
 
   // create topology.

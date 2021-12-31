@@ -49,6 +49,11 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
 
     // TODO(ysh329): add instance_norm + relu pass
     // std::string build_options_ += "-DRELU";
+    const bool enable_fp16 =
+        CLRuntime::Global()->get_precision() == lite_api::CL_PRECISION_FP16;
+    if (enable_fp16) {
+      build_options_ += " -DCL_DTYPE_half -DCL_DTYPE_FLOAT_FORCE ";
+    }
     if (out_h == 128) {
       build_options_ += " -DLOCAL_MEM_128";
     } else if (out_h == 64) {
@@ -75,29 +80,60 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
     int cgroup = (channel + 3) / 4;
     int cround = cgroup * 4;
 
-    std::vector<half_t> scale_img(cround * batch);
-    std::vector<half_t> bias_img(cround * batch);
     const float* scale_data = instance_norm_param_->scale->data<float>();
     const float* bias_data = instance_norm_param_->bias->data<float>();
 
-    for (int i = 0; i < channel; ++i) {
-      scale_img[i] = Float2Half(scale_data[i]);
-      bias_img[i] = Float2Half(bias_data[i]);
-    }
+    std::vector<float> scale_img(cround * batch);
+    std::vector<float> bias_img(cround * batch);
 
-    for (int i = 1; i < batch; ++i) {
-      memcpy(scale_img.data() + i * cround,
-             scale_img.data(),
-             cround * sizeof(half_t));
-      memcpy(bias_img.data() + i * cround,
-             bias_img.data(),
-             cround * sizeof(half_t));
-    }
+    std::vector<half_t> scale_img_h(cround * batch);
+    std::vector<half_t> bias_img_h(cround * batch);
+
     DDim scale_img_size{{ cgroup, batch }};
-    MUTABLE_DATA_GPU(
-        &scale_image_, scale_img_size[0], scale_img_size[1], scale_img.data());
-    MUTABLE_DATA_GPU(
-        &bias_image_, scale_img_size[0], scale_img_size[1], bias_img.data());
+
+    if (enable_fp16) {
+      for (int i = 0; i < channel; ++i) {
+        scale_img_h[i] = Float2Half(scale_data[i]);
+        bias_img_h[i] = Float2Half(bias_data[i]);
+      }
+
+      for (int i = 1; i < batch; ++i) {
+        memcpy(scale_img_h.data() + i * cround,
+               scale_img_h.data(),
+               cround * sizeof(half_t));
+        memcpy(bias_img_h.data() + i * cround,
+               bias_img_h.data(),
+               cround * sizeof(half_t));
+      }
+      MUTABLE_DATA_GPU(&scale_image_,
+                       scale_img_size[0],
+                       scale_img_size[1],
+                       scale_img_h.data());
+      MUTABLE_DATA_GPU(&bias_image_,
+                       scale_img_size[0],
+                       scale_img_size[1],
+                       bias_img_h.data());
+    } else {
+      for (int i = 0; i < channel; ++i) {
+        scale_img[i] = scale_data[i];
+        bias_img[i] = bias_data[i];
+      }
+
+      for (int i = 1; i < batch; ++i) {
+        memcpy(scale_img.data() + i * cround,
+               scale_img.data(),
+               cround * sizeof(float));
+        memcpy(bias_img.data() + i * cround,
+               bias_img.data(),
+               cround * sizeof(float));
+      }
+      MUTABLE_DATA_GPU(&scale_image_,
+                       scale_img_size[0],
+                       scale_img_size[1],
+                       scale_img.data());
+      MUTABLE_DATA_GPU(
+          &bias_image_, scale_img_size[0], scale_img_size[1], bias_img.data());
+    }
   }
 
   void ReInitWhenNeeded() override {
@@ -182,6 +218,7 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
 
     status = EnqueueNDRangeKernel(
         context, kernel_, cl::NullRange, gws_, lws_, nullptr, event_);
+
     CL_CHECK_FATAL(status);
   }
 
@@ -324,7 +361,6 @@ class InstanceNormImageCompute : public KernelLite<TARGET(kOpenCL),
   std::string time_stamp_{GetTimeStamp()};
   cl::Kernel kernel_;
   cl::NDRange gws_, lws_;
-
   Tensor scale_image_;
   Tensor bias_image_;
 };
