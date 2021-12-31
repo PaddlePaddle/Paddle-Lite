@@ -492,6 +492,21 @@ void NCHW2NHWCDataLayoutConverter::ConvertPow(hal::Operation* operation) {
   SetPermutation(output_operand, input_permutation);
 }
 
+void NCHW2NHWCDataLayoutConverter::ConvertQuantize(hal::Operation* operation) {
+  auto& input_operands = operation->input_operands;
+  auto& output_operands = operation->output_operands;
+  auto input_count = input_operands.size();
+  auto output_count = output_operands.size();
+  NNADAPTER_CHECK_EQ(input_count, 4);
+  NNADAPTER_CHECK_EQ(output_count, 1);
+  auto input_operand = input_operands[0];
+  auto output_operand = output_operands[0];
+  // The input and output operands share the same dimorder vector
+  auto input_permutation = GetPermutation(input_operand);
+  TransposeOperand(output_operand, input_permutation);
+  SetPermutation(output_operand, input_permutation);
+}
+
 void NCHW2NHWCDataLayoutConverter::ConvertReduce(hal::Operation* operation) {
   auto& input_operands = operation->input_operands;
   auto& output_operands = operation->output_operands;
@@ -784,6 +799,9 @@ void NCHW2NHWCDataLayoutConverter::Apply(hal::Model* model) {
         break;
       case NNADAPTER_POW:
         ConvertPow(operation);
+        break;
+      case NNADAPTER_QUANTIZE:
+        ConvertQuantize(operation);
         break;
       case NNADAPTER_REDUCE_MEAN:
       case NNADAPTER_REDUCE_SUM:

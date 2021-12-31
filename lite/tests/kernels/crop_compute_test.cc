@@ -139,10 +139,15 @@ class CropComputeTester : public arena::TestCase {
     }
     SetCommonTensor(x_, x_dims_, x_data.data());
 
+    std::vector<int64_t> y_shape;
+    int y_data_num = 1;
+    for (int i = 0; i < attr_shape_.size(); i++) {
+      y_shape.push_back(static_cast<int64_t>(attr_shape_[i]));
+      y_data_num *= attr_shape_[i];
+    }
+    std::vector<int32_t> y_data(y_data_num, 0);
     if (!y_.empty()) {
-      SetCommonTensor(y_,
-                      DDim({static_cast<int64_t>(attr_shape_.size())}),
-                      attr_shape_.data());
+      SetCommonTensor(y_, DDim(y_shape), y_data.data());
     }
 
     if (!offsets_.empty()) {

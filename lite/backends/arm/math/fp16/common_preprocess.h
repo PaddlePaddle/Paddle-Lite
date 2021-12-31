@@ -32,6 +32,10 @@ typedef __fp16 float16_t;
       const dtype *ptr_w5, const dtype *ptr_w6, const dtype *ptr_w7, \
       int remain
 
+#define PTR_ACQUIRE_PARAM_4(dtype)                                 \
+  const dtype *ptr_zero, const dtype *ptr_w0, const dtype *ptr_w1, \
+      const dtype *ptr_w2, const dtype *ptr_w3, int remain
+
 #define PTR_ACQUIRE_PARAM_A8(dtype)                                  \
   const dtype *zerobuff, const dtype *inptr1, const dtype *inptr2,   \
       const dtype *inptr3, const dtype *inptr4, const dtype *inptr5, \
@@ -164,10 +168,10 @@ typedef __fp16 float16_t;
   }
 
 inline void act_acquire(lite_api::ActivationType act,
-                        int &flag_act,       // NOLINT
-                        float &local_alpha,  // NOLINT
-                        float &offset,       // NOLINT
-                        float &threshold,    // NOLINT
+                        int &flag_act,           // NOLINT
+                        float16_t &local_alpha,  // NOLINT
+                        float16_t &offset,       // NOLINT
+                        float16_t &threshold,    // NOLINT
                         const operators::ActivationParam act_param) {
   switch (act) {
     case lite_api::ActivationType::kRelu:
@@ -175,17 +179,17 @@ inline void act_acquire(lite_api::ActivationType act,
       break;
     case lite_api::ActivationType::kRelu6:
       flag_act = 0x02;
-      local_alpha = act_param.Relu_clipped_coef;
+      local_alpha = static_cast<float16_t>(act_param.Relu_clipped_coef);
       break;
     case lite_api::ActivationType::kLeakyRelu:
       flag_act = 0x03;
-      local_alpha = act_param.Leaky_relu_alpha;
+      local_alpha = static_cast<float16_t>(act_param.Leaky_relu_alpha);
       break;
     case lite_api::ActivationType::kHardSwish:
       flag_act = 0x04;
-      local_alpha = 1.0 / act_param.hard_swish_scale;
-      offset = act_param.hard_swish_offset;
-      threshold = act_param.hard_swish_threshold;
+      local_alpha = static_cast<float16_t>(1.0 / act_param.hard_swish_scale);
+      offset = static_cast<float16_t>(act_param.hard_swish_offset);
+      threshold = static_cast<float16_t>(act_param.hard_swish_threshold);
       break;
     default:
       break;
@@ -222,6 +226,23 @@ inline void ptr_acquire_remain(PTR_ACQUIRE_PARAM(dtype)) {
 }
 
 template <typename dtype>
+inline void ptr_acquire_remain_four(PTR_ACQUIRE_PARAM_4(dtype)) {
+  switch (4 - remain) {
+    case 3:
+      ptr_w0 = ptr_zero;
+      break;
+    case 2:
+      ptr_w1 = ptr_zero;
+      break;
+    case 1:
+      ptr_w2 = ptr_zero;
+      break;
+    default:
+      break;
+  }
+}
+
+template <typename dtype>
 inline void ptr_acquire_norm(PTR_ACQUIRE_PARAM(dtype)) {
   switch (8 - remain) {
     case 7:
@@ -244,6 +265,20 @@ inline void ptr_acquire_norm(PTR_ACQUIRE_PARAM(dtype)) {
   }
 }
 
+template <typename dtype>
+inline void ptr_acquire_norm_four(PTR_ACQUIRE_PARAM_4(dtype)) {
+  switch (4 - remain) {
+    case 3:
+      ptr_w1 = ptr_zero;
+    case 2:
+      ptr_w2 = ptr_zero;
+    case 1:
+      ptr_w3 = ptr_zero;
+      break;
+    default:
+      break;
+  }
+}
 template <typename dtype>
 inline void ptr_acquire_a8(PTR_ACQUIRE_PARAM_A8(dtype)) {
   switch (numa - numb) {
