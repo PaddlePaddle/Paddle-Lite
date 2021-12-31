@@ -17,21 +17,18 @@
 #include <list>
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 #include "nnadapter.h"  // NOLINT
-#include "utility/any.h"
 
 namespace nnadapter {
 namespace hal {
-
-// Store tempory shape information
-#define NNADAPTER_TEMPORY_SHAPE_INFO 1
 
 typedef struct Operand {
   NNAdapterOperandType type;
   void* buffer;
   uint32_t length;
-  std::map<int32_t, Any> hints;
+  std::map<uint8_t, std::pair<void*, void (*)(void*)>> hints;
 } Operand;
 
 typedef struct Argument {

@@ -16,6 +16,7 @@
 #include <vector>
 #include "core/hal/types.h"
 #include "utility/debug.h"
+#include "utility/hints.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
@@ -35,9 +36,10 @@ int PrepareReshape(hal::Operation* operation) {
   uint32_t shape_count;
   int32_t* shape_data = nullptr;
   if (shape_type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {
-    auto& tempory_shape_info =
-        *(shape_operand->hints[NNADAPTER_TEMPORY_SHAPE_INFO])
-             .get_mutable<NNAdapterOperandDimensionType>();
+    // auto& tempory_shape_info =
+    //     *(shape_operand->hints[NNADAPTER_TEMPORY_SHAPE_INFO])
+    //          .get_mutable<NNAdapterOperandDimensionType>();
+    auto& tempory_shape_info = *(GetTemporyShapeInfo(shape_operand));
     shape_count = tempory_shape_info.count;
     shape_data = tempory_shape_info.data;
   } else if (IsConstantOperand(shape_operand)) {

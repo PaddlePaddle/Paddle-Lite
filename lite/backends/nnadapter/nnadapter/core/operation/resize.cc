@@ -15,6 +15,7 @@
 #include "core/hal/types.h"
 #include "core/operation/resize_nearest.h"
 #include "utility/debug.h"
+#include "utility/hints.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
@@ -76,9 +77,10 @@ int PrepareResize(hal::Operation* operation) {
             << OperandPrecisionCodeToString(shape_operand->type.precision);
       }
     } else if (shape_operand->type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {
-      auto& tempory_shape_info =
-          *(shape_operand->hints[NNADAPTER_TEMPORY_SHAPE_INFO])
-               .get_mutable<NNAdapterOperandDimensionType>();
+      // auto& tempory_shape_info =
+      //     *(shape_operand->hints[NNADAPTER_TEMPORY_SHAPE_INFO])
+      //          .get_mutable<NNAdapterOperandDimensionType>();
+      auto& tempory_shape_info = *(GetTemporyShapeInfo(shape_operand));
       NNADAPTER_CHECK(tempory_shape_info.data);
       NNADAPTER_CHECK(tempory_shape_info.data[0]);
       memcpy(&shape_dims,

@@ -16,6 +16,7 @@
 #include <vector>
 #include "core/hal/types.h"
 #include "utility/debug.h"
+#include "utility/hints.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
@@ -130,9 +131,10 @@ int PrepareConcat(hal::Operation* operation) {
     std::vector<std::vector<int32_t>> concat_inputs_dims;
     for (size_t i = 0; i < input_count - 1; i++) {
       if (input_operands[i]->type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {
-        auto& tempory_shape_info =
-            *(input_operands[i]->hints[NNADAPTER_TEMPORY_SHAPE_INFO])
-                 .get_mutable<NNAdapterOperandDimensionType>();
+        // auto& tempory_shape_info =
+        //     *(input_operands[i]->hints[NNADAPTER_TEMPORY_SHAPE_INFO])
+        //          .get_mutable<NNAdapterOperandDimensionType>();
+        auto& tempory_shape_info = *(GetTemporyShapeInfo(input_operands[i]));
         NNADAPTER_CHECK(tempory_shape_info.data);
         NNADAPTER_CHECK(tempory_shape_info.data[0]);
         concat_inputs.push_back(tempory_shape_info.data);
@@ -153,9 +155,10 @@ int PrepareConcat(hal::Operation* operation) {
          i++) {
       for (size_t j = 0; j < input_count - 1; j++) {
         if (input_operands[j]->type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {
-          auto& tempory_shape_info =
-              *(input_operands[j]->hints[NNADAPTER_TEMPORY_SHAPE_INFO])
-                   .get_mutable<NNAdapterOperandDimensionType>();
+          // auto& tempory_shape_info =
+          //     *(input_operands[j]->hints[NNADAPTER_TEMPORY_SHAPE_INFO])
+          //          .get_mutable<NNAdapterOperandDimensionType>();
+          auto& tempory_shape_info = *(GetTemporyShapeInfo(input_operands[i]));
           NNADAPTER_CHECK(tempory_shape_info.data);
           NNADAPTER_CHECK(tempory_shape_info.data[0]);
           dynamic_concat_inputs[i].push_back(tempory_shape_info.data);
@@ -187,7 +190,9 @@ int PrepareConcat(hal::Operation* operation) {
                                  dimension_type.dynamic_data[i]);
     }
     output_operand->type.lifetime = NNADAPTER_TEMPORARY_SHAPE;
-    output_operand->hints[NNADAPTER_TEMPORY_SHAPE_INFO].set(dimension_type);
+    // reinterpret_cast<Any*>(output_operand->hints[NNADAPTER_TEMPORY_SHAPE_INFO])->set(reinterpret_cast<void*>(&dimension_type));
+    // output_operand->hints[NNADAPTER_TEMPORY_SHAPE_INFO].set(dimension_type);
+    SetTemporyShapeInfo(output_operand, dimension_type);
   }
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;

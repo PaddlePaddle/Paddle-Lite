@@ -17,6 +17,7 @@
 #include <vector>
 #include "core/hal/types.h"
 #include "utility/debug.h"
+#include "utility/hints.h"
 #include "utility/logging.h"
 #include "utility/micros.h"
 #include "utility/modeling.h"
@@ -107,9 +108,10 @@ int PrepareSlice(hal::Operation* operation) {
 
   if (input_operand->type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {
     output_operand->type.lifetime = NNADAPTER_TEMPORARY_SHAPE;
-    auto& tempory_shape_info =
-        *(input_operand->hints[NNADAPTER_TEMPORY_SHAPE_INFO])
-             .get_mutable<NNAdapterOperandDimensionType>();
+    // auto& tempory_shape_info =
+    //     *(input_operand->hints[NNADAPTER_TEMPORY_SHAPE_INFO])
+    //          .get_mutable<NNAdapterOperandDimensionType>();
+    auto& tempory_shape_info = *(GetTemporyShapeInfo(input_operand));
     NNADAPTER_CHECK(tempory_shape_info.data);
     NNADAPTER_CHECK(tempory_shape_info.data[0]);
     NNAdapterOperandDimensionType dimension_type;
@@ -133,7 +135,8 @@ int PrepareSlice(hal::Operation* operation) {
                                 ends,
                                 dimension_type.dynamic_data[i]);
     }
-    output_operand->hints[NNADAPTER_TEMPORY_SHAPE_INFO].set(dimension_type);
+    SetTemporyShapeInfo(output_operand, dimension_type);
+    // output_operand->hints[NNADAPTER_TEMPORY_SHAPE_INFO].set(dimension_type);
   }
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
