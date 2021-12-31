@@ -16,16 +16,10 @@
 #include <algorithm>
 #include <string>
 #include "lite/backends/xpu/math.h"
+#include "lite/utils/hash.h"
 
 namespace paddle {
 namespace lite {
-
-template <typename T>
-static inline size_t HashCombine(size_t seed, const T& v) {
-  std::hash<T> hasher;
-  seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-  return seed;
-}
 
 static size_t Hashed(const void* cpu_data,
                      int numel,
@@ -33,9 +27,9 @@ static size_t Hashed(const void* cpu_data,
                      bool trans) {
   std::hash<const void*> ptr_hasher;
   auto hash_res = ptr_hasher(cpu_data);
-  hash_res = HashCombine(hash_res, numel);
-  hash_res = HashCombine(hash_res, precision);
-  hash_res = HashCombine(hash_res, trans);
+  CombineHash(numel, &hash_res);
+  CombineHash(precision, &hash_res);
+  CombineHash(trans, &hash_res);
   return hash_res;
 }
 
@@ -69,31 +63,31 @@ inline const std::string CppTypeToString<int8_t>() {
 }
 
 template <typename T>
-static void QuantFP32ToIntX(const float* src_ptr,
-                            T* dst_ptr,
-                            float max_val,
-                            int numel) {
+void XPUQuantizer::QuantFP32ToIntX(const float* src_ptr,
+                                   T* dst_ptr,
+                                   float max_val,
+                                   int numel) {
   LOG(FATAL) << "Not support for T is " << CppTypeToString<T>();
 }
 template <>
-void QuantFP32ToIntX<float>(const float* src_ptr,
-                            float* dst_ptr,
-                            float max_val,
-                            int numel) {
+void XPUQuantizer::QuantFP32ToIntX<float>(const float* src_ptr,
+                                          float* dst_ptr,
+                                          float max_val,
+                                          int numel) {
   std::copy(src_ptr, src_ptr + numel, dst_ptr);
 }
 template <>
-void QuantFP32ToIntX<int16_t>(const float* src_ptr,
-                              int16_t* dst_ptr,
-                              float max_val,
-                              int numel) {
+void XPUQuantizer::QuantFP32ToIntX<int16_t>(const float* src_ptr,
+                                            int16_t* dst_ptr,
+                                            float max_val,
+                                            int numel) {
   paddle::lite::xpu::math::ConvertFP32ToInt16(src_ptr, dst_ptr, max_val, numel);
 }
 template <>
-void QuantFP32ToIntX<int8_t>(const float* src_ptr,
-                             int8_t* dst_ptr,
-                             float max_val,
-                             int numel) {
+void XPUQuantizer::QuantFP32ToIntX<int8_t>(const float* src_ptr,
+                                           int8_t* dst_ptr,
+                                           float max_val,
+                                           int numel) {
   paddle::lite::xpu::math::ConvertFP32ToInt8(src_ptr, dst_ptr, max_val, numel);
 }
 
@@ -101,14 +95,10 @@ template <typename Tcpu,
           typename Txpu,
           typename std::enable_if<!std::is_same<Tcpu, float>::value,
                                   Tcpu>::type* ptr = nullptr>
-static void ConvertWithQuant(
-    const Tcpu* cpu_data,
-    const DDimLite& dims,
-    bool data_transpose,
-    std::unordered_map<size_t,
-                       std::pair<XPUScratchPadGuard, XPUScratchPadGuard>>&
-        weight_cache_,
-    size_t hashed_key) {
+void XPUQuantizer::ConvertWithQuant(const Tcpu* cpu_data,
+                                    const DDimLite& dims,
+                                    bool data_transpose,
+                                    size_t hashed_key) {
   LOG(FATAL) << "Not support for Tcpu is " << CppTypeToString<Tcpu>();
 }
 
@@ -116,14 +106,10 @@ template <typename Tcpu,
           typename Txpu,
           typename std::enable_if<std::is_same<Tcpu, float>::value, Tcpu>::type*
               ptr = nullptr>
-static void ConvertWithQuant(
-    const Tcpu* cpu_data,
-    const DDimLite& dims,
-    bool data_transpose,
-    std::unordered_map<size_t,
-                       std::pair<XPUScratchPadGuard, XPUScratchPadGuard>>&
-        weight_cache_,
-    size_t hashed_key) {
+void XPUQuantizer::ConvertWithQuant(const Tcpu* cpu_data,
+                                    const DDimLite& dims,
+                                    bool data_transpose,
+                                    size_t hashed_key) {
   // transpose
   const Tcpu* cpu_ptr = nullptr;
   int numel = dims.production();
@@ -159,14 +145,10 @@ static void ConvertWithQuant(
 }
 
 template <typename T>
-static void ConvertWithoutQuant(
-    const T* cpu_data,
-    const DDimLite& dims,
-    bool data_transpose,
-    std::unordered_map<size_t,
-                       std::pair<XPUScratchPadGuard, XPUScratchPadGuard>>&
-        weight_cache_,
-    size_t hashed_key) {
+void XPUQuantizer::ConvertWithoutQuant(const T* cpu_data,
+                                       const DDimLite& dims,
+                                       bool data_transpose,
+                                       size_t hashed_key) {
   // transpose
   const T* cpu_ptr = nullptr;
   int numel = dims.production();
@@ -204,14 +186,7 @@ XPUQuantData XPUQuantizer::quant(const Tcpu* cpu_data,
           << ", precision=" << precision << ", transpose=" << data_transpose
           << ", hashed_key=" << hashed_key;
   if (weight_cache_.find(hashed_key) == weight_cache_.end()) {
-    bool need_quant = !std::is_same<Tcpu, Txpu>::value;
-    if (need_quant) {
-      ConvertWithQuant<Tcpu, Txpu>(
-          cpu_data, dims, data_transpose, weight_cache_, hashed_key);
-    } else {
-      ConvertWithoutQuant<Tcpu>(
-          cpu_data, dims, data_transpose, weight_cache_, hashed_key);
-    }
+    ConvertWrapper<Tcpu, Txpu>(cpu_data, dims, data_transpose, hashed_key);
   }
 
   float* max_ptr =
