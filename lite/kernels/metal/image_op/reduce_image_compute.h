@@ -52,9 +52,11 @@ class ReduceImageCompute
     void* mps_input_image_{nullptr};
     void* mps_output_image_{nullptr};
 
+    template <typename T>
     void setup_with_mps();
     void setup_without_mps();
 
+    template <typename T>
     void run_with_mps();
     void run_without_mps();
 
