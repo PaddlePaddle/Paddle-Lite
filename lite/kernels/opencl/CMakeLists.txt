@@ -106,8 +106,8 @@ lite_cc_test(test_layout_image_opencl SRCS layout_image_compute_test.cc
 lite_cc_test(test_pixel_shuffle_image_opencl SRCS pixel_shuffle_image_compute_test.cc
              DEPS kernels core)
 
-lite_cc_test(test_expand_image_opencl SRCS expand_image_compute_test.cc
-             DEPS kernels core)
+#lite_cc_test(test_expand_image_opencl SRCS expand_image_compute_test.cc
+#             DEPS kernels core)
 
 #lite_cc_test(test_elementwise_add_image_opencl SRCS elementwise_add_image_compute_test.cc
 #             DEPS kernels core)
