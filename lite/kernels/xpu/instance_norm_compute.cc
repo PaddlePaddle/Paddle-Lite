@@ -25,8 +25,8 @@ void InstanceNormCompute::Run() {
   auto& param = this->Param<param_t>();
   auto& ctx = this->ctx_->As<XPUContext>();
   auto x_dims = param.x->dims();
-  bool x_dims_support = (x_dims.size() == 4 || x_dims.size() == 5);
-  CHECK_EQ(x_dims_support, true);
+  CHECK(x_dims.size() == 4 || x_dims.size() == 5)
+      << "Not support x_dims_rank = " << x_dims.size();
 
   int n = x_dims[0];
   int c = x_dims[1];
@@ -60,20 +60,16 @@ void InstanceNormCompute::Run() {
       h,
       w,
       param.epsilon,
-      (param.scale == nullptr)
-          ? xpu_scale
-          : param.scale->data<float>(),  // param.scale->data<float>(),
-      (param.bias == nullptr)
-          ? xpu_bias
-          : param.bias->data<float>(),  // param.bias->data<float>(),
+      (param.scale == nullptr) ? xpu_scale : param.scale->data<float>(),
+      (param.bias == nullptr) ? xpu_bias : param.bias->data<float>(),
       param.saved_mean->mutable_data<float>(TARGET(kXPU)),
       param.saved_variance->mutable_data<float>(TARGET(kXPU)),
       true);
   CHECK_EQ(ret, 0);
-  if (param.scale == nullptr) {
+  if (xpu_scale != nullptr) {
     XPU_CALL(xpu_free(xpu_scale));
   }
-  if (param.bias == nullptr) {
+  if (xpu_bias != nullptr) {
     XPU_CALL(xpu_free(xpu_bias));
   }
 }

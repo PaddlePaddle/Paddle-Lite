@@ -128,9 +128,9 @@ void Conv2dTransposeCompute<PRECISION(kFloat)>::Run() {
                               dilations,
                               true);
     CHECK_EQ(ret, 0);
-    xpu_free(x_trans);
-    xpu_free(x_col_before_concat);
-    xpu_free(x_col);
+    XPU_CALL(xpu_free(x_trans));
+    XPU_CALL(xpu_free(x_col_before_concat));
+    XPU_CALL(xpu_free(x_col));
   }
 }
 
