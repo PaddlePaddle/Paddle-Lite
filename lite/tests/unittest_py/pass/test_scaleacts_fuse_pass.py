@@ -42,7 +42,8 @@ class TestScaleactsFusePass(FusePassAutoScanTest):
                       TargetType.OpenCL, PrecisionType.Any,
                       DataLayoutType.ImageFolder),
             Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-            Place(TargetType.Host, PrecisionType.FP32)
+            Place(TargetType.Host, PrecisionType.FP32),
+            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW)
         ]
         self.enable_testing_on_place(places=opencl_places)
 
@@ -56,7 +57,7 @@ class TestScaleactsFusePass(FusePassAutoScanTest):
             st.lists(
                 st.integers(
                     min_value=1, max_value=64), min_size=2, max_size=4))
-        act_type = draw(st.sampled_from(['relu', 'relu6', 'leaky_relu']))
+        act_type = draw(st.sampled_from(['relu6']))
         threshold = draw(st.floats(min_value=0, max_value=1))
         alpha = draw(st.floats(min_value=0, max_value=1))
         scale = draw(st.floats(min_value=0.5, max_value=5))
@@ -67,10 +68,6 @@ class TestScaleactsFusePass(FusePassAutoScanTest):
             attrs = {}
             if act_type_str == 'relu6':
                 attrs = {"threshold": threshold}
-            elif act_type_str == 'leaky_relu':
-                attrs = {"alpha": alpha}
-            elif act_type_str == 'relu':
-                attrs = {}
             return attrs
 
         scale_op1 = OpConfig(
@@ -111,6 +108,10 @@ class TestScaleactsFusePass(FusePassAutoScanTest):
         return self.get_predictor_configs(), ['scale'], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
+        def teller1(program_config, predictor_config):
+            if predictor_config.target() == TargetType.Metal:
+                return True
+
         pass
 
     def test(self, *args, **kwargs):
