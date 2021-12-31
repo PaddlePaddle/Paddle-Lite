@@ -427,13 +427,11 @@ TEST(Conv_transpose, precision) {
   abs_error = 5e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
+  abs_error = 2e-4;
   TestConvTransposeKsize(place, abs_error);
   TestConvTransposeStrides(place, abs_error);
   TestConvTransposePaddings(place, abs_error);
   TestConvTransposeGroups(place, abs_error);
-  TestConvTransposeDilations(place, abs_error);
-  TestConvTransposePaddingAlgorithm(place, abs_error);
-  TestConvTransposeOutputSize(place, abs_error);
   TestConvTransposeOutputPadding(place, abs_error);
   return;
 #elif defined(LITE_WITH_ARM)
