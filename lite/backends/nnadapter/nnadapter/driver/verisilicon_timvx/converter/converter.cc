@@ -94,5 +94,16 @@ std::shared_ptr<tim::vx::Tensor> Converter::ConvertOperand(
   return tensor;
 }
 
+std::shared_ptr<tim::vx::Tensor> Converter::AddConstantTensor(
+    void* values,
+    std::vector<int32_t> dimensions,
+    tim::vx::DataType precision,
+    const float* quant_scale,
+    const int32_t* zero_point) {
+  auto tensor = CreateConstantTimVXTensor(
+      graph_, values, dimensions, precision, quant_scale, zero_point);
+  NNADAPTER_CHECK(tensor);
+  return tensor;
+}
 }  // namespace verisilicon_timvx
 }  // namespace nnadapter
