@@ -332,65 +332,135 @@ void conv_direct::run(const float* i_data,
   int whwB = wh * ww * BLOCK;
   int ochw = oc * oh * ow;
 
-  // fetch bs_i th input feature map
-  for (int bs_i = 0; bs_i < bs; bs_i++) {
-    // calculate the result of each line of output
-    auto cal_out_line = [=](const float* in_row_addr,
-                            const float* trans_weight,
-                            float* out_row_addr,
-                            int wh) {
+  // strideh *
+  if (iw >= 224) {
+    // fetch bs_i th input feature map
+    for (int bs_i = 0; bs_i < bs; bs_i++) {
+      // calculate the result of each line of output
+      auto cal_out_line = [=](const float* in_row_addr,
+                              const float* trans_weight,
+                              float* out_row_addr,
+                              int wh) {
+        for (int ic_i = 0; ic_i < ic; ic_i += ic_block) {
+          for (int oc_gi = 0; oc_gi < oc; oc_gi += oc_block) {
+            jit_param param;
+            param.in_row_addr = in_row_addr + ic_i * ihw;
+            param.kernel_addr =
+                trans_weight + oc_gi / BLOCK * whwB * wc + ic_i * whwB;
+            param.out_row_addr = out_row_addr + oc_gi * oh * ow;
+            param.oc = oc_gi + oc_block - 1 < oc ? oc_block : oc - oc_gi;
+            param.ic = ic_i + ic_block - 1 < ic ? ic_block : ic - ic_i;
+            param.wh = wh;
+
+            void (*f)(jit_param*) =
+                CodeGenerator::getCode<void (*)(jit_param*)>();
+            f(&param);
+          }
+        }
+      };
+
+      const float* in_row_addr = i_data + bs_i * ichw;
+      float* out_row_addr = trans_out + bs_i * ochw;
+
+      int oh_i = 0;
+      if (ph > 0) {  // upper boundry
+        int temp_wh =
+            wh - ph;  // we olny need deal with temp_wh rows not wh rows!
+
+        // check if the kernel will occupy lower boundry
+        // if so, we need decrease temp_wh again
+        if (ih + ph < wh) temp_wh -= (wh - ih - ph);
+        cal_out_line(
+            in_row_addr, trans_weight + ph * ww * BLOCK, out_row_addr, temp_wh);
+        oh_i++;
+        in_row_addr += (strideh - ph) * iw;
+        out_row_addr += ow * BLOCK;
+      }
+      // middle
+      for (; oh_i < oh - 1; oh_i++) {
+        cal_out_line(in_row_addr, trans_weight, out_row_addr, wh);
+        out_row_addr += ow * BLOCK;
+        in_row_addr += strideh * iw;
+      }
+
+      if (oh_i >= oh) continue;
+
+      // lower boundary,
+      // compute how many boundry rows is used to the lowerest output row
+      int lower = strideh * (oh - 1) + wh - ph - ih;
+
+      if (lower > 0) {
+        cal_out_line(in_row_addr, trans_weight, out_row_addr, wh - lower);
+      } else {
+        cal_out_line(in_row_addr, trans_weight, out_row_addr, wh);
+      }
+    }
+  } else {
+    // fetch bs_i th input feature map
+    for (int bs_i = 0; bs_i < bs; bs_i++) {
       for (int ic_i = 0; ic_i < ic; ic_i += ic_block) {
         for (int oc_gi = 0; oc_gi < oc; oc_gi += oc_block) {
+          const float* in_row_addr = i_data + bs_i * ichw + ic_i * ihw;
+          float* out_row_addr = trans_out + bs_i * ochw + oc_gi * oh * ow;
+          const float* weight =
+              trans_weight + oc_gi * wc * whwB / BLOCK + ic_i * whwB;
           jit_param param;
-          param.in_row_addr = in_row_addr + ic_i * ihw;
-          param.kernel_addr =
-              trans_weight + oc_gi / BLOCK * whwB * wc + ic_i * whwB;
-          param.out_row_addr = out_row_addr + oc_gi * oh * ow;
           param.oc = oc_gi + oc_block - 1 < oc ? oc_block : oc - oc_gi;
           param.ic = ic_i + ic_block - 1 < ic ? ic_block : ic - ic_i;
-          param.wh = wh;
-
           void (*f)(jit_param*) =
               CodeGenerator::getCode<void (*)(jit_param*)>();
-          f(&param);
+
+          int oh_i = 0;
+          if (ph > 0) {  // upper boundry
+            int temp_wh =
+                wh - ph;  // we olny need deal with temp_wh rows not wh rows!
+
+            // check if the kernel will occupy lower boundry
+            // if so, we need decrease temp_wh again
+            if (ih + ph < wh) temp_wh -= (wh - ih - ph);
+
+            param.wh = temp_wh;
+            param.in_row_addr = in_row_addr;
+            param.kernel_addr = weight + ph * ww * BLOCK;
+            param.out_row_addr = out_row_addr;
+            f(&param);
+            oh_i++;
+            in_row_addr += (strideh - ph) * iw;
+            out_row_addr += ow * BLOCK;
+          }
+
+          // middle
+          for (; oh_i < oh - 1; oh_i++) {
+            param.wh = wh;
+            param.in_row_addr = in_row_addr;
+            param.kernel_addr = weight;
+            param.out_row_addr = out_row_addr;
+            f(&param);
+            out_row_addr += ow * BLOCK;
+            in_row_addr += strideh * iw;
+          }
+
+          if (oh_i >= oh) continue;
+
+          // lower boundary,
+          // compute how many boundry rows is used to the lowerest output row
+          int lower = strideh * (oh - 1) + wh - ph - ih;
+
+          if (lower > 0) {
+            param.wh = wh - lower;
+            param.in_row_addr = in_row_addr;
+            param.kernel_addr = weight;
+            param.out_row_addr = out_row_addr;
+            f(&param);
+          } else {
+            param.wh = wh;
+            param.in_row_addr = in_row_addr;
+            param.kernel_addr = weight;
+            param.out_row_addr = out_row_addr;
+            f(&param);
+          }
         }
       }
-    };
-
-    const float* in_row_addr = i_data + bs_i * ichw;
-    float* out_row_addr = trans_out + bs_i * ochw;
-
-    int oh_i = 0;
-    if (ph > 0) {  // upper boundry
-      int temp_wh =
-          wh - ph;  // we olny need deal with temp_wh rows not wh rows!
-
-      // check if the kernel will occupy lower boundry
-      // if so, we need decrease temp_wh again
-      if (ih + ph < wh) temp_wh -= (wh - ih - ph);
-      cal_out_line(
-          in_row_addr, trans_weight + ph * ww * BLOCK, out_row_addr, temp_wh);
-      oh_i++;
-      in_row_addr += (strideh - ph) * iw;
-      out_row_addr += ow * BLOCK;
-    }
-    // middle
-    for (; oh_i < oh - 1; oh_i++) {
-      cal_out_line(in_row_addr, trans_weight, out_row_addr, wh);
-      out_row_addr += ow * BLOCK;
-      in_row_addr += strideh * iw;
-    }
-
-    if (oh_i >= oh) continue;
-
-    // lower boundary,
-    // compute how many boundry rows is used to the lowerest output row
-    int lower = strideh * (oh - 1) + wh - ph - ih;
-
-    if (lower > 0) {
-      cal_out_line(in_row_addr, trans_weight, out_row_addr, wh - lower);
-    } else {
-      cal_out_line(in_row_addr, trans_weight, out_row_addr, wh);
     }
   }
 }
