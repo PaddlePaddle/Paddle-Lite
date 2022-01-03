@@ -1540,6 +1540,7 @@ struct DistributeFpnProposalsParam : ParamBase {
   int max_level{};
   int refer_level{};
   int refer_scale{};
+  bool pixel_offset{true};
 };
 
 /// --------------------- instance_norm operators --------------------
