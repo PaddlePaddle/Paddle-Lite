@@ -53,11 +53,22 @@ class TestElementwiseSubOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_valid_places)
+        metal_places = [
+            Place(TargetType.Metal, PrecisionType.FP32,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.Metal, PrecisionType.FP16,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.ARM, PrecisionType.FP32),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=metal_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
         target_type = predictor_config.target()
+        in_x_shape = list(program_config.inputs["input_data_x"].shape)
+        in_y_shape = list(program_config.inputs["input_data_y"].shape)
         input_data_type = program_config.inputs["input_data_x"].dtype
         # Check config
         if target_type in [TargetType.ARM]:
@@ -72,6 +83,12 @@ class TestElementwiseSubOp(AutoScanTest):
                 return False
             if predictor_config.precision(
             ) == PrecisionType.INT32 and input_data_type != np.int32:
+                return False
+        if target_type == TargetType.Metal:
+            if input_data_type != np.float32 \
+                or in_x_shape != in_y_shape \
+                or len(in_x_shape) == 3 \
+                or in_x_shape[0] != 1:
                 return False
 
         return True
@@ -145,7 +162,15 @@ class TestElementwiseSubOp(AutoScanTest):
         )
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=300)
+        target_str = self.get_target()
+        max_examples = 150
+        if target_str == "OpenCL":
+            # Make sure to generate enough valid cases for OpenCL
+            max_examples = 300
+        if target_str == "Metal":
+            # Make sure to generate enough valid cases for Metal
+            max_examples = 2000
+        self.run_and_statis(quant=False, max_examples=max_examples)
 
 
 if __name__ == "__main__":
