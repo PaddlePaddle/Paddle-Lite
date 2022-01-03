@@ -167,7 +167,7 @@ class TestElementwiseDivOp(AutoScanTest):
             max_examples = 300
         if target_str == "Metal":
             # Make sure to generate enough valid cases for Metal
-            max_examples = 1000
+            max_examples = 2000
         self.run_and_statis(quant=False, max_examples=max_examples)
 
 
