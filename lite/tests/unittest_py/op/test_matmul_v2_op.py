@@ -47,11 +47,25 @@ class TestMatmulV2Op(AutoScanTest):
         #    Place(TargetType.Host, PrecisionType.FP32)
         #]
         #self.enable_testing_on_place(places=opencl_places)
+        metal_places = [
+            Place(TargetType.Metal, PrecisionType.FP32,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.Metal, PrecisionType.FP16,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.ARM, PrecisionType.FP32),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=metal_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        return True  # True ci run matmul has diff
+        target_type = predictor_config.target()
+        in_shape = list(program_config.inputs["input_data_x"].shape)
+        if target_type == TargetType.Metal:
+            if len(in_shape) != 4:
+                return False
+        return True
 
     def sample_program_configs(self, draw):
         target_str = self.get_target()
@@ -67,6 +81,12 @@ class TestMatmulV2Op(AutoScanTest):
             shape2 = draw(st.integers(min_value=1, max_value=64))
             batch0 = draw(st.integers(min_value=1, max_value=64))
             batch1 = draw(st.integers(min_value=1, max_value=64))
+        if target_str == "Metal":
+            shape0 = draw(st.integers(min_value=1, max_value=64))
+            shape1 = draw(st.integers(min_value=1, max_value=64))
+            shape2 = draw(st.integers(min_value=1, max_value=64))
+            batch0 = draw(st.integers(min_value=1, max_value=1))
+            batch1 = draw(st.integers(min_value=1, max_value=1))
         transpose_X = draw(st.booleans())
         transpose_Y = draw(st.booleans())
         if ((not transpose_X) and (not transpose_Y)):
@@ -100,7 +120,12 @@ class TestMatmulV2Op(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["matmul_v2"], (1e-5, 1e-5)
+        atol, rtol = 1e-5, 1e-5
+        target_str = self.get_target()
+        if target_str == "Metal":
+            atol, rtol = 1e-1, 1e-1
+
+        return self.get_predictor_configs(), ["matmul_v2"], (atol, rtol)
 
     def add_ignore_pass_case(self):
         pass
@@ -110,6 +135,8 @@ class TestMatmulV2Op(AutoScanTest):
         target_str = self.get_target()
         if target_str == "OpenCL":
             sample_size = 100
+        elif target_str == "Metal":
+            sample_size = 200
         self.run_and_statis(quant=False, max_examples=sample_size)
 
 
