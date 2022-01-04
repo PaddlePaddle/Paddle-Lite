@@ -1,12 +1,12 @@
 # 新增硬件
 
 ## 背景
-- 深度学习技术在安防、交通、医疗、工业制造等行业获得了较广泛的应用，为了满足实际需求，越来越多算力更高、功耗更低的专用硬件被研发出来投向市场，涌现了诸如华为昇腾/麒麟 SoC 的达芬奇架构 NPU 、瑞芯微 RK/RV 系列 SoC 的 NPU 、寒武纪 MLU 、谷歌 TPU 和百度 XPU 等不同形态的硬件，以明显优于传统 CPU 、 GPU 的性能和功耗的特点，逐步获得市场的认可，被广泛用于服务器端、边缘端和移动端。
+- 深度学习技术在安防、交通、医疗、工业制造等行业获得了较广泛的应用，为了满足实际需求，越来越多算力更高、功耗更低的专用硬件被研发出来投向市场，涌现了诸如华为昇腾/麒麟 SoC 的达芬奇架构 NPU 、瑞芯微 RK/RV 系列 SoC 的 NPU 、寒武纪 MLU 、谷歌 TPU 和昆仑芯 XPU 等不同形态的硬件，以明显优于传统 CPU 、 GPU 的性能和功耗的特点，逐步获得市场的认可，被广泛用于服务器端、边缘端和移动端。
 
 ## 意义
 - 良好的软件生态是硬件获得成功的关键，硬件驱动的兼容性、成熟的编译工具链、完善的 SDK 、 API 和文档、更多第三方深度学习框架的支持，都是影响硬件能否积攒用户、建立完善的软件生态的重要因素。特别的，在实际的项目部署过程中，推理引擎对硬件的支持尤为关键，它能屏蔽底层硬件细节，提供统一的接口，实现同一个模型在多种硬件间无缝迁移和异构计算，帮助应用提供方降低迁移成本并获得更高的性能；
 - Paddle Lite 是一款支持服务器端、边缘端和移动端场景的推理引擎，在设计之初就考虑了如何友好的支持不同形态的硬件（例如 CPU 、 GPU 、 DSP 、 FPGA 和 ASIC 等），主要表现在推理框架与硬件解耦合，提出了统一的图优化 Pass 层、算子层和 Kernel 层接口，在实现灵活配置多硬件间异构执行的同时，最大限度地减少适配过程中对框架的修改，真正做到硬件细节对用户透明；
-- Paddle Lite 支持的硬件目前已多达十余种，这其中不乏像华为 NPU 、瑞芯微 NPU 、联发科 APU 、颖脉（ Imagination ） NNA、百度 XPU 和寒武纪 MLU 等一线芯片（或 IP ）厂商研发的 ASIC 芯片，我们也希望更多的硬件（或 IP ）厂商与我们合作，共建 Paddle Lite 和 PaddlePaddle 的硬件生态。
+- Paddle Lite 支持的硬件目前已多达十余种，这其中不乏像华为 NPU 、瑞芯微 NPU 、联发科 APU 、颖脉（ Imagination ） NNA、昆仑芯 XPU 和寒武纪 MLU 等一线芯片（或 IP ）厂商研发的 ASIC 芯片，我们也希望更多的硬件（或 IP ）厂商与我们合作，共建 Paddle Lite 和 PaddlePaddle 的硬件生态。
 - 在阐述硬件接入的具体步骤前，我们将简单介绍下 Paddle Lite 的工作原理，即从读入模型文件到硬件执行过程中都经历了哪些步骤？
 
 ## Paddle Lite 是如何工作的？
@@ -59,7 +59,7 @@
     优点是灵活，但缺点也显而易见，性能的好坏取决于负责接入框架的研发同学的能力和经验，更依赖对硬件的熟悉程度；
 
   - **中间表示层（ Intermediate Representation ， IR ）接口（ High Level ）** 
-    - 组网 IR 和运行时 API ：例如 NVIDIA 的 TensorRT 、 Intel 的 nGraph 、华为 HiAI IR 和百度昆仑的 XTCL 接口。
+    - 组网 IR 和运行时 API ：例如 NVIDIA 的 TensorRT 、 Intel 的 nGraph 、华为 HiAI IR 和昆仑芯的 XTCL 接口。
     
     优点是屏蔽硬件细节，模型的优化、生成和执行由运行时库完成，对负责接入框架的研发同学要求较低，性能取决于硬件厂商（或 IP 提供商）的研发能力，相对可控；
 
@@ -256,7 +256,7 @@
   To https://github.com/UserName/Paddle-Lite.git
    * [new branch]      hongming/print_ssa_graph -> hongming/print_ssa_graph
   ```
-  - 发起 Pull Request ：登录 github ，在自己账户下找到并进入 UserName/Paddle-Lite 仓库，这时会自动提示创建 Pull Request ，点击 Create Pull Request 按钮，一般来说会自动选择比较更改的仓库和分支，如果需要手动设置，可将 base repository 选择为 PaddlePaddle/Paddle-Lite ， base 分支为 develop ，然后将 head repository 选择为 UserName/Paddle-Lite ，compare分支为 hongming/print_ssa_graph 。 PR（Pull Request） 的标题必须用英文概括本次提交的修改内容，例如修复了什么问题，增加了什么功能。同时，为了便于其他人快速得知该PR影响了哪些模块，应该在标题前添加中括号 + 模块名称进行标识，例如 "[HuaweiKirinNPU][BaiduXPU] Temporarily toggle printing ssa graph, test=develop" 。 PR 的描述必须详细描述本次修改的原因/背景、解决方法、对其它模块会产生何种影响（例如生成库的大小增量是多少），性能优化的 PR 需要有性能对比数据等。
+  - 发起 Pull Request ：登录 github ，在自己账户下找到并进入 UserName/Paddle-Lite 仓库，这时会自动提示创建 Pull Request ，点击 Create Pull Request 按钮，一般来说会自动选择比较更改的仓库和分支，如果需要手动设置，可将 base repository 选择为 PaddlePaddle/Paddle-Lite ， base 分支为 develop ，然后将 head repository 选择为 UserName/Paddle-Lite ，compare分支为 hongming/print_ssa_graph 。 PR（Pull Request） 的标题必须用英文概括本次提交的修改内容，例如修复了什么问题，增加了什么功能。同时，为了便于其他人快速得知该PR影响了哪些模块，应该在标题前添加中括号 + 模块名称进行标识，例如 "[HuaweiKirinNPU][KunlunxinXPU] Temporarily toggle printing ssa graph, test=develop" 。 PR 的描述必须详细描述本次修改的原因/背景、解决方法、对其它模块会产生何种影响（例如生成库的大小增量是多少），性能优化的 PR 需要有性能对比数据等。
   - 签署 CLA 协议：在首次向 Paddle Lite 提交 Pull Request 时，您需要您签署一次 CLA(Contributor License Agreement) 协议，以保证您的代码可以被合入。
   - 等待 CI 测试完成：您在 Pull Request 中每提交一次新的 commit 后，都会触发一系列 CI 流水线（根据场景/硬件的不同，一般会有多个流水线），它将会在几个小时内完成，只需保证带有 Required 的流水线通过即可。例如下图所示，每项流水线测试通过后，都会在前面打勾，否则打叉，可点击 Details 查看日志定位错误原因：
   ![](https://user-images.githubusercontent.com/9973393/113404216-631e0f00-93da-11eb-8dad-fb47c8f512de.png)

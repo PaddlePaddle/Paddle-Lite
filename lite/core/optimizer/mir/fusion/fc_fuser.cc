@@ -76,10 +76,26 @@ void FcFuser::BuildPattern() {
 }
 
 void FcFuser::InsertNewNode(SSAGraph* graph, const key2nodes_t& matched) {
-  auto op_desc = GenOpDesc(matched);
-  auto fc_op = LiteOpRegistry::Global().Create("fc");
   auto mul = matched.at("mul")->stmt()->op();
   auto* scope = mul->scope();
+  auto mul_weight = scope->FindVar(matched.at("W")->arg()->name);
+  auto mul_weight_dims = mul_weight->Get<lite::Tensor>().dims();
+  auto bias = scope->FindVar(matched.at("b")->arg()->name);
+  auto bias_dims = bias->Get<lite::Tensor>().dims();
+  if (bias_dims.size() == 2 && bias_dims[0] != 1) {
+    nodes_.erase(nodes_.begin(), nodes_.end());
+    LOG(WARNING) << "elementwiseadd bias size equal to 2, but bias[0] not "
+                    "equal to 1 , eleminate failed";
+    return;
+  }
+  if (bias_dims[bias_dims.size() - 1] != mul_weight_dims[1]) {
+    nodes_.erase(nodes_.begin(), nodes_.end());
+    LOG(WARNING) << "elementwise_add bias last shape not equal to weight "
+                    "shape1, eleminate failed";
+    return;
+  }
+  auto op_desc = GenOpDesc(matched);
+  auto fc_op = LiteOpRegistry::Global().Create("fc");
   auto& valid_places = mul->valid_places();
   fc_op->Attach(op_desc, scope);
 

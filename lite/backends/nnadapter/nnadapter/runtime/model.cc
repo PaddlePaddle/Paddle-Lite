@@ -33,8 +33,8 @@ Model::~Model() {
       free(operand.type.symm_per_channel_params.scales);
     }
     for (size_t i = 0; i < NNADAPTER_MAX_SIZE_OF_HINTS; i++) {
-      if (operand.hints->handler) {
-        operand.hints->deleter(&operand.hints->handler);
+      if (operand.hints[i].handler) {
+        operand.hints[i].deleter(&operand.hints[i].handler);
       }
     }
   }
