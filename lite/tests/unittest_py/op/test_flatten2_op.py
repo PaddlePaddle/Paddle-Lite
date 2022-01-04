@@ -93,6 +93,10 @@ class TestFlatten2Op(AutoScanTest):
 
         axis = draw(st.integers(min_value=0, max_value=len(in_shape) - 1))
 
+        outputs = ["output_data", "xshape_data"]
+        if self.get_target() == "Metal":
+            outputs = ["output_data"]
+
         flatten2_op = OpConfig(
             type="flatten2",
             inputs={"X": ["input_data"]},
@@ -111,7 +115,7 @@ class TestFlatten2Op(AutoScanTest):
                     high=10,
                     shape=in_shape))
             },
-            outputs=["output_data"])
+            outputs=outputs)
 
         return program_config
 
