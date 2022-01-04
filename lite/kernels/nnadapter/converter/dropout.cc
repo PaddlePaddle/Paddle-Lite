@@ -37,7 +37,6 @@ int ConvertDropout(Converter* converter, OpInfo* op, Scope* scope) {
   // Output
   auto output_name = op->Output("Out").front();
   auto output_scale_name = "Out0_scale";
-  float prob_scale = scale / 127;
   std::vector<float> output_scales;
   if (op->HasOutputScale(output_scale_name, true)) {
     output_scales = op->GetOutputScale(output_scale_name, true);
@@ -49,8 +48,8 @@ int ConvertDropout(Converter* converter, OpInfo* op, Scope* scope) {
   // Prob operand
   NNAdapterOperand* prob_operand = nullptr;
   if (x_scales.size() > 0) {
-    prob_operand =
-        converter->AddConstantOperand(static_cast<int8_t>(127), {prob_scale});
+    prob_operand = converter->AddConstantOperand(
+        static_cast<int8_t>(scale > 0.0f ? 1 : -1), {fabsf(scale)});
   } else {
     prob_operand = converter->AddConstantOperand(scale);
   }
