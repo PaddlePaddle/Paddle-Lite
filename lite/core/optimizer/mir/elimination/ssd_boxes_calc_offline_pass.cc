@@ -726,9 +726,5 @@ REGISTER_MIR_PASS(ssd_boxes_calc_offline_pass,
                   TARGET(kOpenCL),
                   TARGET(kMetal),
                   TARGET(kARM),
-<<<<<<< HEAD
-                  TARGET(kX86),                                    
-=======
                   TARGET(kX86),
->>>>>>> c8d12c2fc043dd4ffcdb3fe520e2c61de2f7c2d7
                   TARGET(kNNAdapter)});
