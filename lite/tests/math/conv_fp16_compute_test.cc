@@ -537,3 +537,41 @@ TEST(TestConvCustom, test_conv_fp16_custom_size) {
       FLAGS_leakey_relu_alpha);
 }
 #endif  // custom
+
+#if 1  /// conv3x3s2
+TEST(TestDWConv3x3s2, test_dwconv_3x3s2) {
+  if (FLAGS_basic_test) {
+    for (auto& cin : {2, 6, 32}) {
+      for (auto& cout : {cin}) {
+        for (auto& pad : {0, 1}) {
+          for (auto& flag_bias : {false, true}) {
+            for (auto& flag_act : {0, 1, 2, 4}) {
+              if (cin == 1 && cout == 1) {
+                continue;
+              }
+              DDim weights_dim({cout, 1, 3, 3});
+              for (auto& batch : {1, 4}) {
+                for (auto& h : {4, 10, 16, 32, 48, 96, 100, 112, 224}) {
+                  DDim dim_in({batch, cin, h, h});
+                  const float leakey_relu_scale = 1.0f;
+                  test_conv_fp16(dim_in,
+                                 weights_dim,
+                                 cin,
+                                 {2, 2},
+                                 {pad, pad, pad, pad},
+                                 {1, 1},
+                                 flag_bias,
+                                 flag_act,
+                                 {4},
+                                 {FLAGS_power_mode},
+                                 leakey_relu_scale);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+#endif  /// dwconv3x3s2

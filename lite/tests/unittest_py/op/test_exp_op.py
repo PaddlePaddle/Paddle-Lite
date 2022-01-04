@@ -54,10 +54,24 @@ class TestExpOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
+        metal_places = [
+            Place(TargetType.Metal, PrecisionType.FP32,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.Metal, PrecisionType.FP16,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.ARM, PrecisionType.FP32),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=metal_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
+        target_type = predictor_config.target()
+        in_shape = list(program_config.inputs["input_data"].shape)
+        if target_type == TargetType.Metal:
+            if len(in_shape) != 4:
+                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -78,13 +92,16 @@ class TestExpOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["exp"], (1e-5, 1e-5)
+        atol, rtol = 1e-5, 1e-5
+        target_str = self.get_target()
+        if target_str == "Metal":
+            atol, rtol = 2e-3, 2e-3
+        return self.get_predictor_configs(), ["exp"], (atol, rtol)
 
     def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):
-
         self.run_and_statis(quant=False, max_examples=100)
 
 

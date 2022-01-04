@@ -77,10 +77,16 @@ function compile_publish_inference_lib {
 function run_test() {
   local target_list="Host,X86"
   local targets=(${target_list//,/ })
+  rm -rf $(find $WORKSPACE/lite/tests/unittest_py/ -name statics_data)
 
   for target in ${targets[@]}; do
     auto_scan_test $target
   done
+
+  cd $WORKSPACE/lite/tests/unittest_py/op/
+  python$PYTHON_VERSION ../global_var_model.py
+  cd $WORKSPACE/lite/tests/unittest_py/pass/
+  python$PYTHON_VERSION ../global_var_model.py
 }
 
 function pipeline() {

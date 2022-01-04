@@ -73,6 +73,9 @@ bool DistributeFpnProposalsOpLite::AttachImpl(const cpp::OpDesc &op_desc,
   param_.max_level = op_desc.GetAttr<int>("max_level");
   param_.refer_level = op_desc.GetAttr<int>("refer_level");
   param_.refer_scale = op_desc.GetAttr<int>("refer_scale");
+  if (op_desc.HasAttr("pixel_offset")) {
+    param_.pixel_offset = op_desc.GetAttr<bool>("pixel_offset");
+  }
 
   return true;
 }

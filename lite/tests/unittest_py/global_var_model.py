@@ -96,16 +96,16 @@ def display():
             target] - not_supported_ops - out_diff_ops
 
         print("Target =", target)
-        print("Number of test ops =", len(all_test_ops))
-        print("Number of success ops =", len(success_ops))
-        print("Number of not supported ops =", len(not_supported_ops))
-        print("Number of output diff ops =", len(out_diff_ops))
+        print("Number of test =", len(all_test_ops))
+        print("Number of success =", len(success_ops))
+        print("Number of not supported =", len(not_supported_ops))
+        print("Number of output diff =", len(out_diff_ops))
         print("\nDetails:")
-        print("Success ops:")
+        print("Success:")
         print(list(success_ops))
-        print("\nNot supported ops:")
+        print("\nNot supported:")
         print(list(not_supported_ops))
-        print("\nOutput diff ops:")
+        print("\nOutput diff:")
         print(list(out_diff_ops))
         print("\n")
 

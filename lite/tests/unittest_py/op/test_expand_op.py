@@ -36,6 +36,20 @@ class TestExpandOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
         ]
         self.enable_testing_on_place(thread=[1, 4], places=host_places)
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -47,10 +61,20 @@ class TestExpandOp(AutoScanTest):
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(
-            st.lists(
-                st.integers(
-                    min_value=1, max_value=8), min_size=3, max_size=4))
+        if self.get_target() == "OpenCL":
+            in_shape = draw(
+                st.lists(
+                    st.integers(
+                        min_value=1, max_value=8),
+                    min_size=4,
+                    max_size=4))
+        else:
+            in_shape = draw(
+                st.lists(
+                    st.integers(
+                        min_value=1, max_value=8),
+                    min_size=2,
+                    max_size=4))
         expand_shape = draw(
             st.lists(
                 st.integers(
@@ -108,6 +132,10 @@ class TestExpandOp(AutoScanTest):
                     min_value=1, max_value=8),
                 min_size=len(in_shape),
                 max_size=len(in_shape)))
+        if self.get_target() == "OpenCL":
+            with_tensor = False
+            attr_shape[1] = 1
+
         inputs = gnerate_inputs(with_tensor)
         expand_op = OpConfig(
             type="expand",
@@ -129,7 +157,7 @@ class TestExpandOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=300)
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":

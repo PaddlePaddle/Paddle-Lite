@@ -28,7 +28,7 @@ ARM Linux 环境下编译适用于 ARM Linux 的库
    * - Host环境
      - 目标硬件环境
    * - ARM-Linux
-     - CPU arm64/armhf :raw-html-m2r:`<br>` Huawei Ascend NPU :raw-html-m2r:`<br>` Baidu XPU :raw-html-m2r:`<br>` OpenCL :raw-html-m2r:`<br>` 注：查询以上芯片支持的具体型号，可参考\ `支持硬件列表 <https://paddle-lite.readthedocs.io/zh/develop/quick_start/support_hardware.html>`_\ 章节。
+     - CPU arm64/armhf :raw-html-m2r:`<br>` Huawei Ascend NPU :raw-html-m2r:`<br>` Kunlunxin XPU :raw-html-m2r:`<br>` OpenCL :raw-html-m2r:`<br>` 注：查询以上芯片支持的具体型号，可参考\ `支持硬件列表 <https://paddle-lite.readthedocs.io/zh/develop/quick_start/support_hardware.html>`_\ 章节。
 
 准备编译环境
 ------------------------------------------------------
@@ -173,7 +173,7 @@ Paddle Lite 仓库中\ ``./lite/tools/build_linux.sh``\ 脚本文件用于构建
 
 .. include:: include/multi_device_support/opencl.rst
 
-.. include:: include/multi_device_support/baidu_xpu.rst
+.. include:: include/multi_device_support/kunlunxin_xpu.rst
 
 .. include:: include/multi_device_support/nnadapter_support_introduction.rst
 

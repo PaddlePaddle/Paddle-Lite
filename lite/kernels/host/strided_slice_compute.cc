@@ -400,8 +400,9 @@ REGISTER_LITE_KERNEL(strided_slice, kHost, kFloat, kNCHW, slice_float, def)
     .Finalize();
 
 using slice_int32 =
-    paddle::lite::kernels::host::StridedSliceCompute<int, PRECISION(kInt32)>;
-REGISTER_LITE_KERNEL(strided_slice, kHost, kInt32, kNCHW, slice_int32, def)
+    paddle::lite::kernels::host::StridedSliceCompute<int, PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(
+    strided_slice, kHost, kFloat, kNCHW, slice_int32, def_int32)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt32))})
     .BindInput("StartsTensor",
@@ -418,8 +419,9 @@ REGISTER_LITE_KERNEL(strided_slice, kHost, kInt32, kNCHW, slice_int32, def)
 
 using slice_int64 =
     paddle::lite::kernels::host::StridedSliceCompute<int64_t,
-                                                     PRECISION(kInt64)>;
-REGISTER_LITE_KERNEL(strided_slice, kHost, kInt64, kNCHW, slice_int64, def)
+                                                     PRECISION(kFloat)>;
+REGISTER_LITE_KERNEL(
+    strided_slice, kHost, kFloat, kNCHW, slice_int64, def_int64)
     .BindInput("Input",
                {LiteType::GetTensorTy(TARGET(kHost), PRECISION(kInt64))})
     .BindInput("StartsTensor",

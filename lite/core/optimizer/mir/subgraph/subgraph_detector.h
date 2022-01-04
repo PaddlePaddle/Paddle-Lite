@@ -127,10 +127,10 @@ class SubgraphFuser {
   bool support_mixed_precision_{false};
 };
 
-class MixPrecisionAutoInsertCalibFuser {
+class MixedPrecisionAutoInsertCalibFuser {
  public:
-  MixPrecisionAutoInsertCalibFuser(SSAGraph* graph,
-                                   std::vector<std::vector<Node*>>* subgraphs)
+  MixedPrecisionAutoInsertCalibFuser(SSAGraph* graph,
+                                     std::vector<std::vector<Node*>>* subgraphs)
       : graph_(graph), subgraphs_(subgraphs) {}
 
   void operator()();
