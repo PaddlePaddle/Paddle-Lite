@@ -35,6 +35,7 @@ int PrepareShape(hal::Operation* operation) {
   output_type.precision = static_cast<NNAdapterOperandPrecisionCode>(dtype);
   output_type.lifetime = NNADAPTER_TEMPORARY_SHAPE;
   SetTemporyShapeInfo(output_operand, input_type.dimensions);
+  NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
 }
 

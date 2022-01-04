@@ -26,6 +26,13 @@ enum { NNADAPTER_VERSION = 1 };
 enum { NNADAPTER_UNKNOWN = -1 };
 
 /**
+ * Max size of hints for operand.
+ *
+ * Available since version 1.
+ */
+enum { NNADAPTER_MAX_SIZE_OF_HINTS = 8 };
+
+/**
  * Result codes.
  *
  * Available since version 1.

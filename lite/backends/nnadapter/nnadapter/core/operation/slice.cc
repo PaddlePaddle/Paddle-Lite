@@ -108,9 +108,6 @@ int PrepareSlice(hal::Operation* operation) {
 
   if (input_operand->type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {
     output_operand->type.lifetime = NNADAPTER_TEMPORARY_SHAPE;
-    // auto& tempory_shape_info =
-    //     *(input_operand->hints[NNADAPTER_TEMPORY_SHAPE_INFO])
-    //          .get_mutable<NNAdapterOperandDimensionType>();
     auto& tempory_shape_info = *(GetTemporyShapeInfo(input_operand));
     NNADAPTER_CHECK(tempory_shape_info.data);
     NNADAPTER_CHECK(tempory_shape_info.data[0]);
@@ -136,7 +133,6 @@ int PrepareSlice(hal::Operation* operation) {
                                 dimension_type.dynamic_data[i]);
     }
     SetTemporyShapeInfo(output_operand, dimension_type);
-    // output_operand->hints[NNADAPTER_TEMPORY_SHAPE_INFO].set(dimension_type);
   }
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;

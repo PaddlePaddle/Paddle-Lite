@@ -13,27 +13,21 @@
 // limitations under the License.
 
 #include "utility/hints.h"
-#include <memory>
 #include "utility/logging.h"
 
 namespace nnadapter {
 
-void ClearTemporaryShapeInfo(void* ptr) {
-  auto operand = reinterpret_cast<hal::Operand*>(ptr);
-  if (operand->hints.count(NNADAPTER_OPERAND_HINTS_KEY_TEMPORY_SHAPE) > 0) {
-    auto ptr = reinterpret_cast<NNAdapterOperandDimensionType*>(
-        operand->hints[NNADAPTER_OPERAND_HINTS_KEY_TEMPORY_SHAPE].first);
-    NNADAPTER_CHECK(ptr);
-    free(ptr);
-    operand->hints[NNADAPTER_OPERAND_HINTS_KEY_TEMPORY_SHAPE].first = nullptr;
-  }
+void ClearTemporaryShapeInfo(void** handler) {
+  NNADAPTER_CHECK(*handler);
+  free(*handler);
+  *handler = nullptr;
 }
 
 NNAdapterOperandDimensionType* GetTemporyShapeInfo(hal::Operand* operand) {
-  return operand->hints.count(NNADAPTER_OPERAND_HINTS_KEY_TEMPORY_SHAPE) > 0
+  return operand->hints[NNADAPTER_OPERAND_HINTS_KEY_TEMPORY_SHAPE].handler
              ? reinterpret_cast<NNAdapterOperandDimensionType*>(
                    operand->hints[NNADAPTER_OPERAND_HINTS_KEY_TEMPORY_SHAPE]
-                       .first)
+                       .handler)
              : nullptr;
 }
 
@@ -41,8 +35,8 @@ void SetTemporyShapeInfo(hal::Operand* operand,
                          const NNAdapterOperandDimensionType type) {
   auto ptr = malloc(sizeof(NNAdapterOperandDimensionType));
   memcpy(ptr, &type, sizeof(NNAdapterOperandDimensionType));
-  operand->hints[NNADAPTER_OPERAND_HINTS_KEY_TEMPORY_SHAPE].first = ptr;
-  operand->hints[NNADAPTER_OPERAND_HINTS_KEY_TEMPORY_SHAPE].second =
+  operand->hints[NNADAPTER_OPERAND_HINTS_KEY_TEMPORY_SHAPE].handler = ptr;
+  operand->hints[NNADAPTER_OPERAND_HINTS_KEY_TEMPORY_SHAPE].deleter =
       ClearTemporaryShapeInfo;
 }
 

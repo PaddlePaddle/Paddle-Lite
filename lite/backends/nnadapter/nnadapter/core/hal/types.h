@@ -24,11 +24,16 @@
 namespace nnadapter {
 namespace hal {
 
+typedef struct Hint {
+  void* handler;
+  void (*deleter)(void** handler);
+} Hint;
+
 typedef struct Operand {
   NNAdapterOperandType type;
   void* buffer;
   uint32_t length;
-  std::map<uint8_t, std::pair<void*, void (*)(void*)>> hints;
+  Hint hints[NNADAPTER_MAX_SIZE_OF_HINTS];
 } Operand;
 
 typedef struct Argument {
