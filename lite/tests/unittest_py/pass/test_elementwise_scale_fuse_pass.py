@@ -30,8 +30,6 @@ import hypothesis.strategies as st
 class TestElementwiseScaleFuse(FusePassAutoScanTest):
     def __init__(self, *args, **kwargs):
         FusePassAutoScanTest.__init__(self, *args, **kwargs)
-        #OpenCL outdiff 
-        '''
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -46,11 +44,14 @@ class TestElementwiseScaleFuse(FusePassAutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
-        '''
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
+        if len(program_config.inputs["input_data_x"].shape) > 4 or len(
+                program_config.inputs["input_data_y"].shape
+        ) > 4 or program_config.ops[1].attrs["bias_after_scale"] == False:
+            return False
         return True
 
     def sample_program_configs(self, draw):
@@ -75,7 +76,6 @@ class TestElementwiseScaleFuse(FusePassAutoScanTest):
         #scale param
         scale = draw(st.floats(min_value=0.5, max_value=5))
         bias = draw(st.floats(min_value=0, max_value=1))
-        alpha = draw(st.floats(min_value=0, max_value=1))
         bias_after_scale = draw(st.sampled_from([False, True]))
 
         elementwise_op = OpConfig(
@@ -93,7 +93,6 @@ class TestElementwiseScaleFuse(FusePassAutoScanTest):
             attrs={
                 "scale": scale,
                 "bias": bias,
-                "alpha": alpha,
                 "bias_after_scale": bias_after_scale
             })
 
@@ -118,7 +117,7 @@ class TestElementwiseScaleFuse(FusePassAutoScanTest):
     def test(self, *args, **kwargs):
         self.run_and_statis(
             quant=False,
-            max_examples=100,
+            max_examples=1000,
             passes=["lite_elementwise_scale_fuse_pass"])
 
 
