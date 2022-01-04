@@ -191,7 +191,6 @@ function init_cmake_mutable_options {
                         -DLITE_WITH_RKNPU=$WITH_ROCKCHIP_NPU \
                         -DRKNPU_DDK_ROOT=$ROCKCHIP_NPU_SDK_ROOT \
                         -DLITE_WITH_XPU=$WITH_KUNLUNXIN_XPU \
-                        -DLITE_WITH_XTCL=OFF \
                         -DXPU_SDK_URL=$KUNLUNXIN_XPU_SDK_URL \
                         -DXPU_SDK_ENV=$KUNLUNXIN_XPU_SDK_ENV \
                         -DXPU_SDK_ROOT=$KUNLUNXIN_XPU_SDK_ROOT \
@@ -404,7 +403,7 @@ function print_usage {
     echo -e "|     --kunlunxin_xpu_sdk_env: (bdcentos_x86_64|centos7_x86_64|ubuntu_x86_64|kylin_aarch64) optional,                                                  |"
     echo -e "|             default is bdcentos_x86_64(if x86) / kylin_aarch64(if arm)                                                                               |"
     echo -e "|     --kunlunxin_xpu_sdk_root: (path to kunlunxin_xpu DDK file) optional, default is None                                                             |"
-    echo -e "|  detailed information about Paddle-Lite CAMBRICON MLU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/kunlunxin_xpu.html                  |"
+    echo -e "|  detailed information about Paddle-Lite KUNLUNXIN XPU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/kunlunxin_xpu.html                  |"
     echo "--------------------------------------------------------------------------------------------------------------------------------------------------------"
     echo
 }
@@ -580,9 +579,6 @@ function main {
             # compiling lib which can operate on baidu xpu.
             --with_baidu_xpu=*)
                 WITH_KUNLUNXIN_XPU="${i#*=}"
-                shift
-                ;;
-            --with_baidu_xpu_xtcl=*)
                 shift
                 ;;
             --baidu_xpu_sdk_root=*)
