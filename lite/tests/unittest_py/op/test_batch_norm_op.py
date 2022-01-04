@@ -98,6 +98,13 @@ class TestBatchNormOp(AutoScanTest):
         def generate_variance(*args, **kwargs):
             return np.random.random([in_shape[1]]).astype(np.float32)
 
+        outputs = [
+            "output_data", "mean_data", "variance_data", "saved_mean",
+            "saved_variance"
+        ]
+        if self.get_target() == "Metal":
+            outputs = ["output_data"]
+
         batch_norm_ops = OpConfig(
             type="batch_norm",
             inputs={
@@ -133,14 +140,14 @@ class TestBatchNormOp(AutoScanTest):
                 "variance_data":
                 TensorConfig(data_gen=partial(generate_variance)),
             },
-            outputs=["output_data"])
+            outputs=outputs)
         return program_config
 
     def sample_predictor_configs(self):
         atol, rtol = 1e-5, 1e-5
         target_str = self.get_target()
         if target_str == "Metal":
-            atol, rtol = 5e-3, 5e-3
+            atol, rtol = 8e-3, 8e-3
         return self.get_predictor_configs(), ["batch_norm"], (atol, rtol)
 
     def add_ignore_pass_case(self):
@@ -151,7 +158,7 @@ class TestBatchNormOp(AutoScanTest):
         max_examples = 25
         if target_str == "Metal":
             # Make sure to generate enough valid cases for Metal
-            max_examples = 1000
+            max_examples = 1500
         self.run_and_statis(quant=False, max_examples=max_examples)
 
 
