@@ -1,7 +1,7 @@
-# 百度昆仑 XPU 部署示例
+# 昆仑芯 XPU 部署示例
 
-Paddle Lite 已支持百度 XPU 在 X86 和 ARM 服务器（例如飞腾 FT-2000+/64）上进行预测部署。
-目前支持 Kernel 和子图两种接入方式，其中子图接入方式与之前华为 Kirin NPU 类似，即加载并分析 Paddle 模型，将 Paddle 算子转成 XTCL 组网 API 进行网络构建，在线生成并执行模型。
+Paddle Lite 已支持昆仑芯 XPU 在 X86 和 ARM 服务器（例如飞腾 FT-2000+/64）上进行预测部署。
+目前支持 Kernel 和子图两种接入方式。其中子图接入方式原理是，在线分析 Paddle 模型，将 Paddle 算子先转为统一的 NNAdapter 标准算子，再通过 XTCL 组网 API 进行网络构建，在线生成并执行模型。
 
 ## 支持现状
 
@@ -28,7 +28,7 @@ Paddle Lite 已支持百度 XPU 在 X86 和 ARM 服务器（例如飞腾 FT-2000
 
 ### 测试设备( K100 昆仑 AI 加速卡)
 
-![baidu_xpu](https://paddlelite-demo.bj.bcebos.com/devices/baidu/baidu_xpu.jpg)
+![kunlunxin_xpu](https://paddlelite-demo.bj.bcebos.com/devices/baidu/baidu_xpu.jpg)
 
 ### 准备设备环境
 
@@ -137,7 +137,7 @@ Paddle Lite 已支持百度 XPU 在 X86 和 ARM 服务器（例如飞腾 FT-2000
 - 通过 Paddle 训练，或 X2Paddle 转换得到 ResNet50 float32 模型[ resnet50_fp32_224_fluid ](https://paddlelite-demo.bj.bcebos.com/models/resnet50_fp32_224_fluid.tar.gz)；
 - 由于 XPU 一般部署在 Server 端，因此将使用 Paddle Lite 的 `full api` 加载原始的 Paddle 模型进行预测，即采用 `CxxConfig` 配置相关参数。
 
-### 更新支持百度 XPU 的 Paddle Lite 库
+### 更新支持昆仑芯 XPU 的 Paddle Lite 库
 
 - 下载 Paddle Lite 源码；
 
@@ -151,12 +151,12 @@ Paddle Lite 已支持百度 XPU 在 X86 和 ARM 服务器（例如飞腾 FT-2000
 
   ```shell
   $ # For amd64，如果报找不到 cxx11:: 符号的编译错误，请将 gcc 切换到 4.8 版本。
-  $ ./lite/tools/build_linux.sh --arch=x86 --with_baidu_xpu=ON
+  $ ./lite/tools/build_linux.sh --arch=x86 --with_kunlunxin_xpu=ON
 
   $ # For arm64(FT-2000+/64), arm 环境下需要设置环境变量 CC 和 CXX，分别指定 C 编译器和 C++ 编译器的路径
   $ export CC=<path_to_your_c_compiler>
   $ export CXX=<path_to_your_c++_compiler>
-  $ ./lite/tools/build_linux.sh --arch=armv8 --with_baidu_xpu=ON
+  $ ./lite/tools/build_linux.sh --arch=armv8 --with_kunlunxin_xpu=ON
   ```
 
 - 替换库文件和头文件
@@ -164,26 +164,59 @@ Paddle Lite 已支持百度 XPU 在 X86 和 ARM 服务器（例如飞腾 FT-2000
   ```shell
   cd PaddleLite-linux-demo/image_classification_demo/shell
   ./update_libs.sh <lite_inference_dir> <demo_libs_dir>
-  # For amd64，lite_inference_dir 一般为编译生成的 build.lite.linux.x86.gcc.baidu_xpu/inference_lite_lib，demo_libs_dir 为 PaddleLite-linux-demo/libs/PaddleLite/amd64
-  # For arm64，lite_inference_dir一般为编译生成的 build.lite.linux.armv8.gcc.baidu_xpu/inference_lite_lib.armlinux.armv8.xpu，demo_libs_dir 为 PaddleLite-linux-demo/libs/PaddleLite/amd64
+  # For amd64，lite_inference_dir 一般为编译生成的 build.lite.linux.x86.gcc.kunlunxin_xpu/inference_lite_lib，demo_libs_dir 为 PaddleLite-linux-demo/libs/PaddleLite/amd64
+  # For arm64，lite_inference_dir一般为编译生成的 build.lite.linux.armv8.gcc.kunlunxin_xpu/inference_lite_lib.armlinux.armv8.xpu，demo_libs_dir 为 PaddleLite-linux-demo/libs/PaddleLite/amd64
   ```
 
   备注：替换头文件后需要重新编译示例程序
 
-- windows 版本的编译适配
+## 子图方式接入
+
+### 运行图像分类示例程序
+
+### 更新模型
+
+### 更新支持昆仑芯 XPU XTCL 方式的 Paddle Lite 库
+
+- 下载 Paddle Lite 源码；
+
+  ```shell
+  $ git clone https://github.com/PaddlePaddle/Paddle-Lite.git
+  $ cd Paddle-Lite
+  $ git checkout <release-version-tag>
+  ```
+
+- 编译 publish so for amd64 or arm64(FT-2000+/64)；
+
+  ```shell
+  $ # For amd64
+  $ ./lite/tools/build_linux.sh \
+  $     --arch=x86 \
+  $     --with_nnadapter=ON \
+  $     --nnadapter_with_kunlunxin_xtcl=ON \
+  $     --nnadapter_kunlunxin_xtcl_sdk_root=<path-to-kunlunxin-xtcl-sdk-root>
+
+  $ # For arm64(FT-2000+/64), arm 环境下需要设置环境变量 CC 和 CXX，分别指定 C 编译器和 C++ 编译器的路径
+  $ export CC=<path_to_your_c_compiler>
+  $ export CXX=<path_to_your_c++_compiler>
+  $ ./lite/tools/build_linux.sh \
+  $     --arch=armv8 \
+  $     --with_nnadapter=ON \
+  $     --nnadapter_with_kunlunxin_xtcl=ON \
+  $     --nnadapter_kunlunxin_xtcl_sdk_root=<path-to-kunlunxin-xtcl-sdk-root>
+  ```
+
+- 替换库文件和头文件
+
+  备注：替换头文件后需要重新编译示例程序
+
+## windows 版本的编译适配
 
   1) Paddle Lite 使用 XPU kernel 的方案
 
   ```shell
   $ cd Paddle-Lite
-  $ lite\\tools\\build_windows.bat with_extra without_python use_vs2017 with_dynamic_crt  with_baidu_xpu baidu_xpu_sdk_root D:\\xpu_toolchain_windows\\output
-  ```
-
-  2) Paddle Lite 使用 XPU XTCL 子图方案
-
-  ```shell
-  $ cd Paddle-Lite
-  $ lite\\tools\\build_windows.bat with_extra without_python use_vs2017 with_dynamic_crt  with_baidu_xpu with_baidu_xpu_xtcl baidu_xpu_sdk_root D:\\xpu_toolchain_windows\\output
+  $ lite\\tools\\build_windows.bat with_extra without_python use_vs2017 with_dynamic_crt  with_kunlunxin_xpu kunlunxin_xpu_sdk_root D:\\xpu_toolchain_windows\\output
   ```
 
   编译脚本 `build_windows.bat` 使用可参考[源码编译( Windows )](../source_compile/windows_compile_windows)进行环境配置和查找相应编译参数
@@ -191,4 +224,4 @@ Paddle Lite 已支持百度 XPU 在 X86 和 ARM 服务器（例如飞腾 FT-2000
 ## 其它说明
 
 - 如需更进一步的了解相关产品的信息，请联系欧阳剑 ouyangjian@baidu.com；
-- 百度昆仑的研发同学正在持续适配更多的 Paddle 算子，以便支持更多的 Paddle 模型。
+- 昆仑芯的研发同学正在持续适配更多的 Paddle 算子，以便支持更多的 Paddle 模型。
