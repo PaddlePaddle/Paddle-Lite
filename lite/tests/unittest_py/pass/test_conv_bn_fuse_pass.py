@@ -31,10 +31,12 @@ class TestConvBnFuse(FusePassAutoScanTest):
     def __init__(self, *args, **kwargs):
         FusePassAutoScanTest.__init__(self, *args, **kwargs)
         self.ops = []
-        self.enable_testing_on_place(
-            TargetType.ARM, [PrecisionType.FP32],
-            DataLayoutType.NCHW,
-            thread=[1, 4])
+        arm_places = [
+            Place(TargetType.ARM, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.ARM, PrecisionType.FP16, DataLayoutType.NCHW),
+            Place(TargetType.ARM, PrecisionType.INT8, DataLayoutType.NCHW)
+        ]
+        self.enable_testing_on_place(places=arm_places, thread=[1, 4])
         self.enable_testing_on_place(
             TargetType.X86, [PrecisionType.FP32],
             DataLayoutType.NCHW,
@@ -53,6 +55,16 @@ class TestConvBnFuse(FusePassAutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
+        #Metal not support conv2d_transpose: cannot find the name
+        '''
+        metal_places = [
+            Place(TargetType.Metal, PrecisionType.FP32,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.Metal, PrecisionType.FP16,
+                  DataLayoutType.MetalTexture2DArray)
+        ]
+        self.enable_testing_on_place(places=metal_places)
+        '''
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -62,6 +74,10 @@ class TestConvBnFuse(FusePassAutoScanTest):
             result = result and (
                 program_config.ops[0].attrs["groups"] == 1 and
                 program_config.ops[0].type != "conv2d_transpose")
+        if predictor_config.target() == TargetType.ARM:
+            result = result and predictor_config.precision(
+            ) != PrecisionType.FP16 and predictor_config.precision(
+            ) != PrecisionType.INT8
         return result
 
     def sample_program_configs(self, draw):
