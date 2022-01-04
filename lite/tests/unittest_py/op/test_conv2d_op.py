@@ -54,24 +54,40 @@ class TestConv2dOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
+        metal_places = [
+            Place(TargetType.Metal, PrecisionType.FP16,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.Metal, PrecisionType.FP32,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.ARM, PrecisionType.FP32),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=metal_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        if predictor_config.target() == TargetType.OpenCL:
-            groups = program_config.ops[0].attrs["groups"]
+        target_type = predictor_config.target()
+        input_shape = program_config.inputs["input_data"].shape
+        filter_data = program_config.weights["filter_data"].shape
+        groups = program_config.ops[0].attrs["groups"]
+        if target_type == TargetType.OpenCL:
             # opencl doesn't support
             if groups != 1:
                 return False
             else:
                 return True
-        elif predictor_config.target() == TargetType.ARM and (
+        elif target_type == TargetType.ARM and (
                 predictor_config.precision() == PrecisionType.FP16 or
                 predictor_config.precision() == PrecisionType.INT8):
             # fp16 has diff and int8 doesn't support
             return False
-        else:
-            return True
+        if target_type == TargetType.Metal:
+            if groups != 1:
+                return False
+            if input_shape[0] != 1 or input_shape[1] < 3 or filter_data[0] < 3:
+                return False
+        return True
 
     def sample_program_configs(self, draw):
         num = draw(st.integers(min_value=1, max_value=4))
@@ -148,8 +164,11 @@ class TestConv2dOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        config = CxxConfig()
-        return self.get_predictor_configs(), ["conv2d"], (1e-5, 1e-5)
+        atol, rtol = 1e-5, 1e-5
+        target_str = self.get_target()
+        if target_str == "Metal":
+            atol, rtol = 1e-3, 1e-3
+        return self.get_predictor_configs(), ["conv2d"], (atol, rtol)
 
     def add_ignore_pass_case(self):
         pass
