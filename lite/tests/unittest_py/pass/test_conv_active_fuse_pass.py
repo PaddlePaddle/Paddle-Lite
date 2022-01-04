@@ -42,7 +42,6 @@ class TestConvActiveFuse(FusePassAutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 4])
         #some case OpenCL not support 
-        '''
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -57,7 +56,7 @@ class TestConvActiveFuse(FusePassAutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
-        '''
+
         #Metal not support conv2d_transpose: cannot find the name
         '''       
         metal_places = [
@@ -73,6 +72,13 @@ class TestConvActiveFuse(FusePassAutoScanTest):
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
         result = True
+        if predictor_config.target() == TargetType.OpenCL:
+            if program_config.ops[0].attrs[
+                    "groups"] != 1 or program_config.ops[
+                        0].type == "conv2d_transpose" or program_config.ops[
+                            1].type == "relu6" or program_config.ops[
+                                1].type == "prelu":
+                result = False
         if program_config.ops[0].type == "conv2d_transpose":  #TODO
             result = result and program_config.ops[
                 1].type != "hard_swish" and program_config.ops[
@@ -287,7 +293,7 @@ class TestConvActiveFuse(FusePassAutoScanTest):
     def test(self, *args, **kwargs):
         self.run_and_statis(
             quant=False,
-            max_examples=100,
+            max_examples=300,
             passes=["lite_conv_active_fuse_pass"])
 
 

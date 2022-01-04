@@ -49,7 +49,7 @@ class TestMatmulElementwiseAddFusePass(FusePassAutoScanTest):
             Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
-        # self.enable_testing_on_place(places=opencl_places)
+        self.enable_testing_on_place(places=opencl_places)
         #x86
         self.enable_testing_on_place(
             TargetType.X86,
@@ -70,6 +70,11 @@ class TestMatmulElementwiseAddFusePass(FusePassAutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
+        target_type = predictor_config.target()
+        in_shape = list(program_config.inputs["x_data"].shape)
+        if target_type in [TargetType.OpenCL]:
+            if len(in_shape) != 2:
+                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -132,9 +137,13 @@ class TestMatmulElementwiseAddFusePass(FusePassAutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
+        target_str = self.get_target()
+        max_examples = 25
+        if target_str in ["OpenCL"]:
+            max_examples = 200
         self.run_and_statis(
             quant=False,
-            max_examples=25,
+            max_examples=max_examples,
             passes=["lite_matmul_elementwise_fuse_pass"])
 
 

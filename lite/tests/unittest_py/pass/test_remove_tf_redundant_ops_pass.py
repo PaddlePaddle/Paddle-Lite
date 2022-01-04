@@ -34,8 +34,6 @@ class TestRemoveTfRedundantOpsPass(FusePassAutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 4])
         #self.enable_testing_on_place(TargetType.X86, [PrecisionType.FP32], DataLayoutType.NCHW, thread=[1, 4])
-        #OpenCL outdiff
-        '''        
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -50,11 +48,15 @@ class TestRemoveTfRedundantOpsPass(FusePassAutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
-        '''
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
+        target_type = predictor_config.target()
+        in_shape = list(program_config.inputs["input_data"].shape)
+        if target_type in [TargetType.OpenCL]:
+            if len(in_shape) != 4 and len(in_shape) != 3:
+                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -69,8 +71,10 @@ class TestRemoveTfRedundantOpsPass(FusePassAutoScanTest):
                     min_size=2,
                     max_size=5))
             input_axis = draw(st.sampled_from([0, 1, 2, 3, -1]))
+            target = self.get_target()
+            if (target in ["OpenCL"]):
+                input_axis = draw(st.sampled_from([1, 2, 3, -1]))
             assume(input_axis < len(in_shape))
-            print()
 
             softmax_config = OpConfig(
                 type="softmax",

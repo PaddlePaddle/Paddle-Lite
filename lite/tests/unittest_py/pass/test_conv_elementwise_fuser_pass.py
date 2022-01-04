@@ -40,7 +40,6 @@ class TestConvElementwiseFuse(FusePassAutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 4])
         #some case OpenCL not support 
-        '''
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -55,11 +54,17 @@ class TestConvElementwiseFuse(FusePassAutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
-        '''
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
+        weight_shape = list(program_config.weights["filter_data"].shape)
+        if predictor_config.target() == TargetType.OpenCL:
+            if program_config.ops[0].attrs[
+                    "groups"] != 1 or program_config.ops[
+                        0].type == "conv2d_transpose" or weight_shape[
+                            2] == weight_shape[3]:
+                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -82,6 +87,7 @@ class TestConvElementwiseFuse(FusePassAutoScanTest):
             st.lists(
                 st.integers(
                     min_value=0, max_value=2), min_size=2, max_size=2))
+
         dilations = draw(st.sampled_from([[2, 2]]))
         groups = draw(st.sampled_from([1, 2, in_shape[1]]))
         padding_algorithm = draw(st.sampled_from(["VALID", "SAME"]))
@@ -206,9 +212,14 @@ class TestConvElementwiseFuse(FusePassAutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
+        target_str = self.get_target()
+        max_examples = 200
+        if target_str == "OpenCL":
+            # Make sure to generate enough valid cases for OpenCL
+            max_examples = 500
         self.run_and_statis(
             quant=False,
-            max_examples=200,
+            max_examples=max_examples,
             passes=["lite_conv_elementwise_fuser_pass"])
 
 

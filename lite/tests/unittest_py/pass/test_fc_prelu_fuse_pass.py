@@ -34,7 +34,6 @@ class TestFcPreluFusePass(FusePassAutoScanTest):
     def __init__(self, *args, **kwargs):
         FusePassAutoScanTest.__init__(self, *args, **kwargs)
         #opencl not support padding_weights
-        '''
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -49,11 +48,15 @@ class TestFcPreluFusePass(FusePassAutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
-        '''
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
+        target_type = predictor_config.target()
+        in_shape = list(program_config.inputs["input_data"].shape)
+        if target_type in [TargetType.OpenCL]:
+            if len(in_shape) != 2:
+                return False
         return True
 
     def sample_program_configs(self, draw):

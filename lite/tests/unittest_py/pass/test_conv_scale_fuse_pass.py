@@ -42,7 +42,6 @@ class TestConvScaleFuse(FusePassAutoScanTest):
             TargetType.X86, [PrecisionType.FP32],
             DataLayoutType.NCHW,
             thread=[1, 4])
-        '''
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -57,15 +56,16 @@ class TestConvScaleFuse(FusePassAutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
-        '''
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
+        if predictor_config.target() == TargetType.OpenCL:
+            if program_config.ops[0].attrs["groups"] != 1:
+                return False
         return True
 
     def sample_program_configs(self, draw):
-
         #conv param or conv_transpose param
         in_shape = draw(
             st.lists(
@@ -99,8 +99,13 @@ class TestConvScaleFuse(FusePassAutoScanTest):
         scale_in = draw(st.floats(min_value=0.001, max_value=0.1))
         scale_out = draw(st.floats(min_value=0.001, max_value=0.1))
 
-        scale = draw(st.floats(min_value=0.5, max_value=5))
-        scale_bias = draw(st.floats(min_value=0.0, max_value=1.0))
+        target = self.get_target()
+        if (target in ["OpenCL"]):
+            scale = draw(st.floats(min_value=1, max_value=1))
+            scale_bias = draw(st.floats(min_value=0, max_value=0))
+        else:
+            scale = draw(st.floats(min_value=0.5, max_value=5))
+            scale_bias = draw(st.floats(min_value=0.0, max_value=1.0))
 
         conv_out_shape = []
         paddings_, dilations_ = UpdatePaddingAndDilation(
@@ -119,7 +124,6 @@ class TestConvScaleFuse(FusePassAutoScanTest):
         use_mkldnn = False
         if self.target[0] == "X86":
             use_mkldnn = True
-        use_mkldnn = True
 
         inputs_type = {"Input": ["input_data"], "Filter": ["filter_data"]}
         weights_data = {"filter_data": TensorConfig(shape=weight_shape)}
