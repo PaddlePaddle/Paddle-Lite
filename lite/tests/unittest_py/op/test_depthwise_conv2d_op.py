@@ -54,10 +54,28 @@ class TestDepthwiseConv2dOp(AutoScanTest):
         #     Place(TargetType.Host, PrecisionType.FP32)
         # ]
         # self.enable_testing_on_place(places=opencl_valid_places)
+        metal_places = [
+            Place(TargetType.Metal, PrecisionType.FP16,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.Metal, PrecisionType.FP32,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.ARM, PrecisionType.FP32),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=metal_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
+        target_type = predictor_config.target()
+        in_shape = list(program_config.inputs["input_data"].shape)
+        dilations = program_config.ops[0].attrs["dilations"]
+        strides = program_config.ops[0].attrs["strides"]
+        if target_type == TargetType.Metal:
+            if in_shape[0] != 1 or in_shape[1] < 3 or dilations[
+                    0] != dilations[1] or strides[0] != strides[1]:
+                return False
+
         return True
 
     def sample_program_configs(self, draw):
@@ -81,12 +99,12 @@ class TestDepthwiseConv2dOp(AutoScanTest):
         dilations = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=10), min_size=2, max_size=2))
+                    min_value=1, max_value=6), min_size=2, max_size=2))
         padding_algorithm = draw(st.sampled_from(["VALID", "SAME"]))
         strides = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=10), min_size=2, max_size=2))
+                    min_value=1, max_value=6), min_size=2, max_size=2))
         data_format = "NCHW"
         use_mkldnn = False
         if self.get_target() == "X86":
@@ -158,7 +176,12 @@ class TestDepthwiseConv2dOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["depthwise_conv2d"], (1e-5, 1e-5)
+        atol, rtol = 1e-5, 1e-5
+        target_str = self.get_target()
+        if target_str == "Metal":
+            atol, rtol = 5e-2, 5e-2
+
+        return self.get_predictor_configs(), ["depthwise_conv2d"], (atol, rtol)
 
     def add_ignore_pass_case(self):
         def skip_bias_teller(program_config, predictor_config):
@@ -172,7 +195,12 @@ class TestDepthwiseConv2dOp(AutoScanTest):
         )
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=300)
+        target_str = self.get_target()
+        max_examples = 300
+        if target_str == "Metal":
+            # Make sure to generate enough valid cases for Metal
+            max_examples = 4000
+        self.run_and_statis(quant=False, max_examples=max_examples)
 
 
 if __name__ == "__main__":
