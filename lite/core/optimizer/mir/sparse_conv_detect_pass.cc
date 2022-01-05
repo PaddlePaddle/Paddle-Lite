@@ -645,6 +645,10 @@ void SparseConvDetectPass::Apply(const std::unique_ptr<SSAGraph>& graph) {
         VLOG(4) << "The paddings of the supported sparse conv must be 0";
         continue;
       }
+      if (!(ch_out > 0 && ch_in > 0)) {
+        VLOG(4) << "The input and output channels must be larger than 0";
+        continue;
+      }
       int zero_num;
       int num_build_nonzeroes = 0;
       int count_nonzeroes = 0;
