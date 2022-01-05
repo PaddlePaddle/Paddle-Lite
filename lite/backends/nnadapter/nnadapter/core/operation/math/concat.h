@@ -20,49 +20,51 @@
 
 namespace nnadapter {
 namespace operation {
+namespace math {
 
 template <typename T>
-static void ConcatCompute(const std::vector<T*>& inputs,
-                          const std::vector<std::vector<int32_t>>& inputs_dims,
-                          const int axis,
-                          T* output) {
-  size_t num = inputs.size();
-  auto dim_0 = inputs_dims[0];
-  int64_t concat_input_size = 1;
+static void concat(const std::vector<T*>& input_data_ptrs,
+                   const std::vector<std::vector<int32_t>>& input_shapes,
+                   const int axis,
+                   T* output_data_ptr) {
+  size_t num = input_data_ptrs.size();
+  auto input_dim_0 = input_shapes[0];
+  int64_t input_size = 1;
   int64_t num_cancats = 1;
-  for (int i = axis + 1; i < dim_0.size(); i++) {
-    concat_input_size *= dim_0[i];
+  for (int i = axis + 1; i < input_dim_0.size(); i++) {
+    input_size *= input_dim_0[i];
   }
   for (int i = 0; i < axis; i++) {
-    num_cancats *= dim_0[i];
+    num_cancats *= input_dim_0[i];
   }
 
-  std::vector<int32_t> output_dims = dim_0;
+  std::vector<int32_t> output_dims = input_dim_0;
   for (uint32_t i = 1; i < num; i++) {
     for (uint32_t j = 0; j < output_dims.size(); j++) {
       if (j == axis) {
-        output_dims[j] += inputs_dims[i][j];
+        output_dims[j] += input_shapes[i][j];
       }
     }
   }
-  auto* dst_ptr = output;
-  const int out_concat_axis = output_dims[axis];
-  int64_t offset_concat_axis = 0;
-  int64_t out_sum = out_concat_axis * concat_input_size;
+  auto* dst_ptr = output_data_ptr;
+  const int out_axis = output_dims[axis];
+  int64_t offset_axis = 0;
+  int64_t out_sum = out_axis * input_size;
   for (int n = 0; n < num; n++) {
-    auto dims = inputs_dims[n];
-    auto* src_ptr = inputs[n];
-    int64_t in_concat_axis = dims[axis];
-    auto* dout_ptr = dst_ptr + offset_concat_axis * concat_input_size;
-    int64_t in_sum = in_concat_axis * concat_input_size;
+    auto dims = input_shapes[n];
+    auto* src_ptr = input_data_ptrs[n];
+    int64_t in_axis = dims[axis];
+    auto* dout_ptr = dst_ptr + offset_axis * input_size;
+    int64_t in_sum = in_axis * input_size;
     for (int i = 0; i < num_cancats; i++) {
       std::memcpy(dout_ptr, src_ptr, sizeof(T) * in_sum);
       dout_ptr += out_sum;
       src_ptr += in_sum;
     }
-    offset_concat_axis += in_concat_axis;
+    offset_axis += in_axis;
   }
 }
 
+}  // namespace math
 }  // namespace operation
 }  // namespace nnadapter

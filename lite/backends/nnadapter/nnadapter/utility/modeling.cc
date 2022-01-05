@@ -462,6 +462,10 @@ NNADAPTER_EXPORT bool IsConstantOperand(hal::Operand* operand) {
          operand->type.lifetime == NNADAPTER_CONSTANT_REFERENCE;
 }
 
+NNADAPTER_EXPORT bool IsTemporaryShapeOperand(hal::Operand* operand) {
+  return operand->type.lifetime == NNADAPTER_TEMPORARY_SHAPE;
+}
+
 NNADAPTER_EXPORT bool IsModelInputOperand(hal::Operand* operand) {
   return operand->type.lifetime == NNADAPTER_MODEL_INPUT;
 }

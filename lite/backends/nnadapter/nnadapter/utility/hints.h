@@ -18,13 +18,11 @@
 
 namespace nnadapter {
 
-#define NNADAPTER_OPERAND_HINTS_KEY_TEMPORY_SHAPE 1
+void ClearTemporaryShape(void* ptr);
 
-void ClearTemporaryShapeInfo(void* ptr);
+NNAdapterOperandDimensionType* GetTemporaryShape(hal::Operand* operand);
 
-NNAdapterOperandDimensionType* GetTemporyShapeInfo(hal::Operand* operand);
-
-void SetTemporyShapeInfo(hal::Operand* operand,
-                         const NNAdapterOperandDimensionType type);
+void SetTemporaryShape(hal::Operand* operand,
+                       const NNAdapterOperandDimensionType type);
 
 }  // namespace nnadapter

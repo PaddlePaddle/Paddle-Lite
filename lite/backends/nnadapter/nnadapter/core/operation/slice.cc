@@ -16,7 +16,7 @@
 #include <algorithm>
 #include <vector>
 #include "core/hal/types.h"
-#include "core/math/slice_compute.h"
+#include "core/operation/math/slice.h"
 #include "utility/debug.h"
 #include "utility/hints.h"
 #include "utility/logging.h"
@@ -51,33 +51,33 @@ int PrepareSlice(hal::Operation* operation) {
     infer_output_shape(output_operand->type.dimensions.dynamic_data[i]);
   }
 
-  if (input_operand->type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {
+  if (IsTemporaryShapeOperand(input_operand)) {
     output_operand->type.lifetime = NNADAPTER_TEMPORARY_SHAPE;
-    auto& tempory_shape_info = *(GetTemporyShapeInfo(input_operand));
-    NNADAPTER_CHECK(tempory_shape_info.data);
-    NNADAPTER_CHECK(tempory_shape_info.data[0]);
+    auto& temporary_shape = *(GetTemporaryShape(input_operand));
+    NNADAPTER_CHECK(temporary_shape.data);
+    NNADAPTER_CHECK(temporary_shape.data[0]);
     NNAdapterOperandDimensionType dimension_type;
     dimension_type.count = output_operand->type.dimensions.data[0];
     dimension_type.dynamic_count = input_operand->type.dimensions.dynamic_count;
-    SliceCompute<int32_t>(
-        tempory_shape_info.data,
-        std::vector<int32_t>({static_cast<int32_t>(tempory_shape_info.count)}),
+    math::slice<int32_t>(
+        temporary_shape.data,
+        std::vector<int32_t>({static_cast<int32_t>(temporary_shape.count)}),
         axes_count,
         axes,
         starts,
         ends,
         dimension_type.data);
     for (uint32_t i = 0; i < dimension_type.dynamic_count; i++) {
-      SliceCompute<int32_t>(tempory_shape_info.dynamic_data[i],
-                            std::vector<int32_t>({static_cast<int32_t>(
-                                tempory_shape_info.count)}),
-                            axes_count,
-                            axes,
-                            starts,
-                            ends,
-                            dimension_type.dynamic_data[i]);
+      math::slice<int32_t>(
+          temporary_shape.dynamic_data[i],
+          std::vector<int32_t>({static_cast<int32_t>(temporary_shape.count)}),
+          axes_count,
+          axes,
+          starts,
+          ends,
+          dimension_type.dynamic_data[i]);
     }
-    SetTemporyShapeInfo(output_operand, dimension_type);
+    SetTemporaryShape(output_operand, dimension_type);
   }
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;

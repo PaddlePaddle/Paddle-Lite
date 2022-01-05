@@ -76,13 +76,12 @@ int PrepareResize(hal::Operation* operation) {
             << "Unsupported precision: "
             << OperandPrecisionCodeToString(shape_operand->type.precision);
       }
-    } else if (shape_operand->type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {
-      auto& tempory_shape_info = *(GetTemporyShapeInfo(shape_operand));
-      NNADAPTER_CHECK(tempory_shape_info.data);
-      NNADAPTER_CHECK(tempory_shape_info.data[0]);
-      memcpy(&shape_dims,
-             &tempory_shape_info,
-             sizeof(NNAdapterOperandDimensionType));
+    } else if (IsTemporaryShapeOperand(shape_operand)) {
+      auto& temporary_shape = *(GetTemporaryShape(shape_operand));
+      NNADAPTER_CHECK(temporary_shape.data);
+      NNADAPTER_CHECK(temporary_shape.data[0]);
+      memcpy(
+          &shape_dims, &temporary_shape, sizeof(NNAdapterOperandDimensionType));
     } else {
       NNADAPTER_LOG(FATAL) << "Unsupported shape lifetime: "
                            << OperandLifetimeCodeToString(

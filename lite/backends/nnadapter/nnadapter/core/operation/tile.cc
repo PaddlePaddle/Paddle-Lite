@@ -13,10 +13,10 @@
 // limitations under the License.
 
 #include "core/operation/tile.h"
-
 #include <vector>
 #include "core/hal/types.h"
 #include "utility/debug.h"
+#include "utility/hints.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
@@ -36,12 +36,10 @@ int PrepareTile(hal::Operation* operation) {
   uint32_t repeats_count;
   int32_t* repeats_data;
   std::vector<int32_t> repeats;
-  if (repeats_type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {
-    auto repeats_operand_dimension =
-        *reinterpret_cast<NNAdapterOperandDimensionType*>(
-            repeats_operand->buffer);
-    repeats_count = repeats_operand_dimension.count;
-    repeats_data = repeats_operand_dimension.data;
+  if (IsTemporaryShapeOperand(repeats_operand)) {
+    auto& temporary_shape = *(GetTemporaryShape(repeats_operand));
+    repeats_count = temporary_shape.count;
+    repeats_data = temporary_shape.data;
     repeats = std::vector<int32_t>(repeats_data, repeats_count + repeats_data);
   } else if (IsConstantOperand(repeats_operand)) {
     repeats_count = repeats_operand->length / sizeof(int32_t);

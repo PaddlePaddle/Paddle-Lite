@@ -17,27 +17,27 @@
 
 namespace nnadapter {
 
-void ClearTemporaryShapeInfo(void** handler) {
+void ClearTemporaryShape(void** handler) {
   NNADAPTER_CHECK(*handler);
   free(*handler);
   *handler = nullptr;
 }
 
-NNAdapterOperandDimensionType* GetTemporyShapeInfo(hal::Operand* operand) {
-  return operand->hints[NNADAPTER_OPERAND_HINTS_KEY_TEMPORY_SHAPE].handler
+NNAdapterOperandDimensionType* GetTemporaryShape(hal::Operand* operand) {
+  return operand->hints[NNADAPTER_OPERAND_HINTS_KEY_TEMPORARY_SHAPE].handler
              ? reinterpret_cast<NNAdapterOperandDimensionType*>(
-                   operand->hints[NNADAPTER_OPERAND_HINTS_KEY_TEMPORY_SHAPE]
+                   operand->hints[NNADAPTER_OPERAND_HINTS_KEY_TEMPORARY_SHAPE]
                        .handler)
              : nullptr;
 }
 
-void SetTemporyShapeInfo(hal::Operand* operand,
-                         const NNAdapterOperandDimensionType type) {
+void SetTemporaryShape(hal::Operand* operand,
+                       const NNAdapterOperandDimensionType type) {
   auto ptr = malloc(sizeof(NNAdapterOperandDimensionType));
   memcpy(ptr, &type, sizeof(NNAdapterOperandDimensionType));
-  operand->hints[NNADAPTER_OPERAND_HINTS_KEY_TEMPORY_SHAPE].handler = ptr;
-  operand->hints[NNADAPTER_OPERAND_HINTS_KEY_TEMPORY_SHAPE].deleter =
-      ClearTemporaryShapeInfo;
+  operand->hints[NNADAPTER_OPERAND_HINTS_KEY_TEMPORARY_SHAPE].handler = ptr;
+  operand->hints[NNADAPTER_OPERAND_HINTS_KEY_TEMPORARY_SHAPE].deleter =
+      ClearTemporaryShape;
 }
 
 }  // namespace nnadapter

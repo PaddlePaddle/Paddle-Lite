@@ -29,10 +29,22 @@ int ConvertReshape(Converter* converter, hal::Operation* operation) {
     input_operator = converter->ConvertOperand(input_operand);
   }
   auto reshape_op = converter->AddOperator<hiai::op::Reshape>(output_operand);
+  uint32_t shape_count = 0;
+  int32_t* shape_data = nullptr;
+  if (IsTemporaryShapeOperand(shape_operand)) {
+    shape_count = output_operand->type.dimensions.count;
+    shape_data = output_operand->type.dimensions.data;
+  } else if (IsConstantOperand(shape_operand)) {
+    shape_count = shape_operand->length / sizeof(int32_t);
+    shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);
+  } else {
+    NNADAPTER_LOG(FATAL) << "Unsupported shape lifetime: "
+                         << OperandLifetimeCodeToString(
+                                shape_operand->type.lifetime);
+    return NNADAPTER_INVALID_PARAMETER;
+  }
   auto shape_operator = converter->AddInt32ConstantOperator(
-      std::vector<int32_t>(output_operand->type.dimensions.data,
-                           output_operand->type.dimensions.data +
-                               output_operand->type.dimensions.count));
+      std::vector<int32_t>(shape_data, shape_data + shape_count));
   SET_INPUT(reshape_op, x, input_operator);
   SET_INPUT(reshape_op, shape, shape_operator);
   MAP_OUTPUT(reshape_op, y, output_operand);

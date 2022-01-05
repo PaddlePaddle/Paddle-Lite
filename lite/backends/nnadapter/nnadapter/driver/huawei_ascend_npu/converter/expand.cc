@@ -31,11 +31,22 @@ int ConvertExpand(Converter* converter, hal::Operation* operation) {
     input_operator = converter->ConvertOperand(input_operand);
   }
   auto expand_op = converter->AddOperator<ge::op::ExpandD>(output_operand);
-  std::vector<int64_t> expand_shape;
-  for (uint32_t i = 0; i < output_operand->type.dimensions.count; i++) {
-    expand_shape.push_back(output_operand->type.dimensions.data[i]);
+  uint32_t shape_count = 0;
+  int32_t* shape_data = nullptr;
+  if (IsTemporaryShapeOperand(shape_operand)) {
+    shape_count = output_operand->type.dimensions.count;
+    shape_data = output_operand->type.dimensions.data;
+  } else if (IsConstantOperand(shape_operand)) {
+    shape_count = shape_operand->length / sizeof(int32_t);
+    shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);
+  } else {
+    NNADAPTER_LOG(FATAL) << "Unsupported shape lifetime: "
+                         << OperandLifetimeCodeToString(
+                                shape_operand->type.lifetime);
+    return NNADAPTER_INVALID_PARAMETER;
   }
-  expand_op->set_attr_shape(ge::Operator::OpListInt(expand_shape));
+  expand_op->set_attr_shape(ge::Operator::OpListInt(
+      std::vector<int64_t>(shape_data, shape_data + shape_count)));
   SET_INPUT(expand_op, x, input_operator);
   MAP_OUTPUT(expand_op, y, output_operand);
   return NNADAPTER_NO_ERROR;

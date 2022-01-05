@@ -28,10 +28,22 @@ int ConvertReshape(Converter* converter, hal::Operation* operation) {
   if (!input_expr.defined()) {
     input_expr = converter->ConvertOperand(input_operand);
   }
+  uint32_t shape_count = 0;
+  int32_t* shape_data = nullptr;
+  if (IsTemporaryShapeOperand(shape_operand)) {
+    shape_count = output_operand->type.dimensions.count;
+    shape_data = output_operand->type.dimensions.data;
+  } else if (IsConstantOperand(shape_operand)) {
+    shape_count = shape_operand->length / sizeof(int32_t);
+    shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);
+  } else {
+    NNADAPTER_LOG(FATAL) << "Unsupported shape lifetime: "
+                         << OperandLifetimeCodeToString(
+                                shape_operand->type.lifetime);
+    return NNADAPTER_INVALID_PARAMETER;
+  }
   auto reshape_expr = converter->builder()->CreateReshape(
-      input_expr,
-      ConvertToXTCLArray<xtcl::Integer>(output_operand->type.dimensions.data,
-                                        output_operand->type.dimensions.count));
+      input_expr, ConvertToXTCLArray<xtcl::Integer>(shape_data, shape_count));
   converter->UpdateExprMap(output_operand, reshape_expr);
   return NNADAPTER_NO_ERROR;
 }

@@ -35,10 +35,10 @@ int PrepareReshape(hal::Operation* operation) {
 
   uint32_t shape_count;
   int32_t* shape_data = nullptr;
-  if (shape_type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {
-    auto& tempory_shape_info = *(GetTemporyShapeInfo(shape_operand));
-    shape_count = tempory_shape_info.count;
-    shape_data = tempory_shape_info.data;
+  if (IsTemporaryShapeOperand(shape_operand)) {
+    auto& temporary_shape = *(GetTemporaryShape(shape_operand));
+    shape_count = temporary_shape.count;
+    shape_data = temporary_shape.data;
   } else if (IsConstantOperand(shape_operand)) {
     shape_count = shape_operand->length / sizeof(int32_t);
     shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);

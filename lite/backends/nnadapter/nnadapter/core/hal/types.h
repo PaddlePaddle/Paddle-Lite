@@ -15,14 +15,14 @@
 #pragma once
 
 #include <list>
-#include <map>
 #include <string>
-#include <utility>
 #include <vector>
 #include "nnadapter.h"  // NOLINT
 
 namespace nnadapter {
 namespace hal {
+
+#define NNADAPTER_OPERAND_HINTS_KEY_TEMPORARY_SHAPE 1
 
 typedef struct Hint {
   void* handler;
