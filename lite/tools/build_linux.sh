@@ -58,11 +58,10 @@ NNADAPTER_KUNLUNXIN_XTCL_SDK_URL=""
 NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV=""
 
 # options of compiling baidu XPU lib.
-WITH_BAIDU_XPU=OFF
-WITH_BAIDU_XPU_XTCL=OFF
-BAIDU_XPU_SDK_ROOT=""
-BAIDU_XPU_SDK_URL=""
-BAIDU_XPU_SDK_ENV=""
+WITH_KUNLUNXIN_XPU=OFF
+KUNLUNXIN_XPU_SDK_URL=""
+KUNLUNXIN_XPU_SDK_ENV=""
+KUNLUNXIN_XPU_SDK_ROOT=""
 # options of compiling intel fpga.
 WITH_INTEL_FPGA=OFF
 INTEL_FPGA_SDK_ROOT="$(pwd)/intel_fpga_sdk"
@@ -156,7 +155,12 @@ function init_cmake_mutable_options {
         WITH_EXTRA=ON
     fi
 
-    if [ "${WITH_BAIDU_XPU}" == "ON" ]; then
+    if [ "${WITH_KUNLUNXIN_XPU}" == "ON" ]; then
+        WITH_EXTRA=ON
+        WITH_TINY_PUBLISH=OFF
+    fi
+
+    if [ "${DNNADAPTER_WITH_KUNLUNXIN_XTCL}" == "ON" ]; then
         WITH_EXTRA=ON
         WITH_TINY_PUBLISH=OFF
     fi
@@ -186,11 +190,11 @@ function init_cmake_mutable_options {
                         -DLITE_WITH_METAL=$WITH_METAL \
                         -DLITE_WITH_RKNPU=$WITH_ROCKCHIP_NPU \
                         -DRKNPU_DDK_ROOT=$ROCKCHIP_NPU_SDK_ROOT \
-                        -DLITE_WITH_XPU=$WITH_BAIDU_XPU \
-                        -DLITE_WITH_XTCL=$WITH_BAIDU_XPU_XTCL \
-                        -DXPU_SDK_ROOT=$BAIDU_XPU_SDK_ROOT \
-                        -DXPU_SDK_URL=$BAIDU_XPU_SDK_URL \
-                        -DXPU_SDK_ENV=$BAIDU_XPU_SDK_ENV \
+                        -DLITE_WITH_XPU=$WITH_KUNLUNXIN_XPU \
+                        -DLITE_WITH_XTCL=OFF \
+                        -DXPU_SDK_URL=$KUNLUNXIN_XPU_SDK_URL \
+                        -DXPU_SDK_ENV=$KUNLUNXIN_XPU_SDK_ENV \
+                        -DXPU_SDK_ROOT=$KUNLUNXIN_XPU_SDK_ROOT \
                         -DLITE_WITH_TRAIN=$WITH_TRAIN  \
                         -DLITE_WITH_NNADAPTER=$WITH_NNADAPTER \
                         -DNNADAPTER_WITH_ROCKCHIP_NPU=$NNADAPTER_WITH_ROCKCHIP_NPU \
@@ -305,8 +309,8 @@ function make_publish_so {
     if [ "${WITH_METAL}" = "ON" ]; then
         build_dir=${build_dir}.metal
     fi
-    if [ "${WITH_BAIDU_XPU}" = "ON" ]; then
-        build_dir=${build_dir}.baidu_xpu
+    if [ "${WITH_KUNLUNXIN_XPU}" = "ON" ]; then
+        build_dir=${build_dir}.kunlunxin_xpu
     fi
 
     if [ -d $build_dir ]; then
@@ -391,15 +395,16 @@ function print_usage {
     echo -e "|             you can download cambricon MLU SDK from:                                                                                                 |"
     echo -e "|  detailed information about Paddle-Lite CAMBRICON MLU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/cambricon_mlu.html                  |"
     echo -e "|                                                                                                                                                      |"
-    echo -e "|  arguments of baidu xpu library compiling:                                                                                                           |"
-    echo -e "|     ./lite/tools/build_linux.sh --arch=x86 --with_baidu_xpu=ON                                                                                       |"
-    echo -e "|     ./lite/tools/build_linux.sh --arch=armv8 --with_baidu_xpu=ON                                                                                     |"
-    echo -e "|     --with_baidu_xpu: (OFF|ON); controls whether to compile lib for baidu_xpu, default is OFF.                                                       |"
-    echo -e "|     --with_baidu_xpu_xtcl: (OFF|ON); controls whether to enable xtcl for baidu_xpu, default is OFF.                                                  |"
-    echo -e "|     --baidu_xpu_sdk_root: (path to baidu_xpu DDK file) optional, default is None                                                                     |"
-    echo -e "|     --baidu_xpu_sdk_url: (baidu_xpu sdk download url) optional, default is 'https://baidu-kunlun-product.cdn.bcebos.com/KL-SDK/klsdk-dev_paddle'     |"
-    echo -e "|     --baidu_xpu_sdk_env: (bdcentos_x86_64|centos7_x86_64|ubuntu_x86_64|kylin_aarch64) optional,                                                      |"
+    echo -e "|  arguments of kunlunxin xpu library compiling:                                                                                                       |"
+    echo -e "|     ./lite/tools/build_linux.sh --arch=x86 --with_kunlunxin_xpu=ON                                                                                   |"
+    echo -e "|     ./lite/tools/build_linux.sh --arch=armv8 --with_kunlunxin_xpu=ON                                                                                 |"
+    echo -e "|     --with_kunlunxin_xpu: (OFF|ON); controls whether to compile lib for kunlunxin_xpu, default is OFF.                                               |"
+    echo -e "|     --kunlunxin_xpu_sdk_url: (kunlunxin_xpu sdk download url) optional, default is                                                                   |"
+    echo -e "|             'https://baidu-kunlun-product.cdn.bcebos.com/KL-SDK/klsdk-dev_paddle'                                                                    |"
+    echo -e "|     --kunlunxin_xpu_sdk_env: (bdcentos_x86_64|centos7_x86_64|ubuntu_x86_64|kylin_aarch64) optional,                                                  |"
     echo -e "|             default is bdcentos_x86_64(if x86) / kylin_aarch64(if arm)                                                                               |"
+    echo -e "|     --kunlunxin_xpu_sdk_root: (path to kunlunxin_xpu DDK file) optional, default is None                                                             |"
+    echo -e "|  detailed information about Paddle-Lite CAMBRICON MLU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/kunlunxin_xpu.html                  |"
     echo "--------------------------------------------------------------------------------------------------------------------------------------------------------"
     echo
 }
@@ -574,26 +579,44 @@ function main {
                 ;;
             # compiling lib which can operate on baidu xpu.
             --with_baidu_xpu=*)
-                WITH_BAIDU_XPU="${i#*=}"
+                WITH_KUNLUNXIN_XPU="${i#*=}"
                 shift
                 ;;
             --with_baidu_xpu_xtcl=*)
-                WITH_BAIDU_XPU_XTCL="${i#*=}"
                 shift
                 ;;
             --baidu_xpu_sdk_root=*)
-                BAIDU_XPU_SDK_ROOT="${i#*=}"
-                if [ -n "${BAIDU_XPU_SDK_ROOT}" ]; then
-                    BAIDU_XPU_SDK_ROOT=$(readlink -f ${BAIDU_XPU_SDK_ROOT})
+                KUNLUNXIN_XPU_SDK_ROOT="${i#*=}"
+                if [ -n "${KUNLUNXIN_XPU_SDK_ROOT}" ]; then
+                    KUNLUNXIN_XPU_SDK_ROOT=$(readlink -f ${KUNLUNXIN_XPU_SDK_ROOT})
                 fi
                 shift
                 ;;
             --baidu_xpu_sdk_url=*)
-                BAIDU_XPU_SDK_URL="${i#*=}"
+                KUNLUNXIN_XPU_SDK_URL="${i#*=}"
                 shift
                 ;;
             --baidu_xpu_sdk_env=*)
-                BAIDU_XPU_SDK_ENV="${i#*=}"
+                KUNLUNXIN_XPU_SDK_ENV="${i#*=}"
+                shift
+                ;;
+            --with_kunlunxin_xpu=*)
+                WITH_KUNLUNXIN_XPU="${i#*=}"
+                shift
+                ;;
+            --kunlunxin_xpu_sdk_url=*)
+                KUNLUNXIN_XPU_SDK_URL="${i#*=}"
+                shift
+                ;;
+            --kunlunxin_xpu_sdk_env=*)
+                KUNLUNXIN_XPU_SDK_ENV="${i#*=}"
+                shift
+                ;;
+            --kunlunxin_xpu_sdk_root=*)
+                KUNLUNXIN_XPU_SDK_ROOT="${i#*=}"
+                if [ -n "${KUNLUNXIN_XPU_SDK_ROOT}" ]; then
+                    KUNLUNXIN_XPU_SDK_ROOT=$(readlink -f ${KUNLUNXIN_XPU_SDK_ROOT})
+                fi
                 shift
                 ;;
             # compiling lib which can operate on intel fpga.

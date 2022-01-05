@@ -408,7 +408,11 @@ void scale_leaky_relu<float>(const float* din,
           "v12",
           "v13",
           "v14",
-          "v15");
+          "v15",
+          "v16",
+          "v17",
+          "v18",
+          "v19");
 #else
     asm volatile(
         "1:                                     @ loop header \n"

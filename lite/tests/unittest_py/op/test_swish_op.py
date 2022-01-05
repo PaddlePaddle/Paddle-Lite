@@ -57,20 +57,23 @@ class TestSwishOp(AutoScanTest):
         ]
         self.enable_testing_on_place(places=opencl_places)
 
-        # big diff!
-        # metal_places = [
-        #     Place(TargetType.Metal, PrecisionType.FP32,
-        #           DataLayoutType.MetalTexture2DArray),
-        #     Place(TargetType.Metal, PrecisionType.FP16,
-        #           DataLayoutType.MetalTexture2DArray),
-        #     Place(TargetType.ARM, PrecisionType.FP32),
-        #     Place(TargetType.Host, PrecisionType.FP32)
-        # ]
-        # self.enable_testing_on_place(places=metal_places)
+        metal_places = [
+            Place(TargetType.Metal, PrecisionType.FP32,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.Metal, PrecisionType.FP16,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.ARM, PrecisionType.FP32),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=metal_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
+        x_shape = list(program_config.inputs["input_data"].shape)
+        if predictor_config.target() == TargetType.Metal:
+            if x_shape[0] != 1 or len(x_shape) != 4:
+                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -93,13 +96,21 @@ class TestSwishOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), [""], (1e-5, 1e-5)
+        atol, rtol = 1e-5, 1e-5
+        target_str = self.get_target()
+        if target_str == "Metal":
+            atol, rtol = 1e-2, 1e-2
+        return self.get_predictor_configs(), ["swish"], (atol, rtol)
 
     def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        target_str = self.get_target()
+        if target_str == "Metal":
+            self.run_and_statis(quant=False, max_examples=300)
+        else:
+            self.run_and_statis(quant=False, max_examples=25)
 
 
 if __name__ == "__main__":

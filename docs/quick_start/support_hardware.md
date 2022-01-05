@@ -75,15 +75,15 @@ Paddle Lite 支持 **英特尔 (Intel) FPGA**，支持列表如下：
 - 英特尔 (Intel) FPGA: [Paddle Lite 使用英特尔 FPGA 预测部署](../demo_guides/intel_fpga)
 
 
-## 百度 (Baidu) XPU
+## 昆仑芯 (kunlunxin) XPU
 
-Paddle Lite 支持百度 XPU，支持列表如下：
-- 百度昆仑 818-100 芯片
-- 百度昆仑 818-300 芯片
+Paddle Lite 支持昆仑芯 XPU，支持列表如下：
+- 昆仑芯 818-100 芯片
+- 昆仑芯 818-300 芯片
 
-### 百度 (Baidu) XPU 环境准备及示例程序
+### 昆仑芯 (kunlunxin) XPU 环境准备及示例程序
 
-- [Paddle Lite 使用百度 XPU 预测部署](../demo_guides/baidu_xpu)
+- [Paddle Lite 使用昆仑芯 XPU 预测部署](../demo_guides/kunlunxin_xpu)
 
 ## 华为 (Huawei) 麒麟 NPU
 

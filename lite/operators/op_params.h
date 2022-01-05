@@ -254,6 +254,7 @@ struct SoftmaxParam : ParamBase {
   lite::Tensor* output{};
   int axis{-1};
   bool use_cudnn{true};
+  bool eleminate_success{false};
 };
 
 // For Reshape and Reshape2 Op
@@ -1540,6 +1541,7 @@ struct DistributeFpnProposalsParam : ParamBase {
   int max_level{};
   int refer_level{};
   int refer_scale{};
+  bool pixel_offset{true};
 };
 
 /// --------------------- instance_norm operators --------------------

@@ -25,7 +25,8 @@ __kernel void pool(__read_only image2d_t input,
                    __private const int stride_h,
                    __private const int stride_w,
                    __private const int pad_top,
-                   __private const int pad_left) {
+                   __private const int pad_left,
+                   __private const int adaptive) {
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
@@ -39,6 +40,12 @@ __kernel void pool(__read_only image2d_t input,
   int start_w = out_w * stride_w - pad_left;
   int end_w = min(start_w + ksize_w, in_width);
   start_w = max(start_w, 0);
+  if (adaptive == 1) {
+    start_h = out_h * in_height / out_height;
+    end_h = (out_h + 1) * in_height / out_height;
+    start_w = out_w * in_width / out_width;
+    end_w = (out_w + 1) * in_width / out_width;
+  }
 
   const int pos_in_x = out_c * in_width;
   const int pos_in_y = out_n * in_height;
