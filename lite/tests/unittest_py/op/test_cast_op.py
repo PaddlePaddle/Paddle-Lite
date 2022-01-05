@@ -54,8 +54,7 @@ class TestCastOp(AutoScanTest):
         if in_dtype == 0 or out_dtype == 0:
             return False
         if predictor_config.target() == TargetType.Metal:
-            if len(x_shape) != 4 or (in_dtype != 2 and
-                                     in_dtype != 5) or out_dtype != 5:
+            if len(x_shape) != 4 or in_dtype != 5 or out_dtype != 5:
                 return False
         return True
 
@@ -116,7 +115,7 @@ class TestCastOp(AutoScanTest):
         max_examples = 250
         if target_str == "Metal":
             # Make sure to generate enough valid cases for Metal
-            max_examples = 500
+            max_examples = 1000
         self.run_and_statis(quant=False, max_examples=max_examples)
 
 
