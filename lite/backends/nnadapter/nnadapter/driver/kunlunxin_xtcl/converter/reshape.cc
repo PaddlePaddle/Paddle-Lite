@@ -36,6 +36,12 @@ int ConvertReshape(Converter* converter, hal::Operation* operation) {
   } else if (IsConstantOperand(shape_operand)) {
     shape_count = shape_operand->length / sizeof(int32_t);
     shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);
+    for (uint32_t i = 0; i < shape_count; i++) {
+      if (shape_data[i] == 0 &&
+          input_operand->type.dimensions.data[i] != NNADAPTER_UNKNOWN) {
+        shape_data[i] = input_operand->type.dimensions.data[i];
+      }
+    }
   } else {
     NNADAPTER_LOG(FATAL) << "Unsupported shape lifetime: "
                          << OperandLifetimeCodeToString(
