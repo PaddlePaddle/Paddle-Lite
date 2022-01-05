@@ -48,13 +48,6 @@ class Converter {
   // operand
   std::shared_ptr<tim::vx::Tensor> ConvertOperand(
       hal::Operand* operand, std::vector<int32_t> dimensions = {});
-  // Add a constant TIM-VX tensor
-  std::shared_ptr<tim::vx::Tensor> AddConstantTensor(
-      void* values,
-      std::vector<int32_t> dimensions,
-      tim::vx::DataType precision,
-      const float* quant_scale,
-      const int32_t* zero_point);
 
  private:
   tim::vx::Graph* graph_{nullptr};

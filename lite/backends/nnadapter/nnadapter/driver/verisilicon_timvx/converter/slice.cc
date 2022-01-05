@@ -29,41 +29,35 @@ int ConvertSlice(Converter* converter, hal::Operation* operation) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
   auto output_tensor = converter->ConvertOperand(output_operand);
-  auto output_dim = output_operand->type.dimensions.count;
-  std::vector<int32_t> axis;
-  for (uint32_t i = 0; i < axes_count; i++) {
-    axis.push_back(output_dim - 1 - axes[i]);
-  }
-  std::vector<int32_t> start;
-  for (int i = 0; i < output_dim; i++) {
-    bool match_axis = false;
-    for (uint32_t j = 0; j < axes_count; j++) {
-      if (i == axis[j]) {
-        match_axis = true;
+  auto output_dimensions_count = output_operand->type.dimensions.count;
+  // Convert starts & ends to tim-vx slice params
+  std::vector<int32_t> mapped_start;
+  for (int i = output_dimensions_count - 1; i >= 0; i--) {
+    bool matched = false;
+    uint32_t j = 0;
+    for (; j < axes_count; j++) {
+      if (i == axes[j]) {
+        matched = true;
         break;
       }
     }
-    if (match_axis)
-      start.push_back(starts[i]);
-    else
-      start.push_back(0);
+    mapped_start.push_back(matched ? starts[j] : 0);
   }
-  std::vector<int32_t> length;
-  for (int i = 0; i < output_dim; i++) {
-    bool match_axis = false;
-    for (uint32_t j = 0; j < axes_count; j++) {
-      if (i == axis[j]) {
-        match_axis = true;
+  std::vector<int32_t> mapped_length;
+  for (int i = output_dimensions_count - 1; i >= 0; i--) {
+    bool matched = false;
+    uint32_t j = 0;
+    for (; j < axes_count; j++) {
+      if (i == axes[j]) {
+        matched = true;
         break;
       }
     }
-    if (match_axis)
-      start.push_back(ends[i] - starts[i]);
-    else
-      start.push_back(output_operand->type.dimensions.data[output_dim - 1 - i]);
+    mapped_length.push_back(matched ? ends[j] - starts[j]
+                                    : output_operand->type.dimensions.data[i]);
   }
   auto slice_op = converter->graph()->CreateOperation<tim::vx::ops::Slice>(
-      output_dim, start, length);
+      output_dimensions_count, mapped_start, mapped_length);
   slice_op->BindInputs({input_tensor});
   slice_op->BindOutputs({output_tensor});
   return NNADAPTER_NO_ERROR;

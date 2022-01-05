@@ -56,12 +56,5 @@ std::shared_ptr<tim::vx::Tensor> CreateTimVXTensor(
     const NNAdapterOperandType* type,
     void* buffer = nullptr,
     std::vector<int32_t> dimensions = {});
-std::shared_ptr<tim::vx::Tensor> CreateConstantTimVXTensor(
-    tim::vx::Graph* graph,
-    void* values,
-    std::vector<int32_t> dimensions,
-    tim::vx::DataType precision,
-    const float* quant_scale,
-    const int32_t* zero_point);
 }  // namespace verisilicon_timvx
 }  // namespace nnadapter

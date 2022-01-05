@@ -247,26 +247,5 @@ std::shared_ptr<tim::vx::Tensor> CreateTimVXTensor(
                            data_layout,
                            tensor_attr);
 }
-
-std::shared_ptr<tim::vx::Tensor> CreateConstantTimVXTensor(
-    tim::vx::Graph* graph,
-    void* values,
-    std::vector<int32_t> dimensions,
-    tim::vx::DataType precision,
-    const float* quant_scale,
-    const int32_t* zero_point) {
-  auto shape = ConvertToTimVXShapeType(dimensions.data(), dimensions.size());
-  return CreateTimVXTensor(graph,
-                           shape,
-                           precision,
-                           quant_scale,
-                           zero_point,
-                           1,
-                           -1,
-                           values,
-                           tim::vx::DataLayout::WHCN,
-                           tim::vx::TensorAttribute::CONSTANT);
-}
-
 }  // namespace verisilicon_timvx
 }  // namespace nnadapter

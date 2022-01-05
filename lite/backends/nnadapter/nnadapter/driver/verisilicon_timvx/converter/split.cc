@@ -32,14 +32,14 @@ int ConvertSplit(Converter* converter, hal::Operation* operation) {
   }
   std::vector<std::shared_ptr<tim::vx::Tensor>> output_tensors(split.size());
   // WHCN
-  uint32_t axis_timvx = input_operand->type.dimensions.count - 1 - axis;
-  std::vector<uint32_t> split_timvx;
+  uint32_t mapped_axis = input_operand->type.dimensions.count - 1 - axis;
+  std::vector<uint32_t> mapped_split;
   for (int i = 0; i < split.size(); i++) {
-    split_timvx.push_back(split[i]);
+    mapped_split.push_back(split[i]);
     output_tensors[i] = converter->ConvertOperand(output_operands[i]);
   }
   auto split_op = converter->graph()->CreateOperation<tim::vx::ops::Split>(
-      axis_timvx, split_timvx);
+      mapped_axis, mapped_split);
   split_op->BindInputs({input_tensor});
   split_op->BindOutputs(output_tensors);
   return NNADAPTER_NO_ERROR;

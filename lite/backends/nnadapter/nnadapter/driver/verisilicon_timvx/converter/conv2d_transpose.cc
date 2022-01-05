@@ -44,6 +44,7 @@ int ConvertConv2DTranspose(Converter* converter, hal::Operation* operation) {
         stride_width,
         &dilation_width);
   }
+
   // Convert to tim-vx tensors and operators
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
