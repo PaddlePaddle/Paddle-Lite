@@ -46,7 +46,7 @@ NNADAPTER_EXPORT void RemoveOperand(hal::Model* model, hal::Operand* operand) {
           operand->type.symm_per_channel_params.scales) {
         free(operand->type.symm_per_channel_params.scales);
       }
-      for (size_t i = 0; i < NNADAPTER_MAX_SIZE_OF_HINTS; i++) {
+      for (size_t i = 0; i < hal::NNADAPTER_MAX_SIZE_OF_HINTS; i++) {
         if (operand->hints[i].handler) {
           operand->hints[i].deleter(&operand->hints[i].handler);
         }
