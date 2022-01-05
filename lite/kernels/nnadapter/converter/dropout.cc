@@ -46,7 +46,13 @@ int ConvertDropout(Converter* converter, OpInfo* op, Scope* scope) {
   // Input operand
   auto input_operand = converter->AddInputOperand(scope, x_name, {}, x_scales);
   // Prob operand
-  auto prob_operand = converter->AddConstantOperand(scale);
+  NNAdapterOperand* prob_operand = nullptr;
+  if (x_scales.size() > 0) {
+    prob_operand = converter->AddConstantOperand(
+        static_cast<int8_t>(scale > 0.0f ? 1 : -1), {fabsf(scale)});
+  } else {
+    prob_operand = converter->AddConstantOperand(scale);
+  }
   // Fuse code operand
   auto fuse_code_operand =
       converter->AddConstantOperand(static_cast<int32_t>(NNADAPTER_FUSED_NONE));
