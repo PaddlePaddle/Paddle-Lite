@@ -104,8 +104,9 @@ class TestElementwisePowOp(AutoScanTest):
             input_data_type = draw(st.sampled_from([np.float32]))
 
         def gen_input_data(*args, **kwargs):
+            # The value is small because we do pow operation. The result will be very large if input data is large.
             return np.random.randint(
-                1, 20, size=(kwargs['shape'])).astype(kwargs['dtype'])
+                1, 5, size=(kwargs['shape'])).astype(kwargs['dtype'])
 
         elementwise_pow_op = OpConfig(
             type="elementwise_pow",
@@ -134,11 +135,14 @@ class TestElementwisePowOp(AutoScanTest):
 
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
-            return True
+            input_data_shape = program_config.inputs["input_data_x"].shape
+            if len(input_data_shape) != 4:
+                return True
+            return False
 
         self.add_ignore_check_case(
             teller1, IgnoreReasons.ACCURACY_ERROR,
-            "The elementwise_pow op's result is different from paddle, because paddle has bug on this op, wait paddle fix!"
+            "The elementwise_pow op's result is different from paddle, we should fix it as soon as possible!"
         )
 
     def test(self, *args, **kwargs):

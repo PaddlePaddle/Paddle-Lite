@@ -158,7 +158,7 @@ class TestElementwiseSubOp(AutoScanTest):
 
         self.add_ignore_check_case(
             teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "The elementwise_min op's result is different from paddle in some case, we should fix it as soon as possible!"
+            "The elementwise_sub op's result is different from paddle in some case, we should fix it as soon as possible!"
         )
 
     def test(self, *args, **kwargs):
