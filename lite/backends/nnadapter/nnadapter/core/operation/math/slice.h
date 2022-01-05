@@ -28,7 +28,7 @@ static void slice(const T* input_data_ptr,
                   int32_t* axes,
                   int32_t* starts,
                   int32_t* ends,
-                  T* out) {
+                  T* output_data_ptr) {
   std::vector<int32_t> out_shapes(input_shapes);
   std::vector<int> real_starts(input_shapes.size(), 0);
   std::vector<int> real_ends(input_shapes.size(), 0);
@@ -73,7 +73,7 @@ static void slice(const T* input_data_ptr,
       index_id = index_id % dst_step[j];
       src_id += (cur_id + real_starts[j]) * src_step[j];
     }
-    out[dst_id] = input_data_ptr[src_id];
+    output_data_ptr[dst_id] = input_data_ptr[src_id];
   }
 }
 

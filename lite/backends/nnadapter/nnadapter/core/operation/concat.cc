@@ -37,7 +37,7 @@ int PrepareConcat(hal::Operation* operation) {
                                 const uint32_t input_dimension_count) {
     NNADAPTER_CHECK_EQ(input_dimension_count,
                        output_operand->type.dimensions.count);
-    for (uint32_t i = 0; i < input_dimension_count; i++) {
+    for (size_t i = 0; i < input_dimension_count; i++) {
       if (output_dimensions[i] == NNADAPTER_UNKNOWN ||
           input_dimensions[i] == NNADAPTER_UNKNOWN) {
         output_dimensions[i] = NNADAPTER_UNKNOWN;
@@ -57,7 +57,7 @@ int PrepareConcat(hal::Operation* operation) {
                        output_operand->type.dimensions.data,
                        input_operands[i]->type.dimensions.count);
   }
-  for (uint32_t i = 0; i < output_operand->type.dimensions.dynamic_count; i++) {
+  for (size_t i = 0; i < output_operand->type.dimensions.dynamic_count; i++) {
     for (size_t j = 1; j < input_count - 1; j++) {
       infer_output_shape(input_operands[j]->type.dimensions.dynamic_data[i],
                          output_operand->type.dimensions.dynamic_data[i],
@@ -98,8 +98,7 @@ int PrepareConcat(hal::Operation* operation) {
           inputs.push_back(input_data);
         }
         std::vector<int32_t> input_dims;
-        for (uint32_t j = 0; j < input_operands[i]->type.dimensions.count;
-             j++) {
+        for (size_t j = 0; j < input_operands[i]->type.dimensions.count; j++) {
           input_dims.push_back(input_operands[i]->type.dimensions.data[j]);
         }
         inputs_shapes.push_back(input_dims);
@@ -109,47 +108,10 @@ int PrepareConcat(hal::Operation* operation) {
     std::vector<int32_t*> inputs;
     std::vector<std::vector<int32_t>> inputs_shapes;
     get_inputs_info(inputs, inputs_shapes);
-    // for (size_t i = 0; i < input_count - 1; i++) {
-    //   if (IsTemporaryShapeOperand(input_operands[i])) {
-    //     auto& temporary_shape = *(GetTemporaryShape(input_operands[i]));
-    //     NNADAPTER_CHECK(temporary_shape.data);
-    //     NNADAPTER_CHECK(temporary_shape.data[0]);
-    //     inputs.push_back(temporary_shape.data);
-    //   } else {  // Constant Operand
-    //     auto input_data =
-    //     reinterpret_cast<int32_t*>(input_operands[i]->buffer);
-    //     inputs.push_back(input_data);
-    //   }
-    //   std::vector<int32_t> input_dims;
-    //   for (uint32_t j = 0; j < input_operands[i]->type.dimensions.count; j++)
-    //   {
-    //     input_dims.push_back(input_operands[i]->type.dimensions.data[j]);
-    //   }
-    //   inputs_shapes.push_back(input_dims);
-    // }
     // Dynamic shape
     std::vector<std::vector<int32_t*>> dynamic_inputs;
     std::vector<std::vector<std::vector<int32_t>>> dynamic_inputs_shapes;
-    for (uint32_t i = 0; i < output_operand->type.dimensions.dynamic_count;
-         i++) {
-      // for (size_t j = 0; j < input_count - 1; j++) {
-      //   if (IsTemporaryShapeOperand(input_operands[j])) {
-      //     auto& temporary_shape = *(GetTemporaryShape(input_operands[i]));
-      //     NNADAPTER_CHECK(temporary_shape.data);
-      //     NNADAPTER_CHECK(temporary_shape.data[0]);
-      //     dynamic_inputs[i].push_back(temporary_shape.data);
-      //   } else {  // Constant Operand
-      //     auto input_data =
-      //         reinterpret_cast<int32_t*>(input_operands[j]->buffer);
-      //     dynamic_inputs[i].push_back(input_data);
-      //   }
-      //   std::vector<int32_t> input_dims;
-      //   for (uint32_t k = 0; k < input_operands[j]->type.dimensions.count;
-      //        k++) {
-      //     input_dims.push_back(input_operands[j]->type.dimensions.data[k]);
-      //   }
-      //   dynamic_inputs_shapes[i].push_back(input_dims);
-      // }
+    for (size_t i = 0; i < output_operand->type.dimensions.dynamic_count; i++) {
       get_inputs_info(dynamic_inputs[i], dynamic_inputs_shapes[i]);
     }
 
@@ -158,8 +120,7 @@ int PrepareConcat(hal::Operation* operation) {
     dimension_type.dynamic_count =
         output_operand->type.dimensions.dynamic_count;
     math::concat<int32_t>(inputs, inputs_shapes, axis, dimension_type.data);
-    for (uint32_t i = 0; i < output_operand->type.dimensions.dynamic_count;
-         i++) {
+    for (size_t i = 0; i < output_operand->type.dimensions.dynamic_count; i++) {
       math::concat<int32_t>(dynamic_inputs[i],
                             dynamic_inputs_shapes[i],
                             axis,

@@ -20,6 +20,7 @@
 #include "utility/logging.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
+
 namespace nnadapter {
 namespace operation {
 

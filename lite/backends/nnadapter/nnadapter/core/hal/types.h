@@ -22,6 +22,8 @@
 namespace nnadapter {
 namespace hal {
 
+enum { NNADAPTER_MAX_SIZE_OF_HINTS = 8 };
+
 #define NNADAPTER_OPERAND_HINTS_KEY_TEMPORARY_SHAPE 1
 
 typedef struct Hint {
