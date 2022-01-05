@@ -302,4 +302,4 @@ TEST(pool2d_global_pooling_false, compute) {
 }  // namespace lite
 }  // namespace paddle
 
-USE_LITE_KERNEL(pool2d, kOpenCL, kFP16, kImageDefault, image2d);
+USE_LITE_KERNEL(pool2d, kOpenCL, kFP16, kImageDefault, def);

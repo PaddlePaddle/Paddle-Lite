@@ -45,6 +45,10 @@ class TestCase {
         inst_scope_(new Scope),
         base_scope_(new Scope) {
     ctx_ = ContextScheduler::Global().NewContext(place_.target);
+#ifdef LITE_WITH_OPENCL
+    CLRuntime::Global()->set_precision(
+        lite_api::CLPrecisionType::CL_PRECISION_FP32);
+#endif
   }
   virtual ~TestCase() {}
 

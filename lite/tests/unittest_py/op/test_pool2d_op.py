@@ -25,7 +25,7 @@ import hypothesis.strategies as st
 import argparse
 
 
-class TestReluOp(AutoScanTest):
+class TestPool2dOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(
@@ -158,7 +158,7 @@ class TestReluOp(AutoScanTest):
                     if program_config.ops[0].attrs["pooling_type"] == "avg":
                         return True
             if predictor_config.target() == TargetType.OpenCL:
-                return True
+                return False
             if predictor_config.target() == TargetType.Metal:
                 if program_config.ops[0].attrs["padding_algorithm"] == "SAME" \
                     or program_config.ops[0].attrs["pooling_type"] == "avg" :

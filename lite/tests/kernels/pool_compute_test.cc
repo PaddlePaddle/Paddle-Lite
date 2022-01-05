@@ -60,7 +60,8 @@ class PoolComputeTest : public arena::TestCase {
         ksize_(ksize),
         exclusive_(exclusive),
         ceil_mode_(ceil_mode),
-        adaptive_(adaptive) {}
+        adaptive_(adaptive),
+        padding_algorithm_(padding_algorithm) {}
 
   void RunBaseline(Scope* scope) override {
     std::vector<int> paddings_new{paddings_};
@@ -236,7 +237,7 @@ class PoolComputeTest : public arena::TestCase {
 };
 
 void TestPoolGlobal(Place place, float abs_error = 2e-5) {
-  for (auto dims : std::vector<std::vector<int64_t>>{{2, 3, 4, 5}}) {
+  for (auto dims : std::vector<std::vector<int64_t>>{{1, 1, 4, 5}}) {
     for (std::string pooling_type : {"max", "avg"}) {
       std::unique_ptr<arena::TestCase> tester(
           new PoolComputeTest(place, "def", DDim(dims), pooling_type, true));
@@ -408,6 +409,9 @@ TEST(Pool, precision) {
   abs_error = 1e-2;  // Using fp16 in NPU
 #elif defined(LITE_WITH_XPU) && defined(LITE_WITH_XTCL)
   place = TARGET(kXPU);
+#elif defined(LITE_WITH_OPENCL)
+  place = Place(TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
+  abs_error = 2e-2;  // opencl fp16 torlerance
 #else
   return;
 #endif
