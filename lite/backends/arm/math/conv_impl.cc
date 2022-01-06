@@ -656,6 +656,9 @@ void conv1x1s1_gemm(const float* i_data,
               ctx,
               act_param.Relu_clipped_coef,
               act_param.Leaky_relu_alpha);
+#ifdef TARGET_IOS
+        delete[] bias_ptr;
+#endif
       } else {
         sgemm_prepack(false,
                       m,
@@ -755,6 +758,10 @@ void conv1x1s1_gemm_int8(const int8_t* i_data,
                   bias_ptr,
                   act_param,
                   ctx);
+#ifdef TARGET_IOS
+        delete[] bias_ptr;
+        delete[] scale_ptr;
+#endif
       } else {
         gemm_prepack_int8(weights_group,
                           din_group,
@@ -911,6 +918,9 @@ void conv_im2col_gemm(const float* i_data,
               ctx,
               act_param.Relu_clipped_coef,
               act_param.Leaky_relu_alpha);
+#ifdef TARGET_IOS
+        delete[] bias_ptr;
+#endif
       } else {
         int ldb = n;
         sgemm_prepack(false,
@@ -1021,8 +1031,6 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
                   act_param,
                   ctx);
       } else if (m == 1) {
-        float bias_ptr[n];  // NOLINT
-
 #ifdef TARGET_IOS
         float* bias_ptr = new float[n];
         float* scale_ptr = new float[n];
@@ -1049,6 +1057,10 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
                   bias_ptr,
                   act_param,
                   ctx);
+#ifdef TARGET_IOS
+        delete[] bias_ptr;
+        delete[] scale_ptr;
+#endif
       } else {
         gemm_prepack_int8(weights_group,
                           dB,
