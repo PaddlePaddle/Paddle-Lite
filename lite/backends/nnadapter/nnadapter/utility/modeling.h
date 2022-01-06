@@ -147,6 +147,7 @@ bool IsConstantOperand(hal::Operand* operand);
 bool IsTemporaryShapeOperand(hal::Operand* operand);
 bool IsModelInputOperand(hal::Operand* operand);
 bool IsModelOutputOperand(hal::Operand* operand);
+bool IsOperandWithDynamicShape(hal::Operand* operand);
 bool IsOperationWithAllInputConstantOperands(hal::Operation* operation);
 // Find the operations that consumes the operand
 std::vector<hal::Operation*> GetOperandConsumers(hal::Model* model,

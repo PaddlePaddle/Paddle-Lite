@@ -474,6 +474,15 @@ NNADAPTER_EXPORT bool IsModelOutputOperand(hal::Operand* operand) {
   return operand->type.lifetime == NNADAPTER_MODEL_OUTPUT;
 }
 
+NNADAPTER_EXPORT bool IsOperandWithDynamicShape(hal::Operand* operand) {
+  for (size_t i = 0; i < operand->type.dimensions.count; i++) {
+    if (operand->type.dimensions.data[i] == NNADAPTER_UNKNOWN) {
+      return true;
+    }
+  }
+  return false;
+}
+
 NNADAPTER_EXPORT bool IsOperationWithAllInputConstantOperands(
     hal::Operation* operation) {
   auto& input_operands = operation->input_operands;

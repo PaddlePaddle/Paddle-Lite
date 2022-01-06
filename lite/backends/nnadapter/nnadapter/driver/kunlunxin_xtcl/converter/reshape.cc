@@ -16,6 +16,7 @@
 #include "driver/kunlunxin_xtcl/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/modeling.h"
 
 namespace nnadapter {
 namespace kunlunxin_xtcl {
@@ -31,8 +32,18 @@ int ConvertReshape(Converter* converter, hal::Operation* operation) {
   uint32_t shape_count = 0;
   int32_t* shape_data = nullptr;
   if (IsTemporaryShapeOperand(shape_operand)) {
-    shape_count = output_operand->type.dimensions.count;
-    shape_data = output_operand->type.dimensions.data;
+    if (IsOperandWithDynamicShape(shape_operand)) {
+      NNADAPTER_LOG(FATAL) << "Unsupported dynamic shape of reshape operation";
+    } else {
+      auto& temporary_shape = *(GetTemporaryShape(shape_operand));
+      shape_count = temporary_shape.count;
+      shape_data = temporary_shape.data;
+      for (uint32_t i = 0; i < shape_count; i++) {
+        if (shape_data[i] == 0) {
+          shape_data[i] = input_operand->type.dimensions.data[i];
+        }
+      }
+    }
   } else if (IsConstantOperand(shape_operand)) {
     shape_count = shape_operand->length / sizeof(int32_t);
     shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);
