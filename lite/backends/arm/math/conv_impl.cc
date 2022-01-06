@@ -1021,8 +1021,6 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
                   act_param,
                   ctx);
       } else if (m == 1) {
-        float bias_ptr[n];  // NOLINT
-
 #ifdef TARGET_IOS
         float* bias_ptr = new float[n];
         float* scale_ptr = new float[n];
