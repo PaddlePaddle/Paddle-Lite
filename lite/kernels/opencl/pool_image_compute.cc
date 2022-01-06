@@ -59,6 +59,7 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
         out_dims[0] * UP_DIV(out_dims[1], 4) * out_dims[2] * out_dims[3] <
             low_op_parallelism_thre_ &&
         ksize[0] * ksize[1] >= high_op_intensity_thre_;
+    run_local_work_ = false;
     if (run_local_work_) {
       kernel_func_name_ += "_local";
     }
@@ -136,6 +137,7 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
       run_local_work_ = out_dims[0] * out_c_blks * out_dims[2] * out_dims[3] <
                             low_op_parallelism_thre_ &&
                         compute_intensity >= high_op_intensity_thre_;
+      run_local_work_ = false;
       if (run_local_work_) {
         workgroup_size =
             std::min(static_cast<uint32_t>(local_mem_size / (4 * type_size)),
