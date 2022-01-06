@@ -321,4 +321,11 @@ struct ArgMetalParam {
     int orank;
 };
 
+struct RankMetalParam {
+    int irank;
+    int idim[4];
+    int orank;
+    int odim[4];
+};
+
 #endif  // LITE_KERNELS_METAL_IMAGE_OP_METAL_PARAMS_H_

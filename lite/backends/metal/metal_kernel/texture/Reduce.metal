@@ -121,3 +121,39 @@ kernel void reduce_sum_c(texture2d_array<ftype, access::read> inTexture[[texture
     }
     outTexture.write(ftype4(osum, 0.0, 0.0, 0.0), gid.xy, 0);
 }
+
+kernel void reduce_mean_ch(texture2d_array<ftype, access::read> inTexture[[texture(0)]],
+    texture2d_array<ftype, access::write> outTexture[[texture(1)]],
+    constant RankParam& params[[buffer(0)]],
+    uint3 gid[[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
+        gid.z >= outTexture.get_array_size())
+        return;
+
+    uint iC = params.idim[1];
+    uint iH = params.idim[2];
+    uint iAL = inTexture.get_array_size();
+
+    ftype out[4] = {0.0};
+    // out.xyzw
+    for (uint k = 0; k < 4; k++) {
+        // C direction average
+        for (uint i = 0; i < iAL; i++) {
+            ftype4 mean_h = 0.0;
+            // H direction average
+            for (uint j = 0; j < iH; j++) {
+                ftype4 in_tex_h = inTexture.read(uint2(gid.z * 4 + k, j), i);
+                mean_h += in_tex_h;
+            }
+            mean_h /= iH;
+
+            out[k] += mean_h.x;
+            out[k] += mean_h.y;
+            out[k] += mean_h.z;
+            out[k] += mean_h.w;
+        }
+        out[k] /= iC;
+    }
+
+    outTexture.write(ftype4(out[0], out[1], out[2], out[3]), gid.xy, gid.z);
+}

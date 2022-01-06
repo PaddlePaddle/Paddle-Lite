@@ -36,8 +36,7 @@ void ReduceImageCompute::PrepareForRun() {
 #ifdef LITE_WITH_METAL_FULL
 #else
     input_buffer_ = param.X->data<MetalHalf, MetalImage>();
-    output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(
-        metal_context_, MetalImage::FourDimFrom(output_dims));
+    output_buffer_ = param.Out->mutable_data<MetalHalf, MetalImage>(metal_context_, output_dims);
 #endif
 
     // use mps or not
@@ -49,7 +48,23 @@ void ReduceImageCompute::PrepareForRun() {
             should_use_mps = true;
         }
     }
-    if (input_buffer_->tensor_dim_[1] < 4) should_use_mps = false;
+    if (input_buffer_->tensor_dim_[1] < 4) {
+        should_use_mps = false;
+    }
+
+    auto irank = input_buffer_->tensor_dim_.size();
+    auto orank = output_buffer_->tensor_dim_.size();
+    // support reduce by channel
+    if (param.dim.size() == 1 && param.dim[0] == 1 && param.keep_dim == true && irank == 4 &&
+        orank == 4) {
+    }
+    // support reduce by C&H
+    else if (param.dim.size() == 2 && param.dim[0] == 1 && param.dim[1] == 2 &&
+             param.keep_dim == false && irank == 4 && orank == 2) {
+        should_use_mps = false;
+    } else {
+        return;
+    }
 
     use_mps_ = should_use_mps;
     if (use_mps_) {
@@ -95,6 +110,7 @@ void ReduceImageCompute::run_without_mps() {
     auto encoder = [backend commandEncoder];
     [encoder setTexture:(input_buffer_->image()) atIndex:(0)];
     [encoder setTexture:(output_buffer_->image()) atIndex:(1)];
+    [encoder setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(0)];
 
     [backend dispatchEncoder:encoder pipline:pipline outTexture:outTexture];
     [backend commit];
@@ -103,13 +119,23 @@ void ReduceImageCompute::run_without_mps() {
 void ReduceImageCompute::setup_without_mps() {
     const auto& param = this->Param<param_t>();
     auto irank = input_buffer_->tensor_dim_.size();
-    auto reduce_type_ = KernelBase::op_type();
+    auto orank = output_buffer_->tensor_dim_.size();
 
-    // only support reduce_max by channel
-    if (param.dim.size() == 1 && param.dim[0] == 1 && param.keep_dim == true && irank == 4) {
-    } else {
-        LOG(FATAL) << "reduce: only support max by channel";
+    // support reduce by channel
+    if (param.dim.size() == 1 && param.dim[0] == 1 && param.keep_dim == true && irank == 4 &&
+        orank == 4) {
+        setup_without_mps_c();
     }
+    // support reduce by C&H
+    else if (param.dim.size() == 2 && param.dim[0] == 1 && param.dim[1] == 2 &&
+             param.keep_dim == false && irank == 4 && orank == 2) {
+        setup_without_mps_ch();
+    } else {
+    }
+}
+
+void ReduceImageCompute::setup_without_mps_c() {
+    auto reduce_type_ = KernelBase::op_type();
 
     if (reduce_type_ == ("reduce_max")) {
         function_name_ = "reduce_max_c";
@@ -120,6 +146,39 @@ void ReduceImageCompute::setup_without_mps() {
     } else if (reduce_type_ == ("reduce_sum")) {
         function_name_ = "reduce_sum_c";
     }
+    // pipline
+    auto backend = (__bridge MetalContextImp*)metal_context_->backend();
+    pipline_ = [backend pipline:function_name_];
+}
+
+void ReduceImageCompute::setup_without_mps_ch() {
+    auto reduce_type_ = KernelBase::op_type();
+
+    if (reduce_type_ == ("reduce_max")) {
+    } else if (reduce_type_ == ("reduce_min")) {
+    } else if (reduce_type_ == ("reduce_mean")) {
+        function_name_ = "reduce_mean_ch";
+    } else if (reduce_type_ == ("reduce_sum")) {
+    }
+
+    auto irank = input_buffer_->tensor_dim_.size();
+    std::vector<int> idm = {1, 1, 1, 1};
+    for (int i = 0; i < irank; i++) {
+        idm[4 - irank + i] = (int)(input_buffer_->tensor_dim_[i]);
+    }
+
+    auto orank = output_buffer_->tensor_dim_.size();
+    std::vector<int> odm = {1, 1, 1, 1};
+    for (int i = 0; i < orank; i++) {
+        odm[4 - orank + i] = (int)(output_buffer_->tensor_dim_[i]);
+    }
+
+    RankMetalParam metal_params{
+        (int)irank, {idm[0], idm[1], idm[2], idm[3]}, (int)orank, {odm[0], odm[1], odm[2], odm[3]},
+    };
+    params_buffer_ =
+        std::make_shared<MetalBuffer>(metal_context_, sizeof(metal_params), &metal_params);
+
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     pipline_ = [backend pipline:function_name_];

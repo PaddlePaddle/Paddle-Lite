@@ -73,7 +73,11 @@ void MetalDebug::print_float(const std::string& name, float* data, int size, int
         float value = vec[i * stride].first;
         int index = vec[i * stride].second;
         if (i == 0) {
-            printf("[(%d: %lf),", index, value);
+            if (realCount == 1) {
+                printf("[(%d: %lf)]\n", index, value);
+            } else {
+                printf("[(%d: %lf),", index, value);
+            }
         } else if (i == realCount - 1) {
             printf(" (%d: %lf)]\n", index, value);
         } else {

@@ -276,7 +276,6 @@ void Conv2dImageCompute::setup_without_mps() {
     const auto& param = this->Param<param_t>();
     auto padTop = (*param.paddings)[0];
     auto padLeft = (*param.paddings)[2];
-    assert((*param.paddings)[0] == (*param.paddings)[1]);
 
     int offsetX = static_cast<int>(
         ((int)((*param.dilations)[1]) * (param.filter->dims()[3] - 1) + 1) / 2 - padLeft);

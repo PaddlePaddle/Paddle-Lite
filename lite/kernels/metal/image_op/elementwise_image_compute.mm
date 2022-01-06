@@ -97,7 +97,9 @@ void ElementwiseImageCompute::init_for_run() {
         }
     }
     // X Y reasonable dims
-    should_use_mps = InputsValid(input_buffer_x_, input_buffer_y_);
+    if (InputsValid(input_buffer_x_, input_buffer_y_) == false) {
+        should_use_mps = false;
+    }
 
 // X Y output
 #ifdef LITE_WITH_METAL_FULL
@@ -117,6 +119,10 @@ void ElementwiseImageCompute::init_for_run() {
         if (act_t != "relu") {
             LOG(FATAL) << "Unsupported Activation type: " << act_t << ", support Relu only.";
         }
+        should_use_mps = false;
+    }
+
+    if (ele_type_ == ("elementwise_max")) {
         should_use_mps = false;
     }
 
@@ -140,6 +146,8 @@ void ElementwiseImageCompute::init_for_run() {
             arithmetic_type = 2;
         } else if (ele_type_ == ("elementwise_sub")) {
             arithmetic_type = 1;
+        } else if (ele_type_ == ("elementwise_max")) {
+            arithmetic_type = 4;
         }
         setup_without_mps();
     }
@@ -171,8 +179,13 @@ void ElementwiseImageCompute::run_without_mps() {
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
 
     auto encoder = [backend commandEncoder];
-    [encoder setTexture:(input_buffer_x_->image()) atIndex:(0)];
-    [encoder setTexture:(input_buffer_y_->image()) atIndex:(1)];
+    if (reverse_flag_) {
+        [encoder setTexture:(input_buffer_y_->image()) atIndex:(0)];
+        [encoder setTexture:(input_buffer_x_->image()) atIndex:(1)];
+    } else {
+        [encoder setTexture:(input_buffer_x_->image()) atIndex:(0)];
+        [encoder setTexture:(input_buffer_y_->image()) atIndex:(1)];
+    }
     [encoder setTexture:(output_buffer_->image()) atIndex:(2)];
     [encoder setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(0)];
 
@@ -215,7 +228,22 @@ void ElementwiseImageCompute::setup_without_mps() {
     } else if (ydim[0] == 1 && ydim[1] == 1 && ydim[2] == 1 && ydim[3] == xdim[2]) {
         by_W = 1;
     } else {
-        LOG(FATAL) << ele_type_ << " does not support the current input dimensions.";
+        // attention maybe input x, y is reversed
+        if (xdim[0] == 1 && xdim[1] == 1 && xdim[2] == 1 && xdim[3] == 1) {
+            by_num = 1;
+            reverse_flag_ = true;
+        } else if (xdim[0] == 1 && xdim[1] == 1 && xdim[2] == 1 && xdim[3] == ydim[3]) {
+            by_channel = 1;
+            reverse_flag_ = true;
+        } else if (xdim[0] == 1 && xdim[3] == 1 && xdim[1] == ydim[1] && xdim[2] == ydim[2]) {
+            by_HW = 1;
+            reverse_flag_ = true;
+        } else if (xdim[0] == 1 && xdim[1] == 1 && xdim[3] == 1 && xdim[2] == ydim[2]) {
+            by_W = 1;
+            reverse_flag_ = true;
+        } else {
+            LOG(FATAL) << ele_type_ << " does not support the current input dimensions.";
+        }
     }
 
     ElementwiseAddMetalParam element_params = {params_fast,
@@ -486,6 +514,40 @@ REGISTER_LITE_KERNEL(elementwise_sub,
     .Finalize();
 
 REGISTER_LITE_KERNEL(elementwise_sub,
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::ElementwiseImageCompute,
+    def)
+    .BindInput("X",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("Y",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(elementwise_max,
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::ElementwiseImageCompute,
+    def)
+    .BindInput("X",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .BindInput("Y",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(elementwise_max,
     kMetal,
     kFP16,
     kMetalTexture2DArray,

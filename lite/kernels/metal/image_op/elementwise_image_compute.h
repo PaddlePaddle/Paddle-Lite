@@ -42,7 +42,8 @@ class ElementwiseImageCompute
     void ReInitWhenNeeded() override;
     void Run() override;
     void SaveOutput() override {
-        MetalDebug::SaveOutput(function_name_, output_buffer_);
+        MetalDebug::SaveOutput(
+            (use_mps_ ? ("MPS_" + KernelBase::op_type()) : KernelBase::op_type()), output_buffer_);
     };
     virtual ~ElementwiseImageCompute();
 
@@ -76,8 +77,10 @@ class ElementwiseImageCompute
     id<MTLComputePipelineState> pipline_;
     std::string function_name_;
     MetalContext* metal_context_;
+
     int arithmetic_type;
     bool fuse_flag_{false};
+    bool reverse_flag_{false};
     const param_t* elementwise_param_{nullptr};
 };
 

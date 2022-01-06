@@ -311,13 +311,19 @@ void Conv2dTransposeImageCompute::run_without_mps() {
 }
 
 void Conv2dTransposeImageCompute::run_2x2() {
+    const auto& param = this->Param<param_t>();
     auto pipline = pipline_;
     auto outTexture = output_buffer_->image();
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
 
     auto encoder = [backend commandEncoder];
     [encoder setTexture:(input_buffer_->image()) atIndex:(0)];
-    [encoder setTexture:(output_buffer_->image()) atIndex:(1)];
+    if (param.bias) {
+        [encoder setTexture:(bias_buffer_->image()) atIndex:(1)];
+    } else {
+        [encoder setTexture:(blank_buffer_->image()) atIndex:(1)];
+    }
+    [encoder setTexture:(output_buffer_->image()) atIndex:(2)];
     [encoder setBuffer:(params_buffer_->buffer()) offset:(0) atIndex:(0)];
     [encoder setBuffer:(filter_buffer_->buffer()) offset:(0) atIndex:(1)];
 

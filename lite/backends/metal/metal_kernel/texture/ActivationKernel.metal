@@ -216,3 +216,14 @@ kernel void expand_half(texture2d_array<half, access::sample> inTexture[[texture
             half4(input1[c1 % 4], input2[c2 % 4], input3[c3 % 4], input4[c4 % 4]), gid.xy, gid.z);
     }
 }
+
+kernel void tanh(texture2d_array<ftype, access::read> inTexture[[texture(0)]],
+    texture2d_array<ftype, access::write> outTexture[[texture(1)]],
+    uint3 gid[[thread_position_in_grid]]) {
+    if (gid.x >= outTexture.get_width() || gid.y >= outTexture.get_height() ||
+        gid.z >= outTexture.get_array_size())
+        return;
+    const ftype4 input = inTexture.read(gid.xy, gid.z);
+    const ftype4 res = tanh(input);
+    outTexture.write(res, gid.xy, gid.z);
+}

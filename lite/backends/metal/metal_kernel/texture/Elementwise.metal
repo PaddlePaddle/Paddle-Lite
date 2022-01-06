@@ -34,7 +34,8 @@ kernel void elementwise(texture2d_array<ftype, access::read> inputX[[texture(0)]
     }
     // add at one number
     else if (pm.ByNum == 1) {
-        ry = inputY.read(uint2(0, 0), gid.z);
+        ftype num = inputY.read(uint2(0, 0), 0).x;
+        ry = ftype4(num);
     }
     // add at C channel
     else if (pm.addByChannel == 1) {
@@ -46,7 +47,8 @@ kernel void elementwise(texture2d_array<ftype, access::read> inputX[[texture(0)]
     }
     // add at W
     else if (pm.ByW == 1) {
-        ry = inputY.read(uint2(gid.x, 0), 0);
+        ftype num = inputY.read(uint2(gid.x, 0), 0).x;
+        ry = ftype4(num);
     } else {
         // X coordinate GPU NHNC
         int32_t x_xyzn[4] = {int32_t(gid.x), int32_t(gid.y), int32_t(gid.z), 0};
@@ -94,6 +96,8 @@ kernel void elementwise(texture2d_array<ftype, access::read> inputX[[texture(0)]
         r = rx * ry;
     else if (pm.arithmetic_type == 3)
         r = rx / ry;
+    else if (pm.arithmetic_type == 4)
+        r = max(rx, ry);
     outTexture.write(r, gid.xy, gid.z);
 }
 

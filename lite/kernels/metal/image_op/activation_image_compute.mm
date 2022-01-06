@@ -64,6 +64,9 @@ void ActivationImageCompute::setup_without_mps() {
         case 5:
             function_name_ = "sigmoid";
             break;
+        case 6:
+            function_name_ = "tanh";
+            break;
         case 7: {
             SwishMetalParam metal_param{param.Swish_beta};
             param_buffer_ =
@@ -317,6 +320,34 @@ REGISTER_LITE_KERNEL(hard_swish,
     .Finalize();
 
 REGISTER_LITE_KERNEL(hard_swish,
+    kMetal,
+    kFP16,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::ActivationImageCompute,
+    def)
+    .BindInput("X",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+        {LiteType::GetTensorTy(TARGET(kMetal), PRECISION(kFP16), DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(tanh,
+    kMetal,
+    kFloat,
+    kMetalTexture2DArray,
+    paddle::lite::kernels::metal::ActivationImageCompute,
+    def)
+    .BindInput("X",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .BindOutput("Out",
+        {LiteType::GetTensorTy(TARGET(kMetal),
+            PRECISION(kFloat),
+            DATALAYOUT(kMetalTexture2DArray))})
+    .Finalize();
+
+REGISTER_LITE_KERNEL(tanh,
     kMetal,
     kFP16,
     kMetalTexture2DArray,
