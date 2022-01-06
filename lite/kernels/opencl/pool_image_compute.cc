@@ -59,8 +59,8 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
     }
     if (global_pooling) {
       build_options_ += " -DGLOBAL";
-      operators::UpdateKsize(&ksize_, ksize.size(), in_dims);
       ksize_.resize(static_cast<size_t>(in_dims.size()) - 2);
+      operators::UpdateKsize(&ksize_, ksize_.size(), in_dims);
     }
     if (param.pooling_type == "avg") {
       build_options_ += " -DPOOL_AVG";
@@ -126,8 +126,8 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
                                strides,
                                ksize);
       if (global_pooling) {
-        operators::UpdateKsize(&ksize_, ksize.size(), in_dims);
         ksize_.resize(static_cast<size_t>(in_dims.size()) - 2);
+        operators::UpdateKsize(&ksize_, ksize_.size(), in_dims);
       }
       bool pads_equal = ((abs(paddings_[0] - paddings_[1]) < 2) &&
                          (abs(paddings_[2] - paddings_[3]) < 2));

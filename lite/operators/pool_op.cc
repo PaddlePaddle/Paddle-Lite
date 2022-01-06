@@ -73,8 +73,8 @@ bool PoolOpLite::InferShapeImpl() const {
                 param_.strides,
                 ksize);
   if (param_.global_pooling) {
-    UpdateKsize(&ksize, ksize.size(), x_dims);
     ksize.resize(static_cast<size_t>(x_dims.size()) - 2);
+    UpdateKsize(&ksize, ksize.size(), x_dims);
   }
   auto paddings = *param_.paddings;
   std::vector<int64_t> output_shape({x_dims[0], x_dims[1]});
