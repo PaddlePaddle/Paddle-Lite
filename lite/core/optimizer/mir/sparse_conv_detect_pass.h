@@ -37,6 +37,15 @@ class SparseConvDetectPass : public ProgramPass {
                          const int width);
 
   template <typename T>
+  int ComputeSemiSparseZeros(const lite::Tensor* weights,
+                             int* count_nonzeroes,
+                             int* count_channels,
+                             int* count_blocks,
+                             int* flag_semi,
+                             const int height,
+                             const int width);
+
+  template <typename T>
   int ComputeSparseWeight(const lite::Tensor* w_tensor,
                           const int M,
                           const int K,
@@ -45,6 +54,19 @@ class SparseConvDetectPass : public ProgramPass {
                           lite::Tensor* nonzero_output_tensor,
                           lite::Tensor* oc_nonzeros_tensor,
                           lite::Tensor* diffs_tensor);
+
+  template <typename T>
+  int ComputeSemiSparseWeight(const lite::Tensor* w_tensor,
+                              const int M,
+                              const int K,
+                              const int N,
+                              const int count_nonzeroes,
+                              const int count_channels,
+                              const int count_blocks,
+                              lite::Tensor* nonzero_output_tensor,
+                              lite::Tensor* oc_nonzeros_tensor,
+                              lite::Tensor* diffs_tensor);
+
   template <typename T>
   int ComputeSparseWeight(const lite::Tensor* w_tensor,
                           const int M,

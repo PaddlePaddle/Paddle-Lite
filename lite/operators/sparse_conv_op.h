@@ -120,6 +120,9 @@ class SparseConvOp : public OpLite {
     if (op_desc.HasAttr("first_ic")) {
       param_.first_ic = op_desc.GetAttr<int>("first_ic");
     }
+    if (op_desc.HasAttr("flag_semi")) {
+      param_.flag_semi = op_desc.GetAttr<int>("flag_semi");
+    }
 
     // For Int8
     const OpInfo* op_info = static_cast<const OpInfo*>(&op_desc);
