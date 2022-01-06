@@ -601,6 +601,7 @@ void conv1x1s1_gemm(const float* i_data,
               bias_ptr,
               act_param,
               ctx);
+        delete[] bias_ptr;
       } else {
         sgemm_prepack(false,
                       m,
@@ -700,6 +701,8 @@ void conv1x1s1_gemm_int8(const int8_t* i_data,
                   bias_ptr,
                   act_param,
                   ctx);
+        delete[] bias_ptr;
+        delete[] scale_ptr;
       } else {
         gemm_prepack_int8(weights_group,
                           din_group,
@@ -850,6 +853,7 @@ void conv_im2col_gemm(const float* i_data,
               bias_ptr,
               act_param,
               ctx);
+        delete[] bias_ptr;
       } else {
         int ldb = n;
         sgemm_prepack(false,
@@ -986,6 +990,8 @@ void conv_im2col_gemm_int8(const int8_t* i_data,
                   bias_ptr,
                   act_param,
                   ctx);
+        delete[] bias_ptr;
+        delete[] scale_ptr;
       } else {
         gemm_prepack_int8(weights_group,
                           dB,
