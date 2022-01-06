@@ -22,8 +22,8 @@ namespace host {
 template <typename T>
 void EyeCompute::MakeIdentityMatrix() {
   auto& param = *param_.get_mutable<param_t>();
-  int num_rows = param.num_rows;
-  int num_columns = param.num_columns;
+  int64_t num_rows = param.num_rows;
+  int64_t num_columns = param.num_columns;
   T value = static_cast<T>(0);
   auto data = param.out->template mutable_data<T>();
   for (int i = 0; i < param.out->numel(); i++) {

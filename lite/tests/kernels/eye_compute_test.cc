@@ -25,18 +25,16 @@ class EyeComputeTester : public arena::TestCase {
  protected:
   // common attributes for this op.
   std::string out_ = "out";
-  std::string num_rows_ = "num_rows";
-  std::string num_columns_ = "num_columns";
 
-  int num_rows_{0};
-  int num_columns_{0};
+  int64_t num_rows_{0};
+  int64_t num_columns_{0};
   int dtype_{static_cast<int>(VarDescAPI::VarDataType::FP32)};
 
  public:
   EyeComputeTester(const Place& place,
                    const std::string& alias,
-                   int num_rows,
-                   int num_columns,
+                   int64_t num_rows,
+                   int64_t num_columns,
                    int dtype)
       : TestCase(place, alias),
         num_rows_(num_rows),
@@ -106,7 +104,7 @@ class EyeComputeTester : public arena::TestCase {
 };
 
 void TestEyeShape(Place place, float abs_error) {
-  std::vector<std::vector<int>> out_shapes{{2, 2}, {4, 4}, {3, 4}, {4, 3}};
+  std::vector<std::vector<int64_t>> out_shapes{{2, 2}, {4, 4}, {3, 4}, {4, 3}};
   for (auto out_shape : out_shapes) {
     std::unique_ptr<arena::TestCase> tester(
         new EyeComputeTester(place,

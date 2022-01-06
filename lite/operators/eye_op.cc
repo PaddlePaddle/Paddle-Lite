@@ -66,8 +66,15 @@ bool EyeOpLite::AttachImpl(const cpp::OpDesc& opdesc, lite::Scope* scope) {
   auto out_name = opdesc.Output("Out").front();
   param_.out = GetMutableVar<lite::Tensor>(scope, out_name);
 
-  param_.num_rows = opdesc.GetAttr<int>("num_rows");
-  param_.num_columns = opdesc.GetAttr<int>("num_columns");
+  if (opdesc.GetAttrType("num_rows") == OpAttrType::INT)
+    param_.num_rows = static_cast<int64_t>(opdesc.GetAttr<int>("num_rows"));
+  else
+    param_.num_rows = opdesc.GetAttr<int64_t>("num_rows");
+  if (opdesc.GetAttrType("num_columns") == OpAttrType::INT)
+    param_.num_columns =
+        static_cast<int64_t>(opdesc.GetAttr<int>("num_columns"));
+  else
+    param_.num_columns = opdesc.GetAttr<int64_t>("num_columns");
   param_.dtype = opdesc.GetAttr<int>("dtype");
   return true;
 }

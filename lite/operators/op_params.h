@@ -605,8 +605,8 @@ struct FillConstantBatchSizeLikeParam : ParamBase {
 struct EyeParam : ParamBase {
   lite::Tensor* out{nullptr};
 
-  int num_rows{0};
-  int num_columns{0};
+  int64_t num_rows{0};
+  int64_t num_columns{0};
   int dtype{static_cast<int>(VarDescAPI::VarDataType::FP32)};
 };
 
