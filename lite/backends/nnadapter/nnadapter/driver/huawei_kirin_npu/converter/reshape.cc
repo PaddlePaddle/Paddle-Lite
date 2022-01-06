@@ -34,7 +34,7 @@ int ConvertReshape(Converter* converter, hal::Operation* operation) {
   if (IsTemporaryShapeOperand(shape_operand)) {
     if (IsOperandWithDynamicShape(shape_operand)) {
       shape_operator = converter->GetMappedOperator(shape_operand);
-      if (shape_operator == nullptr) {
+      if (!shape_operator) {
         shape_operator = converter->ConvertOperand(shape_operand);
       }
     } else {
