@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include "nnadapter.h"  // NOLINT
+
 namespace nnadapter {
 namespace operation {
 
@@ -33,6 +35,12 @@ namespace operation {
   /* Output */                                                              \
   auto output_operand = output_operands[0];                                 \
   NNADAPTER_VLOG(5) << "output_operand: " << OperandToString(output_operand);
+
+void UpdateExpandInferOutputShape(int32_t* input_dimensions_data,
+                                  uint32_t input_dimensions_count,
+                                  int32_t* output_dimensions_data,
+                                  uint32_t shape_count,
+                                  int32_t* shape_data);
 
 }  // namespace operation
 }  // namespace nnadapter

@@ -35,21 +35,19 @@ int PrepareTile(hal::Operation* operation) {
 
   uint32_t repeats_count;
   int32_t* repeats_data;
-  std::vector<int32_t> repeats;
   if (IsTemporaryShapeOperand(repeats_operand)) {
     auto& temporary_shape = *(GetTemporaryShape(repeats_operand));
     repeats_count = temporary_shape.count;
     repeats_data = temporary_shape.data;
-    repeats = std::vector<int32_t>(repeats_data, repeats_count + repeats_data);
   } else if (IsConstantOperand(repeats_operand)) {
     repeats_count = repeats_operand->length / sizeof(int32_t);
     repeats_data = reinterpret_cast<int32_t*>(repeats_operand->buffer);
-    repeats = std::vector<int32_t>(repeats_data, repeats_data + repeats_count);
   } else {
     NNADAPTER_LOG(FATAL) << "Unsupported repeats lifetime: "
                          << static_cast<int32_t>(repeats_type.lifetime);
     return NNADAPTER_INVALID_PARAMETER;
   }
+  std::vector<int32_t> repeats(repeats_data, repeats_data + repeats_count);
 
   auto infer_output_shape = [&](int32_t* input_dimensions_data,
                                 uint32_t input_dimensions_count,

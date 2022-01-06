@@ -15,6 +15,7 @@
 #include "core/operation/reshape.h"
 #include "driver/kunlunxin_xtcl/converter/converter.h"
 #include "utility/debug.h"
+#include "utility/hints.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
 
@@ -33,7 +34,7 @@ int ConvertReshape(Converter* converter, hal::Operation* operation) {
   int32_t* shape_data = nullptr;
   if (IsTemporaryShapeOperand(shape_operand)) {
     if (IsOperandWithDynamicShape(shape_operand)) {
-      NNADAPTER_LOG(FATAL) << "Unsupported dynamic shape of reshape operation";
+      NNADAPTER_LOG(FATAL) << "Unsupported dynamic shape for reshape operation";
     } else {
       auto& temporary_shape = *(GetTemporaryShape(shape_operand));
       shape_count = temporary_shape.count;

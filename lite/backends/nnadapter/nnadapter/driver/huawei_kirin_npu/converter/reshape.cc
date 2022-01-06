@@ -15,6 +15,7 @@
 #include "core/operation/reshape.h"
 #include "driver/huawei_kirin_npu/converter/converter.h"
 #include "utility/debug.h"
+#include "utility/hints.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
 
