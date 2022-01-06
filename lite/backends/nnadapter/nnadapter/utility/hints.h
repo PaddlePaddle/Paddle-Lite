@@ -13,10 +13,13 @@
 // limitations under the License.
 
 #pragma once
+
 #include "core/hal/types.h"
 #include "nnadapter.h"  // NOLINT
 
 namespace nnadapter {
+
+#define NNADAPTER_OPERAND_HINTS_KEY_TEMPORARY_SHAPE 1
 
 void ClearTemporaryShape(void* ptr);
 
