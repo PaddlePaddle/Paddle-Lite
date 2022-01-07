@@ -31,8 +31,6 @@ int ConvertExpand(Converter* converter, hal::Operation* operation) {
   if (!input_operator) {
     input_operator = converter->ConvertOperand(input_operand);
   }
-  uint32_t shape_count = 0;
-  int32_t* shape_data = nullptr;
   std::shared_ptr<Operator> shape_operator = nullptr;
   if (IsTemporaryShapeOperand(shape_operand)) {
     if (IsOperandWithDynamicShape(shape_operand)) {
