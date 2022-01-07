@@ -72,8 +72,6 @@ class PoolOpLite : public OpLite {
     if (op_desc.HasAttr("padding_algorithm")) {
       param_.padding_algorithm =
           op_desc.GetAttr<std::string>("padding_algorithm");
-      LOG(INFO) << "param_.padding_algorithm in op: "
-                << param_.padding_algorithm;
     }
     // 2-pad to 4-pad
     if (paddings.size() == 2L) {
