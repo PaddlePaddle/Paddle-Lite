@@ -117,7 +117,7 @@ class TestSoftmaxOp(AutoScanTest):
         if target_str == "OpenCL":
             # Make sure to generate enough valid cases for OpenCL
             max_examples = 100
-        if target_str == "Metal":
+        elif target_str == "Metal":
             # Make sure to generate enough valid cases for Metal
             max_examples = 2000
         self.run_and_statis(quant=False, max_examples=max_examples)
