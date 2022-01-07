@@ -101,7 +101,7 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   bool flag_p01 = (paddings[0] == 0 || paddings[0] == 1);
 
   //! select conv impl
-  if (dw_kernel && kps_equal && flag_dw &&
+  if (dw_kernel && kps_equal && flag_dw && pads_equal &&
       ((flag_dw_5x5 && no_dilation) || (flag_dw_3x3 && (groups & 3) == 0))) {
     impl_ = new DepthwiseConv<PRECISION(kFloat), PRECISION(kFloat)>;
     VLOG(3) << "invoking conv_depthwise_3x3p0p1 or conv_depthwise_5x5";

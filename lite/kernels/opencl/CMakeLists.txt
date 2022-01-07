@@ -63,6 +63,7 @@ add_kernel(matmul_opencl_image OPENCL basic SRCS matmul_image_compute.cc)
 ######################
 # image kernel test  #
 ######################
+
 lite_cc_test(test_gather_image_opencl SRCS gather_image_compute_test.cpp
              DEPS kernels core)
 
@@ -105,8 +106,8 @@ lite_cc_test(test_layout_image_opencl SRCS layout_image_compute_test.cc
 lite_cc_test(test_pixel_shuffle_image_opencl SRCS pixel_shuffle_image_compute_test.cc
              DEPS kernels core)
 
-lite_cc_test(test_expand_image_opencl SRCS expand_image_compute_test.cc
-             DEPS kernels core)
+#lite_cc_test(test_expand_image_opencl SRCS expand_image_compute_test.cc
+#             DEPS kernels core)
 
 #lite_cc_test(test_elementwise_add_image_opencl SRCS elementwise_add_image_compute_test.cc
 #             DEPS kernels core)
@@ -127,8 +128,8 @@ lite_cc_test(test_bilinear_interp_image_opencl SRCS bilinear_interp_image_comput
 #lite_cc_test(test_slice_image_opencl SRCS slice_image_compute_test.cc
 #             DEPS kernels core)
 
-#lite_cc_test(test_instance_norm_image_opencl SRCS instance_norm_image_compute_test.cc
-#             DEPS kernels core)
+lite_cc_test(test_instance_norm_image_opencl SRCS instance_norm_image_compute_test.cc
+             DEPS kernels core)
 
 lite_cc_test(test_dropout_image_opencl SRCS dropout_image_compute_test.cc
              DEPS kernels core)

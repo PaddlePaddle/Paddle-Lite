@@ -175,6 +175,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "lite_greater_than_cast_fuse_pass",
        "fill_range_fuse_pass",
        "range_calc_offline_pass",
+       "fill_constant_calc_offline_pass",
        "identity_dropout_eliminate_pass",
        "p_norm_fill_constant_max_div_fuse_pass",
        "sparse_conv_detect_pass",

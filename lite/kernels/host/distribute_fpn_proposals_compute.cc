@@ -26,7 +26,7 @@ namespace host {
 const int kBoxDim = 4;
 
 template <typename T>
-static inline T BBoxArea(const T* box, bool normalized) {
+static inline T BBoxArea(const T* box, bool pixel_offset) {
   if (box[2] < box[0] || box[3] < box[1]) {
     // If coordinate values are is invalid
     // (e.g. xmax < xmin or ymax < ymin), return 0.
@@ -34,11 +34,11 @@ static inline T BBoxArea(const T* box, bool normalized) {
   } else {
     const T w = box[2] - box[0];
     const T h = box[3] - box[1];
-    if (normalized) {
-      return w * h;
-    } else {
+    if (pixel_offset) {
       // If coordinate values are not within range [0, 1].
       return (w + 1) * (h + 1);
+    } else {
+      return w * h;
     }
   }
 }
@@ -64,6 +64,7 @@ void DistributeFpnProposalsCompute::Run() {
   int max_level = param.max_level;
   int refer_level = param.refer_level;
   int refer_scale = param.refer_scale;
+  bool pixel_offset = param.pixel_offset;
   int num_level = max_level - min_level + 1;
 
   std::vector<uint64_t> fpn_rois_lod;
@@ -86,7 +87,7 @@ void DistributeFpnProposalsCompute::Run() {
     const float* rois_data = fpn_rois_slice.data<float>();
     for (int j = 0; j < fpn_rois_slice.dims()[0]; ++j) {
       // get the target level of current rois
-      float roi_scale = std::sqrt(BBoxArea(rois_data, false));
+      float roi_scale = std::sqrt(BBoxArea(rois_data, pixel_offset));
       int tgt_lvl =
           std::floor(log2(roi_scale / refer_scale + static_cast<float>(1e-6)) +
                      refer_level);

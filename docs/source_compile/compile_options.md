@@ -45,5 +45,4 @@
 | LITE_ON_MODEL_OPTIMIZE_TOOL |  编译[模型优化工具 opt](https://paddle-lite.readthedocs.io/zh/develop/user_guides/model_optimize_tool.html) | X86 |OFF|
 | LITE_WITH_PYTHON |  编译支持 [Python API](https://paddle-lite.readthedocs.io/zh/develop/api_reference/python_api_doc.html) 的预测库 | X86 / CUDA |OFF |
 | LITE_WITH_OPENCL |  编译 [OpenCL 平台](https://paddle-lite.readthedocs.io/zh/develop/demo_guides/opencl.html)预测库 | OpenCL | OFF |
-| LITE_WITH_XPU |  编译[百度 XPU 平台](https://paddle-lite.readthedocs.io/zh/develop/demo_guides/baidu_xpu.html)预测库 | XPU |OFF |
-| LITE_WITH_XTCL | 通过 XTCL 方式支持百度 XPU，默认 Kernel 方式 | XPU |OFF IF LITE_WITH_XPU |
+| LITE_WITH_XPU |  编译[昆仑芯 XPU 平台](https://paddle-lite.readthedocs.io/zh/develop/demo_guides/kunlunxin_xpu.html)预测库 | XPU |OFF |

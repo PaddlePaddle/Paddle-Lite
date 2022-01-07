@@ -25,7 +25,7 @@ macOS 环境下编译适用于 macOS 的库
      - x86/ARM 架构 :raw-html-m2r:`<br>`
 
 
-[^1]：OpenCL 是面向异构硬件平台的编译库，Paddle Lite 支持在 macOS 系统上运行基于 OpenCL 的程序。
+[1]：OpenCL 是面向异构硬件平台的编译库，Paddle Lite 支持在 macOS 系统上运行基于 OpenCL 的程序。
 
    **说明：**
 
