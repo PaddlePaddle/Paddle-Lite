@@ -65,10 +65,10 @@ class TestSoftmaxOp(AutoScanTest):
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
         x_shape = list(program_config.inputs["input_data"].shape)
+        axis = program_config.ops[0].attrs["axis"]
         if predictor_config.target() == TargetType.Metal:
-            if len(x_shape) <= 2:
-                return False
-            if x_shape[1] % 4 != 0:
+            if len(x_shape) < 2 or x_shape[0] != 1 \
+                or (len(x_shape) == 4 and axis == 0):
                 return False
         return True
 
@@ -100,12 +100,15 @@ class TestSoftmaxOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["softmax"], (1e-5, 1e-5)
+        atol, rtol = 1e-5, 1e-5
+        target_str = self.get_target()
+        if target_str == "Metal":
+            atol, rtol = 1e-3, 1e-3
+        return self.get_predictor_configs(), ["softmax"], (atol, rtol)
 
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
-            if predictor_config.target() == TargetType.Metal \
-               or predictor_config.target() == TargetType.OpenCL :
+            if predictor_config.target() == TargetType.OpenCL:
                 return True
 
         self.add_ignore_check_case(
@@ -116,7 +119,7 @@ class TestSoftmaxOp(AutoScanTest):
     def test(self, *args, **kwargs):
         target_str = self.get_target()
         if target_str == "Metal":
-            self.run_and_statis(quant=False, max_examples=400)
+            self.run_and_statis(quant=False, max_examples=2000)
         else:
             self.run_and_statis(quant=False, max_examples=25)
 

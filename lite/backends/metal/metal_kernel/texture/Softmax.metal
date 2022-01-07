@@ -123,26 +123,22 @@ kernel void softmax_c_d3_common(texture2d_array<ftype, access::read> inTexture[[
         gid.z >= outTexture.get_array_size())
         return;
 
-    int out_texture_array_size = outTexture.get_array_size();
-    int left = out_texture_array_size * 4 - sp.N * sp.C;
-
+    int in_texture_array_size = inTexture.get_array_size();
+    int left = (sp.N * sp.C - (in_texture_array_size - 1) * 4) % 4;
+    int array_size = (left == 0) ? in_texture_array_size : in_texture_array_size - 1;
     ftype4 max_vector = inTexture.read(uint2(gid.x, gid.y), 0);
 
     // caculate max
-    int array_size = inTexture.get_array_size();
-    for (int z = 0; z < (array_size - 1); z++) {
+    for (int z = 0; z < array_size; z++) {
         ftype4 temp_value_vector = inTexture.read(uint2(gid.x, gid.y), z);
         max_vector = max(temp_value_vector, max_vector);
     }
 
     ftype max_value = max_vector[0];
-    if (array_size > 1) {
-        for (int c = 0; c < 4; c++) {
-            max_value = max(max_vector[c], max_value);
-        }
+    for (int c = 0; c < 4; c++) {
+        max_value = max(max_vector[c], max_value);
     }
-
-    ftype4 temp_value_vector = inTexture.read(uint2(gid.x, gid.y), array_size - 1);
+    ftype4 temp_value_vector = inTexture.read(uint2(gid.x, gid.y), array_size);
     ftype max_value_left = temp_value_vector[0];
     for (int c = 0; c < left; c++) {
         max_value_left = max(temp_value_vector[c], max_value_left);
@@ -151,16 +147,15 @@ kernel void softmax_c_d3_common(texture2d_array<ftype, access::read> inTexture[[
 
     // caculate sum
     ftype4 sum_vector = 0.0;
-    for (int z = 0; z < array_size - 1; z++) {
+    for (int z = 0; z < array_size; z++) {
         ftype4 temp_value_vector = inTexture.read(uint2(gid.x, gid.y), z);
         sum_vector += exp(temp_value_vector - max_value);
     }
     ftype sum_value = 0.0;
-    if (array_size > 1) {
-        sum_value = sum_vector[0] + sum_vector[1] + sum_vector[2] + sum_vector[3];
-    }
+    sum_value = sum_vector[0] + sum_vector[1] + sum_vector[2] + sum_vector[3];
+
     ftype4 sum_vector_left = 0.0;
-    ftype4 temp_value_vector_left = inTexture.read(uint2(gid.x, gid.y), array_size - 1);
+    ftype4 temp_value_vector_left = inTexture.read(uint2(gid.x, gid.y), array_size);
     sum_vector_left += exp(temp_value_vector_left - max_value);
 
     ftype sum_value_left = 0.0;

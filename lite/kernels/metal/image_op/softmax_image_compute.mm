@@ -29,7 +29,12 @@ void SoftmaxImageCompute::PrepareForRun() {
     metal_context_ = (MetalContext*)context.context();
 
     const auto& param = this->Param<param_t>();
+    auto input_dims = param.x->dims();
     auto output_dims = param.output->dims();
+    auto axis = param.axis;
+    if (axis < 0) {
+        axis += input_dims.size();
+    }
 
 #ifdef LITE_WITH_METAL_FULL
 #else
@@ -43,7 +48,7 @@ void SoftmaxImageCompute::PrepareForRun() {
         if (metal_context_->use_mps()) {
             int input_c = static_cast<int>(input_buffer_->dim_[3]);
             int output_c = static_cast<int>(output_buffer_->dim_[3]);
-            if (input_c >= 3 && output_c >= 3) {
+            if (input_c >= 3 && output_c >= 3 && input_dims.size() == 4 && axis == 1) {
                 should_use_mps = true;
             }
         }
@@ -110,9 +115,9 @@ void SoftmaxImageCompute::setup_without_mps() {
         }
     } else if (input_dims.size() == 2 || input_dims.size() == 1) {
         if (axis == 0) {
-            function_name = "softmax_h_2d_common";
+            function_name = "softmax_h_d3_common";
         } else if (axis == 1) {
-            function_name = "softmax_w_2d_common";
+            function_name = "softmax_w_d3_common";
         }
     }
     function_name_ = function_name;
