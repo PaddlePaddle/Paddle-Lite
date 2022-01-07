@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-'''
+
 import sys
 sys.path.append('../')
 
@@ -31,11 +31,12 @@ import numpy as np
 class TestBeamSearchDecodeOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(
-            TargetType.Host,
-            PrecisionType.FP32,
-            DataLayoutType.NCHW,
-            thread=[1, 4])
+        # it doesn't suppor std::vector<Tensor>
+        # self.enable_testing_on_place(
+        #     TargetType.Host,
+        #     PrecisionType.FP32,
+        #     DataLayoutType.NCHW,
+        #     thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -94,4 +95,3 @@ class TestBeamSearchDecodeOp(AutoScanTest):
 
 if __name__ == "__main__":
     unittest.main(argv=[''])
-'''

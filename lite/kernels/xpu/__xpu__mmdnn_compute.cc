@@ -767,13 +767,17 @@ class MMDNNBidEmbGrnnAtt {
     r = xdnn::sequence_last_pool(
         ctx, grnn_fw, pool_fw, sentense.lod_32_vector, batch, cap_h_, 0);
     CHECK_EQ(r, 0);
-    const int concat_widths[] = {cap_h_, cap_h_, cap_h_};
-    const float* concat_ptrs[] = {emb_fw, grnn_fw, grnn_rv_rv};
-    r = xdnn::concat<float>(
-        ctx, cap_l, concat_widths + 1, 2, concat_ptrs + 1, concat_2in);
+    r = xdnn::concat<float>(ctx,
+                            {grnn_fw, grnn_rv_rv},
+                            concat_2in,
+                            {{cap_l, cap_h_}, {cap_l, cap_h_}},
+                            1);
     CHECK_EQ(r, 0);
-    r = xdnn::concat<float>(
-        ctx, cap_l, concat_widths, 3, concat_ptrs, concat_3in);
+    r = xdnn::concat<float>(ctx,
+                            {emb_fw, grnn_fw, grnn_rv_rv},
+                            concat_3in,
+                            {{cap_l, cap_h_}, {cap_l, cap_h_}, {cap_l, cap_h_}},
+                            1);
     CHECK_EQ(r, 0);
     att_.Infer(ctx,
                sentense,
@@ -947,19 +951,17 @@ class MMDNNMergeAll {
     // float* fc2_out = fc1_out + batch * fc1_n_;
     float* fc2_out = out->mutable_data<float>(TARGET(kXPU));
 
-    std::vector<int> concat_widths;
     std::vector<const float*> concat_ptrs;
+    std::vector<std::vector<int>> concat_shape_list;
     for (const auto* t : concat_topk_x) {
-      concat_widths.push_back(static_cast<int>(t->dims()[1]));
       concat_ptrs.push_back(t->data<float>());
+      auto t_dims = t->dims().Vectorize();
+      std::vector<int> t_dims_32(t_dims.begin(), t_dims.end());
+      concat_shape_list.push_back(t_dims_32);
     }
     int r = 0;
-    r = xdnn::concat<float>(ctx,
-                            cap_l,
-                            concat_widths.data(),
-                            concat_widths.size(),
-                            concat_ptrs.data(),
-                            topk_concat_out_fw);
+    r = xdnn::concat<float>(
+        ctx, concat_ptrs, topk_concat_out_fw, concat_shape_list, 1);
     CHECK_EQ(r, 0);
     r = xdnn::sequence_reverse<float, int>(ctx,
                                            topk_concat_out_fw,
@@ -977,33 +979,23 @@ class MMDNNMergeAll {
         ctx, grnn_rv, pool_rv, sentense.lod_32_vector, batch, cap_h_, 0);
     CHECK_EQ(r, 0);
 
-    const int concat_widths_fc0[] = {
-        static_cast<int>(concat_7in1_x[0]->dims()[1]),
-        static_cast<int>(concat_7in1_x[1]->dims()[1]),
-        static_cast<int>(concat_7in1_x[2]->dims()[1]),
-        static_cast<int>(concat_7in1_x[3]->dims()[1]),
-        static_cast<int>(concat_7in1_x[4]->dims()[1]),
-        static_cast<int>(concat_7in1_x[5]->dims()[1]),
-        static_cast<int>(concat_7in1_x[6]->dims()[1]),
-    };
-    const float* concat_ptrs_fc0[] = {
-        concat_7in1_x[0]->data<float>(),
-        concat_7in1_x[1]->data<float>(),
-        concat_7in1_x[2]->data<float>(),
-        concat_7in1_x[3]->data<float>(),
-        concat_7in1_x[4]->data<float>(),
-        concat_7in1_x[5]->data<float>(),
-        concat_7in1_x[6]->data<float>(),
-    };
-    const int concat_widths_fc1[] = {cap_h_, cap_h_, fc0_n_};
-    const float* concat_ptrs_fc1[] = {pool_fw, pool_rv, fc0_out};
-
+    std::vector<const float*> concat_ptrs_fc0;
+    std::vector<std::vector<int>> concat_xshape_list0;
+    for (int i = 0; i < 7; i++) {
+      concat_ptrs_fc0.push_back(concat_7in1_x[i]->data<float>());
+      auto x_dims = concat_7in1_x[i]->dims().Vectorize();
+      std::vector<int> x_dims_32(x_dims.begin(), x_dims.end());
+      concat_xshape_list0.push_back(x_dims_32);
+    }
     r = xdnn::concat<float>(
-        ctx, batch, concat_widths_fc0, 7, concat_ptrs_fc0, fc0_in);
+        ctx, concat_ptrs_fc0, fc0_in, concat_xshape_list0, 1);
     CHECK_EQ(r, 0);
     fc0_.Infer(ctx, fc0_in, batch, fc0_out);
-    r = xdnn::concat<float>(
-        ctx, batch, concat_widths_fc1, 3, concat_ptrs_fc1, fc1_in);
+    r = xdnn::concat<float>(ctx,
+                            {pool_fw, pool_rv, fc0_out},
+                            fc1_in,
+                            {{batch, cap_h_}, {batch, cap_h_}, {batch, fc0_n_}},
+                            1);
     CHECK_EQ(r, 0);
     fc1_.Infer(ctx, fc1_in, batch, fc1_out);
     fc2_.Infer(ctx, fc1_out, batch, fc2_out);
@@ -1118,17 +1110,18 @@ void XPUMmdnnBidEmbGrnnAttCompute2::Run() {
                   xpu_ctx->_l3_mgr.get_size());
 
   int num = param.id0->numel();
+  int table_m = param.emb_tbl->dims()[0];
   int embed_dim = param.emb_tbl->dims()[1];
 
-  // TODO(miaotianxiang):
   int r = xdnn::embedding<float, int64_t>(
-      ctx.GetRawContext(),                               /* context */
-      num,                                               /* num */
-      param.id0->data<int64_t>(),                        /* indices */
-      embed_dim,                                         /* embed_dim */
-      param.emb_tbl->data<float>(),                      /* table */
-      param.emb0_out->mutable_data<float>(TARGET(kXPU)), /* top */
-      128000 /* padding_idx */);
+      ctx.GetRawContext(),
+      param.emb_tbl->data<float>(),
+      param.id0->data<int64_t>(),
+      param.emb0_out->mutable_data<float>(TARGET(kXPU)),
+      table_m,
+      embed_dim,
+      num,
+      128000);
   CHECK_EQ(r, 0);
 }
 
