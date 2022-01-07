@@ -50,7 +50,6 @@ class TestSoftmaxOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
-        # metal demo
         metal_places = [
             Place(TargetType.Metal, PrecisionType.FP32,
                   DataLayoutType.MetalTexture2DArray),
@@ -66,6 +65,9 @@ class TestSoftmaxOp(AutoScanTest):
                          predictor_config: CxxConfig) -> bool:
         x_shape = list(program_config.inputs["input_data"].shape)
         axis = program_config.ops[0].attrs["axis"]
+        if predictor_config.target() == TargetType.OpenCL:
+            if len(x_shape) < 2 or (len(x_shape) == 4 and axis == 0):
+                return False
         if predictor_config.target() == TargetType.Metal:
             if len(x_shape) < 2 or x_shape[0] != 1 \
                 or (len(x_shape) == 4 and axis == 0):
@@ -107,21 +109,18 @@ class TestSoftmaxOp(AutoScanTest):
         return self.get_predictor_configs(), ["softmax"], (atol, rtol)
 
     def add_ignore_pass_case(self):
-        def teller1(program_config, predictor_config):
-            if predictor_config.target() == TargetType.OpenCL:
-                return True
-
-        self.add_ignore_check_case(
-            teller1, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff in a specific case. We need to fix it as soon as possible."
-        )
+        pass
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()
+        max_examples = 25
+        if target_str == "OpenCL":
+            # Make sure to generate enough valid cases for OpenCL
+            max_examples = 100
         if target_str == "Metal":
-            self.run_and_statis(quant=False, max_examples=2000)
-        else:
-            self.run_and_statis(quant=False, max_examples=25)
+            # Make sure to generate enough valid cases for Metal
+            max_examples = 2000
+        self.run_and_statis(quant=False, max_examples=max_examples)
 
 
 if __name__ == "__main__":
