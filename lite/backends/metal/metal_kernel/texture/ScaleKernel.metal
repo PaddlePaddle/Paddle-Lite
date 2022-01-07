@@ -23,7 +23,7 @@ struct ScaleParam {
     MetalActivationParam activationParam;
 };
 
-kernel void scale_before_bias(texture2d_array<ftype, access::read> inTexture[[texture(0)]],
+kernel void bias_after_scale(texture2d_array<ftype, access::read> inTexture[[texture(0)]],
     texture2d_array<ftype, access::write> outTexture[[texture(1)]],
     constant ScaleParam& pm[[buffer(0)]],
     uint3 gid[[thread_position_in_grid]]) {
@@ -38,7 +38,7 @@ kernel void scale_before_bias(texture2d_array<ftype, access::read> inTexture[[te
     outTexture.write(relu, gid.xy, gid.z);
 }
 
-kernel void scale_after_bias(texture2d_array<ftype, access::read> inTexture[[texture(0)]],
+kernel void bias_before_scale(texture2d_array<ftype, access::read> inTexture[[texture(0)]],
     texture2d_array<ftype, access::write> outTexture[[texture(1)]],
     constant ScaleParam& pm[[buffer(0)]],
     uint3 gid[[thread_position_in_grid]]) {
