@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/kernels/arm/max_pool_with_index_compute.h"
+#include "lite/kernels/host/max_pool_with_index_compute.h"
 #include <cmath>
 #include <string>
 #include <vector>
-#include "lite/backends/arm/math/funcs.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/tensor.h"
 #include "lite/core/type_system.h"
@@ -24,7 +23,7 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
 inline int AdaptStartIndex(int ph, int input_size, int output_size) {
   return static_cast<int>(
@@ -35,6 +34,20 @@ inline int AdaptEndIndex(int ph, int input_size, int output_size) {
   return static_cast<int>(
       ceil(static_cast<double>((ph + 1) * input_size) / output_size));
 }
+
+#define COMMON_LOOP_BODY                              \
+  float ele = static_cast<float>(-FLT_MAX);           \
+  int index = -1;                                     \
+  for (int h = hstart; h < hend; ++h) {               \
+    for (int w = wstart; w < wend; ++w) {             \
+      if (ele < input_data[h * input_width + w]) {    \
+        ele = input_data[h * input_width + w];        \
+        index = h * input_width + w;                  \
+      }                                               \
+    }                                                 \
+  }                                                   \
+  output_data[ph * output_width + pw] = ele;          \
+  mask_data[ph * output_width + pw] = index;
 
 void MaxPoolWithIndexCompute::Run() {
   auto param = Param<param_t>();
@@ -63,64 +76,62 @@ void MaxPoolWithIndexCompute::Run() {
   int hstart, hend;
   int wstart, wend;
   auto adaptive = param.adaptive;
-
-  for (int i = 0; i < batch_size; i++) {
-    for (int c = 0; c < output_channels; ++c) {
-      for (int ph = 0; ph < output_height; ++ph) {
-        if (adaptive) {
+  if (adaptive) {
+    for (int i = 0; i < batch_size; i++) {
+      for (int c = 0; c < output_channels; ++c) {
+        for (int ph = 0; ph < output_height; ++ph) {
           hstart = AdaptStartIndex(ph, input_height, output_height);
           hend = AdaptEndIndex(ph, input_height, output_height);
-        } else {
+          for (int pw = 0; pw < output_width; ++pw) {
+            wstart = AdaptStartIndex(pw, input_width, output_width);
+            wend = AdaptEndIndex(pw, input_width, output_width);
+            COMMON_LOOP_BODY
+          }
+        }
+        // offset
+        input_data += input_stride;
+        output_data += output_stride;
+        mask_data += output_stride;
+      }
+    }
+  } else {
+    for (int i = 0; i < batch_size; i++) {
+      for (int c = 0; c < output_channels; ++c) {
+        for (int ph = 0; ph < output_height; ++ph) {
           hstart = ph * stride_height - padding_height;
           hend = std::min(hstart + ksize_height, input_height);
           hstart = std::max(hstart, 0);
-        }
-        for (int pw = 0; pw < output_width; ++pw) {
-          if (adaptive) {
-            wstart = AdaptStartIndex(pw, input_width, output_width);
-            wend = AdaptEndIndex(pw, input_width, output_width);
-          } else {
+          for (int pw = 0; pw < output_width; ++pw) {
             wstart = pw * stride_width - padding_width;
             wend = std::min(wstart + ksize_width, input_width);
             wstart = std::max(wstart, 0);
+            COMMON_LOOP_BODY
           }
-
-          float ele = static_cast<float>(-FLT_MAX);
-          int index = -1;
-          for (int h = hstart; h < hend; ++h) {
-            for (int w = wstart; w < wend; ++w) {
-              if (ele < input_data[h * input_width + w]) {
-                ele = input_data[h * input_width + w];
-                index = h * input_width + w;
-              }
-            }
-          }
-          output_data[ph * output_width + pw] = ele;
-          mask_data[ph * output_width + pw] = index;
         }
+        // offset
+        input_data += input_stride;
+        output_data += output_stride;
+        mask_data += output_stride;
       }
-      // offset
-      input_data += input_stride;
-      output_data += output_stride;
-      mask_data += output_stride;
     }
   }
 }
 
-}  // namespace arm
+#undef COMMON_LOOP_BODY
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
 
 #ifdef LITE_BUILD_EXTRA
 REGISTER_LITE_KERNEL(max_pool2d_with_index,
-                     kARM,
+                     kHost,
                      kFloat,
                      kNCHW,
-                     paddle::lite::kernels::arm::MaxPoolWithIndexCompute,
+                     paddle::lite::kernels::host::MaxPoolWithIndexCompute,
                      fp32)
-    .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kARM))})
-    .BindOutput("Mask", {LiteType::GetTensorTy(TARGET(kARM))})
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindOutput("Mask", {LiteType::GetTensorTy(TARGET(kHost))})
     .Finalize();
 #endif

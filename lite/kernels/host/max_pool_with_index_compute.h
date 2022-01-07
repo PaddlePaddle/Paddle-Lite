@@ -20,10 +20,10 @@
 namespace paddle {
 namespace lite {
 namespace kernels {
-namespace arm {
+namespace host {
 
 class MaxPoolWithIndexCompute
-    : public KernelLite<TARGET(kARM), PRECISION(kFloat)> {
+    : public KernelLite<TARGET(kHost), PRECISION(kFloat)> {
  public:
   using param_t = operators::PoolParam;
 
@@ -32,7 +32,7 @@ class MaxPoolWithIndexCompute
   virtual ~MaxPoolWithIndexCompute() = default;
 };
 
-}  // namespace arm
+}  // namespace host
 }  // namespace kernels
 }  // namespace lite
 }  // namespace paddle
