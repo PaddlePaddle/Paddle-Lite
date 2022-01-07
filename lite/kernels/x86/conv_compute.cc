@@ -98,7 +98,7 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
   bool pad_all_equal = (paddings[0] == paddings[1]) &&
                        (paddings[1] == paddings[2]) &&
                        (paddings[2] == paddings[3]);
-  bool flag_p01 = (paddings[0] == 0 || paddings[0] == 1);
+  bool flag_p = paddings[0] <= stride_h;
 
   //! select conv impl
   if (dw_kernel && kps_equal && flag_dw && pads_equal &&
@@ -107,10 +107,14 @@ void Conv2dCompute<PRECISION(kFloat), PRECISION(kFloat)>::PrepareForRun() {
     VLOG(3) << "invoking conv_depthwise_3x3p0p1 or conv_depthwise_5x5";
   }
 
-  if (output_channel % 8 == 0 && groups == 1 && kernel_h == 3 &&
-      stride_h == 2 && nodilations && kps_equal && pad_all_equal && flag_p01) {
+  // support 3x3s1p01,5x5s1p01,7x7s1p01
+  //  3x3s2p012,5x5s1p012,7x7s1p012
+  if (output_channel % 8 == 0 && groups == 1 &&
+      (kernel_h == 3 || kernel_h == 5 || kernel_h == 7) &&
+      (stride_h == 2 || stride_h == 1) && nodilations && kps_equal &&
+      pad_all_equal && flag_p) {
     impl_ = new DirectConv<PRECISION(kFloat), PRECISION(kFloat)>();
-    VLOG(3) << "invoking directConv  3x3s2";
+    VLOG(3) << "invoking directConv";
   }
 
   if (impl_) {

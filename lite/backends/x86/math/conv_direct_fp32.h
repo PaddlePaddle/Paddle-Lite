@@ -20,8 +20,8 @@ namespace lite {
 namespace x86 {
 namespace math {
 
-struct conv_direct_3x3s2 : lite::jit::gen::JitCode {
-  conv_direct_3x3s2();
+struct conv_direct : lite::jit::gen::JitCode {
+  conv_direct();
   void generate_code(int ic,
                      int ih,
                      int iw,
@@ -30,9 +30,12 @@ struct conv_direct_3x3s2 : lite::jit::gen::JitCode {
                      int oh,
                      int ow,
                      int ph,
-                     int pw);
+                     int pw,
+                     int wh,
+                     int ww,
+                     int stridew);
   virtual void genCode() {}
-  virtual ~conv_direct_3x3s2() {}
+  virtual ~conv_direct() {}
   void run(const float* i_data,
            const float* trans_weight,
            float* trans_out,
@@ -45,18 +48,21 @@ struct conv_direct_3x3s2 : lite::jit::gen::JitCode {
            int oh,
            int ow,
            int ph,
-           int pw);
+           int pw,
+           int wh,
+           int ww,
+           int strideh);
 };
 
-void conv_direct_3x3s2_tranpose_out(int bs,
-                                    int oc,
-                                    int oh,
-                                    int ow,
-                                    float* o_data,
-                                    float* trans_out,
-                                    const float* bias,
-                                    lite_api::ActivationType active_type,
-                                    operators::ActivationParam act_param);
+void conv_direct_transpose_out(int bs,
+                               int oc,
+                               int oh,
+                               int ow,
+                               float* o_data,
+                               float* trans_out,
+                               const float* bias,
+                               lite_api::ActivationType active_type,
+                               operators::ActivationParam act_param);
 
 }  // namespace math
 }  // namespace x86
