@@ -112,7 +112,9 @@ function run_test() {
   for target in ${targets[@]}; do
     auto_scan_test $target
   done
+}
 
+function get_summary() {
   cd $WORKSPACE/lite/tests/unittest_py/op/
   python3.8 ../global_var_model.py
   cd $WORKSPACE/lite/tests/unittest_py/pass/
@@ -151,6 +153,7 @@ function main() {
   done
 
   pipeline $TARGET_LIST
+  get_summary
 
   echo "Success for targets:" $TARGET_LIST
 }
