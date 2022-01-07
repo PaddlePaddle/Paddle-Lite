@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "lite/core/optimizer/mir/fusion/inplace_fuse_pass.h"
+#include "lite/core/optimizer/mir/fusion/__xpu__inplace_fuse_pass.h"
 #include <memory>
 #include <vector>
-#include "lite/core/optimizer/mir/fusion/inplace_fuser.h"
+#include "lite/core/optimizer/mir/fusion/__xpu__inplace_fuser.h"
 #include "lite/core/optimizer/mir/pass_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace mir {
 
-void InplaceFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
+void XPUInplaceFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   std::vector<std::string> inplace_type_cases{"reshape",
                                               "reshape2",
                                               "flatten",
@@ -32,7 +32,7 @@ void InplaceFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
                                               "unsqueeze",
                                               "unsqueeze2"};
   for (auto type : inplace_type_cases) {
-    fusion::InplaceFuser inplace_fuser(type);
+    fusion::XPUInplaceFuser inplace_fuser(type);
     inplace_fuser(graph.get());
   }
 }
@@ -41,7 +41,5 @@ void InplaceFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 }  // namespace lite
 }  // namespace paddle
 
-REGISTER_MIR_PASS(lite_inplace_fuse_pass, paddle::lite::mir::InplaceFusePass)
-    .BindTargets({TARGET(kAny)})
-    .ExcludeTargets({TARGET(kNPU)})
-    .ExcludeTargets({TARGET(kXPU)});
+REGISTER_MIR_PASS(xpu_inplace_fuse_pass, paddle::lite::mir::XPUInplaceFusePass)
+    .BindTargets({TARGET(kXPU)});

@@ -31,9 +31,6 @@ namespace paddle {
 namespace lite {
 namespace mir {
 
-/*
- * XPUMemoryOptimizePass will
- */
 class XPUMemoryOptimizePass : public ProgramPass {
  public:
   using lifecycle_t = std::pair<int, int>;
@@ -42,9 +39,14 @@ class XPUMemoryOptimizePass : public ProgramPass {
 
  private:
   void CollectLifeCycleByDevice(
-      std::map<std::string, lifecycle_map_t>* lifecycles, SSAGraph*);
+      std::map<std::string, lifecycle_map_t>* lifecycles,
+      SSAGraph*,
+      std::map<std::string, std::string>* squeeze_input2output,
+      std::map<std::string, std::string>* squeeze_output2input);
   void MakeReusePlan(const lifecycle_map_t& lifecycles,
-                     std::map<std::string, std::string>* node2cluster);
+                     std::map<std::string, std::string>* node2cluster,
+                     std::map<std::string, std::string>* squeeze_input2output,
+                     std::map<std::string, std::string>* squeeze_output2input);
   void PerformReusePlan(SSAGraph* graph,
                         const std::map<std::string, std::string>& reuse_table);
 
