@@ -74,7 +74,7 @@ class TestEqualOp(AutoScanTest):
             in_shape = draw(
                 st.lists(
                     st.integers(
-                        min_value=1, max_value=7),
+                        min_value=1, max_value=8),
                     min_size=3,
                     max_size=3))
             in_shape.insert(0, 1)
@@ -121,7 +121,7 @@ class TestEqualOp(AutoScanTest):
 
     def add_ignore_pass_case(self):
         def teller1(program_config, predictor_config):
-            # All outputs are zero, but diff occurred.
+            # All outputs are zero. But diff occurred.
             if predictor_config.target() == TargetType.Metal:
                 return True
 
