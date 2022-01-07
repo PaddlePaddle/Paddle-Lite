@@ -96,7 +96,7 @@ __kernel void pool(__read_only image2d_t input,
     for (int x = start_w; x < end_w; ++x) {
       CL_DTYPE4 tmp = READ_IMG_TYPE(
           CL_DTYPE_CHAR, input, SAMPLER, (int2)(pos_in_x + x, pos_in_y + y));
-      res = max(res, tmp);
+      res = fmax(res, tmp);
     }
   }
 
