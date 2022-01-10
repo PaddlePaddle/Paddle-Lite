@@ -152,12 +152,6 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
         ksize_.resize(static_cast<size_t>(in_dims.size()) - 2);
         operators::UpdateKsize(&ksize_, ksize_.size(), in_dims);
       }
-      bool pads_equal =
-          (paddings_[0] == paddings_[2]) && (paddings_[1] == paddings_[3]);
-      if (!pads_equal) {
-        LOG(INFO)
-            << "padding requires pad_left == pad_right, pad_top == pad_bottom";
-      }
 
       const int out_c_blks = UP_DIV(out_dims[1], 4);
       uint32_t workgroup_size = 0;
