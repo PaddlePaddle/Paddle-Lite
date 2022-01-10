@@ -92,7 +92,6 @@ bool NNAdapterWrapper::Initialize() {
   NNADAPTER_LOAD_FUNCTION(NNAdapterCompilation_destroy)
   NNADAPTER_LOAD_FUNCTION(NNAdapterCompilation_finish)
   NNADAPTER_LOAD_FUNCTION(NNAdapterCompilation_queryInputsAndOutputs)
-  NNADAPTER_LOAD_FUNCTION(NNAdapterCompilation_checkShapeValid)
   NNADAPTER_LOAD_FUNCTION(NNAdapterExecution_create)
   NNADAPTER_LOAD_FUNCTION(NNAdapterExecution_destroy)
   NNADAPTER_LOAD_FUNCTION(NNAdapterExecution_setInput)

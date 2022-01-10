@@ -224,7 +224,7 @@ bool Program::SetInputsAndOutputs(std::vector<Variable>* input_vars,
   return true;
 }
 
-bool Program::Execute() {
+int Program::Execute() {
   CHECK(IsReady());
   auto GetCurrentUS = []() -> double {
     struct timeval time;
@@ -235,30 +235,10 @@ bool Program::Execute() {
   int result = NNAdapterExecution_compute_invoke(execution_);
   if (result != NNADAPTER_NO_ERROR) {
     LOG(WARNING) << "Failed to run the execution(" << result << ")!";
-    return false;
+    return result;
   }
   VLOG(3) << "Process cost " << GetCurrentUS() - start_time << " us";
-  return true;
-}
-
-bool Program::CheckShapeValid(
-    const std::vector<std::vector<int64_t>>& input_shapes) {
-  uint32_t input_count = input_shapes.size();
-  int(*shapes_data)[NNADAPTER_MAX_SIZE_OF_DIMENSIONS] =
-      new int[input_count][NNADAPTER_MAX_SIZE_OF_DIMENSIONS];
-  for (uint32_t i = 0; i < input_count; i++) {
-    memset(
-        shapes_data[i], 0, NNADAPTER_MAX_SIZE_OF_DIMENSIONS * sizeof(int32_t));
-  }
-  for (uint32_t i = 0; i < input_count; i++) {
-    for (size_t j = 0; j < input_shapes[i].size(); j++) {
-      shapes_data[i][j] = input_shapes[i][j];
-    }
-  }
-  bool ret = NNAdapterCompilation_checkShapeValid_invoke(
-      compilation_, input_count, shapes_data);
-  delete[] shapes_data;
-  return ret;
+  return NNADAPTER_NO_ERROR;
 }
 
 Engine::Engine(KernelContext* ctx,
@@ -359,59 +339,55 @@ bool Engine::Run() {
   for (size_t i = 0; i < input_count; i++) {
     input_dims[i] = input_vars_[i].value->dims().Vectorize();
   }
-  // Find the compiled device program according to the input dimensions
-  std::shared_ptr<Program> program = GetValibProgram(input_dims);
-  if (program == nullptr) {
-    // Rebuild the device program corresponding to the input dimensions if not
-    // found
-    VLOG(1) << "Not found valid program for the current input shapes. New "
-               "progam will be created.";
-    std::vector<std::string> device_names;
-    for (auto* device : devices_) {
-      const char* name = nullptr;
-      NNAdapterDevice_getName_invoke(device, &name);
-      device_names.push_back(name);
-    }
-    program = std::make_shared<Program>(context_);
-    // Take the model cache buffer from the scope
-    std::vector<char> model_cache_buffer;
-    // Generate a cache token based on the input names and shapes
-    auto model_cache_token = GenerateModelCacheToken(device_names, input_vars_);
-    VLOG(3) << "NNAdapter model_cache_token: " << model_cache_token;
-    ctx_->As<NNAdapterContext>().NNAdapterModelCacheBuffers(
-        exec_scope_, model_cache_token, &model_cache_buffer);
-    VLOG(3) << "NNAdapter model_cache_buffer size: "
-            << model_cache_buffer.size();
-    // Load the compiled device program from the model cache buffer or file
-    if (!program->LoadFromCache(
-            model_cache_token, &model_cache_buffer, model_cache_dir_)) {
-      // Compile the model online to generate the device program and cache it to
-      // the file
-      CHECK(program->BuildAndCacheToFile(block_idx_,
-                                         program_desc_,
-                                         exec_scope_,
-                                         input_vars_,
-                                         &output_vars_,
-                                         model_cache_token,
-                                         model_cache_dir_));
-    }
-    CHECK(program->IsValid());
-    CHECK(program->SetInputsAndOutputs(&input_vars_, &output_vars_));
-    programs_.push_back(program);
-  }
-  return program->Execute();
-}
-
-std::shared_ptr<Program> Engine::GetValibProgram(
-    const std::vector<std::vector<int64_t>>& input_shapes) {
-  std::shared_ptr<Program> valid_program;
+  // try to execute all programs.
   for (auto program : programs_) {
-    if (program->CheckShapeValid(input_shapes)) {
-      valid_program = program;
-      break;
+    int ret = program->Execute();
+    if (ret == NNADAPTER_INVALID_DIMENSIONS) {
+      VLOG(1)
+          << "Input shapes are invalid for the program, try the next program.";
+      continue;
     }
+    CHECK_EQ(ret, NNADAPTER_NO_ERROR) << "Program execute failed.";
+    return true;
   }
-  return valid_program;
+  // Rebuild the device program corresponding to the input dimensions if not
+  // find valid program.
+  VLOG(1) << "Not found valid program for the current input shapes. New "
+             "progam will be created.";
+  std::vector<std::string> device_names;
+  for (auto* device : devices_) {
+    const char* name = nullptr;
+    NNAdapterDevice_getName_invoke(device, &name);
+    device_names.push_back(name);
+  }
+  auto program = std::make_shared<Program>(context_);
+  // Take the model cache buffer from the scope
+  std::vector<char> model_cache_buffer;
+  // Generate a cache token based on the input names and shapes
+  auto model_cache_token = GenerateModelCacheToken(device_names, input_vars_);
+  VLOG(3) << "NNAdapter model_cache_token: " << model_cache_token;
+  ctx_->As<NNAdapterContext>().NNAdapterModelCacheBuffers(
+      exec_scope_, model_cache_token, &model_cache_buffer);
+  VLOG(3) << "NNAdapter model_cache_buffer size: " << model_cache_buffer.size();
+  // Load the compiled device program from the model cache buffer or file
+  if (!program->LoadFromCache(
+          model_cache_token, &model_cache_buffer, model_cache_dir_)) {
+    // Compile the model online to generate the device program and cache it to
+    // the file
+    CHECK(program->BuildAndCacheToFile(block_idx_,
+                                       program_desc_,
+                                       exec_scope_,
+                                       input_vars_,
+                                       &output_vars_,
+                                       model_cache_token,
+                                       model_cache_dir_));
+  }
+  CHECK(program->IsValid());
+  CHECK(program->SetInputsAndOutputs(&input_vars_, &output_vars_));
+  programs_.push_back(program);
+  int ret = program->Execute();
+  CHECK_EQ(ret, NNADAPTER_NO_ERROR) << "Program execute failed.";
+  return true;
 }
 
 }  // namespace nnadapter

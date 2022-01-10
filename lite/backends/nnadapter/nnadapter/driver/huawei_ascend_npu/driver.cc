@@ -97,27 +97,11 @@ int ExecuteProgram(void* program,
     return NNADAPTER_INVALID_PARAMETER;
   }
   auto p = reinterpret_cast<Program*>(program);
+  if (!p->CheckShapeValid()) {
+    return NNADAPTER_INVALID_DIMENSIONS;
+  }
   return p->Execute(
       input_count, input_arguments, output_count, output_arguments);
-}
-
-bool CheckShapeValid(
-    void* program,
-    uint32_t input_count,
-    int32_t (*input_dimensions_data)[NNADAPTER_MAX_SIZE_OF_DIMENSIONS]) {
-  std::vector<std::vector<int32_t>> shapes;
-  for (uint32_t i = 0; i < input_count; i++) {
-    std::vector<int32_t> shape;
-    for (int j = 0; j < NNADAPTER_MAX_SIZE_OF_DIMENSIONS; j++) {
-      int32_t data = input_dimensions_data[i][j];
-      if (data == 0) break;
-      shape.push_back(data);
-    }
-    if (shape.empty()) break;
-    shapes.push_back(shape);
-  }
-  auto p = reinterpret_cast<Program*>(program);
-  return p->CheckShapeValid(shapes);
 }
 
 }  // namespace huawei_ascend_npu
@@ -136,5 +120,4 @@ NNADAPTER_EXPORT nnadapter::hal::Device NNADAPTER_AS_SYM2(
     .create_program = nnadapter::huawei_ascend_npu::CreateProgram,
     .destroy_program = nnadapter::huawei_ascend_npu::DestroyProgram,
     .execute_program = nnadapter::huawei_ascend_npu::ExecuteProgram,
-    .check_shape_valid = nnadapter::huawei_ascend_npu::CheckShapeValid,
 };

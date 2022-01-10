@@ -54,10 +54,6 @@ class Device {
                      hal::Argument* input_arguments,
                      uint32_t output_count,
                      hal::Argument* output_arguments);
-  bool CheckShapeValid(
-      void* program,
-      uint32_t input_count,
-      int32_t (*input_dimensions_data)[NNADAPTER_MAX_SIZE_OF_DIMENSIONS]);
 
  private:
   std::pair<void*, hal::Device*>* device_{nullptr};

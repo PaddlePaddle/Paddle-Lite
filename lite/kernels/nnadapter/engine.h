@@ -56,10 +56,9 @@ class Program {
   // functions to access them
   bool SetInputsAndOutputs(std::vector<Variable>* input_vars,
                            std::vector<Variable>* output_vars);
-  bool Execute();
+  int Execute();
   bool IsValid() { return context_ && compilation_; }
   bool IsReady() { return IsValid() && execution_; }
-  bool CheckShapeValid(const std::vector<std::vector<int64_t>>& input_shapes);
 
  public:
   NNAdapterModel* model_{nullptr};
@@ -80,8 +79,6 @@ class Engine {
          const std::vector<float>& output_scales);
   ~Engine();
   bool Run();
-  std::shared_ptr<Program> GetValibProgram(
-      const std::vector<std::vector<int64_t>>& input_shapes);
 
  private:
   KernelContext* ctx_{nullptr};

@@ -354,9 +354,9 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     NNADAPTER_CHECK_EQ(dimensions.GetDimNum(), type->dimensions.count);
     for (size_t j = 0; j < type->dimensions.count; j++) {
       auto dimension = type->dimensions.data[j];
-      if (dimension == -1) {
+      if (dimension == NNADAPTER_UNKNOWN) {
         // Check if the dimension of the model inputs is dynamic
-        NNADAPTER_CHECK_EQ(dimension, dimensions.GetDim(j))
+        NNADAPTER_CHECK_EQ(dimensions.GetDim(j), -1)
             << "The " << j << "th dimension of the " << i
             << "th input does not match, expect " << dimension
             << " but recevied " << dimensions.GetDim(j);
@@ -375,7 +375,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     NNADAPTER_CHECK_EQ(dimensions.GetDimNum(), type->dimensions.count);
     for (size_t j = 0; j < type->dimensions.count; j++) {
       auto dimension = type->dimensions.data[j];
-      if (dimension != -1) {
+      if (dimension > 0) {
         // Check if the dimension of the model outputs is not dynamic
         NNADAPTER_CHECK_EQ(dimension, dimensions.GetDim(j))
             << "The " << j << "th dimension of the " << i
@@ -400,6 +400,17 @@ int Program::Execute(uint32_t input_count,
                                          output_arguments,
                                          dynamic_shape_mode_));
   return NNADAPTER_NO_ERROR;
+}
+
+bool Program::CheckShapeValid() {
+  std::vector<std::vector<int32_t>> shapes;
+  for (auto& input_type : input_types_) {
+    uint32_t size = input_type.dimensions.count;
+    int32_t* data = input_type.dimensions.data;
+    std::vector<int32_t> shape(data, data + size);
+    shapes.push_back(shape);
+  }
+  return valid_shapes_.count(shapes);
 }
 
 }  // namespace huawei_ascend_npu

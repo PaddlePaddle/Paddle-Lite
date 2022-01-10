@@ -69,14 +69,6 @@ int Device::ExecuteProgram(void* program,
   return NNADAPTER_INVALID_PARAMETER;
 }
 
-bool Device::CheckShapeValid(
-    void* program,
-    uint32_t input_count,
-    int32_t (*input_dimensions_data)[NNADAPTER_MAX_SIZE_OF_DIMENSIONS]) {
-  return device_->second->check_shape_valid(
-      program, input_count, input_dimensions_data);
-}
-
 DeviceManager& DeviceManager::get() {
   static DeviceManager instance;
   return instance;

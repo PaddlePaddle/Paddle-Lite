@@ -338,14 +338,6 @@ NNADAPTER_EXPORT int NNAdapterCompilation_queryInputsAndOutputs(
       input_count, input_types, output_count, output_types);
 }
 
-NNADAPTER_EXPORT bool NNAdapterCompilation_checkShapeValid(
-    NNAdapterCompilation* compilation,
-    uint32_t input_count,
-    int32_t (*input_dimensions_data)[NNADAPTER_MAX_SIZE_OF_DIMENSIONS]) {
-  auto c = reinterpret_cast<nnadapter::runtime::Compilation*>(compilation);
-  return c->CheckShapeValid(input_count, input_dimensions_data);
-}
-
 NNADAPTER_EXPORT int NNAdapterExecution_create(
     NNAdapterCompilation* compilation, NNAdapterExecution** execution) {
   if (!compilation || !execution) {

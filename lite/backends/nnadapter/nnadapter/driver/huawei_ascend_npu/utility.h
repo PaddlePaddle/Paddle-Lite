@@ -140,6 +140,7 @@ bool GetAscendCANNVersion(int* major, int* minor, int* patch);
 // Get Ascend soc name
 ge::AscendString GetAscendSocName();
 
+// Generate shape strings for CANN
 std::string ShapeToString(const std::vector<int32_t>& shape);
 std::string MergeOptionalShapesString(
     const std::vector<std::string>& optional_shapes,

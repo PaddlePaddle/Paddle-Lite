@@ -33,9 +33,10 @@ enum { NNADAPTER_UNKNOWN = -65535 };
 typedef enum {
   NNADAPTER_NO_ERROR = 0,
   NNADAPTER_OUT_OF_MEMORY = 1,
-  NNADAPTER_INVALID_PARAMETER = 2,
-  NNADAPTER_DEVICE_NOT_FOUND = 3,
-  NNADAPTER_DEVICE_INTERNAL_ERROR = 4,
+  NNADAPTER_INVALID_DIMENSIONS = 2,
+  NNADAPTER_INVALID_PARAMETER = 3,
+  NNADAPTER_DEVICE_NOT_FOUND = 4,
+  NNADAPTER_DEVICE_INTERNAL_ERROR = 5,
 } NNAdapterResultCode;
 
 enum { NNADAPTER_MAX_SIZE_OF_DIMENSIONS = 8 };
@@ -2309,11 +2310,6 @@ int NNAdapterCompilation_queryInputsAndOutputs(
     NNAdapterOperandType** input_types,
     uint32_t* output_count,
     NNAdapterOperandType** output_types);
-
-bool NNAdapterCompilation_checkShapeValid(
-    NNAdapterCompilation* compilation,
-    uint32_t input_count,
-    int32_t (*input_dimensions_data)[NNADAPTER_MAX_SIZE_OF_DIMENSIONS]);
 
 /**
  * Create an execution plan to execute the hardware-related binary program.

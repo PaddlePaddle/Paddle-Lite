@@ -84,10 +84,6 @@ typedef struct Device {
                          Argument* input_arguments,
                          uint32_t output_count,
                          Argument* output_arguments);
-  bool (*check_shape_valid)(
-      void* program,
-      uint32_t input_count,
-      int32_t (*input_dimensions_data)[NNADAPTER_MAX_SIZE_OF_DIMENSIONS]);
 } Device;
 
 }  // namespace hal

@@ -60,9 +60,7 @@ class Program {
               hal::Argument* input_arguments,
               uint32_t output_count,
               hal::Argument* output_arguments);
-  bool CheckShapeValid(const std::vector<std::vector<int32_t>>& shapes) {
-    return valid_shapes_.count(shapes) > 0;
-  }
+  bool CheckShapeValid();
 
  private:
   void Clear();
