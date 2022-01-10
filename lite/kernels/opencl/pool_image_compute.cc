@@ -46,6 +46,18 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
 
     ksize_.assign(ksize.begin(), ksize.end());
     paddings_.assign(paddings.begin(), paddings.end());
+    // 2-pad to 4-pad
+    if (paddings_.size() == 2L) {
+      for (size_t i = 0; i < 2L; ++i) {
+        int copy_pad = *(paddings_.begin() + 2 * i);
+        paddings_.insert(paddings_.begin() + 2 * i + 1, copy_pad);
+      }
+    } else {
+      if (paddings_.size() != 4L) {
+        LOG(FATAL)
+            << "Paddings size should be the same or twice as the inputs size.";
+      }
+    }
     operators::UpdatePadding(&paddings_,
                              global_pooling,
                              adaptive,
@@ -117,6 +129,18 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
       const std::vector<int>& ksize = param.ksize;
       const std::vector<int> strides = param.strides;
 
+      // 2-pad to 4-pad
+      if (paddings_.size() == 2L) {
+        for (size_t i = 0; i < 2L; ++i) {
+          int copy_pad = *(paddings_.begin() + 2 * i);
+          paddings_.insert(paddings_.begin() + 2 * i + 1, copy_pad);
+        }
+      } else {
+        if (paddings_.size() != 4L) {
+          LOG(FATAL) << "Paddings size should be the same or twice as the "
+                        "inputs size.";
+        }
+      }
       operators::UpdatePadding(&paddings_,
                                global_pooling,
                                adaptive,
@@ -127,6 +151,12 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
       if (global_pooling) {
         ksize_.resize(static_cast<size_t>(in_dims.size()) - 2);
         operators::UpdateKsize(&ksize_, ksize_.size(), in_dims);
+      }
+      bool pads_equal =
+          (paddings_[0] == paddings_[2]) && (paddings_[1] == paddings_[3]);
+      if (!pads_equal) {
+        LOG(INFO)
+            << "padding requires pad_left == pad_right, pad_top == pad_bottom";
       }
 
       const int out_c_blks = UP_DIV(out_dims[1], 4);
@@ -229,6 +259,8 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
       VLOG(4) << "ksize: " << ksize[0] << "  " << ksize[1];
       VLOG(4) << "paddings: " << paddings[0] << "  " << paddings[1] << "  "
               << paddings[2] << "  " << paddings[3];
+      VLOG(4) << "paddings_: " << paddings_[0] << "  " << paddings_[1] << "  "
+              << paddings_[2] << "  " << paddings_[3];
       VLOG(4) << "global_work_size: " << static_cast<int>(global_work_size_[0])
               << "  " << static_cast<int>(global_work_size_[1]) << "  "
               << static_cast<int>(global_work_size_[2]);
