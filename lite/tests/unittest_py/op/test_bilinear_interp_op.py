@@ -29,18 +29,17 @@ import argparse
 class TestBilinearOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        # arm has diff
-        # self.enable_testing_on_place(
-        #     TargetType.ARM,
-        #     PrecisionType.FP32,
-        #     DataLayoutType.NCHW,
-        #     thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
         # x86 has diff
-        # self.enable_testing_on_place(
-        #     TargetType.X86,
-        #     PrecisionType.FP32,
-        #     DataLayoutType.NCHW,
-        #     thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.X86,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
         # opencl demo
         # opencl has diff
         # opencl_places = [
@@ -80,10 +79,10 @@ class TestBilinearOp(AutoScanTest):
             return np.random.random(in_shape).astype(np.float32) * 10
 
         def generate_out_size(*args, **kwargs):
-            return np.random.random(out_size_shape).astype(np.int32)
+            return np.random.randint(1, 100, size=out_size_shape)
 
         def generate_size_tensor(*args, **kwargs):
-            return np.random.randint(1, 10, [1]).astype(np.int32)
+            return np.random.randint(4, 100, [1]).astype(np.int32)
 
         def generate_scale(*args, **kwargs):
             return np.random.random([1]).astype(np.float32)
@@ -124,7 +123,7 @@ class TestBilinearOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["bilinear_interp"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["bilinear_interp"], (1e-4, 1e-4)
 
     def add_ignore_pass_case(self):
         pass

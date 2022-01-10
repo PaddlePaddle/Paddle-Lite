@@ -46,20 +46,7 @@ class ExpandComputeImage2D : public KernelLite<TARGET(kOpenCL),
     CHECK(expand_times.size() == 4)
         << "expand image now only support in_expand_timesdims size 4";
     CHECK(expand_times[1] == 1) << "expand image do not support expend c now";
-
-    // do not confuse with these cases.it is use to support expend c in future
-    if (in_dims[1] == 1) {
-      kernel_func_name_ = "expend_c1";
-    } else if (in_dims[1] == 2) {
-      kernel_func_name_ = "expend_c2";
-    } else if (in_dims[1] == 3) {
-      kernel_func_name_ = "expend_c3";
-    } else if (in_dims[1] == 4) {
-      kernel_func_name_ = "expend_c4";
-    } else {
-      kernel_func_name_ = "expend_cn";
-    }
-
+    kernel_func_name_ = "expend_cn";
     VLOG(1) << "kernel_func_name_:" << kernel_func_name_;
     auto& context = ctx_->As<OpenCLContext>();
     context.cl_context()->AddKernel(kernel_func_name_,
@@ -87,6 +74,7 @@ class ExpandComputeImage2D : public KernelLite<TARGET(kOpenCL),
         first_epoch_for_reinit_) {
       last_x_dims_ = x_dims;
       first_epoch_for_reinit_ = false;
+
       // compute image shape
       paddle::lite::CLImageConverterDefault default_convertor;
       out_img_shape_ = default_convertor.InitImageDimInfoWith(out_dims);
@@ -159,15 +147,6 @@ class ExpandComputeImage2D : public KernelLite<TARGET(kOpenCL),
     status = kernel.setArg(10, *x_img);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(11, *out_img);
-    CL_CHECK_FATAL(status);
-
-    status = kernel.setArg(12, expand_times_n);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(13, expand_times_c);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(14, expand_times_h);
-    CL_CHECK_FATAL(status);
-    status = kernel.setArg(15, expand_times_w);
     CL_CHECK_FATAL(status);
 
     status = EnqueueNDRangeKernel(context,

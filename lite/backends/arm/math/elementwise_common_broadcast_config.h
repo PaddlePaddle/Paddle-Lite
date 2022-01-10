@@ -184,7 +184,7 @@ struct BasicConfig<float16_t> {
   constexpr static auto neon_dup = vdupq_n_f16;
   constexpr static auto neon_ld = vld1q_f16;
   constexpr static auto neon_st = vst1q_f16;
-  constexpr static int cnt_num = 8;
+  constexpr static int cnt_num = 4;
 };
 
 template <>

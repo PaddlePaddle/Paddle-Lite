@@ -201,11 +201,7 @@ __kernel void expend_cn(__private const int OUT_C,
                         __private const int output_height,
 
                         __read_only image2d_t input,
-                        __write_only image2d_t output,
-                        __private const int n_times,
-                        __private const int c_times,
-                        __private const int h_times,
-                        __private const int w_times) {
+                        __write_only image2d_t output) {
   const int out_c = get_global_id(0);
   const int out_w = get_global_id(1);
   const int out_nh = get_global_id(2);
@@ -213,13 +209,15 @@ __kernel void expend_cn(__private const int OUT_C,
   if (out_c >= OUT_C || out_w >= OUT_W || out_nh >= OUT_NH) {
     return;
   }
-
+  const int IN_N = IN_NH / input_height;
+  const int OUT_N = OUT_NH / output_height;
   const int out_n = out_nh / output_height;
   const int out_h = out_nh % output_height;
   const int in_c = out_c;
-  const int in_w = out_w / w_times;
-  const int in_h = out_h / h_times;
-  const int in_n = out_n / n_times;
+  const int in_w = out_w % input_width;
+  const int in_h = out_h % input_height;
+  const int in_n = out_n % IN_N;
+
   const int in_nh = in_n * input_height + in_h;
 
   int2 output_pos = (int2)(out_c * OUT_W + out_w, out_nh);

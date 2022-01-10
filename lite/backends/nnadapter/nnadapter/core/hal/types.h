@@ -22,10 +22,18 @@
 namespace nnadapter {
 namespace hal {
 
+enum { NNADAPTER_MAX_SIZE_OF_HINTS = 8 };
+
+typedef struct Hint {
+  void* handler;
+  void (*deleter)(void** handler);
+} Hint;
+
 typedef struct Operand {
   NNAdapterOperandType type;
   void* buffer;
   uint32_t length;
+  Hint hints[NNADAPTER_MAX_SIZE_OF_HINTS];
 } Operand;
 
 typedef struct Argument {

@@ -228,7 +228,6 @@ void RemoveTFRedundantOpsPass::RemoveSqueeze2Reshape2Pattern(
           "softmax") {
     // link out_arg to op
     IR_NODE_LINK_TO(out_arg_node, next_inst_node_of_reshape2_out);
-
     // collect nodes to safe remove
     std::set<const Node*> nodes_to_remove;
     auto remove_inst_node_and_out_args_node = [&](Node* n) {
@@ -243,6 +242,11 @@ void RemoveTFRedundantOpsPass::RemoveSqueeze2Reshape2Pattern(
     auto next_inst_op_desc =
         next_inst_node_of_reshape2_out->AsStmt().mutable_op_info();
     next_inst_op_desc->SetInput("X", {out_arg_node->AsArg().name});
+    next_inst_op_desc->SetAttr("eleminate_success", true);
+    auto undate_softmax_desc =
+        *next_inst_node_of_reshape2_out->stmt()->mutable_op_info();
+    auto softmax_instruct = next_inst_node_of_reshape2_out->stmt();
+    softmax_instruct->ResetOp(undate_softmax_desc, graph.get()->valid_places());
     VLOG(5) << Visualize(graph.get());
   }
   VLOG(5) << "replace pattern fininshed";

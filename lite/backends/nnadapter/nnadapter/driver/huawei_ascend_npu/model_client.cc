@@ -84,7 +84,7 @@ void AclModelClient::FinalizeAclProfilingEnv() {
   }
 }
 
-bool AclModelClient::LoadModel(const void* data, uint32_t size) {
+bool AclModelClient::LoadModel(const void* data, size_t size) {
   if (model_desc_) {
     NNADAPTER_LOG(WARNING) << "ACL model had been already loaded.";
     return true;

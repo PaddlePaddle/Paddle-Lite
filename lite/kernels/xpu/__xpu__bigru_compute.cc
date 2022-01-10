@@ -53,44 +53,15 @@ void XPUBiGRUCompute::PrepareBiasForRun(bool forward) {
 }
 
 void XPUBiGRUCompute::PrepareMulWeightForRun(bool forward) {
-  auto& ctx = this->ctx_->As<XPUContext>();
-  int max_ptr_size = xdnn::get_max_ptr_size(ctx.GetRawContext());
-  auto& weight_abs_max =
-      forward ? fw_mul_weight_abs_max_ : bw_mul_weight_abs_max_;
-  auto& weight_max_guard =
-      forward ? fw_mul_weight_max_guard_ : bw_mul_weight_max_guard_;
-  auto& quant_weight_guard =
-      forward ? fw_mul_quant_weight_guard_ : bw_mul_quant_weight_guard_;
+  auto& mul_quant_weight_ =
+      forward ? fw_mul_quant_weight_ : bw_mul_quant_weight_;
   auto& param = this->Param<param_t>();
   auto* weight = forward ? param.fw_mul_w : param.bw_mul_w;
   auto weight_ptr = weight->data<float>();
   auto weight_dims = weight->dims();
-  auto weight_len = weight->numel();
-  // max
-  weight_abs_max = paddle::lite::xpu::math::FindMaxAbs(weight_ptr, weight_len);
-  std::vector<float> weight_max_vector(max_ptr_size, weight_abs_max);
-  weight_max_guard =
-      TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
-  XPU_CALL(xpu_memcpy(reinterpret_cast<float*>(weight_max_guard->addr_),
-                      weight_max_vector.data(),
-                      max_ptr_size * sizeof(float),
-                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
-  // transpose
-  std::vector<float> transpose_weight(weight_len, 0);
-  paddle::lite::xpu::math::Transpose(
-      weight_ptr, transpose_weight.data(), weight_dims[0], weight_dims[1]);
-  // quant
-  std::vector<int16_t> quant_weight_cpu(weight_len, 0);
-  paddle::lite::xpu::math::ConvertFP32ToInt16(transpose_weight.data(),
-                                              quant_weight_cpu.data(),
-                                              weight_abs_max,
-                                              weight_len);
-  quant_weight_guard =
-      TargetWrapperXPU::MallocScratchPad(weight_len * sizeof(int16_t));
-  XPU_CALL(xpu_memcpy(reinterpret_cast<int16_t*>(quant_weight_guard->addr_),
-                      quant_weight_cpu.data(),
-                      weight_len * sizeof(int16_t),
-                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+  mul_quant_weight_ =
+      TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<float, int16_t>(
+          weight_ptr, weight_dims, true);
 }
 
 void XPUBiGRUCompute::PrepareGRUWeightForRun(bool forward) {
@@ -196,35 +167,32 @@ void XPUBiGRUCompute::MulRun(bool forward) {
   auto& output = forward ? fw_mul_out : bw_mul_out;
   output.Resize({m, n});
 
-  auto& quant_weight_guard =
-      forward ? fw_mul_quant_weight_guard_ : bw_mul_quant_weight_guard_;
-  auto& weight_max_guard =
-      forward ? fw_mul_weight_max_guard_ : bw_mul_weight_max_guard_;
+  auto& quant_weight_ = forward ? fw_mul_quant_weight_ : bw_mul_quant_weight_;
   auto& bias_guard = forward ? fw_bias_guard_ : bw_bias_guard_;
   const float* bias_ptr =
       (bias_guard == nullptr)
           ? nullptr
           : reinterpret_cast<const float*>(bias_guard->addr_);
   int r = xdnn::fc_fusion<float, int16_t, float, int16_t>(
-      ctx.GetRawContext(),                                          // ctx
-      x_matrix.data<float>(),                                       // x
-      reinterpret_cast<const int16_t*>(quant_weight_guard->addr_),  // w
-      output.mutable_data<float>(TARGET(kXPU)),                     // y
-      m,                                                            // m
-      n,                                                            // n
-      k,                                                            // k
-      false,                                                        // x_trans
-      true,                                                         // w_trans
-      reinterpret_cast<const float*>(input_max_guard_->addr_),      // x_maxptr
-      reinterpret_cast<const float*>(weight_max_guard->addr_),      // w_maxptr
-      reinterpret_cast<float*>(mul_output_max_guard_->addr_),       // y_maxptr,
-      k,                                                            // ldx
-      k,                                                            // ldw
-      n,                                                            // ldy
-      1.0f,                                                         // alpha
-      0.0f,                                                         // beta
-      bias_ptr,                                                     // bias
-      xdnn::Activation_t::LINEAR);                                  // act
+      ctx.GetRawContext(),                                        // ctx
+      x_matrix.data<float>(),                                     // x
+      reinterpret_cast<const int16_t*>(quant_weight_.data_ptr_),  // w
+      output.mutable_data<float>(TARGET(kXPU)),                   // y
+      m,                                                          // m
+      n,                                                          // n
+      k,                                                          // k
+      false,                                                      // x_trans
+      true,                                                       // w_trans
+      reinterpret_cast<const float*>(input_max_guard_->addr_),    // x_maxptr
+      reinterpret_cast<const float*>(quant_weight_.max_ptr_),     // w_maxptr
+      reinterpret_cast<float*>(mul_output_max_guard_->addr_),     // y_maxptr,
+      k,                                                          // ldx
+      k,                                                          // ldw
+      n,                                                          // ldy
+      1.0f,                                                       // alpha
+      0.0f,                                                       // beta
+      bias_ptr,                                                   // bias
+      xdnn::Activation_t::LINEAR);                                // act
   CHECK_EQ(r, 0);
   *(output.mutable_lod()) = origin_x.lod();
 }

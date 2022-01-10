@@ -107,10 +107,18 @@ function compile_publish_inference_lib {
 function run_test() {
   local target_list=$1
   local targets=(${target_list//,/ })
+  rm -rf $(find $WORKSPACE/lite/tests/unittest_py/ -name statics_data)
 
   for target in ${targets[@]}; do
     auto_scan_test $target
   done
+}
+
+function get_summary() {
+  cd $WORKSPACE/lite/tests/unittest_py/op/
+  python3.8 ../global_var_model.py
+  cd $WORKSPACE/lite/tests/unittest_py/pass/
+  python3.8 ../global_var_model.py
 }
 
 function pipeline() {
@@ -145,6 +153,7 @@ function main() {
   done
 
   pipeline $TARGET_LIST
+  get_summary
 
   echo "Success for targets:" $TARGET_LIST
 }

@@ -52,33 +52,13 @@ bool QuantFilter<int8_t>(const float* filter_on_host,
 
 template <typename T, PrecisionType PType>
 void XPUConv2dCompute<T, PType>::PrepareForRun() {
-  auto& ctx = this->ctx_->template As<XPUContext>();
   auto& param = this->template Param<param_t>();
   auto filter_ptr = param.filter->template data<float>();
-  auto filter_len = param.filter->numel();
-  // max
-  float max_f = paddle::lite::xpu::math::FindMaxAbs(filter_ptr, filter_len);
-  int max_ptr_size = get_max_ptr_size(ctx.GetRawContext());
-  std::vector<float> max_f_v(max_ptr_size, max_f);
-  filter_max_guard_ =
-      TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
-  filter_max_ = reinterpret_cast<float*>(filter_max_guard_->addr_);
-  XPU_CALL(xpu_memcpy(filter_max_,
-                      max_f_v.data(),
-                      max_ptr_size * sizeof(float),
-                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
-  // quant
-  quant_filter_guard_ =
-      TargetWrapperXPU::MallocScratchPad(filter_len * sizeof(T));
-  quant_filter_ = reinterpret_cast<T*>(quant_filter_guard_->addr_);
-  std::vector<T> quant_filter_cpu(filter_len, 0);
-  bool ret =
-      QuantFilter<T>(filter_ptr, quant_filter_cpu.data(), max_f, filter_len);
-  CHECK_EQ(ret, true);
-  XPU_CALL(xpu_memcpy(quant_filter_,
-                      quant_filter_cpu.data(),
-                      filter_len * sizeof(T),
-                      XPUMemcpyKind::XPU_HOST_TO_DEVICE));
+  auto filter_dims = param.filter->dims();
+
+  xpu_quant_filter_ =
+      TargetWrapperXPU::ConvertCPUWeightToXPUQuantWeight<float, T>(
+          filter_ptr, filter_dims, false);
 }
 
 template <typename T, PrecisionType PType>
@@ -125,7 +105,7 @@ void XPUConv2dCompute<T, PType>::Run() {
     int r = xdnn::conv2d_fusion<float, T, float, T>(
         ctx.GetRawContext(),
         param.input->template data<float>(),
-        quant_filter_,
+        reinterpret_cast<const T*>(xpu_quant_filter_.data_ptr_),
         reinterpret_cast<float*>(branch_broadcast_guard_->addr_),
         batch,
         img_c,
@@ -138,7 +118,7 @@ void XPUConv2dCompute<T, PType>::Run() {
         dilations,
         groups,
         input_max,
-        filter_max_,
+        reinterpret_cast<const float*>(xpu_quant_filter_.max_ptr_),
         output_max,
         true,
         bias,
@@ -170,7 +150,7 @@ void XPUConv2dCompute<T, PType>::Run() {
     int r = xdnn::conv2d_fusion<float, T, float, T>(
         ctx.GetRawContext(),
         param.input->template data<float>(),
-        quant_filter_,
+        reinterpret_cast<const T*>(xpu_quant_filter_.data_ptr_),
         output,
         batch,
         img_c,
@@ -183,7 +163,7 @@ void XPUConv2dCompute<T, PType>::Run() {
         dilations,
         groups,
         input_max,
-        filter_max_,
+        reinterpret_cast<const float*>(xpu_quant_filter_.max_ptr_),
         output_max,
         true,
         bias,

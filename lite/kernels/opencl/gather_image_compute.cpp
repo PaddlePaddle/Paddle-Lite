@@ -73,29 +73,13 @@ void GatherImageCompute::PrepareForRun() {
 
   auto axis_dims = axis->dims();
 
-  auto* axis_data = axis->data<half_t, cl::Image2D>();
-  std::vector<half_t> axis_image_v(axis_dims.production() * 4);
-  std::vector<float> axis_v(axis_dims.production());
-
-  TargetWrapperCL::ImgcpySync(axis_image_v.data(),
-                              axis_data,
-                              axis->dims().production(),
-                              1,
-                              {0},
-                              {0},
-                              IoDirection::DtoH);
-
-  paddle::lite::CLImageConverterDefault default_convertor;
-  DDim axis_image_shape = default_convertor.InitImageDimInfoWith(axis->dims());
-
-  default_convertor.ImageToNCHW(
-      axis_image_v.data(), axis_v.data(), axis_image_shape, axis_dims);
+  auto* axis_v = axis->data<int>();
 
   CHECK(axis_v[0] <= 1 && axis_v[0] >= 0);
 
   if (axis_v[0] != axis_) axis_ = axis_v[0], axis_change = true;
-  // choose kernel
 
+  // choose kernel
   if (axis_ == 0) {
     kernel_func_name_ = "gather_axis0";
   } else {
@@ -126,10 +110,18 @@ void GatherImageCompute::ReInitWhenNeeded() {
     first_epoch_for_reinit_ = false;
 
     paddle::lite::CLImageConverterDefault default_convertor;
-
-    index_img_shape_ =
-        default_convertor.InitImageDimInfoWith(index->dims());  // w, h
     x_img_shape_ = default_convertor.InitImageDimInfoWith(x->dims());
+    out_img_shape_ =
+        default_convertor.InitImageDimInfoWith(ga_param_->Out->dims());
+
+    auto index_t = ga_param_->Index;
+    index_gpu_t_ = std::unique_ptr<Tensor>(new Tensor);
+    auto index_gpu_data =
+        index_gpu_t_->mutable_data(TARGET(kOpenCL), index_t->memory_size());
+    TargetWrapperCL::MemcpySync(index_gpu_data,
+                                index_t->raw_data(),
+                                index_t->memory_size(),
+                                IoDirection::HtoD);
 
     GetGlobalWorkSize();
   }
@@ -139,18 +131,18 @@ void GatherImageCompute::GetGlobalWorkSize() {
   // VLOG(1) << "走到了GetGlobalWorkSize()" ;
   if (axis_ == 0) {
     global_work_size_ =
-        cl::NDRange{static_cast<cl::size_type>(index_img_shape_[0]),
+        cl::NDRange{static_cast<cl::size_type>(ga_param_->Index->dims()[0]),
                     static_cast<cl::size_type>(x_img_shape_[0])};
   } else {
     global_work_size_ =
-        cl::NDRange{static_cast<cl::size_type>(index_img_shape_[0]),
+        cl::NDRange{static_cast<cl::size_type>(ga_param_->Index->dims()[0]),
                     static_cast<cl::size_type>(x_img_shape_[1])};
   }
   if (axis_ == 0) {
-    VLOG(1) << "global_work_size:[2D]:" << index_img_shape_[0] << " "
+    VLOG(1) << "global_work_size:[2D]:" << ga_param_->Index->dims()[0] << " "
             << x_img_shape_[0] << "\n";
   } else {
-    VLOG(1) << "global_work_size:[2D]:" << index_img_shape_[0] << " "
+    VLOG(1) << "global_work_size:[2D]:" << ga_param_->Index->dims()[0] << " "
             << x_img_shape_[1] << "\n";
   }
 }
@@ -165,7 +157,7 @@ void GatherImageCompute::Run() {
   auto out_dims = out->dims();
   auto* x_img = GET_DATA_GPU(x);
   //  GET_DATA_GPU(index);
-  auto* index_img = index->data<int, cl::Image2D>();
+  auto index_buf = index_gpu_t_->data<int, cl::Buffer>();
 
   auto* out_img =
       MUTABLE_DATA_GPU(out, out_img_shape_[0], out_img_shape_[1], nullptr);
@@ -174,14 +166,14 @@ void GatherImageCompute::Run() {
   if (kernel_func_name_ == "gather_axis0") {  // axis=0
     status = kernel.setArg(0, *x_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(1, *index_img);
+    status = kernel.setArg(1, *index_buf);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(2, *out_img);
     CL_CHECK_FATAL(status);
   } else if (kernel_func_name_ == "gather_axis1") {
     status = kernel.setArg(0, *x_img);
     CL_CHECK_FATAL(status);
-    status = kernel.setArg(1, *index_img);
+    status = kernel.setArg(1, *index_buf);
     CL_CHECK_FATAL(status);
     status = kernel.setArg(2, *out_img);
     CL_CHECK_FATAL(status);
@@ -203,20 +195,20 @@ void GatherImageCompute::Run() {
 
 #ifdef LITE_test_x_index_LOG
   CLRuntime::Global()->command_queue().finish();
-  DDim out_image_shape = default_converter->InitImageDimInfoWith(out_dims);
-  std::vector<half_t> out_image_data(out_dims.production() * 4);
+  CLImageConverterDefault default_converter;
+  std::vector<float> out_image_data(out_img_shape_[0] * out_img_shape_[1] * 4);
   std::vector<float> out_v(out_dims.production());
   auto* out_p = GET_DATA_GPU(out);
   if (out_p == nullptr) VLOG(1) << "out_p== nullptr   ";
   TargetWrapperCL::ImgcpySync(out_image_data.data(),
                               out_img,
-                              out_image_shape[0],
-                              out_image_shape[1],
-                              cl_image2d_row_pitch,
-                              cl_image2d_slice_pitch,
+                              out_img_shape_[0],
+                              out_img_shape_[1],
+                              0,
+                              0,
                               IoDirection::DtoH);
-  default_converter->ImageToNCHW(
-      out_image_data.data(), out_v.data(), out_image_shape, out_dims);
+  default_converter.ImageToNCHW(
+      out_image_data.data(), out_v.data(), out_img_shape_, out_dims);
 
 #endif
   CL_CHECK_FATAL(status);
@@ -235,14 +227,8 @@ REGISTER_LITE_KERNEL(
                {LiteType::GetTensorTy(TARGET(kOpenCL),
                                       PRECISION(kFP16),
                                       DATALAYOUT(kImageDefault))})
-    .BindInput("Index",
-               {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kImageDefault))})
-    .BindInput("Axis",
-               {LiteType::GetTensorTy(TARGET(kOpenCL),
-                                      PRECISION(kFP16),
-                                      DATALAYOUT(kImageDefault))})
+    .BindInput("Index", {LiteType::GetTensorTy(TARGET(kHost))})
+    .BindInput("Axis", {LiteType::GetTensorTy(TARGET(kHost))})
     .BindOutput("Out",
                 {LiteType::GetTensorTy(TARGET(kOpenCL),
                                        PRECISION(kFP16),

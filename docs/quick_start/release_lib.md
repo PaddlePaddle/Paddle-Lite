@@ -122,7 +122,7 @@
 |armv8 |[v2.10](https://github.com/PaddlePaddle/Paddle-Lite/releases/download/v2.10/inference_lite_lib.armv8.clang.with_exception.with_extra.with_cv.opencl.tar.gz) |
 
 
-## 百度昆仑 XPU
+## 昆仑芯 XPU
 
 |Arch |下载链接 |适用的操作系统 |
 |:-----:|:-----:|:-----:|

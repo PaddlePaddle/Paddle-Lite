@@ -645,7 +645,7 @@ void SubgraphFuser::operator()() {
   std::vector<std::vector<Node *>> subgraphs =
       SubgraphDetector(graph_, teller_, subgraph_partition_configs_)();
   if (support_mixed_precision_) {
-    MixPrecisionAutoInsertCalibFuser mixed_precision_auto_insert_calib_fuser(
+    MixedPrecisionAutoInsertCalibFuser mixed_precision_auto_insert_calib_fuser(
         graph_, &subgraphs);
     mixed_precision_auto_insert_calib_fuser();
   }
@@ -653,7 +653,7 @@ void SubgraphFuser::operator()() {
   ReplaceNodesWithSubgraphs(graph_, subgraphs, min_subgraph_size_);
 }
 
-void MixPrecisionAutoInsertCalibFuser::UpdateQuantOpOut(
+void MixedPrecisionAutoInsertCalibFuser::UpdateQuantOpOut(
     const std::vector<Node *> &nodes) {
   for (auto node : nodes) {
     if (!node->IsStmt() || !IsQuantInstNode(node)) continue;
@@ -667,7 +667,7 @@ void MixPrecisionAutoInsertCalibFuser::UpdateQuantOpOut(
   }
 }
 
-void MixPrecisionAutoInsertCalibFuser::InsertQuantCalib(
+void MixedPrecisionAutoInsertCalibFuser::InsertQuantCalib(
     SSAGraph *graph, std::vector<Node *> *nodes) {
   // Record arg nodes to reuse if other inst nodes need the same arg node
   std::map<std::string, Node *> transed_arg_nodes;
@@ -734,7 +734,7 @@ void MixPrecisionAutoInsertCalibFuser::InsertQuantCalib(
   }
 }
 
-void MixPrecisionAutoInsertCalibFuser::InsertDeQuantCalib(
+void MixedPrecisionAutoInsertCalibFuser::InsertDeQuantCalib(
     SSAGraph *graph, std::vector<Node *> *nodes) {
   // Record arg nodes to reuse if other inst nodes need the same arg node
   std::map<std::string, Node *> transed_arg_nodes;
@@ -801,7 +801,7 @@ void MixPrecisionAutoInsertCalibFuser::InsertDeQuantCalib(
   }
 }
 
-void MixPrecisionAutoInsertCalibFuser::operator()() {
+void MixedPrecisionAutoInsertCalibFuser::operator()() {
   for (auto &nodes : *subgraphs_) {
     UpdateQuantOpOut(nodes);
     InsertQuantCalib(graph_, &nodes);

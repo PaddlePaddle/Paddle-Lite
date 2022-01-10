@@ -39,6 +39,58 @@ class XPUQuantizer {
                      bool data_transpose);
 
  private:
+  template <typename T>
+  void QuantFP32ToIntX(const float* src_ptr,
+                       T* dst_ptr,
+                       float max_val,
+                       int numel);
+
+  template <typename T>
+  void ConvertWithoutQuant(const T* cpu_data,
+                           const DDimLite& dims,
+                           bool data_transpose,
+                           size_t hashed_key);
+
+  template <typename Tcpu,
+            typename Txpu,
+            typename std::enable_if<std::is_same<Tcpu, float>::value,
+                                    Tcpu>::type* ptr = nullptr>
+  void ConvertWithQuant(const Tcpu* cpu_data,
+                        const DDimLite& dims,
+                        bool data_transpose,
+                        size_t hashed_key);
+
+  template <typename Tcpu,
+            typename Txpu,
+            typename std::enable_if<!std::is_same<Tcpu, float>::value,
+                                    Tcpu>::type* ptr = nullptr>
+  void ConvertWithQuant(const Tcpu* cpu_data,
+                        const DDimLite& dims,
+                        bool data_transpose,
+                        size_t hashed_key);
+
+  template <typename Tcpu,
+            typename Txpu,
+            typename std::enable_if<!std::is_same<Tcpu, Txpu>::value,
+                                    Tcpu>::type* ptr = nullptr>
+  void ConvertWrapper(const Tcpu* cpu_data,
+                      const DDimLite& dims,
+                      bool data_transpose,
+                      size_t hashed_key) {
+    ConvertWithQuant<Tcpu, Txpu>(cpu_data, dims, data_transpose, hashed_key);
+  }
+
+  template <typename Tcpu,
+            typename Txpu,
+            typename std::enable_if<std::is_same<Tcpu, Txpu>::value,
+                                    Tcpu>::type* ptr = nullptr>
+  void ConvertWrapper(const Tcpu* cpu_data,
+                      const DDimLite& dims,
+                      bool data_transpose,
+                      size_t hashed_key) {
+    ConvertWithoutQuant<Tcpu>(cpu_data, dims, data_transpose, hashed_key);
+  }
+
   // cpu data to xpu quant data
   std::unordered_map<size_t, std::pair<XPUScratchPadGuard, XPUScratchPadGuard>>
       weight_cache_;

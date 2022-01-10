@@ -34,13 +34,15 @@ void pool_avg(const int padding_height,
               const float* input_data,
               const DDim& in_dim,
               float* output_data,
-              const DDim& out_dim) {
+              const DDim& out_dim,
+              const bool adaptive = false) {
   const int batch_size = in_dim[0];
   const int input_height = in_dim[2];
   const int input_width = in_dim[3];
   const int output_channels = out_dim[1];
   const int output_height = out_dim[2];
   const int output_width = out_dim[3];
+  LOG(INFO) << "adaptive: " << adaptive;
 
   const size_t input_spatial_size = input_height * input_width;
   const size_t output_spatial_size = output_height * output_width;
@@ -55,10 +57,18 @@ void pool_avg(const int padding_height,
         int hstart = ph * stride_height - padding_height;
         int hend = std::min(hstart + ksize_height, input_height);
         hstart = std::max(hstart, 0);
+        if (adaptive) {
+          hstart = ph * input_height / output_height;
+          hend = (ph + 1) * input_height / output_height;
+        }
         for (int pw = 0; pw < output_width; ++pw) {
           int wstart = pw * stride_width - padding_width;
           int wend = std::min(wstart + ksize_width, input_width);
           wstart = std::max(wstart, 0);
+          if (adaptive) {
+            wstart = pw * input_width / output_width;
+            wend = (pw + 1) * input_width / output_width;
+          }
 
           float val = 0.f;
           int count = 0;
@@ -140,7 +150,124 @@ TEST(pool2d_image2d, compute) {
   CLRuntime::Global()->command_queue().finish();
 
   std::unique_ptr<float[]> out_ref(new float[out_dim.production()]);
-  pool_avg(1, 1, 1, 1, 3, 3, input_v.data(), in_dim, out_ref.get(), out_dim);
+  pool_avg(1,
+           1,
+           1,
+           1,
+           3,
+           3,
+           input_v.data(),
+           in_dim,
+           out_ref.get(),
+           out_dim,
+           param.adaptive);
+
+  const size_t cl_image2d_row_pitch{0};
+  const size_t cl_image2d_slice_pitch{0};
+  half_t* out_image_data = new half_t[out_image_shape.production() * 4];
+  TargetWrapperCL::ImgcpySync(out_image_data,
+                              out_image,
+                              out_image_shape[0],
+                              out_image_shape[1],
+                              cl_image2d_row_pitch,
+                              cl_image2d_slice_pitch,
+                              IoDirection::DtoH);
+  float* out_data = new float[out_image_shape.production() * 4];
+  default_converter->ImageToNCHW(
+      out_image_data, out_data, out_image_shape, out_dim);
+
+  for (int i = 0; i < out_dim.production(); i++) {
+    auto abs_diff = abs(out_data[i] - out_ref[i]);
+    auto relative_diff = COMPUTE_RELATIVE_DIFF(out_data[i], out_ref[i]);
+    EXPECT_EQ((relative_diff <= FP16_MAX_DIFF) || (abs_diff <= FP16_MAX_DIFF),
+              true);
+    if ((relative_diff > FP16_MAX_DIFF) && (abs_diff > FP16_MAX_DIFF)) {
+      LOG(ERROR) << "error idx:" << i << " out_data[" << i
+                 << "]:" << out_data[i] << " "
+                                           "out_ref["
+                 << i << "]:" << out_ref[i] << " abs_diff:" << abs_diff
+                 << " relative_diff:" << relative_diff
+                 << " FP16_MAX_DIFF:" << FP16_MAX_DIFF;
+    }
+  }
+}
+
+TEST(pool2d_global_pooling_false, compute) {
+  LOG(INFO) << "to get kernel ...";
+  auto kernels = KernelRegistry::Global().Create(
+      "pool2d", TARGET(kOpenCL), PRECISION(kFP16), DATALAYOUT(kImageDefault));
+  ASSERT_FALSE(kernels.empty());
+
+  auto kernel = std::move(kernels.front());
+
+  LOG(INFO) << "get kernel:" << kernel->doc();
+
+  lite::Tensor x, out;
+  operators::PoolParam param;
+  param.x = &x;
+  param.output = &out;
+  param.global_pooling = false;
+  param.pooling_type = "avg";
+  std::vector<int> paddings = {0, 0, 0, 0};
+  param.strides = std::vector<int>{1, 1};
+  param.ksize = std::vector<int>{1, 1};
+  param.paddings = std::make_shared<std::vector<int>>(paddings);
+  param.adaptive = true;
+
+  std::unique_ptr<KernelContext> context(new KernelContext);
+  context->As<OpenCLContext>().InitOnce();
+
+  kernel->SetParam(param);
+  std::unique_ptr<KernelContext> pool_context(new KernelContext);
+  context->As<OpenCLContext>().CopySharedTo(
+      &(pool_context->As<OpenCLContext>()));
+  kernel->SetContext(std::move(pool_context));
+
+  const DDim in_dim = DDim(std::vector<DDim::value_type>{1, 256, 16, 16});
+  const DDim out_dim = DDim(std::vector<DDim::value_type>{1, 256, 1, 1});
+  x.Resize(in_dim);
+  out.Resize(out_dim);
+
+  std::default_random_engine engine;
+  std::uniform_real_distribution<float> dist(-5, 5);
+  std::vector<float> input_v(1 * 256 * 16 * 16);
+  for (auto& i : input_v) {
+    i = dist(engine);
+  }
+
+  LOG(INFO) << "prepare input";
+  CLImageConverterDefault* default_converter = new CLImageConverterDefault();
+  DDim x_image_shape = default_converter->InitImageDimInfoWith(in_dim);
+  LOG(INFO) << "x_image_shape = " << x_image_shape[0] << " "
+            << x_image_shape[1];
+  std::vector<half_t> x_image_data(x_image_shape.production() * 4);  // 4 : RGBA
+  default_converter->NCHWToImage(input_v.data(), x_image_data.data(), in_dim);
+  auto* x_image = x.mutable_data<half_t, cl::Image2D>(
+      x_image_shape[0], x_image_shape[1], x_image_data.data());
+  LOG(INFO) << "x_image:" << x_image;
+
+  DDim out_image_shape = default_converter->InitImageDimInfoWith(out_dim);
+  LOG(INFO) << "out_image_shape = " << out_image_shape[0] << " "
+            << out_image_shape[1];
+  auto* out_image = out.mutable_data<half_t, cl::Image2D>(out_image_shape[0],
+                                                          out_image_shape[1]);
+  LOG(INFO) << "out_image:" << out_image;
+  kernel->Launch();
+
+  CLRuntime::Global()->command_queue().finish();
+
+  std::unique_ptr<float[]> out_ref(new float[out_dim.production()]);
+  pool_avg(0,
+           0,
+           1,
+           1,
+           1,
+           1,
+           input_v.data(),
+           in_dim,
+           out_ref.get(),
+           out_dim,
+           param.adaptive);
 
   const size_t cl_image2d_row_pitch{0};
   const size_t cl_image2d_slice_pitch{0};
