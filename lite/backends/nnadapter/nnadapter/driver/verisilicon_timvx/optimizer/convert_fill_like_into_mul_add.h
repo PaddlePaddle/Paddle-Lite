@@ -18,6 +18,6 @@
 
 namespace nnadapter {
 
-void ConvertFillLikeIntoEltwiseMul(hal::Model *model);
+void ConvertFillLikeIntoMulAdd(hal::Model *model);
 
 }  // namespace nnadapter

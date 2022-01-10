@@ -17,7 +17,7 @@
 #include <algorithm>
 #include <vector>
 #include "driver/verisilicon_timvx/converter/converter.h"
-#include "driver/verisilicon_timvx/optimizer/convert_fill_like_into_eltwise_mul.h"
+#include "driver/verisilicon_timvx/optimizer/convert_fill_like_into_mul_add.h"
 #include "driver/verisilicon_timvx/optimizer/unpack_op_fusion.h"
 #include "optimizer/fuse_matmul_add_into_fully_connected.h"
 #include "optimizer/symm2asymm.h"
@@ -96,7 +96,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     // Build from model
     NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
     FuseMatMulAddIntoFullyConnected(model);
-    ConvertFillLikeIntoEltwiseMul(model);
+    ConvertFillLikeIntoMulAdd(model);
     UnpackOpFusion(model);
     ConvertQuantizationSymmToAsymm(model);
     NNADAPTER_VLOG(5) << "Optimized model:" << std::endl << Visualize(model);
