@@ -355,6 +355,11 @@ const std::string OutputOptModel(const std::string& opt_model_file) {
 
   auto npos = opt_model_file.find(".nb");
   std::string out_name = opt_model_file.substr(0, npos);
+#ifdef __ANDROID__
+  if (out_name.empty()) {
+    out_name = "/data/local/tmp/";
+  }
+#endif
   opt.SetOptimizeOut(out_name);
   bool is_opt_model =
       (FLAGS_uncombined_model_dir.empty() && FLAGS_model_file.empty() &&
@@ -377,7 +382,7 @@ const std::string OutputOptModel(const std::string& opt_model_file) {
   }
 
   std::string saved_opt_model_file =
-      opt_model_file.empty() ? ".nb" : opt_model_file;
+      opt_model_file.empty() ? "/data/local/tmp/.nb" : opt_model_file;
   if (paddle::lite::IsFileExists(saved_opt_model_file)) {
     int err = system(
         lite::string_format("rm -rf %s", saved_opt_model_file.c_str()).c_str());

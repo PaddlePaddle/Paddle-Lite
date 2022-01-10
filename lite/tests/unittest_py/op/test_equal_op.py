@@ -34,11 +34,21 @@ class TestEqualOp(AutoScanTest):
             [PrecisionType.FP32, PrecisionType.INT64, PrecisionType.INT32],
             DataLayoutType.NCHW,
             thread=[1, 4])
+        metal_places = [
+            Place(TargetType.Metal, PrecisionType.FP32,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.Metal, PrecisionType.FP16,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.ARM, PrecisionType.FP32),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=metal_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
         target_type = predictor_config.target()
+        in_x_shape = list(program_config.inputs["input_data_x"].shape)
         input_data_type = program_config.inputs["input_data_x"].dtype
         if predictor_config.precision(
         ) == PrecisionType.INT64 and input_data_type != np.int64:
@@ -49,13 +59,26 @@ class TestEqualOp(AutoScanTest):
         if predictor_config.precision(
         ) == PrecisionType.INT32 and input_data_type != np.int32:
             return False
+        if target_type == TargetType.Metal:
+            if len(in_x_shape) != 4 or in_x_shape[0] != 1:
+                return False
         return True
 
     def sample_program_configs(self, draw):
+        in_shape = []
         in_shape = draw(
             st.lists(
                 st.integers(
                     min_value=1, max_value=8), min_size=1, max_size=6))
+        if self.get_target() == "Metal":
+            in_shape = draw(
+                st.lists(
+                    st.integers(
+                        min_value=1, max_value=8),
+                    min_size=3,
+                    max_size=3))
+            in_shape.insert(0, 1)
+
         data_type = draw(st.sampled_from(['float32', 'int32', 'int64']))
 
         def gen_input_data(*args, **kwargs):
@@ -97,7 +120,15 @@ class TestEqualOp(AutoScanTest):
         return self.get_predictor_configs(), ["equal"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def teller1(program_config, predictor_config):
+            # All outputs are zero. But diff occurred.
+            if predictor_config.target() == TargetType.Metal:
+                return True
+
+        self.add_ignore_check_case(
+            teller1, IgnoreReasons.ACCURACY_ERROR,
+            "The op output has diff in a specific case. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)

@@ -55,17 +55,30 @@ class TestBatchNormOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
+        metal_places = [
+            Place(TargetType.Metal, PrecisionType.FP32,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.Metal, PrecisionType.FP16,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.ARM, PrecisionType.FP32),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=metal_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
+        x_shape = list(program_config.inputs["input_data"].shape)
+        if predictor_config.target() == TargetType.Metal:
+            if x_shape[0] != 1:
+                return False
         return True
 
     def sample_program_configs(self, draw):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=8), min_size=4, max_size=4))
+                    min_value=1, max_value=32), min_size=4, max_size=4))
         is_test_val = draw(st.sampled_from([True, False]))
         epsilon = draw(st.floats(min_value=0.00001, max_value=0.001))
         momentum = draw(st.floats(min_value=0.1, max_value=0.9))
@@ -84,6 +97,13 @@ class TestBatchNormOp(AutoScanTest):
 
         def generate_variance(*args, **kwargs):
             return np.random.random([in_shape[1]]).astype(np.float32)
+
+        outputs = [
+            "output_data", "mean_data", "variance_data", "saved_mean",
+            "saved_variance"
+        ]
+        if self.get_target() == "Metal":
+            outputs = ["output_data"]
 
         batch_norm_ops = OpConfig(
             type="batch_norm",
@@ -120,20 +140,26 @@ class TestBatchNormOp(AutoScanTest):
                 "variance_data":
                 TensorConfig(data_gen=partial(generate_variance)),
             },
-            outputs=[
-                "output_data", "mean_data", "variance_data", "saved_mean",
-                "saved_variance"
-            ])
+            outputs=outputs)
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["batch_norm"], (1e-5, 1e-5)
+        atol, rtol = 1e-5, 1e-5
+        target_str = self.get_target()
+        if target_str == "Metal":
+            atol, rtol = 8e-3, 8e-3
+        return self.get_predictor_configs(), ["batch_norm"], (atol, rtol)
 
     def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        target_str = self.get_target()
+        max_examples = 25
+        if target_str == "Metal":
+            # Make sure to generate enough valid cases for Metal
+            max_examples = 1500
+        self.run_and_statis(quant=False, max_examples=max_examples)
 
 
 if __name__ == "__main__":

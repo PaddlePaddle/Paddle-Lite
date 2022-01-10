@@ -29,12 +29,11 @@ import argparse
 class TestBilinearV2Op(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        # arm has diff
-        # self.enable_testing_on_place(
-        #     TargetType.ARM,
-        #     PrecisionType.FP32,
-        #     DataLayoutType.NCHW,
-        #     thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
         # x86 has diff
         self.enable_testing_on_place(
             TargetType.X86,
@@ -88,7 +87,7 @@ class TestBilinearV2Op(AutoScanTest):
             return np.random.randint(1, 100, size=out_size_shape)
 
         def generate_size_tensor(*args, **kwargs):
-            return np.random.randint(1, 100, [1]).astype(np.int32)
+            return np.random.randint(3, 100, [1]).astype(np.int32)
 
         def generate_scale(*args, **kwargs):
             return np.random.random([1]).astype(np.int32)
@@ -136,7 +135,7 @@ class TestBilinearV2Op(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=50)
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":

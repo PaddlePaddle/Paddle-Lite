@@ -15,6 +15,7 @@
 #include "core/hal/types.h"
 #include "core/operation/resize_nearest.h"
 #include "utility/debug.h"
+#include "utility/hints.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
@@ -75,12 +76,12 @@ int PrepareResize(hal::Operation* operation) {
             << "Unsupported precision: "
             << OperandPrecisionCodeToString(shape_operand->type.precision);
       }
-    } else if (shape_operand->type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {
-      NNADAPTER_CHECK_EQ(shape_operand->length,
-                         sizeof(NNAdapterOperandDimensionType));
-      memcpy(&shape_dims,
-             shape_operand->buffer,
-             sizeof(NNAdapterOperandDimensionType));
+    } else if (IsTemporaryShapeOperand(shape_operand)) {
+      auto& temporary_shape = *(GetTemporaryShape(shape_operand));
+      NNADAPTER_CHECK(temporary_shape.data);
+      NNADAPTER_CHECK(temporary_shape.data[0]);
+      memcpy(
+          &shape_dims, &temporary_shape, sizeof(NNAdapterOperandDimensionType));
     } else {
       NNADAPTER_LOG(FATAL) << "Unsupported shape lifetime: "
                            << OperandLifetimeCodeToString(
@@ -132,7 +133,7 @@ int PrepareResize(hal::Operation* operation) {
                          output_operand->type.dimensions.dynamic_data[i]);
     }
   }
-
+  output_operand->type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
 }
