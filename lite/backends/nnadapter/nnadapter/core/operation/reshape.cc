@@ -16,6 +16,7 @@
 #include <vector>
 #include "core/hal/types.h"
 #include "utility/debug.h"
+#include "utility/hints.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
@@ -27,11 +28,28 @@ int PrepareReshape(hal::Operation* operation) {
   RESHAPE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
-  NNADAPTER_CHECK(IsConstantOperand(shape_operand))
-      << "Only support constant shape now.";
   auto input_type = input_operand->type;
+  auto& shape_type = shape_operand->type;
   auto& output_type = output_operand->type;
   CopyOperandTypeWithQuantParams(&output_type, input_type);
+
+  uint32_t shape_count;
+  int32_t* shape_data = nullptr;
+  if (IsTemporaryShapeOperand(shape_operand)) {
+    auto& temporary_shape = *(GetTemporaryShape(shape_operand));
+    shape_count = temporary_shape.count;
+    shape_data = temporary_shape.data;
+  } else if (IsConstantOperand(shape_operand)) {
+    shape_count = shape_operand->length / sizeof(int32_t);
+    shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);
+  } else {
+    NNADAPTER_LOG(FATAL) << "Unsupported shape lifetime: "
+                         << OperandLifetimeCodeToString(shape_type.lifetime);
+    return NNADAPTER_INVALID_PARAMETER;
+  }
+  for (uint32_t i = 0; i < shape_count; i++) {
+    NNADAPTER_VLOG(5) << "shape[" << i << "] = " << shape_data[i];
+  }
   output_type.dimensions.count = shape_count;
   for (uint32_t i = 0; i < shape_count; i++) {
     if (shape_data[i] == 0 &&
@@ -79,6 +97,7 @@ int PrepareReshape(hal::Operation* operation) {
                        input_type.dimensions.count,
                        output_type.dimensions.dynamic_data[i]);
   }
+  output_type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
 }

@@ -18,38 +18,22 @@ sys.path.append('../')
 from auto_scan_test import AutoScanTest, IgnoreReasons
 from program_config import TensorConfig, ProgramConfig, OpConfig, CxxConfig, TargetType, PrecisionType, DataLayoutType, Place
 import unittest
-from functools import partial
+
 import hypothesis
 from hypothesis import given, settings, seed, example, assume
 import hypothesis.strategies as st
+from functools import partial
+import random
 import numpy as np
 
 
-class TestSqrtOp(AutoScanTest):
+class TestWhereOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        self.enable_testing_on_place(
-            TargetType.X86, [PrecisionType.FP32],
-            DataLayoutType.NCHW,
-            thread=[1, 4])
-        self.enable_testing_on_place(
-            TargetType.ARM, [PrecisionType.FP32],
-            DataLayoutType.NCHW,
-            thread=[1, 4])
-        opencl_places = [
-            Place(TargetType.OpenCL, PrecisionType.FP16,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.FP16,
-                      DataLayoutType.ImageFolder),
-            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-            Place(TargetType.OpenCL, PrecisionType.Any,
-                  DataLayoutType.ImageDefault), Place(
-                      TargetType.OpenCL, PrecisionType.Any,
-                      DataLayoutType.ImageFolder),
-            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-            Place(TargetType.Host, PrecisionType.FP32)
+        host_places = [
+            Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
         ]
-        self.enable_testing_on_place(places=opencl_places)
+        self.enable_testing_on_place(places=host_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -60,35 +44,60 @@ class TestSqrtOp(AutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=64), min_size=1, max_size=4))
+                    min_value=1, max_value=50), min_size=1, max_size=1))
+        in_dtype = draw(st.sampled_from([np.float32, np.int32, np.int64]))
 
-        def generate_input(*args, **kwargs):
-            return np.random.random(in_shape).astype(np.float32)
+        def generate_X_data():
+            return np.random.normal(0.0, 5.0, in_shape).astype(in_dtype)
 
-        ops_config = OpConfig(
-            type="sqrt",
-            inputs={"X": ["input_data"]},
-            outputs={"Out": ["output_data"]},
+        def generate_Condition_data():
+            return np.random.choice(
+                [0, 1], in_shape, replace=True).astype(np.int32)
+
+        cast_op = OpConfig(
+            type="cast",
+            inputs={"X": ["Condition_data"]},
+            outputs={"Out": ["middle_data"]},
+            attrs={
+                "in_dtype": 2,  #int32
+                "out_dtype": 0,  # bool
+            })
+
+        cast_op.outputs_dtype = {"middle_data": np.bool}
+
+        where_op = OpConfig(
+            type="where",
+            inputs={
+                "X": ["X_data"],
+                "Y": ["Y_data"],
+                "Condition": ["middle_data"]
+            },
+            outputs={"Out": ["Out_data"]},
             attrs={})
 
+        where_op.outputs_dtype = {"Out_data": in_dtype}
+
         program_config = ProgramConfig(
-            ops=[ops_config],
+            ops=[cast_op, where_op],
             weights={},
             inputs={
-                "input_data": TensorConfig(data_gen=partial(generate_input))
+                "X_data": TensorConfig(data_gen=partial(generate_X_data)),
+                "Y_data": TensorConfig(data_gen=partial(generate_X_data)),
+                "Condition_data":
+                TensorConfig(data_gen=partial(generate_Condition_data))
             },
-            outputs=["output_data"])
+            outputs=["Out_data"])
 
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["sqrt"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), [""], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=50)
+        self.run_and_statis(quant=False, max_examples=25)
 
 
 if __name__ == "__main__":

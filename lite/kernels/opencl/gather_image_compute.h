@@ -61,8 +61,6 @@ class GatherImageCompute : public KernelLite<TARGET(kOpenCL),
   DDim last_x_dims_;
   DDim x_img_shape_ = DDim(std::vector<DDim::value_type>(
       {static_cast<DDim::value_type>(1), static_cast<DDim::value_type>(1)}));
-  DDim index_img_shape_ = DDim(std::vector<DDim::value_type>(
-      {static_cast<DDim::value_type>(1), static_cast<DDim::value_type>(1)}));
   DDim out_img_shape_ = DDim(std::vector<DDim::value_type>(
       {static_cast<DDim::value_type>(1), static_cast<DDim::value_type>(1)}));
   int axis_ = 0;  // axis默认
@@ -74,6 +72,7 @@ class GatherImageCompute : public KernelLite<TARGET(kOpenCL),
   cl::Kernel kernel_;
   cl::NDRange global_work_size_ = cl::NDRange{
       static_cast<size_t>(1), static_cast<size_t>(1), static_cast<size_t>(1)};
+  std::unique_ptr<Tensor> index_gpu_t_{nullptr};
 };
 
 }  // namespace opencl

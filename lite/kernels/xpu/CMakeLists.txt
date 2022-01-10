@@ -19,6 +19,7 @@ else()
   # basic
   add_kernel(rnn_compute_xpu XPU basic SRCS rnn_compute.cc)
   add_kernel(conv_compute_xpu XPU basic SRCS conv_compute.cc)
+  add_kernel(conv3d_compute_xpu XPU basic SRCS conv3d_compute.cc)
   add_kernel(conv2d_transpose_compute_xpu XPU basic SRCS conv2d_transpose_compute.cc)
   add_kernel(calib_compute_xpu XPU basic SRCS calib_compute.cc)
   add_kernel(io_copy_compute_xpu XPU basic SRCS io_copy_compute.cc)
