@@ -519,7 +519,6 @@ void QuantDequantOpFuser::InsertNewNode(SSAGraph* graph,
     op_info.SetAttr<int>("bit_length", bit_length);
 
 #ifndef LITE_WITH_FPGA
-    std::vector<std::string> input_activation_quant_op = {"matmul"};
     std::string op_type = op_info.Type();
     if (std::find(input_activation_quant_op.begin(),
                   input_activation_quant_op.end(),
