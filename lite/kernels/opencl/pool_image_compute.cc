@@ -196,6 +196,11 @@ class PoolComputeImage2D : public KernelLite<TARGET(kOpenCL),
       CL_CHECK_FATAL(status);
       status = kernel_.setArg(arg_idx++, paddings[0]);
       CL_CHECK_FATAL(status);
+      if (kernel_func_name_ == "pool") {
+        int ad = param.adaptive;
+        status = kernel_.setArg(arg_idx++, ad);
+        CL_CHECK_FATAL(status);
+      }
 
 #ifdef LITE_WITH_LOG
       VLOG(4) << "in_dims: " << in_dims;

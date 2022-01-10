@@ -39,35 +39,65 @@ void BoxCoderCompute::Run() {
 
   auto row = target_box->dims()[0];
   auto col = prior_box->dims()[0];
+
   if (code_type == "decode_center_size") {
     col = target_box->dims()[1];
   }
-  auto len = prior_box->dims()[1];
-  output_box->Resize({row, col, len});
+  auto len = prior_box->dims()[1];      // 4
+  output_box->Resize({row, col, len});  // N x M x 4
   auto* output = output_box->mutable_data<float>();
+  auto axis = param.axis;
 
-  const float* loc_data = target_box->data<float>();
-  const float* prior_data = prior_box->data<float>();
-  const float* variance_data;
+  const float* target_box_data = target_box->data<float>();
+  const float* prior_box_data = prior_box->data<float>();
+
   bool var_len4 = false;
-  if (param.prior_box_var != nullptr) {
+  int var_size = 0;
+  const float* variance_data;
+  if (prior_box_var != nullptr) {
+    var_size = 2;
     variance_data = prior_box_var->data<float>();
     var_len4 = false;
   } else {
+    var_size = 1;
     variance_data = param.variance.data();
     var_len4 = true;
   }
-
-  lite::arm::math::decode_bboxes(row,
-                                 param.axis,
-                                 loc_data,
-                                 prior_data,
-                                 variance_data,
-                                 var_len4,
-                                 code_type,
-                                 normalized,
-                                 col,
-                                 output);
+  if (code_type == "encode_center_size") {
+    lite::arm::math::encode_bbox_center_kernel(row,
+                                               target_box_data,
+                                               prior_box_data,
+                                               variance_data,
+                                               var_len4,
+                                               col,
+                                               output);
+  } else if (code_type == "decode_center_size") {
+    if (axis == 0) {
+      lite::arm::math::decode_bbox_center_kernel(row,
+                                                 target_box_data,
+                                                 prior_box_data,
+                                                 variance_data,
+                                                 var_len4,
+                                                 col,
+                                                 normalized,
+                                                 output);
+    } else {
+      auto prior_box_var_data =
+          prior_box_var ? prior_box_var->data<float>() : nullptr;
+      lite::arm::math::decode_center_size_axis_1(var_size,
+                                                 row,
+                                                 col,
+                                                 len,
+                                                 target_box_data,
+                                                 prior_box_data,
+                                                 prior_box_var_data,
+                                                 normalized,
+                                                 variance,
+                                                 output);
+    }
+  } else {
+    LOG(FATAL) << "box_coder don't support this code_type: " << code_type;
+  }
 }
 
 #ifdef ENABLE_ARM_FP16

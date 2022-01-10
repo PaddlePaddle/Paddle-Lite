@@ -50,9 +50,23 @@ int ConvertReshape(Converter* converter, OpInfo* op, Scope* scope) {
   // "ShapeTensor"(input) > "Shape"(input) > "shape"(attr)
   NNAdapterOperand* shape_operand = nullptr;
   if (HasInput(op, scope, "ShapeTensor")) {
-    // TODO(zhupengyang): apply concat
-    LOG(WARNING) << "Not support ShapeTensor!";
-    return UNSUPPORTED_FEATURE;
+    std::vector<NNAdapterOperand*> shapes_operands;
+    for (auto shapes_tensor_name : op->Input("ShapeTensor")) {
+      auto shapes_tensor_scale_name = shapes_tensor_name + "_scale";
+      std::vector<float> shapes_tensor_scales;
+      if (op->HasInputScale(shapes_tensor_scale_name, true)) {
+        shapes_tensor_scales =
+            op->GetInputScale(shapes_tensor_scale_name, true);
+      }
+      auto shapes_operand = converter->AddInputOperand(
+          scope, shapes_tensor_name, {}, shapes_tensor_scales);
+      shapes_operands.push_back(shapes_operand);
+    }
+    auto axis_operand = converter->AddConstantOperand(0);
+    shapes_operands.push_back(axis_operand);
+    shape_operand = converter->AddOutputOperand(out_name + "/concat");
+    // Concat operation
+    converter->AddOperation(NNADAPTER_CONCAT, shapes_operands, {shape_operand});
   } else if (HasInput(op, scope, "Shape")) {
     auto shape_name = op->Input("Shape").front();
     shape_operand = converter->AddInputOperand(scope, shape_name);

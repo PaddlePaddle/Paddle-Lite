@@ -49,7 +49,7 @@ Paddle Lite 提供了 C++、Java、Python 三种 API，并且提供了相应 API
 - [百度 EdgeBoard FPGA 示例](https://paddle-lite.readthedocs.io/zh/develop/demo_guides/fpga.html)
 - [华为麒麟 NPU 示例](https://paddle-lite.readthedocs.io/zh/develop/demo_guides/huawei_kirin_npu.html)
 - [华为昇腾 NPU 示例](https://paddle-lite.readthedocs.io/zh/develop/demo_guides/huawei_ascend_npu.html)
-- [百度昆仑 XPU 示例](https://paddle-lite.readthedocs.io/zh/develop/demo_guides/baidu_xpu.html)
+- [昆仑芯 XPU 示例](https://paddle-lite.readthedocs.io/zh/develop/demo_guides/kunlunxin_xpu.html)
 - [瑞芯微 NPU 示例](https://paddle-lite.readthedocs.io/zh/develop/demo_guides/rockchip_npu.html)
 - [联发科 APU 示例](https://paddle-lite.readthedocs.io/zh/develop/demo_guides/mediatek_apu.html)
 - [比特大陆 NPU 示例](https://paddle-lite.readthedocs.io/zh/develop/demo_guides/bitmain.html)
@@ -76,7 +76,7 @@ Paddle Lite 提供了 C++、Java、Python 三种 API，并且提供了相应 API
 | 百度 EdgeBoard FPGA | - | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | - | - |
 | 华为麒麟 NPU | - | - | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | - |
 | 华为昇腾 NPU | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | - | - |
-| 百度昆仑 XPU | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | - | - |
+| 昆仑芯 XPU | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | - | - |
 | 瑞芯微 NPU | - | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | - | - |
 | 联发科 APU | - | - | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | - |
 | 比特大陆 NPU | - | ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) | - | - |

@@ -1,9 +1,9 @@
-.. Paddle Lite documentation master file, created by
+.. Paddle-Lite documentation master file, created by
    sphinx-quickstart on Thu Feb  6 14:11:30 2020.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Paddle Lite's documentation!
+Welcome to Paddle-Lite's documentation!
 =======================================
 
 *请在页面左下角选择特定版本的文档。*
@@ -15,16 +15,6 @@ Welcome to Paddle Lite's documentation!
 
   guide/introduction
   guide/roadmap
-
-.. toctree::
-  :maxdepth: 1
-  :caption: 性能
-  :name: sec-performance
-  
-  performance/best_practices
-  performance/benchmark_tools
-  performance/benchmark
-  performance/gpu
 
 .. toctree::
   :maxdepth: 1
@@ -41,24 +31,45 @@ Welcome to Paddle Lite's documentation!
 
 .. toctree::
   :maxdepth: 1
+  :caption: 源码编译
+  :name: sec-source-compile
+
+  source_compile/compile_env
+  source_compile/docker_env
+  source_compile/linux_x86_compile_linux_x86
+  source_compile/linux_x86_compile_arm_linux
+  source_compile/linux_x86_compile_android
+  source_compile/arm_linux_compile_arm_linux
+  source_compile/macos_compile_macos
+  source_compile/macos_compile_ios
+  source_compile/macos_compile_android
+  source_compile/windows_compile_windows
+  source_compile/compile_options
+  source_compile/library_tailoring
+
+.. toctree::
+  :maxdepth: 2
   :caption: 程序开发
   :name: program-development
 
   user_guides/cpp_demo
   user_guides/java_demo
   user_guides/python_demo
-  user_guides/quant_post_dynamic_demo
   user_guides/development_overview
   user_guides/model_optimize_tool
+  user_guides/opt/opt_bin
+  user_guides/opt/opt_python
+  user_guides/opt/x2paddle&opt
   user_guides/quant_aware
-  user_guides/quant_post_dynamic
-  user_guides/quant_post_static
+  user_guides/quant/quant_post_dynamic
+  user_guides/quant/quant_post_static
+  user_guides/quant/quant_post_dynamic_demo
   user_guides/model_visualization
   user_guides/profiler
 
 .. toctree::
   :maxdepth: 1
-  :caption: 部署示例
+  :caption: 多硬件部署示例
   :name: sec-demo_guides
 
   demo_guides/android_app_demo
@@ -80,21 +91,25 @@ Welcome to Paddle Lite's documentation!
 
 .. toctree::
   :maxdepth: 1
-  :caption: 源码编译
-  :name: sec-source-compile
+  :caption: 性能优化
+  :name: sec-performance
+  
+  performance/best_practices
+  performance/benchmark_tools
+  performance/benchmark
+  performance/gpu
 
-  source_compile/compile_env
-  source_compile/docker_env
-  source_compile/linux_x86_compile_linux_x86
-  source_compile/linux_x86_compile_arm_linux
-  source_compile/linux_x86_compile_android
-  source_compile/arm_linux_compile_arm_linux
-  source_compile/macos_compile_macos
-  source_compile/macos_compile_ios
-  source_compile/macos_compile_android
-  source_compile/windows_compile_windows
-  source_compile/compile_options
-  source_compile/library_tailoring
+.. toctree::
+  :maxdepth: 1
+  :caption: 开发者贡献
+
+  develop_guides/for-developer
+  develop_guides/architecture-intro
+  develop_guides/add_operation
+  develop_guides/add_layout
+  develop_guides/add_new_pass
+  develop_guides/add_hardware
+  develop_guides/nnadapter
 
 .. toctree::
   :maxdepth: 1
@@ -111,18 +126,6 @@ Welcome to Paddle Lite's documentation!
   api_reference/java_api_doc
   api_reference/python_api_doc
   api_reference/cv
-
-.. toctree::
-  :maxdepth: 1
-  :caption: 开发者贡献
-
-  develop_guides/for-developer
-  develop_guides/architecture-intro
-  develop_guides/add_operation
-  develop_guides/add_layout
-  develop_guides/add_new_pass
-  develop_guides/add_hardware
-  develop_guides/nnadapter
 
 .. toctree::
   :maxdepth: 1

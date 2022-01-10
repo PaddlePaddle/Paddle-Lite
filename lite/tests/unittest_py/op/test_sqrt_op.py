@@ -63,7 +63,7 @@ class TestSqrtOp(AutoScanTest):
                     min_value=1, max_value=64), min_size=1, max_size=4))
 
         def generate_input(*args, **kwargs):
-            return np.random.normal(0.1, 1, in_shape).astype(np.float32)
+            return np.random.random(in_shape).astype(np.float32)
 
         ops_config = OpConfig(
             type="sqrt",
@@ -85,13 +85,7 @@ class TestSqrtOp(AutoScanTest):
         return self.get_predictor_configs(), ["sqrt"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def teller1(program_config, predictor_config):
-            return True
-
-        self.add_ignore_check_case(
-            teller1, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff in a specific case. We need to fix it as soon as possible."
-        )
+        pass
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=50)

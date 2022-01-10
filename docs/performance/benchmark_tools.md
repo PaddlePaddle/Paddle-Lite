@@ -386,7 +386,7 @@ adb shell "cd /data/local/tmp/benchmark;
     --input_shape=1,3,224,224 \
     --warmup=10 \
     --repeats=20 \
-    --backend=opemncl,arm \
+    --backend=opencl,arm \
     --opencl_cache_dir=/data/local/tmp \
     --opencl_kernel_cache_file=MobileNetV1_kernel.bin \
     --opencl_tuned_file=MobileNetV1_tuned.bin"
