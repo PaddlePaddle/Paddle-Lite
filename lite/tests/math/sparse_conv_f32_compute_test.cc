@@ -149,7 +149,7 @@ int ComputeSemiSparseZeros(const Tensor* weights,
   *count_channels = height;
   *count_nonzeroes = num_nonzeroes;
   *count_blocks = num_nonzeroes;
-  if (num_block2_nonzeroes * 5 >= num_nonzero_blocks2 * 9) {
+  if ((num_block2_nonzeroes * 5 >= num_nonzero_blocks2 * 9) && (height > 1)) {
     // 2-channel blocks have 90%+ non-zeroes
     *count_channels = (*count_channels) / 2 + (*count_channels) % 2;
     // spmm_parameters = &xnn_params.f32.spmm2;
