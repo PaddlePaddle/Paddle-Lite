@@ -53,10 +53,28 @@ class TestDropoutOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_valid_places)
+        metal_places = [
+            Place(TargetType.Metal, PrecisionType.FP32,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.Metal, PrecisionType.FP16,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.ARM, PrecisionType.FP32),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=metal_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
+        target_type = predictor_config.target()
+        in_x_shape = list(program_config.inputs["input_data_x"].shape)
+        dropout_implementation = program_config.ops[0].attrs[
+            "dropout_implementation"]
+        if target_type == TargetType.Metal:
+            if in_x_shape[0] != 1 or len(in_x_shape) != 4 \
+                or dropout_implementation != 'downgrade_in_infer':
+                return False
+
         return True
 
     def sample_program_configs(self, draw):
@@ -64,7 +82,7 @@ class TestDropoutOp(AutoScanTest):
         input_data_x_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=20), min_size=2, max_size=4))
+                    min_value=1, max_value=32), min_size=2, max_size=4))
         dropout_prob = draw(st.floats(min_value=0, max_value=1))
         seed = draw(st.integers(min_value=0, max_value=1024))
         dropout_implementation = draw(
@@ -87,6 +105,10 @@ class TestDropoutOp(AutoScanTest):
             return inputs, inputs_tensor
 
         inputs, inputs_tensor = GenOpInputs()
+        outputs = ["output_data", "mask_data"]
+        if self.get_target() == "Metal":
+            outputs = ["output_data"]
+
         dropout_op = OpConfig(
             type="dropout",
             inputs=inputs,
@@ -103,12 +125,16 @@ class TestDropoutOp(AutoScanTest):
             ops=[dropout_op],
             weights={"mask_data": TensorConfig(shape=input_data_x_shape)},
             inputs=inputs_tensor,
-            outputs=["output_data", "mask_data"])
+            outputs=outputs)
         return program_config
 
     def sample_predictor_configs(self):
-        config = CxxConfig()
-        return self.get_predictor_configs(), ["dropout"], (1e-5, 1e-5)
+        atol, rtol = 1e-5, 1e-5
+        target_str = self.get_target()
+        if target_str == "Metal":
+            atol, rtol = 1e-3, 1e-3
+
+        return self.get_predictor_configs(), ["dropout"], (atol, rtol)
 
     def add_ignore_pass_case(self):
         def skip_seed_input_case(program_config, predictor_config):
@@ -122,8 +148,10 @@ class TestDropoutOp(AutoScanTest):
             "Paddle-Lite not support 'Seed' as the input of dropout!")
 
         def skip_is_test_with_false_case(program_config, predictor_config):
-            if predictor_config.target(
-            ) in [TargetType.X86, TargetType.ARM, TargetType.OpenCL]:
+            if predictor_config.target() in [
+                    TargetType.X86, TargetType.ARM, TargetType.OpenCL,
+                    TargetType.Metal
+            ]:
                 if program_config.ops[0].attrs['is_test'] == False:
                     return True
             return False
@@ -134,7 +162,12 @@ class TestDropoutOp(AutoScanTest):
         )
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=300)
+        target_str = self.get_target()
+        max_examples = 300
+        if target_str == "Metal":
+            # Make sure to generate enough valid cases for Metal
+            max_examples = 3000
+        self.run_and_statis(quant=False, max_examples=max_examples)
 
 
 if __name__ == "__main__":
