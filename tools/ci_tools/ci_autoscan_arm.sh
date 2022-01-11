@@ -142,14 +142,18 @@ function run_python_demo() {
   local target_list=$1
   local targets=(${target_list//,/ })
 
+  # Download model
   local download_dir="${WORKSPACE}/Models/"
   local force_download="ON"
   prepare_models $download_dir $force_download
   local model_dir=${download_dir}/$(ls $download_dir)
 
+  # Requirements
+  python$PYTHON_VERSION -m pip install opencv-python
+
+  # Run demo & check result
   cd $WORKSPACE/lite/demo/python/
   local log_file="log"
-
   for target in ${targets[@]}; do
     # mobilenetv1_full_api
     python$PYTHON_VERSION mobilenetv1_full_api.py \
@@ -176,13 +180,6 @@ function pipeline() {
 
   # Run unittests
   run_test $1
-
-  # Run python demo
-  run_python_demo $1
-
-  # Uninstall paddlelite
-  python$PYTHON_VERSION -m pip uninstall -y paddlelite
-  echo "Success for targets:" $1
 }
 
 function main() {
@@ -204,12 +201,15 @@ function main() {
     esac
   done
 
-  # Check op/pass unittests
+  # Run op/pass unittests
   pipeline $TARGET_LIST
   get_summary
 
-  # Check python demo
-  check_python_demo
+  # Run python demo
+  run_python_demo $TARGET_LIST
+
+  # Uninstall paddlelite
+  python$PYTHON_VERSION -m pip uninstall -y paddlelite
 
   echo "Success for targets:" $TARGET_LIST
 }
