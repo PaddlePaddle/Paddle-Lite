@@ -40,9 +40,21 @@ function prepare_models {
 
   rm -rf $model_zoo_dir && mkdir $model_zoo_dir && cd $model_zoo_dir
   # download compressed model recorded in $MODELS_URL
+  local bak_http_proxy=""
+  local bak_https_proxy=""
+  if [ $http_proxy ]; then
+    bak_http_proxy=$http_proxy
+    bak_https_proxy=$https_proxy
+    unset http_proxy
+    unset https_proxy
+  fi
   for url in ${MODELS_URL[@]}; do
     wget $url
   done
+  if [ $bak_http_proxy ]; then
+    export http_proxy=$bak_http_proxy
+    export https_proxy=$bak_https_proxy
+  fi
 
   compressed_models=$(ls)
   # decompress models
@@ -217,18 +229,18 @@ function android_prepare_device() {
 function prepare_workspace() {
     local root_dir=$1
     local build_dir=$2
-    
+
     # 1. Prepare gen_code file
     local GEN_CODE_PATH_PREFIX=$build_dir/lite/gen_code
     mkdir -p ${GEN_CODE_PATH_PREFIX}
     touch ${GEN_CODE_PATH_PREFIX}/__generated_code__.cc
-    
+
     # 2.Prepare debug tool
     local DEBUG_TOOL_PATH_PREFIX=$build_dir/lite/tools/debug
     mkdir -p ${DEBUG_TOOL_PATH_PREFIX}
     cp $root_dir/lite/tools/debug/analysis_tool.py ${DEBUG_TOOL_PATH_PREFIX}/
-    
-    prepare_thirdparty $root_dir 
+
+    prepare_thirdparty $root_dir
 }
 
 # Prepare source code of opencl lib
