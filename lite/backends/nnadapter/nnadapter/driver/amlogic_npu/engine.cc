@@ -41,12 +41,34 @@ void Program::Clear() {
   tensors_.clear();
   input_types_.clear();
   output_types_.clear();
+  valid_shapes_.clear();
   dump_graph_path_ = "";
   dump_graph_buffer_ = nullptr;
 }
 
+void Program::SetValidShapes(
+    const std::vector<NNAdapterOperandType>& input_types) {
+  std::vector<std::vector<int32_t>> shapes;
+  for (auto input_type : input_types) {
+    NNADAPTER_CHECK(!IsDynamicShapeOperandType(input_type))
+        << "Not support dynamic input shapes now.";
+    auto shape_size = input_type.dimensions.count;
+    auto shape_data = input_type.dimensions.data;
+    std::vector<int32_t> shape(shape_data, shape_data + shape_size);
+    valid_shapes_.push_back(shape);
+  }
+}
+
 int Program::Build(hal::Model* model, hal::Cache* cache) {
   Clear();
+  if (!cache->buffer.empty()) {
+    input_types_ = cache->input_types;
+  } else {
+    for (auto input_operand : model->input_operands) {
+      input_types_.push_back(input_operand->type);
+    }
+  }
+  SetValidShapes(input_types_);
   if (model && cache->dir && cache->token) {
     dump_graph_path_ = string_format("%s/%s.dat", cache->dir, cache->token);
   }
@@ -83,14 +105,12 @@ int Program::BuildFromModel(hal::Model* model) {
   std::vector<std::shared_ptr<aml::nn::Tensor>> input_tensors;
   if (input_count > 0) {
     input_tensors.resize(input_count);
-    input_types_.resize(input_count);
     for (size_t i = 0; i < input_count; i++) {
       auto operand = model->input_operands[i];
       const auto& type = operand->type;
       NNADAPTER_CHECK(tensors_.find(operand) != tensors_.end());
       input_tensors[i] = tensors_[operand].back();
       NNADAPTER_CHECK(input_tensors[i]);
-      input_types_[i] = type;
     }
   }
   auto output_count = model->output_operands.size();
@@ -137,7 +157,6 @@ int Program::BuildFromCache(hal::Cache* cache) {
   std::vector<std::shared_ptr<aml::nn::Tensor>> input_tensors;
   if (input_count > 0) {
     input_tensors.resize(input_count);
-    input_types_ = cache->input_types;
     for (size_t i = 0; i < input_count; i++) {
       const auto& type = cache->input_types[i];
       input_tensors[i] = CreateAmlTensor(
@@ -259,6 +278,17 @@ int Program::Execute(uint32_t input_count,
     dump_graph_path_ = "";
   }
   return NNADAPTER_NO_ERROR;
+}
+
+bool Program::CheckShapeValid() {
+  std::vector<std::vector<int32_t>> shapes;
+  for (auto& input_type : input_types_) {
+    uint32_t size = input_type.dimensions.count;
+    int32_t* data = input_type.dimensions.data;
+    std::vector<int32_t> shape(data, data + size);
+    shapes.push_back(shape);
+  }
+  return valid_shapes_ == shapes;
 }
 
 }  // namespace amlogic_npu

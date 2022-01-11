@@ -98,6 +98,9 @@ int ExecuteProgram(void* program,
     return NNADAPTER_INVALID_PARAMETER;
   }
   auto p = reinterpret_cast<Program*>(program);
+  if (!p->CheckShapeValid()) {
+    return NNADAPTER_INVALID_DIMENSIONS;
+  }
   return p->Execute(
       input_count, input_arguments, output_count, output_arguments);
 }

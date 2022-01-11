@@ -27,115 +27,6 @@
 namespace nnadapter {
 namespace huawei_ascend_npu {
 
-static void UpdateDynamicShapeMode(
-    const NNAdapterOperandDimensionType& dimensions, DynamicShapeMode* mode) {
-  bool is_nchw = dimensions.count == 4;
-  bool b_unk = dimensions.data[0] == NNADAPTER_UNKNOWN;
-  bool c_unk = dimensions.data[1] == NNADAPTER_UNKNOWN;
-  bool h_unk = dimensions.data[2] == NNADAPTER_UNKNOWN;
-  bool w_unk = dimensions.data[3] == NNADAPTER_UNKNOWN;
-  if (is_nchw && b_unk && !c_unk && !h_unk && !w_unk) {
-    if (*mode == DYNAMIC_SHAPE_MODE_NONE) {
-      *mode = DYNAMIC_SHAPE_MODE_BTACH_SIZE;
-    }
-    if (*mode != DYNAMIC_SHAPE_MODE_BTACH_SIZE) {
-      *mode = DYNAMIC_SHAPE_MODE_N_DIMS;
-    }
-  } else if (is_nchw && !b_unk && !c_unk && (h_unk || w_unk)) {
-    if (*mode == DYNAMIC_SHAPE_MODE_NONE) {
-      *mode = DYNAMIC_SHAPE_MODE_HEIGHT_WIDTH;
-    } else {
-      // only support one input has dynamic h&w
-      *mode = DYNAMIC_SHAPE_MODE_N_DIMS;
-    }
-  } else {
-    *mode = DYNAMIC_SHAPE_MODE_N_DIMS;
-  }
-}
-
-static void GetDynamicInfo(const std::vector<NNAdapterOperandType>& input_types,
-                           std::vector<std::string>* shapes,
-                           std::string* optional_shapes_str,
-                           DynamicShapeMode* mode) {
-  // Get dynamic shape mode from all inputs. Rules are as follows:
-  // 1. If all shapes are const, mode is DYNAMIC_SHAPE_MODE_NONE.
-  // 2. If only batch of inputs is unknown, mode is
-  // DYNAMIC_SHAPE_MODE_BTACH_SIZE.
-  // 3. If only one 4-D input has dynamic height or weight, mode is
-  // DYNAMIC_SHAPE_MODE_HEIGHT_WIDTH.
-  // 4. Others belong to DYNAMIC_SHAPE_MODE_N_DIMS.
-  *mode = DYNAMIC_SHAPE_MODE_NONE;
-  for (auto& input_type : input_types) {
-    auto dimensions = input_type.dimensions;
-    if (dimensions.dynamic_count == 0) continue;
-    UpdateDynamicShapeMode(dimensions, mode);
-  }
-
-  // Generate shapes string according to mode.
-  std::vector<std::string> optional_shapes;
-  for (auto& input_type : input_types) {
-    auto dimensions = input_type.dimensions;
-    if (dimensions.dynamic_count == 0) {
-      std::vector<int32_t> shape(dimensions.data,
-                                 dimensions.data + dimensions.count);
-      shapes->push_back(ShapeToString(shape));
-      continue;
-    }
-
-    if (optional_shapes.empty()) {
-      optional_shapes.resize(dimensions.dynamic_count);
-    }
-
-    std::vector<int32_t> shape(dimensions.data,
-                               dimensions.data + dimensions.count);
-    switch (*mode) {
-      case DYNAMIC_SHAPE_MODE_BTACH_SIZE: {
-        shapes->push_back(ShapeToString(shape));
-        for (size_t i = 0; i < optional_shapes.size(); i++) {
-          auto& optional_shape_str = optional_shapes.at(i);
-          auto dynamic_batch_str =
-              std::to_string(dimensions.dynamic_data[i][0]);
-          if (optional_shape_str.empty()) {
-            optional_shape_str = dynamic_batch_str;
-          }
-          NNADAPTER_CHECK_EQ(optional_shape_str, dynamic_batch_str);
-        }
-      } break;
-      case DYNAMIC_SHAPE_MODE_HEIGHT_WIDTH: {
-        NNADAPTER_CHECK_EQ(shape.size(), 4UL);
-        shape[2] = -1;
-        shape[3] = -1;
-        shapes->push_back(ShapeToString(shape));
-        for (size_t i = 0; i < optional_shapes.size(); i++) {
-          auto& optional_shape_str = optional_shapes.at(i);
-          NNADAPTER_CHECK(optional_shape_str.empty());
-          optional_shape_str = std::to_string(dimensions.dynamic_data[i][2]) +
-                               "," +
-                               std::to_string(dimensions.dynamic_data[i][3]);
-        }
-      } break;
-      case DYNAMIC_SHAPE_MODE_N_DIMS: {
-        shapes->push_back(ShapeToString(shape));
-        for (size_t i = 0; i < optional_shapes.size(); i++) {
-          auto& optional_shape_str = optional_shapes.at(i);
-          for (uint32_t j = 0; j < dimensions.count; j++) {
-            if (dimensions.data[j] != NNADAPTER_UNKNOWN) continue;
-            if (!optional_shape_str.empty()) {
-              optional_shape_str += ",";
-            }
-            optional_shape_str += dimensions.dynamic_data[i][j];
-          }
-        }
-      } break;
-      default:
-        NNADAPTER_LOG(FATAL) << "Unsupported dynamic shape mode: " << mode;
-        break;
-    }
-  }
-
-  *optional_shapes_str = MergeOptionalShapesString(optional_shapes, *mode);
-}
-
 Device::Device() { InitializeAscendCL(); }
 
 Device::~Device() {}
@@ -234,17 +125,18 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
 
   std::vector<std::string> dynamic_shapes;
   std::string optional_shapes_str;
-  std::vector<NNAdapterOperandType> input_types;
   if (!cache->buffer.empty()) {
-    input_types = cache->input_types;
+    input_types_ = cache->input_types;
   } else {
     for (auto input_operand : model->input_operands) {
-      input_types.push_back(input_operand->type);
+      input_types_.push_back(input_operand->type);
     }
   }
-  SetValidShapes(input_types);
-  GetDynamicInfo(
-      input_types, &dynamic_shapes, &optional_shapes_str, &dynamic_shape_mode_);
+  SetValidShapes(input_types_);
+  GetDynamicInfo(input_types_,
+                 &dynamic_shapes,
+                 &optional_shapes_str,
+                 &dynamic_shape_mode_);
   for (auto dynamic_shape : dynamic_shapes) {
     NNADAPTER_VLOG(3) << "dynamic_shape: " << dynamic_shape;
   }
@@ -258,7 +150,6 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     model_buffer = &cache->buffer;
     auto input_count = cache->input_types.size();
     NNADAPTER_VLOG(3) << "Model input count: " << input_count;
-    input_types_ = cache->input_types;
     auto output_count = cache->output_types.size();
     NNADAPTER_VLOG(3) << "Model output count: " << output_count;
     NNADAPTER_CHECK_GT(output_count, 0);
@@ -281,12 +172,10 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     std::vector<ge::Operator> input_operators;
     if (input_count > 0) {
       input_operators.resize(input_count);
-      input_types_.resize(input_count);
       for (size_t i = 0; i < input_count; i++) {
         auto operand = model->input_operands[i];
         NNADAPTER_CHECK(operators_.find(operand) != operators_.end());
         input_operators[i] = *operators_[operand].back()->op();
-        input_types_[i] = operand->type;
       }
     }
     auto output_count = model->output_operands.size();

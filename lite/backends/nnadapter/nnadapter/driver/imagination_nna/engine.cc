@@ -43,6 +43,7 @@ void Program::Clear() {
   output_info_.clear();
   input_types_.clear();
   output_types_.clear();
+  valid_shapes_.clear();
   for (size_t i = 0; i < input_memory_.size(); i++) {
     if (input_memory_[i].first) {
       imgdnn_mgr_->DestroyMemory(input_memory_[i].first);
@@ -59,6 +60,14 @@ void Program::Clear() {
 
 int Program::Build(hal::Model* model, hal::Cache* cache) {
   Clear();
+  if (!cache->buffer.empty()) {
+    input_types_ = cache->input_types;
+  } else {
+    for (auto input_operand : model->input_operands) {
+      input_types_.push_back(input_operand->type);
+    }
+  }
+  SetValidShapes(input_types_);
   // Convert the quantization parameters of the operands in the NNAdapter model
   NNADAPTER_VLOG(5) << "Origin model:" << std::endl << Visualize(model);
   ConvertQuantizationSymmToAsymm(model);
@@ -76,14 +85,12 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
   std::vector<imgdnn_tensor> input_tensors;
   if (input_count > 0) {
     input_tensors.resize(input_count);
-    input_types_.resize(input_count);
     for (size_t i = 0; i < input_count; i++) {
       auto operand = model->input_operands[i];
       const auto& type = operand->type;
       NNADAPTER_CHECK(tensors_.find(operand) != tensors_.end());
       input_tensors[i] = tensors_[operand].back();
       NNADAPTER_CHECK(input_tensors[i]);
-      input_types_[i] = type;
     }
   }
   auto output_count = model->output_operands.size();
@@ -217,6 +224,17 @@ int Program::Execute(uint32_t input_count,
     imgdnn_mgr_->UnlockMemory(output_buffers[i].second.second);
   }
   return NNADAPTER_NO_ERROR;
+}
+
+bool Program::CheckShapeValid() {
+  std::vector<std::vector<int32_t>> shapes;
+  for (auto& input_type : input_types_) {
+    uint32_t size = input_type.dimensions.count;
+    int32_t* data = input_type.dimensions.data;
+    std::vector<int32_t> shape(data, data + size);
+    shapes.push_back(shape);
+  }
+  return valid_shapes_ == shapes;
 }
 
 }  // namespace imagination_nna

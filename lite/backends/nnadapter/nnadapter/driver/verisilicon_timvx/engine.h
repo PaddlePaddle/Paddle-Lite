@@ -49,9 +49,11 @@ class Program {
               hal::Argument* input_arguments,
               uint32_t output_count,
               hal::Argument* output_arguments);
+  bool CheckShapeValid();
 
  private:
   void Clear();
+  void SetValidShapes(const std::vector<NNAdapterOperandType>& input_types);
 
  private:
   Context* context_{nullptr};
@@ -62,6 +64,7 @@ class Program {
   std::shared_ptr<tim::vx::Context> ctx_{nullptr};
   std::vector<NNAdapterOperandType> input_types_;
   std::vector<NNAdapterOperandType> output_types_;
+  std::vector<std::vector<int32_t>> valid_shapes_;
   std::vector<std::shared_ptr<tim::vx::Tensor>> input_tensors_;
   std::vector<std::shared_ptr<tim::vx::Tensor>> output_tensors_;
 };

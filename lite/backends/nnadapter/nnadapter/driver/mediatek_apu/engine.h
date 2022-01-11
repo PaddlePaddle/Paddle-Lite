@@ -49,9 +49,11 @@ class Program {
               hal::Argument* input_arguments,
               uint32_t output_count,
               hal::Argument* output_arguments);
+  bool CheckShapeValid();
 
  private:
   void Clear();
+  void SetValidShapes(const std::vector<NNAdapterOperandType>& input_types);
   // Build from model or cache
   int BuildFromModel(hal::Model* model);
   int BuildFromCache(hal::Cache* cache);
@@ -66,6 +68,7 @@ class Program {
   NeuronExecution* execution_{nullptr};
   std::vector<NNAdapterOperandType> input_types_;
   std::vector<NNAdapterOperandType> output_types_;
+  std::vector<std::vector<int32_t>> valid_shapes_;
   std::string dump_graph_path_;
   std::vector<uint8_t>* dump_graph_buffer_{nullptr};
 };

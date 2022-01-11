@@ -343,8 +343,8 @@ bool Engine::Run() {
   for (auto program : programs_) {
     int ret = program->Execute();
     if (ret == NNADAPTER_INVALID_DIMENSIONS) {
-      VLOG(1)
-          << "Input shapes are invalid for the program, try the next program.";
+      VLOG(1) << "Input shapes are not supported by the program, try the next "
+                 "program.";
       continue;
     }
     CHECK_EQ(ret, NNADAPTER_NO_ERROR) << "Program execute failed.";
@@ -352,8 +352,8 @@ bool Engine::Run() {
   }
   // Rebuild the device program corresponding to the input dimensions if not
   // find valid program.
-  VLOG(1) << "Not found valid program for the current input shapes. New "
-             "progam will be created.";
+  VLOG(1) << "No suitable program found for current input shapes, try "
+             "generating a new program online.";
   std::vector<std::string> device_names;
   for (auto* device : devices_) {
     const char* name = nullptr;

@@ -660,5 +660,109 @@ std::string MergeOptionalShapesString(
   return merged_shape_str;
 }
 
+static void UpdateDynamicShapeMode(
+    const NNAdapterOperandDimensionType& dimensions, DynamicShapeMode* mode) {
+  bool is_nchw = dimensions.count == 4;
+  bool b_unk = dimensions.data[0] == NNADAPTER_UNKNOWN;
+  bool c_unk = dimensions.data[1] == NNADAPTER_UNKNOWN;
+  bool h_unk = dimensions.data[2] == NNADAPTER_UNKNOWN;
+  bool w_unk = dimensions.data[3] == NNADAPTER_UNKNOWN;
+  if (is_nchw && b_unk && !c_unk && !h_unk && !w_unk) {
+    if (*mode == DYNAMIC_SHAPE_MODE_NONE) {
+      *mode = DYNAMIC_SHAPE_MODE_BTACH_SIZE;
+    }
+    if (*mode != DYNAMIC_SHAPE_MODE_BTACH_SIZE) {
+      *mode = DYNAMIC_SHAPE_MODE_N_DIMS;
+    }
+  } else if (is_nchw && !b_unk && !c_unk && (h_unk || w_unk)) {
+    if (*mode == DYNAMIC_SHAPE_MODE_NONE) {
+      *mode = DYNAMIC_SHAPE_MODE_HEIGHT_WIDTH;
+    } else {
+      // only support one input has dynamic h&w
+      *mode = DYNAMIC_SHAPE_MODE_N_DIMS;
+    }
+  } else {
+    *mode = DYNAMIC_SHAPE_MODE_N_DIMS;
+  }
+}
+
+void GetDynamicInfo(const std::vector<NNAdapterOperandType>& input_types,
+                    std::vector<std::string>* shapes,
+                    std::string* optional_shapes_str,
+                    DynamicShapeMode* mode) {
+  // Get dynamic shape mode from all inputs. Rules are as follows:
+  // 1. If all shapes are const, mode is DYNAMIC_SHAPE_MODE_NONE.
+  // 2. If only batch of inputs is unknown, mode is
+  // DYNAMIC_SHAPE_MODE_BTACH_SIZE.
+  // 3. If only one 4-D input has dynamic height or weight, mode is
+  // DYNAMIC_SHAPE_MODE_HEIGHT_WIDTH.
+  // 4. Others belong to DYNAMIC_SHAPE_MODE_N_DIMS.
+  *mode = DYNAMIC_SHAPE_MODE_NONE;
+  for (auto& input_type : input_types) {
+    if (!IsDynamicShapeOperandType(input_type)) continue;
+    UpdateDynamicShapeMode(input_type.dimensions, mode);
+  }
+  // Generate shapes string according to mode.
+  std::vector<std::string> optional_shapes;
+  for (auto& input_type : input_types) {
+    auto dimensions = input_type.dimensions;
+    std::vector<int32_t> shape(dimensions.data,
+                               dimensions.data + dimensions.count);
+    if (!IsDynamicShapeOperandType(input_type)) {
+      shapes->push_back(ShapeToString(shape));
+      continue;
+    }
+    // Fill optional_shapes if input_type has dynamic shapes.
+    if (optional_shapes.empty()) {
+      optional_shapes.resize(dimensions.dynamic_count);
+    }
+    switch (*mode) {
+      case DYNAMIC_SHAPE_MODE_BTACH_SIZE: {
+        shapes->push_back(ShapeToString(shape));
+        for (size_t i = 0; i < optional_shapes.size(); i++) {
+          auto& optional_shape_str = optional_shapes.at(i);
+          auto dynamic_batch_str =
+              std::to_string(dimensions.dynamic_data[i][0]);
+          if (optional_shape_str.empty()) {
+            optional_shape_str = dynamic_batch_str;
+          }
+          NNADAPTER_CHECK_EQ(optional_shape_str, dynamic_batch_str);
+        }
+      } break;
+      case DYNAMIC_SHAPE_MODE_HEIGHT_WIDTH: {
+        NNADAPTER_CHECK_EQ(shape.size(), 4UL);
+        shape[2] = -1;
+        shape[3] = -1;
+        shapes->push_back(ShapeToString(shape));
+        for (size_t i = 0; i < optional_shapes.size(); i++) {
+          auto& optional_shape_str = optional_shapes.at(i);
+          NNADAPTER_CHECK(optional_shape_str.empty());
+          optional_shape_str = std::to_string(dimensions.dynamic_data[i][2]) +
+                               "," +
+                               std::to_string(dimensions.dynamic_data[i][3]);
+        }
+      } break;
+      case DYNAMIC_SHAPE_MODE_N_DIMS: {
+        shapes->push_back(ShapeToString(shape));
+        for (size_t i = 0; i < optional_shapes.size(); i++) {
+          auto& optional_shape_str = optional_shapes.at(i);
+          for (uint32_t j = 0; j < dimensions.count; j++) {
+            if (dimensions.data[j] != NNADAPTER_UNKNOWN) continue;
+            if (!optional_shape_str.empty()) {
+              optional_shape_str += ",";
+            }
+            optional_shape_str += dimensions.dynamic_data[i][j];
+          }
+        }
+      } break;
+      default:
+        NNADAPTER_LOG(FATAL) << "Unsupported dynamic shape mode: " << mode;
+        break;
+    }
+  }
+  // Generate optional_shapes_str.
+  *optional_shapes_str = MergeOptionalShapesString(optional_shapes, *mode);
+}
+
 }  // namespace huawei_ascend_npu
 }  // namespace nnadapter

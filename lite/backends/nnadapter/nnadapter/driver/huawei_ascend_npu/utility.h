@@ -145,6 +145,10 @@ std::string ShapeToString(const std::vector<int32_t>& shape);
 std::string MergeOptionalShapesString(
     const std::vector<std::string>& optional_shapes,
     const DynamicShapeMode mode);
+void GetDynamicInfo(const std::vector<NNAdapterOperandType>& input_types,
+                    std::vector<std::string>* shapes,
+                    std::string* optional_shapes_str,
+                    DynamicShapeMode* mode);
 
 }  // namespace huawei_ascend_npu
 }  // namespace nnadapter
