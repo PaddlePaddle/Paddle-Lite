@@ -39,7 +39,7 @@ parser.add_argument(
 parser.add_argument(
     "--label_path", default="", type=str, help="The path of label file")
 parser.add_argument(
-    "--disable_print_results",
+    "--print_results",
     action="store_true",
     default=False,
     help="Print results. Default: False")
@@ -109,7 +109,7 @@ def RunModel(args):
     # 5. Get output data
     output_tensor = predictor.get_output(0)
     output_data = output_tensor.numpy()
-    if args.disable_print_results == False:
+    if args.print_results == True:
         print("result data:\n{}".format(output_data))
     print("mean:{:.6e}, std:{:.6e}, min:{:.6e}, max:{:.6e}".format(
         np.mean(output_data),
