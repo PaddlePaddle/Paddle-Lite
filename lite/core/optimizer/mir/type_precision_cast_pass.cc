@@ -323,8 +323,8 @@ void PrecisionCastPass::AddCastInst(const Type& from,
       }
     }
 
-    CHECK(is_found) << "Can't find a Cast kernel for Cast op: " << from << ":"
-                    << in->AsArg().name << "->" << to << ":"
+    CHECK(is_found) << "Can't find a 'calib' kernel to trans: " << from << ":"
+                    << in->AsArg().name << " -> " << to << ":"
                     << inst_node->AsStmt().op_info()->Type();
 
     // Remove the old link
