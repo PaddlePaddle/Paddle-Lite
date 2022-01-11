@@ -69,11 +69,6 @@ class TestTransposeOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        x_shape = list(program_config.inputs["X_data"].shape)
-        axis = program_config.ops[0].attrs["axis"]
-        if predictor_config.target() == TargetType.Metal:
-            if x_shape[0] != 1:
-                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -137,11 +132,7 @@ class TestTransposeOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        target_str = self.get_target()
-        if target_str == "Metal":
-            self.run_and_statis(quant=False, max_examples=1000)
-        else:
-            self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=25)
 
 
 if __name__ == "__main__":
