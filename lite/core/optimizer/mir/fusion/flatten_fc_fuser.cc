@@ -62,7 +62,6 @@ void FlattenFcFuser::InsertNewNode(SSAGraph* graph,
   auto flatten_input_dims = flatten_input->Get<lite::Tensor>().dims();
   auto flatten_desc = matched.at("flatten_contiguous_range")->stmt()->op_info();
   auto start_axis = flatten_desc->GetAttr<int>("start_axis");
-  auto end_axis = flatten_desc->GetAttr<int>("stop_axis");
   auto fc_desc = matched.at("fc")->stmt()->op_info();
   auto in_mum_col_dims = fc_desc->GetAttr<int>("in_num_col_dims");
   int real_start_axis = start_axis;
