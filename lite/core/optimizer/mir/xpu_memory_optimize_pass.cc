@@ -37,8 +37,8 @@ typedef struct {
 void XPUMemoryOptimizePass::CollectLifeCycleByDevice(
     std::map<std::string, lifecycle_map_t>* lifecycles,
     SSAGraph* graph,
-    std::map<std::string, std::string>* squeeze_input2output,
-    std::map<std::string, std::string>* squeeze_output2input) {
+    std::map<std::string, std::string>* inplaceop_input2output,
+    std::map<std::string, std::string>* inplaceop_output2input) {
   max_lifecycle_ = 0;
 
   auto is_host = [](TargetType x) -> bool {
@@ -232,8 +232,8 @@ void XPUMemoryOptimizePass::CollectLifeCycleByDevice(
               if (is_inplace) {
                 (*lifecycles)[TargetToStr(target_type)].emplace(
                     var_name, std::make_pair(max_lifecycle_, max_lifecycle_));
-                squeeze_input2output->emplace(input_xpu_var_name, var_name);
-                squeeze_output2input->emplace(var_name, input_xpu_var_name);
+                inplaceop_input2output->emplace(input_xpu_var_name, var_name);
+                inplaceop_output2input->emplace(var_name, input_xpu_var_name);
               } else {
                 (*lifecycles)[TargetToStr(target_type)].emplace(
                     var_name, std::make_pair(max_lifecycle_, max_lifecycle_));
@@ -264,8 +264,8 @@ void XPUMemoryOptimizePass::CollectLifeCycleByDevice(
 void XPUMemoryOptimizePass::MakeReusePlan(
     const lifecycle_map_t& lifecycles,
     std::map<std::string, std::string>* node2cluster,
-    std::map<std::string, std::string>* squeeze_input2output,
-    std::map<std::string, std::string>* squeeze_output2input) {
+    std::map<std::string, std::string>* inplaceop_input2output,
+    std::map<std::string, std::string>* inplaceop_output2input) {
   std::vector<XPUMemNode> mem_nodes;
   std::vector<std::string> cluster;
   for (auto& data : lifecycles) {
@@ -306,7 +306,7 @@ void XPUMemoryOptimizePass::MakeReusePlan(
   }
   VLOG(4) << "Step1 get inplace node Cluster: ";
   for (size_t i = 0; i < mem_nodes.size(); i++) {
-    if (squeeze_input2output->count(mem_nodes[i].name)) {
+    if (inplaceop_input2output->count(mem_nodes[i].name)) {
       int cluster_index = cluster.size();
       mem_nodes[i].cluster = cluster_index;
       (*node2cluster)[mem_nodes[i].name] = mem_nodes[i].name;
@@ -316,7 +316,7 @@ void XPUMemoryOptimizePass::MakeReusePlan(
               << (*node2cluster)[mem_nodes[i].name];
       std::set<std::string> cluster_adj = mem_nodes[i].adj;
       for (size_t j = 0; j < mem_nodes.size(); j++) {
-        if (mem_nodes[j].name == (*squeeze_input2output)[mem_nodes[i].name]) {
+        if (mem_nodes[j].name == (*inplaceop_input2output)[mem_nodes[i].name]) {
           (*node2cluster)[mem_nodes[j].name] == mem_nodes[i].name;
           mem_nodes[j].cluster = cluster_index;
           VLOG(4) << mem_nodes[j].name << ", life time is "
@@ -332,7 +332,7 @@ void XPUMemoryOptimizePass::MakeReusePlan(
   }
   VLOG(4) << "Step2 merge inplace node Cluster: ";
   for (size_t i = 0; i < mem_nodes.size(); i++) {
-    if (squeeze_input2output->count(mem_nodes[i].name) &&
+    if (inplaceop_input2output->count(mem_nodes[i].name) &&
         mem_nodes[i].mapping != 1) {
       int cluster_index = cluster.size();
       mem_nodes[i].cluster = cluster_index;
@@ -347,7 +347,7 @@ void XPUMemoryOptimizePass::MakeReusePlan(
 
       std::set<std::string> cluster_adj = mem_nodes[i].adj;
       for (size_t j = 0; j < mem_nodes.size(); j++) {
-        if (mem_nodes[j].name == (*squeeze_input2output)[mem_nodes[i].name]) {
+        if (mem_nodes[j].name == (*inplaceop_input2output)[mem_nodes[i].name]) {
           mem_nodes[j].cluster = mem_nodes[i].cluster;
           (*node2cluster)[mem_nodes[j].name] = mem_nodes[i].name;
           VLOG(4) << mem_nodes[j].name << ", life time is "
@@ -359,7 +359,7 @@ void XPUMemoryOptimizePass::MakeReusePlan(
           for (auto& m : mem_nodes[j].adj) {
             cluster_adj.insert(m);
           }
-        } else if (squeeze_input2output->count(mem_nodes[j].name) &&
+        } else if (inplaceop_input2output->count(mem_nodes[j].name) &&
                    (cluster_adj.find(mem_nodes[j].name) == cluster_adj.end()) &&
                    mem_nodes[j].mapping != 1) {
           mem_nodes[j].mapping = 1;
@@ -376,7 +376,7 @@ void XPUMemoryOptimizePass::MakeReusePlan(
           }
           for (size_t n = 0; n < mem_nodes.size(); n++) {
             if (mem_nodes[n].name ==
-                (*squeeze_input2output)[mem_nodes[j].name]) {
+                (*inplaceop_input2output)[mem_nodes[j].name]) {
               mem_nodes[n].cluster = mem_nodes[i].cluster;
               (*node2cluster)[mem_nodes[n].name] = mem_nodes[i].name;
               VLOG(4) << mem_nodes[n].name << ", life time is "
@@ -396,7 +396,7 @@ void XPUMemoryOptimizePass::MakeReusePlan(
   }
   VLOG(4) << "Step3 get others node Cluster : ";
   for (size_t i = 0; i < mem_nodes.size(); i++) {
-    if (!(squeeze_input2output->count(mem_nodes[i].name)) &&
+    if (!(inplaceop_input2output->count(mem_nodes[i].name)) &&
         mem_nodes[i].cluster < 0 && mem_nodes[i].life_interval != 0) {
       int cluster_index = cluster.size();
       mem_nodes[i].cluster = cluster_index;
@@ -409,7 +409,7 @@ void XPUMemoryOptimizePass::MakeReusePlan(
       cluster.push_back(mem_nodes[i].name);
       std::set<std::string> cluster_adj = mem_nodes[i].adj;
       for (size_t j = i + 1; j < mem_nodes.size(); j++) {
-        if (!(squeeze_input2output->count(mem_nodes[j].name)) &&
+        if (!(inplaceop_input2output->count(mem_nodes[j].name)) &&
             mem_nodes[j].cluster < 0 &&
             (cluster_adj.find(mem_nodes[j].name) == cluster_adj.end())) {
           mem_nodes[j].cluster = mem_nodes[i].cluster;
@@ -521,10 +521,12 @@ void XPUMemoryOptimizePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
   // 3. Perform reuse plan: Replace all var's name in the model according to the
   // mapping table.
   std::map<std::string, lifecycle_map_t> lifecycles;
-  std::map<std::string, std::string> squeeze_input2output;
-  std::map<std::string, std::string> squeeze_output2input;
-  CollectLifeCycleByDevice(
-      &lifecycles, graph.get(), &squeeze_input2output, &squeeze_output2input);
+  std::map<std::string, std::string> inplaceop_input2output;
+  std::map<std::string, std::string> inplaceop_output2input;
+  CollectLifeCycleByDevice(&lifecycles,
+                           graph.get(),
+                           &inplaceop_input2output,
+                           &inplaceop_output2input);
   for (auto& ele : lifecycles) {
     if (ele.first != "xpu") {
       continue;
@@ -532,8 +534,8 @@ void XPUMemoryOptimizePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
     std::map<std::string, std::string> node2cluster;
     MakeReusePlan(ele.second,
                   &node2cluster,
-                  &squeeze_input2output,
-                  &squeeze_output2input);
+                  &inplaceop_input2output,
+                  &inplaceop_output2input);
     PerformReusePlan(graph.get(), node2cluster);
   }
 }

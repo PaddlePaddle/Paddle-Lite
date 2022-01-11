@@ -43,5 +43,4 @@ void InplaceFusePass::Apply(const std::unique_ptr<SSAGraph>& graph) {
 
 REGISTER_MIR_PASS(lite_inplace_fuse_pass, paddle::lite::mir::InplaceFusePass)
     .BindTargets({TARGET(kAny)})
-    .ExcludeTargets({TARGET(kNPU)})
-    .ExcludeTargets({TARGET(kXPU)});
+    .ExcludeTargets({TARGET(kNPU)});
