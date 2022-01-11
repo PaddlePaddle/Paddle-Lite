@@ -13,6 +13,25 @@ OFF_COLOR='\E[0m'      # off color
 readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
 readonly THIRDPARTY_TAR=third-party-801f670.tar.gz
 
+function wget_wrapper() {
+  local url=$1
+  local bak_http_proxy=""
+  local bak_https_proxy=""
+  if [ $http_proxy ]; then
+    bak_http_proxy=$http_proxy
+    bak_https_proxy=$https_proxy
+    unset http_proxy
+    unset https_proxy
+  fi
+
+  wget $url
+
+  if [ $bak_http_proxy ]; then
+    export http_proxy=$bak_http_proxy
+    export https_proxy=$bak_https_proxy
+  fi
+}
+
 function prepare_thirdparty() {
     local workspace=$1
     cd $workspace
@@ -20,7 +39,7 @@ function prepare_thirdparty() {
         rm -rf $workspace/third-party
 
         if [ ! -f $workspace/$THIRDPARTY_TAR ]; then
-            wget $THIRDPARTY_URL/$THIRDPARTY_TAR
+            wget_wrapper $THIRDPARTY_URL/$THIRDPARTY_TAR
         fi
         tar xzf $THIRDPARTY_TAR
     else
@@ -40,21 +59,9 @@ function prepare_models {
 
   rm -rf $model_zoo_dir && mkdir $model_zoo_dir && cd $model_zoo_dir
   # download compressed model recorded in $MODELS_URL
-  local bak_http_proxy=""
-  local bak_https_proxy=""
-  if [ $http_proxy ]; then
-    bak_http_proxy=$http_proxy
-    bak_https_proxy=$https_proxy
-    unset http_proxy
-    unset https_proxy
-  fi
   for url in ${MODELS_URL[@]}; do
-    wget $url
+    wget_wrapper $url
   done
-  if [ $bak_http_proxy ]; then
-    export http_proxy=$bak_http_proxy
-    export https_proxy=$bak_https_proxy
-  fi
 
   compressed_models=$(ls)
   # decompress models
