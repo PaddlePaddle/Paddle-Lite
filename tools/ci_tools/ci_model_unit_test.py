@@ -130,8 +130,8 @@ def compare_output():
                             paddle_results_tmp.append(float(data.strip()))
                     paddle_results = np.array(paddle_results_tmp)
                     if len(lite_results) != len(paddle_results):
-                        print(arm, acc, (
-                            (output_txt.split("."))[0]), " Outshape Diff")
+                        print(arm, acc, ((output_txt.split("."))[0]),
+                              " Outshape Diff")
                         return True
                     a = abs_diff(lite_results, paddle_results)
                     r = ratio_diff(lite_results - paddle_results,
