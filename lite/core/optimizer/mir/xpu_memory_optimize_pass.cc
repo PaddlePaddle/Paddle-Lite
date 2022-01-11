@@ -101,7 +101,6 @@ void XPUMemoryOptimizePass::CollectLifeCycleByDevice(
 
   // Collect the invalid input and output variables that will not be reused.
   std::set<std::string> invalid_var_names;
-  int inplace_op_num = 0;
   for (auto& op_node : graph->StmtTopologicalOrder()) {
     // variables of invalid_op_nodes wil not be reused
     if (!op_node->IsStmt()) continue;
@@ -118,36 +117,6 @@ void XPUMemoryOptimizePass::CollectLifeCycleByDevice(
         invalid_var_names.insert(out_var_node->AsArg().name);
       }
       continue;
-    }
-    // The specified input and output variables of the Ops whose 'inplace' attr
-    // is true will not be reused, such as reshape/reshape2's X and Out
-    // variables
-    std::map<std::string,
-             std::pair<std::set<std::string>, std::set<std::string>>>
-        inplace_op_nodes = {{"reshape", {{"X"}, {"Out"}}},
-                            {"reshape2", {{"X"}, {"Out"}}},
-                            {"flatten", {{"X"}, {"Out"}}},
-                            {"flatten2", {{"X"}, {"Out"}}},
-                            {"squeeze", {{"X"}, {"Out"}}},
-                            {"squeeze2", {{"X"}, {"Out"}}},
-                            {"unsqueeze", {{"X"}, {"Out"}}},
-                            {"unsqueeze2", {{"X"}, {"Out"}}}};
-    auto inplace_op_node = inplace_op_nodes.find(op_type);
-
-    if (inplace_op_node != inplace_op_nodes.end()) {
-      bool inplace = false;
-      if (op_info->HasAttr("inplace")) {
-        inplace = op_info->GetAttr<bool>("inplace");
-      }
-      if (inplace) {
-        inplace_op_num++;
-        for (auto& in_param_name : inplace_op_node->second.first) {
-          const auto& in_arg_names = op_info->Input(in_param_name);
-        }
-        for (auto& out_param_name : inplace_op_node->second.second) {
-          const auto& out_arg_names = op_info->Output(out_param_name);
-        }
-      }
     }
   }
 
