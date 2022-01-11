@@ -13,6 +13,7 @@ OFF_COLOR='\E[0m'      # off color
 readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
 readonly THIRDPARTY_TAR=third-party-801f670.tar.gz
 
+# wget wrapper for download file from Baidu bcebos
 function wget_wrapper() {
   local url=$1
   local bak_http_proxy=""
