@@ -29,6 +29,12 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "--model_dir", default="", type=str, help="Non-combined Model dir path")
 parser.add_argument(
+    "--input_shape",
+    default=[],
+    type=str,
+    required=False,
+    help="Model input shape, eg: 1,3,224,224. Defalut: 1,3,224,224")
+parser.add_argument(
     "--backend",
     default="",
     type=str,
@@ -84,7 +90,7 @@ def RunModel(args):
 
     # 3. Set input data
     input_tensor = predictor.get_input(0)
-    h, w = 224, 224
+    c, h, w = args.input_shape[1], args.input_shape[2], args.input_shape[3]
     read_image = len(args.image_path) != 0 and len(args.label_path) != 0
     if read_image == True:
         import cv2
@@ -98,10 +104,10 @@ def RunModel(args):
         image_data = image_data.transpose((2, 0, 1)) / 255.0
         image_data = (image_data - np.array(image_mean).reshape(
             (3, 1, 1))) / np.array(image_std).reshape((3, 1, 1))
-        image_data = image_data.reshape([1, 3, h, w]).astype('float32')
+        image_data = image_data.reshape([1, c, h, w]).astype('float32')
         input_tensor.from_numpy(image_data)
     else:
-        input_tensor.from_numpy(np.ones((1, 3, h, w)).astype("float32"))
+        input_tensor.from_numpy(np.ones((1, c, h, w)).astype("float32"))
 
     # 4. Run model
     predictor.run()
