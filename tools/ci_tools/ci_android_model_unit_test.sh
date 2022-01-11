@@ -37,31 +37,31 @@ function prepare_models {
   cd ${WORKSPACE}
 
   # download fluid output and decompress fluid output
-#  wget $FLUID_OUTPUT_URL
-#  fluid_output_tar_gz_tmp=(${FLUID_OUTPUT_URL//\// })
-#  fluid_output_tar_gz=${fluid_output_tar_gz_tmp[${#fluid_output_tar_gz_tmp[@]}-1]}
-#  fluid_output_tar_gz_out=(${fluid_output_tar_gz//./ })
-#  rm -rf $fluid_output_tar_gz_out && mkdir $fluid_output_tar_gz_out
-#  tar xf $fluid_output_tar_gz -C $fluid_output_tar_gz_out
-#
-#  rm -rf inference_model && mkdir inference_model && cd inference_model
-#
-#  # download compressed model recorded in $MODELS_URL
-#  for url in ${MODELS_URL[@]}; do
-#    wget $url
-#  done
-#  
-#  compressed_models=$(ls)
-#  # decompress models
-#  for name in ${compressed_models[@]}; do
-#    if echo "$name" | grep -q -E '.tar.gz$'; then
-#      tar xf $name && rm -f $name
-#    elif echo "$name" | grep -q -E '.zip$'; then
-#      unzip $name && rm -f $name
-#    else
-#      echo "Error, only .zip or .tar.gz format files are supported!"
-#    fi
-#  done
+  wget $FLUID_OUTPUT_URL
+  fluid_output_tar_gz_tmp=(${FLUID_OUTPUT_URL//\// })
+  fluid_output_tar_gz=${fluid_output_tar_gz_tmp[${#fluid_output_tar_gz_tmp[@]}-1]}
+  fluid_output_tar_gz_out=(${fluid_output_tar_gz//./ })
+  rm -rf $fluid_output_tar_gz_out && mkdir $fluid_output_tar_gz_out
+  tar xf $fluid_output_tar_gz -C $fluid_output_tar_gz_out
+
+  rm -rf inference_model && mkdir inference_model && cd inference_model
+
+  # download compressed model recorded in $MODELS_URL
+  for url in ${MODELS_URL[@]}; do
+    wget $url
+  done
+  
+  compressed_models=$(ls)
+  # decompress models
+  for name in ${compressed_models[@]}; do
+    if echo "$name" | grep -q -E '.tar.gz$'; then
+      tar xf $name && rm -f $name
+    elif echo "$name" | grep -q -E '.zip$'; then
+      unzip $name && rm -f $name
+    else
+      echo "Error, only .zip or .tar.gz format files are supported!"
+    fi
+  done
 }
 
 ####################################################################################################
