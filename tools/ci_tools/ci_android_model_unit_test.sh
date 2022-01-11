@@ -19,13 +19,13 @@ if [ ${os_name} == "Darwin" ]; then
    ulimit -n 1024
 fi
 
-model_str=`python3.6 ci_model_unit_test.py modellist`
+model_str=`python3 ci_model_unit_test.py modellist`
 model_arr=(${model_str//./ })
 
-shape_str=`python3.6 ci_model_unit_test.py shapelist`
+shape_str=`python3 ci_model_unit_test.py shapelist`
 shape_arr=(${shape_str//./ })
 
-exclude_str=`python3.6 ci_model_unit_test.py excludelist`
+exclude_str=`python3 ci_model_unit_test.py excludelist`
 exclude_arr=(${exclude_str//./ })
 
 ####################################################################################################
@@ -37,31 +37,31 @@ function prepare_models {
   cd ${WORKSPACE}
 
   # download fluid output and decompress fluid output
-  wget $FLUID_OUTPUT_URL
-  fluid_output_tar_gz_tmp=(${FLUID_OUTPUT_URL//\// })
-  fluid_output_tar_gz=${fluid_output_tar_gz_tmp[${#fluid_output_tar_gz_tmp[@]}-1]}
-  fluid_output_tar_gz_out=(${fluid_output_tar_gz//./ })
-  rm -rf $fluid_output_tar_gz_out && mkdir $fluid_output_tar_gz_out
-  tar xf $fluid_output_tar_gz -C $fluid_output_tar_gz_out
-
-  rm -rf inference_model && mkdir inference_model && cd inference_model
-
-  # download compressed model recorded in $MODELS_URL
-  for url in ${MODELS_URL[@]}; do
-    wget $url
-  done
-  
-  compressed_models=$(ls)
-  # decompress models
-  for name in ${compressed_models[@]}; do
-    if echo "$name" | grep -q -E '.tar.gz$'; then
-      tar xf $name && rm -f $name
-    elif echo "$name" | grep -q -E '.zip$'; then
-      unzip $name && rm -f $name
-    else
-      echo "Error, only .zip or .tar.gz format files are supported!"
-    fi
-  done
+#  wget $FLUID_OUTPUT_URL
+#  fluid_output_tar_gz_tmp=(${FLUID_OUTPUT_URL//\// })
+#  fluid_output_tar_gz=${fluid_output_tar_gz_tmp[${#fluid_output_tar_gz_tmp[@]}-1]}
+#  fluid_output_tar_gz_out=(${fluid_output_tar_gz//./ })
+#  rm -rf $fluid_output_tar_gz_out && mkdir $fluid_output_tar_gz_out
+#  tar xf $fluid_output_tar_gz -C $fluid_output_tar_gz_out
+#
+#  rm -rf inference_model && mkdir inference_model && cd inference_model
+#
+#  # download compressed model recorded in $MODELS_URL
+#  for url in ${MODELS_URL[@]}; do
+#    wget $url
+#  done
+#  
+#  compressed_models=$(ls)
+#  # decompress models
+#  for name in ${compressed_models[@]}; do
+#    if echo "$name" | grep -q -E '.tar.gz$'; then
+#      tar xf $name && rm -f $name
+#    elif echo "$name" | grep -q -E '.zip$'; then
+#      unzip $name && rm -f $name
+#    else
+#      echo "Error, only .zip or .tar.gz format files are supported!"
+#    fi
+#  done
 }
 
 ####################################################################################################
@@ -141,25 +141,24 @@ function compile_according_lib_and_opt {
 
   ## step 3. compiling Android ARM lib
   cd ${WORKSPACE} && rm -rf third_party
-  ./lite/tools/build.sh --arm_os=android --arm_abi=armv8 --build_extra=$WITH_EXTRA --arm_lang=$TOOL_CHAIN --android_stl=$ANDROID_STL --with_log=$WITH_LOG  --with_exception=$WITH_EXCEPTION --build_arm82_fp16=ON tiny_publish
+  ./lite/tools/build_android.sh --arch=armv8 --toolchain=$TOOL_CHAIN --android_stl=$ANDROID_STL --with_arm82_fp16=ON --with_benchmark=ON full_publish
 
 
-  #./lite/tools/build_android.sh --with_log=$WITH_LOG --arch=armv7 --with_cv=$WITH_CV --toolchain=$TOOL_CHAIN --with_exception=$WITH_EXCEPTION --android_stl=$ANDROID_STL --with_arm82_fp16=ON
+  ./lite/tools/build_android.sh --arch=armv7 --toolchain=$TOOL_CHAIN --android_stl=$ANDROID_STL --with_arm82_fp16=ON --with_benchmark=ON full_publish
 
 
-  #cd build.lite.android.armv7.$TOOL_CHAIN/inference_lite_lib.android.armv7/demo/cxx/mobile_light && make && mv mobilenetv1_light_api mobilenetv1_light_api_armv7
+  cd build.lite.android.armv7.$TOOL_CHAIN/lite/api/tools/benchmark && mv benchmark_bin benchmark_bin_armv7 
 
   cd ${WORKSPACE}
 
-  cd build.lite.android.armv8.$TOOL_CHAIN/inference_lite_lib.android.armv8/demo/cxx/mobile_light && make && mv mobilenetv1_light_api mobilenetv1_light_api_armv8   
+  cd build.lite.android.armv8.$TOOL_CHAIN/lite/api/tools/benchmark && mv benchmark_bin benchmark_bin_armv8   
 
   # step 4. pack compiling results and optimized models
   cd ${WORKSPACE}  
   result_name=android_lib
   rm -rf $result_name && mkdir $result_name
-  #cp -rf build.lite.android.armv7.$TOOL_CHAIN/inference_lite_lib.android.armv7 $result_name/armv7.$TOOL_CHAIN
-  cp -rf build.lite.android.armv8.$TOOL_CHAIN/inference_lite_lib.android.armv8 $result_name/armv8.$TOOL_CHAIN
-  #cp build.opt/lite/api/opt $result_name/
+  cp build.lite.android.armv7.$TOOL_CHAIN/lite/api/tools/benchmark/benchmark_bin_armv7 $result_name
+  cp build.lite.android.armv8.$TOOL_CHAIN/lite/api/tools/benchmark/benchmark_bin_armv8 $result_name
   mv build.opt/lite/api/optimized_model $result_name
 
   # step5. compress the result into tar file
@@ -181,20 +180,8 @@ function test_model {
   # 1.1 prepare workspace directory
   adb -s ${adb_devices[$adb_index]} shell "cd /data/local/tmp && rm -rf $adb_dir && mkdir $adb_dir"
 
-  # 1.2 upload optimized model
-  adb -s ${adb_devices[$adb_index]} push android_lib/optimized_model/ /data/local/tmp/$adb_dir
-
-  # 1.3 upload armv7 demo
-  #adb -s ${adb_devices[$adb_index]} push android_lib/armv7.clang/demo/cxx/mobile_light/mobilenetv1_light_api_armv7 /data/local/tmp/$adb_dir
-
-  # 1.4 upload armv8 demo
-  adb -s ${adb_devices[$adb_index]} push android_lib/armv8.clang/demo/cxx/mobile_light/mobilenetv1_light_api_armv8 /data/local/tmp/$adb_dir     
-
-  # 1.5 upload armv7 lib
-  #adb -s ${adb_devices[$adb_index]} shell " cd /data/local/tmp/$adb_dir && mkdir armv7_lib " && adb -s ${adb_devices[$adb_index]} push android_lib/armv7.clang/cxx/lib/libpaddle_light_api_shared.so /data/local/tmp/$adb_dir/armv7_lib
-
-  # 1.6 upload armv8 lib
-  adb -s ${adb_devices[$adb_index]} shell " cd /data/local/tmp/$adb_dir && mkdir armv8_lib " && adb -s ${adb_devices[$adb_index]} push android_lib/armv8.clang/cxx/lib/libpaddle_light_api_shared.so /data/local/tmp/$adb_dir/armv8_lib
+  # 1.2 upload optimized model and bench_mark_bin
+  adb -s ${adb_devices[$adb_index]} push android_lib/optimized_model android_lib/benchmark_bin_armv8 android_lib/benchmark_bin_armv7 /data/local/tmp/$adb_dir
 
   # 2. model unit test
 
@@ -202,25 +189,33 @@ function test_model {
   adb -s ${adb_devices[$adb_index]} shell " cd /data/local/tmp/$adb_dir && mkdir output && mkdir output/armv7 output/armv8 && mkdir output/armv7/int8 output/armv7/fp16 output/armv7/fp32 output/armv8/int8 output/armv8/fp16 output/armv8/fp32"
 
   accuracy_type=(fp16 fp32 int8)
-  arm_abi=(armv8)
+  arm_abi=(armv8 armv7)
   for accuracy in ${accuracy_type[@]}; do
+    #choose cpu precision   
+    cpu_precision="fp32"
+    if [ ${accuracy} == "fp16" ]; then
+      cpu_precision="fp16"
+    fi
+    #update fp16/fp32 model name    
     for(( i=0;i<${#model_arr[@]};i++)); do
       if [ ${exclude_arr[$i]} == "True" ]; then
         continue
       fi
       model_accuracy[$i]=${model_arr[$i]}
     done
+    #update int8 model name    
     if [ "$accuracy" = "int8" ]; then
       for(( i=0;i<${#model_accuracy[@]};i++)); do
         tmp=(${model_accuracy[$i]//_/ })
         model_accuracy[$i]=${model_accuracy[$i]/${tmp[${#tmp[@]}-1]}/"quant_"${tmp[${#tmp[@]}-1]}}
       done
     fi
+    #run    
     for arm in ${arm_abi[@]}; do
       for(( i=0;i<${#model_accuracy[@]};i++ )); do
         opt_model=${model_accuracy[$i]}
         shape=${shape_arr[$i]}
-        adb -s ${adb_devices[$adb_index]} shell "cd /data/local/tmp/$adb_dir && unset LD_LIBRARY_PATH && export LD_LIBRARY_PATH=/data/local/tmp/$adb_dir/$arm"_lib" &&  ./mobilenetv1_light_api_$arm ./optimized_model/$accuracy/$opt_model".nb" $shape 10 10 0 1 0 1 > output/$arm/$accuracy/$opt_model".txt" 2>&1 "
+        adb -s ${adb_devices[$adb_index]} shell "cd /data/local/tmp/$adb_dir &&  ./benchmark_bin_$arm --optimized_model_file=./optimized_model/$accuracy/$opt_model".nb" --backend=arm --input_shape=$shape --warmup=10 --repeats=10 --power_mode=0 --threads=1 --show_output_elem=true --cpu_precision=$cpu_precision > output/$arm/$accuracy/$opt_model".txt" 2>&1 "
       done
     done
   done
@@ -236,7 +231,7 @@ function test_model {
 
 function compre_with_fluid {
   cd ${WORKSPACE}/tools/ci_tools
-  result=`python3.6 ci_model_unit_test.py cmp_diff`
+  result=`python3 ci_model_unit_test.py cmp_diff`
 }
 
 ####################################################################################################

@@ -74,7 +74,6 @@ def ratio_diff(arrA, arrB):
     idxZeros = np.where(arrB == 0)
     rel_arr[idxNoneZeros] = np.absolute(
         np.absolute(arrA[idxNoneZeros]) / np.absolute(arrB[idxNoneZeros]))
-
     return rel_arr
 
 
@@ -83,7 +82,7 @@ def compare_output():
     compare result with fluid 
     """
     lite_output_path = "/".join(os.getcwd().split('/')[:-2])
-    arm_abi = ["armv8"]
+    arm_abi = ["armv8, armv7"]
     accuracy = ["fp32", "fp16", "int8"]
     rerr = 1e-5
     aerr = 1e-5
@@ -118,12 +117,11 @@ def compare_output():
                     lite_results_tmp = list()
                     with open(lite_txt) as flite_result:
                         for data in flite_result.readlines():
-                            try:
-                                lite_results_tmp.append(float(data.strip()))
-                            except NameError:
-                                print(
-                                    " output data is not number, maybe inf or nan"
-                                )
+                            if data.strip() == "nan" or data.strip() == "inf":
+                                print(arm, acc, ((output_txt.split("."))[0]),
+                                      " Output nan of inf")
+                                return True
+                            lite_results_tmp.append(float(data.strip()))
                     lite_results = np.array(lite_results_tmp)
                     paddle_results = list()
                     paddle_results_tmp = list()
@@ -132,8 +130,8 @@ def compare_output():
                             paddle_results_tmp.append(float(data.strip()))
                     paddle_results = np.array(paddle_results_tmp)
                     if len(lite_results) != len(paddle_results):
-                        print(arm, acc, ((output_txt.split("."))[0]),
-                              " Outshape Diff")
+                        print(arm, acc, (
+                            (output_txt.split("."))[0]), " Outshape Diff")
                         return True
                     a = abs_diff(lite_results, paddle_results)
                     r = ratio_diff(lite_results - paddle_results,
@@ -148,7 +146,6 @@ def compare_output():
                                   " abolute error:", a[i], " relative error:",
                                   r[i])
                             return True
-
     return False
 
 
