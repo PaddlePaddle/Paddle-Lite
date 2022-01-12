@@ -23,6 +23,38 @@
 #include "utility/utility.h"
 
 namespace nnadapter {
+/**
+ * fill_like --value==0--> eltwise_mul(zero)
+ *          |
+ *           --value!=0--> eltwise_mul(zero)+ eltwise_add(value)
+ * Such as:
+ * value: 0
+ *
+ *             input        zero_value(0)
+ *                \            /
+ *                  \        /
+ *                  [eltwise_mul]
+ *                      |
+ *                      |
+ *                    output
+ *
+ * value: 2
+ *
+ *             input        zero_value(0)
+ *                \            /
+ *                  \        /
+ *                  [eltwise_mul]
+ *                      |
+ *                      |
+ *                  new_input       value(2)
+ *                      |          /
+ *                      |        /
+ *                    [elementwise_add]
+ *                            |
+ *                            |
+ *                          output
+ *
+ */
 static void InsertAdd(hal::Model* model,
                       hal::Operand* input_operand,
                       hal::Operand* value_operand) {
