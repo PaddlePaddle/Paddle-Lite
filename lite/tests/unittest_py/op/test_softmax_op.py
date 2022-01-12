@@ -69,7 +69,7 @@ class TestSoftmaxOp(AutoScanTest):
             if len(x_shape) < 2 or (len(x_shape) == 4 and axis == 0):
                 return False
         if predictor_config.target() == TargetType.Metal:
-            if len(x_shape) < 2 or x_shape[0] != 1 \
+            if len(x_shape) <= 3 or x_shape[0] != 1 \
                 or (len(x_shape) == 4 and axis == 0):
                 return False
         return True
@@ -78,7 +78,8 @@ class TestSoftmaxOp(AutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=64), min_size=1, max_size=4))
+                    min_value=1, max_value=64), min_size=0, max_size=3))
+        in_shape.insert(0, draw(st.integers(min_value=1, max_value=4)))
         input_axis = draw(st.sampled_from([0, 1, 2, 3, -1]))
         assume(input_axis < len(in_shape))
 
@@ -119,7 +120,7 @@ class TestSoftmaxOp(AutoScanTest):
             max_examples = 100
         elif target_str == "Metal":
             # Make sure to generate enough valid cases for Metal
-            max_examples = 2000
+            max_examples = 500
         self.run_and_statis(quant=False, max_examples=max_examples)
 
 
