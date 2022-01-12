@@ -32,11 +32,11 @@ class TestReduceAllOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         # not support
-        # self.enable_testing_on_place(
-        #     TargetType.Host,
-        #     PrecisionType.FP32,
-        #     DataLayoutType.NCHW,
-        #     thread=[1, 2])
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 2])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -83,7 +83,14 @@ class TestReduceAllOp(AutoScanTest):
         return self.get_predictor_configs(), ["reduce_all"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            if predictor_config.target() == TargetType.Host:
+                return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case on x86. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)

@@ -129,13 +129,18 @@ class TestTransposeOp(AutoScanTest):
         return self.get_predictor_configs(), ["transpose"], (atol, rtol)
 
     def add_ignore_pass_case(self):
-        def teller1(program_config, predictor_config):
+        def _teller1(program_config, predictor_config):
+            x_shape = list(program_config.inputs["X_data"].shape)
+            axis = program_config.ops[0].attrs["axis"]
+            if predictor_config.target() == TargetType.Metal:
+                if x_shape[0] != 1:
+                    return True
             if predictor_config.target() == TargetType.OpenCL:
                 return True
 
         self.add_ignore_check_case(
-            teller1, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff in a specific case. We need to fix it as soon as possible."
+            _teller1, IgnoreReasons.ACCURACY_ERROR,
+            "The op output has diff in a specific case on metal. We need to fix it as soon as possible."
         )
 
     def test(self, *args, **kwargs):

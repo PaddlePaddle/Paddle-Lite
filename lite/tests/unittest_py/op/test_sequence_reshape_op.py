@@ -40,6 +40,7 @@ class TestSequenceReshapeOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
+        # check config
         x_dtype = program_config.inputs["input_data"].dtype
         if predictor_config.precision() == PrecisionType.INT64:
             if x_dtype != np.int64:

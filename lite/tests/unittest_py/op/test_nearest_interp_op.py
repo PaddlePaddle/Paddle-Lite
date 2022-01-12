@@ -31,46 +31,38 @@ class TestNearestInterpOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         # precision bugs will be fix in the future
-        #self.enable_testing_on_place(
-        #    TargetType.ARM, [PrecisionType.FP16, PrecisionType.FP32],
-        #    DataLayoutType.NCHW,
-        #    thread=[1, 4])
-        #self.enable_testing_on_place(
-        #    TargetType.X86,
-        #    PrecisionType.FP32,
-        #    DataLayoutType.NCHW,
-        #    thread=[1, 4])
-        #self.enable_testing_on_place(
-        #    TargetType.Metal,
-        #    PrecisionType.FP32,
-        #    DataLayoutType.NCHW,
-        #    thread=[1, 4])
-        #opencl_places = [
-        #    Place(TargetType.OpenCL, PrecisionType.FP16,
-        #          DataLayoutType.ImageDefault), Place(
-        #              TargetType.OpenCL, PrecisionType.FP16,
-        #              DataLayoutType.ImageFolder),
-        #    Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-        #    Place(TargetType.OpenCL, PrecisionType.Any,
-        #          DataLayoutType.ImageDefault), Place(
-        #              TargetType.OpenCL, PrecisionType.Any,
-        #              DataLayoutType.ImageFolder),
-        #    Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-        #    Place(TargetType.Host, PrecisionType.FP32)
-        #]
-        #self.enable_testing_on_place(places=opencl_places)
+        self.enable_testing_on_place(
+            TargetType.ARM, [PrecisionType.FP16, PrecisionType.FP32],
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.X86,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.Metal,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        in_shape = list(program_config.inputs["input_data_x"].shape)
-        scale_data = program_config.inputs["Scale"].data
-        SizeTensor = list(program_config.inputs["SizeTensor"].shape)
-        # paddle not support fp16
-        if predictor_config.precision() == PrecisionType.FP16:
-            return False
-        if in_shape[2] * scale_data[0] < 1 or in_shape[3] * scale_data[0] < 1:
-            return False
         return True
 
     def sample_program_configs(self, draw):
@@ -134,7 +126,36 @@ class TestNearestInterpOp(AutoScanTest):
         return self.get_predictor_configs(), ["nearest_interp"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            if predictor_config.target(
+            ) in [TargetType.ARM, TargetType.OpenCL]:
+                if predictor_config.precision() == PrecisionType.FP16:
+                    return True
+
+        def _teller2(program_config, predictor_config):
+            if predictor_config.target() == TargetType.Metal:
+                return True
+
+        def _teller3(program_config, predictor_config):
+            in_shape = list(program_config.inputs["input_data_x"].shape)
+            scale_data = program_config.inputs["Scale"].data
+            SizeTensor = list(program_config.inputs["SizeTensor"].shape)
+            if in_shape[2] * scale_data[0] < 1 or in_shape[3] * scale_data[
+                    0] < 1:
+                return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.ACCURACY_ERROR,
+            "The op output has diff in a specific case. We need to fix it as soon as possible."
+        )
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case on metal. We need to fix it as soon as possible."
+        )
+        self.add_ignore_check_case(
+            _teller3, IgnoreReasons.PADDLE_NOT_SUPPORT,
+            "Paddle does not support this op in a specific case on metal. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)
