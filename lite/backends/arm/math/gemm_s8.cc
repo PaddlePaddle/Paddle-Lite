@@ -40,8 +40,8 @@ void gemm_s8(bool is_transA,
   }
   if (M == 1) {
 #ifdef TARGET_IOS
-    float bias_ptr = new float[N];
-    float scale_ptr = new float[N];
+    float* bias_ptr = new float[N];
+    float* scale_ptr = new float[N];
 #else
     float bias_ptr[N];   // NOLINT
     float scale_ptr[N];  // NOLINT

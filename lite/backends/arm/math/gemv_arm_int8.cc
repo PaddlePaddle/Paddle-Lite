@@ -1619,8 +1619,8 @@ bool gemv_int8_trans_oth(const int8_t* A,
   int out_cnt = M >> 4;
   int out_remain = M & 15;
 #ifdef TARGET_IOS
-  int zero_ptr = new int[M + 16];
-  float zerobuf = new float[M + 16];
+  int* zero_ptr = new int[M + 16];
+  float* zerobuf = new float[M + 16];
 #else
   int zero_ptr[M + 16];   // NOLINT
   float zerobuf[M + 16];  // NOLINT

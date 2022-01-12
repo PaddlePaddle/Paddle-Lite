@@ -56,7 +56,7 @@ void sgemm_fp16(bool is_transA,
   }
   if (M == 1 && !has_alpha) {
 #ifdef TARGET_IOS
-    float16_t bias_ptr = new float16_t[N];
+    float16_t* bias_ptr = new float16_t[N];
 #else
     float16_t bias_ptr[N];  // NOLINT
 #endif

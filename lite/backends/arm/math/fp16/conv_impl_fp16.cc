@@ -328,7 +328,7 @@ void conv1x1s1_gemm_fp16(CONV_PARAM(float16_t)) {
                   ctx);
       } else if (m == 1) {
 #ifdef TARGET_IOS
-        float16_t bias_ptr = new float16_t[n];
+        float16_t* bias_ptr = new float16_t[n];
 #else
         float16_t bias_ptr[n];  // NOLINT
 #endif
@@ -443,7 +443,7 @@ void conv_im2col_gemm_fp16(CONV_PARAM(float16_t)) {
                   ctx);
       } else if (m == 1) {
 #ifdef TARGET_IOS
-        float16_t bias_ptr = new float16_t[n];
+        float16_t* bias_ptr = new float16_t[n];
 #else
         float16_t bias_ptr[n];  // NOLINT
 #endif
