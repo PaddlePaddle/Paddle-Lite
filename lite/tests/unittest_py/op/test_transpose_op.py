@@ -41,20 +41,20 @@ class TestTransposeOp(AutoScanTest):
         self.enable_testing_on_place(places=arm_places)
 
         # opencl having diffs , big diff
-        # opencl_places = [
-        #     Place(TargetType.OpenCL, PrecisionType.FP16,
-        #           DataLayoutType.ImageDefault), Place(
-        #               TargetType.OpenCL, PrecisionType.FP16,
-        #               DataLayoutType.ImageFolder),
-        #     Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-        #     Place(TargetType.OpenCL, PrecisionType.Any,
-        #           DataLayoutType.ImageDefault), Place(
-        #               TargetType.OpenCL, PrecisionType.Any,
-        #               DataLayoutType.ImageFolder),
-        #     Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-        #     Place(TargetType.Host, PrecisionType.FP32)
-        # ]
-        # self.enable_testing_on_place(places=opencl_places)
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=opencl_places)
 
         metal_places = [
             Place(TargetType.Metal, PrecisionType.FP32,
@@ -69,11 +69,6 @@ class TestTransposeOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        x_shape = list(program_config.inputs["X_data"].shape)
-        axis = program_config.ops[0].attrs["axis"]
-        if predictor_config.target() == TargetType.Metal:
-            if x_shape[0] != 1:
-                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -134,14 +129,17 @@ class TestTransposeOp(AutoScanTest):
         return self.get_predictor_configs(), ["transpose"], (atol, rtol)
 
     def add_ignore_pass_case(self):
-        pass
+        def teller1(program_config, predictor_config):
+            if predictor_config.target() == TargetType.OpenCL:
+                return True
+
+        self.add_ignore_check_case(
+            teller1, IgnoreReasons.ACCURACY_ERROR,
+            "The op output has diff in a specific case. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
-        target_str = self.get_target()
-        if target_str == "Metal":
-            self.run_and_statis(quant=False, max_examples=1000)
-        else:
-            self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=25)
 
 
 if __name__ == "__main__":
