@@ -35,18 +35,18 @@ inline int AdaptEndIndex(int ph, int input_size, int output_size) {
       ceil(static_cast<double>((ph + 1) * input_size) / output_size));
 }
 
-#define COMMON_LOOP_BODY                              \
-  float ele = static_cast<float>(-FLT_MAX);           \
-  int index = -1;                                     \
-  for (int h = hstart; h < hend; ++h) {               \
-    for (int w = wstart; w < wend; ++w) {             \
-      if (ele < input_data[h * input_width + w]) {    \
-        ele = input_data[h * input_width + w];        \
-        index = h * input_width + w;                  \
-      }                                               \
-    }                                                 \
-  }                                                   \
-  output_data[ph * output_width + pw] = ele;          \
+#define COMMON_LOOP_BODY                           \
+  float ele = static_cast<float>(-FLT_MAX);        \
+  int index = -1;                                  \
+  for (int h = hstart; h < hend; ++h) {            \
+    for (int w = wstart; w < wend; ++w) {          \
+      if (ele < input_data[h * input_width + w]) { \
+        ele = input_data[h * input_width + w];     \
+        index = h * input_width + w;               \
+      }                                            \
+    }                                              \
+  }                                                \
+  output_data[ph * output_width + pw] = ele;       \
   mask_data[ph * output_width + pw] = index;
 
 void MaxPoolWithIndexCompute::Run() {
