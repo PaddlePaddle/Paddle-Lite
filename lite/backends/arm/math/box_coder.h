@@ -28,6 +28,7 @@ void encode_bbox_center_kernel(const int batch_num,
                                const float* prior_data,
                                const float* variance,
                                const bool var_len4,
+                               const bool normalized,
                                const int num_priors,
                                float* bbox_data);
 

@@ -61,9 +61,9 @@ bool DropoutOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
       LOG(FATAL) << "Unsupported attribute type: the type of attribute "
                     "`is_test` in BatchNormOP should be int or bool.";
   }
-  if (param_.HasInput("Seed")) {
-    auto Seed = op_desc.Input("Seed").front() param_.seed_tensor =
-        GetVar<lite::Tensor>(Seed, input);
+  if (op_desc.HasInput("Seed")) {
+    auto seed = op_desc.Input("Seed").front();
+    param_.seed_tensor = GetVar<lite::Tensor>(scope, seed);
   }
   if (!param_.is_test) {
     auto Mask = op_desc.Output("Mask").front();
