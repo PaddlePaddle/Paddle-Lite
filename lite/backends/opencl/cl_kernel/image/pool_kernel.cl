@@ -33,18 +33,23 @@ __kernel void pool(__read_only image2d_t input,
   const int out_n = out_nh / out_height;
   const int out_h = out_nh % out_height;
 
-  int start_h = out_h * stride_h - pad_top;
-  int end_h = min(start_h + ksize_h, in_height);
-  start_h = max(start_h, 0);
-
-  int start_w = out_w * stride_w - pad_left;
-  int end_w = min(start_w + ksize_w, in_width);
-  start_w = max(start_w, 0);
+  int start_h, start_w, end_h, end_w;
+  int pool_size = 1;
   if (adaptive == 1) {
-    start_h = out_h * in_height / out_height;
-    end_h = (out_h + 1) * in_height / out_height;
-    start_w = out_w * in_width / out_width;
-    end_w = (out_w + 1) * in_width / out_width;
+    start_h = floor((out_h * in_height) / (float)out_height);
+    end_h = ceil(((out_h + 1) * in_height) / (float)out_height);
+    start_w = floor((out_w * in_width) / (float)out_width);
+    end_w = ceil(((out_w + 1) * in_width) / (float)out_width);
+  } else {
+    start_h = out_h * stride_h - pad_top;
+    start_w = out_w * stride_w - pad_left;
+    end_h = min(start_h + ksize_h, in_height + pad_top);
+    end_w = min(start_w + ksize_w, in_width + pad_left);
+    pool_size = (end_h - start_h) * (end_w - start_w);
+    start_h = max(start_h, 0);
+    start_w = max(start_w, 0);
+    end_h = min(end_h, in_height);
+    end_w = min(end_w, in_width);
   }
 
   const int pos_in_x = out_c * in_width;
@@ -53,40 +58,28 @@ __kernel void pool(__read_only image2d_t input,
 
 #ifdef POOL_AVG
 
-  CL_DTYPE4 res = (CL_DTYPE4)(0.0f);
-  int div;
-#ifdef EXCLUSIVE
-  div = (end_h - start_h) * (end_w - start_w);
-#else
-  div = ksize_w * ksize_h;
-#endif  // EXCLUSIVE
-
-#ifdef GLOBAL
-  // pool_avg_global: force to use fp32 to avoid the loss of accuracy
-  float4 res_f32 = 0.f;
+  // force to use fp32 to avoid the loss of accuracy
+  float4 res_fp32 = 0.f;
   for (int y = start_h; y < end_h; ++y) {
     for (int x = start_w; x < end_w; ++x) {
-      res_f32 +=
+      res_fp32 +=
           read_imagef(input, SAMPLER, (int2)(pos_in_x + x, pos_in_y + y));
     }
   }
-  res_f32 /= (float)div;
-#ifdef CL_DTYPE_half
-  res = convert_half4(res_f32);
-#else
-  res = res_f32;
-#endif
 
-#else
-  // pool_avg: use default precision
-  for (int y = start_h; y < end_h; ++y) {
-    for (int x = start_w; x < end_w; ++x) {
-      res += READ_IMG_TYPE(
-          CL_DTYPE_CHAR, input, SAMPLER, (int2)(pos_in_x + x, pos_in_y + y));
-    }
+#ifdef EXCLUSIVE
+  pool_size = (end_h - start_h) * (end_w - start_w);
+#endif  // EXCLUSIVE
+  if (adaptive == 1) {
+    pool_size = (end_h - start_h) * (end_w - start_w);
   }
-  res /= (CL_DTYPE)div;
-#endif  // GLOBAL
+
+  res_fp32 = res_fp32 / (float)pool_size;
+#ifdef CL_DTYPE_half
+  CL_DTYPE4 res = convert_half4(res_fp32);
+#else
+  CL_DTYPE4 res = res_fp32;
+#endif
 
 #else
 
@@ -96,7 +89,7 @@ __kernel void pool(__read_only image2d_t input,
     for (int x = start_w; x < end_w; ++x) {
       CL_DTYPE4 tmp = READ_IMG_TYPE(
           CL_DTYPE_CHAR, input, SAMPLER, (int2)(pos_in_x + x, pos_in_y + y));
-      res = max(res, tmp);
+      res = fmax(res, tmp);
     }
   }
 

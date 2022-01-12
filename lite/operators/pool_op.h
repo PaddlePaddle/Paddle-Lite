@@ -70,7 +70,8 @@ class PoolOpLite : public OpLite {
       param_.use_quantizer = op_desc.GetAttr<bool>("use_quantizer");
     }
     if (op_desc.HasAttr("padding_algorithm")) {
-      padding_algorithm_ = op_desc.GetAttr<std::string>("padding_algorithm");
+      param_.padding_algorithm =
+          op_desc.GetAttr<std::string>("padding_algorithm");
     }
     // 2-pad to 4-pad
     if (paddings.size() == 2L) {
@@ -112,14 +113,13 @@ class PoolOpLite : public OpLite {
                    std::to_string(param_.strides[0]) + "p" +
                    std::to_string((*param_.paddings)[0]);
     }
-    ch->remark += padding_algorithm_;
+    ch->remark += param_.padding_algorithm;
     ch->macs = output_dims.production() * param_.ksize[0] * param_.ksize[1];
   }
 #endif
 
  private:
   mutable PoolParam param_;
-  std::string padding_algorithm_{""};
 };
 
 inline void UpdatePadding(std::vector<int> *paddings,
@@ -152,6 +152,14 @@ inline void UpdatePadding(std::vector<int> *paddings,
     for (auto it = paddings->begin(); it != paddings->end(); it++) {
       *it = 0;
     }
+  }
+}
+
+inline void UpdateKsize(std::vector<int> *ksize,
+                        const int ksize_num,
+                        const lite::DDim x_dims) {
+  for (int i = 0; i < ksize_num; ++i) {
+    *(ksize->begin() + i) = static_cast<int>(x_dims[i + 2]);
   }
 }
 
