@@ -1,7 +1,7 @@
 set(LITE_URL "http://paddle-inference-dist.bj.bcebos.com" CACHE STRING "inference download url")
 
 function(lite_download_and_uncompress INSTALL_DIR URL FILENAME)
-    string(REGEX MATCH "bcebos.com" URL ${URL_BOS})
+    string(REGEX MATCH "bcebos.com" URL_BOS ${URL})
     if(${URL_BOS})
       if($ENV{http_proxy})
         set(http_proxy_bak ${http_proxy})
