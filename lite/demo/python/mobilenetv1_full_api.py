@@ -22,6 +22,7 @@ from __future__ import print_function
 import argparse
 from paddlelite.lite import *
 import numpy as np
+import platform
 
 # Command arguments
 parser = argparse.ArgumentParser()
@@ -80,6 +81,10 @@ def RunModel(args):
         config.set_model_dir(args.model_dir)
 
     # For arm platform (armlinux), you can set places = [Place(TargetType.ARM, PrecisionType.FP32)]
+    if platform.machine() in ["x86_64", "x64", "AMD64"]:
+        platform_place = Place(TargetType.X86, PrecisionType.FP32)
+    else:
+        platform_place = Place(TargetType.ARM, PrecisionType.FP32)
 
     if args.enable_opencl:
         places = [
@@ -93,9 +98,7 @@ def RunModel(args):
                       TargetType.OpenCL, PrecisionType.Any,
                       DataLayoutType.ImageFolder),
             Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-            Place(TargetType.X86, PrecisionType.FP32),
-            Place(TargetType.ARM, PrecisionType.FP32),
-            Place(TargetType.Host, PrecisionType.FP32)
+            platform_place, Place(TargetType.Host, PrecisionType.FP32)
         ]
         '''
         Set opencl kernel binary.
@@ -141,11 +144,9 @@ def RunModel(args):
         # set places for Metal
         places = [
             Place(TargetType.Metal, PrecisionType.FP32,
-                  DataLayoutType.MetalTexture2DArray), Place(
-                      TargetType.Metal, PrecisionType.FP16,
-                      DataLayoutType.MetalTexture2DArray),
-            Place(TargetType.X86, PrecisionType.FP32),
-            Place(TargetType.ARM, PrecisionType.FP32),
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.Metal, PrecisionType.FP16,
+                  DataLayoutType.MetalTexture2DArray), platform_place,
             Place(TargetType.Host, PrecisionType.FP32)
         ]
     else:
@@ -153,9 +154,7 @@ def RunModel(args):
 
     if args.backend == "nnadapter":
         places = [
-            Place(TargetType.NNAdapter, PrecisionType.FP32),
-            Place(TargetType.X86, PrecisionType.FP32),
-            Place(TargetType.ARM, PrecisionType.FP32),
+            Place(TargetType.NNAdapter, PrecisionType.FP32), platform_place,
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         if args.nnadapter_device_names == "":
