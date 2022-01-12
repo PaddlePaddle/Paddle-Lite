@@ -84,14 +84,15 @@ class Optimizer {
     InitControlFlowOpSharedInputsAndOutputsPlaceSyncPass();
 
     std::vector<std::string> passes_local{
-        {"lite_quant_dequant_fuse_pass",             //
-         "weight_quantization_preprocess_pass",      //
-         "remove_scale1_pass",                       //
-         "adaptive_1x1_pool2d_convert_global_pass",  //
-         "lite_conv_elementwise_fuse_pass",          // conv-elemwise-bn
-         "lite_conv_bn_fuse_pass",                   //
-         "lite_conv_elementwise_fuse_pass",          // conv-bn-elemwise
-         "lite_conv_conv_fuse_pass",                 //
+        {"lite_quant_dequant_fuse_pass",              //
+         "weight_quantization_preprocess_pass",       //
+         "remove_scale1_pass",                        //
+         "adaptive_1x1_pool2d_convert_global_pass",   //
+         "lite_unsqueeze2_pad3d_squeeze2_fuse_pass",  //
+         "lite_conv_elementwise_fuse_pass",           // conv-elemwise-bn
+         "lite_conv_bn_fuse_pass",                    //
+         "lite_conv_elementwise_fuse_pass",           // conv-bn-elemwise
+         "lite_conv_conv_fuse_pass",                  //
          // TODO(Superjomn) Refine the fusion related design to select fusion
          // kernels for devices automatically.
          "lite_conv_activation_fuse_pass",              //
