@@ -328,4 +328,9 @@ struct RankMetalParam {
     int odim[4];
 };
 
+struct CipMetalParam {
+    float max;
+    float min;
+};
+
 #endif  // LITE_KERNELS_METAL_IMAGE_OP_METAL_PARAMS_H_

@@ -87,7 +87,7 @@ kernel void elementwise(texture2d_array<ftype, access::read> inputX[[texture(0)]
             ry[n] = inputY.read(uint2(y_xyzn[0], y_xyzn[1]), y_xyzn[2])[y_xyzn[3]];
         }
     }
-    ftype4 r;
+    ftype4 r = ftype4(0.0);
     if (pm.arithmetic_type == 0)
         r = rx + ry;
     else if (pm.arithmetic_type == 1)
