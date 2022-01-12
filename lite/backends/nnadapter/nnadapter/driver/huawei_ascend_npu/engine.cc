@@ -81,43 +81,6 @@ void Program::Clear() {
   model_client_ = nullptr;
   input_types_.clear();
   output_types_.clear();
-  valid_shapes_.clear();
-}
-
-void Program::SetValidShapes(
-    const std::vector<NNAdapterOperandType>& input_types) {
-  std::vector<std::vector<int32_t>> shapes;
-  for (auto input_type : input_types) {
-    auto shape_size = input_type.dimensions.count;
-    auto shape_data = input_type.dimensions.data;
-    std::vector<int32_t> shape(shape_data, shape_data + shape_size);
-    shapes.push_back(shape);
-  }
-  valid_shapes_.insert(shapes);
-
-  uint32_t dynamic_count = 0;
-  for (auto input_type : input_types) {
-    uint32_t cnt = input_type.dimensions.dynamic_count;
-    if (cnt > 0) {
-      if (dynamic_count == 0) {
-        dynamic_count += cnt;
-      } else {
-        NNADAPTER_CHECK_EQ(dynamic_count, cnt);
-      }
-    }
-  }
-  for (uint32_t i = 0; i < dynamic_count; i++) {
-    for (size_t j = 0; j < input_types.size(); j++) {
-      if (input_types[j].dimensions.dynamic_count == 0) {
-        continue;
-      }
-      auto shape_size = input_types[j].dimensions.count;
-      auto shape_data = input_types[j].dimensions.dynamic_data[i];
-      std::vector<int32_t> shape(shape_data, shape_data + shape_size);
-      shapes[j] = shape;
-    }
-    valid_shapes_.insert(shapes);
-  }
 }
 
 int Program::Build(hal::Model* model, hal::Cache* cache) {
@@ -150,6 +113,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     model_buffer = &cache->buffer;
     auto input_count = cache->input_types.size();
     NNADAPTER_VLOG(3) << "Model input count: " << input_count;
+    input_types_ = cache->input_types;
     auto output_count = cache->output_types.size();
     NNADAPTER_VLOG(3) << "Model output count: " << output_count;
     NNADAPTER_CHECK_GT(output_count, 0);
@@ -172,10 +136,12 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     std::vector<ge::Operator> input_operators;
     if (input_count > 0) {
       input_operators.resize(input_count);
+      input_types_.resize(input_count);
       for (size_t i = 0; i < input_count; i++) {
         auto operand = model->input_operands[i];
         NNADAPTER_CHECK(operators_.find(operand) != operators_.end());
         input_operators[i] = *operators_[operand].back()->op();
+        input_types_[i] = operand->type;
       }
     }
     auto output_count = model->output_operands.size();
@@ -291,16 +257,10 @@ int Program::Execute(uint32_t input_count,
   return NNADAPTER_NO_ERROR;
 }
 
-bool Program::CheckShapeValid() {
-  std::vector<std::vector<int32_t>> shapes;
-  for (auto& input_type : input_types_) {
-    uint32_t size = input_type.dimensions.count;
-    int32_t* data = input_type.dimensions.data;
-    std::vector<int32_t> shape(data, data + size);
-    shapes.push_back(shape);
-  }
-  return valid_shapes_.count(shapes);
-}
+int CheckInputsAndOutputs(uint32_t input_count,
+                          hal::Argument* input_arguments,
+                          uint32_t output_count,
+                          hal::Argument* output_arguments);
 
 }  // namespace huawei_ascend_npu
 }  // namespace nnadapter
