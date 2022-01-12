@@ -1,4 +1,4 @@
-// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -39,10 +39,10 @@ void SoftmaxImageCompute::PrepareForRun() {
 
     // whether to use mps
     bool should_use_mps = false;
-    if (@available(iOS 10.0, macOS 10.13, macCatalyst 13.0, *)) {
+    if (@available(iOS 10.0, *)) {
         if (metal_context_->use_mps()) {
-            int input_c = static_cast<int>(input_buffer_->dim_[3]);
-            int output_c = static_cast<int>(output_buffer_->dim_[3]);
+            int input_c = static_cast<int>(input_buffer_->tensor_dim_[1]);
+            int output_c = static_cast<int>(output_buffer_->tensor_dim_[1]);
             if (input_c >= 3 && output_c >= 3) {
                 should_use_mps = true;
             }
@@ -86,47 +86,18 @@ void SoftmaxImageCompute::setup_without_mps() {
     const auto& param = this->Param<param_t>();
     auto input_dims = param.x->dims();
 
-    auto axis = param.axis;
-    if (axis < 0) {
-        axis += input_dims.size();
+    if (input_dims.size() - param.axis != 3 && input_dims.size() != 2) {
+        LOG(FATAL) << "only support input with rank(dim)=2 or doing softmax in C channel";
+        return;
     }
 
-    std::string function_name = "softmax";
-    if (input_dims.size() == 4) {
-        if (axis == 1) {
-            function_name = "softmax_c_d3_common";
-        } else if (axis == 2) {
-            function_name = "softmax_h_d3_common";
-        } else if (axis == 3) {
-            function_name = "softmax_w_d3_common";
-        }
-    } else if (input_dims.size() == 3) {
-        if (axis == 0) {
-            function_name = "softmax_c_d3_common";
-        } else if (axis == 1) {
-            function_name = "softmax_h_d3_common";
-        } else if (axis == 2) {
-            function_name = "softmax_w_d3_common";
-        }
-    } else if (input_dims.size() == 2 || input_dims.size() == 1) {
-        if (axis == 0) {
-            function_name = "softmax_h_2d_common";
-        } else if (axis == 1) {
-            function_name = "softmax_w_2d_common";
-        }
-    }
-    function_name_ = function_name;
-
+    function_name_ = "softmax";
     // pipline
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     pipline_ = [backend pipline:function_name_];
 
-    SoftmaxMetalParam2 metal_param{
-        (int)input_buffer_->pad_to_four_dim_[0],
-        (int)input_buffer_->pad_to_four_dim_[1],
-        (int)input_buffer_->pad_to_four_dim_[2],
-        (int)input_buffer_->pad_to_four_dim_[3],
-    };
+    SoftmaxMetalParam metal_param{
+        (int)input_buffer_->tensor_dim_[0], (int)input_buffer_->tensor_dim_[1]};
     params_buffer_ =
         std::make_shared<MetalBuffer>(metal_context_, sizeof(metal_param), &metal_param);
 }
@@ -137,7 +108,7 @@ void SoftmaxImageCompute::run_with_mps() {
     auto backend = (__bridge MetalContextImp*)metal_context_->backend();
     auto cmdbuf = [backend commandBuffer];
     if (mps_softmax_op_) {
-        if (@available(iOS 10.0, macOS 10.13, macCatalyst 13.0, *)) {
+        if (@available(iOS 10.0, *)) {
             [((__bridge MPSCNNSoftMax*)mps_softmax_op_)
                 encodeToCommandBuffer:cmdbuf
                           sourceImage:(__bridge MPSImage*)mps_input_image_
@@ -148,15 +119,15 @@ void SoftmaxImageCompute::run_with_mps() {
 }
 
 void SoftmaxImageCompute::setup_with_mps() {
-    if (@available(iOS 10.0, macOS 10.13, macCatalyst 13.0, *)) {
+    if (@available(iOS 10.0, *)) {
         auto backend = (__bridge MetalContextImp*)metal_context_->backend();
         //
         mps_softmax_op_ =
             (__bridge_retained void*)[[MPSCNNSoftMax alloc] initWithDevice:backend.device];
         ((__bridge MPSCNNSoftMax*)mps_softmax_op_).edgeMode = MPSImageEdgeModeZero;
         // MPS in and out
-        auto input_c = static_cast<int>(input_buffer_->dim_[3]);
-        auto output_c = static_cast<int>(output_buffer_->dim_[3]);
+        auto input_c = static_cast<int>(input_buffer_->tensor_dim_[1]);
+        auto output_c = static_cast<int>(output_buffer_->tensor_dim_[1]);
         mps_input_image_ =
             (__bridge_retained void*)[[MPSImage alloc] initWithTexture:input_buffer_->image()
                                                        featureChannels:input_c];
