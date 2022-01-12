@@ -31,7 +31,6 @@ import numpy as np
 class TestBoxCoderOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        # precision has diff on arm
         self.enable_testing_on_place(
             TargetType.ARM,
             PrecisionType.FP32,
