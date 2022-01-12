@@ -34,7 +34,7 @@ function auto_scan_test {
   cd $WORKSPACE/lite/tests/unittest_py/op/
   unittests=$(ls | egrep -v $SKIP_LIST)
   for test in ${unittests[@]}; do
-    if [[ "$test" =~ py$ ]];then
+    if [[ "$test" =~ py$ ]]; then
       python$PYTHON_VERSION $test --target=$target_name
     fi
   done
@@ -42,7 +42,7 @@ function auto_scan_test {
   cd $WORKSPACE/lite/tests/unittest_py/pass/
   unittests=$(ls | egrep -v $SKIP_LIST)
   for test in ${unittests[@]}; do
-    if [[ "$test" =~ py$ ]];then
+    if [[ "$test" =~ py$ ]]; then
       python$PYTHON_VERSION $test --target=$target_name
     fi
   done
@@ -101,8 +101,8 @@ function check_classification_result() {
   local log_file=$2
   local result_class_name="Egyptian cat"
 
-  ret=$(grep "$result_class_name" $log_file)
-  if [ ! $ret ]; then
+  local ret=$(grep "$result_class_name" $log_file)
+  if [[ -z "$ret" ]]; then
     echo "Wrong result on $target. exit!"
     exit 1
   fi
@@ -127,19 +127,21 @@ function run_python_demo() {
   for target in ${targets[@]}; do
     # mobilenetv1_full_api
     python$PYTHON_VERSION mobilenetv1_full_api.py \
-        --model_file=${model_dir}/inference.pdmodel \
-        --param_file=${model_dir}/inference.pdiparams \
-        --label_path=./labels.txt \
-        --image_path=./tabby_cat.jpg \
-        --backend=$target 2>&1 | tee $log_file
+        --model_file ${model_dir}/inference.pdmodel \
+        --param_file ${model_dir}/inference.pdiparams \
+        --input_shape 1 3 224 224 \
+        --label_path ./labels.txt \
+        --image_path ./tabby_cat.jpg \
+        --backend $target 2>&1 | tee $log_file
     check_classification_result $target $log_file
 
     # mobilenetv1_light_api
     python$PYTHON_VERSION mobilenetv1_light_api.py \
-        --model_dir="opt_${target}.nb" \
-        --label_path=./labels.txt \
-        --image_path=./tabby_cat.jpg \
-        --backend=$target 2>&1 | tee $log_file
+        --model_dir "opt_${target}.nb" \
+        --input_shape 1 3 224 224 \
+        --label_path ./labels.txt \
+        --image_path ./tabby_cat.jpg \
+        --backend $target 2>&1 | tee $log_file
     check_classification_result $target $log_file
   done
 }

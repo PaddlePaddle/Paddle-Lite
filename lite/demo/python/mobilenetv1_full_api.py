@@ -32,10 +32,11 @@ parser.add_argument(
     "--param_file", default="", type=str, help="Combined model param file")
 parser.add_argument(
     "--input_shape",
-    default=[],
-    type=str,
+    default=[1, 3, 224, 224],
+    nargs='+',
+    type=int,
     required=False,
-    help="Model input shape, eg: 1,3,224,224. Defalut: 1,3,224,224")
+    help="Model input shape, eg: 1 3 224 224. Defalut: 1 3 224 224")
 parser.add_argument(
     "--backend",
     default="",
@@ -48,7 +49,7 @@ parser.add_argument(
     "--label_path", default="", type=str, help="The path of label file")
 parser.add_argument(
     "--print_results",
-    action="store_true",
+    type=bool,
     default=False,
     help="Print results. Default: False")
 
