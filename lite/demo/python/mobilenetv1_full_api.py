@@ -42,15 +42,32 @@ parser.add_argument(
     action="store_false",
     help="Print results or not")
 parser.add_argument(
-    "--enable_nnadapter",
-    action="store_true",
-    default=False,
-    help="Enable nnadapter or not")
+    "--backend", default="", type=str, help="Specify what the backend is")
 parser.add_argument(
     "--nnadapter_device_names",
     default="",
     type=str,
     help="Set nnadapter device names")
+parser.add_argument(
+    "--nnadapter_context_properties",
+    default="",
+    type=str,
+    help="Set nnadapter context properties")
+parser.add_argument(
+    "--nnadapter_model_cache_dir",
+    default="",
+    type=str,
+    help="Set nnadapter model cache dir")
+parser.add_argument(
+    "--nnadapter_subgraph_partition_config_path",
+    default="",
+    type=str,
+    help="Set nnadapter subgraph partition config path")
+parser.add_argument(
+    "--nnadapter_mixed_precision_quantization_config_path",
+    default="",
+    type=str,
+    help="Set nnadapter mixed precision quantization config path")
 
 
 def RunModel(args):
@@ -131,7 +148,10 @@ def RunModel(args):
             Place(TargetType.ARM, PrecisionType.FP32),
             Place(TargetType.Host, PrecisionType.FP32)
         ]
-    elif args.enable_nnadapter:
+    else:
+        places = [Place(TargetType.X86, PrecisionType.FP32)]
+
+    if args.backend == "nnadapter":
         places = [
             Place(TargetType.NNAdapter, PrecisionType.FP32),
             Place(TargetType.X86, PrecisionType.FP32),
@@ -140,13 +160,16 @@ def RunModel(args):
         ]
         if args.nnadapter_device_names == "":
             print(
-                "You should set nnadapter_device_names when enable_nnadapter == True!"
-            )
+                "Please set nnadapter_device_names when backend = nnadapter!")
             return
         config.set_nnadapter_device_names([args.nnadapter_device_names])
-    else:
-        places = [Place(TargetType.X86, PrecisionType.FP32)]
-    print(config.get_nnadapter_device_names())
+        config.set_nnadapter_context_properties(
+            args.nnadapter_context_properties)
+        config.set_nnadapter_model_cache_dir(args.nnadapter_model_cache_dir)
+        config.set_nnadapter_subgraph_partition_config_path(
+            args.nnadapter_subgraph_partition_config_path)
+        config.set_nnadapter_mixed_precision_quantization_config_path(
+            args.nnadapter_mixed_precision_quantization_config_path)
 
     config.set_valid_places(places)
 
@@ -159,7 +182,7 @@ def RunModel(args):
 
     # 4. Run model
     predictor.run()
-    print("haha")
+
     # 5. Get output data
     output_tensor = predictor.get_output(0)
     output_data = output_tensor.numpy()

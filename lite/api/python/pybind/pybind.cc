@@ -141,7 +141,6 @@ void BindLiteCxxConfig(py::module *m) {
       .def("set_param_file", &CxxConfig::set_param_file)
       .def("param_file", &CxxConfig::param_file)
       .def("set_valid_places", &CxxConfig::set_valid_places)
-      .def("get_valid_places", &CxxConfig::valid_places)
       .def("set_model_buffer",
            (void (CxxConfig::*)(const char *, size_t, const char *, size_t)) &
                CxxConfig::set_model_buffer)
@@ -175,17 +174,18 @@ void BindLiteCxxConfig(py::module *m) {
            &CxxConfig::set_nnadapter_context_properties)
       .def("set_nnadapter_model_cache_dir",
            &CxxConfig::set_nnadapter_model_cache_dir)
-      .def("set_nnadapter_model_cache_buffers",
-           &CxxConfig::set_nnadapter_model_cache_buffers)
       .def("set_nnadapter_subgraph_partition_config_path",
            &CxxConfig::set_nnadapter_subgraph_partition_config_path)
-      .def("set_nnadapter_subgraph_partition_config_buffer",
-           &CxxConfig::set_nnadapter_subgraph_partition_config_buffer)
       .def("set_nnadapter_mixed_precision_quantization_config_path",
            &CxxConfig::set_nnadapter_mixed_precision_quantization_config_path)
-      .def(
-          "set_nnadapter_mixed_precision_quantization_config_buffer",
-          &CxxConfig::set_nnadapter_mixed_precision_quantization_config_buffer);
+      .def("nnadapter_device_names", &CxxConfig::nnadapter_device_names)
+      .def("nnadapter_context_properties",
+           &CxxConfig::nnadapter_context_properties)
+      .def("nnadapter_model_cache_dir", &CxxConfig::nnadapter_model_cache_dir)
+      .def("nnadapter_subgraph_partition_config_path",
+           &CxxConfig::nnadapter_subgraph_partition_config_path)
+      .def("nnadapter_mixed_precision_quantization_config_path",
+           &CxxConfig::nnadapter_mixed_precision_quantization_config_path);
 
 #ifdef LITE_WITH_MLU
   cxx_config.def("set_mlu_core_version", &CxxConfig::set_mlu_core_version)
