@@ -265,7 +265,7 @@ std::unique_ptr<RuntimeProgram> RunDefaultOptimizer(
        "argument_type_display_pass",
        "lite_inplace_fuse_pass",
 #if !(defined(LITE_WITH_FPGA) || defined(LITE_WITH_PRECISION_PROFILE))
-       //       "memory_optimize_pass",
+       "memory_optimize_pass",
        "xpu_memory_optimize_pass"
 #endif
       }};
