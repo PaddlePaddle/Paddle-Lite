@@ -39,32 +39,10 @@ void Program::Clear() {
   output_tensors_.clear();
   input_types_.clear();
   output_types_.clear();
-  valid_shapes_.clear();
-}
-
-void Program::SetValidShapes(
-    const std::vector<NNAdapterOperandType>& input_types) {
-  std::vector<std::vector<int32_t>> shapes;
-  for (auto input_type : input_types) {
-    NNADAPTER_CHECK(!IsDynamicShapeOperandType(input_type))
-        << "Not support dynamic input shapes now.";
-    auto shape_size = input_type.dimensions.count;
-    auto shape_data = input_type.dimensions.data;
-    std::vector<int32_t> shape(shape_data, shape_data + shape_size);
-    valid_shapes_.push_back(shape);
-  }
 }
 
 int Program::Build(hal::Model* model, hal::Cache* cache) {
   Clear();
-  if (!cache->buffer.empty()) {
-    input_types_ = cache->input_types;
-  } else {
-    for (auto input_operand : model->input_operands) {
-      input_types_.push_back(input_operand->type);
-    }
-  }
-  SetValidShapes(input_types_);
   std::vector<uint8_t> model_content;
   std::vector<uint8_t>* model_buffer = nullptr;
   if (!cache->buffer.empty()) {
@@ -72,6 +50,7 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     model_buffer = &cache->buffer;
     auto input_count = cache->input_types.size();
     NNADAPTER_VLOG(3) << "Model input count: " << input_count;
+    input_types_ = cache->input_types;
     auto output_count = cache->output_types.size();
     NNADAPTER_VLOG(3) << "Model output count: " << output_count;
     NNADAPTER_CHECK_GT(output_count, 0);
@@ -90,10 +69,12 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     std::vector<ge::Operator> input_operators;
     if (input_count > 0) {
       input_operators.resize(input_count);
+      input_types_.resize(input_count);
       for (size_t i = 0; i < input_count; i++) {
         auto operand = model->input_operands[i];
         NNADAPTER_CHECK(operators_.find(operand) != operators_.end());
         input_operators[i] = *operators_[operand].back()->op();
+        input_types_[i] = operand->type;
       }
     }
     auto output_count = model->output_operands.size();
@@ -188,10 +169,41 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
   return NNADAPTER_NO_ERROR;
 }
 
+int Program::CheckInputsAndOutputs(uint32_t input_count,
+                                   hal::Argument* input_arguments,
+                                   uint32_t output_count,
+                                   hal::Argument* output_arguments) {
+  // Check inputs
+  for (uint32_t i = 0; i < input_count; i++) {
+    // Get actual type
+    auto& arg = input_arguments[i];
+    NNAdapterOperandType type;
+    arg.access(arg.memory, &type);
+    // Check dimensions count
+    uint32_t count = type.dimensions.count;
+    int32_t* data = type.dimensions.data;
+    auto& src_dimensions = input_types_[i].dimensions;
+    int32_t* src_data = src_dimensions.data;
+    if (count != src_dimensions.count) {
+      return NNADAPTER_INVALID_DIMENSIONS;
+    }
+    // Check dimensions data
+    for (uint32_t j = 0; j < count; j++) {
+      if (data[j] != src_data[j]) {
+        return NNADAPTER_INVALID_DIMENSIONS;
+      }
+    }
+  }
+  return NNADAPTER_NO_ERROR;
+}
+
 int Program::Execute(uint32_t input_count,
                      hal::Argument* input_arguments,
                      uint32_t output_count,
                      hal::Argument* output_arguments) {
+  int ret = CheckInputsAndOutputs(
+      input_count, input_arguments, output_count, output_arguments);
+  if (ret != NNADAPTER_NO_ERROR) return ret;
   NNADAPTER_CHECK_EQ(input_types_.size(), input_count);
   NNADAPTER_CHECK_EQ(output_types_.size(), output_count);
   for (uint32_t i = 0; i < input_count; i++) {
@@ -236,17 +248,6 @@ int Program::Execute(uint32_t input_count,
     memcpy(buffer, output_tensors_[arg.index]->GetBuffer(), length);
   }
   return NNADAPTER_NO_ERROR;
-}
-
-bool Program::CheckShapeValid() {
-  std::vector<std::vector<int32_t>> shapes;
-  for (auto& input_type : input_types_) {
-    uint32_t size = input_type.dimensions.count;
-    int32_t* data = input_type.dimensions.data;
-    std::vector<int32_t> shape(data, data + size);
-    shapes.push_back(shape);
-  }
-  return valid_shapes_ == shapes;
 }
 
 }  // namespace huawei_kirin_npu

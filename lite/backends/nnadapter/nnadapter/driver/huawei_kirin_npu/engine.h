@@ -61,11 +61,13 @@ class Program {
               hal::Argument* input_arguments,
               uint32_t output_count,
               hal::Argument* output_arguments);
-  bool CheckShapeValid();
 
  private:
   void Clear();
-  void SetValidShapes(const std::vector<NNAdapterOperandType>& input_types);
+  int CheckInputsAndOutputs(uint32_t input_count,
+                            hal::Argument* input_arguments,
+                            uint32_t output_count,
+                            hal::Argument* output_arguments);
 
  private:
   Context* context_{nullptr};
@@ -77,7 +79,6 @@ class Program {
   std::vector<std::shared_ptr<hiai::AiTensor>> output_tensors_{};
   std::vector<NNAdapterOperandType> input_types_;
   std::vector<NNAdapterOperandType> output_types_;
-  std::vector<std::vector<int32_t>> valid_shapes_;
 };
 
 }  // namespace huawei_kirin_npu

@@ -17,7 +17,6 @@
 #include <limits.h>
 #include <map>
 #include <memory>
-#include <set>
 #include <string>
 #include <vector>
 #include "driver/huawei_ascend_npu/converter/converter.h"

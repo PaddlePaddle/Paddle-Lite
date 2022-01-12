@@ -305,42 +305,42 @@ bool AclModelClient::Process(uint32_t input_count,
     NNADAPTER_CHECK(arg) << "Input argument " << i << " does not exist!";
     NNADAPTER_CHECK(arg->memory);
     NNADAPTER_CHECK(arg->access);
-    auto type = &input_types->at(i);
-    auto host_ptr = arg->access(arg->memory, type);
+    auto type = input_types->at(i);
+    auto host_ptr = arg->access(arg->memory, &type);
     NNADAPTER_CHECK(host_ptr);
-    auto length = GetOperandTypeBufferLength(*type);
+    auto length = GetOperandTypeBufferLength(type);
     // Query and verify the input dimensions from ACL runtime
     aclmdlIODims dimensions;
     ACL_CALL(aclmdlGetInputDims(model_desc_, i, &dimensions));
-    NNADAPTER_CHECK_GE(dimensions.dimCount, type->dimensions.count);
-    bool dynamic_shape = false;
+    NNADAPTER_CHECK_GE(dimensions.dimCount, type.dimensions.count);
+    bool is_dynamic_shape = false;
     for (size_t j = 0; j < dimensions.dimCount; j++) {
       auto& dimension = dimensions.dims[j];
       if (dimension == -1) {
-        dimension = type->dimensions.data[j];
-        dynamic_shape = true;
+        dimension = type.dimensions.data[j];
+        is_dynamic_shape = true;
       } else {
-        NNADAPTER_CHECK_EQ(dimension, type->dimensions.data[j])
+        NNADAPTER_CHECK_EQ(dimension, type.dimensions.data[j])
             << "The " << j << "th dimension of the " << i
             << "th input does not match, expect " << dimension
-            << " but recevied " << type->dimensions.data[j];
+            << " but recevied " << type.dimensions.data[j];
       }
       NNADAPTER_VLOG(3) << "The " << j << "th dimension of the " << i
                         << "th input is " << dimension;
     }
     // Set true dynamic shapes
-    if (dynamic_shape) {
+    if (is_dynamic_shape) {
       switch (dynamic_shape_mode) {
         case DYNAMIC_SHAPE_MODE_BTACH_SIZE:
           aclmdlSetDynamicBatchSize(
-              model_id_, input_dataset_, i, type->dimensions.data[0]);
+              model_id_, input_dataset_, i, type.dimensions.data[0]);
           break;
         case DYNAMIC_SHAPE_MODE_HEIGHT_WIDTH:
           aclmdlSetDynamicHWSize(model_id_,
                                  input_dataset_,
                                  i,
-                                 type->dimensions.data[2],
-                                 type->dimensions.data[3]);
+                                 type.dimensions.data[2],
+                                 type.dimensions.data[3]);
           break;
         case DYNAMIC_SHAPE_MODE_N_DIMS:
           aclmdlSetInputDynamicDims(model_id_, input_dataset_, i, &dimensions);

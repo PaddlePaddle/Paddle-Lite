@@ -84,13 +84,13 @@ int Compilation::Execute(std::vector<hal::Argument>* input_arguments,
   // TODO(hong19860320) Supports asynchronously execution in future.
   for (size_t i = 0; i < programs_.size(); i++) {
     auto device_context = programs_[i].device_context;
-    NNADAPTER_CHECK_EQ(
-        device_context->device->ExecuteProgram(programs_[i].program,
-                                               input_arguments->size(),
-                                               &((*input_arguments)[0]),
-                                               output_arguments->size(),
-                                               &((*output_arguments)[0])),
-        NNADAPTER_NO_ERROR)
+    int ret = device_context->device->ExecuteProgram(programs_[i].program,
+                                                     input_arguments->size(),
+                                                     &((*input_arguments)[0]),
+                                                     output_arguments->size(),
+                                                     &((*output_arguments)[0]));
+    if (ret == NNADAPTER_INVALID_DIMENSIONS) return ret;
+    NNADAPTER_CHECK_EQ(ret, NNADAPTER_NO_ERROR)
         << "Failed to Execute a program for " << i
         << "th compiled program on the device '"
         << device_context->device->GetName() << "'";

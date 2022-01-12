@@ -55,21 +55,12 @@ void Program::Clear() {
   operand_buffers_.clear();
   input_types_.clear();
   output_types_.clear();
-  valid_shapes_.clear();
   dump_graph_path_ = "";
   dump_graph_buffer_ = nullptr;
 }
 
 int Program::Build(hal::Model* model, hal::Cache* cache) {
   Clear();
-  if (!cache->buffer.empty()) {
-    input_types_ = cache->input_types;
-  } else {
-    for (auto input_operand : model->input_operands) {
-      input_types_.push_back(input_operand->type);
-    }
-  }
-  SetValidShapes(input_types_);
   if (model && cache->dir && cache->token) {
     dump_graph_path_ = string_format("%s/%s.dat", cache->dir, cache->token);
   }
@@ -106,6 +97,7 @@ int Program::BuildFromModel(hal::Model* model) {
   std::vector<uint32_t> input_operand_indexes(input_count);
   if (input_count > 0) {
     input_operand_indexes.resize(input_count);
+    input_types_.resize(input_count);
     for (size_t i = 0; i < input_count; i++) {
       auto operand = model->input_operands[i];
       NNADAPTER_CHECK(operand_indexes_.find(operand) != operand_indexes_.end())
@@ -117,6 +109,7 @@ int Program::BuildFromModel(hal::Model* model) {
                         << " for input operand @0x" << std::hex
                         << reinterpret_cast<int64_t>(operand);
       input_operand_indexes[i] = index;
+      input_types_[i] = operand->type;
     }
   }
   auto output_count = model->output_operands.size();
@@ -218,6 +211,7 @@ int Program::BuildFromCache(hal::Cache* cache) {
   }
   auto input_count = cache->input_types.size();
   NNADAPTER_VLOG(3) << "Model input count: " << input_count;
+  input_types_ = cache->input_types;
   auto output_count = cache->output_types.size();
   NNADAPTER_VLOG(3) << "Model output count: " << output_count;
   NNADAPTER_CHECK_GT(output_count, 0);
@@ -235,10 +229,41 @@ int Program::BuildFromCache(hal::Cache* cache) {
   return NNADAPTER_NO_ERROR;
 }
 
+int Program::CheckInputsAndOutputs(uint32_t input_count,
+                                   hal::Argument* input_arguments,
+                                   uint32_t output_count,
+                                   hal::Argument* output_arguments) {
+  // Check inputs
+  for (uint32_t i = 0; i < input_count; i++) {
+    // Get actual type
+    auto& arg = input_arguments[i];
+    NNAdapterOperandType type;
+    arg.access(arg.memory, &type);
+    // Check dimensions count
+    uint32_t count = type.dimensions.count;
+    int32_t* data = type.dimensions.data;
+    auto& src_dimensions = input_types_[i].dimensions;
+    int32_t* src_data = src_dimensions.data;
+    if (count != src_dimensions.count) {
+      return NNADAPTER_INVALID_DIMENSIONS;
+    }
+    // Check dimensions data
+    for (uint32_t j = 0; j < count; j++) {
+      if (data[j] != src_data[j]) {
+        return NNADAPTER_INVALID_DIMENSIONS;
+      }
+    }
+  }
+  return NNADAPTER_NO_ERROR;
+}
+
 int Program::Execute(uint32_t input_count,
                      hal::Argument* input_arguments,
                      uint32_t output_count,
                      hal::Argument* output_arguments) {
+  int ret = CheckInputsAndOutputs(
+      input_count, input_arguments, output_count, output_arguments);
+  if (ret != NNADAPTER_NO_ERROR) return ret;
   // Set inputs and outputs and transform the data with zero point
   for (uint32_t i = 0; i < input_count; i++) {
     auto& arg = input_arguments[i];
@@ -296,17 +321,6 @@ int Program::Execute(uint32_t input_count,
     }
   }
   return NNADAPTER_NO_ERROR;
-}
-
-bool Program::CheckShapeValid() {
-  std::vector<std::vector<int32_t>> shapes;
-  for (auto& input_type : input_types_) {
-    uint32_t size = input_type.dimensions.count;
-    int32_t* data = input_type.dimensions.data;
-    std::vector<int32_t> shape(data, data + size);
-    shapes.push_back(shape);
-  }
-  return valid_shapes_ == shapes;
 }
 
 }  // namespace mediatek_apu

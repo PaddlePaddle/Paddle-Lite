@@ -15,7 +15,6 @@
 #include "lite/kernels/nnadapter/engine.h"
 #include <sys/time.h>
 #include <time.h>
-#include <map>
 #include <utility>
 #include "lite/core/op_registry.h"
 #include "lite/kernels/nnadapter/converter/converter.h"

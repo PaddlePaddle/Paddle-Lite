@@ -86,8 +86,7 @@ void Program::Clear() {
 int Program::Build(hal::Model* model, hal::Cache* cache) {
   Clear();
 
-  std::vector<std::string> dynamic_shapes;
-  std::string optional_shapes_str;
+  // Get dynamic_shape_info, optional_shape_str, dynamic_shape_mode_
   if (!cache->buffer.empty()) {
     input_types_ = cache->input_types;
   } else {
@@ -95,15 +94,16 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
       input_types_.push_back(input_operand->type);
     }
   }
-  SetValidShapes(input_types_);
-  GetDynamicInfo(input_types_,
-                 &dynamic_shapes,
-                 &optional_shapes_str,
-                 &dynamic_shape_mode_);
-  for (auto dynamic_shape : dynamic_shapes) {
+  std::vector<std::string> dynamic_shape_info;
+  std::string optional_shape_str;
+  GetDynamicShapeInfo(input_types_,
+                      &dynamic_shape_info,
+                      &optional_shape_str,
+                      &dynamic_shape_mode_);
+  for (auto dynamic_shape : dynamic_shape_info) {
     NNADAPTER_VLOG(3) << "dynamic_shape: " << dynamic_shape;
   }
-  NNADAPTER_VLOG(3) << "optional_shapes_str: " << optional_shapes_str;
+  NNADAPTER_VLOG(3) << "optional_shape_str: " << optional_shape_str;
   NNADAPTER_VLOG(3) << "dynamic_shape_mode_: " << dynamic_shape_mode_;
 
   std::vector<uint8_t> model_content;
@@ -113,7 +113,6 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     model_buffer = &cache->buffer;
     auto input_count = cache->input_types.size();
     NNADAPTER_VLOG(3) << "Model input count: " << input_count;
-    input_types_ = cache->input_types;
     auto output_count = cache->output_types.size();
     NNADAPTER_VLOG(3) << "Model output count: " << output_count;
     NNADAPTER_CHECK_GT(output_count, 0);
@@ -136,12 +135,10 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     std::vector<ge::Operator> input_operators;
     if (input_count > 0) {
       input_operators.resize(input_count);
-      input_types_.resize(input_count);
       for (size_t i = 0; i < input_count; i++) {
         auto operand = model->input_operands[i];
         NNADAPTER_CHECK(operators_.find(operand) != operators_.end());
         input_operators[i] = *operators_[operand].back()->op();
-        input_types_[i] = operand->type;
       }
     }
     auto output_count = model->output_operands.size();
@@ -164,8 +161,8 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
     if (!BuildOMModelToBuffer(input_operators,
                               output_operators,
                               model_buffer,
-                              dynamic_shapes,
-                              optional_shapes_str,
+                              dynamic_shape_info,
+                              optional_shape_str,
                               dynamic_shape_mode_)) {
       NNADAPTER_LOG(FATAL)
           << "Failed to build a CANN OM model and serialize it into a buffer!";
@@ -243,10 +240,58 @@ int Program::Build(hal::Model* model, hal::Cache* cache) {
   return NNADAPTER_NO_ERROR;
 }
 
+int Program::CheckInputsAndOutputs(uint32_t input_count,
+                                   hal::Argument* input_arguments,
+                                   uint32_t output_count,
+                                   hal::Argument* output_arguments) {
+  // Check inputs
+  for (uint32_t i = 0; i < input_count; i++) {
+    // Get actual type
+    auto& arg = input_arguments[i];
+    NNAdapterOperandType type;
+    arg.access(arg.memory, &type);
+    // Check dimensions count
+    uint32_t count = type.dimensions.count;
+    int32_t* data = type.dimensions.data;
+    auto& src_dimensions = input_types_[i].dimensions;
+    int32_t* src_data = src_dimensions.data;
+    if (count != src_dimensions.count) {
+      return NNADAPTER_INVALID_DIMENSIONS;
+    }
+    // Check dimensions data
+    bool is_matched = true;
+    for (uint32_t j = 0; j < count; j++) {
+      if (data[j] != src_data[j]) {
+        is_matched = false;
+        break;
+      }
+    }
+    if (is_matched) continue;
+    // Chech dynamic dymensions data
+    for (uint32_t k = 0; k < src_dimensions.dynamic_count; k++) {
+      is_matched = true;
+      for (uint32_t j = 0; j < count; j++) {
+        if (data[j] != src_dimensions.dynamic_data[k][j]) {
+          is_matched = false;
+          break;
+        }
+      }
+      if (is_matched) break;
+    }
+    if (!is_matched) {
+      return NNADAPTER_INVALID_DIMENSIONS;
+    }
+  }
+  return NNADAPTER_NO_ERROR;
+}
+
 int Program::Execute(uint32_t input_count,
                      hal::Argument* input_arguments,
                      uint32_t output_count,
                      hal::Argument* output_arguments) {
+  int ret = CheckInputsAndOutputs(
+      input_count, input_arguments, output_count, output_arguments);
+  if (ret != NNADAPTER_NO_ERROR) return ret;
   NNADAPTER_CHECK(model_client_->Process(input_count,
                                          &input_types_,
                                          input_arguments,
@@ -256,11 +301,6 @@ int Program::Execute(uint32_t input_count,
                                          dynamic_shape_mode_));
   return NNADAPTER_NO_ERROR;
 }
-
-int CheckInputsAndOutputs(uint32_t input_count,
-                          hal::Argument* input_arguments,
-                          uint32_t output_count,
-                          hal::Argument* output_arguments);
 
 }  // namespace huawei_ascend_npu
 }  // namespace nnadapter
