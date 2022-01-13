@@ -180,9 +180,6 @@ endif()
 
 if (LITE_WITH_XPU)
     add_definitions("-DLITE_WITH_XPU")
-    if (LITE_WITH_XTCL)
-      add_definitions("-DLITE_WITH_XTCL")
-    endif()
 endif()
 
 if (LITE_WITH_OPENCL)

@@ -173,7 +173,7 @@ TEST(ExpandV2, precision) {
   TestExpandV2<float>(place, abs_error, {2, 1, 4}, {2, 3, 4}, true);
   TestExpandV2<float>(place, abs_error, {2, 1, 4}, {2, 2, 3, 4});
   return;
-#elif defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+#elif defined(LITE_WITH_XPU)
   place = TARGET(kXPU);
 #else
   return;

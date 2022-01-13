@@ -162,7 +162,7 @@ void test_sequence_pool(Place place) {
     for (auto h : {1, 3, 4}) {
       for (auto w : {1, 3, 4}) {
         for (auto pool_type :
-#if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+#if defined(LITE_WITH_XPU)
              {"SUM", "MAX", "FIRST", "LAST"}) {
 #else
              {"SUM", "AVERAGE", "SQRT", "MAX", "MIN", "FIRST", "LAST"}) {
@@ -189,7 +189,7 @@ TEST(SequencePool, precision) {
 // #ifdef LITE_WITH_X86
 //   Place place(TARGET(kX86));
 // #endif
-#if defined(LITE_WITH_XPU) && !defined(LITE_WITH_XTCL)
+#if defined(LITE_WITH_XPU)
   Place place(TARGET(kXPU));
 #elif defined(LITE_WITH_ARM)
   Place place(TARGET(kARM));
