@@ -39,13 +39,6 @@ class TestExpandV2Op(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        in_dtype = program_config.inputs["input_data"].dtype
-
-        #wait for atuo_scan_base bug fix 
-        if "float32" != in_dtype or "expand_shapes_tensor" in program_config.ops[
-                0].inputs:
-            return False
-
         return True
 
     def sample_program_configs(self, draw):
@@ -157,7 +150,18 @@ class TestExpandV2Op(AutoScanTest):
         return self.get_predictor_configs(), ["expand_v2"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_dtype = program_config.inputs["input_data"].dtype
+            if target_type == TargetType.Host:
+                if "float32" != in_dtype or "expand_shapes_tensor" in program_config.ops[
+                        0].inputs:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case on Host. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)

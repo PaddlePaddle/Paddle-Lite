@@ -253,7 +253,7 @@ class ConvComputeTester : public arena::TestCase {
     if (with_bias_) {
       DDim bias_dims(std::vector<int64_t>{out_channels_});
       std::vector<float> dbias(bias_dims.production());
-      fill_data_rand(din.data(), -1.f, 1.f, bias_dims.production());
+      fill_data_rand(dbias.data(), -1.f, 1.f, bias_dims.production());
       SetCommonTensor(bias_, bias_dims, dbias.data(), {}, true);
     }
   }

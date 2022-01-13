@@ -254,6 +254,7 @@ struct SoftmaxParam : ParamBase {
   lite::Tensor* output{};
   int axis{-1};
   bool use_cudnn{true};
+  bool eleminate_success{false};
 };
 
 // For Reshape and Reshape2 Op
@@ -335,6 +336,7 @@ struct SparseConvParam : ParamBase {
   const lite::Tensor* bias{nullptr};
   lite::Tensor* output{};
   int first_ic{0};
+  int flag_semi{0};
   std::vector<int> strides{1, 1};
   std::shared_ptr<std::vector<int>> paddings;
   int groups{1};
@@ -450,6 +452,7 @@ struct PoolParam : ParamBase {
   bool adaptive{false};
   bool ceil_mode{false};
   bool use_quantizer{false};
+  std::string padding_algorithm{"EXPLICIT"};
   std::string data_format{"AnyLayout"};
   // for int8
   WITH_INT8_CONFIG
@@ -1539,6 +1542,7 @@ struct DistributeFpnProposalsParam : ParamBase {
   int max_level{};
   int refer_level{};
   int refer_scale{};
+  bool pixel_offset{true};
 };
 
 /// --------------------- instance_norm operators --------------------

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from os import truncate
 import sys
 sys.path.append('../')
 
@@ -35,15 +36,20 @@ class TestCastOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
+        metal_places = [
+            Place(TargetType.Metal, PrecisionType.FP32,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.Metal, PrecisionType.FP16,
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.ARM, PrecisionType.FP32),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=metal_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        if program_config.ops[0].attrs["in_dtype"] == 0 or program_config.ops[
-                0].attrs["out_dtype"] == 0:
-            return False
-        else:
-            return True
+        return True
 
     def sample_program_configs(self, draw):
         in_shape = draw(
@@ -85,16 +91,41 @@ class TestCastOp(AutoScanTest):
                 "input_data": TensorConfig(data_gen=partial(generate_input))
             },
             outputs=["output_data"])
+
+        in_dtype = program_config.ops[0].attrs["in_dtype"]
+        out_dtype = program_config.ops[0].attrs["out_dtype"]
+        assume(in_dtype != 0)
+        assume(out_dtype != 0)
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["cast"], (1e-5, 1e-5)
+        atol, rtol = 1e-5, 1e-5
+        target_str = self.get_target()
+        if target_str == "Metal":
+            atol, rtol = 5e-4, 5e-4
+        return self.get_predictor_configs(), ["cast"], (atol, rtol)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            x_shape = list(program_config.inputs["input_data"].shape)
+            in_dtype = program_config.ops[0].attrs["in_dtype"]
+            out_dtype = program_config.ops[0].attrs["out_dtype"]
+            if predictor_config.target() == TargetType.Metal:
+                if len(x_shape) != 4 or in_dtype != 5 or out_dtype != 5:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "The op output has diff in a specific case on metal. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=250)
+        target_str = self.get_target()
+        max_examples = 250
+        if target_str == "Metal":
+            # Make sure to generate enough valid cases for Metal
+            max_examples = 1000
+        self.run_and_statis(quant=False, max_examples=max_examples)
 
 
 if __name__ == "__main__":

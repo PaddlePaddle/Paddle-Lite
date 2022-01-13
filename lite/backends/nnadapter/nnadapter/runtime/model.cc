@@ -32,6 +32,11 @@ Model::~Model() {
         operand.type.symm_per_channel_params.scales) {
       free(operand.type.symm_per_channel_params.scales);
     }
+    for (size_t i = 0; i < hal::NNADAPTER_MAX_SIZE_OF_HINTS; i++) {
+      if (operand.hints[i].handler) {
+        operand.hints[i].deleter(&operand.hints[i].handler);
+      }
+    }
   }
 }
 

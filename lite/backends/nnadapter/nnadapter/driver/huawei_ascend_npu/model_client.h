@@ -32,7 +32,7 @@ class AclModelClient {
                           const std::string& profiling_file_path);
   ~AclModelClient();
 
-  bool LoadModel(const void* data, uint32_t size);
+  bool LoadModel(const void* data, size_t size);
   void UnloadModel();
   bool GetModelIOTensorDim(std::vector<ge::TensorDesc>* input_tensor_descs,
                            std::vector<ge::TensorDesc>* output_tensor_descs);

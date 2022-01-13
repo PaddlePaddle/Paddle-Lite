@@ -320,6 +320,185 @@ namespace fp16 {
   "st1 {v7.8h}, [%[outc7]], #16\n"
 
 #else
+
+#define COMPUTE                                                    \
+  "vld1.16  {d24-d25},  [%[bias]]   \n" /* load bias to out00 */   \
+  "vmov.u32 q13,  q12 \n" /* mov bias to out01 */                  \  
+  "vld1.16  {d0-d3},    [%[wc0]]!    \n" /* load w0-w1 */          \
+  "vmov.u32 q14,  q12 \n" /* mov bias to out02 */                  \
+  "vld1.16  {d8-d11},   [%[inr0]]!  \n" /* load inr0, 0-1 */       \
+  "vmov.u32 q15,  q12 \n" /* mov bias to out03 */                  \
+  "vld1.16  {d12-d15},  [%[inr0]]!  \n" /* load inr0, 2-3 */       \
+  /*  out row0*/ \
+  "vmla.f16 q12,  q4,   q0  \n"   /* out00 = w0 * inr00 */         \
+  "vmla.f16 q13,  q5,   q0  \n"   /* out01 = w0 * inr01 */         \
+  "vld1.16  {d16-d19},  [%[inr0]]!  \n" /* load inr0, 4-5 */       \
+  "vmla.f16 q14,  q6,   q0  \n"   /* out02 = w0 * inr02 */         \
+  "vmla.f16 q15,  q7,   q0  \n"   /* out03 = w0 * inr03 */         \
+  "vld1.16  {d20-d23},  [%[inr0]]!  \n" /* load inr0, 6-7 */       \
+  "vmla.f16 q12,  q5,   q1  \n"   /* out00 = w1 * inr01 */         \
+  "vmla.f16 q13,  q6,   q1  \n"   /* out01 = w1 * inr02 */         \
+  "vld1.16  {d4-d7},    [%[wc0]]!    \n" /* load w2-w3 */          \
+  "vmla.f16 q14,  q7,   q1  \n"   /* out02 = w1 * inr03 */         \
+  "vmla.f16 q15,  q8,   q1  \n"   /* out03 = w1 * inr04 */         \
+  "vld1.16  {d8-d11},   [%[inr1]]!\n" /* load inr1, 0-1 */         \
+  "vmla.f16 q12,  q6,   q2  \n"   /* out00 = w2 * inr02 */         \
+  "vmla.f16 q13,  q7,   q2  \n"   /* out01 = w2 * inr03 */         \
+  "vmla.f16 q14,  q8,   q2  \n"   /* out02 = w2 * inr04 */         \
+  "vmla.f16 q15,  q9,   q2  \n"   /* out03 = w2 * inr05 */         \
+  "vld1.16   {d0-d3},   [%[wc0]]!  \n" /* load w4-w5 */            \
+  "vmla.f16 q12,  q7,   q3  \n"   /* out00 = w3 * inr03 */         \
+  "vmla.f16 q13,  q8,   q3  \n"   /* out01 = w3 * inr04 */         \
+  "vmla.f16 q14,  q9,   q3  \n"   /* out02 = w3 * inr05 */         \
+  "vmla.f16 q15,  q10,  q3  \n"   /* out03 = w3 * inr06 */         \
+  "vld1.16  {d12-d15},  [%[inr1]]!\n" /* load inr1, 2-3 */         \
+  "vmla.f16 q12,  q8,   q0  \n"   /* out00 = w4 * inr04 */         \
+  "vmla.f16 q13,  q9,   q0  \n"   /* out01 = w4 * inr05 */         \ 
+  "vmla.f16 q14,  q10,  q0  \n"   /* out02 = w4 * inr06 */         \
+  "vmla.f16 q15,  q11,  q0  \n"   /* out03 = w4 * inr07 */         \
+  "vld1.16   {d4-d7},   [%[wc0]]!  \n" /* load w6-w7 */            \
+  /*  out row1*/\
+  "vmla.f16 q12,  q4,   q1  \n"   /* out00 = w5 * inr10 */         \
+  "vmla.f16 q13,  q5,   q1  \n"   /* out01 = w5 * inr11 */         \
+  "vmla.f16 q14,  q6,   q1  \n"   /* out02 = w5 * inr12 */         \
+  "vmla.f16 q15,  q7,   q1  \n"   /* out03 = w5 * inr13 */         \
+  "vld1.16  {d16-d19},  [%[inr1]]!\n" /* load inr1, 4-5 */         \
+  "vmla.f16 q12,  q5,   q2  \n"   /* out00 = w6 * inr11 */         \
+  "vmla.f16 q13,  q6,   q2  \n"   /* out01 = w6 * inr12 */         \
+  "vmla.f16 q14,  q7,   q2  \n"   /* out02 = w6 * inr13 */         \
+  "vmla.f16 q15,  q8,   q2  \n"   /* out03 = w6 * inr14 */         \
+  "vld1.16   {d0-d3},   [%[wc0]]!  \n" /* load w8-w9 */            \
+  "vmla.f16 q12,  q6,   q3  \n"   /* out00 = w7 * inr12 */         \
+  "vmla.f16 q13,  q7,   q3  \n"   /* out01 = w7 * inr13 */         \
+  "vld1.16  {d20-d23},  [%[inr1]]!\n" /* load inr1, 6-7 */         \
+  "vmla.f16 q14,  q8,   q3  \n"   /* out02 = w7 * inr14 */         \  
+  "vmla.f16 q15,  q9,   q3  \n"   /* out03 = w7 * inr15 */         \
+  "vmla.f16 q12,  q7,   q0  \n"   /* out00 = w8 * inr13 */         \
+  "vmla.f16 q13,  q8,   q0  \n"   /* out01 = w8 * inr14 */         \
+  "vld1.16  {d8-d11},   [%[inr2]]!\n" /* load inr2, 0-1 */         \
+  "vmla.f16 q14,  q9,   q0  \n"   /* out02 = w8 * inr15 */         \
+  "vmla.f16 q15,  q10,  q0  \n"   /* out03 = w8 * inr16 */         \
+  "vld1.16  {d4-d7},    [%[wc0]]!  \n" /* load w10-w11 */           \
+  "vmla.f16 q12,  q8,   q1  \n"   /* out00 = w9 * inr14 */         \
+  "vmla.f16 q13,  q9,   q1  \n"   /* out01 = w9 * inr15 */         \
+  "vld1.16  {d12-d15},  [%[inr2]]!\n" /* load inr2, 2-3 */         \
+  "vmla.f16 q14,  q10,  q1  \n"   /* out02 = w9 * inr16 */         \
+  "vmla.f16 q15,  q11,  q1  \n"   /* out03 = w9 * inr17 */         \
+  /*  out row3*/        \
+  "vmla.f16 q12,  q4,   q2  \n"   /* out00 = w10 * inr20 */        \
+  "vmla.f16 q13,  q5,   q2  \n"   /* out01 = w10 * inr21 */        \
+  "vld1.16  {d16-d19},  [%[inr2]]!\n" /* load inr2, 4-5 */         \
+  "vmla.f16 q14,  q6,   q2  \n"   /* out02 = w10 * inr22 */        \
+  "vmla.f16 q15,  q7,   q2  \n"   /* out03 = w10 * inr23 */        \
+  "vld1.16  {d0-d3},    [%[wc0]]!  \n" /* load w12-w13 */          \
+  "vmla.f16 q12,  q5,   q3  \n"   /* out00 = w11 * inr21 */        \
+  "vmla.f16 q13,  q6,   q3  \n"   /* out01 = w11 * inr22 */        \
+  "vld1.16  {d20-d23},  [%[inr2]]!\n" /* load inr2, 6-7 */         \
+  "vmla.f16 q14,  q7,   q3  \n"   /* out02 = w11 * inr23 */        \
+  "vmla.f16 q15,  q8,   q3  \n"   /* out03 = w11 * inr24 */        \
+  "vld1.16  {d4-d7},    [%[wc0]]!  \n" /* load w14-w15 */          \ 
+  "vmla.f16 q12,  q6,   q0  \n"   /* out00 = w12 * inr22 */        \
+  "vmla.f16 q13,  q7,   q0  \n"   /* out01 = w12 * inr23 */        \
+  "vmla.f16 q14,  q8,   q0  \n"   /* out02 = w12 * inr24 */        \
+  "vmla.f16 q15,  q9,   q0  \n"   /* out03 = w12 * inr25 */        \
+  "vld1.16  {d8-d11},   [%[inr3]]!\n" /* load inr3, 0-1 */         \
+  "vmla.f16 q12,  q7,   q1  \n"   /* out00 = w13 * inr23 */        \
+  "vmla.f16 q13,  q8,   q1  \n"   /* out01 = w13 * inr24 */        \
+  "vmla.f16 q14,  q9,   q1  \n"   /* out02 = w13 * inr25 */        \
+  "vmla.f16 q15,  q10,  q1  \n"   /* out03 = w13 * inr26 */        \
+  "vld1.16  {d0-d3},    [%[wc0]]!  \n" /* load w16-w17 */           \
+  "vmla.f16 q12,  q8,   q2  \n"   /* out00 = w14 * inr24 */        \
+  "vmla.f16 q13,  q9,   q2  \n"   /* out01 = w14 * inr25 */        \
+  "vld1.16  {d12-d15},  [%[inr3]]!\n" /* load inr3, 2-3 */         \
+  "vmla.f16 q14,  q10,  q2  \n"   /* out02 = w14 * inr26 */        \
+  "vmla.f16 q15,  q11,  q2  \n"   /* out03 = w14 * inr27 */        \
+  /*  out row3*/ \
+  "vmla.f16 q12,  q4,   q3  \n"   /* out00 = w15 * inr30 */        \
+  "vmla.f16 q13,  q5,   q3  \n"   /* out01 = w15 * inr31 */        \
+  "vld1.16  {d16-d19},  [%[inr3]]!\n" /* load inr3, 4-5 */         \
+  "vmla.f16 q14,  q6,   q3  \n"   /* out02 = w15 * inr32 */        \
+  "vmla.f16 q15,  q7,   q3  \n"   /* out03 = w15 * inr33 */        \
+  "vld1.16  {d4-d7},    [%[wc0]]!  \n" /* load w18-w19 */           \
+  "vmla.f16 q12,  q5,   q0  \n"   /* out00 = w16 * inr31 */        \
+  "vmla.f16 q13,  q6,   q0  \n"   /* out01 = w16 * inr32 */        \
+  "vld1.16  {d20-d23},  [%[inr3]]!\n" /* load inr3, 6-7 */         \
+  "vmla.f16 q14,  q7,   q0  \n"   /* out02 = w16 * inr33 */        \
+  "vmla.f16 q15,  q8,   q0  \n"   /* out03 = w16 * inr34 */        \
+  "vmla.f16 q12,  q6,   q1  \n"   /* out00 = w17 * inr32 */        \
+  "vmla.f16 q13,  q7,   q1  \n"   /* out01 = w17 * inr33 */        \
+  "vmla.f16 q14,  q8,   q1  \n"   /* out02 = w17 * inr34 */        \
+  "vmla.f16 q15,  q9,   q1  \n"   /* out03 = w17 * inr35 */        \
+  "vld1.16  {d0-d3},    [%[wc0]]!  \n" /* load w20-w21 */           \
+  "vmla.f16 q12,  q7,   q2  \n"   /* out00 = w18 * inr33 */        \
+  "vmla.f16 q13,  q8,   q2  \n"   /* out01 = w18 * inr34 */        \
+  "vmla.f16 q14,  q9,   q2  \n"   /* out02 = w18 * inr35 */        \
+  "vmla.f16 q15,  q10,  q2  \n"   /* out03 = w18 * inr36 */        \
+  "vld1.16  {d8-d11},  [%[inr4]]!\n" /* load inr4, 0-1 */          \
+  "vmla.f16 q12,  q8,   q3  \n"   /* out00 = w19 * inr34 */        \
+  "vmla.f16 q13,  q9,   q3  \n"   /* out01 = w19 * inr35 */        \
+  "vld1.16  {d12-d15},  [%[inr4]]!\n" /* load inr4, 2-3 */         \
+  "vmla.f16 q14,  q10,  q3  \n"   /* out02 = w19 * inr36 */        \
+  "vmla.f16 q15,  q11,  q3  \n"   /* out03 = w19 * inr37 */        \
+  /*  out row4 */ \
+  "vmla.f16 q12,  q4,   q0  \n"   /* out00 = w20 * inr40 */         \
+  "vmla.f16 q13,  q5,   q0  \n"   /* out01 = w20 * inr41 */         \
+  "vld1.16  {d16-d19},  [%[inr4]]!\n" /* load inr4, 4-5 */          \
+  "vmla.f16 q14,  q6,   q0  \n"   /* out02 = w20 * inr42 */         \
+  "vmla.f16 q15,  q7,   q0  \n"   /* out03 = w20 * inr43 */         \
+  "vld1.16  {d4-d7},    [%[wc0]]!  \n" /* load w22-w23 */            \
+  "vmla.f16 q12,  q5,   q1  \n"   /* out00 = w21 * inr41 */         \
+  "vmla.f16 q13,  q6,   q1  \n"   /* out01 = w21 * inr42 */         \
+  "vmla.f16 q14,  q7,   q1  \n"   /* out02 = w21 * inr43 */         \
+  "vmla.f16 q15,  q8,   q1  \n"   /* out03 = w21 * inr44 */         \
+  "vld1.16  {d20-d23},  [%[inr4]]!\n" /* load inr4, 6-7 */          \
+  "vmla.f16 q12,  q6,   q2  \n"   /* out00 = w22 * inr42 */         \
+  "vmla.f16 q13,  q7,   q2  \n"   /* out01 = w22 * inr43 */         \
+  "vmla.f16 q14,  q8,   q2  \n"   /* out02 = w22 * inr44 */         \
+  "vmla.f16 q15,  q9,   q2  \n"   /* out03 = w22 * inr45 */         \
+  "vld1.16  {d4-d5},    [%[wc0]]   \n" /* load w24 */                \
+  "vmla.f16 q12,  q7,   q3  \n"   /* out00 = w23 * inr43 */         \
+  "vmla.f16 q13,  q8,   q3  \n"   /* out01 = w23 * inr44 */         \
+  "vmla.f16 q14,  q9,   q3  \n"   /* out02 = w23 * inr45 */         \
+  "vmla.f16 q15,  q10,  q3  \n"   /* out03 = w23 * inr46 */         \
+  "vmla.f16 q12,  q8,   q2  \n"   /* out00 = w24 * inr44 */         \
+  "vmla.f16 q13,  q9,   q2  \n"   /* out01 = w24 * inr45 */         \
+  "vmla.f16 q14,  q10,  q2  \n"   /* out02 = w24 * inr46 */         \
+  "vmla.f16 q15,  q11,  q2  \n"   /* out03 = w24 * inr47 */         \
+
+#define RELU /* relu */             \
+  "vmov.u16 q0, #0\n"               \
+  "vld1.16 {d2-d3}, [%[six_ptr]]\n" \
+  "vmax.f16 q12, q12, q0\n"         \
+  "vmax.f16 q13, q13, q0\n"         \
+  "vmax.f16 q14, q14, q0\n"         \
+  "vmax.f16 q15, q15, q0\n"
+#define RELU6 /* relu6 */   \
+  "vmin.f16 q12, q12, q1\n" \
+  "vmin.f16 q13, q13, q1\n" \
+  "vmin.f16 q14, q14, q1\n" \
+  "vmin.f16 q15, q15, q1\n"
+#define LEAKY_RELU /* LeakyRelu */    \
+  "vmov.u16 q0, #0\n"                 \
+  "vld1.16 {d2-d3}, [%[scale_ptr]]\n" \
+  "vcge.f16 q2, q12, q0  @ q0 > 0 \n" \
+  "vcge.f16 q4, q13, q0  @ q0 > 0 \n" \
+  "vcge.f16 q6, q14, q0  @ q0 > 0 \n" \
+  "vcge.f16 q8, q15, q0  @ q0 > 0 \n" \
+  "vmul.f16 q3, q12, q1   @ mul \n"   \
+  "vmul.f16 q5, q13, q1   @ mul \n"   \
+  "vmul.f16 q7, q14, q1   @ mul \n"   \
+  "vmul.f16 q9, q15, q1   @ mul \n"   \
+  "vbif q12, q3, q2 @ choose \n"      \
+  "vbif q13, q5, q4 @ choose \n"      \
+  "vbif q14, q7, q6 @ choose \n"      \
+  "vbif q15, q9, q8 @ choose \n"
+#define STORE                        /* save result */ \
+  "vst1.16 {d24-d25}, [%[outc0]]\n" /* save outc0*/   \
+  "vst1.16 {d26-d27}, [%[outc1]]\n" /* save outc1*/   \
+  "vst1.16 {d28-d29}, [%[outc2]]\n" /* save outc2*/   \
+  "vst1.16 {d30-d31}, [%[outc3]]\n" /* save outc3*/
+
+
 #endif
 // clang-format on
 
@@ -352,6 +531,9 @@ void act_switch_5x5s1(const float16_t* inr0,
 #ifdef __aarch64__
     float16x8_t vsix = vdupq_n_f16(tmp);
     float16x8_t vscale = vdupq_n_f16(ss);
+#else
+    float16x8_t vsix[8] = {tmp, tmp, tmp, tmp, tmp, tmp, tmp, tmp};
+    float16x8_t vscale[8] = {ss, ss, ss, ss, ss, ss, ss, ss};
 #endif
     switch (act_param.active_type) {
       case lite_api::ActivationType::kRelu:
@@ -405,6 +587,36 @@ void act_switch_5x5s1(const float16_t* inr0,
                        "v25",
                        "v26");
 #else
+        asm volatile(COMPUTE RELU STORE
+                     : [inr0] "+r"(inr0),
+                       [inr1] "+r"(inr1),
+                       [inr2] "+r"(inr2),
+                       [inr3] "+r"(inr3),
+                       [inr4] "+r"(inr4),
+                       [wc0] "+r"(weight_c),
+                       [outc0] "+r"(outc0),
+                       [outc1] "+r"(outc1),
+                       [outc2] "+r"(outc2),
+                       [outc3] "+r"(outc3)
+                     : [bias] "r"(bias_local), [six_ptr] "r"(vsix)
+                     : "cc",
+                       "memory",
+                       "q0",
+                       "q1",
+                       "q2",
+                       "q3",
+                       "q4",
+                       "q5",
+                       "q6",
+                       "q7",
+                       "q8",
+                       "q9",
+                       "q10",
+                       "q11",
+                       "q12",
+                       "q13",
+                       "q14",
+                       "q15");
 #endif
         break;
       case lite_api::ActivationType::kRelu6:
@@ -459,6 +671,36 @@ void act_switch_5x5s1(const float16_t* inr0,
                        "v25",
                        "v26");
 #else
+        asm volatile(COMPUTE RELU RELU6 STORE
+                     : [inr0] "+r"(inr0),
+                       [inr1] "+r"(inr1),
+                       [inr2] "+r"(inr2),
+                       [inr3] "+r"(inr3),
+                       [inr4] "+r"(inr4),
+                       [wc0] "+r"(weight_c),
+                       [outc0] "+r"(outc0),
+                       [outc1] "+r"(outc1),
+                       [outc2] "+r"(outc2),
+                       [outc3] "+r"(outc3)
+                     : [bias] "r"(bias_local), [six_ptr] "r"(vsix)
+                     : "cc",
+                       "memory",
+                       "q0",
+                       "q1",
+                       "q2",
+                       "q3",
+                       "q4",
+                       "q5",
+                       "q6",
+                       "q7",
+                       "q8",
+                       "q9",
+                       "q10",
+                       "q11",
+                       "q12",
+                       "q13",
+                       "q14",
+                       "q15");
 #endif
         break;
       case lite_api::ActivationType::kLeakyRelu:
@@ -513,6 +755,36 @@ void act_switch_5x5s1(const float16_t* inr0,
                        "v25",
                        "v26");
 #else
+        asm volatile(COMPUTE LEAKY_RELU STORE
+                     : [inr0] "+r"(inr0),
+                       [inr1] "+r"(inr1),
+                       [inr2] "+r"(inr2),
+                       [inr3] "+r"(inr3),
+                       [inr4] "+r"(inr4),
+                       [wc0] "+r"(weight_c),
+                       [outc0] "+r"(outc0),
+                       [outc1] "+r"(outc1),
+                       [outc2] "+r"(outc2),
+                       [outc3] "+r"(outc3)
+                     : [bias] "r"(bias_local), [scale_ptr] "r"(vscale)
+                     : "cc",
+                       "memory",
+                       "q0",
+                       "q1",
+                       "q2",
+                       "q3",
+                       "q4",
+                       "q5",
+                       "q6",
+                       "q7",
+                       "q8",
+                       "q9",
+                       "q10",
+                       "q11",
+                       "q12",
+                       "q13",
+                       "q14",
+                       "q15");
 #endif
         break;
       default:
@@ -571,6 +843,36 @@ void act_switch_5x5s1(const float16_t* inr0,
                    "v25",
                    "v26");
 #else
+    asm volatile(COMPUTE STORE
+                 : [inr0] "+r"(inr0),
+                   [inr1] "+r"(inr1),
+                   [inr2] "+r"(inr2),
+                   [inr3] "+r"(inr3),
+                   [inr4] "+r"(inr4),
+                   [wc0] "+r"(weight_c),
+                   [outc0] "+r"(outc0),
+                   [outc1] "+r"(outc1),
+                   [outc2] "+r"(outc2),
+                   [outc3] "+r"(outc3)
+                 : [bias] "r"(bias_local)
+                 : "cc",
+                   "memory",
+                   "q0",
+                   "q1",
+                   "q2",
+                   "q3",
+                   "q4",
+                   "q5",
+                   "q6",
+                   "q7",
+                   "q8",
+                   "q9",
+                   "q10",
+                   "q11",
+                   "q12",
+                   "q13",
+                   "q14",
+                   "q15");
 #endif
   }
 }
@@ -593,7 +895,11 @@ void conv_depthwise_5x5s1_fp16(const float16_t* i_data,
   const int pad_w = paddings[2];
   const int out_c_block = 8;
   const int out_h_kernel = 1;
+#ifdef __aarch64__
   const int out_w_kernel = 8;
+#else
+  const int out_w_kernel = 4;
+#endif
   const int win_ext = ow + 4;
   const int ow_round = ROUNDUP(ow, out_w_kernel);
   const int win_round = ROUNDUP(win_ext, out_w_kernel);
@@ -644,7 +950,6 @@ void conv_depthwise_5x5s1_fp16(const float16_t* i_data,
       const float16_t* weight_c = weights + c * 25;  // kernel_w * kernel_h
       float16_t* dout_c00 = dout_batch + c * size_out_channel;
       float16_t bias_local[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-
 #ifdef __aarch64__
       float16x8_t w0 = vld1q_f16(weight_c);       // w0, v23
       float16x8_t w1 = vld1q_f16(weight_c + 8);   // w1, v24
@@ -664,7 +969,16 @@ void conv_depthwise_5x5s1_fp16(const float16_t* i_data,
       }
       weight_c += 40;
 #else
+      if (flag_bias) {
+        for (int k = 0; k < 8 && c + k < oc; k++) {
+          bias_local[k] = bias[c + k];
+        }
+      }
+      float16_t pre_out_[32];
+      float16_t *pre_din0_ = &(pre_out_[0]), *pre_din1_ = &(pre_out_[8]),
+                *pre_din2_ = &(pre_out_[16]), *pre_din3_ = &(pre_out_[24]);
 #endif
+
       for (int h = 0; h < oh; h += out_h_kernel) {
         float16_t* outc0 = dout_c00 + h * ow;
         float16_t* outc1 = outc0 + size_out_channel;
@@ -753,6 +1067,62 @@ void conv_depthwise_5x5s1_fp16(const float16_t* i_data,
                            bias_local,
                            act_param);
 #else
+          act_switch_5x5s1(inr0,
+                           inr1,
+                           inr2,
+                           inr3,
+                           inr4,
+                           pre_din0_,
+                           pre_din1_,
+                           pre_din2_,
+                           pre_din3_,
+                           pre_din0_,
+                           pre_din1_,
+                           pre_din2_,
+                           pre_din3_,
+                           vzero,
+                           vzero,
+                           vzero,
+                           vzero,
+                           vzero,
+                           vzero,
+                           weight_c,
+                           bias_local,
+                           act_param);
+          asm volatile(
+              "vld1.32 {d0-d1},  [%[r0]]\n"
+              "vld1.32 {d2-d3},  [%[r1]]\n"
+              "vld1.32 {d4-d5},  [%[r2]]\n"
+              "vld1.32 {d6-d7},  [%[r3]]\n"
+              "vtrn.16   q0, q1\n"
+              "vtrn.16   q2, q3\n"
+              "vtrn.32   q0, q2\n"
+              "vtrn.32   q1, q3\n"
+              "vswp      d1, d2\n"
+              "vswp      d5, d6\n"
+              "vst1.16 {d0}, [%[outc0]]\n"
+              "vst1.16 {d1}, [%[outc1]]\n"
+              "vst1.16 {d4}, [%[outc2]]\n"
+              "vst1.16 {d5}, [%[outc3]]\n"
+              "vst1.16 {d2}, [%[outc4]]\n"
+              "vst1.16 {d3}, [%[outc5]]\n"
+              "vst1.16 {d6}, [%[outc6]]\n"
+              "vst1.16 {d7}, [%[outc7]]\n"
+
+              : [r0] "+r"(pre_din0_),
+                [r1] "+r"(pre_din1_),
+                [r2] "+r"(pre_din2_),
+                [r3] "+r"(pre_din3_),
+                [outc0] "+r"(outc0),
+                [outc1] "+r"(outc1),
+                [outc2] "+r"(outc2),
+                [outc3] "+r"(outc3),
+                [outc4] "+r"(outc4),
+                [outc5] "+r"(outc5),
+                [outc6] "+r"(outc6),
+                [outc7] "+r"(outc7)
+              :
+              : "cc", "memory", "q0", "q1", "q2", "q3");
 #endif
           if (flag_mask) {
             for (int i = 0; i < remain; ++i) {
@@ -766,6 +1136,7 @@ void conv_depthwise_5x5s1_fp16(const float16_t* i_data,
               c7[i] = pre_out[i + 56];
             }
           }
+#ifdef __aarch64__
           inr0 += 64;
           inr1 += 64;
           inr2 += 64;
@@ -779,6 +1150,21 @@ void conv_depthwise_5x5s1_fp16(const float16_t* i_data,
           outc5 += 8;
           outc6 += 8;
           outc7 += 8;
+#else
+          inr0 += 32;
+          inr1 += 32;
+          inr2 += 32;
+          inr3 += 32;
+          inr4 += 32;
+          outc0 += 4;
+          outc1 += 4;
+          outc2 += 4;
+          outc3 += 4;
+          outc4 += 4;
+          outc5 += 4;
+          outc6 += 4;
+          outc7 += 4;
+#endif
         }
       }
     }

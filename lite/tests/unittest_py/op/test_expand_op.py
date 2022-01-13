@@ -36,21 +36,41 @@ class TestExpandOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32, DataLayoutType.NCHW)
         ]
         self.enable_testing_on_place(thread=[1, 4], places=host_places)
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        in_dtype = program_config.inputs["input_data"].dtype
-        #wait for atuo_scan_base bug fix 
-        if "float32" != in_dtype:
-            return False
         return True
 
     def sample_program_configs(self, draw):
-        in_shape = draw(
-            st.lists(
-                st.integers(
-                    min_value=1, max_value=8), min_size=3, max_size=4))
+        if self.get_target() == "OpenCL":
+            in_shape = draw(
+                st.lists(
+                    st.integers(
+                        min_value=1, max_value=8),
+                    min_size=4,
+                    max_size=4))
+        else:
+            in_shape = draw(
+                st.lists(
+                    st.integers(
+                        min_value=1, max_value=8),
+                    min_size=2,
+                    max_size=4))
         expand_shape = draw(
             st.lists(
                 st.integers(
@@ -108,6 +128,10 @@ class TestExpandOp(AutoScanTest):
                     min_value=1, max_value=8),
                 min_size=len(in_shape),
                 max_size=len(in_shape)))
+        if self.get_target() == "OpenCL":
+            with_tensor = False
+            attr_shape[1] = 1
+
         inputs = gnerate_inputs(with_tensor)
         expand_op = OpConfig(
             type="expand",
@@ -126,10 +150,32 @@ class TestExpandOp(AutoScanTest):
         return self.get_predictor_configs(), ["expand"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_dtype = program_config.inputs["input_data"].dtype
+            if target_type == TargetType.OpenCL:
+                if "float32" != in_dtype:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.ACCURACY_ERROR,
+            "The op output has diff in a specific case on OpenCL. We need to fix it as soon as possible."
+        )
+
+        def _teller2(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_dtype = program_config.inputs["input_data"].dtype
+            if target_type == TargetType.Host:
+                if "float32" != in_dtype:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case on Host. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=300)
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":

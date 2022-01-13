@@ -15,6 +15,7 @@
 #include "lite/kernels/arm/sparse_conv_compute.h"
 #include <utility>
 #include "lite/backends/arm/math/sparse_conv_impl.h"
+#include "lite/backends/arm/math/sparse_semi_conv_impl.h"
 #include "lite/core/op_registry.h"
 #include "lite/core/type_system.h"
 
@@ -108,18 +109,33 @@ void SparseConvCompute<PRECISION(kFloat), PRECISION(kFloat)>::Run() {
   int oc = o_dims[1];
   int im_size = oh * ow;
   int first_ic = param.first_ic;
+  int flag_semi = param.flag_semi;
   const float* din = input + first_ic * im_size;
-  lite::arm::math::sparse_conv_fp32_pipelined(nonzero_weights,
-                                              din,
-                                              diffs,
-                                              oc_nonzeros,
-                                              bias,
-                                              dout,
-                                              oc,
-                                              ic,
-                                              im_size,
-                                              param,
-                                              &ctx);
+  if (flag_semi == 1) {
+    lite::arm::math::sparse_semi_conv_fp32_pipelined(nonzero_weights,
+                                                     din,
+                                                     diffs,
+                                                     oc_nonzeros,
+                                                     bias,
+                                                     dout,
+                                                     oc,
+                                                     ic,
+                                                     im_size,
+                                                     param,
+                                                     &ctx);
+  } else {
+    lite::arm::math::sparse_conv_fp32_pipelined(nonzero_weights,
+                                                din,
+                                                diffs,
+                                                oc_nonzeros,
+                                                bias,
+                                                dout,
+                                                oc,
+                                                ic,
+                                                im_size,
+                                                param,
+                                                &ctx);
+  }
   KERNEL_FUNC_NAME("sparse_conv_fp32_pipelined")
 }
 
@@ -148,19 +164,35 @@ void SparseConvCompute<PRECISION(kInt8), PRECISION(kFloat)>::Run() {
   int oc = o_dims[1];
   int im_size = oh * ow;
   int first_ic = param.first_ic;
+  int flag_semi = param.flag_semi;
   auto* din = input + first_ic * im_size;
-  lite::arm::math::sparse_conv_int8_fp32_pipelined(nonzero_weights,
-                                                   din,
-                                                   diffs,
-                                                   oc_nonzeros,
-                                                   bias,
-                                                   w_scale_.data(),
-                                                   dout,
-                                                   oc,
-                                                   ic,
-                                                   im_size,
-                                                   param,
-                                                   &ctx);
+  if (flag_semi == 1) {
+    lite::arm::math::sparse_semi_conv_int8_fp32_pipelined(nonzero_weights,
+                                                          din,
+                                                          diffs,
+                                                          oc_nonzeros,
+                                                          bias,
+                                                          w_scale_.data(),
+                                                          dout,
+                                                          oc,
+                                                          ic,
+                                                          im_size,
+                                                          param,
+                                                          &ctx);
+  } else {
+    lite::arm::math::sparse_conv_int8_fp32_pipelined(nonzero_weights,
+                                                     din,
+                                                     diffs,
+                                                     oc_nonzeros,
+                                                     bias,
+                                                     w_scale_.data(),
+                                                     dout,
+                                                     oc,
+                                                     ic,
+                                                     im_size,
+                                                     param,
+                                                     &ctx);
+  }
   KERNEL_FUNC_NAME("sparse_conv_int8_fp32_pipelined")
 }
 
@@ -189,19 +221,35 @@ void SparseConvCompute<PRECISION(kInt8), PRECISION(kInt8)>::Run() {
   int oc = o_dims[1];
   int im_size = oh * ow;
   int first_ic = param.first_ic;
+  int flag_semi = param.flag_semi;
   auto* din = input + first_ic * im_size;
-  lite::arm::math::sparse_conv_int8_int8_pipelined(nonzero_weights,
-                                                   din,
-                                                   diffs,
-                                                   oc_nonzeros,
-                                                   bias,
-                                                   w_scale_.data(),
-                                                   dout,
-                                                   oc,
-                                                   ic,
-                                                   im_size,
-                                                   param,
-                                                   &ctx);
+  if (flag_semi == 1) {
+    lite::arm::math::sparse_semi_conv_int8_int8_pipelined(nonzero_weights,
+                                                          din,
+                                                          diffs,
+                                                          oc_nonzeros,
+                                                          bias,
+                                                          w_scale_.data(),
+                                                          dout,
+                                                          oc,
+                                                          ic,
+                                                          im_size,
+                                                          param,
+                                                          &ctx);
+  } else {
+    lite::arm::math::sparse_conv_int8_int8_pipelined(nonzero_weights,
+                                                     din,
+                                                     diffs,
+                                                     oc_nonzeros,
+                                                     bias,
+                                                     w_scale_.data(),
+                                                     dout,
+                                                     oc,
+                                                     ic,
+                                                     im_size,
+                                                     param,
+                                                     &ctx);
+  }
   KERNEL_FUNC_NAME("sparse_conv_int8_int8_pipelined")
 }
 

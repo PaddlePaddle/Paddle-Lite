@@ -16,95 +16,100 @@
 #include <vector>
 #include "core/hal/types.h"
 #include "utility/debug.h"
+#include "utility/hints.h"
 #include "utility/logging.h"
+#include "utility/micros.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
 
 namespace nnadapter {
 namespace operation {
 
+NNADAPTER_EXPORT void UpdateExpandInferOutputShape(
+    int32_t* input_dimensions_data,
+    uint32_t input_dimensions_count,
+    int32_t* output_dimensions_data,
+    uint32_t shape_count,
+    int32_t* shape_data) {
+  std::vector<int> input_shapes(input_dimensions_data,
+                                input_dimensions_data + input_dimensions_count);
+  auto diff = shape_count - input_dimensions_count;
+  input_shapes.insert(input_shapes.begin(), diff, 1);
+  for (uint32_t i = 0; i < shape_count; ++i) {
+    NNADAPTER_CHECK_NE(shape_data[i], 0) << "The expanded size cannot be zero.";
+    if (i < diff) {
+      // input = [10, 2], shape_data = [3,4,-1,-1]
+      // --> output_dimensions_data = [3,4,10,2]
+      NNADAPTER_CHECK_GT(shape_data[i], 0)
+          << "The expanded size " << shape_data[i]
+          << "for non-existing dimensions must be positive for expand_v2 op.";
+      output_dimensions_data[i] = shape_data[i];
+    } else if (shape_data[i] > 0) {
+      // input = [10,1], shape_data = [3,4,10,4]
+      // --> output_dimensions_data = [3,4,10,4]
+      if (input_shapes[i] != 1) {
+        NNADAPTER_CHECK_EQ(input_shapes[i], shape_data[i])
+            << "The value " << input_shapes[i]
+            << " of the non-singleton dimension does not match the "
+               "corresponding value "
+            << shape_data[i] << " in shape for expand_v2 op.";
+        output_dimensions_data[i] = shape_data[i];
+      } else {
+        output_dimensions_data[i] = shape_data[i];
+      }
+    } else {
+      // input = [10, 2], shape_data = [3,4,-1,-1]
+      // --> output_dimensions_data = [3,4,10,2]
+      NNADAPTER_CHECK_EQ(shape_data[i], -1)
+          << "When the value in shape is negative for expand_v2 op, "
+             "only -1 is supported, but the value received is "
+          << shape_data[i];
+      output_dimensions_data[i] = input_shapes[i];
+    }
+  }
+}
+
 int PrepareExpand(hal::Operation* operation) {
   EXPAND_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Infer the shape and type of output operands
   auto input_type = input_operand->type;
+  auto& shape_type = shape_operand->type;
   auto& output_type = output_operand->type;
   CopyOperandTypeWithQuantParams(&output_type, input_type);
 
-  auto& shape_type = shape_operand->type;
-  if (shape_type.lifetime == NNADAPTER_TEMPORARY_SHAPE) {
-    auto shape_operand_dimension =
-        *reinterpret_cast<NNAdapterOperandDimensionType*>(
-            shape_operand->buffer);
-    shape_count = shape_operand_dimension.count;
-    shape_data = shape_operand_dimension.data;
-  } else if (!IsConstantOperand(shape_operand)) {
+  uint32_t shape_count;
+  int32_t* shape_data;
+  if (IsTemporaryShapeOperand(shape_operand)) {
+    auto& temporary_shape = *(GetTemporaryShape(shape_operand));
+    shape_count = temporary_shape.count;
+    shape_data = temporary_shape.data;
+  } else if (IsConstantOperand(shape_operand)) {
+    shape_count = shape_operand->length / sizeof(int32_t);
+    shape_data = reinterpret_cast<int32_t*>(shape_operand->buffer);
+  } else {
     NNADAPTER_LOG(FATAL) << "Unsupported shape lifetime: "
-                         << static_cast<int32_t>(shape_type.lifetime);
+                         << OperandLifetimeCodeToString(shape_type.lifetime);
     return NNADAPTER_INVALID_PARAMETER;
   }
+
   for (uint32_t i = 0; i < shape_count; i++) {
     NNADAPTER_VLOG(5) << "shape[" << i << "] = " << shape_data[i];
   }
+
   output_type.dimensions.count = shape_count;
-
-  auto infer_output_shape = [&](int32_t* input_dimensions_data,
-                                uint32_t input_dimensions_count,
-                                int32_t* output_dimensions_data) {
-    std::vector<int> input_dims_vec;
-    for (uint32_t i = 0; i < input_dimensions_count; i++) {
-      input_dims_vec.push_back(input_dimensions_data[i]);
-    }
-    auto diff = shape_count - input_dimensions_count;
-    input_dims_vec.insert(input_dims_vec.begin(), diff, 1);
-    std::vector<int> final_expand_shape(input_dimensions_count);
-    for (uint32_t i = 0; i < input_dims_vec.size(); ++i) {
-      NNADAPTER_CHECK_NE(shape_data[i], 0)
-          << "The expanded size cannot be zero.";
-      if (i < diff) {
-        // shape_data = [3,4,-1,-1], X = [10,2] --> // final_expand_shape =
-        // [3,4,10,2]
-        NNADAPTER_CHECK_GT(shape_data[i], 0)
-            << "The expanded size " << shape_data[i]
-            << "for non-existing dimensions must be positive for expand_v2 op.";
-        final_expand_shape[i] = shape_data[i];
-      } else if (shape_data[i] > 0) {
-        // shape_data = [3,4,10,4], X = [10,1] --> final_expand_shape =
-        // [3,4,10,4]
-        if (input_dims_vec[i] != 1) {
-          NNADAPTER_CHECK_EQ(input_dims_vec[i], shape_data[i])
-              << "The value " << input_dims_vec[i]
-              << " of the non-singleton dimension does not match the "
-                 "corresponding value "
-              << shape_data[i] << " in shape for expand_v2 op.";
-          final_expand_shape[i] = shape_data[i];
-        } else {
-          final_expand_shape[i] = shape_data[i];
-        }
-      } else {
-        // shape_data = [3,4,-1,-1], X = [10,2] --> final_expand_shape =
-        // [3,4,10,2]
-        NNADAPTER_CHECK_EQ(shape_data[i], -1)
-            << "When the value in shape is negative for expand_v2 op, "
-               "only -1 is supported, but the value received is "
-            << shape_data[i];
-        final_expand_shape[i] = input_dims_vec[i];
-      }
-    }
-
-    for (uint32_t i = 0; i < shape_count; ++i) {
-      shape_data[i] = final_expand_shape[i];
-      output_dimensions_data[i] = final_expand_shape[i];
-    }
-  };
-
-  infer_output_shape(input_type.dimensions.data,
-                     input_type.dimensions.count,
-                     output_type.dimensions.data);
+  output_type.lifetime = NNADAPTER_TEMPORARY_VARIABLE;
+  UpdateExpandInferOutputShape(input_type.dimensions.data,
+                               input_type.dimensions.count,
+                               output_type.dimensions.data,
+                               shape_count,
+                               shape_data);
   for (uint32_t i = 0; i < input_type.dimensions.dynamic_count; i++) {
-    infer_output_shape(input_type.dimensions.dynamic_data[i],
-                       input_type.dimensions.count,
-                       output_type.dimensions.dynamic_data[i]);
+    UpdateExpandInferOutputShape(input_type.dimensions.dynamic_data[i],
+                                 input_type.dimensions.count,
+                                 output_type.dimensions.dynamic_data[i],
+                                 shape_count,
+                                 shape_data);
   }
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;

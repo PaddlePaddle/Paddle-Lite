@@ -116,3 +116,4 @@ USE_MIR_PASS(x86_int8_attribute_pass);
 USE_MIR_PASS(fill_range_fuse_pass);
 USE_MIR_PASS(range_calc_offline_pass);
 USE_MIR_PASS(p_norm_fill_constant_max_div_fuse_pass);
+USE_MIR_PASS(fill_constant_calc_offline_pass);

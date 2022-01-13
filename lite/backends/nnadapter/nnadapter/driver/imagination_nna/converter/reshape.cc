@@ -30,9 +30,11 @@ int ConvertReshape(Converter* converter, hal::Operation* operation) {
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
+  auto shape_count = output_operand->type.dimensions.count;
   unsigned int shape[shape_count];
   for (size_t i = 0; i < shape_count; i++) {
-    shape[i] = static_cast<unsigned int>(shape_data[i]);
+    shape[i] =
+        static_cast<unsigned int>(output_operand->type.dimensions.data[i]);
   }
   NNADAPTER_CHECK(
       IsUInt8AsymmPerLayerQuantType(output_operand->type.precision));

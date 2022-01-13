@@ -82,6 +82,41 @@ void ConvElementwiseFuser::InsertNewNode(SSAGraph* graph,
   //   if `conv_bias` not existed, set `elementwise_add_bias` as
   //   `new_conv_bias`.
   /////////////////////////////////////////////////////////////////////////////////////
+  auto elementwise_add_bias_t = scope->FindVar(matched.at("bias")->arg()->name);
+  auto elementwise_add_bias_dims =
+      elementwise_add_bias_t->Get<lite::Tensor>().dims();
+  auto groups = conv_op_desc->GetAttr<int>("groups");
+
+  if (elementwise_add_bias_dims.size() != 1) {
+    nodes_.erase(nodes_.begin(), nodes_.end());
+    LOG(WARNING) << "elementwise_add_bias_dims not equal to 1, fusion failed";
+    return;
+  }
+  auto conv_filter_var =
+      scope->FindVar((conv_op_desc->Input("Filter").front()));
+  auto w_dims = conv_filter_var->Get<lite::Tensor>().dims();
+  int cout;
+  if (conv_type_ == "conv2d_transpose") {
+    cout = w_dims[1] * groups;
+  } else {
+    cout = w_dims[0];
+  }
+  if (conv_has_bias_ == true) {
+    if (cout != elementwise_add_bias_dims[0] &&
+        elementwise_add_bias_dims[0] != 1) {
+      nodes_.erase(nodes_.begin(), nodes_.end());
+      LOG(WARNING) << "elementwise_add_bias_dims numel not equal to 1 or cout, "
+                      "fusion failed";
+      return;
+    }
+  } else {
+    if (cout != elementwise_add_bias_dims[0]) {
+      nodes_.erase(nodes_.begin(), nodes_.end());
+      LOG(WARNING)
+          << "elementwise_add_bias_dims numel not equal to cout, fusion failed";
+      return;
+    }
+  }
 
   if (conv_has_bias_ == true && conv_op_desc->HasInput("Bias") &&
       conv_op_desc->Input("Bias").size() > 0) {
