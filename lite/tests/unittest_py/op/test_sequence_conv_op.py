@@ -34,18 +34,15 @@ class TestSequenceConvOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
-        # self.enable_testing_on_place(
-        #     TargetType.ARM,
-        #     PrecisionType.FP32,
-        #     DataLayoutType.NCHW,
-        #     thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.ARM,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        # if predictor_config.target() == TargetType.ARM:
-        #     print("Output has diff on ARM. Skip.")
-        #     return False
         return True
 
     def sample_program_configs(self, draw):
@@ -60,7 +57,8 @@ class TestSequenceConvOp(AutoScanTest):
                 min_size=2,
                 max_size=2))
         filter_dims = [context_length * in_dims[1], kernel_num]
-        lod_info = draw(st.sampled_from([[[0, 4]], [[0, 2, 4]]]))
+        lod_info = draw(
+            st.sampled_from([[[0, in_dims[0]]], [[0, 2, in_dims[0]]]]))
         padding_trainable = draw(st.booleans())
 
         assume(context_stride == 1)
@@ -118,7 +116,7 @@ class TestSequenceConvOp(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=100)
 
 
 if __name__ == "__main__":
