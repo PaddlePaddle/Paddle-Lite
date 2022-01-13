@@ -64,12 +64,6 @@ class TestSoftmaxOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        x_shape = list(program_config.inputs["input_data"].shape)
-        if predictor_config.target() == TargetType.Metal:
-            if len(x_shape) <= 2:
-                return False
-            if x_shape[1] % 4 != 0:
-                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -108,9 +102,21 @@ class TestSoftmaxOp(AutoScanTest):
                or predictor_config.target() == TargetType.OpenCL :
                 return True
 
+        def teller2(program_config, predictor_config):
+            x_shape = list(program_config.inputs["input_data"].shape)
+            if predictor_config.target() == TargetType.Metal:
+                if len(x_shape) <= 2:
+                    return True
+                if x_shape[1] % 4 != 0:
+                    return True
+
         self.add_ignore_check_case(
             teller1, IgnoreReasons.ACCURACY_ERROR,
             "The op output has diff in a specific case. We need to fix it as soon as possible."
+        )
+        self.add_ignore_check_case(
+            teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case on metal. We need to fix it as soon as possible."
         )
 
     def test(self, *args, **kwargs):
