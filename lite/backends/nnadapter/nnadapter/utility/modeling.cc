@@ -46,6 +46,11 @@ NNADAPTER_EXPORT void RemoveOperand(hal::Model* model, hal::Operand* operand) {
           operand->type.symm_per_channel_params.scales) {
         free(operand->type.symm_per_channel_params.scales);
       }
+      for (size_t i = 0; i < hal::NNADAPTER_MAX_SIZE_OF_HINTS; i++) {
+        if (operand->hints[i].handler) {
+          operand->hints[i].deleter(&operand->hints[i].handler);
+        }
+      }
       it = model->operands.erase(it);
     } else {
       ++it;
@@ -457,12 +462,25 @@ NNADAPTER_EXPORT bool IsConstantOperand(hal::Operand* operand) {
          operand->type.lifetime == NNADAPTER_CONSTANT_REFERENCE;
 }
 
+NNADAPTER_EXPORT bool IsTemporaryShapeOperand(hal::Operand* operand) {
+  return operand->type.lifetime == NNADAPTER_TEMPORARY_SHAPE;
+}
+
 NNADAPTER_EXPORT bool IsModelInputOperand(hal::Operand* operand) {
   return operand->type.lifetime == NNADAPTER_MODEL_INPUT;
 }
 
 NNADAPTER_EXPORT bool IsModelOutputOperand(hal::Operand* operand) {
   return operand->type.lifetime == NNADAPTER_MODEL_OUTPUT;
+}
+
+NNADAPTER_EXPORT bool IsOperandWithDynamicShape(hal::Operand* operand) {
+  for (size_t i = 0; i < operand->type.dimensions.count; i++) {
+    if (operand->type.dimensions.data[i] == NNADAPTER_UNKNOWN) {
+      return true;
+    }
+  }
+  return false;
 }
 
 NNADAPTER_EXPORT bool IsOperationWithAllInputConstantOperands(

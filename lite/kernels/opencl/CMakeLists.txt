@@ -63,9 +63,8 @@ add_kernel(matmul_opencl_image OPENCL basic SRCS matmul_image_compute.cc)
 ######################
 # image kernel test  #
 ######################
-
-lite_cc_test(test_gather_image_opencl SRCS gather_image_compute_test.cpp
-             DEPS kernels core)
+#lite_cc_test(test_gather_image_opencl SRCS gather_image_compute_test.cpp
+#             DEPS kernels core)
 
 lite_cc_test(test_activation_image_opencl SRCS activation_image_compute_test.cc
              DEPS kernels core)

@@ -13,8 +13,11 @@
 // limitations under the License.
 
 #include "core/operation/concat.h"
+#include <vector>
 #include "core/hal/types.h"
+#include "core/operation/math/concat.h"
 #include "utility/debug.h"
+#include "utility/hints.h"
 #include "utility/logging.h"
 #include "utility/modeling.h"
 #include "utility/utility.h"
@@ -34,7 +37,7 @@ int PrepareConcat(hal::Operation* operation) {
                                 const uint32_t input_dimension_count) {
     NNADAPTER_CHECK_EQ(input_dimension_count,
                        output_operand->type.dimensions.count);
-    for (uint32_t i = 0; i < input_dimension_count; i++) {
+    for (size_t i = 0; i < input_dimension_count; i++) {
       if (output_dimensions[i] == NNADAPTER_UNKNOWN ||
           input_dimensions[i] == NNADAPTER_UNKNOWN) {
         output_dimensions[i] = NNADAPTER_UNKNOWN;
@@ -48,12 +51,13 @@ int PrepareConcat(hal::Operation* operation) {
     }
   };
 
+  // Derive the dimensions of concat's output operand
   for (size_t i = 1; i < input_count - 1; i++) {
     infer_output_shape(input_operands[i]->type.dimensions.data,
                        output_operand->type.dimensions.data,
                        input_operands[i]->type.dimensions.count);
   }
-  for (uint32_t i = 0; i < output_operand->type.dimensions.dynamic_count; i++) {
+  for (size_t i = 0; i < output_operand->type.dimensions.dynamic_count; i++) {
     for (size_t j = 1; j < input_count - 1; j++) {
       infer_output_shape(input_operands[j]->type.dimensions.dynamic_data[i],
                          output_operand->type.dimensions.dynamic_data[i],
@@ -61,6 +65,70 @@ int PrepareConcat(hal::Operation* operation) {
     }
   }
 
+  // Check if inputs are temporary shape or constant operands
+  bool has_temporary_shape = false;
+  for (size_t i = 0; i < input_count - 1; i++) {
+    if (IsTemporaryShapeOperand(input_operands[i])) {
+      has_temporary_shape = true;
+    }
+  }
+  for (size_t i = 0; i < input_count - 1; i++) {
+    if (has_temporary_shape && !IsTemporaryShapeOperand(input_operands[i]) &&
+        !IsConstantOperand(input_operands[i])) {
+      NNADAPTER_LOG(FATAL) << "Temporary shape operand can only be used with "
+                              "constant operand, current operand lifetime is "
+                           << OperandLifetimeCodeToString(
+                                  input_operands[i]->type.lifetime);
+    }
+  }
+  // Derive the shape value of concat's output operand
+  if (has_temporary_shape) {
+    auto get_inputs_info = [&](
+        std::vector<int32_t*>& inputs,
+        std::vector<std::vector<int32_t>>& inputs_shapes) {
+      for (size_t i = 0; i < input_count - 1; i++) {
+        if (IsTemporaryShapeOperand(input_operands[i])) {
+          auto& temporary_shape = *(GetTemporaryShape(input_operands[i]));
+          NNADAPTER_CHECK(temporary_shape.data);
+          NNADAPTER_CHECK(temporary_shape.data[0]);
+          inputs.push_back(temporary_shape.data);
+        } else {  // Constant Operand
+          auto input_data =
+              reinterpret_cast<int32_t*>(input_operands[i]->buffer);
+          inputs.push_back(input_data);
+        }
+        std::vector<int32_t> input_dims;
+        for (size_t j = 0; j < input_operands[i]->type.dimensions.count; j++) {
+          input_dims.push_back(input_operands[i]->type.dimensions.data[j]);
+        }
+        inputs_shapes.push_back(input_dims);
+      }
+    };
+    // Static shape
+    std::vector<int32_t*> inputs;
+    std::vector<std::vector<int32_t>> inputs_shapes;
+    get_inputs_info(inputs, inputs_shapes);
+    // Dynamic shape
+    std::vector<std::vector<int32_t*>> dynamic_inputs;
+    std::vector<std::vector<std::vector<int32_t>>> dynamic_inputs_shapes;
+    for (size_t i = 0; i < output_operand->type.dimensions.dynamic_count; i++) {
+      get_inputs_info(dynamic_inputs[i], dynamic_inputs_shapes[i]);
+    }
+
+    NNAdapterOperandDimensionType dimension_type;
+    dimension_type.count = output_operand->type.dimensions.data[0];
+    dimension_type.dynamic_count =
+        output_operand->type.dimensions.dynamic_count;
+    math::concat<int32_t>(inputs, inputs_shapes, axis, dimension_type.data);
+    for (size_t i = 0; i < output_operand->type.dimensions.dynamic_count; i++) {
+      math::concat<int32_t>(dynamic_inputs[i],
+                            dynamic_inputs_shapes[i],
+                            axis,
+                            dimension_type.dynamic_data[i]);
+    }
+    output_operand->type.lifetime = NNADAPTER_TEMPORARY_SHAPE;
+    SetTemporaryShape(output_operand, dimension_type);
+  }
   NNADAPTER_VLOG(5) << "output: " << OperandToString(output_operand);
   return NNADAPTER_NO_ERROR;
 }

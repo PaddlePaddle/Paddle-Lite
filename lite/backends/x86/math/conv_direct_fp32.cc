@@ -22,16 +22,16 @@ limitations under the License. */
 #else
 #include <emmintrin.h>
 #endif
-#include "lite/backends/x86/math/conv3x3s2_direct_fp32.h"
+#include "lite/backends/x86/math/conv_direct_fp32.h"
 
 namespace paddle {
 namespace lite {
 namespace x86 {
 namespace math {
 
-#define GET_OFF(field) offsetof(jit_3x3s2param, field)
+#define GET_OFF(field) offsetof(jit_param, field)
 
-struct jit_3x3s2param {
+struct jit_param {
   const float* in_row_addr;
   const float* kernel_addr;
   float* out_row_addr;
@@ -40,26 +40,26 @@ struct jit_3x3s2param {
   size_t wh;
 };
 
-conv_direct_3x3s2::conv_direct_3x3s2() : JitCode(8192, Xbyak::AutoGrow) {}
+conv_direct::conv_direct() : JitCode(8192, Xbyak::AutoGrow) {}
 
-void conv_direct_3x3s2::generate_code(int ic,
-                                      int ih,
-                                      int iw,
-                                      int oc,
-                                      int oc_expand,
-                                      int oh,
-                                      int ow,
-                                      int ph,
-                                      int pw) {
+void conv_direct::generate_code(int ic,
+                                int ih,
+                                int iw,
+                                int oc,
+                                int oc_expand,
+                                int oh,
+                                int ow,
+                                int ph,
+                                int pw,
+                                int ww,
+                                int wh,
+                                int stridew) {
 #ifdef __AVX__
   constexpr int BLOCK = 8;
 #else
   constexpr int BLOCK = 4;
 #endif
 
-  constexpr int ww = 3;
-  constexpr int wh = 3;
-  constexpr int stridew = 2;
   constexpr int oc_block = 4 * BLOCK;
   const int oc_loop_n =
       oc_expand / oc_block;  // deal with every 32 output channels
@@ -73,19 +73,17 @@ void conv_direct_3x3s2::generate_code(int ic,
 
   int new_ow = 0;  // 0 or 3 or 6....
   bool right = false;
-  if (ph == 0 && pw == 0) {
+  if (pw == 0) {
     new_ow = ow / ow_bulk * ow_bulk;
     new_ow -= ow_bulk;
-  } else if (ph == 1 && pw == 1) {
+  } else if (pw > 0) {
     // whether padding is required for the rightet output
-    right = (-pw + stridew * (ow - 1) + ww - 1) == ((iw - 1) + pw);
+    right = stridew * (ow - 1) + ww - iw - pw > 0;
     if (right)
       new_ow = ow % ow_bulk ? ow / ow_bulk * ow_bulk : ow - ow_bulk;
     else
       new_ow = ow / ow_bulk * ow_bulk;
     new_ow -= ow_bulk;
-  } else {
-    LOG(FATAL) << "[X86] conv_direct only support 3x3s2 with padding = 0 or 1";
   }
 
   // The number of channels of convolution kernel
@@ -142,6 +140,7 @@ void conv_direct_3x3s2::generate_code(int ic,
   };
 
   // one_line means we only compute one line kernel and one line input
+  // every input row consists of [l_pad's data, real data, r_pad's data]
   auto fmadd_one_line = [=, &temp](
       int oc_group, int ic_group, int l_pad, int r_pad, int bulk) {
     // kernel has ww columns, but I only take one number at a time
@@ -151,7 +150,7 @@ void conv_direct_3x3s2::generate_code(int ic,
         for (int j = 0; j < bulk; j++) {
           // no need to fetch this input
           if (ww_i + stridew * j < l_pad) continue;
-          if (ww_i + stridew * j >= stridew * bulk + 1 - r_pad) continue;
+          if (ww_i + stridew * j >= stridew * (bulk - 1) + ww - r_pad) continue;
 
           Vmm input = Vmm(oc_group / BLOCK * bulk + j);
           temp = (ww_i - l_pad + stridew * j + ic_i * ihw) * sizeof(float);
@@ -167,7 +166,8 @@ void conv_direct_3x3s2::generate_code(int ic,
           for (int j = 0; j < bulk; j++) {
             // no need to fetch this input
             if (ww_i + stridew * j < l_pad) continue;
-            if (ww_i + stridew * j >= stridew * bulk + 1 - r_pad) continue;
+            if (ww_i + stridew * j >= stridew * (bulk - 1) + ww - r_pad)
+              continue;
 
             Vmm input = Vmm(oc_group / BLOCK * bulk + j);
             Vmm res(oc_gi / BLOCK * bulk + j);
@@ -178,6 +178,8 @@ void conv_direct_3x3s2::generate_code(int ic,
     }
   };
 
+  // compute output whole line
+  // three parts: [left, middle, right]
   auto cal_out_whole_line = [=, &temp](int oc_group, int ic_group) {
     int ow_bulk_i = ow / ow_bulk;
 
@@ -207,17 +209,26 @@ void conv_direct_3x3s2::generate_code(int ic,
 
     // entry !
     // left
-    mov(ow_bulk_i_xb, 0);
-    if (pw == 1 || new_ow < 0) {
-      int temp_rpad = 0;
-      if (pw == 1 && right && new_ow < 0) temp_rpad = pw;
-      cal_bulk(oc_group, ic_group, pw, temp_rpad, new_ow < 0 ? ow : ow_bulk);
-      inc(ow_bulk_i_xb);
-      add(in_row_addr_xb, 5 * sizeof(float));
-      add(out_row_addr_xb, ow_bulk * BLOCK * sizeof(float));
+    // we need check if there is a left part
+    // besided, we need check if the first ow_bulk output is
+    // associated with right boundry
+    int ow_rpad = 0;
+    int first_ow_bulk_rpad = (ow_bulk - 1) * stridew + ww - pw - iw;
+    if (first_ow_bulk_rpad > 0)  // means ow <= 3
+      ow_rpad = (ow - 1) * stridew + ww - pw - iw;
 
+    mov(ow_bulk_i_xb, 0);
+    if (pw > 0 || ow <= ow_bulk) {
+      int temp_rpad = 0;
+      if (ow_rpad > 0) temp_rpad = ow_rpad;
+      cal_bulk(oc_group, ic_group, pw, temp_rpad, ow <= ow_bulk ? ow : ow_bulk);
+
+      inc(ow_bulk_i_xb);
+      add(in_row_addr_xb, (stridew * ow_bulk - pw) * sizeof(float));
+      add(out_row_addr_xb, ow_bulk * BLOCK * sizeof(float));
       ow_bulk_i--;
     }
+
     // judge whether there is an middle part
     if (ow_bulk_i > 0 && !(right && ow == 2 * ow_bulk)) {
       // middle !
@@ -237,7 +248,8 @@ void conv_direct_3x3s2::generate_code(int ic,
     // ow_remain = rightest index - ??
     int ow_remain = (ow - 1) - (new_ow + 2);
     if (ow_remain > 0 && new_ow >= 0) {  // right exists
-      int r_pad = right ? pw : 0;
+      ow_rpad = (ow - 1) * stridew + ww - pw - iw;
+      int r_pad = right ? ow_rpad : 0;
       cal_bulk(oc_group, ic_group, 0, r_pad, ow_remain);
     }
   };
@@ -289,28 +301,28 @@ void conv_direct_3x3s2::generate_code(int ic,
   postCode();
 }
 
-void conv_direct_3x3s2::run(const float* i_data,
-                            const float* trans_weight,
-                            float* trans_out,
-                            int bs,
-                            int ic,
-                            int ih,
-                            int iw,
-                            int oc,
-                            int oc_expand,
-                            int oh,
-                            int ow,
-                            int ph,
-                            int pw) {
+void conv_direct::run(const float* i_data,
+                      const float* trans_weight,
+                      float* trans_out,
+                      int bs,
+                      int ic,
+                      int ih,
+                      int iw,
+                      int oc,
+                      int oc_expand,
+                      int oh,
+                      int ow,
+                      int ph,
+                      int pw,
+                      int wh,
+                      int ww,
+                      int strideh) {
 #ifdef __AVX__
   constexpr int BLOCK = 8;
 #else
   constexpr int BLOCK = 4;
 #endif
 
-  constexpr int ww = 3;
-  constexpr int wh = 3;
-  constexpr int strideh = 2;
   constexpr int oc_block = 4 * BLOCK;
   constexpr int ic_block = 8;
   int wc = ic;
@@ -320,74 +332,150 @@ void conv_direct_3x3s2::run(const float* i_data,
   int whwB = wh * ww * BLOCK;
   int ochw = oc * oh * ow;
 
-  // fetch bs_i th input feature map
-  for (int bs_i = 0; bs_i < bs; bs_i++) {
-    // calculate the result of each line of output
-    auto cal_out_line = [=](const float* in_row_addr,
-                            const float* trans_weight,
-                            float* out_row_addr,
-                            int wh) {
+  // strideh *
+  if (iw >= 224) {
+    // fetch bs_i th input feature map
+    for (int bs_i = 0; bs_i < bs; bs_i++) {
+      // calculate the result of each line of output
+      auto cal_out_line = [=](const float* in_row_addr,
+                              const float* trans_weight,
+                              float* out_row_addr,
+                              int wh) {
+        for (int ic_i = 0; ic_i < ic; ic_i += ic_block) {
+          for (int oc_gi = 0; oc_gi < oc; oc_gi += oc_block) {
+            jit_param param;
+            param.in_row_addr = in_row_addr + ic_i * ihw;
+            param.kernel_addr =
+                trans_weight + oc_gi / BLOCK * whwB * wc + ic_i * whwB;
+            param.out_row_addr = out_row_addr + oc_gi * oh * ow;
+            param.oc = oc_gi + oc_block - 1 < oc ? oc_block : oc - oc_gi;
+            param.ic = ic_i + ic_block - 1 < ic ? ic_block : ic - ic_i;
+            param.wh = wh;
+
+            void (*f)(jit_param*) =
+                CodeGenerator::getCode<void (*)(jit_param*)>();
+            f(&param);
+          }
+        }
+      };
+
+      const float* in_row_addr = i_data + bs_i * ichw;
+      float* out_row_addr = trans_out + bs_i * ochw;
+
+      int oh_i = 0;
+      if (ph > 0) {  // upper boundry
+        int temp_wh =
+            wh - ph;  // we olny need deal with temp_wh rows not wh rows!
+
+        // check if the kernel will occupy lower boundry
+        // if so, we need decrease temp_wh again
+        if (ih + ph < wh) temp_wh -= (wh - ih - ph);
+        cal_out_line(
+            in_row_addr, trans_weight + ph * ww * BLOCK, out_row_addr, temp_wh);
+        oh_i++;
+        in_row_addr += (strideh - ph) * iw;
+        out_row_addr += ow * BLOCK;
+      }
+      // middle
+      for (; oh_i < oh - 1; oh_i++) {
+        cal_out_line(in_row_addr, trans_weight, out_row_addr, wh);
+        out_row_addr += ow * BLOCK;
+        in_row_addr += strideh * iw;
+      }
+
+      if (oh_i >= oh) continue;
+
+      // lower boundary,
+      // compute how many boundry rows is used to the lowerest output row
+      int lower = strideh * (oh - 1) + wh - ph - ih;
+
+      if (lower > 0) {
+        cal_out_line(in_row_addr, trans_weight, out_row_addr, wh - lower);
+      } else {
+        cal_out_line(in_row_addr, trans_weight, out_row_addr, wh);
+      }
+    }
+  } else {
+    // fetch bs_i th input feature map
+    for (int bs_i = 0; bs_i < bs; bs_i++) {
       for (int ic_i = 0; ic_i < ic; ic_i += ic_block) {
         for (int oc_gi = 0; oc_gi < oc; oc_gi += oc_block) {
-          jit_3x3s2param param;
-          param.in_row_addr = in_row_addr + ic_i * ihw;
-          param.kernel_addr =
-              trans_weight + oc_gi / BLOCK * whwB * wc + ic_i * whwB;
-          param.out_row_addr = out_row_addr + oc_gi * oh * ow;
+          const float* in_row_addr = i_data + bs_i * ichw + ic_i * ihw;
+          float* out_row_addr = trans_out + bs_i * ochw + oc_gi * oh * ow;
+          const float* weight =
+              trans_weight + oc_gi * wc * whwB / BLOCK + ic_i * whwB;
+          jit_param param;
           param.oc = oc_gi + oc_block - 1 < oc ? oc_block : oc - oc_gi;
           param.ic = ic_i + ic_block - 1 < ic ? ic_block : ic - ic_i;
-          param.wh = wh;
+          void (*f)(jit_param*) =
+              CodeGenerator::getCode<void (*)(jit_param*)>();
 
-          void (*f)(jit_3x3s2param*) =
-              CodeGenerator::getCode<void (*)(jit_3x3s2param*)>();
-          f(&param);
+          int oh_i = 0;
+          if (ph > 0) {  // upper boundry
+            int temp_wh =
+                wh - ph;  // we olny need deal with temp_wh rows not wh rows!
+
+            // check if the kernel will occupy lower boundry
+            // if so, we need decrease temp_wh again
+            if (ih + ph < wh) temp_wh -= (wh - ih - ph);
+
+            param.wh = temp_wh;
+            param.in_row_addr = in_row_addr;
+            param.kernel_addr = weight + ph * ww * BLOCK;
+            param.out_row_addr = out_row_addr;
+            f(&param);
+            oh_i++;
+            in_row_addr += (strideh - ph) * iw;
+            out_row_addr += ow * BLOCK;
+          }
+
+          // middle
+          for (; oh_i < oh - 1; oh_i++) {
+            param.wh = wh;
+            param.in_row_addr = in_row_addr;
+            param.kernel_addr = weight;
+            param.out_row_addr = out_row_addr;
+            f(&param);
+            out_row_addr += ow * BLOCK;
+            in_row_addr += strideh * iw;
+          }
+
+          if (oh_i >= oh) continue;
+
+          // lower boundary,
+          // compute how many boundry rows is used to the lowerest output row
+          int lower = strideh * (oh - 1) + wh - ph - ih;
+
+          if (lower > 0) {
+            param.wh = wh - lower;
+            param.in_row_addr = in_row_addr;
+            param.kernel_addr = weight;
+            param.out_row_addr = out_row_addr;
+            f(&param);
+          } else {
+            param.wh = wh;
+            param.in_row_addr = in_row_addr;
+            param.kernel_addr = weight;
+            param.out_row_addr = out_row_addr;
+            f(&param);
+          }
         }
       }
-    };
-
-    const float* in_row_addr = i_data + bs_i * ichw;
-    float* out_row_addr = trans_out + bs_i * ochw;
-
-    int oh_i = 0;
-    if (ph == 1) {  // upper boundry
-      int temp_wh = ih >= 2 ? 2 : 1;
-      cal_out_line(
-          in_row_addr, trans_weight + ww * BLOCK, out_row_addr, temp_wh);
-      oh_i++;
-      in_row_addr += iw;
-      out_row_addr += ow * BLOCK;
-    }
-    // middle
-    for (; oh_i < oh - 1; oh_i++) {
-      cal_out_line(in_row_addr, trans_weight, out_row_addr, wh);
-      out_row_addr += ow * BLOCK;
-      in_row_addr += strideh * iw;
-    }
-
-    // lower boundary
-    if (oh_i >= oh) continue;
-
-    bool lower = (-ph + strideh * (oh - 1) + wh - 1) == ((ih - 1) + ph);
-
-    if (ph == 1 && lower) {
-      cal_out_line(in_row_addr, trans_weight, out_row_addr, 2);
-    } else {
-      cal_out_line(in_row_addr, trans_weight, out_row_addr, wh);
     }
   }
 }
 
 // we always assume oc % BLOCK == 0!
 // convert [N C/8 H W 8] to [N C H W]!
-void conv_direct_3x3s2_tranpose_out(int bs,
-                                    int oc,
-                                    int oh,
-                                    int ow,
-                                    float* o_data,
-                                    float* trans_out,
-                                    const float* bias,
-                                    lite_api::ActivationType active_type,
-                                    operators::ActivationParam act_param) {
+void conv_direct_transpose_out(int bs,
+                               int oc,
+                               int oh,
+                               int ow,
+                               float* o_data,
+                               float* trans_out,
+                               const float* bias,
+                               lite_api::ActivationType active_type,
+                               operators::ActivationParam act_param) {
 #ifdef __AVX__
   constexpr int BLOCK = 8;
 #else
@@ -507,25 +595,25 @@ void conv_direct_3x3s2_tranpose_out(int bs,
                                     row0,
                                     _mm256_cmp_ps(row0, vzero, _CMP_GT_OS));
             row1 = _mm256_blendv_ps(_mm256_mul_ps(row1, vscale),
-                                    row0,
+                                    row1,
                                     _mm256_cmp_ps(row1, vzero, _CMP_GT_OS));
             row2 = _mm256_blendv_ps(_mm256_mul_ps(row2, vscale),
-                                    row0,
+                                    row2,
                                     _mm256_cmp_ps(row2, vzero, _CMP_GT_OS));
             row3 = _mm256_blendv_ps(_mm256_mul_ps(row3, vscale),
-                                    row0,
+                                    row3,
                                     _mm256_cmp_ps(row3, vzero, _CMP_GT_OS));
             row4 = _mm256_blendv_ps(_mm256_mul_ps(row4, vscale),
-                                    row0,
+                                    row4,
                                     _mm256_cmp_ps(row4, vzero, _CMP_GT_OS));
             row5 = _mm256_blendv_ps(_mm256_mul_ps(row5, vscale),
-                                    row0,
+                                    row5,
                                     _mm256_cmp_ps(row5, vzero, _CMP_GT_OS));
             row6 = _mm256_blendv_ps(_mm256_mul_ps(row6, vscale),
-                                    row0,
+                                    row6,
                                     _mm256_cmp_ps(row6, vzero, _CMP_GT_OS));
             row7 = _mm256_blendv_ps(_mm256_mul_ps(row7, vscale),
-                                    row0,
+                                    row7,
                                     _mm256_cmp_ps(row7, vzero, _CMP_GT_OS));
 #else
             __m128 vzero = _mm_set1_ps(0.f);
@@ -534,13 +622,13 @@ void conv_direct_3x3s2_tranpose_out(int bs,
                                  row0,
                                  _mm_cmp_ps(row0, vzero, _CMP_GT_OS));
             row1 = _mm_blendv_ps(_mm_mul_ps(row1, vscale),
-                                 row0,
+                                 row1,
                                  _mm_cmp_ps(row1, vzero, _CMP_GT_OS));
             row2 = _mm_blendv_ps(_mm_mul_ps(row2, vscale),
-                                 row0,
+                                 row2,
                                  _mm_cmp_ps(row2, vzero, _CMP_GT_OS));
             row3 = _mm_blendv_ps(_mm_mul_ps(row3, vscale),
-                                 row0,
+                                 row3,
                                  _mm_cmp_ps(row3, vzero, _CMP_GT_OS));
 #endif
           } else if (active_type == lite_api::ActivationType::kHardSwish) {

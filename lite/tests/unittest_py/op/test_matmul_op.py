@@ -33,22 +33,22 @@ class TestMulOp(AutoScanTest):
                                      DataLayoutType.NCHW)
         self.enable_testing_on_place(TargetType.X86, PrecisionType.FP32,
                                      DataLayoutType.NCHW)
-        #self.enable_testing_on_place(TargetType.Metal, PrecisionType.FP32,
+        # self.enable_testing_on_place(TargetType.Metal, PrecisionType.FP32,
         #                             DataLayoutType.NCHW)
-        #opencl_places = [
-        #    Place(TargetType.OpenCL, PrecisionType.FP16,
-        #          DataLayoutType.ImageDefault), Place(
-        #              TargetType.OpenCL, PrecisionType.FP16,
-        #              DataLayoutType.ImageFolder),
-        #    Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-        #    Place(TargetType.OpenCL, PrecisionType.Any,
-        #          DataLayoutType.ImageDefault), Place(
-        #              TargetType.OpenCL, PrecisionType.Any,
-        #              DataLayoutType.ImageFolder),
-        #    Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-        #    Place(TargetType.Host, PrecisionType.FP32)
-        #]
-        #self.enable_testing_on_place(places=opencl_places)
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -97,6 +97,9 @@ class TestMulOp(AutoScanTest):
         head_number = draw(st.integers(min_value=1, max_value=1))
         force_fp32_output = draw(st.booleans())
 
+        if target_str == "OpenCL":
+            alpha = 1.0
+
         matmul_op = OpConfig(
             type="matmul",
             inputs={"X": ["input_data_x"],
@@ -132,7 +135,14 @@ class TestMulOp(AutoScanTest):
         return self.get_predictor_configs(), ["matmul"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            if predictor_config.target() == TargetType.OpenCL:
+                return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         sample_size = 25
