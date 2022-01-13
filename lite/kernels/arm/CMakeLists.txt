@@ -54,7 +54,6 @@ add_kernel(rnn_compute_arm ARM extra SRCS rnn_compute.cc)
 add_kernel(activation_extra_compute_arm ARM extra SRCS activation_extra_compute.cc)
 add_kernel(negative_compute_arm ARM extra SRCS negative_compute.cc)
 add_kernel(pow_compute_arm ARM extra SRCS pow_compute.cc)
-add_kernel(norm_compute_arm ARM extra SRCS norm_compute.cc)
 add_kernel(group_norm_compute ARM extra SRCS group_norm_compute.cc)
 ## 3. extra kernels
 add_kernel(sparse_conv_compute_arm ARM extra SRCS sparse_conv_compute.cc)
