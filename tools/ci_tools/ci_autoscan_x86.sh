@@ -15,6 +15,11 @@ WORKSPACE=${SHELL_FOLDER%tools/ci_tools*}
 BUILD_EXTRA=ON
 # Skip op or pass, use | to separate them, such as "expand_op" or "expand_op|abc_pass", etc.
 SKIP_LIST="abc_op|abc_pass"
+# Models URL
+MODELS_URL="https://paddle-inference-dist.bj.bcebos.com/AI-Rank/mobile/MobileNetV1.tar.gz"
+
+# Helper functions
+source ${SHELL_FOLDER}/utils.sh
 
 ####################################################################################################
 # Functions of operate unit test
@@ -29,7 +34,7 @@ function auto_scan_test {
   cd $WORKSPACE/lite/tests/unittest_py/op/
   unittests=$(ls | egrep -v $SKIP_LIST)
   for test in ${unittests[@]}; do
-    if [[ "$test" =~ py$ ]];then
+    if [[ "$test" =~ py$ ]]; then
       python$PYTHON_VERSION $test --target=$target_name
     fi
   done
@@ -37,7 +42,7 @@ function auto_scan_test {
   cd $WORKSPACE/lite/tests/unittest_py/pass/
   unittests=$(ls | egrep -v $SKIP_LIST)
   for test in ${unittests[@]}; do
-    if [[ "$test" =~ py$ ]];then
+    if [[ "$test" =~ py$ ]]; then
       python$PYTHON_VERSION $test --target=$target_name
     fi
   done
@@ -91,15 +96,62 @@ function get_summary() {
   python$PYTHON_VERSION ../global_var_model.py
 }
 
+function check_classification_result() {
+  local target=$1
+  local log_file=$2
+  local result_class_name="Egyptian cat"
+
+  local ret=$(grep "$result_class_name" $log_file)
+  if [[ -z "$ret" ]]; then
+    echo "Wrong result on $target. exit!"
+    exit 1
+  fi
+}
+
+function run_python_demo() {
+  local target_list="x86"
+  local targets=(${target_list//,/ })
+
+  # Download model
+  local download_dir="${WORKSPACE}/Models/"
+  local force_download="ON"
+  prepare_models $download_dir $force_download
+  local model_dir=${download_dir}/$(ls $download_dir)
+
+  # Requirements
+  python$PYTHON_VERSION -m pip install opencv-python
+
+  # Run demo & check result
+  cd $WORKSPACE/lite/demo/python/
+  local log_file="log"
+  for target in ${targets[@]}; do
+    # mobilenetv1_full_api
+    python$PYTHON_VERSION mobilenetv1_full_api.py \
+        --model_file ${model_dir}/inference.pdmodel \
+        --param_file ${model_dir}/inference.pdiparams \
+        --input_shape 1 3 224 224 \
+        --label_path ./labels.txt \
+        --image_path ./tabby_cat.jpg \
+        --backend $target 2>&1 | tee $log_file
+    check_classification_result $target $log_file
+
+    # mobilenetv1_light_api
+    python$PYTHON_VERSION mobilenetv1_light_api.py \
+        --model_dir "opt_${target}.nb" \
+        --input_shape 1 3 224 224 \
+        --label_path ./labels.txt \
+        --image_path ./tabby_cat.jpg \
+        --backend $target 2>&1 | tee $log_file
+    check_classification_result $target $log_file
+  done
+}
+
 function pipeline() {
   # Compile
   compile_publish_inference_lib
 
   # Run unittests
   run_test
-
-  # Uninstall paddlelite
-  python$PYTHON_VERSION -m pip uninstall -y paddlelite
 }
 
 function main() {
@@ -117,8 +169,15 @@ function main() {
     esac
   done
 
+  # Run op/pass unittests
   pipeline
   get_summary
+
+  # Run python demo
+  run_python_demo
+
+  # Uninstall paddlelite
+  python$PYTHON_VERSION -m pip uninstall -y paddlelite
 
   echo "Success for targets: Host,X86"
 }
