@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//
-// Created by chenyaohuang on 2021/12/17.
-//
-
 #include "lite/core/optimizer/mir/fusion/unsqueeze2_pad3d_squeeze2_fuse.h"
 #include <memory>
 #include <vector>
