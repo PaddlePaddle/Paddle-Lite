@@ -73,7 +73,14 @@ void CumsumCompute<T, PType>::Run() {
       }
     }
   }
-
+  if (param.reverse) {
+    int x_size = x->numel();
+    T tmp = out_data[0];
+    for (int i = 1; < x_size; i++) {
+      out_data[i - 1] = out_data[x_size - i];
+    }
+    out_data[x_size - 1] = tmp;
+  }
   return;
 }
 
