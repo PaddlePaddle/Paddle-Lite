@@ -67,26 +67,6 @@ class TestConv2dOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        target_type = predictor_config.target()
-        input_shape = program_config.inputs["input_data"].shape
-        filter_data = program_config.weights["filter_data"].shape
-        groups = program_config.ops[0].attrs["groups"]
-        if target_type == TargetType.OpenCL:
-            # opencl doesn't support
-            if groups != 1:
-                return False
-            else:
-                return True
-        elif target_type == TargetType.ARM and (
-                predictor_config.precision() == PrecisionType.FP16 or
-                predictor_config.precision() == PrecisionType.INT8):
-            # fp16 has diff and int8 doesn't support
-            return False
-        if target_type == TargetType.Metal:
-            if groups != 1:
-                return False
-            if input_shape[0] != 1 or input_shape[1] < 3 or filter_data[0] < 3:
-                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -171,7 +151,44 @@ class TestConv2dOp(AutoScanTest):
         return self.get_predictor_configs(), ["conv2d"], (atol, rtol)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            target_type = predictor_config.target()
+            groups = program_config.ops[0].attrs["groups"]
+            if target_type == TargetType.OpenCL:
+                if groups != 1:
+                    return True
+
+        def _teller2(program_config, predictor_config):
+            target_type = predictor_config.target()
+            if target_type == TargetType.ARM and (
+                    predictor_config.precision() == PrecisionType.FP16 or
+                    predictor_config.precision() == PrecisionType.INT8):
+                return True
+
+        def _teller3(program_config, predictor_config):
+            target_type = predictor_config.target()
+            input_shape = program_config.inputs["input_data"].shape
+            filter_data = program_config.weights["filter_data"].shape
+            groups = program_config.ops[0].attrs["groups"]
+            if target_type == TargetType.Metal:
+                if groups != 1:
+                    return True
+                if input_shape[0] != 1 or input_shape[1] < 3 or filter_data[
+                        0] < 3:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case on opencl. We need to fix it as soon as possible."
+        )
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.ACCURACY_ERROR,
+            "The op output has diff in a specific case on arm. We need to fix it as soon as possible."
+        )
+        self.add_ignore_check_case(
+            _teller3, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case on metal. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)

@@ -58,12 +58,6 @@ class TestGridSamplerOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        if predictor_config.target() == TargetType.OpenCL:
-            if program_config.ops[0].attrs[
-                    "align_corners"] != True or program_config.ops[0].attrs[
-                        "padding_mode"] != "zeros" or program_config.ops[
-                            0].attrs["mode"] != "bilinear":
-                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -108,12 +102,21 @@ class TestGridSamplerOp(AutoScanTest):
             return True
 
         self.add_ignore_check_case(
-            # IgnoreReasonsBase.PADDLE_NOT_IMPLEMENTED
-            # IgnoreReasonsBase.PADDLELITE_NOT_SUPPORT
-            # IgnoreReasonsBase.ACCURACY_ERROR
-            teller1,
-            IgnoreReasons.ACCURACY_ERROR,
+            teller1, IgnoreReasons.ACCURACY_ERROR,
             "The op output has diff. We need to fix it as soon as possible.")
+
+        def teller2(program_config, predictor_config):
+            if predictor_config.target() == TargetType.OpenCL:
+                if program_config.ops[0].attrs[
+                        "align_corners"] != True or program_config.ops[0].attrs[
+                            "padding_mode"] != "zeros" or program_config.ops[
+                                0].attrs["mode"] != "bilinear":
+                    return True
+
+        self.add_ignore_check_case(
+            teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case on opencl. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=300)
