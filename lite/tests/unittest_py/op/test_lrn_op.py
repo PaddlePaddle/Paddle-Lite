@@ -36,16 +36,20 @@ class TestLrnOp(AutoScanTest):
             DataLayoutType.NCHW,
             thread=[1, 4])
         # opencl bug will be fix in the future
-        #opencl_places = [
-        #                  Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageDefault),
-        #                  Place(TargetType.OpenCL, PrecisionType.FP16, DataLayoutType.ImageFolder),
-        #                  Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
-        #                  Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageDefault),
-        #                  Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.ImageFolder),
-        #                  Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-        #                  Place(TargetType.Host, PrecisionType.FP32)
-        #                 ]
-        #self.enable_testing_on_place(places=opencl_places)
+        opencl_places = [
+            Place(TargetType.OpenCL, PrecisionType.FP16,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.FP16,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.FP32, DataLayoutType.NCHW),
+            Place(TargetType.OpenCL, PrecisionType.Any,
+                  DataLayoutType.ImageDefault), Place(
+                      TargetType.OpenCL, PrecisionType.Any,
+                      DataLayoutType.ImageFolder),
+            Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        self.enable_testing_on_place(places=opencl_places)
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -103,7 +107,14 @@ class TestLrnOp(AutoScanTest):
         return self.get_predictor_configs(), ["lrn"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            if predictor_config.target() == TargetType.OpenCL:
+                return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case on opencl. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=150)

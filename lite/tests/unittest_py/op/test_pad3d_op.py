@@ -28,7 +28,7 @@ import numpy as np
 from functools import partial
 
 
-class TestReverseOp(AutoScanTest):
+class TestPad3dOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         self.enable_testing_on_place(
@@ -46,41 +46,56 @@ class TestReverseOp(AutoScanTest):
         in_shape = draw(
             st.lists(
                 st.integers(
-                    min_value=1, max_value=10), min_size=4, max_size=4))
-        axis = draw(st.sampled_from([0, [1], [0, 1]]))
-
-        if isinstance(axis, int):
-            axis = [axis]
+                    min_value=1, max_value=64), min_size=5, max_size=5))
+        mode = draw(
+            st.sampled_from(["constant", "reflect", "replicate", "circular"]))
+        value_data = draw(st.floats(min_value=0.0, max_value=4.0))
+        padding_data = draw(
+            st.lists(
+                st.integers(
+                    min_value=0, max_value=6), min_size=6, max_size=6))
+        data_format = draw(st.sampled_from(["NCDHW", "NDHWC"]))
+        for i in range(6):
+            assume(padding_data[i] < in_shape[1])
+            assume(padding_data[i] < in_shape[2])
+            assume(padding_data[i] < in_shape[3])
+            assume(padding_data[i] < in_shape[4])
 
         def generate_input(*args, **kwargs):
             return np.random.random(in_shape).astype(np.float32)
 
+        def generate_paddings(*args, **kwargs):
+            return np.array(padding_data).astype(np.int32)
+
         build_ops = OpConfig(
-            type="reverse",
-            inputs={"X": ["input_data"], },
+            type="pad3d",
+            inputs={
+                "X": ["input_data"],
+                #"Paddings": ["paddings_data"]
+            },
             outputs={"Out": ["output_data"], },
-            attrs={"axis": axis, })
+            attrs={
+                "paddings": padding_data,
+                "mode": mode,
+                "pad_value": value_data,
+                "data_format": data_format
+            })
         program_config = ProgramConfig(
             ops=[build_ops],
-            weights={},
+            weights={
+                #"paddings_data": TensorConfig(data_gen=partial(generate_paddings))
+            },
             inputs={
-                "input_data": TensorConfig(data_gen=partial(generate_input)),
+                "input_data": TensorConfig(data_gen=partial(generate_input))
             },
             outputs=["output_data"])
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["reverse"], (1e-5, 1e-5)
+        return self.get_predictor_configs(), ["pad3d"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        def _teller1(program_config, predictor_config):
-            if predictor_config.target() == TargetType.X86:
-                return True
-
-        self.add_ignore_check_case(
-            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite does not support this op in a specific case on x86. We need to fix it as soon as possible."
-        )
+        pass
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=25)

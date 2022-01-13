@@ -286,7 +286,9 @@ REGISTER_CONVERTER(tile, ConvertTile, "huawei_ascend_npu");
 REGISTER_CONVERTER(sum, ConvertSum, "huawei_ascend_npu");
 REGISTER_CONVERTER(where, ConvertWhere, "huawei_ascend_npu");
 REGISTER_CONVERTER(softplus, ConvertSoftplus, "huawei_ascend_npu");
-REGISTER_CONVERTER(shuffle_channel, ConvertShuffleChannel, "huawei_ascend_npu");
+REGISTER_CONVERTER(shuffle_channel,
+                   ConvertShuffleChannel,
+                   "huawei_ascend_npu,verisilicon_timvx");
 // TODO(shentanyue): open later
 // REGISTER_CONVERTER(roi_align, ConvertRoiAlign, "huawei_ascend_npu");
 // REGISTER_CONVERTER(grid_sample, ConvertGridSample, "huawei_ascend_npu");

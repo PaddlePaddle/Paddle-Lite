@@ -31,11 +31,11 @@ class TestMeshgridOp(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
         #input tensorlist bugs will be fixed in the future
-        #self.enable_testing_on_place(
-        #    TargetType.Host,
-        #    PrecisionType.FP32,
-        #    DataLayoutType.NCHW,
-        #    thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -64,7 +64,14 @@ class TestMeshgridOp(AutoScanTest):
         return self.get_predictor_configs(), ["meshgrid"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            if predictor_config.target() == TargetType.Host:
+                return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case on host. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)
