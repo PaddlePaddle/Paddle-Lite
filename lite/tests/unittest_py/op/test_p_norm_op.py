@@ -39,12 +39,12 @@ class TestPNormOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        # error when pick kernel
         x_shape = list(program_config.inputs["input_data"].shape)
         if len(x_shape) < program_config.ops[0].attrs["axis"] + 1:
             return False
-        # if True Paddle-lite run crash so omit it
-        if program_config.ops[0].attrs["asvector"]:
+        if program_config.ops[0].attrs[
+                "asvector"] == True and program_config.ops[0].attrs[
+                    "axis"] != 0:
             return False
         return True
 
@@ -61,7 +61,7 @@ class TestPNormOp(AutoScanTest):
                 max_size=3))
         in_shape = in_num + in_c_h_w
         axis = draw(st.sampled_from([-1, 0, 1, 2, 3]))
-        epsilon = draw(st.sampled_from([0, 1e-6]))
+        epsilon = draw(st.sampled_from([1.0e-12, 1.0e-13]))
         keepdim = draw(st.booleans())
         asvector = draw(st.booleans())
         p_norm_op = OpConfig(
@@ -84,21 +84,8 @@ class TestPNormOp(AutoScanTest):
     def sample_predictor_configs(self):
         return self.get_predictor_configs(), ["p_norm"], (1e-5, 1e-5)
 
-    def add_ignore_pass_case(self):
-        def teller1(program_config, predictor_config):
-            epsilon = program_config.ops[0].attrs["epsilon"]
-            asvector = program_config.ops[0].attrs["asvector"]
-            if epsilon:
-                return True
-
-        self.add_ignore_check_case(
-            teller1, IgnoreReasons.ACCURACY_ERROR,
-            "The op output has diff in a specific case. We need to fix it as soon as possible."
-        )
-        #pass
-
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=300)
+        self.run_and_statis(quant=False, max_examples=50)
 
 
 if __name__ == "__main__":
