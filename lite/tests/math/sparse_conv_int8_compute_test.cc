@@ -522,6 +522,7 @@ bool test_spmm_int8(bool tra,
   std::unique_ptr<paddle::lite::KernelContext> ctx1(
       new paddle::lite::KernelContext);
   auto& ctx = ctx1->As<paddle::lite::ARMContext>();
+  ths = ((f_semi == 1) ? 1 : ths);
   ctx.SetRunMode(static_cast<paddle::lite_api::PowerMode>(cls), ths);
 
   const int8_t* input = tb.data<int8_t>();
