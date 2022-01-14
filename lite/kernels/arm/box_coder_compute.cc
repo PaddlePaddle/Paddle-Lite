@@ -69,6 +69,7 @@ void BoxCoderCompute::Run() {
                                                prior_box_data,
                                                variance_data,
                                                var_len4,
+                                               normalized,
                                                col,
                                                output);
   } else if (code_type == "decode_center_size") {
