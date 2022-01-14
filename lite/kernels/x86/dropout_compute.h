@@ -53,8 +53,8 @@ class DropoutCompute : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
       // NOTE: fixed seed should only be used in unittest or for debug.
       // Guarantee to use random seed in training.
       int seed_data = 0;
-      if (param.seed_tensor.data<int>()) {
-        seed_data = *(param.seed_tensor.data<int>());
+      if (param.seed_tensor->data<int>()) {
+        seed_data = *(param.seed_tensor->data<int>());
       } else {
         seed_data = param.fix_seed ? param.seed : 0;
       }
