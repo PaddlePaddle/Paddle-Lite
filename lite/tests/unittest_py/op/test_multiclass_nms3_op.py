@@ -30,12 +30,11 @@ import hypothesis.strategies as st
 class TestMulticlassNms3Op(AutoScanTest):
     def __init__(self, *args, **kwargs):
         AutoScanTest.__init__(self, *args, **kwargs)
-        #bugs will be fix in the future
-        #self.enable_testing_on_place(
-        #    TargetType.Host,
-        #    PrecisionType.FP32,
-        #    DataLayoutType.NCHW,
-        #    thread=[1, 4])
+        self.enable_testing_on_place(
+            TargetType.Host,
+            PrecisionType.FP32,
+            DataLayoutType.NCHW,
+            thread=[1, 4])
 
     def is_program_valid(self,
                          program_config: ProgramConfig,
@@ -44,11 +43,11 @@ class TestMulticlassNms3Op(AutoScanTest):
 
     def sample_program_configs(self, draw):
         shape0 = draw(st.integers(min_value=1, max_value=64))
-        shape1 = draw(st.sampled_from([4, 8]))
+        shape1 = draw(st.sampled_from([4, 8, 16, 24, 32]))
         shape2 = draw(st.integers(min_value=1, max_value=64))
         shape3 = draw(st.integers(min_value=1, max_value=64))
-        X_shape = [shape0, shape2, shape1]
-        Y_shape = [shape1, shape3, shape2]
+        X_shape = [shape0, shape2, shape1]  #[N, M, 4x]
+        Y_shape = [shape0, shape3, shape2]  #[N, C, M]
         background_label = draw(st.sampled_from([1, 0]))
         score_threshold = draw(st.floats(min_value=0.1, max_value=1.0))
         nms_threshold = draw(st.floats(min_value=0.1, max_value=0.1))
@@ -56,34 +55,63 @@ class TestMulticlassNms3Op(AutoScanTest):
         nms_top_k = draw(st.integers(min_value=1, max_value=64))
         keep_top_k = draw(st.integers(min_value=1, max_value=64))
         normalized = draw(st.booleans())
-        multiclass_nms3_op = OpConfig(
-            type="multiclass_nms3",
-            inputs={
-                "BBoxes": ["input_data_BBoxes"],
-                "Scores": ["input_data_Scores"]
-            },
-            outputs={
-                "Out": ["output_data"],
-                "Index": ["Index"],
-                "RoisNum": ["RoisNum"],
-                "NmsRoisNum": ["NmsRoisNum"]
-            },
-            attrs={
-                "background_label": background_label,
-                "score_threshold": score_threshold,
-                "nms_threshold": nms_threshold,
-                "nms_top_k": nms_top_k,
-                "keep_top_k": keep_top_k,
-                "normalized": normalized,
-                "nms_eta": nms_eta
-            })
+        test_case = draw(st.sampled_from(["two_input", "three_input"]))
+
+        def generate_input():
+            return np.random.randint(
+                low=1, high=64, size=[shape0]).astype(np.int32)
+
+        if test_case == "two_input":
+            multiclass_nms3_op = OpConfig(
+                type="multiclass_nms3",
+                inputs={
+                    "BBoxes": ["input_data_BBoxes"],
+                    "Scores": ["input_data_Scores"]
+                },
+                outputs={
+                    "Out": ["output_data"],
+                    "Index": ["Index"],
+                    "NmsRoisNum": ["NmsRoisNum"]
+                },
+                attrs={
+                    "background_label": background_label,
+                    "score_threshold": score_threshold,
+                    "nms_threshold": nms_threshold,
+                    "nms_top_k": nms_top_k,
+                    "keep_top_k": keep_top_k,
+                    "normalized": normalized,
+                    "nms_eta": nms_eta
+                })
+        else:
+            multiclass_nms3_op = OpConfig(
+                type="multiclass_nms3",
+                inputs={
+                    "BBoxes": ["input_data_BBoxes"],
+                    "Scores": ["input_data_Scores"],
+                    "RoisNum": ["input_data_roisnum"]
+                },
+                outputs={
+                    "Out": ["output_data"],
+                    "Index": ["Index"],
+                    "NmsRoisNum": ["NmsRoisNum"]
+                },
+                attrs={
+                    "background_label": background_label,
+                    "score_threshold": score_threshold,
+                    "nms_threshold": nms_threshold,
+                    "nms_top_k": nms_top_k,
+                    "keep_top_k": keep_top_k,
+                    "normalized": normalized,
+                    "nms_eta": nms_eta
+                })
 
         program_config = ProgramConfig(
             ops=[multiclass_nms3_op],
             weights={},
             inputs={
                 "input_data_BBoxes": TensorConfig(shape=X_shape),
-                "input_data_Scores": TensorConfig(shape=Y_shape)
+                "input_data_Scores": TensorConfig(shape=Y_shape),
+                "input_data_roisnum": TensorConfig(data_gen=generate_input)
             },
             outputs={"output_data"})
         x_shape = list(program_config.inputs["input_data_BBoxes"].shape)
@@ -98,7 +126,7 @@ class TestMulticlassNms3Op(AutoScanTest):
         pass
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=25)
+        self.run_and_statis(quant=False, max_examples=50)
 
 
 if __name__ == "__main__":
