@@ -42,7 +42,7 @@ parser.add_argument(
     "--backend",
     default="",
     type=str,
-    help="To use a particular backend for execution. Should be one of: arm|opencl|x86|x86_opencl|metal"
+    help="To use a particular backend for execution. Should be one of: arm|opencl|x86|x86_opencl|metal|nnadapter"
 )
 parser.add_argument(
     "--image_path", default="", type=str, help="The path of test image file")
@@ -78,6 +78,7 @@ parser.add_argument(
     default="",
     type=str,
     help="Set nnadapter mixed precision quantization config path")
+
 
 def RunModel(args):
     # 1. Set config information
@@ -160,10 +161,7 @@ def RunModel(args):
                   DataLayoutType.MetalTexture2DArray), platform_place,
             Place(TargetType.Host, PrecisionType.FP32)
         ]
-    else:
-        raise ValueError("Unsupported backend: %s." % args.backend)
-
-    if args.backend.upper() in ["NNADAPTER"]:
+    elif args.backend.upper() in ["NNADAPTER"]:
         places = [
             Place(TargetType.NNAdapter, PrecisionType.FP32), platform_place,
             Place(TargetType.Host, PrecisionType.FP32)
@@ -172,7 +170,8 @@ def RunModel(args):
             print(
                 "Please set nnadapter_device_names when backend = nnadapter!")
             return
-        config.set_nnadapter_device_names([args.nnadapter_device_names])
+        config.set_nnadapter_device_names(
+            args.nnadapter_device_names.split(","))
         config.set_nnadapter_context_properties(
             args.nnadapter_context_properties)
         config.set_nnadapter_model_cache_dir(args.nnadapter_model_cache_dir)
@@ -180,6 +179,8 @@ def RunModel(args):
             args.nnadapter_subgraph_partition_config_path)
         config.set_nnadapter_mixed_precision_quantization_config_path(
             args.nnadapter_mixed_precision_quantization_config_path)
+    else:
+        raise ValueError("Unsupported backend: %s." % args.backend)
 
     config.set_valid_places(places)
 
