@@ -50,7 +50,8 @@ void PoolImageCompute::PrepareForRun() {
             }
         }
     }
-    if (param.global_pooling) {
+    if (param.pooling_type == "avg") {
+        should_use_mps = false;
     }
     use_mps_ = should_use_mps;
     if (use_mps_) {
@@ -196,15 +197,14 @@ void PoolImageCompute::setup_with_mps() {
                 MPSOffset{.x = offsetX, .y = offsetY};
             ((__bridge MPSCNNPoolingMax*)mps_pool_op_).edgeMode = MPSImageEdgeModeZero;
         } else if (param.pooling_type == "avg") {
-            mps_pool_op_ = (__bridge_retained void*)[[MPSCNNPoolingAverage alloc]
-                 initWithDevice:backend.device
-                    kernelWidth:input_buffer_->image().width
-                   kernelHeight:input_buffer_->image().height
-                strideInPixelsX:input_buffer_->image().width
-                strideInPixelsY:input_buffer_->image().height];
+            mps_pool_op_ =
+                (__bridge_retained void*)[[MPSCNNPoolingAverage alloc] initWithDevice:backend.device
+                                                                          kernelWidth:kw
+                                                                         kernelHeight:kh
+                                                                      strideInPixelsX:sw
+                                                                      strideInPixelsY:sh];
             ((__bridge MPSCNNPoolingAverage*)mps_pool_op_).offset =
-                MPSOffset{.x = static_cast<NSInteger>(input_buffer_->image().width / 2),
-                    .y = static_cast<NSInteger>(input_buffer_->image().height / 2)};
+                MPSOffset{.x = offsetX, .y = offsetY};
             ((__bridge MPSCNNPoolingAverage*)mps_pool_op_).edgeMode = MPSImageEdgeModeZero;
         }
         // MPS input and output
