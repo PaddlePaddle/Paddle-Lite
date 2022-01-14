@@ -40,11 +40,11 @@ class TestNearestInterpOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
-        self.enable_testing_on_place(
-            TargetType.Metal,
-            PrecisionType.FP32,
-            DataLayoutType.NCHW,
-            thread=[1, 4])
+        #self.enable_testing_on_place(
+        #    TargetType.Metal,
+        #    PrecisionType.FP32,
+        #    DataLayoutType.NCHW,
+        #    thread=[1, 4])
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -132,9 +132,9 @@ class TestNearestInterpOp(AutoScanTest):
                 if predictor_config.precision() == PrecisionType.FP16:
                     return True
 
-        def _teller2(program_config, predictor_config):
-            if predictor_config.target() == TargetType.Metal:
-                return True
+    # def _teller2(program_config, predictor_config):
+    #     if predictor_config.target() == TargetType.Metal:
+    #         return True
 
         def _teller3(program_config, predictor_config):
             in_shape = list(program_config.inputs["input_data_x"].shape)
@@ -148,17 +148,17 @@ class TestNearestInterpOp(AutoScanTest):
             _teller1, IgnoreReasons.ACCURACY_ERROR,
             "The op output has diff in a specific case. We need to fix it as soon as possible."
         )
-        self.add_ignore_check_case(
-            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
-            "Lite does not support this op in a specific case on metal. We need to fix it as soon as possible."
-        )
+        #    self.add_ignore_check_case(
+        #        _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+        #        "Lite does not support this op in a specific case on metal. We need to fix it as soon as possible."
+        #    )
         self.add_ignore_check_case(
             _teller3, IgnoreReasons.PADDLE_NOT_SUPPORT,
             "Paddle does not support this op in a specific case on metal. We need to fix it as soon as possible."
         )
 
     def test(self, *args, **kwargs):
-        self.run_and_statis(quant=False, max_examples=100)
+        self.run_and_statis(quant=False, max_examples=200)
 
 
 if __name__ == "__main__":
