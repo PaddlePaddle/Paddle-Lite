@@ -40,7 +40,6 @@ class TestScaleOp(AutoScanTest):
             PrecisionType.FP32,
             DataLayoutType.NCHW,
             thread=[1, 4])
-
         opencl_places = [
             Place(TargetType.OpenCL, PrecisionType.FP16,
                   DataLayoutType.ImageDefault), Place(
@@ -55,7 +54,6 @@ class TestScaleOp(AutoScanTest):
             Place(TargetType.Host, PrecisionType.FP32)
         ]
         self.enable_testing_on_place(places=opencl_places)
-
         metal_places = [
             Place(TargetType.Metal, PrecisionType.FP32,
                   DataLayoutType.MetalTexture2DArray),
@@ -145,7 +143,11 @@ class TestScaleOp(AutoScanTest):
         return program_config
 
     def sample_predictor_configs(self):
-        return self.get_predictor_configs(), ["scale"], (1e-5, 1e-5)
+        atol, rtol = 1e-5, 1e-5
+        target_str = self.get_target()
+        if target_str == "Metal":
+            atol, rtol = 1e-2, 1e-2
+        return self.get_predictor_configs(), ["scale"], (atol, rtol)
 
     def add_ignore_pass_case(self):
         def _teller1(program_config, predictor_config):
