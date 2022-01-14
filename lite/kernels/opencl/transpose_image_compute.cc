@@ -95,7 +95,18 @@ class TransposeComputeFloatImage
       std::set<std::vector<int>> unsupported_cases{
           std::vector<int>({0, 3, 1, 2})};
       if (unsupported_cases.find(axis_) == unsupported_cases.end()) {
-        kernel_func_name_ = "transpose_4d";
+        if (axis_ == std::vector<int>({0, 2, 3, 1})) {  // for NHWC
+          kernel_func_name_ = "transpose_4d_perm0231";
+        } else if (axis_ == std::vector<int>({0, 1, 3, 2})) {
+          kernel_func_name_ = "transpose_4d_perm0132";
+        } else if (axis_ == std::vector<int>({0, 2, 1, 3})) {
+          kernel_func_name_ = "transpose_4d_perm0213";
+        } else if (axis_ == std::vector<int>({0, 3, 2, 1})) {
+          kernel_func_name_ = "transpose_4d_perm0321";
+        } else {
+          LOG(FATAL) << "Unsupported axis permutation for current lite OpenCL "
+                        "kernel! ";
+        }
       } else {
         kernel_func_name_ = "transpose_general_buffer";
       }
@@ -149,17 +160,18 @@ class TransposeComputeFloatImage
     }
 
     if (output_tensor_dims_.size() == 4) {
+      output_tensor_n_ = output_tensor_dims_[0];
       output_tensor_c_ = output_tensor_dims_[1];
       output_tensor_h_ = output_tensor_dims_[2];
       output_tensor_w_ = output_tensor_dims_[3];
       x_tensor_w_ = x_tensor_dims_[3];
+      x_tensor_h_ = x_tensor_dims_[2];
     } else if (output_tensor_dims_.size() == 3) {
       output_tensor_c_ = output_tensor_dims_[0];
       output_tensor_h_ = output_tensor_dims_[1];
       output_tensor_w_ = output_tensor_dims_[2];
       x_tensor_w_ = x_tensor_dims_[2];
     } else if (output_tensor_dims_.size() == 2) {
-      output_tensor_c_ = 1;
       output_tensor_h_ = output_tensor_dims_[0];
       output_tensor_w_ = output_tensor_dims_[1];
       x_tensor_w_ = x_tensor_dims_[1];
@@ -185,7 +197,10 @@ class TransposeComputeFloatImage
 #endif
 
   void GetGlobalWorkSize() {
-    if (kernel_func_name_ == "transpose_4d" ||
+    if (kernel_func_name_ == "transpose_4d_perm0231" ||
+        kernel_func_name_ == "transpose_4d_perm0132" ||
+        kernel_func_name_ == "transpose_4d_perm0213" ||
+        kernel_func_name_ == "transpose_4d_perm0321" ||
         kernel_func_name_ == "transpose_2d") {
       const std::vector<size_t>& ws =
           DefaultGlobalWorkSize(output_tensor_dims_,
@@ -214,7 +229,10 @@ class TransposeComputeFloatImage
     auto& context = ctx_->As<OpenCLContext>();
     auto kernel = kernel_;
     cl_int status;
-    if (kernel_func_name_ == "transpose_4d" ||
+    if (kernel_func_name_ == "transpose_4d_perm0231" ||
+        kernel_func_name_ == "transpose_4d_perm0132" ||
+        kernel_func_name_ == "transpose_4d_perm0213" ||
+        kernel_func_name_ == "transpose_4d_perm0321" ||
         kernel_func_name_ == "transpose_2d") {
       status = kernel.setArg(0, *x_image);
       CL_CHECK_FATAL(status);
@@ -227,6 +245,8 @@ class TransposeComputeFloatImage
       status = kernel.setArg(4, output_tensor_w_);
       CL_CHECK_FATAL(status);
       status = kernel.setArg(5, x_tensor_w_);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(6, x_tensor_h_);
       CL_CHECK_FATAL(status);
 
       GetGlobalWorkSize();
@@ -278,13 +298,15 @@ class TransposeComputeFloatImage
       CL_CHECK_FATAL(status);
       status = kernel.setArg(2, *output_tensor_idxs_data_);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(3, output_tensor_c_);
+      status = kernel.setArg(3, output_tensor_n_);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(4, output_tensor_h_);
+      status = kernel.setArg(4, output_tensor_c_);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(5, output_tensor_w_);
+      status = kernel.setArg(5, output_tensor_h_);
       CL_CHECK_FATAL(status);
-      status = kernel.setArg(6, output_tensor_h_ * output_tensor_w_);
+      status = kernel.setArg(6, output_tensor_w_);
+      CL_CHECK_FATAL(status);
+      status = kernel.setArg(7, output_tensor_h_ * output_tensor_w_);
       CL_CHECK_FATAL(status);
 
       GetGlobalWorkSize();
@@ -316,7 +338,9 @@ class TransposeComputeFloatImage
   std::vector<int> axis_;
   DDim x_tensor_dims_{};
   int x_tensor_w_{1};
+  int x_tensor_h_{1};
   DDim output_tensor_dims_{};
+  int output_tensor_n_{1};
   int output_tensor_c_{1};
   int output_tensor_h_{1};
   int output_tensor_w_{1};
