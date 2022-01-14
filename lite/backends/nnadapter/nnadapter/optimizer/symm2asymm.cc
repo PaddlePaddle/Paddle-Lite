@@ -113,7 +113,8 @@ NNADAPTER_EXPORT void ConvertQuantizationSymmToAsymm(hal::Model* model) {
       case NNADAPTER_HARD_SWISH:
       case NNADAPTER_LEAKY_RELU:
       case NNADAPTER_SQUEEZE:
-      case NNADAPTER_CLIP: {
+      case NNADAPTER_CLIP:
+      case NNADAPTER_CHANNEL_SHUFFLE: {
         ConvertOperandSymmToAsymm(input_operands[0], 128);
         ConvertOperandSymmToAsymm(output_operands[0], 128);
         PropagateAsymmZeroPoint(input_operands[0], output_operands[0]);

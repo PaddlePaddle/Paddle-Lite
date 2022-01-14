@@ -39,7 +39,14 @@ statics_data = {
         "OpenCL": set(),
         "Metal": set()
     },
-    "not_supported_ops": {
+    "lite_not_supported_ops": {
+        "Host": set(),
+        "X86": set(),
+        "ARM": set(),
+        "OpenCL": set(),
+        "Metal": set()
+    },
+    "paddle_not_supported_ops": {
         "Host": set(),
         "X86": set(),
         "ARM": set(),
@@ -78,8 +85,12 @@ def set_out_diff_ops(target, op):
     set_value("out_diff_ops", target, op)
 
 
-def set_not_supported_ops(target, op):
-    set_value("not_supported_ops", target, op)
+def set_lite_not_supported_ops(target, op):
+    set_value("lite_not_supported_ops", target, op)
+
+
+def set_paddle_not_supported_ops(target, op):
+    set_value("paddle_not_supported_ops", target, op)
 
 
 def display():
@@ -90,21 +101,27 @@ def display():
 
     for target in targets:
         all_test_ops = statics_data["all_test_ops"][target]
-        not_supported_ops = statics_data["not_supported_ops"][target]
+        lite_not_supported_ops = statics_data["lite_not_supported_ops"][target]
+        paddle_not_supported_ops = statics_data["paddle_not_supported_ops"][
+            target]
         out_diff_ops = statics_data["out_diff_ops"][target]
         success_ops = statics_data["success_ops"][
-            target] - not_supported_ops - out_diff_ops
+            target] - lite_not_supported_ops - out_diff_ops - paddle_not_supported_ops
 
         print("Target =", target)
         print("Number of test =", len(all_test_ops))
         print("Number of success =", len(success_ops))
-        print("Number of not supported =", len(not_supported_ops))
+        print("Number of paddle not supported =",
+              len(paddle_not_supported_ops))
+        print("Number of lite not supported =", len(lite_not_supported_ops))
         print("Number of output diff =", len(out_diff_ops))
         print("\nDetails:")
         print("Success:")
         print(list(success_ops))
-        print("\nNot supported:")
-        print(list(not_supported_ops))
+        print("\npaddle Not supported:")
+        print(list(paddle_not_supported_ops))
+        print("\nlite Not supported:")
+        print(list(lite_not_supported_ops))
         print("\nOutput diff:")
         print(list(out_diff_ops))
         print("\n")

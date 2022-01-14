@@ -60,21 +60,9 @@ class TestSplitOp(AutoScanTest):
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
         x_dtype = program_config.inputs["input_data"].dtype
-        x_shape = list(program_config.inputs["input_data"].shape)
-        out_shape = list(program_config.outputs)
-        axis = program_config.ops[0].attrs["axis"]
+        #check config
         if predictor_config.precision() == PrecisionType.INT64:
             if x_dtype != np.int64:
-                return False
-        if predictor_config.target() == TargetType.OpenCL:
-            if len(x_shape) != 4 \
-                or len(out_shape) != 2 \
-                or x_dtype != np.float32 :
-                return False
-        if predictor_config.target() == TargetType.Metal:
-            if len(x_shape) == 2 or axis == 0 or axis == 1:
-                return False
-            if x_dtype != np.float32:
                 return False
         return True
 
@@ -193,6 +181,27 @@ class TestSplitOp(AutoScanTest):
         self.add_ignore_check_case(
             teller1, IgnoreReasons.ACCURACY_ERROR,
             "The op output has diff in a specific case. We need to fix it as soon as possible."
+        )
+
+        def teller2(program_config, predictor_config):
+            x_dtype = program_config.inputs["input_data"].dtype
+            x_shape = list(program_config.inputs["input_data"].shape)
+            out_shape = list(program_config.outputs)
+            axis = program_config.ops[0].attrs["axis"]
+            if predictor_config.target() == TargetType.OpenCL:
+                if len(x_shape) != 4 \
+                    or len(out_shape) != 2 \
+                    or x_dtype != np.float32 :
+                    return True
+            if predictor_config.target() == TargetType.Metal:
+                if len(x_shape) == 2 or axis == 0 or axis == 1:
+                    return True
+                if x_dtype != np.float32:
+                    return True
+
+        self.add_ignore_check_case(
+            teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case. We need to fix it as soon as possible."
         )
 
     def test(self, *args, **kwargs):

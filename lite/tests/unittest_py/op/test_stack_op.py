@@ -43,10 +43,6 @@ class TestStackOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        x_dtype = program_config.inputs["stack_input1"].dtype
-        if predictor_config.target() == TargetType.X86:
-            if x_dtype != np.float32:
-                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -107,7 +103,16 @@ class TestStackOp(AutoScanTest):
         return self.get_predictor_configs(), ["stack"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            x_dtype = program_config.inputs["stack_input1"].dtype
+            if predictor_config.target() == TargetType.X86:
+                if x_dtype != np.float32:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.ACCURACY_ERROR,
+            "The op output has diff in a specific case on x86. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)

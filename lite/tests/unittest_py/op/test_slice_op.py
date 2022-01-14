@@ -66,12 +66,10 @@ class TestSliceOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
+        # check config
         x_dtype = program_config.inputs["input_data"].dtype
-        if predictor_config.target() == TargetType.ARM \
-        or predictor_config.target() == TargetType.OpenCL \
-        or predictor_config.target() == TargetType.Metal :
-            if x_dtype == np.int32 or x_dtype == np.int64:
-                return False
+        if x_dtype == np.int32 or x_dtype == np.int64:
+            return False
         return True
 
     def sample_program_configs(self, draw):
