@@ -17,6 +17,7 @@
 #include "driver/verisilicon_timvx/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
+#include "utility/modeling.h"
 
 namespace nnadapter {
 namespace verisilicon_timvx {
@@ -43,11 +44,14 @@ int ConvertConv2DTranspose(Converter* converter, hal::Operation* operation) {
         stride_width,
         &dilation_width);
   }
+
   // Convert to tim-vx tensors and operators
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
+  std::vector<int32_t> filter_permutation = {1, 0, 2, 3};
+  TransposeOperand(filter_operand, filter_permutation);
   int32_t multiplier = 0;
   std::vector<int32_t> filter_dimensions(
       filter_operand->type.dimensions.data,
@@ -82,7 +86,7 @@ int ConvertConv2DTranspose(Converter* converter, hal::Operation* operation) {
                                    static_cast<uint32_t>(pad_width_right),
                                    static_cast<uint32_t>(pad_height_top),
                                    static_cast<uint32_t>(pad_height_bottom)}),
-          group);
+          1);
   conv2dtranspose_op->BindInputs({input_tensor, filter_tensor, bias_tensor});
   conv2dtranspose_op->BindOutputs({output_tensor});
   NNADAPTER_CHECK_EQ(fuse_code, NNADAPTER_FUSED_NONE)

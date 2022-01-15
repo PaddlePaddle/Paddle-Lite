@@ -93,6 +93,5 @@ std::shared_ptr<tim::vx::Tensor> Converter::ConvertOperand(
   UpdateTensorMap(operand, tensor);
   return tensor;
 }
-
 }  // namespace verisilicon_timvx
 }  // namespace nnadapter
