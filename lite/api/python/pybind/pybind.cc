@@ -168,6 +168,25 @@ void BindLiteCxxConfig(py::module *m) {
       .def("set_metal_use_memory_reuse", &CxxConfig::set_metal_use_memory_reuse)
       .def("set_metal_lib_path", &CxxConfig::set_metal_lib_path);
 
+  cxx_config
+      .def("set_nnadapter_device_names", &CxxConfig::set_nnadapter_device_names)
+      .def("set_nnadapter_context_properties",
+           &CxxConfig::set_nnadapter_context_properties)
+      .def("set_nnadapter_model_cache_dir",
+           &CxxConfig::set_nnadapter_model_cache_dir)
+      .def("set_nnadapter_subgraph_partition_config_path",
+           &CxxConfig::set_nnadapter_subgraph_partition_config_path)
+      .def("set_nnadapter_mixed_precision_quantization_config_path",
+           &CxxConfig::set_nnadapter_mixed_precision_quantization_config_path)
+      .def("nnadapter_device_names", &CxxConfig::nnadapter_device_names)
+      .def("nnadapter_context_properties",
+           &CxxConfig::nnadapter_context_properties)
+      .def("nnadapter_model_cache_dir", &CxxConfig::nnadapter_model_cache_dir)
+      .def("nnadapter_subgraph_partition_config_path",
+           &CxxConfig::nnadapter_subgraph_partition_config_path)
+      .def("nnadapter_mixed_precision_quantization_config_path",
+           &CxxConfig::nnadapter_mixed_precision_quantization_config_path);
+
 #ifdef LITE_WITH_MLU
   cxx_config.def("set_mlu_core_version", &CxxConfig::set_mlu_core_version)
       .def("set_mlu_core_number", &CxxConfig::set_mlu_core_number)

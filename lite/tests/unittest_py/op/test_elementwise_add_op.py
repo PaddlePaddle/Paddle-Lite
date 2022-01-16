@@ -106,8 +106,6 @@ class TestElementwiseAddOp(AutoScanTest):
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
         target_type = predictor_config.target()
-        in_x_shape = list(program_config.inputs["input_data_x"].shape)
-        in_y_shape = list(program_config.inputs["input_data_y"].shape)
         input_data_type = program_config.inputs["input_data_x"].dtype
         # Check config
         if target_type in [TargetType.ARM]:
@@ -123,18 +121,6 @@ class TestElementwiseAddOp(AutoScanTest):
             if predictor_config.precision(
             ) == PrecisionType.INT32 and input_data_type != np.int32:
                 return False
-
-        if target_type == TargetType.ARM:
-            if input_data_type == np.int64:
-                err_msg = "Elementwise_add op on this backend will crash with int64 dtype, we should fix it as soon as possible!"
-                return False
-        if target_type == TargetType.Metal:
-            if input_data_type != np.float32 \
-                or in_x_shape != in_y_shape \
-                or len(in_x_shape) == 3 \
-                or in_x_shape[0] != 1:
-                return False
-
         return True
 
     def sample_program_configs(self, draw):
@@ -195,7 +181,33 @@ class TestElementwiseAddOp(AutoScanTest):
         return self.get_predictor_configs(), ["elementwise_add"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            target_type = predictor_config.target()
+            input_data_type = program_config.inputs["input_data_x"].dtype
+            in_x_shape = list(program_config.inputs["input_data_x"].shape)
+            in_y_shape = list(program_config.inputs["input_data_y"].shape)
+            if target_type == TargetType.Metal:
+                if input_data_type != np.float32 \
+                    or in_x_shape != in_y_shape \
+                    or len(in_x_shape) == 3 \
+                    or in_x_shape[0] != 1:
+                    return True
+
+        def _teller2(program_config, predictor_config):
+            target_type = predictor_config.target()
+            input_data_type = program_config.inputs["input_data_x"].dtype
+            if target_type == TargetType.ARM:
+                if input_data_type == np.int64:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case on metal. We need to fix it as soon as possible."
+        )
+        self.add_ignore_check_case(
+            _teller2, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Elementwise_add op on this backend will crash with int64 dtype, we should fix it as soon as possible!"
+        )
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()
