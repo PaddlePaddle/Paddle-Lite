@@ -54,12 +54,11 @@ struct SequenceExpandFunctor {
   }
 };
 
-template <typename T>
-class SequenceExpandAsCompute
-    : public KernelLite<TARGET(kX86), PRECISION(kFloat)> {
+template <typename T, PrecisionType PType>
+class SequenceExpandAsCompute : public KernelLite<TARGET(kX86), PType> {
  public:
   void Run() override {
-    auto &param = *param_.get_mutable<operators::SequenceExpandAsParam>();
+    auto &param = this->template Param<operators::SequenceExpandAsParam>();
 
     auto *x = param.x;
     auto *y = param.y;
