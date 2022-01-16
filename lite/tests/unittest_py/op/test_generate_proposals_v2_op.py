@@ -39,8 +39,9 @@ class TestGenerateProposalsOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        if program_config.ops[1].attrs["pixel_offset"] == True:
-            return False
+        # check config
+        # if program_config.ops[1].attrs["pixel_offset"] == True:
+        #     return False
         return True
 
     def sample_program_configs(self, draw):
@@ -144,11 +145,7 @@ class TestGenerateProposalsOp(AutoScanTest):
             return True
 
         self.add_ignore_check_case(
-            # IgnoreReasonsBase.PADDLE_NOT_IMPLEMENTED
-            # IgnoreReasonsBase.PADDLELITE_NOT_SUPPORT
-            # IgnoreReasonsBase.ACCURACY_ERROR
-            teller1,
-            IgnoreReasons.ACCURACY_ERROR,
+            teller1, IgnoreReasons.ACCURACY_ERROR,
             "The op output has diff. We need to fix it as soon as possible.")
 
     def test(self, *args, **kwargs):

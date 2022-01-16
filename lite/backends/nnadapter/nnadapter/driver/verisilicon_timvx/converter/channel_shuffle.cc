@@ -1,4 +1,4 @@
-// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cmath>
-#include "core/operation/hard_sigmoid_swish.h"
+#include "core/operation/channel_shuffle.h"
 #include "driver/verisilicon_timvx/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -21,8 +20,8 @@
 namespace nnadapter {
 namespace verisilicon_timvx {
 
-int ConvertHardSigmoid(Converter* converter, hal::Operation* operation) {
-  HARD_SIGMOID_SWISH_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int ConvertChannelShuffle(Converter* converter, hal::Operation* operation) {
+  CHANNEL_SHUFFLE_OPERATION_EXTRACT_INPUTS_OUTPUTS
 
   // Convert to tim-vx tensors and operators
   auto input_tensor = converter->GetMappedTensor(input_operand);
@@ -30,11 +29,11 @@ int ConvertHardSigmoid(Converter* converter, hal::Operation* operation) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
   auto output_tensor = converter->ConvertOperand(output_operand);
-  auto hard_sigmoid_op =
-      converter->graph()->CreateOperation<tim::vx::ops::HardSigmoid>(alpha,
-                                                                     beta);
-  hard_sigmoid_op->BindInputs({input_tensor});
-  hard_sigmoid_op->BindOutputs({output_tensor});
+  auto clip_op =
+      converter->graph()->CreateOperation<tim::vx::ops::ShuffleChannel>(
+          group, static_cast<int32_t>(-2));
+  clip_op->BindInputs({input_tensor});
+  clip_op->BindOutputs({output_tensor});
   return NNADAPTER_NO_ERROR;
 }
 

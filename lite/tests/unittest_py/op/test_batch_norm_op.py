@@ -68,10 +68,6 @@ class TestBatchNormOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        x_shape = list(program_config.inputs["input_data"].shape)
-        if predictor_config.target() == TargetType.Metal:
-            if x_shape[0] != 1:
-                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -151,7 +147,16 @@ class TestBatchNormOp(AutoScanTest):
         return self.get_predictor_configs(), ["batch_norm"], (atol, rtol)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            x_shape = list(program_config.inputs["input_data"].shape)
+            if predictor_config.target() == TargetType.Metal:
+                if x_shape[0] != 1:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.ACCURACY_ERROR,
+            "The op output has diff in a specific case. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()

@@ -1,4 +1,4 @@
-// Copyright (c) 2021 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cmath>
-#include "core/operation/hard_sigmoid_swish.h"
+#include "core/operation/split.h"
 #include "driver/verisilicon_timvx/converter/converter.h"
 #include "utility/debug.h"
 #include "utility/logging.h"
@@ -21,20 +20,28 @@
 namespace nnadapter {
 namespace verisilicon_timvx {
 
-int ConvertHardSigmoid(Converter* converter, hal::Operation* operation) {
-  HARD_SIGMOID_SWISH_OPERATION_EXTRACT_INPUTS_OUTPUTS
+int ConvertSplit(Converter* converter, hal::Operation* operation) {
+  SPLIT_OPERATION_EXTRACT_INPUTS_OUTPUTS
+  NNADAPTER_CHECK(IsConstantOperand(axis_operand));
+  NNADAPTER_CHECK(IsConstantOperand(split_operand));
 
   // Convert to tim-vx tensors and operators
   auto input_tensor = converter->GetMappedTensor(input_operand);
   if (!input_tensor) {
     input_tensor = converter->ConvertOperand(input_operand);
   }
-  auto output_tensor = converter->ConvertOperand(output_operand);
-  auto hard_sigmoid_op =
-      converter->graph()->CreateOperation<tim::vx::ops::HardSigmoid>(alpha,
-                                                                     beta);
-  hard_sigmoid_op->BindInputs({input_tensor});
-  hard_sigmoid_op->BindOutputs({output_tensor});
+  std::vector<std::shared_ptr<tim::vx::Tensor>> output_tensors(split.size());
+  // WHCN
+  uint32_t mapped_axis = input_operand->type.dimensions.count - 1 - axis;
+  std::vector<uint32_t> mapped_split;
+  for (int i = 0; i < split.size(); i++) {
+    mapped_split.push_back(split[i]);
+    output_tensors[i] = converter->ConvertOperand(output_operands[i]);
+  }
+  auto split_op = converter->graph()->CreateOperation<tim::vx::ops::Split>(
+      mapped_axis, mapped_split);
+  split_op->BindInputs({input_tensor});
+  split_op->BindOutputs(output_tensors);
   return NNADAPTER_NO_ERROR;
 }
 
