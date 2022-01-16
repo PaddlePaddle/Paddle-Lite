@@ -31,10 +31,10 @@ NNADAPTER_EXPORT void UpdateExpandInferOutputShape(
     int32_t* output_dimensions_data,
     uint32_t shape_count,
     int32_t* shape_data) {
-  std::vector<int> input_shapes(input_dimensions_data,
-                                input_dimensions_data + input_dimensions_count);
+  std::vector<int> input_shape(input_dimensions_data,
+                               input_dimensions_data + input_dimensions_count);
   auto diff = shape_count - input_dimensions_count;
-  input_shapes.insert(input_shapes.begin(), diff, 1);
+  input_shape.insert(input_shape.begin(), diff, 1);
   for (uint32_t i = 0; i < shape_count; ++i) {
     NNADAPTER_CHECK_NE(shape_data[i], 0) << "The expanded size cannot be zero.";
     if (i < diff) {
@@ -47,9 +47,9 @@ NNADAPTER_EXPORT void UpdateExpandInferOutputShape(
     } else if (shape_data[i] > 0) {
       // input = [10,1], shape_data = [3,4,10,4]
       // --> output_dimensions_data = [3,4,10,4]
-      if (input_shapes[i] != 1) {
-        NNADAPTER_CHECK_EQ(input_shapes[i], shape_data[i])
-            << "The value " << input_shapes[i]
+      if (input_shape[i] != 1) {
+        NNADAPTER_CHECK_EQ(input_shape[i], shape_data[i])
+            << "The value " << input_shape[i]
             << " of the non-singleton dimension does not match the "
                "corresponding value "
             << shape_data[i] << " in shape for expand_v2 op.";
@@ -64,7 +64,7 @@ NNADAPTER_EXPORT void UpdateExpandInferOutputShape(
           << "When the value in shape is negative for expand_v2 op, "
              "only -1 is supported, but the value received is "
           << shape_data[i];
-      output_dimensions_data[i] = input_shapes[i];
+      output_dimensions_data[i] = input_shape[i];
     }
   }
 }
