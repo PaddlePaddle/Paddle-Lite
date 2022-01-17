@@ -620,6 +620,118 @@ void interpolate(lite::Tensor* X,
   }
 }
 
+void interpolate_v2(lite::Tensor* X,
+                    lite::Tensor* OutSize,
+                    std::vector<const lite::Tensor*> SizeTensor,
+                    lite::Tensor* Scale,
+                    lite::Tensor* Out,
+                    int out_height,
+                    int out_width,
+                    float scale,
+                    bool with_align,
+                    int align_mode,
+                    std::string interpolate_type,
+                    std::vector<float> scale_data) {
+  int in_h = X->dims()[2];
+  int in_w = X->dims()[3];
+  float height_scale = -1;
+  float width_scale = -1;
+
+  if (SizeTensor.size() > 0) {
+    // have size tensor
+    auto new_size = get_new_shape(SizeTensor);
+    out_height = new_size[0];
+    out_width = new_size[1];
+  } else {
+    if (scale_tensor != nullptr) {
+      auto scale_data = get_new_data_from_tensor<float>(scale_tensor);
+      if (scale_data.size() > 1) {
+        scale_h = scale_data[0];
+        scale_w = scale_data[1];
+      } else {
+        scale_h = scale_data[0];
+        scale_w = scale_data[0];
+      }
+    } else {
+      if (scale_v.size() > 1 && scale_v[0] > 0 && scale_v[1] > 0) {
+        height_scale = scale_v[0];
+        width_scale = scale_v[1];
+      }
+    }
+
+    if (scale_h > 0. && scale_w > 0.) {
+      out_height = static_cast<int>(in_h * height_scale);
+      out_width = static_cast<int>(in_w * width_scale);
+    }
+
+    if (out_size != nullptr) {
+      auto out_size_data = get_new_data_from_tensor<int>(out_size);
+      out_height = out_size_data[0];
+      out_width = out_size_data[1];
+    }
+  }
+
+  float ratio_h = 0.f;
+  float ratio_w = 0.f;
+  if (out_h > 1) {
+    float new_scale_h = 0.f;
+    new_scale_h = (height_scale > 0) ? static_cast<float>(1. / height_scale)
+                                     : static_cast<float>(in_h) / out_height;
+    ratio_h = (align_corners) ? static_cast<float>(in_h - 1) / (out_height - 1)
+                              : static_cast<float>(new_scale_h);
+  }
+  if (out_w > 1) {
+    float new_scale_w = 0.f;
+    new_scale_w = (width_scale > 0) ? static_cast<float>(1. / width_scale)
+                                    : static_cast<float>(in_w) / out_width;
+    ratio_w = (align_corners) ? static_cast<float>(in_w - 1) / (out_width - 1)
+                              : static_cast<float>(new_scale_w);
+  }
+
+  int num_cout = X->dims()[0];
+  int c_cout = X->dims()[1];
+  Out->Resize({num_cout, c_cout, out_height, out_width});
+
+  float* dout = Out->mutable_data<float>();
+  const float* din = X->data<float>();
+  int out_num = Out->dims()[0];
+  int out_c = Out->dims()[1];
+  int count = out_num * out_c;
+  int out_h = Out->dims()[2];
+  int out_w = Out->dims()[3];
+  int spatial_in = in_h * in_w;
+  int spatial_out = out_h * out_w;
+
+  if ("Bilinear" == interpolate_type) {
+    LITE_PARALLEL_BEGIN(i, tid, count) {
+      bilinear_interp(din + spatial_in * i,
+                      in_w,
+                      in_h,
+                      dout + spatial_out * i,
+                      out_w,
+                      out_h,
+                      ratio_w,
+                      ratio_h,
+                      with_align,
+                      align_mode);
+    }
+    LITE_PARALLEL_END()
+  } else if ("Nearest" == interpolate_type) {
+    LITE_PARALLEL_BEGIN(i, tid, count) {
+      nearest_interp(din + spatial_in * i,
+                     in_w,
+                     in_h,
+                     dout + spatial_out * i,
+                     out_w,
+                     out_h,
+                     ratio_w,
+                     ratio_h,
+                     with_align);
+    }
+    LITE_PARALLEL_END()
+  }
+}
+
 } /* namespace math */
 } /* namespace arm */
 } /* namespace lite */

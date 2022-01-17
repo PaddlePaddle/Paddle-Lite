@@ -55,6 +55,19 @@ void interpolate(lite::Tensor* X,
                  std::string interpolate_type,
                  std::vector<float> scale_data);
 
+void interpolate_v2(lite::Tensor* X,
+                    lite::Tensor* OutSize,
+                    std::vector<const lite::Tensor*> SizeTensor,
+                    lite::Tensor* Scale,
+                    lite::Tensor* Out,
+                    int out_height,
+                    int out_width,
+                    float scale,
+                    bool with_align,
+                    int align_mode,
+                    std::string interpolate_type,
+                    std::vector<float> scale_data);
+
 } /* namespace math */
 } /* namespace arm */
 } /* namespace lite */
