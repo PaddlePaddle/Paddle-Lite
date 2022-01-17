@@ -145,6 +145,9 @@ typedef paddle::lite::kernels::arm::BilinearInterpCompute<PRECISION(kFloat)>
 typedef paddle::lite::kernels::arm::NearestInterpCompute<PRECISION(kFloat)>
     nearest_interp_fp32;
 
+typedef paddle::lite::kernels::arm::NearestInterpComputeV2<PRECISION(kFloat)>
+    nearest_interp_v2_fp32;
+
 REGISTER_LITE_KERNEL(
     bilinear_interp, kARM, kFloat, kNCHW, bilinear_interp_fp32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
@@ -179,7 +182,7 @@ REGISTER_LITE_KERNEL(
     .Finalize();
 
 REGISTER_LITE_KERNEL(
-    nearest_interp_v2, kARM, kFloat, kNCHW, nearest_interp_fp32, def)
+    nearest_interp_v2, kARM, kFloat, kNCHW, nearest_interp_v2_fp32, def)
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kARM))})
     .BindInput("OutSize",
                {LiteType::GetTensorTy(TARGET(kARM), PRECISION(kInt32))})
