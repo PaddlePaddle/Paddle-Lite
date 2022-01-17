@@ -50,6 +50,7 @@ bool DropoutOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
   param_.dropout_prob = op_desc.GetAttr<float>("dropout_prob");
 
   auto is_test_type = op_desc.GetAttrType("is_test");
+  LOG(INFO) << "is_test_type: ";
   switch (is_test_type) {
     case OpDescAPI::AttrType::INT:
       param_.is_test = op_desc.GetAttr<int>("is_test");
@@ -61,9 +62,18 @@ bool DropoutOp::AttachImpl(const cpp::OpDesc& op_desc, lite::Scope* scope) {
       LOG(FATAL) << "Unsupported attribute type: the type of attribute "
                     "`is_test` in BatchNormOP should be int or bool.";
   }
-  if (op_desc.HasInput("Seed")) {
-    auto seed = op_desc.Input("Seed").front();
-    param_.seed_tensor = GetVar<lite::Tensor>(scope, seed);
+  // optional params
+  std::vector<std::string> input_arg_names = op_desc.InputArgumentNames();
+  if (std::find(input_arg_names.begin(), input_arg_names.end(), "Seed") !=
+      input_arg_names.end()) {
+    auto seed_arguments = op_desc.Input("Seed");
+    if (seed_arguments.size() > 0) {
+      auto seed_var = scope->FindVar(seed_arguments.front());
+      if (seed_var != nullptr) {
+        param_.seed_tensor =
+            const_cast<lite::Tensor*>(&(seed_var->Get<lite::Tensor>()));
+      }
+    }
   }
   if (!param_.is_test) {
     auto Mask = op_desc.Output("Mask").front();
