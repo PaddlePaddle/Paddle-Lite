@@ -53,6 +53,8 @@ void XPUBiGRUCompute::PrepareBiasForRun(bool forward) {
 }
 
 void XPUBiGRUCompute::PrepareMulWeightForRun(bool forward) {
+  auto& ctx = this->ctx_->As<XPUContext>();
+  int max_ptr_size = xdnn::get_max_ptr_size(ctx.GetRawContext());
   auto& weight_abs_max =
       forward ? fw_mul_weight_abs_max_ : bw_mul_weight_abs_max_;
   auto& weight_max_guard =
@@ -66,11 +68,12 @@ void XPUBiGRUCompute::PrepareMulWeightForRun(bool forward) {
   auto weight_len = weight->numel();
   // max
   weight_abs_max = paddle::lite::xpu::math::FindMaxAbs(weight_ptr, weight_len);
-  std::vector<float> weight_max_vector(4, weight_abs_max);
-  weight_max_guard = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
+  std::vector<float> weight_max_vector(max_ptr_size, weight_abs_max);
+  weight_max_guard =
+      TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
   XPU_CALL(xpu_memcpy(reinterpret_cast<float*>(weight_max_guard->addr_),
                       weight_max_vector.data(),
-                      4 * sizeof(float),
+                      max_ptr_size * sizeof(float),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
   // transpose
   std::vector<float> transpose_weight(weight_len, 0);
@@ -91,6 +94,8 @@ void XPUBiGRUCompute::PrepareMulWeightForRun(bool forward) {
 }
 
 void XPUBiGRUCompute::PrepareGRUWeightForRun(bool forward) {
+  auto& ctx = this->ctx_->As<XPUContext>();
+  int max_ptr_size = xdnn::get_max_ptr_size(ctx.GetRawContext());
   auto& weight_s1_abs_max_ =
       forward ? fw_gru_weight_s1_abs_max_ : bw_gru_weight_s1_abs_max_;
   auto& weight_s2_abs_max_ =
@@ -117,15 +122,16 @@ void XPUBiGRUCompute::PrepareGRUWeightForRun(bool forward) {
       paddle::lite::xpu::math::FindMaxAbs(weight_s1_ptr, weight_s1_len);
   weight_s2_abs_max_ =
       paddle::lite::xpu::math::FindMaxAbs(weight_s2_ptr, weight_s2_len);
-  std::vector<float> weight_max_vector(8);
-  for (int i = 0; i < 4; i++) {
+  std::vector<float> weight_max_vector(max_ptr_size * 2);
+  for (int i = 0; i < max_ptr_size; i++) {
     weight_max_vector[i] = weight_s1_abs_max_;
-    weight_max_vector[i + 4] = weight_s2_abs_max_;
+    weight_max_vector[i + max_ptr_size] = weight_s2_abs_max_;
   }
-  weight_max_guard_ = TargetWrapperXPU::MallocScratchPad(8 * sizeof(float));
+  weight_max_guard_ =
+      TargetWrapperXPU::MallocScratchPad(max_ptr_size * 2 * sizeof(float));
   XPU_CALL(xpu_memcpy(reinterpret_cast<float*>(weight_max_guard_->addr_),
                       weight_max_vector.data(),
-                      8 * sizeof(float),
+                      max_ptr_size * 2 * sizeof(float),
                       XPUMemcpyKind::XPU_HOST_TO_DEVICE));
   // quant
   quant_weight_guard_ =
@@ -148,8 +154,12 @@ void XPUBiGRUCompute::PrepareGRUWeightForRun(bool forward) {
 }
 
 void XPUBiGRUCompute::PrepareForRun() {
-  input_max_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
-  mul_output_max_guard_ = TargetWrapperXPU::MallocScratchPad(4 * sizeof(float));
+  auto& ctx = this->ctx_->As<XPUContext>();
+  int max_ptr_size = xdnn::get_max_ptr_size(ctx.GetRawContext());
+  input_max_guard_ =
+      TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
+  mul_output_max_guard_ =
+      TargetWrapperXPU::MallocScratchPad(max_ptr_size * sizeof(float));
   for (auto forward : {true, false}) {
     PrepareBiasForRun(forward);
     PrepareMulWeightForRun(forward);
@@ -195,24 +205,26 @@ void XPUBiGRUCompute::MulRun(bool forward) {
       (bias_guard == nullptr)
           ? nullptr
           : reinterpret_cast<const float*>(bias_guard->addr_);
-
-  int r = xdnn::fc_int16(
-      ctx.GetRawContext(), /* context */
-      false,               /* TransA */
-      true,                /* TransB */
-      m,
-      n,
-      k,
-      1.0f,                   /* alpha */
-      x_matrix.data<float>(), /* A */
-      reinterpret_cast<const float*>(input_max_guard_->addr_),
-      reinterpret_cast<const int16_t*>(quant_weight_guard->addr_), /* B */
-      reinterpret_cast<const float*>(weight_max_guard->addr_),
-      0.0f,                                     /* beta */
-      output.mutable_data<float>(TARGET(kXPU)), /* C */
-      reinterpret_cast<float*>(mul_output_max_guard_->addr_),
-      bias_ptr,
-      xdnn::Activation_t::LINEAR);
+  int r = xdnn::fc_fusion<float, int16_t, float, int16_t>(
+      ctx.GetRawContext(),                                          // ctx
+      x_matrix.data<float>(),                                       // x
+      reinterpret_cast<const int16_t*>(quant_weight_guard->addr_),  // w
+      output.mutable_data<float>(TARGET(kXPU)),                     // y
+      m,                                                            // m
+      n,                                                            // n
+      k,                                                            // k
+      false,                                                        // x_trans
+      true,                                                         // w_trans
+      reinterpret_cast<const float*>(input_max_guard_->addr_),      // x_maxptr
+      reinterpret_cast<const float*>(weight_max_guard->addr_),      // w_maxptr
+      reinterpret_cast<float*>(mul_output_max_guard_->addr_),       // y_maxptr,
+      k,                                                            // ldx
+      k,                                                            // ldw
+      n,                                                            // ldy
+      1.0f,                                                         // alpha
+      0.0f,                                                         // beta
+      bias_ptr,                                                     // bias
+      xdnn::Activation_t::LINEAR);                                  // act
   CHECK_EQ(r, 0);
   *(output.mutable_lod()) = origin_x.lod();
 }

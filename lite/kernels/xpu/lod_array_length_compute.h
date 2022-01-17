@@ -1,4 +1,4 @@
-// Copyright (c) 2019 PaddlePaddle Authors. All Rights Reserved.
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,32 +13,30 @@
 // limitations under the License.
 
 #pragma once
-
-#include <memory>
-#include "lite/backends/xpu/target_wrapper.h"  // XPUScratchPadGuard
+#include <string>
 #include "lite/core/kernel.h"
+#include "lite/core/op_registry.h"
 
 namespace paddle {
 namespace lite {
 namespace kernels {
 namespace xpu {
 
-class MatchMatrixTensorCompute
-    : public KernelLite<TARGET(kXPU), PRECISION(kFloat)> {
+class LoDArrayLengthCompute
+    : public KernelLite<TARGET(kXPU), PRECISION(kAny), DATALAYOUT(kAny)> {
  public:
-  using param_t = operators::MatchMatrixTensorParam;
+  using param_t = operators::LoDArrayLengthParam;
 
-  virtual void PrepareForRun();
+  void Run() override;
 
-  virtual void Run();
+  virtual ~LoDArrayLengthCompute() = default;
 
- private:
-  XPUScratchPadGuard weight_max_xpu_guard_;
-  XPUScratchPadGuard offset_l_xpu_guard_;
-  XPUScratchPadGuard offset_r_xpu_guard_;
-
-  std::unique_ptr<int[]> offset_l_cpu;
-  std::unique_ptr<int[]> offset_r_cpu;
+#ifdef LITE_WITH_PROFILE
+  virtual void SetProfileRuntimeKernelInfo(
+      paddle::lite::profile::OpCharacter* ch) {
+    ch->kernel_func_name = "lod_array_length_func";
+  }
+#endif
 };
 
 }  // namespace xpu

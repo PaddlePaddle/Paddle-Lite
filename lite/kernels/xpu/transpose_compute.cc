@@ -30,6 +30,10 @@ void TransposeCompute::Run() {
   int ndims = axis.size();
   const auto x_dims = x->dims();
   std::vector<int> x_shape_host(ndims, 0);
+  if (x_dims.production() == 0) {
+    param.output->set_target(TARGET(kXPU));
+    return;
+  }
 
   for (int i = 0; i < ndims; ++i) {
     x_shape_host[i] = x_dims[i];
@@ -67,4 +71,15 @@ REGISTER_LITE_KERNEL(transpose2,
     .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU))})
     .BindOutput("XShape", {LiteType::GetTensorTy(TARGET(kHost))})
+    .Finalize();
+REGISTER_LITE_KERNEL(transpose2,
+                     kXPU,
+                     kFloat,
+                     kNCHW,
+                     paddle::lite::kernels::xpu::TransposeCompute,
+                     def_int64)
+    .BindInput("X", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
+    .BindOutput("Out", {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
+    .BindOutput("XShape",
+                {LiteType::GetTensorTy(TARGET(kXPU), PRECISION(kInt64))})
     .Finalize();

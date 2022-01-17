@@ -51,6 +51,7 @@ std::vector<const float*>* XPUMultiEncoderCompute::get_weight() {
 }
 
 void XPUMultiEncoderCompute::PrepareForRun() {
+  auto& ctx = this->ctx_->As<XPUContext>();
   auto& param = this->Param<param_t>();
   // prepare bias
   for (auto* fc_bias : param.fc_bias) {
@@ -72,20 +73,38 @@ void XPUMultiEncoderCompute::PrepareForRun() {
   } else if (param.precision == "int31") {
     arg_fc_weight_fp32_ = prepare_weight<float>(param.fc_weight);
   }
+  const int XPU_QUANT_SCALE_NUM = get_max_ptr_size(ctx.GetRawContext());
   // prepare weight_max
   weight_max_guard_ = TargetWrapperXPU::MallocScratchPad(
-      param.fc_weight_max->numel() * lite::XPU_QUANT_SCALE_NUM * sizeof(float));
+      param.fc_weight_max->numel() * XPU_QUANT_SCALE_NUM * sizeof(float));
   float* weight_max_ptr = reinterpret_cast<float*>(weight_max_guard_->addr_);
   for (int i = 0; i < param.fc_weight_max->numel(); i++) {
-    float* cur_weight_max_ptr = weight_max_ptr + i * lite::XPU_QUANT_SCALE_NUM;
-    std::vector<float> cpu_max(lite::XPU_QUANT_SCALE_NUM,
+    float* cur_weight_max_ptr = weight_max_ptr + i * XPU_QUANT_SCALE_NUM;
+    std::vector<float> cpu_max(XPU_QUANT_SCALE_NUM,
                                param.fc_weight_max->data<float>()[i]);
-    lite::TargetWrapperXPU::MemcpySync(
-        cur_weight_max_ptr,
-        cpu_max.data(),
-        sizeof(float) * lite::XPU_QUANT_SCALE_NUM,
-        IoDirection::HtoD);
+    lite::TargetWrapperXPU::MemcpySync(cur_weight_max_ptr,
+                                       cpu_max.data(),
+                                       sizeof(float) * XPU_QUANT_SCALE_NUM,
+                                       IoDirection::HtoD);
     fc_weight_max_.push_back(cur_weight_max_ptr);
+  }
+  if (param.input_max.size()) {
+    // prepare input_max
+    input_max_guard_ = TargetWrapperXPU::MallocScratchPad(
+        param.input_max.size() * XPU_QUANT_SCALE_NUM * sizeof(float));
+    float* input_max_ptr = reinterpret_cast<float*>(input_max_guard_->addr_);
+    for (int i = 0; i < param.input_max.size(); i++) {
+      float* cur_input_max_ptr = input_max_ptr + i * XPU_QUANT_SCALE_NUM;
+      std::vector<float> cpu_max(XPU_QUANT_SCALE_NUM, param.input_max[i]);
+      lite::TargetWrapperXPU::MemcpySync(cur_input_max_ptr,
+                                         cpu_max.data(),
+                                         sizeof(float) * XPU_QUANT_SCALE_NUM,
+                                         IoDirection::HtoD);
+      fc_input_max_.push_back(cur_input_max_ptr);
+    }
+    CHECK_EQ(fc_input_max_.size(), fc_weight_max_.size())
+        << "input and weight max shape unequal:" << fc_input_max_.size() << ","
+        << fc_weight_max_.size();
   }
   // prepare act_type
   if (param.act_type == "gelu") {
@@ -122,14 +141,15 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
                                       qkv_act,
                                       slice_idx,
                                       true /* qkv fusion */,
-                                      max_pad_seqlen);
+                                      max_pad_seqlen,
+                                      param.hidden_dim);
 
     int r = xdnn::transformer_encoder<T, TW, TGEMM>(
         ctx.GetRawContext(),
         in,
         *(XPUMultiEncoderCompute::get_weight<TW>()),
         out,
-        {},
+        fc_input_max_,
         fc_weight_max_,
         arg_fc_bias_,
         arg_ln_scale_,
@@ -140,7 +160,6 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
     // no vsl
     int batch = static_cast<int>(param.input->dims()[0]);
     int max_seqlen = static_cast<int>(param.input->dims()[1]);
-
     std::vector<int64_t> mask_shape = param.mask->dims().Vectorize();
     std::vector<int> encoder_mask_shape =
         std::vector<int>(mask_shape.begin(), mask_shape.end());
@@ -152,13 +171,14 @@ void XPUMultiEncoderCompute::run_encoder(const T* in, T* out) {
                                       encoder_mask_shape,
                                       qkv_act,
                                       slice_idx,
-                                      true);
+                                      true,
+                                      param.hidden_dim);
     int r = xdnn::transformer_encoder<T, TW, TGEMM>(
         ctx.GetRawContext(),
         in,
         *(XPUMultiEncoderCompute::get_weight<TW>()),
         out,
-        {},
+        fc_input_max_,
         fc_weight_max_,
         arg_fc_bias_,
         arg_ln_scale_,

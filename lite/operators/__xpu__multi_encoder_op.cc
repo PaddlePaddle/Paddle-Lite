@@ -133,6 +133,7 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
   }
 
   param_.n_layers = op_desc.GetAttr<int>("n_layers");
+  param_.hidden_dim = op_desc.GetAttr<int>("hidden_dim");
   param_.head_num = op_desc.GetAttr<int>("head_num");
   param_.size_per_head = op_desc.GetAttr<int>("size_per_head");
   param_.act_type = op_desc.GetAttr<std::string>("act_type");
@@ -140,6 +141,10 @@ bool XPUMultiEncoderOp::AttachImpl(const cpp::OpDesc& op_desc,
   param_.enable_qkv_fusion = op_desc.GetAttr<bool>("enable_qkv_fusion");
   param_.norm_before = op_desc.GetAttr<bool>("norm_before");
   param_.adaptive_seqlen = op_desc.GetAttr<bool>("adaptive_seqlen");
+  if (op_desc.HasAttr("enable_int8") && op_desc.GetAttr<bool>("enable_int8")) {
+    param_.input_max = op_desc.GetAttr<std::vector<float>>("FCInputMax");
+    param_.weight_max = op_desc.GetAttr<std::vector<float>>("FCWeightMax");
+  }
 
   if (op_desc.HasAttr("slice_axes")) {
     param_.slice_axes = op_desc.GetAttr<std::vector<int>>("slice_axes");
