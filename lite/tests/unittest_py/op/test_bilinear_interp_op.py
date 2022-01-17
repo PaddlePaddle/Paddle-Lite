@@ -71,7 +71,7 @@ class TestBilinearOp(AutoScanTest):
 
     def sample_program_configs(self, draw):
         batch = draw(st.integers(min_value=1, max_value=4))
-        channel = draw(st.integers(min_value=4, max_value=4))
+        channel = draw(st.integers(min_value=1, max_value=32))
         height = draw(st.integers(min_value=3, max_value=100))
         width = draw(st.integers(min_value=3, max_value=100))
         in_shape = [batch, channel, height, width]
@@ -133,7 +133,7 @@ class TestBilinearOp(AutoScanTest):
         atol, rtol = 1e-4, 1e-4
         target_str = self.get_target()
         if target_str == "Metal":
-            atol, rtol = 3e-1, 3e-1
+            atol, rtol = 5e-1, 5e-1
         return self.get_predictor_configs(), ["bilinear_interp"], (atol, rtol)
 
     def add_ignore_pass_case(self):
