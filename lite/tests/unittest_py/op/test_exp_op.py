@@ -67,11 +67,6 @@ class TestExpOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        target_type = predictor_config.target()
-        in_shape = list(program_config.inputs["input_data"].shape)
-        if target_type == TargetType.Metal:
-            if len(in_shape) != 4:
-                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -99,7 +94,17 @@ class TestExpOp(AutoScanTest):
         return self.get_predictor_configs(), ["exp"], (atol, rtol)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            target_type = predictor_config.target()
+            in_shape = list(program_config.inputs["input_data"].shape)
+            if target_type == TargetType.Metal:
+                if len(in_shape) != 4:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.PADDLELITE_NOT_SUPPORT,
+            "Lite does not support this op in a specific case on metal. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         self.run_and_statis(quant=False, max_examples=100)

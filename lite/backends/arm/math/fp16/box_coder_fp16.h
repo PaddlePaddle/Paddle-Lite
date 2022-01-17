@@ -15,6 +15,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include "lite/core/tensor.h"
 
 namespace paddle {
@@ -23,18 +24,34 @@ namespace arm {
 namespace math {
 namespace fp16 {
 typedef __fp16 float16_t;
+void encode_bbox_center_kernel(const int batch_num,
+                               const float16_t* loc_data,
+                               const float16_t* prior_data,
+                               const float16_t* variance,
+                               const bool var_len4,
+                               const bool normalized,
+                               const int num_priors,
+                               float16_t* bbox_data);
 
-void decode_bboxes(const int batch_num,
-                   const int axis,
-                   const float16_t* loc_data,
-                   const float16_t* prior_data,
-                   const float16_t* variance_data,
-                   const bool var_len4,
-                   const std::string code_type,
-                   const bool normalized,
-                   const int num_priors,
-                   float16_t* bbox_data);
+void decode_bbox_center_kernel(const int batch_num,
+                               const float16_t* loc_data,
+                               const float16_t* prior_data,
+                               const float16_t* variance,
+                               const bool var_len4,
+                               const int num_priors,
+                               const bool normalized,
+                               float16_t* bbox_data);
 
+void decode_center_size_axis_1(const int var_size,
+                               const int row,
+                               const int col,
+                               const int len,
+                               const float16_t* target_box_data,
+                               const float16_t* prior_box_data,
+                               const float16_t* prior_box_var_data,
+                               const bool normalized,
+                               const std::vector<float16_t> variance,
+                               float16_t* output);
 }  // namespace fp16
 }  // namespace math
 }  // namespace arm

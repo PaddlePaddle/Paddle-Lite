@@ -49,18 +49,10 @@ class TestGatherOp(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
+        # check config
         in_dtype = program_config.inputs["input_data"].dtype
-        index_dtpye = program_config.inputs["index_data"].dtype
-        in_shape = list(program_config.inputs["input_data"].shape)
-
         if "float32" != in_dtype or "axis_data" not in program_config.inputs:
             return False
-
-        axis_dtpye = program_config.inputs["axis_data"].dtype
-        if predictor_config.target() == TargetType.OpenCL:
-            if "int32" != axis_dtpye or "int32" != index_dtpye or len(
-                    in_shape) != 2:
-                return False
         return True
 
     def sample_program_configs(self, draw):
@@ -150,7 +142,20 @@ class TestGatherOp(AutoScanTest):
         return self.get_predictor_configs(), ["gather"], (1e-5, 1e-5)
 
     def add_ignore_pass_case(self):
-        pass
+        def _teller1(program_config, predictor_config):
+            in_dtype = program_config.inputs["input_data"].dtype
+            index_dtpye = program_config.inputs["index_data"].dtype
+            in_shape = list(program_config.inputs["input_data"].shape)
+            axis_dtpye = program_config.inputs["axis_data"].dtype
+            if predictor_config.target() == TargetType.OpenCL:
+                if "int32" != axis_dtpye or "int32" != index_dtpye or len(
+                        in_shape) != 2:
+                    return True
+
+        self.add_ignore_check_case(
+            _teller1, IgnoreReasons.ACCURACY_ERROR,
+            "The op output has diff in a specific case on opencl. We need to fix it as soon as possible."
+        )
 
     def test(self, *args, **kwargs):
         target_str = self.get_target()

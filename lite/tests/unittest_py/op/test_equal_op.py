@@ -50,6 +50,7 @@ class TestEqualOp(AutoScanTest):
         target_type = predictor_config.target()
         in_x_shape = list(program_config.inputs["input_data_x"].shape)
         input_data_type = program_config.inputs["input_data_x"].dtype
+        # check config
         if predictor_config.precision(
         ) == PrecisionType.INT64 and input_data_type != np.int64:
             return False
@@ -59,9 +60,7 @@ class TestEqualOp(AutoScanTest):
         if predictor_config.precision(
         ) == PrecisionType.INT32 and input_data_type != np.int32:
             return False
-        if target_type == TargetType.Metal:
-            if len(in_x_shape) != 4 or in_x_shape[0] != 1:
-                return False
+
         return True
 
     def sample_program_configs(self, draw):
