@@ -59,8 +59,8 @@ void RangeCalcOfflinePass::RemoveRangePattern(
     if (!start_t->persistable() || !end_t->persistable() ||
         !step_t->persistable()) {
       LOG(WARNING) << "RangeCalcOfflinePass does not support input that is not "
-                      "persistent";
-      return;
+                      "persistable";
+      continue;
     }
     auto start = start_t->mutable_data<float>()[0];
     auto end = end_t->mutable_data<float>()[0];

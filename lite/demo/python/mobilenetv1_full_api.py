@@ -22,6 +22,7 @@ from __future__ import print_function
 import argparse
 from paddlelite.lite import *
 import numpy as np
+import platform
 
 # Command arguments
 parser = argparse.ArgumentParser()
@@ -41,7 +42,7 @@ parser.add_argument(
     "--backend",
     default="",
     type=str,
-    help="To use a particular backend for execution. Should be one of: arm|opencl|x86|x86_opencl|metal"
+    help="To use a particular backend for execution. Should be one of: arm|opencl|x86|x86_opencl|metal|nnadapter"
 )
 parser.add_argument(
     "--image_path", default="", type=str, help="The path of test image file")
@@ -52,6 +53,31 @@ parser.add_argument(
     type=bool,
     default=False,
     help="Print results. Default: False")
+parser.add_argument(
+    "--nnadapter_device_names",
+    default="",
+    type=str,
+    help="Set nnadapter device names")
+parser.add_argument(
+    "--nnadapter_context_properties",
+    default="",
+    type=str,
+    help="Set nnadapter context properties")
+parser.add_argument(
+    "--nnadapter_model_cache_dir",
+    default="",
+    type=str,
+    help="Set nnadapter model cache dir")
+parser.add_argument(
+    "--nnadapter_subgraph_partition_config_path",
+    default="",
+    type=str,
+    help="Set nnadapter subgraph partition config path")
+parser.add_argument(
+    "--nnadapter_mixed_precision_quantization_config_path",
+    default="",
+    type=str,
+    help="Set nnadapter mixed precision quantization config path")
 
 
 def RunModel(args):
@@ -62,6 +88,11 @@ def RunModel(args):
         config.set_param_file(args.param_file)
     else:
         config.set_model_dir(args.model_dir)
+
+    if platform.machine() in ["x86_64", "x64", "AMD64"]:
+        platform_place = Place(TargetType.X86, PrecisionType.FP32)
+    else:
+        platform_place = Place(TargetType.ARM, PrecisionType.FP32)
 
     if args.backend.upper() in ["ARM"]:
         places = [Place(TargetType.ARM, PrecisionType.FP32)]
@@ -79,9 +110,7 @@ def RunModel(args):
                       TargetType.OpenCL, PrecisionType.Any,
                       DataLayoutType.ImageFolder),
             Place(TargetType.OpenCL, PrecisionType.Any, DataLayoutType.NCHW),
-            Place(TargetType.X86, PrecisionType.FP32),
-            Place(TargetType.ARM, PrecisionType.FP32),
-            Place(TargetType.Host, PrecisionType.FP32)
+            platform_place, Place(TargetType.Host, PrecisionType.FP32)
         ]
         '''
         Set opencl kernel binary.
@@ -127,13 +156,29 @@ def RunModel(args):
         # set places for Metal
         places = [
             Place(TargetType.Metal, PrecisionType.FP32,
-                  DataLayoutType.MetalTexture2DArray), Place(
-                      TargetType.Metal, PrecisionType.FP16,
-                      DataLayoutType.MetalTexture2DArray),
-            Place(TargetType.X86, PrecisionType.FP32),
-            Place(TargetType.ARM, PrecisionType.FP32),
+                  DataLayoutType.MetalTexture2DArray),
+            Place(TargetType.Metal, PrecisionType.FP16,
+                  DataLayoutType.MetalTexture2DArray), platform_place,
             Place(TargetType.Host, PrecisionType.FP32)
         ]
+    elif args.backend.upper() in ["NNADAPTER"]:
+        places = [
+            Place(TargetType.NNAdapter, PrecisionType.FP32), platform_place,
+            Place(TargetType.Host, PrecisionType.FP32)
+        ]
+        if args.nnadapter_device_names == "":
+            print(
+                "Please set nnadapter_device_names when backend = nnadapter!")
+            return
+        config.set_nnadapter_device_names(
+            args.nnadapter_device_names.split(","))
+        config.set_nnadapter_context_properties(
+            args.nnadapter_context_properties)
+        config.set_nnadapter_model_cache_dir(args.nnadapter_model_cache_dir)
+        config.set_nnadapter_subgraph_partition_config_path(
+            args.nnadapter_subgraph_partition_config_path)
+        config.set_nnadapter_mixed_precision_quantization_config_path(
+            args.nnadapter_mixed_precision_quantization_config_path)
     else:
         raise ValueError("Unsupported backend: %s." % args.backend)
 
