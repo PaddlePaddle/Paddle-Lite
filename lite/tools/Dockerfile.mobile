@@ -65,7 +65,7 @@ ENV NDK_ROOT_R20B /opt/android-ndk-r20b
 ENV NDK_ROOT_R20B /opt/android-ndk-r23b
 RUN cd /opt && unzip /tmp/android-ndk-r17c-linux-x86_64.zip
 RUN cd /opt && unzip /tmp/android-ndk-r20b-linux-x86_64.zip
-RUN cd /opt && unzip /tmp/android-ndk-r23b-linux-x86_64.zip
+RUN cd /opt && unzip /tmp/android-ndk-r23b-linux.zip
 
 # VNC port
 EXPOSE 5900
