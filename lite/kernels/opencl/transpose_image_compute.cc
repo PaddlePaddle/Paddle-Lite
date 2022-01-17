@@ -104,9 +104,8 @@ class TransposeComputeFloatImage
         } else if (axis_ == std::vector<int>({0, 3, 2, 1})) {
           kernel_func_name_ = "transpose_4d_perm0321";
         } else {
-          LOG(INFO) << "Unsupported axis permutation for current lite OpenCL "
-                       "kernel! ";
-          kernel_func_name_ = "transpose_4d_perm0231";
+          LOG(FATAL) << "Unsupported axis permutation for current lite OpenCL "
+                        "kernel! ";
         }
       } else {
         kernel_func_name_ = "transpose_general_buffer";
