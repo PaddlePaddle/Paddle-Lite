@@ -39,10 +39,6 @@ class TestMulticlassNms2Op(AutoScanTest):
     def is_program_valid(self,
                          program_config: ProgramConfig,
                          predictor_config: CxxConfig) -> bool:
-        x_shape = list(program_config.inputs["input_data_BBoxes"].shape)
-        y_shape = list(program_config.inputs["input_data_Scores"].shape)
-        if x_shape[0] <= y_shape[0]:
-            return False
         return True
 
     def sample_program_configs(self, draw):
@@ -86,6 +82,9 @@ class TestMulticlassNms2Op(AutoScanTest):
                 "input_data_Scores": TensorConfig(shape=Y_shape)
             },
             outputs={"output_data", "Index"})
+        x_shape = list(program_config.inputs["input_data_BBoxes"].shape)
+        y_shape = list(program_config.inputs["input_data_Scores"].shape)
+        assume(x_shape[0] > y_shape[0])
         return program_config
 
     def sample_predictor_configs(self):

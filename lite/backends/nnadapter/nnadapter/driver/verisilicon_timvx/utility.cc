@@ -247,6 +247,5 @@ std::shared_ptr<tim::vx::Tensor> CreateTimVXTensor(
                            data_layout,
                            tensor_attr);
 }
-
 }  // namespace verisilicon_timvx
 }  // namespace nnadapter

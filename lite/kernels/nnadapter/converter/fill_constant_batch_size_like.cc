@@ -53,7 +53,7 @@ namespace nnadapter {
  *                            |
  *                            |
  *                          output
- *                 (dims=(7,9,5,1), value=2)
+ *                 (dims=(7,9,5,2), value=2)
  */
 int ConvertFillConstantBatchSizeLike(Converter* converter,
                                      OpInfo* op,

@@ -56,6 +56,5 @@ std::shared_ptr<tim::vx::Tensor> CreateTimVXTensor(
     const NNAdapterOperandType* type,
     void* buffer = nullptr,
     std::vector<int32_t> dimensions = {});
-
 }  // namespace verisilicon_timvx
 }  // namespace nnadapter
