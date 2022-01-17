@@ -643,14 +643,14 @@ void interpolate_v2(lite::Tensor* X,
     out_height = new_size[0];
     out_width = new_size[1];
   } else {
-    if (scale_tensor != nullptr) {
-      auto scale_data1 = get_new_data_from_tensor<float>(scale_tensor);
+    if (Scale != nullptr) {
+      auto scale_data1 = get_new_data_from_tensor<float>(Scale);
       if (scale_data1.size() > 1) {
-        scale_h = scale_data1[0];
-        scale_w = scale_data1[1];
+        height_scale = scale_data1[0];
+        width_scale = scale_data1[1];
       } else {
-        scale_h = scale_data1[0];
-        scale_w = scale_data1[0];
+        height_scale = scale_data1[0];
+        width_scale = scale_data1[0];
       }
     } else {
       if (scale_data.size() > 1 && scale_data[0] > 0 && scale_data[1] > 0) {
@@ -664,8 +664,8 @@ void interpolate_v2(lite::Tensor* X,
       out_width = static_cast<int>(in_w * width_scale);
     }
 
-    if (out_size != nullptr) {
-      auto out_size_data = get_new_data_from_tensor<int>(out_size);
+    if (OutSize != nullptr) {
+      auto out_size_data = get_new_data_from_tensor<int>(OutSize);
       out_height = out_size_data[0];
       out_width = out_size_data[1];
     }
@@ -673,19 +673,19 @@ void interpolate_v2(lite::Tensor* X,
 
   float ratio_h = 0.f;
   float ratio_w = 0.f;
-  if (out_h > 1) {
+  if (out_height > 1) {
     float new_scale_h = 0.f;
     new_scale_h = (height_scale > 0) ? static_cast<float>(1. / height_scale)
                                      : static_cast<float>(in_h) / out_height;
-    ratio_h = (align_corners) ? static_cast<float>(in_h - 1) / (out_height - 1)
-                              : static_cast<float>(new_scale_h);
+    ratio_h = (with_align) ? static_cast<float>(in_h - 1) / (out_height - 1)
+                           : static_cast<float>(new_scale_h);
   }
-  if (out_w > 1) {
+  if (out_width > 1) {
     float new_scale_w = 0.f;
     new_scale_w = (width_scale > 0) ? static_cast<float>(1. / width_scale)
                                     : static_cast<float>(in_w) / out_width;
-    ratio_w = (align_corners) ? static_cast<float>(in_w - 1) / (out_width - 1)
-                              : static_cast<float>(new_scale_w);
+    ratio_w = (with_align) ? static_cast<float>(in_w - 1) / (out_width - 1)
+                           : static_cast<float>(new_scale_w);
   }
 
   int num_cout = X->dims()[0];
